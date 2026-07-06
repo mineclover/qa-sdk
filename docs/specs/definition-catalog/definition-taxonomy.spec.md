@@ -24,6 +24,17 @@ def:
       type: refs
     - target: tag-management-spec
       type: depends_on
+  sources:
+    - packages/definition-catalog/src/types.ts
+    - packages/definition-catalog/src/vocabulary.ts
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/observe.ts
+    - packages/definition-catalog/src/address-assign.ts
+    - packages/definition-catalog/src/def-config.ts
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
+    - packages/definition-catalog/src/observe.test.ts
+    - packages/definition-catalog/src/address-assign.test.ts
 ---
 # Definition Taxonomy — 문서 분류 체계
 
@@ -33,7 +44,7 @@ def:
 
 ## 정의 ^defines
 
-- scope 8종, aspect 23종, depth 4종, lifecycle 5종, level 3종, layer 4종, link_type 8종
+- scope 9종, aspect 48종, depth 4종, lifecycle 5종, level 3종, layer 4종, link_type 10종
 - 문서 태그는 좌표 축이 아니라 보조 taxonomy이며 `tag-management-spec`에서 관리
 - VALID_SCOPE_ASPECTS 유효 조합 제약
 - v1/v2 주소 공간 개요
@@ -47,15 +58,15 @@ def:
 
 7개 축이 문서의 정체성을 결정한다:
 
-- **좌표 축** (주소에 인코딩 — 불변): scope(8) × aspect(23) × depth(4) × seq(128)
+- **좌표 축** (주소에 인코딩 — 불변): scope × aspect × depth, v2는 doc_seq 추가. 현재 capacity 기준 v1은 32×128×8, v2는 32×128×8×128.
 - **메타데이터** (변할 수 있음): level(3), lifecycle(5), layer(4)
-- **관계**: link_type(8)
+- **관계**: link_type(10)
 - **이중 관리**: address(불변 식별자) + id(표시 라벨)
 - **하위 문서**: definition-level(분해 레벨), definition-addressing(주소 체계)
 
 ## 좌표 축
 
-### scope (8종) — "무엇에 대한 정의인가"
+### scope (9종) — "무엇에 대한 정의인가"
 
 참조: `definition-catalog/src/vocabulary.ts:DEF_SCOPE`
 
@@ -69,8 +80,9 @@ def:
 | data | 데이터 구조를 파악하려는 개발자 | "어떤 데이터를 다루는가?" |
 | interface | API를 호출하는 소비자 | "어떻게 접근하는가?" |
 | meta | 메타 설계 제안의 독자 | "정규 스펙의 규칙을 어떻게 재정의하는가?" |
+| decision | 의사결정 기록의 독자 | "어떤 결정 1건인가?" |
 
-### aspect (23종) — "어떤 측면을 정의하는가"
+### aspect (48종) — "어떤 측면을 정의하는가"
 
 참조: `definition-catalog/src/vocabulary.ts:DEF_ASPECT`
 
@@ -116,7 +128,7 @@ def:
     └── 제안설계 (proposal_design)   메타 설계 제안 / 정규 스펙 규칙을 재정의 대상으로 삼는 문서
 ```
 
-scope-aspect 유효 조합: 23개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증.
+scope-aspect 유효 조합: 48개. `VALID_SCOPE_ASPECTS`가 제약, `validateScopeAspect()`가 검증한다. `decision` scope는 현재 aspect 0개인 단일 의사결정 좌표 자리다.
 
 ### depth (4종) — "얼마나 상세한가"
 
@@ -158,7 +170,7 @@ draft → review → approved → deprecated → archived
 ### v1 (분류용 — 현재)
 
 ```
-def_document:v1:<address> = scope(16) × aspect(64) × depth(8) = 8,192 공간
+def_document:v1:<address> = scope(32) × aspect(128) × depth(8) = 32,768 공간
 ```
 
 같은 유형의 문서가 같은 주소를 공유. 주소 = 분류, 식별 = id 필드.
@@ -166,7 +178,7 @@ def_document:v1:<address> = scope(16) × aspect(64) × depth(8) = 8,192 공간
 ### v2 (유일 식별 — 이행 중)
 
 ```
-def_document:v2:<address> = scope(16) × aspect(64) × depth(8) × seq(128) = 1,048,576 공간
+def_document:v2:<address> = scope(32) × aspect(128) × depth(8) × seq(128) = 4,194,304 공간
 ```
 
 모든 문서가 유일한 주소를 가짐. 주소 = 불변 식별자, id = 표시 라벨.
@@ -179,9 +191,9 @@ def_document:v2:<address> = scope(16) × aspect(64) × depth(8) × seq(128) = 1,
 
 ## 관련 소스
 
-- `definition-catalog/src/types.ts` — DefLevel, DefScope, DefAspect, DefDepth, DefLayer, LinkType
-- `definition-catalog/src/vocabulary.ts` — DEF_LEVEL, DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DOC_SEQ, LINK_TYPE
-- `definition-catalog/src/taxonomy.ts` — VALID_SCOPE_ASPECTS, LINK_TYPE_RULES, CLASSIFICATION_CONVENTIONS
-- `definition-catalog/src/observe.ts` — encodeDocument(v1), encodeUniqueDocument(v2)
-- `definition-catalog/src/address-assign.ts` — assignUniqueAddresses, buildIdToAddressMap
-- `definition-catalog/src/def-config.ts` — readDefConfig, writeDefConfig, detectDrift
+- `packages/definition-catalog/src/types.ts` — DefLevel, DefScope, DefAspect, DefDepth, DefLayer, LinkType
+- `packages/definition-catalog/src/vocabulary.ts` — DEF_LEVEL, DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DOC_SEQ, LINK_TYPE
+- `packages/definition-catalog/src/taxonomy.ts` — VALID_SCOPE_ASPECTS, LINK_TYPE_RULES, CLASSIFICATION_CONVENTIONS
+- `packages/definition-catalog/src/observe.ts` — encodeDocument(v1), encodeUniqueDocument(v2), address space helpers
+- `packages/definition-catalog/src/address-assign.ts` — assignUniqueAddresses, buildIdToAddressMap
+- `packages/definition-catalog/src/def-config.ts` — readDefConfig, writeDefConfig, detectDrift

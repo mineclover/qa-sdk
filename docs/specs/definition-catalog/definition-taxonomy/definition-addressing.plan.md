@@ -12,6 +12,16 @@ def:
   links:
     - target: definition-addressing
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/observe.ts
+    - packages/definition-catalog/src/address-assign.ts
+    - packages/definition-catalog/src/registry.ts
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/cli/src/commands/def.ts
+    - packages/cli/src/commands/def.test.ts
+    - packages/cli/src/data-sources/local-data-source.ts
+    - packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts
+    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
 ---
 
 # Definition Addressing — 전환 계획
@@ -25,6 +35,7 @@ def:
 - explicit `def_document:v2:*`는 sync/DB에 보존된다.
 - incoming/outgoing/impact/boundary 조회면에서 address를 병행 노출한다.
 - `document_links`는 id와 address를 함께 저장한다.
+- `def get|incoming|outgoing|boundary|boundary-context --address=<ADDR>` 조회면이 존재한다.
 
 ## 다음 단계
 

@@ -18,6 +18,16 @@ def:
   links:
     - target: definition-taxonomy
       type: refines
+  sources:
+    - packages/definition-catalog/src/types.ts
+    - packages/definition-catalog/src/vocabulary.ts
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/validate.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
+    - packages/definition-catalog/src/validate-semantic.test.ts
+    - packages/cli/src/lib/docs-control-plane/metadata-transform.ts
+    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
+    - packages/cli/src/commands/docs.test.ts
 ---
 # Definition Level — 분해 레벨
 
@@ -97,11 +107,12 @@ level은 "현재 이 문서가 어떤 역할인가"의 선언이지, "트리의 
 
 - level은 좌표 주소에 인코딩하지 않는다 (불변성 보존)
 - level 미선언 시 기본값은 "leaf"
-- contains 자식이 있는 문서는 leaf보다 상위 level을 선언해야 한다 (권장, 강제 아님)
+- group/module level은 contains 자식 1건 이상이 필요하고, leaf level은 contains 자식을 가질 수 없다
 - level 변경은 주소에 영향 없다 — 다른 문서의 링크가 깨지지 않는다
 
 ## 관련 소스
 
-- `definition-catalog/src/types.ts:DefLevel` — 타입 정의
-- `definition-catalog/src/vocabulary.ts:DEF_LEVEL` — 축 정의 (entries, capacity, ko)
-- `definition-catalog/src/frontmatter.ts` — 파싱 (기본값 leaf)
+- `packages/definition-catalog/src/types.ts:DefLevel` — 타입 정의
+- `packages/definition-catalog/src/vocabulary.ts:DEF_LEVEL` — 축 정의 (entries, capacity, ko)
+- `packages/definition-catalog/src/frontmatter.ts` — 파싱 (기본값 leaf)
+- `packages/definition-catalog/src/validate.ts` — group/module/leaf contains 검증

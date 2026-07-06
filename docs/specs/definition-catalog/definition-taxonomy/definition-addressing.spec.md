@@ -19,6 +19,19 @@ def:
       type: traces_to
     - target: definition-addressing-plan
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/observe.ts
+    - packages/definition-catalog/src/address-assign.ts
+    - packages/definition-catalog/src/registry.ts
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/observe.test.ts
+    - packages/definition-catalog/src/address-assign.test.ts
+    - packages/definition-catalog/src/registry.test.ts
+    - packages/cli/src/commands/def.ts
+    - packages/cli/src/commands/def.test.ts
+    - packages/cli/src/data-sources/local-data-source.ts
+    - packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts
+    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
 ---
 # Definition Addressing — 문서 주소 체계
 
@@ -67,8 +80,8 @@ address = scope×aspect×depth로 계산되므로 같은 유형 문서 79건이 
 ### 변경 후
 
 ```
-id="gate-api"       address="def_document:v1:142"   ← 유일!
-id="record-spec"    address="def_document:v1:283"   ← 유일!
+id="gate-api"       address="def_document:v2:142"   ← 유일!
+id="record-spec"    address="def_document:v2:283"   ← 유일!
 ```
 
 주소 공간에 문서 엔트리(doc_entry) 축을 추가하여, 같은 scope×aspect×depth 내에서도 각 문서가 고유 주소를 가진다.
@@ -101,17 +114,17 @@ links:
 ## 주소 공간
 
 ```
-현재:  scope(16) × aspect(64) × depth(8) = 8,192
-변경:  scope(16) × aspect(64) × depth(8) × doc_seq(128) = 1,048,576
+현재 v1 fallback:  scope(32) × aspect(128) × depth(8) = 32,768
+v2 유일 주소:     scope(32) × aspect(128) × depth(8) × doc_seq(128) = 4,194,304
 ```
 
 doc_seq = 같은 scope×aspect×depth 내 순번. capacity 128이면 같은 유형에 최대 128건.
 
 ## 마이그레이션
 
-1. 기존 548건에 유일 주소 부여 (scope×aspect×depth×seq로 재계산)
-2. 기존 id 기반 링크를 주소 기반으로 변환 (id → address 매핑 테이블)
-3. frontmatter의 address 필드 업데이트
+1. 기존 문서에 유일 주소 부여 (scope×aspect×depth×seq로 계산)
+2. id 기반 링크와 address 기반 링크를 병행 저장 (id → address 매핑)
+3. frontmatter의 explicit v2 address는 보존
 4. id는 표시용으로 유지 (frontmatter에 그대로)
 
 ## 제약 조건 ^constraint
