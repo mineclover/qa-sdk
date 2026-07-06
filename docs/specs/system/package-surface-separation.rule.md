@@ -43,22 +43,30 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 | 기능군 | 의미 |
 |--------|------|
-| `runtime core` | 좌표 인코딩과 observability runtime처럼 production flow가 직접 의존할 수 있는 기반 |
-| `definition governance` | definition, decision, spec, architecture governance처럼 작업/문서/검증을 통제하는 표면 |
+| `coordinate kernel capability` | 좌표 인코딩, 주소 수학, 메타데이터 인덱싱, 권한 bitmask를 소유하는 기반 |
+| `observability runtime capability` | 이벤트 수집, SDK, gateway, registry, storage, logging, codec, runtime service를 소유하는 기반 |
+| `definition catalog capability` | definition graph, catalog runtime, 문서 품질 gate처럼 정의 카탈로그를 소유하는 표면 |
+| `decision evidence capability` | decision-flow, DKG, evidence recording처럼 판단 과정과 증거를 기록하는 표면 |
+| `spec analysis capability` | spec schema, transition, convergence, snapshot, codegen처럼 명세 분석 산출물을 만드는 표면 |
+| `governance tooling` | CLI, architecture, scaffold, config/db/infra helper처럼 운영자가 실행하는 관리 도구 표면 |
 | `taxonomy capability` | 유한 vocabulary tooling, taxonomy adapter, taxonomy-only preview consumer |
 | `profile capability` | profile contract tooling, evidence ledger adapter, measurement, profile-only preview consumer |
 | `operational ontology capability` | operational ontology runtime, pack projection, programming artifact registry, ontology-only preview consumer |
-| `domain support` | 권한 보조, authoring, simulation, visual analysis처럼 특정 도메인을 지원하는 표면 |
-| `consumer verification` | demo, smoke, test suite처럼 상위 capability를 소비해 증명하는 표면 |
+| `authorization support capability` | 권한 정책과 감사 영속 보조 표면 |
+| `motion authoring capability` | motion content/workspace/client/service authoring 표면 |
+| `simulation contract capability` | simulation DTO, service catalog, internal network, outbox, decision view, contract test 표면 |
+| `visual analysis capability` | canvas, 3D visualization, visual bridge, layout analysis 표면 |
+| `verification suite capability` | test harness, E2E, facet, demo, scenario verification 표면 |
+| `demo consumer surfaces` | read-only demo, smoke UI, API consumer 표면 |
 | `quarantine` | package-local 증거는 있으나 제품 surface로 승격하지 않는 격리 큐 |
 
 ## Surface 분류
 
 | Surface | 기능군 | 판정 | 대표 패키지/그룹 | 승격 기준 |
 |---------|--------|------|-------------|-----------|
-| Coordinate kernel | runtime core | keep | weighted/index/address/search packages | 다수 내부 소비자, package tests, `arch:usage` fan-in 근거 |
-| Observability runtime | runtime core | maintain | core/sdk/browser/ingest/registry/store/logging/codec services | ingest/registry/runtime smoke 또는 서비스별 quality gate |
-| Definition control plane | definition governance | keep | definition catalog/service/client/data-source/doc envelope/readiness tools | `def validate`, definition quality gates, docs graph 정합성 |
+| Coordinate kernel | coordinate kernel capability | keep | weighted/index/address/search packages | 다수 내부 소비자, package tests, `arch:usage` fan-in 근거 |
+| Observability runtime | observability runtime capability | maintain | core/sdk/browser/ingest/registry/store/logging/codec services | ingest/registry/runtime smoke 또는 서비스별 quality gate |
+| Definition control plane | definition catalog capability | keep | definition catalog/service/client/data-source/doc envelope/readiness tools | `def validate`, definition quality gates, docs graph 정합성 |
 | Taxonomy tooling | taxonomy capability | keep as tooling | `taxonomy-engine` | finite vocabulary parse/validate/diff/codegen tests |
 | Taxonomy decision bridge | taxonomy capability | keep as bridge | `taxonomy-decision-bridge` | taxonomy/decision-flow round-trip tests |
 | Taxonomy preview surfaces | taxonomy capability | consumer only | `@qa-sdk/taxonomy-web` | taxonomy-web build/test; no vocabulary ownership |
@@ -68,15 +76,15 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | Profile preview surfaces | profile capability | consumer only | `@qa-sdk/viz-web` | viz-web build/test from lineage/graph artifacts; no profile ownership |
 | Operational ontology runtime | operational ontology capability | conditional keep | `operational-ontology` | package tests, pack/projector/persistence evidence, explicit consumer bridge before product promotion |
 | Operational ontology preview surfaces | operational ontology capability | consumer only | `@qa-sdk/operational-ontology-web` | operational ontology web build/test/static smoke; no schema or registry ownership |
-| Decision recording | definition governance | conditional keep | decision-flow, DKG, authorization/work-domain decision packages | decision-flow tests, CLI/service use, quality bundle evidence |
-| Spec analysis kernel | definition governance | keep | spec-core/schema/transition/tracker/analyzer/codegen/demo snapshot packages | spec package tests, propagation/convergence/codegen evidence |
-| Infra governance tooling | definition governance | maintain | CLI, archi, scaffolding, service kit, config/db/git/infra helpers | arch feedback, package-local tests, generated contract checks |
-| Authorization support | domain support | maintain | audit recorder and resource policy stores | authorization ontology smoke, persistence tests |
-| Motion authoring | domain support | conditional keep | motion content/workspace/client/service | consumer build/test or service smoke before promotion |
-| Simulation contracts | domain support | consumer contract | sim-* DTO, catalog, network, and simulation test packages | producer/consumer drift tests |
-| Visual analysis tools | domain support | consumer tooling | canvas/viz/visbug/layout analysis packages | visual consumer tests/builds |
-| Verification suites | consumer verification | test only | test types, demo/e2e/facet/scenario test packages | test harness execution |
-| Product demo surfaces | consumer verification | consumer only | demo/web/smoke UI and API consumers | 소비자 앱 build/test, 상위 surface 소유권 침범 금지 |
+| Decision recording | decision evidence capability | conditional keep | decision-flow, DKG, authorization/work-domain decision packages | decision-flow tests, CLI/service use, quality bundle evidence |
+| Spec analysis kernel | spec analysis capability | keep | spec-core/schema/transition/tracker/analyzer/codegen/demo snapshot packages | spec package tests, propagation/convergence/codegen evidence |
+| Infra governance tooling | governance tooling | maintain | CLI, archi, scaffolding, service kit, config/db/git/infra helpers | arch feedback, package-local tests, generated contract checks |
+| Authorization support | authorization support capability | maintain | audit recorder and resource policy stores | authorization ontology smoke, persistence tests |
+| Motion authoring | motion authoring capability | conditional keep | motion content/workspace/client/service | consumer build/test or service smoke before promotion |
+| Simulation contracts | simulation contract capability | consumer contract | sim-* DTO, catalog, network, and simulation test packages | producer/consumer drift tests |
+| Visual analysis tools | visual analysis capability | consumer tooling | canvas/viz/visbug/layout analysis packages | visual consumer tests/builds |
+| Verification suites | verification suite capability | test only | test types, demo/e2e/facet/scenario test packages | test harness execution |
+| Product demo surfaces | demo consumer surfaces | consumer only | demo/web/smoke UI and API consumers | 소비자 앱 build/test, 상위 surface 소유권 침범 금지 |
 | Quarantine candidates | quarantine | no promotion | `request-contract`, `weighted-gpu` | 실제 consumer 또는 bridge smoke가 생길 때까지 제품 축으로 언급하지 않음 |
 
 ## 경계 규칙
@@ -114,7 +122,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 
 정리 작업은 `arch:surfaces`로 `packages/*` surface-managed 배정이 깨지지 않는지 먼저 확인하고, `arch:usage`로 surface별 zero-fan-in/archive/dead/missing-entrypoint/entrypoint-gap 잔여를 확인한 뒤 진행한다.
 
-정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 기능군, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 manifest 기준으로 증명한다. `corepack pnpm arch:surfaces -- --json`은 기능군별 surface 수, package 수, 판정 분포도 내보내며, `arch:verify`는 taxonomy/profile/operational-ontology/quarantine 기능군이 다시 섞이지 않도록 이 요약을 고정한다. `simulations/*`와 `vendor/*`는 workspace-support로 usefulness audit에 남길 수 있으나, 기능 surface 승격 또는 quarantine 후보로 계산하지 않는다.
+정확한 `packages/*` surface-managed 패키지 배정의 SSOT는 `scripts/package-surfaces.mjs`다. 위 표는 리뷰 가능한 surface 이름, 기능군, 판정, 대표 패키지/그룹, 승격 기준을 요약한다. `packages/*` package coverage와 누락/중복은 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 manifest 기준으로 증명한다. `corepack pnpm arch:surfaces -- --json`은 기능군별 surface 수, package 수, 판정 분포도 내보내며, `arch:verify`는 coordinate/observability/definition catalog/decision evidence/spec analysis/governance tooling/taxonomy/profile/operational-ontology/authorization/motion/simulation/visual analysis/verification/demo/quarantine 기능군이 다시 섞이지 않도록 이 요약을 고정한다. `simulations/*`와 `vendor/*`는 workspace-support로 usefulness audit에 남길 수 있으나, 기능 surface 승격 또는 quarantine 후보로 계산하지 않는다.
 
 `design-usefulness-audit`는 이 규칙을 소비해 package 후보의 `surfaceGroup`, `surfaceVerdict`, `surfaceScope`를 계산한다. 이 문서가 새 surface를 추가하면 `scripts/package-surfaces.mjs`와 `system-packages` 표를 먼저 맞추고, `arch:verify`가 rule table과 manifest drift를 잡도록 둔다.
 
@@ -128,4 +136,4 @@ corepack pnpm arch:verify
 corepack pnpm arch:feedback
 ```
 
-`corepack pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 `packages/*` package가 있으면 실패하고, 출력의 feature group 요약으로 기능군별 분리 상태를 즉시 확인할 수 있다. `corepack pnpm arch:verify`는 taxonomy/profile/operational-ontology 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/기능군/판정을 말하는지도 고정한다.
+`corepack pnpm arch:surfaces`는 이 문서의 핵심 분류를 스크립트 surface manifest와 맞춘다. 없는 패키지, 중복 배정, 또는 surface 없는 `packages/*` package가 있으면 실패하고, 출력의 feature group 요약으로 기능군별 분리 상태를 즉시 확인할 수 있다. `corepack pnpm arch:verify`는 coordinate/observability/definition catalog/decision evidence/spec analysis/governance tooling/taxonomy/profile/operational-ontology/authorization/motion/simulation/visual analysis/verification/demo 관련 surface가 다시 한 덩어리로 합쳐지지 않았는지와 이 문서 및 `system-packages`의 surface 표가 manifest와 같은 목록/기능군/판정을 말하는지도 고정한다.

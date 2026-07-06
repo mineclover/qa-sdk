@@ -69,7 +69,7 @@ def:
 | [layer-separation](./layer-separation.rule.md) | data / validator / workflow / tooling 4 계층 책임 모델 + workflow smoke 원칙 |
 | [coordinate-storage](./coordinate-storage.rule.md) | weighted-index 좌표를 저장할 때 `(prefix_id, version, address)` VersionedIndex 패턴 필수 |
 | [design-usefulness-audit](./design-usefulness-audit.rule.md) | 실행 증거 없는 설계 문서/패키지를 keep/prove/quarantine/remove로 판정하는 감사 규칙 |
-| [package-surface-separation](./package-surface-separation.rule.md) | package surface를 runtime, governance, taxonomy, profile, domain support, consumer verification, quarantine으로 분리하는 승격/격리 규칙 |
+| [package-surface-separation](./package-surface-separation.rule.md) | package surface를 coordinate kernel, observability runtime, definition catalog, decision evidence, spec analysis, governance tooling, taxonomy, profile, operational ontology, authorization, motion, simulation, visual analysis, verification, demo, quarantine으로 분리하는 승격/격리 규칙 |
 
 ---
 

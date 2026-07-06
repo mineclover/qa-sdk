@@ -32,7 +32,7 @@ def:
 - catalog cardinality, axis/prefix 목록, generated snapshot shape는 producer package에서 파생한다.
 - protocol constants, HTTP status, 테스트가 직접 주입한 fixture row count는 명시 값으로 검증할 수 있다.
 - compatibility/error parity는 package-local contract로 유지하고, producer runtime dependency graph를 바꾸는 근거로 사용하지 않는다.
-- demo-tests는 consumer verification surface다. runtime package ownership을 가져오지 않는다.
+- demo-tests는 verification suite capability surface다. runtime package ownership을 가져오지 않는다.
 
 ## 검증 ^validation
 

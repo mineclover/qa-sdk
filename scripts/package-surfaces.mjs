@@ -2,12 +2,28 @@ export const MANAGED_PACKAGE_SCOPE = "packages/*";
 
 export const SURFACE_GROUPS = [
   {
-    id: "runtime-core",
-    description: "coordinate math and observability runtime packages that production flows can depend on directly",
+    id: "coordinate-kernel-capability",
+    description: "coordinate math, address encoding, metadata indexing, and permission bitmask packages",
   },
   {
-    id: "definition-governance",
-    description: "definition, decision, spec, and architecture governance packages",
+    id: "observability-runtime-capability",
+    description: "event collection, SDK, gateway, registry, storage, logging, codec, and runtime service packages",
+  },
+  {
+    id: "definition-catalog-capability",
+    description: "definition graph, catalog runtime, and documentation quality gate packages",
+  },
+  {
+    id: "decision-evidence-capability",
+    description: "decision-flow, DKG, and decision evidence recording packages",
+  },
+  {
+    id: "spec-analysis-capability",
+    description: "spec schema, transition, convergence, snapshot, and codegen packages",
+  },
+  {
+    id: "governance-tooling",
+    description: "CLI, architecture, scaffold, config, database, and infrastructure helper packages",
   },
   {
     id: "taxonomy-capability",
@@ -22,12 +38,28 @@ export const SURFACE_GROUPS = [
     description: "operational ontology runtime, pack projection, and ontology-only preview consumers",
   },
   {
-    id: "domain-support",
-    description: "domain-specific support, authoring, simulation, and analysis packages",
+    id: "authorization-support-capability",
+    description: "authorization policy and audit persistence support packages",
   },
   {
-    id: "consumer-verification",
-    description: "demo, smoke, and test surfaces that consume other capabilities",
+    id: "motion-authoring-capability",
+    description: "motion content, workspace, client, and service authoring packages",
+  },
+  {
+    id: "simulation-contract-capability",
+    description: "simulation DTO, service catalog, internal network, outbox, decision view, and contract test packages",
+  },
+  {
+    id: "visual-analysis-capability",
+    description: "canvas, 3D visualization, visual bridge, and layout analysis packages",
+  },
+  {
+    id: "verification-suite-capability",
+    description: "test harness, E2E, facet, demo, and scenario verification packages",
+  },
+  {
+    id: "demo-consumer-surfaces",
+    description: "read-only demo, smoke UI, and API consumer packages",
   },
   {
     id: "quarantine",
@@ -38,7 +70,7 @@ export const SURFACE_GROUPS = [
 export const SURFACES = [
   {
     id: "coordinate-kernel",
-    group: "runtime-core",
+    group: "coordinate-kernel-capability",
     verdict: "keep",
     packages: [
       "weighted-index",
@@ -54,7 +86,7 @@ export const SURFACES = [
   },
   {
     id: "observability-runtime",
-    group: "runtime-core",
+    group: "observability-runtime-capability",
     verdict: "maintain",
     packages: [
       "@qa-sdk/apm",
@@ -82,7 +114,7 @@ export const SURFACES = [
   },
   {
     id: "definition-control-plane",
-    group: "definition-governance",
+    group: "definition-catalog-capability",
     verdict: "keep",
     packages: [
       "definition-catalog",
@@ -152,7 +184,7 @@ export const SURFACES = [
   },
   {
     id: "decision-recording",
-    group: "definition-governance",
+    group: "decision-evidence-capability",
     verdict: "conditional-keep",
     packages: [
       "decision-flow",
@@ -167,7 +199,7 @@ export const SURFACES = [
   },
   {
     id: "spec-analysis-kernel",
-    group: "definition-governance",
+    group: "spec-analysis-capability",
     verdict: "keep",
     packages: [
       "@qa-sdk/spec-core",
@@ -185,7 +217,7 @@ export const SURFACES = [
   },
   {
     id: "infra-governance-tooling",
-    group: "definition-governance",
+    group: "governance-tooling",
     verdict: "maintain",
     packages: [
       "@qa-sdk/cli",
@@ -205,13 +237,13 @@ export const SURFACES = [
   },
   {
     id: "authorization-support",
-    group: "domain-support",
+    group: "authorization-support-capability",
     verdict: "maintain",
     packages: ["audit-recorder-store", "resource-policy-store"],
   },
   {
     id: "motion-authoring",
-    group: "domain-support",
+    group: "motion-authoring-capability",
     verdict: "conditional-keep",
     packages: [
       "motion-content",
@@ -222,7 +254,7 @@ export const SURFACES = [
   },
   {
     id: "simulation-contracts",
-    group: "domain-support",
+    group: "simulation-contract-capability",
     verdict: "consumer-contract",
     packages: [
       "sim-decision-view",
@@ -235,7 +267,7 @@ export const SURFACES = [
   },
   {
     id: "visual-analysis-tools",
-    group: "domain-support",
+    group: "visual-analysis-capability",
     verdict: "consumer-tooling",
     packages: [
       "canvas-viewport",
@@ -247,7 +279,7 @@ export const SURFACES = [
   },
   {
     id: "verification-suites",
-    group: "consumer-verification",
+    group: "verification-suite-capability",
     verdict: "test-only",
     packages: [
       "test-types",
@@ -259,7 +291,7 @@ export const SURFACES = [
   },
   {
     id: "product-demo-surfaces",
-    group: "consumer-verification",
+    group: "demo-consumer-surfaces",
     verdict: "consumer-only",
     packages: [
       "@qa-sdk/authorization-monitor-web",

@@ -109,6 +109,18 @@ async function main() {
     assert(usefulnessPackages["taxonomy-engine"]?.surfaceGroup === "taxonomy-capability"
            && usefulnessPackages["data-structure-profile"]?.surfaceGroup === "profile-capability"
            && usefulnessPackages["@qa-sdk/viz-web"]?.surfaceGroup === "profile-capability"
+           && usefulnessPackages["weighted-index"]?.surfaceGroup === "coordinate-kernel-capability"
+           && usefulnessPackages["@qa-sdk/core"]?.surfaceGroup === "observability-runtime-capability"
+           && usefulnessPackages["definition-catalog"]?.surfaceGroup === "definition-catalog-capability"
+           && usefulnessPackages["decision-flow"]?.surfaceGroup === "decision-evidence-capability"
+           && usefulnessPackages["@qa-sdk/spec-core"]?.surfaceGroup === "spec-analysis-capability"
+           && usefulnessPackages["@qa-sdk/cli"]?.surfaceGroup === "governance-tooling"
+           && usefulnessPackages["resource-policy-store"]?.surfaceGroup === "authorization-support-capability"
+           && usefulnessPackages["motion-content"]?.surfaceGroup === "motion-authoring-capability"
+           && usefulnessPackages["sim-service-catalog"]?.surfaceGroup === "simulation-contract-capability"
+           && usefulnessPackages["viz-core"]?.surfaceGroup === "visual-analysis-capability"
+           && usefulnessPackages["test-types"]?.surfaceGroup === "verification-suite-capability"
+           && usefulnessPackages["@qa-sdk/platform-demo"]?.surfaceGroup === "demo-consumer-surfaces"
            && usefulnessPackages["request-contract"]?.surfaceGroup === "quarantine",
            "Usefulness Audit: packages expose separated feature groups");
     assert(usefulnessDocs["docs/specs/prefix-catalog/entity-prefix-group/prefix-service.spec.md"]?.verdict === "keep"
@@ -334,20 +346,56 @@ async function main() {
     assert(surfaceGroups["taxonomy-tooling"] === "taxonomy-capability"
            && surfaceGroups["taxonomy-decision-bridge"] === "taxonomy-capability"
            && surfaceGroups["taxonomy-preview-surfaces"] === "taxonomy-capability"
+           && surfaceGroups["coordinate-kernel"] === "coordinate-kernel-capability"
+           && surfaceGroups["observability-runtime"] === "observability-runtime-capability"
            && surfaceGroups["profile-contract-tooling"] === "profile-capability"
            && surfaceGroups["quality-evidence-ledgers"] === "profile-capability"
            && surfaceGroups["measurement-tooling"] === "profile-capability"
            && surfaceGroups["profile-preview-surfaces"] === "profile-capability"
            && surfaceGroups["operational-ontology-runtime"] === "operational-ontology-capability"
            && surfaceGroups["operational-ontology-preview-surfaces"] === "operational-ontology-capability"
+           && surfaceGroups["definition-control-plane"] === "definition-catalog-capability"
+           && surfaceGroups["decision-recording"] === "decision-evidence-capability"
+           && surfaceGroups["spec-analysis-kernel"] === "spec-analysis-capability"
+           && surfaceGroups["infra-governance-tooling"] === "governance-tooling"
+           && surfaceGroups["authorization-support"] === "authorization-support-capability"
+           && surfaceGroups["motion-authoring"] === "motion-authoring-capability"
+           && surfaceGroups["simulation-contracts"] === "simulation-contract-capability"
+           && surfaceGroups["visual-analysis-tools"] === "visual-analysis-capability"
+           && surfaceGroups["verification-suites"] === "verification-suite-capability"
+           && surfaceGroups["product-demo-surfaces"] === "demo-consumer-surfaces"
            && surfaceGroups["quarantine-candidates"] === "quarantine",
-           "Surface Report: taxonomy, profile, operational ontology, and quarantine feature groups stay separated");
-    assert(groupSummaries["taxonomy-capability"]?.surfaceCount === 3
+           "Surface Report: capability, consumer, governance, and quarantine feature groups stay separated");
+    assert(groupSummaries["coordinate-kernel-capability"]?.surfaceCount === 1
+           && groupSummaries["coordinate-kernel-capability"]?.packageCount === 9
+           && groupSummaries["observability-runtime-capability"]?.surfaceCount === 1
+           && groupSummaries["observability-runtime-capability"]?.packageCount === 21
+           && groupSummaries["taxonomy-capability"]?.surfaceCount === 3
            && groupSummaries["taxonomy-capability"]?.packageCount === 3
            && groupSummaries["profile-capability"]?.surfaceCount === 4
            && groupSummaries["profile-capability"]?.packageCount === 5
            && groupSummaries["operational-ontology-capability"]?.surfaceCount === 2
            && groupSummaries["operational-ontology-capability"]?.packageCount === 2
+           && groupSummaries["definition-catalog-capability"]?.surfaceCount === 1
+           && groupSummaries["definition-catalog-capability"]?.packageCount === 9
+           && groupSummaries["decision-evidence-capability"]?.surfaceCount === 1
+           && groupSummaries["decision-evidence-capability"]?.packageCount === 8
+           && groupSummaries["spec-analysis-capability"]?.surfaceCount === 1
+           && groupSummaries["spec-analysis-capability"]?.packageCount === 11
+           && groupSummaries["governance-tooling"]?.surfaceCount === 1
+           && groupSummaries["governance-tooling"]?.packageCount === 13
+           && groupSummaries["authorization-support-capability"]?.surfaceCount === 1
+           && groupSummaries["authorization-support-capability"]?.packageCount === 2
+           && groupSummaries["motion-authoring-capability"]?.surfaceCount === 1
+           && groupSummaries["motion-authoring-capability"]?.packageCount === 4
+           && groupSummaries["simulation-contract-capability"]?.surfaceCount === 1
+           && groupSummaries["simulation-contract-capability"]?.packageCount === 6
+           && groupSummaries["visual-analysis-capability"]?.surfaceCount === 1
+           && groupSummaries["visual-analysis-capability"]?.packageCount === 5
+           && groupSummaries["verification-suite-capability"]?.surfaceCount === 1
+           && groupSummaries["verification-suite-capability"]?.packageCount === 5
+           && groupSummaries["demo-consumer-surfaces"]?.surfaceCount === 1
+           && groupSummaries["demo-consumer-surfaces"]?.packageCount === 8
            && groupSummaries["quarantine"]?.surfaceCount === 1
            && groupSummaries["quarantine"]?.packageCount === 2,
            "Surface Report: separated feature group summary stays stable");

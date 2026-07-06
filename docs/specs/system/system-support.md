@@ -73,7 +73,9 @@ def:
 - `Authorization support`: resource-policy-store, audit-recorder-store, permission-system 관련 persistence/감사 보조.
 - `Simulation contracts`: sim-* DTO, service catalog, internal network, outbox view, simulation test 계약.
 - `Verification suites`: test-types, demo/e2e/facet/scenario test packages.
-- `Domain support`: motion authoring, visual analysis tools, event vocabulary, auth/config/db/otel 보조 문서.
+- `Motion authoring`: motion content/workspace/client/service authoring.
+- `Visual analysis tools`: canvas/3D visualization/visual bridge/layout analysis.
+- `Governance tooling`: config/db/otel/package-classifier 계열 운영 보조.
 - `Guides/skill catalog`: 운영자가 runtime과 definition surface를 사용할 때 참조하는 guide 문서.
 
 테스트 환경: e2e/facet/simulation 스펙 + validation-layer-group(통합).

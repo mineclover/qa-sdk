@@ -48,7 +48,7 @@ def:
 
 ## 구성 ^overview
 
-시스템 개요는 runtime, governance, taxonomy, profile, operational ontology, domain support, consumer verification, quarantine surface를 한 화면에서 찾기 위한 navigation root다. 패키지 소유권의 SSOT는 `system-packages`와 `package-surface-separation-rule`이며, 실제 배정은 `scripts/package-surfaces.mjs`가 소유한다.
+시스템 개요는 coordinate kernel, observability runtime, definition catalog, decision evidence, spec analysis, governance tooling, taxonomy, profile, operational ontology, authorization support, motion authoring, simulation contract, visual analysis, verification suite, demo consumer, quarantine surface를 한 화면에서 찾기 위한 navigation root다. 패키지 소유권의 SSOT는 `system-packages`와 `package-surface-separation-rule`이며, 실제 배정은 `scripts/package-surfaces.mjs`가 소유한다.
 
 - `system-overview`: 시스템을 한 문단씩 빠르게 훑는 교차 개요 문서.
 - `system-concepts`: 이벤트, 좌표, 축, Prefix, prefix_ref 기본 개념.
@@ -59,9 +59,9 @@ def:
 - `system-operational-ontology`: operational ontology runtime과 read-only web preview의 실제 패키지 진입점을 분리해 가리킨다.
 - `system-infra`: observability runtime service와 infra governance tooling의 운영 경계를 가리킨다.
 - `system-libraries`: coordinate kernel과 observability runtime library surface를 가리킨다.
-- `system-design-tools`: definition governance surface를 가리키며 taxonomy/profile 소유권을 직접 흡수하지 않는다.
+- `system-design-tools`: definition catalog, decision evidence, spec analysis, governance tooling surface를 가리키며 taxonomy/profile 소유권을 직접 흡수하지 않는다.
 - `system-frontend`: browser/runtime consumer, taxonomy preview, profile preview, product demo surface를 구분한다.
-- `system-support`: authorization/domain support, verification suite, guide/skill 등 횡단 지원 surface를 구분한다.
+- `system-support`: authorization support, simulation contract, verification suite, guide/skill 등 횡단 지원 surface를 구분한다.
 
 ## 검증 ^validation
 
