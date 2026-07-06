@@ -25,6 +25,13 @@ def:
       type: depends_on
     - target: bdd-contract-system
       type: depends_on
+sources:
+  - packages/cli/src/commands/docs.ts:cmdClosure
+  - packages/cli/src/commands/docs.ts:buildClosureResult
+  - packages/cli/src/commands/docs.ts:collectClosureMissingItems
+  - packages/cli/src/commands/docs.ts:collectClosureConcernSignals
+  - packages/cli/src/commands/docs.ts:deriveClosureState
+  - packages/cli/src/commands/docs.test.ts
 ---
 
 # Responsibility Closure Harness — 판정 규칙

@@ -17,6 +17,11 @@ def:
       type: depends_on
     - target: architecture-revealing-code-convention
       type: depends_on
+sources:
+  - packages/cli/src/commands/docs.ts:buildClosureResult
+  - packages/cli/src/commands/docs.ts:collectClosureMissingItems
+  - packages/cli/src/commands/docs.ts:deriveClosureState
+  - packages/cli/src/commands/docs.test.ts
 ---
 
 # Responsibility Closure Harness — Use Cases

@@ -18,13 +18,18 @@ def:
       type: depends_on
     - target: responsibility-closure-harness-test
       type: traces_to
+sources:
+  - packages/cli/src/commands/docs.ts:cmdClosure
+  - packages/cli/src/commands/docs.ts:buildClosureResult
+  - packages/cli/src/commands/docs.ts:deriveClosureState
+  - packages/cli/src/commands/docs.test.ts
 ---
 
 # Responsibility Closure Harness — TODO
 
 ## 목적 ^purpose
 
-Responsibility Closure Harness를 실제 read-only 하네스로 운영하기 위해 남은 실행 작업만 추적한다. 구현된 개념과 판정 규칙은 spec/rule/cases/test 문서가 소유하고, 이 문서는 다음 implementation slice만 소유한다.
+Responsibility Closure Harness를 실제 read-only 하네스로 운영하기 위해 남은 실행 작업만 추적한다. read-only `docs closure` CLI와 1차 missing-evidence aggregation은 구현 완료 상태이고, 이 문서는 완료된 baseline과 아직 deferred인 write/FSM 연동을 분리해 둔다.
 
 ## 실행 항목
 

@@ -17,6 +17,13 @@ def:
       type: verifies
     - target: deterministic-label-architecture
       type: traces_to
+sources:
+  - packages/ralph-tui-integration/src/ralph-session.ts
+  - packages/ralph-tui-integration/src/ralph-session.test.ts
+  - packages/ralph-tui-integration/src/ralph-prd-json.ts
+  - packages/ralph-tui-integration/src/ralph-prd-json.test.ts
+  - packages/ralph-tui-integration/src/completed-ralph-prd.ts
+  - packages/ralph-tui-integration/src/completed-ralph-prd.test.ts
 ---
 
 # ralph-tui-integration — 테스트 명세
