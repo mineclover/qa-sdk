@@ -10,6 +10,7 @@ const format = readOption("--format", "markdown");
 const limit = Number(readOption("--limit", "40"));
 const includeAll = args.includes("--all");
 const surfaceIndex = createSurfaceIndex();
+const SOURCE_REF_ROOTS = "packages|docs|scripts|skills|simulations";
 
 const EXCLUDED_DIRS = new Set([
   ".git",
@@ -64,16 +65,15 @@ function parseFrontmatter(text) {
     tier: matchValue(frontmatter, "tier"),
     scope: matchValue(frontmatter, "scope"),
     aspect: matchValue(frontmatter, "aspect"),
-    hasSources: /^\s*sources:\s*$/m.test(frontmatter) || /^\s*source:\s*(?:packages|docs|scripts|skills)\//m.test(frontmatter),
+    hasSources: /^\s*sources:\s*$/m.test(frontmatter) || new RegExp(`^\\s*source:\\s*(?:${SOURCE_REF_ROOTS})/`, "m").test(frontmatter),
     sourceRefs,
   };
 }
 
 function collectSourceRefs(frontmatter) {
   const refs = [
-    ...frontmatter.matchAll(/^\s*source:\s+((?:packages|docs|scripts)\/[^\n#]+)/gm),
-    ...frontmatter.matchAll(/^\s*source:\s+((?:skills)\/[^\n#]+)/gm),
-    ...frontmatter.matchAll(/^\s*-\s+((?:packages|docs|scripts|skills)\/[^\n#]+)/gm),
+    ...frontmatter.matchAll(new RegExp(`^\\s*source:\\s+((?:${SOURCE_REF_ROOTS})/[^\\n#]+)`, "gm")),
+    ...frontmatter.matchAll(new RegExp(`^\\s*-\\s+((?:${SOURCE_REF_ROOTS})/[^\\n#]+)`, "gm")),
   ].map((match) => cleanSourceRef(match[1]));
   return [...new Set(refs)];
 }
@@ -84,7 +84,7 @@ function cleanSourceRef(source) {
 
 function sourceRefFilePath(source) {
   const cleaned = cleanSourceRef(source);
-  const match = cleaned.match(/^((?:packages|docs|scripts|skills)\/.*?\.(?:[cm]?[jt]sx?|mjs|cjs|md|json|ya?ml|sql))(?:[:#].*)?$/);
+  const match = cleaned.match(new RegExp(`^((?:${SOURCE_REF_ROOTS})/.*?\\.(?:[cm]?[jt]sx?|mjs|cjs|md|json|ya?ml|sql|toml))(?:[:#].*)?$`));
   return match?.[1] ?? cleaned;
 }
 

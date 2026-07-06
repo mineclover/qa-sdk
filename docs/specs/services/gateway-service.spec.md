@@ -17,6 +17,16 @@ def:
       type: contains
     - target: gateway-routing
       type: contains
+sources:
+  - packages/gateway/worker.ts
+  - packages/gateway/server.ts
+  - packages/gateway/scripts/route-permissions.test.ts
+  - simulations/enterprise-pm/services/gateway/src/app.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/health.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/login.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/proxy-routes.ts
+  - simulations/enterprise-pm/services/gateway/src/app.test.ts
+  - simulations/enterprise-pm/services/gateway/src/integration.test.ts
 ---
 # Gateway Service
 

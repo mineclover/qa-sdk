@@ -13,6 +13,14 @@ def:
   links:
     - target: gateway-service-spec
       type: refines
+sources:
+  - packages/gateway/worker.ts
+  - packages/gateway/wrangler.toml
+  - packages/gateway/tunnel.yml
+  - simulations/enterprise-pm/services/gateway/src/config/env.ts
+  - simulations/enterprise-pm/services/gateway/src/config/env.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/routing-table.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/routing-table.test.ts
 ---
 # Gateway — data/domain_data
 

@@ -13,6 +13,15 @@ def:
   links:
     - target: gateway-service-spec
       type: refines
+sources:
+  - packages/gateway/worker.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/proxy-routes.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/proxy-routes.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/route-decision.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/route-decision.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/sticky-hash.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/sticky-hash.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/integration.test.ts
 ---
 # Gateway — feature/func_def
 
