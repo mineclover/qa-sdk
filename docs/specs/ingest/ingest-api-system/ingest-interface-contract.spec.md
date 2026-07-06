@@ -15,6 +15,19 @@ def:
       type: refines
     - target: transmission-spec
       type: depends_on
+  sources:
+    - packages/core/src/schema/envelope.schema.ts
+    - packages/core/src/types/envelope.ts
+    - packages/ingest-server/src/app.ts
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/routes/ingest.test.ts
+    - packages/ingest-server/src/app.test.ts
+    - packages/ingest-server/src/middleware/rate-limit.ts
+    - packages/ingest-server/src/middleware/shutdown.ts
+    - packages/ingest-server/src/lib/enrich-address-context.ts
+    - packages/ingest-server/src/lib/catalog-validator.ts
+    - packages/ingest-server/src/lib/proto-codec.ts
+    - packages/codec-proto/src/index.ts
 ---
 
 # Ingest 인터페이스 계약
@@ -25,10 +38,12 @@ SDK가 보내는 Transmission Envelope을 수신하는 ingest 엔드포인트의
 
 ## 구성 ^overview
 
-- **POST /v1/ingest** — SDK의 TransmissionEnvelope을 수신하여 Phase 1 저장 후 202 응답.
+- **POST /v1/ingest** — SDK의 TransmissionEnvelope을 수신하여 Phase 1 저장과 설정별 후속 처리를 거친 뒤 202 응답.
 - **Content-Type 자동 감지** — JSON, QAPB(레거시), 진짜 Protobuf, MessagePack 4종 지원.
-- **Phase 1 (동기)** — transmission 메타 + trace/session/record 저장 + SSE 발행.
-- **Phase 2 (비동기)** — reconstruction + verdict 계산 (인라인 또는 BullMQ).
+- **Phase 1 (동기)** — transmission 메타 + trace/session/record 저장 + SSE/WS 발행.
+- **검증 모드** — zod schema, catalog fail-open warning, registry strict/warn/off를 분리.
+- **관측 저장** — debug/key observation/insights 저장은 선택 포트이며 실패 시 ingest 응답을 막지 않는다.
+- **Phase 2 (후속)** — reconstruction + verdict 계산 (BullMQ enqueue 또는 inline 처리).
 
 ## 엔드포인트 계약
 
@@ -41,7 +56,7 @@ TransmissionEnvelope 형태의 body. `transmissionEnvelopeSchema` (zod)로 검�
 | Content-Type | 처리 |
 |:---|:---|
 | `application/json` (기본) | JSON.parse |
-| `application/x-protobuf` + QAPB magic (0x51414042) | `fromProtoEnvelope` (레거시 QAPB) |
+| `application/x-protobuf` + QAPB magic (0x51415042) | `fromProtoEnvelope` (레거시 QAPB) |
 | `application/x-protobuf` (magic 없음) | `@qa-sdk/codec-proto` decodeEnvelope |
 | `application/msgpack` | @msgpack/msgpack decode |
 
@@ -54,13 +69,13 @@ TransmissionEnvelope 형태의 body. `transmissionEnvelopeSchema` (zod)로 검�
 }
 ```
 
-HTTP 202 Accepted. 동기 저장(Phase 1) 성공을 의미하며, Phase 2 처리는 별도 진행.
+HTTP 202 Accepted. Phase 1 저장이 완료되었고, Phase 2는 설정에 따라 BullMQ에 enqueue되었거나 inline 처리 경로를 통과했음을 의미한다.
 
 **응답 (실패):**
 
 | HTTP | 조건 |
 |------|------|
-| 400 | envelope schema 검증 실패, registry strict 모드 위반 |
+| 400 | envelope schema 검증 실패, registry strict 모드 위반, 지원 포맷 decode 실패 |
 | 429 | rate-limit 초과 |
 | 503 | shutdown 중 (middleware가 차단) |
 
@@ -72,6 +87,7 @@ SDK → POST /v1/ingest (Envelope)
   → transmissionEnvelopeSchema.parse (zod 검증)
   → enrichAddressContext (infra_context ← record.address_context 머지)
   → checkAddressHealth (orphan prefix / stale version 경고)
+  → validateWithCatalog (catalog 검증 — fail-open warning)
   → validateEnvelopeRecords (registry 검증 — strict/warn/off)
   → storeEnvelope (Phase 1)
 ```
@@ -109,6 +125,8 @@ SDK → POST /v1/ingest (Envelope)
 | `recordStore` | 1 | record batch insert |
 | `recordStreamBroker` | 1 | 실시간 SSE/WebSocket 발행 |
 | `debugStore` | 1 | 디버그 저장 (선택) |
+| `keyObservationStore` | 1 | key observation 추출/저장 (선택, fail-open) |
+| `insightsStore` | 1 이후 | AppHub/Drizzle insights 수집 (선택, fail-open) |
 
 ## 트랜잭션 경계
 

@@ -13,6 +13,16 @@ def:
   links:
     - target: ingest-api-system
       type: refines
+  sources:
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/routes/ingest.test.ts
+    - packages/ingest-server/src/app.test.ts
+    - packages/ingest-server/src/server.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/bullmq-task-queue.ts
+    - packages/ingest-server/src/lib/enrich-address-context.ts
+    - packages/ingest-server/src/lib/catalog-validator.ts
+    - packages/ingest-server/src/lib/extract-key-observations.ts
 ---
 
 # Ingest 인터페이스 파이프라인
@@ -23,8 +33,9 @@ ingest API가 registry validation, trace transaction, DLQ 삽입과 어떻게 �
 
 ## 구성 ^overview
 
-- **Phase 1 (동기 응답 경로)** — envelope 수신 → 검증 → 저장 → SSE 발행 → 202 응답.
-- **Phase 2 (비동기 후처리)** — reconstruction → verdict 계산 → convergence 통지.
+- **Phase 1 (동기 저장 경로)** — envelope 수신 → 검증 → 저장 → SSE/WS 발행.
+- **관측 fail-open** — debug/key observation/insights 수집 실패는 warning으로 격리.
+- **Phase 2 (후속 처리)** — BullMQ enqueue 또는 inline reconstruction/verdict 계산 → convergence 통지.
 - **DLQ fallback** — Phase 2 최종 실패 시 DLQ에 삽입하여 수동 재처리 경로 보존.
 - **Convergence Pipeline** — Phase 2 완료 후 집계/관측 파이프라인에 통지.
 
@@ -37,6 +48,7 @@ POST /v1/ingest
   ├─ zod schema 검증
   ├─ enrichAddressContext (infra_context 머지)
   ├─ checkAddressHealth (orphan/stale 경고)
+  ├─ catalog validation (fail-open warning)
   ├─ registry validation (strict/warn/off)
   │
   ├─ Phase 1: storeEnvelope
@@ -45,12 +57,13 @@ POST /v1/ingest
   │   ├─ 각 trace:
   │   │   ├─ withTraceTransaction (session + trace + record 저장)
   │   │   ├─ recordStreamBroker.publish (SSE)
-  │   │   └─ debugStore.append (선택)
-  │   └─ 202 응답
+  │   │   ├─ debugStore.append (선택)
+  │   │   └─ keyObservationStore.observeBatch (선택, fail-open)
+  │   └─ insightsStore.collect (선택, fail-open)
   │
-  └─ Phase 2: processEnvelope (비동기)
+  └─ Phase 2: processEnvelope 후속 처리
       ├─ TASK_QUEUE_ENABLED=true:
-      │   └─ BullMQ enqueue → worker가 처리
+      │   └─ BullMQ enqueue → 202 응답 → worker가 처리
       └─ TASK_QUEUE_ENABLED=false:
           └─ processPendingPhaseTwo (인라인)
               ├─ reconstructPendingTraces
@@ -58,7 +71,7 @@ POST /v1/ingest
               ├─ aggregateMetrics (MetricRollupStore)
               ├─ decodeAddressContext (decode-service 호출)
               ├─ transition processing (선택)
-              └─ convergencePipeline.notifyCompletion
+              └─ convergencePipeline.notifyCompletion → 202 응답
 ```
 
 ## Registry Validation (첫 관문)
@@ -74,6 +87,7 @@ POST /v1/ingest
 - `RegistryClient`가 registry-service에 `validateEvent()` 호출
 - registry 불가용 시 fail-open (유효하다고 간주)
 - envelope 내 고유 eventKey+eventVersion 조합만 질의 (중복 방지)
+- catalog validator는 registry와 별도이며, 미등록 prefix/event 경고만 남기고 저장을 계속한다.
 
 ## Trace Transaction (Phase 1 핵심)
 
@@ -85,6 +99,7 @@ record 저장과 trace/session 갱신이 같은 단위로 묶여야 하는 구�
    - 미설정 시: 각 store에 개별 호출 (InMemory)
 3. 저장 성공 후 SSE/WebSocket 발행
 4. scenario 구독자가 있으면 session의 scenarioId로 scenario 레벨 broadcast
+5. key observation 추출/저장 실패는 warning만 남기고 202 응답 경로를 유지
 
 ## DLQ 삽입 (최종 fallback)
 
