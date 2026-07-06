@@ -13,6 +13,14 @@ def:
   links:
     - target: motion-workspace-service-spec
       type: refines
+sources:
+  - packages/motion-workspace-service/src/db/schema.ts
+  - packages/motion-workspace-service/src/repository.ts
+  - packages/motion-workspace-service/src/sqlite-repository.ts
+  - packages/motion-workspace-service/test/repository.test.ts
+  - packages/motion-workspace/src/types.ts
+  - packages/motion-workspace/src/io.ts
+  - packages/motion-workspace/src/migrate.ts
 ---
 # Motion Workspace Service — data/domain_data
 

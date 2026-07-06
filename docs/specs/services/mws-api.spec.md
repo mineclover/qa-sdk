@@ -13,6 +13,16 @@ def:
   links:
     - target: motion-workspace-service-spec
       type: refines
+sources:
+  - packages/motion-workspace-service/src/app.ts
+  - packages/motion-workspace-service/src/controller.ts
+  - packages/motion-workspace-service/src/routes/workspaces.ts
+  - packages/motion-workspace-service/src/ws-hub.ts
+  - packages/motion-workspace-service/src/ws-protocol.ts
+  - packages/motion-workspace-service/src/errors.ts
+  - packages/motion-workspace-service/src/error-handler.ts
+  - packages/motion-workspace-service/test/app.test.ts
+  - packages/motion-workspace-service/test/ws-hub.test.ts
 ---
 # Motion Workspace Service — interface/api_contract
 
