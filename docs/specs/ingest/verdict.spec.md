@@ -23,6 +23,13 @@ def:
       type: depends_on
     - target: dlq-store-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/verdict.ts
+  - packages/ingest-server/src/routes/verdict.test.ts
+  - packages/ingest-server/src/stores/d1-verdict-store.ts
+  - packages/ingest-server/src/stores/d1-verdict-store.test.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/verdict-store.shared.ts
+  - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
 ---
 # Verdict API
 

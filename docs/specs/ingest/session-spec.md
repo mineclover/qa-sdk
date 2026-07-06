@@ -13,6 +13,11 @@ def:
   links:
     - target: scenario-store-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/session.ts
+  - packages/ingest-server/src/stores/d1-session-store.ts
+  - packages/ingest-server/src/stores/d1-session-store.test.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/session-store.shared.ts
 ---
 # QA Session + SessionStore
 

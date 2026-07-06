@@ -17,6 +17,11 @@ def:
       type: depends_on
     - target: session-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/streams.ts
+  - packages/ingest-server/src/lib/record-stream-broker.ts
+  - packages/ingest-server/src/lib/record-stream-broker.test.ts
+  - packages/ingest-server/src/routes/ingest.ts
 ---
 # SSE 실시간 스트리밍
 

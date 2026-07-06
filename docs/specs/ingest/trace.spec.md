@@ -13,6 +13,12 @@ def:
   links:
     - target: session-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/stores/d1-trace-store.ts
+  - packages/ingest-server/src/stores/d1-trace-store.test.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/trace-store.shared.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/phase-two-worker.test.ts
 ---
 # Trace + TraceStore
 

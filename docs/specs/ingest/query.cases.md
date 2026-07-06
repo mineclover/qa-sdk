@@ -15,6 +15,10 @@ def:
       type: refines
     - target: query-system
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/query.test.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/schemas/query.ts
 ---
 
 # Query API (ingest) — 소비자 기대 시나리오

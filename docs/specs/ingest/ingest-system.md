@@ -37,6 +37,13 @@ def:
       type: contains
     - target: storage-system
       type: depends_on
+sources:
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/server.ts
+  - packages/ingest-server/src/worker.ts
+  - packages/ingest-server/src/grpc/debug-server.ts
+  - packages/ingest-server/src/lib/proto-codec.ts
+  - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
 ---
 
 # Ingest 시스템

@@ -13,6 +13,13 @@ def:
   links:
     - target: trace-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/dlq.ts
+  - packages/ingest-server/src/routes/dlq.test.ts
+  - packages/ingest-server/src/stores/d1-dlq-store.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/dlq-store.shared.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/phase-two-worker.test.ts
 ---
 
 # DlqStore

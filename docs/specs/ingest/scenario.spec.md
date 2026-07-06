@@ -13,6 +13,11 @@ def:
   links:
     - target: scenario-store-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/scenario.ts
+  - packages/ingest-server/src/routes/scenario.test.ts
+  - packages/ingest-server/src/stores/d1-scenario-spec-store.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/scenario-spec-store.shared.ts
 ---
 # Scenario API
 

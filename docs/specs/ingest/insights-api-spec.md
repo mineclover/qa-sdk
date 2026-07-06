@@ -16,6 +16,14 @@ def:
       type: depends_on
     - target: session-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/insights.ts
+  - packages/ingest-server/src/routes/insights.test.ts
+  - packages/ingest-server/src/ports/insights-store.port.ts
+  - packages/ingest-server/src/stores/app-hub-insights-store.ts
+  - packages/ingest-server/src/stores/drizzle-insights-store.ts
+  - packages/ingest-server/src/insights-store.e2e.test.ts
+  - packages/cli/src/commands/ingest.ts
 ---
 
 # Insights API

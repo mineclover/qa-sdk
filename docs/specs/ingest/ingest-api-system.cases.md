@@ -15,6 +15,13 @@ def:
       type: refines
     - target: ingest-system
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.ts
+  - packages/ingest-server/src/routes/dlq.ts
 ---
 
 # Ingest API — 소비자 기대 시나리오

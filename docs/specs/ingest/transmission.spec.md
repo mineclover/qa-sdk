@@ -13,6 +13,11 @@ def:
   links:
     - target: record-spec
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/ingest-server/src/stores/d1-transmission-store.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/transmission-store.shared.ts
 ---
 
 # TransmissionEnvelope + TransmissionStore

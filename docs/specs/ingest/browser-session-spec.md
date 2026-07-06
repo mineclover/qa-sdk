@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: trace-spec
       type: depends_on
+sources:
+  - packages/browser-sdk/src/session.ts
+  - packages/browser-sdk/src/session.test.ts
+  - packages/browser-sdk/src/monitor.ts
+  - packages/browser-sdk/src/monitor.test.ts
 ---
 
 # SessionManager

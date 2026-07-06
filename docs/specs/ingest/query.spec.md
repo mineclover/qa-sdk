@@ -19,6 +19,12 @@ def:
       type: depends_on
     - target: query-system
       type: depends_on
+sources:
+  - packages/ingest-server/src/routes/query.ts
+  - packages/ingest-server/src/routes/query.test.ts
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/schemas/query.ts
 ---
 # Query API
 
