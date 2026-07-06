@@ -19,6 +19,13 @@ def:
       type: depends_on
     - target: doc-type-convention
       type: traces_to
+sources:
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/lib/docs-control-plane/index.ts
+  - packages/cli/src/lib/docs-control-plane/graph-scope.ts
+  - packages/cli/src/lib/docs-control-plane/completed-record-review.ts
+  - packages/cli/src/lib/docs-control-plane/completed-record-cleanup-plan.ts
+  - packages/cli/src/lib/docs-control-plane/completed-record-cleanup-apply.ts
 ---
 
 # Docs Control Plane — 문서 바운더리 소비 규칙

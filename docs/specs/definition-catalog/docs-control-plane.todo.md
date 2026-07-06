@@ -16,6 +16,11 @@ def:
       type: traces_to
     - target: docs-control-plane-plan
       type: traces_to
+sources:
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/lib/docs-control-plane/completed-record-review.ts
+  - packages/cli/src/lib/docs-control-plane/completed-record-cleanup-plan.ts
+  - packages/cli/src/lib/docs-control-plane/completed-record-cleanup-apply.ts
 ---
 
 # Docs Control Plane — TODO
