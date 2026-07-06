@@ -13,6 +13,14 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/workspace/workspace.module.ts
+  - packages/registry-service/src/modules/workspace/workspace.service.ts
+  - packages/registry-service/src/modules/workspace/workspace.controller.ts
+  - packages/registry-service/src/lib/draft-workspace.ts
+  - packages/registry-service/src/lib/registry-service.ts
+  - packages/registry-service/src/modules/workspace/workspace.controller.test.ts
+  - packages/registry-service/src/lib/draft-workspace.test.ts
 ---
 # Registry Workspace Module
 

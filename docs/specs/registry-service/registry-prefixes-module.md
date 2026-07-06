@@ -13,6 +13,12 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/prefixes/prefix.module.ts
+  - packages/registry-service/src/modules/prefixes/prefix.service.ts
+  - packages/registry-service/src/modules/prefixes/prefix.controller.ts
+  - packages/registry-service/src/lib/registry-service.ts
+  - packages/registry-service/src/modules/prefixes/prefix.controller.test.ts
 ---
 # Registry Prefixes Module
 

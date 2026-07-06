@@ -13,6 +13,15 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/versions/version.module.ts
+  - packages/registry-service/src/modules/versions/version.service.ts
+  - packages/registry-service/src/modules/versions/version.controller.ts
+  - packages/registry-service/src/modules/versions/activation-gate.service.ts
+  - packages/registry-service/src/modules/versions/post-activation-hook.service.ts
+  - packages/registry-service/src/lib/registry-service.ts
+  - packages/registry-service/src/modules/versions/version.controller.test.ts
+  - packages/registry-service/src/modules/versions/version.service.test.ts
 ---
 # Registry Versions Module
 

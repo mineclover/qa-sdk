@@ -13,6 +13,22 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/services/service.module.ts
+  - packages/registry-service/src/modules/services/service-topology.service.ts
+  - packages/registry-service/src/modules/services/service.controller.ts
+  - packages/registry-service/src/modules/services/service-component.service.ts
+  - packages/registry-service/src/modules/services/service-component.controller.ts
+  - packages/registry-service/src/modules/services/endpoint.service.ts
+  - packages/registry-service/src/modules/services/endpoint.controller.ts
+  - packages/registry-service/src/modules/services/application.service.ts
+  - packages/registry-service/src/modules/services/application.controller.ts
+  - packages/registry-service/src/modules/services/service-health.service.ts
+  - packages/registry-service/src/modules/services/service-health.controller.ts
+  - packages/registry-service/src/modules/services/service.controller.test.ts
+  - packages/registry-service/src/modules/services/service-component.service.test.ts
+  - packages/registry-service/src/modules/services/service-topology.service.test.ts
+  - packages/registry-service/src/modules/services/service-control-plane.test.ts
 ---
 # Registry Services Module
 

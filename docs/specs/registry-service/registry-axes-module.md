@@ -13,6 +13,12 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/axes/axis.module.ts
+  - packages/registry-service/src/modules/axes/axis.service.ts
+  - packages/registry-service/src/modules/axes/axis.controller.ts
+  - packages/registry-service/src/modules/axes/axis.change-notifier.ts
+  - packages/registry-service/src/modules/axes/axis.controller.test.ts
 ---
 # Registry Axes Module
 

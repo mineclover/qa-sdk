@@ -13,6 +13,13 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/events/event.module.ts
+  - packages/registry-service/src/modules/events/event-schema.service.ts
+  - packages/registry-service/src/modules/events/event-schema.controller.ts
+  - packages/registry-service/src/modules/events/event-catalog.service.ts
+  - packages/registry-service/src/modules/events/event-catalog.controller.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 # Registry Events Module
 

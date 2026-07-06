@@ -33,6 +33,19 @@ def:
       type: contains
     - target: registry-ui
       type: contains
+sources:
+  - packages/registry-service/src/app.module.ts
+  - packages/registry-service/src/runtime.module.ts
+  - packages/registry-service/src/registry-core.module.ts
+  - packages/registry-service/src/modules/catalog/catalog.module.ts
+  - packages/registry-service/src/modules/prefixes/prefix.module.ts
+  - packages/registry-service/src/modules/versions/version.module.ts
+  - packages/registry-service/src/modules/axes/axis.module.ts
+  - packages/registry-service/src/modules/services/service.module.ts
+  - packages/registry-service/src/modules/events/event.module.ts
+  - packages/registry-service/src/modules/workspace/workspace.module.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.module.ts
+  - packages/registry-service/src/modules/seed/seed.module.ts
 ---
 # Registry Service Nest 모듈 구성
 

@@ -13,6 +13,14 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/catalog/catalog.module.ts
+  - packages/registry-service/src/modules/catalog/catalog.service.ts
+  - packages/registry-service/src/modules/catalog/catalog.controller.ts
+  - packages/registry-service/src/modules/catalog/decode-map.service.ts
+  - packages/registry-service/src/modules/catalog/decode-map.controller.ts
+  - packages/registry-service/src/modules/catalog/catalog.change-notifier.ts
+  - packages/registry-service/src/modules/catalog/catalog.controller.test.ts
 ---
 # Registry Catalog Module
 

@@ -13,6 +13,17 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/seed/seed.module.ts
+  - packages/registry-service/src/modules/seed/seed.service.ts
+  - packages/registry-service/src/runtime.module.ts
+  - packages/registry-service/src/core/index.ts
+  - packages/registry-service/src/core/seed-catalog.ts
+  - packages/registry-service/src/core/seed-config.ts
+  - packages/registry-service/src/core/seed-endpoints.ts
+  - packages/registry-service/src/core/seed-events.ts
+  - packages/registry-service/src/modules/seed/seed.service.unit.test.ts
+  - packages/registry-service/src/modules/seed/seed.service.test.ts
 ---
 # Registry Seed Module
 

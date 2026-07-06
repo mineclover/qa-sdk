@@ -13,6 +13,17 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-service/src/modules/dashboard/dashboard.module.ts
+  - packages/registry-service/src/modules/dashboard/dev-dashboard.provider.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.service.ts
+  - packages/registry-service/src/modules/dashboard/diagram.service.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.ts
+  - packages/registry-service/src/modules/dashboard/diagram.controller.ts
+  - packages/registry-service/src/modules/dashboard/dev-dashboard.gateway.ts
+  - packages/registry-service/src/modules/dashboard/dev-dashboard.socket-hub.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.test.ts
+  - packages/registry-service/src/modules/dashboard/dev-dashboard.gateway.test.ts
 ---
 # Registry Dashboard Module
 
