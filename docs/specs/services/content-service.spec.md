@@ -17,12 +17,19 @@ def:
       type: contains
     - target: content-data
       type: contains
+sources:
+  - packages/dkg/src/service-topology.ts
+  - packages/demo-types/src/dsl.ts
+  - packages/demo-types/src/prefix-ids.ts
+  - packages/demo-types/src/sdk-factory.ts
+  - packages/dkg/src/relational-instance.ts
+  - packages/platform-demo-api/src/demo-dashboard-read-model.ts
 ---
 # Content Service
 
 ## 목적 ^purpose
 
-콘텐츠 플랫폼 관리 서비스. content, relational 2개 prefix를 소유하여 콘텐츠 엔티티와 관계 모델 이벤트를 생산한다.
+콘텐츠/관계 모델의 DKG/demo 서비스 경계. content-service는 content, relational prefix를 소유하고 dsl-content, dsl-access-control에 결합되어 콘텐츠 분류와 관계 유형 좌표를 제공한다.
 
 ## 구성 ^overview
 

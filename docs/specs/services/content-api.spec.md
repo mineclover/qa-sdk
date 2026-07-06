@@ -13,12 +13,18 @@ def:
   links:
     - target: content-service-spec
       type: refines
+sources:
+  - packages/dkg/src/skills/service-explorer.ts
+  - packages/dkg/src/service-topology.ts
+  - packages/dkg/src/relational-instance.ts
+  - packages/dkg/src/index.ts
+  - packages/platform-demo-api/src/demo-dashboard-read-model.ts
 ---
 # Content Service — interface/api_contract
 
 ## 목적 ^purpose
 
-콘텐츠 서비스 API 계약. 콘텐츠 CRUD, 관계 모델 조회.
+콘텐츠 서비스의 현재 repo interface 계약. HTTP CRUD 표면이 아니라 DKG service/prefix 탐색과 relational prefix 인코딩/디코딩 헬퍼로 content-service 소유 prefix와 관계 모델을 조회한다.
 
 ## 구성 ^overview
 
