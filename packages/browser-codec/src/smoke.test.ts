@@ -77,11 +77,15 @@ describe('@qa-sdk/browser-codec smoke test', () => {
     expect(decode(BROWSER_CATALOG, 'tracking:v3:1e3')).toBeNull();
   });
 
-  it('track does not synthesize missing prefix_ref dims', () => {
+  it('track fills missing prefix_ref dims from catalog defaults', () => {
     const ctx = track(BROWSER_CATALOG, {
       tracking: { trackAction: 'click', page: 'home', userType: 'guest' },
     });
-    expect(ctx).not.toHaveProperty('tracking');
+    expect(ctx.tracking).toMatch(/^tracking:v\d+:\d+$/);
+
+    const decoded = decode(BROWSER_CATALOG, ctx.tracking);
+    expect(decoded?.values.svc_ref).toBe(BROWSER_CATALOG.tracking.dims.svc_ref.values![0]);
+    expect(decoded?.values.trackAction).toBe('click');
   });
 
   it('encode with invalid prefix returns null', () => {

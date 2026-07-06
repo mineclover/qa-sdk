@@ -173,6 +173,13 @@ export function track(
     if (!def) continue;
 
     const fullDims = { ...dims };
+    for (const label of def.labels) {
+      const dim = def.dims[label];
+      const firstRef = dim?.kind === 'prefix_ref' ? dim.values?.[0] : undefined;
+      if (fullDims[label] === undefined && firstRef !== undefined) {
+        fullDims[label] = firstRef;
+      }
+    }
     const result = encode(catalog, prefixId, fullDims);
     if (result) ctx[prefixId] = result.serialized;
   }
