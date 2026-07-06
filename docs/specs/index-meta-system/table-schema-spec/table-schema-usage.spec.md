@@ -13,6 +13,13 @@ def:
   links:
     - target: table-schema-spec
       type: refines
+sources:
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/package.json
 ---
 
 # TableDef 사용 예시 및 레이어 위치
@@ -32,13 +39,7 @@ import { defineTable, compileSchema } from "index-meta";
 const roleTable = defineTable("role", {
   source: { kind: { type: "string_enum" } },
   versions: {
-    v1: {
-      capacity: 8,
-      reserved: [
-        { position: 1, token: "_" },  // null — 역할 미지정
-        { position: 2, token: "~" },  // other — 분류 불가
-      ],
-    },
+    v1: { capacity: 8 },
     v2: { capacity: 16 },  // 주소 공간 확장 → 새 버전
   },
 });
@@ -46,12 +47,7 @@ const roleTable = defineTable("role", {
 const scoreTable = defineTable("score", {
   source: { kind: { type: "number_enum" } },
   versions: {
-    v1: {
-      capacity: 16,
-      reserved: [
-        { position: 1, token: "NaN" },  // 숫자가 아닌 값이 들어온 경우
-      ],
-    },
+    v1: { capacity: 16 },
   },
 });
 
@@ -118,3 +114,9 @@ WeightedIndex                 ← ../../weighted-index-system/wi-math.spec.md (�
 
 `compileSchema`의 출력(`CompiledSchema`)은 DB 마이그레이션 판단과 스키마 검증에 사용된다.
 런타임 encode/decode가 필요하면 DB에서 entries를 읽어 `MetaRegistry`를 생성하고, `createCodec()`으로 특정 version의 `MetaCodec`을 얻는다.
+
+## source-backed 주의점
+
+- `defineTable`/`compileSchema`는 `index-meta` main entrypoint에서 export된다.
+- `index-meta/client` 경량 entrypoint는 SDK/core 중심이며 table schema API를 export하지 않는다.
+- reserved token seeding 예시는 현재 TableDef API가 소유하지 않으므로 이 사용 예시에서 제외한다.

@@ -25,6 +25,13 @@ def:
       type: contains
     - target: index-meta-system
       type: depends_on
+sources:
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/package.json
 ---
 
 # TableDef / compileSchema 스펙
@@ -44,8 +51,12 @@ def:
 - **defineTable API**: id/source/dims/versions를 받아 TableDef를 생성하며, 14가지 ValidationError 검증 규칙 적용
 - **compileSchema API**: TableDef 배열을 위상정렬 후 처리하여 CompiledSchema 반환 (composite capacity = dim capacity 곱 자동 계산)
 - **CompiledSchema.diff**: capacity 변화만 감지 — added/removed/changed 테이블과 버전별 capacity 변경 추적
-- **ReservedSlot 마커**: leaf 버전에서 특정 position을 마커 슬롯으로 선언 (token: "_", "~", "NaN" 등)
+- **슬롯 마커 경계**: 현재 TableDef 타입 계약은 `capacity`와 `refs`만 소유한다. reserved token seeding은 store/registry convention의 후속 책임이며 이 스키마 레이어의 source-backed 필드가 아니다.
 - **레이어 위치**: defineTable/compileSchema(스키마) → IndexMetaStore(저장) → MetaRegistry(런타임 encode/decode) → WeightedIndex(수학)
+
+## source-backed 판정
+
+이 문서는 `defineTable`/`compileSchema` 스키마 선언 레이어만 소유한다. 현재 구현이 증명하는 것은 leaf/composite 구분, capacity 검증, composite refs 검증, topological compile, composite capacity 계산, capacity-only diff다. marker token 자동 시드나 DB entry 생성은 `IndexMetaStore`와 registry convention 쪽 책임이다.
 
 ## 참조
 

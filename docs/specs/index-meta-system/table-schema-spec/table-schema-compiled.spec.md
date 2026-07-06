@@ -13,6 +13,11 @@ def:
   links:
     - target: table-schema-spec
       type: refines
+sources:
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/index.ts
 ---
 
 # CompiledSchema 출력 타입
@@ -42,12 +47,14 @@ interface LeafTableSpec {
   id: string;
   entryKind: { type: "string_enum" } | { type: "number_enum" };
   versions: ReadonlyMap<string, LeafVersionSpec>;  // versionId → { versionId, capacity }
+  description?: string;
 }
 
 interface CompositeTableSpec {
   kind: "composite";
   id: string;
   versions: ReadonlyMap<string, CompositeVersionSpec>;
+  description?: string;
 }
 
 interface CompositeVersionSpec {
@@ -85,3 +92,9 @@ interface VersionCapacityChange {
   previousCapacity?: number;  // capacity가 변경된 경우
 }
 ```
+
+## source-backed 주의점
+
+- `diff(from)`은 table id 추가/삭제와 version capacity 변화만 본다.
+- entries, reserved marker, description 변화는 `SchemaDiff` 대상이 아니다.
+- composite capacity는 compile 시 참조 version capacity를 곱해 계산하며, 출력 dim ref에는 capacity가 함께 포함된다.

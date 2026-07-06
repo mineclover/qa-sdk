@@ -13,6 +13,10 @@ def:
   links:
     - target: table-schema-spec
       type: refines
+sources:
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/index.ts
 ---
 
 # TableDef 설계 원칙 및 타입 계층
@@ -20,7 +24,7 @@ def:
 ## 목적 ^purpose
 
 TableDef의 이원 구조(leaf / composite)와 capacity/entries 분리 원칙,
-그리고 타입 계층(TableDef, AddressRef, ReservedSlot)을 정의한다.
+그리고 타입 계층(TableDef, AddressRef, LeafVersion, CompositeVersion)을 정의한다.
 
 ## 1. 설계 원칙
 
@@ -59,32 +63,27 @@ TableDef
 ├── source?: { kind }              ← leaf only — 원본 값의 타입
 ├── dims?: TableDef[]              ← composite only — 참조할 테이블 목록
 └── versions: Record<versionId, TableVersion>
-    ├── LeafVersion     { capacity, reserved? }       ← leaf
+    ├── LeafVersion     { capacity }                   ← leaf
     └── CompositeVersion { refs: Record<dimId, AddressRef> }  ← composite
 
 AddressRef
 ├── prefix: string     ← 참조 테이블의 id
 └── version: string    ← 참조 테이블의 versionId
-
-ReservedSlot          ← 슬롯 마커 선언 (LeafVersion 전용)
-├── position: number  ← 1-based, capacity 범위 내
-└── token: string     ← 마커 값 ("_", "~", "?", "NaN", 또는 커스텀)
 ```
 
 ### 리프 vs 복합 구분
 
 | 구분 | `source` | `dims` | version 형태 |
 |------|----------|--------|-------------|
-| leaf | ✓ | — | `{ capacity, reserved? }` |
+| leaf | ✓ | — | `{ capacity }` |
 | composite | — | ✓ | `{ refs }` |
 
 하나의 `TableDef`는 leaf 또는 composite 중 하나여야 한다. 둘 다이거나 둘 다 아닌 경우는 `ValidationError`.
 
-### 슬롯 마커 (reserved)
+### 슬롯 마커 경계
 
-`LeafVersion.reserved`는 해당 버전의 어느 position이 마커 슬롯인지를 선언한다.
+현재 source-backed `LeafVersion`은 `capacity`만 갖는다. `ReservedSlot` 또는 `LeafVersion.reserved`는 public TableDef 타입 계약이 아니다.
 
-- 마커는 스키마 레이어의 선언 — 실제 entry 저장은 `IndexMetaStore`가 담당.
-- `capacity` 변화 없이 마커만 추가하는 경우 → 새 버전 불필요 (마커도 entry의 일종).
-- 마커가 추가될 때 해당 position의 entry는 DB에 `token` 값으로 자동 시드될 수 있다.
-- `conventions.md §2` 표준 토큰 참조.
+- marker token을 entry로 저장해야 하는 경우 `IndexMetaStore` 또는 registry convention에서 처리한다.
+- 이 문서는 marker seeding API나 reserved field를 소유하지 않는다.
+- capacity 변화 없이 entry를 채우는 원칙은 유지되지만, 해당 entry의 의미는 table schema가 아니라 store/registry consumer가 정한다.

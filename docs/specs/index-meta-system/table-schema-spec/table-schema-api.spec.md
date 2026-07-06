@@ -13,6 +13,12 @@ def:
   links:
     - target: table-schema-spec
       type: refines
+sources:
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/index.ts
 ---
 
 # defineTable / compileSchema API
@@ -50,6 +56,7 @@ function defineTable(id: string, input: {
 | refs의 key가 dims에 없는 id | `ValidationError` |
 | `ref.prefix !== dimId` | `ValidationError` |
 | ref.prefix / ref.version 비어있음 | `ValidationError` |
+| composite version에 capacity 선언 | `ValidationError` |
 
 ---
 
@@ -80,3 +87,9 @@ function compileSchema(defs: TableDef[]): CompiledSchema
 | 순환 의존성 | `ValidationError` |
 | composite가 참조하는 prefix가 specMap에 없음 | `ValidationError` |
 | composite가 참조하는 version이 해당 spec에 없음 | `ValidationError` |
+
+## source-backed 주의점
+
+- `defineTable`은 `dims` 배열을 복사하지만, nested `TableDef` 객체 자체를 deep copy하지 않는다.
+- `compileSchema`는 인자로 직접 넘기지 않은 dim chain의 `TableDef`를 자동 수집한다.
+- 현재 API는 reserved slot 필드를 검증하거나 컴파일 출력에 보존하지 않는다.
