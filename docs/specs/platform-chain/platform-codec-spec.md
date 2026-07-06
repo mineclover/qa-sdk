@@ -14,18 +14,33 @@ def:
       type: refines
     - target: platform-core-spec
       type: depends_on
+sources:
+  - packages/codec/src/index.ts
+  - packages/codec/src/dim-wire.ts
+  - packages/codec/src/typed-sdk.ts
+  - packages/sdk/src/dim-wire.test.ts
+  - packages/sdk/src/typed-sdk.test.ts
 ---
 # @qa-sdk/codec — dim-wire 인코딩
 
 ## 목적 ^purpose
 
-WeightedIndex 기반 dim-wire 인코딩/디코딩과 typed SDK 패턴을 제공한다. Catalog의 축/prefix 정의를 wire format으로 변환.
+Catalog 기반 dim-wire codec과 `WeightedIndex` 기반 typed index SDK를 제공한다. `@qa-sdk/core`의 catalog 런타임 위에서 차원별 1-based wire map과 compile-time typed prefix encode/decode surface를 분리한다.
+
+소스: `packages/codec/src/dim-wire.ts`, `packages/codec/src/typed-sdk.ts`, `packages/sdk/src/dim-wire.test.ts`, `packages/sdk/src/typed-sdk.test.ts`
 
 ## 정의 ^defines
 
-- encodeDimWire() / decodeDimWire() — 차원 인코딩/디코딩
-- TypedSdk — 타입 안전한 SDK 래퍼 (Catalog 타입에서 파생)
-- createTypedSdk() — TypedSdk 팩토리
+- createDimWireCodec(catalog) — `encodeDims`, `decodeDims`, `addressToDims`, `dimsToAddress` 제공
+- createIndexSDK(schema) — literal schema에서 prefix/axis/entry 타입을 보존하는 typed SDK 팩토리
+- DimWireCodec — prefix 주소와 dim index map 사이의 변환 계약
+- TypedIndexSDK — `encode(prefix, coord)`, `decode(prefix, address)` 타입 안전 계약
+
+## 경계 ^boundary
+
+- dim-wire는 table_ref가 아닌 고정 dim을 대상으로 한다.
+- `prefix_ref` dim의 값 인코딩/디코딩은 `encodePrefixByValue()` / `decodePrefix()` 계열 책임이며, `encodeDims()` / `decodeDims()`는 명시적으로 거부한다.
+- `createIndexSDK()`는 간단한 schema DSL에서 `WeightedIndex` shape를 만들며, full `Catalog` version/snapshot 관리는 `@qa-sdk/core`가 소유한다.
 
 ## 소비 ^consumes
 
@@ -35,4 +50,4 @@ WeightedIndex 기반 dim-wire 인코딩/디코딩과 typed SDK 패턴을 제공�
 ## 관련 소스
 
 - `packages/codec/src/dim-wire.ts` — dim-wire 인코딩
-- `packages/codec/src/typed-sdk.ts` — TypedSdk 패턴
+- `packages/codec/src/typed-sdk.ts` — typed index SDK 패턴
