@@ -13,6 +13,22 @@ def:
   links:
     - target: permission-system
       type: depends_on
+sources:
+  - simulations/enterprise-pm/services/auth-api/src/app.module.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/auth-slices.registry.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/role/application/use-cases/role.use-case.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/role/application/use-cases/role.use-case.test.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/role-assignment/application/use-cases/role-assignment.use-case.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/role-assignment/application/use-cases/role-assignment.use-case.test.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/bitmap/infrastructure/codec/auth-codec.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/bitmap/infrastructure/codec/auth-codec.test.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/bitmap/infrastructure/computation/compute-bits.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/bitmap/presentation/http/bitmap.controller.ts
+  - simulations/enterprise-pm/services/auth-api/src/auth/bitmap/presentation/http/bitmap.controller.test.ts
+  - packages/permission-engine/src/index.ts
+  - packages/permission-engine/src/versioned-bitmap/index.ts
+  - packages/permission-engine/src/versioned-bitmap/issuer.ts
+  - packages/permission-engine/src/versioned-bitmap/issuer.test.ts
 ---
 # Auth Service
 
