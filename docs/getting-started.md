@@ -11,6 +11,39 @@ def:
   links:
     - target: guides-system
       type: refines
+    - target: system-overview
+      type: refs
+    - target: apm-codegen-system
+      type: refs
+    - target: browser-system
+      type: refs
+    - target: registry-system
+      type: refs
+    - target: decision-flow-system
+      type: refs
+sources:
+  - package.json
+  - scripts/setup.sh
+  - scripts/health.sh
+  - packages/cli/package.json
+  - packages/cli/src/index.ts
+  - packages/cli/src/command-groups/root.commands.ts
+  - packages/cli/src/command-groups/dkg.commands.ts
+  - packages/cli/src/command-groups/flow.commands.ts
+  - packages/cli/src/commands/init.ts
+  - packages/cli/src/commands/codegen.ts
+  - packages/cli/src/commands/codegen.test.ts
+  - packages/core/src/index.ts
+  - packages/demo-snapshot/src/index.ts
+  - packages/browser-sdk/package.json
+  - packages/browser-sdk/src/index.ts
+  - packages/registry-client/src/index.ts
+  - packages/ingest-server/package.json
+  - packages/registry-service/package.json
+  - packages/shop-web/package.json
+  - packages/platform-demo/package.json
+  - docs/system-overview.md
+  - docs/specs/guides-system/guides-system.md
 ---
 # QA-SDK Getting Started
 
@@ -24,19 +57,20 @@ QA-SDK 시작 가이드. 산출물 단위, codegen 실행, CLI 사용법, 첫 �
 ## Prerequisites
 
 - Node.js 22+
-- pnpm 10+
+- Corepack 활성화
+- 루트 `packageManager`에 고정된 pnpm 버전
 
 ## 1. 환경 구성
 
 ```bash
 git clone <repo-url> && cd qa-sdk
-pnpm setup     # 의존성 + .env + 빌드 + 검증 (원클릭)
+corepack pnpm setup     # 의존성 + .env + 빌드 + 검증 (원클릭)
 ```
 
 ## 2. 서비스 기동
 
 ```bash
-pnpm demo      # 4서비스 동시 기동
+corepack pnpm demo      # 4서비스 동시 기동
 ```
 
 | 서비스 | URL | 용도 |
@@ -47,7 +81,7 @@ pnpm demo      # 4서비스 동시 기동
 | platform-demo | http://localhost:5176 | 3D 모니터 + 다이어그램 + 디버거 |
 
 ```bash
-pnpm health    # 전 서비스 헬스체크
+corepack pnpm health    # local/prod 서비스와 인프라 헬스체크
 ```
 
 ## 3. 프로젝트 초기화
@@ -63,10 +97,10 @@ qa-sdk init --from demo
 
 ```bash
 # 로컬 JSON 카탈로그 사용
-qa-sdk codegen --output ./generated
+qa-sdk codegen --catalog my-project.catalog.json --output ./generated
 
 # 또는 레지스트리에서 fetch
-qa-sdk codegen --registry http://localhost:3300 --output ./generated
+qa-sdk codegen --registry http://localhost:3300 --catalog-id demo --output ./generated
 ```
 
 생성물 (7파일):
@@ -96,7 +130,7 @@ const decoded = decodePrefix(DEMO_CATALOG, "service", ver, addr);
 
 ```html
 <script type="module">
-import { createQaMonitor } from './qa-browser-sdk.js';
+import { createQaMonitor } from '@qa-sdk/browser';
 
 const monitor = createQaMonitor({
   ingestUrl: "http://localhost:3200",
@@ -139,7 +173,8 @@ qa-sdk dkg report      # 전체 현황
 qa-sdk dkg axes        # 축 목록
 qa-sdk dkg prefixes    # prefix 목록
 qa-sdk dkg domains     # 도메인 경계
-qa-sdk dkg diagram list  # 다이어그램 목록
+qa-sdk dkg flow-schemas # 의사결정 플로우 스키마
+qa-sdk dkg skills      # 자동화 스킬 목록
 ```
 
 ## 서비스 아키텍처
@@ -177,7 +212,7 @@ qa-sdk dkg diagram list  # 다이어그램 목록
 모든 서비스가 Cloudflare Workers + D1로 배포됨:
 
 ```bash
-pnpm health    # CF Workers 상태 확인
+corepack pnpm health    # CF Workers 상태 확인 포함
 ```
 
 | 서비스 | prod URL |
