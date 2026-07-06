@@ -13,6 +13,19 @@ def:
   links:
     - target: monitor-service-spec
       type: refines
+sources:
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/presentation/bff/audit-trace.controller.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/presentation/bff/audit-trace.controller.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/presentation/bff/audit-trace.bff.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/presentation/bff/audit-trace.bff.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/presentation/bff/graph-catalog.controller.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/presentation/bff/graph-catalog.controller.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/presentation/bff/graph-catalog.bff.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/presentation/bff/graph-catalog.bff.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/infrastructure/housekeeping/graph-retention-housekeeping.service.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/infrastructure/housekeeping/graph-retention-housekeeping.service.test.ts
+  - packages/authorization-monitor-web/src/main.ts
+  - packages/authorization-monitor-web/scripts/static-smoke.mjs
 ---
 # Monitor — feature/func_def
 

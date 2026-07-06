@@ -17,6 +17,18 @@ def:
       type: contains
     - target: monitor-features
       type: contains
+sources:
+  - simulations/enterprise-pm/services/audit-browser-api/src/app.module.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-browser-slices.registry.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/presentation/bff/audit-trace.controller.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/presentation/bff/audit-trace.controller.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/presentation/bff/graph-catalog.controller.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/presentation/bff/graph-catalog.controller.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/test-bootstrap.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/test-bootstrap.test.ts
+  - packages/authorization-monitor-web/src/main.ts
+  - packages/authorization-monitor-web/scripts/static-smoke.mjs
+  - packages/authorization-monitor-web/README.md
 ---
 # Monitor
 

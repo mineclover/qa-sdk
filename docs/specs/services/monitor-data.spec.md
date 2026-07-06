@@ -13,6 +13,18 @@ def:
   links:
     - target: monitor-service-spec
       type: refines
+sources:
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/infrastructure/adapters/audit-recorder-query.adapter.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/infrastructure/adapters/audit-recorder-query.adapter.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/infrastructure/adapters/graph-snapshot-query.adapter.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/infrastructure/adapters/graph-snapshot-query.adapter.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/infrastructure/adapters/graph-retention-insight.adapter.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/audit-explorer/infrastructure/adapters/graph-retention-insight.adapter.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/infrastructure/adapters/graph-store-query.adapter.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/infrastructure/adapters/graph-store-query.adapter.test.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/application/events/graph-retention-event.ts
+  - simulations/enterprise-pm/services/audit-browser-api/src/graph-explorer/application/events/graph-retention-event.test.ts
+  - packages/authorization-monitor-web/public/authorization-graph-snapshot.json
 ---
 # Monitor — data/system_data
 
