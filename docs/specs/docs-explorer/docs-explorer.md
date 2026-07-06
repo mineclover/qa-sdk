@@ -12,6 +12,13 @@ def:
   links:
     - target: definition-service-system
       type: depends_on
+sources:
+  - packages/docs-explorer/package.json
+  - packages/docs-explorer/README.md
+  - packages/docs-explorer/index.html
+  - packages/docs-explorer/scripts/export-data.mjs
+  - packages/docs-explorer/scripts/static-smoke.test.mjs
+  - docs/specs/viz-system/docs-explorer.spec.md
 ---
 # docs-explorer
 
