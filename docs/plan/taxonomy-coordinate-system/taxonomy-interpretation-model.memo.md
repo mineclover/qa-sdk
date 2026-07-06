@@ -1,3 +1,26 @@
+---
+status: draft
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/validate/index.ts
+  - packages/taxonomy-engine/src/indexer/index.ts
+  - packages/taxonomy-engine/src/query/walk-by-coordinate.ts
+  - packages/taxonomy-engine/src/query/walk-relation.ts
+  - packages/taxonomy-engine/__tests__/dogfooding.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-def-catalog.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-lesson-builder.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-dkg.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-ingest.test.ts
+  - docs/taxonomies/qa-sdk-coordinate-system.yaml
+  - docs/taxonomies/qa-sdk-def-catalog.yaml
+  - docs/taxonomies/lesson-builder-content.yaml
+  - docs/taxonomies/dkg-schema.yaml
+  - docs/taxonomies/ingest-coords.yaml
+  - docs/specs/system/meta-taxonomy.spec.md
+  - docs/specs/system/dual-coordinate-system.spec.md
+---
+
 # Taxonomy 해석 모델 — 입력 → 관점 → 산출
 
 ## 목적
