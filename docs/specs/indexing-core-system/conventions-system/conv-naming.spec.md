@@ -17,6 +17,27 @@ def:
       type: constrains
     - target: sdk-system
       type: constrains
+sources:
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/package.json
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/schema-sync.ts
+  - packages/index-meta/src/schema-sync.test.ts
+  - packages/index-meta/src/index-sdk.ts
+
 ---
 # conv-naming
 

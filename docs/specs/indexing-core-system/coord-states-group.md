@@ -15,6 +15,22 @@ def:
       type: contains
     - target: coord-states-versioning
       type: contains
+sources:
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/invalid-ranges.test.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/version-lifecycle.ts
+  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta/src/migrate-address.ts
+  - packages/index-meta/src/migrate-address.test.ts
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/schema-sync.ts
+  - packages/index-meta/src/schema-sync.test.ts
+
 ---
 
 # 좌표 상태 그룹

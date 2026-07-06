@@ -22,6 +22,32 @@ def:
       type: depends_on
     - target: coord-layer-separation
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/protocol/capacity-planner.ts
+  - packages/weighted-index/src/protocol/capacity-planner.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+  - packages/address-index/src/index.ts
+  - packages/address-index/src/types.ts
+  - packages/address-index/src/port.ts
+  - packages/address-index/src/memory-store.ts
+  - packages/address-index/src/address-index.test.ts
+  - packages/address-index/package.json
+  - packages/browser-codec/src/browser-codec.ts
+  - packages/browser-codec/src/catalog-loader.ts
+  - packages/browser-codec/src/catalog-loader.test.ts
+  - packages/browser-codec/src/smoke.test.ts
+
 ---
 
 # ID 할당과 좌표 주소 설계

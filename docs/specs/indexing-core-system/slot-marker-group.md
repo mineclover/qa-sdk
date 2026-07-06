@@ -19,6 +19,21 @@ def:
       type: contains
     - target: indexing-core-system
       type: depends_on
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/invalid-ranges.test.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/version-lifecycle.ts
+  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta/src/migrate-address.ts
+  - packages/index-meta/src/migrate-address.test.ts
+
 ---
 
 # 슬롯 마커 시스템

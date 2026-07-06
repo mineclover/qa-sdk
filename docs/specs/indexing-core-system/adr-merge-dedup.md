@@ -17,6 +17,35 @@ def:
       type: traces_to
     - target: dim-ops-system
       type: constrains
+sources:
+  - packages/demo-tests/src/merge-contract/README.md
+  - packages/demo-tests/src/merge-contract/d1-label-map-parity.test.ts
+  - packages/demo-tests/src/merge-contract/d2-d5-meta-registry-shape.test.ts
+  - packages/demo-tests/src/merge-contract/d3-capacity-parity.test.ts
+  - packages/demo-tests/src/merge-contract/d4-stride-parity.test.ts
+  - packages/demo-tests/src/merge-contract/error-parity.test.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/demo-snapshot/src/demo-catalog.test.ts
+  - packages/demo-snapshot/src/catalog-builder.ts
+  - packages/demo-snapshot/src/demo-accessors.ts
+  - packages/demo-snapshot/src/demo-bridge.ts
+  - packages/demo-snapshot/src/event-schema.test.ts
+  - packages/demo-snapshot/src/table-ref-guide.test.ts
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/package.json
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+
 ---
 
 # ADR: 의미적 중복 제거 — Indexing Merge Plan

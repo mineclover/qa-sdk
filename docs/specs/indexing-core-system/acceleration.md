@@ -13,6 +13,22 @@ def:
   links:
     - target: coord-foundation
       type: depends_on
+sources:
+  - packages/weighted-wasm/src/lib.rs
+  - packages/weighted-wasm/js/index.ts
+  - packages/weighted-wasm/js/index.test.ts
+  - packages/weighted-wasm/js/bench.ts
+  - packages/weighted-gpu/src/index.ts
+  - packages/weighted-gpu/src/index.test.ts
+  - packages/weighted-gpu/src/bench.ts
+  - scripts/package-surfaces.mjs
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/package.json
+
 ---
 
 # 하드웨어 가속 비전 — FPGA/PCIe 가속기를 위한 데이터 아키텍처

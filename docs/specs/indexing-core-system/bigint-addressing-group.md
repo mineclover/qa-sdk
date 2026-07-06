@@ -17,6 +17,30 @@ def:
       type: contains
     - target: indexing-core-system
       type: depends_on
+sources:
+  - packages/weighted-index/src/math/weighted-index-big.ts
+  - packages/weighted-index/src/math/weighted-index-big.test.ts
+  - packages/weighted-index/src/math/layout-fit-bigint.test.ts
+  - packages/weighted-index/src/bench-bigint-uuid.test.ts
+  - packages/index-meta/src/meta-codec-big.ts
+  - packages/index-meta/src/meta-codec-big.test.ts
+  - packages/index-meta/src/prefix-decoder-big.ts
+  - packages/index-meta/src/prefix-decoder-big.test.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/protocol/capacity-planner.ts
+  - packages/weighted-index/src/protocol/capacity-planner.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+
 ---
 
 # BigInt 주소 체계 그룹

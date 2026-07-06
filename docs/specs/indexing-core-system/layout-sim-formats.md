@@ -13,6 +13,17 @@ def:
   links:
     - target: bigint-addressing-group
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/protocol/capacity-planner.ts
+  - packages/weighted-index/src/protocol/capacity-planner.test.ts
+  - packages/weighted-index/src/math/layout-fit.ts
+  - packages/weighted-index/src/math/layout-fit.test.ts
+  - packages/weighted-index/src/math/layout-fit-bigint.test.ts
+
 ---
 
 # 레이아웃 시뮬레이터 — 포맷 선택 및 인덱스 타입 가이드

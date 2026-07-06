@@ -13,6 +13,30 @@ def:
   links:
     - target: coord-foundation
       type: refines
+sources:
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/invalid-ranges.test.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/version-lifecycle.ts
+  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta/src/migrate-address.ts
+  - packages/index-meta/src/migrate-address.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+
 ---
 
 # 버전화된 닫힌 공간의 계열

@@ -13,6 +13,29 @@ def:
   links:
     - target: table-schema-def
       type: depends_on
+sources:
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/schema-sync.ts
+  - packages/index-meta/src/schema-sync.test.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/demo-snapshot/src/demo-catalog.test.ts
+  - packages/demo-snapshot/src/catalog-builder.ts
+  - packages/demo-snapshot/src/demo-accessors.ts
+  - packages/demo-snapshot/src/demo-bridge.ts
+  - packages/demo-snapshot/src/event-schema.test.ts
+  - packages/demo-snapshot/src/table-ref-guide.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+
 ---
 # DimRef 두 종류 — axis vs table_ref
 

@@ -15,6 +15,28 @@ def:
       type: depends_on
     - target: wi-hex-ops
       type: depends_on
+sources:
+  - packages/weighted-index/src/bench.test.ts
+  - packages/weighted-index/src/bench-cross-index.test.ts
+  - packages/weighted-index/src/bench-resource.test.ts
+  - packages/weighted-index/src/bench-bigint-uuid.test.ts
+  - packages/index-meta/src/bench-info-decode.test.ts
+  - packages/index-meta/src/bench-resource.test.ts
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/package.json
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+
 ---
 
 # 벤치마크 — calcAddressRanges + BigInt/UUID

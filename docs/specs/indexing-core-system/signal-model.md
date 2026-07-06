@@ -17,6 +17,23 @@ def:
       type: depends_on
     - target: table-system-group
       type: depends_on
+sources:
+  - packages/viz-3d/src/core/signal-model.ts
+  - packages/viz-3d/src/core/signal-model.test.ts
+  - packages/viz-3d/src/index.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/demo-snapshot/src/demo-catalog.test.ts
+  - packages/demo-snapshot/src/catalog-builder.ts
+  - packages/demo-snapshot/src/demo-accessors.ts
+  - packages/demo-snapshot/src/demo-bridge.ts
+  - packages/demo-snapshot/src/event-schema.test.ts
+  - packages/demo-snapshot/src/table-ref-guide.test.ts
+  - packages/browser-codec/src/browser-codec.ts
+  - packages/browser-codec/src/catalog-loader.ts
+  - packages/browser-codec/src/catalog-loader.test.ts
+  - packages/browser-codec/src/smoke.test.ts
+  - packages/event-catalog/src/index.ts
+
 ---
 
 # Signal Model — 트래킹의 상위 개념 구조

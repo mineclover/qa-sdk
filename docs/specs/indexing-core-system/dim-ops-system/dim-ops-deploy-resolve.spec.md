@@ -15,6 +15,29 @@ def:
       type: depends_on
     - target: table-dimref-types
       type: depends_on
+sources:
+  - packages/bit-index/src/index.ts
+  - packages/bit-index/src/bit-index.ts
+  - packages/bit-index/src/bit-index.test.ts
+  - packages/bit-index/src/bit-mask-set.ts
+  - packages/bit-index/src/bit-mask-set.test.ts
+  - packages/bit-index/src/bridge.ts
+  - packages/bit-index/src/bridge.test.ts
+  - packages/permission-engine/src/permission-set.ts
+  - packages/permission-engine/src/permission-set.test.ts
+  - packages/permission-engine/src/scoped-engine.ts
+  - packages/permission-engine/src/scoped-engine.test.ts
+  - packages/permission-engine/src/service-ref.ts
+  - packages/permission-engine/src/permission-code.ts
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/permission-codec.test.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+
 ---
 
 # 배포 시점 차원 해석

@@ -13,6 +13,14 @@ def:
   links:
     - target: indexing-core-system
       type: refines
+sources:
+  - packages/tag-search/src/index.ts
+  - packages/tag-search/src/types.ts
+  - packages/tag-search/src/port.ts
+  - packages/tag-search/src/memory-store.ts
+  - packages/tag-search/src/search.test.ts
+  - packages/tag-search/package.json
+
 ---
 # Tag Search
 

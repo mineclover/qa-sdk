@@ -15,6 +15,18 @@ def:
       type: depends_on
     - target: table-system-group
       type: depends_on
+sources:
+  - packages/dkg/src/dsl-bundle.ts
+  - packages/dkg/src/bootstrap.ts
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/dkg-bridge.ts
+  - packages/dkg/src/flow-definition.ts
+  - packages/dkg/src/skills/flow-trace.ts
+  - packages/dkg/src/skills/flow-trace.test.ts
+  - packages/demo-dkg-config/src/index.ts
+  - packages/spec-core/src/dkg/index.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+
 ---
 
 # DSL Bundle — prefix 묶음의 사용 패턴 정의
@@ -28,10 +40,10 @@ DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구�
 ## 구성 ^overview
 
 - **DSL 정의**: prefix 묶음 + 서비스 바인딩(fixedDims) + 사용 패턴 + 불변조건의 조합. 개별 prefix는 독립 사용 가능하되 DSL이 조합 의도를 명시
-- **4개 등록 번들**: observation(화면/API/흐름 관측), infra(배포/헬스 추적), checkout(결제 종단 흐름), auth(인증/권한 접근 제어)
+- **설정 기반 등록 번들**: `demo-dkg-config`의 `dslBundles`가 observation, infra, checkout, auth 등 실제 번들 목록을 제공하고, 부트스트랩이 이를 그래프 노드로 등록
 - **멤버 역할 5종**: observation, permission, event, infra, context — 각 prefix의 DSL 내 역할을 구분
 - **svcRefLabel 자동 감지**: defineDslBundle()이 멤버 prefix의 dims에서 prefix_ref → service인 차원을 자동으로 찾아 서비스 바인딩
-- **DKG 노드 타입**: dsl-bundle은 DKG 12번째 노드 타입으로 등록. DomainNode(소유 경계)와 달리 사용 패턴을 표현하며, 하나의 prefix가 여러 DSL에 포함 가능
+- **DKG 노드 타입**: dsl-bundle은 DomainNode(소유 경계)와 달리 사용 패턴을 표현하며, 하나의 prefix가 여러 DSL에 포함 가능
 - **커버리지 분석**: analyzeDslCoverage()로 카탈로그 prefix의 DSL 배치 현황(covered/uncovered/unbound) 파악
 - **불변조건 선언**: 번들별로 prefix 간 선후 관계나 필수 공출현 조건을 명시 (예: checkout page_view 없이 flow_point success 관측 금지)
 
@@ -42,7 +54,7 @@ DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구�
 
 ## 관련 소스
 
-관련 스펙: `packages/spec-core/src/dkg/dsl-bundle.ts`
+관련 구현: `packages/dkg/src/dsl-bundle.ts`
 
 ## 1. DSL이란
 
@@ -177,7 +189,7 @@ auth_event.dims.action = { kind: "axis", axisId: "auth_action" }
 
 ## 4. DKG에서의 위치
 
-DSL Bundle은 DKG의 12번째 노드 타입(`dsl-bundle`)으로 등록된다.
+DSL Bundle은 DKG 노드 타입(`dsl-bundle`)으로 등록된다.
 
 ```
 DslBundleNode
@@ -213,7 +225,7 @@ DslBundleNode
 `analyzeDslCoverage()`로 카탈로그의 prefix가 DSL에 어떻게 배치되었는지 분석한다.
 
 ```typescript
-import { analyzeDslCoverage, DslBundleRegistry } from "spec-core";
+import { analyzeDslCoverage, DslBundleRegistry } from "dkg";
 
 const registry = new DslBundleRegistry();
 // ... 번들 등록 ...
@@ -306,10 +318,11 @@ interface ExecutionContext {
 
 | 파일 | 역할 |
 |---|---|
-| `packages/spec-core/src/dkg/dsl-bundle.ts` | DslBundle 타입, defineDslBundle, DslBundleRegistry, analyzeDslCoverage |
-| `packages/spec-core/src/dkg/dkg.types.ts` | DslBundleNode (DKG 노드 타입) |
-| `packages/spec-core/src/dkg/bootstrap.ts` | 4개 DSL 번들 등록 (observation, infra, checkout, auth) |
-| `packages/spec-core/src/dkg/flow-definition.ts` | FlowDefinition (DSL과 조합 가능한 흐름 정의) |
+| `packages/dkg/src/dsl-bundle.ts` | DslBundle 타입, defineDslBundle, DslBundleRegistry, analyzeDslCoverage |
+| `packages/dkg/src/dkg.types.ts` | DslBundleNode (DKG 노드 타입) |
+| `packages/dkg/src/bootstrap.ts` | config의 dslBundles를 그래프 노드로 등록하고 서비스 바인딩 엣지를 생성 |
+| `packages/dkg/src/flow-definition.ts` | FlowDefinition (DSL과 조합 가능한 흐름 정의) |
+| `packages/spec-core/src/dkg/index.ts` | spec-core 하위 호환 subpath re-export |
 
 ## 10. DSL Bundle과 Taxonomy의 관계
 

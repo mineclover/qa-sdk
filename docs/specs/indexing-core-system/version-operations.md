@@ -13,6 +13,28 @@ def:
   links:
     - target: coord-foundation
       type: depends_on
+sources:
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/invalid-ranges.test.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/version-lifecycle.ts
+  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta/src/migrate-address.ts
+  - packages/index-meta/src/migrate-address.test.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/package.json
+
 ---
 
 # 버전 운영 — Draft Cycle, 배포, 다중 버전 관리

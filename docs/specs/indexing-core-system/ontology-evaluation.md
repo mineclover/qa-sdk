@@ -15,6 +15,33 @@ def:
       type: depends_on
     - target: data-design-group
       type: depends_on
+sources:
+  - packages/spec-core/src/semantic-indexing-pack/index.ts
+  - packages/spec-core/src/semantic-indexing-pack/types.ts
+  - packages/spec-core/src/semantic-indexing-pack/manifest.ts
+  - packages/spec-core/src/semantic-indexing-pack/classify.ts
+  - packages/spec-core/src/semantic-indexing-pack/compatibility.ts
+  - packages/spec-core/src/semantic-indexing-pack/report.ts
+  - packages/spec-core/src/semantic-indexing-pack/grounding.ts
+  - packages/spec-core/src/semantic-indexing-pack/semantic-indexing-pack.test.ts
+  - packages/spec-core/src/dkg/index.ts
+  - packages/spec-core/src/dkg/cli-query.test.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+
 ---
 
 # 좌표 시스템의 온톨로지 스키마 표현력 평가

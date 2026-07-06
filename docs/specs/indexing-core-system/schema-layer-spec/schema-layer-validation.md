@@ -12,6 +12,29 @@ def:
   links:
     - target: schema-layer-spec
       type: refines
+sources:
+  - packages/index-meta/src/table-def.ts
+  - packages/index-meta/src/table-def.test.ts
+  - packages/index-meta/src/compile-schema.ts
+  - packages/index-meta/src/compile-schema.test.ts
+  - packages/index-meta/src/schema-sync.ts
+  - packages/index-meta/src/schema-sync.test.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/spec-core/src/semantic-indexing-pack/index.ts
+  - packages/spec-core/src/semantic-indexing-pack/types.ts
+  - packages/spec-core/src/semantic-indexing-pack/manifest.ts
+  - packages/spec-core/src/semantic-indexing-pack/classify.ts
+  - packages/spec-core/src/semantic-indexing-pack/compatibility.ts
+  - packages/spec-core/src/semantic-indexing-pack/report.ts
+  - packages/spec-core/src/semantic-indexing-pack/grounding.ts
+  - packages/spec-core/src/semantic-indexing-pack/semantic-indexing-pack.test.ts
+  - packages/spec-core/src/spec/prefix-spec.types.ts
+
 ---
 
 # Schema Layer — 검증 파이프라인과 식별 체계

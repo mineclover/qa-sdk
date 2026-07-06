@@ -15,6 +15,42 @@ def:
       type: depends_on
     - target: index-arch-group
       type: refines
+sources:
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/package.json
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/protocol/capacity-planner.ts
+  - packages/weighted-index/src/protocol/capacity-planner.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+  - packages/spec-core/src/semantic-indexing-pack/index.ts
+  - packages/spec-core/src/semantic-indexing-pack/types.ts
+  - packages/spec-core/src/semantic-indexing-pack/manifest.ts
+  - packages/spec-core/src/semantic-indexing-pack/classify.ts
+  - packages/spec-core/src/semantic-indexing-pack/compatibility.ts
+  - packages/spec-core/src/semantic-indexing-pack/report.ts
+  - packages/spec-core/src/semantic-indexing-pack/grounding.ts
+  - packages/spec-core/src/semantic-indexing-pack/semantic-indexing-pack.test.ts
+
 ---
 
 # 인덱싱 아키텍처 - 레이어 구조

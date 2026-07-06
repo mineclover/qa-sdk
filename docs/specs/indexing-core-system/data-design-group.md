@@ -17,6 +17,40 @@ def:
       type: contains
     - target: indexing-core-system
       type: depends_on
+sources:
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/package.json
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+  - packages/address-index/src/index.ts
+  - packages/address-index/src/types.ts
+  - packages/address-index/src/port.ts
+  - packages/address-index/src/memory-store.ts
+  - packages/address-index/src/address-index.test.ts
+  - packages/address-index/package.json
+  - packages/tag-search/src/index.ts
+  - packages/tag-search/src/types.ts
+  - packages/tag-search/src/port.ts
+  - packages/tag-search/src/memory-store.ts
+  - packages/tag-search/src/search.test.ts
+  - packages/tag-search/package.json
+
 ---
 
 # 좌표 시스템 데이터 설계 그룹

@@ -24,6 +24,33 @@ def:
       type: traces_to
     - target: def-svc-semantic-grounding-module
       type: traces_to
+sources:
+  - packages/spec-core/src/semantic-indexing-pack/index.ts
+  - packages/spec-core/src/semantic-indexing-pack/types.ts
+  - packages/spec-core/src/semantic-indexing-pack/manifest.ts
+  - packages/spec-core/src/semantic-indexing-pack/classify.ts
+  - packages/spec-core/src/semantic-indexing-pack/compatibility.ts
+  - packages/spec-core/src/semantic-indexing-pack/report.ts
+  - packages/spec-core/src/semantic-indexing-pack/grounding.ts
+  - packages/spec-core/src/semantic-indexing-pack/semantic-indexing-pack.test.ts
+  - packages/spec-core/src/dkg/index.ts
+  - packages/spec-core/src/dkg/cli-query.test.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/address-protocol-manager.ts
+  - packages/index-meta/src/address-protocol-manager.test.ts
+  - packages/address-index/src/index.ts
+  - packages/address-index/src/types.ts
+  - packages/address-index/src/port.ts
+  - packages/address-index/src/memory-store.ts
+  - packages/address-index/src/address-index.test.ts
+  - packages/address-index/package.json
+
 ---
 
 # 의미론 인덱싱 기본 로직

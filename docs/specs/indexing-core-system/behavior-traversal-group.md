@@ -17,6 +17,20 @@ def:
       type: contains
     - target: indexing-core-system
       type: depends_on
+sources:
+  - packages/spec-core/src/dkg/index.ts
+  - packages/spec-core/src/dkg/cli-query.test.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - packages/spec-core/src/semantic-indexing-pack/index.ts
+  - packages/spec-core/src/semantic-indexing-pack/types.ts
+  - packages/spec-core/src/semantic-indexing-pack/manifest.ts
+  - packages/spec-core/src/semantic-indexing-pack/classify.ts
+  - packages/spec-core/src/semantic-indexing-pack/compatibility.ts
+  - packages/spec-core/src/semantic-indexing-pack/report.ts
+  - packages/spec-core/src/semantic-indexing-pack/grounding.ts
+  - packages/spec-core/src/semantic-indexing-pack/semantic-indexing-pack.test.ts
+  - packages/spec-core/src/visualization/monitor-queries.ts
+
 ---
 
 # 행위 축 탐색 그룹
