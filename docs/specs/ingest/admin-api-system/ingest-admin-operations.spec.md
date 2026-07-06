@@ -13,19 +13,19 @@ def:
   links:
     - target: admin-api-system
       type: refines
-  sources:
-    - packages/ingest-server/src/server.ts
-    - packages/ingest-server/src/app.ts
-    - packages/ingest-server/src/routes/dlq.ts
-    - packages/ingest-server/src/routes/cleanup.ts
-    - packages/ingest-server/src/lib/phase-two-worker.ts
-    - packages/ingest-server/src/lib/cleanup.ts
-    - packages/ingest-server/src/lib/bullmq-task-queue.ts
-    - packages/core/src/ports/dlq-store.port.ts
-    - packages/ingest-server/src/routes/dlq.test.ts
-    - packages/ingest-server/src/routes/cleanup.test.ts
-    - packages/ingest-server/src/app.test.ts
-    - packages/ingest-server/src/async-worker.e2e.test.ts
+sources:
+  - packages/ingest-server/src/server.ts
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/routes/dlq.ts
+  - packages/ingest-server/src/routes/cleanup.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/cleanup.ts
+  - packages/ingest-server/src/lib/bullmq-task-queue.ts
+  - packages/core/src/ports/dlq-store.port.ts
+  - packages/ingest-server/src/routes/dlq.test.ts
+  - packages/ingest-server/src/routes/cleanup.test.ts
+  - packages/ingest-server/src/app.test.ts
+  - packages/ingest-server/src/async-worker.e2e.test.ts
 ---
 
 # Ingest Admin 운영 규칙

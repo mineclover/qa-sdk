@@ -15,16 +15,16 @@ def:
       type: refines
     - target: ingest-api-system
       type: constrains
-  sources:
-    - packages/ingest-server/src/app.ts
-    - packages/ingest-server/src/middleware/rate-limit.ts
-    - packages/ingest-server/src/middleware/request-id.ts
-    - packages/ingest-server/src/middleware/shutdown.ts
-    - packages/ingest-server/src/middleware/error-handler.ts
-    - packages/ingest-server/src/routes/health.ts
-    - packages/ingest-server/src/app.test.ts
-    - packages/ingest-server/src/routes/health.test.ts
-    - packages/ingest-server/src/graceful-shutdown.test.ts
+sources:
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/middleware/rate-limit.ts
+  - packages/ingest-server/src/middleware/request-id.ts
+  - packages/ingest-server/src/middleware/shutdown.ts
+  - packages/ingest-server/src/middleware/error-handler.ts
+  - packages/ingest-server/src/routes/health.ts
+  - packages/ingest-server/src/app.test.ts
+  - packages/ingest-server/src/routes/health.test.ts
+  - packages/ingest-server/src/graceful-shutdown.test.ts
 ---
 
 # Ingest 런타임 미들웨어

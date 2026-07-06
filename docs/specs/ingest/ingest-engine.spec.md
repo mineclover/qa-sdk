@@ -13,7 +13,7 @@ def:
   links:
     - target: pipeline-system
       type: refines
-  source: packages/engine/src/index.ts
+source: packages/engine/src/index.ts
 ---
 
 # @qa-sdk/engine — ingest 파이프라인 엔진

@@ -15,14 +15,14 @@ def:
       type: refines
     - target: dlq-store-spec
       type: depends_on
-  sources:
-    - packages/ingest-server/src/app.ts
-    - packages/ingest-server/src/routes/dlq.ts
-    - packages/ingest-server/src/routes/cleanup.ts
-    - packages/ingest-server/src/routes/dlq.test.ts
-    - packages/ingest-server/src/routes/cleanup.test.ts
-    - packages/ingest-server/src/app.test.ts
-    - packages/ingest-server/src/async-worker.e2e.test.ts
+sources:
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/routes/dlq.ts
+  - packages/ingest-server/src/routes/cleanup.ts
+  - packages/ingest-server/src/routes/dlq.test.ts
+  - packages/ingest-server/src/routes/cleanup.test.ts
+  - packages/ingest-server/src/app.test.ts
+  - packages/ingest-server/src/async-worker.e2e.test.ts
 ---
 
 # Ingest Admin 엔드포인트

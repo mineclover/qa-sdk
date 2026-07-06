@@ -14,19 +14,19 @@ def:
       type: refines
     - target: ingest-runtime-operations
       type: depends_on
-  sources:
-    - packages/core/src/ports/key-observation-store.port.ts
-    - packages/ingest-server/src/lib/extract-key-observations.ts
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/db/schema.ts
-    - packages/ingest-server/src/stores/d1-key-observation-store.ts
-    - packages/ingest-server/src/stores/d1-key-observation-store.test.ts
-    - packages/ingest-server/src/stores/d1-key-observation-store.versioned.test.ts
-    - packages/ingest-server/src/stores/pg/schema.ts
-    - packages/ingest-server/src/stores/pg/key-observation.adapter.ts
-    - packages/ingest-server/src/stores/pg/key-observation.adapter.test.ts
-    - packages/ingest-server/src/__tests__/cross-adapter/shared/key-observation-store.shared.ts
-    - packages/ingest-server/src/routes/ingest.test.ts
+sources:
+  - packages/core/src/ports/key-observation-store.port.ts
+  - packages/ingest-server/src/lib/extract-key-observations.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/db/schema.ts
+  - packages/ingest-server/src/stores/d1-key-observation-store.ts
+  - packages/ingest-server/src/stores/d1-key-observation-store.test.ts
+  - packages/ingest-server/src/stores/d1-key-observation-store.versioned.test.ts
+  - packages/ingest-server/src/stores/pg/schema.ts
+  - packages/ingest-server/src/stores/pg/key-observation.adapter.ts
+  - packages/ingest-server/src/stores/pg/key-observation.adapter.test.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/key-observation-store.shared.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
 ---
 
 # Key Observation Store

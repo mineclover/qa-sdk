@@ -17,13 +17,13 @@ def:
       type: contains
     - target: ingest-system
       type: depends_on
-  sources:
-    - packages/ingest-server/src/app.ts
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/routes/ingest.test.ts
-    - packages/ingest-server/src/app.test.ts
-    - packages/ingest-server/src/lib/phase-two-worker.ts
-    - packages/core/src/schema/envelope.schema.ts
+sources:
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/ingest-server/src/app.test.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/core/src/schema/envelope.schema.ts
 ---
 
 # Ingest API 그룹

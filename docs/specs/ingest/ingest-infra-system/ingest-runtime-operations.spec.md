@@ -13,20 +13,20 @@ def:
   links:
     - target: ingest-infra-system
       type: refines
-  sources:
-    - packages/ingest-server/src/server.ts
-    - packages/ingest-server/src/worker.ts
-    - packages/ingest-server/src/config/env.ts
-    - packages/ingest-server/src/stores/store-factory.ts
-    - packages/ingest-server/src/lib/graceful-shutdown.ts
-    - packages/ingest-server/src/lib/worker-shutdown.ts
-    - packages/ingest-server/src/lib/runtime-mode.ts
-    - packages/ingest-server/src/lib/cleanup-scheduler.ts
-    - packages/ingest-server/src/lib/metrics-collector.ts
-    - packages/ingest-server/src/graceful-shutdown.test.ts
-    - packages/ingest-server/src/lib/runtime-mode.test.ts
-    - packages/ingest-server/src/lib/worker-shutdown.test.ts
-    - packages/ingest-server/src/lib/cleanup-scheduler.test.ts
+sources:
+  - packages/ingest-server/src/server.ts
+  - packages/ingest-server/src/worker.ts
+  - packages/ingest-server/src/config/env.ts
+  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/lib/graceful-shutdown.ts
+  - packages/ingest-server/src/lib/worker-shutdown.ts
+  - packages/ingest-server/src/lib/runtime-mode.ts
+  - packages/ingest-server/src/lib/cleanup-scheduler.ts
+  - packages/ingest-server/src/lib/metrics-collector.ts
+  - packages/ingest-server/src/graceful-shutdown.test.ts
+  - packages/ingest-server/src/lib/runtime-mode.test.ts
+  - packages/ingest-server/src/lib/worker-shutdown.test.ts
+  - packages/ingest-server/src/lib/cleanup-scheduler.test.ts
 ---
 
 # Ingest 런타임 운영 절차

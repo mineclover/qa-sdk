@@ -15,19 +15,19 @@ def:
       type: refines
     - target: transmission-spec
       type: depends_on
-  sources:
-    - packages/core/src/schema/envelope.schema.ts
-    - packages/core/src/types/envelope.ts
-    - packages/ingest-server/src/app.ts
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/routes/ingest.test.ts
-    - packages/ingest-server/src/app.test.ts
-    - packages/ingest-server/src/middleware/rate-limit.ts
-    - packages/ingest-server/src/middleware/shutdown.ts
-    - packages/ingest-server/src/lib/enrich-address-context.ts
-    - packages/ingest-server/src/lib/catalog-validator.ts
-    - packages/ingest-server/src/lib/proto-codec.ts
-    - packages/codec-proto/src/index.ts
+sources:
+  - packages/core/src/schema/envelope.schema.ts
+  - packages/core/src/types/envelope.ts
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/ingest-server/src/app.test.ts
+  - packages/ingest-server/src/middleware/rate-limit.ts
+  - packages/ingest-server/src/middleware/shutdown.ts
+  - packages/ingest-server/src/lib/enrich-address-context.ts
+  - packages/ingest-server/src/lib/catalog-validator.ts
+  - packages/ingest-server/src/lib/proto-codec.ts
+  - packages/codec-proto/src/index.ts
 ---
 
 # Ingest 인터페이스 계약

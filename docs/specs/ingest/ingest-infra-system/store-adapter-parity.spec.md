@@ -12,27 +12,27 @@ def:
   links:
     - target: ingest-system
       type: depends_on
-  sources:
-    - packages/core/src/ports/record-store.port.ts
-    - packages/core/src/ports/trace-store.port.ts
-    - packages/core/src/ports/session-store.port.ts
-    - packages/core/src/ports/verdict-store.port.ts
-    - packages/core/src/ports/graph-store.port.ts
-    - packages/core/src/ports/scenario-spec-store.port.ts
-    - packages/core/src/ports/transmission-store.port.ts
-    - packages/core/src/ports/dlq-store.port.ts
-    - packages/core/src/ports/key-observation-store.port.ts
-    - packages/ingest-server/src/stores/store-factory.ts
-    - packages/ingest-server/src/stores/d1-record-store.ts
-    - packages/ingest-server/src/stores/d1-key-observation-store.ts
-    - packages/ingest-server/src/stores/pg/event-record.adapter.ts
-    - packages/ingest-server/src/stores/pg/key-observation.adapter.ts
-    - packages/ingest-server/src/stores/clickhouse-record-store.ts
-    - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.d1.test.ts
-    - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.pg.test.ts
-    - packages/ingest-server/src/__tests__/cross-adapter/factories/pg.factory.ts
-    - packages/ingest-server/src/__tests__/cross-adapter/shared/record-store.shared.ts
-    - packages/ingest-server/src/__tests__/cross-adapter/shared/key-observation-store.shared.ts
+sources:
+  - packages/core/src/ports/record-store.port.ts
+  - packages/core/src/ports/trace-store.port.ts
+  - packages/core/src/ports/session-store.port.ts
+  - packages/core/src/ports/verdict-store.port.ts
+  - packages/core/src/ports/graph-store.port.ts
+  - packages/core/src/ports/scenario-spec-store.port.ts
+  - packages/core/src/ports/transmission-store.port.ts
+  - packages/core/src/ports/dlq-store.port.ts
+  - packages/core/src/ports/key-observation-store.port.ts
+  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/stores/d1-record-store.ts
+  - packages/ingest-server/src/stores/d1-key-observation-store.ts
+  - packages/ingest-server/src/stores/pg/event-record.adapter.ts
+  - packages/ingest-server/src/stores/pg/key-observation.adapter.ts
+  - packages/ingest-server/src/stores/clickhouse-record-store.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.d1.test.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.pg.test.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/factories/pg.factory.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/record-store.shared.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/shared/key-observation-store.shared.ts
 ---
 
 # Store Adapter Parity

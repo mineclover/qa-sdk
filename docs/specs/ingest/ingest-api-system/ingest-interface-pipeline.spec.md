@@ -13,16 +13,16 @@ def:
   links:
     - target: ingest-api-system
       type: refines
-  sources:
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/routes/ingest.test.ts
-    - packages/ingest-server/src/app.test.ts
-    - packages/ingest-server/src/server.ts
-    - packages/ingest-server/src/lib/phase-two-worker.ts
-    - packages/ingest-server/src/lib/bullmq-task-queue.ts
-    - packages/ingest-server/src/lib/enrich-address-context.ts
-    - packages/ingest-server/src/lib/catalog-validator.ts
-    - packages/ingest-server/src/lib/extract-key-observations.ts
+sources:
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/ingest-server/src/app.test.ts
+  - packages/ingest-server/src/server.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/bullmq-task-queue.ts
+  - packages/ingest-server/src/lib/enrich-address-context.ts
+  - packages/ingest-server/src/lib/catalog-validator.ts
+  - packages/ingest-server/src/lib/extract-key-observations.ts
 ---
 
 # Ingest 인터페이스 파이프라인

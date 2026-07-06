@@ -15,13 +15,13 @@ def:
       type: contains
     - target: ingest-admin-operations
       type: contains
-  sources:
-    - packages/ingest-server/src/app.ts
-    - packages/ingest-server/src/routes/dlq.ts
-    - packages/ingest-server/src/routes/cleanup.ts
-    - packages/ingest-server/src/routes/dlq.test.ts
-    - packages/ingest-server/src/routes/cleanup.test.ts
-    - packages/ingest-server/src/app.test.ts
+sources:
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/routes/dlq.ts
+  - packages/ingest-server/src/routes/cleanup.ts
+  - packages/ingest-server/src/routes/dlq.test.ts
+  - packages/ingest-server/src/routes/cleanup.test.ts
+  - packages/ingest-server/src/app.test.ts
 ---
 
 # Ingest Admin 그룹

@@ -19,14 +19,14 @@ def:
       type: contains
     - target: store-adapter-parity
       type: depends_on
-  sources:
-    - packages/ingest-server/src/app.ts
-    - packages/ingest-server/src/server.ts
-    - packages/ingest-server/src/stores/store-factory.ts
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/routes/health.ts
-    - packages/ingest-server/src/lib/graceful-shutdown.ts
-    - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.d1.test.ts
+sources:
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/server.ts
+  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/health.ts
+  - packages/ingest-server/src/lib/graceful-shutdown.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.d1.test.ts
 ---
 
 # Ingest 인프라 그룹
