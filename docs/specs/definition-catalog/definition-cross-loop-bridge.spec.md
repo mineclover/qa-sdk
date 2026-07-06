@@ -19,6 +19,13 @@ def:
       type: depends_on
     - target: definition-cross-loop-bridge-rule
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/cross-loop-bridge.ts
+    - packages/definition-catalog/src/cross-loop-bridge.test.ts
+    - packages/definition-catalog/src/runtime.ts
+    - packages/definition-catalog/src/harness-tracker.ts
+    - packages/definition-catalog/src/harness-state-model.ts
+    - packages/definition-catalog/src/bridge.ts
 ---
 
 ## 목적 ^purpose
@@ -50,5 +57,6 @@ BundleState `complete` → convention-compliance `compliant` 자동 전이. guar
 
 ## 관련 소스
 
-- `definition-catalog/src/cross-loop-bridge.ts`
-- `definition-catalog/src/cross-loop-bridge.test.ts` — 15건 (시나리오 4 + 엣지 5 + 통합 1)
+- `packages/definition-catalog/src/cross-loop-bridge.ts` — createGateHarnessBridge, buildHarnessContext, createDecisionInfraBridge
+- `packages/definition-catalog/src/runtime.ts` — createDefinitionRuntime, gateListener, getHarnessContext, onDecisionCompleted
+- `packages/definition-catalog/src/cross-loop-bridge.test.ts` — 15건 (시나리오 4 + 엣지 5 + 통합 1)

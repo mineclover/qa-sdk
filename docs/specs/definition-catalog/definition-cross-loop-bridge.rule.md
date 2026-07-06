@@ -15,6 +15,18 @@ def:
   links:
     - target: definition-cross-loop-bridge
       type: refines
+  sources:
+    - packages/definition-catalog/src/cross-loop-bridge.ts
+    - packages/definition-catalog/src/cross-loop-bridge.test.ts
+    - packages/definition-catalog/src/runtime.ts
+    - packages/definition-catalog/src/harness-tracker.ts
+    - packages/work-domain/src/gate-tracker.ts
+    - packages/decision-flow/src/observe.ts
+    - packages/index-meta/src/gate-aware-query.ts
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/lib/convergence-pipeline.ts
+    - packages/convergence/src/metric-registry.ts
+    - packages/event-catalog/src/prefix-mapping.ts
 ---
 
 # Cross-Loop Bridge — 소비 규칙
@@ -52,4 +64,13 @@ def:
 - convention → compliant 전이에는 `doc-lifecycle: approved` guard 필요
 - 전체 루프 순서: **Decision success → Doc approved → Gate complete → Convention compliant**
 
-브릿지 코드: `definition-catalog/src/cross-loop-bridge.ts`
+## 구현 근거 ^evidence
+
+- ③→②: `packages/work-domain/src/gate-tracker.ts`의 `BundleStateListener`와 `packages/definition-catalog/src/cross-loop-bridge.ts`의 `createGateHarnessBridge()`
+- ②→⑤: `packages/definition-catalog/src/cross-loop-bridge.ts`의 `buildHarnessContext()`
+- ⑤→⑥: `packages/definition-catalog/src/cross-loop-bridge.ts`의 `createDecisionInfraBridge()`
+- ⑥→①: `packages/index-meta/src/gate-aware-query.ts`의 `gateFilterRanges()`
+- ①→④: `packages/ingest-server/src/routes/ingest.ts`의 ingest 저장 경로와 phase-two/convergence 알림
+- ④→⑥: `packages/ingest-server/src/lib/convergence-pipeline.ts`의 `flush()` 및 `packages/convergence/src/metric-registry.ts`의 `metricsToObservations()`
+
+브릿지 초기화: `packages/definition-catalog/src/runtime.ts`
