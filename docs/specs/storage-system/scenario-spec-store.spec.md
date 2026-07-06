@@ -13,6 +13,12 @@ def:
   links:
     - target: verdict-spec
       type: depends_on
+sources:
+  - packages/core/src/types/scenario.ts
+  - packages/core/src/ports/scenario-spec-store.port.ts
+  - packages/store/src/adapters/drizzle/scenario-spec.adapter.ts
+  - packages/store/src/adapters/memory/scenario-spec.adapter.ts
+  - packages/store/src/adapters/memory/scenario-spec.adapter.test.ts
 ---
 
 # ScenarioSpec + ScenarioSpecStore

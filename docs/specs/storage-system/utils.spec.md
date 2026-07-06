@@ -13,6 +13,10 @@ def:
   links:
     - target: storage-schema-spec
       type: depends_on
+sources:
+  - packages/core/src/lib/id.ts
+  - packages/core/src/lib/clock.ts
+  - packages/core/src/lib/id.test.ts
 ---
 # Utils (ID + Clock)
 
@@ -25,6 +29,7 @@ ULID 기반 prefix ID 생성 및 타임스탬프 유틸리티.
 - **ID 생성 함수 7종**: txm_(Transmission), log_(Record), trc_(Trace), spn_(Span), qas_(Session), vrd_(Verdict), dlq_(Dead-letter) — 모두 `<prefix>_<ULID>` 포맷
 - **ULID 특성**: 시간순 정렬 가능 (48-bit timestamp + 80-bit random), 동일 밀리초 내 유일성 보장
 - **Clock 유틸**: `now()` — ISO-8601 UTC 문자열 반환, 모든 시각 기록에 사용
+- **Timestamp 비교 유틸**: `normalizeTimestamp()` / `compareTimestamps()` — 밀리초 유무가 섞인 ISO 문자열을 Date 기준으로 정렬
 - **불변 원칙**: 모든 ID는 생성 후 변경 불가, prefix로 ID 종류 즉시 식별 가능
 
 ## 상태
@@ -65,6 +70,8 @@ function newDlqId(): string;           // "dlq_<ULID>"
 
 ```typescript
 function now(): string;  // ISO-8601 UTC
+function normalizeTimestamp(iso: string): string;
+function compareTimestamps(a: string, b: string): number;
 ```
 
 ### 동작
@@ -72,6 +79,8 @@ function now(): string;  // ISO-8601 UTC
 - `new Date().toISOString()` 반환
 - SDK의 timestamp, span의 start_time/end_time 등에서 사용
 - 모든 시각은 UTC ISO-8601 문자열
+- `normalizeTimestamp()`는 유효한 ISO 입력을 밀리초 3자리 포함 형식으로 정규화하고, 파싱 실패 시 원문을 반환한다.
+- `compareTimestamps()`는 문자열 비교 대신 Date 변환 결과로 시간 순서를 비교한다.
 
 ## 제약 조건
 

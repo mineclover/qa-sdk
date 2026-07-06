@@ -13,6 +13,13 @@ def:
   links:
     - target: storage-system
       type: refines
+sources:
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/types.ts
+  - packages/core/src/catalog/catalog.types.ts
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/store/dkg-sqlite-store.ts
 ---
 # 태그 관리 설계
 
@@ -47,7 +54,7 @@ overview: 총 5개 설계 결정.
 | 축 (태그 종류) | 카디널리티 | 예시 | 충돌 처리 |
 |--------------|----------|------|---------|
 | concerns (ConcernTag) | **다중** | [security, observability] | 공존 가능 |
-| tierTag (TierTag) | **단일** | tier-frontend | 동시 불가 — 후자가 대체 |
+| tierTag (ServiceTierTag) | **단일** | tier-frontend | 동시 불가 — 후자가 대체 |
 | structural (StructuralTag) | **다중** | [entry-point, cross-scope] | 공존 가능 |
 | category (PrefixMeta) | **단일** | "event" | 동시 불가 |
 | criticality | **단일** | "critical" | 동시 불가 — 후자가 대체 |
@@ -60,7 +67,7 @@ overview: 총 5개 설계 결정.
 | 축 | 전파 여부 | 방향 | 구현 |
 |---|:--------:|------|------|
 | ConcernTag | ✅ 전파 | depends_on 링크를 따라 하위로 | `definition-catalog` ConcernDef.propagate() |
-| TierTag | ❌ 불전파 | 서비스 고유 속성 | — |
+| ServiceTierTag | ❌ 불전파 | 서비스 고유 속성 | — |
 | StructuralTag | ❌ 불전파 | 구조적 특성은 개별 | — |
 | category | ❌ 불전파 | prefix 고유 | — |
 | criticality | ⚠️ 상향 전파 | Application → 소속 서비스의 최고값 | Application.criticality ≥ max(services.criticality) |
@@ -101,13 +108,14 @@ auth (security 직접 부여)
 | 태그 종류 | SSOT | 위치 |
 |----------|------|------|
 | ConcernTag (7종) | definition-catalog | `taxonomy.ts` CONCERN_TAGS |
-| TierTag (4종) | definition-catalog | `taxonomy.ts` TIER_TAGS |
-| StructuralTag (4종) | definition-catalog | `taxonomy.ts` STRUCTURAL_TAGS |
+| ServiceTierTag (4종) | registry-service | `service.types.ts` ServiceTierTag |
+| StructuralTag (5종) | definition-catalog | `taxonomy.ts` STRUCTURAL_TAGS |
 | PrefixMeta.category (6종) | @qa-sdk/core | `catalog.types.ts` PrefixMeta |
 | criticality (4종) | registry-service | `services.ts` ServiceAttributes |
 
 registry-service의 `ServiceConcernTag/ServiceTierTag/ServiceStructuralTag`는
-definition-catalog의 KNOWN_TAGS와 **동일 값**을 사용하되, 패키지 의존 없이 자체 타입으로 정의.
+definition-catalog와 주요 의미를 맞추되, 패키지 의존 없이 자체 타입으로 정의한다.
+현재 `ServiceConcernTag`는 definition-catalog concern 값을 동일하게 유지하고, `ServiceTierTag`는 registry-service의 서비스 속성이며, `ServiceStructuralTag`는 registry 서비스 속성에 필요한 subset/extension(`shared`)을 포함한다.
 값 동기화는 수동 (태그 추가 시 양쪽 갱신).
 
 ## 문서 태그 taxonomy ^document-tags
@@ -122,6 +130,7 @@ definition-catalog의 KNOWN_TAGS와 **동일 값**을 사용하되, 패키지 �
 |------|------|------|
 | StructuralTag | `entry-point` | 이 주제의 시작 문서 |
 | StructuralTag | `cross-scope` | 여러 scope를 가로지르는 통합 문서 |
+| StructuralTag | `coordinate-cluster` | 좌표/축 묶음의 구조 단위 |
 | StructuralTag | `decision` | 의사결정 기록/판단 문맥이 핵심인 문서 |
 | StructuralTag | `generated` | codegen 등 자동 생성 문서 |
 | ConcernTag | `security` | 인증/인가/암호화/감사 |

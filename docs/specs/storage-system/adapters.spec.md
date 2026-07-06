@@ -15,6 +15,27 @@ def:
       type: depends_on
     - target: scenario-store-spec
       type: depends_on
+sources:
+  - packages/store/src/index.ts
+  - packages/store/src/adapters/drizzle/index.ts
+  - packages/store/src/adapters/memory/index.ts
+  - packages/store/src/adapters/drizzle/record.adapter.ts
+  - packages/store/src/adapters/drizzle/trace.adapter.ts
+  - packages/store/src/adapters/drizzle/session.adapter.ts
+  - packages/store/src/adapters/drizzle/transmission.adapter.ts
+  - packages/store/src/adapters/drizzle/scenario-spec.adapter.ts
+  - packages/store/src/adapters/drizzle/graph.adapter.ts
+  - packages/store/src/adapters/drizzle/verdict.adapter.ts
+  - packages/store/src/adapters/drizzle/dlq.adapter.ts
+  - packages/store/src/adapters/memory/record.adapter.ts
+  - packages/store/src/adapters/memory/trace.adapter.ts
+  - packages/store/src/adapters/memory/session.adapter.ts
+  - packages/store/src/adapters/memory/transmission.adapter.ts
+  - packages/store/src/adapters/memory/scenario-spec.adapter.ts
+  - packages/store/src/adapters/memory/graph.adapter.ts
+  - packages/store/src/adapters/memory/verdict.adapter.ts
+  - packages/store/src/adapters/memory/dlq.adapter.ts
+  - packages/ingest-server/src/lib/cleanup.ts
 ---
 
 # Store Adapters
@@ -25,7 +46,7 @@ core 포트의 Drizzle/PostgreSQL 및 In-Memory 구현체.
 
 ## 구성 ^overview
 
-- **8개 Store 어댑터**: RecordStore, TraceStore, SessionStore, TransmissionStore, ScenarioSpecStore, GraphStore, VerdictStore, DlqStore — 각각 Drizzle(PostgreSQL)과 InMemory 구현체 제공
+- **주요 Store 어댑터 8개**: RecordStore, TraceStore, SessionStore, TransmissionStore, ScenarioSpecStore, GraphStore, VerdictStore, DlqStore — 각각 Drizzle(PostgreSQL)과 InMemory 구현체 제공
 - **공통 패턴**: Drizzle adapter는 `DbExecutor` 주입, InMemory adapter는 Map/배열 기반 테스트용이며, 모든 adapter가 core port interface를 구현
 - **멱등 쓰기**: RecordStore는 `ON CONFLICT DO NOTHING`, TraceStore/SessionStore는 `ON CONFLICT DO UPDATE`로 중복 안전한 upsert 지원
 - **커서 기반 페이지네이션**: RecordStore의 `findByTraceIdPaginated`/`findBySessionIdPaginated`는 `(timestamp, log_id)` 복합 커서 + `LIMIT+1` 패턴으로 hasMore 판정

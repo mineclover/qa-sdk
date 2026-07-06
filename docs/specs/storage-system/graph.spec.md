@@ -13,6 +13,11 @@ def:
   links:
     - target: system-concepts
       type: depends_on
+sources:
+  - packages/core/src/types/graph.ts
+  - packages/core/src/ports/graph-store.port.ts
+  - packages/store/src/adapters/drizzle/graph.adapter.ts
+  - packages/store/src/adapters/memory/graph.adapter.ts
 ---
 
 # SpecGraph / RuntimeGraph + GraphStore
@@ -24,7 +29,7 @@ def:
 ## 구성 ^overview
 
 - **RuntimeGraph**: trace_id 기반 실행 그래프 — RuntimeNode(log/span, 타임스탬프, payload 마스킹 정보)와 RuntimeEdge(temporal/parent_child/causal)
-- **SpecGraph**: ScenarioSpec을 판정용 경량 그래프로 컴파일 — SpecNode(step_id, event_key, required, timeout_ms)와 SpecEdge(sequence/branch/optional)
+- **SpecGraph**: ScenarioSpec을 판정용 경량 그래프로 컴파일 — entry_conditions, SpecNode(step_id, event_key, required, timeout_ms)와 SpecEdge(sequence/branch/optional)
 - **GraphStore**: RuntimeGraph만 trace_id 기준 upsert 저장, SpecGraph는 engine 내부 투영 구조
 - **edge 규칙**: source/target이 canonical endpoint (from/to 미사용), causal 타입 고정 (derived 미사용)
 - **SpecNode 설계**: ScenarioStep 전체 참조 없이 판정 필수 필드만 보유, 네비게이션은 SpecEdge로만 표현
@@ -55,7 +60,7 @@ interface RuntimeNode {
   span_name?: string;
   start_time?: string;
   end_time?: string;
-  status_code?: "ok" | "error" | "unset";
+  status_code?: string;
   payload?: unknown;
   payload_masking_applied: boolean;
   payload_masked_fields: string[];
@@ -87,6 +92,7 @@ interface SpecGraph {
   version: string;
   nodes: SpecNode[];
   edges: SpecEdge[];
+  entry_conditions?: EntryCondition[];
 }
 
 interface SpecNode {
@@ -122,5 +128,6 @@ interface SpecEdge {
 - `source` / `target`이 edge의 canonical endpoint 필드다. `from` / `to`는 사용하지 않는다.
 - runtime causal relation의 edge 타입은 `causal`로 고정한다. `derived`는 사용하지 않는다.
 - `SpecNode`는 전체 `ScenarioStep` 참조를 들고 있지 않는다.
+- `ScenarioSpec.entry_conditions`는 compileSpec 투영 후에도 `SpecGraph.entry_conditions`에 유지한다.
 - `ScenarioStep.next` / `ScenarioStep.branches` 같은 네비게이션 정보는 `SpecEdge`로만 표현한다.
 - `timeout_ms`는 latency verdict 계산을 위해 `SpecNode`에 유지한다.

@@ -27,6 +27,17 @@ def:
       type: contains
     - target: test-scenario-store
       type: contains
+sources:
+  - packages/store/src/index.ts
+  - packages/store/src/db/schema.ts
+  - packages/store/src/adapters/drizzle/index.ts
+  - packages/store/src/adapters/memory/index.ts
+  - packages/core/src/types/graph.ts
+  - packages/core/src/types/verdict.ts
+  - packages/core/src/ports/scenario-spec-store.port.ts
+  - packages/core/src/ports/verdict-store.port.ts
+  - packages/ingest-server/src/lib/cleanup.ts
+  - packages/test-scenario-store/src/store.ts
 ---
 
 ## 목적 ^purpose

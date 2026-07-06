@@ -15,6 +15,8 @@ def:
       type: depends_on
     - target: verdict-spec
       type: depends_on
+sources:
+  - packages/store/src/db/schema.ts
 ---
 
 # DB Schema
@@ -25,12 +27,12 @@ PostgreSQL 테이블 정의. Drizzle ORM `pgTable` 기반.
 
 ## 구성 ^overview
 
-- **qa_sessions**: 세션 단위 관리 (session_id PK, scenario 연결, labels, 시작/종료 시각)
-- **traces**: 트레이스 저장 (session FK, service_name, record_count, 재구성 여부 추적)
-- **event_records**: 이벤트 레코드 본체 (trace FK, span 계층, payload 마스킹, registry_warning)
+- **qa_sessions**: 세션 단위 관리 (session_id PK, scenario 연결, labels, actor/user 속성, 시작/종료 시각)
+- **traces**: 트레이스 저장 (session FK, service_name, actor/user 속성, record_count, 재구성 여부 추적)
+- **event_records**: 이벤트 레코드 본체 (trace FK, span 계층, payload 마스킹, registry_warning, address_context, actor/user 속성)
 - **transmissions**: SDK 전송 메타데이터 (owner, service, sdk 버전, 플랫폼, 환경 정보)
 - **runtime_graphs**: 트레이스별 런타임 그래프 (jsonb 저장, 노드/엣지 수 집계)
-- **verdict_reports**: 시나리오 판정 결과 (scenario_id + trace_id UNIQUE, overall_verdict, jsonb report)
+- **verdict_reports**: 시나리오 판정 결과 (scenario_id + trace_id UNIQUE, overall_verdict, jsonb report, path_observation 조회 필드)
 - **scenario_specs**: 시나리오 스펙 정의 (버전, 도메인, ScenarioSpec JSON 전체 저장)
 - **dead_letter_queue**: 실패 레코드 재처리 큐 (reconstruction/verdict 단계, 시도 횟수 추적)
 
@@ -46,6 +48,9 @@ implemented
 | session_id | text | PK |
 | scenario_id | text | nullable |
 | labels | jsonb | nullable, `Record<string, string>` |
+| actor_id | text | nullable |
+| user_id | text | nullable |
+| user_attributes | jsonb | nullable, `Record<string, string>` |
 | started_at | timestamptz | NOT NULL, default now() |
 | closed_at | timestamptz | nullable |
 
@@ -55,6 +60,9 @@ implemented
 | trace_id | text | PK |
 | session_id | text | FK → qa_sessions, nullable |
 | service_name | text | nullable |
+| actor_id | text | nullable |
+| user_id | text | nullable |
+| user_attributes | jsonb | nullable, `Record<string, string>` |
 | record_count | integer | NOT NULL, default 0 |
 | first_timestamp | timestamptz | nullable |
 | last_timestamp | timestamptz | nullable |
@@ -84,10 +92,13 @@ implemented
 | payload_masking_applied | boolean | NOT NULL |
 | payload_masked_fields | jsonb | NOT NULL, `string[]` |
 | payload | jsonb | nullable |
-| qa_session_id | text | nullable |
-| created_at | timestamptz | NOT NULL, default now() |
-
 | registry_warning | text | nullable |
+| qa_session_id | text | nullable |
+| address_context | jsonb | nullable, `Record<string, string>` |
+| actor_id | text | nullable |
+| user_id | text | nullable |
+| user_attributes | jsonb | nullable, `Record<string, string>` |
+| created_at | timestamptz | NOT NULL, default now() |
 
 인덱스: `idx_event_records_trace_id`, `idx_event_records_trace_timestamp` (trace_id + timestamp 복합), `idx_event_records_event_key`, `idx_event_records_session_id`
 
@@ -124,6 +135,9 @@ implemented
 | qa_session_id | text | nullable |
 | overall_verdict | text | NOT NULL |
 | report | jsonb | NOT NULL |
+| path_observation | jsonb | nullable |
+| loop_detected | boolean | nullable |
+| terminal_reason | text | nullable |
 | computed_at | timestamptz | NOT NULL, default now() |
 
 인덱스: `idx_verdict_reports_scenario_id`, `idx_verdict_reports_trace_id`, `idx_verdict_reports_session_id`, `idx_verdict_reports_verdict`
