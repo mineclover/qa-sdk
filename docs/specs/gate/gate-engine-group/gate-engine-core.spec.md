@@ -13,6 +13,12 @@ def:
   links:
     - target: gate-state-model
       type: depends_on
+  sources:
+    - packages/index-meta/src/gate-engine.ts
+    - packages/index-meta/src/invalid-ranges.ts
+    - packages/index-meta/src/gate-engine.test.ts
+    - packages/demo-tests/src/index-meta/gate-engine.test.ts
+    - packages/demo-tests/src/index-meta/gate-engine-sql-e2e.test.ts
 ---
 # GateEngine 코어 기능
 
@@ -25,6 +31,7 @@ GateEngine 클래스의 코어 기능. recompute(단일 재계산), cascadeRecom
 - **4-state 모델**: active(정상) / inactive(인코딩 차단, 디코딩 가능) / open(인코딩 가능, 디코딩 불가) / reserved(완전 차단)
 - **recompute**: DimStateSpec 기반 순수 함수 — dim별 inactive/open 좌표로 전체 주소 범위 상태 계산
 - **cascadeRecompute**: leaf prefix 상태 변경을 composite prefix까지 DFS 순회로 전파, AND 규칙 적용
+- **저장/무효화**: 계산 결과를 AddressStateStore에 저장하고 AddressRangeCache를 prefix/version 단위로 무효화
 - **Deactivation 모드**: strict(release 시에만 재계산) / flexible(setFlag 시에도 재계산)
 - **CON-006**: prefix_ref refEntries 미정의 시 unfilled positions는 reserved 처리
 
@@ -34,7 +41,7 @@ GateEngine 클래스의 코어 기능. recompute(단일 재계산), cascadeRecom
 
 dim별 inactive/open 좌표를 기반으로 전체 주소 범위의 상태를 계산한다.
 
-- 입력: DimStateSpec (dim별 비활성 좌표 목록)
+- 입력: DimStateSpec (dim별 inactive/open/reserved 좌표 목록)
 - 출력: AddressStateCacheRecord (reserved/inactive/open 범위)
 - 순수 함수: 같은 입력 → 같은 출력
 
@@ -60,6 +67,7 @@ leaf prefix의 상태 변경을 composite prefix까지 전파한다.
 
 - leaf → composite 역참조 그래프를 DFS 순회
 - 각 composite에서 AND 규칙 적용 후 재계산
+- 재계산 후 AddressStateStore 저장 + AddressRangeCache 무효화
 
 ---
 
