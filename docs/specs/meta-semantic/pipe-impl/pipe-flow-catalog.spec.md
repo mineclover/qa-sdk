@@ -81,6 +81,15 @@ def:
       type: contains
     - target: meta-semantic-system
       type: depends_on
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-path.ts
+    - packages/core/src/pipe/pipe-path.test.ts
+    - packages/core/src/pipe/pipe-validate.ts
+    - packages/core/src/pipe/pipe-validate.test.ts
+    - packages/core/src/pipe/pipe-simulate.ts
+    - packages/core/src/pipe/pipe-simulate.test.ts
+
 ---
 
 # PipeFlow 카탈로그 — 30종 표현·정의·검증·시각 방식

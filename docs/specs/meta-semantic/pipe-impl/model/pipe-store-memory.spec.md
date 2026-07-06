@@ -14,9 +14,9 @@ def:
   links:
     - target: pipe-store
       type: depends_on
-sources:
-  - packages/core/src/pipe-store.ts
-  - packages/core/src/pipe-store.test.ts
+  sources:
+    - packages/core/src/pipe/pipe-store.ts
+    - packages/core/src/pipe/pipe-store.test.ts
 ---
 
 # PipeGraph / PipeSpec 인메모리 저장소
@@ -33,8 +33,8 @@ PipeGraphStore / PipeSpecStore 포트의 인메모리 어댑터.
 
 ## 관련 소스
 
-- `packages/core/src/pipe-store.ts` — 포트 + 어댑터 구현
-- `packages/core/src/pipe-store.test.ts` — 9 tests
+- `packages/core/src/pipe/pipe-store.ts` — 포트 + 어댑터 구현
+- `packages/core/src/pipe/pipe-store.test.ts` — 9 tests
 
 ## 저장 구조
 

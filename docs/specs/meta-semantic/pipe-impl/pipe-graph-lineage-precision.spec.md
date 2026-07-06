@@ -14,6 +14,13 @@ def:
   links:
     - target: pipe-static-lineage
       type: refines
+  sources:
+    - packages/core/src/pipe/pipe-lineage.ts
+    - packages/core/src/pipe/pipe-lineage.test.ts
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-endpoint.ts
+    - packages/core/src/pipe/pipe-endpoint.test.ts
+
 ---
 
 # Graph 계보 정밀 연결 — facetType + PortRef

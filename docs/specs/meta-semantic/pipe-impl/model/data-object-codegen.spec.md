@@ -15,6 +15,13 @@ def:
   links:
     - target: data-object-binding
       type: depends_on
+  sources:
+    - packages/codegen-core/src/data-object-typescript.ts
+    - packages/codegen-core/src/data-object-typescript.test.ts
+    - packages/codegen-core/src/naming.ts
+    - packages/codegen-core/src/naming.test.ts
+    - packages/core/src/data-object/types.ts
+
 ---
 
 # DataObject Codegen — 바인딩 → Typed SDK 코드 생성
@@ -29,7 +36,7 @@ DataObjectBinding 배열에서 TypeScript 타입 안전 코드를 자동 생성�
 ### generateDataObjectBindings
 
 ```ts
-// 참조: codegen-core/src/data-object-typescript.ts
+// 참조: packages/codegen-core/src/data-object-typescript.ts
 function generateDataObjectBindings(
   bindings: readonly DataObjectBinding[],
   options?: DataObjectCodegenOptions,
@@ -59,9 +66,9 @@ function generateDataObjectBindings(
 
 ## 테스트
 
-`codegen-core/src/data-object-typescript.test.ts` — 8건
+`packages/codegen-core/src/data-object-typescript.test.ts` — 8건
 
 ## ^consumes
 
-- `DataObjectBinding` 타입 (core/data-object/types.ts와 동일 구조)
-- `toPascal`, `toConstKey` (codegen-core/naming.ts)
+- `DataObjectBinding` 타입 (packages/core/src/data-object/types.ts와 동일 구조)
+- `toPascal`, `toConstKey` (packages/codegen-core/src/naming.ts)

@@ -18,6 +18,17 @@ def:
       type: depends_on
     - target: pipe-flow-catalog
       type: depends_on
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-port.ts
+    - packages/core/src/pipe/pipe-port.test.ts
+    - packages/core/src/pipe/pipe-endpoint.ts
+    - packages/core/src/pipe/pipe-endpoint.test.ts
+    - packages/core/src/pipe/pipe-validate.ts
+    - packages/core/src/pipe/pipe-validate.test.ts
+    - packages/core/src/pipe/pipe-interpret.ts
+    - packages/core/src/pipe/pipe-interpret.test.ts
+
 ---
 
 # Facet-Port 모델 — Feynman 인과 다이어그램 기반 Pipe 재설계
@@ -112,11 +123,11 @@ facetType badge: 반투명 흰색 rect, 10px monospace, edge 색상 계열.
 
 | 항목 | 파일 | 상태 |
 |------|------|------|
-| PipePort, PortRef 타입 | `core/types/pipe-spec.ts` | 완료 |
-| inferPorts, resolvePorts | `core/pipe/pipe-port.ts` | 완료 (4 tests) |
-| classifyPipeRole | `core/pipe/pipe-interpret.ts` | 완료 (26 tests) |
-| SVG port dot | `core/pipe/pipe-svg-shapes.ts` | 완료 |
-| SVG facetType badge | `core/pipe/pipe-svg-shapes.ts` | 완료 |
-| PortRef edge routing | `core/pipe/pipe-svg.ts` | 완료 |
+| PipePort, PortRef 타입 | `packages/core/src/types/pipe-spec.ts` | 완료 |
+| inferPorts, resolvePorts | `packages/core/src/pipe/pipe-port.ts` | 완료 (4 tests) |
+| classifyPipeRole | `packages/core/src/pipe/pipe-interpret.ts` | 완료 (26 tests) |
+| SVG port dot | `packages/viz-core/src/pipe-svg.ts` | 완료 |
+| SVG facetType badge | `packages/viz-core/src/pipe-svg.ts` | 완료 |
+| PortRef edge routing | `packages/viz-core/src/pipe-svg.ts` | 완료 |
 | design catalog | `viz-web/src/pipe-design.ts` | 완료 |
 | fold topology 30종 | `pipe-flow-catalog.spec.md` | 완료 |

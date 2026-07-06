@@ -14,6 +14,15 @@ def:
   links:
     - target: ms-concept-pipe
       type: implements
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-validate.ts
+    - packages/core/src/pipe/pipe-validate.test.ts
+    - packages/core/src/pipe/pipe-path.ts
+    - packages/core/src/pipe/pipe-path.test.ts
+    - packages/core/src/pipe/pipe-flow-utils.ts
+    - packages/core/src/pipe/pipe-flow-utils.test.ts
+
 ---
 
 # PipeFlow 타입 정의

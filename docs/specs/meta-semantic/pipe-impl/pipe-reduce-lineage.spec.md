@@ -14,6 +14,11 @@ def:
   links:
     - target: pipe-static-lineage
       type: refines
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-lineage.ts
+    - packages/core/src/pipe/pipe-lineage.test.ts
+
 ---
 
 # Reduce/Accumulator 계보 표현

@@ -14,6 +14,12 @@ def:
   links:
     - target: pipe-static-lineage
       type: refines
+  sources:
+    - packages/core/src/pipe/pipe-lineage.ts
+    - packages/core/src/pipe/pipe-lineage.test.ts
+    - packages/core/src/pipe/pipe-fold.ts
+    - packages/core/src/pipe/pipe-fold.test.ts
+
 ---
 
 # Fold 압축 시 계보 통합

@@ -21,6 +21,14 @@ def:
       type: depends_on
     - target: meta-semantic-pipe-impl
       type: depends_on
+  sources:
+    - packages/core/src/types/data-schema.ts
+    - packages/core/src/pipe/data-contract.ts
+    - packages/core/src/pipe/data-contract.test.ts
+    - packages/core/src/pipe/pipe-lineage.ts
+    - packages/core/src/pipe/pipe-lineage.test.ts
+    - packages/core/src/pipe/meta-semantic-integration.test.ts
+
 ---
 
 # 데이터 계약 — 스키마 정의 + 관계 + 계보 추적
@@ -46,14 +54,14 @@ def:
 
 | 구성 | 설명 | 구현 파일 |
 |------|------|----------|
-| DataSchema | 컬럼 + 패싯 역할(produced/consumed/derived/managed/identity) + 제약 | `core/src/types/data-schema.ts` |
-| DataRelation | 1:1/1:N/N:M + owns/references/embeds + cascade | `core/src/types/data-schema.ts` |
-| 호환 검증 | checkCompatibility(producer, consumer) → 누락/타입불일치 판정 | `core/src/data-contract.ts` |
-| 계보 추적 | LineageCollector — 10종 변환(direct/rename/compute/aggregate/...) + 원본/영향 추적 | `core/src/data-contract.ts` |
-| 버전 관리 | VersionCollector — 9종 변경 유형 + backward/forward/breaking 판별 | `core/src/data-contract.ts` |
+| DataSchema | 컬럼 + 패싯 역할(produced/consumed/derived/managed/identity) + 제약 | `packages/core/src/types/data-schema.ts` |
+| DataRelation | 1:1/1:N/N:M + owns/references/embeds + cascade | `packages/core/src/types/data-schema.ts` |
+| 호환 검증 | checkCompatibility(producer, consumer) → 누락/타입불일치 판정 | `packages/core/src/pipe/data-contract.ts` |
+| 계보 추적 | LineageCollector — 10종 변환(direct/rename/compute/aggregate/...) + 원본/영향 추적 | `packages/core/src/pipe/data-contract.ts` |
+| 버전 관리 | VersionCollector — 9종 변경 유형 + backward/forward/breaking 판별 | `packages/core/src/pipe/data-contract.ts` |
 
-테스트: `core/src/data-contract.test.ts` (36 tests)
-통합: `core/src/meta-semantic-integration.test.ts` (시나리오 9~10)
+테스트: `packages/core/src/pipe/data-contract.test.ts` (36 tests)
+통합: `packages/core/src/pipe/meta-semantic-integration.test.ts` (시나리오 9~10)
 
 ---
 
@@ -69,7 +77,7 @@ def:
 | `managed` | 정합성 관리 대상 | orders.status (상태 전이 규칙) |
 | `identity` | UID/PK — 저장의 식별자 | orders.id |
 
-> 타입 상세: `core/src/types/data-schema.ts` `DataSchema`, `DataColumn`, `FacetRole` 참조
+> 타입 상세: `packages/core/src/types/data-schema.ts` `DataSchema`, `DataColumn`, `FacetRole` 참조
 
 ---
 
@@ -84,7 +92,7 @@ def:
 | cascade.onDelete | cascade, set-null, restrict, no-action |
 | cascade.onUpdate | cascade, restrict, no-action |
 
-> 타입 상세: `core/src/types/data-schema.ts` `DataRelation`, `CascadeRule` 참조
+> 타입 상세: `packages/core/src/types/data-schema.ts` `DataRelation`, `CascadeRule` 참조
 
 ---
 
@@ -99,7 +107,7 @@ def:
 | 소비자 필수 필드 누락 | 비호환 | **✓** |
 | 타입 불일치 | 비호환 | **✓** |
 
-> 구현: `core/src/data-contract.ts` `checkCompatibility()` 참조
+> 구현: `packages/core/src/pipe/data-contract.ts` `checkCompatibility()` 참조
 
 ---
 
@@ -121,7 +129,7 @@ items.price → cart_items.subtotal (compute: price × qty)
 | `.traceImpact(field)` | 영향 순추적 |
 | `.getSchemaLineage(schemaId)` | 스키마별 계보 |
 
-> 구현: `core/src/data-contract.ts` `LineageCollector` 참조
+> 구현: `packages/core/src/pipe/data-contract.ts` `LineageCollector` 참조
 
 ---
 
@@ -142,7 +150,7 @@ items.price → cart_items.subtotal (compute: price × qty)
 | `createSchemaVersion(old, new)` | SchemaVersion 생성 |
 | `VersionCollector.getBreakingChanges(id)` | breaking 필터 |
 
-> 구현: `core/src/data-contract.ts` `VersionCollector` 참조
+> 구현: `packages/core/src/pipe/data-contract.ts` `VersionCollector` 참조
 
 ---
 
@@ -168,8 +176,8 @@ PipeStep.dataContract로 파이프 step별 입출력 스키마 + 접근 테이�
 
 > 시뮬레이션 없이는 "어떤 step이 실행되었는지" 알 수 없으므로 계보도 구성 불가.
 
-> 구현: `core/src/pipe-bridge.ts` 참조
-> 타입: `core/src/types/pipe-spec.ts` `StepDataContract` 참조
+> 구현: `packages/core/src/pipe/pipe-bridge.ts` 참조
+> 타입: `packages/core/src/types/pipe-spec.ts` `StepDataContract` 참조
 
 ---
 

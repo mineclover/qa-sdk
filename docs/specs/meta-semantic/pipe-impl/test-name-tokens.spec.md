@@ -17,6 +17,12 @@ def:
       type: depends_on
     - target: doc-type-convention
       type: implements
+  sources:
+    - packages/core/src/pipe/test-name.ts
+    - packages/core/src/pipe/test-name.test.ts
+    - packages/core/src/pipe/test-tokens.ts
+    - packages/core/src/pipe/test-tokens.test.ts
+
 ---
 
 # Test Name Tokens — 구조화된 테스트 이름 생성 체계
@@ -32,7 +38,7 @@ test.md 시나리오 ID와 자동 매칭 가능한 파싱 가능 형식.
 ### testName — 단일 테스트 이름 생성
 
 ```ts
-// 참조: core/pipe/test-name.ts
+// 참조: packages/core/src/pipe/test-name.ts
 function testName(input: TestNameInput): TestNameResult
 ```
 
@@ -60,7 +66,7 @@ id:       "{module} > {fn}[{facet}] > {category}: {input} → {resolved}"
 ### testGroup — 배치 생성
 
 ```ts
-// 참조: core/pipe/test-name.ts
+// 참조: packages/core/src/pipe/test-name.ts
 function testGroup(input: TestGroupInput): TestGroupResult
 ```
 
@@ -69,7 +75,7 @@ function testGroup(input: TestGroupInput): TestGroupResult
 ### deriveTestTokens — spec에서 토큰 파생
 
 ```ts
-// 참조: core/pipe/test-tokens.ts
+// 참조: packages/core/src/pipe/test-tokens.ts
 function deriveTestTokens(specId: string, rootDir?: string): TestTokens | null
 ```
 
@@ -129,5 +135,5 @@ test.ts describe > it → 동일 id
 
 ## 구현 참조
 
-- 구현: `core/pipe/test-name.ts`, `core/pipe/test-tokens.ts`
-- 테스트: `core/pipe/test-name.test.ts` (5건), `core/pipe/test-tokens.test.ts` (7건)
+- 구현: `packages/core/src/pipe/test-name.ts`, `packages/core/src/pipe/test-tokens.ts`
+- 테스트: `packages/core/src/pipe/test-name.test.ts` (5건), `packages/core/src/pipe/test-tokens.test.ts` (7건)

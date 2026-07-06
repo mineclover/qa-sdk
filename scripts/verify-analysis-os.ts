@@ -157,6 +157,29 @@ async function main() {
            && pipeConnectionCatalogDocs.length === 8
            && pipeVocabularyGaps.length === 0,
            `Usefulness Audit: pipe flow/connection vocabulary docs are source-backed keep docs (flows=${pipeFlowCatalogDocs.length}, connections=${pipeConnectionCatalogDocs.length}, gaps=${pipeVocabularyGaps.length})`);
+    const metaSemanticPipeModelDocs = [
+      "docs/specs/meta-semantic/pipe-impl/model/data-object-binding.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/model/data-object-codegen.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/model/facet-code-lineage.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/model/facet-port-model.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/model/meta-semantic-data-contract.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/model/pipe-store-memory.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/model/pipe-types.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/model/prefix-path-summation.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/pipe-connection-catalog.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/pipe-flow-catalog.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/pipe-flow-visual-semantics.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/pipe-static-lineage.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/pipe-fold-lineage.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/pipe-graph-lineage-precision.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/pipe-reduce-lineage.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/test-name-tokens.spec.md",
+      "docs/specs/meta-semantic/pipe-impl/transition-scope.spec.md",
+    ];
+    const metaSemanticPipeModelGaps = metaSemanticPipeModelDocs
+      .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
+    assert(metaSemanticPipeModelGaps.length === 0,
+           `Usefulness Audit: meta-semantic pipe model/lineage docs are source-backed keep docs (${metaSemanticPipeModelGaps.join(", ") || "ok"})`);
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

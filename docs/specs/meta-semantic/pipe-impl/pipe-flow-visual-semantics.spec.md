@@ -14,10 +14,11 @@ def:
   links:
     - target: pipe-flow-catalog
       type: depends_on
-sources:
-  - packages/core/src/pipe/pipe-interpret.ts
-  - packages/core/src/pipe/pipe-mermaid.ts
-  - packages/core/src/pipe/pipe-svg.ts
+  sources:
+    - packages/core/src/pipe/pipe-interpret.ts
+    - packages/core/src/pipe/pipe-interpret.test.ts
+    - packages/viz-core/src/pipe-mermaid.ts
+    - packages/viz-core/src/pipe-svg.ts
 ---
 
 # PipeFlow 시각 의미론
@@ -83,6 +84,6 @@ sources:
 ## 구현 참조
 
 - `packages/core/src/pipe/pipe-interpret.ts` — `classifyPipeRole`, `extractPipeConcerns`
-- `packages/core/src/pipe/pipe-mermaid.ts` — Mermaid 시각 표현 소비
-- `packages/core/src/pipe/pipe-svg.ts` — SVG 시각 표현 소비
+- `packages/viz-core/src/pipe-mermaid.ts` — Mermaid 시각 표현 소비
+- `packages/viz-core/src/pipe-svg.ts` — SVG 시각 표현 소비
 - `packages/core/src/pipe/pipe-zoom.ts` — zoom 노드 스타일/role 소비

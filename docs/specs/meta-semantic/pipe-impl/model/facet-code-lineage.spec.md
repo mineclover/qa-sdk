@@ -20,6 +20,16 @@ def:
       type: depends_on
     - target: pipe-store-sqlite
       type: depends_on
+  sources:
+    - packages/core/src/data-object/facet-code-registry.ts
+    - packages/core/src/data-object/facet-code-registry.test.ts
+    - packages/core/src/data-object/lineage-chain.ts
+    - packages/core/src/data-object/lineage-chain.test.ts
+    - packages/core/src/pipe/pipe-lineage.ts
+    - packages/core/src/pipe/pipe-lineage.test.ts
+    - packages/pipe-store-sqlite/src/facet-code-store.ts
+    - packages/pipe-store-sqlite/src/facet-code-store.test.ts
+
 ---
 
 # 패싯-코드 매핑 + 3단 계보 체인
@@ -153,13 +163,13 @@ CREATE INDEX idx_fcm_schema_id ON facet_code_mappings (schema_id);
 
 | 항목 | 파일 | 상태 |
 |------|------|------|
-| FacetCodeRef, FacetCodeMapping 타입 | `core/data-object/types.ts` | 완료 |
-| FacetCodeStore 포트 | `core/data-object/facet-code-registry.ts` | 완료 |
-| FacetCodeRegistry 인메모리 | `core/data-object/facet-code-registry.ts` | 완료 (7 tests) |
-| resolveFacetMappings | `core/data-object/facet-code-registry.ts` | 완료 |
-| FieldLineage.facet | `core/types/data-schema.ts` | 완료 |
-| facet 자동 주입 | `core/pipe/pipe-lineage.ts` | 완료 |
-| buildFullLineageChain | `core/data-object/lineage-chain.ts` | 완료 (3 tests) |
+| FacetCodeRef, FacetCodeMapping 타입 | `packages/core/src/data-object/types.ts` | 완료 |
+| FacetCodeStore 포트 | `packages/core/src/data-object/facet-code-registry.ts` | 완료 |
+| FacetCodeRegistry 인메모리 | `packages/core/src/data-object/facet-code-registry.ts` | 완료 (7 tests) |
+| resolveFacetMappings | `packages/core/src/data-object/facet-code-registry.ts` | 완료 |
+| FieldLineage.facet | `packages/core/src/types/data-schema.ts` | 완료 |
+| facet 자동 주입 | `packages/core/src/pipe/pipe-lineage.ts` | 완료 |
+| buildFullLineageChain | `packages/core/src/data-object/lineage-chain.ts` | 완료 (3 tests) |
 | SqliteFacetCodeStore | `pipe-store-sqlite/facet-code-store.ts` | 완료 (8 tests) |
 
 ### 폐기 항목

@@ -23,6 +23,17 @@ def:
       type: contains
     - target: facet-code-lineage
       type: contains
+  sources:
+    - packages/core/src/data-object/types.ts
+    - packages/core/src/data-object/registry.ts
+    - packages/core/src/data-object/registry.test.ts
+    - packages/core/src/data-object/validate.ts
+    - packages/core/src/data-object/validate.test.ts
+    - packages/core/src/data-object/facet-code-registry.ts
+    - packages/core/src/data-object/facet-code-registry.test.ts
+    - packages/core/src/data-object/lineage-chain.ts
+    - packages/core/src/data-object/lineage-chain.test.ts
+
 ---
 
 # DataObject Binding — 데이터 스키마 ↔ prefix 좌표 바인딩
@@ -38,16 +49,16 @@ DataSchema를 prefix 주소 공간에 바인딩하여 데이터 인스턴스를
 
 | 소스 모듈 | 패싯 | 역할 |
 |-----------|------|------|
-| `core/data-object/types.ts` | 타입 정의 | DataObjectBinding, ColumnAxisMapping, BoundDataObject, ChainIssue 등 9 인터페이스 |
-| `core/data-object/registry.ts` | 레지스트리 | BindingRegistry (register/getBySchema/getByPrefix/listAll/remove) |
-| `core/data-object/validate.ts` | 검증 | validateBindings, validateLineageChain, validateLineageChainDetailed |
-| `core/data-object/lineage-chain.ts` | 계보 체인 | buildFullLineageChain |
-| `core/data-object/facet-code-registry.ts` | 패싯↔코드 | FacetCodeRegistry, resolveFacetMappings |
+| `packages/core/src/data-object/types.ts` | 타입 정의 | DataObjectBinding, ColumnAxisMapping, BoundDataObject, ChainIssue 등 9 인터페이스 |
+| `packages/core/src/data-object/registry.ts` | 레지스트리 | BindingRegistry (register/getBySchema/getByPrefix/listAll/remove) |
+| `packages/core/src/data-object/validate.ts` | 검증 | validateBindings, validateLineageChain, validateLineageChainDetailed |
+| `packages/core/src/data-object/lineage-chain.ts` | 계보 체인 | buildFullLineageChain |
+| `packages/core/src/data-object/facet-code-registry.ts` | 패싯↔코드 | FacetCodeRegistry, resolveFacetMappings |
 
 ### 핵심 타입
 
 ```ts
-// 참조: core/data-object/types.ts
+// 참조: packages/core/src/data-object/types.ts
 interface DataObjectBinding {
   schemaId: string;
   schemaVersion: string;

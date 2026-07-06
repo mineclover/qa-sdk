@@ -18,6 +18,16 @@ def:
       type: depends_on
     - target: meta-semantic-spacetime-uid
       type: depends_on
+  sources:
+    - packages/core/src/catalog/catalog.types.ts
+    - packages/core/src/catalog/path-summation.ts
+    - packages/core/src/catalog/path-summation.test.ts
+    - packages/core/src/catalog/path-summation-example.test.ts
+    - packages/core/src/pipe/pipe-segment.ts
+    - packages/core/src/pipe/pipe-segment.test.ts
+    - packages/cli/src/commands/prefix-stamp.ts
+    - packages/cli/src/commands/prefix-stamp.test.ts
+
 ---
 
 # Prefix 경로 합산 — 이벤트 분기의 명시적 표현
@@ -61,13 +71,13 @@ PrefixDef의 주소 모델을 전곱(product)에서 경로 합산(sum)으로 확
 
 | 파일 | 역할 |
 |------|------|
-| `core/src/catalog/catalog.types.ts` | PathSegment, AxisCondition, BranchRoute, EventTransition |
-| `core/src/catalog/path-summation.ts` | createSegment, chainSegments, encodeBySegment, decodeBySegment, collectTransitions, productToSegment, validateSegments, validatePrefixSegments |
-| `core/src/catalog/path-summation.test.ts` | 기본 테스트 (21) |
-| `core/src/catalog/path-summation-example.test.ts` | 예시 + v1→v2 업그레이드 테스트 (36) |
-| `core/src/pipe/pipe-segment.ts` | detectPathSegments — PipeGraph → PathSegment[] 자동 도출 |
-| `core/src/pipe/pipe-segment.test.ts` | segment 도출 + prefix 검증 테스트 (9) |
-| `cli/src/commands/prefix-stamp.ts` | stamp/drift/migrate/find/impact — sum 모델 확장 |
+| `packages/core/src/catalog/catalog.types.ts` | PathSegment, AxisCondition, BranchRoute, EventTransition |
+| `packages/core/src/catalog/path-summation.ts` | createSegment, chainSegments, encodeBySegment, decodeBySegment, collectTransitions, productToSegment, validateSegments, validatePrefixSegments |
+| `packages/core/src/catalog/path-summation.test.ts` | 기본 테스트 (21) |
+| `packages/core/src/catalog/path-summation-example.test.ts` | 예시 + v1→v2 업그레이드 테스트 (36) |
+| `packages/core/src/pipe/pipe-segment.ts` | detectPathSegments — PipeGraph → PathSegment[] 자동 도출 |
+| `packages/core/src/pipe/pipe-segment.test.ts` | segment 도출 + prefix 검증 테스트 (9) |
+| `packages/cli/src/commands/prefix-stamp.ts` | stamp/drift/migrate/find/impact — sum 모델 확장 |
 
 ## 제약
 

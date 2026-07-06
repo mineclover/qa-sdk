@@ -15,6 +15,19 @@ def:
   links:
     - target: prefix-path-summation
       type: depends_on
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-validate.ts
+    - packages/core/src/pipe/pipe-validate.test.ts
+    - packages/core/src/pipe/pipe-path.ts
+    - packages/core/src/pipe/pipe-path.test.ts
+    - packages/core/src/pipe/pipe-simulate.ts
+    - packages/core/src/pipe/pipe-simulate.test.ts
+    - packages/core/src/pipe/pipe-runtime.ts
+    - packages/core/src/pipe/pipe-runtime.test.ts
+    - packages/core/src/catalog/transition-bridge.ts
+    - packages/core/src/catalog/transition-bridge.test.ts
+
 ---
 
 # PipeTransitionScope — 제어 흐름 내 선언적 비즈니스 원자 경계
@@ -158,17 +171,17 @@ for (const pipe of graph.pipes) {
 
 | 항목 | 파일 | 상태 |
 |------|------|------|
-| 타입 | `core/types/pipe-spec.ts` | ✅ PipeFlow 유니온 30종 |
-| 검증 | `core/pipe/pipe-validate.ts` | ✅ transitionId, events, body, compensate |
-| 관심사 | `core/pipe/pipe-interpret.ts` | ✅ compensate 시 resilience |
-| 경로 수 | `core/pipe/pipe-path.ts` | ✅ body + compensate |
-| 순회 | `core/pipe/pipe-analyze.ts` | ✅ getChildFlows, collectFailureKinds |
-| 시뮬레이션 | `core/pipe/pipe-simulate.ts` | ✅ body 실행 |
-| 런타임 | `core/pipe/pipe-runtime.ts` | ✅ body 실패 시 compensate |
-| 직렬화 | `core/pipe/pipe-serialize.ts` | ✅ JSON 라운드트립 |
-| fold | `core/pipe/pipe-fold.ts` | ✅ collectFlowSteps |
-| 벤치마크 | `core/pipe/pipe-benchmark.test.ts` | ✅ allFlowKinds 30종 |
+| 타입 | `packages/core/src/types/pipe-spec.ts` | ✅ PipeFlow 유니온 30종 |
+| 검증 | `packages/core/src/pipe/pipe-validate.ts` | ✅ transitionId, events, body, compensate |
+| 관심사 | `packages/core/src/pipe/pipe-interpret.ts` | ✅ compensate 시 resilience |
+| 경로 수 | `packages/core/src/pipe/pipe-path.ts` | ✅ body + compensate |
+| 순회 | `packages/core/src/pipe/pipe-analyze.ts` | ✅ getChildFlows, collectFailureKinds |
+| 시뮬레이션 | `packages/core/src/pipe/pipe-simulate.ts` | ✅ body 실행 |
+| 런타임 | `packages/core/src/pipe/pipe-runtime.ts` | ✅ body 실패 시 compensate |
+| 직렬화 | `packages/core/src/pipe/pipe-serialize.ts` | ✅ JSON 라운드트립 |
+| fold | `packages/core/src/pipe/pipe-fold.ts` | ✅ collectFlowSteps |
+| 벤치마크 | `packages/core/src/pipe/pipe-benchmark.test.ts` | ✅ allFlowKinds 30종 |
 | TransitionDef | `event-catalog/transition.ts` | ✅ registry + validateTransitionEvents |
-| 브릿지 | `core/catalog/transition-bridge.ts` | ✅ 좌표↔제어 흐름 검증 |
+| 브릿지 | `packages/core/src/catalog/transition-bridge.ts` | ✅ 좌표↔제어 흐름 검증 |
 | 카탈로그 | `pipe-flow-catalog.spec.md` | ✅ 30번째, transactional 분류 |
 | 테스트 | 6개 파일 | ✅ 총 35건 (pipe 13 + bridge 14 + event 8) |
