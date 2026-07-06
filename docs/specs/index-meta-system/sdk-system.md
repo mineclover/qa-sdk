@@ -17,13 +17,19 @@ def:
       type: contains
     - target: sdk-dim-views
       type: contains
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/client.ts
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/package.json
 ---
 
 # sdk-system
 
 ## 목적 ^purpose
-
-index-meta SDK의 퍼블릭 API. MetaCodec 통합, reserved tokens, constants 빌드, 용량/주소 뷰.
 
 index-meta SDK의 퍼블릭 API. MetaCodec 통합, reserved tokens, constants 빌드, 용량/주소 뷰.
 
@@ -63,8 +69,12 @@ IndexSDK는 MetaRegistry + MetaCodec + MetaResolver를 내부에서 조합한다
 
 1. **버전 고정**: `client(indexId, versionId)`로 index + version을 한 번 바인딩하면, 이후 모든 호출에서 반복하지 않는다.
 2. **예약 토큰 필터링**: `constants()`는 정규 값만 반환. 슬롯 마커와 inactive 항목은 자동 제외.
-3. **캐싱**: 동일 `indexId + versionId` client 재생성 비용 없음. `Object.freeze()` 불변성 보장.
+3. **캐싱**: 동일 `indexId + versionId` client 재생성 비용 없음. entries/constants/full-view 같은 반환 read model은 불변 객체/배열로 노출한다.
 4. **환경 무관**: `index-meta/client` 진입점으로 브라우저, Edge 런타임, 프론트엔드에서 안전하게 사용 가능.
+
+## source-backed 판정
+
+현재 SDK는 `MetaRegistryInput`에서 `MetaRegistry`, `MetaResolver`, `MetaCodec`을 조합하는 경량 소비 레이어다. `IndexMetaStore`를 직접 호출하지 않으며, entries 변경이나 version 생성은 관리/store 레이어에서 수행한 뒤 SDK를 새로 생성해 반영한다.
 
 ## 원본
 

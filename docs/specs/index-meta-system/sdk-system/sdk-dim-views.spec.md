@@ -13,6 +13,12 @@ def:
   links:
     - target: address-spec
       type: depends_on
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/capacity-guard.test.ts
+  - packages/index-meta/src/client.ts
 ---
 # sdk-dim-views
 
@@ -146,3 +152,9 @@ perm.dimFullView("role");
 | `reserved` | `typeof entry === "string" && reservedTokens.has(entry)` | 슬롯 마커 (encode/decode 가능, 도메인 상수 제외) |
 | `normal` | entry가 존재하고 reserved가 아님 | 정규 도메인 값 |
 | `empty` | position > entries.length (capacity 범위 내 빈 슬롯) | headroom — 추가 가능한 영역 |
+
+## source-backed 주의점
+
+- `dimCapacity()`는 snapshot entries 수와 `snapshotCapacity()`로 계산한 capacity/headroom만 반환한다. BigInt 용량 판정은 registry capacity guard API가 소유한다.
+- `dimFullView()`는 position 1..capacity를 모두 materialize한다. capacity가 매우 큰 dim에서는 backend/operator surface에서 호출 범위를 판단해야 한다.
+- `DimFullView.kind`에는 inactive 상태가 따로 없다. inactive filtering은 `constants()`의 read model에서 수행한다.

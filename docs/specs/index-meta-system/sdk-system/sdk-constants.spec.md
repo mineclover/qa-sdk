@@ -15,14 +15,18 @@ def:
       type: depends_on
     - target: sdk-dim-views
       type: depends_on
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/client.ts
+  - packages/index-meta/src/index.ts
 ---
 # sdk-constants
 
 ## 목적 ^purpose
 
-constants() 빌드 로직과 RESERVED_TOKENS. 모든 예약 토큰은 constants()를 통해 공급된다.
-
-constants() 빌드 로직과 RESERVED_TOKENS. 모든 예약 토큰은 constants()를 통해 공급된다.
+constants() 빌드 로직과 RESERVED_TOKENS. 예약 토큰과 inactive entry를 constants read model에서 제외하는 규칙을 정의한다.
 
 그룹: [sdk-system.md](sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
@@ -158,3 +162,9 @@ const actions = perm.constants("action");
 ```
 
 SDK-level `constants()`도 동일한 필터링 규칙(예약 토큰 + inactive 제외)이 적용되며, 결과는 캐싱된다.
+
+## source-backed 주의점
+
+- `RESERVED_TOKENS`는 `index-sdk.ts`의 기본 필터 Set이다. `constants()`가 예약 토큰을 공급하는 것이 아니라, entries에서 예약 토큰을 제외한다.
+- `buildConstants()`는 string entry가 reserved token이면 제외하고, `activeIndices`가 있으면 inactive position도 제외한다.
+- `entries()`와 codec encode/decode는 constants 필터링과 별개다. inactive entry도 기존 데이터 호환을 위해 lower-level codec 경로에서는 decode 가능하다.

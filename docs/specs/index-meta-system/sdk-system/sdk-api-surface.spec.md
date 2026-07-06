@@ -15,14 +15,20 @@ def:
       type: depends_on
     - target: index-meta-store-group
       type: depends_on
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/client.ts
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-resolver.test.ts
+  - packages/index-meta/src/capacity-guard.test.ts
+  - packages/index-meta/package.json
 ---
 # sdk-api-surface
 
 ## 목적 ^purpose
 
-index-meta SDK의 퍼블릭 API. MetaCodec 위에 구축된 encode/decode/resolve/serialize 통합 인터페이스.
-
-index-meta SDK의 퍼블릭 API. MetaCodec 위에 구축된 encode/decode/resolve/serialize 통합 인터페이스.
+index-meta SDK의 퍼블릭 API. MetaCodec 위에 구축된 encode/decode/matchRanges/toDecodeMap 소비 인터페이스.
 
 그룹: [sdk-system.md](sdk-system.md)
 원본: `docs/specs/indexing/index-meta/sdk.spec.md`
@@ -33,7 +39,7 @@ index-meta SDK의 퍼블릭 API. MetaCodec 위에 구축된 encode/decode/resolv
 - **IndexSDK**: client(index+version 바인딩), constants(dim+snapshot 직접 상수 추출), registry(내부 MetaRegistry 접근) 제공
 - **IndexClient 핵심 API**: encode(entity→정수), decode(정수→entity), matchRanges(부분 매칭 범위 쿼리), toDecodeMap(독립 decode용 맵 전달)
 - **상수 기반 코딩**: constants()로 enum-like 객체를 반환하여 IDE 자동완성과 타입 안전성 확보
-- **캐싱 전략**: SDK는 immutable 스냅샷이며, IndexClient와 constants는 키 기반 캐싱으로 재생성 시에만 무효화
+- **캐싱 전략**: SDK는 `MetaRegistryInput` snapshot을 기준으로 생성되며, IndexClient와 constants는 키 기반 캐싱으로 재생성 시에만 무효화
 - **진입점 분리**: index-meta/client(브라우저/Edge/Node.js, Node 전용 의존성 제외)와 index-meta(SQL 어댑터/마이그레이션 포함, Node.js 전용)
 - **에러 체계**: DimNotFoundError, IndexNotFoundError, IndexVersionNotFoundError, EntryNotFoundError 4종으로 명확한 발생 조건 구분
 
@@ -194,3 +200,9 @@ SDK는 immutable 스냅샷이다. 스키마가 변경되면(entry 추가, versio
 | `index-meta` | 위 전체 + SQL 어댑터 + 마이그레이션 + 분산 클라이언트 | Node.js |
 
 `index-meta/client`는 Node.js 전용 의존성(better-sqlite3 등)을 포함하지 않는다.
+
+## source-backed 주의점
+
+- `IndexClient`는 serialize/parse를 직접 노출하지 않는다. serialized address 처리가 필요하면 `sdk.registry`나 lower-level registry/codec API를 사용한다.
+- `IndexSDK`는 `IndexMetaStore`를 직접 읽지 않는다. store에서 만든 entries/snapshots를 `MetaRegistryInput`으로 전달한 뒤 SDK를 생성하는 구조다.
+- `index-meta/client` export는 SDK/core/errors/types로 제한되고, SQL adapters/migration/distributed client는 main `index-meta` entrypoint에 남는다.
