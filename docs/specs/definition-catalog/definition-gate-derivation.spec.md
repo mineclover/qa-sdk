@@ -13,6 +13,12 @@ def:
   layer: operation
   svc: definition-service
   tags: [testing, structural, runtime]
+  sources:
+    - packages/work-domain/src/contract-to-gates.ts
+    - packages/work-domain/src/contract-to-gates.test.ts
+    - packages/work-domain/src/gate-kind.ts
+    - packages/work-domain/src/harness.ts
+    - packages/work-domain/src/harness.test.ts
   links:
     - target: definition-quality-gates
       type: refines

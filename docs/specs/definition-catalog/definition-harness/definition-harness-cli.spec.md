@@ -13,6 +13,11 @@ def:
   layer: mediation
   svc: definition-service
   tags: [entry-point, runtime, testing, cross-scope]
+  sources:
+    - packages/cli/src/commands/def.ts
+    - packages/cli/src/commands/def.test.ts
+    - packages/definition-catalog/src/harness-derive.ts
+    - packages/definition-catalog/src/def-config.ts
   links:
     - target: definition-harness
       type: refines

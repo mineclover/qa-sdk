@@ -13,6 +13,13 @@ def:
   lifecycle: approved
   layer: mediation
   tags: [testing, contract, work-domain:productivity]
+  sources:
+    - packages/cli/src/commands/quality.ts
+    - packages/cli/src/commands/quality.test.ts
+    - packages/definition-catalog/src/contract.ts
+    - packages/definition-catalog/src/contract.test.ts
+    - packages/definition-catalog/src/contract-evidence.ts
+    - packages/definition-catalog/src/contract-evidence.test.ts
   links:
     - target: definition-quality-gates
       type: refines

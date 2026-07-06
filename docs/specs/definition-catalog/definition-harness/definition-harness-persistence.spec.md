@@ -13,6 +13,11 @@ def:
   layer: operation
   svc: definition-service
   tags: [runtime, observability, persistence, cross-scope]
+  sources:
+    - packages/definition-catalog/src/def-config.ts
+    - packages/definition-catalog/src/harness-tracker.ts
+    - packages/definition-catalog/src/harness-state-model.ts
+    - packages/definition-catalog/src/harness-guards.test.ts
   links:
     - target: definition-harness
       type: refines

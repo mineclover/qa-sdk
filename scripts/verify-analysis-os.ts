@@ -243,6 +243,22 @@ async function main() {
       .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
     assert(definitionMetadataGaps.length === 0,
            `Usefulness Audit: definition metadata docs are source-backed keep docs (${definitionMetadataGaps.join(", ") || "ok"})`);
+    const definitionHarnessQualityDocs = [
+      "docs/specs/definition-catalog/definition-harness.spec.md",
+      "docs/specs/definition-catalog/definition-harness-architecture.spec.md",
+      "docs/specs/definition-catalog/definition-harness/definition-harness-cli.spec.md",
+      "docs/specs/definition-catalog/definition-harness/definition-harness-derive.spec.md",
+      "docs/specs/definition-catalog/definition-harness/definition-harness-persistence.spec.md",
+      "docs/specs/definition-catalog/definition-state-model.spec.md",
+      "docs/specs/definition-catalog/definition-gate-fsm.spec.md",
+      "docs/specs/definition-catalog/definition-gate-derivation.spec.md",
+      "docs/specs/definition-catalog/definition-quality-gates.spec.md",
+      "docs/specs/definition-catalog/definition-quality-contract.spec.md",
+    ];
+    const definitionHarnessQualityGaps = definitionHarnessQualityDocs
+      .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
+    assert(definitionHarnessQualityGaps.length === 0,
+           `Usefulness Audit: definition harness/quality docs are source-backed keep docs (${definitionHarnessQualityGaps.join(", ") || "ok"})`);
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

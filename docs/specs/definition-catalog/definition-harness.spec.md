@@ -13,6 +13,13 @@ def:
   layer: operation
   svc: definition-service
   tags: [entry-point, cross-scope]
+  sources:
+    - packages/definition-catalog/src/harness-state-model.ts
+    - packages/definition-catalog/src/harness-machines.ts
+    - packages/definition-catalog/src/harness-guards.ts
+    - packages/definition-catalog/src/harness-tracker.ts
+    - packages/definition-catalog/src/harness-derive.ts
+    - packages/definition-catalog/src/harness-derive.test.ts
   links:
     - target: definition-catalog-spec
       type: refines

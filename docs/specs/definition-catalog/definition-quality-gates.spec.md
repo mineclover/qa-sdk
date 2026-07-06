@@ -13,6 +13,13 @@ def:
   layer: operation
   svc: definition-service
   tags: [cross-scope, quality-bundle, testing, entry-point]
+  sources:
+    - packages/work-domain/src/harness.ts
+    - packages/work-domain/src/gate-fsm.ts
+    - packages/work-domain/src/contract-to-gates.ts
+    - packages/work-domain/src/gate-tracker.ts
+    - packages/cli/src/commands/quality.ts
+    - packages/cli/src/commands/quality.test.ts
   links:
     - target: definition-catalog-spec
       type: refines

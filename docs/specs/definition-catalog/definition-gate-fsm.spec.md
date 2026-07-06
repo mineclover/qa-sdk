@@ -13,6 +13,11 @@ def:
   layer: operation
   svc: definition-service
   tags: [testing, runtime, structural]
+  sources:
+    - packages/work-domain/src/gate-fsm.ts
+    - packages/work-domain/src/gate-fsm.test.ts
+    - packages/work-domain/src/gate-tracker.ts
+    - packages/work-domain/src/gate-tracker.test.ts
   links:
     - target: definition-quality-gates
       type: refines
