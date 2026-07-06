@@ -15,6 +15,9 @@ def:
       type: refines
     - target: spec-analyzer-types
       type: depends_on
+sources:
+  - packages/spec-analyzer/src/scanner.ts
+  - packages/spec-analyzer/src/spec-analyzer.test.ts
 ---
 # Spec Analyzer — 코드 스캐너
 

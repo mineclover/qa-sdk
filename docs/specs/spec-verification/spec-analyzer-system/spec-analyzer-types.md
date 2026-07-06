@@ -13,6 +13,9 @@ def:
   links:
     - target: spec-analyzer-system
       type: refines
+sources:
+  - packages/spec-analyzer/src/types.ts
+  - packages/spec-analyzer/src/index.ts
 ---
 # Spec Analyzer — 핵심 타입
 

@@ -19,6 +19,15 @@ def:
       type: contains
     - target: spec-analyzer-extractor
       type: contains
+sources:
+  - packages/spec-analyzer/src/index.ts
+  - packages/spec-analyzer/src/types.ts
+  - packages/spec-analyzer/src/extractor.ts
+  - packages/spec-analyzer/src/scanner.ts
+  - packages/spec-analyzer/src/drift.ts
+  - packages/spec-analyzer/src/spec-analyzer.test.ts
+  - packages/cli/src/commands/spec-drift.ts
+  - packages/cli/src/command-groups/spec.commands.ts
 ---
 # Spec Analyzer — 정적 코드 분석기
 
@@ -67,13 +76,10 @@ def:
 qa-sdk spec drift
 
 # 특정 서비스만
-qa-sdk spec drift --svc registry-service
+qa-sdk spec drift --svc=registry-service
 
 # 특정 문서만
-qa-sdk spec drift --spec registry-api
-
-# JSON 출력
-qa-sdk spec drift --json
+qa-sdk spec drift --spec=registry-api
 ```
 
 ## 매칭 규칙 ^constraint

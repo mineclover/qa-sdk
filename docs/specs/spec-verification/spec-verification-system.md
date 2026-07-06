@@ -18,6 +18,18 @@ def:
       type: refs
     - target: spec-analyzer-system
       type: refs
+sources:
+  - packages/spec-analyzer/src/index.ts
+  - packages/spec-analyzer/src/extractor.ts
+  - packages/spec-analyzer/src/scanner.ts
+  - packages/spec-analyzer/src/drift.ts
+  - packages/spec-analyzer/src/spec-analyzer.test.ts
+  - packages/spec-tracker/src/index.ts
+  - packages/spec-tracker/src/collector.ts
+  - packages/spec-tracker/src/reporter.ts
+  - packages/spec-tracker/src/vitest-adapter.ts
+  - packages/spec-tracker/src/spec-tracker.test.ts
+  - packages/cli/src/commands/spec-drift.ts
 ---
 # Spec Verification 시스템
 

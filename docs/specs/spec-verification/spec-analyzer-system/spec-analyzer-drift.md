@@ -19,6 +19,9 @@ def:
       type: depends_on
     - target: spec-analyzer-scanner
       type: depends_on
+sources:
+  - packages/spec-analyzer/src/drift.ts
+  - packages/spec-analyzer/src/spec-analyzer.test.ts
 ---
 # Spec Analyzer — Drift 분석기
 
