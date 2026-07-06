@@ -248,6 +248,30 @@ async function main() {
            `Surface Docs: feature groups match manifest (${groupMismatches.join("; ") || "ok"})`);
     assert(verdictMismatches.length === 0,
            `Surface Docs: separation rule verdicts match manifest (${verdictMismatches.join("; ") || "ok"})`);
+
+    const taxonomyEntry = readFileSync("docs/specs/system/system-taxonomy.md", "utf-8");
+    const profileEntry = readFileSync("docs/specs/system/system-profile.md", "utf-8");
+    const rootEntry = readFileSync("docs/specs/system/system-root.md", "utf-8");
+    const taxonomySurfaceIds = [
+      "taxonomy-tooling",
+      "taxonomy-decision-bridge",
+      "taxonomy-preview-surfaces",
+    ];
+    const profileSurfaceIds = [
+      "profile-contract-tooling",
+      "quality-evidence-ledgers",
+      "measurement-tooling",
+      "profile-preview-surfaces",
+    ];
+    assert(taxonomySurfaceIds.every((id) => taxonomyEntry.includes(id)),
+           "Surface Docs: taxonomy capability has its own operator entry");
+    assert(profileSurfaceIds.every((id) => profileEntry.includes(id)),
+           "Surface Docs: profile capability has its own operator entry");
+    assert(profileSurfaceIds.every((id) => !taxonomyEntry.includes(id))
+           && taxonomySurfaceIds.slice(1).every((id) => !profileEntry.includes(id)),
+           "Surface Docs: taxonomy and profile operator entries do not merge surfaces");
+    assert(rootEntry.includes("system-taxonomy") && rootEntry.includes("system-profile"),
+           "Surface Docs: system root links separate taxonomy and profile entries");
   } catch (err) {
     console.error("Surface verification failed:", err);
     assert(false, "Surface Report: command completed successfully and produced valid JSON");

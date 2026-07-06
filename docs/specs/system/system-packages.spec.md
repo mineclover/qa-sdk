@@ -17,6 +17,10 @@ def:
       type: refines
     - target: package-surface-separation-rule
       type: refs
+    - target: system-taxonomy
+      type: refs
+    - target: system-profile
+      type: refs
     - target: resource-policy-store-system
       type: refs
     - target: audit-recorder-store-system
@@ -73,6 +77,8 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Quarantine candidates | quarantine | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
 
 상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `arch:surfaces`는 기능군별 surface/package 요약도 출력하므로 taxonomy capability, profile capability, quarantine이 같은 제품 surface로 다시 합쳐졌는지 즉시 확인할 수 있다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
+
+운영자가 실제 패키지를 고를 때는 taxonomy 기능군은 `system-taxonomy`, profile 기능군은 `system-profile`을 먼저 본다. 두 문서는 package ownership을 새로 만들지 않고 이 표와 `package-surface-separation-rule`의 배정을 소비하는 얇은 entry surface다.
 
 ## 인코딩 체인
 

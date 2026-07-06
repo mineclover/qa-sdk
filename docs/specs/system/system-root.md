@@ -24,6 +24,10 @@ def:
       type: refs
     - target: system-packages
       type: refs
+    - target: system-taxonomy
+      type: refs
+    - target: system-profile
+      type: refs
     - target: system-support
       type: refs
   sources:
@@ -48,6 +52,8 @@ def:
 - `system-concepts`: 이벤트, 좌표, 축, Prefix, prefix_ref 기본 개념.
 - `system-data-flow`: 이벤트 발생 → 수집 → 저장 → 판정 → 시각화 전체 흐름.
 - `system-packages`: package surface manifest를 리뷰 가능한 기능군 표로 요약한다.
+- `system-taxonomy`: finite vocabulary tooling, decision bridge, taxonomy preview의 실제 패키지 진입점을 분리해 가리킨다.
+- `system-profile`: profile contract, evidence ledger, measurement, profile preview의 실제 패키지 진입점을 분리해 가리킨다.
 - `system-infra`: observability runtime service와 infra governance tooling의 운영 경계를 가리킨다.
 - `system-libraries`: coordinate kernel과 observability runtime library surface를 가리킨다.
 - `system-design-tools`: definition governance surface를 가리키며 taxonomy/profile 소유권을 직접 흡수하지 않는다.
