@@ -16,6 +16,9 @@ def:
       type: traces_to
     - target: skill-def-split
       type: depends_on
+  sources:
+    - skills/def-audit/SKILL.md
+
 ---
 
 

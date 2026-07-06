@@ -64,7 +64,7 @@ function parseFrontmatter(text) {
     tier: matchValue(frontmatter, "tier"),
     scope: matchValue(frontmatter, "scope"),
     aspect: matchValue(frontmatter, "aspect"),
-    hasSources: /^\s*sources:\s*$/m.test(frontmatter) || /^\s*source:\s*(?:packages|docs|scripts)\//m.test(frontmatter),
+    hasSources: /^\s*sources:\s*$/m.test(frontmatter) || /^\s*source:\s*(?:packages|docs|scripts|skills)\//m.test(frontmatter),
     sourceRefs,
   };
 }
@@ -72,7 +72,8 @@ function parseFrontmatter(text) {
 function collectSourceRefs(frontmatter) {
   const refs = [
     ...frontmatter.matchAll(/^\s*source:\s+((?:packages|docs|scripts)\/[^\n#]+)/gm),
-    ...frontmatter.matchAll(/^\s*-\s+((?:packages|docs|scripts)\/[^\n#]+)/gm),
+    ...frontmatter.matchAll(/^\s*source:\s+((?:skills)\/[^\n#]+)/gm),
+    ...frontmatter.matchAll(/^\s*-\s+((?:packages|docs|scripts|skills)\/[^\n#]+)/gm),
   ].map((match) => cleanSourceRef(match[1]));
   return [...new Set(refs)];
 }
@@ -83,7 +84,7 @@ function cleanSourceRef(source) {
 
 function sourceRefFilePath(source) {
   const cleaned = cleanSourceRef(source);
-  const match = cleaned.match(/^((?:packages|docs|scripts)\/.*?\.(?:[cm]?[jt]sx?|mjs|cjs|md|json|ya?ml|sql))(?:[:#].*)?$/);
+  const match = cleaned.match(/^((?:packages|docs|scripts|skills)\/.*?\.(?:[cm]?[jt]sx?|mjs|cjs|md|json|ya?ml|sql))(?:[:#].*)?$/);
   return match?.[1] ?? cleaned;
 }
 
@@ -128,6 +129,7 @@ function classifyDoc(path) {
   const hasCommand = /\b(pnpm|node|tsx|qa-sdk|vitest|smoke|arch:feedback|def validate)\b/.test(text);
   const hasTestWords = /\b(test|fixture|smoke|verification|검증|validation)\b/i.test(text);
   const hasPackageRef = /\bpackages\//.test(text);
+  const hasSkillRef = /\bskills\//.test(text);
   const hasSourceRefs = frontmatter.sourceRefs.length > 0;
   const existingSourceRefs = frontmatter.sourceRefs.filter(sourceRefExists);
   const missingSourceRefs = frontmatter.sourceRefs.filter((source) => !sourceRefExists(source));
@@ -137,6 +139,7 @@ function classifyDoc(path) {
     hasCommand,
     hasTestWords,
     hasPackageRef,
+    hasSkillRef,
   ].filter(Boolean).length;
 
   let verdict = "prove";

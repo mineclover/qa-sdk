@@ -13,6 +13,9 @@ def:
       type: refines
     - target: skill-spec-lifecycle
       type: refines
+  sources:
+    - skills/gform-parser/SKILL.md
+
 ---
 
 

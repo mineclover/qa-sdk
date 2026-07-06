@@ -15,6 +15,9 @@ def:
       type: depends_on
     - target: definition-frontmatter-metadata-system
       type: depends_on
+  sources:
+    - skills/def-explore/SKILL.md
+
 ---
 # /def-explore — 시스템 구조 탐색
 

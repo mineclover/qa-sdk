@@ -13,6 +13,9 @@ def:
       type: refines
     - target: definition-catalog-spec
       type: depends_on
+  sources:
+    - skills/def-knowledge/SKILL.md
+
 ---
 # /def-knowledge — 지식 문서 조회/생성
 

@@ -16,6 +16,11 @@ def:
       type: contains
     - target: skill-catalog-system
       type: depends_on
+  sources:
+    - skills/dkg-audit/SKILL.md
+    - skills/semantic-change/SKILL.md
+    - packages/cli/src/commands/dkg.ts
+
 ---
 
 # Governance Skill Group

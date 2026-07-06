@@ -11,6 +11,9 @@ def:
   links:
     - target: governance-skill-group
       type: refines
+  sources:
+    - skills/semantic-change/SKILL.md
+
 ---
 
 # Skill — semantic-change

@@ -13,6 +13,9 @@ def:
       type: refines
     - target: definition-level
       type: depends_on
+  sources:
+    - skills/def-level/SKILL.md
+
 ---
 # /def-level — 분해 레벨 관리
 

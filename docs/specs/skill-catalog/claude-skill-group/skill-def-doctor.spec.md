@@ -15,6 +15,9 @@ def:
       type: depends_on
     - target: skill-def-audit
       type: depends_on
+  sources:
+    - skills/def-doctor/SKILL.md
+
 ---
 
 # Skill — def-doctor

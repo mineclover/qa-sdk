@@ -13,6 +13,10 @@ def:
       type: refines
     - target: skill-spec-lifecycle
       type: depends_on
+  sources:
+    - skills/doc-lifecycle/SKILL.md
+    - docs/specs/system/doc-type-convention.spec.md
+
 ---
 
 # Skill — doc-lifecycle

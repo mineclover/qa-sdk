@@ -16,6 +16,9 @@ def:
       type: depends_on
     - target: skill-def-bottomup
       type: traces_to
+  sources:
+    - skills/def-topdown/SKILL.md
+
 ---
 
 

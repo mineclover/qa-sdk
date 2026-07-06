@@ -117,6 +117,19 @@ async function main() {
     assert(!usefulnessDocs["docs/specs/authorization-ontology/authorization-ontology-resource-lifecycle.spec.md"]?.reasons
       ?.some((reason) => reason.includes("missing source refs")),
            "Usefulness Audit: source refs with symbol suffix are resolved by file path");
+    const skillCatalogDocs = usefulness.docs
+      .filter((item: { path: string }) => item.path.startsWith("docs/specs/skill-catalog/"));
+    const skillCatalogProveDocs = skillCatalogDocs
+      .filter((item: { verdict: string }) => item.verdict === "prove");
+    const skillCatalogDocsWithoutSourceRefs = skillCatalogDocs
+      .filter((item: { sourceRefs: number }) => item.sourceRefs === 0);
+    assert(skillCatalogDocs.length === 51
+           && skillCatalogProveDocs.length === 0
+           && skillCatalogDocsWithoutSourceRefs.length === 0,
+           `Usefulness Audit: skill catalog docs are source-backed keep docs (${skillCatalogDocs.length} docs, prove=${skillCatalogProveDocs.length}, missingSources=${skillCatalogDocsWithoutSourceRefs.length})`);
+    assert(usefulnessDocs["docs/specs/skill-catalog/claude-skill-group/skill-def-context.spec.md"]?.verdict === "keep"
+           && usefulnessDocs["docs/specs/skill-catalog/claude-skill-group/skill-def-context.spec.md"]?.sourceRefs === 1,
+           "Usefulness Audit: repo-local skill sources count as source evidence");
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

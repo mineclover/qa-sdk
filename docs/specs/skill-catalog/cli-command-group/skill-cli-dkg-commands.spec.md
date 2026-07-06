@@ -14,6 +14,11 @@ def:
       type: refines
     - target: dkg-skill-group
       type: depends_on
+  sources:
+    - packages/cli/src/commands/dkg.ts
+    - packages/dkg/src/store/dkg-sqlite-store.ts
+    - packages/dkg/src/db/schema.ts
+
 ---
 
 

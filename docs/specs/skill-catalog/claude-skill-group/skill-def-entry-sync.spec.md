@@ -13,6 +13,9 @@ def:
       type: refines
     - target: skill-catalog-system
       type: depends_on
+  sources:
+    - skills/def-entry-sync/SKILL.md
+
 ---
 
 # Skill — def-entry-sync

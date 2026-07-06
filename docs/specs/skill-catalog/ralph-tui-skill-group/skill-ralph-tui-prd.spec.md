@@ -15,6 +15,9 @@ def:
       type: traces_to
     - target: skill-ralph-tui-create-beads
       type: traces_to
+  sources:
+    - skills/ralph-tui-prd/SKILL.md
+
 ---
 
 

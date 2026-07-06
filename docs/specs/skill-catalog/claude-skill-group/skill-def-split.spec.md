@@ -16,6 +16,9 @@ def:
       type: depends_on
     - target: skill-def-link
       type: depends_on
+  sources:
+    - skills/def-split/SKILL.md
+
 ---
 
 

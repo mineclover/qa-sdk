@@ -14,6 +14,9 @@ def:
       type: refines
     - target: skill-cli-dkg-commands
       type: depends_on
+  sources:
+    - packages/cli/src/commands/flow.ts
+
 ---
 
 

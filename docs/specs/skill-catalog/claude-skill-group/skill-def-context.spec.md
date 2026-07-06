@@ -16,6 +16,9 @@ def:
       type: traces_to
     - target: skill-def-topdown
       type: traces_to
+  sources:
+    - skills/def-context/SKILL.md
+
 ---
 
 
