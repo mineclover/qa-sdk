@@ -13,6 +13,20 @@ def:
   links:
     - target: ingest-infra-system
       type: refines
+  sources:
+    - packages/ingest-server/src/server.ts
+    - packages/ingest-server/src/worker.ts
+    - packages/ingest-server/src/config/env.ts
+    - packages/ingest-server/src/stores/store-factory.ts
+    - packages/ingest-server/src/lib/graceful-shutdown.ts
+    - packages/ingest-server/src/lib/worker-shutdown.ts
+    - packages/ingest-server/src/lib/runtime-mode.ts
+    - packages/ingest-server/src/lib/cleanup-scheduler.ts
+    - packages/ingest-server/src/lib/metrics-collector.ts
+    - packages/ingest-server/src/graceful-shutdown.test.ts
+    - packages/ingest-server/src/lib/runtime-mode.test.ts
+    - packages/ingest-server/src/lib/worker-shutdown.test.ts
+    - packages/ingest-server/src/lib/cleanup-scheduler.test.ts
 ---
 
 # Ingest 런타임 운영 절차
@@ -67,23 +81,29 @@ SIGTERM/SIGINT 수신
 
 ## Store Driver 선택
 
-두 가지 경로로 저장소를 결정한다.
+두 가지 경로로 저장소를 결정한다. 현재 운영 부팅 경로(`server.ts`)와 재사용 팩토리(`stores/store-factory.ts`)는 완전히 동일하지 않으므로 문서에서 분리해 추적한다.
 
 ### 경로 1: server.ts 직접 분기 (현행)
 
-`server.ts`의 `createRuntimeStores()`가 `TRACE_DATABASE_URL` 유무로 분기:
+`server.ts`의 `createRuntimeStores()`는 `STORE_DRIVER=pg`만 PostgreSQL 경로로 보낸다. 나머지 driver 값은 SQLite/D1-style 로컬 저장소를 우선 시도하고 실패 시 InMemory로 fallback한다.
 
 | 조건 | 저장소 구성 | 용도 |
 |------|-----------|------|
-| `TRACE_DATABASE_URL` 미설정 | 전체 `InMemory*Store` (8종) | 개발/데모 |
-| `TRACE_DATABASE_URL` 설정 | `createDb()` + 전체 `Drizzle*Store` (8종) | 운영 (PostgreSQL) |
+| `STORE_DRIVER=pg` + `TRACE_DATABASE_URL` 설정 | `createDb()` + `Drizzle*Store` (8종) | 운영 (PostgreSQL) |
+| `STORE_DRIVER!=pg` | `NodeSqliteDriver` + D1 core stores 4종, support stores InMemory | 개발/데모 및 SQLite 로컬 실행 |
+| SQLite/D1 초기화 실패 | 전체 `InMemory*Store` (8종) | fallback |
 
 **pg 모드 Store 구성:**
 - `DrizzleDlqStore`, `DrizzleGraphStore`, `DrizzleRecordStore`
 - `DrizzleScenarioSpecStore`, `DrizzleSessionStore`, `DrizzleTraceStore`
 - `DrizzleTransmissionStore`, `DrizzleVerdictStore`
 
-**memory 모드:** 동일 인터페이스의 `InMemory*Store` 사용 (DB 없이 동작).
+**non-pg 직접 부팅 구성:**
+- `D1RecordStore`, `D1TraceStore`, `D1SessionStore`, `D1VerdictStore`
+- `InMemoryDlqStore`, `InMemoryGraphStore`, `InMemoryScenarioSpecStore`, `InMemoryTransmissionStore`
+- `keyObservationStore`는 `server.ts` 직접 부팅 경로에 아직 연결되지 않았다.
+
+**fallback 모드:** 동일 인터페이스의 `InMemory*Store` 사용 (DB 없이 동작).
 
 ### 경로 2: store-factory.ts (STORE_DRIVER)
 
@@ -91,12 +111,12 @@ SIGTERM/SIGINT 수신
 
 | 드라이버 | 저장소 구성 | 비고 |
 |---------|-----------|------|
-| `memory` (기본) | 전체 InMemory (8종) | dynamic import, DB 없이 동작 |
-| `pg` | Drizzle + PostgreSQL (8종) | `TRACE_DATABASE_URL` 필수 |
-| `d1` | D1/SQLite core 4종 + 나머지 InMemory | Record, Trace, Session, Verdict만 D1 |
+| `memory` (기본) | InMemory store set | dynamic import, DB 없이 동작 |
+| `sqlite`/`d1` | D1/SQLite store set 9포트 | `d1`은 `sqlite` alias |
+| `pg` | PostgreSQL store set 9포트 | `TRACE_DATABASE_URL` 필수. Record/KeyObservation은 ingest-server PG adapter, 나머지는 `@qa-sdk/store` Drizzle |
 | `clickhouse` | ClickHouse RecordStore + 나머지 InMemory | runtime write path는 RecordStore만 ClickHouse. OLAP 조회는 별도 `ClickHouseAnalyticsStore` |
 
-**D1 모드 store 매핑:**
+**D1/SQLite 팩토리 store 매핑:**
 
 | Store | 구현 | 비고 |
 |-------|------|------|
@@ -104,12 +124,13 @@ SIGTERM/SIGINT 수신
 | `TraceStore` | `D1TraceStore` | SQL DDL 기반 |
 | `SessionStore` | `D1SessionStore` | SQL DDL 기반 |
 | `VerdictStore` | `D1VerdictStore` | SQL DDL 기반 |
-| `TransmissionStore` | `InMemoryTransmissionStore` | D1 구현 후순위 |
-| `GraphStore` | `InMemoryGraphStore` | D1 구현 후순위 |
-| `ScenarioSpecStore` | `InMemoryScenarioSpecStore` | D1 구현 후순위 |
-| `DlqStore` | `InMemoryDlqStore` | D1 구현 후순위 |
+| `KeyObservationStore` | `D1KeyObservationStore` | version/address 복합키 |
+| `TransmissionStore` | `D1TransmissionStore` | SQL DDL 기반 |
+| `GraphStore` | `D1GraphStore` | SQL DDL 기반 |
+| `ScenarioSpecStore` | `D1ScenarioSpecStore` | SQL DDL 기반 |
+| `DlqStore` | `D1DlqStore` | SQL DDL 기반 |
 
-**ClickHouse 모드:** runtime store set은 `ClickhouseRecordStore`만 사용하고, 나머지 7종은 InMemory다. OLAP 조회는 runtime CRUD 포트가 아니라 `ClickHouseAnalyticsStore`를 별도 주입해 사용한다.
+**ClickHouse 팩토리 모드:** runtime store set은 `ClickhouseRecordStore`만 사용하고, 나머지 support stores는 InMemory다. OLAP 조회는 runtime CRUD 포트가 아니라 `ClickHouseAnalyticsStore`를 별도 주입해 사용한다. `server.ts` 직접 부팅 경로에는 ClickHouse wiring이 아직 없다.
 
 ### 트랜잭션 경계
 
@@ -154,9 +175,10 @@ SIGTERM/SIGINT 수신
 
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
-| `STORE_DRIVER` | `memory` | 저장소 드라이버 (`memory`/`pg`/`d1`/`clickhouse`) |
+| `STORE_DRIVER` | `memory` | 저장소 드라이버 (`memory`/`sqlite`/`pg`/`clickhouse`, `d1` alias) |
 | `TRACE_DATABASE_URL` | - | PostgreSQL URL (`STORE_DRIVER=pg` 시 필수) |
-| `SQLITE_PATH` | - | SQLite 경로 (`STORE_DRIVER=d1` 시 Node.js 로컬용) |
+| `QA_PG_SCHEMA` | `ingest` | PostgreSQL schema (`STORE_DRIVER=pg` 시) |
+| `SQLITE_PATH` | - | SQLite 경로 (`STORE_DRIVER=sqlite`/`d1` 시 Node.js 로컬용) |
 | `REDIS_URL` | - | Redis URL (`TASK_QUEUE_ENABLED=true` 시 필수) |
 | `PORT` | `3200` | 서비스 포트 |
 | `CORS_ORIGIN` | `*` | CORS 허용 origin |
@@ -175,6 +197,10 @@ SIGTERM/SIGINT 수신
 | `CONVERGENCE_DKG_SQLITE_PATH` | - | DKG SQLite 경로 |
 | `CONVERGENCE_SCHEDULE_INTERVAL_MS` | `300000` | convergence 스케줄 주기 (5분) |
 | `CONVERGENCE_REGISTRY_URL` | - | convergence용 registry URL |
+| `INSIGHTS_DRIVER` | `local` | 인사이트 저장소 드라이버 (`local`/`app-hub`) |
+| `APP_HUB_ENDPOINT` | - | App Hub endpoint (`INSIGHTS_DRIVER=app-hub` 시 필수) |
+| `APP_HUB_PROJECT_ID` | - | App Hub project ID (`INSIGHTS_DRIVER=app-hub` 시 필수) |
+| `APP_HUB_CREDENTIAL` | - | App Hub credential |
 | `CATALOG_ID` | `demo` | catalog ID |
 | `PATTERN_CLASSIFICATION_ENABLED` | `false` | 패턴 분류 활성화 |
 | `DECODE_SERVICE_URL` | - | decode-service URL (Phase 2 주소 디코딩) |

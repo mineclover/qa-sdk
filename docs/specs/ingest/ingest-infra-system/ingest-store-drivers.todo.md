@@ -10,6 +10,12 @@ def:
   links:
     - target: ingest-runtime-operations
       type: traces_to
+  sources:
+    - packages/ingest-server/src/stores/app-hub-insights-store.ts
+    - packages/ingest-server/src/stores/store-factory.ts
+    - packages/ingest-server/src/stores/clickhouse-record-store.ts
+    - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
+    - packages/ingest-server/src/config/env.ts
 ---
 
 # Ingest Store Drivers — 구현 TODO
@@ -31,16 +37,17 @@ infra-engine이 주력 인프라 관측 파이프라인. App Hub은 현재 미�
 - [ ] `APP_HUB_ENDPOINT`, `APP_HUB_PROJECT_ID`, `APP_HUB_CREDENTIAL` 환경변수 연동
 - [ ] App Hub SDK/API 클라이언트 구현
 
-## ClickHouse Adapter — 미구현
+## ClickHouse Adapter — 부분 구현
 
-코드: `packages/ingest-server/src/stores/store-factory.ts`
+코드: `packages/ingest-server/src/stores/store-factory.ts`, `packages/ingest-server/src/stores/clickhouse-record-store.ts`
 
-- [ ] ClickHouse RecordStore 외 나머지 store 구현
-- [ ] `CLICKHOUSE_URL` 기반 연결 관리
+- [x] ClickHouse `RecordStore` 구현 (`ClickhouseRecordStore`)
 - [x] 대량 분석 쿼리 포트 분리 (`ClickHouseAnalyticsStore`: time series/top keys/distribution/key observations/trace stats)
+- [ ] ClickHouse RecordStore 외 나머지 CRUD store 구현 여부 재판정
+- [ ] `CLICKHOUSE_URL` 기반 연결 관리와 `server.ts` 직접 부팅 경로 wiring
 
 ## 비고
 
 - App Hub은 운영 모드(`INSIGHTS_DRIVER=app-hub`) 전환 시 필요
-- ClickHouse는 대량 분석용 — 현재 local SQLite + D1으로 운영 가능
+- ClickHouse는 대량 분석용 — 현재 local SQLite/D1 또는 PostgreSQL으로 운영 가능
 - 둘 다 fail-open 원칙 적용 (insights 실패가 ingest 차단 금지)

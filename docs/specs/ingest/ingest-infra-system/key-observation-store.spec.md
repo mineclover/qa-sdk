@@ -14,18 +14,31 @@ def:
       type: refines
     - target: ingest-runtime-operations
       type: depends_on
+  sources:
+    - packages/core/src/ports/key-observation-store.port.ts
+    - packages/ingest-server/src/lib/extract-key-observations.ts
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/db/schema.ts
+    - packages/ingest-server/src/stores/d1-key-observation-store.ts
+    - packages/ingest-server/src/stores/d1-key-observation-store.test.ts
+    - packages/ingest-server/src/stores/d1-key-observation-store.versioned.test.ts
+    - packages/ingest-server/src/stores/pg/schema.ts
+    - packages/ingest-server/src/stores/pg/key-observation.adapter.ts
+    - packages/ingest-server/src/stores/pg/key-observation.adapter.test.ts
+    - packages/ingest-server/src/__tests__/cross-adapter/shared/key-observation-store.shared.ts
+    - packages/ingest-server/src/routes/ingest.test.ts
 ---
 
 # Key Observation Store
 
 ## 목적 ^purpose
 
-packed_key(좌표 인코딩 결과)의 관측 빈도·시점·페이로드 요약을 영속 추적하여, 설계한 좌표 공간과 실제 관측된 좌표 공간의 gap을 파악한다.
+packed_key(좌표 인코딩 결과)의 관측 빈도·시점·페이로드 요약을 영속 추적하고, 저장 시 version/address를 1급 컬럼으로 분리해 설계한 좌표 공간과 실제 관측된 좌표 공간의 gap을 파악한다.
 
 ## 구성 ^overview
 
-- **key_observations 테이블** — packed_key 단위 관측 기록 (count, first_seen, last_seen, payload_summary, registered).
-- **key_observation_prefixes 테이블** — prefix 레벨 집계 (distinct_keys, total_count).
+- **key_observations 테이블** — `(prefix_id, version, address)` 단위 관측 기록 (packed_key, count, first_seen, last_seen, payload_summary, registered).
+- **key_observation_prefixes 테이블** — `(prefix_id, version)` 레벨 집계 (distinct_keys, total_count).
 - **Ingest-time upsert** — RecordStore.insertBatch() 성공 후 fail-open으로 observeBatch() 호출.
 - **extractKeyObservations 헬퍼** — RecordInsert[]에서 addressContext 기반 KeyObservationEntry[] 추출.
 
@@ -45,25 +58,31 @@ packed_key(좌표 인코딩 결과)의 관측 빈도·시점·페이로드 요�
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
-| packed_key | TEXT PK | 인코딩된 좌표 주소 |
 | prefix_id | TEXT NOT NULL | packed_key에서 추출한 prefix 식별자 |
+| version | TEXT NOT NULL | packed_key에서 추출한 catalog/schema version |
+| address | INTEGER NOT NULL | packed_key에서 추출한 정수 주소 |
+| packed_key | TEXT NOT NULL | 원본 인코딩 좌표 주소 (secondary index) |
 | registered | INTEGER DEFAULT 0 | 레지스트리 등록 여부 (0=미등록, 1=등록) |
 | count | INTEGER DEFAULT 1 | 관측 횟수 |
 | first_seen | TEXT NOT NULL | 최초 관측 시점 (ISO-8601) |
 | last_seen | TEXT NOT NULL | 최근 관측 시점 (ISO-8601) |
 | payload_summary | TEXT DEFAULT '{}' | JSON: { fieldFrequency, sampleValues } |
 
-인덱스: prefix_id, last_seen, count DESC, registered.
+PK: `(prefix_id, version, address)`.
+인덱스: packed_key, `(prefix_id, version)`, last_seen, count, registered.
 
 ### key_observation_prefixes
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
-| prefix_id | TEXT PK | prefix 식별자 |
+| prefix_id | TEXT NOT NULL | prefix 식별자 |
+| version | TEXT NOT NULL | catalog/schema version |
 | distinct_keys | INTEGER DEFAULT 1 | 관측된 고유 좌표 수 |
 | total_count | INTEGER DEFAULT 0 | 총 관측 횟수 |
 | first_seen | TEXT NOT NULL | 최초 관측 시점 |
 | last_seen | TEXT NOT NULL | 최근 관측 시점 |
+
+PK: `(prefix_id, version)`.
 
 ### PayloadSummary 구조
 
@@ -77,6 +96,38 @@ interface PayloadSummary {
 ## 포트 인터페이스 ^method
 
 ```typescript
+interface KeyObservationEntry {
+  packedKey: string;
+  prefixId: string;
+  version?: string;
+  address?: number;
+  registered: boolean;
+  timestamp: string;
+  payloadFields?: string[];
+  samplePayload?: Record<string, unknown>;
+}
+
+interface KeyObservation {
+  packedKey: string;
+  prefixId: string;
+  version: string;
+  address: number;
+  registered: boolean;
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+  payloadSummary: PayloadSummary;
+}
+
+interface PrefixObservationSummary {
+  prefixId: string;
+  version: string;
+  distinctKeys: number;
+  totalCount: number;
+  firstSeen: string;
+  lastSeen: string;
+}
+
 interface KeyObservationStore {
   observe(entry: KeyObservationEntry): Promise<void>;
   observeBatch(entries: readonly KeyObservationEntry[]): Promise<void>;
@@ -107,17 +158,20 @@ RecordInsert[]
 
 | 드라이버 | 상태 | 파일 |
 |---------|:---:|------|
-| D1/SQLite | 완료 | `ingest-server/src/stores/d1-key-observation-store.ts` |
-| Drizzle/PG | 미구현 | StoreSet에서 optional, D1과 동일 Drizzle ORM |
-| ClickHouse | DDL + 분석 조회 | `clickhouse-schema.sql.ts`, `ClickHouseAnalyticsStore.queryKeyObservations()` |
+| D1/SQLite | 완료 | `packages/ingest-server/src/stores/d1-key-observation-store.ts` |
+| PostgreSQL | 완료 | `packages/ingest-server/src/stores/pg/key-observation.adapter.ts` |
+| ClickHouse | DDL + 분석 조회 | `packages/ingest-server/src/stores/clickhouse-schema.sql.ts`, `ClickHouseAnalyticsStore.queryKeyObservations()` |
 
 ## 테스트
 
 | 대상 | 파일 | 케이스 |
 |------|------|:---:|
-| D1 Store | `ingest-server/src/stores/d1-stores.test.ts` | 8 |
-| extractKeyObservations | `ingest-server/src/lib/extract-key-observations.test.ts` | 4 |
-| fail-open 통합 | `ingest-server/src/routes/ingest.test.ts` | 1 |
+| D1 Store | `packages/ingest-server/src/stores/d1-key-observation-store.test.ts` | 8 |
+| D1 version/address | `packages/ingest-server/src/stores/d1-key-observation-store.versioned.test.ts` | 6 |
+| PG Store | `packages/ingest-server/src/stores/pg/key-observation.adapter.test.ts` | 5 |
+| 교차 어댑터 shared | `packages/ingest-server/src/__tests__/cross-adapter/shared/key-observation-store.shared.ts` | 6 |
+| extractKeyObservations | `packages/ingest-server/src/lib/extract-key-observations.test.ts` | 4 |
+| fail-open 통합 | `packages/ingest-server/src/routes/ingest.test.ts` | 1 |
 
 검증 항목: observe 라운드트립, count 누적, batch 처리, summary 집계, stale 탐지, drift 감지, prefix 집계, orderBy, registered 판정, payload 샘플 최대 5 필드, observeBatch 실패 시 ingest 정상 진행.
 
@@ -127,4 +181,4 @@ RecordInsert[]
 - **summary() SQL 집계**: 전건 로드 대신 COUNT/SUM으로 메모리 안전 보장.
 - **payloadSummary merge**: 덮어쓰기가 아닌 누적 merge로 fieldFrequency 정확도 유지.
 - **findStale limit**: 기본 500건. 무제한 반환 방지.
-- **2테이블 분리**: 좌표 단위(key_observations)와 prefix 집계(key_observation_prefixes)를 분리하여 쿼리 최적화. capacity planning은 prefix 테이블만 조회.
+- **2테이블 분리**: 좌표 단위(key_observations)와 prefix/version 집계(key_observation_prefixes)를 분리하여 쿼리 최적화. capacity planning은 prefix 테이블만 조회.

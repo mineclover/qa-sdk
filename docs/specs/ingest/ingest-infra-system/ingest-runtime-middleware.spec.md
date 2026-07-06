@@ -15,6 +15,16 @@ def:
       type: refines
     - target: ingest-api-system
       type: constrains
+  sources:
+    - packages/ingest-server/src/app.ts
+    - packages/ingest-server/src/middleware/rate-limit.ts
+    - packages/ingest-server/src/middleware/request-id.ts
+    - packages/ingest-server/src/middleware/shutdown.ts
+    - packages/ingest-server/src/middleware/error-handler.ts
+    - packages/ingest-server/src/routes/health.ts
+    - packages/ingest-server/src/app.test.ts
+    - packages/ingest-server/src/routes/health.test.ts
+    - packages/ingest-server/src/graceful-shutdown.test.ts
 ---
 
 # Ingest 런타임 미들웨어
@@ -97,6 +107,6 @@ IP 기반 슬라이딩 윈도우 방식의 요청 제한:
 
 `appLifecycle.beginShutdown()` 호출 후:
 
-- 새 요청은 503 `{ error: "server shutting down" }` 응답
+- 새 요청은 503 `{ error: { code: "SERVER_SHUTTING_DOWN", message: "server is shutting down" } }` 응답
 - 진행 중인 요청은 완료까지 허용
 - SSE 연결은 `streamConnectionRegistry.shutdown("server_shutdown")`으로 정리

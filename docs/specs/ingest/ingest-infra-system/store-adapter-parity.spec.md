@@ -12,6 +12,27 @@ def:
   links:
     - target: ingest-system
       type: depends_on
+  sources:
+    - packages/core/src/ports/record-store.port.ts
+    - packages/core/src/ports/trace-store.port.ts
+    - packages/core/src/ports/session-store.port.ts
+    - packages/core/src/ports/verdict-store.port.ts
+    - packages/core/src/ports/graph-store.port.ts
+    - packages/core/src/ports/scenario-spec-store.port.ts
+    - packages/core/src/ports/transmission-store.port.ts
+    - packages/core/src/ports/dlq-store.port.ts
+    - packages/core/src/ports/key-observation-store.port.ts
+    - packages/ingest-server/src/stores/store-factory.ts
+    - packages/ingest-server/src/stores/d1-record-store.ts
+    - packages/ingest-server/src/stores/d1-key-observation-store.ts
+    - packages/ingest-server/src/stores/pg/event-record.adapter.ts
+    - packages/ingest-server/src/stores/pg/key-observation.adapter.ts
+    - packages/ingest-server/src/stores/clickhouse-record-store.ts
+    - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.d1.test.ts
+    - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.pg.test.ts
+    - packages/ingest-server/src/__tests__/cross-adapter/factories/pg.factory.ts
+    - packages/ingest-server/src/__tests__/cross-adapter/shared/record-store.shared.ts
+    - packages/ingest-server/src/__tests__/cross-adapter/shared/key-observation-store.shared.ts
 ---
 
 # Store Adapter Parity
@@ -24,24 +45,24 @@ D1(SQLite)과 PostgreSQL 두 드라이버에서 동일한 Store 포트 인터페
 
 - **9 Store 포트** — @qa-sdk/core에 정의된 인터페이스. 드라이버 무관.
 - **D1 어댑터 9종** — ingest-server/stores/d1-*.ts. SQLite + Drizzle ORM.
-- **PG 어댑터 9종** — store/adapters/drizzle/*.adapter.ts. PostgreSQL + Drizzle ORM.
-- **교차 테스트 31 케이스** — 동일 테스트를 D1/PG 양쪽에서 실행.
+- **PG 어댑터 9종** — Record/KeyObservation은 ingest-server/stores/pg, 나머지 7종은 @qa-sdk/store Drizzle adapter. PostgreSQL + Drizzle ORM.
+- **교차 테스트 46 shared 케이스** — 동일 테스트를 D1/PG 양쪽에서 실행.
 - **ClickHouse** — DDL 11 테이블 + RecordStore + OLAP 전용 `ClickHouseAnalyticsStore`. CRUD 포트와 분석 포트를 분리.
 
 ## Store 포트 × 드라이버 매트릭스 ^defines
 
 | Store 포트 | 포트 파일 | D1 어댑터 | PG 어댑터 | 교차 테스트 |
 |-----------|----------|----------|----------|:---:|
-| RecordStore | `core/ports/record-store.port.ts` | `d1-record-store.ts` | `record.adapter.ts` | 5 |
-| TraceStore | `core/ports/trace-store.port.ts` | `d1-trace-store.ts` | `trace.adapter.ts` | 4 |
-| SessionStore | `core/ports/session-store.port.ts` | `d1-session-store.ts` | `session.adapter.ts` | 4 |
-| VerdictStore | `core/ports/verdict-store.port.ts` | `d1-verdict-store.ts` | `verdict.adapter.ts` | 3 |
-| GraphStore | `core/ports/graph-store.port.ts` | `d1-graph-store.ts` | `graph.adapter.ts` | 3 |
-| ScenarioSpecStore | `core/ports/scenario-spec-store.port.ts` | `d1-scenario-spec-store.ts` | `scenario-spec.adapter.ts` | 4 |
-| TransmissionStore | `core/ports/transmission-store.port.ts` | `d1-transmission-store.ts` | `transmission.adapter.ts` | 1 |
-| DlqStore | `core/ports/dlq-store.port.ts` | `d1-dlq-store.ts` | `dlq.adapter.ts` | 3 |
-| KeyObservationStore | `core/ports/key-observation-store.port.ts` | `d1-key-observation-store.ts` | `key-observation.adapter.ts` | 4 |
-| **합계** | 9 포트 | 9 어댑터 | 9 어댑터 | **31** |
+| RecordStore | `core/ports/record-store.port.ts` | `d1-record-store.ts` | `ingest-server/stores/pg/event-record.adapter.ts` | 9 |
+| TraceStore | `core/ports/trace-store.port.ts` | `d1-trace-store.ts` | `@qa-sdk/store` `DrizzleTraceStore` | 6 |
+| SessionStore | `core/ports/session-store.port.ts` | `d1-session-store.ts` | `@qa-sdk/store` `DrizzleSessionStore` | 4 |
+| VerdictStore | `core/ports/verdict-store.port.ts` | `d1-verdict-store.ts` | `@qa-sdk/store` `DrizzleVerdictStore` | 4 |
+| GraphStore | `core/ports/graph-store.port.ts` | `d1-graph-store.ts` | `@qa-sdk/store` `DrizzleGraphStore` | 4 |
+| ScenarioSpecStore | `core/ports/scenario-spec-store.port.ts` | `d1-scenario-spec-store.ts` | `@qa-sdk/store` `DrizzleScenarioSpecStore` | 6 |
+| TransmissionStore | `core/ports/transmission-store.port.ts` | `d1-transmission-store.ts` | `@qa-sdk/store` `DrizzleTransmissionStore` | 2 |
+| DlqStore | `core/ports/dlq-store.port.ts` | `d1-dlq-store.ts` | `@qa-sdk/store` `DrizzleDlqStore` | 5 |
+| KeyObservationStore | `core/ports/key-observation-store.port.ts` | `d1-key-observation-store.ts` | `ingest-server/stores/pg/key-observation.adapter.ts` | 6 |
+| **합계** | 9 포트 | 9 어댑터 | 9 어댑터 | **46** |
 
 ## 포트별 인터페이스 요약 ^method
 
@@ -203,7 +224,7 @@ ClickHouse는 OLAP 분석 전용이다. CRUD 포트와 분리된 `AnalyticsStore
 ## store-factory 드라이버 선택 ^delegates
 
 ```typescript
-type StoreDriver = "memory" | "pg" | "d1" | "clickhouse";
+type StoreDriver = "memory" | "sqlite" | "pg" | "d1" | "clickhouse";
 ```
 
 `STORE_DRIVER` 환경변수로 선택. 각 드라이버별 `createXxxStores()` 팩토리가 StoreSet을 반환.
@@ -211,6 +232,6 @@ type StoreDriver = "memory" | "pg" | "d1" | "clickhouse";
 | 드라이버 | 9 포트 커버리지 | 비고 |
 |---------|:---:|------|
 | memory | 9/9 | InMemory 어댑터 (dev/test) |
-| d1 | 9/9 | D1/SQLite (CF Workers, 경량 배포) |
-| pg | 9/9 | PostgreSQL (운영) |
-| clickhouse | 1/9 | RecordStore만 (OLAP 전용) |
+| sqlite/d1 | 9/9 | D1/SQLite (CF Workers, 경량 배포). `d1`은 alias |
+| pg | 9/9 | PostgreSQL. Record/KeyObservation은 ingest-server PG adapter, 나머지는 @qa-sdk/store Drizzle |
+| clickhouse | 1/9 | RecordStore만 ClickHouse, support stores는 InMemory. OLAP 조회는 `ClickHouseAnalyticsStore` |
