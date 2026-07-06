@@ -17,6 +17,12 @@ def:
       type: depends_on
     - target: dkg-edge-types
       type: depends_on
+sources:
+  - packages/dkg/src/skills/infer-migrator.ts
+  - packages/dkg/src/resolve.ts
+  - packages/dkg/src/skills/analyze-impact.ts
+  - packages/dkg/src/dkg.test.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # inferMigrator — 마이그레이션 추론
 
@@ -37,7 +43,7 @@ dkg-system > dkg-skills-system > **dkg-skill-migrator**
 
 ## 입력 타입
 
-소스 위치: `packages/spec-core/src/dkg/skills/infer-migrator.ts`
+소스 위치: `packages/dkg/src/skills/infer-migrator.ts`
 
 ```typescript
 interface DiffInfo {
@@ -130,7 +136,7 @@ type MigratorPattern =
 
 ## resolve 기반 마이그레이션
 
-소스 위치: `packages/spec-core/src/dkg/resolve.ts`
+소스 위치: `packages/dkg/src/resolve.ts`
 
 좌표 시스템의 문자열이 영구 고정이므로, `resolve()` 함수가 decode → re-encode 전략으로 항상 마이그레이션 가능.
 

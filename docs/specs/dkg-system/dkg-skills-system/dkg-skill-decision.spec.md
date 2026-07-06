@@ -15,6 +15,15 @@ def:
       type: depends_on
     - target: dkg-node-types
       type: depends_on
+sources:
+  - packages/dkg/src/decision-scaffold.ts
+  - packages/dkg/src/skills/decision-scaffold.ts
+  - packages/dkg/src/skills/skill-chain.ts
+  - packages/dkg/src/skills/record-operation.ts
+  - packages/dkg/src/skills/converge-chain.ts
+  - packages/dkg/src/dkg.test.ts
+  - packages/dkg/src/skills/record-operation.test.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # Decision.scaffold — 의사결정 템플릿
 
@@ -35,7 +44,7 @@ dkg-system > dkg-skills-system > **dkg-skill-decision**
 
 ## 입력 타입
 
-소스 위치: `packages/spec-core/src/shared/decision-scaffold.ts`
+소스 위치: `packages/dkg/src/decision-scaffold.ts`
 
 ```typescript
 interface ScaffoldInput {

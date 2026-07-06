@@ -17,6 +17,17 @@ def:
       type: depends_on
     - target: dkg-edge-types
       type: depends_on
+sources:
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/graph-registry.ts
+  - packages/dkg/src/skills/analyze-impact.ts
+  - packages/dkg/src/skills/constraint-check.ts
+  - packages/dkg/src/skills/safe-entry-add.ts
+  - packages/dkg/src/skills/skill-chain.ts
+  - packages/dkg/src/skills/converge-chain.ts
+  - packages/dkg/src/dkg.test.ts
+  - packages/dkg/src/skills/skills-suite.test.ts
+  - packages/dkg/src/skills/converge-chain.test.ts
 ---
 # analyzeImpact — 종단 Cascade
 
@@ -37,7 +48,7 @@ DKG 그래프에서 특정 노드 변경의 영향을 종단까지 추적하는 
 
 ## 입력 타입
 
-소스 위치: `packages/spec-core/src/dkg/dkg.types.ts`
+소스 위치: `packages/dkg/src/dkg.types.ts`
 
 ```typescript
 interface ImpactAnalysisInput {
@@ -56,7 +67,7 @@ interface ImpactAnalysisInput {
 
 ## 분석 파이프라인
 
-소스 위치: `packages/spec-core/src/dkg/skills/analyze-impact.ts`
+소스 위치: `packages/dkg/src/skills/analyze-impact.ts`
 
 ### 1단계: Axis Cascade
 

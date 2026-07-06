@@ -14,6 +14,13 @@ def:
       type: refines
     - target: dkg-node-types
       type: depends_on
+sources:
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/bootstrap-types.ts
+  - packages/dkg/src/bootstrap.ts
+  - packages/demo-dkg-config/src/index.ts
+  - packages/dkg/src/skills/trace.ts
+  - packages/dkg/src/skills/service-explorer.ts
 ---
 # Skill 타입 정의
 
@@ -30,7 +37,7 @@ SkillNode 타입, 4개 카테고리, 전문화(Specialization) 메커니즘, DKG
 
 ## SkillNode 타입
 
-소스 위치: `packages/spec-core/src/dkg/dkg.types.ts`
+소스 위치: `packages/dkg/src/dkg.types.ts`
 
 ```typescript
 interface SkillNode {

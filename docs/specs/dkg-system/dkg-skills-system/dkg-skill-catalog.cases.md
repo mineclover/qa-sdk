@@ -15,6 +15,14 @@ def:
       type: refines
     - target: dkg-system
       type: depends_on
+sources:
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/bootstrap.ts
+  - packages/demo-dkg-config/src/index.ts
+  - packages/dkg/src/skills/constraint-check.ts
+  - packages/dkg/src/skills/skills-suite.test.ts
+  - packages/dkg/src/skills/service-explorer.test.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 
 # DKG Skill 카탈로그 — 소비자 기대 시나리오

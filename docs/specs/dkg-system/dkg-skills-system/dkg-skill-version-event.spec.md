@@ -17,6 +17,13 @@ def:
       type: depends_on
     - target: dkg-edge-types
       type: depends_on
+sources:
+  - packages/dkg/src/skills/version-event-derive.ts
+  - packages/dkg/src/skills/lifecycle-transition.ts
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/dkg.test.ts
+  - packages/dkg/src/index.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # VersionEvent.fromDiff — 버전 이벤트 자동 파생
 
@@ -36,7 +43,7 @@ dkg-system > dkg-skills-system > **dkg-skill-version-event**
 DiffInput에서 VersionChange 목록을 파생하고, impact를 자동 판정하여 VersionEventNode를 생성한다. 5종 변경 분류와 4종 impact 판정으로 구성된다.
 
 ## 입력 타입
-소스 위치: `packages/spec-core/src/dkg/skills/version-event-derive.ts`
+소스 위치: `packages/dkg/src/skills/version-event-derive.ts`
 
 ```typescript
 interface DiffInput {
@@ -115,7 +122,7 @@ interface VersionChange {
 
 ## lifecycle-transition과의 관계
 
-소스 위치: `packages/spec-core/src/dkg/skills/lifecycle-transition.ts`
+소스 위치: `packages/dkg/src/skills/lifecycle-transition.ts`
 
 lifecycle 전이 시에도 VersionEventNode를 생성하여 이력을 기록한다.
 

@@ -21,6 +21,15 @@ def:
       type: contains
     - target: dkg-system
       type: depends_on
+sources:
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/bootstrap.ts
+  - packages/demo-dkg-config/src/index.ts
+  - packages/dkg/src/skills/trace.ts
+  - packages/dkg/src/skills/service-explorer.ts
+  - packages/dkg/src/skills/skill-chain.ts
+  - packages/spec-core/src/dkg/index.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # Skill 카탈로그
 

@@ -14,6 +14,27 @@ def:
       type: refines
     - target: dkg-skill-catalog-types
       type: depends_on
+sources:
+  - packages/demo-dkg-config/src/index.ts
+  - packages/dkg/src/index.ts
+  - packages/dkg/src/skills/analyze-impact.ts
+  - packages/dkg/src/skills/claim-operation.ts
+  - packages/dkg/src/skills/constraint-check.ts
+  - packages/dkg/src/skills/converge-chain.ts
+  - packages/dkg/src/skills/coverage-audit.ts
+  - packages/dkg/src/skills/domain-health.ts
+  - packages/dkg/src/skills/flow-trace.ts
+  - packages/dkg/src/skills/infer-migrator.ts
+  - packages/dkg/src/skills/lifecycle-transition.ts
+  - packages/dkg/src/skills/record-operation.ts
+  - packages/dkg/src/skills/safe-entry-add.ts
+  - packages/dkg/src/skills/service-explorer.ts
+  - packages/dkg/src/skills/service-skills.ts
+  - packages/dkg/src/skills/skill-chain.ts
+  - packages/dkg/src/skills/trace.ts
+  - packages/dkg/src/skills/version-event-derive.ts
+  - packages/dkg/src/skills/skills-suite.test.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # Skill 레지스트리 (39개)
 
@@ -28,9 +49,9 @@ dkg-system > dkg-skills-system > dkg-skill-catalog > **dkg-skill-catalog-registr
 
 DKG에 등록된 39개 skill의 전체 목록. 카테고리별 분류, CLI 연결 상태, 구현 소스 매핑.
 
-정의: `packages/demo-dkg-config` (`DEMO_DKG_CONFIG`)
-구현: `spec-core/src/dkg/skills/*.ts`
-CLI: `cli/src/commands/dkg.ts` dkgRun() switch
+정의: `packages/demo-dkg-config/src/index.ts` (`DEMO_DKG_CONFIG`)
+구현: `packages/dkg/src/skills/*.ts`
+CLI: `packages/cli/src/commands/dkg.ts` dkgRun() switch
 
 ## read (5개)
 

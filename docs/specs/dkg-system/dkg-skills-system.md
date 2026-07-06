@@ -21,6 +21,15 @@ def:
       type: contains
     - target: dkg-skill-catalog
       type: depends_on
+sources:
+  - packages/demo-dkg-config/src/index.ts
+  - packages/dkg/src/bootstrap.ts
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/index.ts
+  - packages/dkg/src/skills/skill-chain.ts
+  - packages/dkg/src/skills/converge-chain.ts
+  - packages/dkg/src/skills/skills-suite.test.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 
 # DKG Skills 시스템
