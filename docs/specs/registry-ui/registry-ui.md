@@ -12,6 +12,17 @@ def:
   links:
     - target: registry-service-modules
       type: refines
+sources:
+  - packages/registry-ui/package.json
+  - packages/registry-ui/README.md
+  - packages/registry-ui/index.html
+  - packages/registry-ui/src/main.ts
+  - packages/registry-ui/src/store.ts
+  - packages/registry-ui/src/pages/glossary.ts
+  - packages/registry-ui/src/pages/prefix-builder.ts
+  - packages/registry-ui/src/pages/dsl-builder.ts
+  - packages/registry-ui/scripts/static-smoke.test.mjs
+  - docs/specs/viz-system/registry-ui.spec.md
 ---
 # registry-ui
 
