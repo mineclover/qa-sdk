@@ -19,6 +19,13 @@ def:
       type: depends_on
     - target: ms-concept-verification-unit
       type: depends_on
+  sources:
+    - packages/core/src/meta-semantic/extraction.ts
+    - packages/core/src/meta-semantic/extraction.test.ts
+    - packages/core/src/meta-semantic/extraction-parser.ts
+    - packages/core/src/meta-semantic/extraction-pipeline.ts
+    - packages/core/src/meta-semantic/extraction-pipeline.test.ts
+    - packages/core/src/meta-semantic/extraction-prompts.ts
 ---
 
 # Meta-Semantic Extraction — LLM 기반 검증 단위 식별

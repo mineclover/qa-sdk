@@ -19,6 +19,11 @@ def:
       type: depends_on
     - target: definition-taxonomy
       type: refines
+  sources:
+    - packages/core/src/meta-semantic/source-annotations.ts
+    - packages/core/src/meta-semantic/source-annotations.test.ts
+    - packages/definition-catalog/src/vocabulary.ts
+    - packages/definition-catalog/src/scope-registry.ts
 ---
 
 # Meta-Semantic Scope — 검증 분류 체계

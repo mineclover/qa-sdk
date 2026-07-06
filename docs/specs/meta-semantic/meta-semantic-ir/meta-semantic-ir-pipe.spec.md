@@ -21,6 +21,14 @@ def:
       type: depends_on
     - target: ms-concept-pipe
       type: refines
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-types.test.ts
+    - packages/core/src/meta-semantic/ir-bridge.ts
+    - packages/core/src/meta-semantic/ir-bridge.test.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-validate.test.ts
+    - packages/core/src/meta-semantic/ir-scenario.test.ts
 ---
 
 # Meta-Semantic IR — PipeIR

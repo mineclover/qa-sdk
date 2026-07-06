@@ -49,6 +49,15 @@ def:
       type: traces_to
     - target: meta-semantic-philosophy
       type: refs
+  sources:
+    - packages/core/src/meta-semantic/index.ts
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-validate.test.ts
+    - packages/core/src/meta-semantic/extraction-pipeline.ts
+    - packages/core/src/meta-semantic/extraction-pipeline.test.ts
+    - packages/core/src/pipe/index.ts
+    - packages/core/src/pipe/meta-semantic-integration.test.ts
 ---
 
 # Meta-Semantic Architecture — 시공간 좌표 기반 의도 컴파일러

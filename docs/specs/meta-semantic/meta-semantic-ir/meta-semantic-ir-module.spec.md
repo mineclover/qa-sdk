@@ -21,6 +21,15 @@ def:
       type: depends_on
     - target: ms-concept-boundary
       type: refines
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-types.test.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-validate.test.ts
+    - packages/core/src/meta-semantic/ir-bridge.ts
+    - packages/core/src/meta-semantic/ir-bridge.test.ts
+    - packages/core/src/meta-semantic/ir-nesting-bridge.ts
+    - packages/core/src/meta-semantic/ir-nesting-bridge.test.ts
 ---
 
 # Meta-Semantic IR — ModuleIR

@@ -130,6 +130,23 @@ async function main() {
     assert(usefulnessDocs["docs/specs/skill-catalog/claude-skill-group/skill-def-context.spec.md"]?.verdict === "keep"
            && usefulnessDocs["docs/specs/skill-catalog/claude-skill-group/skill-def-context.spec.md"]?.sourceRefs === 1,
            "Usefulness Audit: repo-local skill sources count as source evidence");
+    const metaSemanticSourceBackedDocs = [
+      "docs/specs/meta-semantic/meta-semantic-system.spec.md",
+      "docs/specs/meta-semantic/meta-semantic-ir.spec.md",
+      "docs/specs/meta-semantic/meta-semantic-ir/meta-semantic-ir-data.spec.md",
+      "docs/specs/meta-semantic/meta-semantic-ir/meta-semantic-ir-module.spec.md",
+      "docs/specs/meta-semantic/meta-semantic-ir/meta-semantic-ir-pipe.spec.md",
+      "docs/specs/meta-semantic/meta-semantic-ir/meta-semantic-ir.rule.md",
+      "docs/specs/meta-semantic/meta-semantic-ir/meta-semantic-scope.spec.md",
+      "docs/specs/meta-semantic/meta-semantic-ir/meta-semantic-spacetime-uid.spec.md",
+      "docs/specs/meta-semantic/algorithm/meta-semantic-extraction.spec.md",
+      "docs/specs/meta-semantic/algorithm/meta-semantic-folding.spec.md",
+      "docs/specs/meta-semantic/algorithm/meta-semantic-execution-semantics.spec.md",
+    ];
+    const metaSemanticSourceBackedGaps = metaSemanticSourceBackedDocs
+      .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
+    assert(metaSemanticSourceBackedGaps.length === 0,
+           `Usefulness Audit: meta-semantic IR/execution docs are source-backed keep docs (${metaSemanticSourceBackedGaps.join(", ") || "ok"})`);
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

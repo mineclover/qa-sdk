@@ -17,6 +17,13 @@ def:
       type: depends_on
     - target: ms-concept-branch-path
       type: depends_on
+  sources:
+    - packages/core/src/pipe/pipe-fold.ts
+    - packages/core/src/pipe/pipe-fold.test.ts
+    - packages/core/src/pipe/pipe-zoom.ts
+    - packages/core/src/pipe/pipe-zoom-layout.test.ts
+    - packages/core/src/pipe/pipe-zoom-style.test.ts
+    - packages/core/src/pipe/pipe-zoom-view.test.ts
 ---
 
 # Semantic Folding — 검증 단위 식별의 핵심 메커니즘

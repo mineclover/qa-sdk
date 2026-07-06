@@ -17,6 +17,13 @@ def:
       type: refines
     - target: scope-nesting-system
       type: refs
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-validate.test.ts
+    - packages/core/src/meta-semantic/ir-rule-validation.test.ts
+    - packages/core/src/meta-semantic/ir-alignment.ts
+    - packages/core/src/meta-semantic/ir-alignment.test.ts
 ---
 
 # Meta-Semantic IR — 소비 규칙
