@@ -221,6 +221,28 @@ async function main() {
       .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
     assert(definitionManagementGaps.length === 0,
            `Usefulness Audit: definition management docs are source-backed keep docs (${definitionManagementGaps.join(", ") || "ok"})`);
+    const definitionMetadataDocs = [
+      "docs/specs/definition-catalog/definition-frontmatter-metadata-system.spec.md",
+      "docs/specs/definition-catalog/definition-frontmatter-metadata-system.cases.md",
+      "docs/specs/definition-catalog/definition-metadata-depth.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-id.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-intent-hierarchy.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-knowledge-kind.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-layer.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-lifecycle.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-links.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-owner-system.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-projection-plane.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-scope-aspect.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-source-map.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-tags.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-tier.spec.md",
+      "docs/specs/definition-catalog/definition-metadata-type.spec.md",
+    ];
+    const definitionMetadataGaps = definitionMetadataDocs
+      .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
+    assert(definitionMetadataGaps.length === 0,
+           `Usefulness Audit: definition metadata docs are source-backed keep docs (${definitionMetadataGaps.join(", ") || "ok"})`);
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

@@ -12,6 +12,12 @@ def:
   lifecycle: approved
   layer: operation
   tags: [structural, metadata, entry-point]
+  sources:
+    - packages/definition-catalog/src/types.ts
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/vocabulary.ts
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/frontmatter.test.ts
   links:
     - target: definition-management
       type: refines

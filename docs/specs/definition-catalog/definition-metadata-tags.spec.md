@@ -12,6 +12,10 @@ def:
   lifecycle: approved
   layer: operation
   tags: [metadata, structural, coordinate-cluster]
+  sources:
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
+    - packages/definition-catalog/src/tag-coverage.test.ts
   links:
     - target: definition-frontmatter-metadata-system
       type: refines

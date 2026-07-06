@@ -12,6 +12,11 @@ def:
   lifecycle: approved
   layer: operation
   tags: [scenario, testing, metadata]
+  sources:
+    - packages/definition-catalog/src/types.ts
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/frontmatter.test.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
   links:
     - target: definition-frontmatter-metadata-system
       type: refines
