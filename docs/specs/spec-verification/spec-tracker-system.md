@@ -21,6 +21,13 @@ def:
       type: contains
     - target: spec-tracker-vitest-adapter
       type: contains
+  sources:
+    - packages/spec-tracker/src/index.ts
+    - packages/spec-tracker/src/types.ts
+    - packages/spec-tracker/src/collector.ts
+    - packages/spec-tracker/src/reporter.ts
+    - packages/spec-tracker/src/vitest-adapter.ts
+    - packages/spec-tracker/src/spec-tracker.test.ts
 ---
 # Spec Tracker — 런타임 계약 수집기
 
@@ -33,7 +40,7 @@ def:
 - `spec-tracker-types`: ContractEvidence, ContractReport 등 핵심 타입
 - `spec-tracker-collector`: 테스트/런타임에서 증거를 수집하는 수집기
 - `spec-tracker-reporter`: 수집된 증거를 specId별로 집계하여 리포트 생성
-- `spec-tracker-vitest-adapter`: vitest describe/it에 specId를 연결하는 어댑터
+- `spec-tracker-vitest-adapter`: `linkSpec`/`specIt`와 legacy `spec()`로 vitest 테스트를 specId에 연결하는 어댑터
 
 ## 수집 흐름 ^flow-steps
 
@@ -91,5 +98,5 @@ describe("컨벤션 준수", () => {
 - spec-tracker는 순수 라이브러리 — DB/네트워크 직접 접근 없음
 - definition-service 동기화는 선택적 (CLI 또는 CI에서 호출)
 - 테스트 프레임워크 의존: vitest 어댑터만 제공 (확장 가능)
-- ContractEvidence는 불변 — 수집 후 변경 불가
+- ContractEvidence는 readonly 타입이며 collector는 추가/조회 중심으로 사용한다
 - specId는 definition-catalog에 존재하는 문서 ID여야 함 (존재 검증은 sync 시점)
