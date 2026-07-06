@@ -15,12 +15,17 @@ def:
       type: refines
     - target: decode-svc-data-model
       type: depends_on
+sources:
+  - packages/decode-service/src/routes/decode.ts
+  - packages/decode-service/src/lib/decoder-pool.ts
+  - packages/decode-service/src/schemas/decode.ts
+  - packages/decode-service/src/app.test.ts
 ---
 # Decode Service — 핵심 로직
 
 ## 목적 ^purpose
 
-디코딩 라우트 핸들러와 resolveDecoder 분기 로직을 정의한다. 모든 디코딩 연산은 DecoderPool에서 PrefixDecoder를 조회한 뒤, index-meta 라이브러리의 resolve/decode/decodeDeep을 호출하는 패턴이다.
+디코딩 라우트 핸들러와 resolveDecoder 분기 로직을 정의한다. 모든 디코딩 연산은 DecoderPool에서 PrefixDecoder 또는 PrefixDecoderBig을 조회한 뒤, index-meta 라이브러리의 resolve/decode/decodeDeep을 호출하는 패턴이다.
 
 ## 구성 ^overview
 
@@ -38,7 +43,10 @@ def:
 
 | 라우트 | 로직 | 반환 |
 |--------|------|------|
-| POST /decode | resolve(input) + decode(input) 병합 | { indexId, versionId, value, entities } |
+| POST /decode | L2 cache 조회 → resolve(input) + decode(input) 병합 → L2 cache 저장 | { indexId, versionId, value, entities } |
 | POST /decode/batch | inputs[] 순회, 각각 resolve+decode | { results: [...] } |
 | POST /decode/deep | decodeDeepDetailed(input) | { entities, refs, unresolved? } |
+| POST /decode/big | BigInt 문자열 파싱 + PrefixDecoderBig resolve/decode | { indexId, versionId, value, entities } |
+| POST /decode/big/batch | BigInt 문자열 배열 순회 decode | { results: [...] } |
+| POST /decode/big/deep | BigInt 문자열 파싱 + decodeDeepDetailed(input) | { entities, refs, unresolved? } |
 | GET /decode-map/:prefix/:version | decoder.toDecodeMap() | raw DecodeMap 번들 |

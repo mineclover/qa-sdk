@@ -7,6 +7,7 @@ import type { DecoderPool } from "../lib/decoder-pool.js";
 export interface MetricsRouteDeps {
   pool: DecoderPool;
   getUptimeSeconds?: () => number;
+  getMemoryUsage?: () => { heapUsed: number; rss: number };
 }
 
 function gauge(
@@ -30,7 +31,8 @@ function gauge(
 
 export function createMetricsRoutes(deps: MetricsRouteDeps) {
   const routes = new Hono();
-  const getUptimeSeconds = deps.getUptimeSeconds ?? (() => process.uptime());
+  const getUptimeSeconds = deps.getUptimeSeconds ?? getRuntimeUptimeSeconds;
+  const getMemoryUsage = deps.getMemoryUsage ?? getRuntimeMemoryUsage;
 
   routes.get("/metrics", (c) => {
     const lines: string[] = [];
@@ -44,7 +46,7 @@ export function createMetricsRoutes(deps: MetricsRouteDeps) {
       ),
     );
 
-    const mem = process.memoryUsage();
+    const mem = getMemoryUsage();
     lines.push(
       ...gauge("process_heap_used_bytes", mem.heapUsed, "Process heap used bytes"),
     );
@@ -67,4 +69,16 @@ export function createMetricsRoutes(deps: MetricsRouteDeps) {
   });
 
   return routes;
+}
+
+function getRuntimeUptimeSeconds(): number {
+  return typeof process !== "undefined" && typeof process.uptime === "function"
+    ? process.uptime()
+    : 0;
+}
+
+function getRuntimeMemoryUsage(): { heapUsed: number; rss: number } {
+  return typeof process !== "undefined" && typeof process.memoryUsage === "function"
+    ? process.memoryUsage()
+    : { heapUsed: 0, rss: 0 };
 }

@@ -25,8 +25,18 @@ def:
       type: refs
     - target: decode-svc-scenarios
       type: refs
+    - target: decode-bigint
+      type: refs
     - target: decode-system
       type: depends_on
+sources:
+  - packages/decode-service/package.json
+  - packages/decode-service/src/app.ts
+  - packages/decode-service/src/server.ts
+  - packages/decode-service/src/worker.ts
+  - packages/decode-service/src/routes/decode.ts
+  - packages/decode-service/src/routes/health.ts
+  - packages/decode-service/src/routes/metrics.ts
 ---
 # Decode Service — 시스템 개요
 
@@ -36,9 +46,10 @@ DecodeMap 번들로 주소를 독립 디코딩하는 경량 서비스. registry-
 
 ## 구성 ^overview
 
-- Hono + @hono/node-server, 포트 3600
-- 상태: DecoderPool (TTL 캐시, Map<prefix:version, PrefixDecoder>)
-- DB 없음 — 순수 인메모리
-- 6 엔드포인트: health, metrics, decode, batch, deep, decode-map
+- Hono 앱 + Node 서버 엔트리(`server.ts`) + Cloudflare Worker 엔트리(`worker.ts`)
+- 상태: DecoderPool (TTL 캐시, `Map<prefix:version, PrefixDecoder | PrefixDecoderBig>`)
+- DB 없음 — decode path는 인메모리 pool을 사용하고, Worker는 registry D1/HTTP에서 DecodeMap을 로드
+- 선택적 Redis L2 decode cache (`CACHE_DRIVER=redis`)
+- 9 엔드포인트: health, metrics, decode, batch, deep, decode-map, big, big/batch, big/deep
 - 시작 시 registry-service에서 DecodeMap fetch (fail-open)
-- 에러 계층: IndexMetaError → AppError → HTTP 응답
+- 에러 계층: ZodError / IndexMetaError / IndexRangeError / AppError → HTTP 응답

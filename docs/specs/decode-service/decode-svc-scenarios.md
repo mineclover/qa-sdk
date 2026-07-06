@@ -15,12 +15,18 @@ def:
       type: refines
     - target: decode-svc-core-logic
       type: traces_to
+sources:
+  - packages/decode-service/src/app.test.ts
+  - packages/decode-service/src/lib/decode-cache.test.ts
+  - packages/decode-service/src/routes/decode.ts
+  - packages/decode-service/src/lib/decoder-pool.ts
+  - packages/decode-service/src/schemas/decode.ts
 ---
 # Decode Service — 검증 시나리오
 
 ## 목적 ^purpose
 
-decode-service의 핵심 경로를 검증하는 시나리오와 기대 결과를 정의한다. 39건 테스트(app.test.ts)의 설계 근거.
+decode-service의 핵심 경로를 검증하는 시나리오와 기대 결과를 정의한다. `app.test.ts`와 `decode-cache.test.ts`의 설계 근거.
 
 ## 구성 ^overview
 
@@ -39,7 +45,7 @@ decode-service의 핵심 경로를 검증하는 시나리오와 기대 결과를
 | # | 입력 | 기대 |
 |---|------|------|
 | 6 | inputs=[0,1,2], prefix=A, version=v1 | 3건 decode 성공 |
-| 7 | inputs=[] | 빈 results 반환 |
+| 7 | inputs=[] | 400 INVALID_INPUT (min 1) |
 | 8 | inputs=[99999] (범위 초과) | 400 RANGE_EXCEEDED |
 
 ### deep decode 시나리오
@@ -57,3 +63,16 @@ decode-service의 핵심 경로를 검증하는 시나리오와 기대 결과를
 | 12 | EntryNotFoundError | 404 | NOT_FOUND |
 | 13 | ZodError | 400 | INVALID_INPUT |
 | 14 | IndexRangeError | 400 | RANGE_EXCEEDED |
+| 15 | decoder 미로드 | 404 | DECODER_NOT_LOADED |
+
+### cache/health 시나리오
+
+| # | 입력 | 기대 |
+|---|------|------|
+| 16 | /health + memory cache | `{ cache: { driver: "memory", status: "disabled" } }` |
+| 17 | Redis cache ping 성공 | cacheHealth connected + decodeCache 노출 |
+| 18 | Redis cache ping 실패 | cacheHealth disconnected + decodeCache 미노출 |
+| 19 | L2 cache hit | cached decode result 반환 |
+| 20 | L2 cache get/set 실패 | fail-open, 실제 decode 결과 반환 |
+
+BigInt REST 시나리오는 `decode-bigint` / `decode-bigint-cases`가 별도 소유한다.

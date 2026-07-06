@@ -150,6 +150,22 @@ describe("decode-service", () => {
     });
   });
 
+  describe("GET /metrics", () => {
+    it("Prometheus text로 uptime, memory, decoder pool 지표를 반환", async () => {
+      const metricApp = createApp({ pool, getUptimeSeconds: () => 42 });
+
+      const res = await metricApp.request("/metrics");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toContain("text/plain");
+
+      const text = await res.text();
+      expect(text).toContain("process_uptime_seconds 42");
+      expect(text).toContain("process_heap_used_bytes");
+      expect(text).toContain("process_rss_bytes");
+      expect(text).toContain("decode_pool_size 3");
+    });
+  });
+
   // ── POST /decode ──────────────────────────────────────────────────────────
 
   describe("POST /decode", () => {

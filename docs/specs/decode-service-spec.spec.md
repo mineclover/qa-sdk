@@ -12,6 +12,10 @@ def:
   links:
     - target: decode-service-system
       type: depends_on
+sources:
+  - docs/specs/decode-service/decode-service-system.md
+  - docs/specs/decode-service/decode-svc-api-contract.md
+  - packages/decode-service/src/app.ts
 ---
 # Decode Service Spec (Deprecated)
 
