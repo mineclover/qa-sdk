@@ -21,6 +21,9 @@ gate:
   successPattern: exit_code=0
   references: [packages/decode-service/src/server.ts, packages/decode-service/package.json]
   suggestOnPass: [gate-decode-test]
+sources:
+  - packages/decode-service/src/server.ts
+  - packages/decode-service/package.json
 ---
 # Decode Build Gate
 

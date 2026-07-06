@@ -20,6 +20,10 @@ gate:
   command: pnpm --filter definition-catalog exec vitest run src/cli-tools-real.test.ts
   successPattern: exit_code=0
   references: [packages/definition-catalog/src/cli-tools-real.test.ts, packages/definition-service/src/modules/docs/docs.service.ts, packages/definition-service/src/modules/graphql/doc.resolver.ts]
+sources:
+  - packages/definition-catalog/src/cli-tools-real.test.ts
+  - packages/definition-service/src/modules/docs/docs.service.ts
+  - packages/definition-service/src/modules/graphql/doc.resolver.ts
 ---
 # Definition Service Context Gate
 

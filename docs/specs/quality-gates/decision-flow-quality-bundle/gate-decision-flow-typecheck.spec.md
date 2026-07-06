@@ -21,6 +21,9 @@ gate:
   successPattern: exit_code=0
   references: [packages/decision-flow/src/schema.ts, packages/decision-flow/src/types.ts]
   suggestOnPass: [gate-decision-flow-build]
+sources:
+  - packages/decision-flow/src/schema.ts
+  - packages/decision-flow/src/types.ts
 ---
 # Decision Flow Typecheck Gate
 

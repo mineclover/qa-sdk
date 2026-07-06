@@ -21,6 +21,8 @@ gate:
   successPattern: exit_code=0
   references: [packages/decode-service/src/app.test.ts]
   suggestOnFail: [gate-decode-build]
+sources:
+  - packages/decode-service/src/app.test.ts
 ---
 # Decode Test Gate
 

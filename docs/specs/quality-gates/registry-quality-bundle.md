@@ -19,6 +19,13 @@ def:
       type: contains
     - target: registry-system
       type: depends_on
+sources:
+  - packages/registry-service/src/app.module.ts
+  - packages/registry-service/src/lib/registry-service.ts
+  - packages/registry-service/src/modules/services/service-topology.service.ts
+  - packages/registry-service/src/modules/manifests/manifest.service.ts
+  - packages/registry-service/src/modules/resolve/resolve.service.ts
+  - packages/registry-service/src/app.test.ts
 ---
 # Registry Quality Bundle
 

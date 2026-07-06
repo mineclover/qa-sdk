@@ -22,6 +22,8 @@ gate:
   references: [packages/decision-flow/package.json]
   suggestOnPass: [gate-decision-flow-test]
   suggestOnFail: [gate-decision-flow-typecheck]
+sources:
+  - packages/decision-flow/package.json
 ---
 # Decision Flow Build Gate
 

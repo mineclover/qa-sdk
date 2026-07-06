@@ -21,6 +21,8 @@ gate:
   successPattern: exit_code=0
   references: [packages/registry-service/src/app.test.ts]
   suggestOnFail: [gate-registry-build]
+sources:
+  - packages/registry-service/src/app.test.ts
 ---
 # Registry Test Gate
 

@@ -11,6 +11,10 @@ def:
   links:
     - target: harness-architecture
       type: implements
+sources:
+  - packages/work-domain/src/gate-kind.ts
+  - packages/work-domain/src/harness.ts
+  - packages/work-domain/src/contract-to-gates.ts
 ---
 
 

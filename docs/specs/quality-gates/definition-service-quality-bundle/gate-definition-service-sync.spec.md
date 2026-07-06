@@ -21,6 +21,9 @@ gate:
   successPattern: exit_code=0
   references: [packages/definition-catalog/src/scan-real.test.ts, packages/definition-service/src/modules/sync/sync.service.ts]
   suggestOnPass: [gate-definition-service-context]
+sources:
+  - packages/definition-catalog/src/scan-real.test.ts
+  - packages/definition-service/src/modules/sync/sync.service.ts
 ---
 # Definition Service Sync Gate
 

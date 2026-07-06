@@ -19,6 +19,13 @@ def:
       type: contains
     - target: work-domain
       type: contains
+sources:
+  - packages/work-domain/src/index.ts
+  - packages/work-domain/src/types.ts
+  - packages/work-domain/src/quality-gates.ts
+  - packages/work-domain/src/mapping.ts
+  - packages/work-domain/src/classify.ts
+  - packages/work-domain/src/work-domain.test.ts
 ---
 # Work Domain Quality Bundle
 

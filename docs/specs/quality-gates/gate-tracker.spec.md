@@ -13,6 +13,9 @@ def:
       type: implements
     - target: harness-state-model
       type: depends_on
+sources:
+  - packages/work-domain/src/gate-tracker.ts
+  - packages/work-domain/src/gate-tracker.test.ts
 ---
 
 

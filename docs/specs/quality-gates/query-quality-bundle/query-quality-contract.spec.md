@@ -12,6 +12,13 @@ def:
   links:
     - target: query-quality-bundle
       type: refines
+sources:
+  - packages/query-service/src/app.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/lib/gate-client.ts
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/stores/policy-rule-store.ts
+  - packages/query-service/src/app.test.ts
 ---
 # Query Service Public Contract
 

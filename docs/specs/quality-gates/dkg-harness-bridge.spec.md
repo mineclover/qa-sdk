@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: harness-state-model
       type: depends_on
+sources:
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/work-domain/src/gate-tracker.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/cli/src/commands/quality.ts
 ---
 
 ## 탐색 ^navigation

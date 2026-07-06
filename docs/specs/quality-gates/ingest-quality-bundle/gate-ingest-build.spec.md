@@ -22,6 +22,9 @@ gate:
   references: [packages/ingest-server/package.json, packages/ingest-server/src/server.ts]
   suggestOnPass: [gate-ingest-test]
   suggestOnFail: [gate-ingest-test]
+sources:
+  - packages/ingest-server/package.json
+  - packages/ingest-server/src/server.ts
 ---
 # Ingest Build Gate
 

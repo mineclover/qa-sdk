@@ -12,6 +12,11 @@ def:
   links:
     - target: decode-quality-bundle
       type: refines
+sources:
+  - packages/decode-service/src/app.ts
+  - packages/decode-service/src/routes/decode.ts
+  - packages/decode-service/src/lib/decoder-pool.ts
+  - packages/decode-service/src/app.test.ts
 ---
 # Decode Service Public Contract
 

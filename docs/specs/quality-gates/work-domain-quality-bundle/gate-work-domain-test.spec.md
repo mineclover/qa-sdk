@@ -22,6 +22,8 @@ gate:
   successPattern: exit_code=0
   references: [packages/work-domain/src/work-domain.test.ts]
   suggestOnFail: [gate-work-domain-build]
+sources:
+  - packages/work-domain/src/work-domain.test.ts
 ---
 # Work Domain Test Gate
 

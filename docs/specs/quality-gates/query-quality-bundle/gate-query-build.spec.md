@@ -22,6 +22,9 @@ gate:
   references: [packages/query-service/src/server.ts, packages/query-service/package.json]
   suggestOnPass: [gate-query-test]
   suggestOnFail: [gate-query-test]
+sources:
+  - packages/query-service/src/server.ts
+  - packages/query-service/package.json
 ---
 # Query Build Gate
 

@@ -20,6 +20,9 @@ gate:
   command: pnpm --filter @qa-sdk/ingest-server exec vitest run src/sdk-to-ingest.e2e.test.ts
   successPattern: exit_code=0
   references: [packages/ingest-server/src/sdk-to-ingest.e2e.test.ts, packages/ingest-server/src/routes/ingest.ts]
+sources:
+  - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
+  - packages/ingest-server/src/routes/ingest.ts
 ---
 # Ingest SDK Bridge Gate
 

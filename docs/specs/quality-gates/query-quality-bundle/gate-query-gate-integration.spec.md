@@ -20,6 +20,9 @@ gate:
   command: pnpm --filter query-service exec vitest run src/lib/gate-client.test.ts src/app.test.ts
   successPattern: exit_code=0
   references: [packages/query-service/src/lib/gate-client.ts, packages/query-service/src/routes/query.ts]
+sources:
+  - packages/query-service/src/lib/gate-client.ts
+  - packages/query-service/src/routes/query.ts
 ---
 # Query Gate Integration Gate
 

@@ -22,6 +22,10 @@ tests:
     intent: concept-defined → verified 전이 검증
     module: work-domain/harness-model
     scope: single
+sources:
+  - packages/work-domain/src/harness-model.ts
+  - packages/work-domain/src/harness-model.test.ts
+  - packages/work-domain/src/harness-model.e2e.test.ts
 ---
 
 

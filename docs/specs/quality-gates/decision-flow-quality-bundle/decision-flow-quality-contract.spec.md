@@ -12,6 +12,13 @@ def:
   links:
     - target: decision-flow-quality-bundle
       type: refines
+sources:
+  - packages/decision-flow/src/index.ts
+  - packages/decision-flow/src/schema.ts
+  - packages/decision-flow/src/engine.ts
+  - packages/decision-flow/src/observe.ts
+  - packages/decision-flow/src/comparison.ts
+  - packages/decision-flow/src/decision-flow.test.ts
 ---
 # Decision Flow Public Contract
 

@@ -21,6 +21,10 @@ gate:
   successPattern: exit_code=0
   references: [packages/ingest-server/src/app.test.ts, packages/ingest-server/src/routes/ingest.test.ts, packages/ingest-server/src/lib/phase-two-worker.test.ts]
   suggestOnFail: [gate-ingest-build]
+sources:
+  - packages/ingest-server/src/app.test.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/ingest-server/src/lib/phase-two-worker.test.ts
 ---
 # Ingest Test Gate
 

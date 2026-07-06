@@ -14,6 +14,11 @@ def:
       type: refines
     - target: harness-state-model
       type: depends_on
+sources:
+  - packages/quality-ledger/src/db/schema.ts
+  - packages/quality-ledger/src/ledger.ts
+  - packages/quality-ledger/src/types.ts
+  - packages/quality-ledger/src/quality-ledger.test.ts
 ---
 
 ## 탐색 ^navigation

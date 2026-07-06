@@ -21,6 +21,9 @@ gate:
   successPattern: exit_code=0
   references: [packages/query-service/src/app.test.ts, packages/query-service/src/stores/policy-rule-store.test.ts]
   suggestOnFail: [gate-query-build]
+sources:
+  - packages/query-service/src/app.test.ts
+  - packages/query-service/src/stores/policy-rule-store.test.ts
 ---
 # Query Test Gate
 

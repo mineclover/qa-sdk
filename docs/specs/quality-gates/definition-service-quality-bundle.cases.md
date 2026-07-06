@@ -14,6 +14,15 @@ def:
       type: refines
     - target: definition-service-system
       type: depends_on
+sources:
+  - packages/definition-service/src/main.ts
+  - packages/definition-service/src/app.module.ts
+  - packages/definition-service/src/modules/docs/docs.service.ts
+  - packages/definition-service/src/modules/sync/sync.service.ts
+  - packages/definition-service/src/modules/search/search.service.ts
+  - packages/definition-service/src/modules/graphql/doc.resolver.ts
+  - packages/definition-catalog/src/scan-real.test.ts
+  - packages/definition-catalog/src/cli-tools-real.test.ts
 ---
 
 # Definition Service Quality Bundle — 소비자 기대 시나리오

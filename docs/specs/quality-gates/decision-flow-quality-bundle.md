@@ -17,6 +17,13 @@ def:
       type: refs
     - target: gate-decision-flow-test
       type: refs
+sources:
+  - packages/decision-flow/src/index.ts
+  - packages/decision-flow/src/schema.ts
+  - packages/decision-flow/src/engine.ts
+  - packages/decision-flow/src/observe.ts
+  - packages/decision-flow/src/comparison.ts
+  - packages/decision-flow/src/decision-flow.test.ts
 ---
 # Decision Flow Quality Bundle
 

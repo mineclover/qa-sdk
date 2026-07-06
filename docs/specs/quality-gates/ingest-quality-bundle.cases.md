@@ -14,6 +14,11 @@ def:
       type: refines
     - target: ingest-system
       type: depends_on
+sources:
+  - packages/ingest-server/src/app.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
 ---
 
 # Ingest Quality Bundle — 소비자 기대 시나리오

@@ -22,6 +22,9 @@ gate:
   successPattern: exit_code=0
   references: [packages/work-domain/src/types.ts, packages/work-domain/src/gate-kind.ts]
   suggestOnPass: [gate-work-domain-build]
+sources:
+  - packages/work-domain/src/types.ts
+  - packages/work-domain/src/gate-kind.ts
 ---
 # Work Domain Typecheck Gate
 

@@ -22,6 +22,9 @@ gate:
   references: [packages/definition-service/src/main.ts, packages/definition-service/src/app.module.ts]
   suggestOnPass: [gate-definition-service-sync]
   suggestOnFail: [gate-definition-service-sync]
+sources:
+  - packages/definition-service/src/main.ts
+  - packages/definition-service/src/app.module.ts
 ---
 # Definition Service Build Gate
 

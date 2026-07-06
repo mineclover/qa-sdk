@@ -23,6 +23,9 @@ gate:
   references: [packages/work-domain/package.json, packages/work-domain/tsup.config.ts]
   suggestOnPass: [gate-work-domain-test]
   suggestOnFail: [gate-work-domain-typecheck]
+sources:
+  - packages/work-domain/package.json
+  - packages/work-domain/tsup.config.ts
 ---
 # Work Domain Build Gate
 

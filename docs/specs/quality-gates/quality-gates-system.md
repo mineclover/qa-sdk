@@ -38,6 +38,12 @@ def:
       type: contains
     - target: dkg-harness-bridge
       type: contains
+sources:
+  - packages/work-domain/src/harness.ts
+  - packages/work-domain/src/harness-model.ts
+  - packages/work-domain/src/gate-tracker.ts
+  - packages/quality-ledger/src/ledger.ts
+  - packages/cli/src/commands/quality.ts
 ---
 # Quality Gates System
 

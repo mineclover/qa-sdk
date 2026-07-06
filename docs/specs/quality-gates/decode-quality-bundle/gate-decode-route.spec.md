@@ -20,6 +20,9 @@ gate:
   command: pnpm --filter @qa-sdk/decode-service exec vitest run src/app.test.ts
   successPattern: exit_code=0
   references: [packages/decode-service/src/routes/decode.ts, packages/decode-service/src/app.test.ts]
+sources:
+  - packages/decode-service/src/routes/decode.ts
+  - packages/decode-service/src/app.test.ts
 ---
 # Decode Route Gate
 

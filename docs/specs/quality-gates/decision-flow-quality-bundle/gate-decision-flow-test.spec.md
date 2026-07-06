@@ -21,6 +21,10 @@ gate:
   successPattern: exit_code=0
   references: [packages/decision-flow/src/decision-flow.test.ts, packages/decision-flow/src/observe.test.ts, packages/decision-flow/src/core-analysis.test.ts]
   suggestOnFail: [gate-decision-flow-build]
+sources:
+  - packages/decision-flow/src/decision-flow.test.ts
+  - packages/decision-flow/src/observe.test.ts
+  - packages/decision-flow/src/core-analysis.test.ts
 ---
 # Decision Flow Test Gate
 
