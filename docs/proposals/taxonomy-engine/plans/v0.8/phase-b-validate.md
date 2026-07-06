@@ -1,3 +1,25 @@
+---
+def:
+  id: taxonomy-engine-plan-v0-8-phase-b
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: implementation_plan
+  tier: component
+  depth: implementation
+  sources:
+    - packages/taxonomy-engine/src/validate/lifecycle.ts
+    - packages/taxonomy-engine/src/validate/index.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: plan-v0-8-phase-b-validate
+---
+
 # Taxonomy Engine v0.8 — Phase B — Validate (4 신규 diagnostic)
 
 ## 목적 ^purpose

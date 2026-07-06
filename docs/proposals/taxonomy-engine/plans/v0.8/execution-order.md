@@ -1,3 +1,28 @@
+---
+def:
+  id: taxonomy-engine-plan-v0-8-execution-order
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: implementation_plan
+  tier: component
+  depth: overview
+  sources:
+    - docs/proposals/taxonomy-engine/plans/v0.8.md
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-schema.test.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
+    - packages/cli/src/commands/taxonomy/validate.ts
+    - packages/taxonomy-web/src/components/LifecycleBadge.tsx
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: plan-v0-8-execution-order
+---
+
 # Taxonomy Engine v0.8 — 실행 순서
 
 ## 목적 ^purpose

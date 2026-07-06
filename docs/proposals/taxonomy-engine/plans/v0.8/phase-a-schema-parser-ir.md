@@ -1,3 +1,26 @@
+---
+def:
+  id: taxonomy-engine-plan-v0-8-phase-a
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: implementation_plan
+  tier: component
+  depth: implementation
+  sources:
+    - packages/taxonomy-engine/src/schema/ir.ts
+    - packages/taxonomy-engine/src/schema/zod.ts
+    - packages/taxonomy-engine/src/parser/index.ts
+    - packages/taxonomy-engine/__tests__/unit/lifecycle-schema.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: plan-v0-8-phase-a-schema-parser-ir
+---
+
 # Taxonomy Engine v0.8 — Phase A — Schema + Parser + IR
 
 ## 목적 ^purpose

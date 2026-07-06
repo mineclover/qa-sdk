@@ -1,3 +1,32 @@
+---
+def:
+  id: taxonomy-engine-plan-v0-8-phase-g
+  type: knowledge
+  knowledge_kind: proposal
+  lifecycle: approved
+  owner_system: taxonomy-engine
+  projection_plane: intent
+  scope: meta
+  aspect: implementation_plan
+  tier: component
+  depth: implementation
+  sources:
+    - docs/taxonomies/qa-sdk-coordinate-system.yaml
+    - docs/taxonomies/lesson-builder-content.yaml
+    - docs/taxonomies/dkg-schema.yaml
+    - docs/taxonomies/ingest-coords.yaml
+    - docs/taxonomies/qa-sdk-def-catalog.yaml
+    - scripts/tax-add-lifecycle.mjs
+    - packages/taxonomy-engine/__tests__/dogfooding-def-catalog.test.ts
+    - packages/taxonomy-engine/__tests__/dogfooding-dkg.test.ts
+    - packages/taxonomy-engine/__tests__/dogfooding-ingest.test.ts
+    - packages/taxonomy-engine/__tests__/dogfooding-lesson-builder.test.ts
+status: implemented
+date: 2026-07-05
+part_of: taxonomy-engine
+role: plan-v0-8-phase-g-dogfooding
+---
+
 # Taxonomy Engine v0.8 — Phase G — 도그푸딩 마이그레이션
 
 ## 목적 ^purpose
