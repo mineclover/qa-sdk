@@ -20,6 +20,11 @@ def:
       type: depends_on
     - target: deterministic-label-stability-boundary
       type: traces_to
+sources:
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/frontmatter.test.ts
+  - packages/definition-catalog/src/yaml-lite.ts
+  - packages/definition-catalog/src/yaml-lite.test.ts
 ---
 
 # Frontmatter Interpreter Namespace — 해석자 네임스페이스 계약
@@ -61,7 +66,7 @@ dlr:            # deterministic-label-registry
 각 네임스페이스:
 - 해당 해석자가 소유하는 필드만 포함
 - 독립 스키마 (해석자가 자체 검증)
-- 다른 네임스페이스의 필드를 참조하지 않는다 (cross-read 금지)
+- 기본적으로 자기 네임스페이스에서 완결한다. 다른 네임스페이스 값을 읽기로 결정한 해석자는 그 검증 책임도 함께 소유한다.
 
 ### 2. 네임스페이스 선언은 분산된다
 
@@ -166,4 +171,4 @@ dlr:
 ---
 ```
 
-위 예시는 설명용이며, `dlr` 네임스페이스의 실제 스키마는 `deterministic-label-coordinate-stability.spec.md` (장래 작성)에서 고정한다.
+위 예시는 설명용이다. 현재 deterministic-label read model은 별도 `dlr:` frontmatter 네임스페이스를 도입하지 않고 `DocumentEnvelope`의 기존 identity/source 필드를 read-only로 소비한다.

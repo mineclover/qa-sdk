@@ -140,6 +140,26 @@ describe("extractDef", () => {
     expect(def.tags).toEqual(["security"]);
   });
 
+  it("알 수 없는 top-level 해석자 네임스페이스는 보존하되 extractDef는 def만 소비한다", () => {
+    const parsed = parseYaml(`def:
+  id: namespace-test
+  scope: interface
+  aspect: api_contract
+  depth: specification
+  lifecycle: approved
+dlr:
+  labelKind: definition-doc
+  labelVersion: v1`);
+
+    expect(parsed.dlr).toEqual({
+      labelKind: "definition-doc",
+      labelVersion: "v1",
+    });
+    const def = extractDef(parsed, "test.md");
+    expect(def.id).toBe("namespace-test");
+    expect(def.scope).toBe("interface");
+  });
+
   it("lifecycle 기본값은 draft", () => {
     const parsed = parseYaml(`def:
   id: new-doc

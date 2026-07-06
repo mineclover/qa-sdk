@@ -216,8 +216,8 @@ function buildEnvelope(
   const workTopicMetadata = extractWorkTopicDocumentMetadata(parsed.relativePath, body);
   const allowsWorkTopic = parsed.kind === "plan" || parsed.kind === "todo";
   // 필드 소유권은 `docs/specs/definition-catalog/doc-metadata-field-ownership.rule.md` 참조.
-  // scope/aspect/depth/layer/svc/address/version/revision은 현재 decision 비소비 —
-  // frontmatter round-trip writer + docs status --json API surface 유지를 위해 passthrough.
+  // scope/aspect/depth/layer/svc는 docs selector/closure/graph context에서도 읽는
+  // active metadata이고, address/version/revision은 주로 round-trip + JSON API surface다.
   // 새 해석자는 def.* 네임스페이스에 직접 추가 금지. 해석자 namespace(B단계) 경로 사용.
   const metadata: DocumentMetadata = {
     defId: def.id,

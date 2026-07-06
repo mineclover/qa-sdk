@@ -17,6 +17,13 @@ def:
       type: verifies
     - target: deterministic-label-architecture
       type: traces_to
+sources:
+  - packages/doc-envelope/src/completed-records.ts
+  - packages/doc-envelope/src/completed-records.test.ts
+  - packages/doc-envelope/src/family-scope.ts
+  - packages/doc-envelope/src/family-scope.test.ts
+  - packages/doc-envelope/src/todo-lifecycle.ts
+  - packages/doc-envelope/src/todo-lifecycle.test.ts
 ---
 
 # doc-envelope — 테스트 명세

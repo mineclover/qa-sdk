@@ -20,6 +20,16 @@ def:
       type: depends_on
     - target: deterministic-label-stability-boundary
       type: traces_to
+sources:
+  - packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/lib/docs-control-plane/graph-normalize.ts
+  - packages/cli/src/lib/docs-control-plane/graph-rank.ts
+  - packages/cli/src/lib/docs-control-plane/drift.ts
+  - packages/doc-envelope/src/completed-records.ts
+  - packages/doc-envelope/src/family-scope.ts
+  - packages/definition-catalog/src/frontmatter-writer.ts
+  - packages/deterministic-label-registry/src/projection.ts
 ---
 
 # DocumentEnvelope Metadata — 필드 소유권 규칙
@@ -49,11 +59,12 @@ def:
 
 | 필드 | Decision 소비자 | 용도 |
 |------|--------------|------|
-| `lifecycle` | `drift.ts`, `follow-ups.ts`, `graph-rank.ts`, `completed-records.ts`, `deterministic-label-fsm.ts`, `family-scope.ts`, `docs.ts` | archived/deprecated 필터, FSM 종료 상태 파생 |
-| `level` | `drift.ts`, `family-scope.ts` | module vs leaf 기반 scope 판단 |
+| `lifecycle` | `drift.ts`, `follow-ups.ts`, `graph-rank.ts`, `doc-envelope/completed-records.ts`, `doc-envelope/family-scope.ts`, `deterministic-label-registry/projection.ts`, `docs.ts` | archived/deprecated 필터, completed-record 제외, projection archive 판정 |
+| `level` | `drift.ts`, `doc-envelope/family-scope.ts` | group/module/leaf 기반 scope 판단 |
+| `tier`, `scope`, `aspect`, `depth` | `docs.ts`, `graph-normalize.ts`, `doc-envelope/family-scope.ts` | closure ownership, context edge, selector/root ranking |
 | `tags` | `docs.ts`, `graph-normalize.ts` | 역할 태그 감지, 표시 |
 | `followUpCategory` | `follow-ups.ts` | TODO 분류 |
-| `defId` | 다수 | 식별자 |
+| `defId`, `sourcePath` | `docs.ts`, `graph-*`, `role-matrix.ts`, `deterministic-label-registry/projection.ts` | 식별자, source/evidence edge, label projection 입력 |
 
 ### Passthrough 필드 (API + round-trip만)
 
@@ -61,18 +72,14 @@ Decision 코드가 안 읽지만 JSON API와 frontmatter writer가 사용. **삭
 
 | 필드 | 소비자 | 분류 |
 |------|--------|------|
-| `scope` | `frontmatter-writer.ts`, `summarizeDocument()` JSON | Round-trip + JSON API |
-| `aspect` | 위와 동일 | Round-trip + JSON API |
-| `depth` | 위와 동일 | Round-trip + JSON API |
-| `layer` | 위와 동일 | Round-trip + JSON API |
-| `svc` | 위와 동일 | Round-trip + JSON API |
-| `address` | 위와 동일 | Round-trip + JSON API |
-| `version` | 위와 동일 | Round-trip + JSON API |
-| `revision` | 위와 동일 | Round-trip + JSON API |
-| `type` | 위와 동일 | Round-trip + JSON API |
-| `knowledgeKind` | 위와 동일 | Round-trip + JSON API |
+| `layer` | `frontmatter-writer.ts`, `summarizeDocument()` JSON, `graph-normalize.ts` context edge | Round-trip + JSON API + Decision |
+| `svc` | `frontmatter-writer.ts`, `summarizeDocument()` JSON, `docs.ts` selector | Round-trip + JSON API + Decision |
+| `address` | `frontmatter-writer.ts`, `summarizeDocument()` JSON | Round-trip + JSON API |
+| `version` | `frontmatter-writer.ts`, `summarizeDocument()` JSON, `deterministic-label-registry/projection.ts` | Round-trip + JSON API + Decision |
+| `revision` | `frontmatter-writer.ts`, `summarizeDocument()` JSON | Round-trip + JSON API |
+| `type` | `frontmatter-writer.ts`, `summarizeDocument()` JSON, graph/role/cleanup consumers | Round-trip + JSON API + Decision |
+| `knowledgeKind` | `frontmatter-writer.ts`, `summarizeDocument()` JSON, `graph-normalize.ts` context edge | Round-trip + JSON API + Decision |
 | `documentKind` | (documentKind는 adapter 자체 생성) | JSON API |
-| `sourcePath` | `graph-*`, `drift`, `docs.ts` | **Decision** — active |
 | `purpose`, `overview` | `docs.ts` 표시 | JSON API |
 
 ### 해석자 소유 매핑
@@ -118,9 +125,11 @@ Decision 코드가 안 읽지만 JSON API와 frontmatter writer가 사용. **삭
 
 ## 현재 적용 범위 ^consumes
 
-- `packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts:191-217` — `def.*` → metadata forward 지점
-- `packages/definition-catalog/src/frontmatter-writer.ts:58-65` — round-trip writer
-- `packages/cli/src/commands/docs.ts:2305-2315` — JSON API `summarizeDocument()`
+- `packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts` — `def.*` → metadata forward 지점
+- `packages/definition-catalog/src/frontmatter-writer.ts` — round-trip writer
+- `packages/cli/src/commands/docs.ts` — JSON API `summarizeDocument()` 및 selector/closure 소비자
+- `packages/doc-envelope/src/*.ts` — completed-record, family-only scope 소비자
+- `packages/deterministic-label-registry/src/projection.ts` — read-only label projection 소비자
 
 ## 의도적 비목표
 
