@@ -12,6 +12,19 @@ def:
   links:
     - target: tag-management-spec
       type: traces_to
+sources:
+  - packages/tag-search/README.md
+  - docs/specs/indexing-core-system/tag-search.spec.md
+  - docs/specs/storage-system/tag-management.spec.md
+  - docs/specs/definition-catalog/definition-taxonomy.spec.md
+  - packages/tag-search/src/index.ts
+  - packages/tag-search/src/port.ts
+  - packages/tag-search/src/types.ts
+  - packages/tag-search/src/memory-store.ts
+  - packages/tag-search/src/search.test.ts
+  - packages/definition-service/src/modules/search/search.module.ts
+  - packages/definition-service/src/modules/search/search.service.ts
+  - packages/definition-service/src/modules/search/search.service.test.ts
 ---
 # tag-search (deprecated)
 
