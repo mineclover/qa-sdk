@@ -10,6 +10,24 @@ def:
   aspect: proposal_design
   tier: system
   depth: specification
+  sources:
+    - docs/specs/data-structure-profile/data-structure-profile-system.spec.md
+    - docs/specs/data-structure-profile/data-structure-profile-taxonomy.spec.md
+    - docs/specs/data-structure-profile/data-structure-profile-profile-contract.spec.md
+    - docs/specs/data-structure-profile/data-structure-profile-validation.spec.md
+    - docs/specs/data-structure-profile/data-structure-profile-cli.spec.md
+    - docs/specs/data-structure-profile/data-structure-profile-system.test.md
+    - docs/specs/data-structure-profile/data-structure-profile-operations.rule.md
+    - packages/data-structure-profile/package.json
+    - packages/data-structure-profile/src/index.ts
+    - packages/data-structure-profile/src/parse.ts
+    - packages/data-structure-profile/src/lineage.ts
+    - packages/data-structure-profile/src/measurement.ts
+    - packages/data-structure-profile/src/adapters.ts
+    - packages/data-structure-profile/src/validate.ts
+    - packages/data-structure-profile/src/profile.test.ts
+    - packages/data-structure-profile/src/cli-runner.test.ts
+    - scripts/data-structure-profile-bridge-smoke.mjs
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
@@ -88,3 +106,19 @@ Rationale:
 4. Inspect whether bench can represent non-SDK measurement reports.
 5. Inspect whether viz-web or registry-ui can load a static lineage JSON.
 6. Inspect whether event-catalog has enough payload vocabulary for Kafka-like source events.
+
+## 6. Current Source-Backed Closure ^evidence
+
+The implemented boundary is Option B: `taxonomy-engine` remains the finite vocabulary foundation, while `data-structure-profile` owns concrete profile YAML, lineage compilation, validation diagnostics, measurement dry-run, optional DPM readiness, and adapter payloads.
+
+Closed follow-up results:
+
+- Custom relation/structure vocabulary is handled through `docs/taxonomies/data-structure-profile.yaml` and `parseProfileTaxonomy`; concrete paths stay in profile fixtures.
+- `quality-ledger` integration is an adapter payload and repo-level smoke, not a package runtime dependency.
+- `@qa-sdk/bench` integration is a rendered-report adapter and repo-level smoke, not measurement ownership inside the ledger.
+- `viz-web` consumes compiled lineage as a read-only preview artifact.
+- DPM stays optional through string `dpm_policy_ref` and readiness diagnostics; the package does not execute DPM policy.
+
+Still outside the current boundary:
+
+- Live Kafka/ClickHouse connector I/O, scheduler behavior, production token vault behavior, and a generic ETL runtime are not implemented by this package.

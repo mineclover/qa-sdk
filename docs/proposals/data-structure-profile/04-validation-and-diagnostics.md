@@ -10,6 +10,18 @@ def:
   aspect: proposal_design
   tier: system
   depth: specification
+  sources:
+    - docs/specs/data-structure-profile/data-structure-profile-validation.spec.md
+    - docs/specs/data-structure-profile/data-structure-profile-system.test.md
+    - packages/data-structure-profile/src/validate.ts
+    - packages/data-structure-profile/src/dpm.ts
+    - packages/data-structure-profile/src/adapters.ts
+    - packages/data-structure-profile/src/cli-runner.ts
+    - packages/data-structure-profile/src/profile.test.ts
+    - packages/data-structure-profile/src/cli-runner.test.ts
+    - docs/proposals/data-structure-profile/fixtures/expected-validation-report.json
+    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-validation-report.json
+    - scripts/data-structure-profile-bridge-smoke.mjs
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
@@ -45,29 +57,25 @@ Profile diagnostics should not reuse taxonomy-engine core codes.
 | Prefix | Meaning | Example |
 |---|---|---|
 | `dsp-parse-*` | profile syntax or required field problem | `dsp-parse-missing-source` |
-| `dsp-struct-*` | structure id/path/parent problem | `dsp-struct-broken-parent` |
-| `dsp-tax-*` | taxonomy reference problem | `dsp-tax-unknown-kind` |
-| `dsp-transform-*` | transform graph problem | `dsp-transform-broken-input` |
-| `dsp-measure-*` | measurement assumption/report problem | `dsp-measure-unbounded-row-multiplier` |
-| `dsp-quality-*` | quality gate problem | `dsp-quality-dedup-missing` |
+| `dsp-profile-*` | profile-local graph reference problem | `dsp-profile-ref-unknown` |
+| `dsp-taxonomy-*` | taxonomy reference problem | `dsp-taxonomy-ref-unknown` |
+| `dsp-transform-*` | transform graph or bound problem | `dsp-transform-unbounded-array` |
+| `dsp-measure-*` | measurement assumption/report problem | reserved for future measurement diagnostics |
+| `dsp-quality-*` | quality gate problem | `dsp-quality-dedup-key-missing` |
 | `dsp-privacy-*` | DPM readiness problem | `dsp-privacy-dpm-ref-missing` |
 
-## 3. Required MVP Diagnostics
+## 3. Implemented MVP Diagnostics
 
 | Code | Severity | When |
 |---|---|---|
-| `dsp-parse-missing-source` | error | `source` section is absent. |
-| `dsp-struct-duplicate-id` | error | structure or transform ids collide. |
-| `dsp-struct-broken-parent` | error | structure parent does not exist. |
-| `dsp-tax-unknown-kind` | error | kind is not in the taxonomy vocabulary. |
-| `dsp-transform-broken-input` | error | transform `from` structure does not exist. |
-| `dsp-transform-broken-output` | error | transform `to` structure does not exist. |
-| `dsp-measure-array-length-missing` | warning | explode transform exists but average array length is missing. |
-| `dsp-measure-unbounded-row-multiplier` | warning | max array length is missing or above configured budget. |
-| `dsp-quality-dedup-missing` | error | stream source has no event id or dedup gate. |
+| `dsp-taxonomy-ref-unknown` | error | source, structure, transform, or quality risk kind is not in the taxonomy vocabulary. |
+| `dsp-profile-ref-unknown` | error | structure parent, relationship endpoint, or transform endpoint is not local to the same profile. |
+| `dsp-quality-dedup-key-missing` | gate severity | `dedup` gate exists but `source.event_id_path` is missing. |
 | `dsp-quality-replay-policy-missing` | warning | stream source has no replay/backfill policy. |
-| `dsp-quality-schema-drift-policy-missing` | warning | schema ref exists but no schema drift gate exists. |
-| `dsp-privacy-dpm-ref-missing` | warning | sensitive paths exist without DPM policy ref. |
+| `dsp-quality-schema-ref-missing` | gate severity | `schema-drift` gate exists but `source.schema_ref` is missing. |
+| `dsp-transform-unbounded-array` | gate severity | explode transform has no `max_array_length` bound. |
+| `dsp-transform-array-threshold-exceeded` | gate severity | explode transform bound exceeds configured threshold. |
+| `dsp-privacy-dpm-ref-missing` | privacy required flag | sensitive paths exist without DPM policy ref. |
 
 ## 4. Quality Gates
 
@@ -131,3 +139,11 @@ Initial bridge fields:
 - `createdAt`
 
 The ledger should store outcomes, not own validation semantics.
+
+## 8. Current Source-Backed Boundary ^evidence
+
+- `validateProfile` emits `pass`, `needs-review`, and `fail` status from stable diagnostic severity counts.
+- Local graph references are profile-local; attempts to point one profile at another profile's node id fail with `dsp-profile-ref-unknown`.
+- Taxonomy validation uses `parseProfileTaxonomy` vocabulary membership and fails unknown refs with `dsp-taxonomy-ref-unknown`.
+- `toQualityLedgerRunInputs` and `toBenchReportInput` convert reports into consumer payloads; they do not write ledger history or run benchmarks themselves.
+- `scripts/data-structure-profile-bridge-smoke.mjs` proves the built consumer packages can consume those payloads without adding `quality-ledger` or `@qa-sdk/bench` as runtime dependencies of `data-structure-profile`.

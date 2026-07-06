@@ -10,6 +10,27 @@ def:
   aspect: proposal_fixture
   tier: component
   depth: specification
+  sources:
+    - packages/data-structure-profile/src/profile.test.ts
+    - packages/data-structure-profile/src/cli-runner.test.ts
+    - packages/data-structure-profile/src/parse.ts
+    - packages/data-structure-profile/src/validate.ts
+    - packages/data-structure-profile/src/lineage.ts
+    - packages/data-structure-profile/src/measurement.ts
+    - packages/data-structure-profile/src/dpm.ts
+    - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
+    - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
+    - docs/proposals/data-structure-profile/fixtures/order-event.schema.json
+    - docs/proposals/data-structure-profile/fixtures/order-event.sample.json
+    - docs/proposals/data-structure-profile/fixtures/customer-orders.schema.sql
+    - docs/proposals/data-structure-profile/fixtures/expected-validation-report.json
+    - docs/proposals/data-structure-profile/fixtures/expected-lineage.json
+    - docs/proposals/data-structure-profile/fixtures/expected-measurement-report.json
+    - docs/proposals/data-structure-profile/fixtures/expected-dpm-readiness.json
+    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-validation-report.json
+    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-lineage.json
+    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-measurement-report.json
+    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-dpm-readiness.json
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
@@ -35,5 +56,12 @@ This directory contains the first deterministic fixture pack for Data Structure 
 | [expected-dpm-readiness.json](./expected-dpm-readiness.json) | privacy readiness snapshot |
 | `expected-customer-orders-*.json` | deterministic snapshots for the relational profile |
 
-The fixture intentionally has no live Kafka or ClickHouse dependency. It should be usable as a
-package-local unit test input once a Data Structure Profile implementation exists.
+The fixtures intentionally have no live Kafka, PostgreSQL, ClickHouse, or DPM runtime dependency.
+They are package-local unit test inputs for parser, validator, lineage, measurement, DPM readiness,
+CLI output, and profile isolation checks.
+
+## Current Verification ^evidence
+
+- `profile.test.ts` compares both profiles against deterministic validation, lineage, measurement, and DPM readiness snapshots.
+- `profile.test.ts` runs the order-event and customer-orders profiles in the same test process and verifies artifact ids, lineage nodes, quality-ledger bundle ids, bench scenario ids, and DPM policy refs remain profile-local.
+- `cli-runner.test.ts` uses these fixtures to verify `validate`, `compile`, `measure`, `dpm-readiness`, `quality-ledger` adapter output, and `bench` adapter output.
