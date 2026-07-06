@@ -17,6 +17,20 @@ def:
       type: contains
     - target: infra-controller-data
       type: contains
+sources:
+  - simulations/enterprise-pm/services/canary-controller/src/app.module.ts
+  - simulations/enterprise-pm/services/canary-controller/src/cycle/cycle-scheduler.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/cycle/cycle-scheduler.ring-buffer.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/action/action-executor.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/action/action-executor.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/safety-decision.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/safety-decision.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/resource-decision.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/resource-decision.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/verdict/category-verdict.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/verdict/category-verdict.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/integration/cycle-flow.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/integration/stage-1b.smoke.test.ts
 ---
 # Infra Controller
 

@@ -13,6 +13,18 @@ def:
   links:
     - target: infra-controller-spec
       type: refines
+sources:
+  - simulations/enterprise-pm/services/canary-controller/src/admin/compose-proxy.controller.ts
+  - simulations/enterprise-pm/services/canary-controller/src/admin/compose-proxy.controller.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/admin/scale.controller.ts
+  - simulations/enterprise-pm/services/canary-controller/src/admin/scale.controller.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-query.controller.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-query.controller.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/alerts-audit-catalog.controller.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/alerts-audit-catalog.controller.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/health/health.controller.ts
 ---
 # Infra Controller — interface/api_contract
 

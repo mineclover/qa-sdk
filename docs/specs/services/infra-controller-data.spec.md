@@ -13,6 +13,19 @@ def:
   links:
     - target: infra-controller-spec
       type: refines
+sources:
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-ring-buffer.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-ring-buffer.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-builder.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-builder.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/metrics/metrics-scrape.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/metrics/metrics-scrape.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/catalog/catalog.provider.ts
+  - simulations/enterprise-pm/services/canary-controller/src/catalog/catalog.provider.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/admin/scale-store.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/types.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.test.ts
 ---
 # Infra Controller — data/system_data
 
