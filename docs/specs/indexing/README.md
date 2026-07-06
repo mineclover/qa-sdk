@@ -1,3 +1,19 @@
+---
+sources:
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/index.ts
+  - packages/weighted-index/src/vocab/index.ts
+  - packages/weighted-index/src/protocol/index.ts
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/src/client.ts
+  - packages/index-meta/src/decode.ts
+  - packages/permission-engine/src/index.ts
+  - packages/permission-engine/src/browser.ts
+  - packages/weighted-index/package.json
+  - packages/index-meta/package.json
+  - packages/permission-engine/package.json
+---
+
 # 좌표 시스템 — 개념 맵
 
 > **작은 세계를 수학적으로 정의하고 운용하는 원시 도구.**
@@ -84,6 +100,8 @@
 | **권한 수학** | permission-engine | bitmask grant/check, ternary 상속 | 서비스 로직, API |
 | **스키마** | index-meta | 축 의미, 버전, 활성 영역 | 이벤트 정의, 데이터 저장 |
 | **카탈로그** | demo-snapshot | 타입 통합 관리, encode/decode/resolve | 런타임 이벤트, 인스턴스 |
+
+소스: `packages/weighted-index/src/index.ts`, `packages/index-meta/src/index.ts`, `packages/permission-engine/src/index.ts`
 
 ## 문서 체계
 
@@ -180,13 +198,13 @@ resolveAddress
 
 ## 데이터 카탈로그 (demo-snapshot)
 
-모든 데모/테스트 데이터의 단일 출처(SSOT). `DEMO_CATALOG`가 21개 축과 7개 prefix를 통합 관리한다.
+모든 데모/테스트 데이터의 단일 출처(SSOT). `DEMO_CATALOG`가 축, prefix, table 정의를 통합 관리한다. 축/prefix/table 수는 `DEMO_CATALOG`에서 런타임에 파생하며, 이 문서에는 고정 숫자를 두지 않는다.
 
 ```
 DEMO_CATALOG
-├── axes: 21개 VersionedAxis (버전별 entries/capacity/ko)
+├── axes: VersionedAxis (버전별 entries/capacity/ko)
 │   └── role: { v1: [5개,cap:5], v2: [6개,cap:6], v3: [6개,cap:8], v4: [7개,cap:8] }
-└── prefixes: 7개 PrefixDef (축 조합 + prefix_ref 참조)
+└── prefixes: PrefixDef (축 조합 + prefix_ref/table_ref 참조)
     └── permission: [perm_svc(→service), role] × 4 versions
 ```
 

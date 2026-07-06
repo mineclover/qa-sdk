@@ -1,3 +1,19 @@
+---
+sources:
+  - packages/permission-engine/package.json
+  - packages/permission-engine/src/index.ts
+  - packages/permission-engine/src/browser.ts
+  - packages/permission-engine/src/permission-set.ts
+  - packages/permission-engine/src/ternary-mask.ts
+  - packages/permission-engine/src/scoped-engine.ts
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/resource-policy/index.ts
+  - packages/permission-engine/src/versioned-bitmap/index.ts
+  - packages/permission-engine/src/access-checker/index.ts
+  - packages/permission-engine/src/permission-set.test.ts
+  - packages/permission-engine/src/permission-codec.test.ts
+---
+
 # permission-engine 패키지 스펙
 
 > `weighted-index` 위에 구축된 비트마스크 권한 엔진.
@@ -6,6 +22,8 @@
 패키지: `permission-engine`
 의존: `weighted-index`
 운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
+
+소스: `packages/permission-engine/src/index.ts`, `packages/permission-engine/src/browser.ts`
 
 ## 상태
 
@@ -60,6 +78,8 @@ index.ts
 ├── migration: migratePermissions
 └── weighted-index re-export: createBinder / PartialBinder
 ```
+
+현재 public API는 core permission primitives 외에도 `resource-policy`, `versioned-bitmap`, `audit`, `access-checker`, role/override/user permission engine, auth/token/middleware surface를 함께 노출한다. 브라우저 진입점은 `PermissionSet`, `ScopedEngine`, `migratePermissions`로 제한된다.
 
 ## 현재 스펙 범위
 

@@ -1,10 +1,27 @@
+---
+sources:
+  - packages/index-meta/package.json
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/src/client.ts
+  - packages/index-meta/src/decode.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/relational-engine.ts
+  - packages/index-meta/src/meta-registry.test.ts
+  - packages/index-meta/src/meta-codec.test.ts
+---
+
 # index-meta 패키지 스펙
 
 > 가중진법 인덱스의 **스키마 메타 DB**.
 > `WeightedIndex`가 정수 ↔ 좌표 변환을 담당한다면, `index-meta`는 "각 축이 무엇을 의미하는가", "각 위치에 어떤 엔티티가 있는가"를 정의하고 버전 간 변경 동선을 관리한다.
 
-패키지: `@qa-sdk/index-meta`
+패키지: `index-meta`
 의존: `weighted-index`
+
+소스: `packages/index-meta/src/index.ts`, `packages/index-meta/src/client.ts`, `packages/index-meta/src/decode.ts`
 
 ## 상태
 
@@ -82,4 +99,12 @@ src/
   index-sdk.ts           # IndexSDK — 경량 소비 레이어 (constants, dimCapacity)
   index.ts               # 공개 API 재수출
   client.ts              # 브라우저/Edge 경량 진입점
+  decode.ts              # DecodeMap 기반 decode 전용 경량 진입점
 ```
+
+## 공개 진입점
+
+- `index-meta`: registry/store/schema/gate/query/migration까지 포함한 전체 API.
+- `index-meta/client`: SQL 어댑터 없이 `createIndexSDK`, `MetaRegistry`, `MetaCodec`, `MetaResolver`, `PrefixDecoder`를 쓰는 브라우저·Edge 안전 진입점.
+- `index-meta/decode`: `DecodeMap` 번들 기반 decode/codec/address protocol 전용 진입점.
+- `index-meta/workers`: Workers/D1 배포용 진입점.

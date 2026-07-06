@@ -1,8 +1,26 @@
+---
+sources:
+  - packages/weighted-index/package.json
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/index.ts
+  - packages/weighted-index/src/vocab/index.ts
+  - packages/weighted-index/src/protocol/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+---
+
 # weighted-index 패키지 스펙
 
 > 가중진법 기반 다차원 인코딩 수학 엔진 + ID 포맷 적합성 설계 + 프로토콜 독립 주소 체계.
 
-패키지: `@qa-sdk/weighted-index`
+패키지: `weighted-index`
+
+소스: `packages/weighted-index/src/index.ts`, `packages/weighted-index/src/math/index.ts`, `packages/weighted-index/src/vocab/index.ts`, `packages/weighted-index/src/protocol/index.ts`
 
 ## 상태
 
@@ -30,3 +48,10 @@ implemented
 ## 외부 소비자
 
 - `index-meta` — MetaRegistry가 WeightedIndex + AddressConverter를 내부적으로 사용. [../index-meta/](../index-meta/README.md) 참조.
+
+## 공개 진입점
+
+- `weighted-index`: math/vocab/protocol/obfuscate 통합 export.
+- `weighted-index/math`: string 처리 없는 encode/decode, stride, range, bitmask, layout simulation 기준 구현.
+- `weighted-index/vocab`: `LabelRegistry`, `PrefixCodec`, `PartialBinder`, `DisjointUnionIndex`.
+- `weighted-index/protocol`: semantic address, pack format, UUID/bit-field layout, capacity planner.
