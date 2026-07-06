@@ -14,6 +14,18 @@ def:
       type: contains
     - target: motion-workspace-client
       type: contains
+sources:
+  - packages/motion-workspace/src/index.ts
+  - packages/motion-workspace/src/types.ts
+  - packages/motion-workspace/src/controller.ts
+  - packages/motion-workspace-client/src/index.ts
+  - packages/motion-workspace-client/src/client.ts
+  - packages/motion-workspace-client/src/ws-client.ts
+  - packages/motion-workspace-service/src/app.ts
+  - packages/motion-workspace-service/src/controller.ts
+  - packages/motion-workspace-service/src/routes/workspaces.ts
+  - packages/motion-workspace-service/src/ws-hub.ts
+  - packages/motion-workspace-service/test/app.test.ts
 ---
 # motion-workspace-system
 

@@ -13,6 +13,16 @@ def:
   links:
     - target: motion-workspace-system
       type: traces_to
+sources:
+  - docs/specs/motion-workspace/motion-workspace-system.md
+  - docs/specs/motion-content/motion-workspace-service.spec.md
+  - packages/motion-workspace-service/src/app.ts
+  - packages/motion-workspace-service/src/controller.ts
+  - packages/motion-workspace-service/src/repository.ts
+  - packages/motion-workspace-service/src/routes/workspaces.ts
+  - packages/motion-workspace-service/src/ws-hub.ts
+  - packages/motion-workspace-service/test/app.test.ts
+  - packages/motion-workspace-service/test/repository.test.ts
 ---
 # motion-workspace-service (deprecated)
 
