@@ -19,6 +19,15 @@ def:
       type: traces_to
     - target: bdd-contract-cli
       type: traces_to
+sources:
+  - docs/specs/bdd-system/bdd-contract-system.spec.md
+  - docs/specs/bdd-system/bdd-contract-cli.spec.md
+  - docs/specs/bdd-system/bdd-contract-cli.rule.md
+  - docs/specs/definition-catalog/docs-control-plane.cases.md
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/commands/docs.test.ts
+  - packages/cli/src/lib/docs-control-plane/bdd-contract-extract.ts
+  - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
 ---
 
 # BDD Contract System — TODO
@@ -30,6 +39,21 @@ BDD Contract System의 구현 완료 항목과 남은 실행 작업을 추적한
 ## 구현 항목
 
 구현된 사실은 `bdd-contract-system.spec`, `bdd-contract-schema.spec`, `bdd-contract-cli.spec`가 소유한다. 이 TODO는 남은 실행 작업만 유지한다.
+
+## 현재 분리 판정
+
+| 범위 | 판정 | 추적 위치 |
+|------|------|-----------|
+| BDD block parser/schema/metadata | implemented | `bdd-contract-schema.spec`, `bdd-contract-system.spec` |
+| `docs bdd` read-only CLI | implemented | `bdd-contract-cli.spec`, `bdd-contract-cli.rule` |
+| ScenarioSpec/PipeGraph compile preview | implemented | `bdd-contract-system.spec` |
+| command smoke example capture | actionable | 이 TODO |
+| authoring examples | actionable | 이 TODO |
+| write/scaffold/gate integration | deferred | 이 TODO |
+
+따라서 이 문서는 완료된 기능을 다시 소유하지 않는다. 남은 항목은 CLI smoke output, authoring examples, 정책 결정, write/gate 통합 후보만 추적한다.
+
+현재 smoke 대상은 `docs-control-plane` family다. 명령 실행 자체는 검증에 사용하되, full output 예시를 spec/guide에 고정하는 작업은 아래 Actionable 항목으로 남긴다.
 
 ### Actionable — 실행 가능
 
