@@ -19,6 +19,30 @@ def:
       type: traces_to
     - target: decision-standard-group
       type: traces_to
+sources:
+  - packages/decision-flow/src/narrative.ts
+  - packages/decision-flow/src/context-provider.ts
+  - packages/decision-flow/src/hierarchical-context.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/context-provider.test.ts
+  - packages/decision-flow/src/hierarchical-context.test.ts
+  - packages/decision-flow/src/decision-unit.test.ts
+  - packages/decision-flow/src/types.ts
+  - packages/decision-flow/src/schema.ts
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/catalog.ts
+  - packages/decision-flow/src/coordinate.ts
+  - packages/decision-flow/src/observe.ts
+  - packages/decision-flow/src/decision-flow.test.ts
+  - packages/decision-flow/src/observe.test.ts
+  - packages/decision-flow/src/comparison.ts
+  - packages/decision-flow/src/core-analysis.ts
+  - packages/decision-flow/src/monitor.ts
+  - packages/decision-flow/src/orthogonality.ts
+  - packages/decision-flow/src/self-analysis.ts
+  - packages/decision-flow/src/core-analysis.test.ts
+  - packages/decision-flow/src/monitor.test.ts
+  - packages/decision-flow/src/evaluation.test.ts
 ---
 # Decision Flow — 서사 증명: 좌표 공간
 

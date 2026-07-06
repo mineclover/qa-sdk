@@ -14,6 +14,14 @@ def:
   links:
     - target: df-state-model
       type: traces_to
+sources:
+  - packages/decision-flow/src/narrative.ts
+  - packages/decision-flow/src/context-provider.ts
+  - packages/decision-flow/src/hierarchical-context.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/context-provider.test.ts
+  - packages/decision-flow/src/hierarchical-context.test.ts
+  - packages/decision-flow/src/decision-unit.test.ts
 ---
 # Decision Flow — 서사 구조
 
@@ -59,7 +67,7 @@ def:
 
 ```
 한 줄 요약:
-  "기존 모듈의 응답 시간이 SLA를 초과 → [범위 결정=new] → module:packages/new-component"
+  "기존 모듈의 응답 시간이 SLA를 초과 → [범위 결정=new] → module:new-component"
 
   배경                              코어 전환점           산출
 ```

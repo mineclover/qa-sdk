@@ -15,6 +15,23 @@ def:
       type: refines
     - target: df-system
       type: depends_on
+sources:
+  - packages/decision-flow/src/observe.ts
+  - packages/decision-flow/src/ingest-adapter.ts
+  - packages/decision-flow/src/instance-store.ts
+  - packages/decision-flow/src/engine.ts
+  - packages/decision-flow/src/observe.test.ts
+  - packages/cli/src/commands/flow.ts
+  - packages/cli/src/commands/flow.test.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/cli/src/commands/dkg-decision-flow.ts
+  - packages/cli/src/commands/dkg-decision-flow.test.ts
+  - packages/cli/src/commands/dkg-flow-schema.test.ts
+  - packages/cli/src/stores/flow-sqlite-store.ts
+  - packages/cli/src/stores/flow-sqlite-store.test.ts
+  - packages/cli/src/stores/flow-ingest-emitter.ts
+  - packages/decision-flow-store/src/store.ts
+  - packages/decision-flow-store/src/store.test.ts
 ---
 
 # DF Interface — 소비자 기대 시나리오

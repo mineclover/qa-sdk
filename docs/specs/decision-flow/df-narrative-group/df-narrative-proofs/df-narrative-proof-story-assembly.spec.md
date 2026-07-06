@@ -17,6 +17,14 @@ def:
       type: traces_to
     - target: df-narrative-context
       type: traces_to
+sources:
+  - packages/decision-flow/src/narrative.ts
+  - packages/decision-flow/src/context-provider.ts
+  - packages/decision-flow/src/hierarchical-context.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/context-provider.test.ts
+  - packages/decision-flow/src/hierarchical-context.test.ts
+  - packages/decision-flow/src/decision-unit.test.ts
 ---
 # Decision Flow — 서사 증명: 서사 조립과 컨텍스트
 

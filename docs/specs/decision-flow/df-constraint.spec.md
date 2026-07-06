@@ -15,6 +15,12 @@ def:
       type: constrains
     - target: df-causal-mapping
       type: constrains
+sources:
+  - packages/decision-flow/src/boundary.ts
+  - packages/decision-flow/src/mental-model.ts
+  - packages/decision-flow/src/core-analysis.ts
+  - packages/decision-flow/src/boundary.test.ts
+  - packages/decision-flow/src/evaluation.test.ts
 ---
 # Decision Flow 구조적 제약
 

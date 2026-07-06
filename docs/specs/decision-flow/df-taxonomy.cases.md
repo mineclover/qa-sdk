@@ -15,6 +15,14 @@ def:
       type: refines
     - target: df-system
       type: depends_on
+sources:
+  - packages/decision-flow/src/types.ts
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/catalog.ts
+  - packages/decision-flow/src/boundary.ts
+  - packages/decision-flow/src/sprint.ts
+  - packages/decision-flow/src/evaluation.test.ts
+  - packages/decision-flow/src/sprint.test.ts
 ---
 
 # DF Taxonomy — 소비자 기대 시나리오

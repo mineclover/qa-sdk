@@ -21,6 +21,51 @@ def:
       type: refs
     - target: decision-flow-store
       type: refs
+sources:
+  - packages/decision-flow/src/index.ts
+  - packages/decision-flow/src/types.ts
+  - packages/decision-flow/src/schema.ts
+  - packages/decision-flow/src/engine.ts
+  - packages/decision-flow/src/decision-flow.test.ts
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/catalog.ts
+  - packages/decision-flow/src/coordinate.ts
+  - packages/decision-flow/src/observe.ts
+  - packages/decision-flow/src/observe.test.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/comparison.ts
+  - packages/decision-flow/src/core-analysis.ts
+  - packages/decision-flow/src/monitor.ts
+  - packages/decision-flow/src/orthogonality.ts
+  - packages/decision-flow/src/self-analysis.ts
+  - packages/decision-flow/src/core-analysis.test.ts
+  - packages/decision-flow/src/monitor.test.ts
+  - packages/decision-flow/src/ingest-adapter.ts
+  - packages/decision-flow/src/instance-store.ts
+  - packages/cli/src/commands/flow.ts
+  - packages/cli/src/commands/flow.test.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/cli/src/commands/dkg-decision-flow.ts
+  - packages/cli/src/commands/dkg-decision-flow.test.ts
+  - packages/cli/src/commands/dkg-flow-schema.test.ts
+  - packages/cli/src/stores/flow-sqlite-store.ts
+  - packages/cli/src/stores/flow-sqlite-store.test.ts
+  - packages/cli/src/stores/flow-ingest-emitter.ts
+  - packages/decision-flow-store/src/store.ts
+  - packages/decision-flow-store/src/store.test.ts
+  - packages/decision-flow/src/narrative.ts
+  - packages/decision-flow/src/context-provider.ts
+  - packages/decision-flow/src/hierarchical-context.ts
+  - packages/decision-flow/src/context-provider.test.ts
+  - packages/decision-flow/src/hierarchical-context.test.ts
+  - packages/decision-flow/src/decision-unit.test.ts
+  - packages/decision-flow/src/dev-decisions.ts
+  - packages/decision-flow/src/dev-decisions.test.ts
+  - packages/decision-flow/src/sprint.ts
+  - packages/decision-flow/src/sprint.test.ts
+  - packages/decision-flow/src/policy.ts
+  - packages/decision-flow/src/policy-learning.ts
+  - packages/decision-flow/src/evaluation.test.ts
 ---
 
 # Decision Flow 시스템

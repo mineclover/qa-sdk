@@ -19,6 +19,22 @@ def:
       type: traces_to
     - target: axis-decision-guide
       type: traces_to
+sources:
+  - packages/decision-flow/src/narrative.ts
+  - packages/decision-flow/src/context-provider.ts
+  - packages/decision-flow/src/hierarchical-context.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/context-provider.test.ts
+  - packages/decision-flow/src/hierarchical-context.test.ts
+  - packages/decision-flow/src/decision-unit.test.ts
+  - packages/decision-flow/src/boundary.ts
+  - packages/decision-flow/src/mental-model.ts
+  - packages/decision-flow/src/core-analysis.ts
+  - packages/decision-flow/src/boundary.test.ts
+  - packages/decision-flow/src/evaluation.test.ts
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/orthogonality.ts
+  - packages/decision-flow/src/self-analysis.ts
 ---
 # Decision Flow — 서사 증명: 코어 gate와 축 설계
 

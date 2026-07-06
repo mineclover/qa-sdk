@@ -13,6 +13,12 @@ def:
   links:
     - target: decision-standard-group
       type: refines
+sources:
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/orthogonality.ts
+  - packages/decision-flow/src/self-analysis.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/evaluation.test.ts
 ---
 
 # Decision Standard 프로세스

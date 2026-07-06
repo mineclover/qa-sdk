@@ -17,6 +17,12 @@ def:
       type: contains
     - target: df-system
       type: depends_on
+sources:
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/orthogonality.ts
+  - packages/decision-flow/src/self-analysis.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/evaluation.test.ts
 ---
 
 # Decision Standard 그룹

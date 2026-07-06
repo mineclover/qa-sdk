@@ -26,6 +26,14 @@ def:
       type: contains
     - target: df-system
       type: depends_on
+sources:
+  - packages/decision-flow/src/narrative.ts
+  - packages/decision-flow/src/context-provider.ts
+  - packages/decision-flow/src/hierarchical-context.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/context-provider.test.ts
+  - packages/decision-flow/src/hierarchical-context.test.ts
+  - packages/decision-flow/src/decision-unit.test.ts
 ---
 # Decision Flow — 서사 증명
 

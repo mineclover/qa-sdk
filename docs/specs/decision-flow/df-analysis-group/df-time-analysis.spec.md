@@ -15,6 +15,15 @@ def:
       type: depends_on
     - target: df-system
       type: implements
+sources:
+  - packages/decision-flow/src/comparison.ts
+  - packages/decision-flow/src/core-analysis.ts
+  - packages/decision-flow/src/monitor.ts
+  - packages/decision-flow/src/orthogonality.ts
+  - packages/decision-flow/src/self-analysis.ts
+  - packages/decision-flow/src/core-analysis.test.ts
+  - packages/decision-flow/src/monitor.test.ts
+  - packages/decision-flow/src/proof.test.ts
 ---
 # 시간축 분석
 

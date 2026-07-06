@@ -13,6 +13,16 @@ def:
   links:
     - target: df-observation-space
       type: depends_on
+sources:
+  - packages/decision-flow/src/types.ts
+  - packages/decision-flow/src/schema.ts
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/catalog.ts
+  - packages/decision-flow/src/coordinate.ts
+  - packages/decision-flow/src/observe.ts
+  - packages/decision-flow/src/decision-flow.test.ts
+  - packages/decision-flow/src/observe.test.ts
+  - packages/decision-flow/src/proof.test.ts
 ---
 # Decision Flow 직렬화
 

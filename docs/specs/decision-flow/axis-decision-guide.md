@@ -14,6 +14,12 @@ def:
   links:
     - target: decision-standard-group
       type: traces_to
+sources:
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/orthogonality.ts
+  - packages/decision-flow/src/self-analysis.ts
+  - packages/decision-flow/src/proof.test.ts
+  - packages/decision-flow/src/evaluation.test.ts
 ---
 
 # Axis Decision Guide — 축에 넣을 것과 넣지 않을 것

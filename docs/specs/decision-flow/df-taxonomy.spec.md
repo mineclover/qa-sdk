@@ -27,6 +27,14 @@ def:
       type: traces_to
     - target: df-system
       type: depends_on
+sources:
+  - packages/decision-flow/src/types.ts
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/catalog.ts
+  - packages/decision-flow/src/boundary.ts
+  - packages/decision-flow/src/sprint.ts
+  - packages/decision-flow/src/evaluation.test.ts
+  - packages/decision-flow/src/sprint.test.ts
 ---
 
 # Decision Flow Taxonomy — 판단 추적 분류 체계

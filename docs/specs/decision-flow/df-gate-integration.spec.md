@@ -17,6 +17,14 @@ def:
       type: refines
     - target: df-system
       type: implements
+sources:
+  - packages/decision-flow/src/observe.ts
+  - packages/decision-flow/src/ingest-adapter.ts
+  - packages/decision-flow/src/engine.ts
+  - packages/decision-flow/src/observe.test.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/cli/src/commands/flow.ts
 ---
 # GateEngine 연동
 

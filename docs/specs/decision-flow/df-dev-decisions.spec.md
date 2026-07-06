@@ -15,6 +15,15 @@ def:
       type: depends_on
     - target: df-system
       type: implements
+sources:
+  - packages/decision-flow/src/dev-decisions.ts
+  - packages/decision-flow/src/dev-decisions.test.ts
+  - packages/decision-flow/src/sprint.ts
+  - packages/decision-flow/src/sprint.test.ts
+  - packages/decision-flow/src/policy.ts
+  - packages/decision-flow/src/policy-learning.ts
+  - packages/decision-flow/src/engine.ts
+  - packages/decision-flow/src/evaluation.test.ts
 ---
 # 일상 개발 의사결정 플로우
 
