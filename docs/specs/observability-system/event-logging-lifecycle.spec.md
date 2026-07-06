@@ -34,6 +34,18 @@ def:
       type: traces_to
     - target: event-logging-lifecycle-rule
       type: traces_to
+sources:
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
+  - packages/ingest-server/src/lib/enrich-address-context.ts
+  - packages/ingest-server/src/lib/enrich-address-context.test.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/registry-service/src/core/seed-events.ts
+  - packages/registry-service/src/core/seed-events.test.ts
+  - packages/registry-service/src/modules/events/event-catalog.controller.ts
+  - packages/registry-service/src/modules/events/event-catalog.service.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Logging Lifecycle
@@ -89,6 +101,15 @@ Requester/data-effect policy:
 - backend는 requester-aware data-effect event를 정의한다.
 - 같은 backend mutation도 request path, requester type, behavior unit, persistence outcome에 따라 다른 event intent를 가질 수 있다.
 - alert는 raw delta가 아니라 semantic event key와 requester/data-effect payload를 소비한다.
+
+## 현재 구현 근거 ^evidence
+
+- `IngestForwarder`는 `addressContext`가 없는 로그와 빈 객체 로그를 필터링하고, `addressContext`가 있는 로그만 `EventRecord`로 변환한다.
+- `IngestForwarder`의 event identity 우선순위는 명시 `eventKey` -> `svc_log.<level>` fallback이다.
+- `IngestForwarder`가 만든 record는 `addressContext`를 canonical `address_context`에 싣고, pino 예약 필드는 payload에서 제외한다.
+- `/v1/ingest`는 저장 전에 `infra_context`를 각 record의 `address_context`와 머지하며, record 값이 envelope 값을 override한다.
+- registry validation mode는 `strict|warn|off`로 검증된다. `strict`는 invalid event를 400으로 거절하고, `warn`은 202로 수락하며 warning reason을 남기고, `off`는 validator를 호출하지 않는다. validator 장애는 fail-open이다.
+- event taxonomy/adoption surface는 event-catalog controller/service의 service/catalog level `taxonomy`, `taxonomy/check`, `taxonomy/assert` API와 `seedEventSchemas` materialization 테스트로 검증한다.
 
 ## 소비 ^consumes
 

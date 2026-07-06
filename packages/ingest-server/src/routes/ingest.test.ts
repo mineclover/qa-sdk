@@ -449,7 +449,7 @@ describe("POST /v1/ingest — keyObservationStore fail-open", () => {
       records: [
         buildRecord({
           log_id: "log_ko_001",
-          address_context: { pfx_page: "packed_key_001" },
+          address_context: { pfx_page: "pfx_page:v1:1" },
         }),
       ],
     });

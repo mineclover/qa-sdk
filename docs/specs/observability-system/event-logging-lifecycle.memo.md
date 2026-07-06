@@ -15,6 +15,15 @@ def:
   links:
     - target: event-logging-lifecycle
       type: traces_to
+sources:
+  - docs/specs/observability-system/event-logging-lifecycle.spec.md
+  - docs/specs/observability-system/event-logging-lifecycle.rule.md
+  - docs/specs/observability-system/event-logging-lifecycle.test.md
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/registry-service/src/core/seed-events.test.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Logging Lifecycle — Review Memo
@@ -30,3 +39,9 @@ event logging lifecycle 기능 리뷰 중 확인한 판정과 검증 결과를 �
 - 따라서 fallback key는 진단용이며, taxonomy-clean domain/production event는 명시 `eventKey`를 사용해야 한다.
 - `pnpm gate:event-taxonomy`는 `localhost:3300` registry-service 미기동으로 실패했다. drift 판정 전 단계에서 막힌 것이므로 registry-service 실행 후 재시도해야 한다.
 - CLI usability review에서 `docs collect` text header가 `docs status:`로 출력되는 혼선을 고쳤고, JSON `counts.relatedDocuments`를 추가했다. 기존 `counts.familyMembers`는 호환용으로 유지한다.
+
+## 현재 source-backed 판정
+
+- 지속 계약은 `event-logging-lifecycle.spec.md`, `event-logging-lifecycle.rule.md`, `event-logging-lifecycle.test.md`로 이동했다.
+- 이 memo가 유지하는 것은 2026-04-21 시점의 review context뿐이다.
+- 현행 구현 근거는 logger bridge 테스트, ingest registry validation mode 테스트, registry-service adoption/taxonomy 테스트에 연결되어 있다.

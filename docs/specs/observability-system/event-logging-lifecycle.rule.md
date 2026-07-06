@@ -16,6 +16,16 @@ def:
       type: refines
     - target: service-event-adoption-rule
       type: depends_on
+sources:
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
+  - packages/ingest-server/src/lib/enrich-address-context.ts
+  - packages/ingest-server/src/lib/enrich-address-context.test.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/registry-service/src/modules/events/event-catalog.controller.ts
+  - packages/registry-service/src/modules/events/event-catalog.service.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Logging Lifecycle — 소비 규칙
@@ -63,3 +73,9 @@ def:
 | registry warning | event key 미등록 또는 version mismatch | event taxonomy/adoption 확인 |
 | address health orphan prefix | catalog에 없는 prefix가 address_context에 있음 | prefix catalog 또는 SDK 주입값 확인 |
 | taxonomy assert 409 | 운영 게이트 drift | `event-taxonomy-gate` skill 절차 수행 |
+
+## 현재 검증 근거
+
+- Logger input/bridge behavior는 `packages/logger/src/transport/ingest-forwarder.test.ts`의 필터링, event key 우선순위, `address_context` 전달 테스트가 고정한다.
+- Ingest validation은 `packages/ingest-server/src/routes/ingest.test.ts`의 registry validation mode 테스트와 `packages/ingest-server/src/lib/enrich-address-context.test.ts`의 merge 테스트가 고정한다.
+- Taxonomy gate surface는 `packages/registry-service/src/modules/events/event.controller.test.ts`의 adoption, service taxonomy check/assert, catalog taxonomy check/assert 테스트가 고정한다.

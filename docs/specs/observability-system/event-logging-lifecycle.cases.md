@@ -16,6 +16,12 @@ def:
       type: refines
     - target: event-logging-lifecycle-rule
       type: depends_on
+sources:
+  - packages/logger/src/transport/ingest-forwarder.test.ts
+  - packages/ingest-server/src/lib/enrich-address-context.test.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/registry-service/src/core/seed-events.test.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Logging Lifecycle — Cases
@@ -45,3 +51,9 @@ event logging lifecycle의 사용자 관점 시나리오를 정리한다. 흐름
 - **Given** 서비스 로그에 `addressContext`가 없다.
 - **When** `IngestForwarder`가 pino log를 수신한다.
 - **Then** 로그는 stdout 운영 로그로만 남고 ingest로 forward되지 않는다.
+
+## 검증 표면 ^evidence
+
+- `C-001`: logger test의 명시 `eventKey` 우선순위, `address_context` 전달, ingest route의 registry known/invalid validation mode, registry-service의 adoption materialization 및 taxonomy check/assert 테스트로 나뉘어 검증한다.
+- `C-002`: logger test의 `svc_log.info` fallback 생성과 registry-service seed 테스트의 mapping adoption materialization 조건으로 검증한다. fallback key 자체의 gate-clean 여부는 별도 mapping pack/adoption이 생길 때만 바뀐다.
+- `C-003`: logger test의 `addressContext` 없음/빈 객체 필터링으로 검증한다.
