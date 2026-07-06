@@ -15,6 +15,26 @@ def:
       type: depends_on
     - target: index-meta-store-group
       type: refines
+sources:
+  - packages/index-meta/src/adapters/memory-store.ts
+  - packages/index-meta/src/adapters/memory-store.test.ts
+  - packages/index-meta/src/version-lifecycle.ts
+  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta/src/adapters/memory-version-lifecycle.ts
+  - packages/index-meta/src/adapters/sql-version-lifecycle-store.ts
+  - packages/index-meta/src/migration-store.ts
+  - packages/index-meta/src/migration-store.test.ts
+  - packages/index-meta/src/adapters/memory-migration-store.ts
+  - packages/index-meta/src/adapters/sql-migration-store.ts
+  - packages/index-meta/src/prefix-router.ts
+  - packages/index-meta/src/prefix-router.test.ts
+  - packages/index-meta/src/adapters/memory-prefix-router.ts
+  - packages/index-meta/src/adapters/sql-prefix-router.ts
+  - packages/index-meta/src/cross-version-entry-sync.ts
+  - packages/index-meta/src/cross-version-entry-sync.test.ts
+  - packages/index-meta/src/prefix-registry.ts
+  - packages/index-meta/src/prefix-registry.test.ts
+  - packages/index-meta/src/address-resolver.test.ts
 ---
 
 # Index Meta Store - 주소 해석과 재사용
@@ -98,7 +118,7 @@ interface MigrationStore {
 
 ## PrefixRouter
 
-prefix → D1 database 라우팅. PrefixRegistry(capacity 조회)와 별개 관심사.
+prefix → D1 database 라우팅. PrefixRegistry(capacity/shape/address resolution)와 별개 관심사.
 
 ```ts
 interface PrefixRouter {
@@ -110,6 +130,7 @@ interface PrefixRouter {
 
 - composite 테이블은 entry가 없으므로 라우팅 대상이 아님.
 - 동일 prefix 재등록 시 덮어쓰기 (라우팅 변경 허용).
+- versionId별 codec 선택이나 serialized address parsing은 PrefixRouter 책임이 아니다.
 
 ## CrossVersionEntrySync — 크로스 버전 동기 전파
 
@@ -180,3 +201,9 @@ article:v1 = content_type(4) × perm(2048) × lang(2)
 |----------|------|
 | 전체 디코딩 후 필터 | O(n) — 모든 row decode |
 | 주소 범위 계산 | O(1) — 산술 연산만, entry 조회 없음 |
+
+## source-backed 주의점
+
+- `CrossVersionEntrySync.addEntry()`는 active 버전에서 새 position을 결정하고 writable 버전(draft/released/active)에 같은 position으로 전파한다.
+- 이 클래스는 기존 v1 entity를 v2로 일괄 변환하는 migration executor가 아니다. EntityId 변경/비활성화 이력은 `MigrationStore`가 추적한다.
+- decode 없는 재사용은 `address-resolver.test.ts`의 산술 range 계산과 PrefixRegistry shape/resolve contract로 검증된다. MetaDataset 배포나 lazy iterable API는 이 문서의 현재 source-backed 범위에 포함하지 않는다.

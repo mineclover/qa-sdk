@@ -15,6 +15,20 @@ def:
       type: depends_on
     - target: index-meta-store-group
       type: refines
+sources:
+  - packages/index-meta/src/index-meta-store.ts
+  - packages/index-meta/src/adapters/validate-entry.ts
+  - packages/index-meta/src/adapters/memory-store.ts
+  - packages/index-meta/src/adapters/memory-store.test.ts
+  - packages/index-meta/src/adapters/sql-store.ts
+  - packages/index-meta/src/adapters/sql-store.test.ts
+  - packages/index-meta/src/adapters/d1-store.ts
+  - packages/index-meta/src/adapters/d1-driver.ts
+  - packages/index-meta/src/adapters/better-sqlite-driver.ts
+  - packages/index-meta/src/adapters/node-sqlite-driver.ts
+  - packages/index-meta/src/adapters/node-sqlite-driver.test.ts
+  - packages/index-meta/src/adapters/sqlite-shared.ts
+  - packages/index-meta/src/db/schema.ts
 ---
 
 # Index Meta Store - 저장 계약
@@ -182,3 +196,10 @@ const store = new SqlIndexMetaStore(driver);
 ## 구체 구현과 주소 해석
 
 구체 구현과 주소 해석 흐름은 `index-meta-store-resolution`에서 다룬다.
+
+## source-backed 주의점
+
+- `IndexMetaStore` port의 atomic migration 요구는 `index-meta-store.ts`의 interface contract다.
+- `SqlIndexMetaStore`는 `SqlDriver.transaction()`에 위임한다. SQLite 계열 driver는 rollback을 제공하지만, `D1SqlDriver`는 Workers API 한계로 transaction wrapper 없이 순차 실행한다.
+- 따라서 D1에서 `migrateEntries`는 개별 statement 단위 원자성만 보장한다. cross-entry rollback이 필요한 운영 경로는 transaction-capable driver를 사용하거나 migration 전용 정책을 별도로 둬야 한다.
+- `D1IndexMetaStore` 역시 `migrateEntries`를 transaction wrapping 없이 실행한다. 이 문서는 D1 migration을 full rollback capable로 주장하지 않는다.
