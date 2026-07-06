@@ -13,20 +13,34 @@ def:
   links:
     - target: admin-api-system
       type: refines
+  sources:
+    - packages/ingest-server/src/server.ts
+    - packages/ingest-server/src/app.ts
+    - packages/ingest-server/src/routes/dlq.ts
+    - packages/ingest-server/src/routes/cleanup.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/cleanup.ts
+    - packages/ingest-server/src/lib/bullmq-task-queue.ts
+    - packages/core/src/ports/dlq-store.port.ts
+    - packages/ingest-server/src/routes/dlq.test.ts
+    - packages/ingest-server/src/routes/cleanup.test.ts
+    - packages/ingest-server/src/app.test.ts
+    - packages/ingest-server/src/async-worker.e2e.test.ts
 ---
 
 # Ingest Admin 운영 규칙
 
 ## 목적 ^purpose
 
-DLQ 삽입 시점, 설정, 의존 포트를 분리해 ingest admin 운영 작업이 본선 수집 경로를 침범하지 않도록 규정한다.
+DLQ 삽입 시점, cleanup 실행 경계, 설정, 의존 포트를 분리해 ingest admin 운영 작업이 본선 수집 경로를 침범하지 않도록 규정한다.
 
 ## 구성 ^overview
 
 - **DLQ 삽입 시점** — Phase 2 (reconstruction/verdict) 최종 실패 시 자동 삽입.
 - **재시도 한도** — `DLQ_MAX_RETRY_ATTEMPTS` (기본 3)로 무한 재시도 방지.
 - **BullMQ 통합** — `TASK_QUEUE_ENABLED=true` 시 Phase 2 작업을 Redis 큐에 위임.
-- **admin/ingest 경로 분리** — rate-limit, 인증 경계가 별도.
+- **Cleanup 실행** — `POST /v1/admin/cleanup`과 cleanup scheduler가 같은 `cleanupExpiredData()`를 사용.
+- **admin/ingest 경로 분리** — ingest rate-limit은 `/v1/ingest` POST에만 적용되고 `/v1/admin/*`에는 적용되지 않는다.
 
 ## DLQ 삽입 규칙
 
@@ -74,6 +88,16 @@ storeEnvelope (Phase 1, 동기)
 - `TASK_QUEUE_ENABLED=false` (기본) → Phase 2를 인라인으로 동기 실행 (`processPendingPhaseTwo`)
 - `TASK_QUEUE_ENABLED=true` → BullMQ로 비동기 위임, 별도 worker 프로세스 가능
 
+## Cleanup 운영 규칙
+
+`POST /v1/admin/cleanup`은 scheduler 없이 운영자가 즉시 정리를 요청하는 경로다.
+
+- 기본 보존 기간: trace 30일, verdict 90일
+- 기본 batch size: 1000
+- 정리 대상: expired verdict report, expired trace 하위 event record/runtime graph/verdict report/trace, orphan QA session
+- 실행 결과는 `options`, `cutoffs`, `deleted` 집계로 반환
+- 스케줄러(`CLEANUP_CRON_ENABLED=true`)와 admin endpoint 모두 `cleanupExpiredData()`를 공유해 동작 차이를 줄인다.
+
 ## Worker 모드
 
 `ingest-server worker` 인자로 시작하면 HTTP 서버 없이 BullMQ 워커만 실행:
@@ -91,3 +115,4 @@ storeEnvelope (Phase 1, 동기)
 | session 연관 | `SessionStore`, `ScenarioSpecStore` | verdict 계산 |
 | verdict 저장 | `VerdictStore` | 판정 결과 영속 |
 | 태스크 큐 | `BullMQTaskQueue` | Phase 2 비동기 위임 |
+| 데이터 정리 | `CleanupStore` | 만료 trace/verdict/session 삭제 |

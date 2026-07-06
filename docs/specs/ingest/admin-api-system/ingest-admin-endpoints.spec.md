@@ -15,6 +15,14 @@ def:
       type: refines
     - target: dlq-store-spec
       type: depends_on
+  sources:
+    - packages/ingest-server/src/app.ts
+    - packages/ingest-server/src/routes/dlq.ts
+    - packages/ingest-server/src/routes/cleanup.ts
+    - packages/ingest-server/src/routes/dlq.test.ts
+    - packages/ingest-server/src/routes/cleanup.test.ts
+    - packages/ingest-server/src/app.test.ts
+    - packages/ingest-server/src/async-worker.e2e.test.ts
 ---
 
 # Ingest Admin 엔드포인트
@@ -27,6 +35,7 @@ def:
 
 - **GET /v1/admin/dlq** — DLQ 적재분 조회 (status=pending 필터, limit 옵션).
 - **POST /v1/admin/dlq/retry** — pending 상태의 DLQ 항목 일괄 재시도.
+- **POST /v1/admin/cleanup** — 만료 trace/verdict/session 데이터를 운영자가 즉시 정리.
 - DLQ 항목은 phase(reconstruction/verdict) 기반으로 재처리 경로가 분기됨.
 - admin API는 ingest rate-limit과 별도 경로 (`/v1/admin/`)로 분리.
 
@@ -77,12 +86,48 @@ pending 상태의 DLQ 항목을 최대 100건 조회하여 일괄 재시도한�
 }
 ```
 
+### POST /v1/admin/cleanup
+
+만료된 trace, event record, runtime graph, verdict report, orphan session을 정리한다.
+
+**요청 body:** 비어 있거나 JSON override를 받을 수 있다.
+
+| 필드 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `traceRetentionDays` | `number` | `30` | trace/event/runtime graph 정리 보존 기간 |
+| `verdictRetentionDays` | `number` | `90` | verdict report 정리 보존 기간 |
+| `batchSize` | `number` | `1000` | 한 번에 처리할 ID 수 |
+
+**응답:**
+```json
+{
+  "ok": true,
+  "options": {
+    "traceRetentionDays": 30,
+    "verdictRetentionDays": 90,
+    "batchSize": 1000
+  },
+  "cutoffs": {
+    "traceCreatedBefore": "2026-03-26T...",
+    "verdictComputedBefore": "2026-01-25T..."
+  },
+  "deleted": {
+    "eventRecords": 10,
+    "runtimeGraphs": 1,
+    "verdictReports": 2,
+    "traces": 1,
+    "qaSessions": 0
+  }
+}
+```
+
 ## 운영 계약
 
 - admin API는 ingest rate-limit 미들웨어가 적용되지 않는 별도 경로
 - 재시도 한도: `DLQ_MAX_RETRY_ATTEMPTS` 환경변수로 설정 (기본 3)
 - 재시도와 자동 재시도 구분: admin 재시도는 `markAttempted()` 후 처리 → 이력 추적 가능
 - 응답에 resolved/failed/skipped를 명시하여 잔여 실패 건수 즉시 파악 가능
+- cleanup은 빈 body를 기본 옵션으로 처리하고, 잘못된 JSON 또는 0 이하 보존 기간은 400으로 거부
 
 ## 의존 포트
 
@@ -95,3 +140,4 @@ pending 상태의 DLQ 항목을 최대 100건 조회하여 일괄 재시도한�
 | `sessionStore` | `SessionStore` | session 연관 정보 |
 | `scenarioSpecStore` | `ScenarioSpecStore` | verdict 계산 시 시나리오 스펙 |
 | `verdictStore` | `VerdictStore` | verdict 저장 |
+| `cleanupStore` | `CleanupStore` | 만료 데이터 조회/삭제 |
