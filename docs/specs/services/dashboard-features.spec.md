@@ -13,6 +13,14 @@ def:
   links:
     - target: dashboard-service-spec
       type: refines
+sources:
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.service.ts
+  - packages/registry-service/src/modules/dashboard/dev-dashboard.gateway.ts
+  - packages/registry-service/src/modules/dashboard/dev-dashboard.socket-hub.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.test.ts
+  - packages/registry-service/src/modules/dashboard/dev-dashboard.gateway.test.ts
+  - packages/registry-service/src/e2e/dashboard-and-events.test.ts
 ---
 # Dashboard — feature/func_def
 

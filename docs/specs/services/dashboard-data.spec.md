@@ -13,6 +13,12 @@ def:
   links:
     - target: dashboard-service-spec
       type: refines
+sources:
+  - packages/registry-service/src/modules/dashboard/dashboard.service.ts
+  - packages/registry-service/src/lib/dev-dkg-provider.ts
+  - packages/registry-service/src/types/spec-core-ports.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.ts
+  - packages/registry-service/src/e2e/dashboard-and-events.test.ts
 ---
 # Dashboard — data/system_data
 
