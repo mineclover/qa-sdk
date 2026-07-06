@@ -12,6 +12,12 @@ def:
   links:
     - target: definition-service-system
       type: refines
+  sources:
+    - packages/definition-client/src/client.ts
+    - packages/definition-client/src/nestjs.ts
+    - packages/definition-client/src/types.ts
+    - packages/definition-client/src/index.ts
+    - packages/definition-client/src/client.test.ts
 ---
 # Definition Client
 
@@ -25,9 +31,3 @@ definition-service의 REST surface를 타입 있는 클라이언트로 감싸는
 - `nestjs.ts` — NestJS 연동용 export
 - `types.ts` — 요청/응답 타입
 - 에러 규칙 — 외부 서비스 호출 실패는 throw가 기본
-
-## 관련 소스
-
-- `packages/definition-client/src/client.ts`
-- `packages/definition-client/src/nestjs.ts`
-- `packages/definition-client/src/types.ts`

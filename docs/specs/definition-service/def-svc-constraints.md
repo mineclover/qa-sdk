@@ -15,6 +15,15 @@ def:
       type: constrains
     - target: def-svc-docs-module
       type: constrains
+  sources:
+    - packages/definition-service/src/core/axis-registry.ts
+    - packages/definition-service/src/core/compute-address.ts
+    - packages/definition-service/src/core/doc-versioner.ts
+    - packages/definition-service/src/modules/docs/docs.controller.ts
+    - packages/definition-service/src/modules/graph/graph.service.ts
+    - packages/definition-service/src/sync/reverse-sync.ts
+    - packages/definition-service/src/core/doc-versioner.test.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
 ---
 # Definition Service — 기술 제약
 
@@ -28,7 +37,7 @@ definition-service의 동작을 제한하는 불변 조건과 검증 규칙을 �
 
 | 규칙 | 설명 | 위반 시 |
 |------|------|---------|
-| scope×aspect 유효 조합 | 22개 조합만 허용 (VALID_SCOPE_ASPECTS) | PATCH 400 에러 |
+| scope×aspect 유효 조합 | definition-catalog의 `VALID_SCOPE_ASPECTS` 조합만 허용 | PATCH 400 에러 |
 | AxisRegistry 검증 | scope/aspect/depth/lifecycle 값이 registry-service 축 entries에 존재 | PATCH 400 에러 |
 | address 자동 계산 | scope×aspect×depth 변경 시 자동 재계산 | 계산 실패 시 null (저장 차단 않음) |
 

@@ -13,6 +13,16 @@ def:
   links:
     - target: definition-service-system
       type: refines
+  sources:
+    - packages/definition-service/src/modules/docs/docs.controller.ts
+    - packages/definition-service/src/modules/sync/sync.controller.ts
+    - packages/definition-service/src/modules/graph/graph.controller.ts
+    - packages/definition-service/src/modules/graphql/doc.resolver.ts
+    - packages/definition-service/src/modules/graphql/doc.object.ts
+    - packages/definition-service/src/modules/tests/tests.controller.ts
+    - packages/definition-service/src/modules/prefixes/prefixes.controller.ts
+    - packages/definition-service/src/modules/intents/intents.controller.ts
+    - packages/definition-service/src/modules/consumption/consumption.controller.ts
 ---
 # Definition Service — API 계약
 
@@ -26,8 +36,13 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 
 | Method | Path | 설명 |
 |--------|------|------|
-| GET | `/docs` | 목록 (scope, aspect, depth, lifecycle, layer, svc, tag, address, q, limit, offset, sort) |
+| GET | `/docs` | 목록 (type, knowledge-kind, level, scope, aspect, depth, lifecycle, layer, svc, tag, address, q, limit, offset, sort) |
+| GET | `/docs/by-file?path=` | code reference 기준 문서/바운더리 해석 |
+| GET | `/docs/by-address/:address` | 주소 기준 단건 조회 |
+| GET | `/docs/by-address/:address/incoming-links` | 주소 기준 역링크 |
+| GET | `/docs/by-address/:address/outgoing-links` | 주소 기준 순방향 링크 |
 | GET | `/docs/:id` | 단건 조회 |
+| GET | `/docs/:id/body` | 본문 snapshot 조회 |
 | PATCH | `/docs/:id` | 메타데이터 업데이트 (AxisRegistry 검증 + address 재계산) |
 | GET | `/docs/:id/children` | contains 자식 |
 | GET | `/docs/:id/parent` | contains 부모 |
@@ -41,6 +56,7 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 | POST | `/docs/:id/tags/:tag` | 단일 태그 추가 |
 | DELETE | `/docs/:id/tags/:tag` | 단일 태그 삭제 |
 | GET | `/docs/:id/history` | 버전 이력 |
+| GET | `/docs/:id/history/:version` | 특정 버전 body 포함 조회 |
 
 ### 동기화 (SyncController)
 
@@ -49,14 +65,17 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 | POST | `/sync` | file → DB |
 | POST | `/sync/to-files` | DB → file (frontmatter 역동기화) |
 | GET | `/sync` | 마지막 동기화 결과 |
+| GET | `/sync/to-files` | 마지막 역동기화 결과 |
 
 ### 그래프 (GraphController)
 
 | Method | Path | 설명 |
 |--------|------|------|
 | GET | `/graph/:id/impact` | 영향 분석 (blast radius, BFS) |
+| GET | `/graph/by-address/:address/impact` | 주소 기준 영향 분석 |
 | GET | `/graph/:id/concerns` | concern 전파 (직접 + 상속) |
 | GET | `/graph/:id/boundary-context` | boundary + concerns + impact + feedback trace (`level`, `mode=direct|transitive`) |
+| GET | `/graph/by-address/:address/boundary-context` | 주소 기준 boundary context |
 | POST | `/graph/validate` | 깨진 링크, 순환 참조, 고아 문서 |
 
 ## GraphQL API
@@ -66,6 +85,7 @@ definition-service의 REST + GraphQL 엔드포인트 명세. 요청/응답 형�
 ```graphql
 type Query {
   doc(id: String!): Doc
+  docByAddress(address: String!): Doc
   docList(scope, aspect, depth, layer, svc, tag, q, limit, offset): [Doc!]!
   boundary(docId: String!, level: String): BoundaryResultType
   boundaryContext(docId: String!, level: String, mode: String): BoundaryContextResultType

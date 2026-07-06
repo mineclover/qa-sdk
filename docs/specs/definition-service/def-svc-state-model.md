@@ -13,6 +13,13 @@ def:
   links:
     - target: definition-service-system
       type: refines
+  sources:
+    - packages/definition-service/src/core/doc-versioner.ts
+    - packages/definition-service/src/core/doc-versioner.test.ts
+    - packages/definition-service/src/stores/doc-store.ts
+    - packages/definition-service/src/db/schema.ts
+    - packages/definition-service/src/core/compute-address.ts
+    - packages/definition-service/src/modules/docs/docs.controller.ts
 ---
 # Definition Service — 상태 모델
 

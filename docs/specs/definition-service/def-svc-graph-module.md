@@ -15,6 +15,12 @@ def:
       type: refines
     - target: def-svc-docs-module
       type: depends_on
+  sources:
+    - packages/definition-service/src/modules/graph/graph.module.ts
+    - packages/definition-service/src/modules/graph/graph.controller.ts
+    - packages/definition-service/src/modules/graph/graph.service.ts
+    - packages/definition-service/src/modules/graphql/doc.resolver.ts
+    - packages/definition-service/src/modules/graphql/doc.object.ts
 ---
 # Definition Service — Graph Module
 
@@ -33,7 +39,11 @@ DB edge 테이블 기반으로 영향 분석(blast radius), concern 전파, 그�
 | 엔드포인트 | 로직 | DB 의존 |
 |-----------|------|---------|
 | `GET /graph/:id/impact` | analyzeImpact() — BFS blast radius | document_links (outgoing + incoming) |
+| `GET /graph/by-address/:address/impact` | address → docId 해석 후 impact() | documents.address + document_links |
 | `GET /graph/:id/concerns` | computeEffectiveConcerns() — BFS 전파 | document_links + tags_json |
+| `GET /graph/:id/boundary-context` | boundary + concerns + impact + feedback trace | documents + document_links |
+| `GET /graph/by-address/:address/boundary-context` | address → docId 해석 후 boundaryContext() | documents.address + document_links |
 | `POST /graph/validate` | 깨진 링크 + 순환 참조 + 고아 문서 | documents + document_links |
 | GraphQL `impact(docId)` | 동일 로직 | 동일 |
+| GraphQL `boundaryContext(docId)` | 동일 로직 | 동일 |
 | GraphQL `validateGraph` | 동일 로직 | 동일 |
