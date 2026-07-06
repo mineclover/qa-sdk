@@ -15,6 +15,10 @@ def:
       type: depends_on
     - target: perm-migration-system
       type: refines
+sources:
+  - packages/permission-engine/src/migration.ts
+  - packages/permission-engine/src/migration.test.ts
+  - packages/permission-engine/src/permission-codec.ts
 ---
 
 # Permission Migration 매퍼 규칙

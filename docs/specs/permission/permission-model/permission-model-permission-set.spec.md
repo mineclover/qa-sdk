@@ -14,6 +14,13 @@ def:
       type: refines
     - target: permission-encoding
       type: depends_on
+sources:
+  - packages/permission-engine/src/permission-set.ts
+  - packages/permission-engine/src/permission-set.test.ts
+  - packages/permission-engine/src/role-registry.ts
+  - packages/permission-engine/src/role-registry.test.ts
+  - packages/bit-index/src/bit-mask-set.ts
+  - packages/bit-index/src/bit-mask-set.test.ts
 ---
 # 권한 모델 — PermissionSet
 

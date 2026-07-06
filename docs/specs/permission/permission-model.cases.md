@@ -15,6 +15,12 @@ def:
       type: refines
     - target: permission-system
       type: depends_on
+sources:
+  - packages/permission-engine/src/permission-set.test.ts
+  - packages/permission-engine/src/ternary-mask.test.ts
+  - packages/permission-engine/src/scoped-engine.test.ts
+  - packages/permission-engine/src/auth-integration.test.ts
+  - packages/permission-engine/src/composite-address.test.ts
 ---
 
 # Permission Model — 소비자 기대 시나리오

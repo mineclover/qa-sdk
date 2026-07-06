@@ -16,6 +16,12 @@ def:
       type: depends_on
     - target: permission-encoding
       type: depends_on
+sources:
+  - packages/permission-engine/src/composite-address.test.ts
+  - packages/permission-engine/src/permission-set.ts
+  - packages/permission-engine/src/scoped-engine.ts
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/migration.ts
 ---
 # 권한 모델 — 조합과 마이그레이션
 

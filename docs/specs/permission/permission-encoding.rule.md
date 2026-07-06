@@ -14,6 +14,11 @@ def:
       type: refines
     - target: cq-policy-resolver
       type: refines
+sources:
+  - packages/permission-engine/src/permission-code.ts
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/permission-codec.test.ts
+  - packages/bit-index/src/bridge.ts
 ---
 
 # Permission Encoding — 소비 규칙

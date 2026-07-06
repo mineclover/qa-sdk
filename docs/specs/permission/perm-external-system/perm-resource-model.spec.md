@@ -13,6 +13,12 @@ def:
   links:
     - target: system-concepts
       type: depends_on
+sources:
+  - packages/permission-engine/src/resource.ts
+  - packages/permission-engine/src/resource-policy/state.ts
+  - packages/permission-engine/src/resource-policy/state.test.ts
+  - packages/permission-engine/src/resource-policy/registry.ts
+  - packages/permission-engine/src/resource-policy/registry.test.ts
 ---
 # perm-resource-model
 

@@ -17,6 +17,10 @@ def:
       type: depends_on
     - target: perm-migration-system
       type: refines
+sources:
+  - packages/permission-engine/src/migration.ts
+  - packages/permission-engine/src/migration.test.ts
+  - packages/permission-engine/src/permission-version.ts
 ---
 
 # PermissionSet 자동 마이그레이션 규칙

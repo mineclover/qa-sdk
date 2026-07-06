@@ -15,6 +15,13 @@ def:
       type: constrains
     - target: perm-permission-code
       type: constrains
+sources:
+  - packages/permission-engine/src/ternary-mask.ts
+  - packages/permission-engine/src/ternary-mask.test.ts
+  - packages/permission-engine/src/resource-policy/state.ts
+  - packages/permission-engine/src/resource-policy/state.test.ts
+  - packages/permission-engine/src/access-checker/checker.ts
+  - packages/permission-engine/src/access-checker/checker.test.ts
 ---
 
 # applyMasking

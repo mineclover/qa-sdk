@@ -29,6 +29,13 @@ def:
       type: contains
     - target: permission-system
       type: depends_on
+sources:
+  - packages/permission-engine/src/role-registry.ts
+  - packages/permission-engine/src/resource.ts
+  - packages/permission-engine/src/permission-code.ts
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/index-meta/src/named-policy.ts
+  - packages/demo-dkg-config/src/index.ts
 ---
 # 권한 비즈니스 제약
 

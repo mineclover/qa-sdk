@@ -14,6 +14,13 @@ def:
       type: refines
     - target: perm-service-ref
       type: depends_on
+sources:
+  - packages/permission-engine/src/scoped-engine.ts
+  - packages/permission-engine/src/scoped-engine.test.ts
+  - packages/permission-engine/src/service-ref.ts
+  - packages/permission-engine/src/resource.ts
+  - packages/permission-engine/src/auth-request.test.ts
+  - packages/permission-engine/src/auth-integration.test.ts
 ---
 # 권한 모델 — ScopedEngine
 

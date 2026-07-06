@@ -19,6 +19,14 @@ def:
       type: refs
     - target: auth-permission-integration
       type: depends_on
+sources:
+  - packages/permission-engine/src/index.ts
+  - packages/permission-engine/src/permission-set.ts
+  - packages/permission-engine/src/scoped-engine.ts
+  - packages/permission-engine/src/ternary-mask.ts
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/migration.ts
+  - packages/bit-index/src/index.ts
 ---
 
 # 권한 엔진 시스템

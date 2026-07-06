@@ -14,6 +14,13 @@ def:
       type: refines
     - target: perm-codec-system
       type: depends_on
+sources:
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/permission-codec.test.ts
+  - packages/permission-engine/src/permission-view-cache.ts
+  - packages/permission-engine/src/bench-bit-optimization.test.ts
+  - packages/bit-index/src/bridge.ts
+  - packages/bit-index/src/bridge.test.ts
 ---
 # 권한 제약 — 인코딩 선택 기준
 

@@ -13,6 +13,9 @@ def:
   links:
     - target: registry-services-api-spec
       type: depends_on
+sources:
+  - packages/permission-engine/src/service-ref.ts
+  - packages/permission-engine/src/permission-code.ts
 ---
 # perm-service-ref
 

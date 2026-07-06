@@ -15,6 +15,9 @@ def:
       type: depends_on
     - target: perm-service-ref
       type: depends_on
+sources:
+  - packages/permission-engine/src/permission-code.ts
+  - packages/permission-engine/src/permission-codec.test.ts
 ---
 # perm-permission-code
 

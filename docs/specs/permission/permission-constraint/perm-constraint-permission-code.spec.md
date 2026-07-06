@@ -14,6 +14,10 @@ def:
       type: refines
     - target: perm-permission-code
       type: depends_on
+sources:
+  - packages/permission-engine/src/permission-code.ts
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/permission-codec.test.ts
 ---
 # 권한 제약 — Permission Code 형식
 

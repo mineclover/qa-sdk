@@ -14,6 +14,11 @@ def:
       type: refines
     - target: perm-codec-stack
       type: depends_on
+sources:
+  - packages/permission-engine/src/ternary-mask.ts
+  - packages/permission-engine/src/ternary-mask.test.ts
+  - packages/bit-index/src/bit-index.ts
+  - packages/bit-index/src/bit-index.test.ts
 ---
 # 권한 모델 — TernaryMask
 

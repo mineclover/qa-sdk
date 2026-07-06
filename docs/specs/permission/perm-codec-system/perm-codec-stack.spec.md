@@ -17,6 +17,11 @@ def:
       type: depends_on
     - target: perm-codec-system
       type: refines
+sources:
+  - packages/permission-engine/src/permission-codec.ts
+  - packages/permission-engine/src/permission-codec.test.ts
+  - packages/permission-engine/src/permission-view-cache.ts
+  - packages/bit-index/src/bridge.ts
 ---
 
 # PermissionCodec 스택 계약

@@ -14,6 +14,9 @@ def:
       type: refines
     - target: perm-resource-model
       type: depends_on
+sources:
+  - packages/permission-engine/src/resource.ts
+  - packages/permission-engine/src/auth-request.test.ts
 ---
 # 권한 제약 — Resource 형식
 

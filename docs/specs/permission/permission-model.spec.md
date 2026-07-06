@@ -24,6 +24,13 @@ def:
       type: contains
     - target: permission-system
       type: depends_on
+sources:
+  - packages/permission-engine/src/permission-set.ts
+  - packages/permission-engine/src/ternary-mask.ts
+  - packages/permission-engine/src/scoped-engine.ts
+  - packages/permission-engine/src/resource.ts
+  - packages/permission-engine/src/service-ref.ts
+  - packages/permission-engine/src/composite-address.test.ts
 ---
 # 권한 모델
 

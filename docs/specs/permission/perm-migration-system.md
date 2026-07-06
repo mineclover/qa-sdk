@@ -17,6 +17,12 @@ def:
       type: contains
     - target: permission-system
       type: depends_on
+sources:
+  - packages/permission-engine/src/migration.ts
+  - packages/permission-engine/src/migration.test.ts
+  - packages/permission-engine/src/permission-version.ts
+  - packages/permission-engine/src/versioned-bitmap/issuer.ts
+  - packages/permission-engine/src/versioned-bitmap/issuer.test.ts
 ---
 
 # Permission Migration 시스템

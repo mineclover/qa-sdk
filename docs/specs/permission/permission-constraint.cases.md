@@ -15,6 +15,12 @@ def:
       type: refines
     - target: permission-system
       type: depends_on
+sources:
+  - packages/permission-engine/src/role-registry.test.ts
+  - packages/permission-engine/src/resource-policy/state.test.ts
+  - packages/permission-engine/src/access-checker/checker.test.ts
+  - packages/index-meta/src/named-policy.test.ts
+  - packages/dkg/src/skills/constraint-check.ts
 ---
 
 # Permission Constraint — 소비자 기대 시나리오

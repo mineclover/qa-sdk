@@ -19,6 +19,12 @@ def:
       type: contains
     - target: permission-system
       type: depends_on
+sources:
+  - packages/permission-engine/src/resource.ts
+  - packages/permission-engine/src/service-ref.ts
+  - packages/permission-engine/src/permission-code.ts
+  - packages/permission-engine/src/resource-policy/state.ts
+  - packages/permission-engine/src/access-checker/checker.ts
 ---
 
 # perm-external-system

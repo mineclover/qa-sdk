@@ -12,6 +12,11 @@ def:
   links:
     - target: permission-constraint
       type: refines
+sources:
+  - packages/permission-engine/src/role-registry.ts
+  - packages/permission-engine/src/role-registry.test.ts
+  - packages/permission-engine/src/role-resolver.ts
+  - packages/permission-engine/src/role-resolver.test.ts
 ---
 # 권한 제약 — Role 해소 규칙
 

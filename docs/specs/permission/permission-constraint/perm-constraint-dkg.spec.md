@@ -12,6 +12,13 @@ def:
   links:
     - target: permission-constraint
       type: refines
+sources:
+  - packages/demo-dkg-config/src/index.ts
+  - packages/dkg/src/skills/constraint-check.ts
+  - packages/dkg/src/dkg.test.ts
+  - packages/index-meta/src/named-policy.ts
+  - packages/index-meta/src/named-policy.test.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # 권한 제약 — DKG 제약
 
