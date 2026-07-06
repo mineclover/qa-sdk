@@ -15,6 +15,13 @@ def:
       type: refines
     - target: sdk-system
       type: depends_on
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/index-sdk.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
 ---
 
 # SDK 멀티 서비스 시나리오 — 소비자 기대 시나리오
@@ -57,8 +64,8 @@ def:
 
 **기대**:
 - constants 와 문자열 직접 입력("ADMIN") 의 encode 결과 동일
-- RESERVED_TOKENS 와 충돌하는 entity name → 등록 시점 에러
-- constants 는 런타임 `const` — 트리 쉐이킹 친화
+- reserved token entry 는 encode/decode 가능하지만 constants read model 에서는 제외
+- custom reservedTokens 는 constants 필터와 fullView reserved 분류를 바꿈
 
 **실패 시 수정 대상**: `sdk-system.md`의 `sdk-constants` — constants / 문자열 동등성이 보장되지 않으면 FE 타입 안전과 BE string 경로가 drift.
 
@@ -69,8 +76,8 @@ def:
 **동작**: 같은 SDK 인스턴스에 v1 + v2 주소가 혼재 입력.
 
 **기대**:
-- versionId 기반 라우팅으로 각 주소를 해당 version codec 으로 decode
-- 미지원 versionId → reserved 처리 + warning metric
+- 호출자가 versionId에 맞는 version-pinned client 또는 MetaCodec을 선택해야 함
+- 미지원 versionId를 다른 version-pinned client로 decode하면 명시적으로 실패
 - capacity 혼재 (v1 smaller, v2 larger) 시 `dimCapacity()` 가 version-aware 응답
 
 **실패 시 수정 대상**: `sdk-system.md`의 `sdk-dim-views` — dimCapacity 가 version-aware 가 아니면 혼재 환경에서 잘못된 capacity headroom 리포트.

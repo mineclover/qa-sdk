@@ -14,12 +14,21 @@ def:
       type: refines
     - target: sdk-system
       type: traces_to
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/index-sdk.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
 ---
 # SDK 시나리오 — inactive 항목 운영
 
 ## 목적 ^purpose
 
 deprecated/inactive entry가 constants에서는 제외되면서도 기존 데이터의 encode/decode 호환성은 유지되는지 검증한다.
+
+## 상태
+
+implemented
 
 ## 구성 ^overview
 

@@ -28,6 +28,20 @@ def:
       type: refs
     - target: sdk-scenario-reserved-tokens
       type: refs
+sources:
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-lifecycle.spec.md
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-entry-modes.spec.md
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-schema-evolution.spec.md
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-multi-service.spec.md
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-cli-simulation.spec.md
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-inactive-entries.spec.md
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-reserved-tokens.spec.md
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/index-sdk.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
 ---
 
 # SDK 라이프사이클 유저 시나리오
@@ -48,9 +62,9 @@ IndexSDK 기반 클라이언트·서버 운영 시나리오를 단계별로 분�
 
 ## 테스트 범위
 
-- E2E 시나리오 30건
-- SDK 단위 테스트 77건
-- 총 107개 테스트
+- `index-sdk.test.ts`: SDK 소비 라이프사이클, entry modes, inactive entry, reservedTokens override, schema snapshot regeneration, multi-service DecodeMap, CLI-like read model.
+- `meta-codec.test.ts`: DecodeMap 독립 codec, encode/decode, matchRanges, toDecodeMap.
+- `meta-resolver.test.ts`: DecodeMap, DimRange, IndexRange, Dataset, address 포함 bundle.
 
 ## 참조
 

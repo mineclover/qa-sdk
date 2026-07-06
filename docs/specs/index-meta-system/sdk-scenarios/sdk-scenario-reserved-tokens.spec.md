@@ -14,12 +14,19 @@ def:
       type: refines
     - target: sdk-system
       type: traces_to
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/index-sdk.test.ts
 ---
 # SDK 시나리오 — reservedTokens 오버라이드
 
 ## 목적 ^purpose
 
 테이블별 커스텀 reserved token 집합을 설정했을 때 constants 제외 대상과 fullView 분류가 의도대로 동작하는지 검증한다.
+
+## 상태
+
+implemented
 
 ## 구성 ^overview
 

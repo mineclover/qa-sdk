@@ -14,12 +14,21 @@ def:
       type: refines
     - target: sdk-system
       type: traces_to
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/index-sdk.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
 ---
 # SDK 시나리오 — 소비 라이프사이클
 
 ## 목적 ^purpose
 
 MetaRegistryInput 작성 → `createIndexSDK()` → client → constants → encode/decode까지의 전체 소비 라이프사이클이 정확하게 동작함을 검증한다.
+
+## 상태
+
+implemented
 
 ## 구성 ^overview
 

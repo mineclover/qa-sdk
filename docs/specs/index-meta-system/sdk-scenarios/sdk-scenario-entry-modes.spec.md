@@ -14,12 +14,21 @@ def:
       type: refines
     - target: sdk-system
       type: traces_to
+sources:
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/index-sdk.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
 ---
 # SDK 시나리오 — 엔트리 제공 모드
 
 ## 목적 ^purpose
 
 프론트엔드용 Client 모드와 백엔드용 Full 모드가 다른 수준의 엔트리 정보를 노출하면서도 동일한 스키마 의미를 유지함을 검증한다.
+
+## 상태
+
+implemented
 
 ## 구성 ^overview
 

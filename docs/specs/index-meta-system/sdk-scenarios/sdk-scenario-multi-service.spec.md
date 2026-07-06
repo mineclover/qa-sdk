@@ -14,12 +14,24 @@ def:
       type: traces_to
     - target: sdk-system
       type: depends_on
+sources:
+  - docs/specs/index-meta-system/sdk-scenarios/sdk-scenario-multi-service.cases.md
+  - packages/index-meta/src/index-sdk.ts
+  - packages/index-meta/src/index-sdk.test.ts
+  - packages/index-meta/src/meta-codec.ts
+  - packages/index-meta/src/meta-codec.test.ts
+  - packages/index-meta/src/meta-resolver.ts
+  - packages/index-meta/src/meta-resolver.test.ts
 ---
 # SDK 시나리오 — 멀티 서비스 스키마 공유
 
 ## 목적 ^purpose
 
 프론트엔드, 백엔드, 분석 서비스가 동일 스키마를 독립적으로 소비하면서도 `VersionedValue`와 DecodeMap을 통해 같은 의미를 공유함을 검증한다.
+
+## 상태
+
+implemented
 
 ## 구성 ^overview
 
@@ -32,4 +44,4 @@ def:
 
 - FE encode 결과를 BE decode가 그대로 복원
 - SDK 없이 MetaCodec + DecodeMap만으로 decode 가능
-- 버전 혼재 환경에서도 versionId 기반 라우팅으로 정확한 decode 보장
+- 다른 version-pinned client로 잘못 decode하면 명시적으로 실패
