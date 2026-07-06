@@ -25,6 +25,12 @@ def:
       type: refs
     - target: operational-ontology-lineage
       type: refs
+  sources:
+    - packages/operational-ontology/src/internal/corridor-core.ts
+    - packages/operational-ontology/src/internal/junction-core.ts
+    - packages/operational-ontology/src/internal/checkpoint-core.ts
+    - packages/operational-ontology/src/internal/topology-core.ts
+    - packages/operational-ontology/src/internal/lineage-core.ts
 ---
 
 # Operational Ontology Observation Plane
@@ -41,4 +47,3 @@ operational ontology의 observation semantics를 조망한다. corridor, junctio
 - `operational-ontology-observation-topology`
 - `operational-ontology-information-transmission`
 - `operational-ontology-lineage`
-

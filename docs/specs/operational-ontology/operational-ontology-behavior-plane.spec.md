@@ -25,6 +25,11 @@ def:
       type: refs
     - target: operational-ontology-branch-handling
       type: refs
+  sources:
+    - packages/operational-ontology/src/internal/schema-core.ts
+    - packages/operational-ontology/src/internal/prompt-artifact-core.ts
+    - packages/operational-ontology/src/internal/pipe-projector.ts
+    - packages/operational-ontology/src/projectors-pipe.test.ts
 ---
 
 # Operational Ontology Behavior Plane
@@ -41,4 +46,3 @@ operational ontology의 System behavior를 조망한다. 이 plane은 validation
 - `operational-ontology-simulation`
 - `operational-ontology-control-flow`
 - `operational-ontology-branch-handling`
-

@@ -16,6 +16,11 @@ def:
       type: traces_to
     - target: operational-ontology-package-architecture
       type: traces_to
+  sources:
+    - packages/operational-ontology-web/package.json
+    - packages/operational-ontology-web/src/main.ts
+    - packages/operational-ontology-web/scripts/static-smoke.mjs
+    - packages/operational-ontology-web/public/samples/event-store.json
 ---
 
 # Operational Ontology Visualization Web — 수집 store 시각화

@@ -28,6 +28,11 @@ def:
       type: contains
     - target: operational-ontology-governance-plane
       type: contains
+  sources:
+    - packages/operational-ontology/package.json
+    - packages/operational-ontology/README.md
+    - packages/operational-ontology/src/index.ts
+    - scripts/package-surfaces.mjs
 ---
 
 # Operational Ontology System — schema-first operational ontology 초안

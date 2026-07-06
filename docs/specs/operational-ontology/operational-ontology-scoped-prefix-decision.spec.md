@@ -24,6 +24,11 @@ def:
       type: constrains
     - target: index-meta-system
       type: constrains
+  sources:
+    - packages/operational-ontology/src/internal/ontology-allocation-core.ts
+    - packages/operational-ontology/src/allocation.test.ts
+    - packages/cli/src/commands/ontology/activation.ts
+    - docs/specs/operational-ontology/operational-ontology-registry-persistence-handoff.spec.md
 ---
 
 # Operational Ontology Scoped Prefix Decision - namespace change criteria

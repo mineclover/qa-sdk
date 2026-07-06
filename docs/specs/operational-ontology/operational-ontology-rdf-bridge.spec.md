@@ -16,6 +16,10 @@ def:
       type: traces_to
     - target: operational-ontology-traversal-coordinate
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/schema-core.ts
+    - packages/operational-ontology/src/runtime.ts
 ---
 
 # Operational Ontology RDF Bridge — RDF 개념을 operational coordinate로 읽기

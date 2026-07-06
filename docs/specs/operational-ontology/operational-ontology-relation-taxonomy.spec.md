@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: taxonomy-boundaries
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/schema-core.ts
+    - packages/operational-ontology/src/runtime.ts
+    - packages/operational-ontology/src/facades.test.ts
 ---
 
 # Operational Ontology Relation Taxonomy — relation type도 taxonomy여야 한다

@@ -14,6 +14,10 @@ def:
       type: traces_to
     - target: operational-ontology-relation-taxonomy
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/runtime.ts
+    - packages/operational-ontology/src/facades.test.ts
 ---
 
 # Operational Ontology Edge Assertion — relation type의 실제 연결 사실

@@ -29,6 +29,11 @@ def:
       type: refs
     - target: operational-ontology-rdf-bridge
       type: refs
+  sources:
+    - packages/operational-ontology/package.json
+    - packages/operational-ontology/src/index.ts
+    - packages/operational-ontology-web/package.json
+    - packages/operational-ontology-web/scripts/static-smoke.mjs
 ---
 
 # Operational Ontology Interface Plane

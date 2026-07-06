@@ -14,6 +14,10 @@ def:
       type: traces_to
     - target: operational-ontology-core-model
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/schema-core.ts
+    - packages/operational-ontology/src/internal/schema-memory.ts
+    - packages/operational-ontology/src/pack.test.ts
 ---
 
 # Operational Ontology Category Constraint — relation 조합 폭발을 막는 grammar

@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: tracking-three-axes
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/junction-core.ts
+    - packages/operational-ontology/src/internal/pipe-projector.ts
+    - packages/operational-ontology/src/projectors-pipe.test.ts
 ---
 
 # Operational Ontology Branch Handling — 분기 처리의 해석 규칙

@@ -16,6 +16,11 @@ def:
       type: constrains
     - target: operational-ontology-schema-validation
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/schema-core.ts
+    - packages/operational-ontology/src/internal/schema-memory.ts
+    - packages/operational-ontology/src/schema.ts
+    - packages/operational-ontology/src/pack.test.ts
 ---
 
 # Operational Ontology Relation Category Schema — relation type grammar의 schema 정의

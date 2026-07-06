@@ -18,6 +18,10 @@ def:
       type: traces_to
     - target: operational-ontology-category-constraint
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/path-projector.ts
+    - packages/operational-ontology/src/projectors-path.test.ts
 ---
 
 # Operational Ontology Traversal Coordinate — start/end/edge chain을 route identity로 다루기

@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: meta-semantic-ir
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/projector-shared.ts
+    - packages/operational-ontology/src/internal/lineage-projector.ts
+    - packages/operational-ontology/src/projectors-lineage.test.ts
 ---
 
 # Operational Ontology Data Facets — 정보를 데이터 패싯으로 다루기

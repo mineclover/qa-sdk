@@ -17,6 +17,11 @@ def:
       type: traces_to
     - target: programming-artifact-ontology-context-simulation-todo
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/programming-artifact-core.ts
+    - packages/operational-ontology/src/programming-artifacts.test.ts
+    - packages/cli/src/commands/ontology.test.ts
+    - docs/specs/operational-ontology/programming-artifact-ontology-context-simulation.spec.md
 ---
 
 # Programming Artifact Ontology Context Simulation — 방향 계획

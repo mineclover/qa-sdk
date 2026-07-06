@@ -31,6 +31,11 @@ def:
       type: refs
     - target: operational-ontology-persistence
       type: refs
+  sources:
+    - packages/operational-ontology/src/internal/schema-core.ts
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/persistence-core.ts
+    - packages/operational-ontology/src/pack.test.ts
 ---
 
 # Operational Ontology Component Plane
@@ -50,4 +55,3 @@ operational ontology의 Component vocabulary를 조망한다. 이 plane은 data 
 - `operational-ontology-traversal-coordinate`
 - `operational-ontology-data-facets`
 - `operational-ontology-persistence`
-

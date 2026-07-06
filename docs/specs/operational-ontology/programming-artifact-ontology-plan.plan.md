@@ -11,6 +11,12 @@ def:
   links:
     - target: decision-definition-bridge
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/programming-artifact-core.ts
+    - packages/operational-ontology/src/programming-artifacts.test.ts
+    - packages/cli/src/commands/ontology/artifact-registry.ts
+    - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
+    - packages/cli/src/commands/ontology.test.ts
 ---
 
 # Programming Artifact Ontology — 방향 계획

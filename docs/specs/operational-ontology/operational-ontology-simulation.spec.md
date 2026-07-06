@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: tracking-three-axes
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/pipe-projector.ts
+    - packages/operational-ontology/src/projectors-pipe.test.ts
+    - packages/operational-ontology/src/projectors-event.test.ts
+    - packages/operational-ontology/src/projectors-lineage.test.ts
 ---
 
 # Operational Ontology Simulation — 정보 패싯과 전달을 시뮬레이션하기

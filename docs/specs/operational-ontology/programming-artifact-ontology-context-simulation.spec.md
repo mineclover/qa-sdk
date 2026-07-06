@@ -25,6 +25,12 @@ def:
       type: traces_to
     - target: programming-artifact-ontology-context-simulation-todo
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/programming-artifact-core.ts
+    - packages/operational-ontology/src/programming-artifacts.test.ts
+    - packages/cli/src/commands/ontology/prompt-extract-artifact.ts
+    - packages/cli/src/commands/ontology/quality-status-evidence.ts
+    - packages/cli/src/commands/ontology.test.ts
 ---
 
 # Programming Artifact Ontology Context Simulation — context/dataflow 검증 계약

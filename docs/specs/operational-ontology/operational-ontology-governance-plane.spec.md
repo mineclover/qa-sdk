@@ -27,6 +27,11 @@ def:
       type: refs
     - target: programming-artifact-ontology-system
       type: refs
+  sources:
+    - packages/operational-ontology/src/internal/implementation-governance-core.ts
+    - packages/operational-ontology/src/internal/implementation-governance-evaluator.ts
+    - packages/operational-ontology/src/internal/ontology-allocation-core.ts
+    - packages/operational-ontology/src/governance.test.ts
 ---
 
 # Operational Ontology Governance Plane

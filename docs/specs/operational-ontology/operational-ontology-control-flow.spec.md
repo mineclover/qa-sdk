@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: meta-semantic-pipe-impl
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/pipe-projector.ts
+    - packages/operational-ontology/src/internal/projector-utils.ts
+    - packages/operational-ontology/src/projectors-pipe.test.ts
 ---
 
 # Operational Ontology Control Flow — 제어 흐름 관리의 최소 모델

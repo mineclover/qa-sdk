@@ -16,6 +16,11 @@ def:
       type: traces_to
     - target: operational-ontology-edge-assertion
       type: traces_to
+  sources:
+    - packages/operational-ontology/src/internal/runtime-core.ts
+    - packages/operational-ontology/src/internal/projector-utils.ts
+    - packages/operational-ontology/src/internal/pipe-projector.ts
+    - packages/operational-ontology/src/projectors-pipe.test.ts
 ---
 
 # Operational Ontology Information Transmission — 정보를 전달하는 개념
