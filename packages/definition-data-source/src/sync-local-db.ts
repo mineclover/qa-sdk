@@ -32,6 +32,7 @@ export interface SyncLocalDbResult {
 }
 
 const DEFAULT_DB_PATH = "data/definition-service.sqlite";
+const SQLITE_INSERT_BATCH_SIZE = 50;
 
 // ─── Drizzle 스키마 정의 (SSOT) ──────────────────────────
 
@@ -187,16 +188,17 @@ export async function syncDocsToLocalDb(
       // 4. 코드 참조 일괄 수집 및 적재
       const refs = collectCodeReferences(rootDir, { docsDir });
       if (refs.length > 0) {
-        tx.insert(codeReferences).values(
-          refs.map((ref) => ({
-            codePath: ref.codePath,
-            docId: ref.docId,
-            relationType: ref.relationType,
-            sourceKind: ref.sourceKind,
-            symbol: ref.symbol ?? "", // NOT NULL 제약 준수
-            line: ref.line,
-          })),
-        ).run();
+        const rows = refs.map((ref) => ({
+          codePath: ref.codePath,
+          docId: ref.docId,
+          relationType: ref.relationType,
+          sourceKind: ref.sourceKind,
+          symbol: ref.symbol ?? "", // NOT NULL 제약 준수
+          line: ref.line,
+        }));
+        for (const batch of chunks(rows, SQLITE_INSERT_BATCH_SIZE)) {
+          tx.insert(codeReferences).values(batch).run();
+        }
       }
 
       // 5. aspect_parents 동기화 (Phase C-0 populate + C-1 insert-on-discovery).
@@ -208,7 +210,9 @@ export async function syncDocsToLocalDb(
         description: descriptionByAspect.get(childId) ?? null,
       }));
       if (aspectRows.length > 0) {
-        tx.insert(aspectParents).values(aspectRows).run();
+        for (const batch of chunks(aspectRows, SQLITE_INSERT_BATCH_SIZE)) {
+          tx.insert(aspectParents).values(batch).run();
+        }
       }
     });
 
@@ -223,6 +227,14 @@ export async function syncDocsToLocalDb(
   } finally {
     sqlite.close();
   }
+}
+
+function chunks<T>(items: readonly T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    result.push(items.slice(index, index + size));
+  }
+  return result;
 }
 
 function resetTables(sqlite: Database.Database): void {

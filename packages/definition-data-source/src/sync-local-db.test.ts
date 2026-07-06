@@ -353,4 +353,51 @@ export const Catalog = {
       source.close();
     }
   });
+
+  it("많은 frontmatter source refs를 SQLite 변수 한도 안에서 배치 적재한다", async () => {
+    const rootDir = makeTempDir();
+    const docsDir = join(rootDir, "docs");
+    const dataDir = join(rootDir, "data");
+    mkdirSync(docsDir, { recursive: true });
+    mkdirSync(dataDir, { recursive: true });
+
+    const sources = Array.from(
+      { length: 220 },
+      (_, index) => `    - packages/demo/src/generated-${String(index).padStart(3, "0")}.ts#Generated${index}`,
+    ).join("\n");
+
+    writeFileSync(
+      join(docsDir, "many-sources.md"),
+      `---
+def:
+  id: many-sources-doc
+  scope: data
+  aspect: domain_data
+  depth: specification
+  lifecycle: approved
+  sources:
+${sources}
+---
+# Many Sources
+
+## 목적 ^purpose
+
+많은 source refs를 한 문서에 연결한다.
+`,
+      "utf8",
+    );
+
+    const result = await syncDocsToLocalDb({ rootDir });
+    expect(result.codeReferences).toBe(220);
+
+    const db = new Database(join(rootDir, "data/definition-service.sqlite"), { readonly: true });
+    try {
+      const row = db
+        .prepare("SELECT COUNT(*) AS count FROM code_references WHERE doc_id = ?")
+        .get("many-sources-doc") as { count: number };
+      expect(row.count).toBe(220);
+    } finally {
+      db.close();
+    }
+  });
 });
