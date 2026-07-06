@@ -20,6 +20,11 @@ def:
       type: traces_to
     - target: service-ownership-spec
       type: traces_to
+  sources:
+    - packages/event-catalog/src/index.test.ts
+    - packages/event-catalog/src/prefix-mapping.test.ts
+    - packages/registry-service/src/core/seed-events.test.ts
+    - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Taxonomy Use Cases — 설계 검증 계획

@@ -13,6 +13,11 @@ def:
   links:
     - target: event-intent-definition-rule
       type: refines
+  sources:
+    - packages/event-catalog/src/payload-guides.ts
+    - packages/event-catalog/src/prefix-mapping.ts
+    - packages/event-catalog/src/index.test.ts
+    - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Intent Definition — Use Cases
@@ -63,4 +68,3 @@ requester-aware data-effect event 규칙이 실제 event key 설계에서 어떻
 - alert rule은 requester type을 기준으로 다른 severity/routing을 적용할 수 있다.
 
 **실패 시 수정 대상**: backend requester injection, event payload guide, alert mapping.
-

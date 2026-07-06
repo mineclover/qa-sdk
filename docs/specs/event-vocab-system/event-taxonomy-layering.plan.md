@@ -22,6 +22,12 @@ def:
       type: contains
     - target: event-vocab-system
       type: depends_on
+  sources:
+    - packages/event-catalog/src/registry.ts
+    - packages/event-catalog/src/prefix-mapping.ts
+    - packages/registry-service/src/core/seed-events.ts
+    - packages/registry-service/src/modules/events/event-catalog.service.ts
+    - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Taxonomy Layering — 설계 계획

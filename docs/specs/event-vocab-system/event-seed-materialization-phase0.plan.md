@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: service-ownership-spec
       type: traces_to
+  sources:
+    - packages/registry-service/src/core/seed-events.ts
+    - packages/registry-service/src/core/seed-events.test.ts
+    - packages/registry-service/src/modules/seed/seed.service.unit.test.ts
+    - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Seed Materialization Phase 0 — 하드코딩 제거 설계

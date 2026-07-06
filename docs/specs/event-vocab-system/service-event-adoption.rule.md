@@ -16,6 +16,11 @@ def:
       type: depends_on
     - target: event-intent-definition-rule
       type: depends_on
+  sources:
+    - packages/registry-service/src/modules/events/event-catalog.service.ts
+    - packages/registry-service/src/modules/events/event-catalog.controller.ts
+    - packages/registry-service/src/modules/events/event.controller.test.ts
+    - scripts/registry-event-taxonomy-gate.sh
 ---
 
 # Service Event Adoption — 소비 규칙

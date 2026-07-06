@@ -23,6 +23,11 @@ def:
       type: traces_to
     - target: event-intent-definition-cases
       type: traces_to
+  sources:
+    - packages/event-catalog/src/payload-guides.ts
+    - packages/event-catalog/src/prefix-mapping.ts
+    - packages/event-catalog/src/index.test.ts
+    - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Intent Definition — Requester/Data Effect Rule

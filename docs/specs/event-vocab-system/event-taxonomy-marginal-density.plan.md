@@ -14,6 +14,11 @@ def:
       type: traces_to
     - target: event-taxonomy-roadmap-plan
       type: refines
+  sources:
+    - scripts/registry-event-taxonomy-gate.sh
+    - packages/registry-service/src/modules/events/event-catalog.service.ts
+    - packages/weighted-index/src/rdbms/strategy-sparse.test.ts
+    - packages/core/src/types/event-pattern.ts
 ---
 
 # Event Taxonomy Gate — Marginal Density 확장 계획

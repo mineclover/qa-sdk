@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: event-mapping-pack-plan
       type: traces_to
+  sources:
+    - packages/registry-service/src/modules/events/event-catalog.service.ts
+    - packages/registry-service/src/modules/events/event-catalog.controller.ts
+    - packages/registry-service/src/core/seed-events.ts
+    - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Service Event Adoption — 설계 계획
