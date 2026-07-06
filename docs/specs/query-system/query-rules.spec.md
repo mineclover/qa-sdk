@@ -15,6 +15,15 @@ def:
       type: contains
     - target: query-system
       type: depends_on
+sources:
+  - packages/query-service/src/stores/policy-rule-store.ts
+  - packages/query-service/src/stores/in-memory-policy-rule-store.ts
+  - packages/query-service/src/stores/sql-policy-rule-store.ts
+  - packages/query-service/src/lib/rule-service.ts
+  - packages/query-service/src/routes/rules.ts
+  - packages/query-service/src/schemas/policy-rule.ts
+  - packages/query-service/src/app.test.ts
+  - packages/query-service/src/stores/policy-rule-store.test.ts
 ---
 # 규칙 영속화 (PolicyRule Store)
 
@@ -22,13 +31,16 @@ def:
 
 PolicyRule의 CRUD와 충돌 전략을 정의한다. Memory/SQL 어댑터를 지원하며, 여러 서비스가 동일 규칙 집합을 공유한다.
 
+소스: `packages/query-service/src/stores/policy-rule-store.ts`, `packages/query-service/src/lib/rule-service.ts`, `packages/query-service/src/routes/rules.ts`, `packages/query-service/src/app.test.ts`
+
 ## 구성 ^overview
 
 - **PolicyRuleStore 인터페이스** — insert, findById, findByIndex, update, delete 5개 메서드.
 - **SqlPolicyRuleStore** — SQLite 기반 영속 저장. query-service 기본 저장소.
 - **InMemoryPolicyRuleStore** — 테스트/데모용 인메모리 구현.
 - **REST /rules 엔드포인트** — CRUD + force 옵션으로 규칙 관리.
-- **충돌 전략** — priority 기반, 같은 priority 시 latest-wins.
+- **충돌 검사** — `detectPatternConflicts()`로 겹치는 pattern을 찾고, `force=true`가 아니면 409를 반환한다.
+- **정책 해소 전략** — 저장소가 아니라 `/resolve` 요청의 `strategy`와 `QueryService.resolvePolicy()`가 담당한다.
 
 ## StoredPolicyRule 구조
 
@@ -87,6 +99,9 @@ PolicyRule의 CRUD와 충돌 전략을 정의한다. Memory/SQL 어댑터를 지
 - `deleteRule(id)` — 규칙 삭제
 - `getRule(id)` — 단건 조회
 - `listRules(indexId, versionId)` — 목록 조회
+- `validateConflicts(rule, ignoredId?)` — PrefixRegistry shape를 조회하고 pattern 길이 검증 후 `detectPatternConflicts()` 수행
+
+`force=true`는 충돌 규칙을 삭제하거나 비활성화하지 않는다. 충돌 보고를 응답에 포함하면서 새 규칙 또는 업데이트 규칙을 그대로 저장한다.
 
 ## 에러 타입
 

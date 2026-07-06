@@ -15,6 +15,16 @@ def:
       type: depends_on
     - target: query-api
       type: refines
+sources:
+  - packages/query-service/src/app.ts
+  - packages/query-service/src/server.ts
+  - packages/query-service/src/worker.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/lib/gate-client.ts
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/config/env.ts
+  - packages/query-service/src/app.test.ts
+  - packages/query-service/src/lib/gate-client.test.ts
 ---
 # Query-Gate 통합
 
@@ -22,10 +32,12 @@ def:
 
 질의 결과에 gate 상태를 합성하는 통합 경로. gateMode(fail-open/fail-closed)와 withGate 플래그로 gate 필터 적용 여부를 제어한다.
 
+소스: `packages/query-service/src/lib/query-service.ts`, `packages/query-service/src/lib/gate-client.ts`, `packages/query-service/src/app.ts`, `packages/query-service/src/server.ts`
+
 ## 구성 ^overview
 
 - **HttpGateStateClient** — gate-service에서 prefix/version별 상태 범위를 HTTP로 조회.
-- **NoopGateStateClient** — gate-service 미설정 시 항상 null 반환 (gate 필터 미적용).
+- **NoopGateStateClient** — `createApp()`에 gateClient를 주입하지 않을 때 항상 null 반환 (gate 필터 미적용).
 - **gateFailureMode** — gate 호출 실패 시 `fail-open`(허용) 또는 `fail-closed`(503 에러).
 - **GateAwareResult** — 정책 해소 결과에 gate 상태를 합성한 확장 결과 타입.
 
@@ -75,6 +87,12 @@ query-service → HttpGateStateClient
 
 - fail-open이 기본값 (ADR: Fail-open 원칙)
 - 에러 격리: gate 실패가 질의 자체를 차단하지 않음 (fail-open 시)
+
+## Runtime 배선
+
+- Node.js `server.ts`는 `GATE_SERVICE_URL` env 기본값으로 `HttpGateStateClient`를 생성한다.
+- `createApp()` 직접 호출 또는 테스트에서 `gateClient`를 생략하면 `NoopGateStateClient`를 사용한다.
+- Worker `worker.ts`는 현재 `GATE_SERVICE_URL`을 Env 타입으로 받지만 `HttpGateStateClient`를 생성하지 않는다. 따라서 Worker 배포의 gate 통합은 아직 Node.js 배선과 동일하지 않다.
 
 ## Transition State Store (선택적)
 
@@ -166,5 +184,5 @@ worker.ts
   → createApp({ defaultStrategy: "most-specific", gateFailureMode: "fail-open" })
 ```
 
-- `GATE_SERVICE_URL` 환경변수로 gate 통합 설정 가능
+- 현재 Worker entrypoint는 `GATE_SERVICE_URL`을 `gateClient`로 연결하지 않는다.
 - transition state store 미지원 (Worker 모드)

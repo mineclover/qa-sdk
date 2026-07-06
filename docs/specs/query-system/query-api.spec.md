@@ -15,12 +15,21 @@ def:
       type: depends_on
     - target: gate-api
       type: depends_on
+sources:
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/schemas/query.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/app.test.ts
+  - packages/index-meta/src/policy-resolver.ts
+  - packages/index-meta/src/relational-engine.ts
 ---
 # Query Service REST API
 
 ## 목적 ^purpose
 
 좌표 질의를 수행하는 REST 엔드포인트. resolve(단일 해소), match-ranges(범위 매칭), compose-query(복합 질의), query-across-versions(버전 횡단), resolve-relation(관계 해소)를 제공한다.
+
+소스: `packages/query-service/src/routes/query.ts`, `packages/query-service/src/schemas/query.ts`, `packages/query-service/src/lib/query-service.ts`, `packages/query-service/src/app.test.ts`
 
 ## 구성 ^overview
 
@@ -47,6 +56,8 @@ def:
 | `versionId` | `string` | - | gate 통합 시 version ID |
 | `withGate` | `boolean` | - | true 시 gate 상태를 합성하여 GateAwareResult 반환 |
 
+`withGate=true`이면 `indexId`와 `versionId`가 zod schema에서 필수로 검증된다. `shape`는 registry의 WeightedIndex shape과 일치해야 한다.
+
 ### POST /match-ranges
 
 partial entity 조건으로 주소 범위를 매칭한다.
@@ -56,7 +67,7 @@ partial entity 조건으로 주소 범위를 매칭한다.
 | `indexId` | `string` | O | 대상 index ID |
 | `versionId` | `string` | O | 대상 version ID |
 | `partial` | `Record<string, EntityId \| null>` | O | dim별 필터 조건 (null=전체) |
-| `gateMode` | `string \| null` | - | gate 필터 모드 |
+| `gateMode` | `"encodable" \| "decodable" \| "active" \| null` | - | gate 필터 모드 |
 
 **응답:** `[number, number][]` — 주소 범위 배열
 
@@ -101,6 +112,7 @@ source index에서 through 관계를 거쳐 target으로 복합 질의한다.
 | `PORT` | `3500` | 서비스 포트 |
 | `SQLITE_DRIVER` | `node` | SQLite 드라이버 (node / better) |
 | `SQLITE_PATH` | `data/query-service.sqlite` | PolicyRuleStore SQLite 경로 |
-| `GATE_SERVICE_URL` | - | gate-service URL (gate 통합 시 필수) |
+| `GATE_SERVICE_URL` | gate-service dev URL 또는 `http://localhost:3400` | Node.js gate-service URL |
 | `QUERY_DEFAULT_STRATEGY` | `most-specific` | 기본 충돌 해소 전략 |
 | `QUERY_GATE_FAILURE_MODE` | `fail-open` | gate 호출 실패 시 동작 (fail-open / fail-closed) |
+| `RECORD_STORE_PATH` | - | state replay용 event_records DB 경로. 미설정 시 `SQLITE_PATH` 공유 |

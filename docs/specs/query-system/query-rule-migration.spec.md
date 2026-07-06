@@ -15,6 +15,13 @@ def:
       type: contains
 contains:
   - query-rule-migration-test
+sources:
+  - packages/query-service/src/lib/rule-migration-service.ts
+  - packages/query-service/src/lib/rule-migration-service.test.ts
+  - packages/query-service/src/routes/rules.ts
+  - packages/query-service/src/schemas/policy-rule.ts
+  - packages/query-service/src/stores/policy-rule-store.ts
+  - packages/index-meta/src/version-query.ts
 ---
 
 # 규칙 버전 마이그레이션 (Rule Version Migration)
@@ -22,6 +29,8 @@ contains:
 ## 목적 ^purpose
 
 index version 변경 시 StoredPolicyRule의 pattern을 자동 변환한다. `translateConstraint` 기반으로 이전 버전의 position을 새 버전의 position으로 매핑하며, 변환 불가(entity 미존재)인 규칙은 건너뛰고 보고한다.
+
+소스: `packages/query-service/src/lib/rule-migration-service.ts`, `packages/query-service/src/lib/rule-migration-service.test.ts`, `packages/query-service/src/routes/rules.ts`
 
 ## 정의 ^defines
 

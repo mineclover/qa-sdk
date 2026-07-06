@@ -2,6 +2,7 @@
 // @def.doc query-api-spec
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { StoredRecord } from "@qa-sdk/core";
 import {
   InMemoryPrefixRegistry,
   MetaRegistry,
@@ -836,7 +837,7 @@ describe("query-service", () => {
       stateRoutes: {
         recordStore: {
           async findByTimeRange() {
-            return [
+            const records: StoredRecord[] = [
               {
                 logId: "keep",
                 traceId: "t1",
@@ -870,6 +871,7 @@ describe("query-service", () => {
                 createdAt: AT,
               },
             ];
+            return records;
           },
         },
       },
@@ -897,7 +899,7 @@ describe("query-service", () => {
       stateRoutes: {
         recordStore: {
           async findByTimeRange() {
-            return [
+            const records: StoredRecord[] = [
               {
                 logId: "keep",
                 traceId: "t1",
@@ -915,6 +917,7 @@ describe("query-service", () => {
                 createdAt: AT,
               },
             ];
+            return records;
           },
         },
         replayTransition,

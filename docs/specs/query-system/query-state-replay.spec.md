@@ -10,6 +10,14 @@ def:
   links:
     - target: query-api
       type: depends_on
+sources:
+  - packages/query-service/src/routes/state.ts
+  - packages/query-service/src/lib/replay-record-store.ts
+  - packages/query-service/src/lib/replay-cache.ts
+  - packages/query-service/src/server.ts
+  - packages/query-service/src/config/env.ts
+  - packages/query-service/src/app.ts
+  - packages/query-service/src/app.test.ts
 ---
 
 # Query Service State Replay — 시점 상태 재구성
@@ -18,10 +26,12 @@ def:
 
 특정 시점까지의 이벤트를 리플레이하여 해당 시각의 축 상태를 재구성한다. GET `/state/:contextId/:resourceId/at?ts=` 엔드포인트로 제공.
 
+소스: `packages/query-service/src/routes/state.ts`, `packages/query-service/src/lib/replay-record-store.ts`, `packages/query-service/src/lib/replay-cache.ts`, `packages/query-service/src/server.ts`
+
 ## 정의 ^defines
 
 - **ReplayRecordStore** — 시간 범위 레코드 조회 포트
-- **ReplayCache** — LRU + TTL 캐시 (100항목, 5분)
+- **ReplayCache** — 선택 주입 가능한 LRU + TTL 캐시 (기본 factory: 100항목, 5분)
 - **TransitionEnginePort** — 전이 엔진 추상 포트 (선택)
 - **GET /at?ts=** — 시점 replay 엔드포인트
 
@@ -35,12 +45,12 @@ def:
 
 ```
 GET /state/:ctx/:res/at?ts=2026-04-01T12:00:00Z
-  → [1] ReplayCache 확인 (hit → 즉시 반환, cached: true)
+  → [1] replayCache가 주입되면 ReplayCache 확인 (hit → 즉시 반환, cached: true)
   → [2] ReplayRecordStore.findByTimeRange({ to: targetTime })
   → [3] address_context에서 contextId/resourceId 필터
   → [4-A] TransitionEngine 있으면 → engine.process(events) → snapshot (mode: engine-replay)
   → [4-B] 없으면 → address_context 병합 (mode: replay)
-  → [5] ReplayCache 저장
+  → [5] replayCache가 주입되면 ReplayCache 저장
   → [6] 응답 { state, recordCount, mode, cached }
 ```
 
@@ -65,7 +75,7 @@ interface ReplayCache {
 }
 ```
 
-LRU: Map 재삽입 순서. TTL: get 시 만료 검사. 키: `contextId:resourceId:ts_truncated`.
+LRU: Map 재삽입 순서. TTL: get 시 만료 검사. 키: `contextId:resourceId:ts_truncated`. `server.ts`는 현재 `createReplayCache()`를 기본 배선하지 않으므로, 캐시는 `createApp({ stateRoutes: { replayCache } })`로 명시 주입할 때 활성화된다.
 
 ### TransitionEnginePort
 
@@ -122,5 +132,5 @@ interface RecordStore {
 | `packages/query-service/src/lib/replay-record-store.ts` | ReplayRecordStore (raw SQL) |
 | `packages/query-service/src/lib/replay-cache.ts` | LRU + TTL 캐시 |
 | `packages/query-service/src/config/env.ts` | RECORD_STORE_PATH |
-| `packages/query-service/src/server.ts` | recordStore 배선 |
+| `packages/query-service/src/server.ts` | recordStore 배선 (`RECORD_STORE_PATH` 미설정 시 `SQLITE_PATH` 공유) |
 | `packages/core/src/ports/record-store.port.ts` | TimeRangeParams + findByTimeRange 포트 |
