@@ -13,6 +13,11 @@ def:
   links:
     - target: domain-hierarchy-readme
       type: depends_on
+  sources:
+    - packages/definition-catalog/src/validate.ts
+    - packages/definition-catalog/src/validate-semantic.test.ts
+    - docs/specs/system/validator-suppression-tags.rule.md
+    - docs/specs/system/aspect-naming-convention.rule.md
 status: under-review
 date: 2026-04-21
 part_of: domain-hierarchy

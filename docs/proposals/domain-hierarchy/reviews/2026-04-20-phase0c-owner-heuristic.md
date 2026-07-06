@@ -6,6 +6,11 @@ def:
   lifecycle: review
   owner_system: definition-catalog
   projection_plane: intent
+  sources:
+    - packages/definition-catalog/src/domain-root.ts
+    - packages/definition-catalog/src/domain-root.test.ts
+    - packages/definition-catalog/src/validate.ts
+    - docs/specs/system/change-simulation-precedence.rule.md
 status: under-review
 date: 2026-04-20
 part_of: domain-hierarchy

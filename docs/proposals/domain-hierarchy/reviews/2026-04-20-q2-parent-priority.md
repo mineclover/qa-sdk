@@ -13,6 +13,10 @@ def:
   links:
     - target: domain-hierarchy-readme
       type: depends_on
+  sources:
+    - packages/definition-catalog/src/domain-root.ts
+    - packages/definition-catalog/src/domain-root.test.ts
+    - docs/specs/system/link-type-usage.rule.md
 status: under-review
 date: 2026-04-20
 part_of: domain-hierarchy
@@ -206,4 +210,3 @@ Existing `visited` set in `deriveDomainRoot()` handles cycles. No change needed.
 1. Implement rule in Phase 1
 2. Measure actual distribution after applying rule
 3. Validate against the 30 duplicate-coordinate warnings (Phase 3)
-

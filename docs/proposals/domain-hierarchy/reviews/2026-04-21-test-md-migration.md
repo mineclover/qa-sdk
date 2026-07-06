@@ -15,6 +15,13 @@ def:
       type: traces_to
     - target: domain-hierarchy-readme
       type: depends_on
+  sources:
+    - packages/definition-catalog/src/types.ts
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/vocabulary.ts
+    - docs/specs/system/test-md-convention.rule.md
+    - packages/definition-catalog/src/frontmatter.test.ts
+    - packages/definition-catalog/src/observe.test.ts
 status: under-review
 date: 2026-04-21
 part_of: domain-hierarchy
