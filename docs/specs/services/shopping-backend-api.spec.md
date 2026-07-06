@@ -13,12 +13,18 @@ def:
   links:
     - target: shopping-backend-spec
       type: refines
+sources:
+  - packages/platform-demo-api/src/index.ts
+  - packages/platform-demo-api/scripts/read-api.test.ts
+  - packages/platform-demo-api/src/registry.ts
+  - packages/platform-demo-api/src/demo-dashboard-read-model.ts
+  - packages/platform-demo-api/package.json
 ---
 # Shopping Backend — interface/api_contract
 
 ## 목적 ^purpose
 
-쇼핑 백엔드 API 계약. 주문 생성, 결제 처리, 권한 확인 엔드포인트.
+platform-demo-api가 노출하는 쇼핑 백엔드 관련 read API 계약. service/permission/event 좌표 조회, scenario, grant-table, log seed 표면으로 쇼핑 백엔드 prefix와 권한/이벤트 상태를 관측한다.
 
 ## 구성 ^overview
 

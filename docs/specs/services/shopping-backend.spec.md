@@ -17,12 +17,22 @@ def:
       type: refs
     - target: shopping-backend-data
       type: refs
+sources:
+  - packages/dkg/src/service-topology.ts
+  - packages/dkg/src/skills/service-explorer.ts
+  - packages/dkg/src/skills/service-explorer.test.ts
+  - packages/dkg/src/skills/trace-demo.test.ts
+  - packages/dkg/src/skills/claim-operation.ts
+  - packages/dkg/src/skills/claim-operation.test.ts
+  - packages/demo-types/src/dsl.ts
+  - packages/platform-demo-api/src/demo-dashboard-read-model.ts
+  - packages/platform-demo-api/src/registry.ts
 ---
 # Shopping Backend
 
 ## 목적 ^purpose
 
-주문/결제/권한 등 비즈니스 핵심 로직을 처리하는 백엔드 서비스. order_event, permission, event, endpoint 4개 prefix를 소유하여 주문 흐름과 API 엔드포인트 이벤트를 생산한다.
+쇼핑 도메인의 DKG/demo 백엔드 서비스 경계. cart_event, order_event, permission, event prefix를 소유하고 checkout/commerce/auth DSL 결합에서 주문 흐름, 권한, 이벤트 영향을 추적한다.
 
 ## 구성 ^overview
 

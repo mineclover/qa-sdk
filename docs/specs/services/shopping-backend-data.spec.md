@@ -13,12 +13,22 @@ def:
   links:
     - target: shopping-backend-spec
       type: refines
+sources:
+  - packages/demo-types/src/prefix-ids.ts
+  - packages/demo-types/src/sdk-factory.ts
+  - packages/demo-types/src/axes.ts
+  - packages/demo-types/src/dsl.ts
+  - packages/platform-demo-api/src/registry.ts
+  - packages/platform-demo-api/src/demo-dashboard-read-model.ts
+  - packages/dkg/src/service-topology.ts
+  - packages/dkg/src/skills/service-explorer.test.ts
+  - packages/dkg/src/skills/claim-operation.test.ts
 ---
 # Shopping Backend — data/domain_data
 
 ## 목적 ^purpose
 
-주문/결제/권한 비즈니스 데이터. order_event, permission, event, endpoint prefix의 이벤트 레코드 구조.
+쇼핑 백엔드의 DKG/demo 데이터 경계. cart_event, order_event, permission, event prefix와 service binding, checkout/commerce/auth DSL 멤버십, demo registry/read-model 좌표 데이터를 정의한다.
 
 ## 구성 ^overview
 
