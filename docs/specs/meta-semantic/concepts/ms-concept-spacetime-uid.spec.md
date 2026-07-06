@@ -13,6 +13,11 @@ def:
       type: traces_to
     - target: ms-concept-branch-path
       type: traces_to
+  sources:
+    - packages/core/src/meta-semantic/spacetime-uid.ts
+    - packages/core/src/meta-semantic/spacetime-uid.test.ts
+    - packages/core/src/pipe/pipe-path.ts
+    - packages/core/src/pipe/pipe-path.test.ts
 ---
 
 # Spacetime UID

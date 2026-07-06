@@ -13,6 +13,10 @@ def:
       type: traces_to
     - target: ms-concept-data-facets
       type: traces_to
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-validate.test.ts
 ---
 
 # 바운더리 (Boundary)

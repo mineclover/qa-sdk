@@ -19,6 +19,17 @@ def:
       type: refines
     - target: meta-semantic-scope
       type: depends_on
+  sources:
+    - packages/core/src/standards/cloud-events.ts
+    - packages/core/src/standards/cloud-events.test.ts
+    - packages/core/src/standards/asyncapi-gen.ts
+    - packages/core/src/standards/asyncapi-gen.test.ts
+    - packages/definition-catalog/src/version-manifest.ts
+    - packages/definition-catalog/src/version-manifest.test.ts
+    - packages/pipe-store-sqlite/src/manifest-store.ts
+    - packages/pipe-store-sqlite/src/manifest-store.test.ts
+    - packages/codegen-core/src/event-track-typescript.ts
+    - packages/codegen-core/src/event-track-typescript.test.ts
 ---
 
 # 이벤트 표준 — CloudEvents 호환 + 서비스 버전 매니페스트
@@ -371,8 +382,8 @@ PipeGraph 정의 → collectGraphEvents()로 이벤트 카탈로그 수집
 ```
 
 현재 구현 상태:
-- **구현됨**: 런타임 track API (event-catalog autoTrack), CloudEvent 변환, collectGraphEvents
-- **미구현**: 이벤트 카탈로그에서 SDK track 코드 자동 생성 (현재는 수동 삽입)
+- **구현됨**: 런타임 track API(event-catalog autoTrack), CloudEvent 변환, collectGraphEvents, AsyncAPI 생성, SDK track 코드 생성
+- **후속**: registry-service 매니페스트 API 연동과 운영 배포 경로
 
 ---
 
@@ -393,11 +404,13 @@ PipeGraph 정의 → collectGraphEvents()로 이벤트 카탈로그 수집
 
 | 구현 | 파일 | 테스트 |
 |------|------|--------|
-| toCloudEvent / fromCloudEvent | `core/src/cloud-events.ts` | 14 tests |
+| toCloudEvent / fromCloudEvent | `packages/core/src/standards/cloud-events.ts` | 18 tests |
 | serializeCloudEvent / deserializeCloudEvent | 같은 파일 | 포함 |
 | toCloudEventBatch / fromCloudEventBatch | 같은 파일 | 포함 |
-| generateAsyncApi / asyncApiToYaml / asyncApiToJson | `core/src/asyncapi-gen.ts` | 4 tests |
-| ManifestRegistry (prefix + manifest 라이프사이클) | `definition-catalog/src/version-manifest.ts` | 16 tests |
+| generateAsyncApi / asyncApiToYaml / asyncApiToJson | `packages/core/src/standards/asyncapi-gen.ts` | 3 tests |
+| ManifestRegistry (prefix + manifest 라이프사이클) | `packages/definition-catalog/src/version-manifest.ts` | 16 tests |
+| SqliteManifestRegistry | `packages/pipe-store-sqlite/src/manifest-store.ts` | lifecycle + persistence tests |
+| generateTrackCode | `packages/codegen-core/src/event-track-typescript.ts` | deterministic codegen tests |
 
 ### 후속 과제
 

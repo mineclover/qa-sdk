@@ -15,6 +15,12 @@ def:
       type: traces_to
     - target: ms-concept-data-facets
       type: traces_to
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-runtime.ts
+    - packages/core/src/pipe/pipe-runtime.test.ts
+    - packages/core/src/pipe/pipe-validate.ts
+    - packages/core/src/pipe/meta-semantic-integration.test.ts
 ---
 
 # 파이프 (Pipe)
@@ -49,9 +55,6 @@ meta-semantic에서 이벤트는 새 포맷이 아니라 기존 EventRecord에
 | 이벤트 | 데이터가 생산되는 포인트. 파이프를 트리거함 |
 | 파이프 | 트리거된 이벤트를 처리하는 패싯의 실행 순서 |
 | 후속 이벤트 | 파이프 결과로 생산된 새 데이터. 다음 파이프를 트리거할 수 있음 |
-
-**비즈니스 로직 = 이벤트에 의해 트리거되는 파이프들의 집합.**
-파이프가 새 이벤트를 생산하면 또 다른 파이프가 트리거되어 체인을 형성한다.
 
 > 아키텍처 패턴: Pipes and Filters (EIP) + Event-Driven Architecture
 > 이벤트 포맷: qa-sdk EventRecord (CloudEvents 유사 구조)
@@ -120,34 +123,10 @@ pipe "order-processing":
 | **데이터 패싯** | 파이프는 패싯의 실행 순서를 정의. 개별 패싯 정의는 leaf에 유지 |
 | **바운더리** | 바운더리 = 개념 단위, 파이프 = 실행 단위. 직교 |
 | **계약 하향** | 파이프 간 계약도 동일 원칙. 파이프가 소비할 계약만 앎 |
-| **Semantic Folding** | 파이프도 Folding 대상. 하위 실행 단계의 패싯을 파이프의 흐름 표현으로 접음 |
+| **Semantic Folding** | 하위 실행 단계를 흐름 요약으로 접음 (`ms-concept-folding`) |
 | **검증 단위** | 검증 단위 ≈ 독립 테스트 가능한 파이프. 대부분의 검증 단위는 파이프 |
 | **분기 경로** | 파이프 내 조건부 분기 = 분기 경로의 분기점 |
 | **Spacetime UID** | 파이프 실행 인스턴스에 UID 부여 |
-
-## 파이프가 아닌 것
-
-| 코드 | 이유 |
-|------|------|
-| 타입 선언 (`interface User {}`) | 실행이 없음 — 개념 단위(정의)만 |
-| 단순 getter (`get name()`) | 실행은 있지만 확정적 묶음이 아님 |
-| import 문 | 이동이지 실행이 아님 |
-| 설정 로딩 | 환경 파라미터이지 비즈니스 파이프가 아님 |
-
-## Pipe Folding
-
-파이프도 Folding의 대상이다.
-접으면 파이프의 흐름 요약만 보이고, 펼치면 각 단계의 패싯이 보인다.
-
-```
-접은 상태: "입력을 검증하고 생성하여 저장한다"
-펼친 상태: 소비(입력) → 관리(검증) → 생산(생성) → 저장(DB)
-```
-
-Module이 "어떤 데이터에 접근 가능한가"를 접는다면,
-Pipe는 "어떤 순서로 실행되는가"를 접는다.
-
-> Folding 상세: `ms-concept-folding` 참조
 
 ## 핵심
 

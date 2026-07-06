@@ -13,6 +13,11 @@ def:
       type: traces_to
     - target: ms-concept-folding
       type: traces_to
+  sources:
+    - packages/core/src/meta-semantic/extraction.ts
+    - packages/core/src/meta-semantic/extraction.test.ts
+    - packages/core/src/meta-semantic/extraction-parser.ts
+    - packages/core/src/meta-semantic/extraction-pipeline.ts
 ---
 
 # 검증 단위 (Verification Unit)

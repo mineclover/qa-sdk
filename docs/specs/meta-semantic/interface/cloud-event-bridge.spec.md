@@ -16,6 +16,10 @@ def:
       type: depends_on
     - target: meta-semantic-data-contract
       type: depends_on
+  sources:
+    - packages/core/src/standards/cloud-events.ts
+    - packages/core/src/standards/cloud-events.test.ts
+    - packages/core/src/types/record.ts
 ---
 
 # toCloudEvent → EventRecord 타입 연결
@@ -38,11 +42,11 @@ def:
 
 | 파일 | 역할 |
 |------|------|
-| `core/src/cloud-events.ts` | 구현 (타입 강화 + address_context 지원) |
-| `core/src/cloud-events.test.ts` | 테스트 (18 tests) |
+| `packages/core/src/standards/cloud-events.ts` | 구현 (타입 강화 + address_context 지원) |
+| `packages/core/src/standards/cloud-events.test.ts` | 테스트 (18 tests) |
 
 ## 검증
 
 ```bash
-pnpm --filter @qa-sdk/core test -- src/cloud-events.test.ts  # 18 tests
+corepack pnpm --filter @qa-sdk/core test -- src/standards/cloud-events.test.ts
 ```

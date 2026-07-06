@@ -180,6 +180,30 @@ async function main() {
       .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
     assert(metaSemanticPipeModelGaps.length === 0,
            `Usefulness Audit: meta-semantic pipe model/lineage docs are source-backed keep docs (${metaSemanticPipeModelGaps.join(", ") || "ok"})`);
+    const metaSemanticConceptDocs = [
+      "docs/specs/meta-semantic/concepts/ms-concept-boundary.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-branch-path.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-contract-descent.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-data-facets.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-event.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-folding.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-pipe.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-spacetime-uid.spec.md",
+      "docs/specs/meta-semantic/concepts/ms-concept-verification-unit.spec.md",
+    ];
+    const metaSemanticConceptGaps = metaSemanticConceptDocs
+      .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
+    assert(metaSemanticConceptGaps.length === 0,
+           `Usefulness Audit: meta-semantic concept docs are source-backed keep docs (${metaSemanticConceptGaps.join(", ") || "ok"})`);
+    const metaSemanticInterfaceDocs = [
+      "docs/specs/meta-semantic/interface/cloud-event-bridge.spec.md",
+      "docs/specs/meta-semantic/interface/event-track-codegen.spec.md",
+      "docs/specs/meta-semantic/interface/meta-semantic-event-standard.spec.md",
+    ];
+    const metaSemanticInterfaceGaps = metaSemanticInterfaceDocs
+      .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
+    assert(metaSemanticInterfaceGaps.length === 0,
+           `Usefulness Audit: meta-semantic interface docs are source-backed keep docs (${metaSemanticInterfaceGaps.join(", ") || "ok"})`);
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

@@ -11,6 +11,11 @@ def:
   links:
     - target: meta-semantic-concepts
       type: traces_to
+  sources:
+    - packages/core/src/meta-semantic/extraction.ts
+    - packages/core/src/meta-semantic/extraction.test.ts
+    - packages/core/src/pipe/pipe-path.ts
+    - packages/core/src/pipe/pipe-path.test.ts
 ---
 
 # 분기 경로 (Branch Path)

@@ -14,6 +14,12 @@ def:
   links:
     - target: meta-semantic-system
       type: depends_on
+  sources:
+    - packages/codegen-core/src/event-track-typescript.ts
+    - packages/codegen-core/src/event-track-typescript.test.ts
+    - packages/event-catalog/src/types.ts
+    - packages/event-catalog/src/prefix-mapping.ts
+    - packages/event-catalog/src/payload-guides.ts
 ---
 
 # Event Catalog → SDK Track 코드 자동 생성
@@ -101,5 +107,5 @@ export function track<K extends EventKey>(
 ## 검증
 
 ```bash
-pnpm --filter codegen-core test   # 19 tests
+corepack pnpm --filter codegen-core test
 ```
