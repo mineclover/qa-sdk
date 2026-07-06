@@ -14,6 +14,11 @@ def:
       type: refines
     - target: wi-math
       type: depends_on
+sources:
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
 ---
 
 # PartialBinder 차원 규칙과 계산 원리

@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: wi-math
       type: depends_on
+sources:
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
 ---
 
 # Range Query 스펙

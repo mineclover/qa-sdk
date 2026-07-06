@@ -15,6 +15,13 @@ def:
       type: depends_on
     - target: wi-semantic-address
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/capacity-planner.ts
+  - packages/weighted-index/src/protocol/capacity-planner.test.ts
+  - packages/weighted-index/src/protocol/uuid-layout.ts
+  - packages/weighted-index/src/protocol/uuid-layout.test.ts
+  - packages/weighted-index/src/math/layout-fit.ts
+  - packages/weighted-index/src/math/layout-fit.test.ts
 ---
 # Capacity 계획
 

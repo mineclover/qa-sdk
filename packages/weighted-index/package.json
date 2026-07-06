@@ -46,6 +46,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
     "better-sqlite3": "catalog:",
     "drizzle-orm": "catalog:",
     "fast-check": "^4.6.0",

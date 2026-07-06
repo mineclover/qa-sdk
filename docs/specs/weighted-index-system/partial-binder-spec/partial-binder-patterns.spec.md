@@ -12,6 +12,12 @@ def:
   links:
     - target: partial-binder-spec
       type: refines
+sources:
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
 ---
 
 # PartialBinder 연동 및 사용 패턴

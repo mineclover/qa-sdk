@@ -13,6 +13,11 @@ def:
   links:
     - target: wi-pack-format-def
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/index.ts
 ---
 # SemanticAddress
 

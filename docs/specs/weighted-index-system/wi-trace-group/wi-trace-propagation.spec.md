@@ -17,6 +17,13 @@ def:
       type: refines
     - target: partial-binder-spec
       type: refines
+sources:
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
 ---
 # weighted-index 변경 전파 경로
 

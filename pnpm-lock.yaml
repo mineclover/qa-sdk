@@ -3007,6 +3007,9 @@ importers:
 
   packages/weighted-index:
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: 'catalog:'
+        version: 7.6.13
       better-sqlite3:
         specifier: 'catalog:'
         version: 12.8.0

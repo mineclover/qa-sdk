@@ -12,6 +12,15 @@ def:
   links:
     - target: wi-system
       type: refines
+sources:
+  - packages/weighted-index-explorer/src/main.ts
+  - packages/weighted-index-explorer/src/data.ts
+  - packages/weighted-index-explorer/src/pages/concept.ts
+  - packages/weighted-index-explorer/src/pages/address.ts
+  - packages/weighted-index-explorer/src/pages/filter.ts
+  - packages/weighted-index-explorer/src/pages/layout-planner.ts
+  - packages/weighted-index-explorer/scripts/static-smoke.test.mjs
+  - packages/weighted-index-explorer/package.json
 ---
 # Weighted Index Explorer
 

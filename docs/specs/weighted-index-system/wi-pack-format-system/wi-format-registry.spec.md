@@ -13,6 +13,10 @@ def:
   links:
     - target: wi-pack-format-def
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/protocol/index.ts
 ---
 # FormatRegistry
 

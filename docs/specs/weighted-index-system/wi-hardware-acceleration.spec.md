@@ -13,6 +13,16 @@ def:
   links:
     - target: wi-system
       type: traces_to
+sources:
+  - docs/specs/weighted-index-system/weighted-wasm.spec.md
+  - docs/specs/weighted-index-system/weighted-gpu.spec.md
+  - packages/weighted-wasm/src/lib.rs
+  - packages/weighted-wasm/js/index.ts
+  - packages/weighted-wasm/js/index.test.ts
+  - packages/weighted-gpu/src/index.ts
+  - packages/weighted-gpu/src/index.test.ts
+  - packages/weighted-gpu/src/bench.ts
+  - scripts/package-surfaces.mjs
 ---
 
 # 하드웨어 가속 — WASM / GPU / FPGA
@@ -34,7 +44,7 @@ WeightedIndex 연산(encode/decode/bitmask)에 대한 하드웨어 가속 구현
 
 - `encode.wgsl`, `decode.wgsl`, `reduce.wgsl` — 3 compute shaders — G-2
 - `GPUEncoder` 클래스, GPU 미지원 시 null 반환
-- 벤치마크 (G-6): `weighted-gpu/src/bench.ts` — batch 10K/100K encode/decode/reduce
+- 벤치마크 (G-6): `weighted-gpu/src/bench.ts` — batch 10K/100K encode/decode/reduceByKey
 
 ## CPU 성능 기준 (Node.js, Apple Silicon)
 

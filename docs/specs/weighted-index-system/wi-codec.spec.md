@@ -13,6 +13,13 @@ def:
   links:
     - target: wi-api
       type: depends_on
+sources:
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
 ---
 # PrefixCodec + 직렬화 프로토콜
 

@@ -14,6 +14,14 @@ def:
       type: refines
     - target: wi-hardware-acceleration
       type: depends_on
+sources:
+  - packages/weighted-wasm/src/lib.rs
+  - packages/weighted-wasm/js/index.ts
+  - packages/weighted-wasm/js/index.test.ts
+  - packages/weighted-wasm/js/bench.ts
+  - packages/weighted-wasm/Cargo.toml
+  - packages/weighted-wasm/package.json
+  - packages/weighted-wasm/pkg/package.json
 ---
 # Weighted WASM
 

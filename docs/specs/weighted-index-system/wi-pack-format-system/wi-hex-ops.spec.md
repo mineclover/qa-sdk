@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: wi-semantic-address
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/obfuscate/hex.ts
+  - packages/weighted-index/src/obfuscate/hex.test.ts
 ---
 # Hex 연산
 

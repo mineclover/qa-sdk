@@ -17,6 +17,13 @@ def:
       type: refines
     - target: authorization-ontology-bitmap-pipeline
       type: traces_to
+sources:
+  - packages/weighted-index/src/vocab/union-index.ts
+  - packages/weighted-index/src/vocab/union-index.test.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/bitmask.ts
+  - packages/weighted-index/src/math/bitmask.test.ts
 ---
 
 # Disjoint Union Addressing — 이종 shape의 합산 주소 공간

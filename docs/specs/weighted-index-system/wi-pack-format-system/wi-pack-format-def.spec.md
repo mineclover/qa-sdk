@@ -13,6 +13,11 @@ def:
   links:
     - target: wi-math
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/protocol/uuid-layout.ts
+  - packages/weighted-index/src/protocol/uuid-layout.test.ts
 ---
 # PackFormat 포맷 정의
 

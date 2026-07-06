@@ -25,6 +25,14 @@ def:
       type: contains
     - target: weighted-index-system
       type: depends_on
+sources:
+  - docs/specs/weighted-index-system/partial-binder-spec/partial-binder-api.spec.md
+  - docs/specs/weighted-index-system/partial-binder-spec/partial-binder-math.spec.md
+  - docs/specs/weighted-index-system/partial-binder-spec/partial-binder-patterns.spec.md
+  - docs/specs/weighted-index-system/partial-binder-spec/partial-binder-validation.spec.md
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
 ---
 
 # weighted-index partial-binder

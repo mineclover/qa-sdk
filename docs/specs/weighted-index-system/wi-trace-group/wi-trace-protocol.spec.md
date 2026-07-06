@@ -19,6 +19,15 @@ def:
       type: constrains
     - target: range-query-spec
       type: constrains
+sources:
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
 ---
 # weighted-index 수정 프로토콜
 

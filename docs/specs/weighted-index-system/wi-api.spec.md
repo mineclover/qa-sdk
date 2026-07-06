@@ -13,6 +13,15 @@ def:
   links:
     - target: wi-math
       type: implements
+sources:
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/index.ts
+  - packages/weighted-index/src/vocab/index.ts
+  - packages/weighted-index/src/protocol/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/package.json
 ---
 # Weighted-Index 퍼블릭 API
 

@@ -15,6 +15,13 @@ def:
       type: refines
     - target: wi-system
       type: depends_on
+sources:
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
 ---
 
 # WI Trace 그룹 — 소비자 기대 시나리오

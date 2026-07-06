@@ -12,6 +12,11 @@ def:
   links:
     - target: wi-math
       type: refines
+sources:
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
 ---
 
 # Axis Projection — 부분 decode 최적화

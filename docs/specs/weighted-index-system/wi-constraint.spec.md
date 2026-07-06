@@ -19,6 +19,13 @@ def:
       type: constrains
     - target: range-query-spec
       type: constrains
+sources:
+  - packages/weighted-index/src/math/validators.ts
+  - packages/weighted-index/src/math/errors.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
 ---
 # Weighted-Index 제약
 

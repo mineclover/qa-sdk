@@ -35,6 +35,20 @@ def:
       type: refs
     - target: weighted-wasm-spec
       type: refs
+sources:
+  - docs/specs/weighted-index-system/wi-math.spec.md
+  - docs/specs/weighted-index-system/wi-api.spec.md
+  - docs/specs/weighted-index-system/wi-codec.spec.md
+  - docs/specs/weighted-index-system/wi-constraint.spec.md
+  - docs/specs/weighted-index-system/partial-binder.spec.md
+  - docs/specs/weighted-index-system/range-query.spec.md
+  - docs/specs/weighted-index-system/axis-projection.spec.md
+  - packages/weighted-index/src/index.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/package.json
 ---
 
 # Weighted-Index 시스템

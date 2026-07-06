@@ -95,7 +95,7 @@ function bench(label: string, fn: () => void, iterations: number): BenchResult {
   return { label, batchSize: 0, opsPerSec, avgMs };
 }
 
-async function benchAsync(label: string, fn: () => Promise<void>, iterations: number): Promise<BenchResult> {
+async function benchAsync(label: string, fn: () => Promise<unknown>, iterations: number): Promise<BenchResult> {
   // 워밍업
   for (let i = 0; i < Math.min(3, iterations); i++) await fn();
 
@@ -127,10 +127,6 @@ export async function runBenchmark(): Promise<BenchResult[]> {
 
   for (const n of batches) {
     const coords = generateCoords(n, 4, shape);
-    const flatCoords = new Uint32Array(n * 4);
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < 4; j++) flatCoords[i * 4 + j] = coords[i][j];
-    }
 
     const iters = Math.max(5, Math.floor(1000 / Math.sqrt(n)));
 
@@ -144,7 +140,7 @@ export async function runBenchmark(): Promise<BenchResult[]> {
 
     // GPU
     if (gpu) {
-      const gpuEnc = await benchAsync(`GPU encode`, () => gpu.encodeBatch(flatCoords), iters);
+      const gpuEnc = await benchAsync(`GPU encode`, () => gpu.encodeBatch(coords), iters);
       gpuEnc.batchSize = n;
       results.push(gpuEnc);
       console.log(`  GPU: ${gpuEnc.avgMs.toFixed(3)}ms (${gpuEnc.opsPerSec} ops/s)`);
@@ -180,7 +176,7 @@ export async function runBenchmark(): Promise<BenchResult[]> {
     console.log(`  CPU: ${cpuRed.avgMs.toFixed(3)}ms (${cpuRed.opsPerSec} ops/s)`);
 
     if (gpu) {
-      const gpuRed = await benchAsync(`GPU reduce`, () => gpu.reduce(keys, 100), iters);
+      const gpuRed = await benchAsync(`GPU reduce`, () => gpu.reduceByKey(keys, 100), iters);
       gpuRed.batchSize = n;
       results.push(gpuRed);
       console.log(`  GPU: ${gpuRed.avgMs.toFixed(3)}ms (${gpuRed.opsPerSec} ops/s)`);

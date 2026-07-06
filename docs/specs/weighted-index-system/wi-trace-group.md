@@ -19,6 +19,14 @@ def:
       type: refs
     - target: wi-system
       type: depends_on
+sources:
+  - docs/specs/weighted-index-system/wi-trace-group/wi-trace-axes.spec.md
+  - docs/specs/weighted-index-system/wi-trace-group/wi-trace-propagation.spec.md
+  - docs/specs/weighted-index-system/wi-trace-group/wi-trace-protocol.spec.md
+  - docs/specs/weighted-index-system/wi-trace-group.cases.md
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/partial-binder.ts
 ---
 
 # weighted-index 추적성 그룹

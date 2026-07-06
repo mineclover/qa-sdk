@@ -13,6 +13,13 @@ def:
   links:
     - target: wi-math
       type: depends_on
+sources:
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/vocab/label-registry.ts
+  - packages/weighted-index/src/vocab/label-registry.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
 ---
 # weighted-index 추적성의 3축
 

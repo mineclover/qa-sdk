@@ -25,6 +25,17 @@ def:
       type: contains
     - target: wi-system
       type: depends_on
+sources:
+  - docs/specs/weighted-index-system/wi-pack-format-system/wi-pack-format-def.spec.md
+  - docs/specs/weighted-index-system/wi-pack-format-system/wi-format-registry.spec.md
+  - docs/specs/weighted-index-system/wi-pack-format-system/wi-hex-ops.spec.md
+  - docs/specs/weighted-index-system/wi-pack-format-system/wi-capacity-planning.spec.md
+  - docs/specs/weighted-index-system/wi-pack-format-system/wi-semantic-address.spec.md
+  - docs/specs/weighted-index-system/wi-pack-format-system/wi-layout-protocol.spec.md
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/capacity-planner.ts
+  - packages/weighted-index/src/protocol/index.ts
 ---
 
 # Pack Format 시스템

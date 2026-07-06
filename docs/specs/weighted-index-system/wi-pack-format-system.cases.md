@@ -15,6 +15,13 @@ def:
       type: refines
     - target: wi-system
       type: depends_on
+sources:
+  - packages/weighted-index/src/protocol/pack-format.ts
+  - packages/weighted-index/src/protocol/pack-format.test.ts
+  - packages/weighted-index/src/protocol/capacity-planner.ts
+  - packages/weighted-index/src/protocol/capacity-planner.test.ts
+  - packages/weighted-index/src/protocol/semantic-address.ts
+  - packages/weighted-index/src/protocol/semantic-address.test.ts
 ---
 
 # WI Pack Format 그룹 — 소비자 기대 시나리오
