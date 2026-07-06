@@ -13,12 +13,24 @@ def:
   links:
     - target: decode-api
       type: constrains
+sources:
+  - packages/decode-service/src/app.ts
+  - packages/decode-service/src/server.ts
+  - packages/decode-service/src/worker.ts
+  - packages/decode-service/src/config/env.ts
+  - packages/decode-service/src/routes/health.ts
+  - packages/decode-service/src/routes/metrics.ts
+  - packages/decode-service/src/middleware/request-id.ts
+  - packages/decode-service/src/middleware/error-handler.ts
+  - packages/decode-service/src/app.test.ts
 ---
 # Decode 배포 토폴로지
 
 ## 목적 ^purpose
 
 Decode Service의 3가지 배포 형태와 각각의 제약 조건을 정의한다.
+
+소스: `packages/decode-service/src/app.ts`, `packages/decode-service/src/server.ts`, `packages/decode-service/src/worker.ts`, `packages/decode-service/src/config/env.ts`
 
 ## 구성 ^overview
 
@@ -49,7 +61,7 @@ Decode Service의 3가지 배포 형태와 각각의 제약 조건을 정의한�
 
 - `server.ts`를 통해 독립 Hono 서비스로 실행
 - 포트: 3600 (기본)
-- startup 시 `REGISTRY_URL`이 설정되어 있으면 `/api/decode-map` 자동 fetch
+- startup 시 `REGISTRY_URL`(기본 registry-service dev URL)에서 `/api/decode-map` 자동 fetch
 - fetch 실패 시 빈 pool로 시작 (fail-open, 이후 DECODER_NOT_LOADED 에러)
 - `AbortSignal.timeout(5_000)` 적용으로 startup 블로킹 방지
 - `installSimpleShutdown`으로 SIGTERM/SIGINT 처리
@@ -95,7 +107,8 @@ N. errorHandler (onError) — AppError, ZodError 분기 처리
 |------|--------|------|
 | `GET /health` | `createHealthRoutes` | pool 상태 + uptime + version |
 | `GET /metrics` | `createMetricsRoutes` | Prometheus 형식 (uptime, heap, pool 크기) |
-| `POST /decode`, `POST /decode/batch`, `POST /decode/deep` | `createDecodeRoutes` | 디코딩 API |
+| `POST /decode`, `POST /decode/batch`, `POST /decode/deep` | `createDecodeRoutes` | Number/string 주소 디코딩 API |
+| `POST /decode/big`, `POST /decode/big/batch`, `POST /decode/big/deep` | `createDecodeRoutes` | BigInt 주소 문자열 디코딩 API |
 | `GET /decode-map/:prefix/:version` | `createDecodeRoutes` | DecodeMap 번들 원본 조회 |
 | `GET /debug` (Worker만) | 인라인 | pool 크기, 키 목록, 로드 에러, 통계 |
 
@@ -106,9 +119,10 @@ N. errorHandler (onError) — AppError, ZodError 분기 처리
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `PORT` | `3600` | 서비스 포트 |
-| `DECODE_MAP_SOURCE` | - | DecodeMap JSON 파일 경로 또는 URL (선택) |
-| `REGISTRY_URL` | - | registry-service URL (startup 시 DecodeMap 자동 fetch) |
+| `REGISTRY_URL` | registry-service dev URL 또는 `http://localhost:3300` | startup 시 DecodeMap 자동 fetch |
 | `CACHE_TTL_MS` | `60000` | DecoderPool 캐시 TTL (ms). Worker에서는 0 |
+| `CACHE_DRIVER` | `memory` | L2 decode 캐시 드라이버 (`memory` 또는 `redis`) |
+| `REDIS_URL` | - | `CACHE_DRIVER=redis`일 때 필수 |
 
 ## registry에서 DecodeMap 로드
 

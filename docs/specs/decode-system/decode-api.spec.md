@@ -17,18 +17,27 @@ def:
       type: depends_on
 contains:
   - decode-bigint
+sources:
+  - packages/decode-service/src/routes/decode.ts
+  - packages/decode-service/src/schemas/decode.ts
+  - packages/decode-service/src/app.test.ts
 ---
 # Decode Service REST API
 
 ## 목적 ^purpose
 
-주소 정수를 entity ID 매핑으로 변환하는 REST 엔드포인트. decode(단일), batch(배치), deep(index_ref 확장) 3개 엔드포인트를 제공한다.
+주소 정수를 entity ID 매핑으로 변환하는 REST 엔드포인트. Number 주소와 BigInt 주소를 같은 서비스 경계에서 제공하되, BigInt 요청은 별도 `/decode/big/*` 경로로 분리한다.
+
+소스: `packages/decode-service/src/routes/decode.ts`, `packages/decode-service/src/schemas/decode.ts`, `packages/decode-service/src/app.test.ts`
 
 ## 구성 ^overview
 
 - **POST /decode** — 단일 주소를 디코딩하여 entity 매핑 반환. 포맷 자동 감지 지원.
 - **POST /decode/batch** — 동일 prefix/version의 주소 배열을 일괄 디코딩 (최대 10,000건).
-- **POST /decode/deep** — index_ref 차원을 재귀적으로 확장하여 참조 prefix까지 풀어내는 심층 디코딩.
+- **POST /decode/deep** — index_ref 차원을 1-level 확장하고 미해결 참조를 보고하는 심층 디코딩.
+- **POST /decode/big** — BigInt 주소 문자열을 디코딩하여 entity 매핑 반환.
+- **POST /decode/big/batch** — 동일 prefix/version의 BigInt 주소 문자열 배열을 일괄 디코딩.
+- **POST /decode/big/deep** — BigInt 주소의 index_ref 차원을 확장하여 반환.
 - **GET /decode-map/:prefix/:version** — 캐시된 DecodeMap 번들 원본 조회.
 - Hono 프레임워크 기반, request-id 미들웨어 + 중앙 에러 핸들러 적용.
 
@@ -66,14 +75,49 @@ contains:
 
 ### POST /decode/deep
 
-index_ref 차원을 재귀적으로 풀어내어 참조 prefix의 entity까지 반환한다.
+index_ref 차원을 1-level 풀어내어 참조 prefix의 entity까지 반환한다.
 
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `input` | `number \| string` | O | 디코딩할 주소 |
 | `prefix` | `string` | - | prefix ID |
 | `version` | `string` | - | version ID |
-| `maxDepth` | `number` | - | 최대 재귀 깊이 (1~16, 기본값 미지정) |
+
+**응답:** `{ entities, refs, unresolved? }`
+
+### POST /decode/big
+
+BigInt 주소를 entity 매핑으로 변환한다. JSON은 bigint를 직접 표현할 수 없으므로 `input`은 10진수 문자열이다.
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `input` | `string` | O | bigint를 나타내는 10진수 문자열 |
+| `prefix` | `string` | O | prefix ID |
+| `version` | `string` | O | version ID |
+
+**응답:** `{ indexId, versionId, value, entities }`, 여기서 `value`는 문자열이다.
+
+### POST /decode/big/batch
+
+같은 prefix/version의 BigInt 주소 문자열 배열을 일괄 디코딩한다.
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `prefix` | `string` | O | prefix ID |
+| `version` | `string` | O | version ID |
+| `inputs` | `string[]` | O | 1~10,000개 bigint 문자열 배열 |
+
+**응답:** `{ results: [{ value, entities }] }`, 여기서 `value`는 문자열이다.
+
+### POST /decode/big/deep
+
+BigInt 주소를 디코딩하고 index_ref 차원을 확장한다.
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `input` | `string` | O | bigint를 나타내는 10진수 문자열 |
+| `prefix` | `string` | O | prefix ID |
+| `version` | `string` | O | version ID |
 
 **응답:** `{ entities, refs, unresolved? }`
 
@@ -94,6 +138,7 @@ index_ref 차원을 재귀적으로 풀어내어 참조 prefix의 entity까지 �
 | 변수 | 기본값 | 설명 |
 |------|--------|------|
 | `PORT` | `3600` | 서비스 포트 |
-| `REGISTRY_URL` | - | registry-service URL (startup 시 DecodeMap 자동 fetch) |
+| `REGISTRY_URL` | registry-service dev URL 또는 `http://localhost:3300` | startup 시 `/api/decode-map` 자동 fetch |
 | `CACHE_TTL_MS` | `60000` | DecoderPool 캐시 TTL (밀리초) |
-| `DECODE_MAP_SOURCE` | - | DecodeMap JSON 파일 경로 또는 URL (선택) |
+| `CACHE_DRIVER` | `memory` | L2 decode 캐시 드라이버 (`memory` 또는 `redis`) |
+| `REDIS_URL` | - | `CACHE_DRIVER=redis`일 때 필수 |

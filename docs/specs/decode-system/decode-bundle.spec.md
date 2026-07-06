@@ -13,6 +13,16 @@ def:
   links:
     - target: meta-registry-spec
       type: depends_on
+sources:
+  - packages/decode-service/src/lib/decoder-pool.ts
+  - packages/decode-service/src/worker.ts
+  - packages/decode-service/src/server.ts
+  - packages/index-meta/src/types.ts
+  - packages/index-meta/src/prefix-decoder.ts
+  - packages/index-meta/src/prefix-decoder-big.ts
+  - packages/registry-service/src/modules/catalog/decode-map.service.ts
+  - packages/registry-service/src/modules/catalog/decode-map.controller.ts
+  - packages/decode-service/src/app.test.ts
 ---
 # DecodeMap 번들 관리
 
@@ -20,10 +30,12 @@ def:
 
 decode에 필요한 최소 데이터(entity name → ID 매핑)를 DecodeMap 번들로 패키징하고, 캐시/갱신을 관리한다. 전체 MetaRegistry 대신 필요한 prefix의 DecodeMap만 로드한다.
 
+소스: `packages/decode-service/src/lib/decoder-pool.ts`, `packages/decode-service/src/worker.ts`, `packages/registry-service/src/modules/catalog/decode-map.service.ts`
+
 ## 구성 ^overview
 
-- **DecoderPool** — prefix/version별 PrefixDecoder 인스턴스를 TTL 기반으로 캐시.
-- **DecodeMap 구조** — `{ indexId, versionId, shape, size, dims[] }` 형태의 경량 번들.
+- **DecoderPool** — prefix/version별 `PrefixDecoder` 또는 `PrefixDecoderBig` 인스턴스를 TTL 기반으로 캐시.
+- **DecodeMap 구조** — `{ indexId, versionId, shape, size, dims[], numberType? }` 형태의 경량 번들.
 - **로딩 소스** — registry-service `/api/decode-map` 또는 D1 바인딩에서 catalog 직접 조회.
 - **dim 종류** — axis(string_enum), prefix_ref(index_ref), table_ref(string_enum, `_ref` 고정).
 
@@ -34,7 +46,8 @@ decode에 필요한 최소 데이터(entity name → ID 매핑)를 DecodeMap 번
 | 메서드 | 설명 |
 |--------|------|
 | `load(config)` | PrefixDecoderConfig → PrefixDecoder 생성 후 캐시 등록 |
-| `loadMap(map)` | DecodeMap으로 직접 등록 (refs 없이) |
+| `loadBig(config)` | PrefixDecoderBigConfig → PrefixDecoderBig 생성 후 캐시 등록 |
+| `loadMap(map)` | DecodeMap으로 직접 등록. `numberType === "bigint"`이면 BigInt decoder로 라우팅하고, 그 외에는 Number decoder로 라우팅 |
 | `get(prefix, version)` | decoder 조회. TTL 만료 시 null 반환하고 캐시에서 제거 |
 | `values()` | 유효한 모든 decoder 반환 (TTL 만료 항목은 제거 후 제외) |
 | `evict(prefix, version)` | 특정 decoder 명시 제거 |
@@ -47,10 +60,12 @@ decode에 필요한 최소 데이터(entity name → ID 매핑)를 DecodeMap 번
 
 Catalog에서 DecodeMap을 생성하는 규칙:
 
-1. **axis dim** — catalog의 해당 축 버전에서 entries 목록과 capacity를 추출
+1. **axis dim** — catalog의 해당 축 버전에서 entries 목록과 shape 값을 추출
 2. **prefix_ref dim** — `refEntries`가 있으면 정수 배열을 entries로 변환. **refEntries 없으면 해당 prefix 전체를 무효화** (CON-006)
 3. **table_ref dim** — `_ref` 단일 entries로 처리 (shape=1)
 4. size는 shape의 곱으로 계산
+
+`index-meta`의 `DecodeMap` 타입은 `numberType?`을 포함하지만, registry-service의 `/api/decode-map` DTO는 현재 이 필드를 생성하지 않는다. BigInt decoder 자동 라우팅은 `numberType: "bigint"`가 포함된 map을 주입받을 때의 계약이다.
 
 ## 번들 공급 경로
 
@@ -78,5 +93,5 @@ Catalog에서 DecodeMap을 생성하는 규칙:
 ## 갱신 전략
 
 - TTL 만료 시 다음 접근에서 null 반환 → 클라이언트가 재요청
-- 능동적 갱신은 구현되지 않음 (pull 모델)
+- Node.js 요청 경로에서 registry를 능동적으로 다시 fetch하지 않음
 - Worker 모드에서는 TTL=0 (한 번 로드 후 프로세스 수명 동안 유지)

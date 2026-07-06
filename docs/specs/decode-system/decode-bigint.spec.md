@@ -18,12 +18,23 @@ def:
       type: depends_on
 contains:
   - decode-bigint-test
+sources:
+  - packages/index-meta/src/prefix-decoder-big.ts
+  - packages/index-meta/src/meta-codec-big.ts
+  - packages/index-meta/src/types.ts
+  - packages/decode-service/src/lib/decoder-pool.ts
+  - packages/decode-service/src/routes/decode.ts
+  - packages/decode-service/src/schemas/decode.ts
+  - packages/index-meta/src/prefix-decoder-big.test.ts
+  - packages/decode-service/src/app.test.ts
 ---
 # PrefixDecoderBig — BigInt 주소 디코딩
 
 ## 목적 ^purpose
 
 Number.MAX_SAFE_INTEGER(2^53) 초과 주소 공간의 BigInt decode를 지원한다. MetaCodecBig를 내부적으로 사용하여 PrefixDecoder와 대칭 API를 제공하되, 입력·출력·범위가 모두 bigint 타입이다.
+
+소스: `packages/index-meta/src/prefix-decoder-big.ts`, `packages/index-meta/src/meta-codec-big.ts`, `packages/decode-service/src/lib/decoder-pool.ts`, `packages/decode-service/src/routes/decode.ts`
 
 ## 정의 ^defines
 
@@ -86,6 +97,7 @@ Number.MAX_SAFE_INTEGER(2^53) 초과 주소 공간의 BigInt decode를 지원한
 - DecoderPool이 `numberType`에 따라 PrefixDecoder/PrefixDecoderBig를 자동 라우팅한다.
 - Number decoder에 BigInt 요청 또는 반대 시 `INVALID_INPUT` (400) 에러.
 - BigInt 응답의 value는 문자열로 직렬화된다 (JSON bigint 미지원).
+- registry-service의 `/api/decode-map` DTO는 현재 `numberType`을 생성하지 않는다. 따라서 BigInt REST 경로는 `numberType: "bigint"`가 포함된 DecodeMap을 `DecoderPool.loadMap()` 또는 `loadBig()`으로 주입받은 경우의 런타임 계약이다.
 
 ### 에러
 
