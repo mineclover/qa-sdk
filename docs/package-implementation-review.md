@@ -13,12 +13,31 @@ def:
       type: refines
     - target: spec-convention
       type: constrains
+    - target: system-packages
+      type: refs
+    - target: package-surface-separation-rule
+      type: refs
+    - target: design-usefulness-audit
+      type: refs
+sources:
+  - scripts/package-surfaces.mjs
+  - scripts/report-package-surfaces.mjs
+  - scripts/analyze-package-usage.ts
+  - scripts/design-usefulness-audit.mjs
+  - scripts/verify-analysis-os.ts
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/package-surface-separation.rule.md
+  - docs/specs/system/design-usefulness-audit.rule.md
+  - docs/specs/system/system-root.md
+  - docs/specs/system/system-taxonomy.md
+  - docs/specs/system/system-profile.md
+  - packages/package-classifier/README.md
 ---
 # QA-SDK 패키지 구현 현황 리뷰
 
 ## 목적 ^purpose
 
-패키지별 구현 목표, 코드 표면, 문서 보강 필요 지점을 한곳에 정리해 패키지 단위 리뷰와 후속 문서 작업의 기준선으로 사용한다.
+패키지별 구현 목표, 코드 표면, 문서 보강 필요 지점을 한곳에 정리해 패키지 단위 리뷰와 후속 문서 작업의 기준선으로 사용한다. 현재 패키지 소유권과 승격/격리 판정의 SSOT는 `system-packages`, `package-surface-separation-rule`, `scripts/package-surfaces.mjs`이며, 이 문서는 과거 보강 스냅샷과 운영자가 어떤 감사 명령으로 다시 판정해야 하는지를 연결하는 리뷰 가이드다.
 
 - 기준일: `2026-04-07`
 - 전체 패키지: `86`개 (`foundation 40 / platform 25 / app 9 / service 9 / data 3`)
@@ -26,7 +45,23 @@ def:
 - 로컬 문서 surface: `README 77 / specs redirect 11 / 둘 다 없음 0`
 - 추가 메모: `package.json description 없음 0`, `코드 패키지인데 패키지 내부 테스트가 없는 패키지 18`
 
-이 문서의 상태 라벨은 품질 게이트 verdict가 아니라 `src/test/readme` 표면을 기준으로 한 리뷰 라벨이다. `구현 > 부분 > 기반 > 쉘` 순으로 읽는다.
+위 수치는 2026-04-07 보강 작업의 역사적 스냅샷이다. 현재 운영 기준에서는 `packages/*` surface-managed 패키지 113개가 `scripts/package-surfaces.mjs`의 22개 surface / 16개 기능군에 모두 배정되어야 하며, `arch:usage`는 `zeroFanIn`, `archiveCandidates`, `deadWeight`, `missingEntrypoints`, `entrypointGaps`를 surface 판정과 함께 분리한다. 이 문서의 상태 라벨은 품질 게이트 verdict가 아니라 당시 `src/test/readme` 표면을 기준으로 한 리뷰 라벨이며, 현재 승격/격리 판단은 `package-surface-separation-rule`과 `design-usefulness-audit`를 따른다.
+
+## 현행 판정 경로 ^validation
+
+패키지 구현 상태를 다시 판정할 때는 이 문서의 오래된 foundation/platform/app 표를 직접 갱신하기보다 아래 순서로 현재 source-backed 표면을 확인한다.
+
+```bash
+node scripts/report-package-surfaces.mjs --json
+corepack pnpm --silent arch:usage -- --json
+node scripts/design-usefulness-audit.mjs --format json --all
+corepack pnpm arch:feedback
+```
+
+- `report-package-surfaces`: `packages/*` 패키지가 정확히 하나의 surface에 배정됐는지 확인한다.
+- `arch:usage`: fan-in, missing entrypoint, archive/dead-weight 후보를 surface verdict와 함께 계산한다.
+- `design-usefulness-audit`: 문서와 패키지를 `keep`/`prove` 후보로 나누고, source refs와 실행 증거가 없는 approved 문서를 보강 대상으로 돌린다.
+- `arch:feedback`: lint, 계층 경계, API 영향도, 분석 OS self-check를 한 번에 검증한다.
 
 이미 패키지 진입 문서가 있는 축은 기존 surface를 유지한다: `address-index`, `apm`, `bench`, `bit-index`, `browser-codec`, `browser-sdk`, `canvas-viewport`, `cli`, `cli-command`, `codec`, `codec-proto`, `codegen-core`, `config-loader`, `context`, `convergence`, `core`, `data-object-codegen`, `db-traffic-control`, `decision-flow`, `decision-service`, `definition-catalog`, `definition-client`, `definition-data-source`, `definition-service`, `demo-snapshot`, `demo-tests`, `dkg`, `engine`, `event-catalog`, `gateway`, `git-utils`, `index-meta`, `infra-engine`, `ingest-server`, `logger`, `motion-*`, `otel`, `package-classifier`, `permission-engine`, `pino`, `platform-demo`, `quality-ledger`, `query-service`, `registry-client`, `registry-service`, `registry-ui`, `review-ledger`, `rlsc`, `roleplay-web`, `sdk`, `snapshot-io`, `spec-analyzer`, `spec-core`, `spec-schema`, `spec-tracker`, `spec-transition`, `store`, `tag-search`, `test-scenario-store`, `test-types`, `viteplus-sdk-smoke`, `weighted-index`, `weighted-index-explorer`, `weighted-ui`, `viz-web`, `work-domain`.
 
