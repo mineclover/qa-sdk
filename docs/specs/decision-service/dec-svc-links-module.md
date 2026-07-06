@@ -15,6 +15,11 @@ def:
       type: refines
     - target: decision-definition-bridge
       type: implements
+sources:
+  - packages/decision-service/src/modules/links/links.module.ts
+  - packages/decision-service/src/modules/links/links.service.ts
+  - packages/decision-service/src/modules/links/links.controller.ts
+  - packages/decision-service/scripts/services.test.ts
 ---
 # Decision Service — Links Module
 

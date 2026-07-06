@@ -13,6 +13,12 @@ def:
   links:
     - target: decision-service-system
       type: constrains
+sources:
+  - packages/decision-service/src/config/env.ts
+  - packages/decision-service/src/database.module.ts
+  - packages/decision-service/src/lib/logger.ts
+  - packages/decision-service/src/modules/instances/instances.service.ts
+  - packages/decision-service/src/modules/links/links.service.ts
 ---
 # Decision Service — 기술 제약
 

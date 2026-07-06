@@ -15,6 +15,11 @@ def:
       type: refines
     - target: dec-svc-data-model
       type: depends_on
+sources:
+  - packages/decision-service/src/modules/instances/instances.module.ts
+  - packages/decision-service/src/modules/instances/instances.service.ts
+  - packages/decision-service/src/modules/instances/instances.controller.ts
+  - packages/decision-service/scripts/services.test.ts
 ---
 # Decision Service — Instances Module
 

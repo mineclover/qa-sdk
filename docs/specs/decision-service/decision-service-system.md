@@ -31,6 +31,14 @@ def:
       type: refs
     - target: dec-svc-constraints
       type: refs
+sources:
+  - packages/decision-service/src/main.ts
+  - packages/decision-service/src/app.module.ts
+  - packages/decision-service/src/database.module.ts
+  - packages/decision-service/src/modules/schemas/schemas.module.ts
+  - packages/decision-service/src/modules/instances/instances.module.ts
+  - packages/decision-service/src/modules/links/links.module.ts
+  - packages/decision-service/scripts/services.test.ts
 ---
 # Decision Service — 시스템 개요
 

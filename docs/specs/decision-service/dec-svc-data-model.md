@@ -13,6 +13,11 @@ def:
   links:
     - target: decision-service-system
       type: refines
+sources:
+  - packages/decision-service/src/db/schema.ts
+  - packages/decision-service/drizzle/20260328020445_initial/migration.sql
+  - packages/decision-service/drizzle/20260328162408_rename_context_columns/migration.sql
+  - packages/decision-service/scripts/services.test.ts
 ---
 # Decision Service — 데이터 모델
 

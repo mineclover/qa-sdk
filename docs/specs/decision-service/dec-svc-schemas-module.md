@@ -13,6 +13,11 @@ def:
   links:
     - target: decision-service-system
       type: refines
+sources:
+  - packages/decision-service/src/modules/schemas/schemas.module.ts
+  - packages/decision-service/src/modules/schemas/schemas.service.ts
+  - packages/decision-service/src/modules/schemas/schemas.controller.ts
+  - packages/decision-service/scripts/services.test.ts
 ---
 # Decision Service — Schemas Module
 

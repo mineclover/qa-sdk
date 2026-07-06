@@ -12,6 +12,11 @@ def:
   links:
     - target: decision-service-system
       type: depends_on
+sources:
+  - packages/decision-service/src/app.module.ts
+  - packages/decision-service/src/database.module.ts
+  - packages/decision-service/src/db/schema.ts
+  - packages/decision-service/scripts/services.test.ts
 ---
 # Decision Service Spec
 ## 목적 ^purpose

@@ -13,6 +13,10 @@ def:
   links:
     - target: decision-service-system
       type: refines
+sources:
+  - packages/decision-service/src/db/schema.ts
+  - packages/decision-service/src/modules/instances/instances.service.ts
+  - packages/decision-service/scripts/services.test.ts
 ---
 # Decision Service — 상태 모델
 
