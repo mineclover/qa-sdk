@@ -1,3 +1,29 @@
+---
+status: implemented
+sources:
+  - packages/spec-transition/package.json
+  - packages/spec-transition/src/index.ts
+  - packages/spec-transition/src/transition.types.ts
+  - packages/spec-transition/src/transition.schema.ts
+  - packages/spec-transition/src/catalog-validator.ts
+  - packages/spec-transition/src/transition-engine.ts
+  - packages/spec-transition/src/demo-transition-specs.ts
+  - packages/spec-transition/src/transition.test.ts
+  - packages/spec-transition/src/transition-engine.test.ts
+  - packages/spec-transition/src/proof-of-value.test.ts
+  - packages/spec-core/src/transition/index.ts
+  - packages/spec-core/src/transition/transition-pipeline.ts
+  - packages/spec-core/src/transition/transition-metrics.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - packages/dkg/src/dkg-bridge.ts
+  - packages/dkg/src/violation-bridge.ts
+  - packages/convergence/src/metric-registry.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/config/env.ts
+  - packages/cli/src/commands/dkg.ts
+  - docs/specs/analysis-system/analysis-transition.spec.md
+---
+
 # Transition Spec DSL
 
 > raw coordinate system 위에 state semantics를 덧씌우는 해석 계층
@@ -71,7 +97,7 @@ StateStore (축별 상태) ← 런타임 파생
 ## 파일 구조
 
 ```
-packages/spec-core/src/transition/
+packages/spec-transition/src/
   transition.types.ts        — 핵심 타입 (StateCondition/StateAssignment)
   transition.schema.ts       — 구조 검증
   transition.registry.ts     — 인메모리 등록
@@ -84,10 +110,15 @@ packages/spec-core/src/transition/
   output-applier.ts          — set/unset (축 entry 변경)
   transition-engine.ts       — 7단계 파이프라인 (2-pass: matched_at 순서)
   decode-adapter.ts          — 인코딩된 address_context → 축:entry flat map
-  dkg-bridge.ts              — TransitionSpec → TransitionSpecNode + inter-spec edges + satisfies
-  violation-bridge.ts        — InputViolation → ObservationNode
+  demo-transition-specs.ts   — DEMO_CATALOG 기반 예시 spec
+  index.ts                   — public export
+
+packages/spec-core/src/transition/
+  index.ts                   — spec-transition + DKG bridge + pipeline re-export
   transition-pipeline.ts     — TransitionFunctions (convergence 주입 번들)
   transition-metrics.ts      — Phase 2.5 결과 → MetricValue[]
-  demo-transition-specs.ts   — DEMO_CATALOG 기반 예시 3종
-  index.ts                   — barrel export (./transition subpath)
+
+packages/dkg/src/
+  dkg-bridge.ts              — TransitionSpec → TransitionSpecNode + inter-spec edges + satisfies
+  violation-bridge.ts        — InputViolation → ObservationNode
 ```

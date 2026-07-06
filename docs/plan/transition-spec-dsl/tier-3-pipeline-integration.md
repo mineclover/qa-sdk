@@ -1,3 +1,25 @@
+---
+status: implemented
+sources:
+  - packages/spec-core/src/transition/index.ts
+  - packages/spec-core/src/transition/transition-pipeline.ts
+  - packages/spec-core/src/transition/transition-metrics.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - packages/spec-transition/src/decode-adapter.ts
+  - packages/spec-transition/src/demo-transition-specs.ts
+  - packages/dkg/src/dkg-bridge.ts
+  - packages/dkg/src/violation-bridge.ts
+  - packages/convergence/src/metric-registry.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/phase-two-worker.test.ts
+  - packages/ingest-server/src/server.ts
+  - packages/ingest-server/src/config/env.ts
+  - packages/cli/src/commands/dkg.ts
+  - docs/specs/analysis-system/analysis-transition.spec.md
+  - docs/specs/pipeline-system/pipeline-phase-flow.spec.md
+  - docs/specs/ingest/ingest-infra-system/ingest-runtime-operations.spec.md
+---
+
 # Tier 3 — 파이프라인 통합 + 수렴 + DKG
 
 > ingest Phase 2.5 삽입 + 수렴 metric + effect vocabulary DKG 관리.

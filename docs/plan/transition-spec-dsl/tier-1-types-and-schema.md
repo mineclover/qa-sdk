@@ -1,3 +1,21 @@
+---
+status: implemented
+sources:
+  - packages/spec-transition/src/index.ts
+  - packages/spec-transition/src/transition.types.ts
+  - packages/spec-transition/src/transition.schema.ts
+  - packages/spec-transition/src/transition.registry.ts
+  - packages/spec-transition/src/catalog-validator.ts
+  - packages/spec-transition/src/match-adapter.ts
+  - packages/spec-transition/src/bind-extractor.ts
+  - packages/spec-transition/src/demo-transition-specs.ts
+  - packages/spec-transition/src/transition.test.ts
+  - packages/dkg/src/dkg-bridge.ts
+  - packages/dkg/src/dkg-bridge.test.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - docs/specs/analysis-system/analysis-transition.spec.md
+---
+
 # Tier 1 — 타입 + 스키마 + Match/Bind
 
 > 순수 선언 계층. 런타임 엔진 없음.
@@ -35,6 +53,8 @@ interface StateAssignment {
 - `satisfies` 엣지: slotRefs ∩ DSL member axes → invariant 형식 구현
 
 ## Demo Specs
+
+대표 spec:
 
 | spec | 좌표 | effect |
 |------|------|--------|

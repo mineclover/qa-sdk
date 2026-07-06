@@ -1,3 +1,19 @@
+---
+status: implemented
+sources:
+  - packages/spec-transition/src/transition.types.ts
+  - packages/spec-transition/src/state-store.ts
+  - packages/spec-transition/src/sqlite-state-store.ts
+  - packages/spec-transition/src/input-validator.ts
+  - packages/spec-transition/src/output-applier.ts
+  - packages/spec-transition/src/transition-engine.ts
+  - packages/spec-transition/src/transition-engine.test.ts
+  - packages/spec-transition/src/proof-of-value.test.ts
+  - packages/core/src/lib/clock.ts
+  - packages/core/src/lib/clock.test.ts
+  - docs/specs/analysis-system/analysis-transition.spec.md
+---
+
 # Tier 2 — 축 기반 상태 + Transition Engine
 
 > 상태를 DEMO_CATALOG 축으로 표현. 7단계 파이프라인.
