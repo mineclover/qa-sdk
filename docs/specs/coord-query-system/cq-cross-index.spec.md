@@ -13,24 +13,34 @@ def:
   links:
     - target: wi-api
       type: depends_on
+sources:
+  - packages/index-meta/src/cross-index-query.ts
+  - packages/index-meta/src/cross-index-query.test.ts
+  - packages/index-meta/src/relational-engine.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/app.test.ts
+  - packages/weighted-index/src/math/calc.ts
 ---
 # Cross-Index Query
 
 ## 목적 ^purpose
 
-서로 다른 prefix 간 공유 축을 기반으로 합성 질의를 수행하는 함수. prefix A의 결과를 prefix B의 조건으로 변환하여 교차 탐색한다.
+`index_ref` dim을 통해 하위 index 조건을 상위 index의 주소 범위로 변환하는 합성 질의 함수. 예를 들어 `article.quality_tier -> doc_meta` 참조에서 `doc_meta.format = PDF` 조건을 만족하는 `article` value 범위를 계산한다.
+
+소스: `packages/index-meta/src/cross-index-query.ts`, `packages/index-meta/src/cross-index-query.test.ts`, `packages/query-service/src/lib/query-service.ts`
 
 ## 구성 ^overview
 
-Cross-Index Query는 PrefixCodec의 공유 레이블(축)을 매개로 prefix 간 주소 범위를 변환한다.
+Cross-Index Query는 MetaRegistry의 `index_ref` dim metadata와 target codec의 `matchRanges()` 결과를 사용한다.
 
-1. **composeQuery** — source prefix의 결과를 shared label을 통해 target prefix의 주소 범위로 변환
+1. **composeQuery** — source index의 `index_ref` dim을 통해 target 조건을 source 주소 범위로 변환
 2. **matchRanges** — 단일 prefix 내 부분 좌표 제약에서 유효 주소 범위 계산
-3. **PartialBinder** — 고정 차원을 캐시하고, 자유 차원만 받아 최종 주소 계산
+3. **deepDecode** — `index_ref` 체인을 따라 각 index layer의 entity record를 반환
 
 소스:
+- `packages/index-meta/src/cross-index-query.ts` — composeQuery/deepDecode
 - `packages/weighted-index/src/math/calc.ts` — range 대수 연산
-- `packages/weighted-index/src/vocab/partial-binder.ts` — 차원 부분 바인딩
 - `packages/query-service/src/lib/query-service.ts` — composeQuery API
 
 ## composeQuery 인터페이스
@@ -39,26 +49,29 @@ Cross-Index Query는 PrefixCodec의 공유 레이블(축)을 매개로 prefix �
 
 ### 동작 원리
 
-1. source prefix에서 through 레이블의 값 범위를 추출
-2. through 레이블을 target prefix의 동일 레이블 제약 조건으로 변환
-3. targetConstraint와 결합하여 target prefix의 주소 범위를 계산
+1. source index에서 `through` dim이 존재하고 `kind.type === "index_ref"`인지 검증
+2. target index의 최신 version codec으로 `targetConstraint`를 `matchRanges()` 계산
+3. source version의 `through` snapshot entries 중 target range에 포함되는 position을 수집
+4. 수집된 position을 `positionsToConstraint()`로 변환해 source 주소 범위를 `calcAddressRanges()`로 계산
 
 ### 사용 예시
 
-role 축을 공유하는 `api_perm`과 `data_perm` 사이의 교차 질의:
+`article.quality_tier -> doc_meta` 참조를 통한 교차 질의:
 
 ```
-source = { indexId: "api_perm", versionId: "pv1" }
-through = "role"
-targetConstraint = { action: null, resource: "orders" }
-→ api_perm에서 role 범위 추출 → data_perm의 role 제약으로 변환 → 주소 범위 반환
+source = { indexId: "article", versionId: "v1" }
+through = "quality_tier"
+targetConstraint = { format: "PDF", lang: null }
+→ doc_meta에서 format=PDF 범위 계산
+→ article.quality_tier entries 중 해당 target 주소를 참조하는 position 수집
+→ article 주소 범위 반환
 ```
 
 ## matchRanges 인터페이스
 
 > 타입 정의: packages/query-service/src/lib/query-service.ts — QueryService.matchRanges
 
-내부적으로 `calcAddressRanges(shape, constraints)`를 호출하여 주소 범위를 계산하고, gateMode가 설정되면 gate 상태 필터를 합성한다.
+QueryService의 `matchRanges()`는 `RelationalEngine.matchRanges()`를 통해 해당 `MetaCodec.matchRanges()`에 위임하고, gateMode가 설정되면 gate 상태 필터를 합성한다.
 
 ## Range 대수 연산
 
@@ -81,11 +94,11 @@ Cross-index 질의에 사용되는 range 연산:
 - 외부 dim(높은 weight)을 고정할수록 적은 수의 큰 구간 생성
 - 내부 dim(낮은 weight)을 고정할수록 많은 수의 작은 구간 생성
 
-## PartialBinder를 통한 Cross-Index 활용
+## PartialBinder와의 경계
 
 소스: `packages/weighted-index/src/vocab/partial-binder.ts`
 
-PartialBinder는 SDK 부트 시 앞쪽 차원을 고정하고, 런타임에 나머지만 받아 주소를 계산한다.
+PartialBinder는 SDK 부트 시 앞쪽 차원을 고정하고 런타임에 나머지만 받아 주소를 계산하는 weighted-index binding API다. `composeQuery()` 런타임은 PartialBinder를 사용하지 않으며, 두 기능은 모두 같은 range algebra를 공유하는 별도 표면이다.
 
 ```typescript
 // 같은 codec에서 다른 prefix의 binder 생성

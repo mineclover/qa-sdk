@@ -13,28 +13,38 @@ def:
   links:
     - target: wi-api
       type: depends_on
+sources:
+  - packages/index-meta/src/policy-resolver.ts
+  - packages/index-meta/src/named-policy.ts
+  - packages/weighted-index/src/math/pattern-lattice.ts
+  - packages/weighted-index/src/math/calc.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/app.test.ts
 ---
 # Policy Resolver
 
 ## 목적 ^purpose
 
-PolicyRule 집합에서 특정 좌표에 적용되는 정책을 해소하는 함수. resolvePolicy(codec, entities, rules, strategy)로 공개 API, resolvePatternPolicy로 내부 API.
+PolicyRule 집합에서 특정 좌표에 적용되는 정책을 해소하는 함수. `index-meta`는 position 기반 `resolvePolicy(coord, rules, shape, strategy)`를 제공하고, `query-service`는 이를 `POST /resolve`와 `QueryService.resolvePolicy()`로 노출한다.
+
+소스: `packages/index-meta/src/policy-resolver.ts`, `packages/index-meta/src/named-policy.ts`, `packages/weighted-index/src/math/pattern-lattice.ts`, `packages/query-service/src/lib/query-service.ts`
 
 ## 구성 ^overview
 
 Policy Resolver는 두 계층으로 구성된다.
 
-1. **resolvePolicy** — 공개 API. entity name + 와일드카드(`"*"`) 매칭
-2. **resolvePatternPolicy** — 내부 API. position 기반 CoordConstraint 매칭
+1. **resolvePolicy** — position 기반 CoordConstraint 매칭 API (`index-meta/src/policy-resolver.ts`)
+2. **named-policy resolvePolicy** — entity name 기반 편의 API (`index-meta/src/named-policy.ts`)
 
-세 가지 해소 전략을 지원한다: `first-match`, `highest-priority`, `most-specific`.
+네 가지 해소 전략을 지원한다: `most-specific`, `priority`, `collect`, `first-match`.
 
 소스:
 - `packages/query-service/src/lib/query-service.ts` — QueryService.resolvePolicy
 - `packages/weighted-index/src/math/pattern-lattice.ts` — 패턴 포함 관계 + 구체성 점수
 - `packages/weighted-index/src/math/calc.ts` — range 대수 연산
 
-## 공개 API: resolvePolicy
+## QueryService API: resolvePolicy
 
 QueryService를 통해 노출된다.
 
@@ -71,7 +81,7 @@ async resolvePolicy<T>(
 3. gate-service에서 `AddressStateCacheRecord` 조회
 4. `gateAwareResolve(policyResult, address, gateRecord)` — gate 상태와 policy 결과 합성
 
-## 내부 API: PatternRule 매칭
+## PatternRule 매칭
 
 ### CoordConstraint 패턴
 
@@ -114,8 +124,9 @@ type CoordConstraint = string | null;
 | 전략 | 동작 |
 |------|------|
 | `first-match` | 매칭되는 첫 번째 규칙 반환 (규칙 순서 의존) |
-| `highest-priority` | 매칭 규칙 중 priority가 가장 높은 것 반환 |
+| `priority` | 매칭 규칙 중 priority가 가장 높은 것 반환 |
 | `most-specific` | 매칭 규칙 중 `patternSpecificity` 점수가 가장 높은 것 반환 |
+| `collect` | 매칭되는 모든 규칙의 value 배열 반환 |
 
 `most-specific`이 query-service의 기본 전략이다.
 

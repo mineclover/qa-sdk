@@ -15,25 +15,34 @@ def:
       type: depends_on
     - target: registry-version-lifecycle
       type: depends_on
+sources:
+  - packages/index-meta/src/version-query.ts
+  - packages/index-meta/src/version-query.test.ts
+  - packages/index-meta/src/meta-registry.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/app.test.ts
 ---
 # Version Query
 
 ## 목적 ^purpose
 
-동일 prefix의 여러 버전을 횡단하여 주소 변환, 히스토리 조회, 마이그레이션 경로 탐색을 수행하는 함수.
+동일 index의 여러 version을 횡단하여 entity 기준 범위 조회, entity 존재 version 조회, position constraint 변환을 수행하는 함수.
+
+소스: `packages/index-meta/src/version-query.ts`, `packages/index-meta/src/version-query.test.ts`, `packages/query-service/src/lib/query-service.ts`
 
 ## 구성 ^overview
 
-Version Query는 세 가지 기능으로 구성된다.
+Version Query는 세 가지 함수로 구성된다.
 
 1. **queryAcrossVersions** — 동일 제약 조건으로 여러 버전의 주소 범위를 한 번에 계산
-2. **PrefixCodec.migrate** — 구버전 주소를 신버전으로 좌표 변환
-3. **PrefixCodec.diff** — 두 버전 사이의 변경 내역 (레이블별 max 변화)
+2. **entityVersionSpan** — 특정 entity가 존재하는 index version 목록을 반환
+3. **translateConstraint** — fromVersion position constraint를 toVersion position constraint로 변환
 
 소스:
 - `packages/query-service/src/lib/query-service.ts` — queryAcrossVersions
-- `packages/weighted-index/src/vocab/prefix-registry.ts` — PrefixCodec (migrate, diff)
-- `packages/weighted-index/src/vocab/label-registry.ts` — LabelRegistry (버전별 entity 매핑)
+- `packages/index-meta/src/version-query.ts` — queryAcrossVersions/entityVersionSpan/translateConstraint
+- `packages/index-meta/src/meta-registry.ts` — index version, dim snapshot, migration edge 조회
 
 ## queryAcrossVersions
 
@@ -49,7 +58,7 @@ queryAcrossVersions(
 
 ### 동작
 
-동일 prefix의 여러 버전에 대해 같은 제약 조건을 적용하고, 버전별 주소 범위를 반환한다.
+동일 index의 여러 version에 대해 같은 제약 조건을 적용하고, 버전별 주소 범위를 반환한다.
 
 ```typescript
 const result = service.queryAcrossVersions(
@@ -70,117 +79,97 @@ const result = service.queryAcrossVersions(
 - 마이그레이션 전후 영향 범위 분석
 - 히스토리 쿼리 (특정 entity의 모든 버전에 걸친 데이터 조회)
 
-## PrefixCodec.migrate
+## entityVersionSpan
 
 ### 시그니처
 
 ```typescript
-migrate(
-  vi: VersionedIndex,
-  toVersion: string,
-  migrator: CoordMigrator,
-): VersionedIndex
+entityVersionSpan(
+  indexId: string,
+  dimId: string,
+  entityId: EntityId,
+  registry: MetaRegistry,
+  options?: { activeOnly?: boolean },
+): string[]
 ```
 
-### CoordMigrator 인터페이스
+### 동작
 
-```typescript
-type CoordMigrator = (
-  oldCoords: number[],
-  oldLabels: readonly string[],
-  newLabels: readonly string[],
-) => number[];
-```
-
-호출자가 직접 변환 로직을 제공한다. 라이브러리는 좌표 범위 검증만 수행.
-
-### 변환 흐름
-
-```
-1. fromWi.decode(vi.id) → oldCoords (구버전 좌표 복원)
-2. migrator(oldCoords, oldLabels, newLabels) → newCoords (사용자 변환)
-3. 검증: newCoords.length === toWi.shape.length
-4. 각 좌표: 1 <= newCoords[i] <= toWi.shape[i]
-5. toWi.encodeUnsafe(newCoords) → 신버전 주소
-```
+- index에 `dimId`가 포함되어 있는지 검증한다.
+- 모든 version의 해당 dim snapshot에서 `entityId`가 존재하는지 확인한다.
+- `activeOnly: true`이면 inactive entry가 있는 version을 제외한다.
 
 ### 에러 처리
 
 | 상황 | 에러 타입 |
 |------|----------|
-| 좌표 개수 불일치 | `MigrateError` |
-| 좌표 범위 초과 | `MigrateError` (dim index + label 정보 포함) |
-| 미등록 버전 | `VersionNotFoundError` |
+| index에 없는 dim | `ValidationError` |
+| entity가 없는 version | 결과에서 제외 |
 
-## PrefixCodec.diff
+## translateConstraint
 
 ### 시그니처
 
 ```typescript
-diff(
-  prefix: string,
+translateConstraint(
+  indexId: string,
   fromVersion: string,
   toVersion: string,
-): PrefixVersionDiff
+  constraint: Record<string, CoordConstraint>,
+  registry: MetaRegistry,
+): Record<string, CoordConstraint> | null
 ```
 
-### 출력 구조
+### 변환 흐름
 
-```typescript
-interface PrefixVersionDiff {
-  prefix: string;
-  from: string;               // 구버전 ID
-  to: string;                 // 신버전 ID
-  changedLabels: Array<{
-    label: string;            // 변경된 레이블 이름
-    fromLabelVersion: string; // 구버전의 label version
-    fromMax: number;          // 구버전의 entity 수
-    toLabelVersion: string;   // 신버전의 label version
-    toMax: number;            // 신버전의 entity 수
-  }>;
-}
+```
+1. fromVersion === toVersion이면 constraint 복사본 반환
+2. index dim 순서대로 from/to snapshot 비교
+3. 동일 snapshot이면 constraint 그대로 유지
+4. snapshot이 다르면 position constraint를 개별 position으로 파싱
+5. migration edge가 있으면 `traceMigration()`으로 position 변환
+6. edge가 없으면 from entityId를 to snapshot에서 찾아 암묵 이동
+7. target version에 entity가 없으면 null 반환
 ```
 
 ### 용도
 
-- 버전 간 shape 변화 파악 (어떤 축이 늘어나거나 줄었는지)
-- 마이그레이션 필요성 판단 (changedLabels가 비어있으면 shape 동일)
-- capacity 변화에 따른 headroom 분석
+- rule migration에서 StoredPolicyRule pattern을 새 version 기준으로 변환
+- append-only version에서 기존 position 보존
+- migration edge가 있는 version에서 명시적 position mapping 적용
 
-## LabelRegistry 버전 관리
+## MetaRegistry version/snapshot 관리
 
-소스: `packages/weighted-index/src/vocab/label-registry.ts`
+소스: `packages/index-meta/src/meta-registry.ts`
 
-각 레이블(축)은 독립적으로 버전을 관리한다.
+각 dim snapshot은 entity 배열과 entry lifecycle flag를 보유하고, index version은 dimId → snapshotId 매핑으로 구성된다.
 
 ### 설계 원칙
 
-- entity ID 순서 = 1-based 인덱스: `ids[0] → 1`, `ids[1] → 2`
-- 추가는 끝에만 (append-only) → 기존 인덱스 유지
-- `max = ids.length` (자동 도출)
-- 버전 간 entity 삭제 없음 → backward compatibility
+- entity ID 순서 = 1-based position: `entries[0] → 1`, `entries[1] → 2`
+- append-only snapshot이면 기존 position이 보존된다.
+- shrink/reorder는 migration edge 또는 entity 기반 변환 결과에 따라 처리된다.
+- inactive entry는 `entityVersionSpan(..., { activeOnly: true })`에서 제외된다.
 
 ### 버전 조회 API
 
 | 메서드 | 설명 |
 |--------|------|
-| `getLatestVersion(label)` | 최신 버전 ID |
-| `getVersions(label)` | 전체 버전 목록 (등록 순) |
-| `hasVersion(label, version)` | 특정 버전 존재 여부 |
-| `getMax(label, version)` | 해당 버전의 entity 수 |
-| `getIndex(label, version, entityId)` | entity ID → 1-based 순번 |
-| `getEntityId(label, version, index)` | 1-based 순번 → entity ID |
+| `getVersionIds(indexId)` | index version ID 목록 |
+| `getIndexVersion(indexId, versionId)` | index version snapshot 매핑 조회 |
+| `getDimSnapshot(dimId, snapshotId)` | dim snapshot entries/flags 조회 |
+| `isEntryActive(dimId, snapshotId, position)` | entry active 여부 |
+| `traceMigration(dimId, fromSnapshotId, toSnapshotId, position)` | migration edge 기반 position 변환 |
 
 ### PrefixVersionEntry
 
 ```typescript
-interface PrefixVersionEntry {
-  version: string;
-  labelVersions: Record<string, string>;  // label → LabelRegistry version
+interface IndexVersionInput {
+  snapshots: Record<string, string>; // dimId → snapshotId
 }
 ```
 
-prefix 버전은 각 레이블에서 어떤 label version을 사용할지의 스냅샷이다. shape은 `labelVersions`에서 각 레이블의 max를 모아 동적으로 도출한다.
+index version은 각 dim에서 어떤 snapshot을 사용할지의 스냅샷이다. shape은 각 snapshot의 entries 길이로 도출된다.
 
 ## HTTP 엔드포인트
 
@@ -190,4 +179,4 @@ POST /query-across-versions
   Response: { "pv1": [[0, 63]], "pv2": [[0, 127]] }
 ```
 
-`isCurrent(vi)` — 주어진 VersionedIndex가 해당 prefix의 현재(최신) 버전인지 확인하는 편의 메서드.
+`entityVersionSpan()`과 `translateConstraint()`는 HTTP 라우트가 아니라 라이브러리/마이그레이션용 함수다. query-service의 REST 표면에는 현재 `POST /query-across-versions`가 노출된다.

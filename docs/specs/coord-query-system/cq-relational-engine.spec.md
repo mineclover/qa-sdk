@@ -17,6 +17,15 @@ def:
       type: depends_on
     - target: cq-version-query
       type: depends_on
+sources:
+  - packages/index-meta/src/relational-engine.ts
+  - packages/index-meta/src/policy-resolver.ts
+  - packages/index-meta/src/cross-index-query.ts
+  - packages/index-meta/src/version-query.ts
+  - packages/index-meta/src/gate-aware-query.ts
+  - packages/query-service/src/lib/query-service.ts
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/app.test.ts
 ---
 # RelationalEngine
 
@@ -24,14 +33,16 @@ def:
 
 policy-resolver, cross-index-query, version-query를 통합하여 단일 질의 인터페이스를 제공하는 오케스트레이터. query-service의 핵심 런타임.
 
+소스: `packages/index-meta/src/relational-engine.ts`, `packages/query-service/src/lib/query-service.ts`, `packages/query-service/src/routes/query.ts`, `packages/query-service/src/app.test.ts`
+
 ## 구성 ^overview
 
 RelationalEngine은 다섯 가지 질의 타입을 단일 서비스로 통합한다.
 
 1. **resolvePolicy** — 좌표에 매칭되는 정책 규칙 해소
 2. **matchRanges** — 부분 좌표 제약에서 유효 주소 범위 계산 (+ gate 필터)
-3. **composeQuery** — 공유 축 기반 교차 prefix 질의
-4. **queryAcrossVersions** — 동일 prefix의 여러 버전 횡단 질의
+3. **composeQuery** — `index_ref` dim 기반 교차 index 질의
+4. **queryAcrossVersions** — 동일 index의 여러 version 횡단 질의
 5. **resolveRelation** — 관계형 타입 + 인스턴스 2단계 해소
 
 소스:
@@ -81,19 +92,20 @@ const service = new QueryService({
 await service.matchRanges(
   "api_perm", "pv1",
   { role: "editor", action: null, resource: null },
-  "active-only",  // gate 필터 모드
+  "active",  // gate 필터 모드
 );
 // → [[128, 255]]  (editor role에 해당하는 active 주소 범위)
 ```
 
 gate 모드:
 - `null` — gate 필터 없음 (전체 범위)
-- `"active-only"` — active 상태 주소만
-- `"include-inactive"` — inactive도 포함
+- `"encodable"` — inactive + reserved 범위 제거
+- `"decodable"` — open + reserved 범위 제거
+- `"active"` — inactive + open + reserved 범위 제거
 
 ### 3. composeQuery
 
-공유 축을 통한 교차 prefix 질의.
+`index_ref` dim을 통한 교차 index 질의.
 
 ```typescript
 service.composeQuery(
