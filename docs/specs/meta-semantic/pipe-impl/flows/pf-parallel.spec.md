@@ -16,6 +16,18 @@ def:
       type: traces_to
     - target: pipe-types
       type: traces_to
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-path.ts
+    - packages/core/src/pipe/pipe-path.test.ts
+    - packages/core/src/pipe/pipe-validate.ts
+    - packages/core/src/pipe/pipe-validate.test.ts
+    - packages/core/src/pipe/pipe-simulate.ts
+    - packages/core/src/pipe/pipe-simulate.test.ts
+    - packages/core/src/pipe/pipe-runtime.ts
+    - packages/core/src/pipe/pipe-runtime.test.ts
+    - packages/core/src/pipe/pipe-analyze.ts
+
 ---
 
 # PipeFlow: parallel — 동시 실행 전부 대기
@@ -33,7 +45,7 @@ steps 전부 동시 시작, 전부 완료 대기. 카테고리: 동시성.
 
 필드: steps(필수, 2+)
 
-> 타입: `core/src/types/pipe-spec.ts` 참조
+> 타입: `packages/core/src/types/pipe-spec.ts` 참조
 
 ## 검증 방식
 
@@ -49,19 +61,19 @@ steps 전부 동시 시작, 전부 완료 대기. 카테고리: 동시성.
 
 ## 관련 소스
 
-- 타입: `core/src/types/pipe-spec.ts`
-- 경로: `core/src/pipe-path.ts`
-- 시뮬: `core/src/pipe-simulate.ts`
-- 검증: `core/src/pipe-validate.ts`
+- 타입: `packages/core/src/types/pipe-spec.ts`
+- 경로: `packages/core/src/pipe/pipe-path.ts`
+- 시뮬: `packages/core/src/pipe/pipe-simulate.ts`
+- 검증: `packages/core/src/pipe/pipe-validate.ts`
 
 ## 구현 소스
 
 - 타입: `packages/core/src/types/pipe-spec.ts` — `PipeParallel`
-- 경로 계산: `packages/core/src/pipe-path.ts` — `countPipePaths()` switch case
-- 검증: `packages/core/src/pipe-validate.ts` — `validateFlow()` switch case
-- 시뮬레이션: `packages/core/src/pipe-simulate.ts` — `walkFlow()` switch case
-- 런타임: `packages/core/src/pipe-runtime.ts` — `runFlow()` switch case
-- 분석: `packages/core/src/pipe-analyze.ts` — `getChildFlows()` switch case
+- 경로 계산: `packages/core/src/pipe/pipe-path.ts` — `countPipePaths()` switch case
+- 검증: `packages/core/src/pipe/pipe-validate.ts` — `validateFlow()` switch case
+- 시뮬레이션: `packages/core/src/pipe/pipe-simulate.ts` — `walkFlow()` switch case
+- 런타임: `packages/core/src/pipe/pipe-runtime.ts` — `runFlow()` switch case
+- 분석: `packages/core/src/pipe/pipe-analyze.ts` — `getChildFlows()` switch case
 
 
 ## 시각 표현

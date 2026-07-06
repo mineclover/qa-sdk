@@ -147,6 +147,16 @@ async function main() {
       .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
     assert(metaSemanticSourceBackedGaps.length === 0,
            `Usefulness Audit: meta-semantic IR/execution docs are source-backed keep docs (${metaSemanticSourceBackedGaps.join(", ") || "ok"})`);
+    const pipeFlowCatalogDocs = usefulness.docs
+      .filter((item: { path: string }) => item.path.startsWith("docs/specs/meta-semantic/pipe-impl/flows/"));
+    const pipeConnectionCatalogDocs = usefulness.docs
+      .filter((item: { path: string }) => item.path.startsWith("docs/specs/meta-semantic/pipe-impl/connections/"));
+    const pipeVocabularyGaps = [...pipeFlowCatalogDocs, ...pipeConnectionCatalogDocs]
+      .filter((item: { verdict: string; sourceRefs: number }) => item.verdict !== "keep" || item.sourceRefs === 0);
+    assert(pipeFlowCatalogDocs.length === 29
+           && pipeConnectionCatalogDocs.length === 8
+           && pipeVocabularyGaps.length === 0,
+           `Usefulness Audit: pipe flow/connection vocabulary docs are source-backed keep docs (flows=${pipeFlowCatalogDocs.length}, connections=${pipeConnectionCatalogDocs.length}, gaps=${pipeVocabularyGaps.length})`);
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(
