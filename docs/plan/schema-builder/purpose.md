@@ -1,3 +1,16 @@
+---
+status: draft
+sources:
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/demo-snapshot/src/event-schema.test.ts
+  - packages/ingest-server/src/stores/d1-schema.sql.ts
+  - packages/ingest-server/src/db/schema.ts
+  - packages/registry-service/src/db/schema.ts
+  - packages/index-meta/drizzle/20260328021248_initial/migration.sql
+  - packages/store/src/db/schema.ts
+  - packages/registry-service/src/core/seed-catalog.ts
+---
+
 # Schema Builder — 목적 정의
 
 > Status: **설계 중**
@@ -6,35 +19,52 @@
 
 ---
 
+## 0. 현행 판정
+
+`@qa-sdk/schema-builder` 패키지는 아직 구현된 패키지가 아니다. 이 문서는 신규 패키지의 API가 존재한다고 주장하는 구현 문서가 아니라, 현재 소스에 존재하는 table schema/DDL drift를 근거로 한 계획 문서다.
+
+현재 소스 기준으로 확정된 경계는 다음과 같다.
+
+- `packages/demo-snapshot/src/demo-catalog.ts`의 `DEMO_CATALOG.tables`가 좌표 세계와 관계형 세계를 연결하는 `TableSchema`/`ColumnRef` 정의를 소유한다.
+- `packages/demo-snapshot/src/event-schema.test.ts`가 `scalar`, `prefix_ref`, `table_ref`, `axis_ref` 4종 column reference와 event -> table -> prefix 경로를 검증한다.
+- ingest D1 DDL은 `packages/ingest-server/src/stores/d1-schema.sql.ts`와 `packages/ingest-server/src/db/schema.ts`가 소유하며, store PG schema는 `packages/store/src/db/schema.ts`가 소유한다.
+- registry DDL은 `packages/registry-service/src/db/schema.ts`가 소유하고, `packages/registry-service/src/core/seed-catalog.ts`가 `DEMO_CATALOG`를 registry catalog store로 seed한다.
+- index-meta의 SQLite DDL은 `packages/index-meta/drizzle/20260328021248_initial/migration.sql`에 별도 소유권으로 존재한다.
+
+따라서 이 계획의 보수적 결론은 "CATALOG.tables를 즉시 DDL SSOT로 승격한다"가 아니라, 기존 DDL 소유권을 유지한 채 schema-builder가 필요한지 판단할 수 있는 extractor/diff/migration 후보를 분리한다는 것이다.
+
 ## 1. 문제
 
 ### 현재 상태
 
 ```
-DEMO_CATALOG.tables (19개)
+DEMO_CATALOG.tables
   ├── columns: axis_ref, prefix_ref 등 좌표 참조 정의
-  ├── DKG table 노드 (19개) + ER 다이어그램
-  └── 실제 DDL? → 수동 작성 (d1-schema.sql.ts, schema.sql.ts)
+  ├── event/table/prefix 경로 테스트
+  └── 실제 DDL? → ingest/registry/index-meta/store 패키지별 수동 소유
 
 결과:
   - 카탈로그에 테이블을 정의해도 DDL은 따로 손으로 씀
-  - 카탈로그 테이블 정의와 실제 D1 스키마가 drift
-  - 어떤 테이블/컬럼이 실제로 쿼리되는지 모름
+  - 카탈로그 테이블 정의와 실제 DDL/Drizzle 스키마가 drift할 수 있음
+  - 어떤 테이블/컬럼이 실제로 쿼리되는지 schema-builder 관점에서는 아직 관측하지 않음
 ```
 
-### SSOT 위반 3곳
+### Drift 후보 4곳
 
 | 위치 | 정의 | 문제 |
 |------|------|------|
-| `demo-catalog.ts` | `tables.members.columns.role: axis_ref → role` | 원본 정의 |
-| `d1-schema.sql.ts` | `CREATE TABLE members (role TEXT)` | 수동 복사 — 동기화 보장 없음 |
-| `schema.sql.ts` | `CREATE TABLE event_schema (...)` | 또 다른 수동 복사 |
+| `packages/demo-snapshot/src/demo-catalog.ts` | `tables.*.columns`와 `ColumnRef` | 좌표/관계형 연결의 계획 SSOT |
+| `packages/ingest-server/src/stores/d1-schema.sql.ts` | ingest D1 `CREATE TABLE` SQL | 수동 DDL |
+| `packages/ingest-server/src/db/schema.ts` | ingest Drizzle schema | DDL과 1:1 대응 필요 |
+| `packages/registry-service/src/db/schema.ts` | registry Drizzle schema | registry 자체 catalog/event/prefix DDL |
 
 ---
 
 ## 2. 목적
 
-**CATALOG.tables가 DDL의 유일한 입력이 되어야 한다.**
+**장기적으로는 CATALOG.tables가 DDL의 유일한 입력 후보가 되어야 한다.**
+
+단기적으로는 각 패키지가 이미 소유한 DDL을 유지하면서, 아래 기능이 실제 비용을 줄이는지 검증한다.
 
 ```
 DEMO_CATALOG.tables
@@ -259,3 +289,16 @@ schema-builder → @qa-sdk/core (Catalog 타입)
 | S2 | `diffSchema()`가 실제 D1과 카탈로그 정의의 drift를 감지 | event_schema 누락 → 발견 |
 | S3 | 새 테이블을 카탈로그에 추가하면 DDL이 자동 생성 | 수동 SQL 작성 0 |
 | S4 | 테이블 쿼리 이벤트가 insights에서 조회 가능 | event_key: "table.query" |
+
+## 9. 검증 경로
+
+현재 문서가 기대는 최소 검증 경로는 다음이다.
+
+```bash
+corepack pnpm --filter demo-snapshot test -- event-schema
+node scripts/design-usefulness-audit.mjs --format json --all
+corepack pnpm def:check
+corepack pnpm arch:feedback
+```
+
+`@qa-sdk/schema-builder` 패키지가 생기기 전까지 `generateDDL`, `diffSchema`, `migrate`, `trackUsage`는 구현 완료 API가 아니라 성공 기준을 표현하는 후보 이름이다.

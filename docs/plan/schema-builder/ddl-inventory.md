@@ -1,6 +1,35 @@
+---
+status: draft
+sources:
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/demo-snapshot/src/event-schema.test.ts
+  - packages/ingest-server/src/stores/d1-schema.sql.ts
+  - packages/ingest-server/src/db/schema.ts
+  - packages/ingest-server/drizzle/20260328024155_initial/migration.sql
+  - packages/registry-service/src/db/schema.ts
+  - packages/registry-service/drizzle/20260328024153_initial/migration.sql
+  - packages/index-meta/drizzle/20260328021248_initial/migration.sql
+  - packages/store/src/db/schema.ts
+---
+
 # DDL 인벤토리 — 현재 상태
 
-> 2026-03-24 기준. DEMO_CATALOG.tables 19개 + 서비스 DDL 정의 + 실제 D1 테이블 매핑.
+> 2026-03-24 기준으로 작성된 schema-builder 계획 인벤토리. 2026-07-07 현재는 위 source refs를 기준으로 재검증해야 한다.
+
+## 0. 현행 판정
+
+이 문서는 `@qa-sdk/schema-builder` 구현 산출물이 아니라, `DEMO_CATALOG.tables`와 실제 DDL 소유 표면을 대조하기 위한 계획 인벤토리다.
+
+현재 코드 기준 소유권은 다음처럼 나뉜다.
+
+- `DEMO_CATALOG.tables`: `packages/demo-snapshot/src/demo-catalog.ts`가 `scalar`, `prefix_ref`, `table_ref`, `axis_ref` column vocabulary를 소유한다.
+- table/prefix 경로 검증: `packages/demo-snapshot/src/event-schema.test.ts`가 event -> table -> table -> prefix 연결을 검증한다.
+- ingest DDL: `packages/ingest-server/src/stores/d1-schema.sql.ts`, `packages/ingest-server/src/db/schema.ts`, ingest migration SQL이 소유한다.
+- registry DDL: `packages/registry-service/src/db/schema.ts`, registry migration SQL이 소유한다.
+- index-meta DDL: `packages/index-meta/drizzle/20260328021248_initial/migration.sql`이 별도 SQLite schema를 소유한다.
+- store PG schema: `packages/store/src/db/schema.ts`가 PostgreSQL 저장소 schema를 소유한다.
+
+따라서 아래 표는 "현재 완전 동기화됨"의 증명이 아니라, schema-builder 또는 diff checker가 생길 때 비교해야 할 drift 후보 목록으로 읽는다.
 
 ---
 
@@ -153,3 +182,14 @@
 2. **CATALOG.tables 보강**: `dead_letter_queue`, `insight_labels` 등 인프라 테이블도 CATALOG에 등록 (선택적)
 3. **diff 체커**: 카테고리 A+B의 DDL과 실제 D1 스키마를 자동 비교
 4. **사용 추적**: `table.query` 이벤트 수집 래퍼
+
+## 5. 검증 경로
+
+```bash
+corepack pnpm --filter demo-snapshot test -- event-schema
+node scripts/design-usefulness-audit.mjs --format json --all
+corepack pnpm def:check
+corepack pnpm arch:feedback
+```
+
+`schema-builder` 패키지가 없는 동안 이 인벤토리의 마감 기준은 "자동 생성기 구현"이 아니라 "source refs가 존재하고, 현재 DDL 소유권과 계획 API가 섞이지 않는 것"이다.
