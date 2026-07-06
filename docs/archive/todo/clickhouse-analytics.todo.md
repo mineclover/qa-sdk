@@ -11,6 +11,12 @@ def:
   links:
     - target: ingest-infra-system
       type: refines
+status: completed
+sources:
+  - packages/ingest-server/src/stores/clickhouse-record-store.ts
+  - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
+  - packages/ingest-server/src/stores/clickhouse-schema.sql.ts
+  - packages/ingest-server/src/stores/store-factory.ts
 ---
 
 # ClickHouse AnalyticsStore — TODO
@@ -61,3 +67,10 @@ interface AnalyticsStore {
   - Docker ClickHouse 없이 SQL 생성, 결과 매핑, 식별자/limit 방어를 검증
 
 상태: 완료. 열린 실행 항목은 없으며, 이 문서는 ClickHouse 분석 전용 포트 분리 완료 기록으로 유지한다.
+
+## 검증 경로
+
+```bash
+corepack pnpm --filter @qa-sdk/ingest-server test -- clickhouse-record-store
+node scripts/design-usefulness-audit.mjs --format json --all
+```

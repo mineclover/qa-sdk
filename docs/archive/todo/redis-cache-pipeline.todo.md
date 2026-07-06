@@ -11,6 +11,17 @@ def:
   links:
     - target: ingest-infra-system
       type: depends_on
+status: completed
+sources:
+  - docs/specs/pipeline-system/redis-cache-adapter.spec.md
+  - packages/store/src/adapters/redis/key-cache.adapter.ts
+  - packages/store/src/adapters/redis/key-cache.adapter.test.ts
+  - packages/store/src/index.ts
+  - packages/decode-service/src/lib/decode-cache.ts
+  - packages/decode-service/src/lib/decode-cache.test.ts
+  - packages/decode-service/src/server.ts
+  - packages/decode-service/src/routes/health.ts
+  - packages/cli/src/command-groups/cache.commands.ts
 ---
 
 # Redis 캐시 파이프라인 — TODO
@@ -76,3 +87,11 @@ Phase 3, Phase 5, Phase 4 (4-3)은 후속 작업.
 - ioredis는 optionalDependencies — Redis 없는 환경에서 store 패키지 정상 동작
 - 모든 Redis 연동은 fail-open — Redis 장애가 서비스를 차단하지 않음
 - DecoderPool의 기존 in-memory TTL-LRU 캐시는 L1으로 유지, Redis는 L2
+
+## 검증 경로
+
+```bash
+corepack pnpm --filter @qa-sdk/store test -- src/adapters/redis/key-cache.adapter.test.ts
+corepack pnpm --filter @qa-sdk/decode-service test -- decode-cache
+node scripts/design-usefulness-audit.mjs --format json --all
+```

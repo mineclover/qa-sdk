@@ -22,6 +22,17 @@ def:
       type: depends_on
     - target: event-vocab-system
       type: refines
+status: completed
+sources:
+  - packages/event-catalog/src/prefix-mapping.ts
+  - packages/registry-service/src/core/seed-events.ts
+  - packages/registry-service/src/core/seed-events.test.ts
+  - packages/registry-service/src/core/seed-config.ts
+  - packages/registry-service/src/modules/events/event-catalog.service.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
+  - scripts/registry-event-taxonomy-gate.sh
+  - docs/specs/event-vocab-system/event-taxonomy-role-contract.spec.md
+  - docs/specs/event-vocab-system/service-event-adoption.rule.md
 ---
 
 # Event Taxonomy Rollout — 실행 TODO
@@ -89,3 +100,12 @@ event taxonomy 3층 분리 설계를 실제 구조와 도구에 반영하기 위
 - 서비스별 taxonomy check가 핵심 서비스 집합에서 green일 것
 - 외부 수동 config가 canonical `{ packId, version }[]` 형태로 migration될 것
 - 위 조건 충족 후 runtime seed에서는 `_mapping`을 생성하지 않고, adoption 미존재 시 warning만 남긴다
+
+## 검증 경로
+
+```bash
+corepack pnpm --filter @qa-sdk/event-catalog test
+corepack pnpm --filter @qa-sdk/registry-service test -- seed-events event.controller
+corepack pnpm gate:event-taxonomy
+node scripts/design-usefulness-audit.mjs --format json --all
+```
