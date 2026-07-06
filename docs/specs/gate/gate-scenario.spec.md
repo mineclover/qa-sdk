@@ -15,6 +15,12 @@ def:
       type: traces_to
     - target: gate-api
       type: traces_to
+sources:
+  - packages/gate-service/src/app.test.ts
+  - packages/gate-service/src/services/consistency.test.ts
+  - packages/gate-service/src/services/cache-invalidation.test.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/gate-aware-query.test.ts
 ---
 # Gate 테스트 시나리오
 

@@ -13,6 +13,11 @@ def:
   links:
     - target: gate-state-model
       type: depends_on
+sources:
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/gate-aware-query.ts
+  - packages/index-meta/src/gate-aware-query.test.ts
 ---
 # GateEngine 기능 명세
 

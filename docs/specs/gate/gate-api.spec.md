@@ -21,6 +21,12 @@ def:
       type: depends_on
     - target: gate-consistency
       type: depends_on
+sources:
+  - packages/gate-service/src/routes/gate.ts
+  - packages/gate-service/src/schemas/gate.ts
+  - packages/gate-service/src/routes/gate-openapi.ts
+  - packages/gate-service/src/routes/gate-openapi.test.ts
+  - packages/gate-service/src/app.test.ts
 ---
 # Gate Service API 계약
 

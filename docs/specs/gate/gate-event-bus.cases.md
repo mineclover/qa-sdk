@@ -15,6 +15,11 @@ def:
       type: refines
     - target: gate-system
       type: depends_on
+sources:
+  - packages/gate-service/src/ports/event-bus.port.ts
+  - packages/gate-service/src/adapters/memory-event-bus.ts
+  - packages/gate-service/src/adapters/memory-event-bus.test.ts
+  - packages/gate-service/src/services/cache-invalidation.ts
 ---
 
 # Gate Event Bus — 소비자 기대 시나리오

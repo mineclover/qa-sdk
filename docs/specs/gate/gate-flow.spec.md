@@ -15,6 +15,15 @@ def:
       type: refines
     - target: gate-engine-func
       type: refines
+sources:
+  - packages/gate-service/src/lib/gate-service.ts
+  - packages/gate-service/src/routes/gate.ts
+  - packages/gate-service/src/services/cache-invalidation.ts
+  - packages/gate-service/src/middleware/error-handler.ts
+  - packages/gate-service/src/server.ts
+  - packages/gate-service/src/worker.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-aware-query.ts
 ---
 # Gate 운영 흐름
 

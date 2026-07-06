@@ -25,6 +25,13 @@ def:
       type: refs
     - target: gate-scenario
       type: refs
+sources:
+  - packages/gate-service/src/app.ts
+  - packages/gate-service/src/lib/gate-service.ts
+  - packages/gate-service/src/routes/gate.ts
+  - packages/gate-service/src/services/consistency.ts
+  - packages/gate-service/src/services/cache-invalidation.ts
+  - packages/index-meta/src/gate-engine.ts
 ---
 
 # Gate 시스템

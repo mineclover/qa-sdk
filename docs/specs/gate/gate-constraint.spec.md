@@ -15,6 +15,13 @@ def:
       type: constrains
     - target: gate-engine-func
       type: constrains
+sources:
+  - packages/gate-service/src/lib/gate-service.ts
+  - packages/gate-service/src/config/env.ts
+  - packages/gate-service/src/services/consistency.ts
+  - packages/gate-service/src/services/cache-invalidation.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/invalid-ranges.ts
 ---
 # Gate 기술적 제약
 

@@ -15,6 +15,11 @@ def:
       type: refs
 contains:
   - gate-cache-invalidation-test
+sources:
+  - packages/gate-service/src/services/cache-invalidation.ts
+  - packages/gate-service/src/services/cache-invalidation.test.ts
+  - packages/gate-service/src/ports/event-bus.port.ts
+  - packages/gate-service/src/lib/gate-service.ts
 ---
 # CacheInvalidation 서비스
 

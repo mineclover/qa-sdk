@@ -17,6 +17,10 @@ def:
       type: depends_on
 contains:
   - gate-event-bus-test
+sources:
+  - packages/gate-service/src/ports/event-bus.port.ts
+  - packages/gate-service/src/adapters/memory-event-bus.ts
+  - packages/gate-service/src/adapters/memory-event-bus.test.ts
 ---
 # EventBus 이벤트 전파 계약
 

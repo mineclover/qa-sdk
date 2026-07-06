@@ -17,6 +17,11 @@ def:
       type: depends_on
 contains:
   - gate-consistency-test
+sources:
+  - packages/gate-service/src/services/consistency.ts
+  - packages/gate-service/src/services/consistency.test.ts
+  - packages/gate-service/src/lib/gate-service.ts
+  - packages/index-meta/src/gate-engine.ts
 ---
 # Consistency 서비스
 

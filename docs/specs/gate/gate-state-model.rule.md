@@ -12,6 +12,11 @@ def:
   links:
     - target: gate-state-model
       type: refines
+sources:
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-aware-query.ts
+  - packages/gate-service/src/lib/gate-service.ts
 ---
 
 # Gate State Model — 소비 규칙

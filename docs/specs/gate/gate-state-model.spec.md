@@ -13,6 +13,12 @@ def:
   links:
     - target: gate-constraint
       type: depends_on
+sources:
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/invalid-ranges.test.ts
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/gate-service/src/lib/gate-service.ts
 ---
 # Gate 4-State 모델
 

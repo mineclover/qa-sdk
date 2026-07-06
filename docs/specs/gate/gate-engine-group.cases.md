@@ -15,6 +15,12 @@ def:
       type: refines
     - target: gate-system
       type: depends_on
+sources:
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/gate-aware-query.ts
+  - packages/index-meta/src/gate-aware-query.test.ts
+  - packages/gate-service/src/ports/event-bus.port.ts
 ---
 
 # Gate Engine Group — 소비자 기대 시나리오

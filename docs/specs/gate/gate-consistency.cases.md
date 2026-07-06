@@ -15,6 +15,11 @@ def:
       type: refines
     - target: gate-system
       type: depends_on
+sources:
+  - packages/gate-service/src/services/consistency.ts
+  - packages/gate-service/src/services/consistency.test.ts
+  - packages/gate-service/src/lib/gate-service.ts
+  - packages/index-meta/src/gate-engine.test.ts
 ---
 
 # Gate Consistency — 소비자 기대 시나리오
