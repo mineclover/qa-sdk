@@ -16,6 +16,12 @@ def:
   links:
     - target: definition-catalog-spec
       type: refines
+  sources:
+    - packages/definition-catalog/src/concern.ts
+    - packages/definition-catalog/src/concern.test.ts
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/real-docs.test.ts
+    - packages/definition-catalog/src/gate-docs.test.ts
 ---
 # Definition Concern — concern 전파 규칙
 
@@ -62,5 +68,6 @@ const concerns = computeEffectiveConcerns(docId, getEntry, getLinks);
 
 ## 관련 소스
 
-- `definition-catalog/src/concern.ts` — 전파 엔진 (computeEffectiveConcerns, extractDirectConcerns)
-- `definition-catalog/src/taxonomy.ts` — CONCERN_TAGS, CONCERN_DEFS
+- `packages/definition-catalog/src/concern.ts` — 전파 엔진 (computeEffectiveConcerns, extractDirectConcerns)
+- `packages/definition-catalog/src/concern.test.ts` — concern 7종, 직접 추출, BFS 전파, 순환 안전성 검증
+- `packages/definition-catalog/src/taxonomy.ts` — CONCERN_TAGS

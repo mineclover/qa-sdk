@@ -16,6 +16,11 @@ def:
   links:
     - target: definition-catalog-spec
       type: refines
+  sources:
+    - packages/definition-catalog/src/extract.ts
+    - packages/definition-catalog/src/extract.test.ts
+    - packages/definition-catalog/src/assemble.ts
+    - packages/definition-catalog/src/contract.ts
 ---
 # Definition Extraction — 마커 기반 요약 추출
 
@@ -28,6 +33,8 @@ def:
 - ^marker 문법 (헤더 접미사)
 - 3수준 추출 (purpose / overview / full)
 - findMarkedSections(), extractByLevel(), summarizeDocument()
+- extractByMarker() 자유 마커 추출
+- fenced code block 내부 예시 마커 무시
 
 ## 소비 ^consumes
 
@@ -94,4 +101,5 @@ def:
 
 ## 관련 소스
 
-- `definition-catalog/src/extract.ts` — findMarkedSections, extractByLevel, extractByMarker, summarizeDocument
+- `packages/definition-catalog/src/extract.ts` — findMarkedSections, extractByLevel, extractByMarker, summarizeDocument
+- `packages/definition-catalog/src/extract.test.ts` — 표준 마커, 자유 마커, fenced block 회귀 검증

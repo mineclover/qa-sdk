@@ -20,6 +20,15 @@ def:
       type: depends_on
     - target: definition-assembly
       type: depends_on
+  sources:
+    - packages/definition-catalog/src/contract.ts
+    - packages/definition-catalog/src/contract.test.ts
+    - packages/definition-catalog/src/contract-evidence.ts
+    - packages/definition-catalog/src/contract-evidence.test.ts
+    - packages/definition-catalog/src/contract-stats.ts
+    - packages/definition-catalog/src/contract-stats.test.ts
+    - packages/definition-catalog/src/extract.ts
+    - packages/definition-catalog/src/taxonomy.ts
 ---
 # Definition Contract — 계약 조립
 
@@ -34,6 +43,7 @@ def:
 - parseEvidenceItems() — 증거 어노테이션 파싱
 - ContractStats — 계약 통계 (완성도, 의미밀도, 가역성 비율)
 - assembleContract() — 계약 조립 오케스트레이터
+- 그룹 문서 자체의 계약 마커도 멤버 마커와 함께 수집
 
 ## 소비 ^consumes
 
@@ -73,6 +83,7 @@ reversible = 원본 복원 가능, irreversible = 정보 손실.
 
 ## 관련 소스
 
-- `definition-catalog/src/contract.ts` — assembleContract
-- `definition-catalog/src/contract-evidence.ts` — parseEvidenceItems
-- `definition-catalog/src/contract-stats.ts` — computeStats, renderContract
+- `packages/definition-catalog/src/contract.ts` — assembleContract
+- `packages/definition-catalog/src/contract.test.ts` — contains 멤버 계약 조립, 슬롯/통계/렌더링 검증
+- `packages/definition-catalog/src/contract-evidence.ts` — parseEvidenceItems
+- `packages/definition-catalog/src/contract-stats.ts` — computeStats, renderContract
