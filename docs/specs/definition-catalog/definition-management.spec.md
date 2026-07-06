@@ -13,6 +13,12 @@ def:
   layer: operation
   svc: definition-service
   tags: [structural, entry-point]
+  sources:
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/assemble.ts
+    - packages/definition-catalog/src/harness-state-model.ts
+    - packages/definition-catalog/src/semantic-lint.ts
+    - packages/definition-catalog/src/cross-loop-bridge.ts
   links:
     - target: definition-frontmatter-metadata-system
       type: refs

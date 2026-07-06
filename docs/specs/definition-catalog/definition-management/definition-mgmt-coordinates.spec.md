@@ -12,6 +12,12 @@ def:
   lifecycle: approved
   layer: operation
   tags: [structural]
+  sources:
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/observe.ts
+    - packages/definition-catalog/src/address-assign.ts
+    - packages/definition-catalog/src/address-intent.ts
   links:
     - target: definition-management
       type: refines

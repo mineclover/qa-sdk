@@ -204,6 +204,23 @@ async function main() {
       .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
     assert(metaSemanticInterfaceGaps.length === 0,
            `Usefulness Audit: meta-semantic interface docs are source-backed keep docs (${metaSemanticInterfaceGaps.join(", ") || "ok"})`);
+    const definitionManagementDocs = [
+      "docs/specs/definition-catalog/definition-management.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-consistency-rules.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-feedback-loop.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-graph-links.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-observability-model.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-observability-planes.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-reachable-path-registry.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-semantic-lint.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-state-tracking.spec.md",
+      "docs/specs/definition-catalog/definition-management/definition-mgmt-verification-loop.spec.md",
+    ];
+    const definitionManagementGaps = definitionManagementDocs
+      .filter((path) => usefulnessDocs[path]?.verdict !== "keep" || usefulnessDocs[path]?.sourceRefs === 0);
+    assert(definitionManagementGaps.length === 0,
+           `Usefulness Audit: definition management docs are source-backed keep docs (${definitionManagementGaps.join(", ") || "ok"})`);
 
     // missing entrypoints는 실제 public entrypoint gap과 분리되어야 함
     const missingEntrypoints = Object.fromEntries(

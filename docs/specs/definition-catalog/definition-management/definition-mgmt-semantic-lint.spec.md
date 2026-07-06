@@ -12,6 +12,11 @@ def:
   lifecycle: approved
   layer: operation
   tags: [observability, structural]
+  sources:
+    - packages/definition-catalog/src/semantic-lint.ts
+    - packages/definition-catalog/src/validate-semantic.test.ts
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
   links:
     - target: definition-management
       type: refines

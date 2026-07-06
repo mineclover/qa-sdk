@@ -12,6 +12,12 @@ def:
   lifecycle: approved
   layer: operation
   tags: [structural]
+  sources:
+    - packages/definition-catalog/src/frontmatter.ts
+    - packages/definition-catalog/src/registry.ts
+    - packages/definition-catalog/src/assemble.ts
+    - packages/definition-catalog/src/impact.ts
+    - packages/definition-catalog/src/system-link-coverage.test.ts
   links:
     - target: definition-management
       type: refines

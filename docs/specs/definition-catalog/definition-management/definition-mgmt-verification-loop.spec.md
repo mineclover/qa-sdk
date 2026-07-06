@@ -12,6 +12,14 @@ def:
   lifecycle: approved
   layer: operation
   tags: [observability, testing, runtime]
+  sources:
+    - packages/cli/src/commands/def.ts
+    - packages/cli/src/commands/def.test.ts
+    - packages/cli/src/commands/quality.ts
+    - packages/cli/src/commands/quality.test.ts
+    - packages/definition-catalog/src/scan-real.test.ts
+    - packages/definition-catalog/src/tag-coverage.test.ts
+    - packages/definition-catalog/src/system-link-coverage.test.ts
   links:
     - target: definition-management
       type: refines
