@@ -14,6 +14,14 @@ def:
   links:
     - target: spec-reference-system
       type: traces_to
+sources:
+  - packages/context/src/qa-context.ts
+  - packages/core/src/catalog/runtime.ts
+  - packages/cli/src/command-groups/prefix.commands.ts
+  - packages/cli/src/command-groups/dkg.commands.ts
+  - packages/spec-core/src/propagation/catalog-mutator.ts
+  - packages/spec-core/src/propagation/catalog-writer.ts
+  - packages/spec-core/src/dkg/cli-query.test.ts
 ---
 
 # Cookbook — 자주 쓰는 레시피
@@ -38,22 +46,21 @@ entry 추가, 축 생성, prefix 설계, capacity 확장 등 자주 쓰는 좌�
 
 ```bash
 # 1. 현재 상태 확인
-qa list-axes
+qa-sdk dkg axes
 # → role  entries=7  cap=32  headroom=25
 
 # 2. 이미 있는지 확인
-qa find-version role auditor
-# → v4: position 6  (이미 있다면 여기서 끝)
+qa-sdk dkg axes --group-by prefix
+# → role 축이 이미 쓰이는 prefix 확인
 # → (없으면 DEMO_CATALOG에 entry 추가)
 
 # 3. 영향 분석
-qa impact --axis role
+qa-sdk dkg impact role
 # → stride-break: false
 # → 영향: permission, shopping-domain, auth-service
 
 # 4. 인코딩 테스트
-qa encode permission --role auditor
-# → permission:v4:ADDRESS
+qa-sdk spec resolve --prefix permission --values '{"role":"auditor"}' --catalog
 ```
 
 ---
@@ -64,8 +71,8 @@ qa encode permission --role auditor
 
 ```bash
 # 1. 의사결정 7개 질문
-qa list-prefixes    # 기존에 notification prefix 없음 확인
-qa list-axes        # notification_type 같은 축도 없음
+qa-sdk dkg prefixes # 기존에 notification prefix 없음 확인
+qa-sdk dkg axes     # notification_type 같은 축도 없음
 
 # 2. 새 축 정의 (DEMO_CATALOG에 추가)
 #    notification_type: ["email", "sms", "push", "webhook"]
@@ -77,11 +84,10 @@ qa list-axes        # notification_type 같은 축도 없음
 #    → 32 × 32 = 1024 조합
 
 # 4. encode 테스트
-qa encode notification --notification_type email --notification_status sent
-# → notification:v1:ADDRESS
+qa-sdk spec resolve --prefix notification --values '{"notification_type":"email","notification_status":"sent"}' --catalog
 
 # 5. DKG 영향 확인
-qa impact --prefix notification
+qa-sdk prefix impact notification
 # → stride-break: false (신규이므로)
 # → 기존에 영향 없음
 ```
@@ -94,21 +100,20 @@ qa impact --prefix notification
 
 ```bash
 # 1. 현재 상태
-qa list-axes
+qa-sdk dkg axes
 # → api_path  entries=6  cap=64  headroom=58
 
 # 2. headroom 58이면 아직 충분. 하지만 미래를 대비하려면:
 #    _axes.api_path.capacity = 128 (또는 256)
 
 # 3. 변경 시 영향 확인
-qa impact --axis api_path
+qa-sdk dkg impact api_path
 # → 영향: api prefix
 # → stride-break: true (capacity 변경)
 
 # 4. 변경 후:
 #    build → refEntries 자동 재계산 → 테스트 통과 확인
-qa derive-refs --check
-# → ✅ 전부 일치
+qa-sdk prefix drift packages/demo-types/src
 ```
 
 ---
@@ -177,7 +182,7 @@ if (result.migrated) {
 **상황:** 두 축의 entries가 비슷해 보임
 
 ```bash
-qa dkg overlaps
+qa-sdk dkg overlaps
 # → 🔴 initiator ↔ channel: [web,mobile] 100% → merge 후보
 # → 🟡 subjectKind ↔ objectKind: [_,role,group] 50% → review
 

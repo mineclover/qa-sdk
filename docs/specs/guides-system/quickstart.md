@@ -14,6 +14,14 @@ def:
   links:
     - target: system-data-flow
       type: traces_to
+sources:
+  - packages/context/src/qa-context.ts
+  - packages/sdk/src/index.ts
+  - packages/core/src/catalog/runtime.ts
+  - packages/core/src/catalog/catalog.types.ts
+  - packages/cli/src/command-groups/spec.commands.ts
+  - packages/cli/src/command-groups/prefix.commands.ts
+  - packages/cli/src/command-groups/dkg.commands.ts
 ---
 # Quickstart — 차원 압축 기반 DSL DB
 
@@ -24,7 +32,7 @@ def:
 ## 구성 ^overview
 
 - **prefix 개념**: 각 prefix는 차원의 조합(role×action, method×path 등)으로 유일한 정수 주소를 파생하는 의사결정 단위
-- **CLI 6종**: encode(문자열→주소), decode(주소→문자열), resolve(자동 마이그레이션), find-version(버전 탐색), impact(영향 분석), derive-refs(정합성 검증)
+- **운영 CLI 표면**: `qa-sdk spec resolve/decode`, `qa-sdk prefix find/drift/impact/migrate`, `qa-sdk dkg axes/prefixes/domains/overlaps/add-entry`
 - **SDK 사용법**: createQaContext로 초기화 후 encode/decode/resolve 호출, env·region·service는 SDK가 자동 주입
 - **환경 변수**: QA_ENV, QA_REGION, QA_SERVICE, QA_NAMESPACE 4종으로 런타임 컨텍스트 설정
 - **의사결정 7단계**: 기존 축/prefix 존재 여부 → 확장 vs 신규 → Domain 소속 → 연결 관계 → capacity → 소비자 영향 순서로 판단
@@ -47,75 +55,40 @@ page_view prefix:   page × locale     → "어떤 화면을 누가 보는가"
 
 ---
 
-## CLI 사용법
+## 현재 CLI 표면
 
-### encode — 문자열 → 주소
+### spec resolve — 값 JSON → export title
 
 ```bash
-# 권한 인코딩
-qa encode permission --role admin --action write
-# → permission:v4:ADDRESS
-
-# API 인코딩
-qa encode api --http_method POST --api_path orders --api_version v2
-# → api:v1:ADDRESS
-
-# 흐름 포인트
-qa encode flow_point --flow_name checkout --flow_step success --flow_variant default
-# → flow_point:v1:ADDRESS
+qa-sdk spec resolve --prefix permission --values '{"role":"admin"}' --catalog
+qa-sdk spec resolve --prefix flow_point --values '{"flow_name":"checkout","flow_step":"success","flow_variant":"default"}' --catalog
 ```
 
-### decode — 주소 → 문자열
+런타임 주소 문자열이 필요하면 앱 코드에서 `createQaContext().encode()`를 사용한다.
+
+### spec decode — 주소 → 문자열
 
 ```bash
-qa decode "permission:v4:65536"
-# → role: admin, action: read, ...
-
-# prefix_ref까지 재귀 해석
-qa decode "permission:v1:65536" --deep
-# → perm_svc → service:v1:65536 → env: prod, region: asia, ...
+qa-sdk spec decode --address "permission:v4:65536" --catalog
+qa-sdk spec decode --address "permission:v1:65536" --deep --catalog
 ```
 
-### resolve — 자동 마이그레이션
+### SDK resolve — 자동 마이그레이션
 
-```bash
-# 구버전 주소를 최신으로 변환
-qa resolve "permission:v1:5"
-# → permission:v4:NEW_ADDRESS
-# → migrated: true
-# → values: { role: "admin", action: "write" }
+```typescript
+const resolved = qa.resolve("permission:v1:5");
+// { address: "permission:v4:NEW_ADDRESS", migrated: true, values: {...} }
 ```
 
-### find-version — 문자열이 있는 버전 찾기
+### prefix / dkg — 탐색과 영향 분석
 
 ```bash
-qa find-version role auditor
-# → v4: position 6
-
-qa find-version role customer
-# → v2: position 5
-# → v3: position 5
-# → v4: position 5
-```
-
-### impact — 영향 분석
-
-```bash
-qa impact --axis role
-# → 영향 prefix: permission
-# → 영향 domain: shopping-domain
-# → 영향 consumer: auth-service, payment-service
-# → stride-break: false
-```
-
-### derive-refs — refEntries 정합성
-
-```bash
-qa derive-refs --check
-# → ✅ 9개 refEntries 전부 일치
-
-qa derive-refs --show
-# → 의미 ↔ 정수 매핑 표시
+qa-sdk prefix find permission --summary
+qa-sdk prefix impact permission
+qa-sdk prefix drift packages/demo-types/src
+qa-sdk dkg axes --group-by prefix
+qa-sdk dkg impact role
+qa-sdk dkg overlaps
 ```
 
 ---
@@ -164,13 +137,13 @@ QA_NAMESPACE=shop    # 네임스페이스
 
 | # | 질문 | CLI |
 |---|---|---|
-| 1 | 기존 축에 있는가? | `qa find-version <axis> <entry>` |
-| 2 | 기존 prefix에 있는가? | `qa list-prefixes` |
+| 1 | 기존 축에 있는가? | `qa-sdk dkg axes` |
+| 2 | 기존 prefix에 있는가? | `qa-sdk dkg prefixes` |
 | 3 | 확장 vs 신규? | 원칙: 보통 신규 |
-| 4 | 어떤 Domain? | `qa dkg domains` |
-| 5 | 다른 prefix와 연결? | `qa impact --prefix <id>` |
-| 6 | capacity 충분? | `qa list-axes` → headroom 확인 |
-| 7 | 기존 소비자 영향? | `qa impact --axis <id>` |
+| 4 | 어떤 Domain? | `qa-sdk dkg domains` |
+| 5 | 다른 prefix와 연결? | `qa-sdk prefix impact <id>` |
+| 6 | capacity 충분? | `qa-sdk prefix find <prefixId> --summary` |
+| 7 | 기존 소비자 영향? | `qa-sdk dkg impact <axisId>` |
 
 ---
 

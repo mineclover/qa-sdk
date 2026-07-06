@@ -15,6 +15,14 @@ def:
       type: traces_to
     - target: harness-architecture
       type: traces_to
+sources:
+  - packages/definition-catalog/src/runtime.ts
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/definition-catalog/src/harness-tracker.ts
+  - packages/definition-catalog/src/harness-derive.ts
+  - packages/definition-catalog/src/cross-loop-bridge.test.ts
+  - packages/work-domain/src/gate-tracker.ts
+  - packages/work-domain/src/harness-model.ts
 ---
 
 ## 목적 ^purpose
@@ -192,8 +200,8 @@ doc-lifecycle이 approved가 아니면 convention → compliant 전이가 guard�
 
 | 파일 | 역할 |
 |------|------|
-| `definition-catalog/src/runtime.ts` | `createDefinitionRuntime()` 팩토리 |
-| `definition-catalog/src/cross-loop-bridge.ts` | 3개 브릿지 |
-| `work-domain/src/gate-tracker.ts` | 게이트 트래커 |
-| `definition-catalog/src/harness-tracker.ts` | 하네스 트래커 |
-| `definition-catalog/src/harness-derive.ts` | 자동 상태 파생 |
+| `packages/definition-catalog/src/runtime.ts` | `createDefinitionRuntime()` 팩토리 |
+| `packages/definition-catalog/src/cross-loop-bridge.ts` | 3개 브릿지 |
+| `packages/work-domain/src/gate-tracker.ts` | 게이트 트래커 |
+| `packages/definition-catalog/src/harness-tracker.ts` | 하네스 트래커 |
+| `packages/definition-catalog/src/harness-derive.ts` | 자동 상태 파생 |

@@ -16,6 +16,12 @@ def:
       type: traces_to
     - target: dual-coordinate-system
       type: traces_to
+sources:
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/scope-registry.ts
+  - packages/definition-catalog/src/scope-registry.test.ts
+  - packages/definition-catalog/src/validate.ts
 ---
 # Scope 분류 가이드 — "이 정의는 어디에 속하는가"
 
@@ -23,7 +29,7 @@ def:
 
 새 문서를 작성할 때 scope와 aspect를 선택하는 기준을 제시한다. 같은 코드/기능이라도 **보는 관점**에 따라 다른 scope에 속한다. 이 가이드는 "이 정의는 무엇에 대한 것인가?"라는 질문에 대한 의사결정 트리를 제공한다.
 
-## Scope 7종 — 판별 기준 ^overview
+## Scope 9종 — 판별 기준 ^overview
 
 ### 선택 의사결정 트리
 
@@ -35,7 +41,9 @@ def:
 ├── 시간에 따라 변하는 값인가?               → state
 ├── "이것은 허용/금지"라는 규칙인가?          → constraint
 ├── 저장/전달되는 구조화된 값인가?            → data
-└── 외부와의 약속(API/CLI/이벤트)인가?        → interface
+├── 외부와의 약속(API/CLI/이벤트)인가?        → interface
+├── 문서 시스템 자체의 메타 규칙인가?         → meta
+└── 의사결정 기록/판정 문맥인가?              → decision
 ```
 
 ### 1. ui — 사용자가 보는 것
@@ -124,6 +132,22 @@ def:
 | event_contract | 이벤트 스키마 규격 | EventRecord 필드, address_context 포맷 |
 
 **소비 방식**: 계약 명세. 요청/응답 형식, 에러 코드, 인증 요구.
+
+### 8. meta — 문서 시스템 자체의 규칙
+
+**판별**: "문서 작성/검증/좌표화 규칙 자체를 설명하는가?"
+
+| aspect | 문서화 대상 | 예시 |
+|--------|-----------|------|
+| proposal_design | 문서 체계, 제안, 운영 메타 규칙 | aspect 분할 제안, lifecycle 운영 정책 |
+
+### 9. decision — 판단 문맥
+
+**판별**: "선택지, 근거, 의사결정 흐름을 보존하는가?"
+
+| aspect | 문서화 대상 | 예시 |
+|--------|-----------|------|
+| proposal_design | 결정 배경, 대안, 판정 근거 | taxonomy 분리 결정, governance ADR |
 
 ## Aspect 선택 기준
 

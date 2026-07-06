@@ -14,6 +14,13 @@ def:
   links:
     - target: decision-standard-group
       type: traces_to
+sources:
+  - packages/core/src/catalog/catalog.types.ts
+  - packages/core/src/catalog/runtime.ts
+  - packages/spec-schema/src/category-rules.ts
+  - packages/spec-schema/src/schema.types.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/cli/src/command-groups/dkg.commands.ts
 ---
 
 # Prefix 유형 가이드 — 프로젝트 분석 → prefix 설계
@@ -63,7 +70,7 @@ endpoint:v1:32 = "prod/asia/shopping-web에서 POST /api v1 호출"
 └─────────────┴──────────────────┴─────────┴──────────────────────────────────────────┘
 ```
 
-> 검증: `category-rules.ts` (`CATEGORY_RULES`) 기준. `dkg report` 또는 `graph.groupPrefixesByCategory()`로 확인 가능.
+> 검증: `packages/spec-schema/src/category-rules.ts` (`CATEGORY_RULES`) 기준. CLI에서는 `qa-sdk dkg report`와 `qa-sdk dkg prefixes`로 현재 카탈로그 표면을 확인한다.
 
 ### entity — "무엇이 있는가" (5개)
 **시스템에 존재하는 것의 정의.**

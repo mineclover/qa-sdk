@@ -40,6 +40,20 @@ def:
       type: contains
     - target: spec-convention
       type: contains
+sources:
+  - docs/specs/guides-system/quickstart.md
+  - docs/specs/guides-system/cookbook.md
+  - docs/specs/guides-system/definition-runtime-guide.md
+  - docs/specs/guides-system/prefix-type-guide.md
+  - docs/specs/guides-system/scope-classification-guide.md
+  - docs/specs/guides-system/sdk-usage-guide.md
+  - docs/specs/guides-system/sdk-vite-onboarding-guide.md
+  - docs/specs/guides-system/definition-authoring-guide.md
+  - docs/specs/guides-system/scenario-authoring-guide.md
+  - packages/cli/src/command-groups/def.commands.ts
+  - packages/cli/src/command-groups/spec.commands.ts
+  - packages/cli/src/command-groups/prefix.commands.ts
+  - packages/cli/src/command-groups/dkg.commands.ts
 ---
 
 ## 목적 ^purpose
