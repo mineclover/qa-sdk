@@ -10,17 +10,17 @@ def:
   aspect: concept
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/schema/zod.ts
-    - packages/taxonomy-engine/src/validate/constraint.ts
-    - packages/taxonomy-engine/src/validate/index.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
-    - docs/taxonomies/qa-sdk-coordinate-system.yaml
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-constraint
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/schema/zod.ts
+  - packages/taxonomy-engine/src/validate/constraint.ts
+  - packages/taxonomy-engine/src/validate/index.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+  - docs/taxonomies/qa-sdk-coordinate-system.yaml
 ---
 
 # Constraint — 의미 제약

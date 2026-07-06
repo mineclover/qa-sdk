@@ -16,13 +16,13 @@ def:
       type: refines
     - target: infra-discovery
       type: depends_on
-  sources:
-    - packages/infra-env-kit/src/cli.ts
-    - packages/infra-env-kit/src/export-command.ts
-    - packages/infra-env-kit/src/export-files.ts
-    - packages/infra-env-kit/src/env-file.ts
-    - packages/infra-env-kit/src/typescript-module.ts
-    - packages/infra-env-kit/src/docker-compose.ts
+sources:
+  - packages/infra-env-kit/src/cli.ts
+  - packages/infra-env-kit/src/export-command.ts
+  - packages/infra-env-kit/src/export-files.ts
+  - packages/infra-env-kit/src/env-file.ts
+  - packages/infra-env-kit/src/typescript-module.ts
+  - packages/infra-env-kit/src/docker-compose.ts
 ---
 
 # infra-env-kit export surface

@@ -28,14 +28,13 @@ def:
       type: contains
     - target: skill-catalog-system
       type: depends_on
-  sources:
-    - skills/bdd-contract/SKILL.md
-    - skills/e2e-test/SKILL.md
-    - skills/spec-lifecycle/SKILL.md
-    - docs/skills/automation-workflows.md
-    - packages/cli/src/skills-workflows.test.ts
-    - packages/cli/src/scenarios.e2e.test.ts
-
+sources:
+  - skills/bdd-contract/SKILL.md
+  - skills/e2e-test/SKILL.md
+  - skills/spec-lifecycle/SKILL.md
+  - docs/skills/automation-workflows.md
+  - packages/cli/src/skills-workflows.test.ts
+  - packages/cli/src/scenarios.e2e.test.ts
 ---
 
 

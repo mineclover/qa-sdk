@@ -15,9 +15,8 @@ def:
       type: depends_on
     - target: skill-ralph-tui-create-beads
       type: refines
-  sources:
-    - skills/ralph-tui-create-beads-rust/SKILL.md
-
+sources:
+  - skills/ralph-tui-create-beads-rust/SKILL.md
 ---
 
 

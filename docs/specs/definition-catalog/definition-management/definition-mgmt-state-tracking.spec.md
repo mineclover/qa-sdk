@@ -12,12 +12,6 @@ def:
   lifecycle: approved
   layer: operation
   tags: [testing]
-  sources:
-    - packages/definition-catalog/src/harness-machines.ts
-    - packages/definition-catalog/src/harness-state-model.ts
-    - packages/definition-catalog/src/harness-tracker.ts
-    - packages/definition-catalog/src/harness-machines.test.ts
-    - packages/definition-catalog/src/harness-guards.test.ts
   links:
     - target: definition-management
       type: refines
@@ -27,6 +21,12 @@ def:
       type: depends_on
     - target: definition-quality-gates
       type: depends_on
+sources:
+  - packages/definition-catalog/src/harness-machines.ts
+  - packages/definition-catalog/src/harness-state-model.ts
+  - packages/definition-catalog/src/harness-tracker.ts
+  - packages/definition-catalog/src/harness-machines.test.ts
+  - packages/definition-catalog/src/harness-guards.test.ts
 ---
 
 # Definition Management — 상태 추적

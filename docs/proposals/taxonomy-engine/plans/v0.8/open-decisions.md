@@ -10,15 +10,15 @@ def:
   aspect: implementation_plan
   tier: component
   depth: overview
-  sources:
-    - packages/taxonomy-engine/src/validate/lifecycle.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
-    - docs/taxonomies/lesson-builder-content.yaml
-    - packages/taxonomy-web/src/components/LifecycleBadge.tsx
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-open-decisions
+sources:
+  - packages/taxonomy-engine/src/validate/lifecycle.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+  - docs/taxonomies/lesson-builder-content.yaml
+  - packages/taxonomy-web/src/components/LifecycleBadge.tsx
 ---
 
 # Taxonomy Engine v0.8 — 미결 (구현 중 결정)

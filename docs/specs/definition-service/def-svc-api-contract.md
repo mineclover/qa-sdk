@@ -13,16 +13,16 @@ def:
   links:
     - target: definition-service-system
       type: refines
-  sources:
-    - packages/definition-service/src/modules/docs/docs.controller.ts
-    - packages/definition-service/src/modules/sync/sync.controller.ts
-    - packages/definition-service/src/modules/graph/graph.controller.ts
-    - packages/definition-service/src/modules/graphql/doc.resolver.ts
-    - packages/definition-service/src/modules/graphql/doc.object.ts
-    - packages/definition-service/src/modules/tests/tests.controller.ts
-    - packages/definition-service/src/modules/prefixes/prefixes.controller.ts
-    - packages/definition-service/src/modules/intents/intents.controller.ts
-    - packages/definition-service/src/modules/consumption/consumption.controller.ts
+sources:
+  - packages/definition-service/src/modules/docs/docs.controller.ts
+  - packages/definition-service/src/modules/sync/sync.controller.ts
+  - packages/definition-service/src/modules/graph/graph.controller.ts
+  - packages/definition-service/src/modules/graphql/doc.resolver.ts
+  - packages/definition-service/src/modules/graphql/doc.object.ts
+  - packages/definition-service/src/modules/tests/tests.controller.ts
+  - packages/definition-service/src/modules/prefixes/prefixes.controller.ts
+  - packages/definition-service/src/modules/intents/intents.controller.ts
+  - packages/definition-service/src/modules/consumption/consumption.controller.ts
 ---
 # Definition Service — API 계약
 

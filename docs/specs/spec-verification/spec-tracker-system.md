@@ -21,13 +21,13 @@ def:
       type: contains
     - target: spec-tracker-vitest-adapter
       type: contains
-  sources:
-    - packages/spec-tracker/src/index.ts
-    - packages/spec-tracker/src/types.ts
-    - packages/spec-tracker/src/collector.ts
-    - packages/spec-tracker/src/reporter.ts
-    - packages/spec-tracker/src/vitest-adapter.ts
-    - packages/spec-tracker/src/spec-tracker.test.ts
+sources:
+  - packages/spec-tracker/src/index.ts
+  - packages/spec-tracker/src/types.ts
+  - packages/spec-tracker/src/collector.ts
+  - packages/spec-tracker/src/reporter.ts
+  - packages/spec-tracker/src/vitest-adapter.ts
+  - packages/spec-tracker/src/spec-tracker.test.ts
 ---
 # Spec Tracker — 런타임 계약 수집기
 

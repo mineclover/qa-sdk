@@ -16,9 +16,8 @@ def:
       type: traces_to
     - target: skill-def-new
       type: depends_on
-  sources:
-    - skills/def-link/SKILL.md
-
+sources:
+  - skills/def-link/SKILL.md
 ---
 
 

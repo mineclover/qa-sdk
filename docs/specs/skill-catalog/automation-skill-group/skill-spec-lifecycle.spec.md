@@ -15,9 +15,8 @@ def:
       type: depends_on
     - target: skill-def-new
       type: depends_on
-  sources:
-    - skills/spec-lifecycle/SKILL.md
-
+sources:
+  - skills/spec-lifecycle/SKILL.md
 ---
 
 

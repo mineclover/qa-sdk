@@ -16,9 +16,9 @@ def:
       type: refines
     - target: infra-engine-pipeline
       type: depends_on
-  sources:
-    - packages/infra-env-kit/src/codegen.ts
-    - packages/infra-env-kit/src/discovery-client.ts
+sources:
+  - packages/infra-env-kit/src/codegen.ts
+  - packages/infra-env-kit/src/discovery-client.ts
 ---
 
 # infra-env-kit codegen

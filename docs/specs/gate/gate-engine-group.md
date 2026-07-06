@@ -22,15 +22,15 @@ def:
     - target: gate-system
       type: depends_on
   contains: [gate-engine-core, gate-engine-decorator, gate-engine-aware-query]
-  sources:
-    - packages/index-meta/src/gate-engine.ts
-    - packages/index-meta/src/gate-aware-query.ts
-    - packages/index-meta/src/invalid-ranges.ts
-    - packages/index-meta/src/gate-engine.test.ts
-    - packages/index-meta/src/gate-aware-query.test.ts
-    - packages/demo-tests/src/index-meta/gate-engine.test.ts
-    - packages/demo-tests/src/index-meta/gate-engine-sql-e2e.test.ts
-    - packages/gate-service/src/lib/gate-service.ts
+sources:
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/gate-aware-query.ts
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/index-meta/src/gate-aware-query.test.ts
+  - packages/demo-tests/src/index-meta/gate-engine.test.ts
+  - packages/demo-tests/src/index-meta/gate-engine-sql-e2e.test.ts
+  - packages/gate-service/src/lib/gate-service.ts
 ---
 
 # GateEngine 그룹

@@ -19,13 +19,13 @@ def:
       type: depends_on
     - target: definition-cross-loop-bridge-rule
       type: traces_to
-  sources:
-    - packages/definition-catalog/src/cross-loop-bridge.ts
-    - packages/definition-catalog/src/cross-loop-bridge.test.ts
-    - packages/definition-catalog/src/runtime.ts
-    - packages/definition-catalog/src/harness-tracker.ts
-    - packages/definition-catalog/src/harness-state-model.ts
-    - packages/definition-catalog/src/bridge.ts
+sources:
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/definition-catalog/src/cross-loop-bridge.test.ts
+  - packages/definition-catalog/src/runtime.ts
+  - packages/definition-catalog/src/harness-tracker.ts
+  - packages/definition-catalog/src/harness-state-model.ts
+  - packages/definition-catalog/src/bridge.ts
 ---
 
 ## 목적 ^purpose

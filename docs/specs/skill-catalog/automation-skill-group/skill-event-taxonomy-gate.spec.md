@@ -13,12 +13,11 @@ def:
       type: refines
     - target: service-event-adoption-plan
       type: depends_on
-  sources:
-    - skills/event-taxonomy-gate/SKILL.md
-    - scripts/registry-event-taxonomy-gate.sh
-    - docs/specs/event-vocab-system/service-event-adoption.rule.md
-    - docs/specs/observability-system/event-logging-lifecycle.rule.md
-
+sources:
+  - skills/event-taxonomy-gate/SKILL.md
+  - scripts/registry-event-taxonomy-gate.sh
+  - docs/specs/event-vocab-system/service-event-adoption.rule.md
+  - docs/specs/observability-system/event-logging-lifecycle.rule.md
 ---
 
 ## 탐색 ^navigation

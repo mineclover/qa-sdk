@@ -12,11 +12,6 @@ def:
   lifecycle: approved
   layer: operation
   tags: [observability, decision]
-  sources:
-    - packages/definition-catalog/src/observe.ts
-    - packages/definition-catalog/src/harness-state-model.ts
-    - packages/definition-catalog/src/cross-loop-bridge.ts
-    - packages/definition-catalog/src/quality-report.test.ts
   links:
     - target: definition-mgmt-feedback-loop
       type: contains
@@ -30,6 +25,11 @@ def:
       type: contains
     - target: definition-mgmt-reachable-path-registry
       type: contains
+sources:
+  - packages/definition-catalog/src/observe.ts
+  - packages/definition-catalog/src/harness-state-model.ts
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/definition-catalog/src/quality-report.test.ts
 ---
 # Definition Management — Observability Model
 

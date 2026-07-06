@@ -10,19 +10,19 @@ def:
   aspect: diagnostic_policy
   tier: system
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/diagnostic.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/validate/index.ts
-    - packages/taxonomy-engine/src/codegen/index.ts
-    - packages/taxonomy-engine/src/doctor/index.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: diagnostics-policy
+sources:
+  - packages/taxonomy-engine/src/schema/diagnostic.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/validate/index.ts
+  - packages/taxonomy-engine/src/codegen/index.ts
+  - packages/taxonomy-engine/src/doctor/index.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
 ---
 
 # Diagnostics — 에러 처리 + 진단 정책

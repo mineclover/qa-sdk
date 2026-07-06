@@ -13,14 +13,14 @@ def:
   layer: domain
   svc: definition-service
   tags: [entry-point]
-  sources:
-    - packages/definition-catalog/src/state-model.ts
-    - packages/definition-catalog/src/state-model.test.ts
-    - packages/definition-catalog/src/harness-machines.ts
-    - packages/definition-catalog/src/harness-machines.test.ts
   links:
     - target: definition-catalog-spec
       type: refines
+sources:
+  - packages/definition-catalog/src/state-model.ts
+  - packages/definition-catalog/src/state-model.test.ts
+  - packages/definition-catalog/src/harness-machines.ts
+  - packages/definition-catalog/src/harness-machines.test.ts
 ---
 # Definition State Model — 유한 상태 모델
 

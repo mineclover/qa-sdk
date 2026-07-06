@@ -20,15 +20,15 @@ def:
       type: depends_on
     - target: definition-assembly
       type: depends_on
-  sources:
-    - packages/definition-catalog/src/contract.ts
-    - packages/definition-catalog/src/contract.test.ts
-    - packages/definition-catalog/src/contract-evidence.ts
-    - packages/definition-catalog/src/contract-evidence.test.ts
-    - packages/definition-catalog/src/contract-stats.ts
-    - packages/definition-catalog/src/contract-stats.test.ts
-    - packages/definition-catalog/src/extract.ts
-    - packages/definition-catalog/src/taxonomy.ts
+sources:
+  - packages/definition-catalog/src/contract.ts
+  - packages/definition-catalog/src/contract.test.ts
+  - packages/definition-catalog/src/contract-evidence.ts
+  - packages/definition-catalog/src/contract-evidence.test.ts
+  - packages/definition-catalog/src/contract-stats.ts
+  - packages/definition-catalog/src/contract-stats.test.ts
+  - packages/definition-catalog/src/extract.ts
+  - packages/definition-catalog/src/taxonomy.ts
 ---
 # Definition Contract — 계약 조립
 

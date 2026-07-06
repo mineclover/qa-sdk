@@ -15,10 +15,10 @@ def:
       type: refines
     - target: cli-contract-spec
       type: depends_on
-  sources:
-    - packages/cli/src/commands/codegen.ts
-    - packages/cli/src/commands/codegen.test.ts
-    - packages/cli/src/scenarios.e2e.test.ts
+sources:
+  - packages/cli/src/commands/codegen.ts
+  - packages/cli/src/commands/codegen.test.ts
+  - packages/cli/src/scenarios.e2e.test.ts
 ---
 
 # 코드젠 CLI 계약

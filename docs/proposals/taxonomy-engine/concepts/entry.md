@@ -10,21 +10,21 @@ def:
   aspect: concept
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/indexer/index.ts
-    - packages/taxonomy-engine/src/validate/structure.ts
-    - packages/taxonomy-engine/src/ref/parser.ts
-    - packages/taxonomy-engine/src/ref/resolver.ts
-    - packages/taxonomy-engine/__tests__/unit/parser.test.ts
-    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
-    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-entry
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/indexer/index.ts
+  - packages/taxonomy-engine/src/validate/structure.ts
+  - packages/taxonomy-engine/src/ref/parser.ts
+  - packages/taxonomy-engine/src/ref/resolver.ts
+  - packages/taxonomy-engine/__tests__/unit/parser.test.ts
+  - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+  - packages/taxonomy-engine/__tests__/unit/ref.test.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
 ---
 
 # Entry — 좌표값

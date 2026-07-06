@@ -13,11 +13,11 @@ def:
   links:
     - target: config-loader-spec
       type: constrains
-  sources:
-    - packages/config-loader/src/catalog-loader.ts
-    - packages/config-loader/src/dkg-config-loader.ts
-    - packages/config-loader/src/index.ts
-    - packages/config-loader/scripts/smoke.test.mjs
+sources:
+  - packages/config-loader/src/catalog-loader.ts
+  - packages/config-loader/src/dkg-config-loader.ts
+  - packages/config-loader/src/index.ts
+  - packages/config-loader/scripts/smoke.test.mjs
 ---
 
 # config-loader — Consumption Rule

@@ -26,9 +26,9 @@ def:
       type: refs
     - target: audit-recorder-store-validation
       type: refs
-  sources:
-    - packages/audit-recorder-store/src/index.ts
-    - packages/audit-recorder-store/src/factory.ts
+sources:
+  - packages/audit-recorder-store/src/index.ts
+  - packages/audit-recorder-store/src/factory.ts
 ---
 
 # audit-recorder-store system

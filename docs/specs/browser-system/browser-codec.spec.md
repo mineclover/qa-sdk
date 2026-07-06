@@ -13,7 +13,7 @@ def:
   links:
     - target: browser-runtime-system
       type: refines
-  source: packages/browser-codec/src/index.ts
+source: packages/browser-codec/src/index.ts
 ---
 
 # @qa-sdk/browser-codec — 브라우저 encode/decode 보조층

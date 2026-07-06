@@ -18,14 +18,14 @@ def:
       type: depends_on
     - target: analysis-convergence-rule
       type: traces_to
-  sources:
-    - packages/convergence/src/index.ts
-    - packages/convergence/src/usage-aggregator.ts
-    - packages/convergence/src/metric-registry.ts
-    - packages/convergence/src/convergence-runner.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.test.ts
-    - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+sources:
+  - packages/convergence/src/index.ts
+  - packages/convergence/src/usage-aggregator.ts
+  - packages/convergence/src/metric-registry.ts
+  - packages/convergence/src/convergence-runner.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.test.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
 ---
 # Convergence — 수렴 분석
 

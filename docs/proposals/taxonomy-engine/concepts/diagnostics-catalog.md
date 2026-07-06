@@ -10,26 +10,26 @@ def:
   aspect: validation
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/diagnostic.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/validate/structure.ts
-    - packages/taxonomy-engine/src/validate/capacity.ts
-    - packages/taxonomy-engine/src/validate/ref.ts
-    - packages/taxonomy-engine/src/validate/constraint.ts
-    - packages/taxonomy-engine/src/validate/axis5q.ts
-    - packages/taxonomy-engine/src/validate/lifecycle.ts
-    - packages/taxonomy-engine/src/doctor/index.ts
-    - packages/taxonomy-engine/src/drift/index.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: diagnostics-catalog
 supersedes: -
 superseded_by: -
+sources:
+  - packages/taxonomy-engine/src/schema/diagnostic.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/validate/structure.ts
+  - packages/taxonomy-engine/src/validate/capacity.ts
+  - packages/taxonomy-engine/src/validate/ref.ts
+  - packages/taxonomy-engine/src/validate/constraint.ts
+  - packages/taxonomy-engine/src/validate/axis5q.ts
+  - packages/taxonomy-engine/src/validate/lifecycle.ts
+  - packages/taxonomy-engine/src/doctor/index.ts
+  - packages/taxonomy-engine/src/drift/index.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
 ---
 
 # DiagnosticCode 카탈로그

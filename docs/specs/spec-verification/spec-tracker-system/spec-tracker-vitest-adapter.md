@@ -15,12 +15,12 @@ def:
       type: refines
     - target: spec-tracker-collector
       type: depends_on
-  sources:
-    - packages/spec-tracker/src/vitest-adapter.ts
-    - packages/spec-tracker/src/collector.ts
-    - packages/spec-tracker/src/types.ts
-    - packages/spec-tracker/src/index.ts
-    - packages/spec-tracker/src/spec-tracker.test.ts
+sources:
+  - packages/spec-tracker/src/vitest-adapter.ts
+  - packages/spec-tracker/src/collector.ts
+  - packages/spec-tracker/src/types.ts
+  - packages/spec-tracker/src/index.ts
+  - packages/spec-tracker/src/spec-tracker.test.ts
 ---
 # Spec Tracker — Vitest 어댑터
 

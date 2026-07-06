@@ -20,14 +20,14 @@ def:
       type: contains
     - target: taxonomy-boundaries
       type: traces_to
-  sources:
-    - packages/event-catalog/src/prefix-mapping.ts
-    - packages/event-catalog/src/auto-track.ts
-    - packages/event-catalog/src/auto-track.contract.test.ts
-    - docs/specs/system/tracking-three-axes.spec.md
-    - docs/specs/apm-system/apm-schema-system/address-context-storage.spec.md
-    - docs/specs/system/otel-package.spec.md
-    - docs/specs/infra-engine/infra-observe-stage.spec.md
+sources:
+  - packages/event-catalog/src/prefix-mapping.ts
+  - packages/event-catalog/src/auto-track.ts
+  - packages/event-catalog/src/auto-track.contract.test.ts
+  - docs/specs/system/tracking-three-axes.spec.md
+  - docs/specs/apm-system/apm-schema-system/address-context-storage.spec.md
+  - docs/specs/system/otel-package.spec.md
+  - docs/specs/infra-engine/infra-observe-stage.spec.md
 ---
 
 # Observability Taxonomy — 관측 책임 경계

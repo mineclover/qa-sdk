@@ -11,9 +11,9 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
-  sources:
-    - packages/permission-engine/src/auth-provider.ts
-    - packages/permission-engine/src/auth-integration.test.ts
+sources:
+  - packages/permission-engine/src/auth-provider.ts
+  - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # AuthProvider 계약

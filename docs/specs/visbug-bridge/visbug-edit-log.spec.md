@@ -12,7 +12,7 @@ def:
   links:
     - target: visbug-dom-ref-roadmap
       type: depends_on
-  source: vendor/projectvisbug/app/edit-log/index.js
+source: vendor/projectvisbug/app/edit-log/index.js
 ---
 
 # visbug edit-log (vendor)

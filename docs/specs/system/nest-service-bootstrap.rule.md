@@ -13,10 +13,10 @@ def:
   links:
     - target: nest-service-bootstrap
       type: constrains
-  sources:
-    - packages/nest-service-kit/src/bootstrap.ts
-    - packages/nest-service-kit/src/bootstrap.test.ts
-    - packages/nest-service-kit/src/logger.ts
+sources:
+  - packages/nest-service-kit/src/bootstrap.ts
+  - packages/nest-service-kit/src/bootstrap.test.ts
+  - packages/nest-service-kit/src/logger.ts
 ---
 
 # Nest Service Bootstrap — Observability Rule

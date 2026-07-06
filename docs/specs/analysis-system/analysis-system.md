@@ -28,21 +28,21 @@ def:
       type: contains
     - target: tracking-three-axes
       type: contains
-  sources:
-    - packages/cli/src/commands/dkg.ts
-    - packages/convergence/src/index.ts
-    - packages/convergence/src/usage-aggregator.ts
-    - packages/convergence/src/self-check-analyzer.ts
-    - packages/convergence/src/smoke.test.ts
-    - packages/convergence/src/self-check-analyzer.test.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.test.ts
-    - packages/ingest-server/src/lib/convergence-e2e.test.ts
-    - packages/ingest-server/src/insights-store.e2e.test.ts
-    - packages/dkg/src/skills/flow-trace.ts
-    - packages/dkg/src/skills/flow-trace.test.ts
-    - packages/spec-transition/src/transition-engine.ts
-    - packages/spec-transition/src/transition-engine.test.ts
+sources:
+  - packages/cli/src/commands/dkg.ts
+  - packages/convergence/src/index.ts
+  - packages/convergence/src/usage-aggregator.ts
+  - packages/convergence/src/self-check-analyzer.ts
+  - packages/convergence/src/smoke.test.ts
+  - packages/convergence/src/self-check-analyzer.test.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.test.ts
+  - packages/ingest-server/src/lib/convergence-e2e.test.ts
+  - packages/ingest-server/src/insights-store.e2e.test.ts
+  - packages/dkg/src/skills/flow-trace.ts
+  - packages/dkg/src/skills/flow-trace.test.ts
+  - packages/spec-transition/src/transition-engine.ts
+  - packages/spec-transition/src/transition-engine.test.ts
 ---
 
 # 분석 시스템

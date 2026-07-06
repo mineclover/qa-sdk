@@ -11,7 +11,7 @@ def:
   links:
     - target: scope-nesting-contract-timing
       type: verifies
-  source: packages/core/src/scope-nesting-timing.test.ts
+source: packages/core/src/scope-nesting-timing.test.ts
 ---
 
 # Contract Timing 테스트 명세

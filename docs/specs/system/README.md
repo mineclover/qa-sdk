@@ -37,13 +37,13 @@ def:
       type: refs
     - target: package-surface-separation-rule
       type: refs
-  sources:
-    - scripts/design-usefulness-audit.mjs
-    - scripts/package-surfaces.mjs
-    - scripts/report-package-surfaces.mjs
-    - scripts/verify-analysis-os.ts
-    - docs/specs/system/design-usefulness-audit.rule.md
-    - docs/specs/system/package-surface-separation.rule.md
+sources:
+  - scripts/design-usefulness-audit.mjs
+  - scripts/package-surfaces.mjs
+  - scripts/report-package-surfaces.mjs
+  - scripts/verify-analysis-os.ts
+  - docs/specs/system/design-usefulness-audit.rule.md
+  - docs/specs/system/package-surface-separation.rule.md
 ---
 
 # System-level Rules & Conventions Index

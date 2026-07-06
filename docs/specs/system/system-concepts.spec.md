@@ -13,13 +13,13 @@ def:
   links:
     - target: coord-foundation
       type: traces_to
-  sources:
-    - packages/core/src/catalog/runtime.ts
-    - packages/core/src/catalog/runtime-boundary.test.ts
-    - packages/weighted-index/src/math/weighted-index.ts
-    - packages/weighted-index/src/math/weighted-index.test.ts
-    - packages/weighted-index/src/vocab/prefix-registry.ts
-    - packages/weighted-index/src/vocab/prefix-registry.test.ts
+sources:
+  - packages/core/src/catalog/runtime.ts
+  - packages/core/src/catalog/runtime-boundary.test.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/weighted-index/src/vocab/prefix-registry.ts
+  - packages/weighted-index/src/vocab/prefix-registry.test.ts
 ---
 
 # 핵심 개념

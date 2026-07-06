@@ -16,12 +16,12 @@ def:
   links:
     - target: definition-catalog-spec
       type: refines
-  sources:
-    - packages/definition-catalog/src/concern.ts
-    - packages/definition-catalog/src/concern.test.ts
-    - packages/definition-catalog/src/taxonomy.ts
-    - packages/definition-catalog/src/real-docs.test.ts
-    - packages/definition-catalog/src/gate-docs.test.ts
+sources:
+  - packages/definition-catalog/src/concern.ts
+  - packages/definition-catalog/src/concern.test.ts
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/real-docs.test.ts
+  - packages/definition-catalog/src/gate-docs.test.ts
 ---
 # Definition Concern — concern 전파 규칙
 

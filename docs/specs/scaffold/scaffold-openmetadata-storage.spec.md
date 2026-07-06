@@ -14,9 +14,9 @@ def:
   links:
     - target: scaffold-governance-metadata
       type: refines
-  sources:
-    - packages/architecture-schematics/src/governance/openmetadata.ts
-    - simulations/enterprise-pm/metadata/openmetadata/assignment.seed.json
+sources:
+  - packages/architecture-schematics/src/governance/openmetadata.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/metadata/openmetadata.seed.json
 ---
 
 # scaffold OpenMetadata storage
@@ -40,4 +40,3 @@ OpenMetadata storage 표준은 domain/team/owner/glossary/lineage/data quality s
 - 코드 주석/Drizzle schema annotation은 seed를 보조하거나 생성하는 입력으로만 사용한다.
 - OpenMetadata API sync 결과는 runtime observation이며 seed를 대체하지 않는다.
 - read model/projection cache key는 반드시 OpenMetadata entity FQN과 연결되어야 한다.
-

@@ -17,11 +17,11 @@ def:
       type: depends_on
     - target: service-definition-standard
       type: depends_on
-  sources:
-    - packages/cli/src/templates/nest-service-template.ts
-    - packages/cli/src/commands/init.ts
-    - packages/cli/src/commands/init.test.ts
-    - packages/cli/src/commands/index-usage.test.ts
+sources:
+  - packages/cli/src/templates/nest-service-template.ts
+  - packages/cli/src/commands/init.ts
+  - packages/cli/src/commands/init.test.ts
+  - packages/cli/src/commands/index-usage.test.ts
 ---
 
 # Nest Service Template — Scaffold Rule

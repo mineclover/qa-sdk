@@ -10,17 +10,17 @@ def:
   aspect: api_surface
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/src/registry/index.ts
-    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
-    - packages/cli/src/commands/taxonomy/index.ts
-    - packages/cli/src/commands/taxonomy/shared.ts
-    - packages/cli/src/commands/taxonomy.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: api-surface
+sources:
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/src/registry/index.ts
+  - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+  - packages/cli/src/commands/taxonomy/index.ts
+  - packages/cli/src/commands/taxonomy/shared.ts
+  - packages/cli/src/commands/taxonomy.test.ts
 ---
 
 # API Surface

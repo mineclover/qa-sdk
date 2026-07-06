@@ -10,33 +10,33 @@ def:
   aspect: proposal_fixture
   tier: component
   depth: specification
-  sources:
-    - packages/data-structure-profile/src/profile.test.ts
-    - packages/data-structure-profile/src/cli-runner.test.ts
-    - packages/data-structure-profile/src/parse.ts
-    - packages/data-structure-profile/src/validate.ts
-    - packages/data-structure-profile/src/lineage.ts
-    - packages/data-structure-profile/src/measurement.ts
-    - packages/data-structure-profile/src/dpm.ts
-    - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
-    - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
-    - docs/proposals/data-structure-profile/fixtures/order-event.schema.json
-    - docs/proposals/data-structure-profile/fixtures/order-event.sample.json
-    - docs/proposals/data-structure-profile/fixtures/customer-orders.schema.sql
-    - docs/proposals/data-structure-profile/fixtures/expected-validation-report.json
-    - docs/proposals/data-structure-profile/fixtures/expected-lineage.json
-    - docs/proposals/data-structure-profile/fixtures/expected-measurement-report.json
-    - docs/proposals/data-structure-profile/fixtures/expected-dpm-readiness.json
-    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-validation-report.json
-    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-lineage.json
-    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-measurement-report.json
-    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-dpm-readiness.json
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
 role: fixture-index
 supersedes: -
 superseded_by: -
+sources:
+  - packages/data-structure-profile/src/profile.test.ts
+  - packages/data-structure-profile/src/cli-runner.test.ts
+  - packages/data-structure-profile/src/parse.ts
+  - packages/data-structure-profile/src/validate.ts
+  - packages/data-structure-profile/src/lineage.ts
+  - packages/data-structure-profile/src/measurement.ts
+  - packages/data-structure-profile/src/dpm.ts
+  - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
+  - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
+  - docs/proposals/data-structure-profile/fixtures/order-event.schema.json
+  - docs/proposals/data-structure-profile/fixtures/order-event.sample.json
+  - docs/proposals/data-structure-profile/fixtures/customer-orders.schema.sql
+  - docs/proposals/data-structure-profile/fixtures/expected-validation-report.json
+  - docs/proposals/data-structure-profile/fixtures/expected-lineage.json
+  - docs/proposals/data-structure-profile/fixtures/expected-measurement-report.json
+  - docs/proposals/data-structure-profile/fixtures/expected-dpm-readiness.json
+  - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-validation-report.json
+  - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-lineage.json
+  - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-measurement-report.json
+  - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-dpm-readiness.json
 ---
 
 # Data Structure Profile Fixtures

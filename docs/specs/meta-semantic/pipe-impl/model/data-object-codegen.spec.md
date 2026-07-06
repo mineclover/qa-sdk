@@ -15,13 +15,12 @@ def:
   links:
     - target: data-object-binding
       type: depends_on
-  sources:
-    - packages/codegen-core/src/data-object-typescript.ts
-    - packages/codegen-core/src/data-object-typescript.test.ts
-    - packages/codegen-core/src/naming.ts
-    - packages/codegen-core/src/naming.test.ts
-    - packages/core/src/data-object/types.ts
-
+sources:
+  - packages/codegen-core/src/data-object-typescript.ts
+  - packages/codegen-core/src/data-object-typescript.test.ts
+  - packages/codegen-core/src/naming.ts
+  - packages/codegen-core/src/naming.test.ts
+  - packages/core/src/data-object/types.ts
 ---
 
 # DataObject Codegen — 바인딩 → Typed SDK 코드 생성

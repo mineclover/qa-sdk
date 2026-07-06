@@ -16,9 +16,9 @@ def:
       type: refines
     - target: infra-config-stage
       type: depends_on
-  sources:
-    - packages/infra-env-kit/src/types.ts
-    - packages/infra-env-kit/src/env-bridge.ts
+sources:
+  - packages/infra-env-kit/src/types.ts
+  - packages/infra-env-kit/src/env-bridge.ts
 ---
 
 # infra-env-kit env bridge

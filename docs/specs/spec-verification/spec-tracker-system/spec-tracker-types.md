@@ -13,10 +13,10 @@ def:
   links:
     - target: spec-tracker-system
       type: refines
-  sources:
-    - packages/spec-tracker/src/types.ts
-    - packages/spec-tracker/src/index.ts
-    - packages/spec-tracker/src/spec-tracker.test.ts
+sources:
+  - packages/spec-tracker/src/types.ts
+  - packages/spec-tracker/src/index.ts
+  - packages/spec-tracker/src/spec-tracker.test.ts
 ---
 # Spec Tracker — 핵심 타입
 

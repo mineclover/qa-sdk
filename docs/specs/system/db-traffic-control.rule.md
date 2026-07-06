@@ -15,13 +15,13 @@ def:
       type: constrains
     - target: drizzle-orm-convention
       type: depends_on
-  sources:
-    - packages/db-traffic-control/src/budget.ts
-    - packages/db-traffic-control/src/controller.ts
-    - packages/db-traffic-control/src/drizzle-middleware.ts
-    - packages/db-traffic-control/src/event-bridge.ts
-    - packages/db-traffic-control/src/metrics.ts
-    - packages/db-traffic-control/src/event-bridge.test.ts
+sources:
+  - packages/db-traffic-control/src/budget.ts
+  - packages/db-traffic-control/src/controller.ts
+  - packages/db-traffic-control/src/drizzle-middleware.ts
+  - packages/db-traffic-control/src/event-bridge.ts
+  - packages/db-traffic-control/src/metrics.ts
+  - packages/db-traffic-control/src/event-bridge.test.ts
 ---
 
 # db-traffic-control — Consumption Rule

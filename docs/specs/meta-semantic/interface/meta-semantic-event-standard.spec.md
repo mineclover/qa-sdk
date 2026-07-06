@@ -19,17 +19,17 @@ def:
       type: refines
     - target: meta-semantic-scope
       type: depends_on
-  sources:
-    - packages/core/src/standards/cloud-events.ts
-    - packages/core/src/standards/cloud-events.test.ts
-    - packages/core/src/standards/asyncapi-gen.ts
-    - packages/core/src/standards/asyncapi-gen.test.ts
-    - packages/definition-catalog/src/version-manifest.ts
-    - packages/definition-catalog/src/version-manifest.test.ts
-    - packages/pipe-store-sqlite/src/manifest-store.ts
-    - packages/pipe-store-sqlite/src/manifest-store.test.ts
-    - packages/codegen-core/src/event-track-typescript.ts
-    - packages/codegen-core/src/event-track-typescript.test.ts
+sources:
+  - packages/core/src/standards/cloud-events.ts
+  - packages/core/src/standards/cloud-events.test.ts
+  - packages/core/src/standards/asyncapi-gen.ts
+  - packages/core/src/standards/asyncapi-gen.test.ts
+  - packages/definition-catalog/src/version-manifest.ts
+  - packages/definition-catalog/src/version-manifest.test.ts
+  - packages/pipe-store-sqlite/src/manifest-store.ts
+  - packages/pipe-store-sqlite/src/manifest-store.test.ts
+  - packages/codegen-core/src/event-track-typescript.ts
+  - packages/codegen-core/src/event-track-typescript.test.ts
 ---
 
 # 이벤트 표준 — CloudEvents 호환 + 서비스 버전 매니페스트

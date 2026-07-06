@@ -15,18 +15,18 @@ def:
       type: refs
     - target: system-packages
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - scripts/report-package-surfaces.mjs
-    - packages/taxonomy-engine/package.json
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
-    - packages/taxonomy-decision-bridge/package.json
-    - packages/taxonomy-decision-bridge/src/index.ts
-    - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
-    - packages/taxonomy-web/package.json
-    - packages/taxonomy-web/src/data/loadStaticTaxonomies.ts
-    - packages/taxonomy-web/src/lib/lib.test.ts
+sources:
+  - scripts/package-surfaces.mjs
+  - scripts/report-package-surfaces.mjs
+  - packages/taxonomy-engine/package.json
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+  - packages/taxonomy-decision-bridge/package.json
+  - packages/taxonomy-decision-bridge/src/index.ts
+  - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
+  - packages/taxonomy-web/package.json
+  - packages/taxonomy-web/src/data/loadStaticTaxonomies.ts
+  - packages/taxonomy-web/src/lib/lib.test.ts
 ---
 
 # Taxonomy Capability

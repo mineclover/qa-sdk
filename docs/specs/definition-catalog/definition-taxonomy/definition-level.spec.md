@@ -18,16 +18,16 @@ def:
   links:
     - target: definition-taxonomy
       type: refines
-  sources:
-    - packages/definition-catalog/src/types.ts
-    - packages/definition-catalog/src/vocabulary.ts
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/validate.ts
-    - packages/definition-catalog/src/taxonomy.test.ts
-    - packages/definition-catalog/src/validate-semantic.test.ts
-    - packages/cli/src/lib/docs-control-plane/metadata-transform.ts
-    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
-    - packages/cli/src/commands/docs.test.ts
+sources:
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/taxonomy.test.ts
+  - packages/definition-catalog/src/validate-semantic.test.ts
+  - packages/cli/src/lib/docs-control-plane/metadata-transform.ts
+  - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
+  - packages/cli/src/commands/docs.test.ts
 ---
 # Definition Level — 분해 레벨
 

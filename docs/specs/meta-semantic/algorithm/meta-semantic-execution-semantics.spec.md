@@ -19,17 +19,17 @@ def:
       type: depends_on
     - target: meta-semantic-v2-migration
       type: depends_on
-  sources:
-    - packages/core/src/types/pipe-spec.ts
-    - packages/core/src/types/pipe-runtime.ts
-    - packages/core/src/pipe/pipe-runtime.ts
-    - packages/core/src/pipe/pipe-runtime.test.ts
-    - packages/core/src/pipe/pipe-interpret.ts
-    - packages/core/src/pipe/pipe-interpret.test.ts
-    - packages/core/src/pipe/pipe-simulate.ts
-    - packages/core/src/pipe/pipe-simulate.test.ts
-    - packages/core/src/pipe/path-matcher.ts
-    - packages/core/src/pipe/path-matcher.test.ts
+sources:
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/types/pipe-runtime.ts
+  - packages/core/src/pipe/pipe-runtime.ts
+  - packages/core/src/pipe/pipe-runtime.test.ts
+  - packages/core/src/pipe/pipe-interpret.ts
+  - packages/core/src/pipe/pipe-interpret.test.ts
+  - packages/core/src/pipe/pipe-simulate.ts
+  - packages/core/src/pipe/pipe-simulate.test.ts
+  - packages/core/src/pipe/path-matcher.ts
+  - packages/core/src/pipe/path-matcher.test.ts
 ---
 
 # 실행 의미론 (Execution Semantics)

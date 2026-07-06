@@ -14,9 +14,9 @@ def:
   links:
     - target: scaffold-system
       type: refines
-  sources:
-    - packages/architecture-schematics/src/catalog.ts
-    - packages/architecture-schematics/src/catalog.test.ts
+sources:
+  - packages/architecture-schematics/src/catalog.ts
+  - packages/architecture-schematics/src/catalog.test.ts
 ---
 
 # scaffold template catalog

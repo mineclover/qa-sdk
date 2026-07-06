@@ -17,13 +17,13 @@ def:
       type: depends_on
     - target: architecture-revealing-code-convention
       type: depends_on
-  sources:
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/validate.ts
-    - packages/definition-catalog/src/domain-root.ts
-    - packages/definition-catalog/src/frontmatter.test.ts
-    - packages/definition-catalog/src/domain-root.test.ts
-    - packages/cli/src/lib/def-tier-classify.ts
+sources:
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/domain-root.ts
+  - packages/definition-catalog/src/frontmatter.test.ts
+  - packages/definition-catalog/src/domain-root.test.ts
+  - packages/cli/src/lib/def-tier-classify.ts
 ---
 
 # 문서 거버넌스 가이드라인 — 일관된 지식 관리 체계

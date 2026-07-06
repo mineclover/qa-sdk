@@ -16,7 +16,7 @@ def:
       type: verifies
     - target: test-name-tokens
       type: depends_on
-  source: packages/core/src/pipe/pipe-lineage-consistency.test.ts
+source: packages/core/src/pipe/pipe-lineage-consistency.test.ts
 ---
 
 # 정적 계보 추적 — 검증 기준

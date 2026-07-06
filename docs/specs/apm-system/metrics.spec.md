@@ -15,14 +15,14 @@ def:
       type: depends_on
     - target: record-spec
       type: depends_on
-  sources:
-    - packages/core/src/types/record.ts
-    - packages/core/src/schema/record.schema.ts
-    - packages/core/src/schema/schema.test.ts
-    - packages/logger/src/logger.ts
-    - packages/sdk/src/logger.test.ts
-    - packages/apm/src/apm-logger.ts
-    - packages/apm/src/apm-logger.test.ts
+sources:
+  - packages/core/src/types/record.ts
+  - packages/core/src/schema/record.schema.ts
+  - packages/core/src/schema/schema.test.ts
+  - packages/logger/src/logger.ts
+  - packages/sdk/src/logger.test.ts
+  - packages/apm/src/apm-logger.ts
+  - packages/apm/src/apm-logger.test.ts
 ---
 # Metric RecordKind — 메트릭 수집 및 집계
 

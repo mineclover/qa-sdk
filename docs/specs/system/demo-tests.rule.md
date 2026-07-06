@@ -15,10 +15,10 @@ def:
       type: constrains
     - target: testing-patterns
       type: depends_on
-  sources:
-    - packages/demo-tests/src/schema-consistency.test.ts
-    - packages/demo-tests/src/index-meta/invariants.test.ts
-    - packages/demo-tests/src/merge-contract/error-parity.test.ts
+sources:
+  - packages/demo-tests/src/schema-consistency.test.ts
+  - packages/demo-tests/src/index-meta/invariants.test.ts
+  - packages/demo-tests/src/merge-contract/error-parity.test.ts
 ---
 
 # demo-tests — Consumption Rule

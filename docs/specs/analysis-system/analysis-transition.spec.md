@@ -16,20 +16,20 @@ def:
       type: depends_on
     - target: spec-transition
       type: traces_to
-  sources:
-    - packages/spec-transition/src/index.ts
-    - packages/spec-transition/src/transition.types.ts
-    - packages/spec-transition/src/transition-engine.ts
-    - packages/spec-transition/src/transition.schema.ts
-    - packages/spec-transition/src/catalog-validator.ts
-    - packages/spec-transition/src/demo-transition-specs.ts
-    - packages/spec-transition/src/transition.test.ts
-    - packages/spec-transition/src/transition-engine.test.ts
-    - packages/spec-transition/src/proof-of-value.test.ts
-    - packages/spec-core/src/transition/index.ts
-    - packages/spec-core/src/transition/transition-pipeline.ts
-    - packages/spec-core/src/transition/transition-metrics.ts
-    - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+sources:
+  - packages/spec-transition/src/index.ts
+  - packages/spec-transition/src/transition.types.ts
+  - packages/spec-transition/src/transition-engine.ts
+  - packages/spec-transition/src/transition.schema.ts
+  - packages/spec-transition/src/catalog-validator.ts
+  - packages/spec-transition/src/demo-transition-specs.ts
+  - packages/spec-transition/src/transition.test.ts
+  - packages/spec-transition/src/transition-engine.test.ts
+  - packages/spec-transition/src/proof-of-value.test.ts
+  - packages/spec-core/src/transition/index.ts
+  - packages/spec-core/src/transition/transition-pipeline.ts
+  - packages/spec-core/src/transition/transition-metrics.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
 ---
 # TransitionSpec — 상태 전이
 

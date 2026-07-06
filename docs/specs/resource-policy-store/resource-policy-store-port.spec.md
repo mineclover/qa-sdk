@@ -16,8 +16,8 @@ def:
       type: refines
     - target: permission-engine-spec
       type: implements
-  sources:
-    - packages/resource-policy-store/src/port.ts
+sources:
+  - packages/resource-policy-store/src/port.ts
 ---
 
 # resource-policy-store port

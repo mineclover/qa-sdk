@@ -12,12 +12,6 @@ def:
   lifecycle: approved
   layer: operation
   tags: [structural]
-  sources:
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/validate.ts
-    - packages/definition-catalog/src/large-leaf-split.test.ts
-    - packages/definition-catalog/src/system-link-coverage.test.ts
-    - packages/definition-catalog/src/semantic-lint.ts
   links:
     - target: definition-management
       type: refines
@@ -33,6 +27,12 @@ def:
       type: depends_on
     - target: context-action-convention
       type: depends_on
+sources:
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/large-leaf-split.test.ts
+  - packages/definition-catalog/src/system-link-coverage.test.ts
+  - packages/definition-catalog/src/semantic-lint.ts
 ---
 
 # Definition Management — 일관성 규칙

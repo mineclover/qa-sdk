@@ -17,18 +17,18 @@ def:
       type: depends_on
     - target: db-traffic-control-rule
       type: traces_to
-  sources:
-    - packages/db-traffic-control/package.json
-    - packages/db-traffic-control/src/index.ts
-    - packages/db-traffic-control/src/budget.ts
-    - packages/db-traffic-control/src/budget.test.ts
-    - packages/db-traffic-control/src/controller.ts
-    - packages/db-traffic-control/src/controller.test.ts
-    - packages/db-traffic-control/src/drizzle-middleware.ts
-    - packages/db-traffic-control/src/event-bridge.ts
-    - packages/db-traffic-control/src/event-bridge.test.ts
-    - packages/db-traffic-control/src/metrics.ts
-    - packages/db-traffic-control/src/metrics.test.ts
+sources:
+  - packages/db-traffic-control/package.json
+  - packages/db-traffic-control/src/index.ts
+  - packages/db-traffic-control/src/budget.ts
+  - packages/db-traffic-control/src/budget.test.ts
+  - packages/db-traffic-control/src/controller.ts
+  - packages/db-traffic-control/src/controller.test.ts
+  - packages/db-traffic-control/src/drizzle-middleware.ts
+  - packages/db-traffic-control/src/event-bridge.ts
+  - packages/db-traffic-control/src/event-bridge.test.ts
+  - packages/db-traffic-control/src/metrics.ts
+  - packages/db-traffic-control/src/metrics.test.ts
 ---
 # db-traffic-control
 

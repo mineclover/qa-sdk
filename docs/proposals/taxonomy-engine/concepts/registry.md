@@ -10,18 +10,18 @@ def:
   aspect: concept
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/registry/index.ts
-    - packages/taxonomy-engine/src/ref/resolver.ts
-    - packages/taxonomy-engine/src/validate/ref.ts
-    - packages/taxonomy-engine/__tests__/unit/registry.test.ts
-    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
-    - packages/cli/src/commands/taxonomy/shared.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-registry
+sources:
+  - packages/taxonomy-engine/src/registry/index.ts
+  - packages/taxonomy-engine/src/ref/resolver.ts
+  - packages/taxonomy-engine/src/validate/ref.ts
+  - packages/taxonomy-engine/__tests__/unit/registry.test.ts
+  - packages/taxonomy-engine/__tests__/unit/ref.test.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+  - packages/cli/src/commands/taxonomy/shared.ts
 ---
 
 # Registry — Taxonomy의 우주

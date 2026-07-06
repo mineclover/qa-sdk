@@ -16,15 +16,15 @@ def:
       type: depends_on
     - target: analysis-transition
       type: depends_on
-  sources:
-    - packages/ingest-server/src/routes/insights.ts
-    - packages/ingest-server/src/stores/drizzle-insights-store.ts
-    - packages/ingest-server/src/ports/insights-store.port.ts
-    - packages/ingest-server/src/insights-store.e2e.test.ts
-    - packages/convergence/src/usage-aggregator.ts
-    - packages/convergence/src/causal-discovery.ts
-    - packages/spec-core/src/convergence/pipeline-e2e.test.ts
-    - packages/spec-core/src/convergence/convergence.test.ts
+sources:
+  - packages/ingest-server/src/routes/insights.ts
+  - packages/ingest-server/src/stores/drizzle-insights-store.ts
+  - packages/ingest-server/src/ports/insights-store.port.ts
+  - packages/ingest-server/src/insights-store.e2e.test.ts
+  - packages/convergence/src/usage-aggregator.ts
+  - packages/convergence/src/causal-discovery.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+  - packages/spec-core/src/convergence/convergence.test.ts
 ---
 # Co-occurrence — 세션 기반 공출현 패턴
 

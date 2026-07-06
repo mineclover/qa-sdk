@@ -15,8 +15,8 @@ def:
       type: refines
     - target: config-loader-rule
       type: depends_on
-  sources:
-    - packages/config-loader/scripts/smoke.test.mjs
+sources:
+  - packages/config-loader/scripts/smoke.test.mjs
 ---
 
 # config-loader — Validation Mapping

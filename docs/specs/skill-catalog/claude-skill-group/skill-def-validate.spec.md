@@ -13,9 +13,8 @@ def:
       type: refines
     - target: skill-def-audit
       type: traces_to
-  sources:
-    - skills/def-validate/SKILL.md
-
+sources:
+  - skills/def-validate/SKILL.md
 ---
 
 # Skill — def-validate

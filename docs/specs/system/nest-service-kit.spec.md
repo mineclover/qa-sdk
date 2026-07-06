@@ -28,11 +28,11 @@ def:
       type: traces_to
     - target: nest-service-kit-test
       type: traces_to
-  sources:
-    - packages/nest-service-kit/src/index.ts
-    - packages/nest-service-kit/src/bootstrap.ts
-    - packages/nest-service-kit/src/event-envelope.ts
-    - packages/nest-service-kit/src/ports.ts
+sources:
+  - packages/nest-service-kit/src/index.ts
+  - packages/nest-service-kit/src/bootstrap.ts
+  - packages/nest-service-kit/src/event-envelope.ts
+  - packages/nest-service-kit/src/ports.ts
 ---
 
 # Nest Service Kit

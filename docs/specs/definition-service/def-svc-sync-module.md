@@ -19,10 +19,10 @@ def:
       type: depends_on
     - target: def-svc-semantic-grounding-module
       type: depends_on
-  sources:
-    - packages/definition-service/src/modules/sync/sync.service.ts
-    - packages/definition-service/src/sync/scanner.ts
-    - packages/definition-service/src/sync/reverse-sync.ts
+sources:
+  - packages/definition-service/src/modules/sync/sync.service.ts
+  - packages/definition-service/src/sync/scanner.ts
+  - packages/definition-service/src/sync/reverse-sync.ts
 ---
 # Definition Service — Sync Module
 

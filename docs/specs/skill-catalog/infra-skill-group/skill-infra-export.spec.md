@@ -11,9 +11,8 @@ def:
   links:
     - target: infra-skill-group
       type: refines
-  sources:
-    - skills/infra-export/SKILL.md
-
+sources:
+  - skills/infra-export/SKILL.md
 ---
 
 # Skill — infra-export

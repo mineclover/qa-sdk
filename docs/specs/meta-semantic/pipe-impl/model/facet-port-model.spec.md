@@ -18,17 +18,16 @@ def:
       type: depends_on
     - target: pipe-flow-catalog
       type: depends_on
-  sources:
-    - packages/core/src/types/pipe-spec.ts
-    - packages/core/src/pipe/pipe-port.ts
-    - packages/core/src/pipe/pipe-port.test.ts
-    - packages/core/src/pipe/pipe-endpoint.ts
-    - packages/core/src/pipe/pipe-endpoint.test.ts
-    - packages/core/src/pipe/pipe-validate.ts
-    - packages/core/src/pipe/pipe-validate.test.ts
-    - packages/core/src/pipe/pipe-interpret.ts
-    - packages/core/src/pipe/pipe-interpret.test.ts
-
+sources:
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/pipe/pipe-port.ts
+  - packages/core/src/pipe/pipe-port.test.ts
+  - packages/core/src/pipe/pipe-endpoint.ts
+  - packages/core/src/pipe/pipe-endpoint.test.ts
+  - packages/core/src/pipe/pipe-validate.ts
+  - packages/core/src/pipe/pipe-validate.test.ts
+  - packages/core/src/pipe/pipe-interpret.ts
+  - packages/core/src/pipe/pipe-interpret.test.ts
 ---
 
 # Facet-Port 모델 — Feynman 인과 다이어그램 기반 Pipe 재설계

@@ -18,15 +18,15 @@ def:
       type: refs
     - target: experience-layer-group
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - docs/specs/system/system-packages.spec.md
-    - docs/specs/system/package-surface-separation.rule.md
-    - packages/browser-sdk/package.json
-    - packages/taxonomy-web/package.json
-    - packages/viz-web/package.json
-    - packages/platform-demo/package.json
-    - packages/shop-web/package.json
+sources:
+  - scripts/package-surfaces.mjs
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/package-surface-separation.rule.md
+  - packages/browser-sdk/package.json
+  - packages/taxonomy-web/package.json
+  - packages/viz-web/package.json
+  - packages/platform-demo/package.json
+  - packages/shop-web/package.json
 ---
 # Consumer/Preview 표면
 

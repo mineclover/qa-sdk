@@ -14,14 +14,14 @@ def:
   links:
     - target: data-structure-profile-system
       type: refines
-  sources:
-    - packages/data-structure-profile/src/profile.test.ts
-    - packages/data-structure-profile/src/cli-runner.test.ts
-    - packages/viz-web/src/data-structure-profile/lineage-view.test.ts
-    - packages/viz-web/src/data-structure-profile/sample-lineage.test.ts
-    - scripts/data-structure-profile-bridge-smoke.mjs
-    - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
-    - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
+sources:
+  - packages/data-structure-profile/src/profile.test.ts
+  - packages/data-structure-profile/src/cli-runner.test.ts
+  - packages/viz-web/src/data-structure-profile/lineage-view.test.ts
+  - packages/viz-web/src/data-structure-profile/sample-lineage.test.ts
+  - scripts/data-structure-profile-bridge-smoke.mjs
+  - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
+  - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
 ---
 
 # Data Structure Profile Verification

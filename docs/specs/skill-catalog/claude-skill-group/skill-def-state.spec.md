@@ -15,9 +15,8 @@ def:
       type: depends_on
     - target: definition-harness
       type: depends_on
-  sources:
-    - skills/def-state/SKILL.md
-
+sources:
+  - skills/def-state/SKILL.md
 ---
 # /def-state — 유한 상태 관리
 

@@ -14,11 +14,11 @@ def:
   links:
     - target: pipe-flow-catalog
       type: depends_on
-  sources:
-    - packages/core/src/pipe/pipe-interpret.ts
-    - packages/core/src/pipe/pipe-interpret.test.ts
-    - packages/viz-core/src/pipe-mermaid.ts
-    - packages/viz-core/src/pipe-svg.ts
+sources:
+  - packages/core/src/pipe/pipe-interpret.ts
+  - packages/core/src/pipe/pipe-interpret.test.ts
+  - packages/viz-core/src/pipe-mermaid.ts
+  - packages/viz-core/src/pipe-svg.ts
 ---
 
 # PipeFlow 시각 의미론

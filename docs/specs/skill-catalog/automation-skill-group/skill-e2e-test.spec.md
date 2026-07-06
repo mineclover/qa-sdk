@@ -15,9 +15,8 @@ def:
       type: depends_on
     - target: skill-spec-lifecycle
       type: depends_on
-  sources:
-    - skills/e2e-test/SKILL.md
-
+sources:
+  - skills/e2e-test/SKILL.md
 ---
 
 

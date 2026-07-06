@@ -16,11 +16,11 @@ def:
       type: refines
     - target: data-structure-profile-profile-contract
       type: depends_on
-  sources:
-    - packages/data-structure-profile/package.json
-    - packages/data-structure-profile/src/cli.ts
-    - packages/data-structure-profile/src/cli-runner.ts
-    - packages/data-structure-profile/src/cli-runner.test.ts
+sources:
+  - packages/data-structure-profile/package.json
+  - packages/data-structure-profile/src/cli.ts
+  - packages/data-structure-profile/src/cli-runner.ts
+  - packages/data-structure-profile/src/cli-runner.test.ts
 ---
 
 # Data Structure Profile CLI

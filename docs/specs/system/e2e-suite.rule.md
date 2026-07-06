@@ -15,9 +15,9 @@ def:
       type: constrains
     - target: testing-patterns
       type: depends_on
-  sources:
-    - packages/e2e/playwright.config.ts
-    - packages/e2e/tests/helpers.ts
+sources:
+  - packages/e2e/playwright.config.ts
+  - packages/e2e/tests/helpers.ts
 ---
 
 # E2E Suite — Consumption Rule

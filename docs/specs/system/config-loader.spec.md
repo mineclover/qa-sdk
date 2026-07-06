@@ -19,12 +19,12 @@ def:
       type: traces_to
     - target: config-loader-test
       type: traces_to
-  sources:
-    - packages/config-loader/package.json
-    - packages/config-loader/src/catalog-loader.ts
-    - packages/config-loader/src/dkg-config-loader.ts
-    - packages/config-loader/src/index.ts
-    - packages/config-loader/scripts/smoke.test.mjs
+sources:
+  - packages/config-loader/package.json
+  - packages/config-loader/src/catalog-loader.ts
+  - packages/config-loader/src/dkg-config-loader.ts
+  - packages/config-loader/src/index.ts
+  - packages/config-loader/scripts/smoke.test.mjs
 ---
 # config-loader
 

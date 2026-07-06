@@ -16,11 +16,11 @@ def:
       type: traces_to
     - target: event-intent-definition-rule
       type: traces_to
-  sources:
-    - packages/event-catalog/src/payload-guides.ts
-    - packages/event-catalog/src/index.ts
-    - packages/event-catalog/src/index.test.ts
-    - packages/event-catalog/src/auto-track.contract.test.ts
+sources:
+  - packages/event-catalog/src/payload-guides.ts
+  - packages/event-catalog/src/index.ts
+  - packages/event-catalog/src/index.test.ts
+  - packages/event-catalog/src/auto-track.contract.test.ts
 ---
 
 # Payload Field Guide

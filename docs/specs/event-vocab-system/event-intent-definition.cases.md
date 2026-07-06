@@ -13,11 +13,11 @@ def:
   links:
     - target: event-intent-definition-rule
       type: refines
-  sources:
-    - packages/event-catalog/src/payload-guides.ts
-    - packages/event-catalog/src/prefix-mapping.ts
-    - packages/event-catalog/src/index.test.ts
-    - packages/registry-service/src/modules/events/event.controller.test.ts
+sources:
+  - packages/event-catalog/src/payload-guides.ts
+  - packages/event-catalog/src/prefix-mapping.ts
+  - packages/event-catalog/src/index.test.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Intent Definition — Use Cases

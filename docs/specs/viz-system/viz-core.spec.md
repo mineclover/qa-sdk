@@ -13,7 +13,7 @@ def:
   links:
     - target: viz-panel-layout
       type: traces_to
-  source: packages/viz-core/src/index.ts
+source: packages/viz-core/src/index.ts
 ---
 
 # viz-core — 시각화 코어

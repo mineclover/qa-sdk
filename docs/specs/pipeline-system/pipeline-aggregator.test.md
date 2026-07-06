@@ -11,7 +11,7 @@ def:
   links:
     - target: pipeline-aggregator
       type: verifies
-  source: packages/store/src/adapters/memory/aggregator.adapter.test.ts
+source: packages/store/src/adapters/memory/aggregator.adapter.test.ts
 ---
 
 # Aggregator 테스트 명세

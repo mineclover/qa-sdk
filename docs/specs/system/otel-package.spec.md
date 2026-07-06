@@ -14,15 +14,15 @@ def:
       type: refines
     - target: apm-system
       type: depends_on
-  sources:
-    - packages/otel/src/index.ts
-    - packages/otel/src/init.ts
-    - packages/otel/src/tracer.ts
-    - packages/otel/src/env.ts
-    - packages/otel/src/drizzle-instrument.ts
-    - packages/otel/src/sqlcommenter.ts
-    - packages/otel/src/drizzle-instrument.test.ts
-    - packages/otel/src/sqlcommenter.test.ts
+sources:
+  - packages/otel/src/index.ts
+  - packages/otel/src/init.ts
+  - packages/otel/src/tracer.ts
+  - packages/otel/src/env.ts
+  - packages/otel/src/drizzle-instrument.ts
+  - packages/otel/src/sqlcommenter.ts
+  - packages/otel/src/drizzle-instrument.test.ts
+  - packages/otel/src/sqlcommenter.test.ts
 ---
 # @qa-sdk/otel
 

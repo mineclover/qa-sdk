@@ -16,13 +16,13 @@ def:
       type: depends_on
     - target: coord-semantic-indexing-logic
       type: traces_to
-  sources:
-    - packages/definition-service/src/modules/semantic-grounding/semantic-grounding.service.ts
-    - packages/definition-service/src/stores/semantic-grounding-store.ts
-    - packages/definition-service/src/core/semantic-grounding/types.ts
-    - packages/definition-service/src/core/semantic-grounding/resolver.ts
-    - packages/definition-service/src/core/semantic-grounding/planner.ts
-    - packages/definition-service/src/core/semantic-grounding/feedback.ts
+sources:
+  - packages/definition-service/src/modules/semantic-grounding/semantic-grounding.service.ts
+  - packages/definition-service/src/stores/semantic-grounding-store.ts
+  - packages/definition-service/src/core/semantic-grounding/types.ts
+  - packages/definition-service/src/core/semantic-grounding/resolver.ts
+  - packages/definition-service/src/core/semantic-grounding/planner.ts
+  - packages/definition-service/src/core/semantic-grounding/feedback.ts
 ---
 # Definition Service — Semantic Grounding Module
 

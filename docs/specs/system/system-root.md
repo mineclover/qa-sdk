@@ -32,12 +32,12 @@ def:
       type: refs
     - target: system-support
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - scripts/report-package-surfaces.mjs
-    - scripts/verify-analysis-os.ts
-    - docs/specs/system/system-packages.spec.md
-    - docs/specs/system/package-surface-separation.rule.md
+sources:
+  - scripts/package-surfaces.mjs
+  - scripts/report-package-surfaces.mjs
+  - scripts/verify-analysis-os.ts
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/package-surface-separation.rule.md
 ---
 
 # QA-SDK 시스템

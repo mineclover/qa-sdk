@@ -16,13 +16,13 @@ def:
       type: refines
     - target: data-structure-profile-taxonomy
       type: depends_on
-  sources:
-    - packages/data-structure-profile/src/types.ts
-    - packages/data-structure-profile/src/parse.ts
-    - packages/data-structure-profile/src/lineage.ts
-    - packages/data-structure-profile/src/measurement.ts
-    - packages/data-structure-profile/src/dpm.ts
-    - packages/data-structure-profile/src/adapters.ts
+sources:
+  - packages/data-structure-profile/src/types.ts
+  - packages/data-structure-profile/src/parse.ts
+  - packages/data-structure-profile/src/lineage.ts
+  - packages/data-structure-profile/src/measurement.ts
+  - packages/data-structure-profile/src/dpm.ts
+  - packages/data-structure-profile/src/adapters.ts
 ---
 
 # Data Structure Profile Contract

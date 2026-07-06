@@ -11,7 +11,7 @@ def:
   links:
     - target: gate-consistency
       type: verifies
-  source: packages/gate-service/src/services/consistency.test.ts
+source: packages/gate-service/src/services/consistency.test.ts
 ---
 
 ## 목적 ^purpose

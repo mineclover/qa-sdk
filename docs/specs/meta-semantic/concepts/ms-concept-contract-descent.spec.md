@@ -13,11 +13,11 @@ def:
       type: traces_to
     - target: ms-concept-boundary
       type: traces_to
-  sources:
-    - packages/core/src/meta-semantic/ir-types.ts
-    - packages/core/src/meta-semantic/ir-nesting-bridge.ts
-    - packages/core/src/meta-semantic/ir-nesting-bridge.test.ts
-    - packages/core/src/meta-semantic/ir-validate.ts
+sources:
+  - packages/core/src/meta-semantic/ir-types.ts
+  - packages/core/src/meta-semantic/ir-nesting-bridge.ts
+  - packages/core/src/meta-semantic/ir-nesting-bridge.test.ts
+  - packages/core/src/meta-semantic/ir-validate.ts
 ---
 
 # 계약 하향 (Contract Descent)

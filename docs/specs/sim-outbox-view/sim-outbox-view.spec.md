@@ -14,8 +14,8 @@ def:
   links:
     - target: system-libraries
       type: refines
-  sources:
-    - packages/sim-outbox-view/src/index.ts
+sources:
+  - packages/sim-outbox-view/src/index.ts
 ---
 
 # sim-outbox-view

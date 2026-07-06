@@ -18,12 +18,12 @@ def:
       type: depends_on
     - target: package-surface-separation-rule
       type: depends_on
-  sources:
-    - scripts/design-usefulness-audit.mjs
-    - scripts/package-surfaces.mjs
-    - scripts/analyze-package-usage.ts
-    - scripts/verify-analysis-os.ts
-    - docs/specs/system/package-surface-separation.rule.md
+sources:
+  - scripts/design-usefulness-audit.mjs
+  - scripts/package-surfaces.mjs
+  - scripts/analyze-package-usage.ts
+  - scripts/verify-analysis-os.ts
+  - docs/specs/system/package-surface-separation.rule.md
 ---
 
 # Design Usefulness Audit — 운영 규칙

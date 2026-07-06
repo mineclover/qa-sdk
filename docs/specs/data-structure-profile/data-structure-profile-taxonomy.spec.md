@@ -14,9 +14,9 @@ def:
   links:
     - target: data-structure-profile-system
       type: refines
-  sources:
-    - docs/taxonomies/data-structure-profile.yaml
-    - packages/data-structure-profile/src/taxonomy.ts
+sources:
+  - docs/taxonomies/data-structure-profile.yaml
+  - packages/data-structure-profile/src/taxonomy.ts
 ---
 
 # Data Structure Profile Taxonomy

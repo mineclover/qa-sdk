@@ -16,25 +16,25 @@ def:
       type: refines
     - target: motion-content-contract
       type: depends_on
-  sources:
-    - packages/motion-content/src/assemble.ts
-    - packages/motion-content/src/content-types.ts
-    - packages/motion-content/src/editor.ts
-    - packages/motion-content/src/event-log.ts
-    - packages/motion-content/src/events.ts
-    - packages/motion-content/src/examples.ts
-    - packages/motion-content/src/history.ts
-    - packages/motion-content/src/index.ts
-    - packages/motion-content/src/io.ts
-    - packages/motion-content/src/model.ts
-    - packages/motion-content/src/presets.ts
-    - packages/motion-content/src/query.ts
-    - packages/motion-content/src/runtime.ts
-    - packages/motion-content/src/service.ts
-    - packages/motion-content/src/snapshot.ts
-    - packages/motion-content/src/state.ts
-    - packages/motion-content/src/types.ts
-    - packages/motion-content/src/utils.ts
+sources:
+  - packages/motion-content/src/assemble.ts
+  - packages/motion-content/src/content-types.ts
+  - packages/motion-content/src/editor.ts
+  - packages/motion-content/src/event-log.ts
+  - packages/motion-content/src/events.ts
+  - packages/motion-content/src/examples.ts
+  - packages/motion-content/src/history.ts
+  - packages/motion-content/src/index.ts
+  - packages/motion-content/src/io.ts
+  - packages/motion-content/src/model.ts
+  - packages/motion-content/src/presets.ts
+  - packages/motion-content/src/query.ts
+  - packages/motion-content/src/runtime.ts
+  - packages/motion-content/src/service.ts
+  - packages/motion-content/src/snapshot.ts
+  - packages/motion-content/src/state.ts
+  - packages/motion-content/src/types.ts
+  - packages/motion-content/src/utils.ts
 ---
 
 # motion-content system

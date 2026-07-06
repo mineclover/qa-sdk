@@ -10,23 +10,23 @@ def:
   aspect: proposal_design
   tier: system
   depth: specification
-  sources:
-    - docs/taxonomies/data-structure-profile.yaml
-    - docs/specs/data-structure-profile/data-structure-profile-taxonomy.spec.md
-    - docs/specs/data-structure-profile/data-structure-profile-operations.rule.md
-    - packages/data-structure-profile/src/taxonomy.ts
-    - packages/data-structure-profile/src/validate.ts
-    - packages/data-structure-profile/src/profile.test.ts
-    - packages/data-structure-profile/src/cli-runner.test.ts
-    - scripts/data-structure-profile-bridge-smoke.mjs
-    - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
-    - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
 role: taxonomy-layer
 supersedes: -
 superseded_by: -
+sources:
+  - docs/taxonomies/data-structure-profile.yaml
+  - docs/specs/data-structure-profile/data-structure-profile-taxonomy.spec.md
+  - docs/specs/data-structure-profile/data-structure-profile-operations.rule.md
+  - packages/data-structure-profile/src/taxonomy.ts
+  - packages/data-structure-profile/src/validate.ts
+  - packages/data-structure-profile/src/profile.test.ts
+  - packages/data-structure-profile/src/cli-runner.test.ts
+  - scripts/data-structure-profile-bridge-smoke.mjs
+  - docs/proposals/data-structure-profile/fixtures/order-events.profile.yaml
+  - docs/proposals/data-structure-profile/fixtures/customer-orders.profile.yaml
 ---
 
 # Taxonomy Layer

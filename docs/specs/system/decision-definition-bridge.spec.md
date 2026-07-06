@@ -22,15 +22,15 @@ def:
       type: refines
     - target: definition-cross-loop-bridge
       type: traces_to
-  sources:
-    - packages/definition-catalog/src/bridge.ts
-    - packages/definition-catalog/src/cross-loop-bridge.ts
-    - packages/definition-catalog/src/cross-loop-bridge.test.ts
-    - packages/decision-flow/src/context-provider.ts
-    - packages/decision-flow/src/context-provider.test.ts
-    - packages/decision-flow/src/engine.ts
-    - docs/specs/definition-catalog/definition-cross-loop-bridge.spec.md
-    - docs/specs/decision-flow/df-system.md
+sources:
+  - packages/definition-catalog/src/bridge.ts
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/definition-catalog/src/cross-loop-bridge.test.ts
+  - packages/decision-flow/src/context-provider.ts
+  - packages/decision-flow/src/context-provider.test.ts
+  - packages/decision-flow/src/engine.ts
+  - docs/specs/definition-catalog/definition-cross-loop-bridge.spec.md
+  - docs/specs/decision-flow/df-system.md
 ---
 # Decision ↔ Definition 브릿지
 

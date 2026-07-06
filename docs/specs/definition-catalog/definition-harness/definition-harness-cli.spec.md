@@ -13,16 +13,16 @@ def:
   layer: mediation
   svc: definition-service
   tags: [entry-point, runtime, testing, cross-scope]
-  sources:
-    - packages/cli/src/commands/def.ts
-    - packages/cli/src/commands/def.test.ts
-    - packages/definition-catalog/src/harness-derive.ts
-    - packages/definition-catalog/src/def-config.ts
   links:
     - target: definition-harness
       type: refines
     - target: definition-state-model
       type: depends_on
+sources:
+  - packages/cli/src/commands/def.ts
+  - packages/cli/src/commands/def.test.ts
+  - packages/definition-catalog/src/harness-derive.ts
+  - packages/definition-catalog/src/def-config.ts
 ---
 # Harness CLI — 상태 조회/전이/프로세스 실행
 

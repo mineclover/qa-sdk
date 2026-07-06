@@ -36,16 +36,16 @@ def:
       type: refs
     - target: system-libraries
       type: depends_on
-  sources:
-    - scripts/package-surfaces.mjs
-    - docs/specs/system/system-packages.spec.md
-    - docs/specs/system/package-surface-separation.rule.md
-    - packages/ingest-server/package.json
-    - packages/registry-service/package.json
-    - packages/gate-service/package.json
-    - packages/query-service/package.json
-    - packages/decode-service/package.json
-    - packages/infra-engine/package.json
+sources:
+  - scripts/package-surfaces.mjs
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/package-surface-separation.rule.md
+  - packages/ingest-server/package.json
+  - packages/registry-service/package.json
+  - packages/gate-service/package.json
+  - packages/query-service/package.json
+  - packages/decode-service/package.json
+  - packages/infra-engine/package.json
 ---
 # 인프라 서비스 계층
 

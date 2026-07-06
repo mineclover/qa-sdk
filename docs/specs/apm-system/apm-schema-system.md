@@ -21,12 +21,12 @@ def:
       type: contains
     - target: apm-system
       type: depends_on
-  sources:
-    - packages/spec-schema/src/schema.types.ts
-    - packages/spec-schema/src/category-rules.ts
-    - packages/demo-snapshot/src/demo-catalog.ts
-    - packages/core/src/coordinates/address-context-schema.ts
-    - packages/ingest-server/src/lib/enrich-address-context.ts
+sources:
+  - packages/spec-schema/src/schema.types.ts
+  - packages/spec-schema/src/category-rules.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/core/src/coordinates/address-context-schema.ts
+  - packages/ingest-server/src/lib/enrich-address-context.ts
 ---
 
 # APM 스키마 그룹

@@ -24,9 +24,9 @@ def:
       type: refs
     - target: infra-env-kit-validation
       type: refs
-  sources:
-    - packages/infra-env-kit/src/index.ts
-    - packages/infra-env-kit/src/cli.ts
+sources:
+  - packages/infra-env-kit/src/index.ts
+  - packages/infra-env-kit/src/cli.ts
 ---
 
 # infra-env-kit system

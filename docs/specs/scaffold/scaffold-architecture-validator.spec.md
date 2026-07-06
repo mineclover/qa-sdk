@@ -16,10 +16,10 @@ def:
       type: refines
     - target: scaffold-template-catalog
       type: depends_on
-  sources:
-    - packages/architecture-schematics/src/validator.ts
-    - packages/architecture-schematics/src/validator.test.ts
-    - packages/architecture-schematics/src/cli.ts
+sources:
+  - packages/architecture-schematics/src/validator.ts
+  - packages/architecture-schematics/src/validator.test.ts
+  - packages/architecture-schematics/src/cli.ts
 ---
 
 # scaffold architecture validator

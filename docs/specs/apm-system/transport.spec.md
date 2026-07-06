@@ -13,13 +13,13 @@ def:
   links:
     - target: address-context-format
       type: depends_on
-  sources:
-    - packages/logger/src/transport/transport.ts
-    - packages/logger/src/transport/http.ts
-    - packages/logger/src/transport/noop.ts
-    - packages/sdk/src/transport/transport.test.ts
-    - packages/logger/src/transport/ingest-forwarder.ts
-    - packages/logger/src/transport/ingest-forwarder.test.ts
+sources:
+  - packages/logger/src/transport/transport.ts
+  - packages/logger/src/transport/http.ts
+  - packages/logger/src/transport/noop.ts
+  - packages/sdk/src/transport/transport.test.ts
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
 ---
 
 # Transport

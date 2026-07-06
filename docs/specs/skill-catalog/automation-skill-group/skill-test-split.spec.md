@@ -13,9 +13,8 @@ def:
       type: refines
     - target: skill-bdd-contract
       type: depends_on
-  sources:
-    - skills/test-split/SKILL.md
-
+sources:
+  - skills/test-split/SKILL.md
 ---
 
 # Skill — test-split

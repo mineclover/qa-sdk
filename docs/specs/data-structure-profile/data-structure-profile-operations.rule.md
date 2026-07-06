@@ -22,13 +22,13 @@ def:
       type: depends_on
     - target: data-structure-profile-system-test
       type: depends_on
-  sources:
-    - packages/data-structure-profile/README.md
-    - packages/data-structure-profile/src/validate.ts
-    - packages/data-structure-profile/src/profile.test.ts
-    - packages/data-structure-profile/src/cli-runner.ts
-    - scripts/data-structure-profile-bridge-smoke.mjs
-    - docs/taxonomies/data-structure-profile.yaml
+sources:
+  - packages/data-structure-profile/README.md
+  - packages/data-structure-profile/src/validate.ts
+  - packages/data-structure-profile/src/profile.test.ts
+  - packages/data-structure-profile/src/cli-runner.ts
+  - scripts/data-structure-profile-bridge-smoke.mjs
+  - docs/taxonomies/data-structure-profile.yaml
 ---
 
 # Data Structure Profile Operations Rule

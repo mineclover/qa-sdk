@@ -45,13 +45,12 @@ def:
       type: contains
     - target: skill-catalog-system
       type: depends_on
-  sources:
-    - skills/def-context/SKILL.md
-    - skills/def-topdown/SKILL.md
-    - skills/def-bottomup/SKILL.md
-    - packages/cli/src/commands/def.ts
-    - packages/cli/src/skills-workflows.test.ts
-
+sources:
+  - skills/def-context/SKILL.md
+  - skills/def-topdown/SKILL.md
+  - skills/def-bottomup/SKILL.md
+  - packages/cli/src/commands/def.ts
+  - packages/cli/src/skills-workflows.test.ts
 ---
 
 

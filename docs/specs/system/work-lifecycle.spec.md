@@ -22,15 +22,15 @@ def:
       type: traces_to
     - target: work-topic-schema-plan
       type: traces_to
-  sources:
-    - docs/specs/system/work-lifecycle.cases.md
-    - docs/specs/definition-catalog/responsibility-closure-harness.rule.md
-    - docs/specs/definition-catalog/responsibility-closure-harness.cases.md
-    - packages/cli/src/lib/docs-control-plane/work-topic-extract.ts
-    - packages/cli/src/lib/docs-control-plane/bdd-contract-extract.ts
-    - packages/cli/src/lib/docs-control-plane/completed-record-review.ts
-    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
-    - packages/cli/src/commands/docs.test.ts
+sources:
+  - docs/specs/system/work-lifecycle.cases.md
+  - docs/specs/definition-catalog/responsibility-closure-harness.rule.md
+  - docs/specs/definition-catalog/responsibility-closure-harness.cases.md
+  - packages/cli/src/lib/docs-control-plane/work-topic-extract.ts
+  - packages/cli/src/lib/docs-control-plane/bdd-contract-extract.ts
+  - packages/cli/src/lib/docs-control-plane/completed-record-review.ts
+  - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
+  - packages/cli/src/commands/docs.test.ts
 ---
 
 # Work Lifecycle

@@ -21,14 +21,13 @@ def:
       type: depends_on
     - target: meta-semantic-pipe-impl
       type: depends_on
-  sources:
-    - packages/core/src/types/data-schema.ts
-    - packages/core/src/pipe/data-contract.ts
-    - packages/core/src/pipe/data-contract.test.ts
-    - packages/core/src/pipe/pipe-lineage.ts
-    - packages/core/src/pipe/pipe-lineage.test.ts
-    - packages/core/src/pipe/meta-semantic-integration.test.ts
-
+sources:
+  - packages/core/src/types/data-schema.ts
+  - packages/core/src/pipe/data-contract.ts
+  - packages/core/src/pipe/data-contract.test.ts
+  - packages/core/src/pipe/pipe-lineage.ts
+  - packages/core/src/pipe/pipe-lineage.test.ts
+  - packages/core/src/pipe/meta-semantic-integration.test.ts
 ---
 
 # 데이터 계약 — 스키마 정의 + 관계 + 계보 추적

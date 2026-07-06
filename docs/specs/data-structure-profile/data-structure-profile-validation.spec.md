@@ -16,11 +16,11 @@ def:
       type: refines
     - target: data-structure-profile-profile-contract
       type: depends_on
-  sources:
-    - packages/data-structure-profile/src/validate.ts
-    - packages/data-structure-profile/src/dpm.ts
-    - packages/data-structure-profile/src/adapters.ts
-    - packages/data-structure-profile/src/profile.test.ts
+sources:
+  - packages/data-structure-profile/src/validate.ts
+  - packages/data-structure-profile/src/dpm.ts
+  - packages/data-structure-profile/src/adapters.ts
+  - packages/data-structure-profile/src/profile.test.ts
 ---
 
 # Data Structure Profile Validation

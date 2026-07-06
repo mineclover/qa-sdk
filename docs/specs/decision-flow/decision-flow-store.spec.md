@@ -13,7 +13,7 @@ def:
   links:
     - target: df-system
       type: refines
-  source: packages/decision-flow-store/src/index.ts
+source: packages/decision-flow-store/src/index.ts
 ---
 
 # decision-flow-store — InstanceStore SQLite 구현

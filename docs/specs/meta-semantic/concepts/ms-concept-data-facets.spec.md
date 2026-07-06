@@ -11,10 +11,10 @@ def:
   links:
     - target: meta-semantic-concepts
       type: traces_to
-  sources:
-    - packages/core/src/meta-semantic/ir-types.ts
-    - packages/core/src/pipe/data-contract.ts
-    - packages/core/src/pipe/data-contract.test.ts
+sources:
+  - packages/core/src/meta-semantic/ir-types.ts
+  - packages/core/src/pipe/data-contract.ts
+  - packages/core/src/pipe/data-contract.test.ts
 ---
 
 # 데이터 패싯 (Data Facets)

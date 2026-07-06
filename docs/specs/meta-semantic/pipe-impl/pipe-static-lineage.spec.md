@@ -27,15 +27,14 @@ def:
       type: contains
     - target: meta-semantic-system
       type: depends_on
-  sources:
-    - packages/core/src/pipe/pipe-lineage.ts
-    - packages/core/src/pipe/pipe-lineage.test.ts
-    - packages/core/src/pipe/pipe-lineage-consistency.test.ts
-    - packages/core/src/pipe/pipe-schema-id.ts
-    - packages/core/src/pipe/pipe-schema-id.test.ts
-    - packages/core/src/data-object/validate.ts
-    - packages/core/src/data-object/validate.test.ts
-
+sources:
+  - packages/core/src/pipe/pipe-lineage.ts
+  - packages/core/src/pipe/pipe-lineage.test.ts
+  - packages/core/src/pipe/pipe-lineage-consistency.test.ts
+  - packages/core/src/pipe/pipe-schema-id.ts
+  - packages/core/src/pipe/pipe-schema-id.test.ts
+  - packages/core/src/data-object/validate.ts
+  - packages/core/src/data-object/validate.test.ts
 ---
 
 # 정적 계보 추적 — PipeFlow에서 데이터 계보 파생

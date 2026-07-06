@@ -16,15 +16,15 @@ def:
       type: refines
     - target: coordinate-storage-pr-checklist
       type: traces_to
-  sources:
-    - packages/definition-catalog/src/coordinate-storage-check.ts
-    - packages/definition-catalog/src/coordinate-storage-check.test.ts
-    - packages/definition-catalog/src/coordinate-storage-check.integration.test.ts
-    - packages/definition-catalog/src/validate.ts
-    - packages/cli/src/data-sources/local-data-source.ts
-    - packages/ingest-server/src/db/schema.ts
-    - packages/ingest-server/src/stores/d1-key-observation-store.test.ts
-    - packages/core/src/coordinates/address-context-schema.ts
+sources:
+  - packages/definition-catalog/src/coordinate-storage-check.ts
+  - packages/definition-catalog/src/coordinate-storage-check.test.ts
+  - packages/definition-catalog/src/coordinate-storage-check.integration.test.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/cli/src/data-sources/local-data-source.ts
+  - packages/ingest-server/src/db/schema.ts
+  - packages/ingest-server/src/stores/d1-key-observation-store.test.ts
+  - packages/core/src/coordinates/address-context-schema.ts
 ---
 
 # Coordinate Storage — VersionedIndex 패턴 규칙

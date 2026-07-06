@@ -24,18 +24,18 @@ def:
       type: traces_to
     - target: dual-coordinate-system
       type: traces_to
-  sources:
-    - scripts/package-surfaces.mjs
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
-    - packages/taxonomy-decision-bridge/src/index.ts
-    - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
-    - packages/taxonomy-web/src/data/loadStaticTaxonomies.ts
-    - packages/taxonomy-web/src/lib/lib.test.ts
-    - packages/event-catalog/src/prefix-mapping.ts
-    - packages/event-catalog/src/auto-track.contract.test.ts
-    - docs/specs/definition-catalog/definition-taxonomy.spec.md
-    - docs/specs/decision-flow/df-taxonomy.spec.md
+sources:
+  - scripts/package-surfaces.mjs
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+  - packages/taxonomy-decision-bridge/src/index.ts
+  - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
+  - packages/taxonomy-web/src/data/loadStaticTaxonomies.ts
+  - packages/taxonomy-web/src/lib/lib.test.ts
+  - packages/event-catalog/src/prefix-mapping.ts
+  - packages/event-catalog/src/auto-track.contract.test.ts
+  - docs/specs/definition-catalog/definition-taxonomy.spec.md
+  - docs/specs/decision-flow/df-taxonomy.spec.md
 ---
 
 # Taxonomy Boundaries — 분류 체계 패밀리와 경계

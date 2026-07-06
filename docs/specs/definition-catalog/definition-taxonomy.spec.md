@@ -24,17 +24,17 @@ def:
       type: refs
     - target: tag-management-spec
       type: depends_on
-  sources:
-    - packages/definition-catalog/src/types.ts
-    - packages/definition-catalog/src/vocabulary.ts
-    - packages/definition-catalog/src/taxonomy.ts
-    - packages/definition-catalog/src/observe.ts
-    - packages/definition-catalog/src/address-assign.ts
-    - packages/definition-catalog/src/def-config.ts
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/taxonomy.test.ts
-    - packages/definition-catalog/src/observe.test.ts
-    - packages/definition-catalog/src/address-assign.test.ts
+sources:
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/observe.ts
+  - packages/definition-catalog/src/address-assign.ts
+  - packages/definition-catalog/src/def-config.ts
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/taxonomy.test.ts
+  - packages/definition-catalog/src/observe.test.ts
+  - packages/definition-catalog/src/address-assign.test.ts
 ---
 # Definition Taxonomy — 문서 분류 체계
 

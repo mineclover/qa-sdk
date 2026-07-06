@@ -23,7 +23,7 @@ def:
       type: contains
     - target: meta-semantic-system
       type: depends_on
-  source: packages/core/src/pipe/pipe-zoom.ts
+source: packages/core/src/pipe/pipe-zoom.ts
 ---
 
 # PipeGraph 줌 레벨 시각화 데이터 모델

@@ -18,7 +18,7 @@ def:
       type: contains
     - target: meta-semantic-system
       type: depends_on
-  source: packages/core/src/pipe/pipe-store.ts
+source: packages/core/src/pipe/pipe-store.ts
 ---
 
 # PipeGraph / PipeSpec 저장소

@@ -13,13 +13,13 @@ def:
   links:
     - target: apm-schema-system
       type: refines
-  sources:
-    - packages/core/src/lib/address-parser.ts
-    - packages/core/src/lib/address-parser.test.ts
-    - packages/core/src/coordinates/address-context-schema.ts
-    - packages/core/src/coordinates/address-context-schema.test.ts
-    - packages/ingest-server/src/lib/enrich-address-context.ts
-    - packages/ingest-server/src/lib/enrich-address-context.test.ts
+sources:
+  - packages/core/src/lib/address-parser.ts
+  - packages/core/src/lib/address-parser.test.ts
+  - packages/core/src/coordinates/address-context-schema.ts
+  - packages/core/src/coordinates/address-context-schema.test.ts
+  - packages/ingest-server/src/lib/enrich-address-context.ts
+  - packages/ingest-server/src/lib/enrich-address-context.test.ts
 ---
 
 # Address Context 형식

@@ -35,16 +35,16 @@ def:
       type: contains
     - target: docs-explorer
       type: contains
-  sources:
-    - packages/definition-service/src/app.module.ts
-    - packages/definition-service/src/main.ts
-    - packages/definition-service/src/db/schema.ts
-    - packages/definition-service/src/modules/docs/docs.module.ts
-    - packages/definition-service/src/modules/graph/graph.module.ts
-    - packages/definition-service/src/modules/sync/sync.module.ts
-    - packages/definition-service/src/modules/search/search.module.ts
-    - packages/definition-service/src/modules/semantic-grounding/semantic-grounding.module.ts
-    - packages/definition-client/src/index.ts
+sources:
+  - packages/definition-service/src/app.module.ts
+  - packages/definition-service/src/main.ts
+  - packages/definition-service/src/db/schema.ts
+  - packages/definition-service/src/modules/docs/docs.module.ts
+  - packages/definition-service/src/modules/graph/graph.module.ts
+  - packages/definition-service/src/modules/sync/sync.module.ts
+  - packages/definition-service/src/modules/search/search.module.ts
+  - packages/definition-service/src/modules/semantic-grounding/semantic-grounding.module.ts
+  - packages/definition-client/src/index.ts
 ---
 # Definition Service — 시스템 개요
 

@@ -19,15 +19,15 @@ def:
       type: traces_to
     - target: package-classifier-test
       type: traces_to
-  sources:
-    - packages/package-classifier/package.json
-    - packages/package-classifier/src/index.ts
-    - packages/package-classifier/src/pkg-classifier.ts
-    - packages/package-classifier/src/pkg-classifier.test.ts
-    - packages/package-classifier/src/__tests__/usage-logic.test.ts
-    - scripts/analyze-package-usage.ts
-    - scripts/check-dependency-boundaries.ts
-    - scripts/generate-api-reference.ts
+sources:
+  - packages/package-classifier/package.json
+  - packages/package-classifier/src/index.ts
+  - packages/package-classifier/src/pkg-classifier.ts
+  - packages/package-classifier/src/pkg-classifier.test.ts
+  - packages/package-classifier/src/__tests__/usage-logic.test.ts
+  - scripts/analyze-package-usage.ts
+  - scripts/check-dependency-boundaries.ts
+  - scripts/generate-api-reference.ts
 ---
 # package-classifier
 

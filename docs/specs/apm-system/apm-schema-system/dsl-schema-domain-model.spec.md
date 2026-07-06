@@ -13,12 +13,12 @@ def:
   links:
     - target: apm-schema-system
       type: refines
-  sources:
-    - packages/spec-schema/src/schema.types.ts
-    - packages/spec-schema/src/category-rules.ts
-    - packages/spec-schema/src/schema.test.ts
-    - packages/demo-snapshot/src/demo-catalog.ts
-    - packages/demo-snapshot/src/event-schema.test.ts
+sources:
+  - packages/spec-schema/src/schema.types.ts
+  - packages/spec-schema/src/category-rules.ts
+  - packages/spec-schema/src/schema.test.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/demo-snapshot/src/event-schema.test.ts
 ---
 
 # DSL 스키마 도메인 모델

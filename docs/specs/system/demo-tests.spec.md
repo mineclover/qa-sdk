@@ -19,13 +19,13 @@ def:
       type: traces_to
     - target: testing-patterns
       type: depends_on
-  sources:
-    - packages/demo-tests/package.json
-    - packages/demo-tests/src/schema-consistency.test.ts
-    - packages/demo-tests/src/index-meta/invariants.test.ts
-    - packages/demo-tests/src/registry-service-e2e.test.ts
-    - packages/demo-tests/src/permission-engine/scenario.test.ts
-    - packages/demo-tests/src/merge-contract/error-parity.test.ts
+sources:
+  - packages/demo-tests/package.json
+  - packages/demo-tests/src/schema-consistency.test.ts
+  - packages/demo-tests/src/index-meta/invariants.test.ts
+  - packages/demo-tests/src/registry-service-e2e.test.ts
+  - packages/demo-tests/src/permission-engine/scenario.test.ts
+  - packages/demo-tests/src/merge-contract/error-parity.test.ts
 ---
 
 # @qa-sdk/demo-tests — 데모 cross-package 통합 테스트

@@ -13,14 +13,14 @@ def:
   links:
     - target: logger-contract
       type: depends_on
-  sources:
-    - packages/pino/src/index.ts
-    - packages/pino/src/index.test.ts
-    - packages/core/src/lib/create-logger.ts
-    - packages/core/src/lib/create-logger.test.ts
-    - packages/logger/src/logger.ts
-    - packages/logger/src/transport/ingest-forwarder.ts
-    - packages/logger/src/transport/ingest-forwarder.test.ts
+sources:
+  - packages/pino/src/index.ts
+  - packages/pino/src/index.test.ts
+  - packages/core/src/lib/create-logger.ts
+  - packages/core/src/lib/create-logger.test.ts
+  - packages/logger/src/logger.ts
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
 ---
 
 # Logger

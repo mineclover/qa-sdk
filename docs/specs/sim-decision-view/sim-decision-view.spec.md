@@ -14,12 +14,12 @@ def:
   links:
     - target: system-libraries
       type: refines
-  sources:
-    - packages/sim-decision-view/src/alert-event-view.ts
-    - packages/sim-decision-view/src/audit-trace-view.ts
-    - packages/sim-decision-view/src/conversion.ts
-    - packages/sim-decision-view/src/resource-decision-view.ts
-    - packages/sim-decision-view/src/safety-decision-view.ts
+sources:
+  - packages/sim-decision-view/src/alert-event-view.ts
+  - packages/sim-decision-view/src/audit-trace-view.ts
+  - packages/sim-decision-view/src/conversion.ts
+  - packages/sim-decision-view/src/resource-decision-view.ts
+  - packages/sim-decision-view/src/safety-decision-view.ts
 ---
 
 # sim-decision-view

@@ -24,9 +24,9 @@ def:
       type: contains
     - target: data-structure-profile-operations-rule
       type: contains
-  sources:
-    - packages/data-structure-profile/package.json
-    - packages/data-structure-profile/src/index.ts
+sources:
+  - packages/data-structure-profile/package.json
+  - packages/data-structure-profile/src/index.ts
 ---
 
 # Data Structure Profile System

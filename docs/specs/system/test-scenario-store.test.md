@@ -15,8 +15,8 @@ def:
       type: refines
     - target: test-scenario-store-rule
       type: depends_on
-  sources:
-    - packages/test-scenario-store/src/store.test.ts
+sources:
+  - packages/test-scenario-store/src/store.test.ts
 ---
 
 # test-scenario-store — Validation Mapping

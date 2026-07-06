@@ -13,7 +13,7 @@ def:
   links:
     - target: demo-snapshot
       type: depends_on
-  source: packages/demo-types/src/index.ts
+source: packages/demo-types/src/index.ts
 ---
 
 # demo-types — demo-snapshot 파생 타입

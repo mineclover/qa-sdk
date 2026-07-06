@@ -11,15 +11,15 @@ def:
   links:
     - target: doc-type-convention
       type: depends_on
-  sources:
-    - packages/cli/drizzle.config.ts
-    - packages/cli/src/db/schema.ts
-    - packages/index-meta/drizzle.config.ts
-    - packages/index-meta/src/db/schema.ts
-    - packages/registry-service/drizzle.config.ts
-    - packages/registry-service/src/db/schema.ts
-    - packages/db-traffic-control/src/drizzle-middleware.ts
-    - packages/drizzle/meta/_journal.json
+sources:
+  - packages/cli/drizzle.config.ts
+  - packages/cli/src/db/schema.ts
+  - packages/index-meta/drizzle.config.ts
+  - packages/index-meta/src/db/schema.ts
+  - packages/registry-service/drizzle.config.ts
+  - packages/registry-service/src/db/schema.ts
+  - packages/db-traffic-control/src/drizzle-middleware.ts
+  - packages/drizzle/meta/_journal.json
 ---
 
 # Drizzle ORM 컨벤션

@@ -38,14 +38,14 @@ def:
       type: refs
     - target: qa-sdk-engine-system
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - docs/specs/system/system-packages.spec.md
-    - docs/specs/system/package-surface-separation.rule.md
-    - packages/definition-catalog/package.json
-    - packages/decision-flow/package.json
-    - packages/spec-core/package.json
-    - packages/cli/package.json
+sources:
+  - scripts/package-surfaces.mjs
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/package-surface-separation.rule.md
+  - packages/definition-catalog/package.json
+  - packages/decision-flow/package.json
+  - packages/spec-core/package.json
+  - packages/cli/package.json
 ---
 # 설계 도구 계층
 

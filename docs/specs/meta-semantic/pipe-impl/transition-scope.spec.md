@@ -15,19 +15,18 @@ def:
   links:
     - target: prefix-path-summation
       type: depends_on
-  sources:
-    - packages/core/src/types/pipe-spec.ts
-    - packages/core/src/pipe/pipe-validate.ts
-    - packages/core/src/pipe/pipe-validate.test.ts
-    - packages/core/src/pipe/pipe-path.ts
-    - packages/core/src/pipe/pipe-path.test.ts
-    - packages/core/src/pipe/pipe-simulate.ts
-    - packages/core/src/pipe/pipe-simulate.test.ts
-    - packages/core/src/pipe/pipe-runtime.ts
-    - packages/core/src/pipe/pipe-runtime.test.ts
-    - packages/core/src/catalog/transition-bridge.ts
-    - packages/core/src/catalog/transition-bridge.test.ts
-
+sources:
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/pipe/pipe-validate.ts
+  - packages/core/src/pipe/pipe-validate.test.ts
+  - packages/core/src/pipe/pipe-path.ts
+  - packages/core/src/pipe/pipe-path.test.ts
+  - packages/core/src/pipe/pipe-simulate.ts
+  - packages/core/src/pipe/pipe-simulate.test.ts
+  - packages/core/src/pipe/pipe-runtime.ts
+  - packages/core/src/pipe/pipe-runtime.test.ts
+  - packages/core/src/catalog/transition-bridge.ts
+  - packages/core/src/catalog/transition-bridge.test.ts
 ---
 
 # PipeTransitionScope — 제어 흐름 내 선언적 비즈니스 원자 경계

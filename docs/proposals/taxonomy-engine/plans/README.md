@@ -10,25 +10,25 @@ def:
   aspect: proposal_design
   tier: layout
   depth: overview
-  sources:
-    - docs/proposals/taxonomy-engine/plans/v0.1.md
-    - docs/proposals/taxonomy-engine/plans/v0.8.md
-    - docs/proposals/taxonomy-engine/plans/v0.10.md
-    - docs/proposals/taxonomy-engine/plans/v0.11.md
-    - docs/proposals/taxonomy-engine/plans/v0.12.md
-    - docs/proposals/taxonomy-engine/plans/v0.13.md
-    - docs/proposals/taxonomy-engine/plans/v0.14.md
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-decision-bridge/src/index.ts
-    - packages/taxonomy-decision-bridge/src/decision-file.ts
-    - packages/taxonomy-decision-bridge/src/from-flow-schema.ts
-    - packages/definition-catalog/src/taxonomy.ts
 status: accepted
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plans-index
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/taxonomy-engine/plans/v0.1.md
+  - docs/proposals/taxonomy-engine/plans/v0.8.md
+  - docs/proposals/taxonomy-engine/plans/v0.10.md
+  - docs/proposals/taxonomy-engine/plans/v0.11.md
+  - docs/proposals/taxonomy-engine/plans/v0.12.md
+  - docs/proposals/taxonomy-engine/plans/v0.13.md
+  - docs/proposals/taxonomy-engine/plans/v0.14.md
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-decision-bridge/src/index.ts
+  - packages/taxonomy-decision-bridge/src/decision-file.ts
+  - packages/taxonomy-decision-bridge/src/from-flow-schema.ts
+  - packages/definition-catalog/src/taxonomy.ts
 ---
 
 # Plans

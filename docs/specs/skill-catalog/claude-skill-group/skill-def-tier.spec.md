@@ -15,9 +15,8 @@ def:
       type: depends_on
     - target: definition-metadata-tier
       type: depends_on
-  sources:
-    - skills/def-tier/SKILL.md
-
+sources:
+  - skills/def-tier/SKILL.md
 ---
 
 # Skill — def-tier

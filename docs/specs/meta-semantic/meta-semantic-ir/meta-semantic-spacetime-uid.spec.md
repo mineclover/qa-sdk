@@ -21,11 +21,11 @@ def:
       type: depends_on
     - target: coord-foundation
       type: refs
-  sources:
-    - packages/core/src/meta-semantic/spacetime-uid.ts
-    - packages/core/src/meta-semantic/spacetime-uid.test.ts
-    - packages/core/src/meta-semantic/extraction.ts
-    - packages/core/src/meta-semantic/extraction.test.ts
+sources:
+  - packages/core/src/meta-semantic/spacetime-uid.ts
+  - packages/core/src/meta-semantic/spacetime-uid.test.ts
+  - packages/core/src/meta-semantic/extraction.ts
+  - packages/core/src/meta-semantic/extraction.test.ts
 ---
 
 # Spacetime UID — 분기 경로 기반 시공간 주소 체계

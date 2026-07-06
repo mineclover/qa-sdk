@@ -14,7 +14,7 @@ def:
       type: depends_on
     - target: visbug-edit-log-spec
       type: depends_on
-  source: packages/visbug-bridge/src/index.ts
+source: packages/visbug-bridge/src/index.ts
 ---
 
 # visbug-bridge

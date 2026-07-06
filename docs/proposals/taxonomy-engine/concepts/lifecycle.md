@@ -10,19 +10,19 @@ def:
   aspect: lifecycle
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/schema/zod.ts
-    - packages/taxonomy-engine/src/validate/lifecycle.ts
-    - packages/taxonomy-engine/src/diff/index.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-schema.test.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
-    - packages/cli/src/commands/taxonomy/validate.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-lifecycle
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/schema/zod.ts
+  - packages/taxonomy-engine/src/validate/lifecycle.ts
+  - packages/taxonomy-engine/src/diff/index.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-schema.test.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
+  - packages/cli/src/commands/taxonomy/validate.ts
 ---
 
 # Lifecycle — 결정 진행 상태

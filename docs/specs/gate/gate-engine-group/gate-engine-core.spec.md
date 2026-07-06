@@ -13,12 +13,12 @@ def:
   links:
     - target: gate-state-model
       type: depends_on
-  sources:
-    - packages/index-meta/src/gate-engine.ts
-    - packages/index-meta/src/invalid-ranges.ts
-    - packages/index-meta/src/gate-engine.test.ts
-    - packages/demo-tests/src/index-meta/gate-engine.test.ts
-    - packages/demo-tests/src/index-meta/gate-engine-sql-e2e.test.ts
+sources:
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/demo-tests/src/index-meta/gate-engine.test.ts
+  - packages/demo-tests/src/index-meta/gate-engine-sql-e2e.test.ts
 ---
 # GateEngine 코어 기능
 

@@ -16,11 +16,11 @@ def:
   links:
     - target: definition-catalog-spec
       type: refines
-  sources:
-    - packages/definition-catalog/src/extract.ts
-    - packages/definition-catalog/src/extract.test.ts
-    - packages/definition-catalog/src/assemble.ts
-    - packages/definition-catalog/src/contract.ts
+sources:
+  - packages/definition-catalog/src/extract.ts
+  - packages/definition-catalog/src/extract.test.ts
+  - packages/definition-catalog/src/assemble.ts
+  - packages/definition-catalog/src/contract.ts
 ---
 # Definition Extraction — 마커 기반 요약 추출
 

@@ -21,13 +21,13 @@ def:
       type: contains
     - target: system-support
       type: depends_on
-  sources:
-    - packages/permission-engine/src/auth-provider.ts
-    - packages/permission-engine/src/permission-version.ts
-    - packages/permission-engine/src/permission-change-notifier.ts
-    - packages/permission-engine/src/token-enrichment.ts
-    - packages/permission-engine/src/permission-middleware.ts
-    - packages/permission-engine/src/auth-integration.test.ts
+sources:
+  - packages/permission-engine/src/auth-provider.ts
+  - packages/permission-engine/src/permission-version.ts
+  - packages/permission-engine/src/permission-change-notifier.ts
+  - packages/permission-engine/src/token-enrichment.ts
+  - packages/permission-engine/src/permission-middleware.ts
+  - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # Auth × Permission 통합

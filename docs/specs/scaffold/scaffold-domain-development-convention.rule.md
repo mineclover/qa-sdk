@@ -22,8 +22,8 @@ def:
       type: depends_on
     - target: architecture-revealing-code-convention
       type: depends_on
-  sources:
-    - architecture-samples/domain-slice-monorepo
+sources:
+  - architecture-samples/domain-slice-monorepo
 ---
 
 # scaffold domain development convention

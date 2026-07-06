@@ -13,7 +13,7 @@ def:
   links:
     - target: platform-chain-system
       type: refines
-  source: packages/demo-snapshot/src/index.ts
+source: packages/demo-snapshot/src/index.ts
 ---
 
 # demo-snapshot — 데모 카탈로그 SSOT

@@ -14,14 +14,14 @@ def:
       type: constrains
     - target: design-usefulness-audit
       type: constrains
-  sources:
-    - scripts/package-surfaces.mjs
-    - scripts/report-package-surfaces.mjs
-    - scripts/analyze-package-usage.ts
-    - scripts/design-usefulness-audit.mjs
-    - scripts/verify-analysis-os.ts
-    - docs/specs/system/system-packages.spec.md
-    - docs/specs/system/system-operational-ontology.md
+sources:
+  - scripts/package-surfaces.mjs
+  - scripts/report-package-surfaces.mjs
+  - scripts/analyze-package-usage.ts
+  - scripts/design-usefulness-audit.mjs
+  - scripts/verify-analysis-os.ts
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/system-operational-ontology.md
 ---
 
 # Package Surface Separation Rule

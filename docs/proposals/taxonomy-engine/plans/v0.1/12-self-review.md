@@ -10,25 +10,25 @@ def:
   aspect: self_review
   tier: component
   depth: validation
-  sources:
-    - docs/proposals/taxonomy-engine/plans/v0.1.md
-    - docs/proposals/taxonomy-engine/plans/v0.1/11-follow-up-out-of-scope.md
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/schema/diagnostic.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/validate/index.ts
-    - packages/taxonomy-engine/src/ref/parser.ts
-    - packages/taxonomy-engine/src/ref/resolver.ts
-    - packages/taxonomy-engine/src/registry/index.ts
-    - packages/taxonomy-engine/src/codegen/index.ts
-    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding.test.ts
-    - packages/cli/src/commands/taxonomy.test.ts
 status: historical-self-review
 date: 2026-07-06
 part_of: taxonomy-engine
 role: v0-1-self-review
+sources:
+  - docs/proposals/taxonomy-engine/plans/v0.1.md
+  - docs/proposals/taxonomy-engine/plans/v0.1/11-follow-up-out-of-scope.md
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/schema/diagnostic.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/validate/index.ts
+  - packages/taxonomy-engine/src/ref/parser.ts
+  - packages/taxonomy-engine/src/ref/resolver.ts
+  - packages/taxonomy-engine/src/registry/index.ts
+  - packages/taxonomy-engine/src/codegen/index.ts
+  - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding.test.ts
+  - packages/cli/src/commands/taxonomy.test.ts
 ---
 
 # Taxonomy Engine v0.1 — Self-Review 결과

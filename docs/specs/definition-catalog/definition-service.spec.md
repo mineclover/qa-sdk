@@ -19,17 +19,17 @@ def:
       type: depends_on
     - target: definition-service-sync
       type: refs
-  sources:
-    - packages/definition-service/src/modules/docs/docs.service.ts
-    - packages/definition-service/src/modules/docs/docs.service.test.ts
-    - packages/definition-service/src/modules/graph/graph.service.ts
-    - packages/definition-service/src/modules/sync/sync.service.ts
-    - packages/definition-service/src/db/schema.ts
-    - packages/definition-service/src/stores/doc-store.ts
-    - packages/definition-data-source/src/factory.ts
-    - packages/definition-data-source/src/local-data-source.ts
-    - packages/definition-data-source/src/server-data-source.ts
-    - packages/cli/src/commands/def.ts
+sources:
+  - packages/definition-service/src/modules/docs/docs.service.ts
+  - packages/definition-service/src/modules/docs/docs.service.test.ts
+  - packages/definition-service/src/modules/graph/graph.service.ts
+  - packages/definition-service/src/modules/sync/sync.service.ts
+  - packages/definition-service/src/db/schema.ts
+  - packages/definition-service/src/stores/doc-store.ts
+  - packages/definition-data-source/src/factory.ts
+  - packages/definition-data-source/src/local-data-source.ts
+  - packages/definition-data-source/src/server-data-source.ts
+  - packages/cli/src/commands/def.ts
 ---
 
 # Definition Service — 문서 카탈로그 API 서비스

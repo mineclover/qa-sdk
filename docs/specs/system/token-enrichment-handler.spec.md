@@ -11,12 +11,12 @@ def:
   links:
     - target: auth-permission-integration
       type: refines
-  sources:
-    - packages/permission-engine/src/token-enrichment.ts
-    - packages/permission-engine/src/user-permission-engine.ts
-    - packages/permission-engine/src/role-registry.ts
-    - packages/permission-engine/src/permission-version.ts
-    - packages/permission-engine/src/auth-integration.test.ts
+sources:
+  - packages/permission-engine/src/token-enrichment.ts
+  - packages/permission-engine/src/user-permission-engine.ts
+  - packages/permission-engine/src/role-registry.ts
+  - packages/permission-engine/src/permission-version.ts
+  - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # TokenEnrichmentHandler

@@ -18,12 +18,12 @@ def:
       type: depends_on
     - target: resource-policy-store-rls
       type: depends_on
-  sources:
-    - packages/resource-policy-store/src/factory.test.ts
-    - packages/resource-policy-store/src/port-contract.test.ts
-    - packages/resource-policy-store/src/e2e-integration.test.ts
-    - packages/resource-policy-store/src/pg/rls-policy.test.ts
-    - packages/resource-policy-store/src/pg/rls-aware-adapter.test.ts
+sources:
+  - packages/resource-policy-store/src/factory.test.ts
+  - packages/resource-policy-store/src/port-contract.test.ts
+  - packages/resource-policy-store/src/e2e-integration.test.ts
+  - packages/resource-policy-store/src/pg/rls-policy.test.ts
+  - packages/resource-policy-store/src/pg/rls-aware-adapter.test.ts
 ---
 
 # resource-policy-store validation

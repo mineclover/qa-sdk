@@ -10,19 +10,19 @@ def:
   aspect: migration
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/diff/index.ts
-    - packages/taxonomy-engine/src/migration/index.ts
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/__tests__/unit/diff-semver.test.ts
-    - packages/taxonomy-engine/__tests__/unit/migration.test.ts
-    - packages/cli/src/commands/taxonomy/diff.ts
-    - packages/cli/src/commands/taxonomy/migration.ts
-    - packages/cli/src/commands/taxonomy.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: semver-migration
+sources:
+  - packages/taxonomy-engine/src/diff/index.ts
+  - packages/taxonomy-engine/src/migration/index.ts
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/__tests__/unit/diff-semver.test.ts
+  - packages/taxonomy-engine/__tests__/unit/migration.test.ts
+  - packages/cli/src/commands/taxonomy/diff.ts
+  - packages/cli/src/commands/taxonomy/migration.ts
+  - packages/cli/src/commands/taxonomy.test.ts
 ---
 
 # Semver + Migration — 변경 영향도 분류와 이전 계획

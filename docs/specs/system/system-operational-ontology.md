@@ -17,20 +17,20 @@ def:
       type: refs
     - target: system-packages
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - scripts/report-package-surfaces.mjs
-    - packages/operational-ontology/package.json
-    - packages/operational-ontology/src/index.ts
-    - packages/operational-ontology/src/schema.ts
-    - packages/operational-ontology/src/runtime.ts
-    - packages/operational-ontology/src/projectors.ts
-    - packages/operational-ontology/src/programming-artifacts.ts
-    - packages/operational-ontology/src/pack.test.ts
-    - packages/operational-ontology/src/programming-artifacts.test.ts
-    - packages/operational-ontology-web/package.json
-    - packages/operational-ontology-web/src/main.ts
-    - packages/operational-ontology-web/scripts/static-smoke.mjs
+sources:
+  - scripts/package-surfaces.mjs
+  - scripts/report-package-surfaces.mjs
+  - packages/operational-ontology/package.json
+  - packages/operational-ontology/src/index.ts
+  - packages/operational-ontology/src/schema.ts
+  - packages/operational-ontology/src/runtime.ts
+  - packages/operational-ontology/src/projectors.ts
+  - packages/operational-ontology/src/programming-artifacts.ts
+  - packages/operational-ontology/src/pack.test.ts
+  - packages/operational-ontology/src/programming-artifacts.test.ts
+  - packages/operational-ontology-web/package.json
+  - packages/operational-ontology-web/src/main.ts
+  - packages/operational-ontology-web/scripts/static-smoke.mjs
 ---
 
 # Operational Ontology Capability

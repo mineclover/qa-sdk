@@ -13,12 +13,12 @@ def:
   links:
     - target: infra-logger-spec
       type: refines
-  sources:
-    - packages/logger/src/logger.ts
-    - packages/logger/src/masking.ts
-    - packages/logger/src/transport/http.ts
-    - packages/logger/src/transport/ingest-forwarder.test.ts
-    - packages/logger/src/transport/ingest-forwarder.e2e.test.ts
+sources:
+  - packages/logger/src/logger.ts
+  - packages/logger/src/masking.ts
+  - packages/logger/src/transport/http.ts
+  - packages/logger/src/transport/ingest-forwarder.test.ts
+  - packages/logger/src/transport/ingest-forwarder.e2e.test.ts
 ---
 
 # 로거 런타임 규칙

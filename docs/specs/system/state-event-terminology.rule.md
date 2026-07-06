@@ -18,16 +18,16 @@ def:
       type: traces_to
     - target: responsibility-closure-harness
       type: traces_to
-  sources:
-    - packages/definition-catalog/src/state-model.ts
-    - packages/definition-catalog/src/state-model.test.ts
-    - packages/definition-catalog/src/harness-tracker.ts
-    - packages/definition-catalog/src/harness-machines.test.ts
-    - packages/work-domain/src/gate-fsm.ts
-    - packages/work-domain/src/gate-fsm.test.ts
-    - packages/permission-engine/src/resource-policy/state.ts
-    - packages/permission-engine/src/resource-policy/state.test.ts
-    - packages/event-catalog/src/prefix-mapping.ts
+sources:
+  - packages/definition-catalog/src/state-model.ts
+  - packages/definition-catalog/src/state-model.test.ts
+  - packages/definition-catalog/src/harness-tracker.ts
+  - packages/definition-catalog/src/harness-machines.test.ts
+  - packages/work-domain/src/gate-fsm.ts
+  - packages/work-domain/src/gate-fsm.test.ts
+  - packages/permission-engine/src/resource-policy/state.ts
+  - packages/permission-engine/src/resource-policy/state.test.ts
+  - packages/event-catalog/src/prefix-mapping.ts
 ---
 
 # State/Event Terminology — 상태와 이벤트 역할 분리 규칙

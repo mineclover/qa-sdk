@@ -15,15 +15,15 @@ def:
       type: constrains
     - target: def-svc-docs-module
       type: constrains
-  sources:
-    - packages/definition-service/src/core/axis-registry.ts
-    - packages/definition-service/src/core/compute-address.ts
-    - packages/definition-service/src/core/doc-versioner.ts
-    - packages/definition-service/src/modules/docs/docs.controller.ts
-    - packages/definition-service/src/modules/graph/graph.service.ts
-    - packages/definition-service/src/sync/reverse-sync.ts
-    - packages/definition-service/src/core/doc-versioner.test.ts
-    - packages/definition-catalog/src/taxonomy.test.ts
+sources:
+  - packages/definition-service/src/core/axis-registry.ts
+  - packages/definition-service/src/core/compute-address.ts
+  - packages/definition-service/src/core/doc-versioner.ts
+  - packages/definition-service/src/modules/docs/docs.controller.ts
+  - packages/definition-service/src/modules/graph/graph.service.ts
+  - packages/definition-service/src/sync/reverse-sync.ts
+  - packages/definition-service/src/core/doc-versioner.test.ts
+  - packages/definition-catalog/src/taxonomy.test.ts
 ---
 # Definition Service — 기술 제약
 

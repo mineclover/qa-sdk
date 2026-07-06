@@ -15,18 +15,18 @@ def:
   links:
     - target: service-definition-standard
       type: refines
-  sources:
-    - docs/specs/system/service-definition-standard.rule.md
-    - docs/specs/system/nest-service-kit.spec.md
-    - docs/specs/definition-catalog/responsibility-closure-harness.spec.md
-    - packages/cli/src/templates/nest-service-template.ts
-    - packages/cli/src/commands/init.ts
-    - packages/cli/src/commands/init.test.ts
-    - packages/cli/src/commands/docs.ts
-    - packages/cli/src/commands/docs.test.ts
-    - packages/nest-service-kit/src/index.ts
-    - packages/nest-service-kit/src/bootstrap.test.ts
-    - packages/nest-service-kit/src/event-envelope.test.ts
+sources:
+  - docs/specs/system/service-definition-standard.rule.md
+  - docs/specs/system/nest-service-kit.spec.md
+  - docs/specs/definition-catalog/responsibility-closure-harness.spec.md
+  - packages/cli/src/templates/nest-service-template.ts
+  - packages/cli/src/commands/init.ts
+  - packages/cli/src/commands/init.test.ts
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/commands/docs.test.ts
+  - packages/nest-service-kit/src/index.ts
+  - packages/nest-service-kit/src/bootstrap.test.ts
+  - packages/nest-service-kit/src/event-envelope.test.ts
 ---
 
 # Service Definition Standard — Use Cases

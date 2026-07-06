@@ -10,21 +10,21 @@ def:
   aspect: cli
   tier: component
   depth: specification
-  sources:
-    - packages/cli/src/commands/taxonomy/index.ts
-    - packages/cli/src/commands/taxonomy/help.ts
-    - packages/cli/src/commands/taxonomy/validate.ts
-    - packages/cli/src/commands/taxonomy/show.ts
-    - packages/cli/src/commands/taxonomy/codegen.ts
-    - packages/cli/src/commands/taxonomy/diff.ts
-    - packages/cli/src/commands/taxonomy/git-diff.ts
-    - packages/cli/src/commands/taxonomy/migration.ts
-    - packages/cli/src/commands/taxonomy/doctor.ts
-    - packages/cli/src/commands/taxonomy.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: cli-commands
+sources:
+  - packages/cli/src/commands/taxonomy/index.ts
+  - packages/cli/src/commands/taxonomy/help.ts
+  - packages/cli/src/commands/taxonomy/validate.ts
+  - packages/cli/src/commands/taxonomy/show.ts
+  - packages/cli/src/commands/taxonomy/codegen.ts
+  - packages/cli/src/commands/taxonomy/diff.ts
+  - packages/cli/src/commands/taxonomy/git-diff.ts
+  - packages/cli/src/commands/taxonomy/migration.ts
+  - packages/cli/src/commands/taxonomy/doctor.ts
+  - packages/cli/src/commands/taxonomy.test.ts
 ---
 
 # CLI Commands Reference

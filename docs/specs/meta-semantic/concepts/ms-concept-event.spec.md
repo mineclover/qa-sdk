@@ -17,12 +17,12 @@ def:
       type: traces_to
     - target: system-concepts
       type: traces_to
-  sources:
-    - packages/core/src/types/record.ts
-    - packages/core/src/standards/cloud-events.ts
-    - packages/core/src/standards/cloud-events.test.ts
-    - packages/core/src/pipe/pipe-analyze.ts
-    - packages/core/src/pipe/pipe-analyze.test.ts
+sources:
+  - packages/core/src/types/record.ts
+  - packages/core/src/standards/cloud-events.ts
+  - packages/core/src/standards/cloud-events.test.ts
+  - packages/core/src/pipe/pipe-analyze.ts
+  - packages/core/src/pipe/pipe-analyze.test.ts
 ---
 
 # 이벤트 (Event)

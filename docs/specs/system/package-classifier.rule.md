@@ -15,11 +15,11 @@ def:
       type: constrains
     - target: package-surface-separation-rule
       type: depends_on
-  sources:
-    - packages/package-classifier/src/pkg-classifier.ts
-    - scripts/analyze-package-usage.ts
-    - scripts/check-dependency-boundaries.ts
-    - scripts/package-surfaces.mjs
+sources:
+  - packages/package-classifier/src/pkg-classifier.ts
+  - scripts/analyze-package-usage.ts
+  - scripts/check-dependency-boundaries.ts
+  - scripts/package-surfaces.mjs
 ---
 
 # package-classifier — Consumption Rule

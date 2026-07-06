@@ -10,17 +10,17 @@ def:
   aspect: implementation_plan
   tier: component
   depth: validation
-  sources:
-    - packages/taxonomy-engine/package.json
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-schema.test.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
-    - packages/cli/src/commands/taxonomy/validate.ts
-    - packages/taxonomy-web/package.json
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-regression-policy
+sources:
+  - packages/taxonomy-engine/package.json
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-schema.test.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
+  - packages/cli/src/commands/taxonomy/validate.ts
+  - packages/taxonomy-web/package.json
 ---
 
 # Taxonomy Engine v0.8 — 회귀 정책

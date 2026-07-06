@@ -19,13 +19,13 @@ def:
       type: traces_to
     - target: drizzle-orm-convention
       type: depends_on
-  sources:
-    - packages/test-scenario-store/package.json
-    - packages/test-scenario-store/src/index.ts
-    - packages/test-scenario-store/src/store.ts
-    - packages/test-scenario-store/src/store.test.ts
-    - packages/test-scenario-store/src/types.ts
-    - packages/test-scenario-store/src/db/schema.ts
+sources:
+  - packages/test-scenario-store/package.json
+  - packages/test-scenario-store/src/index.ts
+  - packages/test-scenario-store/src/store.ts
+  - packages/test-scenario-store/src/store.test.ts
+  - packages/test-scenario-store/src/types.ts
+  - packages/test-scenario-store/src/db/schema.ts
 ---
 
 # test-scenario-store — 시나리오 B 좌표 레지스트리

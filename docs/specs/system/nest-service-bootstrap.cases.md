@@ -13,9 +13,9 @@ def:
   links:
     - target: nest-service-bootstrap
       type: refines
-  sources:
-    - packages/nest-service-kit/src/bootstrap.ts
-    - packages/nest-service-kit/src/bootstrap.test.ts
+sources:
+  - packages/nest-service-kit/src/bootstrap.ts
+  - packages/nest-service-kit/src/bootstrap.test.ts
 ---
 
 # Nest Service Bootstrap — Use Cases

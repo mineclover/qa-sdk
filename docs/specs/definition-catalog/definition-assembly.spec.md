@@ -18,13 +18,13 @@ def:
       type: refines
     - target: definition-extraction
       type: depends_on
-  sources:
-    - packages/definition-catalog/src/assemble.ts
-    - packages/definition-catalog/src/assemble.test.ts
-    - packages/definition-catalog/src/extract.ts
-    - packages/definition-catalog/src/concern.ts
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/registry.ts
+sources:
+  - packages/definition-catalog/src/assemble.ts
+  - packages/definition-catalog/src/assemble.test.ts
+  - packages/definition-catalog/src/extract.ts
+  - packages/definition-catalog/src/concern.ts
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/registry.ts
 ---
 # Definition Assembly — 문서 조립
 

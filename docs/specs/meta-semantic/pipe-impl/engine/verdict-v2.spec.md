@@ -16,7 +16,7 @@ def:
       type: depends_on
     - target: meta-semantic-scope
       type: depends_on
-  source: packages/core/src/pipe/verdict-v2.ts
+source: packages/core/src/pipe/verdict-v2.ts
 ---
 
 # VerdictReport v2 — PipeGraph 기반 판정

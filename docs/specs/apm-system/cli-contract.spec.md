@@ -17,15 +17,15 @@ def:
       type: depends_on
     - target: git-utils
       type: depends_on
-  sources:
-    - packages/cli/src/index.ts
-    - packages/cli/src/command-groups/root.commands.ts
-    - packages/cli/src/commands/codegen.ts
-    - packages/cli/src/commands/flow.ts
-    - packages/cli/src/commands/quality.ts
-    - packages/cli/src/commands/ingest.ts
-    - packages/cli/src/commands/codegen.test.ts
-    - packages/cli/src/scenarios.e2e.test.ts
+sources:
+  - packages/cli/src/index.ts
+  - packages/cli/src/command-groups/root.commands.ts
+  - packages/cli/src/commands/codegen.ts
+  - packages/cli/src/commands/flow.ts
+  - packages/cli/src/commands/quality.ts
+  - packages/cli/src/commands/ingest.ts
+  - packages/cli/src/commands/codegen.test.ts
+  - packages/cli/src/scenarios.e2e.test.ts
 ---
 # QA-SDK CLI 계약
 

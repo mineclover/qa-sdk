@@ -13,14 +13,14 @@ def:
   links:
     - target: work-domain-quality-bundle
       type: traces_to
-  sources:
-    - packages/work-domain/src/index.ts
-    - packages/work-domain/src/registry.ts
-    - packages/work-domain/src/quality-gates.ts
-    - packages/work-domain/src/mapping.ts
-    - packages/work-domain/src/classify.ts
-    - packages/work-domain/src/work-domain.test.ts
-    - packages/test-types/src/work-domain-data.ts
+sources:
+  - packages/work-domain/src/index.ts
+  - packages/work-domain/src/registry.ts
+  - packages/work-domain/src/quality-gates.ts
+  - packages/work-domain/src/mapping.ts
+  - packages/work-domain/src/classify.ts
+  - packages/work-domain/src/work-domain.test.ts
+  - packages/test-types/src/work-domain-data.ts
 ---
 
 # work-domain — 작업 유형 분류 체계

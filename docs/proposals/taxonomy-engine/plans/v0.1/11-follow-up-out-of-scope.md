@@ -10,26 +10,26 @@ def:
   aspect: implementation_plan
   tier: component
   depth: implementation
-  sources:
-    - docs/proposals/taxonomy-engine/plans/v0.1.md
-    - packages/taxonomy-engine/package.json
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/src/registry/index.ts
-    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding-lesson-builder.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding-dkg.test.ts
-    - packages/cli/src/commands/taxonomy/index.ts
-    - packages/cli/src/command-groups/taxonomy.commands.ts
-    - packages/cli/src/commands/taxonomy.test.ts
-    - packages/taxonomy-web/package.json
-    - scripts/taxonomy-web-build-data.mjs
-    - scripts/package-surfaces.mjs
-    - docs/specs/system/package-surface-separation.rule.md
-    - docs/specs/system/taxonomy-boundaries.spec.md
 status: historical-plan-with-open-followups
 date: 2026-07-06
 part_of: taxonomy-engine
 role: v0-1-follow-up-boundary
+sources:
+  - docs/proposals/taxonomy-engine/plans/v0.1.md
+  - packages/taxonomy-engine/package.json
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/src/registry/index.ts
+  - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-lesson-builder.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-dkg.test.ts
+  - packages/cli/src/commands/taxonomy/index.ts
+  - packages/cli/src/command-groups/taxonomy.commands.ts
+  - packages/cli/src/commands/taxonomy.test.ts
+  - packages/taxonomy-web/package.json
+  - scripts/taxonomy-web-build-data.mjs
+  - scripts/package-surfaces.mjs
+  - docs/specs/system/package-surface-separation.rule.md
+  - docs/specs/system/taxonomy-boundaries.spec.md
 ---
 
 # Taxonomy Engine v0.1 — 후속 (Out of Scope — Open Issues)

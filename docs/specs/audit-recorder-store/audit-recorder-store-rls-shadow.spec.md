@@ -16,9 +16,9 @@ def:
       type: refines
     - target: authorization-ontology-rls-enforcement
       type: implements
-  sources:
-    - packages/audit-recorder-store/src/pg/shadow-recorder.ts
-    - packages/audit-recorder-store/src/pg/shadow-schema.ts
+sources:
+  - packages/audit-recorder-store/src/pg/shadow-recorder.ts
+  - packages/audit-recorder-store/src/pg/shadow-schema.ts
 ---
 
 # audit-recorder-store RLS shadow

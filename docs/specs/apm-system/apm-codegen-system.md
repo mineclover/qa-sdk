@@ -21,11 +21,11 @@ def:
       type: contains
     - target: apm-system
       type: depends_on
-  sources:
-    - packages/cli/src/commands/codegen.ts
-    - packages/cli/src/scenarios.e2e.test.ts
-    - packages/codegen-core/src/index.ts
-    - packages/snapshot-io/src/index.ts
+sources:
+  - packages/cli/src/commands/codegen.ts
+  - packages/cli/src/scenarios.e2e.test.ts
+  - packages/codegen-core/src/index.ts
+  - packages/snapshot-io/src/index.ts
 ---
 
 # APM 코드젠 그룹

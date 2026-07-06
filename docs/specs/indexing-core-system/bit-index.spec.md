@@ -13,7 +13,7 @@ def:
   links:
     - target: indexing-core-system
       type: refines
-  source: packages/bit-index/src/index.ts
+source: packages/bit-index/src/index.ts
 ---
 
 # bit-index — 차원별 bit-packing 인덱스

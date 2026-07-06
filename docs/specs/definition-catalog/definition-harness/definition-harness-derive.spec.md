@@ -13,11 +13,6 @@ def:
   layer: operation
   svc: definition-service
   tags: [runtime, observability, structural, cross-scope]
-  sources:
-    - packages/definition-catalog/src/harness-derive.ts
-    - packages/definition-catalog/src/harness-derive.test.ts
-    - packages/definition-catalog/src/state-model.ts
-    - packages/definition-catalog/src/harness-machines.ts
   links:
     - target: definition-harness
       type: refines
@@ -25,6 +20,11 @@ def:
       type: depends_on
     - target: spec-verification-system
       type: depends_on
+sources:
+  - packages/definition-catalog/src/harness-derive.ts
+  - packages/definition-catalog/src/harness-derive.test.ts
+  - packages/definition-catalog/src/state-model.ts
+  - packages/definition-catalog/src/harness-machines.ts
 ---
 # Harness Derive — 자동 상태 파생
 

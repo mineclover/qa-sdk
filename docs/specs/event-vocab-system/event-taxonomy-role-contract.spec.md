@@ -16,12 +16,12 @@ def:
       type: depends_on
     - target: service-event-adoption-spec
       type: constrains
-  sources:
-    - packages/event-catalog/src/registry.ts
-    - packages/event-catalog/src/prefix-mapping.ts
-    - packages/registry-service/src/core/seed-events.ts
-    - packages/registry-service/src/modules/events/event-catalog.service.ts
-    - packages/registry-service/src/modules/events/event.controller.test.ts
+sources:
+  - packages/event-catalog/src/registry.ts
+  - packages/event-catalog/src/prefix-mapping.ts
+  - packages/registry-service/src/core/seed-events.ts
+  - packages/registry-service/src/modules/events/event-catalog.service.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Event Taxonomy Role Contract

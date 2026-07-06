@@ -17,16 +17,16 @@ def:
       type: depends_on
     - target: observability-taxonomy
       type: refines
-  sources:
-    - packages/event-catalog/src/prefix-mapping.ts
-    - packages/event-catalog/src/auto-track.ts
-    - packages/event-catalog/src/auto-track.contract.test.ts
-    - docs/specs/meta-semantic/concepts/ms-concept-data-facets.spec.md
-    - packages/core/src/meta-semantic/ir-types.ts
-    - packages/core/src/pipe/pipe-lineage.ts
-    - packages/core/src/pipe/data-contract.ts
-    - packages/definition-catalog/src/types.ts
-    - packages/definition-catalog/src/impact.ts
+sources:
+  - packages/event-catalog/src/prefix-mapping.ts
+  - packages/event-catalog/src/auto-track.ts
+  - packages/event-catalog/src/auto-track.contract.test.ts
+  - docs/specs/meta-semantic/concepts/ms-concept-data-facets.spec.md
+  - packages/core/src/meta-semantic/ir-types.ts
+  - packages/core/src/pipe/pipe-lineage.ts
+  - packages/core/src/pipe/data-contract.ts
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/impact.ts
 ---
 
 # 앱 데이터 관측 3축 체계 — 이벤트 × 패싯 × 데이터 분류

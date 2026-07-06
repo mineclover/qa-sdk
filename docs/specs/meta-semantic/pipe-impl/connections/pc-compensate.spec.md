@@ -16,19 +16,18 @@ def:
       type: traces_to
     - target: pipe-types
       type: traces_to
-  sources:
-    - packages/core/src/types/pipe-spec.ts
-    - packages/core/src/pipe/pipe-path.ts
-    - packages/core/src/pipe/pipe-path.test.ts
-    - packages/core/src/pipe/pipe-validate.ts
-    - packages/core/src/pipe/pipe-validate.test.ts
-    - packages/core/src/pipe/pipe-simulate.ts
-    - packages/core/src/pipe/pipe-simulate.test.ts
-    - packages/core/src/pipe/pipe-interpret.ts
-    - packages/core/src/pipe/pipe-interpret.test.ts
-    - packages/core/src/pipe/pipe-endpoint.ts
-    - packages/core/src/pipe/pipe-endpoint.test.ts
-
+sources:
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/pipe/pipe-path.ts
+  - packages/core/src/pipe/pipe-path.test.ts
+  - packages/core/src/pipe/pipe-validate.ts
+  - packages/core/src/pipe/pipe-validate.test.ts
+  - packages/core/src/pipe/pipe-simulate.ts
+  - packages/core/src/pipe/pipe-simulate.test.ts
+  - packages/core/src/pipe/pipe-interpret.ts
+  - packages/core/src/pipe/pipe-interpret.test.ts
+  - packages/core/src/pipe/pipe-endpoint.ts
+  - packages/core/src/pipe/pipe-endpoint.test.ts
 ---
 
 # ConnectionKind: compensate — 보상 롤백

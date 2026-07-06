@@ -10,24 +10,24 @@ def:
   aspect: proposal_design
   tier: system
   depth: specification
-  sources:
-    - docs/specs/data-structure-profile/data-structure-profile-validation.spec.md
-    - docs/specs/data-structure-profile/data-structure-profile-system.test.md
-    - packages/data-structure-profile/src/validate.ts
-    - packages/data-structure-profile/src/dpm.ts
-    - packages/data-structure-profile/src/adapters.ts
-    - packages/data-structure-profile/src/cli-runner.ts
-    - packages/data-structure-profile/src/profile.test.ts
-    - packages/data-structure-profile/src/cli-runner.test.ts
-    - docs/proposals/data-structure-profile/fixtures/expected-validation-report.json
-    - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-validation-report.json
-    - scripts/data-structure-profile-bridge-smoke.mjs
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
 role: validation-and-diagnostics
 supersedes: -
 superseded_by: -
+sources:
+  - docs/specs/data-structure-profile/data-structure-profile-validation.spec.md
+  - docs/specs/data-structure-profile/data-structure-profile-system.test.md
+  - packages/data-structure-profile/src/validate.ts
+  - packages/data-structure-profile/src/dpm.ts
+  - packages/data-structure-profile/src/adapters.ts
+  - packages/data-structure-profile/src/cli-runner.ts
+  - packages/data-structure-profile/src/profile.test.ts
+  - packages/data-structure-profile/src/cli-runner.test.ts
+  - docs/proposals/data-structure-profile/fixtures/expected-validation-report.json
+  - docs/proposals/data-structure-profile/fixtures/expected-customer-orders-validation-report.json
+  - scripts/data-structure-profile-bridge-smoke.mjs
 ---
 
 # Validation And Diagnostics

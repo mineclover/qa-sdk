@@ -11,18 +11,18 @@ def:
   links:
     - target: guides-system
       type: refines
-  sources:
-    - packages/definition-catalog/src/vocabulary.ts
-    - packages/definition-catalog/src/taxonomy.ts
-    - packages/definition-catalog/src/taxonomy.test.ts
-    - packages/core/src/types/record.ts
-    - packages/core/src/types/envelope.ts
-    - packages/core/src/coordinates/address-context-schema.ts
-    - packages/core/src/lib/clock.ts
-    - packages/core/src/lib/clock.test.ts
-    - packages/context/src/qa-context.ts
-    - packages/logger/src/logger.ts
-    - packages/cli/src/commands/dkg.ts
+sources:
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/taxonomy.test.ts
+  - packages/core/src/types/record.ts
+  - packages/core/src/types/envelope.ts
+  - packages/core/src/coordinates/address-context-schema.ts
+  - packages/core/src/lib/clock.ts
+  - packages/core/src/lib/clock.test.ts
+  - packages/context/src/qa-context.ts
+  - packages/logger/src/logger.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # QA-SDK 개발 컨벤션
 

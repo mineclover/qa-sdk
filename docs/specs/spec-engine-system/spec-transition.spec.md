@@ -13,7 +13,7 @@ def:
   links:
     - target: spec-architecture-system
       type: refines
-  source: packages/spec-transition/src/index.ts
+source: packages/spec-transition/src/index.ts
 ---
 
 # spec-transition — Transition Spec DSL

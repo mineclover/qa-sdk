@@ -19,13 +19,13 @@ def:
       type: depends_on
     - target: event-intent-definition-rule
       type: depends_on
-  sources:
-    - packages/nest-service-kit/src/index.ts
-    - packages/nest-service-kit/src/bootstrap.ts
-    - packages/nest-service-kit/src/event-envelope.ts
-    - packages/nest-service-kit/src/ports.ts
-    - packages/nest-service-kit/src/bootstrap.test.ts
-    - packages/nest-service-kit/src/event-envelope.test.ts
+sources:
+  - packages/nest-service-kit/src/index.ts
+  - packages/nest-service-kit/src/bootstrap.ts
+  - packages/nest-service-kit/src/event-envelope.ts
+  - packages/nest-service-kit/src/ports.ts
+  - packages/nest-service-kit/src/bootstrap.test.ts
+  - packages/nest-service-kit/src/event-envelope.test.ts
 ---
 
 # Nest Service Kit — Consumption Rule

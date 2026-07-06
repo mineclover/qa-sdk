@@ -15,12 +15,12 @@ def:
       type: refines
     - target: demo-tests-rule
       type: depends_on
-  sources:
-    - packages/demo-tests/src/schema-consistency.test.ts
-    - packages/demo-tests/src/index-meta/invariants.test.ts
-    - packages/demo-tests/src/registry-service-e2e.test.ts
-    - packages/demo-tests/src/permission-engine/scenario.test.ts
-    - packages/demo-tests/src/merge-contract/error-parity.test.ts
+sources:
+  - packages/demo-tests/src/schema-consistency.test.ts
+  - packages/demo-tests/src/index-meta/invariants.test.ts
+  - packages/demo-tests/src/registry-service-e2e.test.ts
+  - packages/demo-tests/src/permission-engine/scenario.test.ts
+  - packages/demo-tests/src/merge-contract/error-parity.test.ts
 ---
 
 # demo-tests — Validation Mapping

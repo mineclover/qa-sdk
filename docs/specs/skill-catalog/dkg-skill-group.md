@@ -23,13 +23,12 @@ def:
       type: contains
     - target: skill-dkg-skill-catalog
       type: contains
-  sources:
-    - packages/demo-dkg-config/src/index.ts
-    - packages/cli/src/commands/dkg.ts
-    - packages/dkg/src/skills/skill-chain.ts
-    - packages/dkg/src/skills/skills-suite.test.ts
-    - docs/specs/dkg-system/dkg-skills-system/dkg-skill-catalog/dkg-skill-catalog-registry.spec.md
-
+sources:
+  - packages/demo-dkg-config/src/index.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/dkg/src/skills/skill-chain.ts
+  - packages/dkg/src/skills/skills-suite.test.ts
+  - docs/specs/dkg-system/dkg-skills-system/dkg-skill-catalog/dkg-skill-catalog-registry.spec.md
 ---
 
 

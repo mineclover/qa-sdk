@@ -12,15 +12,15 @@ def:
   lifecycle: approved
   layer: operation
   tags: [metadata, structural, coordinate-cluster]
-  sources:
-    - packages/definition-catalog/src/taxonomy.ts
-    - packages/definition-catalog/src/taxonomy.test.ts
-    - packages/definition-catalog/src/tag-coverage.test.ts
   links:
     - target: definition-frontmatter-metadata-system
       type: refines
     - target: tag-management-spec
       type: depends_on
+sources:
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/taxonomy.test.ts
+  - packages/definition-catalog/src/tag-coverage.test.ts
 ---
 
 # Definition Metadata — `tags`

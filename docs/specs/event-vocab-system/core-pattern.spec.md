@@ -14,11 +14,11 @@ def:
   links:
     - target: graph-spec
       type: traces_to
-  sources:
-    - packages/event-catalog/src/registry.ts
-    - packages/event-catalog/src/types.ts
-    - packages/event-catalog/src/index.test.ts
-    - packages/registry-service/src/core/seed-events.ts
+sources:
+  - packages/event-catalog/src/registry.ts
+  - packages/event-catalog/src/types.ts
+  - packages/event-catalog/src/index.test.ts
+  - packages/registry-service/src/core/seed-events.ts
 ---
 
 # Event Registry Core Pattern v1

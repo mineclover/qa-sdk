@@ -28,9 +28,9 @@ def:
       type: refs
     - target: scaffold-cache-key-dsl
       type: refs
-  sources:
-    - packages/architecture-schematics/package.json
-    - packages/architecture-schematics/src/index.ts
+sources:
+  - packages/architecture-schematics/package.json
+  - packages/architecture-schematics/src/index.ts
 ---
 
 # scaffold system

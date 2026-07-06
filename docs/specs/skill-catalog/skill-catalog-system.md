@@ -24,11 +24,10 @@ def:
       type: contains
     - target: governance-skill-group
       type: contains
-  sources:
-    - scripts/sync-skills.sh
-    - packages/cli/src/skills-workflows.test.ts
-    - skills/def-context/SKILL.md
-
+sources:
+  - scripts/sync-skills.sh
+  - packages/cli/src/skills-workflows.test.ts
+  - skills/def-context/SKILL.md
 ---
 
 ## 목적 ^purpose

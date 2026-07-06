@@ -10,19 +10,19 @@ def:
   aspect: decision_sync
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-decision-bridge/src/decision-file.ts
-    - packages/taxonomy-decision-bridge/src/resolve-link.ts
-    - packages/taxonomy-decision-bridge/src/sync.ts
-    - packages/taxonomy-decision-bridge/__tests__/resolve-link.test.ts
-    - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
-    - packages/cli/src/commands/decision/index.ts
-    - packages/cli/src/commands/decision/sync.ts
-    - packages/cli/src/commands/decision.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: decision-sync
+sources:
+  - packages/taxonomy-decision-bridge/src/decision-file.ts
+  - packages/taxonomy-decision-bridge/src/resolve-link.ts
+  - packages/taxonomy-decision-bridge/src/sync.ts
+  - packages/taxonomy-decision-bridge/__tests__/resolve-link.test.ts
+  - packages/taxonomy-decision-bridge/__tests__/sync.test.ts
+  - packages/cli/src/commands/decision/index.ts
+  - packages/cli/src/commands/decision/sync.ts
+  - packages/cli/src/commands/decision.test.ts
 ---
 
 # Decision Sync — taxonomy entry와 decision markdown 동기화

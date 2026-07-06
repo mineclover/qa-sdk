@@ -15,12 +15,12 @@ def:
       type: refines
     - target: apm-system
       type: depends_on
-  sources:
-    - packages/spec-schema/src/schema.test.ts
-    - packages/demo-snapshot/src/event-schema.test.ts
-    - packages/core/src/coordinates/address-context-schema.test.ts
-    - packages/ingest-server/src/lib/enrich-address-context.test.ts
-    - packages/ingest-server/src/stores/d1-record-store.test.ts
+sources:
+  - packages/spec-schema/src/schema.test.ts
+  - packages/demo-snapshot/src/event-schema.test.ts
+  - packages/core/src/coordinates/address-context-schema.test.ts
+  - packages/ingest-server/src/lib/enrich-address-context.test.ts
+  - packages/ingest-server/src/stores/d1-record-store.test.ts
 ---
 
 # APM Schema — 소비자 기대 시나리오

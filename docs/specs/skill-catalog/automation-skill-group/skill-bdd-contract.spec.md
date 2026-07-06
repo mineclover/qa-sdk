@@ -15,15 +15,14 @@ def:
       type: depends_on
     - target: skill-spec-lifecycle
       type: depends_on
-  sources:
-    - skills/bdd-contract/SKILL.md
-    - docs/specs/bdd-system/bdd-contract-system.spec.md
-    - docs/specs/bdd-system/bdd-contract-cli.spec.md
-    - docs/specs/bdd-system/bdd-contract-cli.rule.md
-    - packages/cli/src/commands/docs.ts
-    - packages/cli/src/lib/docs-control-plane/bdd-contract-extract.ts
-    - docs/proposals/ai-dlc-dspy-harness/04-bdd-contract-model.md
-
+sources:
+  - skills/bdd-contract/SKILL.md
+  - docs/specs/bdd-system/bdd-contract-system.spec.md
+  - docs/specs/bdd-system/bdd-contract-cli.spec.md
+  - docs/specs/bdd-system/bdd-contract-cli.rule.md
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/lib/docs-control-plane/bdd-contract-extract.ts
+  - docs/proposals/ai-dlc-dspy-harness/04-bdd-contract-model.md
 ---
 
 # Skill — bdd-contract

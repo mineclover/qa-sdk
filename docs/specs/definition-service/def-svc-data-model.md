@@ -13,8 +13,8 @@ def:
   links:
     - target: definition-service-system
       type: refines
-  sources:
-    - packages/definition-service/src/db/schema.ts
+sources:
+  - packages/definition-service/src/db/schema.ts
 ---
 # Definition Service — 데이터 모델
 

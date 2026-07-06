@@ -29,13 +29,13 @@ def:
       type: contains
     - target: meta-semantic-system
       type: depends_on
-  sources:
-    - packages/core/src/meta-semantic/ir-types.ts
-    - packages/core/src/meta-semantic/ir-types.test.ts
-    - packages/core/src/meta-semantic/ir-validate.ts
-    - packages/core/src/meta-semantic/ir-validate.test.ts
-    - packages/core/src/meta-semantic/ir-rule-validation.test.ts
-    - packages/core/src/meta-semantic/ir-scenario.test.ts
+sources:
+  - packages/core/src/meta-semantic/ir-types.ts
+  - packages/core/src/meta-semantic/ir-types.test.ts
+  - packages/core/src/meta-semantic/ir-validate.ts
+  - packages/core/src/meta-semantic/ir-validate.test.ts
+  - packages/core/src/meta-semantic/ir-rule-validation.test.ts
+  - packages/core/src/meta-semantic/ir-scenario.test.ts
 ---
 
 # Meta-Semantic IR — 3종 중간 표현 모델

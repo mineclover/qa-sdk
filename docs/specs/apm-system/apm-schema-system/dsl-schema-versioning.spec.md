@@ -13,13 +13,13 @@ def:
   links:
     - target: apm-schema-system
       type: refines
-  sources:
-    - packages/demo-snapshot/src/demo-snapshot.ts
-    - packages/demo-snapshot/src/demo-snapshot.test.ts
-    - packages/demo-snapshot/src/__tests__/catalog-validation.test.ts
-    - packages/demo-types/src/index.ts
-    - packages/demo-types/src/lifecycle.test.ts
-    - packages/codegen-core/src/catalog-typescript.ts
+sources:
+  - packages/demo-snapshot/src/demo-snapshot.ts
+  - packages/demo-snapshot/src/demo-snapshot.test.ts
+  - packages/demo-snapshot/src/__tests__/catalog-validation.test.ts
+  - packages/demo-types/src/index.ts
+  - packages/demo-types/src/lifecycle.test.ts
+  - packages/codegen-core/src/catalog-typescript.ts
 ---
 
 # DSL 스키마 버전 정책

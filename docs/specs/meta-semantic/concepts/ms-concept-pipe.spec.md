@@ -15,12 +15,12 @@ def:
       type: traces_to
     - target: ms-concept-data-facets
       type: traces_to
-  sources:
-    - packages/core/src/types/pipe-spec.ts
-    - packages/core/src/pipe/pipe-runtime.ts
-    - packages/core/src/pipe/pipe-runtime.test.ts
-    - packages/core/src/pipe/pipe-validate.ts
-    - packages/core/src/pipe/meta-semantic-integration.test.ts
+sources:
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/pipe/pipe-runtime.ts
+  - packages/core/src/pipe/pipe-runtime.test.ts
+  - packages/core/src/pipe/pipe-validate.ts
+  - packages/core/src/pipe/meta-semantic-integration.test.ts
 ---
 
 # 파이프 (Pipe)

@@ -15,12 +15,12 @@ def:
       type: constrains
     - target: drizzle-orm-convention
       type: depends_on
-  sources:
-    - packages/db-bootstrap/src/connection.ts
-    - packages/db-bootstrap/src/env.ts
-    - packages/db-bootstrap/src/test-fixtures.ts
-    - packages/db-bootstrap/src/connection.test.ts
-    - packages/db-bootstrap/src/test-fixtures.test.ts
+sources:
+  - packages/db-bootstrap/src/connection.ts
+  - packages/db-bootstrap/src/env.ts
+  - packages/db-bootstrap/src/test-fixtures.ts
+  - packages/db-bootstrap/src/connection.test.ts
+  - packages/db-bootstrap/src/test-fixtures.test.ts
 ---
 
 # db-bootstrap — Consumption Rule

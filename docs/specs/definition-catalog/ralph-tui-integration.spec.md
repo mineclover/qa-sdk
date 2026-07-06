@@ -18,7 +18,7 @@ def:
       type: traces_to
     - target: doc-envelope
       type: depends_on
-  source: packages/ralph-tui-integration/src/index.ts
+source: packages/ralph-tui-integration/src/index.ts
 ---
 
 # ralph-tui-integration — ralph-tui 도구 통합

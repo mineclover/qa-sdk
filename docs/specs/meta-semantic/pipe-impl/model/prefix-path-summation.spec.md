@@ -18,16 +18,15 @@ def:
       type: depends_on
     - target: meta-semantic-spacetime-uid
       type: depends_on
-  sources:
-    - packages/core/src/catalog/catalog.types.ts
-    - packages/core/src/catalog/path-summation.ts
-    - packages/core/src/catalog/path-summation.test.ts
-    - packages/core/src/catalog/path-summation-example.test.ts
-    - packages/core/src/pipe/pipe-segment.ts
-    - packages/core/src/pipe/pipe-segment.test.ts
-    - packages/cli/src/commands/prefix-stamp.ts
-    - packages/cli/src/commands/prefix-stamp.test.ts
-
+sources:
+  - packages/core/src/catalog/catalog.types.ts
+  - packages/core/src/catalog/path-summation.ts
+  - packages/core/src/catalog/path-summation.test.ts
+  - packages/core/src/catalog/path-summation-example.test.ts
+  - packages/core/src/pipe/pipe-segment.ts
+  - packages/core/src/pipe/pipe-segment.test.ts
+  - packages/cli/src/commands/prefix-stamp.ts
+  - packages/cli/src/commands/prefix-stamp.test.ts
 ---
 
 # Prefix 경로 합산 — 이벤트 분기의 명시적 표현

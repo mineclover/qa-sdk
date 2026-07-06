@@ -23,17 +23,16 @@ def:
       type: contains
     - target: facet-code-lineage
       type: contains
-  sources:
-    - packages/core/src/data-object/types.ts
-    - packages/core/src/data-object/registry.ts
-    - packages/core/src/data-object/registry.test.ts
-    - packages/core/src/data-object/validate.ts
-    - packages/core/src/data-object/validate.test.ts
-    - packages/core/src/data-object/facet-code-registry.ts
-    - packages/core/src/data-object/facet-code-registry.test.ts
-    - packages/core/src/data-object/lineage-chain.ts
-    - packages/core/src/data-object/lineage-chain.test.ts
-
+sources:
+  - packages/core/src/data-object/types.ts
+  - packages/core/src/data-object/registry.ts
+  - packages/core/src/data-object/registry.test.ts
+  - packages/core/src/data-object/validate.ts
+  - packages/core/src/data-object/validate.test.ts
+  - packages/core/src/data-object/facet-code-registry.ts
+  - packages/core/src/data-object/facet-code-registry.test.ts
+  - packages/core/src/data-object/lineage-chain.ts
+  - packages/core/src/data-object/lineage-chain.test.ts
 ---
 
 # DataObject Binding — 데이터 스키마 ↔ prefix 좌표 바인딩

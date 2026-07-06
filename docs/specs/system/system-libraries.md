@@ -41,14 +41,14 @@ def:
       type: refs
     - target: qa-sdk-core-system
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - docs/specs/system/system-packages.spec.md
-    - docs/specs/system/package-surface-separation.rule.md
-    - packages/weighted-index/package.json
-    - packages/index-meta/package.json
-    - packages/core/package.json
-    - packages/sdk/package.json
+sources:
+  - scripts/package-surfaces.mjs
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/package-surface-separation.rule.md
+  - packages/weighted-index/package.json
+  - packages/index-meta/package.json
+  - packages/core/package.json
+  - packages/sdk/package.json
 ---
 # 런타임 코어 라이브러리 표면
 

@@ -11,9 +11,8 @@ def:
   links:
     - target: infra-skill-group
       type: refines
-  sources:
-    - skills/infra-discover/SKILL.md
-
+sources:
+  - skills/infra-discover/SKILL.md
 ---
 
 # Skill — infra-discover

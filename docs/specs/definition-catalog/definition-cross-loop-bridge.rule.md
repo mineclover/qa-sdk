@@ -15,18 +15,18 @@ def:
   links:
     - target: definition-cross-loop-bridge
       type: refines
-  sources:
-    - packages/definition-catalog/src/cross-loop-bridge.ts
-    - packages/definition-catalog/src/cross-loop-bridge.test.ts
-    - packages/definition-catalog/src/runtime.ts
-    - packages/definition-catalog/src/harness-tracker.ts
-    - packages/work-domain/src/gate-tracker.ts
-    - packages/decision-flow/src/observe.ts
-    - packages/index-meta/src/gate-aware-query.ts
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.ts
-    - packages/convergence/src/metric-registry.ts
-    - packages/event-catalog/src/prefix-mapping.ts
+sources:
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/definition-catalog/src/cross-loop-bridge.test.ts
+  - packages/definition-catalog/src/runtime.ts
+  - packages/definition-catalog/src/harness-tracker.ts
+  - packages/work-domain/src/gate-tracker.ts
+  - packages/decision-flow/src/observe.ts
+  - packages/index-meta/src/gate-aware-query.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.ts
+  - packages/convergence/src/metric-registry.ts
+  - packages/event-catalog/src/prefix-mapping.ts
 ---
 
 # Cross-Loop Bridge — 소비 규칙

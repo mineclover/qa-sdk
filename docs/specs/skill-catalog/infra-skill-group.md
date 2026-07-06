@@ -20,13 +20,12 @@ def:
       type: contains
     - target: skill-catalog-system
       type: depends_on
-  sources:
-    - skills/infra-deploy/SKILL.md
-    - skills/infra-discover/SKILL.md
-    - skills/infra-export/SKILL.md
-    - skills/infra-status/SKILL.md
-    - packages/infra-engine/package.json
-
+sources:
+  - skills/infra-deploy/SKILL.md
+  - skills/infra-discover/SKILL.md
+  - skills/infra-export/SKILL.md
+  - skills/infra-status/SKILL.md
+  - packages/infra-engine/package.json
 ---
 
 # Infra Skill Group

@@ -14,12 +14,12 @@ def:
   links:
     - target: system-libraries
       type: refines
-  sources:
-    - packages/sim-service-catalog/src/index.ts
-    - packages/sim-service-catalog/src/types.ts
-    - packages/sim-service-catalog/src/get-current-topology.ts
-    - packages/sim-service-catalog/src/get-service-version-tag.ts
-    - packages/sim-service-catalog/src/transition-state.ts
+sources:
+  - packages/sim-service-catalog/src/index.ts
+  - packages/sim-service-catalog/src/types.ts
+  - packages/sim-service-catalog/src/get-current-topology.ts
+  - packages/sim-service-catalog/src/get-service-version-tag.ts
+  - packages/sim-service-catalog/src/transition-state.ts
 ---
 
 # sim-service-catalog

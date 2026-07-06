@@ -14,14 +14,14 @@ def:
       type: refines
     - target: browser-runtime-system
       type: refines
-  sources:
-    - packages/logger/src/logger.ts
-    - packages/sdk/src/transport/transport.test.ts
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/lib/enrich-address-context.ts
-    - packages/ingest-server/src/lib/phase-two-worker.ts
-    - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
-    - packages/ingest-server/src/async-worker.e2e.test.ts
+sources:
+  - packages/logger/src/logger.ts
+  - packages/sdk/src/transport/transport.test.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/lib/enrich-address-context.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/sdk-to-ingest.e2e.test.ts
+  - packages/ingest-server/src/async-worker.e2e.test.ts
 ---
 # 데이터 흐름
 

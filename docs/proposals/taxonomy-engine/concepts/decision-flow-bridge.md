@@ -10,21 +10,21 @@ def:
   aspect: decision_flow_bridge
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-decision-bridge/src/decision-file.ts
-    - packages/taxonomy-decision-bridge/src/to-flow-schema.ts
-    - packages/taxonomy-decision-bridge/src/from-flow-schema.ts
-    - packages/taxonomy-decision-bridge/src/index.ts
-    - packages/taxonomy-decision-bridge/__tests__/decision-file.test.ts
-    - packages/taxonomy-decision-bridge/__tests__/to-flow-schema.test.ts
-    - packages/taxonomy-decision-bridge/__tests__/from-flow-schema.test.ts
-    - packages/cli/src/commands/decision/analyze.ts
-    - packages/cli/src/commands/decision/render.ts
-    - packages/cli/src/commands/decision.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: decision-flow-bridge
+sources:
+  - packages/taxonomy-decision-bridge/src/decision-file.ts
+  - packages/taxonomy-decision-bridge/src/to-flow-schema.ts
+  - packages/taxonomy-decision-bridge/src/from-flow-schema.ts
+  - packages/taxonomy-decision-bridge/src/index.ts
+  - packages/taxonomy-decision-bridge/__tests__/decision-file.test.ts
+  - packages/taxonomy-decision-bridge/__tests__/to-flow-schema.test.ts
+  - packages/taxonomy-decision-bridge/__tests__/from-flow-schema.test.ts
+  - packages/cli/src/commands/decision/analyze.ts
+  - packages/cli/src/commands/decision/render.ts
+  - packages/cli/src/commands/decision.test.ts
 ---
 
 # Decision-Flow Bridge — decision markdown과 FlowSchema 변환

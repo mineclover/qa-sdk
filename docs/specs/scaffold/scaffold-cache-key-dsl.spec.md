@@ -16,9 +16,9 @@ def:
       type: refines
     - target: scaffold-openmetadata-storage
       type: depends_on
-  sources:
-    - packages/architecture-schematics/src/governance/cache-key-dsl.ts
-    - packages/architecture-schematics/src/governance/cache-key-dsl.test.ts
+sources:
+  - packages/architecture-schematics/src/governance/cache-key-dsl.ts
+  - packages/architecture-schematics/src/governance/cache-key-dsl.test.ts
 ---
 
 # scaffold cache key DSL

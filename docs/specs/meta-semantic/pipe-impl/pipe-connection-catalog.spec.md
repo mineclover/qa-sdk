@@ -33,15 +33,14 @@ def:
       type: contains
     - target: meta-semantic-system
       type: depends_on
-  sources:
-    - packages/core/src/types/pipe-spec.ts
-    - packages/core/src/pipe/pipe-path.ts
-    - packages/core/src/pipe/pipe-path.test.ts
-    - packages/core/src/pipe/pipe-validate.ts
-    - packages/core/src/pipe/pipe-validate.test.ts
-    - packages/core/src/pipe/pipe-interpret.ts
-    - packages/core/src/pipe/pipe-interpret.test.ts
-
+sources:
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/pipe/pipe-path.ts
+  - packages/core/src/pipe/pipe-path.test.ts
+  - packages/core/src/pipe/pipe-validate.ts
+  - packages/core/src/pipe/pipe-validate.test.ts
+  - packages/core/src/pipe/pipe-interpret.ts
+  - packages/core/src/pipe/pipe-interpret.test.ts
 ---
 
 # ConnectionKind 카탈로그 — 8종 파이프 간 연결

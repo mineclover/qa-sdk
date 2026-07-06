@@ -10,13 +10,13 @@ def:
   aspect: implementation_plan
   tier: component
   depth: implementation
-  sources:
-    - packages/taxonomy-engine/src/diff/index.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-phase-c-diff
+sources:
+  - packages/taxonomy-engine/src/diff/index.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-diff.test.ts
 ---
 
 # Taxonomy Engine v0.8 — Phase C — Diff 신규 kind

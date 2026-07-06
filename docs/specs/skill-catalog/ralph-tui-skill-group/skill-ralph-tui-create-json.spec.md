@@ -13,9 +13,8 @@ def:
       type: refines
     - target: skill-ralph-tui-prd
       type: depends_on
-  sources:
-    - skills/ralph-tui-create-json/SKILL.md
-
+sources:
+  - skills/ralph-tui-create-json/SKILL.md
 ---
 
 

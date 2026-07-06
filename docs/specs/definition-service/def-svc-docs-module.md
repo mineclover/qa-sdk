@@ -19,9 +19,9 @@ def:
       type: depends_on
     - target: def-svc-semantic-grounding-module
       type: depends_on
-  sources:
-    - packages/definition-service/src/modules/docs/docs.service.ts
-    - packages/definition-service/src/stores/doc-store.ts
+sources:
+  - packages/definition-service/src/modules/docs/docs.service.ts
+  - packages/definition-service/src/stores/doc-store.ts
 ---
 # Definition Service — Docs Module
 

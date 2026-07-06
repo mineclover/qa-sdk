@@ -19,9 +19,9 @@ def:
       type: depends_on
     - target: nest-service-port-contract
       type: depends_on
-  sources:
-    - packages/nest-service-kit/src/bootstrap.test.ts
-    - packages/nest-service-kit/src/event-envelope.test.ts
+sources:
+  - packages/nest-service-kit/src/bootstrap.test.ts
+  - packages/nest-service-kit/src/event-envelope.test.ts
 ---
 
 # Nest Service Kit — Validation Mapping

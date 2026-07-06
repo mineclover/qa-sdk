@@ -20,14 +20,14 @@ def:
       type: traces_to
     - target: structural-taxonomy
       type: traces_to
-  sources:
-    - docs/specs/system/status-crosswalk.spec.md
-    - docs/specs/decision-flow/df-taxonomy.spec.md
-    - docs/specs/definition-catalog/definition-taxonomy.spec.md
-    - docs/specs/system/structural-taxonomy.spec.md
-    - packages/decision-flow/src/types.ts
-    - packages/decision-flow/src/vocabulary.ts
-    - packages/decision-flow/src/catalog.ts
+sources:
+  - docs/specs/system/status-crosswalk.spec.md
+  - docs/specs/decision-flow/df-taxonomy.spec.md
+  - docs/specs/definition-catalog/definition-taxonomy.spec.md
+  - docs/specs/system/structural-taxonomy.spec.md
+  - packages/decision-flow/src/types.ts
+  - packages/decision-flow/src/vocabulary.ts
+  - packages/decision-flow/src/catalog.ts
 ---
 
 # PM Taxonomy — delivery 상태 관리 분류 체계

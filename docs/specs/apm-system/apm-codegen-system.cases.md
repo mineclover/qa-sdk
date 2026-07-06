@@ -15,11 +15,11 @@ def:
       type: refines
     - target: apm-system
       type: depends_on
-  sources:
-    - packages/cli/src/scenarios.e2e.test.ts
-    - packages/codegen-core/src/proto.test.ts
-    - packages/codegen-core/src/typescript.test.ts
-    - packages/snapshot-io/scripts/smoke.test.mjs
+sources:
+  - packages/cli/src/scenarios.e2e.test.ts
+  - packages/codegen-core/src/proto.test.ts
+  - packages/codegen-core/src/typescript.test.ts
+  - packages/snapshot-io/scripts/smoke.test.mjs
 ---
 
 # APM Codegen — 소비자 기대 시나리오

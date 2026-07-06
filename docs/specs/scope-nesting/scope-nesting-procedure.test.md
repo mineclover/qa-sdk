@@ -11,7 +11,7 @@ def:
   links:
     - target: scope-nesting-procedure
       type: verifies
-  source: packages/core/src/scope-nesting-mount.test.ts
+source: packages/core/src/scope-nesting-mount.test.ts
 ---
 
 # Scope Nesting 변경 절차 테스트 명세

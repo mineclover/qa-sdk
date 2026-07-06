@@ -12,11 +12,6 @@ def:
   lifecycle: approved
   layer: operation
   tags: [observability, decision]
-  sources:
-    - packages/definition-catalog/src/cross-loop-bridge.ts
-    - packages/definition-catalog/src/cross-loop-bridge.test.ts
-    - packages/definition-catalog/src/harness-tracker.ts
-    - packages/definition-catalog/src/bridge.ts
   links:
     - target: definition-management
       type: refines
@@ -26,6 +21,11 @@ def:
       type: depends_on
     - target: harness-architecture
       type: depends_on
+sources:
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/definition-catalog/src/cross-loop-bridge.test.ts
+  - packages/definition-catalog/src/harness-tracker.ts
+  - packages/definition-catalog/src/bridge.ts
 ---
 
 # Definition Management — 피드백 루프

@@ -10,25 +10,25 @@ def:
   aspect: architecture
   tier: system
   depth: specification
-  sources:
-    - packages/taxonomy-engine/package.json
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/indexer/index.ts
-    - packages/taxonomy-engine/src/query/index.ts
-    - packages/taxonomy-engine/src/ref/parser.ts
-    - packages/taxonomy-engine/src/ref/resolver.ts
-    - packages/taxonomy-engine/src/codegen/index.ts
-    - packages/taxonomy-engine/src/validate/index.ts
-    - packages/taxonomy-engine/src/doctor/index.ts
-    - packages/taxonomy-engine/src/diff/index.ts
-    - packages/cli/src/commands/taxonomy/index.ts
-    - packages/cli/src/commands/taxonomy/shared.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: architecture
+sources:
+  - packages/taxonomy-engine/package.json
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/indexer/index.ts
+  - packages/taxonomy-engine/src/query/index.ts
+  - packages/taxonomy-engine/src/ref/parser.ts
+  - packages/taxonomy-engine/src/ref/resolver.ts
+  - packages/taxonomy-engine/src/codegen/index.ts
+  - packages/taxonomy-engine/src/validate/index.ts
+  - packages/taxonomy-engine/src/doctor/index.ts
+  - packages/taxonomy-engine/src/diff/index.ts
+  - packages/cli/src/commands/taxonomy/index.ts
+  - packages/cli/src/commands/taxonomy/shared.ts
 ---
 
 # Architecture

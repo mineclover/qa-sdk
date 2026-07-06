@@ -12,10 +12,10 @@ def:
   links:
     - target: apm-codegen-system
       type: refines
-  sources:
-    - packages/snapshot-io/src/index.ts
-    - packages/snapshot-io/src/snapshot-io.ts
-    - packages/snapshot-io/scripts/smoke.test.mjs
+sources:
+  - packages/snapshot-io/src/index.ts
+  - packages/snapshot-io/src/snapshot-io.ts
+  - packages/snapshot-io/scripts/smoke.test.mjs
 ---
 # snapshot-io
 

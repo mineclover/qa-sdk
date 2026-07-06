@@ -13,13 +13,6 @@ def:
   layer: operation
   svc: definition-service
   tags: [structural, entry-point]
-  sources:
-    - packages/definition-catalog/src/harness-state-model.ts
-    - packages/definition-catalog/src/harness-tracker.ts
-    - packages/definition-catalog/src/cross-loop-bridge.ts
-    - packages/work-domain/src/gate-fsm.ts
-    - packages/work-domain/src/gate-tracker.ts
-    - packages/cli/src/commands/quality.ts
   links:
     - target: definition-harness
       type: depends_on
@@ -33,6 +26,13 @@ def:
       type: contains
     - target: definition-harness-cli
       type: contains
+sources:
+  - packages/definition-catalog/src/harness-state-model.ts
+  - packages/definition-catalog/src/harness-tracker.ts
+  - packages/definition-catalog/src/cross-loop-bridge.ts
+  - packages/work-domain/src/gate-fsm.ts
+  - packages/work-domain/src/gate-tracker.ts
+  - packages/cli/src/commands/quality.ts
 ---
 
 ## 목적 ^purpose

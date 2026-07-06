@@ -16,7 +16,7 @@ def:
       type: depends_on
     - target: pipe-zoom
       type: depends_on
-  source: packages/viz-core/src/pipe-mermaid.ts
+source: packages/viz-core/src/pipe-mermaid.ts
 ---
 
 # PipeGraph → Mermaid 변환

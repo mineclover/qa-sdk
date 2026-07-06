@@ -10,15 +10,15 @@ def:
   aspect: implementation_plan
   tier: component
   depth: implementation
-  sources:
-    - packages/cli/src/commands/taxonomy/validate.ts
-    - packages/cli/src/commands/taxonomy/show.ts
-    - packages/cli/src/commands/taxonomy/index.ts
-    - packages/cli/src/command-groups/taxonomy.commands.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-phase-d-cli
+sources:
+  - packages/cli/src/commands/taxonomy/validate.ts
+  - packages/cli/src/commands/taxonomy/show.ts
+  - packages/cli/src/commands/taxonomy/index.ts
+  - packages/cli/src/command-groups/taxonomy.commands.ts
 ---
 
 # Taxonomy Engine v0.8 — Phase D — CLI 확장

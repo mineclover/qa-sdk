@@ -12,16 +12,16 @@ def:
   lifecycle: approved
   layer: operation
   tags: [observability, runtime]
-  sources:
-    - packages/definition-catalog/src/address-intent.ts
-    - packages/definition-catalog/src/observe.ts
-    - packages/definition-catalog/src/harness-state-model.ts
-    - packages/definition-catalog/src/address-intent.test.ts
   links:
     - target: definition-mgmt-observability-model
       type: refines
     - target: definition-mgmt-feedback-loop
       type: depends_on
+sources:
+  - packages/definition-catalog/src/address-intent.ts
+  - packages/definition-catalog/src/observe.ts
+  - packages/definition-catalog/src/harness-state-model.ts
+  - packages/definition-catalog/src/address-intent.test.ts
 ---
 # Definition Management — Reachable Path Registry
 

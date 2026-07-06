@@ -15,12 +15,12 @@ def:
       type: depends_on
     - target: df-system
       type: depends_on
-  sources:
-    - packages/cli/src/lib/docs-control-plane/README.md
-    - packages/cli/src/lib/docs-control-plane/graph-traverse.test.ts
-    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
-    - packages/cli/src/commands/docs.test.ts
-    - packages/cli/src/command-groups/docs.commands.ts
+sources:
+  - packages/cli/src/lib/docs-control-plane/README.md
+  - packages/cli/src/lib/docs-control-plane/graph-traverse.test.ts
+  - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
+  - packages/cli/src/commands/docs.test.ts
+  - packages/cli/src/command-groups/docs.commands.ts
 ---
 
 # Document Type Convention — Use Cases

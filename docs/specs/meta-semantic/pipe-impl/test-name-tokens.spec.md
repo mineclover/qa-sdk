@@ -17,12 +17,11 @@ def:
       type: depends_on
     - target: doc-type-convention
       type: implements
-  sources:
-    - packages/core/src/pipe/test-name.ts
-    - packages/core/src/pipe/test-name.test.ts
-    - packages/core/src/pipe/test-tokens.ts
-    - packages/core/src/pipe/test-tokens.test.ts
-
+sources:
+  - packages/core/src/pipe/test-name.ts
+  - packages/core/src/pipe/test-name.test.ts
+  - packages/core/src/pipe/test-tokens.ts
+  - packages/core/src/pipe/test-tokens.test.ts
 ---
 
 # Test Name Tokens — 구조화된 테스트 이름 생성 체계

@@ -13,10 +13,10 @@ def:
   links:
     - target: nest-service-event-envelope
       type: constrains
-  sources:
-    - packages/nest-service-kit/src/event-envelope.ts
-    - packages/nest-service-kit/src/event-envelope.test.ts
-    - packages/nest-service-kit/src/ports.ts
+sources:
+  - packages/nest-service-kit/src/event-envelope.ts
+  - packages/nest-service-kit/src/event-envelope.test.ts
+  - packages/nest-service-kit/src/ports.ts
 ---
 
 # Nest Service Event Envelope — Observability Rule

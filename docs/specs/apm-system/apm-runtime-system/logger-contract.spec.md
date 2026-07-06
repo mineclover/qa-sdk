@@ -13,12 +13,12 @@ def:
   links:
     - target: platform-logger-spec
       type: refines
-  sources:
-    - packages/logger/src/logger.ts
-    - packages/logger/src/config.ts
-    - packages/logger/src/context.ts
-    - packages/logger/src/transport/transport.ts
-    - packages/logger/src/transport/noop.ts
+sources:
+  - packages/logger/src/logger.ts
+  - packages/logger/src/config.ts
+  - packages/logger/src/context.ts
+  - packages/logger/src/transport/transport.ts
+  - packages/logger/src/transport/noop.ts
 ---
 
 # 로거 계약

@@ -19,10 +19,9 @@ def:
       type: depends_on
     - target: skill-def-state
       type: depends_on
-  sources:
-    - skills/def-boundary/SKILL.md
-    - docs/specs/skill-catalog/cli-command-group/skill-cli-def-commands.spec.md
-
+sources:
+  - skills/def-boundary/SKILL.md
+  - docs/specs/skill-catalog/cli-command-group/skill-cli-def-commands.spec.md
 ---
 
 ## 탐색 ^navigation

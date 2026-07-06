@@ -15,12 +15,12 @@ def:
       type: refines
     - target: def-svc-docs-module
       type: depends_on
-  sources:
-    - packages/definition-service/src/modules/graph/graph.module.ts
-    - packages/definition-service/src/modules/graph/graph.controller.ts
-    - packages/definition-service/src/modules/graph/graph.service.ts
-    - packages/definition-service/src/modules/graphql/doc.resolver.ts
-    - packages/definition-service/src/modules/graphql/doc.object.ts
+sources:
+  - packages/definition-service/src/modules/graph/graph.module.ts
+  - packages/definition-service/src/modules/graph/graph.controller.ts
+  - packages/definition-service/src/modules/graph/graph.service.ts
+  - packages/definition-service/src/modules/graphql/doc.resolver.ts
+  - packages/definition-service/src/modules/graphql/doc.object.ts
 ---
 # Definition Service — Graph Module
 

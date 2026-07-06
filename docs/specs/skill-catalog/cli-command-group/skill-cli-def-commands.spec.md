@@ -14,14 +14,13 @@ def:
       type: refines
     - target: claude-skill-group
       type: depends_on
-  sources:
-    - packages/cli/src/commands/def.ts
-    - packages/cli/src/index.ts
-    - packages/definition-data-source/src/local-data-source.ts
-    - packages/definition-service/src/modules/docs/docs.controller.ts
-    - packages/definition-service/src/modules/graph/graph.controller.ts
-    - packages/definition-data-source/src/server-data-source.ts
-
+sources:
+  - packages/cli/src/commands/def.ts
+  - packages/cli/src/index.ts
+  - packages/definition-data-source/src/local-data-source.ts
+  - packages/definition-service/src/modules/docs/docs.controller.ts
+  - packages/definition-service/src/modules/graph/graph.controller.ts
+  - packages/definition-data-source/src/server-data-source.ts
 ---
 
 

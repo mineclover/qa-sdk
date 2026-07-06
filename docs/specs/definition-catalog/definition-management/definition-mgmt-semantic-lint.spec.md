@@ -12,11 +12,6 @@ def:
   lifecycle: approved
   layer: operation
   tags: [observability, structural]
-  sources:
-    - packages/definition-catalog/src/semantic-lint.ts
-    - packages/definition-catalog/src/validate-semantic.test.ts
-    - packages/definition-catalog/src/taxonomy.ts
-    - packages/definition-catalog/src/taxonomy.test.ts
   links:
     - target: definition-management
       type: refines
@@ -30,6 +25,11 @@ def:
       type: depends_on
     - target: scope-nesting-provider-patterns
       type: depends_on
+sources:
+  - packages/definition-catalog/src/semantic-lint.ts
+  - packages/definition-catalog/src/validate-semantic.test.ts
+  - packages/definition-catalog/src/taxonomy.ts
+  - packages/definition-catalog/src/taxonomy.test.ts
 ---
 # Definition Management — Semantic Lint Override
 

@@ -13,9 +13,9 @@ def:
   links:
     - target: apm-runtime-system
       type: refines
-  sources:
-    - packages/pino/src/index.ts
-    - packages/pino/src/index.test.ts
+sources:
+  - packages/pino/src/index.ts
+  - packages/pino/src/index.test.ts
 ---
 
 # @qa-sdk/pino — zero-dependency 구조화 로거

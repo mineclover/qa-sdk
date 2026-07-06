@@ -11,7 +11,7 @@ def:
   links:
     - target: gate-event-bus
       type: verifies
-  source: packages/gate-service/src/adapters/memory-event-bus.test.ts
+source: packages/gate-service/src/adapters/memory-event-bus.test.ts
 ---
 
 ## 목적 ^purpose

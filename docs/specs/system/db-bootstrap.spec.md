@@ -17,15 +17,15 @@ def:
       type: depends_on
     - target: db-bootstrap-rule
       type: traces_to
-  sources:
-    - packages/db-bootstrap/package.json
-    - packages/db-bootstrap/src/index.ts
-    - packages/db-bootstrap/src/connection.ts
-    - packages/db-bootstrap/src/connection.test.ts
-    - packages/db-bootstrap/src/env.ts
-    - packages/db-bootstrap/src/env.test.ts
-    - packages/db-bootstrap/src/test-fixtures.ts
-    - packages/db-bootstrap/src/test-fixtures.test.ts
+sources:
+  - packages/db-bootstrap/package.json
+  - packages/db-bootstrap/src/index.ts
+  - packages/db-bootstrap/src/connection.ts
+  - packages/db-bootstrap/src/connection.test.ts
+  - packages/db-bootstrap/src/env.ts
+  - packages/db-bootstrap/src/env.test.ts
+  - packages/db-bootstrap/src/test-fixtures.ts
+  - packages/db-bootstrap/src/test-fixtures.test.ts
 ---
 
 # db-bootstrap

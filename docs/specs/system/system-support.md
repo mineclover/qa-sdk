@@ -50,15 +50,15 @@ def:
       type: refs
     - target: shared-utility-group
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - docs/specs/system/system-packages.spec.md
-    - docs/specs/system/package-surface-separation.rule.md
-    - packages/resource-policy-store/package.json
-    - packages/audit-recorder-store/package.json
-    - packages/demo-tests/package.json
-    - packages/e2e/package.json
-    - packages/facet-tests/package.json
+sources:
+  - scripts/package-surfaces.mjs
+  - docs/specs/system/system-packages.spec.md
+  - docs/specs/system/package-surface-separation.rule.md
+  - packages/resource-policy-store/package.json
+  - packages/audit-recorder-store/package.json
+  - packages/demo-tests/package.json
+  - packages/e2e/package.json
+  - packages/facet-tests/package.json
 ---
 # 지원 계층
 

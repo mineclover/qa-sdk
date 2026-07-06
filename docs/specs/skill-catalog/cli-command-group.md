@@ -24,13 +24,12 @@ def:
       type: traces_to
     - target: skill-catalog-system
       type: depends_on
-  sources:
-    - packages/cli/src/index.ts
-    - packages/cli/src/commands/def.ts
-    - packages/cli/src/commands/dkg.ts
-    - packages/cli/src/commands/flow.ts
-    - packages/cli/src/commands/dx.ts
-
+sources:
+  - packages/cli/src/index.ts
+  - packages/cli/src/commands/def.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/cli/src/commands/flow.ts
+  - packages/cli/src/commands/dx.ts
 ---
 
 

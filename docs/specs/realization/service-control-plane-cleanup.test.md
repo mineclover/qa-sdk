@@ -12,7 +12,7 @@ def:
       type: verifies
     - target: service-manifest-cleanup-lane
       type: verifies
-  source: packages/cli/src/commands/service.test.ts
+source: packages/cli/src/commands/service.test.ts
 ---
 # Service Control Plane Cleanup — 검증 기준
 

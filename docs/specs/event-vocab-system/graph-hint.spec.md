@@ -13,11 +13,11 @@ def:
   links:
     - target: event-core-pattern
       type: depends_on
-  sources:
-    - packages/event-catalog/src/types.ts
-    - packages/event-catalog/src/registry.ts
-    - packages/event-catalog/src/categories/navigation.ts
-    - packages/event-catalog/src/index.test.ts
+sources:
+  - packages/event-catalog/src/types.ts
+  - packages/event-catalog/src/registry.ts
+  - packages/event-catalog/src/categories/navigation.ts
+  - packages/event-catalog/src/index.test.ts
 ---
 
 # Graph Hint — 이벤트 그래프 의미론

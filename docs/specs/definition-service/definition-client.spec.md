@@ -12,12 +12,12 @@ def:
   links:
     - target: definition-service-system
       type: refines
-  sources:
-    - packages/definition-client/src/client.ts
-    - packages/definition-client/src/nestjs.ts
-    - packages/definition-client/src/types.ts
-    - packages/definition-client/src/index.ts
-    - packages/definition-client/src/client.test.ts
+sources:
+  - packages/definition-client/src/client.ts
+  - packages/definition-client/src/nestjs.ts
+  - packages/definition-client/src/types.ts
+  - packages/definition-client/src/index.ts
+  - packages/definition-client/src/client.test.ts
 ---
 # Definition Client
 

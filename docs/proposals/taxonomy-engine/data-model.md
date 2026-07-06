@@ -10,21 +10,21 @@ def:
   aspect: domain_model
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/schema/zod.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/indexer/index.ts
-    - packages/taxonomy-engine/src/validate/capacity.ts
-    - packages/taxonomy-engine/__tests__/unit/schema.test.ts
-    - packages/taxonomy-engine/__tests__/unit/parser.test.ts
-    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding.test.ts
-    - docs/taxonomies/qa-sdk-coordinate-system.yaml
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: data-model
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/schema/zod.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/indexer/index.ts
+  - packages/taxonomy-engine/src/validate/capacity.ts
+  - packages/taxonomy-engine/__tests__/unit/schema.test.ts
+  - packages/taxonomy-engine/__tests__/unit/parser.test.ts
+  - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding.test.ts
+  - docs/taxonomies/qa-sdk-coordinate-system.yaml
 ---
 
 # Data Model

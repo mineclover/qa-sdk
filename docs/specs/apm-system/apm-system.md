@@ -27,12 +27,12 @@ def:
       type: contains
     - target: apm-runtime-system
       type: contains
-  sources:
-    - packages/cli/src/commands/codegen.ts
-    - packages/sdk/src/index.ts
-    - packages/apm/src/index.ts
-    - packages/logger/src/logger.ts
-    - packages/ingest-server/src/routes/ingest.ts
+sources:
+  - packages/cli/src/commands/codegen.ts
+  - packages/sdk/src/index.ts
+  - packages/apm/src/index.ts
+  - packages/logger/src/logger.ts
+  - packages/ingest-server/src/routes/ingest.ts
 ---
 
 ## 목적 ^purpose

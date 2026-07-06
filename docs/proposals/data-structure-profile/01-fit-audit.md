@@ -10,30 +10,30 @@ def:
   aspect: proposal_design
   tier: system
   depth: specification
-  sources:
-    - docs/specs/data-structure-profile/data-structure-profile-system.spec.md
-    - docs/specs/data-structure-profile/data-structure-profile-taxonomy.spec.md
-    - docs/specs/data-structure-profile/data-structure-profile-profile-contract.spec.md
-    - docs/specs/data-structure-profile/data-structure-profile-validation.spec.md
-    - docs/specs/data-structure-profile/data-structure-profile-cli.spec.md
-    - docs/specs/data-structure-profile/data-structure-profile-system.test.md
-    - docs/specs/data-structure-profile/data-structure-profile-operations.rule.md
-    - packages/data-structure-profile/package.json
-    - packages/data-structure-profile/src/index.ts
-    - packages/data-structure-profile/src/parse.ts
-    - packages/data-structure-profile/src/lineage.ts
-    - packages/data-structure-profile/src/measurement.ts
-    - packages/data-structure-profile/src/adapters.ts
-    - packages/data-structure-profile/src/validate.ts
-    - packages/data-structure-profile/src/profile.test.ts
-    - packages/data-structure-profile/src/cli-runner.test.ts
-    - scripts/data-structure-profile-bridge-smoke.mjs
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile
 role: fit-audit
 supersedes: -
 superseded_by: -
+sources:
+  - docs/specs/data-structure-profile/data-structure-profile-system.spec.md
+  - docs/specs/data-structure-profile/data-structure-profile-taxonomy.spec.md
+  - docs/specs/data-structure-profile/data-structure-profile-profile-contract.spec.md
+  - docs/specs/data-structure-profile/data-structure-profile-validation.spec.md
+  - docs/specs/data-structure-profile/data-structure-profile-cli.spec.md
+  - docs/specs/data-structure-profile/data-structure-profile-system.test.md
+  - docs/specs/data-structure-profile/data-structure-profile-operations.rule.md
+  - packages/data-structure-profile/package.json
+  - packages/data-structure-profile/src/index.ts
+  - packages/data-structure-profile/src/parse.ts
+  - packages/data-structure-profile/src/lineage.ts
+  - packages/data-structure-profile/src/measurement.ts
+  - packages/data-structure-profile/src/adapters.ts
+  - packages/data-structure-profile/src/validate.ts
+  - packages/data-structure-profile/src/profile.test.ts
+  - packages/data-structure-profile/src/cli-runner.test.ts
+  - scripts/data-structure-profile-bridge-smoke.mjs
 ---
 
 # Fit Audit

@@ -15,11 +15,11 @@ def:
       type: refines
     - target: e2e-suite-rule
       type: depends_on
-  sources:
-    - packages/e2e/tests/event-pipeline.spec.ts
-    - packages/e2e/tests/shopping-flow.spec.ts
-    - packages/e2e/tests/git-conflicts-map.spec.ts
-    - packages/e2e/tests/helpers.ts
+sources:
+  - packages/e2e/tests/event-pipeline.spec.ts
+  - packages/e2e/tests/shopping-flow.spec.ts
+  - packages/e2e/tests/git-conflicts-map.spec.ts
+  - packages/e2e/tests/helpers.ts
 ---
 
 # E2E Suite — Validation Mapping

@@ -11,9 +11,8 @@ def:
   links:
     - target: governance-skill-group
       type: refines
-  sources:
-    - skills/dkg-audit/SKILL.md
-
+sources:
+  - skills/dkg-audit/SKILL.md
 ---
 
 # Skill — dkg-audit

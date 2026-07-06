@@ -10,16 +10,16 @@ def:
   aspect: implementation_plan
   tier: component
   depth: overview
-  sources:
-    - docs/proposals/taxonomy-engine/plans/v0.9.md
-    - docs/proposals/taxonomy-engine/plans/v0.10.md
-    - packages/taxonomy-engine/src/migration/index.ts
-    - packages/taxonomy-decision-bridge/src/index.ts
-    - packages/taxonomy-web/src/components/decision/DecisionFilePicker.tsx
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-non-goals
+sources:
+  - docs/proposals/taxonomy-engine/plans/v0.9.md
+  - docs/proposals/taxonomy-engine/plans/v0.10.md
+  - packages/taxonomy-engine/src/migration/index.ts
+  - packages/taxonomy-decision-bridge/src/index.ts
+  - packages/taxonomy-web/src/components/decision/DecisionFilePicker.tsx
 ---
 
 # Taxonomy Engine v0.8 — 비-목표

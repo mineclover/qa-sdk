@@ -19,13 +19,13 @@ def:
       type: depends_on
     - target: skill-e2e-test
       type: depends_on
-  sources:
-    - skills/domain-slice-architecture/SKILL.md
-    - skills/domain-slice-architecture/references/workflow.md
-    - skills/domain-slice-architecture/references/surface-map.md
-    - skills/domain-slice-architecture/references/review-checklist.md
-    - architecture-samples/domain-slice-monorepo
-    - architecture-samples/domain-slice-monorepo/docs/source-architecture/current
+sources:
+  - skills/domain-slice-architecture/SKILL.md
+  - skills/domain-slice-architecture/references/workflow.md
+  - skills/domain-slice-architecture/references/surface-map.md
+  - skills/domain-slice-architecture/references/review-checklist.md
+  - architecture-samples/domain-slice-monorepo
+  - architecture-samples/domain-slice-monorepo/docs/source-architecture/current
 ---
 
 # Skill — domain-slice-architecture

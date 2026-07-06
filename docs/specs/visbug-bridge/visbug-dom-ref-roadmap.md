@@ -12,7 +12,7 @@ def:
   links:
     - target: rlsc-integration
       type: depends_on
-  source: vendor/projectvisbug/app/dom-ref/index.js
+source: vendor/projectvisbug/app/dom-ref/index.js
 ---
 
 # visbug DomRef 로드맵

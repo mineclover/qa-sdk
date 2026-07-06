@@ -17,7 +17,7 @@ def:
   links:
     - target: deterministic-label-architecture
       type: traces_to
-  source: packages/doc-envelope/src/index.ts
+source: packages/doc-envelope/src/index.ts
 ---
 
 # doc-envelope — 문서 수집 중립 모델

@@ -20,12 +20,12 @@ def:
       type: depends_on
     - target: infra-env-kit-codegen
       type: depends_on
-  sources:
-    - packages/infra-env-kit/__tests__/env-bridge.test.ts
-    - packages/infra-env-kit/__tests__/export-command.test.ts
-    - packages/infra-env-kit/__tests__/export-files.test.ts
-    - packages/infra-env-kit/__tests__/codegen.test.ts
-    - packages/infra-env-kit/__tests__/discovery-client.test.ts
+sources:
+  - packages/infra-env-kit/__tests__/env-bridge.test.ts
+  - packages/infra-env-kit/__tests__/export-command.test.ts
+  - packages/infra-env-kit/__tests__/export-files.test.ts
+  - packages/infra-env-kit/__tests__/codegen.test.ts
+  - packages/infra-env-kit/__tests__/discovery-client.test.ts
 ---
 
 # infra-env-kit validation

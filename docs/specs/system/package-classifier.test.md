@@ -15,10 +15,10 @@ def:
       type: refines
     - target: package-classifier-rule
       type: depends_on
-  sources:
-    - packages/package-classifier/src/pkg-classifier.test.ts
-    - packages/package-classifier/src/__tests__/usage-logic.test.ts
-    - scripts/verify-analysis-os.ts
+sources:
+  - packages/package-classifier/src/pkg-classifier.test.ts
+  - packages/package-classifier/src/__tests__/usage-logic.test.ts
+  - scripts/verify-analysis-os.ts
 ---
 
 # package-classifier — Validation Mapping

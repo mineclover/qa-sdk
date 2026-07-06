@@ -10,25 +10,25 @@ def:
   aspect: proposal_design
   tier: layout
   depth: overview
-  sources:
-    - docs/proposals/taxonomy-engine/concepts/axis.md
-    - docs/proposals/taxonomy-engine/concepts/entry.md
-    - docs/proposals/taxonomy-engine/concepts/coordinate.md
-    - docs/proposals/taxonomy-engine/concepts/relation.md
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/indexer/index.ts
-    - packages/taxonomy-engine/src/registry/index.ts
-    - packages/taxonomy-engine/src/query/index.ts
-    - packages/taxonomy-engine/__tests__/unit/schema.test.ts
-    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
-    - packages/taxonomy-decision-bridge/src/to-flow-schema.ts
-    - packages/taxonomy-decision-bridge/__tests__/to-flow-schema.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concepts-index
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/taxonomy-engine/concepts/axis.md
+  - docs/proposals/taxonomy-engine/concepts/entry.md
+  - docs/proposals/taxonomy-engine/concepts/coordinate.md
+  - docs/proposals/taxonomy-engine/concepts/relation.md
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/indexer/index.ts
+  - packages/taxonomy-engine/src/registry/index.ts
+  - packages/taxonomy-engine/src/query/index.ts
+  - packages/taxonomy-engine/__tests__/unit/schema.test.ts
+  - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+  - packages/taxonomy-decision-bridge/src/to-flow-schema.ts
+  - packages/taxonomy-decision-bridge/__tests__/to-flow-schema.test.ts
 ---
 
 # Taxonomy Engine — 1급 개념

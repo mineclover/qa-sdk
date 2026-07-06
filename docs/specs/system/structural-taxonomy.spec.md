@@ -18,14 +18,14 @@ def:
       type: traces_to
     - target: definition-taxonomy
       type: depends_on
-  sources:
-    - packages/core/src/meta-semantic/ir-types.ts
-    - packages/core/src/pipe/data-contract.ts
-    - packages/definition-catalog/src/types.ts
-    - docs/specs/meta-semantic/meta-semantic-concepts.spec.md
-    - docs/specs/scope-nesting/scope-nesting-system.md
-    - docs/specs/viz-system/viz-surface-system/concept-hierarchy-grid.spec.md
-    - docs/specs/definition-catalog/definition-taxonomy.spec.md
+sources:
+  - packages/core/src/meta-semantic/ir-types.ts
+  - packages/core/src/pipe/data-contract.ts
+  - packages/definition-catalog/src/types.ts
+  - docs/specs/meta-semantic/meta-semantic-concepts.spec.md
+  - docs/specs/scope-nesting/scope-nesting-system.md
+  - docs/specs/viz-system/viz-surface-system/concept-hierarchy-grid.spec.md
+  - docs/specs/definition-catalog/definition-taxonomy.spec.md
 ---
 
 # Structural Taxonomy — 실제 단위와 배열의 분류 체계

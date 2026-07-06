@@ -18,14 +18,14 @@ def:
       type: traces_to
     - target: test-md-convention
       type: traces_to
-  sources:
-    - packages/definition-catalog/src/code-references.ts
-    - packages/definition-catalog/src/code-references.test.ts
-    - packages/definition-catalog/src/contract-evidence.ts
-    - packages/definition-catalog/src/contract-evidence.test.ts
-    - packages/cli/src/lib/docs-control-plane/graph-index.ts
-    - packages/cli/src/lib/docs-control-plane/graph-index.test.ts
-    - packages/cli/src/commands/docs.test.ts
+sources:
+  - packages/definition-catalog/src/code-references.ts
+  - packages/definition-catalog/src/code-references.test.ts
+  - packages/definition-catalog/src/contract-evidence.ts
+  - packages/definition-catalog/src/contract-evidence.test.ts
+  - packages/cli/src/lib/docs-control-plane/graph-index.ts
+  - packages/cli/src/lib/docs-control-plane/graph-index.test.ts
+  - packages/cli/src/commands/docs.test.ts
 ---
 
 # Architecture-Revealing Code Convention — Responsibility Topology 코드 구조 규칙

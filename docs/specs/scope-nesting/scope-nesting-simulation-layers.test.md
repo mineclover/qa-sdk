@@ -11,7 +11,7 @@ def:
   links:
     - target: scope-nesting-simulation-layers
       type: verifies
-  source: packages/core/src/scope-nesting-simulate.test.ts
+source: packages/core/src/scope-nesting-simulate.test.ts
 ---
 
 # 시뮬레이션 계층 테스트 명세

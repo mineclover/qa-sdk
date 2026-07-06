@@ -10,15 +10,15 @@ def:
   aspect: implementation_plan
   tier: component
   depth: implementation
-  sources:
-    - packages/taxonomy-engine/src/doctor/extract/vocab.ts
-    - packages/taxonomy-engine/src/doctor/index.ts
-    - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
-    - packages/taxonomy-engine/__tests__/unit/doctor-extract.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-phase-e-doctor
+sources:
+  - packages/taxonomy-engine/src/doctor/extract/vocab.ts
+  - packages/taxonomy-engine/src/doctor/index.ts
+  - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
+  - packages/taxonomy-engine/__tests__/unit/doctor-extract.test.ts
 ---
 
 # Taxonomy Engine v0.8 — Phase E — Doctor vocab cross-check

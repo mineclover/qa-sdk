@@ -13,13 +13,13 @@ def:
   links:
     - target: apm-codegen-system
       type: refines
-  sources:
-    - packages/codegen-core/src/index.ts
-    - packages/codegen-core/src/catalog-typescript.ts
-    - packages/codegen-core/src/proto.ts
-    - packages/codegen-core/src/typescript.ts
-    - packages/codegen-core/src/proto.test.ts
-    - packages/codegen-core/src/typescript.test.ts
+sources:
+  - packages/codegen-core/src/index.ts
+  - packages/codegen-core/src/catalog-typescript.ts
+  - packages/codegen-core/src/proto.ts
+  - packages/codegen-core/src/typescript.ts
+  - packages/codegen-core/src/proto.test.ts
+  - packages/codegen-core/src/typescript.test.ts
 ---
 
 # codegen-core — 순수 코드 생성 함수 라이브러리

@@ -13,14 +13,14 @@ def:
   links:
     - target: gate-engine-core
       type: depends_on
-  sources:
-    - packages/index-meta/src/gate-aware-query.ts
-    - packages/index-meta/src/gate-aware-query.test.ts
-    - packages/index-meta/src/invalid-ranges.ts
-    - packages/index-meta/src/index.ts
-    - packages/index-meta/src/workers.ts
-    - packages/gate-service/src/lib/gate-service.ts
-    - packages/gate-service/src/routes/gate.ts
+sources:
+  - packages/index-meta/src/gate-aware-query.ts
+  - packages/index-meta/src/gate-aware-query.test.ts
+  - packages/index-meta/src/invalid-ranges.ts
+  - packages/index-meta/src/index.ts
+  - packages/index-meta/src/workers.ts
+  - packages/gate-service/src/lib/gate-service.ts
+  - packages/gate-service/src/routes/gate.ts
 ---
 # Gate-Aware Query
 

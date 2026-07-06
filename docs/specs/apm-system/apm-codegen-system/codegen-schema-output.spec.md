@@ -13,11 +13,11 @@ def:
   links:
     - target: apm-codegen-system
       type: refines
-  sources:
-    - packages/codegen-core/src/proto.ts
-    - packages/codegen-core/src/typescript.ts
-    - packages/codegen-core/src/proto.test.ts
-    - packages/codegen-core/src/typescript.test.ts
+sources:
+  - packages/codegen-core/src/proto.ts
+  - packages/codegen-core/src/typescript.ts
+  - packages/codegen-core/src/proto.test.ts
+  - packages/codegen-core/src/typescript.test.ts
 ---
 
 # 코드젠 산출물 계약

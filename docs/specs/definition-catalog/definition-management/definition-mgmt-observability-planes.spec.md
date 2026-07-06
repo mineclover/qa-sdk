@@ -9,11 +9,6 @@ def:
   lifecycle: approved
   layer: operation
   tags: [observability]
-  sources:
-    - packages/definition-catalog/src/observe.ts
-    - packages/definition-catalog/src/vocabulary.ts
-    - packages/definition-catalog/src/harness-state-model.ts
-    - packages/definition-catalog/src/contract-evidence.ts
   links:
     - target: definition-mgmt-observability-model
       type: traces_to
@@ -21,6 +16,11 @@ def:
       type: traces_to
     - target: definition-mgmt-verification-loop
       type: traces_to
+sources:
+  - packages/definition-catalog/src/observe.ts
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/harness-state-model.ts
+  - packages/definition-catalog/src/contract-evidence.ts
 ---
 # Definition Management — Observability Planes
 

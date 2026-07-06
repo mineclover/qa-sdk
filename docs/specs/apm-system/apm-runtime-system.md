@@ -23,12 +23,12 @@ def:
       type: depends_on
     - target: pino-logger
       type: contains
-  sources:
-    - packages/logger/src/logger.ts
-    - packages/logger/src/transport/ingest-forwarder.ts
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/lib/phase-two-worker.ts
-    - packages/ingest-server/src/lib/record-stream-broker.ts
+sources:
+  - packages/logger/src/logger.ts
+  - packages/logger/src/transport/ingest-forwarder.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/record-stream-broker.ts
 ---
 
 # APM 런타임 그룹

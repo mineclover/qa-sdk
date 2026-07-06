@@ -14,23 +14,23 @@ def:
   links:
     - target: system-libraries
       type: refines
-  sources:
-    - packages/sim-identifier-grammar/src/index.ts
-    - packages/sim-identifier-grammar/src/cache-key.ts
-    - packages/sim-identifier-grammar/src/cycle-id.ts
-    - packages/sim-identifier-grammar/src/decision-category.ts
-    - packages/sim-identifier-grammar/src/decision-id.ts
-    - packages/sim-identifier-grammar/src/decision-signal.ts
-    - packages/sim-identifier-grammar/src/event-name.ts
-    - packages/sim-identifier-grammar/src/http-header.ts
-    - packages/sim-identifier-grammar/src/idempotency-key.ts
-    - packages/sim-identifier-grammar/src/image-tag.ts
-    - packages/sim-identifier-grammar/src/label-key.ts
-    - packages/sim-identifier-grammar/src/pubsub-channel.ts
-    - packages/sim-identifier-grammar/src/replication-slot.ts
-    - packages/sim-identifier-grammar/src/schema-hash.ts
-    - packages/sim-identifier-grammar/src/service-prefix.ts
-    - packages/sim-identifier-grammar/src/version-tag.ts
+sources:
+  - packages/sim-identifier-grammar/src/index.ts
+  - packages/sim-identifier-grammar/src/cache-key.ts
+  - packages/sim-identifier-grammar/src/cycle-id.ts
+  - packages/sim-identifier-grammar/src/decision-category.ts
+  - packages/sim-identifier-grammar/src/decision-id.ts
+  - packages/sim-identifier-grammar/src/decision-signal.ts
+  - packages/sim-identifier-grammar/src/event-name.ts
+  - packages/sim-identifier-grammar/src/http-header.ts
+  - packages/sim-identifier-grammar/src/idempotency-key.ts
+  - packages/sim-identifier-grammar/src/image-tag.ts
+  - packages/sim-identifier-grammar/src/label-key.ts
+  - packages/sim-identifier-grammar/src/pubsub-channel.ts
+  - packages/sim-identifier-grammar/src/replication-slot.ts
+  - packages/sim-identifier-grammar/src/schema-hash.ts
+  - packages/sim-identifier-grammar/src/service-prefix.ts
+  - packages/sim-identifier-grammar/src/version-tag.ts
 ---
 
 # sim-identifier-grammar

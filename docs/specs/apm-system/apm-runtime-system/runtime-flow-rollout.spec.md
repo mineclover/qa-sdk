@@ -13,12 +13,12 @@ def:
   links:
     - target: apm-runtime-system
       type: refines
-  sources:
-    - packages/ingest-server/src/stores/store-factory.ts
-    - packages/ingest-server/src/lib/in-memory-task-queue.ts
-    - packages/ingest-server/src/lib/bullmq-task-queue.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.ts
-    - packages/ingest-server/src/routes/streams.ts
+sources:
+  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/lib/in-memory-task-queue.ts
+  - packages/ingest-server/src/lib/bullmq-task-queue.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.ts
+  - packages/ingest-server/src/routes/streams.ts
 ---
 
 # 런타임 흐름 도입 규칙

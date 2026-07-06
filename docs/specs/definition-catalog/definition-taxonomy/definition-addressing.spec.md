@@ -19,19 +19,19 @@ def:
       type: traces_to
     - target: definition-addressing-plan
       type: traces_to
-  sources:
-    - packages/definition-catalog/src/observe.ts
-    - packages/definition-catalog/src/address-assign.ts
-    - packages/definition-catalog/src/registry.ts
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/observe.test.ts
-    - packages/definition-catalog/src/address-assign.test.ts
-    - packages/definition-catalog/src/registry.test.ts
-    - packages/cli/src/commands/def.ts
-    - packages/cli/src/commands/def.test.ts
-    - packages/cli/src/data-sources/local-data-source.ts
-    - packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts
-    - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
+sources:
+  - packages/definition-catalog/src/observe.ts
+  - packages/definition-catalog/src/address-assign.ts
+  - packages/definition-catalog/src/registry.ts
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/observe.test.ts
+  - packages/definition-catalog/src/address-assign.test.ts
+  - packages/definition-catalog/src/registry.test.ts
+  - packages/cli/src/commands/def.ts
+  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/data-sources/local-data-source.ts
+  - packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts
+  - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
 ---
 # Definition Addressing — 문서 주소 체계
 

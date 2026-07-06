@@ -18,11 +18,11 @@ def:
       type: depends_on
     - target: drizzle-orm-convention
       type: depends_on
-  sources:
-    - packages/audit-recorder-store/src/sqlite/adapter.ts
-    - packages/audit-recorder-store/src/sqlite/schema.ts
-    - packages/audit-recorder-store/src/pg/adapter.ts
-    - packages/audit-recorder-store/src/pg/schema.ts
+sources:
+  - packages/audit-recorder-store/src/sqlite/adapter.ts
+  - packages/audit-recorder-store/src/sqlite/schema.ts
+  - packages/audit-recorder-store/src/pg/adapter.ts
+  - packages/audit-recorder-store/src/pg/schema.ts
 ---
 
 # audit-recorder-store adapters

@@ -10,16 +10,16 @@ def:
   aspect: implementation_plan
   tier: component
   depth: implementation
-  sources:
-    - packages/taxonomy-web/src/components/LifecycleBadge.tsx
-    - packages/taxonomy-web/src/components/TaxonomyTree.tsx
-    - packages/taxonomy-web/src/components/UnitDetailPanel.tsx
-    - packages/taxonomy-web/src/types/taxonomy.ts
-    - scripts/taxonomy-web-build-data.mjs
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-phase-f-web-ui
+sources:
+  - packages/taxonomy-web/src/components/LifecycleBadge.tsx
+  - packages/taxonomy-web/src/components/TaxonomyTree.tsx
+  - packages/taxonomy-web/src/components/UnitDetailPanel.tsx
+  - packages/taxonomy-web/src/types/taxonomy.ts
+  - scripts/taxonomy-web-build-data.mjs
 ---
 
 # Taxonomy Engine v0.8 — Phase F — Web UI

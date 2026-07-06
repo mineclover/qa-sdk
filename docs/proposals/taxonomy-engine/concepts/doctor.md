@@ -10,17 +10,17 @@ def:
   aspect: ssot_drift
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/doctor/index.ts
-    - packages/taxonomy-engine/src/doctor/extract/index.ts
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
-    - packages/taxonomy-engine/__tests__/unit/doctor-extract.test.ts
-    - packages/cli/src/commands/taxonomy/doctor.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: doctor
+sources:
+  - packages/taxonomy-engine/src/doctor/index.ts
+  - packages/taxonomy-engine/src/doctor/extract/index.ts
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/__tests__/unit/doctor.test.ts
+  - packages/taxonomy-engine/__tests__/unit/doctor-extract.test.ts
+  - packages/cli/src/commands/taxonomy/doctor.ts
 ---
 
 # Doctor — SSOT Drift 검출

@@ -18,12 +18,12 @@ def:
       type: depends_on
     - target: audit-recorder-store-rls-shadow
       type: depends_on
-  sources:
-    - packages/audit-recorder-store/src/factory.test.ts
-    - packages/audit-recorder-store/src/port-contract.test.ts
-    - packages/audit-recorder-store/src/e2e-integration.test.ts
-    - packages/audit-recorder-store/src/pg/rls-policy.test.ts
-    - packages/audit-recorder-store/src/pg/shadow-recorder.test.ts
+sources:
+  - packages/audit-recorder-store/src/factory.test.ts
+  - packages/audit-recorder-store/src/port-contract.test.ts
+  - packages/audit-recorder-store/src/e2e-integration.test.ts
+  - packages/audit-recorder-store/src/pg/rls-policy.test.ts
+  - packages/audit-recorder-store/src/pg/shadow-recorder.test.ts
 ---
 
 # audit-recorder-store validation

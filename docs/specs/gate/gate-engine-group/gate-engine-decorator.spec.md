@@ -13,13 +13,13 @@ def:
   links:
     - target: gate-engine-core
       type: depends_on
-  sources:
-    - packages/index-meta/src/gate-engine.ts
-    - packages/index-meta/src/version-lifecycle.ts
-    - packages/index-meta/src/entry-flag-store.ts
-    - packages/index-meta/src/gate-engine.test.ts
-    - packages/demo-tests/src/index-meta/gate-engine.test.ts
-    - packages/demo-tests/src/index-meta/gate-engine-sql-e2e.test.ts
+sources:
+  - packages/index-meta/src/gate-engine.ts
+  - packages/index-meta/src/version-lifecycle.ts
+  - packages/index-meta/src/entry-flag-store.ts
+  - packages/index-meta/src/gate-engine.test.ts
+  - packages/demo-tests/src/index-meta/gate-engine.test.ts
+  - packages/demo-tests/src/index-meta/gate-engine-sql-e2e.test.ts
 ---
 # GateEngine Decorator 패턴
 

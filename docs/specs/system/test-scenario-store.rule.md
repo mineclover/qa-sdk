@@ -15,10 +15,10 @@ def:
       type: constrains
     - target: drizzle-orm-convention
       type: depends_on
-  sources:
-    - packages/test-scenario-store/src/store.ts
-    - packages/test-scenario-store/src/types.ts
-    - packages/test-scenario-store/src/db/schema.ts
+sources:
+  - packages/test-scenario-store/src/store.ts
+  - packages/test-scenario-store/src/types.ts
+  - packages/test-scenario-store/src/db/schema.ts
 ---
 
 # test-scenario-store — Consumption Rule

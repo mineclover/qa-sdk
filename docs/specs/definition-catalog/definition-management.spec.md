@@ -13,12 +13,6 @@ def:
   layer: operation
   svc: definition-service
   tags: [structural, entry-point]
-  sources:
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/assemble.ts
-    - packages/definition-catalog/src/harness-state-model.ts
-    - packages/definition-catalog/src/semantic-lint.ts
-    - packages/definition-catalog/src/cross-loop-bridge.ts
   links:
     - target: definition-frontmatter-metadata-system
       type: refs
@@ -46,6 +40,12 @@ def:
       type: refs
     - target: context-action-convention
       type: refs
+sources:
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/assemble.ts
+  - packages/definition-catalog/src/harness-state-model.ts
+  - packages/definition-catalog/src/semantic-lint.ts
+  - packages/definition-catalog/src/cross-loop-bridge.ts
 ---
 
 # Definition Management — 좌표 기반 운영

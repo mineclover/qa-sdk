@@ -20,11 +20,11 @@ def:
       type: depends_on
     - target: scaffold-architecture-validator
       type: depends_on
-  sources:
-    - packages/architecture-schematics/collection.json
-    - packages/architecture-schematics/src/domain/index.ts
-    - packages/architecture-schematics/src/domain/ast-wiring.ts
-    - packages/architecture-schematics/src/domain/files
+sources:
+  - packages/architecture-schematics/collection.json
+  - packages/architecture-schematics/src/domain/index.ts
+  - packages/architecture-schematics/src/domain/ast-wiring.ts
+  - packages/architecture-schematics/src/domain/files
 ---
 
 # scaffold domain schematic

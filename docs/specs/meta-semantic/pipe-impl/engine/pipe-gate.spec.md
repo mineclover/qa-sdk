@@ -20,7 +20,7 @@ def:
       type: refs
     - target: meta-semantic-system
       type: depends_on
-  source: packages/core/src/pipe/pipe-gate.ts
+source: packages/core/src/pipe/pipe-gate.ts
 ---
 
 # PipeGraph 퀄리티 게이트

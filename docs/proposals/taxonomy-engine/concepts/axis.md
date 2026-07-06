@@ -10,19 +10,19 @@ def:
   aspect: concept
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/schema/zod.ts
-    - packages/taxonomy-engine/src/validate/capacity.ts
-    - packages/taxonomy-engine/src/validate/axis5q.ts
-    - packages/taxonomy-engine/src/indexer/index.ts
-    - packages/taxonomy-engine/__tests__/unit/schema.test.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-axis
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/schema/zod.ts
+  - packages/taxonomy-engine/src/validate/capacity.ts
+  - packages/taxonomy-engine/src/validate/axis5q.ts
+  - packages/taxonomy-engine/src/indexer/index.ts
+  - packages/taxonomy-engine/__tests__/unit/schema.test.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
 ---
 
 # Axis — 차원

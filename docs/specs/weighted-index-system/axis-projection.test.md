@@ -12,7 +12,7 @@ def:
   links:
     - target: axis-projection
       type: verifies
-  source: packages/weighted-index/src/math/calc.test.ts
+source: packages/weighted-index/src/math/calc.test.ts
 ---
 
 # Axis Projection — 테스트 시나리오

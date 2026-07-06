@@ -16,14 +16,14 @@ def:
       type: depends_on
     - target: analysis-transition
       type: depends_on
-  sources:
-    - packages/dkg-enrichment/src/skills/flow-trace.ts
-    - packages/dkg-enrichment/src/skills/flow-trace.test.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.test.ts
-    - packages/ingest-server/src/routes/labels.ts
-    - packages/ingest-server/src/db/schema.ts
-    - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+sources:
+  - packages/dkg-enrichment/src/skills/flow-trace.ts
+  - packages/dkg-enrichment/src/skills/flow-trace.test.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.test.ts
+  - packages/ingest-server/src/routes/labels.ts
+  - packages/ingest-server/src/db/schema.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
 ---
 # IntentLink — Prefix 공출현 조건
 

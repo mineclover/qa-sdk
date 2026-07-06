@@ -16,18 +16,17 @@ def:
       type: traces_to
     - target: pipe-types
       type: traces_to
-  sources:
-    - packages/core/src/types/pipe-spec.ts
-    - packages/core/src/pipe/pipe-path.ts
-    - packages/core/src/pipe/pipe-path.test.ts
-    - packages/core/src/pipe/pipe-validate.ts
-    - packages/core/src/pipe/pipe-validate.test.ts
-    - packages/core/src/pipe/pipe-simulate.ts
-    - packages/core/src/pipe/pipe-simulate.test.ts
-    - packages/core/src/pipe/pipe-runtime.ts
-    - packages/core/src/pipe/pipe-runtime.test.ts
-    - packages/core/src/pipe/pipe-analyze.ts
-
+sources:
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/pipe/pipe-path.ts
+  - packages/core/src/pipe/pipe-path.test.ts
+  - packages/core/src/pipe/pipe-validate.ts
+  - packages/core/src/pipe/pipe-validate.test.ts
+  - packages/core/src/pipe/pipe-simulate.ts
+  - packages/core/src/pipe/pipe-simulate.test.ts
+  - packages/core/src/pipe/pipe-runtime.ts
+  - packages/core/src/pipe/pipe-runtime.test.ts
+  - packages/core/src/pipe/pipe-analyze.ts
 ---
 
 # PipeFlow: branch — 조건부 분기

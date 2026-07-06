@@ -10,25 +10,25 @@ def:
   aspect: roadmap
   tier: layout
   depth: overview
-  sources:
-    - docs/proposals/taxonomy-engine/concepts/lifecycle.md
-    - docs/proposals/taxonomy-engine/concepts/semver-migration.md
-    - docs/proposals/taxonomy-engine/concepts/decision-sync.md
-    - docs/proposals/taxonomy-engine/concepts/decision-flow-bridge.md
-    - docs/proposals/taxonomy-engine/plans/README.md
-    - docs/proposals/taxonomy-engine/plans/v0.8.md
-    - docs/proposals/taxonomy-engine/plans/v0.9.md
-    - docs/proposals/taxonomy-engine/plans/v0.10.md
-    - docs/proposals/taxonomy-engine/plans/v0.11.md
-    - docs/proposals/taxonomy-engine/plans/v0.12.md
-    - docs/proposals/taxonomy-engine/plans/v0.13.md
-    - docs/proposals/taxonomy-engine/plans/v0.14.md
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: roadmap
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/taxonomy-engine/concepts/lifecycle.md
+  - docs/proposals/taxonomy-engine/concepts/semver-migration.md
+  - docs/proposals/taxonomy-engine/concepts/decision-sync.md
+  - docs/proposals/taxonomy-engine/concepts/decision-flow-bridge.md
+  - docs/proposals/taxonomy-engine/plans/README.md
+  - docs/proposals/taxonomy-engine/plans/v0.8.md
+  - docs/proposals/taxonomy-engine/plans/v0.9.md
+  - docs/proposals/taxonomy-engine/plans/v0.10.md
+  - docs/proposals/taxonomy-engine/plans/v0.11.md
+  - docs/proposals/taxonomy-engine/plans/v0.12.md
+  - docs/proposals/taxonomy-engine/plans/v0.13.md
+  - docs/proposals/taxonomy-engine/plans/v0.14.md
 ---
 
 # Taxonomy Engine 진화 로드맵

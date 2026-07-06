@@ -17,11 +17,11 @@ def:
       type: traces_to
     - target: ms-concept-pipe
       type: traces_to
-  sources:
-    - packages/core/src/pipe/pipe-fold.ts
-    - packages/core/src/pipe/pipe-fold.test.ts
-    - packages/core/src/pipe/pipe-lineage.ts
-    - packages/core/src/meta-semantic/ir-nesting-bridge.ts
+sources:
+  - packages/core/src/pipe/pipe-fold.ts
+  - packages/core/src/pipe/pipe-fold.test.ts
+  - packages/core/src/pipe/pipe-lineage.ts
+  - packages/core/src/meta-semantic/ir-nesting-bridge.ts
 ---
 
 # Semantic Folding

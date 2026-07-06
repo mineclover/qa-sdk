@@ -10,18 +10,18 @@ def:
   aspect: implementation_plan
   tier: component
   depth: implementation
-  sources:
-    - docs/proposals/taxonomy-engine/concepts/diagnostics-catalog.md
-    - docs/proposals/taxonomy-engine/concepts/README.md
-    - docs/proposals/taxonomy-engine/concepts/entry.md
-    - docs/proposals/taxonomy-engine/concepts/lifecycle.md
-    - packages/taxonomy-engine/src/schema/diagnostic.ts
-    - packages/taxonomy-engine/src/validate/lifecycle.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: plan-v0-8-phase-h-docs
+sources:
+  - docs/proposals/taxonomy-engine/concepts/diagnostics-catalog.md
+  - docs/proposals/taxonomy-engine/concepts/README.md
+  - docs/proposals/taxonomy-engine/concepts/entry.md
+  - docs/proposals/taxonomy-engine/concepts/lifecycle.md
+  - packages/taxonomy-engine/src/schema/diagnostic.ts
+  - packages/taxonomy-engine/src/validate/lifecycle.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
 ---
 
 # Taxonomy Engine v0.8 — Phase H — 문서 마무리

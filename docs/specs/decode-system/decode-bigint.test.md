@@ -11,7 +11,7 @@ def:
   links:
     - target: decode-bigint
       type: verifies
-  source: packages/index-meta/src/prefix-decoder-big.test.ts
+source: packages/index-meta/src/prefix-decoder-big.test.ts
 ---
 
 # PrefixDecoderBig 테스트 명세

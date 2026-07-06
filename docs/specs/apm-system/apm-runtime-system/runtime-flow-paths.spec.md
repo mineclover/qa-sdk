@@ -13,13 +13,13 @@ def:
   links:
     - target: apm-runtime-system
       type: refines
-  sources:
-    - packages/ingest-server/src/routes/ingest.ts
-    - packages/ingest-server/src/routes/ingest.test.ts
-    - packages/ingest-server/src/lib/phase-two-worker.ts
-    - packages/ingest-server/src/lib/phase-two-worker.test.ts
-    - packages/ingest-server/src/lib/record-stream-broker.ts
-    - packages/ingest-server/src/lib/record-stream-broker.test.ts
+sources:
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/routes/ingest.test.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/lib/phase-two-worker.test.ts
+  - packages/ingest-server/src/lib/record-stream-broker.ts
+  - packages/ingest-server/src/lib/record-stream-broker.test.ts
 ---
 
 # 런타임 흐름 경로

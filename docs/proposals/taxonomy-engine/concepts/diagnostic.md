@@ -10,18 +10,18 @@ def:
   aspect: diagnostic
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/diagnostic.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/validate/index.ts
-    - packages/taxonomy-engine/src/codegen/index.ts
-    - packages/taxonomy-engine/src/doctor/index.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: diagnostic
+sources:
+  - packages/taxonomy-engine/src/schema/diagnostic.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/validate/index.ts
+  - packages/taxonomy-engine/src/codegen/index.ts
+  - packages/taxonomy-engine/src/doctor/index.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/lifecycle-validate.test.ts
 ---
 
 # Diagnostic — 진단

@@ -18,10 +18,10 @@ def:
       type: implements
     - target: db-bootstrap
       type: depends_on
-  sources:
-    - packages/resource-policy-store/src/pg/rls-bits.ts
-    - packages/resource-policy-store/src/pg/rls-aware-adapter.ts
-    - packages/resource-policy-store/src/pg/schema.ts
+sources:
+  - packages/resource-policy-store/src/pg/rls-bits.ts
+  - packages/resource-policy-store/src/pg/rls-aware-adapter.ts
+  - packages/resource-policy-store/src/pg/schema.ts
 ---
 
 # resource-policy-store RLS

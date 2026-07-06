@@ -23,13 +23,13 @@ def:
       type: traces_to
     - target: testing-patterns
       type: depends_on
-  sources:
-    - packages/e2e/package.json
-    - packages/e2e/playwright.config.ts
-    - packages/e2e/tests/helpers.ts
-    - packages/e2e/tests/event-pipeline.spec.ts
-    - packages/e2e/tests/shopping-flow.spec.ts
-    - packages/e2e/tests/git-conflicts-map.spec.ts
+sources:
+  - packages/e2e/package.json
+  - packages/e2e/playwright.config.ts
+  - packages/e2e/tests/helpers.ts
+  - packages/e2e/tests/event-pipeline.spec.ts
+  - packages/e2e/tests/shopping-flow.spec.ts
+  - packages/e2e/tests/git-conflicts-map.spec.ts
 ---
 # E2E Suite
 

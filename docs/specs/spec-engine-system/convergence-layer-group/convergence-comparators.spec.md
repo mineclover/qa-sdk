@@ -16,10 +16,10 @@ def:
       type: depends_on
     - target: convergence-layer-group
       type: refines
-  sources:
-    - packages/convergence/src/symbol-comparator.ts
-    - packages/convergence/src/decision-comparator.ts
-    - packages/convergence/src/causal-discovery.ts
+sources:
+  - packages/convergence/src/symbol-comparator.ts
+  - packages/convergence/src/decision-comparator.ts
+  - packages/convergence/src/causal-discovery.ts
 ---
 
 # Convergence Layer - 비교와 인과 발견

@@ -13,13 +13,13 @@ def:
   links:
     - target: apm-system
       type: refines
-  sources:
-    - packages/apm/src/index.ts
-    - packages/apm/src/apm-logger.ts
-    - packages/apm/src/apm-logger.test.ts
-    - packages/apm/src/address-ranges.ts
-    - packages/apm/src/address-ranges.test.ts
-    - packages/sdk/src/qa-context.test.ts
+sources:
+  - packages/apm/src/index.ts
+  - packages/apm/src/apm-logger.ts
+  - packages/apm/src/apm-logger.test.ts
+  - packages/apm/src/address-ranges.ts
+  - packages/apm/src/address-ranges.test.ts
+  - packages/sdk/src/qa-context.test.ts
 ---
 
 # @qa-sdk/apm — APM 지원 레이어

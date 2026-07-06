@@ -23,10 +23,10 @@ def:
       type: traces_to
     - target: nest-service-bootstrap-test
       type: traces_to
-  sources:
-    - packages/nest-service-kit/src/bootstrap.ts
-    - packages/nest-service-kit/src/bootstrap.test.ts
-    - packages/nest-service-kit/src/logger.ts
+sources:
+  - packages/nest-service-kit/src/bootstrap.ts
+  - packages/nest-service-kit/src/bootstrap.test.ts
+  - packages/nest-service-kit/src/logger.ts
 ---
 
 # Nest Service Bootstrap

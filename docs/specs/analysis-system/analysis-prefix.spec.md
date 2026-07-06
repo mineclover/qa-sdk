@@ -16,20 +16,20 @@ def:
       type: depends_on
     - target: dkg-system-root
       type: traces_to
-  sources:
-    - packages/dkg/src/dkg.types.ts
-    - packages/dkg/src/dsl-bundle.ts
-    - packages/dkg/src/catalog-derive.ts
-    - packages/dkg/src/graph-registry.ts
-    - packages/dkg/src/skills/flow-trace.ts
-    - packages/dkg/src/dkg.test.ts
-    - packages/dkg/src/skills/flow-trace.test.ts
-    - packages/ingest-server/src/routes/insights.ts
-    - packages/ingest-server/src/stores/drizzle-insights-store.ts
-    - packages/ingest-server/src/ports/insights-store.port.ts
-    - packages/ingest-server/src/insights-store.e2e.test.ts
-    - packages/core/src/catalog/runtime.ts
-    - packages/core/src/catalog/runtime-boundary.test.ts
+sources:
+  - packages/dkg/src/dkg.types.ts
+  - packages/dkg/src/dsl-bundle.ts
+  - packages/dkg/src/catalog-derive.ts
+  - packages/dkg/src/graph-registry.ts
+  - packages/dkg/src/skills/flow-trace.ts
+  - packages/dkg/src/dkg.test.ts
+  - packages/dkg/src/skills/flow-trace.test.ts
+  - packages/ingest-server/src/routes/insights.ts
+  - packages/ingest-server/src/stores/drizzle-insights-store.ts
+  - packages/ingest-server/src/ports/insights-store.port.ts
+  - packages/ingest-server/src/insights-store.e2e.test.ts
+  - packages/core/src/catalog/runtime.ts
+  - packages/core/src/catalog/runtime-boundary.test.ts
 ---
 # Prefix — 의미의 재사용 단위
 

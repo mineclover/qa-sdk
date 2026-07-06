@@ -13,12 +13,12 @@ def:
   links:
     - target: analysis-convergence
       type: refines
-  sources:
-    - packages/convergence/src/index.ts
-    - packages/convergence/src/usage-aggregator.ts
-    - packages/convergence/src/metric-registry.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.ts
-    - packages/ingest-server/src/lib/convergence-pipeline.test.ts
+sources:
+  - packages/convergence/src/index.ts
+  - packages/convergence/src/usage-aggregator.ts
+  - packages/convergence/src/metric-registry.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.test.ts
 ---
 
 # Convergence Pipeline — 소비 규칙

@@ -12,13 +12,13 @@ def:
   lifecycle: approved
   layer: operation
   tags: [metadata, structural, coordinate-cluster]
-  sources:
-    - packages/definition-catalog/src/types.ts
-    - packages/definition-catalog/src/frontmatter.ts
-    - packages/definition-catalog/src/frontmatter.test.ts
   links:
     - target: definition-frontmatter-metadata-system
       type: refines
+sources:
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/frontmatter.test.ts
 ---
 
 # Definition Metadata — `owner_system`

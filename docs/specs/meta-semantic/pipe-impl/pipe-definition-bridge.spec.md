@@ -14,7 +14,7 @@ def:
   links:
     - target: meta-semantic-pipe-impl
       type: depends_on
-  source: packages/core/src/pipe/pipe-definition-bridge.ts
+source: packages/core/src/pipe/pipe-definition-bridge.ts
 ---
 
 # PipeGraph ↔ Definition Catalog 브릿지

@@ -15,9 +15,8 @@ def:
       type: depends_on
     - target: skill-ralph-tui-create-json
       type: refines
-  sources:
-    - skills/ralph-tui-create-beads/SKILL.md
-
+sources:
+  - skills/ralph-tui-create-beads/SKILL.md
 ---
 
 

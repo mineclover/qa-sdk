@@ -10,27 +10,27 @@ def:
   aspect: concept
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/schema/zod.ts
-    - packages/taxonomy-engine/src/parser/index.ts
-    - packages/taxonomy-engine/src/validate/index.ts
-    - packages/taxonomy-engine/__tests__/unit/parser.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding-lesson-builder.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding-dkg.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding-ingest.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding-def-catalog.test.ts
-    - docs/taxonomies/qa-sdk-coordinate-system.yaml
-    - docs/taxonomies/lesson-builder-content.yaml
-    - docs/taxonomies/dkg-schema.yaml
-    - docs/taxonomies/ingest-coords.yaml
-    - docs/taxonomies/qa-sdk-def-catalog.yaml
-    - docs/taxonomies/data-structure-profile.yaml
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-taxonomy
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/schema/zod.ts
+  - packages/taxonomy-engine/src/parser/index.ts
+  - packages/taxonomy-engine/src/validate/index.ts
+  - packages/taxonomy-engine/__tests__/unit/parser.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-lesson-builder.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-dkg.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-ingest.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding-def-catalog.test.ts
+  - docs/taxonomies/qa-sdk-coordinate-system.yaml
+  - docs/taxonomies/lesson-builder-content.yaml
+  - docs/taxonomies/dkg-schema.yaml
+  - docs/taxonomies/ingest-coords.yaml
+  - docs/taxonomies/qa-sdk-def-catalog.yaml
+  - docs/taxonomies/data-structure-profile.yaml
 ---
 
 # Taxonomy — 한 좌표 공간

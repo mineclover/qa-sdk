@@ -26,9 +26,9 @@ def:
       type: refs
     - target: resource-policy-store-validation
       type: refs
-  sources:
-    - packages/resource-policy-store/src/index.ts
-    - packages/resource-policy-store/src/factory.ts
+sources:
+  - packages/resource-policy-store/src/index.ts
+  - packages/resource-policy-store/src/factory.ts
 ---
 
 # resource-policy-store system

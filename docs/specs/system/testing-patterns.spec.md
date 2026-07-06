@@ -18,12 +18,12 @@ def:
       type: refs
     - target: test-scenario-store
       type: refs
-  sources:
-    - packages/demo-tests/src/schema-consistency.test.ts
-    - packages/demo-tests/src/index-meta/invariants.test.ts
-    - packages/test-scenario-store/src/store.test.ts
-    - packages/facet-tests/package.json
-    - packages/test-types/scripts/smoke.test.mjs
+sources:
+  - packages/demo-tests/src/schema-consistency.test.ts
+  - packages/demo-tests/src/index-meta/invariants.test.ts
+  - packages/test-scenario-store/src/store.test.ts
+  - packages/facet-tests/package.json
+  - packages/test-types/scripts/smoke.test.mjs
 ---
 
 # 테스트 패턴 — SSOT 파생 표준

@@ -18,12 +18,12 @@ def:
       type: depends_on
     - target: event-taxonomy-role-contract
       type: depends_on
-  sources:
-    - packages/registry-service/src/modules/events/event-catalog.service.ts
-    - packages/registry-service/src/modules/events/event-catalog.controller.ts
-    - packages/registry-service/src/core/seed-events.ts
-    - packages/registry-service/src/core/seed-events.test.ts
-    - packages/registry-service/src/modules/events/event.controller.test.ts
+sources:
+  - packages/registry-service/src/modules/events/event-catalog.service.ts
+  - packages/registry-service/src/modules/events/event-catalog.controller.ts
+  - packages/registry-service/src/core/seed-events.ts
+  - packages/registry-service/src/core/seed-events.test.ts
+  - packages/registry-service/src/modules/events/event.controller.test.ts
 ---
 
 # Service Event Adoption

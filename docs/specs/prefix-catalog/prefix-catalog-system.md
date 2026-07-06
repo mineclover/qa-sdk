@@ -32,12 +32,12 @@ def:
       type: refs
     - target: state-prefix-group
       type: refs
-  sources:
-    - packages/definition-catalog/scripts/gen-prefix-docs.mjs
-    - packages/demo-snapshot/src/demo-catalog.ts
-    - packages/demo-snapshot/src/demo-catalog.test.ts
-    - packages/demo-types/src/prefix-ids.ts
-    - packages/demo-types/src/lifecycle.test.ts
+sources:
+  - packages/definition-catalog/scripts/gen-prefix-docs.mjs
+  - packages/demo-snapshot/src/demo-catalog.ts
+  - packages/demo-snapshot/src/demo-catalog.test.ts
+  - packages/demo-types/src/prefix-ids.ts
+  - packages/demo-types/src/lifecycle.test.ts
 ---
 
 ## 목적 ^purpose

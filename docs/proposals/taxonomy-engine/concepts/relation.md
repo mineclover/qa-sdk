@@ -10,19 +10,19 @@ def:
   aspect: concept
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/validate/ref.ts
-    - packages/taxonomy-engine/src/validate/constraint.ts
-    - packages/taxonomy-engine/src/query/walk-relation.ts
-    - packages/taxonomy-engine/src/query/walk-by-coordinate.ts
-    - packages/taxonomy-engine/__tests__/unit/query.test.ts
-    - packages/taxonomy-engine/__tests__/unit/validate.test.ts
-    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-relation
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/validate/ref.ts
+  - packages/taxonomy-engine/src/validate/constraint.ts
+  - packages/taxonomy-engine/src/query/walk-relation.ts
+  - packages/taxonomy-engine/src/query/walk-by-coordinate.ts
+  - packages/taxonomy-engine/__tests__/unit/query.test.ts
+  - packages/taxonomy-engine/__tests__/unit/validate.test.ts
+  - packages/taxonomy-engine/__tests__/unit/ref.test.ts
 ---
 
 # Relation — 화살표

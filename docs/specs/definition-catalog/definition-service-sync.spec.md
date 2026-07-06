@@ -16,19 +16,19 @@ def:
   links:
     - target: definition-catalog-spec
       type: depends_on
-  sources:
-    - packages/definition-service/src/modules/sync/sync.service.ts
-    - packages/definition-service/src/modules/sync/sync.controller.ts
-    - packages/definition-service/src/modules/sync/sync.service.test.ts
-    - packages/definition-service/src/sync/scanner.ts
-    - packages/definition-service/src/core/sync-engine.ts
-    - packages/definition-service/src/sync/reverse-sync.ts
-    - packages/definition-service/src/sync/aspect-parents-sync.ts
-    - packages/definition-service/src/sync/aspect-parents-sync.test.ts
-    - packages/definition-data-source/src/sync-local-db.ts
-    - packages/definition-data-source/src/sync-local-db.test.ts
-    - packages/definition-data-source/src/factory.test.ts
-    - packages/cli/src/commands/def.ts
+sources:
+  - packages/definition-service/src/modules/sync/sync.service.ts
+  - packages/definition-service/src/modules/sync/sync.controller.ts
+  - packages/definition-service/src/modules/sync/sync.service.test.ts
+  - packages/definition-service/src/sync/scanner.ts
+  - packages/definition-service/src/core/sync-engine.ts
+  - packages/definition-service/src/sync/reverse-sync.ts
+  - packages/definition-service/src/sync/aspect-parents-sync.ts
+  - packages/definition-service/src/sync/aspect-parents-sync.test.ts
+  - packages/definition-data-source/src/sync-local-db.ts
+  - packages/definition-data-source/src/sync-local-db.test.ts
+  - packages/definition-data-source/src/factory.test.ts
+  - packages/cli/src/commands/def.ts
 ---
 
 # Definition Service Sync — 동기화 로직

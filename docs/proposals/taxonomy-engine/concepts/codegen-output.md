@@ -10,18 +10,18 @@ def:
   aspect: codegen
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/codegen/index.ts
-    - packages/taxonomy-engine/src/codegen/render.ts
-    - packages/taxonomy-engine/src/drift/index.ts
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/__tests__/unit/codegen.test.ts
-    - packages/taxonomy-engine/__tests__/unit/drift.test.ts
-    - packages/cli/src/commands/taxonomy/codegen.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: codegen-output
+sources:
+  - packages/taxonomy-engine/src/codegen/index.ts
+  - packages/taxonomy-engine/src/codegen/render.ts
+  - packages/taxonomy-engine/src/drift/index.ts
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/__tests__/unit/codegen.test.ts
+  - packages/taxonomy-engine/__tests__/unit/drift.test.ts
+  - packages/cli/src/commands/taxonomy/codegen.ts
 ---
 
 # Codegen Output — IR -> TS 파일 생성

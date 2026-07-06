@@ -15,18 +15,18 @@ def:
       type: refs
     - target: system-packages
       type: refs
-  sources:
-    - scripts/package-surfaces.mjs
-    - scripts/report-package-surfaces.mjs
-    - scripts/data-structure-profile-bridge-smoke.mjs
-    - packages/data-structure-profile/package.json
-    - packages/data-structure-profile/src/index.ts
-    - packages/data-structure-profile/src/profile.test.ts
-    - packages/quality-ledger/package.json
-    - packages/review-ledger/package.json
-    - packages/bench/package.json
-    - packages/viz-web/package.json
-    - packages/viz-web/src/data-structure-profile/sample-lineage.test.ts
+sources:
+  - scripts/package-surfaces.mjs
+  - scripts/report-package-surfaces.mjs
+  - scripts/data-structure-profile-bridge-smoke.mjs
+  - packages/data-structure-profile/package.json
+  - packages/data-structure-profile/src/index.ts
+  - packages/data-structure-profile/src/profile.test.ts
+  - packages/quality-ledger/package.json
+  - packages/review-ledger/package.json
+  - packages/bench/package.json
+  - packages/viz-web/package.json
+  - packages/viz-web/src/data-structure-profile/sample-lineage.test.ts
 ---
 
 # Profile Capability

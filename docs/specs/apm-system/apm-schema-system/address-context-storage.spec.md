@@ -13,16 +13,16 @@ def:
   links:
     - target: apm-schema-system
       type: refines
-  sources:
-    - packages/core/src/types/record.ts
-    - packages/core/src/schema/envelope.schema.ts
-    - packages/core/src/schema/record.schema.ts
-    - packages/ingest-server/src/stores/d1-record-store.ts
-    - packages/ingest-server/src/stores/d1-record-store.test.ts
-    - packages/ingest-server/src/stores/clickhouse-record-store.ts
-    - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
-    - packages/ingest-server/src/stores/pg/event-record.adapter.ts
-    - packages/ingest-server/src/stores/pg/event-record.adapter.test.ts
+sources:
+  - packages/core/src/types/record.ts
+  - packages/core/src/schema/envelope.schema.ts
+  - packages/core/src/schema/record.schema.ts
+  - packages/ingest-server/src/stores/d1-record-store.ts
+  - packages/ingest-server/src/stores/d1-record-store.test.ts
+  - packages/ingest-server/src/stores/clickhouse-record-store.ts
+  - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
+  - packages/ingest-server/src/stores/pg/event-record.adapter.ts
+  - packages/ingest-server/src/stores/pg/event-record.adapter.test.ts
 ---
 
 # Address Context 저장 계약

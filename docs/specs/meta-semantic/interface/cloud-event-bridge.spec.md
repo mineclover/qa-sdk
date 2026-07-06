@@ -16,10 +16,10 @@ def:
       type: depends_on
     - target: meta-semantic-data-contract
       type: depends_on
-  sources:
-    - packages/core/src/standards/cloud-events.ts
-    - packages/core/src/standards/cloud-events.test.ts
-    - packages/core/src/types/record.ts
+sources:
+  - packages/core/src/standards/cloud-events.ts
+  - packages/core/src/standards/cloud-events.test.ts
+  - packages/core/src/types/record.ts
 ---
 
 # toCloudEvent → EventRecord 타입 연결

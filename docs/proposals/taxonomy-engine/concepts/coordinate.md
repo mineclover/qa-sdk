@@ -10,18 +10,18 @@ def:
   aspect: concept
   tier: component
   depth: specification
-  sources:
-    - packages/taxonomy-engine/src/schema/ir.ts
-    - packages/taxonomy-engine/src/indexer/index.ts
-    - packages/taxonomy-engine/src/query/walk-by-coordinate.ts
-    - packages/taxonomy-engine/src/ref/parser.ts
-    - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
-    - packages/taxonomy-engine/__tests__/unit/query.test.ts
-    - packages/taxonomy-engine/__tests__/unit/ref.test.ts
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
 role: concept-coordinate
+sources:
+  - packages/taxonomy-engine/src/schema/ir.ts
+  - packages/taxonomy-engine/src/indexer/index.ts
+  - packages/taxonomy-engine/src/query/walk-by-coordinate.ts
+  - packages/taxonomy-engine/src/ref/parser.ts
+  - packages/taxonomy-engine/__tests__/unit/indexer.test.ts
+  - packages/taxonomy-engine/__tests__/unit/query.test.ts
+  - packages/taxonomy-engine/__tests__/unit/ref.test.ts
 ---
 
 # Coordinate — 점

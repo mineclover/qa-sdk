@@ -10,21 +10,21 @@ def:
   aspect: proposal_design
   tier: system
   depth: overview
-  sources:
-    - packages/taxonomy-engine/src/index.ts
-    - packages/taxonomy-engine/package.json
-    - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
-    - packages/taxonomy-engine/__tests__/dogfooding.test.ts
-    - packages/cli/src/commands/taxonomy/index.ts
-    - packages/cli/src/commands/taxonomy/shared.ts
-    - packages/cli/src/commands/taxonomy.test.ts
-    - package.json
 status: implemented
 date: 2026-05-20
 part_of: taxonomy-engine
 role: overview
 supersedes: -
 superseded_by: -
+sources:
+  - packages/taxonomy-engine/src/index.ts
+  - packages/taxonomy-engine/package.json
+  - packages/taxonomy-engine/__tests__/unit/public-api.test.ts
+  - packages/taxonomy-engine/__tests__/dogfooding.test.ts
+  - packages/cli/src/commands/taxonomy/index.ts
+  - packages/cli/src/commands/taxonomy/shared.ts
+  - packages/cli/src/commands/taxonomy.test.ts
+  - package.json
 ---
 
 # Taxonomy Engine — 설계 개요

@@ -16,7 +16,7 @@ def:
       type: depends_on
     - target: pipe-analyze
       type: depends_on
-  source: packages/core/src/pipe/pipe-interpret.ts
+source: packages/core/src/pipe/pipe-interpret.ts
 ---
 
 # PipeGraph 해석 — 관심사 추출/전파 + 영향 분석 + 역할 분류

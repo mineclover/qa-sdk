@@ -18,12 +18,12 @@ def:
       type: depends_on
     - target: drizzle-orm-convention
       type: depends_on
-  sources:
-    - packages/resource-policy-store/src/factory.ts
-    - packages/resource-policy-store/src/sqlite/adapter.ts
-    - packages/resource-policy-store/src/sqlite/schema.ts
-    - packages/resource-policy-store/src/pg/adapter.ts
-    - packages/resource-policy-store/src/pg/schema.ts
+sources:
+  - packages/resource-policy-store/src/factory.ts
+  - packages/resource-policy-store/src/sqlite/adapter.ts
+  - packages/resource-policy-store/src/sqlite/schema.ts
+  - packages/resource-policy-store/src/pg/adapter.ts
+  - packages/resource-policy-store/src/pg/schema.ts
 ---
 
 # resource-policy-store adapters

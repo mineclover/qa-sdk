@@ -20,13 +20,12 @@ def:
       type: contains
     - target: skill-catalog-system
       type: depends_on
-  sources:
-    - skills/ralph-tui-prd/SKILL.md
-    - skills/ralph-tui-create-json/SKILL.md
-    - skills/ralph-tui-create-beads/SKILL.md
-    - skills/ralph-tui-create-beads-rust/SKILL.md
-    - docs/skills/ralph-tui-workflows.md
-
+sources:
+  - skills/ralph-tui-prd/SKILL.md
+  - skills/ralph-tui-create-json/SKILL.md
+  - skills/ralph-tui-create-beads/SKILL.md
+  - skills/ralph-tui-create-beads-rust/SKILL.md
+  - docs/skills/ralph-tui-workflows.md
 ---
 
 

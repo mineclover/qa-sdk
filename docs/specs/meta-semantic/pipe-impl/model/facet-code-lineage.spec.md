@@ -20,16 +20,15 @@ def:
       type: depends_on
     - target: pipe-store-sqlite
       type: depends_on
-  sources:
-    - packages/core/src/data-object/facet-code-registry.ts
-    - packages/core/src/data-object/facet-code-registry.test.ts
-    - packages/core/src/data-object/lineage-chain.ts
-    - packages/core/src/data-object/lineage-chain.test.ts
-    - packages/core/src/pipe/pipe-lineage.ts
-    - packages/core/src/pipe/pipe-lineage.test.ts
-    - packages/pipe-store-sqlite/src/facet-code-store.ts
-    - packages/pipe-store-sqlite/src/facet-code-store.test.ts
-
+sources:
+  - packages/core/src/data-object/facet-code-registry.ts
+  - packages/core/src/data-object/facet-code-registry.test.ts
+  - packages/core/src/data-object/lineage-chain.ts
+  - packages/core/src/data-object/lineage-chain.test.ts
+  - packages/core/src/pipe/pipe-lineage.ts
+  - packages/core/src/pipe/pipe-lineage.test.ts
+  - packages/pipe-store-sqlite/src/facet-code-store.ts
+  - packages/pipe-store-sqlite/src/facet-code-store.test.ts
 ---
 
 # 패싯-코드 매핑 + 3단 계보 체인

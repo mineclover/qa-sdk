@@ -18,15 +18,15 @@ def:
       type: depends_on
     - target: df-ingest-emission
       type: traces_to
-  sources:
-    - docs/specs/definition-catalog/definition-taxonomy/definition-addressing.spec.md
-    - docs/specs/definition-catalog/definition-taxonomy.spec.md
-    - packages/definition-catalog/src/bridge.ts
-    - packages/definition-catalog/src/address-assign.ts
-    - packages/definition-data-source/src/sync-local-db.ts
-    - packages/definition-data-source/src/sync-local-db.test.ts
-    - packages/decision-flow/src/ingest-adapter.ts
-    - docs/specs/decision-flow/df-interface-group/df-ingest-emission.spec.md
+sources:
+  - docs/specs/definition-catalog/definition-taxonomy/definition-addressing.spec.md
+  - docs/specs/definition-catalog/definition-taxonomy.spec.md
+  - packages/definition-catalog/src/bridge.ts
+  - packages/definition-catalog/src/address-assign.ts
+  - packages/definition-data-source/src/sync-local-db.ts
+  - packages/definition-data-source/src/sync-local-db.test.ts
+  - packages/decision-flow/src/ingest-adapter.ts
+  - docs/specs/decision-flow/df-interface-group/df-ingest-emission.spec.md
 ---
 # 이중 좌표 시스템 — Prefix(이벤트) × Scope(문서)
 

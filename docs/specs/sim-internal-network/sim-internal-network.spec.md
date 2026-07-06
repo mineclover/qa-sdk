@@ -14,10 +14,10 @@ def:
   links:
     - target: system-libraries
       type: refines
-  sources:
-    - packages/sim-internal-network/src/hono-middleware.ts
-    - packages/sim-internal-network/src/is-internal-ip.ts
-    - packages/sim-internal-network/src/nestjs-guard.ts
+sources:
+  - packages/sim-internal-network/src/hono-middleware.ts
+  - packages/sim-internal-network/src/is-internal-ip.ts
+  - packages/sim-internal-network/src/nestjs-guard.ts
 ---
 
 # sim-internal-network
