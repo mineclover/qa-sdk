@@ -11,6 +11,21 @@ def:
   links:
     - target: system-narrative
       type: refines
+sources:
+  - docs/system-narrative.md
+  - docs/msa-architecture.md
+  - docs/specs/apm-system/apm-codegen-system/codegen-core.spec.md
+  - packages/codegen-core/src/catalog-typescript.ts
+  - packages/core/src/catalog/catalog-registry.ts
+  - packages/config-loader/src/catalog-loader.ts
+  - packages/cli/src/commands/codegen.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/spec-core/src/propagation/catalog-mutator.ts
+  - packages/spec-core/src/propagation/catalog-writer.ts
+  - packages/spec-core/src/propagation/catalog-file-writer.ts
+  - packages/spec-core/src/propagation/entry-add-executor.ts
+  - packages/registry-service/src/stores/catalog-store.ts
+  - packages/registry-service/src/stores/sql-catalog-store.ts
 ---
 # Realization Plan: 카탈로그 생명주기 관리
 
@@ -28,6 +43,10 @@ def:
 > Phase 2: CatalogRegistry register/unregister/setDefault + computeCatalogHash() 드리프트 감지.
 > Phase 3: viz-3d/scripts/generate-browser-catalog.ts 자동 생성 + prebuild 스크립트.
 > Phase 4: loadCatalog() 3-tier 우선순위 (--catalog → qa-sdk.config.ts → DEMO_CATALOG).
+
+> **현재 상태 메모**: 이 문서는 2026-03-22 완료 시점의 realization narrative다. 구현 authority는
+> `packages/codegen-core`, `packages/spec-core`, `packages/config-loader`, `packages/cli`, `packages/registry-service`
+>의 source가 소유한다. 아래 수치/Gap 표는 당시 문제와 완료 경로를 설명하는 기록으로 읽는다.
 
 ## 1. 현재 상태 + 문제 진단
 

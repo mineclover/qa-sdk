@@ -11,6 +11,18 @@ def:
   links:
     - target: system-narrative
       type: refines
+sources:
+  - docs/system-narrative.md
+  - docs/system-overview.md
+  - docs/specs/analysis-system/analysis-convergence.spec.md
+  - packages/convergence/src/usage-aggregator.ts
+  - packages/convergence/src/entry-coverage.ts
+  - packages/convergence/src/convergence-runner.ts
+  - packages/convergence/src/causal-discovery.ts
+  - packages/convergence/src/boundary-recommender.ts
+  - packages/convergence/src/self-check-analyzer.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # Realization Plan: 파이프라인 실체화
 
@@ -26,6 +38,10 @@ def:
 >
 > **달성**: G1~G5, R2, R5 해결. 현재 수량은 `DEMO_CATALOG`와 DKG store에서 파생한다.
 > **G5 해소**: flow-trace skill이 AddressContextRecord를 직접 소비 (CLI self-check + ingest convergence pipeline). 나머지 skill은 UsageData(집계 결과) 소비가 올바른 설계.
+
+> **현재 상태 메모**: 이 문서는 2026-03-24 마지막 검증 기준의 pipeline realization 기록이다.
+> 현재 수량과 health는 문서에 고정하지 않고 `DEMO_CATALOG`, DKG store, convergence/CLI source에서 파생한다.
+> 아래 숫자는 당시 검증 snapshot이며, 현행 authority는 위 `sources`의 구현과 테스트다.
 
 ## 1. 배경
 

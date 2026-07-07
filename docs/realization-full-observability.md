@@ -11,6 +11,15 @@ def:
   links:
     - target: system-narrative
       type: refines
+sources:
+  - docs/system-narrative.md
+  - docs/system-overview.md
+  - docs/CONVENTIONS.md
+  - packages/demo-dkg-config/src/index.ts
+  - packages/cli/src/index.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/convergence/src/self-check-analyzer.ts
+  - packages/convergence/src/entry-coverage.ts
 ---
 # Realization Plan: 완전 관측 — CLI + DKG + 시스템 이벤트의 좌표화
 
@@ -25,6 +34,10 @@ def:
 >
 > **달성**: cli_event prefix + 3축(cli_intent/cli_domain/cli_subject) + CLI_COMMAND_MAP 75개 명령 → 50 고유 좌표.
 > emitCliEvent() 전 CLI 명령에 통합. analyzeCliCoverage() → dormant 감지. dsl-dev DSL에 배정.
+
+> **현재 상태 메모**: 이 문서는 CLI/DKG 관측성 realization의 completed narrative다. 실제 CLI event
+> 매핑과 emit/analyze 동작은 `packages/cli/src/commands/dkg.ts`와 CLI entrypoint가 소유한다. 명령 수와
+> 고유 좌표 수는 완료 시점 설명이며, 새 명령 추가 여부는 현행 `CLI_COMMAND_MAP`을 기준으로 확인한다.
 
 ## 1. 핵심 원칙
 

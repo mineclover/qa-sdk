@@ -11,6 +11,19 @@ def:
   links:
     - target: system-narrative
       type: refines
+sources:
+  - docs/system-narrative.md
+  - docs/system-overview.md
+  - docs/specs/dkg-system/dkg-growth-spiral.spec.md
+  - docs/specs/dkg-system/dkg-skills-system/dkg-skill-catalog/dkg-skill-catalog-registry.spec.md
+  - packages/convergence/src/promotion-scanner.ts
+  - packages/convergence/src/causal-discovery.ts
+  - packages/convergence/src/boundary-recommender.ts
+  - packages/convergence/src/entry-coverage.ts
+  - packages/dkg/src/skills/safe-entry-add.ts
+  - packages/spec-core/src/propagation/entry-add-executor.ts
+  - packages/spec-core/src/propagation/catalog-file-writer.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # Realization Plan: 좌표 승격 파이프라인
 
@@ -28,6 +41,11 @@ def:
 > phantom→auditCoverage()→safeEntryAdd()→executeEntryAdd() 전체 체인.
 > co-occurrence→discoverCausality()→recommendFromCausality() prefix 후보 추천.
 > writeCatalogFile() codegen + CatalogRegistry 재등록.
+
+> **현재 상태 메모**: 이 문서는 좌표 승격 파이프라인의 completed narrative다. 현행 실행 경계는
+> `scanPromotionCandidates`, convergence 추천기, `safeEntryAdd`, `executeEntryAdd`, `writeCatalogFile`,
+> 그리고 `packages/cli/src/commands/dkg.ts`의 CLI surface가 소유한다. 아래 Phase 설명은 구현에 이른
+> 설계 경로와 검증 기준 기록이다.
 
 ## 1. 배경
 

@@ -11,6 +11,19 @@ def:
   links:
     - target: system-narrative
       type: refines
+sources:
+  - docs/system-narrative.md
+  - docs/system-overview.md
+  - docs/specs/realization/realization-service-control-plane.spec.md
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/loader/catalog-bridge.test.ts
+  - packages/spec-core/src/propagation/registry-http-client.ts
+  - packages/spec-core/src/propagation/registry-port.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/config-loader/src/catalog-loader.ts
+  - packages/registry-service/src/stores/catalog-store.ts
+  - packages/registry-service/src/stores/sql-catalog-store.ts
+  - packages/registry-service/src/modules/catalog/catalog.service.ts
 ---
 # Realization Plan: Registry 연결
 
@@ -27,6 +40,10 @@ def:
 > Phase A: catalogToSchemaSnapshot() + `dkg publish --registry` → POST /schema/import.
 > Phase B: `dkg version list/lock/unlock/release/activate/deprecate` 6개 lifecycle CLI.
 > Phase C: `--registry` 글로벌 옵션 + createCatalogProvider({ registry }) + createQaContextAsync({ registry }) + QA_REGISTRY_URL env.
+
+> **현재 상태 메모**: 이 문서는 registry 연결 realization의 completed narrative다. 현행 변환/HTTP/CLI/store
+> 계약은 `catalogToSchemaSnapshot`, `RegistryHttpClient`, `packages/cli/src/commands/dkg.ts`, 그리고
+> registry-service catalog store/service source가 소유한다. 아래 Phase/Fitness는 완료 경로 기록이다.
 
 ## 1. 배경
 

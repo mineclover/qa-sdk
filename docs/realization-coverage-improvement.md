@@ -11,6 +11,16 @@ def:
   links:
     - target: system-narrative
       type: refines
+sources:
+  - docs/system-narrative.md
+  - docs/system-overview.md
+  - docs/specs/analysis-system/analysis-convergence.spec.md
+  - packages/convergence/src/self-check-analyzer.ts
+  - packages/convergence/src/entry-coverage.ts
+  - packages/convergence/src/usage-aggregator.ts
+  - packages/convergence/src/convergence-runner.ts
+  - packages/convergence/src/index.ts
+  - packages/cli/src/commands/dkg.ts
 ---
 # Realization: Entry 커버리지 15% → 97% 달성
 
@@ -22,6 +32,10 @@ def:
 > Status: **completed** (Phase 1 완료)
 > Created: 2026-03-22
 > Completed: 2026-03-22
+
+> **현재 상태 메모**: 이 문서는 2026-03-22 커버리지 개선 완료 기록이다. `SYNTHETIC_EVENTS`와
+> `ERROR_PATH_ENTRIES`의 현행 정의, coverage 계산 방식, CLI 출력은 위 `sources`의 convergence/CLI
+> 구현을 기준으로 확인한다. 아래 비율과 entry 수는 완료 시점 snapshot이며 현재 SSOT가 아니다.
 
 ---
 
