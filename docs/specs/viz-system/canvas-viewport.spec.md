@@ -14,6 +14,14 @@ def:
       type: traces_to
     - target: scope-nesting-visualization
       type: refs
+sources:
+  - packages/canvas-viewport/src/index.ts
+  - packages/canvas-viewport/src/math.ts
+  - packages/canvas-viewport/src/controller.ts
+  - packages/canvas-viewport/src/chrome.ts
+  - packages/canvas-viewport/src/hud.ts
+  - packages/canvas-viewport/src/support-bar.ts
+  - packages/canvas-viewport/src/ui-state.ts
 ---
 # Canvas Viewport
 

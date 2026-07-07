@@ -13,18 +13,25 @@ def:
   links:
     - target: ingest-api-system
       type: depends_on
+sources:
+  - packages/viz-web/src/api/ingest-client.ts
+  - packages/viz-web/src/api/ingest-client.test.ts
+  - packages/viz-web/src/api/sse-client.ts
+  - packages/viz-web/src/api/ws-client.ts
+  - packages/viz-web/src/config.ts
 ---
 # API 클라이언트 — REST 래퍼 + SSE 구독
 
 ## 목적 ^purpose
 
-viz-web에서 ingest-server와 통신하기 위한 REST fetch 래퍼와 EventSource 기반 SSE 구독 클라이언트.
+viz-web에서 ingest-server와 통신하기 위한 REST fetch 래퍼, EventSource 기반 SSE 구독 클라이언트, WebSocket session stream 클라이언트.
 
 ## 구성 ^overview
 
 - **REST 클라이언트**: 단일 `request<T>(path, init?)` 헬퍼로 모든 REST 호출에 일관된 에러 처리를 적용한다
 - **엔드포인트**: scenarios CRUD, trace 메타/레코드/그래프/verdicts 조회, session 레코드/verdicts 조회, verdicts 재계산 등 10개 함수
 - **SSE 구독**: `subscribeToTrace(traceId, handlers)` — EventSource로 실시간 레코드 수신, close 이벤트 처리, unsubscribe 함수 반환
+- **WebSocket 구독**: `createWsClient()` — scenario/session stream을 받고 viz-web graph replay buffer에 전달
 - **페이지네이션**: `getSessionRecords`는 cursor 기반으로 limit=200씩 요청하며 최대 1,000개까지 수집한다
 - **설정**: `INGEST_SERVER_URL`/`ROLEPLAY_WEB_URL`은 config.ts에서 읽으며, `VITE_*` 환경변수로 오버라이드 가능하다
 - **무상태 설계**: 클라이언트는 상태를 갖지 않으며, 인증/세션 관리는 범위 밖이다

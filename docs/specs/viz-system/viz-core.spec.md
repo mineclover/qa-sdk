@@ -13,7 +13,13 @@ def:
   links:
     - target: viz-panel-layout
       type: traces_to
-source: packages/viz-core/src/index.ts
+sources:
+  - packages/viz-core/src/index.ts
+  - packages/viz-core/src/primitives.ts
+  - packages/viz-core/src/shapes.ts
+  - packages/viz-core/src/pipe-mermaid.ts
+  - packages/viz-core/src/pipe-svg.ts
+  - packages/viz-core/src/concept-grid.ts
 ---
 
 # viz-core — 시각화 코어

@@ -12,6 +12,13 @@ def:
   links:
     - target: viz-system
       type: refines
+sources:
+  - packages/weighted-ui/src/index.ts
+  - packages/weighted-ui/src/components/badge.ts
+  - packages/weighted-ui/src/components/hex-bar.ts
+  - packages/weighted-ui/src/components/mode-toggle.ts
+  - packages/weighted-ui/src/styles/index.css
+  - packages/weighted-ui/src/utils/colors.ts
 ---
 # Weighted UI
 

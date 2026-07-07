@@ -13,19 +13,27 @@ def:
   links:
     - target: viz-surface-system
       type: refines
+sources:
+  - packages/viz-web/src/main.ts
+  - packages/viz-web/src/api/ws-client.ts
+  - packages/viz-web/src/graph/updater.ts
+  - packages/viz-web/src/graph/renderer.ts
+  - packages/viz-3d/src/core/signal-model.ts
+  - packages/viz-3d/src/adapter/flow-timeline.ts
+  - packages/viz-3d/src/adapter/legend-builder.ts
 ---
 
 # 그래프 렌더러 실시간 규칙
 
 ## 목적 ^purpose
 
-그래프 스타일 매핑과 SSE 기반 실시간 업데이트 규칙을 분리해 렌더러의 런타임 변경 비용을 줄인다.
+그래프 스타일 매핑과 stream 기반 실시간 업데이트 규칙을 분리해 렌더러의 런타임 변경 비용을 줄인다.
 
 ## 구성 ^overview
 
-platform-demo의 monitor.html이 3D 좌표 시각화를 실시간으로 렌더링한다. Three.js 기반 3D 그리드, SSE 이벤트 스트림, Signal Role 분류를 결합하여 좌표 주소가 발생할 때마다 해당 셀을 하이라이트한다.
+viz-web은 WebSocket stream과 session record replay를 통해 2D graph 상태를 부분 갱신한다. viz-3d는 Signal Role 분류와 timeline/legend adapter를 통해 3D 좌표 시각화의 의미 레이어를 제공한다.
 
-## 3D 그리드 렌더링 — viz-3d-core.js
+## 3D 그리드 렌더링 — viz-3d
 
 ### 카테고리별 스타일 매핑
 
@@ -67,8 +75,9 @@ platform-demo의 monitor.html이 3D 좌표 시각화를 실시간으로 렌더�
 ### 부분 갱신 원칙
 
 - 전체 그래프를 다시 그리지 않는다
-- 이벤트 발생 시 해당 셀의 opacity만 `activeOpacity`로 변경
-- 일정 시간 후 `cellOpacity`로 fade-back
+- 새 record는 `GraphUpdater.processRecord()`로 matching node/edge/event badge만 갱신한다
+- session 전환 시 historical records와 WebSocket buffer를 merge/dedup/sort 후 replay한다
+- WebSocket 연결 실패 시 exponential backoff로 재연결한다
 
 ### Flow Timeline Panel
 
@@ -85,6 +94,6 @@ platform-demo의 monitor.html이 3D 좌표 시각화를 실시간으로 렌더�
 
 ## 스트림 안정성
 
-- SSE 연결이 끊어지면 마지막 일관된 상태 유지
-- 이벤트 순서 뒤틀림 시 타임스탬프 기준 정렬
+- WebSocket 연결이 끊어지면 마지막 일관된 상태 유지
+- event 순서 뒤틀림 시 session replay merge에서 타임스탬프 기준 정렬
 - 스트림 지연 시 UI가 멈추지 않음 — 렌더링과 데이터 수신이 독립

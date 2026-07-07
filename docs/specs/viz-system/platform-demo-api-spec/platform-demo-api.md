@@ -12,6 +12,11 @@ def:
   links:
     - target: platform-demo-api-spec
       type: refines
+sources:
+  - packages/platform-demo-api/src/index.ts
+  - packages/platform-demo-api/src/registry.ts
+  - packages/platform-demo-api/src/db/schema.ts
+  - packages/platform-demo-api/src/stubs/better-sqlite3.ts
 ---
 # platform-demo-api
 

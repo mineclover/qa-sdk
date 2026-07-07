@@ -15,6 +15,10 @@ def:
       type: depends_on
     - target: dkg-service-topology
       type: depends_on
+sources:
+  - packages/spec-core/src/visualization/mermaid-gen.ts
+  - packages/spec-core/src/visualization/mermaid-gen.test.ts
+  - packages/spec-core/src/visualization/index.ts
 ---
 # Mermaid 다이어그램 생성 (mermaid-gen)
 

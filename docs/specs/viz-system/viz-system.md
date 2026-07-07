@@ -31,6 +31,12 @@ def:
       type: refs
     - target: weighted-ui-spec
       type: refs
+sources:
+  - packages/viz-web/src/main.ts
+  - packages/viz-core/src/index.ts
+  - packages/viz-3d/src/index.ts
+  - packages/roleplay-web/src/main.ts
+  - packages/platform-demo-api/src/index.ts
 ---
 
 ## 목적 ^purpose
@@ -39,9 +45,9 @@ def:
 
 ## 구성 ^overview
 
-- `viz-surface-system`: 패널 배치와 그래프 렌더러를 시각 구성/실시간 갱신 문서로 분리한 그룹.
+- `viz-surface-system`: viz-web의 패널 배치와 그래프 렌더러를 시각 구성/실시간 갱신 문서로 분리한 그룹.
 - `viz-language-system`: RLSC 계약을 모델/통합 문서로 분리한 그룹.
 - `viz-roleplay-system`: form-builder와 QA bridge를 구조/렌더링/런타임 문서로 분리한 그룹.
-- `api-client-spec`: viz-web에서 ingest-server와 통신하기 위한 REST fetch 래퍼와 EventSource 기반 SSE 구독 클라이언트.
+- `api-client-spec`: viz-web에서 ingest-server와 통신하기 위한 REST fetch/WebSocket/SSE 클라이언트 계층.
 - `iframe-protocol-spec`: viz-web(부모)과 roleplay-web(자식 iframe) 간의 `postMessage` 기반 양방향 통신 프로토콜.
 - `mermaid-gen-spec`: DKG 그래프에서 Mermaid 텍스트를 생성하는 12종 다이어그램 함수와 카탈로그 함수.

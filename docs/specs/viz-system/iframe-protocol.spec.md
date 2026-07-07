@@ -13,6 +13,13 @@ def:
   links:
     - target: motion-content-contract
       type: depends_on
+sources:
+  - packages/viz-web/src/iframe/message-protocol.ts
+  - packages/viz-web/src/iframe/roleplay-host.ts
+  - packages/roleplay-web/src/iframe/message-protocol.ts
+  - packages/roleplay-web/src/iframe/child-bridge.ts
+  - packages/roleplay-web/src/iframe/message-protocol.test.ts
+  - packages/roleplay-web/src/iframe/child-bridge.test.ts
 ---
 
 # iframe 통신 프로토콜
@@ -23,12 +30,12 @@ viz-web(부모)과 roleplay-web(자식 iframe) 간의 `postMessage` 기반 양�
 
 ## 구성 ^overview
 
-- **통신 채널**: postMessage는 SSE 파이프라인의 보조 채널로, 즉시 UI 피드백 전용으로 사용한다
-- **메시지 방향**: ContextMessage(부모→자식, 시나리오 컨텍스트 전달)와 EventEmittedMessage(자식→부모, 이벤트 발생 알림) 2종
+- **통신 채널**: postMessage는 ingest stream 파이프라인의 보조 채널로, 즉시 UI 피드백 전용으로 사용한다
+- **메시지 방향**: ContextMessage(부모→자식, 시나리오 컨텍스트 전달), EventEmittedMessage(자식→부모, 이벤트 발생 알림), ReadyMessage(자식→부모, iframe reload 후 context 재전송 요청)
 - **보안**: origin 검증으로 cross-origin 메시지를 필터링하며, iframe sandbox에 `allow-scripts allow-same-origin allow-forms` 적용
 - **부모 측 API**: `createRoleplayHost(container)` — iframe 생성, 컨텍스트 전송, 이벤트 수신, 토글 UI 제공
 - **자식 측 API**: `createChildBridge(vizOrigin)` — 컨텍스트 수신, 이벤트 알림 전송, 비-iframe 환경 안전 처리
-- **타이밍**: postMessage(~1ms 즉시 하이라이트) 후 SSE(~50-200ms 정식 그래프 업데이트) 순서로 도착
+- **타이밍**: postMessage(~1ms 즉시 하이라이트) 후 ingest stream(~50-200ms 정식 그래프 업데이트) 순서로 도착
 - **타입 공유 전략**: 메시지 타입 정의를 양쪽 패키지에 각각 유지하며, 공유 패키지로 추출하지 않는다
 - **타입 가드**: 구조적 타입 검사(`typeof` + `data.type` 문자열 비교 + 필드 타입 확인)로 메시지를 검증한다
 
@@ -38,8 +45,8 @@ implemented
 
 ## 설계 원칙
 
-- postMessage는 SSE 파이프라인의 보조 채널이다. 실제 데이터 흐름은 `roleplay-web → HttpTransport → ingest-server → SSE → viz-web`이 정상 경로다.
-- postMessage는 SSE 지연 없는 즉시 UI 피드백용으로만 사용한다.
+- postMessage는 ingest stream 파이프라인의 보조 채널이다. 실제 데이터 흐름은 `roleplay-web → HttpTransport → ingest-server → viz-web stream`이 정상 경로다.
+- postMessage는 stream 지연 없는 즉시 UI 피드백용으로만 사용한다.
 - origin 검증으로 cross-origin 메시지를 필터링한다.
 - 메시지 타입은 양쪽 패키지에 동일한 정의를 유지한다 (복사, 공유 패키지 없음).
 
@@ -88,8 +95,9 @@ QA 이벤트 발생 알림을 부모에게 전달한다.
 2. iframe sandbox: `allow-scripts allow-same-origin allow-forms`.
 3. `sendContext()` — `iframe.contentWindow.postMessage(msg, ROLEPLAY_WEB_URL)`.
 4. `onEvent()` — `window.addEventListener("message", handler)`. origin이 `ROLEPLAY_WEB_URL`의 origin과 다르면 무시한다.
-5. Collapse/Expand 토글 버튼으로 iframe 영역을 접거나 펼 수 있다.
-6. `destroy()` — 이벤트 리스너 해제, DOM 제거.
+5. `ready` 메시지를 받으면 마지막 context를 iframe에 다시 전송한다.
+6. Collapse/Expand 토글 버튼으로 iframe 영역을 접거나 펼 수 있다.
+7. `destroy()` — 이벤트 리스너 해제, DOM 제거.
 
 ## roleplay-web 측 (child-bridge.ts)
 
@@ -99,20 +107,21 @@ QA 이벤트 발생 알림을 부모에게 전달한다.
 ### 동작
 
 1. `window.addEventListener("message", handler)` — origin이 `vizOrigin`인 `ContextMessage`만 처리한다.
-2. `notifyEvent(eventKey)` — `EventEmittedMessage`를 생성하여 `window.parent.postMessage(msg, vizOrigin)` 전송. `window.parent === window`이면 (iframe이 아닌 경우) 전송하지 않는다.
-3. `onContext(handler)` — 컨텍스트 핸들러를 등록한다 (단일 핸들러).
-4. `destroy()` — 이벤트 리스너 해제, 핸들러 null 처리.
-5. timestamp는 `@qa-sdk/core`의 `now()`를 사용한다.
+2. 초기화 시 parent에 `ready` 메시지를 보내고, parent는 마지막 context를 재전송한다.
+3. `notifyEvent(eventKey)` — `EventEmittedMessage`를 생성하여 `window.parent.postMessage(msg, vizOrigin)` 전송. `window.parent === window`이면 (iframe이 아닌 경우) 전송하지 않는다.
+4. `onContext(handler)` — 컨텍스트 핸들러를 등록한다 (단일 핸들러).
+5. `destroy()` — 이벤트 리스너 해제, 핸들러 null 처리.
+6. timestamp는 `@qa-sdk/core`의 `now()`로 생성한다.
 
 ## 데이터 흐름 타이밍
 
 ```
 [User clicks button in roleplay-web]
   ├── (즉시) postMessage → viz-web: 노드 하이라이트 (~1ms)
-  └── (비동기) HttpTransport → ingest-server → SSE → viz-web: 그래프 진행 (~50-200ms)
+  └── (비동기) HttpTransport → ingest-server → viz-web stream: 그래프 진행 (~50-200ms)
 ```
 
-postMessage가 먼저 도착하므로 사용자는 즉각적인 시각 피드백을 받고, SSE를 통한 정식 데이터가 도착하면 그래프가 정확한 상태로 업데이트된다.
+postMessage가 먼저 도착하므로 사용자는 즉각적인 시각 피드백을 받고, ingest stream을 통한 정식 데이터가 도착하면 그래프가 정확한 상태로 업데이트된다.
 
 ## 제약 조건
 

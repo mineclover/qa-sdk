@@ -34,6 +34,11 @@ def:
       type: depends_on
     - target: definition-code-link-coverage
       type: depends_on
+sources:
+  - packages/viz-core/src/concept-grid.ts
+  - packages/viz-core/src/concept-grid.test.ts
+  - packages/viz-web/src/concept-hierarchy-preview.ts
+  - packages/viz-web/concept-hierarchy.html
 ---
 
 # Concept Hierarchy Grid

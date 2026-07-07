@@ -13,6 +13,10 @@ def:
   links:
     - target: viz-language-system
       type: refines
+sources:
+  - packages/rlsc-analysis/src/index.ts
+  - packages/rlsc-analysis/src/browser.ts
+  - packages/rlsc-analysis/src/browser.test.ts
 ---
 
 # RLSC 핵심 모델
@@ -23,7 +27,7 @@ RLSC의 정체성, 핵심 개념, 마크업 포맷을 분리해 시각 구조 DS
 
 ## 구성 ^overview
 
-R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구조를 좌표계 DSL로 표현한다. DOM을 순회하여 노드 트리(R), 그리드 행렬(L), z-index 레이어 스택(S), 공간 관계(C)를 추출하고, 마크업 문자열로 직렬화하여 LLM Context Engineering에 사용한다.
+R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구조를 좌표계 DSL로 표현한다. 현재 qa-sdk 근거는 `rlsc-analysis`의 browser collector/metadata 분석이며, DOM을 순회하여 구조·텍스트·위치·스타일 신호를 추출하고 LLM Context Engineering에 사용할 수 있는 분석 fact로 정규화한다.
 
 ## 핵심 타입
 

@@ -15,6 +15,12 @@ def:
       type: refines
     - target: viz-system
       type: depends_on
+sources:
+  - packages/viz-web/src/main.ts
+  - packages/viz-web/src/graph/renderer.ts
+  - packages/viz-web/src/graph/updater.ts
+  - packages/viz-core/src/concept-grid.ts
+  - packages/spec-core/src/visualization/mermaid-gen.ts
 ---
 
 # Viz Surface 그룹 — 소비자 기대 시나리오
@@ -30,35 +36,35 @@ def:
 **동작**: graph-renderer-pipeline 이 동일 DAG 데이터 입력 → SVG 출력.
 
 **기대**:
-- 노드 좌표가 입력 해시로 결정 (결정론적 layout)
-- viewport 크기 변경 시 layout 재계산, 애니메이션은 viz-core 가 담당
-- 노드 수 > 1000 시 progressive render (throttling)
+- 같은 `ScenarioSpec` 입력은 같은 graph node/edge sequence와 layout을 만든다
+- viewport 상호작용은 canvas-viewport controller/HUD/minimap으로 처리한다
+- 상태 변화는 renderer API의 node/edge 부분 갱신으로 처리한다
 
 **실패 시 수정 대상**: `viz-system.md`의 `canvas-viewport-spec` — viewport API 가 불완전하면 surface 가 직접 DOM 조작 → viz-core 캡슐화 위반.
 
 ## 시나리오 2: graph-renderer-live 실시간 업데이트 ^overview
 
-**전제**: `viz-system`의 `api-client-spec` 이 EventSource SSE 구독 제공.
+**전제**: `viz-system`의 `api-client-spec` 이 WebSocket/SSE 구독과 REST replay 조회를 제공.
 
-**동작**: graph-renderer-live 가 SSE 스트림을 구독하여 노드/엣지 실시간 갱신.
+**동작**: graph-renderer-live 가 session stream을 구독하여 노드/엣지 실시간 갱신.
 
 **기대**:
-- SSE 연결 끊김 → 지수 backoff 재연결
-- 중복 이벤트(same ID) → dedup, 최신 상태만 렌더
-- 버퍼 가득 참 → oldest drop + metric
+- WebSocket 연결 끊김 → 지수 backoff 재연결
+- 중복 record는 `mergeAndSortRecords()`에서 logId 기준 dedup
+- session buffer는 session/record 상한을 둬 oldest 데이터를 정리
 
-**실패 시 수정 대상**: `viz-system.md`의 `api-client-spec` — SSE reconnect/dedup 정책이 없으면 surface 가 로컬 버퍼 관리를 재구현.
+**실패 시 수정 대상**: `viz-system.md`의 `api-client-spec` — stream reconnect/dedup 정책이 없으면 surface 가 로컬 버퍼 관리를 재구현.
 
 ## 시나리오 3: panel-layout 제약 ^overview
 
-**전제**: `viz-system`이 viz-surface 내 scenario selector, event log, verdict panel 의 배치 제약을 viz-core 를 통해 공유.
+**전제**: `viz-system`이 viz-surface 내 scenario selector, session list, event log, verdict panel, roleplay iframe의 배치 제약을 공유.
 
 **동작**: 작은 뷰포트(<= 768px width)에서 panel 배치.
 
 **기대**:
-- 세로 stack 전환 (가로 배치 금지)
-- panel 간 의존(예: event log 선택 → verdict panel 갱신)은 양방향 이벤트 채널로 연결
-- resize observer 1회 subscribe, 여러 panel 이 공유
+- pane focus는 canvas-viewport helper로 `focused`/`unfocused` class를 토글
+- panel 간 의존은 `main.ts`의 session/spec state와 component interface를 통해 연결
+- iframe 통신은 postMessage protocol로 격리
 
 **실패 시 수정 대상**: `viz-system.md`의 panel 배치 제약 — viewport breakpoint 가 viz-core 에 상수로 없으면 각 surface panel 이 다른 breakpoint 사용.
 

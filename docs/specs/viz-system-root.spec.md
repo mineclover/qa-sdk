@@ -20,6 +20,11 @@ def:
       type: refs
     - target: viz-roleplay-system
       type: refs
+sources:
+  - packages/viz-web/src/main.ts
+  - packages/viz-core/src/index.ts
+  - packages/viz-3d/src/index.ts
+  - packages/roleplay-web/src/main.ts
 ---
 # Visualization System Root
 ## 목적 ^purpose

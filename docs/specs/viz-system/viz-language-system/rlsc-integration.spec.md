@@ -15,6 +15,11 @@ def:
       type: refines
     - target: visbug-bridge-spec
       type: refs
+sources:
+  - packages/rlsc-analysis/src/index.ts
+  - packages/rlsc-analysis/src/browser.ts
+  - packages/rlsc-analysis/smoke/accuracy.mjs
+  - packages/visbug-bridge/test/rlsc-integration.spec.ts
 ---
 
 # RLSC 통합 경로
@@ -25,7 +30,7 @@ RLSC를 context engineering, 기존 좌표계, API 요약, 패키지 구조와 �
 
 ## 구성 ^overview
 
-RLSC는 DOM 수집 → 분석(grid/layers/relations) → 마크업 직렬화 → Context Engineering 프롬프트 생성의 파이프라인을 제공한다. 기존 qa-sdk 좌표 인프라를 `data-qa-address` 속성으로 연결하고, 5가지 목적별 프롬프트 템플릿으로 LLM 워크플로에 주입한다.
+RLSC 계열은 DOM 수집 → 분석 fact 생성 → graphics/layout contract 연결의 파이프라인을 제공한다. 기존 qa-sdk 좌표 인프라와의 연결은 `data-qa-address` 같은 DOM 속성 또는 bridge 테스트에서 확인되는 통합 표면을 통해 관리한다.
 
 ## Context Engineering — generateDesignContext
 
@@ -72,12 +77,12 @@ RLSC는 패키지 구현은 독립 repository/submodule로 공유할 수 있지�
 
 | 패키지 | 책임 | 배포/공유 기준 |
 |--------|------|---------------|
-| `rlsc-analysis` | DOM 스캔, 메타데이터 수집, identifier/index, 영역/overflow 분석 | `pnpm-mcp/packages/rlsc-analysis` |
-| `rlsc-perspective` | 수집된 `RLSCDocument`의 CSS 3D Perspective 시각화 | `pnpm-mcp/packages/rlsc-perspective` |
-| `rlsc` | 기존 RLSC DSL, rendering, compatibility export | `pnpm-mcp/packages/rlsc` |
-| `rlsc-demo` | 분석/시각화 통합 데모 | `pnpm-mcp/packages/rlsc-demo` |
+| `rlsc-analysis` | DOM 스캔, 메타데이터 수집, identifier/index, 영역/overflow 분석 | `packages/rlsc-analysis` |
+| `rlsc-perspective` | 수집된 `RLSCDocument`의 CSS 3D Perspective 시각화 | 외부/이전 패키지 경계 |
+| `rlsc` | 기존 RLSC DSL, rendering, compatibility export | 외부/이전 패키지 경계 |
+| `rlsc-demo` | 분석/시각화 통합 데모 | 외부/이전 패키지 경계 |
 
-qa-sdk는 더 이상 RLSC 구현 패키지나 demo를 workspace로 소유하지 않는다. qa-sdk 쪽 계약은 `data-qa-address` 기반 좌표 연결과 viz-language 문서 수준의 통합 설명으로 제한한다.
+qa-sdk는 RLSC 전체 구현 패키지나 demo를 제품 코어로 승격하지 않는다. qa-sdk 쪽 계약은 `rlsc-analysis` 근거, `data-qa-address` 기반 좌표 연결, viz-language 문서 수준의 통합 설명으로 제한한다.
 
 외부 소비자는 `pnpm-mcp`에서 빌드/테스트된 registry 또는 local tarball 산출물을 설치한다. 구현과 테스트 하네스의 관리 주체는 `pnpm-mcp`다.
 
@@ -94,7 +99,7 @@ qa-sdk는 더 이상 RLSC 구현 패키지나 demo를 workspace로 소유하지 
 | `removeNode(doc, id)` | 불변 노드 제거 |
 | `diffDocuments(before, after)` | 두 문서 간 차이 계산 (added/removed/moved/resized/reordered) |
 
-## 레거시 패키지 구조 — pnpm-mcp/packages/rlsc
+## 레거시 패키지 구조 — external rlsc package
 
 ```
 src/
@@ -109,7 +114,7 @@ src/
   index.ts       ← 공개 export 배럴
 ```
 
-## demo 통합 — pnpm-mcp/packages/rlsc-demo
+## demo 통합 — external rlsc-demo
 
 R.L.S.C. Inspector UI:
 

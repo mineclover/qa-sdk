@@ -13,86 +13,74 @@ def:
   links:
     - target: viz-roleplay-system
       type: refines
+sources:
+  - packages/roleplay-web/src/sdk/qa-bridge.ts
+  - packages/roleplay-web/src/sdk/event-emitter.ts
+  - packages/roleplay-web/src/sdk/qa-bridge.test.ts
+  - packages/roleplay-web/src/sdk/event-emitter.test.ts
+  - packages/roleplay-web/src/iframe/child-bridge.ts
+  - packages/roleplay-web/src/main.ts
 ---
 
 # QA Bridge 런타임
 
 ## 목적 ^purpose
 
-roleplay-web의 사용자 폼 상호작용을 QA 이벤트로 변환하고 템플릿 렌더링과 오케스트레이션에 연결하는 런타임 계약을 정리한다.
+roleplay-web의 사용자 폼 상호작용을 QA 이벤트로 변환하고 ingest/iframe 경로에 연결하는 런타임 계약을 정리한다.
 
 ## 구성 ^overview
 
-QA Bridge는 motion-content의 이벤트 시스템과 browser-sdk의 전송 계층을 연결한다. 에디터 세션 내 사용자 액션을 `MotionEventLog` 으로 로컬 기록하고, 필요 시 QaMonitor를 통해 ingest 경로로 전달한다.
+QA Bridge는 `@qa-sdk/sdk`의 `QaLogger`/transport 계층과 `@qa-sdk/browser-codec`의 service overlay를 연결한다. EventEmitter는 preview DOM의 click/input/change/submit 이벤트를 QA 이벤트로 기록하고, 동시에 iframe parent에 즉시 알림을 보낸다.
 
 ## 이벤트 변환 경로
 
 ```
-사용자 폼 상호작용
+사용자 preview 상호작용
   │
-  ├── 에디터 커맨드 (set-parameter, update-item-timing 등)
+  ├── click / input / change / submit listener
   │     │
-  │     └── MotionEditorCommand → applyMotionEditorCommand()
-  │           └── EditorState 갱신
+  │     └── EventEmitter.emit()
+  │           ├── bridge.emitEvent(eventKey, payload)
+  │           ├── childBridge.notifyEvent(eventKey)
+  │           └── local event log append
   │
-  ├── transport 제어 (play, pause, seek, restart)
+  ├── session context
   │     │
-  │     └── MotionPlayer API 호출
-  │           └── GSAP timeline 제어
+  │     └── childBridge.onContext()
+  │           └── bridge.startSession(scenarioId, sessionId)
   │
-  └── 이벤트 로그 기록
-        │
-        └── MotionEventLog.append()
-              └── 로컬 세션 기록 (event-log.ts)
+  └── transport
+        └── HttpTransport / NoopTransport / custom Transport
 ```
 
 ## 도메인 액션 정의
 
-motion-content는 4가지 액션 카테고리를 정의한다:
+roleplay-web EventEmitter는 현재 preview DOM 이벤트를 네 가지 event key로 정규화한다:
 
-### transport 액션
-`play`, `pause`, `seek`, `restart`, `complete`, `set_loop`, `set_rate`
-
-### 편집 액션
-`select`, `edit_timing`, `edit_parameter`, `undo`, `redo`
-
-### 타임라인 액션
-`drag_start`, `drag_commit`
-
-### 컴포지션 라이프사이클 액션
-`import`, `export`, `preset_switch`
+| DOM 이벤트 | event_key | payload |
+|------------|-----------|---------|
+| click | `click` | target selector, text |
+| input/change | `input_change` | field name, value |
+| submit | `form_submit` | form id |
+| error | `ERROR:<event_key>` | error message |
 
 ## 서비스 메타데이터
 
 ```typescript
-const MOTION_CONTENT_SERVICE = {
-  serviceId: "motion-content",
-  name: "모션 콘텐츠",
-  description: "GSAP 기반 선언형 모션 콘텐츠 코어",
-};
+service_name: "roleplay-web"
+sdk_name: "@qa-sdk/sdk"
+owner_id: "qa-roleplay"
 ```
 
-## 템플릿 렌더링 연동
+## Infra Context 통합
 
-`applyMotionTemplate(template, values)` 가 `{{paramId}}` 패턴을 파라미터 값으로 치환한다.
-
-- 텍스트 자산: `"{{headline}}"` → `"GSAP Motion Canvas"`
-- 스타일 자산: `"{{accent}}"` → `"#f08f20"`
-- MotionStageAdapter가 `data-motion-id` 로 DOM 타겟을 해석
-
-## QaMonitor 통합 (선택적)
-
-motion-content 자체는 전역 좌표계에 참여하지 않는다 (`ownedPrefixes` 없음). 다만 호스팅 앱이 QaMonitor를 가지고 있으면:
-
-1. 에디터 액션을 `monitor.emit()` 로 전송 가능
-2. `emitWithCoords()` 로 좌표 컨텍스트 부여 가능
-3. 이는 호스팅 앱의 책임이며, motion-content 라이브러리 자체는 순수
+serviceConfig가 전달되면 `withServiceOverlay()`와 `browserTrack()`으로 service prefix address_context를 계산한다. service dims가 catalog에 없거나 encode가 실패하면 `onError(err, "infra-context")`를 호출하고 infraContext 없이 계속 동작한다.
 
 ## EventEmitter 패턴
 
 폼 컴포넌트와 QA 기록 계층 사이의 결합은 느슨하다:
 
-- 폼 컴포넌트 → EditorCommand 발행 → state 갱신
-- state 갱신 → 이벤트 로그 기록 (로컬)
-- 이벤트 로그 → QaMonitor 전송 (선택적, 호스팅 앱 책임)
-- 이 구조에서 폼 컴포넌트는 QaMonitor의 존재를 모른다
+- preview DOM → EventEmitter listener → QaBridge emit
+- QaBridge → `QaLogger` + transport flush
+- EventEmitter → ChildBridge notifyEvent로 parent viz-web에 즉시 알림
+- 이 구조에서 form-builder renderer는 ingest transport의 존재를 모른다

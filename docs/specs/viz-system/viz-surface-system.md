@@ -23,6 +23,15 @@ def:
       type: contains
     - target: viz-system
       type: depends_on
+sources:
+  - packages/viz-web/src/main.ts
+  - packages/viz-web/src/graph/layout.ts
+  - packages/viz-web/src/graph/renderer.ts
+  - packages/viz-web/src/graph/updater.ts
+  - packages/viz-web/src/panels/scenario-selector.ts
+  - packages/viz-web/src/panels/event-log.ts
+  - packages/viz-web/src/panels/verdict-panel.ts
+  - packages/viz-core/src/index.ts
 ---
 
 # Viz 표면 구성 그룹
@@ -33,9 +42,9 @@ def:
 
 ## 구성 ^overview
 
-- `viz-panel-layout`: scenario selector, event log, verdict panel의 배치와 제약을 정리한 문서.
-- `graph-renderer-pipeline`: DAG 레이아웃과 SVG 렌더링 파이프라인을 정리한 문서.
-- `graph-renderer-live`: 스타일 매핑과 실시간 업데이트 규칙을 정리한 문서.
+- `viz-panel-layout`: scenario selector, session list, event log, verdict panel, roleplay iframe의 배치와 제약을 정리한 문서.
+- `graph-renderer-pipeline`: scenario spec을 graph로 compile하고 SVG/canvas viewport로 렌더링하는 파이프라인을 정리한 문서.
+- `graph-renderer-live`: WebSocket/record replay 기반 실시간 업데이트 규칙을 정리한 문서.
 - `concept-hierarchy-grid`: 핵심 개념을 2차원 그리드 위에 배치해 높낮이와 바운더리 plane을 시각화하는 문서.
 
 원본: `docs/specs/visualization/panels.spec.md` (`viz-panels-spec`), `docs/specs/visualization/graph-renderer.spec.md` (`graph-renderer-spec`)

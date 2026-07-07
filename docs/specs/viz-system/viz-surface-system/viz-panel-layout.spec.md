@@ -13,6 +13,15 @@ def:
   links:
     - target: viz-surface-system
       type: refines
+sources:
+  - packages/viz-web/index.html
+  - packages/viz-web/src/main.ts
+  - packages/viz-web/src/panels/scenario-selector.ts
+  - packages/viz-web/src/panels/session-list.ts
+  - packages/viz-web/src/panels/event-log.ts
+  - packages/viz-web/src/panels/verdict-panel.ts
+  - packages/viz-web/src/iframe/roleplay-host.ts
+  - packages/viz-web/src/styles/main.css
 ---
 
 # Viz 패널 레이아웃
@@ -23,104 +32,59 @@ viz-web의 scenario selector, event log, verdict panel을 하나의 보조 패�
 
 ## 구성 ^overview
 
-platform-demo의 각 페이지가 공통 레이아웃 패턴(nav + sidebar + main + panel)을 따른다. 시나리오 선택기, 이벤트 로그, verdict 패널이 독립 스크롤 영역으로 분리되어 있으며, 공용 네비게이션 바가 페이지 간 이동을 담당한다.
+viz-web은 header + sidebar + split-pane(left graph/event log, right roleplay iframe) 레이아웃을 따른다. 시나리오 선택기, 세션 목록, 이벤트 로그, verdict 패널, roleplay iframe이 독립 영역으로 분리되어 있으며, pane focus는 canvas-viewport의 focus helper로 제어한다.
 
 ## 공통 레이아웃 구조
 
 ```
 ┌──────────────────────────────────────────────────┐
-│ #nav (36px)                                       │
-│ ┌────┬──────────────────────────────────┬───────┐ │
-│ │Brand│ Demo │ Monitor │ Diagram │ ...  │       │ │
-│ └────┴──────────────────────────────────┴───────┘ │
+│ #header                                           │
+│ ┌─────────────┬───────────────────────────────┐   │
+│ │ QA SDK Viz  │ Session / WS / Refresh        │   │
+│ └─────────────┴───────────────────────────────┘   │
 ├──────────────────────────────────────────────────┤
 │ ┌──────────┬──────────────────────┬────────────┐ │
-│ │ Sidebar  │      Main Content    │   Panel    │ │
-│ │ (280~     │                      │ (440px~    │ │
-│ │  340px)   │                      │  520px)    │ │
-│ │           │                      │            │ │
-│ │ 독립 스크롤│    독립 스크롤        │ 독립 스크롤 │ │
+│ │ Sidebar  │ Graph + Event Log    │ Roleplay   │ │
+│ │          │ split pane           │ split pane │ │
 │ └──────────┴──────────────────────┴────────────┘ │
 └──────────────────────────────────────────────────┘
 ```
 
-## 네비게이션 바 — #nav
+## 헤더 — #header
 
-- 높이: 36px 고정
-- 배경: `--bg2` (#161b22)
-- 하단 border: `--border` (#30363d)
-- 항목: Brand → Demo, Monitor, Diagram, Dashboard, Events, Insights, Flow, Debugger
-- 활성 링크: 페이지별 하이라이트 색상 (green, mint)
+- 제목: `QA SDK Viz`
+- 세션 정보: 선택 session ID, WebSocket status, verdict refresh 버튼
+- 오류: `#error-banner`로 session/API 오류를 표시하고 닫기 버튼으로 숨김
 
 ## 시나리오 선택기 (Sidebar)
 
-### diagram.html
+- `createScenarioSelector()`가 scenario 목록을 로드하고 선택 시 graph/session 상태를 초기화한다.
+- `createSessionList()`가 기존 session과 새 session을 나열하고 선택 session replay를 담당한다.
+- `createVerdictPanel()`이 recompute된 verdict 결과와 step match/missing/unexpected 정보를 표시한다.
 
-- 너비: 280px 고정
-- 헤더: 검색 필터 + 카운트 배지
-- 본문: 카테고리별 트리 뷰 (prefix, service, DSL, observation)
-- 선택 시 메인 영역의 다이어그램 갱신
+## 이벤트 로그 (Left Pane)
 
-### flow.html
+- `createEventLog()`가 event sequence strip과 log row를 렌더링한다.
+- `StoredRecord.eventKey`를 spec graph step 번호와 매핑하고, 미매칭 이벤트는 `?` 배지로 표시한다.
+- payload는 길이를 제한해 inline 표시하고, sequence chip hover는 singleton tooltip을 사용한다.
 
-- 너비: 340px 고정
-- 헤더: 시나리오 정보 (ID, 상태, 진행률)
-- 본문: 시나리오 step 목록 (체크리스트)
-- 피드 영역: SSE 실시간 이벤트 스트림 (min-height 140px, max-height 260px)
+## Roleplay 패널 (Right Pane)
 
-### events.html
-
-- 본문: trace/session 그룹별 이벤트 카드 목록
-- 필터: 서비스, prefix, session, 시간 범위
-
-## 이벤트 로그 (Main Content)
-
-### events.html 이벤트 카드
-
-- trace 카드: 서비스명, 시간, entry, flow 시퀀스, prefix 태그, session ID
-- 선택 시 우측 패널에 상세 표시
-- session 그룹핑: 같은 `qa_session_id` 끼리 묶어 표시
-
-### flow.html 타임라인
-
-- SSE 스트림에서 실시간 이벤트 수신
-- 시간순 세로 스크롤
-- 일시정지/재개 토글 버튼
-
-## Verdict 패널 (Side Panel)
-
-### events.html 상세 패널
-
-- 너비: 440px
-- 헤더: trace ID + 닫기 버튼 (sticky)
-- trace 요약: 서비스, 시간 범위, record 수
-- record 목록: event_key, 타입(log/span), 타임스탬프
-- payload 표시: JSON pre-wrap (max-height 120px)
-- address_context: prefix별 디코드 결과 표시
-
-### insights.html
-
-- summary 카드 그리드 (4열): 핵심 수치 (기록 수, prefix 수 등)
-- 바 차트: prefix별 사용 빈도
-- coverage donut: 서비스별 prefix 커버리지
-- correlation 카드: Jaccard 기반 공출현 분석
-- label 액션: confirmed/rejected/investigating 라벨링
+- `createRoleplayHost()`가 roleplay-web iframe을 footer/right pane에 삽입한다.
+- scenario/session context는 iframe으로 postMessage되고, iframe reload 시 마지막 context를 재전송한다.
+- collapse/expand 토글로 iframe 영역을 접거나 펼 수 있다.
 
 ## 통합 제약
 
-- 세 패널(sidebar, main, panel)은 독립 스크롤 경계를 가진다
-- 패널 간 정보 전달은 JavaScript 상태를 통해 이뤄지며, 직접 DOM 결합은 피한다
-- 패널은 `display: none` / `.open` 클래스로 토글 — CSS 전환
-- 다크 테마 통일: `--bg` (#0d1117), `--bg2` (#161b22), `--border` (#30363d)
-- 폰트: 본문은 시스템 sans-serif, 코드/수치는 monospace (SF Mono / Cascadia Code)
-- 모바일 미지원 — 데스크톱 전용 대시보드
+- 패널 간 정보 전달은 `main.ts`의 session/spec 상태와 component interface를 통해 이뤄진다.
+- roleplay iframe 통신은 `iframe-protocol-spec`의 postMessage 타입을 따른다.
+- pane focus class는 canvas-viewport helper를 통해 `focused`/`unfocused`로 토글한다.
+- 데스크톱 중심 대시보드이며, 작은 뷰포트에서는 split-pane 제약을 보수적으로 유지한다.
 
 ## 페이지별 그리드
 
 | 페이지 | Sidebar | Main | Panel |
 |--------|---------|------|-------|
-| diagram.html | 280px | flex:1 | 없음 |
-| events.html | 없음 | flex:1 | 440px (토글) |
-| flow.html | 340px | flex:1 | 없음 |
-| monitor.html | 없음 | canvas 전체 | HUD 오버레이 |
-| insights.html | 없음 | 전체 (max-width 1200px) | 없음 |
+| 화면 | Sidebar | Left Pane | Right Pane |
+|------|---------|-----------|------------|
+| viz-web/index.html | scenario/session/verdict | graph + event log | roleplay iframe |

@@ -14,6 +14,13 @@ def:
       type: refines
     - target: wi-system
       type: depends_on
+sources:
+  - packages/viz-3d/src/index.ts
+  - packages/viz-3d/src/core-bundle.ts
+  - packages/viz-3d/src/core/types.ts
+  - packages/viz-3d/src/core/signal-model.ts
+  - packages/viz-3d/src/adapter/browser-codec.ts
+  - packages/viz-3d/scripts/generate-browser-catalog.ts
 ---
 # Viz 3D
 

@@ -14,6 +14,10 @@ def:
       type: refines
     - target: rlsc-integration
       type: depends_on
+sources:
+  - packages/rlsc-analysis/src/graphics-interface.ts
+  - packages/rlsc-analysis/src/graphics-interface.test.ts
+  - packages/rlsc-analysis/src/index.ts
 ---
 
 # Graphics Interface Adapter Coverage
