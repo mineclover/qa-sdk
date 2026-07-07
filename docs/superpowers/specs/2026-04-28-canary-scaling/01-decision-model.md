@@ -1,3 +1,15 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/services/canary-controller/controller-config.yaml
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-builder.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-builder.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/safety-decision.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/resource-decision.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/verdict/category-verdict.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/integration/cycle-flow.test.ts
+---
+
 # Enterprise-PM Canary & Scaling — Decision Model
 
 > 30초 사이클로 Pass 1(안전 카나리 제어) · Pass 2(자원 스케일링)을 순차 평가하고, 카테고리×신호×임계 매트릭스에서 산출한 verdict를 audit-recorder에 멱등적으로 적재하는 결정 모델.

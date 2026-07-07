@@ -1,3 +1,13 @@
+---
+status: source-backed
+sources:
+  - docs/superpowers/specs/2026-04-28-canary-scaling/README.md
+  - docs/superpowers/plans/2026-04-28-canary-scaling/C-overview.md
+  - docs/superpowers/plans/2026-04-28-canary-scaling/D-overview.md
+  - docs/superpowers/plans/2026-04-28-canary-scaling/E-overview.md
+  - simulations/enterprise-pm/README.md
+---
+
 # Enterprise-PM Canary & Scaling — Implementation Plan Set
 
 > spec set `docs/superpowers/specs/2026-04-28-canary-scaling/`을 구현하기 위한 plan. 분할 review 편의를 위해 **plan별 overview + 단계별 stage 파일**로 구성된다.

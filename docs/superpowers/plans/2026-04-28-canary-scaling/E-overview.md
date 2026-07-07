@@ -1,3 +1,13 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-9-canary-happy-promote.ts
+  - simulations/enterprise-pm/scenarios/src/lib/assertions/decision-assertions.ts
+  - simulations/enterprise-pm/scenarios/src/runner/sim-handles/index.ts
+  - scripts/sim-canary.ts
+  - scripts/sim-scale.ts
+---
+
 # Plan E — Scenarios + closing (단계 11·12·13) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

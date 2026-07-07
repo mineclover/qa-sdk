@@ -1,3 +1,15 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/services/canary-controller/src/lock/advisory-lock.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/metrics/metrics-scrape.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/verdict/category-verdict.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/safety-decision.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/decision/resource-decision.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/action/action-executor.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/cycle/cycle-scheduler.service.ts
+---
+
 ## 단계 9: sim-canary-controller 신규 NestJS 서비스 (Pass 1 + Pass 2 + 30s 사이클)
 
 **Spec 참조:** `01-decision-model.md` 전체

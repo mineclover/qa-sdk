@@ -1,3 +1,15 @@
+---
+status: source-backed
+sources:
+  - docs/superpowers/specs/2026-04-28-canary-scaling/00-overview.md
+  - docs/superpowers/specs/2026-04-28-canary-scaling/01-decision-model.md
+  - docs/superpowers/specs/2026-04-28-canary-scaling/02-canary-topology.md
+  - docs/superpowers/specs/2026-04-28-canary-scaling/03-identifier-grammar.md
+  - docs/superpowers/specs/2026-04-28-canary-scaling/04-scaling-infra.md
+  - docs/superpowers/specs/2026-04-28-canary-scaling/05-error-and-scenarios.md
+  - simulations/enterprise-pm/README.md
+---
+
 # Enterprise-PM Canary & Scaling — Spec Set
 
 > enterprise-pm 시뮬에 카나리 배포 + 수평 스케일링 운영 컨트롤 플레인을 도입하는 설계 문서 군. 시뮬 자체가 qa-sdk decision-flow + version axis + audit-recorder + permission-engine Pass 1/2 패턴의 운영 응용 사례가 되도록 구성한다.

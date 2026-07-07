@@ -1,3 +1,13 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/services/gateway/src/routing/routing-table.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/route-decision.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/admin-routing.ts
+  - simulations/enterprise-pm/services/approval-api/src/lib/service-version.ts
+  - simulations/enterprise-pm/services/approval-api/test/integration/v1-v2-routing.test.ts
+---
+
 # Plan C — Canary delivery (단계 7·8) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

@@ -1,3 +1,13 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/README.md
+  - simulations/enterprise-pm/docker-compose.sim.yaml
+  - simulations/enterprise-pm/services/canary-controller/package.json
+  - simulations/enterprise-pm/services/gateway/src/app.ts
+  - simulations/enterprise-pm/scenarios/src/runner/sim-handles/index.ts
+---
+
 # Enterprise-PM Canary & Scaling — Overview
 
 > enterprise-pm 시뮬에 카나리 배포 + 스케일링 운영 컨트롤 플레인을 1급 시민으로 도입하고, 시뮬 자체를 qa-sdk 운영 결정 패턴의 응용 사례로 만든다.

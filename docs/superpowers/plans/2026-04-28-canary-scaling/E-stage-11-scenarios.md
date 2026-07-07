@@ -1,3 +1,15 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-9-canary-happy-promote.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-10-canary-rollback-compatibility.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-11-canary-rollback-audit-spike.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-12-scale-up-load-pressure.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-13-scale-blocked-by-db-pool.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-17-pass-priority-canary-blocks-scale.ts
+  - simulations/enterprise-pm/scenarios/src/lib/assertions/decision-assertions.ts
+---
+
 ## 단계 11: 시나리오 9~17 추가 + assertion 빌더
 
 **Spec 참조:** `05-error-and-scenarios.md` §3

@@ -1,3 +1,15 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/services/gateway/src/routing/routing-table.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/routing-table.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/sticky-hash.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/route-decision.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/admin-routing.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/admin-routing.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routing/integration.test.ts
+---
+
 ## 단계 7: gateway 변경 — routing table + sticky + version stamp + escape hatch
 
 **Spec 참조:** `02-canary-topology.md` §3 (§3.1 ~ §3.4)

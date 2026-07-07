@@ -1,3 +1,13 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/services/canary-controller/package.json
+  - simulations/enterprise-pm/services/canary-controller/src/decision/decision-builder.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/cycle/cycle-scheduler.service.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.ts
+  - simulations/enterprise-pm/services/canary-controller/src/integration/cycle-flow.test.ts
+---
+
 # Plan D — Controller (단계 9·10) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

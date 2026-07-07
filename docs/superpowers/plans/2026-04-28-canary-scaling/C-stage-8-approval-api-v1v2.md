@@ -1,3 +1,14 @@
+---
+status: source-backed
+sources:
+  - simulations/enterprise-pm/services/approval-api/src/lib/service-version.ts
+  - simulations/enterprise-pm/services/approval-api/src/lib/version-stamp.interceptor.ts
+  - simulations/enterprise-pm/services/approval-api/src/lib/version-stamp.test.ts
+  - simulations/enterprise-pm/services/approval-api/src/lib/outbox-payload.test.ts
+  - simulations/enterprise-pm/services/approval-api/src/lib/cross-stamp-consistency.test.ts
+  - simulations/enterprise-pm/services/approval-api/test/integration/v1-v2-routing.test.ts
+---
+
 ## 단계 8: approval-api v1/v2 빌드 분리 + version stamp + DataSource 분리
 
 **Spec 참조:** `02-canary-topology.md` §1·§4 + `04-scaling-infra.md` §4.2·§4.3

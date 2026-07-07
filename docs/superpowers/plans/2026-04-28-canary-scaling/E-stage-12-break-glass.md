@@ -1,3 +1,14 @@
+---
+status: source-backed
+sources:
+  - scripts/sim-canary.ts
+  - scripts/sim-canary.test.ts
+  - scripts/sim-scale.ts
+  - scripts/sim-scale.test.ts
+  - simulations/enterprise-pm/scenarios/src/runner/sim-handles/fault-injector.ts
+  - simulations/enterprise-pm/scenarios/src/runner/sim-handles/compose-handle.ts
+---
+
 ## 단계 12: 운영자 escape hatch (break-glass CLI)
 
 **Spec 참조:** `05-error-and-scenarios.md` §2
