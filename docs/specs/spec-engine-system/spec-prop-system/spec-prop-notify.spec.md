@@ -15,6 +15,10 @@ def:
       type: refines
     - target: spec-prop-codegen
       type: refines
+sources:
+  - packages/spec-core/src/propagation/lifecycle.ts
+  - packages/spec-core/src/propagation/types.ts
+  - packages/spec-core/src/propagation/lifecycle.test.ts
 ---
 
 # Spec Propagation — 2단계: Notify

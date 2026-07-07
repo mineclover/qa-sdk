@@ -13,6 +13,10 @@ def:
   links:
     - target: spec-reference-system
       type: refines
+sources:
+  - packages/spec-schema/src/category-rules.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/large-leaf-split.test.ts
 ---
 
 # Axis 경계 판단 기준

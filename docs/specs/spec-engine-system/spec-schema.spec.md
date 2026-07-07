@@ -13,7 +13,12 @@ def:
   links:
     - target: spec-architecture-system
       type: refines
-source: packages/spec-schema/src/index.ts
+sources:
+  - packages/spec-schema/src/index.ts
+  - packages/spec-schema/src/schema.registry.ts
+  - packages/spec-schema/src/schema.validator.ts
+  - packages/spec-schema/src/category-rules.ts
+  - packages/spec-schema/src/schema.test.ts
 ---
 
 # spec-schema — Layer 2 스키마 시스템

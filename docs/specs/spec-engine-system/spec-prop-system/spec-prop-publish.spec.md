@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: registry-data-model
       type: depends_on
+sources:
+  - packages/spec-core/src/propagation/publish.ts
+  - packages/spec-core/src/propagation/publish.test.ts
+  - packages/spec-core/src/propagation/registry-port.ts
+  - packages/spec-core/src/propagation/types.ts
 ---
 
 # Spec Propagation — 1단계: Publish

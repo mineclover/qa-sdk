@@ -15,6 +15,11 @@ def:
       type: refines
     - target: spec-phases-roadmap
       type: depends_on
+sources:
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+  - packages/spec-core/src/transition/transition-pipeline.ts
+  - packages/spec-core/src/propagation/activation-gate.ts
+  - packages/spec-core/src/propagation/lifecycle.test.ts
 ---
 
 # Spec Engine 단계 - 관측과 확장

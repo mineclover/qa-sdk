@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: spec-core-types-group
       type: refines
+sources:
+  - packages/spec-core/src/spec/spec-document.registry.ts
+  - packages/spec-core/src/spec/spec-document.registry.test.ts
+  - packages/definition-catalog/src/registry.ts
+  - packages/definition-catalog/src/registry.test.ts
 ---
 
 # Spec Core Types - Registry와 IR

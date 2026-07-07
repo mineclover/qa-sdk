@@ -13,6 +13,11 @@ def:
   links:
     - target: prefix-guide
       type: traces_to
+sources:
+  - packages/spec-core/src/propagation/lifecycle.test.ts
+  - packages/spec-core/src/propagation/registry-http-client.ts
+  - packages/cli/src/commands/ingest.ts
+  - packages/cli/src/commands/service.ts
 ---
 
 # 환경별 오버라이드 예시

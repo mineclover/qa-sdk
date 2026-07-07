@@ -13,6 +13,11 @@ def:
   links:
     - target: spec-core-types-group
       type: depends_on
+sources:
+  - packages/definition-catalog/src/code-references.ts
+  - packages/definition-catalog/src/code-references.test.ts
+  - packages/definition-service/src/modules/sync/sync.service.ts
+  - packages/definition-service/src/modules/docs/docs.service.ts
 ---
 # Decorator와 Interceptor 설계
 

@@ -19,6 +19,12 @@ def:
       type: contains
     - target: spec-architecture-system
       type: depends_on
+sources:
+  - packages/spec-core/src/spec/spec.types.ts
+  - packages/spec-core/src/spec/prefix-spec.types.ts
+  - packages/spec-core/src/spec/spec-document.registry.ts
+  - packages/spec-core/src/spec/spec-document.registry.test.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
 ---
 
 # Spec Core Types 그룹

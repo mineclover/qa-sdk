@@ -13,6 +13,11 @@ def:
   links:
     - target: prefix-guide
       type: traces_to
+sources:
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/core/src/standards/cloud-events.ts
 ---
 
 # 비즈니스 로직 관측 포인트

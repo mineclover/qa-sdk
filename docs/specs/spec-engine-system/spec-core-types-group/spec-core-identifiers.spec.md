@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: spec-core-types-group
       type: refines
+sources:
+  - packages/spec-core/src/spec/spec.types.ts
+  - packages/spec-core/src/spec/prefix-spec.types.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/loader/catalog-bridge.test.ts
 ---
 
 # Spec Core Types - 공개 식별자와 스키마

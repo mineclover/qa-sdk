@@ -13,6 +13,11 @@ def:
   links:
     - target: prefix-guide
       type: traces_to
+sources:
+  - packages/spec-core/src/export-surface/export-surface.registry.ts
+  - packages/spec-core/src/export-surface/export-surface.registry.test.ts
+  - packages/spec-core/src/visualization/layer-map.ts
+  - packages/spec-core/src/loader/catalog-bridge.test.ts
 ---
 
 # SDK 환경 오버라이드 패턴

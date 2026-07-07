@@ -17,6 +17,11 @@ def:
       type: contains
     - target: spec-architecture-system
       type: depends_on
+sources:
+  - packages/spec-core/src/self-evaluation.test.ts
+  - packages/spec-core/src/convergence/convergence.test.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+  - packages/spec-core/src/propagation/lifecycle.test.ts
 ---
 
 # Spec Engine 단계 그룹

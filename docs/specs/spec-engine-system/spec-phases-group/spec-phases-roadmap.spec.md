@@ -15,6 +15,11 @@ def:
       type: refines
     - target: spec-phases-group
       type: refines
+sources:
+  - packages/spec-core/src/self-evaluation.test.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/convergence/convergence.test.ts
+  - packages/spec-core/src/propagation/lifecycle.test.ts
 ---
 
 # Spec Engine 단계 - 핵심 로드맵

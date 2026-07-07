@@ -13,6 +13,11 @@ def:
   links:
     - target: prefix-guide
       type: traces_to
+sources:
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/loader/catalog-bridge.test.ts
+  - packages/spec-core/src/spec/prefix-spec.types.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
 ---
 
 # Prefix 모델링 기준 — 무엇이든 prefix가 될 수 있다

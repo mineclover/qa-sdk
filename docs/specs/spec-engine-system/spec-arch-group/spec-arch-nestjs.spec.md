@@ -13,6 +13,12 @@ def:
   links:
     - target: spec-arch-interceptors
       type: refines
+sources:
+  - packages/definition-service/src/app.module.ts
+  - packages/definition-service/src/modules/sync/sync.module.ts
+  - packages/definition-service/src/modules/docs/docs.module.ts
+  - packages/definition-service/src/modules/prefixes/prefixes.module.ts
+  - packages/definition-service/src/modules/semantic-grounding/semantic-grounding.module.ts
 ---
 # NestJS 모듈 구성과 의존 그래프
 

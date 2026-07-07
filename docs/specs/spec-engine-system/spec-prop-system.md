@@ -23,6 +23,12 @@ def:
       type: depends_on
     - target: dkg-system
       type: depends_on
+sources:
+  - packages/spec-core/src/propagation/index.ts
+  - packages/spec-core/src/propagation/publish.ts
+  - packages/spec-core/src/propagation/lifecycle.ts
+  - packages/spec-core/src/propagation/activation-gate.ts
+  - packages/spec-core/src/codegen/codegen.test.ts
 ---
 
 # Spec Propagation 시스템

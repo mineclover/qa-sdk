@@ -21,6 +21,12 @@ def:
       type: contains
     - target: spec-transition
       type: contains
+sources:
+  - packages/spec-core/src/index.ts
+  - packages/spec-core/src/loader/spec-loader.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/transition/transition-pipeline.ts
+  - packages/spec-schema/src/index.ts
 ---
 
 # Spec Architecture 그룹

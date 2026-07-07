@@ -19,6 +19,12 @@ def:
       type: contains
     - target: axis-consumption-patterns
       type: contains
+sources:
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/registry.ts
+  - packages/definition-catalog/src/code-references.ts
+  - packages/spec-schema/src/category-rules.ts
 ---
 
 # Spec Reference 그룹

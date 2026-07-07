@@ -13,6 +13,12 @@ def:
   links:
     - target: spec-core-types-group
       type: depends_on
+sources:
+  - packages/spec-core/src/codegen/index.ts
+  - packages/spec-core/src/codegen/ir-builder.ts
+  - packages/spec-core/src/codegen/ts-generator.ts
+  - packages/spec-core/src/codegen/codegen.test.ts
+  - packages/cli/src/commands/spec.ts
 ---
 
 # Spec Propagation — 3단계: Codegen

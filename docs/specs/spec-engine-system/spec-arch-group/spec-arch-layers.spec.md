@@ -13,6 +13,12 @@ def:
   links:
     - target: spec-arch-interceptors
       type: constrains
+sources:
+  - packages/spec-core/src/index.ts
+  - packages/spec-schema/src/index.ts
+  - packages/definition-service/src/app.module.ts
+  - packages/definition-service/src/modules/sync/sync.module.ts
+  - scripts/check-dependency-boundaries.ts
 ---
 # spec-engine 계층 분리 원칙
 

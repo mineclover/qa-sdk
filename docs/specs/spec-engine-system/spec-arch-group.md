@@ -19,6 +19,12 @@ def:
       type: contains
     - target: spec-architecture-system
       type: depends_on
+sources:
+  - packages/spec-core/src/index.ts
+  - packages/spec-core/src/export-surface/export-surface.registry.ts
+  - packages/definition-service/src/app.module.ts
+  - packages/definition-service/src/modules/sync/sync.module.ts
+  - scripts/check-dependency-boundaries.ts
 ---
 
 # Spec Engine 아키텍처

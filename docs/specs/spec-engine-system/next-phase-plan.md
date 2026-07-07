@@ -12,6 +12,12 @@ def:
   links:
     - target: convergence-layer-group
       type: refines
+sources:
+  - packages/spec-core/src/demo-run.test.ts
+  - packages/spec-core/src/self-evaluation.test.ts
+  - packages/spec-core/src/propagation/lifecycle.test.ts
+  - packages/cli/src/commands/prefix-stamp.ts
+  - packages/cli/src/commands/ingest.ts
 ---
 
 # Next Phase — Skills + 인프라 + 수집 테스트

@@ -24,6 +24,11 @@ def:
       type: contains
     - target: spec-architecture-system
       type: depends_on
+sources:
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/loader/catalog-bridge.test.ts
+  - packages/cli/src/commands/prefix-stamp.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
 ---
 
 # Prefix 실용 가이드 — 페이지, API, 환경, 관측 포인트

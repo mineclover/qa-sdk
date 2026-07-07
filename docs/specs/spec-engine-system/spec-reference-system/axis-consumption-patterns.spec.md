@@ -14,6 +14,11 @@ def:
       type: traces_to
     - target: axis-decision-guide
       type: traces_to
+sources:
+  - packages/definition-catalog/src/address-intent.ts
+  - packages/definition-catalog/src/address-intent.test.ts
+  - packages/definition-service/src/modules/consumption/consumption.service.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
 ---
 
 # Axis 소비 패턴 — 개념 정의

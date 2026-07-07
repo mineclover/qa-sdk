@@ -18,6 +18,12 @@ def:
       type: refs
     - target: spec-architecture-system
       type: depends_on
+sources:
+  - packages/convergence/src/symbol-comparator.ts
+  - packages/convergence/src/decision-comparator.ts
+  - packages/convergence/src/simplification-advisor.ts
+  - packages/convergence/src/capacity-optimizer.ts
+  - packages/spec-core/src/convergence/convergence.test.ts
 ---
 
 # Convergence Layer 그룹

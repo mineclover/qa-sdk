@@ -13,6 +13,12 @@ def:
   links:
     - target: spec-reference-system
       type: refines
+sources:
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/registry.ts
+  - packages/definition-catalog/src/code-references.ts
+  - packages/definition-catalog/src/system-link-coverage.test.ts
 ---
 
 # Spec Linking 규칙

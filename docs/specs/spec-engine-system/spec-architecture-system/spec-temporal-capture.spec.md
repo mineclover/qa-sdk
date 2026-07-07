@@ -13,6 +13,11 @@ def:
   links:
     - target: spec-architecture-system
       type: refines
+sources:
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - packages/spec-core/src/transition/transition-pipeline.ts
+  - packages/spec-core/src/transition/transition-metrics.ts
+  - packages/spec-core/src/convergence/pipeline-e2e.test.ts
 ---
 
 # Spec 시간 관계 수집

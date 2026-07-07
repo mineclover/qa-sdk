@@ -29,6 +29,13 @@ def:
       type: depends_on
     - target: spec-prop-system
       type: depends_on
+sources:
+  - packages/spec-core/src/index.ts
+  - packages/spec-core/src/self-evaluation.test.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/propagation/index.ts
+  - packages/spec-schema/src/index.ts
+  - packages/spec-transition/src/index.ts
 ---
 
 ## 목적 ^purpose

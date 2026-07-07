@@ -14,6 +14,11 @@ def:
   links:
     - target: spec-reference-system
       type: traces_to
+sources:
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/loader/catalog-bridge.test.ts
+  - packages/spec-core/src/visualization/layer-map.ts
+  - packages/cli/src/commands/prefix-stamp.ts
 ---
 
 # Axis 경계 적용 패턴

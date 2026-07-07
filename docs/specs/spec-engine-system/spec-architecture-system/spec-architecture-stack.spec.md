@@ -13,6 +13,13 @@ def:
   links:
     - target: spec-architecture-system
       type: refines
+sources:
+  - packages/spec-core/src/index.ts
+  - packages/spec-core/src/spec/spec-document.registry.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-core/src/shared/copy-drift.test.ts
+  - packages/spec-schema/src/shared/result.ts
+  - packages/spec-schema/src/shared/errors.ts
 ---
 
 # Spec Architecture 스택

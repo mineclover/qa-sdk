@@ -13,6 +13,11 @@ def:
   links:
     - target: dkg-node-types
       type: depends_on
+sources:
+  - packages/spec-core/src/dkg/index.ts
+  - packages/spec-core/src/dkg/lifecycle-e2e.test.ts
+  - packages/spec-core/src/dkg/cli-query.test.ts
+  - packages/spec-core/src/propagation/lifecycle.test.ts
 ---
 
 # Spec Propagation — 4단계: DKG Record
