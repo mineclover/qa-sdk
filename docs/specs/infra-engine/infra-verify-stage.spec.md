@@ -13,6 +13,12 @@ def:
       type: contains
     - target: infra-engine-system
       type: depends_on
+sources:
+  - packages/infra-engine/src/verify/verify-stage.ts
+  - packages/infra-engine/src/verify/gate-definitions.ts
+  - packages/infra-engine/src/verify/health-check.ts
+  - packages/infra-engine/__tests__/verify/verify-stage.test.ts
+  - packages/infra-engine/__tests__/verify/health-check.test.ts
 ---
 # VerifyStage — 헬스체크 + 품질 게이트
 

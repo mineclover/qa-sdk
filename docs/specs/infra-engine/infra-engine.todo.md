@@ -10,6 +10,12 @@ def:
   links:
     - target: infra-engine-pipeline
       type: traces_to
+sources:
+  - packages/infra-engine/README.md
+  - packages/infra-engine/src/index.ts
+  - packages/infra-engine/__tests__/integration.test.ts
+  - packages/infra-engine/src/lib/pf-registry.ts
+  - packages/infra-engine/__tests__/commands/pf.test.ts
 ---
 
 # Infra Engine — TODO

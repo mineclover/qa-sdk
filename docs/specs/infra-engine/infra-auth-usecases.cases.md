@@ -10,6 +10,11 @@ def:
   links:
     - target: infra-auth-integration
       type: refines
+sources:
+  - packages/infra-engine/scripts/test-oidc-browser.ts
+  - packages/infra-engine/scripts/test-auth-lifecycle.ts
+  - packages/gateway/scripts/route-permissions.test.ts
+  - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # AuthN/AuthZ 통합 — Use Cases

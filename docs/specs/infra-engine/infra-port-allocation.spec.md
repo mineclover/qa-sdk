@@ -11,6 +11,13 @@ def:
   links:
     - target: infra-service-operations
       type: refines
+sources:
+  - packages/core/src/lib/service-ports.ts
+  - packages/infra-engine/config/dev.json
+  - packages/infra-engine/config/local.json
+  - packages/infra-engine/src/export/pg-env-builder.ts
+  - packages/infra-engine/src/export/pg-env-builder.test.ts
+  - simulations/enterprise-pm/docker-compose.sim.yaml
 ---
 # 서비스 포트 할당
 

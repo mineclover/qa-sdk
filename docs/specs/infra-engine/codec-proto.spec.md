@@ -12,6 +12,11 @@ def:
   links:
     - target: infra-service-operations
       type: refines
+sources:
+  - packages/codec-proto/src/index.ts
+  - packages/codec-proto/src/codec.ts
+  - packages/codec-proto/src/codec.test.ts
+  - packages/ingest-server/src/lib/proto-codec.ts
 ---
 # Protobuf 전송 (codec-proto)
 

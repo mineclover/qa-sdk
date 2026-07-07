@@ -11,6 +11,13 @@ def:
   links:
     - target: infra-service-operations
       type: refines
+sources:
+  - packages/infra-engine/src/providers/cloudflare.ts
+  - packages/infra-engine/src/cli/cmd-deploy.ts
+  - packages/infra-engine/config/cloudflare-prod.json
+  - packages/registry-service/wrangler.toml
+  - packages/ingest-server/wrangler.toml
+  - packages/gateway/wrangler.toml
 ---
 # Cloudflare Workers 배포
 

@@ -11,6 +11,10 @@ def:
   links:
     - target: infra-service-operations
       type: refines
+sources:
+  - packages/infra-engine/src/adapters/service-profile.ts
+  - packages/infra-engine/__tests__/adapters/service-profile.test.ts
+  - packages/cli/src/lib/service-profile.ts
 ---
 # Service Profile (서비스 URL 중앙 관리)
 

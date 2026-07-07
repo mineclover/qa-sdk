@@ -13,6 +13,11 @@ def:
       type: implements
     - target: infra-verify-stage
       type: depends_on
+sources:
+  - packages/infra-engine/src/stages/observe-stage.ts
+  - packages/infra-engine/__tests__/stages/observe-stage.test.ts
+  - packages/infra-engine/src/adapters/coordinate.ts
+  - packages/infra-engine/src/adapters/ingest.ts
 ---
 # ObserveStage — 배포 이벤트 emit + 모니터링 등록
 

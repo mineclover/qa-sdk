@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: infra-providers
       type: depends_on
+sources:
+  - packages/infra-engine/src/stages/provision-stage.ts
+  - packages/infra-engine/__tests__/stages/provision-stage.test.ts
+  - packages/infra-engine/src/providers/pulumi-deploy.ts
+  - packages/infra-engine/src/providers/registry.ts
 ---
 # ProvisionStage — Pulumi 실행 + 프로바이더 분기
 

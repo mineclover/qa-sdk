@@ -12,6 +12,12 @@ def:
   links:
     - target: infra-engine-system-rule
       type: traces_to
+sources:
+  - packages/infra-engine/README.md
+  - packages/infra-engine/src/index.ts
+  - packages/infra-engine/src/core/types.ts
+  - packages/infra-engine/src/core/pipeline.ts
+  - packages/infra-engine/__tests__/core/pipeline.test.ts
 ---
 # Infra Engine System
 ## 목적 ^purpose

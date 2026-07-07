@@ -11,6 +11,10 @@ def:
   links:
     - target: infra-service-operations
       type: refines
+sources:
+  - package.json
+  - scripts/publish-local.sh
+  - verdaccio/config.yml
 ---
 # Verdaccio 로컬 NPM 배포
 

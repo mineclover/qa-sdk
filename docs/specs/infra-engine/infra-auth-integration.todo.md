@@ -11,6 +11,13 @@ def:
   links:
     - target: infra-auth-integration
       type: traces_to
+sources:
+  - packages/infra-engine/src/auth/enrichment-server.ts
+  - packages/infra-engine/scripts/test-auth-lifecycle.ts
+  - packages/infra-engine/scripts/test-oidc-browser.ts
+  - packages/infra-engine/__tests__/commands/authz.test.ts
+  - packages/gateway/lib/route-permissions.ts
+  - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # AuthN/AuthZ 통합 — TODO

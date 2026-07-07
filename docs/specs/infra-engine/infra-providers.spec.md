@@ -11,6 +11,13 @@ def:
   links:
     - target: infra-engine-pipeline
       type: implements
+sources:
+  - packages/infra-engine/src/providers/all.ts
+  - packages/infra-engine/src/providers/registry.ts
+  - packages/infra-engine/src/providers/cloudflare.ts
+  - packages/infra-engine/src/providers/local.ts
+  - packages/infra-engine/src/providers/pulumi-deploy.ts
+  - packages/infra-engine/__tests__/providers/pulumi-deploy.test.ts
 ---
 # 프로바이더 추상화 — 멀티 클라우드 배포
 

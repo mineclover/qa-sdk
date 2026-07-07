@@ -13,6 +13,13 @@ def:
       type: implements
     - target: infra-adapters
       type: depends_on
+sources:
+  - packages/infra-engine/src/discovery/client.ts
+  - packages/infra-engine/src/discovery/enhanced-client.ts
+  - packages/infra-engine/__tests__/discovery/enhanced-client.test.ts
+  - packages/infra-engine/src/fleet/manager.ts
+  - packages/infra-engine/__tests__/fleet/manager.test.ts
+  - packages/infra-env-kit/src/discovery-client.ts
 ---
 # 서비스 디스커버리 + Fleet 관리 + Export 도구
 

@@ -12,6 +12,12 @@ def:
       type: refines
     - target: infra-providers
       type: depends_on
+sources:
+  - packages/infra-engine/src/verify/gate-definitions.ts
+  - packages/infra-engine/src/verify/verify-stage.ts
+  - packages/infra-engine/__tests__/verify/verify-stage.test.ts
+  - packages/infra-engine/src/adapters/service-profile.ts
+  - packages/infra-engine/src/cli/cmd-deploy.ts
 ---
 # Endpoint Resolution Chain — 서비스 엔드포인트 다계층 해석 패턴
 

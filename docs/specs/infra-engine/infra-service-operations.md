@@ -27,6 +27,13 @@ def:
       type: contains
     - target: infra-engine-system
       type: depends_on
+sources:
+  - packages/infra-engine/README.md
+  - packages/infra-engine/src/cli/index.ts
+  - packages/infra-engine/src/cli/cmd-deploy.ts
+  - packages/infra-engine/src/cli/cmd-status.ts
+  - packages/core/src/lib/service-ports.ts
+  - package.json
 ---
 
 # 서비스 운영 참조

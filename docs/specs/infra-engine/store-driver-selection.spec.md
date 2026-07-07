@@ -11,6 +11,12 @@ def:
   links:
     - target: infra-service-operations
       type: refines
+sources:
+  - packages/ingest-server/src/stores/store-factory.ts
+  - packages/ingest-server/src/config/env.ts
+  - packages/ingest-server/src/stores/clickhouse-record-store.ts
+  - packages/ingest-server/src/stores/clickhouse-record-store.test.ts
+  - packages/cli/src/lib/service-profile.ts
 ---
 # Store / Insights 드라이버 선택
 

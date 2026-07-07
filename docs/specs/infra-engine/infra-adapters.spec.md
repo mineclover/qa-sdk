@@ -11,6 +11,13 @@ def:
   links:
     - target: infra-engine-pipeline
       type: implements
+sources:
+  - packages/infra-engine/src/adapters/adapter.ts
+  - packages/infra-engine/src/adapters/registry.ts
+  - packages/infra-engine/src/adapters/service-profile.ts
+  - packages/infra-engine/src/adapters/infra-profile.ts
+  - packages/infra-engine/__tests__/adapters/service-profile.test.ts
+  - packages/infra-engine/__tests__/adapters/infra-profile.test.ts
 ---
 # 어댑터 계층 — qa-sdk 연동 + 범용 확장
 

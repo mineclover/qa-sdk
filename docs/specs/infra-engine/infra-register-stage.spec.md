@@ -13,6 +13,12 @@ def:
       type: implements
     - target: infra-provision-stage
       type: depends_on
+sources:
+  - packages/infra-engine/src/stages/register-stage.ts
+  - packages/infra-engine/__tests__/stages/register-stage.test.ts
+  - packages/infra-engine/src/adapters/registry.ts
+  - packages/infra-engine/src/adapters/service-profile.ts
+  - packages/infra-engine/src/adapters/infra-profile.ts
 ---
 # RegisterStage — 레지스트리 등록 + 인프라 프로필
 

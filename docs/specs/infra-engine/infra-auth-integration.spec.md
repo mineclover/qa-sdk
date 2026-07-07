@@ -15,6 +15,13 @@ def:
       type: contains
     - target: infra-auth-integration-todo
       type: contains
+sources:
+  - packages/infra-engine/src/auth/enrichment-server.ts
+  - packages/gateway/lib/jwks-verifier.ts
+  - packages/gateway/lib/route-permissions.ts
+  - packages/gateway/scripts/route-permissions.test.ts
+  - packages/permission-engine/src/token-enrichment.ts
+  - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # AuthN/AuthZ 통합

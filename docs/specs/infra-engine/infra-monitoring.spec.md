@@ -13,6 +13,13 @@ def:
       type: implements
     - target: infra-observe-stage
       type: depends_on
+sources:
+  - packages/infra-engine/src/monitor/sync-loop.ts
+  - packages/infra-engine/src/monitor/auto-recovery.ts
+  - packages/infra-engine/src/monitor/dashboard.ts
+  - packages/infra-engine/src/monitor/sla.ts
+  - packages/infra-engine/__tests__/monitor/sync-loop.test.ts
+  - packages/infra-engine/__tests__/monitor/auto-recovery.test.ts
 ---
 # 모니터링 — ArgoCD 스타일 배포 상태 감시
 
