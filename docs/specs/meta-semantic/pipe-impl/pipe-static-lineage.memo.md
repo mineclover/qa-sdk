@@ -1,3 +1,13 @@
+---
+status: accepted
+sources:
+  - packages/core/src/pipe/pipe-lineage.ts
+  - packages/core/src/pipe/pipe-lineage.test.ts
+  - packages/core/src/pipe/pipe-lineage-consistency.test.ts
+  - packages/core/src/pipe/pipe-schema-id.ts
+  - packages/core/src/pipe/pipe-schema-id.test.ts
+---
+
 # 정적 계보 추적 — 결정 메모
 
 ## 2026-04-02: self-reference BFS 방지

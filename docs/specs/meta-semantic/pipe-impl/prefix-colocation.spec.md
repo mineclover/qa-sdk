@@ -16,6 +16,10 @@ def:
       type: refines
     - target: meta-semantic-data-contract
       type: depends_on
+  sources:
+    - packages/core/src/catalog/table-ref-validate.ts
+    - packages/core/src/catalog/table-ref-validate.test.ts
+    - packages/core/src/catalog/catalog.types.ts
 ---
 
 # Prefix Colocation

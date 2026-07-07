@@ -15,6 +15,13 @@ def:
       type: refines
     - target: meta-semantic-system
       type: depends_on
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-validate.test.ts
+    - packages/core/src/meta-semantic/ir-audit.ts
+    - packages/core/src/meta-semantic/ir-audit.test.ts
+    - packages/core/src/meta-semantic/ir-scenario.test.ts
 ---
 
 # Meta-Semantic IR — 소비자 기대 시나리오

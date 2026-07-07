@@ -34,6 +34,13 @@ def:
       type: contains
     - target: meta-semantic-system
       type: depends_on
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-types.test.ts
+    - packages/core/src/meta-semantic/ir-bridge.ts
+    - packages/core/src/meta-semantic/ir-bridge.test.ts
+    - packages/core/src/meta-semantic/ir-nesting-bridge.ts
+    - packages/core/src/meta-semantic/ir-nesting-bridge.test.ts
 ---
 
 # 핵심 개념

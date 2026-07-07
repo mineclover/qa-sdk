@@ -23,6 +23,14 @@ def:
       type: contains
     - target: test-name-tokens
       type: contains
+  sources:
+    - packages/core/src/types/pipe-spec.ts
+    - packages/core/src/pipe/pipe-flow-utils.ts
+    - packages/core/src/pipe/pipe-flow-utils.test.ts
+    - packages/core/src/pipe/pipe-interpret.ts
+    - packages/core/src/pipe/pipe-interpret-gate.test.ts
+    - packages/core/src/pipe/test-name.ts
+    - packages/core/src/pipe/test-name.test.ts
 ---
 
 # Meta-Semantic Pipe Catalog

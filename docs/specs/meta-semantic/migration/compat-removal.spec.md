@@ -13,6 +13,12 @@ def:
       type: traces_to
     - target: meta-semantic-scope
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/definition-catalog/src/taxonomy.test.ts
+    - packages/definition-catalog/src/scope-registry.ts
+    - packages/definition-catalog/src/scope-registry.test.ts
+    - packages/definition-catalog/src/index.ts
 ---
 
 # compat 파일 제거 (ASPECT_TO_SCOPE 잔존 19줄)

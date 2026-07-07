@@ -12,6 +12,14 @@ def:
   links:
     - target: meta-semantic-system
       type: traces_to
+  sources:
+    - packages/definition-catalog/src/scope-registry.ts
+    - packages/definition-catalog/src/scope-registry.test.ts
+    - packages/definition-catalog/src/version-manifest.ts
+    - packages/definition-catalog/src/version-manifest.test.ts
+    - packages/definition-catalog/src/taxonomy.ts
+    - packages/core/src/pipe/path-matcher.ts
+    - packages/core/src/pipe/path-matcher.test.ts
 ---
 
 # Meta-Semantic v2 마이그레이션 계획

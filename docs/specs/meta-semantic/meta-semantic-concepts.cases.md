@@ -14,6 +14,13 @@ def:
       type: refines
     - target: meta-semantic-system
       type: depends_on
+  sources:
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-rule-validation.test.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-validate.test.ts
+    - packages/core/src/meta-semantic/spacetime-uid.ts
+    - packages/core/src/meta-semantic/spacetime-uid.test.ts
 ---
 
 # Meta-Semantic Concepts — 소비자 기대 시나리오

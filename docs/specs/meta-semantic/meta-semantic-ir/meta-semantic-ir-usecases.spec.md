@@ -17,6 +17,14 @@ def:
       type: refines
     - target: meta-semantic-ir-rule
       type: depends_on
+  sources:
+    - packages/core/src/meta-semantic/extraction-pipeline.ts
+    - packages/core/src/meta-semantic/extraction-pipeline.test.ts
+    - packages/core/src/meta-semantic/ir-bridge.ts
+    - packages/core/src/meta-semantic/ir-validate.ts
+    - packages/core/src/meta-semantic/ir-audit.ts
+    - packages/core/src/meta-semantic/ir-scenario.test.ts
+    - packages/core/src/meta-semantic/spacetime-uid.test.ts
 ---
 
 # Meta-Semantic IR — Use Cases

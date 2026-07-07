@@ -12,6 +12,13 @@ def:
   links:
     - target: meta-semantic-system
       type: traces_to
+  sources:
+    - packages/core/src/meta-semantic/extraction.ts
+    - packages/core/src/meta-semantic/extraction.test.ts
+    - packages/core/src/meta-semantic/ir-types.ts
+    - packages/core/src/meta-semantic/ir-bridge.ts
+    - packages/core/src/pipe/pipe-path.ts
+    - packages/core/src/pipe/pipe-segment.ts
 ---
 
 # Meta-Semantic 설계 철학
