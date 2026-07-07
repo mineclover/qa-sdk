@@ -1,6 +1,21 @@
+---
+sources:
+  - docs/specs/apm-system/apm-system.md
+  - docs/specs/apm-system/apm-schema-system.md
+  - docs/specs/apm-system/apm-codegen-system.md
+  - docs/specs/apm-system/apm-runtime-system.md
+  - docs/specs/apm-system/apm-sdk.spec.md
+  - packages/apm/src/index.ts
+  - packages/apm/src/apm-logger.ts
+  - packages/apm/src/address-ranges.ts
+  - packages/codegen-core/src/index.ts
+---
+
 # APM 인프라 — 텔레메트리 파이프라인 고도화
 
 > n차원 인덱싱 주소 체계 위에서 동작하는 APM 시스템 설계. Git DSL + K8s DSL을 prefix 스키마로 정의하고, CLI codegen으로 protobuf 스펙/타입을 공급하며, 기존 텔레메트리 파이프라인을 확장한다.
+
+현재 정식 문서군은 [`apm-system`](../apm-system/apm-system.md)이다. 이 파일은 예전 `docs/specs/apm/` 경로에서 들어오는 참조를 현재 APM system 문서군으로 안내하는 compatibility overview다.
 
 ## 레이어 다이어그램
 
@@ -54,11 +69,14 @@
 
 | 스펙 | 설명 | 상태 |
 |---|---|---|
-| [dsl-schemas.spec.md](dsl-schemas.spec.md) | Git/K8s DSL 축 + composite + SchemaSnapshot 정의 | planned |
-| [address-context.spec.md](address-context.spec.md) | EventRecord/Envelope 주소 태깅 계약 | planned |
-| [metrics.spec.md](metrics.spec.md) | Metric RecordKind + 집계 모델 | planned |
-| [codegen.spec.md](codegen.spec.md) | Protobuf + CLI 타입 공급 파이프라인 | planned |
-| [pipeline.spec.md](pipeline.spec.md) | 파이프라인 고도화 — 미들웨어, Phase 2 metric, Range Query | planned |
+| [apm-system.md](../apm-system/apm-system.md) | APM 관심사 전체 진입점 | approved |
+| [apm-schema-system.md](../apm-system/apm-schema-system.md) | DSL 축 설계와 `address_context` 계약 | approved |
+| [address-context-format.spec.md](../apm-system/apm-schema-system/address-context-format.spec.md) | EventRecord/Envelope 주소 문자열과 머지 규칙 | approved |
+| [address-context-storage.spec.md](../apm-system/apm-schema-system/address-context-storage.spec.md) | `address_context` 저장 스키마와 SDK/Zod 확장 | approved |
+| [metrics.spec.md](../apm-system/metrics.spec.md) | Metric RecordKind + 집계 모델 | approved |
+| [apm-codegen-system.md](../apm-system/apm-codegen-system.md) | Protobuf/TypeScript codegen 문서군 | approved |
+| [apm-runtime-system.md](../apm-system/apm-runtime-system.md) | 런타임 흐름과 로거 계약 문서군 | approved |
+| [apm-sdk.spec.md](../apm-system/apm-sdk.spec.md) | `@qa-sdk/apm` 패키지 구현 surface | approved |
 
 ## Unit 2/3 관계
 

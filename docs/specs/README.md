@@ -173,18 +173,18 @@ API 클라이언트, iframe 통신 프로토콜.
 | [dkg-skills-system.md](dkg-system/dkg-skills-system.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, skill 카탈로그 | implemented |
 | [spec-prop-system.md](spec-engine-system/spec-prop-system.md) | Spec Propagation — 스펙 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 | implemented |
 
-### apm/ — APM 인프라
+### apm-system/ — APM 인프라
 
 텔레메트리 파이프라인 고도화 — n차원 인덱싱 주소 체계 위의 APM 시스템.
 
 | 스펙 | 설명 | 상태 |
 |---|---|---|
-| [README.md](apm/README.md) | APM 관심사 개요 — 레이어 다이어그램, Snapshot Supply 전략 | spec-complete |
-| [dsl-schemas.spec.md](apm/dsl-schemas.spec.md) | Git/K8s DSL 축 + composite + snapshotSupply 전략 | spec-complete |
-| [address-context.spec.md](apm/address-context.spec.md) | EventRecord/Envelope 주소 태깅 계약 + 전략별 포맷 | spec-complete |
-| [metrics.spec.md](apm/metrics.spec.md) | Metric RecordKind + 집계 모델 | spec-complete |
-| [codegen.spec.md](apm/codegen.spec.md) | Protobuf + CLI 타입 공급 + snapshotSupply 코드젠 | spec-complete |
-| [pipeline.spec.md](apm/pipeline.spec.md) | 파이프라인 고도화 — 미들웨어, Phase 2 metric, Range Query | spec-complete |
+| [apm-system.md](apm-system/apm-system.md) | APM 관심사 전체 진입점 | approved |
+| [apm-schema-system.md](apm-system/apm-schema-system.md) | DSL 축 설계와 `address_context` 형식 | approved |
+| [metrics.spec.md](apm-system/metrics.spec.md) | Metric RecordKind + 집계 모델 | approved |
+| [apm-codegen-system.md](apm-system/apm-codegen-system.md) | Protobuf/TypeScript codegen 문서군 | approved |
+| [apm-runtime-system.md](apm-system/apm-runtime-system.md) | 런타임 흐름과 로거 계약 문서군 | approved |
+| [apm-sdk.spec.md](apm-system/apm-sdk.spec.md) | `@qa-sdk/apm` 패키지 구현 surface | approved |
 
 ### dkg-system/ — 설계 지식 그래프
 
