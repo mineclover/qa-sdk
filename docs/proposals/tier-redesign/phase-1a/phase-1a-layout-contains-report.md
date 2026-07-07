@@ -19,13 +19,31 @@ part_of: tier-redesign
 role: phase-1a-evidence
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/README.md
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-classifier-ruleset.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-taxonomy/definition-level.spec.md
+  - docs/specs/system/link-type-usage.rule.md
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/assemble.ts
+  - packages/definition-catalog/src/assemble.test.ts
 ---
 
 # Phase 1.A — Layout-like `contains` 전환 대상 조사
 
 ## 요약
 
-현재 codebase의 **995개 contains 엣지** 중 **117개(12%)는 System-contains-System 위반**(module→module), **9개 group 문서는 Layout-like 패턴**(여러 module을 조직)을 보임. 전환 규모: 위반 정정(depends_on 변경) 117건 + Layout 패턴 정규화 9건. Phase 2 자동화 규칙은 scope 기반 필터링으로 충분할 것으로 예상.
+2026-04-18 전수조사 당시 codebase의 **995개 contains 엣지** 중 **117개(12%)는 System-contains-System 위반**(module→module), **9개 group 문서는 Layout-like 패턴**(여러 module을 조직)을 보였다. 전환 규모: 위반 정정(depends_on 변경) 117건 + Layout 패턴 정규화 9건. Phase 2 자동화 규칙은 scope 기반 필터링으로 충분할 것으로 예상했다.
+
+현재 실행 근거는 `packages/definition-catalog/src/validate.ts`가 소유한다. 이 validator는 `tier: layout` 문서의
+`contains` 사용을 error로 보고, `tier: system` 또는 legacy `level: module` 문서가 System/module을
+`contains`하면 `system-contains-system` warning을 낸다.
 
 ---
 
@@ -154,4 +172,3 @@ module 레벨 문서(System 후보)가 다른 module을 `contains`하는 경우.
 2. **Layout 정규화 후 `refs`와 기존 `depends_on` 혼재** 처리 규칙
 3. **definition-catalog의 계층 의도** 검증 (catalog 구조인지, 실제 System hierarchy인지)
 4. **일부 module이 "실제로 Component 또는 leaf여야 하는가"** 판단 (R-7 3-check 재적용 필요)
-

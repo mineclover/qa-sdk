@@ -19,6 +19,17 @@ part_of: tier-redesign
 role: phase-1a-evidence
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/README.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-classifier-ruleset.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - docs/specs/definition-catalog/definition-frontmatter-metadata-system.spec.md
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
 ---
 
 # Phase 1.A — Meta-operational 문서 정책 조사
@@ -82,6 +93,8 @@ specs/ 바깥 경계 문서는 **116개 · 6 카테고리**로 분류된다. 대
 | 6 | System configuration (`.claude/**`, settings) | 메타데이터 자체. tier 개념 미적용 |
 
 **검증**: `def validate`는 위 카테고리의 tier missing을 **pass** (기본) 또는 warn(선택). error 승격 금지.
+현행 parser/validator 기준으로도 knowledge 문서는 `scope/aspect` 강제에서 빠지고, `tier: exempt`는
+정규 tier 값 중 하나로 유지된다.
 
 **가역성**: high — 정책 선언만, 기존 문서 변경 불필요.
 

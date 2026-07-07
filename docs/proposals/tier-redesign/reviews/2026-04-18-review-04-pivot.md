@@ -19,9 +19,30 @@ part_of: tier-redesign
 role: proposal
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/README.md
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/mental-models.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/tiers/component.md
+  - docs/proposals/tier-redesign/tiers/entry.md
+  - docs/proposals/tier-redesign/tiers/system.md
+  - docs/proposals/tier-redesign/tiers/layout.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/examples/approval-system.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/deterministic-label-registry/src/index.ts
 ---
 
 # STC Proposal — 4차 리뷰 (D-17 Pivot 검증)
+
+> **현재 상태 메모**: 이 문서는 D-17 Pivot 적용 중 발견된 blocker를 남긴 historical review다.
+> 이후 `tiers/`, `rules/`, `examples/`, `mental-models` 문서가 FSM tier 제거와 current
+> deterministic-label stateless projection 경계에 맞춰 정리되었다. 본문 아래의 파일/라인 지적은 당시
+> 상태의 감사 기록이며, 현재 상태 판단은 위 `sources`의 현행 문서와 source-backed 예제를 기준으로 한다.
 
 ## 요약 (Executive Summary)
 

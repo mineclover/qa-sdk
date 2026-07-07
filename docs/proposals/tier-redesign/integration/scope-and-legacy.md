@@ -19,6 +19,20 @@ part_of: tier-redesign
 role: scope-clarification
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/README.md
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-layout-contains-report.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-meta-operational-policy.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-classifier-ruleset.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - docs/specs/system/link-type-usage.rule.md
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/definition-catalog/src/vocabulary.ts
 ---
 
 # STC 제안 — 범위·목적 재정의 + 레거시 처리 매트릭스

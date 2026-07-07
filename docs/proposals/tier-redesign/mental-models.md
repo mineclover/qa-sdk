@@ -19,6 +19,23 @@ part_of: tier-redesign
 role: mental-models
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/README.md
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/tiers/component.md
+  - docs/proposals/tier-redesign/tiers/entry.md
+  - docs/proposals/tier-redesign/tiers/system.md
+  - docs/proposals/tier-redesign/tiers/layout.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - docs/specs/system/doc-type-convention.spec.md
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/frontmatter.ts
 ---
 
 > **RFC / Proposal.** `docs/proposals/tier-redesign/`의 일부. STC 제안의 **읽기 지도** 역할 — 설계를 여러 mental model로 투영해 독자가 배경에 맞는 모델을 선택할 수 있게 함.

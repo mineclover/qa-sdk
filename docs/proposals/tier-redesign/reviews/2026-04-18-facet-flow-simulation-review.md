@@ -19,6 +19,21 @@ part_of: tier-redesign
 role: review
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/README.md
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/specs/meta-semantic/meta-semantic-system.spec.md
+  - docs/specs/meta-semantic/meta-semantic-pipe-impl.spec.md
+  - docs/specs/meta-semantic/concepts/ms-concept-data-facets.spec.md
+  - docs/specs/meta-semantic/pipe-impl/pipe-flow-catalog.spec.md
+  - docs/specs/meta-semantic/pipe-impl/pipe-static-lineage.spec.md
+  - docs/specs/meta-semantic/pipe-impl/pipe-fold-lineage.spec.md
+  - packages/core/src/types/pipe-spec.ts
+  - packages/core/src/pipe/pipe-analyze.ts
+  - packages/core/src/pipe/pipe-simulate.ts
+  - packages/core/src/pipe/pipe-lineage.ts
+  - packages/core/src/pipe/pipe-bridge.ts
 ---
 
 # Data Facet + Flow + Simulation 체계 리뷰
@@ -26,6 +41,11 @@ superseded_by: -
 > 리뷰 대상: `docs/specs/meta-semantic/` 전체 체계 (9개 원자 개념 + pipe-impl 22+ leaf)
 > 비교 대상: `docs/proposals/tier-redesign/` (STC: Component/Entry/FSM/System/Layout)
 > 목적: STC 제안이 기존 meta-semantic 설계와 어떻게 관계하는지, 흡수/충돌/보완 구조를 파악
+
+> **현재 상태 메모**: 이 문서는 D-17 Pivot 직후 작성된 historical review다. 당시 비교 대상에는
+> FSM tier 표현이 남아 있었지만, 현행 proposal 문서는 Component/Entry/System/Layout + meta-semantic 위임
+> 구조로 정리되어 있다. meta-semantic 실행 근거는 위 `sources`의 `packages/core/src/pipe/**` 구현과
+> `docs/specs/meta-semantic/**` 정규 스펙이 소유한다.
 
 ---
 
