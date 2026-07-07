@@ -16,6 +16,11 @@ def:
       type: depends_on
     - target: viteplus-playbook-app-state
       type: depends_on
+sources:
+  - packages/viteplus-sdk-smoke/src/features/shared/runtime/playbookHandlers.ts
+  - packages/viteplus-sdk-smoke/src/features/shared/views/playbookDom.ts
+  - packages/viteplus-sdk-smoke/src/features/canonical-review/CanonicalReviewExample.test.ts
+  - packages/viteplus-sdk-smoke/src/features/incident-escalation/IncidentEscalationExample.test.ts
 ---
 
 # Vite+ Playbook Interaction

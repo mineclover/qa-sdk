@@ -16,6 +16,12 @@ def:
       type: refines
     - target: definition-mgmt-graph-links
       type: depends_on
+sources:
+  - docs/specs/system/context-action-convention.rule.md
+  - packages/viteplus-sdk-smoke/src/context-action-contract.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.test.ts
+  - packages/definition-catalog/src/assemble.test.ts
+  - packages/definition-catalog/src/cli-tools-real.test.ts
 ---
 
 # Vite+ Playbook Boundary Coupling 규칙

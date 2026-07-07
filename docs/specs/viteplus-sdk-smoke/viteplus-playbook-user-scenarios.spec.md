@@ -19,6 +19,12 @@ def:
       type: traces_to
     - target: viteplus-playbook-template-flow
       type: traces_to
+sources:
+  - packages/core/src/scope-nesting.test.ts
+  - packages/core/src/scope-nesting-mount.test.ts
+  - packages/core/src/scope-nesting-simulate.test.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.test.ts
+  - docs/specs/scope-nesting/scope-nesting-mount-flow.spec.md
 ---
 
 # Vite+ Playbook Context-Action 유저 시나리오

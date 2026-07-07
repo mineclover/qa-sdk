@@ -20,6 +20,13 @@ def:
       type: depends_on
     - target: context-action-convention
       type: depends_on
+sources:
+  - packages/viteplus-sdk-smoke/src/features/shared/runtime/playbookStore.ts
+  - packages/viteplus-sdk-smoke/src/features/shared/runtime/playbookPersist.ts
+  - packages/viteplus-sdk-smoke/src/features/shared/runtime/playbookHandlers.ts
+  - packages/viteplus-sdk-smoke/src/features/shared/views/playbookDom.ts
+  - packages/viteplus-sdk-smoke/src/qa-bridge.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.ts
 ---
 
 # Vite+ Playbook Template 구현

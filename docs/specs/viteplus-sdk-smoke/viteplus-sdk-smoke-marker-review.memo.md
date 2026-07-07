@@ -13,6 +13,14 @@ def:
   links:
     - target: viteplus-sdk-smoke-system
       type: traces_to
+sources:
+  - packages/core/src/scope-nesting.test.ts
+  - packages/core/src/scope-nesting-mount.test.ts
+  - packages/core/src/scope-nesting-timing.test.ts
+  - packages/core/src/scope-nesting-state.test.ts
+  - packages/core/src/scope-nesting-simulate.test.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.test.ts
+  - packages/definition-catalog/src/assemble.test.ts
 ---
 
 # Vite+ SDK Smoke 스펙 리뷰 — 결정 기록

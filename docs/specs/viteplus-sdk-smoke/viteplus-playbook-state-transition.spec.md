@@ -14,6 +14,12 @@ def:
       type: refines
     - target: viteplus-playbook-app-state
       type: refines
+sources:
+  - packages/viteplus-sdk-smoke/src/features/shared/runtime/playbookStateMachine.ts
+  - packages/viteplus-sdk-smoke/src/features/canonical-review/business/canonicalReviewStateMachine.ts
+  - packages/viteplus-sdk-smoke/src/features/canonical-review/business/canonicalReviewStateMachine.test.ts
+  - packages/viteplus-sdk-smoke/src/features/incident-escalation/business/incidentEscalationStateMachine.ts
+  - packages/viteplus-sdk-smoke/src/features/incident-escalation/business/incidentEscalationStateMachine.test.ts
 ---
 
 # Vite+ Playbook State Transition

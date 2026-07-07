@@ -20,6 +20,11 @@ def:
       type: implements
     - target: context-action-convention
       type: depends_on
+sources:
+  - packages/viteplus-sdk-smoke/src/context-action-contract.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.test.ts
+  - packages/core/src/scope-nesting.test.ts
+  - packages/core/src/scope-nesting-state.test.ts
 ---
 
 # Vite+ Playbook Boundary Relation

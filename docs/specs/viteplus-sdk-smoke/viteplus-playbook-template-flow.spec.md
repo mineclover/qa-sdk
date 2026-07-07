@@ -26,6 +26,12 @@ def:
       type: depends_on
     - target: context-action-convention
       type: depends_on
+sources:
+  - packages/viteplus-sdk-smoke/src/features/canonical-review/CanonicalReviewExample.ts
+  - packages/viteplus-sdk-smoke/src/features/incident-escalation/IncidentEscalationExample.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.test.ts
+  - docs/specs/system/context-action-convention.rule.md
 ---
 
 # Vite+ Playbook Template 확장 흐름

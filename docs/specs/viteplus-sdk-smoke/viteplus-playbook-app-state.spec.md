@@ -12,6 +12,12 @@ def:
   links:
     - target: viteplus-sdk-smoke-system
       type: refines
+sources:
+  - packages/viteplus-sdk-smoke/src/features/shared/runtime/playbookStore.ts
+  - packages/viteplus-sdk-smoke/src/features/shared/runtime/playbookStateMachine.ts
+  - packages/viteplus-sdk-smoke/src/features/canonical-review/contexts/CanonicalReviewContexts.ts
+  - packages/viteplus-sdk-smoke/src/features/incident-escalation/contexts/IncidentEscalationContexts.ts
+  - packages/viteplus-sdk-smoke/src/context-action-contract.test.ts
 ---
 
 # Vite+ Playbook App State
