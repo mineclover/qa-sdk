@@ -13,12 +13,25 @@ def:
   links:
     - target: domain-hierarchy-readme
       type: depends_on
-status: under-review
+status: implemented
 date: 2026-04-20
 part_of: domain-hierarchy
 role: overview
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/aspect-evolution-index.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase0-simulation.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase0b-q2-resim.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase0c-owner-heuristic.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase2-impl.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase6-impl.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-21-subdoc-rollup-impl.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-21-final-cleanup.md
+  - packages/definition-catalog/src/domain-root.ts
+  - packages/definition-catalog/src/domain-root.test.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/cli/src/commands/def.ts
 ---
 
 # Domain Hierarchy — 설계 개요
@@ -26,6 +39,13 @@ superseded_by: -
 ## 목적 ^purpose
 
 서로 다른 도메인에 속한 시스템들이 같은 `(tier, scope, layer, aspect)` 좌표를 공유해 `duplicate-coordinate` 경고가 30건 발생한다. 도메인 축을 신규 스키마 필드로 도입하지 않고 **기존 링크 그래프에서 파생**하여 중복 판정을 정확하게 만들고, 내용상 진짜 중복만 드러낸다.
+
+## 현재 증거 표면 ^evidence
+
+- Phase 0/0b/0c 시뮬레이션과 Phase 2/6 실행 기록은 본 제안의 부모 선택 규칙, validator 적용, CLI listing surface를 고정한다.
+- `packages/definition-catalog/src/domain-root.ts`는 현재 알고리즘 SSoT다. 구현은 `refines`/`depends_on` walk, `refines > depends_on` 우선순위, visited/depth guard, component sub-doc rollup을 포함한다.
+- `packages/definition-catalog/src/validate.ts`는 duplicate-coordinate 키를 `tier:scope:layer:aspect:domain_root`로 구성하고 proposal/co-location 예외를 적용한다.
+- `packages/cli/src/commands/def.ts`와 `packages/cli/src/workflow-smoke.test.ts`가 `def list --domain-root`와 topdown member union을 현재 운영 surface로 검증한다.
 
 ## 1. 핵심 원칙 ^defines
 

@@ -17,15 +17,25 @@ def:
       type: refs
     - target: domain-hierarchy-02-proposals-integration
       type: refs
-status: under-review
+status: implemented
 date: 2026-04-20
 part_of: domain-hierarchy
 role: index
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/aspect-evolution-index.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase2-impl.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-20-phase6-impl.md
+  - docs/proposals/domain-hierarchy/reviews/2026-04-21-final-cleanup.md
+  - packages/definition-catalog/src/domain-root.ts
+  - packages/definition-catalog/src/domain-root.test.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/cli/src/commands/def.ts
+  - packages/cli/src/workflow-smoke.test.ts
 ---
 
-> **RFC / Proposal.** `docs/proposals/domain-hierarchy/`. 아직 정규 스펙 아님.
+> **RFC / Proposal historical record.** `docs/proposals/domain-hierarchy/`. 현재 실행 결과와 정규화된 규칙은 `aspect-evolution-index` 및 `docs/specs/system/*` rule 문서가 잇는다.
 
 # Domain Hierarchy — 시스템의 도메인 소속 및 좌표 구별
 
@@ -68,5 +78,13 @@ superseded_by: -
 
 ## 상태
 
-- 2026-04-20: draft 작성 완료
-- 다음: Phase 1 조사 실행 후 Empirical Validation
+- 2026-04-20: RFC 작성 및 Phase 0~6 실행.
+- 2026-04-21: Aspect Evolution 3-RFC 흐름으로 흡수되어 `duplicate-coordinate` 최종 0건까지 정리.
+- 현재: proposal은 historical record이며, runtime evidence는 `domain-root.ts`, `validate.ts`, CLI `def list --domain-root`, workflow smoke test, `aspect-evolution-index`가 소유한다.
+
+## 현재 증거 표면 ^evidence
+
+- `packages/definition-catalog/src/domain-root.ts`가 `deriveDomainRoot()` / `deriveAllDomainRoots()`를 소유하고, `domain-root.test.ts`가 기본 walk, 안전장치, sub-doc rollup을 검증한다.
+- `packages/definition-catalog/src/validate.ts`는 duplicate-coordinate 키에 파생 `domain_root`를 포함하고, proposal/ADR/convention 및 `cross-scope` / `coordinate-cluster` 예외 정책을 적용한다.
+- `packages/cli/src/commands/def.ts`는 `def list --domain-root` 및 domain member 탐색 경로를 제공한다.
+- `packages/cli/src/workflow-smoke.test.ts`는 핵심 root의 domain-root 파생, topdown member union, domain-root listing을 repo 문서 데이터로 검증한다.
