@@ -13,6 +13,12 @@ def:
   links:
     - target: pipeline-monitoring
       type: depends_on
+  sources:
+    - packages/ingest-server/src/lib/enrich-address-context.ts
+    - packages/ingest-server/src/lib/enrich-address-context.test.ts
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/routes/ingest.test.ts
+    - packages/core/src/catalog/runtime.ts
 ---
 # enrichAddressContext 미들웨어
 

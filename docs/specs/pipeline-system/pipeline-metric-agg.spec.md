@@ -13,6 +13,12 @@ def:
   links:
     - target: metrics-spec
       type: depends_on
+  sources:
+    - packages/ingest-server/src/lib/metric-aggregator.ts
+    - packages/ingest-server/src/lib/metric-aggregator.test.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/phase-two-worker.test.ts
+    - packages/core/src/ports/metric-rollup-store.port.ts
 ---
 # 메트릭 집계 (Phase 2)
 

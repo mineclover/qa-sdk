@@ -15,6 +15,15 @@ def:
       type: refines
     - target: ingest-admin-operations
       type: depends_on
+  sources:
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/routes/ingest.test.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/phase-two-worker.test.ts
+    - packages/ingest-server/src/lib/in-memory-task-queue.ts
+    - packages/ingest-server/src/lib/bullmq-task-queue.ts
+    - packages/ingest-server/src/async-worker.e2e.test.ts
+    - packages/ingest-server/src/lib/convergence-e2e.test.ts
 ---
 
 # Pipeline Phase 흐름

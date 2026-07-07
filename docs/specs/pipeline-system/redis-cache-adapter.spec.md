@@ -12,6 +12,15 @@ def:
   links:
     - target: pipeline-cache
       type: refines
+  sources:
+    - packages/store/src/adapters/redis/key-cache.adapter.ts
+    - packages/store/src/adapters/redis/key-cache.adapter.test.ts
+    - packages/decode-service/src/config/env.ts
+    - packages/decode-service/src/lib/decode-cache.ts
+    - packages/decode-service/src/lib/decode-cache.test.ts
+    - packages/decode-service/src/routes/decode.ts
+    - packages/decode-service/src/routes/health.ts
+    - packages/cli/src/command-groups/cache.commands.ts
 ---
 
 # Redis Cache Adapter
@@ -105,4 +114,4 @@ fail-open: Redis 장애 시 in-memory pool만으로 동작.
 - Phase 4-3: `cache warm` CLI 명령
 - Phase 5: catalog 변경 시 자동 무효화
 
-전체 로드맵: `docs/specs/pipeline-system/redis-cache-pipeline.todo.md`
+전체 로드맵: `docs/archive/todo/redis-cache-pipeline.todo.md`

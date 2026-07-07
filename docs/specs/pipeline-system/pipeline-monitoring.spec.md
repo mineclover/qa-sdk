@@ -13,6 +13,13 @@ def:
   links:
     - target: metrics-spec
       type: depends_on
+  sources:
+    - packages/ingest-server/src/lib/metrics-collector.ts
+    - packages/ingest-server/src/routes/metrics.ts
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/routes/health.ts
+    - packages/ingest-server/src/routes/health.test.ts
+    - packages/ingest-server/src/app.test.ts
 ---
 # 파이프라인 자체 모니터링
 

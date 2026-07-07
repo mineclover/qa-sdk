@@ -15,6 +15,16 @@ def:
       type: refines
     - target: pipeline-metric-agg
       type: refines
+  sources:
+    - packages/core/src/ports/key-cache.port.ts
+    - packages/store/src/adapters/memory/key-cache.adapter.ts
+    - packages/core/src/ports/aggregator.port.ts
+    - packages/store/src/adapters/memory/aggregator.adapter.ts
+    - packages/store/src/adapters/redis/key-cache.adapter.ts
+    - packages/core/src/ports/metric-rollup-store.port.ts
+    - packages/ingest-server/src/lib/metric-aggregator.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/index-meta/src/meta-codec.ts
 ---
 
 # Unit 2 — 이벤트 수집 + 집계 파이프라인
@@ -31,8 +41,8 @@ A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축
 - **핵심 포트**: KeyCache(bigint 키 캐시), Aggregator(groupByKey + projectAxis)
 - **집계 로직**: Transition(전이 쌍 추출+window 버킷), Path(trace 기준 시퀀스 정규화+해시)
 - **projectAxis()**: 전체 decode 없이 packed_key에서 특정 축 값만 추출하는 함수
-- **캐시 어댑터**: InMemory, Redis, Cloudflare KV 3종 지원
-- **산출물**: key-cache 패키지, pipeline 패키지, A 흐름 커버리지 57%→100% 달성 목표
+- **캐시 어댑터**: InMemory와 Redis 구현, Cloudflare KV는 후속 어댑터 후보
+- **산출물**: `@qa-sdk/core` 포트, `@qa-sdk/store` 어댑터, ingest-server Phase 2 metric rollup 경로
 
 ## 흐름 심볼
 
@@ -42,10 +52,10 @@ A1 (이벤트 생성) → A5 (집계) → A6 (메트릭 저장) 경로를 구축
 
 | 단계 | 상태 | 비고 |
 |---|---|---|
-| A1 이벤트 생성 | 🔧 | MetaCodec.encode() 완성, 흐름 미연결 |
+| A1 이벤트 생성 | 구현됨 | MetaCodec.encode()와 ingest address_context 경로가 분리 유지 |
 | A2→A4 MQ | Unit 1에서 구축 | 선행 |
-| **A5 집계** | 📋 | Aggregator 인터페이스 없음, projectAxis() 미구현 |
-| **A6 Metrics Store** | 📋 | 테이블/스키마 없음 |
+| **A5 집계** | 구현됨 | `Aggregator` 포트 + `InMemoryAggregator.groupByKey/projectAxis` |
+| **A6 Metrics Store** | 구현됨 | `MetricRollupStore` 포트 + Phase 2 `aggregateMetrics` 연동 |
 | A7 보존 | ✅ | event_records immutable |
 
 ## 선행 조건
@@ -62,39 +72,37 @@ I-1, I-2, I-3, I-4, I-5, I-6
 
 | # | spec.todo | 작업 | 위치 |
 |---|---|---|---|
-| 1 | I-1 | KeyCache 포트 인터페이스 | `packages/key-cache/src/key-cache.ts` |
-| 2 | I-1 | InMemory KeyCache 어댑터 | `packages/key-cache/src/adapters/memory.ts` |
-| 3 | I-2 | Aggregator 포트 인터페이스 | `packages/pipeline/src/aggregator.ts` |
-| 4 | I-6 | `projectAxis()` 함수 | `packages/pipeline/src/axis-projection.ts` |
+| 1 | I-1 | KeyCache 포트 인터페이스 | `packages/core/src/ports/key-cache.port.ts` |
+| 2 | I-1 | InMemory KeyCache 어댑터 | `packages/store/src/adapters/memory/key-cache.adapter.ts` |
+| 3 | I-2 | Aggregator 포트 인터페이스 | `packages/core/src/ports/aggregator.port.ts` |
+| 4 | I-6 | `projectAxis()` 함수 | `packages/store/src/adapters/memory/aggregator.adapter.ts` |
 
 ```ts
-// key-cache.ts
-interface KeyCache<K = bigint, V = unknown> {
-  get(key: K): Promise<V | undefined>;
-  set(key: K, value: V, ttlMs?: number): Promise<void>;
-  delete(key: K): Promise<boolean>;
-  has(key: K): Promise<boolean>;
+// key-cache.port.ts
+interface KeyCache<T = unknown> {
+  get(key: string): Promise<T | undefined>;
+  set(key: string, value: T, ttlMs: number): Promise<void>;
+  delete(key: string): Promise<boolean>;
+  has(key: string): Promise<boolean>;
 }
 
-// aggregator.ts
+// aggregator.port.ts
 interface Aggregator {
-  groupByKey(keys: bigint[]): Promise<Map<bigint, AggregateResult>>;
-  projectAxis(keys: bigint[], axisIndex: number, shape: number[]): Promise<Map<number, AggregateResult>>;
+  groupByKey(keys: readonly string[], options?: AggregateOptions): Promise<AggregateEntry[]>;
+  projectAxis(keys: readonly string[], axes: readonly string[], options?: AggregateOptions): Promise<AxisProjectionEntry[]>;
 }
 
-// axis-projection.ts
-function projectAxis(key: number, axisIndex: number, strides: number[], shape: number[]): number {
-  return Math.floor(key / strides[axisIndex]) % shape[axisIndex];
-}
+// aggregator.adapter.ts
+new InMemoryAggregator({ decode }).projectAxis(keys, ["env", "region"]);
 ```
 
 ### Phase B — 집계 로직 (I-2, I-3)
 
 | # | spec.todo | 작업 | 위치 |
 |---|---|---|---|
-| 5 | I-2 | Transition 계산 | `packages/pipeline/src/transition.ts` |
-| 6 | I-2 | Path 계산 | `packages/pipeline/src/path.ts` |
-| 7 | I-3 | Materialized View 스키마 | `packages/pipeline/src/materialized-view.ts` |
+| 5 | I-2 | Transition 계산 | `packages/ingest-server/src/lib/phase-two-worker.ts` (`TransitionEnginePort`) |
+| 6 | I-2 | Path/trace 계산 | `packages/engine` reconstruction + `packages/ingest-server/src/lib/phase-two-worker.ts` |
+| 7 | I-3 | Metric rollup 포트 | `packages/core/src/ports/metric-rollup-store.port.ts` |
 
 Transition 계산:
 1. 이벤트 순서 정렬
@@ -112,15 +120,15 @@ Path 계산:
 
 | # | spec.todo | 작업 | 위치 |
 |---|---|---|---|
-| 8 | I-3 | Metrics Store 테이블 | DB 스키마 (transition_metrics, path_metrics) |
-| 9 | I-4 | Redis KeyCache 어댑터 | `packages/key-cache/src/adapters/redis.ts` |
-| 10 | I-4 | Cloudflare KV KeyCache 어댑터 | `packages/key-cache/src/adapters/cloudflare-kv.ts` |
+| 8 | I-3 | Metric rollup 실행 | `packages/ingest-server/src/lib/metric-aggregator.ts` |
+| 9 | I-4 | Redis KeyCache 어댑터 | `packages/store/src/adapters/redis/key-cache.adapter.ts` |
+| 10 | I-4 | Cloudflare KV KeyCache 어댑터 | 후속 어댑터 후보 |
 
 ### Phase D — MQ 연결 (I-5)
 
 | # | spec.todo | 작업 | 위치 |
 |---|---|---|---|
-| 11 | I-5 | Aggregation Consumer | `packages/pipeline/src/consumer.ts` |
+| 11 | I-5 | Aggregation Consumer | `packages/ingest-server/src/lib/phase-two-worker.ts` |
 | 12 | A1 | Event → packed_key 연결 | ingest-server 또는 worker에서 `MetaCodec.encode()` 호출 → MQ 발행 |
 
 ## 인덱싱 시스템 활용 지점
@@ -135,7 +143,8 @@ Path 계산:
 
 ## 산출물
 
-- `packages/key-cache/` 패키지 (포트 + Memory + Redis + KV)
-- `packages/pipeline/` 패키지 (Aggregator + Transition + Path + Materialized View + Consumer)
+- `packages/core/src/ports/key-cache.port.ts` / `aggregator.port.ts` (포트)
+- `packages/store/src/adapters/memory/*` / `adapters/redis/*` (Memory + Redis 어댑터)
+- `packages/ingest-server/src/lib/metric-aggregator.ts` / `phase-two-worker.ts` (Phase 2 metric rollup consumer)
 - `projectAxis()` 함수
-- A 흐름 커버리지: 57% → **100%** (A1, A5, A6 추가)
+- A 흐름 커버리지: A1/A5/A6 경로를 source-backed 상태로 유지

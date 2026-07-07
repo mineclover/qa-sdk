@@ -14,6 +14,13 @@ def:
       type: refines
     - target: pipeline-system
       type: depends_on
+  sources:
+    - packages/core/src/ports/key-cache.port.ts
+    - packages/store/src/adapters/memory/key-cache.adapter.ts
+    - packages/store/src/adapters/memory/key-cache.adapter.test.ts
+    - packages/store/src/adapters/redis/key-cache.adapter.ts
+    - packages/store/src/adapters/redis/key-cache.adapter.test.ts
+    - packages/decode-service/src/lib/decode-cache.ts
 ---
 
 # Pipeline KeyCache — 소비자 기대 시나리오

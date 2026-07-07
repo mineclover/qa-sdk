@@ -15,6 +15,15 @@ def:
       type: constrains
     - target: pipeline-metric-agg
       type: constrains
+  sources:
+    - packages/ingest-server/src/middleware/error-handler.ts
+    - packages/ingest-server/src/middleware/error-handler.test.ts
+    - packages/ingest-server/src/lib/errors.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/phase-two-worker.test.ts
+    - packages/ingest-server/src/routes/dlq.ts
+    - packages/ingest-server/src/routes/dlq.test.ts
+    - packages/ingest-server/src/routes/ingest.ts
 ---
 # 파이프라인 에러 처리
 

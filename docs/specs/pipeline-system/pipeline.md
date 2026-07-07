@@ -15,6 +15,15 @@ def:
       type: refines
     - target: pipeline-metric-agg
       type: refines
+  sources:
+    - packages/weighted-index/src/protocol/semantic-address.ts
+    - packages/weighted-index/src/protocol/semantic-address.test.ts
+    - packages/index-meta/src/meta-codec.ts
+    - packages/index-meta/src/meta-codec.test.ts
+    - packages/index-meta/src/meta-registry.ts
+    - packages/index-meta/src/meta-registry.test.ts
+    - packages/index-meta/src/meta-resolver.ts
+    - packages/index-meta/src/meta-resolver.test.ts
 ---
 
 # 인코딩/디코딩 파이프라인

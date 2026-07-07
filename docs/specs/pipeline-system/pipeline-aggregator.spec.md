@@ -13,6 +13,12 @@ def:
       type: refs
     - target: pipeline-system
       type: depends_on
+  sources:
+    - packages/core/src/ports/aggregator.port.ts
+    - packages/store/src/adapters/memory/aggregator.adapter.ts
+    - packages/store/src/adapters/memory/aggregator.adapter.test.ts
+    - packages/core/src/lib/clock.ts
+    - packages/core/src/lib/clock.test.ts
 contains:
   - pipeline-aggregator-test
 ---

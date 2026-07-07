@@ -31,6 +31,15 @@ def:
       type: contains
     - target: ingest-system
       type: depends_on
+  sources:
+    - packages/ingest-server/src/routes/ingest.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
+    - packages/ingest-server/src/lib/enrich-address-context.ts
+    - packages/ingest-server/src/lib/metric-aggregator.ts
+    - packages/ingest-server/src/lib/metrics-collector.ts
+    - packages/ingest-server/src/routes/metrics.ts
+    - packages/core/src/ports/aggregator.port.ts
+    - packages/core/src/ports/key-cache.port.ts
 ---
 
 # 파이프라인 시스템

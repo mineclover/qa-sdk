@@ -13,6 +13,12 @@ def:
       type: contains
     - target: pipeline-system
       type: depends_on
+  sources:
+    - packages/core/src/ports/key-cache.port.ts
+    - packages/store/src/adapters/memory/key-cache.adapter.ts
+    - packages/store/src/adapters/memory/key-cache.adapter.test.ts
+    - packages/store/src/adapters/redis/key-cache.adapter.ts
+    - packages/store/src/adapters/redis/key-cache.adapter.test.ts
 contains:
   - pipeline-cache-test
 ---

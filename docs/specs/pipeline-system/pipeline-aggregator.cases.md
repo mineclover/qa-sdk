@@ -14,6 +14,13 @@ def:
       type: refines
     - target: pipeline-system
       type: depends_on
+  sources:
+    - packages/core/src/ports/aggregator.port.ts
+    - packages/store/src/adapters/memory/aggregator.adapter.ts
+    - packages/store/src/adapters/memory/aggregator.adapter.test.ts
+    - packages/core/src/lib/clock.ts
+    - packages/core/src/ports/key-cache.port.ts
+    - packages/ingest-server/src/lib/phase-two-worker.ts
 ---
 
 # Pipeline Aggregator — 소비자 기대 시나리오
