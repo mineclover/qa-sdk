@@ -114,6 +114,7 @@ function classifyDoc(path) {
   const frontmatter = parseFrontmatter(text);
   const relativePath = repoPath(path);
   const isArchivedDoc = relativePath.startsWith("docs/archive/");
+  const isProposalIndexDoc = relativePath === "docs/proposals/README.md";
   const isTemplateDoc = relativePath.startsWith("docs/proposals/_template/");
   const isDecisionSkeleton = relativePath.startsWith("docs/decisions/")
     && frontmatter.lifecycle === "draft"
@@ -124,6 +125,7 @@ function classifyDoc(path) {
   const isSupersededNote = relativePath.startsWith("docs/proposals/")
     && frontmatter.status === "superseded";
   const isProposal = relativePath.startsWith("docs/proposals/")
+    && !isProposalIndexDoc
     && !isTemplateDoc;
   const isSpec = relativePath.startsWith("docs/specs/");
   const isRule = relativePath.endsWith(".rule.md");
@@ -149,6 +151,11 @@ function classifyDoc(path) {
   if (evidenceScore >= 3) {
     verdict = "keep";
     reasons.push("has executable/source evidence");
+  }
+
+  if (isProposalIndexDoc) {
+    verdict = "keep";
+    reasons.push("proposal index");
   }
 
   if (isTemplateDoc) {
@@ -193,6 +200,7 @@ function classifyDoc(path) {
     type: frontmatter.type || "-",
     tier: frontmatter.tier || "-",
     isArchivedDoc,
+    isProposalIndexDoc,
     isTemplateDoc,
     isDecisionSkeleton,
     isPlanningNote,
@@ -450,6 +458,7 @@ function renderMarkdown() {
 
 function docScope(item) {
   if (item.isArchivedDoc) return "archive";
+  if (item.isProposalIndexDoc) return "proposal-index";
   if (item.isTemplateDoc) return "template";
   if (item.isDecisionSkeleton) return "decision-draft";
   if (item.isPlanningNote) return "plan-note";

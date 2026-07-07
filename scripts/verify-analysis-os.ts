@@ -87,7 +87,7 @@ async function main() {
     ) as Record<string, { verdict: string; surfaceGroup: string; surfaceVerdict: string; surfaceScope: string }>;
     const usefulnessDocs = Object.fromEntries(
       usefulness.docs.map((item: { path: string }) => [item.path, item]),
-    ) as Record<string, { verdict: string; sourceRefs: number; reasons: string[]; isTemplateDoc?: boolean }>;
+    ) as Record<string, { verdict: string; sourceRefs: number; reasons: string[]; isProposalIndexDoc?: boolean; isTemplateDoc?: boolean }>;
     assert(usefulnessPackages["request-contract"]?.verdict === "quarantine"
            && usefulnessPackages["weighted-gpu"]?.verdict === "quarantine",
            "Usefulness Audit: no-promotion packages stay quarantine candidates");
@@ -123,6 +123,10 @@ async function main() {
            && usefulnessPackages["@qa-sdk/platform-demo"]?.surfaceGroup === "demo-consumer-surfaces"
            && usefulnessPackages["request-contract"]?.surfaceGroup === "quarantine",
            "Usefulness Audit: packages expose separated feature groups");
+    assert(usefulnessDocs["docs/proposals/README.md"]?.verdict === "keep"
+           && usefulnessDocs["docs/proposals/README.md"]?.isProposalIndexDoc === true
+           && usefulnessDocs["docs/proposals/README.md"]?.reasons.includes("proposal index"),
+           "Usefulness Audit: proposal root README stays index doc");
     const proposalTemplateDocs = usefulness.docs
       .filter((item: { path: string }) => item.path.startsWith("docs/proposals/_template/"));
     assert(proposalTemplateDocs.length > 0
