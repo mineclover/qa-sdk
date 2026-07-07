@@ -3,6 +3,15 @@ lifecycle: draft
 plan: 12a-1
 phase: 4
 depends-on: [12a, 11a]
+sources:
+  - simulations/enterprise-pm/services/gateway/package.json
+  - simulations/enterprise-pm/services/gateway/tsup.config.ts
+  - simulations/enterprise-pm/services/gateway/src/app.ts
+  - simulations/enterprise-pm/services/gateway/src/lib/jwt.ts
+  - simulations/enterprise-pm/services/gateway/src/lib/bitmap-claim.ts
+  - simulations/enterprise-pm/services/gateway/src/test-bootstrap.ts
+  - simulations/enterprise-pm/services/gateway/src/test-bootstrap.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/proxy-routes.ts
 ---
 
 # Plan 12a-1 — sim-gateway package exports + `/approvals/requests/*` 라우팅 정합 + test-bootstrap
@@ -37,6 +46,12 @@ depends-on: [12a, 11a]
 - hono ^4.7.5, tsup ^8.5.1 — dual entry + dts 빌드
 - @nestjs/common (ApprovalRequestsController용)
 - vitest, ES2023
+
+## 현재 증거 표면 ^evidence
+
+- Gateway package exports는 `simulations/enterprise-pm/services/gateway/package.json`의 `./app`, `./jwt`, `./bitmap-claim`, `./test-bootstrap`, `./routing` 서브경로로 구현되어 있다.
+- `test-bootstrap.ts`와 `test-bootstrap.test.ts`가 in-process scenario runner 소비 표면을 고정한다.
+- 현재 repo에는 본 plan 초안이 언급한 `approval/requests/ApprovalRequestsController` 파일군은 없다. 이후 시나리오 구현은 현재 approval-api/gateway 표면과 scenario fixtures를 기준으로 유지된다.
 
 ---
 

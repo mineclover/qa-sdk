@@ -3,6 +3,16 @@ lifecycle: draft
 plan: 13d
 phase: 4
 depends-on: [13c, 12a, 12b]
+sources:
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-7-bitmap-refresh.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-7-bitmap-refresh.test.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-8-pubsub-invalidation.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-8-pubsub-invalidation.test.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/login.ts
+  - simulations/enterprise-pm/services/gateway/src/routes/login.test.ts
+  - simulations/enterprise-pm/scenarios/src/env/in-process-env.ts
+  - simulations/enterprise-pm/scenarios/src/cli.ts
+  - docs/specs/sim-erp-pm-coverage.spec.md
 ---
 
 # Plan 13d — sim 시나리오 7, 8 (bitmap refresh + pub/sub invalidation)
@@ -48,6 +58,12 @@ depends-on: [13c, 12a, 12b]
 **Tech Stack:**
 - Plan 13a/b/c와 동일
 - `BitmapCacheService` 통계 조회 — `cache.size()` public 메서드 (Plan 12b에서 이미 노출)
+
+## 현재 증거 표면 ^evidence
+
+- 시나리오 7/8 구현과 테스트는 `scenario-7-bitmap-refresh.*`, `scenario-8-pubsub-invalidation.*` 파일이 소유한다.
+- Gateway refresh route와 token expiry behavior는 `services/gateway/src/routes/login.ts`와 `login.test.ts`가 검증한다.
+- `src/cli.ts`와 `sim-erp-pm-coverage.spec.md`가 7/8을 bitmap refresh와 invalidation 회귀 게이트로 연결한다.
 
 ---
 

@@ -1,3 +1,16 @@
+---
+lifecycle: review
+status: implemented
+sources:
+  - simulations/enterprise-pm/README.md
+  - simulations/enterprise-pm/scenarios/src/cli.ts
+  - simulations/enterprise-pm/scenarios/src/env/in-process-env.ts
+  - simulations/enterprise-pm/docker-compose.sim.yaml
+  - simulations/enterprise-pm/contracts/openapi/src/openapi.yaml
+  - docs/specs/sim-erp-pm-coverage.spec.md
+  - scripts/sim-smoke-full.ts
+---
+
 # Enterprise PM 시뮬레이션 — 디자인
 
 2026-04-22 · Phase 4 brainstorming 결과
@@ -30,6 +43,13 @@ qa-sdk의 5축(권한·이벤트·관측·로직·로깅)을 현실적 엔터프
 - audit-recorder가 각 시나리오의 nested tree 영속
 - deny 시나리오의 decision replay 정확
 - bitmap 변경 → invalidation → 캐시 flush 검증
+
+## 현재 증거 표면 ^evidence
+
+- Runtime root는 `simulations/enterprise-pm/README.md`와 `docker-compose.sim.yaml`이 소유한다.
+- Scenario registry는 `simulations/enterprise-pm/scenarios/src/cli.ts`에 있으며 현재 원래 8개를 넘어 17개 시나리오를 포함한다.
+- `docs/specs/sim-erp-pm-coverage.spec.md`는 5축 × 8 시나리오 회귀 매트릭스의 current spec이다.
+- Repo-level smoke entry는 `scripts/sim-smoke-full.ts`다.
 
 ---
 

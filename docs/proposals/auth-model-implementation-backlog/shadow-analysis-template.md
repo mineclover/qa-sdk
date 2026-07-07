@@ -1,3 +1,12 @@
+---
+lifecycle: draft
+role: template
+sources:
+  - docs/specs/audit-recorder-store/audit-recorder-store-rls-shadow.spec.md
+  - packages/audit-recorder-store/src/pg/shadow-recorder.ts
+  - packages/audit-recorder-store/src/pg/shadow-schema.ts
+---
+
 # RLS Shadow 분석 리포트 — <기간>
 
 > Plan 15d → Plan 15e 진입 전제. 본 템플릿을 복사해 `shadow-analysis-<yyyy-mm-dd>.md` 로 제출.
@@ -34,5 +43,6 @@
 
 ## 7. 참조
 - spec: docs/specs/authorization-ontology/authorization-ontology-rls-enforcement.spec.md
+- implementation spec: docs/specs/audit-recorder-store/audit-recorder-store-rls-shadow.spec.md
 - plan: Plan 15d, Plan 15e
 - shadow schema: audit.rls_shadow_decisions

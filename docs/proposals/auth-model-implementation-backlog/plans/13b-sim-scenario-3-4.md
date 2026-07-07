@@ -3,6 +3,15 @@ lifecycle: draft
 plan: 13b
 phase: 4
 depends-on: [13a, 11b, 12c]
+sources:
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-3-self-dept-approval.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-3-self-dept-approval.test.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-4-cross-dept-deny.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-4-cross-dept-deny.test.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/lib/audit-helpers.ts
+  - simulations/enterprise-pm/scenarios/src/env/in-process-env.ts
+  - simulations/enterprise-pm/scenarios/src/cli.ts
+  - docs/specs/sim-erp-pm-coverage.spec.md
 ---
 
 # Plan 13b — sim 시나리오 3, 4 (단일 승인 + cross-department deny)
@@ -46,6 +55,12 @@ depends-on: [13a, 11b, 12c]
 **Tech Stack:**
 - 13a와 동일 + sim-approval-api 추가
 - `audit-recorder-store` factory + audit-browser-api 통합 (Plan 12c 결과물)
+
+## 현재 증거 표면 ^evidence
+
+- 시나리오 3/4 구현과 테스트는 `simulations/enterprise-pm/scenarios/src/scenarios/` 아래 `scenario-3-*`, `scenario-4-*` 파일이 소유한다.
+- `src/cli.ts`는 두 시나리오를 `ALL_SCENARIOS` registry에 포함한다.
+- `sim-erp-pm-coverage.spec.md`는 시나리오 3/4를 approval state machine, deny path, decision replay 회귀 게이트로 추적한다.
 
 ---
 

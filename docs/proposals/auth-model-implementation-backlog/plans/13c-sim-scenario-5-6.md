@@ -3,6 +3,15 @@ lifecycle: draft
 plan: 13c
 phase: 4
 depends-on: [13b, 11b, 12c]
+sources:
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-5-three-stage-approval.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-5-three-stage-approval.test.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-6-delegated-resource.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/scenario-6-delegated-resource.test.ts
+  - simulations/enterprise-pm/scenarios/src/scenarios/lib/audit-helpers.ts
+  - simulations/enterprise-pm/scenarios/src/env/in-process-env.ts
+  - simulations/enterprise-pm/scenarios/src/cli.ts
+  - docs/specs/sim-erp-pm-coverage.spec.md
 ---
 
 # Plan 13c — sim 시나리오 5, 6 (3단계 승인 + DELEGATED)
@@ -46,6 +55,12 @@ depends-on: [13b, 11b, 12c]
 
 **Tech Stack:**
 - Plan 13a/b와 동일
+
+## 현재 증거 표면 ^evidence
+
+- 시나리오 5/6 구현과 테스트는 `scenario-5-three-stage-approval.*`, `scenario-6-delegated-resource.*` 파일이 소유한다.
+- Scenario 6은 audit context, graph snapshot list/diff/prune helper를 소비해 DELEGATED graph lifecycle evidence를 남긴다.
+- `src/cli.ts`와 `sim-erp-pm-coverage.spec.md`가 5/6을 현재 회귀 매트릭스에 연결한다.
 
 ---
 

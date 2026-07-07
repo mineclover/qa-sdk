@@ -12,6 +12,14 @@ def:
   links:
     - target: coordinate-storage
       type: implements
+sources:
+  - docs/specs/system/coordinate-storage.rule.md
+  - packages/definition-catalog/src/coordinate-storage-check.ts
+  - packages/definition-catalog/src/coordinate-storage-check.test.ts
+  - packages/definition-catalog/src/coordinate-storage-check.integration.test.ts
+  - packages/cli/src/data-sources/local-data-source.ts
+  - scripts/def-ci-check.ts
+  - scripts/def-ci-check.sh
 ---
 
 # 좌표 저장 PR 체크리스트
@@ -56,6 +64,6 @@ def:
 - `docs/proposals/ingest-coordinate-storage-audit/README.md` — 이행 사례
 - `docs/proposals/auth-model-implementation-backlog/plans/03-coordinate-storage-validation.md` — 자동 검출 도입 plan
 
-## CI 동작
+## 검증 동작
 
-`.github/workflows/def-gate.yml`이 `def validate`를 호출하므로 본 규칙 위반은 PR CI에서 자동 실패한다. 우회는 `--no-code-checks=true` (권장하지 않음, 임시 진단용).
+현재 active workflow에는 `def-gate.yml`가 없으므로 이 체크리스트의 실행 증거는 `def validate`와 `scripts/def-ci-check.*` 경로다. `def validate`는 `packages/cli/src/data-sources/local-data-source.ts`에서 coordinate-storage scanner를 호출하며, 우회는 `--no-code-checks=true` (권장하지 않음, 임시 진단용)로만 가능하다.
