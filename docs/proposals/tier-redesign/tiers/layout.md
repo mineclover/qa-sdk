@@ -19,6 +19,16 @@ part_of: tier-redesign
 role: tier-definition
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/examples/docs-control-plane-layout.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - docs/specs/definition-catalog/docs-control-plane.spec.md
+  - packages/definition-catalog/src/validate.ts
 ---
 
 # STC Tier — Layout (ECS 외 확장 축)
@@ -125,5 +135,5 @@ refs:
 
 ## 예시
 
-- **Pilot**: [../examples/docs-control-plane-layout.md](../examples/docs-control-plane-layout.md) — docs-control-plane을 Layout으로 재해석
+- **Pilot**: [../examples/docs-control-plane-layout.md](../examples/docs-control-plane-layout.md) — current `docs-control-plane` system boundary를 Layout 관점에서 재해석
 - 실제 qa-sdk: `system-root` (전체 Layout), `system-infra-layout` (인프라 서비스 그룹)

@@ -19,6 +19,17 @@ part_of: tier-redesign
 role: independence-rules
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/examples/approval-system.md
+  - docs/proposals/tier-redesign/examples/docs-control-plane-layout.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/definition-catalog/src/validate.ts
 ---
 
 # System 독립성 + meta-semantic 상태 위임 + Inline 정의 금지
@@ -71,18 +82,23 @@ System (STC)
 
 - **State enum 분리** — Entity가 가질 수 있는 상태 리스트는 **Component tier 문서**로 분리. System 문서에 인라인 금지
 - **Lifecycle 참조** — 전이/원자 경계/compensate/이벤트 카탈로그는 meta-semantic 문서(`docs/specs/meta-semantic/`) 참조
-- **Read-only System 단순화** — 상태 변화가 있더라도 write-mode controller 없으면 `pipe_refs: []` + `read_only_projection: true`
+- **Read-only System 단순화** — 상태 vocabulary가 contract이면 `pipe_refs: []` + `read_only_projection: true`; 상태 없는 projection이면 `lifecycle_ref` 생략
 - **Code SSOT 방향** — code enum / 타입은 **Component State** 문서의 `states[]`를 따름. 역방향 금지
 - **Trivial System 예외** — 상태가 없는 System은 `lifecycle_ref` 생략
 
 ### 예시
 
 ```yaml
-# Read-only System (상태 있지만 projection만)
+# Stateless read-only System (현행 deterministic-label)
 tier: system
 id: deterministic-label-system
+# lifecycle_ref 없음
+
+# Read-only System (상태 vocabulary가 contract인 경우)
+tier: system
+id: stateful-read-model-system
 lifecycle_ref:
-  state_component: deterministic-label-record-state
+  state_component: stateful-read-model-state
   pipe_refs: []
   read_only_projection: true
 
@@ -149,8 +165,8 @@ Layout 재귀는 "이전에 없던 구조적 요구를 발견하는 메커니즘
 |------|------|----------|------|
 | System → System | 소비 | `depends_on` | A가 B를 사용 |
 | System → System | 구체화 | `refines` | A가 B를 더 구체화 |
-| **System → Component (State enum)** | **상태 소유** | `lifecycle_ref.state_component` (frontmatter 필드) | **State enum을 담는 Component 참조 (D-17)** |
-| **System → meta-semantic pipe** | **실행 위임** | `lifecycle_ref.pipe_refs` (frontmatter 필드) | **상태 전이 규칙을 meta-semantic에 위임** |
+| **System → Component (State enum)** | **상태 소유** | `lifecycle_ref.state_component` (frontmatter 필드) | **State enum을 담는 Component 참조. 상태 vocabulary가 contract일 때만 사용** |
+| **System → meta-semantic pipe** | **실행 위임** | `lifecycle_ref.pipe_refs` (frontmatter 필드) | **상태 전이 규칙을 meta-semantic에 위임. stateless projection이면 생략** |
 | Layout → System | 배치 | `refs` (신규) | Layout이 Systems를 조직 |
 | Layout → Layout | 재귀 | `refs` | Layout이 다른 Layout 참조 |
 | Component → ? | — | — | Component는 수동적, 링크 대상일 뿐 |

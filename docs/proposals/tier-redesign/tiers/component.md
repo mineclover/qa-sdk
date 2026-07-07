@@ -19,6 +19,17 @@ part_of: tier-redesign
 role: tier-definition
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-record.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-record-state.md
+  - docs/proposals/tier-redesign/examples/approval-request-state.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/deterministic-label-registry/src/records.ts
 ---
 
 # STC Tier — Component (데이터 진입점)
@@ -86,10 +97,12 @@ id: label-record
 
 ```ts
 interface LabelRecord {
-  id: string
-  state: DeterministicLabelRecordState   // state-enum Component 참조
-  ontologyPackId?: string
-  ...
+  label: string
+  kind: SemanticCoordinateLabelKind
+  physicalRefs: SemanticPhysicalRef[]
+  sourceRefs: string[]
+  evidenceRefs: string[]
+  diagnostics: SemanticCoordinateDiagnostic[]
 }
 ```
 ```
@@ -174,7 +187,7 @@ Component 변경은 다음 권장 패턴:
 
 ## 예시
 
-- Pilot: [../examples/deterministic-label-record.md](../examples/deterministic-label-record.md) — `data-shape` sub-type 예시 (primary)
-- Pilot: [../examples/deterministic-label-record-state.md](../examples/deterministic-label-record-state.md) — `state-enum` sub-type 예시
+- Pilot: [../examples/deterministic-label-record.md](../examples/deterministic-label-record.md) — 현행 `DeterministicLabelRecord` 기반 `data-shape` sub-type 예시
+- Pilot: [../examples/deterministic-label-record-state.md](../examples/deterministic-label-record-state.md) — historical `state-enum` sub-type 예시. 현행 deterministic-label code enum은 제거됨
 - Pilot: [../examples/approval-request-state.md](../examples/approval-request-state.md) — `state-enum` (write-mode 연결)
 - 기존 qa-sdk 문서 중 대다수 "데이터 정의" 문서는 **data-shape** Component로 분류 예정 (Phase 2 자동 분류)

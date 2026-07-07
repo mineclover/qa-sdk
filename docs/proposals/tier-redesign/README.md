@@ -132,9 +132,9 @@ sources:
 
 | 파일 | Tier | 모드 / Sub-type | 핵심 |
 |------|------|----------------|------|
-| [examples/deterministic-label-record.md](./examples/deterministic-label-record.md) | Component | **data-shape** (D-18) | Record field shape + 다른 Component 참조 패턴 |
-| [examples/deterministic-label-record-state.md](./examples/deterministic-label-record-state.md) | Component | state-enum (D-18) | **Read-only** 도메인 상태 (7 states) |
-| [examples/deterministic-label-system.md](./examples/deterministic-label-system.md) | System | read-only-projection | `pipe_refs=[]` + R-7 3-check 3/3 |
+| [examples/deterministic-label-record.md](./examples/deterministic-label-record.md) | Component | **data-shape** (D-18) | 현행 `DeterministicLabelRecord` field shape |
+| [examples/deterministic-label-record-state.md](./examples/deterministic-label-record-state.md) | Component | state-enum (D-18) | historical state pilot. 현행 deterministic-label code enum은 제거됨 |
+| [examples/deterministic-label-system.md](./examples/deterministic-label-system.md) | System | stateless read-only projection | `buildDeterministicLabelInventory()` 중심 현행 projection boundary |
 | [examples/approval-request-state.md](./examples/approval-request-state.md) | Component | state-enum (D-18) | **Write-mode** 도메인 상태 (4 states) — 가상 Pilot |
 | [examples/approval-system.md](./examples/approval-system.md) | System | **write-mode** | `pipe_refs=[3]` + meta-semantic 위임 + compensate — 가상 Pilot |
 | [examples/docs-control-plane-layout.md](./examples/docs-control-plane-layout.md) | Layout | — | 5 Systems refs + heading mirror 패턴 |
@@ -182,7 +182,7 @@ sources:
 - [ ] `lifecycle_ref` schema가 실무에 적용 가능한가 ([rules/state-machine-delegation.md](./rules/state-machine-delegation.md))
 
 #### Pilot 예시 검증
-- [ ] [System 예시](./examples/deterministic-label-system.md)의 R-7 3-check 3/3 평가 + `lifecycle_ref` 구조가 타당한가
+- [ ] [System 예시](./examples/deterministic-label-system.md)의 current stateless projection boundary와 historical `lifecycle_ref` pilot 분리가 타당한가
 - [ ] [Layout 예시](./examples/docs-control-plane-layout.md)의 5 System refs 구조가 실제 구조 반영하는가
 - [ ] Read-only 2 Pilot만으로 D-17 검증이 충분한가 — write-mode controller 부재 영향 판단
 

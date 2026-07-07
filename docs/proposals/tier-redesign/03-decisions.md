@@ -19,6 +19,19 @@ part_of: tier-redesign
 role: phase-0-decision
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/examples/approval-system.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/deterministic-label-registry/src/index.ts
+  - packages/deterministic-label-registry/src/inventory.ts
+  - packages/deterministic-label-registry/src/records.ts
 ---
 
 > **RFC / Proposal.** `docs/proposals/tier-redesign/`의 일부. 아직 정규 스펙이 아닙니다.
@@ -149,7 +162,12 @@ superseded_by: -
 
 ### D-11: Dry-run은 System operation
 
-**결정**: Dry-run 평가 기능(예: `dryRunDeterministicLabelTransition`)은 **System의 operation**이다. FSM tier가 제거된 후에도 이 결정은 유효.
+**결정**: Dry-run 평가 기능이 존재한다면 **System의 operation**이다. FSM tier가 제거된 후에도 이 분류 원칙은 유효하다.
+
+**Current boundary**: `dryRunDeterministicLabelTransition`은 historical deterministic-label pilot의 예시였고,
+`deterministic-label-stability-boundary`의 2026-04-18 단순화 이후 현행
+`packages/deterministic-label-registry` 구현에서는 제거되었다. 현재 deterministic-label은 상태 없는
+read-only projection이다.
 
 **근거**:
 - Dry-run은 실제 상태 변경이 없는 "평가 함수"
@@ -441,14 +459,14 @@ STC tier 분류를 현재 repo 문서에 대입.
 | `ingest-system` (기존) | `system` | R-7 3-check 3/3 |
 | `system-infra-layout` | `layout` | 여러 System을 refs로 조직 |
 | `system-root` | `layout` | 여러 Layout을 refs로 조직 |
-| `deterministic-label-record-state` (미작성) | `component` | State enum 분리 (D-17 규칙) |
+| `deterministic-label-record-state` (historical pilot) | `component` | State enum 분리 패턴. 현행 deterministic-label code enum은 제거됨 |
 
 ### 애매 케이스
 
 #### `docs-control-plane.spec.md`
 
-- **잠정**: `tier: system` (R-7 3/3 만족)
-- **lifecycle_ref**: `state_component: deterministic-label-record-state`, `pipe_refs: []` (read-only projection)
+- **잠정**: `tier: system` (R-7 2/3 이상 만족)
+- **lifecycle_ref**: 현행 docs-control-plane/deterministic-label integration은 상태 없는 read-only projection이므로 없음. state enum + `pipe_refs: []`는 historical pilot 경계
 - Sub-package(`doc-envelope`, `deterministic-label-registry`, `ontology-pack-validate`)는 **별도 System** + `depends_on` 관계
 
 #### `definition-catalog-spec`

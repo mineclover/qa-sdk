@@ -186,13 +186,13 @@ doc_coordinate = tier × scope × layer
 | `ingest-system` | System | R-7 3-check 3/3 |
 | `system-infra-layout` | Layout | 여러 System을 refs로 조직 |
 | `system-root` | Layout | 여러 Layout을 refs로 조직 |
-| `deterministic-label-record-state` (미작성) | Component | State enum 분리 — meta-semantic 체계 참조 대상 |
+| `deterministic-label-record-state` (historical pilot) | Component | State enum 분리 패턴. 현행 deterministic-label code enum은 제거됨 |
 
 ### 애매 사례
 
 | 문서 | 잠정 tier | 분할 제안 |
 |------|----------|----------|
-| `docs-control-plane` | System | Sub-package를 `depends_on`으로 분리. 상태 관리는 lifecycle_ref로 meta-semantic 참조 |
+| `docs-control-plane` | System | Sub-package를 `depends_on`으로 분리. 현행 deterministic-label integration은 상태 없는 read-only projection |
 | `definition-catalog-spec` | 분할 필요 | Component (스키마) + System (operations). 상태 전이는 meta-semantic |
 | `CLAUDE.md` | tier 면제 | Operational instruction 예외 (D-2 확장) |
 

@@ -19,6 +19,15 @@ part_of: tier-redesign
 role: tier-definition
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/mental-models.md
+  - docs/proposals/tier-redesign/tiers/component.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/frontmatter.ts
 ---
 
 # STC Tier — Entry (ECS Entity 적응)

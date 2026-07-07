@@ -19,6 +19,22 @@ part_of: tier-redesign
 role: delegation-rules
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/tiers/system.md
+  - docs/proposals/tier-redesign/tiers/component.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-record-state.md
+  - docs/proposals/tier-redesign/examples/approval-system.md
+  - docs/proposals/tier-redesign/examples/approval-request-state.md
+  - docs/specs/meta-semantic/meta-semantic-ir.spec.md
+  - docs/specs/meta-semantic/concepts/ms-concept-data-facets.spec.md
+  - docs/specs/meta-semantic/pipe-impl/transition-scope.spec.md
+  - docs/specs/meta-semantic/pipe-impl/pipe-connection-catalog.spec.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/deterministic-label-registry/src/index.ts
+  - packages/deterministic-label-registry/src/inventory.ts
+  - packages/deterministic-label-registry/src/records.ts
 ---
 
 # State Machine Delegation — 상태 관리는 meta-semantic에 위임
@@ -94,7 +110,13 @@ lifecycle_ref:
 
 ### 규칙 4 — Read-only projection 단순화
 
-System이 **read-only projection만** 수행하면:
+System이 **read-only projection만** 수행하면 두 갈래로 나눈다:
+
+- 상태 vocabulary를 실제 contract로 노출하는 read-only projection이면 `state_component`를 둔다.
+- 현행 deterministic-label처럼 상태 없이 source에서 record만 투영하는 **stateless projection**이면
+  `lifecycle_ref` 전체를 생략한다.
+
+상태 contract가 있는 read-only projection이면:
 - `state_component` **필수** (상태 enum 선언 필요)
 - `pipe_refs` **빈 배열 허용** 또는 생략
 - `read_only_projection: true` 명시
@@ -130,7 +152,11 @@ State enum Component는 다음만 담는다 (확장 금지):
 
 ### deterministic-label-registry 재표현
 
-**State enum (Component tier)**:
+현행 `packages/deterministic-label-registry`는 FSM readiness, `currentState`, transition dry-run을 제거한
+stateless projection이다. 따라서 아래 State enum/lifecycle_ref 구조는 current implementation contract가
+아니라 D-17/D-18을 검토하던 historical pilot이다.
+
+**Historical State enum (Component tier)**:
 
 ```yaml
 ---
@@ -156,7 +182,7 @@ id: deterministic-label-record-state
 전이 규칙은 lifecycle을 소유한 System 문서(`deterministic-label-system`) + 해당 meta-semantic pipe 참조.
 ```
 
-**System tier의 lifecycle_ref**:
+**Historical System tier의 lifecycle_ref**:
 
 ```yaml
 tier: system
@@ -167,16 +193,28 @@ lifecycle_ref:
   pipe_refs: []   # read-only projection — pipe 없음
   read_only_projection: true
   notes: |
-    DRAFT→LINTED→RESOLVED→ACTIVE 전이는 `computeReadiness`가 매 호출마다 재계산.
+    DRAFT→LINTED→RESOLVED→ACTIVE 전이는 historical pilot에서 readiness가 매 호출마다 재계산한다고 가정했다.
     실제 전이 실행은 write-mode transition controller (미래 PRD)가 담당.
     그 시점에 meta-semantic PipeTransitionScope 문서 작성 + pipe_refs 채움.
+```
+
+**Current implementation**:
+
+```yaml
+tier: system
+id: deterministic-label-system
+
+# lifecycle_ref 없음 — 상태 없는 projection
+operations:
+  - buildDeterministicLabelInventory
+  - projectDeterministicLabelRecordsFromDocuments
 ```
 
 ## def validate에서 지원할 검증 (Phase 1.B)
 
 - `lifecycle_ref.state_component`가 실존 Component tier 문서인가
 - `lifecycle_ref.pipe_refs`의 각 항목이 meta-semantic 내 PipeTransitionScope와 일치하는가
-- Component State 문서의 `states[]`와 System 구현 코드의 enum이 일치하는가 (D-9 SSOT 원칙 계승)
+- Component State 문서의 `states[]`와 System 구현 코드의 enum이 일치하는가 (stateful contract가 존재할 때만)
 - `read_only_projection: true`이면 pipe_refs가 비어 있어야 (또는 unresolved 상태 pipe만)
 
 ## 장점

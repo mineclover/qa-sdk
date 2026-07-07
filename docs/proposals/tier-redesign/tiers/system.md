@@ -19,6 +19,18 @@ part_of: tier-redesign
 role: tier-definition
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/examples/approval-system.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/deterministic-label-registry/src/inventory.ts
+  - packages/deterministic-label-registry/src/records.ts
 ---
 
 # STC Tier — System
@@ -42,12 +54,9 @@ superseded_by: -
 ```
 예: deterministic-label-system (read-only + compute)
   - buildDeterministicLabelInventory()    ← 조회
-  - dryRunDeterministicLabelTransition()  ← 전이 검증 (dry-run)
+  - projectDeterministicLabelRecordsFromDocuments()  ← record projection
   - depends_on: ontology-pack-system, doc-envelope
-  - lifecycle_ref:
-      state_component: deterministic-label-record-state
-      pipe_refs: []   # read-only projection — pipe 없음
-      read_only_projection: true
+  - lifecycle_ref 없음                    ← 현행 구현은 상태 없는 projection
 ```
 
 ## 외연 기준 — R-7 3-check
@@ -73,6 +82,10 @@ superseded_by: -
 
 이 경우 **`lifecycle_ref` 생략** + System 문서에 "상태 관리 없음" 명시.
 
+현행 `deterministic-label-system`은 이 예외에 속한다. 고유 이름과 독립 운용은 만족하지만,
+`deterministic-label-stability-boundary` 결정 이후 FSM readiness/currentState/transition dry-run을 제거한
+stateless projection이므로 lifecycle_ref를 갖지 않는다.
+
 ## 상태 관리 (D-17 Pivot)
 
 상태가 있는 System은 **meta-semantic에 위임**한다:
@@ -86,7 +99,7 @@ lifecycle_ref:
 
 - **State enum**: Component tier 문서로 분리 ("component" tier)
 - **Lifecycle/전이**: meta-semantic의 `PipeTransitionScope`, `Data IR.lifecycle`, `TransitionDef` 참조
-- **Read-only projection**: `pipe_refs: []`로 비움. 상태는 source에서 재계산
+- **Read-only projection**: 상태 vocabulary가 contract이면 `pipe_refs: []`로 비움. 상태 없는 projection은 `lifecycle_ref` 생략
 - **Write-mode**: 각 전이를 meta-semantic pipe 문서로 작성 + `pipe_refs` 추가
 
 상세 규칙: [../rules/state-machine-delegation.md](../rules/state-machine-delegation.md)
@@ -109,5 +122,5 @@ lifecycle_ref:
 
 ## 예시
 
-- **Pilot**: [../examples/deterministic-label-system.md](../examples/deterministic-label-system.md) — `lifecycle_ref` 패턴 + R-7 3-check 3/3 충족 검증
+- **Pilot**: [../examples/deterministic-label-system.md](../examples/deterministic-label-system.md) — 현행 stateless projection + historical lifecycle_ref pilot 경계 검증
 - 실제 qa-sdk: `ingest-system`, `decode-system`, `gate-system`, `registry-system`, `docs-control-plane` 등

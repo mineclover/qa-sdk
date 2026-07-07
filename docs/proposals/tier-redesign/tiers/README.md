@@ -25,6 +25,20 @@ status: under-review
 date: 2026-04-19
 part_of: tier-redesign
 role: tiers-index
+sources:
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/classification.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/tiers/component.md
+  - docs/proposals/tier-redesign/tiers/entry.md
+  - docs/proposals/tier-redesign/tiers/system.md
+  - docs/proposals/tier-redesign/tiers/layout.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - packages/definition-catalog/src/types.ts
+  - packages/definition-catalog/src/frontmatter.ts
 ---
 
 # STC Tiers
@@ -74,6 +88,7 @@ Layout ─────────→ Systems 조직 (refs, ECS 외 확장 축)
 - State enum → **Component tier**로 분리
 - Lifecycle 전이 규칙 → **meta-semantic pipe** (PipeTransitionScope 등)
 - System 문서는 `lifecycle_ref`로 참조만
+- 상태 없는 read-only projection은 `lifecycle_ref`를 생략한다
 
 상세: [../rules/state-machine-delegation.md](../rules/state-machine-delegation.md)
 
