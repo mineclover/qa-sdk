@@ -72,6 +72,30 @@ qa-sdk 설계 문서와 패키지가 실제 작업을 줄이거나 실패를 막
 - workspace glob 아래 hidden directory는 pnpm workspace filter에 잡히지 않는 경우가 있으므로 package 후보에서 제외한다.
 - test-only package는 `tests/`, `scenarios/`, `*.spec.*`, `*.test.*` 파일을 실행 증거 표면으로 인정한다.
 
+## 관리 구조 ^overview
+
+usefulness 정리는 문서가 구현을 소유하게 만드는 작업이 아니다. 구현과 테스트가 먼저 source authority이고, 문서는 그 authority를 찾을 수 있게 좌표화한다. 유지 가능한 정리 구조는 다음 5개 역할로 나눈다.
+
+| 역할 | 소유 표면 | 책임 | 금지 사항 |
+|---|---|---|---|
+| Source owner | `packages/*`, `simulations/*`, `scripts/*`, `skills/*` | runtime, CLI, test, fixture, smoke, generated contract의 실제 동작 | 문서 판정을 맞추기 위해 동작을 넓히거나 임시 API를 만들지 않는다 |
+| Surface manifest | `scripts/package-surfaces.mjs` | `packages/*`의 기능군, 승격, `no-promotion` 큐 | docs 표를 먼저 바꾸고 manifest를 따라오게 하지 않는다 |
+| Definition docs | `docs/specs/**`, `docs/*.md` 중 `def:` frontmatter가 있는 문서 | 현재 승인된 개념/계약/시스템의 목적, 책임, source refs | 구현 세부 타입/API 사본을 SSOT처럼 보관하지 않는다 |
+| Legacy design records | `docs/superpowers/**`, 일부 plan/proposal 기록 | 완료된 설계/계획의 배경과 추적 가능한 결과 | 현재 spec이나 제품 roadmap으로 재승격하지 않는다 |
+| Audit tooling | `scripts/design-usefulness-audit.mjs`, `scripts/verify-analysis-os.ts` | 후보 생성과 회귀 방지 | 자동 삭제, 자동 lifecycle 변경, 자동 archive 결정을 하지 않는다 |
+
+source-backed 정리는 위 역할을 섞지 않는 것이 핵심이다. `sources:`는 "이 문서가 구현을 소유한다"가 아니라 "현재 구현/검증 authority는 여기서 확인한다"는 역참조다.
+
+## Source-backed 작성 규칙 ^constraint
+
+- definition 문서에는 기존 `def:` frontmatter를 유지하고, 같은 frontmatter의 top-level `sources:` 배열에 repo-relative source refs를 추가한다.
+- legacy 설계/계획 문서에는 `def:`를 새로 만들지 않는다. 대신 top-level `status: source-backed`와 `sources:`만 추가해 완료 기록임을 표시한다.
+- source ref는 `packages/`, `docs/`, `scripts/`, `skills/`, `simulations/` 아래의 실제 파일이어야 한다. 절대경로, `./`, `../`는 쓰지 않는다.
+- source ref는 가능하면 implementation file + test/smoke file + 소비 문서/README 중 2종 이상을 함께 가리킨다.
+- source ref가 없으면 문서를 `keep`으로 만들기 위해 lifecycle을 낮추거나 archive로 숨기지 않는다. 그대로 `prove`로 남긴다.
+- `prove`를 닫는 방식은 작은 실행 증거 추가, 기존 실행 증거 발견 후 source ref 연결, 또는 별도 quarantine/remove 변경 중 하나다.
+- `quarantine`/`remove`는 source-backed 정리 커밋과 섞지 않는다. 별도 topic에서 참조자 확인, 대체 경로, 검증 명령을 같이 남긴다.
+
 ## 감사 절차 ^validation
 
 1. `corepack pnpm docs:usefulness-audit -- --limit 40`으로 후보를 생성한다.

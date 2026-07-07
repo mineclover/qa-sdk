@@ -71,6 +71,35 @@ package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 s
 - `quarantine`은 삭제가 아니라 live route에서 빼고 참조를 명확히 하는 작업이며, 별도 변경으로 다룬다.
 - `remove`는 def validation, arch feedback, package tests가 통과한 뒤에만 한다.
 
+## 관리 구조
+
+이 감사의 장기 운영 구조는 "패키지를 문서에 맞추는 것"이 아니라 "문서가 실제 source authority를 가리키게 하는 것"이다.
+
+| 레이어 | 기준 파일 | 운영 방식 |
+|---|---|---|
+| Source authority | `packages/*`, `simulations/*`, `scripts/*`, `skills/*` | 구현, 테스트, smoke, CLI, fixture가 실제 동작을 소유한다 |
+| Package surface | `scripts/package-surfaces.mjs` | `packages/*`만 surface-managed로 분류하고, `simulations/*`/`vendor/*`는 workspace-support로 둔다 |
+| Definition catalog | `docs/specs/**`, `docs/*.md`의 `def:` 문서 | 개념/계약/시스템을 설명하고 top-level `sources:`로 실제 source authority를 연결한다 |
+| Legacy records | `docs/superpowers/**`, 오래된 plan/proposal | 현재 spec으로 승격하지 않고 `status: source-backed` + `sources:`로 완료 기록을 보존한다 |
+| Audit gates | `docs:usefulness-audit`, `def:check`, `arch:feedback` | 후보 생성, 문서 정합성, surface 분리 회귀 방지를 담당한다 |
+
+### Source-backed 정리 루프
+
+1. `corepack pnpm docs:usefulness-audit -- --format json --all`로 후보를 확인한다.
+2. 후보 문서가 현재 구현과 맞으면 top-level `sources:`에 implementation/test/smoke/consumer refs를 추가한다.
+3. 후보가 legacy 설계/계획이면 `def:`를 만들지 않고 `status: source-backed`로 완료 기록임을 표시한다.
+4. 후보가 아직 구현되지 않았으면 `prove`로 남긴다. lifecycle downgrade나 archive 이동으로 숨기지 않는다.
+5. 실제 제거/격리가 필요하면 source-backed 커밋과 분리해 `quarantine` 또는 `remove` topic으로 처리한다.
+6. 닫을 때는 `git diff --check`, `corepack pnpm docs:usefulness-audit`, `corepack pnpm def:check`, `corepack pnpm arch:feedback`을 확인한다.
+
+### 유지 불변식
+
+- `docs:usefulness-audit`의 `prove=0`은 목표가 아니라 결과다. 실제 source authority가 없으면 0을 만들지 않는다.
+- `sources:`는 문서의 구현 소유권이 아니라 역추적 링크다.
+- approved definition 문서는 현재 동작만 적는다. 미구현 계획은 `.todo.md`, proposal, 또는 legacy record에 둔다.
+- `scripts/package-surfaces.mjs`가 package surface SSOT다. 문서 표는 manifest를 따라가야 한다.
+- `request-contract`, `weighted-gpu`처럼 `no-promotion`인 패키지는 package-local 증거가 있어도 제품 core로 승격하지 않는다.
+
 ## 1차 보수 정리 결과
 
 첫 audit 결과에서 `packages/weighted-wasm/pkg`가 `quarantine` 후보로 잡혔지만, 실제로는 `wasm-pack`이 생성한 배포 manifest와 WASM 산출물이다. 상위 workspace package인 `packages/weighted-wasm`의 JS wrapper가 `../pkg/weighted_wasm.js`와 `../pkg/weighted_wasm_bg.wasm`을 직접 소비하므로 삭제 또는 격리 대상이 아니다.
