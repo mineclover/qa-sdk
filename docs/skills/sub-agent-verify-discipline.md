@@ -1,6 +1,13 @@
 ---
 name: sub-agent-verify-discipline
 description: "sub-agent dispatch 시 verify-before-complete 룰. 트리거: 'sub-agent', 'parallel agent', 'dispatch', '병렬 실행', '검증 누락', 'false claim', 'verify before complete'"
+sources:
+  - skills/domain-slice-architecture/SKILL.md
+  - skills/domain-slice-architecture/references/lessons-from-migration.md
+  - docs/specs/system/layer-separation.rule.md
+  - docs/specs/system/change-simulation-precedence.rule.md
+  - docs/specs/system/testing-patterns.spec.md
+  - docs/plan/simulations-domain-slice-migration/lessons-learned.md
 ---
 
 # Sub-Agent Verify Discipline

@@ -11,6 +11,14 @@ def:
   links:
     - target: guides-system
       type: refines
+sources:
+  - docs/specs/system/doc-type-convention.spec.md
+  - docs/specs/system/doc-type-convention.cases.md
+  - docs/specs/system/test-md-convention.rule.md
+  - docs/specs/definition-catalog/definition-management.spec.md
+  - docs/specs/definition-catalog/definition-frontmatter-metadata-system.spec.md
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/frontmatter.test.ts
 ---
 # Spec Convention
 

@@ -1,6 +1,13 @@
 ---
 name: decide
 description: "의사결정 플로우 실행. 트리거: '결정', 'decide', '테스트 필요', '확장할까', '안정화', '기존 기능', '판단', '의사결정', 'decision'"
+sources:
+  - packages/cli/src/skills-workflows.test.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/cli/src/commands/dkg.e2e.test.ts
+  - packages/dkg/src/decision-scaffold.ts
+  - packages/dkg/src/skills/record-operation.ts
+  - packages/dkg/src/skills/trace.ts
 ---
 
 # 의사결정 플로우

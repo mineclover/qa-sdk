@@ -1,6 +1,15 @@
 ---
 name: ralph-tui-workflows
 description: "ralph-tui skill 묶음 운영 가이드. PRD 생성부터 tracker별 작업 생성까지 어떤 skill을 어떤 순서로 쓰는지 정리한다."
+sources:
+  - skills/ralph-tui-prd/SKILL.md
+  - skills/ralph-tui-create-json/SKILL.md
+  - skills/ralph-tui-create-beads/SKILL.md
+  - skills/ralph-tui-create-beads-rust/SKILL.md
+  - docs/specs/skill-catalog/ralph-tui-skill-group.md
+  - docs/specs/definition-catalog/docs-control-plane-prd.spec.md
+  - packages/cli/src/command-groups/docs.commands.ts
+  - packages/cli/src/lib/docs-control-plane/prd-to-ralph-json.ts
 ---
 
 # Ralph TUI Workflows
