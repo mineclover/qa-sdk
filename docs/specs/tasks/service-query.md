@@ -1,6 +1,37 @@
+---
+def:
+  id: task-service-query
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: query-service
+  tags: [runtime, task-record]
+  links:
+    - target: query-system
+      type: traces_to
+    - target: query-api
+      type: traces_to
+sources:
+  - packages/query-service/README.md
+  - packages/query-service/src/routes/query.ts
+  - packages/query-service/src/routes/rules.ts
+  - packages/query-service/src/lib/gate-client.ts
+  - packages/query-service/src/lib/rule-migration-service.test.ts
+  - docs/specs/query-system/query-api.spec.md
+---
+
 # query-service 구축
 
 > 관계형 질의 + 정책 해소 + gate 통합을 중앙 질의 서비스로 노출한다.
+
+## 목적 ^purpose
+
+query-service 구축 task의 구현 완료 위치를 추적한다. API 계약은 `query-api`, 규칙/gate/replay 세부 문서는 `query-system`, 런타임 surface는 `packages/query-service`가 소유한다.
 
 ## 흐름 심볼
 
@@ -8,14 +39,14 @@
 
 ## 현재 상태
 
-| 항목 | 라이브러리 (🔧) | 서비스 (📋) |
+| 항목 | 라이브러리 | 서비스 |
 |---|---|---|
-| RelationalEngine | ✅ 226줄, 12 facade 메서드 | ❌ |
-| PolicyResolver | ✅ 170줄, 4전략 | ❌ |
-| CrossIndexQuery | ✅ 206줄, 5단계 composeQuery | ❌ |
-| VersionQuery | ✅ 202줄 | ❌ |
-| PolicyRule 영속화 | ❌ | ❌ |
-| Gate 통합 | gateAwareResolve 함수 있음 | ❌ |
+| RelationalEngine | ✅ index-meta | ✅ `routes/query.ts` + `query-service.ts` |
+| PolicyResolver | ✅ index-meta | ✅ `/resolve` |
+| CrossIndexQuery | ✅ index-meta | ✅ `/compose-query` |
+| VersionQuery | ✅ index-meta | ✅ `/query-across-versions` |
+| PolicyRule 영속화 | ✅ Memory + SQL | ✅ `/rules` |
+| Gate 통합 | ✅ `GateServiceClient` | ✅ `withGate` / `gateMode` |
 
 ## 선행 조건
 
@@ -57,3 +88,11 @@ spec.todo에서 언급된 대로, 규모가 커지면 분할 고려:
 - 규칙 CRUD 5종 + 질의 5종 = 10개 엔드포인트
 - Gate 통합 클라이언트
 - query-system.md `[S2]` `[A5]` → 📋 에서 ✅로 전환
+
+## 관련 소스
+
+- `packages/query-service/src/routes/query.ts`
+- `packages/query-service/src/routes/rules.ts`
+- `packages/query-service/src/lib/gate-client.ts`
+- `packages/query-service/src/lib/rule-migration-service.test.ts`
+- `docs/specs/query-system/query-api.spec.md`

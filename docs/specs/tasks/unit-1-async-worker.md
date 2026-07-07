@@ -1,7 +1,38 @@
+---
+def:
+  id: task-unit-1-async-worker
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: ingest-server
+  tags: [runtime, task-record]
+  links:
+    - target: ingest-system
+      type: traces_to
+    - target: pipeline-system
+      type: depends_on
+sources:
+  - packages/core/src/ports/task-queue.port.ts
+  - packages/ingest-server/src/lib/bullmq-task-queue.ts
+  - packages/ingest-server/src/lib/phase-two-worker.ts
+  - packages/ingest-server/src/routes/ingest.ts
+  - packages/ingest-server/src/async-worker.e2e.test.ts
+  - packages/ingest-server/src/routes/dlq.ts
+---
+
 # Unit 1 — Phase 2 비동기 분리
 
 > ingest-server의 Phase 2 (reconstruction + verdict)를 MQ Worker로 분리하여
 > A2→A4 흐름을 구축하고, ingest 응답 지연을 해소한다.
+
+## 목적 ^purpose
+
+Unit 1 async worker task의 완료 위치를 추적한다. 현재 SSOT는 TaskQueue 포트, BullMQ/InMemory queue adapters, PhaseTwoWorker, ingest route wiring과 E2E 테스트다.
 
 ## 흐름 심볼
 

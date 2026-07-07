@@ -1,6 +1,32 @@
+---
+def:
+  id: task-test-schema-sync
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: index-meta
+  tags: [testing, task-record]
+  links:
+    - target: index-meta-system
+      type: traces_to
+sources:
+  - packages/index-meta/src/schema-sync.ts
+  - packages/index-meta/src/schema-sync.test.ts
+  - docs/specs/indexing-core-system/schema-layer.md
+---
+
 # schema-sync 테스트 보강
 
 > 스키마 동기화 로직이 테스트 미검증.
+
+## 목적 ^purpose
+
+schema-sync test 보강 task의 완료 위치를 추적한다. 현재 검증 SSOT는 `packages/index-meta/src/schema-sync.test.ts`다.
 
 ## 우선순위: 🔴 3순위
 

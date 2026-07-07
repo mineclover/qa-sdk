@@ -1,6 +1,32 @@
+---
+def:
+  id: task-test-wasm-js
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: weighted-wasm
+  tags: [testing, performance, task-record]
+  links:
+    - target: weighted-wasm-spec
+      type: traces_to
+sources:
+  - packages/weighted-wasm/js/index.ts
+  - packages/weighted-wasm/js/index.test.ts
+  - docs/specs/weighted-index-system/weighted-wasm.spec.md
+---
+
 # weighted-wasm JS 래퍼 테스트
 
 > Rust→WASM 바인딩의 JS 쪽 래퍼가 테스트 미검증.
+
+## 목적 ^purpose
+
+weighted-wasm JS wrapper test 보강 task의 완료 위치를 추적한다. 현재 검증 SSOT는 `packages/weighted-wasm/js/index.test.ts`다.
 
 ## 우선순위: 🟡 5순위
 

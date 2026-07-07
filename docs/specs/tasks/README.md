@@ -1,6 +1,41 @@
+---
+def:
+  id: task-index
+  type: knowledge
+  knowledge_kind: guide
+  tier: layout
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: draft
+  layer: operation
+  tags: [roadmap, task-index]
+  links:
+    - target: gate-system
+      type: refs
+    - target: query-system
+      type: refs
+    - target: pipeline-system
+      type: refs
+    - target: permission-system
+      type: refs
+    - target: weighted-index-system
+      type: refs
+sources:
+  - docs/specs/gate/gate-system.md
+  - docs/specs/query-system/query-system.md
+  - docs/specs/pipeline-system/pipeline-system.md
+  - docs/specs/permission/permission-system.md
+  - docs/specs/weighted-index-system.spec.md
+---
+
 # 작업 태스크 인덱스
 
 > runtime-flows.spec.md 심볼 기반 구현 태스크 + 테스트/스펙 보강 태스크.
+
+## 목적 ^purpose
+
+runtime flow 기반으로 파생된 구현 task의 현재 위치를 안내한다. 구현 완료 항목은 각 system/spec 문서와 source/test 경로가 SSOT이고, 이 인덱스는 잔여 작업과 과거 task 기록을 분리해 찾기 쉽게 유지한다.
 
 ## 실행 순서 (테스트·스펙 보강 → 인프라 → 서비스)
 
@@ -30,10 +65,10 @@
 | 10 | ~~[infra-debug-store.md](infra-debug-store.md)~~ | D3 | 없음 | 신규 | ✅ 완료 |
 | 11 | ~~[infra-sql-adapters.md](infra-sql-adapters.md)~~ | S4 | 없음 | H-1~H-3 | ✅ 완료 |
 | 12 | ~~[unit-1-async-worker.md](unit-1-async-worker.md)~~ | A2→A4 | 없음 | 신규 | ✅ 완료 |
-| 13 | [service-gate.md](service-gate.md) | S2, A4 | 없음 | E-1~E-4 | 부분 완료 (E-1) |
-| 14 | [service-query.md](service-query.md) | S2, A5 | gate | F-1~F-5 | 부분 완료 (F-1~F-4) |
-| 15 | [unit-2-pipeline.md](unit-2-pipeline.md) | A1, A5, A6 | unit-1 | I-1~I-6 | 대기 |
-| 16 | [unit-3-monitoring.md](unit-3-monitoring.md) | A6 조회 | unit-2 | 신규 | 대기 |
+| 13 | ~~[service-gate.md](service-gate.md)~~ | S2, A4 | 없음 | E-1~E-4 | ✅ 완료 |
+| 14 | ~~[service-query.md](service-query.md)~~ | S2, A5 | gate | F-1~F-5 | ✅ 완료 |
+| 15 | [unit-2-pipeline.md](../pipeline-system/unit-2-pipeline.md) | A1, A5, A6 | unit-1 | I-1~I-6 | ✅ 완료 |
+| 16 | [unit-3-monitoring.md](unit-3-monitoring.md) | A6 조회 | unit-2 | 신규 | 후속 검토 |
 
 ## 의존 그래프
 

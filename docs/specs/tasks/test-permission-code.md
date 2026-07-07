@@ -1,6 +1,32 @@
+---
+def:
+  id: task-test-permission-code
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: permission-engine
+  tags: [testing, security, task-record]
+  links:
+    - target: perm-permission-code
+      type: traces_to
+sources:
+  - packages/permission-engine/src/permission-code.ts
+  - packages/permission-engine/src/permission-codec.test.ts
+  - docs/specs/permission/perm-external-system/perm-permission-code.spec.md
+---
+
 # permission-code 테스트 보강
 
 > permission-engine의 핵심 직렬화 모듈 5개 export가 테스트 미검증.
+
+## 목적 ^purpose
+
+permission-code test 보강 task의 완료 위치를 추적한다. 현재 구현 SSOT는 `permission-code.ts`, 검증 SSOT는 `permission-codec.test.ts`와 `perm-permission-code` 스펙이다.
 
 ## 우선순위: 🔴 1순위
 

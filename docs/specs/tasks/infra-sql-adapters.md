@@ -1,6 +1,35 @@
+---
+def:
+  id: task-infra-sql-adapters
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: index-meta
+  tags: [persistence, task-record]
+  links:
+    - target: index-meta-system
+      type: traces_to
+sources:
+  - packages/index-meta/src/adapters/sql-version-lifecycle-store.ts
+  - packages/index-meta/src/adapters/sql-migration-store.ts
+  - packages/index-meta/src/adapters/sql-prefix-router.ts
+  - packages/index-meta/src/version-lifecycle.test.ts
+  - packages/index-meta/src/migration-store.test.ts
+  - packages/index-meta/src/prefix-router.test.ts
+---
+
 # SQL 어댑터 보강
 
 > Memory-only Store 인터페이스에 SQL 어댑터를 추가하여 프로덕션 영속성을 확보한다.
+
+## 목적 ^purpose
+
+index-meta SQL adapter task의 완료 위치를 추적한다. 구현된 어댑터와 contract test가 현재 SSOT다.
 
 ## 흐름 심볼
 
@@ -73,3 +102,12 @@ SqlDriver 위임 패턴 (Drizzle 아님 — 범용 SQL 인터페이스 직접 �
 - SQL 어댑터 7건 구현 완료 (H-1~H-3 + 기존 4건)
 - NodeSqliteDriver에 전체 DDL 13개 테이블 통합
 - gate-service / query-service 프로덕션 배포 blocker 해소
+
+## 관련 소스
+
+- `packages/index-meta/src/adapters/sql-version-lifecycle-store.ts`
+- `packages/index-meta/src/adapters/sql-migration-store.ts`
+- `packages/index-meta/src/adapters/sql-prefix-router.ts`
+- `packages/index-meta/src/version-lifecycle.test.ts`
+- `packages/index-meta/src/migration-store.test.ts`
+- `packages/index-meta/src/prefix-router.test.ts`

@@ -1,6 +1,32 @@
+---
+def:
+  id: task-test-gpu-fallback
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: weighted-gpu
+  tags: [testing, performance, task-record]
+  links:
+    - target: wi-hardware-acceleration
+      type: traces_to
+sources:
+  - packages/weighted-gpu/src/index.ts
+  - packages/weighted-gpu/src/index.test.ts
+  - docs/specs/weighted-index-system/weighted-gpu.spec.md
+---
+
 # weighted-gpu fallback 테스트
 
 > GPUEncoder의 device unavailable 경로가 테스트 미검증.
+
+## 목적 ^purpose
+
+weighted-gpu fallback test 보강 task의 완료 위치를 추적한다. 현재 검증 SSOT는 `packages/weighted-gpu/src/index.test.ts`다.
 
 ## 우선순위: 🟡 6순위
 

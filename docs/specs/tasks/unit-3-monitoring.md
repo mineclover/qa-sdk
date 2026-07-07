@@ -1,7 +1,37 @@
+---
+def:
+  id: task-unit-3-monitoring
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: draft
+  layer: operation
+  svc: ingest-server
+  tags: [roadmap, observability]
+  links:
+    - target: pipeline-monitoring
+      type: traces_to
+    - target: metrics-spec
+      type: depends_on
+sources:
+  - docs/specs/pipeline-system/pipeline-monitoring.spec.md
+  - docs/specs/apm-system/metrics.spec.md
+  - packages/ingest-server/src/lib/metrics-collector.ts
+  - packages/ingest-server/src/routes/metrics.ts
+  - packages/ingest-server/src/lib/metric-aggregator.ts
+---
+
 # Unit 3 — Monitoring API
 
 > 집계 데이터(Transition/Path)를 조회하는 전용 API를 제공한다.
 > raw event를 직접 조회하지 않고 projection 기반으로 운영 가시성을 확보한다.
+
+## 목적 ^purpose
+
+Unit 3 monitoring API 후속 task를 추적한다. 현재는 pipeline 자체 메트릭과 rollup 경로가 존재하며, transition/path 전용 조회 API는 `pipeline-monitoring`과 `metrics-spec`를 기준으로 별도 구현 판단이 필요하다.
 
 ## 흐름 심볼
 
@@ -9,8 +39,8 @@
 
 ## 현재 상태
 
-- Metrics Store: 📋 (Unit 2에서 구축)
-- 조회 API: 📋 없음
+- Metrics Store: 구현된 rollup/collector 경로 존재
+- 조회 API: 전용 transition/path API는 후속 판단 필요
 - 현재 조회: ingest-server `/v1/traces`, `/v1/sessions` (raw record 기반)
 
 ## 선행 조건

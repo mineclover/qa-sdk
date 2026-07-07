@@ -1,6 +1,34 @@
+---
+def:
+  id: task-spec-partial-binder
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: weighted-index
+  tags: [task-record]
+  links:
+    - target: partial-binder-spec
+      type: traces_to
+sources:
+  - docs/specs/weighted-index-system/partial-binder.spec.md
+  - docs/specs/weighted-index-system/partial-binder-spec/partial-binder-api.spec.md
+  - docs/specs/weighted-index-system/partial-binder-spec/partial-binder-math.spec.md
+  - packages/weighted-index/src/vocab/partial-binder.ts
+  - packages/weighted-index/src/vocab/partial-binder.test.ts
+---
+
 # partial-binder 스펙 작성
 
 > 차원 부분 바인딩 모듈이 CLAUDE.md + docs/md에만 문서화. 전용 스펙 필요.
+
+## 목적 ^purpose
+
+partial-binder 스펙 작성 task의 완료 위치를 추적한다. 현재 SSOT는 `partial-binder-spec` 문서군과 `packages/weighted-index/src/vocab/partial-binder.ts`다.
 
 ## 우선순위: 🔴 8순위
 
@@ -8,12 +36,12 @@
 
 - CLAUDE.md에 상세 기술 (createBinder, resolve, bind, 체이닝)
 - `packages/weighted-index/docs/partial-binder.md` 존재 (API 문서)
-- `docs/specs/` 스펙: **없음**
+- `docs/specs/weighted-index-system/partial-binder.spec.md` 존재
 - 테스트: `partial-binder.test.ts` ✅ 존재
 
 ## 산출물
 
-`docs/specs/indexing/weighted-index/partial-binder.spec.md`
+`docs/specs/weighted-index-system/partial-binder.spec.md`
 
 ## 범위
 

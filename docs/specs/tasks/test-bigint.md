@@ -1,6 +1,34 @@
+---
+def:
+  id: task-test-bigint
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: approved
+  layer: operation
+  svc: index-meta
+  tags: [testing, task-record]
+  links:
+    - target: bigint-addressing-group
+      type: traces_to
+sources:
+  - packages/demo-tests/src/index-meta/bigint-address.test.ts
+  - packages/demo-tests/src/index-meta/bigint-codec-equiv.test.ts
+  - packages/demo-tests/src/index-meta/bigint-ranges.test.ts
+  - docs/specs/indexing-core-system/bigint-addressing-group.md
+  - packages/index-meta/src/meta-codec-big.ts
+---
+
 # BigInt 테스트 갭 보강 — ✅ 완료
 
 > 기존 BigInt 구현의 테스트 커버리지 갭을 채운다.
+
+## 목적 ^purpose
+
+BigInt addressing test 보강 task의 완료 위치를 추적한다. 현재 검증 SSOT는 `packages/demo-tests/src/index-meta/`의 B-1~B-3 테스트와 `bigint-addressing-group` 문서군이다.
 
 ## 흐름 심볼
 
