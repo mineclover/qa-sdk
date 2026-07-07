@@ -12,6 +12,13 @@ def:
   links:
     - target: permission-system
       type: depends_on
+  sources:
+    - packages/permission-engine/src/index.ts
+    - packages/permission-engine/src/scoped-engine.ts
+    - packages/permission-engine/src/permission-set.ts
+    - packages/permission-engine/src/role-registry.ts
+    - packages/permission-engine/src/user-permission-engine.ts
+    - packages/permission-engine/src/user-permission-engine.test.ts
 ---
 # Permission Engine Spec
 ## 목적 ^purpose

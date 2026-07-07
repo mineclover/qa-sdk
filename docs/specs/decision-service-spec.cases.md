@@ -15,6 +15,13 @@ def:
       type: refines
     - target: decision-service-system
       type: depends_on
+  sources:
+    - packages/decision-service/src/db/schema.ts
+    - packages/decision-service/scripts/services.test.ts
+    - packages/decision-service/src/app.module.ts
+    - packages/decision-flow/src/schema.ts
+    - packages/decision-flow/src/instance-store.ts
+    - packages/decision-flow/src/decision-flow.test.ts
 ---
 
 # Decision Service Spec — 소비자 기대 시나리오

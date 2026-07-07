@@ -12,6 +12,13 @@ def:
   links:
     - target: event-logging-lifecycle
       type: contains
+  sources:
+    - packages/logger/src/logger.ts
+    - packages/logger/src/transport/ingest-forwarder.ts
+    - packages/logger/src/transport/ingest-forwarder.test.ts
+    - packages/apm/src/apm-logger.ts
+    - packages/apm/src/apm-logger.test.ts
+    - packages/core/src/lib/create-logger.ts
 ---
 # Observability System Root
 ## 목적 ^purpose

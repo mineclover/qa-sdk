@@ -26,6 +26,14 @@ def:
       type: depends_on
     - target: store-driver-selection
       type: refs
+  sources:
+    - packages/store/src/index.ts
+    - packages/store/src/adapters/memory/record.adapter.test.ts
+    - packages/index-meta/src/index-meta-store.ts
+    - packages/index-meta/src/adapters/sql-store.test.ts
+    - packages/definition-data-source/src/factory.test.ts
+    - packages/dkg/src/store/dkg-sqlite-store.test.ts
+    - packages/ingest-server/src/stores/store-factory.ts
 ---
 # Persistence System Root
 

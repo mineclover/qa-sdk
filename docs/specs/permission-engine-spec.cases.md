@@ -15,6 +15,14 @@ def:
       type: refines
     - target: permission-system
       type: depends_on
+  sources:
+    - packages/permission-engine/src/scoped-engine.ts
+    - packages/permission-engine/src/scoped-engine.test.ts
+    - packages/permission-engine/src/ternary-mask.ts
+    - packages/permission-engine/src/ternary-mask.test.ts
+    - packages/permission-engine/src/permission-codec.ts
+    - packages/permission-engine/src/permission-codec.test.ts
+    - packages/permission-engine/src/auth-integration.test.ts
 ---
 
 # Permission Engine Spec — 소비자 기대 시나리오

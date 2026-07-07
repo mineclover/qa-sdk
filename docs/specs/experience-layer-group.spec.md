@@ -15,6 +15,13 @@ def:
       type: refs
     - target: indexing-core-system
       type: depends_on
+  sources:
+    - packages/viz-web/src/main.ts
+    - packages/viz-web/src/graph/renderer.ts
+    - packages/viz-web/src/graph/updater.test.ts
+    - packages/platform-demo/src/main.ts
+    - packages/browser-sdk/src/monitor.integration.test.ts
+    - packages/roleplay-web/src/main.ts
 ---
 # Experience Layer Group
 ## 목적 ^purpose

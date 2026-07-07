@@ -15,6 +15,13 @@ def:
       type: refines
     - target: dkg-system
       type: depends_on
+  sources:
+    - packages/dkg/src/dkg.types.ts
+    - packages/dkg/src/graph-registry.ts
+    - packages/dkg/src/store/dkg-sqlite-store.ts
+    - packages/dkg/src/store/dkg-sqlite-store.test.ts
+    - packages/dkg/src/dkg.test.ts
+    - packages/dkg/src/skills/constraint-check.ts
 ---
 
 # DKG System Root — 소비자 기대 시나리오

@@ -12,6 +12,13 @@ def:
   links:
     - target: dkg-system
       type: depends_on
+  sources:
+    - packages/dkg/README.md
+    - packages/dkg/src/index.ts
+    - packages/dkg/src/dkg.types.ts
+    - packages/dkg/src/graph-registry.ts
+    - packages/dkg/src/store/dkg-sqlite-store.ts
+    - packages/dkg/src/dkg.test.ts
 ---
 
 # DKG System Root
