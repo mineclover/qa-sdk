@@ -17,6 +17,12 @@ status: under-review
 date: 2026-04-21
 part_of: aspect-schema-hierarchy
 role: schema-diff
+sources:
+  - packages/definition-service/src/db/schema.ts
+  - packages/definition-service/drizzle/20260421000000_aspect_parents/migration.sql
+  - packages/definition-service/src/sync/aspect-parents-sync.ts
+  - packages/definition-service/src/sync/aspect-parents-sync.test.ts
+  - packages/definition-service/src/modules/sync/sync.service.ts
 ---
 
 # Aspect Schema Hierarchy — DDL Diff 및 Populate 스크립트
@@ -218,6 +224,13 @@ DROP TABLE IF EXISTS aspect_parents;
 ```
 
 Drizzle 스키마에서 `aspectParents` export 제거 + `AspectParentRow` 타입 제거. 코드는 runtime map 만으로 계속 작동.
+
+## 현재 증거 표면 ^evidence
+
+- 실제 DDL은 `packages/definition-service/drizzle/20260421000000_aspect_parents/migration.sql`에 materialized되어 있다.
+- Drizzle schema export는 `packages/definition-service/src/db/schema.ts`의 `aspectParents`가 소유한다.
+- Idempotent populate/self-heal은 `syncAspectParents()`와 `aspect-parents-sync.test.ts`가 검증한다.
+- 부팅 및 sync 경로 연결은 `packages/definition-service/src/modules/sync/sync.service.ts`가 담당한다.
 
 ## 예상 row 수 (2026-04-21 기준)
 

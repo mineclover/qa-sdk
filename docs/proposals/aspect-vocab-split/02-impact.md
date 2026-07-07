@@ -17,6 +17,12 @@ status: under-review
 date: 2026-04-21
 part_of: aspect-vocab-split
 role: impact
+sources:
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/aspect-parents.test.ts
+  - packages/definition-catalog/src/aspect-family.test.ts
+  - docs/specs/system/aspect-naming-convention.rule.md
+  - docs/specs/definition-catalog/definition-metadata-scope-aspect.spec.md
 ---
 
 # Aspect Vocabulary Split — 문서별 영향 분석
@@ -41,6 +47,12 @@ Confidence 정의:
 | 합계 | **59** | **47** | **10** | **2** |
 
 (LOW 비율 2/59 ≈ 3.4% — 00-design §R6 임계치 20% 이하)
+
+## 현재 증거 표면 ^evidence
+
+- Impact table이 제안한 aspect family는 `DEF_ASPECT.entries`와 `ASPECT_PARENTS` map으로 구현되어 있다.
+- Parent/root 누락, 중복 등록, parent 존재성, cycle 없음은 `aspect-parents.test.ts`가 CI에서 검증한다.
+- Family rollup helper는 `aspect-family.test.ts`가 검증하며, CLI rollup 경로는 `packages/cli/src/commands/def.ts`에서 소비한다.
 
 ## 매핑 표
 

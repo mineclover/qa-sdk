@@ -23,6 +23,14 @@ part_of: aspect-schema-hierarchy
 role: index
 supersedes: -
 superseded_by: -
+sources:
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-service/drizzle/20260421000000_aspect_parents/migration.sql
+  - packages/definition-service/src/core/aspect-registry.ts
+  - packages/definition-service/src/core/aspect-registry.test.ts
+  - packages/definition-service/src/sync/aspect-parents-sync.ts
+  - packages/definition-service/src/sync/aspect-parents-sync.test.ts
+  - packages/cli/src/commands/def.ts
 ---
 
 > **RFC / Proposal.** `docs/proposals/aspect-schema-hierarchy/`. 아직 정규 스펙 아님 — validator/스키마/DB migration 은 본 제안 수락 전에 수정하지 않는다.
@@ -90,6 +98,13 @@ Reasoning: DEF_ASPECT 는 여전히 **코드가 SSOT** 이며 (codegen / `derive
   - [aspect-vocab-split/README.md](../aspect-vocab-split/README.md) (Phase A/B/C 단계적 접근)
   - [aspect-vocab-split/00-design.md](../aspect-vocab-split/00-design.md) § "Helper: deriveAspectParent", § "대안 검토"
   - [aspect-vocab-split/01-migration.md](../aspect-vocab-split/01-migration.md) § "Phase C — Schema Hierarchy 전환"
+
+## 현재 증거 표면 ^evidence
+
+- `aspect_parents` table은 `packages/definition-service/drizzle/20260421000000_aspect_parents/migration.sql`과 service schema에 존재한다.
+- DB-first + runtime fallback bridge는 `createAspectRegistry()`와 `aspect-registry.test.ts`가 검증한다.
+- map → DB self-heal은 `syncAspectParents()`와 `aspect-parents-sync.test.ts`가 검증한다.
+- Rollup 소비 표면은 `packages/cli/src/commands/def.ts`의 `--include-children` / `--rollup-aspect` 경로다.
 
 ## 범위 외
 

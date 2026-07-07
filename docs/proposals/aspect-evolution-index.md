@@ -35,6 +35,14 @@ status: accepted
 date: 2026-04-21
 part_of: aspect-evolution
 role: index
+sources:
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/aspect-parents.test.ts
+  - packages/definition-catalog/src/aspect-family.test.ts
+  - packages/definition-service/drizzle/20260421000000_aspect_parents/migration.sql
+  - packages/definition-service/src/core/aspect-registry.ts
+  - packages/definition-service/src/sync/aspect-parents-sync.ts
+  - packages/cli/src/commands/def.ts
 ---
 
 > **RFC 통합 인덱스.** 2026-04-20 ~ 2026-04-21 세션에서 실행된 3개 RFC (`domain-hierarchy`, `aspect-vocab-split`, `aspect-schema-hierarchy`) 의 통합 서사 + 최종 상태 보고.
@@ -132,6 +140,13 @@ role: index
 | aspect-vocab-split B-4 (레거시 fallback 제거) | 영구 유지 권장 | 해당 없음 (fallback 잔존이 비용 < 이득) |
 
 본 세션의 3-RFC 작업은 위 3건의 후속 외에 **pending work 없음**.
+
+## 현재 증거 표면 ^evidence
+
+- `DEF_ASPECT`, `ASPECT_PARENTS`, `ROOT_ASPECTS`, `deriveAspectParent()`, `getAspectFamily()`는 `packages/definition-catalog/src/vocabulary.ts`가 소유한다.
+- Aspect parent completeness와 family BFS는 `packages/definition-catalog/src/aspect-parents.test.ts`, `packages/definition-catalog/src/aspect-family.test.ts`가 검증한다.
+- Phase C-0/C-1/C-2의 service-side replica와 DB-first bridge는 `aspect_parents` migration, `aspect-registry.ts`, `aspect-parents-sync.ts`에 구현되어 있다.
+- 검증 명령: `corepack pnpm --filter definition-catalog test`, `corepack pnpm --filter @qa-sdk/definition-service test`, `corepack pnpm --filter @qa-sdk/cli test`.
 
 ## 부산물 — 규칙 성문화
 

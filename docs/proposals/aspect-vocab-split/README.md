@@ -23,6 +23,12 @@ part_of: aspect-vocab-split
 role: index
 supersedes: -
 superseded_by: -
+sources:
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/aspect-parents.test.ts
+  - packages/definition-catalog/src/aspect-family.test.ts
+  - docs/specs/system/aspect-naming-convention.rule.md
+  - docs/specs/definition-catalog/definition-metadata-scope-aspect.spec.md
 ---
 
 > **RFC / Proposal.** `docs/proposals/aspect-vocab-split/`. 아직 정규 스펙 아님 — vocabulary/ taxonomy 코드나 프론트매터는 본 제안 수락 전에는 수정하지 않는다.
@@ -95,6 +101,13 @@ Phase C 는 aspect 수 ≥ 40 + rollup 요구 ≥ 5회 발생 시 개시. 상세
   - `docs/proposals/domain-hierarchy/reviews/2026-04-20-phase5-redesign.md` (Class D 분류 근거)
   - `docs/proposals/domain-hierarchy/reviews/2026-04-20-phase5c-abstract.md` (사전 Class A 처리 내역)
   - `docs/proposals/domain-hierarchy/reviews/2026-04-20-phase5d-cleanup.md` (proposal 면제 선례)
+
+## 현재 증거 표면 ^evidence
+
+- 신규 aspect 값, capacity 128, parent map은 `packages/definition-catalog/src/vocabulary.ts`에 구현되어 있다.
+- `aspect-parents.test.ts`는 `DEF_ASPECT.entries`가 `ROOT_ASPECTS` 또는 `ASPECT_PARENTS` 중 정확히 하나에 속한다는 불변식을 검증한다.
+- `aspect-family.test.ts`는 부모→자식 조회와 family BFS가 deterministic하게 동작함을 검증한다.
+- 네이밍/부모 추론 금지 규율은 `docs/specs/system/aspect-naming-convention.rule.md`가 소유한다.
 
 ## 범위 외
 

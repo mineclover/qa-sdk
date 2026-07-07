@@ -17,6 +17,13 @@ status: under-review
 date: 2026-04-21
 part_of: aspect-schema-hierarchy
 role: design
+sources:
+  - packages/definition-catalog/src/vocabulary.ts
+  - packages/definition-catalog/src/aspect-family.test.ts
+  - packages/definition-service/src/db/schema.ts
+  - packages/definition-service/src/core/aspect-registry.ts
+  - packages/definition-service/src/core/aspect-registry.test.ts
+  - docs/specs/system/catalog-purity-bridge.rule.md
 ---
 
 # Aspect Schema Hierarchy — 설계 개요
@@ -57,6 +64,13 @@ Phase 5b B-0 에서 추가된 `ASPECT_PARENTS: Record<string, string>` 런타임
 - 현재 **aspect 는 문자열 한 개로 저장**, 부모 관계는 코드 상수로만 존재.
 - Phase C 는 **새 테이블 추가** 가 필요하다 (기존 "aspects 테이블 컬럼 확장" 시나리오는 해당 없음).
 - 문서 `documents.aspect` 컬럼은 **변경 불필요** — 계층은 별도 lookup 으로 충분.
+
+## 현재 증거 표면 ^evidence
+
+- Catalog SSoT는 `packages/definition-catalog/src/vocabulary.ts`의 `ASPECT_PARENTS`와 pure helper가 유지한다.
+- Service bridge는 `packages/definition-service/src/core/aspect-registry.ts`가 DB-first 조회와 runtime fallback을 제공한다.
+- `aspect-registry.test.ts`는 DB populated, DB empty, DB 미전달 fallback, `getAspectFamily()` 경로를 검증한다.
+- `catalog-purity-bridge.rule.md`는 catalog 순수성 유지와 service-side replica 책임을 규칙으로 고정한다.
 
 ## 옵션 비교
 
