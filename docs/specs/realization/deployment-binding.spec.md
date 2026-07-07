@@ -12,6 +12,13 @@ def:
       type: refines
     - target: deployment-address
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/registry-service/src/modules/services/service-component.service.ts
+  - packages/registry-service/src/modules/services/service-component.controller.ts
+  - packages/registry-service/src/modules/services/service.controller.test.ts
+  - packages/registry-service/src/stores/service-component-version-store.ts
+  - packages/registry-service/src/modules/resolve/resolve.service.ts
 ---
 # DeploymentBinding
 

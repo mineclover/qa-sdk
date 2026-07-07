@@ -16,6 +16,15 @@ def:
       type: depends_on
     - target: meta-semantic-event-standard
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/registry-service/src/modules/manifests/manifest-assembly.ts
+  - packages/registry-service/src/modules/manifests/manifest.service.ts
+  - packages/registry-service/src/modules/manifests/manifest.controller.test.ts
+  - packages/pipe-store-sqlite/src/manifest-store.ts
+  - packages/pipe-store-sqlite/src/manifest-store.test.ts
+  - packages/core/src/standards/cloud-events.ts
+  - packages/core/src/standards/cloud-events.test.ts
 ---
 # ServiceReleaseManifest
 

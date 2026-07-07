@@ -12,6 +12,10 @@ def:
       type: refines
     - target: runtime-service-address
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/registry-service/src/modules/services/service-control-plane.ts
+  - packages/registry-service/src/modules/services/service-control-plane.test.ts
 ---
 # DeploymentAddress
 

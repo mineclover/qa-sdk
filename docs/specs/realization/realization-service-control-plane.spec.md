@@ -46,6 +46,15 @@ contains:
   - service-release-manifest
   - service-manifest-assembly
   - service-control-plane-cleanup-test
+sources:
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/registry-service/src/modules/services/service-control-plane.ts
+  - packages/registry-service/src/modules/services/service-component.service.ts
+  - packages/registry-service/src/modules/services/service-component.controller.ts
+  - packages/registry-service/src/modules/manifests/manifest.service.ts
+  - packages/registry-service/src/modules/resolve/resolve.service.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.ts
+  - packages/cli/src/commands/service.ts
 ---
 # Service Control Plane
 

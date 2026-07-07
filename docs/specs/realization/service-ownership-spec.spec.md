@@ -12,6 +12,15 @@ def:
       type: refines
     - target: dkg-service-topology
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/registry-service/src/modules/services/service-component.service.ts
+  - packages/registry-service/src/modules/services/service-component.service.test.ts
+  - packages/registry-service/src/modules/services/service-component.controller.ts
+  - packages/registry-service/src/modules/manifests/manifest.service.ts
+  - packages/registry-service/src/modules/manifests/manifest-assembly.test.ts
+  - packages/cli/src/commands/service.ts
+  - packages/cli/src/commands/service.test.ts
 ---
 # ServiceOwnershipSpec
 

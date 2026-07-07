@@ -10,6 +10,12 @@ def:
   links:
     - target: realization-service-control-plane
       type: refines
+sources:
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/registry-service/src/modules/services/service-control-plane.ts
+  - packages/registry-service/src/modules/services/service-control-plane.test.ts
+  - packages/registry-service/src/modules/services/service-component.service.ts
+  - packages/registry-service/src/modules/manifests/manifest-assembly.ts
 ---
 # ServiceUnitSpec
 

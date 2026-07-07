@@ -12,6 +12,15 @@ def:
       type: refines
     - target: service-release-manifest
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/resolve/resolve.service.ts
+  - packages/registry-service/src/modules/resolve/resolve.controller.ts
+  - packages/registry-service/src/modules/resolve/resolve.controller.test.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.service.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.test.ts
+  - packages/cli/src/commands/service.ts
+  - packages/cli/src/commands/service.test.ts
 ---
 # Service Manifest Cleanup Lane
 

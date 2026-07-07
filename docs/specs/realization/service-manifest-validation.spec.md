@@ -12,6 +12,12 @@ def:
       type: refines
     - target: service-release-manifest
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/manifests/manifest-assembly.ts
+  - packages/registry-service/src/modules/manifests/manifest-assembly.test.ts
+  - packages/registry-service/src/modules/manifests/manifest.service.ts
+  - packages/registry-service/src/modules/manifests/manifest.controller.ts
+  - packages/registry-service/src/modules/manifests/manifest.controller.test.ts
 ---
 # Service Manifest Validation
 

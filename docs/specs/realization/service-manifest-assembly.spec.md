@@ -19,6 +19,12 @@ def:
 contains:
   - service-manifest-validation
   - service-manifest-cleanup-lane
+sources:
+  - packages/registry-service/src/modules/manifests/manifest-assembly.ts
+  - packages/registry-service/src/modules/manifests/manifest-assembly.test.ts
+  - packages/registry-service/src/modules/manifests/manifest.service.ts
+  - packages/registry-service/src/modules/manifests/manifest.controller.ts
+  - packages/registry-service/src/modules/resolve/resolve.service.ts
 ---
 # Service Manifest Assembly
 

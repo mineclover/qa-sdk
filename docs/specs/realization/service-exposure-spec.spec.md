@@ -12,6 +12,12 @@ def:
       type: refines
     - target: registry-services-module
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/services/service.types.ts
+  - packages/registry-service/src/modules/services/service-component.service.ts
+  - packages/registry-service/src/modules/services/service-component.service.test.ts
+  - packages/registry-service/src/modules/resolve/resolve.service.ts
+  - packages/registry-service/src/modules/resolve/resolve.controller.test.ts
 ---
 # ServiceExposureSpec
 

@@ -12,6 +12,17 @@ def:
       type: refines
     - target: registry-services-module
       type: depends_on
+sources:
+  - packages/registry-service/src/modules/services/service-component.controller.ts
+  - packages/registry-service/src/modules/services/service.controller.test.ts
+  - packages/registry-service/src/modules/manifests/manifest.controller.ts
+  - packages/registry-service/src/modules/manifests/manifest.controller.test.ts
+  - packages/registry-service/src/modules/resolve/resolve.controller.ts
+  - packages/registry-service/src/modules/resolve/resolve.controller.test.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.ts
+  - packages/registry-service/src/modules/dashboard/dashboard.controller.test.ts
+  - packages/cli/src/commands/service.ts
+  - packages/cli/src/commands/service.test.ts
 ---
 # Service Control Plane Surface
 
