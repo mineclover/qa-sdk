@@ -16,6 +16,9 @@ def:
       type: traces_to
     - target: authorization-ontology-audit-layer
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
 ---
 
 # Authorization Ontology Application Enforcement — 애플리케이션 권한 적용 모델

@@ -15,6 +15,13 @@ def:
       type: traces_to
     - target: authorization-ontology-system
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
+  - packages/authorization-ontology/src/permission-engine-bridge.test.ts
+  - packages/authorization-monitor-web/src/main.ts
+  - packages/authorization-monitor-web/scripts/static-smoke.mjs
+  - packages/db-bootstrap/src/rls-shadow-evaluator.test.ts
 ---
 
 # Authorization Management Hardening — 보강 TODO

@@ -17,6 +17,10 @@ def:
       type: traces_to
     - target: authorization-ontology-audit-layer
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
+  - packages/authorization-ontology/package.json
 ---
 
 # Authorization Ontology Operational Pack — 현황과 적용 계획

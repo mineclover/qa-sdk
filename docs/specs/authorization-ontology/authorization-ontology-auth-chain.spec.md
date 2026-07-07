@@ -14,6 +14,9 @@ def:
       type: traces_to
     - target: auth-permission-integration
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
 ---
 
 # Authorization Ontology Auth Chain — 인증/인가 서비스 체인 모델

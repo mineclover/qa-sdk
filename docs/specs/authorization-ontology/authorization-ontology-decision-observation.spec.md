@@ -16,6 +16,9 @@ def:
       type: traces_to
     - target: operational-ontology-checkpoint
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
 ---
 
 # Authorization Ontology Decision Observation — Cerbos 판정 관측 모델

@@ -15,6 +15,9 @@ def:
       type: depends_on
     - target: authorization-ontology-audit-layer
       type: depends_on
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
 ---
 
 # Authorization Graph Store — 권한 graph snapshot 저장 계약

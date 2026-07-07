@@ -16,6 +16,10 @@ def:
       type: traces_to
     - target: authorization-ontology-decision-observation
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
+  - packages/authorization-ontology/src/permission-engine-bridge.test.ts
 ---
 
 # Authorization Ontology Audit Layer — 권한 선언/적용/관측 감사

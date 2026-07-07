@@ -25,6 +25,12 @@ def:
       type: depends_on
     - target: authorization-ontology-nested-audit-tracing
       type: refs
+sources:
+  - packages/permission-engine/src/versioned-bitmap/issuer.ts
+  - packages/permission-engine/src/versioned-bitmap/issuer.test.ts
+  - packages/authorization-ontology/src/permission-engine-bridge.test.ts
+  - packages/permission-engine/src/resource-policy/state.ts
+  - packages/permission-engine/src/resource-policy/state.test.ts
 ---
 
 # Authorization Ontology Bitmap Pipeline — bitmap 발급·갱신·무효화 파이프라인

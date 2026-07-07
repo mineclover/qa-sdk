@@ -13,6 +13,11 @@ def:
       type: refines
     - target: authorization-ontology-system
       type: depends_on
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
+  - packages/authorization-ontology/src/permission-engine-bridge.test.ts
+  - packages/authorization-monitor-web/src/main.ts
 ---
 
 # Authorization Management Usage — 소비 규칙

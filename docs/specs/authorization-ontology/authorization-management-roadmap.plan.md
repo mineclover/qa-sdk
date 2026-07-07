@@ -15,6 +15,12 @@ def:
       type: traces_to
     - target: authorization-ontology-system
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
+  - packages/authorization-ontology/src/permission-engine-bridge.test.ts
+  - packages/authorization-monitor-web/src/main.ts
+  - packages/authorization-monitor-web/scripts/static-smoke.mjs
 ---
 
 # Authorization Management Roadmap — 권한 관리 목표와 단계

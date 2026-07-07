@@ -14,6 +14,9 @@ def:
       type: traces_to
     - target: authorization-ontology-realm-model
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
 ---
 
 # Authorization Ontology Cerbos Mapping — Cerbos 정책 선언 투영

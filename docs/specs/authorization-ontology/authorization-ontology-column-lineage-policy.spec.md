@@ -16,6 +16,9 @@ def:
       type: traces_to
     - target: operational-ontology-persistence
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
 ---
 
 # Authorization Ontology Column Lineage Policy — 컬럼 리니지 기반 권한 전파

@@ -18,6 +18,11 @@ def:
       type: traces_to
     - target: authorization-ontology-audit-layer
       type: traces_to
+sources:
+  - packages/authorization-monitor-web/src/main.ts
+  - packages/authorization-monitor-web/scripts/static-smoke.mjs
+  - packages/authorization-monitor-web/public/authorization-graph-snapshot.json
+  - packages/authorization-monitor-web/package.json
 ---
 
 # Authorization Ontology Monitor Web — 권한 관측 독립 웹

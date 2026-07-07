@@ -21,6 +21,15 @@ def:
       type: refs
     - target: authorization-ontology-audit-layer
       type: traces_to
+sources:
+  - packages/db-bootstrap/src/rls-session.ts
+  - packages/db-bootstrap/src/rls-session.test.ts
+  - packages/db-bootstrap/src/rls-context-storage.ts
+  - packages/db-bootstrap/src/rls-context-storage.test.ts
+  - packages/resource-policy-store/src/pg/rls-aware-adapter.ts
+  - packages/resource-policy-store/src/pg/rls-aware-adapter.test.ts
+  - packages/cli/src/commands/rls/enforce.ts
+  - packages/cli/src/commands/rls/enforce.test.ts
 ---
 
 # Authorization Ontology RLS Enforcement — DB 레벨 권한 방어

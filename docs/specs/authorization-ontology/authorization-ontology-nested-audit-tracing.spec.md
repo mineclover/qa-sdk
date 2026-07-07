@@ -21,6 +21,12 @@ def:
       type: refs
     - target: authorization-ontology-bitmap-pipeline
       type: refs
+sources:
+  - packages/permission-engine/src/audit/recorder.ts
+  - packages/permission-engine/src/audit/recorder.test.ts
+  - packages/permission-engine/src/audit/otel-wrapper.ts
+  - packages/permission-engine/src/audit/otel-wrapper.test.ts
+  - packages/audit-recorder-store/src/pg/shadow-schema.test.ts
 ---
 
 # Authorization Ontology Nested Audit Tracing — 중첩 트랜잭션의 감사 추적

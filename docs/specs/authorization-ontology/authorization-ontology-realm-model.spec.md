@@ -14,6 +14,9 @@ def:
       type: traces_to
     - target: operational-ontology-core-model
       type: traces_to
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
 ---
 
 # Authorization Ontology Realm Model — 권한 authority boundary 정의

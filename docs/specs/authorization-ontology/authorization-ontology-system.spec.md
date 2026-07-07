@@ -50,6 +50,13 @@ def:
       type: refs
     - target: authorization-monitor-web
       type: refs
+sources:
+  - packages/authorization-ontology/src/index.ts
+  - packages/authorization-ontology/src/index.test.ts
+  - packages/authorization-ontology/src/permission-engine-bridge.test.ts
+  - packages/authorization-monitor-web/src/main.ts
+  - packages/authorization-monitor-web/scripts/static-smoke.mjs
+  - packages/permission-engine/src/index.ts
 ---
 
 # Authorization Ontology System — Cerbos 중심 권한 관리 온톨로지
