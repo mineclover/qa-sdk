@@ -1,3 +1,20 @@
+---
+status: source-backed
+sources:
+  - docs/specs/infra-engine/infra-engine-pipeline.spec.md
+  - docs/specs/infra-engine/infra-config-stage.spec.md
+  - docs/specs/infra-engine/infra-provision-stage.spec.md
+  - docs/specs/infra-engine/infra-register-stage.spec.md
+  - docs/specs/infra-engine/infra-verify-stage.spec.md
+  - docs/specs/infra-engine/infra-observe-stage.spec.md
+  - packages/infra-engine/src/core/pipeline.ts
+  - packages/infra-engine/src/config/config-stage.ts
+  - packages/infra-engine/src/stages/provision-stage.ts
+  - packages/infra-engine/src/stages/register-stage.ts
+  - packages/infra-engine/src/verify/verify-stage.ts
+  - packages/infra-engine/src/stages/observe-stage.ts
+---
+
 # 인프라 엔진 설계 문서
 
 > 2026-04-05 작성

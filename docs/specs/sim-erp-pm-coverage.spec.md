@@ -19,6 +19,14 @@ def:
       type: traces_to
     - target: event-taxonomy-marginal-density
       type: traces_to
+sources:
+  - simulations/enterprise-pm/scripts/smoke.sh
+  - scripts/sim-smoke-full.ts
+  - simulations/enterprise-pm/test/regression/scenarios-1-to-8.smoke.test.ts
+  - simulations/enterprise-pm/scenarios/src/cli.ts
+  - simulations/enterprise-pm/scenarios/src/post-run/density-collector.ts
+  - simulations/enterprise-pm/docs/operations.md
+  - simulations/enterprise-pm/docs/operator-workflows.md
 ---
 
 # Enterprise PM Simulation — Coverage Spec

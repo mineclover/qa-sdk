@@ -1,3 +1,18 @@
+---
+status: source-backed
+sources:
+  - docs/specs/weighted-index-system/axis-projection.spec.md
+  - docs/specs/weighted-index-system/axis-projection.test.md
+  - packages/weighted-index/src/math/calc.ts
+  - packages/weighted-index/src/math/calc.test.ts
+  - packages/weighted-index/src/math/weighted-index.ts
+  - packages/weighted-index/src/math/weighted-index.test.ts
+  - packages/core/src/catalog/runtime.ts
+  - packages/core/src/catalog/runtime-boundary.test.ts
+  - packages/store/src/adapters/memory/aggregator.adapter.ts
+  - packages/store/src/adapters/memory/aggregator.adapter.test.ts
+---
+
 # I-6: Axis Projection 최적화 설계
 
 > 2026-04-07. 부분 decode (특정 축만 추출) — shift/modulo로 단축.

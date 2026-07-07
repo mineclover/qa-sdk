@@ -1,3 +1,16 @@
+---
+status: source-backed
+sources:
+  - packages/store/src/db/schema.ts
+  - packages/store/src/adapters/drizzle/key-observation.adapter.ts
+  - packages/ingest-server/src/stores/d1-schema.sql.ts
+  - packages/ingest-server/src/stores/d1-graph-store.ts
+  - packages/ingest-server/src/stores/d1-scenario-spec-store.ts
+  - packages/ingest-server/src/stores/clickhouse-schema.sql.ts
+  - packages/ingest-server/src/stores/clickhouse-record-store.ts
+  - packages/ingest-server/src/__tests__/cross-adapter/cross-adapter.d1.test.ts
+---
+
 # 스키마 동기화 설계
 
 > 2026-04-06. D1/PG/CH 3종 드라이버 스키마를 11 테이블 공통으로 정합.

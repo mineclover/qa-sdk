@@ -1,3 +1,12 @@
+---
+status: source-backed
+sources:
+  - packages/infra-engine/src/adapters/coordinate.ts
+  - packages/infra-engine/__tests__/adapters/coordinate.test.ts
+  - packages/infra-engine/src/cli/cmd-deploy.ts
+  - packages/infra-engine/src/index.ts
+---
+
 # CoordinateAdapter 좌표 실인코딩 전환 설계
 
 > 2026-04-06. fail-open → Catalog 기반 실인코딩.

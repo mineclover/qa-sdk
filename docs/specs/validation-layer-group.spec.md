@@ -11,6 +11,15 @@ def:
   links:
     - target: indexing-core-system
       type: depends_on
+sources:
+  - docs/specs/system/demo-tests.spec.md
+  - docs/specs/system/e2e-suite.spec.md
+  - docs/specs/system/facet-tests.spec.md
+  - docs/specs/system/testing-patterns.spec.md
+  - packages/demo-tests/package.json
+  - packages/e2e/package.json
+  - packages/facet-tests/package.json
+  - packages/simulation-tests/package.json
 ---
 # Validation Layer Group
 ## 목적 ^purpose

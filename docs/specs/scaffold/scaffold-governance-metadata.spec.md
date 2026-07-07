@@ -20,6 +20,13 @@ def:
       type: refs
     - target: scaffold-cache-key-dsl
       type: refs
+sources:
+  - packages/architecture-schematics/src/catalog.ts
+  - packages/architecture-schematics/src/validator.ts
+  - packages/architecture-schematics/src/governance/openmetadata.ts
+  - packages/architecture-schematics/src/governance/cache-key-dsl.ts
+  - packages/architecture-schematics/src/domain/files/__name@dasherize__/metadata/openmetadata.seed.json.template
+  - packages/architecture-schematics/src/domain/domain.test.ts
 ---
 
 # scaffold governance metadata

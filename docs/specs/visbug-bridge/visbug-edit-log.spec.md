@@ -13,6 +13,12 @@ def:
     - target: visbug-dom-ref-roadmap
       type: depends_on
 source: vendor/projectvisbug/app/edit-log/index.js
+sources:
+  - packages/visbug-bridge/src/types.ts
+  - packages/visbug-bridge/src/controller.ts
+  - packages/visbug-bridge/src/mount.ts
+  - packages/visbug-bridge/test/controller.spec.ts
+  - packages/visbug-bridge/test/e2e/bridge.test.ts
 ---
 
 # visbug edit-log (vendor)

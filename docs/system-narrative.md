@@ -32,6 +32,15 @@ def:
       type: contains
     - target: system-root
       type: refines
+sources:
+  - docs/specs/system/system-root.md
+  - docs/specs/system/system-libraries.md
+  - docs/specs/system/system-infra.md
+  - docs/specs/system/system-design-tools.md
+  - docs/specs/system/system-support.md
+  - docs/specs/system/system-packages.spec.md
+  - scripts/package-surfaces.mjs
+  - scripts/verify-analysis-os.ts
 ---
 # QA-SDK 시스템 서술
 

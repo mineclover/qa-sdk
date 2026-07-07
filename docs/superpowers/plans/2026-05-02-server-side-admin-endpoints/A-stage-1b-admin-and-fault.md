@@ -1,3 +1,17 @@
+---
+status: source-backed
+sources:
+  - docs/superpowers/specs/2026-05-02-server-side-admin-endpoints-design.md
+  - simulations/enterprise-pm/services/canary-controller/src/fault/types.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/admin-fault.controller.test.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/fault-injector.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/pubsub-invalidate-drop.ts
+  - simulations/enterprise-pm/services/canary-controller/src/fault/perf-warn.ts
+  - simulations/enterprise-pm/services/canary-controller/src/admin/scale.controller.ts
+  - simulations/enterprise-pm/services/canary-controller/src/admin/compose-proxy.controller.ts
+---
+
 # Stage 1b — Controller Admin / Fault / Scale + #21 + FaultKind 확장 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

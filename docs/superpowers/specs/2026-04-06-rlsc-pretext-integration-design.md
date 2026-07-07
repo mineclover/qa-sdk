@@ -1,6 +1,17 @@
+---
+status: source-backed
+sources:
+  - packages/rlsc-analysis/src/index.ts
+  - packages/rlsc-analysis/src/browser.ts
+  - packages/rlsc-analysis/src/index.test.ts
+  - packages/rlsc-analysis/README.md
+  - docs/archive/todo/rlsc-text-occupancy.todo.md
+---
+
 # RLSC × pretext 텍스트 점유 분석 통합 설계
 
 > 2026-04-06. RLSC에 pretext 라이브러리를 통합하여 텍스트의 시각적 공간 점유를 측정한다.
+> 2026-07-08 현재 구현 소유 표면은 `packages/rlsc-analysis`이며, 기존 `rlsc` 명칭은 이 설계의 역사적 패키지명으로 읽는다.
 
 ## 목적
 

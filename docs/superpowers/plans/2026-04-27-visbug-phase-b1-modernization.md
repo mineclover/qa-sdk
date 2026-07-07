@@ -1,3 +1,13 @@
+---
+status: source-backed
+sources:
+  - docs/superpowers/specs/2026-04-27-visbug-modernization-and-edit-log-design.md
+  - packages/visbug-bridge/package.json
+  - packages/visbug-bridge/CI.md
+  - packages/visbug-bridge/playwright.config.ts
+  - packages/visbug-bridge/test/extension/extension-assets.test.ts
+---
+
 # VisBug Phase B'1 — 모더나이즈 Implementation Plan
 
 > **Status: 완료 (2026-04-27)** — 모든 Task 실행 + main 머지. vendor SHA `030e115`, monorepo SHA `5759736b`. playwright 56/57 PASS (1건 font 회귀는 FU-2에서 해결).

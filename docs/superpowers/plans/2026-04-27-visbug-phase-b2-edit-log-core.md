@@ -1,3 +1,13 @@
+---
+status: source-backed
+sources:
+  - docs/specs/visbug-bridge/visbug-edit-log.spec.md
+  - packages/visbug-bridge/src/types.ts
+  - packages/visbug-bridge/src/controller.ts
+  - packages/visbug-bridge/test/controller.spec.ts
+  - packages/visbug-bridge/test/e2e/bridge.test.ts
+---
+
 # VisBug Phase B'2 — edit-log core Implementation Plan
 
 > **Status: 완료 (2026-04-27)** — vendor SHA `8bbb606`, monorepo SHA `0fedfda9`. vitest 37/37 + playwright e2e 4/4 PASS.
