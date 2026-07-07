@@ -19,6 +19,14 @@ part_of: tier-redesign
 role: component-example
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/examples/README.md
+  - docs/proposals/tier-redesign/examples/approval-system.md
+  - docs/proposals/tier-redesign/tiers/component.md
+  - docs/proposals/tier-redesign/tiers/system.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/specs/meta-semantic/pipe-impl/transition-scope.spec.md
 ---
 
 > **⚠️ 가상 Write-mode Pilot (pair with [approval-system](./approval-system.md))**
@@ -32,6 +40,9 @@ superseded_by: -
 ## 목적 ^purpose
 
 `ApprovalRequest` entity가 가질 수 있는 상태 리스트를 **state-enum Component**로 정의. [approval-system](./approval-system.md)의 `lifecycle_ref.state_component`가 본 문서를 참조.
+
+본 문서는 qa-sdk current implementation을 설명하지 않는다. `approval-system`과 `ApprovalRequest`는
+write-mode lifecycle_ref 패턴을 사전 검토하기 위한 virtual pilot이며, 실재 package/API/DB schema는 없다.
 
 **포함**:
 - 상태 enum 리스트

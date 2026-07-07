@@ -8,7 +8,7 @@ def:
   projection_plane: intent
   scope: meta
   aspect: proposal_design
-  tier: component
+  tier: layout
   depth: specification
   links:
     - target: tier-redesign-readme
@@ -19,6 +19,17 @@ part_of: tier-redesign
 role: layout-example
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/examples/README.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/tiers/layout.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/specs/definition-catalog/docs-control-plane.spec.md
+  - packages/cli/src/commands/docs.ts
+  - packages/cli/src/lib/docs-control-plane/index.ts
+  - packages/doc-envelope/src/index.ts
+  - packages/ontology-pack-validate/src/index.ts
+  - packages/deterministic-label-registry/src/inventory.ts
 ---
 
 > **Pilot Draft — STC Layout tier 예시.**
@@ -37,6 +48,11 @@ superseded_by: -
 
 본 Layout은 **카탈로그** 성격 — Consumer는 Systems 간 경계를 파악하고 필요한 System 문서로 이동한다. 상세 operations는 각 System 문서에서 확인. 상태 관리가 있는 System은 `lifecycle_ref`를 통해 meta-semantic 체계 참조.
 
+현행 정규 source는 `docs/specs/definition-catalog/docs-control-plane.spec.md`와
+`packages/cli/src/commands/docs.ts`, `packages/cli/src/lib/docs-control-plane/index.ts`다. 본 파일은
+그 current system boundary를 STC Layout 관점에서 재해석하는 pilot이며, 실제 정규 spec 전환은 아직
+완료되지 않았다.
+
 ## Inline 정의 금지 선언
 
 본 Layout은 **Systems 참조만** 담는다. 새 Component / Entry / System은 각자 독립 tier 문서로 존재. 본 문서에서 정의하지 않는다 ([system-independence 규칙 3](../rules/system-independence.md) 준수).
@@ -47,9 +63,9 @@ superseded_by: -
 
 ### deterministic-label-system ^ref:deterministic-label-system
 
-- **역할**: 문서/pack/artifact의 좌표 label을 read-only projection + readiness + 전이 dry-run으로 조합
+- **역할**: 문서/pack/artifact의 좌표 label을 stateless read-only projection으로 조합. readiness + 전이 dry-run은 historical pilot 경계에만 남아 있음
 - **이 Layout에 포함되는 이유**: `qa-sdk docs` 명령 체계의 핵심 데이터 모델 제공
-- **상세**: [examples/deterministic-label-system.md](./deterministic-label-system.md) (Pilot) / State Component: `deterministic-label-record-state` (미작성)
+- **상세**: [examples/deterministic-label-system.md](./deterministic-label-system.md) (Pilot). 현행 구현은 stateless projection이며 `deterministic-label-record-state`는 historical state pilot
 
 ### doc-envelope-system ^ref:doc-envelope-system
 
@@ -89,7 +105,8 @@ Consumer (qa-sdk docs CLI)
 docs-control-plane-layout
   ↓ refs
   ├── deterministic-label-system
-  │     ├── lifecycle_ref → deterministic-label-record-state (Component, state-enum sub-type, D-18)
+  │     ├── current implementation → stateless read-only projection
+  │     ├── historical pilot → deterministic-label-record-state (Component, state-enum sub-type, D-18)
   │     └── depends_on → doc-envelope-system, ontology-pack-validate-system
   ├── doc-envelope-system            ← Component 주도
   ├── ontology-pack-validate-system  ← Validate operations 제공

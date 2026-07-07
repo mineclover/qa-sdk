@@ -8,7 +8,7 @@ def:
   projection_plane: intent
   scope: meta
   aspect: proposal_design
-  tier: component
+  tier: system
   depth: specification
   links:
     - target: tier-redesign-readme
@@ -19,6 +19,15 @@ part_of: tier-redesign
 role: system-example
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/examples/README.md
+  - docs/proposals/tier-redesign/examples/approval-request-state.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/tiers/system.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/specs/meta-semantic/pipe-impl/transition-scope.spec.md
+  - docs/specs/meta-semantic/pipe-impl/pipe-connection-catalog.spec.md
 ---
 
 > **⚠️ 가상 Write-mode Pilot — 참조 3건 모두 가상**

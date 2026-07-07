@@ -19,6 +19,15 @@ part_of: tier-redesign
 role: component-example
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/examples/README.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-record-state.md
+  - docs/proposals/tier-redesign/examples/deterministic-label-system.md
+  - docs/proposals/tier-redesign/tiers/component.md
+  - docs/specs/definition-catalog/deterministic-label-stability-boundary.memo.md
+  - packages/deterministic-label-registry/src/index.ts
+  - packages/deterministic-label-registry/src/records.ts
+  - packages/deterministic-label-registry/src/projection.ts
 ---
 
 > **Pilot Draft — STC Component (data-shape sub-type) 예시.** D-18 반영: Component의 6 sub-type 중 가장 빈도 높은 `data-shape` 실증.
@@ -33,53 +42,34 @@ superseded_by: -
 
 ## 목적 ^purpose
 
-`deterministic-label-record` entity의 **field shape**을 data-shape Component로 정의. state enum은 별도 Component([deterministic-label-record-state](./deterministic-label-record-state.md))로 분리되어 본 문서의 `state` 필드가 참조.
+`deterministic-label-record` entity의 **field shape**을 data-shape Component로 정의한다.
+현행 구현은 `packages/deterministic-label-registry/src/records.ts`의 `DeterministicLabelRecord`가
+소유하며, 상태 enum/currentState는 `deterministic-label-stability-boundary` 결정에 따라 제거된
+historical pilot 개념이다.
 
 **포함**:
 - Record의 field 구성 (type + optional)
-- 각 field의 **역할 서술** (identity / coordinate / lifecycle / evidence refs)
-- 타 Component와의 참조 관계 (state-enum 등)
+- 각 field의 **역할 서술** (identity / physical refs / graph refs / diagnostics / metadata)
+- 타 Component와의 참조 관계 (historical state-enum 등)
 
 **미포함** (타 tier/체계 소유):
 - 상태 전이 규칙 → meta-semantic pipe
-- Operations (compute readiness 등) → System tier
+- Operations (inventory/projection 등) → System tier
 - 실제 인스턴스 값 → 코드 / DB
 
-## Shape 정의 ^defines
+## 현행 코드 shape ^defines
 
 ```ts
 interface DeterministicLabelRecord {
-  // Identity
-  id: string                                          // record unique id
-  address: number                                     // STC 좌표 address (정수, 불변)
-
-  // Coordinate (scope × aspect × depth)
-  coordinate: {
-    scope: ScopeId                                    // 예: data / feature / infra ...
-    aspect: AspectId                                  // aspect 카탈로그 값
-    depth: number                                     // 0..7
-  }
-
-  // Lifecycle
-  state: DeterministicLabelRecordState                // ← state-enum Component 참조
-                                                      // 값: DRAFT / LINTED / RESOLVED / ACTIVE / DEPRECATED / ARCHIVED / BLOCKED
-
-  // Ontology / Pack
-  ontologyPackId?: string                             // 소속 pack (optional)
-  ontologyPackVersion?: string                        // pack version
-
-  // Source
-  sourcePath: string                                  // 파일 경로 (frontmatter SSOT)
-  sourceHash: string                                  // 변경 감지용 content hash
-
-  // Evidence refs (계산 결과는 evidence-shape Component로 분리 권장)
-  readinessEvidenceRef?: string                       // → evidence-shape Component id
-  driftEvidenceRef?: string
-
-  // Metadata
-  createdAt: string                                   // ISO-8601
-  updatedAt: string                                   // ISO-8601
-  superseded_by?: string                              // v2 전환 링크 (Component 변경 경로)
+  readonly label: string;
+  readonly kind: SemanticCoordinateLabelKind;
+  readonly physicalRefs: readonly SemanticPhysicalRef[];
+  readonly dependencyLabels: readonly string[];
+  readonly sourceRefs: readonly string[];
+  readonly evidenceRefs: readonly string[];
+  readonly diagnostics: readonly SemanticCoordinateDiagnostic[];
+  readonly candidate: SemanticCoordinateCandidate;
+  readonly metadata: DocumentMetadata;
 }
 ```
 
@@ -87,12 +77,17 @@ interface DeterministicLabelRecord {
 
 | 그룹 | 필드 | 역할 |
 |-----|------|------|
-| Identity | `id`, `address` | 불변 참조 앵커 |
-| Coordinate | `coordinate.*` | STC 좌표 주소 (scope × aspect × depth) |
-| Lifecycle | `state` | state-enum Component 참조 (D-17 lifecycle_ref 대상) |
-| Source | `sourcePath`, `sourceHash` | 파일 SSOT + drift 감지 |
-| Evidence | `readinessEvidenceRef`, `driftEvidenceRef` | evidence-shape Component 참조 |
-| Metadata | `createdAt`, `updatedAt`, `superseded_by`, `ontologyPackId`, `ontologyPackVersion` | 부가 속성 |
+| Identity | `label`, `kind`, `candidate` | deterministic semantic coordinate anchor |
+| Physical refs | `physicalRefs` | source file/pointer 등 실제 위치 |
+| Graph refs | `dependencyLabels`, `sourceRefs`, `evidenceRefs` | 문서/소스/증거 label 관계 |
+| Diagnostics | `diagnostics` | projection 중 발견한 warning/error |
+| Metadata | `metadata` | `DocumentEnvelope`에서 온 보조 metadata |
+
+### Historical state pilot
+
+초기 STC pilot은 `state: DeterministicLabelRecordState`, readiness evidence, transition dry-run을 함께
+상정했다. 현행 패키지는 이를 제거했으므로, [deterministic-label-record-state](./deterministic-label-record-state.md)는
+현재 code contract가 아니라 state-enum Component 패턴을 검토하기 위한 historical pilot이다.
 
 ## Sub-type 분리 근거
 
@@ -102,33 +97,34 @@ interface DeterministicLabelRecord {
 - **D-17 lifecycle_ref 연결점**: System의 `lifecycle_ref.state_component`가 참조하는 **단일 anchor**가 필요
 - **SSOT 분리**: 상태 리스트 변경 ↔ shape 변경은 **독립 lifecycle**
 
-evidence 필드도 동일 논리로 **evidence-shape sub-type**으로 분리 권장 (본 Pilot에서는 `*EvidenceRef` 문자열 참조만).
+evidence 필드도 동일 논리로 **evidence-shape sub-type**으로 분리 권장 (현행 record는 `evidenceRefs` label 배열만 보유).
 
 ## SSOT 매핑
 
-본 data-shape Component는 code type의 **SSOT**:
+현행 code type이 이 data-shape pilot의 **source evidence**다:
 
 ```
-Component data-shape (본 문서)          → TypeScript type
-  schema: { id, address, coordinate, ...}   type DeterministicLabelRecord = {...}
+packages/deterministic-label-registry/src/records.ts
+  → DeterministicLabelRecord
+  → buildDeterministicLabelRecord()
+  → projectDeterministicLabelRecordsFromDocuments()
 ```
 
-코드 구현 위치: Record 타입을 export하는 패키지 (예: `@qa-sdk/deterministic-label-registry`)  
-검증: `def validate`가 Component shape ↔ code type 구조 일치 확인 (Phase 1.B)
+`def validate`가 Component shape와 code type의 구조 일치를 강제하는 것은 아직 Phase 1.B 후속 범위다.
 
 ## 소비 System / Component
 
 본 data-shape을 참조하는 것:
 
 - **System**: [deterministic-label-system](./deterministic-label-system.md) — operations의 입출력 shape
-- **state-enum Component**: [deterministic-label-record-state](./deterministic-label-record-state.md) — `state` field의 value enum
-- **evidence-shape Component (미작성)**: `readinessEvidenceRef`, `driftEvidenceRef`가 가리키는 target shape
+- **state-enum Component**: [deterministic-label-record-state](./deterministic-label-record-state.md) — historical readiness/state pilot
+- **evidence-shape Component (미작성)**: 현행 record의 `evidenceRefs`가 가리키는 target shape
 
 ## meta-semantic 매핑
 
 | meta-semantic | STC |
 |--------------|-----|
-| `Data IR` (Record의 생산/소비 관계) | 본 data-shape Component + System의 `lifecycle_ref.pipe_refs` |
+| `Data IR` (Record의 생산/소비 관계) | 본 data-shape Component + System projection |
 | Data facet 5역할 (생산/소비/정의/관리/저장) | 본 shape을 `data-facet-role` sub-type에서 역할별로 재서술 가능 |
 
 **원칙**: 본 문서는 shape만. facet 역할별 관점은 `data-facet-role` sub-type Component가 따로 소유.
@@ -155,6 +151,6 @@ Component는 여러 System이 공유하므로 shape 변경은 **breaking change*
 ## Consumer 빠른 참고
 
 - **"Record 필드 구성은?"** → 위 `DeterministicLabelRecord` TS interface
-- **"가능한 state 값은?"** → [state Component](./deterministic-label-record-state.md) 참조 (본 문서 아님)
-- **"readiness 계산 로직은?"** → System의 operations (본 문서 아님) — [System Pilot](./deterministic-label-system.md) `computeReadiness`
-- **"source 파일 변경 감지?"** → `sourcePath` + `sourceHash` 조합. drift 감지 상세는 System 문서
+- **"가능한 state 값은?"** → 현행 code contract에는 없음. historical pilot은 [state Component](./deterministic-label-record-state.md) 참조
+- **"readiness 계산 로직은?"** → 현행 code contract에는 없음. boundary memo에서 readiness/dry-run 제거 결정
+- **"source 파일 참조?"** → `physicalRefs`, `sourceRefs`, `candidate.metadata` 조합. 상세 projection은 `projection.ts`와 `records.ts`
