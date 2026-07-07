@@ -61,6 +61,8 @@ function parseFrontmatter(text) {
   return {
     lifecycle: matchValue(frontmatter, "lifecycle"),
     status: matchValue(frontmatter, "status"),
+    role: matchValue(frontmatter, "role"),
+    supersededBy: matchValue(frontmatter, "superseded_by"),
     type: matchValue(frontmatter, "type"),
     tier: matchValue(frontmatter, "tier"),
     scope: matchValue(frontmatter, "scope"),
@@ -96,6 +98,8 @@ function emptyFrontmatter() {
   return {
     lifecycle: "",
     status: "",
+    role: "",
+    supersededBy: "",
     type: "",
     tier: "",
     scope: "",
@@ -107,6 +111,21 @@ function emptyFrontmatter() {
 
 function matchValue(frontmatter, key) {
   return frontmatter.match(new RegExp(`^(?: {0,2})${key}:\\s*([^\\n#]+)`, "m"))?.[1]?.trim() ?? "";
+}
+
+function docRefFilePath(docPath, ref) {
+  const cleaned = cleanSourceRef(ref);
+  if (!cleaned || cleaned === "-") return "";
+  const withoutAnchor = cleaned.split("#")[0];
+  if (withoutAnchor.startsWith("docs/")) {
+    return join(repoRoot, withoutAnchor);
+  }
+  return resolve(dirname(docPath), withoutAnchor);
+}
+
+function docRefExists(docPath, ref) {
+  const resolved = docRefFilePath(docPath, ref);
+  return resolved.length > 0 && existsSync(resolved);
 }
 
 function classifyDoc(path) {
@@ -124,6 +143,10 @@ function classifyDoc(path) {
     && !text.startsWith("---\n");
   const isSupersededNote = relativePath.startsWith("docs/proposals/")
     && frontmatter.status === "superseded";
+  const isSupersededMovedNote = isSupersededNote
+    && frontmatter.role === "moved-note";
+  const hasSupersededTarget = isSupersededMovedNote
+    && docRefExists(path, frontmatter.supersededBy);
   const isProposal = relativePath.startsWith("docs/proposals/")
     && !isProposalIndexDoc
     && !isTemplateDoc;
@@ -163,6 +186,11 @@ function classifyDoc(path) {
     reasons.push("proposal template scaffold");
   }
 
+  if (isSupersededMovedNote && hasSupersededTarget) {
+    verdict = "keep";
+    reasons.push("superseded moved-note target exists");
+  }
+
   if (frontmatter.lifecycle === "approved" && evidenceScore < 2 && isSpec) {
     verdict = "prove";
     reasons.push("approved spec needs execution evidence");
@@ -173,7 +201,7 @@ function classifyDoc(path) {
     reasons.push("open proposal needs execution evidence");
   }
 
-  if (isSupersededNote) {
+  if (isSupersededNote && !hasSupersededTarget) {
     verdict = "prove";
     reasons.push("superseded proposal redirect note");
   }
@@ -205,6 +233,8 @@ function classifyDoc(path) {
     isDecisionSkeleton,
     isPlanningNote,
     isSupersededNote,
+    isSupersededMovedNote,
+    hasSupersededTarget,
     evidenceScore,
     sourceRefs: frontmatter.sourceRefs.length,
     reasons,

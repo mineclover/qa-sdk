@@ -12,6 +12,13 @@ part_of: ai-dlc-dspy-harness
 role: overview
 supersedes: -
 superseded_by: -
+sources:
+  - docs/specs/bdd-system/bdd-contract-system.spec.md
+  - docs/specs/bdd-system/bdd-contract-schema.spec.md
+  - docs/specs/meta-semantic/algorithm/meta-semantic-extraction.spec.md
+  - docs/specs/spec-verification/spec-analyzer-system.md
+  - packages/core/src/meta-semantic/extraction-pipeline.ts
+  - packages/core/src/meta-semantic/extraction-prompts.ts
 ---
 
 > **RFC / Proposal.** `docs/proposals/ai-dlc-dspy-harness/`의 일부로, 아직 정규 스펙이 아니다.
@@ -32,6 +39,13 @@ AI-DLC 워크플로우에서 DSPy 같은 prompt optimization 도구를 도입하
 - compiled prompt/program과 eval 결과는 artifact/evidence로 관리한다.
 - work-domain harness는 `eval-benchmark`와 `cost-track` gate로 DSPy 품질을 관측한다.
 - 첫 pilot은 `meta-semantic-extraction`의 `ExtractionPort`를 대상으로 한다.
+
+## 현재 증거 표면 ^evidence
+
+- BDD 계약의 정규 소유권은 `bdd-contract-system` spec과 `packages/core`의 deterministic compile/schema 구현이 가진다.
+- `meta-semantic-extraction` pilot 후보는 현재 `ExtractionPort`, prompt template, mock fallback 경계가 구현된 표면에 붙는다.
+- `spec-analyzer`는 deterministic drift baseline으로 남기며, DSPy가 truth 판정을 대체하지 않는다.
+- 이 proposal 자체는 여전히 draft이며, DSPy sidecar 구현과 active 전환은 아직 승인된 runtime surface가 아니다.
 
 ---
 

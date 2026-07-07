@@ -12,6 +12,13 @@ part_of: ai-dlc-dspy-harness
 role: decisions
 supersedes: -
 superseded_by: -
+sources:
+  - docs/specs/bdd-system/bdd-contract-system.spec.md
+  - docs/specs/bdd-system/bdd-contract-cli.spec.md
+  - docs/specs/meta-semantic/algorithm/meta-semantic-extraction.spec.md
+  - docs/specs/spec-verification/spec-analyzer-system.md
+  - docs/specs/system/work-domain.spec.md
+  - packages/core/src/meta-semantic/extraction-pipeline.ts
 ---
 
 > **RFC / Proposal.** `docs/proposals/ai-dlc-dspy-harness/`의 일부로, 아직 정규 스펙이 아니다.
@@ -25,6 +32,12 @@ AI-DLC DSPy 하네스 proposal의 Phase 0 결정을 기록한다. 목표는 Phas
 ## 구성 ^overview
 
 결정은 D-1부터 번호를 부여한다. 각 결정은 상태, 가역성, 근거, 영향을 함께 기록한다.
+
+## 현재 증거 표면 ^evidence
+
+- D-4와 D-10의 현재 구현 근거는 `meta-semantic-extraction` 포트와 `bdd-contract-system` spec/compile 경계다.
+- D-5의 현재 근거는 `spec-analyzer` deterministic baseline spec이다.
+- D-6부터 D-9까지의 DSPy event/cost/eval 활성화는 아직 draft 결정이며, runtime 승격 전까지 proposal evidence로만 둔다.
 
 ---
 

@@ -80,6 +80,8 @@ qa-sdk 설계 문서와 패키지가 실제 작업을 줄이거나 실패를 막
 4. `quarantine` 후보는 바로 삭제하지 않는다. 먼저 링크, package dependency, CLI entry, tests를 확인한다.
 5. 삭제/아카이브 PR은 `node packages/cli/dist/index.js def validate`, `corepack pnpm arch:feedback`, `git diff --check`를 통과해야 한다.
 
+`status: superseded` proposal 중 `role: moved-note`이고 `superseded_by` 대상 파일이 실제로 존재하는 문서는 redirect scaffold로 보존한다. 대상이 없거나 moved-note가 아니면 계속 `prove`로 남겨 이동 경로를 재확인한다.
+
 이 규칙의 package 판정은 `package-surface-separation-rule`의 surface manifest 경계를 소비한다. 따라서 `packages/*`는 기능 surface 승격/격리 후보로 계산하지만, `simulations/*`와 `vendor/*` workspace는 `workspace-support`로만 보고 제품 surface 표에 섞지 않는다.
 
 ## 보존 우선순위 ^constraint

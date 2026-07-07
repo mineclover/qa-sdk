@@ -11,15 +11,16 @@ date: 2026-04-20
 part_of: ai-dlc-dspy-harness
 role: moved-note
 supersedes: -
-superseded_by: ../bdd-contract-system/02-cli-consumption.md
+superseded_by: ../../specs/bdd-system/bdd-contract-cli.spec.md
 ---
 
 # Moved — BDD CLI / Impact Design
 
 ## 목적 ^purpose
 
-BDD CLI 소비 표면과 영향 범위 설계는 [bdd-contract-system](../bdd-contract-system/) proposal로 이동했다.
+BDD CLI 소비 표면과 영향 범위 설계는 [bdd-contract-system](../../specs/bdd-system/bdd-contract-system.spec.md) spec으로 이동했다.
 
 ## 이동 위치 ^overview
 
-- [../bdd-contract-system/02-cli-consumption.md](../bdd-contract-system/02-cli-consumption.md)
+- [bdd-contract-cli.spec.md](../../specs/bdd-system/bdd-contract-cli.spec.md)
+- [bdd-contract-cli.rule.md](../../specs/bdd-system/bdd-contract-cli.rule.md)

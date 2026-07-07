@@ -12,6 +12,7 @@ import chalk from "chalk";
 async function main() {
   console.log(chalk.bold.cyan("\n🧪 Verifying Analysis System Accuracy...\n"));
 
+  const execMaxBuffer = 20 * 1024 * 1024;
   let totalTests = 0;
   let passedTests = 0;
   let totalUsageSurfaceManagedPackages: number | undefined;
@@ -80,7 +81,10 @@ async function main() {
            && archiveCandidates["weighted-gpu"]?.disposition === "archive-candidate",
            "Usage Analysis: no-promotion packages remain in the archive decision queue");
 
-    const usefulnessOutput = execSync("node scripts/design-usefulness-audit.mjs --format json --all", { encoding: "utf-8" });
+    const usefulnessOutput = execSync("node scripts/design-usefulness-audit.mjs --format json --all", {
+      encoding: "utf-8",
+      maxBuffer: execMaxBuffer,
+    });
     const usefulness = JSON.parse(usefulnessOutput);
     const usefulnessPackages = Object.fromEntries(
       usefulness.packages.map((item: { name: string }) => [item.name, item]),
@@ -135,6 +139,26 @@ async function main() {
              && item.isTemplateDoc === true
              && item.reasons.includes("proposal template scaffold")),
            "Usefulness Audit: proposal templates stay scaffold docs");
+    const aiDlcMovedNotes = [
+      "docs/proposals/ai-dlc-dspy-harness/04-bdd-contract-model.md",
+      "docs/proposals/ai-dlc-dspy-harness/05-bdd-mechanical-design.md",
+      "docs/proposals/ai-dlc-dspy-harness/06-bdd-cli-impact.md",
+    ];
+    const aiDlcMovedNoteGaps = aiDlcMovedNotes
+      .filter((path) => {
+        const doc = usefulnessDocs[path] as {
+          verdict?: string;
+          isSupersededMovedNote?: boolean;
+          hasSupersededTarget?: boolean;
+          reasons?: string[];
+        } | undefined;
+        return doc?.verdict !== "keep"
+          || doc?.isSupersededMovedNote !== true
+          || doc?.hasSupersededTarget !== true
+          || !doc?.reasons?.includes("superseded moved-note target exists");
+      });
+    assert(aiDlcMovedNoteGaps.length === 0,
+           `Usefulness Audit: valid superseded moved notes stay redirect scaffolds (${aiDlcMovedNoteGaps.join(", ") || "ok"})`);
     assert(usefulnessDocs["docs/specs/prefix-catalog/entity-prefix-group/prefix-service.spec.md"]?.verdict === "keep"
            && usefulnessDocs["docs/specs/prefix-catalog/entity-prefix-group/prefix-service.spec.md"]?.sourceRefs === 1,
            "Usefulness Audit: singular source refs with symbol suffix count as source evidence");
