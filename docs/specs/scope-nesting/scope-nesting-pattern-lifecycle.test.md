@@ -11,7 +11,9 @@ def:
   links:
     - target: scope-nesting-pattern-lifecycle
       type: verifies
-source: packages/core/src/scope-nesting-lifecycle.test.ts
+sources:
+  - packages/core/src/scope-nesting-lifecycle.ts
+  - packages/core/src/scope-nesting-lifecycle.test.ts
 ---
 
 # Scope Lifecycle 패턴 테스트 명세

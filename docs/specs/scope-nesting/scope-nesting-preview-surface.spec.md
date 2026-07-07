@@ -13,6 +13,11 @@ def:
       type: refines
     - target: scope-nesting-timeline-renderer
       type: depends_on
+sources:
+  - packages/viz-web/src/scope-nesting-preview.ts
+  - packages/viz-web/scope-nesting.html
+  - packages/viz-core/src/scope-nesting-timeline.ts
+  - packages/viz-core/src/scope-nesting-timeline.test.ts
 ---
 
 # Scope Nesting Preview Surface

@@ -13,6 +13,9 @@ def:
       type: refines
     - target: scope-nesting-guide
       type: depends_on
+sources:
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/scope-nesting.test.ts
 ---
 
 # Provider Override 패턴

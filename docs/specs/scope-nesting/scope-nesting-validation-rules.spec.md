@@ -13,6 +13,9 @@ def:
       type: refines
     - target: scope-nesting-guide
       type: refines
+sources:
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/scope-nesting.test.ts
 ---
 
 # Scope Nesting 검증 규칙

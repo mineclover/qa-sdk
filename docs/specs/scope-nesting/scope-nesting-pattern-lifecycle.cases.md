@@ -14,6 +14,10 @@ def:
       type: refines
     - target: scope-nesting-system
       type: depends_on
+sources:
+  - packages/core/src/scope-nesting-lifecycle.ts
+  - packages/core/src/scope-nesting-lifecycle.test.ts
+  - packages/core/src/scope-nesting.ts
 ---
 
 # Scope Lifecycle 패턴 — 소비자 기대 시나리오

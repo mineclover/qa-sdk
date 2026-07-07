@@ -19,6 +19,11 @@ def:
       type: depends_on
     - target: pipe-simulate
       type: depends_on
+sources:
+  - packages/core/src/scope-nesting-mount.ts
+  - packages/core/src/scope-nesting-mount.test.ts
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/pipe/pipe-simulate.ts
 ---
 
 # Vite+ Playbook Mount Flow — scope↔pipe 브릿지

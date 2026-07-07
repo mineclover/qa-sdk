@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: scope-nesting-validation-rules
       type: depends_on
+sources:
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/scope-nesting.test.ts
+  - packages/core/src/scope-nesting-mount.ts
+  - packages/core/src/scope-nesting-mount.test.ts
 ---
 
 # Scope Nesting 변경 절차

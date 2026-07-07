@@ -17,6 +17,11 @@ def:
       type: depends_on
     - target: pipe-simulate
       type: depends_on
+sources:
+  - packages/core/src/scope-nesting-timing.ts
+  - packages/core/src/scope-nesting-timing.test.ts
+  - packages/core/src/scope-nesting-mount.ts
+  - packages/core/src/pipe/pipe-simulate.ts
 ---
 
 # Vite+ Playbook Contract Timing — 계약 위임 시점 분석

@@ -21,6 +21,14 @@ def:
       type: depends_on
     - target: pipe-gate
       type: depends_on
+sources:
+  - packages/core/src/scope-nesting-simulate.test.ts
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/scope-nesting-mount.ts
+  - packages/core/src/scope-nesting-timing.ts
+  - packages/core/src/scope-nesting-state.ts
+  - packages/core/src/pipe/pipe-simulate.ts
+  - packages/core/src/pipe/pipe-gate.ts
 ---
 
 # Scope Nesting 시뮬레이션 계층 정의

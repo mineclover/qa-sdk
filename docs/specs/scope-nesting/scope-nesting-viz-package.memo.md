@@ -12,6 +12,12 @@ def:
   links:
     - target: scope-nesting-visualization
       type: traces_to
+sources:
+  - packages/viz-core/src/index.ts
+  - packages/viz-core/src/scope-nesting-timeline.ts
+  - packages/viz-core/src/scope-nesting-timeline.test.ts
+  - packages/viz-web/src/scope-nesting-preview.ts
+  - packages/viz-web/scope-nesting.html
 ---
 
 # 시각화 패키지 분리 기록

@@ -20,6 +20,11 @@ def:
 contains:
   - scope-nesting-timeline-renderer
   - scope-nesting-preview-surface
+sources:
+  - packages/viz-core/src/scope-nesting-timeline.ts
+  - packages/viz-core/src/scope-nesting-timeline.test.ts
+  - packages/viz-web/src/scope-nesting-preview.ts
+  - packages/viz-web/scope-nesting.html
 ---
 
 # Scope Nesting 시각화

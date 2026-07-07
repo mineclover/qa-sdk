@@ -15,6 +15,10 @@ def:
       type: contains
     - target: scope-nesting-system
       type: depends_on
+sources:
+  - packages/core/src/scope-nesting-lifecycle.ts
+  - packages/core/src/scope-nesting-lifecycle.test.ts
+  - packages/core/src/scope-nesting.ts
 ---
 
 # Scope Lifecycle 패턴 — 비활성화 영향 분석 파이프라인

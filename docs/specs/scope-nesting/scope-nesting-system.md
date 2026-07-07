@@ -33,6 +33,14 @@ def:
       type: implements
     - target: context-action-convention
       type: refs
+sources:
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/scope-nesting.test.ts
+  - packages/core/src/scope-nesting-mount.ts
+  - packages/core/src/scope-nesting-timing.ts
+  - packages/core/src/scope-nesting-lifecycle.ts
+  - packages/core/src/scope-nesting-simulate.test.ts
+  - packages/core/src/meta-semantic/ir-nesting-bridge.ts
 ---
 
 # Scope Nesting System

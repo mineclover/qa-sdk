@@ -21,6 +21,11 @@ def:
       type: refs
     - target: ms-concept-contract-descent
       type: implements
+sources:
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/scope-nesting.test.ts
+  - packages/core/src/scope-nesting-lifecycle.ts
+  - packages/core/src/scope-nesting-lifecycle.test.ts
 ---
 
 # Provider 패턴

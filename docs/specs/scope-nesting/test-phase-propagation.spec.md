@@ -11,6 +11,12 @@ def:
   links:
     - target: scope-nesting-pattern-lifecycle
       type: depends_on
+sources:
+  - packages/test-types/src/index.ts
+  - packages/core/src/types/test-tracking.ts
+  - packages/core/src/pipe/test-tracking.ts
+  - packages/core/src/pipe/sim-phase-bridge.ts
+  - packages/demo-snapshot/src/demo-catalog.ts
 ---
 
 # test_phase 분류체계 전파

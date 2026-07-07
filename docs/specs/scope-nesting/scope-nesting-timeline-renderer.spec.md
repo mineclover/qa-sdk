@@ -19,6 +19,11 @@ def:
       type: depends_on
     - target: scope-nesting-contract-timing
       type: depends_on
+sources:
+  - packages/viz-core/src/scope-nesting-timeline.ts
+  - packages/viz-core/src/scope-nesting-timeline.test.ts
+  - packages/viz-core/src/primitives.ts
+  - packages/viz-core/src/shapes.ts
 ---
 
 # Scope Nesting Timeline Renderer

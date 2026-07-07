@@ -15,6 +15,11 @@ def:
       type: implements
     - target: ms-concept-boundary
       type: implements
+sources:
+  - packages/core/src/scope-nesting.ts
+  - packages/core/src/scope-nesting.test.ts
+  - packages/core/src/scope-nesting-mount.ts
+  - packages/core/src/scope-nesting-lifecycle.ts
 ---
 
 # Scope Nesting 가이드

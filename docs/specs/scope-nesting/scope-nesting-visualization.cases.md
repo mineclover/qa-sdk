@@ -14,6 +14,11 @@ def:
       type: refines
     - target: scope-nesting-system
       type: depends_on
+sources:
+  - packages/viz-core/src/scope-nesting-timeline.ts
+  - packages/viz-core/src/scope-nesting-timeline.test.ts
+  - packages/viz-web/src/scope-nesting-preview.ts
+  - packages/viz-web/scope-nesting.html
 ---
 
 # Scope Nesting 시각화 — 소비자 기대 시나리오
