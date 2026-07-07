@@ -19,12 +19,35 @@ part_of: tier-redesign
 role: roadmap
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/integration/taxonomy-catalog.spec.md
+  - docs/specs/definition-catalog/definition-metadata-projection-plane.spec.md
+  - docs/specs/definition-catalog/definition-metadata-intent-hierarchy.spec.md
+  - docs/specs/definition-catalog/definition-metadata-owner-system.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-observability-planes.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/cli/src/commands/def.ts
+  - packages/cli/src/data-sources/local-data-source.ts
 ---
 
 # 로드맵: 이중 평면 거버넌스 및 추적 자동화
 
 > 근거: [taxonomy-catalog.spec.md](./integration/taxonomy-catalog.spec.md) Section 4, 5.
 > 설계자의 **주권적 의도(Intent)**와 코드의 **실증적 사실(Execution)**을 분리하고, 그 사이의 괴리를 자동 감지하여 시스템의 정합성을 증명한다.
+
+## 현재 근거와 미구현 범위
+
+이 로드맵의 핵심 메타데이터 중 `owner_system`, `projection_plane`, `intent_hierarchy`는
+`docs/specs/definition-catalog/definition-metadata-*.spec.md`와 `packages/definition-catalog/src/frontmatter.ts`
+에서 정규 frontmatter 필드로 파싱된다. `packages/definition-catalog/src/validate.ts`는 `type: design`
+문서의 `owner_system` 누락을 진단하고, `packages/cli/src/commands/def.ts`와
+`packages/cli/src/data-sources/local-data-source.ts`는 definition 조회/경계 출력에서 이 메타데이터를
+사용한다.
+
+아래 Phase 2~5의 IR 고도화, 자동 drift 비교, field-level lineage 분석은 아직 구현 완료로 보지 않는다.
+따라서 본 문서는 accepted spec이 아니라, 현행 metadata 기반과 후속 자동화 범위를 분리하는 roadmap이다.
 
 ## 1. 배경 및 목적
 

@@ -19,6 +19,20 @@ part_of: tier-redesign
 role: overview
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/README.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/rules/system-independence.md
+  - docs/proposals/tier-redesign/rules/state-machine-delegation.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-depth-usage-report.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-layout-contains-report.md
+  - docs/specs/definition-catalog/definition-management.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-metadata-depth.spec.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
 ---
 
 > **RFC / Proposal.** `docs/proposals/tier-redesign/`의 일부로, 아직 정규 스펙이 아닙니다.
@@ -46,6 +60,19 @@ superseded_by: -
 > 엄밀한 수학 topology는 아니되, "위치 + 관계"의 직관을 공유. 더 정확한 명명 후보는 "Semantic Structural Coordinate" 또는 "Categorical Multi-axis Coordinate"이나 **"STC"** 약어의 발음성/기억성을 고려해 현 이름 유지.
 
 ---
+
+## 0. 현재 정규화 상태
+
+본 설계는 아직 proposal이지만, 일부 규칙은 현행 definition-catalog에 정규화되어 있다.
+
+- `tier` 값 공간은 `definition-metadata-tier`에서 Entry / Component / System / Layout / exempt로
+  문서화되어 있고, authoring 판단 순서는 `definition-mgmt-coordinates`의 E/C/I/S + L/P 책임 분리가
+  소유한다.
+- `depth`는 Phase 1.A 조사 결과 제거 대상이 아니라 4값 상세도 enum으로 유지되는 것이 현재 결론이며,
+  `definition-metadata-depth`와 `frontmatter.ts`가 이 값을 정규 필드로 유지한다.
+- Layout은 `contains`가 아니라 `refs`로 조망한다는 규칙이 `definition-metadata-links`와
+  `validate.ts`에 반영되어 있다.
+- `level`은 새 분할 판단의 중심 언어가 아니라 contains 그래프 검증용 보조 메타데이터로 남아 있다.
 
 ## 1. 핵심 원칙 ^defines
 

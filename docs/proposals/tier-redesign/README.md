@@ -31,6 +31,22 @@ part_of: tier-redesign
 role: index
 supersedes: -
 superseded_by: -
+sources:
+  - docs/proposals/tier-redesign/00-design.md
+  - docs/proposals/tier-redesign/02-tracking-roadmap.md
+  - docs/proposals/tier-redesign/03-decisions.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-depth-usage-report.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-layout-contains-report.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-meta-operational-policy.md
+  - docs/proposals/tier-redesign/phase-1a/phase-1a-classifier-ruleset.md
+  - docs/specs/definition-catalog/definition-management.spec.md
+  - docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md
+  - docs/specs/definition-catalog/definition-metadata-tier.spec.md
+  - docs/specs/definition-catalog/definition-metadata-depth.spec.md
+  - docs/specs/definition-catalog/definition-metadata-links.spec.md
+  - packages/definition-catalog/src/frontmatter.ts
+  - packages/definition-catalog/src/validate.ts
+  - packages/cli/src/commands/def.ts
 ---
 
 # STC — Semantic Topological Coordinate 제안
@@ -42,6 +58,22 @@ superseded_by: -
 기존 `level: group | module | leaf` 분해 체계를 **STC (Semantic Topological Coordinate)**로 전환한다. STC는 `tier × scope × layer` 세 축의 좌표계이며, `tier` 축이 Component / Entry / System / Layout의 **네 값**을 갖는다. **ECS 적응** 기반으로 데이터·ID aggregation·기능·배치를 분리 (ECS 정석 3축 + Layout 확장, 변형 범위는 [mental-models.md § ECS 정석 vs STC 적응](./mental-models.md) 참조).
 
 > **D-17 Pivot (2026-04-18)**: 이전 설계는 5 tier(+ FSM)였으나 meta-semantic과의 역할 중복 해소를 위해 FSM tier 제거. 상태 전이/원자 경계/이벤트 카탈로그는 이미 실증된 meta-semantic(`docs/specs/meta-semantic/`) 체계가 단독 소유. System이 상태 관리 시 `lifecycle_ref`로 참조만. 상세: [03-decisions.md D-17](./03-decisions.md), [rules/state-machine-delegation.md](./rules/state-machine-delegation.md)
+
+## 현재 근거와 정규화 범위
+
+이 proposal은 아직 `under-review` 상태다. 다만 핵심 언어 일부는 정규 definition-catalog 문서와
+검증 코드에 흡수되어 있다.
+
+- `docs/specs/definition-catalog/definition-management/definition-mgmt-coordinates.spec.md`가
+  E/C/I/S + L/P 책임 분리, `tier`, `scope`, `depth`, `level`의 현재 authoring 순서를 정의한다.
+- `docs/specs/definition-catalog/definition-metadata-tier.spec.md`와
+  `definition-metadata-links.spec.md`가 `tier: layout`은 `refs`를 쓰고 behavior/data ownership을 직접
+  갖지 않는다는 규칙을 정규 스펙으로 고정한다.
+- `packages/definition-catalog/src/frontmatter.ts`는 `refs` LinkType과 `depth` 4값 enum을 파싱하고,
+  `packages/definition-catalog/src/validate.ts`는 `tier: layout`의 `refs` 사용, System→System `contains`
+  경고, `type: design`의 `owner_system` 요구를 검증한다.
+- Phase 1.A 보고서 4건은 `depth` 유지, Layout-like contains 전환 규모, operational 예외, 자동 분류
+  규칙의 근거 자료다.
 
 ## 독자 / 읽는 순서
 
