@@ -1,3 +1,25 @@
+---
+status: implemented
+sources:
+  - simulations/enterprise-pm/services/pm-api/package.json
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/assignment.module.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/domain/assignment.entity.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/domain/assignment.entity.test.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/application/use-cases/assignment.use-case.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/application/use-cases/assignment.use-case.test.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/infrastructure/persistence/assignment.repository.test.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/infrastructure/transaction/assignment.unit-of-work.test.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/presentation/http/assignment.controller.test.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/presentation/bff/assignment-detail.test.ts
+  - simulations/enterprise-pm/services/pm-api/src/pm/assignment/metadata/openmetadata.seed.json
+  - simulations/enterprise-pm/services/pm-api/src/pm/pm-slices.registry.ts
+  - simulations/enterprise-pm/contracts/openapi/src/domains/assignment/spec.yaml
+  - simulations/enterprise-pm/scenarios/package.json
+  - simulations/enterprise-pm/scenarios/src/architecture/architecture-manifest.test.ts
+  - packages/architecture-schematics/src/domain/domain.test.ts
+  - packages/architecture-schematics/src/validator.test.ts
+---
+
 # Phase 1 — Reference Slice (pm-api/assignment)
 
 직렬, 단일 에이전트. Phase 2 의 모든 병렬 에이전트가 복제·변형의 기준으로 삼는 gold standard 슬라이스를 만든다.
@@ -137,13 +159,13 @@ pg 버전도 동등하게 추가.
 ## 검증
 
 ```bash
-pnpm --filter @qa-sdk/sim-enterprise-pm-pm-api build
-pnpm --filter @qa-sdk/sim-enterprise-pm-pm-api test
+pnpm --filter @qa-sdk/sim-pm-api build
+pnpm --filter @qa-sdk/sim-pm-api test
 # qa-scaffold 는 dist/cli.js 를 가리키므로 최초/변경 시 빌드 선행
 pnpm --filter @qa-sdk/scaffold build
 pnpm exec qa-scaffold validate \
   simulations/enterprise-pm/services/pm-api/src/pm/assignment
-pnpm --filter @qa-sdk/sim-enterprise-pm-scenarios test architecture-manifest
+pnpm --filter @qa-sdk/sim-scenarios test architecture-manifest
 ```
 
 모두 통과해야 Phase 1 종료.

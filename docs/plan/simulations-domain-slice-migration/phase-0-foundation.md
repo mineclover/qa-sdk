@@ -133,7 +133,7 @@ simulations 의 OpenAPI 는 yaml. `qa-scaffold promote-openapi` 는 현재 json 
 ```bash
 pnpm --filter sim-domain-slice-kit build
 pnpm --filter sim-domain-slice-kit test
-pnpm --filter @qa-sdk/sim-enterprise-pm-pm-api build  # registry 가 컴파일 통과
+pnpm --filter @qa-sdk/sim-pm-api build  # registry 가 컴파일 통과
 ```
 
 ## 종료 조건

@@ -121,8 +121,8 @@ Phase 2 시작 시점에 23개의 spec sheet 가 자동 생성된다. 생성 스
 7. 마이그레이션 후 기존 service/controller 파일은 삭제 (단, 다른 슬라이스가 import 하고 있지 않은 것을 확인 후)
 
 검증 (모두 통과해야 작업 완료로 간주):
-- pnpm --filter @qa-sdk/sim-enterprise-pm-<svc> build
-- pnpm --filter @qa-sdk/sim-enterprise-pm-<svc> test
+- pnpm --filter @qa-sdk/sim-<svc> build
+- pnpm --filter @qa-sdk/sim-<svc> test
 - pnpm exec qa-scaffold validate <target_path>
 - 슬라이스 단위 vitest 가 5계층 모두 커버
 
@@ -168,8 +168,8 @@ SVC=pm-api
 
 # qa-scaffold 는 dist/cli.js 를 가리키므로 최초/변경 시 빌드 선행
 pnpm --filter @qa-sdk/scaffold build
-pnpm --filter @qa-sdk/sim-enterprise-pm-$SVC build
-pnpm --filter @qa-sdk/sim-enterprise-pm-$SVC test --filter "task"
+pnpm --filter @qa-sdk/sim-$SVC build
+pnpm --filter @qa-sdk/sim-$SVC test --filter "task"
 pnpm exec qa-scaffold validate $SLICE
 ```
 

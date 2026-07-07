@@ -74,8 +74,8 @@ jobs:
       - run: pnpm --filter @qa-sdk/scaffold build
       - run: pnpm exec qa-scaffold validate simulations/enterprise-pm/services
       - run: node simulations/enterprise-pm/contracts/openapi/scripts/check-merge.mjs
-      - run: pnpm --filter @qa-sdk/sim-enterprise-pm-scenarios test architecture-manifest
-      - run: pnpm --filter @qa-sdk/sim-enterprise-pm-scenarios test cross-slice-conventions
+      - run: pnpm --filter @qa-sdk/sim-scenarios test architecture-manifest
+      - run: pnpm --filter @qa-sdk/sim-scenarios test cross-slice-conventions
 ```
 
 추천: B (격리). simulations 전용 gate 를 두면 def-gate 가 비대해지지 않는다.
@@ -121,10 +121,10 @@ drift 가 발견되면 prefix/event 명세 갱신 또는 LoggerPort 의 표준 �
 node simulations/enterprise-pm/contracts/openapi/scripts/check-merge.mjs
 
 # 2. manifest fileExists 검증
-pnpm --filter @qa-sdk/sim-enterprise-pm-scenarios test architecture-manifest
+pnpm --filter @qa-sdk/sim-scenarios test architecture-manifest
 
 # 3. cross-slice 컨벤션 검증
-pnpm --filter @qa-sdk/sim-enterprise-pm-scenarios test cross-slice-conventions
+pnpm --filter @qa-sdk/sim-scenarios test cross-slice-conventions
 
 # 4. 시뮬레이션 전체 빌드/테스트
 pnpm --filter './simulations/enterprise-pm/**' build
