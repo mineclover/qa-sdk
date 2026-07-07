@@ -1,13 +1,50 @@
+---
+def:
+  id: spec-engine-design-guide
+  type: knowledge
+  knowledge_kind: guide
+  tier: layout
+  scope: flow
+  aspect: process_flow
+  depth: overview
+  lifecycle: approved
+  layer: domain
+  svc: spec-core
+  tags: [entry-point, structural]
+  links:
+    - target: spec-engine-system
+      type: traces_to
+    - target: indexing-core-system
+      type: depends_on
+    - target: decision-standard-group
+      type: depends_on
+    - target: prefix-guide
+      type: depends_on
+sources:
+  - docs/specs/spec-engine-system/spec-engine-system.md
+  - docs/specs/indexing-core-system/indexing-core-system.md
+  - packages/spec-core/src/index.ts
+  - packages/spec-core/src/loader/catalog-bridge.ts
+  - packages/spec-schema/src/index.ts
+  - packages/spec-transition/src/index.ts
+---
+
 # Spec Engine — 작은 세계의 구조 정의 도구
 
-> **Status: DESIGN**
+> **Role: DESIGN GUIDE**
 >
 > indexing 레이어가 "작은 세계를 수학적으로 운용하는 원시 도구"라면,
 > spec-engine은 "그 세계를 왜 이렇게 구성했고, 밖에서 어떻게 보이는지 정의하는 도구"이다.
 >
 > NestJS를 호스트 런타임으로 사용하되, 코어 모델은 framework-agnostic 독립 커널로 유지한다.
+>
+> 현재 구현/검증 SSOT는 `spec-engine-system` 문서군과 `packages/spec-*` 소스다.
 
-기반: [../indexing/README.md](../indexing/README.md) · [../indexing/schema-layer.md](../indexing/schema-layer.md) · [../indexing/coordinate-states.md](../indexing/coordinate-states.md)
+## 목적 ^purpose
+
+spec-engine의 설계 언어와 indexing 레이어 경계를 빠르게 파악하기 위한 guide다. 구현된 타입, registry, transition, propagation 세부사항은 `spec-engine-system` 문서군과 package source가 소유한다.
+
+기반: [../indexing/README.md](../indexing/README.md) · [../indexing-core-system/indexing-core-system.md](../indexing-core-system/indexing-core-system.md) · [../indexing-core-system/schema-layer.md](../indexing-core-system/schema-layer.md) · [../indexing-core-system/coord-states-group.md](../indexing-core-system/coord-states-group.md)
 
 ---
 
@@ -194,17 +231,25 @@ prefix의 존재 이유를 문서화. c4-doc 참조하되 독립 재작성.
 
 | 문서 | 내용 |
 |------|------|
+| [../spec-engine-system/spec-engine-system.md](../spec-engine-system/spec-engine-system.md) | 구현/검증된 spec-engine 시스템 진입점 |
 | [../spec-engine-system/spec-core-types-group.md](../spec-engine-system/spec-core-types-group.md) | ExportSurface, Schema(6종), PrefixSpec, SpecDocument, Registry API |
 | [../spec-engine-system/spec-architecture-system.md](../spec-engine-system/spec-architecture-system.md) | NestJS 모듈 매핑, 계층 분리, decorator/interceptor 설계, 함정 방지 |
 | [../spec-engine-system/spec-phases-group.md](../spec-engine-system/spec-phases-group.md) | 5단계 구현 계획 + 검증 기준 + 기술 스택 |
 | [../dkg-system/dkg-system.md](../dkg-system/dkg-system.md) | Design Knowledge Graph — 설계 시점 메타데이터 그래프와 성장 나선 모델 |
 | [../dkg-system/dkg-skills-system.md](../dkg-system/dkg-skills-system.md) | DKG Skills — 종단 파이프라인, migrator 추론, VersionEvent 파생, Decision 템플릿, skill 카탈로그 |
 | [../spec-engine-system/spec-prop-system.md](../spec-engine-system/spec-prop-system.md) | Spec Propagation — PrefixSpec 작성 → registry 고정 → 소비자 전파 → codegen → DKG 기록 종단 파이프라인 |
-| [convergence-layer.md](convergence-layer.md) | Convergence Layer — 심볼 비교, 결정 비교, 인과 발견, 최소 가짓수, 경계 추천. 신경기호 검증 |
-| [decision-standard.md](decision-standard.md) | 의사결정 표준 프로세스 — 새 요구 시 prefix 평가/생성 표준 경로, 7개 체크리스트, skill 매핑 |
-| [prefix-guide.md](prefix-guide.md) | Prefix 실용 가이드 — 페이지/API/이벤트/권한이 모두 prefix, 환경 오버라이드 패턴, 관측 포인트 정의 |
+| [../spec-engine-system/convergence-layer-group.md](../spec-engine-system/convergence-layer-group.md) | Convergence Layer — 심볼 비교, 결정 비교, 인과 발견, 최소 가짓수, 경계 추천 |
+| [../decision-flow/decision-standard-group.md](../decision-flow/decision-standard-group.md) | 의사결정 표준 프로세스 — 새 요구 시 prefix 평가/생성 표준 경로, 체크리스트, skill 매핑 |
+| [../spec-engine-system/prefix-guide.md](../spec-engine-system/prefix-guide.md) | Prefix 실용 가이드 — 페이지/API/이벤트/권한이 모두 prefix, 환경 오버라이드 패턴, 관측 포인트 정의 |
 | [../spec-engine-system/spec-reference-system.md](../spec-engine-system/spec-reference-system.md) | Axis Boundary — 축에 넣을 것과 넣지 않을 것. endpoint prefix 재설계. 미들웨어 자동 태깅 |
 | [../spec-engine-system/spec-reference-system.md](../spec-engine-system/spec-reference-system.md) | Spec Linking Standard — 문서 간 참조 규칙. prefix↔spec↔decision 연결 형식 표준화 |
 | [../spec-engine-system/spec-architecture-system.md](../spec-engine-system/spec-architecture-system.md) | System Architecture — 전체 구현 구조 (12모듈, 12노드, 18엣지, 11skill, 14수렴도구) |
 | [../spec-engine-system/spec-architecture-system.md](../spec-engine-system/spec-architecture-system.md) | Temporal Relations — 시간 순서(trace 내 선후)와 데이터 흐름(prefix_ref 동적 추적) 수집 정의 |
-| [next-phase-plan.md](next-phase-plan.md) | Next Phase — prefix 3가지 사용 모드(enum/로깅/권한), skills prefix화, 이벤트 수집 E2E, PartialBinder 통합 |
+| [../spec-engine-system/next-phase-plan.md](../spec-engine-system/next-phase-plan.md) | Next Phase — prefix 3가지 사용 모드(enum/로깅/권한), skills prefix화, 이벤트 수집 E2E, PartialBinder 통합 |
+
+## 관련 소스
+
+- `packages/spec-core/src/index.ts` — spec-core 공개 진입점
+- `packages/spec-core/src/loader/catalog-bridge.ts` — indexing catalog와 PrefixSpec 연결
+- `packages/spec-schema/src/index.ts` — schema/validation 공개 진입점
+- `packages/spec-transition/src/index.ts` — transition 공개 진입점

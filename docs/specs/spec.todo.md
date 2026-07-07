@@ -1,6 +1,38 @@
+---
+def:
+  id: spec-todo
+  type: knowledge
+  knowledge_kind: guide
+  tier: component
+  scope: flow
+  aspect: process_flow
+  depth: specification
+  lifecycle: draft
+  layer: operation
+  tags: [roadmap, follow-up]
+  links:
+    - target: wi-hardware-acceleration
+      type: traces_to
+    - target: indexing-pipeline
+      type: traces_to
+    - target: spec-engine-system
+      type: depends_on
+sources:
+  - docs/specs/weighted-index-system/wi-hardware-acceleration.spec.md
+  - docs/specs/pipeline-system/pipeline.md
+  - packages/weighted-wasm/js/index.ts
+  - packages/weighted-gpu/src/index.ts
+  - packages/index-meta/src/index.ts
+---
+
 # 스펙별 작업 필요 사항
 
 > 2026-04-06 기준. 완료 항목은 각 스펙에 흡수, 잔여만 추적.
+> 이 문서는 `lifecycle: draft` 계획 문서이며, 구현/테스트가 끝난 항목만 해당 spec으로 흡수한다.
+
+## 목적 ^purpose
+
+완료된 spec 작업을 다시 소유하지 않고, 아직 구현/검증 전인 잔여 작업만 추적한다. `.todo.md`가 남아 있는 동안 현재 동작의 SSOT는 각 `.spec.md`와 source/test 경로다.
 
 ---
 
