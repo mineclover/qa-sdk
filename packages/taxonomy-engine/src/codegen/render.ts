@@ -2,6 +2,10 @@ import type { TaxonomyIR, AxisIR, RelationIR } from '../schema/ir.js';
 
 const HEADER = '// 자동 생성 파일. 수동 편집 금지. taxonomy-engine codegen 산출물.\n\n';
 
+function finalize(content: string): string {
+  return content.endsWith('\n\n') ? content.slice(0, -1) : content;
+}
+
 function pascal(name: string): string {
   return name
     .split(/[-_]/)
@@ -23,7 +27,7 @@ export function renderAxes(ir: TaxonomyIR): string {
     const ids = axis.entries.map((e) => `"${e.id}"`).join(' | ');
     lines.push(`export type ${pascal(name)}Id = ${ids};\n\n`);
   }
-  return lines.join('');
+  return finalize(lines.join(''));
 }
 
 export function renderAddresses(ir: TaxonomyIR): string {
@@ -35,7 +39,7 @@ export function renderAddresses(ir: TaxonomyIR): string {
     }
     lines.push(`} as const;\n\n`);
   }
-  return lines.join('');
+  return finalize(lines.join(''));
 }
 
 export function renderRegistry(ir: TaxonomyIR): string {
@@ -46,7 +50,7 @@ export function renderRegistry(ir: TaxonomyIR): string {
       `export const ${upper(name)}_ENTRIES = ${JSON.stringify(stripped, null, 2)} as const;\n\n`,
     );
   }
-  return lines.join('');
+  return finalize(lines.join(''));
 }
 
 export function renderRelations(ir: TaxonomyIR): string {
@@ -55,7 +59,7 @@ export function renderRelations(ir: TaxonomyIR): string {
     const stripped = stripLoc(rel) as RelationIR;
     lines.push(`export const ${upper(name)} = ${JSON.stringify(stripped, null, 2)} as const;\n\n`);
   }
-  return lines.join('');
+  return finalize(lines.join(''));
 }
 
 export function renderMeta(ir: TaxonomyIR, contentHash: string, generatedAt: string): string {
