@@ -18,57 +18,48 @@
  *   - timestamp 필드는 ISO-8601 text 유지 (ingest 핫패스 호환성)
  */
 
-import {
-  boolean,
-  index,
-  integer,
-  jsonb,
-  pgSchema,
-  primaryKey,
-  text,
-} from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgSchema, primaryKey, text } from 'drizzle-orm/pg-core';
 
-const ingestSchema = pgSchema("ingest");
+const ingestSchema = pgSchema('ingest');
 
 export const keyObservations = ingestSchema.table(
-  "key_observations",
+  'key_observations',
   {
-    prefixId: text("prefix_id").notNull(),
-    version: text("version").notNull(),
-    address: integer("address").notNull(),
-    packedKey: text("packed_key").notNull(),
-    registered: boolean("registered").notNull().default(false),
-    count: integer("count").notNull().default(1),
-    firstSeen: text("first_seen").notNull(),
-    lastSeen: text("last_seen").notNull(),
-    payloadSummary: jsonb("payload_summary").notNull().default({}),
+    prefixId: text('prefix_id').notNull(),
+    version: text('version').notNull(),
+    address: integer('address').notNull(),
+    packedKey: text('packed_key').notNull(),
+    registered: boolean('registered').notNull().default(false),
+    count: integer('count').notNull().default(1),
+    firstSeen: text('first_seen').notNull(),
+    lastSeen: text('last_seen').notNull(),
+    payloadSummary: jsonb('payload_summary').notNull().default({}),
   },
   (t) => [
     primaryKey({ columns: [t.prefixId, t.version, t.address] }),
-    index("idx_key_obs_packed_pg").on(t.packedKey),
-    index("idx_key_obs_prefix_version_pg").on(t.prefixId, t.version),
-    index("idx_key_obs_last_seen_pg").on(t.lastSeen),
-    index("idx_key_obs_count_pg").on(t.count),
-    index("idx_key_obs_registered_pg").on(t.registered),
+    index('idx_key_obs_packed_pg').on(t.packedKey),
+    index('idx_key_obs_prefix_version_pg').on(t.prefixId, t.version),
+    index('idx_key_obs_last_seen_pg').on(t.lastSeen),
+    index('idx_key_obs_count_pg').on(t.count),
+    index('idx_key_obs_registered_pg').on(t.registered),
   ],
 );
 
 export const keyObservationPrefixes = ingestSchema.table(
-  "key_observation_prefixes",
+  'key_observation_prefixes',
   {
-    prefixId: text("prefix_id").notNull(),
-    version: text("version").notNull(),
-    distinctKeys: integer("distinct_keys").notNull().default(1),
-    totalCount: integer("total_count").notNull().default(0),
-    firstSeen: text("first_seen").notNull(),
-    lastSeen: text("last_seen").notNull(),
+    prefixId: text('prefix_id').notNull(),
+    version: text('version').notNull(),
+    distinctKeys: integer('distinct_keys').notNull().default(1),
+    totalCount: integer('total_count').notNull().default(0),
+    firstSeen: text('first_seen').notNull(),
+    lastSeen: text('last_seen').notNull(),
   },
   (t) => [primaryKey({ columns: [t.prefixId, t.version] })],
 );
 
 export type KeyObservationPgRow = typeof keyObservations.$inferSelect;
-export type KeyObservationPrefixPgRow =
-  typeof keyObservationPrefixes.$inferSelect;
+export type KeyObservationPrefixPgRow = typeof keyObservationPrefixes.$inferSelect;
 
 /**
  * ingest.event_records — RecordStore의 PG 구현 대상 (Plan 07c).
@@ -81,40 +72,38 @@ export type KeyObservationPrefixPgRow =
  *   - timestamp 필드는 ISO-8601 text 유지 — ingest 핫패스 호환성
  */
 export const eventRecords = ingestSchema.table(
-  "event_records",
+  'event_records',
   {
-    logId: text("log_id").primaryKey(),
-    traceId: text("trace_id").notNull(),
-    spanId: text("span_id").notNull(),
-    parentSpanId: text("parent_span_id"),
-    timestamp: text("timestamp").notNull(),
-    recordKind: text("record_kind").notNull(),
-    eventKey: text("event_key").notNull(),
-    eventVersion: text("event_version").notNull(),
-    spanName: text("span_name"),
-    startTime: text("start_time"),
-    endTime: text("end_time"),
-    statusCode: text("status_code"),
-    payloadFormat: text("payload_format").notNull(),
-    payloadEncoding: text("payload_encoding").notNull(),
-    payloadMaskingApplied: boolean("payload_masking_applied")
-      .notNull()
-      .default(false),
-    payloadMaskedFields: jsonb("payload_masked_fields").notNull().default([]),
-    payload: jsonb("payload"),
-    registryWarning: text("registry_warning"),
-    addressContext: jsonb("address_context"),
-    qaSessionId: text("qa_session_id"),
-    actorId: text("actor_id"),
-    userId: text("user_id"),
-    userAttributes: jsonb("user_attributes"),
-    createdAt: text("created_at").notNull(),
+    logId: text('log_id').primaryKey(),
+    traceId: text('trace_id').notNull(),
+    spanId: text('span_id').notNull(),
+    parentSpanId: text('parent_span_id'),
+    timestamp: text('timestamp').notNull(),
+    recordKind: text('record_kind').notNull(),
+    eventKey: text('event_key').notNull(),
+    eventVersion: text('event_version').notNull(),
+    spanName: text('span_name'),
+    startTime: text('start_time'),
+    endTime: text('end_time'),
+    statusCode: text('status_code'),
+    payloadFormat: text('payload_format').notNull(),
+    payloadEncoding: text('payload_encoding').notNull(),
+    payloadMaskingApplied: boolean('payload_masking_applied').notNull().default(false),
+    payloadMaskedFields: jsonb('payload_masked_fields').notNull().default([]),
+    payload: jsonb('payload'),
+    registryWarning: text('registry_warning'),
+    addressContext: jsonb('address_context'),
+    qaSessionId: text('qa_session_id'),
+    actorId: text('actor_id'),
+    userId: text('user_id'),
+    userAttributes: jsonb('user_attributes'),
+    createdAt: text('created_at').notNull(),
   },
   (t) => [
-    index("idx_event_records_trace_id_pg").on(t.traceId),
-    index("idx_event_records_trace_timestamp_pg").on(t.traceId, t.timestamp),
-    index("idx_event_records_event_key_pg").on(t.eventKey),
-    index("idx_event_records_session_id_pg").on(t.qaSessionId),
+    index('idx_event_records_trace_id_pg').on(t.traceId),
+    index('idx_event_records_trace_timestamp_pg').on(t.traceId, t.timestamp),
+    index('idx_event_records_event_key_pg').on(t.eventKey),
+    index('idx_event_records_session_id_pg').on(t.qaSessionId),
   ],
 );
 

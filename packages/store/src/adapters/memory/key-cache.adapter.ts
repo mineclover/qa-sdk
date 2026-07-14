@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import type { CacheEntry, CacheStats, KeyCache } from "@qa-sdk/core";
+import type { CacheEntry, CacheStats, KeyCache } from '@qa-sdk/core';
 
 /**
  * InMemory KeyCache — L1 프로세스 내 캐시.

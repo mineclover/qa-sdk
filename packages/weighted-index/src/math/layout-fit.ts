@@ -64,7 +64,7 @@ export function analyzeLayoutSim(cfg: LayoutSimConfig): LayoutSimAnalysis {
 
   if (indexBudget <= 0) {
     maxProductSafe = 0;
-    maxProductDisplay = "0";
+    maxProductDisplay = '0';
   } else if (indexBudget <= SAFE_POW16_LIMIT) {
     maxProductSafe = 16 ** indexBudget;
     maxProductDisplay = maxProductSafe.toLocaleString();
@@ -116,10 +116,10 @@ export function dimMaxForBudget(indexBudget: number, productOfOthers: number): n
  * Use this to show the TRUE max when it exceeds MAX_SAFE_INTEGER.
  */
 export function dimMaxBig(indexBudget: number, productOfOthers: number): string {
-  if (indexBudget <= 0 || productOfOthers <= 0) return "0";
+  if (indexBudget <= 0 || productOfOthers <= 0) return '0';
   const maxProduct = 16n ** BigInt(indexBudget);
   const others = BigInt(Math.round(productOfOthers));
-  if (others <= 0n) return "0";
+  if (others <= 0n) return '0';
   const result = maxProduct / others;
   return formatBigInt(result);
 }
@@ -137,11 +137,11 @@ export function dimMaxApprox(indexBudget: number, productOfOthers: number): numb
 }
 
 function formatBigInt(n: bigint): string {
-  if (n <= 0n) return "0";
+  if (n <= 0n) return '0';
   if (n < 1_000_000n) return Number(n).toLocaleString();
   const s = n.toString();
   const exp = s.length - 1;
-  const mantissa = s[0] + "." + s.slice(1, 3);
+  const mantissa = s[0] + '.' + s.slice(1, 3);
   return `${mantissa} × 10^${exp}`;
 }
 
@@ -159,7 +159,7 @@ export function clampShape(
 ): number[] {
   const result = [...shape];
 
-  if (mode === "bigint" && indexBudget > SAFE_POW16_LIMIT) {
+  if (mode === 'bigint' && indexBudget > SAFE_POW16_LIMIT) {
     // BigInt 모드: 정확한 BigInt 연산으로 clamp
     const maxProduct = 16n ** BigInt(indexBudget);
     for (let p = 0; p < passes; p++) {
@@ -171,9 +171,8 @@ export function clampShape(
         }
         if (othersBig <= 0n) continue;
         const dmax = maxProduct / othersBig;
-        const dmaxNum = dmax < BigInt(Number.MAX_SAFE_INTEGER)
-          ? Number(dmax)
-          : Number(dmax / 1000000n) * 1000000; // 큰 값은 float 근사
+        const dmaxNum =
+          dmax < BigInt(Number.MAX_SAFE_INTEGER) ? Number(dmax) : Number(dmax / 1000000n) * 1000000; // 큰 값은 float 근사
         const clamped = Math.max(1, Math.min(result[i], Math.floor(dmaxNum)));
         if (clamped !== result[i]) {
           result[i] = clamped;
@@ -284,7 +283,7 @@ export function simPackUUID(
   shardVal: number,
   indexVal: number,
 ): string {
-  const chars = new Array(UUID_CHARS).fill("0");
+  const chars = new Array(UUID_CHARS).fill('0');
 
   // Left side: prefix then version
   _writeHex(chars, 0, prefixChars, prefixVal);
@@ -299,14 +298,14 @@ export function simPackUUID(
     _writeHex(chars, UUID_CHARS - indexChars - shardChars, shardChars, shardVal);
   }
 
-  const raw = chars.join("");
+  const raw = chars.join('');
   return [
     raw.slice(0, 8),
     raw.slice(8, 12),
     raw.slice(12, 16),
     raw.slice(16, 20),
     raw.slice(20, 32),
-  ].join("-");
+  ].join('-');
 }
 
 /**
@@ -323,7 +322,7 @@ export function simPackHex(
   shardVal: number,
   indexVal: number,
 ): string {
-  const chars = new Array(totalChars).fill("0");
+  const chars = new Array(totalChars).fill('0');
   _writeHex(chars, 0, prefixChars, prefixVal);
   _writeHex(chars, prefixChars, versionChars, versionVal);
   const indexChars = totalChars - prefixChars - versionChars - shardChars;
@@ -333,7 +332,7 @@ export function simPackHex(
   if (shardChars > 0) {
     _writeHex(chars, totalChars - indexChars - shardChars, shardChars, shardVal);
   }
-  return chars.join("");
+  return chars.join('');
 }
 
 /** BigInt 범용 hex pack: totalChars 길이의 raw hex 문자열 반환 (dash 없음). */
@@ -349,17 +348,15 @@ export function simPackHexBig(
 ): string {
   const indexChars = totalChars - prefixChars - versionChars - shardChars;
   let full = 0n;
-  if (prefixChars > 0)
-    full |= BigInt(prefixVal) << BigInt((totalChars - prefixChars) * 4);
+  if (prefixChars > 0) full |= BigInt(prefixVal) << BigInt((totalChars - prefixChars) * 4);
   if (versionChars > 0)
     full |= BigInt(versionVal) << BigInt((totalChars - prefixChars - versionChars) * 4);
-  if (shardChars > 0)
-    full |= BigInt(shardVal) << BigInt(indexChars * 4);
+  if (shardChars > 0) full |= BigInt(shardVal) << BigInt(indexChars * 4);
   if (indexChars > 0) {
     const mask = (1n << BigInt(indexChars * 4)) - 1n;
     full |= indexVal & mask;
   }
-  return full.toString(16).padStart(totalChars, "0");
+  return full.toString(16).padStart(totalChars, '0');
 }
 
 function _writeHex(arr: string[], start: number, width: number, value: number): void {
@@ -367,7 +364,7 @@ function _writeHex(arr: string[], start: number, width: number, value: number): 
   // Cap value to the field's max capacity (16^width - 1)
   const maxVal = 16 ** width - 1;
   const capped = Math.min(Math.max(0, Math.floor(value)), maxVal);
-  const hex = capped.toString(16).padStart(width, "0");
+  const hex = capped.toString(16).padStart(width, '0');
   for (let i = 0; i < width; i++) {
     if (start + i < arr.length) arr[start + i] = hex[i];
   }
@@ -411,19 +408,17 @@ export function simPackUUIDBig(
   const indexChars = UUID_CHARS - prefixChars - versionChars - shardChars;
   let full = 0n;
 
-  if (prefixChars > 0)
-    full |= BigInt(prefixVal) << BigInt((UUID_CHARS - prefixChars) * 4);
+  if (prefixChars > 0) full |= BigInt(prefixVal) << BigInt((UUID_CHARS - prefixChars) * 4);
   if (versionChars > 0)
     full |= BigInt(versionVal) << BigInt((UUID_CHARS - prefixChars - versionChars) * 4);
-  if (shardChars > 0)
-    full |= BigInt(shardVal) << BigInt(indexChars * 4);
+  if (shardChars > 0) full |= BigInt(shardVal) << BigInt(indexChars * 4);
   if (indexChars > 0) {
     const mask = (1n << BigInt(indexChars * 4)) - 1n;
     full |= indexVal & mask;
   }
 
-  const hex = full.toString(16).padStart(UUID_CHARS, "0");
-  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20,32)}`;
+  const hex = full.toString(16).padStart(UUID_CHARS, '0');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 // ── Display & UI helpers ────────────────────────────────────────────────────
@@ -436,7 +431,7 @@ export function fieldMaxVal(chars: number): number {
 /** Log-scale percentage: val이 [1..max] 범위에서 차지하는 비율 (0–100). */
 export function logScalePercent(val: number, max: number): number {
   if (max <= 1 || val <= 1) return 0;
-  return Math.min(100, Math.log(val) / Math.log(max) * 100);
+  return Math.min(100, (Math.log(val) / Math.log(max)) * 100);
 }
 
 /** Log-scale 슬라이더 position(0–resolution) → 실제 값(1–dmax). */
@@ -449,7 +444,7 @@ export function sliderToVal(pos: number, dmax: number, resolution = 1000): numbe
 export function valToSlider(val: number, dmax: number, resolution = 1000): number {
   if (dmax <= 1) return 0;
   const clamped = Math.max(1, Math.min(val, dmax));
-  return Math.round(Math.log(clamped) / Math.log(dmax) * resolution);
+  return Math.round((Math.log(clamped) / Math.log(dmax)) * resolution);
 }
 
 /** Protobuf varint 인코딩 시 바이트 수 추정. */
@@ -457,13 +452,16 @@ export function varintByteSize(n: number): number {
   if (n < 0) return 1;
   let s = 1;
   let v = n;
-  while (v >= 128) { v >>>= 7; s++; }
+  while (v >= 128) {
+    v >>>= 7;
+    s++;
+  }
   return s;
 }
 
 /** Format a potentially large number for display. */
 export function formatLargeNumber(n: number): string {
-  if (n <= 0) return "0";
+  if (n <= 0) return '0';
   if (n < 1_000_000) return n.toLocaleString();
   const exp = Math.floor(Math.log10(n));
   const mantissa = n / Math.pow(10, exp);
@@ -475,13 +473,13 @@ export function formatLargeNumber(n: number): string {
 // UI가 모드별로 정합성 있는 수치를 표시하기 위한 단일 출력 구조.
 // 모든 수치는 effectiveMax를 기준으로 계산되므로 모순이 없다.
 
-export type LayoutViewMode = "number" | "bigint";
+export type LayoutViewMode = 'number' | 'bigint';
 
 export interface DimViewModel {
   index: number;
   value: number;
-  sliderMax: number;       // 슬라이더가 도달 가능한 최대값
-  displayMax: string;      // sliderMax의 포맷 문자열
+  sliderMax: number; // 슬라이더가 도달 가능한 최대값
+  displayMax: string; // sliderMax의 포맷 문자열
 }
 
 export interface LayoutViewModel {
@@ -490,27 +488,27 @@ export interface LayoutViewModel {
   indexBits: number;
 
   // 인덱스 타입 자동 결정: indexBudget > 13 → bigint 필수
-  indexType: "number" | "bigint";
+  indexType: 'number' | 'bigint';
 
   // 모드별 유효 최대 용량
-  effectiveMax: number;            // Number 기준 (Number 모드에서 연산에 사용)
+  effectiveMax: number; // Number 기준 (Number 모드에서 연산에 사용)
   effectiveMaxDisplay: string;
-  isCapped: boolean;               // Number 모드에서 MAX_SAFE_INTEGER 캡 적용 여부
-  uuidCapacityDisplay: string;     // 항상 실제 포맷 용량 (16^budget)
+  isCapped: boolean; // Number 모드에서 MAX_SAFE_INTEGER 캡 적용 여부
+  uuidCapacityDisplay: string; // 항상 실제 포맷 용량 (16^budget)
 
   dims: DimViewModel[];
 
   product: number;
   productDisplay: string;
-  utilization: number;              // 0-100+, effectiveMax 기준
+  utilization: number; // 0-100+, effectiveMax 기준
   utilizationDisplay: string;
   overflow: boolean;
 
-  capacityNote: string | null;     // isCapped일 때 실제 용량 안내
+  capacityNote: string | null; // isCapped일 때 실제 용량 안내
 
   // Number 갭: index 영역 중 Number로 도달 불가능한 비트 수
-  numberReachBits: number;         // Number로 도달 가능한 비트 (≈53)
-  numberGapBits: number;           // index 영역 중 도달 불가 비트
+  numberReachBits: number; // Number로 도달 가능한 비트 (≈53)
+  numberGapBits: number; // index 영역 중 도달 불가 비트
 
   // index 영역 사용률: 구조 바 오버레이용 (0~1)
   indexFillRatio: number;
@@ -536,13 +534,12 @@ export function computeLayoutViewModel(
 
   if (indexBudget <= 0) {
     effectiveMax = 0;
-    effectiveMaxDisplay = "0";
+    effectiveMaxDisplay = '0';
     isCapped = false;
-  } else if (mode === "bigint") {
+  } else if (mode === 'bigint') {
     // BigInt 모드: UUID 전체 용량 (float 근사)
-    effectiveMax = indexBudget <= SAFE_POW16_LIMIT
-      ? 16 ** indexBudget
-      : Math.exp(indexBudget * Math.LN2 * 4);
+    effectiveMax =
+      indexBudget <= SAFE_POW16_LIMIT ? 16 ** indexBudget : Math.exp(indexBudget * Math.LN2 * 4);
     effectiveMaxDisplay = analysis.maxProductDisplay;
     isCapped = false;
   } else {
@@ -564,13 +561,12 @@ export function computeLayoutViewModel(
   const dims: DimViewModel[] = clamped.map((value, i) => {
     // BigInt 모드: uncapped float로 정확한 others 계산
     // Number 모드: capped productExcluding 사용
-    const others = mode === "bigint"
-      ? productExcludingUncapped(clamped, i)
-      : productExcluding(clamped, i);
+    const others =
+      mode === 'bigint' ? productExcludingUncapped(clamped, i) : productExcluding(clamped, i);
     let sliderMax: number;
     let displayMax: string;
 
-    if (mode === "bigint") {
+    if (mode === 'bigint') {
       sliderMax = Math.max(1, dimMaxApprox(indexBudget, others));
       displayMax = dimMaxBig(indexBudget, Math.round(others));
     } else {
@@ -582,28 +578,23 @@ export function computeLayoutViewModel(
   });
 
   // Product & utilization — effectiveMax 기준 (clamp된 shape)
-  const product = mode === "bigint"
-    ? shapeProductUncapped(clamped)
-    : shapeProduct(clamped);
+  const product = mode === 'bigint' ? shapeProductUncapped(clamped) : shapeProduct(clamped);
   const productDisplay = formatLargeNumber(product);
 
   let utilization: number;
-  if (mode === "bigint") {
+  if (mode === 'bigint') {
     utilization = utilizationBig(product, indexBudget);
   } else {
-    utilization = effectiveMax > 0 ? (product / effectiveMax * 100) : 0;
+    utilization = effectiveMax > 0 ? (product / effectiveMax) * 100 : 0;
   }
 
-  const utilizationDisplay = utilization < 0.01 && product > 0
-    ? "< 0.01%"
-    : utilization.toFixed(2) + "%";
+  const utilizationDisplay =
+    utilization < 0.01 && product > 0 ? '< 0.01%' : utilization.toFixed(2) + '%';
 
-  const capacityNote = isCapped
-    ? `실제 포맷 용량: ${analysis.maxProductDisplay}`
-    : null;
+  const capacityNote = isCapped ? `실제 포맷 용량: ${analysis.maxProductDisplay}` : null;
 
   // 인덱스 타입 자동 결정
-  const indexType: "number" | "bigint" = indexBudget > SAFE_POW16_LIMIT ? "bigint" : "number";
+  const indexType: 'number' | 'bigint' = indexBudget > SAFE_POW16_LIMIT ? 'bigint' : 'number';
 
   // Number 갭 계산: MAX_SAFE_INTEGER = 2^53 → 53bit
   const numberReachBits = isCapped ? 53 : indexBits;
@@ -656,5 +647,5 @@ export function utilizationBig(approxProduct: number, indexBudget: number): numb
   if (indexBudget <= 0 || approxProduct <= 0) return 0;
   const maxP = 16n ** BigInt(indexBudget);
   const prodBig = BigInt(Math.round(approxProduct));
-  return Number(prodBig * 1000000n / maxP) / 10000;
+  return Number((prodBig * 1000000n) / maxP) / 10000;
 }

@@ -1,7 +1,7 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import type { DeployHistoryEntry } from "../core/types.js";
+import type { DeployHistoryEntry } from '../core/types.js';
 
 export interface FleetRunContext {
   runId?: string;
@@ -18,15 +18,13 @@ export interface BuildDeployHistoryEntryInput {
   endpoint: string;
   duration: number;
   success: boolean;
-  triggeredBy: "ci" | "manual";
+  triggeredBy: 'ci' | 'manual';
   configPath?: string;
   artifactId?: string;
   error?: string;
 }
 
-export function readFleetRunContextFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): FleetRunContext {
+export function readFleetRunContextFromEnv(env: NodeJS.ProcessEnv = process.env): FleetRunContext {
   return {
     runId: env.QA_FLEET_RUN_ID,
     mode: env.QA_FLEET_MODE,
@@ -48,7 +46,7 @@ export function buildDeployHistoryEntry(
     duration: input.duration,
     success: input.success,
     triggeredBy: input.triggeredBy,
-    mode: fleet.runId ? "fleet-service" : "single",
+    mode: fleet.runId ? 'fleet-service' : 'single',
     runId: fleet.runId,
     scope: fleet.scope,
     configPath: fleet.configPath ?? input.configPath,

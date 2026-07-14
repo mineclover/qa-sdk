@@ -11,13 +11,13 @@
  * 호출. pub/sub 채널 = INVALIDATION_CHANNEL ("bitmap:invalidate").
  */
 
-import type { Redis } from "ioredis";
+import type { Redis } from 'ioredis';
 import {
   INVALIDATION_CHANNEL,
   serializeMessage,
   type InvalidationMessage,
   type Reason,
-} from "./message.js";
+} from './message.js';
 
 export interface BitmapInvalidationPublisherOptions {
   redis: Redis;
@@ -36,7 +36,7 @@ export class BitmapInvalidationPublisher {
   /** scope=user (단일 사용자 권한 변경). */
   async publishUserChange(userId: string, reason: Reason): Promise<number> {
     return this.publish({
-      scope: "user",
+      scope: 'user',
       target: userId,
       reason,
       issuedAt: new Date().toISOString(),
@@ -51,7 +51,7 @@ export class BitmapInvalidationPublisher {
     affectedUserIds: readonly string[],
   ): Promise<number> {
     return this.publish({
-      scope: "role",
+      scope: 'role',
       target: roleId,
       reason,
       issuedAt: new Date().toISOString(),
@@ -63,7 +63,7 @@ export class BitmapInvalidationPublisher {
   /** scope=prefix (shape/version 변경 — 전체 cache flush). */
   async publishPrefixBump(prefix: string, reason: Reason): Promise<number> {
     return this.publish({
-      scope: "prefix",
+      scope: 'prefix',
       target: prefix,
       reason,
       issuedAt: new Date().toISOString(),

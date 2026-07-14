@@ -68,9 +68,9 @@
  * ```
  */
 
-import { PrefixCodec } from "./prefix-registry.js";
-import type { EntityId } from "./label-registry.js";
-import type { VersionedIndex } from "./prefix-registry.js";
+import { PrefixCodec } from './prefix-registry.js';
+import type { EntityId } from './label-registry.js';
+import type { VersionedIndex } from './prefix-registry.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -133,18 +133,18 @@ export function createBinder(
   for (const key of boundKeys) {
     if (!allLabels.includes(key)) {
       throw new RangeError(
-        `Unknown label "${key}" for prefix "${prefix}". Valid: [${allLabels.join(", ")}]`
+        `Unknown label "${key}" for prefix "${prefix}". Valid: [${allLabels.join(', ')}]`,
       );
     }
   }
 
-  const freeLabels = allLabels.filter(l => !boundKeys.has(l));
+  const freeLabels = allLabels.filter((l) => !boundKeys.has(l));
 
   function _resolve(remaining: Record<string, EntityId>): VersionedIndex {
     for (const label of freeLabels) {
       if (remaining[label] === undefined) {
         throw new RangeError(
-          `Missing label "${label}" in resolve(). Expected: [${freeLabels.join(", ")}]`
+          `Missing label "${label}" in resolve(). Expected: [${freeLabels.join(', ')}]`,
         );
       }
     }

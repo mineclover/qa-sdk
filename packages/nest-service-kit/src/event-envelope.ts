@@ -1,10 +1,10 @@
 // @def.boundary nest-service-event-envelope
 // @def.doc nest-service-event-envelope
 
-import { randomUUID } from "node:crypto";
+import { randomUUID } from 'node:crypto';
 
-export type RequesterType = "user" | "service" | "job" | "system";
-export type EventOutcome = "success" | "failure" | "noop";
+export type RequesterType = 'user' | 'service' | 'job' | 'system';
+export type EventOutcome = 'success' | 'failure' | 'noop';
 
 export interface RequesterContext {
   requesterType?: RequesterType;
@@ -35,8 +35,9 @@ export interface EventEnvelope<TPayload extends Record<string, unknown> = Record
   payload: TPayload;
 }
 
-export interface CreateEventEnvelopeInput<TPayload extends Record<string, unknown> = Record<string, unknown>>
-  extends RequesterContext {
+export interface CreateEventEnvelopeInput<
+  TPayload extends Record<string, unknown> = Record<string, unknown>,
+> extends RequesterContext {
   eventId?: string;
   eventKey: string;
   eventVersion: string;

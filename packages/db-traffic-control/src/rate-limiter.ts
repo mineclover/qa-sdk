@@ -1,6 +1,6 @@
 // @def.boundary db-traffic-control-spec
 // @def.doc db-traffic-control-spec
-import type { RateStatus } from "./types.js";
+import type { RateStatus } from './types.js';
 
 /** 윈도우 세그먼트 — 100ms 단위 카운트 */
 interface Segment {

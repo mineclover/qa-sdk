@@ -1,8 +1,5 @@
-import type {
-  EventRecordObservationInput,
-  PipeGraphProjectionInput,
-} from "./projector-core.js";
-import type { OperationalOntologyStore } from "./persistence-memory.js";
+import type { EventRecordObservationInput, PipeGraphProjectionInput } from './projector-core.js';
+import type { OperationalOntologyStore } from './persistence-memory.js';
 import {
   diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
@@ -16,12 +13,12 @@ import {
   type OperationalOntologyRouteDecisionDiff,
   type OperationalOntologySnapshotDiff,
   type OperationalOntologyTraversalDiff,
-} from "./persistence-diff.js";
+} from './persistence-diff.js';
 import {
   ingestOperationalOntologyProjection,
   type IngestOperationalOntologyProjectionOptions,
   type IngestOperationalOntologyProjectionResult,
-} from "./persistence-ingest.js";
+} from './persistence-ingest.js';
 import {
   loadOperationalOntologyCheckpointLattice,
   loadOperationalOntologyCheckpointLattices,
@@ -38,7 +35,7 @@ import {
   type OperationalOntologyCorridorView,
   type OperationalOntologyJunctionView,
   type OperationalOntologySnapshotView,
-} from "./persistence-query.js";
+} from './persistence-query.js';
 
 export async function ingestEventRecordProjection(
   store: OperationalOntologyStore,
@@ -76,10 +73,7 @@ export async function ingestPipeGraphProjection(
 }
 
 export async function listOperationalOntologySnapshotViewsByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
 ): Promise<OperationalOntologySnapshotView[]> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
@@ -93,10 +87,7 @@ export async function listOperationalOntologySnapshotViewsByScope(
 }
 
 export async function loadLatestOperationalOntologySnapshotViewByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
 ): Promise<OperationalOntologySnapshotView | null> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
@@ -109,12 +100,11 @@ export async function loadLatestOperationalOntologySnapshotViewByScope(
 }
 
 export async function listOperationalOntologyCorridorsByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   targetScope: string,
-): Promise<ReturnType<typeof loadOperationalOntologyCorridors> extends Promise<infer T> ? T : never> {
+): Promise<
+  ReturnType<typeof loadOperationalOntologyCorridors> extends Promise<infer T> ? T : never
+> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
   const corridors = await Promise.all(
     projections.map((projection) =>
@@ -125,15 +115,10 @@ export async function listOperationalOntologyCorridorsByScope(
 }
 
 export async function listOperationalOntologyCheckpointLatticesByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   targetScope: string,
 ): Promise<
-  ReturnType<typeof loadOperationalOntologyCheckpointLattices> extends Promise<infer T>
-    ? T
-    : never
+  ReturnType<typeof loadOperationalOntologyCheckpointLattices> extends Promise<infer T> ? T : never
 > {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
   const lattices = await Promise.all(
@@ -145,15 +130,10 @@ export async function listOperationalOntologyCheckpointLatticesByScope(
 }
 
 export async function listOperationalOntologyRouteDecisionsByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   targetScope: string,
 ): Promise<
-  ReturnType<typeof loadOperationalOntologyRouteDecisions> extends Promise<infer T>
-    ? T
-    : never
+  ReturnType<typeof loadOperationalOntologyRouteDecisions> extends Promise<infer T> ? T : never
 > {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
   const routeDecisions = await Promise.all(
@@ -165,15 +145,10 @@ export async function listOperationalOntologyRouteDecisionsByScope(
 }
 
 export async function listOperationalOntologyJunctionsByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   targetScope: string,
 ): Promise<
-  ReturnType<typeof loadOperationalOntologyJunctions> extends Promise<infer T>
-    ? T
-    : never
+  ReturnType<typeof loadOperationalOntologyJunctions> extends Promise<infer T> ? T : never
 > {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
   const junctions = await Promise.all(
@@ -185,15 +160,10 @@ export async function listOperationalOntologyJunctionsByScope(
 }
 
 export async function listOperationalOntologyTraversalBundlesByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
 ): Promise<
-  ReturnType<typeof loadOperationalOntologyTraversalBundles> extends Promise<infer T>
-    ? T
-    : never
+  ReturnType<typeof loadOperationalOntologyTraversalBundles> extends Promise<infer T> ? T : never
 > {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
   const bundles = await Promise.all(
@@ -205,10 +175,7 @@ export async function listOperationalOntologyTraversalBundlesByScope(
 }
 
 export async function listOperationalOntologyCorridorViewsByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
 ): Promise<OperationalOntologyCorridorView[]> {
   const snapshotViews = await listOperationalOntologySnapshotViewsByScope(store, targetScope);
@@ -224,16 +191,11 @@ export async function listOperationalOntologyCorridorViewsByScope(
     ),
   );
 
-  return corridorViews.filter(
-    (view): view is OperationalOntologyCorridorView => view !== null,
-  );
+  return corridorViews.filter((view): view is OperationalOntologyCorridorView => view !== null);
 }
 
 export async function loadLatestOperationalOntologyCorridorViewByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   corridorId: string,
 ): Promise<OperationalOntologyCorridorView | null> {
@@ -252,10 +214,7 @@ export async function loadLatestOperationalOntologyCorridorViewByScope(
 }
 
 export async function loadLatestOperationalOntologyCheckpointLatticeByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   targetScope: string,
   rootCheckpointId: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyCheckpointLattice>>> {
@@ -274,10 +233,7 @@ export async function loadLatestOperationalOntologyCheckpointLatticeByScope(
 }
 
 export async function loadLatestOperationalOntologyJunctionViewByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   junctionId: string,
 ): Promise<OperationalOntologyJunctionView | null> {
@@ -296,10 +252,7 @@ export async function loadLatestOperationalOntologyJunctionViewByScope(
 }
 
 export async function loadLatestOperationalOntologyRouteDecisionByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   targetScope: string,
   branchNodeId: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyRouteDecision>>> {
@@ -318,10 +271,7 @@ export async function loadLatestOperationalOntologyRouteDecisionByScope(
 }
 
 export async function loadLatestOperationalOntologyTraversalBundleByScope(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   traversalKey: string,
 ): Promise<Awaited<ReturnType<typeof loadOperationalOntologyTraversalBundle>>> {
@@ -340,7 +290,7 @@ export async function loadLatestOperationalOntologyTraversalBundleByScope(
 }
 
 export async function diffLatestOperationalOntologySnapshotsByScope(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
 ): Promise<OperationalOntologySnapshotDiff | null> {
   const projections = await listOperationalOntologySnapshotProjections(store, targetScope);
@@ -350,15 +300,11 @@ export async function diffLatestOperationalOntologySnapshotsByScope(
     return null;
   }
 
-  return diffOperationalOntologySnapshots(
-    store,
-    previous.projectionId,
-    latest.projectionId,
-  );
+  return diffOperationalOntologySnapshots(store, previous.projectionId, latest.projectionId);
 }
 
 export async function diffLatestOperationalOntologyCorridorByScope(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   corridorId: string,
 ): Promise<OperationalOntologyCorridorDiff | null> {
@@ -378,7 +324,7 @@ export async function diffLatestOperationalOntologyCorridorByScope(
 }
 
 export async function diffLatestOperationalOntologyCheckpointByScope(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   rootCheckpointId: string,
 ): Promise<OperationalOntologyCheckpointDiff | null> {
@@ -398,7 +344,7 @@ export async function diffLatestOperationalOntologyCheckpointByScope(
 }
 
 export async function diffLatestOperationalOntologyJunctionByScope(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   junctionId: string,
 ): Promise<OperationalOntologyJunctionDiff | null> {
@@ -418,7 +364,7 @@ export async function diffLatestOperationalOntologyJunctionByScope(
 }
 
 export async function diffLatestOperationalOntologyRouteDecisionByScope(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   branchNodeId: string,
 ): Promise<OperationalOntologyRouteDecisionDiff | null> {
@@ -438,7 +384,7 @@ export async function diffLatestOperationalOntologyRouteDecisionByScope(
 }
 
 export async function diffLatestOperationalOntologyTraversalByScope(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   targetScope: string,
   traversalKey: string,
 ): Promise<OperationalOntologyTraversalDiff | null> {

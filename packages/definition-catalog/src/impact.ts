@@ -14,7 +14,7 @@
  *   impact:  "이 문서가 바뀌면 무엇이 깨지는가?" (아래→위)
  */
 
-import type { DefLayer, DefinitionEntry, DefinitionLink, LinkType } from "./types.js";
+import type { DefLayer, DefinitionEntry, DefinitionLink, LinkType } from './types.js';
 
 /** 영향받는 문서 1건 */
 export interface ImpactedDoc {
@@ -27,7 +27,7 @@ export interface ImpactedDoc {
   /** 영향 경로 (변경 문서 → ... → 영향받는 문서) */
   readonly path: readonly string[];
   /** 영향의 방향 */
-  readonly direction: "upstream" | "downstream";
+  readonly direction: 'upstream' | 'downstream';
   /** 영향 깊이 (hop 수) */
   readonly depth: number;
   /** 영향받는 문서의 layer (있으면) */
@@ -51,7 +51,13 @@ export interface ImpactAnalysis {
   /** 영향 범위 요약: 총 영향 문서 수 */
   readonly blastRadius: number;
   /** layer별 영향 수 */
-  readonly byLayer: { domain: number; operation: number; mediation: number; experience: number; unspecified: number };
+  readonly byLayer: {
+    domain: number;
+    operation: number;
+    mediation: number;
+    experience: number;
+    unspecified: number;
+  };
 }
 
 /**
@@ -80,20 +86,23 @@ export interface ImpactAnalysis {
  * | experience  | experience                       | 상향 전파 없음 |
  * | 미지정       | 모두                              | layer 미지정은 제한 없음 (기존 호환) |
  */
-function canPropagate(sourceLayer: DefLayer | undefined, targetLayer: DefLayer | undefined): boolean {
+function canPropagate(
+  sourceLayer: DefLayer | undefined,
+  targetLayer: DefLayer | undefined,
+): boolean {
   if (!sourceLayer || !targetLayer) return true;
 
-  if (sourceLayer === "domain") {
-    return targetLayer === "domain" || targetLayer === "operation" || targetLayer === "mediation";
+  if (sourceLayer === 'domain') {
+    return targetLayer === 'domain' || targetLayer === 'operation' || targetLayer === 'mediation';
   }
-  if (sourceLayer === "operation") {
-    return targetLayer === "operation";
+  if (sourceLayer === 'operation') {
+    return targetLayer === 'operation';
   }
-  if (sourceLayer === "mediation") {
-    return targetLayer === "mediation" || targetLayer === "experience";
+  if (sourceLayer === 'mediation') {
+    return targetLayer === 'mediation' || targetLayer === 'experience';
   }
-  if (sourceLayer === "experience") {
-    return targetLayer === "experience";
+  if (sourceLayer === 'experience') {
+    return targetLayer === 'experience';
   }
   return true;
 }
@@ -101,7 +110,7 @@ function canPropagate(sourceLayer: DefLayer | undefined, targetLayer: DefLayer |
 export function analyzeImpact(
   sourceId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
 ): ImpactAnalysis {
   const source = getEntry(sourceId);
   if (!source) {
@@ -121,7 +130,14 @@ export function analyzeImpact(
   const byLayer = { domain: 0, operation: 0, mediation: 0, experience: 0, unspecified: 0 };
 
   // BFS로 영향 전파
-  const queue: { docId: string; path: string[]; via: LinkType; direction: "upstream" | "downstream"; depth: number; propagatingLayer: DefLayer | undefined }[] = [];
+  const queue: {
+    docId: string;
+    path: string[];
+    via: LinkType;
+    direction: 'upstream' | 'downstream';
+    depth: number;
+    propagatingLayer: DefLayer | undefined;
+  }[] = [];
 
   // 초기 영향 수집
   seedImpact(sourceId, getLinks, queue, [], 0, sourceLayer);
@@ -156,7 +172,7 @@ export function analyzeImpact(
     else byLayer.unspecified++;
 
     // contains 역추적으로 올라간 그룹 기록
-    if (via === "contains" && direction === "upstream") {
+    if (via === 'contains' && direction === 'upstream') {
       affectedGroups.push(docId);
     }
 
@@ -177,43 +193,85 @@ export function analyzeImpact(
 
 function seedImpact(
   docId: string,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
-  queue: { docId: string; path: string[]; via: LinkType; direction: "upstream" | "downstream"; depth: number; propagatingLayer: DefLayer | undefined }[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
+  queue: {
+    docId: string;
+    path: string[];
+    via: LinkType;
+    direction: 'upstream' | 'downstream';
+    depth: number;
+    propagatingLayer: DefLayer | undefined;
+  }[],
   basePath: string[] = [],
   baseDepth: number = 0,
   propagatingLayer: DefLayer | undefined = undefined,
 ): void {
-  const incoming = getLinks(docId, "incoming");
-  const outgoing = getLinks(docId, "outgoing");
+  const incoming = getLinks(docId, 'incoming');
+  const outgoing = getLinks(docId, 'outgoing');
   const path = [...basePath, docId];
   const depth = baseDepth + 1;
 
-  for (const l of incoming.filter(lnk => lnk.linkType === "depends_on")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "depends_on", direction: "downstream", depth, propagatingLayer });
+  for (const l of incoming.filter((lnk) => lnk.linkType === 'depends_on')) {
+    queue.push({
+      docId: l.sourceId,
+      path: [...path, l.sourceId],
+      via: 'depends_on',
+      direction: 'downstream',
+      depth,
+      propagatingLayer,
+    });
   }
 
-  for (const l of incoming.filter(lnk => lnk.linkType === "implements")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "implements", direction: "downstream", depth, propagatingLayer });
+  for (const l of incoming.filter((lnk) => lnk.linkType === 'implements')) {
+    queue.push({
+      docId: l.sourceId,
+      path: [...path, l.sourceId],
+      via: 'implements',
+      direction: 'downstream',
+      depth,
+      propagatingLayer,
+    });
   }
 
-  for (const l of incoming.filter(lnk => lnk.linkType === "refines")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "refines", direction: "downstream", depth, propagatingLayer });
+  for (const l of incoming.filter((lnk) => lnk.linkType === 'refines')) {
+    queue.push({
+      docId: l.sourceId,
+      path: [...path, l.sourceId],
+      via: 'refines',
+      direction: 'downstream',
+      depth,
+      propagatingLayer,
+    });
   }
 
-  for (const l of outgoing.filter(lnk => lnk.linkType === "constrains")) {
-    queue.push({ docId: l.targetId, path: [...path, l.targetId], via: "constrains", direction: "downstream", depth, propagatingLayer });
+  for (const l of outgoing.filter((lnk) => lnk.linkType === 'constrains')) {
+    queue.push({
+      docId: l.targetId,
+      path: [...path, l.targetId],
+      via: 'constrains',
+      direction: 'downstream',
+      depth,
+      propagatingLayer,
+    });
   }
 
-  for (const l of incoming.filter(lnk => lnk.linkType === "contains")) {
-    queue.push({ docId: l.sourceId, path: [...path, l.sourceId], via: "contains", direction: "upstream", depth, propagatingLayer });
+  for (const l of incoming.filter((lnk) => lnk.linkType === 'contains')) {
+    queue.push({
+      docId: l.sourceId,
+      path: [...path, l.sourceId],
+      via: 'contains',
+      direction: 'upstream',
+      depth,
+      propagatingLayer,
+    });
   }
 }
 
 export function selectImpactContext(
   impact: ImpactAnalysis,
-  mode: "direct" | "transitive",
+  mode: 'direct' | 'transitive',
 ): ImpactAnalysis {
-  if (mode === "transitive") {
+  if (mode === 'transitive') {
     return impact;
   }
 
@@ -230,7 +288,7 @@ export function selectImpactContext(
     sourceLayer: impact.sourceLayer,
     impacted,
     affectedGroups: impacted
-      .filter((item) => item.via === "contains" && item.direction === "upstream")
+      .filter((item) => item.via === 'contains' && item.direction === 'upstream')
       .map((item) => item.id),
     blastRadius: impacted.length,
     byLayer,

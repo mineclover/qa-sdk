@@ -8,7 +8,7 @@
  * (permission-engine + audit-recorder-store) 도메인의 read API 만 노출하고,
  * BFF 가 화면 합성에 사용한다.
  */
-import type { AuditEntry } from "permission-engine";
+import type { AuditEntry } from 'permission-engine';
 
 export abstract class AuditRecorderQueryPort {
   /** rootSpanId 로 trace tree 전체 조회 */

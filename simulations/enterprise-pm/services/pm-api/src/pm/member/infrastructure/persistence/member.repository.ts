@@ -1,16 +1,16 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { and, eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { and, eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { MemberEntity } from "../../domain/index.js";
-import type { MemberSnapshot, MemberRole } from "../../domain/index.js";
-import { MemberRepositoryPort } from "../../application/ports/member-repository.port.js";
-import type { MemberTransactionScope } from "../../application/ports/member-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { MemberEntity } from '../../domain/index.js';
+import type { MemberSnapshot, MemberRole } from '../../domain/index.js';
+import { MemberRepositoryPort } from '../../application/ports/member-repository.port.js';
+import type { MemberTransactionScope } from '../../application/ports/member-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface MemberRow {
   projectId: string;
@@ -85,12 +85,14 @@ export class SqliteMemberRepository extends MemberRepositoryPort {
   }
 
   async delete(projectId: string, userId: string, _scope: MemberTransactionScope): Promise<void> {
-    await this.db.delete(sqliteSchema.projectMembers).where(
-      and(
-        eq(sqliteSchema.projectMembers.projectId, projectId),
-        eq(sqliteSchema.projectMembers.userId, userId),
-      ),
-    );
+    await this.db
+      .delete(sqliteSchema.projectMembers)
+      .where(
+        and(
+          eq(sqliteSchema.projectMembers.projectId, projectId),
+          eq(sqliteSchema.projectMembers.userId, userId),
+        ),
+      );
   }
 }
 
@@ -142,30 +144,32 @@ export class PgMemberRepository extends MemberRepositoryPort {
   }
 
   async delete(projectId: string, userId: string, _scope: MemberTransactionScope): Promise<void> {
-    await this.db.delete(pgSchema.projectMembers).where(
-      and(
-        eq(pgSchema.projectMembers.projectId, projectId),
-        eq(pgSchema.projectMembers.userId, userId),
-      ),
-    );
+    await this.db
+      .delete(pgSchema.projectMembers)
+      .where(
+        and(
+          eq(pgSchema.projectMembers.projectId, projectId),
+          eq(pgSchema.projectMembers.userId, userId),
+        ),
+      );
   }
 }
 
-export type MemberDialect = "sqlite" | "pg";
+export type MemberDialect = 'sqlite' | 'pg';
 
 export interface MemberRepositoryFactoryOpts {
   readonly dialect: MemberDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createMemberRepository(
-  opts: MemberRepositoryFactoryOpts,
-): MemberRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createMemberRepository(opts: MemberRepositoryFactoryOpts): MemberRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteMemberRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgMemberRepository(opts.db as PostgresJsDatabase);
   }
-  throw new Error(`createMemberRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  throw new Error(
+    `createMemberRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

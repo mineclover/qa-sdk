@@ -16,7 +16,7 @@ const DOCS_RE = /^docs\//;
 const GITHUB_RE = /^\.github\//;
 
 export function resolveScope(filePath: string): string {
-  const normalized = filePath.replace(/\\/g, "/");
+  const normalized = filePath.replace(/\\/g, '/');
 
   const pkgMatch = normalized.match(PACKAGES_RE);
   if (pkgMatch) return pkgMatch[1];
@@ -24,8 +24,8 @@ export function resolveScope(filePath: string): string {
   const specMatch = normalized.match(DOCS_SPECS_RE);
   if (specMatch) return `docs:${specMatch[1]}`;
 
-  if (DOCS_RE.test(normalized)) return "docs";
-  if (GITHUB_RE.test(normalized)) return "ci";
+  if (DOCS_RE.test(normalized)) return 'docs';
+  if (GITHUB_RE.test(normalized)) return 'ci';
 
-  return "root";
+  return 'root';
 }

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import type { Feedback, FeedbackStatus } from "../types/feedback";
-import { FeedbackForm } from "./FeedbackForm";
-import { FeedbackList } from "./FeedbackList";
-import { StatusChangeDialog } from "./StatusChangeDialog";
+import { useState } from 'react';
+import type { Feedback, FeedbackStatus } from '../types/feedback';
+import { FeedbackForm } from './FeedbackForm';
+import { FeedbackList } from './FeedbackList';
+import { StatusChangeDialog } from './StatusChangeDialog';
 
 export function FeedbackPanel({
   selectedRef,
@@ -31,10 +31,7 @@ export function FeedbackPanel({
 
       <div>
         <h3 className="font-bold text-base mb-2">새 피드백</h3>
-        <FeedbackForm
-          initialRef={selectedRef}
-          onSubmitted={() => onChanged()}
-        />
+        <FeedbackForm initialRef={selectedRef} onSubmitted={() => onChanged()} />
       </div>
 
       {selected && (
@@ -42,26 +39,26 @@ export function FeedbackPanel({
           <h4 className="font-bold text-sm">선택: {selected.id}</h4>
           <p className="text-sm">{selected.text}</p>
           <div className="flex gap-2">
-            {selected.status !== "resolved" && (
+            {selected.status !== 'resolved' && (
               <button
                 className="px-2 py-1 bg-green-600 text-white rounded text-xs"
-                onClick={() => setPendingStatus("resolved")}
+                onClick={() => setPendingStatus('resolved')}
               >
                 Resolve
               </button>
             )}
-            {selected.status !== "rejected" && (
+            {selected.status !== 'rejected' && (
               <button
                 className="px-2 py-1 bg-gray-500 text-white rounded text-xs"
-                onClick={() => setPendingStatus("rejected")}
+                onClick={() => setPendingStatus('rejected')}
               >
                 Reject
               </button>
             )}
-            {selected.status !== "open" && (
+            {selected.status !== 'open' && (
               <button
                 className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
-                onClick={() => setPendingStatus("open")}
+                onClick={() => setPendingStatus('open')}
               >
                 Re-open
               </button>

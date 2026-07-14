@@ -1,6 +1,6 @@
-import type { Feedback } from "../types/feedback";
-import { StatusBadge } from "./StatusBadge";
-import { TagPill } from "./TagPill";
+import type { Feedback } from '../types/feedback';
+import { StatusBadge } from './StatusBadge';
+import { TagPill } from './TagPill';
 
 export function FeedbackList({
   items,

@@ -42,11 +42,11 @@ export function createGatewayStickyConsistency(
         ...(init ?? {}),
         signal: AbortSignal.timeout(args.timeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
-  const base = args.gatewayUrl.replace(/\/$/, "");
+  const base = args.gatewayUrl.replace(/\/$/, '');
 
   return async function getStickyRatio(): Promise<number> {
     const url = `${base}/admin/routing/sticky-consistency`;
-    const res = await fetchImpl(url, { method: "GET" });
+    const res = await fetchImpl(url, { method: 'GET' });
     if (!res.ok) {
       const body = await res.text();
       throw new Error(
@@ -57,15 +57,11 @@ export function createGatewayStickyConsistency(
     try {
       json = await res.json();
     } catch (e) {
-      throw new Error(
-        `gateway-sticky-consistency JSON parse failed: ${(e as Error).message}`,
-      );
+      throw new Error(`gateway-sticky-consistency JSON parse failed: ${(e as Error).message}`);
     }
     const obj = json as { consistent?: unknown; total?: unknown };
-    if (typeof obj.consistent !== "number" || typeof obj.total !== "number") {
-      throw new Error(
-        `gateway-sticky-consistency invalid shape: ${JSON.stringify(json)}`,
-      );
+    if (typeof obj.consistent !== 'number' || typeof obj.total !== 'number') {
+      throw new Error(`gateway-sticky-consistency invalid shape: ${JSON.stringify(json)}`);
     }
     if (obj.total === 0) return 1.0;
     return obj.consistent / obj.total;

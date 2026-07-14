@@ -2,11 +2,11 @@
 // @def.doc canary-routing-decision
 // spec 02 §3.4 escape hatch. 외부 IP의 헤더는 silent ignore (정보 노출 X).
 
-import type { MiddlewareHandler } from "hono";
-import { isInternalIp, type Cidr } from "../lib/internal-network.js";
+import type { MiddlewareHandler } from 'hono';
+import { isInternalIp, type Cidr } from '../lib/internal-network.js';
 
 export interface CanaryOverride {
-  target: "stable" | "candidate";
+  target: 'stable' | 'candidate';
   version: string;
 }
 export interface CanaryOverrideOptions {
@@ -16,13 +16,13 @@ export interface CanaryOverrideOptions {
 const OVERRIDE_PATTERN = /^(stable|candidate):(v[1-9][0-9]*(?:-candidate|-retired)?)$/;
 
 function clientIp(req: Request): string | undefined {
-  const xff = req.headers.get("x-forwarded-for");
-  return xff ? xff.split(",")[0]?.trim() || undefined : undefined;
+  const xff = req.headers.get('x-forwarded-for');
+  return xff ? xff.split(',')[0]?.trim() || undefined : undefined;
 }
 
 export function canaryOverrideMiddleware(opts: CanaryOverrideOptions): MiddlewareHandler {
   return async (c, next) => {
-    const headerValue = c.req.header("x-canary-override");
+    const headerValue = c.req.header('x-canary-override');
     if (!headerValue) {
       await next();
       return;
@@ -37,8 +37,8 @@ export function canaryOverrideMiddleware(opts: CanaryOverrideOptions): Middlewar
       await next();
       return;
     }
-    c.set("canary-override", {
-      target: m[1] as "stable" | "candidate",
+    c.set('canary-override', {
+      target: m[1] as 'stable' | 'candidate',
       version: m[2]!,
     } satisfies CanaryOverride);
     await next();

@@ -1,8 +1,8 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import type { Logger } from "@qa-sdk/core";
-import type { SubscriberLogger } from "@qa-sdk/sim-bitmap-cache";
+import type { Logger } from '@qa-sdk/core';
+import type { SubscriberLogger } from '@qa-sdk/sim-bitmap-cache';
 
 /**
  * pino-style Logger → SubscriberLogger 인터페이스 어댑터.

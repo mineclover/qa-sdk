@@ -17,7 +17,7 @@ export {
   type LabelVersionEntry,
   type EntityId,
   type InferLabelSchema,
-} from "./label-registry.js";
+} from './label-registry.js';
 
 export {
   PrefixCodec,
@@ -26,15 +26,8 @@ export {
   type VersionedIndex,
   type PrefixVersionDiff,
   type CoordMigrator,
-} from "./prefix-registry.js";
+} from './prefix-registry.js';
 
-export {
-  createBinder,
-  type PartialBinder,
-} from "./partial-binder.js";
+export { createBinder, type PartialBinder } from './partial-binder.js';
 
-export {
-  DisjointUnionIndex,
-  UnionKindError,
-  type UnionVariant,
-} from "./union-index.js";
+export { DisjointUnionIndex, UnionKindError, type UnionVariant } from './union-index.js';

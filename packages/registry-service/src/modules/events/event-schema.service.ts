@@ -1,17 +1,17 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
-import type { EventSchemaRecord, EventSchemaStore } from "../../stores/event-schema-store.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
+import type { EventSchemaRecord, EventSchemaStore } from '../../stores/event-schema-store.js';
 
-export const EVENT_SCHEMA_STORE = "EVENT_SCHEMA_STORE";
+export const EVENT_SCHEMA_STORE = 'EVENT_SCHEMA_STORE';
 
 type EventSchemaPayload = {
   displayName?: string;
   description?: string;
-  recordKind?: "log" | "span" | "both";
-  status?: "active" | "deprecated" | "retired";
+  recordKind?: 'log' | 'span' | 'both';
+  status?: 'active' | 'deprecated' | 'retired';
 };
 
 @Injectable()
@@ -32,7 +32,7 @@ export class EventSchemaService {
     const records = await this.eventSchemaStore.listByService(catalogId, serviceId);
     const versions = records.filter((record) => record.eventKey === eventKey);
     if (versions.length === 0) {
-      throw new AppError("NOT_FOUND", `Event '${serviceId}/${eventKey}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Event '${serviceId}/${eventKey}' not found`, 404);
     }
 
     return {
@@ -45,7 +45,7 @@ export class EventSchemaService {
   async get(catalogId: string, serviceId: string, eventKey: string, eventVersion: string) {
     const record = await this.eventSchemaStore.get(catalogId, serviceId, eventKey, eventVersion);
     if (!record) {
-      throw new AppError("NOT_FOUND", "Event schema not found", 404);
+      throw new AppError('NOT_FOUND', 'Event schema not found', 404);
     }
 
     return record;
@@ -69,8 +69,8 @@ export class EventSchemaService {
       eventVersion,
       displayName: body.displayName ?? existing?.displayName ?? eventKey,
       description: body.description ?? existing?.description,
-      recordKind: body.recordKind ?? existing?.recordKind ?? "log",
-      status: body.status ?? existing?.status ?? "active",
+      recordKind: body.recordKind ?? existing?.recordKind ?? 'log',
+      status: body.status ?? existing?.status ?? 'active',
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
@@ -78,33 +78,38 @@ export class EventSchemaService {
     await this.eventSchemaStore.upsert(record);
     return {
       ok: true,
-      action: existing ? "updated" : "created",
+      action: existing ? 'updated' : 'created',
     };
   }
 
   async remove(catalogId: string, serviceId: string, eventKey: string, eventVersion: string) {
     const existing = await this.eventSchemaStore.get(catalogId, serviceId, eventKey, eventVersion);
     if (!existing) {
-      throw new AppError("NOT_FOUND", "Event schema not found", 404);
+      throw new AppError('NOT_FOUND', 'Event schema not found', 404);
     }
 
     await this.eventSchemaStore.delete(catalogId, serviceId, eventKey, eventVersion);
     return { ok: true };
   }
 
-  async validateLegacyRoute(catalogId: string, rawName: string, eventKey: string, eventVersion: string) {
+  async validateLegacyRoute(
+    catalogId: string,
+    rawName: string,
+    eventKey: string,
+    eventVersion: string,
+  ) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split("/") on a string containing "/" always yields ≥2 elements
-    const serviceId = rawName.includes("/") ? rawName.split("/").pop()! : rawName;
+    const serviceId = rawName.includes('/') ? rawName.split('/').pop()! : rawName;
     const record = await this.eventSchemaStore.get(catalogId, serviceId, eventKey, eventVersion);
     if (!record) {
-      throw new AppError("NOT_FOUND", "Event not found", 404);
+      throw new AppError('NOT_FOUND', 'Event not found', 404);
     }
 
     return record;
   }
 
   private asPayload(input: unknown): EventSchemaPayload {
-    if (!input || typeof input !== "object") {
+    if (!input || typeof input !== 'object') {
       return {};
     }
 

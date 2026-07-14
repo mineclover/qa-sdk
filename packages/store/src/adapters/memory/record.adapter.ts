@@ -9,7 +9,7 @@ import type {
   StoredRecord,
   StoredRecordPage,
   TimeRangeParams,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 /** RecordStore의 in-memory 구현 */
 export class InMemoryRecordStore implements RecordStore {
@@ -64,10 +64,7 @@ export class InMemoryRecordStore implements RecordStore {
     );
   }
 
-  async findByTraceAndEventKey(
-    traceId: string,
-    eventKey: string,
-  ): Promise<StoredRecord[]> {
+  async findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]> {
     return this.selectRecords(
       (record) => record.traceId === traceId && record.eventKey === eventKey,
     );
@@ -96,9 +93,7 @@ export class InMemoryRecordStore implements RecordStore {
     return this.records.size;
   }
 
-  private selectRecords(
-    predicate: (record: StoredRecord) => boolean,
-  ): StoredRecord[] {
+  private selectRecords(predicate: (record: StoredRecord) => boolean): StoredRecord[] {
     return Array.from(this.records.values())
       .filter(predicate)
       .toSorted(compareRecords)
@@ -115,10 +110,7 @@ export class InMemoryRecordStore implements RecordStore {
       ? records.findIndex((record) => compareRecordToCursor(record, cursor) > 0)
       : 0;
     const normalizedStartIndex = startIndex === -1 ? records.length : startIndex;
-    const pageWindow = records.slice(
-      normalizedStartIndex,
-      normalizedStartIndex + limit + 1,
-    );
+    const pageWindow = records.slice(normalizedStartIndex, normalizedStartIndex + limit + 1);
     const hasMore = pageWindow.length > limit;
     const items = pageWindow.slice(0, limit).map((record) => structuredClone(record));
     const lastItem = items.at(-1);
@@ -138,8 +130,7 @@ export class InMemoryRecordStore implements RecordStore {
 }
 
 function compareRecords(left: StoredRecord, right: StoredRecord): number {
-  const timestampDifference =
-    left.timestamp.getTime() - right.timestamp.getTime();
+  const timestampDifference = left.timestamp.getTime() - right.timestamp.getTime();
 
   if (timestampDifference !== 0) {
     return timestampDifference;
@@ -148,12 +139,8 @@ function compareRecords(left: StoredRecord, right: StoredRecord): number {
   return left.logId.localeCompare(right.logId);
 }
 
-function compareRecordToCursor(
-  record: StoredRecord,
-  cursor: RecordPaginationCursor,
-): number {
-  const timestampDifference =
-    record.timestamp.getTime() - cursor.timestamp.getTime();
+function compareRecordToCursor(record: StoredRecord, cursor: RecordPaginationCursor): number {
+  const timestampDifference = record.timestamp.getTime() - cursor.timestamp.getTime();
 
   if (timestampDifference !== 0) {
     return timestampDifference;

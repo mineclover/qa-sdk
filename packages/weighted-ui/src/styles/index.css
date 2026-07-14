@@ -1,14 +1,14 @@
 /* ── weighted-ui: CSS Aggregator ── */
-@import "./tokens/base.css";
-@import "./reset.css";
-@import "./ribbon.css";
-@import "./formula-bar.css";
-@import "./axis-bar.css";
-@import "./sheet.css";
-@import "./sidebar.css";
-@import "./detail-panel.css";
-@import "./grid.css";
-@import "./bottom-bar.css";
-@import "./hex-bar.css";
-@import "./badge.css";
-@import "./controls.css";
+@import './tokens/base.css';
+@import './reset.css';
+@import './ribbon.css';
+@import './formula-bar.css';
+@import './axis-bar.css';
+@import './sheet.css';
+@import './sidebar.css';
+@import './detail-panel.css';
+@import './grid.css';
+@import './bottom-bar.css';
+@import './hex-bar.css';
+@import './badge.css';
+@import './controls.css';

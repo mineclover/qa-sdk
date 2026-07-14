@@ -1,11 +1,11 @@
 // @def.boundary decode-service-system
 // @def.doc decode-service-system
 
-import { Hono } from "hono";
-import type { KeyCache } from "@qa-sdk/core";
-import { PrefixDecoder, PrefixDecoderBig } from "index-meta-workers";
-import type { DecoderPool } from "../lib/decoder-pool.js";
-import { AppError, decoderNotLoaded } from "../lib/errors.js";
+import { Hono } from 'hono';
+import type { KeyCache } from '@qa-sdk/core';
+import { PrefixDecoder, PrefixDecoderBig } from 'index-meta-workers';
+import type { DecoderPool } from '../lib/decoder-pool.js';
+import { AppError, decoderNotLoaded } from '../lib/errors.js';
 import {
   decodeRequestSchema,
   decodeBatchRequestSchema,
@@ -13,7 +13,7 @@ import {
   decodeBigRequestSchema,
   decodeBigBatchRequestSchema,
   decodeBigDeepRequestSchema,
-} from "../schemas/decode.js";
+} from '../schemas/decode.js';
 
 export interface DecodeDeps {
   pool: DecoderPool;
@@ -29,12 +29,12 @@ export function createDecodeRoutes(deps: DecodeDeps) {
 
   // ── POST /decode ─────────────────────────────────────────────────────────
 
-  app.post("/decode", async (c) => {
+  app.post('/decode', async (c) => {
     const body = await c.req.json();
     const req = decodeRequestSchema.parse(body);
 
     // L2 캐시 조회
-    const cacheKey = `${req.prefix ?? "auto"}:${req.version ?? "auto"}:${req.input}`;
+    const cacheKey = `${req.prefix ?? 'auto'}:${req.version ?? 'auto'}:${req.input}`;
     if (deps.decodeCache) {
       try {
         const cached = await deps.decodeCache.get(cacheKey);
@@ -68,7 +68,7 @@ export function createDecodeRoutes(deps: DecodeDeps) {
 
   // ── POST /decode/batch ───────────────────────────────────────────────────
 
-  app.post("/decode/batch", async (c) => {
+  app.post('/decode/batch', async (c) => {
     const body = await c.req.json();
     const req = decodeBatchRequestSchema.parse(body);
 
@@ -76,7 +76,7 @@ export function createDecodeRoutes(deps: DecodeDeps) {
     if (!raw) throw decoderNotLoaded(req.prefix, req.version);
     if (raw instanceof PrefixDecoderBig) {
       throw new AppError(
-        "INVALID_INPUT",
+        'INVALID_INPUT',
         `decoder "${req.prefix}/${req.version}" is BigInt-typed. Use /decode/big/batch instead.`,
         400,
       );
@@ -94,7 +94,7 @@ export function createDecodeRoutes(deps: DecodeDeps) {
 
   // ── POST /decode/deep ────────────────────────────────────────────────────
 
-  app.post("/decode/deep", async (c) => {
+  app.post('/decode/deep', async (c) => {
     const body = await c.req.json();
     const req = decodeDeepRequestSchema.parse(body);
 
@@ -110,7 +110,7 @@ export function createDecodeRoutes(deps: DecodeDeps) {
 
   // ── POST /decode/big ─────────────────────────────────────────────────────
 
-  app.post("/decode/big", async (c) => {
+  app.post('/decode/big', async (c) => {
     const body = await c.req.json();
     const req = decodeBigRequestSchema.parse(body);
 
@@ -129,7 +129,7 @@ export function createDecodeRoutes(deps: DecodeDeps) {
 
   // ── POST /decode/big/batch ───────────────────────────────────────────────
 
-  app.post("/decode/big/batch", async (c) => {
+  app.post('/decode/big/batch', async (c) => {
     const body = await c.req.json();
     const req = decodeBigBatchRequestSchema.parse(body);
 
@@ -146,7 +146,7 @@ export function createDecodeRoutes(deps: DecodeDeps) {
 
   // ── POST /decode/big/deep ────────────────────────────────────────────────
 
-  app.post("/decode/big/deep", async (c) => {
+  app.post('/decode/big/deep', async (c) => {
     const body = await c.req.json();
     const req = decodeBigDeepRequestSchema.parse(body);
 
@@ -163,9 +163,9 @@ export function createDecodeRoutes(deps: DecodeDeps) {
 
   // ── GET /decode-map/:prefix/:version ─────────────────────────────────────
 
-  app.get("/decode-map/:prefix/:version", (c) => {
-    const prefix = c.req.param("prefix");
-    const version = c.req.param("version");
+  app.get('/decode-map/:prefix/:version', (c) => {
+    const prefix = c.req.param('prefix');
+    const version = c.req.param('version');
 
     const decoder = pool.get(prefix, version);
     if (!decoder) throw decoderNotLoaded(prefix, version);
@@ -186,11 +186,7 @@ function parseBigIntInput(input: string): bigint {
   try {
     return BigInt(input);
   } catch {
-    throw new AppError(
-      "INVALID_INPUT",
-      `invalid BigInt input: "${input}"`,
-      400,
-    );
+    throw new AppError('INVALID_INPUT', `invalid BigInt input: "${input}"`, 400);
   }
 }
 
@@ -198,16 +194,12 @@ function parseBigIntInput(input: string): bigint {
  * BigInt decoder를 조회한다.
  * @throws {AppError} 로드 안 됨 또는 Number decoder
  */
-function resolveBigDecoder(
-  pool: DecoderPool,
-  prefix: string,
-  version: string,
-): PrefixDecoderBig {
+function resolveBigDecoder(pool: DecoderPool, prefix: string, version: string): PrefixDecoderBig {
   const decoder = pool.get(prefix, version);
   if (!decoder) throw decoderNotLoaded(prefix, version);
   if (!(decoder instanceof PrefixDecoderBig)) {
     throw new AppError(
-      "INVALID_INPUT",
+      'INVALID_INPUT',
       `decoder "${prefix}/${version}" is not BigInt-typed. Use /decode instead.`,
       400,
     );
@@ -236,7 +228,7 @@ function resolveDecoder(
     if (!decoder) throw decoderNotLoaded(prefix, version);
     if (decoder instanceof PrefixDecoderBig) {
       throw new AppError(
-        "INVALID_INPUT",
+        'INVALID_INPUT',
         `decoder "${prefix}/${version}" is BigInt-typed. Use /decode/big instead.`,
         400,
       );
@@ -247,17 +239,17 @@ function resolveDecoder(
   // 2. 하나만 있으면 불완전 — 에러
   if (prefix || version) {
     throw new AppError(
-      "INVALID_INPUT",
-      `both prefix and version are required (got prefix=${prefix ?? "undefined"}, version=${version ?? "undefined"})`,
+      'INVALID_INPUT',
+      `both prefix and version are required (got prefix=${prefix ?? 'undefined'}, version=${version ?? 'undefined'})`,
       400,
     );
   }
 
   // 3. 둘 다 없고 number → 특정 불가
-  if (typeof input === "number") {
+  if (typeof input === 'number') {
     throw new AppError(
-      "INVALID_INPUT",
-      "prefix and version are required when input is a number",
+      'INVALID_INPUT',
+      'prefix and version are required when input is a number',
       400,
     );
   }
@@ -269,9 +261,5 @@ function resolveDecoder(
     }
   }
 
-  throw new AppError(
-    "NOT_FOUND",
-    `no decoder could detect the input format: "${input}"`,
-    404,
-  );
+  throw new AppError('NOT_FOUND', `no decoder could detect the input format: "${input}"`, 404);
 }

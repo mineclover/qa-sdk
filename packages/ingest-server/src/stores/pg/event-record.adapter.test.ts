@@ -1,15 +1,15 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { randomBytes } from "node:crypto";
-import type { RecordInsert } from "@qa-sdk/core";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { randomBytes } from 'node:crypto';
+import type { RecordInsert } from '@qa-sdk/core';
 
-import { PgRecordStore } from "./event-record.adapter.js";
+import { PgRecordStore } from './event-record.adapter.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
 /**
  * 테스트 격리 전략:
@@ -52,12 +52,12 @@ CREATE INDEX idx_event_records_event_key_pg        ON ingest.event_records(event
 CREATE INDEX idx_event_records_session_id_pg       ON ingest.event_records(qa_session_id);
 `;
 
-describe.skipIf(!PG_AVAILABLE)("PgRecordStore — PG-specific", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('PgRecordStore — PG-specific', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
 
   let sql: ReturnType<typeof postgres>;
   let store: PgRecordStore;
@@ -78,9 +78,7 @@ describe.skipIf(!PG_AVAILABLE)("PgRecordStore — PG-specific", () => {
 
   afterEach(async () => {
     try {
-      await sql.unsafe(
-        `DROP TABLE IF EXISTS ingest.event_records CASCADE`,
-      );
+      await sql.unsafe(`DROP TABLE IF EXISTS ingest.event_records CASCADE`);
     } finally {
       await sql.end();
     }
@@ -88,138 +86,134 @@ describe.skipIf(!PG_AVAILABLE)("PgRecordStore — PG-specific", () => {
 
   function makeRecord(overrides: Partial<RecordInsert> = {}): RecordInsert {
     return {
-      logId: `r-${randomBytes(4).toString("hex")}`,
-      traceId: "t1",
-      spanId: "s1",
-      timestamp: new Date("2026-04-22T10:00:00Z"),
-      recordKind: "log",
-      eventKey: "page.view",
-      eventVersion: "001",
-      payloadFormat: "json",
-      payloadEncoding: "raw",
+      logId: `r-${randomBytes(4).toString('hex')}`,
+      traceId: 't1',
+      spanId: 's1',
+      timestamp: new Date('2026-04-22T10:00:00Z'),
+      recordKind: 'log',
+      eventKey: 'page.view',
+      eventVersion: '001',
+      payloadFormat: 'json',
+      payloadEncoding: 'raw',
       payloadMaskingApplied: false,
       payloadMaskedFields: [],
-      payload: { page: "home" },
+      payload: { page: 'home' },
       ...overrides,
     };
   }
 
-  it("insertBatch + findByTraceId — 기본 동작", async () => {
+  it('insertBatch + findByTraceId — 기본 동작', async () => {
     await store.insertBatch([
-      makeRecord({ logId: "r1", eventKey: "page.view" }),
+      makeRecord({ logId: 'r1', eventKey: 'page.view' }),
       makeRecord({
-        logId: "r2",
-        eventKey: "cart.add",
-        timestamp: new Date("2026-04-22T10:00:01Z"),
+        logId: 'r2',
+        eventKey: 'cart.add',
+        timestamp: new Date('2026-04-22T10:00:01Z'),
       }),
     ]);
-    const rows = await store.findByTraceId("t1");
+    const rows = await store.findByTraceId('t1');
     expect(rows).toHaveLength(2);
-    expect(rows[0].eventKey).toBe("page.view");
-    expect(rows[0].payload).toEqual({ page: "home" });
-    expect(rows[1].eventKey).toBe("cart.add");
+    expect(rows[0].eventKey).toBe('page.view');
+    expect(rows[0].payload).toEqual({ page: 'home' });
+    expect(rows[1].eventKey).toBe('cart.add');
   });
 
-  it("address_context jsonb round-trip", async () => {
+  it('address_context jsonb round-trip', async () => {
     await store.insertBatch([
       makeRecord({
-        logId: "r1",
-        addressContext: { version: "v1", prefix: "svc", address: "42" },
+        logId: 'r1',
+        addressContext: { version: 'v1', prefix: 'svc', address: '42' },
       }),
     ]);
-    const rows = await store.findByTraceId("t1");
+    const rows = await store.findByTraceId('t1');
     expect(rows[0].addressContext).toEqual({
-      version: "v1",
-      prefix: "svc",
-      address: "42",
+      version: 'v1',
+      prefix: 'svc',
+      address: '42',
     });
   });
 
-  it("payload_masked_fields jsonb round-trip", async () => {
+  it('payload_masked_fields jsonb round-trip', async () => {
     await store.insertBatch([
       makeRecord({
-        logId: "r1",
+        logId: 'r1',
         payloadMaskingApplied: true,
-        payloadMaskedFields: ["email", "phone"],
+        payloadMaskedFields: ['email', 'phone'],
       }),
     ]);
-    const rows = await store.findByTraceId("t1");
+    const rows = await store.findByTraceId('t1');
     expect(rows[0].payloadMaskingApplied).toBe(true);
-    expect(rows[0].payloadMaskedFields).toEqual(["email", "phone"]);
+    expect(rows[0].payloadMaskedFields).toEqual(['email', 'phone']);
   });
 
-  it("onConflictDoNothing — duplicate logId 무시", async () => {
-    await store.insertBatch([
-      makeRecord({ logId: "r1", payload: { v: 1 } }),
-    ]);
-    await store.insertBatch([
-      makeRecord({ logId: "r1", payload: { v: 2 } }),
-    ]);
-    const rows = await store.findByTraceId("t1");
+  it('onConflictDoNothing — duplicate logId 무시', async () => {
+    await store.insertBatch([makeRecord({ logId: 'r1', payload: { v: 1 } })]);
+    await store.insertBatch([makeRecord({ logId: 'r1', payload: { v: 2 } })]);
+    const rows = await store.findByTraceId('t1');
     expect(rows).toHaveLength(1);
     expect(rows[0].payload).toEqual({ v: 1 }); // 첫 insert 보존
   });
 
-  it("findByTraceIdPaginated — cursor tie-breaker (logId)", async () => {
-    const sameTs = new Date("2026-04-22T10:00:00Z");
+  it('findByTraceIdPaginated — cursor tie-breaker (logId)', async () => {
+    const sameTs = new Date('2026-04-22T10:00:00Z');
     await store.insertBatch([
-      makeRecord({ logId: "a", timestamp: sameTs }),
-      makeRecord({ logId: "b", timestamp: sameTs }),
-      makeRecord({ logId: "c", timestamp: sameTs }),
+      makeRecord({ logId: 'a', timestamp: sameTs }),
+      makeRecord({ logId: 'b', timestamp: sameTs }),
+      makeRecord({ logId: 'c', timestamp: sameTs }),
     ]);
-    const page1 = await store.findByTraceIdPaginated("t1", { limit: 2 });
+    const page1 = await store.findByTraceIdPaginated('t1', { limit: 2 });
     expect(page1.items).toHaveLength(2);
     expect(page1.hasMore).toBe(true);
-    expect(page1.items.map((r) => r.logId)).toEqual(["a", "b"]);
+    expect(page1.items.map((r) => r.logId)).toEqual(['a', 'b']);
 
-    const page2 = await store.findByTraceIdPaginated("t1", {
+    const page2 = await store.findByTraceIdPaginated('t1', {
       limit: 2,
       cursor: page1.nextCursor!,
     });
     expect(page2.items).toHaveLength(1);
-    expect(page2.items[0].logId).toBe("c");
+    expect(page2.items[0].logId).toBe('c');
     expect(page2.hasMore).toBe(false);
   });
 
-  it("findByTimeRange — eventKey + 시간 필터", async () => {
+  it('findByTimeRange — eventKey + 시간 필터', async () => {
     await store.insertBatch([
       makeRecord({
-        logId: "r1",
-        eventKey: "page.view",
-        timestamp: new Date("2026-04-22T09:00:00Z"),
+        logId: 'r1',
+        eventKey: 'page.view',
+        timestamp: new Date('2026-04-22T09:00:00Z'),
       }),
       makeRecord({
-        logId: "r2",
-        eventKey: "page.view",
-        timestamp: new Date("2026-04-22T10:00:00Z"),
+        logId: 'r2',
+        eventKey: 'page.view',
+        timestamp: new Date('2026-04-22T10:00:00Z'),
       }),
       makeRecord({
-        logId: "r3",
-        eventKey: "cart.add",
-        timestamp: new Date("2026-04-22T10:00:00Z"),
+        logId: 'r3',
+        eventKey: 'cart.add',
+        timestamp: new Date('2026-04-22T10:00:00Z'),
       }),
     ]);
     const rows = await store.findByTimeRange({
-      from: new Date("2026-04-22T09:30:00Z"),
-      eventKey: "page.view",
+      from: new Date('2026-04-22T09:30:00Z'),
+      eventKey: 'page.view',
     });
     expect(rows).toHaveLength(1);
-    expect(rows[0].logId).toBe("r2");
+    expect(rows[0].logId).toBe('r2');
   });
 
-  it("user_attributes jsonb round-trip", async () => {
+  it('user_attributes jsonb round-trip', async () => {
     await store.insertBatch([
       makeRecord({
-        logId: "r1",
-        userId: "u1",
-        userAttributes: { tier: "premium", region: "kr" },
+        logId: 'r1',
+        userId: 'u1',
+        userAttributes: { tier: 'premium', region: 'kr' },
       }),
     ]);
-    const rows = await store.findByTraceId("t1");
-    expect(rows[0].userId).toBe("u1");
+    const rows = await store.findByTraceId('t1');
+    expect(rows[0].userId).toBe('u1');
     expect(rows[0].userAttributes).toEqual({
-      tier: "premium",
-      region: "kr",
+      tier: 'premium',
+      region: 'kr',
     });
   });
 });

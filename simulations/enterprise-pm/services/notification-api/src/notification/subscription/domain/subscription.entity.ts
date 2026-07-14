@@ -1,12 +1,12 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { toEventTypeKey, toSubscriberUserId } from "./subscription.ids.js";
+import { toEventTypeKey, toSubscriberUserId } from './subscription.ids.js';
 import type {
   SubscriptionChannel,
   SubscriptionProps,
   SubscriptionSnapshot,
-} from "./subscription.types.js";
+} from './subscription.types.js';
 
 /**
  * Subscription Aggregate Root.
@@ -77,9 +77,9 @@ export class SubscriptionEntity {
 /** event-type matching helper — 정확 일치 + "<domain>.*" wildcard. */
 export function matchesEventType(pattern: string, actual: string): boolean {
   if (pattern === actual) return true;
-  if (pattern.endsWith(".*")) {
+  if (pattern.endsWith('.*')) {
     const prefix = pattern.slice(0, -2);
-    return actual.startsWith(prefix + ".");
+    return actual.startsWith(prefix + '.');
   }
   return false;
 }

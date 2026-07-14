@@ -1,8 +1,8 @@
-import { scanAndClassify } from "../packages/package-classifier/src/pkg-classifier.js";
-import { createSurfaceIndex, MANAGED_PACKAGE_SCOPE } from "./package-surfaces.mjs";
-import { resolve, join } from "node:path";
-import { existsSync, readFileSync } from "node:fs";
-import chalk from "chalk";
+import { scanAndClassify } from '../packages/package-classifier/src/pkg-classifier.js';
+import { createSurfaceIndex, MANAGED_PACKAGE_SCOPE } from './package-surfaces.mjs';
+import { resolve, join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import chalk from 'chalk';
 
 /**
  * Package Activity & Usage Analyzer
@@ -18,11 +18,11 @@ async function main() {
   const root = resolve(process.cwd());
   const pkgs = await scanAndClassify(root);
   const surfaceIndex = createSurfaceIndex();
-  
+
   // 1. Dependency Mapping
   const fanInMap = new Map<string, string[]>(); // pkgName -> dependents
-  pkgs.forEach(p => {
-    p.deps.forEach(depName => {
+  pkgs.forEach((p) => {
+    p.deps.forEach((depName) => {
       const dependents = fanInMap.get(depName) || [];
       dependents.push(p.displayName);
       fanInMap.set(depName, dependents);
@@ -37,16 +37,25 @@ async function main() {
   const highUsage: any[] = [];
   const surfaceSummary = new Map<
     string,
-    { total: number; highUsage: number; zeroFanIn: number; archiveCandidates: number; deadWeight: number; missingEntrypoints: number; entrypointGaps: number }
+    {
+      total: number;
+      highUsage: number;
+      zeroFanIn: number;
+      archiveCandidates: number;
+      deadWeight: number;
+      missingEntrypoints: number;
+      entrypointGaps: number;
+    }
   >();
 
   for (const pkg of pkgs) {
-    const pkgDir = pkg.dir.startsWith("/") ? pkg.dir : join(root, "packages", pkg.dir);
+    const pkgDir = pkg.dir.startsWith('/') ? pkg.dir : join(root, 'packages', pkg.dir);
     const pkgJson = readPackageJson(pkgDir);
-    const hasIndex = existsSync(join(pkgDir, "src/index.ts")) || 
-                     existsSync(join(pkgDir, "src/main.ts")) ||
-                     existsSync(join(pkgDir, "src/index.js"));
-    
+    const hasIndex =
+      existsSync(join(pkgDir, 'src/index.ts')) ||
+      existsSync(join(pkgDir, 'src/main.ts')) ||
+      existsSync(join(pkgDir, 'src/index.js'));
+
     const dependents = [
       ...(fanInMap.get(pkg.displayName) || []),
       ...(fanInMap.get(pkg.name) || []),
@@ -54,8 +63,8 @@ async function main() {
     const uniqueDependents = [...new Set(dependents)].sort();
     const usageCount = uniqueDependents.length;
     const surface = surfaceIndex.get(pkg.name) || surfaceIndex.get(pkg.displayName);
-    const surfaceId = surface?.id ?? "unassigned";
-    const verdict = surface?.verdict ?? "needs-decision";
+    const surfaceId = surface?.id ?? 'unassigned';
+    const verdict = surface?.verdict ?? 'needs-decision';
     const summary = surfaceSummary.get(surfaceId) || {
       total: 0,
       highUsage: 0,
@@ -71,11 +80,17 @@ async function main() {
     // A. Entrypoint Check
     if (!hasIndex) {
       const disposition = classifyMissingEntrypoint(pkg, pkgJson, pkgDir, verdict);
-      const item = { id: pkg.displayName, tier: pkg.tier, surface: surfaceId, verdict, disposition };
+      const item = {
+        id: pkg.displayName,
+        tier: pkg.tier,
+        surface: surfaceId,
+        verdict,
+        disposition,
+      };
       missingEntrypoints.push(item);
       summary.missingEntrypoints += 1;
 
-      if (disposition === "entrypoint-gap") {
+      if (disposition === 'entrypoint-gap') {
         entrypointGaps.push(item);
         summary.entrypointGaps += 1;
       }
@@ -84,56 +99,77 @@ async function main() {
     // B. Usage Classification
     if (usageCount === 0) {
       const disposition = classifyZeroFanIn(pkg, pkgJson, verdict);
-      const zeroFanInItem = { id: pkg.displayName, tier: pkg.tier, surface: surfaceId, verdict, disposition };
+      const zeroFanInItem = {
+        id: pkg.displayName,
+        tier: pkg.tier,
+        surface: surfaceId,
+        verdict,
+        disposition,
+      };
       zeroFanIn.push(zeroFanInItem);
       summary.zeroFanIn += 1;
 
-      if (disposition === "archive-candidate") {
+      if (disposition === 'archive-candidate') {
         archiveCandidates.push(zeroFanInItem);
         summary.archiveCandidates += 1;
-      } else if (disposition === "needs-evidence") {
+      } else if (disposition === 'needs-evidence') {
         deadWeight.push(zeroFanInItem);
         summary.deadWeight += 1;
       }
     } else if (usageCount >= 3) {
-      highUsage.push({ id: pkg.displayName, count: usageCount, tier: pkg.tier, surface: surfaceId, verdict, dependents: uniqueDependents });
+      highUsage.push({
+        id: pkg.displayName,
+        count: usageCount,
+        tier: pkg.tier,
+        surface: surfaceId,
+        verdict,
+        dependents: uniqueDependents,
+      });
       summary.highUsage += 1;
     }
   }
 
-  const highUsageByCount = [...highUsage].sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
+  const highUsageByCount = [...highUsage].sort(
+    (a, b) => b.count - a.count || a.id.localeCompare(b.id),
+  );
   const zeroFanInById = [...zeroFanIn].sort((a, b) => a.id.localeCompare(b.id));
   const archiveCandidatesById = [...archiveCandidates].sort((a, b) => a.id.localeCompare(b.id));
   const deadWeightById = [...deadWeight].sort((a, b) => a.id.localeCompare(b.id));
   const missingEntrypointsById = [...missingEntrypoints].sort((a, b) => a.id.localeCompare(b.id));
   const entrypointGapsById = [...entrypointGaps].sort((a, b) => a.id.localeCompare(b.id));
 
-  if (process.argv.includes("--json")) {
-    console.log(JSON.stringify({
-      managedPackageScope: MANAGED_PACKAGE_SCOPE,
-      totalSurfaceManagedPackages: pkgs.length,
-      totalPackages: pkgs.length,
-      surfaces: [...surfaceSummary.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([surface, stats]) => ({
-          surface,
-          ...stats,
-          skeletons: stats.missingEntrypoints,
-        })),
-      highUsage: highUsageByCount,
-      zeroFanIn: zeroFanInById,
-      archiveCandidates: archiveCandidatesById,
-      deadWeight: deadWeightById,
-      missingEntrypoints: missingEntrypointsById,
-      entrypointGaps: entrypointGapsById,
-      skeletons: missingEntrypointsById,
-    }, null, 2));
+  if (process.argv.includes('--json')) {
+    console.log(
+      JSON.stringify(
+        {
+          managedPackageScope: MANAGED_PACKAGE_SCOPE,
+          totalSurfaceManagedPackages: pkgs.length,
+          totalPackages: pkgs.length,
+          surfaces: [...surfaceSummary.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([surface, stats]) => ({
+              surface,
+              ...stats,
+              skeletons: stats.missingEntrypoints,
+            })),
+          highUsage: highUsageByCount,
+          zeroFanIn: zeroFanInById,
+          archiveCandidates: archiveCandidatesById,
+          deadWeight: deadWeightById,
+          missingEntrypoints: missingEntrypointsById,
+          entrypointGaps: entrypointGapsById,
+          skeletons: missingEntrypointsById,
+        },
+        null,
+        2,
+      ),
+    );
     return;
   }
 
   // ─── Reporting ─────────────────────────────────────────────────────────────
 
-  console.log(chalk.bold.cyan("\n📊 Package Usage & Health Analysis Report\n"));
+  console.log(chalk.bold.cyan('\n📊 Package Usage & Health Analysis Report\n'));
   console.log(chalk.cyan(`Scope: surface-managed packages (${MANAGED_PACKAGE_SCOPE})`));
 
   console.log(chalk.bold.blue(`[0] Surface Summary`));
@@ -146,53 +182,77 @@ async function main() {
     });
 
   console.log(chalk.bold.green(`[1] Critical Infrastructure (High Usage: Fan-In >= 3)`));
-  highUsageByCount.forEach(h => {
-    console.log(`  🔥 ${chalk.yellow(h.id.padEnd(25))} | Count: ${chalk.bold(h.count)} | Tier: ${h.tier} | Surface: ${h.surface}`);
+  highUsageByCount.forEach((h) => {
+    console.log(
+      `  🔥 ${chalk.yellow(h.id.padEnd(25))} | Count: ${chalk.bold(h.count)} | Tier: ${h.tier} | Surface: ${h.surface}`,
+    );
     // console.log(chalk.dim(`     Deps: ${h.dependents.join(", ")}`));
   });
 
   console.log(chalk.bold.magenta(`\n[2] Zero Fan-In Packages (Disposition)`));
   if (zeroFanInById.length > 0) {
-    zeroFanInById.forEach(d => console.log(`  ◌ ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`));
+    zeroFanInById.forEach((d) =>
+      console.log(
+        `  ◌ ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`,
+      ),
+    );
   } else {
-    console.log("  (None found)");
+    console.log('  (None found)');
   }
 
   console.log(chalk.bold.red(`\n[3] Archive Decision Candidates (Quarantine / No Promotion)`));
   if (archiveCandidatesById.length > 0) {
-    archiveCandidatesById.forEach(d => console.log(`  ⧉ ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`));
+    archiveCandidatesById.forEach((d) =>
+      console.log(
+        `  ⧉ ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`,
+      ),
+    );
   } else {
-    console.log("  (None found)");
+    console.log('  (None found)');
   }
 
   console.log(chalk.bold.red(`\n[4] Dead Weight Candidates (Needs Evidence)`));
   if (deadWeightById.length > 0) {
-    deadWeightById.forEach(d => console.log(`  📦 ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`));
+    deadWeightById.forEach((d) =>
+      console.log(
+        `  📦 ${chalk.dim(d.id.padEnd(25))} | Tier: ${d.tier} | Surface: ${d.surface} | Verdict: ${d.verdict} | Disposition: ${d.disposition}`,
+      ),
+    );
   } else {
-    console.log("  (None found)");
+    console.log('  (None found)');
   }
 
   console.log(chalk.bold.yellow(`\n[5] Missing Conventional Entrypoints (Disposition)`));
   if (missingEntrypointsById.length > 0) {
-    missingEntrypointsById.forEach(s => console.log(`  ◇ ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`));
+    missingEntrypointsById.forEach((s) =>
+      console.log(
+        `  ◇ ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`,
+      ),
+    );
   } else {
-    console.log("  (None found)");
+    console.log('  (None found)');
   }
 
   console.log(chalk.bold.red(`\n[6] Entrypoint Gaps (Public/Library Surface Needs Review)`));
   if (entrypointGapsById.length > 0) {
-    entrypointGapsById.forEach(s => console.log(`  💀 ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`));
+    entrypointGapsById.forEach((s) =>
+      console.log(
+        `  💀 ${chalk.dim(s.id.padEnd(25))} | Tier: ${s.tier} | Surface: ${s.surface} | Verdict: ${s.verdict} | Disposition: ${s.disposition}`,
+      ),
+    );
   } else {
-    console.log("  (None found)");
+    console.log('  (None found)');
   }
 
-  console.log(chalk.cyan(`\nAnalysis complete. Surface-managed packages scanned: ${pkgs.length}\n`));
+  console.log(
+    chalk.cyan(`\nAnalysis complete. Surface-managed packages scanned: ${pkgs.length}\n`),
+  );
 }
 
 main().catch(console.error);
 
 function readPackageJson(pkgDir: string): Record<string, any> {
-  return JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
+  return JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8'));
 }
 
 function classifyZeroFanIn(
@@ -200,26 +260,38 @@ function classifyZeroFanIn(
   pkgJson: Record<string, any>,
   verdict: string,
 ): string {
-  if (verdict === "no-promotion") return "archive-candidate";
-  if (["consumer-contract", "consumer-tooling", "test-only"].includes(verdict)) {
-    return "standalone-contract";
+  if (verdict === 'no-promotion') return 'archive-candidate';
+  if (['consumer-contract', 'consumer-tooling', 'test-only'].includes(verdict)) {
+    return 'standalone-contract';
   }
-  if (pkgJson.private === true) return "standalone-app";
-  if (pkgJson.bin) return "standalone-tool";
+  if (pkgJson.private === true) return 'standalone-app';
+  if (pkgJson.bin) return 'standalone-tool';
 
-  const hasLibraryEntrypoint = Boolean(pkgJson.exports || pkgJson.main || pkgJson.module || pkgJson.bin);
-  const scripts = pkgJson.scripts ?? {};
-  const hasOperationalScript = ["start", "preview", "deploy", "deploy:local", "demo", "infra", "build:data", "test:e2e"].some(
-    (script) => scripts[script],
+  const hasLibraryEntrypoint = Boolean(
+    pkgJson.exports || pkgJson.main || pkgJson.module || pkgJson.bin,
   );
-  if (hasOperationalScript) return "standalone-tool";
+  const scripts = pkgJson.scripts ?? {};
+  const hasOperationalScript = [
+    'start',
+    'preview',
+    'deploy',
+    'deploy:local',
+    'demo',
+    'infra',
+    'build:data',
+    'test:e2e',
+  ].some((script) => scripts[script]);
+  if (hasOperationalScript) return 'standalone-tool';
 
-  if (["keep", "maintain", "keep-as-tooling", "conditional-keep"].includes(verdict) && hasLibraryEntrypoint) {
-    return "kept-library";
+  if (
+    ['keep', 'maintain', 'keep-as-tooling', 'conditional-keep'].includes(verdict) &&
+    hasLibraryEntrypoint
+  ) {
+    return 'kept-library';
   }
 
-  if (pkg.tier === "consumer") return "standalone-app";
-  return "needs-evidence";
+  if (pkg.tier === 'consumer') return 'standalone-app';
+  return 'needs-evidence';
 }
 
 function classifyMissingEntrypoint(
@@ -228,44 +300,48 @@ function classifyMissingEntrypoint(
   pkgDir: string,
   verdict: string,
 ): string {
-  if (["test-only", "consumer-contract"].includes(verdict)) return "test-or-contract-suite";
+  if (['test-only', 'consumer-contract'].includes(verdict)) return 'test-or-contract-suite';
 
   const scripts = pkgJson.scripts ?? {};
   const hasScript = (...names: string[]) => names.some((name) => scripts[name]);
 
-  if (hasScript("build:wasm") || existsSync(join(pkgDir, "Cargo.toml")) || String(pkgJson.main ?? "").startsWith("js/")) {
-    return "wasm-package";
+  if (
+    hasScript('build:wasm') ||
+    existsSync(join(pkgDir, 'Cargo.toml')) ||
+    String(pkgJson.main ?? '').startsWith('js/')
+  ) {
+    return 'wasm-package';
   }
 
   if (
-    existsSync(join(pkgDir, "index.html"))
-    || existsSync(join(pkgDir, "public/index.html"))
-    || existsSync(join(pkgDir, "src/App.tsx"))
-    || existsSync(join(pkgDir, "vite.config.ts"))
-    || hasScript("preview", "build:data")
+    existsSync(join(pkgDir, 'index.html')) ||
+    existsSync(join(pkgDir, 'public/index.html')) ||
+    existsSync(join(pkgDir, 'src/App.tsx')) ||
+    existsSync(join(pkgDir, 'vite.config.ts')) ||
+    hasScript('preview', 'build:data')
   ) {
-    return "browser-app";
+    return 'browser-app';
   }
 
   if (
-    existsSync(join(pkgDir, "src/server.ts"))
-    || existsSync(join(pkgDir, "server.ts"))
-    || existsSync(join(pkgDir, "src/worker.ts"))
-    || existsSync(join(pkgDir, "worker.ts"))
-    || hasScript("start", "deploy", "deploy:prod", "dev:worker")
+    existsSync(join(pkgDir, 'src/server.ts')) ||
+    existsSync(join(pkgDir, 'server.ts')) ||
+    existsSync(join(pkgDir, 'src/worker.ts')) ||
+    existsSync(join(pkgDir, 'worker.ts')) ||
+    hasScript('start', 'deploy', 'deploy:prod', 'dev:worker')
   ) {
-    return "runtime-service";
+    return 'runtime-service';
   }
 
   if (
-    existsSync(join(pkgDir, "playwright.config.ts"))
-    || existsSync(join(pkgDir, "vitest.config.ts"))
-    || existsSync(join(pkgDir, "tests"))
-    || hasScript("test:e2e", "test:ui", "test:headed")
+    existsSync(join(pkgDir, 'playwright.config.ts')) ||
+    existsSync(join(pkgDir, 'vitest.config.ts')) ||
+    existsSync(join(pkgDir, 'tests')) ||
+    hasScript('test:e2e', 'test:ui', 'test:headed')
   ) {
-    return "test-or-contract-suite";
+    return 'test-or-contract-suite';
   }
 
-  if (pkgJson.private === true && pkg.tier === "consumer") return "private-consumer";
-  return "entrypoint-gap";
+  if (pkgJson.private === true && pkg.tier === 'consumer') return 'private-consumer';
+  return 'entrypoint-gap';
 }

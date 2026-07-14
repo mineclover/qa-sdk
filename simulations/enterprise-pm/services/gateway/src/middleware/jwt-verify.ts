@@ -1,8 +1,8 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import type { MiddlewareHandler } from "hono";
-import { JwtVerifyError, verifyBitmapJwt } from "../lib/jwt.js";
+import type { MiddlewareHandler } from 'hono';
+import { JwtVerifyError, verifyBitmapJwt } from '../lib/jwt.js';
 
 export interface JwtVerifyOptions {
   secret: string;
@@ -30,60 +30,57 @@ export interface JwtVerifyOptions {
  */
 export function jwtVerifyMiddleware(opts: JwtVerifyOptions): MiddlewareHandler {
   return async (c, next) => {
-    const auth = c.req.header("authorization") ?? c.req.header("Authorization");
+    const auth = c.req.header('authorization') ?? c.req.header('Authorization');
     if (!auth || !/^Bearer\s+/i.test(auth)) {
-      return c.json({ error: "unauthorized", reason: "missing_bearer" }, 401);
+      return c.json({ error: 'unauthorized', reason: 'missing_bearer' }, 401);
     }
-    const token = auth.replace(/^Bearer\s+/i, "").trim();
+    const token = auth.replace(/^Bearer\s+/i, '').trim();
     try {
       const verified = await verifyBitmapJwt(token, opts.secret);
       // §2 §6 unified version binding 검증
       if (verified.bitmap.v !== opts.currentBitmapV) {
         c.header(
-          "WWW-Authenticate",
+          'WWW-Authenticate',
           `Bearer error="refresh_required", current_v="${opts.currentBitmapV}"`,
         );
         return c.json(
-          { error: "version_mismatch", expected: opts.currentBitmapV, got: verified.bitmap.v },
+          { error: 'version_mismatch', expected: opts.currentBitmapV, got: verified.bitmap.v },
           401,
         );
       }
       // Hono req.raw.headers는 mutable Web Headers — downstream fetch에서 활용.
-      c.req.raw.headers.set("x-auth-user-id", verified.userId);
-      c.req.raw.headers.set("x-auth-bitmap-prefix", verified.bitmap.prefix);
-      c.req.raw.headers.set("x-auth-bitmap-v", verified.bitmap.v);
+      c.req.raw.headers.set('x-auth-user-id', verified.userId);
+      c.req.raw.headers.set('x-auth-bitmap-prefix', verified.bitmap.prefix);
+      c.req.raw.headers.set('x-auth-bitmap-v', verified.bitmap.v);
       c.req.raw.headers.set(
-        "x-auth-bitmap-mask",
-        Buffer.from(verified.bitmap.mask).toString("base64"),
+        'x-auth-bitmap-mask',
+        Buffer.from(verified.bitmap.mask).toString('base64'),
       );
       if (verified.departmentId) {
-        c.req.raw.headers.set("x-auth-department-id", verified.departmentId);
+        c.req.raw.headers.set('x-auth-department-id', verified.departmentId);
       }
       if (verified.primaryRoleId) {
-        c.req.raw.headers.set("x-auth-primary-role-id", verified.primaryRoleId);
+        c.req.raw.headers.set('x-auth-primary-role-id', verified.primaryRoleId);
       }
       if (verified.roleNames.length > 0) {
-        c.req.raw.headers.set("x-auth-role-names", verified.roleNames.join(","));
+        c.req.raw.headers.set('x-auth-role-names', verified.roleNames.join(','));
       }
       if (verified.roleIds.length > 0) {
-        c.req.raw.headers.set("x-auth-role-ids", verified.roleIds.join(","));
+        c.req.raw.headers.set('x-auth-role-ids', verified.roleIds.join(','));
       }
       if (verified.roleAssignments.length > 0) {
         c.req.raw.headers.set(
-          "x-auth-role-assignments",
-          Buffer.from(JSON.stringify(verified.roleAssignments)).toString("base64url"),
+          'x-auth-role-assignments',
+          Buffer.from(JSON.stringify(verified.roleAssignments)).toString('base64url'),
         );
       }
-      c.set("verifiedJwt", verified);
+      c.set('verifiedJwt', verified);
       await next();
       return;
     } catch (err) {
       if (err instanceof JwtVerifyError) {
-        c.header(
-          "WWW-Authenticate",
-          `Bearer error="invalid_token", reason="${err.reason}"`,
-        );
-        return c.json({ error: "invalid_token", reason: err.reason }, 401);
+        c.header('WWW-Authenticate', `Bearer error="invalid_token", reason="${err.reason}"`);
+        return c.json({ error: 'invalid_token', reason: err.reason }, 401);
       }
       throw err;
     }

@@ -1,14 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { resolveMotionComposition } from "./model.js";
-import { endMs } from "./utils.js";
-import { createPromoGridComposition } from "./presets.js";
-import { parseMotionComposition, serializeMotionComposition } from "./io.js";
-import { resolveMotionAssetSnapshots, createMotionDebugSnapshot } from "./snapshot.js";
+import { describe, expect, it } from 'vitest';
+import { resolveMotionComposition } from './model.js';
+import { endMs } from './utils.js';
+import { createPromoGridComposition } from './presets.js';
+import { parseMotionComposition, serializeMotionComposition } from './io.js';
+import { resolveMotionAssetSnapshots, createMotionDebugSnapshot } from './snapshot.js';
 
-describe("composition roundtrip", () => {
+describe('composition roundtrip', () => {
   const original = createPromoGridComposition();
 
-  it("serialize → parse preserves composition identity", () => {
+  it('serialize → parse preserves composition identity', () => {
     const json = serializeMotionComposition(original);
     const parsed = parseMotionComposition(json);
 
@@ -17,7 +17,7 @@ describe("composition roundtrip", () => {
     expect(parsed.durationMs).toBe(original.durationMs);
   });
 
-  it("serialize → parse preserves all layers", () => {
+  it('serialize → parse preserves all layers', () => {
     const parsed = parseMotionComposition(serializeMotionComposition(original));
 
     expect(parsed.layers).toHaveLength(original.layers.length);
@@ -30,7 +30,7 @@ describe("composition roundtrip", () => {
     }
   });
 
-  it("serialize → parse preserves all sequences", () => {
+  it('serialize → parse preserves all sequences', () => {
     const parsed = parseMotionComposition(serializeMotionComposition(original));
 
     expect(parsed.sequences).toHaveLength(original.sequences.length);
@@ -41,7 +41,7 @@ describe("composition roundtrip", () => {
     }
   });
 
-  it("serialize → parse preserves all captions with durationMs", () => {
+  it('serialize → parse preserves all captions with durationMs', () => {
     const parsed = parseMotionComposition(serializeMotionComposition(original));
 
     expect(parsed.captions).toHaveLength(original.captions.length);
@@ -53,7 +53,7 @@ describe("composition roundtrip", () => {
     }
   });
 
-  it("serialize → parse preserves transitions", () => {
+  it('serialize → parse preserves transitions', () => {
     const parsed = parseMotionComposition(serializeMotionComposition(original));
 
     expect(parsed.transitions).toHaveLength(original.transitions.length);
@@ -65,7 +65,7 @@ describe("composition roundtrip", () => {
     }
   });
 
-  it("resolved composition snapshot covers full timeline", () => {
+  it('resolved composition snapshot covers full timeline', () => {
     const resolved = resolveMotionComposition(original);
     const assets = resolveMotionAssetSnapshots(resolved);
 
@@ -78,7 +78,7 @@ describe("composition roundtrip", () => {
     }
   });
 
-  it("all layers/sequences/captions end within composition duration", () => {
+  it('all layers/sequences/captions end within composition duration', () => {
     for (const layer of original.layers) {
       expect(endMs(layer)).toBeLessThanOrEqual(original.durationMs);
     }
@@ -90,7 +90,7 @@ describe("composition roundtrip", () => {
     }
   });
 
-  it("double roundtrip produces identical JSON", () => {
+  it('double roundtrip produces identical JSON', () => {
     const json1 = serializeMotionComposition(original);
     const parsed1 = parseMotionComposition(json1);
     const json2 = serializeMotionComposition(parsed1);

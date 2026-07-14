@@ -25,7 +25,7 @@
  */
 export function toHex(id: number, bitWidth: number): string {
   const hexLen = Math.ceil(bitWidth / 4);
-  return id.toString(16).padStart(hexLen, "0");
+  return id.toString(16).padStart(hexLen, '0');
 }
 
 /**
@@ -41,13 +41,11 @@ export function fromHex(hex: string, bitWidth: number): number {
   const expected = Math.ceil(bitWidth / 4);
   if (hex.length !== expected) {
     throw new RangeError(
-      `hex length must be ${expected} for bitWidth=${bitWidth}, got ${hex.length}`
+      `hex length must be ${expected} for bitWidth=${bitWidth}, got ${hex.length}`,
     );
   }
   if (!/^[0-9a-fA-F]+$/.test(hex)) {
-    throw new RangeError(
-      `Invalid hex string: "${hex}" (must contain only hex characters)`
-    );
+    throw new RangeError(`Invalid hex string: "${hex}" (must contain only hex characters)`);
   }
   return parseInt(hex, 16);
 }

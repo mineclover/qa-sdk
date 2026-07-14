@@ -14,8 +14,8 @@
 //   포팅 시 모듈 경로를 결정한다.
 // - 모두 read-model 슬라이스로 재포지셔닝 (read-only)
 
-import { ReportSliceModule } from "./report/report.module.js";
-import { MetricSliceModule } from "./metric/metric.module.js";
+import { ReportSliceModule } from './report/report.module.js';
+import { MetricSliceModule } from './metric/metric.module.js';
 // DensitySliceModule 은 dynamic 모듈이라 useFactory 가 필요해 본 정적 배열에
 // 포함하지 않는다. 활성화는 app.module 의 `DensitySliceModule.register({...})`
 // + `src/density-slices.registry.ts` 의 single-slot marker 가 담당.

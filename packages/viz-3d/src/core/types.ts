@@ -33,11 +33,11 @@ export const DEFAULT_THEME: VizTheme = {
   background: 0x050508,
   categories: {
     observation: { color: 0x00e5ff, emissive: 0x0097a7 },
-    event:       { color: 0xff9100, emissive: 0xbf6c00 },
-    policy:      { color: 0x00e676, emissive: 0x009624 },
-    relation:    { color: 0xb388ff, emissive: 0x7c4dff },
-    entity:      { color: 0x546e7a, emissive: 0x37474f },
-    table:       { color: 0xff5252, emissive: 0xc62828 },
+    event: { color: 0xff9100, emissive: 0xbf6c00 },
+    policy: { color: 0x00e676, emissive: 0x009624 },
+    relation: { color: 0xb388ff, emissive: 0x7c4dff },
+    entity: { color: 0x546e7a, emissive: 0x37474f },
+    table: { color: 0xff5252, emissive: 0xc62828 },
   },
   layerColors: [0x64ffda, 0xff9f43, 0x7c5cfc, 0xff3860],
   cellOpacity: 0.12,
@@ -103,7 +103,7 @@ export interface CellRef {
 //  뷰 모드
 // ═══════════════════════════════════════════════════
 
-export type ViewMode = "layer" | "category" | "dsl" | "service";
+export type ViewMode = 'layer' | 'category' | 'dsl' | 'service';
 
 export interface ViewPosition {
   readonly x: number;
@@ -115,7 +115,7 @@ export interface ViewPosition {
 //  매트릭스 스택 (큐브 겹침)
 // ═══════════════════════════════════════════════════
 
-export type StackAxis = "x" | "y" | "z";
+export type StackAxis = 'x' | 'y' | 'z';
 
 export interface MatrixStackDef {
   /** 스택 ID */
@@ -136,7 +136,7 @@ export interface MatrixStackDef {
 
 export interface ActivationEvent {
   readonly keys: readonly string[];
-  readonly source: "demo" | "live" | "manual";
+  readonly source: 'demo' | 'live' | 'manual';
   readonly timestamp: string;
   readonly addressContext?: Record<string, string>;
 }

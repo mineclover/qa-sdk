@@ -1,17 +1,17 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { PrefixRegistry, VersionLifecycleStore } from "index-meta";
-import { calcWeights } from "weighted-index";
-import type { PrefixOwnerStore } from "../stores/prefix-owner-store.js";
+import type { PrefixRegistry, VersionLifecycleStore } from 'index-meta';
+import { calcWeights } from 'weighted-index';
+import type { PrefixOwnerStore } from '../stores/prefix-owner-store.js';
 import type {
   DiagnosticEntry,
   ImpactEntry,
   SimulateResult,
   AnalyzeResult,
   DraftInfo,
-} from "../types/index.js";
-import { circularRef } from "./errors.js";
+} from '../types/index.js';
+import { circularRef } from './errors.js';
 
 const MAX_SAFE = Number.MAX_SAFE_INTEGER; // 2^53 - 1
 const BIGINT_THRESHOLD_RATIO = 0.01; // product가 MAX_SAFE의 1% 이상이면 경고
@@ -32,7 +32,7 @@ export async function simulate(
   // 변경 대상의 versionId 조회 (draft 우선, 없으면 active 폴백)
   const changeVersionMap = new Map<string, string>();
   for (const prefix of Object.keys(changes)) {
-    const drafts = await versionStore.getVersions(prefix, "draft");
+    const drafts = await versionStore.getVersions(prefix, 'draft');
     if (drafts.length > 0) {
       changeVersionMap.set(prefix, drafts[drafts.length - 1].versionId);
     } else {
@@ -67,7 +67,7 @@ export async function simulate(
 
   // 첫 루프가 draft를 선택한 경우, active 버전도 역참조 탐색 (historical 버전은 스킵)
   for (const prefix of Object.keys(changes)) {
-    const drafts = await versionStore.getVersions(prefix, "draft");
+    const drafts = await versionStore.getVersions(prefix, 'draft');
     if (drafts.length > 0) {
       // 첫 루프에서 draft를 사용했으므로, active도 추가 확인
       const active = await versionStore.getActive(prefix);
@@ -120,7 +120,7 @@ export async function simulate(
     addDiagnostics(diagnostics, prefix, owner.owner, owner.numberType, newProduct, strideChanged);
   }
 
-  const hasError = diagnostics.some((d) => d.level === "error");
+  const hasError = diagnostics.some((d) => d.level === 'error');
 
   // release order 계산
   const releaseOrder = await computeSimulateReleaseOrder(
@@ -149,7 +149,7 @@ export async function analyze(
   // 모든 draft 수집 (capacity는 prefixRegistry를 진실의 원천으로 사용)
   const drafts: DraftInfo[] = [];
   for (const o of owners) {
-    const versions = await versionStore.getVersions(o.prefix, "draft");
+    const versions = await versionStore.getVersions(o.prefix, 'draft');
     for (const v of versions) {
       const registryCap = await registry.getCapacity(v.prefix, v.versionId);
       drafts.push({
@@ -158,7 +158,7 @@ export async function analyze(
         owner: o.owner,
         kind: o.kind,
         capacity: registryCap ?? v.capacity,
-        status: (await isLocked(v.prefix, v.versionId)) ? "locked" : "draft",
+        status: (await isLocked(v.prefix, v.versionId)) ? 'locked' : 'draft',
       });
     }
   }
@@ -169,7 +169,7 @@ export async function analyze(
 
   // 각 composite draft의 정합성 검증
   for (const d of drafts) {
-    if (d.kind !== "composite") continue;
+    if (d.kind !== 'composite') continue;
 
     const deps = await registry.getDeps(d.prefix, d.versionId);
     if (deps.length === 0) continue;
@@ -190,7 +190,7 @@ export async function analyze(
           strideChanges++;
           affectedPrefixes.add(d.prefix);
           diagnostics.push({
-            level: "warn",
+            level: 'warn',
             prefix: d.prefix,
             owner: owner.owner,
             message: `stride 변경: [${activeStride}]→[${newStride}]. 마이그레이션 필요`,
@@ -200,17 +200,17 @@ export async function analyze(
     }
 
     // overflow / bigint 검증
-    if (product > MAX_SAFE && owner.numberType === "number") {
+    if (product > MAX_SAFE && owner.numberType === 'number') {
       diagnostics.push({
-        level: "error",
+        level: 'error',
         prefix: d.prefix,
         owner: owner.owner,
         message: `product ${product} — Number 한계(2^53) 초과. BigInt 전환 필수`,
       });
       numberTypeSwitches++;
-    } else if (product > MAX_SAFE * BIGINT_THRESHOLD_RATIO && owner.numberType === "number") {
+    } else if (product > MAX_SAFE * BIGINT_THRESHOLD_RATIO && owner.numberType === 'number') {
       diagnostics.push({
-        level: "warn",
+        level: 'warn',
         prefix: d.prefix,
         owner: owner.owner,
         message: `product ${product} — BigInt 전환 임계점 접근 (2^53 대비 ${((product / MAX_SAFE) * 100).toFixed(3)}%)`,
@@ -222,16 +222,16 @@ export async function analyze(
   const cycleCheck = await detectCycles(registry, drafts);
   if (cycleCheck) {
     diagnostics.push({
-      level: "error",
+      level: 'error',
       prefix: cycleCheck.prefix,
-      owner: ownerMap.get(cycleCheck.prefix)?.owner ?? "unknown",
-      message: `순환 참조 감지: ${cycleCheck.cycle.join(" → ")}`,
+      owner: ownerMap.get(cycleCheck.prefix)?.owner ?? 'unknown',
+      message: `순환 참조 감지: ${cycleCheck.cycle.join(' → ')}`,
     });
   }
 
   // 위상정렬
   const releaseOrder = await computeAnalyzeReleaseOrder(registry, drafts);
-  const hasError = diagnostics.some((d) => d.level === "error");
+  const hasError = diagnostics.some((d) => d.level === 'error');
 
   return {
     ready: !hasError,
@@ -256,16 +256,16 @@ function addDiagnostics(
   newProduct: number,
   strideChanged: boolean,
 ) {
-  if (newProduct > MAX_SAFE && numberType === "number") {
+  if (newProduct > MAX_SAFE && numberType === 'number') {
     diagnostics.push({
-      level: "error",
+      level: 'error',
       prefix,
       owner,
       message: `product ${newProduct} — Number 한계(2^53) 초과. BigInt 전환 필수`,
     });
-  } else if (newProduct > MAX_SAFE * BIGINT_THRESHOLD_RATIO && numberType === "number") {
+  } else if (newProduct > MAX_SAFE * BIGINT_THRESHOLD_RATIO && numberType === 'number') {
     diagnostics.push({
-      level: "warn",
+      level: 'warn',
       prefix,
       owner,
       message: `product ${newProduct} — BigInt 전환 임계점 접근 (2^53 대비 ${((newProduct / MAX_SAFE) * 100).toFixed(3)}%)`,
@@ -274,14 +274,14 @@ function addDiagnostics(
 
   if (strideChanged) {
     diagnostics.push({
-      level: "warn",
+      level: 'warn',
       prefix,
       owner,
       message: `stride 변경 감지. 마이그레이션 필요`,
     });
   } else {
     diagnostics.push({
-      level: "info",
+      level: 'info',
       prefix,
       owner,
       message: `stride 불변. 마이그레이션 불필요`,
@@ -305,7 +305,7 @@ async function detectCycles(
     if (visited.has(key)) return null;
     if (visiting.has(key)) {
       const cycleStart = path.indexOf(key);
-      return [...path.slice(cycleStart).map((k) => k.split(":")[0]), prefix];
+      return [...path.slice(cycleStart).map((k) => k.split(':')[0]), prefix];
     }
 
     visiting.add(key);
@@ -386,10 +386,7 @@ async function computeAnalyzeReleaseOrder(
   return topologicalSort(allPrefixes, adj);
 }
 
-function topologicalSort(
-  nodes: Set<string>,
-  adj: Map<string, Set<string>>,
-): string[] {
+function topologicalSort(nodes: Set<string>, adj: Map<string, Set<string>>): string[] {
   const visited = new Set<string>();
   const visiting = new Set<string>();
   const stack: string[] = [];
@@ -401,9 +398,7 @@ function topologicalSort(
       // cycle detected — reconstruct cycle path from stack
       const cycleStart = stack.indexOf(node);
       const cyclePath = [...stack.slice(cycleStart), node];
-      throw circularRef(
-        `Cycle detected in dependency DAG: ${cyclePath.join(" → ")}`,
-      );
+      throw circularRef(`Cycle detected in dependency DAG: ${cyclePath.join(' → ')}`);
     }
     visiting.add(node);
     stack.push(node);
@@ -424,7 +419,7 @@ function topologicalSort(
 }
 
 function splitKey(key: string): [string, string] {
-  const idx = key.indexOf(":");
+  const idx = key.indexOf(':');
   return [key.slice(0, idx), key.slice(idx + 1)];
 }
 

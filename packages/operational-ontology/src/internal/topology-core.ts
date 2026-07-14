@@ -1,24 +1,11 @@
-import type {
-  CheckpointLattice,
-  CheckpointTemplateKind,
-} from "./checkpoint-core.js";
-import type {
-  CorridorTemplateKind,
-  FlowCorridor,
-} from "./corridor-core.js";
-import type {
-  JunctionDefinition,
-  JunctionTemplateKind,
-  RouteDecision,
-} from "./junction-core.js";
-import type { TraversalObservation } from "./runtime-core.js";
+import type { CheckpointLattice, CheckpointTemplateKind } from './checkpoint-core.js';
+import type { CorridorTemplateKind, FlowCorridor } from './corridor-core.js';
+import type { JunctionDefinition, JunctionTemplateKind, RouteDecision } from './junction-core.js';
+import type { TraversalObservation } from './runtime-core.js';
 
-export const OBSERVATION_TOPOLOGY_TEMPLATE_KINDS = [
-  "runtime_snapshot",
-] as const;
+export const OBSERVATION_TOPOLOGY_TEMPLATE_KINDS = ['runtime_snapshot'] as const;
 
-export type ObservationTopologyTemplateKind =
-  (typeof OBSERVATION_TOPOLOGY_TEMPLATE_KINDS)[number];
+export type ObservationTopologyTemplateKind = (typeof OBSERVATION_TOPOLOGY_TEMPLATE_KINDS)[number];
 
 export interface ObservationTopologyTemplate {
   kind: ObservationTopologyTemplateKind;
@@ -43,9 +30,10 @@ export interface ObservationTopologyTemplateRegistry {
 
 export const DEFAULT_OBSERVATION_TOPOLOGY_TEMPLATES = {
   runtime_snapshot: {
-    kind: "runtime_snapshot",
-    description: "Snapshot that combines corridor, junction, checkpoint, transmission, lineage, and traversal views",
-    requireCorridorKinds: ["pipe_graph", "event_record_observed"],
+    kind: 'runtime_snapshot',
+    description:
+      'Snapshot that combines corridor, junction, checkpoint, transmission, lineage, and traversal views',
+    requireCorridorKinds: ['pipe_graph', 'event_record_observed'],
     requireCheckpointLattices: true,
     minCorridors: 1,
     minCheckpointLatticeDepth: 2,
@@ -123,7 +111,7 @@ export function validateObservationTopologyAgainstTemplate(
     traversals: readonly TraversalObservation[];
   },
   registry: ObservationTopologyTemplateRegistry = defaultObservationTopologyTemplateRegistry,
-  kind: ObservationTopologyTemplateKind = "runtime_snapshot",
+  kind: ObservationTopologyTemplateKind = 'runtime_snapshot',
 ): ObservationTopologyTemplateValidationResult {
   const template = getObservationTopologyTemplate(registry, kind);
   const corridorKinds = new Set(input.corridors.map((corridor) => corridor.templateKind));
@@ -151,26 +139,24 @@ export function validateObservationTopologyAgainstTemplate(
     Boolean(template.requireCheckpointLattices) && input.checkpointLattices.length === 0;
   const missingRouteDecisions =
     Boolean(template.requireRouteDecisions) && input.routeDecisions.length === 0;
-  const missingTraversals =
-    Boolean(template.requireTraversals) && input.traversals.length === 0;
+  const missingTraversals = Boolean(template.requireTraversals) && input.traversals.length === 0;
   const corridorCount = input.corridors.length;
   const tooFewCorridors =
-    typeof template.minCorridors === "number" ? corridorCount < template.minCorridors : false;
+    typeof template.minCorridors === 'number' ? corridorCount < template.minCorridors : false;
   const tooManyCorridors =
-    typeof template.maxCorridors === "number" ? corridorCount > template.maxCorridors : false;
+    typeof template.maxCorridors === 'number' ? corridorCount > template.maxCorridors : false;
   const maxCheckpointLatticeDepth = Math.max(
     0,
     ...input.checkpointLattices.map((lattice) => computeCheckpointLatticeDepth(lattice)),
   );
   const checkpointDepthTooShallow =
-    typeof template.minCheckpointLatticeDepth === "number"
+    typeof template.minCheckpointLatticeDepth === 'number'
       ? maxCheckpointLatticeDepth < template.minCheckpointLatticeDepth
       : false;
   const routeDecisionsMissingRefs = template.requireRouteDecisionReferences
     ? input.routeDecisions
         .filter(
-          (decision) =>
-            !decision.junctionId || !decision.corridorId || !decision.traversalKey,
+          (decision) => !decision.junctionId || !decision.corridorId || !decision.traversalKey,
         )
         .map((decision) => decision.branchNodeId)
     : [];

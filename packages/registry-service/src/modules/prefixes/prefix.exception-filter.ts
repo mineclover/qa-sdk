@@ -1,14 +1,9 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import {
-  ArgumentsHost,
-  Catch,
-  type ExceptionFilter,
-  Logger,
-} from "@nestjs/common";
-import { ZodError } from "zod";
-import { AppError, fromIndexMetaError } from "../../lib/errors.js";
+import { ArgumentsHost, Catch, type ExceptionFilter, Logger } from '@nestjs/common';
+import { ZodError } from 'zod';
+import { AppError, fromIndexMetaError } from '../../lib/errors.js';
 
 @Catch()
 export class PrefixExceptionFilter implements ExceptionFilter {
@@ -31,10 +26,10 @@ export class PrefixExceptionFilter implements ExceptionFilter {
     if (exception instanceof ZodError) {
       return response.status(400).send({
         error: {
-          code: "INVALID_INPUT",
+          code: 'INVALID_INPUT',
           message: exception.errors
-            .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-            .join("; "),
+            .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+            .join('; '),
         },
       });
     }
@@ -50,13 +45,13 @@ export class PrefixExceptionFilter implements ExceptionFilter {
     }
 
     this.logger.error(
-      exception instanceof Error ? exception.stack ?? exception.message : String(exception),
+      exception instanceof Error ? (exception.stack ?? exception.message) : String(exception),
     );
 
     return response.status(500).send({
       error: {
-        code: "INTERNAL_ERROR",
-        message: "internal server error",
+        code: 'INTERNAL_ERROR',
+        message: 'internal server error',
       },
     });
   }

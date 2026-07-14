@@ -8,21 +8,21 @@
  * density = observed / theoretical, 그리고 축별 marginal density.
  */
 
-import { sql } from "drizzle-orm";
-import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { beforeEach, describe, expect, it } from "vitest";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { sql } from 'drizzle-orm';
+import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
-import { WI, freshDb, shape } from "./shared.js";
+import { WI, freshDb, shape } from './shared.js';
 
-describe("#1 Sparse materialization — 관측 좌표만 저장", () => {
+describe('#1 Sparse materialization — 관측 좌표만 저장', () => {
   const events = sqliteTable(
-    "events",
+    'events',
     {
-      roleId: integer("role_id").notNull(),
-      actionId: integer("action_id").notNull(),
-      resourceId: integer("resource_id").notNull(),
-      observedAt: text("observed_at").notNull(),
+      roleId: integer('role_id').notNull(),
+      actionId: integer('action_id').notNull(),
+      resourceId: integer('resource_id').notNull(),
+      observedAt: text('observed_at').notNull(),
     },
     (t) => [primaryKey({ columns: [t.roleId, t.actionId, t.resourceId] })],
   );
@@ -50,23 +50,31 @@ describe("#1 Sparse materialization — 관측 좌표만 저장", () => {
     `);
     db = d;
     db.insert(events)
-      .values(observations.map(([r, a, x]) => ({
-        roleId: r, actionId: a, resourceId: x, observedAt: "2026-04-21T00:00:00Z",
-      })))
+      .values(
+        observations.map(([r, a, x]) => ({
+          roleId: r,
+          actionId: a,
+          resourceId: x,
+          observedAt: '2026-04-21T00:00:00Z',
+        })),
+      )
       .run();
   });
 
-  it("이론 공간 = ∏shape (shape만으로 산출)", () => {
+  it('이론 공간 = ∏shape (shape만으로 산출)', () => {
     expect(WI.size).toBe(27);
   });
 
-  it("전체 density = observed / theoretical", () => {
-    const [{ observed }] = db.select({ observed: sql<number>`count(*)` }).from(events).all();
+  it('전체 density = observed / theoretical', () => {
+    const [{ observed }] = db
+      .select({ observed: sql<number>`count(*)` })
+      .from(events)
+      .all();
     expect(observed).toBe(5);
     expect(observed / WI.size).toBeCloseTo(5 / 27, 6);
   });
 
-  it("축별 marginal density — 실무에서는 전체 density보다 중요", () => {
+  it('축별 marginal density — 실무에서는 전체 density보다 중요', () => {
     // 관측된 entity 수 / 축 capacity = 축 활용률
     const roleActive = db
       .select({ n: sql<number>`count(distinct role_id)` })
@@ -87,7 +95,7 @@ describe("#1 Sparse materialization — 관측 좌표만 저장", () => {
     expect(resourceActive / shape[2]).toBe(1);
   });
 
-  it("관측된 좌표의 주소는 전단사 — DB row ↔ weighted-index address 복원", () => {
+  it('관측된 좌표의 주소는 전단사 — DB row ↔ weighted-index address 복원', () => {
     const rows = db.select().from(events).all();
     for (const row of rows) {
       const addr = WI.encode([row.roleId, row.actionId, row.resourceId]);

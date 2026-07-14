@@ -6,11 +6,11 @@
  * mutation은 REST에서 처리. GraphQL은 쿼리 레이어만 담당.
  */
 
-import { Args, Int, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
-import { Inject } from "@nestjs/common";
-import { DocsService } from "../docs/docs.service.js";
-import { GraphService } from "../graph/graph.service.js";
-import type { DocRecord } from "../../core/types.js";
+import { Args, Int, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { Inject } from '@nestjs/common';
+import { DocsService } from '../docs/docs.service.js';
+import { GraphService } from '../graph/graph.service.js';
+import type { DocRecord } from '../../core/types.js';
 import {
   BoundaryContextResultType,
   BoundaryResultType,
@@ -22,9 +22,9 @@ import {
   ConcernsResult,
   SyntheticIncomingLink,
   ValidationResultType,
-} from "./doc.object.js";
+} from './doc.object.js';
 
-function toGraphQlGate(record: DocRecord["gate"]) {
+function toGraphQlGate(record: DocRecord['gate']) {
   if (!record) return undefined;
   return {
     ...record,
@@ -43,41 +43,52 @@ export class DocResolver {
 
   // ── Query ─────────────────────────────────────────────
 
-  @Query(() => Doc, { nullable: true, description: "단일 문서 조회" })
-  doc(@Args("id", { type: () => String }) id: string): Doc | null {
+  @Query(() => Doc, { nullable: true, description: '단일 문서 조회' })
+  doc(@Args('id', { type: () => String }) id: string): Doc | null {
     const record = this.docsService.get(id);
     return record ? this.toDoc(record) : null;
   }
 
-  @Query(() => Doc, { nullable: true, description: "주소 기준 단일 문서 조회" })
-  docByAddress(@Args("address", { type: () => String }) address: string): Doc | null {
+  @Query(() => Doc, { nullable: true, description: '주소 기준 단일 문서 조회' })
+  docByAddress(@Args('address', { type: () => String }) address: string): Doc | null {
     const record = this.docsService.getByAddress(address);
     return record ? this.toDoc(record) : null;
   }
 
-  @Query(() => [Doc], { description: "문서 목록 (확장 필터 + 전문검색 + pagination)" })
+  @Query(() => [Doc], { description: '문서 목록 (확장 필터 + 전문검색 + pagination)' })
   docList(
-    @Args("level", { type: () => String, nullable: true }) level?: string,
-    @Args("scope", { type: () => String, nullable: true }) scope?: string,
-    @Args("aspect", { type: () => String, nullable: true }) aspect?: string,
-    @Args("depth", { type: () => String, nullable: true }) depth?: string,
-    @Args("lifecycle", { type: () => String, nullable: true }) lifecycle?: string,
-    @Args("layer", { type: () => String, nullable: true }) layer?: string,
-    @Args("svc", { type: () => String, nullable: true }) svc?: string,
-    @Args("tag", { type: () => String, nullable: true }) tag?: string,
-    @Args("address", { type: () => String, nullable: true }) address?: string,
-    @Args("q", { type: () => String, nullable: true }) q?: string,
-    @Args("limit", { type: () => Int, nullable: true }) limit?: number,
-    @Args("offset", { type: () => Int, nullable: true }) offset?: number,
+    @Args('level', { type: () => String, nullable: true }) level?: string,
+    @Args('scope', { type: () => String, nullable: true }) scope?: string,
+    @Args('aspect', { type: () => String, nullable: true }) aspect?: string,
+    @Args('depth', { type: () => String, nullable: true }) depth?: string,
+    @Args('lifecycle', { type: () => String, nullable: true }) lifecycle?: string,
+    @Args('layer', { type: () => String, nullable: true }) layer?: string,
+    @Args('svc', { type: () => String, nullable: true }) svc?: string,
+    @Args('tag', { type: () => String, nullable: true }) tag?: string,
+    @Args('address', { type: () => String, nullable: true }) address?: string,
+    @Args('q', { type: () => String, nullable: true }) q?: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('offset', { type: () => Int, nullable: true }) offset?: number,
   ): Doc[] {
     const records = this.docsService.list({
-      level, scope, aspect, depth, lifecycle, layer, svc, tag, address, q, limit, offset,
+      level,
+      scope,
+      aspect,
+      depth,
+      lifecycle,
+      layer,
+      svc,
+      tag,
+      address,
+      q,
+      limit,
+      offset,
     });
-    return records.map(r => this.toDoc(r));
+    return records.map((r) => this.toDoc(r));
   }
 
-  @Query(() => ImpactAnalysisResult, { nullable: true, description: "영향 분석 (blast radius)" })
-  impact(@Args("docId", { type: () => String }) docId: string): ImpactAnalysisResult | null {
+  @Query(() => ImpactAnalysisResult, { nullable: true, description: '영향 분석 (blast radius)' })
+  impact(@Args('docId', { type: () => String }) docId: string): ImpactAnalysisResult | null {
     const result = this.graphService.impact(docId);
     if (!result) return null;
     const feedbackTrace = this.docsService.getFeedbackTrace([
@@ -87,12 +98,12 @@ export class DocResolver {
     return {
       sourceId: result.sourceId,
       sourceAddress: result.sourceAddress,
-      impacted: result.impacted.map(d => ({
+      impacted: result.impacted.map((d) => ({
         docId: d.id,
         address: d.address,
         scope: d.via,
         layer: d.layer,
-        path: d.path.join(" → "),
+        path: d.path.join(' → '),
         distance: d.depth,
       })),
       blastRadius: result.blastRadius,
@@ -100,14 +111,14 @@ export class DocResolver {
     };
   }
 
-  @Query(() => ConcernsResult, { nullable: true, description: "concern 전파 조회" })
-  concerns(@Args("docId", { type: () => String }) docId: string): ConcernsResult | null {
+  @Query(() => ConcernsResult, { nullable: true, description: 'concern 전파 조회' })
+  concerns(@Args('docId', { type: () => String }) docId: string): ConcernsResult | null {
     const result = this.graphService.concerns(docId);
     if (!result) return null;
     return {
       docId: result.docId,
       direct: [...result.concerns.direct],
-      inherited: result.concerns.inherited.map(i => ({
+      inherited: result.concerns.inherited.map((i) => ({
         tag: i.concern,
         source: i.from,
       })),
@@ -115,77 +126,93 @@ export class DocResolver {
     };
   }
 
-  @Query(() => ValidationResultType, { description: "그래프 검증" })
+  @Query(() => ValidationResultType, { description: '그래프 검증' })
   validateGraph(): ValidationResultType {
     return this.graphService.validate();
   }
 
-  @Query(() => BoundaryResultType, { nullable: true, description: "바운더리 구조 + direct coupling 조회" })
+  @Query(() => BoundaryResultType, {
+    nullable: true,
+    description: '바운더리 구조 + direct coupling 조회',
+  })
   boundary(
-    @Args("docId", { type: () => String }) docId: string,
-    @Args("level", { type: () => String, nullable: true }) level?: string,
+    @Args('docId', { type: () => String }) docId: string,
+    @Args('level', { type: () => String, nullable: true }) level?: string,
   ): BoundaryResultType | null {
     const result = this.docsService.getBoundary(
       docId,
-      level === "purpose" ? "purpose" : "overview",
+      level === 'purpose' ? 'purpose' : 'overview',
     );
     return result;
   }
 
-  @Query(() => BoundaryContextResultType, { nullable: true, description: "바운더리 구조 + concerns + impact + feedback trace 조회" })
+  @Query(() => BoundaryContextResultType, {
+    nullable: true,
+    description: '바운더리 구조 + concerns + impact + feedback trace 조회',
+  })
   boundaryContext(
-    @Args("docId", { type: () => String }) docId: string,
-    @Args("level", { type: () => String, nullable: true }) level?: string,
-    @Args("mode", { type: () => String, nullable: true }) mode?: string,
+    @Args('docId', { type: () => String }) docId: string,
+    @Args('level', { type: () => String, nullable: true }) level?: string,
+    @Args('mode', { type: () => String, nullable: true }) mode?: string,
   ): BoundaryContextResultType | null {
     return this.graphService.boundaryContext(
       docId,
-      level === "purpose" ? "purpose" : "overview",
-      mode === "direct" ? "direct" : "transitive",
+      level === 'purpose' ? 'purpose' : 'overview',
+      mode === 'direct' ? 'direct' : 'transitive',
     );
   }
 
   // ── ResolveField (관계 필드 lazy 로딩) ────────────────
 
-  @ResolveField(() => [Doc], { description: "contains 자식 문서" })
+  @ResolveField(() => [Doc], { description: 'contains 자식 문서' })
   children(@Parent() doc: Doc): Doc[] {
-    return this.docsService.getChildren(doc.docId).map(r => this.toDoc(r));
+    return this.docsService.getChildren(doc.docId).map((r) => this.toDoc(r));
   }
 
-  @ResolveField(() => Doc, { nullable: true, description: "contains 부모 문서" })
+  @ResolveField(() => Doc, { nullable: true, description: 'contains 부모 문서' })
   parent(@Parent() doc: Doc): Doc | null {
     const record = this.docsService.getParent(doc.docId);
     return record ? this.toDoc(record) : null;
   }
 
-  @ResolveField(() => [DocLink], { description: "순방향 링크 (address-aware read model)" })
+  @ResolveField(() => [DocLink], { description: '순방향 링크 (address-aware read model)' })
   outgoingLinks(@Parent() doc: Doc): DocLink[] {
     return this.docsService.getOutgoingLinks(doc.docId);
   }
 
-  @ResolveField(() => [IncomingLink], { description: "역링크" })
+  @ResolveField(() => [IncomingLink], { description: '역링크' })
   incomingLinks(@Parent() doc: Doc): IncomingLink[] {
     return this.docsService.getIncomingLinks(doc.docId);
   }
 
-  @ResolveField(() => [SyntheticIncomingLink], { description: "synthetic 역링크 (feedback_request)" })
+  @ResolveField(() => [SyntheticIncomingLink], {
+    description: 'synthetic 역링크 (feedback_request)',
+  })
   syntheticIncomingLinks(@Parent() doc: Doc): SyntheticIncomingLink[] {
     return this.docsService.getSyntheticIncomingLinks(doc.docId);
   }
 
-  @ResolveField(() => [FeedbackRequestSummary], { description: "이 문서와 연결된 feedback request 요약" })
+  @ResolveField(() => [FeedbackRequestSummary], {
+    description: '이 문서와 연결된 feedback request 요약',
+  })
   feedbackRequests(@Parent() doc: Doc): FeedbackRequestSummary[] {
     return this.docsService.getFeedbackRequests(doc.docId);
   }
 
-  @ResolveField("boundary", () => BoundaryResultType, { nullable: true, description: "이 문서의 바운더리 구조 + direct coupling" })
+  @ResolveField('boundary', () => BoundaryResultType, {
+    nullable: true,
+    description: '이 문서의 바운더리 구조 + direct coupling',
+  })
   resolveBoundary(@Parent() doc: Doc): BoundaryResultType | null {
-    return this.docsService.getBoundary(doc.docId, "overview");
+    return this.docsService.getBoundary(doc.docId, 'overview');
   }
 
-  @ResolveField("boundaryContext", () => BoundaryContextResultType, { nullable: true, description: "이 문서의 바운더리 컨텍스트" })
+  @ResolveField('boundaryContext', () => BoundaryContextResultType, {
+    nullable: true,
+    description: '이 문서의 바운더리 컨텍스트',
+  })
   resolveBoundaryContext(@Parent() doc: Doc): BoundaryContextResultType | null {
-    return this.graphService.boundaryContext(doc.docId, "overview", "transitive");
+    return this.graphService.boundaryContext(doc.docId, 'overview', 'transitive');
   }
 
   // ── 헬퍼 ──────────────────────────────────────────────

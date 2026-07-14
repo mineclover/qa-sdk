@@ -29,7 +29,7 @@ export interface LineageChainValidation {
   mismatched: number;
 }
 
-export type ChainIssueKind = "unbound" | "mismatched";
+export type ChainIssueKind = 'unbound' | 'mismatched';
 
 export interface ChainIssue {
   kind: ChainIssueKind;
@@ -43,10 +43,7 @@ export interface DetailedChainValidation extends LineageChainValidation {
   issues: ChainIssue[];
 }
 
-export interface BoundDataObject<
-  S extends string,
-  P extends string,
-> {
+export interface BoundDataObject<S extends string, P extends string> {
   readonly schemaId: S;
   readonly prefixId: P;
   readonly data: Record<string, unknown>;

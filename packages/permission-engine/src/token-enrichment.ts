@@ -14,10 +14,10 @@
  *   schema가 바뀌면 (feature 추가/제거) 구 토큰을 자동으로 무효화한다.
  */
 
-import { type RoleRegistry } from "./role-registry.js";
-import { type UserPermissionEngine } from "./user-permission-engine.js";
-import { type PermissionVersionStore } from "./permission-version.js";
-import { type ResolutionContext } from "./role-resolver.js";
+import { type RoleRegistry } from './role-registry.js';
+import { type UserPermissionEngine } from './user-permission-engine.js';
+import { type PermissionVersionStore } from './permission-version.js';
+import { type ResolutionContext } from './role-resolver.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,31 +103,33 @@ function _djb2(str: string): number {
 
 // ── Base64 ────────────────────────────────────────────────────────────────────
 
-const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 function _uint8ToBase64(arr: Uint8Array): string {
-  let out = "";
+  let out = '';
   for (let i = 0; i < arr.length; i += 3) {
-    const b0 = arr[i], b1 = arr[i + 1] ?? 0, b2 = arr[i + 2] ?? 0;
+    const b0 = arr[i],
+      b1 = arr[i + 1] ?? 0,
+      b2 = arr[i + 2] ?? 0;
     out += B64[b0 >> 2];
     out += B64[((b0 & 3) << 4) | (b1 >> 4)];
-    out += i + 1 < arr.length ? B64[((b1 & 0xF) << 2) | (b2 >> 6)] : "=";
-    out += i + 2 < arr.length ? B64[b2 & 0x3F] : "=";
+    out += i + 1 < arr.length ? B64[((b1 & 0xf) << 2) | (b2 >> 6)] : '=';
+    out += i + 2 < arr.length ? B64[b2 & 0x3f] : '=';
   }
   return out;
 }
 
 export function base64ToUint8(b64: string): Uint8Array {
-  const clean = b64.replace(/=+$/, "");
-  const bytes = new Uint8Array(Math.floor(clean.length * 3 / 4));
+  const clean = b64.replace(/=+$/, '');
+  const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
   let j = 0;
   for (let i = 0; i < clean.length; i += 4) {
     const a = B64.indexOf(clean[i]);
     const b = B64.indexOf(clean[i + 1]);
-    const c = B64.indexOf(clean[i + 2] ?? "");
-    const d = B64.indexOf(clean[i + 3] ?? "");
+    const c = B64.indexOf(clean[i + 2] ?? '');
+    const d = B64.indexOf(clean[i + 3] ?? '');
     bytes[j++] = (a << 2) | (b >> 4);
-    if (c >= 0) bytes[j++] = ((b & 0xF) << 4) | (c >> 2);
+    if (c >= 0) bytes[j++] = ((b & 0xf) << 4) | (c >> 2);
     if (d >= 0) bytes[j++] = ((c & 3) << 6) | d;
   }
   return bytes.slice(0, j);

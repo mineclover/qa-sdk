@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { AccessChecker } from "permission-engine";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { AccessChecker } from 'permission-engine';
 import {
   addDelegateToProject,
   bootstrapTestApi,
@@ -8,18 +8,18 @@ import {
   getDelegationGraph,
   seedTestData,
   type TestPmApiHandle,
-} from "./test-bootstrap.js";
+} from './test-bootstrap.js';
 
 function fakeAllowChecker(): AccessChecker {
   return {
     check: async () => ({
       allowed: true,
-      executionSpanId: "root-allow",
+      executionSpanId: 'root-allow',
     }),
   } as unknown as AccessChecker;
 }
 
-describe("sim-pm-api/test-bootstrap", () => {
+describe('sim-pm-api/test-bootstrap', () => {
   let handle: TestPmApiHandle;
 
   beforeEach(async () => {
@@ -30,92 +30,92 @@ describe("sim-pm-api/test-bootstrap", () => {
     await handle.close();
   });
 
-  it("bootstrapTestApi — port > 0", () => {
+  it('bootstrapTestApi — port > 0', () => {
     expect(handle.port).toBeGreaterThan(0);
   });
 
-  it("createTestProject — direct svc 호출 → project 생성 + UNREGISTERED policy 자동", async () => {
+  it('createTestProject — direct svc 호출 → project 생성 + UNREGISTERED policy 자동', async () => {
     const p = await createTestProject(handle, {
-      name: "Demo",
-      ownerId: "user-alice",
-      departmentId: "dept-eng",
+      name: 'Demo',
+      ownerId: 'user-alice',
+      departmentId: 'dept-eng',
     });
-    expect(p.ownerId).toBe("user-alice");
-    expect(p.departmentId).toBe("dept-eng");
+    expect(p.ownerId).toBe('user-alice');
+    expect(p.departmentId).toBe('dept-eng');
   });
 
-  it("seedTestData — 2 projects + 1 member", async () => {
+  it('seedTestData — 2 projects + 1 member', async () => {
     const { projects } = await seedTestData(handle, {
       projects: [
-        { name: "P1", ownerId: "user-alice", departmentId: "dept-eng" },
-        { name: "P2", ownerId: "user-bob", departmentId: "dept-mkt" },
+        { name: 'P1', ownerId: 'user-alice', departmentId: 'dept-eng' },
+        { name: 'P2', ownerId: 'user-bob', departmentId: 'dept-mkt' },
       ],
     });
     expect(projects).toHaveLength(2);
     const p1 = projects[0];
     await seedTestData(handle, {
-      members: [{ projectId: p1.id, userId: "user-bob", role: "contributor" }],
+      members: [{ projectId: p1.id, userId: 'user-bob', role: 'contributor' }],
     });
   });
 
-  it("POST /projects — gateway header 없음 → 401", async () => {
+  it('POST /projects — gateway header 없음 → 401', async () => {
     const res = await fetch(`${handle.baseUrl}/projects`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "X", departmentId: "dept-eng" }),
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'X', departmentId: 'dept-eng' }),
     });
     expect(res.status).toBe(401);
   });
 
-  it("POST /projects — gateway header + allow checker → 201 + rootSpanId", async () => {
-    const maskB64 = Buffer.from([0xff, 0xff]).toString("base64");
+  it('POST /projects — gateway header + allow checker → 201 + rootSpanId', async () => {
+    const maskB64 = Buffer.from([0xff, 0xff]).toString('base64');
     const res = await fetch(`${handle.baseUrl}/projects`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "content-type": "application/json",
-        "x-auth-user-id": "user-alice",
-        "x-auth-bitmap-mask": maskB64,
-        "x-auth-bitmap-v": "uv1",
+        'content-type': 'application/json',
+        'x-auth-user-id': 'user-alice',
+        'x-auth-bitmap-mask': maskB64,
+        'x-auth-bitmap-v': 'uv1',
       },
-      body: JSON.stringify({ name: "Scenario2", departmentId: "dept-eng" }),
+      body: JSON.stringify({ name: 'Scenario2', departmentId: 'dept-eng' }),
     });
     expect(res.status).toBe(201);
     const body = (await res.json()) as { id: string; ownerId: string; rootSpanId: string };
-    expect(body.ownerId).toBe("user-alice");
-    expect(body.rootSpanId).toBe("root-allow");
+    expect(body.ownerId).toBe('user-alice');
+    expect(body.rootSpanId).toBe('root-allow');
   });
 
-  it("delegateTestProject — UNREGISTERED policy를 REGISTERED 후 DELEGATED로 전이한다", async () => {
+  it('delegateTestProject — UNREGISTERED policy를 REGISTERED 후 DELEGATED로 전이한다', async () => {
     const project = await createTestProject(handle, {
-      name: "Delegated",
-      ownerId: "user-alice",
-      departmentId: "dept-eng",
+      name: 'Delegated',
+      ownerId: 'user-alice',
+      departmentId: 'dept-eng',
     });
 
     const delegated = await delegateTestProject(handle, {
       projectId: project.id,
       graphRootId: `graph-${project.id}`,
-      delegateUserId: "user-frank",
+      delegateUserId: 'user-frank',
     });
 
-    expect(delegated.state).toBe("DELEGATED");
+    expect(delegated.state).toBe('DELEGATED');
     expect(delegated.graphRootId).toBe(`graph-${project.id}`);
 
     const snapshot = await getDelegationGraph(handle, project.id);
     expect(snapshot?.graphId).toBe(`graph-${project.id}`);
     expect(snapshot?.graph.nodes.map((node) => node.coord.anchor)).toEqual(
-      expect.arrayContaining([`graph-${project.id}`, "user-frank"]),
+      expect.arrayContaining([`graph-${project.id}`, 'user-frank']),
     );
 
     const appended = await addDelegateToProject(handle, {
       projectId: project.id,
-      delegateUserId: "user-eve",
+      delegateUserId: 'user-eve',
     });
     expect(appended.graphRootId).toBe(`graph-${project.id}`);
 
     const updatedSnapshot = await getDelegationGraph(handle, project.id);
     expect(updatedSnapshot?.graph.nodes.map((node) => node.coord.anchor)).toEqual(
-      expect.arrayContaining([`graph-${project.id}`, "user-frank", "user-eve"]),
+      expect.arrayContaining([`graph-${project.id}`, 'user-frank', 'user-eve']),
     );
   });
 });

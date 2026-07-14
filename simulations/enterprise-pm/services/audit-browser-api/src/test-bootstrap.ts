@@ -20,45 +20,39 @@
  *   - 운영 module 의 useFactory (실 DB 연결) 는 호출하지 않는다.
  */
 
-import { Global, Module, type Provider } from "@nestjs/common";
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from "@nestjs/platform-fastify";
-import { Test } from "@nestjs/testing";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
-import { createInMemorySqliteAuthorizationGraphFixture } from "@qa-sdk/sim-authorization-graph-provider/memory-sqlite-fixture";
-import type { AuditRecorder } from "permission-engine";
-import type { AuthorizationGraphStore } from "authorization-ontology";
+import { Global, Module, type Provider } from '@nestjs/common';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { Test } from '@nestjs/testing';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
+import { createInMemorySqliteAuthorizationGraphFixture } from '@qa-sdk/sim-authorization-graph-provider/memory-sqlite-fixture';
+import type { AuditRecorder } from 'permission-engine';
+import type { AuthorizationGraphStore } from 'authorization-ontology';
 
-import { HealthModule } from "./health/health.module.js";
+import { HealthModule } from './health/health.module.js';
 import {
   AUDIT_RECORDER,
   GRAPH_RETENTION_INSIGHT_ENDPOINT,
-} from "./audit-explorer/audit-explorer.module.js";
-import { AUTHORIZATION_GRAPH_STORE } from "./graph-explorer/graph-explorer.module.js";
-import { AuditRecorderQueryPort } from "./audit-explorer/application/ports/audit-recorder-query.port.js";
-import { GraphSnapshotQueryPort } from "./audit-explorer/application/ports/graph-snapshot-query.port.js";
-import { GraphRetentionInsightQueryPort } from "./audit-explorer/application/ports/graph-retention-insight.port.js";
-import { AuditRecorderQueryAdapter } from "./audit-explorer/infrastructure/adapters/audit-recorder-query.adapter.js";
-import { GraphSnapshotQueryAdapter } from "./audit-explorer/infrastructure/adapters/graph-snapshot-query.adapter.js";
-import { GraphRetentionInsightHttpAdapter } from "./audit-explorer/infrastructure/adapters/graph-retention-insight.adapter.js";
-import { createAuditExplorerLogger } from "./audit-explorer/infrastructure/logging/audit-explorer.logger.js";
-import { AuditTraceBff } from "./audit-explorer/presentation/bff/audit-trace.bff.js";
-import { AuditTraceController } from "./audit-explorer/presentation/bff/audit-trace.controller.js";
-import { GraphStoreQueryPort } from "./graph-explorer/application/ports/graph-store-query.port.js";
-import { GraphStoreQueryAdapter } from "./graph-explorer/infrastructure/adapters/graph-store-query.adapter.js";
+} from './audit-explorer/audit-explorer.module.js';
+import { AUTHORIZATION_GRAPH_STORE } from './graph-explorer/graph-explorer.module.js';
+import { AuditRecorderQueryPort } from './audit-explorer/application/ports/audit-recorder-query.port.js';
+import { GraphSnapshotQueryPort } from './audit-explorer/application/ports/graph-snapshot-query.port.js';
+import { GraphRetentionInsightQueryPort } from './audit-explorer/application/ports/graph-retention-insight.port.js';
+import { AuditRecorderQueryAdapter } from './audit-explorer/infrastructure/adapters/audit-recorder-query.adapter.js';
+import { GraphSnapshotQueryAdapter } from './audit-explorer/infrastructure/adapters/graph-snapshot-query.adapter.js';
+import { GraphRetentionInsightHttpAdapter } from './audit-explorer/infrastructure/adapters/graph-retention-insight.adapter.js';
+import { createAuditExplorerLogger } from './audit-explorer/infrastructure/logging/audit-explorer.logger.js';
+import { AuditTraceBff } from './audit-explorer/presentation/bff/audit-trace.bff.js';
+import { AuditTraceController } from './audit-explorer/presentation/bff/audit-trace.controller.js';
+import { GraphStoreQueryPort } from './graph-explorer/application/ports/graph-store-query.port.js';
+import { GraphStoreQueryAdapter } from './graph-explorer/infrastructure/adapters/graph-store-query.adapter.js';
 import {
   GRAPH_RETENTION_HOUSEKEEPING_OPTIONS,
   GraphRetentionHousekeepingService,
   type GraphRetentionHousekeepingOptions,
-} from "./graph-explorer/infrastructure/housekeeping/graph-retention-housekeeping.service.js";
-import { createGraphExplorerLogger } from "./graph-explorer/infrastructure/logging/graph-explorer.logger.js";
-import { GraphCatalogBff } from "./graph-explorer/presentation/bff/graph-catalog.bff.js";
-import { GraphCatalogController } from "./graph-explorer/presentation/bff/graph-catalog.controller.js";
+} from './graph-explorer/infrastructure/housekeeping/graph-retention-housekeeping.service.js';
+import { createGraphExplorerLogger } from './graph-explorer/infrastructure/logging/graph-explorer.logger.js';
+import { GraphCatalogBff } from './graph-explorer/presentation/bff/graph-catalog.bff.js';
+import { GraphCatalogController } from './graph-explorer/presentation/bff/graph-catalog.controller.js';
 
 export interface BootstrapArgs {
   /** 외부에서 이미 생성된 AuditRecorder. null/undefined 불허. */
@@ -167,59 +161,36 @@ function buildTestGraphExplorerSliceModule(graphStore: AuthorizationGraphStore) 
       bffProvider,
     ],
     controllers: [GraphCatalogController],
-    exports: [
-      GraphStoreQueryPort,
-      GraphCatalogBff,
-      AUTHORIZATION_GRAPH_STORE,
-    ],
+    exports: [GraphStoreQueryPort, GraphCatalogBff, AUTHORIZATION_GRAPH_STORE],
   })
   class TestGraphExplorerSliceModule {}
   return TestGraphExplorerSliceModule;
 }
 
-function buildTestAppModule(
-  recorder: AuditRecorder,
-  graphStore: AuthorizationGraphStore,
-) {
-  const TestAuditExplorerSliceModule = buildTestAuditExplorerSliceModule(
-    recorder,
-    graphStore,
-  );
+function buildTestAppModule(recorder: AuditRecorder, graphStore: AuthorizationGraphStore) {
+  const TestAuditExplorerSliceModule = buildTestAuditExplorerSliceModule(recorder, graphStore);
   const TestGraphExplorerSliceModule = buildTestGraphExplorerSliceModule(graphStore);
   @Module({
-    imports: [
-      HealthModule,
-      TestGraphExplorerSliceModule,
-      TestAuditExplorerSliceModule,
-    ],
+    imports: [HealthModule, TestGraphExplorerSliceModule, TestAuditExplorerSliceModule],
   })
   class TestAppModule {}
   return TestAppModule;
 }
 
-export async function bootstrapTestAuditBrowserApi(
-  args: BootstrapArgs,
-): Promise<BootstrapHandle> {
+export async function bootstrapTestAuditBrowserApi(args: BootstrapArgs): Promise<BootstrapHandle> {
   if (args.recorder === null || args.recorder === undefined) {
-    throw new Error(
-      "bootstrapTestAuditBrowserApi: recorder required (no fallback)",
-    );
+    throw new Error('bootstrapTestAuditBrowserApi: recorder required (no fallback)');
   }
 
   const graphFixture = args.graphStore
     ? null
     : await createInMemorySqliteAuthorizationGraphFixture();
-  const TestAppModule = buildTestAppModule(
-    args.recorder,
-    args.graphStore ?? graphFixture!.store,
-  );
+  const TestAppModule = buildTestAppModule(args.recorder, args.graphStore ?? graphFixture!.store);
   const moduleRef = await Test.createTestingModule({
     imports: [TestAppModule],
   }).compile();
 
-  const app = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter(),
-  );
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
 

@@ -1,33 +1,30 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  PM_DB_INSTANCE,
-  type PmDbInstanceHandle,
-} from "../pm-db.module.js";
+import { PM_DB_INSTANCE, type PmDbInstanceHandle } from '../pm-db.module.js';
 
-import { MemberRepositoryPort } from "./application/ports/member-repository.port.js";
-import { MemberReadModelQuery } from "./application/queries/member-read-model.query.js";
-import { MemberUseCase } from "./application/use-cases/member.use-case.js";
+import { MemberRepositoryPort } from './application/ports/member-repository.port.js';
+import { MemberReadModelQuery } from './application/queries/member-read-model.query.js';
+import { MemberUseCase } from './application/use-cases/member.use-case.js';
 
-import { createMemberRepository } from "./infrastructure/persistence/member.repository.js";
-import { createMemberTransactionPort } from "./infrastructure/transaction/member.transaction.js";
-import { createMemberOutboxPort } from "./infrastructure/outbox/member.outbox.js";
-import { createMemberLogger } from "./infrastructure/logging/member.logger.js";
-import { RepositoryMemberReadModel } from "./infrastructure/read-model/member.read-model.js";
+import { createMemberRepository } from './infrastructure/persistence/member.repository.js';
+import { createMemberTransactionPort } from './infrastructure/transaction/member.transaction.js';
+import { createMemberOutboxPort } from './infrastructure/outbox/member.outbox.js';
+import { createMemberLogger } from './infrastructure/logging/member.logger.js';
+import { RepositoryMemberReadModel } from './infrastructure/read-model/member.read-model.js';
 
-import { MemberController } from "./presentation/http/member.controller.js";
+import { MemberController } from './presentation/http/member.controller.js';
 
-const MEMBER_TRANSACTION_PORT = Symbol.for("sim-pm-api/member/TransactionPort");
-const MEMBER_OUTBOX_PORT = Symbol.for("sim-pm-api/member/OutboxPort");
+const MEMBER_TRANSACTION_PORT = Symbol.for('sim-pm-api/member/TransactionPort');
+const MEMBER_OUTBOX_PORT = Symbol.for('sim-pm-api/member/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: MemberRepositoryPort,
@@ -69,12 +66,7 @@ const useCaseProvider: Provider = {
     transaction: TransactionPort,
     logger: LoggerPort,
   ) => new MemberUseCase(repo, outbox, transaction, logger),
-  inject: [
-    MemberRepositoryPort,
-    MEMBER_OUTBOX_PORT,
-    MEMBER_TRANSACTION_PORT,
-    SLICE_LOGGER_PORT,
-  ],
+  inject: [MemberRepositoryPort, MEMBER_OUTBOX_PORT, MEMBER_TRANSACTION_PORT, SLICE_LOGGER_PORT],
 };
 
 /**

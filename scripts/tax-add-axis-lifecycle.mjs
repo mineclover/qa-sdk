@@ -7,16 +7,16 @@
  *
  * 실행: node scripts/tax-add-axis-lifecycle.mjs <file>...
  */
-import { readFileSync, writeFileSync } from "node:fs";
-import { basename } from "node:path";
+import { readFileSync, writeFileSync } from 'node:fs';
+import { basename } from 'node:path';
 
 function indentOf(line) {
   return line.length - line.trimStart().length;
 }
 
 function addAxisLifecycle(filePath) {
-  const text = readFileSync(filePath, "utf8");
-  const lines = text.split("\n");
+  const text = readFileSync(filePath, 'utf8');
+  const lines = text.split('\n');
   const out = [];
   let inAxes = false;
   let axesIndent = -1;
@@ -29,7 +29,7 @@ function addAxisLifecycle(filePath) {
     if (currentAxisStartIdx >= 0 && !currentAxisHasLifecycle) {
       // 부재 시 description: 다음(또는 axis 키 바로 다음) 줄에 lifecycle 삽입
       // currentAxisStartIdx + 1부터 axis 내부. description 검색.
-      const childIndent = " ".repeat(currentAxisIndent + 2);
+      const childIndent = ' '.repeat(currentAxisIndent + 2);
       let insertAt = currentAxisStartIdx + 1;
       // description: 또는 description: | block 확인
       const descLine = out[insertAt];
@@ -39,7 +39,7 @@ function addAxisLifecycle(filePath) {
           let j = insertAt + 1;
           while (j < out.length) {
             const l = out[j];
-            if (l.trim() === "" || indentOf(l) > currentAxisIndent + 2) {
+            if (l.trim() === '' || indentOf(l) > currentAxisIndent + 2) {
               j++;
               continue;
             }
@@ -107,7 +107,7 @@ function addAxisLifecycle(filePath) {
   if (inAxes) flush();
 
   if (changed > 0) {
-    writeFileSync(filePath, out.join("\n"));
+    writeFileSync(filePath, out.join('\n'));
     console.log(`✔ ${basename(filePath)}: ${changed} axes`);
   } else {
     console.log(`  ${basename(filePath)}: 변경 없음`);
@@ -116,7 +116,7 @@ function addAxisLifecycle(filePath) {
 
 const files = process.argv.slice(2);
 if (files.length === 0) {
-  console.error("사용법: node scripts/tax-add-axis-lifecycle.mjs <file>...");
+  console.error('사용법: node scripts/tax-add-axis-lifecycle.mjs <file>...');
   process.exit(1);
 }
 for (const f of files) addAxisLifecycle(f);

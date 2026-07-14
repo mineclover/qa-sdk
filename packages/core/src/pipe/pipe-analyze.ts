@@ -5,10 +5,10 @@
  * PipeGraph 분석 — 복잡도 메트릭, 커버리지, 병목 감지
  */
 
-import type { PipeFlow, PipeSpec, PipeGraph } from "../types/pipe-spec.js";
-import { countPipePaths, countGraphPaths } from "./pipe-path.js";
-import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
-import { getChildFlows } from "./pipe-flow-utils.js";
+import type { PipeFlow, PipeSpec, PipeGraph } from '../types/pipe-spec.js';
+import { countPipePaths, countGraphPaths } from './pipe-path.js';
+import { normalizeEndpointPipeIds } from './pipe-endpoint.js';
+import { getChildFlows } from './pipe-flow-utils.js';
 
 // ── 복잡도 메트릭 ────────────────────────────────────
 
@@ -60,7 +60,7 @@ export function analyzePipeComplexity(graph: PipeGraph): PipeComplexity {
     collectFlowKinds(pipe.flow, flowKinds);
   }
 
-  const connectionKinds = new Set(graph.connections.map(c => c.kind));
+  const connectionKinds = new Set(graph.connections.map((c) => c.kind));
 
   return {
     graphId: graph.graphId,
@@ -124,9 +124,9 @@ export function findBottlenecks(
     .map(([pipeId, fanOut]) => ({ pipeId, fanOut }));
 
   // 실패/지연 가능 지점
-  const failurePoints: BottleneckReport["failurePoints"] = [];
-  const latencyPoints: BottleneckReport["latencyPoints"] = [];
-  const complexPipes: BottleneckReport["complexPipes"] = [];
+  const failurePoints: BottleneckReport['failurePoints'] = [];
+  const latencyPoints: BottleneckReport['latencyPoints'] = [];
+  const complexPipes: BottleneckReport['complexPipes'] = [];
 
   for (const pipe of graph.pipes) {
     const failureKinds = collectFailureKinds(pipe.flow);
@@ -174,10 +174,10 @@ export function analyzeCoverage(
   executedPathCount?: number,
 ): CoverageReport {
   const totalPipes = graph.pipes.length;
-  const executedPipes = graph.pipes.filter(p => executedPipeIds.has(p.pipeId)).length;
+  const executedPipes = graph.pipes.filter((p) => executedPipeIds.has(p.pipeId)).length;
   const uncoveredPipes = graph.pipes
-    .filter(p => !executedPipeIds.has(p.pipeId))
-    .map(p => p.pipeId);
+    .filter((p) => !executedPipeIds.has(p.pipeId))
+    .map((p) => p.pipeId);
 
   const totalPaths = countGraphPaths(graph);
 
@@ -188,9 +188,10 @@ export function analyzeCoverage(
     totalPaths,
     // executedPathCount 미제공 시 null — 근사치 사용 안 함
     executedPaths: executedPathCount ?? null,
-    pathCoverage: executedPathCount != null && totalPaths > 0
-      ? Math.round((executedPathCount / totalPaths) * 100)
-      : null,
+    pathCoverage:
+      executedPathCount != null && totalPaths > 0
+        ? Math.round((executedPathCount / totalPaths) * 100)
+        : null,
     uncoveredPipes,
   };
 }
@@ -200,7 +201,7 @@ export function analyzeCoverage(
 function measureFlowDepth(flow: PipeFlow, depth = 1): number {
   const children = getChildFlows(flow);
   if (children.length === 0) return depth;
-  return Math.max(...children.map(c => measureFlowDepth(c, depth + 1)));
+  return Math.max(...children.map((c) => measureFlowDepth(c, depth + 1)));
 }
 
 function collectFlowKinds(flow: PipeFlow, kinds: Set<string>): void {
@@ -211,7 +212,13 @@ function collectFlowKinds(flow: PipeFlow, kinds: Set<string>): void {
 function collectFailureKinds(flow: PipeFlow): string[] {
   const kinds: string[] = [];
   function walk(f: PipeFlow): void {
-    if (f.kind === "retry" || f.kind === "fallback" || f.kind === "circuit-breaker" || f.kind === "compensate" || (f.kind === "transition-scope" && f.compensate != null)) {
+    if (
+      f.kind === 'retry' ||
+      f.kind === 'fallback' ||
+      f.kind === 'circuit-breaker' ||
+      f.kind === 'compensate' ||
+      (f.kind === 'transition-scope' && f.compensate != null)
+    ) {
       kinds.push(f.kind);
     }
     for (const child of getChildFlows(f)) walk(child);
@@ -223,9 +230,9 @@ function collectFailureKinds(flow: PipeFlow): string[] {
 function collectTotalTimeout(flow: PipeFlow): number {
   let total = 0;
   function walk(f: PipeFlow): void {
-    if (f.kind === "step" && f.timeout) total += f.timeout;
-    if (f.kind === "timeout") total += f.duration;
-    if (f.kind === "await" && f.timeout) total += f.timeout;
+    if (f.kind === 'step' && f.timeout) total += f.timeout;
+    if (f.kind === 'timeout') total += f.duration;
+    if (f.kind === 'await' && f.timeout) total += f.timeout;
     for (const child of getChildFlows(f)) walk(child);
   }
   walk(flow);
@@ -239,7 +246,7 @@ export interface GraphEvent {
   /** 이벤트 키 */
   eventKey: string;
   /** 이벤트 유형: trigger(소비) / produces(생산) / emit(비동기 생산) */
-  role: "trigger" | "produces" | "emit";
+  role: 'trigger' | 'produces' | 'emit';
   /** 소속 파이프 ID */
   pipeId: string;
 }
@@ -253,12 +260,12 @@ export function collectGraphEvents(graph: PipeGraph): GraphEvent[] {
 
   for (const pipe of graph.pipes) {
     // trigger (소비)
-    events.push({ eventKey: pipe.trigger.eventKey, role: "trigger", pipeId: pipe.pipeId });
+    events.push({ eventKey: pipe.trigger.eventKey, role: 'trigger', pipeId: pipe.pipeId });
 
     // produces (생산)
     if (pipe.produces) {
       for (const eventKey of pipe.produces) {
-        events.push({ eventKey, role: "produces", pipeId: pipe.pipeId });
+        events.push({ eventKey, role: 'produces', pipeId: pipe.pipeId });
       }
     }
 
@@ -270,8 +277,8 @@ export function collectGraphEvents(graph: PipeGraph): GraphEvent[] {
 }
 
 function collectEmitEvents(flow: PipeFlow, pipeId: string, events: GraphEvent[]): void {
-  if (flow.kind === "emit") {
-    events.push({ eventKey: flow.eventKey, role: "emit", pipeId });
+  if (flow.kind === 'emit') {
+    events.push({ eventKey: flow.eventKey, role: 'emit', pipeId });
   }
   for (const child of getChildFlows(flow)) {
     collectEmitEvents(child, pipeId, events);

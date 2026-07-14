@@ -1,14 +1,10 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type {
-  IndexMetaStore,
-  SchemaVersionRecord,
-  EntryRecord,
-} from "../index-meta-store.js";
-import { ValidationError } from "../errors.js";
-import type { EntityId } from "../types.js";
-import { validateEntryForInsert } from "./validate-entry.js";
+import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from '../index-meta-store.js';
+import { ValidationError } from '../errors.js';
+import type { EntityId } from '../types.js';
+import { validateEntryForInsert } from './validate-entry.js';
 
 /**
  * In-memory implementation of IndexMetaStore.
@@ -30,7 +26,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
     const key = `${record.prefix}:${record.versionId}`;
     if (this._versions.has(key)) {
       throw new ValidationError(
-        `SchemaVersion already exists: "${record.prefix}/${record.versionId}"`
+        `SchemaVersion already exists: "${record.prefix}/${record.versionId}"`,
       );
     }
     this._versions.set(key, record);
@@ -42,10 +38,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
       .toSorted((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
-  async getSchemaVersion(
-    prefix: string,
-    versionId: string
-  ): Promise<SchemaVersionRecord | null> {
+  async getSchemaVersion(prefix: string, versionId: string): Promise<SchemaVersionRecord | null> {
     return this._versions.get(`${prefix}:${versionId}`) ?? null;
   }
 
@@ -76,7 +69,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
     prefix: string,
     versionId: string,
     from: number,
-    to: number
+    to: number,
   ): Promise<EntryRecord[]> {
     return [...this._entries.values()]
       .filter(
@@ -84,23 +77,19 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
           r.prefix === prefix &&
           r.versionId === versionId &&
           r.position >= from &&
-          r.position <= to
+          r.position <= to,
       )
       .toSorted((a, b) => a.position - b.position);
   }
 
-  async getEntry(
-    prefix: string,
-    versionId: string,
-    position: number
-  ): Promise<EntryRecord | null> {
+  async getEntry(prefix: string, versionId: string, position: number): Promise<EntryRecord | null> {
     return this._entries.get(`${prefix}:${versionId}:${position}`) ?? null;
   }
 
   async getEntryByValue(
     prefix: string,
     versionId: string,
-    value: EntityId
+    value: EntityId,
   ): Promise<EntryRecord | null> {
     const strValue = String(value);
     for (const r of this._entries.values()) {
@@ -115,12 +104,12 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
     prefix: string,
     fromVersion: string,
     toVersion: string,
-    positionMap?: Record<number, number>
+    positionMap?: Record<number, number>,
   ): Promise<{ migrated: number; skipped: number }> {
     const sv = this._versions.get(`${prefix}:${toVersion}`);
     if (!sv) {
       throw new ValidationError(
-        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`
+        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`,
       );
     }
 
@@ -137,7 +126,7 @@ export class InMemoryIndexMetaStore implements IndexMetaStore {
       const newPosition = positionMap?.[entry.position] ?? entry.position;
       if (newPosition < 1 || newPosition > sv.capacity) {
         throw new ValidationError(
-          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`
+          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`,
         );
       }
       const entryKey = `${prefix}:${toVersion}:${newPosition}`;

@@ -16,10 +16,12 @@ const formatExtensions = new Set([
   '.ts',
   '.tsx',
 ]);
-const generatedPath = /(^|\/)(?:\.omx|\.ralph-tui|coverage|dist|node_modules|test-results)(\/|$)/;
+const generatedPath =
+  /(^|\/)(?:\.omx|\.ralph-tui|coverage|dist|node_modules|test-results)(\/|$)|(?:^|\/)(?:packages\/docs-explorer\/public\/data\.json|packages\/platform-demo\/public\/def-catalog-data\.json)$/;
 
 const args = process.argv.slice(2).filter((arg, index) => !(index === 0 && arg === '--'));
 const all = args.includes('--all');
+const write = args.includes('--write');
 const baseIndex = args.findIndex((arg) => arg === '--base' || arg.startsWith('--base='));
 const base =
   baseIndex === -1
@@ -30,16 +32,13 @@ const base =
 const unknownOptions = args.filter(
   (option, index) =>
     option !== '--all' &&
+    option !== '--write' &&
     !option.startsWith('--base=') &&
     option !== '--base' &&
     !(baseIndex !== -1 && index === baseIndex + 1),
 );
 if (unknownOptions.length > 0) {
   console.error(`Unknown option: ${unknownOptions.join(', ')}`);
-  process.exit(2);
-}
-if (all && base) {
-  console.error('--all and --base cannot be used together');
   process.exit(2);
 }
 if (baseIndex !== -1 && !base) {
@@ -69,7 +68,7 @@ const files = [...new Set(candidates)]
   .sort();
 
 if (files.length === 0) {
-  console.log('format:check passed (no selected source files)');
+  console.log(`${write ? 'format:write' : 'format:check'} passed (no selected source files)`);
   process.exit(0);
 }
 
@@ -78,19 +77,23 @@ const chunkSize = 200;
 let failed = false;
 
 console.log(
-  all
-    ? `Checking formatting for ${files.length} tracked source files...`
-    : base
-      ? `Checking formatting for ${files.length} source files changed since ${base}...`
-      : `Checking formatting for ${files.length} changed source files...`,
+  base
+    ? `${write ? 'Formatting' : 'Checking formatting'} for ${files.length} source files changed since ${base}...`
+    : all
+      ? `${write ? 'Formatting' : 'Checking formatting'} for ${files.length} tracked source files...`
+      : `${write ? 'Formatting' : 'Checking formatting'} for ${files.length} changed source files...`,
 );
 
 for (let offset = 0; offset < files.length; offset += chunkSize) {
   const chunk = files.slice(offset, offset + chunkSize);
-  const result = spawnSync(command, ['pnpm', 'exec', 'oxfmt', '--check', ...chunk], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-  });
+  const result = spawnSync(
+    command,
+    ['pnpm', 'exec', 'oxfmt', write ? '--write' : '--check', ...chunk],
+    {
+      cwd: repoRoot,
+      stdio: 'inherit',
+    },
+  );
 
   if (result.error) {
     console.error(result.error.message);
@@ -102,11 +105,11 @@ for (let offset = 0; offset < files.length; offset += chunkSize) {
 
 if (failed) {
   console.error(
-    all
+    all && !base
       ? 'format:check:all failed; existing tracked baseline files still need formatting.'
-      : 'format:check failed; format the changed source files with oxfmt before continuing.',
+      : `${write ? 'format:write' : 'format:check'} failed; inspect the oxfmt output before continuing.`,
   );
   process.exit(1);
 }
 
-console.log('format:check passed');
+console.log(`${write ? 'format:write' : 'format:check'} passed`);

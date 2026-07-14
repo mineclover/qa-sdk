@@ -8,9 +8,9 @@
  * 언어 generator는 이 IRModule만 소비하면 된다.
  */
 
-import type { IRModule, IREnum, IREnumValue, IRStruct, IRField } from "./ir.js";
-import type { PrefixSpec } from "../spec/prefix-spec.types.js";
-import type { AxisInput } from "./ts-generator.js";
+import type { IRModule, IREnum, IREnumValue, IRStruct, IRField } from './ir.js';
+import type { PrefixSpec } from '../spec/prefix-spec.types.js';
+import type { AxisInput } from './ts-generator.js';
 
 export interface BuildIROptions {
   /** 모듈 이름 */
@@ -50,12 +50,12 @@ export function buildIR(options: BuildIROptions): IRModule {
 
   // prefix export surface → struct
   for (const spec of options.prefixSpecs) {
-    const fields: IRField[] = spec.export.dims.map(dim => {
+    const fields: IRField[] = spec.export.dims.map((dim) => {
       const dimRef = spec.dims[dim];
       return {
         name: dim,
-        enumRef: dimRef?.kind === "axis" ? dimRef.axisId : null,
-        dimKind: dimRef?.kind ?? "axis",
+        enumRef: dimRef?.kind === 'axis' ? dimRef.axisId : null,
+        dimKind: dimRef?.kind ?? 'axis',
       };
     });
 

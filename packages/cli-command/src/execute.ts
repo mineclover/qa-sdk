@@ -1,9 +1,9 @@
 // @def.boundary cli-command-spec
 // @def.doc cli-command-spec
 
-import type { CliCommandNode, CommandContext } from "./types.js";
-import { resolveCommand } from "./resolve.js";
-import { parseCommandArgs } from "./parse.js";
+import type { CliCommandNode, CommandContext } from './types.js';
+import { resolveCommand } from './resolve.js';
+import { parseCommandArgs } from './parse.js';
 
 export interface ExecuteOptions {
   /** handlerKey → handler 매핑 (기존 호환용) */
@@ -25,11 +25,16 @@ export async function executeCommand(
   rootSegments?: readonly string[],
 ): Promise<boolean> {
   // --help 체크
-  if (args.includes("--help") || args.includes("-h") || args.length === 0) {
-    const resolved = args.length > 0
-      ? resolveCommand(args.filter(a => a !== "--help" && a !== "-h"), tree, rootSegments)
-      : null;
-    options?.onHelp?.(resolved?.node ?? null, resolved?.commandName ?? "");
+  if (args.includes('--help') || args.includes('-h') || args.length === 0) {
+    const resolved =
+      args.length > 0
+        ? resolveCommand(
+            args.filter((a) => a !== '--help' && a !== '-h'),
+            tree,
+            rootSegments,
+          )
+        : null;
+    options?.onHelp?.(resolved?.node ?? null, resolved?.commandName ?? '');
     return true;
   }
 

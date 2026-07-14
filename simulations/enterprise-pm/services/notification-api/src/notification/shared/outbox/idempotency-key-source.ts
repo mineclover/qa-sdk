@@ -18,16 +18,16 @@
  * grammar 가 요구하는 정규화 규칙의 명시적 구현.
  */
 export function toGrammarSafeAggregateId(rawId: string): string {
-  if (typeof rawId !== "string" || rawId.length === 0) {
+  if (typeof rawId !== 'string' || rawId.length === 0) {
     throw new Error(`toGrammarSafeAggregateId: empty id`);
   }
-  let s = rawId.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
+  let s = rawId.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
   // 연속 hyphen 정리.
-  s = s.replace(/-+/g, "-");
+  s = s.replace(/-+/g, '-');
   // 첫 글자 보정 — grammar 는 [a-z] 로 시작.
   if (!/^[a-z]/.test(s)) s = `x-${s}`;
   // trailing hyphen 정리.
-  s = s.replace(/-+$/, "");
+  s = s.replace(/-+$/, '');
   if (s.length < 2) {
     throw new Error(`toGrammarSafeAggregateId: id too short after normalization: ${rawId}`);
   }

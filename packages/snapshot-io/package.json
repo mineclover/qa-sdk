@@ -3,11 +3,32 @@
   "version": "0.1.0",
   "description": "SchemaSnapshot JSON 읽기/쓰기/검증 유틸리티",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" } },
-  "main": "./dist/index.cjs", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "scripts": { "build": "tsup", "test": "corepack pnpm --filter spec-schema build && tsup && node scripts/smoke.test.mjs", "typecheck": "tsc --noEmit", "clean": "rm -rf dist" },
-  "dependencies": { "spec-schema": "workspace:*" },
-  "devDependencies": { "@types/node": "^22.0.0", "tsup": "^8.5.1", "typescript": "^5.8.2" }
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "corepack pnpm --filter spec-schema build && tsup && node scripts/smoke.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "spec-schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
 }

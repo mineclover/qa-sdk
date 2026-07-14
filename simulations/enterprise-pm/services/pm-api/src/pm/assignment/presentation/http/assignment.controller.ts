@@ -1,15 +1,15 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { Body, Controller, Get, Inject, Param, Post, UseFilters } from "@nestjs/common";
-import { z } from "zod";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { AssignmentUseCase } from "../../application/use-cases/assignment.use-case.js";
+import { Body, Controller, Get, Inject, Param, Post, UseFilters } from '@nestjs/common';
+import { z } from 'zod';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { AssignmentUseCase } from '../../application/use-cases/assignment.use-case.js';
 import {
   AssignmentReadModelQuery,
   type AssignmentDetailReadModel,
-} from "../../application/queries/assignment-read-model.query.js";
-import { AssignmentDomainException } from "../../domain/index.js";
+} from '../../application/queries/assignment-read-model.query.js';
+import { AssignmentDomainException } from '../../domain/index.js';
 
 // OpenAPI spec.yaml 의 AssignManagerCommand 와 1:1 매칭.
 const createSchema = z.object({
@@ -22,7 +22,7 @@ const createSchema = z.object({
 
 interface AssignmentCommandAccepted {
   readonly assignmentId: string;
-  readonly status: "PENDING";
+  readonly status: 'PENDING';
 }
 
 /**
@@ -34,7 +34,7 @@ interface AssignmentCommandAccepted {
  * 도메인 예외 → DomainExceptionFilter 가 표준 HTTP 응답 (`{code, message,
  * traceId, details}`) 으로 변환.
  */
-@Controller("assignments")
+@Controller('assignments')
 @UseFilters(DomainExceptionFilter)
 export class AssignmentController {
   constructor(
@@ -56,13 +56,16 @@ export class AssignmentController {
     return { assignmentId: result.id, status: result.status };
   }
 
-  @Get(":id")
-  async get(@Param("id") id: string): Promise<AssignmentDetailReadModel> {
+  @Get(':id')
+  async get(@Param('id') id: string): Promise<AssignmentDetailReadModel> {
     const detail = await this.readModel.findDetail(id);
     if (!detail) {
       // 도메인 표준 NotFound — DomainExceptionFilter 가 404 매핑
-      const err = new AssignmentDomainException("ASSIGNMENT_NOT_FOUND", `Assignment not found: ${id}`);
-      err.name = "NotFoundError";
+      const err = new AssignmentDomainException(
+        'ASSIGNMENT_NOT_FOUND',
+        `Assignment not found: ${id}`,
+      );
+      err.name = 'NotFoundError';
       throw err;
     }
     return detail;

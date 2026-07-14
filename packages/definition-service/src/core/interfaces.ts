@@ -12,7 +12,7 @@ import type {
   DocOutgoingLinkRecord,
   SliceIntentRecord,
   ConsumptionSnapshot,
-} from "./types.js";
+} from './types.js';
 
 /** 메타데이터 업데이트 입력 (DB가 SSOT인 필드들) */
 export interface DocMetadataUpdate {
@@ -32,13 +32,13 @@ export interface DocStore {
   upsert(
     doc: DocRecord,
     body: string,
-  ): { action: "created" | "updated" | "unchanged"; version: number };
+  ): { action: 'created' | 'updated' | 'unchanged'; version: number };
   delete(docId: string): boolean;
   /** DB-owned 메타데이터만 업데이트 (body/markers 유지) */
   updateMetadata(
     docId: string,
     patch: DocMetadataUpdate,
-  ): { action: "updated" | "unchanged"; version: number } | null;
+  ): { action: 'updated' | 'unchanged'; version: number } | null;
   get(docId: string): DocRecord | null;
   getByAddress(address: string): DocRecord | null;
   getBody(docId: string): {
@@ -75,12 +75,12 @@ export interface DocListFilter {
   q?: string;
   limit?: number;
   offset?: number;
-  sort?: "doc_id" | "synced_at" | "synced_at_desc";
+  sort?: 'doc_id' | 'synced_at' | 'synced_at_desc';
 }
 
 /** 페이지네이션 포함 목록 결과 */
 export interface DocListResult {
-  docs: import("./types.js").DocRecord[];
+  docs: import('./types.js').DocRecord[];
   total: number;
   offset: number;
   limit: number;
@@ -96,10 +96,7 @@ export interface IntentStore {
     observationGoal?: string;
     owner?: string;
   }): number;
-  update(
-    id: number,
-    patch: { intent?: string; observationGoal?: string; owner?: string },
-  ): void;
+  update(id: number, patch: { intent?: string; observationGoal?: string; owner?: string }): void;
   remove(id: number): boolean;
   listByPrefix(prefixId: string): SliceIntentRecord[];
 }

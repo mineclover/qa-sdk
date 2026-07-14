@@ -1,7 +1,7 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import type { MaskingMode, MaskedFieldMarker } from "@qa-sdk/core";
+import type { MaskingMode, MaskedFieldMarker } from '@qa-sdk/core';
 
 export interface MaskingRule {
   field: string;
@@ -25,11 +25,11 @@ export function applyMasking(
     maskedFields.push(rule.field);
 
     switch (rule.mode) {
-      case "raw":
+      case 'raw':
         // No masking — keep as-is
         break;
 
-      case "mask": {
+      case 'mask': {
         const marker: MaskedFieldMarker = {
           _masked: true,
           _present: result[rule.field] !== undefined && result[rule.field] !== null,
@@ -38,11 +38,11 @@ export function applyMasking(
         break;
       }
 
-      case "drop":
+      case 'drop':
         delete result[rule.field];
         break;
 
-      case "hash": {
+      case 'hash': {
         const val = result[rule.field];
         result[rule.field] = simpleHash(String(val));
         break;
@@ -60,5 +60,5 @@ function simpleHash(input: string): string {
     const ch = input.charCodeAt(i);
     hash = ((hash << 5) - hash + ch) | 0;
   }
-  return `h_${(hash >>> 0).toString(16).padStart(8, "0")}`;
+  return `h_${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }

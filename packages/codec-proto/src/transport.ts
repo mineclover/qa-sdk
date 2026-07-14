@@ -7,8 +7,8 @@
  * TransmissionEnvelope → protobuf encode → HTTP POST (application/x-protobuf).
  * 수신 측: protobuf decode → JSON TransmissionEnvelope 복원.
  */
-import type { TransmissionEnvelope } from "@qa-sdk/core";
-import { encodeEnvelope } from "./codec.js";
+import type { TransmissionEnvelope } from '@qa-sdk/core';
+import { encodeEnvelope } from './codec.js';
 
 export interface ProtoTransportOptions {
   endpoint: string;
@@ -31,12 +31,15 @@ export class ProtoTransport {
     const binary = encodeEnvelope(envelope);
 
     const res = await fetch(this.endpoint, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/x-protobuf",
+        'Content-Type': 'application/x-protobuf',
         ...this.headers,
       },
-      body: binary.buffer.slice(binary.byteOffset, binary.byteOffset + binary.byteLength) as ArrayBuffer,
+      body: binary.buffer.slice(
+        binary.byteOffset,
+        binary.byteOffset + binary.byteLength,
+      ) as ArrayBuffer,
       signal: AbortSignal.timeout(this.timeoutMs),
     });
 

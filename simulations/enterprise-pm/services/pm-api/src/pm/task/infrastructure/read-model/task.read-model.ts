@@ -4,9 +4,9 @@
 import {
   TaskReadModelQuery,
   type TaskDetailReadModel,
-} from "../../application/queries/task-read-model.query.js";
-import type { TaskRepositoryPort } from "../../application/ports/task-repository.port.js";
-import type { TaskEntity } from "../../domain/index.js";
+} from '../../application/queries/task-read-model.query.js';
+import type { TaskRepositoryPort } from '../../application/ports/task-repository.port.js';
+import type { TaskEntity } from '../../domain/index.js';
 
 export class RepositoryTaskReadModel extends TaskReadModelQuery {
   constructor(private readonly repository: TaskRepositoryPort) {

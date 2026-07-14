@@ -1,13 +1,13 @@
 // @def.boundary sim-scenarios
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { ok, equal, notEqual } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
+import { ok, equal, notEqual } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
 import {
   auditEntryHint,
   auditFirstFailureHint,
   auditTraceHint,
-} from "../post-run/operator-handoff.js";
+} from '../post-run/operator-handoff.js';
 
 interface S8Ctx {
   bob: { id: string; email: string; password: string };
@@ -36,33 +36,32 @@ interface S8Ctx {
  * bob 새 login 시 bitmap 은 두 role 의 union (ffff).
  */
 export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
-  name: "scenario-8-pubsub-invalidation",
-  description:
-    "admin 이 role 추가 → Redis pub/sub (옵션) → 새 login 시 fresh bitmap 적용",
+  name: 'scenario-8-pubsub-invalidation',
+  description: 'admin 이 role 추가 → Redis pub/sub (옵션) → 새 login 시 fresh bitmap 적용',
   validates: [
-    "Bitmap invalidation (§2 §5)",
-    "fresh bitmap re-issue on login",
-    "JWT self-contained semantics",
+    'Bitmap invalidation (§2 §5)',
+    'fresh bitmap re-issue on login',
+    'JWT self-contained semantics',
   ],
 
   async setup() {
     const handle = (globalThis as any).__simHandle;
-    if (!handle) throw new Error("__simHandle not bound");
+    if (!handle) throw new Error('__simHandle not bound');
     const fx = handle.fixtures;
-    
+
     // authApp shim 을 통해 auth-api URL 획득.
     // In-process 는 dynamic port, HTTP mode 는 factory 에 주입된 authApiUrl 을 사용.
     const addr = handle.authApp.getHttpServer().address();
-    if (!addr) throw new Error("authApp address not available");
-    
-    const authApiBaseUrl = (addr as any).port 
+    if (!addr) throw new Error('authApp address not available');
+
+    const authApiBaseUrl = (addr as any).port
       ? `http://127.0.0.1:${(addr as any).port}`
-      : (handle as any).authApiUrl || "http://localhost:4400";
+      : (handle as any).authApiUrl || 'http://localhost:4400';
 
     // engineering budget request 를 하나 시드 — bob 이 approve 시도할 대상.
     // requesterId=alice, bob 은 member 로 initial bitmap mask 가 budget.approve (addr 10) 미포함.
     const engReq = await fx.seedBudgetRequest({
-      projectId: "proj-scenario-8",
+      projectId: 'proj-scenario-8',
       projectDepartmentId: fx.departments.eng,
       amount: 500_000,
       requesterId: fx.alice.id,
@@ -73,7 +72,7 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       admin: fx.admin,
       newRole: {
         roleId: fx.roles.manager.id,
-        scopeType: "department",
+        scopeType: 'department',
         scopeId: fx.departments.eng,
       },
       // bob 의 재시도 endpoint — 생성된 eng budget request 의 approve 경로.
@@ -85,14 +84,14 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
 
   async act(ctx) {
     const gatewayFetch = (globalThis as any).__simGatewayFetch;
-    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
+    if (!gatewayFetch) throw new Error('__simGatewayFetch not bound');
     const traceIds: string[] = [];
 
     // 1. bob login → token1 (초기 mask 0x0f00)
     const bobLogin1 = await gatewayFetch(
-      new Request("http://sim/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://sim/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           email: ctx.bob.email,
           password: ctx.bob.password,
@@ -101,17 +100,17 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
     );
     if (!bobLogin1.ok) throw new Error(`bob login1: ${bobLogin1.status}`);
     const { token: token1 } = (await bobLogin1.json()) as { token: string };
-    traceIds.push(bobLogin1.headers.get("x-trace-id") ?? "");
+    traceIds.push(bobLogin1.headers.get('x-trace-id') ?? '');
 
     // 2. 초기 approve 시도 (member mask 미포함) → 403
     const initialDeny = await gatewayFetch(
       new Request(`http://sim${ctx.restrictedEndpoint}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${token1}`,
         },
-        body: JSON.stringify({ decision: "approve", comment: "initial try" }),
+        body: JSON.stringify({ decision: 'approve', comment: 'initial try' }),
       }),
     );
     const initialDenyStatus = initialDeny.status;
@@ -121,7 +120,7 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
     } catch {
       initialDenyBody = null;
     }
-    traceIds.push(initialDeny.headers.get("x-trace-id") ?? "");
+    traceIds.push(initialDeny.headers.get('x-trace-id') ?? '');
     const initialDenyMeta = ((initialDenyBody?.message as Record<string, unknown>) ??
       initialDenyBody ??
       {}) as {
@@ -131,8 +130,8 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
 
     // 3. admin → auth-api 직접 role assign (gateway proxy 우회)
     const assignRes = await fetch(`${ctx.authApiBaseUrl}/role-assignments`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         userId: ctx.bob.id,
         roleId: ctx.newRole.roleId,
@@ -141,9 +140,7 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       }),
     });
     if (!assignRes.ok) {
-      throw new Error(
-        `assign: ${assignRes.status} ${await assignRes.text()}`,
-      );
+      throw new Error(`assign: ${assignRes.status} ${await assignRes.text()}`);
     }
 
     // 4. invalidation publish 전파 대기 (in-process 는 no-op but test 안정)
@@ -152,12 +149,12 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
     // 5. stale token1 로 재시도 — JWT self-contained → 여전히 403
     const staleRes = await gatewayFetch(
       new Request(`http://sim${ctx.restrictedEndpoint}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${token1}`,
         },
-        body: JSON.stringify({ decision: "approve", comment: "stale retry" }),
+        body: JSON.stringify({ decision: 'approve', comment: 'stale retry' }),
       }),
     );
     const staleStatus = staleRes.status;
@@ -167,18 +164,16 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
     } catch {
       staleBody = null;
     }
-    const staleMeta = ((staleBody?.message as Record<string, unknown>) ??
-      staleBody ??
-      {}) as {
+    const staleMeta = ((staleBody?.message as Record<string, unknown>) ?? staleBody ?? {}) as {
       rootSpanId?: string;
       firstFailureSpanId?: string;
     };
 
     // 6. bob 다시 login → token2 (fresh bitmap with new manager role)
     const bobLogin2 = await gatewayFetch(
-      new Request("http://sim/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://sim/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           email: ctx.bob.email,
           password: ctx.bob.password,
@@ -191,12 +186,12 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
     // 7. token2 로 재시도 — manager role bits 포함 → 200/201
     const freshRes = await gatewayFetch(
       new Request(`http://sim${ctx.restrictedEndpoint}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${token2}`,
         },
-        body: JSON.stringify({ decision: "approve", comment: "fresh retry" }),
+        body: JSON.stringify({ decision: 'approve', comment: 'fresh retry' }),
       }),
     );
     const freshStatus = freshRes.status;
@@ -215,10 +210,7 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
         staleStatus,
         staleMeta,
         freshStatus,
-        freshRootSpanId:
-          typeof freshBody?.rootSpanId === "string"
-            ? freshBody.rootSpanId
-            : null,
+        freshRootSpanId: typeof freshBody?.rootSpanId === 'string' ? freshBody.rootSpanId : null,
         token1,
         token2,
       },
@@ -227,42 +219,24 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       operatorHints: [
         ...(initialDenyMeta.rootSpanId
           ? [
-              auditTraceHint(initialDenyMeta.rootSpanId, "initial-deny-trace"),
-              auditFirstFailureHint(
-                initialDenyMeta.rootSpanId,
-                "initial-deny-first-failure",
-              ),
+              auditTraceHint(initialDenyMeta.rootSpanId, 'initial-deny-trace'),
+              auditFirstFailureHint(initialDenyMeta.rootSpanId, 'initial-deny-first-failure'),
             ]
           : []),
         ...(initialDenyMeta.firstFailureSpanId
-          ? [
-              auditEntryHint(
-                initialDenyMeta.firstFailureSpanId,
-                "initial-deny-entry",
-              ),
-            ]
+          ? [auditEntryHint(initialDenyMeta.firstFailureSpanId, 'initial-deny-entry')]
           : []),
         ...(staleMeta.rootSpanId
           ? [
-              auditTraceHint(staleMeta.rootSpanId, "stale-deny-trace"),
-              auditFirstFailureHint(
-                staleMeta.rootSpanId,
-                "stale-deny-first-failure",
-              ),
+              auditTraceHint(staleMeta.rootSpanId, 'stale-deny-trace'),
+              auditFirstFailureHint(staleMeta.rootSpanId, 'stale-deny-first-failure'),
             ]
           : []),
         ...(staleMeta.firstFailureSpanId
-          ? [
-              auditEntryHint(
-                staleMeta.firstFailureSpanId,
-                "stale-deny-entry",
-              ),
-            ]
+          ? [auditEntryHint(staleMeta.firstFailureSpanId, 'stale-deny-entry')]
           : []),
-        ...(typeof freshBody?.rootSpanId === "string"
-          ? [
-              auditTraceHint(freshBody.rootSpanId, "fresh-approve-trace"),
-            ]
+        ...(typeof freshBody?.rootSpanId === 'string'
+          ? [auditTraceHint(freshBody.rootSpanId, 'fresh-approve-trace')]
           : []),
       ],
     };
@@ -288,7 +262,7 @@ export const scenario8PubsubInvalidation: Scenario<S8Ctx> = {
       d.freshStatus === 200 || d.freshStatus === 201,
       `fresh token (with new role) must yield 200/201, got ${d.freshStatus}`,
     );
-    notEqual(d.token1, d.token2, "tokens must differ after role change");
+    notEqual(d.token1, d.token2, 'tokens must differ after role change');
   },
 
   async teardown() {},

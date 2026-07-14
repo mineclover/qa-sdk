@@ -7,12 +7,12 @@
  *   3. dev 환경에서 schema 위반 시 throw
  */
 
-import { AddressContextV1Schema } from "@qa-sdk/core/coordinates/address-context-schema";
-import { describe, expect, it, vi } from "vitest";
+import { AddressContextV1Schema } from '@qa-sdk/core/coordinates/address-context-schema';
+import { describe, expect, it, vi } from 'vitest';
 
-import { createAutoTracker, type AutoTrackCatalog } from "./auto-track.js";
-import { registerMappings, SHOP_EVENT_MAPPINGS } from "./prefix-mapping.js";
-import { createTrackingContext } from "./tracking-context.js";
+import { createAutoTracker, type AutoTrackCatalog } from './auto-track.js';
+import { registerMappings, SHOP_EVENT_MAPPINGS } from './prefix-mapping.js';
+import { createTrackingContext } from './tracking-context.js';
 
 // 매핑 등록 보장
 registerMappings(SHOP_EVENT_MAPPINGS);
@@ -22,25 +22,25 @@ const mockCatalog: AutoTrackCatalog = {
   prefixes: {
     tracking: {
       dims: {
-        svc_ref: { kind: "prefix_ref", prefixId: "service" },
-        trackAction: { kind: "axis" },
-        page: { kind: "axis" },
-        userType: { kind: "axis" },
+        svc_ref: { kind: 'prefix_ref', prefixId: 'service' },
+        trackAction: { kind: 'axis' },
+        page: { kind: 'axis' },
+        userType: { kind: 'axis' },
       },
-      versions: [{ version: "v3", refEntries: { svc_ref: { values: [0] } } }],
+      versions: [{ version: 'v3', refEntries: { svc_ref: { values: [0] } } }],
     },
     cart_event: {
-      dims: { svc_ref: { kind: "prefix_ref", prefixId: "service" }, action: { kind: "axis" } },
-      versions: [{ version: "v2", refEntries: { svc_ref: { values: [0] } } }],
+      dims: { svc_ref: { kind: 'prefix_ref', prefixId: 'service' }, action: { kind: 'axis' } },
+      versions: [{ version: 'v2', refEntries: { svc_ref: { values: [0] } } }],
     },
     endpoint: {
       dims: {
-        svc_ref: { kind: "prefix_ref", prefixId: "service" },
-        resource_type: { kind: "axis" },
-        http_method: { kind: "axis" },
-        api_version: { kind: "axis" },
+        svc_ref: { kind: 'prefix_ref', prefixId: 'service' },
+        resource_type: { kind: 'axis' },
+        http_method: { kind: 'axis' },
+        api_version: { kind: 'axis' },
       },
-      versions: [{ version: "v1", refEntries: { svc_ref: { values: [0] } } }],
+      versions: [{ version: 'v1', refEntries: { svc_ref: { values: [0] } } }],
     },
   },
 };
@@ -51,13 +51,17 @@ const mockEncode = vi.fn(
 );
 const mockVersion = vi.fn(
   (_cat: AutoTrackCatalog, pid: string) =>
-    mockCatalog.prefixes?.[pid]?.versions?.[0]?.version ?? "v1",
+    mockCatalog.prefixes?.[pid]?.versions?.[0]?.version ?? 'v1',
 );
 
-describe("auto-track — emit address_context contract", () => {
-  it("정상 emit은 AddressContextV1Schema 통과", () => {
+describe('auto-track — emit address_context contract', () => {
+  it('정상 emit은 AddressContextV1Schema 통과', () => {
     const captured: Array<{ key: string; ctx: Record<string, string> }> = [];
-    const ctx = createTrackingContext({ locale: "ko", initialPage: "product_detail", initialUserType: "member" });
+    const ctx = createTrackingContext({
+      locale: 'ko',
+      initialPage: 'product_detail',
+      initialUserType: 'member',
+    });
 
     const tracker = createAutoTracker({
       catalog: mockCatalog,
@@ -69,7 +73,7 @@ describe("auto-track — emit address_context contract", () => {
       latestPrefixVersion: mockVersion,
     });
 
-    tracker.track("cart.add", { item_id: 7 });
+    tracker.track('cart.add', { item_id: 7 });
 
     expect(captured).toHaveLength(1);
     expect(() => AddressContextV1Schema.parse(captured[0].ctx)).not.toThrow();
@@ -79,7 +83,7 @@ describe("auto-track — emit address_context contract", () => {
     }
   });
 
-  it("매핑 없는 이벤트 → 빈 컨텍스트, 검증 통과", () => {
+  it('매핑 없는 이벤트 → 빈 컨텍스트, 검증 통과', () => {
     let received: Record<string, string> | null = null;
     const ctx = createTrackingContext();
 
@@ -93,7 +97,7 @@ describe("auto-track — emit address_context contract", () => {
       latestPrefixVersion: mockVersion,
     });
 
-    tracker.track("unknown_event", {});
+    tracker.track('unknown_event', {});
     expect(received).toEqual({});
     expect(() => AddressContextV1Schema.parse(received!)).not.toThrow();
   });

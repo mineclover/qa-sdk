@@ -1,8 +1,8 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { DepartmentEntity } from "../../domain/index.js";
-import type { DepartmentTransactionScope } from "./department-transaction.port.js";
+import type { DepartmentEntity } from '../../domain/index.js';
+import type { DepartmentTransactionScope } from './department-transaction.port.js';
 
 export abstract class DepartmentRepositoryPort {
   abstract save(entity: DepartmentEntity, scope: DepartmentTransactionScope): Promise<void>;

@@ -1,4 +1,4 @@
-import type { UnknownMarker } from "../../lib/decisionDemo";
+import type { UnknownMarker } from '../../lib/decisionDemo';
 
 export function UnknownMarkersPanel({ markers }: { markers: UnknownMarker[] }) {
   if (markers.length === 0) return null;

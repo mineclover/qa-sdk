@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "0aa8f1be-7f6c-4b6a-b80d-3a150e77014b",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "consumption_snapshots",
@@ -919,74 +917,56 @@
       "table": "test_results"
     },
     {
-      "columns": [
-        "source_id",
-        "target_id",
-        "link_type"
-      ],
+      "columns": ["source_id", "target_id", "link_type"],
       "nameExplicit": false,
       "name": "document_links_pk",
       "entityType": "pks",
       "table": "document_links"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "consumption_snapshots_pk",
       "table": "consumption_snapshots",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "document_history_pk",
       "table": "document_history",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "doc_id"
-      ],
+      "columns": ["doc_id"],
       "nameExplicit": false,
       "name": "documents_pk",
       "table": "documents",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "prefix_id"
-      ],
+      "columns": ["prefix_id"],
       "nameExplicit": false,
       "name": "prefix_registry_pk",
       "table": "prefix_registry",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "slice_intents_pk",
       "table": "slice_intents",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "test_registry_pk",
       "table": "test_registry",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "test_results_pk",
       "table": "test_results",

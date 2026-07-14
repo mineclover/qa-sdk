@@ -1,33 +1,30 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  PM_DB_INSTANCE,
-  type PmDbInstanceHandle,
-} from "../pm-db.module.js";
+import { PM_DB_INSTANCE, type PmDbInstanceHandle } from '../pm-db.module.js';
 
-import { TaskRepositoryPort } from "./application/ports/task-repository.port.js";
-import { TaskReadModelQuery } from "./application/queries/task-read-model.query.js";
-import { TaskUseCase } from "./application/use-cases/task.use-case.js";
+import { TaskRepositoryPort } from './application/ports/task-repository.port.js';
+import { TaskReadModelQuery } from './application/queries/task-read-model.query.js';
+import { TaskUseCase } from './application/use-cases/task.use-case.js';
 
-import { createTaskRepository } from "./infrastructure/persistence/task.repository.js";
-import { createTaskTransactionPort } from "./infrastructure/transaction/task.transaction.js";
-import { createTaskOutboxPort } from "./infrastructure/outbox/task.outbox.js";
-import { createTaskLogger } from "./infrastructure/logging/task.logger.js";
-import { RepositoryTaskReadModel } from "./infrastructure/read-model/task.read-model.js";
+import { createTaskRepository } from './infrastructure/persistence/task.repository.js';
+import { createTaskTransactionPort } from './infrastructure/transaction/task.transaction.js';
+import { createTaskOutboxPort } from './infrastructure/outbox/task.outbox.js';
+import { createTaskLogger } from './infrastructure/logging/task.logger.js';
+import { RepositoryTaskReadModel } from './infrastructure/read-model/task.read-model.js';
 
-import { TaskController } from "./presentation/http/task.controller.js";
+import { TaskController } from './presentation/http/task.controller.js';
 
-const TASK_TRANSACTION_PORT = Symbol.for("sim-pm-api/task/TransactionPort");
-const TASK_OUTBOX_PORT = Symbol.for("sim-pm-api/task/OutboxPort");
+const TASK_TRANSACTION_PORT = Symbol.for('sim-pm-api/task/TransactionPort');
+const TASK_OUTBOX_PORT = Symbol.for('sim-pm-api/task/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: TaskRepositoryPort,
@@ -69,12 +66,7 @@ const useCaseProvider: Provider = {
     transaction: TransactionPort,
     logger: LoggerPort,
   ) => new TaskUseCase(repo, outbox, transaction, logger),
-  inject: [
-    TaskRepositoryPort,
-    TASK_OUTBOX_PORT,
-    TASK_TRANSACTION_PORT,
-    SLICE_LOGGER_PORT,
-  ],
+  inject: [TaskRepositoryPort, TASK_OUTBOX_PORT, TASK_TRANSACTION_PORT, SLICE_LOGGER_PORT],
 };
 
 /**

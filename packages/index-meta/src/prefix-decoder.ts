@@ -24,10 +24,10 @@
  * refs에 없는 index_ref는 raw number로 유지된다 (hasRef()로 확인 가능).
  */
 
-import type { DecodeMap, EntityId, VersionedValue } from "./types.js";
-import { MetaCodec, validateDecodeMap } from "./meta-codec.js";
-import { AddressProtocolManager } from "./address-protocol-manager.js";
-import { ValidationError } from "./errors.js";
+import type { DecodeMap, EntityId, VersionedValue } from './types.js';
+import { MetaCodec, validateDecodeMap } from './meta-codec.js';
+import { AddressProtocolManager } from './address-protocol-manager.js';
+import { ValidationError } from './errors.js';
 
 // ── 공개 타입 ────────────────────────────────────────────────────────────────
 
@@ -69,10 +69,10 @@ export class PrefixDecoder {
 
   constructor(config: PrefixDecoderConfig) {
     validateDecodeMap(config.map);
-    if (config.map.numberType === "bigint") {
+    if (config.map.numberType === 'bigint') {
       throw new ValidationError(
         `PrefixDecoder does not support BigInt-typed index "${config.map.indexId}/${config.map.versionId}". ` +
-        `Use BigInt-capable codec instead.`
+          `Use BigInt-capable codec instead.`,
       );
     }
     this._config = config;
@@ -83,10 +83,10 @@ export class PrefixDecoder {
     if (config.refs) {
       for (const [indexId, refMap] of Object.entries(config.refs)) {
         validateDecodeMap(refMap);
-        if (refMap.numberType === "bigint") {
+        if (refMap.numberType === 'bigint') {
           throw new ValidationError(
             `PrefixDecoder: reference index "${indexId}" cannot be BigInt-typed. ` +
-            `Use BigInt-capable codec instead.`,
+              `Use BigInt-capable codec instead.`,
           );
         }
         this._refCodecs.set(indexId, new MetaCodec(refMap));
@@ -101,12 +101,24 @@ export class PrefixDecoder {
 
   // ── Identity (MetaCodec 위임) ─────────────────────────────────────────────
 
-  get indexId(): string { return this._codec.indexId; }
-  get versionId(): string { return this._codec.versionId; }
-  get size(): number { return this._codec.size; }
-  get shape(): readonly number[] { return this._codec.shape; }
-  get strides(): readonly number[] { return this._codec.strides; }
-  get dimIds(): readonly string[] { return this._codec.dimIds; }
+  get indexId(): string {
+    return this._codec.indexId;
+  }
+  get versionId(): string {
+    return this._codec.versionId;
+  }
+  get size(): number {
+    return this._codec.size;
+  }
+  get shape(): readonly number[] {
+    return this._codec.shape;
+  }
+  get strides(): readonly number[] {
+    return this._codec.strides;
+  }
+  get dimIds(): readonly string[] {
+    return this._codec.dimIds;
+  }
 
   // ── Format detection ───────────────────────────────────────────────────────
 
@@ -131,7 +143,7 @@ export class PrefixDecoder {
    * - string: APM auto-detect 파싱 (colon/URI/UUID/compact)
    */
   resolve(input: number | string): VersionedValue {
-    if (typeof input === "number") {
+    if (typeof input === 'number') {
       return {
         indexId: this._codec.indexId,
         versionId: this._codec.versionId,
@@ -152,7 +164,7 @@ export class PrefixDecoder {
    * // → { role: "admin", action: "read", resource: 10 }
    */
   decode(input: number | string): Readonly<Record<string, EntityId>> {
-    if (typeof input === "number") {
+    if (typeof input === 'number') {
       return this._codec.decodeValue(input);
     }
     const vv = this.resolve(input);
@@ -178,11 +190,11 @@ export class PrefixDecoder {
     const refs: Record<string, Record<string, EntityId>> = {};
 
     for (const dim of this._config.map.dims) {
-      if (dim.kind.type === "index_ref") {
+      if (dim.kind.type === 'index_ref') {
         const refCodec = this._refCodecs.get(dim.kind.indexId);
         if (refCodec) {
           const refValue = entities[dim.dimId];
-          if (typeof refValue === "number") {
+          if (typeof refValue === 'number') {
             refs[dim.dimId] = { ...refCodec.decodeValue(refValue) };
           }
         }
@@ -202,7 +214,7 @@ export class PrefixDecoder {
     const result = this.decodeDeep(input);
     const unresolved: string[] = [];
     for (const dim of this._config.map.dims) {
-      if (dim.kind.type === "index_ref" && !this.hasRef(dim.dimId)) {
+      if (dim.kind.type === 'index_ref' && !this.hasRef(dim.dimId)) {
         unresolved.push(dim.dimId);
       }
     }
@@ -240,26 +252,22 @@ export class PrefixDecoder {
     const dim = this._config.map.dims.find((d) => d.dimId === dimId);
     if (!dim) {
       throw new ValidationError(
-        `resolveRef: unknown dim "${dimId}" in "${this._codec.indexId}/${this._codec.versionId}"`
+        `resolveRef: unknown dim "${dimId}" in "${this._codec.indexId}/${this._codec.versionId}"`,
       );
     }
-    if (dim.kind.type !== "index_ref") {
+    if (dim.kind.type !== 'index_ref') {
       throw new ValidationError(
-        `resolveRef: dim "${dimId}" is "${dim.kind.type}", expected "index_ref"`
+        `resolveRef: dim "${dimId}" is "${dim.kind.type}", expected "index_ref"`,
       );
     }
     const refCodec = this._refCodecs.get(dim.kind.indexId);
     if (!refCodec) {
-      throw new ValidationError(
-        `resolveRef: no ref codec for index "${dim.kind.indexId}"`
-      );
+      throw new ValidationError(`resolveRef: no ref codec for index "${dim.kind.indexId}"`);
     }
     const decoded = this._codec.decodeValue(value);
     const refValue = decoded[dimId];
-    if (typeof refValue !== "number") {
-      throw new ValidationError(
-        `resolveRef: dim "${dimId}" entry is not a number`
-      );
+    if (typeof refValue !== 'number') {
+      throw new ValidationError(`resolveRef: dim "${dimId}" entry is not a number`);
     }
     return refCodec.decodeValue(refValue);
   }
@@ -269,7 +277,7 @@ export class PrefixDecoder {
    */
   hasRef(dimId: string): boolean {
     const dim = this._config.map.dims.find((d) => d.dimId === dimId);
-    if (!dim || dim.kind.type !== "index_ref") return false;
+    if (!dim || dim.kind.type !== 'index_ref') return false;
     return this._refCodecs.has(dim.kind.indexId);
   }
 

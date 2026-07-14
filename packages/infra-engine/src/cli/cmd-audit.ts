@@ -1,15 +1,15 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import type { CommandHandler } from "cli-command";
-import { createDiscoveryClient } from "../discovery/client.js";
-import type { AuditIssue } from "../commands/audit.js";
-import { REGISTRY_URL } from "./context.js";
+import type { CommandHandler } from 'cli-command';
+import { createDiscoveryClient } from '../discovery/client.js';
+import type { AuditIssue } from '../commands/audit.js';
+import { REGISTRY_URL } from './context.js';
 
 /** audit 명령 — registry 감사 */
 export const auditHandler: CommandHandler = async (_ctx) => {
   const client = createDiscoveryClient(REGISTRY_URL);
-  const { auditRegistry } = await import("../commands/audit.js");
+  const { auditRegistry } = await import('../commands/audit.js');
   const result = await auditRegistry(client);
 
   console.log(`\n=== Registry 감사 ===\n`);
@@ -32,7 +32,7 @@ export const auditHandler: CommandHandler = async (_ctx) => {
     }
   }
   if (result.errors.length === 0 && result.warnings.length === 0) {
-    console.log("이상 없음");
+    console.log('이상 없음');
   }
   console.log(`\n요약: ${result.errors.length} 에러, ${result.warnings.length} 경고`);
 };

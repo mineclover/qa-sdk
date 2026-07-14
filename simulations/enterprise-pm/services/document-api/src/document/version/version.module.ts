@@ -1,38 +1,35 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  DOCUMENT_DB_INSTANCE,
-  type DocumentDbInstanceHandle,
-} from "../document-db.module.js";
+import { DOCUMENT_DB_INSTANCE, type DocumentDbInstanceHandle } from '../document-db.module.js';
 
-import { VersionRepositoryPort } from "./application/ports/version-repository.port.js";
-import { VersionReadModelQuery } from "./application/queries/version-read-model.query.js";
-import { VersionUseCase } from "./application/use-cases/version.use-case.js";
-import { DocumentQueryPort } from "./application/ports/document-query.port.js";
+import { VersionRepositoryPort } from './application/ports/version-repository.port.js';
+import { VersionReadModelQuery } from './application/queries/version-read-model.query.js';
+import { VersionUseCase } from './application/use-cases/version.use-case.js';
+import { DocumentQueryPort } from './application/ports/document-query.port.js';
 
-import { createVersionRepository } from "./infrastructure/persistence/version.repository.js";
-import { createVersionTransactionPort } from "./infrastructure/transaction/version.transaction.js";
-import { createVersionOutboxPort } from "./infrastructure/outbox/version.outbox.js";
-import { createVersionLogger } from "./infrastructure/logging/version.logger.js";
-import { RepositoryVersionReadModel } from "./infrastructure/read-model/version.read-model.js";
-import { DocumentReadModelDocumentQueryAdapter } from "./infrastructure/read-model/document-query.adapter.js";
+import { createVersionRepository } from './infrastructure/persistence/version.repository.js';
+import { createVersionTransactionPort } from './infrastructure/transaction/version.transaction.js';
+import { createVersionOutboxPort } from './infrastructure/outbox/version.outbox.js';
+import { createVersionLogger } from './infrastructure/logging/version.logger.js';
+import { RepositoryVersionReadModel } from './infrastructure/read-model/version.read-model.js';
+import { DocumentReadModelDocumentQueryAdapter } from './infrastructure/read-model/document-query.adapter.js';
 
-import { DocumentReadModelQuery } from "../document/application/queries/document-read-model.query.js";
-import { DocumentSliceModule } from "../document/document.module.js";
+import { DocumentReadModelQuery } from '../document/application/queries/document-read-model.query.js';
+import { DocumentSliceModule } from '../document/document.module.js';
 
-import { VersionController } from "./presentation/http/version.controller.js";
+import { VersionController } from './presentation/http/version.controller.js';
 
-const VERSION_TRANSACTION_PORT = Symbol.for("sim-document-api/version/TransactionPort");
-const VERSION_OUTBOX_PORT = Symbol.for("sim-document-api/version/OutboxPort");
+const VERSION_TRANSACTION_PORT = Symbol.for('sim-document-api/version/TransactionPort');
+const VERSION_OUTBOX_PORT = Symbol.for('sim-document-api/version/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: VersionRepositoryPort,

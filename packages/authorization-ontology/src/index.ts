@@ -9,17 +9,17 @@ import {
   type NodeCoord,
   type OperationalOntologyPack,
   type OperationalOntologyPackValidationResult,
-} from "operational-ontology";
-import { parse as parseYaml } from "yaml";
+} from 'operational-ontology';
+import { parse as parseYaml } from 'yaml';
 
 export const AUTHORIZATION_REALM_KINDS = [
-  "identity",
-  "policy",
-  "enforcement",
-  "infra",
-  "application",
-  "data",
-  "observation",
+  'identity',
+  'policy',
+  'enforcement',
+  'infra',
+  'application',
+  'data',
+  'observation',
 ] as const;
 
 export type AuthorizationRealmKind = (typeof AUTHORIZATION_REALM_KINDS)[number];
@@ -34,98 +34,98 @@ export interface AuthorizationRealm {
 }
 
 export const AUTHORIZATION_NODE_KINDS = [
-  "principal",
-  "role",
-  "resource",
-  "action",
-  "policy",
-  "decision",
-  "enforcement_point",
-  "identity_provider",
-  "deployment_source",
-  "lineage_policy",
+  'principal',
+  'role',
+  'resource',
+  'action',
+  'policy',
+  'decision',
+  'enforcement_point',
+  'identity_provider',
+  'deployment_source',
+  'lineage_policy',
 ] as const;
 
 export type AuthorizationNodeKind = (typeof AUTHORIZATION_NODE_KINDS)[number];
 
 export const AUTHORIZATION_RESOURCE_KINDS = [
-  "api_route",
-  "service",
-  "k8s_object",
-  "cloud_lb",
-  "proxy_route",
-  "domain_resource",
-  "permission_feature",
-  "permission_scope",
-  "dataset",
-  "table",
-  "view",
-  "column",
-  "graph_node",
-  "graph_property",
+  'api_route',
+  'service',
+  'k8s_object',
+  'cloud_lb',
+  'proxy_route',
+  'domain_resource',
+  'permission_feature',
+  'permission_scope',
+  'dataset',
+  'table',
+  'view',
+  'column',
+  'graph_node',
+  'graph_property',
 ] as const;
 
 export type AuthorizationResourceKind = (typeof AUTHORIZATION_RESOURCE_KINDS)[number];
 
 export const AUTHORIZATION_PRINCIPAL_KINDS = [
-  "human_user",
-  "service_account",
-  "machine",
-  "group",
-  "role",
+  'human_user',
+  'service_account',
+  'machine',
+  'group',
+  'role',
 ] as const;
 
 export type AuthorizationPrincipalKind = (typeof AUTHORIZATION_PRINCIPAL_KINDS)[number];
 
 export const AUTHORIZATION_ACTION_KINDS = [
-  "read",
-  "write",
-  "delete",
-  "execute",
-  "export",
-  "traverse",
+  'read',
+  'write',
+  'delete',
+  'execute',
+  'export',
+  'traverse',
 ] as const;
 
 export type AuthorizationActionKind = (typeof AUTHORIZATION_ACTION_KINDS)[number];
 
 export const AUTHORIZATION_POLICY_KINDS = [
-  "cerbos_resource_policy",
-  "cerbos_derived_roles",
-  "lineage_policy",
-  "gateway_policy",
+  'cerbos_resource_policy',
+  'cerbos_derived_roles',
+  'lineage_policy',
+  'gateway_policy',
 ] as const;
 
 export type AuthorizationPolicyKind = (typeof AUTHORIZATION_POLICY_KINDS)[number];
 
 export const AUTHORIZATION_RELATION_KINDS = [
-  "issued_by",
-  "authenticated_by",
-  "enters_at",
-  "enforced_at",
-  "protects",
-  "evaluated_by",
-  "deployed_by",
-  "has_role",
-  "assigns_role",
-  "derives_role_from",
-  "denies_role",
-  "imports_derived_role",
-  "matches_resource",
-  "grants_feature",
-  "denies_feature",
-  "materializes_permission",
-  "overrides_permission",
-  "allows_action",
-  "denies_action",
-  "derives_from",
-  "inherits_policy_from",
-  "downgrades_policy_from",
-  "requires_manual_review",
-  "decision_principal",
-  "decision_resource",
-  "decision_action",
-  "decision_policy",
-  "decision_enforcement",
+  'issued_by',
+  'authenticated_by',
+  'enters_at',
+  'enforced_at',
+  'protects',
+  'evaluated_by',
+  'deployed_by',
+  'has_role',
+  'assigns_role',
+  'derives_role_from',
+  'denies_role',
+  'imports_derived_role',
+  'matches_resource',
+  'grants_feature',
+  'denies_feature',
+  'materializes_permission',
+  'overrides_permission',
+  'allows_action',
+  'denies_action',
+  'derives_from',
+  'inherits_policy_from',
+  'downgrades_policy_from',
+  'requires_manual_review',
+  'decision_principal',
+  'decision_resource',
+  'decision_action',
+  'decision_policy',
+  'decision_enforcement',
 ] as const;
 
 export type AuthorizationRelationKind = (typeof AUTHORIZATION_RELATION_KINDS)[number];
@@ -188,20 +188,26 @@ export interface PolicyRef {
 export interface EnforcementPointRef {
   realm: AuthorizationRealm;
   enforcementPointId: string;
-  kind: "cloud_lb" | "caddy" | "nginx_proxy" | "authentik_proxy" | "service_middleware" | "cerbos_pdp";
+  kind:
+    | 'cloud_lb'
+    | 'caddy'
+    | 'nginx_proxy'
+    | 'authentik_proxy'
+    | 'service_middleware'
+    | 'cerbos_pdp';
 }
 
 export interface IdentityProviderRef {
   realm: AuthorizationRealm;
   providerId: string;
-  kind: "zitadel" | "authentik" | "oidc" | string;
+  kind: 'zitadel' | 'authentik' | 'oidc' | string;
   issuer?: string;
 }
 
 export interface EnforcementRouteRef {
   routeRealm: AuthorizationRealm;
   routeId: string;
-  routeKind: "proxy_route" | "api_route" | "cloud_lb" | string;
+  routeKind: 'proxy_route' | 'api_route' | 'cloud_lb' | string;
   host?: string;
   path?: string;
   methods?: string[];
@@ -211,7 +217,7 @@ export interface EnforcementRouteRef {
   deploymentSource?: {
     realm: AuthorizationRealm;
     sourceId: string;
-    kind: "pulumi" | "argocd" | "git" | string;
+    kind: 'pulumi' | 'argocd' | 'git' | string;
     revision?: string;
   };
 }
@@ -220,14 +226,14 @@ export interface StructuredEnforcementRouteConfig {
   environment: string;
   route: {
     id?: string;
-    kind?: "proxy_route" | "api_route" | "cloud_lb" | string;
+    kind?: 'proxy_route' | 'api_route' | 'cloud_lb' | string;
     host: string;
     path: string;
     methods?: string[];
   };
   proxy: {
     authority: string;
-    kind: "cloud_lb" | "caddy" | "nginx_proxy" | "authentik_proxy" | "service_middleware";
+    kind: 'cloud_lb' | 'caddy' | 'nginx_proxy' | 'authentik_proxy' | 'service_middleware';
     id: string;
   };
   upstream?: {
@@ -238,13 +244,13 @@ export interface StructuredEnforcementRouteConfig {
   policy?: {
     authority: string;
     id: string;
-    kind?: PolicyRef["policyKind"];
+    kind?: PolicyRef['policyKind'];
     version?: string;
   };
   deployment?: {
     authority: string;
     id: string;
-    kind: "pulumi" | "argocd" | "git" | string;
+    kind: 'pulumi' | 'argocd' | 'git' | string;
     revision?: string;
   };
 }
@@ -261,10 +267,10 @@ export interface NginxProxyConfigProjectionOptions {
   proxyAuthority: string;
   proxyId: string;
   host?: string;
-  proxyKind?: StructuredEnforcementRouteConfig["proxy"]["kind"];
+  proxyKind?: StructuredEnforcementRouteConfig['proxy']['kind'];
   upstreamAuthority?: string;
-  deployment?: StructuredEnforcementRouteConfig["deployment"];
-  policyByPath?: Record<string, StructuredEnforcementRouteConfig["policy"]>;
+  deployment?: StructuredEnforcementRouteConfig['deployment'];
+  policyByPath?: Record<string, StructuredEnforcementRouteConfig['policy']>;
 }
 
 export interface ApplicationAuthorizationBindingRef {
@@ -276,7 +282,7 @@ export interface ApplicationAuthorizationBindingRef {
   deploymentSource?: {
     realm: AuthorizationRealm;
     sourceId: string;
-    kind: "pulumi" | "argocd" | "git" | string;
+    kind: 'pulumi' | 'argocd' | 'git' | string;
     revision?: string;
   };
 }
@@ -291,7 +297,7 @@ export interface StructuredApplicationAuthorizationConfig {
   middleware?: {
     authority?: string;
     id?: string;
-    kind?: EnforcementPointRef["kind"];
+    kind?: EnforcementPointRef['kind'];
   };
   resource: {
     authority?: string;
@@ -305,14 +311,14 @@ export interface StructuredApplicationAuthorizationConfig {
   policy?: {
     authority: string;
     id: string;
-    kind?: PolicyRef["policyKind"];
+    kind?: PolicyRef['policyKind'];
     version?: string;
   };
-  actions?: Array<string | { id: string; kind?: ActionRef["actionKind"] }>;
+  actions?: Array<string | { id: string; kind?: ActionRef['actionKind'] }>;
   deployment?: {
     authority: string;
     id: string;
-    kind: "pulumi" | "argocd" | "git" | string;
+    kind: 'pulumi' | 'argocd' | 'git' | string;
     revision?: string;
   };
 }
@@ -373,7 +379,7 @@ export interface PermissionEngineRoleProjectionInput {
 }
 
 export interface PermissionEngineAuditGrantSourceLike {
-  source: "direct" | "org-role";
+  source: 'direct' | 'org-role';
   orgRoleId?: string;
   domainRole: string;
   inheritancePath: readonly string[];
@@ -385,7 +391,7 @@ export interface PermissionEngineAuditResultLike {
   userId: string;
   granted: boolean;
   sources: readonly PermissionEngineAuditGrantSourceLike[];
-  denialReason: { kind: "not-assigned" | "user-override" } | null;
+  denialReason: { kind: 'not-assigned' | 'user-override' } | null;
 }
 
 export interface PermissionEngineAuditProjectionInput {
@@ -402,11 +408,11 @@ export interface PermissionEngineAuditProjectionInput {
 }
 
 export type PermissionEngineMiddlewareFeedbackKind =
-  | "VERSION_MISMATCH"
-  | "SCHEMA_MISMATCH"
-  | "NO_DOMAIN_CLAIM"
-  | "FEATURE_NOT_FOUND"
-  | "PERMISSION_DENIED";
+  | 'VERSION_MISMATCH'
+  | 'SCHEMA_MISMATCH'
+  | 'NO_DOMAIN_CLAIM'
+  | 'FEATURE_NOT_FOUND'
+  | 'PERMISSION_DENIED';
 
 export interface PermissionEngineMiddlewareFeedbackLike {
   ok: boolean;
@@ -464,7 +470,7 @@ export interface CerbosDerivedRoleDefinitionLike {
 
 export interface CerbosPolicyRuleLike {
   actions: string[];
-  effect: "EFFECT_ALLOW" | "EFFECT_DENY" | "allow" | "deny" | string;
+  effect: 'EFFECT_ALLOW' | 'EFFECT_DENY' | 'allow' | 'deny' | string;
   roles?: string[];
   derivedRoles?: string[];
   condition?: unknown;
@@ -472,7 +478,7 @@ export interface CerbosPolicyRuleLike {
 }
 
 export interface CerbosPolicyValidationIssue {
-  level: "error" | "warning";
+  level: 'error' | 'warning';
   code: string;
   path: string;
   message: string;
@@ -485,7 +491,7 @@ export interface CerbosPolicyValidationResult {
 
 export interface NormalizedCerbosPolicyRule {
   actions: string[];
-  effect: "allow" | "deny";
+  effect: 'allow' | 'deny';
   roles: string[];
   derivedRoles: string[];
   condition?: unknown;
@@ -547,11 +553,11 @@ export interface CerbosPolicySourceProjectionInput {
   actionRealm?: AuthorizationRealm;
   roleRealm?: AuthorizationRealm;
   source: string | CerbosResourcePolicyLike | CerbosDerivedRolesLike;
-  sourceType?: "json" | "yaml" | "object";
+  sourceType?: 'json' | 'yaml' | 'object';
   metadata?: CerbosPolicySourceMetadata;
 }
 
-export type CerbosPolicySourceKind = "resource_policy" | "derived_roles";
+export type CerbosPolicySourceKind = 'resource_policy' | 'derived_roles';
 
 export interface CerbosPolicySourceProjectionResult {
   sourceKind: CerbosPolicySourceKind;
@@ -560,25 +566,20 @@ export interface CerbosPolicySourceProjectionResult {
 }
 
 export const LINEAGE_AUTHORIZATION_TRANSFORMS = [
-  "direct",
-  "rename",
-  "copy",
-  "hash",
-  "mask",
-  "aggregate",
-  "join",
-  "filter",
-  "derive",
+  'direct',
+  'rename',
+  'copy',
+  'hash',
+  'mask',
+  'aggregate',
+  'join',
+  'filter',
+  'derive',
 ] as const;
 
-export type LineageAuthorizationTransform =
-  (typeof LINEAGE_AUTHORIZATION_TRANSFORMS)[number];
+export type LineageAuthorizationTransform = (typeof LINEAGE_AUTHORIZATION_TRANSFORMS)[number];
 
-export type PolicyPropagationMode =
-  | "inherit"
-  | "downgrade"
-  | "block"
-  | "manual_review";
+export type PolicyPropagationMode = 'inherit' | 'downgrade' | 'block' | 'manual_review';
 
 export interface LineagePolicyPropagationRule {
   sourceClassification: string;
@@ -598,10 +599,7 @@ export interface ColumnPolicyPropagationInput {
 
 export interface ColumnPolicyPropagationResult {
   mode: PolicyPropagationMode;
-  relationKind:
-    | "inherits_policy_from"
-    | "downgrades_policy_from"
-    | "requires_manual_review";
+  relationKind: 'inherits_policy_from' | 'downgrades_policy_from' | 'requires_manual_review';
   targetClassification: string;
   reason: string;
 }
@@ -613,7 +611,7 @@ export interface AuthorizationDecision {
   action: ActionRef;
   policy?: PolicyRef;
   enforcementPoint?: EnforcementPointRef;
-  effect: "allow" | "deny";
+  effect: 'allow' | 'deny';
   observedAt: string;
   reason?: string;
 }
@@ -632,7 +630,7 @@ export interface CerbosResourceLike {
 
 export interface CerbosActionDecisionLike {
   action: string;
-  effect: "EFFECT_ALLOW" | "EFFECT_DENY" | "allow" | "deny" | string;
+  effect: 'EFFECT_ALLOW' | 'EFFECT_DENY' | 'allow' | 'deny' | string;
   policyId?: string;
   reason?: string;
 }
@@ -655,21 +653,21 @@ export interface CerbosDecisionObservationProjectionInput {
   decision: CerbosDecisionObservationLike;
 }
 
-export type AuthorizationAuditSeverity = "error" | "warning";
+export type AuthorizationAuditSeverity = 'error' | 'warning';
 
 export type AuthorizationAuditIssueCode =
-  | "dangling_relation"
-  | "proxy_route_missing_enforcement"
-  | "proxy_route_missing_policy"
-  | "proxy_route_missing_upstream"
-  | "application_resource_missing_policy"
-  | "application_resource_missing_enforcement"
-  | "decision_missing_resource"
-  | "decision_missing_action"
-  | "decision_missing_policy"
-  | "decision_missing_enforcement"
-  | "decision_policy_action_unlinked"
-  | "decision_policy_resource_unlinked";
+  | 'dangling_relation'
+  | 'proxy_route_missing_enforcement'
+  | 'proxy_route_missing_policy'
+  | 'proxy_route_missing_upstream'
+  | 'application_resource_missing_policy'
+  | 'application_resource_missing_enforcement'
+  | 'decision_missing_resource'
+  | 'decision_missing_action'
+  | 'decision_missing_policy'
+  | 'decision_missing_enforcement'
+  | 'decision_policy_action_unlinked'
+  | 'decision_policy_resource_unlinked';
 
 export interface AuthorizationAuditIssue {
   severity: AuthorizationAuditSeverity;
@@ -728,18 +726,15 @@ export interface AuthorizationCoverageReport {
   overallScore: number;
 }
 
-export function createAuthorizationRealmId(input: Omit<AuthorizationRealm, "realmId">): string {
-  const parts = [
-    input.kind,
-    input.authority,
-    input.environment,
-    input.region,
-  ].filter((part): part is string => Boolean(part));
-  return parts.join(":");
+export function createAuthorizationRealmId(input: Omit<AuthorizationRealm, 'realmId'>): string {
+  const parts = [input.kind, input.authority, input.environment, input.region].filter(
+    (part): part is string => Boolean(part),
+  );
+  return parts.join(':');
 }
 
 export function createAuthorizationRealm(
-  input: Omit<AuthorizationRealm, "realmId"> & { realmId?: string },
+  input: Omit<AuthorizationRealm, 'realmId'> & { realmId?: string },
 ): AuthorizationRealm {
   return {
     ...input,
@@ -768,16 +763,16 @@ function nodeIdFromCoord(coord: NodeCoord): string {
 export function createPrincipalNode(input: PrincipalRef): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "principal",
+    space: 'principal',
     anchor: input.principalId,
     taxonomies: {
-      node_kind: "principal",
+      node_kind: 'principal',
       principal_kind: input.principalKind,
     },
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "principal",
+    kind: 'principal',
     coord,
     metadata: {
       issuer: input.issuer,
@@ -790,10 +785,10 @@ export function createPrincipalNode(input: PrincipalRef): AuthorizationNode {
 export function createResourceNode(input: ResourceRef): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "resource",
+    space: 'resource',
     anchor: input.resourceId,
     taxonomies: {
-      node_kind: "resource",
+      node_kind: 'resource',
       resource_kind: input.resourceKind,
       ...(input.classification ? { classification: input.classification } : {}),
       ...(input.sensitivity ? { sensitivity: input.sensitivity } : {}),
@@ -801,7 +796,7 @@ export function createResourceNode(input: ResourceRef): AuthorizationNode {
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "resource",
+    kind: 'resource',
     coord,
     metadata: {
       parentResourceId: input.parentResourceId,
@@ -813,16 +808,16 @@ export function createResourceNode(input: ResourceRef): AuthorizationNode {
 export function createActionNode(input: ActionRef): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "action",
+    space: 'action',
     anchor: input.actionId,
     taxonomies: {
-      node_kind: "action",
+      node_kind: 'action',
       action_kind: input.actionKind ?? input.actionId,
     },
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "action",
+    kind: 'action',
     coord,
   };
 }
@@ -830,22 +825,22 @@ export function createActionNode(input: ActionRef): AuthorizationNode {
 export function createRoleNode(input: {
   realm: AuthorizationRealm;
   roleId: string;
-  roleKind?: "role" | "derived_role" | "domain_role" | "org_role" | string;
+  roleKind?: 'role' | 'derived_role' | 'domain_role' | 'org_role' | string;
   sourcePolicyId?: string;
   condition?: unknown;
 }): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "role",
+    space: 'role',
     anchor: input.roleId,
     taxonomies: {
-      node_kind: "role",
-      role_kind: input.roleKind ?? "role",
+      node_kind: 'role',
+      role_kind: input.roleKind ?? 'role',
     },
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "role",
+    kind: 'role',
     coord,
     metadata: {
       sourcePolicyId: input.sourcePolicyId,
@@ -857,17 +852,17 @@ export function createRoleNode(input: {
 export function createPolicyNode(input: PolicyRef): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "policy",
+    space: 'policy',
     anchor: input.policyId,
     taxonomies: {
-      node_kind: "policy",
+      node_kind: 'policy',
       policy_kind: input.policyKind,
       ...(input.version ? { version: input.version } : {}),
     },
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "policy",
+    kind: 'policy',
     coord,
     metadata: {
       sourceRef: input.sourceRef,
@@ -878,16 +873,16 @@ export function createPolicyNode(input: PolicyRef): AuthorizationNode {
 export function createEnforcementPointNode(input: EnforcementPointRef): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "enforcement",
+    space: 'enforcement',
     anchor: input.enforcementPointId,
     taxonomies: {
-      node_kind: "enforcement_point",
+      node_kind: 'enforcement_point',
       enforcement_kind: input.kind,
     },
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "enforcement_point",
+    kind: 'enforcement_point',
     coord,
   };
 }
@@ -895,16 +890,16 @@ export function createEnforcementPointNode(input: EnforcementPointRef): Authoriz
 export function createIdentityProviderNode(input: IdentityProviderRef): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "identity-provider",
+    space: 'identity-provider',
     anchor: input.providerId,
     taxonomies: {
-      node_kind: "identity_provider",
+      node_kind: 'identity_provider',
       provider_kind: input.kind,
     },
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "identity_provider",
+    kind: 'identity_provider',
     coord,
     metadata: {
       issuer: input.issuer,
@@ -915,22 +910,22 @@ export function createIdentityProviderNode(input: IdentityProviderRef): Authoriz
 export function createDeploymentSourceNode(input: {
   realm: AuthorizationRealm;
   sourceId: string;
-  kind: "pulumi" | "argocd" | "git" | string;
+  kind: 'pulumi' | 'argocd' | 'git' | string;
   revision?: string;
 }): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.realm,
-    space: "deployment-source",
+    space: 'deployment-source',
     anchor: input.sourceId,
     taxonomies: {
-      node_kind: "deployment_source",
+      node_kind: 'deployment_source',
       deployment_kind: input.kind,
       ...(input.revision ? { revision: input.revision } : {}),
     },
   });
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "deployment_source",
+    kind: 'deployment_source',
     coord,
     metadata: {
       revision: input.revision,
@@ -957,12 +952,12 @@ export function createAuthorizationRelation(input: {
   };
 }
 
-function normalizeEffect(effect: string): "allow" | "deny" {
-  return effect === "EFFECT_DENY" || effect === "deny" ? "deny" : "allow";
+function normalizeEffect(effect: string): 'allow' | 'deny' {
+  return effect === 'EFFECT_DENY' || effect === 'deny' ? 'deny' : 'allow';
 }
 
 function createCerbosIssue(
-  level: "error" | "warning",
+  level: 'error' | 'warning',
   code: string,
   path: string,
   message: string,
@@ -977,7 +972,7 @@ export function normalizeCerbosResourcePolicy(
     apiVersion: policy.apiVersion,
     metadata: policy.metadata,
     resourcePolicy: {
-      version: policy.resourcePolicy.version ?? "default",
+      version: policy.resourcePolicy.version ?? 'default',
       resource: policy.resourcePolicy.resource,
       scope: policy.resourcePolicy.scope,
       importDerivedRoles: policy.resourcePolicy.importDerivedRoles ?? [],
@@ -993,44 +988,37 @@ export function normalizeCerbosResourcePolicy(
   };
 }
 
-export function validateCerbosResourcePolicyLike(
-  policy: unknown,
-): CerbosPolicyValidationResult {
+export function validateCerbosResourcePolicyLike(policy: unknown): CerbosPolicyValidationResult {
   const issues: CerbosPolicyValidationIssue[] = [];
 
-  if (!policy || typeof policy !== "object" || Array.isArray(policy)) {
+  if (!policy || typeof policy !== 'object' || Array.isArray(policy)) {
     return {
       valid: false,
       issues: [
-        createCerbosIssue(
-          "error",
-          "policy-not-object",
-          "$",
-          "Cerbos policy must be an object",
-        ),
+        createCerbosIssue('error', 'policy-not-object', '$', 'Cerbos policy must be an object'),
       ],
     };
   }
 
   const record = policy as Partial<CerbosResourcePolicyLike>;
   const resourcePolicy = record.resourcePolicy;
-  if (!resourcePolicy || typeof resourcePolicy !== "object") {
+  if (!resourcePolicy || typeof resourcePolicy !== 'object') {
     issues.push(
       createCerbosIssue(
-        "error",
-        "resource-policy-missing",
-        "resourcePolicy",
-        "resourcePolicy is required",
+        'error',
+        'resource-policy-missing',
+        'resourcePolicy',
+        'resourcePolicy is required',
       ),
     );
   } else {
     if (!resourcePolicy.resource || resourcePolicy.resource.trim().length === 0) {
       issues.push(
         createCerbosIssue(
-          "error",
-          "resource-missing",
-          "resourcePolicy.resource",
-          "resourcePolicy.resource is required",
+          'error',
+          'resource-missing',
+          'resourcePolicy.resource',
+          'resourcePolicy.resource is required',
         ),
       );
     }
@@ -1039,10 +1027,10 @@ export function validateCerbosResourcePolicyLike(
     if (rules.length === 0) {
       issues.push(
         createCerbosIssue(
-          "warning",
-          "rules-empty",
-          "resourcePolicy.rules",
-          "resourcePolicy should define at least one rule",
+          'warning',
+          'rules-empty',
+          'resourcePolicy.rules',
+          'resourcePolicy should define at least one rule',
         ),
       );
     }
@@ -1052,30 +1040,30 @@ export function validateCerbosResourcePolicyLike(
       if (!Array.isArray(rule.actions) || rule.actions.length === 0) {
         issues.push(
           createCerbosIssue(
-            "error",
-            "rule-actions-empty",
+            'error',
+            'rule-actions-empty',
             `${path}.actions`,
-            "rule.actions must contain at least one action",
+            'rule.actions must contain at least one action',
           ),
         );
       }
-      if (!rule.effect || typeof rule.effect !== "string") {
+      if (!rule.effect || typeof rule.effect !== 'string') {
         issues.push(
           createCerbosIssue(
-            "error",
-            "rule-effect-missing",
+            'error',
+            'rule-effect-missing',
             `${path}.effect`,
-            "rule.effect is required",
+            'rule.effect is required',
           ),
         );
       }
       if ((rule.roles?.length ?? 0) === 0 && (rule.derivedRoles?.length ?? 0) === 0) {
         issues.push(
           createCerbosIssue(
-            "warning",
-            "rule-principal-match-empty",
+            'warning',
+            'rule-principal-match-empty',
             path,
-            "rule has no roles or derivedRoles",
+            'rule has no roles or derivedRoles',
           ),
         );
       }
@@ -1083,7 +1071,7 @@ export function validateCerbosResourcePolicyLike(
   }
 
   return {
-    valid: issues.every((issue) => issue.level !== "error"),
+    valid: issues.every((issue) => issue.level !== 'error'),
     issues,
   };
 }
@@ -1105,43 +1093,41 @@ export function normalizeCerbosDerivedRoles(
   };
 }
 
-export function validateCerbosDerivedRolesLike(
-  input: unknown,
-): CerbosPolicyValidationResult {
+export function validateCerbosDerivedRolesLike(input: unknown): CerbosPolicyValidationResult {
   const issues: CerbosPolicyValidationIssue[] = [];
 
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return {
       valid: false,
       issues: [
         createCerbosIssue(
-          "error",
-          "derived-roles-not-object",
-          "$",
-          "Cerbos derivedRoles must be an object",
+          'error',
+          'derived-roles-not-object',
+          '$',
+          'Cerbos derivedRoles must be an object',
         ),
       ],
     };
   }
 
   const record = input as Partial<CerbosDerivedRolesLike>;
-  if (!record.derivedRoles || typeof record.derivedRoles !== "object") {
+  if (!record.derivedRoles || typeof record.derivedRoles !== 'object') {
     issues.push(
       createCerbosIssue(
-        "error",
-        "derived-roles-missing",
-        "derivedRoles",
-        "derivedRoles is required",
+        'error',
+        'derived-roles-missing',
+        'derivedRoles',
+        'derivedRoles is required',
       ),
     );
   } else {
     if (!record.derivedRoles.name || record.derivedRoles.name.trim().length === 0) {
       issues.push(
         createCerbosIssue(
-          "error",
-          "derived-roles-name-missing",
-          "derivedRoles.name",
-          "derivedRoles.name is required",
+          'error',
+          'derived-roles-name-missing',
+          'derivedRoles.name',
+          'derivedRoles.name is required',
         ),
       );
     }
@@ -1150,10 +1136,10 @@ export function validateCerbosDerivedRolesLike(
     if (definitions.length === 0) {
       issues.push(
         createCerbosIssue(
-          "warning",
-          "derived-role-definitions-empty",
-          "derivedRoles.definitions",
-          "derivedRoles should define at least one definition",
+          'warning',
+          'derived-role-definitions-empty',
+          'derivedRoles.definitions',
+          'derivedRoles should define at least one definition',
         ),
       );
     }
@@ -1163,20 +1149,20 @@ export function validateCerbosDerivedRolesLike(
       if (!definition.name || definition.name.trim().length === 0) {
         issues.push(
           createCerbosIssue(
-            "error",
-            "derived-role-name-missing",
+            'error',
+            'derived-role-name-missing',
             `${path}.name`,
-            "derived role definition name is required",
+            'derived role definition name is required',
           ),
         );
       }
       if (!Array.isArray(definition.parentRoles) || definition.parentRoles.length === 0) {
         issues.push(
           createCerbosIssue(
-            "error",
-            "derived-role-parent-roles-empty",
+            'error',
+            'derived-role-parent-roles-empty',
             `${path}.parentRoles`,
-            "derived role definition parentRoles must contain at least one role",
+            'derived role definition parentRoles must contain at least one role',
           ),
         );
       }
@@ -1184,7 +1170,7 @@ export function validateCerbosDerivedRolesLike(
   }
 
   return {
-    valid: issues.every((issue) => issue.level !== "error"),
+    valid: issues.every((issue) => issue.level !== 'error'),
     issues,
   };
 }
@@ -1211,18 +1197,18 @@ export function mergeAuthorizationGraphs(
   };
 }
 
-const BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 function decodeBase64Bytes(value: string): Uint8Array {
-  const clean = value.replace(/=+$/, "");
+  const clean = value.replace(/=+$/, '');
   const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
   let out = 0;
 
   for (let index = 0; index < clean.length; index += 4) {
-    const a = BASE64_CHARS.indexOf(clean[index] ?? "");
-    const b = BASE64_CHARS.indexOf(clean[index + 1] ?? "");
-    const c = BASE64_CHARS.indexOf(clean[index + 2] ?? "");
-    const d = BASE64_CHARS.indexOf(clean[index + 3] ?? "");
+    const a = BASE64_CHARS.indexOf(clean[index] ?? '');
+    const b = BASE64_CHARS.indexOf(clean[index + 1] ?? '');
+    const c = BASE64_CHARS.indexOf(clean[index + 2] ?? '');
+    const d = BASE64_CHARS.indexOf(clean[index + 3] ?? '');
     if (a < 0 || b < 0) break;
     bytes[out++] = (a << 2) | (b >> 4);
     if (c >= 0) bytes[out++] = ((b & 0xf) << 4) | (c >> 2);
@@ -1244,7 +1230,7 @@ function permissionFeatureNode(input: {
   return createResourceNode({
     realm: input.realm,
     resourceId: `${input.domain}:${input.feature}`,
-    resourceKind: "permission_feature",
+    resourceKind: 'permission_feature',
     attributes: {
       domain: input.domain,
       feature: input.feature,
@@ -1256,20 +1242,22 @@ function permissionRoleNode(input: {
   realm: AuthorizationRealm;
   domain: string;
   role: string;
-  roleKind?: "domain_role" | "org_role" | string;
+  roleKind?: 'domain_role' | 'org_role' | string;
 }): AuthorizationNode {
   return createRoleNode({
     realm: input.realm,
     roleId: `${input.domain}:${input.role}`,
-    roleKind: input.roleKind ?? "domain_role",
+    roleKind: input.roleKind ?? 'domain_role',
   });
 }
 
-function permissionEnginePolicyNode(input: PermissionEnginePermissionSetProjectionInput): AuthorizationNode {
+function permissionEnginePolicyNode(
+  input: PermissionEnginePermissionSetProjectionInput,
+): AuthorizationNode {
   return createPolicyNode({
     realm: input.policyRealm,
-    policyId: input.policyId ?? `permission-engine:${input.domain}:${input.scopeKey ?? "default"}`,
-    policyKind: "permission_engine_mask",
+    policyId: input.policyId ?? `permission-engine:${input.domain}:${input.scopeKey ?? 'default'}`,
+    policyKind: 'permission_engine_mask',
     sourceRef: input.sourceRef,
   });
 }
@@ -1323,7 +1311,7 @@ export function projectPermissionEnginePermissionSet(
     ? createResourceNode({
         realm: input.scopeRealm ?? input.policyRealm,
         resourceId: `${input.domain}:${input.scopeKey}`,
-        resourceKind: "permission_scope",
+        resourceKind: 'permission_scope',
         attributes: {
           domain: input.domain,
           scopeKey: input.scopeKey,
@@ -1332,10 +1320,10 @@ export function projectPermissionEnginePermissionSet(
     : undefined;
 
   const featureById = new Map(
-    featureNodes.map((node) => [node.coord.anchor.split(":").slice(1).join(":"), node]),
+    featureNodes.map((node) => [node.coord.anchor.split(':').slice(1).join(':'), node]),
   );
   const roleById = new Map(
-    roleNodes.map((node) => [node.coord.anchor.split(":").slice(1).join(":"), node]),
+    roleNodes.map((node) => [node.coord.anchor.split(':').slice(1).join(':'), node]),
   );
   const grantedKeys = new Set(grants.map((grant) => `${grant.feature}\u0000${grant.role}`));
   const deniedGrants: PermissionEngineGrantLike[] = input.includeDenied
@@ -1366,20 +1354,20 @@ export function projectPermissionEnginePermissionSet(
     relations: uniqueRelations([
       ...featureNodes.map((featureNode) =>
         createAuthorizationRelation({
-          kind: "protects",
+          kind: 'protects',
           fromNodeId: policyNode.nodeId,
           toNodeId: featureNode.nodeId,
           metadata: {
             domain: input.domain,
             scopeKey: input.scopeKey,
-            source: "permission-engine",
+            source: 'permission-engine',
           },
         }),
       ),
       ...(scopeNode
         ? [
             createAuthorizationRelation({
-              kind: "materializes_permission",
+              kind: 'materializes_permission',
               fromNodeId: policyNode.nodeId,
               toNodeId: scopeNode.nodeId,
               metadata: {
@@ -1395,14 +1383,14 @@ export function projectPermissionEnginePermissionSet(
         if (!roleNode || !featureNode) return [];
         return [
           createAuthorizationRelation({
-            kind: "grants_feature",
+            kind: 'grants_feature',
             fromNodeId: roleNode.nodeId,
             toNodeId: featureNode.nodeId,
             metadata: {
               domain: input.domain,
               scopeKey: input.scopeKey,
               address: grant.address,
-              source: "permission-engine:PermissionSet",
+              source: 'permission-engine:PermissionSet',
             },
           }),
         ];
@@ -1413,15 +1401,15 @@ export function projectPermissionEnginePermissionSet(
         if (!roleNode || !featureNode) return [];
         return [
           createAuthorizationRelation({
-            kind: "denies_feature",
+            kind: 'denies_feature',
             fromNodeId: roleNode.nodeId,
             toNodeId: featureNode.nodeId,
             metadata: {
               domain: input.domain,
               scopeKey: input.scopeKey,
               address: grant.address,
-              source: "permission-engine:PermissionSet",
-              reason: "bit-unset",
+              source: 'permission-engine:PermissionSet',
+              reason: 'bit-unset',
             },
           }),
         ];
@@ -1466,13 +1454,15 @@ export function projectPermissionEngineRoles(
     createRoleNode({
       realm: orgRoleRealm,
       roleId: `org:${orgRole.id}`,
-      roleKind: "org_role",
+      roleKind: 'org_role',
     }),
   );
 
   const roleByKey = new Map(roleNodes.map((node) => [node.coord.anchor, node]));
   const featureByKey = new Map(featureNodes.map((node) => [node.coord.anchor, node]));
-  const orgRoleById = new Map(orgRoleNodes.map((node) => [node.coord.anchor.slice("org:".length), node]));
+  const orgRoleById = new Map(
+    orgRoleNodes.map((node) => [node.coord.anchor.slice('org:'.length), node]),
+  );
 
   return {
     realms: uniqueRealms([input.roleRealm, input.featureRealm, orgRoleRealm]),
@@ -1487,12 +1477,12 @@ export function projectPermissionEngineRoles(
             if (!parentNode) return [];
             return [
               createAuthorizationRelation({
-                kind: "derives_role_from",
+                kind: 'derives_role_from',
                 fromNodeId: roleNode.nodeId,
                 toNodeId: parentNode.nodeId,
                 metadata: {
                   domain: role.domain,
-                  source: "permission-engine:RoleRegistry",
+                  source: 'permission-engine:RoleRegistry',
                 },
               }),
             ];
@@ -1502,12 +1492,12 @@ export function projectPermissionEngineRoles(
             if (!featureNode) return [];
             return [
               createAuthorizationRelation({
-                kind: "grants_feature",
+                kind: 'grants_feature',
                 fromNodeId: roleNode.nodeId,
                 toNodeId: featureNode.nodeId,
                 metadata: {
                   domain: role.domain,
-                  source: "permission-engine:RoleRegistry",
+                  source: 'permission-engine:RoleRegistry',
                   direct: true,
                 },
               }),
@@ -1518,12 +1508,12 @@ export function projectPermissionEngineRoles(
             if (!featureNode) return [];
             return [
               createAuthorizationRelation({
-                kind: "denies_feature",
+                kind: 'denies_feature',
                 fromNodeId: roleNode.nodeId,
                 toNodeId: featureNode.nodeId,
                 metadata: {
                   domain: role.domain,
-                  source: "permission-engine:RoleRegistry",
+                  source: 'permission-engine:RoleRegistry',
                 },
               }),
             ];
@@ -1533,12 +1523,12 @@ export function projectPermissionEngineRoles(
             if (!deniedRoleNode) return [];
             return [
               createAuthorizationRelation({
-                kind: "denies_role",
+                kind: 'denies_role',
                 fromNodeId: roleNode.nodeId,
                 toNodeId: deniedRoleNode.nodeId,
                 metadata: {
                   domain: role.domain,
-                  source: "permission-engine:RoleRegistry",
+                  source: 'permission-engine:RoleRegistry',
                 },
               }),
             ];
@@ -1554,11 +1544,11 @@ export function projectPermissionEngineRoles(
             if (!parentNode) return [];
             return [
               createAuthorizationRelation({
-                kind: "derives_role_from",
+                kind: 'derives_role_from',
                 fromNodeId: orgRoleNode.nodeId,
                 toNodeId: parentNode.nodeId,
                 metadata: {
-                  source: "permission-engine:OrgRoleRegistry",
+                  source: 'permission-engine:OrgRoleRegistry',
                 },
               }),
             ];
@@ -1568,12 +1558,12 @@ export function projectPermissionEngineRoles(
             if (!roleNode) return [];
             return [
               createAuthorizationRelation({
-                kind: "assigns_role",
+                kind: 'assigns_role',
                 fromNodeId: orgRoleNode.nodeId,
                 toNodeId: roleNode.nodeId,
                 metadata: {
                   domain: assignment.domain,
-                  source: "permission-engine:OrgRoleRegistry",
+                  source: 'permission-engine:OrgRoleRegistry',
                 },
               }),
             ];
@@ -1591,17 +1581,19 @@ export function projectPermissionEngineAudit(
   const actionRealm = input.actionRealm ?? policyRealm;
   const decisionRealm = input.decisionRealm ?? input.enforcementPoint?.realm ?? input.featureRealm;
   const decision = projectAuthorizationDecision({
-    decisionId: input.decisionId ?? `permission-engine:${input.audit.userId}:${input.audit.domain}:${input.audit.feature}`,
+    decisionId:
+      input.decisionId ??
+      `permission-engine:${input.audit.userId}:${input.audit.domain}:${input.audit.feature}`,
     principal: {
       realm: input.identityRealm,
       principalId: input.audit.userId,
-      principalKind: "human_user",
+      principalKind: 'human_user',
       roles: [],
     },
     resource: {
       realm: input.featureRealm,
       resourceId: `${input.audit.domain}:${input.audit.feature}`,
-      resourceKind: "permission_feature",
+      resourceKind: 'permission_feature',
       attributes: {
         domain: input.audit.domain,
         feature: input.audit.feature,
@@ -1615,17 +1607,17 @@ export function projectPermissionEngineAudit(
     policy: {
       realm: policyRealm,
       policyId: `permission-engine:${input.audit.domain}:final-mask`,
-      policyKind: "permission_engine_final_mask",
+      policyKind: 'permission_engine_final_mask',
     },
     enforcementPoint: input.enforcementPoint,
-    effect: input.audit.granted ? "allow" : "deny",
+    effect: input.audit.granted ? 'allow' : 'deny',
     observedAt: input.observedAt ?? new Date().toISOString(),
     reason: input.audit.denialReason?.kind,
   });
   const principalNode = createPrincipalNode({
     realm: input.identityRealm,
     principalId: input.audit.userId,
-    principalKind: "human_user",
+    principalKind: 'human_user',
   });
   const sourceRoleNodes = input.audit.sources.map((source) =>
     permissionRoleNode({
@@ -1635,11 +1627,11 @@ export function projectPermissionEngineAudit(
     }),
   );
   const overridePolicyNode =
-    input.audit.denialReason?.kind === "user-override"
+    input.audit.denialReason?.kind === 'user-override'
       ? createPolicyNode({
           realm: policyRealm,
           policyId: `permission-engine:${input.audit.domain}:${input.audit.userId}:override`,
-          policyKind: "permission_engine_user_override",
+          policyKind: 'permission_engine_user_override',
         })
       : undefined;
   const featureNode = permissionFeatureNode({
@@ -1650,7 +1642,7 @@ export function projectPermissionEngineAudit(
   const finalPolicyNode = createPolicyNode({
     realm: policyRealm,
     policyId: `permission-engine:${input.audit.domain}:final-mask`,
-    policyKind: "permission_engine_final_mask",
+    policyKind: 'permission_engine_final_mask',
   });
   const actionNode = createActionNode({
     realm: actionRealm,
@@ -1677,21 +1669,21 @@ export function projectPermissionEngineAudit(
     ]),
     relations: uniqueRelations([
       createAuthorizationRelation({
-        kind: "protects",
+        kind: 'protects',
         fromNodeId: finalPolicyNode.nodeId,
         toNodeId: featureNode.nodeId,
         metadata: {
           domain: input.audit.domain,
-          source: "permission-engine:UserPermissionEngine.audit",
+          source: 'permission-engine:UserPermissionEngine.audit',
         },
       }),
       createAuthorizationRelation({
-        kind: input.audit.granted ? "allows_action" : "denies_action",
+        kind: input.audit.granted ? 'allows_action' : 'denies_action',
         fromNodeId: finalPolicyNode.nodeId,
         toNodeId: actionNode.nodeId,
         metadata: {
           domain: input.audit.domain,
-          source: "permission-engine:UserPermissionEngine.audit",
+          source: 'permission-engine:UserPermissionEngine.audit',
           denialReason: input.audit.denialReason?.kind,
         },
       }),
@@ -1700,7 +1692,7 @@ export function projectPermissionEngineAudit(
         if (!roleNode) return [];
         return [
           createAuthorizationRelation({
-            kind: "has_role",
+            kind: 'has_role',
             fromNodeId: principalNode.nodeId,
             toNodeId: roleNode.nodeId,
             metadata: {
@@ -1711,12 +1703,12 @@ export function projectPermissionEngineAudit(
             },
           }),
           createAuthorizationRelation({
-            kind: "grants_feature",
+            kind: 'grants_feature',
             fromNodeId: roleNode.nodeId,
             toNodeId: featureNode.nodeId,
             metadata: {
               domain: input.audit.domain,
-              source: "permission-engine:UserPermissionEngine.audit",
+              source: 'permission-engine:UserPermissionEngine.audit',
               finalGranted: input.audit.granted,
             },
           }),
@@ -1725,17 +1717,17 @@ export function projectPermissionEngineAudit(
       ...(overridePolicyNode
         ? [
             createAuthorizationRelation({
-              kind: "denies_feature",
+              kind: 'denies_feature',
               fromNodeId: overridePolicyNode.nodeId,
               toNodeId: featureNode.nodeId,
               metadata: {
                 domain: input.audit.domain,
                 userId: input.audit.userId,
-                reason: "user-override",
+                reason: 'user-override',
               },
             }),
             createAuthorizationRelation({
-              kind: "overrides_permission",
+              kind: 'overrides_permission',
               fromNodeId: overridePolicyNode.nodeId,
               toNodeId: principalNode.nodeId,
               metadata: {
@@ -1756,7 +1748,7 @@ export function projectPermissionEngineMiddlewareFeedback(
   const policyNode = createPolicyNode({
     realm: input.policyRealm,
     policyId: `permission-engine:${input.feedback.domain}:middleware-check`,
-    policyKind: "permission_engine_middleware_check",
+    policyKind: 'permission_engine_middleware_check',
   });
   const featureNode = permissionFeatureNode({
     realm: input.featureRealm,
@@ -1775,12 +1767,12 @@ export function projectPermissionEngineMiddlewareFeedback(
     principal: {
       realm: input.identityRealm,
       principalId: input.feedback.userId,
-      principalKind: "human_user",
+      principalKind: 'human_user',
     },
     resource: {
       realm: input.featureRealm,
       resourceId: `${input.feedback.domain}:${input.feedback.feature}`,
-      resourceKind: "permission_feature",
+      resourceKind: 'permission_feature',
       attributes: {
         domain: input.feedback.domain,
         feature: input.feedback.feature,
@@ -1794,10 +1786,10 @@ export function projectPermissionEngineMiddlewareFeedback(
     policy: {
       realm: input.policyRealm,
       policyId: `permission-engine:${input.feedback.domain}:middleware-check`,
-      policyKind: "permission_engine_middleware_check",
+      policyKind: 'permission_engine_middleware_check',
     },
     enforcementPoint: input.enforcementPoint,
-    effect: input.feedback.ok ? "allow" : "deny",
+    effect: input.feedback.ok ? 'allow' : 'deny',
     observedAt: input.observedAt ?? new Date().toISOString(),
     reason: input.feedback.error?.kind,
   });
@@ -1814,20 +1806,20 @@ export function projectPermissionEngineMiddlewareFeedback(
     nodes: uniqueNodes([policyNode, featureNode, actionNode]),
     relations: uniqueRelations([
       createAuthorizationRelation({
-        kind: "protects",
+        kind: 'protects',
         fromNodeId: policyNode.nodeId,
         toNodeId: featureNode.nodeId,
         metadata: {
-          source: "permission-engine:PermissionMiddleware",
+          source: 'permission-engine:PermissionMiddleware',
           domain: input.feedback.domain,
         },
       }),
       createAuthorizationRelation({
-        kind: input.feedback.ok ? "allows_action" : "denies_action",
+        kind: input.feedback.ok ? 'allows_action' : 'denies_action',
         fromNodeId: policyNode.nodeId,
         toNodeId: actionNode.nodeId,
         metadata: {
-          source: "permission-engine:PermissionMiddleware",
+          source: 'permission-engine:PermissionMiddleware',
           domain: input.feedback.domain,
           errorKind: input.feedback.error?.kind,
           errorMessage: input.feedback.error?.message,
@@ -1848,16 +1840,16 @@ export function projectCerbosResourcePolicy(
   if (!validation.valid) {
     throw new Error(
       `Invalid Cerbos resource policy: ${validation.issues
-        .filter((issue) => issue.level === "error")
+        .filter((issue) => issue.level === 'error')
         .map((issue) => `${issue.code}@${issue.path}`)
-        .join(", ")}`,
+        .join(', ')}`,
     );
   }
   const normalized = normalizeCerbosResourcePolicy(input.policy);
   const policyRef: PolicyRef = {
     realm: input.policyRealm,
     policyId: `cerbos:resource:${normalized.resourcePolicy.resource}`,
-    policyKind: "cerbos_resource_policy",
+    policyKind: 'cerbos_resource_policy',
     version: normalized.resourcePolicy.version,
     sourceRef: input.sourceRef,
   };
@@ -1865,7 +1857,7 @@ export function projectCerbosResourcePolicy(
   const resourceNode = createResourceNode({
     realm: input.resourceRealm,
     resourceId: normalized.resourcePolicy.resource,
-    resourceKind: "service",
+    resourceKind: 'service',
     attributes: {
       cerbosScope: normalized.resourcePolicy.scope,
       importDerivedRoles: normalized.resourcePolicy.importDerivedRoles,
@@ -1885,7 +1877,7 @@ export function projectCerbosResourcePolicy(
 
   const relations: AuthorizationRelation[] = [
     createAuthorizationRelation({
-      kind: "protects",
+      kind: 'protects',
       fromNodeId: policyNode.nodeId,
       toNodeId: resourceNode.nodeId,
       metadata: {
@@ -1900,7 +1892,7 @@ export function projectCerbosResourcePolicy(
           actionKind: action,
         });
         return createAuthorizationRelation({
-          kind: rule.effect === "allow" ? "allows_action" : "denies_action",
+          kind: rule.effect === 'allow' ? 'allows_action' : 'denies_action',
           fromNodeId: policyNode.nodeId,
           toNodeId: actionNode.nodeId,
           metadata: {
@@ -1928,16 +1920,16 @@ export function projectCerbosDerivedRoles(
   if (!validation.valid) {
     throw new Error(
       `Invalid Cerbos derivedRoles: ${validation.issues
-        .filter((issue) => issue.level === "error")
+        .filter((issue) => issue.level === 'error')
         .map((issue) => `${issue.code}@${issue.path}`)
-        .join(", ")}`,
+        .join(', ')}`,
     );
   }
   const normalized = normalizeCerbosDerivedRoles(input.derivedRoles);
   const policyNode = createPolicyNode({
     realm: input.policyRealm,
     policyId: `cerbos:derivedRoles:${normalized.derivedRoles.name}`,
-    policyKind: "cerbos_derived_roles",
+    policyKind: 'cerbos_derived_roles',
     sourceRef: input.sourceRef,
   });
   const roleRealm = input.roleRealm ?? input.policyRealm;
@@ -1945,7 +1937,7 @@ export function projectCerbosDerivedRoles(
     createRoleNode({
       realm: roleRealm,
       roleId: definition.name,
-      roleKind: "derived_role",
+      roleKind: 'derived_role',
       sourcePolicyId: policyNode.nodeId,
       condition: definition.condition,
     }),
@@ -1955,7 +1947,7 @@ export function projectCerbosDerivedRoles(
       createRoleNode({
         realm: roleRealm,
         roleId: parentRole,
-        roleKind: "role",
+        roleKind: 'role',
       }),
     ),
   );
@@ -1963,7 +1955,7 @@ export function projectCerbosDerivedRoles(
   const relations = [
     ...derivedRoleNodes.map((roleNode) =>
       createAuthorizationRelation({
-        kind: "imports_derived_role",
+        kind: 'imports_derived_role',
         fromNodeId: policyNode.nodeId,
         toNodeId: roleNode.nodeId,
         metadata: {
@@ -1975,16 +1967,16 @@ export function projectCerbosDerivedRoles(
       const roleNode = createRoleNode({
         realm: roleRealm,
         roleId: definition.name,
-        roleKind: "derived_role",
+        roleKind: 'derived_role',
       });
       return definition.parentRoles.map((parentRole) => {
         const parentRoleNode = createRoleNode({
           realm: roleRealm,
           roleId: parentRole,
-          roleKind: "role",
+          roleKind: 'role',
         });
         return createAuthorizationRelation({
-          kind: "derives_role_from",
+          kind: 'derives_role_from',
           fromNodeId: roleNode.nodeId,
           toNodeId: parentRoleNode.nodeId,
           metadata: {
@@ -2003,24 +1995,24 @@ export function projectCerbosDerivedRoles(
 }
 
 function parseCerbosPolicySource(
-  source: CerbosPolicySourceProjectionInput["source"],
-  sourceType: CerbosPolicySourceProjectionInput["sourceType"] = "json",
+  source: CerbosPolicySourceProjectionInput['source'],
+  sourceType: CerbosPolicySourceProjectionInput['sourceType'] = 'json',
 ): CerbosResourcePolicyLike | CerbosDerivedRolesLike {
-  if (typeof source !== "string") {
+  if (typeof source !== 'string') {
     return source;
   }
-  if (sourceType === "yaml") {
+  if (sourceType === 'yaml') {
     try {
       return parseYaml(source) as CerbosResourcePolicyLike | CerbosDerivedRolesLike;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown parse error";
+      const message = error instanceof Error ? error.message : 'unknown parse error';
       throw new Error(`Invalid Cerbos policy YAML source: ${message}`, { cause: error });
     }
   }
   try {
     return JSON.parse(source) as CerbosResourcePolicyLike | CerbosDerivedRolesLike;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown parse error";
+    const message = error instanceof Error ? error.message : 'unknown parse error';
     throw new Error(`Invalid Cerbos policy JSON source: ${message}`, { cause: error });
   }
 }
@@ -2028,9 +2020,9 @@ function parseCerbosPolicySource(
 function detectCerbosPolicySourceKind(
   source: CerbosResourcePolicyLike | CerbosDerivedRolesLike,
 ): CerbosPolicySourceKind {
-  if ("resourcePolicy" in source) return "resource_policy";
-  if ("derivedRoles" in source) return "derived_roles";
-  throw new Error("Unsupported Cerbos policy source: expected resourcePolicy or derivedRoles");
+  if ('resourcePolicy' in source) return 'resource_policy';
+  if ('derivedRoles' in source) return 'derived_roles';
+  throw new Error('Unsupported Cerbos policy source: expected resourcePolicy or derivedRoles');
 }
 
 function sourceRefFromMetadata(metadata: CerbosPolicySourceMetadata = {}): string | undefined {
@@ -2038,7 +2030,7 @@ function sourceRefFromMetadata(metadata: CerbosPolicySourceMetadata = {}): strin
   const parts = [metadata.bundleId, metadata.path, metadata.revision].filter(
     (part): part is string => Boolean(part),
   );
-  return parts.length > 0 ? parts.join("@") : undefined;
+  return parts.length > 0 ? parts.join('@') : undefined;
 }
 
 function annotateGraphSourceMetadata(
@@ -2051,7 +2043,7 @@ function annotateGraphSourceMetadata(
   return {
     ...graph,
     nodes: graph.nodes.map((node) =>
-      node.kind === "policy"
+      node.kind === 'policy'
         ? {
             ...node,
             metadata: {
@@ -2073,7 +2065,7 @@ export function projectCerbosPolicySource(
   const sourceKind = detectCerbosPolicySourceKind(source);
   const sourceRef = sourceRefFromMetadata(input.metadata);
   const graph =
-    sourceKind === "resource_policy"
+    sourceKind === 'resource_policy'
       ? projectCerbosResourcePolicy({
           policyRealm: input.policyRealm,
           resourceRealm: input.resourceRealm,
@@ -2100,14 +2092,15 @@ export function evaluateColumnPolicyPropagation(
 ): ColumnPolicyPropagationResult {
   const matched = input.rules.find(
     (rule) =>
-      rule.sourceClassification === (input.source.classification ?? input.source.sensitivity ?? "unknown") &&
+      rule.sourceClassification ===
+        (input.source.classification ?? input.source.sensitivity ?? 'unknown') &&
       rule.transform === input.transform,
   );
   const fallback: ColumnPolicyPropagationResult = {
-    mode: "manual_review",
-    relationKind: "requires_manual_review",
-    targetClassification: input.target.classification ?? input.target.sensitivity ?? "unknown",
-    reason: "No matching lineage authorization propagation rule",
+    mode: 'manual_review',
+    relationKind: 'requires_manual_review',
+    targetClassification: input.target.classification ?? input.target.sensitivity ?? 'unknown',
+    reason: 'No matching lineage authorization propagation rule',
   };
 
   if (!matched) {
@@ -2115,11 +2108,11 @@ export function evaluateColumnPolicyPropagation(
   }
 
   const relationKind =
-    matched.propagation === "inherit"
-      ? "inherits_policy_from"
-      : matched.propagation === "downgrade"
-        ? "downgrades_policy_from"
-        : "requires_manual_review";
+    matched.propagation === 'inherit'
+      ? 'inherits_policy_from'
+      : matched.propagation === 'downgrade'
+        ? 'downgrades_policy_from'
+        : 'requires_manual_review';
 
   return {
     mode: matched.propagation,
@@ -2128,7 +2121,7 @@ export function evaluateColumnPolicyPropagation(
       matched.targetClassification ??
       input.target.classification ??
       input.target.sensitivity ??
-      "unknown",
+      'unknown',
     reason: matched.reason ?? `Propagation ${matched.propagation} via ${input.transform}`,
   };
 }
@@ -2146,7 +2139,7 @@ export function projectColumnPolicyPropagation(
     nodes: [sourceNode, targetNode],
     relations: [
       createAuthorizationRelation({
-        kind: "derives_from",
+        kind: 'derives_from',
         fromNodeId: targetNode.nodeId,
         toNodeId: sourceNode.nodeId,
         metadata: {
@@ -2171,7 +2164,7 @@ export function projectEnforcementRoute(input: EnforcementRouteRef): Authorizati
   const routeNode = createResourceNode({
     realm: input.routeRealm,
     resourceId: input.routeId,
-    resourceKind: "proxy_route",
+    resourceKind: 'proxy_route',
     attributes: {
       routeKind: input.routeKind,
       host: input.host,
@@ -2205,14 +2198,14 @@ export function projectEnforcementRoute(input: EnforcementRouteRef): Authorizati
     ]),
     relations: uniqueRelations([
       createAuthorizationRelation({
-        kind: "enforced_at",
+        kind: 'enforced_at',
         fromNodeId: routeNode.nodeId,
         toNodeId: enforcementNode.nodeId,
       }),
       ...(upstreamNode
         ? [
             createAuthorizationRelation({
-              kind: "matches_resource",
+              kind: 'matches_resource',
               fromNodeId: routeNode.nodeId,
               toNodeId: upstreamNode.nodeId,
             }),
@@ -2221,7 +2214,7 @@ export function projectEnforcementRoute(input: EnforcementRouteRef): Authorizati
       ...(policyNode
         ? [
             createAuthorizationRelation({
-              kind: "protects",
+              kind: 'protects',
               fromNodeId: policyNode.nodeId,
               toNodeId: routeNode.nodeId,
             }),
@@ -2230,7 +2223,7 @@ export function projectEnforcementRoute(input: EnforcementRouteRef): Authorizati
       ...(deploymentNode
         ? [
             createAuthorizationRelation({
-              kind: "deployed_by",
+              kind: 'deployed_by',
               fromNodeId: routeNode.nodeId,
               toNodeId: deploymentNode.nodeId,
             }),
@@ -2245,12 +2238,12 @@ export function normalizeStructuredEnforcementRoute(
 ): EnforcementRouteRef {
   const routeId = config.route.id ?? `${config.route.host}${config.route.path}`;
   const routeRealm = createAuthorizationRealm({
-    kind: "enforcement",
+    kind: 'enforcement',
     authority: config.proxy.authority,
     environment: config.environment,
   });
   const enforcementRealm = createAuthorizationRealm({
-    kind: "enforcement",
+    kind: 'enforcement',
     authority: config.proxy.authority,
     environment: config.environment,
   });
@@ -2258,7 +2251,7 @@ export function normalizeStructuredEnforcementRoute(
   return {
     routeRealm,
     routeId,
-    routeKind: config.route.kind ?? "proxy_route",
+    routeKind: config.route.kind ?? 'proxy_route',
     host: config.route.host,
     path: config.route.path,
     methods: config.route.methods ?? [],
@@ -2270,30 +2263,30 @@ export function normalizeStructuredEnforcementRoute(
     upstreamResource: config.upstream
       ? {
           realm: createAuthorizationRealm({
-            kind: "application",
+            kind: 'application',
             authority: config.upstream.authority,
             environment: config.environment,
           }),
           resourceId: config.upstream.id,
-          resourceKind: config.upstream.kind ?? "service",
+          resourceKind: config.upstream.kind ?? 'service',
         }
       : undefined,
     policy: config.policy
       ? {
           realm: createAuthorizationRealm({
-            kind: "policy",
+            kind: 'policy',
             authority: config.policy.authority,
             environment: config.environment,
           }),
           policyId: config.policy.id,
-          policyKind: config.policy.kind ?? "cerbos_resource_policy",
+          policyKind: config.policy.kind ?? 'cerbos_resource_policy',
           version: config.policy.version,
         }
       : undefined,
     deploymentSource: config.deployment
       ? {
           realm: createAuthorizationRealm({
-            kind: "infra",
+            kind: 'infra',
             authority: config.deployment.authority,
             environment: config.environment,
           }),
@@ -2342,19 +2335,19 @@ export function projectApplicationAuthorizationBinding(
     ]),
     relations: uniqueRelations([
       createAuthorizationRelation({
-        kind: "matches_resource",
+        kind: 'matches_resource',
         fromNodeId: serviceNode.nodeId,
         toNodeId: resourceNode.nodeId,
       }),
       createAuthorizationRelation({
-        kind: "enforced_at",
+        kind: 'enforced_at',
         fromNodeId: resourceNode.nodeId,
         toNodeId: enforcementNode.nodeId,
       }),
       ...(policyNode
         ? [
             createAuthorizationRelation({
-              kind: "protects",
+              kind: 'protects',
               fromNodeId: policyNode.nodeId,
               toNodeId: resourceNode.nodeId,
             }),
@@ -2362,7 +2355,7 @@ export function projectApplicationAuthorizationBinding(
         : []),
       ...actionNodes.map((actionNode) =>
         createAuthorizationRelation({
-          kind: "evaluated_by",
+          kind: 'evaluated_by',
           fromNodeId: actionNode.nodeId,
           toNodeId: enforcementNode.nodeId,
           metadata: {
@@ -2374,7 +2367,7 @@ export function projectApplicationAuthorizationBinding(
       ...(deploymentNode
         ? [
             createAuthorizationRelation({
-              kind: "deployed_by",
+              kind: 'deployed_by',
               fromNodeId: resourceNode.nodeId,
               toNodeId: deploymentNode.nodeId,
             }),
@@ -2389,7 +2382,7 @@ function normalizeStructuredApplicationActions(
   actionRealm: AuthorizationRealm,
 ): ActionRef[] {
   return (config.actions ?? []).map((action) => {
-    if (typeof action === "string") {
+    if (typeof action === 'string') {
       return {
         realm: actionRealm,
         actionId: action,
@@ -2408,23 +2401,23 @@ export function normalizeStructuredApplicationAuthorization(
   config: StructuredApplicationAuthorizationConfig,
 ): ApplicationAuthorizationBindingRef {
   const serviceRealm = createAuthorizationRealm({
-    kind: "application",
+    kind: 'application',
     authority: config.service.authority,
     environment: config.environment,
   });
   const resourceRealm = createAuthorizationRealm({
-    kind: "application",
+    kind: 'application',
     authority: config.resource.authority ?? config.service.authority,
     environment: config.environment,
   });
   const enforcementRealm = createAuthorizationRealm({
-    kind: "enforcement",
+    kind: 'enforcement',
     authority: config.middleware?.authority ?? config.service.authority,
     environment: config.environment,
   });
   const policyRealm = config.policy
     ? createAuthorizationRealm({
-        kind: "policy",
+        kind: 'policy',
         authority: config.policy.authority,
         environment: config.environment,
       })
@@ -2435,12 +2428,12 @@ export function normalizeStructuredApplicationAuthorization(
     serviceResource: {
       realm: serviceRealm,
       resourceId: config.service.id,
-      resourceKind: config.service.kind ?? "service",
+      resourceKind: config.service.kind ?? 'service',
     },
     resource: {
       realm: resourceRealm,
       resourceId: config.resource.id,
-      resourceKind: config.resource.kind ?? "domain_resource",
+      resourceKind: config.resource.kind ?? 'domain_resource',
       parentResourceId: config.resource.parentResourceId ?? config.service.id,
       classification: config.resource.classification,
       sensitivity: config.resource.sensitivity,
@@ -2449,13 +2442,13 @@ export function normalizeStructuredApplicationAuthorization(
     enforcementPoint: {
       realm: enforcementRealm,
       enforcementPointId: config.middleware?.id ?? `${config.service.id}:middleware`,
-      kind: config.middleware?.kind ?? "service_middleware",
+      kind: config.middleware?.kind ?? 'service_middleware',
     },
     policy: config.policy
       ? {
           realm: policyRealm!,
           policyId: config.policy.id,
-          policyKind: config.policy.kind ?? "cerbos_resource_policy",
+          policyKind: config.policy.kind ?? 'cerbos_resource_policy',
           version: config.policy.version,
         }
       : undefined,
@@ -2463,7 +2456,7 @@ export function normalizeStructuredApplicationAuthorization(
     deploymentSource: config.deployment
       ? {
           realm: createAuthorizationRealm({
-            kind: "infra",
+            kind: 'infra',
             authority: config.deployment.authority,
             environment: config.environment,
           }),
@@ -2488,7 +2481,7 @@ function parseNginxUpstreams(configText: string): Map<string, string> {
   const upstreamPattern = /upstream\s+([a-zA-Z0-9_-]+)\s*\{([\s\S]*?)\}/g;
   for (const match of configText.matchAll(upstreamPattern)) {
     const name = match[1];
-    const body = match[2] ?? "";
+    const body = match[2] ?? '';
     const server = body.match(/server\s+([^;]+);/)?.[1]?.trim();
     if (name && server) {
       upstreams.set(name, server);
@@ -2503,7 +2496,7 @@ export function parseNginxProxyLocations(configText: string): NginxProxyLocation
   const locationPattern = /location\s+([^\s{]+)\s*\{([\s\S]*?)\}/g;
   for (const match of configText.matchAll(locationPattern)) {
     const path = match[1];
-    const body = match[2] ?? "";
+    const body = match[2] ?? '';
     const proxyPass = body.match(/proxy_pass\s+([^;]+);/)?.[1]?.trim();
     if (!path || !proxyPass) {
       continue;
@@ -2523,25 +2516,25 @@ export function nginxProxyLocationToStructuredRoute(
   location: NginxProxyLocation,
   options: NginxProxyConfigProjectionOptions,
 ): StructuredEnforcementRouteConfig {
-  const host = options.host ?? "localhost";
+  const host = options.host ?? 'localhost';
   return {
     environment: options.environment,
     route: {
       id: `${host}${location.path}`,
       host,
       path: location.path,
-      methods: ["*"],
+      methods: ['*'],
     },
     proxy: {
       authority: options.proxyAuthority,
-      kind: options.proxyKind ?? "nginx_proxy",
+      kind: options.proxyKind ?? 'nginx_proxy',
       id: options.proxyId,
     },
     upstream: location.upstreamName
       ? {
           authority: options.upstreamAuthority ?? `upstream:${location.upstreamName}`,
           id: location.upstreamName,
-          kind: "service",
+          kind: 'service',
         }
       : undefined,
     policy: options.policyByPath?.[location.path],
@@ -2554,9 +2547,7 @@ export function projectNginxProxyConfig(
   options: NginxProxyConfigProjectionOptions,
 ): AuthorizationOntologyGraph {
   const routeGraphs = parseNginxProxyLocations(configText).map((location) =>
-    projectStructuredEnforcementRoute(
-      nginxProxyLocationToStructuredRoute(location, options),
-    ),
+    projectStructuredEnforcementRoute(nginxProxyLocationToStructuredRoute(location, options)),
   );
 
   return {
@@ -2569,17 +2560,17 @@ export function projectNginxProxyConfig(
 export function createAuthorizationDecisionNode(input: AuthorizationDecision): AuthorizationNode {
   const coord = createAuthNodeCoord({
     realm: input.enforcementPoint?.realm ?? input.policy?.realm ?? input.resource.realm,
-    space: "decision",
+    space: 'decision',
     anchor: input.decisionId,
     taxonomies: {
-      node_kind: "decision",
+      node_kind: 'decision',
       effect: input.effect,
     },
   });
 
   return {
     nodeId: nodeIdFromCoord(coord),
-    kind: "decision",
+    kind: 'decision',
     coord,
     metadata: {
       observedAt: input.observedAt,
@@ -2603,7 +2594,7 @@ export function projectAuthorizationDecision(
     createRoleNode({
       realm: input.principal.realm,
       roleId: role,
-      roleKind: "role",
+      roleKind: 'role',
     }),
   );
 
@@ -2626,24 +2617,24 @@ export function projectAuthorizationDecision(
     ]),
     relations: uniqueRelations([
       createAuthorizationRelation({
-        kind: "decision_principal",
+        kind: 'decision_principal',
         fromNodeId: decisionNode.nodeId,
         toNodeId: principalNode.nodeId,
       }),
       createAuthorizationRelation({
-        kind: "decision_resource",
+        kind: 'decision_resource',
         fromNodeId: decisionNode.nodeId,
         toNodeId: resourceNode.nodeId,
       }),
       createAuthorizationRelation({
-        kind: "decision_action",
+        kind: 'decision_action',
         fromNodeId: decisionNode.nodeId,
         toNodeId: actionNode.nodeId,
       }),
       ...(policyNode
         ? [
             createAuthorizationRelation({
-              kind: "decision_policy",
+              kind: 'decision_policy',
               fromNodeId: decisionNode.nodeId,
               toNodeId: policyNode.nodeId,
             }),
@@ -2652,7 +2643,7 @@ export function projectAuthorizationDecision(
       ...(enforcementNode
         ? [
             createAuthorizationRelation({
-              kind: "decision_enforcement",
+              kind: 'decision_enforcement',
               fromNodeId: decisionNode.nodeId,
               toNodeId: enforcementNode.nodeId,
             }),
@@ -2660,7 +2651,7 @@ export function projectAuthorizationDecision(
         : []),
       ...roleNodes.map((roleNode) =>
         createAuthorizationRelation({
-          kind: "has_role",
+          kind: 'has_role',
           fromNodeId: principalNode.nodeId,
           toNodeId: roleNode.nodeId,
         }),
@@ -2670,7 +2661,7 @@ export function projectAuthorizationDecision(
 }
 
 function normalizeCerbosActionDecisions(
-  actions: CerbosDecisionObservationLike["actions"],
+  actions: CerbosDecisionObservationLike['actions'],
 ): CerbosActionDecisionLike[] {
   if (Array.isArray(actions)) {
     return actions.map((action) => ({
@@ -2691,7 +2682,7 @@ export function projectCerbosDecisionObservation(
   const principal: PrincipalRef = {
     realm: input.identityRealm,
     principalId: input.decision.principal.id,
-    principalKind: "human_user",
+    principalKind: 'human_user',
     issuer: input.identityRealm.authority,
     roles: input.decision.principal.roles ?? [],
     attributes: input.decision.principal.attr ?? {},
@@ -2699,12 +2690,15 @@ export function projectCerbosDecisionObservation(
   const resource: ResourceRef = {
     realm: input.resourceRealm,
     resourceId: input.decision.resource.id,
-    resourceKind: (input.decision.resource.kind ?? "service") as AuthorizationResourceKind,
+    resourceKind: (input.decision.resource.kind ?? 'service') as AuthorizationResourceKind,
     attributes: input.decision.resource.attr ?? {},
   };
   const actionRealm = input.actionRealm ?? input.policyRealm ?? input.resourceRealm;
   const decisionRealm =
-    input.decisionRealm ?? input.enforcementPoint?.realm ?? input.policyRealm ?? input.resourceRealm;
+    input.decisionRealm ??
+    input.enforcementPoint?.realm ??
+    input.policyRealm ??
+    input.resourceRealm;
   const observedAt = input.decision.observedAt ?? new Date().toISOString();
   const actionDecisions = normalizeCerbosActionDecisions(input.decision.actions);
   const graphs = actionDecisions.map((actionDecision) =>
@@ -2721,7 +2715,7 @@ export function projectCerbosDecisionObservation(
         ? {
             realm: input.policyRealm ?? decisionRealm,
             policyId: actionDecision.policyId,
-            policyKind: "cerbos_resource_policy",
+            policyKind: 'cerbos_resource_policy',
           }
         : undefined,
       enforcementPoint: input.enforcementPoint,
@@ -2808,7 +2802,7 @@ function policyProtectsResourceThroughRoute(
 ): boolean {
   return graph.relations.some((protectsRelation) => {
     if (
-      protectsRelation.kind !== "protects" ||
+      protectsRelation.kind !== 'protects' ||
       !policyNodeIds.includes(protectsRelation.fromNodeId)
     ) {
       return false;
@@ -2817,16 +2811,16 @@ function policyProtectsResourceThroughRoute(
       return true;
     }
     const protectedNode = nodesById.get(protectsRelation.toNodeId);
-    if (!protectedNode || protectedNode.kind !== "resource") {
+    if (!protectedNode || protectedNode.kind !== 'resource') {
       return false;
     }
-    const resourceKind = getNodeTaxonomy(protectedNode, "resource_kind");
+    const resourceKind = getNodeTaxonomy(protectedNode, 'resource_kind');
     if (!routeResourceKinds.includes(resourceKind as AuthorizationResourceKind)) {
       return false;
     }
     return graph.relations.some(
       (relation) =>
-        relation.kind === "matches_resource" &&
+        relation.kind === 'matches_resource' &&
         relation.fromNodeId === protectedNode.nodeId &&
         resourceNodeIds.includes(relation.toNodeId),
     );
@@ -2874,20 +2868,20 @@ function hasAnyPolicyActionForDecision(
   actionRelations: AuthorizationRelation[],
   nodesById: Map<string, AuthorizationNode>,
 ): boolean {
-  const effect = getNodeTaxonomy(decisionNode, "effect");
+  const effect = getNodeTaxonomy(decisionNode, 'effect');
   return policyRelations.some((policyRelation) => {
     const policyNodeIds = findEquivalentNodeIds(graph, nodesById, policyRelation.toNodeId);
     return actionRelations.some((actionRelation) => {
       const actionNodeIds = findEquivalentNodeIds(graph, nodesById, actionRelation.toNodeId);
-      if (effect === "allow") {
-        return hasRelationBetweenAny(graph, "allows_action", policyNodeIds, actionNodeIds);
+      if (effect === 'allow') {
+        return hasRelationBetweenAny(graph, 'allows_action', policyNodeIds, actionNodeIds);
       }
-      if (effect === "deny") {
-        return hasRelationBetweenAny(graph, "denies_action", policyNodeIds, actionNodeIds);
+      if (effect === 'deny') {
+        return hasRelationBetweenAny(graph, 'denies_action', policyNodeIds, actionNodeIds);
       }
       return (
-        hasRelationBetweenAny(graph, "allows_action", policyNodeIds, actionNodeIds) ||
-        hasRelationBetweenAny(graph, "denies_action", policyNodeIds, actionNodeIds)
+        hasRelationBetweenAny(graph, 'allows_action', policyNodeIds, actionNodeIds) ||
+        hasRelationBetweenAny(graph, 'denies_action', policyNodeIds, actionNodeIds)
       );
     });
   });
@@ -2898,9 +2892,9 @@ function routeHasPolicyResourceBridge(
   routeNode: AuthorizationNode,
   nodesById: Map<string, AuthorizationNode>,
 ): boolean {
-  const routePolicyIds = relationSources(graph, routeNode.nodeId, "protects");
+  const routePolicyIds = relationSources(graph, routeNode.nodeId, 'protects');
   if (routePolicyIds.length === 0) return false;
-  const upstreamIds = relationTargets(graph, routeNode.nodeId, "matches_resource");
+  const upstreamIds = relationTargets(graph, routeNode.nodeId, 'matches_resource');
   if (upstreamIds.length === 0) return false;
 
   return routePolicyIds.some((policyNodeId) => {
@@ -2911,7 +2905,7 @@ function routeHasPolicyResourceBridge(
         upstreamNodeIds.some((candidateResourceId) =>
           graph.relations.some(
             (relation) =>
-              relation.kind === "protects" &&
+              relation.kind === 'protects' &&
               relation.fromNodeId === candidatePolicyId &&
               relation.toNodeId === candidateResourceId,
           ),
@@ -2925,51 +2919,53 @@ export function computeAuthorizationCoverage(
   graph: AuthorizationOntologyGraph,
   options: Pick<
     AuthorizationGraphAuditOptions,
-    "routeResourceKinds" | "applicationResourceKinds"
+    'routeResourceKinds' | 'applicationResourceKinds'
   > = {},
 ): AuthorizationCoverageReport {
-  const routeResourceKinds = options.routeResourceKinds ?? ["proxy_route"];
-  const applicationResourceKinds = options.applicationResourceKinds ?? ["domain_resource"];
+  const routeResourceKinds = options.routeResourceKinds ?? ['proxy_route'];
+  const applicationResourceKinds = options.applicationResourceKinds ?? ['domain_resource'];
   const nodesById = new Map(graph.nodes.map((node) => [node.nodeId, node]));
   const routeNodes = graph.nodes.filter(
     (node) =>
-      node.kind === "resource" &&
-      routeResourceKinds.includes(getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind),
+      node.kind === 'resource' &&
+      routeResourceKinds.includes(
+        getNodeTaxonomy(node, 'resource_kind') as AuthorizationResourceKind,
+      ),
   );
   const applicationResourceNodes = graph.nodes.filter(
     (node) =>
-      node.kind === "resource" &&
+      node.kind === 'resource' &&
       applicationResourceKinds.includes(
-        getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind,
+        getNodeTaxonomy(node, 'resource_kind') as AuthorizationResourceKind,
       ),
   );
-  const decisionNodes = graph.nodes.filter((node) => node.kind === "decision");
+  const decisionNodes = graph.nodes.filter((node) => node.kind === 'decision');
 
   const routeCovered = routeNodes.filter(
     (node) =>
-      relationSources(graph, node.nodeId, "protects").length > 0 &&
-      relationTargets(graph, node.nodeId, "enforced_at").length > 0 &&
-      relationTargets(graph, node.nodeId, "matches_resource").length > 0,
+      relationSources(graph, node.nodeId, 'protects').length > 0 &&
+      relationTargets(graph, node.nodeId, 'enforced_at').length > 0 &&
+      relationTargets(graph, node.nodeId, 'matches_resource').length > 0,
   ).length;
   const appCovered = applicationResourceNodes.filter(
     (node) =>
-      relationSources(graph, node.nodeId, "protects").length > 0 &&
-      relationTargets(graph, node.nodeId, "enforced_at").length > 0,
+      relationSources(graph, node.nodeId, 'protects').length > 0 &&
+      relationTargets(graph, node.nodeId, 'enforced_at').length > 0,
   ).length;
   const decisionComplete = decisionNodes.filter(
     (node) =>
-      relationTargets(graph, node.nodeId, "decision_principal").length > 0 &&
-      relationTargets(graph, node.nodeId, "decision_resource").length > 0 &&
-      relationTargets(graph, node.nodeId, "decision_action").length > 0 &&
-      relationTargets(graph, node.nodeId, "decision_policy").length > 0 &&
-      relationTargets(graph, node.nodeId, "decision_enforcement").length > 0,
+      relationTargets(graph, node.nodeId, 'decision_principal').length > 0 &&
+      relationTargets(graph, node.nodeId, 'decision_resource').length > 0 &&
+      relationTargets(graph, node.nodeId, 'decision_action').length > 0 &&
+      relationTargets(graph, node.nodeId, 'decision_policy').length > 0 &&
+      relationTargets(graph, node.nodeId, 'decision_enforcement').length > 0,
   ).length;
   const policyActionConsistent = decisionNodes.filter((node) =>
     hasAnyPolicyActionForDecision(
       graph,
       node,
-      getOutgoingRelations(graph, node.nodeId, "decision_policy"),
-      getOutgoingRelations(graph, node.nodeId, "decision_action"),
+      getOutgoingRelations(graph, node.nodeId, 'decision_policy'),
+      getOutgoingRelations(graph, node.nodeId, 'decision_action'),
       nodesById,
     ),
   ).length;
@@ -2995,8 +2991,8 @@ export function auditAuthorizationGraph(
   graph: AuthorizationOntologyGraph,
   options: AuthorizationGraphAuditOptions = {},
 ): AuthorizationGraphAuditReport {
-  const routeResourceKinds = options.routeResourceKinds ?? ["proxy_route"];
-  const applicationResourceKinds = options.applicationResourceKinds ?? ["domain_resource"];
+  const routeResourceKinds = options.routeResourceKinds ?? ['proxy_route'];
+  const applicationResourceKinds = options.applicationResourceKinds ?? ['domain_resource'];
   const requireRoutePolicy = options.requireRoutePolicy ?? true;
   const requireRouteEnforcement = options.requireRouteEnforcement ?? true;
   const requireRouteUpstream = options.requireRouteUpstream ?? true;
@@ -3015,8 +3011,8 @@ export function auditAuthorizationGraph(
     if (!nodesById.has(relation.fromNodeId) || !nodesById.has(relation.toNodeId)) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "dangling_relation",
+          severity: 'error',
+          code: 'dangling_relation',
           message: `Relation ${relation.kind} points to a missing node`,
           relationId: relation.relationId,
           metadata: {
@@ -3030,21 +3026,24 @@ export function auditAuthorizationGraph(
 
   const routeNodes = graph.nodes.filter(
     (node) =>
-      node.kind === "resource" &&
-      routeResourceKinds.includes(getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind),
+      node.kind === 'resource' &&
+      routeResourceKinds.includes(
+        getNodeTaxonomy(node, 'resource_kind') as AuthorizationResourceKind,
+      ),
   );
   let protectedRouteCount = 0;
   let enforcedRouteCount = 0;
 
   for (const routeNode of routeNodes) {
     const hasPolicy = graph.relations.some(
-      (relation) => relation.kind === "protects" && relation.toNodeId === routeNode.nodeId,
+      (relation) => relation.kind === 'protects' && relation.toNodeId === routeNode.nodeId,
     );
     const hasEnforcement = graph.relations.some(
-      (relation) => relation.kind === "enforced_at" && relation.fromNodeId === routeNode.nodeId,
+      (relation) => relation.kind === 'enforced_at' && relation.fromNodeId === routeNode.nodeId,
     );
     const hasUpstream = graph.relations.some(
-      (relation) => relation.kind === "matches_resource" && relation.fromNodeId === routeNode.nodeId,
+      (relation) =>
+        relation.kind === 'matches_resource' && relation.fromNodeId === routeNode.nodeId,
     );
 
     if (hasPolicy) protectedRouteCount += 1;
@@ -3053,8 +3052,8 @@ export function auditAuthorizationGraph(
     if (requireRoutePolicy && !hasPolicy) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "proxy_route_missing_policy",
+          severity: 'error',
+          code: 'proxy_route_missing_policy',
           message: `Proxy route ${routeNode.coord.anchor} is not protected by a policy`,
           nodeId: routeNode.nodeId,
         }),
@@ -3063,8 +3062,8 @@ export function auditAuthorizationGraph(
     if (requireRouteEnforcement && !hasEnforcement) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "proxy_route_missing_enforcement",
+          severity: 'error',
+          code: 'proxy_route_missing_enforcement',
           message: `Proxy route ${routeNode.coord.anchor} has no enforcement point`,
           nodeId: routeNode.nodeId,
         }),
@@ -3073,8 +3072,8 @@ export function auditAuthorizationGraph(
     if (requireRouteUpstream && !hasUpstream) {
       issues.push(
         createAuditIssue({
-          severity: "warning",
-          code: "proxy_route_missing_upstream",
+          severity: 'warning',
+          code: 'proxy_route_missing_upstream',
           message: `Proxy route ${routeNode.coord.anchor} is not linked to an upstream resource`,
           nodeId: routeNode.nodeId,
         }),
@@ -3084,9 +3083,9 @@ export function auditAuthorizationGraph(
 
   const applicationResourceNodes = graph.nodes.filter(
     (node) =>
-      node.kind === "resource" &&
+      node.kind === 'resource' &&
       applicationResourceKinds.includes(
-        getNodeTaxonomy(node, "resource_kind") as AuthorizationResourceKind,
+        getNodeTaxonomy(node, 'resource_kind') as AuthorizationResourceKind,
       ),
   );
   let protectedApplicationResourceCount = 0;
@@ -3094,11 +3093,10 @@ export function auditAuthorizationGraph(
 
   for (const resourceNode of applicationResourceNodes) {
     const hasPolicy = graph.relations.some(
-      (relation) => relation.kind === "protects" && relation.toNodeId === resourceNode.nodeId,
+      (relation) => relation.kind === 'protects' && relation.toNodeId === resourceNode.nodeId,
     );
     const hasEnforcement = graph.relations.some(
-      (relation) =>
-        relation.kind === "enforced_at" && relation.fromNodeId === resourceNode.nodeId,
+      (relation) => relation.kind === 'enforced_at' && relation.fromNodeId === resourceNode.nodeId,
     );
 
     if (hasPolicy) protectedApplicationResourceCount += 1;
@@ -3107,8 +3105,8 @@ export function auditAuthorizationGraph(
     if (requireApplicationResourcePolicy && !hasPolicy) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "application_resource_missing_policy",
+          severity: 'error',
+          code: 'application_resource_missing_policy',
           message: `Application resource ${resourceNode.coord.anchor} is not protected by a policy`,
           nodeId: resourceNode.nodeId,
         }),
@@ -3117,8 +3115,8 @@ export function auditAuthorizationGraph(
     if (requireApplicationResourceEnforcement && !hasEnforcement) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "application_resource_missing_enforcement",
+          severity: 'error',
+          code: 'application_resource_missing_enforcement',
           message: `Application resource ${resourceNode.coord.anchor} has no application enforcement point`,
           nodeId: resourceNode.nodeId,
         }),
@@ -3126,17 +3124,17 @@ export function auditAuthorizationGraph(
     }
   }
 
-  const decisionNodes = graph.nodes.filter((node) => node.kind === "decision");
+  const decisionNodes = graph.nodes.filter((node) => node.kind === 'decision');
   let decisionsWithPolicyCount = 0;
 
   for (const decisionNode of decisionNodes) {
-    const policyRelations = getOutgoingRelations(graph, decisionNode.nodeId, "decision_policy");
-    const resourceRelations = getOutgoingRelations(graph, decisionNode.nodeId, "decision_resource");
-    const actionRelations = getOutgoingRelations(graph, decisionNode.nodeId, "decision_action");
+    const policyRelations = getOutgoingRelations(graph, decisionNode.nodeId, 'decision_policy');
+    const resourceRelations = getOutgoingRelations(graph, decisionNode.nodeId, 'decision_resource');
+    const actionRelations = getOutgoingRelations(graph, decisionNode.nodeId, 'decision_action');
     const enforcementRelations = getOutgoingRelations(
       graph,
       decisionNode.nodeId,
-      "decision_enforcement",
+      'decision_enforcement',
     );
 
     if (policyRelations.length > 0) decisionsWithPolicyCount += 1;
@@ -3144,8 +3142,8 @@ export function auditAuthorizationGraph(
     if (resourceRelations.length === 0) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "decision_missing_resource",
+          severity: 'error',
+          code: 'decision_missing_resource',
           message: `Decision ${decisionNode.coord.anchor} has no resource relation`,
           nodeId: decisionNode.nodeId,
         }),
@@ -3154,8 +3152,8 @@ export function auditAuthorizationGraph(
     if (actionRelations.length === 0) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "decision_missing_action",
+          severity: 'error',
+          code: 'decision_missing_action',
           message: `Decision ${decisionNode.coord.anchor} has no action relation`,
           nodeId: decisionNode.nodeId,
         }),
@@ -3164,8 +3162,8 @@ export function auditAuthorizationGraph(
     if (requireDecisionPolicy && policyRelations.length === 0) {
       issues.push(
         createAuditIssue({
-          severity: "error",
-          code: "decision_missing_policy",
+          severity: 'error',
+          code: 'decision_missing_policy',
           message: `Decision ${decisionNode.coord.anchor} has no policy relation`,
           nodeId: decisionNode.nodeId,
         }),
@@ -3174,8 +3172,8 @@ export function auditAuthorizationGraph(
     if (requireDecisionEnforcement && enforcementRelations.length === 0) {
       issues.push(
         createAuditIssue({
-          severity: "warning",
-          code: "decision_missing_enforcement",
+          severity: 'warning',
+          code: 'decision_missing_enforcement',
           message: `Decision ${decisionNode.coord.anchor} has no enforcement relation`,
           nodeId: decisionNode.nodeId,
         }),
@@ -3183,39 +3181,31 @@ export function auditAuthorizationGraph(
     }
 
     for (const policyRelation of policyRelations) {
-      const policyNodeIds = findEquivalentNodeIds(
-        graph,
-        nodesById,
-        policyRelation.toNodeId,
-      );
+      const policyNodeIds = findEquivalentNodeIds(graph, nodesById, policyRelation.toNodeId);
       for (const actionRelation of actionRelations) {
-        const actionNodeIds = findEquivalentNodeIds(
-          graph,
-          nodesById,
-          actionRelation.toNodeId,
-        );
+        const actionNodeIds = findEquivalentNodeIds(graph, nodesById, actionRelation.toNodeId);
         const allowsAction = hasRelationBetweenAny(
           graph,
-          "allows_action",
+          'allows_action',
           policyNodeIds,
           actionNodeIds,
         );
         const deniesAction = hasRelationBetweenAny(
           graph,
-          "denies_action",
+          'denies_action',
           policyNodeIds,
           actionNodeIds,
         );
-        const effect = getNodeTaxonomy(decisionNode, "effect");
+        const effect = getNodeTaxonomy(decisionNode, 'effect');
         const actionLinked = allowsAction || deniesAction;
         if (
           requireDecisionPolicyAction &&
-          (!actionLinked || (effect === "allow" && !allowsAction))
+          (!actionLinked || (effect === 'allow' && !allowsAction))
         ) {
           issues.push(
             createAuditIssue({
-              severity: effect === "allow" ? "error" : "warning",
-              code: "decision_policy_action_unlinked",
+              severity: effect === 'allow' ? 'error' : 'warning',
+              code: 'decision_policy_action_unlinked',
               message: `Decision ${decisionNode.coord.anchor} action is not declared by its policy`,
               nodeId: decisionNode.nodeId,
               metadata: {
@@ -3229,11 +3219,7 @@ export function auditAuthorizationGraph(
       }
 
       for (const resourceRelation of resourceRelations) {
-        const resourceNodeIds = findEquivalentNodeIds(
-          graph,
-          nodesById,
-          resourceRelation.toNodeId,
-        );
+        const resourceNodeIds = findEquivalentNodeIds(graph, nodesById, resourceRelation.toNodeId);
         const linked = policyProtectsResourceThroughRoute(
           graph,
           policyNodeIds,
@@ -3244,8 +3230,8 @@ export function auditAuthorizationGraph(
         if (requireDecisionPolicyResource && !linked) {
           issues.push(
             createAuditIssue({
-              severity: "warning",
-              code: "decision_policy_resource_unlinked",
+              severity: 'warning',
+              code: 'decision_policy_resource_unlinked',
               message: `Decision ${decisionNode.coord.anchor} resource is not protected by its policy graph`,
               nodeId: decisionNode.nodeId,
               metadata: {
@@ -3259,8 +3245,8 @@ export function auditAuthorizationGraph(
     }
   }
 
-  const errors = issues.filter((issue) => issue.severity === "error").length;
-  const warnings = issues.filter((issue) => issue.severity === "warning").length;
+  const errors = issues.filter((issue) => issue.severity === 'error').length;
+  const warnings = issues.filter((issue) => issue.severity === 'warning').length;
 
   return {
     ok: errors === 0,
@@ -3316,7 +3302,9 @@ export interface AuthorizationGraphSnapshotListFilter {
 }
 
 export interface AuthorizationGraphStore {
-  saveSnapshot(input: SaveAuthorizationGraphSnapshotInput): Promise<AuthorizationGraphSnapshotRecord>;
+  saveSnapshot(
+    input: SaveAuthorizationGraphSnapshotInput,
+  ): Promise<AuthorizationGraphSnapshotRecord>;
   getSnapshot(snapshotId: string): Promise<AuthorizationGraphSnapshotRecord | null>;
   listSnapshots(
     filter?: AuthorizationGraphSnapshotListFilter,
@@ -3353,7 +3341,7 @@ function cloneJson<T>(value: T): T {
 }
 
 function createSnapshotId(graphId: string, createdAt: string, sequence: number): string {
-  const safeGraphId = graphId.replace(/[^a-zA-Z0-9_.:-]/g, "_");
+  const safeGraphId = graphId.replace(/[^a-zA-Z0-9_.:-]/g, '_');
   return `${safeGraphId}:${createdAt}:${sequence}`;
 }
 
@@ -3380,7 +3368,7 @@ export class InMemoryAuthorizationGraphStore implements AuthorizationGraphStore 
     input: SaveAuthorizationGraphSnapshotInput,
   ): Promise<AuthorizationGraphSnapshotRecord> {
     const createdAt = input.createdAt ?? new Date().toISOString();
-    const graphId = input.graphId ?? "authorization-graph";
+    const graphId = input.graphId ?? 'authorization-graph';
     const snapshotId = input.snapshotId ?? createSnapshotId(graphId, createdAt, this.sequence++);
     const record: AuthorizationGraphSnapshotRecord = {
       snapshotId,
@@ -3391,7 +3379,9 @@ export class InMemoryAuthorizationGraphStore implements AuthorizationGraphStore 
       tags: input.tags ? [...input.tags] : undefined,
       labels: input.labels ? { ...input.labels } : undefined,
       metadata: input.metadata ? cloneJson(input.metadata) : undefined,
-      auditReport: input.audit ? auditAuthorizationGraph(input.graph, input.auditOptions) : undefined,
+      auditReport: input.audit
+        ? auditAuthorizationGraph(input.graph, input.auditOptions)
+        : undefined,
     };
 
     this.snapshots.set(snapshotId, record);
@@ -3468,7 +3458,7 @@ export function diffAuthorizationGraphs(
 }
 
 export async function diffAuthorizationGraphSnapshots(
-  store: Pick<AuthorizationGraphStore, "getSnapshot">,
+  store: Pick<AuthorizationGraphStore, 'getSnapshot'>,
   fromSnapshotId: string,
   toSnapshotId: string,
 ): Promise<AuthorizationGraphDiff | null> {
@@ -3484,11 +3474,11 @@ export async function diffAuthorizationGraphSnapshots(
 }
 
 export type AuthorizationGraphIngestKind =
-  | "graph"
-  | "authorization_decision"
-  | "cerbos_decision"
-  | "permission_engine_audit"
-  | "permission_engine_middleware_feedback";
+  | 'graph'
+  | 'authorization_decision'
+  | 'cerbos_decision'
+  | 'permission_engine_audit'
+  | 'permission_engine_middleware_feedback';
 
 interface AuthorizationGraphIngestBase {
   graphId?: string;
@@ -3505,23 +3495,23 @@ interface AuthorizationGraphIngestBase {
 
 export type AuthorizationGraphIngestInput =
   | (AuthorizationGraphIngestBase & {
-      kind: "graph";
+      kind: 'graph';
       graph: AuthorizationOntologyGraph;
     })
   | (AuthorizationGraphIngestBase & {
-      kind: "authorization_decision";
+      kind: 'authorization_decision';
       decision: AuthorizationDecision;
     })
   | (AuthorizationGraphIngestBase & {
-      kind: "cerbos_decision";
+      kind: 'cerbos_decision';
       decision: CerbosDecisionObservationProjectionInput;
     })
   | (AuthorizationGraphIngestBase & {
-      kind: "permission_engine_audit";
+      kind: 'permission_engine_audit';
       audit: PermissionEngineAuditProjectionInput;
     })
   | (AuthorizationGraphIngestBase & {
-      kind: "permission_engine_middleware_feedback";
+      kind: 'permission_engine_middleware_feedback';
       feedback: PermissionEngineMiddlewareFeedbackProjectionInput;
     });
 
@@ -3537,15 +3527,15 @@ function projectAuthorizationGraphIngestInput(
   input: AuthorizationGraphIngestInput,
 ): AuthorizationOntologyGraph {
   switch (input.kind) {
-    case "graph":
+    case 'graph':
       return input.graph;
-    case "authorization_decision":
+    case 'authorization_decision':
       return projectAuthorizationDecision(input.decision);
-    case "cerbos_decision":
+    case 'cerbos_decision':
       return projectCerbosDecisionObservation(input.decision);
-    case "permission_engine_audit":
+    case 'permission_engine_audit':
       return projectPermissionEngineAudit(input.audit);
-    case "permission_engine_middleware_feedback":
+    case 'permission_engine_middleware_feedback':
       return projectPermissionEngineMiddlewareFeedback(input.feedback);
   }
 }
@@ -3555,7 +3545,7 @@ function defaultTagsForIngest(input: AuthorizationGraphIngestInput): string[] {
 }
 
 async function loadLatestSnapshotForGraph(
-  store: Pick<AuthorizationGraphStore, "listSnapshots">,
+  store: Pick<AuthorizationGraphStore, 'listSnapshots'>,
   graphId: string,
 ): Promise<AuthorizationGraphSnapshotRecord | undefined> {
   const snapshots = await store.listSnapshots({ graphId });
@@ -3566,7 +3556,7 @@ export class AuthorizationGraphIngestService {
   constructor(private readonly store: AuthorizationGraphStore) {}
 
   async ingest(input: AuthorizationGraphIngestInput): Promise<AuthorizationGraphIngestResult> {
-    const graphId = input.graphId ?? "authorization-observations";
+    const graphId = input.graphId ?? 'authorization-observations';
     const projectedGraph = projectAuthorizationGraphIngestInput(input);
     const previousSnapshot = input.mergeWithLatest
       ? await loadLatestSnapshotForGraph(this.store, graphId)
@@ -3617,140 +3607,140 @@ export function createAuthorizationFacetRef(
 }
 
 export const authorizationOntologyPack = {
-  packId: "authorization-ontology",
+  packId: 'authorization-ontology',
   schema: {
     axes: [
       {
-        id: "authorization_node_kind",
+        id: 'authorization_node_kind',
         values: [...AUTHORIZATION_NODE_KINDS],
       },
       {
-        id: "authorization_realm_kind",
+        id: 'authorization_realm_kind',
         values: [...AUTHORIZATION_REALM_KINDS],
       },
       {
-        id: "authorization_principal_kind",
+        id: 'authorization_principal_kind',
         values: [...AUTHORIZATION_PRINCIPAL_KINDS],
       },
       {
-        id: "authorization_resource_kind",
+        id: 'authorization_resource_kind',
         values: [...AUTHORIZATION_RESOURCE_KINDS],
       },
       {
-        id: "authorization_action_kind",
+        id: 'authorization_action_kind',
         values: [...AUTHORIZATION_ACTION_KINDS],
       },
       {
-        id: "authorization_policy_kind",
+        id: 'authorization_policy_kind',
         values: [...AUTHORIZATION_POLICY_KINDS],
       },
       {
-        id: "authorization_relation_kind",
+        id: 'authorization_relation_kind',
         values: [...AUTHORIZATION_RELATION_KINDS],
       },
       {
-        id: "authorization_decision_effect",
-        values: ["allow", "deny"],
+        id: 'authorization_decision_effect',
+        values: ['allow', 'deny'],
       },
       {
-        id: "authorization_enforcement_kind",
+        id: 'authorization_enforcement_kind',
         values: [
-          "cloud_lb",
-          "caddy",
-          "nginx_proxy",
-          "authentik_proxy",
-          "service_middleware",
-          "cerbos_pdp",
+          'cloud_lb',
+          'caddy',
+          'nginx_proxy',
+          'authentik_proxy',
+          'service_middleware',
+          'cerbos_pdp',
         ],
       },
       {
-        id: "authorization_lineage_transform",
+        id: 'authorization_lineage_transform',
         values: [...LINEAGE_AUTHORIZATION_TRANSFORMS],
       },
       {
-        id: "authorization_policy_propagation_mode",
-        values: ["inherit", "downgrade", "block", "manual_review"],
+        id: 'authorization_policy_propagation_mode',
+        values: ['inherit', 'downgrade', 'block', 'manual_review'],
       },
     ],
     taxonomies: [
       {
-        id: "authorization-node",
-        appliesTo: ["node"],
-        axisIds: ["authorization_node_kind", "authorization_realm_kind"],
-        identityAxisIds: ["authorization_node_kind"],
-        space: "authorization",
+        id: 'authorization-node',
+        appliesTo: ['node'],
+        axisIds: ['authorization_node_kind', 'authorization_realm_kind'],
+        identityAxisIds: ['authorization_node_kind'],
+        space: 'authorization',
       },
       {
-        id: "authorization-principal",
-        appliesTo: ["node"],
-        axisIds: ["authorization_principal_kind"],
-        identityAxisIds: ["authorization_principal_kind"],
-        space: "authorization",
+        id: 'authorization-principal',
+        appliesTo: ['node'],
+        axisIds: ['authorization_principal_kind'],
+        identityAxisIds: ['authorization_principal_kind'],
+        space: 'authorization',
       },
       {
-        id: "authorization-resource",
-        appliesTo: ["node"],
-        axisIds: ["authorization_resource_kind"],
-        identityAxisIds: ["authorization_resource_kind"],
-        space: "authorization",
+        id: 'authorization-resource',
+        appliesTo: ['node'],
+        axisIds: ['authorization_resource_kind'],
+        identityAxisIds: ['authorization_resource_kind'],
+        space: 'authorization',
       },
       {
-        id: "authorization-action",
-        appliesTo: ["node"],
-        axisIds: ["authorization_action_kind"],
-        identityAxisIds: ["authorization_action_kind"],
-        space: "authorization",
+        id: 'authorization-action',
+        appliesTo: ['node'],
+        axisIds: ['authorization_action_kind'],
+        identityAxisIds: ['authorization_action_kind'],
+        space: 'authorization',
       },
       {
-        id: "authorization-policy",
-        appliesTo: ["node"],
-        axisIds: ["authorization_policy_kind"],
-        identityAxisIds: ["authorization_policy_kind"],
-        space: "authorization",
+        id: 'authorization-policy',
+        appliesTo: ['node'],
+        axisIds: ['authorization_policy_kind'],
+        identityAxisIds: ['authorization_policy_kind'],
+        space: 'authorization',
       },
       {
-        id: "authorization-decision",
-        appliesTo: ["node"],
-        axisIds: ["authorization_decision_effect"],
-        identityAxisIds: ["authorization_decision_effect"],
-        space: "authorization",
+        id: 'authorization-decision',
+        appliesTo: ['node'],
+        axisIds: ['authorization_decision_effect'],
+        identityAxisIds: ['authorization_decision_effect'],
+        space: 'authorization',
       },
       {
-        id: "authorization-enforcement",
-        appliesTo: ["node"],
-        axisIds: ["authorization_enforcement_kind"],
-        identityAxisIds: ["authorization_enforcement_kind"],
-        space: "authorization",
+        id: 'authorization-enforcement',
+        appliesTo: ['node'],
+        axisIds: ['authorization_enforcement_kind'],
+        identityAxisIds: ['authorization_enforcement_kind'],
+        space: 'authorization',
       },
       {
-        id: "authorization-lineage",
-        appliesTo: ["edge"],
-        axisIds: ["authorization_lineage_transform", "authorization_policy_propagation_mode"],
-        identityAxisIds: ["authorization_lineage_transform"],
-        space: "authorization",
+        id: 'authorization-lineage',
+        appliesTo: ['edge'],
+        axisIds: ['authorization_lineage_transform', 'authorization_policy_propagation_mode'],
+        identityAxisIds: ['authorization_lineage_transform'],
+        space: 'authorization',
       },
     ],
     relationCategories: [
       {
-        category: "authorization_relation",
-        requiredAxes: ["authorization_relation_kind"],
+        category: 'authorization_relation',
+        requiredAxes: ['authorization_relation_kind'],
       },
       {
-        category: "authorization_lineage",
-        requiredAxes: ["authorization_lineage_transform", "authorization_policy_propagation_mode"],
+        category: 'authorization_lineage',
+        requiredAxes: ['authorization_lineage_transform', 'authorization_policy_propagation_mode'],
       },
       {
-        category: "authorization_decision_effect",
-        requiredAxes: ["authorization_decision_effect"],
+        category: 'authorization_decision_effect',
+        requiredAxes: ['authorization_decision_effect'],
       },
     ],
     traversals: [
       {
-        purpose: "authorization_audit",
+        purpose: 'authorization_audit',
         allowedRelationCategories: [
-          "authorization_relation",
-          "authorization_lineage",
-          "authorization_decision_effect",
+          'authorization_relation',
+          'authorization_lineage',
+          'authorization_decision_effect',
         ],
         canonicalizable: true,
       },
@@ -3758,141 +3748,157 @@ export const authorizationOntologyPack = {
   },
   blueprints: [
     {
-      blueprintId: "authorization-proxy-enforcement",
-      coordinateRef: "corridor:authorization-proxy-enforcement",
-      unitKind: "corridor_bundle",
-      requiredSchemas: ["authorization-enforcement", "authorization_relation"],
+      blueprintId: 'authorization-proxy-enforcement',
+      coordinateRef: 'corridor:authorization-proxy-enforcement',
+      unitKind: 'corridor_bundle',
+      requiredSchemas: ['authorization-enforcement', 'authorization_relation'],
       implementationBinding: {
-        coordinateRef: "corridor:authorization-proxy-enforcement",
-        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
-        relationCategories: ["authorization_relation"],
+        coordinateRef: 'corridor:authorization-proxy-enforcement',
+        implementationRefs: [{ kind: 'code', ref: 'packages/authorization-ontology/src/index.ts' }],
+        relationCategories: ['authorization_relation'],
       },
       verificationBinding: {
-        coordinateRef: "corridor:authorization-proxy-enforcement",
-        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
-      },
-      constraints: [
-        { kind: "unit_boundary", severity: "core" },
-        { kind: "allowed_relations", allowedRefs: ["authorization_relation"] },
-        { kind: "validation_surface", requiredRefs: ["test"] },
-      ],
-      evolutionPolicy: { kind: "append_only" },
-    },
-    {
-      blueprintId: "authorization-application-enforcement",
-      coordinateRef: "corridor:authorization-application-enforcement",
-      unitKind: "corridor_bundle",
-      requiredSchemas: ["authorization-resource", "authorization_relation"],
-      implementationBinding: {
-        coordinateRef: "corridor:authorization-application-enforcement",
-        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
-        relationCategories: ["authorization_relation"],
-      },
-      verificationBinding: {
-        coordinateRef: "corridor:authorization-application-enforcement",
-        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
-      },
-      constraints: [
-        { kind: "unit_boundary", severity: "core" },
-        { kind: "allowed_relations", allowedRefs: ["authorization_relation"] },
-        { kind: "validation_surface", requiredRefs: ["test"] },
-      ],
-      evolutionPolicy: { kind: "append_only" },
-    },
-    {
-      blueprintId: "authorization-column-lineage-policy",
-      coordinateRef: "traversal:authorization-column-lineage-policy",
-      unitKind: "traversal_bundle",
-      requiredSchemas: ["authorization-lineage", "authorization_lineage"],
-      implementationBinding: {
-        coordinateRef: "traversal:authorization-column-lineage-policy",
-        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
-        relationCategories: ["authorization_lineage"],
-      },
-      verificationBinding: {
-        coordinateRef: "traversal:authorization-column-lineage-policy",
-        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
-      },
-      constraints: [
-        { kind: "unit_boundary", severity: "core" },
-        { kind: "allowed_relations", allowedRefs: ["authorization_lineage"] },
-        { kind: "validation_surface", requiredRefs: ["test"] },
-      ],
-      evolutionPolicy: { kind: "append_only" },
-    },
-    {
-      blueprintId: "authorization-permission-engine-bridge",
-      coordinateRef: "corridor:authorization-permission-engine-bridge",
-      unitKind: "corridor_bundle",
-      requiredSchemas: ["authorization-policy", "authorization_relation"],
-      implementationBinding: {
-        coordinateRef: "corridor:authorization-permission-engine-bridge",
-        implementationRefs: [
-          { kind: "code", ref: "packages/authorization-ontology/src/index.ts" },
-          { kind: "code", ref: "packages/authorization-ontology/src/permission-engine-bridge.test.ts" },
-        ],
-        relationCategories: ["authorization_relation"],
-      },
-      verificationBinding: {
-        coordinateRef: "corridor:authorization-permission-engine-bridge",
+        coordinateRef: 'corridor:authorization-proxy-enforcement',
         verificationRefs: [
-          { kind: "test", ref: "packages/authorization-ontology/src/permission-engine-bridge.test.ts" },
+          { kind: 'test', ref: 'packages/authorization-ontology/src/index.test.ts' },
         ],
       },
       constraints: [
-        { kind: "unit_boundary", severity: "core" },
-        { kind: "allowed_relations", allowedRefs: ["authorization_relation"] },
-        { kind: "validation_surface", requiredRefs: ["test"] },
+        { kind: 'unit_boundary', severity: 'core' },
+        { kind: 'allowed_relations', allowedRefs: ['authorization_relation'] },
+        { kind: 'validation_surface', requiredRefs: ['test'] },
       ],
-      evolutionPolicy: { kind: "append_only" },
+      evolutionPolicy: { kind: 'append_only' },
     },
     {
-      blueprintId: "authorization-decision-observation",
-      coordinateRef: "checkpoint:authorization-decision",
-      unitKind: "checkpoint_lattice",
-      requiredSchemas: ["authorization-decision", "authorization_relation"],
+      blueprintId: 'authorization-application-enforcement',
+      coordinateRef: 'corridor:authorization-application-enforcement',
+      unitKind: 'corridor_bundle',
+      requiredSchemas: ['authorization-resource', 'authorization_relation'],
       implementationBinding: {
-        coordinateRef: "checkpoint:authorization-decision",
-        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
-        relationCategories: ["authorization_relation", "authorization_decision_effect"],
+        coordinateRef: 'corridor:authorization-application-enforcement',
+        implementationRefs: [{ kind: 'code', ref: 'packages/authorization-ontology/src/index.ts' }],
+        relationCategories: ['authorization_relation'],
       },
       verificationBinding: {
-        coordinateRef: "checkpoint:authorization-decision",
-        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
+        coordinateRef: 'corridor:authorization-application-enforcement',
+        verificationRefs: [
+          { kind: 'test', ref: 'packages/authorization-ontology/src/index.test.ts' },
+        ],
       },
       constraints: [
-        { kind: "unit_boundary", severity: "core" },
-        {
-          kind: "allowed_relations",
-          allowedRefs: ["authorization_relation", "authorization_decision_effect"],
-        },
-        { kind: "validation_surface", requiredRefs: ["test"] },
+        { kind: 'unit_boundary', severity: 'core' },
+        { kind: 'allowed_relations', allowedRefs: ['authorization_relation'] },
+        { kind: 'validation_surface', requiredRefs: ['test'] },
       ],
-      evolutionPolicy: { kind: "append_only" },
+      evolutionPolicy: { kind: 'append_only' },
     },
     {
-      blueprintId: "authorization-graph-audit",
-      coordinateRef: "traversal:authorization-audit",
-      unitKind: "traversal_bundle",
-      requiredSchemas: ["authorization_audit", "authorization_relation"],
+      blueprintId: 'authorization-column-lineage-policy',
+      coordinateRef: 'traversal:authorization-column-lineage-policy',
+      unitKind: 'traversal_bundle',
+      requiredSchemas: ['authorization-lineage', 'authorization_lineage'],
       implementationBinding: {
-        coordinateRef: "traversal:authorization-audit",
-        implementationRefs: [{ kind: "code", ref: "packages/authorization-ontology/src/index.ts" }],
-        relationCategories: ["authorization_relation", "authorization_lineage"],
+        coordinateRef: 'traversal:authorization-column-lineage-policy',
+        implementationRefs: [{ kind: 'code', ref: 'packages/authorization-ontology/src/index.ts' }],
+        relationCategories: ['authorization_lineage'],
       },
       verificationBinding: {
-        coordinateRef: "traversal:authorization-audit",
-        verificationRefs: [{ kind: "test", ref: "packages/authorization-ontology/src/index.test.ts" }],
+        coordinateRef: 'traversal:authorization-column-lineage-policy',
+        verificationRefs: [
+          { kind: 'test', ref: 'packages/authorization-ontology/src/index.test.ts' },
+        ],
       },
       constraints: [
-        { kind: "unit_boundary", severity: "core" },
-        {
-          kind: "allowed_relations",
-          allowedRefs: ["authorization_relation", "authorization_lineage"],
-        },
-        { kind: "validation_surface", requiredRefs: ["test"] },
+        { kind: 'unit_boundary', severity: 'core' },
+        { kind: 'allowed_relations', allowedRefs: ['authorization_lineage'] },
+        { kind: 'validation_surface', requiredRefs: ['test'] },
       ],
-      evolutionPolicy: { kind: "append_only" },
+      evolutionPolicy: { kind: 'append_only' },
+    },
+    {
+      blueprintId: 'authorization-permission-engine-bridge',
+      coordinateRef: 'corridor:authorization-permission-engine-bridge',
+      unitKind: 'corridor_bundle',
+      requiredSchemas: ['authorization-policy', 'authorization_relation'],
+      implementationBinding: {
+        coordinateRef: 'corridor:authorization-permission-engine-bridge',
+        implementationRefs: [
+          { kind: 'code', ref: 'packages/authorization-ontology/src/index.ts' },
+          {
+            kind: 'code',
+            ref: 'packages/authorization-ontology/src/permission-engine-bridge.test.ts',
+          },
+        ],
+        relationCategories: ['authorization_relation'],
+      },
+      verificationBinding: {
+        coordinateRef: 'corridor:authorization-permission-engine-bridge',
+        verificationRefs: [
+          {
+            kind: 'test',
+            ref: 'packages/authorization-ontology/src/permission-engine-bridge.test.ts',
+          },
+        ],
+      },
+      constraints: [
+        { kind: 'unit_boundary', severity: 'core' },
+        { kind: 'allowed_relations', allowedRefs: ['authorization_relation'] },
+        { kind: 'validation_surface', requiredRefs: ['test'] },
+      ],
+      evolutionPolicy: { kind: 'append_only' },
+    },
+    {
+      blueprintId: 'authorization-decision-observation',
+      coordinateRef: 'checkpoint:authorization-decision',
+      unitKind: 'checkpoint_lattice',
+      requiredSchemas: ['authorization-decision', 'authorization_relation'],
+      implementationBinding: {
+        coordinateRef: 'checkpoint:authorization-decision',
+        implementationRefs: [{ kind: 'code', ref: 'packages/authorization-ontology/src/index.ts' }],
+        relationCategories: ['authorization_relation', 'authorization_decision_effect'],
+      },
+      verificationBinding: {
+        coordinateRef: 'checkpoint:authorization-decision',
+        verificationRefs: [
+          { kind: 'test', ref: 'packages/authorization-ontology/src/index.test.ts' },
+        ],
+      },
+      constraints: [
+        { kind: 'unit_boundary', severity: 'core' },
+        {
+          kind: 'allowed_relations',
+          allowedRefs: ['authorization_relation', 'authorization_decision_effect'],
+        },
+        { kind: 'validation_surface', requiredRefs: ['test'] },
+      ],
+      evolutionPolicy: { kind: 'append_only' },
+    },
+    {
+      blueprintId: 'authorization-graph-audit',
+      coordinateRef: 'traversal:authorization-audit',
+      unitKind: 'traversal_bundle',
+      requiredSchemas: ['authorization_audit', 'authorization_relation'],
+      implementationBinding: {
+        coordinateRef: 'traversal:authorization-audit',
+        implementationRefs: [{ kind: 'code', ref: 'packages/authorization-ontology/src/index.ts' }],
+        relationCategories: ['authorization_relation', 'authorization_lineage'],
+      },
+      verificationBinding: {
+        coordinateRef: 'traversal:authorization-audit',
+        verificationRefs: [
+          { kind: 'test', ref: 'packages/authorization-ontology/src/index.test.ts' },
+        ],
+      },
+      constraints: [
+        { kind: 'unit_boundary', severity: 'core' },
+        {
+          kind: 'allowed_relations',
+          allowedRefs: ['authorization_relation', 'authorization_lineage'],
+        },
+        { kind: 'validation_surface', requiredRefs: ['test'] },
+      ],
+      evolutionPolicy: { kind: 'append_only' },
     },
   ],
 } satisfies OperationalOntologyPack;

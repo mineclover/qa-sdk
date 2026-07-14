@@ -20,7 +20,7 @@ export {
   type LayoutFieldSpec,
   type PlannedField,
   type LayoutPlan,
-} from "./uuid-layout.js";
+} from './uuid-layout.js';
 
 export {
   PACK_FORMATS,
@@ -37,7 +37,7 @@ export {
   type BuiltinFormatName,
   type DefineFormatOptions,
   type HexBoundary,
-} from "./pack-format.js";
+} from './pack-format.js';
 
 export {
   fitShape,
@@ -51,7 +51,7 @@ export {
   type FitShapeResult,
   type FitLayoutOptions,
   type FitLayoutResult,
-} from "./capacity-planner.js";
+} from './capacity-planner.js';
 
 export {
   CANONICAL_TEXT_PROTOCOL,
@@ -81,7 +81,7 @@ export {
   type AddressProtocolBig,
   type LayoutProtocolOptions,
   type ShardingStrategy,
-} from "./semantic-address.js";
+} from './semantic-address.js';
 
 export {
   bitsForMax,
@@ -100,4 +100,4 @@ export {
   type BitFieldLayout,
   type BitVsHexField,
   type BitVsHexAnalysis,
-} from "./bit-field-layout.js";
+} from './bit-field-layout.js';

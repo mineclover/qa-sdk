@@ -38,17 +38,17 @@ import {
   complementRanges,
   containsAddress,
   type CoordConstraint,
-} from "weighted-index";
+} from 'weighted-index';
 
 // ── 4가지 상태 ────────────────────────────────────────────
 
-export type AddressState = "active" | "inactive" | "open" | "reserved";
+export type AddressState = 'active' | 'inactive' | 'open' | 'reserved';
 
 /** 각 상태의 encode/decode 허용 여부 */
 export const ADDRESS_GATE: Record<AddressState, { encode: boolean; decode: boolean }> = {
-  active:   { encode: true,  decode: true  },
-  inactive: { encode: false, decode: true  },
-  open:     { encode: true,  decode: false },
+  active: { encode: true, decode: true },
+  inactive: { encode: false, decode: true },
+  open: { encode: true, decode: false },
   reserved: { encode: false, decode: false },
 } as const;
 
@@ -65,7 +65,7 @@ export const ADDRESS_GATE: Record<AddressState, { encode: boolean; decode: boole
  */
 export interface DimStateSpec {
   readonly dimIndex: number;
-  readonly state: Exclude<AddressState, "active">;
+  readonly state: Exclude<AddressState, 'active'>;
   /** CoordConstraint 문자열. null = 이 dim 전체 */
   readonly coords: string | null;
   readonly reason?: string;
@@ -106,22 +106,22 @@ export function computeStateRanges(
 ): {
   reservedRanges: [number, number][];
   inactiveRanges: [number, number][];
-  openRanges:     [number, number][];
+  openRanges: [number, number][];
 } {
   const rawReserved: [number, number][] = [];
   const rawInactive: [number, number][] = [];
-  const rawOpen:     [number, number][] = [];
+  const rawOpen: [number, number][] = [];
 
   for (const spec of specs) {
     const coordStr = spec.coords ?? `1-${shape[spec.dimIndex]}`;
     const constraints: CoordConstraint[] = shape.map((_, i) =>
-      i === spec.dimIndex ? coordStr : null
+      i === spec.dimIndex ? coordStr : null,
     );
     const ranges = calcAddressRanges(shape, constraints);
 
-    if      (spec.state === "reserved") rawReserved.push(...ranges);
-    else if (spec.state === "inactive") rawInactive.push(...ranges);
-    else                                rawOpen.push(...ranges);
+    if (spec.state === 'reserved') rawReserved.push(...ranges);
+    else if (spec.state === 'inactive') rawInactive.push(...ranges);
+    else rawOpen.push(...ranges);
   }
 
   const reservedRanges = mergeRanges(rawReserved);
@@ -134,12 +134,12 @@ export function computeStateRanges(
 
   // inactive/open에서 reserved 구간 제거
   const finalInactive = subtractRanges(mergeRanges(rawInactive), finalReserved);
-  const finalOpen     = subtractRanges(mergeRanges(rawOpen),     finalReserved);
+  const finalOpen = subtractRanges(mergeRanges(rawOpen), finalReserved);
 
   return {
     reservedRanges: finalReserved,
     inactiveRanges: finalInactive,
-    openRanges:     finalOpen,
+    openRanges: finalOpen,
   };
 }
 
@@ -155,7 +155,7 @@ export function checkGate(
   address: number,
   reservedRanges: readonly [number, number][],
   inactiveRanges: readonly [number, number][],
-  openRanges:     readonly [number, number][],
+  openRanges: readonly [number, number][],
 ): GateResult {
   const state = classifyAddress(address, reservedRanges, inactiveRanges, openRanges);
   return {
@@ -163,7 +163,7 @@ export function checkGate(
     state,
     // open: 캐시 stale 가능 → 실제 조회로 검증 권장
     // reserved: 의도적 잠금 → 검증 불필요 (hard block)
-    shouldVerify: state === "open",
+    shouldVerify: state === 'open',
   };
 }
 
@@ -177,15 +177,17 @@ export function classifyAddress(
   address: number,
   reservedRanges: readonly [number, number][],
   inactiveRanges: readonly [number, number][],
-  openRanges:     readonly [number, number][],
+  openRanges: readonly [number, number][],
 ): AddressState {
-  const encodeBlocked = containsAddress(address, reservedRanges) || containsAddress(address, inactiveRanges);
-  const decodeBlocked = containsAddress(address, reservedRanges) || containsAddress(address, openRanges);
+  const encodeBlocked =
+    containsAddress(address, reservedRanges) || containsAddress(address, inactiveRanges);
+  const decodeBlocked =
+    containsAddress(address, reservedRanges) || containsAddress(address, openRanges);
 
-  if (encodeBlocked && decodeBlocked) return "reserved";
-  if (encodeBlocked)                  return "inactive";
-  if (decodeBlocked)                  return "open";
-  return "active";
+  if (encodeBlocked && decodeBlocked) return 'reserved';
+  if (encodeBlocked) return 'inactive';
+  if (decodeBlocked) return 'open';
+  return 'active';
 }
 
 // ── 구간 조회 헬퍼 ────────────────────────────────────────
@@ -211,7 +213,7 @@ export function decodableRanges(
 ): [number, number][] {
   const blocked = mergeRanges([
     ...(reservedRanges as [number, number][]),
-    ...(openRanges     as [number, number][]),
+    ...(openRanges as [number, number][]),
   ]);
   return complementRanges(capacity, blocked);
 }
@@ -221,16 +223,16 @@ export function activeRanges(
   capacity: number,
   reservedRanges: readonly [number, number][],
   inactiveRanges: readonly [number, number][],
-  openRanges:     readonly [number, number][],
+  openRanges: readonly [number, number][],
 ): [number, number][] {
   const blocked = mergeRanges([
     ...(reservedRanges as [number, number][]),
     ...(inactiveRanges as [number, number][]),
-    ...(openRanges     as [number, number][]),
+    ...(openRanges as [number, number][]),
   ]);
   return complementRanges(capacity, blocked);
 }
 
 // ── positionsToConstraint re-export ──────────────────────
 
-export { positionsToConstraint } from "weighted-index";
+export { positionsToConstraint } from 'weighted-index';

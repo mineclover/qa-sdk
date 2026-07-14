@@ -1,16 +1,16 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { ResourceEntity } from "../../domain/index.js";
-import type { ResourceSnapshot } from "../../domain/index.js";
-import { ResourceRepositoryPort } from "../../application/ports/resource-repository.port.js";
-import type { ResourceTransactionScope } from "../../application/ports/resource-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { ResourceEntity } from '../../domain/index.js';
+import type { ResourceSnapshot } from '../../domain/index.js';
+import { ResourceRepositoryPort } from '../../application/ports/resource-repository.port.js';
+import type { ResourceTransactionScope } from '../../application/ports/resource-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface ResourceRow {
   id: string;
@@ -18,7 +18,7 @@ interface ResourceRow {
   requesterId: string;
   resourceType: string;
   description: string;
-  status: ResourceSnapshot["status"];
+  status: ResourceSnapshot['status'];
   createdAt: string;
   updatedAt: string;
 }
@@ -79,18 +79,20 @@ export class PgResourceRepository extends ResourceRepositoryPort {
   }
 }
 
-export type ResourceDialect = "sqlite" | "pg";
+export type ResourceDialect = 'sqlite' | 'pg';
 
 export interface ResourceRepositoryFactoryOpts {
   readonly dialect: ResourceDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createResourceRepository(opts: ResourceRepositoryFactoryOpts): ResourceRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createResourceRepository(
+  opts: ResourceRepositoryFactoryOpts,
+): ResourceRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteResourceRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgResourceRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(`createResourceRepository: dialect=${(opts as { dialect: string }).dialect}`);

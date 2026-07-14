@@ -1,7 +1,7 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { EntryMetadataStore, MetadataEntry } from "../entry-metadata-store.js";
+import type { EntryMetadataStore, MetadataEntry } from '../entry-metadata-store.js';
 
 export class InMemoryEntryMetadataStore implements EntryMetadataStore {
   // key = "prefix\0position\0key"
@@ -39,7 +39,10 @@ export class InMemoryEntryMetadataStore implements EntryMetadataStore {
     this._store.delete(this.pk(prefix, position, key));
   }
 
-  async findByKey(prefix: string, key: string): Promise<Array<{ position: number; value: unknown }>> {
+  async findByKey(
+    prefix: string,
+    key: string,
+  ): Promise<Array<{ position: number; value: unknown }>> {
     const result: Array<{ position: number; value: unknown }> = [];
     for (const [k, entry] of this._store) {
       if (k.startsWith(`${prefix}\0`) && entry.key === key) {

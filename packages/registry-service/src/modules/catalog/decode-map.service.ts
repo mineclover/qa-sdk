@@ -1,11 +1,11 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import type { Catalog, PrefixDef } from "@qa-sdk/core";
-import { AppError } from "@qa-sdk/core";
-import { CATALOG_STORE } from "./catalog.service.js";
-import type { CatalogStore } from "../../stores/catalog-store.js";
+import { Inject, Injectable } from '@nestjs/common';
+import type { Catalog, PrefixDef } from '@qa-sdk/core';
+import { AppError } from '@qa-sdk/core';
+import { CATALOG_STORE } from './catalog.service.js';
+import type { CatalogStore } from '../../stores/catalog-store.js';
 
 export interface DecodeMapDim {
   dimId: string;
@@ -48,12 +48,16 @@ export class DecodeMapService {
     const catalog = await this.requireCatalog(catalogId);
     const prefix = catalog.prefixes?.[prefixId];
     if (!prefix) {
-      throw new AppError("NOT_FOUND", `Prefix '${prefixId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Prefix '${prefixId}' not found`, 404);
     }
 
     const map = this.buildDecodeMap(catalog, prefixId, prefix, versionId);
     if (!map) {
-      throw new AppError("NOT_FOUND", `Version '${versionId}' not found for prefix '${prefixId}'`, 404);
+      throw new AppError(
+        'NOT_FOUND',
+        `Version '${versionId}' not found for prefix '${prefixId}'`,
+        404,
+      );
     }
 
     return map;
@@ -62,13 +66,18 @@ export class DecodeMapService {
   private async requireCatalog(catalogId: string) {
     const record = await this.catalogStore.get(catalogId);
     if (!record) {
-      throw new AppError("NOT_FOUND", `Catalog '${catalogId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Catalog '${catalogId}' not found`, 404);
     }
 
     return JSON.parse(record.data) as Catalog;
   }
 
-  private buildDecodeMap(catalog: Catalog, prefixId: string, prefix: PrefixDef, versionId: string): DecodeMap | null {
+  private buildDecodeMap(
+    catalog: Catalog,
+    prefixId: string,
+    prefix: PrefixDef,
+    versionId: string,
+  ): DecodeMap | null {
     const labels = [...prefix.labels];
     const dims = prefix.dims ?? {};
     const versionDef = (prefix.versions ?? []).find((version) => version.version === versionId);
@@ -86,13 +95,13 @@ export class DecodeMapService {
         continue;
       }
 
-      if (dimDef.kind === "axis") {
+      if (dimDef.kind === 'axis') {
         const axis = catalog.axes?.[dimDef.axisId];
         if (!axis) {
           continue;
         }
 
-        const axisVersion = axisVersions[label] ?? Object.keys(axis.versions)[0] ?? "v1";
+        const axisVersion = axisVersions[label] ?? Object.keys(axis.versions)[0] ?? 'v1';
         const axisVersionDef = axis.versions?.[axisVersion];
         if (!axisVersionDef) {
           continue;
@@ -102,14 +111,14 @@ export class DecodeMapService {
         mapDims.push({
           dimId: label,
           snapshotId: `${dimDef.axisId}_${axisVersion}`,
-          kind: { type: "string_enum" },
+          kind: { type: 'string_enum' },
           entries,
         });
         shape.push(axisVersionDef.capacity ?? entries.length);
         continue;
       }
 
-      if (dimDef.kind === "prefix_ref") {
+      if (dimDef.kind === 'prefix_ref') {
         const refEntries = versionDef.refEntries?.[label];
         if (!refEntries?.values?.length) {
           mapDims.length = 0;
@@ -119,19 +128,19 @@ export class DecodeMapService {
         mapDims.push({
           dimId: label,
           snapshotId: `ref_${dimDef.prefixId}`,
-          kind: { type: "index_ref", indexId: dimDef.prefixId },
+          kind: { type: 'index_ref', indexId: dimDef.prefixId },
           entries: [...refEntries.values].map(String),
         });
         shape.push(refEntries.values.length);
         continue;
       }
 
-      if (dimDef.kind === "table_ref") {
+      if (dimDef.kind === 'table_ref') {
         mapDims.push({
           dimId: label,
           snapshotId: `table_${dimDef.table}`,
-          kind: { type: "string_enum" },
-          entries: ["_ref"],
+          kind: { type: 'string_enum' },
+          entries: ['_ref'],
         });
         shape.push(1);
       }
@@ -139,12 +148,12 @@ export class DecodeMapService {
 
     const size = shape.reduce((acc, value) => acc * value, 1);
     let refLabels: Record<string, { values: number[]; labels: string[] }> | undefined;
-    if (versionDef.refEntries && typeof versionDef.refEntries === "object") {
+    if (versionDef.refEntries && typeof versionDef.refEntries === 'object') {
       refLabels = {};
       for (const [dimLabel, ref] of Object.entries(versionDef.refEntries)) {
         const values = ref.values ? [...ref.values] : [];
         const dimDef = dims[dimLabel];
-        const refPrefixId = dimDef?.kind === "prefix_ref" ? dimDef.prefixId : undefined;
+        const refPrefixId = dimDef?.kind === 'prefix_ref' ? dimDef.prefixId : undefined;
         const refPrefix = refPrefixId ? catalog.prefixes?.[refPrefixId] : null;
         refLabels[dimLabel] = {
           values,
@@ -153,6 +162,13 @@ export class DecodeMapService {
       }
     }
 
-    return { indexId: prefixId, versionId, shape, size, dims: mapDims, ...(refLabels ? { refLabels } : {}) };
+    return {
+      indexId: prefixId,
+      versionId,
+      shape,
+      size,
+      dims: mapDims,
+      ...(refLabels ? { refLabels } : {}),
+    };
   }
 }

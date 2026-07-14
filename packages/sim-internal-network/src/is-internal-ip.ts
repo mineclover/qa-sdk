@@ -1,10 +1,13 @@
 // @def.boundary sim-internal-network
 // spec 2026-05-02 §3 — internal IP only auth. 외부는 caller가 404 silent 처리.
 
-interface Cidr4 { base: number; mask: number; }
+interface Cidr4 {
+  base: number;
+  mask: number;
+}
 
 function ipv4ToInt(ip: string): number | null {
-  const parts = ip.split(".");
+  const parts = ip.split('.');
   if (parts.length !== 4) return null;
   let v = 0;
   for (const p of parts) {
@@ -24,20 +27,22 @@ function makeCidr(ip: string, prefixLen: number): Cidr4 {
 }
 
 const INTERNAL_V4: Cidr4[] = [
-  makeCidr("10.0.0.0", 8), makeCidr("172.16.0.0", 12),
-  makeCidr("192.168.0.0", 16), makeCidr("127.0.0.0", 8),
+  makeCidr('10.0.0.0', 8),
+  makeCidr('172.16.0.0', 12),
+  makeCidr('192.168.0.0', 16),
+  makeCidr('127.0.0.0', 8),
 ];
 
 function isInternalV4(ip: string): boolean {
   const v = ipv4ToInt(ip);
   if (v === null) return false;
-  for (const c of INTERNAL_V4) if (((v & c.mask) >>> 0) === c.base) return true;
+  for (const c of INTERNAL_V4) if ((v & c.mask) >>> 0 === c.base) return true;
   return false;
 }
 
 export function isInternalIp(ip: string): boolean {
-  if (typeof ip !== "string" || ip.length === 0) return false;
-  if (ip === "::1") return true;
-  if (ip.startsWith("::ffff:")) return isInternalV4(ip.slice("::ffff:".length));
+  if (typeof ip !== 'string' || ip.length === 0) return false;
+  if (ip === '::1') return true;
+  if (ip.startsWith('::ffff:')) return isInternalV4(ip.slice('::ffff:'.length));
   return isInternalV4(ip);
 }

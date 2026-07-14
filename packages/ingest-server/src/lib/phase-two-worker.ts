@@ -14,11 +14,11 @@ import {
   type TaskQueueOptions,
   type TraceStore,
   type VerdictStore,
-} from "@qa-sdk/core";
-import { computePendingVerdicts, reconstructPendingTraces } from "@qa-sdk/engine";
-import { aggregateMetrics } from "./metric-aggregator.js";
-import { decodeAddressContext } from "./decode-client.js";
-import type { Logger } from "pino";
+} from '@qa-sdk/core';
+import { computePendingVerdicts, reconstructPendingTraces } from '@qa-sdk/engine';
+import { aggregateMetrics } from './metric-aggregator.js';
+import { decodeAddressContext } from './decode-client.js';
+import type { Logger } from 'pino';
 
 export const PHASE_TWO_TASK_QUEUE_OPTIONS = {
   retryAttempts: 2,
@@ -61,7 +61,7 @@ export interface PhaseTwoWorkerDeps {
 export function buildReconstructionTask(traceId: string): TaskPayload {
   return {
     traceId,
-    phase: "reconstruction",
+    phase: 'reconstruction',
     enqueuedAt: now(),
   };
 }
@@ -69,7 +69,7 @@ export function buildReconstructionTask(traceId: string): TaskPayload {
 export function buildVerdictTask(traceId: string): TaskPayload {
   return {
     traceId,
-    phase: "verdict",
+    phase: 'verdict',
     enqueuedAt: now(),
   };
 }
@@ -83,11 +83,11 @@ export async function processPhaseTwoTask(
       phase: task.phase,
       traceId: task.traceId,
     },
-    "phase-two job started",
+    'phase-two job started',
   );
 
   try {
-    if (task.phase === "verdict") {
+    if (task.phase === 'verdict') {
       await computeTraceVerdictForTask(task.traceId, deps);
     } else {
       await reconstructTraceForTask(task.traceId, deps);
@@ -98,7 +98,7 @@ export async function processPhaseTwoTask(
         phase: task.phase,
         traceId: task.traceId,
       },
-      "phase-two job completed",
+      'phase-two job completed',
     );
   } catch (error) {
     deps.logger?.error(
@@ -107,15 +107,13 @@ export async function processPhaseTwoTask(
         phase: task.phase,
         traceId: task.traceId,
       },
-      "phase-two job failed",
+      'phase-two job failed',
     );
     throw error;
   }
 }
 
-export async function processPendingPhaseTwo(
-  deps: PhaseTwoWorkerDeps,
-): Promise<void> {
+export async function processPendingPhaseTwo(deps: PhaseTwoWorkerDeps): Promise<void> {
   const reconstructResult = await reconstructPendingTraces(
     {
       recordStore: deps.recordStore,
@@ -130,7 +128,7 @@ export async function processPendingPhaseTwo(
             err: error,
             traceId,
           },
-          "failed to reconstruct trace",
+          'failed to reconstruct trace',
         );
       },
     },
@@ -162,7 +160,7 @@ export async function processPendingPhaseTwo(
             err: error,
             traceId,
           },
-          "failed to compute verdict",
+          'failed to compute verdict',
         );
       },
     },
@@ -176,7 +174,9 @@ export async function processPendingPhaseTwo(
       for (const traceId of reconstructResult.reconstructedTraceIds) {
         const records = await deps.recordStore.findByTraceId(traceId);
         // address_context가 있는 레코드만 디코딩 + 전이 매칭
-        const withCtx = records.filter((r) => r.addressContext && typeof r.addressContext === "object");
+        const withCtx = records.filter(
+          (r) => r.addressContext && typeof r.addressContext === 'object',
+        );
         const decodedEvents: Array<Record<string, unknown>> = [];
         for (const r of withCtx) {
           const ctx = r.addressContext as Record<string, string>;
@@ -199,8 +199,8 @@ export async function processPendingPhaseTwo(
           }
           decodedEvents.push({
             ...r,
-            log_id: r.logId ?? "",
-            timestamp: r.createdAt ?? r.timestamp ?? "",
+            log_id: r.logId ?? '',
+            timestamp: r.createdAt ?? r.timestamp ?? '',
             address_context: decoded,
           });
         }
@@ -214,13 +214,16 @@ export async function processPendingPhaseTwo(
           if (result.violations.length > 0) {
             deps.logger?.warn(
               { traceId, violations: result.violations.length, instances: result.instances.length },
-              "transition violations detected",
+              'transition violations detected',
             );
           }
         }
       }
     } catch (error) {
-      deps.logger?.error({ err: error }, "transition matching failed (Phase 2.5) — verdict unaffected");
+      deps.logger?.error(
+        { err: error },
+        'transition matching failed (Phase 2.5) — verdict unaffected',
+      );
     }
   }
 
@@ -229,7 +232,7 @@ export async function processPendingPhaseTwo(
     try {
       deps.convergencePipeline.notifyCompletion(reconstructResult.reconstructedTraceIds);
     } catch (error) {
-      deps.logger?.error({ err: error }, "convergence notification failed");
+      deps.logger?.error({ err: error }, 'convergence notification failed');
     }
   }
 }
@@ -250,29 +253,24 @@ export async function registerTaskQueueWorker(
   });
 }
 
-async function aggregateMetricsForPendingTraces(
-  deps: PhaseTwoWorkerDeps,
-): Promise<void> {
+async function aggregateMetricsForPendingTraces(deps: PhaseTwoWorkerDeps): Promise<void> {
   if (!deps.metricRollupStore) return;
 
   // unreconstructed trace에서 metric 레코드만 조회
   const pendingTraces = await deps.traceStore.findUnreconstructed();
   for (const trace of pendingTraces) {
     const records = await deps.recordStore.findByTraceId(trace.traceId);
-    const metrics = records.filter((r) => r.recordKind === "metric");
+    const metrics = records.filter((r) => r.recordKind === 'metric');
     if (metrics.length === 0) continue;
 
     try {
       const count = await aggregateMetrics(metrics, deps.metricRollupStore);
       deps.logger?.info(
         { traceId: trace.traceId, metricsAggregated: count },
-        "metric aggregation completed",
+        'metric aggregation completed',
       );
     } catch (error) {
-      deps.logger?.error(
-        { err: error, traceId: trace.traceId },
-        "metric aggregation failed",
-      );
+      deps.logger?.error({ err: error, traceId: trace.traceId }, 'metric aggregation failed');
     }
   }
 }
@@ -301,21 +299,18 @@ async function computeTraceVerdictForTask(
   );
 
   if (result.failed.includes(traceId)) {
-    throw toWorkerTaskError("verdict", traceId, capturedFailure);
+    throw toWorkerTaskError('verdict', traceId, capturedFailure);
   }
 }
 
-async function reconstructTraceForTask(
-  traceId: string,
-  deps: PhaseTwoWorkerDeps,
-): Promise<void> {
+async function reconstructTraceForTask(traceId: string, deps: PhaseTwoWorkerDeps): Promise<void> {
   const trace = await deps.traceStore.findById(traceId);
   if (!trace) {
     deps.logger?.warn(
       {
         traceId,
       },
-      "skipping reconstruction for missing trace",
+      'skipping reconstruction for missing trace',
     );
     return;
   }
@@ -325,7 +320,7 @@ async function reconstructTraceForTask(
       {
         traceId,
       },
-      "skipping reconstruction for already reconstructed trace",
+      'skipping reconstruction for already reconstructed trace',
     );
   } else {
     let capturedFailure: unknown;
@@ -346,7 +341,7 @@ async function reconstructTraceForTask(
     );
 
     if (result.failedTraceIds.includes(traceId)) {
-      throw toWorkerTaskError("reconstruction", traceId, capturedFailure);
+      throw toWorkerTaskError('reconstruction', traceId, capturedFailure);
     }
   }
 
@@ -354,17 +349,10 @@ async function reconstructTraceForTask(
     return;
   }
 
-  await deps.taskQueue.enqueue(
-    buildVerdictTask(traceId),
-    PHASE_TWO_TASK_QUEUE_OPTIONS,
-  );
+  await deps.taskQueue.enqueue(buildVerdictTask(traceId), PHASE_TWO_TASK_QUEUE_OPTIONS);
 }
 
-function toWorkerTaskError(
-  phase: TaskPayload["phase"],
-  traceId: string,
-  error: unknown,
-): Error {
+function toWorkerTaskError(phase: TaskPayload['phase'], traceId: string, error: unknown): Error {
   if (error instanceof Error) {
     return error;
   }

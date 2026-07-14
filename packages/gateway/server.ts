@@ -11,20 +11,20 @@
  * 환경변수: AUTH_MODE, REGISTRY_URL, INGEST_URL 등
  */
 
-import { serve } from "@hono/node-server";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { JwksVerifier } from "./lib/jwks-verifier.js";
-import { getRoutePermission, checkPermission } from "./lib/route-permissions.js";
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { JwksVerifier } from './lib/jwks-verifier.js';
+import { getRoutePermission, checkPermission } from './lib/route-permissions.js';
 
 const app = new Hono();
 
 // ── 환경변수 ────────────────────────────────────────
 
-const AUTH_MODE = process.env.AUTH_MODE ?? "bypass";
-const REGISTRY_URL = process.env.REGISTRY_URL ?? "http://localhost:3300";
-const PORT = parseInt(process.env.PORT ?? "8787");
-const GATEWAY_ENV = process.env.GATEWAY_ENV ?? "dev"; // dev | staging | prod — ScopedEngine env 분리
+const AUTH_MODE = process.env.AUTH_MODE ?? 'bypass';
+const REGISTRY_URL = process.env.REGISTRY_URL ?? 'http://localhost:3300';
+const PORT = parseInt(process.env.PORT ?? '8787');
+const GATEWAY_ENV = process.env.GATEWAY_ENV ?? 'dev'; // dev | staging | prod — ScopedEngine env 분리
 
 // ── JWKS 검증기 ────────────────────────────────────────
 
@@ -51,24 +51,30 @@ if (ENRICHMENT_JWT_SECRET) {
  * 성공 시 payload 반환, 실패 시 null.
  */
 async function verifyHS256(token: string, secret: string): Promise<Record<string, unknown> | null> {
-  const parts = token.split(".");
+  const parts = token.split('.');
   if (parts.length !== 3) return null;
 
   try {
-    const header = JSON.parse(Buffer.from(parts[0], "base64url").toString()) as Record<string, unknown>;
-    if (header.alg !== "HS256") return null;
+    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString()) as Record<
+      string,
+      unknown
+    >;
+    if (header.alg !== 'HS256') return null;
 
-    const { createHmac } = await import("node:crypto");
-    const expected = createHmac("sha256", secret)
+    const { createHmac } = await import('node:crypto');
+    const expected = createHmac('sha256', secret)
       .update(`${parts[0]}.${parts[1]}`)
-      .digest("base64url");
+      .digest('base64url');
 
     if (parts[2] !== expected) return null;
 
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString()) as Record<string, unknown>;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString()) as Record<
+      string,
+      unknown
+    >;
 
     // 만료 체크
-    if (typeof payload.exp === "number" && payload.exp < Math.floor(Date.now() / 1000)) {
+    if (typeof payload.exp === 'number' && payload.exp < Math.floor(Date.now() / 1000)) {
       return null;
     }
 
@@ -105,8 +111,8 @@ async function fetchPermsFromZitadel(userId: string): Promise<PermsResult | null
   if (ENRICHMENT_URL) {
     try {
       const resp = await fetch(`${ENRICHMENT_URL}/enrich`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
           env: GATEWAY_ENV,
@@ -114,10 +120,12 @@ async function fetchPermsFromZitadel(userId: string): Promise<PermsResult | null
         signal: AbortSignal.timeout(3_000),
       });
       if (resp.ok) {
-        const data = await resp.json() as PermsResult;
+        const data = (await resp.json()) as PermsResult;
         if (data.perms) return data;
       }
-    } catch { /* enrichment 서버 미실행 — metadata fallback */ }
+    } catch {
+      /* enrichment 서버 미실행 — metadata fallback */
+    }
   }
 
   // 2. Zitadel metadata fallback
@@ -126,68 +134,70 @@ async function fetchPermsFromZitadel(userId: string): Promise<PermsResult | null
       const metaResp = await fetch(
         `${ZITADEL_URL}/management/v1/users/${userId}/metadata/_search`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${ZITADEL_SERVICE_TOKEN}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({}),
           signal: AbortSignal.timeout(3_000),
         },
       );
       if (metaResp.ok) {
-        const meta = await metaResp.json() as {
+        const meta = (await metaResp.json()) as {
           result?: Array<{ key: string; value: string }>;
         };
         let perms: unknown = undefined;
         let perms_v = 1;
-        let perms_schema = "qa-v1";
+        let perms_schema = 'qa-v1';
         for (const m of meta.result ?? []) {
-          const val = Buffer.from(m.value, "base64").toString();
-          if (m.key === "perms") perms = JSON.parse(val);
-          if (m.key === "perms_v") perms_v = parseInt(val) || 1;
-          if (m.key === "perms_schema") perms_schema = val;
+          const val = Buffer.from(m.value, 'base64').toString();
+          if (m.key === 'perms') perms = JSON.parse(val);
+          if (m.key === 'perms_v') perms_v = parseInt(val) || 1;
+          if (m.key === 'perms_schema') perms_schema = val;
         }
         if (perms) return { perms, perms_v, perms_schema };
       }
-    } catch { /* metadata 조회 실패 */ }
+    } catch {
+      /* metadata 조회 실패 */
+    }
   }
 
   return null;
 }
 
 const SERVICE_URLS: Record<string, string> = {
-  ingest: process.env.INGEST_URL ?? "http://localhost:3200",
-  registry: process.env.REGISTRY_URL ?? "http://localhost:3300",
-  gate: process.env.GATE_URL ?? "http://localhost:3400",
-  query: process.env.QUERY_URL ?? "http://localhost:3500",
-  decode: process.env.DECODE_URL ?? "http://localhost:3600",
-  definition: process.env.DEFINITION_URL ?? "http://localhost:3700",
-  decision: process.env.DECISION_URL ?? "http://localhost:3800",
+  ingest: process.env.INGEST_URL ?? 'http://localhost:3200',
+  registry: process.env.REGISTRY_URL ?? 'http://localhost:3300',
+  gate: process.env.GATE_URL ?? 'http://localhost:3400',
+  query: process.env.QUERY_URL ?? 'http://localhost:3500',
+  decode: process.env.DECODE_URL ?? 'http://localhost:3600',
+  definition: process.env.DEFINITION_URL ?? 'http://localhost:3700',
+  decision: process.env.DECISION_URL ?? 'http://localhost:3800',
 };
 
 const PATH_MAP: Array<{ prefix: string; service: string; strip?: boolean }> = [
-  { prefix: "/v1/ingest", service: "ingest" },
-  { prefix: "/v1/traces", service: "ingest" },
-  { prefix: "/v1/sessions", service: "ingest" },
-  { prefix: "/v1/scenarios", service: "ingest" },
-  { prefix: "/v1/streams", service: "ingest" },
-  { prefix: "/v1/admin", service: "ingest" },
-  { prefix: "/api/", service: "registry" },
-  { prefix: "/dev/", service: "registry" },
-  { prefix: "/catalogs", service: "registry" },
-  { prefix: "/health/generation", service: "registry" },
-  { prefix: "/metrics", service: "registry", strip: true },
-  { prefix: "/gate/", service: "gate", strip: true },
-  { prefix: "/query/", service: "query", strip: true },
-  { prefix: "/state/", service: "query", strip: true },
-  { prefix: "/decode/", service: "decode", strip: true },
-  { prefix: "/docs", service: "definition" },
-  { prefix: "/sync", service: "definition" },
-  { prefix: "/graph/", service: "definition" },
-  { prefix: "/definitions/", service: "definition", strip: true },
-  { prefix: "/decisions/", service: "decision", strip: true },
-  { prefix: "/decision/", service: "decision", strip: true },
+  { prefix: '/v1/ingest', service: 'ingest' },
+  { prefix: '/v1/traces', service: 'ingest' },
+  { prefix: '/v1/sessions', service: 'ingest' },
+  { prefix: '/v1/scenarios', service: 'ingest' },
+  { prefix: '/v1/streams', service: 'ingest' },
+  { prefix: '/v1/admin', service: 'ingest' },
+  { prefix: '/api/', service: 'registry' },
+  { prefix: '/dev/', service: 'registry' },
+  { prefix: '/catalogs', service: 'registry' },
+  { prefix: '/health/generation', service: 'registry' },
+  { prefix: '/metrics', service: 'registry', strip: true },
+  { prefix: '/gate/', service: 'gate', strip: true },
+  { prefix: '/query/', service: 'query', strip: true },
+  { prefix: '/state/', service: 'query', strip: true },
+  { prefix: '/decode/', service: 'decode', strip: true },
+  { prefix: '/docs', service: 'definition' },
+  { prefix: '/sync', service: 'definition' },
+  { prefix: '/graph/', service: 'definition' },
+  { prefix: '/definitions/', service: 'definition', strip: true },
+  { prefix: '/decisions/', service: 'decision', strip: true },
+  { prefix: '/decision/', service: 'decision', strip: true },
 ];
 
 // ── 동적 라우팅 (registry 기반) ─────────────────────
@@ -206,52 +216,64 @@ async function getRoutes(): Promise<GatewayRoute[]> {
   if (dynamicRoutes && now < routesCacheExpiry) return dynamicRoutes;
 
   try {
-    const env = AUTH_MODE === "bypass" ? "dev" : "prod";
+    const env = AUTH_MODE === 'bypass' ? 'dev' : 'prod';
     const resp = await fetch(`${REGISTRY_URL}/api/services/gateway?env=${env}`, {
       signal: AbortSignal.timeout(3_000),
     });
     if (resp.ok) {
-      const data = await resp.json() as { routes: Array<{ path: string; url: string; strip?: boolean }> };
+      const data = (await resp.json()) as {
+        routes: Array<{ path: string; url: string; strip?: boolean }>;
+      };
       if (data.routes.length > 0) {
-        dynamicRoutes = data.routes.map(r => ({ prefix: r.path, url: r.url, strip: r.strip ?? false }));
+        dynamicRoutes = data.routes.map((r) => ({
+          prefix: r.path,
+          url: r.url,
+          strip: r.strip ?? false,
+        }));
         routesCacheExpiry = now + 60_000;
         return dynamicRoutes;
       }
     }
-  } catch { /* fallback */ }
+  } catch {
+    /* fallback */
+  }
 
-  return PATH_MAP.map(r => ({ prefix: r.prefix, url: SERVICE_URLS[r.service], strip: r.strip ?? false }));
+  return PATH_MAP.map((r) => ({
+    prefix: r.prefix,
+    url: SERVICE_URLS[r.service],
+    strip: r.strip ?? false,
+  }));
 }
 
 // ── 미들웨어 ────────────────────────────────────────
 
-app.use("*", cors({ origin: "*" }));
+app.use('*', cors({ origin: '*' }));
 
 // ── 인증 ────────────────────────────────────────────
 
-app.use("*", async (c, next) => {
+app.use('*', async (c, next) => {
   const path = new URL(c.req.url).pathname;
-  if (path === "/health") return next();
+  if (path === '/health') return next();
 
-  if (AUTH_MODE === "bypass") {
-    c.set("identity", "dev");
+  if (AUTH_MODE === 'bypass') {
+    c.set('identity', 'dev');
     return next();
   }
 
-  if (AUTH_MODE === "api-key") {
-    const auth = c.req.header("Authorization");
-    if (!auth?.startsWith("Bearer ")) return c.json({ error: "Unauthorized" }, 401);
-    const keys = (process.env.AUTH_API_KEYS ?? "").split(",").map(k => k.trim());
-    if (!keys.includes(auth.slice(7))) return c.json({ error: "Forbidden" }, 403);
-    c.set("identity", `key:${auth.slice(7, 15)}`);
+  if (AUTH_MODE === 'api-key') {
+    const auth = c.req.header('Authorization');
+    if (!auth?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401);
+    const keys = (process.env.AUTH_API_KEYS ?? '').split(',').map((k) => k.trim());
+    if (!keys.includes(auth.slice(7))) return c.json({ error: 'Forbidden' }, 403);
+    c.set('identity', `key:${auth.slice(7, 15)}`);
     return next();
   }
 
   // jwt 모드: JWT 토큰 파싱 + perms claims 추출
   // 검증 순서: HS256 (enrichment JWT) → JWKS (Zitadel RS256) → 서명 미검증 (dev)
-  if (AUTH_MODE === "jwt") {
-    const auth = c.req.header("Authorization");
-    if (!auth?.startsWith("Bearer ")) return c.json({ error: "JWT required" }, 401);
+  if (AUTH_MODE === 'jwt') {
+    const auth = c.req.header('Authorization');
+    if (!auth?.startsWith('Bearer ')) return c.json({ error: 'JWT required' }, 401);
     const token = auth.slice(7);
 
     try {
@@ -276,21 +298,21 @@ app.use("*", async (c, next) => {
 
       // 3. 로컬 dev: 서명 미검증 (JWKS_URL, ENRICHMENT_JWT_SECRET 모두 미설정 시)
       if (!payload && !JWKS_VERIFIER && !ENRICHMENT_JWT_SECRET) {
-        const parts = token.split(".");
-        if (parts.length !== 3) throw new Error("invalid jwt");
-        payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+        const parts = token.split('.');
+        if (parts.length !== 3) throw new Error('invalid jwt');
+        payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
         if (payload!.exp && (payload!.exp as number) < Math.floor(Date.now() / 1000)) {
-          return c.json({ error: "Token expired" }, 401);
+          return c.json({ error: 'Token expired' }, 401);
         }
       }
 
       if (!payload) {
-        return c.json({ error: "Invalid JWT — signature verification failed" }, 401);
+        return c.json({ error: 'Invalid JWT — signature verification failed' }, 401);
       }
 
       // id_token에 perms가 없으면 Zitadel user metadata에서 조회
       if (!payload.perms) {
-        const enriched = await fetchPermsFromZitadel(String(payload.sub ?? ""));
+        const enriched = await fetchPermsFromZitadel(String(payload.sub ?? ''));
         if (enriched) {
           payload.perms = enriched.perms;
           payload.perms_v = enriched.perms_v;
@@ -298,52 +320,52 @@ app.use("*", async (c, next) => {
         }
       }
 
-      if (!payload.perms) return c.json({ error: "No permission claims in token" }, 403);
+      if (!payload.perms) return c.json({ error: 'No permission claims in token' }, 403);
 
-      c.set("identity", String(payload.sub ?? payload.email ?? "jwt-user"));
-      c.set("perms", JSON.stringify(payload.perms));
-      c.set("perms_v", String(payload.perms_v ?? 0));
-      c.set("perms_schema", String(payload.perms_schema ?? ""));
+      c.set('identity', String(payload.sub ?? payload.email ?? 'jwt-user'));
+      c.set('perms', JSON.stringify(payload.perms));
+      c.set('perms_v', String(payload.perms_v ?? 0));
+      c.set('perms_schema', String(payload.perms_schema ?? ''));
       return next();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("expired")) return c.json({ error: "Token expired" }, 401);
-      if (msg.includes("signature")) return c.json({ error: "Invalid signature" }, 401);
-      return c.json({ error: "Invalid JWT", detail: msg }, 401);
+      if (msg.includes('expired')) return c.json({ error: 'Token expired' }, 401);
+      if (msg.includes('signature')) return c.json({ error: 'Invalid signature' }, 401);
+      return c.json({ error: 'Invalid JWT', detail: msg }, 401);
     }
   }
 
   // tailscale 모드: Tailscale-User-Login 헤더 확인 (tailscale serve가 주입)
-  if (AUTH_MODE === "tailscale") {
-    const tsUser = c.req.header("Tailscale-User-Login");
-    const _tsName = c.req.header("Tailscale-User-Name");
-    if (!tsUser) return c.json({ error: "Tailscale auth required" }, 401);
-    c.set("identity", tsUser);
+  if (AUTH_MODE === 'tailscale') {
+    const tsUser = c.req.header('Tailscale-User-Login');
+    const _tsName = c.req.header('Tailscale-User-Name');
+    if (!tsUser) return c.json({ error: 'Tailscale auth required' }, 401);
+    c.set('identity', tsUser);
     return next();
   }
 
-  return c.json({ error: "Unknown auth mode" }, 500);
+  return c.json({ error: 'Unknown auth mode' }, 500);
 });
 
 // ── Permission 체크 미들웨어 (AUTH_MODE=jwt일 때만) ──
 
-if (AUTH_MODE === "jwt") {
-  app.use("*", async (c, next) => {
+if (AUTH_MODE === 'jwt') {
+  app.use('*', async (c, next) => {
     const url = new URL(c.req.url);
     const required = getRoutePermission(url.pathname);
 
     // 공개 경로 or 매핑 없음 -> 통과
     if (!required) return next();
 
-    const permsStr = c.get("perms");
-    if (!permsStr) return c.json({ error: "No permissions" }, 403);
+    const permsStr = c.get('perms');
+    if (!permsStr) return c.json({ error: 'No permissions' }, 403);
 
     try {
       const perms = JSON.parse(permsStr) as Record<string, string>;
       if (!checkPermission(perms, required.domain, required.feature)) {
         return c.json(
           {
-            error: "Forbidden",
+            error: 'Forbidden',
             required: `${required.domain}.${required.feature}`,
             message: `이 API에 접근하려면 ${required.domain}.${required.feature} 권한이 필요합니다`,
           },
@@ -351,7 +373,7 @@ if (AUTH_MODE === "jwt") {
         );
       }
     } catch {
-      return c.json({ error: "Invalid permission claims" }, 403);
+      return c.json({ error: 'Invalid permission claims' }, 403);
     }
 
     return next();
@@ -360,35 +382,39 @@ if (AUTH_MODE === "jwt") {
 
 // ── 헬스체크 ────────────────────────────────────────
 
-app.get("/health", (c) => {
+app.get('/health', (c) => {
   return c.json({
-    status: "ok",
-    service: "gateway",
+    status: 'ok',
+    service: 'gateway',
     auth: AUTH_MODE,
-    mode: "node",
+    mode: 'node',
   });
 });
 
 // ── 프록시 ──────────────────────────────────────────
 
-app.all("*", async (c) => {
+app.all('*', async (c) => {
   const url = new URL(c.req.url);
   const routes = await getRoutes();
 
   for (const route of routes) {
     if (url.pathname.startsWith(route.prefix)) {
       const targetPath = route.strip
-        ? url.pathname.slice(route.prefix.replace(/\/$/, "").length) || "/"
+        ? url.pathname.slice(route.prefix.replace(/\/$/, '').length) || '/'
         : url.pathname;
       const targetUrl = `${route.url}${targetPath}${url.search}`;
       const headers = new Headers(c.req.raw.headers);
-      headers.set("X-Gateway-Identity", c.get("identity") ?? "unknown");
-      headers.delete("Authorization");
+      headers.set('X-Gateway-Identity', c.get('identity') ?? 'unknown');
+      headers.delete('Authorization');
 
       // body: arrayBuffer로 읽어서 전달 (stream 소비 문제 방지)
       let body: ArrayBuffer | undefined;
-      if (c.req.method !== "GET" && c.req.method !== "HEAD") {
-        try { body = await c.req.arrayBuffer(); } catch { /* empty body */ }
+      if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
+        try {
+          body = await c.req.arrayBuffer();
+        } catch {
+          /* empty body */
+        }
       }
 
       try {
@@ -403,12 +429,12 @@ app.all("*", async (c) => {
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: "Service unavailable", message }, 502);
+        return c.json({ error: 'Service unavailable', message }, 502);
       }
     }
   }
 
-  return c.json({ error: "Not found", path: url.pathname }, 404);
+  return c.json({ error: 'Not found', path: url.pathname }, 404);
 });
 
 // ── 서버 시작 ───────────────────────────────────────

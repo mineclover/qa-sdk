@@ -1,14 +1,14 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { sql } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { sql } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createSqliteTransactionPort,
   createPgTransactionPort,
   type TransactionPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
 /**
  * dialect 별 TransactionPort 생성 헬퍼.
@@ -24,10 +24,12 @@ export function createAssignmentSqliteTransactionPort(db: BetterSQLite3Database)
 }
 
 export function createAssignmentPgTransactionPort(db: PostgresJsDatabase): TransactionPort {
-  return createPgTransactionPort(db as unknown as { transaction: <T>(h: (tx: unknown) => Promise<T> | T) => Promise<T> });
+  return createPgTransactionPort(
+    db as unknown as { transaction: <T>(h: (tx: unknown) => Promise<T> | T) => Promise<T> },
+  );
 }
 
-export type AssignmentDialect = "sqlite" | "pg";
+export type AssignmentDialect = 'sqlite' | 'pg';
 
 export interface AssignmentTransactionFactoryOpts {
   readonly dialect: AssignmentDialect;
@@ -37,10 +39,10 @@ export interface AssignmentTransactionFactoryOpts {
 export function createAssignmentTransactionPort(
   opts: AssignmentTransactionFactoryOpts,
 ): TransactionPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return createAssignmentSqliteTransactionPort(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return createAssignmentPgTransactionPort(opts.db as PostgresJsDatabase);
   }
   throw new Error(

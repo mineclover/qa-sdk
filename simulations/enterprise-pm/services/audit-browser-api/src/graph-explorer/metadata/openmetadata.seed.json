@@ -53,9 +53,7 @@
       "purpose": "bff_snapshots",
       "version": "v1",
       "prefix": "graph-explorer-bff-catalog",
-      "segments": [
-        { "name": "graphId" }
-      ],
+      "segments": [{ "name": "graphId" }],
       "ttl": "short",
       "openmetadataEntity": "experience.graph_snapshots"
     }

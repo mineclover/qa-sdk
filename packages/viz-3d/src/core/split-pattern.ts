@@ -40,17 +40,16 @@
 
 /** 시각 채널 — 축 값을 어떤 시각 속성에 매핑하는가 */
 export type VisualChannel =
-  | "x"        // 공간 x축
-  | "y"        // 공간 y축
-  | "z"        // 공간 z축
-  | "color"    // 색상 (hue)
-  | "opacity"  // 투명도
-  | "size"     // 셀 크기
-  | "label"    // 텍스트 라벨
-  | "group"    // 상위 그룹 분류 (shelf/nested의 분할 축)
-  | "collapse" // 축 압축 (3D→1D의 압축 대상)
-  | "link"     // 연결선 (table_ref/prefix_ref 시각 연결)
-  ;
+  | 'x' // 공간 x축
+  | 'y' // 공간 y축
+  | 'z' // 공간 z축
+  | 'color' // 색상 (hue)
+  | 'opacity' // 투명도
+  | 'size' // 셀 크기
+  | 'label' // 텍스트 라벨
+  | 'group' // 상위 그룹 분류 (shelf/nested의 분할 축)
+  | 'collapse' // 축 압축 (3D→1D의 압축 대상)
+  | 'link'; // 연결선 (table_ref/prefix_ref 시각 연결)
 
 /**
  * 축 역할 — 축의 의미적 역할. 시각 채널 추론의 근거.
@@ -63,13 +62,12 @@ export type VisualChannel =
  *   measure:   측정 (hit count, latency) → size/opacity
  */
 export type AxisRole =
-  | "classify"   // 분류 → group/shelf
-  | "sequence"   // 순서 → x
-  | "variant"    // 변형 → z or color
-  | "identity"   // 식별 → x or label
-  | "context"    // 컨텍스트 → collapse or link
-  | "measure"    // 측정 → size/opacity
-  ;
+  | 'classify' // 분류 → group/shelf
+  | 'sequence' // 순서 → x
+  | 'variant' // 변형 → z or color
+  | 'identity' // 식별 → x or label
+  | 'context' // 컨텍스트 → collapse or link
+  | 'measure'; // 측정 → size/opacity
 
 /** 축 → 시각 채널 매핑 */
 export interface AxisMapping {
@@ -80,7 +78,7 @@ export interface AxisMapping {
   /** 축의 의미적 역할 */
   readonly role?: AxisRole;
   /** DimRef 종류 (axis/prefix_ref/table_ref) */
-  readonly dimKind?: "axis" | "prefix_ref" | "table_ref";
+  readonly dimKind?: 'axis' | 'prefix_ref' | 'table_ref';
   /** channel이 "group"이면: 그룹별 하위 패턴 */
   readonly subPattern?: SplitPatternType;
 }
@@ -90,14 +88,13 @@ export interface AxisMapping {
 // ═══════════════════════════════════════════════════
 
 export type SplitPatternType =
-  | "scalar"   // 0D
-  | "row"      // 1D
-  | "grid"     // 2D
-  | "cube"     // 3D
-  | "spine"    // 3D→1D (축소 + 확대)
-  | "shelf"    // 3D→2D (축별 선반)
-  | "nested"   // ND→Group (계층 분해)
-  ;
+  | 'scalar' // 0D
+  | 'row' // 1D
+  | 'grid' // 2D
+  | 'cube' // 3D
+  | 'spine' // 3D→1D (축소 + 확대)
+  | 'shelf' // 3D→2D (축별 선반)
+  | 'nested'; // ND→Group (계층 분해)
 
 export interface SplitPattern {
   /** 패턴 타입 */
@@ -117,9 +114,9 @@ export interface SplitPattern {
 /** 0D — 단일 값 (히트맵 셀, KPI) */
 export function scalar(prefixId: string, axis: string): SplitPattern {
   return {
-    type: "scalar",
+    type: 'scalar',
     prefixId,
-    mappings: [{ axis, channel: "color" }],
+    mappings: [{ axis, channel: 'color' }],
     description: `${prefixId}.${axis} → 단일 값 표시`,
   };
 }
@@ -127,9 +124,9 @@ export function scalar(prefixId: string, axis: string): SplitPattern {
 /** 1D — 한 축을 가로로 펼침 */
 export function row(prefixId: string, axis: string): SplitPattern {
   return {
-    type: "row",
+    type: 'row',
     prefixId,
-    mappings: [{ axis, channel: "x" }],
+    mappings: [{ axis, channel: 'x' }],
     description: `${prefixId}.${axis} → 가로 행`,
   };
 }
@@ -137,11 +134,11 @@ export function row(prefixId: string, axis: string): SplitPattern {
 /** 2D — 두 축을 x/z 그리드로 펼침 */
 export function grid(prefixId: string, xAxis: string, zAxis: string): SplitPattern {
   return {
-    type: "grid",
+    type: 'grid',
     prefixId,
     mappings: [
-      { axis: xAxis, channel: "x" },
-      { axis: zAxis, channel: "z" },
+      { axis: xAxis, channel: 'x' },
+      { axis: zAxis, channel: 'z' },
     ],
     description: `${prefixId}: ${xAxis}(x) × ${zAxis}(z) → 2D 그리드`,
   };
@@ -150,52 +147,63 @@ export function grid(prefixId: string, xAxis: string, zAxis: string): SplitPatte
 /** 3D — 세 축을 x/y/z 큐브로 펼침 */
 export function cube(prefixId: string, xAxis: string, yAxis: string, zAxis: string): SplitPattern {
   return {
-    type: "cube",
+    type: 'cube',
     prefixId,
     mappings: [
-      { axis: xAxis, channel: "x" },
-      { axis: yAxis, channel: "y" },
-      { axis: zAxis, channel: "z" },
+      { axis: xAxis, channel: 'x' },
+      { axis: yAxis, channel: 'y' },
+      { axis: zAxis, channel: 'z' },
     ],
     description: `${prefixId}: ${xAxis}(x) × ${yAxis}(y) × ${zAxis}(z) → 3D 큐브`,
   };
 }
 
 /** 3D→1D — 큐브를 1D 행으로 압축. 확대 시 전개. */
-export function spine(prefixId: string, visibleAxis: string, collapsedAxes: string[]): SplitPattern {
+export function spine(
+  prefixId: string,
+  visibleAxis: string,
+  collapsedAxes: string[],
+): SplitPattern {
   return {
-    type: "spine",
+    type: 'spine',
     prefixId,
     mappings: [
-      { axis: visibleAxis, channel: "x" },
-      ...collapsedAxes.map(a => ({ axis: a, channel: "collapse" as VisualChannel })),
+      { axis: visibleAxis, channel: 'x' },
+      ...collapsedAxes.map((a) => ({ axis: a, channel: 'collapse' as VisualChannel })),
     ],
-    description: `${prefixId}: ${visibleAxis}(x), [${collapsedAxes.join(",")}] 압축 → 확대 시 큐브`,
+    description: `${prefixId}: ${visibleAxis}(x), [${collapsedAxes.join(',')}] 압축 → 확대 시 큐브`,
   };
 }
 
 /** 3D→2D — 한 축을 "선반 층"으로, 나머지를 그리드로 */
-export function shelf(prefixId: string, shelfAxis: string, xAxis: string, zAxis: string): SplitPattern {
+export function shelf(
+  prefixId: string,
+  shelfAxis: string,
+  xAxis: string,
+  zAxis: string,
+): SplitPattern {
   return {
-    type: "shelf",
+    type: 'shelf',
     prefixId,
     mappings: [
-      { axis: shelfAxis, channel: "group", subPattern: "grid" },
-      { axis: xAxis, channel: "x" },
-      { axis: zAxis, channel: "z" },
+      { axis: shelfAxis, channel: 'group', subPattern: 'grid' },
+      { axis: xAxis, channel: 'x' },
+      { axis: zAxis, channel: 'z' },
     ],
     description: `${prefixId}: ${shelfAxis}별 선반, 각 선반 = ${xAxis}(x) × ${zAxis}(z) 그리드`,
   };
 }
 
 /** ND→Group — N차원을 계층적 그룹으로 분해 */
-export function nested(prefixId: string, groupAxis: string, subPattern: SplitPatternType): SplitPattern {
+export function nested(
+  prefixId: string,
+  groupAxis: string,
+  subPattern: SplitPatternType,
+): SplitPattern {
   return {
-    type: "nested",
+    type: 'nested',
     prefixId,
-    mappings: [
-      { axis: groupAxis, channel: "group", subPattern },
-    ],
+    mappings: [{ axis: groupAxis, channel: 'group', subPattern }],
     description: `${prefixId}: ${groupAxis}별 그룹, 각 그룹 = ${subPattern}`,
   };
 }
@@ -233,29 +241,29 @@ export function computePatternLayout(
   const step = cellSize + cellGap;
   const cells: CellPosition[] = [];
 
-  const xMapping = pattern.mappings.find(m => m.channel === "x");
-  const yMapping = pattern.mappings.find(m => m.channel === "y");
-  const zMapping = pattern.mappings.find(m => m.channel === "z");
-  const groupMapping = pattern.mappings.find(m => m.channel === "group");
-  const collapseAxes = pattern.mappings.filter(m => m.channel === "collapse").map(m => m.axis);
+  const xMapping = pattern.mappings.find((m) => m.channel === 'x');
+  const yMapping = pattern.mappings.find((m) => m.channel === 'y');
+  const zMapping = pattern.mappings.find((m) => m.channel === 'z');
+  const groupMapping = pattern.mappings.find((m) => m.channel === 'group');
+  const collapseAxes = pattern.mappings.filter((m) => m.channel === 'collapse').map((m) => m.axis);
 
-  const xEntries = xMapping ? (axisEntries[xMapping.axis] || []) : ["_"];
-  const yEntries = yMapping ? (axisEntries[yMapping.axis] || []) : ["_"];
-  const zEntries = zMapping ? (axisEntries[zMapping.axis] || []) : ["_"];
-  const groupEntries = groupMapping ? (axisEntries[groupMapping.axis] || []) : ["_"];
+  const xEntries = xMapping ? axisEntries[xMapping.axis] || [] : ['_'];
+  const yEntries = yMapping ? axisEntries[yMapping.axis] || [] : ['_'];
+  const zEntries = zMapping ? axisEntries[zMapping.axis] || [] : ['_'];
+  const groupEntries = groupMapping ? axisEntries[groupMapping.axis] || [] : ['_'];
 
   switch (pattern.type) {
-    case "scalar":
+    case 'scalar':
       cells.push({ key: `${pattern.prefixId}/_`, x: 0, y: 0, z: 0 });
       break;
 
-    case "row":
+    case 'row':
       xEntries.forEach((e, i) => {
         cells.push({ key: `${pattern.prefixId}/${e}`, x: i * step, y: 0, z: 0 });
       });
       break;
 
-    case "grid":
+    case 'grid':
       xEntries.forEach((ex, xi) => {
         zEntries.forEach((ez, zi) => {
           cells.push({ key: `${pattern.prefixId}/${ex}_${ez}`, x: xi * step, y: 0, z: zi * step });
@@ -263,17 +271,22 @@ export function computePatternLayout(
       });
       break;
 
-    case "cube":
+    case 'cube':
       xEntries.forEach((ex, xi) => {
         yEntries.forEach((ey, yi) => {
           zEntries.forEach((ez, zi) => {
-            cells.push({ key: `${pattern.prefixId}/${ex}_${ey}_${ez}`, x: xi * step, y: yi * step, z: zi * step });
+            cells.push({
+              key: `${pattern.prefixId}/${ex}_${ey}_${ez}`,
+              x: xi * step,
+              y: yi * step,
+              z: zi * step,
+            });
           });
         });
       });
       break;
 
-    case "spine":
+    case 'spine':
       // 주 축만 펼치고, collapsed 축은 메타데이터로 보존
       xEntries.forEach((e, i) => {
         const collapsed: Record<string, string> = {};
@@ -284,7 +297,7 @@ export function computePatternLayout(
       });
       break;
 
-    case "shelf":
+    case 'shelf':
       // 그룹별로 y 오프셋을 주고, 각 그룹 내에서 x/z 그리드
       groupEntries.forEach((ge, gi) => {
         const yOffset = gi * (zEntries.length * step + step * 2);
@@ -302,7 +315,7 @@ export function computePatternLayout(
       });
       break;
 
-    case "nested":
+    case 'nested':
       // 그룹별로 x 오프셋을 주고, 각 그룹은 하위 패턴 (여기선 row로 기본)
       groupEntries.forEach((ge, gi) => {
         const xOffset = gi * (xEntries.length * step + step * 2);
@@ -319,9 +332,9 @@ export function computePatternLayout(
       break;
   }
 
-  const xs = cells.map(c => c.x);
-  const ys = cells.map(c => c.y);
-  const zs = cells.map(c => c.z);
+  const xs = cells.map((c) => c.x);
+  const ys = cells.map((c) => c.y);
+  const zs = cells.map((c) => c.z);
 
   return {
     pattern,
@@ -344,33 +357,54 @@ export function computePatternLayout(
 
 /** 축 이름에서 역할을 추론 */
 export function inferRole(axisName: string, dimKind: string): AxisRole {
-  if (dimKind === "prefix_ref") return "context";
-  if (dimKind === "table_ref") return "context";
+  if (dimKind === 'prefix_ref') return 'context';
+  if (dimKind === 'table_ref') return 'context';
 
   // 이름 기반 추론
   const name = axisName.toLowerCase();
-  if (name.includes("step") || name.includes("phase") || name.includes("stage")) return "sequence";
-  if (name.includes("variant") || name.includes("version") || name.includes("mode")) return "variant";
-  if (name.endsWith("_name") || name === "flow_name" || name === "event_name" || name.endsWith("_type") || name === "resource_type") return "classify";
-  if (name.includes("action") || name.includes("method") || name.includes("op") || name === "role" || name === "resource") return "identity";
-  return "identity";
+  if (name.includes('step') || name.includes('phase') || name.includes('stage')) return 'sequence';
+  if (name.includes('variant') || name.includes('version') || name.includes('mode'))
+    return 'variant';
+  if (
+    name.endsWith('_name') ||
+    name === 'flow_name' ||
+    name === 'event_name' ||
+    name.endsWith('_type') ||
+    name === 'resource_type'
+  )
+    return 'classify';
+  if (
+    name.includes('action') ||
+    name.includes('method') ||
+    name.includes('op') ||
+    name === 'role' ||
+    name === 'resource'
+  )
+    return 'identity';
+  return 'identity';
 }
 
 /** 역할 기반 시각 채널 결정 */
 function _roleToChannel(role: AxisRole): VisualChannel {
   switch (role) {
-    case "classify": return "group";
-    case "sequence": return "x";
-    case "variant": return "z";
-    case "identity": return "x";
-    case "context": return "collapse";
-    case "measure": return "size";
+    case 'classify':
+      return 'group';
+    case 'sequence':
+      return 'x';
+    case 'variant':
+      return 'z';
+    case 'identity':
+      return 'x';
+    case 'context':
+      return 'collapse';
+    case 'measure':
+      return 'size';
   }
 }
 
 export interface DimInfo {
   readonly label: string;
-  readonly kind: "axis" | "prefix_ref" | "table_ref";
+  readonly kind: 'axis' | 'prefix_ref' | 'table_ref';
 }
 
 /** 자동 패턴 추론 — 축 역할 기반 */
@@ -378,93 +412,135 @@ export function inferPattern(prefixId: string, axes: string[]): SplitPattern;
 export function inferPattern(prefixId: string, dims: DimInfo[]): SplitPattern;
 export function inferPattern(prefixId: string, input: string[] | DimInfo[]): SplitPattern {
   // normalize input
-  const dims: DimInfo[] = typeof input[0] === "string"
-    ? (input as string[]).map(label => ({ label, kind: "axis" as const }))
-    : input as DimInfo[];
+  const dims: DimInfo[] =
+    typeof input[0] === 'string'
+      ? (input as string[]).map((label) => ({ label, kind: 'axis' as const }))
+      : (input as DimInfo[]);
 
-  const axisDims = dims.filter(d => d.kind === "axis");
-  const refDims = dims.filter(d => d.kind === "prefix_ref");
-  const tableDims = dims.filter(d => d.kind === "table_ref");
+  const axisDims = dims.filter((d) => d.kind === 'axis');
+  const refDims = dims.filter((d) => d.kind === 'prefix_ref');
+  const tableDims = dims.filter((d) => d.kind === 'table_ref');
 
   // 역할 추론
-  const roles = axisDims.map(d => Object.assign({}, d, { role: inferRole(d.label, d.kind) }));
-  const classifiers = roles.filter(r => r.role === "classify");
-  const sequences = roles.filter(r => r.role === "sequence");
-  const variants = roles.filter(r => r.role === "variant");
-  const identities = roles.filter(r => r.role === "identity");
+  const roles = axisDims.map((d) => Object.assign({}, d, { role: inferRole(d.label, d.kind) }));
+  const classifiers = roles.filter((r) => r.role === 'classify');
+  const sequences = roles.filter((r) => r.role === 'sequence');
+  const variants = roles.filter((r) => r.role === 'variant');
+  const identities = roles.filter((r) => r.role === 'identity');
 
   // 매핑 구성
   const mappings: AxisMapping[] = [];
 
   // context 축 (prefix_ref) → collapse
   for (const d of refDims) {
-    mappings.push({ axis: d.label, channel: "collapse", role: "context", dimKind: "prefix_ref" });
+    mappings.push({ axis: d.label, channel: 'collapse', role: 'context', dimKind: 'prefix_ref' });
   }
 
   // table_ref → link
   for (const d of tableDims) {
-    mappings.push({ axis: d.label, channel: "link", role: "context", dimKind: "table_ref" });
+    mappings.push({ axis: d.label, channel: 'link', role: 'context', dimKind: 'table_ref' });
   }
 
   // 분류 축이 있으면 shelf/nested
   if (classifiers.length > 0) {
     const classifier = classifiers[0];
-    const rest = roles.filter(r => r !== classifier);
+    const rest = roles.filter((r) => r !== classifier);
 
     if (rest.length === 0) {
-      mappings.push({ axis: classifier.label, channel: "x", role: "classify" });
-      return { type: "row", prefixId, mappings, description: `${prefixId}: ${classifier.label}(x) → 행` };
+      mappings.push({ axis: classifier.label, channel: 'x', role: 'classify' });
+      return {
+        type: 'row',
+        prefixId,
+        mappings,
+        description: `${prefixId}: ${classifier.label}(x) → 행`,
+      };
     }
 
     if (rest.length === 1) {
-      mappings.push({ axis: classifier.label, channel: "group", role: "classify", subPattern: "row" });
-      mappings.push({ axis: rest[0].label, channel: "x", role: rest[0].role });
-      return { type: "shelf", prefixId, mappings, description: `${prefixId}: ${classifier.label}별 선반, ${rest[0].label}(x)` };
+      mappings.push({
+        axis: classifier.label,
+        channel: 'group',
+        role: 'classify',
+        subPattern: 'row',
+      });
+      mappings.push({ axis: rest[0].label, channel: 'x', role: rest[0].role });
+      return {
+        type: 'shelf',
+        prefixId,
+        mappings,
+        description: `${prefixId}: ${classifier.label}별 선반, ${rest[0].label}(x)`,
+      };
     }
 
     // 2+ rest → shelf with grid
-    mappings.push({ axis: classifier.label, channel: "group", role: "classify", subPattern: "grid" });
+    mappings.push({
+      axis: classifier.label,
+      channel: 'group',
+      role: 'classify',
+      subPattern: 'grid',
+    });
     const xAxis = sequences[0] || rest[0];
-    const zAxis = variants[0] || rest.find(r => r !== xAxis) || rest[1];
-    if (xAxis) mappings.push({ axis: xAxis.label, channel: "x", role: xAxis.role });
-    if (zAxis && zAxis !== xAxis) mappings.push({ axis: zAxis.label, channel: "z", role: zAxis.role });
-    return { type: "shelf", prefixId, mappings, description: `${prefixId}: ${classifier.label}별 선반, ${xAxis?.label}(x) × ${zAxis?.label}(z)` };
+    const zAxis = variants[0] || rest.find((r) => r !== xAxis) || rest[1];
+    if (xAxis) mappings.push({ axis: xAxis.label, channel: 'x', role: xAxis.role });
+    if (zAxis && zAxis !== xAxis)
+      mappings.push({ axis: zAxis.label, channel: 'z', role: zAxis.role });
+    return {
+      type: 'shelf',
+      prefixId,
+      mappings,
+      description: `${prefixId}: ${classifier.label}별 선반, ${xAxis?.label}(x) × ${zAxis?.label}(z)`,
+    };
   }
 
   // 분류 축 없음 → 순수 identity/sequence/variant
   const allAxes = [...sequences, ...identities, ...variants];
 
   if (allAxes.length === 0) {
-    return { type: "scalar", prefixId, mappings: [{ axis: "_", channel: "color" }], description: `${prefixId}: scalar` };
+    return {
+      type: 'scalar',
+      prefixId,
+      mappings: [{ axis: '_', channel: 'color' }],
+      description: `${prefixId}: scalar`,
+    };
   }
   if (allAxes.length === 1) {
-    mappings.push({ axis: allAxes[0].label, channel: "x", role: allAxes[0].role });
-    return { type: "row", prefixId, mappings, description: `${prefixId}: ${allAxes[0].label}(x)` };
+    mappings.push({ axis: allAxes[0].label, channel: 'x', role: allAxes[0].role });
+    return { type: 'row', prefixId, mappings, description: `${prefixId}: ${allAxes[0].label}(x)` };
   }
   if (allAxes.length === 2) {
-    mappings.push({ axis: allAxes[0].label, channel: "x", role: allAxes[0].role });
-    mappings.push({ axis: allAxes[1].label, channel: "z", role: allAxes[1].role });
-    return { type: "grid", prefixId, mappings, description: `${prefixId}: ${allAxes[0].label}(x) × ${allAxes[1].label}(z)` };
+    mappings.push({ axis: allAxes[0].label, channel: 'x', role: allAxes[0].role });
+    mappings.push({ axis: allAxes[1].label, channel: 'z', role: allAxes[1].role });
+    return {
+      type: 'grid',
+      prefixId,
+      mappings,
+      description: `${prefixId}: ${allAxes[0].label}(x) × ${allAxes[1].label}(z)`,
+    };
   }
 
   // 3+ → cube
-  mappings.push({ axis: allAxes[0].label, channel: "x", role: allAxes[0].role });
-  mappings.push({ axis: allAxes[1].label, channel: "y", role: allAxes[1].role });
-  mappings.push({ axis: allAxes[2].label, channel: "z", role: allAxes[2].role });
-  return { type: "cube", prefixId, mappings, description: `${prefixId}: ${allAxes[0].label}(x) × ${allAxes[1].label}(y) × ${allAxes[2].label}(z)` };
+  mappings.push({ axis: allAxes[0].label, channel: 'x', role: allAxes[0].role });
+  mappings.push({ axis: allAxes[1].label, channel: 'y', role: allAxes[1].role });
+  mappings.push({ axis: allAxes[2].label, channel: 'z', role: allAxes[2].role });
+  return {
+    type: 'cube',
+    prefixId,
+    mappings,
+    description: `${prefixId}: ${allAxes[0].label}(x) × ${allAxes[1].label}(y) × ${allAxes[2].label}(z)`,
+  };
 }
 
 /** prefix 정의에서 차원 정보 추출 */
 export function extractDims(prefixDims: Record<string, { kind: string }>): DimInfo[] {
   return Object.entries(prefixDims).map(([label, d]) => ({
     label,
-    kind: d.kind as "axis" | "prefix_ref" | "table_ref",
+    kind: d.kind as 'axis' | 'prefix_ref' | 'table_ref',
   }));
 }
 
 /** 후방 호환: 축 이름만 추출 */
 export function extractAxes(prefixDims: Record<string, { kind: string }>): string[] {
   return Object.entries(prefixDims)
-    .filter(([, d]) => d.kind === "axis")
+    .filter(([, d]) => d.kind === 'axis')
     .map(([label]) => label);
 }

@@ -9,30 +9,25 @@
  * 이 모듈은 노드/엣지/레이아웃/스타일 데이터만 제공한다.
  */
 
-import type {
-  PipeSpec, PipeGraph, ConnectionKind, PipePort,
-} from "../types/pipe-spec.js";
-import type { FoldLevel, FoldedContract, FoldRegion } from "./pipe-fold.js";
-import {
-  foldSubgraph, detectFoldRegions,
-  collectFlowSteps,
-} from "./pipe-fold.js";
-import { countPipePaths, countGraphPaths } from "./pipe-path.js";
-import { extractPipeConcerns, propagatePipeConcerns, classifyPipeRole } from "./pipe-interpret.js";
-import type { PipeConcern, PipeRole } from "./pipe-interpret.js";
-import { normalizePortRefs } from "./pipe-endpoint.js";
-import { resolvePorts } from "./pipe-port.js";
+import type { PipeSpec, PipeGraph, ConnectionKind, PipePort } from '../types/pipe-spec.js';
+import type { FoldLevel, FoldedContract, FoldRegion } from './pipe-fold.js';
+import { foldSubgraph, detectFoldRegions, collectFlowSteps } from './pipe-fold.js';
+import { countPipePaths, countGraphPaths } from './pipe-path.js';
+import { extractPipeConcerns, propagatePipeConcerns, classifyPipeRole } from './pipe-interpret.js';
+import type { PipeConcern, PipeRole } from './pipe-interpret.js';
+import { normalizePortRefs } from './pipe-endpoint.js';
+import { resolvePorts } from './pipe-port.js';
 
 // ── 타입 정의 ─────────────────────────────────────────
 
 /** 줌 노드의 시각 스타일 */
 export interface ZoomNodeStyle {
   /** 타입 확실성 */
-  certainty: "strict" | "flexible" | "mixed";
+  certainty: 'strict' | 'flexible' | 'mixed';
   /** 형태: strict→다각형, flexible→구름 */
-  shape: "polygon" | "cloud";
+  shape: 'polygon' | 'cloud';
   /** 경계선: strict→실선, flexible→점선 */
-  borderStyle: "solid" | "dashed";
+  borderStyle: 'solid' | 'dashed';
 }
 
 /** 줌 뷰의 노드 */
@@ -146,9 +141,9 @@ const SIZE_SCALE_FACTOR = 0.5;
  */
 export function computeZoomLevels(graph: PipeGraph): ZoomLevelMap {
   return {
-    group: computeZoomView(graph, "group"),
-    module: computeZoomView(graph, "module"),
-    leaf: computeZoomView(graph, "leaf"),
+    group: computeZoomView(graph, 'group'),
+    module: computeZoomView(graph, 'module'),
+    leaf: computeZoomView(graph, 'leaf'),
   };
 }
 
@@ -156,7 +151,7 @@ export function computeZoomLevels(graph: PipeGraph): ZoomLevelMap {
  * 특정 줌 레벨의 뷰를 계산한다.
  */
 export function computeZoomView(graph: PipeGraph, level: FoldLevel): ZoomView {
-  if (level === "leaf") {
+  if (level === 'leaf') {
     return buildLeafView(graph);
   }
 
@@ -164,7 +159,7 @@ export function computeZoomView(graph: PipeGraph, level: FoldLevel): ZoomView {
 
   // 레벨에 따라 접을 영역 필터링
   const targetReasons = getTargetReasons(level);
-  const filteredRegions = regions.filter(r => targetReasons.has(r.reason));
+  const filteredRegions = regions.filter((r) => targetReasons.has(r.reason));
 
   // 겹치는 영역 제외하면서 순차 접기
   let currentGraph = graph;
@@ -172,7 +167,7 @@ export function computeZoomView(graph: PipeGraph, level: FoldLevel): ZoomView {
   const consumedPipeIds = new Set<string>();
 
   for (const region of filteredRegions) {
-    if (region.pipeIds.some(id => consumedPipeIds.has(id))) continue;
+    if (region.pipeIds.some((id) => consumedPipeIds.has(id))) continue;
 
     const foldId = `fold_${level}_${region.regionId}`;
     const folded = foldSubgraph(currentGraph, region.pipeIds, foldId, level);
@@ -218,9 +213,8 @@ export function computeLayout(view: ZoomView): ZoomView {
     visited.add(id);
 
     const incoming = inAdj.get(id) ?? [];
-    const maxParent = incoming.length === 0
-      ? -1
-      : Math.max(...incoming.map(p => assignLayer(p, visited)));
+    const maxParent =
+      incoming.length === 0 ? -1 : Math.max(...incoming.map((p) => assignLayer(p, visited)));
     const layer = maxParent + 1;
     layerMap.set(id, layer);
     return layer;
@@ -251,19 +245,24 @@ export function computeLayout(view: ZoomView): ZoomView {
       ids.forEach((id, i) => positionIndex.set(id, i));
     } else {
       // 이전 레이어 이웃의 평균 위치(barycenter)로 정렬
-      const barycenters = ids.map(id => {
-        const parents = inAdj.get(id) ?? [];
-        if (parents.length === 0) return { id, bc: 0 };
-        const sum = parents.reduce((s, p) => s + (positionIndex.get(p) ?? 0), 0);
-        return { id, bc: sum / parents.length };
-      }).toSorted((a, b) => a.bc - b.bc);
+      const barycenters = ids
+        .map((id) => {
+          const parents = inAdj.get(id) ?? [];
+          if (parents.length === 0) return { id, bc: 0 };
+          const sum = parents.reduce((s, p) => s + (positionIndex.get(p) ?? 0), 0);
+          return { id, bc: sum / parents.length };
+        })
+        .toSorted((a, b) => a.bc - b.bc);
       barycenters.forEach(({ id }, i) => positionIndex.set(id, i));
-      layers.set(layerKey, barycenters.map(b => b.id));
+      layers.set(
+        layerKey,
+        barycenters.map((b) => b.id),
+      );
     }
   }
 
   // 좌표 할당
-  const nodeMap = new Map(view.nodes.map(n => [n.id, n]));
+  const nodeMap = new Map(view.nodes.map((n) => [n.id, n]));
 
   for (const layerKey of sortedLayerKeys) {
     const ids = layers.get(layerKey);
@@ -286,18 +285,18 @@ export function computeLayout(view: ZoomView): ZoomView {
 // ── 내부 함수 ─────────────────────────────────────────
 
 /** 줌 레벨에 따라 접을 영역의 reason 필터 */
-function getTargetReasons(level: FoldLevel): Set<FoldRegion["reason"]> {
-  if (level === "group") {
+function getTargetReasons(level: FoldLevel): Set<FoldRegion['reason']> {
+  if (level === 'group') {
     // L0: 모든 영역을 접어 최대 축소
-    return new Set(["scope-cluster", "aspect-cluster", "linear-chain", "strongly-connected"]);
+    return new Set(['scope-cluster', 'aspect-cluster', 'linear-chain', 'strongly-connected']);
   }
   // L1 (module): 선형 체인 + SCC만 접기 (scope-cluster는 유지)
-  return new Set(["linear-chain", "strongly-connected"]);
+  return new Set(['linear-chain', 'strongly-connected']);
 }
 
 /** 접기 없는 L2 뷰 구축 */
 function buildLeafView(graph: PipeGraph): ZoomView {
-  return buildView(graph, "leaf", new Map(), graph.pipes.length);
+  return buildView(graph, 'leaf', new Map(), graph.pipes.length);
 }
 
 /** 공통 뷰 구축 */
@@ -308,14 +307,14 @@ function buildView(
   originalPipeCount: number,
 ): ZoomView {
   // 관심사 맵 (leaf 레벨에서만 전파 포함, 그 외는 개별 추출)
-  const concernMap = level === "leaf" ? propagatePipeConcerns(graph) : null;
+  const concernMap = level === 'leaf' ? propagatePipeConcerns(graph) : null;
 
   // 노드 생성
-  const nodes: ZoomNode[] = graph.pipes.map(pipe => {
+  const nodes: ZoomNode[] = graph.pipes.map((pipe) => {
     const contract = foldedContracts.get(pipe.pipeId);
     const isFolded = contract !== undefined;
     const concerns: readonly PipeConcern[] = isFolded
-      ? contract.concerns as PipeConcern[]
+      ? (contract.concerns as PipeConcern[])
       : concernMap
         ? (concernMap.get(pipe.pipeId)?.all ?? [])
         : extractPipeConcerns(pipe);
@@ -327,7 +326,7 @@ function buildView(
       position: { x: 0, y: 0 },
       size: computeNodeSize(pipe, contract),
       style: isFolded ? computeContractStyle(contract) : computePipeStyle(pipe),
-      role: isFolded ? "transformer" as PipeRole : classifyPipeRole(pipe),
+      role: isFolded ? ('transformer' as PipeRole) : classifyPipeRole(pipe),
       concerns,
       isFolded,
       contract,
@@ -340,7 +339,7 @@ function buildView(
   });
 
   // 엣지 생성
-  const pipeIds = new Set(graph.pipes.map(p => p.pipeId));
+  const pipeIds = new Set(graph.pipes.map((p) => p.pipeId));
   const edges: ZoomEdge[] = [];
 
   for (const conn of graph.connections) {
@@ -375,7 +374,7 @@ function buildView(
     nodeCount: nodes.length,
     edgeCount: edges.length,
     totalPaths: countGraphPaths(graph),
-    foldedNodeCount: nodes.filter(n => n.isFolded).length,
+    foldedNodeCount: nodes.filter((n) => n.isFolded).length,
     originalPipeCount,
     concernCounts,
   };
@@ -446,19 +445,19 @@ function computeContractStyle(contract: FoldedContract): ZoomNodeStyle {
 function resolveStyle(hasStrict: boolean, hasFlexible: boolean): ZoomNodeStyle {
   if (!hasStrict && !hasFlexible) {
     // 데이터 계약 없음 — 판단 불가
-    return { certainty: "mixed", shape: "cloud", borderStyle: "dashed" };
+    return { certainty: 'mixed', shape: 'cloud', borderStyle: 'dashed' };
   }
   if (hasFlexible && hasStrict) {
-    return { certainty: "mixed", shape: "cloud", borderStyle: "dashed" };
+    return { certainty: 'mixed', shape: 'cloud', borderStyle: 'dashed' };
   }
   if (hasFlexible) {
-    return { certainty: "flexible", shape: "cloud", borderStyle: "dashed" };
+    return { certainty: 'flexible', shape: 'cloud', borderStyle: 'dashed' };
   }
-  return { certainty: "strict", shape: "polygon", borderStyle: "solid" };
+  return { certainty: 'strict', shape: 'polygon', borderStyle: 'solid' };
 }
 
 /** 타입 문자열이 런타임 결정 타입(flexible)인지 판별 */
 function isFlexibleType(typeStr: string): boolean {
-  const flexible = ["any", "unknown", "Record<string, any>", "object"];
-  return flexible.some(f => typeStr.includes(f)) || /\bT\b/.test(typeStr);
+  const flexible = ['any', 'unknown', 'Record<string, any>', 'object'];
+  return flexible.some((f) => typeStr.includes(f)) || /\bT\b/.test(typeStr);
 }

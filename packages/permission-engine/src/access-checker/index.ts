@@ -11,4 +11,4 @@ export {
   type InstancePolicyEvaluation,
   type InstancePolicyEvaluator,
   type InstancePolicyResolver,
-} from "./checker.js";
+} from './checker.js';

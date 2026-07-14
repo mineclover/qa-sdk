@@ -1,7 +1,7 @@
 // @def.boundary spec-engine-system
 // @def.doc spec-engine-system
 
-import type { ContractEvidence, ContractMarkerKind } from "./types.js";
+import type { ContractEvidence, ContractMarkerKind } from './types.js';
 
 /**
  * Verification Claim — 스펙 문장의 최소 검증 단위.
@@ -22,32 +22,15 @@ export interface VerificationClaim {
   readonly text: string;
 }
 
-export type DefinitionState =
-  | "missing"
-  | "declared"
-  | "structured"
-  | "linked";
+export type DefinitionState = 'missing' | 'declared' | 'structured' | 'linked';
 
-export type ImplementationState =
-  | "none"
-  | "partial"
-  | "implemented";
+export type ImplementationState = 'none' | 'partial' | 'implemented';
 
-export type TestState =
-  | "none"
-  | "mapped"
-  | "passing"
-  | "failing";
+export type TestState = 'none' | 'mapped' | 'passing' | 'failing';
 
-export type RuntimeState =
-  | "none"
-  | "observable"
-  | "observed";
+export type RuntimeState = 'none' | 'observable' | 'observed';
 
-export type ReviewState =
-  | "none"
-  | "reviewed"
-  | "accepted";
+export type ReviewState = 'none' | 'reviewed' | 'accepted';
 
 /**
  * Product FSM의 합성 결과.
@@ -66,13 +49,13 @@ export type ReviewState =
  *   최신 문서 버전과 binding/evidence가 어긋남
  */
 export type ClaimCompositeState =
-  | "absent"
-  | "declared"
-  | "bound"
-  | "exercised"
-  | "verified"
-  | "contradicted"
-  | "stale";
+  | 'absent'
+  | 'declared'
+  | 'bound'
+  | 'exercised'
+  | 'verified'
+  | 'contradicted'
+  | 'stale';
 
 export interface ClaimDefinitionInput {
   readonly declared?: boolean;
@@ -129,42 +112,42 @@ export interface VerificationClaimSnapshot {
 }
 
 export function deriveDefinitionState(input?: ClaimDefinitionInput): DefinitionState {
-  if (!input?.declared) return "missing";
-  if (input.linked) return "linked";
-  if (input.structured) return "structured";
-  return "declared";
+  if (!input?.declared) return 'missing';
+  if (input.linked) return 'linked';
+  if (input.structured) return 'structured';
+  return 'declared';
 }
 
 export function deriveImplementationState(input?: ClaimImplementationInput): ImplementationState {
   const bindings = input?.bindings ?? [];
   const implemented = input?.implementedBindings ?? [];
 
-  if (bindings.length === 0 && implemented.length === 0) return "none";
-  if (implemented.length === 0) return "partial";
-  if (implemented.length < bindings.length) return "partial";
-  return "implemented";
+  if (bindings.length === 0 && implemented.length === 0) return 'none';
+  if (implemented.length === 0) return 'partial';
+  if (implemented.length < bindings.length) return 'partial';
+  return 'implemented';
 }
 
 export function deriveTestState(input?: ClaimTestingInput): TestState {
   const bindings = input?.bindings ?? [];
   const evidences = input?.evidences ?? [];
 
-  if (evidences.some((e) => e.status === "fail")) return "failing";
-  if (evidences.some((e) => e.status === "pass")) return "passing";
-  if (bindings.length > 0) return "mapped";
-  return "none";
+  if (evidences.some((e) => e.status === 'fail')) return 'failing';
+  if (evidences.some((e) => e.status === 'pass')) return 'passing';
+  if (bindings.length > 0) return 'mapped';
+  return 'none';
 }
 
 export function deriveRuntimeState(input?: ClaimRuntimeInput): RuntimeState {
-  if (input?.observed) return "observed";
-  if (input?.observable) return "observable";
-  return "none";
+  if (input?.observed) return 'observed';
+  if (input?.observable) return 'observable';
+  return 'none';
 }
 
 export function deriveReviewState(input?: ClaimReviewInput): ReviewState {
-  if (input?.accepted) return "accepted";
-  if (input?.reviewed) return "reviewed";
-  return "none";
+  if (input?.accepted) return 'accepted';
+  if (input?.reviewed) return 'reviewed';
+  return 'none';
 }
 
 export function buildClaimStateKey(snapshot: {
@@ -180,12 +163,10 @@ export function buildClaimStateKey(snapshot: {
     snapshot.testState,
     snapshot.runtimeState,
     snapshot.reviewState,
-  ].join("/");
+  ].join('/');
 }
 
-export function deriveVerificationClaim(
-  input: VerificationClaimInput,
-): VerificationClaimSnapshot {
+export function deriveVerificationClaim(input: VerificationClaimInput): VerificationClaimSnapshot {
   const definitionState = deriveDefinitionState(input.definition);
   const implementationState = deriveImplementationState(input.implementation);
   const testState = deriveTestState(input.testing);
@@ -193,15 +174,15 @@ export function deriveVerificationClaim(
   const reviewState = deriveReviewState(input.review);
 
   const blockers: string[] = [];
-  if (definitionState === "missing") blockers.push("claim 문서 정의 없음");
-  if (testState === "failing") blockers.push("실패한 검증 증거 존재");
+  if (definitionState === 'missing') blockers.push('claim 문서 정의 없음');
+  if (testState === 'failing') blockers.push('실패한 검증 증거 존재');
 
   const missing: string[] = [];
-  if (definitionState !== "linked") missing.push("문서 링크 정합성");
-  if (implementationState === "none") missing.push("구현 바인딩");
-  if (testState === "none") missing.push("테스트 매핑");
-  if (runtimeState === "none") missing.push("런타임 관측 바인딩");
-  if (reviewState !== "accepted") missing.push("리뷰 승인");
+  if (definitionState !== 'linked') missing.push('문서 링크 정합성');
+  if (implementationState === 'none') missing.push('구현 바인딩');
+  if (testState === 'none') missing.push('테스트 매핑');
+  if (runtimeState === 'none') missing.push('런타임 관측 바인딩');
+  if (reviewState !== 'accepted') missing.push('리뷰 승인');
 
   const compositeState = deriveCompositeState({
     definitionState,
@@ -240,28 +221,26 @@ function deriveCompositeState(input: {
   reviewState: ReviewState;
   stale: boolean;
 }): ClaimCompositeState {
-  if (input.stale) return "stale";
-  if (input.definitionState === "missing") return "absent";
-  if (input.testState === "failing") return "contradicted";
+  if (input.stale) return 'stale';
+  if (input.definitionState === 'missing') return 'absent';
+  if (input.testState === 'failing') return 'contradicted';
 
   const isBound =
-    input.implementationState !== "none"
-    || input.testState !== "none"
-    || input.runtimeState !== "none"
-    || input.reviewState !== "none";
+    input.implementationState !== 'none' ||
+    input.testState !== 'none' ||
+    input.runtimeState !== 'none' ||
+    input.reviewState !== 'none';
 
-  const isExercised =
-    input.testState === "passing"
-    || input.runtimeState === "observed";
+  const isExercised = input.testState === 'passing' || input.runtimeState === 'observed';
 
   const isVerified =
-    input.definitionState === "linked"
-    && input.implementationState === "implemented"
-    && isExercised
-    && input.reviewState === "accepted";
+    input.definitionState === 'linked' &&
+    input.implementationState === 'implemented' &&
+    isExercised &&
+    input.reviewState === 'accepted';
 
-  if (isVerified) return "verified";
-  if (isExercised) return "exercised";
-  if (isBound) return "bound";
-  return "declared";
+  if (isVerified) return 'verified';
+  if (isExercised) return 'exercised';
+  if (isBound) return 'bound';
+  return 'declared';
 }

@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc authorization-ontology-resource-lifecycle
 
-import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 import {
   AccessChecker,
   InMemoryAuditRecorder,
@@ -10,20 +10,17 @@ import {
   type InstancePolicyDecision,
   type InstancePolicyEvaluator,
   type ResourcePolicyRegistry,
-} from "permission-engine";
-import {
-  createResourcePolicyRegistry,
-  RESOURCE_POLICIES_DDL,
-} from "resource-policy-store";
-import { createSimAuditRecorder } from "@qa-sdk/sim-audit-recorder-provider";
-import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
-import { DisjointUnionIndex } from "weighted-index";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type { ApprovalRepository } from "../approval/shared/port.js";
+} from 'permission-engine';
+import { createResourcePolicyRegistry, RESOURCE_POLICIES_DDL } from 'resource-policy-store';
+import { createSimAuditRecorder } from '@qa-sdk/sim-audit-recorder-provider';
+import { AUDIT_ENTRIES_DDL } from 'audit-recorder-store';
+import { DisjointUnionIndex } from 'weighted-index';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { ApprovalRepository } from '../approval/shared/port.js';
 
-export const APPROVAL_ACCESS_CHECKER = Symbol("APPROVAL_ACCESS_CHECKER");
-export const APPROVAL_POLICY_REGISTRY = Symbol("APPROVAL_POLICY_REGISTRY");
+export const APPROVAL_ACCESS_CHECKER = Symbol('APPROVAL_ACCESS_CHECKER');
+export const APPROVAL_POLICY_REGISTRY = Symbol('APPROVAL_POLICY_REGISTRY');
 
 class SimInstanceEvaluator implements InstancePolicyEvaluator {
   constructor(private readonly repo: ApprovalRepository | undefined) {}
@@ -35,11 +32,11 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
     attributes?: Record<string, unknown>;
   }): Promise<InstancePolicyDecision> {
     if (!this.repo) {
-      return { allowed: args.policyRef.length > 0, denyReason: "approval_repo_unavailable" };
+      return { allowed: args.policyRef.length > 0, denyReason: 'approval_repo_unavailable' };
     }
     const request = await this.repo.findBudgetRequest(args.resourceId);
     if (!request) {
-      return { allowed: false, denyReason: "request_not_found" };
+      return { allowed: false, denyReason: 'request_not_found' };
     }
 
     const roleNames = asStringArray(args.attributes?.actorRoleNames);
@@ -47,32 +44,41 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
     const roleAssignments = asRoleAssignments(args.attributes?.actorRoleAssignments);
     const apiId = asString(args.attributes?.apiId);
 
-    if (roleNames.includes("admin")) {
+    if (roleNames.includes('admin')) {
       return { allowed: true };
     }
 
     const isOwner = request.requesterId === args.userId;
-    if (isOwner && apiId !== "budget.approve" && apiId !== "budget.reject") {
+    if (isOwner && apiId !== 'budget.approve' && apiId !== 'budget.reject') {
       return { allowed: true };
     }
 
     const sameDepartment =
       actorDepartmentId !== null && actorDepartmentId === request.projectDepartmentId;
-    const scopedManager = hasScopedRole(roleAssignments, ["manager"], request.projectDepartmentId);
-    const scopedDirector = hasScopedRole(roleAssignments, ["director"], request.projectDepartmentId);
-    const scopedApprover = hasScopedRole(roleAssignments, ["approver"], request.projectDepartmentId);
-    const globalCfo = hasScopedRole(roleAssignments, ["cfo"], request.projectDepartmentId);
-    const globalAdmin = hasScopedRole(roleAssignments, ["admin"], request.projectDepartmentId);
+    const scopedManager = hasScopedRole(roleAssignments, ['manager'], request.projectDepartmentId);
+    const scopedDirector = hasScopedRole(
+      roleAssignments,
+      ['director'],
+      request.projectDepartmentId,
+    );
+    const scopedApprover = hasScopedRole(
+      roleAssignments,
+      ['approver'],
+      request.projectDepartmentId,
+    );
+    const globalCfo = hasScopedRole(roleAssignments, ['cfo'], request.projectDepartmentId);
+    const globalAdmin = hasScopedRole(roleAssignments, ['admin'], request.projectDepartmentId);
     const scopedStageCapability =
       scopedManager || scopedDirector || scopedApprover || globalCfo || globalAdmin;
     if (!sameDepartment && !scopedStageCapability) {
-      return { allowed: false, denyReason: "cross_department_requires_approver_role" };
+      return { allowed: false, denyReason: 'cross_department_requires_approver_role' };
     }
 
-    if (apiId === "budget.read" || apiId === "budget.submit" || apiId === "budget.start-review") {
+    if (apiId === 'budget.read' || apiId === 'budget.submit' || apiId === 'budget.start-review') {
       return {
         allowed: sameDepartment || scopedStageCapability,
-        denyReason: sameDepartment || scopedStageCapability ? undefined : "department_scope_mismatch",
+        denyReason:
+          sameDepartment || scopedStageCapability ? undefined : 'department_scope_mismatch',
       };
     }
 
@@ -86,7 +92,7 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
     });
     return {
       allowed: stageAllowed,
-      denyReason: stageAllowed ? undefined : "approval_stage_role_mismatch",
+      denyReason: stageAllowed ? undefined : 'approval_stage_role_mismatch',
     };
   }
 
@@ -98,8 +104,10 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
   }): Promise<InstancePolicyDecision> {
     const roleNames = asStringArray(args.attributes?.actorRoleNames);
     return {
-      allowed: hasAnyRole(roleNames, ["admin", "approver", "cfo"]),
-      denyReason: hasAnyRole(roleNames, ["admin", "approver", "cfo"]) ? undefined : "delegation_not_supported",
+      allowed: hasAnyRole(roleNames, ['admin', 'approver', 'cfo']),
+      denyReason: hasAnyRole(roleNames, ['admin', 'approver', 'cfo'])
+        ? undefined
+        : 'delegation_not_supported',
     };
   }
 }
@@ -107,14 +115,14 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
 function buildDefaultUnion(): DisjointUnionIndex {
   // approval_api_action 6 values — WeightedIndex labels 는 dimension name.
   return new DisjointUnionIndex([
-    { kind: "transaction", shape: [6], labels: ["action"] },
-    { kind: "resource", shape: [6], labels: ["action"] },
+    { kind: 'transaction', shape: [6], labels: ['action'] },
+    { kind: 'resource', shape: [6], labels: ['action'] },
   ]);
 }
 
 export interface AccessCheckerModuleOptions {
   db?: unknown;
-  dialect?: "sqlite" | "pg";
+  dialect?: 'sqlite' | 'pg';
   overrideChecker?: AccessChecker;
   overrideRegistry?: ResourcePolicyRegistry;
   overrideAudit?: AuditRecorder;
@@ -124,7 +132,7 @@ export interface AccessCheckerModuleOptions {
 }
 
 export interface AccessCheckerAsyncOptions {
-  imports?: NonNullable<DynamicModule["imports"]>;
+  imports?: NonNullable<DynamicModule['imports']>;
   inject?: Array<string | symbol | (new (...args: never[]) => unknown)>;
   useFactory: (
     ...args: unknown[]
@@ -140,15 +148,15 @@ export class AccessCheckerModule {
         const resolved = await opts.useFactory(...deps);
         if (resolved.overrideRegistry) return resolved.overrideRegistry;
         if (!resolved.db || !resolved.dialect) {
-          throw new Error(
-            "AccessCheckerModule: db + dialect 또는 overrideRegistry 필수",
-          );
+          throw new Error('AccessCheckerModule: db + dialect 또는 overrideRegistry 필수');
         }
-        if (resolved.dialect === "sqlite") {
-          const raw = (resolved.db as BetterSQLite3Database as unknown as {
-            $client: { exec: (sql: string) => void };
-          }).$client;
-          if (raw && typeof raw.exec === "function") {
+        if (resolved.dialect === 'sqlite') {
+          const raw = (
+            resolved.db as BetterSQLite3Database as unknown as {
+              $client: { exec: (sql: string) => void };
+            }
+          ).$client;
+          if (raw && typeof raw.exec === 'function') {
             raw.exec(RESOURCE_POLICIES_DDL);
           }
         }
@@ -173,11 +181,13 @@ export class AccessCheckerModule {
         if (resolved.overrideAudit) {
           audit = resolved.overrideAudit;
         } else if (resolved.db && resolved.dialect) {
-          if (resolved.dialect === "sqlite") {
-            const raw = (resolved.db as BetterSQLite3Database as unknown as {
-              $client: { exec: (sql: string) => void };
-            }).$client;
-            if (raw && typeof raw.exec === "function") {
+          if (resolved.dialect === 'sqlite') {
+            const raw = (
+              resolved.db as BetterSQLite3Database as unknown as {
+                $client: { exec: (sql: string) => void };
+              }
+            ).$client;
+            if (raw && typeof raw.exec === 'function') {
               raw.exec(AUDIT_ENTRIES_DDL);
             }
           }
@@ -211,16 +221,16 @@ export class AccessCheckerModule {
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.length > 0 ? value : undefined;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
 function asNullableString(value: unknown): string | null {
-  return typeof value === "string" && value.length > 0 ? value : null;
+  return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
+  return value.filter((item): item is string => typeof item === 'string');
 }
 
 function hasAnyRole(roleNames: readonly string[], expected: readonly string[]): boolean {
@@ -233,19 +243,22 @@ function asRoleAssignments(
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) =>
     item &&
-    typeof item === "object" &&
-    typeof (item as Record<string, unknown>).roleId === "string" &&
-    typeof (item as Record<string, unknown>).roleName === "string" &&
-    typeof (item as Record<string, unknown>).scopeType === "string"
-      ? [{
-          roleId: (item as Record<string, unknown>).roleId as string,
-          roleName: (item as Record<string, unknown>).roleName as string,
-          scopeType: (item as Record<string, unknown>).scopeType as string,
-          scopeId:
-            typeof (item as Record<string, unknown>).scopeId === "string" || (item as Record<string, unknown>).scopeId === null
-              ? ((item as Record<string, unknown>).scopeId as string | null)
-              : null,
-        }]
+    typeof item === 'object' &&
+    typeof (item as Record<string, unknown>).roleId === 'string' &&
+    typeof (item as Record<string, unknown>).roleName === 'string' &&
+    typeof (item as Record<string, unknown>).scopeType === 'string'
+      ? [
+          {
+            roleId: (item as Record<string, unknown>).roleId as string,
+            roleName: (item as Record<string, unknown>).roleName as string,
+            scopeType: (item as Record<string, unknown>).scopeType as string,
+            scopeId:
+              typeof (item as Record<string, unknown>).scopeId === 'string' ||
+              (item as Record<string, unknown>).scopeId === null
+                ? ((item as Record<string, unknown>).scopeId as string | null)
+                : null,
+          },
+        ]
       : [],
   );
 }
@@ -257,8 +270,10 @@ function hasScopedRole(
 ): boolean {
   return assignments.some((assignment) => {
     if (!expectedRoleNames.includes(assignment.roleName)) return false;
-    return assignment.scopeType === "global" ||
-      (assignment.scopeType === "department" && assignment.scopeId === projectDepartmentId);
+    return (
+      assignment.scopeType === 'global' ||
+      (assignment.scopeType === 'department' && assignment.scopeId === projectDepartmentId)
+    );
   });
 }
 
@@ -274,7 +289,13 @@ function isStageRoleAllowed(
   },
 ): boolean {
   if (stage <= 1) {
-    return args.scopedManager || args.scopedDirector || args.scopedApprover || args.globalCfo || args.globalAdmin;
+    return (
+      args.scopedManager ||
+      args.scopedDirector ||
+      args.scopedApprover ||
+      args.globalCfo ||
+      args.globalAdmin
+    );
   }
   if (stage === 2) {
     return args.scopedDirector || args.scopedApprover || args.globalCfo || args.globalAdmin;

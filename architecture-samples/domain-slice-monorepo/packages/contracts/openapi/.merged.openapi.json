@@ -16,9 +16,7 @@
     "/assignments": {
       "post": {
         "operationId": "createAssignment",
-        "tags": [
-          "assignment"
-        ],
+        "tags": ["assignment"],
         "requestBody": {
           "required": true,
           "content": {
@@ -49,9 +47,7 @@
     "/bff/assignments/{id}": {
       "get": {
         "operationId": "getAssignmentDetail",
-        "tags": [
-          "assignment-bff"
-        ],
+        "tags": ["assignment-bff"],
         "parameters": [
           {
             "name": "id",
@@ -91,11 +87,7 @@
     "schemas": {
       "ErrorResponse": {
         "type": "object",
-        "required": [
-          "code",
-          "message",
-          "traceId"
-        ],
+        "required": ["code", "message", "traceId"],
         "properties": {
           "code": {
             "type": "string"
@@ -110,10 +102,7 @@
       },
       "CreateAssignmentCommand": {
         "type": "object",
-        "required": [
-          "id",
-          "assigneeId"
-        ],
+        "required": ["id", "assigneeId"],
         "properties": {
           "id": {
             "type": "string"
@@ -131,13 +120,7 @@
       },
       "AssignmentDetailBffResponse": {
         "type": "object",
-        "required": [
-          "id",
-          "title",
-          "assigneeLabel",
-          "statusLabel",
-          "updatedAt"
-        ],
+        "required": ["id", "title", "assigneeLabel", "statusLabel", "updatedAt"],
         "properties": {
           "id": {
             "type": "string"

@@ -1,74 +1,76 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseFilters } from "@nestjs/common";
-import { ServiceExceptionFilter } from "./service.exception-filter.js";
-import { ServiceComponentService } from "./service-component.service.js";
+import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseFilters } from '@nestjs/common';
+import { ServiceExceptionFilter } from './service.exception-filter.js';
+import { ServiceComponentService } from './service-component.service.js';
 
 @UseFilters(new ServiceExceptionFilter())
-@Controller("api/services")
+@Controller('api/services')
 export class ServiceComponentController {
-  constructor(@Inject(ServiceComponentService) private readonly components: ServiceComponentService) {}
+  constructor(
+    @Inject(ServiceComponentService) private readonly components: ServiceComponentService,
+  ) {}
 
-  @Get(":serviceId/components/:kind")
+  @Get(':serviceId/components/:kind')
   listVersions(
-    @Param("serviceId") serviceId: string,
-    @Param("kind") kind: string,
-    @Query("catalog") catalogId?: string,
+    @Param('serviceId') serviceId: string,
+    @Param('kind') kind: string,
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.listVersions(catalogId ?? "demo", kind, serviceId);
+    return this.components.listVersions(catalogId ?? 'demo', kind, serviceId);
   }
 
-  @Get(":serviceId/components/:kind/published")
+  @Get(':serviceId/components/:kind/published')
   listPublishedVersions(
-    @Param("serviceId") serviceId: string,
-    @Param("kind") kind: string,
-    @Query("catalog") catalogId?: string,
+    @Param('serviceId') serviceId: string,
+    @Param('kind') kind: string,
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.listPublishedVersions(catalogId ?? "demo", kind, serviceId);
+    return this.components.listPublishedVersions(catalogId ?? 'demo', kind, serviceId);
   }
 
-  @Get(":serviceId/assembly-candidates")
+  @Get(':serviceId/assembly-candidates')
   getAssemblyCandidates(
-    @Param("serviceId") serviceId: string,
-    @Query("catalog") catalogId?: string,
+    @Param('serviceId') serviceId: string,
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.getAssemblyCandidates(catalogId ?? "demo", serviceId);
+    return this.components.getAssemblyCandidates(catalogId ?? 'demo', serviceId);
   }
 
-  @Get(":serviceId/ownership/topology")
+  @Get(':serviceId/ownership/topology')
   getOwnershipTopologyAlignment(
-    @Param("serviceId") serviceId: string,
-    @Query("catalog") catalogId?: string,
-    @Query("version") version?: string,
+    @Param('serviceId') serviceId: string,
+    @Query('catalog') catalogId?: string,
+    @Query('version') version?: string,
   ) {
-    return this.components.getOwnershipTopologyAlignment(catalogId ?? "demo", serviceId, version);
+    return this.components.getOwnershipTopologyAlignment(catalogId ?? 'demo', serviceId, version);
   }
 
-  @Get(":serviceId/components/:kind/:version")
+  @Get(':serviceId/components/:kind/:version')
   get(
-    @Param("serviceId") serviceId: string,
-    @Param("kind") kind: string,
-    @Param("version") version: string,
-    @Query("catalog") catalogId?: string,
+    @Param('serviceId') serviceId: string,
+    @Param('kind') kind: string,
+    @Param('version') version: string,
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.get(catalogId ?? "demo", kind, serviceId, version);
+    return this.components.get(catalogId ?? 'demo', kind, serviceId, version);
   }
 
-  @Put(":serviceId/components/:kind/:version")
+  @Put(':serviceId/components/:kind/:version')
   upsert(
-    @Param("serviceId") serviceId: string,
-    @Param("kind") kind: string,
-    @Param("version") version: string,
+    @Param('serviceId') serviceId: string,
+    @Param('kind') kind: string,
+    @Param('version') version: string,
     @Body() body: unknown,
-    @Query("catalog") catalogId?: string,
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.upsert(catalogId ?? "demo", kind, serviceId, version, body);
+    return this.components.upsert(catalogId ?? 'demo', kind, serviceId, version, body);
   }
 
-  @Post(":serviceId/runtime-addresses/sync")
+  @Post(':serviceId/runtime-addresses/sync')
   syncRuntimeAddress(
-    @Param("serviceId") serviceId: string,
+    @Param('serviceId') serviceId: string,
     @Body() body: {
       runtimeAddressVersion: string;
       namespace: string;
@@ -76,14 +78,14 @@ export class ServiceComponentController {
       env: string;
       region: string;
     },
-    @Query("catalog") catalogId?: string,
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.syncRuntimeAddress(catalogId ?? "demo", serviceId, body);
+    return this.components.syncRuntimeAddress(catalogId ?? 'demo', serviceId, body);
   }
 
-  @Post(":serviceId/deployments/sync")
+  @Post(':serviceId/deployments/sync')
   syncDeployment(
-    @Param("serviceId") serviceId: string,
+    @Param('serviceId') serviceId: string,
     @Body() body: {
       deploymentVersion: string;
       runtime: {
@@ -100,19 +102,19 @@ export class ServiceComponentController {
       urn?: string;
       outputs?: Record<string, unknown>;
     },
-    @Query("catalog") catalogId?: string,
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.syncDeployment(catalogId ?? "demo", serviceId, body);
+    return this.components.syncDeployment(catalogId ?? 'demo', serviceId, body);
   }
 
-  @Post(":serviceId/components/:kind/:version/transition")
+  @Post(':serviceId/components/:kind/:version/transition')
   transition(
-    @Param("serviceId") serviceId: string,
-    @Param("kind") kind: string,
-    @Param("version") version: string,
-    @Body() body: { state: "draft" | "published" | "deprecated" | "archived" },
-    @Query("catalog") catalogId?: string,
+    @Param('serviceId') serviceId: string,
+    @Param('kind') kind: string,
+    @Param('version') version: string,
+    @Body() body: { state: 'draft' | 'published' | 'deprecated' | 'archived' },
+    @Query('catalog') catalogId?: string,
   ) {
-    return this.components.transition(catalogId ?? "demo", kind, serviceId, version, body.state);
+    return this.components.transition(catalogId ?? 'demo', kind, serviceId, version, body.state);
   }
 }

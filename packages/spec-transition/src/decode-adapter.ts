@@ -11,8 +11,8 @@
  * decode 실패 시 해당 prefix skip (에러 격리).
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { parseSerializedAddress, decodePrefixAsResult } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
+import { parseSerializedAddress, decodePrefixAsResult } from '@qa-sdk/core';
 
 /**
  * 인코딩된 address_context를 디코딩하여 축 이름→entry 값 flat map으로 변환한다.
@@ -36,13 +36,13 @@ export function decodeAddressContext(
 
       for (const [label, dim] of Object.entries(decoded.dims)) {
         // axis 차원만 포함 — prefix_ref/table_ref는 건너뜀
-        if (dim.kind !== "axis") continue;
+        if (dim.kind !== 'axis') continue;
 
         result[label] = String(dim.value);
         // axisId가 label과 다르면 axisId로도 매핑 (TransitionSpec 호환)
         const prefixDef = catalog.prefixes?.[parsed.prefix];
         const dimDef = prefixDef?.dims[label];
-        if (dimDef?.kind === "axis" && dimDef.axisId !== label) {
+        if (dimDef?.kind === 'axis' && dimDef.axisId !== label) {
           result[dimDef.axisId] = String(dim.value);
         }
       }

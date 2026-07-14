@@ -1,6 +1,6 @@
 /** @def.boundary apm-codegen-system */
-import type { SchemaSnapshot, Axis } from "./types.js";
-import { toPascal, toEnumValue } from "./naming.js";
+import type { SchemaSnapshot, Axis } from './types.js';
+import { toPascal, toEnumValue } from './naming.js';
 
 export interface ProtoGenOptions {
   /** protobuf package 이름 (기본: qa.apm.v1) */
@@ -14,11 +14,8 @@ export interface ProtoGenOptions {
  * 1. 축별 enum (entries → enum values, 0 = UNSPECIFIED)
  * 2. ApmRecord / ApmEnvelope / MetricPayload 코어 메시지
  */
-export function generateProto(
-  snapshot: SchemaSnapshot,
-  options: ProtoGenOptions = {},
-): string {
-  const pkg = options.packageName ?? "qa.apm.v1";
+export function generateProto(snapshot: SchemaSnapshot, options: ProtoGenOptions = {}): string {
+  const pkg = options.packageName ?? 'qa.apm.v1';
   const lines: string[] = [];
 
   lines.push(`// Generated from SchemaSnapshot "${snapshot.id}"`);
@@ -41,7 +38,7 @@ export function generateProto(
   // ── 코어 메시지 ────────────────────────────────────
   lines.push(...CORE_MESSAGES);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 function generateAxisEnum(axis: Axis): string[] {
@@ -50,7 +47,7 @@ function generateAxisEnum(axis: Axis): string[] {
 
   lines.push(`// ${axis.id} (capacity: ${axis.capacity})`);
   lines.push(`enum ${enumName} {`);
-  lines.push(`  ${toEnumValue(axis.id, "UNSPECIFIED")} = 0;`);
+  lines.push(`  ${toEnumValue(axis.id, 'UNSPECIFIED')} = 0;`);
 
   for (let i = 0; i < axis.entries.length; i++) {
     lines.push(`  ${toEnumValue(axis.id, axis.entries[i])} = ${i + 1};`);

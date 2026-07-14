@@ -1,7 +1,7 @@
-import type { Config } from "drizzle-kit";
+import type { Config } from 'drizzle-kit';
 
 export default {
-  schema: "./src/pm/pg/schema.ts",
-  out: "./drizzle/pg",
-  dialect: "postgresql",
+  schema: './src/pm/pg/schema.ts',
+  out: './drizzle/pg',
+  dialect: 'postgresql',
 } satisfies Config;

@@ -1,13 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { toMemberProjectId, toMemberUserId } from "./member.ids.js";
-import { MemberRoleConflictException } from "./member.exceptions.js";
-import type {
-  MemberProps,
-  MemberRole,
-  MemberSnapshot,
-} from "./member.types.js";
+import { toMemberProjectId, toMemberUserId } from './member.ids.js';
+import { MemberRoleConflictException } from './member.exceptions.js';
+import type { MemberProps, MemberRole, MemberSnapshot } from './member.types.js';
 
 /**
  * Member Aggregate.
@@ -46,7 +42,7 @@ export class MemberEntity {
    * 역할 변경. viewer → lead 는 직접 전이 금지 (contributor 경유 정책).
    */
   changeRole(next: MemberRole): MemberEntity {
-    if (this.props.role === "viewer" && next === "lead") {
+    if (this.props.role === 'viewer' && next === 'lead') {
       throw new MemberRoleConflictException(`viewer -> lead`);
     }
     return new MemberEntity({ ...this.props, role: next });

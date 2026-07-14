@@ -1,8 +1,8 @@
 {
   "name": "weighted-index-explorer",
   "version": "0.1.0",
-  "description": "weighted-index 개념을 탐색하는 브라우저 데모 앱",
   "private": true,
+  "description": "weighted-index 개념을 탐색하는 브라우저 데모 앱",
   "type": "module",
   "scripts": {
     "dev": "vite",

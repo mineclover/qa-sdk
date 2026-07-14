@@ -10,10 +10,10 @@ declare const __brand: unique symbol;
 export type Brand<T, B extends string> = T & { readonly [__brand]: B };
 
 /** 문서 좌표 주소 (scope × aspect × depth × seq) */
-export type DocumentAddress = Brand<number, "DocumentAddress">;
+export type DocumentAddress = Brand<number, 'DocumentAddress'>;
 
 /** prefix 가중치 주소 (WeightedIndex 인코딩 결과) */
-export type PrefixAddress = Brand<number, "PrefixAddress">;
+export type PrefixAddress = Brand<number, 'PrefixAddress'>;
 
 /** 문서 주소 생성 */
 export function documentAddress(n: number): DocumentAddress {

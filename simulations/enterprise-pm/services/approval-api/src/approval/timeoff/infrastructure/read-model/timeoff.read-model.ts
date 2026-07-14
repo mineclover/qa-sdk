@@ -4,8 +4,8 @@
 import {
   TimeOffReadModelQuery,
   type TimeOffDetailReadModel,
-} from "../../application/queries/timeoff-read-model.query.js";
-import type { TimeOffRepositoryPort } from "../../application/ports/timeoff-repository.port.js";
+} from '../../application/queries/timeoff-read-model.query.js';
+import type { TimeOffRepositoryPort } from '../../application/ports/timeoff-repository.port.js';
 
 export class RepositoryTimeOffReadModel extends TimeOffReadModelQuery {
   constructor(private readonly repository: TimeOffRepositoryPort) {

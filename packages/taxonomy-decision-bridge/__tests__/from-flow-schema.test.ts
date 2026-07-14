@@ -1,12 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { parseDecisionFile } from "../src/decision-file.js";
-import { toFlowSchema, extractEvidence } from "../src/to-flow-schema.js";
-import {
-  toMarkdown,
-  toMarkdownText,
-  extractOptionAnnotations,
-} from "../src/from-flow-schema.js";
-import type { DecisionFile } from "../src/decision-file.js";
+import { describe, it, expect } from 'vitest';
+import { parseDecisionFile } from '../src/decision-file.js';
+import { toFlowSchema, extractEvidence } from '../src/to-flow-schema.js';
+import { toMarkdown, toMarkdownText, extractOptionAnnotations } from '../src/from-flow-schema.js';
+import type { DecisionFile } from '../src/decision-file.js';
 
 const RICH_DECISION = `---
 id: cue-boundary
@@ -41,8 +37,8 @@ function parse(text: string): DecisionFile {
   return parseDecisionFile(text);
 }
 
-describe("toMarkdown", () => {
-  it("FlowSchema + lifecycle → DecisionFile (markers 보존)", () => {
+describe('toMarkdown', () => {
+  it('FlowSchema + lifecycle → DecisionFile (markers 보존)', () => {
     const original = parse(RICH_DECISION);
     const schema = toFlowSchema(original);
     const evidence = extractEvidence(original);
@@ -61,14 +57,12 @@ describe("toMarkdown", () => {
     expect(reconstructed.markers.options).toEqual(original.markers.options);
     expect(reconstructed.markers.evidence).toEqual(original.markers.evidence);
     expect(reconstructed.markers.outcome).toBe(original.markers.outcome);
-    expect(reconstructed.markers.phase).toBe("evaluate");
-    expect(reconstructed.markers.weight).toBe("core");
-    expect(reconstructed.markers.dependsOn).toEqual([
-      { gateId: "scope-mode", kind: "constrains" },
-    ]);
+    expect(reconstructed.markers.phase).toBe('evaluate');
+    expect(reconstructed.markers.weight).toBe('core');
+    expect(reconstructed.markers.dependsOn).toEqual([{ gateId: 'scope-mode', kind: 'constrains' }]);
   });
 
-  it("toFlowSchema → toMarkdown → parse → toFlowSchema 라운드트립 (의미 보존)", () => {
+  it('toFlowSchema → toMarkdown → parse → toFlowSchema 라운드트립 (의미 보존)', () => {
     const original = parse(RICH_DECISION);
     const schema = toFlowSchema(original);
     const evidence = extractEvidence(original);
@@ -90,82 +84,80 @@ describe("toMarkdown", () => {
     expect(schema2.gates[0].weight).toBe(schema.gates[0].weight);
     expect(schema2.gates[0].branches).toEqual(schema.gates[0].branches);
     expect(schema2.gates[0].affects).toEqual(schema.gates[0].affects);
-    expect(schema2.gates[0].requiredEvidence).toEqual(
-      schema.gates[0].requiredEvidence,
-    );
+    expect(schema2.gates[0].requiredEvidence).toEqual(schema.gates[0].requiredEvidence);
     expect(schema2.outcomes).toEqual(schema.outcomes);
   });
 
-  it("phase/weight default → 마커 생략", () => {
+  it('phase/weight default → 마커 생략', () => {
     const text = toMarkdownText({
       schema: {
-        id: "x",
-        name: "Decision: x",
-        description: "단순 질문",
-        version: "1",
+        id: 'x',
+        name: 'Decision: x',
+        description: '단순 질문',
+        version: '1',
         gates: [
           {
-            id: "decide",
-            name: "결정",
-            phase: "decide",
-            weight: "tactical",
+            id: 'decide',
+            name: '결정',
+            phase: 'decide',
+            weight: 'tactical',
             branches: [],
           },
         ],
         unit: {
-          topic: "x",
-          objective: "단순 질문",
+          topic: 'x',
+          objective: '단순 질문',
           successCriteria: [],
         },
       },
-      lifecycle: "draft",
+      lifecycle: 'draft',
     });
     expect(text).not.toMatch(/\^phase:/);
     expect(text).not.toMatch(/\^weight:/);
-    expect(text).toContain("^purpose");
+    expect(text).toContain('^purpose');
   });
 
-  it("lifecycle != approved → outcome 생략", () => {
+  it('lifecycle != approved → outcome 생략', () => {
     const text = toMarkdownText({
       schema: {
-        id: "x",
-        name: "Decision: x",
-        description: "질문",
-        version: "1",
+        id: 'x',
+        name: 'Decision: x',
+        description: '질문',
+        version: '1',
         gates: [
           {
-            id: "decide",
-            name: "결정",
-            phase: "decide",
-            weight: "tactical",
+            id: 'decide',
+            name: '결정',
+            phase: 'decide',
+            weight: 'tactical',
             branches: [],
           },
         ],
-        unit: { topic: "x", objective: "질문", successCriteria: [] },
+        unit: { topic: 'x', objective: '질문', successCriteria: [] },
       },
-      lifecycle: "review",
-      outcome: "이건 안 들어감",
+      lifecycle: 'review',
+      outcome: '이건 안 들어감',
     });
-    expect(text).not.toContain("^outcome");
-    expect(text).not.toContain("이건 안 들어감");
+    expect(text).not.toContain('^outcome');
+    expect(text).not.toContain('이건 안 들어감');
   });
 
-  it("schema gates 0개 → throw", () => {
+  it('schema gates 0개 → throw', () => {
     expect(() =>
       toMarkdown({
         schema: {
-          id: "x",
-          name: "Empty",
-          description: "",
-          version: "1",
+          id: 'x',
+          name: 'Empty',
+          description: '',
+          version: '1',
           gates: [],
         },
-        lifecycle: "draft",
+        lifecycle: 'draft',
       }),
     ).toThrow(/gate가 0/);
   });
 
-  it("multi-gate schema → ^gate:<id> 섹션 N개 생성 + 라운드트립", () => {
+  it('multi-gate schema → ^gate:<id> 섹션 N개 생성 + 라운드트립', () => {
     const MULTI = `---
 id: multi
 subject: "tax:test:multi"
@@ -205,27 +197,27 @@ updated: 2026-05-22T00:00:00Z
       created: original.meta.created,
       updated: original.meta.updated,
     });
-    expect(text).toContain("^gate:risk");
-    expect(text).toContain("^gate:scope");
-    expect(text).toContain("^phase:evaluate");
-    expect(text).toContain("^weight:core");
-    expect(text).toContain("^depends_on:risk:constrains");
+    expect(text).toContain('^gate:risk');
+    expect(text).toContain('^gate:scope');
+    expect(text).toContain('^phase:evaluate');
+    expect(text).toContain('^weight:core');
+    expect(text).toContain('^depends_on:risk:constrains');
 
     // 라운드트립 — 두 gate 구조 보존
     const reparsed = parse(text);
     const schema2 = toFlowSchema(reparsed);
     expect(schema2.gates).toHaveLength(2);
-    expect(schema2.gates[0].id).toBe("risk");
-    expect(schema2.gates[0].phase).toBe("evaluate");
-    expect(schema2.gates[0].weight).toBe("core");
-    expect(schema2.gates[1].id).toBe("scope");
-    expect(schema2.gates[1].affects).toEqual([{ gateId: "risk", kind: "constrains" }]);
-    expect(schema2.gates[0].branches?.map((b) => b.id)).toEqual(["low", "high"]);
-    expect(schema2.gates[1].branches?.map((b) => b.id)).toEqual(["expand", "shrink"]);
+    expect(schema2.gates[0].id).toBe('risk');
+    expect(schema2.gates[0].phase).toBe('evaluate');
+    expect(schema2.gates[0].weight).toBe('core');
+    expect(schema2.gates[1].id).toBe('scope');
+    expect(schema2.gates[1].affects).toEqual([{ gateId: 'risk', kind: 'constrains' }]);
+    expect(schema2.gates[0].branches?.map((b) => b.id)).toEqual(['low', 'high']);
+    expect(schema2.gates[1].branches?.map((b) => b.id)).toEqual(['expand', 'shrink']);
   });
 });
 
-describe("option annotation 라운드트립", () => {
+describe('option annotation 라운드트립', () => {
   const WITH_ANNOTATIONS = `---
 id: opt-eval
 subject: 옵션 평가
@@ -251,15 +243,15 @@ A의 이점 ^benefit:a
 B의 위험 ^risk:b
 `;
 
-  it("extractOptionAnnotations — 옵션별 annotation 추출", () => {
+  it('extractOptionAnnotations — 옵션별 annotation 추출', () => {
     const file = parseDecisionFile(WITH_ANNOTATIONS);
     const map = extractOptionAnnotations(file);
     expect(map.a?.length).toBe(2);
-    expect(map.a?.map((x) => x.kind).sort()).toEqual(["benefit", "cost"]);
-    expect(map.b?.[0].kind).toBe("risk");
+    expect(map.a?.map((x) => x.kind).sort()).toEqual(['benefit', 'cost']);
+    expect(map.b?.[0].kind).toBe('risk');
   });
 
-  it("toMarkdown + optionAnnotations로 라운드트립 시 annotation 보존", () => {
+  it('toMarkdown + optionAnnotations로 라운드트립 시 annotation 보존', () => {
     const file = parseDecisionFile(WITH_ANNOTATIONS);
     const schema = toFlowSchema(file);
     const md = toMarkdownText({
@@ -271,16 +263,13 @@ B의 위험 ^risk:b
       updated: file.meta.updated,
     });
     const reparsed = parseDecisionFile(md);
-    const optA = reparsed.markers.options.find((o) => o.id === "a");
-    expect(optA?.annotations?.map((x) => x.kind).sort()).toEqual([
-      "benefit",
-      "cost",
-    ]);
-    const optB = reparsed.markers.options.find((o) => o.id === "b");
-    expect(optB?.annotations?.[0].kind).toBe("risk");
+    const optA = reparsed.markers.options.find((o) => o.id === 'a');
+    expect(optA?.annotations?.map((x) => x.kind).sort()).toEqual(['benefit', 'cost']);
+    const optB = reparsed.markers.options.find((o) => o.id === 'b');
+    expect(optB?.annotations?.[0].kind).toBe('risk');
   });
 
-  it("annotation 없으면 라운드트립이 plain options만 생성", () => {
+  it('annotation 없으면 라운드트립이 plain options만 생성', () => {
     const file = parseDecisionFile(`---
 id: x
 subject: y
@@ -296,8 +285,8 @@ opt A ^option:a
       schema,
       lifecycle: file.meta.lifecycle,
     });
-    expect(md).not.toContain("^cost:");
-    expect(md).not.toContain("^benefit:");
-    expect(md).not.toContain("^risk:");
+    expect(md).not.toContain('^cost:');
+    expect(md).not.toContain('^benefit:');
+    expect(md).not.toContain('^risk:');
   });
 });

@@ -1,19 +1,13 @@
-import type {
-  CognitivePhase,
-  Evidence,
-  FlowSchema,
-  GateSchema,
-  GateWeight,
-} from "decision-flow";
-import type { Lifecycle } from "taxonomy-engine";
+import type { CognitivePhase, Evidence, FlowSchema, GateSchema, GateWeight } from 'decision-flow';
+import type { Lifecycle } from 'taxonomy-engine';
 import type {
   DecisionFile,
   DecisionMeta,
   GateDependency,
   GateMarkers,
   OptionAnnotation,
-} from "./decision-file.js";
-import { serializeDecisionFile } from "./decision-file.js";
+} from './decision-file.js';
+import { serializeDecisionFile } from './decision-file.js';
 
 export type ToMarkdownOptions = {
   schema: FlowSchema;
@@ -32,8 +26,8 @@ export type ToMarkdownOptions = {
   optionAnnotations?: Record<string, readonly OptionAnnotation[]>;
 };
 
-const DEFAULT_PHASE: CognitivePhase = "decide";
-const DEFAULT_WEIGHT: GateWeight = "tactical";
+const DEFAULT_PHASE: CognitivePhase = 'decide';
+const DEFAULT_WEIGHT: GateWeight = 'tactical';
 
 /**
  * FlowSchema → DecisionFile (markdown). toFlowSchema의 역함수.
@@ -44,10 +38,10 @@ const DEFAULT_WEIGHT: GateWeight = "tactical";
 export function toMarkdown(opts: ToMarkdownOptions): DecisionFile {
   const { schema, lifecycle } = opts;
   if (schema.gates.length === 0) {
-    throw new Error("toMarkdown: schema에 gate가 0개");
+    throw new Error('toMarkdown: schema에 gate가 0개');
   }
   const subject = schema.unit?.topic ?? schema.name;
-  const purpose = schema.unit?.objective ?? schema.description ?? "(목적 미정)";
+  const purpose = schema.unit?.objective ?? schema.description ?? '(목적 미정)';
   const now = new Date().toISOString();
 
   const meta: DecisionMeta = {
@@ -60,7 +54,7 @@ export function toMarkdown(opts: ToMarkdownOptions): DecisionFile {
 
   const isMulti = schema.gates.length > 1;
   const allEvidence = opts.evidence ?? [];
-  const outcomeForBody = lifecycle === "approved" ? opts.outcome : undefined;
+  const outcomeForBody = lifecycle === 'approved' ? opts.outcome : undefined;
   const annotations = opts.optionAnnotations ?? {};
 
   const body = isMulti
@@ -83,8 +77,20 @@ export function toMarkdown(opts: ToMarkdownOptions): DecisionFile {
     meta,
     body,
     markers: isMulti
-      ? buildMultiGateMarkers({ purpose, gates: schema.gates, evidence: allEvidence, outcomeForBody, annotations })
-      : buildSingleGateMarkers({ purpose, gate: schema.gates[0], evidence: allEvidence, outcomeForBody, annotations }),
+      ? buildMultiGateMarkers({
+          purpose,
+          gates: schema.gates,
+          evidence: allEvidence,
+          outcomeForBody,
+          annotations,
+        })
+      : buildSingleGateMarkers({
+          purpose,
+          gate: schema.gates[0],
+          evidence: allEvidence,
+          outcomeForBody,
+          annotations,
+        }),
   };
 }
 
@@ -132,9 +138,7 @@ function buildSingleGateMarkers(opts: {
     outcome: outcomeForBody,
     phase: gate.phase !== DEFAULT_PHASE ? gate.phase : undefined,
     weight:
-      (gate.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT
-        ? (gate.weight as GateWeight)
-        : undefined,
+      (gate.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT ? (gate.weight as GateWeight) : undefined,
     dependsOn: [...(gate.affects ?? [])],
     gates: [],
   };
@@ -148,7 +152,7 @@ function buildSingleGateBody(opts: {
   annotations: Record<string, readonly OptionAnnotation[]>;
 }): string {
   const { gate, evidence, outcome, annotations } = opts;
-  const lines: string[] = ["", "# Decision\n"];
+  const lines: string[] = ['', '# Decision\n'];
   const purposeMarkers = inlineMarkers({
     phase: gate.phase,
     weight: gate.weight ?? DEFAULT_WEIGHT,
@@ -160,7 +164,7 @@ function buildSingleGateBody(opts: {
   lines.push(...renderEvidence(evidence));
   lines.push(...renderOutcome(outcome));
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── multi-gate ──────────────────────────────────────────
@@ -190,17 +194,12 @@ function gateSchemaToMarkers(
   // multi-gate evidence 분배: gate.requiredEvidence kind에 매칭되는 것만 그 gate에 할당.
   // 추정만 — 정확한 매핑은 toFlowSchema → toMarkdown 라운드트립에서만 필요.
   const required = new Set(g.requiredEvidence ?? []);
-  const gateEvidence = required.size > 0
-    ? allEvidence.filter((e) => required.has(e.kind))
-    : [];
+  const gateEvidence = required.size > 0 ? allEvidence.filter((e) => required.has(e.kind)) : [];
   return {
     id: g.id,
     name: g.name !== g.id ? g.name : undefined,
     phase: g.phase !== DEFAULT_PHASE ? g.phase : undefined,
-    weight:
-      (g.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT
-        ? (g.weight as GateWeight)
-        : undefined,
+    weight: (g.weight ?? DEFAULT_WEIGHT) !== DEFAULT_WEIGHT ? (g.weight as GateWeight) : undefined,
     options: (g.branches ?? []).map((b) => ({
       id: b.id,
       body: b.label,
@@ -218,7 +217,7 @@ function buildMultiGateBody(opts: {
   outcome: string | undefined;
   annotations: Record<string, readonly OptionAnnotation[]>;
 }): string {
-  const lines: string[] = ["", "# Decision\n", `${opts.purpose} ^purpose\n`];
+  const lines: string[] = ['', '# Decision\n', `${opts.purpose} ^purpose\n`];
   for (const g of opts.gates) {
     lines.push(`## Gate: ${g.name ?? g.id}\n`);
     const gateMarkers = inlineMarkers({
@@ -229,14 +228,11 @@ function buildMultiGateBody(opts: {
     lines.push(`^gate:${g.id}${formatInline(gateMarkers)}\n`);
     lines.push(...renderOptions(g.branches ?? [], opts.annotations));
     const required = new Set(g.requiredEvidence ?? []);
-    const gateEvidence =
-      required.size > 0
-        ? opts.evidence.filter((e) => required.has(e.kind))
-        : [];
+    const gateEvidence = required.size > 0 ? opts.evidence.filter((e) => required.has(e.kind)) : [];
     lines.push(...renderEvidence(gateEvidence));
   }
   lines.push(...renderOutcome(opts.outcome));
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── shared helpers ──────────────────────────────────────
@@ -258,7 +254,7 @@ function inlineMarkers(opts: {
 }
 
 function formatInline(markers: string[]): string {
-  return markers.length > 0 ? ` ${markers.join(" ")}` : "";
+  return markers.length > 0 ? ` ${markers.join(' ')}` : '';
 }
 
 function renderOptions(
@@ -266,7 +262,7 @@ function renderOptions(
   annotations: Record<string, readonly OptionAnnotation[]>,
 ): string[] {
   if (branches.length === 0) return [];
-  const lines: string[] = ["## 옵션\n"];
+  const lines: string[] = ['## 옵션\n'];
   for (const b of branches) {
     lines.push(`${b.label} ^option:${b.id}\n`);
     const anns = annotations[b.id] ?? [];
@@ -279,7 +275,7 @@ function renderOptions(
 
 function renderEvidence(evidence: readonly Evidence[]): string[] {
   if (evidence.length === 0) return [];
-  const lines: string[] = ["## 증거\n"];
+  const lines: string[] = ['## 증거\n'];
   for (const e of evidence) {
     lines.push(`${e.content} ^evidence:${e.kind} weight=${e.weight}\n`);
   }
@@ -288,5 +284,5 @@ function renderEvidence(evidence: readonly Evidence[]): string[] {
 
 function renderOutcome(outcome: string | undefined): string[] {
   if (!outcome) return [];
-  return ["## 결정\n", `${outcome} ^outcome\n`];
+  return ['## 결정\n', `${outcome} ^outcome\n`];
 }

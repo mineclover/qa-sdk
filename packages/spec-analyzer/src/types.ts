@@ -5,7 +5,7 @@
  * Spec Analyzer 핵심 타입.
  */
 
-export type SymbolKind = "function" | "type" | "endpoint" | "class";
+export type SymbolKind = 'function' | 'type' | 'endpoint' | 'class';
 
 /** 문서에서 추출한 선언 1건 */
 export interface DeclaredSymbol {

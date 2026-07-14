@@ -1,17 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { renderBenchmarkReport } from "./report.js";
-import type { BenchmarkRunSummary } from "./types.js";
+import { describe, expect, it } from 'vitest';
+import { renderBenchmarkReport } from './report.js';
+import type { BenchmarkRunSummary } from './types.js';
 
-describe("renderBenchmarkReport", () => {
-  it("markdown report를 사람이 읽을 수 있는 형태로 렌더링한다", () => {
+describe('renderBenchmarkReport', () => {
+  it('markdown report를 사람이 읽을 수 있는 형태로 렌더링한다', () => {
     const summary: BenchmarkRunSummary = {
-      scenarioId: "checkout",
-      scenarioName: "Checkout Journey",
+      scenarioId: 'checkout',
+      scenarioName: 'Checkout Journey',
       concurrency: 2,
       warmupIterations: 1,
       measuredIterations: 5,
-      startedAt: "2026-03-29T00:00:00.000Z",
-      completedAt: "2026-03-29T00:00:01.000Z",
+      startedAt: '2026-03-29T00:00:00.000Z',
+      completedAt: '2026-03-29T00:00:01.000Z',
       elapsedMs: 1000,
       scenarioRate: 5,
       scenarioLatencyMs: { min: 1, avg: 2, p50: 2, p95: 3, p99: 4, max: 5 },
@@ -31,21 +31,21 @@ describe("renderBenchmarkReport", () => {
           totalRecords: 30,
           recordsWithAddressContext: 30,
           prefixes: { service: 30, flow_point: 10, tracking: 20 },
-          uniquePrefixes: ["flow_point", "service", "tracking"],
+          uniquePrefixes: ['flow_point', 'service', 'tracking'],
         },
       },
     };
 
     const report = renderBenchmarkReport(summary, {
-      format: "markdown",
-      metadata: { transport: "noop", service: "shop/shopping-web" },
+      format: 'markdown',
+      metadata: { transport: 'noop', service: 'shop/shopping-web' },
     });
 
-    expect(report).toContain("# Benchmark Report");
-    expect(report).toContain("## Throughput");
-    expect(report).toContain("transport: `noop`");
-    expect(report).toContain("| envelopes | 5 |");
-    expect(report).toContain("## Address Context");
-    expect(report).toContain("| flow_point | 10 |");
+    expect(report).toContain('# Benchmark Report');
+    expect(report).toContain('## Throughput');
+    expect(report).toContain('transport: `noop`');
+    expect(report).toContain('| envelopes | 5 |');
+    expect(report).toContain('## Address Context');
+    expect(report).toContain('| flow_point | 10 |');
   });
 });

@@ -1,21 +1,16 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import { REGISTRY_SERVICE } from "../../registry-core.module.js";
-import { RegistryService } from "../../lib/registry-service.js";
-import { analyze } from "../../lib/draft-workspace.js";
-import { badRequest } from "../../lib/errors.js";
-import {
-  importSchema,
-  type SchemaSnapshot,
-} from "../../schemas/schema-snapshot.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { REGISTRY_SERVICE } from '../../registry-core.module.js';
+import { RegistryService } from '../../lib/registry-service.js';
+import { analyze } from '../../lib/draft-workspace.js';
+import { badRequest } from '../../lib/errors.js';
+import { importSchema, type SchemaSnapshot } from '../../schemas/schema-snapshot.js';
 
 @Injectable()
 export class SchemaService {
-  constructor(
-    @Inject(REGISTRY_SERVICE) private readonly registry: RegistryService,
-  ) {}
+  constructor(@Inject(REGISTRY_SERVICE) private readonly registry: RegistryService) {}
 
   async importSchema(input: unknown) {
     const body = importSchema.parse(input);
@@ -28,9 +23,9 @@ export class SchemaService {
       if (!existing) {
         await this.registry.registerPrefix({
           prefix: axis.id,
-          owner: "schema-import",
-          kind: "leaf",
-          numberType: "number",
+          owner: 'schema-import',
+          kind: 'leaf',
+          numberType: 'number',
         });
       }
 
@@ -51,8 +46,8 @@ export class SchemaService {
         await this.registry.registerPrefix({
           prefix: composite.id,
           owner: composite.owner,
-          kind: "composite",
-          numberType: "number",
+          kind: 'composite',
+          numberType: 'number',
         });
       }
 
@@ -100,7 +95,7 @@ export class SchemaService {
 
     if (axisIds.size + compositeIds.size !== allIds.size) {
       const overlap = [...axisIds].filter((id) => compositeIds.has(id));
-      throw badRequest(`Axis와 composite 사이에 ID 중복: ${overlap.join(", ")}`);
+      throw badRequest(`Axis와 composite 사이에 ID 중복: ${overlap.join(', ')}`);
     }
 
     for (const composite of snapshot.composites) {
@@ -120,7 +115,7 @@ export class SchemaService {
         return;
       }
       if (visiting.has(id)) {
-        throw badRequest(`순환참조 감지: ${[...path, id].join(" → ")}`);
+        throw badRequest(`순환참조 감지: ${[...path, id].join(' → ')}`);
       }
 
       visiting.add(id);
@@ -141,8 +136,8 @@ export class SchemaService {
 
   private async buildSchemaSnapshot(versionId?: string): Promise<SchemaSnapshot> {
     const prefixes = await this.registry.listPrefixes();
-    const axes: SchemaSnapshot["axes"] = [];
-    const composites: SchemaSnapshot["composites"] = [];
+    const axes: SchemaSnapshot['axes'] = [];
+    const composites: SchemaSnapshot['composites'] = [];
 
     for (const prefix of prefixes) {
       let version: { versionId: string; capacity: number } | null = null;
@@ -165,7 +160,7 @@ export class SchemaService {
         continue;
       }
 
-      if (prefix.kind === "leaf") {
+      if (prefix.kind === 'leaf') {
         axes.push({ id: prefix.prefix, entries: [], capacity: version.capacity });
         continue;
       }
@@ -179,7 +174,7 @@ export class SchemaService {
     }
 
     return {
-      id: versionId ?? "active",
+      id: versionId ?? 'active',
       axes,
       composites,
     };

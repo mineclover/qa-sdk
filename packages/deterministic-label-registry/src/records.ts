@@ -1,7 +1,5 @@
 // @def.doc deterministic-label-architecture
-import type {
-  CompletedRecordState,
-} from "doc-envelope";
+import type { CompletedRecordState } from 'doc-envelope';
 import {
   buildSemanticCoordinateCandidate,
   semanticCoordinateDiagnostic,
@@ -10,7 +8,7 @@ import {
   type SemanticCoordinateDiagnostic,
   type SemanticCoordinateLabelKind,
   type SemanticPhysicalRef,
-} from "./coordinate.js";
+} from './coordinate.js';
 import {
   collectSemanticCoordinateCandidatesFromDocuments,
   documentIdentityValues,
@@ -20,7 +18,7 @@ import {
   sourceSubtype,
   type SemanticCoordinateCandidateInventoryOptions,
   type SemanticCoordinateSkippedDocument,
-} from "./projection.js";
+} from './projection.js';
 import {
   asString,
   metadataStringArray,
@@ -28,14 +26,9 @@ import {
   normalizeMetadata,
   normalizeRecordRefs,
   uniqueStrings,
-} from "./shared.js";
-import { isTransientDocument } from "doc-envelope";
-import type {
-  DocumentEnvelope,
-  DocumentLink,
-  DocumentMetadata,
-  DocumentTask,
-} from "doc-envelope";
+} from './shared.js';
+import { isTransientDocument } from 'doc-envelope';
+import type { DocumentEnvelope, DocumentLink, DocumentMetadata, DocumentTask } from 'doc-envelope';
 
 export interface DeterministicLabelRecord {
   readonly label: string;
@@ -58,8 +51,7 @@ export interface DeterministicLabelRecordInput {
   readonly metadata?: DocumentMetadata | null;
 }
 
-export interface DeterministicLabelRecordProjectionOptions
-  extends SemanticCoordinateCandidateInventoryOptions {
+export interface DeterministicLabelRecordProjectionOptions extends SemanticCoordinateCandidateInventoryOptions {
   readonly completedRecords?: readonly CompletedRecordState[] | null;
 }
 
@@ -85,10 +77,7 @@ export function buildDeterministicLabelRecord(
     dependencyLabels: normalizeRecordRefs(input.dependencyLabels),
     sourceRefs: normalizeRecordRefs(input.sourceRefs),
     evidenceRefs: normalizeRecordRefs(input.evidenceRefs),
-    diagnostics: [
-      ...candidate.diagnostics,
-      ...(input.diagnostics ?? []),
-    ],
+    diagnostics: [...candidate.diagnostics, ...(input.diagnostics ?? [])],
     candidate,
     metadata: {
       ...candidate.metadata,
@@ -104,33 +93,28 @@ export function projectDeterministicLabelRecordsFromDocuments(
   const candidateInventory = collectSemanticCoordinateCandidatesFromDocuments(documents, options);
   const index = buildProjectionIndex(documents, candidateInventory.candidates);
   const completedRecords = buildCompletedRecordIndex(options.completedRecords);
-  const records = candidateInventory.candidates.map((candidate) => {
-    const document = index.documentByCandidate.get(candidate);
-    const task = document ? taskForCandidate(document, candidate) : undefined;
+  const records = candidateInventory.candidates
+    .map((candidate) => {
+      const document = index.documentByCandidate.get(candidate);
+      const task = document ? taskForCandidate(document, candidate) : undefined;
 
-    return buildDeterministicLabelRecord({
-      candidate,
-      dependencyLabels: document
-        ? dependencyLabelsForCandidate(index, document, candidate, task)
-        : [],
-      sourceRefs: document ? sourceRefsForCandidate(index, document, candidate) : [],
-      evidenceRefs: document
-        ? evidenceRefsForCandidate(index, document, candidate, task)
-        : [],
-      diagnostics: document
-        ? documentValidationDiagnosticsForCandidate(document, candidate)
-        : [],
-      metadata: document
-        ? projectionRecordMetadata(
-          document,
-          completedRecords.get(documentKey(document)),
-        )
-        : {
-          projection: "document-envelope",
-          documentScope: "unknown",
-        },
-    });
-  }).toSorted(compareDeterministicLabelRecords);
+      return buildDeterministicLabelRecord({
+        candidate,
+        dependencyLabels: document
+          ? dependencyLabelsForCandidate(index, document, candidate, task)
+          : [],
+        sourceRefs: document ? sourceRefsForCandidate(index, document, candidate) : [],
+        evidenceRefs: document ? evidenceRefsForCandidate(index, document, candidate, task) : [],
+        diagnostics: document ? documentValidationDiagnosticsForCandidate(document, candidate) : [],
+        metadata: document
+          ? projectionRecordMetadata(document, completedRecords.get(documentKey(document)))
+          : {
+              projection: 'document-envelope',
+              documentScope: 'unknown',
+            },
+      });
+    })
+    .toSorted(compareDeterministicLabelRecords);
 
   return {
     records,
@@ -148,9 +132,11 @@ export function compareDeterministicLabelRecords(
   left: DeterministicLabelRecord,
   right: DeterministicLabelRecord,
 ): number {
-  return left.label.localeCompare(right.label)
-    || left.kind.localeCompare(right.kind)
-    || firstPhysicalRef(left).localeCompare(firstPhysicalRef(right));
+  return (
+    left.label.localeCompare(right.label) ||
+    left.kind.localeCompare(right.kind) ||
+    firstPhysicalRef(left).localeCompare(firstPhysicalRef(right))
+  );
 }
 
 export function documentKey(document: DocumentEnvelope): string {
@@ -158,7 +144,7 @@ export function documentKey(document: DocumentEnvelope): string {
     document.adapterId,
     document.stableId,
     normalizeCoordinatePart(document.path) ?? document.path,
-  ].join("\u001f");
+  ].join('\u001f');
 }
 
 export function candidateDocumentKey(candidate: SemanticCoordinateCandidate): string | undefined {
@@ -166,7 +152,7 @@ export function candidateDocumentKey(candidate: SemanticCoordinateCandidate): st
   const stableId = asString(candidate.metadata.documentStableId);
   const path = asString(candidate.metadata.documentPath);
   if (!adapterId || !stableId || !path) return undefined;
-  return [adapterId, stableId, normalizeCoordinatePart(path) ?? path].join("\u001f");
+  return [adapterId, stableId, normalizeCoordinatePart(path) ?? path].join('\u001f');
 }
 
 /* --------------------------------------------------------------------------
@@ -216,7 +202,7 @@ function buildProjectionIndex(
     addCandidateReference(candidatesByReference, candidate.originalId, candidate);
     for (const ref of candidate.physicalRefs) {
       addCandidateReference(candidatesByReference, ref.ref, candidate);
-      addCandidateReference(candidatesByReference, ref.ref.split("#")[0], candidate);
+      addCandidateReference(candidatesByReference, ref.ref.split('#')[0], candidate);
     }
   }
 
@@ -233,7 +219,7 @@ function dependencyLabelsForCandidate(
   candidate: SemanticCoordinateCandidate,
   task: DocumentTask | undefined,
 ): readonly string[] {
-  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+  if (candidate.kind === 'source-file' || candidate.kind === 'evidence') {
     return [];
   }
 
@@ -248,15 +234,14 @@ function sourceRefsForCandidate(
   document: DocumentEnvelope,
   candidate: SemanticCoordinateCandidate,
 ): readonly string[] {
-  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+  if (candidate.kind === 'source-file' || candidate.kind === 'evidence') {
     return [];
   }
 
   return normalizeRecordRefs(
     candidatesForDocument(document, index)
-      .filter((item) =>
-        item.kind === "source-file"
-        && item.metadata.idSource === "document.source.path"
+      .filter(
+        (item) => item.kind === 'source-file' && item.metadata.idSource === 'document.source.path',
       )
       .map((item) => item.label),
   );
@@ -268,28 +253,24 @@ function evidenceRefsForCandidate(
   candidate: SemanticCoordinateCandidate,
   task: DocumentTask | undefined,
 ): readonly string[] {
-  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+  if (candidate.kind === 'source-file' || candidate.kind === 'evidence') {
     return [];
   }
 
   return normalizeRecordRefs([
     ...candidatesForDocument(document, index)
-      .filter((item) =>
-        item.kind === "evidence"
-        && item.metadata.idSource === "document.evidence.id"
+      .filter(
+        (item) => item.kind === 'evidence' && item.metadata.idSource === 'document.evidence.id',
       )
       .map((item) => item.label),
     ...(task ? task.evidenceIds.flatMap((id) => evidenceLabelsForId(index, id)) : []),
   ]);
 }
 
-function dependencyLabelsForLink(
-  index: ProjectionIndex,
-  link: DocumentLink,
-): readonly string[] {
+function dependencyLabelsForLink(index: ProjectionIndex, link: DocumentLink): readonly string[] {
   return labelsForReference(index, link.targetId, {
-    fallbackKind: "definition-doc",
-    fallbackSubtype: "spec",
+    fallbackKind: 'definition-doc',
+    fallbackSubtype: 'spec',
   });
 }
 
@@ -301,28 +282,26 @@ function taskDependencyLabels(
   return taskDependencyIds(task).flatMap((dependencyId) => {
     if (isPrdStoryId(dependencyId)) {
       const label = buildSemanticCoordinateCandidate({
-        kind: "prd-story",
-        parentId: prdDocumentIdFromPath(task.rawSource?.path ?? document.path)
-          ?? document.familyId
-          ?? document.stableId,
+        kind: 'prd-story',
+        parentId:
+          prdDocumentIdFromPath(task.rawSource?.path ?? document.path) ??
+          document.familyId ??
+          document.stableId,
         id: dependencyId,
       }).candidate?.label;
       return label ? [label] : [];
     }
     return labelsForReference(index, dependencyId, {
-      fallbackKind: "definition-doc",
-      fallbackSubtype: "spec",
+      fallbackKind: 'definition-doc',
+      fallbackSubtype: 'spec',
     });
   });
 }
 
-function evidenceLabelsForId(
-  index: ProjectionIndex,
-  evidenceId: string,
-): readonly string[] {
+function evidenceLabelsForId(index: ProjectionIndex, evidenceId: string): readonly string[] {
   return labelsForReference(index, evidenceId, {
-    fallbackKind: "evidence",
-    fallbackSubtype: "evidence",
+    fallbackKind: 'evidence',
+    fallbackSubtype: 'evidence',
   });
 }
 
@@ -336,10 +315,11 @@ function labelsForReference(
 ): readonly string[] {
   const normalized = normalizeCoordinatePart(reference);
   if (!normalized) return [];
-  if (normalized.startsWith("urn:")) return [normalized];
+  if (normalized.startsWith('urn:')) return [normalized];
 
-  const existing = index.candidatesByReference.get(normalized)
-    ?? index.candidatesByReference.get(normalized.replace(/\.(?:md|json)$/i, ""));
+  const existing =
+    index.candidatesByReference.get(normalized) ??
+    index.candidatesByReference.get(normalized.replace(/\.(?:md|json)$/i, ''));
   if (existing && existing.length > 0) {
     return preferredDocumentCandidates(existing).map((candidate) => candidate.label);
   }
@@ -357,25 +337,25 @@ function inferReferenceCandidateInput(
     readonly fallbackSubtype: string;
   },
 ): SemanticCoordinateCandidateInput {
-  const id = reference.replace(/\.(?:md|json)$/i, "");
-  if (reference.endsWith(".json") && reference.startsWith("tasks/")) {
+  const id = reference.replace(/\.(?:md|json)$/i, '');
+  if (reference.endsWith('.json') && reference.startsWith('tasks/')) {
     return {
-      kind: "ralph-prd-json",
+      kind: 'ralph-prd-json',
       id,
-      version: "v1",
+      version: 'v1',
     };
   }
-  if (reference.endsWith(".md") && reference.startsWith("tasks/")) {
+  if (reference.endsWith('.md') && reference.startsWith('tasks/')) {
     return {
-      kind: "prd-markdown",
+      kind: 'prd-markdown',
       id,
-      version: "v1",
+      version: 'v1',
     };
   }
   const sourcePath = pathLikeReference(reference);
   if (sourcePath) {
     return {
-      kind: "source-file",
+      kind: 'source-file',
       id: sourcePath,
       subtype: sourceSubtype(sourcePath),
     };
@@ -384,7 +364,7 @@ function inferReferenceCandidateInput(
     kind: fallback.fallbackKind,
     id: reference,
     subtype: fallback.fallbackSubtype,
-    version: "v1",
+    version: 'v1',
   };
 }
 
@@ -394,11 +374,11 @@ function projectionRecordMetadata(
 ): DocumentMetadata {
   const scope = documentInventoryScope(document);
   return {
-    projection: "document-envelope",
+    projection: 'document-envelope',
     documentScope: scope,
-    activeScope: scope === "active",
-    archiveScope: scope === "archive",
-    transientScope: scope === "transient",
+    activeScope: scope === 'active',
+    archiveScope: scope === 'archive',
+    transientScope: scope === 'transient',
     documentAdapterId: document.adapterId,
     documentKind: document.kind,
     documentStableId: document.stableId,
@@ -406,41 +386,41 @@ function projectionRecordMetadata(
     documentPath: document.path,
     ...(completedRecord
       ? {
-        completedRecord: {
-          source: completedRecord.source,
-          kind: completedRecord.kind,
-          documentId: completedRecord.documentId,
-          path: completedRecord.path,
-          state: completedRecord.state,
-          title: completedRecord.title,
-          ...(completedRecord.lifecycle ? { lifecycle: completedRecord.lifecycle } : {}),
-          ...(completedRecord.completedCount !== undefined
-            ? { completedCount: completedRecord.completedCount }
-            : {}),
-          ...(completedRecord.openCount !== undefined
-            ? { openCount: completedRecord.openCount }
-            : {}),
-          ...(completedRecord.storyCount !== undefined
-            ? { storyCount: completedRecord.storyCount }
-            : {}),
-          ...(completedRecord.passedStoryCount !== undefined
-            ? { passedStoryCount: completedRecord.passedStoryCount }
-            : {}),
-          ...(completedRecord.pairedDocumentId
-            ? { pairedDocumentId: completedRecord.pairedDocumentId }
-            : {}),
-          ...(completedRecord.pairedPath ? { pairedPath: completedRecord.pairedPath } : {}),
-          reason: completedRecord.reason,
-        },
-      }
+          completedRecord: {
+            source: completedRecord.source,
+            kind: completedRecord.kind,
+            documentId: completedRecord.documentId,
+            path: completedRecord.path,
+            state: completedRecord.state,
+            title: completedRecord.title,
+            ...(completedRecord.lifecycle ? { lifecycle: completedRecord.lifecycle } : {}),
+            ...(completedRecord.completedCount !== undefined
+              ? { completedCount: completedRecord.completedCount }
+              : {}),
+            ...(completedRecord.openCount !== undefined
+              ? { openCount: completedRecord.openCount }
+              : {}),
+            ...(completedRecord.storyCount !== undefined
+              ? { storyCount: completedRecord.storyCount }
+              : {}),
+            ...(completedRecord.passedStoryCount !== undefined
+              ? { passedStoryCount: completedRecord.passedStoryCount }
+              : {}),
+            ...(completedRecord.pairedDocumentId
+              ? { pairedDocumentId: completedRecord.pairedDocumentId }
+              : {}),
+            ...(completedRecord.pairedPath ? { pairedPath: completedRecord.pairedPath } : {}),
+            reason: completedRecord.reason,
+          },
+        }
       : {}),
   };
 }
 
-function documentInventoryScope(document: DocumentEnvelope): "active" | "archive" | "transient" {
-  if (isTransientDocument(document)) return "transient";
-  if (isCandidateArchiveDocument(document)) return "archive";
-  return "active";
+function documentInventoryScope(document: DocumentEnvelope): 'active' | 'archive' | 'transient' {
+  if (isTransientDocument(document)) return 'transient';
+  if (isCandidateArchiveDocument(document)) return 'archive';
+  return 'active';
 }
 
 function buildCompletedRecordIndex(
@@ -449,11 +429,9 @@ function buildCompletedRecordIndex(
   const index = new Map<string, CompletedRecordState>();
   for (const record of records ?? []) {
     index.set(
-      [
-        record.source,
-        record.documentId,
-        normalizeCoordinatePart(record.path) ?? record.path,
-      ].join("\u001f"),
+      [record.source, record.documentId, normalizeCoordinatePart(record.path) ?? record.path].join(
+        '\u001f',
+      ),
       record,
     );
   }
@@ -471,7 +449,7 @@ function taskForCandidate(
   document: DocumentEnvelope,
   candidate: SemanticCoordinateCandidate,
 ): DocumentTask | undefined {
-  if (candidate.kind !== "prd-story") return undefined;
+  if (candidate.kind !== 'prd-story') return undefined;
   const storyId = asString(candidate.metadata.storyId) ?? candidate.originalId;
   return document.tasks.find((task) => task.id === storyId);
 }
@@ -491,16 +469,17 @@ function preferredDocumentCandidates(
   candidates: readonly SemanticCoordinateCandidate[],
 ): readonly SemanticCoordinateCandidate[] {
   if (candidates.length <= 1) return candidates;
-  const documentLike = candidates.filter((candidate) =>
-    candidate.kind !== "source-file" && candidate.kind !== "evidence"
+  const documentLike = candidates.filter(
+    (candidate) => candidate.kind !== 'source-file' && candidate.kind !== 'evidence',
   );
   const pool = documentLike.length > 0 ? documentLike : candidates;
-  const preferred = pool.find((candidate) => candidate.metadata.idSource === "def.id")
-    ?? pool.find((candidate) => candidate.metadata.idSource === "artifactId")
-    ?? pool.find((candidate) => candidate.metadata.idSource === "packId")
-    ?? pool.find((candidate) => candidate.metadata.idSource === "sourcePath")
-    ?? pool.find((candidate) => candidate.metadata.idSource === "stableId")
-    ?? pool[0];
+  const preferred =
+    pool.find((candidate) => candidate.metadata.idSource === 'def.id') ??
+    pool.find((candidate) => candidate.metadata.idSource === 'artifactId') ??
+    pool.find((candidate) => candidate.metadata.idSource === 'packId') ??
+    pool.find((candidate) => candidate.metadata.idSource === 'sourcePath') ??
+    pool.find((candidate) => candidate.metadata.idSource === 'stableId') ??
+    pool[0];
   return preferred ? [preferred] : [];
 }
 
@@ -523,35 +502,32 @@ function addMapValue<K, V>(map: Map<K, V[]>, key: K, value: V): void {
 }
 
 function firstPhysicalRef(record: DeterministicLabelRecord): string {
-  return record.physicalRefs[0]?.ref ?? "";
+  return record.physicalRefs[0]?.ref ?? '';
 }
 
 function documentValidationDiagnosticsForCandidate(
   document: DocumentEnvelope,
   candidate: SemanticCoordinateCandidate,
 ): readonly SemanticCoordinateDiagnostic[] {
-  if (candidate.kind === "source-file" || candidate.kind === "evidence") {
+  if (candidate.kind === 'source-file' || candidate.kind === 'evidence') {
     return [];
   }
 
   return document.diagnostics.map((diagnostic) =>
     semanticCoordinateDiagnostic({
-      code: "document-validation-signal",
-      severity: diagnostic.severity === "error" ? "error" : "warning",
+      code: 'document-validation-signal',
+      severity: diagnostic.severity === 'error' ? 'error' : 'warning',
       label: candidate.label,
       id: candidate.id,
       message: diagnostic.message,
       metadata: {
-        projection: "document-envelope",
+        projection: 'document-envelope',
         sourceCode: diagnostic.code,
         sourceSeverity: diagnostic.severity,
         ...(diagnostic.rawSource?.path ? { sourcePath: diagnostic.rawSource.path } : {}),
-        ...(diagnostic.rawSource?.pointer
-          ? { sourcePointer: diagnostic.rawSource.pointer }
-          : {}),
+        ...(diagnostic.rawSource?.pointer ? { sourcePointer: diagnostic.rawSource.pointer } : {}),
         ...diagnostic.metadata,
       },
     }),
   );
 }
-

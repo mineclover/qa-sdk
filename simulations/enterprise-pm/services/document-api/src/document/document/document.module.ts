@@ -1,33 +1,30 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  DOCUMENT_DB_INSTANCE,
-  type DocumentDbInstanceHandle,
-} from "../document-db.module.js";
+import { DOCUMENT_DB_INSTANCE, type DocumentDbInstanceHandle } from '../document-db.module.js';
 
-import { DocumentRepositoryPort } from "./application/ports/document-repository.port.js";
-import { DocumentReadModelQuery } from "./application/queries/document-read-model.query.js";
-import { DocumentUseCase } from "./application/use-cases/document.use-case.js";
+import { DocumentRepositoryPort } from './application/ports/document-repository.port.js';
+import { DocumentReadModelQuery } from './application/queries/document-read-model.query.js';
+import { DocumentUseCase } from './application/use-cases/document.use-case.js';
 
-import { createDocumentSliceRepository } from "./infrastructure/persistence/document.repository.js";
-import { createDocumentTransactionPort } from "./infrastructure/transaction/document.transaction.js";
-import { createDocumentOutboxPort } from "./infrastructure/outbox/document.outbox.js";
-import { createDocumentLogger } from "./infrastructure/logging/document.logger.js";
-import { RepositoryDocumentReadModel } from "./infrastructure/read-model/document.read-model.js";
+import { createDocumentSliceRepository } from './infrastructure/persistence/document.repository.js';
+import { createDocumentTransactionPort } from './infrastructure/transaction/document.transaction.js';
+import { createDocumentOutboxPort } from './infrastructure/outbox/document.outbox.js';
+import { createDocumentLogger } from './infrastructure/logging/document.logger.js';
+import { RepositoryDocumentReadModel } from './infrastructure/read-model/document.read-model.js';
 
-import { DocumentController } from "./presentation/http/document.controller.js";
+import { DocumentController } from './presentation/http/document.controller.js';
 
-const DOCUMENT_TRANSACTION_PORT = Symbol.for("sim-document-api/document/TransactionPort");
-const DOCUMENT_OUTBOX_PORT = Symbol.for("sim-document-api/document/OutboxPort");
+const DOCUMENT_TRANSACTION_PORT = Symbol.for('sim-document-api/document/TransactionPort');
+const DOCUMENT_OUTBOX_PORT = Symbol.for('sim-document-api/document/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: DocumentRepositoryPort,

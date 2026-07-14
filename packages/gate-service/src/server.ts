@@ -1,17 +1,17 @@
 // @def.boundary gate-system
 // @def.doc gate-system
 
-import "dotenv/config";
-import { serve } from "@hono/node-server";
-import { createSqliteDriver } from "index-meta";
-import { SqlAddressStateStore } from "index-meta-workers";
-import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from "@qa-sdk/core";
-import { env } from "./config/env.js";
-import { createApp } from "./app.js";
-import { createGateService } from "./lib/gate-service.js";
-import { createLogger } from "./lib/logger.js";
+import 'dotenv/config';
+import { serve } from '@hono/node-server';
+import { createSqliteDriver } from 'index-meta';
+import { SqlAddressStateStore } from 'index-meta-workers';
+import { warnPortConflict, installSimpleShutdown, createServiceBootConfig } from '@qa-sdk/core';
+import { env } from './config/env.js';
+import { createApp } from './app.js';
+import { createGateService } from './lib/gate-service.js';
+import { createLogger } from './lib/logger.js';
 
-const logger = createLogger("gate-service");
+const logger = createLogger('gate-service');
 
 const driver = await createSqliteDriver({
   driver: env.SQLITE_DRIVER,
@@ -28,15 +28,18 @@ const app = createApp({
   getUptimeSeconds: () => Math.floor((Date.now() - startedAt) / 1000),
 });
 
-const serviceConfig = createServiceBootConfig("gate-service");
+const serviceConfig = createServiceBootConfig('gate-service');
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  logger.info({
-    port: info.port,
-    service: `${serviceConfig.namespace}/${serviceConfig.name}`,
-    env: serviceConfig.env,
-    region: serviceConfig.region,
-  }, "gate-service listening");
-  warnPortConflict("gate-service", env.PORT, logger);
+  logger.info(
+    {
+      port: info.port,
+      service: `${serviceConfig.namespace}/${serviceConfig.name}`,
+      env: serviceConfig.env,
+      region: serviceConfig.region,
+    },
+    'gate-service listening',
+  );
+  warnPortConflict('gate-service', env.PORT, logger);
 });
 
 installSimpleShutdown({ server, logger });

@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { parse } from "yaml";
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse } from 'yaml';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const srcDir = join(root, "src");
-const domainsDir = join(srcDir, "domains");
+const srcDir = join(root, 'src');
+const domainsDir = join(srcDir, 'domains');
 
 function readYaml(path) {
-  return parse(readFileSync(path, "utf-8")) ?? {};
+  return parse(readFileSync(path, 'utf-8')) ?? {};
 }
 
 function sortDomainNames(names) {
-  return [...names].sort((a, b) => (a === "common" ? -1 : b === "common" ? 1 : a.localeCompare(b)));
+  return [...names].sort((a, b) => (a === 'common' ? -1 : b === 'common' ? 1 : a.localeCompare(b)));
 }
 
 function deepEqual(a, b) {
   if (a === b) return true;
   if (a === null || b === null) return a === b;
-  if (typeof a !== "object" || typeof b !== "object") return false;
+  if (typeof a !== 'object' || typeof b !== 'object') return false;
   if (Array.isArray(a)) {
     if (!Array.isArray(b) || a.length !== b.length) return false;
     return a.every((value, index) => deepEqual(value, b[index]));
@@ -29,12 +29,14 @@ function deepEqual(a, b) {
   const ka = Object.keys(a);
   const kb = Object.keys(b);
   if (ka.length !== kb.length) return false;
-  return ka.every((key) => Object.prototype.hasOwnProperty.call(b, key) && deepEqual(a[key], b[key]));
+  return ka.every(
+    (key) => Object.prototype.hasOwnProperty.call(b, key) && deepEqual(a[key], b[key]),
+  );
 }
 
 function main() {
-  const basePath = join(srcDir, "openapi.yaml");
-  const localProfilePath = join(srcDir, "profiles", "local.yaml");
+  const basePath = join(srcDir, 'openapi.yaml');
+  const localProfilePath = join(srcDir, 'profiles', 'local.yaml');
   if (!existsSync(basePath)) throw new Error(`missing base spec: ${basePath}`);
   if (!existsSync(localProfilePath)) throw new Error(`missing local profile: ${localProfilePath}`);
 
@@ -47,7 +49,7 @@ function main() {
   );
 
   for (const domainName of domainNames) {
-    const specPath = join(domainsDir, domainName, "spec.yaml");
+    const specPath = join(domainsDir, domainName, 'spec.yaml');
     if (!existsSync(specPath)) continue;
     const spec = readYaml(specPath);
 
@@ -90,4 +92,3 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 }
-

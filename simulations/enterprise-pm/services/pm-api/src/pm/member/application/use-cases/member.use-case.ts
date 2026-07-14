@@ -1,21 +1,18 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import { MemberEntity } from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type {
-  AddMemberCommand,
-  RemoveMemberCommand,
-} from "../commands/add-member.command.js";
-import type { MemberLoggerPort } from "../ports/member-logger.port.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { MemberEntity } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { AddMemberCommand, RemoveMemberCommand } from '../commands/add-member.command.js';
+import type { MemberLoggerPort } from '../ports/member-logger.port.js';
 import type {
   MemberOutboxPort,
   MemberAddedEventPayload,
   MemberRemovedEventPayload,
-} from "../ports/member-outbox.port.js";
-import type { MemberRepositoryPort } from "../ports/member-repository.port.js";
-import type { MemberTransactionPort } from "../ports/member-transaction.port.js";
+} from '../ports/member-outbox.port.js';
+import type { MemberRepositoryPort } from '../ports/member-repository.port.js';
+import type { MemberTransactionPort } from '../ports/member-transaction.port.js';
 
 /**
  * Member 슬라이스의 use-case.
@@ -43,17 +40,17 @@ export class MemberUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "member",
-      useCase: "MemberUseCase.add",
+      domain: 'member',
+      useCase: 'MemberUseCase.add',
       aggregateId,
-      commandName: "AddMemberCommand",
+      commandName: 'AddMemberCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "member.add.started");
+    this.logger.info({ ...ctxBase }, 'member.add.started');
 
     try {
-      let snapshotResult: ReturnType<MemberEntity["toSnapshot"]>;
-      await this.transaction.run("member.add", async (scope) => {
+      let snapshotResult: ReturnType<MemberEntity['toSnapshot']>;
+      await this.transaction.run('member.add', async (scope) => {
         const member = MemberEntity.create({
           projectId: command.projectId,
           userId: command.userId,
@@ -68,7 +65,7 @@ export class MemberUseCase {
           role: snapshotResult.role,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.member.added";
+        const eventName = 'pm.member.added';
         await this.outbox.append(
           {
             aggregateId,
@@ -89,11 +86,11 @@ export class MemberUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "pm.member.added",
+          eventName: 'pm.member.added',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "member.add.success",
+        'member.add.success',
       );
 
       return snapshotResult!;
@@ -101,11 +98,11 @@ export class MemberUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "member.add.failure",
+        'member.add.failure',
       );
       throw error;
     }
@@ -118,16 +115,16 @@ export class MemberUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "member",
-      useCase: "MemberUseCase.remove",
+      domain: 'member',
+      useCase: 'MemberUseCase.remove',
       aggregateId,
-      commandName: "RemoveMemberCommand",
+      commandName: 'RemoveMemberCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "member.remove.started");
+    this.logger.info({ ...ctxBase }, 'member.remove.started');
 
     try {
-      await this.transaction.run("member.remove", async (scope) => {
+      await this.transaction.run('member.remove', async (scope) => {
         await this.repository.delete(command.projectId, command.userId, scope);
         const occurredAt = new Date();
         const payload: MemberRemovedEventPayload = {
@@ -135,7 +132,7 @@ export class MemberUseCase {
           userId: command.userId,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.member.removed";
+        const eventName = 'pm.member.removed';
         await this.outbox.append(
           {
             aggregateId,
@@ -156,21 +153,21 @@ export class MemberUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "pm.member.removed",
+          eventName: 'pm.member.removed',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "member.remove.success",
+        'member.remove.success',
       );
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "member.remove.failure",
+        'member.remove.failure',
       );
       throw error;
     }

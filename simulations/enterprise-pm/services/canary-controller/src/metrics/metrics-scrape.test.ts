@@ -2,13 +2,13 @@
 // @def.doc canary-controller-config
 // spec 01 §5 t=0s — 3 source 병렬 fetch + fail-open + 매트릭스 전수 수집.
 
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { MetricsScrapeService } from "./metrics-scrape.service.js";
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { MetricsScrapeService } from './metrics-scrape.service.js';
 
 const cfg = {
-  metricsUrl: "http://m",
-  ingestUrl: "http://i",
-  auditUrl: "http://a",
+  metricsUrl: 'http://m',
+  ingestUrl: 'http://i',
+  auditUrl: 'http://a',
 };
 
 afterEach(() => {
@@ -16,12 +16,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("MetricsScrapeService (spec 01 §5)", () => {
-  it("aggregates 3 sources; collects 12 signals when all source healthy", async () => {
+describe('MetricsScrapeService (spec 01 §5)', () => {
+  it('aggregates 3 sources; collects 12 signals when all source healthy', async () => {
     vi.stubGlobal(
-      "fetch",
+      'fetch',
       vi.fn(async (url: string) => {
-        if (url.includes("/metrics")) {
+        if (url.includes('/metrics')) {
           return new Response(
             JSON.stringify({
               errorRate: 0.01,
@@ -32,7 +32,7 @@ describe("MetricsScrapeService (spec 01 §5)", () => {
             }),
           );
         }
-        if (url.includes("schema-compat")) {
+        if (url.includes('schema-compat')) {
           return new Response(JSON.stringify({ schemaCompatRate: 1.0 }));
         }
         return new Response(
@@ -58,11 +58,11 @@ describe("MetricsScrapeService (spec 01 §5)", () => {
     expect(out.sources.every((s) => s.weight === 1)).toBe(true);
   });
 
-  it("fails open when ingest down — weight=0.3 + schema-compat signal 누락", async () => {
+  it('fails open when ingest down — weight=0.3 + schema-compat signal 누락', async () => {
     vi.stubGlobal(
-      "fetch",
+      'fetch',
       vi.fn(async (url: string) => {
-        if (url.includes("/metrics")) {
+        if (url.includes('/metrics')) {
           return new Response(
             JSON.stringify({
               errorRate: 0.01,
@@ -73,8 +73,8 @@ describe("MetricsScrapeService (spec 01 §5)", () => {
             }),
           );
         }
-        if (url.includes("schema-compat")) {
-          throw new Error("ECONNREFUSED");
+        if (url.includes('schema-compat')) {
+          throw new Error('ECONNREFUSED');
         }
         return new Response(
           JSON.stringify({
@@ -88,21 +88,19 @@ describe("MetricsScrapeService (spec 01 §5)", () => {
       }),
     );
     const out = await new MetricsScrapeService(cfg).scrape();
-    const ingest = out.sources.find((s) => s.name === "ingest")!;
+    const ingest = out.sources.find((s) => s.name === 'ingest')!;
     expect(ingest.ok).toBe(false);
     expect(ingest.weight).toBe(0.3);
     // schema-compat은 ingest source — 누락
-    expect(out.signals["compatibility.schemaCompatRate"]).toBeUndefined();
+    expect(out.signals['compatibility.schemaCompatRate']).toBeUndefined();
     // metrics / audit signal은 정상 수집
-    expect(out.signals["perf.errorRate"]?.value).toBe(0.01);
-    expect(out.signals["auditSafety.criticalAnomalyRate"]?.value).toBe(0);
+    expect(out.signals['perf.errorRate']?.value).toBe(0.01);
+    expect(out.signals['auditSafety.criticalAnomalyRate']?.value).toBe(0);
   });
 
-  it("fetch는 모두 AbortSignal을 가진다 (5s timeout)", async () => {
-    const fetchSpy = vi.fn(async () =>
-      new Response(JSON.stringify({})),
-    );
-    vi.stubGlobal("fetch", fetchSpy);
+  it('fetch는 모두 AbortSignal을 가진다 (5s timeout)', async () => {
+    const fetchSpy = vi.fn(async () => new Response(JSON.stringify({})));
+    vi.stubGlobal('fetch', fetchSpy);
     await new MetricsScrapeService(cfg).scrape();
     expect(fetchSpy).toHaveBeenCalledTimes(3);
     for (const call of fetchSpy.mock.calls) {

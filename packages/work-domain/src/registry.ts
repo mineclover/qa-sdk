@@ -7,7 +7,7 @@ import {
   WORK_DOMAINS,
   ALL_DOMAIN_IDS,
   getSubDomain as getSubDomainBase,
-} from "test-types";
+} from 'test-types';
 
 export type { WorkDomainDef, WorkDomainId };
 export { WORK_DOMAINS, ALL_DOMAIN_IDS };

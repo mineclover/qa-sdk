@@ -26,13 +26,10 @@
  *   disjoint union = 1000 + 50 = 1050
  */
 
-import { WeightedIndex } from "../math/weighted-index.js";
-import {
-  IndexRangeError,
-  WeightedIndexError,
-} from "../math/errors.js";
-import { formatList } from "../math/validators.js";
-import { calcAddressRanges, type CoordConstraint } from "../math/calc.js";
+import { WeightedIndex } from '../math/weighted-index.js';
+import { IndexRangeError, WeightedIndexError } from '../math/errors.js';
+import { formatList } from '../math/validators.js';
+import { calcAddressRanges, type CoordConstraint } from '../math/calc.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -56,10 +53,8 @@ interface Range {
 
 export class UnionKindError extends WeightedIndexError {
   constructor(kind: string, registered: readonly string[]) {
-    super(
-      `Unknown union kind: "${kind}". Registered: [${formatList(registered)}]`,
-    );
-    this.name = "UnionKindError";
+    super(`Unknown union kind: "${kind}". Registered: [${formatList(registered)}]`);
+    this.name = 'UnionKindError';
   }
 }
 
@@ -75,9 +70,7 @@ export class DisjointUnionIndex {
 
   constructor(variants: readonly UnionVariant[]) {
     if (variants.length === 0) {
-      throw new WeightedIndexError(
-        "DisjointUnionIndex requires at least one variant",
-      );
+      throw new WeightedIndexError('DisjointUnionIndex requires at least one variant');
     }
 
     const map = new Map<string, Range>();
@@ -86,9 +79,7 @@ export class DisjointUnionIndex {
 
     for (const v of variants) {
       if (map.has(v.kind)) {
-        throw new WeightedIndexError(
-          `Duplicate union kind: "${v.kind}"`,
-        );
+        throw new WeightedIndexError(`Duplicate union kind: "${v.kind}"`);
       }
       const wi = new WeightedIndex(v.shape, v.labels ? [...v.labels] : undefined);
       const range: Range = { kind: v.kind, wi, offset, size: wi.size };
@@ -128,10 +119,7 @@ export class DisjointUnionIndex {
    * 특정 kind 내에서의 calcAddressRanges — 결과는 전역 address 범위.
    * pattern은 해당 variant의 sub-shape 기준.
    */
-  calcAddressRanges(
-    kind: string,
-    pattern: readonly CoordConstraint[],
-  ): Array<[number, number]> {
+  calcAddressRanges(kind: string, pattern: readonly CoordConstraint[]): Array<[number, number]> {
     const range = this.rangeFor(kind);
     const shape = [...range.wi.shape];
     const localRanges = calcAddressRanges(shape, [...pattern]);
@@ -158,9 +146,7 @@ export class DisjointUnionIndex {
 
   private rangeContaining(address: number): Range {
     if (!Number.isInteger(address) || address < 0 || address >= this.totalSize) {
-      throw new IndexRangeError(
-        `address ${address} out of union range [0, ${this.totalSize - 1}]`,
-      );
+      throw new IndexRangeError(`address ${address} out of union range [0, ${this.totalSize - 1}]`);
     }
     // binary search over orderedRanges by offset
     let lo = 0;

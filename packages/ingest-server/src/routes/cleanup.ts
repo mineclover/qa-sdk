@@ -1,14 +1,11 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { Hono, type Context } from "hono";
-import { z } from "zod";
-import type { Logger } from "pino";
-import {
-  cleanupExpiredData,
-  type CleanupStore,
-} from "../lib/cleanup.js";
-import { badRequest } from "../lib/errors.js";
+import { Hono, type Context } from 'hono';
+import { z } from 'zod';
+import type { Logger } from 'pino';
+import { cleanupExpiredData, type CleanupStore } from '../lib/cleanup.js';
+import { badRequest } from '../lib/errors.js';
 
 const cleanupOverrideSchema = z.object({
   traceRetentionDays: z.coerce.number().int().positive().optional(),
@@ -24,7 +21,7 @@ export interface CleanupRouteDeps {
 export function createCleanupRoutes(deps: CleanupRouteDeps) {
   const app = new Hono();
 
-  app.post("/v1/admin/cleanup", async (c) => {
+  app.post('/v1/admin/cleanup', async (c) => {
     const options = cleanupOverrideSchema.parse(await parseOptionalJsonBody(c));
     const result = await cleanupExpiredData(
       {
@@ -52,6 +49,6 @@ async function parseOptionalJsonBody(c: Context) {
   try {
     return JSON.parse(text) as unknown;
   } catch {
-    throw badRequest("body: invalid JSON");
+    throw badRequest('body: invalid JSON');
   }
 }

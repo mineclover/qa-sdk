@@ -1,12 +1,12 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import "reflect-metadata";
-import { describe, expect, it, vi } from "vitest";
-import { Test } from "@nestjs/testing";
-import { VersionController } from "./version.controller.js";
-import { VersionUseCase } from "../../application/use-cases/version.use-case.js";
-import { VersionReadModelQuery } from "../../application/queries/version-read-model.query.js";
+import 'reflect-metadata';
+import { describe, expect, it, vi } from 'vitest';
+import { Test } from '@nestjs/testing';
+import { VersionController } from './version.controller.js';
+import { VersionUseCase } from '../../application/use-cases/version.use-case.js';
+import { VersionReadModelQuery } from '../../application/queries/version-read-model.query.js';
 
 async function build({
   useCase,
@@ -25,47 +25,47 @@ async function build({
   return moduleRef.get(VersionController);
 }
 
-describe("VersionController", () => {
-  it("POST /documents/:id/versions — CREATED", async () => {
+describe('VersionController', () => {
+  it('POST /documents/:id/versions — CREATED', async () => {
     const useCase = {
       create: vi.fn(async (cmd: { documentId: string }) => ({
         documentId: cmd.documentId,
         versionNumber: 1,
-        status: "CREATED" as const,
+        status: 'CREATED' as const,
       })),
     };
     const controller = await build({ useCase, readModel: {} });
-    const res = await controller.create("doc_1", { contentRef: "k", authorId: "u" });
-    expect(res).toEqual({ documentId: "doc_1", versionNumber: 1, status: "CREATED" });
+    const res = await controller.create('doc_1', { contentRef: 'k', authorId: 'u' });
+    expect(res).toEqual({ documentId: 'doc_1', versionNumber: 1, status: 'CREATED' });
   });
 
-  it("POST 입력 검증 실패", async () => {
+  it('POST 입력 검증 실패', async () => {
     const controller = await build({ useCase: { create: vi.fn() }, readModel: {} });
-    await expect(controller.create("doc_1", { contentRef: "" })).rejects.toThrow();
+    await expect(controller.create('doc_1', { contentRef: '' })).rejects.toThrow();
   });
 
-  it("GET — 리스트", async () => {
+  it('GET — 리스트', async () => {
     const items = [
       {
-        documentId: "d",
+        documentId: 'd',
         versionNumber: 1,
-        contentRef: "k",
-        authorId: "u",
-        createdAt: "x",
+        contentRef: 'k',
+        authorId: 'u',
+        createdAt: 'x',
       },
     ];
     const controller = await build({
       useCase: { create: vi.fn() },
       readModel: { listByDocument: vi.fn(async () => items) },
     });
-    expect(await controller.list("d")).toEqual(items);
+    expect(await controller.list('d')).toEqual(items);
   });
 
-  it("GET 미존재 → NotFoundError", async () => {
+  it('GET 미존재 → NotFoundError', async () => {
     const controller = await build({
       useCase: { create: vi.fn() },
       readModel: { findDetail: vi.fn(async () => null) },
     });
-    await expect(controller.get("d", "1")).rejects.toMatchObject({ name: "NotFoundError" });
+    await expect(controller.get('d', '1')).rejects.toMatchObject({ name: 'NotFoundError' });
   });
 });

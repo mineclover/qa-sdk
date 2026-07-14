@@ -8,10 +8,10 @@
  * d1-schema.sql이 먼저 적용된 D1 인스턴스가 필요하다.
  */
 
-import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from "../index-meta-store.js";
-import { IndexMetaError, ValidationError } from "../errors.js";
-import type { EntityId } from "../types.js";
-import { validateEntryForInsert } from "./validate-entry.js";
+import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from '../index-meta-store.js';
+import { IndexMetaError, ValidationError } from '../errors.js';
+import type { EntityId } from '../types.js';
+import { validateEntryForInsert } from './validate-entry.js';
 
 // ── Cloudflare D1 최소 타입 정의 ─────────────────────────
 // @cloudflare/workers-types 없이도 동작하도록 로컬 정의
@@ -45,13 +45,13 @@ export class D1IndexMetaStore implements IndexMetaStore {
       await this.db
         .prepare(
           `INSERT INTO schema_version (prefix, version_id, capacity, created_at)
-           VALUES (?, ?, ?, ?)`
+           VALUES (?, ?, ?, ?)`,
         )
         .bind(record.prefix, record.versionId, record.capacity, record.createdAt)
         .run();
     } catch (err) {
       throw new IndexMetaError(
-        `D1 insertSchemaVersion failed for "${record.prefix}/${record.versionId}": ${err instanceof Error ? err.message : String(err)}`
+        `D1 insertSchemaVersion failed for "${record.prefix}/${record.versionId}": ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }
@@ -61,7 +61,7 @@ export class D1IndexMetaStore implements IndexMetaStore {
       .prepare(
         `SELECT prefix, version_id, capacity, created_at
          FROM schema_version WHERE prefix = ?
-         ORDER BY created_at ASC`
+         ORDER BY created_at ASC`,
       )
       .bind(prefix)
       .all<{ prefix: string; version_id: string; capacity: number; created_at: string }>();
@@ -73,7 +73,7 @@ export class D1IndexMetaStore implements IndexMetaStore {
     const row = await this.db
       .prepare(
         `SELECT prefix, version_id, capacity, created_at
-         FROM schema_version WHERE prefix = ? AND version_id = ?`
+         FROM schema_version WHERE prefix = ? AND version_id = ?`,
       )
       .bind(prefix, versionId)
       .first<{ prefix: string; version_id: string; capacity: number; created_at: string }>();
@@ -104,13 +104,19 @@ export class D1IndexMetaStore implements IndexMetaStore {
       await this.db
         .prepare(
           `INSERT INTO entry (prefix, version_id, position, value, created_at)
-           VALUES (?, ?, ?, ?, ?)`
+           VALUES (?, ?, ?, ?, ?)`,
         )
-        .bind(record.prefix, record.versionId, record.position, String(record.value), record.createdAt)
+        .bind(
+          record.prefix,
+          record.versionId,
+          record.position,
+          String(record.value),
+          record.createdAt,
+        )
         .run();
     } catch (err) {
       throw new IndexMetaError(
-        `D1 insertEntry failed for "${record.prefix}/${record.versionId}" position ${record.position}: ${err instanceof Error ? err.message : String(err)}`
+        `D1 insertEntry failed for "${record.prefix}/${record.versionId}" position ${record.position}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }
@@ -120,10 +126,16 @@ export class D1IndexMetaStore implements IndexMetaStore {
       .prepare(
         `SELECT prefix, version_id, position, value, created_at
          FROM entry WHERE prefix = ? AND version_id = ?
-         ORDER BY position ASC`
+         ORDER BY position ASC`,
       )
       .bind(prefix, versionId)
-      .all<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
+      .all<{
+        prefix: string;
+        version_id: string;
+        position: number;
+        value: string;
+        created_at: string;
+      }>();
 
     return result.results.map(toEntryRecord);
   }
@@ -132,17 +144,23 @@ export class D1IndexMetaStore implements IndexMetaStore {
     prefix: string,
     versionId: string,
     from: number,
-    to: number
+    to: number,
   ): Promise<EntryRecord[]> {
     const result = await this.db
       .prepare(
         `SELECT prefix, version_id, position, value, created_at
          FROM entry
          WHERE prefix = ? AND version_id = ? AND position >= ? AND position <= ?
-         ORDER BY position ASC`
+         ORDER BY position ASC`,
       )
       .bind(prefix, versionId, from, to)
-      .all<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
+      .all<{
+        prefix: string;
+        version_id: string;
+        position: number;
+        value: string;
+        created_at: string;
+      }>();
 
     return result.results.map(toEntryRecord);
   }
@@ -151,22 +169,38 @@ export class D1IndexMetaStore implements IndexMetaStore {
     const row = await this.db
       .prepare(
         `SELECT prefix, version_id, position, value, created_at
-         FROM entry WHERE prefix = ? AND version_id = ? AND position = ?`
+         FROM entry WHERE prefix = ? AND version_id = ? AND position = ?`,
       )
       .bind(prefix, versionId, position)
-      .first<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
+      .first<{
+        prefix: string;
+        version_id: string;
+        position: number;
+        value: string;
+        created_at: string;
+      }>();
 
     return row ? toEntryRecord(row) : null;
   }
 
-  async getEntryByValue(prefix: string, versionId: string, value: EntityId): Promise<EntryRecord | null> {
+  async getEntryByValue(
+    prefix: string,
+    versionId: string,
+    value: EntityId,
+  ): Promise<EntryRecord | null> {
     const row = await this.db
       .prepare(
         `SELECT prefix, version_id, position, value, created_at
-         FROM entry WHERE prefix = ? AND version_id = ? AND value = ?`
+         FROM entry WHERE prefix = ? AND version_id = ? AND value = ?`,
       )
       .bind(prefix, versionId, String(value))
-      .first<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>();
+      .first<{
+        prefix: string;
+        version_id: string;
+        position: number;
+        value: string;
+        created_at: string;
+      }>();
 
     return row ? toEntryRecord(row) : null;
   }
@@ -175,25 +209,39 @@ export class D1IndexMetaStore implements IndexMetaStore {
     prefix: string,
     fromVersion: string,
     toVersion: string,
-    positionMap?: Record<number, number>
+    positionMap?: Record<number, number>,
   ): Promise<{ migrated: number; skipped: number }> {
     const sv = await this.getSchemaVersion(prefix, toVersion);
     if (!sv) {
       throw new ValidationError(
-        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`
+        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`,
       );
     }
 
     // D1 does not support multi-statement transactions via the Workers API.
     // Operations are individually atomic. migrateEntries runs without transaction wrapping.
-    let sourceResult: D1Result<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>;
+    let sourceResult: D1Result<{
+      prefix: string;
+      version_id: string;
+      position: number;
+      value: string;
+      created_at: string;
+    }>;
     let existingResult: D1Result<{ position: number }>;
     try {
       [sourceResult, existingResult] = await Promise.all([
         this.db
-          .prepare(`SELECT prefix, version_id, position, value, created_at FROM entry WHERE prefix = ? AND version_id = ? ORDER BY position ASC`)
+          .prepare(
+            `SELECT prefix, version_id, position, value, created_at FROM entry WHERE prefix = ? AND version_id = ? ORDER BY position ASC`,
+          )
           .bind(prefix, fromVersion)
-          .all<{ prefix: string; version_id: string; position: number; value: string; created_at: string }>(),
+          .all<{
+            prefix: string;
+            version_id: string;
+            position: number;
+            value: string;
+            created_at: string;
+          }>(),
         this.db
           .prepare(`SELECT position FROM entry WHERE prefix = ? AND version_id = ?`)
           .bind(prefix, toVersion)
@@ -201,7 +249,7 @@ export class D1IndexMetaStore implements IndexMetaStore {
       ]);
     } catch (err) {
       throw new IndexMetaError(
-        `D1 migrateEntries failed to read entries for "${prefix}" (${fromVersion} -> ${toVersion}): ${err instanceof Error ? err.message : String(err)}`
+        `D1 migrateEntries failed to read entries for "${prefix}" (${fromVersion} -> ${toVersion}): ${err instanceof Error ? err.message : String(err)}`,
       );
     }
 
@@ -220,17 +268,19 @@ export class D1IndexMetaStore implements IndexMetaStore {
       }
       if (newPosition < 1 || newPosition > sv.capacity) {
         throw new ValidationError(
-          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`
+          `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`,
         );
       }
       try {
         await this.db
-          .prepare(`INSERT INTO entry (prefix, version_id, position, value, created_at) VALUES (?, ?, ?, ?, ?)`)
+          .prepare(
+            `INSERT INTO entry (prefix, version_id, position, value, created_at) VALUES (?, ?, ?, ?, ?)`,
+          )
           .bind(prefix, toVersion, newPosition, String(entry.value), now)
           .run();
       } catch (err) {
         throw new IndexMetaError(
-          `D1 migrateEntries failed to insert position ${newPosition} for "${prefix}/${toVersion}": ${err instanceof Error ? err.message : String(err)}`
+          `D1 migrateEntries failed to insert position ${newPosition} for "${prefix}/${toVersion}": ${err instanceof Error ? err.message : String(err)}`,
         );
       }
       existingPositions.add(newPosition);
@@ -250,9 +300,9 @@ function toSchemaVersionRecord(row: {
   created_at: string;
 }): SchemaVersionRecord {
   return {
-    prefix:    row.prefix,
+    prefix: row.prefix,
     versionId: row.version_id,
-    capacity:  row.capacity,
+    capacity: row.capacity,
     createdAt: row.created_at,
   };
 }
@@ -265,10 +315,10 @@ function toEntryRecord(row: {
   created_at: string;
 }): EntryRecord {
   return {
-    prefix:    row.prefix,
+    prefix: row.prefix,
     versionId: row.version_id,
-    position:  row.position,
-    value:     row.value,
+    position: row.position,
+    value: row.value,
     createdAt: row.created_at,
   };
 }

@@ -1,8 +1,8 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { UserEntity } from "../../domain/index.js";
-import type { UserTransactionScope } from "./user-transaction.port.js";
+import type { UserEntity } from '../../domain/index.js';
+import type { UserTransactionScope } from './user-transaction.port.js';
 
 /**
  * User Aggregate 의 영속 추상.

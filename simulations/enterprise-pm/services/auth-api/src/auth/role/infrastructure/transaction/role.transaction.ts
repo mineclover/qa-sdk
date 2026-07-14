@@ -5,8 +5,5 @@ export {
   createRoleTransactionPort,
   createRoleSqliteTransactionPort,
   createRolePgTransactionPort,
-} from "./role.drizzle-transaction.js";
-export type {
-  RoleDialect,
-  RoleTransactionFactoryOpts,
-} from "./role.drizzle-transaction.js";
+} from './role.drizzle-transaction.js';
+export type { RoleDialect, RoleTransactionFactoryOpts } from './role.drizzle-transaction.js';

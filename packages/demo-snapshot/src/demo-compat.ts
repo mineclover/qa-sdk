@@ -5,8 +5,14 @@
  * 의존 방향: demo-catalog → demo-compat → demo-snapshot/demo-domains
  */
 
-import { calcWeights } from "weighted-index";
-import { DEMO_CATALOG, type Axis, type Domain, type AxisVersionSnapshot, type VersionedAxis } from "./demo-catalog.js";
+import { calcWeights } from 'weighted-index';
+import {
+  DEMO_CATALOG,
+  type Axis,
+  type Domain,
+  type AxisVersionSnapshot,
+  type VersionedAxis,
+} from './demo-catalog.js';
 
 // ── 내부 헬퍼 ────────────────────────────────────────────────────────────────
 
@@ -22,7 +28,6 @@ function axisCap(axisId: string, ver: string): number {
   const snap = getAxisSnap(axisId, ver);
   return snap.capacity ?? snap.entries.length;
 }
-
 
 function catalogAxisToLegacy(axisId: string, ver: string, overrideId?: string): Axis {
   const axis = (C.axes as Record<string, VersionedAxis>)[axisId];
@@ -56,17 +61,17 @@ export const DEMO_EVENTS_V3 = C.axes.event_name.versions.v3.entries;
 export const DEMO_EVENTS_V4 = C.axes.event_name.versions.v4.entries;
 
 export const DEMO_ROLE_CAP = {
-  v1: axisCap("role", "v1"),
-  v2: axisCap("role", "v2"),
-  v3: axisCap("role", "v3"),
-  v4: axisCap("role", "v4"),
+  v1: axisCap('role', 'v1'),
+  v2: axisCap('role', 'v2'),
+  v3: axisCap('role', 'v3'),
+  v4: axisCap('role', 'v4'),
 } as const;
 
 export const DEMO_EVENT_CAP = {
-  v1: axisCap("event_name", "v1"),
-  v2: axisCap("event_name", "v2"),
-  v3: axisCap("event_name", "v3"),
-  v4: axisCap("event_name", "v4"),
+  v1: axisCap('event_name', 'v1'),
+  v2: axisCap('event_name', 'v2'),
+  v3: axisCap('event_name', 'v3'),
+  v4: axisCap('event_name', 'v4'),
 } as const;
 
 export const DEMO_INITIATORS = C.axes.initiator.versions.v1.entries;
@@ -100,13 +105,15 @@ const _svcPrefix = C.prefixes.service;
 const _svcV1 = _svcPrefix.versions[0];
 
 /** SVC shape — service prefix v1의 각 축 capacity */
-export const DEMO_SVC_SHAPE = _svcPrefix.labels.map(label => {
+export const DEMO_SVC_SHAPE = _svcPrefix.labels.map((label) => {
   const dim = _svcPrefix.dims[label];
-  if (dim.kind !== "axis") throw new Error("service prefix should only have axis dims");
+  if (dim.kind !== 'axis') throw new Error('service prefix should only have axis dims');
   return axisCap(dim.axisId as keyof typeof C.axes, _svcV1.axisVersions[label]);
 }) as unknown as readonly [number, number, number, number];
 
-export const DEMO_SVC_STRIDES = calcWeights(DEMO_SVC_SHAPE as unknown as number[]) as unknown as readonly [number, number, number, number];
+export const DEMO_SVC_STRIDES = calcWeights(
+  DEMO_SVC_SHAPE as unknown as number[],
+) as unknown as readonly [number, number, number, number];
 
 export function demoEncodeSvc(coords: readonly number[]): number {
   let v = 0;
@@ -136,27 +143,54 @@ export const DEMO_EVT_SVC_VALUES = _evtV1.refEntries!.evt_svc.values;
 
 // ── Permission / Event helpers ──────────────────────────────────────────────
 
-export type DemoVer = "v1" | "v2" | "v3" | "v4";
+export type DemoVer = 'v1' | 'v2' | 'v3' | 'v4';
 
-const ROLES_BY_VER = { v1: DEMO_ROLES_V1, v2: DEMO_ROLES_V2, v3: DEMO_ROLES_V3, v4: DEMO_ROLES_V4 } as const;
-const EVENTS_BY_VER = { v1: DEMO_EVENTS_V1, v2: DEMO_EVENTS_V2, v3: DEMO_EVENTS_V3, v4: DEMO_EVENTS_V4 } as const;
+const ROLES_BY_VER = {
+  v1: DEMO_ROLES_V1,
+  v2: DEMO_ROLES_V2,
+  v3: DEMO_ROLES_V3,
+  v4: DEMO_ROLES_V4,
+} as const;
+const EVENTS_BY_VER = {
+  v1: DEMO_EVENTS_V1,
+  v2: DEMO_EVENTS_V2,
+  v3: DEMO_EVENTS_V3,
+  v4: DEMO_EVENTS_V4,
+} as const;
 
-export function demoRolesFor(v: DemoVer) { return ROLES_BY_VER[v]; }
-export function demoRoleStride(v: DemoVer) { return DEMO_ROLE_CAP[v]; }
-export function demoEventsFor(v: DemoVer) { return EVENTS_BY_VER[v]; }
-export function demoEvtStride(v: DemoVer) { return DEMO_EVENT_CAP[v] * DEMO_INITIATORS.length; }
+export function demoRolesFor(v: DemoVer) {
+  return ROLES_BY_VER[v];
+}
+export function demoRoleStride(v: DemoVer) {
+  return DEMO_ROLE_CAP[v];
+}
+export function demoEventsFor(v: DemoVer) {
+  return EVENTS_BY_VER[v];
+}
+export function demoEvtStride(v: DemoVer) {
+  return DEMO_EVENT_CAP[v] * DEMO_INITIATORS.length;
+}
 
 export function demoCalcPermAddr(svcPos: number, rolePos: number, ver: DemoVer): number {
   return (svcPos - 1) * demoRoleStride(ver) + (rolePos - 1);
 }
-export function demoCalcEvtAddr(svcPos: number, evtPos: number, initPos: number, ver: DemoVer): number {
+export function demoCalcEvtAddr(
+  svcPos: number,
+  evtPos: number,
+  initPos: number,
+  ver: DemoVer,
+): number {
   return (svcPos - 1) * demoEvtStride(ver) + (evtPos - 1) * 2 + (initPos - 1);
 }
 
 export interface DemoPermDecoded {
-  svcIdx: number; svcId: string; svcKo: string;
-  nsId: string; nsKo: string;
-  roleId: string; roleKo: string;
+  svcIdx: number;
+  svcId: string;
+  svcKo: string;
+  nsId: string;
+  nsKo: string;
+  roleId: string;
+  roleKo: string;
 }
 
 export function demoDecodePerm(addr: number, v: DemoVer): DemoPermDecoded | null {
@@ -169,18 +203,26 @@ export function demoDecodePerm(addr: number, v: DemoVer): DemoPermDecoded | null
   const nsI = svcPos % 2;
   const isHeadroom = roleIdx >= roles.length;
   return {
-    svcIdx: svcPos, svcId: DEMO_SVCS[svcI], svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
-    nsId: DEMO_NSS[nsI], nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
+    svcIdx: svcPos,
+    svcId: DEMO_SVCS[svcI],
+    svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
+    nsId: DEMO_NSS[nsI],
+    nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
     roleId: isHeadroom ? `(reserved:${roleIdx})` : roles[roleIdx],
-    roleKo: isHeadroom ? "(예약)" : (DEMO_KO.role[roles[roleIdx]] ?? roles[roleIdx]),
+    roleKo: isHeadroom ? '(예약)' : (DEMO_KO.role[roles[roleIdx]] ?? roles[roleIdx]),
   };
 }
 
 export interface DemoEvtDecoded {
-  svcIdx: number; svcId: string; svcKo: string;
-  nsId: string; nsKo: string;
-  eventId: string; eventKo: string;
-  initiatorId: string; initiatorKo: string;
+  svcIdx: number;
+  svcId: string;
+  svcKo: string;
+  nsId: string;
+  nsKo: string;
+  eventId: string;
+  eventKo: string;
+  initiatorId: string;
+  initiatorKo: string;
 }
 
 export function demoDecodeEvt(addr: number, v: DemoVer): DemoEvtDecoded | null {
@@ -196,11 +238,15 @@ export function demoDecodeEvt(addr: number, v: DemoVer): DemoEvtDecoded | null {
   const nsI = svcPos % 2;
   const isHeadroom = evtIdx >= events.length;
   return {
-    svcIdx: svcPos, svcId: DEMO_SVCS[svcI], svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
-    nsId: DEMO_NSS[nsI], nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
+    svcIdx: svcPos,
+    svcId: DEMO_SVCS[svcI],
+    svcKo: DEMO_KO.svc[DEMO_SVCS[svcI]],
+    nsId: DEMO_NSS[nsI],
+    nsKo: DEMO_KO.ns[DEMO_NSS[nsI]],
     eventId: isHeadroom ? `(reserved:${evtIdx})` : events[evtIdx],
-    eventKo: isHeadroom ? "(예약)" : (DEMO_KO.event[events[evtIdx]] ?? events[evtIdx]),
-    initiatorId: DEMO_INITIATORS[initIdx], initiatorKo: DEMO_KO.initiator[DEMO_INITIATORS[initIdx]],
+    eventKo: isHeadroom ? '(예약)' : (DEMO_KO.event[events[evtIdx]] ?? events[evtIdx]),
+    initiatorId: DEMO_INITIATORS[initIdx],
+    initiatorKo: DEMO_KO.initiator[DEMO_INITIATORS[initIdx]],
   };
 }
 
@@ -212,23 +258,23 @@ export function demoDecodeEvt(addr: number, v: DemoVer): DemoEvtDecoded | null {
 
 export const AXIS = {
   // RBAC — rbac_role을 role로 매핑 (하위 호환)
-  role: catalogAxisToLegacy("rbac_role", "v1", "role"),
-  action: catalogAxisToLegacy("action", "v1"),
-  resource: catalogAxisToLegacy("resource", "v1"),
+  role: catalogAxisToLegacy('rbac_role', 'v1', 'role'),
+  action: catalogAxisToLegacy('action', 'v1'),
+  resource: catalogAxisToLegacy('resource', 'v1'),
   // Content
-  tag: catalogAxisToLegacy("tag", "v1"),
-  category: catalogAxisToLegacy("category", "v1"),
-  status: catalogAxisToLegacy("status", "v1"),
-  locale: catalogAxisToLegacy("locale", "v1"),
-  channel: catalogAxisToLegacy("channel", "v1"),
+  tag: catalogAxisToLegacy('tag', 'v1'),
+  category: catalogAxisToLegacy('category', 'v1'),
+  status: catalogAxisToLegacy('status', 'v1'),
+  locale: catalogAxisToLegacy('locale', 'v1'),
+  channel: catalogAxisToLegacy('channel', 'v1'),
   // Tracking
-  trackAction: catalogAxisToLegacy("trackAction", "v1"),
-  page: catalogAxisToLegacy("page", "v1"),
-  userType: catalogAxisToLegacy("userType", "v1"),
+  trackAction: catalogAxisToLegacy('trackAction', 'v1'),
+  page: catalogAxisToLegacy('page', 'v1'),
+  userType: catalogAxisToLegacy('userType', 'v1'),
   // Relational
-  subjectKind: catalogAxisToLegacy("subjectKind", "v1"),
-  predicate: catalogAxisToLegacy("predicate", "v1"),
-  objectKind: catalogAxisToLegacy("objectKind", "v1"),
+  subjectKind: catalogAxisToLegacy('subjectKind', 'v1'),
+  predicate: catalogAxisToLegacy('predicate', 'v1'),
+  objectKind: catalogAxisToLegacy('objectKind', 'v1'),
 } as const;
 
 export type AxisId = keyof typeof AXIS;
@@ -236,30 +282,42 @@ export type AxisId = keyof typeof AXIS;
 // ── 도메인 ──────────────────────────────────────────────────────────────────
 
 export const DEMO_RBAC: Domain<{ role: Axis; action: Axis; resource: Axis }> = {
-  id: "rbac",
-  name: "역할 기반 접근 제어",
-  description: "role × action × resource 3차원 권한 모델.",
+  id: 'rbac',
+  name: '역할 기반 접근 제어',
+  description: 'role × action × resource 3차원 권한 모델.',
   axes: { role: AXIS.role, action: AXIS.action, resource: AXIS.resource },
 };
 
-export const DEMO_CONTENT: Domain<{ tag: Axis; category: Axis; status: Axis; locale: Axis; channel: Axis }> = {
-  id: "content",
-  name: "콘텐츠 플랫폼",
-  description: "tag(1D) + article(category × status × locale) + feed(article_ref × channel).",
-  axes: { tag: AXIS.tag, category: AXIS.category, status: AXIS.status, locale: AXIS.locale, channel: AXIS.channel },
+export const DEMO_CONTENT: Domain<{
+  tag: Axis;
+  category: Axis;
+  status: Axis;
+  locale: Axis;
+  channel: Axis;
+}> = {
+  id: 'content',
+  name: '콘텐츠 플랫폼',
+  description: 'tag(1D) + article(category × status × locale) + feed(article_ref × channel).',
+  axes: {
+    tag: AXIS.tag,
+    category: AXIS.category,
+    status: AXIS.status,
+    locale: AXIS.locale,
+    channel: AXIS.channel,
+  },
 };
 
 export const DEMO_TRACKING: Domain<{ trackAction: Axis; page: Axis; userType: Axis }> = {
-  id: "tracking",
-  name: "사용자 행동 추적",
-  description: "action × page × userType 3차원 이벤트 추적.",
+  id: 'tracking',
+  name: '사용자 행동 추적',
+  description: 'action × page × userType 3차원 이벤트 추적.',
   axes: { trackAction: AXIS.trackAction, page: AXIS.page, userType: AXIS.userType },
 };
 
 export const DEMO_RELATIONAL: Domain<{ subjectKind: Axis; predicate: Axis; objectKind: Axis }> = {
-  id: "relational",
-  name: "관계 모델",
-  description: "subject_kind × predicate × object_kind 관계 인덱스.",
+  id: 'relational',
+  name: '관계 모델',
+  description: 'subject_kind × predicate × object_kind 관계 인덱스.',
   axes: { subjectKind: AXIS.subjectKind, predicate: AXIS.predicate, objectKind: AXIS.objectKind },
 };
 
@@ -308,7 +366,7 @@ function axisToSnapshot(axis: Axis): AxisSnapshot {
   };
 }
 
-export function buildDemoSchemaSnapshot(version = "v1"): SchemaSnapshot {
+export function buildDemoSchemaSnapshot(version = 'v1'): SchemaSnapshot {
   const axes: Record<string, AxisSnapshot> = {};
   for (const [key, axis] of Object.entries(AXIS)) {
     axes[key] = axisToSnapshot(axis);

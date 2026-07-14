@@ -1,7 +1,7 @@
 // @def.boundary sim-otel-utils
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { context, propagation } from "@opentelemetry/api";
+import { context, propagation } from '@opentelemetry/api';
 
 export interface FetchWithTraceOptions extends RequestInit {
   timeoutMs?: number;

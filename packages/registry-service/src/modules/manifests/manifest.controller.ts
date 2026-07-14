@@ -1,42 +1,49 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, UseFilters } from "@nestjs/common";
-import type { PrefixLifecycleState, ManifestLifecycleState } from "pipe-store-sqlite";
-import { PrefixExceptionFilter } from "../prefixes/prefix.exception-filter.js";
-import { ManifestService } from "./manifest.service.js";
-import type { AssembleManifestBody } from "./manifest-assembly.js";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Post,
+  Query,
+  UseFilters,
+} from '@nestjs/common';
+import type { PrefixLifecycleState, ManifestLifecycleState } from 'pipe-store-sqlite';
+import { PrefixExceptionFilter } from '../prefixes/prefix.exception-filter.js';
+import { ManifestService } from './manifest.service.js';
+import type { AssembleManifestBody } from './manifest-assembly.js';
 
 @UseFilters(new PrefixExceptionFilter())
-@Controller("manifests")
+@Controller('manifests')
 export class ManifestController {
   constructor(@Inject(ManifestService) private readonly manifests: ManifestService) {}
 
   // ── Prefix 라이프사이클 ──────────────────────────────
   // static "prefixes" segment 먼저 선언 → ":serviceId" 보다 우선 매칭
 
-  @Post("prefixes")
+  @Post('prefixes')
   registerPrefix(@Body() body: { prefixId: string; version: string }) {
     return this.manifests.registerPrefix(body.prefixId, body.version);
   }
 
-  @Get("prefixes/:prefixId/active")
-  getActivePrefixVersion(@Param("prefixId") prefixId: string) {
+  @Get('prefixes/:prefixId/active')
+  getActivePrefixVersion(@Param('prefixId') prefixId: string) {
     return this.manifests.getActivePrefixVersion(prefixId);
   }
 
-  @Get("prefixes/:prefixId/:version")
-  getPrefixRecord(
-    @Param("prefixId") prefixId: string,
-    @Param("version") version: string,
-  ) {
+  @Get('prefixes/:prefixId/:version')
+  getPrefixRecord(@Param('prefixId') prefixId: string, @Param('version') version: string) {
     return this.manifests.getPrefixRecord(prefixId, version);
   }
 
-  @Post("prefixes/:prefixId/:version/transition")
+  @Post('prefixes/:prefixId/:version/transition')
   transitionPrefix(
-    @Param("prefixId") prefixId: string,
-    @Param("version") version: string,
+    @Param('prefixId') prefixId: string,
+    @Param('version') version: string,
     @Body() body: { state: PrefixLifecycleState },
   ) {
     return this.manifests.transitionPrefix(prefixId, version, body.state);
@@ -62,50 +69,50 @@ export class ManifestController {
     );
   }
 
-  @Post("assemble")
-  assembleManifest(@Body() body: AssembleManifestBody, @Query("catalog") catalogId?: string) {
-    return this.manifests.assembleManifest(body, catalogId ?? "demo");
+  @Post('assemble')
+  assembleManifest(@Body() body: AssembleManifestBody, @Query('catalog') catalogId?: string) {
+    return this.manifests.assembleManifest(body, catalogId ?? 'demo');
   }
 
-  @Post("validate")
+  @Post('validate')
   @HttpCode(200)
-  validateManifest(@Body() body: AssembleManifestBody, @Query("catalog") catalogId?: string) {
-    return this.manifests.validateManifestAssembly(body, catalogId ?? "demo");
+  validateManifest(@Body() body: AssembleManifestBody, @Query('catalog') catalogId?: string) {
+    return this.manifests.validateManifestAssembly(body, catalogId ?? 'demo');
   }
 
-  @Get(":serviceId/active")
-  getActiveManifest(@Param("serviceId") serviceId: string) {
+  @Get(':serviceId/active')
+  getActiveManifest(@Param('serviceId') serviceId: string) {
     return this.manifests.getActiveManifest(serviceId);
   }
 
-  @Get(":serviceId/:manifestVersion/transition")
+  @Get(':serviceId/:manifestVersion/transition')
   getManifestForTransition(
-    @Param("serviceId") serviceId: string,
-    @Param("manifestVersion") manifestVersion: string,
+    @Param('serviceId') serviceId: string,
+    @Param('manifestVersion') manifestVersion: string,
   ) {
     // GET으로 현재 상태 조회
     return this.manifests.getManifest(serviceId, manifestVersion);
   }
 
-  @Get(":serviceId/:manifestVersion")
+  @Get(':serviceId/:manifestVersion')
   getManifest(
-    @Param("serviceId") serviceId: string,
-    @Param("manifestVersion") manifestVersion: string,
+    @Param('serviceId') serviceId: string,
+    @Param('manifestVersion') manifestVersion: string,
   ) {
     return this.manifests.getManifest(serviceId, manifestVersion);
   }
 
-  @Post(":serviceId/:manifestVersion/transition")
+  @Post(':serviceId/:manifestVersion/transition')
   transitionManifest(
-    @Param("serviceId") serviceId: string,
-    @Param("manifestVersion") manifestVersion: string,
+    @Param('serviceId') serviceId: string,
+    @Param('manifestVersion') manifestVersion: string,
     @Body() body: { state: ManifestLifecycleState },
   ) {
     return this.manifests.transitionManifest(serviceId, manifestVersion, body.state);
   }
 
-  @Get(":serviceId")
-  listManifests(@Param("serviceId") serviceId: string) {
+  @Get(':serviceId')
+  listManifests(@Param('serviceId') serviceId: string) {
     return this.manifests.listManifests(serviceId);
   }
 }

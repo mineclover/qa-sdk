@@ -42,9 +42,7 @@
       "priority": 2,
       "passes": true,
       "notes": "US-001 완료 후 진행. 기존 ingest 흐름에 side-effect 추가 — 동기 append이므로 성능 영향 최소.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -148,9 +146,7 @@
       "priority": 7,
       "passes": true,
       "notes": "US-006 완료 후 진행. 이번 PRD에서 제외된 항목: E-2(이벤트 수신 인터페이스) — MQ 트리거 의존, E-3(캐시 무효화 브로드캐스트) — 분산 인프라 의존, E-4(shouldVerify 재확인) — MQ 기반 정합성 모델 의존. 모두 트랙 C(MQ) 선행 필요.",
-      "dependsOn": [
-        "US-006"
-      ],
+      "dependsOn": ["US-006"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -195,9 +191,7 @@
       "priority": 9,
       "passes": true,
       "notes": "tasks/service-query.md F-2 참조. US-008 완료 후 진행. disabledStrategies(서버 수준 전략 제한)는 이번 PRD 범위 밖 — 운영 설정으로 별도 추가 가능.",
-      "dependsOn": [
-        "US-008"
-      ],
+      "dependsOn": ["US-008"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -220,9 +214,7 @@
       "priority": 10,
       "passes": true,
       "notes": "tasks/service-query.md F-3 참조. MetaRegistry 인스턴스 관리 방식 결정 필요 (DI 또는 설정 기반).",
-      "dependsOn": [
-        "US-008"
-      ],
+      "dependsOn": ["US-008"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -244,10 +236,7 @@
       "priority": 11,
       "passes": true,
       "notes": "tasks/service-query.md F-4 참조. US-007(gate-service 계산 엔드포인트) + US-010 완료 후 진행. 이번 PRD에서 제외: F-5(규칙 버전 마이그레이션) — 운영 단계 진입 시 필요, 현재 우선순위 낮음.",
-      "dependsOn": [
-        "US-007",
-        "US-010"
-      ],
+      "dependsOn": ["US-007", "US-010"],
       "completionNotes": "Completed by agent"
     },
     {

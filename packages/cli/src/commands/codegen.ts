@@ -1,20 +1,23 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { mkdir } from "node:fs/promises";
-import { isAbsolute, join, relative, resolve } from "node:path";
-import { readFile } from "node:fs/promises";
-import { writeOutput } from "snapshot-io";
-import { generateCatalogTypes, generateDataObjectBindings, testMigration } from "codegen-core";
-import { loadCatalog, isDkgConfig, loadDkgConfig } from "config-loader";
-import { latestPrefixVersion, type Catalog, type DkgConfig, type DataObjectBinding } from "@qa-sdk/core";
+import { mkdir } from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { writeOutput } from 'snapshot-io';
+import { generateCatalogTypes, generateDataObjectBindings, testMigration } from 'codegen-core';
+import { loadCatalog, isDkgConfig, loadDkgConfig } from 'config-loader';
+import {
+  latestPrefixVersion,
+  type Catalog,
+  type DkgConfig,
+  type DataObjectBinding,
+} from '@qa-sdk/core';
 import {
   createProgrammingArtifactRegistryRecord,
   type ProgrammingArtifactRegistryRecord,
-} from "operational-ontology/programming-artifacts";
-import {
-  appendProgrammingArtifactRegistryRecords,
-} from "../lib/programming-artifact-registry.js";
+} from 'operational-ontology/programming-artifacts';
+import { appendProgrammingArtifactRegistryRecords } from '../lib/programming-artifact-registry.js';
 
 /** 공통 codegen 옵션 */
 interface CodegenBase {
@@ -40,7 +43,7 @@ export interface CodegenCatalogOptions extends CodegenBase {
 export type CodegenOptions = CodegenRegistryOptions | CodegenCatalogOptions;
 
 function isRegistryOptions(opts: CodegenOptions): opts is CodegenRegistryOptions {
-  return "registry" in opts && !!opts.registry;
+  return 'registry' in opts && !!opts.registry;
 }
 
 export async function codegen(opts: CodegenOptions): Promise<void> {
@@ -54,7 +57,7 @@ export async function codegen(opts: CodegenOptions): Promise<void> {
 
 async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> {
   const registryUrl = opts.registry;
-  const catalogId = opts.catalogId ?? "demo";
+  const catalogId = opts.catalogId ?? 'demo';
 
   console.log(`Fetching catalog "${catalogId}" from ${registryUrl}...`);
 
@@ -66,21 +69,25 @@ async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> 
     if (!res.ok) {
       throw new Error(`${res.status} ${res.statusText}`);
     }
-    const body = await res.json() as { id: string; name: string; data: string };
+    const body = (await res.json()) as { id: string; name: string; data: string };
     catalog = JSON.parse(body.data) as Catalog;
     fromRegistry = true;
-    console.log(`Catalog loaded: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes, ${Object.keys(catalog.axes).length} axes)`);
+    console.log(
+      `Catalog loaded: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes, ${Object.keys(catalog.axes).length} axes)`,
+    );
   } catch (err) {
     console.warn(`Registry fetch failed: ${(err as Error).message}`);
-    console.warn("Falling back to local catalog...");
+    console.warn('Falling back to local catalog...');
     try {
-      catalog = await loadCatalog() as Catalog;
+      catalog = (await loadCatalog()) as Catalog;
     } catch {
       // TS config 로드 실패 시 DEMO_CATALOG 최종 fallback
-      const { DEMO_CATALOG } = await import("demo-snapshot");
+      const { DEMO_CATALOG } = await import('demo-snapshot');
       catalog = DEMO_CATALOG as Catalog;
     }
-    console.log(`Local fallback: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes)`);
+    console.log(
+      `Local fallback: "${catalog.id}" (${Object.keys(catalog.prefixes).length} prefixes)`,
+    );
   }
 
   // prefix version lifecycle 검증 (registry에서 로드한 경우)
@@ -96,7 +103,7 @@ async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> 
     try {
       const configRes = await fetch(`${registryUrl}/catalogs/${catalogId}/config`);
       if (configRes.ok) {
-        const configBody = await configRes.json() as { catalogId: string; data: string };
+        const configBody = (await configRes.json()) as { catalogId: string; data: string };
         const parsed = JSON.parse(configBody.data) as unknown;
         if (isDkgConfig(parsed)) {
           dkgConfig = parsed;
@@ -105,10 +112,12 @@ async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> 
           console.warn(`Registry DkgConfig 형식 불일치: ${catalogId}`);
         }
       }
-    } catch { /* registry에 config 없으면 로컬 fallback */ }
+    } catch {
+      /* registry에 config 없으면 로컬 fallback */
+    }
     if (!dkgConfig) {
-      dkgConfig = await loadDkgConfig() ?? undefined;
-      if (dkgConfig) console.log("DkgConfig: local fallback");
+      dkgConfig = (await loadDkgConfig()) ?? undefined;
+      if (dkgConfig) console.log('DkgConfig: local fallback');
     }
   }
 
@@ -134,23 +143,25 @@ async function codegenFromRegistry(opts: CodegenRegistryOptions): Promise<void> 
       opts.dkgConfig,
       opts.lockVersion ? `prefix-version-lock:${opts.lockVersion}` : undefined,
     ],
-    ownerDefinitionId: opts.ownerDefinitionId ?? "codegen-schema-output",
-    materializesOutputRefs: ["apm-codegen-system", "codegen-schema-output"],
-    verificationRefs: ["packages/cli/src/commands/codegen.test.ts"],
+    ownerDefinitionId: opts.ownerDefinitionId ?? 'codegen-schema-output',
+    materializesOutputRefs: ['apm-codegen-system', 'codegen-schema-output'],
+    verificationRefs: ['packages/cli/src/commands/codegen.test.ts'],
     metadata: {
       catalogId: catalog.id,
       contentHash: result.contentHash,
-      source: fromRegistry ? "registry" : "local-fallback",
+      source: fromRegistry ? 'registry' : 'local-fallback',
     },
   });
 
-  console.log(`${result.files.length} file(s) generated from registry "${registryUrl}" catalog "${catalog.id}" (hash: ${result.contentHash})`);
+  console.log(
+    `${result.files.length} file(s) generated from registry "${registryUrl}" catalog "${catalog.id}" (hash: ${result.contentHash})`,
+  );
 }
 
 // ── Catalog 기반 codegen ───────────────────────────────
 
 async function codegenFromCatalog(opts: CodegenCatalogOptions): Promise<void> {
-  const catalog = (opts.loadedCatalog ?? await loadCatalog(opts.catalog)) as Catalog;
+  const catalog = (opts.loadedCatalog ?? (await loadCatalog(opts.catalog))) as Catalog;
   const dkgConfig = opts.dkgConfig ? await loadDkgConfig(opts.dkgConfig) : await loadDkgConfig();
 
   const result = generateCatalogTypes(catalog, dkgConfig ?? undefined, {
@@ -169,24 +180,26 @@ async function codegenFromCatalog(opts: CodegenCatalogOptions): Promise<void> {
     artifactRegistry: opts.artifactRegistry,
     outputDir: opts.output,
     files: result.files.map((file) => file.path),
-    producedByRef: "qa-sdk codegen",
+    producedByRef: 'qa-sdk codegen',
     derivedFromRefs: [
       opts.catalog,
       `catalog:${catalog.id}`,
       opts.dkgConfig,
       opts.lockVersion ? `prefix-version-lock:${opts.lockVersion}` : undefined,
     ],
-    ownerDefinitionId: opts.ownerDefinitionId ?? "codegen-schema-output",
-    materializesOutputRefs: ["apm-codegen-system", "codegen-schema-output"],
-    verificationRefs: ["packages/cli/src/commands/codegen.test.ts"],
+    ownerDefinitionId: opts.ownerDefinitionId ?? 'codegen-schema-output',
+    materializesOutputRefs: ['apm-codegen-system', 'codegen-schema-output'],
+    verificationRefs: ['packages/cli/src/commands/codegen.test.ts'],
     metadata: {
       catalogId: catalog.id,
       contentHash: result.contentHash,
-      source: opts.catalog ? "catalog-file" : "loaded-catalog",
+      source: opts.catalog ? 'catalog-file' : 'loaded-catalog',
     },
   });
 
-  console.log(`${result.files.length} file(s) generated from catalog "${catalog.id}" (hash: ${result.contentHash})`);
+  console.log(
+    `${result.files.length} file(s) generated from catalog "${catalog.id}" (hash: ${result.contentHash})`,
+  );
   if (opts.lockVersion) {
     console.log(`  version locked to: ${opts.lockVersion}`);
   }
@@ -210,26 +223,28 @@ async function validatePrefixVersions(
     try {
       const res = await fetch(`${registryUrl}/prefixes/${prefixId}/versions`);
       if (!res.ok) continue;
-      const versions = await res.json() as Array<{ versionId: string; status: string }>;
+      const versions = (await res.json()) as Array<{ versionId: string; status: string }>;
       if (versions.length === 0) continue;
 
       const targetVersion = lockVersion ?? latestPrefixVersion(catalog, prefixId);
-      const matched = versions.find(v => v.versionId === targetVersion);
+      const matched = versions.find((v) => v.versionId === targetVersion);
 
       if (matched) {
-        if (matched.status === "deprecated") {
+        if (matched.status === 'deprecated') {
           warnings.push(`⚠ ${prefixId}:${targetVersion} is deprecated`);
-        } else if (matched.status === "draft") {
+        } else if (matched.status === 'draft') {
           warnings.push(`⚠ ${prefixId}:${targetVersion} is still draft (not released)`);
         }
       }
-    } catch { /* 개별 prefix 검증 실패는 무시 */ }
+    } catch {
+      /* 개별 prefix 검증 실패는 무시 */
+    }
   }
 
   if (warnings.length > 0) {
-    console.warn("\nVersion lifecycle warnings:");
+    console.warn('\nVersion lifecycle warnings:');
     for (const w of warnings) console.warn(`  ${w}`);
-    console.warn("");
+    console.warn('');
   }
 }
 
@@ -250,11 +265,11 @@ export interface DataObjectCodegenCliOptions {
  * qa-sdk codegen --data-objects ./bindings.json --output ./generated
  */
 export async function codegenDataObjects(opts: DataObjectCodegenCliOptions): Promise<void> {
-  const raw = await readFile(opts.bindingsPath, "utf-8");
+  const raw = await readFile(opts.bindingsPath, 'utf-8');
   const bindings = JSON.parse(raw) as DataObjectBinding[];
 
   if (!Array.isArray(bindings) || bindings.length === 0) {
-    console.error("바인딩 파일이 비어있거나 배열이 아닙니다:", opts.bindingsPath);
+    console.error('바인딩 파일이 비어있거나 배열이 아닙니다:', opts.bindingsPath);
     return;
   }
 
@@ -276,13 +291,13 @@ export async function codegenDataObjects(opts: DataObjectCodegenCliOptions): Pro
     files: result.files.map((file) => file.path),
     producedByRef: `qa-sdk codegen --data-objects ${opts.bindingsPath}`,
     derivedFromRefs: [opts.bindingsPath],
-    ownerDefinitionId: opts.ownerDefinitionId ?? "data-object-codegen",
-    materializesOutputRefs: ["data-object-codegen"],
-    verificationRefs: ["packages/cli/src/commands/codegen.test.ts"],
+    ownerDefinitionId: opts.ownerDefinitionId ?? 'data-object-codegen',
+    materializesOutputRefs: ['data-object-codegen'],
+    verificationRefs: ['packages/cli/src/commands/codegen.test.ts'],
     metadata: {
       bindingCount: bindings.length,
       contentHash: result.contentHash,
-      source: "data-object-bindings",
+      source: 'data-object-bindings',
     },
   });
 
@@ -310,7 +325,7 @@ async function maybeWriteCodegenArtifactRegistryRecords(
   const records: ProgrammingArtifactRegistryRecord[] = input.files.map((filePath) => {
     const outputPath = portablePath(join(input.outputDir, filePath));
     return createProgrammingArtifactRegistryRecord({
-      kind: "generated-source",
+      kind: 'generated-source',
       artifactRef: outputPath,
       outputPath,
       producedByRef: input.producedByRef,
@@ -328,13 +343,15 @@ async function maybeWriteCodegenArtifactRegistryRecords(
   });
 
   await appendProgrammingArtifactRegistryRecords(input.artifactRegistry, records);
-  console.log(`artifact registry: ${records.length} generated-source record(s) -> ${input.artifactRegistry}`);
+  console.log(
+    `artifact registry: ${records.length} generated-source record(s) -> ${input.artifactRegistry}`,
+  );
 }
 
 function portablePath(filePath: string): string {
   const resolved = resolve(filePath);
   const rel = relative(process.cwd(), resolved);
-  if (rel && !rel.startsWith("..") && !isAbsolute(rel)) return rel;
+  if (rel && !rel.startsWith('..') && !isAbsolute(rel)) return rel;
   return filePath;
 }
 
@@ -353,7 +370,7 @@ export async function runMigrationTest(opts: {
   to: string;
   samples?: number;
 }): Promise<void> {
-  const catalog = (opts.loadedCatalog ?? await loadCatalog(opts.catalog)) as Catalog;
+  const catalog = (opts.loadedCatalog ?? (await loadCatalog(opts.catalog))) as Catalog;
 
   console.log(`\n══ Migration Test: ${opts.prefix} ${opts.from} → ${opts.to} ══\n`);
 

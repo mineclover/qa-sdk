@@ -71,13 +71,13 @@ export type {
   NarrativeOutcome,
   NarrativeTestResult,
   NarrativeReflection,
-} from "./types.js";
+} from './types.js';
 
 export type {
   InstanceContextQuery,
   InstanceTimeRangeQuery,
   InstanceStore,
-} from "./instance-store.js";
+} from './instance-store.js';
 
 // ── schema ───────────────────────────────────────────────
 export {
@@ -85,13 +85,13 @@ export {
   validateFlowSchema,
   type ValidationIssue,
   type ValidationResult,
-} from "./schema.js";
+} from './schema.js';
 
 // ── engine ───────────────────────────────────────────────
-export { FlowEngine } from "./engine.js";
-export type { FlowEngineOptions, FlowEngineListener } from "./engine.js";
+export { FlowEngine } from './engine.js';
+export type { FlowEngineOptions, FlowEngineListener } from './engine.js';
 
-export { MemoryInstanceStore } from "./instance-store.js";
+export { MemoryInstanceStore } from './instance-store.js';
 
 // ── coordinate ───────────────────────────────────────────
 export {
@@ -101,7 +101,7 @@ export {
   decodePath,
   resolveDeepPath,
   constraintForGate,
-} from "./coordinate.js";
+} from './coordinate.js';
 
 // ── policy ───────────────────────────────────────────────
 export {
@@ -110,7 +110,7 @@ export {
   findApplicablePolicies,
   resolvePolicyConflicts,
   tryAutoSelect,
-} from "./policy.js";
+} from './policy.js';
 
 // ── policy-learning (패턴 학습) ──────────────────────────
 export type {
@@ -124,18 +124,15 @@ export type {
   PolicyCandidateChanges,
   PolicyRegistrar,
   PolicyCandidateWorkflowOptions,
-} from "./policy-learning.js";
-export type {
-  PatternClass,
-  ClassifiedPattern,
-} from "./policy-learning.js";
+} from './policy-learning.js';
+export type { PatternClass, ClassifiedPattern } from './policy-learning.js';
 export {
   detectPatterns,
   generatePolicyCandidates,
   PolicyCandidateWorkflow,
   classifyPattern,
   classifyPatterns,
-} from "./policy-learning.js";
+} from './policy-learning.js';
 
 // ── comparison (인스턴스 비교) ───────────────────────────
 export type {
@@ -164,13 +161,13 @@ export type {
   TemporalShiftInsight,
   ComparisonReportSummary,
   ComparisonReport,
-} from "./comparison.js";
+} from './comparison.js';
 export {
   diffInstances,
   gateDistribution,
   compareTimeRanges,
   createComparisonReport,
-} from "./comparison.js";
+} from './comparison.js';
 
 // ── comparison 벡터 프레이밍 alias ──────────────────────
 // 벡터 공간 분석 관점의 이름. 기존 이름도 유지 (하위호환).
@@ -183,12 +180,12 @@ export type {
   InstancePairDiff as VectorDiff,
   GateDistribution as DimensionDistribution,
   TimeRangeComparison as TemporalAnalysis,
-} from "./comparison.js";
+} from './comparison.js';
 export {
   diffInstances as compareVectors,
   gateDistribution as analyzeDimension,
   compareTimeRanges as analyzeTemporalShift,
-} from "./comparison.js";
+} from './comparison.js';
 
 // ── mental-model ─────────────────────────────────────────
 export type {
@@ -202,12 +199,9 @@ export type {
   AutoDecisionPrinciple,
   EscalationJudgment,
   ForcingQuestion,
-} from "./mental-model.js";
+} from './mental-model.js';
 
-export type {
-  ModelAnswerCheck,
-  GateModelValidation,
-} from "./mental-model.js";
+export type { ModelAnswerCheck, GateModelValidation } from './mental-model.js';
 
 export {
   MENTAL_MODELS,
@@ -215,13 +209,10 @@ export {
   classifyEscalation,
   validateMentalModelAnswers,
   validateInstanceModelCoverage,
-} from "./mental-model.js";
+} from './mental-model.js';
 
 // ── vocabulary (도메인 단어) ──────────────────────────────
-export type {
-  ExplanatoryRole,
-  AxisExplanatoryMeta,
-} from "./vocabulary.js";
+export type { ExplanatoryRole, AxisExplanatoryMeta } from './vocabulary.js';
 
 export {
   COGNITIVE_PHASE,
@@ -238,17 +229,13 @@ export {
   DECISION_AXES,
   AXIS_META,
   discretizeConfidence,
-} from "./vocabulary.js";
+} from './vocabulary.js';
 
 // ── catalog (prefix 정의) ────────────────────────────────
-export {
-  DECISION_CATALOG,
-  DECISION_PREFIX_IDS,
-  DECISION_AXIS_IDS,
-} from "./catalog.js";
+export { DECISION_CATALOG, DECISION_PREFIX_IDS, DECISION_AXIS_IDS } from './catalog.js';
 
 // ── observe (관찰 레이어) ────────────────────────────────
-export type { ObservedEvent } from "./observe.js";
+export type { ObservedEvent } from './observe.js';
 export {
   encodeDecisionEvent,
   encodeDecisionPath,
@@ -258,7 +245,7 @@ export {
   decodeObservedEvent,
   serializeObservedEvent,
   parseAndDecodeAddress,
-} from "./observe.js";
+} from './observe.js';
 
 // ── boundary (계층 + 컨텍스트 바운더리) ──────────────────
 export type {
@@ -269,17 +256,17 @@ export type {
   ContextImport,
   LayerViolation,
   EscalationRequest,
-} from "./boundary.js";
+} from './boundary.js';
 export {
   DECISION_LAYERS,
   getLayerForFlow,
   validateLayerConstraints,
   propagateScope,
   createEscalationRequest,
-} from "./boundary.js";
+} from './boundary.js';
 
 // ── ingest-adapter (수집 파이프라인 연동) ─────────────────
-export type { AddressContext } from "./ingest-adapter.js";
+export type { AddressContext } from './ingest-adapter.js';
 export {
   buildSelectionContext,
   buildPathContext,
@@ -288,7 +275,7 @@ export {
   buildForcingContext,
   mergeContexts,
   buildFlowCompletionContext,
-} from "./ingest-adapter.js";
+} from './ingest-adapter.js';
 
 // ── core-analysis (구조적 분석) ───────────────────────────
 export type {
@@ -297,14 +284,14 @@ export type {
   ImpactAnalysis,
   CoreDecisionTrace,
   PivotPoint,
-} from "./core-analysis.js";
+} from './core-analysis.js';
 export {
   analyzeGateStructure,
   identifyCoreGates,
   extractCausalGraph,
   analyzeImpact,
   traceCorePath,
-} from "./core-analysis.js";
+} from './core-analysis.js';
 
 // ── self-analysis (자기참조 분석) ─────────────────────────
 export {
@@ -312,7 +299,7 @@ export {
   getAnnotatedDesignFlow,
   recordQaSdkDesignDecisions,
   analyzeRecordedDecisions,
-} from "./self-analysis.js";
+} from './self-analysis.js';
 
 // ── hierarchical-context (계층적 맥락 조합) ──────────────
 export type {
@@ -322,11 +309,8 @@ export type {
   DimInfo,
   HierarchicalContext,
   HierarchySource,
-} from "./hierarchical-context.js";
-export {
-  assembleHierarchicalContext,
-  assembleMultiPrefixContext,
-} from "./hierarchical-context.js";
+} from './hierarchical-context.js';
+export { assembleHierarchicalContext, assembleMultiPrefixContext } from './hierarchical-context.js';
 
 // ── context-provider (컨텍스트 제공) ────────────────────
 export type {
@@ -339,8 +323,8 @@ export type {
   ContextProviderDeps,
   FeatureLookup,
   FeatureInstance,
-} from "./context-provider.js";
-export { ContextProvider } from "./context-provider.js";
+} from './context-provider.js';
+export { ContextProvider } from './context-provider.js';
 
 // ── dev-decisions (일상 개발 의사결정) ───────────────────
 export {
@@ -353,7 +337,7 @@ export {
   ALL_DEV_DECISION_FLOWS,
   DEV_DECISION_REGISTRY,
   DEV_DECISION_UNITS,
-} from "./dev-decisions.js";
+} from './dev-decisions.js';
 
 // ── monitor (실시간 모니터링) ──────────────────────────────
 export type {
@@ -362,14 +346,11 @@ export type {
   DecisionAlert,
   AlertHandler,
   MonitorConfig,
-} from "./monitor.js";
-export { DecisionMonitor } from "./monitor.js";
+} from './monitor.js';
+export { DecisionMonitor } from './monitor.js';
 
 // ── narrative (서사 빌더) ────────────────────────────────
-export type {
-  BuildNarrativeInput,
-  NarrativeDivergence,
-} from "./narrative.js";
+export type { BuildNarrativeInput, NarrativeDivergence } from './narrative.js';
 export {
   buildNarrative,
   extractPivotPoints,
@@ -378,20 +359,16 @@ export {
   recordVerdict,
   evaluateDecision,
   summarizeDecisionOutcome,
-} from "./narrative.js";
+} from './narrative.js';
 
 // ── orthogonality (직교성 검증) ──────────────────────────
-export type {
-  OrthogonalityResult,
-  ObservedPair,
-  PairExtractor,
-} from "./orthogonality.js";
+export type { OrthogonalityResult, ObservedPair, PairExtractor } from './orthogonality.js';
 export {
   checkOrthogonality,
   extractPhaseEvidencePairs,
   extractEvidenceConfidencePairs,
   checkAllDeclaredOrthogonality,
-} from "./orthogonality.js";
+} from './orthogonality.js';
 
 // ── sprint (gstack-inspired pipeline) ────────────────────
 export {
@@ -409,4 +386,4 @@ export {
   AUTOPLAN_POLICIES,
   ALL_SPRINT_FLOWS,
   SPRINT_FLOW_REGISTRY,
-} from "./sprint.js";
+} from './sprint.js';

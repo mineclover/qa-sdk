@@ -12,8 +12,8 @@
  */
 
 // 타입은 definition-catalog와 호환 (직접 정의하여 패키지 의존 제거)
-export type PrefixLifecycleState = "draft" | "released" | "active" | "deprecated" | "archived";
-export type ManifestLifecycleState = "draft" | "published" | "active" | "superseded" | "archived";
+export type PrefixLifecycleState = 'draft' | 'released' | 'active' | 'deprecated' | 'archived';
+export type ManifestLifecycleState = 'draft' | 'published' | 'active' | 'superseded' | 'archived';
 
 export interface PrefixVersionRecord {
   readonly prefixId: string;
@@ -66,26 +66,26 @@ export interface GuardResult {
   readonly allowed: boolean;
   readonly reason?: string;
 }
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc } from 'drizzle-orm';
 
-import { createDb, type DrizzleDb } from "./db/connection.js";
-import { prefixVersions, serviceManifests } from "./db/schema.js";
+import { createDb, type DrizzleDb } from './db/connection.js';
+import { prefixVersions, serviceManifests } from './db/schema.js';
 
 // ── 전이 규칙 (definition-catalog 비의존, 직접 정의) ──
 
 const PREFIX_TRANSITIONS: Record<string, readonly string[]> = {
-  draft: ["released"],
-  released: ["active"],
-  active: ["deprecated"],
-  deprecated: ["archived"],
+  draft: ['released'],
+  released: ['active'],
+  active: ['deprecated'],
+  deprecated: ['archived'],
   archived: [],
 };
 
 const MANIFEST_TRANSITIONS: Record<string, readonly string[]> = {
-  draft: ["published"],
-  published: ["active"],
-  active: ["superseded"],
-  superseded: ["archived"],
+  draft: ['published'],
+  published: ['active'],
+  active: ['superseded'],
+  superseded: ['archived'],
   archived: [],
 };
 
@@ -115,7 +115,7 @@ export class SqliteManifestRegistry {
     const record: PrefixVersionRecord = {
       prefixId,
       version,
-      state: "draft",
+      state: 'draft',
       createdAt: new Date().toISOString(),
     };
 
@@ -140,17 +140,20 @@ export class SqliteManifestRegistry {
     const updated: PrefixVersionRecord = {
       ...record,
       state: targetState,
-      ...(targetState === "released" ? { releasedAt: now } : {}),
-      ...(targetState === "active" ? { activatedAt: now } : {}),
-      ...(targetState === "deprecated" ? { deprecatedAt: now } : {}),
-      ...(targetState === "archived" ? { archivedAt: now } : {}),
+      ...(targetState === 'released' ? { releasedAt: now } : {}),
+      ...(targetState === 'active' ? { activatedAt: now } : {}),
+      ...(targetState === 'deprecated' ? { deprecatedAt: now } : {}),
+      ...(targetState === 'archived' ? { archivedAt: now } : {}),
     };
 
     this.savePrefixRecord(updated);
     return updated;
   }
 
-  checkPrefixTransition(record: PrefixVersionRecord, targetState: PrefixLifecycleState): GuardResult {
+  checkPrefixTransition(
+    record: PrefixVersionRecord,
+    targetState: PrefixLifecycleState,
+  ): GuardResult {
     const allowed = PREFIX_TRANSITIONS[record.state];
     if (!allowed?.includes(targetState)) {
       return { allowed: false, reason: `${record.state}→${targetState} 허용되지 않음` };
@@ -168,7 +171,7 @@ export class SqliteManifestRegistry {
     const row = this.db
       .select()
       .from(prefixVersions)
-      .where(and(eq(prefixVersions.prefixId, prefixId), eq(prefixVersions.state, "active")))
+      .where(and(eq(prefixVersions.prefixId, prefixId), eq(prefixVersions.state, 'active')))
       .orderBy(desc(prefixVersions.version))
       .get();
     return row ? rowToPrefixRecord(row) : null;
@@ -184,13 +187,17 @@ export class SqliteManifestRegistry {
     options?: ServiceManifestOptions,
   ): ServiceVersionManifest {
     if (options?.runtimeAddress && options.runtimeAddress.serviceId !== serviceId) {
-      throw new Error(`runtimeAddress.serviceId "${options.runtimeAddress.serviceId}" != manifest serviceId "${serviceId}"`);
+      throw new Error(
+        `runtimeAddress.serviceId "${options.runtimeAddress.serviceId}" != manifest serviceId "${serviceId}"`,
+      );
     }
     const manifest: ServiceVersionManifest = {
       serviceId,
       manifestVersion,
-      state: "draft",
-      ...(options?.runtimeAddressVersion ? { runtimeAddressVersion: options.runtimeAddressVersion } : {}),
+      state: 'draft',
+      ...(options?.runtimeAddressVersion
+        ? { runtimeAddressVersion: options.runtimeAddressVersion }
+        : {}),
       ...(options?.serviceUnitVersion ? { serviceUnitVersion: options.serviceUnitVersion } : {}),
       ...(options?.ownershipVersion ? { ownershipVersion: options.ownershipVersion } : {}),
       ...(options?.exposureVersion ? { exposureVersion: options.exposureVersion } : {}),
@@ -222,23 +229,23 @@ export class SqliteManifestRegistry {
     let updated: ServiceVersionManifest = {
       ...manifest,
       state: targetState,
-      ...(targetState === "published" ? { publishedAt: now } : {}),
-      ...(targetState === "active" ? { activatedAt: now } : {}),
-      ...(targetState === "superseded" ? { supersededAt: now } : {}),
-      ...(targetState === "archived" ? { archivedAt: now } : {}),
+      ...(targetState === 'published' ? { publishedAt: now } : {}),
+      ...(targetState === 'active' ? { activatedAt: now } : {}),
+      ...(targetState === 'superseded' ? { supersededAt: now } : {}),
+      ...(targetState === 'archived' ? { archivedAt: now } : {}),
     };
 
     // active 전이 시: 이전 active 매니페스트 supersede + prefix auto-active
-    if (targetState === "active") {
+    if (targetState === 'active') {
       const prevActive = this.getActiveManifest(serviceId);
       if (prevActive) {
-        this.saveManifest({ ...prevActive, state: "superseded", supersededAt: now });
+        this.saveManifest({ ...prevActive, state: 'superseded', supersededAt: now });
       }
       // 매니페스트 내 prefix를 active로 전이
       for (const [prefixId, version] of Object.entries(manifest.prefixes)) {
         const prefixRecord = this.getPrefixRecordOrNull(prefixId, version);
-        if (prefixRecord && prefixRecord.state === "released") {
-          this.savePrefixRecord({ ...prefixRecord, state: "active", activatedAt: now });
+        if (prefixRecord && prefixRecord.state === 'released') {
+          this.savePrefixRecord({ ...prefixRecord, state: 'active', activatedAt: now });
         }
       }
     }
@@ -247,16 +254,19 @@ export class SqliteManifestRegistry {
     return updated;
   }
 
-  checkManifestTransition(manifest: ServiceVersionManifest, targetState: ManifestLifecycleState): GuardResult {
+  checkManifestTransition(
+    manifest: ServiceVersionManifest,
+    targetState: ManifestLifecycleState,
+  ): GuardResult {
     const allowed = MANIFEST_TRANSITIONS[manifest.state];
     if (!allowed?.includes(targetState)) {
       return { allowed: false, reason: `${manifest.state}→${targetState} 허용되지 않음` };
     }
     // published 전이: 모든 prefix가 released 이상인지 검증
-    if (targetState === "published") {
+    if (targetState === 'published') {
       for (const [prefixId, version] of Object.entries(manifest.prefixes)) {
         const record = this.getPrefixRecordOrNull(prefixId, version);
-        if (!record || record.state === "draft") {
+        if (!record || record.state === 'draft') {
           return {
             allowed: false,
             reason: `prefix "${prefixId}:${version}" 가 draft 상태 — released 이상 필요`,
@@ -278,7 +288,7 @@ export class SqliteManifestRegistry {
     const row = this.db
       .select()
       .from(serviceManifests)
-      .where(and(eq(serviceManifests.serviceId, serviceId), eq(serviceManifests.state, "active")))
+      .where(and(eq(serviceManifests.serviceId, serviceId), eq(serviceManifests.state, 'active')))
       .get();
     return row ? rowToManifest(row) : null;
   }
@@ -293,10 +303,15 @@ export class SqliteManifestRegistry {
       .map(rowToManifest);
   }
 
-  getPrefixVersionFromManifest(serviceId: string, manifestVersion: string, prefixId: string): string {
+  getPrefixVersionFromManifest(
+    serviceId: string,
+    manifestVersion: string,
+    prefixId: string,
+  ): string {
     const manifest = this.getManifest(serviceId, manifestVersion);
     const version = manifest.prefixes[prefixId];
-    if (!version) throw new Error(`manifest "${serviceId}:${manifestVersion}"에 prefix "${prefixId}" 없음`);
+    if (!version)
+      throw new Error(`manifest "${serviceId}:${manifestVersion}"에 prefix "${prefixId}" 없음`);
     return version;
   }
 

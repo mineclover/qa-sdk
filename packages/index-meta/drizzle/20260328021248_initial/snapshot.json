@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "a1898311-9301-4094-825d-9f379893b90e",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "address_range_cache",
@@ -637,15 +635,9 @@
       "table": "version_lifecycle"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id"
-      ],
+      "columns": ["prefix", "version_id"],
       "tableTo": "schema_version",
-      "columnsTo": [
-        "prefix",
-        "version_id"
-      ],
+      "columnsTo": ["prefix", "version_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -654,17 +646,9 @@
       "table": "entry"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id",
-        "position"
-      ],
+      "columns": ["prefix", "version_id", "position"],
       "tableTo": "entry",
-      "columnsTo": [
-        "prefix",
-        "version_id",
-        "position"
-      ],
+      "columnsTo": ["prefix", "version_id", "position"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -673,15 +657,9 @@
       "table": "entry_flag"
     },
     {
-      "columns": [
-        "parent_prefix",
-        "parent_version_id"
-      ],
+      "columns": ["parent_prefix", "parent_version_id"],
       "tableTo": "prefix_registry",
-      "columnsTo": [
-        "prefix",
-        "version_id"
-      ],
+      "columnsTo": ["prefix", "version_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -690,103 +668,70 @@
       "table": "prefix_ref"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id",
-        "label"
-      ],
+      "columns": ["prefix", "version_id", "label"],
       "nameExplicit": false,
       "name": "address_range_cache_pk",
       "entityType": "pks",
       "table": "address_range_cache"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id"
-      ],
+      "columns": ["prefix", "version_id"],
       "nameExplicit": false,
       "name": "address_state_cache_pk",
       "entityType": "pks",
       "table": "address_state_cache"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id",
-        "position"
-      ],
+      "columns": ["prefix", "version_id", "position"],
       "nameExplicit": false,
       "name": "entry_pk",
       "entityType": "pks",
       "table": "entry"
     },
     {
-      "columns": [
-        "prefix",
-        "from_version_id",
-        "to_version_id",
-        "position"
-      ],
+      "columns": ["prefix", "from_version_id", "to_version_id", "position"],
       "nameExplicit": false,
       "name": "migration_mapping_pk",
       "entityType": "pks",
       "table": "migration_mapping"
     },
     {
-      "columns": [
-        "parent_prefix",
-        "parent_version_id",
-        "dim_order"
-      ],
+      "columns": ["parent_prefix", "parent_version_id", "dim_order"],
       "nameExplicit": false,
       "name": "prefix_ref_pk",
       "entityType": "pks",
       "table": "prefix_ref"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id"
-      ],
+      "columns": ["prefix", "version_id"],
       "nameExplicit": false,
       "name": "prefix_registry_pk",
       "entityType": "pks",
       "table": "prefix_registry"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id"
-      ],
+      "columns": ["prefix", "version_id"],
       "nameExplicit": false,
       "name": "schema_version_pk",
       "entityType": "pks",
       "table": "schema_version"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id"
-      ],
+      "columns": ["prefix", "version_id"],
       "nameExplicit": false,
       "name": "version_lifecycle_pk",
       "entityType": "pks",
       "table": "version_lifecycle"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "entry_flag_pk",
       "table": "entry_flag",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "prefix"
-      ],
+      "columns": ["prefix"],
       "nameExplicit": false,
       "name": "prefix_route_pk",
       "table": "prefix_route",

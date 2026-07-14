@@ -1,18 +1,18 @@
 // @def.boundary deterministic-label-architecture
-import type { KnownOntologyPackId } from "../known-ontology-packs.js";
+import type { KnownOntologyPackId } from '../known-ontology-packs.js';
 
-export type OntologyPackValidateIssueLevel = "error" | "warning";
+export type OntologyPackValidateIssueLevel = 'error' | 'warning';
 
 export type OntologyPackValidateIssueSource =
-  | "blueprint"
-  | "docs"
-  | "file"
-  | "governance_taxonomy"
-  | "loader"
-  | "pack"
-  | "resolver"
-  | "schema"
-  | "source-map";
+  | 'blueprint'
+  | 'docs'
+  | 'file'
+  | 'governance_taxonomy'
+  | 'loader'
+  | 'pack'
+  | 'resolver'
+  | 'schema'
+  | 'source-map';
 
 export interface OntologyPackValidateIssue {
   readonly level: OntologyPackValidateIssueLevel;
@@ -25,7 +25,7 @@ export interface OntologyPackValidateIssue {
 }
 
 export interface OntologyPackValidateResolution {
-  readonly kind: "file-path" | "known-pack" | "unresolved";
+  readonly kind: 'file-path' | 'known-pack' | 'unresolved';
   readonly packRef: string;
   readonly knownPackId?: KnownOntologyPackId;
   readonly filePath?: string;
@@ -38,24 +38,24 @@ export interface OntologyPackValidateRuntimeSummary {
 }
 
 export interface OntologyPackValidateFileRef {
-  readonly kind: "implementation" | "test";
+  readonly kind: 'implementation' | 'test';
   readonly ref: string;
   readonly path: string;
   readonly absolutePath: string;
   readonly exists: boolean;
-  readonly source: "blueprint" | "scaffold-metadata";
+  readonly source: 'blueprint' | 'scaffold-metadata';
   readonly surfaceKind?: string;
   readonly blueprintId?: string;
 }
 
 export interface OntologyPackValidateFileReadiness {
-  readonly status: "missing" | "ready" | "skipped";
+  readonly status: 'missing' | 'ready' | 'skipped';
   readonly checked: readonly OntologyPackValidateFileRef[];
   readonly missing: readonly OntologyPackValidateFileRef[];
 }
 
 export interface OntologyPackValidateDocsReadiness {
-  readonly status: "missing" | "partial" | "ready" | "skipped";
+  readonly status: 'missing' | 'partial' | 'ready' | 'skipped';
   readonly familyId: string;
   readonly matchingDocs: readonly {
     readonly docId: string;
@@ -66,7 +66,7 @@ export interface OntologyPackValidateDocsReadiness {
 }
 
 export interface OntologyPackValidateSourceMapReadiness {
-  readonly status: "missing" | "partial" | "ready" | "skipped";
+  readonly status: 'missing' | 'partial' | 'ready' | 'skipped';
   readonly checkedRefs: readonly string[];
   readonly coveredRefs: readonly string[];
   readonly missingRefs: readonly string[];

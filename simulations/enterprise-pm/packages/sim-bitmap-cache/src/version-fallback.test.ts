@@ -8,24 +8,19 @@
  * (b) TTL 만료 후 fallthrough 두 경로 모두 회복됨을 단정한다.
  */
 
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { register } from "prom-client";
-import { BitmapCacheService } from "./cache-service.js";
-import {
-  DEFAULT_BITMAP_TTL_MS,
-  type BitmapCacheEntry,
-} from "./lru-cache.js";
-import { bitmapCacheLookupTotal } from "./metrics.js";
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { register } from 'prom-client';
+import { BitmapCacheService } from './cache-service.js';
+import { DEFAULT_BITMAP_TTL_MS, type BitmapCacheEntry } from './lru-cache.js';
+import { bitmapCacheLookupTotal } from './metrics.js';
 
-const KEY = "bitmap:user:U001:sim.svc.approval:v3";
-const PREFIX = "sim.svc.approval";
+const KEY = 'bitmap:user:U001:sim.svc.approval:v3';
+const PREFIX = 'sim.svc.approval';
 
-const fixedEntry = (
-  over: Partial<BitmapCacheEntry> = {},
-): BitmapCacheEntry => ({
+const fixedEntry = (over: Partial<BitmapCacheEntry> = {}): BitmapCacheEntry => ({
   key: KEY,
   prefix: PREFIX,
-  prefixVersion: "v3",
+  prefixVersion: 'v3',
   mask: new Uint8Array([0x01, 0x02]),
   issuedAt: Date.now(),
   ttlMs: DEFAULT_BITMAP_TTL_MS,
@@ -49,7 +44,7 @@ function setup(initialVer: string) {
     mask: new Uint8Array([0xab]),
   }));
   const svc = new BitmapCacheService({
-    publisherName: "test",
+    publisherName: 'test',
     cache: { max: 100 },
     logger: silent(),
     catalog,
@@ -58,24 +53,24 @@ function setup(initialVer: string) {
   return { svc, catalog, fetchBitmap };
 }
 
-describe("bitmap version-check fallback (spec 04 §3 — pub/sub drop 회복)", () => {
+describe('bitmap version-check fallback (spec 04 §3 — pub/sub drop 회복)', () => {
   beforeEach(() => {
     bitmapCacheLookupTotal.reset();
   });
 
-  it("pub/sub 100% drop + version bump → TTL 만료 이전이라도 version-check fallthrough", async () => {
-    const { svc, catalog, fetchBitmap } = setup("v3");
+  it('pub/sub 100% drop + version bump → TTL 만료 이전이라도 version-check fallthrough', async () => {
+    const { svc, catalog, fetchBitmap } = setup('v3');
     svc.cache.setEntry(fixedEntry());
     expect(await svc.getBitmap(KEY)).toEqual(new Uint8Array([0x01, 0x02])); // (1) hit
     expect(fetchBitmap).not.toHaveBeenCalled();
-    catalog.bump("v4"); // pub/sub drop — subscriber 미도달
+    catalog.bump('v4'); // pub/sub drop — subscriber 미도달
     await svc.getBitmap(KEY); // version mismatch → §3.2 fallthrough
     expect(fetchBitmap).toHaveBeenCalledTimes(1);
-    expect(svc.cache.getEntry(KEY)?.prefixVersion).toBe("v4");
+    expect(svc.cache.getEntry(KEY)?.prefixVersion).toBe('v4');
   });
 
-  it("pub/sub 100% drop + TTL 만료 → §3.2 (2) fallthrough", async () => {
-    const { svc, fetchBitmap } = setup("v3");
+  it('pub/sub 100% drop + TTL 만료 → §3.2 (2) fallthrough', async () => {
+    const { svc, fetchBitmap } = setup('v3');
     svc.cache.setEntry(
       fixedEntry({
         issuedAt: Date.now() - DEFAULT_BITMAP_TTL_MS - 1,
@@ -86,16 +81,14 @@ describe("bitmap version-check fallback (spec 04 §3 — pub/sub drop 회복)", 
     expect(fetchBitmap).toHaveBeenCalledTimes(1);
   });
 
-  it("회복 경로 메트릭 — version_mismatch + miss 라벨 모두 증가", async () => {
-    const { svc: a, catalog } = setup("v3");
+  it('회복 경로 메트릭 — version_mismatch + miss 라벨 모두 증가', async () => {
+    const { svc: a, catalog } = setup('v3');
     a.cache.setEntry(fixedEntry());
-    catalog.bump("v4");
+    catalog.bump('v4');
     await a.getBitmap(KEY); // version_mismatch → fallthrough → fetch
-    const { svc: b } = setup("v3");
+    const { svc: b } = setup('v3');
     await b.getBitmap(KEY); // miss → fetch
-    const out = await register.getSingleMetricAsString(
-      "bitmap_cache_lookup_total",
-    );
+    const out = await register.getSingleMetricAsString('bitmap_cache_lookup_total');
     expect(out).toMatch(/result="version_mismatch"\} 1/);
     expect(out).toMatch(/result="miss"\} 1/);
   });

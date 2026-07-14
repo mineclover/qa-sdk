@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-export type DlqPhase = "reconstruction" | "verdict";
+export type DlqPhase = 'reconstruction' | 'verdict';
 
 export interface DlqInsert {
   id: string;

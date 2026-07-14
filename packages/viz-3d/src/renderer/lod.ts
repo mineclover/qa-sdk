@@ -23,15 +23,15 @@ export const DEFAULT_LOD: LodThresholds = {
   mid: 35,
 };
 
-export type LodLevel = "near" | "mid" | "far";
+export type LodLevel = 'near' | 'mid' | 'far';
 
 export function computeLodLevel(
   cameraDistance: number,
   thresholds: LodThresholds = DEFAULT_LOD,
 ): LodLevel {
-  if (cameraDistance <= thresholds.near) return "near";
-  if (cameraDistance <= thresholds.mid) return "mid";
-  return "far";
+  if (cameraDistance <= thresholds.near) return 'near';
+  if (cameraDistance <= thresholds.mid) return 'mid';
+  return 'far';
 }
 
 /**
@@ -65,8 +65,21 @@ export interface LodVisibility {
 
 export function getLodVisibility(level: LodLevel): LodVisibility {
   switch (level) {
-    case "near": return { showLabels: true, showEdges: true, showHitCounts: true, cellOpacityMultiplier: 1.0 };
-    case "mid": return { showLabels: true, showEdges: false, showHitCounts: false, cellOpacityMultiplier: 0.9 };
-    case "far": return { showLabels: false, showEdges: false, showHitCounts: false, cellOpacityMultiplier: 0.7 };
+    case 'near':
+      return { showLabels: true, showEdges: true, showHitCounts: true, cellOpacityMultiplier: 1.0 };
+    case 'mid':
+      return {
+        showLabels: true,
+        showEdges: false,
+        showHitCounts: false,
+        cellOpacityMultiplier: 0.9,
+      };
+    case 'far':
+      return {
+        showLabels: false,
+        showEdges: false,
+        showHitCounts: false,
+        cellOpacityMultiplier: 0.7,
+      };
   }
 }

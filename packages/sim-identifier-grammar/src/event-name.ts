@@ -1,12 +1,12 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
+import { z } from 'zod';
 import {
   EVENT_DOMAINS,
   EVENT_AGGREGATES_BY_DOMAIN,
   EVENT_VERBS_PAST,
   type EventDomain,
   type EventVerbPast,
-} from "../../../simulations/enterprise-pm/contracts/event-vocabulary.catalog.js";
+} from '../../../simulations/enterprise-pm/contracts/event-vocabulary.catalog.js';
 
 export interface EventName {
   domain: EventDomain;
@@ -25,8 +25,8 @@ const EventNameInputSchema = z
     if (!allowed.includes(v.aggregate)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["aggregate"],
-        message: `aggregate "${v.aggregate}" not registered for domain "${v.domain}" (allowed: ${allowed.join(", ")})`,
+        path: ['aggregate'],
+        message: `aggregate "${v.aggregate}" not registered for domain "${v.domain}" (allowed: ${allowed.join(', ')})`,
       });
     }
   });
@@ -37,7 +37,7 @@ export function buildEventName(input: EventName): string {
 }
 
 export function parseEventName(s: string): EventName {
-  const parts = s.split(".");
+  const parts = s.split('.');
   if (parts.length !== 3) throw new Error(`invalid event name (must be 3-tier): ${s}`);
   const [domain, aggregate, verbPast] = parts;
   return EventNameInputSchema.parse({ domain, aggregate, verbPast }) as EventName;

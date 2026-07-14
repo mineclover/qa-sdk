@@ -1,8 +1,8 @@
 // @def.boundary sim-auth-api
 // @def.doc sim-erp-pm-design
 
-import { Module } from "@nestjs/common";
-import { HealthController } from "./health.controller.js";
+import { Module } from '@nestjs/common';
+import { HealthController } from './health.controller.js';
 
 @Module({
   controllers: [HealthController],

@@ -2,8 +2,12 @@
 // @def.doc infra-engine-system
 
 // stages/register-stage.ts — 레지스트리 동기화 + 프로필 갱신 스테이지
-import type { Stage, DeployContext, RegistrationResult, ConnectionCheck } from "../core/types.js";
-import type { RegistryAdapter, ServiceProfileAdapter, InfraProfileAdapter } from "../adapters/adapter.js";
+import type { Stage, DeployContext, RegistrationResult, ConnectionCheck } from '../core/types.js';
+import type {
+  RegistryAdapter,
+  ServiceProfileAdapter,
+  InfraProfileAdapter,
+} from '../adapters/adapter.js';
 
 export function createRegisterStage(
   registry: RegistryAdapter,
@@ -11,7 +15,7 @@ export function createRegisterStage(
   infraProfile: InfraProfileAdapter,
 ): Stage {
   return {
-    name: "register",
+    name: 'register',
     async execute(ctx: DeployContext): Promise<DeployContext> {
       const provision = ctx.provision!;
       const endpoint = provision.outputs.endpoint;
@@ -19,9 +23,9 @@ export function createRegisterStage(
       // 1. registry-service 동기화
       const syncResult = await registry.syncDeployment({
         serviceId: ctx.service,
-        deploymentVersion: provision.outputs.version ?? "unknown",
+        deploymentVersion: provision.outputs.version ?? 'unknown',
         runtime: {
-          namespace: "default",
+          namespace: 'default',
           name: ctx.service,
           env: ctx.env,
           region: ctx.region,
@@ -44,9 +48,9 @@ export function createRegisterStage(
         env: ctx.env,
         region: ctx.region,
         endpoint,
-        healthPath: ctx.config?.connections[ctx.service]?.health_path ?? "/health",
+        healthPath: ctx.config?.connections[ctx.service]?.health_path ?? '/health',
         stackName: provision.stackName,
-        deploymentVersion: provision.outputs.version ?? "unknown",
+        deploymentVersion: provision.outputs.version ?? 'unknown',
         deployedAt: new Date().toISOString(),
         triggeredBy: ctx.triggeredBy,
         metadata: {},
@@ -60,8 +64,8 @@ export function createRegisterStage(
         if (conn?.endpoint) {
           try {
             const start = Date.now();
-            await fetch(conn.endpoint + (conn.health_path ?? "/health"), {
-              method: "HEAD",
+            await fetch(conn.endpoint + (conn.health_path ?? '/health'), {
+              method: 'HEAD',
               signal: AbortSignal.timeout(5_000),
             });
             connectionChecks.push({ target: dep, reachable: true, latency: Date.now() - start });

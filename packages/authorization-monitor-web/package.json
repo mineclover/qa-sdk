@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/authorization-monitor-web",
   "version": "0.1.0",
-  "description": "authorization ontology proxy/application enforcement monitor",
   "private": true,
+  "description": "authorization ontology proxy/application enforcement monitor",
   "type": "module",
   "scripts": {
     "dev": "vite",

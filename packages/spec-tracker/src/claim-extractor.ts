@@ -1,8 +1,8 @@
 // @def.boundary spec-engine-system
 // @def.doc spec-engine-system
 
-import type { ContractMarkerKind } from "./types.js";
-import type { VerificationClaim } from "./verification-claim.js";
+import type { ContractMarkerKind } from './types.js';
+import type { VerificationClaim } from './verification-claim.js';
 
 /**
  * definition-catalog ContractSection과 구조적으로 호환되는 최소 입력.
@@ -25,9 +25,7 @@ export interface ExtractedClaim extends VerificationClaim {
   readonly sourceId: string;
 }
 
-export function extractClaimsFromSection(
-  input: ClaimSectionInput,
-): readonly ExtractedClaim[] {
+export function extractClaimsFromSection(input: ClaimSectionInput): readonly ExtractedClaim[] {
   const units = extractClaimUnits(input.body);
   return units.map((text, index) => ({
     claimId: buildClaimId(input, index, text),
@@ -54,7 +52,7 @@ export function extractClaimsFromSections(
  */
 export function extractClaimUnits(body: string): readonly string[] {
   const bulletUnits = body
-    .split("\n")
+    .split('\n')
     .map((line) => line.trim())
     .map((line) => line.match(/^([-*]|\d+\.)\s+(.+)$/)?.[2]?.trim() ?? null)
     .filter((line): line is string => Boolean(line))
@@ -71,31 +69,27 @@ export function extractClaimUnits(body: string): readonly string[] {
     .filter((part) => part.length > 0);
 }
 
-function buildClaimId(
-  input: ClaimSectionInput,
-  index: number,
-  text: string,
-): string {
-  const slug = slugify(text).slice(0, 40) || "claim";
+function buildClaimId(input: ClaimSectionInput, index: number, text: string): string {
+  const slug = slugify(text).slice(0, 40) || 'claim';
   return [
     input.specId,
     input.sourceId,
     input.marker,
-    String(index + 1).padStart(2, "0"),
+    String(index + 1).padStart(2, '0'),
     slug,
-  ].join(":");
+  ].join(':');
 }
 
 function normalizeClaimText(text: string): string {
   return text
-    .replace(/\s+/g, " ")
-    .replace(/^[.:;,\-–—\s]+|[.:;,\-–—\s]+$/g, "")
+    .replace(/\s+/g, ' ')
+    .replace(/^[.:;,\-–—\s]+|[.:;,\-–—\s]+$/g, '')
     .trim();
 }
 
 function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9가-힣]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/[^a-z0-9가-힣]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }

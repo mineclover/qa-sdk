@@ -15,7 +15,7 @@
  */
 
 export interface PrefixLike {
-  readonly kind: "prefix";
+  readonly kind: 'prefix';
   readonly id: string;
   readonly dimLabels: readonly string[];
   readonly category?: string;
@@ -25,7 +25,12 @@ export interface PrefixLike {
 export type GraphNodeLike = { readonly kind: string; readonly id: string };
 
 /** 그래프 엣지 형태 */
-export type GraphEdgeLike = { readonly type: string; readonly from: string; readonly to: string; readonly meta?: Record<string, unknown> };
+export type GraphEdgeLike = {
+  readonly type: string;
+  readonly from: string;
+  readonly to: string;
+  readonly meta?: Record<string, unknown>;
+};
 
 export interface GraphPort {
   // ── 읽기: 노드 ──
@@ -43,7 +48,9 @@ export interface GraphPort {
 
   // ── 읽기: 복합 질의 ──
   intentLinksFor(targetId: string): Array<{ id: string; intent: string; invariant?: string }>;
-  cascadeFromAxis(axisId: string): Array<{ id: string; reason: "composes" | "references"; distance: number }>;
+  cascadeFromAxis(
+    axisId: string,
+  ): Array<{ id: string; reason: 'composes' | 'references'; distance: number }>;
   cascadeFromPrefix(prefixId: string): {
     domains: Array<{ id: string; affectedPrefixes: string[] }>;
     consumers: Array<{ id: string; via: string }>;

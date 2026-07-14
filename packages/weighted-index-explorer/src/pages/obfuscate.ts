@@ -16,50 +16,75 @@ import {
   toUUID,
   toNanoId,
   toStructuredUUID,
-} from "weighted-index";
+} from 'weighted-index';
 
 // ── 탐색기와 동일한 권한 모델 ──────────────────────────────────────────────
 
-const WI        = new WeightedIndex([8, 4, 5, 4], ["resource", "action", "role", "env"]);
+const WI = new WeightedIndex([8, 4, 5, 4], ['resource', 'action', 'role', 'env']);
 const BIT_WIDTH = calcBitWidth(WI.size); // 10
 
 // ── 변환 로직 ─────────────────────────────────────────────────────────────
 
-type TransformType = "xor" | "rotate" | "reverse" | "compose";
+type TransformType = 'xor' | 'rotate' | 'reverse' | 'compose';
 
-function applyEncode(id: number, type: TransformType, key: number, amount: number, w: number): number {
+function applyEncode(
+  id: number,
+  type: TransformType,
+  key: number,
+  amount: number,
+  w: number,
+): number {
   switch (type) {
-    case "xor":     return xorObfuscate(id, w, key);
-    case "rotate":  return rotateLeft(id, w, amount);
-    case "reverse": return reverseBits(id, w);
-    case "compose": return rotateLeft(xorObfuscate(id, w, key), w, amount);
+    case 'xor':
+      return xorObfuscate(id, w, key);
+    case 'rotate':
+      return rotateLeft(id, w, amount);
+    case 'reverse':
+      return reverseBits(id, w);
+    case 'compose':
+      return rotateLeft(xorObfuscate(id, w, key), w, amount);
   }
 }
 
-function applyDecode(token: number, type: TransformType, key: number, amount: number, w: number): number {
+function applyDecode(
+  token: number,
+  type: TransformType,
+  key: number,
+  amount: number,
+  w: number,
+): number {
   switch (type) {
-    case "xor":     return xorObfuscate(token, w, key);
-    case "rotate":  return rotateRight(token, w, amount);
-    case "reverse": return reverseBits(token, w);
-    case "compose": return xorObfuscate(rotateRight(token, w, amount), w, key);
+    case 'xor':
+      return xorObfuscate(token, w, key);
+    case 'rotate':
+      return rotateRight(token, w, amount);
+    case 'reverse':
+      return reverseBits(token, w);
+    case 'compose':
+      return xorObfuscate(rotateRight(token, w, amount), w, key);
   }
 }
 
 // ── 비트 시각화 헬퍼 ──────────────────────────────────────────────────────
 
 function toBits(n: number, w: number): string[] {
-  return n.toString(2).padStart(w, "0").split("");
+  return n.toString(2).padStart(w, '0').split('');
 }
 
 function renderBitRow(bits: string[], changedIdx: Set<number>): string {
-  return bits.map((b, i) =>
-    `<span class="obf-bit obf-bit-${b}${changedIdx.has(i) ? " obf-bit-changed" : ""}">${b}</span>`
-  ).join("");
+  return bits
+    .map(
+      (b, i) =>
+        `<span class="obf-bit obf-bit-${b}${changedIdx.has(i) ? ' obf-bit-changed' : ''}">${b}</span>`,
+    )
+    .join('');
 }
 
 function changedBits(a: string[], b: string[]): Set<number> {
   const s = new Set<number>();
-  a.forEach((bit, i) => { if (bit !== b[i]) s.add(i); });
+  a.forEach((bit, i) => {
+    if (bit !== b[i]) s.add(i);
+  });
   return s;
 }
 
@@ -105,30 +130,46 @@ function renderIntro(): string {
       <div class="cb-body">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
           ${[
-            { title: "난독화 (이 모듈)", color: "#22c55e", items: [
-              "양방향 — 복원 가능",
-              "전단사 보장",
-              "암호학적 보안 없음",
-              "구조 예측 방지 목적",
-            ]},
-            { title: "암호화", color: "#f59e0b", items: [
-              "양방향 — 키로 복원",
-              "암호학적 안전성",
-              "키 없으면 복원 불가",
-              "보안이 목적",
-            ]},
-            { title: "해시 (SHA 등)", color: "#ef4444", items: [
-              "단방향 — 복원 불가",
-              "충돌 저항성",
-              "원본 ID 복원 불필요",
-              "무결성 검증 목적",
-            ]},
-          ].map(({ title, color, items }) => `
+            {
+              title: '난독화 (이 모듈)',
+              color: '#22c55e',
+              items: [
+                '양방향 — 복원 가능',
+                '전단사 보장',
+                '암호학적 보안 없음',
+                '구조 예측 방지 목적',
+              ],
+            },
+            {
+              title: '암호화',
+              color: '#f59e0b',
+              items: [
+                '양방향 — 키로 복원',
+                '암호학적 안전성',
+                '키 없으면 복원 불가',
+                '보안이 목적',
+              ],
+            },
+            {
+              title: '해시 (SHA 등)',
+              color: '#ef4444',
+              items: [
+                '단방향 — 복원 불가',
+                '충돌 저항성',
+                '원본 ID 복원 불필요',
+                '무결성 검증 목적',
+              ],
+            },
+          ]
+            .map(
+              ({ title, color, items }) => `
             <div class="phi-purpose-box" style="border-top-color:${color}">
               <div class="phi-purpose-title" style="color:${color}">${title}</div>
-              <ul class="phi-purpose-list">${items.map(i => `<li>${i}</li>`).join("")}</ul>
+              <ul class="phi-purpose-list">${items.map((i) => `<li>${i}</li>`).join('')}</ul>
             </div>
-          `).join("")}
+          `,
+            )
+            .join('')}
         </div>
         <div class="insight-box" style="margin-top:12px">
           <span class="insight-icon">💡</span>
@@ -146,10 +187,10 @@ function renderIntro(): string {
 // ── 2. 인터랙티브 데모 ────────────────────────────────────────────────────
 
 function renderDemo(): string {
-  const initBw    = BIT_WIDTH;          // 10
+  const initBw = BIT_WIDTH; // 10
   const initMaxId = (1 << initBw) - 1; // 1023
   const initKeyMax = initMaxId;
-  const initAmtMax = initBw - 1;       // 9
+  const initAmtMax = initBw - 1; // 9
 
   return `
     <div class="concept-block">
@@ -191,7 +232,7 @@ function renderDemo(): string {
             <div id="param-xor">
               <label class="obf-param-label" id="obf-key-label">key (0~${initKeyMax})</label>
               <input type="number" id="obf-key" class="addr-dec-input" min="0" max="${initKeyMax}" value="163" style="width:80px" />
-              <span class="obf-param-hint" id="obf-key-hint">0x0a3 = 0b${(163).toString(2).padStart(initBw, "0")}</span>
+              <span class="obf-param-hint" id="obf-key-hint">0x0a3 = 0b${(163).toString(2).padStart(initBw, '0')}</span>
             </div>
             <!-- Rotate params -->
             <div id="param-rotate" style="display:none">
@@ -263,49 +304,53 @@ function renderDemo(): string {
 function renderTransformRef(): string {
   const transforms = [
     {
-      name: "XOR",
-      fn: "xorObfuscate(id, bitWidth, key)",
-      inv: "xorObfuscate(token, bitWidth, key)  ← 동일",
-      param: "key: 0 ~ 2^bitWidth−1",
-      note: "자기 역원. 같은 함수로 인코드·디코드.",
+      name: 'XOR',
+      fn: 'xorObfuscate(id, bitWidth, key)',
+      inv: 'xorObfuscate(token, bitWidth, key)  ← 동일',
+      param: 'key: 0 ~ 2^bitWidth−1',
+      note: '자기 역원. 같은 함수로 인코드·디코드.',
       example: () => {
-        const id = 42, key = 0xA3;
-        const t  = xorObfuscate(id, BIT_WIDTH, key);
+        const id = 42,
+          key = 0xa3;
+        const t = xorObfuscate(id, BIT_WIDTH, key);
         return `xorObfuscate(${id}, ${BIT_WIDTH}, 0xA3) → ${t} → xorObfuscate → ${id}`;
       },
     },
     {
-      name: "rotateLeft / rotateRight",
-      fn: "rotateLeft(id, bitWidth, amount)",
-      inv: "rotateRight(token, bitWidth, amount)",
-      param: "amount: 정수 (mod bitWidth 정규화, 음수 허용)",
-      note: "왼쪽 순환 시프트가 인코드, 오른쪽이 디코드.",
+      name: 'rotateLeft / rotateRight',
+      fn: 'rotateLeft(id, bitWidth, amount)',
+      inv: 'rotateRight(token, bitWidth, amount)',
+      param: 'amount: 정수 (mod bitWidth 정규화, 음수 허용)',
+      note: '왼쪽 순환 시프트가 인코드, 오른쪽이 디코드.',
       example: () => {
-        const id = 42, amt = 3;
+        const id = 42,
+          amt = 3;
         const t = rotateLeft(id, BIT_WIDTH, amt);
         return `rotateLeft(${id}, ${BIT_WIDTH}, ${amt}) → ${t} → rotateRight → ${id}`;
       },
     },
     {
-      name: "reverseBits",
-      fn: "reverseBits(id, bitWidth)",
-      inv: "reverseBits(token, bitWidth)  ← 동일",
-      param: "없음",
-      note: "자기 역원. 비트 순서를 뒤집는다.",
+      name: 'reverseBits',
+      fn: 'reverseBits(id, bitWidth)',
+      inv: 'reverseBits(token, bitWidth)  ← 동일',
+      param: '없음',
+      note: '자기 역원. 비트 순서를 뒤집는다.',
       example: () => {
         const id = 42;
-        const t  = reverseBits(id, BIT_WIDTH);
+        const t = reverseBits(id, BIT_WIDTH);
         return `reverseBits(${id}, ${BIT_WIDTH}) → ${t} → reverseBits → ${id}`;
       },
     },
     {
-      name: "compose",
-      fn: "compose(f1, f2, ...)(id, bitWidth)",
-      inv: "compose(f2_inv, f1_inv, ...)(token, bitWidth)",
-      param: "각 변환의 파라미터",
-      note: "체인. 역변환은 역순으로 각 역함수 적용.",
+      name: 'compose',
+      fn: 'compose(f1, f2, ...)(id, bitWidth)',
+      inv: 'compose(f2_inv, f1_inv, ...)(token, bitWidth)',
+      param: '각 변환의 파라미터',
+      note: '체인. 역변환은 역순으로 각 역함수 적용.',
       example: () => {
-        const id = 42, key = 0xA3, amt = 3;
+        const id = 42,
+          key = 0xa3,
+          amt = 3;
         const t = rotateLeft(xorObfuscate(id, BIT_WIDTH, key), BIT_WIDTH, amt);
         const b = xorObfuscate(rotateRight(t, BIT_WIDTH, amt), BIT_WIDTH, key);
         return `XOR(0xA3) → rotate(3): ${id} → ${t} → ${b}`;
@@ -313,7 +358,9 @@ function renderTransformRef(): string {
     },
   ];
 
-  const rows = transforms.map(({ name, fn, inv, param, note, example }) => `
+  const rows = transforms
+    .map(
+      ({ name, fn, inv, param, note, example }) => `
     <tr>
       <td style="font-weight:700;white-space:nowrap">${name}</td>
       <td><code style="font-size:0.7rem">${fn}</code></td>
@@ -322,7 +369,9 @@ function renderTransformRef(): string {
       <td style="font-size:0.7rem;color:var(--text-muted)">${note}</td>
       <td style="font-size:0.68rem;color:var(--xl-green)"><code>${example()}</code></td>
     </tr>
-  `).join("");
+  `,
+    )
+    .join('');
 
   return `
     <div class="concept-block">
@@ -353,14 +402,14 @@ function renderTransformRef(): string {
 // ── 4. 직렬화 형식 ────────────────────────────────────────────────────────
 
 function renderSerializationRef(): string {
-  const exId     = 42;
-  const exKey    = 0xA3;
-  const exObf    = xorObfuscate(exId, BIT_WIDTH, exKey);
-  const exHex    = toHex(exObf, BIT_WIDTH);
-  const exNano   = toNanoId(exObf, BIT_WIDTH);
-  const exUuid   = toUUID(exObf, BIT_WIDTH);
-  const hexLen   = Math.ceil(BIT_WIDTH / 4);
-  const nanoLen  = Math.ceil(BIT_WIDTH / 6);
+  const exId = 42;
+  const exKey = 0xa3;
+  const exObf = xorObfuscate(exId, BIT_WIDTH, exKey);
+  const exHex = toHex(exObf, BIT_WIDTH);
+  const exNano = toNanoId(exObf, BIT_WIDTH);
+  const exUuid = toUUID(exObf, BIT_WIDTH);
+  const hexLen = Math.ceil(BIT_WIDTH / 4);
+  const nanoLen = Math.ceil(BIT_WIDTH / 6);
 
   return `
     <div class="concept-block">
@@ -446,21 +495,21 @@ function renderSerializationRef(): string {
 // ── 4b. 구조화 토큰 ──────────────────────────────────────────────────────
 
 function renderStructuredUUIDRef(exObfId: number): string {
-  const ver      = 1;
+  const ver = 1;
   const schemaId = 3;
   const totalBitsA = 4 + 8 + BIT_WIDTH; // 22
-  const tokenA   = toStructuredUUID([
-    { value: ver,      bitWidth: 4  },
-    { value: schemaId, bitWidth: 8  },
-    { value: exObfId,  bitWidth: BIT_WIDTH },
+  const tokenA = toStructuredUUID([
+    { value: ver, bitWidth: 4 },
+    { value: schemaId, bitWidth: 8 },
+    { value: exObfId, bitWidth: BIT_WIDTH },
   ]);
 
   const tokenB = toStructuredUUID([{ value: exObfId, bitWidth: BIT_WIDTH }]);
 
   const totalBitsC = 2 + 6 + BIT_WIDTH; // 18
   const tokenC = toStructuredUUID([
-    { value: 0b10, bitWidth: 2  },
-    { value: 0x1F, bitWidth: 6  },
+    { value: 0b10, bitWidth: 2 },
+    { value: 0x1f, bitWidth: 6 },
     { value: exObfId, bitWidth: BIT_WIDTH },
   ]);
 
@@ -608,16 +657,26 @@ export function decodeToken(hex: string): number {
 // ── 인터랙티브 로직 ───────────────────────────────────────────────────────
 
 function setupInteractivity(container: HTMLElement): void {
-  const bwSlider  = container.querySelector<HTMLInputElement>("#obf-bw-slider");
-  const bwNum     = container.querySelector<HTMLInputElement>("#obf-bw-num");
-  const slider    = container.querySelector<HTMLInputElement>("#obf-id-slider");
-  const numInput  = container.querySelector<HTMLInputElement>("#obf-id-num");
-  const radios    = container.querySelectorAll<HTMLInputElement>("input[name='obf-type']");
-  const keyInput  = container.querySelector<HTMLInputElement>("#obf-key");
-  const amtInput  = container.querySelector<HTMLInputElement>("#obf-amount");
-  const ckeyInput = container.querySelector<HTMLInputElement>("#obf-ckey");
-  const camtInput = container.querySelector<HTMLInputElement>("#obf-camount");
-  if (!bwSlider || !bwNum || !slider || !numInput || !keyInput || !amtInput || !ckeyInput || !camtInput) return;
+  const bwSlider = container.querySelector<HTMLInputElement>('#obf-bw-slider');
+  const bwNum = container.querySelector<HTMLInputElement>('#obf-bw-num');
+  const slider = container.querySelector<HTMLInputElement>('#obf-id-slider');
+  const numInput = container.querySelector<HTMLInputElement>('#obf-id-num');
+  const radios = container.querySelectorAll<HTMLInputElement>("input[name='obf-type']");
+  const keyInput = container.querySelector<HTMLInputElement>('#obf-key');
+  const amtInput = container.querySelector<HTMLInputElement>('#obf-amount');
+  const ckeyInput = container.querySelector<HTMLInputElement>('#obf-ckey');
+  const camtInput = container.querySelector<HTMLInputElement>('#obf-camount');
+  if (
+    !bwSlider ||
+    !bwNum ||
+    !slider ||
+    !numInput ||
+    !keyInput ||
+    !amtInput ||
+    !ckeyInput ||
+    !camtInput
+  )
+    return;
   const bwSliderEl = bwSlider;
   const bwNumberInput = bwNum;
   const idSlider = slider;
@@ -627,15 +686,15 @@ function setupInteractivity(container: HTMLElement): void {
   const composeKeyInput = ckeyInput;
   const composeAmountInput = camtInput;
 
-  const paramXor     = container.querySelector<HTMLElement>("#param-xor");
-  const paramRotate  = container.querySelector<HTMLElement>("#param-rotate");
-  const paramReverse = container.querySelector<HTMLElement>("#param-reverse");
-  const paramCompose = container.querySelector<HTMLElement>("#param-compose");
+  const paramXor = container.querySelector<HTMLElement>('#param-xor');
+  const paramRotate = container.querySelector<HTMLElement>('#param-rotate');
+  const paramReverse = container.querySelector<HTMLElement>('#param-reverse');
+  const paramCompose = container.querySelector<HTMLElement>('#param-compose');
   if (!paramXor || !paramRotate || !paramReverse || !paramCompose) return;
 
   const paramDivs: Record<TransformType, HTMLElement> = {
-    xor:     paramXor,
-    rotate:  paramRotate,
+    xor: paramXor,
+    rotate: paramRotate,
     reverse: paramReverse,
     compose: paramCompose,
   };
@@ -645,135 +704,150 @@ function setupInteractivity(container: HTMLElement): void {
   }
 
   function getType(): TransformType {
-    return (container.querySelector<HTMLInputElement>("input[name='obf-type']:checked")?.value ?? "xor") as TransformType;
+    return (container.querySelector<HTMLInputElement>("input[name='obf-type']:checked")?.value ??
+      'xor') as TransformType;
   }
 
   function getParams(): { key: number; amount: number } {
     const type = getType();
     return {
-      key:    type === "compose" ? Number(composeKeyInput.value)  : Number(keyNumberInput.value),
-      amount: type === "compose" ? Number(composeAmountInput.value)  : Number(amountInput.value),
+      key: type === 'compose' ? Number(composeKeyInput.value) : Number(keyNumberInput.value),
+      amount: type === 'compose' ? Number(composeAmountInput.value) : Number(amountInput.value),
     };
   }
 
   function update(): void {
-    const bw     = getBitWidth();
-    const maxId  = (1 << bw) - 1;
-    const id     = Math.max(0, Math.min(maxId, Number(idNumberInput.value) || 0));
-    const type   = getType();
+    const bw = getBitWidth();
+    const maxId = (1 << bw) - 1;
+    const id = Math.max(0, Math.min(maxId, Number(idNumberInput.value) || 0));
+    const type = getType();
     const { key, amount } = getParams();
 
     // Sync ID slider range + value
-    idSlider.max     = String(maxId);
-    idNumberInput.max   = String(maxId);
-    idSlider.value   = String(id);
+    idSlider.max = String(maxId);
+    idNumberInput.max = String(maxId);
+    idSlider.value = String(id);
     idNumberInput.value = String(id);
 
     // Update param ranges + hints
     const keyMax = maxId;
     const amtMax = Math.max(1, bw - 1);
-    keyNumberInput.max   = String(keyMax);
-    composeKeyInput.max  = String(keyMax);
-    amountInput.max   = String(amtMax);
-    composeAmountInput.max  = String(amtMax);
+    keyNumberInput.max = String(keyMax);
+    composeKeyInput.max = String(keyMax);
+    amountInput.max = String(amtMax);
+    composeAmountInput.max = String(amtMax);
 
-    const keyLabelEl  = container.querySelector<HTMLElement>("#obf-key-label");
-    const amtLabelEl  = container.querySelector<HTMLElement>("#obf-amount-label");
-    const ckeyLabelEl = container.querySelector<HTMLElement>("#obf-ckey-label");
-    const camtLabelEl = container.querySelector<HTMLElement>("#obf-camount-label");
-    if (keyLabelEl)  keyLabelEl.textContent  = `key (0~${keyMax})`;
-    if (amtLabelEl)  amtLabelEl.textContent  = `amount (1~${amtMax})`;
+    const keyLabelEl = container.querySelector<HTMLElement>('#obf-key-label');
+    const amtLabelEl = container.querySelector<HTMLElement>('#obf-amount-label');
+    const ckeyLabelEl = container.querySelector<HTMLElement>('#obf-ckey-label');
+    const camtLabelEl = container.querySelector<HTMLElement>('#obf-camount-label');
+    if (keyLabelEl) keyLabelEl.textContent = `key (0~${keyMax})`;
+    if (amtLabelEl) amtLabelEl.textContent = `amount (1~${amtMax})`;
     if (ckeyLabelEl) ckeyLabelEl.textContent = `key (0~${keyMax})`;
     if (camtLabelEl) camtLabelEl.textContent = `amount (1~${amtMax})`;
 
-    if (type === "xor") {
-      const hint = container.querySelector<HTMLElement>("#obf-key-hint");
-      if (hint) hint.textContent =
-        `0x${key.toString(16).padStart(Math.ceil(bw / 4), "0")} = 0b${key.toString(2).padStart(bw, "0")}`;
+    if (type === 'xor') {
+      const hint = container.querySelector<HTMLElement>('#obf-key-hint');
+      if (hint)
+        hint.textContent = `0x${key.toString(16).padStart(Math.ceil(bw / 4), '0')} = 0b${key.toString(2).padStart(bw, '0')}`;
     }
 
-    const token   = applyEncode(id, type, key, amount, bw);
+    const token = applyEncode(id, type, key, amount, bw);
     const decoded = applyDecode(token, type, key, amount, bw);
 
     // Bit visualization
     const origBits = toBits(id, bw);
-    const obfBits  = toBits(token, bw);
-    const changed  = changedBits(origBits, obfBits);
+    const obfBits = toBits(token, bw);
+    const changed = changedBits(origBits, obfBits);
 
-    const vizOrigBits = container.querySelector<HTMLElement>("#viz-orig-bits");
-    const vizObfBits  = container.querySelector<HTMLElement>("#viz-obf-bits");
-    const vizOrigNum  = container.querySelector<HTMLElement>("#viz-orig-num");
-    const vizObfNum   = container.querySelector<HTMLElement>("#viz-obf-num");
-    const changedEl   = container.querySelector<HTMLElement>("#viz-changed");
+    const vizOrigBits = container.querySelector<HTMLElement>('#viz-orig-bits');
+    const vizObfBits = container.querySelector<HTMLElement>('#viz-obf-bits');
+    const vizOrigNum = container.querySelector<HTMLElement>('#viz-orig-num');
+    const vizObfNum = container.querySelector<HTMLElement>('#viz-obf-num');
+    const changedEl = container.querySelector<HTMLElement>('#viz-changed');
     if (vizOrigBits) vizOrigBits.innerHTML = renderBitRow(origBits, new Set());
-    if (vizObfBits)  vizObfBits.innerHTML  = renderBitRow(obfBits, changed);
-    if (vizOrigNum)  vizOrigNum.textContent = String(id);
-    if (vizObfNum)   vizObfNum.textContent  = String(token);
+    if (vizObfBits) vizObfBits.innerHTML = renderBitRow(obfBits, changed);
+    if (vizOrigNum) vizOrigNum.textContent = String(id);
+    if (vizObfNum) vizObfNum.textContent = String(token);
     if (changedEl) {
       changedEl.textContent = `${changed.size}비트 변경`;
-      changedEl.style.color = changed.size === 0 ? "var(--text-muted)" : "var(--status-warn, #f59e0b)";
+      changedEl.style.color =
+        changed.size === 0 ? 'var(--text-muted)' : 'var(--status-warn, #f59e0b)';
     }
 
     // Tokens
-    const tokHex   = container.querySelector<HTMLElement>("#tok-hex");
-    const tokNanoid = container.querySelector<HTMLElement>("#tok-nanoid");
-    if (tokHex)    tokHex.textContent    = toHex(token, bw);
+    const tokHex = container.querySelector<HTMLElement>('#tok-hex');
+    const tokNanoid = container.querySelector<HTMLElement>('#tok-nanoid');
+    if (tokHex) tokHex.textContent = toHex(token, bw);
     if (tokNanoid) tokNanoid.textContent = toNanoId(token, bw);
 
     // Structured token: version=1 (4-bit) + obfuscated id
     const structToken = toStructuredUUID([
-      { value: 1,     bitWidth: 4  },
+      { value: 1, bitWidth: 4 },
       { value: token, bitWidth: bw },
     ]);
     const structTotalBits = 4 + bw;
-    const tokStruct = container.querySelector<HTMLElement>("#tok-struct");
+    const tokStruct = container.querySelector<HTMLElement>('#tok-struct');
     if (tokStruct) tokStruct.textContent = structToken;
 
     // Token hints
-    const hexHint    = container.querySelector<HTMLElement>("#tok-hex-hint");
-    const nanoHint   = container.querySelector<HTMLElement>("#tok-nano-hint");
-    const structHint = container.querySelector<HTMLElement>("#tok-struct-hint");
-    if (hexHint)    hexHint.textContent    = `${bw}비트 → ${Math.ceil(bw / 4)}자리`;
-    if (nanoHint)   nanoHint.textContent   = `${bw}비트 → ${Math.ceil(bw / 6)}자리 (base64url)`;
-    if (structHint) structHint.textContent = `v1(4) + id(${bw}) = ${structTotalBits}비트 → ${Math.ceil(structTotalBits / 4)}자리`;
+    const hexHint = container.querySelector<HTMLElement>('#tok-hex-hint');
+    const nanoHint = container.querySelector<HTMLElement>('#tok-nano-hint');
+    const structHint = container.querySelector<HTMLElement>('#tok-struct-hint');
+    if (hexHint) hexHint.textContent = `${bw}비트 → ${Math.ceil(bw / 4)}자리`;
+    if (nanoHint) nanoHint.textContent = `${bw}비트 → ${Math.ceil(bw / 6)}자리 (base64url)`;
+    if (structHint)
+      structHint.textContent = `v1(4) + id(${bw}) = ${structTotalBits}비트 → ${Math.ceil(structTotalBits / 4)}자리`;
 
     // bw-size display + range label
-    const bwSizeEl  = container.querySelector<HTMLElement>("#obf-bw-size");
-    const rangeEl   = container.querySelector<HTMLElement>("#obf-id-range");
+    const bwSizeEl = container.querySelector<HTMLElement>('#obf-bw-size');
+    const rangeEl = container.querySelector<HTMLElement>('#obf-id-range');
     if (bwSizeEl) bwSizeEl.textContent = String(1 << bw);
-    if (rangeEl)  rangeEl.textContent  = `( 0 ~ ${maxId} )`;
+    if (rangeEl) rangeEl.textContent = `( 0 ~ ${maxId} )`;
 
     // Round-trip verification
     const ok = decoded === id;
-    const rtFormula = container.querySelector<HTMLElement>("#rt-formula");
-    if (rtFormula) rtFormula.innerHTML =
-      `decode(${token}) = <strong>${decoded}</strong> ${ok ? '<span style="color:var(--xl-green)">✓</span>' : '<span style="color:var(--status-fail)">✗</span>'}`;
+    const rtFormula = container.querySelector<HTMLElement>('#rt-formula');
+    if (rtFormula)
+      rtFormula.innerHTML = `decode(${token}) = <strong>${decoded}</strong> ${ok ? '<span style="color:var(--xl-green)">✓</span>' : '<span style="color:var(--status-fail)">✗</span>'}`;
   }
 
   function onBwChange(): void {
     const bw = getBitWidth();
     bwSliderEl.value = String(bw);
-    bwNumberInput.value    = String(bw);
+    bwNumberInput.value = String(bw);
     update();
   }
 
   function onTypeChange(): void {
     const type = getType();
     Object.entries(paramDivs).forEach(([k, el]) => {
-      el.style.display = k === type ? "" : "none";
+      el.style.display = k === type ? '' : 'none';
     });
     update();
   }
 
-  bwSliderEl.addEventListener("input", () => { bwNumberInput.value = bwSliderEl.value; onBwChange(); });
-  bwNumberInput.addEventListener("input",    () => { bwSliderEl.value = bwNumberInput.value; onBwChange(); });
-  idSlider.addEventListener("input",   () => { idNumberInput.value = idSlider.value; update(); });
-  idNumberInput.addEventListener("input", () => { idSlider.value = idNumberInput.value; update(); });
-  radios.forEach(r => r.addEventListener("change", onTypeChange));
-  keyNumberInput.addEventListener("input", update);
-  amountInput.addEventListener("input", update);
-  composeKeyInput.addEventListener("input", update);
-  composeAmountInput.addEventListener("input", update);
+  bwSliderEl.addEventListener('input', () => {
+    bwNumberInput.value = bwSliderEl.value;
+    onBwChange();
+  });
+  bwNumberInput.addEventListener('input', () => {
+    bwSliderEl.value = bwNumberInput.value;
+    onBwChange();
+  });
+  idSlider.addEventListener('input', () => {
+    idNumberInput.value = idSlider.value;
+    update();
+  });
+  idNumberInput.addEventListener('input', () => {
+    idSlider.value = idNumberInput.value;
+    update();
+  });
+  radios.forEach((r) => r.addEventListener('change', onTypeChange));
+  keyNumberInput.addEventListener('input', update);
+  amountInput.addEventListener('input', update);
+  composeKeyInput.addEventListener('input', update);
+  composeAmountInput.addEventListener('input', update);
 
   update();
 }

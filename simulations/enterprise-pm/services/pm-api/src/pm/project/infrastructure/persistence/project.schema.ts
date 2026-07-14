@@ -8,5 +8,5 @@
  * 슬라이스-로컬 outbox DDL 상수는 더 이상 존재하지 않는다. 본 테이블 (`projects`)
  * 의 DDL 은 pm/sqlite/schema 의 SIM_PM_SQLITE_DDL 이 책임진다.
  */
-export * as sqliteProjectSchema from "./sqlite.schema.js";
-export * as pgProjectSchema from "./pg.schema.js";
+export * as sqliteProjectSchema from './sqlite.schema.js';
+export * as pgProjectSchema from './pg.schema.js';

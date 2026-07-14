@@ -1,15 +1,15 @@
 // @def.doc definition-service
 
-import { describe, expect, it, beforeEach } from "vitest";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { ASPECT_PARENTS } from "definition-catalog";
-import * as schema from "../db/schema.js";
-import { aspectParents } from "../db/schema.js";
-import { syncAspectParents } from "./aspect-parents-sync.js";
+import { describe, expect, it, beforeEach } from 'vitest';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { ASPECT_PARENTS } from 'definition-catalog';
+import * as schema from '../db/schema.js';
+import { aspectParents } from '../db/schema.js';
+import { syncAspectParents } from './aspect-parents-sync.js';
 
 function createInMemoryDb() {
-  const sqlite = new Database(":memory:");
+  const sqlite = new Database(':memory:');
   sqlite.exec(`
     CREATE TABLE aspect_parents (
       child_id TEXT PRIMARY KEY,
@@ -23,14 +23,14 @@ function createInMemoryDb() {
   return { sqlite, db };
 }
 
-describe("syncAspectParents", () => {
+describe('syncAspectParents', () => {
   let ctx: ReturnType<typeof createInMemoryDb>;
 
   beforeEach(() => {
     ctx = createInMemoryDb();
   });
 
-  it("최초 호출 시 ASPECT_PARENTS map 의 모든 쌍을 INSERT 한다", () => {
+  it('최초 호출 시 ASPECT_PARENTS map 의 모든 쌍을 INSERT 한다', () => {
     const report = syncAspectParents(ctx.db);
 
     const expectedCount = Object.keys(ASPECT_PARENTS).length;
@@ -48,7 +48,7 @@ describe("syncAspectParents", () => {
     }
   });
 
-  it("idempotent — 재호출 시 모두 unchanged", () => {
+  it('idempotent — 재호출 시 모두 unchanged', () => {
     const first = syncAspectParents(ctx.db);
     const second = syncAspectParents(ctx.db);
 
@@ -59,10 +59,10 @@ describe("syncAspectParents", () => {
     expect(second.driftOrphans).toEqual([]);
   });
 
-  it("DB 의 부모가 map 과 다르면 map 기준으로 UPDATE 한다", () => {
+  it('DB 의 부모가 map 과 다르면 map 기준으로 UPDATE 한다', () => {
     ctx.db
       .insert(aspectParents)
-      .values({ childId: "codegen_func", parentId: "stale_parent", description: null })
+      .values({ childId: 'codegen_func', parentId: 'stale_parent', description: null })
       .run();
 
     const report = syncAspectParents(ctx.db);
@@ -73,32 +73,32 @@ describe("syncAspectParents", () => {
       .select()
       .from(aspectParents)
       .all()
-      .find((r) => r.childId === "codegen_func");
+      .find((r) => r.childId === 'codegen_func');
     expect(row?.parentId).toBe(ASPECT_PARENTS.codegen_func);
   });
 
-  it("DB 에만 있는 자식은 driftOrphans 로 보고하되 삭제하지 않는다", () => {
+  it('DB 에만 있는 자식은 driftOrphans 로 보고하되 삭제하지 않는다', () => {
     ctx.db
       .insert(aspectParents)
-      .values({ childId: "phantom_child", parentId: "phantom_parent", description: null })
+      .values({ childId: 'phantom_child', parentId: 'phantom_parent', description: null })
       .run();
 
     const report = syncAspectParents(ctx.db);
 
-    expect(report.driftOrphans).toContain("phantom_child");
+    expect(report.driftOrphans).toContain('phantom_child');
 
     const row = ctx.db
       .select()
       .from(aspectParents)
       .all()
-      .find((r) => r.childId === "phantom_child");
+      .find((r) => r.childId === 'phantom_child');
     expect(row).toBeDefined();
   });
 
-  it("description 컬럼이 DEFINITION_TAXONOMY 에서 채워진다", () => {
+  it('description 컬럼이 DEFINITION_TAXONOMY 에서 채워진다', () => {
     syncAspectParents(ctx.db);
     const rows = ctx.db.select().from(aspectParents).all();
-    const codegen = rows.find((r) => r.childId === "codegen_func");
+    const codegen = rows.find((r) => r.childId === 'codegen_func');
     expect(codegen?.description).toBeTruthy();
     expect(codegen?.description?.length ?? 0).toBeGreaterThan(0);
   });

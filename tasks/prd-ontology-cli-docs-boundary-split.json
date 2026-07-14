@@ -62,9 +62,7 @@
       "priority": 2,
       "passes": true,
       "notes": "Promoted operational-ontology-registry-allocation to a module overview and moved lifecycle, activation result, and activation evidence concerns into dedicated leaf specs. Updated contains/back-links so docs status for the registry allocation family includes lifecycle, activation CLI, activation result, activation evidence, and scenario matrix leaves without task PRD sources. Required US-002 gates passed.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -95,9 +93,7 @@
       "priority": 3,
       "passes": true,
       "notes": "Split programming-artifact ontology docs into a concise module overview plus registry provider, activation evidence, and quality evidence leaves. Kept CLI doc focused on public command/flag/JSON contracts, linked provider/evidence leaves with contains/back-links, kept current monolith source references until later extraction stories create split CLI modules, and passed all required US-003 gates.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -127,10 +123,7 @@
       "priority": 4,
       "passes": true,
       "notes": "Recorded conservative future source boundaries in the registry allocation and programming artifact ontology leaf docs while keeping frontmatter sources on existing files until split modules exist. docs status reported narrow scopes for operational-ontology-registry-allocation (13 related, 0 tasks/diagnostics) and programming-artifact-ontology-system (12 related, 0 tasks/diagnostics). docs collect for operational-ontology-registry-activation-evidence returned 3 related docs, 18 sources, 0 tasks/diagnostics, with no unrelated PRD family dominance. Source-map gaps were recorded as TODOs and no source comments or @def.doc annotations were added. Required US-004 gates passed.",
-      "dependsOn": [
-        "US-002",
-        "US-003"
-      ],
+      "dependsOn": ["US-002", "US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -161,9 +154,7 @@
       "priority": 5,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -193,10 +184,7 @@
       "priority": 6,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-004",
-        "US-005"
-      ],
+      "dependsOn": ["US-004", "US-005"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -226,9 +214,7 @@
       "priority": 7,
       "passes": true,
       "notes": "Extracted quality-status source/snapshot helpers into packages/cli/src/commands/ontology/quality-status-evidence.ts while keeping quality-ledger loading, fallback, freshness, conflict, and governance run policy in ontology.ts for US-008. Source JSON qualityStatusRecords/governanceClosure fields and prompt quality metrics are behavior-preserving; all required US-007 gates passed.",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -259,9 +245,7 @@
       "priority": 8,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-007"
-      ],
+      "dependsOn": ["US-007"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -291,10 +275,7 @@
       "priority": 9,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-006",
-        "US-008"
-      ],
+      "dependsOn": ["US-006", "US-008"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -325,9 +306,7 @@
       "priority": 10,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -358,9 +337,7 @@
       "priority": 11,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-010"
-      ],
+      "dependsOn": ["US-010"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -390,15 +367,7 @@
       "priority": 12,
       "passes": true,
       "notes": "Updated registry activation CLI/result/allocation source references to extracted activation modules, added activation source coverage to programming artifact CLI/development docs, and closed the registry/programming artifact source-map TODOs without adding @def.doc comments. Required docs status checks reported 0 diagnostics for registry allocation, activation CLI, activation evidence, programming artifact system, and programming artifact CLI targets. docs drift ran with 0 errors and 2 Ralph session metadata count warnings unrelated to ontology document/source drift. Required US-012 gates passed.",
-      "dependsOn": [
-        "US-005",
-        "US-006",
-        "US-007",
-        "US-008",
-        "US-009",
-        "US-010",
-        "US-011"
-      ],
+      "dependsOn": ["US-005", "US-006", "US-007", "US-008", "US-009", "US-010", "US-011"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -429,9 +398,7 @@
       "priority": 13,
       "passes": true,
       "notes": "Verified packages/cli/src/commands/ontology.ts is 879 lines and all extracted ontology command modules are below 1,500 lines. Activation scenario matrix references 13 ontology test titles and all still exist. Added source-path docs status handling so docs status for packages/cli/src/commands/ontology.ts reports direct source matches and a declared-source limitation instead of widening to full workspace status. Recorded remaining generic prompt extraction split debt in programming-artifact-ontology-todo.todo.md. Required US-013 gates passed.",
-      "dependsOn": [
-        "US-012"
-      ],
+      "dependsOn": ["US-012"],
       "completionNotes": "Completed by agent"
     }
   ],

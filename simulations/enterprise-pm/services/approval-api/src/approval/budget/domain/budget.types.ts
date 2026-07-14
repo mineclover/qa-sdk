@@ -1,21 +1,16 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type {
-  BudgetRequestId,
-  DepartmentId,
-  ProjectId,
-  RequesterId,
-} from "./budget.ids.js";
+import type { BudgetRequestId, DepartmentId, ProjectId, RequesterId } from './budget.ids.js';
 
 /** 상태 머신 — budget 라이프사이클의 유한 상태. */
 export type BudgetStatus =
-  | "draft"
-  | "submitted"
-  | "in_review"
-  | "approved"
-  | "rejected"
-  | "revision_requested";
+  | 'draft'
+  | 'submitted'
+  | 'in_review'
+  | 'approved'
+  | 'rejected'
+  | 'revision_requested';
 
 /** 도메인 entity 의 내부 props (불변, branded ids). */
 export interface BudgetProps {

@@ -4,8 +4,8 @@
 import {
   AssignmentReadModelQuery,
   type AssignmentDetailReadModel,
-} from "../../application/queries/assignment-read-model.query.js";
-import type { AssignmentRepositoryPort } from "../../application/ports/assignment-repository.port.js";
+} from '../../application/queries/assignment-read-model.query.js';
+import type { AssignmentRepositoryPort } from '../../application/ports/assignment-repository.port.js';
 
 /**
  * Repository 위에 얇게 얹은 Read Model.

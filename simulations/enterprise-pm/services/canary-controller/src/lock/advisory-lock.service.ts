@@ -5,9 +5,9 @@
 // db-bootstrap을 사용하지 않는 이유: advisory lock은 PG 세션 스코프이므로
 // connection lifetime을 service가 직접 소유해야 한다 (lock 보유 동안 connection 유지).
 
-import { Injectable, type OnModuleInit, type OnModuleDestroy } from "@nestjs/common";
-import postgres, { type Sql } from "postgres";
-import { createLogger } from "../lib/logger.js";
+import { Injectable, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
+import postgres, { type Sql } from 'postgres';
+import { createLogger } from '../lib/logger.js';
 
 export interface AdvisoryLockConfig {
   pgUrl: string;
@@ -18,7 +18,7 @@ export interface AdvisoryLockConfig {
 export class AdvisoryLockService implements OnModuleInit, OnModuleDestroy {
   private sql!: Sql;
   private holding = false;
-  private readonly logger = createLogger("sim-canary-controller:lock");
+  private readonly logger = createLogger('sim-canary-controller:lock');
 
   constructor(private readonly cfg: AdvisoryLockConfig) {}
 
@@ -42,7 +42,7 @@ export class AdvisoryLockService implements OnModuleInit, OnModuleDestroy {
     const ok = Boolean(rows[0]?.ok);
     if (ok) {
       this.holding = true;
-      this.logger.info({ lockKey: this.cfg.lockKey }, "advisory lock acquired");
+      this.logger.info({ lockKey: this.cfg.lockKey }, 'advisory lock acquired');
     }
     return ok;
   }

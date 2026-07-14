@@ -57,18 +57,22 @@ describe('@qa-sdk/browser-codec smoke test', () => {
   });
 
   it('encode returns null when a prefix_ref dim is missing or unknown', () => {
-    expect(encode(BROWSER_CATALOG, 'tracking', {
-      trackAction: 'click',
-      page: 'home',
-      userType: 'guest',
-    })).toBeNull();
+    expect(
+      encode(BROWSER_CATALOG, 'tracking', {
+        trackAction: 'click',
+        page: 'home',
+        userType: 'guest',
+      }),
+    ).toBeNull();
 
-    expect(encode(BROWSER_CATALOG, 'tracking', {
-      svc_ref: 999999,
-      trackAction: 'click',
-      page: 'home',
-      userType: 'guest',
-    })).toBeNull();
+    expect(
+      encode(BROWSER_CATALOG, 'tracking', {
+        svc_ref: 999999,
+        trackAction: 'click',
+        page: 'home',
+        userType: 'guest',
+      }),
+    ).toBeNull();
   });
 
   it('decode returns null when address is malformed or outside capacity', () => {

@@ -31,17 +31,17 @@
  * UUID 필드에 직접 저장할 수 있도록 한다.
  */
 
-import { formatHex, parseHex, type PackFormat } from "./pack-format.js";
+import { formatHex, parseHex, type PackFormat } from './pack-format.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Canonical format constants
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** 정규 텍스트 프로토콜. API, 로그, 디버깅에서 기본 사용. */
-export const CANONICAL_TEXT_PROTOCOL = "colon" as const;
+export const CANONICAL_TEXT_PROTOCOL = 'colon' as const;
 
 /** 정규 바이너리 프로토콜 접두사. DB PK, 바이너리 저장에서 사용. */
-export const CANONICAL_BINARY_PREFIX = "layout:" as const;
+export const CANONICAL_BINARY_PREFIX = 'layout:' as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  SemanticAddress — 정보 좌표의 보편적 표현
@@ -63,11 +63,11 @@ export interface VersionedValue {
 /** A protocol-independent information coordinate. */
 export interface SemanticAddress {
   /** 스키마 식별자 (= prefix / indexId) */
-  readonly schema:  string;
+  readonly schema: string;
   /** 스키마 버전 (= v / versionId) */
   readonly version: string;
   /** 인코딩된 정수 (= id / value) */
-  readonly index:   number;
+  readonly index: number;
   /**
    * 샤드 라우팅 힌트. layout protocol에 shardChars가 설정된 경우에만 존재.
    * serialize 시 index % numShards로 자동 계산되어 hex에 삽입된다.
@@ -104,12 +104,12 @@ export interface AddressProtocol {
  * // → "perm:v1:42"
  */
 export const colonProtocol: AddressProtocol = {
-  name: "colon",
+  name: 'colon',
 
   test(input: string): boolean {
-    if (input.includes("://")) return false;
-    const parts = input.split(":");
-    return parts.length === 3 && parts.every(p => p.length > 0);
+    if (input.includes('://')) return false;
+    const parts = input.split(':');
+    return parts.length === 3 && parts.every((p) => p.length > 0);
   },
 
   serialize(addr: SemanticAddress): string {
@@ -117,8 +117,8 @@ export const colonProtocol: AddressProtocol = {
   },
 
   parse(input: string): SemanticAddress {
-    const parts = input.split(":");
-    if (parts.length !== 3 || parts.some(p => !p)) {
+    const parts = input.split(':');
+    if (parts.length !== 3 || parts.some((p) => !p)) {
       throw new SyntaxError(`Invalid colon address: "${input}"`);
     }
     if (!/^\d+$/.test(parts[2])) {
@@ -140,10 +140,10 @@ export const colonProtocol: AddressProtocol = {
  * // → "wi://perm/v1/42"
  */
 export const uriProtocol: AddressProtocol = {
-  name: "uri",
+  name: 'uri',
 
   test(input: string): boolean {
-    return input.startsWith("wi://");
+    return input.startsWith('wi://');
   },
 
   serialize(addr: SemanticAddress): string {
@@ -151,12 +151,12 @@ export const uriProtocol: AddressProtocol = {
   },
 
   parse(input: string): SemanticAddress {
-    if (!input.startsWith("wi://")) {
+    if (!input.startsWith('wi://')) {
       throw new SyntaxError(`Invalid URI address: "${input}" (expected wi:// scheme)`);
     }
     const path = input.slice(5); // strip "wi://"
-    const parts = path.split("/");
-    if (parts.length !== 3 || parts.some(p => !p)) {
+    const parts = path.split('/');
+    if (parts.length !== 3 || parts.some((p) => !p)) {
       throw new SyntaxError(`Invalid URI address path: "${path}" (expected schema/version/index)`);
     }
     if (!/^\d+$/.test(parts[2])) {
@@ -178,7 +178,7 @@ export const uriProtocol: AddressProtocol = {
  * // → "perm-v1-42"
  */
 export const compactProtocol: AddressProtocol = {
-  name: "compact",
+  name: 'compact',
 
   /**
    * Detect whether an input string matches the compact format.
@@ -190,12 +190,12 @@ export const compactProtocol: AddressProtocol = {
    * `compactProtocol.parse()`.
    */
   test(input: string): boolean {
-    if (input.includes(":") || input.includes("/")) return false;
-    const parts = input.split("-");
+    if (input.includes(':') || input.includes('/')) return false;
+    const parts = input.split('-');
     // 최소 3파트, 마지막이 10진수 숫자, 그리고 전체가 hex-only가 아닐 것
     if (parts.length < 3 || !/^\d+$/.test(parts[parts.length - 1])) return false;
     // hex layout과 구분: 모든 파트가 [0-9a-f]로만 구성되면 layout으로 간주
-    const allHex = parts.every(p => /^[0-9a-f]+$/i.test(p));
+    const allHex = parts.every((p) => /^[0-9a-f]+$/i.test(p));
     if (allHex) return false;
     return true;
   },
@@ -206,16 +206,16 @@ export const compactProtocol: AddressProtocol = {
 
   parse(input: string): SemanticAddress {
     // 뒤에서부터 파싱: index는 마지막 `-` 뒤, version은 그 앞 `-` 뒤, schema는 나머지
-    const lastDash = input.lastIndexOf("-");
+    const lastDash = input.lastIndexOf('-');
     if (lastDash < 0) throw new SyntaxError(`Invalid compact address: "${input}"`);
 
     const indexStr = input.slice(lastDash + 1);
     const rest = input.slice(0, lastDash);
-    const secondDash = rest.lastIndexOf("-");
+    const secondDash = rest.lastIndexOf('-');
     if (secondDash < 0) throw new SyntaxError(`Invalid compact address: "${input}"`);
 
     const version = rest.slice(secondDash + 1);
-    const schema  = rest.slice(0, secondDash);
+    const schema = rest.slice(0, secondDash);
 
     if (!schema || !version || !indexStr) {
       throw new SyntaxError(`Invalid compact address: "${input}"`);
@@ -234,11 +234,7 @@ export const compactProtocol: AddressProtocol = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** All built-in protocols, ordered by detection priority. */
-const BUILTIN_PROTOCOLS: readonly AddressProtocol[] = [
-  uriProtocol,
-  colonProtocol,
-  compactProtocol,
-];
+const BUILTIN_PROTOCOLS: readonly AddressProtocol[] = [uriProtocol, colonProtocol, compactProtocol];
 
 /**
  * 입력 문자열의 프로토콜을 감지해 이름을 반환한다.
@@ -293,9 +289,9 @@ export function parseAddress(
  */
 export function serializeAddress(
   addr: SemanticAddress,
-  protocol: AddressProtocol | "colon" | "uri" | "compact",
+  protocol: AddressProtocol | 'colon' | 'uri' | 'compact',
 ): string {
-  if (typeof protocol === "object") return protocol.serialize(addr);
+  if (typeof protocol === 'object') return protocol.serialize(addr);
   const proto = resolveBuiltinProtocol(protocol);
   return proto.serialize(addr);
 }
@@ -309,7 +305,7 @@ export function serializeAddress(
  */
 export function convertAddress(
   input: string,
-  toProtocol: AddressProtocol | "colon" | "uri" | "compact",
+  toProtocol: AddressProtocol | 'colon' | 'uri' | 'compact',
 ): string {
   const addr = parseAddress(input);
   return serializeAddress(addr, toProtocol);
@@ -317,10 +313,14 @@ export function convertAddress(
 
 function resolveBuiltinProtocol(name: string): AddressProtocol {
   switch (name) {
-    case "colon":   return colonProtocol;
-    case "uri":     return uriProtocol;
-    case "compact": return compactProtocol;
-    default: throw new RangeError(`Unknown protocol: "${name}"`);
+    case 'colon':
+      return colonProtocol;
+    case 'uri':
+      return uriProtocol;
+    case 'compact':
+      return compactProtocol;
+    default:
+      throw new RangeError(`Unknown protocol: "${name}"`);
   }
 }
 
@@ -359,7 +359,7 @@ function resolveBuiltinProtocol(name: string): AddressProtocol {
  * //               schema+ver  shard=2 (7번째 hex 자리)
  */
 export type ShardingStrategy = {
-  type: "modulo";
+  type: 'modulo';
   /** shard 라우팅 필드에 할당할 hex 자릿수. numShards - 1이 이 용량 안에 들어와야 한다. */
   chars: number;
   /** 논리 샤드 수 (≥ 1). shard = index % numShards. */
@@ -422,24 +422,28 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
   // sharding 유효성 검증
   if (sharding !== undefined) {
     if (!Number.isInteger(sharding.chars) || sharding.chars <= 0) {
-      throw new RangeError(`createLayoutProtocol: sharding.chars must be a positive integer, got ${sharding.chars}`);
+      throw new RangeError(
+        `createLayoutProtocol: sharding.chars must be a positive integer, got ${sharding.chars}`,
+      );
     }
     if (!Number.isInteger(sharding.numShards) || sharding.numShards < 1) {
-      throw new RangeError(`createLayoutProtocol: sharding.numShards must be a positive integer, got ${sharding.numShards}`);
+      throw new RangeError(
+        `createLayoutProtocol: sharding.numShards must be a positive integer, got ${sharding.numShards}`,
+      );
     }
     const shardCapacity = 16 ** sharding.chars;
     if (sharding.numShards > shardCapacity) {
       throw new RangeError(
-        `createLayoutProtocol: sharding.numShards(${sharding.numShards}) exceeds chars(${sharding.chars}) capacity (max ${shardCapacity})`
+        `createLayoutProtocol: sharding.numShards(${sharding.numShards}) exceeds chars(${sharding.chars}) capacity (max ${shardCapacity})`,
       );
     }
   }
 
-  const leftChars  = schemaChars + versionChars + shardChars;
+  const leftChars = schemaChars + versionChars + shardChars;
   const indexChars = format.chars - leftChars;
   if (indexChars <= 0) {
     throw new RangeError(
-      `createLayoutProtocol: schema(${schemaChars}) + version(${versionChars}) + shard(${shardChars}) = ${leftChars} ≥ format.chars(${format.chars})`
+      `createLayoutProtocol: schema(${schemaChars}) + version(${versionChars}) + shard(${shardChars}) = ${leftChars} ≥ format.chars(${format.chars})`,
     );
   }
 
@@ -450,15 +454,15 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
   }
 
   // Reverse maps for parse
-  const schemaByNum  = new Map<number, string>();
-  for (const [name, num] of Object.entries(schemas))  schemaByNum.set(num, name);
+  const schemaByNum = new Map<number, string>();
+  for (const [name, num] of Object.entries(schemas)) schemaByNum.set(num, name);
   const versionByNum = new Map<number, string>();
   for (const [name, num] of Object.entries(versions)) versionByNum.set(num, name);
 
   // UUID-style regex pattern for test()
   const hexPattern = format.groups
-    ? new RegExp(`^${format.groups.map(g => `[0-9a-f]{${g}}`).join("-")}$`, "i")
-    : new RegExp(`^[0-9a-f]{${format.chars}}$`, "i");
+    ? new RegExp(`^${format.groups.map((g) => `[0-9a-f]{${g}}`).join('-')}$`, 'i')
+    : new RegExp(`^[0-9a-f]{${format.chars}}$`, 'i');
 
   return {
     name: `layout:${format.name}`,
@@ -476,28 +480,27 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
       const schemaMax = 16 ** schemaChars - 1;
       if (sNum > schemaMax) {
         throw new RangeError(
-          `Schema value ${sNum} exceeds allocated ${schemaChars} hex char(s) (max ${schemaMax})`
+          `Schema value ${sNum} exceeds allocated ${schemaChars} hex char(s) (max ${schemaMax})`,
         );
       }
       const versionMax = 16 ** versionChars - 1;
       if (vNum > versionMax) {
         throw new RangeError(
-          `Version value ${vNum} exceeds allocated ${versionChars} hex char(s) (max ${versionMax})`
+          `Version value ${vNum} exceeds allocated ${versionChars} hex char(s) (max ${versionMax})`,
         );
       }
       const indexMax = 16 ** indexChars - 1;
       if (addr.index > indexMax) {
         throw new RangeError(
-          `Index value ${addr.index} exceeds allocated ${indexChars} hex char(s) (max ${indexMax})`
+          `Index value ${addr.index} exceeds allocated ${indexChars} hex char(s) (max ${indexMax})`,
         );
       }
 
-      const sHex  = sNum.toString(16).padStart(schemaChars, "0");
-      const vHex  = vNum.toString(16).padStart(versionChars, "0");
-      const shHex = shardChars > 0
-        ? computeShard(addr.index).toString(16).padStart(shardChars, "0")
-        : "";
-      const iHex  = addr.index.toString(16).padStart(indexChars, "0");
+      const sHex = sNum.toString(16).padStart(schemaChars, '0');
+      const vHex = vNum.toString(16).padStart(versionChars, '0');
+      const shHex =
+        shardChars > 0 ? computeShard(addr.index).toString(16).padStart(shardChars, '0') : '';
+      const iHex = addr.index.toString(16).padStart(indexChars, '0');
       // leftChars + indexChars === format.chars 이므로 gap은 항상 0
       const rawHex = sHex + vHex + shHex + iHex;
 
@@ -510,18 +513,19 @@ export function createLayoutProtocol(opts: LayoutProtocolOptions): AddressProtoc
         throw new SyntaxError(`Expected ${format.chars} hex chars, got ${raw.length}`);
       }
 
-      const sNum  = parseInt(raw.slice(0, schemaChars), 16);
-      const vNum  = parseInt(raw.slice(schemaChars, schemaChars + versionChars), 16);
-      const shNum = shardChars > 0
-        ? parseInt(raw.slice(schemaChars + versionChars, leftChars), 16)
-        : undefined;
+      const sNum = parseInt(raw.slice(0, schemaChars), 16);
+      const vNum = parseInt(raw.slice(schemaChars, schemaChars + versionChars), 16);
+      const shNum =
+        shardChars > 0 ? parseInt(raw.slice(schemaChars + versionChars, leftChars), 16) : undefined;
       // Index is right-aligned: take last indexChars
-      const idx   = parseInt(raw.slice(format.chars - indexChars), 16);
+      const idx = parseInt(raw.slice(format.chars - indexChars), 16);
 
-      const schema  = schemaByNum.get(sNum);
+      const schema = schemaByNum.get(sNum);
       const version = versionByNum.get(vNum);
-      if (schema === undefined)  throw new SyntaxError(`Unknown schema number: ${sNum} (0x${sNum.toString(16)})`);
-      if (version === undefined) throw new SyntaxError(`Unknown version number: ${vNum} (0x${vNum.toString(16)})`);
+      if (schema === undefined)
+        throw new SyntaxError(`Unknown schema number: ${sNum} (0x${sNum.toString(16)})`);
+      if (version === undefined)
+        throw new SyntaxError(`Unknown version number: ${vNum} (0x${vNum.toString(16)})`);
 
       return { schema, version, index: idx, ...(shNum !== undefined && { shard: shNum }) };
     },
@@ -562,10 +566,10 @@ export class AddressConverter {
     const existed = this.protos.has(protocol.name);
     this.protos.set(protocol.name, protocol);
     if (existed) {
-      this.order = this.order.map(p => p.name === protocol.name ? protocol : p);
-    } else if (protocol.name.startsWith("layout:")) {
+      this.order = this.order.map((p) => (p.name === protocol.name ? protocol : p));
+    } else if (protocol.name.startsWith('layout:')) {
       // Insert layout protocols before text protocols
-      const firstTextIdx = this.order.findIndex(p => !p.name.startsWith("layout:"));
+      const firstTextIdx = this.order.findIndex((p) => !p.name.startsWith('layout:'));
       if (firstTextIdx >= 0) {
         this.order.splice(firstTextIdx, 0, protocol);
       } else {
@@ -591,7 +595,7 @@ export class AddressConverter {
 
   /** List registered protocol names. */
   protocols(): string[] {
-    return this.order.map(p => p.name);
+    return this.order.map((p) => p.name);
   }
 
   /** 입력 문자열의 프로토콜을 감지해 이름 반환. 매칭 없으면 null. */
@@ -646,11 +650,7 @@ export function createAddressConverter(): AddressConverter {
 /**
  * Convert a VersionedIndex (from PrefixCodec) to a SemanticAddress.
  */
-export function fromVersionedIndex(vi: {
-  prefix: string;
-  v: string;
-  id: number;
-}): SemanticAddress {
+export function fromVersionedIndex(vi: { prefix: string; v: string; id: number }): SemanticAddress {
   return { schema: vi.prefix, version: vi.v, index: vi.id };
 }
 
@@ -688,10 +688,10 @@ export function toVersionedValue(addr: SemanticAddress): VersionedValue {
  * SemanticAddress와 동일하지만 index가 bigint 타입이다.
  */
 export interface SemanticAddressBig {
-  readonly schema:  string;
+  readonly schema: string;
   readonly version: string;
-  readonly index:   bigint;
-  readonly shard?:  number;
+  readonly index: bigint;
+  readonly shard?: number;
 }
 
 /**
@@ -731,24 +731,28 @@ export function createLayoutProtocolBig(opts: LayoutProtocolOptions): AddressPro
 
   if (sharding !== undefined) {
     if (!Number.isInteger(sharding.chars) || sharding.chars <= 0) {
-      throw new RangeError(`createLayoutProtocolBig: sharding.chars must be a positive integer, got ${sharding.chars}`);
+      throw new RangeError(
+        `createLayoutProtocolBig: sharding.chars must be a positive integer, got ${sharding.chars}`,
+      );
     }
     if (!Number.isInteger(sharding.numShards) || sharding.numShards < 1) {
-      throw new RangeError(`createLayoutProtocolBig: sharding.numShards must be a positive integer, got ${sharding.numShards}`);
+      throw new RangeError(
+        `createLayoutProtocolBig: sharding.numShards must be a positive integer, got ${sharding.numShards}`,
+      );
     }
     const shardCapacity = 16 ** sharding.chars;
     if (sharding.numShards > shardCapacity) {
       throw new RangeError(
-        `createLayoutProtocolBig: sharding.numShards(${sharding.numShards}) exceeds chars(${sharding.chars}) capacity (max ${shardCapacity})`
+        `createLayoutProtocolBig: sharding.numShards(${sharding.numShards}) exceeds chars(${sharding.chars}) capacity (max ${shardCapacity})`,
       );
     }
   }
 
-  const leftChars  = schemaChars + versionChars + shardChars;
+  const leftChars = schemaChars + versionChars + shardChars;
   const indexChars = format.chars - leftChars;
   if (indexChars <= 0) {
     throw new RangeError(
-      `createLayoutProtocolBig: schema(${schemaChars}) + version(${versionChars}) + shard(${shardChars}) = ${leftChars} ≥ format.chars(${format.chars})`
+      `createLayoutProtocolBig: schema(${schemaChars}) + version(${versionChars}) + shard(${shardChars}) = ${leftChars} ≥ format.chars(${format.chars})`,
     );
   }
 
@@ -760,14 +764,14 @@ export function createLayoutProtocolBig(opts: LayoutProtocolOptions): AddressPro
     return Number(index % BigInt(sharding!.numShards));
   }
 
-  const schemaByNum  = new Map<number, string>();
-  for (const [name, num] of Object.entries(schemas))  schemaByNum.set(num, name);
+  const schemaByNum = new Map<number, string>();
+  for (const [name, num] of Object.entries(schemas)) schemaByNum.set(num, name);
   const versionByNum = new Map<number, string>();
   for (const [name, num] of Object.entries(versions)) versionByNum.set(num, name);
 
   const hexPattern = format.groups
-    ? new RegExp(`^${format.groups.map(g => `[0-9a-f]{${g}}`).join("-")}$`, "i")
-    : new RegExp(`^[0-9a-f]{${format.chars}}$`, "i");
+    ? new RegExp(`^${format.groups.map((g) => `[0-9a-f]{${g}}`).join('-')}$`, 'i')
+    : new RegExp(`^[0-9a-f]{${format.chars}}$`, 'i');
 
   return {
     name: `layout:${format.name}`,
@@ -785,27 +789,26 @@ export function createLayoutProtocolBig(opts: LayoutProtocolOptions): AddressPro
       const schemaMax = 16 ** schemaChars - 1;
       if (sNum > schemaMax) {
         throw new RangeError(
-          `Schema value ${sNum} exceeds allocated ${schemaChars} hex char(s) (max ${schemaMax})`
+          `Schema value ${sNum} exceeds allocated ${schemaChars} hex char(s) (max ${schemaMax})`,
         );
       }
       const versionMax = 16 ** versionChars - 1;
       if (vNum > versionMax) {
         throw new RangeError(
-          `Version value ${vNum} exceeds allocated ${versionChars} hex char(s) (max ${versionMax})`
+          `Version value ${vNum} exceeds allocated ${versionChars} hex char(s) (max ${versionMax})`,
         );
       }
       if (addr.index > indexMaxBig) {
         throw new RangeError(
-          `Index value ${addr.index} exceeds allocated ${indexChars} hex char(s) (max ${indexMaxBig})`
+          `Index value ${addr.index} exceeds allocated ${indexChars} hex char(s) (max ${indexMaxBig})`,
         );
       }
 
-      const sHex  = sNum.toString(16).padStart(schemaChars, "0");
-      const vHex  = vNum.toString(16).padStart(versionChars, "0");
-      const shHex = shardChars > 0
-        ? computeShard(addr.index).toString(16).padStart(shardChars, "0")
-        : "";
-      const iHex  = addr.index.toString(16).padStart(indexChars, "0");
+      const sHex = sNum.toString(16).padStart(schemaChars, '0');
+      const vHex = vNum.toString(16).padStart(versionChars, '0');
+      const shHex =
+        shardChars > 0 ? computeShard(addr.index).toString(16).padStart(shardChars, '0') : '';
+      const iHex = addr.index.toString(16).padStart(indexChars, '0');
       const rawHex = sHex + vHex + shHex + iHex;
 
       return formatHex(format, rawHex);
@@ -817,18 +820,19 @@ export function createLayoutProtocolBig(opts: LayoutProtocolOptions): AddressPro
         throw new SyntaxError(`Expected ${format.chars} hex chars, got ${raw.length}`);
       }
 
-      const sNum  = parseInt(raw.slice(0, schemaChars), 16);
-      const vNum  = parseInt(raw.slice(schemaChars, schemaChars + versionChars), 16);
-      const shNum = shardChars > 0
-        ? parseInt(raw.slice(schemaChars + versionChars, leftChars), 16)
-        : undefined;
+      const sNum = parseInt(raw.slice(0, schemaChars), 16);
+      const vNum = parseInt(raw.slice(schemaChars, schemaChars + versionChars), 16);
+      const shNum =
+        shardChars > 0 ? parseInt(raw.slice(schemaChars + versionChars, leftChars), 16) : undefined;
       // BigInt 파싱 — Number 정밀도 한계 없음
-      const idx   = BigInt("0x" + raw.slice(format.chars - indexChars));
+      const idx = BigInt('0x' + raw.slice(format.chars - indexChars));
 
-      const schema  = schemaByNum.get(sNum);
+      const schema = schemaByNum.get(sNum);
       const version = versionByNum.get(vNum);
-      if (schema === undefined)  throw new SyntaxError(`Unknown schema number: ${sNum} (0x${sNum.toString(16)})`);
-      if (version === undefined) throw new SyntaxError(`Unknown version number: ${vNum} (0x${vNum.toString(16)})`);
+      if (schema === undefined)
+        throw new SyntaxError(`Unknown schema number: ${sNum} (0x${sNum.toString(16)})`);
+      if (version === undefined)
+        throw new SyntaxError(`Unknown version number: ${vNum} (0x${vNum.toString(16)})`);
 
       return { schema, version, index: idx, ...(shNum !== undefined && { shard: shNum }) };
     },

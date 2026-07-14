@@ -33,16 +33,14 @@ export async function fetchDensity(
   reportingApiUrl: string,
   args: FetchDensityArgs,
 ): Promise<DensityResponse> {
-  const url = new URL("/density", reportingApiUrl);
-  url.searchParams.set("catalog", args.catalog);
-  url.searchParams.set("prefix", args.prefix);
-  url.searchParams.set("version", args.version);
+  const url = new URL('/density', reportingApiUrl);
+  url.searchParams.set('catalog', args.catalog);
+  url.searchParams.set('prefix', args.prefix);
+  url.searchParams.set('version', args.version);
   const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(
-      `fetchDensity ${args.prefix}: status=${res.status} body=${body}`,
-    );
+    throw new Error(`fetchDensity ${args.prefix}: status=${res.status} body=${body}`);
   }
   const json = await res.json();
   return json as DensityResponse;
@@ -57,18 +55,16 @@ export function summarizeDensity(d: DensityResponse): string {
   lines.push(`density: ${d.prefix} (${d.version})`);
   for (const a of d.axes) {
     const pct = (a.marginalDensity * 100).toFixed(1);
-    lines.push(
-      `  ${a.axisName}: ${a.observedDistinct}/${a.shapeCapacity} (${pct}%)`,
-    );
+    lines.push(`  ${a.axisName}: ${a.observedDistinct}/${a.shapeCapacity} (${pct}%)`);
     if (a.unobservedEntries.length > 0 && a.unobservedEntries.length <= 5) {
-      lines.push(`    unobserved: ${a.unobservedEntries.join(", ")}`);
+      lines.push(`    unobserved: ${a.unobservedEntries.join(', ')}`);
     }
   }
   if (d.underutilizedAxes.length > 0) {
-    lines.push(`  [!] underutilized: ${d.underutilizedAxes.join(", ")}`);
+    lines.push(`  [!] underutilized: ${d.underutilizedAxes.join(', ')}`);
   }
   if (d.saturatedAxes.length > 0) {
-    lines.push(`  [!] saturated: ${d.saturatedAxes.join(", ")}`);
+    lines.push(`  [!] saturated: ${d.saturatedAxes.join(', ')}`);
   }
-  return lines.join("\n");
+  return lines.join('\n');
 }

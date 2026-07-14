@@ -45,7 +45,7 @@ import {
   IndexRangeError,
   type BitFieldLayout,
   type BitFieldSpec,
-} from "weighted-index";
+} from 'weighted-index';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Types
@@ -75,7 +75,7 @@ export class BitIndexBig {
 
   constructor(shape: number[], labels?: string[]) {
     if (shape.length === 0) {
-      throw new ShapeError("shape must not be empty");
+      throw new ShapeError('shape must not be empty');
     }
     for (let i = 0; i < shape.length; i++) {
       if (!Number.isInteger(shape[i]) || shape[i] < 1) {
@@ -85,7 +85,7 @@ export class BitIndexBig {
     const resolvedLabels = labels ?? shape.map((_, i) => `dim_${i}`);
     if (resolvedLabels.length !== shape.length) {
       throw new ShapeError(
-        `labels length (${resolvedLabels.length}) must match shape length (${shape.length})`
+        `labels length (${resolvedLabels.length}) must match shape length (${shape.length})`,
       );
     }
 
@@ -100,7 +100,7 @@ export class BitIndexBig {
     this.totalBits = this.layout.totalBits;
     this.totalBytes = this.layout.totalBytes;
 
-    const slots: BitSlot[] = this.layout.fields.map(f => ({
+    const slots: BitSlot[] = this.layout.fields.map((f) => ({
       label: f.name,
       bits: f.bits,
       shift: BigInt(this.totalBits - f.offset - f.bits),
@@ -192,8 +192,10 @@ export class BitIndexBig {
   }
 
   fromBytes(bytes: Uint8Array): number[] {
-    const raw = bitUnpack(this.layout,
-      bytes.reduce((acc, b) => (acc << 8n) | BigInt(b), 0n));
+    const raw = bitUnpack(
+      this.layout,
+      bytes.reduce((acc, b) => (acc << 8n) | BigInt(b), 0n),
+    );
     return this._fromValues(raw);
   }
 
@@ -202,8 +204,8 @@ export class BitIndexBig {
   }
 
   fromHex(hex: string): number[] {
-    const clean = hex.replace(/[-\s]/g, "").toLowerCase();
-    const packed = BigInt("0x" + (clean || "0"));
+    const clean = hex.replace(/[-\s]/g, '').toLowerCase();
+    const packed = BigInt('0x' + (clean || '0'));
     return this.decode(packed);
   }
 
@@ -225,7 +227,7 @@ export class BitIndexBig {
       const val = Number((packed >> slot.shift) & slot.mask);
       if (val >= this.shape[i]) {
         throw new IndexRangeError(
-          `Dimension "${slot.label}" value ${val + 1} exceeds shape ${this.shape[i]} at packed ${packed}`
+          `Dimension "${slot.label}" value ${val + 1} exceeds shape ${this.shape[i]} at packed ${packed}`,
         );
       }
       out[i] = val + 1;
@@ -245,23 +247,23 @@ export class BitIndexBig {
   private _validateCoords(coords: number[]): void {
     if (coords.length !== this.shape.length) {
       throw new CoordError(
-        `coords length (${coords.length}) must match shape length (${this.shape.length})`
+        `coords length (${coords.length}) must match shape length (${this.shape.length})`,
       );
     }
     for (let i = 0; i < this.shape.length; i++) {
       const x = coords[i];
       if (!Number.isInteger(x) || x < 1 || x > this.shape[i]) {
         throw new CoordError(
-          `coords[${i}] (label: "${this.labels[i]}") must be in [1, ${this.shape[i]}], got ${x}`
+          `coords[${i}] (label: "${this.labels[i]}") must be in [1, ${this.shape[i]}], got ${x}`,
         );
       }
     }
   }
 
   private _validatePacked(packed: bigint): void {
-    if (packed < 0n || packed >= (1n << BigInt(this.totalBits))) {
+    if (packed < 0n || packed >= 1n << BigInt(this.totalBits)) {
       throw new IndexRangeError(
-        `packed value must be in [0, 2^${this.totalBits}-1], got ${packed}`
+        `packed value must be in [0, 2^${this.totalBits}-1], got ${packed}`,
       );
     }
   }
@@ -301,7 +303,7 @@ export class BitIndex {
     const totalBits = this._big.totalBits;
     if (totalBits > 53) {
       throw new ShapeError(
-        `BitIndex requires totalBits ≤ 53, got ${totalBits}. Use BitIndexBig instead.`
+        `BitIndex requires totalBits ≤ 53, got ${totalBits}. Use BitIndexBig instead.`,
       );
     }
     this.shape = this._big.shape;
@@ -311,32 +313,57 @@ export class BitIndex {
     this.layout = this._big.layout;
   }
 
-  encode(coords: number[]): number { return Number(this._big.encode(coords)); }
-  decode(packed: number): number[] { return this._big.decode(BigInt(packed)); }
-  encodeUnsafe(coords: number[]): number { return Number(this._big.encodeUnsafe(coords)); }
-  decodeUnsafe(packed: number): number[] { return this._big.decodeUnsafe(BigInt(packed)); }
-  encodeFromRecord(record: Record<string, number>): number { return Number(this._big.encodeFromRecord(record)); }
-  decodeToRecord(packed: number): Record<string, number> { return this._big.decodeToRecord(BigInt(packed)); }
+  encode(coords: number[]): number {
+    return Number(this._big.encode(coords));
+  }
+  decode(packed: number): number[] {
+    return this._big.decode(BigInt(packed));
+  }
+  encodeUnsafe(coords: number[]): number {
+    return Number(this._big.encodeUnsafe(coords));
+  }
+  decodeUnsafe(packed: number): number[] {
+    return this._big.decodeUnsafe(BigInt(packed));
+  }
+  encodeFromRecord(record: Record<string, number>): number {
+    return Number(this._big.encodeFromRecord(record));
+  }
+  decodeToRecord(packed: number): Record<string, number> {
+    return this._big.decodeToRecord(BigInt(packed));
+  }
 
-  extractDim(packed: number, dimIndex: number): number { return this._big.extractDim(BigInt(packed), dimIndex); }
-  extractDimByLabel(packed: number, label: string): number { return this._big.extractDimByLabel(BigInt(packed), label); }
-  extractDims(packed: number, dimIndices: number[]): Record<string, number> { return this._big.extractDims(BigInt(packed), dimIndices); }
-  extractDimsByLabel(packed: number, labels: string[]): Record<string, number> { return this._big.extractDimsByLabel(BigInt(packed), labels); }
+  extractDim(packed: number, dimIndex: number): number {
+    return this._big.extractDim(BigInt(packed), dimIndex);
+  }
+  extractDimByLabel(packed: number, label: string): number {
+    return this._big.extractDimByLabel(BigInt(packed), label);
+  }
+  extractDims(packed: number, dimIndices: number[]): Record<string, number> {
+    return this._big.extractDims(BigInt(packed), dimIndices);
+  }
+  extractDimsByLabel(packed: number, labels: string[]): Record<string, number> {
+    return this._big.extractDimsByLabel(BigInt(packed), labels);
+  }
 
-  toBytes(coords: number[]): Uint8Array { return this._big.toBytes(coords); }
-  fromBytes(bytes: Uint8Array): number[] { return this._big.fromBytes(bytes); }
-  toHex(coords: number[]): string { return this._big.toHex(coords); }
-  fromHex(hex: string): number[] { return this._big.fromHex(hex); }
+  toBytes(coords: number[]): Uint8Array {
+    return this._big.toBytes(coords);
+  }
+  fromBytes(bytes: Uint8Array): number[] {
+    return this._big.fromBytes(bytes);
+  }
+  toHex(coords: number[]): string {
+    return this._big.toHex(coords);
+  }
+  fromHex(hex: string): number[] {
+    return this._big.fromHex(hex);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Factory
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function createBitIndex(
-  shape: number[],
-  labels?: string[],
-): BitIndex | BitIndexBig {
+export function createBitIndex(shape: number[], labels?: string[]): BitIndex | BitIndexBig {
   const totalBits = shape.reduce((s, n) => s + bitsForMax(n - 1), 0);
   if (totalBits <= 53) {
     return new BitIndex(shape, labels);

@@ -1,14 +1,14 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { TransformKind } from "./data-schema.js";
+import type { TransformKind } from './data-schema.js';
 
 // ── PipeSpec — 단일 파이프 노드 ──────────────────────────
 
 export interface PipePort {
   /** 포트 ID (같은 방향 내 유일) */
   portId: string;
-  direction: "in" | "out";
+  direction: 'in' | 'out';
   facetType?: string;
   label?: string;
   required?: boolean;
@@ -76,30 +76,36 @@ export interface PipeConnection {
 }
 
 export type ConnectionKind =
-  | "next"
-  | "conditional"
-  | "event"
-  | "error"
-  | "compensate"
-  | "fan-out"
-  | "join"
-  | "feedback";
+  | 'next'
+  | 'conditional'
+  | 'event'
+  | 'error'
+  | 'compensate'
+  | 'fan-out'
+  | 'join'
+  | 'feedback';
 
 // ── PipeFlow — 30종 흐름 제어 ────────────────────────────
 
 export type PipeFlow =
   // 기본
-  | PipeStep | PipeSequence
+  | PipeStep
+  | PipeSequence
   // 분기
-  | PipeBranch | PipeOptional
+  | PipeBranch
+  | PipeOptional
   // 동시성
-  | PipeParallel | PipeRace | PipeAwait
+  | PipeParallel
+  | PipeRace
+  | PipeAwait
   // 내결함
-  | PipeRetry | PipeFallback
+  | PipeRetry
+  | PipeFallback
   // 반복
   | PipeLoop
   // 트랜잭션
-  | PipeCompensate | PipeTransitionScope
+  | PipeCompensate
+  | PipeTransitionScope
   // 비동기
   | PipeEmit
   // 정리
@@ -109,29 +115,37 @@ export type PipeFlow =
   // 제어
   | PipeFeedback
   // 배치
-  | PipeMap | PipeReduce | PipeBuffer | PipeFilter
+  | PipeMap
+  | PipeReduce
+  | PipeBuffer
+  | PipeFilter
   // 안정화
-  | PipeCircuitBreaker | PipeThrottle | PipeDebounce
+  | PipeCircuitBreaker
+  | PipeThrottle
+  | PipeDebounce
   // 데이터 변환
-  | PipeSplit | PipeEnrich
+  | PipeSplit
+  | PipeEnrich
   // 관측
   | PipeTap
   // 스트리밍
-  | PipeResequence | PipeWindow
+  | PipeResequence
+  | PipeWindow
   // 상태
-  | PipeDedup | PipeCorrelation;
+  | PipeDedup
+  | PipeCorrelation;
 
 // ── 기본 ──────────────────────────────────────────────
 
 export interface PipeStep {
-  kind: "step";
+  kind: 'step';
   facet: string;
   eventKey?: string;
   constraints?: Constraint[];
   timeout?: number;
 
   /** 테스트 단계 힌트: 이 step이 대응하는 테스트 단계 */
-  testPhase?: import("./test-tracking.js").TestPhase;
+  testPhase?: import('./test-tracking.js').TestPhase;
 
   /** 데이터 계약: 이 step의 입출력 스키마 + 접근 테이블 */
   dataContract?: StepDataContract;
@@ -151,43 +165,43 @@ export interface StepDataContract {
   /** 이 step이 보장하는 출력 필드 */
   produces?: Record<string, { type: string; required: boolean }>;
   /** 접근하는 테이블/컬럼 */
-  accesses?: Array<{ schemaId: string; columns: string[]; mode: "read" | "write" | "readwrite" }>;
+  accesses?: Array<{ schemaId: string; columns: string[]; mode: 'read' | 'write' | 'readwrite' }>;
   /** 출력 필드별 입력 기여 매핑 — 어떤 consumes가 어떤 produces에 기여하는가 */
   lineageHints?: Record<string, LineageHint>;
 }
 
 export interface PipeSequence {
-  kind: "sequence";
+  kind: 'sequence';
   steps: PipeFlow[];
 }
 
 // ── 분기 ──────────────────────────────────────────────
 
 export interface PipeBranch {
-  kind: "branch";
+  kind: 'branch';
   condition: string;
   paths: PipeFlow[];
 }
 
 export interface PipeOptional {
-  kind: "optional";
+  kind: 'optional';
   step: PipeFlow;
 }
 
 // ── 동시성 ────────────────────────────────────────────
 
 export interface PipeParallel {
-  kind: "parallel";
+  kind: 'parallel';
   steps: PipeFlow[];
 }
 
 export interface PipeRace {
-  kind: "race";
+  kind: 'race';
   steps: PipeFlow[];
 }
 
 export interface PipeAwait {
-  kind: "await";
+  kind: 'await';
   condition: string;
   timeout?: number;
   then: PipeFlow;
@@ -196,14 +210,14 @@ export interface PipeAwait {
 // ── 내결함 ────────────────────────────────────────────
 
 export interface PipeRetry {
-  kind: "retry";
+  kind: 'retry';
   step: PipeFlow;
   maxAttempts: number;
   backoff?: number;
 }
 
 export interface PipeFallback {
-  kind: "fallback";
+  kind: 'fallback';
   try: PipeFlow;
   catch: PipeFlow;
 }
@@ -211,7 +225,7 @@ export interface PipeFallback {
 // ── 반복 ──────────────────────────────────────────────
 
 export interface PipeLoop {
-  kind: "loop";
+  kind: 'loop';
   body: PipeFlow;
   until: string;
   maxIterations?: number;
@@ -220,14 +234,14 @@ export interface PipeLoop {
 // ── 트랜잭션 ──────────────────────────────────────────
 
 export interface PipeCompensate {
-  kind: "compensate";
+  kind: 'compensate';
   forward: PipeFlow;
   compensate: PipeFlow;
 }
 
 /** 선언적 비즈니스 원자 경계 — "전부 되거나 전부 안 되거나" */
 export interface PipeTransitionScope {
-  kind: "transition-scope";
+  kind: 'transition-scope';
   /** 전이 식별자 */
   transitionId: string;
   /** 전이 본체 — 이 안의 모든 동작이 원자적으로 성공하거나 실패 */
@@ -241,7 +255,7 @@ export interface PipeTransitionScope {
 // ── 비동기 ────────────────────────────────────────────
 
 export interface PipeEmit {
-  kind: "emit";
+  kind: 'emit';
   eventKey: string;
   payload?: string;
 }
@@ -249,7 +263,7 @@ export interface PipeEmit {
 // ── 정리 ──────────────────────────────────────────────
 
 export interface PipeFinally {
-  kind: "finally";
+  kind: 'finally';
   body: PipeFlow;
   cleanup: PipeFlow;
 }
@@ -257,7 +271,7 @@ export interface PipeFinally {
 // ── 시간 ──────────────────────────────────────────────
 
 export interface PipeTimeout {
-  kind: "timeout";
+  kind: 'timeout';
   body: PipeFlow;
   duration: number;
   onTimeout?: PipeFlow;
@@ -266,7 +280,7 @@ export interface PipeTimeout {
 // ── 제어 ──────────────────────────────────────────────
 
 export interface PipeFeedback {
-  kind: "feedback";
+  kind: 'feedback';
   body: PipeFlow;
   feedbackEvent: string;
   until: string;
@@ -276,28 +290,28 @@ export interface PipeFeedback {
 // ── 배치 ──────────────────────────────────────────────
 
 export interface PipeMap {
-  kind: "map";
+  kind: 'map';
   itemFlow: PipeFlow;
   collection: string;
   concurrency?: number;
 }
 
 export interface PipeReduce {
-  kind: "reduce";
+  kind: 'reduce';
   step: PipeFlow;
   initial: string;
   accumulator: string;
 }
 
 export interface PipeBuffer {
-  kind: "buffer";
+  kind: 'buffer';
   body: PipeFlow;
   count?: number;
   duration?: number;
 }
 
 export interface PipeFilter {
-  kind: "filter";
+  kind: 'filter';
   condition: string;
   step: PipeFlow;
 }
@@ -305,7 +319,7 @@ export interface PipeFilter {
 // ── 안정화 ────────────────────────────────────────────
 
 export interface PipeCircuitBreaker {
-  kind: "circuit-breaker";
+  kind: 'circuit-breaker';
   step: PipeFlow;
   failureThreshold: number;
   cooldown: number;
@@ -313,14 +327,14 @@ export interface PipeCircuitBreaker {
 }
 
 export interface PipeThrottle {
-  kind: "throttle";
+  kind: 'throttle';
   step: PipeFlow;
   rate: number;
   interval: number;
 }
 
 export interface PipeDebounce {
-  kind: "debounce";
+  kind: 'debounce';
   step: PipeFlow;
   wait: number;
 }
@@ -328,13 +342,13 @@ export interface PipeDebounce {
 // ── 데이터 변환 ───────────────────────────────────────
 
 export interface PipeSplit {
-  kind: "split";
+  kind: 'split';
   splitBy: string;
   itemFlow: PipeFlow;
 }
 
 export interface PipeEnrich {
-  kind: "enrich";
+  kind: 'enrich';
   source: string;
   mergeField: string;
   step: PipeFlow;
@@ -344,7 +358,7 @@ export interface PipeEnrich {
 // ── 관측 ──────────────────────────────────────────────
 
 export interface PipeTap {
-  kind: "tap";
+  kind: 'tap';
   observe: PipeFlow;
   step: PipeFlow;
 }
@@ -352,15 +366,15 @@ export interface PipeTap {
 // ── 스트리밍 ──────────────────────────────────────────
 
 export interface PipeResequence {
-  kind: "resequence";
+  kind: 'resequence';
   orderBy: string;
   windowSize: number;
   step: PipeFlow;
 }
 
 export interface PipeWindow {
-  kind: "window";
-  type: "tumbling" | "sliding" | "session";
+  kind: 'window';
+  type: 'tumbling' | 'sliding' | 'session';
   size: number;
   slide?: number;
   gap?: number;
@@ -370,14 +384,14 @@ export interface PipeWindow {
 // ── 상태 ──────────────────────────────────────────────
 
 export interface PipeDedup {
-  kind: "dedup";
+  kind: 'dedup';
   keyField: string;
   ttl?: number;
   step: PipeFlow;
 }
 
 export interface PipeCorrelation {
-  kind: "correlation";
+  kind: 'correlation';
   requestEvent: string;
   responseEvent: string;
   correlationKey: string;
@@ -390,6 +404,6 @@ export interface PipeCorrelation {
 
 export interface Constraint {
   field: string;
-  op: "eq" | "neq" | "exists" | "gt" | "lt" | "contains" | "masked";
+  op: 'eq' | 'neq' | 'exists' | 'gt' | 'lt' | 'contains' | 'masked';
   value?: unknown;
 }

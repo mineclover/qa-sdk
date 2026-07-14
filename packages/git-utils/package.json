@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "description": "Git 메타데이터 추출 — conventional commits, semver tags, scope 집계",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -11,12 +17,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",

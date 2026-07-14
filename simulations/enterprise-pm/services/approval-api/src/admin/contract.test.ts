@@ -5,32 +5,29 @@
 // sim-outbox-view 패키지가 SSOT — controller 응답이 schema 와 typecheck 시점에서 일치해야 한다.
 // runtime 검증은 zod parse 로 강제.
 
-import { describe, it, expect } from "vitest";
-import { Test } from "@nestjs/testing";
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from "@nestjs/platform-fastify";
+import { describe, it, expect } from 'vitest';
+import { Test } from '@nestjs/testing';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import {
   OutboxInsertResponseSchema,
   OutboxDispatchResponseSchema,
   type OutboxInsertResponse,
   type OutboxDispatchResponse,
-} from "sim-outbox-view";
-import { OutboxAdminController } from "./outbox-admin.controller.js";
-import { OutboxAdminInsertService } from "./outbox-admin-insert.service.js";
-import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
+} from 'sim-outbox-view';
+import { OutboxAdminController } from './outbox-admin.controller.js';
+import { OutboxAdminInsertService } from './outbox-admin-insert.service.js';
+import { OutboxAdminStateQueryService } from './outbox-admin-state-query.service.js';
 import {
   OutboxAdminDispatchService,
   type OutboxAdminDispatcher,
   type OutboxDispatcherFactory,
-} from "./outbox-admin-dispatch.service.js";
+} from './outbox-admin-dispatch.service.js';
 import {
   OUTBOX_ADMIN_REPO,
   OUTBOX_DISPATCHER_FACTORY,
   type OutboxAdminRepo,
   type OutboxAdminRepoTx,
-} from "./outbox-admin.tokens.js";
+} from './outbox-admin.tokens.js';
 
 const repoStub: OutboxAdminRepo = {
   async transaction<T>(cb: (tx: OutboxAdminRepoTx) => Promise<T>): Promise<T> {
@@ -42,11 +39,9 @@ const repoStub: OutboxAdminRepo = {
   },
 };
 
-const internal = { "x-forwarded-for": "127.0.0.1" };
+const internal = { 'x-forwarded-for': '127.0.0.1' };
 
-async function bootApp(
-  factory: OutboxDispatcherFactory,
-): Promise<NestFastifyApplication> {
+async function bootApp(factory: OutboxDispatcherFactory): Promise<NestFastifyApplication> {
   const moduleRef = await Test.createTestingModule({
     controllers: [OutboxAdminController],
     providers: [
@@ -62,16 +57,14 @@ async function bootApp(
       },
     ],
   }).compile();
-  const app = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter(),
-  );
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   return app;
 }
 
-describe("OutboxAdmin sim-handles contract", () => {
-  it("insert 응답이 sim-outbox-view OutboxInsertResponse shape 일치", async () => {
+describe('OutboxAdmin sim-handles contract', () => {
+  it('insert 응답이 sim-outbox-view OutboxInsertResponse shape 일치', async () => {
     const factory = (consumerName: string): OutboxAdminDispatcher => ({
       consumerName,
       claimed: [],
@@ -81,14 +74,14 @@ describe("OutboxAdmin sim-handles contract", () => {
     });
     const app = await bootApp(factory);
     const res = await app.inject({
-      method: "POST",
-      url: "/admin/outbox/insert",
+      method: 'POST',
+      url: '/admin/outbox/insert',
       headers: internal,
       payload: {
         events: [
           {
-            aggregateId: "proj-001",
-            eventName: "approval.budget.submitted",
+            aggregateId: 'proj-001',
+            eventName: 'approval.budget.submitted',
             payload: {},
             occurredAt: 1714250400000,
           },
@@ -102,7 +95,7 @@ describe("OutboxAdmin sim-handles contract", () => {
     await app.close();
   });
 
-  it("dispatch 응답이 sim-outbox-view OutboxDispatchResponse shape 일치", async () => {
+  it('dispatch 응답이 sim-outbox-view OutboxDispatchResponse shape 일치', async () => {
     const factory = (consumerName: string): OutboxAdminDispatcher => ({
       consumerName,
       claimed: [`${consumerName}-evt`],
@@ -112,8 +105,8 @@ describe("OutboxAdmin sim-handles contract", () => {
     });
     const app = await bootApp(factory);
     const res = await app.inject({
-      method: "POST",
-      url: "/admin/outbox/dispatch",
+      method: 'POST',
+      url: '/admin/outbox/dispatch',
       headers: internal,
       payload: { replicaCount: 2, timeoutMs: 100 },
     });

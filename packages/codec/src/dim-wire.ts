@@ -11,12 +11,8 @@
  * 단점: prefix 합성 정보(shape, stride) 누락 → 1D 주소 복원 불가 (dimsToAddress로 별도 수행)
  */
 
-import type { Catalog, DimRef } from "@qa-sdk/core";
-import {
-  latestPrefixVersion,
-  encodePrefix,
-  decodePrefix,
-} from "@qa-sdk/core";
+import type { Catalog, DimRef } from '@qa-sdk/core';
+import { latestPrefixVersion, encodePrefix, decodePrefix } from '@qa-sdk/core';
 
 // ── 타입 ────────────────────────────────────────────────────────────────────────
 
@@ -37,8 +33,11 @@ export interface DimWireCodec {
 // ── 내부 헬퍼 ────────────────────────────────────────────────────────────────────
 
 /** table_ref가 아닌 차원(고정 차원)의 labels만 반환 */
-function getFixedLabels(prefix: { labels: readonly string[]; dims: Record<string, DimRef> }): string[] {
-  return prefix.labels.filter(l => prefix.dims[l].kind !== "table_ref");
+function getFixedLabels(prefix: {
+  labels: readonly string[];
+  dims: Record<string, DimRef>;
+}): string[] {
+  return prefix.labels.filter((l) => prefix.dims[l].kind !== 'table_ref');
 }
 
 /** prefix의 최신 version을 반환 */
@@ -52,7 +51,7 @@ export function createDimWireCodec(catalog: Catalog): DimWireCodec {
       const prefix = catalog.prefixes[prefixId];
       if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
       const ver = latestVersion(catalog, prefixId);
-      const vdef = prefix.versions.find(v => v.version === ver);
+      const vdef = prefix.versions.find((v) => v.version === ver);
       if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${ver}`);
 
       const fixedLabels = getFixedLabels(prefix);
@@ -63,17 +62,23 @@ export function createDimWireCodec(catalog: Catalog): DimWireCodec {
         if (val === undefined) throw new Error(`Missing value for dim: ${label}`);
 
         const dim = prefix.dims[label];
-        if (dim.kind === "axis") {
+        if (dim.kind === 'axis') {
           const axis = catalog.axes[dim.axisId];
           if (!axis) throw new Error(`Unknown axis: ${dim.axisId}`);
           const snap = axis.versions[vdef.axisVersions[label]];
-          if (!snap) throw new Error(`Unknown axis version: ${dim.axisId}@${vdef.axisVersions[label]}`);
+          if (!snap)
+            throw new Error(`Unknown axis version: ${dim.axisId}@${vdef.axisVersions[label]}`);
           const idx = snap.entries.indexOf(val);
-          if (idx < 0) throw new Error(`Unknown entry "${val}" for axis ${dim.axisId}@${vdef.axisVersions[label]}`);
+          if (idx < 0)
+            throw new Error(
+              `Unknown entry "${val}" for axis ${dim.axisId}@${vdef.axisVersions[label]}`,
+            );
           result[label] = idx + 1; // 1-based
-        } else if (dim.kind === "prefix_ref") {
+        } else if (dim.kind === 'prefix_ref') {
           // prefix_ref: 값을 정수로 해석할 수 없으므로 skip (axis 차원만 지원)
-          throw new Error(`encodeDims does not support prefix_ref dim "${label}". Use encodePrefixByValue instead.`);
+          throw new Error(
+            `encodeDims does not support prefix_ref dim "${label}". Use encodePrefixByValue instead.`,
+          );
         }
       }
 
@@ -84,7 +89,7 @@ export function createDimWireCodec(catalog: Catalog): DimWireCodec {
       const prefix = catalog.prefixes[prefixId];
       if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
       const ver = latestVersion(catalog, prefixId);
-      const vdef = prefix.versions.find(v => v.version === ver);
+      const vdef = prefix.versions.find((v) => v.version === ver);
       if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${ver}`);
 
       const fixedLabels = getFixedLabels(prefix);
@@ -95,18 +100,23 @@ export function createDimWireCodec(catalog: Catalog): DimWireCodec {
         if (idx === undefined) throw new Error(`Missing index for dim: ${label}`);
 
         const dim = prefix.dims[label];
-        if (dim.kind === "axis") {
+        if (dim.kind === 'axis') {
           const axis = catalog.axes[dim.axisId];
           if (!axis) throw new Error(`Unknown axis: ${dim.axisId}`);
           const snap = axis.versions[vdef.axisVersions[label]];
-          if (!snap) throw new Error(`Unknown axis version: ${dim.axisId}@${vdef.axisVersions[label]}`);
+          if (!snap)
+            throw new Error(`Unknown axis version: ${dim.axisId}@${vdef.axisVersions[label]}`);
           const pos = idx - 1; // 0-based
           if (pos < 0 || pos >= snap.entries.length) {
-            throw new Error(`Index ${idx} out of range for axis ${dim.axisId} (entries: ${snap.entries.length})`);
+            throw new Error(
+              `Index ${idx} out of range for axis ${dim.axisId} (entries: ${snap.entries.length})`,
+            );
           }
           result[label] = snap.entries[pos];
-        } else if (dim.kind === "prefix_ref") {
-          throw new Error(`decodeDims does not support prefix_ref dim "${label}". Use decodePrefix instead.`);
+        } else if (dim.kind === 'prefix_ref') {
+          throw new Error(
+            `decodeDims does not support prefix_ref dim "${label}". Use decodePrefix instead.`,
+          );
         }
       }
 

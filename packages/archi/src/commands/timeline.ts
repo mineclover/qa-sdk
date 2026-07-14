@@ -1,10 +1,10 @@
-import { existsSync, readdirSync, statSync, readFileSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
-import chalk from "chalk";
-import { parseFrontmatter } from "../engine/validator.js";
+import { existsSync, readdirSync, statSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import chalk from 'chalk';
+import { parseFrontmatter } from '../engine/validator.js';
 
 // 재귀 파일 스캔
-function getFilesRecursively(dir: string, ext = ".md"): string[] {
+function getFilesRecursively(dir: string, ext = '.md'): string[] {
   const results: string[] = [];
   if (!existsSync(dir)) return results;
 
@@ -15,7 +15,7 @@ function getFilesRecursively(dir: string, ext = ".md"): string[] {
       const stat = statSync(full);
       if (stat.isDirectory()) {
         walk(full);
-      } else if (stat.isFile() && entry.endsWith(ext) && entry !== ".gitkeep") {
+      } else if (stat.isFile() && entry.endsWith(ext) && entry !== '.gitkeep') {
         results.push(full);
       }
     }
@@ -25,13 +25,15 @@ function getFilesRecursively(dir: string, ext = ".md"): string[] {
 }
 
 export function buildTimeline(targetDir: string) {
-  const archRoot = resolve(targetDir, "architecture");
-  const govRoot = join(archRoot, "docs", "governance");
-  const sessionsDir = join(govRoot, "sessions");
-  const timelinePath = join(govRoot, "timeline.md");
+  const archRoot = resolve(targetDir, 'architecture');
+  const govRoot = join(archRoot, 'docs', 'governance');
+  const sessionsDir = join(govRoot, 'sessions');
+  const timelinePath = join(govRoot, 'timeline.md');
 
   if (!existsSync(archRoot)) {
-    console.error(chalk.red(`❌ 'architecture/' 폴더를 찾을 수 없습니다. 먼저 'archi init'를 실행해 주세요.`));
+    console.error(
+      chalk.red(`❌ 'architecture/' 폴더를 찾을 수 없습니다. 먼저 'archi init'를 실행해 주세요.`),
+    );
     process.exit(1);
   }
 
@@ -42,9 +44,9 @@ export function buildTimeline(targetDir: string) {
   }
 
   // 1. 모든 세션 파일 스캔
-  const sessionFiles = getFilesRecursively(sessionsDir, ".md").filter((f) => {
+  const sessionFiles = getFilesRecursively(sessionsDir, '.md').filter((f) => {
     // current.md는 스냅샷이 아니므로 제외
-    return !f.endsWith("current.md");
+    return !f.endsWith('current.md');
   });
 
   interface SessionEntry {
@@ -59,24 +61,24 @@ export function buildTimeline(targetDir: string) {
 
   for (const file of sessionFiles) {
     try {
-      const content = readFileSync(file, "utf-8");
+      const content = readFileSync(file, 'utf-8');
       const fm = parseFrontmatter(content);
 
-      if (fm?.type === "SessionHistoryDocument") {
-        const id = fm.id || "GOV-SESSION-UNKNOWN";
-        const title = fm.title || "Untitled Session";
-        const date = fm.date || "1970-01-01";
-        
+      if (fm?.type === 'SessionHistoryDocument') {
+        const id = fm.id || 'GOV-SESSION-UNKNOWN';
+        const title = fm.title || 'Untitled Session';
+        const date = fm.date || '1970-01-01';
+
         // ID 포맷 GOV-SESSION-YYYYMMDD-NNN 에서 시퀀스 추출 시도
         const match = id.match(/GOV-SESSION-\d{8}-(\d{3})$/);
-        const seq = match ? match[1] : "000";
+        const seq = match ? match[1] : '000';
 
         entries.push({
           id,
           title,
           date,
           seq,
-          relativePath: relative(govRoot, file)
+          relativePath: relative(govRoot, file),
         });
       }
     } catch (err) {
@@ -97,11 +99,11 @@ export function buildTimeline(targetDir: string) {
 id: GOV-TIMELINE
 type: TimelineDocument
 title: "Architecture Governance Timeline"
-date: ${new Date().toISOString().split("T")[0]}
+date: ${new Date().toISOString().split('T')[0]}
 lifecycle:
   state: active
   created_at: 2026-05-26
-  updated_at: ${new Date().toISOString().split("T")[0]}
+  updated_at: ${new Date().toISOString().split('T')[0]}
 tags: ["timeline", "governance"]
 ---
 
@@ -114,7 +116,7 @@ tags: ["timeline", "governance"]
 `;
 
   // 날짜별로 그룹화하여 렌더링
-  let currentDate = "";
+  let currentDate = '';
   for (const entry of entries) {
     if (entry.date !== currentDate) {
       currentDate = entry.date;
@@ -129,7 +131,9 @@ tags: ["timeline", "governance"]
   }
 
   // 4. 저장
-  writeFileSync(timelinePath, markdown, "utf-8");
-  console.log(chalk.green(`✔ timeline.md가 성공적으로 갱신되었습니다! (스캔 세션수: ${entries.length}개)`));
+  writeFileSync(timelinePath, markdown, 'utf-8');
+  console.log(
+    chalk.green(`✔ timeline.md가 성공적으로 갱신되었습니다! (스캔 세션수: ${entries.length}개)`),
+  );
   console.log(chalk.dim(`저장 경로: ${relative(archRoot, timelinePath)}`));
 }

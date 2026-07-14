@@ -7,7 +7,7 @@
  */
 
 /** 이벤트 카테고리 */
-export type McLogCategory = "transport" | "edit" | "timeline" | "composition" | "system";
+export type McLogCategory = 'transport' | 'edit' | 'timeline' | 'composition' | 'system';
 
 /** 로그 엔트리 */
 export interface McLogEntry {

@@ -21,19 +21,19 @@
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface UUIDSlot {
-  name:  string;
+  name: string;
   chars: number; // number of hex chars (1 char = 4 bits)
 }
 
 export interface UUIDLayoutDef {
-  left:  UUIDSlot[];
+  left: UUIDSlot[];
   right: UUIDSlot[];
 }
 
 export interface UUIDLayout {
-  readonly totalLeft:  number;
+  readonly totalLeft: number;
   readonly totalRight: number;
-  readonly left:  ReadonlyArray<UUIDSlot & { start: number }>;
+  readonly left: ReadonlyArray<UUIDSlot & { start: number }>;
   readonly right: ReadonlyArray<UUIDSlot & { start: number }>;
 }
 
@@ -49,12 +49,12 @@ export interface UUIDLayout {
  * });
  */
 export function createUUIDLayout(def: UUIDLayoutDef): UUIDLayout {
-  const totalLeft  = def.left.reduce((s, f) => s + f.chars, 0);
+  const totalLeft = def.left.reduce((s, f) => s + f.chars, 0);
   const totalRight = def.right.reduce((s, f) => s + f.chars, 0);
 
   if (totalLeft + totalRight > 32) {
     throw new RangeError(
-      `UUIDLayout: left (${totalLeft}) + right (${totalRight}) = ${totalLeft + totalRight} chars, exceeds 32`
+      `UUIDLayout: left (${totalLeft}) + right (${totalRight}) = ${totalLeft + totalRight} chars, exceeds 32`,
     );
   }
 
@@ -100,31 +100,31 @@ export function charsForMax(maxValue: number): number {
 
 /** Constraint for a single field in the layout planner. */
 export interface LayoutFieldSpec {
-  name:      string;
-  maxValue?: number;  // auto-compute chars via charsForMax
-  chars?:    number;  // explicit override (takes precedence)
+  name: string;
+  maxValue?: number; // auto-compute chars via charsForMax
+  chars?: number; // explicit override (takes precedence)
 }
 
 /** Resolved field in a layout plan. */
 export interface PlannedField {
-  name:     string;
-  chars:    number;
+  name: string;
+  chars: number;
   maxValue: number;
-  side:     "left" | "right";
+  side: 'left' | 'right';
 }
 
 /** Result of planLayout(). */
 export interface LayoutPlan {
-  fields:     PlannedField[];
+  fields: PlannedField[];
   totalChars: number;
-  fitsUUID:   boolean;     // totalChars ≤ 32
-  gap:        number;      // 32 - totalChars (≥ 0 if fitsUUID)
-  layout?:    UUIDLayout;  // ready-to-use layout (only when fitsUUID)
+  fitsUUID: boolean; // totalChars ≤ 32
+  gap: number; // 32 - totalChars (≥ 0 if fitsUUID)
+  layout?: UUIDLayout; // ready-to-use layout (only when fitsUUID)
 }
 
-function resolveField(spec: LayoutFieldSpec, side: "left" | "right"): PlannedField {
-  const chars    = spec.chars ?? charsForMax(spec.maxValue ?? 0);
-  const maxValue = spec.maxValue ?? (16 ** chars - 1);
+function resolveField(spec: LayoutFieldSpec, side: 'left' | 'right'): PlannedField {
+  const chars = spec.chars ?? charsForMax(spec.maxValue ?? 0);
+  const maxValue = spec.maxValue ?? 16 ** chars - 1;
   return { name: spec.name, chars, maxValue, side };
 }
 
@@ -145,21 +145,21 @@ function resolveField(spec: LayoutFieldSpec, side: "left" | "right"): PlannedFie
  * plan.layout      // ready-to-use UUIDLayout
  */
 export function planLayout(opts: {
-  left:  LayoutFieldSpec[];
+  left: LayoutFieldSpec[];
   right: LayoutFieldSpec[];
 }): LayoutPlan {
-  const leftFields  = opts.left.map(s => resolveField(s, "left"));
-  const rightFields = opts.right.map(s => resolveField(s, "right"));
-  const allFields   = [...leftFields, ...rightFields];
-  const totalChars  = allFields.reduce((s, f) => s + f.chars, 0);
-  const fitsUUID    = totalChars <= 32;
-  const gap         = Math.max(0, 32 - totalChars);
+  const leftFields = opts.left.map((s) => resolveField(s, 'left'));
+  const rightFields = opts.right.map((s) => resolveField(s, 'right'));
+  const allFields = [...leftFields, ...rightFields];
+  const totalChars = allFields.reduce((s, f) => s + f.chars, 0);
+  const fitsUUID = totalChars <= 32;
+  const gap = Math.max(0, 32 - totalChars);
 
   let layout: UUIDLayout | undefined;
   if (fitsUUID) {
     layout = createUUIDLayout({
-      left:  leftFields.map(f => ({ name: f.name, chars: f.chars })),
-      right: rightFields.map(f => ({ name: f.name, chars: f.chars })),
+      left: leftFields.map((f) => ({ name: f.name, chars: f.chars })),
+      right: rightFields.map((f) => ({ name: f.name, chars: f.chars })),
     });
   }
 
@@ -175,7 +175,7 @@ function formatUUID(hex: string): string {
     hex.slice(12, 16),
     hex.slice(16, 20),
     hex.slice(20, 32),
-  ].join("-");
+  ].join('-');
 }
 
 /**
@@ -186,7 +186,7 @@ function formatUUID(hex: string): string {
  * // → "abcd0100-0000-0000-0000-00000000002a"
  */
 export function packUUID(layout: UUIDLayout, values: Record<string, number>): string {
-  const chars = new Array(32).fill("0");
+  const chars = new Array(32).fill('0');
 
   for (const slot of layout.left) {
     writeSlot(chars, slot.start, slot.chars, values[slot.name] ?? 0);
@@ -195,11 +195,11 @@ export function packUUID(layout: UUIDLayout, values: Record<string, number>): st
     writeSlot(chars, slot.start, slot.chars, values[slot.name] ?? 0);
   }
 
-  return formatUUID(chars.join(""));
+  return formatUUID(chars.join(''));
 }
 
 function writeSlot(chars: string[], start: number, width: number, value: number): void {
-  const hex = value.toString(16).padStart(width, "0");
+  const hex = value.toString(16).padStart(width, '0');
   for (let i = 0; i < width; i++) {
     chars[start + i] = hex[i];
   }
@@ -215,7 +215,7 @@ function writeSlot(chars: string[], start: number, width: number, value: number)
  * // → { prefix: 0xABCD, version: 1, index: 42 }
  */
 export function unpackUUID(layout: UUIDLayout, uuid: string): Record<string, number> {
-  const hex = uuid.replace(/-/g, "").toLowerCase();
+  const hex = uuid.replace(/-/g, '').toLowerCase();
   const result: Record<string, number> = {};
 
   for (const slot of layout.left) {

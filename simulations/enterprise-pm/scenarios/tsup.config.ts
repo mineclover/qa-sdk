@@ -1,13 +1,13 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ["src/cli.ts"],
-  format: ["esm"],
+  entry: ['src/cli.ts'],
+  format: ['esm'],
   dts: false,
   sourcemap: true,
   clean: true,
-  target: "es2023",
-  platform: "node",
+  target: 'es2023',
+  platform: 'node',
   shims: true,
-  banner: { js: "#!/usr/bin/env node" },
+  banner: { js: '#!/usr/bin/env node' },
 });

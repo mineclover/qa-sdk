@@ -14,10 +14,10 @@
  *   로컬 주소 = aspect(scope 서브셋) × depth 경로 모델
  */
 
-import { WeightedIndex } from "weighted-index";
-import type { DefScope, DefAspect, DefDepth } from "./types.js";
-import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH } from "./vocabulary.js";
-import { VALID_SCOPE_ASPECTS } from "./taxonomy.js";
+import { WeightedIndex } from 'weighted-index';
+import type { DefScope, DefAspect, DefDepth } from './types.js';
+import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH } from './vocabulary.js';
+import { VALID_SCOPE_ASPECTS } from './taxonomy.js';
 
 // ─── 타입 ────────────────────────────────────────────────
 
@@ -31,7 +31,7 @@ export interface ScopeVersionDef {
 /** scope 등록 정보 */
 export interface ScopeRegistryEntry {
   readonly scopeId: DefScope;
-  readonly index: number;          // scope의 1-based 인덱스
+  readonly index: number; // scope의 1-based 인덱스
   readonly versions: readonly ScopeVersionDef[];
 }
 
@@ -40,9 +40,9 @@ export interface ScopeSegment {
   readonly scopeId: DefScope;
   readonly version: string;
   readonly aspects: readonly DefAspect[];
-  readonly shape: readonly number[];   // [aspects.length, depth.length]
-  readonly addressOffset: number;       // 전체 공간에서의 시작 위치
-  readonly totalSize: number;           // 이 세그먼트의 주소 수
+  readonly shape: readonly number[]; // [aspects.length, depth.length]
+  readonly addressOffset: number; // 전체 공간에서의 시작 위치
+  readonly totalSize: number; // 이 세그먼트의 주소 수
   readonly wi: WeightedIndex;
 }
 
@@ -78,8 +78,8 @@ export class ScopeRegistry {
       const aspects = VALID_SCOPE_ASPECTS[scopeId];
       this.entries.set(scopeId, {
         scopeId,
-        index: i + 1,  // 1-based
-        versions: [{ version: "v1", consumes: [...aspects] }],
+        index: i + 1, // 1-based
+        versions: [{ version: 'v1', consumes: [...aspects] }],
       });
     }
   }
@@ -95,7 +95,7 @@ export class ScopeRegistry {
   getVersion(scopeId: DefScope, version: string): ScopeVersionDef {
     const entry = this.entries.get(scopeId);
     if (!entry) throw new Error(`scope "${scopeId}" 미등록`);
-    const v = entry.versions.find(v => v.version === version);
+    const v = entry.versions.find((v) => v.version === version);
     if (!v) throw new Error(`scope "${scopeId}" 버전 "${version}" 없음`);
     return v;
   }
@@ -113,7 +113,7 @@ export class ScopeRegistry {
     if (!entry) throw new Error(`scope "${scopeId}" 미등록`);
 
     // 중복 버전 체크
-    if (entry.versions.some(v => v.version === version.version)) {
+    if (entry.versions.some((v) => v.version === version.version)) {
       throw new Error(`scope "${scopeId}" 버전 "${version.version}" 이미 존재`);
     }
 
@@ -155,7 +155,7 @@ export class ScopeRegistry {
 
       const shape = [aspectCount, depthCount] as const;
       const totalSize = aspectCount * depthCount;
-      const wi = new WeightedIndex([...shape], ["aspect", "depth"]);
+      const wi = new WeightedIndex([...shape], ['aspect', 'depth']);
 
       result.push({
         scopeId: scopeId as DefScope,
@@ -188,7 +188,7 @@ export class ScopeRegistry {
 
     // offset 계산: 이 scope 이전의 모든 세그먼트 크기 합
     const segments = this.buildSegments();
-    const idx = segments.findIndex(s => s.scopeId === scopeId);
+    const idx = segments.findIndex((s) => s.scopeId === scopeId);
     const offset = idx >= 0 ? segments[idx].addressOffset : 0;
 
     return {
@@ -198,21 +198,21 @@ export class ScopeRegistry {
       shape,
       addressOffset: offset,
       totalSize: aspectCount * depthCount,
-      wi: new WeightedIndex([...shape], ["aspect", "depth"]),
+      wi: new WeightedIndex([...shape], ['aspect', 'depth']),
     };
   }
 
   /** 인코딩: scope + aspect + depth → 주소 */
   encode(scopeId: DefScope, aspect: DefAspect, depth: DefDepth): ScopeAddress {
     const segments = this.buildSegments();
-    const segment = segments.find(s => s.scopeId === scopeId);
+    const segment = segments.find((s) => s.scopeId === scopeId);
     if (!segment) throw new Error(`scope "${scopeId}" 세그먼트 없음`);
 
     const aspectIdx = segment.aspects.indexOf(aspect);
     if (aspectIdx === -1) {
       throw new Error(
         `scope "${scopeId}" v${segment.version}에서 aspect "${aspect}" 미소비. ` +
-        `소비 중: [${segment.aspects.join(", ")}]`,
+          `소비 중: [${segment.aspects.join(', ')}]`,
       );
     }
 
@@ -271,7 +271,7 @@ export class ScopeRegistry {
 
     // scopeIndex → globalAddress 역산
     const segments = this.buildSegments();
-    const segment = segments.find(s => this.getScopeIndex(s.scopeId) === scopeIndex);
+    const segment = segments.find((s) => this.getScopeIndex(s.scopeId) === scopeIndex);
     if (!segment) return null;
 
     return {
@@ -293,7 +293,7 @@ export class ScopeRegistry {
   /** scope별 주소 범위 조회 */
   getAddressRange(scopeId: DefScope): { start: number; end: number } {
     const segments = this.buildSegments();
-    const segment = segments.find(s => s.scopeId === scopeId);
+    const segment = segments.find((s) => s.scopeId === scopeId);
     if (!segment) throw new Error(`scope "${scopeId}" 세그먼트 없음`);
     return {
       start: segment.addressOffset,

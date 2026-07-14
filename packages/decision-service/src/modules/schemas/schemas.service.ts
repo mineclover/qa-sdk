@@ -1,15 +1,15 @@
 // @def.boundary decision-service-spec
 // @def.doc decision-service-spec
 
-import { Inject, Injectable } from "@nestjs/common";
-import { eq } from "drizzle-orm";
-import { DATABASE, type DecisionServiceDatabase } from "../../database.module.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { DATABASE, type DecisionServiceDatabase } from '../../database.module.js';
 import {
   flowSchemas,
   type FlowSchemaGate,
   type FlowSchemaOutcome,
   type FlowSchemaRow,
-} from "../../db/schema.js";
+} from '../../db/schema.js';
 
 export interface FlowSchemaRecord {
   schemaId: string;
@@ -39,8 +39,8 @@ export class SchemasService {
     name: string;
     description?: string;
     version?: string;
-    gates: FlowSchemaRecord["gates"];
-    outcomes?: FlowSchemaRecord["outcomes"];
+    gates: FlowSchemaRecord['gates'];
+    outcomes?: FlowSchemaRecord['outcomes'];
     meta?: Record<string, unknown>;
   }): FlowSchemaRecord {
     const now = new Date().toISOString();
@@ -48,7 +48,7 @@ export class SchemasService {
       schemaId: input.schemaId,
       name: input.name,
       description: input.description ?? null,
-      version: input.version ?? "v1",
+      version: input.version ?? 'v1',
       gates: input.gates,
       outcomes: input.outcomes ?? [],
       meta: input.meta ?? {},
@@ -78,28 +78,16 @@ export class SchemasService {
   }
 
   get(schemaId: string): FlowSchemaRecord | null {
-    const row = this.db
-      .select()
-      .from(flowSchemas)
-      .where(eq(flowSchemas.schemaId, schemaId))
-      .get();
+    const row = this.db.select().from(flowSchemas).where(eq(flowSchemas.schemaId, schemaId)).get();
     return row ? rowToSchema(row) : null;
   }
 
   list(): FlowSchemaRecord[] {
-    return this.db
-      .select()
-      .from(flowSchemas)
-      .orderBy(flowSchemas.schemaId)
-      .all()
-      .map(rowToSchema);
+    return this.db.select().from(flowSchemas).orderBy(flowSchemas.schemaId).all().map(rowToSchema);
   }
 
   delete(schemaId: string): boolean {
-    const result = this.db
-      .delete(flowSchemas)
-      .where(eq(flowSchemas.schemaId, schemaId))
-      .run();
+    const result = this.db.delete(flowSchemas).where(eq(flowSchemas.schemaId, schemaId)).run();
     return result.changes > 0;
   }
 }

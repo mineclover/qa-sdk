@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "description": "Dialect-portable PG/SQLite connection + test fixture — Plan 04c",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -11,12 +17,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -24,14 +24,26 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "drizzle-orm": "catalog:",
     "@qa-sdk/core": "workspace:*",
+    "drizzle-orm": "catalog:",
     "zod": "^3.25.76"
   },
-  "peerDependencies": {
+  "devDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@types/better-sqlite3": "catalog:",
+    "@types/node": "^22.0.0",
     "better-sqlite3": "catalog:",
     "postgres": "^3.4.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  },
+  "peerDependencies": {
     "@nestjs/common": "^11.0.0",
+    "better-sqlite3": "catalog:",
+    "postgres": "^3.4.0",
     "rxjs": "^7.8.0"
   },
   "peerDependenciesMeta": {
@@ -47,17 +59,5 @@
     "rxjs": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@types/better-sqlite3": "catalog:",
-    "@types/node": "^22.0.0",
-    "better-sqlite3": "catalog:",
-    "postgres": "^3.4.0",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.0",
-    "tsup": "^8.5.1",
-    "typescript": "^5.8.2",
-    "vitest": "^1.6.1"
   }
 }

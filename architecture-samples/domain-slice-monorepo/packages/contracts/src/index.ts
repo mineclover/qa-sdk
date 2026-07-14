@@ -1,2 +1,1 @@
-export * from "./assignment.contract.js";
-
+export * from './assignment.contract.js';

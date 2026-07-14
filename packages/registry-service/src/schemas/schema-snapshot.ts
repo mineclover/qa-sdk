@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { z } from "zod";
+import { z } from 'zod';
 
 export const axisSchema = z.object({
   id: z.string().min(1),
@@ -9,11 +9,11 @@ export const axisSchema = z.object({
   capacity: z.number().int().positive(),
 });
 
-const snapshotSupplySchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("axis"), capacity: z.number().int().positive() }),
-  z.object({ type: z.literal("envelope") }),
-  z.object({ type: z.literal("context") }),
-  z.object({ type: z.literal("implicit") }),
+const snapshotSupplySchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('axis'), capacity: z.number().int().positive() }),
+  z.object({ type: z.literal('envelope') }),
+  z.object({ type: z.literal('context') }),
+  z.object({ type: z.literal('implicit') }),
 ]);
 
 export const compositeSchema = z.object({

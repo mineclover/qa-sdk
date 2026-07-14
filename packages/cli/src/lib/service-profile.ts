@@ -10,15 +10,15 @@
  * 우선순위: 환경변수 > 프로필 > 프리셋 기본값
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { getQaSdkBaseHome } from "./qa-dir.js";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { getQaSdkBaseHome } from './qa-dir.js';
 
 // ── 타입 ────────────────────────────────────────────
 
-export type ServiceMode = "local" | "staging" | "prod";
+export type ServiceMode = 'local' | 'staging' | 'prod';
 
-export type InsightsDriver = "local" | "app-hub";
+export type InsightsDriver = 'local' | 'app-hub';
 
 export interface AppHubConfig {
   endpoint: string;
@@ -36,97 +36,97 @@ export interface ServiceProfile {
 // ── 서비스 ID 상수 ──────────────────────────────────
 
 export const SERVICE_IDS = [
-  "ingest-server",
-  "registry-service",
-  "gate-service",
-  "query-service",
-  "decode-service",
-  "definition-service",
-  "motion-workspace",
-  "decision-service",
+  'ingest-server',
+  'registry-service',
+  'gate-service',
+  'query-service',
+  'decode-service',
+  'definition-service',
+  'motion-workspace',
+  'decision-service',
 ] as const;
 
-export type ServiceId = typeof SERVICE_IDS[number];
+export type ServiceId = (typeof SERVICE_IDS)[number];
 
 // ── 프리셋 ──────────────────────────────────────────
 
 const LOCAL_SERVICES: Record<string, string> = {
-  "ingest-server":      "http://localhost:3200",
-  "registry-service":   "http://localhost:3300",
-  "gate-service":       "http://localhost:3400",
-  "query-service":      "http://localhost:3500",
-  "decode-service":     "http://localhost:3600",
-  "definition-service": "http://localhost:3700",
-  "motion-workspace":   "http://localhost:3710",
-  "decision-service":   "http://localhost:3800",
+  'ingest-server': 'http://localhost:3200',
+  'registry-service': 'http://localhost:3300',
+  'gate-service': 'http://localhost:3400',
+  'query-service': 'http://localhost:3500',
+  'decode-service': 'http://localhost:3600',
+  'definition-service': 'http://localhost:3700',
+  'motion-workspace': 'http://localhost:3710',
+  'decision-service': 'http://localhost:3800',
 };
 
 const STAGING_SERVICES: Record<string, string> = {
-  "ingest-server":      "https://ingest.staging.qa-sdk.io",
-  "registry-service":   "https://registry.staging.qa-sdk.io",
-  "gate-service":       "https://gate.staging.qa-sdk.io",
-  "query-service":      "https://query.staging.qa-sdk.io",
-  "decode-service":     "https://decode.staging.qa-sdk.io",
-  "definition-service": "https://definition.staging.qa-sdk.io",
-  "motion-workspace":   "https://motion.staging.qa-sdk.io",
-  "decision-service":   "https://decision.staging.qa-sdk.io",
+  'ingest-server': 'https://ingest.staging.qa-sdk.io',
+  'registry-service': 'https://registry.staging.qa-sdk.io',
+  'gate-service': 'https://gate.staging.qa-sdk.io',
+  'query-service': 'https://query.staging.qa-sdk.io',
+  'decode-service': 'https://decode.staging.qa-sdk.io',
+  'definition-service': 'https://definition.staging.qa-sdk.io',
+  'motion-workspace': 'https://motion.staging.qa-sdk.io',
+  'decision-service': 'https://decision.staging.qa-sdk.io',
 };
 
 const PROD_SERVICES: Record<string, string> = {
-  "ingest-server":      "https://ingest.qa-sdk.io",
-  "registry-service":   "https://registry.qa-sdk.io",
-  "gate-service":       "https://gate.qa-sdk.io",
-  "query-service":      "https://query.qa-sdk.io",
-  "decode-service":     "https://decode.qa-sdk.io",
-  "definition-service": "https://definition.qa-sdk.io",
-  "motion-workspace":   "https://motion.qa-sdk.io",
-  "decision-service":   "https://decision.qa-sdk.io",
+  'ingest-server': 'https://ingest.qa-sdk.io',
+  'registry-service': 'https://registry.qa-sdk.io',
+  'gate-service': 'https://gate.qa-sdk.io',
+  'query-service': 'https://query.qa-sdk.io',
+  'decode-service': 'https://decode.qa-sdk.io',
+  'definition-service': 'https://definition.qa-sdk.io',
+  'motion-workspace': 'https://motion.qa-sdk.io',
+  'decision-service': 'https://decision.qa-sdk.io',
 };
 
 export const PROFILE_PRESETS: Record<ServiceMode, ServiceProfile> = {
   local: {
-    mode: "local",
-    insightsDriver: "local",
+    mode: 'local',
+    insightsDriver: 'local',
     services: LOCAL_SERVICES,
   },
   staging: {
-    mode: "staging",
-    insightsDriver: "local",
+    mode: 'staging',
+    insightsDriver: 'local',
     services: STAGING_SERVICES,
   },
   prod: {
-    mode: "prod",
-    insightsDriver: "app-hub",
+    mode: 'prod',
+    insightsDriver: 'app-hub',
     services: PROD_SERVICES,
-    appHub: { endpoint: "https://apphub.googleapis.com/v1", projectId: "", credential: "" },
+    appHub: { endpoint: 'https://apphub.googleapis.com/v1', projectId: '', credential: '' },
   },
 };
 
 // ── 환경변수 → 서비스 ID 맵핑 ──────────────────────
 
 const ENV_VAR_MAP: Record<string, string> = {
-  "ingest-server":      "INGEST_URL",
-  "registry-service":   "QA_REGISTRY_URL",
-  "gate-service":       "GATE_SERVICE_URL",
-  "query-service":      "QUERY_SERVICE_URL",
-  "decode-service":     "DECODE_SERVICE_URL",
-  "definition-service": "DEF_SERVICE_URL",
-  "motion-workspace":   "MOTION_WORKSPACE_URL",
-  "decision-service":   "DECISION_SERVICE_URL",
+  'ingest-server': 'INGEST_URL',
+  'registry-service': 'QA_REGISTRY_URL',
+  'gate-service': 'GATE_SERVICE_URL',
+  'query-service': 'QUERY_SERVICE_URL',
+  'decode-service': 'DECODE_SERVICE_URL',
+  'definition-service': 'DEF_SERVICE_URL',
+  'motion-workspace': 'MOTION_WORKSPACE_URL',
+  'decision-service': 'DECISION_SERVICE_URL',
 };
 
 // ── 파일 I/O ────────────────────────────────────────
 
 function getProfileDir(): string {
-  return join(getQaSdkBaseHome(), ".qa-sdk");
+  return join(getQaSdkBaseHome(), '.qa-sdk');
 }
 
 function getProfileFilePath(): string {
-  return join(getProfileDir(), "service-profile.json");
+  return join(getProfileDir(), 'service-profile.json');
 }
 
 function getLegacyProfilePath(): string {
-  return join(getProfileDir(), "ingest-profile.json");
+  return join(getProfileDir(), 'ingest-profile.json');
 }
 
 export function getProfilePath(): string {
@@ -138,25 +138,27 @@ export function loadProfile(): ServiceProfile {
   const legacyProfilePath = getLegacyProfilePath();
   try {
     if (existsSync(profilePath)) {
-      return JSON.parse(readFileSync(profilePath, "utf-8")) as ServiceProfile;
+      return JSON.parse(readFileSync(profilePath, 'utf-8')) as ServiceProfile;
     }
     // 레거시 ingest-profile.json 마이그레이션
     if (existsSync(legacyProfilePath)) {
-      const legacy = JSON.parse(readFileSync(legacyProfilePath, "utf-8"));
+      const legacy = JSON.parse(readFileSync(legacyProfilePath, 'utf-8'));
       const migrated: ServiceProfile = {
-        mode: legacy.mode ?? "local",
-        insightsDriver: legacy.insightsDriver ?? "local",
+        mode: legacy.mode ?? 'local',
+        insightsDriver: legacy.insightsDriver ?? 'local',
         services: {
           ...LOCAL_SERVICES,
-          ...(legacy.ingest ? { "ingest-server": legacy.ingest } : {}),
-          ...(legacy.registry ? { "registry-service": legacy.registry } : {}),
+          ...(legacy.ingest ? { 'ingest-server': legacy.ingest } : {}),
+          ...(legacy.registry ? { 'registry-service': legacy.registry } : {}),
         },
         appHub: legacy.appHub,
       };
       saveProfile(migrated);
       return migrated;
     }
-  } catch { /* 파싱 실패 → 기본값 */ }
+  } catch {
+    /* 파싱 실패 → 기본값 */
+  }
   return PROFILE_PRESETS.local;
 }
 
@@ -164,7 +166,7 @@ export function saveProfile(profile: ServiceProfile): void {
   const profileDir = getProfileDir();
   const profilePath = getProfileFilePath();
   if (!existsSync(profileDir)) mkdirSync(profileDir, { recursive: true });
-  writeFileSync(profilePath, JSON.stringify(profile, null, 2) + "\n");
+  writeFileSync(profilePath, JSON.stringify(profile, null, 2) + '\n');
 }
 
 // ── 조회 API ────────────────────────────────────────

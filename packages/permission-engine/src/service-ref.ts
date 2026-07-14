@@ -75,10 +75,7 @@ export function validateServiceIdentity(id: ServiceIdentity): string[] {
 // ── Formatting ───────────────────────────────────────────────────────────────
 
 /** ServiceRef → canonical 문자열. */
-export function formatServiceRef(
-  ref: ServiceRef,
-  opts: ServiceRefFormatOptions = {},
-): string {
+export function formatServiceRef(ref: ServiceRef, opts: ServiceRefFormatOptions = {}): string {
   const base = `${ref.namespace}/${ref.name}`;
   if (!opts.includeContext) return base;
 
@@ -87,17 +84,17 @@ export function formatServiceRef(
   if (ref.env) parts.push(ref.env);
   if (ref.region) parts.push(ref.region);
   if (ref.build) parts.push(ref.build);
-  return parts.length > 0 ? `${base}@${parts.join(".")}` : base;
+  return parts.length > 0 ? `${base}@${parts.join('.')}` : base;
 }
 
 /** canonical 문자열 → ServiceRef 파싱. */
 export function parseServiceRef(raw: string): ServiceRef {
   // format: namespace/name  또는  namespace/name@env.region.build
-  const atIdx = raw.indexOf("@");
+  const atIdx = raw.indexOf('@');
   const identPart = atIdx >= 0 ? raw.slice(0, atIdx) : raw;
-  const ctxPart = atIdx >= 0 ? raw.slice(atIdx + 1) : "";
+  const ctxPart = atIdx >= 0 ? raw.slice(atIdx + 1) : '';
 
-  const slashIdx = identPart.indexOf("/");
+  const slashIdx = identPart.indexOf('/');
   if (slashIdx < 0) {
     throw new RangeError(`Invalid service-ref "${raw}": namespace/name 형식 필요`);
   }
@@ -107,12 +104,12 @@ export function parseServiceRef(raw: string): ServiceRef {
 
   const errors = validateServiceIdentity({ namespace, name });
   if (errors.length > 0) {
-    throw new RangeError(`Invalid service-ref "${raw}": ${errors.join("; ")}`);
+    throw new RangeError(`Invalid service-ref "${raw}": ${errors.join('; ')}`);
   }
 
   const ref: ServiceRef = { namespace, name };
   if (ctxPart) {
-    const ctxParts = ctxPart.split(".");
+    const ctxParts = ctxPart.split('.');
     return {
       ...ref,
       env: ctxParts[0] || undefined,
@@ -158,7 +155,7 @@ export interface ServiceContext {
 export function createServiceContext(config: ServiceRef): ServiceContext {
   const errors = validateServiceIdentity(config);
   if (errors.length > 0) {
-    throw new RangeError(`Invalid service config: ${errors.join("; ")}`);
+    throw new RangeError(`Invalid service config: ${errors.join('; ')}`);
   }
 
   const identity: ServiceIdentity = {

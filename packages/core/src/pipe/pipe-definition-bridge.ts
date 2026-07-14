@@ -8,16 +8,16 @@
  * definition-catalog 패키지에 직접 의존하지 않고, 타입만 정의하여 소비자가 주입.
  */
 
-import type { PipeSpec, PipeGraph } from "../types/pipe-spec.js";
-import type { DataObjectBinding } from "../data-object/types.js";
-import { BindingRegistry } from "../data-object/registry.js";
-import { collectFlowSteps } from "./pipe-fold.js";
-import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
+import type { PipeSpec, PipeGraph } from '../types/pipe-spec.js';
+import type { DataObjectBinding } from '../data-object/types.js';
+import { BindingRegistry } from '../data-object/registry.js';
+import { collectFlowSteps } from './pipe-fold.js';
+import { normalizeEndpointPipeIds } from './pipe-endpoint.js';
 
 // ── definition metadata 타입 (definition-catalog 호환) ──
 
-export type DefLifecycle = "draft" | "review" | "approved" | "deprecated" | "archived";
-export type DefLayer = "domain" | "operation" | "mediation" | "experience";
+export type DefLifecycle = 'draft' | 'review' | 'approved' | 'deprecated' | 'archived';
+export type DefLayer = 'domain' | 'operation' | 'mediation' | 'experience';
 
 /** definition 문서에서 가져온 메타데이터 */
 export interface DefinitionMeta {
@@ -42,28 +42,25 @@ export interface PipeLifecycleInfo {
   pipeId: string;
   scope?: string;
   aspect?: string;
-  lifecycle: DefLifecycle | "unknown";
+  lifecycle: DefLifecycle | 'unknown';
   docId?: string;
 }
 
 /** PipeGraph의 각 파이프에 대해 definition lifecycle을 조회 */
-export function resolveLifecycles(
-  graph: PipeGraph,
-  lookup: DefinitionLookup,
-): PipeLifecycleInfo[] {
-  return graph.pipes.map(pipe => resolveLifecycle(pipe, lookup));
+export function resolveLifecycles(graph: PipeGraph, lookup: DefinitionLookup): PipeLifecycleInfo[] {
+  return graph.pipes.map((pipe) => resolveLifecycle(pipe, lookup));
 }
 
 function resolveLifecycle(pipe: PipeSpec, lookup: DefinitionLookup): PipeLifecycleInfo {
   if (!pipe.scope || !pipe.aspect) {
-    return { pipeId: pipe.pipeId, lifecycle: "unknown" };
+    return { pipeId: pipe.pipeId, lifecycle: 'unknown' };
   }
   const docs = lookup.findByCoordinate(pipe.scope, pipe.aspect);
   if (docs.length === 0) {
-    return { pipeId: pipe.pipeId, scope: pipe.scope, aspect: pipe.aspect, lifecycle: "unknown" };
+    return { pipeId: pipe.pipeId, scope: pipe.scope, aspect: pipe.aspect, lifecycle: 'unknown' };
   }
   // 가장 최신(approved 우선) 문서의 lifecycle
-  const best = docs.find(d => d.lifecycle === "approved") ?? docs[0];
+  const best = docs.find((d) => d.lifecycle === 'approved') ?? docs[0];
   return {
     pipeId: pipe.pipeId,
     scope: pipe.scope,
@@ -76,7 +73,7 @@ function resolveLifecycle(pipe: PipeSpec, lookup: DefinitionLookup): PipeLifecyc
 // ── layer 영향 전파 ──────────────────────────────────
 
 /** layer별 영향 전파 방향 규칙 (domain → operation → mediation → experience) */
-const LAYER_ORDER: DefLayer[] = ["domain", "operation", "mediation", "experience"];
+const LAYER_ORDER: DefLayer[] = ['domain', 'operation', 'mediation', 'experience'];
 
 export interface LayerPropagation {
   sourcePipeId: string;
@@ -111,7 +108,7 @@ export function analyzeLayerPropagation(
       const sourceLayer = layerMap.get(from);
       if (!sourceLayer) continue;
 
-      const affected = tos.filter(to => {
+      const affected = tos.filter((to) => {
         const targetLayer = layerMap.get(to);
         return targetLayer && canPropagate(sourceLayer, targetLayer);
       });
@@ -136,10 +133,10 @@ export function analyzeLayerPropagation(
 
 /** canonical: definition-catalog/impact.ts canPropagate와 동일 */
 function canPropagate(source: DefLayer, target: DefLayer): boolean {
-  if (source === "domain") return target !== "experience"; // domain → domain + operation + mediation
-  if (source === "operation") return target === "operation"; // operation → 자기만
-  if (source === "mediation") return target === "mediation" || target === "experience";
-  return target === "experience"; // experience → 자기만
+  if (source === 'domain') return target !== 'experience'; // domain → domain + operation + mediation
+  if (source === 'operation') return target === 'operation'; // operation → 자기만
+  if (source === 'mediation') return target === 'mediation' || target === 'experience';
+  return target === 'experience'; // experience → 자기만
 }
 
 // ── tags 조회 ────────────────────────────────────────
@@ -151,11 +148,8 @@ export interface PipeTagInfo {
 }
 
 /** PipeGraph의 각 파이프에 대해 definition tags를 조회 */
-export function resolveTags(
-  graph: PipeGraph,
-  lookup: DefinitionLookup,
-): PipeTagInfo[] {
-  return graph.pipes.map(pipe => {
+export function resolveTags(graph: PipeGraph, lookup: DefinitionLookup): PipeTagInfo[] {
+  return graph.pipes.map((pipe) => {
     if (!pipe.scope || !pipe.aspect) {
       return { pipeId: pipe.pipeId, tags: [] };
     }
@@ -182,17 +176,11 @@ export interface PipeBindingInfo {
 }
 
 /** PipeGraph의 각 파이프에 대해 binding registry 조회 */
-export function resolveBindings(
-  graph: PipeGraph,
-  registry: BindingRegistry,
-): PipeBindingInfo[] {
+export function resolveBindings(graph: PipeGraph, registry: BindingRegistry): PipeBindingInfo[] {
   return graph.pipes.map((pipe) => resolvePipeBindings(pipe, registry));
 }
 
-function resolvePipeBindings(
-  pipe: PipeSpec,
-  registry: BindingRegistry,
-): PipeBindingInfo {
+function resolvePipeBindings(pipe: PipeSpec, registry: BindingRegistry): PipeBindingInfo {
   const schemaIds = collectBindingSchemaIds(pipe, registry);
   const bindings: DataObjectBinding[] = [];
   const missingSchemaIds: string[] = [];
@@ -210,7 +198,7 @@ function resolvePipeBindings(
   if (bindings.length === 0) {
     warnings.push(`pipe "${pipe.pipeId}"에 binding 없음`);
   } else if (missingSchemaIds.length > 0) {
-    warnings.push(`pipe "${pipe.pipeId}"의 schema binding 없음: ${missingSchemaIds.join(", ")}`);
+    warnings.push(`pipe "${pipe.pipeId}"의 schema binding 없음: ${missingSchemaIds.join(', ')}`);
   }
 
   return {
@@ -222,10 +210,7 @@ function resolvePipeBindings(
   };
 }
 
-function collectBindingSchemaIds(
-  pipe: PipeSpec,
-  registry: BindingRegistry,
-): string[] {
+function collectBindingSchemaIds(pipe: PipeSpec, registry: BindingRegistry): string[] {
   const schemaIds = new Set<string>();
 
   for (const step of collectFlowSteps(pipe.flow)) {

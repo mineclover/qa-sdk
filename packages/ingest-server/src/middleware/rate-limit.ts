@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { Context, MiddlewareHandler } from "hono";
+import type { Context, MiddlewareHandler } from 'hono';
 
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 100;
@@ -16,16 +16,14 @@ export interface RateLimiterOptions {
   windowMs?: number;
 }
 
-export function createIngestRateLimiter(
-  options: RateLimiterOptions = {},
-): MiddlewareHandler {
+export function createIngestRateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler {
   const windowMs = options.windowMs ?? DEFAULT_RATE_LIMIT_WINDOW_MS;
   const maxRequests = options.maxRequests ?? DEFAULT_RATE_LIMIT_MAX_REQUESTS;
   const now = options.now ?? Date.now;
   const buckets = new Map<string, RateLimitBucket>();
 
   return async (c, next) => {
-    if (c.req.method !== "POST") {
+    if (c.req.method !== 'POST') {
       await next();
       return;
     }
@@ -49,7 +47,7 @@ export function createIngestRateLimiter(
       return c.json(
         {
           error: {
-            code: "RATE_LIMITED",
+            code: 'RATE_LIMITED',
             message: `rate limit exceeded for POST /v1/ingest (max ${maxRequests} requests per ${windowMs}ms window)`,
             retryAfterMs,
           },
@@ -69,10 +67,7 @@ export function createIngestRateLimiter(
   };
 }
 
-function getOrCreateBucket(
-  buckets: Map<string, RateLimitBucket>,
-  clientKey: string,
-) {
+function getOrCreateBucket(buckets: Map<string, RateLimitBucket>, clientKey: string) {
   const existing = buckets.get(clientKey);
   if (existing) {
     return existing;
@@ -83,11 +78,7 @@ function getOrCreateBucket(
   return bucket;
 }
 
-function pruneExpiredRequests(
-  timestamps: number[],
-  currentTime: number,
-  windowMs: number,
-) {
+function pruneExpiredRequests(timestamps: number[], currentTime: number, windowMs: number) {
   const cutoff = currentTime - windowMs;
 
   while (timestamps[0] !== undefined && timestamps[0] <= cutoff) {
@@ -95,14 +86,8 @@ function pruneExpiredRequests(
   }
 }
 
-function getResetAt(
-  timestamps: number[],
-  currentTime: number,
-  windowMs: number,
-) {
-  return timestamps[0] === undefined
-    ? currentTime + windowMs
-    : timestamps[0] + windowMs;
+function getResetAt(timestamps: number[], currentTime: number, windowMs: number) {
+  return timestamps[0] === undefined ? currentTime + windowMs : timestamps[0] + windowMs;
 }
 
 function setRateLimitHeaders(
@@ -113,16 +98,16 @@ function setRateLimitHeaders(
     resetAt: number;
   },
 ) {
-  c.header("X-RateLimit-Limit", String(values.limit));
-  c.header("X-RateLimit-Remaining", String(values.remaining));
-  c.header("X-RateLimit-Reset", String(values.resetAt));
+  c.header('X-RateLimit-Limit', String(values.limit));
+  c.header('X-RateLimit-Remaining', String(values.remaining));
+  c.header('X-RateLimit-Reset', String(values.resetAt));
 }
 
 function resolveClientKey(c: Context) {
-  const forwardedFor = c.req.header("x-forwarded-for");
+  const forwardedFor = c.req.header('x-forwarded-for');
   if (forwardedFor) {
     const forwardedAddress = forwardedFor
-      .split(",")
+      .split(',')
       .map((part) => part.trim())
       .find((part) => part.length > 0);
 
@@ -149,6 +134,6 @@ function resolveClientKey(c: Context) {
   return (
     nodeBindings.server?.incoming?.socket?.remoteAddress ??
     nodeBindings.incoming?.socket?.remoteAddress ??
-    "unknown"
+    'unknown'
   );
 }

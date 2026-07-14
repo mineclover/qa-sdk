@@ -8,7 +8,7 @@
  * 뷰 모드 전환 시 부드러운 애니메이션을 제공한다.
  */
 
-import type { ViewMode, ViewPosition } from "../core/types.js";
+import type { ViewMode, ViewPosition } from '../core/types.js';
 
 export interface ViewTarget {
   readonly groupId: string;
@@ -23,12 +23,17 @@ export interface ViewTarget {
 export class ViewEngine {
   private targets = new Map<string, ViewTarget>();
   private positions: Record<ViewMode, Record<string, ViewPosition>> = {
-    layer: {}, category: {}, dsl: {}, service: {},
+    layer: {},
+    category: {},
+    dsl: {},
+    service: {},
   };
-  private _currentMode: ViewMode = "layer";
+  private _currentMode: ViewMode = 'layer';
   private _lerpSpeed = 3;
 
-  get currentMode(): ViewMode { return this._currentMode; }
+  get currentMode(): ViewMode {
+    return this._currentMode;
+  }
 
   setPositions(positions: Record<ViewMode, Record<string, ViewPosition>>): void {
     this.positions = positions;
@@ -42,8 +47,12 @@ export class ViewEngine {
   registerGroup(groupId: string, initialPos: ViewPosition): void {
     this.targets.set(groupId, {
       groupId,
-      currentX: initialPos.x, currentY: initialPos.y, currentZ: initialPos.z,
-      targetX: initialPos.x, targetY: initialPos.y, targetZ: initialPos.z,
+      currentX: initialPos.x,
+      currentY: initialPos.y,
+      currentZ: initialPos.z,
+      targetX: initialPos.x,
+      targetY: initialPos.y,
+      targetZ: initialPos.z,
     });
   }
 

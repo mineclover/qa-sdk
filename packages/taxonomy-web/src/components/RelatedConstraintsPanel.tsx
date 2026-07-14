@@ -1,5 +1,5 @@
-import { parseRef } from "taxonomy-engine";
-import type { StaticTaxonomy } from "../types/taxonomy";
+import { parseRef } from 'taxonomy-engine';
+import type { StaticTaxonomy } from '../types/taxonomy';
 
 export function RelatedConstraintsPanel({
   selectedRef,
@@ -14,12 +14,12 @@ export function RelatedConstraintsPanel({
   } catch {
     return null;
   }
-  if (ref.kind !== "axis" && ref.kind !== "entry") return null;
+  if (ref.kind !== 'axis' && ref.kind !== 'entry') return null;
 
   const matches = taxonomy.constraints.filter((c) => {
-    const ruleStr = typeof c.rule === "string" ? c.rule : JSON.stringify(c.rule);
-    if (ref.kind === "axis") return ruleStr.includes(ref.axis);
-    if (ref.kind === "entry") return ruleStr.includes(ref.entry);
+    const ruleStr = typeof c.rule === 'string' ? c.rule : JSON.stringify(c.rule);
+    if (ref.kind === 'axis') return ruleStr.includes(ref.axis);
+    if (ref.kind === 'entry') return ruleStr.includes(ref.entry);
     return false;
   });
 

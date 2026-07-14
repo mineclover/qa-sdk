@@ -10,16 +10,16 @@
  * v1(ScenarioSpec 6상태) → v2(PipeGraph 3상태: pass/fail/review)
  */
 
-import type { PipeGraph } from "../types/pipe-spec.js";
-import type { MatchResult } from "./path-matcher.js";
-import type { GateResult } from "./pipe-gate.js";
-import { hasReviewItems } from "./pipe-gate.js";
-import { getChildFlows } from "./pipe-flow-utils.js";
+import type { PipeGraph } from '../types/pipe-spec.js';
+import type { MatchResult } from './path-matcher.js';
+import type { GateResult } from './pipe-gate.js';
+import { hasReviewItems } from './pipe-gate.js';
+import { getChildFlows } from './pipe-flow-utils.js';
 
 // ── 타입 ─────────────────────────────────────────────
 
 /** v2 판정: 3종 */
-export type VerdictV2 = "pass" | "fail" | "review";
+export type VerdictV2 = 'pass' | 'fail' | 'review';
 
 /** 패싯 커버리지 */
 export interface FacetCoverage {
@@ -127,37 +127,39 @@ function determineVerdict(
   reasons: string[],
 ): VerdictV2 {
   // 1. PathMatcher fail → fail (커버리지, 에러 등 PathMatcher가 판단)
-  if (match.verdict === "fail") {
+  if (match.verdict === 'fail') {
     reasons.push(match.reason);
-    return "fail";
+    return 'fail';
   }
 
   // 2. 게이트 fail → fail
-  if (gateResults.some(g => g.verdict === "fail")) {
-    const failedGates = gateResults.filter(g => g.verdict === "fail");
-    reasons.push(`게이트 실패 ${failedGates.length}건: ${failedGates.map(g => g.gateId).join(", ")}`);
-    return "fail";
+  if (gateResults.some((g) => g.verdict === 'fail')) {
+    const failedGates = gateResults.filter((g) => g.verdict === 'fail');
+    reasons.push(
+      `게이트 실패 ${failedGates.length}건: ${failedGates.map((g) => g.gateId).join(', ')}`,
+    );
+    return 'fail';
   }
 
   // 3. PathMatcher warn/degraded → review
-  if (match.verdict === "warn" || match.verdict === "degraded") {
+  if (match.verdict === 'warn' || match.verdict === 'degraded') {
     reasons.push(match.reason);
-    return "review";
+    return 'review';
   }
 
   // 4. 게이트 review → review
   if (gateResults.length > 0 && hasReviewItems(gateResults)) {
-    reasons.push("게이트 review 항목 존재");
-    return "review";
+    reasons.push('게이트 review 항목 존재');
+    return 'review';
   }
 
   // 5. pass
   if (gateResults.length > 0) {
-    reasons.push("전체 매칭 + 게이트 통과");
+    reasons.push('전체 매칭 + 게이트 통과');
   } else {
-    reasons.push("전체 매칭 성공");
+    reasons.push('전체 매칭 성공');
   }
-  return "pass";
+  return 'pass';
 }
 
 // ── 패싯 커버리지 ────────────────────────────────────
@@ -172,7 +174,7 @@ function computeFacetCoverage(match: MatchResult, graph: PipeGraph): FacetCovera
   // 실행된 패싯
   const coveredFacets = new Set(match.facetTrace);
 
-  const uncovered = [...allFacets].filter(f => !coveredFacets.has(f));
+  const uncovered = [...allFacets].filter((f) => !coveredFacets.has(f));
   const total = allFacets.size;
   const covered = total - uncovered.length;
 
@@ -184,8 +186,8 @@ function computeFacetCoverage(match: MatchResult, graph: PipeGraph): FacetCovera
   };
 }
 
-function collectFacets(flow: import("../types/pipe-spec.js").PipeFlow, out: Set<string>): void {
-  if (flow.kind === "step" && flow.facet) {
+function collectFacets(flow: import('../types/pipe-spec.js').PipeFlow, out: Set<string>): void {
+  if (flow.kind === 'step' && flow.facet) {
     out.add(flow.facet);
     return;
   }
@@ -219,9 +221,9 @@ function buildSummary(
   }
 
   if (gateResults.length > 0) {
-    const gatePass = gateResults.filter(g => g.verdict === "pass").length;
+    const gatePass = gateResults.filter((g) => g.verdict === 'pass').length;
     parts.push(`게이트 ${gatePass}/${gateResults.length}`);
   }
 
-  return parts.join(" · ");
+  return parts.join(' · ');
 }

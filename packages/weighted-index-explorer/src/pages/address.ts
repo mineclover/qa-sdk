@@ -5,51 +5,49 @@
 //  주소 체계 레퍼런스 — 데이터 스토리지 주소 시스템 예제
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { WeightedIndex } from "weighted-index";
+import { WeightedIndex } from 'weighted-index';
 
 // ── Storage address schema ────────────────────────────────────────────────
 
 const SCHEMA = {
   tenant: {
     size: 50,
-    label: "테넌트",
-    desc: "서비스 구독 조직",
-    examples: ["acme-corp", "startup-x", "enterprise-y"],
+    label: '테넌트',
+    desc: '서비스 구독 조직',
+    examples: ['acme-corp', 'startup-x', 'enterprise-y'],
   },
   schema: {
     size: 10,
-    label: "스키마",
-    desc: "데이터베이스 스키마/네임스페이스",
-    examples: ["users", "events", "billing", "analytics"],
+    label: '스키마',
+    desc: '데이터베이스 스키마/네임스페이스',
+    examples: ['users', 'events', 'billing', 'analytics'],
   },
   table: {
     size: 30,
-    label: "테이블",
-    desc: "테이블 또는 컬렉션",
-    examples: ["sessions", "records", "metrics", "logs"],
+    label: '테이블',
+    desc: '테이블 또는 컬렉션',
+    examples: ['sessions', 'records', 'metrics', 'logs'],
   },
   shard: {
     size: 8,
-    label: "샤드",
-    desc: "수평 파티션 (샤드)",
-    examples: ["shard-0", "shard-1", "shard-2"],
+    label: '샤드',
+    desc: '수평 파티션 (샤드)',
+    examples: ['shard-0', 'shard-1', 'shard-2'],
   },
 } as const;
 
 type AddrDim = keyof typeof SCHEMA;
-const ADDR_DIMS: AddrDim[] = ["tenant", "schema", "table", "shard"];
+const ADDR_DIMS: AddrDim[] = ['tenant', 'schema', 'table', 'shard'];
 
 const ADDR_WI = new WeightedIndex(
   ADDR_DIMS.map((d) => SCHEMA[d].size),
-  ADDR_DIMS
+  ADDR_DIMS,
 );
 
 // ADDR_WI.size = 50 × 10 × 30 × 8 = 120,000
 // weights     = [2400, 240, 8, 1]
 
-const ADDR_WEIGHTS = ADDR_WI.shape.map((_, i, arr) =>
-  arr.slice(i + 1).reduce((p, n) => p * n, 1)
-);
+const ADDR_WEIGHTS = ADDR_WI.shape.map((_, i, arr) => arr.slice(i + 1).reduce((p, n) => p * n, 1));
 
 // ── Entry point ───────────────────────────────────────────────────────────
 
@@ -69,7 +67,7 @@ export function renderAddress(container: HTMLElement): void {
 
 function renderIntro(): string {
   const size = ADDR_WI.size.toLocaleString();
-  const dims = ADDR_DIMS.map((d) => `${d}(${SCHEMA[d].size})`).join(" × ");
+  const dims = ADDR_DIMS.map((d) => `${d}(${SCHEMA[d].size})`).join(' × ');
   return `
     <h2 class="concept-section-title">주소 체계 레퍼런스 — 데이터 스토리지</h2>
     <p class="concept-desc">
@@ -86,7 +84,7 @@ function renderIntro(): string {
       <div style="width:1px;background:var(--border-cell);align-self:stretch"></div>
       <div>
         <span class="xlf-label">가중치</span>
-        <span class="xlf-expr">[${ADDR_WEIGHTS.join(", ")}]</span>
+        <span class="xlf-expr">[${ADDR_WEIGHTS.join(', ')}]</span>
       </div>
       <div style="width:1px;background:var(--border-cell);align-self:stretch"></div>
       <div>
@@ -102,7 +100,7 @@ function renderIntro(): string {
 function renderSchema(): string {
   const rows = ADDR_DIMS.map((dim, i) => {
     const def = SCHEMA[dim];
-    const w   = ADDR_WEIGHTS[i];
+    const w = ADDR_WEIGHTS[i];
     return `<tr>
       <td style="font-weight:600;color:var(--xl-green)">${i + 1}</td>
       <td><code>${dim}</code></td>
@@ -110,13 +108,13 @@ function renderSchema(): string {
       <td class="td-num" style="color:var(--xl-blue)">${w.toLocaleString()}</td>
       <td>${def.label}</td>
       <td style="font-size:0.72rem;color:var(--text-muted)">${def.desc}</td>
-      <td style="font-size:0.7rem;color:var(--text-dim)">${def.examples.map((e) => `<code>${e}</code>`).join(", ")}</td>
+      <td style="font-size:0.7rem;color:var(--text-dim)">${def.examples.map((e) => `<code>${e}</code>`).join(', ')}</td>
     </tr>`;
-  }).join("");
+  }).join('');
 
   const totalRow = `<tr class="td-total">
     <td colspan="2" style="font-weight:700;text-align:right;padding-right:12px">전체 주소 공간</td>
-    <td class="td-num">${ADDR_WI.shape.join(" × ")}</td>
+    <td class="td-num">${ADDR_WI.shape.join(' × ')}</td>
     <td class="td-num">${ADDR_WI.size.toLocaleString()}</td>
     <td colspan="3" style="font-size:0.72rem;color:var(--xl-green);font-weight:700">
       0 ~ ${(ADDR_WI.size - 1).toLocaleString()} 정수로 표현
@@ -155,7 +153,7 @@ function renderSchema(): string {
 function renderEncoder(): string {
   const sliders = ADDR_DIMS.map((dim, i) => {
     const def = SCHEMA[dim];
-    const w   = ADDR_WEIGHTS[i];
+    const w = ADDR_WEIGHTS[i];
     return `
       <div class="addr-enc-row">
         <div class="addr-enc-dim">
@@ -171,7 +169,7 @@ function renderEncoder(): string {
         </span>
       </div>
     `;
-  }).join("");
+  }).join('');
 
   return `
     <div class="concept-block">
@@ -226,35 +224,37 @@ function renderDecoder(): string {
 function renderComparison(): string {
   const methods = [
     {
-      name: "UUID v4",
-      storage: "16 bytes",
-      readable: "아니오",
-      reversible: "불가",
-      structured: "아니오",
-      version: "해당 없음",
-      example: "550e8400-e29b-41d4-a716-446655440000",
+      name: 'UUID v4',
+      storage: '16 bytes',
+      readable: '아니오',
+      reversible: '불가',
+      structured: '아니오',
+      version: '해당 없음',
+      example: '550e8400-e29b-41d4-a716-446655440000',
     },
     {
-      name: "복합 키",
-      storage: "가변 (문자열)",
-      readable: "예",
-      reversible: "파싱 필요",
-      structured: "예",
-      version: "스키마 변경 시 마이그레이션",
-      example: "tenant:5/schema:3/table:12/shard:4",
+      name: '복합 키',
+      storage: '가변 (문자열)',
+      readable: '예',
+      reversible: '파싱 필요',
+      structured: '예',
+      version: '스키마 변경 시 마이그레이션',
+      example: 'tenant:5/schema:3/table:12/shard:4',
     },
     {
-      name: "가중진법 주소",
-      storage: "4~8 bytes (정수)",
-      readable: "스키마 있으면 예",
-      reversible: "O(d) 산술",
-      structured: "예",
-      version: "버전 공존 (구버전 계속 유효)",
-      example: "addr:v1:12564",
+      name: '가중진법 주소',
+      storage: '4~8 bytes (정수)',
+      readable: '스키마 있으면 예',
+      reversible: 'O(d) 산술',
+      structured: '예',
+      version: '버전 공존 (구버전 계속 유효)',
+      example: 'addr:v1:12564',
     },
   ];
 
-  const rows = methods.map(({ name, storage, readable, reversible, structured, version, example }) => `
+  const rows = methods
+    .map(
+      ({ name, storage, readable, reversible, structured, version, example }) => `
     <tr>
       <td style="font-weight:700">${name}</td>
       <td class="td-num">${storage}</td>
@@ -264,7 +264,9 @@ function renderComparison(): string {
       <td style="font-size:0.7rem">${version}</td>
       <td><code style="font-size:0.68rem">${example}</code></td>
     </tr>
-  `).join("");
+  `,
+    )
+    .join('');
 
   return `
     <div class="concept-block">
@@ -288,10 +290,10 @@ function renderComparison(): string {
 
 function renderDecompress(): string {
   const exampleId = 12564;
-  const coords    = ADDR_WI.decode(exampleId);
+  const coords = ADDR_WI.decode(exampleId);
 
   const steps = ADDR_DIMS.map((dim, i) => {
-    const w  = ADDR_WEIGHTS[i];
+    const w = ADDR_WEIGHTS[i];
     const ni = SCHEMA[dim].size;
     const xi = coords[i];
     return `
@@ -308,7 +310,7 @@ function renderDecompress(): string {
         </td>
       </tr>
     `;
-  }).join("");
+  }).join('');
 
   return `
     <div class="concept-block">
@@ -324,13 +326,15 @@ function renderDecompress(): string {
           <tbody>${steps}</tbody>
         </table>
         <div class="addr-decoded-chips">
-          ${ADDR_DIMS.map((dim, i) => `
+          ${ADDR_DIMS.map(
+            (dim, i) => `
             <div class="addr-chip">
               <span class="addr-chip-dim">${dim}</span>
               <span class="addr-chip-val">#${coords[i]}</span>
               <span class="addr-chip-ko">${SCHEMA[dim].label}</span>
             </div>
-          `).join("")}
+          `,
+          ).join('')}
         </div>
         <div class="addr-code-block" style="margin-top:14px">
           <div class="addr-code-label">런타임 역산 코드</div>
@@ -338,13 +342,13 @@ function renderDecompress(): string {
 const addr = { prefix: "addr", v: "v1", id: ${exampleId} };
 
 const coords = STORAGE_INDEX.decode(addr.id);
-// → [${coords.join(", ")}]  (tenant, schema, table, shard — 1-based)
+// → [${coords.join(', ')}]  (tenant, schema, table, shard — 1-based)
 
 const record = STORAGE_INDEX.decodeToRecord(addr.id);
 // → { tenant: ${coords[0]}, schema: ${coords[1]}, table: ${coords[2]}, shard: ${coords[3]} }
 
 // 재인코딩 (역방향)
-const restored = STORAGE_INDEX.encode([${coords.join(", ")}]);
+const restored = STORAGE_INDEX.encode([${coords.join(', ')}]);
 // → ${exampleId}  ✅ 동일한 주소</pre>
         </div>
         <div class="insight-box">
@@ -370,7 +374,7 @@ function setupInteractivity(container: HTMLElement): void {
 }
 
 function setupEncoder(container: HTMLElement): void {
-  const sliders = container.querySelectorAll<HTMLInputElement>(".addr-slider");
+  const sliders = container.querySelectorAll<HTMLInputElement>('.addr-slider');
 
   function recalc(): void {
     const coords: number[] = [];
@@ -378,35 +382,36 @@ function setupEncoder(container: HTMLElement): void {
     const parts: string[] = [];
 
     sliders.forEach((sl) => {
-      const dim  = sl.dataset.dim as AddrDim;
-      const w    = Number(sl.dataset.weight);
-      const v    = Number(sl.value);
+      const dim = sl.dataset.dim as AddrDim;
+      const w = Number(sl.dataset.weight);
+      const v = Number(sl.value);
       coords.push(v);
       total += (v - 1) * w;
       parts.push(`(${v}−1)×${w.toLocaleString()}`);
 
-      const valEl  = container.querySelector(`#enc-val-${dim}`);
-      const fmlEl  = container.querySelector(`#enc-f-${dim}`);
+      const valEl = container.querySelector(`#enc-val-${dim}`);
+      const fmlEl = container.querySelector(`#enc-f-${dim}`);
       if (valEl) valEl.textContent = String(v);
-      if (fmlEl) fmlEl.textContent = `(${v}−1)×${w.toLocaleString()} = ${((v - 1) * w).toLocaleString()}`;
+      if (fmlEl)
+        fmlEl.textContent = `(${v}−1)×${w.toLocaleString()} = ${((v - 1) * w).toLocaleString()}`;
     });
 
-    const encResult = container.querySelector("#enc-result");
-    const encTotalId = container.querySelector("#enc-total-id");
-    const encFormulaFull = container.querySelector("#enc-formula-full");
+    const encResult = container.querySelector('#enc-result');
+    const encTotalId = container.querySelector('#enc-total-id');
+    const encFormulaFull = container.querySelector('#enc-formula-full');
     if (encResult) encResult.textContent = String(total);
     if (encTotalId) encTotalId.textContent = String(total);
-    if (encFormulaFull) encFormulaFull.textContent =
-      parts.join(" + ") + ` = ${total.toLocaleString()}`;
+    if (encFormulaFull)
+      encFormulaFull.textContent = parts.join(' + ') + ` = ${total.toLocaleString()}`;
   }
 
-  sliders.forEach((sl) => sl.addEventListener("input", recalc));
+  sliders.forEach((sl) => sl.addEventListener('input', recalc));
   recalc();
 }
 
 function setupDecoder(container: HTMLElement): void {
-  const input  = container.querySelector<HTMLInputElement>("#dec-input");
-  const result = container.querySelector<HTMLElement>("#dec-result");
+  const input = container.querySelector<HTMLInputElement>('#dec-input');
+  const result = container.querySelector<HTMLElement>('#dec-result');
   if (!input || !result) return;
   const inputEl = input;
   const resultEl = result;
@@ -419,19 +424,21 @@ function setupDecoder(container: HTMLElement): void {
     }
 
     const coords = ADDR_WI.decode(raw);
-    const chips  = ADDR_DIMS.map((dim, i) => `
+    const chips = ADDR_DIMS.map(
+      (dim, i) => `
       <div class="addr-chip">
         <span class="addr-chip-dim">${dim}</span>
         <span class="addr-chip-val">#${coords[i]}</span>
         <span class="addr-chip-ko">${SCHEMA[dim].label}</span>
       </div>
-    `).join("");
+    `,
+    ).join('');
 
     const formula = ADDR_DIMS.map((dim, i) => {
-      const w  = ADDR_WEIGHTS[i];
+      const w = ADDR_WEIGHTS[i];
       const ni = SCHEMA[dim].size;
       return `⌊${raw}/${w.toLocaleString()}⌋ mod ${ni}+1 = <strong>${coords[i]}</strong>`;
-    }).join(" · ");
+    }).join(' · ');
 
     resultEl.innerHTML = `
       <div class="addr-decoded-chips" style="margin-bottom:10px">${chips}</div>
@@ -439,6 +446,6 @@ function setupDecoder(container: HTMLElement): void {
     `;
   }
 
-  inputEl.addEventListener("input", decode);
+  inputEl.addEventListener('input', decode);
   decode();
 }

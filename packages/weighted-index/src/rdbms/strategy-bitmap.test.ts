@@ -13,14 +13,14 @@
  *   - library bitmask: 주소 공간 전체 비트맵 (size만큼 할당)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { buildMask, hasBit, maskAnd, popcount } from "../math/bitmask.js";
-import { calcAddressRanges } from "../math/calc.js";
-import { WI, shape } from "./shared.js";
+import { buildMask, hasBit, maskAnd, popcount } from '../math/bitmask.js';
+import { calcAddressRanges } from '../math/calc.js';
+import { WI, shape } from './shared.js';
 
-describe("#5 Bitmap ↔ buildMask 동형", () => {
-  it("role=2 비트맵 AND action=2 비트맵 = 두 축 교집합의 주소들", () => {
+describe('#5 Bitmap ↔ buildMask 동형', () => {
+  it('role=2 비트맵 AND action=2 비트맵 = 두 축 교집합의 주소들', () => {
     const rolePositions: number[] = [];
     const actionPositions: number[] = [];
     for (let r = 1; r <= shape[0]; r++) {
@@ -41,7 +41,7 @@ describe("#5 Bitmap ↔ buildMask 동형", () => {
     expect(popcount(intersect)).toBe(shape[2]);
 
     // 비트 위치가 calcAddressRanges(["2", "2", null])와 일치
-    const ranges = calcAddressRanges([...shape], ["2", "2", null]);
+    const ranges = calcAddressRanges([...shape], ['2', '2', null]);
     const expected: number[] = [];
     for (const [lo, hi] of ranges) for (let n = lo; n <= hi; n++) expected.push(n);
 

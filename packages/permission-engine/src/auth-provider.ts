@@ -45,21 +45,21 @@ export interface ZitadelProviderOptions {
 }
 
 export class ZitadelProvider implements AuthProvider {
-  readonly id = "zitadel";
+  readonly id = 'zitadel';
 
   constructor(private readonly opts: ZitadelProviderOptions) {}
 
   async revokeUserSessions(userId: string): Promise<void> {
     // Zitadel v2: 유저의 모든 세션 목록 조회 후 삭제
-    const baseUrl = this.opts.issuerUrl.replace(/\/$/, "");
+    const baseUrl = this.opts.issuerUrl.replace(/\/$/, '');
     const headers = {
-      "Authorization": `Bearer ${this.opts.serviceToken}`,
-      "Content-Type": "application/json",
+      Authorization: `Bearer ${this.opts.serviceToken}`,
+      'Content-Type': 'application/json',
     };
 
     // 1. 세션 목록 조회
     const listRes = await fetch(`${baseUrl}/v2/sessions`, {
-      method: "POST",
+      method: 'POST',
       headers,
       body: JSON.stringify({
         queries: [{ userIdQuery: { userId } }],
@@ -71,25 +71,25 @@ export class ZitadelProvider implements AuthProvider {
       throw new Error(`Zitadel list sessions failed: ${listRes.status}`);
     }
 
-    const { sessions = [] } = await listRes.json() as { sessions?: { id: string }[] };
+    const { sessions = [] } = (await listRes.json()) as { sessions?: { id: string }[] };
 
     // 2. 각 세션 삭제
     await Promise.all(
-      sessions.map(session =>
+      sessions.map((session) =>
         fetch(`${baseUrl}/v2/sessions/${session.id}`, {
-          method: "DELETE",
+          method: 'DELETE',
           headers,
           signal: AbortSignal.timeout(5_000),
-        })
-      )
+        }),
+      ),
     );
   }
 
   async revokeRefreshToken(refreshToken: string): Promise<void> {
-    const baseUrl = this.opts.issuerUrl.replace(/\/$/, "");
+    const baseUrl = this.opts.issuerUrl.replace(/\/$/, '');
     const res = await fetch(`${baseUrl}/oauth/v2/revoke`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ token: refreshToken }),
       signal: AbortSignal.timeout(5_000),
     });
@@ -111,17 +111,17 @@ export interface KeycloakProviderOptions {
 }
 
 export class KeycloakProvider implements AuthProvider {
-  readonly id = "keycloak";
+  readonly id = 'keycloak';
 
   constructor(private readonly opts: KeycloakProviderOptions) {}
 
   async revokeUserSessions(userId: string): Promise<void> {
     const { baseUrl, realm, adminToken } = this.opts;
-    const url = `${baseUrl.replace(/\/$/, "")}/admin/realms/${realm}/users/${userId}/logout`;
+    const url = `${baseUrl.replace(/\/$/, '')}/admin/realms/${realm}/users/${userId}/logout`;
 
     const res = await fetch(url, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${adminToken}` },
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
       signal: AbortSignal.timeout(5_000),
     });
 
@@ -132,12 +132,12 @@ export class KeycloakProvider implements AuthProvider {
 
   async revokeRefreshToken(refreshToken: string): Promise<void> {
     const { baseUrl, realm } = this.opts;
-    const url = `${baseUrl.replace(/\/$/, "")}/realms/${realm}/protocol/openid-connect/revoke`;
+    const url = `${baseUrl.replace(/\/$/, '')}/realms/${realm}/protocol/openid-connect/revoke`;
 
     const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ token: refreshToken, token_type_hint: "refresh_token" }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token: refreshToken, token_type_hint: 'refresh_token' }),
       signal: AbortSignal.timeout(5_000),
     });
 
@@ -150,7 +150,11 @@ export class KeycloakProvider implements AuthProvider {
 // ── NoopProvider (테스트 / provider 없는 환경) ────────────────────────────────
 
 export class NoopAuthProvider implements AuthProvider {
-  readonly id = "noop";
-  async revokeUserSessions(_userId: string): Promise<void> { /* no-op */ }
-  async revokeRefreshToken(_token: string): Promise<void> { /* no-op */ }
+  readonly id = 'noop';
+  async revokeUserSessions(_userId: string): Promise<void> {
+    /* no-op */
+  }
+  async revokeRefreshToken(_token: string): Promise<void> {
+    /* no-op */
+  }
 }

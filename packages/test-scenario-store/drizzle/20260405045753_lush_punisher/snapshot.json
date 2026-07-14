@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "2bff7f2a-269e-40b5-a434-ac1ae76b84dd",
-  "prevIds": [
-    "8c2070b4-8bf6-4724-8192-74a79cfd7bf0"
-  ],
+  "prevIds": ["8c2070b4-8bf6-4724-8192-74a79cfd7bf0"],
   "ddl": [
     {
       "name": "test_scenario_runs",
@@ -235,18 +233,14 @@
       "table": "test_scenarios"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "test_scenario_runs_pk",
       "table": "test_scenario_runs",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "test_scenarios_pk",
       "table": "test_scenarios",
@@ -323,9 +317,7 @@
       "table": "test_scenarios"
     },
     {
-      "columns": [
-        "a_coord"
-      ],
+      "columns": ["a_coord"],
       "nameExplicit": false,
       "name": "test_scenarios_a_coord_unique",
       "entityType": "uniques",

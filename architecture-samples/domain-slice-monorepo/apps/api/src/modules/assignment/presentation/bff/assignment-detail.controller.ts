@@ -1,4 +1,4 @@
-import type { AssignmentDetailBff, AssignmentDetailBffModel } from "./assignment-detail.bff.js";
+import type { AssignmentDetailBff, AssignmentDetailBffModel } from './assignment-detail.bff.js';
 
 export interface AssignmentDetailRequest {
   readonly id: string;

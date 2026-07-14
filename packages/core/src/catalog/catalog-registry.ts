@@ -7,8 +7,8 @@
  * CatalogProvider 구현. O(1) 조회. 여러 카탈로그를 독립적으로 등록/조회/관리.
  */
 
-import type { Catalog } from "./catalog.types.js";
-import type { CatalogProvider, CatalogInfo } from "./catalog-provider.js";
+import type { Catalog } from './catalog.types.js';
+import type { CatalogProvider, CatalogInfo } from './catalog-provider.js';
 
 export class CatalogRegistry implements CatalogProvider {
   private readonly catalogs = new Map<string, Catalog>();
@@ -45,11 +45,11 @@ export class CatalogRegistry implements CatalogProvider {
   getCatalog(id?: string): Catalog {
     const targetId = id ?? this.defaultId;
     if (targetId === null) {
-      throw new Error("No catalogs registered");
+      throw new Error('No catalogs registered');
     }
     const catalog = this.catalogs.get(targetId);
     if (!catalog) {
-      const available = [...this.catalogs.keys()].join(", ");
+      const available = [...this.catalogs.keys()].join(', ');
       throw new Error(`Catalog '${targetId}' not found. Available: ${available}`);
     }
     return catalog;

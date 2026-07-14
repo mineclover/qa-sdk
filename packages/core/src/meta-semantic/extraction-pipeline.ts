@@ -12,7 +12,12 @@
  * ParserPort + ExtractionPort를 조합. mock으로 ���스트 가능.
  */
 
-import type { ParserPort, FileStructure, FunctionInfo, ConditionalInfo } from "./extraction-parser.js";
+import type {
+  ParserPort,
+  FileStructure,
+  FunctionInfo,
+  ConditionalInfo,
+} from './extraction-parser.js';
 import type {
   ExtractionPort,
   ExecutionUnit,
@@ -20,8 +25,8 @@ import type {
   BranchPoint,
   ExtractionResult,
   MarkerHint,
-} from "./extraction.js";
-import { extractMarkerHints, countExecutionPaths, summarizeExtraction } from "./extraction.js";
+} from './extraction.js';
+import { extractMarkerHints, countExecutionPaths, summarizeExtraction } from './extraction.js';
 
 // ── 파이프라인 옵션 ───────────────────────────────────
 
@@ -69,7 +74,7 @@ export async function runExtractionPipeline(
       const branchPoints = await extractBranchPoints(
         llm,
         func,
-        structure.conditionals.filter(c => c.functionId === func.id),
+        structure.conditionals.filter((c) => c.functionId === func.id),
         structure.types,
       );
 
@@ -90,17 +95,17 @@ async function judgeTestability(
   markers: MarkerHint[],
 ): Promise<{ verdict: boolean; confidence: number; sideEffects: string[] }> {
   const response = await llm.judge({
-    kind: "testability",
-    codeSnippet: `${func.leadingComment}\nfunction ${func.id}(${func.params.map(p => `${p.name}: ${p.type}`).join(", ")}): ${func.returnType} {\n${func.body}\n}`,
+    kind: 'testability',
+    codeSnippet: `${func.leadingComment}\nfunction ${func.id}(${func.params.map((p) => `${p.name}: ${p.type}`).join(', ')}): ${func.returnType} {\n${func.body}\n}`,
     context: {
-      markers: markers.map(m => `${m.marker}: ${m.content}`),
+      markers: markers.map((m) => `${m.marker}: ${m.content}`),
       paramCount: func.params.length,
-      hasReturn: func.returnType !== "void",
+      hasReturn: func.returnType !== 'void',
     },
   });
 
   const sideEffects = Array.isArray(response.extracted?.sideEffects)
-    ? response.extracted.sideEffects as string[]
+    ? (response.extracted.sideEffects as string[])
     : [];
 
   return { verdict: response.verdict, confidence: response.confidence, sideEffects };
@@ -116,16 +121,18 @@ async function extractBranchPoints(
 ): Promise<BranchPoint[]> {
   // LLM 판단을 병렬로 실행
   const responses = await Promise.all(
-    conditionals.map(cond => llm.judge({
-      kind: "branch-significance",
-      codeSnippet: `// ${cond.kind} at line ${cond.line}\n// condition: ${cond.conditionText}\n// branches: ${cond.branchCount}`,
-      context: {
-        functionId: func.id,
-        kind: cond.kind,
-        branchCount: cond.branchCount,
-        branchLabels: cond.branchLabels,
-      },
-    })),
+    conditionals.map((cond) =>
+      llm.judge({
+        kind: 'branch-significance',
+        codeSnippet: `// ${cond.kind} at line ${cond.line}\n// condition: ${cond.conditionText}\n// branches: ${cond.branchCount}`,
+        context: {
+          functionId: func.id,
+          kind: cond.kind,
+          branchCount: cond.branchCount,
+          branchLabels: cond.branchLabels,
+        },
+      }),
+    ),
   );
 
   const branchPoints: BranchPoint[] = [];
@@ -141,8 +148,8 @@ async function extractBranchPoints(
     let labels = [...cond.branchLabels];
 
     // switch의 조건이 enum/union이면 멤버 수로 보정
-    if (cond.kind === "switch") {
-      const typeInfo = types.find(t => cond.conditionText.includes(t.name));
+    if (cond.kind === 'switch') {
+      const typeInfo = types.find((t) => cond.conditionText.includes(t.name));
       if (typeInfo) {
         branches = typeInfo.memberCount;
         labels = [...typeInfo.members];
@@ -179,7 +186,7 @@ function buildExecutionUnit(
   const meta: ExecutionUnitMeta = {
     testable: testability.verdict,
     sideEffects: testability.sideEffects,
-    inputTypes: func.params.map(p => p.type),
+    inputTypes: func.params.map((p) => p.type),
     outputType: func.returnType,
     confidence: testability.confidence,
     markers,

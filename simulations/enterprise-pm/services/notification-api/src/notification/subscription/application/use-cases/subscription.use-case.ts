@@ -1,26 +1,26 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import { SubscriptionEntity } from "../../domain/index.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { SubscriptionEntity } from '../../domain/index.js';
 import {
   SubscriptionNotFoundException,
   SubscriptionUserUnknownException,
-} from "../../domain/subscription.exceptions.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type { CreateSubscriptionCommand } from "../commands/create-subscription.command.js";
-import type { SetSubscriptionActiveCommand } from "../commands/set-subscription-active.command.js";
-import type { DeleteSubscriptionCommand } from "../commands/delete-subscription.command.js";
-import type { SubscriptionLoggerPort } from "../ports/subscription-logger.port.js";
+} from '../../domain/subscription.exceptions.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { CreateSubscriptionCommand } from '../commands/create-subscription.command.js';
+import type { SetSubscriptionActiveCommand } from '../commands/set-subscription-active.command.js';
+import type { DeleteSubscriptionCommand } from '../commands/delete-subscription.command.js';
+import type { SubscriptionLoggerPort } from '../ports/subscription-logger.port.js';
 import type {
   SubscriptionOutboxPort,
   SubscriptionActiveChangedEventPayload,
   SubscriptionCreatedEventPayload,
   SubscriptionDeletedEventPayload,
-} from "../ports/subscription-outbox.port.js";
-import type { SubscriptionRepositoryPort } from "../ports/subscription-repository.port.js";
-import type { SubscriptionTransactionPort } from "../ports/subscription-transaction.port.js";
-import type { SubscriptionUserQueryPort } from "../ports/user-query.port.js";
+} from '../ports/subscription-outbox.port.js';
+import type { SubscriptionRepositoryPort } from '../ports/subscription-repository.port.js';
+import type { SubscriptionTransactionPort } from '../ports/subscription-transaction.port.js';
+import type { SubscriptionUserQueryPort } from '../ports/user-query.port.js';
 
 export interface SubscriptionResult {
   readonly userId: string;
@@ -50,10 +50,10 @@ export class SubscriptionUseCase {
       aggregateId,
       command.traceId,
       command.correlationId,
-      "SubscriptionUseCase.create",
-      "CreateSubscriptionCommand",
+      'SubscriptionUseCase.create',
+      'CreateSubscriptionCommand',
     );
-    this.logger.info({ ...ctxBase }, "subscription.create.started");
+    this.logger.info({ ...ctxBase }, 'subscription.create.started');
 
     try {
       const exists = await this.userQuery.userExists(command.userId);
@@ -61,7 +61,7 @@ export class SubscriptionUseCase {
         throw new SubscriptionUserUnknownException(command.userId);
       }
 
-      const entity = await this.transaction.run("subscription.create", async (scope) => {
+      const entity = await this.transaction.run('subscription.create', async (scope) => {
         const e = SubscriptionEntity.create({
           userId: command.userId,
           eventType: command.eventType,
@@ -77,7 +77,7 @@ export class SubscriptionUseCase {
           isActive: e.isActive,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.subscription.created";
+        const eventName = 'notification.subscription.created';
         await this.outbox.append(
           {
             aggregateId,
@@ -99,11 +99,11 @@ export class SubscriptionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.subscription.created",
+          eventName: 'notification.subscription.created',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "subscription.create.success",
+        'subscription.create.success',
       );
 
       return { userId: entity.userId, eventType: entity.eventType, isActive: entity.isActive };
@@ -111,11 +111,11 @@ export class SubscriptionUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "subscription.create.failure",
+        'subscription.create.failure',
       );
       throw error;
     }
@@ -127,13 +127,13 @@ export class SubscriptionUseCase {
       aggregateId,
       command.traceId,
       command.correlationId,
-      "SubscriptionUseCase.setActive",
-      "SetSubscriptionActiveCommand",
+      'SubscriptionUseCase.setActive',
+      'SetSubscriptionActiveCommand',
     );
-    this.logger.info({ ...ctxBase }, "subscription.setActive.started");
+    this.logger.info({ ...ctxBase }, 'subscription.setActive.started');
 
     try {
-      const entity = await this.transaction.run("subscription.setActive", async (scope) => {
+      const entity = await this.transaction.run('subscription.setActive', async (scope) => {
         const cur = await this.repository.findById(command.userId, command.eventType);
         if (!cur) throw new SubscriptionNotFoundException(command.userId, command.eventType);
         const next = cur.setActive(command.isActive);
@@ -145,7 +145,7 @@ export class SubscriptionUseCase {
           isActive: next.isActive,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.subscription.active-changed";
+        const eventName = 'notification.subscription.active-changed';
         await this.outbox.append(
           {
             aggregateId,
@@ -167,11 +167,11 @@ export class SubscriptionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.subscription.active-changed",
+          eventName: 'notification.subscription.active-changed',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "subscription.setActive.success",
+        'subscription.setActive.success',
       );
 
       return { userId: entity.userId, eventType: entity.eventType, isActive: entity.isActive };
@@ -179,11 +179,11 @@ export class SubscriptionUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "subscription.setActive.failure",
+        'subscription.setActive.failure',
       );
       throw error;
     }
@@ -195,13 +195,13 @@ export class SubscriptionUseCase {
       aggregateId,
       command.traceId,
       command.correlationId,
-      "SubscriptionUseCase.delete",
-      "DeleteSubscriptionCommand",
+      'SubscriptionUseCase.delete',
+      'DeleteSubscriptionCommand',
     );
-    this.logger.info({ ...ctxBase }, "subscription.delete.started");
+    this.logger.info({ ...ctxBase }, 'subscription.delete.started');
 
     try {
-      await this.transaction.run("subscription.delete", async (scope) => {
+      await this.transaction.run('subscription.delete', async (scope) => {
         await this.repository.deleteById(command.userId, command.eventType, scope);
         const occurredAt = new Date();
         const payload: SubscriptionDeletedEventPayload = {
@@ -209,7 +209,7 @@ export class SubscriptionUseCase {
           eventType: command.eventType,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.subscription.deleted";
+        const eventName = 'notification.subscription.deleted';
         await this.outbox.append(
           {
             aggregateId,
@@ -230,11 +230,11 @@ export class SubscriptionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.subscription.deleted",
+          eventName: 'notification.subscription.deleted',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "subscription.delete.success",
+        'subscription.delete.success',
       );
 
       return { deleted: true };
@@ -242,11 +242,11 @@ export class SubscriptionUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "subscription.delete.failure",
+        'subscription.delete.failure',
       );
       throw error;
     }
@@ -263,7 +263,7 @@ export class SubscriptionUseCase {
     return {
       traceId: t,
       correlationId: correlationId ?? t,
-      domain: "subscription",
+      domain: 'subscription',
       useCase,
       aggregateId,
       commandName,

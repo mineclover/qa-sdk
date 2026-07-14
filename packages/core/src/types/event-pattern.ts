@@ -20,11 +20,10 @@
 
 /** 행위 주체의 식별 수준 */
 export type IdentificationMode =
-  | "anonymous"       // actor 정보 없음. guest 브라우징
-  | "identified"      // user_id 존재. 로그인 완료
-  | "pseudonymized"   // actor_id만 있고 user_id 없음. 쿠키/토큰 기반
-  | "service"         // 서비스 간 호출 (platform=node, owner_type=workspace)
-  ;
+  | 'anonymous' // actor 정보 없음. guest 브라우징
+  | 'identified' // user_id 존재. 로그인 완료
+  | 'pseudonymized' // actor_id만 있고 user_id 없음. 쿠키/토큰 기반
+  | 'service'; // 서비스 간 호출 (platform=node, owner_type=workspace)
 
 // ── 행동 패턴 ─────────────────────────────────────────
 
@@ -42,12 +41,11 @@ export type BehaviorPattern = string;
 
 /** 패턴 분류의 신뢰도 */
 export type PatternConfidence =
-  | "exact"    // 모든 조건 만족. 의심 없음
-  | "high"     // 핵심 조건 만족. 부분 시퀀스 불일치
-  | "medium"   // 패턴 유사하나 일부 조건 미충족
-  | "low"      // 최소 조건만 만족. 복수 패턴 후보
-  | "unknown"  // 분류 불가. unclassified 태깅
-  ;
+  | 'exact' // 모든 조건 만족. 의심 없음
+  | 'high' // 핵심 조건 만족. 부분 시퀀스 불일치
+  | 'medium' // 패턴 유사하나 일부 조건 미충족
+  | 'low' // 최소 조건만 만족. 복수 패턴 후보
+  | 'unknown'; // 분류 불가. unclassified 태깅
 
 // ── 패턴 규칙 ─────────────────────────────────────────
 
@@ -56,7 +54,7 @@ export interface PatternRule {
   /** 규칙 고유 ID (예: "rule-identified-purchase") */
   readonly id: string;
   /** 식별 모드 조건 */
-  readonly identificationMode: IdentificationMode | "any";
+  readonly identificationMode: IdentificationMode | 'any';
   /** 매칭 시 부여할 행동 패턴 */
   readonly behaviorPattern: BehaviorPattern;
   /** 매칭 조건 */
@@ -80,7 +78,7 @@ export interface PatternMatchCondition {
   /** 반드시 포함해야 하는 순서 있는 시퀀스 */
   readonly requiredSequence?: readonly string[];
   /** actor 조건 */
-  readonly actorCondition?: "has_actor" | "no_actor" | "any";
+  readonly actorCondition?: 'has_actor' | 'no_actor' | 'any';
   /** 최소 이벤트 수 */
   readonly minEvents?: number;
   /** 최대 이벤트 수 */
@@ -124,20 +122,19 @@ export interface PatternAnomaly {
   /** 이상 설명 */
   readonly description: string;
   /** 심각도 */
-  readonly severity: "info" | "warning" | "critical";
+  readonly severity: 'info' | 'warning' | 'critical';
   /** 감지 시각 */
   readonly detectedAt: string;
 }
 
 /** 이상 패턴 유형 */
 export type AnomalyKind =
-  | "unclassified"        // 어떤 규칙에도 매칭 안 됨
-  | "ratio_shift"         // 패턴 비율 급변 (예: browse 80%→20%)
-  | "volume_spike"        // 특정 패턴 급증
-  | "new_sequence"        // 이전에 없던 event_key 시퀀스
-  | "abnormal_speed"      // 비정상 속도 (봇 의심)
-  | "abnormal_duration"   // 비정상 세션 시간
-  ;
+  | 'unclassified' // 어떤 규칙에도 매칭 안 됨
+  | 'ratio_shift' // 패턴 비율 급변 (예: browse 80%→20%)
+  | 'volume_spike' // 특정 패턴 급증
+  | 'new_sequence' // 이전에 없던 event_key 시퀀스
+  | 'abnormal_speed' // 비정상 속도 (봇 의심)
+  | 'abnormal_duration'; // 비정상 세션 시간
 
 // ── 패턴 통계 ─────────────────────────────────────────
 

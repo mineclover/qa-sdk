@@ -117,11 +117,7 @@
     },
     {
       "id": "semver",
-      "entries": [
-        "0.1.0",
-        "0.2.0",
-        "9.9.4"
-      ],
+      "entries": ["0.1.0", "0.2.0", "9.9.4"],
       "capacity": 16
     },
     {
@@ -150,66 +146,39 @@
     },
     {
       "id": "tier",
-      "entries": [
-        "app",
-        "data",
-        "foundation",
-        "platform",
-        "service"
-      ],
+      "entries": ["app", "data", "foundation", "platform", "service"],
       "capacity": 8
     },
     {
       "id": "runtime",
-      "entries": [
-        "browser",
-        "library",
-        "server"
-      ],
+      "entries": ["browser", "library", "server"],
       "capacity": 8
     },
     {
       "id": "scope",
-      "entries": [
-        "public",
-        "private"
-      ],
+      "entries": ["public", "private"],
       "capacity": 2
     }
   ],
   "composites": [
     {
       "id": "pkg_version",
-      "dims": [
-        "pkg",
-        "semver"
-      ],
+      "dims": ["pkg", "semver"],
       "owner": "qa-sdk"
     },
     {
       "id": "change_map",
-      "dims": [
-        "pkg",
-        "semver",
-        "cc_type"
-      ],
+      "dims": ["pkg", "semver", "cc_type"],
       "owner": "qa-sdk"
     },
     {
       "id": "commit_addr",
-      "dims": [
-        "cc_type",
-        "pkg"
-      ],
+      "dims": ["cc_type", "pkg"],
       "owner": "qa-sdk"
     },
     {
       "id": "pkg_class",
-      "dims": [
-        "pkg",
-        "tier",
-        "runtime"
-      ],
+      "dims": ["pkg", "tier", "runtime"],
       "owner": "qa-sdk"
     }
   ]

@@ -1,21 +1,21 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { and, eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { and, eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { SubscriptionEntity, matchesEventType } from "../../domain/index.js";
-import type { SubscriptionSnapshot } from "../../domain/subscription.types.js";
-import { SubscriptionRepositoryPort } from "../../application/ports/subscription-repository.port.js";
-import type { SubscriptionTransactionScope } from "../../application/ports/subscription-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { SubscriptionEntity, matchesEventType } from '../../domain/index.js';
+import type { SubscriptionSnapshot } from '../../domain/subscription.types.js';
+import { SubscriptionRepositoryPort } from '../../application/ports/subscription-repository.port.js';
+import type { SubscriptionTransactionScope } from '../../application/ports/subscription-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface SubscriptionRow {
   userId: string;
   eventType: string;
-  channel: "in_app" | "email";
+  channel: 'in_app' | 'email';
   isActive: boolean;
   createdAt: string;
 }
@@ -170,7 +170,7 @@ export class PgSubscriptionRepository extends SubscriptionRepositoryPort {
   }
 }
 
-export type SubscriptionDialect = "sqlite" | "pg";
+export type SubscriptionDialect = 'sqlite' | 'pg';
 
 export interface SubscriptionRepositoryFactoryOpts {
   readonly dialect: SubscriptionDialect;
@@ -180,10 +180,10 @@ export interface SubscriptionRepositoryFactoryOpts {
 export function createSubscriptionRepository(
   opts: SubscriptionRepositoryFactoryOpts,
 ): SubscriptionRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteSubscriptionRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgSubscriptionRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(

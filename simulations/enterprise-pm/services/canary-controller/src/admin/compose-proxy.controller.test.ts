@@ -8,22 +8,19 @@
 //   (c) 외부 IP → 404 (InternalIpGuard)
 //   (d) docker compose v2.18 이하 단일 array 응답 형식 호환
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Test, type TestingModule } from "@nestjs/testing";
-import {
-  NestFastifyApplication,
-  FastifyAdapter,
-} from "@nestjs/platform-fastify";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { NestFastifyApplication, FastifyAdapter } from '@nestjs/platform-fastify';
 import {
   AdminComposeProxyController,
   type ComposeExec,
   COMPOSE_EXEC_TOKEN,
   SIM_COMPOSE_PROJECT_TOKEN,
-} from "./compose-proxy.controller.js";
+} from './compose-proxy.controller.js';
 
-const internal = { "x-forwarded-for": "172.20.0.5" };
+const internal = { 'x-forwarded-for': '172.20.0.5' };
 
-describe("AdminComposeProxyController GET /admin/compose/replicas (spec §6 endpoint 8)", () => {
+describe('AdminComposeProxyController GET /admin/compose/replicas (spec §6 endpoint 8)', () => {
   let app: NestFastifyApplication;
   let composeExec: ComposeExec;
 
@@ -33,98 +30,89 @@ describe("AdminComposeProxyController GET /admin/compose/replicas (spec §6 endp
       controllers: [AdminComposeProxyController],
       providers: [
         { provide: COMPOSE_EXEC_TOKEN, useValue: composeExec },
-        { provide: SIM_COMPOSE_PROJECT_TOKEN, useValue: "enterprise-pm" },
+        { provide: SIM_COMPOSE_PROJECT_TOKEN, useValue: 'enterprise-pm' },
       ],
     }).compile();
-    app = mod.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
+    app = mod.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   }
 
-  it("(a) Compose v2.20+ line-delimited JSON 합산", async () => {
+  it('(a) Compose v2.20+ line-delimited JSON 합산', async () => {
     const exec = vi.fn(async () => ({
       stdout: [
-        { Service: "sim-approval-api-v1", State: "running" },
-        { Service: "sim-approval-api-v2", State: "running" },
-        { Service: "sim-approval-api-v2", State: "running" },
+        { Service: 'sim-approval-api-v1', State: 'running' },
+        { Service: 'sim-approval-api-v2', State: 'running' },
+        { Service: 'sim-approval-api-v2', State: 'running' },
       ]
         .map((o) => JSON.stringify(o))
-        .join("\n"),
-      stderr: "",
+        .join('\n'),
+      stderr: '',
     }));
     await bootstrap(exec);
     const res = await app.inject({
-      method: "GET",
-      url: "/admin/compose/replicas",
+      method: 'GET',
+      url: '/admin/compose/replicas',
       headers: internal,
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({
       services: {
-        "sim-approval-api-v1": 1,
-        "sim-approval-api-v2": 2,
+        'sim-approval-api-v1': 1,
+        'sim-approval-api-v2': 2,
       },
     });
-    expect(exec).toHaveBeenCalledWith([
-      "compose",
-      "-p",
-      "enterprise-pm",
-      "ps",
-      "--format",
-      "json",
-    ]);
+    expect(exec).toHaveBeenCalledWith(['compose', '-p', 'enterprise-pm', 'ps', '--format', 'json']);
   });
 
-  it("(b) docker exec 실패 → 500 RFC 7807", async () => {
+  it('(b) docker exec 실패 → 500 RFC 7807', async () => {
     const exec = vi.fn(async () => {
-      throw new Error("docker daemon unreachable");
+      throw new Error('docker daemon unreachable');
     });
     await bootstrap(exec);
     const res = await app.inject({
-      method: "GET",
-      url: "/admin/compose/replicas",
+      method: 'GET',
+      url: '/admin/compose/replicas',
       headers: internal,
     });
     expect(res.statusCode).toBe(500);
     const body = res.json() as Record<string, unknown>;
     const detail = (body.message ?? body) as Record<string, unknown>;
-    expect(detail.type).toBe("https://qa-sdk.dev/errors/store-failure");
+    expect(detail.type).toBe('https://qa-sdk.dev/errors/store-failure');
     expect(detail.status).toBe(500);
   });
 
-  it("(c) external IP → 404 (InternalIpGuard)", async () => {
+  it('(c) external IP → 404 (InternalIpGuard)', async () => {
     const exec = vi.fn();
     await bootstrap(exec);
     const res = await app.inject({
-      method: "GET",
-      url: "/admin/compose/replicas",
-      headers: { "x-forwarded-for": "8.8.8.8" },
+      method: 'GET',
+      url: '/admin/compose/replicas',
+      headers: { 'x-forwarded-for': '8.8.8.8' },
     });
     expect(res.statusCode).toBe(404);
     expect(exec).not.toHaveBeenCalled();
   });
 
-  it("(d) Compose v2.18- single-array JSON 호환", async () => {
+  it('(d) Compose v2.18- single-array JSON 호환', async () => {
     const exec = vi.fn(async () => ({
       stdout: JSON.stringify([
-        { Service: "sim-approval-api-v1", State: "running" },
-        { Service: "sim-approval-api-v2", State: "running" },
+        { Service: 'sim-approval-api-v1', State: 'running' },
+        { Service: 'sim-approval-api-v2', State: 'running' },
       ]),
-      stderr: "",
+      stderr: '',
     }));
     await bootstrap(exec);
     const res = await app.inject({
-      method: "GET",
-      url: "/admin/compose/replicas",
+      method: 'GET',
+      url: '/admin/compose/replicas',
       headers: internal,
     });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({
       services: {
-        "sim-approval-api-v1": 1,
-        "sim-approval-api-v2": 1,
+        'sim-approval-api-v1': 1,
+        'sim-approval-api-v2': 1,
       },
     });
   });

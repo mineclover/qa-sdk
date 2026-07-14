@@ -1,22 +1,19 @@
 // @def.boundary ingest-system
 // @def.doc authorization-ontology-rls-enforcement
 
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  INGEST_READ_BIT,
-  EVENT_READ_BIT,
-} from "resource-policy-store";
+import { INGEST_READ_BIT, EVENT_READ_BIT } from 'resource-policy-store';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
 function setBitHex(pos: number): string {
   const byteIdx = Math.floor(pos / 8);
   const bitIdx = pos % 8;
   const bytes = new Array(byteIdx + 1).fill(0);
   bytes[byteIdx] = 1 << bitIdx;
-  return bytes.map((b: number) => b.toString(16).padStart(2, "0")).join("");
+  return bytes.map((b: number) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -155,26 +152,36 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ingest.key_observation_prefixes  TO inge
 GRANT SELECT, INSERT                 ON ingest.event_records             TO ingest_app;
 `;
 
-describe.skipIf(!PG_AVAILABLE)("ingest.* RLS — Plan 15b", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
-  const INGEST_APP_PASSWORD = process.env.QA_TEST_PG_INGEST_APP_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('ingest.* RLS — Plan 15b', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
+  const INGEST_APP_PASSWORD = process.env.QA_TEST_PG_INGEST_APP_PASSWORD ?? '';
 
   let adminSql: ReturnType<typeof postgres>;
   let appSql: ReturnType<typeof postgres>;
 
   beforeEach(async () => {
     adminSql = postgres({
-      host: PG_HOST, port: PG_PORT, database: PG_DATABASE,
-      user: PG_USER, password: PG_PASSWORD, max: 3, onnotice: () => {},
+      host: PG_HOST,
+      port: PG_PORT,
+      database: PG_DATABASE,
+      user: PG_USER,
+      password: PG_PASSWORD,
+      max: 3,
+      onnotice: () => {},
     });
     await adminSql.unsafe(RESET_TABLES_DDL);
     appSql = postgres({
-      host: PG_HOST, port: PG_PORT, database: PG_DATABASE,
-      user: "ingest_app", password: INGEST_APP_PASSWORD, max: 3, onnotice: () => {},
+      host: PG_HOST,
+      port: PG_PORT,
+      database: PG_DATABASE,
+      user: 'ingest_app',
+      password: INGEST_APP_PASSWORD,
+      max: 3,
+      onnotice: () => {},
     });
   });
 
@@ -189,25 +196,26 @@ describe.skipIf(!PG_AVAILABLE)("ingest.* RLS — Plan 15b", () => {
     }
   });
 
-  const seedKeyObs = (prefixId: string) => adminSql.unsafe(`
+  const seedKeyObs = (prefixId: string) =>
+    adminSql.unsafe(`
     INSERT INTO ingest.key_observations (prefix_id, version, address, packed_key, first_seen, last_seen)
     VALUES ('${prefixId}', 'v1', 0, '${prefixId}:0', '2026-04-22', '2026-04-22')
   `);
 
-  it("key_observations SELECT — tenant 일치 row 만 가시", async () => {
-    await seedKeyObs("acme_user_login");   // tenant=acme
-    await seedKeyObs("globex_user_login"); // tenant=globex
+  it('key_observations SELECT — tenant 일치 row 만 가시', async () => {
+    await seedKeyObs('acme_user_login'); // tenant=acme
+    await seedKeyObs('globex_user_login'); // tenant=globex
     const mask = setBitHex(INGEST_READ_BIT);
     await appSql.begin(async (tx) => {
       await tx`SELECT set_config('app.tenant_id', 'acme', true)`;
       await tx`SELECT set_config('app.bitmap_mask', ${mask}, true)`;
       const rows = await tx`SELECT prefix_id FROM ingest.key_observations`;
       expect(rows.length).toBe(1);
-      expect(rows[0].prefix_id).toBe("acme_user_login");
+      expect(rows[0].prefix_id).toBe('acme_user_login');
     });
   });
 
-  it("key_observations INSERT — tenant 접두 불일치 차단", async () => {
+  it('key_observations INSERT — tenant 접두 불일치 차단', async () => {
     await expect(
       appSql.begin(async (tx) => {
         await tx`SELECT set_config('app.tenant_id', 'acme', true)`;
@@ -216,8 +224,8 @@ describe.skipIf(!PG_AVAILABLE)("ingest.* RLS — Plan 15b", () => {
     ).rejects.toThrow(/row-level security|row violates/i);
   });
 
-  it("key_observations — tenant 미주입 시 default deny", async () => {
-    await seedKeyObs("acme_user_login");
+  it('key_observations — tenant 미주입 시 default deny', async () => {
+    await seedKeyObs('acme_user_login');
     const mask = setBitHex(INGEST_READ_BIT);
     await appSql.begin(async (tx) => {
       await tx`SELECT set_config('app.bitmap_mask', ${mask}, true)`;
@@ -227,26 +235,27 @@ describe.skipIf(!PG_AVAILABLE)("ingest.* RLS — Plan 15b", () => {
     });
   });
 
-  const seedEvent = (actor: string | null, user: string | null, logId: string) => adminSql.unsafe(`
+  const seedEvent = (actor: string | null, user: string | null, logId: string) =>
+    adminSql.unsafe(`
     INSERT INTO ingest.event_records (log_id, trace_id, span_id, timestamp, record_kind, event_key, event_version, payload_format, payload_encoding, created_at, actor_id, user_id)
-    VALUES ('${logId}', 't', 'sp', '2026-04-22', 'event', 'k', 'v1', 'json', 'utf8', '2026-04-22', ${actor === null ? "NULL" : `'${actor}'`}, ${user === null ? "NULL" : `'${user}'`})
+    VALUES ('${logId}', 't', 'sp', '2026-04-22', 'event', 'k', 'v1', 'json', 'utf8', '2026-04-22', ${actor === null ? 'NULL' : `'${actor}'`}, ${user === null ? 'NULL' : `'${user}'`})
   `);
 
-  it("event_records SELECT — actor 본인 OR user 본인 일치 row 만 가시", async () => {
-    await seedEvent("alice", null, "l1");
-    await seedEvent("bob", null, "l2");
-    await seedEvent(null, "alice", "l3");
+  it('event_records SELECT — actor 본인 OR user 본인 일치 row 만 가시', async () => {
+    await seedEvent('alice', null, 'l1');
+    await seedEvent('bob', null, 'l2');
+    await seedEvent(null, 'alice', 'l3');
     const mask = setBitHex(EVENT_READ_BIT);
     await appSql.begin(async (tx) => {
       await tx`SELECT set_config('app.user_id', 'alice', true)`;
       await tx`SELECT set_config('app.bitmap_mask', ${mask}, true)`;
       const rows = await tx`SELECT log_id FROM ingest.event_records ORDER BY log_id`;
       const ids = rows.map((r) => r.log_id);
-      expect(ids).toEqual(["l1", "l3"]);
+      expect(ids).toEqual(['l1', 'l3']);
     });
   });
 
-  it("event_records INSERT — actor_id 불일치 차단", async () => {
+  it('event_records INSERT — actor_id 불일치 차단', async () => {
     await expect(
       appSql.begin(async (tx) => {
         await tx`SELECT set_config('app.user_id', 'alice', true)`;
@@ -255,9 +264,9 @@ describe.skipIf(!PG_AVAILABLE)("ingest.* RLS — Plan 15b", () => {
     ).rejects.toThrow(/row-level security|row violates/i);
   });
 
-  it("admin bypass — 모든 ingest row 가시", async () => {
-    await seedKeyObs("acme_x");
-    await seedKeyObs("globex_y");
+  it('admin bypass — 모든 ingest row 가시', async () => {
+    await seedKeyObs('acme_x');
+    await seedKeyObs('globex_y');
     await appSql.begin(async (tx) => {
       await tx`SELECT set_config('app.role', 'admin', true)`;
       const rows = await tx`SELECT prefix_id FROM ingest.key_observations ORDER BY prefix_id`;

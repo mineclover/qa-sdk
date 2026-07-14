@@ -1,19 +1,19 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, real } from 'drizzle-orm/sqlite-core';
 
-export const expenseReports = sqliteTable("expense_reports", {
-  id: text("id").primaryKey(),
-  requesterId: text("requester_id").notNull(),
-  amount: real("amount").notNull(),
-  category: text("category").notNull(),
-  description: text("description").notNull(),
-  status: text("status", {
-    enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+export const expenseReports = sqliteTable('expense_reports', {
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull(),
+  amount: real('amount').notNull(),
+  category: text('category').notNull(),
+  description: text('description').notNull(),
+  status: text('status', {
+    enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
   }).notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
 export const SIM_APPROVAL_EXPENSE_SQLITE_DDL = `

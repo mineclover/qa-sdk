@@ -7,8 +7,8 @@
  * OutputMutation의 set/unset을 StateStore에 반영한다.
  */
 
-import type { OutputMutation } from "./transition.types.js";
-import type { StateStore } from "./state-store.js";
+import type { OutputMutation } from './transition.types.js';
+import type { StateStore } from './state-store.js';
 
 /**
  * output 변경을 StateStore에 적용하고 적용 후 스냅샷을 반환한다.

@@ -64,7 +64,7 @@ export interface RelationAxisValidation {
 }
 
 export interface SchemaValidationIssue {
-  level: "error" | "warning";
+  level: 'error' | 'warning';
   code: string;
   message: string;
   path: string;
@@ -76,7 +76,7 @@ export interface SchemaValidationResult {
 }
 
 function createIssue(
-  level: "error" | "warning",
+  level: 'error' | 'warning',
   code: string,
   message: string,
   path: string,
@@ -86,7 +86,7 @@ function createIssue(
 
 function finalizeIssues(issues: SchemaValidationIssue[]): SchemaValidationResult {
   return {
-    valid: issues.every((issue) => issue.level !== "error"),
+    valid: issues.every((issue) => issue.level !== 'error'),
     issues,
   };
 }
@@ -127,7 +127,7 @@ export function resolveRelationCategory(
   resolver: RelationCategoryResolver,
   category: string,
 ): RelationCategorySchema | undefined {
-  if (typeof resolver === "function") {
+  if (typeof resolver === 'function') {
     return resolver(category);
   }
 
@@ -139,32 +139,37 @@ export function validateAxisSchema(axis: AxisSchema): SchemaValidationResult {
   const uniqueValues = new Set(axis.values);
 
   if (axis.id.trim().length === 0) {
-    issues.push(createIssue("error", "axis-id-empty", "Axis id must not be empty", "axis.id"));
+    issues.push(createIssue('error', 'axis-id-empty', 'Axis id must not be empty', 'axis.id'));
   }
 
   if (axis.values.length === 0) {
     issues.push(
-      createIssue("error", "axis-values-empty", "Axis must define at least one value", `${axis.id}.values`),
+      createIssue(
+        'error',
+        'axis-values-empty',
+        'Axis must define at least one value',
+        `${axis.id}.values`,
+      ),
     );
   }
 
   if (uniqueValues.size !== axis.values.length) {
     issues.push(
       createIssue(
-        "error",
-        "axis-values-duplicate",
-        "Axis values must be unique",
+        'error',
+        'axis-values-duplicate',
+        'Axis values must be unique',
         `${axis.id}.values`,
       ),
     );
   }
 
-  if (typeof axis.capacity === "number" && axis.capacity < axis.values.length) {
+  if (typeof axis.capacity === 'number' && axis.capacity < axis.values.length) {
     issues.push(
       createIssue(
-        "error",
-        "axis-capacity-too-small",
-        "Axis capacity must be greater than or equal to the number of values",
+        'error',
+        'axis-capacity-too-small',
+        'Axis capacity must be greater than or equal to the number of values',
         `${axis.id}.capacity`,
       ),
     );
@@ -183,16 +188,16 @@ export function validateTaxonomySchema(
 
   if (taxonomy.id.trim().length === 0) {
     issues.push(
-      createIssue("error", "taxonomy-id-empty", "Taxonomy id must not be empty", "taxonomy.id"),
+      createIssue('error', 'taxonomy-id-empty', 'Taxonomy id must not be empty', 'taxonomy.id'),
     );
   }
 
   if (taxonomy.axisIds.length === 0) {
     issues.push(
       createIssue(
-        "error",
-        "taxonomy-axes-empty",
-        "Taxonomy must reference at least one axis",
+        'error',
+        'taxonomy-axes-empty',
+        'Taxonomy must reference at least one axis',
         `${taxonomy.id}.axisIds`,
       ),
     );
@@ -201,9 +206,9 @@ export function validateTaxonomySchema(
   if (uniqueAxisIds.size !== taxonomy.axisIds.length) {
     issues.push(
       createIssue(
-        "error",
-        "taxonomy-axes-duplicate",
-        "Taxonomy axisIds must be unique",
+        'error',
+        'taxonomy-axes-duplicate',
+        'Taxonomy axisIds must be unique',
         `${taxonomy.id}.axisIds`,
       ),
     );
@@ -213,8 +218,8 @@ export function validateTaxonomySchema(
     if (!axes.has(axisId)) {
       issues.push(
         createIssue(
-          "error",
-          "taxonomy-axis-missing",
+          'error',
+          'taxonomy-axis-missing',
           `Taxonomy references unknown axis "${axisId}"`,
           `${taxonomy.id}.axisIds`,
         ),
@@ -226,8 +231,8 @@ export function validateTaxonomySchema(
     if (!uniqueAxisIds.has(axisId)) {
       issues.push(
         createIssue(
-          "error",
-          "taxonomy-identity-axis-missing",
+          'error',
+          'taxonomy-identity-axis-missing',
           `identityAxisIds entry "${axisId}" must also exist in axisIds`,
           `${taxonomy.id}.identityAxisIds`,
         ),
@@ -253,10 +258,10 @@ export function validateRelationCategorySchema(
   if (definition.category.trim().length === 0) {
     issues.push(
       createIssue(
-        "error",
-        "relation-category-empty",
-        "Relation category must not be empty",
-        "relation.category",
+        'error',
+        'relation-category-empty',
+        'Relation category must not be empty',
+        'relation.category',
       ),
     );
   }
@@ -264,9 +269,9 @@ export function validateRelationCategorySchema(
   if (definition.requiredAxes.length === 0) {
     issues.push(
       createIssue(
-        "warning",
-        "relation-required-axes-empty",
-        "Relation category should define at least one required axis",
+        'warning',
+        'relation-required-axes-empty',
+        'Relation category should define at least one required axis',
         `${definition.category}.requiredAxes`,
       ),
     );
@@ -275,9 +280,9 @@ export function validateRelationCategorySchema(
   if (uniqueAxes.size !== allReferencedAxes.length) {
     issues.push(
       createIssue(
-        "error",
-        "relation-axes-overlap",
-        "Relation category axes must not overlap across required/optional/forbidden",
+        'error',
+        'relation-axes-overlap',
+        'Relation category axes must not overlap across required/optional/forbidden',
         `${definition.category}.axes`,
       ),
     );
@@ -287,8 +292,8 @@ export function validateRelationCategorySchema(
     if (!axes.has(axisId)) {
       issues.push(
         createIssue(
-          "error",
-          "relation-axis-missing",
+          'error',
+          'relation-axis-missing',
           `Relation category references unknown axis "${axisId}"`,
           `${definition.category}.axes`,
         ),
@@ -308,10 +313,10 @@ export function validateTraversalSchema(
   if (traversal.purpose.trim().length === 0) {
     issues.push(
       createIssue(
-        "error",
-        "traversal-purpose-empty",
-        "Traversal purpose must not be empty",
-        "traversal.purpose",
+        'error',
+        'traversal-purpose-empty',
+        'Traversal purpose must not be empty',
+        'traversal.purpose',
       ),
     );
   }
@@ -320,8 +325,8 @@ export function validateTraversalSchema(
     if (!relationCategories.has(category)) {
       issues.push(
         createIssue(
-          "error",
-          "traversal-relation-category-missing",
+          'error',
+          'traversal-relation-category-missing',
           `Traversal references unknown relation category "${category}"`,
           `${traversal.purpose}.allowedRelationCategories`,
         ),
@@ -344,7 +349,12 @@ export function validateOperationalOntologySchema(
   for (const axis of schema.axes) {
     if (axisMap.has(axis.id)) {
       issues.push(
-        createIssue("error", "axis-id-duplicate", `Duplicate axis id "${axis.id}"`, `axes.${axis.id}`),
+        createIssue(
+          'error',
+          'axis-id-duplicate',
+          `Duplicate axis id "${axis.id}"`,
+          `axes.${axis.id}`,
+        ),
       );
     } else {
       axisMap.set(axis.id, axis);
@@ -357,8 +367,8 @@ export function validateOperationalOntologySchema(
     if (taxonomyIds.has(taxonomy.id)) {
       issues.push(
         createIssue(
-          "error",
-          "taxonomy-id-duplicate",
+          'error',
+          'taxonomy-id-duplicate',
           `Duplicate taxonomy id "${taxonomy.id}"`,
           `taxonomies.${taxonomy.id}`,
         ),
@@ -374,8 +384,8 @@ export function validateOperationalOntologySchema(
     if (relationCategoryMap.has(definition.category)) {
       issues.push(
         createIssue(
-          "error",
-          "relation-category-duplicate",
+          'error',
+          'relation-category-duplicate',
           `Duplicate relation category "${definition.category}"`,
           `relationCategories.${definition.category}`,
         ),
@@ -391,8 +401,8 @@ export function validateOperationalOntologySchema(
     if (traversalPurposes.has(traversal.purpose)) {
       issues.push(
         createIssue(
-          "error",
-          "traversal-purpose-duplicate",
+          'error',
+          'traversal-purpose-duplicate',
           `Duplicate traversal purpose "${traversal.purpose}"`,
           `traversals.${traversal.purpose}`,
         ),

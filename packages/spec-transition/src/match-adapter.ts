@@ -8,8 +8,8 @@
  * CoordinatePattern의 차원 값을 StepConstraint로 변환.
  */
 
-import type { ScenarioStep, StepConstraint } from "@qa-sdk/core";
-import type { MatchPattern, CoordinatePattern } from "./transition.types.js";
+import type { ScenarioStep, StepConstraint } from '@qa-sdk/core';
+import type { MatchPattern, CoordinatePattern } from './transition.types.js';
 
 /**
  * CoordinatePattern → event_key 파생.
@@ -19,7 +19,7 @@ import type { MatchPattern, CoordinatePattern } from "./transition.types.js";
  */
 export function deriveEventKey(coord: CoordinatePattern): string {
   const keys = Object.keys(coord).toSorted();
-  return keys.map((k) => coord[k]).join(".");
+  return keys.map((k) => coord[k]).join('.');
 }
 
 /**
@@ -30,7 +30,7 @@ export function deriveEventKey(coord: CoordinatePattern): string {
 export function coordToConstraints(coord: CoordinatePattern): StepConstraint[] {
   return Object.entries(coord).map(([dim, value]) => ({
     field: `address_context.${dim}`,
-    op: "eq" as const,
+    op: 'eq' as const,
     value,
   }));
 }
@@ -56,12 +56,12 @@ export function transitionMatchToScenarioSteps(
       id: stepId,
       event_key: deriveEventKey(coord),
       required: true,
-      kind: "sequence",
+      kind: 'sequence',
       constraints: coordToConstraints(coord),
     };
 
     // ordered/single: next로 다음 step 연결
-    if (!isLast && (match.mode === "ordered" || match.mode === "single")) {
+    if (!isLast && (match.mode === 'ordered' || match.mode === 'single')) {
       return Object.assign({}, step, { next: [`${transitionName}__step_${i + 1}`] });
     }
 

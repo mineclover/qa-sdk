@@ -1,24 +1,26 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { sql } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { sql } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createSqliteTransactionPort,
   createPgTransactionPort,
   type TransactionPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
 export function createRoleSqliteTransactionPort(db: BetterSQLite3Database): TransactionPort {
   return createSqliteTransactionPort(db as unknown as { run: (q: unknown) => unknown }, sql);
 }
 
 export function createRolePgTransactionPort(db: PostgresJsDatabase): TransactionPort {
-  return createPgTransactionPort(db as unknown as { transaction: <T>(h: (tx: unknown) => Promise<T> | T) => Promise<T> });
+  return createPgTransactionPort(
+    db as unknown as { transaction: <T>(h: (tx: unknown) => Promise<T> | T) => Promise<T> },
+  );
 }
 
-export type RoleDialect = "sqlite" | "pg";
+export type RoleDialect = 'sqlite' | 'pg';
 
 export interface RoleTransactionFactoryOpts {
   readonly dialect: RoleDialect;
@@ -26,7 +28,10 @@ export interface RoleTransactionFactoryOpts {
 }
 
 export function createRoleTransactionPort(opts: RoleTransactionFactoryOpts): TransactionPort {
-  if (opts.dialect === "sqlite") return createRoleSqliteTransactionPort(opts.db as BetterSQLite3Database);
-  if (opts.dialect === "pg") return createRolePgTransactionPort(opts.db as PostgresJsDatabase);
-  throw new Error(`createRoleTransactionPort: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  if (opts.dialect === 'sqlite')
+    return createRoleSqliteTransactionPort(opts.db as BetterSQLite3Database);
+  if (opts.dialect === 'pg') return createRolePgTransactionPort(opts.db as PostgresJsDatabase);
+  throw new Error(
+    `createRoleTransactionPort: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

@@ -5,9 +5,9 @@
 // 시뮬 docker-compose 환경에서 service container 이름 → upstream URL 합성.
 // 운영 환경에서는 service-discovery / DNS 사용. 본 sub-project 범위는 시뮬 내부.
 
-import { type Provider } from "@nestjs/common";
-import { type PortRegistryPort } from "../action/action-executor.service.js";
-import { PORT_REGISTRY_TOKEN } from "./tokens.js";
+import { type Provider } from '@nestjs/common';
+import { type PortRegistryPort } from '../action/action-executor.service.js';
+import { PORT_REGISTRY_TOKEN } from './tokens.js';
 
 const APPROVAL_API_PORT = 4600;
 

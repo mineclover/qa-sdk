@@ -1,15 +1,15 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { DimRef } from "index-meta";
+import type { DimRef } from 'index-meta';
 
 // ── Prefix Owner ──────────────────────────────────────────
 
 export interface PrefixOwnerRecord {
   readonly prefix: string;
   readonly owner: string;
-  readonly kind: "leaf" | "composite";
-  readonly numberType: "number" | "bigint";
+  readonly kind: 'leaf' | 'composite';
+  readonly numberType: 'number' | 'bigint';
   readonly createdAt: string;
   /** prefix 프로필 — category, layer, detailKind 등 */
   readonly meta?: PrefixProfileMeta;
@@ -36,7 +36,7 @@ export interface DraftLock {
 
 // ── Diagnostics ───────────────────────────────────────────
 
-export type DiagnosticLevel = "error" | "warn" | "info";
+export type DiagnosticLevel = 'error' | 'warn' | 'info';
 
 export interface DiagnosticEntry {
   readonly level: DiagnosticLevel;
@@ -57,7 +57,7 @@ export interface ImpactEntry {
   readonly strideChanged: boolean;
   readonly currentProduct: number;
   readonly newProduct: number;
-  readonly numberType: "number" | "bigint";
+  readonly numberType: 'number' | 'bigint';
   readonly migrationRequired: boolean;
 }
 
@@ -74,9 +74,9 @@ export interface DraftInfo {
   readonly prefix: string;
   readonly versionId: string;
   readonly owner: string;
-  readonly kind: "leaf" | "composite";
+  readonly kind: 'leaf' | 'composite';
   readonly capacity: number;
-  readonly status: "draft" | "locked";
+  readonly status: 'draft' | 'locked';
 }
 
 export interface AnalyzeResult {
@@ -93,12 +93,7 @@ export interface AnalyzeResult {
 
 // ── Extended Version (API 응답용) ─────────────────────────
 
-export type ExtendedVersionStatus =
-  | "draft"
-  | "locked"
-  | "released"
-  | "active"
-  | "deprecated";
+export type ExtendedVersionStatus = 'draft' | 'locked' | 'released' | 'active' | 'deprecated';
 
 export interface ExtendedVersionRecord {
   readonly prefix: string;
@@ -106,7 +101,7 @@ export interface ExtendedVersionRecord {
   readonly status: ExtendedVersionStatus;
   readonly baseVersionId: string | null;
   readonly capacity: number;
-  readonly deactivationMode: "strict" | "flexible";
+  readonly deactivationMode: 'strict' | 'flexible';
   readonly refs?: readonly DimRef[];
   readonly shape?: number[];
   readonly stride?: number[];

@@ -20,13 +20,10 @@ export interface MotionWorkspaceWsSceneLockInfo {
   readonly userId: string;
 }
 
-export type MotionWorkspaceWsSceneUnlockReason =
-  | "explicit"
-  | "disconnect"
-  | "timeout";
+export type MotionWorkspaceWsSceneUnlockReason = 'explicit' | 'disconnect' | 'timeout';
 
 export interface MotionWorkspaceWsConnectedMessage {
-  readonly type: "connected";
+  readonly type: 'connected';
   readonly workspaceId: string;
   readonly userId: string;
   readonly sceneLocks: readonly MotionWorkspaceWsSceneLockInfo[];
@@ -34,46 +31,46 @@ export interface MotionWorkspaceWsConnectedMessage {
 }
 
 export interface MotionWorkspaceWsBroadcastMessage {
-  readonly type: "workspace-message";
+  readonly type: 'workspace-message';
   readonly workspaceId: string;
   readonly userId: string;
   readonly payload: unknown;
 }
 
 export interface MotionWorkspaceWsSceneLockMessage extends MotionWorkspaceWsSceneLockInfo {
-  readonly type: "scene:lock";
+  readonly type: 'scene:lock';
   readonly workspaceId: string;
   readonly holders: readonly string[];
   readonly warning: boolean;
 }
 
 export interface MotionWorkspaceWsSceneUnlockMessage extends MotionWorkspaceWsSceneLockInfo {
-  readonly type: "scene:unlock";
+  readonly type: 'scene:unlock';
   readonly workspaceId: string;
   readonly holders: readonly string[];
   readonly reason: MotionWorkspaceWsSceneUnlockReason;
 }
 
 export interface MotionWorkspaceWsPresenceMessage extends MotionWorkspacePresenceInfo {
-  readonly type: "presence";
+  readonly type: 'presence';
   readonly workspaceId: string;
 }
 
 export interface MotionWorkspaceWsSceneUpdatedMessage {
-  readonly type: "scene:updated";
+  readonly type: 'scene:updated';
   readonly workspaceId: string;
   readonly sceneId: string;
   readonly revision: number;
 }
 
 export interface MotionWorkspaceWsResourceUpdatedMessage {
-  readonly type: "resource:updated";
+  readonly type: 'resource:updated';
   readonly workspaceId: string;
   readonly revision: number;
 }
 
 export interface MotionWorkspaceWsErrorMessage {
-  readonly type: "error";
+  readonly type: 'error';
   readonly code: string;
   readonly message: string;
 }
@@ -118,10 +115,10 @@ export interface MotionWorkspaceWsMessageEvent {
 
 export interface MotionWorkspaceWebSocketLike {
   readonly readyState: number;
-  addEventListener(type: "open", listener: (event: unknown) => void): void;
-  addEventListener(type: "message", listener: (event: MotionWorkspaceWsMessageEvent) => void): void;
-  addEventListener(type: "close", listener: (event: MotionWorkspaceWsCloseEvent) => void): void;
-  addEventListener(type: "error", listener: (event: unknown) => void): void;
+  addEventListener(type: 'open', listener: (event: unknown) => void): void;
+  addEventListener(type: 'message', listener: (event: MotionWorkspaceWsMessageEvent) => void): void;
+  addEventListener(type: 'close', listener: (event: MotionWorkspaceWsCloseEvent) => void): void;
+  addEventListener(type: 'error', listener: (event: unknown) => void): void;
   send(data: string): void;
   close(code?: number, reason?: string): void;
 }
@@ -161,26 +158,26 @@ interface ResolvedMotionWorkspaceWsReconnectOptions {
 }
 
 interface MotionWorkspaceWsSceneControlMessage {
-  readonly type: "scene:lock" | "scene:unlock";
+  readonly type: 'scene:lock' | 'scene:unlock';
   readonly sceneId: string;
   readonly userId: string;
 }
 
 interface MotionWorkspaceWsPresenceClientMessage extends MotionWorkspaceWsPresenceInput {
-  readonly type: "presence";
+  readonly type: 'presence';
   readonly userId: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function isStringArray(value: unknown): value is readonly string[] {
@@ -203,113 +200,125 @@ function parseOptionalString(value: unknown): string | undefined {
 }
 
 function isPresenceCursor(value: unknown): value is MotionWorkspacePresenceCursor {
-  return isRecord(value)
-    && isFiniteNumber(value["x"])
-    && isFiniteNumber(value["y"]);
+  return isRecord(value) && isFiniteNumber(value['x']) && isFiniteNumber(value['y']);
 }
 
 function isPresenceInfo(value: unknown): value is MotionWorkspacePresenceInfo {
-  return isRecord(value)
-    && isNonEmptyString(value["userId"])
-    && (
-      value["activeSceneId"] === undefined
-      || isNonEmptyString(value["activeSceneId"])
-    )
-    && (
-      value["cursor"] === undefined
-      || isPresenceCursor(value["cursor"])
-    );
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value['userId']) &&
+    (value['activeSceneId'] === undefined || isNonEmptyString(value['activeSceneId'])) &&
+    (value['cursor'] === undefined || isPresenceCursor(value['cursor']))
+  );
 }
 
 function isSceneLockInfo(value: unknown): value is MotionWorkspaceWsSceneLockInfo {
-  return isRecord(value)
-    && isNonEmptyString(value["sceneId"])
-    && isNonEmptyString(value["userId"]);
+  return isRecord(value) && isNonEmptyString(value['sceneId']) && isNonEmptyString(value['userId']);
 }
 
 function isConnectedMessage(value: unknown): value is MotionWorkspaceWsConnectedMessage {
-  return isRecord(value)
-    && value["type"] === "connected"
-    && isNonEmptyString(value["workspaceId"])
-    && isNonEmptyString(value["userId"])
-    && Array.isArray(value["sceneLocks"])
-    && value["sceneLocks"].every(isSceneLockInfo)
-    && Array.isArray(value["presences"])
-    && value["presences"].every(isPresenceInfo);
+  return (
+    isRecord(value) &&
+    value['type'] === 'connected' &&
+    isNonEmptyString(value['workspaceId']) &&
+    isNonEmptyString(value['userId']) &&
+    Array.isArray(value['sceneLocks']) &&
+    value['sceneLocks'].every(isSceneLockInfo) &&
+    Array.isArray(value['presences']) &&
+    value['presences'].every(isPresenceInfo)
+  );
 }
 
 function isBroadcastMessage(value: unknown): value is MotionWorkspaceWsBroadcastMessage {
-  return isRecord(value)
-    && value["type"] === "workspace-message"
-    && isNonEmptyString(value["workspaceId"])
-    && isNonEmptyString(value["userId"])
-    && "payload" in value;
+  return (
+    isRecord(value) &&
+    value['type'] === 'workspace-message' &&
+    isNonEmptyString(value['workspaceId']) &&
+    isNonEmptyString(value['userId']) &&
+    'payload' in value
+  );
 }
 
 function isSceneLockMessage(value: unknown): value is MotionWorkspaceWsSceneLockMessage {
-  return isRecord(value)
-    && value["type"] === "scene:lock"
-    && isNonEmptyString(value["workspaceId"])
-    && isNonEmptyString(value["sceneId"])
-    && isNonEmptyString(value["userId"])
-    && isStringArray(value["holders"])
-    && typeof value["warning"] === "boolean";
+  return (
+    isRecord(value) &&
+    value['type'] === 'scene:lock' &&
+    isNonEmptyString(value['workspaceId']) &&
+    isNonEmptyString(value['sceneId']) &&
+    isNonEmptyString(value['userId']) &&
+    isStringArray(value['holders']) &&
+    typeof value['warning'] === 'boolean'
+  );
 }
 
 function isSceneUnlockReason(value: unknown): value is MotionWorkspaceWsSceneUnlockReason {
-  return value === "explicit" || value === "disconnect" || value === "timeout";
+  return value === 'explicit' || value === 'disconnect' || value === 'timeout';
 }
 
 function isSceneUnlockMessage(value: unknown): value is MotionWorkspaceWsSceneUnlockMessage {
-  return isRecord(value)
-    && value["type"] === "scene:unlock"
-    && isNonEmptyString(value["workspaceId"])
-    && isNonEmptyString(value["sceneId"])
-    && isNonEmptyString(value["userId"])
-    && isStringArray(value["holders"])
-    && isSceneUnlockReason(value["reason"]);
+  return (
+    isRecord(value) &&
+    value['type'] === 'scene:unlock' &&
+    isNonEmptyString(value['workspaceId']) &&
+    isNonEmptyString(value['sceneId']) &&
+    isNonEmptyString(value['userId']) &&
+    isStringArray(value['holders']) &&
+    isSceneUnlockReason(value['reason'])
+  );
 }
 
 function isPresenceMessage(value: unknown): value is MotionWorkspaceWsPresenceMessage {
-  return isRecord(value)
-    && value["type"] === "presence"
-    && isNonEmptyString(value["workspaceId"])
-    && isPresenceInfo(value);
+  return (
+    isRecord(value) &&
+    value['type'] === 'presence' &&
+    isNonEmptyString(value['workspaceId']) &&
+    isPresenceInfo(value)
+  );
 }
 
 function isSceneUpdatedMessage(value: unknown): value is MotionWorkspaceWsSceneUpdatedMessage {
-  return isRecord(value)
-    && value["type"] === "scene:updated"
-    && isNonEmptyString(value["workspaceId"])
-    && isNonEmptyString(value["sceneId"])
-    && isFiniteNumber(value["revision"]);
+  return (
+    isRecord(value) &&
+    value['type'] === 'scene:updated' &&
+    isNonEmptyString(value['workspaceId']) &&
+    isNonEmptyString(value['sceneId']) &&
+    isFiniteNumber(value['revision'])
+  );
 }
 
-function isResourceUpdatedMessage(value: unknown): value is MotionWorkspaceWsResourceUpdatedMessage {
-  return isRecord(value)
-    && value["type"] === "resource:updated"
-    && isNonEmptyString(value["workspaceId"])
-    && isFiniteNumber(value["revision"]);
+function isResourceUpdatedMessage(
+  value: unknown,
+): value is MotionWorkspaceWsResourceUpdatedMessage {
+  return (
+    isRecord(value) &&
+    value['type'] === 'resource:updated' &&
+    isNonEmptyString(value['workspaceId']) &&
+    isFiniteNumber(value['revision'])
+  );
 }
 
 function isErrorMessage(value: unknown): value is MotionWorkspaceWsErrorMessage {
-  return isRecord(value)
-    && value["type"] === "error"
-    && isNonEmptyString(value["code"])
-    && isNonEmptyString(value["message"]);
+  return (
+    isRecord(value) &&
+    value['type'] === 'error' &&
+    isNonEmptyString(value['code']) &&
+    isNonEmptyString(value['message'])
+  );
 }
 
 export function isMotionWorkspaceWsServerMessage(
   value: unknown,
 ): value is MotionWorkspaceWsServerMessage {
-  return isConnectedMessage(value)
-    || isBroadcastMessage(value)
-    || isSceneLockMessage(value)
-    || isSceneUnlockMessage(value)
-    || isPresenceMessage(value)
-    || isSceneUpdatedMessage(value)
-    || isResourceUpdatedMessage(value)
-    || isErrorMessage(value);
+  return (
+    isConnectedMessage(value) ||
+    isBroadcastMessage(value) ||
+    isSceneLockMessage(value) ||
+    isSceneUnlockMessage(value) ||
+    isPresenceMessage(value) ||
+    isSceneUpdatedMessage(value) ||
+    isResourceUpdatedMessage(value) ||
+    isErrorMessage(value)
+  );
 }
 
 export function parseMotionWorkspaceWsMessage(
@@ -328,15 +337,18 @@ export function parseMotionWorkspaceWsMessage(
 function normalizeReconnectOptions(
   options: MotionWorkspaceWsReconnectOptions | undefined,
 ): ResolvedMotionWorkspaceWsReconnectOptions {
-  const initialDelayMs = isFiniteNumber(options?.initialDelayMs) && options.initialDelayMs >= 0
-    ? options.initialDelayMs
-    : DEFAULT_RECONNECT_INITIAL_DELAY_MS;
-  const maxDelayMs = isFiniteNumber(options?.maxDelayMs) && options.maxDelayMs >= initialDelayMs
-    ? options.maxDelayMs
-    : DEFAULT_RECONNECT_MAX_DELAY_MS;
-  const multiplier = isFiniteNumber(options?.multiplier) && options.multiplier >= 1
-    ? options.multiplier
-    : DEFAULT_RECONNECT_MULTIPLIER;
+  const initialDelayMs =
+    isFiniteNumber(options?.initialDelayMs) && options.initialDelayMs >= 0
+      ? options.initialDelayMs
+      : DEFAULT_RECONNECT_INITIAL_DELAY_MS;
+  const maxDelayMs =
+    isFiniteNumber(options?.maxDelayMs) && options.maxDelayMs >= initialDelayMs
+      ? options.maxDelayMs
+      : DEFAULT_RECONNECT_MAX_DELAY_MS;
+  const multiplier =
+    isFiniteNumber(options?.multiplier) && options.multiplier >= 1
+      ? options.multiplier
+      : DEFAULT_RECONNECT_MULTIPLIER;
 
   return {
     initialDelayMs,
@@ -353,7 +365,7 @@ function computeReconnectDelay(
     return options.initialDelayMs;
   }
 
-  const scaled = options.initialDelayMs * (options.multiplier ** (attempt - 1));
+  const scaled = options.initialDelayMs * options.multiplier ** (attempt - 1);
   return Math.min(options.maxDelayMs, scaled);
 }
 
@@ -362,8 +374,8 @@ function resolveBaseUrl(baseUrl: string): URL {
     return new URL(baseUrl);
   } catch {
     const locationHref = globalThis.location?.href;
-    if (typeof locationHref !== "string") {
-      throw new Error("상대 baseUrl은 globalThis.location이 있는 환경에서만 사용할 수 있습니다.");
+    if (typeof locationHref !== 'string') {
+      throw new Error('상대 baseUrl은 globalThis.location이 있는 환경에서만 사용할 수 있습니다.');
     }
     return new URL(baseUrl, locationHref);
   }
@@ -375,15 +387,15 @@ export function createMotionWorkspaceWsUrl(
   userId: string,
 ): string {
   const url = resolveBaseUrl(baseUrl);
-  const normalizedPath = `${url.pathname.replace(/\/+$/, "")}/workspaces/${encodeURIComponent(workspaceId)}/ws`;
-  url.pathname = normalizedPath.replace(/\/{2,}/g, "/");
-  url.search = "";
-  url.searchParams.set("userId", userId);
+  const normalizedPath = `${url.pathname.replace(/\/+$/, '')}/workspaces/${encodeURIComponent(workspaceId)}/ws`;
+  url.pathname = normalizedPath.replace(/\/{2,}/g, '/');
+  url.search = '';
+  url.searchParams.set('userId', userId);
 
-  if (url.protocol === "http:") {
-    url.protocol = "ws:";
-  } else if (url.protocol === "https:") {
-    url.protocol = "wss:";
+  if (url.protocol === 'http:') {
+    url.protocol = 'ws:';
+  } else if (url.protocol === 'https:') {
+    url.protocol = 'wss:';
   }
 
   return url.toString();
@@ -396,9 +408,9 @@ function resolveWebSocketFactory(
     return createWebSocket;
   }
 
-  if (typeof globalThis.WebSocket !== "function") {
+  if (typeof globalThis.WebSocket !== 'function') {
     throw new Error(
-      "global WebSocket가 없어 WS 연결을 초기화할 수 없습니다. createWebSocket 옵션을 제공하세요.",
+      'global WebSocket가 없어 WS 연결을 초기화할 수 없습니다. createWebSocket 옵션을 제공하세요.',
     );
   }
 
@@ -422,8 +434,8 @@ export class MotionWorkspaceWsConnection {
   private closedByClient = false;
 
   constructor(options: MotionWorkspaceWsConnectionOptions) {
-    this.workspaceId = normalizeNonEmptyString(options.workspaceId, "workspaceId");
-    this.userId = normalizeNonEmptyString(options.handlers.userId, "userId");
+    this.workspaceId = normalizeNonEmptyString(options.workspaceId, 'workspaceId');
+    this.userId = normalizeNonEmptyString(options.handlers.userId, 'userId');
     this.url = createMotionWorkspaceWsUrl(options.baseUrl, this.workspaceId, this.userId);
     this.handlers = options.handlers;
     this.createWebSocket = resolveWebSocketFactory(options.handlers.createWebSocket);
@@ -435,7 +447,7 @@ export class MotionWorkspaceWsConnection {
     return this.socket?.readyState === WS_OPEN_READY_STATE;
   }
 
-  disconnect(code = 1000, reason = "client_disconnect"): void {
+  disconnect(code = 1000, reason = 'client_disconnect'): void {
     this.closedByClient = true;
     this.clearReconnectTimer();
 
@@ -449,20 +461,20 @@ export class MotionWorkspaceWsConnection {
   }
 
   lockScene(sceneId: string): void {
-    const normalizedSceneId = normalizeNonEmptyString(sceneId, "sceneId");
+    const normalizedSceneId = normalizeNonEmptyString(sceneId, 'sceneId');
     this.desiredSceneLocks.add(normalizedSceneId);
     this.sendJson({
-      type: "scene:lock",
+      type: 'scene:lock',
       sceneId: normalizedSceneId,
       userId: this.userId,
     } satisfies MotionWorkspaceWsSceneControlMessage);
   }
 
   unlockScene(sceneId: string): void {
-    const normalizedSceneId = normalizeNonEmptyString(sceneId, "sceneId");
+    const normalizedSceneId = normalizeNonEmptyString(sceneId, 'sceneId');
     this.desiredSceneLocks.delete(normalizedSceneId);
     this.sendJson({
-      type: "scene:unlock",
+      type: 'scene:unlock',
       sceneId: normalizedSceneId,
       userId: this.userId,
     } satisfies MotionWorkspaceWsSceneControlMessage);
@@ -471,10 +483,10 @@ export class MotionWorkspaceWsConnection {
   sendPresence(input: MotionWorkspaceWsPresenceInput = {}): void {
     const activeSceneId = parseOptionalString(input.activeSceneId);
     if (input.activeSceneId !== undefined && activeSceneId === undefined) {
-      throw new Error("activeSceneId는 비어 있을 수 없습니다.");
+      throw new Error('activeSceneId는 비어 있을 수 없습니다.');
     }
     if (input.cursor !== undefined && !isPresenceCursor(input.cursor)) {
-      throw new Error("cursor는 { x, y } 형식의 finite number여야 합니다.");
+      throw new Error('cursor는 { x, y } 형식의 finite number여야 합니다.');
     }
 
     this.desiredPresence = {
@@ -483,7 +495,7 @@ export class MotionWorkspaceWsConnection {
     };
 
     this.sendJson({
-      type: "presence",
+      type: 'presence',
       userId: this.userId,
       ...this.desiredPresence,
     } satisfies MotionWorkspaceWsPresenceClientMessage);
@@ -502,7 +514,7 @@ export class MotionWorkspaceWsConnection {
     try {
       const socket = await this.createWebSocket(this.url);
       if (this.closedByClient || generation !== this.generation) {
-        socket.close(1000, "stale_connection");
+        socket.close(1000, 'stale_connection');
         return;
       }
 
@@ -513,73 +525,68 @@ export class MotionWorkspaceWsConnection {
     }
   }
 
-  private attachSocket(
-    socket: MotionWorkspaceWebSocketLike,
-    generation: number,
-  ): void {
+  private attachSocket(socket: MotionWorkspaceWebSocketLike, generation: number): void {
     this.socket = socket;
 
-    socket.addEventListener("open", () => {
+    socket.addEventListener('open', () => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
       this.clearReconnectTimer();
     });
 
-    socket.addEventListener("message", (event) => {
+    socket.addEventListener('message', (event) => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
 
-      const raw = typeof event.data === "string" ? event.data : String(event.data);
+      const raw = typeof event.data === 'string' ? event.data : String(event.data);
       const message = parseMotionWorkspaceWsMessage(raw);
       if (!message) {
-        this.handlers.onTransportError?.(
-          new Error(`알 수 없는 WS 메시지를 수신했습니다: ${raw}`),
-        );
+        this.handlers.onTransportError?.(new Error(`알 수 없는 WS 메시지를 수신했습니다: ${raw}`));
         return;
       }
 
       this.handlers.onMessage?.(message);
 
       switch (message.type) {
-        case "connected":
+        case 'connected':
           this.reconnectAttempt = 0;
           this.handlers.onConnected?.(message);
           this.flushDesiredState();
           return;
-        case "workspace-message":
+        case 'workspace-message':
           this.handlers.onWorkspaceMessage?.(message);
           return;
-        case "scene:lock":
+        case 'scene:lock':
           this.handlers.onSceneLock?.(message);
           return;
-        case "scene:unlock":
+        case 'scene:unlock':
           this.handlers.onSceneUnlock?.(message);
           return;
-        case "presence":
+        case 'presence':
           this.handlers.onPresence?.(message);
           return;
-        case "scene:updated":
+        case 'scene:updated':
           this.handlers.onSceneUpdated?.(message);
           return;
-        case "resource:updated":
+        case 'resource:updated':
           this.handlers.onResourceUpdated?.(message);
           return;
-        case "error":
+        case 'error':
           this.handlers.onServerError?.(message);
           return;
       }
     });
 
-    socket.addEventListener("error", (event) => {
+    socket.addEventListener('error', (event) => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
       this.handlers.onTransportError?.(event);
     });
 
-    socket.addEventListener("close", (event) => {
+    socket.addEventListener('close', (event) => {
       if (!this.isCurrentSocket(socket, generation)) {
         return;
       }
@@ -592,10 +599,7 @@ export class MotionWorkspaceWsConnection {
     });
   }
 
-  private isCurrentSocket(
-    socket: MotionWorkspaceWebSocketLike,
-    generation: number,
-  ): boolean {
+  private isCurrentSocket(socket: MotionWorkspaceWebSocketLike, generation: number): boolean {
     return this.socket === socket && generation === this.generation;
   }
 
@@ -623,7 +627,7 @@ export class MotionWorkspaceWsConnection {
   private flushDesiredState(): void {
     for (const sceneId of this.desiredSceneLocks) {
       this.sendJson({
-        type: "scene:lock",
+        type: 'scene:lock',
         sceneId,
         userId: this.userId,
       } satisfies MotionWorkspaceWsSceneControlMessage);
@@ -631,14 +635,16 @@ export class MotionWorkspaceWsConnection {
 
     if (this.desiredPresence) {
       this.sendJson({
-        type: "presence",
+        type: 'presence',
         userId: this.userId,
         ...this.desiredPresence,
       } satisfies MotionWorkspaceWsPresenceClientMessage);
     }
   }
 
-  private sendJson(payload: MotionWorkspaceWsSceneControlMessage | MotionWorkspaceWsPresenceClientMessage): void {
+  private sendJson(
+    payload: MotionWorkspaceWsSceneControlMessage | MotionWorkspaceWsPresenceClientMessage,
+  ): void {
     if (!this.socket || this.socket.readyState !== WS_OPEN_READY_STATE) {
       return;
     }

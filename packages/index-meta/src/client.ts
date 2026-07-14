@@ -25,16 +25,23 @@
 
 // ── SDK ────────────────────────────────────────────────────────────────────────
 
-export { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
-export type { IndexSDK, IndexClient, IndexSDKOptions, DimCapacityInfo, DimEntryView, DimFullView } from "./index-sdk.js";
+export { createIndexSDK, RESERVED_TOKENS } from './index-sdk.js';
+export type {
+  IndexSDK,
+  IndexClient,
+  IndexSDKOptions,
+  DimCapacityInfo,
+  DimEntryView,
+  DimFullView,
+} from './index-sdk.js';
 
 // ── Core ───────────────────────────────────────────────────────────────────────
 
-export { MetaRegistry } from "./meta-registry.js";
-export { MetaCodec, validateDecodeMap } from "./meta-codec.js";
-export { MetaResolver } from "./meta-resolver.js";
-export { PrefixDecoder } from "./prefix-decoder.js";
-export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from "./prefix-decoder.js";
+export { MetaRegistry } from './meta-registry.js';
+export { MetaCodec, validateDecodeMap } from './meta-codec.js';
+export { MetaResolver } from './meta-resolver.js';
+export { PrefixDecoder } from './prefix-decoder.js';
+export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from './prefix-decoder.js';
 
 // ── Errors ─────────────────────────────────────────────────────────────────────
 
@@ -49,7 +56,7 @@ export {
   ValidationError,
   ParseError,
   NegotiationError,
-} from "./errors.js";
+} from './errors.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -74,4 +81,4 @@ export type {
   DimActiveSet,
   IndexActiveManifest,
   DecodeMap,
-} from "./types.js";
+} from './types.js';

@@ -1,15 +1,15 @@
 // @def.boundary query-api-spec
 // @def.doc query-api-spec
 
-import { Hono } from "hono";
-import type { QueryLookupService } from "../lib/query-service.js";
+import { Hono } from 'hono';
+import type { QueryLookupService } from '../lib/query-service.js';
 import {
   composeQueryRequestSchema,
   matchRangesRequestSchema,
   queryAcrossVersionsRequestSchema,
   resolvePolicyRequestSchema,
   resolveRelationRequestSchema,
-} from "../schemas/query.js";
+} from '../schemas/query.js';
 
 export interface QueryRouteDeps {
   queryService: QueryLookupService;
@@ -18,7 +18,7 @@ export interface QueryRouteDeps {
 export function createQueryRoutes(deps: QueryRouteDeps) {
   const app = new Hono();
 
-  app.post("/resolve", async (c) => {
+  app.post('/resolve', async (c) => {
     const body = resolvePolicyRequestSchema.parse(await c.req.json());
     const rules = body.rules.map((rule) => ({
       id: rule.id,
@@ -40,7 +40,7 @@ export function createQueryRoutes(deps: QueryRouteDeps) {
     return c.json(result);
   });
 
-  app.post("/match-ranges", async (c) => {
+  app.post('/match-ranges', async (c) => {
     const body = matchRangesRequestSchema.parse(await c.req.json());
     const ranges = await deps.queryService.matchRanges(
       body.indexId,
@@ -51,17 +51,13 @@ export function createQueryRoutes(deps: QueryRouteDeps) {
     return c.json(ranges);
   });
 
-  app.post("/compose-query", async (c) => {
+  app.post('/compose-query', async (c) => {
     const body = composeQueryRequestSchema.parse(await c.req.json());
-    const ranges = deps.queryService.composeQuery(
-      body.source,
-      body.through,
-      body.targetConstraint,
-    );
+    const ranges = deps.queryService.composeQuery(body.source, body.through, body.targetConstraint);
     return c.json(ranges);
   });
 
-  app.post("/query-across-versions", async (c) => {
+  app.post('/query-across-versions', async (c) => {
     const body = queryAcrossVersionsRequestSchema.parse(await c.req.json());
     const rangesByVersion = deps.queryService.queryAcrossVersions(
       body.indexId,
@@ -71,7 +67,7 @@ export function createQueryRoutes(deps: QueryRouteDeps) {
     return c.json(Object.fromEntries(rangesByVersion));
   });
 
-  app.post("/resolve-relation", async (c) => {
+  app.post('/resolve-relation', async (c) => {
     const body = resolveRelationRequestSchema.parse(await c.req.json());
     const typeRules = body.typeRules.map((rule) => ({
       id: rule.id,

@@ -5,11 +5,8 @@
 //  이벤트 인덱스 — 3D grid page (API-backed, version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import {
-  fetchEvtCells,
-  type EvtCellsResponse,
-} from "../registry.js";
-import { DEMO_KO, DEMO_INITIATORS } from "demo-snapshot";
+import { fetchEvtCells, type EvtCellsResponse } from '../registry.js';
+import { DEMO_KO, DEMO_INITIATORS } from 'demo-snapshot';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -23,7 +20,7 @@ export interface EventState {
 function evtDensityFill(value: number, maxValue: number): string {
   const t = value / maxValue;
   const from = [232, 238, 245];
-  const to   = [30,  58,  95];
+  const to = [30, 58, 95];
   const r = Math.round(from[0] + (to[0] - from[0]) * t * 0.8);
   const g = Math.round(from[1] + (to[1] - from[1]) * t * 0.8);
   const b = Math.round(from[2] + (to[2] - from[2]) * t * 0.8);
@@ -31,43 +28,39 @@ function evtDensityFill(value: number, maxValue: number): string {
 }
 
 function evtDensityInk(value: number, maxValue: number): string {
-  return value > maxValue * 0.55 ? "#ffffff" : "#000000";
+  return value > maxValue * 0.55 ? '#ffffff' : '#000000';
 }
 
 // ── Event type → tag class ─────────────────────────────────────────────────
 
 function evtTagClass(event: string): string {
-  if (event.startsWith("user."))    return "evt-tag evt-tag-user";
-  if (event.startsWith("order."))   return "evt-tag evt-tag-order";
-  if (event.startsWith("payment.")) return "evt-tag evt-tag-payment";
-  if (event.startsWith("session.")) return "evt-tag evt-tag-session";
-  if (event.startsWith("config."))  return "evt-tag evt-tag-config";
-  return "evt-tag";
+  if (event.startsWith('user.')) return 'evt-tag evt-tag-user';
+  if (event.startsWith('order.')) return 'evt-tag evt-tag-order';
+  if (event.startsWith('payment.')) return 'evt-tag evt-tag-payment';
+  if (event.startsWith('session.')) return 'evt-tag evt-tag-session';
+  if (event.startsWith('config.')) return 'evt-tag evt-tag-config';
+  return 'evt-tag';
 }
 
 // ── Side panel ────────────────────────────────────────────────────────────
 
-function renderEventDetail(
-  container: HTMLElement,
-  value: number,
-  data: EvtCellsResponse
-): void {
+function renderEventDetail(container: HTMLElement, value: number, data: EvtCellsResponse): void {
   const svcStride = data.svcStride;
-  const svcPos  = Math.floor(value / svcStride) + 1;
-  const rem1    = value % svcStride;
-  const evtPos  = Math.floor(rem1 / 2) + 1;
+  const svcPos = Math.floor(value / svcStride) + 1;
+  const rem1 = value % svcStride;
+  const evtPos = Math.floor(rem1 / 2) + 1;
   const initPos = (rem1 % 2) + 1;
 
   const svcLabel = data.svcLabels[svcPos - 1];
   const evtLabel = data.eventLabels[evtPos - 1];
-  const initiator = initPos === 1 ? "web" : "mobile";
+  const initiator = initPos === 1 ? 'web' : 'mobile';
 
   if (!svcLabel || !evtLabel) {
     container.innerHTML = `<div style="padding:1rem;color:#c0392b">디코딩 오류</div>`;
     return;
   }
 
-  const ENV_KO  = DEMO_KO.env;
+  const ENV_KO = DEMO_KO.env;
   const INIT_KO = DEMO_KO.initiator;
 
   container.innerHTML = `
@@ -128,19 +121,21 @@ const INIT_KO = DEMO_KO.initiator;
 function renderInitiatorBar(
   container: HTMLElement,
   fixedInitiator: number,
-  onChange: (init: number) => void
+  onChange: (init: number) => void,
 ): void {
   container.innerHTML = `
     <span class="initiator-label">발원 (initiator):</span>
-    ${INITIATORS.map((init, i) => `
-      <button class="init-btn${fixedInitiator === i + 1 ? " active" : ""}" data-init="${i + 1}">
+    ${INITIATORS.map(
+      (init, i) => `
+      <button class="init-btn${fixedInitiator === i + 1 ? ' active' : ''}" data-init="${i + 1}">
         ${init} · ${INIT_KO[init] ?? init}
       </button>
-    `).join("")}
+    `,
+    ).join('')}
   `;
 
-  container.querySelectorAll<HTMLButtonElement>(".init-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
+  container.querySelectorAll<HTMLButtonElement>('.init-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
       const init = Number(btn.dataset.init);
       if (init) onChange(init);
     });
@@ -153,7 +148,7 @@ function renderGrid(
   container: HTMLElement,
   state: EventState,
   data: EvtCellsResponse,
-  onSelect: (v: number) => void
+  onSelect: (v: number) => void,
 ): void {
   const { selectedValue } = state;
   const { svcLabels, eventLabels, cells, maxValue } = data;
@@ -163,21 +158,21 @@ function renderGrid(
     cellMap.set(`${cell.svcPos},${cell.evtPos}`, cell.value);
   }
 
-  const tbl = document.createElement("table");
-  tbl.className = "xl-grid";
-  tbl.setAttribute("role", "grid");
+  const tbl = document.createElement('table');
+  tbl.className = 'xl-grid';
+  tbl.setAttribute('role', 'grid');
 
   const thead = tbl.createTHead();
   const headRow = thead.insertRow();
 
-  const corner = document.createElement("th");
-  corner.className = "xl-corner";
+  const corner = document.createElement('th');
+  corner.className = 'xl-corner';
   corner.innerHTML = `<span style="font-size:0.62rem;color:var(--text-muted)">svc \\ event</span>`;
   headRow.appendChild(corner);
 
   eventLabels.forEach((el, ei) => {
-    const th = document.createElement("th");
-    th.className = "xl-col-header";
+    const th = document.createElement('th');
+    th.className = 'xl-col-header';
     const letter = String.fromCharCode(65 + ei);
     th.innerHTML = `
       <span class="col-letter">${letter}</span>
@@ -193,8 +188,8 @@ function renderGrid(
   svcLabels.forEach((sl, si) => {
     const tr = tbody.insertRow();
 
-    const rh = document.createElement("th");
-    rh.className = "xl-row-header";
+    const rh = document.createElement('th');
+    rh.className = 'xl-row-header';
     rh.innerHTML = `
       <span class="row-num">${si + 1}</span>
       <span class="row-value">${sl.svcName}</span>
@@ -204,13 +199,13 @@ function renderGrid(
 
     eventLabels.forEach((_el, ei) => {
       const value = cellMap.get(`${si + 1},${ei + 1}`) ?? 0;
-      const td = document.createElement("td");
-      td.className = "xl-cell evt-cell";
-      td.setAttribute("role", "gridcell");
+      const td = document.createElement('td');
+      td.className = 'xl-cell evt-cell';
+      td.setAttribute('role', 'gridcell');
       td.tabIndex = 0;
-      if (value === selectedValue) td.classList.add("selected");
+      if (value === selectedValue) td.classList.add('selected');
 
-      const bg  = evtDensityFill(value, maxValue);
+      const bg = evtDensityFill(value, maxValue);
       const ink = evtDensityInk(value, maxValue);
       td.style.backgroundColor = bg;
       td.style.color = ink;
@@ -220,12 +215,12 @@ function renderGrid(
         <span class="cell-coord-tag" style="color:${ink};opacity:0.7">[${si + 1},${ei + 1}]</span>
       `;
 
-      td.addEventListener("click", () => onSelect(value));
+      td.addEventListener('click', () => onSelect(value));
       tr.appendChild(td);
     });
   });
 
-  container.innerHTML = "";
+  container.innerHTML = '';
   container.appendChild(tbl);
 }
 
@@ -243,9 +238,9 @@ export async function renderEventPage(
   state: EventState,
   onSelect: (v: number | null) => void,
   onInitiatorChange: (init: number) => void,
-  ver = "v2",
+  ver = 'v2',
 ): Promise<void> {
-  const initiator = state.fixedInitiator === 1 ? "web" : "mobile";
+  const initiator = state.fixedInitiator === 1 ? 'web' : 'mobile';
   const cacheKey = `${ver}:${initiator}`;
 
   renderInitiatorBar(initBarContainer, state.fixedInitiator, onInitiatorChange);
@@ -256,7 +251,7 @@ export async function renderEventPage(
       const data = await fetchEvtCells(initiator, ver);
       _evtCache.set(cacheKey, data);
     } catch (e) {
-      gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
+      gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
       return;
     }
   }
@@ -273,26 +268,26 @@ export async function renderEventPage(
   });
 
   if (state.selectedValue !== null) {
-    spPlaceholder.classList.add("hidden");
-    spContent.classList.remove("hidden");
+    spPlaceholder.classList.add('hidden');
+    spContent.classList.remove('hidden');
     renderEventDetail(spContent, state.selectedValue, data);
   } else {
-    spContent.classList.add("hidden");
-    spPlaceholder.classList.remove("hidden");
+    spContent.classList.add('hidden');
+    spPlaceholder.classList.remove('hidden');
   }
 }
 
 export function updateEventSelection(
   gridContainer: HTMLElement,
   prevValue: number | null,
-  newValue: number | null
+  newValue: number | null,
 ): void {
-  gridContainer.querySelectorAll<HTMLElement>(".xl-cell").forEach((td) => {
-    const span = td.querySelector<HTMLElement>(".cell-id-val");
+  gridContainer.querySelectorAll<HTMLElement>('.xl-cell').forEach((td) => {
+    const span = td.querySelector<HTMLElement>('.cell-id-val');
     if (!span) return;
     const v = Number(span.textContent);
-    if (v === prevValue) td.classList.remove("selected");
-    if (v === newValue)  td.classList.add("selected");
+    if (v === prevValue) td.classList.remove('selected');
+    if (v === newValue) td.classList.add('selected');
   });
 }
 
@@ -301,21 +296,21 @@ export function refreshEventDetail(
   spContent: HTMLElement,
   value: number | null,
   initiator: string,
-  ver = "v2",
+  ver = 'v2',
 ): void {
   if (value === null) {
-    spContent.classList.add("hidden");
-    spPlaceholder.classList.remove("hidden");
+    spContent.classList.add('hidden');
+    spPlaceholder.classList.remove('hidden');
     return;
   }
   const cacheKey = `${ver}:${initiator}`;
   const data = _evtCache.get(cacheKey);
   if (!data) {
-    spContent.classList.add("hidden");
-    spPlaceholder.classList.remove("hidden");
+    spContent.classList.add('hidden');
+    spPlaceholder.classList.remove('hidden');
     return;
   }
-  spPlaceholder.classList.add("hidden");
-  spContent.classList.remove("hidden");
+  spPlaceholder.classList.add('hidden');
+  spContent.classList.remove('hidden');
   renderEventDetail(spContent, value, data);
 }

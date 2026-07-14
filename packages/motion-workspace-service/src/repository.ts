@@ -1,10 +1,10 @@
 // @def.boundary motion-workspace-service-spec
-import type { MotionSceneDef } from "motion-content";
+import type { MotionSceneDef } from 'motion-content';
 import type {
   MotionWorkspaceConflictErrorShape,
   MotionWorkspaceDescriptor,
   MotionWorkspaceSnapshotV2,
-} from "motion-workspace";
+} from 'motion-workspace';
 
 export interface MotionWorkspaceRepositoryCreateInput {
   readonly id: string;
@@ -42,26 +42,25 @@ export interface MotionWorkspaceRepository {
 }
 
 export interface MotionWorkspaceAlreadyExistsErrorShape {
-  readonly code: "workspace_exists";
+  readonly code: 'workspace_exists';
   readonly message: string;
   readonly id: string;
 }
 
 export interface MotionWorkspaceNotFoundErrorShape {
-  readonly code: "workspace_not_found";
+  readonly code: 'workspace_not_found';
   readonly message: string;
   readonly id: string;
 }
 
 export interface MotionWorkspaceSceneNotFoundErrorShape {
-  readonly code: "scene_not_found";
+  readonly code: 'scene_not_found';
   readonly message: string;
   readonly id: string;
   readonly sceneId: string;
 }
 
-export interface MotionWorkspaceSceneConflictErrorShape
-  extends MotionWorkspaceConflictErrorShape {
+export interface MotionWorkspaceSceneConflictErrorShape extends MotionWorkspaceConflictErrorShape {
   readonly sceneId: string;
 }
 
@@ -77,7 +76,7 @@ export class MotionWorkspaceRepositoryError extends Error {
 
   constructor(shape: MotionWorkspaceRepositoryErrorShape) {
     super(shape.message);
-    this.name = "MotionWorkspaceRepositoryError";
+    this.name = 'MotionWorkspaceRepositoryError';
     this.shape = shape;
   }
 }
@@ -86,17 +85,15 @@ export function createMotionWorkspaceAlreadyExistsError(
   id: string,
 ): MotionWorkspaceRepositoryError {
   return new MotionWorkspaceRepositoryError({
-    code: "workspace_exists",
+    code: 'workspace_exists',
     message: `workspace가 이미 존재합니다: ${id}.`,
     id,
   });
 }
 
-export function createMotionWorkspaceNotFoundError(
-  id: string,
-): MotionWorkspaceRepositoryError {
+export function createMotionWorkspaceNotFoundError(id: string): MotionWorkspaceRepositoryError {
   return new MotionWorkspaceRepositoryError({
-    code: "workspace_not_found",
+    code: 'workspace_not_found',
     message: `workspace를 찾을 수 없습니다: ${id}.`,
     id,
   });
@@ -107,7 +104,7 @@ export function createMotionWorkspaceSceneNotFoundError(
   sceneId: string,
 ): MotionWorkspaceRepositoryError {
   return new MotionWorkspaceRepositoryError({
-    code: "scene_not_found",
+    code: 'scene_not_found',
     message: `scene를 찾을 수 없습니다: ${id}/${sceneId}.`,
     id,
     sceneId,
@@ -119,7 +116,7 @@ export function createMotionWorkspaceRevisionConflictError(
   actualRevision: number,
 ): MotionWorkspaceRepositoryError {
   return new MotionWorkspaceRepositoryError({
-    code: "revision_conflict",
+    code: 'revision_conflict',
     message: `workspace revision이 충돌했습니다. expectedRevision=${expectedRevision}, actualRevision=${actualRevision}.`,
     expectedRevision,
     actualRevision,
@@ -132,7 +129,7 @@ export function createMotionWorkspaceSceneRevisionConflictError(
   actualRevision: number,
 ): MotionWorkspaceRepositoryError {
   return new MotionWorkspaceRepositoryError({
-    code: "revision_conflict",
+    code: 'revision_conflict',
     message: `scene revision이 충돌했습니다. sceneId=${sceneId}, expectedRevision=${expectedRevision}, actualRevision=${actualRevision}.`,
     sceneId,
     expectedRevision,

@@ -1,10 +1,10 @@
 // @def.boundary viz-system-root
 // @def.doc viz-system-root
 
-import dagre from "dagre";
-import type { SpecGraph, SpecEdge } from "@qa-sdk/core";
-import { getCoreEvent } from "@qa-sdk/event-catalog";
-import type { GraphRole } from "@qa-sdk/event-catalog";
+import dagre from 'dagre';
+import type { SpecGraph, SpecEdge } from '@qa-sdk/core';
+import { getCoreEvent } from '@qa-sdk/event-catalog';
+import type { GraphRole } from '@qa-sdk/event-catalog';
 
 export interface PositionedNode {
   step_id: string;
@@ -21,7 +21,7 @@ export interface PositionedNode {
 export interface PositionedEdge {
   source: string;
   target: string;
-  type: SpecEdge["type"];
+  type: SpecEdge['type'];
   points: Array<{ x: number; y: number }>;
 }
 
@@ -45,7 +45,7 @@ function computeNodeWidth(label: string): number {
 export function computeLayout(graph: SpecGraph): LayoutResult {
   const g = new dagre.graphlib.Graph();
   g.setGraph({
-    rankdir: "TB",
+    rankdir: 'TB',
     nodesep: 50,
     ranksep: 60,
     marginx: 20,
@@ -97,11 +97,11 @@ export function computeLayout(graph: SpecGraph): LayoutResult {
   });
 
   const positionedEdges: PositionedEdge[] = g.edges().map((e) => {
-    const edgeData = g.edge(e) as dagre.GraphEdge & { type?: SpecEdge["type"] };
+    const edgeData = g.edge(e) as dagre.GraphEdge & { type?: SpecEdge['type'] };
     return {
       source: e.v,
       target: e.w,
-      type: edgeData.type ?? "sequence",
+      type: edgeData.type ?? 'sequence',
       points: edgeData.points.map((p) => ({ x: p.x, y: p.y })),
     };
   });

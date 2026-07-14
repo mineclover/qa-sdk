@@ -14,13 +14,13 @@
  *   pub/sub round-trip 시나리오는 legacy 맵 위에서 그대로 동작한다.
  */
 
-import { LRUCache } from "lru-cache";
-import type { VersionedBitmap } from "permission-engine";
+import { LRUCache } from 'lru-cache';
+import type { VersionedBitmap } from 'permission-engine';
 import {
   buildBitmapCacheKey,
   type BitmapCacheKey,
   type VersionTagState,
-} from "sim-identifier-grammar";
+} from 'sim-identifier-grammar';
 
 /** spec 04 §3.1 — 기본 120000 (2분). */
 export const DEFAULT_BITMAP_TTL_MS = 120_000;
@@ -51,23 +51,22 @@ export interface BitmapLruCacheOptions {
  * 는 단순 합성 문자열을 반환해 deprecation 경로 유지.
  */
 export function makeKey(userId: string, prefix: string, v: string): string {
-  const parts = prefix.split(".");
+  const parts = prefix.split('.');
   const versionMatch = v.match(/^v(\d+)(?:-(stable|candidate|retired))?$/);
   if (parts.length === 3 && versionMatch && /^[A-Za-z0-9_-]+$/.test(userId)) {
     try {
       const key: BitmapCacheKey = {
-        scope: "user",
+        scope: 'user',
         id: userId,
         prefix: {
-          namespace: parts[0] as BitmapCacheKey["prefix"]["namespace"],
-          category: parts[1] as BitmapCacheKey["prefix"]["category"],
+          namespace: parts[0] as BitmapCacheKey['prefix']['namespace'],
+          category: parts[1] as BitmapCacheKey['prefix']['category'],
           name: parts[2],
         },
         version: {
-          axis: "version",
+          axis: 'version',
           value: Number(versionMatch[1]),
-          state:
-            (versionMatch[2] as VersionTagState | undefined) ?? "stable",
+          state: (versionMatch[2] as VersionTagState | undefined) ?? 'stable',
         },
       };
       return buildBitmapCacheKey(key);
@@ -78,10 +77,8 @@ export function makeKey(userId: string, prefix: string, v: string): string {
   return `${userId}|${prefix}|${v}`;
 }
 
-export function parseKey(
-  key: string,
-): { userId: string; prefix: string; v: string } {
-  const [userId, prefix, v] = key.split("|");
+export function parseKey(key: string): { userId: string; prefix: string; v: string } {
+  const [userId, prefix, v] = key.split('|');
   if (!userId || !prefix || !v) {
     throw new Error(`invalid cache key: ${key}`);
   }
@@ -118,12 +115,7 @@ export class BitmapLruCache {
 
   // ───── 레거시 API (VersionedBitmap 호환) ─────
 
-  set(
-    userId: string,
-    prefix: string,
-    v: string,
-    bitmap: VersionedBitmap,
-  ): void {
+  set(userId: string, prefix: string, v: string, bitmap: VersionedBitmap): void {
     const remaining = new Date(bitmap.expiresAt).getTime() - Date.now();
     if (remaining <= 0) return;
     const k = `${userId}|${prefix}|${v}`;

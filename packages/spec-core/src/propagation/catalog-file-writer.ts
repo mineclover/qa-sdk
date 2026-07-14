@@ -7,10 +7,10 @@
  * 기존 파일과 비교하여 변경 없으면 기록하지 않는다 (빌드 캐시 보존).
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname } from "node:path";
-import type { Catalog } from "@qa-sdk/core";
-import { serializeCatalogToTs, type WriterOptions } from "./catalog-writer.js";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { dirname } from 'node:path';
+import type { Catalog } from '@qa-sdk/core';
+import { serializeCatalogToTs, type WriterOptions } from './catalog-writer.js';
 
 export interface FileWriterOptions extends WriterOptions {
   /** true면 content만 생성하고 파일에 기록하지 않음 */
@@ -45,7 +45,7 @@ export function writeCatalogFile(
   // 기존 파일과 비교
   if (existsSync(filePath)) {
     try {
-      const existing = readFileSync(filePath, "utf-8");
+      const existing = readFileSync(filePath, 'utf-8');
       // Generated 날짜를 제외하고 비교 (날짜만 달라져도 캐시를 깨지 않기 위해)
       if (stripGeneratedDate(existing) === stripGeneratedDate(content)) {
         return { written: false, content };
@@ -61,11 +61,11 @@ export function writeCatalogFile(
     mkdirSync(dir, { recursive: true });
   }
 
-  writeFileSync(filePath, content, "utf-8");
+  writeFileSync(filePath, content, 'utf-8');
   return { written: true, content };
 }
 
 /** Generated 날짜 주석을 제거하여 순수 내용만 비교 */
 function stripGeneratedDate(source: string): string {
-  return source.replace(/\* Generated: \d{4}-\d{2}-\d{2}/, "* Generated: DATE");
+  return source.replace(/\* Generated: \d{4}-\d{2}-\d{2}/, '* Generated: DATE');
 }

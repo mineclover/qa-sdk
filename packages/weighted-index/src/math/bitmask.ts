@@ -20,9 +20,7 @@ export function createMask(size: number): Uint8Array {
 
 function _checkBitBounds(mask: Uint8Array, id: number): void {
   if (!Number.isInteger(id) || id < 0 || id >= mask.length * 8) {
-    throw new RangeError(
-      `Bit id ${id} is out of range [0, ${mask.length * 8})`
-    );
+    throw new RangeError(`Bit id ${id} is out of range [0, ${mask.length * 8})`);
   }
 }
 
@@ -34,7 +32,7 @@ function _checkBitBounds(mask: Uint8Array, id: number): void {
  */
 export function setBit(mask: Uint8Array, id: number): void {
   _checkBitBounds(mask, id);
-  mask[id >> 3] |= (1 << (id & 7));
+  mask[id >> 3] |= 1 << (id & 7);
 }
 
 /**
@@ -107,7 +105,10 @@ export function popcount(mask: Uint8Array): number {
   let n = 0;
   for (const byte of mask) {
     let b = byte;
-    while (b) { n += b & 1; b >>>= 1; }
+    while (b) {
+      n += b & 1;
+      b >>>= 1;
+    }
   }
   return n;
 }

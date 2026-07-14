@@ -1,35 +1,32 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  NOTIF_DB_INSTANCE,
-  type NotifDbInstanceHandle,
-} from "../notification-db.module.js";
+import { NOTIF_DB_INSTANCE, type NotifDbInstanceHandle } from '../notification-db.module.js';
 
-import { NotificationRepositoryPort } from "./application/ports/notification-repository.port.js";
-import { NotificationReadModelQuery } from "./application/queries/notification-read-model.query.js";
-import { NotificationUseCase } from "./application/use-cases/notification.use-case.js";
+import { NotificationRepositoryPort } from './application/ports/notification-repository.port.js';
+import { NotificationReadModelQuery } from './application/queries/notification-read-model.query.js';
+import { NotificationUseCase } from './application/use-cases/notification.use-case.js';
 
-import { createNotificationRepository } from "./infrastructure/persistence/notification.repository.js";
-import { createNotificationTransactionPort } from "./infrastructure/transaction/notification.drizzle-transaction.js";
-import { createNotificationOutboxPort } from "./infrastructure/outbox/notification.outbox.js";
-import { createNotificationLogger } from "./infrastructure/logging/notification.logger.js";
-import { RepositoryNotificationReadModel } from "./infrastructure/read-model/notification.read-model.js";
+import { createNotificationRepository } from './infrastructure/persistence/notification.repository.js';
+import { createNotificationTransactionPort } from './infrastructure/transaction/notification.drizzle-transaction.js';
+import { createNotificationOutboxPort } from './infrastructure/outbox/notification.outbox.js';
+import { createNotificationLogger } from './infrastructure/logging/notification.logger.js';
+import { RepositoryNotificationReadModel } from './infrastructure/read-model/notification.read-model.js';
 
-import { NotificationController } from "./presentation/http/notification.controller.js";
-import { NotificationDetailBff } from "./presentation/bff/notification-detail.bff.js";
-import { NotificationDetailController } from "./presentation/bff/notification-detail.controller.js";
+import { NotificationController } from './presentation/http/notification.controller.js';
+import { NotificationDetailBff } from './presentation/bff/notification-detail.bff.js';
+import { NotificationDetailController } from './presentation/bff/notification-detail.controller.js';
 
-const NOTIF_TRANSACTION_PORT = Symbol.for("sim-notification-api/notification/TransactionPort");
-const NOTIF_OUTBOX_PORT = Symbol.for("sim-notification-api/notification/OutboxPort");
+const NOTIF_TRANSACTION_PORT = Symbol.for('sim-notification-api/notification/TransactionPort');
+const NOTIF_OUTBOX_PORT = Symbol.for('sim-notification-api/notification/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: NotificationRepositoryPort,
@@ -59,8 +56,7 @@ const loggerProvider: Provider = {
 
 const readModelProvider: Provider = {
   provide: NotificationReadModelQuery,
-  useFactory: (repo: NotificationRepositoryPort) =>
-    new RepositoryNotificationReadModel(repo),
+  useFactory: (repo: NotificationRepositoryPort) => new RepositoryNotificationReadModel(repo),
   inject: [NotificationRepositoryPort],
 };
 

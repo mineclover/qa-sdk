@@ -4,18 +4,18 @@ import {
   validateJunctionAgainstTemplate,
   type BranchDecision,
   type JunctionTemplateRegistry,
-} from "./junction-core.js";
+} from './junction-core.js';
 import type {
   PathObservationProjectionInput,
   PathObservationProjectionResult,
-} from "./projector-types.js";
-import { isNonLinearPathObservation } from "./projector-shared.js";
+} from './projector-types.js';
+import { isNonLinearPathObservation } from './projector-shared.js';
 import {
   createEdgeCanonicalKey,
   createTraversalCanonicalKey,
   type TraversalCoord,
   type TraversalObservation,
-} from "./runtime-core.js";
+} from './runtime-core.js';
 
 export function projectPathObservationToOperationalOntology(
   input: PathObservationProjectionInput,
@@ -23,7 +23,7 @@ export function projectPathObservationToOperationalOntology(
   const { observation } = input;
   const routeTemplate = getJunctionTemplate(
     input.junctionTemplateRegistry ?? defaultJunctionTemplateRegistry,
-    "observed_route_decision",
+    'observed_route_decision',
   );
   const edges = observation.traversed_edges.map((edge) =>
     createEdgeCanonicalKey({
@@ -35,13 +35,13 @@ export function projectPathObservationToOperationalOntology(
   const start =
     observation.reached_nodes[0]?.spec_step_id ??
     observation.traversed_edges[0]?.from_step_id ??
-    "unknown:start";
+    'unknown:start';
   const end =
     observation.reached_nodes.at(-1)?.spec_step_id ??
     observation.traversed_edges.at(-1)?.to_step_id ??
-    "unknown:end";
+    'unknown:end';
   const traversal: TraversalCoord = {
-    purpose: "observe",
+    purpose: 'observe',
     start,
     edges,
     end,
@@ -69,10 +69,10 @@ export function projectPathObservationToOperationalOntology(
           .map((branch) => `${branchPoint.sourceStepId}->${branch.targetStepId}`);
 
         return {
-          templateKind: "observed_route_decision",
+          templateKind: 'observed_route_decision',
           templateDescription: routeTemplate.description,
           templateValidation: validateJunctionAgainstTemplate(
-            selectedPathIds.length > 1 ? "all_matches" : "first_match",
+            selectedPathIds.length > 1 ? 'all_matches' : 'first_match',
             routeTemplate,
             [
               ...selectedPathIds.map((pathId) => ({
@@ -86,10 +86,10 @@ export function projectPathObservationToOperationalOntology(
             ],
           ),
           branchNodeId: branchPoint.sourceStepId,
-          mode: selectedPathIds.length > 1 ? "all_matches" : "first_match",
+          mode: selectedPathIds.length > 1 ? 'all_matches' : 'first_match',
           selectedPathIds,
           skippedPathIds,
-          reason: selectedPathIds.length > 0 ? "observed-paths" : "no-path-observed",
+          reason: selectedPathIds.length > 0 ? 'observed-paths' : 'no-path-observed',
         } satisfies BranchDecision;
       })
     : [];

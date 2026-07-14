@@ -1,15 +1,12 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import {
-  InvalidResourceIdException,
-  InvalidResourceTypeException,
-} from "./resource.exceptions.js";
+import { InvalidResourceIdException, InvalidResourceTypeException } from './resource.exceptions.js';
 
-export type ResourceRequestId = string & { readonly __brand: "ResourceRequestId" };
-export type ProjectId = string & { readonly __brand: "ProjectId" };
-export type RequesterId = string & { readonly __brand: "RequesterId" };
-export type ResourceTypeId = string & { readonly __brand: "ResourceTypeId" };
+export type ResourceRequestId = string & { readonly __brand: 'ResourceRequestId' };
+export type ProjectId = string & { readonly __brand: 'ProjectId' };
+export type RequesterId = string & { readonly __brand: 'RequesterId' };
+export type ResourceTypeId = string & { readonly __brand: 'ResourceTypeId' };
 
 export function toResourceRequestId(value: string): ResourceRequestId {
   if (value.trim().length === 0) throw new InvalidResourceIdException();

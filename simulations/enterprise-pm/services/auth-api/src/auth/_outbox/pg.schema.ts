@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text, bigint, index } from "drizzle-orm/pg-core";
+import { pgSchema, text, bigint, index } from 'drizzle-orm/pg-core';
 
 /**
  * Postgres — auth 도메인의 ONE shared outbox table.
@@ -9,23 +9,23 @@ import { pgSchema, text, bigint, index } from "drizzle-orm/pg-core";
  * 6 슬라이스가 sim.auth_outbox_events 에 함께 적재한다. snake_case 컬럼명
  * (Phase 1 caveat 5).
  */
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 export const authOutboxEvents = sim.table(
-  "auth_outbox_events",
+  'auth_outbox_events',
   {
-    id: text("id").primaryKey(),
-    aggregate_id: text("aggregate_id").notNull(),
-    event_name: text("event_name").notNull(),
-    event_version: bigint("event_version", { mode: "number" }).notNull(),
-    payload: text("payload").notNull(),
-    occurred_at: bigint("occurred_at", { mode: "number" }).notNull(),
-    scope_id: text("scope_id").notNull(),
-    status: text("status", { enum: ["pending", "published", "failed"] })
+    id: text('id').primaryKey(),
+    aggregate_id: text('aggregate_id').notNull(),
+    event_name: text('event_name').notNull(),
+    event_version: bigint('event_version', { mode: 'number' }).notNull(),
+    payload: text('payload').notNull(),
+    occurred_at: bigint('occurred_at', { mode: 'number' }).notNull(),
+    scope_id: text('scope_id').notNull(),
+    status: text('status', { enum: ['pending', 'published', 'failed'] })
       .notNull()
-      .default("pending"),
+      .default('pending'),
   },
-  (t) => [index("idx_sim_auth_outbox_status").on(t.status, t.occurred_at)],
+  (t) => [index('idx_sim_auth_outbox_status').on(t.status, t.occurred_at)],
 );
 
 export const SIM_AUTH_OUTBOX_PG_DDL = `

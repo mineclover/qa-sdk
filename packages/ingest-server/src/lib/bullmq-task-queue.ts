@@ -1,16 +1,11 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type {
-  TaskHandler,
-  TaskPayload,
-  TaskQueue,
-  TaskQueueOptions,
-} from "@qa-sdk/core";
-import type { Logger } from "pino";
-import { createLogger } from "./logger.js";
+import type { TaskHandler, TaskPayload, TaskQueue, TaskQueueOptions } from '@qa-sdk/core';
+import type { Logger } from 'pino';
+import { createLogger } from './logger.js';
 
-const DEFAULT_JOB_NAME = "task";
+const DEFAULT_JOB_NAME = 'task';
 export const DEFAULT_WORKER_CONCURRENCY = 5;
 
 interface BullConnectionOptions {
@@ -26,7 +21,7 @@ interface BullQueueJobOptions {
   attempts?: number;
   backoff?: {
     delay: number;
-    type: "exponential";
+    type: 'exponential';
   };
   jobId?: string;
 }
@@ -45,11 +40,8 @@ interface BullQueue<T> {
 
 interface BullWorker<T> {
   close(force?: boolean): Promise<void>;
-  on(event: "error", listener: (error: Error) => void): this;
-  on(
-    event: "failed",
-    listener: (job: BullJob<T> | undefined, error: Error) => void,
-  ): this;
+  on(event: 'error', listener: (error: Error) => void): this;
+  on(event: 'failed', listener: (job: BullJob<T> | undefined, error: Error) => void): this;
   waitUntilReady?(): Promise<unknown>;
 }
 
@@ -88,16 +80,12 @@ export interface BullMQTaskQueueConfig<T extends TaskPayload = TaskPayload> {
   workerConcurrency?: number;
 }
 
-export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
-  implements TaskQueue<T>
-{
+export class BullMQTaskQueue<T extends TaskPayload = TaskPayload> implements TaskQueue<T> {
   private readonly bullmqModule: BullMQModule | undefined;
   private readonly connection: BullConnectionOptions;
   private readonly jobName: string;
   private readonly logger: Logger;
-  private readonly onFinalFailure:
-    | ((task: T, error: Error) => Promise<void> | void)
-    | undefined;
+  private readonly onFinalFailure: ((task: T, error: Error) => Promise<void> | void) | undefined;
   private readonly queueName: string;
   private readonly redisUrl: string;
   private readonly workerConcurrency: number;
@@ -108,14 +96,14 @@ export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
 
   constructor(config: BullMQTaskQueueConfig<T>) {
     if (config.queueName.trim().length === 0) {
-      throw new Error("queueName is required for BullMQTaskQueue");
+      throw new Error('queueName is required for BullMQTaskQueue');
     }
 
     if (config.redisUrl.trim().length === 0) {
-      throw new Error("REDIS_URL is required for BullMQTaskQueue");
+      throw new Error('REDIS_URL is required for BullMQTaskQueue');
     }
 
-    this.logger = config.logger ?? createLogger("bullmq-task-queue");
+    this.logger = config.logger ?? createLogger('bullmq-task-queue');
     this.queueName = config.queueName;
     this.redisUrl = config.redisUrl;
     this.onFinalFailure = config.onFinalFailure;
@@ -141,7 +129,7 @@ export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
     this.assertOpen();
 
     if (this.worker) {
-      throw new Error("BullMQ worker is already registered");
+      throw new Error('BullMQ worker is already registered');
     }
 
     await this.getQueue();
@@ -158,41 +146,41 @@ export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
       },
     );
 
-    worker.on("error", (error) => {
+    worker.on('error', (error) => {
       this.logger.error(
         {
           err: error,
           queueName: this.queueName,
           redisUrl: redactRedisUrl(this.redisUrl),
         },
-        "BullMQ worker error",
+        'BullMQ worker error',
       );
     });
 
-    worker.on("failed", (job, error) => {
+    worker.on('failed', (job, error) => {
       if (!job || !isFinalFailure(job) || !this.onFinalFailure) {
         return;
       }
 
-      void Promise.resolve(
-        this.onFinalFailure(structuredClone(job.data), error),
-      ).catch((callbackError) => {
-        this.logger.error(
-          {
-            err: callbackError,
-            queueName: this.queueName,
-            redisUrl: redactRedisUrl(this.redisUrl),
-          },
-          "BullMQ final failure hook failed",
-        );
-      });
+      void Promise.resolve(this.onFinalFailure(structuredClone(job.data), error)).catch(
+        (callbackError) => {
+          this.logger.error(
+            {
+              err: callbackError,
+              queueName: this.queueName,
+              redisUrl: redactRedisUrl(this.redisUrl),
+            },
+            'BullMQ final failure hook failed',
+          );
+        },
+      );
     });
 
     try {
       await worker.waitUntilReady?.();
     } catch (error) {
       await safeClose(worker);
-      throw this.createRedisConnectionError("worker", error);
+      throw this.createRedisConnectionError('worker', error);
     }
 
     this.worker = worker;
@@ -212,7 +200,7 @@ export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
     ]);
 
     const rejected = closeResults.find(
-      (result): result is PromiseRejectedResult => result.status === "rejected",
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
     );
 
     if (rejected) {
@@ -222,14 +210,11 @@ export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
 
   private assertOpen() {
     if (this.closed) {
-      throw new Error("TaskQueue is closed");
+      throw new Error('TaskQueue is closed');
     }
   }
 
-  private createRedisConnectionError(
-    component: "queue" | "worker",
-    error: unknown,
-  ) {
+  private createRedisConnectionError(component: 'queue' | 'worker', error: unknown) {
     const wrapped = new Error(
       `Failed to connect to Redis for BullMQ ${component} "${this.queueName}" using ${redactRedisUrl(
         this.redisUrl,
@@ -246,7 +231,7 @@ export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
         queueName: this.queueName,
         redisUrl: redactRedisUrl(this.redisUrl),
       },
-      "failed to connect to Redis for BullMQ",
+      'failed to connect to Redis for BullMQ',
     );
 
     return wrapped;
@@ -263,7 +248,7 @@ export class BullMQTaskQueue<T extends TaskPayload = TaskPayload>
       return queue;
     } catch (error) {
       await safeClose(queue);
-      throw this.createRedisConnectionError("queue", error);
+      throw this.createRedisConnectionError('queue', error);
     }
   }
 
@@ -309,20 +294,14 @@ function parseRedisConnection(redisUrl: string): BullConnectionOptions {
     });
   }
 
-  if (parsed.protocol !== "redis:" && parsed.protocol !== "rediss:") {
-    throw new Error(
-      `REDIS_URL must use redis:// or rediss://, received ${parsed.protocol}`,
-    );
+  if (parsed.protocol !== 'redis:' && parsed.protocol !== 'rediss:') {
+    throw new Error(`REDIS_URL must use redis:// or rediss://, received ${parsed.protocol}`);
   }
 
-  const dbSegment = parsed.pathname.replace(/^\/+/, "");
-  const db =
-    dbSegment.length > 0 ? Number.parseInt(dbSegment, 10) : undefined;
+  const dbSegment = parsed.pathname.replace(/^\/+/, '');
+  const db = dbSegment.length > 0 ? Number.parseInt(dbSegment, 10) : undefined;
 
-  if (
-    dbSegment.length > 0 &&
-    (!Number.isInteger(db) || db === undefined || db < 0)
-  ) {
+  if (dbSegment.length > 0 && (!Number.isInteger(db) || db === undefined || db < 0)) {
     throw new Error(
       `REDIS_URL database index must be a non-negative integer, received "${dbSegment}"`,
     );
@@ -335,10 +314,10 @@ function parseRedisConnection(redisUrl: string): BullConnectionOptions {
     port:
       parsed.port.length > 0
         ? Number.parseInt(parsed.port, 10)
-        : parsed.protocol === "rediss:"
+        : parsed.protocol === 'rediss:'
           ? 6380
           : 6379,
-    tls: parsed.protocol === "rediss:" ? {} : undefined,
+    tls: parsed.protocol === 'rediss:' ? {} : undefined,
     username: parsed.username || undefined,
   };
 }
@@ -347,9 +326,7 @@ function parseWorkerConcurrency(workerConcurrency: number | undefined) {
   const concurrency = workerConcurrency ?? DEFAULT_WORKER_CONCURRENCY;
 
   if (!Number.isInteger(concurrency) || concurrency <= 0) {
-    throw new Error(
-      `WORKER_CONCURRENCY must be a positive integer, received ${concurrency}`,
-    );
+    throw new Error(`WORKER_CONCURRENCY must be a positive integer, received ${concurrency}`);
   }
 
   return concurrency;
@@ -367,7 +344,7 @@ function toBullBackoff(retryDelayMs: number | undefined) {
 
   return {
     delay: retryDelayMs,
-    type: "exponential" as const,
+    type: 'exponential' as const,
   };
 }
 
@@ -376,7 +353,7 @@ function redactRedisUrl(redisUrl: string) {
     const parsed = new URL(redisUrl);
 
     if (parsed.password) {
-      parsed.password = "***";
+      parsed.password = '***';
     }
 
     return parsed.toString();
@@ -390,10 +367,9 @@ async function safeClose(resource: { close: () => Promise<void> }) {
 }
 
 async function importBullMQRuntime() {
-  const dynamicImport = new Function(
-    "specifier",
-    "return import(specifier);",
-  ) as (specifier: string) => Promise<unknown>;
+  const dynamicImport = new Function('specifier', 'return import(specifier);') as (
+    specifier: string,
+  ) => Promise<unknown>;
 
-  return dynamicImport("bullmq");
+  return dynamicImport('bullmq');
 }

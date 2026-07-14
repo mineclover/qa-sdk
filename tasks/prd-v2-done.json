@@ -38,9 +38,7 @@
       "priority": 2,
       "passes": true,
       "notes": "stream.spec.md 미구현 항목.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -104,9 +102,7 @@
       "priority": 5,
       "passes": true,
       "notes": "engine 함수는 있지만 ingest-server와 연결되지 않음. 현재 ingest만 하고 reconstruction은 수동.",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -125,9 +121,7 @@
       "priority": 6,
       "passes": true,
       "notes": "GraphStore.findByTraceId는 이미 존재하지만 HTTP 엔드포인트가 없음.",
-      "dependsOn": [
-        "US-005"
-      ],
+      "dependsOn": ["US-005"],
       "completionNotes": "Completed by agent"
     }
   ],

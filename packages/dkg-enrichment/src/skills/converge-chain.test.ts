@@ -1,42 +1,43 @@
 // @def.boundary dkg-system-root
 // @def.doc dkg-system-root
 
-import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG, encodePrefixByValue } from "demo-snapshot";
-import { DEMO_DKG_CONFIG } from "demo-dkg-config";
-import { bootstrapDkg } from "dkg-enrichment";
-import { deriveFromCatalog } from "dkg";
-import { aggregateUsageData, type AddressContextRecord } from "@qa-sdk/convergence";
-import { convergeChain } from "./converge-chain.js";
+import { describe, it, expect } from 'vitest';
+import { DEMO_CATALOG, encodePrefixByValue } from 'demo-snapshot';
+import { DEMO_DKG_CONFIG } from 'demo-dkg-config';
+import { bootstrapDkg } from 'dkg-enrichment';
+import { deriveFromCatalog } from 'dkg';
+import { aggregateUsageData, type AddressContextRecord } from '@qa-sdk/convergence';
+import { convergeChain } from './converge-chain.js';
 
-describe("converge-chain — 4가지 행위 구분", () => {
-
-  it("usage 없이 — 수렴(merge) 후보만 발견", () => {
+describe('converge-chain — 4가지 행위 구분', () => {
+  it('usage 없이 — 수렴(merge) 후보만 발견', () => {
     const graph = deriveFromCatalog(DEMO_CATALOG);
 
     // axis entries 준비
     const entriesMap = new Map<string, readonly string[]>();
     for (const [id, axis] of Object.entries(DEMO_CATALOG.axes)) {
       const versions = Object.keys(axis.versions);
-      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      const latest = axis.versions[
+        versions[versions.length - 1] as keyof typeof axis.versions
+      ] as any;
       if (latest?.entries) entriesMap.set(id, [...latest.entries]);
     }
 
     const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap });
 
-    console.log("\n══ converge-chain (usage 없음) ══");
+    console.log('\n══ converge-chain (usage 없음) ══');
     console.log(`  merge: ${result.summary.merges}`);
     console.log(`  deactivate: ${result.summary.deactivations}`);
     console.log(`  simplify: ${result.summary.simplifications}`);
     console.log(`  observe: ${result.summary.observations}`);
 
-    for (const a of result.actions.filter(act => act.kind === "merge")) {
-      const m = a as { kind: "merge"; targets: string[] };
-      console.log(`  🔀 merge: ${m.targets.join(" ↔ ")}`);
+    for (const a of result.actions.filter((act) => act.kind === 'merge')) {
+      const m = a as { kind: 'merge'; targets: string[] };
+      console.log(`  🔀 merge: ${m.targets.join(' ↔ ')}`);
     }
 
     // initiator ↔ channel은 merge 후보
-    const mergeActions = result.actions.filter(a => a.kind === "merge");
+    const mergeActions = result.actions.filter((a) => a.kind === 'merge');
     expect(mergeActions.length).toBeGreaterThan(0);
 
     // usage가 없으므로 deactivate/simplify/observe는 0
@@ -44,7 +45,7 @@ describe("converge-chain — 4가지 행위 구분", () => {
     expect(result.summary.observations).toBe(0);
   });
 
-  it("usage 있음 — 4가지 행위 모두 구분", () => {
+  it('usage 있음 — 4가지 행위 모두 구분', () => {
     // deriveFromCatalog 사용 — bootstrapDkg는 DEC-SEP를 생성하여 merge가 억제됨
     const graph = deriveFromCatalog(DEMO_CATALOG);
     const svcRef = DEMO_CATALOG.prefixes.endpoint.versions[0].refEntries!.svc_ref.values[0];
@@ -52,11 +53,17 @@ describe("converge-chain — 4가지 행위 구분", () => {
     // 편향된 트래픽 생성 — page_view에서 home/ko/member만 사용
     const records: AddressContextRecord[] = [];
     for (let i = 0; i < 500; i++) {
-      const pvAddr = encodePrefixByValue(DEMO_CATALOG, "page_view", "v1", {
-        svc_ref: svcRef, page: "home", locale: "ko", userType: "member",
+      const pvAddr = encodePrefixByValue(DEMO_CATALOG, 'page_view', 'v1', {
+        svc_ref: svcRef,
+        page: 'home',
+        locale: 'ko',
+        userType: 'member',
       });
-      const epAddr = encodePrefixByValue(DEMO_CATALOG, "endpoint", "v1", {
-        svc_ref: svcRef, resource_type: "api", http_method: "POST", api_version: "v1",
+      const epAddr = encodePrefixByValue(DEMO_CATALOG, 'endpoint', 'v1', {
+        svc_ref: svcRef,
+        resource_type: 'api',
+        http_method: 'POST',
+        api_version: 'v1',
       });
       records.push({
         address_context: {
@@ -64,7 +71,7 @@ describe("converge-chain — 4가지 행위 구분", () => {
           endpoint: `endpoint:v1:${epAddr}`,
         },
         timestamp: new Date(2026, 2, 20, 0, 0, i).toISOString(),
-        session_id: "web-app",
+        session_id: 'web-app',
       });
     }
 
@@ -72,31 +79,33 @@ describe("converge-chain — 4가지 행위 구분", () => {
     const entriesMap = new Map<string, readonly string[]>();
     for (const [id, axis] of Object.entries(DEMO_CATALOG.axes)) {
       const versions = Object.keys(axis.versions);
-      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      const latest = axis.versions[
+        versions[versions.length - 1] as keyof typeof axis.versions
+      ] as any;
       if (latest?.entries) entriesMap.set(id, [...latest.entries]);
     }
 
     const result = convergeChain(DEMO_CATALOG, graph, usage, { entriesMap });
 
-    console.log("\n══ converge-chain (usage 있음) ══");
+    console.log('\n══ converge-chain (usage 있음) ══');
     console.log(`  merge:       ${result.summary.merges}건`);
     console.log(`  deactivate:  ${result.summary.deactivations}건`);
     console.log(`  simplify:    ${result.summary.simplifications}건`);
     console.log(`  observe:     ${result.summary.observations}건`);
 
-    console.log("\n  행위별 상세:");
+    console.log('\n  행위별 상세:');
     for (const a of result.actions.slice(0, 10)) {
       switch (a.kind) {
-        case "merge":
-          console.log(`    🔀 merge: ${a.targets.join(" ↔ ")}`);
+        case 'merge':
+          console.log(`    🔀 merge: ${a.targets.join(' ↔ ')}`);
           break;
-        case "deactivate":
-          console.log(`    🗑 deactivate: ${a.axis}:[${a.entries.join(",")}] — ${a.reason}`);
+        case 'deactivate':
+          console.log(`    🗑 deactivate: ${a.axis}:[${a.entries.join(',')}] — ${a.reason}`);
           break;
-        case "simplify":
+        case 'simplify':
           console.log(`    ✂ simplify: ${a.prefix} — ${a.suggestion}`);
           break;
-        case "observe":
+        case 'observe':
           console.log(`    👁 observe: ${a.finding.slice(0, 60)}...`);
           break;
       }
@@ -111,63 +120,69 @@ describe("converge-chain — 4가지 행위 구분", () => {
 
     // Decision이 merge에 대해 생성됨
     expect(result.decisions.length).toBeGreaterThan(0);
-    expect(result.decisions[0].id).toContain("MERGE");
+    expect(result.decisions[0].id).toContain('MERGE');
   });
 
-  it("DEC-SEP 활성 결정이 있으면 merge 제안 억제", () => {
+  it('DEC-SEP 활성 결정이 있으면 merge 제안 억제', () => {
     const graph = deriveFromCatalog(DEMO_CATALOG);
 
     // initiator↔channel에 대한 DEC-SEP 추가
     graph.addNode({
-      kind: "decision",
-      id: "DEC-SEP-initiator-channel",
-      date: "2026-03-20",
-      title: "initiator와 channel 분리 유지",
-      context: "test",
-      rationale: "도메인이 다름",
-      lifecycle: "active",
+      kind: 'decision',
+      id: 'DEC-SEP-initiator-channel',
+      date: '2026-03-20',
+      title: 'initiator와 channel 분리 유지',
+      context: 'test',
+      rationale: '도메인이 다름',
+      lifecycle: 'active',
     });
-    graph.addEdge("justifies", "DEC-SEP-initiator-channel", "initiator");
-    graph.addEdge("justifies", "DEC-SEP-initiator-channel", "channel");
+    graph.addEdge('justifies', 'DEC-SEP-initiator-channel', 'initiator');
+    graph.addEdge('justifies', 'DEC-SEP-initiator-channel', 'channel');
 
     const entriesMap = new Map<string, readonly string[]>();
     for (const [id, axis] of Object.entries(DEMO_CATALOG.axes)) {
       const versions = Object.keys(axis.versions);
-      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      const latest = axis.versions[
+        versions[versions.length - 1] as keyof typeof axis.versions
+      ] as any;
       if (latest?.entries) entriesMap.set(id, [...latest.entries]);
     }
 
     const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap });
 
     // initiator↔channel이 merge 대상에서 제외되어야 함
-    const mergeTargets = new Set(result.actions
-      .filter(a => a.kind === "merge")
-      .flatMap(a => (a as any).targets as string[]));
+    const mergeTargets = new Set(
+      result.actions
+        .filter((a) => a.kind === 'merge')
+        .flatMap((a) => (a as any).targets as string[]),
+    );
 
-    const hasInitiatorChannel = mergeTargets.has("initiator") && mergeTargets.has("channel");
+    const hasInitiatorChannel = mergeTargets.has('initiator') && mergeTargets.has('channel');
     expect(hasInitiatorChannel).toBe(false);
 
     console.log(`  DEC-SEP 억제 후 merge: ${result.summary.merges}건`);
   });
 
-  it("DEC-SEP가 superseded이면 merge 제안 재개", () => {
+  it('DEC-SEP가 superseded이면 merge 제안 재개', () => {
     const graph = deriveFromCatalog(DEMO_CATALOG);
 
     // superseded된 DEC-SEP — 억제하지 않아야 함
     graph.addNode({
-      kind: "decision",
-      id: "DEC-SEP-initiator-channel",
-      date: "2026-03-20",
-      title: "initiator와 channel 분리 유지",
-      context: "test",
-      rationale: "도메인이 다름",
-      lifecycle: "superseded",  // 대체됨 → 재검토 허용
+      kind: 'decision',
+      id: 'DEC-SEP-initiator-channel',
+      date: '2026-03-20',
+      title: 'initiator와 channel 분리 유지',
+      context: 'test',
+      rationale: '도메인이 다름',
+      lifecycle: 'superseded', // 대체됨 → 재검토 허용
     });
 
     const entriesMap = new Map<string, readonly string[]>();
     for (const [id, axis] of Object.entries(DEMO_CATALOG.axes)) {
       const versions = Object.keys(axis.versions);
-      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      const latest = axis.versions[
+        versions[versions.length - 1] as keyof typeof axis.versions
+      ] as any;
       if (latest?.entries) entriesMap.set(id, [...latest.entries]);
     }
 
@@ -175,27 +190,29 @@ describe("converge-chain — 4가지 행위 구분", () => {
 
     // superseded이므로 initiator↔channel이 다시 merge 후보
     const mergeTargets = result.actions
-      .filter(a => a.kind === "merge")
-      .flatMap(a => (a as any).targets as string[]);
+      .filter((a) => a.kind === 'merge')
+      .flatMap((a) => (a as any).targets as string[]);
 
-    expect(mergeTargets).toContain("initiator");
-    expect(mergeTargets).toContain("channel");
+    expect(mergeTargets).toContain('initiator');
+    expect(mergeTargets).toContain('channel');
   });
 
-  it("각 action.kind가 명확히 분리됨", () => {
+  it('각 action.kind가 명확히 분리됨', () => {
     const graph = deriveFromCatalog(DEMO_CATALOG);
     const entriesMap = new Map<string, readonly string[]>();
     for (const [id, axis] of Object.entries(DEMO_CATALOG.axes)) {
       const versions = Object.keys(axis.versions);
-      const latest = axis.versions[versions[versions.length - 1] as keyof typeof axis.versions] as any;
+      const latest = axis.versions[
+        versions[versions.length - 1] as keyof typeof axis.versions
+      ] as any;
       if (latest?.entries) entriesMap.set(id, [...latest.entries]);
     }
     const result = convergeChain(DEMO_CATALOG, graph, null, { entriesMap });
 
     // kind별로 Set으로 분류
-    const kinds = new Set(result.actions.map(a => a.kind));
+    const kinds = new Set(result.actions.map((a) => a.kind));
 
-    console.log(`\n  action kinds: ${[...kinds].join(", ")}`);
+    console.log(`\n  action kinds: ${[...kinds].join(', ')}`);
 
     // merge/deactivate/simplify/observe 4종 중 하나 이상 존재
     expect(kinds.size).toBeGreaterThan(0);
@@ -203,18 +220,18 @@ describe("converge-chain — 4가지 행위 구분", () => {
     // 각 action이 정확한 타입을 가짐
     for (const a of result.actions) {
       switch (a.kind) {
-        case "merge":
+        case 'merge':
           expect(a.targets.length).toBeGreaterThanOrEqual(2);
           break;
-        case "deactivate":
+        case 'deactivate':
           expect(a.axis).toBeDefined();
           expect(a.entries.length).toBeGreaterThan(0);
           break;
-        case "simplify":
+        case 'simplify':
           expect(a.prefix).toBeDefined();
           expect(a.suggestion).toBeDefined();
           break;
-        case "observe":
+        case 'observe':
           expect(a.finding).toBeDefined();
           expect(a.source).toBeDefined();
           break;

@@ -9,8 +9,8 @@
  * sql-store, and d1-store into a single utility.
  */
 
-import type { SchemaVersionRecord, EntryRecord } from "../index-meta-store.js";
-import { ValidationError } from "../errors.js";
+import type { SchemaVersionRecord, EntryRecord } from '../index-meta-store.js';
+import { ValidationError } from '../errors.js';
 
 /**
  * Validate an entry record before insertion.
@@ -32,17 +32,17 @@ export function validateEntryForInsert(
 ): void {
   if (!schemaVersion) {
     throw new ValidationError(
-      `SchemaVersion not found: "${record.prefix}/${record.versionId}". Insert schema version first.`
+      `SchemaVersion not found: "${record.prefix}/${record.versionId}". Insert schema version first.`,
     );
   }
   if (record.position < 1 || record.position > schemaVersion.capacity) {
     throw new ValidationError(
-      `Position ${record.position} out of range [1, ${schemaVersion.capacity}] for "${record.prefix}/${record.versionId}"`
+      `Position ${record.position} out of range [1, ${schemaVersion.capacity}] for "${record.prefix}/${record.versionId}"`,
     );
   }
   if (existingEntry) {
     throw new ValidationError(
-      `Entry already exists at position ${record.position} in "${record.prefix}/${record.versionId}"`
+      `Entry already exists at position ${record.position} in "${record.prefix}/${record.versionId}"`,
     );
   }
 }

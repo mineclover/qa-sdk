@@ -1,17 +1,10 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { basename, relative, resolve } from "node:path";
+import { basename, relative, resolve } from 'node:path';
 
-import {
-  createPrdMarkdownAdapter,
-  buildRalphPrdJsonEnvelopeFromContent,
-} from "./index.js";
-import type {
-  DocumentDiagnostic,
-  DocumentEnvelope,
-  DocumentTask,
-} from "doc-envelope";
+import { createPrdMarkdownAdapter, buildRalphPrdJsonEnvelopeFromContent } from './index.js';
+import type { DocumentDiagnostic, DocumentEnvelope, DocumentTask } from 'doc-envelope';
 
 export interface PrdToRalphJsonOptions {
   readonly rootDir: string;
@@ -26,7 +19,7 @@ export interface RalphPrdJsonStory {
   readonly acceptanceCriteria: readonly string[];
   readonly priority: number;
   readonly passes: false;
-  readonly notes: "";
+  readonly notes: '';
   readonly dependsOn: readonly string[];
 }
 
@@ -65,9 +58,14 @@ export async function previewPrdToRalphJson(
       bytes: 0,
       storyCount: 0,
       root: null,
-      content: "",
+      content: '',
       diagnostics: [
-        diagnostic(input, "prd-to-ralph-json-input-not-found", "error", "PRD markdown input could not be read through the PRD markdown adapter."),
+        diagnostic(
+          input,
+          'prd-to-ralph-json-input-not-found',
+          'error',
+          'PRD markdown input could not be read through the PRD markdown adapter.',
+        ),
       ],
       validationDocument: null,
     };
@@ -83,7 +81,7 @@ export async function previewPrdToRalphJson(
   return {
     input,
     output,
-    bytes: Buffer.byteLength(content, "utf8"),
+    bytes: Buffer.byteLength(content, 'utf8'),
     storyCount: root.userStories.length,
     root,
     content,
@@ -94,12 +92,11 @@ export async function previewPrdToRalphJson(
 
 function buildRalphJsonRoot(document: DocumentEnvelope): RalphPrdJsonRoot {
   const name = asString(document.metadata.title) ?? titleizePath(document.path);
-  const description = asString(document.metadata.overview)
-    ?? firstString(document.metadata.goals)
-    ?? `Generated from ${document.path}.`;
-  const stories = document.tasks.map((task, index) =>
-    toRalphStory(task, document.tasks, index)
-  );
+  const description =
+    asString(document.metadata.overview) ??
+    firstString(document.metadata.goals) ??
+    `Generated from ${document.path}.`;
+  const stories = document.tasks.map((task, index) => toRalphStory(task, document.tasks, index));
   return {
     name,
     branchName: `ralph/${slug(stripPrdSuffix(name))}`,
@@ -119,23 +116,24 @@ function toRalphStory(
     storyIds,
     index,
   );
-  const dependsOn = explicitDependencies.length > 0
-    ? explicitDependencies
-    : index > 0
-      ? [allTasks[index - 1]!.id]
-      : [];
+  const dependsOn =
+    explicitDependencies.length > 0
+      ? explicitDependencies
+      : index > 0
+        ? [allTasks[index - 1]!.id]
+        : [];
 
   return {
     id: task.id,
     title: task.title,
-    description: asString(task.metadata.description) ?? "",
+    description: asString(task.metadata.description) ?? '',
     acceptanceCriteria: unique([
       ...acceptanceCriteriaText(task.metadata.acceptanceCriteria),
       ...asStringArray(task.metadata.qualityGates),
     ]),
     priority: index + 1,
     passes: false,
-    notes: "",
+    notes: '',
     dependsOn,
   };
 }
@@ -164,11 +162,11 @@ function acceptanceCriteriaText(value: unknown): readonly string[] {
   if (!Array.isArray(value)) return [];
   return value
     .map((item) => {
-      if (typeof item === "string") return item.trim();
-      if (item && typeof item === "object" && "text" in item && typeof item.text === "string") {
+      if (typeof item === 'string') return item.trim();
+      if (item && typeof item === 'object' && 'text' in item && typeof item.text === 'string') {
         return item.text.trim();
       }
-      return "";
+      return '';
     })
     .filter(Boolean);
 }
@@ -176,7 +174,7 @@ function acceptanceCriteriaText(value: unknown): readonly string[] {
 function diagnostic(
   path: string,
   code: string,
-  severity: "error" | "warning",
+  severity: 'error' | 'warning',
   message: string,
 ): DocumentDiagnostic {
   return {
@@ -188,42 +186,47 @@ function diagnostic(
       metadata: {},
     },
     metadata: {
-      source: "prd-to-ralph-json",
+      source: 'prd-to-ralph-json',
     },
   };
 }
 
 function toRepoPath(rootDir: string, path: string): string {
-  const absolutePath = path.startsWith("/") ? resolve(path) : resolve(rootDir, path);
+  const absolutePath = path.startsWith('/') ? resolve(path) : resolve(rootDir, path);
   const relativePath = relative(rootDir, absolutePath);
-  return normalizePath(relativePath && !relativePath.startsWith("..") ? relativePath : path);
+  return normalizePath(relativePath && !relativePath.startsWith('..') ? relativePath : path);
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function titleizePath(path: string): string {
-  const name = basename(path).replace(/\.(?:md|json)$/i, "");
+  const name = basename(path).replace(/\.(?:md|json)$/i, '');
   return name
     .split(/[-_\s]+/)
-    .map((part) => part ? `${part[0]!.toUpperCase()}${part.slice(1)}` : "")
+    .map((part) => (part ? `${part[0]!.toUpperCase()}${part.slice(1)}` : ''))
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 }
 
 function stripPrdSuffix(value: string): string {
-  const stripped = value.replace(/\bprd\b/gi, "").replace(/\s+/g, " ").trim();
+  const stripped = value
+    .replace(/\bprd\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return stripped || value;
 }
 
 function slug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "") || "prd";
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'prd'
+  );
 }
 
 function unique(values: readonly string[]): readonly string[] {
@@ -231,17 +234,19 @@ function unique(values: readonly string[]): readonly string[] {
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function firstString(value: unknown): string | undefined {
   return Array.isArray(value)
-    ? value.find((item): item is string => typeof item === "string" && item.trim().length > 0)?.trim()
+    ? value
+        .find((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        ?.trim()
     : undefined;
 }
 
 function asStringArray(value: unknown): readonly string[] {
   return Array.isArray(value)
-    ? value.map((item) => typeof item === "string" ? item.trim() : "").filter(Boolean)
+    ? value.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean)
     : [];
 }

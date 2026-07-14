@@ -8,7 +8,7 @@
  * graph-explorer 도메인의 내부 구현(AuthorizationGraphStore)에 직접 의존하지 않고
  * 본 port 를 통해서만 접근한다.
  */
-import type { AuthorizationGraphSnapshotRecord } from "authorization-ontology";
+import type { AuthorizationGraphSnapshotRecord } from 'authorization-ontology';
 
 export abstract class GraphSnapshotQueryPort {
   /** graphId 기준 가장 최신 snapshot. 없으면 null. */

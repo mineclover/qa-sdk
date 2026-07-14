@@ -1,7 +1,7 @@
 // Generated from Catalog "demo" (hash: 3ccbf6145735) at 2026-03-23T03:53:59
 // !! 자동 생성 파일 — 직접 수정 금지 !!
 
-import type * as Axes from "./axes.js";
+import type * as Axes from './axes.js';
 
 /** auth_event — 인증 이벤트 */
 export interface AuthEventDims {

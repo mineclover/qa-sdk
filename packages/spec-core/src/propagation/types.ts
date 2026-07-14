@@ -5,12 +5,12 @@
  * Propagation 전용 타입.
  */
 
-import type { VersionEventNode } from "dkg";
+import type { VersionEventNode } from 'dkg';
 
 export type { VersionEventNode };
 
 export interface VersionNotification {
-  readonly event: "activated" | "deprecated" | "released";
+  readonly event: 'activated' | 'deprecated' | 'released';
   readonly prefix: string;
   readonly versionId: string;
   readonly previousVersion: string | null;
@@ -22,7 +22,7 @@ export interface VersionNotification {
   readonly affectedDomains: readonly string[];
   readonly affectedConsumers: readonly {
     readonly id: string;
-    readonly action: "update-recommended" | "migration-required" | "no-action";
+    readonly action: 'update-recommended' | 'migration-required' | 'no-action';
   }[];
   readonly constraintViolations: readonly {
     readonly constraintId: string;

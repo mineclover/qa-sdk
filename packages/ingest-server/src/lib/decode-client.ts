@@ -8,7 +8,7 @@
  * DECODE_SERVICE_URL이 설정되지 않으면 null 반환 → 로컬 fallback.
  */
 
-import { parsePackedAddress } from "@qa-sdk/core/coordinates/address-context-schema";
+import { parsePackedAddress } from '@qa-sdk/core/coordinates/address-context-schema';
 
 export interface DecodedAddress {
   prefix: string;
@@ -36,8 +36,8 @@ export async function decodeAddressContext(
       if (!parsed) continue;
 
       const res = await fetch(`${baseUrl}/decode`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           input: parsed.address,
           prefix: parsed.prefix,

@@ -1,9 +1,9 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { Db } from "@qa-sdk/store";
-import { readFileSync } from "node:fs";
-import { Hono, type Context } from "hono";
+import type { Db } from '@qa-sdk/store';
+import { readFileSync } from 'node:fs';
+import { Hono, type Context } from 'hono';
 
 export interface DbHealthStatus {
   connected: boolean;
@@ -23,10 +23,10 @@ function getPackageVersion(): string {
   if (_packageVersion) return _packageVersion;
   let version: string;
   try {
-    const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
-    version = pkg.version ?? "0.0.0";
+    const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
+    version = pkg.version ?? '0.0.0';
   } catch {
-    version = "0.0.0";
+    version = '0.0.0';
   }
   _packageVersion = version;
   return version;
@@ -37,7 +37,7 @@ export function createHealthRoutes(options: HealthRoutesOptions) {
   const version = options.version ?? getPackageVersion();
   const getUptimeSeconds = options.getUptimeSeconds ?? (() => process.uptime());
 
-  routes.get("/health", (c) =>
+  routes.get('/health', (c) =>
     respondWithHealth(c, {
       checkDbHealth: options.checkDbHealth,
       getUptimeSeconds,
@@ -45,9 +45,9 @@ export function createHealthRoutes(options: HealthRoutesOptions) {
     }),
   );
 
-  routes.get("/health/live", (c) => c.json({ ok: true }));
+  routes.get('/health/live', (c) => c.json({ ok: true }));
 
-  routes.get("/health/ready", (c) =>
+  routes.get('/health/ready', (c) =>
     respondWithHealth(c, {
       checkDbHealth: options.checkDbHealth,
       getUptimeSeconds,
@@ -63,7 +63,7 @@ export function createDbHealthChecker(db: Db): DbHealthChecker {
     const startedAt = performance.now();
 
     try {
-      await db.execute("SELECT 1");
+      await db.execute('SELECT 1');
       return {
         connected: true,
         latencyMs: Math.round(performance.now() - startedAt),
@@ -101,4 +101,3 @@ async function respondWithHealth(
     ok ? 200 : 503,
   );
 }
-

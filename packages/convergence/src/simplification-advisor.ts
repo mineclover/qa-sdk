@@ -5,16 +5,16 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphPort } from "spec-schema";
-import type { PrefixNode } from "./dkg-types.js";
+import type { GraphPort } from 'spec-schema';
+import type { PrefixNode } from './dkg-types.js';
 import type {
   EntryUsage,
   AddressUsage,
   SimplificationCandidate,
   SimplificationSuggestion,
-} from "./convergence.types.js";
+} from './convergence.types.js';
 
-const LOW_USAGE_THRESHOLD = 0.05;    // 5% 미만 → 저사용
+const LOW_USAGE_THRESHOLD = 0.05; // 5% 미만 → 저사용
 
 /**
  * prefix의 단순화 기회를 분석한다.
@@ -31,7 +31,7 @@ export function analyzeSimplification(
   const dims = prefixNode?.dimLabels ?? [];
 
   // 주소 공간 사용률
-  const prefixAddresses = addressUsages.filter(a => a.prefix === prefixId);
+  const prefixAddresses = addressUsages.filter((a) => a.prefix === prefixId);
   const activeAddressCount = prefixAddresses.length;
 
   // 차원별 사용된 entry 집합
@@ -55,7 +55,7 @@ export function analyzeSimplification(
 
   // 저사용 entry
   const totalEntryCount = entryUsages
-    .filter(u => dims.includes(u.axisId) || isAxisOfPrefix(graph, prefixId, u.axisId))
+    .filter((u) => dims.includes(u.axisId) || isAxisOfPrefix(graph, prefixId, u.axisId))
     .reduce((sum, u) => sum + u.count, 0);
 
   const lowUsageEntries: { axis: string; entry: string; usageRate: number }[] = [];
@@ -79,7 +79,7 @@ export function analyzeSimplification(
 
   for (const sv of singleValueDims) {
     suggestions.push({
-      kind: "remove-dim",
+      kind: 'remove-dim',
       dim: sv.dim,
       reason: `'${sv.dim}' 차원이 항상 '${sv.value}'만 사용됨. 차원 제거 검토.`,
     });
@@ -87,7 +87,7 @@ export function analyzeSimplification(
 
   for (const le of lowUsageEntries) {
     suggestions.push({
-      kind: "deactivate-entry",
+      kind: 'deactivate-entry',
       axis: le.axis,
       entry: le.entry,
       reason: `'${le.axis}:${le.entry}' 사용률 ${(le.usageRate * 100).toFixed(1)}%. 비활성화 검토.`,
@@ -96,14 +96,14 @@ export function analyzeSimplification(
 
   if (dims.length > 6) {
     suggestions.push({
-      kind: "split-prefix",
+      kind: 'split-prefix',
       newPrefixes: [],
       reason: `차원 수 ${dims.length}개 — 복잡도 높음. 분할 검토.`,
     });
   }
 
   if (suggestions.length === 0) {
-    suggestions.push({ kind: "ok", reason: "단순화 불필요." });
+    suggestions.push({ kind: 'ok', reason: '단순화 불필요.' });
   }
 
   return {
@@ -127,7 +127,7 @@ export function scanAllSimplifications(
   addressUsages: readonly AddressUsage[],
   options?: { addressSpaceSizes?: ReadonlyMap<string, number> },
 ): SimplificationCandidate[] {
-  return prefixIds.map(id =>
+  return prefixIds.map((id) =>
     analyzeSimplification(graph, id, entryUsages, addressUsages, {
       addressSpaceSize: options?.addressSpaceSizes?.get(id),
     }),
@@ -135,5 +135,5 @@ export function scanAllSimplifications(
 }
 
 function isAxisOfPrefix(graph: GraphPort, prefixId: string, axisId: string): boolean {
-  return graph.edgesFrom(prefixId, "composes").some(e => e.to === axisId);
+  return graph.edgesFrom(prefixId, 'composes').some((e) => e.to === axisId);
 }

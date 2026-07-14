@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "b46ca775-6372-4fee-ba0e-17904fff32d2",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "dkg_edges",
@@ -327,13 +325,9 @@
       "table": "version_usages"
     },
     {
-      "columns": [
-        "snapshot_id"
-      ],
+      "columns": ["snapshot_id"],
       "tableTo": "usage_snapshots",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -342,45 +336,35 @@
       "table": "version_usages"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "dkg_edges_pk",
       "table": "dkg_edges",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "key"
-      ],
+      "columns": ["key"],
       "nameExplicit": false,
       "name": "dkg_meta_pk",
       "table": "dkg_meta",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "dkg_nodes_pk",
       "table": "dkg_nodes",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "usage_snapshots_pk",
       "table": "usage_snapshots",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "version_usages_pk",
       "table": "version_usages",

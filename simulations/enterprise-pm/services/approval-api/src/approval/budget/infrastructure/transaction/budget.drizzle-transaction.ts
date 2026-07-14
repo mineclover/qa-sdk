@@ -1,14 +1,14 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { sql } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { sql } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createSqliteTransactionPort,
   createPgTransactionPort,
   type TransactionPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
 export function createBudgetSqliteTransactionPort(db: BetterSQLite3Database): TransactionPort {
   return createSqliteTransactionPort(db as unknown as { run: (q: unknown) => unknown }, sql);
@@ -20,20 +20,18 @@ export function createBudgetPgTransactionPort(db: PostgresJsDatabase): Transacti
   );
 }
 
-export type BudgetDialect = "sqlite" | "pg";
+export type BudgetDialect = 'sqlite' | 'pg';
 
 export interface BudgetTransactionFactoryOpts {
   readonly dialect: BudgetDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createBudgetTransactionPort(
-  opts: BudgetTransactionFactoryOpts,
-): TransactionPort {
-  if (opts.dialect === "sqlite") {
+export function createBudgetTransactionPort(opts: BudgetTransactionFactoryOpts): TransactionPort {
+  if (opts.dialect === 'sqlite') {
     return createBudgetSqliteTransactionPort(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return createBudgetPgTransactionPort(opts.db as PostgresJsDatabase);
   }
   throw new Error(

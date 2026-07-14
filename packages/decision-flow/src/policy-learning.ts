@@ -1,6 +1,6 @@
 // @def.boundary df-system
-import type { InstanceStore } from "./instance-store.js";
-import type { Condition, FlowPolicy, FlowInstance, GateSelection } from "./types.js";
+import type { InstanceStore } from './instance-store.js';
+import type { Condition, FlowPolicy, FlowInstance, GateSelection } from './types.js';
 
 export type PatternContextValue = string | number | boolean | null;
 
@@ -26,11 +26,7 @@ export interface DetectedPattern {
   readonly histogram: Readonly<Record<string, Readonly<Record<string, number>>>>;
 }
 
-export type PolicyCandidateStatus =
-  | "candidate"
-  | "approved"
-  | "rejected"
-  | "modified";
+export type PolicyCandidateStatus = 'candidate' | 'approved' | 'rejected' | 'modified';
 
 export interface PolicyCandidate extends FlowPolicy {
   readonly status: PolicyCandidateStatus;
@@ -49,7 +45,7 @@ export interface PolicyCandidateChanges {
   readonly name?: string;
   readonly priority?: number;
   readonly conditions?: readonly Condition[];
-  readonly action?: Partial<FlowPolicy["action"]>;
+  readonly action?: Partial<FlowPolicy['action']>;
   readonly rationale?: string;
 }
 
@@ -103,15 +99,11 @@ export class PolicyCandidateWorkflow {
     patterns: readonly DetectedPattern[],
     threshold: number | PolicyCandidateThreshold = {},
   ): PolicyCandidate[] {
-    const thresholdOptions = typeof threshold === "number"
-      ? { minFrequency: threshold }
-      : threshold;
+    const thresholdOptions =
+      typeof threshold === 'number' ? { minFrequency: threshold } : threshold;
     const candidates = generatePolicyCandidates(patterns, {
       ...thresholdOptions,
-      existingPolicies: [
-        ...(thresholdOptions.existingPolicies ?? []),
-        ...this.registeredPolicies,
-      ],
+      existingPolicies: [...(thresholdOptions.existingPolicies ?? []), ...this.registeredPolicies],
     });
     const proposed: PolicyCandidate[] = [];
 
@@ -123,7 +115,7 @@ export class PolicyCandidateWorkflow {
 
       const existing = this.candidates.get(candidate.id);
       if (existing) {
-        if (existing.status === "candidate") {
+        if (existing.status === 'candidate') {
           proposed.push(cloneCandidate(existing));
         }
         continue;
@@ -150,10 +142,10 @@ export class PolicyCandidateWorkflow {
   }
 
   approveCandidate(id: string): FlowPolicy {
-    const candidate = this.requireCandidate(id, ["candidate"]);
+    const candidate = this.requireCandidate(id, ['candidate']);
     const approvedCandidate: PolicyCandidate = {
       ...candidate,
-      status: "approved",
+      status: 'approved',
       reviewedAt: new Date().toISOString(),
       reviewReason: undefined,
     };
@@ -165,10 +157,10 @@ export class PolicyCandidateWorkflow {
   }
 
   rejectCandidate(id: string, reason: string): PolicyCandidate {
-    const candidate = this.requireCandidate(id, ["candidate"]);
+    const candidate = this.requireCandidate(id, ['candidate']);
     const rejectedCandidate: PolicyCandidate = {
       ...candidate,
-      status: "rejected",
+      status: 'rejected',
       reviewReason: reason,
       reviewedAt: new Date().toISOString(),
     };
@@ -178,14 +170,11 @@ export class PolicyCandidateWorkflow {
     return cloneCandidate(rejectedCandidate);
   }
 
-  modifyCandidate(
-    id: string,
-    changes: PolicyCandidateChanges,
-  ): FlowPolicy {
-    const candidate = this.requireCandidate(id, ["candidate"]);
+  modifyCandidate(id: string, changes: PolicyCandidateChanges): FlowPolicy {
+    const candidate = this.requireCandidate(id, ['candidate']);
     const modifiedCandidate: PolicyCandidate = {
       ...applyCandidateChanges(candidate, changes),
-      status: "modified",
+      status: 'modified',
       reviewedAt: new Date().toISOString(),
       reviewReason: undefined,
     };
@@ -229,8 +218,9 @@ export function detectPatterns(
   options: PatternDetectionOptions = {},
 ): DetectedPattern[] {
   const minFrequency = normalizeMinFrequency(options.minFrequency);
-  const instances = store.findBySchema(schemaId)
-    .filter((instance) => instance.status === "completed");
+  const instances = store
+    .findBySchema(schemaId)
+    .filter((instance) => instance.status === 'completed');
   const buckets = new Map<string, MutablePatternBucket>();
 
   for (const instance of instances) {
@@ -246,12 +236,8 @@ export function detectPatterns(
 
     for (const entry of contextEntries) {
       const bucketKey = `${entry.key}\u0000${serializeContextValue(entry.value)}\u0000${pathKey}`;
-      const bucket = buckets.get(bucketKey) ?? createPatternBucket(
-        schemaId,
-        entry,
-        gatePath,
-        occurredAt,
-      );
+      const bucket =
+        buckets.get(bucketKey) ?? createPatternBucket(schemaId, entry, gatePath, occurredAt);
 
       bucket.frequency += 1;
       bucket.totalConfidence += occurrenceConfidence;
@@ -280,11 +266,12 @@ export function detectPatterns(
       lastSeenAt: bucket.lastSeenAt,
       histogram: histogramToRecord(bucket.histogram),
     }))
-    .toSorted((a, b) =>
-      b.frequency - a.frequency
-      || compareTimestamps(b.lastSeenAt, a.lastSeenAt)
-      || a.contextKey.localeCompare(b.contextKey)
-      || String(a.contextValue).localeCompare(String(b.contextValue)),
+    .toSorted(
+      (a, b) =>
+        b.frequency - a.frequency ||
+        compareTimestamps(b.lastSeenAt, a.lastSeenAt) ||
+        a.contextKey.localeCompare(b.contextKey) ||
+        String(a.contextValue).localeCompare(String(b.contextValue)),
     );
 }
 
@@ -302,17 +289,17 @@ export function generatePolicyCandidates(
   const normalized = normalizeCandidateThreshold(threshold);
 
   return patterns
-    .filter((pattern) =>
-      pattern.frequency >= normalized.minFrequency
-      && pattern.averageConfidence >= normalized.minAverageConfidence
-      && pattern.gatePath.length > 0,
+    .filter(
+      (pattern) =>
+        pattern.frequency >= normalized.minFrequency &&
+        pattern.averageConfidence >= normalized.minAverageConfidence &&
+        pattern.gatePath.length > 0,
     )
     .map((pattern) => createPolicyCandidate(pattern, normalized.priority))
     .filter((candidate) => !isDuplicatePolicy(candidate, normalized.existingPolicies))
-    .toSorted((a, b) =>
-      b.priority - a.priority
-      || a.flowId.localeCompare(b.flowId)
-      || a.id.localeCompare(b.id),
+    .toSorted(
+      (a, b) =>
+        b.priority - a.priority || a.flowId.localeCompare(b.flowId) || a.id.localeCompare(b.id),
     );
 }
 
@@ -329,7 +316,7 @@ function normalizeMinFrequency(value: number | undefined): number {
 function normalizeCandidateThreshold(
   threshold: number | PolicyCandidateThreshold,
 ): Required<PolicyCandidateThreshold> {
-  if (typeof threshold === "number") {
+  if (typeof threshold === 'number') {
     return {
       minFrequency: normalizeMinFrequency(threshold),
       minAverageConfidence: DEFAULT_MIN_AVERAGE_CONFIDENCE,
@@ -388,15 +375,12 @@ function collectPatternContextEntries(
   return flattenContextEntries(context);
 }
 
-function flattenContextEntries(
-  value: unknown,
-  prefix = "",
-): PatternContextEntry[] {
+function flattenContextEntries(value: unknown, prefix = ''): PatternContextEntry[] {
   if (isPatternContextValue(value)) {
     return prefix ? [{ key: prefix, value }] : [];
   }
 
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return [];
   }
 
@@ -406,33 +390,24 @@ function flattenContextEntries(
   });
 }
 
-function resolveContextValue(
-  context: Record<string, unknown>,
-  key: string,
-): unknown {
-  return key.split(".").reduce<unknown>((current, segment) => {
-    if (current === null || typeof current !== "object") {
+function resolveContextValue(context: Record<string, unknown>, key: string): unknown {
+  return key.split('.').reduce<unknown>((current, segment) => {
+    if (current === null || typeof current !== 'object') {
       return undefined;
     }
     return (current as Record<string, unknown>)[segment];
   }, context);
 }
 
-function buildGatePath(
-  selections: readonly GateSelection[],
-): readonly PatternGateSelection[] {
+function buildGatePath(selections: readonly GateSelection[]): readonly PatternGateSelection[] {
   return selections.map((selection) => ({
     gateId: selection.gateId,
     branchId: selection.branchId,
   }));
 }
 
-function buildPathKey(
-  gatePath: readonly PatternGateSelection[],
-): string {
-  return gatePath
-    .map((selection) => `${selection.gateId}=${selection.branchId}`)
-    .join("|");
+function buildPathKey(gatePath: readonly PatternGateSelection[]): string {
+  return gatePath.map((selection) => `${selection.gateId}=${selection.branchId}`).join('|');
 }
 
 function createPatternBucket(
@@ -454,10 +429,7 @@ function createPatternBucket(
   };
 }
 
-function createPolicyCandidate(
-  pattern: DetectedPattern,
-  priority: number,
-): PolicyCandidate {
+function createPolicyCandidate(pattern: DetectedPattern, priority: number): PolicyCandidate {
   const actionSelection = pattern.gatePath[pattern.gatePath.length - 1];
   const conditions = buildPolicyConditions(pattern);
   const candidateKey = [
@@ -465,7 +437,7 @@ function createPolicyCandidate(
     pattern.contextKey,
     serializeContextValue(pattern.contextValue),
     buildPathKey(pattern.gatePath),
-  ].join("|");
+  ].join('|');
 
   return {
     id: `candidate-${toIdentifierPart(candidateKey)}`,
@@ -479,7 +451,7 @@ function createPolicyCandidate(
       confidence: pattern.averageConfidence,
     },
     rationale: `${pattern.frequency}회 반복, 평균 confidence ${pattern.averageConfidence.toFixed(2)}`,
-    status: "candidate",
+    status: 'candidate',
   };
 }
 
@@ -500,17 +472,15 @@ function applyCandidateChanges(
   };
 }
 
-function buildPolicyConditions(
-  pattern: DetectedPattern,
-): readonly Condition[] {
+function buildPolicyConditions(pattern: DetectedPattern): readonly Condition[] {
   const contextCondition: Condition = {
     field: `context.${pattern.contextKey}`,
-    op: "eq",
+    op: 'eq',
     value: pattern.contextValue,
   };
   const gateConditions = pattern.gatePath.slice(0, -1).map<Condition>((selection) => ({
     field: `gate.${selection.gateId}.branch`,
-    op: "eq",
+    op: 'eq',
     value: selection.branchId,
   }));
 
@@ -529,14 +499,11 @@ function buildPolicySignature(policy: FlowPolicy): string {
   const serializedConditions = [...policy.conditions]
     .map((condition) => serializeCondition(condition))
     .toSorted()
-    .join("|");
+    .join('|');
 
-  return [
-    policy.flowId,
-    policy.action.gateId,
-    policy.action.branchId,
-    serializedConditions,
-  ].join("\u0000");
+  return [policy.flowId, policy.action.gateId, policy.action.branchId, serializedConditions].join(
+    '\u0000',
+  );
 }
 
 function toFlowPolicy(candidate: PolicyCandidate): FlowPolicy {
@@ -568,42 +535,36 @@ function clonePolicy(policy: FlowPolicy): FlowPolicy {
 }
 
 function serializeCondition(condition: Condition): string {
-  return [
-    condition.field,
-    condition.op,
-    serializeUnknown(condition.value),
-  ].join("\u0000");
+  return [condition.field, condition.op, serializeUnknown(condition.value)].join('\u0000');
 }
 
 function serializeUnknown(value: unknown): string {
   if (value === null) {
-    return "null";
+    return 'null';
   }
   if (value === undefined) {
-    return "undefined";
+    return 'undefined';
   }
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return `string:${value}`;
   }
-  if (typeof value === "number" || typeof value === "boolean") {
+  if (typeof value === 'number' || typeof value === 'boolean') {
     return `${typeof value}:${String(value)}`;
   }
   if (Array.isArray(value)) {
-    return `[${value.map((entry) => serializeUnknown(entry)).join(",")}]`;
+    return `[${value.map((entry) => serializeUnknown(entry)).join(',')}]`;
   }
-  if (typeof value === "object") {
+  if (typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
       .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([key, entry]) => `${key}:${serializeUnknown(entry)}`)
-      .join(",")}}`;
+      .join(',')}}`;
   }
 
   return String(value);
 }
 
-function calcAverageConfidence(
-  selections: readonly GateSelection[],
-): number {
+function calcAverageConfidence(selections: readonly GateSelection[]): number {
   if (selections.length === 0) {
     return 0;
   }
@@ -626,10 +587,7 @@ function accumulateHistogram(
 ): void {
   for (const selection of selections) {
     const gateHistogram = histogram.get(selection.gateId) ?? new Map<string, number>();
-    gateHistogram.set(
-      selection.branchId,
-      (gateHistogram.get(selection.branchId) ?? 0) + 1,
-    );
+    gateHistogram.set(selection.branchId, (gateHistogram.get(selection.branchId) ?? 0) + 1);
     histogram.set(selection.gateId, gateHistogram);
   }
 }
@@ -647,7 +605,7 @@ function histogramToRecord(
 
 function serializeContextValue(value: PatternContextValue): string {
   if (value === null) {
-    return "null";
+    return 'null';
   }
   return `${typeof value}:${String(value)}`;
 }
@@ -655,16 +613,18 @@ function serializeContextValue(value: PatternContextValue): string {
 function toIdentifierPart(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
     .slice(0, 96);
 }
 
 function isPatternContextValue(value: unknown): value is PatternContextValue {
-  return value === null
-    || typeof value === "string"
-    || typeof value === "number"
-    || typeof value === "boolean";
+  return (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  );
 }
 
 function compareTimestamps(a: string, b: string): number {
@@ -681,7 +641,7 @@ function compareTimestamps(a: string, b: string): number {
  * escalation:   confidence가 낮거나 하락 중. 주의 필요. "확신 없이 결정하고 있다"
  * anomaly:      기존 패턴에서 벗어남. 새 경로 또는 비정상. "이전과 다르게 결정했다"
  */
-export type PatternClass = "routine" | "exploratory" | "escalation" | "anomaly";
+export type PatternClass = 'routine' | 'exploratory' | 'escalation' | 'anomaly';
 
 /** 분류된 패턴 */
 export interface ClassifiedPattern {
@@ -707,7 +667,7 @@ export function classifyPattern(pattern: DetectedPattern): ClassifiedPattern {
   if (frequency === 1) {
     return {
       pattern,
-      classification: "anomaly",
+      classification: 'anomaly',
       reason: `1회만 발생 — 기존 패턴에서 벗어난 새 경로`,
       policyFitness: 0,
     };
@@ -716,7 +676,7 @@ export function classifyPattern(pattern: DetectedPattern): ClassifiedPattern {
   if (averageConfidence < 0.5) {
     return {
       pattern,
-      classification: "escalation",
+      classification: 'escalation',
       reason: `평균 confidence ${averageConfidence.toFixed(2)} — 확신 없이 결정하고 있다`,
       policyFitness: 0.1,
     };
@@ -725,7 +685,7 @@ export function classifyPattern(pattern: DetectedPattern): ClassifiedPattern {
   if (frequency >= 5 && averageConfidence >= 0.7) {
     return {
       pattern,
-      classification: "routine",
+      classification: 'routine',
       reason: `${frequency}회 반복, confidence ${averageConfidence.toFixed(2)} — 자동 정책 후보`,
       policyFitness: Math.min(1, (frequency / 10) * averageConfidence),
     };
@@ -733,7 +693,7 @@ export function classifyPattern(pattern: DetectedPattern): ClassifiedPattern {
 
   return {
     pattern,
-    classification: "exploratory",
+    classification: 'exploratory',
     reason: `${frequency}회, confidence ${averageConfidence.toFixed(2)} — 아직 패턴 확립 중`,
     policyFitness: 0.3,
   };
@@ -742,6 +702,8 @@ export function classifyPattern(pattern: DetectedPattern): ClassifiedPattern {
 /**
  * 여러 패턴을 한 번에 분류한다.
  */
-export function classifyPatterns(patterns: readonly DetectedPattern[]): readonly ClassifiedPattern[] {
+export function classifyPatterns(
+  patterns: readonly DetectedPattern[],
+): readonly ClassifiedPattern[] {
   return patterns.map(classifyPattern);
 }

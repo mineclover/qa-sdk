@@ -1,7 +1,7 @@
 // @def.boundary viz-system-root
 // @def.doc viz-system-root
 
-import type { StoredRecord } from "@qa-sdk/core";
+import type { StoredRecord } from '@qa-sdk/core';
 
 /**
  * 두 StoredRecord 배열을 logId 기준으로 dedup하고 timestamp 오름차순으로 정렬.
@@ -19,12 +19,14 @@ export function mergeAndSortRecords(a: StoredRecord[], b: StoredRecord[]): Store
   }
 
   merged.sort((x, y) => {
-    const tx = x.timestamp instanceof Date
-      ? x.timestamp.getTime()
-      : new Date(x.timestamp as string).getTime();
-    const ty = y.timestamp instanceof Date
-      ? y.timestamp.getTime()
-      : new Date(y.timestamp as string).getTime();
+    const tx =
+      x.timestamp instanceof Date
+        ? x.timestamp.getTime()
+        : new Date(x.timestamp as string).getTime();
+    const ty =
+      y.timestamp instanceof Date
+        ? y.timestamp.getTime()
+        : new Date(y.timestamp as string).getTime();
     return tx - ty;
   });
 

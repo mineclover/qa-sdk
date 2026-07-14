@@ -16,23 +16,20 @@ import {
   type RelationTypeRule,
   type ResolveResult,
   ValidationError,
-} from "index-meta-workers";
-import type { Logger } from "pino";
-import { AppError } from "./errors.js";
-import {
-  NoopGateStateClient,
-  type GateStateClient,
-} from "./gate-client.js";
+} from 'index-meta-workers';
+import type { Logger } from 'pino';
+import { AppError } from './errors.js';
+import { NoopGateStateClient, type GateStateClient } from './gate-client.js';
 
 export interface QueryServiceDeps {
   metaRegistry?: MetaRegistry;
   defaultStrategy?: ConflictStrategy;
   gateClient?: GateStateClient;
   gateFailureMode?: GateFailureMode;
-  logger?: Pick<Logger, "warn">;
+  logger?: Pick<Logger, 'warn'>;
 }
 
-export interface QueryRelationTypeRule<T> extends Omit<RelationTypeRule<T>, "instanceRules"> {
+export interface QueryRelationTypeRule<T> extends Omit<RelationTypeRule<T>, 'instanceRules'> {
   instanceRules?: {
     indexId: string;
     versionId: string;
@@ -41,7 +38,7 @@ export interface QueryRelationTypeRule<T> extends Omit<RelationTypeRule<T>, "ins
   };
 }
 
-export type GateFailureMode = "fail-open" | "fail-closed";
+export type GateFailureMode = 'fail-open' | 'fail-closed';
 export type QueryGateMode = Parameters<typeof gateFilterRanges>[2];
 export type QueryResolveResult<T> = ResolveResult<T> | GateAwareResult<T> | null;
 
@@ -90,14 +87,14 @@ export class QueryService implements QueryLookupService {
   private readonly engine: RelationalEngine;
   private readonly gateClient: GateStateClient;
   private readonly gateFailureMode: GateFailureMode;
-  private readonly logger?: Pick<Logger, "warn">;
+  private readonly logger?: Pick<Logger, 'warn'>;
 
   constructor(deps: {
     metaRegistry: MetaRegistry;
     defaultStrategy: ConflictStrategy;
     gateClient: GateStateClient;
     gateFailureMode: GateFailureMode;
-    logger?: Pick<Logger, "warn">;
+    logger?: Pick<Logger, 'warn'>;
   }) {
     this.defaultStrategy = deps.defaultStrategy;
     this.engine = new RelationalEngine(deps.metaRegistry.toInput());
@@ -113,8 +110,8 @@ export class QueryService implements QueryLookupService {
     strategy?: ConflictStrategy,
     options: QueryResolveOptions = {},
   ): Promise<QueryResolveResult<T>> {
-    this.assertCoordLength(coord, shape, "coord");
-    this.assertRulePatterns(rules, shape, "rules");
+    this.assertCoordLength(coord, shape, 'coord');
+    this.assertRulePatterns(rules, shape, 'rules');
 
     const policyResult = this.engine.resolvePolicy(
       coord,
@@ -130,7 +127,7 @@ export class QueryService implements QueryLookupService {
     const gateIndexId = options.indexId;
     const gateVersionId = options.versionId;
     if (!gateIndexId || !gateVersionId) {
-      throw new ValidationError("indexId and versionId are required when withGate=true");
+      throw new ValidationError('indexId and versionId are required when withGate=true');
     }
 
     const wi = this.engine.registry.getWeightedIndex(gateIndexId, gateVersionId);
@@ -180,8 +177,8 @@ export class QueryService implements QueryLookupService {
     typeStrategy?: ConflictStrategy,
     instanceCoord?: readonly number[],
   ): RelationResolveResult<T> | null {
-    this.assertCoordLength(relTypeCoord, relShape, "relTypeCoord");
-    this.assertRulePatterns(typeRules, relShape, "typeRules");
+    this.assertCoordLength(relTypeCoord, relShape, 'relTypeCoord');
+    this.assertRulePatterns(typeRules, relShape, 'typeRules');
 
     const normalizedTypeRules: RelationTypeRule<T>[] = typeRules.map((rule) => ({
       ...rule,
@@ -235,8 +232,8 @@ export class QueryService implements QueryLookupService {
     versionId: string,
   ): void {
     if (
-      requestedShape.length !== actualShape.length
-      || requestedShape.some((value, index) => value !== actualShape[index])
+      requestedShape.length !== actualShape.length ||
+      requestedShape.some((value, index) => value !== actualShape[index])
     ) {
       throw new ValidationError(
         `shape ${JSON.stringify(requestedShape)} does not match registry shape ${JSON.stringify(actualShape)} for "${indexId}/${versionId}"`,
@@ -251,9 +248,9 @@ export class QueryService implements QueryLookupService {
     try {
       return await this.gateClient.getStateRanges(indexId, versionId);
     } catch (error) {
-      if (this.gateFailureMode === "fail-closed") {
+      if (this.gateFailureMode === 'fail-closed') {
         throw new AppError(
-          "SERVICE_UNAVAILABLE",
+          'SERVICE_UNAVAILABLE',
           `gate-service unavailable for "${indexId}/${versionId}"`,
           503,
         );
@@ -265,7 +262,7 @@ export class QueryService implements QueryLookupService {
           indexId,
           versionId,
         },
-        "gate-service unavailable, failing open",
+        'gate-service unavailable, failing open',
       );
       return null;
     }
@@ -275,9 +272,9 @@ export class QueryService implements QueryLookupService {
 export function createQueryService(deps: QueryServiceDeps = {}): QueryService {
   return new QueryService({
     metaRegistry: deps.metaRegistry ?? new MetaRegistry({ dims: {}, indices: {} }),
-    defaultStrategy: deps.defaultStrategy ?? "most-specific",
+    defaultStrategy: deps.defaultStrategy ?? 'most-specific',
     gateClient: deps.gateClient ?? new NoopGateStateClient(),
-    gateFailureMode: deps.gateFailureMode ?? "fail-open",
+    gateFailureMode: deps.gateFailureMode ?? 'fail-open',
     logger: deps.logger,
   });
 }

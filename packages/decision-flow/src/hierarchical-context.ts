@@ -74,8 +74,8 @@ export interface TableRefInfo {
 /** 테이블 컬럼 정보 */
 export interface TableColumnInfo {
   readonly name: string;
-  readonly kind: string;   // "scalar" | "axis_ref" | "prefix_ref" | "table_ref"
-  readonly ref?: string;   // axisId, prefixId, or table name
+  readonly kind: string; // "scalar" | "axis_ref" | "prefix_ref" | "table_ref"
+  readonly ref?: string; // axisId, prefixId, or table name
 }
 
 /** IntentLink 정보 — 이 prefix와 함께 관측되는 prefix들 */
@@ -90,7 +90,10 @@ export interface IntentLinkInfo {
 /** 테이블 스키마 (catalog.tables에서 추출) */
 export interface TableSchema {
   readonly table: string;
-  readonly columns: Record<string, { kind: string; type?: string; axisId?: string; prefixId?: string; table?: string }>;
+  readonly columns: Record<
+    string,
+    { kind: string; type?: string; axisId?: string; prefixId?: string; table?: string }
+  >;
 }
 
 // ─── 조합된 계층 컨텍스트 ────────────────────────────────
@@ -156,7 +159,7 @@ export function assembleHierarchicalContext(
   const dimensions: DimInfo[] = [];
   if (prefix) {
     for (const dim of prefix.dims) {
-      if (dim.kind === "axis") {
+      if (dim.kind === 'axis') {
         const axisInfo = source.axes.get(dim.ref);
         if (axisInfo) dimensions.push(axisInfo);
       }
@@ -167,10 +170,10 @@ export function assembleHierarchicalContext(
   const constraints: string[] = [];
   if (domain) {
     if (domain.boundary.exports.length > 0) {
-      constraints.push(`도메인 경계: exports=[${domain.boundary.exports.join(", ")}]`);
+      constraints.push(`도메인 경계: exports=[${domain.boundary.exports.join(', ')}]`);
     }
     if (domain.boundary.internal.length > 0) {
-      constraints.push(`도메인 내부: internal=[${domain.boundary.internal.join(", ")}]`);
+      constraints.push(`도메인 내부: internal=[${domain.boundary.internal.join(', ')}]`);
     }
   }
   for (const bundle of dslBundles) {
@@ -182,7 +185,9 @@ export function assembleHierarchicalContext(
   // headroom 경고
   for (const dim of dimensions) {
     if (dim.headroom <= 1) {
-      constraints.push(`⚠ ${dim.axisId}: headroom=${dim.headroom} (capacity=${dim.capacity}, entries=${dim.entries.length})`);
+      constraints.push(
+        `⚠ ${dim.axisId}: headroom=${dim.headroom} (capacity=${dim.capacity}, entries=${dim.entries.length})`,
+      );
     }
   }
 
@@ -198,7 +203,7 @@ export function assembleHierarchicalContext(
   const parts: string[] = [];
   parts.push(`${prefixId}`);
   if (domain) parts.push(`도메인:${domain.id}`);
-  if (dslBundles.length > 0) parts.push(`DSL:[${dslBundles.map((b) => b.id).join(",")}]`);
+  if (dslBundles.length > 0) parts.push(`DSL:[${dslBundles.map((b) => b.id).join(',')}]`);
   if (prefix) parts.push(`${prefix.dims.length}차원`);
   if (dimensions.length > 0) {
     const totalHeadroom = dimensions.reduce((s, d) => s + d.headroom, 0);
@@ -213,7 +218,7 @@ export function assembleHierarchicalContext(
     dimensions,
     constraints,
     sharedAxes,
-    summary: parts.join(" | "),
+    summary: parts.join(' | '),
   };
 }
 

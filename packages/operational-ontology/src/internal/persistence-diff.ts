@@ -1,23 +1,19 @@
-import { isDeepStrictEqual } from "node:util";
+import { isDeepStrictEqual } from 'node:util';
 
-import type { CheckpointLattice } from "./checkpoint-core.js";
-import type { JunctionDefinition, RouteDecision } from "./junction-core.js";
+import type { CheckpointLattice } from './checkpoint-core.js';
+import type { JunctionDefinition, RouteDecision } from './junction-core.js';
 import type {
   OperationalOntologyObjectBundle,
   OperationalOntologyStore,
-} from "./persistence-memory.js";
+} from './persistence-memory.js';
 import {
   loadOperationalOntologyCorridorView,
   loadOperationalOntologySnapshotView,
   type OperationalOntologyCorridorView,
   type OperationalOntologySnapshotView,
-} from "./persistence-query.js";
+} from './persistence-query.js';
 
-export type OperationalOntologyDiffStatus =
-  | "added"
-  | "removed"
-  | "changed"
-  | "unchanged";
+export type OperationalOntologyDiffStatus = 'added' | 'removed' | 'changed' | 'unchanged';
 
 export interface OperationalOntologyCorridorDiff {
   corridorId: string;
@@ -120,7 +116,7 @@ function diffCorridorViews(
   if (!from) {
     return {
       corridorId,
-      status: "added",
+      status: 'added',
       changedSections: [],
       endpointCountDelta: to!.corridor.endpoints.length,
       contractCountDelta: to!.corridor.contracts.length,
@@ -136,7 +132,7 @@ function diffCorridorViews(
   if (!to) {
     return {
       corridorId,
-      status: "removed",
+      status: 'removed',
       changedSections: [],
       endpointCountDelta: -from.corridor.endpoints.length,
       contractCountDelta: -from.corridor.contracts.length,
@@ -150,45 +146,40 @@ function diffCorridorViews(
   }
 
   const changedSections: string[] = [];
-  if (!isDeepStrictEqual(from.corridor, to.corridor)) changedSections.push("corridor");
+  if (!isDeepStrictEqual(from.corridor, to.corridor)) changedSections.push('corridor');
   if (!isDeepStrictEqual(from.controlFlow, to.controlFlow)) {
-    changedSections.push("controlFlow");
+    changedSections.push('controlFlow');
   }
   if (!isDeepStrictEqual(from.checkpointLattices, to.checkpointLattices)) {
-    changedSections.push("checkpointLattices");
+    changedSections.push('checkpointLattices');
   }
   if (!isDeepStrictEqual(from.routeDecisions, to.routeDecisions)) {
-    changedSections.push("routeDecisions");
+    changedSections.push('routeDecisions');
   }
   if (!isDeepStrictEqual(from.junctions, to.junctions)) {
-    changedSections.push("junctions");
+    changedSections.push('junctions');
   }
   if (!isDeepStrictEqual(from.traversalBundles, to.traversalBundles)) {
-    changedSections.push("traversalBundles");
+    changedSections.push('traversalBundles');
   }
 
   return {
     corridorId,
-    status: changedSections.length > 0 ? "changed" : "unchanged",
+    status: changedSections.length > 0 ? 'changed' : 'unchanged',
     changedSections,
-    endpointCountDelta:
-      to.corridor.endpoints.length - from.corridor.endpoints.length,
-    contractCountDelta:
-      to.corridor.contracts.length - from.corridor.contracts.length,
+    endpointCountDelta: to.corridor.endpoints.length - from.corridor.endpoints.length,
+    contractCountDelta: to.corridor.contracts.length - from.corridor.contracts.length,
     linkCountDelta: to.corridor.links.length - from.corridor.links.length,
-    checkpointLatticeCountDelta:
-      to.checkpointLattices.length - from.checkpointLattices.length,
-    routeDecisionCountDelta:
-      to.routeDecisions.length - from.routeDecisions.length,
-    traversalBundleCountDelta:
-      to.traversalBundles.length - from.traversalBundles.length,
+    checkpointLatticeCountDelta: to.checkpointLattices.length - from.checkpointLattices.length,
+    routeDecisionCountDelta: to.routeDecisions.length - from.routeDecisions.length,
+    traversalBundleCountDelta: to.traversalBundles.length - from.traversalBundles.length,
     from,
     to,
   };
 }
 
 export async function diffOperationalOntologyCorridor(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   corridorId: string,
   fromSnapshotId: string,
   toSnapshotId: string,
@@ -216,7 +207,7 @@ function diffCheckpointLattices(
   if (!from) {
     return {
       rootCheckpointId,
-      status: "added",
+      status: 'added',
       changedSections: [],
       definitionCountDelta: to!.definitions.length,
       observationCountDelta: to!.observations.length,
@@ -228,7 +219,7 @@ function diffCheckpointLattices(
   if (!to) {
     return {
       rootCheckpointId,
-      status: "removed",
+      status: 'removed',
       changedSections: [],
       definitionCountDelta: -from.definitions.length,
       observationCountDelta: -from.observations.length,
@@ -239,13 +230,13 @@ function diffCheckpointLattices(
   }
 
   const changedSections: string[] = [];
-  if (!isDeepStrictEqual(from.definitions, to.definitions)) changedSections.push("definitions");
-  if (!isDeepStrictEqual(from.observations, to.observations)) changedSections.push("observations");
-  if (!isDeepStrictEqual(from.links, to.links)) changedSections.push("links");
+  if (!isDeepStrictEqual(from.definitions, to.definitions)) changedSections.push('definitions');
+  if (!isDeepStrictEqual(from.observations, to.observations)) changedSections.push('observations');
+  if (!isDeepStrictEqual(from.links, to.links)) changedSections.push('links');
 
   return {
     rootCheckpointId,
-    status: changedSections.length > 0 ? "changed" : "unchanged",
+    status: changedSections.length > 0 ? 'changed' : 'unchanged',
     changedSections,
     definitionCountDelta: to.definitions.length - from.definitions.length,
     observationCountDelta: to.observations.length - from.observations.length,
@@ -268,7 +259,7 @@ function diffJunctions(
   if (!from) {
     return {
       junctionId,
-      status: "added",
+      status: 'added',
       changedSections: [],
       pathCountDelta: to!.paths.length,
       routeDecisionCountDelta: toRouteDecisionCount,
@@ -279,7 +270,7 @@ function diffJunctions(
   if (!to) {
     return {
       junctionId,
-      status: "removed",
+      status: 'removed',
       changedSections: [],
       pathCountDelta: -from.paths.length,
       routeDecisionCountDelta: -fromRouteDecisionCount,
@@ -289,12 +280,12 @@ function diffJunctions(
   }
 
   const changedSections: string[] = [];
-  if (!isDeepStrictEqual(from, to)) changedSections.push("junction");
-  if (fromRouteDecisionCount !== toRouteDecisionCount) changedSections.push("routeDecisions");
+  if (!isDeepStrictEqual(from, to)) changedSections.push('junction');
+  if (fromRouteDecisionCount !== toRouteDecisionCount) changedSections.push('routeDecisions');
 
   return {
     junctionId,
-    status: changedSections.length > 0 ? "changed" : "unchanged",
+    status: changedSections.length > 0 ? 'changed' : 'unchanged',
     changedSections,
     pathCountDelta: to.paths.length - from.paths.length,
     routeDecisionCountDelta: toRouteDecisionCount - fromRouteDecisionCount,
@@ -314,7 +305,7 @@ function diffRouteDecisions(
   if (!from) {
     return {
       branchNodeId,
-      status: "added",
+      status: 'added',
       changedSections: [],
       selectedPathCountDelta: to!.selectedPathIds.length,
       skippedPathCountDelta: to!.skippedPathIds.length,
@@ -325,7 +316,7 @@ function diffRouteDecisions(
   if (!to) {
     return {
       branchNodeId,
-      status: "removed",
+      status: 'removed',
       changedSections: [],
       selectedPathCountDelta: -from.selectedPathIds.length,
       skippedPathCountDelta: -from.skippedPathIds.length,
@@ -335,11 +326,11 @@ function diffRouteDecisions(
   }
 
   const changedSections: string[] = [];
-  if (!isDeepStrictEqual(from, to)) changedSections.push("routeDecision");
+  if (!isDeepStrictEqual(from, to)) changedSections.push('routeDecision');
 
   return {
     branchNodeId,
-    status: changedSections.length > 0 ? "changed" : "unchanged",
+    status: changedSections.length > 0 ? 'changed' : 'unchanged',
     changedSections,
     selectedPathCountDelta: to.selectedPathIds.length - from.selectedPathIds.length,
     skippedPathCountDelta: to.skippedPathIds.length - from.skippedPathIds.length,
@@ -359,7 +350,7 @@ function diffTraversalBundles(
   if (!from) {
     return {
       traversalKey,
-      status: "added",
+      status: 'added',
       changedSections: [],
       facetCountDelta: to!.facets.length,
       observationCountDelta: to!.observations.length,
@@ -370,7 +361,7 @@ function diffTraversalBundles(
   if (!to) {
     return {
       traversalKey,
-      status: "removed",
+      status: 'removed',
       changedSections: [],
       facetCountDelta: -from.facets.length,
       observationCountDelta: -from.observations.length,
@@ -380,13 +371,13 @@ function diffTraversalBundles(
   }
 
   const changedSections: string[] = [];
-  if (!isDeepStrictEqual(from.facets, to.facets)) changedSections.push("facets");
-  if (!isDeepStrictEqual(from.observations, to.observations)) changedSections.push("observations");
-  if (!isDeepStrictEqual(from.object, to.object)) changedSections.push("object");
+  if (!isDeepStrictEqual(from.facets, to.facets)) changedSections.push('facets');
+  if (!isDeepStrictEqual(from.observations, to.observations)) changedSections.push('observations');
+  if (!isDeepStrictEqual(from.object, to.object)) changedSections.push('object');
 
   return {
     traversalKey,
-    status: changedSections.length > 0 ? "changed" : "unchanged",
+    status: changedSections.length > 0 ? 'changed' : 'unchanged',
     changedSections,
     facetCountDelta: to.facets.length - from.facets.length,
     observationCountDelta: to.observations.length - from.observations.length,
@@ -396,7 +387,7 @@ function diffTraversalBundles(
 }
 
 export async function diffOperationalOntologyCheckpoint(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   rootCheckpointId: string,
   fromSnapshotId: string,
   toSnapshotId: string,
@@ -409,8 +400,7 @@ export async function diffOperationalOntologyCheckpoint(
     from?.checkpointLattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ??
     null;
   const toLattice =
-    to?.checkpointLattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ??
-    null;
+    to?.checkpointLattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ?? null;
   if (!fromLattice && !toLattice) {
     return null;
   }
@@ -418,7 +408,7 @@ export async function diffOperationalOntologyCheckpoint(
 }
 
 export async function diffOperationalOntologyJunction(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   junctionId: string,
   fromSnapshotId: string,
   toSnapshotId: string,
@@ -429,8 +419,7 @@ export async function diffOperationalOntologyJunction(
   ]);
   const fromJunction =
     from?.junctions.find((junction) => junction.branchNodeId === junctionId) ?? null;
-  const toJunction =
-    to?.junctions.find((junction) => junction.branchNodeId === junctionId) ?? null;
+  const toJunction = to?.junctions.find((junction) => junction.branchNodeId === junctionId) ?? null;
   if (!fromJunction && !toJunction) {
     return null;
   }
@@ -448,7 +437,7 @@ export async function diffOperationalOntologyJunction(
 }
 
 export async function diffOperationalOntologyRouteDecision(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   branchNodeId: string,
   fromSnapshotId: string,
   toSnapshotId: string,
@@ -459,8 +448,7 @@ export async function diffOperationalOntologyRouteDecision(
   ]);
   const fromRoute =
     from?.routeDecisions.find((route) => route.branchNodeId === branchNodeId) ?? null;
-  const toRoute =
-    to?.routeDecisions.find((route) => route.branchNodeId === branchNodeId) ?? null;
+  const toRoute = to?.routeDecisions.find((route) => route.branchNodeId === branchNodeId) ?? null;
   if (!fromRoute && !toRoute) {
     return null;
   }
@@ -468,7 +456,7 @@ export async function diffOperationalOntologyRouteDecision(
 }
 
 export async function diffOperationalOntologyTraversal(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   traversalKey: string,
   fromSnapshotId: string,
   toSnapshotId: string,
@@ -478,11 +466,9 @@ export async function diffOperationalOntologyTraversal(
     loadOperationalOntologySnapshotView(store, toSnapshotId),
   ]);
   const fromBundle =
-    from?.traversalBundles.find((bundle) => bundle.object.canonicalKey === traversalKey) ??
-    null;
+    from?.traversalBundles.find((bundle) => bundle.object.canonicalKey === traversalKey) ?? null;
   const toBundle =
-    to?.traversalBundles.find((bundle) => bundle.object.canonicalKey === traversalKey) ??
-    null;
+    to?.traversalBundles.find((bundle) => bundle.object.canonicalKey === traversalKey) ?? null;
   if (!fromBundle && !toBundle) {
     return null;
   }
@@ -490,7 +476,7 @@ export async function diffOperationalOntologyTraversal(
 }
 
 export async function diffOperationalOntologySnapshots(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   fromSnapshotId: string,
   toSnapshotId: string,
 ): Promise<OperationalOntologySnapshotDiff | null> {
@@ -523,11 +509,8 @@ export async function diffOperationalOntologySnapshots(
     toSnapshotId,
     summary: summarizeStatuses(corridorDiffs),
     corridorDiffs,
-    checkpointLatticeCountDelta:
-      to.checkpointLattices.length - from.checkpointLattices.length,
-    routeDecisionCountDelta:
-      to.routeDecisions.length - from.routeDecisions.length,
-    traversalBundleCountDelta:
-      to.traversalBundles.length - from.traversalBundles.length,
+    checkpointLatticeCountDelta: to.checkpointLattices.length - from.checkpointLattices.length,
+    routeDecisionCountDelta: to.routeDecisions.length - from.routeDecisions.length,
+    traversalBundleCountDelta: to.traversalBundles.length - from.traversalBundles.length,
   };
 }

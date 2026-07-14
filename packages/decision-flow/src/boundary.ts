@@ -34,15 +34,15 @@
  * - 하위 → 상위 변경이 필요하면 에스컬레이션 (명시적 경계 횡단)
  */
 
-import type { FlowSchema, FlowInstance } from "./types.js";
+import type { FlowSchema, FlowInstance } from './types.js';
 
 // ─── 계층 (Layer) ────────────────────────────────────────
 
-export type DecisionLayerId = "strategic" | "tactical" | "operational" | "execution";
+export type DecisionLayerId = 'strategic' | 'tactical' | 'operational' | 'execution';
 
 export interface DecisionLayer {
   readonly id: DecisionLayerId;
-  readonly level: number;           // 0=strategic, 1=tactical, 2=operational, 3=execution
+  readonly level: number; // 0=strategic, 1=tactical, 2=operational, 3=execution
   readonly name: string;
   readonly description: string;
   /** 이 계층에 속하는 FlowSchema ID 목록 */
@@ -51,32 +51,32 @@ export interface DecisionLayer {
 
 export const DECISION_LAYERS: readonly DecisionLayer[] = [
   {
-    id: "strategic",
+    id: 'strategic',
     level: 0,
-    name: "전략",
-    description: "무엇을 만들 것인가 — 방향과 범위를 결정",
-    flowIds: ["office-hours", "ceo-review"],
+    name: '전략',
+    description: '무엇을 만들 것인가 — 방향과 범위를 결정',
+    flowIds: ['office-hours', 'ceo-review'],
   },
   {
-    id: "tactical",
+    id: 'tactical',
     level: 1,
-    name: "전술",
-    description: "어떻게 만들 것인가 — 아키텍처와 설계를 결정",
-    flowIds: ["eng-review", "design-review", "coordinate-design"],
+    name: '전술',
+    description: '어떻게 만들 것인가 — 아키텍처와 설계를 결정',
+    flowIds: ['eng-review', 'design-review', 'coordinate-design'],
   },
   {
-    id: "operational",
+    id: 'operational',
     level: 2,
-    name: "운영",
-    description: "올바르게 만들고 있는가 — 품질과 정합성을 검증",
-    flowIds: ["code-review", "investigation"],
+    name: '운영',
+    description: '올바르게 만들고 있는가 — 품질과 정합성을 검증',
+    flowIds: ['code-review', 'investigation'],
   },
   {
-    id: "execution",
+    id: 'execution',
     level: 3,
-    name: "실행",
-    description: "출시한다 — 배포와 검증을 수행",
-    flowIds: ["ship"],
+    name: '실행',
+    description: '출시한다 — 배포와 검증을 수행',
+    flowIds: ['ship'],
   },
 ];
 
@@ -120,7 +120,7 @@ export interface ContextExport {
   readonly sourceFlowId: string;
   readonly sourceGateId: string;
   /** 발행 형태: value(선택값) 또는 constraint(제약 조건) */
-  readonly kind: "value" | "constraint";
+  readonly kind: 'value' | 'constraint';
 }
 
 /** 컨텍스트가 외부에서 수신하는 제약 */
@@ -135,14 +135,14 @@ export interface ContextImport {
   readonly targetFlowId: string;
   readonly targetGateId: string;
   /** 제약 유형 */
-  readonly effect: "constrains" | "blocks" | "informs";
+  readonly effect: 'constrains' | 'blocks' | 'informs';
 }
 
 // ─── 계층 간 제약 전파 ───────────────────────────────────
 
 /** 계층 간 제약 위반 */
 export interface LayerViolation {
-  readonly kind: "upward-mutation" | "skip-layer" | "boundary-crossing";
+  readonly kind: 'upward-mutation' | 'skip-layer' | 'boundary-crossing';
   readonly message: string;
   readonly sourceFlowId: string;
   readonly sourceLayer: DecisionLayerId;
@@ -161,7 +161,7 @@ export interface LayerViolation {
 export function validateLayerConstraints(
   sourceFlowId: string,
   targetFlowId: string,
-  effect: "constrains" | "invalidates" | "enables",
+  effect: 'constrains' | 'invalidates' | 'enables',
   contexts?: readonly DecisionContext[],
 ): LayerViolation[] {
   const violations: LayerViolation[] = [];
@@ -172,9 +172,9 @@ export function validateLayerConstraints(
   if (!sourceLayer || !targetLayer) return violations;
 
   // 규칙 1: 상향 변경 금지 (하위→상위 constrains/invalidates)
-  if (sourceLayer.level > targetLayer.level && effect !== "enables") {
+  if (sourceLayer.level > targetLayer.level && effect !== 'enables') {
     violations.push({
-      kind: "upward-mutation",
+      kind: 'upward-mutation',
       message: `${sourceLayer.id}(level ${sourceLayer.level})에서 ${targetLayer.id}(level ${targetLayer.level})로의 상향 ${effect} 금지. 에스컬레이션 필요`,
       sourceFlowId,
       sourceLayer: sourceLayer.id,
@@ -186,7 +186,7 @@ export function validateLayerConstraints(
   // 규칙 2: 계층 건너뛰기 경고 (2단계 이상 차이)
   if (Math.abs(sourceLayer.level - targetLayer.level) > 1) {
     violations.push({
-      kind: "skip-layer",
+      kind: 'skip-layer',
       message: `${sourceLayer.id} → ${targetLayer.id}: 중간 계층(${DECISION_LAYERS.find((l) => l.level === Math.min(sourceLayer.level, targetLayer.level) + 1)?.id})을 건너뛴다`,
       sourceFlowId,
       sourceLayer: sourceLayer.id,
@@ -202,12 +202,10 @@ export function validateLayerConstraints(
 
     if (sourceCtx && targetCtx && sourceCtx.id !== targetCtx.id) {
       // 다른 컨텍스트 간 영향 — import가 정의되어 있는가?
-      const hasImport = targetCtx.imports.some(
-        (imp) => imp.sourceContextId === sourceCtx.id,
-      );
+      const hasImport = targetCtx.imports.some((imp) => imp.sourceContextId === sourceCtx.id);
       if (!hasImport) {
         violations.push({
-          kind: "boundary-crossing",
+          kind: 'boundary-crossing',
           message: `${sourceCtx.id} → ${targetCtx.id} 경계 횡단: import가 정의되지 않음`,
           sourceFlowId,
           sourceLayer: sourceLayer.id,
@@ -257,9 +255,9 @@ export function propagateScope(
     const selection = parentInstance.selections.find((s) => s.gateId === exp.sourceGateId);
     if (!selection) continue;
 
-    if (exp.kind === "value") {
+    if (exp.kind === 'value') {
       inherited[`inherited_${exp.name}`] = selection.branchId;
-    } else if (exp.kind === "constraint") {
+    } else if (exp.kind === 'constraint') {
       inherited[`constraint_${exp.name}`] = {
         gateId: exp.sourceGateId,
         branchId: selection.branchId,
@@ -290,7 +288,7 @@ export interface EscalationRequest {
   /** 요청하는 변경 내용 */
   readonly requestedBranch: string;
   /** 현재 상태 */
-  readonly status: "pending" | "approved" | "rejected" | "deferred";
+  readonly status: 'pending' | 'approved' | 'rejected' | 'deferred';
 }
 
 /**
@@ -320,6 +318,6 @@ export function createEscalationRequest(
     targetGateId,
     rationale,
     requestedBranch,
-    status: "pending",
+    status: 'pending',
   };
 }

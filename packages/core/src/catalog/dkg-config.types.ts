@@ -26,7 +26,7 @@ export interface DomainDef {
 
 export interface ConsumerDef {
   readonly id: string;
-  readonly type: "client" | "service";
+  readonly type: 'client' | 'service';
   readonly intendedPrefixes: readonly string[];
   readonly rationale: string;
 }
@@ -38,7 +38,7 @@ export interface ConstraintDef {
   readonly rule: string;
   readonly formal?: string;
   readonly scope: readonly string[];
-  readonly lifecycle: "active" | "deprecated";
+  readonly lifecycle: 'active' | 'deprecated';
 }
 
 // ── DSL Bundle ────────────────────────────────────────────────
@@ -69,7 +69,7 @@ export interface SkillDef {
   readonly id: string;
   readonly name: string;
   readonly description: string;
-  readonly category: "read" | "write" | "analysis" | "chain";
+  readonly category: 'read' | 'write' | 'analysis' | 'chain';
   readonly targetKinds: readonly string[];
   readonly input: string;
   readonly output: string;
@@ -81,9 +81,9 @@ export interface SkillDef {
 
 export interface SpecDef {
   readonly id: string;
-  readonly type: "req" | "feat" | "uc" | "evt" | "ls" | "adr";
+  readonly type: 'req' | 'feat' | 'uc' | 'evt' | 'ls' | 'adr';
   readonly title: string;
-  readonly lifecycle: "draft" | "active" | "deprecated";
+  readonly lifecycle: 'draft' | 'active' | 'deprecated';
   /** spec이 governs하는 prefix/axis ID 목록 */
   readonly governs?: readonly string[];
 }
@@ -99,15 +99,15 @@ export interface ReviewPairDef {
 // ── Flow Schema (decision-flow DKG 연동) ───────────────────
 
 export type FlowGatePhase =
-  | "perceive"
-  | "interpret"
-  | "evaluate"
-  | "decide"
-  | "plan"
-  | "execute"
-  | "reflect";
+  | 'perceive'
+  | 'interpret'
+  | 'evaluate'
+  | 'decide'
+  | 'plan'
+  | 'execute'
+  | 'reflect';
 
-export type FlowGateWeight = "core" | "structural" | "tactical";
+export type FlowGateWeight = 'core' | 'structural' | 'tactical';
 
 export interface FlowBranchDef {
   readonly id: string;
@@ -119,7 +119,7 @@ export interface FlowBranchDef {
 
 export interface FlowGateDependencyDef {
   readonly gateId: string;
-  readonly kind: "constrains" | "enables" | "invalidates";
+  readonly kind: 'constrains' | 'enables' | 'invalidates';
 }
 
 export interface FlowGateDef {

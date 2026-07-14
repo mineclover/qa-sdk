@@ -1,7 +1,7 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * OTel 환경변수 스키마.
@@ -13,9 +13,9 @@ import { z } from "zod";
 export const otelEnvSchema = z.object({
   /** OTel 활성화 여부 */
   OTEL_ENABLED: z
-    .enum(["true", "false", "1", "0"])
-    .default("false")
-    .transform((v) => v === "true" || v === "1"),
+    .enum(['true', 'false', '1', '0'])
+    .default('false')
+    .transform((v) => v === 'true' || v === '1'),
 
   /** OTLP Exporter 엔드포인트 (예: http://localhost:4318) */
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),

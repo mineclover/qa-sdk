@@ -10,8 +10,8 @@ import {
   type CanvasViewportPreset,
   type ViewTransformLike,
   zoomTransformAtCanvasPoint,
-} from "./math.js";
-import { CANVAS_VIEWPORT_HUD_ACTION_ID, type CanvasViewportHudActionId } from "./hud.js";
+} from './math.js';
+import { CANVAS_VIEWPORT_HUD_ACTION_ID, type CanvasViewportHudActionId } from './hud.js';
 
 export interface CanvasViewportController {
   fitView(): void;
@@ -40,22 +40,26 @@ export function createCanvasViewportSession(options: {
   const fitView = () => {
     const content = options.getContentSize();
     const viewport = options.getViewportSize();
-    options.setTransform(fitTransformToViewport({
-      contentWidth: content.width,
-      contentHeight: content.height,
-      viewportWidth: viewport.width,
-      viewportHeight: viewport.height,
-      padding: preset.fitPadding,
-    }));
+    options.setTransform(
+      fitTransformToViewport({
+        contentWidth: content.width,
+        contentHeight: content.height,
+        viewportWidth: viewport.width,
+        viewportHeight: viewport.height,
+        padding: preset.fitPadding,
+      }),
+    );
   };
 
   const zoomAtPoint = (point: CanvasPoint, factor: number) => {
     const transform = options.getTransform();
-    options.setTransform(zoomTransformAtCanvasPoint({
-      point,
-      transform,
-      nextScale: clampScale(transform.k * factor, preset),
-    }));
+    options.setTransform(
+      zoomTransformAtCanvasPoint({
+        point,
+        transform,
+        nextScale: clampScale(transform.k * factor, preset),
+      }),
+    );
   };
 
   const session: CanvasViewportSession = {
@@ -67,28 +71,36 @@ export function createCanvasViewportSession(options: {
     },
     zoomIn() {
       const viewport = options.getViewportSize();
-      zoomAtPoint({
-        x: viewport.width / 2,
-        y: viewport.height / 2,
-      }, preset.wheelZoomInFactor);
+      zoomAtPoint(
+        {
+          x: viewport.width / 2,
+          y: viewport.height / 2,
+        },
+        preset.wheelZoomInFactor,
+      );
     },
     zoomOut() {
       const viewport = options.getViewportSize();
-      zoomAtPoint({
-        x: viewport.width / 2,
-        y: viewport.height / 2,
-      }, preset.wheelZoomOutFactor);
+      zoomAtPoint(
+        {
+          x: viewport.width / 2,
+          y: viewport.height / 2,
+        },
+        preset.wheelZoomOutFactor,
+      );
     },
     zoomAtPoint,
     centerOnPoint(point: CanvasPoint) {
       const transform = options.getTransform();
       const viewport = options.getViewportSize();
-      options.setTransform(createTransformCenteredAtPoint({
-        point,
-        scale: transform.k,
-        viewportWidth: viewport.width,
-        viewportHeight: viewport.height,
-      }));
+      options.setTransform(
+        createTransformCenteredAtPoint({
+          point,
+          scale: transform.k,
+          viewportWidth: viewport.width,
+          viewportHeight: viewport.height,
+        }),
+      );
     },
     panBy(delta: CanvasPoint) {
       const transform = options.getTransform();

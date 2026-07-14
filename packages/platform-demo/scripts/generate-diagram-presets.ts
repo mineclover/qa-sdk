@@ -8,13 +8,13 @@
  * (또는 npx tsx scripts/generate-diagram-presets.ts)
  */
 
-import { writeFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { DEMO_CATALOG } from "demo-snapshot";
-import { DEMO_DKG_CONFIG } from "demo-dkg-config";
-import { bootstrapDkg } from "dkg-enrichment";
+import { DEMO_CATALOG } from 'demo-snapshot';
+import { DEMO_DKG_CONFIG } from 'demo-dkg-config';
+import { bootstrapDkg } from 'dkg-enrichment';
 import {
   intentLinkDiagram,
   allIntentLinksDiagram,
@@ -23,21 +23,26 @@ import {
   constraintDiagram,
   tableDiagram,
   observationLoopDiagram,
-} from "@qa-sdk/spec-core/viz";
+} from '@qa-sdk/spec-core/viz';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const outPath = join(__dirname, "..", "public", "diagram-presets.js");
+const outPath = join(__dirname, '..', 'public', 'diagram-presets.js');
 
 // DKG 초기화
 const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 
 // IntentLink 다이어그램 수집
-const intentLinks = graph.getNodesByKind("intent-link") as Array<{
-  id: string; kind: "intent-link"; intent: string;
+const intentLinks = graph.getNodesByKind('intent-link') as Array<{
+  id: string;
+  kind: 'intent-link';
+  intent: string;
 }>;
 
-const dslBundles = graph.getNodesByKind("dsl-bundle") as Array<{
-  id: string; kind: "dsl-bundle"; name: string; description: string;
+const dslBundles = graph.getNodesByKind('dsl-bundle') as Array<{
+  id: string;
+  kind: 'dsl-bundle';
+  name: string;
+  description: string;
 }>;
 
 interface PresetEntry {
@@ -48,21 +53,21 @@ interface PresetEntry {
 }
 
 const presets: Record<string, PresetEntry[]> = {
-  "intent-links": [],
-  "dsl": [],
+  'intent-links': [],
+  dsl: [],
 };
 
 // 전체 IntentLink 통합 다이어그램
-presets["intent-links"].push({
-  id: "__all__",
-  label: "전체 IntentLink 흐름",
-  description: "모든 IntentLink를 하나의 시퀀스 다이어그램으로 통합",
+presets['intent-links'].push({
+  id: '__all__',
+  label: '전체 IntentLink 흐름',
+  description: '모든 IntentLink를 하나의 시퀀스 다이어그램으로 통합',
   mmd: allIntentLinksDiagram(graph),
 });
 
 // 개별 IntentLink
 for (const il of intentLinks) {
-  presets["intent-links"].push({
+  presets['intent-links'].push({
     id: il.id,
     label: il.id,
     description: il.intent,
@@ -72,7 +77,7 @@ for (const il of intentLinks) {
 
 // DSL 번들
 for (const dsl of dslBundles) {
-  presets["dsl"].push({
+  presets['dsl'].push({
     id: dsl.id,
     label: dsl.name,
     description: dsl.description,
@@ -81,60 +86,78 @@ for (const dsl of dslBundles) {
 }
 
 // Domain
-const domains = graph.getNodesByKind("domain") as Array<{ id: string; name?: string; kind: string }>;
-presets["domain"] = [];
+const domains = graph.getNodesByKind('domain') as Array<{
+  id: string;
+  name?: string;
+  kind: string;
+}>;
+presets['domain'] = [];
 for (const d of domains) {
-  const prefixes = graph.neighbors(d.id, "contains");
+  const prefixes = graph.neighbors(d.id, 'contains');
   try {
-    presets["domain"].push({
+    presets['domain'].push({
       id: d.id,
       label: d.id,
       description: `${d.name ?? d.id} (${prefixes.length} prefixes)`,
       mmd: domainDiagram(graph, d.id),
     });
-  } catch { /* skip */ }
+  } catch {
+    /* skip */
+  }
 }
 
 // Constraint
-const constraints = graph.getNodesByKind("constraint") as Array<{ id: string; rule?: string; kind: string }>;
-presets["constraint"] = [];
+const constraints = graph.getNodesByKind('constraint') as Array<{
+  id: string;
+  rule?: string;
+  kind: string;
+}>;
+presets['constraint'] = [];
 for (const c of constraints) {
   try {
-    presets["constraint"].push({
+    presets['constraint'].push({
       id: c.id,
       label: c.id,
-      description: (c.rule ?? "").slice(0, 80),
+      description: (c.rule ?? '').slice(0, 80),
       mmd: constraintDiagram(graph, c.id),
     });
-  } catch { /* skip */ }
+  } catch {
+    /* skip */
+  }
 }
 
 // Table
-const tables = graph.getNodesByKind("table") as Array<{ id: string; kind: string }>;
+const tables = graph.getNodesByKind('table') as Array<{ id: string; kind: string }>;
 if (tables.length > 0) {
-  presets["table"] = [];
+  presets['table'] = [];
   for (const t of tables) {
     try {
-      presets["table"].push({
+      presets['table'].push({
         id: t.id,
         label: t.id,
         description: `Table: ${t.id}`,
         mmd: tableDiagram(graph, t.id),
       });
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 }
 
 // Observation Loop
 try {
   const obsLoop = observationLoopDiagram(graph);
-  presets["observation-loop"] = [{
-    id: "__loop__",
-    label: "Observation Loop",
-    description: `observation→decision 폐루프`,
-    mmd: obsLoop,
-  }];
-} catch { /* skip */ }
+  presets['observation-loop'] = [
+    {
+      id: '__loop__',
+      label: 'Observation Loop',
+      description: `observation→decision 폐루프`,
+      mmd: obsLoop,
+    },
+  ];
+} catch {
+  /* skip */
+}
 
 // JS 파일로 출력
 const js = `// Auto-generated by generate-diagram-presets.ts — DO NOT EDIT
@@ -142,6 +165,10 @@ const js = `// Auto-generated by generate-diagram-presets.ts — DO NOT EDIT
 window.DIAGRAM_PRESETS = ${JSON.stringify(presets, null, 2)};
 `;
 
-writeFileSync(outPath, js, "utf-8");
+writeFileSync(outPath, js, 'utf-8');
 const total = Object.values(presets).reduce((s, a) => s + a.length, 0);
-console.log(`Written: ${outPath} (${total} diagrams: ${Object.entries(presets).map(([k,v]) => `${v.length} ${k}`).join(", ")})`);
+console.log(
+  `Written: ${outPath} (${total} diagrams: ${Object.entries(presets)
+    .map(([k, v]) => `${v.length} ${k}`)
+    .join(', ')})`,
+);

@@ -6,11 +6,11 @@ import type {
   FlowSchema,
   GateSelection,
   GateWeight,
-} from "./types.js";
-import type { InstanceStore } from "./instance-store.js";
+} from './types.js';
+import type { InstanceStore } from './instance-store.js';
 
-export type GateDiffStatus = "match" | "diverge";
-export type GateDiffEmphasis = "standard" | "core";
+export type GateDiffStatus = 'match' | 'diverge';
+export type GateDiffEmphasis = 'standard' | 'core';
 
 export interface EvidenceDiff {
   readonly hasDifference: boolean;
@@ -160,10 +160,10 @@ export interface ComparisonReportInput {
 }
 
 export type DifferenceReasonType =
-  | "evidence-imbalance"
-  | "exclusive-evidence"
-  | "confidence-gap"
-  | "missing-selection";
+  | 'evidence-imbalance'
+  | 'exclusive-evidence'
+  | 'confidence-gap'
+  | 'missing-selection';
 
 export interface DifferenceReasoning {
   readonly gateId: string;
@@ -243,16 +243,22 @@ export function diffInstances(
     ...a.selections.map((selection) => selection.gateId),
     ...b.selections.map((selection) => selection.gateId),
   ]);
-  const gateDescriptors = resolveGateDescriptors(a, b, schema)
-    .filter((descriptor) => selectedGateIds.has(descriptor.gateId));
+  const gateDescriptors = resolveGateDescriptors(a, b, schema).filter((descriptor) =>
+    selectedGateIds.has(descriptor.gateId),
+  );
   const selectionMapA = buildSelectionMap(a.selections);
   const selectionMapB = buildSelectionMap(b.selections);
 
   const gateDiffs = gateDescriptors.map((descriptor) =>
-    buildGateDiff(descriptor, selectionMapA.get(descriptor.gateId), selectionMapB.get(descriptor.gateId)));
-  const divergencePoint = gateDiffs.find((gateDiff) => gateDiff.status === "diverge");
-  const coreDivergences = gateDiffs.filter((gateDiff) =>
-    gateDiff.status === "diverge" && gateDiff.weight === "core",
+    buildGateDiff(
+      descriptor,
+      selectionMapA.get(descriptor.gateId),
+      selectionMapB.get(descriptor.gateId),
+    ),
+  );
+  const divergencePoint = gateDiffs.find((gateDiff) => gateDiff.status === 'diverge');
+  const coreDivergences = gateDiffs.filter(
+    (gateDiff) => gateDiff.status === 'diverge' && gateDiff.weight === 'core',
   );
 
   return {
@@ -262,11 +268,11 @@ export function diffInstances(
     gateDiffs,
     divergencePoint,
     divergedGateIds: gateDiffs
-      .filter((gateDiff) => gateDiff.status === "diverge")
+      .filter((gateDiff) => gateDiff.status === 'diverge')
       .map((gateDiff) => gateDiff.gateId),
     coreDivergences,
-    matchCount: gateDiffs.filter((gateDiff) => gateDiff.status === "match").length,
-    divergenceCount: gateDiffs.filter((gateDiff) => gateDiff.status === "diverge").length,
+    matchCount: gateDiffs.filter((gateDiff) => gateDiff.status === 'match').length,
+    divergenceCount: gateDiffs.filter((gateDiff) => gateDiff.status === 'diverge').length,
   };
 }
 
@@ -281,8 +287,9 @@ export function gateDistribution(
   schemaId: string,
   gateId: string,
 ): GateDistribution {
-  const instances = store.findBySchema(schemaId)
-    .filter((instance) => instance.status === "completed");
+  const instances = store
+    .findBySchema(schemaId)
+    .filter((instance) => instance.status === 'completed');
   const selections = instances
     .map((instance) => findSelection(instance, gateId))
     .filter((selection): selection is GateSelection => selection !== undefined);
@@ -305,7 +312,9 @@ export function gateDistribution(
   }
 
   const branches = [...branchBuckets.entries()]
-    .map(([branchId, branchSelections]) => toBranchDistribution(branchId, branchSelections, totalSelections))
+    .map(([branchId, branchSelections]) =>
+      toBranchDistribution(branchId, branchSelections, totalSelections),
+    )
     .toSorted((a, b) => b.count - a.count || a.branchId.localeCompare(b.branchId));
   const dominantBranch = branches.find((branch) => branch.isDominant);
 
@@ -325,10 +334,11 @@ export function gateDistribution(
       : undefined,
     evidenceKindCorrelations: [...evidenceBuckets.entries()]
       .map(([evidenceKind, branchMap]) =>
-        toEvidenceKindCorrelation(evidenceKind, branchMap, totalSelections))
-      .toSorted((a, b) =>
-        b.selectionCount - a.selectionCount
-        || a.evidenceKind.localeCompare(b.evidenceKind),
+        toEvidenceKindCorrelation(evidenceKind, branchMap, totalSelections),
+      )
+      .toSorted(
+        (a, b) =>
+          b.selectionCount - a.selectionCount || a.evidenceKind.localeCompare(b.evidenceKind),
       ),
   };
 }
@@ -348,24 +358,27 @@ export function compareTimeRanges(
 ): TimeRangeComparison {
   const instancesA = resolveCompletedRange(store, schemaId, rangeA);
   const instancesB = resolveCompletedRange(store, schemaId, rangeB);
-  assertSufficientSampleSize(instancesA, "rangeA");
-  assertSufficientSampleSize(instancesB, "rangeB");
+  assertSufficientSampleSize(instancesA, 'rangeA');
+  assertSufficientSampleSize(instancesB, 'rangeB');
 
   if (options.coreOnly && !options.schema) {
-    throw new Error("coreOnly 비교에는 schema 옵션이 필요하다");
+    throw new Error('coreOnly 비교에는 schema 옵션이 필요하다');
   }
 
   const selectedGateIds = new Set<string>([
     ...collectSelectedGateIds(instancesA),
     ...collectSelectedGateIds(instancesB),
   ]);
-  const allDescriptors = resolveGateDescriptorsFromInstances(instancesA, instancesB, options.schema)
-    .filter((descriptor) => selectedGateIds.has(descriptor.gateId));
+  const allDescriptors = resolveGateDescriptorsFromInstances(
+    instancesA,
+    instancesB,
+    options.schema,
+  ).filter((descriptor) => selectedGateIds.has(descriptor.gateId));
   const comparedDescriptors = options.coreOnly
-    ? allDescriptors.filter((descriptor) => descriptor.weight === "core")
+    ? allDescriptors.filter((descriptor) => descriptor.weight === 'core')
     : allDescriptors;
   const coreGateIds = allDescriptors
-    .filter((descriptor) => descriptor.weight === "core")
+    .filter((descriptor) => descriptor.weight === 'core')
     .map((descriptor) => descriptor.gateId);
   const pathBucketsA = buildPathBuckets(instancesA, comparedDescriptors);
   const pathBucketsB = buildPathBuckets(instancesB, comparedDescriptors);
@@ -384,9 +397,10 @@ export function compareTimeRanges(
     comparedGateIds: comparedDescriptors.map((descriptor) => descriptor.gateId),
     coreGateIds,
     gateShifts: comparedDescriptors.map((descriptor) =>
-      buildGateDistributionShift(descriptor, instancesA, instancesB)),
-    emergedPaths: diffPathBuckets(pathBucketsA, pathBucketsB, "emerged"),
-    disappearedPaths: diffPathBuckets(pathBucketsA, pathBucketsB, "disappeared"),
+      buildGateDistributionShift(descriptor, instancesA, instancesB),
+    ),
+    emergedPaths: diffPathBuckets(pathBucketsA, pathBucketsB, 'emerged'),
+    disappearedPaths: diffPathBuckets(pathBucketsA, pathBucketsB, 'disappeared'),
   };
 }
 
@@ -396,20 +410,17 @@ export function compareTimeRanges(
  * pairwise diff에서 evidence 차이를 읽어 "왜 다른가" 추론을 만들고,
  * gate 분포/시간 변화 결과를 사람이 바로 훑을 수 있는 insight로 요약한다.
  */
-export function createComparisonReport(
-  input: ComparisonReportInput,
-): ComparisonReport {
+export function createComparisonReport(input: ComparisonReportInput): ComparisonReport {
   const distributions = [...(input.distributions ?? [])];
   const temporalShifts = [...(input.temporalShifts ?? [])];
   const schemaId = resolveReportSchemaId(input.pairwiseDiff, distributions, temporalShifts);
-  const whyDifferent = input.pairwiseDiff
-    ? buildDifferenceReasoning(input.pairwiseDiff)
-    : [];
+  const whyDifferent = input.pairwiseDiff ? buildDifferenceReasoning(input.pairwiseDiff) : [];
   const distributionInsights = distributions.map(toDistributionInsight);
   const temporalInsights = temporalShifts.flatMap((comparison) =>
     comparison.gateShifts
       .filter((gateShift) => gateShift.totalShiftPercentage > 0)
-      .map(toTemporalShiftInsight));
+      .map(toTemporalShiftInsight),
+  );
   const highlights = [
     ...whyDifferent.map((reasoning) => reasoning.summary),
     ...distributionInsights.map((insight) => insight.summary),
@@ -426,8 +437,9 @@ export function createComparisonReport(
     temporalInsights,
     summary: {
       divergenceCount: input.pairwiseDiff?.divergenceCount ?? 0,
-      dominantDistributionCount: distributions
-        .filter((distribution) => distribution.dominantBranch !== undefined).length,
+      dominantDistributionCount: distributions.filter(
+        (distribution) => distribution.dominantBranch !== undefined,
+      ).length,
       temporalShiftCount: temporalInsights.length,
       highlights,
     },
@@ -446,9 +458,7 @@ function assertComparableInstances(
   }
 
   if (schema && schema.id !== a.schemaId) {
-    throw new Error(
-      `비교 대상과 schema ID가 일치하지 않는다: "${schema.id}" vs "${a.schemaId}"`,
-    );
+    throw new Error(`비교 대상과 schema ID가 일치하지 않는다: "${schema.id}" vs "${a.schemaId}"`);
   }
 }
 
@@ -464,29 +474,32 @@ function resolveReportSchemaId(
   ]);
 
   if (schemaIds.size === 0) {
-    throw new Error("ComparisonReport를 생성하려면 최소 한 개 이상의 비교 결과가 필요하다");
+    throw new Error('ComparisonReport를 생성하려면 최소 한 개 이상의 비교 결과가 필요하다');
   }
 
   if (schemaIds.size > 1) {
-    throw new Error(`ComparisonReport의 schemaId가 일치해야 한다: ${[...schemaIds].join(", ")}`);
+    throw new Error(`ComparisonReport의 schemaId가 일치해야 한다: ${[...schemaIds].join(', ')}`);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- size===1 guaranteed by checks above
   return [...schemaIds][0]!;
 }
 
-function buildDifferenceReasoning(
-  pairwiseDiff: InstancePairDiff,
-): DifferenceReasoning[] {
+function buildDifferenceReasoning(pairwiseDiff: InstancePairDiff): DifferenceReasoning[] {
   return pairwiseDiff.gateDiffs
-    .filter((gateDiff) => gateDiff.status === "diverge")
+    .filter((gateDiff) => gateDiff.status === 'diverge')
     .map((gateDiff) => {
       const sharedKinds = collectKinds(gateDiff.evidenceDiff.shared);
       const uniqueKindsA = collectKinds(gateDiff.evidenceDiff.onlyInA);
       const uniqueKindsB = collectKinds(gateDiff.evidenceDiff.onlyInB);
       const uniqueWeightA = totalEvidenceWeight(gateDiff.evidenceDiff.onlyInA);
       const uniqueWeightB = totalEvidenceWeight(gateDiff.evidenceDiff.onlyInB);
-      const reasonType = classifyDifferenceReason(gateDiff, uniqueWeightA, uniqueWeightB, sharedKinds.length);
+      const reasonType = classifyDifferenceReason(
+        gateDiff,
+        uniqueWeightA,
+        uniqueWeightB,
+        sharedKinds.length,
+      );
 
       return {
         gateId: gateDiff.gateId,
@@ -524,14 +537,14 @@ function classifyDifferenceReason(
   sharedKindCount: number,
 ): DifferenceReasonType {
   if (!gateDiff.branchA || !gateDiff.branchB) {
-    return "missing-selection";
+    return 'missing-selection';
   }
 
   if (uniqueWeightA > 0 || uniqueWeightB > 0) {
-    return sharedKindCount === 0 ? "exclusive-evidence" : "evidence-imbalance";
+    return sharedKindCount === 0 ? 'exclusive-evidence' : 'evidence-imbalance';
   }
 
-  return "confidence-gap";
+  return 'confidence-gap';
 }
 
 function summarizeDifferenceReason(
@@ -543,27 +556,25 @@ function summarizeDifferenceReason(
   uniqueWeightB: number,
 ): string {
   const gateLabel = gateDiff.gateName ?? gateDiff.gateId;
-  const branchA = gateDiff.branchA ? `"${gateDiff.branchA}"` : "선택 없음";
-  const branchB = gateDiff.branchB ? `"${gateDiff.branchB}"` : "선택 없음";
+  const branchA = gateDiff.branchA ? `"${gateDiff.branchA}"` : '선택 없음';
+  const branchB = gateDiff.branchB ? `"${gateDiff.branchB}"` : '선택 없음';
 
-  if (reasonType === "missing-selection") {
+  if (reasonType === 'missing-selection') {
     return `${gateLabel} gate는 A=${branchA}, B=${branchB}로 갈렸고 한쪽은 해당 gate를 거치지 않았다.`;
   }
 
-  if (reasonType === "confidence-gap") {
+  if (reasonType === 'confidence-gap') {
     return `${gateLabel} gate는 같은 근거 패턴에서도 A confidence ${formatConfidence(gateDiff.evidenceDiff.confidenceA)}, B confidence ${formatConfidence(gateDiff.evidenceDiff.confidenceB)}로 판단 강도가 갈렸다.`;
   }
 
-  if (reasonType === "exclusive-evidence") {
+  if (reasonType === 'exclusive-evidence') {
     return `${gateLabel} gate는 A=${branchA}, B=${branchB}로 갈렸고 A는 ${formatKinds(uniqueKindsA)} 근거(총 ${uniqueWeightA}), B는 ${formatKinds(uniqueKindsB)} 근거(총 ${uniqueWeightB})를 각각 별도로 사용했다.`;
   }
 
   return `${gateLabel} gate는 A=${branchA}, B=${branchB}로 갈렸고 A는 ${formatKinds(uniqueKindsA)} 근거(총 ${uniqueWeightA}), B는 ${formatKinds(uniqueKindsB)} 근거(총 ${uniqueWeightB})에 더 크게 끌렸다.`;
 }
 
-function toDistributionInsight(
-  distribution: GateDistribution,
-): DistributionInsight {
+function toDistributionInsight(distribution: GateDistribution): DistributionInsight {
   if (distribution.dominantBranch) {
     return {
       gateId: distribution.gateId,
@@ -590,16 +601,14 @@ function toDistributionInsight(
   };
 }
 
-function toTemporalShiftInsight(
-  gateShift: GateDistributionShift,
-): TemporalShiftInsight {
+function toTemporalShiftInsight(gateShift: GateDistributionShift): TemporalShiftInsight {
   const strongestBranch = gateShift.branches[0];
   const gateLabel = gateShift.gateName ?? gateShift.gateId;
-  const dominantBefore = gateShift.dominantBranchA ? `"${gateShift.dominantBranchA}"` : "없음";
-  const dominantAfter = gateShift.dominantBranchB ? `"${gateShift.dominantBranchB}"` : "없음";
+  const dominantBefore = gateShift.dominantBranchA ? `"${gateShift.dominantBranchA}"` : '없음';
+  const dominantAfter = gateShift.dominantBranchB ? `"${gateShift.dominantBranchB}"` : '없음';
   const branchHint = strongestBranch
     ? `가장 큰 이동은 "${strongestBranch.branchId}" (${strongestBranch.shiftPercentage}%)였다.`
-    : "분기 이동 세부 내역은 없다.";
+    : '분기 이동 세부 내역은 없다.';
 
   return {
     gateId: gateShift.gateId,
@@ -622,7 +631,7 @@ function resolveGateDescriptors(
 
   return inferGateOrder(a, b).map((gateId) => ({
     gateId,
-    weight: "tactical",
+    weight: 'tactical',
   }));
 }
 
@@ -637,29 +646,24 @@ function resolveGateDescriptorsFromInstances(
 
   return inferGateOrderFromInstances([...instancesA, ...instancesB]).map((gateId) => ({
     gateId,
-    weight: "tactical",
+    weight: 'tactical',
   }));
 }
 
-function inferGateOrder(
-  a: FlowInstance,
-  b: FlowInstance,
-): string[] {
+function inferGateOrder(a: FlowInstance, b: FlowInstance): string[] {
   return inferGateOrderFromSequences([
     uniqueGateOrder(a.selections),
     uniqueGateOrder(b.selections),
   ]);
 }
 
-function inferGateOrderFromInstances(
-  instances: readonly FlowInstance[],
-): string[] {
-  return inferGateOrderFromSequences(instances.map((instance) => uniqueGateOrder(instance.selections)));
+function inferGateOrderFromInstances(instances: readonly FlowInstance[]): string[] {
+  return inferGateOrderFromSequences(
+    instances.map((instance) => uniqueGateOrder(instance.selections)),
+  );
 }
 
-function inferGateOrderFromSequences(
-  sequences: readonly string[][],
-): string[] {
+function inferGateOrderFromSequences(sequences: readonly string[][]): string[] {
   const nonEmptySequences = sequences.filter((sequence) => sequence.length > 0);
   const adjacency = new Map<string, Set<string>>();
   const inDegree = new Map<string, number>();
@@ -746,10 +750,7 @@ function buildSelectionMap(
   return new Map(selections.map((selection) => [selection.gateId, cloneSelection(selection)]));
 }
 
-function findSelection(
-  instance: FlowInstance,
-  gateId: string,
-): GateSelection | undefined {
+function findSelection(instance: FlowInstance, gateId: string): GateSelection | undefined {
   for (let index = instance.selections.length - 1; index >= 0; index -= 1) {
     const selection = instance.selections[index];
     if (selection.gateId === gateId) {
@@ -765,25 +766,22 @@ function resolveCompletedRange(
   schemaId: string,
   range: ComparisonTimeRange,
 ): FlowInstance[] {
-  return store.findByTimeRange({
-    schemaId,
-    from: range.from,
-    to: range.to,
-  }).filter((instance) => instance.status === "completed");
+  return store
+    .findByTimeRange({
+      schemaId,
+      from: range.from,
+      to: range.to,
+    })
+    .filter((instance) => instance.status === 'completed');
 }
 
-function assertSufficientSampleSize(
-  instances: readonly FlowInstance[],
-  label: string,
-): void {
+function assertSufficientSampleSize(instances: readonly FlowInstance[], label: string): void {
   if (instances.length < 2) {
     throw new Error(`${label} 비교에는 완료 인스턴스가 최소 2건 필요하다`);
   }
 }
 
-function collectSelectedGateIds(
-  instances: readonly FlowInstance[],
-): string[] {
+function collectSelectedGateIds(instances: readonly FlowInstance[]): string[] {
   return instances.flatMap((instance) => uniqueGateOrder(instance.selections));
 }
 
@@ -822,10 +820,11 @@ function buildGateDistributionShift(
         shiftPercentage: normalizeWeight(Math.abs(deltaRatio) * 100),
       };
     })
-    .toSorted((a, b) =>
-      b.shiftPercentage - a.shiftPercentage
-      || b.countB - a.countB
-      || a.branchId.localeCompare(b.branchId),
+    .toSorted(
+      (a, b) =>
+        b.shiftPercentage - a.shiftPercentage ||
+        b.countB - a.countB ||
+        a.branchId.localeCompare(b.branchId),
     );
 
   return {
@@ -853,9 +852,7 @@ function buildPathBuckets(
   for (const instance of instances) {
     const path = descriptors.flatMap((descriptor) => {
       const selection = findSelection(instance, descriptor.gateId);
-      return selection
-        ? [{ gateId: descriptor.gateId, branchId: selection.branchId }]
-        : [];
+      return selection ? [{ gateId: descriptor.gateId, branchId: selection.branchId }] : [];
     });
     if (path.length === 0) {
       continue;
@@ -877,10 +874,10 @@ function buildPathBuckets(
 function diffPathBuckets(
   bucketsA: ReadonlyMap<string, { path: ComparedPathSegment[]; count: number }>,
   bucketsB: ReadonlyMap<string, { path: ComparedPathSegment[]; count: number }>,
-  direction: "emerged" | "disappeared",
+  direction: 'emerged' | 'disappeared',
 ): TimeRangePathChange[] {
-  const source = direction === "emerged" ? bucketsB : bucketsA;
-  const baseline = direction === "emerged" ? bucketsA : bucketsB;
+  const source = direction === 'emerged' ? bucketsB : bucketsA;
+  const baseline = direction === 'emerged' ? bucketsA : bucketsB;
 
   return [...source.entries()]
     .filter(([signature]) => !baseline.has(signature))
@@ -891,7 +888,7 @@ function diffPathBuckets(
       countB: bucketsB.get(signature)?.count ?? 0,
     }))
     .toSorted((a, b) => {
-      const countDeltaA = direction === "emerged" ? b.countB - a.countB : b.countA - a.countA;
+      const countDeltaA = direction === 'emerged' ? b.countB - a.countB : b.countA - a.countA;
       return countDeltaA || a.signature.localeCompare(b.signature);
     });
 }
@@ -901,11 +898,12 @@ function buildGateDiff(
   selectionA: GateSelection | undefined,
   selectionB: GateSelection | undefined,
 ): GateDiff {
-  const status = selectionA !== undefined
-    && selectionB !== undefined
-    && selectionA.branchId === selectionB.branchId
-    ? "match"
-    : "diverge";
+  const status =
+    selectionA !== undefined &&
+    selectionB !== undefined &&
+    selectionA.branchId === selectionB.branchId
+      ? 'match'
+      : 'diverge';
   const evidenceDiff = compareEvidence(selectionA, selectionB);
 
   return {
@@ -913,7 +911,7 @@ function buildGateDiff(
     gateName: descriptor.gateName,
     phase: descriptor.phase,
     weight: descriptor.weight,
-    emphasis: status === "diverge" && descriptor.weight === "core" ? "core" : "standard",
+    emphasis: status === 'diverge' && descriptor.weight === 'core' ? 'core' : 'standard',
     status,
     branchA: selectionA?.branchId,
     branchB: selectionB?.branchId,
@@ -1004,7 +1002,9 @@ function toKindHistogram(evidence: readonly Evidence[]): Readonly<Record<string,
 }
 
 function collectEvidenceKinds(selection: GateSelection): string[] {
-  return [...new Set(selection.evidence.map((entry) => entry.kind))].toSorted((a, b) => a.localeCompare(b));
+  return [...new Set(selection.evidence.map((entry) => entry.kind))].toSorted((a, b) =>
+    a.localeCompare(b),
+  );
 }
 
 function collectKinds(evidence: readonly Evidence[]): string[] {
@@ -1033,8 +1033,10 @@ function toEvidenceKindCorrelation(
   branchMap: ReadonlyMap<string, GateSelection[]>,
   totalSelections: number,
 ): EvidenceKindCorrelation {
-  const selectionCount = [...branchMap.values()]
-    .reduce((sum, selections) => sum + selections.length, 0);
+  const selectionCount = [...branchMap.values()].reduce(
+    (sum, selections) => sum + selections.length,
+    0,
+  );
   const branches = [...branchMap.entries()]
     .map(([branchId, selections]) => ({
       branchId,
@@ -1071,11 +1073,11 @@ function serializeEvidence(evidence: Evidence): string {
     evidence.content,
     String(evidence.weight),
     serializeUnknown(evidence.metadata),
-  ].join("\u0000");
+  ].join('\u0000');
 }
 
 function serializePath(path: readonly ComparedPathSegment[]): string {
-  return path.map((segment) => `${segment.gateId}:${segment.branchId}`).join("|");
+  return path.map((segment) => `${segment.gateId}:${segment.branchId}`).join('|');
 }
 
 function dominantBranchId(selections: readonly GateSelection[]): string | undefined {
@@ -1088,18 +1090,19 @@ function dominantBranchId(selections: readonly GateSelection[]): string | undefi
     counts.set(selection.branchId, (counts.get(selection.branchId) ?? 0) + 1);
   }
 
-  const dominant = [...counts.entries()]
-    .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+  const dominant = [...counts.entries()].toSorted(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+  )[0];
 
   return dominant?.[0];
 }
 
-function toGateDescriptor(gate: FlowSchema["gates"][number]): GateDescriptor {
+function toGateDescriptor(gate: FlowSchema['gates'][number]): GateDescriptor {
   return {
     gateId: gate.id,
     gateName: gate.name,
     phase: gate.phase,
-    weight: gate.weight ?? "tactical",
+    weight: gate.weight ?? 'tactical',
   };
 }
 
@@ -1109,34 +1112,34 @@ function normalizeWeight(value: number): number {
 
 function serializeUnknown(value: unknown): string {
   if (value === null) {
-    return "null";
+    return 'null';
   }
   if (value === undefined) {
-    return "undefined";
+    return 'undefined';
   }
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return `string:${value}`;
   }
-  if (typeof value === "number" || typeof value === "boolean") {
+  if (typeof value === 'number' || typeof value === 'boolean') {
     return `${typeof value}:${String(value)}`;
   }
   if (Array.isArray(value)) {
-    return `[${value.map((entry) => serializeUnknown(entry)).join(",")}]`;
+    return `[${value.map((entry) => serializeUnknown(entry)).join(',')}]`;
   }
-  if (typeof value === "object") {
+  if (typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
       .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([key, entry]) => `${key}:${serializeUnknown(entry)}`)
-      .join(",")}}`;
+      .join(',')}}`;
   }
 
   return String(value);
 }
 
 function formatKinds(kinds: readonly string[]): string {
-  return kinds.length > 0 ? kinds.join(", ") : "공유되지 않은 추가 근거 없음";
+  return kinds.length > 0 ? kinds.join(', ') : '공유되지 않은 추가 근거 없음';
 }
 
 function formatConfidence(confidence: number | undefined): string {
-  return confidence === undefined ? "N/A" : String(normalizeWeight(confidence));
+  return confidence === undefined ? 'N/A' : String(normalizeWeight(confidence));
 }

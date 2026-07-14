@@ -1,10 +1,10 @@
 // @def.boundary qa-sdk-engine-system
 // @def.doc qa-sdk-engine-system
 
-import type { EventRecord, RuntimeGraph, RuntimeNode } from "@qa-sdk/core";
-import { sortByTimestamp } from "./timestamp-sorter.js";
-import { buildSpanTree } from "./span-tree-builder.js";
-import { buildTemporalEdges, buildGlobalTemporalEdges } from "./edge-factory.js";
+import type { EventRecord, RuntimeGraph, RuntimeNode } from '@qa-sdk/core';
+import { sortByTimestamp } from './timestamp-sorter.js';
+import { buildSpanTree } from './span-tree-builder.js';
+import { buildTemporalEdges, buildGlobalTemporalEdges } from './edge-factory.js';
 
 export interface ReconstructionOptions {
   /**
@@ -12,7 +12,7 @@ export interface ReconstructionOptions {
    * - "span-local": 같은 span 내에서만 temporal edge (default, 정확도 높음)
    * - "global": 전체 trace 레벨 temporal edge (span 정보 부족 시 fallback)
    */
-  temporalStrategy?: "span-local" | "global";
+  temporalStrategy?: 'span-local' | 'global';
   /**
    * trace를 발생시킨 서비스 이름.
    * TraceStore의 serviceName에서 전달받아 RuntimeNode.service_name에 채운다.
@@ -32,7 +32,7 @@ export function reconstruct(
   records: EventRecord[],
   options?: ReconstructionOptions,
 ): RuntimeGraph {
-  const strategy = options?.temporalStrategy ?? "span-local";
+  const strategy = options?.temporalStrategy ?? 'span-local';
 
   // 1. timestamp 정렬
   const sorted = sortByTimestamp(records);
@@ -46,9 +46,7 @@ export function reconstruct(
 
   // 4. temporal edge
   const temporalEdges =
-    strategy === "global"
-      ? buildGlobalTemporalEdges(sorted)
-      : buildTemporalEdges(sorted);
+    strategy === 'global' ? buildGlobalTemporalEdges(sorted) : buildTemporalEdges(sorted);
 
   // 5. edge 병합 (중복 제거)
   const edgeSet = new Set<string>();
@@ -67,7 +65,7 @@ function toRuntimeNode(record: EventRecord, serviceName?: string): RuntimeNode {
     id: record.log_id,
     log_id: record.log_id,
     timestamp: record.timestamp,
-    record_kind: record.record_kind as "log" | "span",
+    record_kind: record.record_kind as 'log' | 'span',
     event_key: record.event_key,
     event_version: record.event_version,
     service_name: serviceName,

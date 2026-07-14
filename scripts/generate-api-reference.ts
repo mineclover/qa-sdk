@@ -1,16 +1,16 @@
-import { readFile, readdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import { scanAndClassify, type ClassifiedPackage } from "../packages/package-classifier/src/pkg-classifier.js";
+import { readFile, readdir } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import {
+  scanAndClassify,
+  type ClassifiedPackage,
+} from '../packages/package-classifier/src/pkg-classifier.js';
 
 async function extractBoundaryTags(pkgDir: string): Promise<{ boundary?: string; doc?: string }> {
-  const indexPaths = [
-    join(pkgDir, "src/index.ts"),
-    join(pkgDir, "src/main.ts"),
-  ];
+  const indexPaths = [join(pkgDir, 'src/index.ts'), join(pkgDir, 'src/main.ts')];
 
   for (const path of indexPaths) {
     try {
-      const content = await readFile(path, "utf-8");
+      const content = await readFile(path, 'utf-8');
       const boundary = content.match(/@def\.boundary\s+([^\s\n]+)/)?.[1];
       const doc = content.match(/@def\.doc\s+([^\s\n]+)/)?.[1];
       if (boundary || doc) return { boundary, doc };
@@ -32,18 +32,18 @@ async function main() {
       logic: [],
       kernel: [],
       foundation: [],
-    }
+    },
   };
 
   for (const pkg of pkgs) {
-    const tags = await extractBoundaryTags(join(root, "packages", pkg.dir));
+    const tags = await extractBoundaryTags(join(root, 'packages', pkg.dir));
     const entry = {
       id: pkg.displayName,
       name: pkg.name,
       version: pkg.version,
       tier: pkg.tier,
-      boundary: tags.boundary ?? "unknown",
-      docRef: tags.doc ?? "none",
+      boundary: tags.boundary ?? 'unknown',
+      docRef: tags.doc ?? 'none',
       internalDeps: pkg.deps,
     };
 
@@ -56,14 +56,14 @@ async function main() {
     }
   }
 
-  const outputPath = join(root, "docs/generated-api-manifest.json");
+  const outputPath = join(root, 'docs/generated-api-manifest.json');
   await writeFile(outputPath, JSON.stringify(manifest, null, 2));
   console.log(`✅ API Reference Manifest generated at: ${outputPath}`);
 }
 
-import { writeFile } from "node:fs/promises";
+import { writeFile } from 'node:fs/promises';
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

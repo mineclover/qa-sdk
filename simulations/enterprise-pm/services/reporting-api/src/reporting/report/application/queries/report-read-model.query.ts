@@ -1,7 +1,7 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import type { ReportReadModel, ReportSummaryReadModel } from "../../domain/report.types.js";
+import type { ReportReadModel, ReportSummaryReadModel } from '../../domain/report.types.js';
 
 /** Read 전용 query port (CQRS — Primary DB 직접 read 금지, Read Model 우선). */
 export abstract class ReportReadModelQuery {

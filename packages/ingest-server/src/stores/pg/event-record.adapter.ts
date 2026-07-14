@@ -14,8 +14,8 @@
  * 본 어댑터는 추가 validation 안 함 — §4 P2 정책 준수.
  */
 
-import { and, asc, eq, gt, gte, lte, or, type SQL } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { and, asc, eq, gt, gte, lte, or, type SQL } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type {
   RecordInsert,
   RecordPaginationCursor,
@@ -24,9 +24,9 @@ import type {
   StoredRecord,
   StoredRecordPage,
   TimeRangeParams,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
-import { eventRecords, type EventRecordPgRow } from "./schema.js";
+import { eventRecords, type EventRecordPgRow } from './schema.js';
 
 const DEFAULT_PAGE_LIMIT = 100;
 const DEFAULT_TIME_RANGE_LIMIT = 1000;
@@ -101,19 +101,11 @@ export class PgRecordStore implements RecordStore {
     return this.paginate(eq(eventRecords.qaSessionId, sessionId), params);
   }
 
-  async findByTraceAndEventKey(
-    traceId: string,
-    eventKey: string,
-  ): Promise<StoredRecord[]> {
+  async findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]> {
     const rows = await this.db
       .select()
       .from(eventRecords)
-      .where(
-        and(
-          eq(eventRecords.traceId, traceId),
-          eq(eventRecords.eventKey, eventKey),
-        ),
-      )
+      .where(and(eq(eventRecords.traceId, traceId), eq(eventRecords.eventKey, eventKey)))
       .orderBy(asc(eventRecords.timestamp));
     return rows.map(toStoredRecord);
   }
@@ -121,9 +113,7 @@ export class PgRecordStore implements RecordStore {
   async findByTimeRange(params: TimeRangeParams): Promise<StoredRecord[]> {
     const conditions: SQL<unknown>[] = [];
     if (params.from) {
-      conditions.push(
-        gte(eventRecords.timestamp, params.from.toISOString()),
-      );
+      conditions.push(gte(eventRecords.timestamp, params.from.toISOString()));
     }
     if (params.to) {
       conditions.push(lte(eventRecords.timestamp, params.to.toISOString()));
@@ -164,10 +154,7 @@ export class PgRecordStore implements RecordStore {
     return {
       items,
       hasMore,
-      nextCursor:
-        hasMore && last
-          ? { timestamp: last.timestamp, logId: last.logId }
-          : null,
+      nextCursor: hasMore && last ? { timestamp: last.timestamp, logId: last.logId } : null,
     };
   }
 }
@@ -182,10 +169,7 @@ function buildPaginatedWhere(
     baseCondition,
     or(
       gt(eventRecords.timestamp, ts),
-      and(
-        eq(eventRecords.timestamp, ts),
-        gt(eventRecords.logId, cursor.logId),
-      ),
+      and(eq(eventRecords.timestamp, ts), gt(eventRecords.logId, cursor.logId)),
     ),
   ) as SQL<unknown>;
 }
@@ -210,13 +194,11 @@ function toStoredRecord(row: EventRecordPgRow): StoredRecord {
     payloadMaskedFields: (row.payloadMaskedFields as string[]) ?? [],
     payload: row.payload ?? undefined,
     registryWarning: row.registryWarning ?? undefined,
-    addressContext:
-      (row.addressContext as Record<string, string> | null) ?? undefined,
+    addressContext: (row.addressContext as Record<string, string> | null) ?? undefined,
     qaSessionId: row.qaSessionId ?? undefined,
     actorId: row.actorId ?? undefined,
     userId: row.userId ?? undefined,
-    userAttributes:
-      (row.userAttributes as Record<string, string> | null) ?? undefined,
+    userAttributes: (row.userAttributes as Record<string, string> | null) ?? undefined,
     createdAt: new Date(row.createdAt),
   };
 }

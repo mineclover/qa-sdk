@@ -1,19 +1,19 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-export const timeOffRequests = sqliteTable("time_off_requests", {
-  id: text("id").primaryKey(),
-  requesterId: text("requester_id").notNull(),
-  startDate: text("start_date").notNull(),
-  endDate: text("end_date").notNull(),
-  reason: text("reason").notNull(),
-  status: text("status", {
-    enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+export const timeOffRequests = sqliteTable('time_off_requests', {
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  reason: text('reason').notNull(),
+  status: text('status', {
+    enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
   }).notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
 export const SIM_APPROVAL_TIMEOFF_SQLITE_DDL = `

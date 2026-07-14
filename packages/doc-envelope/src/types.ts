@@ -124,8 +124,7 @@ export interface DocumentAdapterCapabilities {
   readonly transform: boolean;
 }
 
-export type DocumentAdapterCapabilityDeclaration =
-  Partial<DocumentAdapterCapabilities>;
+export type DocumentAdapterCapabilityDeclaration = Partial<DocumentAdapterCapabilities>;
 
 export interface DocumentAdapter {
   readonly id: string;
@@ -134,46 +133,39 @@ export interface DocumentAdapter {
   getDocument(stableId: string): Promise<DocumentEnvelope | null>;
 }
 
-export type RawSourcePointerInput =
-  Omit<DocumentRawSourcePointer, "metadata"> & {
-    readonly metadata?: DocumentMetadata | null;
-  };
+export type RawSourcePointerInput = Omit<DocumentRawSourcePointer, 'metadata'> & {
+  readonly metadata?: DocumentMetadata | null;
+};
 
-export type DocumentLinkInput =
-  Omit<DocumentLink, "metadata"> & {
-    readonly metadata?: DocumentMetadata | null;
-  };
+export type DocumentLinkInput = Omit<DocumentLink, 'metadata'> & {
+  readonly metadata?: DocumentMetadata | null;
+};
 
-export type DocumentSourceInput =
-  Omit<DocumentSource, "metadata" | "rawSource"> & {
-    readonly rawSource?: RawSourcePointerInput | null;
-    readonly metadata?: DocumentMetadata | null;
-  };
+export type DocumentSourceInput = Omit<DocumentSource, 'metadata' | 'rawSource'> & {
+  readonly rawSource?: RawSourcePointerInput | null;
+  readonly metadata?: DocumentMetadata | null;
+};
 
-export type DocumentSectionInput =
-  Omit<DocumentSection, "metadata" | "rawSource"> & {
-    readonly rawSource?: RawSourcePointerInput | null;
-    readonly metadata?: DocumentMetadata | null;
-  };
+export type DocumentSectionInput = Omit<DocumentSection, 'metadata' | 'rawSource'> & {
+  readonly rawSource?: RawSourcePointerInput | null;
+  readonly metadata?: DocumentMetadata | null;
+};
 
-export type DocumentTaskInput =
-  Omit<DocumentTask, "metadata" | "rawSource" | "evidenceIds"> & {
-    readonly evidenceIds?: readonly string[] | null;
-    readonly rawSource?: RawSourcePointerInput | null;
-    readonly metadata?: DocumentMetadata | null;
-  };
+export type DocumentTaskInput = Omit<DocumentTask, 'metadata' | 'rawSource' | 'evidenceIds'> & {
+  readonly evidenceIds?: readonly string[] | null;
+  readonly rawSource?: RawSourcePointerInput | null;
+  readonly metadata?: DocumentMetadata | null;
+};
 
-export type DocumentEvidenceInput =
-  Omit<DocumentEvidence, "metadata" | "rawSource"> & {
-    readonly rawSource?: RawSourcePointerInput | null;
-    readonly metadata?: DocumentMetadata | null;
-  };
+export type DocumentEvidenceInput = Omit<DocumentEvidence, 'metadata' | 'rawSource'> & {
+  readonly rawSource?: RawSourcePointerInput | null;
+  readonly metadata?: DocumentMetadata | null;
+};
 
-export type DocumentDiagnosticInput =
-  Omit<DocumentDiagnostic, "metadata" | "rawSource"> & {
-    readonly rawSource?: RawSourcePointerInput | null;
-    readonly metadata?: DocumentMetadata | null;
-  };
+export type DocumentDiagnosticInput = Omit<DocumentDiagnostic, 'metadata' | 'rawSource'> & {
+  readonly rawSource?: RawSourcePointerInput | null;
+  readonly metadata?: DocumentMetadata | null;
+};
 
 export interface DocumentEnvelopeInput {
   readonly adapterId: string;

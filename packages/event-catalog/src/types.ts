@@ -1,30 +1,23 @@
 // ── Event Category ──────────────────────────────────────
 
 export type EventCategory =
-  | "navigation"
-  | "interaction"
-  | "form"
-  | "session"
-  | "network"
-  | "execution"
-  | "outcome"
-  | "quality"
-  | "infrastructure";
+  | 'navigation'
+  | 'interaction'
+  | 'form'
+  | 'session'
+  | 'network'
+  | 'execution'
+  | 'outcome'
+  | 'quality'
+  | 'infrastructure';
 
 // ── Channel ────────────────────────────────────────────
 
-export type Channel =
-  | "browser"
-  | "mobile"
-  | "backend"
-  | "sdk"
-  | "agent"
-  | "common"
-  | "qa";
+export type Channel = 'browser' | 'mobile' | 'backend' | 'sdk' | 'agent' | 'common' | 'qa';
 
 // ── Graph Hint ─────────────────────────────────────────
 
-export type GraphRole = "entry" | "transition" | "terminal" | "observation";
+export type GraphRole = 'entry' | 'transition' | 'terminal' | 'observation';
 
 export interface GraphHint {
   role: GraphRole;
@@ -37,7 +30,7 @@ export interface GraphHint {
 export interface CoreEventDef {
   event_key: string;
   event_version: string;
-  mode: "core";
+  mode: 'core';
   category: EventCategory;
   channel: Channel[];
   display_name: string;
@@ -48,7 +41,7 @@ export interface CoreEventDef {
 
 // ── Payload Field Guide ────────────────────────────────
 
-export type PayloadFieldType = "string" | "number" | "boolean" | "string[]";
+export type PayloadFieldType = 'string' | 'number' | 'boolean' | 'string[]';
 
 export interface PayloadFieldDef {
   name: string;

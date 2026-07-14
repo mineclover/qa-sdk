@@ -8,10 +8,10 @@
  * @layer 집계 (Aggregation)
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { decodePrefixAsResult } from "@qa-sdk/core";
-import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
-import type { UsageData, EntryUsage } from "./convergence.types.js";
+import type { Catalog } from '@qa-sdk/core';
+import { decodePrefixAsResult } from '@qa-sdk/core';
+import { aggregateUsageData, type AddressContextRecord } from './usage-aggregator.js';
+import type { UsageData, EntryUsage } from './convergence.types.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -56,10 +56,10 @@ export function aggregateByDsl(
   for (const record of records) {
     const prefixes = Object.keys(record.address_context ?? {});
     // 이 record가 속하는 DSL 찾기 (가장 많은 멤버가 매칭되는 DSL)
-    let bestDsl = "unscoped";
+    let bestDsl = 'unscoped';
     let bestCount = 0;
     for (const [dslId, members] of dslMemberMap) {
-      const matched = prefixes.filter(p => members.includes(p)).length;
+      const matched = prefixes.filter((p) => members.includes(p)).length;
       if (matched > bestCount) {
         bestDsl = dslId;
         bestCount = matched;
@@ -108,7 +108,7 @@ export function aggregateByCategory(
   for (const record of records) {
     const prefixes = Object.keys(record.address_context ?? {});
     for (const prefixId of prefixes) {
-      const cat = prefixCategoryMap.get(prefixId) ?? "unknown";
+      const cat = prefixCategoryMap.get(prefixId) ?? 'unknown';
       const list = buckets.get(cat) ?? [];
       list.push(record);
       buckets.set(cat, list);
@@ -151,36 +151,36 @@ export function aggregateByService(
     if (!ctx) continue;
 
     // service prefix 값 추출
-    let svcKey = "no-service";
+    let svcKey = 'no-service';
     if (ctx.service) {
       svcKey = ctx.service;
     } else {
       // svc_ref를 가진 다른 prefix에서 추출 시도
       for (const serialized of Object.values(ctx)) {
-        const parts = serialized.split(":");
+        const parts = serialized.split(':');
         if (parts.length === 3) {
           const [prefixId, version, addr] = parts;
           const prefix = catalog.prefixes[prefixId as keyof typeof catalog.prefixes];
           if (prefix) {
             for (const [, dimRef] of Object.entries(prefix.dims)) {
-              if (dimRef.kind === "prefix_ref" && dimRef.prefixId === "service") {
+              if (dimRef.kind === 'prefix_ref' && dimRef.prefixId === 'service') {
                 try {
                   const result = decodePrefixAsResult(catalog, prefixId, version, Number(addr));
-                  const svcRefLabel = Object.keys(prefix.dims).find(
-                    l => {
-                      const d = prefix.dims[l];
-                      return d.kind === "prefix_ref" && d.prefixId === "service";
-                    },
-                  );
-                  if (svcRefLabel && result.dims[svcRefLabel]?.kind === "prefix_ref") {
+                  const svcRefLabel = Object.keys(prefix.dims).find((l) => {
+                    const d = prefix.dims[l];
+                    return d.kind === 'prefix_ref' && d.prefixId === 'service';
+                  });
+                  if (svcRefLabel && result.dims[svcRefLabel]?.kind === 'prefix_ref') {
                     svcKey = `svc:${result.dims[svcRefLabel].value}`;
                   }
-                } catch { /* ignore */ }
+                } catch {
+                  /* ignore */
+                }
                 break;
               }
             }
           }
-          if (svcKey !== "no-service") break;
+          if (svcKey !== 'no-service') break;
         }
       }
     }
@@ -212,11 +212,21 @@ export function aggregateByService(
 // ═══════════════════════════════════════════════════════════════
 
 const BRANCH_AXES = new Set([
-  "flow_step", "flow_variant", "deploy_action", "health_status",
-  "verdict_result", "constraint_op", "migration_pattern",
-  "mask_mode", "validation_mode", "pipeline_phase",
-  "cart_action", "auth_action", "order_action",
-  "http_method", "resource_type",
+  'flow_step',
+  'flow_variant',
+  'deploy_action',
+  'health_status',
+  'verdict_result',
+  'constraint_op',
+  'migration_pattern',
+  'mask_mode',
+  'validation_mode',
+  'pipeline_phase',
+  'cart_action',
+  'auth_action',
+  'order_action',
+  'http_method',
+  'resource_type',
 ]);
 
 function extractBranches(entryUsages: readonly EntryUsage[], _total: number): BranchDistribution[] {
@@ -236,7 +246,7 @@ function extractBranches(entryUsages: readonly EntryUsage[], _total: number): Br
       total: axisTotal,
       entries: entries
         .toSorted((a, b) => b.count - a.count)
-        .map(e => Object.assign({}, e, { pct: axisTotal > 0 ? (e.count / axisTotal) * 100 : 0 })),
+        .map((e) => Object.assign({}, e, { pct: axisTotal > 0 ? (e.count / axisTotal) * 100 : 0 })),
     };
   });
 }

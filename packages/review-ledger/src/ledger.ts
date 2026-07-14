@@ -6,18 +6,15 @@
  * mark / status / dashboard / history API를 제공한다.
  */
 
-import { SqliteReviewStore } from "./store.js";
-import { resolveScope } from "./scope-resolver.js";
-import {
-  buildEvidenceBundle,
-  createFeedbackRequest,
-} from "./feedback-request.js";
+import { SqliteReviewStore } from './store.js';
+import { resolveScope } from './scope-resolver.js';
+import { buildEvidenceBundle, createFeedbackRequest } from './feedback-request.js';
 import {
   getHeadCommit,
   getLatestCommitForFile,
   getLatestCommitsForFiles,
   listTrackedFiles,
-} from "./staleness.js";
+} from './staleness.js';
 import type {
   CreateFeedbackRequestInput,
   MarkReviewInput,
@@ -26,7 +23,7 @@ import type {
   FileReviewStatus,
   ReviewEntry,
   ServiceCoverage,
-} from "./types.js";
+} from './types.js';
 
 export class ReviewLedger {
   readonly store: SqliteReviewStore;
@@ -47,9 +44,7 @@ export class ReviewLedger {
     let skipped = 0;
 
     for (const filePath of input.filePaths) {
-      const commit = input.commit
-        ?? getLatestCommitForFile(this.cwd, filePath)
-        ?? fallbackCommit;
+      const commit = input.commit ?? getLatestCommitForFile(this.cwd, filePath) ?? fallbackCommit;
       const serviceScope = resolveScope(filePath);
       const inserted = this.store.insert({
         filePath,
@@ -102,13 +97,10 @@ export class ReviewLedger {
     const statuses = this.buildStatuses(files);
 
     if (filter?.stale && filter?.unreviewed) {
-      return statuses.filter(
-        (s) => s.status === "stale" || s.status === "unreviewed",
-      );
+      return statuses.filter((s) => s.status === 'stale' || s.status === 'unreviewed');
     }
-    if (filter?.stale) return statuses.filter((s) => s.status === "stale");
-    if (filter?.unreviewed)
-      return statuses.filter((s) => s.status === "unreviewed");
+    if (filter?.stale) return statuses.filter((s) => s.status === 'stale');
+    if (filter?.unreviewed) return statuses.filter((s) => s.status === 'unreviewed');
     return statuses;
   }
 
@@ -136,12 +128,11 @@ export class ReviewLedger {
     }
 
     return Array.from(scopeMap.entries())
-      .map(([serviceScope, agg]) => Object.assign({ serviceScope }, agg, {
-        coveragePercent:
-          agg.total > 0
-            ? Math.round((agg.reviewed / agg.total) * 1000) / 10
-            : 0,
-      }))
+      .map(([serviceScope, agg]) =>
+        Object.assign({ serviceScope }, agg, {
+          coveragePercent: agg.total > 0 ? Math.round((agg.reviewed / agg.total) * 1000) / 10 : 0,
+        }),
+      )
       .toSorted((a, b) => a.serviceScope.localeCompare(b.serviceScope));
   }
 
@@ -157,10 +148,7 @@ export class ReviewLedger {
   createFeedbackRequest(input: CreateFeedbackRequestInput): FeedbackRequest {
     const filePaths = this.resolveFeedbackFiles(input);
     const statuses = this.buildStatuses(filePaths);
-    const evidenceBundle = buildEvidenceBundle(
-      statuses,
-      input.relatedDocsByFile ?? {},
-    );
+    const evidenceBundle = buildEvidenceBundle(statuses, input.relatedDocsByFile ?? {});
     const request = createFeedbackRequest(input, evidenceBundle);
     this.store.insertFeedbackRequest(request);
     return request;
@@ -172,7 +160,7 @@ export class ReviewLedger {
 
   listFeedbackRequests(filter?: {
     scope?: string;
-    status?: FeedbackRequest["status"];
+    status?: FeedbackRequest['status'];
     limit?: number;
   }): FeedbackRequest[] {
     return this.store.listFeedbackRequests(filter);
@@ -224,7 +212,7 @@ export class ReviewLedger {
     if (!entry) {
       return {
         filePath,
-        status: "unreviewed",
+        status: 'unreviewed',
         serviceScope,
         lastEntry: null,
         latestFileCommit,
@@ -232,13 +220,11 @@ export class ReviewLedger {
     }
 
     // 리뷰 커밋과 파일의 최신 커밋이 같으면 reviewed
-    const stale =
-      latestFileCommit !== null &&
-      latestFileCommit !== entry.reviewedCommit;
+    const stale = latestFileCommit !== null && latestFileCommit !== entry.reviewedCommit;
 
     return {
       filePath,
-      status: stale ? "stale" : "reviewed",
+      status: stale ? 'stale' : 'reviewed',
       serviceScope,
       lastEntry: entry,
       latestFileCommit,

@@ -57,16 +57,12 @@ export function createWaitForCycles(
         signal: AbortSignal.timeout(args.requestTimeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
   const sleep =
-    args.sleepImpl ??
-    ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+    args.sleepImpl ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const now = args.nowImpl ?? (() => Date.now());
   const interval = args.pollIntervalMs ?? 500;
-  const base = args.controllerUrl.replace(/\/$/, "");
+  const base = args.controllerUrl.replace(/\/$/, '');
 
-  return async function waitForCycles(
-    n: number,
-    timeoutMs: number,
-  ): Promise<string[]> {
+  return async function waitForCycles(n: number, timeoutMs: number): Promise<string[]> {
     if (!Number.isInteger(n) || n <= 0) {
       throw new Error(`waitForCycles: n must be positive integer, got ${n}`);
     }
@@ -77,29 +73,23 @@ export function createWaitForCycles(
     while (now() < deadline) {
       attempts += 1;
       const params = new URLSearchParams();
-      params.set("since", since);
-      params.set("limit", String(n * 2));
+      params.set('since', since);
+      params.set('limit', String(n * 2));
       const url = `${base}/v1/cycles/recent?${params.toString()}`;
-      const res = await fetchImpl(url, { method: "GET" });
+      const res = await fetchImpl(url, { method: 'GET' });
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(
-          `waitForCycles GET ${url} failed: status=${res.status} body=${body}`,
-        );
+        throw new Error(`waitForCycles GET ${url} failed: status=${res.status} body=${body}`);
       }
       let json: unknown;
       try {
         json = await res.json();
       } catch (e) {
-        throw new Error(
-          `waitForCycles JSON parse failed: ${(e as Error).message}`,
-        );
+        throw new Error(`waitForCycles JSON parse failed: ${(e as Error).message}`);
       }
       const cycleIds = (json as { cycleIds?: unknown }).cycleIds;
       if (!Array.isArray(cycleIds)) {
-        throw new Error(
-          `waitForCycles invalid response shape: ${JSON.stringify(json)}`,
-        );
+        throw new Error(`waitForCycles invalid response shape: ${JSON.stringify(json)}`);
       }
       if (cycleIds.length >= n) {
         return (cycleIds as string[]).slice(0, n);
@@ -107,8 +97,6 @@ export function createWaitForCycles(
       if (now() + interval >= deadline) break;
       await sleep(interval);
     }
-    throw new Error(
-      `waitForCycles timeout: n=${n} timeoutMs=${timeoutMs} attempts=${attempts}`,
-    );
+    throw new Error(`waitForCycles timeout: n=${n} timeoutMs=${timeoutMs} attempts=${attempts}`);
   };
 }

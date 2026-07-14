@@ -2,7 +2,7 @@
 // @def.doc infra-engine-system
 
 // monitor/auto-recovery.ts — 자동 복구 + 에스컬레이션
-import type { SyncCheckResult } from "./sync-loop.js";
+import type { SyncCheckResult } from './sync-loop.js';
 
 export interface AutoRecoveryOptions {
   maxRetries: number; // default 3
@@ -22,13 +22,13 @@ export function createAutoRecovery(options: AutoRecoveryOptions) {
   return {
     async evaluate(results: SyncCheckResult[]): Promise<void> {
       for (const r of results) {
-        if (r.currentStatus === "Synced") {
+        if (r.currentStatus === 'Synced') {
           // 정상 복구 → 상태 리셋
           state.delete(r.serviceId);
           continue;
         }
 
-        if (r.currentStatus === "OutOfSync" || r.currentStatus === "Unknown") {
+        if (r.currentStatus === 'OutOfSync' || r.currentStatus === 'Unknown') {
           const s = state.get(r.serviceId) ?? { attempts: 0, lastAttempt: 0 };
 
           // 쿨다운 확인

@@ -3,13 +3,19 @@
   "version": "0.1.0",
   "description": "Prompt Template inputs normalized into executable Request Contracts and evaluated through Observation Contracts.",
   "keywords": [
-    "request-contract",
-    "prompt-template",
+    "feedback-loop",
     "observation-contract",
-    "feedback-loop"
+    "prompt-template",
+    "request-contract"
   ],
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,12 +23,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

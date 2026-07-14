@@ -1,15 +1,25 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, UseFilters } from "@nestjs/common";
-import { z } from "zod";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { DepartmentUseCase } from "../../application/use-cases/department.use-case.js";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+  UseFilters,
+} from '@nestjs/common';
+import { z } from 'zod';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { DepartmentUseCase } from '../../application/use-cases/department.use-case.js';
 import {
   DepartmentReadModelQuery,
   type DepartmentDetailReadModel,
-} from "../../application/queries/department-read-model.query.js";
-import { DepartmentNotFoundException } from "../../domain/index.js";
+} from '../../application/queries/department-read-model.query.js';
+import { DepartmentNotFoundException } from '../../domain/index.js';
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -19,7 +29,7 @@ const createSchema = z.object({
 
 const updateSchema = createSchema.partial();
 
-@Controller("departments")
+@Controller('departments')
 @UseFilters(DomainExceptionFilter)
 export class DepartmentController {
   constructor(
@@ -30,7 +40,7 @@ export class DepartmentController {
   @Post()
   async create(@Body() body: unknown): Promise<DepartmentDetailReadModel> {
     const parsed = createSchema.parse(body);
-    const id = `dept_${parsed.name.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}`;
+    const id = `dept_${parsed.name.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
     await this.useCase.create({
       id,
       name: parsed.name,
@@ -42,8 +52,8 @@ export class DepartmentController {
     return detail;
   }
 
-  @Get(":id")
-  async get(@Param("id") id: string): Promise<DepartmentDetailReadModel> {
+  @Get(':id')
+  async get(@Param('id') id: string): Promise<DepartmentDetailReadModel> {
     const detail = await this.readModel.findDetail(id);
     if (!detail) throw new DepartmentNotFoundException(id);
     return detail;
@@ -54,21 +64,24 @@ export class DepartmentController {
     return this.readModel.list();
   }
 
-  @Get(":id/chain")
-  async chain(@Param("id") id: string): Promise<DepartmentDetailReadModel[]> {
+  @Get(':id/chain')
+  async chain(@Param('id') id: string): Promise<DepartmentDetailReadModel[]> {
     return this.readModel.resolveChain(id);
   }
 
-  @Put(":id")
-  async update(@Param("id") id: string, @Body() body: unknown): Promise<{ deptId: string; status: "ACTIVE" }> {
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<{ deptId: string; status: 'ACTIVE' }> {
     const patch = updateSchema.parse(body);
     await this.useCase.update({ id, patch });
-    return { deptId: id, status: "ACTIVE" };
+    return { deptId: id, status: 'ACTIVE' };
   }
 
-  @Delete(":id")
-  async remove(@Param("id") id: string): Promise<{ status: "deleted" }> {
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<{ status: 'deleted' }> {
     await this.useCase.delete({ id });
-    return { status: "deleted" };
+    return { status: 'deleted' };
   }
 }

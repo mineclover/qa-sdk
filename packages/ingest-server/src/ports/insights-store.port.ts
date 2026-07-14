@@ -37,7 +37,7 @@ export interface ServiceInsight {
 export interface EventKeyInsight {
   readonly eventKey: string;
   readonly count: number;
-  readonly source: "auto" | "manual";
+  readonly source: 'auto' | 'manual';
   readonly category: string;
   readonly firstSeen: string | null;
   readonly lastSeen: string | null;

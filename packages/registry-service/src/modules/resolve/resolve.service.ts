@@ -1,21 +1,29 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable, Optional } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
-import { REGISTRY_SERVICE } from "../../registry-core.module.js";
-import { RegistryService } from "../../lib/registry-service.js";
-import { ManifestService } from "../manifests/manifest.service.js";
-import { ServiceComponentService } from "../services/service-component.service.js";
-import { EndpointService } from "../services/endpoint.service.js";
-import type { DeploymentBinding, RuntimeServiceAddress, ServiceExposureSpec, ServiceOwnershipSpec, ServiceUnitSpec } from "../services/service.types.js";
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
+import { REGISTRY_SERVICE } from '../../registry-core.module.js';
+import { RegistryService } from '../../lib/registry-service.js';
+import { ManifestService } from '../manifests/manifest.service.js';
+import { ServiceComponentService } from '../services/service-component.service.js';
+import { EndpointService } from '../services/endpoint.service.js';
+import type {
+  DeploymentBinding,
+  RuntimeServiceAddress,
+  ServiceExposureSpec,
+  ServiceOwnershipSpec,
+  ServiceUnitSpec,
+} from '../services/service.types.js';
 
 @Injectable()
 export class ResolveService {
   constructor(
     @Inject(REGISTRY_SERVICE) private readonly registry: RegistryService,
     @Optional() @Inject(ManifestService) private readonly manifests?: ManifestService,
-    @Optional() @Inject(ServiceComponentService) private readonly components?: ServiceComponentService,
+    @Optional()
+    @Inject(ServiceComponentService)
+    private readonly components?: ServiceComponentService,
     @Optional() @Inject(EndpointService) private readonly endpoints?: EndpointService,
   ) {}
 
@@ -56,7 +64,7 @@ export class ResolveService {
     },
   ) {
     if (!this.manifests || !this.components || !this.endpoints) {
-      throw new AppError("INTERNAL_ERROR", "service resolve dependencies not configured", 500);
+      throw new AppError('INTERNAL_ERROR', 'service resolve dependencies not configured', 500);
     }
 
     const manifest = query.manifestVersion
@@ -64,17 +72,32 @@ export class ResolveService {
       : this.manifests.getActiveManifest(serviceId);
 
     if (!manifest) {
-      throw new AppError("NOT_FOUND", `active manifest '${serviceId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `active manifest '${serviceId}' not found`, 404);
     }
 
     const unit = manifest.serviceUnitVersion
-      ? await this.getComponentValue<ServiceUnitSpec>(query.catalogId, "service-unit", serviceId, manifest.serviceUnitVersion)
+      ? await this.getComponentValue<ServiceUnitSpec>(
+          query.catalogId,
+          'service-unit',
+          serviceId,
+          manifest.serviceUnitVersion,
+        )
       : undefined;
     const ownership = manifest.ownershipVersion
-      ? await this.getComponentValue<ServiceOwnershipSpec>(query.catalogId, "ownership", serviceId, manifest.ownershipVersion)
+      ? await this.getComponentValue<ServiceOwnershipSpec>(
+          query.catalogId,
+          'ownership',
+          serviceId,
+          manifest.ownershipVersion,
+        )
       : undefined;
     const exposure = manifest.exposureVersion
-      ? await this.getComponentValue<ServiceExposureSpec>(query.catalogId, "exposure", serviceId, manifest.exposureVersion)
+      ? await this.getComponentValue<ServiceExposureSpec>(
+          query.catalogId,
+          'exposure',
+          serviceId,
+          manifest.exposureVersion,
+        )
       : undefined;
 
     const runtimeAddress: RuntimeServiceAddress | undefined = manifest.runtimeAddress
@@ -88,7 +111,12 @@ export class ResolveService {
       : undefined;
 
     const deploymentBinding = manifest.deploymentVersion
-      ? await this.getComponentValue<DeploymentBinding>(query.catalogId, "deployment-binding", serviceId, manifest.deploymentVersion)
+      ? await this.getComponentValue<DeploymentBinding>(
+          query.catalogId,
+          'deployment-binding',
+          serviceId,
+          manifest.deploymentVersion,
+        )
       : undefined;
 
     const endpoint = await this.resolveEndpoint(query.catalogId, runtimeAddress, deploymentBinding);
@@ -111,10 +139,12 @@ export class ResolveService {
         deploymentVersion: manifest.deploymentVersion,
       },
       selection: {
-        deploymentBinding: manifest.deploymentVersion ? "manifest-pinned" : "none",
+        deploymentBinding: manifest.deploymentVersion ? 'manifest-pinned' : 'none',
         endpoint: endpoint
-          ? (deploymentBinding?.url ? "deployment-binding" : "service-endpoint")
-          : "none",
+          ? deploymentBinding?.url
+            ? 'deployment-binding'
+            : 'service-endpoint'
+          : 'none',
       },
     };
   }
@@ -127,7 +157,7 @@ export class ResolveService {
     },
   ) {
     if (!this.manifests || !this.components) {
-      throw new AppError("INTERNAL_ERROR", "service warning dependencies not configured", 500);
+      throw new AppError('INTERNAL_ERROR', 'service warning dependencies not configured', 500);
     }
 
     const manifest = query.manifestVersion
@@ -135,16 +165,46 @@ export class ResolveService {
       : this.manifests.getActiveManifest(serviceId);
 
     if (!manifest) {
-      throw new AppError("NOT_FOUND", `active manifest '${serviceId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `active manifest '${serviceId}' not found`, 404);
     }
 
     const warnings = (
       await Promise.all([
-        this.collectDeprecatedWarning(query.catalogId, serviceId, manifest.manifestVersion, "runtime-address", manifest.runtimeAddressVersion),
-        this.collectDeprecatedWarning(query.catalogId, serviceId, manifest.manifestVersion, "service-unit", manifest.serviceUnitVersion),
-        this.collectDeprecatedWarning(query.catalogId, serviceId, manifest.manifestVersion, "ownership", manifest.ownershipVersion),
-        this.collectDeprecatedWarning(query.catalogId, serviceId, manifest.manifestVersion, "exposure", manifest.exposureVersion),
-        this.collectDeprecatedWarning(query.catalogId, serviceId, manifest.manifestVersion, "deployment-binding", manifest.deploymentVersion),
+        this.collectDeprecatedWarning(
+          query.catalogId,
+          serviceId,
+          manifest.manifestVersion,
+          'runtime-address',
+          manifest.runtimeAddressVersion,
+        ),
+        this.collectDeprecatedWarning(
+          query.catalogId,
+          serviceId,
+          manifest.manifestVersion,
+          'service-unit',
+          manifest.serviceUnitVersion,
+        ),
+        this.collectDeprecatedWarning(
+          query.catalogId,
+          serviceId,
+          manifest.manifestVersion,
+          'ownership',
+          manifest.ownershipVersion,
+        ),
+        this.collectDeprecatedWarning(
+          query.catalogId,
+          serviceId,
+          manifest.manifestVersion,
+          'exposure',
+          manifest.exposureVersion,
+        ),
+        this.collectDeprecatedWarning(
+          query.catalogId,
+          serviceId,
+          manifest.manifestVersion,
+          'deployment-binding',
+          manifest.deploymentVersion,
+        ),
       ])
     ).filter((warning): warning is DeprecatedComponentWarning => warning != null);
 
@@ -173,16 +233,21 @@ export class ResolveService {
     const warningResult = await this.getServiceReleaseWarnings(serviceId, query);
     const items = await Promise.all(
       warningResult.warnings.map(async (warning) => {
-        const candidates = await this.components!.listPublishedVersions(query.catalogId, warning.kind, serviceId);
+        const candidates = await this.components!.listPublishedVersions(
+          query.catalogId,
+          warning.kind,
+          serviceId,
+        );
         const candidateVersions = candidates
-          .map(candidate => candidate.version)
-          .filter(version => version !== warning.version);
+          .map((candidate) => candidate.version)
+          .filter((version) => version !== warning.version);
         const suggestedVersion = candidateVersions.length === 1 ? candidateVersions[0] : undefined;
-        const status = candidateVersions.length === 0
-          ? "blocked"
-          : candidateVersions.length === 1
-            ? "replaceable"
-            : "ambiguous";
+        const status =
+          candidateVersions.length === 0
+            ? 'blocked'
+            : candidateVersions.length === 1
+              ? 'replaceable'
+              : 'ambiguous';
         return {
           kind: warning.kind,
           currentVersion: warning.version,
@@ -196,7 +261,7 @@ export class ResolveService {
     return {
       serviceId,
       manifestVersion: warningResult.manifestVersion,
-      ready: items.every(item => item.status === "replaceable"),
+      ready: items.every((item) => item.status === 'replaceable'),
       items,
       warnings: warningResult.warnings,
     };
@@ -213,15 +278,15 @@ export class ResolveService {
     },
   ) {
     if (!this.manifests || !this.components) {
-      throw new AppError("INTERNAL_ERROR", "cleanup dependencies not configured", 500);
+      throw new AppError('INTERNAL_ERROR', 'cleanup dependencies not configured', 500);
     }
-    const catalogId = body.catalogId ?? "demo";
+    const catalogId = body.catalogId ?? 'demo';
     const manifest = body.sourceManifestVersion
       ? this.manifests.getManifest(serviceId, body.sourceManifestVersion)
       : this.manifests.getActiveManifest(serviceId);
 
     if (!manifest) {
-      throw new AppError("NOT_FOUND", `active manifest '${serviceId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `active manifest '${serviceId}' not found`, 404);
     }
 
     const plan = await this.getServiceCleanupPlan(serviceId, {
@@ -229,15 +294,20 @@ export class ResolveService {
       manifestVersion: manifest.manifestVersion,
     });
 
-    const pickReplacement = (kind: CleanupComponentKind, currentVersion?: string): string | undefined => {
+    const pickReplacement = (
+      kind: CleanupComponentKind,
+      currentVersion?: string,
+    ): string | undefined => {
       if (!currentVersion) return undefined;
       const explicit = body.replacements?.[kind];
       if (explicit) return explicit;
-      const item = plan.items.find(entry => entry.kind === kind && entry.currentVersion === currentVersion);
+      const item = plan.items.find(
+        (entry) => entry.kind === kind && entry.currentVersion === currentVersion,
+      );
       if (!item) return currentVersion;
       if (!item.suggestedVersion) {
         throw new AppError(
-          "INVALID_TRANSITION",
+          'INVALID_TRANSITION',
           `cleanup draft blocked: ${kind}/${serviceId}/${currentVersion}`,
           409,
         );
@@ -245,14 +315,24 @@ export class ResolveService {
       return item.suggestedVersion;
     };
 
-    const runtimeAddressVersion = pickReplacement("runtime-address", manifest.runtimeAddressVersion);
-    const serviceUnitVersion = pickReplacement("service-unit", manifest.serviceUnitVersion);
-    const ownershipVersion = pickReplacement("ownership", manifest.ownershipVersion);
-    const exposureVersion = pickReplacement("exposure", manifest.exposureVersion);
-    const deploymentVersion = pickReplacement("deployment-binding", manifest.deploymentVersion);
+    const runtimeAddressVersion = pickReplacement(
+      'runtime-address',
+      manifest.runtimeAddressVersion,
+    );
+    const serviceUnitVersion = pickReplacement('service-unit', manifest.serviceUnitVersion);
+    const ownershipVersion = pickReplacement('ownership', manifest.ownershipVersion);
+    const exposureVersion = pickReplacement('exposure', manifest.exposureVersion);
+    const deploymentVersion = pickReplacement('deployment-binding', manifest.deploymentVersion);
 
     const runtimeAddress = runtimeAddressVersion
-      ? (await this.components.requirePublished(catalogId, "runtime-address", serviceId, runtimeAddressVersion)).value as RuntimeServiceAddress
+      ? ((
+          await this.components.requirePublished(
+            catalogId,
+            'runtime-address',
+            serviceId,
+            runtimeAddressVersion,
+          )
+        ).value as RuntimeServiceAddress)
       : manifest.runtimeAddress
         ? {
             serviceId: manifest.runtimeAddress.serviceId,
@@ -300,23 +380,23 @@ export class ResolveService {
     },
   ) {
     if (!this.manifests) {
-      throw new AppError("INTERNAL_ERROR", "cleanup activation dependencies not configured", 500);
+      throw new AppError('INTERNAL_ERROR', 'cleanup activation dependencies not configured', 500);
     }
 
-    const catalogId = body.catalogId ?? "demo";
+    const catalogId = body.catalogId ?? 'demo';
     const target = this.manifests.getManifest(serviceId, body.manifestVersion);
     const previousActive = this.manifests.getActiveManifest(serviceId);
 
-    if (target.state === "active") {
+    if (target.state === 'active') {
       throw new AppError(
-        "INVALID_TRANSITION",
+        'INVALID_TRANSITION',
         `cleanup activation target already active: ${serviceId}:${body.manifestVersion}`,
         409,
       );
     }
-    if (target.state !== "draft" && target.state !== "published") {
+    if (target.state !== 'draft' && target.state !== 'published') {
       throw new AppError(
-        "INVALID_TRANSITION",
+        'INVALID_TRANSITION',
         `cleanup activation requires draft or published manifest: ${serviceId}:${body.manifestVersion}`,
         409,
       );
@@ -328,16 +408,21 @@ export class ResolveService {
     });
     if (warnings.warnings.length > 0) {
       throw new AppError(
-        "INVALID_TRANSITION",
+        'INVALID_TRANSITION',
         `cleanup activation blocked by deprecated references: ${serviceId}:${body.manifestVersion}`,
         409,
       );
     }
 
-    const published = target.state === "draft"
-      ? this.manifests.transitionManifest(serviceId, body.manifestVersion, "published")
-      : target;
-    const active = this.manifests.transitionManifest(serviceId, published.manifestVersion, "active");
+    const published =
+      target.state === 'draft'
+        ? this.manifests.transitionManifest(serviceId, body.manifestVersion, 'published')
+        : target;
+    const active = this.manifests.transitionManifest(
+      serviceId,
+      published.manifestVersion,
+      'active',
+    );
 
     return {
       ok: true,
@@ -350,7 +435,7 @@ export class ResolveService {
 
   private async getComponentValue<T>(
     catalogId: string,
-    kind: "service-unit" | "ownership" | "exposure" | "deployment-binding",
+    kind: 'service-unit' | 'ownership' | 'exposure' | 'deployment-binding',
     serviceId: string,
     version: string,
   ): Promise<T> {
@@ -362,19 +447,19 @@ export class ResolveService {
     catalogId: string,
     serviceId: string,
     manifestVersion: string,
-    kind: "service-unit" | "ownership" | "exposure" | "runtime-address" | "deployment-binding",
+    kind: 'service-unit' | 'ownership' | 'exposure' | 'runtime-address' | 'deployment-binding',
     version?: string,
   ): Promise<DeprecatedComponentWarning | null> {
     if (!version) {
       return null;
     }
     const record = await this.components!.get(catalogId, kind, serviceId, version);
-    if (record.state !== "deprecated") {
+    if (record.state !== 'deprecated') {
       return null;
     }
     return {
-      code: "DEPRECATED_COMPONENT_REFERENCE",
-      severity: "warning",
+      code: 'DEPRECATED_COMPONENT_REFERENCE',
+      severity: 'warning',
       serviceId,
       manifestVersion,
       kind,
@@ -403,7 +488,7 @@ export class ResolveService {
         runtimeAddress.region,
       );
     } catch (error) {
-      if (error instanceof AppError && error.code === "NOT_FOUND") {
+      if (error instanceof AppError && error.code === 'NOT_FOUND') {
         return undefined;
       }
       throw error;
@@ -412,18 +497,23 @@ export class ResolveService {
 }
 
 export interface DeprecatedComponentWarning {
-  readonly code: "DEPRECATED_COMPONENT_REFERENCE";
-  readonly severity: "warning";
+  readonly code: 'DEPRECATED_COMPONENT_REFERENCE';
+  readonly severity: 'warning';
   readonly serviceId: string;
   readonly manifestVersion: string;
-  readonly kind: "service-unit" | "ownership" | "exposure" | "runtime-address" | "deployment-binding";
+  readonly kind:
+    | 'service-unit'
+    | 'ownership'
+    | 'exposure'
+    | 'runtime-address'
+    | 'deployment-binding';
   readonly version: string;
   readonly message: string;
 }
 
 type CleanupComponentKind =
-  "service-unit"
-  | "ownership"
-  | "exposure"
-  | "runtime-address"
-  | "deployment-binding";
+  | 'service-unit'
+  | 'ownership'
+  | 'exposure'
+  | 'runtime-address'
+  | 'deployment-binding';

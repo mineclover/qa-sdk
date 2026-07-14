@@ -1,6 +1,6 @@
 // @def.boundary db-traffic-control-spec
 // @def.doc db-traffic-control-spec
-import type { QueryOperation } from "./types.js";
+import type { QueryOperation } from './types.js';
 
 /**
  * SQL 쿼리에서 파라미터를 제거하고 정규화된 fingerprint를 생성한다.
@@ -21,15 +21,15 @@ export function extractFingerprint(sql: string): string {
   return (
     sql
       // 문자열 리터럴 → ? (escaped quote 처리)
-      .replace(/'(?:[^'\\]|\\.)*'/g, "?")
+      .replace(/'(?:[^'\\]|\\.)*'/g, '?')
       // postgres 파라미터 ($1, $2, ...) → ?
-      .replace(/\$\d+/g, "?")
+      .replace(/\$\d+/g, '?')
       // 숫자 리터럴 (단어 경계) → ?
-      .replace(/\b\d+(?:\.\d+)?\b/g, "?")
+      .replace(/\b\d+(?:\.\d+)?\b/g, '?')
       // IN (?, ?, ?, ...) → IN (?)
-      .replace(/IN\s*\(\s*\?(?:\s*,\s*\?)*\s*\)/gi, "IN (?)")
+      .replace(/IN\s*\(\s*\?(?:\s*,\s*\?)*\s*\)/gi, 'IN (?)')
       // 연속 공백 → 단일 공백
-      .replace(/\s+/g, " ")
+      .replace(/\s+/g, ' ')
       .trim()
   );
 }
@@ -39,11 +39,11 @@ export function extractFingerprint(sql: string): string {
  */
 export function extractOperation(sql: string): QueryOperation {
   const first = sql.trimStart().slice(0, 10).toUpperCase();
-  if (first.startsWith("SELECT")) return "select";
-  if (first.startsWith("INSERT")) return "insert";
-  if (first.startsWith("UPDATE")) return "update";
-  if (first.startsWith("DELETE")) return "delete";
-  return "select"; // CTE 등 fallback
+  if (first.startsWith('SELECT')) return 'select';
+  if (first.startsWith('INSERT')) return 'insert';
+  if (first.startsWith('UPDATE')) return 'update';
+  if (first.startsWith('DELETE')) return 'delete';
+  return 'select'; // CTE 등 fallback
 }
 
 /**
@@ -56,7 +56,7 @@ export function extractOperation(sql: string): QueryOperation {
  * - DELETE FROM "table"
  */
 export function extractTable(sql: string): string | undefined {
-  const normalized = sql.replace(/\s+/g, " ").trim();
+  const normalized = sql.replace(/\s+/g, ' ').trim();
 
   // INSERT INTO "table" / INSERT INTO table
   const insertMatch = normalized.match(/INSERT\s+INTO\s+"?(\w+)"?/i);
@@ -84,16 +84,14 @@ export function extractTable(sql: string): string | undefined {
 export function extractTableFromBuilder(builder: Record<string, unknown>): string | undefined {
   // Drizzle 내부: config.table + Symbol("drizzle:Name")
   const table = (builder as Record<string, Record<string, unknown>>).config?.table;
-  if (table && typeof table === "object") {
-    const sym = Object.getOwnPropertySymbols(table).find(
-      (s) => s.description === "drizzle:Name",
-    );
+  if (table && typeof table === 'object') {
+    const sym = Object.getOwnPropertySymbols(table).find((s) => s.description === 'drizzle:Name');
     if (sym) return String((table as Record<symbol, unknown>)[sym]);
   }
 
   // fallback: _.tableName
   const tableName = (builder as Record<string, Record<string, unknown>>)._?.tableName;
-  if (typeof tableName === "string") return tableName;
+  if (typeof tableName === 'string') return tableName;
 
   return undefined;
 }

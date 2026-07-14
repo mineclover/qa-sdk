@@ -1,12 +1,12 @@
 // @def.doc definition-service
 
-import { Injectable, Inject } from "@nestjs/common";
-import { sliceDepth } from "definition-catalog";
-import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
-import { SqlIntentStore } from "../../stores/intent-store.js";
-import type { IntentStore } from "../../core/interfaces.js";
-import type { SliceIntentRecord } from "../../core/types.js";
-import { parseDimsParam, resolveMatchingIntents } from "../../core/intent-resolver.js";
+import { Injectable, Inject } from '@nestjs/common';
+import { sliceDepth } from 'definition-catalog';
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from '../../database.module.js';
+import { SqlIntentStore } from '../../stores/intent-store.js';
+import type { IntentStore } from '../../core/interfaces.js';
+import type { SliceIntentRecord } from '../../core/types.js';
+import { parseDimsParam, resolveMatchingIntents } from '../../core/intent-resolver.js';
 
 @Injectable()
 export class IntentsService {
@@ -20,14 +20,23 @@ export class IntentsService {
     return this.store.listByPrefix(prefixId);
   }
 
-  resolve(prefixId: string, dimsParam: string): { address: Record<string, string>; matched: SliceIntentRecord[] } {
+  resolve(
+    prefixId: string,
+    dimsParam: string,
+  ): { address: Record<string, string>; matched: SliceIntentRecord[] } {
     const address = parseDimsParam(dimsParam);
     const all = this.store.listByPrefix(prefixId);
     const matched = resolveMatchingIntents(address, all);
     return { address, matched };
   }
 
-  create(prefixId: string, slice: Record<string, string>, intent: string, observationGoal?: string, owner?: string): number {
+  create(
+    prefixId: string,
+    slice: Record<string, string>,
+    intent: string,
+    observationGoal?: string,
+    owner?: string,
+  ): number {
     return this.store.create({
       prefixId,
       sliceJson: JSON.stringify(slice),

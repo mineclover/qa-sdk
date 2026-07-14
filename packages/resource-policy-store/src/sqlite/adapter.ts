@@ -12,8 +12,8 @@
  * 재사용하고, 본 어댑터는 I/O만 담당한다.
  */
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { eq } from "drizzle-orm";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { eq } from 'drizzle-orm';
 
 import {
   DuplicatePolicyError,
@@ -27,9 +27,9 @@ import {
   type ResourcePolicyRegisterArgs,
   type ResourcePolicyRegistry,
   type ResourcePolicyState,
-} from "permission-engine";
+} from 'permission-engine';
 
-import { resourcePolicies } from "./schema.js";
+import { resourcePolicies } from './schema.js';
 
 type Row = typeof resourcePolicies.$inferSelect;
 
@@ -66,9 +66,11 @@ export class SqliteResourcePolicyRegistry implements ResourcePolicyRegistry {
 
   async resolve(resourceId: string): Promise<ResourcePolicy | null> {
     const rows = this.db
-      .select().from(resourcePolicies)
+      .select()
+      .from(resourcePolicies)
       .where(eq(resourcePolicies.resourceId, resourceId))
-      .limit(1).all();
+      .limit(1)
+      .all();
     return rows.length === 0 ? null : toPolicy(rows[0]);
   }
 
@@ -80,28 +82,24 @@ export class SqliteResourcePolicyRegistry implements ResourcePolicyRegistry {
     return policy;
   }
 
-  async register(
-    resourceId: string,
-    args: ResourcePolicyRegisterArgs,
-  ): Promise<ResourcePolicy> {
+  async register(resourceId: string, args: ResourcePolicyRegisterArgs): Promise<ResourcePolicy> {
     const cur = await this.resolve(resourceId);
     if (!cur) throw new PolicyNotFoundError(resourceId);
     const next = registerResourcePolicy(cur, args);
-    this.db.update(resourcePolicies)
+    this.db
+      .update(resourcePolicies)
       .set(toRow(next))
       .where(eq(resourcePolicies.resourceId, resourceId))
       .run();
     return next;
   }
 
-  async delegate(
-    resourceId: string,
-    args: ResourcePolicyDelegateArgs,
-  ): Promise<ResourcePolicy> {
+  async delegate(resourceId: string, args: ResourcePolicyDelegateArgs): Promise<ResourcePolicy> {
     const cur = await this.resolve(resourceId);
     if (!cur) throw new PolicyNotFoundError(resourceId);
     const next = delegateResourcePolicy(cur, args);
-    this.db.update(resourcePolicies)
+    this.db
+      .update(resourcePolicies)
       .set(toRow(next))
       .where(eq(resourcePolicies.resourceId, resourceId))
       .run();
@@ -109,14 +107,13 @@ export class SqliteResourcePolicyRegistry implements ResourcePolicyRegistry {
   }
 
   async remove(resourceId: string): Promise<void> {
-    this.db.delete(resourcePolicies)
-      .where(eq(resourcePolicies.resourceId, resourceId))
-      .run();
+    this.db.delete(resourcePolicies).where(eq(resourcePolicies.resourceId, resourceId)).run();
   }
 
   async listByOwner(ownerId: string): Promise<ResourcePolicy[]> {
     return this.db
-      .select().from(resourcePolicies)
+      .select()
+      .from(resourcePolicies)
       .where(eq(resourcePolicies.ownerId, ownerId))
       .all()
       .map(toPolicy);
@@ -124,7 +121,8 @@ export class SqliteResourcePolicyRegistry implements ResourcePolicyRegistry {
 
   async listByState(state: ResourcePolicyState): Promise<ResourcePolicy[]> {
     return this.db
-      .select().from(resourcePolicies)
+      .select()
+      .from(resourcePolicies)
       .where(eq(resourcePolicies.state, state))
       .all()
       .map(toPolicy);

@@ -43,7 +43,7 @@ export function createStreamConnectionRegistry(): StreamConnectionRegistry {
         connections.delete(connection);
       };
     },
-    shutdown(reason = "server_shutdown") {
+    shutdown(reason = 'server_shutdown') {
       if (shutdownPromise) {
         return shutdownPromise;
       }

@@ -1,16 +1,20 @@
-import { toAssignmentId } from "./assignment.ids.js";
-import { AssignmentCancelledException } from "./assignment.exceptions.js";
-import type { AssignmentProps, AssignmentSnapshot } from "./assignment.types.js";
+import { toAssignmentId } from './assignment.ids.js';
+import { AssignmentCancelledException } from './assignment.exceptions.js';
+import type { AssignmentProps, AssignmentSnapshot } from './assignment.types.js';
 
 export class AssignmentEntity {
   private constructor(private readonly props: AssignmentProps) {}
 
-  static create(input: { readonly id: string; readonly assigneeId: string; readonly now?: Date }): AssignmentEntity {
+  static create(input: {
+    readonly id: string;
+    readonly assigneeId: string;
+    readonly now?: Date;
+  }): AssignmentEntity {
     const now = input.now ?? new Date();
     return new AssignmentEntity({
       id: toAssignmentId(input.id),
       assigneeId: input.assigneeId,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     });
@@ -27,10 +31,10 @@ export class AssignmentEntity {
   }
 
   assign(now = new Date()): AssignmentEntity {
-    if (this.props.status === "cancelled") {
+    if (this.props.status === 'cancelled') {
       throw new AssignmentCancelledException();
     }
-    return new AssignmentEntity({ ...this.props, status: "assigned", updatedAt: now });
+    return new AssignmentEntity({ ...this.props, status: 'assigned', updatedAt: now });
   }
 
   toSnapshot(): AssignmentSnapshot {

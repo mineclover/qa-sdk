@@ -1,7 +1,7 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (document slice).
@@ -15,19 +15,19 @@ import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
  * 정의하지 않고, `shared/outbox` 에서 import.
  */
 export const documents = sqliteTable(
-  "doc_documents",
+  'doc_documents',
   {
-    id: text("id").primaryKey(),
-    projectId: text("project_id").notNull(),
-    title: text("title").notNull(),
-    currentVersion: integer("current_version").notNull().default(0),
-    ownerId: text("owner_id").notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    title: text('title').notNull(),
+    currentVersion: integer('current_version').notNull().default(0),
+    ownerId: text('owner_id').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
   (t) => [
-    index("idx_doc_documents_project").on(t.projectId),
-    index("idx_doc_documents_owner").on(t.ownerId),
+    index('idx_doc_documents_project').on(t.projectId),
+    index('idx_doc_documents_owner').on(t.ownerId),
   ],
 );
 

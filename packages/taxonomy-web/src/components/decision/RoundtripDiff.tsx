@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { lineDiff, diffStats, type DiffLine } from "../../lib/textDiff";
+import { useMemo } from 'react';
+import { lineDiff, diffStats, type DiffLine } from '../../lib/textDiff';
 
 export function RoundtripDiff({
   original,
@@ -29,23 +29,19 @@ export function RoundtripDiff({
 }
 
 function DiffRow({ line }: { line: DiffLine }) {
-  if (line.kind === "same") {
+  if (line.kind === 'same') {
     return (
       <div className="flex">
         <Gutter text=" " bg="bg-white" />
-        <pre className="flex-1 px-2 whitespace-pre-wrap text-gray-700">
-          {line.text || " "}
-        </pre>
+        <pre className="flex-1 px-2 whitespace-pre-wrap text-gray-700">{line.text || ' '}</pre>
       </div>
     );
   }
-  if (line.kind === "add") {
+  if (line.kind === 'add') {
     return (
       <div className="flex bg-green-50">
         <Gutter text="+" bg="bg-green-100 text-green-700" />
-        <pre className="flex-1 px-2 whitespace-pre-wrap text-green-900">
-          {line.text || " "}
-        </pre>
+        <pre className="flex-1 px-2 whitespace-pre-wrap text-green-900">{line.text || ' '}</pre>
       </div>
     );
   }
@@ -53,14 +49,12 @@ function DiffRow({ line }: { line: DiffLine }) {
     <div className="flex bg-red-50">
       <Gutter text="−" bg="bg-red-100 text-red-700" />
       <pre className="flex-1 px-2 whitespace-pre-wrap text-red-900 line-through opacity-80">
-        {line.text || " "}
+        {line.text || ' '}
       </pre>
     </div>
   );
 }
 
 function Gutter({ text, bg }: { text: string; bg: string }) {
-  return (
-    <span className={`w-5 text-center select-none ${bg}`}>{text}</span>
-  );
+  return <span className={`w-5 text-center select-none ${bg}`}>{text}</span>;
 }

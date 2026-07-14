@@ -4,13 +4,16 @@
 export class ReportNotFoundError extends Error {
   constructor(public readonly id: string) {
     super(`Report not found: ${id}`);
-    this.name = "ReportNotFoundError";
+    this.name = 'ReportNotFoundError';
   }
 }
 
 export class MetricNotFoundError extends Error {
-  constructor(public readonly metricKey: string, public readonly date: string) {
+  constructor(
+    public readonly metricKey: string,
+    public readonly date: string,
+  ) {
     super(`Metric not found: ${metricKey}/${date}`);
-    this.name = "MetricNotFoundError";
+    this.name = 'MetricNotFoundError';
   }
 }

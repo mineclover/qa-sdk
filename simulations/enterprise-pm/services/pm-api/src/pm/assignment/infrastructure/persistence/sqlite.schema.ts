@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (assignment slice).
@@ -17,18 +17,18 @@ import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
  * service-shared schema 를 직접 import 하므로 별도 alias re-export 는 두지 않는다.
  */
 export const assignments = sqliteTable(
-  "pm_assignments",
+  'pm_assignments',
   {
-    id: text("id").primaryKey(),
-    projectId: text("project_id").notNull(),
-    managerId: text("manager_id").notNull(),
-    status: text("status", { enum: ["draft", "assigned", "cancelled"] }).notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    managerId: text('manager_id').notNull(),
+    status: text('status', { enum: ['draft', 'assigned', 'cancelled'] }).notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
   (t) => [
-    index("idx_pm_assignment_project").on(t.projectId),
-    index("idx_pm_assignment_manager").on(t.managerId),
+    index('idx_pm_assignment_project').on(t.projectId),
+    index('idx_pm_assignment_manager').on(t.managerId),
   ],
 );
 

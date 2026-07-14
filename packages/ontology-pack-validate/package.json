@@ -4,11 +4,17 @@
   "description": "Ontology pack validation — load/resolve pack references, validate identity/component/runtime, collect file and docs readiness.",
   "keywords": [
     "ontology-pack",
-    "validation",
-    "readiness"
+    "readiness",
+    "validation"
   ],
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -16,12 +22,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

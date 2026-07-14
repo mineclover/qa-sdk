@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { Hono } from "hono";
+import { Hono } from 'hono';
 import type {
   VerdictStore,
   TraceStore,
@@ -9,9 +9,9 @@ import type {
   GraphStore,
   ScenarioSpecStore,
   DlqStore,
-} from "@qa-sdk/core";
-import { computePendingVerdicts } from "@qa-sdk/engine";
-import { traceNotFound, sessionNotFound } from "../lib/errors.js";
+} from '@qa-sdk/core';
+import { computePendingVerdicts } from '@qa-sdk/engine';
+import { traceNotFound, sessionNotFound } from '../lib/errors.js';
 
 export interface VerdictDeps {
   verdictStore: VerdictStore;
@@ -25,8 +25,8 @@ export interface VerdictDeps {
 export function createVerdictRoutes(deps: VerdictDeps) {
   const app = new Hono();
 
-  app.get("/v1/traces/:traceId/verdicts", async (c) => {
-    const traceId = c.req.param("traceId");
+  app.get('/v1/traces/:traceId/verdicts', async (c) => {
+    const traceId = c.req.param('traceId');
     const trace = await deps.traceStore.findById(traceId);
 
     if (!trace) {
@@ -40,8 +40,8 @@ export function createVerdictRoutes(deps: VerdictDeps) {
     });
   });
 
-  app.get("/v1/sessions/:sessionId/verdicts", async (c) => {
-    const sessionId = c.req.param("sessionId");
+  app.get('/v1/sessions/:sessionId/verdicts', async (c) => {
+    const sessionId = c.req.param('sessionId');
     const session = await deps.sessionStore.findById(sessionId);
 
     if (!session) {
@@ -55,19 +55,15 @@ export function createVerdictRoutes(deps: VerdictDeps) {
     });
   });
 
-  app.post("/v1/traces/:traceId/verdicts/recompute", async (c) => {
-    const traceId = c.req.param("traceId");
+  app.post('/v1/traces/:traceId/verdicts/recompute', async (c) => {
+    const traceId = c.req.param('traceId');
     const trace = await deps.traceStore.findById(traceId);
 
     if (!trace) {
       throw traceNotFound(traceId);
     }
 
-    const result = await computePendingVerdicts(
-      deps,
-      [traceId],
-      { force: true },
-    );
+    const result = await computePendingVerdicts(deps, [traceId], { force: true });
 
     return c.json({
       computed: result.computed,

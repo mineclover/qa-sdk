@@ -10,16 +10,16 @@ export {
   type JunctionDefinition,
   type BranchDecision,
   type RouteDecision,
-} from "./internal/junction-core.js";
+} from './internal/junction-core.js';
 
 export {
   type BranchCondition,
   type BranchPath,
   type BranchHandlingMode,
-} from "./internal/runtime-core.js";
+} from './internal/runtime-core.js';
 
-import { projectPathObservationToOperationalOntology } from "./internal/projector-core.js";
-import { defaultJunctionTemplateRegistry } from "./internal/junction-core.js";
+import { projectPathObservationToOperationalOntology } from './internal/projector-core.js';
+import { defaultJunctionTemplateRegistry } from './internal/junction-core.js';
 
 export const operationalOntologyJunctionPlane = {
   defaultJunctionTemplateRegistry,

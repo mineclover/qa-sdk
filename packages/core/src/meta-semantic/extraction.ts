@@ -63,7 +63,7 @@ export interface ExecutionUnitMeta {
 // ── 마커 힌트 ─────────────────────────────────────────
 
 export interface MarkerHint {
-  marker: "intent" | "contract" | "branches" | "def.doc";
+  marker: 'intent' | 'contract' | 'branches' | 'def.doc';
   content: string;
 }
 
@@ -73,32 +73,32 @@ export interface MarkerHint {
  */
 export function extractMarkerHints(comment: string): MarkerHint[] {
   const hints: MarkerHint[] = [];
-  const lines = comment.split("\n");
+  const lines = comment.split('\n');
 
   for (const line of lines) {
-    const trimmed = line.replace(/^\s*(?:\/\/\s*|\*?\s*)/, "").trim();
+    const trimmed = line.replace(/^\s*(?:\/\/\s*|\*?\s*)/, '').trim();
 
     const intentMatch = trimmed.match(/^\^intent\s+(.+)/);
     if (intentMatch) {
-      hints.push({ marker: "intent", content: intentMatch[1].trim() });
+      hints.push({ marker: 'intent', content: intentMatch[1].trim() });
       continue;
     }
 
     const contractMatch = trimmed.match(/^\^contract\s+(.+)/);
     if (contractMatch) {
-      hints.push({ marker: "contract", content: contractMatch[1].trim() });
+      hints.push({ marker: 'contract', content: contractMatch[1].trim() });
       continue;
     }
 
     const branchesMatch = trimmed.match(/^\^branches\s+(.+)/);
     if (branchesMatch) {
-      hints.push({ marker: "branches", content: branchesMatch[1].trim() });
+      hints.push({ marker: 'branches', content: branchesMatch[1].trim() });
       continue;
     }
 
     const defDocMatch = trimmed.match(/^@def\.doc\s+(.+)/);
     if (defDocMatch) {
-      hints.push({ marker: "def.doc", content: defDocMatch[1].trim() });
+      hints.push({ marker: 'def.doc', content: defDocMatch[1].trim() });
       continue;
     }
   }
@@ -118,7 +118,7 @@ export function extractMarkerHints(comment: string): MarkerHint[] {
 export function countExecutionPaths(unit: ExecutionUnit): number {
   if (!unit.entryPoint || unit.branchGraph.length === 0) return 1;
 
-  const graphMap = new Map(unit.branchGraph.map(bp => [bp.id, bp]));
+  const graphMap = new Map(unit.branchGraph.map((bp) => [bp.id, bp]));
   const memo = new Map<string, number>();
 
   return countFromPoint(unit.entryPoint.id, graphMap, memo);
@@ -157,7 +157,7 @@ function countFromPoint(
 /** LLM 판단 요청 */
 export interface LlmJudgmentRequest {
   /** 판단 종류 */
-  kind: "testability" | "branch-significance" | "side-effects" | "dependency-importance";
+  kind: 'testability' | 'branch-significance' | 'side-effects' | 'dependency-importance';
   /** 판단 대상 코드 조각 */
   codeSnippet: string;
   /** 추가 컨텍스트 (마커 힌트 등) */
@@ -212,8 +212,8 @@ export function validateExtraction(
   threshold = 0.3,
 ): { valid: boolean; warnings: Array<{ functionId: string; confidence: number }> } {
   const warnings = result.units
-    .filter(u => u.meta.confidence < threshold)
-    .map(u => ({ functionId: u.functionId, confidence: u.meta.confidence }));
+    .filter((u) => u.meta.confidence < threshold)
+    .map((u) => ({ functionId: u.functionId, confidence: u.meta.confidence }));
 
   return {
     valid: warnings.length === 0,

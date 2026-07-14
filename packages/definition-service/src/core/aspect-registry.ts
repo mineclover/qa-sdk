@@ -17,13 +17,13 @@ import {
   ASPECT_PARENTS,
   deriveAspectParent,
   getAspectFamily as getAspectFamilyFromMap,
-} from "definition-catalog";
-import { eq } from "drizzle-orm";
-import type { DefinitionServiceDatabase } from "../database.module.js";
-import { aspectParents } from "../db/schema.js";
-import { createLogger } from "../lib/logger.js";
+} from 'definition-catalog';
+import { eq } from 'drizzle-orm';
+import type { DefinitionServiceDatabase } from '../database.module.js';
+import { aspectParents } from '../db/schema.js';
+import { createLogger } from '../lib/logger.js';
 
-const logger = createLogger("definition-service");
+const logger = createLogger('definition-service');
 
 /** 부모 조회 + 자식 조회 + family 조회 helper */
 export interface AspectRegistry {
@@ -52,25 +52,16 @@ export interface AspectRegistry {
  * Service 측 bridge 를 생성한다.
  * `db` 가 전달되면 DB 우선, 없으면 runtime map 으로만 응답한다 (pure fallback 모드).
  */
-export function createAspectRegistry(
-  db?: DefinitionServiceDatabase,
-): AspectRegistry {
+export function createAspectRegistry(db?: DefinitionServiceDatabase): AspectRegistry {
   return {
     getAspectParent(childId: string): string | null {
       if (!db) return deriveAspectParent(childId);
 
       try {
-        const row = db
-          .select()
-          .from(aspectParents)
-          .where(eq(aspectParents.childId, childId))
-          .get();
+        const row = db.select().from(aspectParents).where(eq(aspectParents.childId, childId)).get();
         if (row) return row.parentId;
       } catch (err) {
-        logger.warn(
-          { err, childId },
-          "aspect_parents 조회 실패 — runtime map fallback 적용",
-        );
+        logger.warn({ err, childId }, 'aspect_parents 조회 실패 — runtime map fallback 적용');
       }
       return deriveAspectParent(childId);
     },
@@ -90,7 +81,7 @@ export function createAspectRegistry(
       } catch (err) {
         logger.warn(
           { err, parentId },
-          "aspect_parents children 조회 실패 — runtime map fallback 적용",
+          'aspect_parents children 조회 실패 — runtime map fallback 적용',
         );
       }
       return childrenFromRuntimeMap(parentId);
@@ -124,10 +115,7 @@ export function createAspectRegistry(
           }
         }
       } catch (err) {
-        logger.warn(
-          { err, aspect },
-          "aspect_parents family BFS 실패 — runtime map fallback 적용",
-        );
+        logger.warn({ err, aspect }, 'aspect_parents family BFS 실패 — runtime map fallback 적용');
         return getAspectFamilyFromMap(aspect);
       }
       return family;

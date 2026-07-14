@@ -5,21 +5,18 @@ import {
   type MotionWorkspaceController as RuntimeMotionWorkspaceController,
   type MotionWorkspaceDescriptor,
   type MotionWorkspaceSnapshotV2,
-} from "motion-workspace";
-import type { MotionSceneDef } from "motion-content";
-import {
-  createInvalidRequestError,
-  type MotionWorkspaceServiceHealthResponse,
-} from "./errors.js";
+} from 'motion-workspace';
+import type { MotionSceneDef } from 'motion-content';
+import { createInvalidRequestError, type MotionWorkspaceServiceHealthResponse } from './errors.js';
 import {
   createMotionWorkspaceNotFoundError,
   createMotionWorkspaceSceneNotFoundError,
   type MotionWorkspaceRepository,
-} from "./repository.js";
-import { createMotionWorkspaceServiceInfo } from "./service-info.js";
+} from './repository.js';
+import { createMotionWorkspaceServiceInfo } from './service-info.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function hasOwn(record: Record<string, unknown>, key: string): boolean {
@@ -27,42 +24,42 @@ function hasOwn(record: Record<string, unknown>, key: string): boolean {
 }
 
 const MOTION_EDITOR_COMMAND_TYPES = [
-  "select",
-  "set-composition",
-  "set-parameter",
-  "set-current-time",
-  "set-loop",
-  "set-playback-rate",
-  "play",
-  "pause",
-  "restart",
-  "add-layer",
-  "remove-layer",
-  "add-sequence",
-  "remove-sequence",
-  "add-caption",
-  "remove-caption",
-  "add-transition",
-  "remove-transition",
-  "update-item-string",
-  "update-item-timing",
-  "update-sequence-stagger",
-  "update-sequence-layer-slot",
-  "update-sequence-layer-role",
-  "update-layer-cue-kind",
-  "update-layer-cue-preset",
-  "update-layer-content-type",
-  "update-transition-style",
-  "update-transition-duration",
-  "update-transition-param",
+  'select',
+  'set-composition',
+  'set-parameter',
+  'set-current-time',
+  'set-loop',
+  'set-playback-rate',
+  'play',
+  'pause',
+  'restart',
+  'add-layer',
+  'remove-layer',
+  'add-sequence',
+  'remove-sequence',
+  'add-caption',
+  'remove-caption',
+  'add-transition',
+  'remove-transition',
+  'update-item-string',
+  'update-item-timing',
+  'update-sequence-stagger',
+  'update-sequence-layer-slot',
+  'update-sequence-layer-role',
+  'update-layer-cue-kind',
+  'update-layer-cue-preset',
+  'update-layer-content-type',
+  'update-transition-style',
+  'update-transition-duration',
+  'update-transition-param',
 ] as const;
 
-type MotionWorkspaceApplyCommand = Parameters<RuntimeMotionWorkspaceController["apply"]>[0];
+type MotionWorkspaceApplyCommand = Parameters<RuntimeMotionWorkspaceController['apply']>[0];
 
 type SceneWorkspaceSnapshot = MotionWorkspaceSnapshotV2 & {
-  readonly document: MotionWorkspaceSnapshotV2["document"] & {
-    readonly schemaVersion: "qa-sdk.motion-composition/v2";
-    readonly composition: MotionWorkspaceSnapshotV2["document"]["composition"] & {
+  readonly document: MotionWorkspaceSnapshotV2['document'] & {
+    readonly schemaVersion: 'qa-sdk.motion-composition/v2';
+    readonly composition: MotionWorkspaceSnapshotV2['document']['composition'] & {
       readonly scenes: readonly MotionSceneDef[];
     };
   };
@@ -70,14 +67,16 @@ type SceneWorkspaceSnapshot = MotionWorkspaceSnapshotV2 & {
 
 function parseWorkspaceRequest(input: unknown): MotionWorkspaceSnapshotV2 {
   if (!isRecord(input)) {
-    throw createInvalidRequestError("요청 본문은 { workspace } object여야 합니다.");
+    throw createInvalidRequestError('요청 본문은 { workspace } object여야 합니다.');
   }
 
-  if (!hasOwn(input, "workspace")) {
-    throw createInvalidRequestError("workspace 필드가 필요합니다.");
+  if (!hasOwn(input, 'workspace')) {
+    throw createInvalidRequestError('workspace 필드가 필요합니다.');
   }
 
-  return migrateMotionWorkspaceSnapshot(input["workspace"] as string | MotionWorkspaceSnapshotV2 | Record<string, unknown>);
+  return migrateMotionWorkspaceSnapshot(
+    input['workspace'] as string | MotionWorkspaceSnapshotV2 | Record<string, unknown>,
+  );
 }
 
 function parseRevision(value: unknown, fieldName: string): number {
@@ -90,7 +89,7 @@ function parseRevision(value: unknown, fieldName: string): number {
 
 function readSceneArrayField<T>(
   input: Record<string, unknown>,
-  key: "layers" | "sequences" | "captions",
+  key: 'layers' | 'sequences' | 'captions',
 ): readonly T[] {
   if (!hasOwn(input, key)) {
     return [];
@@ -106,33 +105,41 @@ function readSceneArrayField<T>(
 
 function parseSceneValue(input: unknown): MotionSceneDef {
   if (!isRecord(input)) {
-    throw createInvalidRequestError("scene 필드는 object여야 합니다.");
+    throw createInvalidRequestError('scene 필드는 object여야 합니다.');
   }
 
-  if (typeof input["id"] !== "string" || input["id"].trim().length === 0) {
-    throw createInvalidRequestError("scene.id 필드는 비어 있지 않은 string이어야 합니다.");
+  if (typeof input['id'] !== 'string' || input['id'].trim().length === 0) {
+    throw createInvalidRequestError('scene.id 필드는 비어 있지 않은 string이어야 합니다.');
   }
 
-  if (typeof input["title"] !== "string" || input["title"].trim().length === 0) {
-    throw createInvalidRequestError("scene.title 필드는 비어 있지 않은 string이어야 합니다.");
+  if (typeof input['title'] !== 'string' || input['title'].trim().length === 0) {
+    throw createInvalidRequestError('scene.title 필드는 비어 있지 않은 string이어야 합니다.');
   }
 
-  if (typeof input["startMs"] !== "number" || !Number.isFinite(input["startMs"]) || input["startMs"] < 0) {
-    throw createInvalidRequestError("scene.startMs 필드는 0 이상 number여야 합니다.");
+  if (
+    typeof input['startMs'] !== 'number' ||
+    !Number.isFinite(input['startMs']) ||
+    input['startMs'] < 0
+  ) {
+    throw createInvalidRequestError('scene.startMs 필드는 0 이상 number여야 합니다.');
   }
 
-  if (typeof input["durationMs"] !== "number" || !Number.isFinite(input["durationMs"]) || input["durationMs"] <= 0) {
-    throw createInvalidRequestError("scene.durationMs 필드는 0보다 큰 number여야 합니다.");
+  if (
+    typeof input['durationMs'] !== 'number' ||
+    !Number.isFinite(input['durationMs']) ||
+    input['durationMs'] <= 0
+  ) {
+    throw createInvalidRequestError('scene.durationMs 필드는 0보다 큰 number여야 합니다.');
   }
 
   return {
-    id: input["id"],
-    title: input["title"],
-    startMs: input["startMs"],
-    durationMs: input["durationMs"],
-    layers: readSceneArrayField<MotionSceneDef["layers"][number]>(input, "layers"),
-    sequences: readSceneArrayField<MotionSceneDef["sequences"][number]>(input, "sequences"),
-    captions: readSceneArrayField<MotionSceneDef["captions"][number]>(input, "captions"),
+    id: input['id'],
+    title: input['title'],
+    startMs: input['startMs'],
+    durationMs: input['durationMs'],
+    layers: readSceneArrayField<MotionSceneDef['layers'][number]>(input, 'layers'),
+    sequences: readSceneArrayField<MotionSceneDef['sequences'][number]>(input, 'sequences'),
+    captions: readSceneArrayField<MotionSceneDef['captions'][number]>(input, 'captions'),
   };
 }
 
@@ -141,20 +148,20 @@ function parseSceneMutationRequest(input: unknown): {
   readonly scene: MotionSceneDef;
 } {
   if (!isRecord(input)) {
-    throw createInvalidRequestError("요청 본문은 { revision, scene } object여야 합니다.");
+    throw createInvalidRequestError('요청 본문은 { revision, scene } object여야 합니다.');
   }
 
-  if (!hasOwn(input, "revision")) {
-    throw createInvalidRequestError("revision 필드가 필요합니다.");
+  if (!hasOwn(input, 'revision')) {
+    throw createInvalidRequestError('revision 필드가 필요합니다.');
   }
 
-  if (!hasOwn(input, "scene")) {
-    throw createInvalidRequestError("scene 필드가 필요합니다.");
+  if (!hasOwn(input, 'scene')) {
+    throw createInvalidRequestError('scene 필드가 필요합니다.');
   }
 
   return {
-    revision: parseRevision(input["revision"], "revision"),
-    scene: parseSceneValue(input["scene"]),
+    revision: parseRevision(input['revision'], 'revision'),
+    scene: parseSceneValue(input['scene']),
   };
 }
 
@@ -162,15 +169,15 @@ function parseSceneStructureRequest(input: unknown): {
   readonly revision: number;
 } {
   if (!isRecord(input)) {
-    throw createInvalidRequestError("요청 본문은 { revision } object여야 합니다.");
+    throw createInvalidRequestError('요청 본문은 { revision } object여야 합니다.');
   }
 
-  if (!hasOwn(input, "revision")) {
-    throw createInvalidRequestError("revision 필드가 필요합니다.");
+  if (!hasOwn(input, 'revision')) {
+    throw createInvalidRequestError('revision 필드가 필요합니다.');
   }
 
   return {
-    revision: parseRevision(input["revision"], "revision"),
+    revision: parseRevision(input['revision'], 'revision'),
   };
 }
 
@@ -179,38 +186,42 @@ function parseApplyCommandRequest(input: unknown): {
   readonly command: MotionWorkspaceApplyCommand;
 } {
   if (!isRecord(input)) {
-    throw createInvalidRequestError("요청 본문은 { revision, command } object여야 합니다.");
+    throw createInvalidRequestError('요청 본문은 { revision, command } object여야 합니다.');
   }
 
-  if (!hasOwn(input, "revision")) {
-    throw createInvalidRequestError("revision 필드가 필요합니다.");
+  if (!hasOwn(input, 'revision')) {
+    throw createInvalidRequestError('revision 필드가 필요합니다.');
   }
 
-  if (!Number.isInteger(input["revision"]) || Number(input["revision"]) < 0) {
-    throw createInvalidRequestError("apply-command 요청은 revision이 0 이상인 정수여야 합니다.");
+  if (!Number.isInteger(input['revision']) || Number(input['revision']) < 0) {
+    throw createInvalidRequestError('apply-command 요청은 revision이 0 이상인 정수여야 합니다.');
   }
 
-  if (!hasOwn(input, "command")) {
-    throw createInvalidRequestError("command 필드가 필요합니다.");
+  if (!hasOwn(input, 'command')) {
+    throw createInvalidRequestError('command 필드가 필요합니다.');
   }
 
-  const command = input["command"];
+  const command = input['command'];
   if (!isRecord(command)) {
-    throw createInvalidRequestError("command 필드는 object여야 합니다.");
+    throw createInvalidRequestError('command 필드는 object여야 합니다.');
   }
 
-  if (typeof command["type"] !== "string") {
-    throw createInvalidRequestError("command.type 필드는 string이어야 합니다.");
+  if (typeof command['type'] !== 'string') {
+    throw createInvalidRequestError('command.type 필드는 string이어야 합니다.');
   }
 
-  if (!MOTION_EDITOR_COMMAND_TYPES.includes(command["type"] as (typeof MOTION_EDITOR_COMMAND_TYPES)[number])) {
+  if (
+    !MOTION_EDITOR_COMMAND_TYPES.includes(
+      command['type'] as (typeof MOTION_EDITOR_COMMAND_TYPES)[number],
+    )
+  ) {
     throw createInvalidRequestError(
-      `지원되지 않는 command.type입니다: ${JSON.stringify(command["type"])}.`,
+      `지원되지 않는 command.type입니다: ${JSON.stringify(command['type'])}.`,
     );
   }
 
   return {
-    revision: Number(input["revision"]),
+    revision: Number(input['revision']),
     command: command as MotionWorkspaceApplyCommand,
   };
 }
@@ -218,7 +229,7 @@ function parseApplyCommandRequest(input: unknown): {
 function deriveExpectedRevision(workspace: MotionWorkspaceSnapshotV2): number {
   if (!Number.isInteger(workspace.globalRevision) || workspace.globalRevision < 1) {
     throw createInvalidRequestError(
-      "workspace update 요청은 globalRevision이 1 이상인 snapshot이어야 합니다.",
+      'workspace update 요청은 globalRevision이 1 이상인 snapshot이어야 합니다.',
     );
   }
 
@@ -228,24 +239,20 @@ function deriveExpectedRevision(workspace: MotionWorkspaceSnapshotV2): number {
 function isSceneWorkspace(
   workspace: MotionWorkspaceSnapshotV2,
 ): workspace is SceneWorkspaceSnapshot {
-  return workspace.document.schemaVersion === "qa-sdk.motion-composition/v2";
+  return workspace.document.schemaVersion === 'qa-sdk.motion-composition/v2';
 }
 
-function requireSceneWorkspace(
-  workspace: MotionWorkspaceSnapshotV2,
-): SceneWorkspaceSnapshot {
+function requireSceneWorkspace(workspace: MotionWorkspaceSnapshotV2): SceneWorkspaceSnapshot {
   if (!isSceneWorkspace(workspace)) {
     throw createInvalidRequestError(
-      "scene endpoint는 qa-sdk.motion-composition/v2 workspace에서만 지원합니다.",
+      'scene endpoint는 qa-sdk.motion-composition/v2 workspace에서만 지원합니다.',
     );
   }
 
   return workspace;
 }
 
-function toSceneSummary(
-  sceneWorkspace: SceneWorkspaceSnapshot,
-) {
+function toSceneSummary(sceneWorkspace: SceneWorkspaceSnapshot) {
   return sceneWorkspace.document.composition.scenes.map((scene) => ({
     scene,
     revision: sceneWorkspace.sceneRevisions[scene.id] ?? 0,
@@ -371,7 +378,7 @@ export function createMotionWorkspaceController(
     health() {
       const info = createMotionWorkspaceServiceInfo();
       return {
-        status: "ok",
+        status: 'ok',
         service: info.serviceId,
         default_persistence: info.defaultPersistence,
         uptime_seconds: deps.getUptimeSeconds?.(),
@@ -439,7 +446,7 @@ export function createMotionWorkspaceController(
 
       const controller = createCommandController(workspace);
       controller.apply({
-        type: "add-scene",
+        type: 'add-scene',
         id: request.scene.id,
         title: request.scene.title,
         startMs: request.scene.startMs,
@@ -472,7 +479,7 @@ export function createMotionWorkspaceController(
 
       const controller = createCommandController(workspace);
       controller.apply({
-        type: "remove-scene",
+        type: 'remove-scene',
         sceneId,
       });
 

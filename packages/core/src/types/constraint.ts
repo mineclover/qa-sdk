@@ -30,7 +30,7 @@ export interface ConstraintDef {
   evidence: ConstraintEvidence;
 
   /** 심각도: 실패 시 영향 */
-  severity: "critical" | "error" | "warning";
+  severity: 'critical' | 'error' | 'warning';
 
   /** 사람 읽기용 설명 */
   description: string;
@@ -50,16 +50,16 @@ export interface ConstraintSubject {
 }
 
 export type SubjectKind =
-  | "schema"        // DataSchema
-  | "field"         // DataSchema의 특정 컬럼
-  | "relation"      // DataRelation
-  | "pipe"          // PipeSpec
-  | "pipe-step"     // PipeSpec 내 특정 step
-  | "pipe-graph"    // PipeGraph
-  | "connection"    // PipeConnection
-  | "lineage"       // FieldLineage
-  | "event"         // 이벤트
-  | "contract";     // DataContract
+  | 'schema' // DataSchema
+  | 'field' // DataSchema의 특정 컬럼
+  | 'relation' // DataRelation
+  | 'pipe' // PipeSpec
+  | 'pipe-step' // PipeSpec 내 특정 step
+  | 'pipe-graph' // PipeGraph
+  | 'connection' // PipeConnection
+  | 'lineage' // FieldLineage
+  | 'event' // 이벤트
+  | 'contract'; // DataContract
 
 // ── Predicate — 조건 ─────────────────────────────────
 
@@ -76,31 +76,31 @@ export interface ConstraintPredicate {
 
 export type PredicateOp =
   // 값 비교
-  | "eq"            // === expected
-  | "neq"           // !== expected
-  | "gt"            // > expected
-  | "gte"           // >= expected
-  | "lt"            // < expected
-  | "lte"           // <= expected
+  | 'eq' // === expected
+  | 'neq' // !== expected
+  | 'gt' // > expected
+  | 'gte' // >= expected
+  | 'lt' // < expected
+  | 'lte' // <= expected
   // 존재/포함
-  | "exists"        // 존재해야 함
-  | "not-exists"    // 존재하면 안 됨
-  | "contains"      // expected를 포함
-  | "not-contains"  // expected를 포함하면 안 됨
-  | "subset-of"     // expected의 부분집합
-  | "superset-of"   // expected의 상위집합
+  | 'exists' // 존재해야 함
+  | 'not-exists' // 존재하면 안 됨
+  | 'contains' // expected를 포함
+  | 'not-contains' // expected를 포함하면 안 됨
+  | 'subset-of' // expected의 부분집합
+  | 'superset-of' // expected의 상위집합
   // 타입/스키마
-  | "type-is"       // 타입이 expected
-  | "compatible"    // 스키마 호환
-  | "breaking"      // breaking 변경 여부
+  | 'type-is' // 타입이 expected
+  | 'compatible' // 스키마 호환
+  | 'breaking' // breaking 변경 여부
   // 관계
-  | "connected-to"  // 연결되어 있음
-  | "reachable"     // 도달 가능
-  | "traceable"     // 계보 추적 가능
+  | 'connected-to' // 연결되어 있음
+  | 'reachable' // 도달 가능
+  | 'traceable' // 계보 추적 가능
   // 논리
-  | "and"           // 모든 children 충족
-  | "or"            // children 중 하나 이상 충족
-  | "not";          // children[0] 불충족
+  | 'and' // 모든 children 충족
+  | 'or' // children 중 하나 이상 충족
+  | 'not'; // children[0] 불충족
 
 // ── Context — 상황 ───────────────────────────────────
 
@@ -116,13 +116,13 @@ export interface ConstraintContext {
 }
 
 export type ContextWhen =
-  | "always"              // 항상
-  | "on-schema-change"    // 스키마 변경 시
-  | "on-event"            // 특정 이벤트 발생 시
-  | "on-pipe-execution"   // 파이프 실행 시
-  | "on-deploy"           // 배포 시
-  | "on-version-upgrade"  // 버전 업그레이드 시
-  | "given";              // 특정 조건 하에서 (conditions 참조)
+  | 'always' // 항상
+  | 'on-schema-change' // 스키마 변경 시
+  | 'on-event' // 특정 이벤트 발생 시
+  | 'on-pipe-execution' // 파이프 실행 시
+  | 'on-deploy' // 배포 시
+  | 'on-version-upgrade' // 버전 업그레이드 시
+  | 'given'; // 특정 조건 하에서 (conditions 참조)
 
 // ── Evidence — 증명 방법 ─────────────────────────────
 
@@ -141,18 +141,18 @@ export interface ConstraintEvidence {
 }
 
 export type EvidenceMethod =
-  | "unit-test"           // 단위 테스트
-  | "integration-test"    // 통합 테스트
-  | "contract-test"       // 계약 테스트
-  | "schema-validation"   // 스키마 검증
-  | "type-check"          // 타입 체크 (컴파일 타임)
-  | "simulation"          // dry-run 시뮬레이션
-  | "lineage-trace"       // 계보 추적
-  | "compatibility-check" // 호환성 검증
-  | "invariant-check"     // 불변 조건 체크
-  | "snapshot-compare"    // 스냅샷 비교
-  | "dry-run"             // 출력 비교
-  | "manual-review";      // 수동 리뷰 (코드 리뷰)
+  | 'unit-test' // 단위 테스트
+  | 'integration-test' // 통합 테스트
+  | 'contract-test' // 계약 테스트
+  | 'schema-validation' // 스키마 검증
+  | 'type-check' // 타입 체크 (컴파일 타임)
+  | 'simulation' // dry-run 시뮬레이션
+  | 'lineage-trace' // 계보 추적
+  | 'compatibility-check' // 호환성 검증
+  | 'invariant-check' // 불변 조건 체크
+  | 'snapshot-compare' // 스냅샷 비교
+  | 'dry-run' // 출력 비교
+  | 'manual-review'; // 수동 리뷰 (코드 리뷰)
 
 // ── ConstraintResult — 검증 결과 ─────────────────────
 
@@ -162,7 +162,7 @@ export interface ConstraintResult {
   specId: string;
 
   /** 판정 */
-  verdict: "pass" | "fail" | "skip" | "error";
+  verdict: 'pass' | 'fail' | 'skip' | 'error';
 
   /** subject 실제 값 (실패 시 디버깅) */
   actualValue?: unknown;

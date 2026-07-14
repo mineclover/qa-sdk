@@ -35,20 +35,20 @@
  * [EC-9] use case — 복합 해시맵 키
  */
 
-import { describe, it, expect } from "vitest";
-import { BitIndex } from "bit-index";
+import { describe, it, expect } from 'vitest';
+import { BitIndex } from 'bit-index';
 import {
   WeightedIndex,
   calcAddressRanges,
   containsAddress,
   type CoordConstraint,
-} from "weighted-index";
+} from 'weighted-index';
 
 // ── 공통 픽스처 ──────────────────────────────────────────────────────────────
 
 // 권한 시스템: role(5) × action(8) × resource(20) = 800
 const PERM_SHAPE = [5, 8, 20];
-const PERM_LABELS = ["role", "action", "resource"];
+const PERM_LABELS = ['role', 'action', 'resource'];
 
 const wi = new WeightedIndex(PERM_SHAPE, PERM_LABELS);
 const bi = new BitIndex(PERM_SHAPE, PERM_LABELS);
@@ -74,8 +74,8 @@ function* allCoords(shape: number[]): Generator<number[]> {
 //  [EC-1] 비호환 증명
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-1] 비호환 증명 — 같은 좌표, 다른 packed, 교차 decode 불가", () => {
-  it("전체 800건: wi.encode(c) ≠ bi.encode(c) (일부 우연 일치 제외하고 대부분 다름)", () => {
+describe('[EC-1] 비호환 증명 — 같은 좌표, 다른 packed, 교차 decode 불가', () => {
+  it('전체 800건: wi.encode(c) ≠ bi.encode(c) (일부 우연 일치 제외하고 대부분 다름)', () => {
     let different = 0;
     for (const coords of allCoords(PERM_SHAPE)) {
       if (wi.encode(coords) !== bi.encode(coords)) different++;
@@ -84,7 +84,7 @@ describe("[EC-1] 비호환 증명 — 같은 좌표, 다른 packed, 교차 decod
     expect(different).toBeGreaterThan(700);
   });
 
-  it("wi.encode 결과를 bi.decode에 넣으면 다른 좌표가 나옴", () => {
+  it('wi.encode 결과를 bi.decode에 넣으면 다른 좌표가 나옴', () => {
     const coords = [3, 5, 12];
     const wiIndex = wi.encode(coords);
 
@@ -97,7 +97,7 @@ describe("[EC-1] 비호환 증명 — 같은 좌표, 다른 packed, 교차 decod
     }
   });
 
-  it("bi.encode 결과를 wi.decode에 넣으면 다른 좌표가 나옴", () => {
+  it('bi.encode 결과를 wi.decode에 넣으면 다른 좌표가 나옴', () => {
     const coords = [3, 5, 12];
     const biPacked = bi.encode(coords);
 
@@ -113,14 +113,14 @@ describe("[EC-1] 비호환 증명 — 같은 좌표, 다른 packed, 교차 decod
 //  [EC-2] 공간 효율 비교
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-2] 공간 효율 — mixed-radix ≤ bit-index (항상)", () => {
+describe('[EC-2] 공간 효율 — mixed-radix ≤ bit-index (항상)', () => {
   const cases: [string, number[]][] = [
-    ["[5,8,20]",       [5, 8, 20]],
-    ["[10,50,8,20]",   [10, 50, 8, 20]],
-    ["[3,3,3,3,3]",    [3, 3, 3, 3, 3]],
-    ["[100,100]",      [100, 100]],
-    ["[2,2,2,2,2,2]",  [2, 2, 2, 2, 2, 2]],  // 모두 2의 거듭제곱 → 동일
-    ["[8,16,4,32]",    [8, 16, 4, 32]],       // 모두 2의 거듭제곱 → 동일
+    ['[5,8,20]', [5, 8, 20]],
+    ['[10,50,8,20]', [10, 50, 8, 20]],
+    ['[3,3,3,3,3]', [3, 3, 3, 3, 3]],
+    ['[100,100]', [100, 100]],
+    ['[2,2,2,2,2,2]', [2, 2, 2, 2, 2, 2]], // 모두 2의 거듭제곱 → 동일
+    ['[8,16,4,32]', [8, 16, 4, 32]], // 모두 2의 거듭제곱 → 동일
   ];
 
   for (const [label, shape] of cases) {
@@ -132,14 +132,14 @@ describe("[EC-2] 공간 효율 — mixed-radix ≤ bit-index (항상)", () => {
     });
   }
 
-  it("2의 거듭제곱 shape → 두 방식 동일 비트 수", () => {
+  it('2의 거듭제곱 shape → 두 방식 동일 비트 수', () => {
     const shape = [8, 16, 4, 32]; // 3+4+2+5 = 14
     const w = new WeightedIndex(shape);
     const b = new BitIndex(shape);
     expect(Math.ceil(Math.log2(w.size))).toBe(b.totalBits);
   });
 
-  it("비-거듭제곱 shape → bit-index가 약간 큼", () => {
+  it('비-거듭제곱 shape → bit-index가 약간 큼', () => {
     const shape = [5, 8, 20]; // product 800 → 10 bits, bit-index 3+3+5=11 bits
     const w = new WeightedIndex(shape);
     const b = new BitIndex(shape);
@@ -151,9 +151,9 @@ describe("[EC-2] 공간 효율 — mixed-radix ≤ bit-index (항상)", () => {
 //  [EC-3] WeightedIndex 전용: calcAddressRanges → 연속 구간
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-3] WeightedIndex 전용 — calcAddressRanges로 연속 구간 생성", () => {
-  it("role=2인 모든 주소 → 단일 연속 구간", () => {
-    const ranges = calcAddressRanges(PERM_SHAPE, ["2", null, null]);
+describe('[EC-3] WeightedIndex 전용 — calcAddressRanges로 연속 구간 생성', () => {
+  it('role=2인 모든 주소 → 단일 연속 구간', () => {
+    const ranges = calcAddressRanges(PERM_SHAPE, ['2', null, null]);
     // role=2: 주소 (2-1)*160 ~ (2-1)*160+159 = [160, 319]
     expect(ranges).toHaveLength(1);
     expect(ranges[0][0]).toBeLessThan(ranges[0][1]);
@@ -165,8 +165,8 @@ describe("[EC-3] WeightedIndex 전용 — calcAddressRanges로 연속 구간 생
     }
   });
 
-  it("role=2, action=3 → 연속 구간", () => {
-    const ranges = calcAddressRanges(PERM_SHAPE, ["2", "3", null]);
+  it('role=2, action=3 → 연속 구간', () => {
+    const ranges = calcAddressRanges(PERM_SHAPE, ['2', '3', null]);
     expect(ranges.length).toBeGreaterThanOrEqual(1);
 
     for (const [lo, hi] of ranges) {
@@ -178,7 +178,7 @@ describe("[EC-3] WeightedIndex 전용 — calcAddressRanges로 연속 구간 생
     }
   });
 
-  it("BitIndex에서는 같은 조건이 비연속", () => {
+  it('BitIndex에서는 같은 조건이 비연속', () => {
     // role=2인 BitIndex packed 값들을 수집
     const role2packed: number[] = [];
     for (const coords of allCoords(PERM_SHAPE)) {
@@ -204,10 +204,10 @@ describe("[EC-3] WeightedIndex 전용 — calcAddressRanges로 연속 구간 생
 //  [EC-4] BitIndex extractDim 필터 ≡ calcAddressRanges 결과 (동등성)
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-4] 동등성 — extractDim 필터와 calcAddressRanges가 같은 좌표 집합을 선택", () => {
-  it("role=2: 두 방식이 같은 좌표 집합을 선택", () => {
+describe('[EC-4] 동등성 — extractDim 필터와 calcAddressRanges가 같은 좌표 집합을 선택', () => {
+  it('role=2: 두 방식이 같은 좌표 집합을 선택', () => {
     // WeightedIndex: calcAddressRanges로 주소 수집 → decode → 좌표 집합
-    const ranges = calcAddressRanges(PERM_SHAPE, ["2", null, null]);
+    const ranges = calcAddressRanges(PERM_SHAPE, ['2', null, null]);
     const wiCoords = new Set<string>();
     for (const [lo, hi] of ranges) {
       for (let addr = lo; addr <= hi; addr++) {
@@ -230,8 +230,8 @@ describe("[EC-4] 동등성 — extractDim 필터와 calcAddressRanges가 같은 
     }
   });
 
-  it("role=3, action=5: 복합 조건에서도 동일 집합", () => {
-    const constraints: CoordConstraint[] = ["3", "5", null];
+  it('role=3, action=5: 복합 조건에서도 동일 집합', () => {
+    const constraints: CoordConstraint[] = ['3', '5', null];
     const ranges = calcAddressRanges(PERM_SHAPE, constraints);
     const wiCoords = new Set<string>();
     for (const [lo, hi] of ranges) {
@@ -254,8 +254,8 @@ describe("[EC-4] 동등성 — extractDim 필터와 calcAddressRanges가 같은 
     }
   });
 
-  it("범위 조건 role=2-4: OR 범위에서도 동일 집합", () => {
-    const ranges = calcAddressRanges(PERM_SHAPE, ["2-4", null, null]);
+  it('범위 조건 role=2-4: OR 범위에서도 동일 집합', () => {
+    const ranges = calcAddressRanges(PERM_SHAPE, ['2-4', null, null]);
     const wiCoords = new Set<string>();
     for (const [lo, hi] of ranges) {
       for (let addr = lo; addr <= hi; addr++) {
@@ -283,15 +283,12 @@ describe("[EC-4] 동등성 — extractDim 필터와 calcAddressRanges가 같은 
 //  [EC-5] use case — 캐시 키 그룹핑
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-5] use case — 캐시 키 그룹핑 (BitIndex 전용)", () => {
-  const idx = new BitIndex(
-    [10, 50, 8, 20],
-    ["region", "page", "action", "resource"],
-  );
+describe('[EC-5] use case — 캐시 키 그룹핑 (BitIndex 전용)', () => {
+  const idx = new BitIndex([10, 50, 8, 20], ['region', 'page', 'action', 'resource']);
   // action(3b) + resource(5b) = 하위 8 bits
   const lowerBits = 3 + 5;
 
-  it("같은 region+page → 동일 그룹 키", () => {
+  it('같은 region+page → 동일 그룹 키', () => {
     const keySet = new Set<number>();
     for (let action = 1; action <= 8; action++) {
       for (let resource = 1; resource <= 20; resource++) {
@@ -302,7 +299,7 @@ describe("[EC-5] use case — 캐시 키 그룹핑 (BitIndex 전용)", () => {
     expect(keySet.size).toBe(1);
   });
 
-  it("다른 region 또는 page → 다른 그룹 키", () => {
+  it('다른 region 또는 page → 다른 그룹 키', () => {
     const a = idx.encode([3, 25, 1, 1]) >> lowerBits;
     const b = idx.encode([3, 26, 1, 1]) >> lowerBits; // 다른 page
     const c = idx.encode([4, 25, 1, 1]) >> lowerBits; // 다른 region
@@ -310,7 +307,7 @@ describe("[EC-5] use case — 캐시 키 그룹핑 (BitIndex 전용)", () => {
     expect(a).not.toBe(c);
   });
 
-  it("그룹 키 총 수 = region × page", () => {
+  it('그룹 키 총 수 = region × page', () => {
     const groups = new Set<number>();
     for (const coords of allCoords([10, 50, 8, 20])) {
       groups.add(idx.encode(coords) >> lowerBits);
@@ -318,18 +315,18 @@ describe("[EC-5] use case — 캐시 키 그룹핑 (BitIndex 전용)", () => {
     expect(groups.size).toBe(10 * 50);
   });
 
-  it("WeightedIndex에서는 같은 그룹핑이 시프트로 불가", () => {
+  it('WeightedIndex에서는 같은 그룹핑이 시프트로 불가', () => {
     const w = new WeightedIndex([10, 50, 8, 20]);
     const a = w.encode([3, 25, 1, 1]);
     const b = w.encode([3, 25, 8, 20]);
     // mixed-radix에서 어떤 shift를 해도 같은 값이 나오지 않음
     for (let shift = 1; shift < 20; shift++) {
-      if ((a >> shift) === (b >> shift)) {
+      if (a >> shift === b >> shift) {
         // 우연히 같아질 수 있지만, 체계적이지 않음
         // 다른 page에서도 같아지는지 확인
         const c = w.encode([3, 26, 1, 1]);
         const d = w.encode([3, 26, 8, 20]);
-        if ((c >> shift) === (d >> shift) && (a >> shift) !== (c >> shift)) {
+        if (c >> shift === d >> shift && a >> shift !== c >> shift) {
           // page까지 분리되면 체계적 — 하지만 mixed-radix에서는 거의 불가
           return; // 이론적으로 가능하지만 실제로 도달하지 않음
         }
@@ -344,7 +341,7 @@ describe("[EC-5] use case — 캐시 키 그룹핑 (BitIndex 전용)", () => {
 //  [EC-6] use case — 인메모리 권한 필터
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-6] use case — 인메모리 권한 필터 (BitIndex)", () => {
+describe('[EC-6] use case — 인메모리 권한 필터 (BitIndex)', () => {
   const idx = new BitIndex(PERM_SHAPE, PERM_LABELS);
 
   // admin(role=1)의 모든 권한
@@ -355,19 +352,19 @@ describe("[EC-6] use case — 인메모리 권한 필터 (BitIndex)", () => {
     }
   }
 
-  it("has() → O(1) 판정", () => {
+  it('has() → O(1) 판정', () => {
     expect(adminPerms.has(idx.encode([1, 3, 10]))).toBe(true);
     expect(adminPerms.has(idx.encode([2, 3, 10]))).toBe(false); // 다른 role
   });
 
-  it("extractDim 필터: role=1인 것만 통과", () => {
+  it('extractDim 필터: role=1인 것만 통과', () => {
     for (const packed of adminPerms) {
       expect(idx.extractDim(packed, 0)).toBe(1);
     }
   });
 
-  it("extractDim 필터: action=5인 admin 권한만 추출", () => {
-    const action5 = [...adminPerms].filter(p => idx.extractDim(p, 1) === 5);
+  it('extractDim 필터: action=5인 admin 권한만 추출', () => {
+    const action5 = [...adminPerms].filter((p) => idx.extractDim(p, 1) === 5);
     expect(action5.length).toBe(20); // resource 20개
     for (const p of action5) {
       expect(idx.extractDim(p, 0)).toBe(1);
@@ -375,9 +372,9 @@ describe("[EC-6] use case — 인메모리 권한 필터 (BitIndex)", () => {
     }
   });
 
-  it("WeightedIndex containsAddress와 동일 결과", () => {
+  it('WeightedIndex containsAddress와 동일 결과', () => {
     // WeightedIndex: role=1, action=5인 주소 범위
-    const ranges = calcAddressRanges(PERM_SHAPE, ["1", "5", null]);
+    const ranges = calcAddressRanges(PERM_SHAPE, ['1', '5', null]);
     const wiAddrs = new Set<number>();
     for (const [lo, hi] of ranges) {
       for (let a = lo; a <= hi; a++) wiAddrs.add(a);
@@ -385,12 +382,12 @@ describe("[EC-6] use case — 인메모리 권한 필터 (BitIndex)", () => {
 
     // BitIndex: role=1, action=5 필터
     const biCoords = [...adminPerms]
-      .filter(p => idx.extractDim(p, 1) === 5)
-      .map(p => idx.decode(p));
+      .filter((p) => idx.extractDim(p, 1) === 5)
+      .map((p) => idx.decode(p));
 
     // 좌표 집합이 동일한지
-    const biCoordsSet = new Set(biCoords.map(c => JSON.stringify(c)));
-    const wiCoordsSet = new Set([...wiAddrs].map(a => JSON.stringify(wi.decode(a))));
+    const biCoordsSet = new Set(biCoords.map((c) => JSON.stringify(c)));
+    const wiCoordsSet = new Set([...wiAddrs].map((a) => JSON.stringify(wi.decode(a))));
     expect(biCoordsSet.size).toBe(wiCoordsSet.size);
     for (const c of biCoordsSet) expect(wiCoordsSet.has(c)).toBe(true);
   });
@@ -400,21 +397,18 @@ describe("[EC-6] use case — 인메모리 권한 필터 (BitIndex)", () => {
 //  [EC-7] use case — 이벤트 라우팅
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-7] use case — 이벤트 라우팅 (BitIndex)", () => {
-  const event = new BitIndex(
-    [5, 100, 3, 10],
-    ["service", "endpoint", "method", "status"],
-  );
+describe('[EC-7] use case — 이벤트 라우팅 (BitIndex)', () => {
+  const event = new BitIndex([5, 100, 3, 10], ['service', 'endpoint', 'method', 'status']);
 
-  it("service별 분기: extractDim(p, 0)만으로 라우팅", () => {
+  it('service별 분기: extractDim(p, 0)만으로 라우팅', () => {
     const analytics: number[] = [];
     const billing: number[] = [];
 
     const testEvents = [
-      [3, 50, 1, 2],  // service=3 (analytics)
-      [3, 75, 2, 5],  // service=3 (analytics)
-      [2, 10, 1, 1],  // service=2 (billing)
-      [1, 99, 3, 9],  // service=1 (기타)
+      [3, 50, 1, 2], // service=3 (analytics)
+      [3, 75, 2, 5], // service=3 (analytics)
+      [2, 10, 1, 1], // service=2 (billing)
+      [1, 99, 3, 9], // service=1 (기타)
     ];
 
     for (const coords of testEvents) {
@@ -428,7 +422,7 @@ describe("[EC-7] use case — 이벤트 라우팅 (BitIndex)", () => {
     expect(billing).toHaveLength(1);
   });
 
-  it("method + status 복합 필터", () => {
+  it('method + status 복합 필터', () => {
     const packed = event.encode([3, 50, 2, 5]);
     const method = event.extractDim(packed, 2);
     const status = event.extractDim(packed, 3);
@@ -443,13 +437,10 @@ describe("[EC-7] use case — 이벤트 라우팅 (BitIndex)", () => {
 //  [EC-8] use case — 클라이언트 토큰
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-8] use case — 클라이언트 토큰 (BitIndex)", () => {
-  const token = new BitIndex(
-    [16, 64, 8],
-    ["role", "resource_group", "access_level"],
-  );
+describe('[EC-8] use case — 클라이언트 토큰 (BitIndex)', () => {
+  const token = new BitIndex([16, 64, 8], ['role', 'resource_group', 'access_level']);
 
-  it("bytes 직렬화 → 전송 → 복원 파이프라인", () => {
+  it('bytes 직렬화 → 전송 → 복원 파이프라인', () => {
     const coords = [3, 42, 5];
 
     // 서버: 토큰 생성
@@ -463,14 +454,14 @@ describe("[EC-8] use case — 클라이언트 토큰 (BitIndex)", () => {
     expect(restored).toEqual(coords);
   });
 
-  it("role만 빠르게 확인 (full decode 없이)", () => {
+  it('role만 빠르게 확인 (full decode 없이)', () => {
     const packed = token.encode([3, 42, 5]);
     expect(token.extractDim(packed, 0)).toBe(3); // O(1)
   });
 
-  it("hex 직렬화 → JWT claim", () => {
+  it('hex 직렬화 → JWT claim', () => {
     const hex = token.toHex([3, 42, 5]);
-    expect(typeof hex).toBe("string");
+    expect(typeof hex).toBe('string');
     expect(token.fromHex(hex)).toEqual([3, 42, 5]);
   });
 });
@@ -479,39 +470,36 @@ describe("[EC-8] use case — 클라이언트 토큰 (BitIndex)", () => {
 //  [EC-9] use case — 복합 해시맵 키
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[EC-9] use case — 복합 해시맵 키 (BitIndex)", () => {
-  const key = new BitIndex(
-    [16, 16, 256],
-    ["tenant", "shard", "entity"],
-  );
+describe('[EC-9] use case — 복합 해시맵 키 (BitIndex)', () => {
+  const key = new BitIndex([16, 16, 256], ['tenant', 'shard', 'entity']);
 
-  it("Map<number, T>로 다차원 키 관리", () => {
+  it('Map<number, T>로 다차원 키 관리', () => {
     const store = new Map<number, string>();
 
-    store.set(key.encode([1, 1, 100]), "user-A");
-    store.set(key.encode([1, 2, 50]),  "user-B");
-    store.set(key.encode([2, 1, 100]), "user-C");
+    store.set(key.encode([1, 1, 100]), 'user-A');
+    store.set(key.encode([1, 2, 50]), 'user-B');
+    store.set(key.encode([2, 1, 100]), 'user-C');
 
-    expect(store.get(key.encode([1, 1, 100]))).toBe("user-A");
-    expect(store.get(key.encode([2, 1, 100]))).toBe("user-C");
+    expect(store.get(key.encode([1, 1, 100]))).toBe('user-A');
+    expect(store.get(key.encode([2, 1, 100]))).toBe('user-C');
     expect(store.get(key.encode([1, 1, 200]))).toBeUndefined();
   });
 
-  it("tenant별 필터 — extractDim", () => {
+  it('tenant별 필터 — extractDim', () => {
     const store = new Map<number, string>();
-    store.set(key.encode([1, 1, 10]), "a");
-    store.set(key.encode([1, 2, 20]), "b");
-    store.set(key.encode([2, 1, 10]), "c");
-    store.set(key.encode([2, 3, 30]), "d");
+    store.set(key.encode([1, 1, 10]), 'a');
+    store.set(key.encode([1, 2, 20]), 'b');
+    store.set(key.encode([2, 1, 10]), 'c');
+    store.set(key.encode([2, 3, 30]), 'd');
 
     const tenant1 = [...store.entries()]
       .filter(([k]) => key.extractDim(k, 0) === 1)
       .map(([, v]) => v);
 
-    expect(tenant1).toEqual(["a", "b"]);
+    expect(tenant1).toEqual(['a', 'b']);
   });
 
-  it("키 충돌 없음: 다른 좌표 → 다른 키 (전수)", () => {
+  it('키 충돌 없음: 다른 좌표 → 다른 키 (전수)', () => {
     const seen = new Set<number>();
     for (let t = 1; t <= 16; t++) {
       for (let s = 1; s <= 16; s++) {

@@ -7,7 +7,7 @@
  * ^api-surface, ^inputs 등 계약 마커 섹션의 코드 블록에서
  * 엔드포인트, 함수, 타입, 클래스를 추출한다.
  */
-import type { DeclaredSymbol, SymbolKind } from "./types.js";
+import type { DeclaredSymbol, SymbolKind } from './types.js';
 
 /** HTTP method 패턴: GET /path, POST /path 등 */
 const ENDPOINT_RE = /^\s*(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\/\S+)/gm;
@@ -27,7 +27,7 @@ function extractFromCodeBlock(code: string, specId: string, marker?: string): De
     const name = `${match[1]} ${match[2]}`;
     if (!seen.has(name)) {
       seen.add(name);
-      symbols.push({ name, kind: "endpoint", marker, specId });
+      symbols.push({ name, kind: 'endpoint', marker, specId });
     }
   }
 
@@ -36,7 +36,7 @@ function extractFromCodeBlock(code: string, specId: string, marker?: string): De
     const name = match[1];
     if (!name || seen.has(name)) continue;
     seen.add(name);
-    const kind: SymbolKind = code.includes(`class ${name}`) ? "class" : "type";
+    const kind: SymbolKind = code.includes(`class ${name}`) ? 'class' : 'type';
     symbols.push({ name, kind, marker, specId });
   }
 
@@ -45,10 +45,25 @@ function extractFromCodeBlock(code: string, specId: string, marker?: string): De
     const name = match[1];
     if (!name) continue;
     // 예약어 제외
-    if (["if", "for", "while", "switch", "return", "new", "throw", "catch", "import", "export", "readonly"].includes(name)) continue;
+    if (
+      [
+        'if',
+        'for',
+        'while',
+        'switch',
+        'return',
+        'new',
+        'throw',
+        'catch',
+        'import',
+        'export',
+        'readonly',
+      ].includes(name)
+    )
+      continue;
     if (!seen.has(name)) {
       seen.add(name);
-      symbols.push({ name, kind: "function", marker, specId });
+      symbols.push({ name, kind: 'function', marker, specId });
     }
   }
 

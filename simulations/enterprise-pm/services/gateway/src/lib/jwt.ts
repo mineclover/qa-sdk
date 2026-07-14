@@ -12,11 +12,11 @@
  * dual-accept window는 §2 §7 참조 (운영 도입 시 별도 plan).
  */
 
-import { SignJWT, jwtVerify, errors as joseErrors } from "jose";
-import type { VersionedBitmap } from "permission-engine";
-import { bitmapToClaim, claimToBitmap, type BitmapClaim } from "./bitmap-claim.js";
+import { SignJWT, jwtVerify, errors as joseErrors } from 'jose';
+import type { VersionedBitmap } from 'permission-engine';
+import { bitmapToClaim, claimToBitmap, type BitmapClaim } from './bitmap-claim.js';
 
-export type JwtVerifyReason = "expired" | "signature" | "malformed" | "claim_missing";
+export type JwtVerifyReason = 'expired' | 'signature' | 'malformed' | 'claim_missing';
 
 export class JwtVerifyError extends Error {
   constructor(
@@ -24,7 +24,7 @@ export class JwtVerifyError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "JwtVerifyError";
+    this.name = 'JwtVerifyError';
   }
 }
 
@@ -77,17 +77,23 @@ export async function signBitmapJwt(args: SignArgs): Promise<string> {
   const claim: BitmapClaim = bitmapToClaim(args.bitmap);
   return await new SignJWT({
     ...claim,
-    ...(args.authContext?.departmentId !== undefined ? { department_id: args.authContext.departmentId } : {}),
-    ...(args.authContext?.primaryRoleId !== undefined ? { primary_role_id: args.authContext.primaryRoleId } : {}),
+    ...(args.authContext?.departmentId !== undefined
+      ? { department_id: args.authContext.departmentId }
+      : {}),
+    ...(args.authContext?.primaryRoleId !== undefined
+      ? { primary_role_id: args.authContext.primaryRoleId }
+      : {}),
     ...(args.authContext?.roleIds ? { role_ids: args.authContext.roleIds } : {}),
     ...(args.authContext?.roleNames ? { role_names: args.authContext.roleNames } : {}),
-    ...(args.authContext?.roleAssignments ? { role_assignments: args.authContext.roleAssignments } : {}),
+    ...(args.authContext?.roleAssignments
+      ? { role_assignments: args.authContext.roleAssignments }
+      : {}),
   })
-    .setProtectedHeader({ alg: "HS256" })
+    .setProtectedHeader({ alg: 'HS256' })
     .setSubject(args.userId)
     .setIssuedAt()
     .setExpirationTime(`${args.ttlSeconds}s`)
-    .setIssuer("sim-gateway")
+    .setIssuer('sim-gateway')
     .sign(secretToKey(args.secret));
 }
 
@@ -108,33 +114,33 @@ export async function verifyBitmapJwt(
   let payload: Record<string, unknown>;
   try {
     const result = await jwtVerify(token, secretToKey(secret), {
-      issuer: "sim-gateway",
-      algorithms: ["HS256"],
+      issuer: 'sim-gateway',
+      algorithms: ['HS256'],
       // 100y (~3.15e9 초) — 만료 무시 효과.
-      ...(options.ignoreExpiration ? { clockTolerance: "100y" } : {}),
+      ...(options.ignoreExpiration ? { clockTolerance: '100y' } : {}),
     });
     payload = result.payload as Record<string, unknown>;
   } catch (err) {
     if (err instanceof joseErrors.JWTExpired) {
-      throw new JwtVerifyError("expired", "JWT expired");
+      throw new JwtVerifyError('expired', 'JWT expired');
     }
     if (err instanceof joseErrors.JWSSignatureVerificationFailed) {
-      throw new JwtVerifyError("signature", "JWT signature invalid");
+      throw new JwtVerifyError('signature', 'JWT signature invalid');
     }
     if (err instanceof joseErrors.JWSInvalid || err instanceof joseErrors.JWTInvalid) {
-      throw new JwtVerifyError("malformed", "JWT malformed");
+      throw new JwtVerifyError('malformed', 'JWT malformed');
     }
-    throw new JwtVerifyError("malformed", `JWT verify failed: ${(err as Error).message}`);
+    throw new JwtVerifyError('malformed', `JWT verify failed: ${(err as Error).message}`);
   }
 
   const userId = payload.sub;
-  if (typeof userId !== "string" || userId === "") {
-    throw new JwtVerifyError("claim_missing", "JWT sub missing");
+  if (typeof userId !== 'string' || userId === '') {
+    throw new JwtVerifyError('claim_missing', 'JWT sub missing');
   }
-  const iat = typeof payload.iat === "number" ? payload.iat : null;
-  const exp = typeof payload.exp === "number" ? payload.exp : null;
+  const iat = typeof payload.iat === 'number' ? payload.iat : null;
+  const exp = typeof payload.exp === 'number' ? payload.exp : null;
   if (iat === null || exp === null) {
-    throw new JwtVerifyError("claim_missing", "iat or exp missing");
+    throw new JwtVerifyError('claim_missing', 'iat or exp missing');
   }
   const issuedAt = new Date(iat * 1000).toISOString();
   const expiresAt = new Date(exp * 1000).toISOString();
@@ -143,42 +149,43 @@ export async function verifyBitmapJwt(
   try {
     bitmap = claimToBitmap(payload as Partial<BitmapClaim>, issuedAt, expiresAt);
   } catch (err) {
-    throw new JwtVerifyError("claim_missing", (err as Error).message);
+    throw new JwtVerifyError('claim_missing', (err as Error).message);
   }
   const roleIds = Array.isArray(payload.role_ids)
-    ? payload.role_ids.filter((value): value is string => typeof value === "string")
+    ? payload.role_ids.filter((value): value is string => typeof value === 'string')
     : [];
   const roleNames = Array.isArray(payload.role_names)
-    ? payload.role_names.filter((value): value is string => typeof value === "string")
+    ? payload.role_names.filter((value): value is string => typeof value === 'string')
     : [];
   const roleAssignments = Array.isArray(payload.role_assignments)
     ? payload.role_assignments.flatMap((value) => {
-        if (typeof value !== "object" || value === null) return [];
-        const roleId = typeof (value as Record<string, unknown>).roleId === "string"
-          ? (value as Record<string, unknown>).roleId as string
-          : null;
-        const roleName = typeof (value as Record<string, unknown>).roleName === "string"
-          ? (value as Record<string, unknown>).roleName as string
-          : null;
-        const scopeType = typeof (value as Record<string, unknown>).scopeType === "string"
-          ? (value as Record<string, unknown>).scopeType as string
-          : null;
+        if (typeof value !== 'object' || value === null) return [];
+        const roleId =
+          typeof (value as Record<string, unknown>).roleId === 'string'
+            ? ((value as Record<string, unknown>).roleId as string)
+            : null;
+        const roleName =
+          typeof (value as Record<string, unknown>).roleName === 'string'
+            ? ((value as Record<string, unknown>).roleName as string)
+            : null;
+        const scopeType =
+          typeof (value as Record<string, unknown>).scopeType === 'string'
+            ? ((value as Record<string, unknown>).scopeType as string)
+            : null;
         const rawScopeId = (value as Record<string, unknown>).scopeId;
         const scopeId =
-          rawScopeId === null || typeof rawScopeId === "string"
-            ? rawScopeId as string | null
+          rawScopeId === null || typeof rawScopeId === 'string'
+            ? (rawScopeId as string | null)
             : null;
-        return roleId && roleName && scopeType
-          ? [{ roleId, roleName, scopeType, scopeId }]
-          : [];
+        return roleId && roleName && scopeType ? [{ roleId, roleName, scopeType, scopeId }] : [];
       })
     : [];
   const departmentId =
-    payload.department_id === null || typeof payload.department_id === "string"
+    payload.department_id === null || typeof payload.department_id === 'string'
       ? (payload.department_id as string | null | undefined)
       : undefined;
   const primaryRoleId =
-    payload.primary_role_id === null || typeof payload.primary_role_id === "string"
+    payload.primary_role_id === null || typeof payload.primary_role_id === 'string'
       ? (payload.primary_role_id as string | null | undefined)
       : undefined;
   return {

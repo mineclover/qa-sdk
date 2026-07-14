@@ -1,5 +1,5 @@
-import type { TaxonomyIR } from "../schema/ir.js";
-import type { Diagnostic } from "../schema/diagnostic.js";
+import type { TaxonomyIR } from '../schema/ir.js';
+import type { Diagnostic } from '../schema/diagnostic.js';
 
 /**
  * 각 axis 안에서 entry.address/id 중복 검출.
@@ -14,8 +14,8 @@ export function validateAxisStructure(ir: TaxonomyIR): Diagnostic[] {
     for (const e of axis.entries) {
       if (idSeen.has(e.id)) {
         out.push({
-          severity: "error",
-          code: "structural-duplicate-id",
+          severity: 'error',
+          code: 'structural-duplicate-id',
           message: `axes/${name}: 중복 id "${e.id}"`,
           ref: `${ir.taxonomy}#/axes/${name}/entries/${e.id}`,
           meta: { axis: name, duplicateId: e.id },
@@ -26,8 +26,8 @@ export function validateAxisStructure(ir: TaxonomyIR): Diagnostic[] {
       const prev = addrSeen.get(e.address);
       if (prev !== undefined) {
         out.push({
-          severity: "error",
-          code: "structural-duplicate-address",
+          severity: 'error',
+          code: 'structural-duplicate-address',
           message: `axes/${name}: address=${e.address} 가 "${prev}" 와 "${e.id}"에 중복 할당`,
           ref: `${ir.taxonomy}#/axes/${name}/entries/${e.id}`,
           meta: { axis: name, address: e.address, ids: [prev, e.id] },

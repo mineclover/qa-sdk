@@ -5,9 +5,9 @@
  * @layer 비교 (Comparison)
  */
 
-import type { GraphPort } from "spec-schema";
-import type { ObservationNode } from "./dkg-types.js";
-import type { CoOccurrence, CausalCandidate } from "./convergence.types.js";
+import type { GraphPort } from 'spec-schema';
+import type { ObservationNode } from './dkg-types.js';
+import type { CoOccurrence, CausalCandidate } from './convergence.types.js';
 
 /**
  * co-occurrence 데이터에서 인과 후보를 추출한다.
@@ -26,23 +26,23 @@ export function discoverCausality(
 
     // 이미 IntentLink가 있는지 확인
     const existingLinks = graph.intentLinksFor(co.sourcePrefix);
-    const alreadyLinked = existingLinks.some(l =>
-      l.intent.includes(co.sourceEntry) && l.intent.includes(co.targetEntry),
+    const alreadyLinked = existingLinks.some(
+      (l) => l.intent.includes(co.sourceEntry) && l.intent.includes(co.targetEntry),
     );
     if (alreadyLinked) continue;
 
-    let confidence: CausalCandidate["confidence"];
-    let suggestion: CausalCandidate["suggestion"];
+    let confidence: CausalCandidate['confidence'];
+    let suggestion: CausalCandidate['suggestion'];
 
     if (rate >= 0.95 && co.count >= 1000) {
-      confidence = "high";
-      suggestion = "intent-link";
-    } else if (rate >= 0.80 && co.count >= 500) {
-      confidence = "medium";
-      suggestion = "constraint";
-    } else if (rate >= 0.50 && co.count >= 100) {
-      confidence = "low";
-      suggestion = "observe-more";
+      confidence = 'high';
+      suggestion = 'intent-link';
+    } else if (rate >= 0.8 && co.count >= 500) {
+      confidence = 'medium';
+      suggestion = 'constraint';
+    } else if (rate >= 0.5 && co.count >= 100) {
+      confidence = 'low';
+      suggestion = 'observe-more';
     } else {
       continue; // 무시
     }
@@ -73,22 +73,25 @@ export function discoverCausalityWithObservations(
   const candidates = discoverCausality(graph, coOccurrences);
   const date = options?.date ?? new Date().toISOString().slice(0, 10);
 
-  const observations: ObservationNode[] = candidates.map(c => {
+  const observations: ObservationNode[] = candidates.map((c) => {
     const id = `OBS-CAUSAL-${c.source.prefix}-${c.source.entry}-${c.target.prefix}-${c.target.entry}`;
     const ratePercent = (c.coOccurrenceRate * 100).toFixed(1);
     const finding = `${c.source.prefix}:${c.source.entry} 후 ${ratePercent}% 확률로 ${c.target.prefix}:${c.target.entry} 발생 (${c.observedCount}건)`;
 
     return {
-      kind: "observation" as const,
+      kind: 'observation' as const,
       id,
       date,
-      source: "runtime" as const,
+      source: 'runtime' as const,
       subjects: [c.source.prefix, c.target.prefix],
       finding,
-      intent: c.confidence === "high" ? "action-needed" as const : "monitoring" as const,
-      ...(c.confidence !== "low" && {
+      intent: c.confidence === 'high' ? ('action-needed' as const) : ('monitoring' as const),
+      ...(c.confidence !== 'low' && {
         suggestion: {
-          kind: c.suggestion === "intent-link" ? "add-constraint" as const : "add-constraint" as const,
+          kind:
+            c.suggestion === 'intent-link'
+              ? ('add-constraint' as const)
+              : ('add-constraint' as const),
           rule: `${c.source.prefix}:${c.source.entry} → ${c.target.prefix}:${c.target.entry} (${c.suggestion})`,
         },
       }),

@@ -17,9 +17,9 @@
  * resolveDomainMask()는 O(roles × features) — 한 번 계산 후 호출자가 캐시 권장.
  */
 
-import { maskOr, hasBit } from "weighted-index";
-import { RoleRegistry } from "./role-registry.js";
-import { OrgRoleRegistry } from "./org-role-registry.js";
+import { maskOr, hasBit } from 'weighted-index';
+import { RoleRegistry } from './role-registry.js';
+import { OrgRoleRegistry } from './org-role-registry.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ export interface DomainMaskResult {
 export interface ExplainEntry {
   feature: string;
   grantedBy: {
-    source: "direct" | "org-role";
+    source: 'direct' | 'org-role';
     domain: string;
     role: string;
     /** 상속 경로 (조상 → ... → 직접 보유 role). */
@@ -73,10 +73,7 @@ export class RoleResolver {
    * - 직접 배정 + org role 확장을 합산 (OR)
    * - 사용자가 해당 도메인에 어떤 role도 없으면 빈 mask 반환
    */
-  resolveDomainMask(
-    ctx: ResolutionContext,
-    domain: string,
-  ): DomainMaskResult {
+  resolveDomainMask(ctx: ResolutionContext, domain: string): DomainMaskResult {
     const roles = this._collectDomainRoles(ctx, domain);
     if (roles.size === 0) {
       return { mask: new Uint8Array(0), featureIds: [] };
@@ -106,11 +103,7 @@ export class RoleResolver {
    *       동일 도메인에서 여러 feature를 체크할 때는
    *       resolveDomainMask()로 mask를 한 번만 받아서 hasBit()로 직접 체크할 것.
    */
-  check(
-    ctx: ResolutionContext,
-    domain: string,
-    feature: string,
-  ): boolean {
+  check(ctx: ResolutionContext, domain: string, feature: string): boolean {
     const { mask, featureIds } = this.resolveDomainMask(ctx, domain);
     const idx = featureIds.indexOf(feature);
     if (idx === -1) return false;
@@ -136,11 +129,7 @@ export class RoleResolver {
    * 특정 feature 권한이 어떤 배정에서 부여되었는지 추적한다 (감사용).
    * 동일 권한에 여러 경로가 있을 수 있다.
    */
-  explain(
-    ctx: ResolutionContext,
-    domain: string,
-    feature: string,
-  ): ExplainEntry[] {
+  explain(ctx: ResolutionContext, domain: string, feature: string): ExplainEntry[] {
     const result: ExplainEntry[] = [];
 
     // 직접 배정
@@ -152,21 +141,23 @@ export class RoleResolver {
           result.push({
             feature,
             grantedBy: {
-              source: "direct",
+              source: 'direct',
               domain,
               role,
               inheritancePath: this._inheritancePath(domain, role, feature),
             },
           });
         }
-      } catch { /* unknown role */ }
+      } catch {
+        /* unknown role */
+      }
     }
 
     // Org Role 확장
     if (ctx.orgRoleId) {
       const orgRoles = this.orgRoleRegistry.resolveForDomain(ctx.orgRoleId, domain);
       const directRoles = new Set(
-        ctx.directAssignments.filter(a => a.domain === domain).map(a => a.role),
+        ctx.directAssignments.filter((a) => a.domain === domain).map((a) => a.role),
       );
       for (const role of orgRoles) {
         if (directRoles.has(role)) continue; // 이미 direct에서 보고됨
@@ -176,14 +167,16 @@ export class RoleResolver {
             result.push({
               feature,
               grantedBy: {
-                source: "org-role",
+                source: 'org-role',
                 domain,
                 role,
                 inheritancePath: this._inheritancePath(domain, role, feature),
               },
             });
           }
-        } catch { /* unknown role */ }
+        } catch {
+          /* unknown role */
+        }
       }
     }
 
@@ -193,10 +186,7 @@ export class RoleResolver {
   // ── Private ────────────────────────────────────────────────────────────────
 
   /** 도메인에 적용되는 모든 role ID 수집 (direct + org-role 확장). */
-  private _collectDomainRoles(
-    ctx: ResolutionContext,
-    domain: string,
-  ): Set<string> {
+  private _collectDomainRoles(ctx: ResolutionContext, domain: string): Set<string> {
     const roles = new Set<string>();
     for (const { domain: d, role } of ctx.directAssignments) {
       if (d === domain) roles.add(role);
@@ -213,22 +203,13 @@ export class RoleResolver {
    * 특정 feature를 부여하는 상속 경로를 반환한다.
    * 예: ["viewer", "author"] — viewer가 먼저 feature를 정의, author가 상속
    */
-  private _inheritancePath(
-    domain: string,
-    roleId: string,
-    feature: string,
-  ): string[] {
+  private _inheritancePath(domain: string, roleId: string, feature: string): string[] {
     const path: string[] = [];
     this._tracePath(domain, roleId, feature, path);
     return path;
   }
 
-  private _tracePath(
-    domain: string,
-    roleId: string,
-    feature: string,
-    path: string[],
-  ): boolean {
+  private _tracePath(domain: string, roleId: string, feature: string, path: string[]): boolean {
     let found = false;
     // 부모 경로 먼저 탐색 (상속 원점 찾기)
     try {
@@ -243,7 +224,9 @@ export class RoleResolver {
       if (!found && def.ownFeatures.includes(feature)) {
         found = true;
       }
-    } catch { /* unknown role */ }
+    } catch {
+      /* unknown role */
+    }
 
     if (found) path.push(roleId);
     return found;

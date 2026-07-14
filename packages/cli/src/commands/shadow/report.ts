@@ -11,8 +11,8 @@ export interface ShadowReportSql {
 }
 
 export interface ShadowReportOptions {
-  hours: number;     // default 24
-  limit: number;     // default 20 (top divergences)
+  hours: number; // default 24
+  limit: number; // default 20 (top divergences)
 }
 
 export interface ShadowReportRow {
@@ -43,11 +43,13 @@ export async function runShadowReport(
 }
 
 export function formatShadowReport(rows: ShadowReportRow[]): string {
-  if (rows.length === 0) return "(no shadow activity)";
-  const header = "table                          | op     | deny_reason              | diverge / total";
-  const sep    = "-".repeat(header.length);
-  const lines = rows.map((r) =>
-    `${r.resourceTable.padEnd(30)} | ${r.operation.padEnd(6)} | ${(r.denyReason ?? "-").padEnd(24)} | ${String(r.divergenceCount).padStart(8)} / ${String(r.totalCount).padStart(5)}`,
+  if (rows.length === 0) return '(no shadow activity)';
+  const header =
+    'table                          | op     | deny_reason              | diverge / total';
+  const sep = '-'.repeat(header.length);
+  const lines = rows.map(
+    (r) =>
+      `${r.resourceTable.padEnd(30)} | ${r.operation.padEnd(6)} | ${(r.denyReason ?? '-').padEnd(24)} | ${String(r.divergenceCount).padStart(8)} / ${String(r.totalCount).padStart(5)}`,
   );
-  return [header, sep, ...lines].join("\n");
+  return [header, sep, ...lines].join('\n');
 }

@@ -5,7 +5,7 @@
  * D1RecordStore — RecordStore의 D1/SQLite drizzle ORM 구현.
  * text 컬럼 → ISO-8601 문자열로 저장, 조회 시 Date로 변환.
  */
-import { and, asc, eq, gt, gte, lte, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lte, or, type SQL } from 'drizzle-orm';
 import type {
   RecordStore,
   RecordInsert,
@@ -14,10 +14,15 @@ import type {
   StoredRecord,
   StoredRecordPage,
   TimeRangeParams,
-} from "@qa-sdk/core";
-import { eventRecords } from "../db/schema.js";
-import { parseJsonColumn, type AddressContextJson, type EventPayloadJson, type UserAttributesJson } from "../db/json-types.js";
-import type { D1Db } from "./d1-db-type.js";
+} from '@qa-sdk/core';
+import { eventRecords } from '../db/schema.js';
+import {
+  parseJsonColumn,
+  type AddressContextJson,
+  type EventPayloadJson,
+  type UserAttributesJson,
+} from '../db/json-types.js';
+import type { D1Db } from './d1-db-type.js';
 
 export class D1RecordStore implements RecordStore {
   constructor(private readonly db: D1Db) {}
@@ -66,7 +71,10 @@ export class D1RecordStore implements RecordStore {
     return rows.map(toStoredRecord);
   }
 
-  async findByTraceIdPaginated(traceId: string, params?: RecordPaginationParams): Promise<StoredRecordPage> {
+  async findByTraceIdPaginated(
+    traceId: string,
+    params?: RecordPaginationParams,
+  ): Promise<StoredRecordPage> {
     return this.paginate(eq(eventRecords.traceId, traceId), params);
   }
 
@@ -79,7 +87,10 @@ export class D1RecordStore implements RecordStore {
     return rows.map(toStoredRecord);
   }
 
-  async findBySessionIdPaginated(sessionId: string, params?: RecordPaginationParams): Promise<StoredRecordPage> {
+  async findBySessionIdPaginated(
+    sessionId: string,
+    params?: RecordPaginationParams,
+  ): Promise<StoredRecordPage> {
     return this.paginate(eq(eventRecords.qaSessionId, sessionId), params);
   }
 
@@ -111,7 +122,10 @@ export class D1RecordStore implements RecordStore {
     return rows.map(toStoredRecord);
   }
 
-  private async paginate(baseCondition: SQL<unknown>, params?: RecordPaginationParams): Promise<StoredRecordPage> {
+  private async paginate(
+    baseCondition: SQL<unknown>,
+    params?: RecordPaginationParams,
+  ): Promise<StoredRecordPage> {
     const limit = params?.limit ?? 100;
     const where = buildPaginatedWhere(baseCondition, params?.cursor);
 
@@ -133,7 +147,10 @@ export class D1RecordStore implements RecordStore {
   }
 }
 
-function buildPaginatedWhere(baseCondition: SQL<unknown>, cursor?: RecordPaginationCursor): SQL<unknown> {
+function buildPaginatedWhere(
+  baseCondition: SQL<unknown>,
+  cursor?: RecordPaginationCursor,
+): SQL<unknown> {
   if (!cursor) return baseCondition;
   const ts = cursor.timestamp.toISOString();
   return and(

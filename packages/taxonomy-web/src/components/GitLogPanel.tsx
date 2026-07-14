@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { fetchGitLog, type GitCommit } from "../data/gitLogApi";
+import { useEffect, useState } from 'react';
+import { fetchGitLog, type GitCommit } from '../data/gitLogApi';
 
 export function GitLogPanel({ file, selectedRef }: { file: string; selectedRef: string }) {
   const [log, setLog] = useState<GitCommit[]>([]);

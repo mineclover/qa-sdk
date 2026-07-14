@@ -1,5 +1,5 @@
-import type { ExpectedTaxonomy } from "../index.js";
-import { extractTextsFromMarkdownTable } from "./helpers.js";
+import type { ExpectedTaxonomy } from '../index.js';
+import { extractTextsFromMarkdownTable } from './helpers.js';
 
 /**
  * pascalToKebabStripSuffix — "RecordStore" → "record", "ScenarioSpecStore" → "scenario-spec"
@@ -9,8 +9,8 @@ function pascalToKebabStripSuffix(text: string, suffix: string): string {
   if (s.endsWith(suffix)) s = s.slice(0, -suffix.length);
   // PascalCase → kebab-case
   return s
-    .replace(/([a-z])([A-Z])/g, "$1-$2")
-    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
     .toLowerCase();
 }
 
@@ -21,14 +21,12 @@ function pascalToKebabStripSuffix(text: string, suffix: string): string {
 export function extractIngestExpected(adapterParityMd: string): ExpectedTaxonomy {
   // 첫 표의 첫 칼럼 (Store 포트) — 9 PascalCase 이름
   const storeNames = extractTextsFromMarkdownTable(adapterParityMd, 0);
-  const storeKindIds = storeNames.map((name) =>
-    pascalToKebabStripSuffix(name, "Store"),
-  );
+  const storeKindIds = storeNames.map((name) => pascalToKebabStripSuffix(name, 'Store'));
 
   return {
-    taxonomy: "ingest-coords",
+    taxonomy: 'ingest-coords',
     axes: {
-      "store-kind": {
+      'store-kind': {
         entries: storeKindIds.map((id) => ({ id })),
       },
     },

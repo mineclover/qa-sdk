@@ -1,8 +1,7 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { AddressStateStore, AddressStateCacheRecord } from "../invalid-range-store.js";
-
+import type { AddressStateStore, AddressStateCacheRecord } from '../invalid-range-store.js';
 
 export class InMemoryAddressStateStore implements AddressStateStore {
   private readonly _store = new Map<string, AddressStateCacheRecord>();

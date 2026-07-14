@@ -6,17 +6,17 @@ import {
   type ExecutionContext,
   Injectable,
   UnauthorizedException,
-} from "@nestjs/common";
-import type { CurrentUserContext } from "./current-user.decorator.js";
+} from '@nestjs/common';
+import type { CurrentUserContext } from './current-user.decorator.js';
 
-const HEADER_USER = "x-auth-user-id";
-const HEADER_MASK = "x-auth-bitmap-mask";
-const HEADER_VERSION = "x-auth-bitmap-v";
-const HEADER_DEPARTMENT = "x-auth-department-id";
-const HEADER_PRIMARY_ROLE = "x-auth-primary-role-id";
-const HEADER_ROLE_IDS = "x-auth-role-ids";
-const HEADER_ROLE_NAMES = "x-auth-role-names";
-const HEADER_ROLE_ASSIGNMENTS = "x-auth-role-assignments";
+const HEADER_USER = 'x-auth-user-id';
+const HEADER_MASK = 'x-auth-bitmap-mask';
+const HEADER_VERSION = 'x-auth-bitmap-v';
+const HEADER_DEPARTMENT = 'x-auth-department-id';
+const HEADER_PRIMARY_ROLE = 'x-auth-primary-role-id';
+const HEADER_ROLE_IDS = 'x-auth-role-ids';
+const HEADER_ROLE_NAMES = 'x-auth-role-names';
+const HEADER_ROLE_ASSIGNMENTS = 'x-auth-role-assignments';
 
 @Injectable()
 export class CurrentUserGuard implements CanActivate {
@@ -35,17 +35,17 @@ export class CurrentUserGuard implements CanActivate {
     const roleAssignments = this.roleAssignmentsHeader(req.headers, HEADER_ROLE_ASSIGNMENTS);
 
     if (!userId || !maskBase64 || !version) {
-      throw new UnauthorizedException({ error: "missing_auth_headers" });
+      throw new UnauthorizedException({ error: 'missing_auth_headers' });
     }
 
     let mask: Uint8Array;
     try {
-      mask = Uint8Array.from(Buffer.from(maskBase64, "base64"));
+      mask = Uint8Array.from(Buffer.from(maskBase64, 'base64'));
     } catch {
-      throw new UnauthorizedException({ error: "invalid_bitmap_mask" });
+      throw new UnauthorizedException({ error: 'invalid_bitmap_mask' });
     }
     if (mask.byteLength === 0) {
-      throw new UnauthorizedException({ error: "empty_bitmap_mask" });
+      throw new UnauthorizedException({ error: 'empty_bitmap_mask' });
     }
 
     req.currentUser = {
@@ -67,7 +67,7 @@ export class CurrentUserGuard implements CanActivate {
   ): string | null {
     const v = headers[name];
     if (Array.isArray(v)) return v[0] ?? null;
-    return typeof v === "string" ? v : null;
+    return typeof v === 'string' ? v : null;
   }
 
   private csvHeader(
@@ -76,7 +76,10 @@ export class CurrentUserGuard implements CanActivate {
   ): string[] {
     const value = this.header(headers, name);
     if (!value) return [];
-    return value.split(",").map((item) => item.trim()).filter(Boolean);
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 
   private roleAssignmentsHeader(
@@ -86,19 +89,24 @@ export class CurrentUserGuard implements CanActivate {
     const value = this.header(headers, name);
     if (!value) return [];
     try {
-      const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+      const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
       return Array.isArray(parsed)
         ? parsed.flatMap((item) =>
             item &&
-            typeof item.roleId === "string" &&
-            typeof item.roleName === "string" &&
-            typeof item.scopeType === "string"
-              ? [{
-                  roleId: item.roleId,
-                  roleName: item.roleName,
-                  scopeType: item.scopeType,
-                  scopeId: typeof item.scopeId === "string" || item.scopeId === null ? item.scopeId : null,
-                }]
+            typeof item.roleId === 'string' &&
+            typeof item.roleName === 'string' &&
+            typeof item.scopeType === 'string'
+              ? [
+                  {
+                    roleId: item.roleId,
+                    roleName: item.roleName,
+                    scopeType: item.scopeType,
+                    scopeId:
+                      typeof item.scopeId === 'string' || item.scopeId === null
+                        ? item.scopeId
+                        : null,
+                  },
+                ]
               : [],
           )
         : [];

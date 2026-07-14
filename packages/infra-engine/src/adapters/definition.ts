@@ -31,7 +31,7 @@ export interface ServiceTestInfo {
   /** 0-100 범위의 통과율 */
   passRate: number;
   /** "pass": 전체 통과, "fail": 실패 존재, "no-data": 테스트 데이터 없음 */
-  healthy: "pass" | "fail" | "no-data";
+  healthy: 'pass' | 'fail' | 'no-data';
 }
 
 export interface ServicePrefixInfo {
@@ -73,8 +73,8 @@ export function createDefinitionAdapter(baseUrl: string): DefinitionAdapter {
       const byLifecycle: Record<string, number> = {};
       const byLayer: Record<string, number> = {};
       for (const doc of data.docs) {
-        const lc = (doc.lifecycle as string) ?? "unknown";
-        const ly = (doc.layer as string) ?? "unknown";
+        const lc = (doc.lifecycle as string) ?? 'unknown';
+        const ly = (doc.layer as string) ?? 'unknown';
         byLifecycle[lc] = (byLifecycle[lc] ?? 0) + 1;
         byLayer[ly] = (byLayer[ly] ?? 0) + 1;
       }
@@ -86,9 +86,9 @@ export function createDefinitionAdapter(baseUrl: string): DefinitionAdapter {
         docs: data.docs.map((d: any) => ({
           docId: d.docId as string,
           title: (d.title as string) ?? (d.docId as string),
-          lifecycle: (d.lifecycle as string) ?? "unknown",
-          layer: (d.layer as string) ?? "unknown",
-          scope: (d.scope as string) ?? "unknown",
+          lifecycle: (d.lifecycle as string) ?? 'unknown',
+          layer: (d.layer as string) ?? 'unknown',
+          scope: (d.scope as string) ?? 'unknown',
         })),
       };
     },
@@ -118,8 +118,8 @@ export function createDefinitionAdapter(baseUrl: string): DefinitionAdapter {
       }
 
       const passRate = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
-      const healthy: "pass" | "fail" | "no-data" =
-        totalTests === 0 ? "no-data" : totalFailed === 0 ? "pass" : "fail";
+      const healthy: 'pass' | 'fail' | 'no-data' =
+        totalTests === 0 ? 'no-data' : totalFailed === 0 ? 'pass' : 'fail';
       return {
         serviceId,
         totalTests,
@@ -134,9 +134,9 @@ export function createDefinitionAdapter(baseUrl: string): DefinitionAdapter {
         return {
           prefixId: data.prefixId as string,
           name: (data.name as string) ?? prefixId,
-          category: (data.category as string) ?? "unknown",
+          category: (data.category as string) ?? 'unknown',
           labels: (data.labels as string[]) ?? [],
-          description: (data.description as string) ?? "",
+          description: (data.description as string) ?? '',
         };
       } catch {
         return null;

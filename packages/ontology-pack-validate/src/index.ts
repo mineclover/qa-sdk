@@ -1,22 +1,22 @@
-import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
-import type { OperationalOntologyPack } from "operational-ontology/pack";
+import type { OperationalOntologyPack } from 'operational-ontology/pack';
 
 import {
   collectDocsReadiness,
   emptyDocsReadiness,
   type OntologyPackDocsFamilyReader,
-} from "./internal/docs-readiness.js";
-import { collectFileReadiness, emptyFileReadiness } from "./internal/file-readiness.js";
-import { loadOntologyPack } from "./internal/load-pack.js";
-import { validateOntologyPackRuntime } from "./internal/runtime-validation.js";
+} from './internal/docs-readiness.js';
+import { collectFileReadiness, emptyFileReadiness } from './internal/file-readiness.js';
+import { loadOntologyPack } from './internal/load-pack.js';
+import { validateOntologyPackRuntime } from './internal/runtime-validation.js';
 import type {
   OntologyPackValidateIssue,
   OntologyPackValidateReadiness,
   OntologyPackValidateResolution,
   OntologyPackValidateRuntimeSummary,
-} from "./internal/types.js";
+} from './internal/types.js';
 export type {
   OntologyPackValidateIssue,
   OntologyPackValidateIssueLevel,
@@ -28,14 +28,14 @@ export type {
   OntologyPackValidateResolution,
   OntologyPackValidateRuntimeSummary,
   OntologyPackValidateSourceMapReadiness,
-} from "./internal/types.js";
+} from './internal/types.js';
 
 // ─── Known pack registry ────────────────────────────────
 export {
   isKnownOntologyPackId,
   KNOWN_ONTOLOGY_PACK_IDS,
   resolveKnownOntologyPack,
-} from "./known-ontology-packs.js";
+} from './known-ontology-packs.js';
 
 export type {
   KnownOntologyPackId,
@@ -43,11 +43,11 @@ export type {
   ResolveKnownOntologyPackResult,
   UnknownOntologyPackError,
   UnknownOntologyPackResolution,
-} from "./known-ontology-packs.js";
+} from './known-ontology-packs.js';
 
 // ─── Docs-family reader injection point ─────────────────
-export type { OntologyPackDocsFamilyReader } from "./internal/docs-readiness.js";
-export { filterMatchingDocsForPack } from "./internal/docs-readiness.js";
+export type { OntologyPackDocsFamilyReader } from './internal/docs-readiness.js';
+export { filterMatchingDocsForPack } from './internal/docs-readiness.js';
 
 export interface OntologyPackValidateIdentitySummary {
   readonly packId: string | null;
@@ -119,9 +119,7 @@ export async function validateOntologyPackFromRef(
   const runtimeValidation = pack
     ? validateOntologyPackRuntime(pack)
     : { issues: [], summary: { valid: true, issueCount: 0 } };
-  const fileReadiness = pack
-    ? await collectFileReadiness({ pack, rootDir })
-    : emptyFileReadiness();
+  const fileReadiness = pack ? await collectFileReadiness({ pack, rootDir }) : emptyFileReadiness();
   const docsReadiness = pack
     ? await collectDocsReadiness({
         packId: pack.packId,
@@ -132,15 +130,19 @@ export async function validateOntologyPackFromRef(
     : emptyDocsReadiness(null);
   // readDocsFamily 미주입 시 docs status가 skipped로 조용히 넘어가지 않도록
   // warning surface (silent skip 방지). 의도적 skip이면 caller가 warning을 무시.
-  const readerNotInjectedIssues: OntologyPackValidateIssue[] = (pack && !input.readDocsFamily)
-    ? [{
-        level: "warning",
-        source: "docs",
-        path: "readiness.docs",
-        code: "docs-reader-not-injected",
-        message: "Docs readiness skipped: no readDocsFamily reader injected. Inject a reader to include docs family coverage.",
-      }]
-    : [];
+  const readerNotInjectedIssues: OntologyPackValidateIssue[] =
+    pack && !input.readDocsFamily
+      ? [
+          {
+            level: 'warning',
+            source: 'docs',
+            path: 'readiness.docs',
+            code: 'docs-reader-not-injected',
+            message:
+              'Docs readiness skipped: no readDocsFamily reader injected. Inject a reader to include docs family coverage.',
+          },
+        ]
+      : [];
   const issues = [
     ...loaded.issues,
     ...runtimeValidation.issues,
@@ -150,7 +152,7 @@ export async function validateOntologyPackFromRef(
   ];
 
   return {
-    valid: issues.every((issue) => issue.level !== "error"),
+    valid: issues.every((issue) => issue.level !== 'error'),
     packRef: input.packRef,
     packId: pack?.packId ?? null,
     resolution: loaded.resolution,
@@ -172,7 +174,7 @@ function summarizeIdentity(
   pack: OperationalOntologyPack | null,
 ): OntologyPackValidateIdentitySummary {
   return {
-    packId: typeof pack?.packId === "string" ? pack.packId : null,
+    packId: typeof pack?.packId === 'string' ? pack.packId : null,
     schemaPresent: Boolean(pack?.schema),
     metadataKeys: Object.keys(pack?.metadata ?? {}).toSorted(),
   };
@@ -185,7 +187,8 @@ function summarizeComponentSchema(
   const taxonomies = pack?.schema?.taxonomies?.map((taxonomy) => taxonomy.id).toSorted() ?? [];
   const relationCategories =
     pack?.schema?.relationCategories?.map((category) => category.category).toSorted() ?? [];
-  const traversals = pack?.schema?.traversals?.map((traversal) => traversal.purpose).toSorted() ?? [];
+  const traversals =
+    pack?.schema?.traversals?.map((traversal) => traversal.purpose).toSorted() ?? [];
 
   return {
     axes,
@@ -204,18 +207,20 @@ function summarizeComponentSchema(
 function summarizeSystemBindings(
   pack: OperationalOntologyPack | null,
 ): OntologyPackValidateSystemBindingSummary {
-  const blueprints = (pack?.blueprints ?? []).map((blueprint) => ({
-    blueprintId: blueprint.blueprintId,
-    coordinateRef: blueprint.coordinateRef,
-    unitKind: blueprint.unitKind,
-    requiredSchemas: [...(blueprint.requiredSchemas ?? [])].toSorted(),
-    implementationRefs: (blueprint.implementationBinding?.implementationRefs ?? [])
-      .map((ref) => ref.ref)
-      .toSorted(),
-    verificationRefs: (blueprint.verificationBinding?.verificationRefs ?? [])
-      .map((ref) => ref.ref)
-      .toSorted(),
-  })).toSorted((left, right) => left.blueprintId.localeCompare(right.blueprintId));
+  const blueprints = (pack?.blueprints ?? [])
+    .map((blueprint) => ({
+      blueprintId: blueprint.blueprintId,
+      coordinateRef: blueprint.coordinateRef,
+      unitKind: blueprint.unitKind,
+      requiredSchemas: [...(blueprint.requiredSchemas ?? [])].toSorted(),
+      implementationRefs: (blueprint.implementationBinding?.implementationRefs ?? [])
+        .map((ref) => ref.ref)
+        .toSorted(),
+      verificationRefs: (blueprint.verificationBinding?.verificationRefs ?? [])
+        .map((ref) => ref.ref)
+        .toSorted(),
+    }))
+    .toSorted((left, right) => left.blueprintId.localeCompare(right.blueprintId));
   return {
     blueprints,
     counts: {
@@ -236,7 +241,7 @@ function findWorkspaceRoot(startDir: string): string {
   let current = resolve(startDir);
 
   while (true) {
-    if (existsSync(join(current, "pnpm-workspace.yaml")) && existsSync(join(current, "docs"))) {
+    if (existsSync(join(current, 'pnpm-workspace.yaml')) && existsSync(join(current, 'docs'))) {
       return current;
     }
     const parent = dirname(current);

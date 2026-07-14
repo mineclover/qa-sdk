@@ -11,20 +11,23 @@ import type {
   VerdictInsert,
   VerdictReport,
   VerdictStore,
-} from "@qa-sdk/core";
-import { newDlqId, newVerdictId, now } from "@qa-sdk/core";
-import { compileSpec } from "../spec-compiler/compile.js";
-import { evaluateConstraint } from "../matching/constraint-evaluator.js";
-import { matchViaPathMatcher } from "../matching/path-matcher-adapter.js";
-import { computeVerdict } from "../verdict/compute.js";
+} from '@qa-sdk/core';
+import { newDlqId, newVerdictId, now } from '@qa-sdk/core';
+import { compileSpec } from '../spec-compiler/compile.js';
+import { evaluateConstraint } from '../matching/constraint-evaluator.js';
+import { matchViaPathMatcher } from '../matching/path-matcher-adapter.js';
+import { computeVerdict } from '../verdict/compute.js';
 
 export interface ComputePendingVerdictsDeps {
-  traceStore: Pick<TraceStore, "findById">;
-  sessionStore: Pick<SessionStore, "findById">;
-  graphStore: Pick<GraphStore, "findByTraceId">;
-  scenarioSpecStore: Pick<ScenarioSpecStore, "findById">;
-  verdictStore: Pick<VerdictStore, "insert" | "findByScenarioAndTrace" | "removeByScenarioAndTrace">;
-  dlqStore: Pick<DlqStore, "insert">;
+  traceStore: Pick<TraceStore, 'findById'>;
+  sessionStore: Pick<SessionStore, 'findById'>;
+  graphStore: Pick<GraphStore, 'findByTraceId'>;
+  scenarioSpecStore: Pick<ScenarioSpecStore, 'findById'>;
+  verdictStore: Pick<
+    VerdictStore,
+    'insert' | 'findByScenarioAndTrace' | 'removeByScenarioAndTrace'
+  >;
+  dlqStore: Pick<DlqStore, 'insert'>;
 }
 
 export interface ComputePendingVerdictsOptions {
@@ -62,7 +65,7 @@ export async function computePendingVerdicts(
     try {
       const result = await computeTraceVerdict(deps, traceId, options);
 
-      if (result.status === "skipped") {
+      if (result.status === 'skipped') {
         skipped.push(traceId);
         continue;
       }
@@ -74,7 +77,7 @@ export async function computePendingVerdicts(
         await deps.dlqStore.insert({
           id: newDlqId(),
           traceId,
-          phase: "verdict",
+          phase: 'verdict',
           errorMessage: toErrorMessage(error),
         });
       }
@@ -86,34 +89,30 @@ export async function computePendingVerdicts(
 }
 
 export type ComputeTraceVerdictResult =
-  | { status: "computed"; traceId: string; scenarioId: string }
-  | { status: "skipped"; traceId: string };
+  | { status: 'computed'; traceId: string; scenarioId: string }
+  | { status: 'skipped'; traceId: string };
 
 export async function computeTraceVerdict(
   deps: Pick<
     ComputePendingVerdictsDeps,
-    | "traceStore"
-    | "sessionStore"
-    | "graphStore"
-    | "scenarioSpecStore"
-    | "verdictStore"
+    'traceStore' | 'sessionStore' | 'graphStore' | 'scenarioSpecStore' | 'verdictStore'
   >,
   traceId: string,
-  options: Pick<ComputePendingVerdictsOptions, "force"> = {},
+  options: Pick<ComputePendingVerdictsOptions, 'force'> = {},
 ): Promise<ComputeTraceVerdictResult> {
   const trace = await deps.traceStore.findById(traceId);
   if (!trace?.sessionId) {
-    return { status: "skipped", traceId };
+    return { status: 'skipped', traceId };
   }
 
   const session = await deps.sessionStore.findById(trace.sessionId);
   if (!session?.scenarioId) {
-    return { status: "skipped", traceId };
+    return { status: 'skipped', traceId };
   }
 
   const scenarioSpec = await deps.scenarioSpecStore.findById(session.scenarioId);
   if (!scenarioSpec) {
-    return { status: "skipped", traceId };
+    return { status: 'skipped', traceId };
   }
 
   const existing = await deps.verdictStore.findByScenarioAndTrace(
@@ -122,19 +121,16 @@ export async function computeTraceVerdict(
   );
 
   if (existing && !options.force) {
-    return { status: "skipped", traceId };
+    return { status: 'skipped', traceId };
   }
 
   if (existing && options.force) {
-    await deps.verdictStore.removeByScenarioAndTrace(
-      scenarioSpec.scenario_id,
-      traceId,
-    );
+    await deps.verdictStore.removeByScenarioAndTrace(scenarioSpec.scenario_id, traceId);
   }
 
   const graph = await deps.graphStore.findByTraceId(traceId);
   if (!graph) {
-    return { status: "skipped", traceId };
+    return { status: 'skipped', traceId };
   }
 
   const specGraph = compileSpec(scenarioSpec);
@@ -156,13 +152,13 @@ export async function computeTraceVerdict(
         scenario_id: scenarioSpec.scenario_id,
         trace_id: traceId,
         qa_session_id: session.sessionId,
-        overall_verdict: "skipped",
+        overall_verdict: 'skipped',
         step_matches: [],
         missing_steps: specGraph.nodes.map((n) => n.step_id),
         unexpected_nodes: [],
         latency_violations: [],
         ordering_violations: [],
-        summary: "verdict=skipped, entry_conditions not met",
+        summary: 'verdict=skipped, entry_conditions not met',
         computed_at: now(),
       };
 
@@ -171,11 +167,11 @@ export async function computeTraceVerdict(
         scenarioId: scenarioSpec.scenario_id,
         traceId,
         qaSessionId: session.sessionId,
-        overallVerdict: "skipped",
+        overallVerdict: 'skipped',
         report: skippedReport,
       });
 
-      return { status: "computed", traceId, scenarioId: scenarioSpec.scenario_id };
+      return { status: 'computed', traceId, scenarioId: scenarioSpec.scenario_id };
     }
   }
 
@@ -194,7 +190,7 @@ export async function computeTraceVerdict(
   await deps.verdictStore.insert(verdictInsert);
 
   return {
-    status: "computed",
+    status: 'computed',
     traceId,
     scenarioId: scenarioSpec.scenario_id,
   };

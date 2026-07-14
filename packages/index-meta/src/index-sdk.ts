@@ -43,10 +43,16 @@
  * ```
  */
 
-import { MetaRegistry, computeActiveIndices, snapshotCapacity } from "./meta-registry.js";
-import { MetaResolver } from "./meta-resolver.js";
-import type { MetaRegistryInput, DecodeMap, EntityId, VersionedValue, DimActiveSet } from "./types.js";
-import { DimNotFoundError } from "./errors.js";
+import { MetaRegistry, computeActiveIndices, snapshotCapacity } from './meta-registry.js';
+import { MetaResolver } from './meta-resolver.js';
+import type {
+  MetaRegistryInput,
+  DecodeMap,
+  EntityId,
+  VersionedValue,
+  DimActiveSet,
+} from './types.js';
+import { DimNotFoundError } from './errors.js';
 
 // ── 예약 토큰 ────────────────────────────────────────────────────────────────
 
@@ -62,7 +68,7 @@ import { DimNotFoundError } from "./errors.js";
  * | `"~"` | other — 정의된 카테고리에 해당하지 않음 |
  * | `"?"` | unknown — 존재하지만 식별 불가 |
  */
-export const RESERVED_TOKENS: ReadonlySet<string> = new Set(["_", "~", "?"]);
+export const RESERVED_TOKENS: ReadonlySet<string> = new Set(['_', '~', '?']);
 
 /**
  * `createIndexSDK` 옵션.
@@ -173,7 +179,7 @@ export interface DimEntryView {
   /** 해당 position의 entity 값. empty slot이면 null */
   value: EntityId | null;
   /** normal = 정규 도메인 값, reserved = 슬롯 마커, empty = headroom 빈 슬롯 */
-  kind: "normal" | "reserved" | "empty";
+  kind: 'normal' | 'reserved' | 'empty';
 }
 
 /**
@@ -275,7 +281,7 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
           const e = dimEntriesMap.get(dimId);
           if (!e) {
             throw new DimNotFoundError(
-              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
+              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`,
             );
           }
           return e;
@@ -288,7 +294,7 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
           const e = dimEntriesMap.get(dimId);
           if (!e) {
             throw new DimNotFoundError(
-              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
+              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`,
             );
           }
 
@@ -302,7 +308,7 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
           const info = dimCapacityMap.get(dimId);
           if (!info) {
             throw new DimNotFoundError(
-              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
+              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`,
             );
           }
           return info;
@@ -312,7 +318,7 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
           const entries = dimEntriesMap.get(dimId);
           if (!entries) {
             throw new DimNotFoundError(
-              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`
+              `Dim "${dimId}" not found in index "${indexId}/${versionId}"`,
             );
           }
           // eslint-disable-next-line typescript/no-non-null-assertion -- dimEntriesMap 존재 확인 후 접근, 동일 루프에서 함께 구축됨
@@ -324,17 +330,17 @@ export function createIndexSDK(input: MetaRegistryInput, options?: IndexSDKOptio
           for (let pos = 1; pos <= capInfo.capacity; pos++) {
             if (pos <= entries.length) {
               const entry = entries[pos - 1];
-              const isReserved = typeof entry === "string" && reservedTokens.has(entry);
+              const isReserved = typeof entry === 'string' && reservedTokens.has(entry);
               positions.push({
                 position: pos,
                 value: entry,
-                kind: isReserved ? "reserved" : "normal",
+                kind: isReserved ? 'reserved' : 'normal',
               });
             } else {
               positions.push({
                 position: pos,
                 value: null,
-                kind: "empty",
+                kind: 'empty',
               });
             }
           }
@@ -398,9 +404,7 @@ function buildConstants(
   activeSet: DimActiveSet | undefined,
   tokens: ReadonlySet<string>,
 ): Readonly<Record<string, EntityId>> {
-  const activeIndices = activeSet
-    ? new Set(activeSet.activeIndices)
-    : null;
+  const activeIndices = activeSet ? new Set(activeSet.activeIndices) : null;
 
   const result: Record<string, EntityId> = {};
   for (let i = 0; i < entries.length; i++) {
@@ -408,7 +412,7 @@ function buildConstants(
     const oneBasedIndex = i + 1;
 
     // 예약 토큰 제외
-    if (typeof entry === "string" && tokens.has(entry)) continue;
+    if (typeof entry === 'string' && tokens.has(entry)) continue;
 
     // inactive 항목 제외
     if (activeIndices && !activeIndices.has(oneBasedIndex)) continue;

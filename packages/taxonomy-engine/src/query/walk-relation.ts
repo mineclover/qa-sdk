@@ -1,4 +1,4 @@
-import type { TaxonomyIR } from "../schema/ir.js";
+import type { TaxonomyIR } from '../schema/ir.js';
 
 /**
  * walkRelation — relation의 rules를 그래프로 보고, startId에서 도달 가능한 entry id를 순회.

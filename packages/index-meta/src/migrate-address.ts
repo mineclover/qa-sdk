@@ -21,8 +21,8 @@
  * 이미 최신 버전이면 변환 없이 원본 반환.
  */
 
-import type { MetaRegistry } from "./meta-registry.js";
-import type { EntityId, VersionedValue } from "./types.js";
+import type { MetaRegistry } from './meta-registry.js';
+import type { EntityId, VersionedValue } from './types.js';
 
 export interface MigrateResult {
   /** 변환된 주소 문자열 */
@@ -84,7 +84,7 @@ export function migrateValue(
   registry: MetaRegistry,
   vv: VersionedValue,
   targetVersion: string,
-): Omit<MigrateResult, "serialized"> {
+): Omit<MigrateResult, 'serialized'> {
   if (vv.versionId === targetVersion) {
     return { vv, migrated: false };
   }

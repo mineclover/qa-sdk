@@ -14,15 +14,15 @@ export class DensityDomainException extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "DensityDomainException";
+    this.name = 'DensityDomainException';
   }
 }
 
 /** prefix catalog 미존재 (HTTP 404). */
 export class PrefixNotFoundException extends DensityDomainException {
   constructor(public readonly prefix: string) {
-    super("PREFIX_NOT_FOUND", `prefix not found: ${prefix}`);
-    this.name = "NotFoundError";
+    super('PREFIX_NOT_FOUND', `prefix not found: ${prefix}`);
+    this.name = 'NotFoundError';
   }
 }
 
@@ -34,9 +34,9 @@ export class PrefixVersionMismatchException extends DensityDomainException {
     public readonly catalog: string,
   ) {
     super(
-      "PREFIX_VERSION_MISMATCH",
+      'PREFIX_VERSION_MISMATCH',
       `prefix version mismatch: requested ${requested}, catalog has ${catalog}`,
     );
-    this.name = "ConflictError";
+    this.name = 'ConflictError';
   }
 }

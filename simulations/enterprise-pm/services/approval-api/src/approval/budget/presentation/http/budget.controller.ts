@@ -12,22 +12,23 @@ import {
   Query,
   UseFilters,
   UseGuards,
-} from "@nestjs/common";
-import { z } from "zod";
-import { BudgetExceptionFilter } from "./budget-exception.filter.js";
+} from '@nestjs/common';
+import { z } from 'zod';
+import { BudgetExceptionFilter } from './budget-exception.filter.js';
 
-import { BudgetUseCase } from "../../application/use-cases/budget.use-case.js";
-import {
-  BudgetReadModelQuery,
-} from "../../application/queries/budget-read-model.query.js";
+import { BudgetUseCase } from '../../application/use-cases/budget.use-case.js';
+import { BudgetReadModelQuery } from '../../application/queries/budget-read-model.query.js';
 import {
   BudgetAccessQueryPort,
   type BudgetApiId,
-} from "../../application/ports/access-check.port.js";
-import { BudgetNotFoundException } from "../../domain/budget.exceptions.js";
+} from '../../application/ports/access-check.port.js';
+import { BudgetNotFoundException } from '../../domain/budget.exceptions.js';
 
-import { CurrentUser, type CurrentUserContext } from "../../../../auth-deps/current-user.decorator.js";
-import { CurrentUserGuard } from "../../../../auth-deps/current-user.guard.js";
+import {
+  CurrentUser,
+  type CurrentUserContext,
+} from '../../../../auth-deps/current-user.decorator.js';
+import { CurrentUserGuard } from '../../../../auth-deps/current-user.guard.js';
 
 const createSchema = z.object({
   projectId: z.string().min(1),
@@ -37,7 +38,7 @@ const createSchema = z.object({
 });
 
 const decideSchema = z.object({
-  decision: z.enum(["approve", "reject"]),
+  decision: z.enum(['approve', 'reject']),
   comment: z.string().optional(),
 });
 
@@ -48,7 +49,7 @@ const decideSchema = z.object({
  * - 도메인 예외는 DomainExceptionFilter 가 표준 HTTP 응답으로 변환.
  * - access check 는 BudgetAccessQueryPort (DI) 를 통해 auth bounded context 에 위임.
  */
-@Controller("approvals/requests")
+@Controller('approvals/requests')
 @UseFilters(BudgetExceptionFilter)
 @UseGuards(CurrentUserGuard)
 export class BudgetController {
@@ -83,7 +84,7 @@ export class BudgetController {
     });
     if (!r.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: r.denyReason,
         rootSpanId: r.rootSpanId,
         firstFailureSpanId: r.firstFailureSpanId,
@@ -96,7 +97,7 @@ export class BudgetController {
   async create(@Body() body: unknown, @CurrentUser() user: CurrentUserContext) {
     const parsed = createSchema.parse(body);
     const pre = await this.checkOrThrow({
-      apiId: "budget.create",
+      apiId: 'budget.create',
       user,
       requestId: null,
       projectDepartmentId: parsed.projectDepartmentId,
@@ -113,12 +114,12 @@ export class BudgetController {
     return { ...detail, rootSpanId: pre.rootSpanId };
   }
 
-  @Get(":id")
-  async get(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
+  @Get(':id')
+  async get(@Param('id') id: string, @CurrentUser() user: CurrentUserContext) {
     const r = await this.readModel.findDetail(id);
     if (!r) throw new BudgetNotFoundException(id);
     const check = await this.checkOrThrow({
-      apiId: "budget.read",
+      apiId: 'budget.read',
       user,
       requestId: id,
       projectDepartmentId: r.projectDepartmentId,
@@ -128,21 +129,18 @@ export class BudgetController {
   }
 
   @Get()
-  async list(
-    @Query("projectId") projectId: string,
-    @Query("requesterId") requesterId: string,
-  ) {
+  async list(@Query('projectId') projectId: string, @Query('requesterId') requesterId: string) {
     if (projectId) return this.readModel.listByProject(projectId);
     if (requesterId) return this.readModel.listByRequester(requesterId);
-    throw new BudgetNotFoundException("projectId or requesterId query required");
+    throw new BudgetNotFoundException('projectId or requesterId query required');
   }
 
-  @Get(":id/steps")
-  async steps(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
+  @Get(':id/steps')
+  async steps(@Param('id') id: string, @CurrentUser() user: CurrentUserContext) {
     const r = await this.readModel.findDetail(id);
     if (!r) throw new BudgetNotFoundException(id);
     await this.checkOrThrow({
-      apiId: "budget.read",
+      apiId: 'budget.read',
       user,
       requestId: id,
       projectDepartmentId: r.projectDepartmentId,
@@ -151,12 +149,12 @@ export class BudgetController {
     return this.readModel.listSteps(id);
   }
 
-  @Post(":id/submit")
-  async submit(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
+  @Post(':id/submit')
+  async submit(@Param('id') id: string, @CurrentUser() user: CurrentUserContext) {
     const r = await this.readModel.findDetail(id);
     if (!r) throw new BudgetNotFoundException(id);
     const check = await this.checkOrThrow({
-      apiId: "budget.submit",
+      apiId: 'budget.submit',
       user,
       requestId: id,
       projectDepartmentId: r.projectDepartmentId,
@@ -167,12 +165,12 @@ export class BudgetController {
     return { ...detail, rootSpanId: check.rootSpanId };
   }
 
-  @Post(":id/start-review")
-  async startReview(@Param("id") id: string, @CurrentUser() user: CurrentUserContext) {
+  @Post(':id/start-review')
+  async startReview(@Param('id') id: string, @CurrentUser() user: CurrentUserContext) {
     const r = await this.readModel.findDetail(id);
     if (!r) throw new BudgetNotFoundException(id);
     const check = await this.checkOrThrow({
-      apiId: "budget.start-review",
+      apiId: 'budget.start-review',
       user,
       requestId: id,
       projectDepartmentId: r.projectDepartmentId,
@@ -183,17 +181,16 @@ export class BudgetController {
     return { ...detail, rootSpanId: check.rootSpanId };
   }
 
-  @Post(":id/decisions")
+  @Post(':id/decisions')
   async decide(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @Body() body: unknown,
     @CurrentUser() user: CurrentUserContext,
   ) {
     const parsed = decideSchema.parse(body);
     const r = await this.readModel.findDetail(id);
     if (!r) throw new BudgetNotFoundException(id);
-    const apiId: BudgetApiId =
-      parsed.decision === "approve" ? "budget.approve" : "budget.reject";
+    const apiId: BudgetApiId = parsed.decision === 'approve' ? 'budget.approve' : 'budget.reject';
     const check = await this.checkOrThrow({
       apiId,
       user,
@@ -204,7 +201,7 @@ export class BudgetController {
     const updated = await this.useCase.decide({
       id,
       approverId: user.userId,
-      decision: parsed.decision === "approve" ? "approved" : "rejected",
+      decision: parsed.decision === 'approve' ? 'approved' : 'rejected',
       comment: parsed.comment,
     });
     const detail = await this.readModel.findDetail(updated.id);

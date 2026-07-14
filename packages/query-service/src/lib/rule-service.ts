@@ -1,20 +1,17 @@
 // @def.boundary query-api-spec
 // @def.doc query-api-spec
 
-import { randomUUID } from "node:crypto";
-import { isDeepStrictEqual } from "node:util";
+import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import {
   InMemoryPrefixRegistry,
   detectPatternConflicts,
   type ConflictReport,
   type PrefixRegistry,
-} from "index-meta-workers";
-import type { PolicyRulePayload } from "../schemas/policy-rule.js";
-import type {
-  PolicyRuleStore,
-  StoredPolicyRule,
-} from "../stores/policy-rule-store.js";
-import { AppError } from "./errors.js";
+} from 'index-meta-workers';
+import type { PolicyRulePayload } from '../schemas/policy-rule.js';
+import type { PolicyRuleStore, StoredPolicyRule } from '../stores/policy-rule-store.js';
+import { AppError } from './errors.js';
 
 export interface RuleServiceDeps {
   policyRuleStore: PolicyRuleStore<unknown>;
@@ -42,10 +39,7 @@ export class RuleService {
     return this.policyRuleStore.findById(id);
   }
 
-  async createRule(
-    payload: PolicyRulePayload,
-    force = false,
-  ): Promise<RuleMutationResult> {
+  async createRule(payload: PolicyRulePayload, force = false): Promise<RuleMutationResult> {
     const timestamp = this.now().toISOString();
     const rule: StoredPolicyRule<unknown> = {
       id: randomUUID(),
@@ -61,7 +55,7 @@ export class RuleService {
 
     const conflicts = await this.validateConflicts(rule);
     if (conflicts.length > 0 && !force) {
-      throw new AppError("CONFLICT", "rule conflicts detected", 409, { conflicts });
+      throw new AppError('CONFLICT', 'rule conflicts detected', 409, { conflicts });
     }
 
     return {
@@ -90,7 +84,7 @@ export class RuleService {
 
     const conflicts = await this.validateConflicts(rule, id);
     if (conflicts.length > 0 && !force) {
-      throw new AppError("CONFLICT", "rule conflicts detected", 409, { conflicts });
+      throw new AppError('CONFLICT', 'rule conflicts detected', 409, { conflicts });
     }
 
     return {
@@ -107,14 +101,11 @@ export class RuleService {
     candidate: StoredPolicyRule<unknown>,
     ignoredId?: string,
   ): Promise<ConflictReport<unknown>[]> {
-    const shape = await this.prefixRegistry.getShape(
-      candidate.indexId,
-      candidate.versionId,
-    );
+    const shape = await this.prefixRegistry.getShape(candidate.indexId, candidate.versionId);
 
     if (!shape) {
       throw new AppError(
-        "NOT_FOUND",
+        'NOT_FOUND',
         `index shape not found: "${candidate.indexId}/${candidate.versionId}"`,
         404,
       );
@@ -122,7 +113,7 @@ export class RuleService {
 
     if (candidate.pattern.length !== shape.length) {
       throw new AppError(
-        "INVALID_INPUT",
+        'INVALID_INPUT',
         `pattern length ${candidate.pattern.length} does not match shape length ${shape.length}`,
         400,
       );
@@ -134,11 +125,7 @@ export class RuleService {
     );
     const comparableRules = existingRules.filter((rule) => rule.id !== ignoredId);
 
-    return detectPatternConflicts(
-      [...comparableRules, candidate],
-      shape,
-      isDeepStrictEqual,
-    );
+    return detectPatternConflicts([...comparableRules, candidate], shape, isDeepStrictEqual);
   }
 }
 

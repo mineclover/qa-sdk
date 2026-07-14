@@ -183,10 +183,7 @@ function evaluateTaxonomyMembership(
       );
     }
 
-    if (
-      constraint.severity &&
-      !hasValue(taxonomy.constraintSeverities, constraint.severity)
-    ) {
+    if (constraint.severity && !hasValue(taxonomy.constraintSeverities, constraint.severity)) {
       verdicts.push(
         createVerdict(
           'constraint-severity-unknown',
@@ -327,9 +324,7 @@ function relationCategoryMap(
   );
 }
 
-function refsByKind<TKind extends string>(
-  refs: readonly { kind: TKind }[],
-): Set<string> {
+function refsByKind<TKind extends string>(refs: readonly { kind: TKind }[]): Set<string> {
   return new Set(refs.map((ref) => ref.kind));
 }
 

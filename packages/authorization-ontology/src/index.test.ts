@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   auditAuthorizationGraph,
@@ -42,50 +42,52 @@ import {
   validateCerbosDerivedRolesLike,
   validateAuthorizationOntologyPack,
   validateCerbosResourcePolicyLike,
-} from "./index.js";
+} from './index.js';
 
-describe("authorization-ontology", () => {
-  it("declares a valid operational ontology pack", () => {
+describe('authorization-ontology', () => {
+  it('declares a valid operational ontology pack', () => {
     const validation = validateAuthorizationOntologyPack();
 
-    expect(authorizationOntologyPack.packId).toBe("authorization-ontology");
+    expect(authorizationOntologyPack.packId).toBe('authorization-ontology');
     expect(validation.valid).toBe(true);
     expect(validation.issues).toEqual([]);
     expect(validation.blueprintValidations.map((item) => item.blueprintId)).toEqual([
-      "authorization-proxy-enforcement",
-      "authorization-application-enforcement",
-      "authorization-column-lineage-policy",
-      "authorization-permission-engine-bridge",
-      "authorization-decision-observation",
-      "authorization-graph-audit",
+      'authorization-proxy-enforcement',
+      'authorization-application-enforcement',
+      'authorization-column-lineage-policy',
+      'authorization-permission-engine-bridge',
+      'authorization-decision-observation',
+      'authorization-graph-audit',
     ]);
   });
 
-  it("keeps authorization pack axes aligned with runtime constants", () => {
+  it('keeps authorization pack axes aligned with runtime constants', () => {
     const axes = new Map(
       authorizationOntologyPack.schema.axes.map((axis) => [axis.id, axis.values]),
     );
 
-    expect(axes.get("authorization_node_kind")).toEqual([...AUTHORIZATION_NODE_KINDS]);
-    expect(axes.get("authorization_realm_kind")).toEqual([...AUTHORIZATION_REALM_KINDS]);
-    expect(axes.get("authorization_principal_kind")).toEqual([...AUTHORIZATION_PRINCIPAL_KINDS]);
-    expect(axes.get("authorization_resource_kind")).toEqual([...AUTHORIZATION_RESOURCE_KINDS]);
-    expect(axes.get("authorization_action_kind")).toEqual([...AUTHORIZATION_ACTION_KINDS]);
-    expect(axes.get("authorization_policy_kind")).toEqual([...AUTHORIZATION_POLICY_KINDS]);
-    expect(axes.get("authorization_relation_kind")).toEqual([...AUTHORIZATION_RELATION_KINDS]);
-    expect(axes.get("authorization_lineage_transform")).toEqual([...LINEAGE_AUTHORIZATION_TRANSFORMS]);
+    expect(axes.get('authorization_node_kind')).toEqual([...AUTHORIZATION_NODE_KINDS]);
+    expect(axes.get('authorization_realm_kind')).toEqual([...AUTHORIZATION_REALM_KINDS]);
+    expect(axes.get('authorization_principal_kind')).toEqual([...AUTHORIZATION_PRINCIPAL_KINDS]);
+    expect(axes.get('authorization_resource_kind')).toEqual([...AUTHORIZATION_RESOURCE_KINDS]);
+    expect(axes.get('authorization_action_kind')).toEqual([...AUTHORIZATION_ACTION_KINDS]);
+    expect(axes.get('authorization_policy_kind')).toEqual([...AUTHORIZATION_POLICY_KINDS]);
+    expect(axes.get('authorization_relation_kind')).toEqual([...AUTHORIZATION_RELATION_KINDS]);
+    expect(axes.get('authorization_lineage_transform')).toEqual([
+      ...LINEAGE_AUTHORIZATION_TRANSFORMS,
+    ]);
   });
 
-  it("projects Cerbos resource policies into policy/resource/action graph", () => {
+  it('projects Cerbos resource policies into policy/resource/action graph', () => {
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const resourceRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
 
     const graph = projectCerbosResourcePolicy({
@@ -93,56 +95,56 @@ describe("authorization-ontology", () => {
       resourceRealm,
       policy: {
         resourcePolicy: {
-          resource: "crm.customer_profile",
-          version: "v1",
+          resource: 'crm.customer_profile',
+          version: 'v1',
           rules: [
             {
-              actions: ["read", "export"],
-              effect: "EFFECT_ALLOW",
-              roles: ["analyst"],
+              actions: ['read', 'export'],
+              effect: 'EFFECT_ALLOW',
+              roles: ['analyst'],
               condition: {
                 match: {
-                  expr: "request.resource.attr.region == request.principal.attr.region",
+                  expr: 'request.resource.attr.region == request.principal.attr.region',
                 },
               },
             },
           ],
         },
       },
-      sourceRef: "git://policy-repo/customer.yaml@abc123",
+      sourceRef: 'git://policy-repo/customer.yaml@abc123',
     });
 
     expect(graph.nodes.map((node) => node.kind).toSorted()).toEqual([
-      "action",
-      "action",
-      "policy",
-      "resource",
+      'action',
+      'action',
+      'policy',
+      'resource',
     ]);
     expect(graph.relations).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          kind: "protects",
+          kind: 'protects',
         }),
         expect.objectContaining({
-          kind: "allows_action",
+          kind: 'allows_action',
           metadata: expect.objectContaining({
-            roles: ["analyst"],
+            roles: ['analyst'],
           }),
         }),
       ]),
     );
   });
 
-  it("validates and normalizes Cerbos resource policy shape", () => {
+  it('validates and normalizes Cerbos resource policy shape', () => {
     expect(
       validateCerbosResourcePolicyLike({
         resourcePolicy: {
-          resource: "crm.customer_profile",
+          resource: 'crm.customer_profile',
           rules: [
             {
-              actions: ["read", "read"],
-              effect: "EFFECT_ALLOW",
-              roles: ["analyst"],
+              actions: ['read', 'read'],
+              effect: 'EFFECT_ALLOW',
+              roles: ['analyst'],
             },
           ],
         },
@@ -155,19 +157,19 @@ describe("authorization-ontology", () => {
     expect(
       normalizeCerbosResourcePolicy({
         resourcePolicy: {
-          resource: "crm.customer_profile",
+          resource: 'crm.customer_profile',
           rules: [
             {
-              actions: ["read", "read"],
-              effect: "EFFECT_DENY",
+              actions: ['read', 'read'],
+              effect: 'EFFECT_DENY',
             },
           ],
         },
       }).resourcePolicy.rules,
     ).toEqual([
       {
-        actions: ["read"],
-        effect: "deny",
+        actions: ['read'],
+        effect: 'deny',
         roles: [],
         derivedRoles: [],
         condition: undefined,
@@ -178,23 +180,23 @@ describe("authorization-ontology", () => {
     expect(validateCerbosResourcePolicyLike({}).valid).toBe(false);
   });
 
-  it("projects Cerbos derived roles into role graph", () => {
+  it('projects Cerbos derived roles into role graph', () => {
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
 
     const derivedRoles = {
       derivedRoles: {
-        name: "crm_derived_roles",
+        name: 'crm_derived_roles',
         definitions: [
           {
-            name: "regional_analyst",
-            parentRoles: ["analyst", "viewer"],
+            name: 'regional_analyst',
+            parentRoles: ['analyst', 'viewer'],
             condition: {
               match: {
-                expr: "request.principal.attr.region == request.resource.attr.region",
+                expr: 'request.principal.attr.region == request.resource.attr.region',
               },
             },
           },
@@ -207,11 +209,11 @@ describe("authorization-ontology", () => {
       issues: [],
     });
     expect(normalizeCerbosDerivedRoles(derivedRoles).derivedRoles.definitions[0]).toEqual({
-      name: "regional_analyst",
-      parentRoles: ["analyst", "viewer"],
+      name: 'regional_analyst',
+      parentRoles: ['analyst', 'viewer'],
       condition: {
         match: {
-          expr: "request.principal.attr.region == request.resource.attr.region",
+          expr: 'request.principal.attr.region == request.resource.attr.region',
         },
       },
     });
@@ -219,63 +221,63 @@ describe("authorization-ontology", () => {
     const graph = projectCerbosDerivedRoles({
       policyRealm,
       derivedRoles,
-      sourceRef: "git://policy-repo/derived_roles.yaml@abc123",
+      sourceRef: 'git://policy-repo/derived_roles.yaml@abc123',
     });
 
     expect(graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`).toSorted()).toEqual([
-      "policy:cerbos:derivedRoles:crm_derived_roles",
-      "role:analyst",
-      "role:regional_analyst",
-      "role:viewer",
+      'policy:cerbos:derivedRoles:crm_derived_roles',
+      'role:analyst',
+      'role:regional_analyst',
+      'role:viewer',
     ]);
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "derives_role_from",
-      "derives_role_from",
-      "imports_derived_role",
+      'derives_role_from',
+      'derives_role_from',
+      'imports_derived_role',
     ]);
   });
 
-  it("projects Cerbos JSON and YAML policy sources with source metadata", () => {
+  it('projects Cerbos JSON and YAML policy sources with source metadata', () => {
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const resourceRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const result = projectCerbosPolicySource({
       policyRealm,
       resourceRealm,
       source: JSON.stringify({
         resourcePolicy: {
-          resource: "crm.customer_profile",
-          version: "v1",
+          resource: 'crm.customer_profile',
+          version: 'v1',
           rules: [
             {
-              actions: ["read"],
-              effect: "EFFECT_ALLOW",
-              roles: ["analyst"],
+              actions: ['read'],
+              effect: 'EFFECT_ALLOW',
+              roles: ['analyst'],
             },
           ],
         },
       }),
       metadata: {
-        bundleId: "cerbos-bundle:prod",
-        path: "policies/crm/customer.yaml",
-        revision: "rev-1",
+        bundleId: 'cerbos-bundle:prod',
+        path: 'policies/crm/customer.yaml',
+        revision: 'rev-1',
       },
     });
 
-    expect(result.sourceKind).toBe("resource_policy");
-    expect(result.graph.nodes.find((node) => node.kind === "policy")?.metadata).toEqual(
+    expect(result.sourceKind).toBe('resource_policy');
+    expect(result.graph.nodes.find((node) => node.kind === 'policy')?.metadata).toEqual(
       expect.objectContaining({
-        sourceRef: "cerbos-bundle:prod@policies/crm/customer.yaml@rev-1",
-        bundleId: "cerbos-bundle:prod",
-        path: "policies/crm/customer.yaml",
-        revision: "rev-1",
+        sourceRef: 'cerbos-bundle:prod@policies/crm/customer.yaml@rev-1',
+        bundleId: 'cerbos-bundle:prod',
+        path: 'policies/crm/customer.yaml',
+        revision: 'rev-1',
       }),
     );
 
@@ -284,28 +286,28 @@ describe("authorization-ontology", () => {
       resourceRealm,
       source: {
         derivedRoles: {
-          name: "crm_derived_roles",
+          name: 'crm_derived_roles',
           definitions: [
             {
-              name: "regional_analyst",
-              parentRoles: ["analyst"],
+              name: 'regional_analyst',
+              parentRoles: ['analyst'],
             },
           ],
         },
       },
       metadata: {
-        sourceRef: "git://policy-repo/derived_roles.yaml@rev-1",
+        sourceRef: 'git://policy-repo/derived_roles.yaml@rev-1',
       },
     });
-    expect(derivedRolesResult.sourceKind).toBe("derived_roles");
+    expect(derivedRolesResult.sourceKind).toBe('derived_roles');
     expect(derivedRolesResult.graph.relations.map((relation) => relation.kind)).toEqual(
-      expect.arrayContaining(["imports_derived_role", "derives_role_from"]),
+      expect.arrayContaining(['imports_derived_role', 'derives_role_from']),
     );
 
     const yamlResult = projectCerbosPolicySource({
       policyRealm,
       resourceRealm,
-      sourceType: "yaml",
+      sourceType: 'yaml',
       source: `
 resourcePolicy:
   resource: crm.customer_profile
@@ -316,22 +318,22 @@ resourcePolicy:
       roles: [analyst]
 `,
       metadata: {
-        sourceRef: "git://policy-repo/customer.yaml@rev-2",
+        sourceRef: 'git://policy-repo/customer.yaml@rev-2',
       },
     });
-    expect(yamlResult.sourceKind).toBe("resource_policy");
+    expect(yamlResult.sourceKind).toBe('resource_policy');
     expect(yamlResult.graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`)).toEqual(
       expect.arrayContaining([
-        "policy:cerbos:resource:crm.customer_profile",
-        "action:read",
-        "action:export",
+        'policy:cerbos:resource:crm.customer_profile',
+        'action:read',
+        'action:export',
       ]),
     );
 
     const yamlDerivedRolesResult = projectCerbosPolicySource({
       policyRealm,
       resourceRealm,
-      sourceType: "yaml",
+      sourceType: 'yaml',
       source: `
 derivedRoles:
   name: crm_derived_roles_yaml
@@ -340,12 +342,14 @@ derivedRoles:
       parentRoles: [manager]
 `,
     });
-    expect(yamlDerivedRolesResult.sourceKind).toBe("derived_roles");
-    expect(yamlDerivedRolesResult.graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`)).toEqual(
+    expect(yamlDerivedRolesResult.sourceKind).toBe('derived_roles');
+    expect(
+      yamlDerivedRolesResult.graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`),
+    ).toEqual(
       expect.arrayContaining([
-        "policy:cerbos:derivedRoles:crm_derived_roles_yaml",
-        "role:regional_manager",
-        "role:manager",
+        'policy:cerbos:derivedRoles:crm_derived_roles_yaml',
+        'role:regional_manager',
+        'role:manager',
       ]),
     );
 
@@ -353,129 +357,129 @@ derivedRoles:
       projectCerbosPolicySource({
         policyRealm,
         resourceRealm,
-        source: "{ invalid json",
+        source: '{ invalid json',
       }),
-    ).toThrow("Invalid Cerbos policy JSON source");
+    ).toThrow('Invalid Cerbos policy JSON source');
 
     expect(() =>
       projectCerbosPolicySource({
         policyRealm,
         resourceRealm,
-        sourceType: "yaml",
-        source: "resourcePolicy: [",
+        sourceType: 'yaml',
+        source: 'resourcePolicy: [',
       }),
-    ).toThrow("Invalid Cerbos policy YAML source");
+    ).toThrow('Invalid Cerbos policy YAML source');
   });
 
-  it("classifies column-level policy propagation by lineage transform", () => {
+  it('classifies column-level policy propagation by lineage transform', () => {
     const dataRealm = createAuthorizationRealm({
-      kind: "data",
-      authority: "bq:commerce:analytics",
-      environment: "prod",
+      kind: 'data',
+      authority: 'bq:commerce:analytics',
+      environment: 'prod',
     });
     const source = {
       realm: dataRealm,
-      resourceId: "users.email",
-      resourceKind: "column" as const,
-      classification: "pii",
+      resourceId: 'users.email',
+      resourceKind: 'column' as const,
+      classification: 'pii',
     };
     const target = {
       realm: dataRealm,
-      resourceId: "marketing.user_email",
-      resourceKind: "column" as const,
-      classification: "pii",
+      resourceId: 'marketing.user_email',
+      resourceKind: 'column' as const,
+      classification: 'pii',
     };
 
     expect(
       evaluateColumnPolicyPropagation({
         source,
         target,
-        transform: "copy",
-        sourcePolicyId: "policy:pii-email",
+        transform: 'copy',
+        sourcePolicyId: 'policy:pii-email',
         rules: [
           {
-            sourceClassification: "pii",
-            transform: "copy",
-            propagation: "inherit",
+            sourceClassification: 'pii',
+            transform: 'copy',
+            propagation: 'inherit',
           },
         ],
       }),
     ).toEqual({
-      mode: "inherit",
-      relationKind: "inherits_policy_from",
-      targetClassification: "pii",
-      reason: "Propagation inherit via copy",
+      mode: 'inherit',
+      relationKind: 'inherits_policy_from',
+      targetClassification: 'pii',
+      reason: 'Propagation inherit via copy',
     });
 
     const graph = projectColumnPolicyPropagation({
       source,
       target,
-      transform: "copy",
-      sourcePolicyId: "policy:pii-email",
+      transform: 'copy',
+      sourcePolicyId: 'policy:pii-email',
       rules: [
         {
-          sourceClassification: "pii",
-          transform: "copy",
-          propagation: "inherit",
+          sourceClassification: 'pii',
+          transform: 'copy',
+          propagation: 'inherit',
         },
       ],
     });
 
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "derives_from",
-      "inherits_policy_from",
+      'derives_from',
+      'inherits_policy_from',
     ]);
   });
 
-  it("keeps realm as authority boundary, not resource kind", () => {
+  it('keeps realm as authority boundary, not resource kind', () => {
     const realm = createAuthorizationRealm({
-      kind: "data",
-      authority: "postgres:prod:customer-db",
-      environment: "prod",
+      kind: 'data',
+      authority: 'postgres:prod:customer-db',
+      environment: 'prod',
     });
     const node = createResourceNode({
       realm,
-      resourceId: "public.users.email",
-      resourceKind: "column",
-      sensitivity: "pii",
+      resourceId: 'public.users.email',
+      resourceKind: 'column',
+      sensitivity: 'pii',
     });
 
-    expect(node.coord.realm).toBe("data:postgres:prod:customer-db:prod");
-    expect(node.coord.space).toBe("resource");
+    expect(node.coord.realm).toBe('data:postgres:prod:customer-db:prod');
+    expect(node.coord.space).toBe('resource');
     expect(node.coord.taxonomies).toEqual({
-      node_kind: "resource",
-      resource_kind: "column",
-      sensitivity: "pii",
+      node_kind: 'resource',
+      resource_kind: 'column',
+      sensitivity: 'pii',
     });
 
     const relation = createAuthorizationRelation({
-      kind: "protects",
-      fromNodeId: "policy:customer",
+      kind: 'protects',
+      fromNodeId: 'policy:customer',
       toNodeId: node.nodeId,
     });
-    expect(relation.relationId).toContain("authz:protects");
+    expect(relation.relationId).toContain('authz:protects');
   });
 
-  it("projects Cerbos decision observations into decision graph", () => {
+  it('projects Cerbos decision observations into decision graph', () => {
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const resourceRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "authentik:prod",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'authentik:prod',
+      environment: 'prod',
     });
 
     const graph = projectCerbosDecisionObservation({
@@ -484,173 +488,173 @@ derivedRoles:
       resourceRealm,
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "outpost:crm",
-        kind: "authentik_proxy",
+        enforcementPointId: 'outpost:crm',
+        kind: 'authentik_proxy',
       },
       decision: {
-        requestId: "req-1",
+        requestId: 'req-1',
         principal: {
-          id: "user-1",
-          roles: ["analyst"],
-          attr: { region: "kr" },
+          id: 'user-1',
+          roles: ['analyst'],
+          attr: { region: 'kr' },
         },
         resource: {
-          id: "crm.customer_profile",
-          kind: "service",
-          attr: { region: "kr" },
+          id: 'crm.customer_profile',
+          kind: 'service',
+          attr: { region: 'kr' },
         },
         actions: [
           {
-            action: "read",
-            effect: "EFFECT_ALLOW",
-            policyId: "cerbos:resource:crm.customer_profile",
-            reason: "matched regional analyst",
+            action: 'read',
+            effect: 'EFFECT_ALLOW',
+            policyId: 'cerbos:resource:crm.customer_profile',
+            reason: 'matched regional analyst',
           },
         ],
-        observedAt: "2026-04-11T00:00:00.000Z",
+        observedAt: '2026-04-11T00:00:00.000Z',
       },
     });
 
     expect(graph.nodes.map((node) => node.kind).toSorted()).toEqual([
-      "action",
-      "decision",
-      "enforcement_point",
-      "policy",
-      "principal",
-      "resource",
-      "role",
+      'action',
+      'decision',
+      'enforcement_point',
+      'policy',
+      'principal',
+      'resource',
+      'role',
     ]);
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "decision_action",
-      "decision_enforcement",
-      "decision_policy",
-      "decision_principal",
-      "decision_resource",
-      "has_role",
+      'decision_action',
+      'decision_enforcement',
+      'decision_policy',
+      'decision_principal',
+      'decision_resource',
+      'has_role',
     ]);
   });
 
-  it("projects proxy enforcement routes into route/enforcement/policy graph", () => {
+  it('projects proxy enforcement routes into route/enforcement/policy graph', () => {
     const routeRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "caddy:prod",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'caddy:prod',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "authentik:prod",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'authentik:prod',
+      environment: 'prod',
     });
     const appRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const deploymentRealm = createAuthorizationRealm({
-      kind: "infra",
-      authority: "argocd:prod",
-      environment: "prod",
+      kind: 'infra',
+      authority: 'argocd:prod',
+      environment: 'prod',
     });
 
     const graph = projectEnforcementRoute({
       routeRealm,
-      routeId: "crm.example.com/customers/*",
-      routeKind: "proxy_route",
-      host: "crm.example.com",
-      path: "/customers/*",
-      methods: ["GET"],
+      routeId: 'crm.example.com/customers/*',
+      routeKind: 'proxy_route',
+      host: 'crm.example.com',
+      path: '/customers/*',
+      methods: ['GET'],
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "outpost:crm",
-        kind: "authentik_proxy",
+        enforcementPointId: 'outpost:crm',
+        kind: 'authentik_proxy',
       },
       upstreamResource: {
         realm: appRealm,
-        resourceId: "crm.customer_profile",
-        resourceKind: "service",
+        resourceId: 'crm.customer_profile',
+        resourceKind: 'service',
       },
       policy: {
         realm: policyRealm,
-        policyId: "cerbos:resource:crm.customer_profile",
-        policyKind: "cerbos_resource_policy",
+        policyId: 'cerbos:resource:crm.customer_profile',
+        policyKind: 'cerbos_resource_policy',
       },
       deploymentSource: {
         realm: deploymentRealm,
-        sourceId: "argocd:crm",
-        kind: "argocd",
-        revision: "rev-1",
+        sourceId: 'argocd:crm',
+        kind: 'argocd',
+        revision: 'rev-1',
       },
     });
 
     expect(graph.nodes.map((node) => node.kind).toSorted()).toEqual([
-      "deployment_source",
-      "enforcement_point",
-      "policy",
-      "resource",
-      "resource",
+      'deployment_source',
+      'enforcement_point',
+      'policy',
+      'resource',
+      'resource',
     ]);
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "deployed_by",
-      "enforced_at",
-      "matches_resource",
-      "protects",
+      'deployed_by',
+      'enforced_at',
+      'matches_resource',
+      'protects',
     ]);
   });
 
-  it("normalizes structured proxy route configs into enforcement graph", () => {
+  it('normalizes structured proxy route configs into enforcement graph', () => {
     const route = normalizeStructuredEnforcementRoute({
-      environment: "prod",
+      environment: 'prod',
       route: {
-        host: "crm.example.com",
-        path: "/customers/*",
-        methods: ["GET"],
+        host: 'crm.example.com',
+        path: '/customers/*',
+        methods: ['GET'],
       },
       proxy: {
-        authority: "authentik:prod",
-        kind: "authentik_proxy",
-        id: "outpost:crm",
+        authority: 'authentik:prod',
+        kind: 'authentik_proxy',
+        id: 'outpost:crm',
       },
       upstream: {
-        authority: "service:crm",
-        id: "crm.customer_profile",
+        authority: 'service:crm',
+        id: 'crm.customer_profile',
       },
       policy: {
-        authority: "cerbos:prod",
-        id: "cerbos:resource:crm.customer_profile",
+        authority: 'cerbos:prod',
+        id: 'cerbos:resource:crm.customer_profile',
       },
       deployment: {
-        authority: "argocd:prod",
-        id: "argocd:crm",
-        kind: "argocd",
-        revision: "rev-1",
+        authority: 'argocd:prod',
+        id: 'argocd:crm',
+        kind: 'argocd',
+        revision: 'rev-1',
       },
     });
 
-    expect(route.routeId).toBe("crm.example.com/customers/*");
-    expect(route.enforcementPoint.kind).toBe("authentik_proxy");
-    expect(route.policy?.policyId).toBe("cerbos:resource:crm.customer_profile");
+    expect(route.routeId).toBe('crm.example.com/customers/*');
+    expect(route.enforcementPoint.kind).toBe('authentik_proxy');
+    expect(route.policy?.policyId).toBe('cerbos:resource:crm.customer_profile');
 
     const graph = projectStructuredEnforcementRoute({
-      environment: "prod",
+      environment: 'prod',
       route: {
-        host: "crm.example.com",
-        path: "/customers/*",
+        host: 'crm.example.com',
+        path: '/customers/*',
       },
       proxy: {
-        authority: "authentik:prod",
-        kind: "authentik_proxy",
-        id: "outpost:crm",
+        authority: 'authentik:prod',
+        kind: 'authentik_proxy',
+        id: 'outpost:crm',
       },
     });
-    expect(graph.relations.map((relation) => relation.kind)).toEqual(["enforced_at"]);
+    expect(graph.relations.map((relation) => relation.kind)).toEqual(['enforced_at']);
   });
 
-  it("projects Nginx proxy config into enforcement route graph", () => {
+  it('projects Nginx proxy config into enforcement route graph', () => {
     const config = `
 upstream zitadel_api {
   server zitadel:8080;
@@ -672,185 +676,186 @@ server {
 
     expect(parseNginxProxyLocations(config)).toEqual([
       {
-        path: "/ui/v2/login",
-        proxyPass: "http://zitadel_login",
-        upstreamName: "zitadel_login",
-        upstreamTarget: "zitadel-login:3000",
+        path: '/ui/v2/login',
+        proxyPass: 'http://zitadel_login',
+        upstreamName: 'zitadel_login',
+        upstreamTarget: 'zitadel-login:3000',
       },
       {
-        path: "/",
-        proxyPass: "http://zitadel_api",
-        upstreamName: "zitadel_api",
-        upstreamTarget: "zitadel:8080",
+        path: '/',
+        proxyPass: 'http://zitadel_api',
+        upstreamName: 'zitadel_api',
+        upstreamTarget: 'zitadel:8080',
       },
     ]);
 
     const graph = projectNginxProxyConfig(config, {
-      environment: "local",
-      proxyAuthority: "nginx:zitadel",
-      proxyId: "zitadel-nginx",
-      host: "localhost:8085",
+      environment: 'local',
+      proxyAuthority: 'nginx:zitadel',
+      proxyId: 'zitadel-nginx',
+      host: 'localhost:8085',
       deployment: {
-        authority: "docker-compose:local",
-        id: "infra-engine:docker-compose.infra.yaml",
-        kind: "git",
-        revision: "working-tree",
+        authority: 'docker-compose:local',
+        id: 'infra-engine:docker-compose.infra.yaml',
+        kind: 'git',
+        revision: 'working-tree',
       },
     });
 
-    expect(graph.nodes.filter((node) => node.kind === "resource")).toHaveLength(4);
-    expect(graph.nodes.filter((node) => node.kind === "enforcement_point")).toHaveLength(1);
+    expect(graph.nodes.filter((node) => node.kind === 'resource')).toHaveLength(4);
+    expect(graph.nodes.filter((node) => node.kind === 'enforcement_point')).toHaveLength(1);
     expect(
-      graph.nodes.find((node) => node.kind === "enforcement_point")?.coord.taxonomies
+      graph.nodes.find((node) => node.kind === 'enforcement_point')?.coord.taxonomies
         .enforcement_kind,
-    ).toBe("nginx_proxy");
+    ).toBe('nginx_proxy');
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "deployed_by",
-      "deployed_by",
-      "enforced_at",
-      "enforced_at",
-      "matches_resource",
-      "matches_resource",
+      'deployed_by',
+      'deployed_by',
+      'enforced_at',
+      'enforced_at',
+      'matches_resource',
+      'matches_resource',
     ]);
   });
 
-  it("projects direct authorization decisions into observable graph", () => {
+  it('projects direct authorization decisions into observable graph', () => {
     const realm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const graph = projectAuthorizationDecision({
-      decisionId: "decision-1",
+      decisionId: 'decision-1',
       principal: {
         realm,
-        principalId: "svc-1",
-        principalKind: "service_account",
-        roles: ["reader"],
+        principalId: 'svc-1',
+        principalKind: 'service_account',
+        roles: ['reader'],
       },
       resource: {
         realm,
-        resourceId: "crm.customer_profile",
-        resourceKind: "service",
+        resourceId: 'crm.customer_profile',
+        resourceKind: 'service',
       },
       action: {
         realm,
-        actionId: "read",
+        actionId: 'read',
       },
-      effect: "allow",
-      observedAt: "2026-04-11T00:00:01.000Z",
+      effect: 'allow',
+      observedAt: '2026-04-11T00:00:01.000Z',
     });
 
-    expect(graph.nodes.some((node) => node.kind === "decision")).toBe(true);
+    expect(graph.nodes.some((node) => node.kind === 'decision')).toBe(true);
     expect(graph.relations).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: "decision_principal" }),
-        expect.objectContaining({ kind: "decision_resource" }),
-        expect.objectContaining({ kind: "decision_action" }),
+        expect.objectContaining({ kind: 'decision_principal' }),
+        expect.objectContaining({ kind: 'decision_resource' }),
+        expect.objectContaining({ kind: 'decision_action' }),
       ]),
     );
   });
 
-  it("projects application middleware authorization into resource/policy graph", () => {
+  it('projects application middleware authorization into resource/policy graph', () => {
     const graph = projectStructuredApplicationAuthorization({
-      environment: "prod",
+      environment: 'prod',
       service: {
-        authority: "service:crm",
-        id: "crm-api",
+        authority: 'service:crm',
+        id: 'crm-api',
       },
       middleware: {
-        authority: "service:crm",
-        id: "crm-api:cerbos-middleware",
-        kind: "service_middleware",
+        authority: 'service:crm',
+        id: 'crm-api:cerbos-middleware',
+        kind: 'service_middleware',
       },
       resource: {
-        id: "crm.customer_profile:customer-123",
-        kind: "domain_resource",
+        id: 'crm.customer_profile:customer-123',
+        kind: 'domain_resource',
         attributes: {
-          domainKind: "crm.customer_profile",
-          tenantId: "tenant-1",
+          domainKind: 'crm.customer_profile',
+          tenantId: 'tenant-1',
         },
       },
       policy: {
-        authority: "cerbos:prod",
-        id: "cerbos:resource:crm.customer_profile",
+        authority: 'cerbos:prod',
+        id: 'cerbos:resource:crm.customer_profile',
       },
-      actions: ["read", "export"],
+      actions: ['read', 'export'],
       deployment: {
-        authority: "argocd:prod",
-        id: "argocd:crm",
-        kind: "argocd",
-        revision: "rev-1",
+        authority: 'argocd:prod',
+        id: 'argocd:crm',
+        kind: 'argocd',
+        revision: 'rev-1',
       },
     });
 
     expect(graph.nodes.map((node) => node.kind).toSorted()).toEqual([
-      "action",
-      "action",
-      "deployment_source",
-      "enforcement_point",
-      "policy",
-      "resource",
-      "resource",
+      'action',
+      'action',
+      'deployment_source',
+      'enforcement_point',
+      'policy',
+      'resource',
+      'resource',
     ]);
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "deployed_by",
-      "enforced_at",
-      "evaluated_by",
-      "evaluated_by",
-      "matches_resource",
-      "protects",
+      'deployed_by',
+      'enforced_at',
+      'evaluated_by',
+      'evaluated_by',
+      'matches_resource',
+      'protects',
     ]);
     expect(
-      graph.nodes.find((node) => node.kind === "resource" && node.coord.anchor.includes("customer-123"))
-        ?.coord.taxonomies.resource_kind,
-    ).toBe("domain_resource");
+      graph.nodes.find(
+        (node) => node.kind === 'resource' && node.coord.anchor.includes('customer-123'),
+      )?.coord.taxonomies.resource_kind,
+    ).toBe('domain_resource');
   });
 
-  it("composes Cerbos policy, proxy route, decision, and column lineage into one authorization flow", () => {
+  it('composes Cerbos policy, proxy route, decision, and column lineage into one authorization flow', () => {
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "authentik:prod",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'authentik:prod',
+      environment: 'prod',
     });
     const appRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const dataRealm = createAuthorizationRealm({
-      kind: "data",
-      authority: "bq:commerce:analytics",
-      environment: "prod",
+      kind: 'data',
+      authority: 'bq:commerce:analytics',
+      environment: 'prod',
     });
     const infraRealm = createAuthorizationRealm({
-      kind: "infra",
-      authority: "argocd:prod",
-      environment: "prod",
+      kind: 'infra',
+      authority: 'argocd:prod',
+      environment: 'prod',
     });
 
     const derivedRolesGraph = projectCerbosDerivedRoles({
       policyRealm,
       derivedRoles: {
         derivedRoles: {
-          name: "crm_derived_roles",
+          name: 'crm_derived_roles',
           definitions: [
             {
-              name: "regional_analyst",
-              parentRoles: ["analyst"],
+              name: 'regional_analyst',
+              parentRoles: ['analyst'],
               condition: {
                 match: {
-                  expr: "request.principal.attr.region == request.resource.attr.region",
+                  expr: 'request.principal.attr.region == request.resource.attr.region',
                 },
               },
             },
@@ -864,14 +869,14 @@ server {
       resourceRealm: appRealm,
       policy: {
         resourcePolicy: {
-          resource: "crm.customer_profile",
-          version: "v1",
-          importDerivedRoles: ["crm_derived_roles"],
+          resource: 'crm.customer_profile',
+          version: 'v1',
+          importDerivedRoles: ['crm_derived_roles'],
           rules: [
             {
-              actions: ["read"],
-              effect: "EFFECT_ALLOW",
-              derivedRoles: ["regional_analyst"],
+              actions: ['read'],
+              effect: 'EFFECT_ALLOW',
+              derivedRoles: ['regional_analyst'],
             },
           ],
         },
@@ -880,32 +885,32 @@ server {
 
     const routeGraph = projectEnforcementRoute({
       routeRealm: enforcementRealm,
-      routeId: "crm.example.com/customers/*",
-      routeKind: "proxy_route",
-      host: "crm.example.com",
-      path: "/customers/*",
-      methods: ["GET"],
+      routeId: 'crm.example.com/customers/*',
+      routeKind: 'proxy_route',
+      host: 'crm.example.com',
+      path: '/customers/*',
+      methods: ['GET'],
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "outpost:crm",
-        kind: "authentik_proxy",
+        enforcementPointId: 'outpost:crm',
+        kind: 'authentik_proxy',
       },
       upstreamResource: {
         realm: appRealm,
-        resourceId: "crm.customer_profile",
-        resourceKind: "service",
+        resourceId: 'crm.customer_profile',
+        resourceKind: 'service',
       },
       policy: {
         realm: policyRealm,
-        policyId: "cerbos:resource:crm.customer_profile",
-        policyKind: "cerbos_resource_policy",
-        version: "v1",
+        policyId: 'cerbos:resource:crm.customer_profile',
+        policyKind: 'cerbos_resource_policy',
+        version: 'v1',
       },
       deploymentSource: {
         realm: infraRealm,
-        sourceId: "argocd:crm",
-        kind: "argocd",
-        revision: "rev-1",
+        sourceId: 'argocd:crm',
+        kind: 'argocd',
+        revision: 'rev-1',
       },
     });
 
@@ -915,52 +920,52 @@ server {
       policyRealm,
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "outpost:crm",
-        kind: "authentik_proxy",
+        enforcementPointId: 'outpost:crm',
+        kind: 'authentik_proxy',
       },
       decision: {
-        requestId: "req-authorization-flow",
+        requestId: 'req-authorization-flow',
         principal: {
-          id: "user-1",
-          roles: ["analyst"],
-          attr: { region: "kr" },
+          id: 'user-1',
+          roles: ['analyst'],
+          attr: { region: 'kr' },
         },
         resource: {
-          id: "crm.customer_profile",
-          kind: "service",
-          attr: { region: "kr" },
+          id: 'crm.customer_profile',
+          kind: 'service',
+          attr: { region: 'kr' },
         },
         actions: [
           {
-            action: "read",
-            effect: "EFFECT_ALLOW",
-            policyId: "cerbos:resource:crm.customer_profile",
+            action: 'read',
+            effect: 'EFFECT_ALLOW',
+            policyId: 'cerbos:resource:crm.customer_profile',
           },
         ],
-        observedAt: "2026-04-11T00:00:00.000Z",
+        observedAt: '2026-04-11T00:00:00.000Z',
       },
     });
 
     const lineageGraph = projectColumnPolicyPropagation({
       source: {
         realm: dataRealm,
-        resourceId: "users.email",
-        resourceKind: "column",
-        classification: "pii",
+        resourceId: 'users.email',
+        resourceKind: 'column',
+        classification: 'pii',
       },
       target: {
         realm: dataRealm,
-        resourceId: "crm.customer_email",
-        resourceKind: "column",
-        classification: "pii",
+        resourceId: 'crm.customer_email',
+        resourceKind: 'column',
+        classification: 'pii',
       },
-      transform: "copy",
-      sourcePolicyId: "cerbos:resource:crm.customer_profile",
+      transform: 'copy',
+      sourcePolicyId: 'cerbos:resource:crm.customer_profile',
       rules: [
         {
-          sourceClassification: "pii",
-          transform: "copy",
-          propagation: "inherit",
+          sourceClassification: 'pii',
+          transform: 'copy',
+          propagation: 'inherit',
         },
       ],
     });
@@ -975,44 +980,44 @@ server {
 
     expect(allRelations).toEqual(
       expect.arrayContaining([
-        "imports_derived_role",
-        "derives_role_from",
-        "protects",
-        "allows_action",
-        "enforced_at",
-        "matches_resource",
-        "deployed_by",
-        "decision_principal",
-        "decision_resource",
-        "decision_action",
-        "decision_policy",
-        "decision_enforcement",
-        "derives_from",
-        "inherits_policy_from",
+        'imports_derived_role',
+        'derives_role_from',
+        'protects',
+        'allows_action',
+        'enforced_at',
+        'matches_resource',
+        'deployed_by',
+        'decision_principal',
+        'decision_resource',
+        'decision_action',
+        'decision_policy',
+        'decision_enforcement',
+        'derives_from',
+        'inherits_policy_from',
       ]),
     );
   });
 
-  it("audits policy declarations, proxy routes, and decision observations", () => {
+  it('audits policy declarations, proxy routes, and decision observations', () => {
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "nginx:prod",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'nginx:prod',
+      environment: 'prod',
     });
     const appRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
 
     const policyGraph = projectCerbosResourcePolicy({
@@ -1020,35 +1025,35 @@ server {
       resourceRealm: appRealm,
       policy: {
         resourcePolicy: {
-          resource: "crm.customer_profile",
+          resource: 'crm.customer_profile',
           rules: [
             {
-              actions: ["read"],
-              effect: "EFFECT_ALLOW",
-              roles: ["analyst"],
+              actions: ['read'],
+              effect: 'EFFECT_ALLOW',
+              roles: ['analyst'],
             },
           ],
         },
       },
     });
     const routeGraph = projectStructuredEnforcementRoute({
-      environment: "prod",
+      environment: 'prod',
       route: {
-        host: "crm.example.com",
-        path: "/customers",
+        host: 'crm.example.com',
+        path: '/customers',
       },
       proxy: {
-        authority: "nginx:prod",
-        kind: "nginx_proxy",
-        id: "nginx:crm",
+        authority: 'nginx:prod',
+        kind: 'nginx_proxy',
+        id: 'nginx:crm',
       },
       upstream: {
-        authority: "service:crm",
-        id: "crm.customer_profile",
+        authority: 'service:crm',
+        id: 'crm.customer_profile',
       },
       policy: {
-        authority: "cerbos:prod",
-        id: "cerbos:resource:crm.customer_profile",
+        authority: 'cerbos:prod',
+        id: 'cerbos:resource:crm.customer_profile',
       },
     });
     const decisionGraph = projectCerbosDecisionObservation({
@@ -1057,24 +1062,24 @@ server {
       policyRealm,
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "nginx:crm",
-        kind: "nginx_proxy",
+        enforcementPointId: 'nginx:crm',
+        kind: 'nginx_proxy',
       },
       decision: {
-        requestId: "req-audit",
+        requestId: 'req-audit',
         principal: {
-          id: "user-1",
-          roles: ["analyst"],
+          id: 'user-1',
+          roles: ['analyst'],
         },
         resource: {
-          id: "crm.customer_profile",
-          kind: "service",
+          id: 'crm.customer_profile',
+          kind: 'service',
         },
         actions: [
           {
-            action: "read",
-            effect: "EFFECT_ALLOW",
-            policyId: "cerbos:resource:crm.customer_profile",
+            action: 'read',
+            effect: 'EFFECT_ALLOW',
+            policyId: 'cerbos:resource:crm.customer_profile',
           },
         ],
       },
@@ -1098,19 +1103,19 @@ server {
     const brokenReport = auditAuthorizationGraph(
       mergeAuthorizationGraphs(
         projectStructuredEnforcementRoute({
-          environment: "prod",
+          environment: 'prod',
           route: {
-            host: "crm.example.com",
-            path: "/exports",
+            host: 'crm.example.com',
+            path: '/exports',
           },
           proxy: {
-            authority: "nginx:prod",
-            kind: "nginx_proxy",
-            id: "nginx:crm",
+            authority: 'nginx:prod',
+            kind: 'nginx_proxy',
+            id: 'nginx:crm',
           },
           upstream: {
-            authority: "service:crm",
-            id: "crm.customer_profile",
+            authority: 'service:crm',
+            id: 'crm.customer_profile',
           },
         }),
         projectCerbosDecisionObservation({
@@ -1119,24 +1124,24 @@ server {
           policyRealm,
           enforcementPoint: {
             realm: enforcementRealm,
-            enforcementPointId: "nginx:crm",
-            kind: "nginx_proxy",
+            enforcementPointId: 'nginx:crm',
+            kind: 'nginx_proxy',
           },
           decision: {
-            requestId: "req-broken-audit",
+            requestId: 'req-broken-audit',
             principal: {
-              id: "user-1",
-              roles: ["analyst"],
+              id: 'user-1',
+              roles: ['analyst'],
             },
             resource: {
-              id: "crm.customer_profile",
-              kind: "service",
+              id: 'crm.customer_profile',
+              kind: 'service',
             },
             actions: [
               {
-                action: "export",
-                effect: "EFFECT_ALLOW",
-                policyId: "cerbos:resource:crm.customer_profile",
+                action: 'export',
+                effect: 'EFFECT_ALLOW',
+                policyId: 'cerbos:resource:crm.customer_profile',
               },
             ],
           },
@@ -1147,33 +1152,33 @@ server {
     expect(brokenReport.ok).toBe(false);
     expect(brokenReport.issues.map((issue) => issue.code)).toEqual(
       expect.arrayContaining([
-        "proxy_route_missing_policy",
-        "decision_policy_action_unlinked",
-        "decision_policy_resource_unlinked",
+        'proxy_route_missing_policy',
+        'decision_policy_action_unlinked',
+        'decision_policy_resource_unlinked',
       ]),
     );
   });
 
-  it("audits application middleware protected domain resources", () => {
+  it('audits application middleware protected domain resources', () => {
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const appRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'service:crm',
+      environment: 'prod',
     });
 
     const policyGraph = projectCerbosResourcePolicy({
@@ -1181,36 +1186,36 @@ server {
       resourceRealm: appRealm,
       policy: {
         resourcePolicy: {
-          resource: "crm.customer_profile",
+          resource: 'crm.customer_profile',
           rules: [
             {
-              actions: ["read"],
-              effect: "EFFECT_ALLOW",
-              roles: ["analyst"],
+              actions: ['read'],
+              effect: 'EFFECT_ALLOW',
+              roles: ['analyst'],
             },
           ],
         },
       },
     });
     const applicationGraph = projectStructuredApplicationAuthorization({
-      environment: "prod",
+      environment: 'prod',
       service: {
-        authority: "service:crm",
-        id: "crm-api",
+        authority: 'service:crm',
+        id: 'crm-api',
       },
       middleware: {
-        authority: "service:crm",
-        id: "crm-api:cerbos-middleware",
+        authority: 'service:crm',
+        id: 'crm-api:cerbos-middleware',
       },
       resource: {
-        id: "crm.customer_profile:customer-123",
-        kind: "domain_resource",
+        id: 'crm.customer_profile:customer-123',
+        kind: 'domain_resource',
       },
       policy: {
-        authority: "cerbos:prod",
-        id: "cerbos:resource:crm.customer_profile",
+        authority: 'cerbos:prod',
+        id: 'cerbos:resource:crm.customer_profile',
       },
-      actions: ["read"],
+      actions: ['read'],
     });
     const decisionGraph = projectCerbosDecisionObservation({
       identityRealm,
@@ -1218,24 +1223,24 @@ server {
       policyRealm,
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "crm-api:cerbos-middleware",
-        kind: "service_middleware",
+        enforcementPointId: 'crm-api:cerbos-middleware',
+        kind: 'service_middleware',
       },
       decision: {
-        requestId: "req-app-audit",
+        requestId: 'req-app-audit',
         principal: {
-          id: "user-1",
-          roles: ["analyst"],
+          id: 'user-1',
+          roles: ['analyst'],
         },
         resource: {
-          id: "crm.customer_profile:customer-123",
-          kind: "domain_resource",
+          id: 'crm.customer_profile:customer-123',
+          kind: 'domain_resource',
         },
         actions: [
           {
-            action: "read",
-            effect: "EFFECT_ALLOW",
-            policyId: "cerbos:resource:crm.customer_profile",
+            action: 'read',
+            effect: 'EFFECT_ALLOW',
+            policyId: 'cerbos:resource:crm.customer_profile',
           },
         ],
       },
@@ -1263,14 +1268,14 @@ server {
 
     const brokenReport = auditAuthorizationGraph(
       projectStructuredApplicationAuthorization({
-        environment: "prod",
+        environment: 'prod',
         service: {
-          authority: "service:crm",
-          id: "crm-api",
+          authority: 'service:crm',
+          id: 'crm-api',
         },
         resource: {
-          id: "crm.customer_profile:customer-456",
-          kind: "domain_resource",
+          id: 'crm.customer_profile:customer-456',
+          kind: 'domain_resource',
         },
       }),
       {
@@ -1284,71 +1289,71 @@ server {
 
     expect(brokenReport.ok).toBe(false);
     expect(brokenReport.issues.map((issue) => issue.code)).toEqual(
-      expect.arrayContaining(["application_resource_missing_policy"]),
+      expect.arrayContaining(['application_resource_missing_policy']),
     );
   });
 
-  it("projects permission-engine bitmask grants into feature/role graph", () => {
+  it('projects permission-engine bitmask grants into feature/role graph', () => {
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "permission-engine:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'permission-engine:prod',
+      environment: 'prod',
     });
     const featureRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "permission-engine:project",
-      environment: "prod",
+      kind: 'application',
+      authority: 'permission-engine:project',
+      environment: 'prod',
     });
 
     const graph = projectPermissionEnginePermissionSet({
       policyRealm,
       featureRealm,
-      domain: "project",
-      scopeKey: "prod:kr",
+      domain: 'project',
+      scopeKey: 'prod:kr',
       snapshot: {
-        features: ["resource:read", "resource:write"],
-        roles: ["viewer", "author"],
-        mask: "CQ==",
+        features: ['resource:read', 'resource:write'],
+        roles: ['viewer', 'author'],
+        mask: 'CQ==',
       },
       includeDenied: true,
     });
 
     expect(graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`).toSorted()).toEqual([
-      "policy:permission-engine:project:prod:kr",
-      "resource:project:prod:kr",
-      "resource:project:resource:read",
-      "resource:project:resource:write",
-      "role:project:author",
-      "role:project:viewer",
+      'policy:permission-engine:project:prod:kr',
+      'resource:project:prod:kr',
+      'resource:project:resource:read',
+      'resource:project:resource:write',
+      'role:project:author',
+      'role:project:viewer',
     ]);
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "denies_feature",
-      "denies_feature",
-      "grants_feature",
-      "grants_feature",
-      "materializes_permission",
-      "protects",
-      "protects",
+      'denies_feature',
+      'denies_feature',
+      'grants_feature',
+      'grants_feature',
+      'materializes_permission',
+      'protects',
+      'protects',
     ]);
     expect(
-      graph.relations.find((relation) => relation.kind === "grants_feature")?.metadata,
+      graph.relations.find((relation) => relation.kind === 'grants_feature')?.metadata,
     ).toEqual(
       expect.objectContaining({
-        source: "permission-engine:PermissionSet",
+        source: 'permission-engine:PermissionSet',
       }),
     );
   });
 
-  it("projects permission-engine role and org-role inheritance", () => {
+  it('projects permission-engine role and org-role inheritance', () => {
     const roleRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "permission-engine:roles",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'permission-engine:roles',
+      environment: 'prod',
     });
     const featureRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "permission-engine:project",
-      environment: "prod",
+      kind: 'application',
+      authority: 'permission-engine:project',
+      environment: 'prod',
     });
 
     const graph = projectPermissionEngineRoles({
@@ -1356,65 +1361,65 @@ server {
       featureRealm,
       roles: [
         {
-          id: "viewer",
-          domain: "project",
+          id: 'viewer',
+          domain: 'project',
           parents: [],
-          ownFeatures: ["resource:read"],
+          ownFeatures: ['resource:read'],
         },
         {
-          id: "author",
-          domain: "project",
-          parents: ["viewer"],
-          ownFeatures: ["resource:write"],
-          denyFeatures: ["resource:delete"],
+          id: 'author',
+          domain: 'project',
+          parents: ['viewer'],
+          ownFeatures: ['resource:write'],
+          denyFeatures: ['resource:delete'],
         },
       ],
       orgRoles: [
         {
-          id: "team_lead",
+          id: 'team_lead',
           parents: [],
-          ownAssignments: [{ domain: "project", role: "author" }],
+          ownAssignments: [{ domain: 'project', role: 'author' }],
         },
       ],
     });
 
     expect(graph.relations.map((relation) => relation.kind).toSorted()).toEqual([
-      "assigns_role",
-      "denies_feature",
-      "derives_role_from",
-      "grants_feature",
-      "grants_feature",
+      'assigns_role',
+      'denies_feature',
+      'derives_role_from',
+      'grants_feature',
+      'grants_feature',
     ]);
     expect(graph.nodes.map((node) => `${node.kind}:${node.coord.anchor}`)).toContain(
-      "role:org:team_lead",
+      'role:org:team_lead',
     );
   });
 
-  it("projects permission-engine audit results into decision graph", () => {
+  it('projects permission-engine audit results into decision graph', () => {
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const featureRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "permission-engine:project",
-      environment: "prod",
+      kind: 'application',
+      authority: 'permission-engine:project',
+      environment: 'prod',
     });
     const roleRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "permission-engine:roles",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'permission-engine:roles',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "permission-engine:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'permission-engine:prod',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "service:project",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'service:project',
+      environment: 'prod',
     });
 
     const graph = projectPermissionEngineAudit({
@@ -1424,41 +1429,41 @@ server {
       policyRealm,
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "project-api:permission-middleware",
-        kind: "service_middleware",
+        enforcementPointId: 'project-api:permission-middleware',
+        kind: 'service_middleware',
       },
       audit: {
-        feature: "resource:write",
-        domain: "project",
-        userId: "user-1",
+        feature: 'resource:write',
+        domain: 'project',
+        userId: 'user-1',
         granted: false,
         sources: [
           {
-            source: "org-role",
-            orgRoleId: "team_lead",
-            domainRole: "author",
-            inheritancePath: ["viewer", "author"],
+            source: 'org-role',
+            orgRoleId: 'team_lead',
+            domainRole: 'author',
+            inheritancePath: ['viewer', 'author'],
           },
         ],
-        denialReason: { kind: "user-override" },
+        denialReason: { kind: 'user-override' },
       },
-      observedAt: "2026-04-11T00:00:00.000Z",
+      observedAt: '2026-04-11T00:00:00.000Z',
     });
 
     expect(graph.nodes.map((node) => node.kind)).toEqual(
-      expect.arrayContaining(["decision", "principal", "resource", "action", "policy", "role"]),
+      expect.arrayContaining(['decision', 'principal', 'resource', 'action', 'policy', 'role']),
     );
     expect(graph.relations.map((relation) => relation.kind)).toEqual(
       expect.arrayContaining([
-        "decision_principal",
-        "decision_resource",
-        "decision_action",
-        "decision_policy",
-        "decision_enforcement",
-        "has_role",
-        "grants_feature",
-        "denies_feature",
-        "overrides_permission",
+        'decision_principal',
+        'decision_resource',
+        'decision_action',
+        'decision_policy',
+        'decision_enforcement',
+        'has_role',
+        'grants_feature',
+        'denies_feature',
+        'overrides_permission',
       ]),
     );
 
@@ -1472,26 +1477,26 @@ server {
     expect(report.ok).toBe(true);
   });
 
-  it("projects permission middleware feedback into denial decision graph", () => {
+  it('projects permission middleware feedback into denial decision graph', () => {
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const featureRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "permission-engine:project",
-      environment: "prod",
+      kind: 'application',
+      authority: 'permission-engine:project',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "permission-engine:runtime",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'permission-engine:runtime',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "service:project",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'service:project',
+      environment: 'prod',
     });
 
     const graph = projectPermissionEngineMiddlewareFeedback({
@@ -1500,58 +1505,58 @@ server {
       policyRealm,
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "project-api:permission-middleware",
-        kind: "service_middleware",
+        enforcementPointId: 'project-api:permission-middleware',
+        kind: 'service_middleware',
       },
       feedback: {
         ok: false,
-        userId: "user-1",
-        domain: "project",
-        feature: "resource:write",
+        userId: 'user-1',
+        domain: 'project',
+        feature: 'resource:write',
         error: {
-          kind: "PERMISSION_DENIED",
-          message: "Permission denied",
+          kind: 'PERMISSION_DENIED',
+          message: 'Permission denied',
         },
       },
-      observedAt: "2026-04-11T00:00:00.000Z",
+      observedAt: '2026-04-11T00:00:00.000Z',
     });
 
     expect(graph.nodes.map((node) => node.kind)).toEqual(
-      expect.arrayContaining(["decision", "principal", "resource", "action", "policy"]),
+      expect.arrayContaining(['decision', 'principal', 'resource', 'action', 'policy']),
     );
     expect(graph.relations.map((relation) => relation.kind)).toEqual(
-      expect.arrayContaining(["decision_policy", "denies_action", "protects"]),
+      expect.arrayContaining(['decision_policy', 'denies_action', 'protects']),
     );
-    expect(graph.relations.find((relation) => relation.kind === "denies_action")?.metadata).toEqual(
+    expect(graph.relations.find((relation) => relation.kind === 'denies_action')?.metadata).toEqual(
       expect.objectContaining({
-        errorKind: "PERMISSION_DENIED",
+        errorKind: 'PERMISSION_DENIED',
       }),
     );
   });
 
-  it("stores, lists, audits, and diffs authorization graph snapshots", async () => {
+  it('stores, lists, audits, and diffs authorization graph snapshots', async () => {
     const store = new InMemoryAuthorizationGraphStore();
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const appRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const baseGraph = projectCerbosResourcePolicy({
       policyRealm,
       resourceRealm: appRealm,
       policy: {
         resourcePolicy: {
-          resource: "crm.customer_profile",
+          resource: 'crm.customer_profile',
           rules: [
             {
-              actions: ["read"],
-              effect: "EFFECT_ALLOW",
-              roles: ["analyst"],
+              actions: ['read'],
+              effect: 'EFFECT_ALLOW',
+              roles: ['analyst'],
             },
           ],
         },
@@ -1560,34 +1565,34 @@ server {
     const expandedGraph = mergeAuthorizationGraphs(
       baseGraph,
       projectStructuredApplicationAuthorization({
-        environment: "prod",
+        environment: 'prod',
         service: {
-          authority: "service:crm",
-          id: "crm-api",
+          authority: 'service:crm',
+          id: 'crm-api',
         },
         middleware: {
-          authority: "service:crm",
-          id: "crm-api:cerbos-middleware",
+          authority: 'service:crm',
+          id: 'crm-api:cerbos-middleware',
         },
         resource: {
-          id: "crm.customer_profile:customer-123",
-          kind: "domain_resource",
+          id: 'crm.customer_profile:customer-123',
+          kind: 'domain_resource',
         },
         policy: {
-          authority: "cerbos:prod",
-          id: "cerbos:resource:crm.customer_profile",
+          authority: 'cerbos:prod',
+          id: 'cerbos:resource:crm.customer_profile',
         },
-        actions: ["read"],
+        actions: ['read'],
       }),
     );
 
     const first = await store.saveSnapshot({
-      graphId: "crm-authz",
-      snapshotId: "crm-authz:001",
+      graphId: 'crm-authz',
+      snapshotId: 'crm-authz:001',
       graph: baseGraph,
-      createdAt: "2026-04-11T00:00:00.000Z",
-      tags: ["crm", "policy"],
-      labels: { env: "prod" },
+      createdAt: '2026-04-11T00:00:00.000Z',
+      tags: ['crm', 'policy'],
+      labels: { env: 'prod' },
       audit: true,
       auditOptions: {
         requireRoutePolicy: false,
@@ -1598,18 +1603,18 @@ server {
       },
     });
     const second = await store.saveSnapshot({
-      graphId: "crm-authz",
-      snapshotId: "crm-authz:002",
+      graphId: 'crm-authz',
+      snapshotId: 'crm-authz:002',
       graph: expandedGraph,
-      createdAt: "2026-04-11T00:01:00.000Z",
-      tags: ["crm", "application"],
-      labels: { env: "prod" },
+      createdAt: '2026-04-11T00:01:00.000Z',
+      tags: ['crm', 'application'],
+      labels: { env: 'prod' },
     });
 
     expect(first.auditReport?.ok).toBe(true);
     expect(await store.getSnapshot(first.snapshotId)).toEqual(first);
-    expect(await store.listSnapshots({ graphId: "crm-authz" })).toHaveLength(2);
-    expect(await store.listSnapshots({ tag: "application" })).toEqual([second]);
+    expect(await store.listSnapshots({ graphId: 'crm-authz' })).toHaveLength(2);
+    expect(await store.listSnapshots({ tag: 'application' })).toEqual([second]);
 
     const directDiff = diffAuthorizationGraphs(first.graph, second.graph);
     expect(directDiff.summary.addedNodeCount).toBeGreaterThan(0);
@@ -1625,35 +1630,35 @@ server {
     expect(await store.getSnapshot(first.snapshotId)).toBeNull();
   });
 
-  it("ingests decision observations into graph snapshots and returns diffs", async () => {
+  it('ingests decision observations into graph snapshots and returns diffs', async () => {
     const store = new InMemoryAuthorizationGraphStore();
     const ingest = new AuthorizationGraphIngestService(store);
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const resourceRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'service:crm',
+      environment: 'prod',
     });
 
     const first = await ingest.ingest({
-      kind: "cerbos_decision",
-      graphId: "crm-authz-observations",
-      observedAt: "2026-04-11T00:00:00.000Z",
-      sourceRef: "cerbos://decision/req-1",
+      kind: 'cerbos_decision',
+      graphId: 'crm-authz-observations',
+      observedAt: '2026-04-11T00:00:00.000Z',
+      sourceRef: 'cerbos://decision/req-1',
       audit: true,
       auditOptions: {
         requireRoutePolicy: false,
@@ -1670,35 +1675,35 @@ server {
         resourceRealm,
         enforcementPoint: {
           realm: enforcementRealm,
-          enforcementPointId: "crm-api:cerbos-middleware",
-          kind: "service_middleware",
+          enforcementPointId: 'crm-api:cerbos-middleware',
+          kind: 'service_middleware',
         },
         decision: {
-          requestId: "req-1",
+          requestId: 'req-1',
           principal: {
-            id: "user-1",
-            roles: ["analyst"],
+            id: 'user-1',
+            roles: ['analyst'],
           },
           resource: {
-            id: "crm.customer_profile",
-            kind: "service",
+            id: 'crm.customer_profile',
+            kind: 'service',
           },
           actions: [
             {
-              action: "read",
-              effect: "EFFECT_ALLOW",
-              policyId: "cerbos:resource:crm.customer_profile",
+              action: 'read',
+              effect: 'EFFECT_ALLOW',
+              policyId: 'cerbos:resource:crm.customer_profile',
             },
           ],
-          observedAt: "2026-04-11T00:00:00.000Z",
+          observedAt: '2026-04-11T00:00:00.000Z',
         },
       },
     });
 
     const second = await ingest.ingest({
-      kind: "permission_engine_middleware_feedback",
-      graphId: "crm-authz-observations",
-      observedAt: "2026-04-11T00:01:00.000Z",
+      kind: 'permission_engine_middleware_feedback',
+      graphId: 'crm-authz-observations',
+      observedAt: '2026-04-11T00:01:00.000Z',
       mergeWithLatest: true,
       feedback: {
         identityRealm,
@@ -1706,20 +1711,20 @@ server {
         policyRealm,
         enforcementPoint: {
           realm: enforcementRealm,
-          enforcementPointId: "crm-api:permission-middleware",
-          kind: "service_middleware",
+          enforcementPointId: 'crm-api:permission-middleware',
+          kind: 'service_middleware',
         },
         feedback: {
           ok: false,
-          userId: "user-1",
-          domain: "crm",
-          feature: "resource:export",
+          userId: 'user-1',
+          domain: 'crm',
+          feature: 'resource:export',
           error: {
-            kind: "PERMISSION_DENIED",
-            message: "Permission denied",
+            kind: 'PERMISSION_DENIED',
+            message: 'Permission denied',
           },
         },
-        observedAt: "2026-04-11T00:01:00.000Z",
+        observedAt: '2026-04-11T00:01:00.000Z',
       },
     });
 
@@ -1727,86 +1732,90 @@ server {
     expect(second.previousSnapshot?.snapshotId).toBe(first.record.snapshotId);
     expect(second.diff?.summary.addedNodeCount).toBeGreaterThan(0);
     expect(second.storedGraph.nodes.length).toBeGreaterThan(first.storedGraph.nodes.length);
-    expect(await store.listSnapshots({ labels: { ingestKind: "cerbos_decision" } })).toHaveLength(1);
-    expect(await store.listSnapshots({ tag: "permission_engine_middleware_feedback" })).toHaveLength(1);
+    expect(await store.listSnapshots({ labels: { ingestKind: 'cerbos_decision' } })).toHaveLength(
+      1,
+    );
+    expect(
+      await store.listSnapshots({ tag: 'permission_engine_middleware_feedback' }),
+    ).toHaveLength(1);
   });
 
-  it("computes authorization coverage scores for proxy, app, and decisions", () => {
+  it('computes authorization coverage scores for proxy, app, and decisions', () => {
     const identityRealm = createAuthorizationRealm({
-      kind: "identity",
-      authority: "zitadel:prod",
-      environment: "prod",
+      kind: 'identity',
+      authority: 'zitadel:prod',
+      environment: 'prod',
     });
     const policyRealm = createAuthorizationRealm({
-      kind: "policy",
-      authority: "cerbos:prod",
-      environment: "prod",
+      kind: 'policy',
+      authority: 'cerbos:prod',
+      environment: 'prod',
     });
     const appRealm = createAuthorizationRealm({
-      kind: "application",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'application',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const enforcementRealm = createAuthorizationRealm({
-      kind: "enforcement",
-      authority: "service:crm",
-      environment: "prod",
+      kind: 'enforcement',
+      authority: 'service:crm',
+      environment: 'prod',
     });
     const policyGraph = projectCerbosResourcePolicy({
       policyRealm,
       resourceRealm: appRealm,
       policy: {
         resourcePolicy: {
-          resource: "crm.customer_profile",
+          resource: 'crm.customer_profile',
           rules: [
             {
-              actions: ["read", "export"],
-              effect: "EFFECT_ALLOW",
-              roles: ["analyst"],
+              actions: ['read', 'export'],
+              effect: 'EFFECT_ALLOW',
+              roles: ['analyst'],
             },
           ],
         },
       },
     });
     const routeGraph = projectStructuredEnforcementRoute({
-      environment: "prod",
+      environment: 'prod',
       route: {
-        host: "crm.example.com",
-        path: "/customers",
+        host: 'crm.example.com',
+        path: '/customers',
       },
       proxy: {
-        authority: "nginx:prod",
-        kind: "nginx_proxy",
-        id: "edge-nginx:crm",
+        authority: 'nginx:prod',
+        kind: 'nginx_proxy',
+        id: 'edge-nginx:crm',
       },
       upstream: {
-        authority: "service:crm",
-        id: "crm.customer_profile",
+        authority: 'service:crm',
+        id: 'crm.customer_profile',
       },
       policy: {
-        authority: "cerbos:prod",
-        id: "cerbos:resource:crm.customer_profile",
+        authority: 'cerbos:prod',
+        id: 'cerbos:resource:crm.customer_profile',
       },
     });
     const appGraph = projectStructuredApplicationAuthorization({
-      environment: "prod",
+      environment: 'prod',
       service: {
-        authority: "service:crm",
-        id: "crm-api",
+        authority: 'service:crm',
+        id: 'crm-api',
       },
       middleware: {
-        authority: "service:crm",
-        id: "crm-api:cerbos-middleware",
+        authority: 'service:crm',
+        id: 'crm-api:cerbos-middleware',
       },
       resource: {
-        id: "crm.customer_profile:customer-123",
-        kind: "domain_resource",
+        id: 'crm.customer_profile:customer-123',
+        kind: 'domain_resource',
       },
       policy: {
-        authority: "cerbos:prod",
-        id: "cerbos:resource:crm.customer_profile",
+        authority: 'cerbos:prod',
+        id: 'cerbos:resource:crm.customer_profile',
       },
-      actions: ["read"],
+      actions: ['read'],
     });
     const decisionGraph = projectCerbosDecisionObservation({
       identityRealm,
@@ -1814,24 +1823,24 @@ server {
       policyRealm,
       enforcementPoint: {
         realm: enforcementRealm,
-        enforcementPointId: "crm-api:cerbos-middleware",
-        kind: "service_middleware",
+        enforcementPointId: 'crm-api:cerbos-middleware',
+        kind: 'service_middleware',
       },
       decision: {
-        requestId: "req-coverage",
+        requestId: 'req-coverage',
         principal: {
-          id: "user-1",
-          roles: ["analyst"],
+          id: 'user-1',
+          roles: ['analyst'],
         },
         resource: {
-          id: "crm.customer_profile",
-          kind: "service",
+          id: 'crm.customer_profile',
+          kind: 'service',
         },
         actions: [
           {
-            action: "read",
-            effect: "EFFECT_ALLOW",
-            policyId: "cerbos:resource:crm.customer_profile",
+            action: 'read',
+            effect: 'EFFECT_ALLOW',
+            policyId: 'cerbos:resource:crm.customer_profile',
           },
         ],
       },
@@ -1852,19 +1861,19 @@ server {
       mergeAuthorizationGraphs(
         policyGraph,
         projectStructuredEnforcementRoute({
-          environment: "prod",
+          environment: 'prod',
           route: {
-            host: "crm.example.com",
-            path: "/exports",
+            host: 'crm.example.com',
+            path: '/exports',
           },
           proxy: {
-            authority: "nginx:prod",
-            kind: "nginx_proxy",
-            id: "edge-nginx:crm",
+            authority: 'nginx:prod',
+            kind: 'nginx_proxy',
+            id: 'edge-nginx:crm',
           },
           upstream: {
-            authority: "service:crm",
-            id: "crm.customer_profile",
+            authority: 'service:crm',
+            id: 'crm.customer_profile',
           },
         }),
       ),

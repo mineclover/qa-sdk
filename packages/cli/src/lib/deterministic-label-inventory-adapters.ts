@@ -1,26 +1,26 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import type { DocumentAdapter } from "doc-envelope";
+import type { DocumentAdapter } from 'doc-envelope';
 
 import {
   createArtifactEvidenceAdapter,
   type ArtifactEvidenceAdapterOptions,
-} from "./docs-control-plane/adapters/artifact-evidence.js";
+} from './docs-control-plane/adapters/artifact-evidence.js';
 import {
   createDefinitionMarkdownAdapter,
   type DefinitionMarkdownAdapterOptions,
-} from "./docs-control-plane/adapters/definition-markdown.js";
+} from './docs-control-plane/adapters/definition-markdown.js';
 import {
   createPrdMarkdownAdapter,
   type PrdMarkdownAdapterOptions,
-} from "./docs-control-plane/adapters/prd-markdown.js";
+} from './docs-control-plane/adapters/prd-markdown.js';
 import {
   createRalphPrdJsonAdapter,
   createRalphSessionAdapter,
   type RalphPrdJsonAdapterOptions,
   type RalphSessionAdapterOptions,
-} from "ralph-tui-integration";
+} from 'ralph-tui-integration';
 
 export interface DeterministicLabelInventoryAdapterOptions {
   readonly rootDir: string;
@@ -83,9 +83,7 @@ export function createDeterministicLabelInventoryAdapters(
   };
   const artifactOptions: ArtifactEvidenceAdapterOptions = {
     rootDir: options.rootDir,
-    ...(options.artifactRegistryPaths
-      ? { registryPaths: options.artifactRegistryPaths }
-      : {}),
+    ...(options.artifactRegistryPaths ? { registryPaths: options.artifactRegistryPaths } : {}),
   };
 
   return [
@@ -100,7 +98,9 @@ export function createDeterministicLabelInventoryAdapters(
 function resolvePrdJsonPath(
   options: DeterministicLabelInventoryAdapterOptions,
 ): string | undefined {
-  return options.prdJsonPath
-    ?? (options.prdPath?.endsWith(".json") ? options.prdPath : undefined)
-    ?? undefined;
+  return (
+    options.prdJsonPath ??
+    (options.prdPath?.endsWith('.json') ? options.prdPath : undefined) ??
+    undefined
+  );
 }

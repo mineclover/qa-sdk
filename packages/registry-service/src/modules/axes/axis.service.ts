@@ -1,12 +1,12 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable, Optional } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
-import type { AxisProfileRecord, AxisProfileStore } from "../../stores/axis-profile-store.js";
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
+import type { AxisProfileRecord, AxisProfileStore } from '../../stores/axis-profile-store.js';
 
-export const AXIS_STORE = "AXIS_STORE";
-export const AXIS_CHANGE_HANDLER = "AXIS_CHANGE_HANDLER";
+export const AXIS_STORE = 'AXIS_STORE';
+export const AXIS_CHANGE_HANDLER = 'AXIS_CHANGE_HANDLER';
 
 type AxisCreatePayload = {
   id?: string | null;
@@ -55,12 +55,12 @@ export class AxisService {
   async register(catalogId: string, input: unknown) {
     const body = this.asCreatePayload(input);
     if (!body.id || !body.name) {
-      throw new AppError("INVALID_INPUT", "id, name 필수", 400);
+      throw new AppError('INVALID_INPUT', 'id, name 필수', 400);
     }
 
     const existing = await this.axisStore.get(body.id, catalogId);
     if (existing) {
-      throw new AppError("CONFLICT", `Axis '${body.id}' already exists`, 409);
+      throw new AppError('CONFLICT', `Axis '${body.id}' already exists`, 409);
     }
 
     const now = new Date().toISOString();
@@ -68,7 +68,7 @@ export class AxisService {
       id: body.id,
       catalogId,
       name: body.name,
-      currentVersion: "v1",
+      currentVersion: 'v1',
       capacity: body.capacity ?? 32,
       entryCount: body.entryCount ?? 0,
       ...(body.meta ? { meta: body.meta } : {}),
@@ -89,12 +89,17 @@ export class AxisService {
   async addEntry(catalogId: string, id: string, input: unknown) {
     const body = this.asEntryPayload(input);
     if (!body.entry) {
-      throw new AppError("INVALID_INPUT", "entry 필수", 400);
+      throw new AppError('INVALID_INPUT', 'entry 필수', 400);
     }
 
     const existing = await this.requireAxis(catalogId, id);
     if (existing.entryCount >= existing.capacity) {
-      throw new AppError("CONFLICT", `Axis '${id}' has no headroom (${existing.entryCount}/${existing.capacity}). Increase capacity first.`, 409, { headroom: 0 });
+      throw new AppError(
+        'CONFLICT',
+        `Axis '${id}' has no headroom (${existing.entryCount}/${existing.capacity}). Increase capacity first.`,
+        409,
+        { headroom: 0 },
+      );
     }
 
     const nextEntryCount = existing.entryCount + 1;
@@ -119,7 +124,7 @@ export class AxisService {
   private async requireAxis(catalogId: string, id: string): Promise<AxisProfileRecord> {
     const record = await this.axisStore.get(id, catalogId);
     if (!record) {
-      throw new AppError("NOT_FOUND", `Axis '${id}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Axis '${id}' not found`, 404);
     }
 
     return record;
@@ -142,7 +147,7 @@ export class AxisService {
   }
 
   private asRecord(input: unknown): Record<string, unknown> {
-    if (!input || typeof input !== "object") {
+    if (!input || typeof input !== 'object') {
       return {};
     }
 

@@ -11,11 +11,11 @@
  * 설계: docs/relational-engine.md
  */
 
-import type { CoordConstraint, EntityId } from "weighted-index";
-import { calcAddressRanges, containsAddress } from "weighted-index";
-import { MetaRegistry } from "./meta-registry.js";
-import { MetaCodec } from "./meta-codec.js";
-import type { MetaRegistryInput, VersionedValue } from "./types.js";
+import type { CoordConstraint, EntityId } from 'weighted-index';
+import { calcAddressRanges, containsAddress } from 'weighted-index';
+import { MetaRegistry } from './meta-registry.js';
+import { MetaCodec } from './meta-codec.js';
+import type { MetaRegistryInput, VersionedValue } from './types.js';
 import {
   matchRules,
   resolvePolicy,
@@ -24,8 +24,8 @@ import {
   type ConflictStrategy,
   type ResolveResult,
   type ConflictReport,
-} from "./policy-resolver.js";
-import { composeQuery, deepDecode, type DeepDecodeResult } from "./cross-index-query.js";
+} from './policy-resolver.js';
+import { composeQuery, deepDecode, type DeepDecodeResult } from './cross-index-query.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,11 +83,7 @@ export class RelationalEngine {
   }
 
   /** entity names → VersionedValue */
-  encode(
-    indexId: string,
-    versionId: string,
-    entities: Record<string, EntityId>,
-  ): VersionedValue {
+  encode(indexId: string, versionId: string, entities: Record<string, EntityId>): VersionedValue {
     return this.codec(indexId, versionId).encode(entities);
   }
 
@@ -209,13 +205,18 @@ export class RelationalEngine {
 
     // Level 2: instance-level 매칭 (조건 충족 시)
     if (matchedTypeRule?.instanceRules && instanceCoord) {
-      const { indexId, versionId, rules: instRules, strategy: instStrategy } = matchedTypeRule.instanceRules;
+      const {
+        indexId,
+        versionId,
+        rules: instRules,
+        strategy: instStrategy,
+      } = matchedTypeRule.instanceRules;
       const instWi = this.registry.getWeightedIndex(indexId, versionId);
 
       const instResult = resolvePolicy(instanceCoord, instRules, instWi.shape, instStrategy);
 
       return {
-        value: instResult ? instResult.value as T : typeResult.value as T,
+        value: instResult ? (instResult.value as T) : (typeResult.value as T),
         typeLevel: typeResult,
         instanceLevel: instResult,
       };

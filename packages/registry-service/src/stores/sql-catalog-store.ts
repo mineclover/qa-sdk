@@ -1,8 +1,8 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { SqlDriver } from "index-meta";
-import type { CatalogRecord, CatalogStore } from "./catalog-store.js";
+import type { SqlDriver } from 'index-meta';
+import type { CatalogRecord, CatalogStore } from './catalog-store.js';
 
 export class SqlCatalogStore implements CatalogStore {
   constructor(private readonly driver: SqlDriver) {}
@@ -17,15 +17,23 @@ export class SqlCatalogStore implements CatalogStore {
 
   async get(id: string): Promise<CatalogRecord | null> {
     const row = await this.driver.queryOne<{
-      id: string; name: string; data: string; created_at: string; updated_at: string;
-    }>("SELECT * FROM catalogs WHERE id = ?", [id]);
+      id: string;
+      name: string;
+      data: string;
+      created_at: string;
+      updated_at: string;
+    }>('SELECT * FROM catalogs WHERE id = ?', [id]);
     return row ? toRecord(row) : null;
   }
 
   async list(): Promise<CatalogRecord[]> {
     const rows = await this.driver.query<{
-      id: string; name: string; data: string; created_at: string; updated_at: string;
-    }>("SELECT * FROM catalogs ORDER BY updated_at DESC");
+      id: string;
+      name: string;
+      data: string;
+      created_at: string;
+      updated_at: string;
+    }>('SELECT * FROM catalogs ORDER BY updated_at DESC');
     return rows.map(toRecord);
   }
 
@@ -37,12 +45,16 @@ export class SqlCatalogStore implements CatalogStore {
   }
 
   async delete(id: string): Promise<void> {
-    await this.driver.execute("DELETE FROM catalogs WHERE id = ?", [id]);
+    await this.driver.execute('DELETE FROM catalogs WHERE id = ?', [id]);
   }
 }
 
 function toRecord(row: {
-  id: string; name: string; data: string; created_at: string; updated_at: string;
+  id: string;
+  name: string;
+  data: string;
+  created_at: string;
+  updated_at: string;
 }): CatalogRecord {
   return {
     id: row.id,

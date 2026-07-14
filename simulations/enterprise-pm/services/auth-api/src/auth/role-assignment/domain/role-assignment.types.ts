@@ -1,9 +1,9 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { UserId, RoleId, RoleAssignmentId } from "./role-assignment.ids.js";
+import type { UserId, RoleId, RoleAssignmentId } from './role-assignment.ids.js';
 
-export type AssignmentScopeType = "global" | "department" | "project";
+export type AssignmentScopeType = 'global' | 'department' | 'project';
 
 export interface RoleAssignmentProps {
   readonly id: RoleAssignmentId;

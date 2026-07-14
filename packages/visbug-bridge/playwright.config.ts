@@ -1,9 +1,9 @@
-import { defineConfig, devices } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
-import { dirname, resolve } from 'node:path'
+import { defineConfig, devices } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const monorepoRoot = resolve(__dirname, '../..')
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = resolve(__dirname, '../..');
 
 export default defineConfig({
   testDir: './test/e2e',
@@ -26,4 +26,4 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
   },
-})
+});

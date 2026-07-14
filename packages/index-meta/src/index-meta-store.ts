@@ -1,7 +1,7 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { EntityId } from "./types.js";
+import type { EntityId } from './types.js';
 
 // ── Record 타입 ───────────────────────────────────────────
 
@@ -15,7 +15,7 @@ export interface SchemaVersionRecord {
 export interface EntryRecord {
   readonly prefix: string;
   readonly versionId: string;
-  readonly position: number;  // 1-based
+  readonly position: number; // 1-based
   readonly value: EntityId;
   readonly createdAt: string; // ISO 8601
 }
@@ -58,7 +58,7 @@ export interface IndexMetaStore {
     prefix: string,
     versionId: string,
     from: number,
-    to: number
+    to: number,
   ): Promise<EntryRecord[]>;
 
   /** 특정 position의 entry 조회. 없으면 null. */
@@ -89,6 +89,6 @@ export interface IndexMetaStore {
     prefix: string,
     fromVersion: string,
     toVersion: string,
-    positionMap?: Record<number, number>
+    positionMap?: Record<number, number>,
   ): Promise<{ migrated: number; skipped: number }>;
 }

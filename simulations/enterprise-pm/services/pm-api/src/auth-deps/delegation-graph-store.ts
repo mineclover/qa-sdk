@@ -9,12 +9,12 @@ import {
   InMemoryAuthorizationGraphStore,
   type AuthorizationGraphStore,
   type AuthorizationOntologyGraph,
-} from "authorization-ontology";
+} from 'authorization-ontology';
 
 const SIM_PM_GRAPH_REALM = createAuthorizationRealm({
-  kind: "application",
-  authority: "sim-pm-api",
-  environment: "sim",
+  kind: 'application',
+  authority: 'sim-pm-api',
+  environment: 'sim',
 });
 
 function emptyDelegationGraph(graphRootId: string): AuthorizationOntologyGraph {
@@ -24,9 +24,9 @@ function emptyDelegationGraph(graphRootId: string): AuthorizationOntologyGraph {
       createResourceNode({
         realm: SIM_PM_GRAPH_REALM,
         resourceId: graphRootId,
-        resourceKind: "graph_node",
+        resourceKind: 'graph_node',
         attributes: {
-          graphKind: "delegation",
+          graphKind: 'delegation',
           graphRootId,
         },
       }),
@@ -42,9 +42,9 @@ function delegateGraph(graphRootId: string, delegateUserId: string): Authorizati
       createPrincipalNode({
         realm: SIM_PM_GRAPH_REALM,
         principalId: delegateUserId,
-        principalKind: "human_user",
+        principalKind: 'human_user',
         attributes: {
-          graphKind: "delegation",
+          graphKind: 'delegation',
           graphRootId,
           delegated: true,
         },
@@ -73,7 +73,7 @@ export class ProjectDelegationGraphStore {
       graph: nextGraph,
       sourceRef: `sim-pm-api://delegation/${graphRootId}`,
       labels: {
-        graphKind: "delegation",
+        graphKind: 'delegation',
       },
       metadata: {
         delegateUserId,
@@ -84,12 +84,13 @@ export class ProjectDelegationGraphStore {
   async hasDelegate(graphRootId: string, userId: string): Promise<boolean> {
     const snapshot = await this.latestSnapshot(graphRootId);
     if (!snapshot) return false;
-    return snapshot.graph.nodes.some((node) =>
-      node.kind === "principal" &&
-      node.coord.anchor === userId &&
-      node.metadata?.attributes &&
-      typeof node.metadata.attributes === "object" &&
-      (node.metadata.attributes as Record<string, unknown>).graphRootId === graphRootId,
+    return snapshot.graph.nodes.some(
+      (node) =>
+        node.kind === 'principal' &&
+        node.coord.anchor === userId &&
+        node.metadata?.attributes &&
+        typeof node.metadata.attributes === 'object' &&
+        (node.metadata.attributes as Record<string, unknown>).graphRootId === graphRootId,
     );
   }
 

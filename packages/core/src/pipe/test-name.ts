@@ -10,11 +10,9 @@
 
 // ── 카테고리 (고정 7종) ─────────────────────────────
 
-export const TEST_CATEGORIES = [
-  "정상", "엣지", "소비", "체인", "충돌", "연동", "직렬화",
-] as const;
+export const TEST_CATEGORIES = ['정상', '엣지', '소비', '체인', '충돌', '연동', '직렬화'] as const;
 
-export type TestCategory = typeof TEST_CATEGORIES[number];
+export type TestCategory = (typeof TEST_CATEGORIES)[number];
 
 // ── 메타데이터 ──────────────────────────────────────
 
@@ -51,10 +49,10 @@ export interface TestNameResult {
 // ── 이름 생성 ───────────────────────────────────────
 
 export function testName(input: TestNameInput): TestNameResult {
-  const facetSuffix = input.facet ? ` [${input.facet}]` : "";
+  const facetSuffix = input.facet ? ` [${input.facet}]` : '';
   const describeName = `${input.module} > ${input.fn}${facetSuffix}`;
   const itName = `${input.category}: ${input.input} → ${input.resolved} — ${input.expect}`;
-  const facetTag = input.facet ? `[${input.facet}]` : "";
+  const facetTag = input.facet ? `[${input.facet}]` : '';
   const id = `${input.module} > ${input.fn}${facetTag} > ${input.category}: ${input.input} → ${input.resolved}`;
 
   return { describe: describeName, it: itName, id, meta: input };
@@ -66,7 +64,7 @@ export interface TestGroupInput {
   module: string;
   fn: string;
   facet?: string;
-  cases: Omit<TestNameInput, "module" | "fn" | "facet">[];
+  cases: Omit<TestNameInput, 'module' | 'fn' | 'facet'>[];
 }
 
 export interface TestGroupResult {
@@ -76,11 +74,11 @@ export interface TestGroupResult {
 
 export function testGroup(input: TestGroupInput): TestGroupResult {
   const base = { module: input.module, fn: input.fn, facet: input.facet };
-  const facetSuffix = input.facet ? ` [${input.facet}]` : "";
+  const facetSuffix = input.facet ? ` [${input.facet}]` : '';
   const describeName = `${input.module} > ${input.fn}${facetSuffix}`;
 
   return {
     describe: describeName,
-    cases: input.cases.map(c => testName({ ...base, ...c })),
+    cases: input.cases.map((c) => testName({ ...base, ...c })),
   };
 }

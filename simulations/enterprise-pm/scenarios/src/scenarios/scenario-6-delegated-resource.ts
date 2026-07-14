@@ -1,15 +1,15 @@
 // @def.boundary sim-scenarios
 // @def.doc authorization-ontology-resource-lifecycle
 
-import { ok, equal } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
+import { ok, equal } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
 import {
   fetchAuditContext,
   fetchGraphSnapshotDiff,
   fetchGraphSnapshotList,
   fetchGraphSnapshotPrune,
-} from "./lib/audit-helpers.js";
-import { auditContextHint } from "../post-run/operator-handoff.js";
+} from './lib/audit-helpers.js';
+import { auditContextHint } from '../post-run/operator-handoff.js';
 
 interface S6Ctx {
   alice: { email: string; password: string };
@@ -36,50 +36,47 @@ interface S6Ctx {
  *   - audit entry pass=acl 존재 (DELEGATED 분기 증거)
  */
 export const scenario6DelegatedResource: Scenario<S6Ctx> = {
-  name: "scenario-6-delegated-resource",
-  description:
-    "alice 가 외부 컨설턴트 frank 에게 project 리소스 위임 → frank 접근 가능",
+  name: 'scenario-6-delegated-resource',
+  description: 'alice 가 외부 컨설턴트 frank 에게 project 리소스 위임 → frank 접근 가능',
   validates: [
-    "resource-policy DELEGATED state",
-    "AccessChecker Pass 2 acl branch",
-    "InstancePolicyEvaluator.evaluateDelegated",
-    "authorization-graph",
+    'resource-policy DELEGATED state',
+    'AccessChecker Pass 2 acl branch',
+    'InstancePolicyEvaluator.evaluateDelegated',
+    'authorization-graph',
   ],
 
   async setup() {
     const handle = (globalThis as any).__simHandle;
-    if (!handle) throw new Error("__simHandle not bound");
+    if (!handle) throw new Error('__simHandle not bound');
     const fx = handle.fixtures;
 
     // setup 단계에서 project 생성 — alice token 으로 gateway 경유
     const gatewayFetch = (globalThis as any).__simGatewayFetch;
-    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
+    if (!gatewayFetch) throw new Error('__simGatewayFetch not bound');
     const aliceLogin = await gatewayFetch(
-      new Request("http://sim/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://sim/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email: fx.alice.email, password: fx.alice.password }),
       }),
     );
     if (!aliceLogin.ok) throw new Error(`alice login: ${aliceLogin.status}`);
     const { token: aliceToken } = (await aliceLogin.json()) as { token: string };
     const createRes = await gatewayFetch(
-      new Request("http://sim/projects", {
-        method: "POST",
+      new Request('http://sim/projects', {
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${aliceToken}`,
         },
         body: JSON.stringify({
-          name: "Consulting Project",
+          name: 'Consulting Project',
           departmentId: fx.departments.eng,
         }),
       }),
     );
     if (createRes.status !== 201) {
-      throw new Error(
-        `setup project create: ${createRes.status} ${await createRes.text()}`,
-      );
+      throw new Error(`setup project create: ${createRes.status} ${await createRes.text()}`);
     }
     const project = (await createRes.json()) as { id: string };
 
@@ -93,28 +90,30 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
   },
 
   async act(ctx) {
-    const gatewayFetch = (globalThis as unknown as {
-      __simGatewayFetch?: (r: Request) => Promise<Response>;
-    }).__simGatewayFetch!;
+    const gatewayFetch = (
+      globalThis as unknown as {
+        __simGatewayFetch?: (r: Request) => Promise<Response>;
+      }
+    ).__simGatewayFetch!;
     const traceIds: string[] = [];
 
     // alice login
     const aliceLogin = await gatewayFetch(
-      new Request("http://sim/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://sim/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(ctx.alice),
       }),
     );
     const { token: aliceToken } = (await aliceLogin.json()) as { token: string };
-    traceIds.push(aliceLogin.headers.get("x-trace-id") ?? "");
+    traceIds.push(aliceLogin.headers.get('x-trace-id') ?? '');
 
     // POST /projects/:id/delegate
     const delegateRes = await gatewayFetch(
       new Request(`http://sim/projects/${ctx.project.id}/delegate`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${aliceToken}`,
         },
         body: JSON.stringify({
@@ -124,11 +123,9 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       }),
     );
     if (!delegateRes.ok) {
-      throw new Error(
-        `delegate: status=${delegateRes.status} body=${await delegateRes.text()}`,
-      );
+      throw new Error(`delegate: status=${delegateRes.status} body=${await delegateRes.text()}`);
     }
-    traceIds.push(delegateRes.headers.get("x-trace-id") ?? "");
+    traceIds.push(delegateRes.headers.get('x-trace-id') ?? '');
     const delegated = (await delegateRes.json()) as {
       state: string;
       graphRootId: string;
@@ -136,9 +133,9 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
 
     const appendRes = await gatewayFetch(
       new Request(`http://sim/projects/${ctx.project.id}/delegates`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${aliceToken}`,
         },
         body: JSON.stringify({
@@ -147,23 +144,20 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       }),
     );
     if (!appendRes.ok) {
-      throw new Error(
-        `append-delegate: status=${appendRes.status} body=${await appendRes.text()}`,
-      );
+      throw new Error(`append-delegate: status=${appendRes.status} body=${await appendRes.text()}`);
     }
 
     // frank login
     const frankLogin = await gatewayFetch(
-      new Request("http://sim/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://sim/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email: ctx.frank.email, password: ctx.frank.password }),
       }),
     );
-    if (!frankLogin.ok)
-      throw new Error(`frank login: ${frankLogin.status}`);
+    if (!frankLogin.ok) throw new Error(`frank login: ${frankLogin.status}`);
     const { token: frankToken } = (await frankLogin.json()) as { token: string };
-    traceIds.push(frankLogin.headers.get("x-trace-id") ?? "");
+    traceIds.push(frankLogin.headers.get('x-trace-id') ?? '');
 
     // frank GET /projects/:id
     const frankGetRes = await gatewayFetch(
@@ -171,22 +165,18 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         headers: { Authorization: `Bearer ${frankToken}` },
       }),
     );
-    const frankGetTraceId = frankGetRes.headers.get("x-trace-id") ?? "";
+    const frankGetTraceId = frankGetRes.headers.get('x-trace-id') ?? '';
     if (frankGetTraceId) traceIds.push(frankGetTraceId);
 
     let frankRootSpanId: string | null = null;
-    const frankBody = frankGetRes.ok
-      ? ((await frankGetRes.json()) as { rootSpanId?: string })
-      : {};
+    const frankBody = frankGetRes.ok ? ((await frankGetRes.json()) as { rootSpanId?: string }) : {};
     frankRootSpanId = frankBody.rootSpanId ?? null;
 
     let auditContext: Awaited<ReturnType<typeof fetchAuditContext>> | null = null;
     let graphSnapshotList: Awaited<ReturnType<typeof fetchGraphSnapshotList>> | null = null;
     let graphSnapshotDiff: Awaited<ReturnType<typeof fetchGraphSnapshotDiff>> | null = null;
     let graphSnapshotPrune: Awaited<ReturnType<typeof fetchGraphSnapshotPrune>> | null = null;
-    let auditContextAfterPrune:
-      | Awaited<ReturnType<typeof fetchAuditContext>>
-      | null = null;
+    let auditContextAfterPrune: Awaited<ReturnType<typeof fetchAuditContext>> | null = null;
     if (frankRootSpanId) {
       auditContext = await fetchAuditContext(
         gatewayFetch,
@@ -194,11 +184,7 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         ctx.graphRootId,
         aliceToken,
       );
-      graphSnapshotList = await fetchGraphSnapshotList(
-        gatewayFetch,
-        ctx.graphRootId,
-        aliceToken,
-      );
+      graphSnapshotList = await fetchGraphSnapshotList(gatewayFetch, ctx.graphRootId, aliceToken);
       if ((graphSnapshotList?.snapshots.length ?? 0) >= 2) {
         const from = graphSnapshotList!.snapshots[0]!;
         const to = graphSnapshotList!.snapshots[graphSnapshotList!.snapshots.length - 1]!;
@@ -240,13 +226,7 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       traceIds: traceIds.filter(Boolean),
       stepCount: 6,
       operatorHints: frankRootSpanId
-        ? [
-            auditContextHint(
-              frankRootSpanId,
-              ctx.graphRootId,
-              "delegated-context",
-            ),
-          ]
+        ? [auditContextHint(frankRootSpanId, ctx.graphRootId, 'delegated-context')]
         : undefined,
     };
   },
@@ -257,10 +237,10 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       d.delegateStatus === 200 || d.delegateStatus === 201,
       `delegate POST should be 200/201, got ${d.delegateStatus}`,
     );
-    equal(d.delegatedState, "DELEGATED", "policy.state must be DELEGATED");
+    equal(d.delegatedState, 'DELEGATED', 'policy.state must be DELEGATED');
     ok(
-      (d.delegatedGraphRootId as string).startsWith("consultant-graph-"),
-      "graphRootId must be set",
+      (d.delegatedGraphRootId as string).startsWith('consultant-graph-'),
+      'graphRootId must be set',
     );
     ok(
       d.appendDelegateStatus === 200 || d.appendDelegateStatus === 201,
@@ -280,34 +260,42 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         byTrigger: Record<string, number>;
       } | null;
     } | null;
-    ok(auditContext, "audit context must exist");
-    equal(auditContext!.graphId, d.delegatedGraphRootId, "graph snapshot must be saved under graphRootId");
-    ok(
-      typeof auditContext!.graphSnapshot.snapshotId === "string" &&
-        auditContext!.graphSnapshot.snapshotId.length > 0,
-      "delegation graph snapshotId must exist",
+    ok(auditContext, 'audit context must exist');
+    equal(
+      auditContext!.graphId,
+      d.delegatedGraphRootId,
+      'graph snapshot must be saved under graphRootId',
     );
     ok(
-      auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.graphRootId) &&
-        auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.frank.id),
-      "delegation graph snapshot must contain graph root and delegate principal",
+      typeof auditContext!.graphSnapshot.snapshotId === 'string' &&
+        auditContext!.graphSnapshot.snapshotId.length > 0,
+      'delegation graph snapshotId must exist',
+    );
+    ok(
+      auditContext!.graphSnapshot.graph.nodes
+        .map((node) => node.coord.anchor)
+        .includes(ctx.graphRootId) &&
+        auditContext!.graphSnapshot.graph.nodes
+          .map((node) => node.coord.anchor)
+          .includes(ctx.frank.id),
+      'delegation graph snapshot must contain graph root and delegate principal',
     );
     ok(
       auditContext!.graphSnapshot.graph.nodes.map((node) => node.coord.anchor).includes(ctx.eve.id),
-      "delegation graph latest snapshot must contain appended delegate principal",
+      'delegation graph latest snapshot must contain appended delegate principal',
     );
 
     const snapshotList = d.graphSnapshotList as {
       count: number;
       snapshots: Array<{ snapshotId: string }>;
     } | null;
-    ok(snapshotList, "graph snapshot list must exist");
+    ok(snapshotList, 'graph snapshot list must exist');
     ok(snapshotList!.count >= 2, `expected >= 2 graph snapshots, got ${snapshotList!.count}`);
 
     const snapshotDiff = d.graphSnapshotDiff as {
       summary: { addedNodeCount: number };
     } | null;
-    ok(snapshotDiff, "graph snapshot diff must exist");
+    ok(snapshotDiff, 'graph snapshot diff must exist');
     ok(
       snapshotDiff!.summary.addedNodeCount >= 1,
       `expected graph diff to add nodes, got ${snapshotDiff!.summary.addedNodeCount}`,
@@ -319,27 +307,23 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
       deletedSnapshotIds: string[];
       keptSnapshotIds: string[];
     } | null;
-    ok(pruneResult, "graph snapshot prune result must exist");
+    ok(pruneResult, 'graph snapshot prune result must exist');
     equal(
       pruneResult!.beforeCount,
       snapshotList!.count,
-      "prune should see the same snapshot count as the pre-prune list",
+      'prune should see the same snapshot count as the pre-prune list',
     );
-    equal(pruneResult!.afterCount, 1, "prune should keep only the latest snapshot");
+    equal(pruneResult!.afterCount, 1, 'prune should keep only the latest snapshot');
     equal(
       pruneResult!.deletedSnapshotIds.length,
       pruneResult!.beforeCount - 1,
-      "prune should delete all but the latest snapshot",
+      'prune should delete all but the latest snapshot',
     );
-    equal(
-      pruneResult!.keptSnapshotIds.length,
-      1,
-      "prune should return one kept snapshot id",
-    );
+    equal(pruneResult!.keptSnapshotIds.length, 1, 'prune should return one kept snapshot id');
     equal(
       pruneResult!.keptSnapshotIds[0],
       auditContext!.graphSnapshot.snapshotId,
-      "prune should keep the latest snapshot from the composite audit view",
+      'prune should keep the latest snapshot from the composite audit view',
     );
 
     const auditContextAfterPrune = d.auditContextAfterPrune as {
@@ -352,30 +336,32 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
         byTrigger: Record<string, number>;
       } | null;
     } | null;
-    ok(auditContextAfterPrune, "audit context after prune must exist");
+    ok(auditContextAfterPrune, 'audit context after prune must exist');
     equal(
       auditContextAfterPrune!.graphSnapshot.snapshotId,
       pruneResult!.keptSnapshotIds[0],
-      "audit context after prune must point to the kept latest snapshot",
+      'audit context after prune must point to the kept latest snapshot',
     );
     equal(
       auditContextAfterPrune!.graphId,
       d.delegatedGraphRootId,
-      "audit context after prune must stay bound to the delegated graph",
+      'audit context after prune must stay bound to the delegated graph',
     );
 
     if (auditContextAfterPrune!.graphRetentionInsight) {
       ok(
         auditContextAfterPrune!.graphRetentionInsight.total >= 1,
-        "graph retention insight should include at least one retention event when ingest insight is available",
+        'graph retention insight should include at least one retention event when ingest insight is available',
       );
       ok(
-        (auditContextAfterPrune!.graphRetentionInsight.summary["sim.graph_retention.graph_pruned"] ?? 0) >= 1,
-        "graph retention insight should include graph_pruned event when available",
+        (auditContextAfterPrune!.graphRetentionInsight.summary[
+          'sim.graph_retention.graph_pruned'
+        ] ?? 0) >= 1,
+        'graph retention insight should include graph_pruned event when available',
       );
       ok(
         (auditContextAfterPrune!.graphRetentionInsight.byTrigger.api ?? 0) >= 1,
-        "graph retention insight should attribute retained events to api trigger when available",
+        'graph retention insight should attribute retained events to api trigger when available',
       );
     }
 
@@ -387,17 +373,15 @@ export const scenario6DelegatedResource: Scenario<S6Ctx> = {
 
     const trace = auditContext!.trace;
     if (trace) {
-      const aclEntries = trace.entries.filter(
-        (e) => e.kind === "check" && e.pass === "acl",
-      );
+      const aclEntries = trace.entries.filter((e) => e.kind === 'check' && e.pass === 'acl');
       ok(
         aclEntries.length >= 1,
         `must have ≥1 acl check entry (DELEGATED branch evidence), found ${aclEntries.length}`,
       );
       const allAllow = trace.entries
-        .filter((e) => e.kind === "check")
-        .every((c) => c.outcome === "allow");
-      ok(allAllow, "all check entries should be allow");
+        .filter((e) => e.kind === 'check')
+        .every((c) => c.outcome === 'allow');
+      ok(allAllow, 'all check entries should be allow');
     }
   },
 

@@ -1,15 +1,15 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { performance } from "node:perf_hooks";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { performance } from 'node:perf_hooks';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { buildDeterministicLabelInventory } from "deterministic-label-registry";
+import { buildDeterministicLabelInventory } from 'deterministic-label-registry';
 
-import { createDeterministicLabelInventoryAdapters } from "./deterministic-label-inventory-adapters.js";
+import { createDeterministicLabelInventoryAdapters } from './deterministic-label-inventory-adapters.js';
 
 /**
  * Stability PRD US-005 + US-006 — live inventory 재실행 결정론 + 성능 budget.
@@ -21,8 +21,8 @@ import { createDeterministicLabelInventoryAdapters } from "./deterministic-label
 
 const PERFORMANCE_BUDGET_MS = 5000;
 
-describe("deterministic-label inventory — live rerun determinism", () => {
-  it("produces byte-identical JSON across two consecutive live runs", async () => {
+describe('deterministic-label inventory — live rerun determinism', () => {
+  it('produces byte-identical JSON across two consecutive live runs', async () => {
     const repoRoot = resolveRepoRoot();
     const options = {
       rootDir: repoRoot,
@@ -39,9 +39,9 @@ describe("deterministic-label inventory — live rerun determinism", () => {
 
     if (firstJson !== secondJson) {
       throw new Error(
-        "Inventory output is NOT byte-identical on immediate rerun. " +
-          "This indicates hidden non-determinism (random order, wall time, env dependency). " +
-          "Investigate the projection pipeline with `scripts/stability-exploration.ts`.",
+        'Inventory output is NOT byte-identical on immediate rerun. ' +
+          'This indicates hidden non-determinism (random order, wall time, env dependency). ' +
+          'Investigate the projection pipeline with `scripts/stability-exploration.ts`.',
       );
     }
 
@@ -50,7 +50,7 @@ describe("deterministic-label inventory — live rerun determinism", () => {
     expect(first.diagnostics.length).toBe(second.diagnostics.length);
   });
 
-  it("finishes a real-repo inventory within the stability performance budget", async () => {
+  it('finishes a real-repo inventory within the stability performance budget', async () => {
     const repoRoot = resolveRepoRoot();
     const start = performance.now();
     await buildDeterministicLabelInventory({
@@ -68,5 +68,5 @@ describe("deterministic-label inventory — live rerun determinism", () => {
 
 function resolveRepoRoot(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  return resolve(__dirname, "../../../..");
+  return resolve(__dirname, '../../../..');
 }

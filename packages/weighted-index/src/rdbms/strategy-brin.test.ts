@@ -18,8 +18,8 @@
  * PG 통합 테스트 환경에서 검증할 것.
  */
 
-import { describe, it } from "vitest";
+import { describe, it } from 'vitest';
 
-describe.skip("#4 BRIN — PostgreSQL 전용 (메모)", () => {
-  it("placeholder — PG 통합 환경에서 검증", () => {});
+describe.skip('#4 BRIN — PostgreSQL 전용 (메모)', () => {
+  it('placeholder — PG 통합 환경에서 검증', () => {});
 });

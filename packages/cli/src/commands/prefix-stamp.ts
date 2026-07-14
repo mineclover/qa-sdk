@@ -11,11 +11,11 @@
  *   3. latestPrefixVersion (폴백)
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
-import { extname, resolve, relative, join } from "node:path";
-import type { Catalog } from "@qa-sdk/core";
-import { latestPrefixVersion } from "@qa-sdk/core";
-import { getServiceUrl } from "../lib/service-profile.js";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { extname, resolve, relative, join } from 'node:path';
+import type { Catalog } from '@qa-sdk/core';
+import { latestPrefixVersion } from '@qa-sdk/core';
+import { getServiceUrl } from '../lib/service-profile.js';
 
 // ── Version Resolver ─────────────────────────────────────────────────────────
 
@@ -42,14 +42,12 @@ function createManifestResolver(
 }
 
 /** VERSION_META.prefixVersions 기반 resolver */
-function createVersionMetaResolver(
-  prefixVersions: Record<string, string>,
-): VersionResolver {
+function createVersionMetaResolver(prefixVersions: Record<string, string>): VersionResolver {
   return {
     resolve(catalog, prefixId) {
       return prefixVersions[prefixId] ?? latestPrefixVersion(catalog, prefixId);
     },
-    source: "VERSION_META",
+    source: 'VERSION_META',
   };
 }
 
@@ -57,7 +55,7 @@ function createVersionMetaResolver(
 function createLatestResolver(): VersionResolver {
   return {
     resolve: latestPrefixVersion,
-    source: "latest",
+    source: 'latest',
   };
 }
 
@@ -67,10 +65,7 @@ function createLatestResolver(): VersionResolver {
  * VERSION_META 발견 → prefixVersions 사용
  * 없으면 → latest 폴백
  */
-function buildVersionResolver(
-  catalog: Catalog,
-  serviceId?: string,
-): VersionResolver {
+function buildVersionResolver(catalog: Catalog, serviceId?: string): VersionResolver {
   // 1. --service 지정 시: 로컬 → registry 순서로 매니페스트 탐색
   if (serviceId) {
     const manifest = loadLocalManifest(serviceId) ?? fetchRegistryManifest(serviceId);
@@ -96,17 +91,17 @@ function buildVersionResolver(
  */
 function findVersionMeta(): Record<string, string> | null {
   const candidates = [
-    resolve(process.cwd(), "packages/demo-types/src/prefix-ids.ts"),
-    resolve(process.cwd(), "packages/demo-types/dist/prefix-ids.js"),
-    resolve(process.cwd(), "generated/prefix-ids.ts"),
-    resolve(process.cwd(), "generated/prefix-ids.js"),
-    resolve(process.cwd(), "src/generated/prefix-ids.ts"),
+    resolve(process.cwd(), 'packages/demo-types/src/prefix-ids.ts'),
+    resolve(process.cwd(), 'packages/demo-types/dist/prefix-ids.js'),
+    resolve(process.cwd(), 'generated/prefix-ids.ts'),
+    resolve(process.cwd(), 'generated/prefix-ids.js'),
+    resolve(process.cwd(), 'src/generated/prefix-ids.ts'),
   ];
 
   for (const candidate of candidates) {
     if (!existsSync(candidate)) continue;
     try {
-      const content = readFileSync(candidate, "utf-8");
+      const content = readFileSync(candidate, 'utf-8');
       // prefixVersions 오브젝트를 정규식으로 추출
       const match = content.match(/prefixVersions:\s*\{([^}]+)\}/s);
       if (!match) continue;
@@ -132,7 +127,7 @@ function findVersionMeta(): Record<string, string> | null {
  * ~/.qa-sdk/manifests/{serviceId}.json 또는 프로젝트 내 manifest 파일을 탐색.
  */
 function loadLocalManifest(serviceId: string): Record<string, string> | null {
-  const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? "";
+  const homeDir = process.env.HOME ?? process.env.USERPROFILE ?? '';
   const candidates = [
     resolve(homeDir, `.qa-sdk/manifests/${serviceId}.json`),
     resolve(process.cwd(), `.qa-sdk/manifests/${serviceId}.json`),
@@ -142,10 +137,10 @@ function loadLocalManifest(serviceId: string): Record<string, string> | null {
   for (const candidate of candidates) {
     if (!existsSync(candidate)) continue;
     try {
-      const content = readFileSync(candidate, "utf-8");
+      const content = readFileSync(candidate, 'utf-8');
       const parsed = JSON.parse(content) as Record<string, unknown>;
       const prefixVersions = parsed.prefixVersions;
-      if (prefixVersions && typeof prefixVersions === "object" && !Array.isArray(prefixVersions)) {
+      if (prefixVersions && typeof prefixVersions === 'object' && !Array.isArray(prefixVersions)) {
         return prefixVersions as Record<string, string>;
       }
     } catch {
@@ -161,14 +156,14 @@ function loadLocalManifest(serviceId: string): Record<string, string> | null {
  */
 function fetchRegistryManifest(serviceId: string): Record<string, string> | null {
   try {
-    const registryUrl = getServiceUrl("registry-service");
+    const registryUrl = getServiceUrl('registry-service');
     const url = `${registryUrl}/api/services/${serviceId}/manifest`;
     // 동기 fetch — CLI이므로 허용. AbortSignal.timeout 적용.
     const resp = fetchSync(url);
     if (!resp) return null;
     const parsed = JSON.parse(resp) as Record<string, unknown>;
     const prefixes = parsed.prefixVersions ?? parsed.prefixes;
-    if (prefixes && typeof prefixes === "object" && !Array.isArray(prefixes)) {
+    if (prefixes && typeof prefixes === 'object' && !Array.isArray(prefixes)) {
       console.log(`  registry manifest 로드: ${serviceId}`);
       return prefixes as Record<string, string>;
     }
@@ -181,8 +176,11 @@ function fetchRegistryManifest(serviceId: string): Record<string, string> | null
 /** 동기 HTTP GET — CLI 전용. 5초 타임아웃. */
 function fetchSync(url: string): string | null {
   try {
-    const { execSync } = require("node:child_process") as typeof import("node:child_process");
-    return execSync(`curl -sf --max-time 5 "${url}"`, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+    const { execSync } = require('node:child_process') as typeof import('node:child_process');
+    return execSync(`curl -sf --max-time 5 "${url}"`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
   } catch {
     return null;
   }
@@ -191,32 +189,32 @@ function fetchSync(url: string): string | null {
 // ── 확장자별 주석 접두사 ──────────────────────────────────────────────────────
 
 const COMMENT_PREFIX: Record<string, string> = {
-  ".ts": "//",
-  ".tsx": "//",
-  ".js": "//",
-  ".jsx": "//",
-  ".mts": "//",
-  ".mjs": "//",
-  ".go": "//",
-  ".rs": "//",
-  ".java": "//",
-  ".kt": "//",
-  ".swift": "//",
-  ".c": "//",
-  ".cpp": "//",
-  ".cs": "//",
-  ".py": "#",
-  ".sh": "#",
-  ".bash": "#",
-  ".zsh": "#",
-  ".rb": "#",
-  ".yaml": "#",
-  ".yml": "#",
-  ".toml": "#",
-  ".r": "#",
-  ".lua": "--",
-  ".sql": "--",
-  ".hs": "--",
+  '.ts': '//',
+  '.tsx': '//',
+  '.js': '//',
+  '.jsx': '//',
+  '.mts': '//',
+  '.mjs': '//',
+  '.go': '//',
+  '.rs': '//',
+  '.java': '//',
+  '.kt': '//',
+  '.swift': '//',
+  '.c': '//',
+  '.cpp': '//',
+  '.cs': '//',
+  '.py': '#',
+  '.sh': '#',
+  '.bash': '#',
+  '.zsh': '#',
+  '.rb': '#',
+  '.yaml': '#',
+  '.yml': '#',
+  '.toml': '#',
+  '.r': '#',
+  '.lua': '--',
+  '.sql': '--',
+  '.hs': '--',
 };
 
 // ── SDK 앵커 함수 정의 ────────────────────────────────────────────────────────
@@ -232,7 +230,7 @@ interface AnchorDef {
   /** SDK 함수 이름 (메서드 포함: ".track", "browserTrack" 등) */
   readonly patterns: readonly string[];
   /** prefix ID 추출 방식 */
-  readonly prefixArg: "object-key-1" | "object-key-2" | "string-1" | "string-2";
+  readonly prefixArg: 'object-key-1' | 'object-key-2' | 'string-1' | 'string-2';
 }
 
 /**
@@ -241,25 +239,25 @@ interface AnchorDef {
  */
 interface BindingAnchorDef {
   readonly patterns: readonly string[];
-  readonly prefixArg: "binding-prefixId";
+  readonly prefixArg: 'binding-prefixId';
 }
 
 const BINDING_ANCHORS: readonly BindingAnchorDef[] = [
   // codegen 생성 바인딩 상수: `prefixId: "order_event"`
-  { patterns: ["_BINDING"], prefixArg: "binding-prefixId" },
+  { patterns: ['_BINDING'], prefixArg: 'binding-prefixId' },
 ];
 
 const ANCHORS: readonly AnchorDef[] = [
   // prefix 전용 SDK 함수만 앵커로 사용
   // .encode() / .decode()는 WeightedIndex, BitIndex, Protobuf 등에도 있어 노이즈가 큼
-  { patterns: [".track("], prefixArg: "object-key-1" },
-  { patterns: [".emitWithCoords("], prefixArg: "object-key-2" },
-  { patterns: ["browserTrack("], prefixArg: "object-key-2" },
-  { patterns: ["encodePrefix("], prefixArg: "string-2" },
-  { patterns: ["decodePrefix("], prefixArg: "string-2" },
-  { patterns: ["encodePrefixByValue("], prefixArg: "string-2" },
-  { patterns: ["encodeBySegment("], prefixArg: "string-2" },
-  { patterns: ["decodeBySegment("], prefixArg: "string-1" },
+  { patterns: ['.track('], prefixArg: 'object-key-1' },
+  { patterns: ['.emitWithCoords('], prefixArg: 'object-key-2' },
+  { patterns: ['browserTrack('], prefixArg: 'object-key-2' },
+  { patterns: ['encodePrefix('], prefixArg: 'string-2' },
+  { patterns: ['decodePrefix('], prefixArg: 'string-2' },
+  { patterns: ['encodePrefixByValue('], prefixArg: 'string-2' },
+  { patterns: ['encodeBySegment('], prefixArg: 'string-2' },
+  { patterns: ['decodeBySegment('], prefixArg: 'string-1' },
 ];
 
 // ── 제외 경로 패턴 ───────────────────────────────────────────────────────────
@@ -300,7 +298,7 @@ interface ParsedStamp {
   /** product 모델: dims */
   readonly dims: readonly { label: string; index: number }[];
   /** sum 모델: model/segmentId/consumes */
-  readonly model?: "sum";
+  readonly model?: 'sum';
   readonly segmentId?: string;
   readonly consumes?: readonly string[];
   readonly raw: string;
@@ -316,7 +314,7 @@ function parseStamp(line: string, lineIndex: number): ParsedStamp | null {
   const m = line.match(STAMP_RE);
   if (!m) return null;
 
-  const meta = m[3] || "";
+  const meta = m[3] || '';
 
   // sum 모델 파싱 시도
   const sumMatch = meta.match(SUM_MODEL_RE);
@@ -325,9 +323,9 @@ function parseStamp(line: string, lineIndex: number): ParsedStamp | null {
       prefixId: m[1],
       version: m[2] || undefined,
       dims: [],
-      model: "sum",
+      model: 'sum',
       segmentId: sumMatch[1],
-      consumes: sumMatch[2].split(",").map(s => s.trim()),
+      consumes: sumMatch[2].split(',').map((s) => s.trim()),
       raw: line,
       lineIndex,
     };
@@ -387,7 +385,7 @@ function extractConditionalPrefixIds(
 ): string[] {
   // 호출부 앞 5행 ~ 호출부까지 범위에서 삼항 연산자 패턴 탐색
   const start = Math.max(0, callLine - 5);
-  const context = lines.slice(start, callLine + 1).join("\n");
+  const context = lines.slice(start, callLine + 1).join('\n');
 
   // 패턴: `= ... ? "X" : "Y"` 또는 `=== ... ? "X" : "Y"`
   const ternaryRe = /\?\s*["']([\w-]+)["']\s*:\s*["']([\w-]+)["']/g;
@@ -417,7 +415,7 @@ function extractObjectKeys(code: string, funcCall: string, argPos: number): stri
   }
 
   // 오브젝트 리터럴 시작 찾기
-  const braceIdx = remaining.indexOf("{");
+  const braceIdx = remaining.indexOf('{');
   if (braceIdx < 0) return [];
 
   // 간이 키 추출: 오브젝트 내에서 `key:` 또는 `key :` 패턴
@@ -436,9 +434,9 @@ function extractObjectKeys(code: string, funcCall: string, argPos: number): stri
 function findCommaOutsideParens(s: string): number {
   let depth = 0;
   for (let i = 0; i < s.length; i++) {
-    if (s[i] === "(" || s[i] === "{" || s[i] === "[") depth++;
-    else if (s[i] === ")" || s[i] === "}" || s[i] === "]") depth--;
-    else if (s[i] === "," && depth === 0) return i;
+    if (s[i] === '(' || s[i] === '{' || s[i] === '[') depth++;
+    else if (s[i] === ')' || s[i] === '}' || s[i] === ']') depth--;
+    else if (s[i] === ',' && depth === 0) return i;
   }
   return -1;
 }
@@ -446,8 +444,8 @@ function findCommaOutsideParens(s: string): number {
 function extractBraceContent(s: string, startIdx: number): string | null {
   let depth = 0;
   for (let i = startIdx; i < s.length; i++) {
-    if (s[i] === "{") depth++;
-    else if (s[i] === "}") {
+    if (s[i] === '{') depth++;
+    else if (s[i] === '}') {
       depth--;
       if (depth === 0) return s.slice(startIdx, i + 1);
     }
@@ -471,27 +469,27 @@ function resolveStampLine(
   const version = versionResolver.resolve(catalog, prefixId);
 
   // sum 모델 — 세그먼트별 스탬프
-  if (prefix.addressModel === "sum" && segmentId) {
-    const vdef = prefix.versions.find(v => v.version === version);
-    const seg = vdef?.segments?.find(s => s.segmentId === segmentId);
+  if (prefix.addressModel === 'sum' && segmentId) {
+    const vdef = prefix.versions.find((v) => v.version === version);
+    const seg = vdef?.segments?.find((s) => s.segmentId === segmentId);
     if (!seg) return null;
-    const consumesStr = seg.consumes.join(",");
+    const consumesStr = seg.consumes.join(',');
     return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — model:sum seg:${segmentId} consumes:[${consumesStr}]`;
   }
 
   // sum 모델이지만 segmentId 미지정 → 모든 세그먼트 스탬프 (첫 번째만)
-  if (prefix.addressModel === "sum") {
-    const vdef = prefix.versions.find(v => v.version === version);
+  if (prefix.addressModel === 'sum') {
+    const vdef = prefix.versions.find((v) => v.version === version);
     const seg = vdef?.segments?.[0];
     if (seg) {
-      const consumesStr = seg.consumes.join(",");
+      const consumesStr = seg.consumes.join(',');
       return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — model:sum seg:${seg.segmentId} consumes:[${consumesStr}]`;
     }
   }
 
   // product 모델 (기존)
   const labels = prefix.labels;
-  const dimsStr = labels.map((label, i) => `${label}:${i}`).join(", ");
+  const dimsStr = labels.map((label, i) => `${label}:${i}`).join(', ');
   return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — dims: [${dimsStr}]`;
 }
 
@@ -504,14 +502,14 @@ function resolveAllSegmentStampLines(
   versionResolver: VersionResolver,
 ): string[] {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix || prefix.addressModel !== "sum") return [];
+  if (!prefix || prefix.addressModel !== 'sum') return [];
 
   const version = versionResolver.resolve(catalog, prefixId);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef?.segments) return [];
 
-  return vdef.segments.map(seg => {
-    const consumesStr = seg.consumes.join(",");
+  return vdef.segments.map((seg) => {
+    const consumesStr = seg.consumes.join(',');
     return `${indent}${commentPrefix} @prefix ${prefixId}:${version} — model:sum seg:${seg.segmentId} consumes:[${consumesStr}]`;
   });
 }
@@ -523,7 +521,7 @@ interface StampAction {
   readonly insertBeforeLine: number;
   readonly stampLine: string | null;
   /** 리터럴이면 resolved, 변수면 unresolved */
-  readonly status: "resolved" | "unresolved";
+  readonly status: 'resolved' | 'unresolved';
   /** SDK 함수 패턴 (디버그/리포트용) */
   readonly anchorPattern: string;
   /** 호출부 행 번호 */
@@ -537,7 +535,7 @@ function findAnchorsInFile(
   versionResolver: VersionResolver,
 ): StampAction[] {
   const actions: StampAction[] = [];
-  const fullText = lines.join("\n");
+  const fullText = lines.join('\n');
 
   for (const anchor of ANCHORS) {
     for (const pattern of anchor.patterns) {
@@ -547,39 +545,45 @@ function findAnchorsInFile(
         if (idx < 0) break;
         searchFrom = idx + pattern.length;
 
-        const lineIndex = fullText.slice(0, idx).split("\n").length - 1;
+        const lineIndex = fullText.slice(0, idx).split('\n').length - 1;
         const contextEnd = Math.min(lineIndex + 10, lines.length);
-        const context = lines.slice(lineIndex, contextEnd).join("\n");
+        const context = lines.slice(lineIndex, contextEnd).join('\n');
 
         // prefix ID 추출 시도
         let prefixIds: string[] = [];
-        if (anchor.prefixArg === "string-1") {
+        if (anchor.prefixArg === 'string-1') {
           const id = extractStringArg(context, pattern, 1);
           if (id) prefixIds = [id];
-        } else if (anchor.prefixArg === "string-2") {
+        } else if (anchor.prefixArg === 'string-2') {
           const id = extractStringArg(context, pattern, 2);
           if (id) prefixIds = [id];
-        } else if (anchor.prefixArg === "object-key-1") {
+        } else if (anchor.prefixArg === 'object-key-1') {
           prefixIds = extractObjectKeys(context, pattern, 1);
-        } else if (anchor.prefixArg === "object-key-2") {
+        } else if (anchor.prefixArg === 'object-key-2') {
           prefixIds = extractObjectKeys(context, pattern, 2);
         }
 
         const insertLine = findInsertLine(lines, lineIndex);
-        const indent = lines[insertLine]?.match(/^(\s*)/)?.[1] ?? "";
+        const indent = lines[insertLine]?.match(/^(\s*)/)?.[1] ?? '';
 
         // 카탈로그에 존재하는 리터럴 prefix → resolved
         const validIds = prefixIds.filter((id) => catalog.prefixes[id]);
 
         if (validIds.length > 0) {
           for (const prefixId of validIds) {
-            const stampLine = resolveStampLine(catalog, prefixId, commentPrefix, indent, versionResolver);
+            const stampLine = resolveStampLine(
+              catalog,
+              prefixId,
+              commentPrefix,
+              indent,
+              versionResolver,
+            );
             if (stampLine) {
               actions.push({
                 prefixId,
                 insertBeforeLine: insertLine,
                 stampLine,
-                status: "resolved",
+                status: 'resolved',
                 anchorPattern: pattern,
                 callLine: lineIndex,
               });
@@ -590,13 +594,19 @@ function findAnchorsInFile(
           const conditionalIds = extractConditionalPrefixIds(lines, lineIndex, catalog);
           if (conditionalIds.length > 0) {
             for (const prefixId of conditionalIds) {
-              const stampLine = resolveStampLine(catalog, prefixId, commentPrefix, indent, versionResolver);
+              const stampLine = resolveStampLine(
+                catalog,
+                prefixId,
+                commentPrefix,
+                indent,
+                versionResolver,
+              );
               if (stampLine) {
                 actions.push({
                   prefixId,
                   insertBeforeLine: insertLine,
                   stampLine,
-                  status: "resolved",
+                  status: 'resolved',
                   anchorPattern: pattern,
                   callLine: lineIndex,
                 });
@@ -608,7 +618,7 @@ function findAnchorsInFile(
               prefixId: null,
               insertBeforeLine: insertLine,
               stampLine: null,
-              status: "unresolved",
+              status: 'unresolved',
               anchorPattern: pattern,
               callLine: lineIndex,
             });
@@ -632,14 +642,20 @@ function findAnchorsInFile(
           const prefixId = prefixMatch[1];
           if (!catalog.prefixes[prefixId]) continue;
           const insertLine = findInsertLine(lines, lineIndex);
-          const indent = lines[insertLine]?.match(/^(\s*)/)?.[1] ?? "";
-          const stampLine = resolveStampLine(catalog, prefixId, commentPrefix, indent, versionResolver);
+          const indent = lines[insertLine]?.match(/^(\s*)/)?.[1] ?? '';
+          const stampLine = resolveStampLine(
+            catalog,
+            prefixId,
+            commentPrefix,
+            indent,
+            versionResolver,
+          );
           if (stampLine) {
             actions.push({
               prefixId,
               insertBeforeLine: insertLine,
               stampLine,
-              status: "resolved",
+              status: 'resolved',
               anchorPattern: pattern,
               callLine: lineIndex,
             });
@@ -647,24 +663,32 @@ function findAnchorsInFile(
         }
         // import 구문에서 바인딩 변수명 감지 → 파일 내 prefixId 찾기
         if (/import\s*\{.*_BINDING/.test(line)) {
-          const bindingNames = [...line.matchAll(/([\w]+_BINDING)/g)].map(m => m[1]);
+          const bindingNames = [...line.matchAll(/([\w]+_BINDING)/g)].map((m) => m[1]);
           for (const bindingName of bindingNames) {
             // 파일 전체에서 해당 바인딩의 .prefixId 참조 찾기
             const prefixIdLine = fullText.match(new RegExp(`${bindingName}\\.prefixId`));
             if (!prefixIdLine) continue;
             // 바인딩이 참조되는 위치에 스탬프 — import 행에 삽입
             // 주변에서 prefixId 리터럴 찾기 (codegen 생성 파일이면)
-            const defMatch = fullText.match(new RegExp(`const\\s+${bindingName}[\\s\\S]*?prefixId:\\s*["'](\\w+)["']`));
+            const defMatch = fullText.match(
+              new RegExp(`const\\s+${bindingName}[\\s\\S]*?prefixId:\\s*["'](\\w+)["']`),
+            );
             if (!defMatch || !catalog.prefixes[defMatch[1]]) continue;
             const insertLine2 = findInsertLine(lines, lineIndex);
-            const indent2 = lines[insertLine2]?.match(/^(\s*)/)?.[1] ?? "";
-            const stampLine2 = resolveStampLine(catalog, defMatch[1], commentPrefix, indent2, versionResolver);
+            const indent2 = lines[insertLine2]?.match(/^(\s*)/)?.[1] ?? '';
+            const stampLine2 = resolveStampLine(
+              catalog,
+              defMatch[1],
+              commentPrefix,
+              indent2,
+              versionResolver,
+            );
             if (stampLine2) {
               actions.push({
                 prefixId: defMatch[1],
                 insertBeforeLine: insertLine2,
                 stampLine: stampLine2,
-                status: "resolved",
+                status: 'resolved',
                 anchorPattern: `${pattern}(${bindingName})`,
                 callLine: lineIndex,
               });
@@ -727,8 +751,8 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
     const commentPrefix = COMMENT_PREFIX[ext];
     if (!commentPrefix) continue;
 
-    const content = readFileSync(filePath, "utf-8");
-    const lines = content.split("\n");
+    const content = readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n');
     const rel = relative(process.cwd(), filePath);
 
     // 1. 기존 스탬프 수집
@@ -746,7 +770,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
           catalog,
           stamp.prefixId,
           commentPrefix,
-          lines[stamp.lineIndex].match(/^(\s*)/)?.[1] ?? "",
+          lines[stamp.lineIndex].match(/^(\s*)/)?.[1] ?? '',
           versionResolver,
         );
         if (newStamp && newStamp !== lines[stamp.lineIndex]) {
@@ -762,7 +786,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
         }
       }
       if (changed) {
-        writeFileSync(filePath, lines.join("\n"), "utf-8");
+        writeFileSync(filePath, lines.join('\n'), 'utf-8');
       }
     }
 
@@ -781,7 +805,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
 
     // unresolved 수집 (기존 스탬프로 커버된 곳은 제외)
     for (const action of actions) {
-      if (action.status === "unresolved") {
+      if (action.status === 'unresolved') {
         // 해당 위치에 이미 수동 힌트 스탬프가 있으면 건너뜀
         const covered = stampedPrefixesAtLine.has(action.insertBeforeLine);
         if (!covered) {
@@ -798,7 +822,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
 
     const insertions: { line: number; content: string }[] = [];
     for (const action of actions) {
-      if (action.status !== "resolved" || !action.prefixId || !action.stampLine) continue;
+      if (action.status !== 'resolved' || !action.prefixId || !action.stampLine) continue;
       const covered = stampedPrefixesAtLine.get(action.insertBeforeLine);
       if (covered?.has(action.prefixId)) {
         totalSkipped++;
@@ -823,7 +847,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
         for (const ins of sorted) {
           lines.splice(ins.line, 0, ins.content);
         }
-        writeFileSync(filePath, lines.join("\n"), "utf-8");
+        writeFileSync(filePath, lines.join('\n'), 'utf-8');
       }
       totalStamped += insertions.length;
     }
@@ -836,7 +860,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
   if (unresolvedSites.length > 0) {
     console.log(`\n힌트 필요 (변수 prefix ID — 수동 // @prefix <id> 추가):`);
     for (const site of unresolvedSites) {
-      console.log(`  ${site.file}:${site.line} — ${site.anchor.replace("(", "")}`);
+      console.log(`  ${site.file}:${site.line} — ${site.anchor.replace('(', '')}`);
     }
   }
 }
@@ -846,7 +870,7 @@ export function prefixStamp(catalog: Catalog, opts: StampOptions = {}): void {
 interface DriftResult {
   readonly file: string;
   readonly line: number;
-  readonly severity: "error" | "warning" | "info";
+  readonly severity: 'error' | 'warning' | 'info';
   readonly code: string;
   readonly message: string;
 }
@@ -861,8 +885,8 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
     const ext = extname(filePath);
     if (!COMMENT_PREFIX[ext]) continue;
 
-    const content = readFileSync(filePath, "utf-8");
-    const lines = content.split("\n");
+    const content = readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n');
     const rel = relative(process.cwd(), filePath);
 
     for (let i = 0; i < lines.length; i++) {
@@ -874,8 +898,8 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
         results.push({
           file: rel,
           line: i + 1,
-          severity: "error",
-          code: "unknown-prefix",
+          severity: 'error',
+          code: 'unknown-prefix',
           message: `카탈로그에 없는 prefix: ${stamp.prefixId}`,
         });
         continue;
@@ -888,8 +912,8 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
         results.push({
           file: rel,
           line: i + 1,
-          severity: "warning",
-          code: "version-behind",
+          severity: 'warning',
+          code: 'version-behind',
           message: `${stamp.prefixId} — 표식 ${stamp.version}, 최신 ${latestVer}`,
         });
       }
@@ -898,32 +922,38 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
       const labels = prefix.labels;
 
       // sum 모델 검증
-      if (stamp.model === "sum" && stamp.segmentId) {
-        const vdef = prefix.versions.find(v => v.version === checkVersion);
+      if (stamp.model === 'sum' && stamp.segmentId) {
+        const vdef = prefix.versions.find((v) => v.version === checkVersion);
         const segments = vdef?.segments;
 
         if (!segments) {
           results.push({
-            file: rel, line: i + 1, severity: "error",
-            code: "no-segments",
+            file: rel,
+            line: i + 1,
+            severity: 'error',
+            code: 'no-segments',
             message: `${stamp.prefixId}:${checkVersion} — segments 미정의 (addressModel: sum)`,
           });
         } else {
-          const seg = segments.find(s => s.segmentId === stamp.segmentId);
+          const seg = segments.find((s) => s.segmentId === stamp.segmentId);
           if (!seg) {
             results.push({
-              file: rel, line: i + 1, severity: "error",
-              code: "segment-removed",
+              file: rel,
+              line: i + 1,
+              severity: 'error',
+              code: 'segment-removed',
               message: `${stamp.prefixId}:${checkVersion} — seg "${stamp.segmentId}" 삭제됨`,
             });
           } else if (stamp.consumes) {
             // consumes 변경 검증
-            const actualConsumes = seg.consumes.join(",");
-            const stampConsumes = stamp.consumes.join(",");
+            const actualConsumes = seg.consumes.join(',');
+            const stampConsumes = stamp.consumes.join(',');
             if (actualConsumes !== stampConsumes) {
               results.push({
-                file: rel, line: i + 1, severity: "error",
-                code: "consumes-changed",
+                file: rel,
+                line: i + 1,
+                severity: 'error',
+                code: 'consumes-changed',
                 message: `${stamp.prefixId}:${checkVersion} seg:${stamp.segmentId} — 표식 [${stampConsumes}], 실제 [${actualConsumes}]`,
               });
             }
@@ -939,16 +969,16 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
           results.push({
             file: rel,
             line: i + 1,
-            severity: "error",
-            code: "label-removed",
+            severity: 'error',
+            code: 'label-removed',
             message: `${stamp.prefixId}:${checkVersion} — dim "${dim.label}" 삭제됨`,
           });
         } else if (actualIndex !== dim.index) {
           results.push({
             file: rel,
             line: i + 1,
-            severity: "error",
-            code: "index-mismatch",
+            severity: 'error',
+            code: 'index-mismatch',
             message: `${stamp.prefixId}:${checkVersion} ${dim.label} — 표식 index:${dim.index}, 실제 index:${actualIndex}`,
           });
         }
@@ -958,17 +988,16 @@ export function prefixDrift(catalog: Catalog, paths?: string[]): void {
 
   // 출력
   if (results.length === 0) {
-    console.log("prefix drift: 불일치 없음 ✓");
+    console.log('prefix drift: 불일치 없음 ✓');
     return;
   }
 
-  const errors = results.filter((r) => r.severity === "error");
-  const warnings = results.filter((r) => r.severity === "warning");
-  const infos = results.filter((r) => r.severity === "info");
+  const errors = results.filter((r) => r.severity === 'error');
+  const warnings = results.filter((r) => r.severity === 'warning');
+  const infos = results.filter((r) => r.severity === 'info');
 
   for (const r of results) {
-    const tag =
-      r.severity === "error" ? "ERROR" : r.severity === "warning" ? "WARNING" : "INFO";
+    const tag = r.severity === 'error' ? 'ERROR' : r.severity === 'warning' ? 'WARNING' : 'INFO';
     console.log(`${tag}  ${r.code}: ${r.message}`);
     console.log(`  → ${r.file}:${r.line}`);
   }
@@ -995,8 +1024,8 @@ export function prefixFind(
     const ext = extname(filePath);
     if (!COMMENT_PREFIX[ext]) continue;
 
-    const content = readFileSync(filePath, "utf-8");
-    const lines = content.split("\n");
+    const content = readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n');
     const rel = relative(process.cwd(), filePath);
 
     for (let i = 0; i < lines.length; i++) {
@@ -1008,8 +1037,8 @@ export function prefixFind(
       if (opts?.version && stamp.version !== opts.version) continue;
       if (opts?.dim && !stamp.dims.some((d) => d.label === opts.dim)) continue;
       if (opts?.segment && stamp.segmentId !== opts.segment) continue;
-      if (opts?.model === "sum" && stamp.model !== "sum") continue;
-      if (opts?.model === "product" && stamp.model === "sum") continue;
+      if (opts?.model === 'sum' && stamp.model !== 'sum') continue;
+      if (opts?.model === 'product' && stamp.model === 'sum') continue;
 
       matches.push({ file: rel, line: i + 1, stamp });
     }
@@ -1021,7 +1050,7 @@ export function prefixFind(
     for (const m of matches) {
       counts.set(m.stamp.prefixId, (counts.get(m.stamp.prefixId) || 0) + 1);
     }
-    console.log("prefix 사용 현황:");
+    console.log('prefix 사용 현황:');
     for (const [id, count] of [...counts.entries()].toSorted((a, b) => b[1] - a[1])) {
       console.log(`  ${id}: ${count}곳`);
     }
@@ -1029,22 +1058,21 @@ export function prefixFind(
   }
 
   if (matches.length === 0) {
-    console.log(prefixId ? `"${prefixId}" 스탬프 없음` : "스탬프 없음");
+    console.log(prefixId ? `"${prefixId}" 스탬프 없음` : '스탬프 없음');
     return;
   }
 
   for (const m of matches) {
     let detail: string;
-    if (m.stamp.model === "sum") {
-      detail = ` — model:sum seg:${m.stamp.segmentId} consumes:[${m.stamp.consumes?.join(",") ?? ""}]`;
+    if (m.stamp.model === 'sum') {
+      detail = ` — model:sum seg:${m.stamp.segmentId} consumes:[${m.stamp.consumes?.join(',') ?? ''}]`;
     } else {
-      detail = m.stamp.dims.length > 0
-        ? ` — dims: [${m.stamp.dims.map((d) => `${d.label}:${d.index}`).join(", ")}]`
-        : "";
+      detail =
+        m.stamp.dims.length > 0
+          ? ` — dims: [${m.stamp.dims.map((d) => `${d.label}:${d.index}`).join(', ')}]`
+          : '';
     }
-    console.log(
-      `  ${m.file}:${m.line} — ${m.stamp.prefixId}:${m.stamp.version || "?"}${detail}`,
-    );
+    console.log(`  ${m.file}:${m.line} — ${m.stamp.prefixId}:${m.stamp.version || '?'}${detail}`);
   }
   console.log(`\n${matches.length}건`);
 }
@@ -1066,13 +1094,11 @@ export function prefixMigrate(
 
   // to version의 labels/segments로 새 스탬프 계산
   const labels = prefix.labels;
-  const newDimsStr = labels.map((label, i) => `${label}:${i}`).join(", ");
+  const newDimsStr = labels.map((label, i) => `${label}:${i}`).join(', ');
 
   // sum 모델: to version의 세그먼트 맵
-  const toVdef = prefix.versions.find(v => v.version === toVersion);
-  const toSegMap = new Map(
-    (toVdef?.segments ?? []).map(s => [s.segmentId, s]),
-  );
+  const toVdef = prefix.versions.find((v) => v.version === toVersion);
+  const toSegMap = new Map((toVdef?.segments ?? []).map((s) => [s.segmentId, s]));
 
   const files = collectFiles([process.cwd()]);
   const stampRe = new RegExp(
@@ -1087,23 +1113,23 @@ export function prefixMigrate(
     const cp = COMMENT_PREFIX[ext];
     if (!cp) continue;
 
-    const content = readFileSync(filePath, "utf-8");
-    const lines = content.split("\n");
+    const content = readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n');
     const rel = relative(process.cwd(), filePath);
     let changed = false;
 
     for (let i = 0; i < lines.length; i++) {
       if (!stampRe.test(lines[i])) continue;
 
-      const indent = lines[i].match(/^(\s*)/)?.[1] ?? "";
+      const indent = lines[i].match(/^(\s*)/)?.[1] ?? '';
       const parsed = parseStamp(lines[i], i);
       let newLine: string;
 
-      if (parsed?.model === "sum" && parsed.segmentId) {
+      if (parsed?.model === 'sum' && parsed.segmentId) {
         // sum 모델: 세그먼트별 스탬프 갱신
         const toSeg = toSegMap.get(parsed.segmentId);
         if (toSeg) {
-          const consumesStr = toSeg.consumes.join(",");
+          const consumesStr = toSeg.consumes.join(',');
           newLine = `${indent}${cp} @prefix ${prefixId}:${toVersion} — model:sum seg:${parsed.segmentId} consumes:[${consumesStr}]`;
         } else {
           // 세그먼트 제거됨
@@ -1127,15 +1153,17 @@ export function prefixMigrate(
     }
 
     if (changed) {
-      writeFileSync(filePath, lines.join("\n"), "utf-8");
+      writeFileSync(filePath, lines.join('\n'), 'utf-8');
     }
   }
 
-  console.log(`prefix migrate: ${prefixId} ${fromVersion}→${toVersion} — ${count}건 ${opts?.dryRun ? "(dry-run)" : "갱신"}`);
+  console.log(
+    `prefix migrate: ${prefixId} ${fromVersion}→${toVersion} — ${count}건 ${opts?.dryRun ? '(dry-run)' : '갱신'}`,
+  );
 }
 
 function escapeForRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // ── impact 명령 ──────────────────────────────────────────────────────────────
@@ -1155,8 +1183,8 @@ export function prefixImpact(catalog: Catalog, prefixId: string): void {
     const ext = extname(filePath);
     if (!COMMENT_PREFIX[ext]) continue;
 
-    const content = readFileSync(filePath, "utf-8");
-    const lines = content.split("\n");
+    const content = readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n');
     const rel = relative(process.cwd(), filePath);
 
     for (let i = 0; i < lines.length; i++) {
@@ -1170,21 +1198,23 @@ export function prefixImpact(catalog: Catalog, prefixId: string): void {
   // prefix 정보 출력
   const latestVer = latestPrefixVersion(catalog, prefixId);
   const labels = prefix.labels;
-  console.log(`${prefixId} (${prefix.name || ""})`);
+  console.log(`${prefixId} (${prefix.name || ''})`);
   console.log(`  최신 version: ${latestVer}`);
-  console.log(`  addressModel: ${prefix.addressModel ?? "product"}`);
-  console.log(`  labels: [${labels.join(", ")}]`);
+  console.log(`  addressModel: ${prefix.addressModel ?? 'product'}`);
+  console.log(`  labels: [${labels.join(', ')}]`);
   console.log(`  dims: ${labels.length}개`);
 
   // sum 모델: 세그먼트 정보
-  if (prefix.addressModel === "sum") {
-    const vdef = prefix.versions.find(v => v.version === latestVer);
+  if (prefix.addressModel === 'sum') {
+    const vdef = prefix.versions.find((v) => v.version === latestVer);
     if (vdef?.segments) {
       console.log(`  segments: ${vdef.segments.length}개`);
       for (const seg of vdef.segments) {
-        const trans = seg.transition ? ` → ${seg.transition.eventKey}` : "";
-        const routes = seg.routes ? ` (${seg.routes.length} routes)` : "";
-        console.log(`    ${seg.segmentId}: consumes:[${seg.consumes.join(",")}] size:${seg.size}${trans}${routes}`);
+        const trans = seg.transition ? ` → ${seg.transition.eventKey}` : '';
+        const routes = seg.routes ? ` (${seg.routes.length} routes)` : '';
+        console.log(
+          `    ${seg.segmentId}: consumes:[${seg.consumes.join(',')}] size:${seg.size}${trans}${routes}`,
+        );
       }
     }
   }
@@ -1193,15 +1223,15 @@ export function prefixImpact(catalog: Catalog, prefixId: string): void {
   for (let i = 0; i < labels.length; i++) {
     const label = labels[i];
     const dim = prefix.dims[label];
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       if (axis) {
         const axisVer = prefix.versions[prefix.versions.length - 1]?.axisVersions?.[label];
         const snap = axisVer ? axis.versions[axisVer] : undefined;
-        const entryCount = snap?.entries?.length ?? "?";
+        const entryCount = snap?.entries?.length ?? '?';
         console.log(`  ${label}:${i} (${dim.axisId}) — ${entryCount} entries`);
       }
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       console.log(`  ${label}:${i} (→ ${dim.prefixId}) — prefix_ref`);
     }
   }
@@ -1214,15 +1244,16 @@ export function prefixImpact(catalog: Catalog, prefixId: string): void {
 
   console.log(`\n사용처 (${stamps.length}건):`);
   for (const s of stamps) {
-    const dimsStr = s.stamp.dims.length > 0
-      ? ` — dims: [${s.stamp.dims.map(d => `${d.label}:${d.index}`).join(", ")}]`
-      : "";
-    const versionTag = s.stamp.version !== latestVer ? ` ⚠ ${s.stamp.version}` : "";
+    const dimsStr =
+      s.stamp.dims.length > 0
+        ? ` — dims: [${s.stamp.dims.map((d) => `${d.label}:${d.index}`).join(', ')}]`
+        : '';
+    const versionTag = s.stamp.version !== latestVer ? ` ⚠ ${s.stamp.version}` : '';
     console.log(`  ${s.file}:${s.line}${versionTag}${dimsStr}`);
   }
 
   // version-behind 경고
-  const behind = stamps.filter(s => s.stamp.version && s.stamp.version !== latestVer);
+  const behind = stamps.filter((s) => s.stamp.version && s.stamp.version !== latestVer);
   if (behind.length > 0) {
     console.log(`\n⚠ ${behind.length}건이 최신 version(${latestVer})이 아님`);
   }
@@ -1230,7 +1261,7 @@ export function prefixImpact(catalog: Catalog, prefixId: string): void {
 
 // ── 파일 수집 ────────────────────────────────────────────────────────────────
 
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git", ".next", ".turbo"]);
+const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', '.next', '.turbo']);
 const SUPPORTED_EXTS = new Set(Object.keys(COMMENT_PREFIX));
 
 function collectFiles(roots: string[]): string[] {

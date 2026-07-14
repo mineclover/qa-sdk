@@ -1,11 +1,11 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import { MetricReadModelQuery } from "../../application/queries/metric-read-model.query.js";
-import type { DailyMetricReadModel } from "../../domain/metric.types.js";
-import { toMetricId, toMetricKey } from "../../domain/metric.ids.js";
-import type { ReportingRepository } from "../../../shared/port.js";
-import type { DailyMetric } from "../../../shared/types.js";
+import { MetricReadModelQuery } from '../../application/queries/metric-read-model.query.js';
+import type { DailyMetricReadModel } from '../../domain/metric.types.js';
+import { toMetricId, toMetricKey } from '../../domain/metric.ids.js';
+import type { ReportingRepository } from '../../../shared/port.js';
+import type { DailyMetric } from '../../../shared/types.js';
 
 /**
  * Repository 위에 얇게 얹은 시계열 Read Model 어댑터.

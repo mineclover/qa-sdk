@@ -1,15 +1,15 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { ExpenseReportId, RequesterId } from "./expense.ids.js";
+import type { ExpenseReportId, RequesterId } from './expense.ids.js';
 
 export type ExpenseStatus =
-  | "draft"
-  | "submitted"
-  | "in_review"
-  | "approved"
-  | "rejected"
-  | "revision_requested";
+  | 'draft'
+  | 'submitted'
+  | 'in_review'
+  | 'approved'
+  | 'rejected'
+  | 'revision_requested';
 
 export interface ExpenseProps {
   readonly id: ExpenseReportId;

@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-engine-system
 // @def.doc qa-sdk-engine-system
 
-import type { EventRecord } from "@qa-sdk/core";
+import type { EventRecord } from '@qa-sdk/core';
 
 /**
  * Step 2: timestamp 기준 오름차순 정렬.
@@ -15,8 +15,8 @@ export function sortByTimestamp(records: EventRecord[]): EventRecord[] {
     if (ta !== tb) return ta - tb;
 
     // 동일 timestamp: span을 먼저 (구간 시작이 log보다 앞)
-    if (a.record_kind === "span" && b.record_kind === "log") return -1;
-    if (a.record_kind === "log" && b.record_kind === "span") return 1;
+    if (a.record_kind === 'span' && b.record_kind === 'log') return -1;
+    if (a.record_kind === 'log' && b.record_kind === 'span') return 1;
     return 0;
   });
 }

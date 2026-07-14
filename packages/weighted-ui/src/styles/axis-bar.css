@@ -48,7 +48,9 @@
   text-align: left;
   min-width: var(--axis-btn-min-w, 96px);
   gap: 1px;
-  transition: background 0.08s, border-left-color 0.08s;
+  transition:
+    background 0.08s,
+    border-left-color 0.08s;
 }
 .axis-btn:hover:not(.axis-btn-other) {
   background: var(--xl-blue-hover);

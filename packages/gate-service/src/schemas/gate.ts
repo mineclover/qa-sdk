@@ -1,7 +1,7 @@
 // @def.boundary gate-system
 // @def.doc gate-system
 
-import { z } from "zod";
+import { z } from 'zod';
 
 const prefixVersionRequestSchema = z.object({
   prefix: z.string().min(1),
@@ -17,10 +17,10 @@ export const gateRecomputeRequestSchema = prefixVersionRequestSchema;
 const addressRangeSchema = z
   .tuple([z.number().int().min(0), z.number().int().min(0)])
   .refine(([from, to]) => from <= to, {
-    message: "range start must be less than or equal to range end",
+    message: 'range start must be less than or equal to range end',
   });
 
-export const gateFilterModeSchema = z.enum(["encodable", "decodable", "active"]);
+export const gateFilterModeSchema = z.enum(['encodable', 'decodable', 'active']);
 
 export const gateFilterRangesRequestSchema = prefixVersionRequestSchema.extend({
   ranges: z.array(addressRangeSchema),

@@ -1,57 +1,57 @@
 // @def.boundary qa-sdk-engine-system
 // @def.doc qa-sdk-engine-system
 
-import type { ConstraintResult, RuntimeNode, StepConstraint } from "@qa-sdk/core";
+import type { ConstraintResult, RuntimeNode, StepConstraint } from '@qa-sdk/core';
 
 /**
  * 단일 constraint를 runtime node의 payload에 대해 평가한다.
  */
-export function evaluateConstraint(
-  constraint: StepConstraint,
-  node: RuntimeNode,
-): boolean {
+export function evaluateConstraint(constraint: StepConstraint, node: RuntimeNode): boolean {
   return evaluateConstraintResult(constraint, node).passed;
 }
 
-function evaluateConstraintResult(
-  constraint: StepConstraint,
-  node: RuntimeNode,
-): ConstraintResult {
+function evaluateConstraintResult(constraint: StepConstraint, node: RuntimeNode): ConstraintResult {
   const actual = resolveField(constraint.field, node);
 
   switch (constraint.op) {
-    case "eq":
+    case 'eq':
       return { constraint, passed: actual === constraint.value, actual };
-    case "neq":
+    case 'neq':
       return { constraint, passed: actual !== constraint.value, actual };
-    case "exists":
+    case 'exists':
       return {
         constraint,
         passed: actual !== undefined && actual !== null,
         actual,
       };
-    case "gt":
+    case 'gt':
       return {
         constraint,
-        passed: typeof actual === "number" && typeof constraint.value === "number"
-          && actual > constraint.value,
+        passed:
+          typeof actual === 'number' &&
+          typeof constraint.value === 'number' &&
+          actual > constraint.value,
         actual,
       };
-    case "lt":
+    case 'lt':
       return {
         constraint,
-        passed: typeof actual === "number" && typeof constraint.value === "number"
-          && actual < constraint.value,
+        passed:
+          typeof actual === 'number' &&
+          typeof constraint.value === 'number' &&
+          actual < constraint.value,
         actual,
       };
-    case "contains":
+    case 'contains':
       return {
         constraint,
-        passed: typeof actual === "string" && typeof constraint.value === "string"
-          && actual.includes(constraint.value),
+        passed:
+          typeof actual === 'string' &&
+          typeof constraint.value === 'string' &&
+          actual.includes(constraint.value),
         actual,
       };
-    case "masked":
+    case 'masked':
       return {
         constraint,
         passed: isMaskedField(constraint.field, node),
@@ -75,9 +75,9 @@ export function evaluateConstraints(
  * "payload.xxx" → payload 내부, 그 외 → node 직접 필드
  */
 function resolveField(field: string, node: RuntimeNode): unknown {
-  if (field.startsWith("payload.")) {
-    const key = field.slice("payload.".length);
-    if (node.payload && typeof node.payload === "object") {
+  if (field.startsWith('payload.')) {
+    const key = field.slice('payload.'.length);
+    if (node.payload && typeof node.payload === 'object') {
       return (node.payload as Record<string, unknown>)[key];
     }
     return undefined;
@@ -88,6 +88,6 @@ function resolveField(field: string, node: RuntimeNode): unknown {
 
 /** masking 여부 확인 */
 function isMaskedField(field: string, node: RuntimeNode): boolean {
-  const key = field.startsWith("payload.") ? field.slice("payload.".length) : field;
+  const key = field.startsWith('payload.') ? field.slice('payload.'.length) : field;
   return node.payload_masked_fields.includes(key);
 }

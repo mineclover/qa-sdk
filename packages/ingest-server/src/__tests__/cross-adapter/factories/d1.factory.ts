@@ -5,21 +5,21 @@
  * D1 (SQLite) 팩토리 — NodeSqliteDriver(:memory:) 기반.
  * 각 호출마다 독립적인 in-memory DB를 생성한다.
  */
-import { NodeSqliteDriver } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { createD1Drizzle, type D1Db } from "../../../stores/d1-db-type.js";
-import { D1RecordStore } from "../../../stores/d1-record-store.js";
-import { D1TraceStore } from "../../../stores/d1-trace-store.js";
-import { D1KeyObservationStore } from "../../../stores/d1-key-observation-store.js";
-import { D1SessionStore } from "../../../stores/d1-session-store.js";
-import { D1VerdictStore } from "../../../stores/d1-verdict-store.js";
-import { D1GraphStore } from "../../../stores/d1-graph-store.js";
-import { D1ScenarioSpecStore } from "../../../stores/d1-scenario-spec-store.js";
-import { D1TransmissionStore } from "../../../stores/d1-transmission-store.js";
-import { D1DlqStore } from "../../../stores/d1-dlq-store.js";
+import { NodeSqliteDriver } from 'index-meta';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
+import { createD1Drizzle, type D1Db } from '../../../stores/d1-db-type.js';
+import { D1RecordStore } from '../../../stores/d1-record-store.js';
+import { D1TraceStore } from '../../../stores/d1-trace-store.js';
+import { D1KeyObservationStore } from '../../../stores/d1-key-observation-store.js';
+import { D1SessionStore } from '../../../stores/d1-session-store.js';
+import { D1VerdictStore } from '../../../stores/d1-verdict-store.js';
+import { D1GraphStore } from '../../../stores/d1-graph-store.js';
+import { D1ScenarioSpecStore } from '../../../stores/d1-scenario-spec-store.js';
+import { D1TransmissionStore } from '../../../stores/d1-transmission-store.js';
+import { D1DlqStore } from '../../../stores/d1-dlq-store.js';
 
-const migrationsFolder = new URL("../../../../drizzle", import.meta.url).pathname;
+const migrationsFolder = new URL('../../../../drizzle', import.meta.url).pathname;
 
 // migration에 미포함된 테이블 — DDL 직접 실행
 const EXTRA_DDL = `
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS key_observation_prefixes (
 `;
 
 function createDb(): D1Db {
-  const driver = new NodeSqliteDriver(":memory:", null);
+  const driver = new NodeSqliteDriver(':memory:', null);
   const drizzleDb = drizzle({ client: driver.$client });
   migrate(drizzleDb, { migrationsFolder });
   // migration에 미포함된 테이블 — DDL 직접 실행

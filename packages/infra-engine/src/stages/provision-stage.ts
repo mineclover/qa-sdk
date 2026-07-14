@@ -2,8 +2,8 @@
 // @def.doc infra-engine-system
 
 // stages/provision-stage.ts — 프로바이더 검증 + 배포 스테이지
-import type { Stage, DeployContext, ProvisionResult, ResolvedConfig } from "../core/types.js";
-import type { DeployProvider } from "../adapters/adapter.js";
+import type { Stage, DeployContext, ProvisionResult, ResolvedConfig } from '../core/types.js';
+import type { DeployProvider } from '../adapters/adapter.js';
 
 type DeployFn = (
   provider: DeployProvider,
@@ -14,15 +14,12 @@ type DeployFn = (
 
 type ProviderResolver = (name: string) => DeployProvider;
 
-export function createProvisionStage(
-  resolveProvider: ProviderResolver,
-  deployFn: DeployFn,
-): Stage {
+export function createProvisionStage(resolveProvider: ProviderResolver, deployFn: DeployFn): Stage {
   let lastProvider: DeployProvider | null = null;
   let lastStackName: string | null = null;
 
   return {
-    name: "provision",
+    name: 'provision',
     async execute(ctx: DeployContext): Promise<DeployContext> {
       const provider = resolveProvider(ctx.provider);
       lastProvider = provider;
@@ -30,7 +27,7 @@ export function createProvisionStage(
       // 사전 검증
       const validation = await provider.validate(ctx.config!);
       if (!validation.valid) {
-        throw new Error(`프로바이더 검증 실패 (${provider.name}): ${validation.errors.join(", ")}`);
+        throw new Error(`프로바이더 검증 실패 (${provider.name}): ${validation.errors.join(', ')}`);
       }
 
       const stackName = `${ctx.service}-${ctx.env}-${ctx.provider}-${ctx.region}`;

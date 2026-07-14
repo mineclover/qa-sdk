@@ -1,22 +1,22 @@
 /* ── weighted-ui: Navy Theme (platform-demo) ── */
 :root {
-  --ui-primary:       #1e3a5f;
-  --ui-primary-dark:  #152c4a;
+  --ui-primary: #1e3a5f;
+  --ui-primary-dark: #152c4a;
   --ui-primary-light: #e8eef5;
   --ui-primary-faint: #f0f4f8;
 
-  --surface-ribbon:   var(--ui-primary);
-  --surface-status:   var(--ui-primary);
-  --border-ribbon:    var(--ui-primary-dark);
-  --text-formula-fn:  var(--ui-primary);
+  --surface-ribbon: var(--ui-primary);
+  --surface-status: var(--ui-primary);
+  --border-ribbon: var(--ui-primary-dark);
+  --text-formula-fn: var(--ui-primary);
 
   /* platform-demo 전용 dimension override */
-  --row-header-w:  180px;
-  --col-header-h:  36px;
-  --cell-min-w:    96px;
-  --namebox-w:     72px;
+  --row-header-w: 180px;
+  --col-header-h: 36px;
+  --cell-min-w: 96px;
+  --namebox-w: 72px;
   --axis-btn-min-w: 100px;
-  --sidebar-w:     148px;
-  --col-value-py:  1px;
-  --col-value-px:  5px;
+  --sidebar-w: 148px;
+  --col-value-py: 1px;
+  --col-value-px: 5px;
 }

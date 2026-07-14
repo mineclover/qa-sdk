@@ -5,11 +5,15 @@
  * D1SessionStore — SessionStore의 D1/SQLite drizzle ORM 구현.
  * ON CONFLICT (session_id) DO NOTHING — 이미 존재하면 무시.
  */
-import { desc, eq } from "drizzle-orm";
-import type { SessionStore, SessionUpsert, StoredSession } from "@qa-sdk/core";
-import { qaSessions } from "../db/schema.js";
-import { parseJsonColumn, type SessionLabelsJson, type UserAttributesJson } from "../db/json-types.js";
-import type { D1Db } from "./d1-db-type.js";
+import { desc, eq } from 'drizzle-orm';
+import type { SessionStore, SessionUpsert, StoredSession } from '@qa-sdk/core';
+import { qaSessions } from '../db/schema.js';
+import {
+  parseJsonColumn,
+  type SessionLabelsJson,
+  type UserAttributesJson,
+} from '../db/json-types.js';
+import type { D1Db } from './d1-db-type.js';
 
 export class D1SessionStore implements SessionStore {
   constructor(private readonly db: D1Db) {}

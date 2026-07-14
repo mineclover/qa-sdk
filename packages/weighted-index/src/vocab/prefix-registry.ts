@@ -20,11 +20,8 @@
  * (prefix와 v에는 ":" 사용 불가)
  */
 
-import { WeightedIndex } from "../math/weighted-index.js";
-import {
-  type EntityId,
-  type LabelRegistry,
-} from "./label-registry.js";
+import { WeightedIndex } from '../math/weighted-index.js';
+import { type EntityId, type LabelRegistry } from './label-registry.js';
 import {
   CoordError,
   MigrateError,
@@ -32,8 +29,8 @@ import {
   SerializeError,
   ShapeError,
   VersionNotFoundError,
-} from "../math/errors.js";
-import { assertNoColon, assertNonEmptyArray, formatList } from "../math/validators.js";
+} from '../math/errors.js';
+import { assertNoColon, assertNonEmptyArray, formatList } from '../math/validators.js';
 
 // ── 공개 타입 ────────────────────────────────────────────────────────────────
 
@@ -83,7 +80,7 @@ export interface PrefixVersionDiff {
 export type CoordMigrator = (
   oldCoords: number[],
   oldLabels: readonly string[],
-  newLabels: readonly string[]
+  newLabels: readonly string[],
 ) => number[];
 
 // ── PrefixCodec ────────────────────────────────────────────────────────────
@@ -134,17 +131,12 @@ export class PrefixCodec {
 
   /** LabelRegistry 기반으로 shape을 동적 도출. */
   getShape(prefix: string, version?: string): number[] {
-    return [
-      ...this._getWeightedIndex(prefix, version ?? this.getCurrentVersion(prefix)).shape,
-    ];
+    return [...this._getWeightedIndex(prefix, version ?? this.getCurrentVersion(prefix)).shape];
   }
 
   /** 캐시된 WeightedIndex 인스턴스 반환. */
   getIndex(prefix: string, version?: string): WeightedIndex {
-    return this._getWeightedIndex(
-      prefix,
-      version ?? this.getCurrentVersion(prefix)
-    );
+    return this._getWeightedIndex(prefix, version ?? this.getCurrentVersion(prefix));
   }
 
   // ── 인코딩 ──────────────────────────────────────────────────────────────
@@ -160,7 +152,7 @@ export class PrefixCodec {
   encodeFromRecord(
     prefix: string,
     record: Record<string, number>,
-    version?: string
+    version?: string,
   ): VersionedIndex {
     const v = version ?? this.getCurrentVersion(prefix);
     const id = this._getWeightedIndex(prefix, v).encodeFromRecord(record);
@@ -176,11 +168,7 @@ export class PrefixCodec {
    *   role: 2, action: "write", api: "/posts", tenant: 100,
    * })
    */
-  encodeFromIds(
-    prefix: string,
-    ids: Record<string, EntityId>,
-    version?: string
-  ): VersionedIndex {
+  encodeFromIds(prefix: string, ids: Record<string, EntityId>, version?: string): VersionedIndex {
     const v = version ?? this.getCurrentVersion(prefix);
     const def = this._getPrefixDef(prefix);
     const pv = this._getPrefixVersion(prefix, v);
@@ -188,9 +176,7 @@ export class PrefixCodec {
     const coords = def.labels.map((label) => {
       const entityId = ids[label];
       if (entityId === undefined) {
-        throw new CoordError(
-          `Missing entity id for label "${label}" in encodeFromIds`
-        );
+        throw new CoordError(`Missing entity id for label "${label}" in encodeFromIds`);
       }
       return this.labelReg._getIndexRaw(label, pv.labelVersions[label], entityId);
     });
@@ -226,11 +212,7 @@ export class PrefixCodec {
     const result: Record<string, EntityId> = {};
     for (let i = 0; i < def.labels.length; i++) {
       const label = def.labels[i];
-      result[label] = this.labelReg._getEntityIdRaw(
-        label,
-        pv.labelVersions[label],
-        coords[i]
-      );
+      result[label] = this.labelReg._getEntityIdRaw(label, pv.labelVersions[label], coords[i]);
     }
     return result;
   }
@@ -250,19 +232,19 @@ export class PrefixCodec {
    * prefix와 version이 registry에 등록되어 있어야 함.
    */
   parse(serialized: string): VersionedIndex {
-    const lastColon = serialized.lastIndexOf(":");
+    const lastColon = serialized.lastIndexOf(':');
     if (lastColon === -1) {
       throw new SerializeError(
-        `Invalid serialized VersionedIndex: "${serialized}". Expected "{prefix}:{version}:{id}"`
+        `Invalid serialized VersionedIndex: "${serialized}". Expected "{prefix}:{version}:{id}"`,
       );
     }
     const idStr = serialized.slice(lastColon + 1);
     const rest = serialized.slice(0, lastColon);
 
-    const secondColon = rest.lastIndexOf(":");
+    const secondColon = rest.lastIndexOf(':');
     if (secondColon === -1) {
       throw new SerializeError(
-        `Invalid serialized VersionedIndex: "${serialized}". Expected "{prefix}:{version}:{id}"`
+        `Invalid serialized VersionedIndex: "${serialized}". Expected "{prefix}:{version}:{id}"`,
       );
     }
     const prefix = rest.slice(0, secondColon);
@@ -270,13 +252,13 @@ export class PrefixCodec {
 
     if (!prefix || !v || !idStr) {
       throw new SerializeError(
-        `Invalid serialized VersionedIndex: "${serialized}". Expected "{prefix}:{version}:{id}"`
+        `Invalid serialized VersionedIndex: "${serialized}". Expected "{prefix}:{version}:{id}"`,
       );
     }
 
     if (!/^\d+$/.test(idStr)) {
       throw new SerializeError(
-        `Invalid id "${idStr}" in serialized VersionedIndex: "${serialized}"`
+        `Invalid id "${idStr}" in serialized VersionedIndex: "${serialized}"`,
       );
     }
     const id = Number(idStr);
@@ -291,18 +273,14 @@ export class PrefixCodec {
    * 구버전 VersionedIndex를 다른 버전으로 변환.
    * migrator: 구버전 좌표 → 신버전 좌표 변환 함수 (호출자가 직접 제공).
    */
-  migrate(
-    vi: VersionedIndex,
-    toVersion: string,
-    migrator: CoordMigrator
-  ): VersionedIndex {
+  migrate(vi: VersionedIndex, toVersion: string, migrator: CoordMigrator): VersionedIndex {
     const fromWi = this._getWeightedIndex(vi.prefix, vi.v);
     const toWi = this._getWeightedIndex(vi.prefix, toVersion);
     const oldCoords = fromWi.decode(vi.id);
     const newCoords = migrator(oldCoords, fromWi.labels, toWi.labels);
     if (newCoords.length !== toWi.shape.length) {
       throw new MigrateError(
-        `migrator returned ${newCoords.length} coordinates but target prefix "${vi.prefix}@${toVersion}" expects ${toWi.shape.length}`
+        `migrator returned ${newCoords.length} coordinates but target prefix "${vi.prefix}@${toVersion}" expects ${toWi.shape.length}`,
       );
     }
     // encode() 대신 직접 좌표 범위를 검증해 MigrateError 를 던진다.
@@ -312,7 +290,7 @@ export class PrefixCodec {
       const n = toWi.shape[i];
       if (!Number.isInteger(x) || x < 1 || x > n) {
         throw new MigrateError(
-          `migrator returned invalid coordinate at index ${i} (label: "${toWi.labels[i]}"): got ${x}, expected integer in [1, ${n}]`
+          `migrator returned invalid coordinate at index ${i} (label: "${toWi.labels[i]}"): got ${x}, expected integer in [1, ${n}]`,
         );
       }
     }
@@ -333,11 +311,7 @@ export class PrefixCodec {
    * registry.diff("api_perm", "pv1", "pv2")
    * // → { changedLabels: [{ label: "role", fromMax: 3, toMax: 4, ... }] }
    */
-  diff(
-    prefix: string,
-    fromVersion: string,
-    toVersion: string
-  ): PrefixVersionDiff {
+  diff(prefix: string, fromVersion: string, toVersion: string): PrefixVersionDiff {
     const fromPv = this._getPrefixVersion(prefix, fromVersion);
     const toPv = this._getPrefixVersion(prefix, toVersion);
     const labels = this._getPrefixDef(prefix).labels;
@@ -364,7 +338,7 @@ export class PrefixCodec {
       const def = this._getPrefixDef(prefix);
       const pv = this._getPrefixVersion(prefix, version);
       const shape = def.labels.map((label) =>
-        this.labelReg._getMaxRaw(label, pv.labelVersions[label])
+        this.labelReg._getMaxRaw(label, pv.labelVersions[label]),
       );
       wi = new WeightedIndex(shape, def.labels);
       this.indexCache.set(cacheKey, wi);
@@ -376,7 +350,7 @@ export class PrefixCodec {
     const def = this.prefixes.get(prefix);
     if (!def) {
       throw new PrefixNotFoundError(
-        `Unknown prefix: "${prefix}". Registered: [${formatList(this.prefixes.keys())}]`
+        `Unknown prefix: "${prefix}". Registered: [${formatList(this.prefixes.keys())}]`,
       );
     }
     return def;
@@ -387,7 +361,7 @@ export class PrefixCodec {
     const pv = def.versions.find((v) => v.version === version);
     if (!pv) {
       throw new VersionNotFoundError(
-        `Unknown version "${version}" for prefix "${prefix}". Available: [${formatList(def.versions.map((v) => v.version))}]`
+        `Unknown version "${version}" for prefix "${prefix}". Available: [${formatList(def.versions.map((v) => v.version))}]`,
       );
     }
     return pv;
@@ -402,9 +376,7 @@ export class PrefixCodec {
     for (const pv of def.versions) {
       assertNoColon(pv.version, `Prefix "${name}" version`);
       if (versionSet.has(pv.version)) {
-        throw new ShapeError(
-          `Duplicate version "${pv.version}" in prefix "${name}"`
-        );
+        throw new ShapeError(`Duplicate version "${pv.version}" in prefix "${name}"`);
       }
       versionSet.add(pv.version);
 
@@ -412,7 +384,7 @@ export class PrefixCodec {
         const labelVer = pv.labelVersions[label];
         if (!labelVer) {
           throw new ShapeError(
-            `Prefix "${name}" version "${pv.version}" is missing labelVersion for label "${label}"`
+            `Prefix "${name}" version "${pv.version}" is missing labelVersion for label "${label}"`,
           );
         }
         this.labelReg._getMaxRaw(label, labelVer); // label+version 존재 검증

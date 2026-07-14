@@ -1,6 +1,6 @@
 // @def.boundary sim-service-catalog
-import { parseServicePrefix, parseVersionTag } from "sim-identifier-grammar";
-import type { CatalogPrefixDefinition, ServiceState } from "./types.js";
+import { parseServicePrefix, parseVersionTag } from 'sim-identifier-grammar';
+import type { CatalogPrefixDefinition, ServiceState } from './types.js';
 
 /**
  * spec 02 §5: catalog에서 (prefix, state) → version 매핑을 정확히 1개 돌려준다.

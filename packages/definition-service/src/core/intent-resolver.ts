@@ -6,8 +6,8 @@
  * HTTP/DB 무관한 순수 로직.
  */
 
-import { sliceContains } from "definition-catalog";
-import type { SliceIntentRecord } from "./types.js";
+import { sliceContains } from 'definition-catalog';
+import type { SliceIntentRecord } from './types.js';
 
 /**
  * dims 쿼리 파라미터를 파싱한다.
@@ -17,8 +17,8 @@ export function parseDimsParam(raw: string): Record<string, string> {
   const result: Record<string, string> = {};
   if (!raw) return result;
 
-  for (const pair of raw.split(",")) {
-    const sep = pair.indexOf(":");
+  for (const pair of raw.split(',')) {
+    const sep = pair.indexOf(':');
     if (sep > 0) {
       result[pair.slice(0, sep).trim()] = pair.slice(sep + 1).trim();
     }

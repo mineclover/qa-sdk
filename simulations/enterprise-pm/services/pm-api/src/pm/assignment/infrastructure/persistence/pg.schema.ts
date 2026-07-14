@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text, index } from "drizzle-orm/pg-core";
+import { pgSchema, text, index } from 'drizzle-orm/pg-core';
 
 /**
  * Postgres schema (assignment slice).
@@ -10,21 +10,21 @@ import { pgSchema, text, index } from "drizzle-orm/pg-core";
  * outbox 는 pm-api domain 공유 테이블 `sim.pm_outbox_events` 를 재사용한다
  * (outbox 어댑터가 service-shared schema 를 직접 import; alias re-export 불필요).
  */
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 export const assignments = sim.table(
-  "pm_assignments",
+  'pm_assignments',
   {
-    id: text("id").primaryKey(),
-    projectId: text("project_id").notNull(),
-    managerId: text("manager_id").notNull(),
-    status: text("status", { enum: ["draft", "assigned", "cancelled"] }).notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    managerId: text('manager_id').notNull(),
+    status: text('status', { enum: ['draft', 'assigned', 'cancelled'] }).notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
   (t) => [
-    index("idx_sim_pm_assignment_project").on(t.projectId),
-    index("idx_sim_pm_assignment_manager").on(t.managerId),
+    index('idx_sim_pm_assignment_project').on(t.projectId),
+    index('idx_sim_pm_assignment_manager').on(t.managerId),
   ],
 );
 

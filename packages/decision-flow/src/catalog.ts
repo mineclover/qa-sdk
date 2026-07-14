@@ -16,25 +16,31 @@
  * └────────────────────────────────────────────────────────────┘
  */
 
-import {
-  DECISION_AXES,
-} from "./vocabulary.js";
+import { DECISION_AXES } from './vocabulary.js';
 
 // ─── 타입 (Catalog 인터페이스 호환) ──────────────────────
 
-import type { VersionedAxis } from "./vocabulary.js";
-export type { VersionedAxis } from "./vocabulary.js";
+import type { VersionedAxis } from './vocabulary.js';
+export type { VersionedAxis } from './vocabulary.js';
 
 type DimRef =
-  | { readonly kind: "axis"; readonly axisId: string }
-  | { readonly kind: "prefix_ref"; readonly prefixId: string }
-  | { readonly kind: "table_ref"; readonly table: string };
+  | { readonly kind: 'axis'; readonly axisId: string }
+  | { readonly kind: 'prefix_ref'; readonly prefixId: string }
+  | { readonly kind: 'table_ref'; readonly table: string };
 
 interface PrefixMeta {
-  readonly category?: "entity" | "event" | "relation" | "state" | "policy" | "observation";
+  readonly category?: 'entity' | 'event' | 'relation' | 'state' | 'policy' | 'observation';
   readonly layer?: 0 | 1 | 2 | 3;
-  readonly visualShape?: "cube" | "thin-bar" | "flat-tile" | "column" | "sphere";
-  readonly detailKind?: "schema" | "permission" | "event-def" | "endpoint" | "flow-step" | "config" | "metric" | "generic";
+  readonly visualShape?: 'cube' | 'thin-bar' | 'flat-tile' | 'column' | 'sphere';
+  readonly detailKind?:
+    | 'schema'
+    | 'permission'
+    | 'event-def'
+    | 'endpoint'
+    | 'flow-step'
+    | 'config'
+    | 'metric'
+    | 'generic';
 }
 
 interface PrefixVersionDef {
@@ -70,21 +76,28 @@ interface DecisionCatalog {
  * totalSpace: 16,384
  */
 const DECISION_EVENT: PrefixDef = {
-  id: "decision_event",
-  name: "분기 선택 이벤트",
-  description: "의사결정 플로우에서 개별 gate 선택이 발생할 때 기록",
-  labels: ["flow_type", "cognitive_phase", "evidence_kind", "confidence_band"],
+  id: 'decision_event',
+  name: '분기 선택 이벤트',
+  description: '의사결정 플로우에서 개별 gate 선택이 발생할 때 기록',
+  labels: ['flow_type', 'cognitive_phase', 'evidence_kind', 'confidence_band'],
   dims: {
-    flow_type:       { kind: "axis", axisId: "flow_type" },
-    cognitive_phase: { kind: "axis", axisId: "cognitive_phase" },
-    evidence_kind:   { kind: "axis", axisId: "evidence_kind" },
-    confidence_band: { kind: "axis", axisId: "confidence_band" },
+    flow_type: { kind: 'axis', axisId: 'flow_type' },
+    cognitive_phase: { kind: 'axis', axisId: 'cognitive_phase' },
+    evidence_kind: { kind: 'axis', axisId: 'evidence_kind' },
+    confidence_band: { kind: 'axis', axisId: 'confidence_band' },
   },
-  versions: [{
-    version: "v1",
-    axisVersions: { flow_type: "v1", cognitive_phase: "v1", evidence_kind: "v1", confidence_band: "v1" },
-  }],
-  meta: { category: "event", layer: 1, visualShape: "flat-tile", detailKind: "event-def" },
+  versions: [
+    {
+      version: 'v1',
+      axisVersions: {
+        flow_type: 'v1',
+        cognitive_phase: 'v1',
+        evidence_kind: 'v1',
+        confidence_band: 'v1',
+      },
+    },
+  ],
+  meta: { category: 'event', layer: 1, visualShape: 'flat-tile', detailKind: 'event-def' },
 };
 
 /**
@@ -96,20 +109,22 @@ const DECISION_EVENT: PrefixDef = {
  * totalSpace: 1,024
  */
 const DECISION_PATH: PrefixDef = {
-  id: "decision_path",
-  name: "의사결정 경로",
-  description: "의사결정 플로우 인스턴스 완료 시 전체 경로 기록",
-  labels: ["flow_type", "decision_outcome", "scope_mode"],
+  id: 'decision_path',
+  name: '의사결정 경로',
+  description: '의사결정 플로우 인스턴스 완료 시 전체 경로 기록',
+  labels: ['flow_type', 'decision_outcome', 'scope_mode'],
   dims: {
-    flow_type:        { kind: "axis", axisId: "flow_type" },
-    decision_outcome: { kind: "axis", axisId: "decision_outcome" },
-    scope_mode:       { kind: "axis", axisId: "scope_mode" },
+    flow_type: { kind: 'axis', axisId: 'flow_type' },
+    decision_outcome: { kind: 'axis', axisId: 'decision_outcome' },
+    scope_mode: { kind: 'axis', axisId: 'scope_mode' },
   },
-  versions: [{
-    version: "v1",
-    axisVersions: { flow_type: "v1", decision_outcome: "v1", scope_mode: "v1" },
-  }],
-  meta: { category: "observation", layer: 1, visualShape: "cube", detailKind: "flow-step" },
+  versions: [
+    {
+      version: 'v1',
+      axisVersions: { flow_type: 'v1', decision_outcome: 'v1', scope_mode: 'v1' },
+    },
+  ],
+  meta: { category: 'observation', layer: 1, visualShape: 'cube', detailKind: 'flow-step' },
 };
 
 /**
@@ -121,20 +136,22 @@ const DECISION_PATH: PrefixDef = {
  * totalSpace: 2,048
  */
 const ESCALATION_EVENT: PrefixDef = {
-  id: "escalation_event",
-  name: "에스컬레이션 이벤트",
-  description: "자동 판정 불가 → 인간 결정 요청 시 기록",
-  labels: ["flow_type", "escalation_type", "cognitive_phase"],
+  id: 'escalation_event',
+  name: '에스컬레이션 이벤트',
+  description: '자동 판정 불가 → 인간 결정 요청 시 기록',
+  labels: ['flow_type', 'escalation_type', 'cognitive_phase'],
   dims: {
-    flow_type:       { kind: "axis", axisId: "flow_type" },
-    escalation_type: { kind: "axis", axisId: "escalation_type" },
-    cognitive_phase: { kind: "axis", axisId: "cognitive_phase" },
+    flow_type: { kind: 'axis', axisId: 'flow_type' },
+    escalation_type: { kind: 'axis', axisId: 'escalation_type' },
+    cognitive_phase: { kind: 'axis', axisId: 'cognitive_phase' },
   },
-  versions: [{
-    version: "v1",
-    axisVersions: { flow_type: "v1", escalation_type: "v1", cognitive_phase: "v1" },
-  }],
-  meta: { category: "event", layer: 2, visualShape: "flat-tile", detailKind: "event-def" },
+  versions: [
+    {
+      version: 'v1',
+      axisVersions: { flow_type: 'v1', escalation_type: 'v1', cognitive_phase: 'v1' },
+    },
+  ],
+  meta: { category: 'event', layer: 2, visualShape: 'flat-tile', detailKind: 'event-def' },
 };
 
 /**
@@ -146,20 +163,22 @@ const ESCALATION_EVENT: PrefixDef = {
  * totalSpace: 1,024
  */
 const MODEL_APPLY: PrefixDef = {
-  id: "model_apply",
-  name: "인지 모델 적용",
-  description: "의사결정에 인지 프레임워크를 적용할 때 기록",
-  labels: ["mental_model", "reversibility", "magnitude"],
+  id: 'model_apply',
+  name: '인지 모델 적용',
+  description: '의사결정에 인지 프레임워크를 적용할 때 기록',
+  labels: ['mental_model', 'reversibility', 'magnitude'],
   dims: {
-    mental_model:  { kind: "axis", axisId: "mental_model" },
-    reversibility: { kind: "axis", axisId: "reversibility" },
-    magnitude:     { kind: "axis", axisId: "magnitude" },
+    mental_model: { kind: 'axis', axisId: 'mental_model' },
+    reversibility: { kind: 'axis', axisId: 'reversibility' },
+    magnitude: { kind: 'axis', axisId: 'magnitude' },
   },
-  versions: [{
-    version: "v1",
-    axisVersions: { mental_model: "v1", reversibility: "v1", magnitude: "v1" },
-  }],
-  meta: { category: "observation", layer: 1, visualShape: "cube", detailKind: "generic" },
+  versions: [
+    {
+      version: 'v1',
+      axisVersions: { mental_model: 'v1', reversibility: 'v1', magnitude: 'v1' },
+    },
+  ],
+  meta: { category: 'observation', layer: 1, visualShape: 'cube', detailKind: 'generic' },
 };
 
 /**
@@ -171,20 +190,22 @@ const MODEL_APPLY: PrefixDef = {
  * totalSpace: 512
  */
 const FORCING_RESPONSE: PrefixDef = {
-  id: "forcing_response",
-  name: "강제 질문 응답",
-  description: "Office Hours 6 Forcing Questions에 대한 응답 기록",
-  labels: ["forcing_question", "evidence_kind", "confidence_band"],
+  id: 'forcing_response',
+  name: '강제 질문 응답',
+  description: 'Office Hours 6 Forcing Questions에 대한 응답 기록',
+  labels: ['forcing_question', 'evidence_kind', 'confidence_band'],
   dims: {
-    forcing_question: { kind: "axis", axisId: "forcing_question" },
-    evidence_kind:    { kind: "axis", axisId: "evidence_kind" },
-    confidence_band:  { kind: "axis", axisId: "confidence_band" },
+    forcing_question: { kind: 'axis', axisId: 'forcing_question' },
+    evidence_kind: { kind: 'axis', axisId: 'evidence_kind' },
+    confidence_band: { kind: 'axis', axisId: 'confidence_band' },
   },
-  versions: [{
-    version: "v1",
-    axisVersions: { forcing_question: "v1", evidence_kind: "v1", confidence_band: "v1" },
-  }],
-  meta: { category: "event", layer: 1, visualShape: "flat-tile", detailKind: "event-def" },
+  versions: [
+    {
+      version: 'v1',
+      axisVersions: { forcing_question: 'v1', evidence_kind: 'v1', confidence_band: 'v1' },
+    },
+  ],
+  meta: { category: 'event', layer: 1, visualShape: 'flat-tile', detailKind: 'event-def' },
 };
 
 // ─── 의사결정 카탈로그 ───────────────────────────────────
@@ -204,15 +225,15 @@ const FORCING_RESPONSE: PrefixDef = {
  *   합계:              20,992 좌표
  */
 export const DECISION_CATALOG: DecisionCatalog = {
-  id: "decision",
-  name: "의사결정 관찰",
+  id: 'decision',
+  name: '의사결정 관찰',
   axes: DECISION_AXES,
   prefixes: {
-    decision_event:    DECISION_EVENT,
-    decision_path:     DECISION_PATH,
-    escalation_event:  ESCALATION_EVENT,
-    model_apply:       MODEL_APPLY,
-    forcing_response:  FORCING_RESPONSE,
+    decision_event: DECISION_EVENT,
+    decision_path: DECISION_PATH,
+    escalation_event: ESCALATION_EVENT,
+    model_apply: MODEL_APPLY,
+    forcing_response: FORCING_RESPONSE,
   },
 };
 

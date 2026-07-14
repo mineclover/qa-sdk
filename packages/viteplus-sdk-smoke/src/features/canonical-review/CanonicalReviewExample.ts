@@ -9,10 +9,7 @@ import { flushCanonicalReviewBridge } from './handlers/canonicalReviewHandlerSup
 import { getCanonicalReviewData } from './hooks/getCanonicalReviewData.js';
 import { renderCanonicalReviewView } from './views/CanonicalReviewView.js';
 
-export async function mountCanonicalReviewExample(
-  root: HTMLElement,
-  mode: string,
-): Promise<void> {
+export async function mountCanonicalReviewExample(root: HTMLElement, mode: string): Promise<void> {
   const bridge = createQaBridge({
     serviceName: 'viteplus-sdk-smoke',
     owner: { owner_type: 'workspace', owner_id: 'qa-sdk' },
@@ -42,12 +39,7 @@ export async function mountCanonicalReviewExample(
   }
 
   const render = (): void => {
-    renderCanonicalReviewView(
-      viewRoot,
-      getCanonicalReviewData(context),
-      actions,
-      context.refs,
-    );
+    renderCanonicalReviewView(viewRoot, getCanonicalReviewData(context), actions, context.refs);
   };
 
   context.store.subscribe(render);

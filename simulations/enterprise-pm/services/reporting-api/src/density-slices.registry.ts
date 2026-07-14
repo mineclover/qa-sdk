@@ -12,7 +12,7 @@
 // 활성화 방식: app.module 에서 `DensitySliceModule.register({useFactory})` 형태로
 // 직접 import. 본 파일은 dynamic 모듈을 정적 배열에 포함시키지 않는다.
 
-import { DensitySliceModule } from "./density/density.module.js";
+import { DensitySliceModule } from './density/density.module.js';
 
 /**
  * density 단일 슬라이스 marker 배열. dynamic 모듈은 app.module 의

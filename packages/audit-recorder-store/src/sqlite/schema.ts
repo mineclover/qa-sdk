@@ -1,7 +1,7 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-nested-audit-tracing
 
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
  * audit_entries — nested audit tracing.
@@ -10,39 +10,39 @@ import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
  * `kind` 컬럼으로 분기, kind별 nullable 컬럼은 InMemory 구현과 1:1.
  */
 export const auditEntries = sqliteTable(
-  "audit_entries",
+  'audit_entries',
   {
-    spanId: text("span_id").primaryKey(),
-    traceId: text("trace_id").notNull(),
-    parentSpanId: text("parent_span_id"),
-    rootSpanId: text("root_span_id").notNull(),
-    depth: integer("depth").notNull(),
-    kind: text("kind", { enum: ["execution", "check"] }).notNull(),
+    spanId: text('span_id').primaryKey(),
+    traceId: text('trace_id').notNull(),
+    parentSpanId: text('parent_span_id'),
+    rootSpanId: text('root_span_id').notNull(),
+    depth: integer('depth').notNull(),
+    kind: text('kind', { enum: ['execution', 'check'] }).notNull(),
 
     // execution kind
-    apiId: text("api_id"),
-    actorUserId: text("actor_user_id"),
-    actorTenantId: text("actor_tenant_id"),
-    targetKind: text("target_kind"),
-    targetId: text("target_id"),
-    outcome: text("outcome", { enum: ["allow", "deny", "error"] }),
+    apiId: text('api_id'),
+    actorUserId: text('actor_user_id'),
+    actorTenantId: text('actor_tenant_id'),
+    targetKind: text('target_kind'),
+    targetId: text('target_id'),
+    outcome: text('outcome', { enum: ['allow', 'deny', 'error'] }),
 
     // check kind
-    pass: text("pass", { enum: ["bitmap", "lifecycle", "cerbos", "acl"] }),
-    address: integer("address"),
-    unionKind: text("union_kind"),
-    denyReason: text("deny_reason"),
+    pass: text('pass', { enum: ['bitmap', 'lifecycle', 'cerbos', 'acl'] }),
+    address: integer('address'),
+    unionKind: text('union_kind'),
+    denyReason: text('deny_reason'),
 
-    startedAt: text("started_at").notNull(),
-    endedAt: text("ended_at"),
-    metadata: text("metadata"), // JSON-serialized
+    startedAt: text('started_at').notNull(),
+    endedAt: text('ended_at'),
+    metadata: text('metadata'), // JSON-serialized
   },
   (t) => [
-    index("idx_audit_trace").on(t.traceId),
-    index("idx_audit_root").on(t.rootSpanId),
-    index("idx_audit_parent").on(t.parentSpanId),
-    index("idx_audit_actor").on(t.actorUserId, t.startedAt),
-    index("idx_audit_target").on(t.targetKind, t.targetId),
+    index('idx_audit_trace').on(t.traceId),
+    index('idx_audit_root').on(t.rootSpanId),
+    index('idx_audit_parent').on(t.parentSpanId),
+    index('idx_audit_actor').on(t.actorUserId, t.startedAt),
+    index('idx_audit_target').on(t.targetKind, t.targetId),
   ],
 );
 

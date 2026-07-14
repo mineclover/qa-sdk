@@ -25,7 +25,7 @@
  * ```
  */
 
-import { WeightedIndex } from "weighted-index";
+import { WeightedIndex } from 'weighted-index';
 
 // ── Schema constraint (validation without widening) ─────────────────────────
 
@@ -46,19 +46,17 @@ export interface SdkSchema {
 // ── Type-level inference ────────────────────────────────────────────────────
 
 /** 축 키에 대한 엔트리 유니온 추출 */
-export type AxisEntries<S extends SdkSchema, K extends string> =
-  K extends keyof S["axes"]
-    ? S["axes"][K]["entries"][number]
-    : string;
+export type AxisEntries<S extends SdkSchema, K extends string> = K extends keyof S['axes']
+  ? S['axes'][K]['entries'][number]
+  : string;
 
 /** 모든 prefix 이름 */
-export type PrefixNames<S extends SdkSchema> = keyof S["prefixes"] & string;
+export type PrefixNames<S extends SdkSchema> = keyof S['prefixes'] & string;
 
 /** prefix의 차원 라벨 튜플 */
-export type PrefixDims<S extends SdkSchema, P extends string> =
-  P extends keyof S["prefixes"]
-    ? S["prefixes"][P]["dims"]
-    : never;
+export type PrefixDims<S extends SdkSchema, P extends string> = P extends keyof S['prefixes']
+  ? S['prefixes'][P]['dims']
+  : never;
 
 /** prefix 좌표 레코드: { dimLabel: AxisEntries<S, dimLabel> } */
 export type PrefixCoord<S extends SdkSchema, P extends string> = {
@@ -74,10 +72,7 @@ export interface TypedIndexSDK<S extends SdkSchema> {
    * @param prefix  prefix 이름 (LSP 자동완성 제공)
    * @param coord   차원별 엔트리 값 (LSP 자동완성 제공)
    */
-  encode<P extends PrefixNames<S>>(
-    prefix: P,
-    coord: PrefixCoord<S, P>,
-  ): number;
+  encode<P extends PrefixNames<S>>(prefix: P, coord: PrefixCoord<S, P>): number;
 
   /**
    * 1D 정수 주소 → 차원별 의미값.
@@ -85,10 +80,7 @@ export interface TypedIndexSDK<S extends SdkSchema> {
    * @param prefix   prefix 이름
    * @param address  정수 주소
    */
-  decode<P extends PrefixNames<S>>(
-    prefix: P,
-    address: number,
-  ): PrefixCoord<S, P>;
+  decode<P extends PrefixNames<S>>(prefix: P, address: number): PrefixCoord<S, P>;
 }
 
 // ── 내부: prefix별 런타임 메타데이터 ────────────────────────────────────────
@@ -148,10 +140,7 @@ export function createIndexSDK<const S extends SdkSchema>(schema: S): TypedIndex
   }
 
   return {
-    encode<P extends PrefixNames<S>>(
-      prefix: P,
-      coord: PrefixCoord<S, P>,
-    ): number {
+    encode<P extends PrefixNames<S>>(prefix: P, coord: PrefixCoord<S, P>): number {
       const rt = prefixMap.get(prefix);
       if (!rt) throw new Error(`Unknown prefix: "${prefix}"`);
 
@@ -168,7 +157,7 @@ export function createIndexSDK<const S extends SdkSchema>(schema: S): TypedIndex
         if (idx === undefined) {
           throw new Error(
             `Unknown entry "${value}" for axis "${label}". ` +
-            `Valid: [${[...e2i.keys()].join(", ")}]`,
+              `Valid: [${[...e2i.keys()].join(', ')}]`,
           );
         }
         coords[i] = idx;
@@ -176,10 +165,7 @@ export function createIndexSDK<const S extends SdkSchema>(schema: S): TypedIndex
       return rt.wi.encode(coords);
     },
 
-    decode<P extends PrefixNames<S>>(
-      prefix: P,
-      address: number,
-    ): PrefixCoord<S, P> {
+    decode<P extends PrefixNames<S>>(prefix: P, address: number): PrefixCoord<S, P> {
       const rt = prefixMap.get(prefix);
       if (!rt) throw new Error(`Unknown prefix: "${prefix}"`);
 

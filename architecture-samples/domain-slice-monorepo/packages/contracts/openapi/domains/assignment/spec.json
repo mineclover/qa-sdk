@@ -1,8 +1,5 @@
 {
-  "tags": [
-    { "name": "assignment" },
-    { "name": "assignment-bff" }
-  ],
+  "tags": [{ "name": "assignment" }, { "name": "assignment-bff" }],
   "paths": {
     "/assignments": {
       "post": {

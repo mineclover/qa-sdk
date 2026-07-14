@@ -1,16 +1,16 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { CommentEntity } from "../../domain/index.js";
-import type { CommentSnapshot } from "../../domain/index.js";
-import { CommentRepositoryPort } from "../../application/ports/comment-repository.port.js";
-import type { CommentTransactionScope } from "../../application/ports/comment-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { CommentEntity } from '../../domain/index.js';
+import type { CommentSnapshot } from '../../domain/index.js';
+import { CommentRepositoryPort } from '../../application/ports/comment-repository.port.js';
+import type { CommentTransactionScope } from '../../application/ports/comment-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface CommentRow {
   id: string;
@@ -147,20 +147,18 @@ export class PgCommentRepository extends CommentRepositoryPort {
   }
 }
 
-export type CommentDialect = "sqlite" | "pg";
+export type CommentDialect = 'sqlite' | 'pg';
 
 export interface CommentRepositoryFactoryOpts {
   readonly dialect: CommentDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createCommentRepository(
-  opts: CommentRepositoryFactoryOpts,
-): CommentRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createCommentRepository(opts: CommentRepositoryFactoryOpts): CommentRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteCommentRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgCommentRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(

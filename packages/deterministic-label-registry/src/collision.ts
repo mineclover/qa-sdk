@@ -3,7 +3,7 @@ import {
   semanticCoordinateDiagnostic,
   type SemanticCoordinateCandidate,
   type SemanticCoordinateDiagnostic,
-} from "./coordinate.js";
+} from './coordinate.js';
 
 /**
  * Collision 감지 system — 같은 label을 서로 다른 physical record가 생산하는 경우를
@@ -29,8 +29,8 @@ export function detectSemanticCoordinateCandidateCollisions(
       if (signatures.size <= 1) return [];
       return [
         semanticCoordinateDiagnostic({
-          code: "semantic-coordinate-collision-candidate",
-          severity: "warning",
+          code: 'semantic-coordinate-collision-candidate',
+          severity: 'warning',
           label,
           message: `Semantic coordinate candidate ${label} is produced by ${matches.length} distinct physical records.`,
           metadata: {
@@ -46,17 +46,10 @@ export function detectSemanticCoordinateCandidateCollisions(
     });
 }
 
-function candidateCollisionSignature(
-  candidate: SemanticCoordinateCandidate,
-): string {
+function candidateCollisionSignature(candidate: SemanticCoordinateCandidate): string {
   const physicalRefs = candidate.physicalRefs
     .map((ref) => `${ref.kind}:${ref.ref}`)
     .toSorted()
-    .join("|");
-  return [
-    candidate.kind,
-    candidate.id,
-    candidate.parentId ?? "",
-    physicalRefs,
-  ].join("\u001f");
+    .join('|');
+  return [candidate.kind, candidate.id, candidate.parentId ?? '', physicalRefs].join('\u001f');
 }

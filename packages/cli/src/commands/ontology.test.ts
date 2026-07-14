@@ -1,206 +1,189 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest';
 
-import { SqliteQualityStore } from "quality-ledger";
-import { cliOntology } from "./ontology.js";
-import { USAGE, main, resolveSubcommand } from "../index.js";
-import {
-  KNOWN_ONTOLOGY_PACK_IDS,
-  resolveKnownOntologyPack,
-} from "ontology-pack-validate";
+import { SqliteQualityStore } from 'quality-ledger';
+import { cliOntology } from './ontology.js';
+import { USAGE, main, resolveSubcommand } from '../index.js';
+import { KNOWN_ONTOLOGY_PACK_IDS, resolveKnownOntologyPack } from 'ontology-pack-validate';
 
 const AUTHORIZATION_TAXONOMY_IDS = [
-  "authorization-action",
-  "authorization-decision",
-  "authorization-enforcement",
-  "authorization-lineage",
-  "authorization-node",
-  "authorization-policy",
-  "authorization-principal",
-  "authorization-resource",
+  'authorization-action',
+  'authorization-decision',
+  'authorization-enforcement',
+  'authorization-lineage',
+  'authorization-node',
+  'authorization-policy',
+  'authorization-principal',
+  'authorization-resource',
 ];
 
-describe("ontology CLI", () => {
-  it("known pack resolver resolves activation pack ids without store setup", () => {
+describe('ontology CLI', () => {
+  it('known pack resolver resolves activation pack ids without store setup', () => {
     expect(KNOWN_ONTOLOGY_PACK_IDS).toEqual([
-      "programming-artifact-ontology",
-      "authorization-ontology",
+      'programming-artifact-ontology',
+      'authorization-ontology',
     ]);
 
-    const programmingArtifact = resolveKnownOntologyPack(
-      "programming-artifact-ontology",
-    );
-    const authorization = resolveKnownOntologyPack("authorization-ontology");
+    const programmingArtifact = resolveKnownOntologyPack('programming-artifact-ontology');
+    const authorization = resolveKnownOntologyPack('authorization-ontology');
 
     expect(programmingArtifact).toMatchObject({
       ok: true,
-      packId: "programming-artifact-ontology",
-      pack: { packId: "programming-artifact-ontology" },
+      packId: 'programming-artifact-ontology',
+      pack: { packId: 'programming-artifact-ontology' },
     });
     expect(authorization).toMatchObject({
       ok: true,
-      packId: "authorization-ontology",
-      pack: { packId: "authorization-ontology" },
+      packId: 'authorization-ontology',
+      pack: { packId: 'authorization-ontology' },
     });
   });
 
-  it("known pack resolver reports unknown pack ids as structured errors", () => {
-    const result = resolveKnownOntologyPack("custom-fixture-pack");
+  it('known pack resolver reports unknown pack ids as structured errors', () => {
+    const result = resolveKnownOntologyPack('custom-fixture-pack');
 
     expect(result).toEqual({
       ok: false,
       error: {
-        code: "unknown-ontology-pack",
+        code: 'unknown-ontology-pack',
         message:
           'Unknown ontology pack id "custom-fixture-pack". Supported pack ids: programming-artifact-ontology, authorization-ontology',
-        packId: "custom-fixture-pack",
+        packId: 'custom-fixture-pack',
         supportedPackIds: KNOWN_ONTOLOGY_PACK_IDS,
       },
     });
   });
 
-  it("usage와 subcommand 해석에 ontology 루트를 노출한다", () => {
-    expect(USAGE).toContain("qa-sdk ontology status");
-    expect(USAGE).toContain("qa-sdk ontology pack scaffold <pack-id>");
-    expect(USAGE).toContain("dry-run by default; file writes require --write");
-    expect(USAGE).toContain("source-map candidates include def find-by-file guidance");
-    expect(USAGE).toContain("registry activation is out of scope");
-    expect(USAGE).toContain("[--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]");
-    expect(USAGE).toContain("qa-sdk ontology pack validate <pack-ref>");
-    expect(USAGE).toContain("qa-sdk ontology registry activate-pack <pack-id>");
-    expect(USAGE).toContain("[--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]");
-    expect(USAGE).toContain("qa-sdk ontology prompt extract");
-    expect(USAGE).toContain("qa-sdk ontology prompt extract-file");
-    expect(USAGE).toContain("qa-sdk ontology prompt extract-permission");
-    expect(USAGE).toContain("qa-sdk ontology prompt extract-artifact");
-    expect(USAGE).toContain("--quality-ledger <path>");
-    expect(USAGE).toContain("--quality-status-max-age-days <n>");
-    expect(USAGE).toContain("qa-sdk ontology artifact registry validate");
-    expect(USAGE).toContain("qa-sdk ontology artifact registry append");
-    expect(USAGE).toContain("qa-sdk ontology snapshot ingest");
-    expect(USAGE).toContain("qa-sdk ontology corridor list");
-    expect(USAGE).toContain("qa-sdk ontology checkpoint list");
-    expect(USAGE).toContain("qa-sdk ontology checkpoint show");
-    expect(USAGE).toContain("qa-sdk ontology checkpoint diff");
-    expect(USAGE).toContain("qa-sdk ontology checkpoint diff-latest");
-    expect(USAGE).toContain("qa-sdk ontology junction list");
-    expect(USAGE).toContain("qa-sdk ontology junction show");
-    expect(USAGE).toContain("qa-sdk ontology junction diff");
-    expect(USAGE).toContain("qa-sdk ontology junction diff-latest");
-    expect(USAGE).toContain("qa-sdk ontology route list");
-    expect(USAGE).toContain("qa-sdk ontology route show");
-    expect(USAGE).toContain("qa-sdk ontology route diff");
-    expect(USAGE).toContain("qa-sdk ontology route diff-latest");
-    expect(USAGE).toContain("qa-sdk ontology traversal list");
-    expect(USAGE).toContain("qa-sdk ontology traversal show");
-    expect(USAGE).toContain("qa-sdk ontology traversal diff");
-    expect(USAGE).toContain("qa-sdk ontology traversal diff-latest");
-    expect(USAGE).toContain("qa-sdk ontology snapshot diff");
-    expect(USAGE).toContain("qa-sdk ontology snapshot diff-latest");
-    expect(USAGE).toContain("qa-sdk ontology corridor diff");
-    expect(USAGE).toContain("qa-sdk ontology corridor diff-latest");
-    expect(USAGE).toContain("qa-sdk ontology corridor show");
+  it('usage와 subcommand 해석에 ontology 루트를 노출한다', () => {
+    expect(USAGE).toContain('qa-sdk ontology status');
+    expect(USAGE).toContain('qa-sdk ontology pack scaffold <pack-id>');
+    expect(USAGE).toContain('dry-run by default; file writes require --write');
+    expect(USAGE).toContain('source-map candidates include def find-by-file guidance');
+    expect(USAGE).toContain('registry activation is out of scope');
+    expect(USAGE).toContain(
+      '[--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]',
+    );
+    expect(USAGE).toContain('qa-sdk ontology pack validate <pack-ref>');
+    expect(USAGE).toContain('qa-sdk ontology registry activate-pack <pack-id>');
+    expect(USAGE).toContain(
+      '[--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]',
+    );
+    expect(USAGE).toContain('qa-sdk ontology prompt extract');
+    expect(USAGE).toContain('qa-sdk ontology prompt extract-file');
+    expect(USAGE).toContain('qa-sdk ontology prompt extract-permission');
+    expect(USAGE).toContain('qa-sdk ontology prompt extract-artifact');
+    expect(USAGE).toContain('--quality-ledger <path>');
+    expect(USAGE).toContain('--quality-status-max-age-days <n>');
+    expect(USAGE).toContain('qa-sdk ontology artifact registry validate');
+    expect(USAGE).toContain('qa-sdk ontology artifact registry append');
+    expect(USAGE).toContain('qa-sdk ontology snapshot ingest');
+    expect(USAGE).toContain('qa-sdk ontology corridor list');
+    expect(USAGE).toContain('qa-sdk ontology checkpoint list');
+    expect(USAGE).toContain('qa-sdk ontology checkpoint show');
+    expect(USAGE).toContain('qa-sdk ontology checkpoint diff');
+    expect(USAGE).toContain('qa-sdk ontology checkpoint diff-latest');
+    expect(USAGE).toContain('qa-sdk ontology junction list');
+    expect(USAGE).toContain('qa-sdk ontology junction show');
+    expect(USAGE).toContain('qa-sdk ontology junction diff');
+    expect(USAGE).toContain('qa-sdk ontology junction diff-latest');
+    expect(USAGE).toContain('qa-sdk ontology route list');
+    expect(USAGE).toContain('qa-sdk ontology route show');
+    expect(USAGE).toContain('qa-sdk ontology route diff');
+    expect(USAGE).toContain('qa-sdk ontology route diff-latest');
+    expect(USAGE).toContain('qa-sdk ontology traversal list');
+    expect(USAGE).toContain('qa-sdk ontology traversal show');
+    expect(USAGE).toContain('qa-sdk ontology traversal diff');
+    expect(USAGE).toContain('qa-sdk ontology traversal diff-latest');
+    expect(USAGE).toContain('qa-sdk ontology snapshot diff');
+    expect(USAGE).toContain('qa-sdk ontology snapshot diff-latest');
+    expect(USAGE).toContain('qa-sdk ontology corridor diff');
+    expect(USAGE).toContain('qa-sdk ontology corridor diff-latest');
+    expect(USAGE).toContain('qa-sdk ontology corridor show');
     expect(
       resolveSubcommand([
-        "ontology",
-        "registry",
-        "activate-pack",
-        "programming-artifact-ontology",
-        "--store",
-        "registry.sqlite",
+        'ontology',
+        'registry',
+        'activate-pack',
+        'programming-artifact-ontology',
+        '--store',
+        'registry.sqlite',
       ]),
     ).toEqual({
-      name: "ontology registry activate-pack",
-      rest: ["programming-artifact-ontology", "--store", "registry.sqlite"],
+      name: 'ontology registry activate-pack',
+      rest: ['programming-artifact-ontology', '--store', 'registry.sqlite'],
+    });
+    expect(
+      resolveSubcommand(['ontology', 'pack', 'scaffold', 'risk-model-ontology', '--write']),
+    ).toEqual({
+      name: 'ontology pack scaffold',
+      rest: ['risk-model-ontology', '--write'],
     });
     expect(
       resolveSubcommand([
-        "ontology",
-        "pack",
-        "scaffold",
-        "risk-model-ontology",
-        "--write",
+        'ontology',
+        'pack',
+        'validate',
+        'programming-artifact-ontology',
+        '--json',
       ]),
     ).toEqual({
-      name: "ontology pack scaffold",
-      rest: ["risk-model-ontology", "--write"],
+      name: 'ontology pack validate',
+      rest: ['programming-artifact-ontology', '--json'],
+    });
+    expect(
+      resolveSubcommand(['ontology', 'snapshot', 'ingest', '--input', 'snapshot.json']),
+    ).toEqual({
+      name: 'ontology snapshot ingest',
+      rest: ['--input', 'snapshot.json'],
     });
     expect(
       resolveSubcommand([
-        "ontology",
-        "pack",
-        "validate",
-        "programming-artifact-ontology",
-        "--json",
+        'ontology',
+        'corridor',
+        'show-latest',
+        'pipe-cli',
+        '--scope',
+        'pipe-scope',
       ]),
     ).toEqual({
-      name: "ontology pack validate",
-      rest: ["programming-artifact-ontology", "--json"],
-    });
-    expect(
-      resolveSubcommand([
-        "ontology",
-        "snapshot",
-        "ingest",
-        "--input",
-        "snapshot.json",
-      ]),
-    ).toEqual({
-      name: "ontology snapshot ingest",
-      rest: ["--input", "snapshot.json"],
-    });
-    expect(
-      resolveSubcommand([
-        "ontology",
-        "corridor",
-        "show-latest",
-        "pipe-cli",
-        "--scope",
-        "pipe-scope",
-      ]),
-    ).toEqual({
-      name: "ontology corridor show-latest",
-      rest: ["pipe-cli", "--scope", "pipe-scope"],
+      name: 'ontology corridor show-latest',
+      rest: ['pipe-cli', '--scope', 'pipe-scope'],
     });
   });
 
-  it("pack authoring help documents dry-run and scaffold boundaries", async () => {
+  it('pack authoring help documents dry-run and scaffold boundaries', async () => {
     const output = await captureConsoleAsync(async () => {
-      await cliOntology(["pack.scaffold", "--help"]);
+      await cliOntology(['pack.scaffold', '--help']);
     });
 
-    expect(output.stderr).toBe("");
-    expect(output.stdout).toContain("qa-sdk ontology pack scaffold <pack-id>");
-    expect(output.stdout).toContain("qa-sdk ontology pack validate <pack-ref>");
-    expect(output.stdout).toContain("OperationalOntologyPack is the canonical pack contract.");
-    expect(output.stdout).toContain("Scaffold is dry-run by default");
-    expect(output.stdout).toContain("file writes require explicit --write");
-    expect(output.stdout).toContain("Known-pack registration is reported as a candidate");
-    expect(output.stdout).toContain("def find-by-file guidance");
-    expect(output.stdout).toContain("no source comments are added by default");
-    expect(output.stdout).toContain("Registry activation is out of scope for scaffold");
-    expect(output.stdout).toContain("ECS can be modeled but is not required");
-    expect(output.stdout).toContain("optional rule/cases/test docs require --include-docs");
-    expect(output.stdout).toContain("Validate resolves known pack ids through the known-pack resolver.");
-    expect(output.stdout).toContain(".json pack objects or built .js/.mjs/.cjs modules");
+    expect(output.stderr).toBe('');
+    expect(output.stdout).toContain('qa-sdk ontology pack scaffold <pack-id>');
+    expect(output.stdout).toContain('qa-sdk ontology pack validate <pack-ref>');
+    expect(output.stdout).toContain('OperationalOntologyPack is the canonical pack contract.');
+    expect(output.stdout).toContain('Scaffold is dry-run by default');
+    expect(output.stdout).toContain('file writes require explicit --write');
+    expect(output.stdout).toContain('Known-pack registration is reported as a candidate');
+    expect(output.stdout).toContain('def find-by-file guidance');
+    expect(output.stdout).toContain('no source comments are added by default');
+    expect(output.stdout).toContain('Registry activation is out of scope for scaffold');
+    expect(output.stdout).toContain('ECS can be modeled but is not required');
+    expect(output.stdout).toContain('optional rule/cases/test docs require --include-docs');
+    expect(output.stdout).toContain(
+      'Validate resolves known pack ids through the known-pack resolver.',
+    );
+    expect(output.stdout).toContain('.json pack objects or built .js/.mjs/.cjs modules');
   });
 
-  it("pack validate json checks known pack runtime shape and readiness", async () => {
+  it('pack validate json checks known pack runtime shape and readiness', async () => {
     const output = await captureConsoleWithExitCode(async () => {
-      await main([
-        "ontology",
-        "pack",
-        "validate",
-        "programming-artifact-ontology",
-        "--json",
-      ]);
+      await main(['ontology', 'pack', 'validate', 'programming-artifact-ontology', '--json']);
     });
     const parsed = JSON.parse(output.stdout) as {
       valid: boolean;
@@ -235,17 +218,17 @@ describe("ontology CLI", () => {
       runtime: { valid: boolean; issueCount: number };
     };
 
-    expect(output.stderr).toBe("");
+    expect(output.stderr).toBe('');
     expect(output.exitCode).toBeUndefined();
     expect(parsed).toMatchObject({
       valid: true,
-      packId: "programming-artifact-ontology",
+      packId: 'programming-artifact-ontology',
       resolution: {
-        kind: "known-pack",
-        knownPackId: "programming-artifact-ontology",
+        kind: 'known-pack',
+        knownPackId: 'programming-artifact-ontology',
       },
       identity: {
-        packId: "programming-artifact-ontology",
+        packId: 'programming-artifact-ontology',
         schemaPresent: true,
       },
       runtime: {
@@ -253,64 +236,61 @@ describe("ontology CLI", () => {
         issueCount: 0,
       },
     });
-    expect(parsed.componentSchema.axes).toContain("programming_artifact_kind");
-    expect(parsed.componentSchema.taxonomies).toContain("programming-artifact");
+    expect(parsed.componentSchema.axes).toContain('programming_artifact_kind');
+    expect(parsed.componentSchema.taxonomies).toContain('programming-artifact');
     expect(parsed.systemBindings.counts).toMatchObject({
       blueprints: 1,
       implementationRefs: 1,
       verificationRefs: 1,
     });
-    expect(parsed.readiness.implementationFiles.status).toBe("ready");
-    expect(parsed.readiness.testFiles.status).toBe("ready");
+    expect(parsed.readiness.implementationFiles.status).toBe('ready');
+    expect(parsed.readiness.testFiles.status).toBe('ready');
     expect(parsed.readiness.docs.matchingDocs.length).toBeGreaterThan(0);
     expect(parsed.readiness.sourceMap.checkedRefs).toContain(
-      "packages/operational-ontology/src/internal/programming-artifact-core.ts",
+      'packages/operational-ontology/src/internal/programming-artifact-core.ts',
     );
     expect(parsed.readiness.sourceMap.coveredRefs).toContain(
-      "packages/operational-ontology/src/internal/programming-artifact-core.ts",
+      'packages/operational-ontology/src/internal/programming-artifact-core.ts',
     );
     for (const issue of parsed.issues) {
-      expect(issue).toEqual(expect.objectContaining({
-        source: expect.any(String),
-        path: expect.any(String),
-        code: expect.any(String),
-        message: expect.any(String),
-      }));
+      expect(issue).toEqual(
+        expect.objectContaining({
+          source: expect.any(String),
+          path: expect.any(String),
+          code: expect.any(String),
+          message: expect.any(String),
+        }),
+      );
     }
   });
 
-  it("pack validate text output is concise and actionable", async () => {
+  it('pack validate text output is concise and actionable', async () => {
     const output = await captureConsoleWithExitCode(async () => {
-      await main([
-        "ontology",
-        "pack",
-        "validate",
-        "programming-artifact-ontology",
-      ]);
+      await main(['ontology', 'pack', 'validate', 'programming-artifact-ontology']);
     });
 
-    expect(output.stderr).toBe("");
+    expect(output.stderr).toBe('');
     expect(output.exitCode).toBeUndefined();
-    expect(output.stdout).toContain("pack: programming-artifact-ontology");
-    expect(output.stdout).toContain("valid: yes");
-    expect(output.stdout).toContain("resolution: known-pack");
-    expect(output.stdout).toContain("component schema:");
-    expect(output.stdout).toContain("system bindings:");
-    expect(output.stdout).toContain("implementation files: ready");
-    expect(output.stdout).toContain("test files: ready");
-    expect(output.stdout).toContain("docs/source-map:");
+    expect(output.stdout).toContain('pack: programming-artifact-ontology');
+    expect(output.stdout).toContain('valid: yes');
+    expect(output.stdout).toContain('resolution: known-pack');
+    expect(output.stdout).toContain('component schema:');
+    expect(output.stdout).toContain('system bindings:');
+    expect(output.stdout).toContain('implementation files: ready');
+    expect(output.stdout).toContain('test files: ready');
+    expect(output.stdout).toContain('docs/source-map:');
   });
 
-  it("pack validate loads supported json file refs", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-validate-json-"));
+  it('pack validate loads supported json file refs', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-pack-validate-json-'));
     const previousCwd = process.cwd();
     try {
-      const packPath = join(dir, "file-pack.json");
+      const packPath = join(dir, 'file-pack.json');
       await writeFile(packPath, JSON.stringify(validFilePack(), null, 2));
       process.chdir(dir);
 
       const output = await captureConsoleWithExitCode(async () => {
-        await main(["ontology", "pack", "validate", "file-pack.json", "--json"]);
+        await main(['ontology', 'pack', 'validate', 'file-pack.json', '--json']);
       });
       const parsed = JSON.parse(output.stdout) as {
         valid: boolean;
@@ -323,33 +303,33 @@ describe("ontology CLI", () => {
         };
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
       expect(parsed.valid).toBe(true);
-      expect(parsed.packId).toBe("file-pack-ontology");
-      expect(parsed.resolution.kind).toBe("file-path");
-      expect(parsed.resolution.filePath).toBe("file-pack.json");
-      expect(parsed.resolution.supportedFilePath).toContain(".json pack objects");
-      expect(parsed.readiness.implementationFiles.status).toBe("skipped");
-      expect(parsed.readiness.testFiles.status).toBe("skipped");
-      expect(parsed.readiness.docs.status).toBe("skipped");
+      expect(parsed.packId).toBe('file-pack-ontology');
+      expect(parsed.resolution.kind).toBe('file-path');
+      expect(parsed.resolution.filePath).toBe('file-pack.json');
+      expect(parsed.resolution.supportedFilePath).toContain('.json pack objects');
+      expect(parsed.readiness.implementationFiles.status).toBe('skipped');
+      expect(parsed.readiness.testFiles.status).toBe('skipped');
+      expect(parsed.readiness.docs.status).toBe('skipped');
     } finally {
       process.chdir(previousCwd);
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("pack validate imports supported module file refs", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-validate-module-"));
+  it('pack validate imports supported module file refs', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-pack-validate-module-'));
     try {
-      const packPath = join(dir, "file-pack.mjs");
+      const packPath = join(dir, 'file-pack.mjs');
       await writeFile(
         packPath,
         `export const pack = ${JSON.stringify(validFilePack(), null, 2)};\n`,
       );
 
       const output = await captureConsoleWithExitCode(async () => {
-        await main(["ontology", "pack", "validate", packPath, "--json"]);
+        await main(['ontology', 'pack', 'validate', packPath, '--json']);
       });
       const parsed = JSON.parse(output.stdout) as {
         valid: boolean;
@@ -357,13 +337,13 @@ describe("ontology CLI", () => {
         resolution: { kind: string; filePath: string };
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
       expect(parsed).toMatchObject({
         valid: true,
-        packId: "file-pack-ontology",
+        packId: 'file-pack-ontology',
         resolution: {
-          kind: "file-path",
+          kind: 'file-path',
           filePath: packPath,
         },
       });
@@ -372,39 +352,41 @@ describe("ontology CLI", () => {
     }
   });
 
-  it("pack validate reports missing static implementation and test refs", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-validate-missing-files-"));
+  it('pack validate reports missing static implementation and test refs', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-pack-validate-missing-files-'));
     try {
-      const packPath = join(dir, "missing-files-pack.json");
+      const packPath = join(dir, 'missing-files-pack.json');
       await writeFile(
         packPath,
-        JSON.stringify({
-          ...validFilePack(),
-          blueprints: [
-            {
-              blueprintId: "missing-files-binding",
-              coordinateRef: "corridor:missing-files-binding",
-              unitKind: "corridor_bundle",
-              requiredSchemas: ["file-pack"],
-              implementationBinding: {
-                coordinateRef: "corridor:missing-files-binding",
-                implementationRefs: [
-                  { kind: "code", ref: "packages/missing/src/file-pack.ts" },
-                ],
+        JSON.stringify(
+          {
+            ...validFilePack(),
+            blueprints: [
+              {
+                blueprintId: 'missing-files-binding',
+                coordinateRef: 'corridor:missing-files-binding',
+                unitKind: 'corridor_bundle',
+                requiredSchemas: ['file-pack'],
+                implementationBinding: {
+                  coordinateRef: 'corridor:missing-files-binding',
+                  implementationRefs: [{ kind: 'code', ref: 'packages/missing/src/file-pack.ts' }],
+                },
+                verificationBinding: {
+                  coordinateRef: 'corridor:missing-files-binding',
+                  verificationRefs: [
+                    { kind: 'test', ref: 'packages/missing/src/file-pack.test.ts' },
+                  ],
+                },
               },
-              verificationBinding: {
-                coordinateRef: "corridor:missing-files-binding",
-                verificationRefs: [
-                  { kind: "test", ref: "packages/missing/src/file-pack.test.ts" },
-                ],
-              },
-            },
-          ],
-        }, null, 2),
+            ],
+          },
+          null,
+          2,
+        ),
       );
 
       const output = await captureConsoleWithExitCode(async () => {
-        await main(["ontology", "pack", "validate", packPath, "--json"]);
+        await main(['ontology', 'pack', 'validate', packPath, '--json']);
       });
       const parsed = JSON.parse(output.stdout) as {
         valid: boolean;
@@ -415,33 +397,33 @@ describe("ontology CLI", () => {
         };
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBe(1);
       expect(parsed.valid).toBe(false);
       expect(parsed.issues).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            source: "file",
-            code: "implementation-file-missing",
-            path: "readiness.implementationFiles.packages/missing/src/file-pack.ts",
+            source: 'file',
+            code: 'implementation-file-missing',
+            path: 'readiness.implementationFiles.packages/missing/src/file-pack.ts',
           }),
           expect.objectContaining({
-            source: "file",
-            code: "test-file-missing",
-            path: "readiness.testFiles.packages/missing/src/file-pack.test.ts",
+            source: 'file',
+            code: 'test-file-missing',
+            path: 'readiness.testFiles.packages/missing/src/file-pack.test.ts',
           }),
         ]),
       );
-      expect(parsed.readiness.implementationFiles.status).toBe("missing");
-      expect(parsed.readiness.testFiles.status).toBe("missing");
+      expect(parsed.readiness.implementationFiles.status).toBe('missing');
+      expect(parsed.readiness.testFiles.status).toBe('missing');
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("pack validate reports unknown pack refs as structured errors", async () => {
+  it('pack validate reports unknown pack refs as structured errors', async () => {
     const output = await captureConsoleWithExitCode(async () => {
-      await main(["ontology", "pack", "validate", "missing-pack", "--json"]);
+      await main(['ontology', 'pack', 'validate', 'missing-pack', '--json']);
     });
     const parsed = JSON.parse(output.stdout) as {
       valid: boolean;
@@ -456,36 +438,30 @@ describe("ontology CLI", () => {
       }>;
     };
 
-    expect(output.stderr).toBe("");
+    expect(output.stderr).toBe('');
     expect(output.exitCode).toBe(1);
     expect(parsed).toMatchObject({
       valid: false,
       packId: null,
-      resolution: { kind: "unresolved" },
+      resolution: { kind: 'unresolved' },
       issues: [
         {
-          source: "resolver",
-          path: "packRef",
-          code: "unknown-ontology-pack",
+          source: 'resolver',
+          path: 'packRef',
+          code: 'unknown-ontology-pack',
           details: { supportedPackIds: KNOWN_ONTOLOGY_PACK_IDS },
         },
       ],
     });
   });
 
-  it("pack scaffold json returns a dry-run preview without creating files", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-scaffold-preview-"));
+  it('pack scaffold json returns a dry-run preview without creating files', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-pack-scaffold-preview-'));
     const previousCwd = process.cwd();
     try {
       process.chdir(dir);
       const output = await captureConsoleWithExitCode(async () => {
-        await main([
-          "ontology",
-          "pack",
-          "scaffold",
-          "risk-model-ontology",
-          "--json",
-        ]);
+        await main(['ontology', 'pack', 'scaffold', 'risk-model-ontology', '--json']);
       });
       const parsed = JSON.parse(output.stdout) as {
         mode: string;
@@ -567,92 +543,98 @@ describe("ontology CLI", () => {
         };
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
-      expect(parsed.mode).toBe("dry-run");
-      expect(parsed.preview.mode).toBe("dry-run");
+      expect(parsed.mode).toBe('dry-run');
+      expect(parsed.preview.mode).toBe('dry-run');
       expect(parsed.preview.writesApplied).toBe(false);
-      expect(parsed.componentSchemaFiles[0]?.content).toContain("OperationalOntologySchema");
-      expect(parsed.systemBindingFiles[0]?.content).toContain("OperationalOntologyPack");
-      expect(parsed.testFiles[0]?.content).toContain("validates the pack contract");
+      expect(parsed.componentSchemaFiles[0]?.content).toContain('OperationalOntologySchema');
+      expect(parsed.systemBindingFiles[0]?.content).toContain('OperationalOntologyPack');
+      expect(parsed.testFiles[0]?.content).toContain('validates the pack contract');
       expect(parsed.testFiles[0]?.content).toContain(
-        "expect(validateRiskModelOntologyPack().valid).toBe(true);",
+        'expect(validateRiskModelOntologyPack().valid).toBe(true);',
       );
       expect(parsed.preview.testSkeleton.files[0]?.path).toBe(
-        "packages/operational-ontology/src/risk-model-ontology.test.ts",
+        'packages/operational-ontology/src/risk-model-ontology.test.ts',
       );
       expect(parsed.preview.testSkeleton.files[0]?.content).toContain(
-        "TODO(pack-author): Replace scaffold expectations with domain-specific axis and taxonomy invariants.",
+        'TODO(pack-author): Replace scaffold expectations with domain-specific axis and taxonomy invariants.',
       );
       expect(parsed.preview.testSkeleton.files[0]?.content).toContain(
-        "TODO(pack-author): Replace scaffold expectations with domain-specific blueprint and system binding invariants.",
+        'TODO(pack-author): Replace scaffold expectations with domain-specific blueprint and system binding invariants.',
       );
       expect(parsed.definitionDocFiles.map((file) => file.docType)).toEqual([
-        "spec",
-        "todo",
-        "plan",
+        'spec',
+        'todo',
+        'plan',
       ]);
       expect(parsed.preview.definitionDocs.required.map((file) => file.docType)).toEqual([
-        "spec",
-        "todo",
-        "plan",
+        'spec',
+        'todo',
+        'plan',
       ]);
       expect(parsed.preview.definitionDocs.optional.map((file) => file.docType)).toEqual([
-        "rule",
-        "cases",
-        "test",
+        'rule',
+        'cases',
+        'test',
       ]);
       expect(parsed.preview.definitionDocs.selectedOptional).toEqual([]);
-      expect(parsed.definitionDocFiles.find((file) => file.docType === "spec")?.content)
-        .toContain("Architecture-Neutral Separation");
-      expect(parsed.definitionDocFiles.find((file) => file.docType === "spec")?.content)
-        .toContain("ECS is one possible modeled architecture");
-      expect(parsed.definitionDocFiles.find((file) => file.docType === "todo")?.content)
-        .toContain("## Actionable");
-      expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain("sources:");
+      expect(parsed.definitionDocFiles.find((file) => file.docType === 'spec')?.content).toContain(
+        'Architecture-Neutral Separation',
+      );
+      expect(parsed.definitionDocFiles.find((file) => file.docType === 'spec')?.content).toContain(
+        'ECS is one possible modeled architecture',
+      );
+      expect(parsed.definitionDocFiles.find((file) => file.docType === 'todo')?.content).toContain(
+        '## Actionable',
+      );
+      expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain('sources:');
       expect(parsed.sourceMapFrontmatterCandidates[0]?.yaml).toContain(
-        "packages/operational-ontology/src/risk-model-ontology.test.ts",
+        'packages/operational-ontology/src/risk-model-ontology.test.ts',
       );
       expect(parsed.sourceMapFrontmatterCandidates[0]).toMatchObject({
-        candidateKind: "suggested-doc-edit",
-        targetKind: "definition-doc-frontmatter",
-        applyMode: "candidate-only",
+        candidateKind: 'suggested-doc-edit',
+        targetKind: 'definition-doc-frontmatter',
+        applyMode: 'candidate-only',
       });
       expect(parsed.sourceMapCandidates.map((candidate) => candidate.sourcePath)).toEqual([
-        "packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
-        "packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
-        "packages/operational-ontology/src/risk-model-ontology.test.ts",
+        'packages/operational-ontology/src/internal/risk-model-ontology-schema.ts',
+        'packages/operational-ontology/src/internal/risk-model-ontology-pack.ts',
+        'packages/operational-ontology/src/risk-model-ontology.test.ts',
       ]);
-      expect(parsed.sourceMapCandidates.every((candidate) =>
-        candidate.sourceFileKind === "generated-file"
-        && candidate.candidateKind === "suggested-doc-edit"
-        && candidate.applyMode === "candidate-only"
-      )).toBe(true);
+      expect(
+        parsed.sourceMapCandidates.every(
+          (candidate) =>
+            candidate.sourceFileKind === 'generated-file' &&
+            candidate.candidateKind === 'suggested-doc-edit' &&
+            candidate.applyMode === 'candidate-only',
+        ),
+      ).toBe(true);
       expect(parsed.preview.sourceMapCandidates.map((candidate) => candidate.sourcePath)).toEqual(
         parsed.sourceMapCandidates.map((candidate) => candidate.sourcePath),
       );
       expect(parsed.preview.sourceMapGuidance.findByFileCommands).toEqual([
-        "qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-schema.ts",
-        "qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-pack.ts",
-        "qa-sdk def find-by-file packages/operational-ontology/src/risk-model-ontology.test.ts",
+        'qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-schema.ts',
+        'qa-sdk def find-by-file packages/operational-ontology/src/internal/risk-model-ontology-pack.ts',
+        'qa-sdk def find-by-file packages/operational-ontology/src/risk-model-ontology.test.ts',
       ]);
       expect(parsed.preview.sourceMapGuidance.docsGraphCommands).toContain(
-        "qa-sdk docs graph risk-model-ontology-system --axis source",
+        'qa-sdk docs graph risk-model-ontology-system --axis source',
       );
-      expect(parsed.preview.sourceMapGuidance.notes.join("\n")).toContain(
-        "do not receive @def.boundary/<doc-id> or @def.doc/<doc-id> source comments",
+      expect(parsed.preview.sourceMapGuidance.notes.join('\n')).toContain(
+        'do not receive @def.boundary/<doc-id> or @def.doc/<doc-id> source comments',
       );
       expect(parsed.knownPackCandidate).toMatchObject({
-        targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
-        packId: "risk-model-ontology",
-        importPath: "operational-ontology",
-        exportSymbolName: "riskModelOntologyPack",
-        registryEntry: "\"risk-model-ontology\": riskModelOntologyPack",
-        registrationMode: "manual",
-        applyMode: "candidate-only",
+        targetPath: 'packages/cli/src/lib/known-ontology-packs.ts',
+        packId: 'risk-model-ontology',
+        importPath: 'operational-ontology',
+        exportSymbolName: 'riskModelOntologyPack',
+        registryEntry: '"risk-model-ontology": riskModelOntologyPack',
+        registrationMode: 'manual',
+        applyMode: 'candidate-only',
       });
       expect(parsed.preview.knownPackRegistrationCandidate.targetPath).toBe(
-        "packages/cli/src/lib/known-ontology-packs.ts",
+        'packages/cli/src/lib/known-ontology-packs.ts',
       );
       expect(parsed.preview.declarations.identity.length).toBeGreaterThan(0);
       expect(parsed.preview.declarations.componentLike.length).toBeGreaterThan(0);
@@ -660,33 +642,33 @@ describe("ontology CLI", () => {
       for (const file of parsed.preview.files) {
         expect(existsSync(join(dir, file.path))).toBe(false);
       }
-      expect(existsSync(join(dir, "packages"))).toBe(false);
-      expect(existsSync(join(dir, "docs"))).toBe(false);
+      expect(existsSync(join(dir, 'packages'))).toBe(false);
+      expect(existsSync(join(dir, 'docs'))).toBe(false);
     } finally {
       process.chdir(previousCwd);
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("pack scaffold write json materializes files and reports the same preview list", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-scaffold-write-json-"));
+  it('pack scaffold write json materializes files and reports the same preview list', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-pack-scaffold-write-json-'));
     const previousCwd = process.cwd();
     try {
       process.chdir(dir);
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "pack",
-          "scaffold",
-          "risk-model-ontology",
-          "--implementation-package",
-          "generated-risk-ontology",
-          "--package-root",
-          "packages/generated-risk-ontology",
-          "--docs-dir",
-          "docs/specs/generated-risk-ontology",
-          "--write",
-          "--json",
+          'ontology',
+          'pack',
+          'scaffold',
+          'risk-model-ontology',
+          '--implementation-package',
+          'generated-risk-ontology',
+          '--package-root',
+          'packages/generated-risk-ontology',
+          '--docs-dir',
+          'docs/specs/generated-risk-ontology',
+          '--write',
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as {
@@ -713,12 +695,12 @@ describe("ontology CLI", () => {
         };
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
-      expect(parsed.mode).toBe("write");
+      expect(parsed.mode).toBe('write');
       expect(parsed.preview.writesApplied).toBe(true);
       expect(parsed.writeSummary).toMatchObject({
-        status: "written",
+        status: 'written',
         writesApplied: true,
         fileCount: parsed.preview.files.length,
         writtenCount: parsed.preview.files.length,
@@ -726,91 +708,90 @@ describe("ontology CLI", () => {
       expect(parsed.writeSummary.files.map((file) => file.path)).toEqual(
         parsed.preview.files.map((file) => file.path),
       );
-      expect(parsed.writeSummary.files.every((file) => file.status === "written")).toBe(true);
+      expect(parsed.writeSummary.files.every((file) => file.status === 'written')).toBe(true);
       expect(parsed.preview.testSkeleton.files.map((file) => file.path)).toEqual([
-        "packages/generated-risk-ontology/src/risk-model-ontology.test.ts",
+        'packages/generated-risk-ontology/src/risk-model-ontology.test.ts',
       ]);
       expect(parsed.writeSummary.knownPackRegistrationCandidate).toMatchObject({
-        targetPath: "packages/cli/src/lib/known-ontology-packs.ts",
-        importPath: "generated-risk-ontology",
-        exportSymbolName: "riskModelOntologyPack",
-        registrationMode: "manual",
-        applyMode: "candidate-only",
+        targetPath: 'packages/cli/src/lib/known-ontology-packs.ts',
+        importPath: 'generated-risk-ontology',
+        exportSymbolName: 'riskModelOntologyPack',
+        registrationMode: 'manual',
+        applyMode: 'candidate-only',
       });
 
       const componentPath =
-        "packages/generated-risk-ontology/src/internal/risk-model-ontology-schema.ts";
+        'packages/generated-risk-ontology/src/internal/risk-model-ontology-schema.ts';
       const systemPath =
-        "packages/generated-risk-ontology/src/internal/risk-model-ontology-pack.ts";
-      const specPath =
-        "docs/specs/generated-risk-ontology/risk-model-ontology-system.spec.md";
-      const testPath =
-        "packages/generated-risk-ontology/src/risk-model-ontology.test.ts";
-      expect(await readFile(join(dir, componentPath), "utf8")).toContain(
-        "OperationalOntologySchema",
+        'packages/generated-risk-ontology/src/internal/risk-model-ontology-pack.ts';
+      const specPath = 'docs/specs/generated-risk-ontology/risk-model-ontology-system.spec.md';
+      const testPath = 'packages/generated-risk-ontology/src/risk-model-ontology.test.ts';
+      expect(await readFile(join(dir, componentPath), 'utf8')).toContain(
+        'OperationalOntologySchema',
       );
-      const systemContent = await readFile(join(dir, systemPath), "utf8");
-      const testContent = await readFile(join(dir, testPath), "utf8");
-      expect(systemContent).toContain("validateRiskModelOntologyPack");
+      const systemContent = await readFile(join(dir, systemPath), 'utf8');
+      const testContent = await readFile(join(dir, testPath), 'utf8');
+      expect(systemContent).toContain('validateRiskModelOntologyPack');
       expect(systemContent).toContain(`ref: "${testPath}"`);
-      expect(testContent).toContain("expect(validateRiskModelOntologyPack().valid).toBe(true);");
-      expect(await readFile(join(dir, specPath), "utf8")).toContain(
-        "operational-ontology-pack-interface",
+      expect(testContent).toContain('expect(validateRiskModelOntologyPack().valid).toBe(true);');
+      expect(await readFile(join(dir, specPath), 'utf8')).toContain(
+        'operational-ontology-pack-interface',
       );
-      expect(existsSync(join(dir, parsed.preview.knownPackRegistrationCandidate.targetPath)))
-        .toBe(false);
+      expect(existsSync(join(dir, parsed.preview.knownPackRegistrationCandidate.targetPath))).toBe(
+        false,
+      );
     } finally {
       process.chdir(previousCwd);
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("pack scaffold write text reports write status and candidate-only registration", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-pack-scaffold-write-text-"));
+  it('pack scaffold write text reports write status and candidate-only registration', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-pack-scaffold-write-text-'));
     const previousCwd = process.cwd();
     try {
       process.chdir(dir);
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "pack",
-          "scaffold",
-          "quality-signal-ontology",
-          "--implementation-package",
-          "generated-quality-ontology",
-          "--package-root",
-          "packages/generated-quality-ontology",
-          "--docs-dir",
-          "docs/specs/generated-quality-ontology",
-          "--include-docs",
-          "all",
-          "--write",
+          'ontology',
+          'pack',
+          'scaffold',
+          'quality-signal-ontology',
+          '--implementation-package',
+          'generated-quality-ontology',
+          '--package-root',
+          'packages/generated-quality-ontology',
+          '--docs-dir',
+          'docs/specs/generated-quality-ontology',
+          '--include-docs',
+          'all',
+          '--write',
         ]);
       });
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
-      expect(output.stdout).toContain("mode: write");
-      expect(output.stdout).toContain("write status: written");
-      expect(output.stdout).toContain("files written: 9");
-      expect(output.stdout).toContain("source-map candidates: 4");
+      expect(output.stdout).toContain('mode: write');
+      expect(output.stdout).toContain('write status: written');
+      expect(output.stdout).toContain('files written: 9');
+      expect(output.stdout).toContain('source-map candidates: 4');
       expect(output.stdout).toContain(
-        "packages/generated-quality-ontology/src/internal/quality-signal-ontology-schema.ts -> docs/specs/generated-quality-ontology/quality-signal-ontology-system.spec.md",
+        'packages/generated-quality-ontology/src/internal/quality-signal-ontology-schema.ts -> docs/specs/generated-quality-ontology/quality-signal-ontology-system.spec.md',
       );
       expect(output.stdout).toContain(
-        "packages/generated-quality-ontology/src/quality-signal-ontology.test.ts -> docs/specs/generated-quality-ontology/quality-signal-ontology.test.md",
+        'packages/generated-quality-ontology/src/quality-signal-ontology.test.ts -> docs/specs/generated-quality-ontology/quality-signal-ontology.test.md',
       );
-      expect(output.stdout).toContain("suggested-doc-edit; candidate-only");
-      expect(output.stdout).toContain("def find-by-file guidance:");
+      expect(output.stdout).toContain('suggested-doc-edit; candidate-only');
+      expect(output.stdout).toContain('def find-by-file guidance:');
       expect(output.stdout).toContain(
-        "qa-sdk def find-by-file packages/generated-quality-ontology/src/internal/quality-signal-ontology-pack.ts",
+        'qa-sdk def find-by-file packages/generated-quality-ontology/src/internal/quality-signal-ontology-pack.ts',
       );
-      expect(output.stdout).toContain("docs graph guidance:");
+      expect(output.stdout).toContain('docs graph guidance:');
       expect(output.stdout).toContain(
-        "qa-sdk docs graph quality-signal-ontology-system --axis source",
+        'qa-sdk docs graph quality-signal-ontology-system --axis source',
       );
       expect(output.stdout).toContain(
-        "known-pack candidate: packages/cli/src/lib/known-ontology-packs.ts (manual; candidate only; not written)",
+        'known-pack candidate: packages/cli/src/lib/known-ontology-packs.ts (manual; candidate only; not written)',
       );
       expect(output.stdout).toContain(
         'import { qualitySignalOntologyPack } from "generated-quality-ontology";',
@@ -818,40 +799,45 @@ describe("ontology CLI", () => {
       expect(output.stdout).toContain(
         'registry entry: "quality-signal-ontology": qualitySignalOntologyPack',
       );
-      expect(await readFile(
-        join(dir, "packages/generated-quality-ontology/src/internal/quality-signal-ontology-pack.ts"),
-        "utf8",
-      )).toContain("qualitySignalOntologyPack");
-      expect(existsSync(join(dir, "packages/cli/src/lib/known-ontology-packs.ts"))).toBe(false);
+      expect(
+        await readFile(
+          join(
+            dir,
+            'packages/generated-quality-ontology/src/internal/quality-signal-ontology-pack.ts',
+          ),
+          'utf8',
+        ),
+      ).toContain('qualitySignalOntologyPack');
+      expect(existsSync(join(dir, 'packages/cli/src/lib/known-ontology-packs.ts'))).toBe(false);
     } finally {
       process.chdir(previousCwd);
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry activate-pack activates a known pack through the local runtime", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-"));
+  it('registry activate-pack activates a known pack through the local runtime', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activate-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
+      const storePath = join(dir, 'registry.sqlite');
       const output = await captureConsoleAsync(async () => {
         await cliOntology([
-          "registry.activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'registry.activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-cli",
-          "--namespace",
-          "artifact_cli",
-          "--owner",
-          "cli-test",
-          "--version",
-          "v-test",
-          "--address-model",
-          "sum",
-          "--prefix",
-          "programming-artifact=artifact_cli_kind",
-          "--json",
+          '--ontology-id',
+          'artifact-cli',
+          '--namespace',
+          'artifact_cli',
+          '--owner',
+          'cli-test',
+          '--version',
+          'v-test',
+          '--address-model',
+          'sum',
+          '--prefix',
+          'programming-artifact=artifact_cli_kind',
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as {
@@ -876,14 +862,14 @@ describe("ontology CLI", () => {
         syncSummariesByAllocationId: Record<string, unknown>;
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(parsed).toMatchObject({
-        status: "succeeded",
-        packId: "programming-artifact-ontology",
-        ontologyId: "artifact-cli",
+        status: 'succeeded',
+        packId: 'programming-artifact-ontology',
+        ontologyId: 'artifact-cli',
         namespaceSummary: {
-          namespace: "artifact_cli",
-          owner: "cli-test",
+          namespace: 'artifact_cli',
+          owner: 'cli-test',
         },
         warnings: [],
         errors: [],
@@ -891,12 +877,12 @@ describe("ontology CLI", () => {
       expect(parsed.allocationSummaries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            taxonomyId: "programming-artifact",
-            prefix: "artifact_cli_kind",
-            versionId: "v-test",
-            addressModel: "sum",
-            activationStatus: "active",
-            syncStatus: "synced",
+            taxonomyId: 'programming-artifact',
+            prefix: 'artifact_cli_kind',
+            versionId: 'v-test',
+            addressModel: 'sum',
+            activationStatus: 'active',
+            syncStatus: 'synced',
           }),
         ]),
       );
@@ -910,48 +896,46 @@ describe("ontology CLI", () => {
     }
   });
 
-  it("registry activate-pack activates programming artifact ontology through the public command path", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-command-activate-"));
+  it('registry activate-pack activates programming artifact ontology through the public command path', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-command-activate-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
+      const storePath = join(dir, 'registry.sqlite');
       const commandArgs = [
-        "ontology",
-        "registry",
-        "activate-pack",
-        "programming-artifact-ontology",
-        "--store",
+        'ontology',
+        'registry',
+        'activate-pack',
+        'programming-artifact-ontology',
+        '--store',
         storePath,
-        "--json",
+        '--json',
       ];
       const firstOutput = await captureConsoleWithExitCode(async () => {
         await main(commandArgs);
       });
       const first = JSON.parse(firstOutput.stdout) as RegistryActivationJson;
 
-      expect(firstOutput.stderr).toBe("");
+      expect(firstOutput.stderr).toBe('');
       expect(firstOutput.exitCode).toBeUndefined();
       expect(first).toMatchObject({
-        status: "succeeded",
-        packId: "programming-artifact-ontology",
-        ontologyId: "programming-artifact-ontology",
+        status: 'succeeded',
+        packId: 'programming-artifact-ontology',
+        ontologyId: 'programming-artifact-ontology',
         namespaceSummary: {
-          ontologyId: "programming-artifact-ontology",
-          namespace: "programming_artifact_ontology",
+          ontologyId: 'programming-artifact-ontology',
+          namespace: 'programming_artifact_ontology',
         },
         warnings: [],
         errors: [],
       });
       expect(first.allocationSummaries.map((summary) => summary.taxonomyId).toSorted()).toEqual([
-        "programming-artifact",
-        "programming-artifact-relation",
+        'programming-artifact',
+        'programming-artifact-relation',
       ]);
 
       const firstAllocationIds = first.allocationSummaries
         .map((summary) => summary.allocationId)
         .toSorted();
-      expect(Object.keys(first.syncSummariesByAllocationId).toSorted()).toEqual(
-        firstAllocationIds,
-      );
+      expect(Object.keys(first.syncSummariesByAllocationId).toSorted()).toEqual(firstAllocationIds);
       expect(Object.keys(first.smokeCheckSummary.byAllocationId).toSorted()).toEqual(
         firstAllocationIds,
       );
@@ -959,12 +943,12 @@ describe("ontology CLI", () => {
       for (const allocation of first.allocationSummaries) {
         expect(allocation).toEqual(
           expect.objectContaining({
-            ontologyId: "programming-artifact-ontology",
-            versionId: "v1",
-            addressModel: "product",
-            status: "active",
-            activationStatus: "active",
-            syncStatus: "synced",
+            ontologyId: 'programming-artifact-ontology',
+            versionId: 'v1',
+            addressModel: 'product',
+            status: 'active',
+            activationStatus: 'active',
+            syncStatus: 'synced',
           }),
         );
 
@@ -975,7 +959,7 @@ describe("ontology CLI", () => {
             taxonomyId: allocation.taxonomyId,
             prefix: allocation.prefix,
             versionId: allocation.versionId,
-            syncStatus: "synced",
+            syncStatus: 'synced',
             collisionCount: 0,
           }),
         );
@@ -989,7 +973,7 @@ describe("ontology CLI", () => {
             taxonomyId: allocation.taxonomyId,
             prefix: allocation.prefix,
             versionId: allocation.versionId,
-            syncStatus: "synced",
+            syncStatus: 'synced',
             passed: true,
             failedCheckCount: 0,
           }),
@@ -1002,21 +986,19 @@ describe("ontology CLI", () => {
         failedAllocationCount: 0,
         failedCheckCount: 0,
       });
-      expect(first.smokeCheckSummary.passedCheckCount).toBe(
-        first.smokeCheckSummary.checkCount,
-      );
+      expect(first.smokeCheckSummary.passedCheckCount).toBe(first.smokeCheckSummary.checkCount);
 
       const secondOutput = await captureConsoleWithExitCode(async () => {
         await main(commandArgs);
       });
       const second = JSON.parse(secondOutput.stdout) as RegistryActivationJson;
 
-      expect(secondOutput.stderr).toBe("");
+      expect(secondOutput.stderr).toBe('');
       expect(secondOutput.exitCode).toBe(1);
       expect(second).toMatchObject({
-        status: "failed",
-        packId: "programming-artifact-ontology",
-        ontologyId: "programming-artifact-ontology",
+        status: 'failed',
+        packId: 'programming-artifact-ontology',
+        ontologyId: 'programming-artifact-ontology',
         namespaceSummary: null,
         allocationSummaries: [],
         syncSummariesByAllocationId: {},
@@ -1024,9 +1006,9 @@ describe("ontology CLI", () => {
         warnings: [],
         errors: [
           expect.objectContaining({
-            level: "error",
-            phase: "register",
-            code: "duplicate-allocation",
+            level: 'error',
+            phase: 'register',
+            code: 'duplicate-allocation',
           }),
         ],
       });
@@ -1034,153 +1016,151 @@ describe("ontology CLI", () => {
 
       const textOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
         ]);
       });
 
-      expect(textOutput.stderr).toBe("");
+      expect(textOutput.stderr).toBe('');
       expect(textOutput.exitCode).toBe(1);
       expect(textOutput.stdout).toContain(
-        "Ontology pack activation: programming-artifact-ontology",
+        'Ontology pack activation: programming-artifact-ontology',
       );
-      expect(textOutput.stdout).toContain("status: failed");
-      expect(textOutput.stdout).toContain("duplicate-allocation");
-      expect(textOutput.stdout).toContain("Re-run with --json");
+      expect(textOutput.stdout).toContain('status: failed');
+      expect(textOutput.stdout).toContain('duplicate-allocation');
+      expect(textOutput.stdout).toContain('Re-run with --json');
       expectNoRawSql(textOutput.stdout);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry activate-pack writes --output JSON matching --json stdout", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-output-activate-"));
+  it('registry activate-pack writes --output JSON matching --json stdout', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-output-activate-'));
     try {
-      const storePath = join(dir, "state", "registry.sqlite");
-      const outputPath = join(dir, "evidence", "activation", "result.json");
-      const unprovidedRegistryPath = join(dir, "programming-artifacts.json");
-      const existingRegistryPath = join(dir, "existing-programming-artifacts.json");
+      const storePath = join(dir, 'state', 'registry.sqlite');
+      const outputPath = join(dir, 'evidence', 'activation', 'result.json');
+      const unprovidedRegistryPath = join(dir, 'programming-artifacts.json');
+      const existingRegistryPath = join(dir, 'existing-programming-artifacts.json');
       const existingRegistryContent = '{ "artifacts": [] }\n';
-      await writeFile(existingRegistryPath, existingRegistryContent, "utf8");
+      await writeFile(existingRegistryPath, existingRegistryContent, 'utf8');
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-output",
-          "--namespace",
-          "artifact_output",
-          "--output",
+          '--ontology-id',
+          'artifact-output',
+          '--namespace',
+          'artifact_output',
+          '--output',
           outputPath,
-          "--json",
+          '--json',
         ]);
       });
 
-      const fileContent = await readFile(outputPath, "utf8");
+      const fileContent = await readFile(outputPath, 'utf8');
       const parsed = JSON.parse(fileContent) as RegistryActivationJson;
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
       expect(fileContent.trim()).toBe(output.stdout.trim());
       expect(parsed).toMatchObject({
-        status: "succeeded",
-        packId: "programming-artifact-ontology",
-        ontologyId: "artifact-output",
+        status: 'succeeded',
+        packId: 'programming-artifact-ontology',
+        ontologyId: 'artifact-output',
         namespaceSummary: {
-          ontologyId: "artifact-output",
-          namespace: "artifact_output",
+          ontologyId: 'artifact-output',
+          namespace: 'artifact_output',
         },
         warnings: [],
         errors: [],
       });
       expect(parsed.activationEvidence).toBeUndefined();
       expect(parsed.allocationSummaries.length).toBeGreaterThan(0);
-      await expect(readFile(unprovidedRegistryPath, "utf8")).rejects.toThrow();
-      await expect(readFile(existingRegistryPath, "utf8")).resolves.toBe(
-        existingRegistryContent,
-      );
+      await expect(readFile(unprovidedRegistryPath, 'utf8')).rejects.toThrow();
+      await expect(readFile(existingRegistryPath, 'utf8')).resolves.toBe(existingRegistryContent);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry activate-pack requires --output when artifact registry append is requested", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-required-"));
+  it('registry activate-pack requires --output when artifact registry append is requested', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activation-registry-required-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
-      const registryPath = join(dir, "programming-artifacts.json");
+      const storePath = join(dir, 'registry.sqlite');
+      const registryPath = join(dir, 'programming-artifacts.json');
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBe(1);
       expect(parsed).toMatchObject({
-        status: "failed",
-        packId: "programming-artifact-ontology",
-        ontologyId: "programming-artifact-ontology",
+        status: 'failed',
+        packId: 'programming-artifact-ontology',
+        ontologyId: 'programming-artifact-ontology',
         allocationSummaries: [],
         errors: [
           expect.objectContaining({
-            level: "error",
-            phase: "cli",
-            code: "activation-evidence-output-required",
+            level: 'error',
+            phase: 'cli',
+            code: 'activation-evidence-output-required',
           }),
         ],
       });
-      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
+      await expect(readFile(registryPath, 'utf8')).rejects.toThrow();
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry activate-pack appends activation evidence after writing the sidecar", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-"));
+  it('registry activate-pack appends activation evidence after writing the sidecar', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activation-registry-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
-      const outputPath = join(dir, "activation", "programming-artifact-ontology.json");
-      const registryPath = join(dir, "programming-artifacts.json");
+      const storePath = join(dir, 'registry.sqlite');
+      const outputPath = join(dir, 'activation', 'programming-artifact-ontology.json');
+      const registryPath = join(dir, 'programming-artifacts.json');
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-registry-activation",
-          "--namespace",
-          "artifact_registry_activation",
-          "--output",
+          '--ontology-id',
+          'artifact-registry-activation',
+          '--namespace',
+          'artifact_registry_activation',
+          '--output',
           outputPath,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
-      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
-      const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+      const sidecar = JSON.parse(await readFile(outputPath, 'utf8')) as RegistryActivationJson;
+      const registry = JSON.parse(await readFile(registryPath, 'utf8')) as {
         artifacts: Array<{
           artifactId: string;
           artifactRef: string;
@@ -1190,28 +1170,26 @@ describe("ontology CLI", () => {
         }>;
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
-      expect(parsed.status).toBe("succeeded");
+      expect(parsed.status).toBe('succeeded');
       expect(parsed.activationEvidence).toEqual({
-        appendStatus: "appended",
+        appendStatus: 'appended',
         registryPath,
-        recordId:
-          "activation-evidence-programming-artifact-ontology-artifact-registry-activation",
+        recordId: 'activation-evidence-programming-artifact-ontology-artifact-registry-activation',
         recordRef: outputPath,
         recordCount: 1,
       });
-      expect(sidecar.status).toBe("succeeded");
+      expect(sidecar.status).toBe('succeeded');
       expect(sidecar.activationEvidence).toBeUndefined();
       expect(registry.artifacts).toEqual([
         expect.objectContaining({
           artifactId:
-            "activation-evidence-programming-artifact-ontology-artifact-registry-activation",
+            'activation-evidence-programming-artifact-ontology-artifact-registry-activation',
           artifactRef: outputPath,
           outputPath,
-          kind: "activation-evidence",
-          producedByRef:
-            "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+          kind: 'activation-evidence',
+          producedByRef: 'qa-sdk ontology registry activate-pack programming-artifact-ontology',
         }),
       ]);
     } finally {
@@ -1219,81 +1197,77 @@ describe("ontology CLI", () => {
     }
   });
 
-  it("registry activation evidence is consumable end to end and upserts successful reruns", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-e2e-"));
+  it('registry activation evidence is consumable end to end and upserts successful reruns', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activation-e2e-'));
     try {
-      const storePath = join(dir, "state", "registry.sqlite");
-      const rerunStorePath = join(dir, "state-rerun", "registry.sqlite");
-      const outputPath = join(dir, "activation", "programming-artifact-ontology.json");
-      const duplicateOutputPath = join(dir, "activation", "duplicate-failed.json");
-      const registryPath = join(dir, "programming-artifacts.json");
+      const storePath = join(dir, 'state', 'registry.sqlite');
+      const rerunStorePath = join(dir, 'state-rerun', 'registry.sqlite');
+      const outputPath = join(dir, 'activation', 'programming-artifact-ontology.json');
+      const duplicateOutputPath = join(dir, 'activation', 'duplicate-failed.json');
+      const registryPath = join(dir, 'programming-artifacts.json');
       const activationArgs = (store: string, output = outputPath) => [
-        "ontology",
-        "registry",
-        "activate-pack",
-        "programming-artifact-ontology",
-        "--store",
+        'ontology',
+        'registry',
+        'activate-pack',
+        'programming-artifact-ontology',
+        '--store',
         store,
-        "--output",
+        '--output',
         output,
-        "--artifact-registry",
+        '--artifact-registry',
         registryPath,
-        "--json",
+        '--json',
       ];
       const readActivationEvidenceRecords = async () => {
-        const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+        const registry = JSON.parse(await readFile(registryPath, 'utf8')) as {
           artifacts?: ActivationEvidenceRegistryRecordJson[];
         };
-        return (registry.artifacts ?? []).filter(
-          (record) => record.kind === "activation-evidence",
-        );
+        return (registry.artifacts ?? []).filter((record) => record.kind === 'activation-evidence');
       };
 
       const firstOutput = await captureConsoleWithExitCode(async () => {
         await main(activationArgs(storePath));
       });
       const first = JSON.parse(firstOutput.stdout) as RegistryActivationJson;
-      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
+      const sidecar = JSON.parse(await readFile(outputPath, 'utf8')) as RegistryActivationJson;
 
-      expect(firstOutput.stderr).toBe("");
+      expect(firstOutput.stderr).toBe('');
       expect(firstOutput.exitCode).toBeUndefined();
-      expect(first.status).toBe("succeeded");
+      expect(first.status).toBe('succeeded');
       expect(first.activationEvidence).toEqual({
-        appendStatus: "appended",
+        appendStatus: 'appended',
         registryPath,
-        recordId:
-          "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
+        recordId: 'activation-evidence-programming-artifact-ontology-programming-artifact-ontology',
         recordRef: outputPath,
         recordCount: 1,
       });
-      expect(sidecar.status).toBe("succeeded");
+      expect(sidecar.status).toBe('succeeded');
 
       const firstRecords = await readActivationEvidenceRecords();
       expect(firstRecords).toHaveLength(1);
       expect(firstRecords[0]).toMatchObject({
         artifactId:
-          "activation-evidence-programming-artifact-ontology-programming-artifact-ontology",
+          'activation-evidence-programming-artifact-ontology-programming-artifact-ontology',
         artifactRef: outputPath,
         outputPath,
-        kind: "activation-evidence",
-        producedByRef:
-          "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+        kind: 'activation-evidence',
+        producedByRef: 'qa-sdk ontology registry activate-pack programming-artifact-ontology',
         metadata: {
-          status: "succeeded",
-          packId: "programming-artifact-ontology",
-          ontologyId: "programming-artifact-ontology",
+          status: 'succeeded',
+          packId: 'programming-artifact-ontology',
+          ontologyId: 'programming-artifact-ontology',
         },
       });
 
       const validateOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "artifact",
-          "registry",
-          "validate",
-          "--input",
+          'ontology',
+          'artifact',
+          'registry',
+          'validate',
+          '--input',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const validation = JSON.parse(validateOutput.stdout) as {
@@ -1301,7 +1275,7 @@ describe("ontology CLI", () => {
         artifactCount: number;
         errors: unknown[];
       };
-      expect(validateOutput.stderr).toBe("");
+      expect(validateOutput.stderr).toBe('');
       expect(validateOutput.exitCode).toBeUndefined();
       expect(validation).toMatchObject({
         valid: true,
@@ -1311,25 +1285,25 @@ describe("ontology CLI", () => {
 
       const listOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "artifact",
-          "registry",
-          "list",
-          "--input",
+          'ontology',
+          'artifact',
+          'registry',
+          'list',
+          '--input',
           registryPath,
-          "--kind",
-          "activation-evidence",
-          "--json",
+          '--kind',
+          'activation-evidence',
+          '--json',
         ]);
       });
       const listed = JSON.parse(listOutput.stdout) as {
         artifacts: ActivationEvidenceRegistryRecordJson[];
       };
-      expect(listOutput.stderr).toBe("");
+      expect(listOutput.stderr).toBe('');
       expect(listOutput.exitCode).toBeUndefined();
       expect(listed.artifacts).toEqual([
         expect.objectContaining({
-          kind: "activation-evidence",
+          kind: 'activation-evidence',
           artifactRef: outputPath,
           outputPath,
         }),
@@ -1337,15 +1311,15 @@ describe("ontology CLI", () => {
 
       const extractOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "prompt",
-          "extract-artifact",
+          'ontology',
+          'prompt',
+          'extract-artifact',
           outputPath,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
-          "--kind",
-          "self_reflection",
-          "--json",
+          '--kind',
+          'self_reflection',
+          '--json',
         ]);
       });
       const extracted = JSON.parse(extractOutput.stdout) as {
@@ -1358,13 +1332,13 @@ describe("ontology CLI", () => {
           paths?: string[];
         };
       };
-      expect(extractOutput.stderr).toBe("");
+      expect(extractOutput.stderr).toBe('');
       expect(extractOutput.exitCode).toBeUndefined();
       expect(extracted.source).toMatchObject({
-        kind: "artifact-registry-hit",
+        kind: 'artifact-registry-hit',
         registry: {
-          status: "hit",
-          providerId: "programming-artifact-registry",
+          status: 'hit',
+          providerId: 'programming-artifact-registry',
           recordCount: 1,
         },
       });
@@ -1375,9 +1349,9 @@ describe("ontology CLI", () => {
         await main(activationArgs(rerunStorePath));
       });
       const rerun = JSON.parse(rerunOutput.stdout) as RegistryActivationJson;
-      expect(rerunOutput.stderr).toBe("");
+      expect(rerunOutput.stderr).toBe('');
       expect(rerunOutput.exitCode).toBeUndefined();
-      expect(rerun.status).toBe("succeeded");
+      expect(rerun.status).toBe('succeeded');
       expect(rerun.activationEvidence?.recordCount).toBe(1);
 
       const rerunRecords = await readActivationEvidenceRecords();
@@ -1387,7 +1361,7 @@ describe("ontology CLI", () => {
         artifactRef: outputPath,
         outputPath,
         metadata: {
-          status: "succeeded",
+          status: 'succeeded',
         },
       });
 
@@ -1395,13 +1369,13 @@ describe("ontology CLI", () => {
         await main(activationArgs(storePath, duplicateOutputPath));
       });
       const duplicate = JSON.parse(duplicateOutput.stdout) as RegistryActivationJson;
-      expect(duplicateOutput.stderr).toBe("");
+      expect(duplicateOutput.stderr).toBe('');
       expect(duplicateOutput.exitCode).toBe(1);
-      expect(duplicate.status).toBe("failed");
+      expect(duplicate.status).toBe('failed');
       expect(duplicate.activationEvidence).toBeUndefined();
       expect(duplicate.errors).toEqual([
         expect.objectContaining({
-          code: "duplicate-allocation",
+          code: 'duplicate-allocation',
         }),
       ]);
 
@@ -1412,14 +1386,14 @@ describe("ontology CLI", () => {
         artifactRef: outputPath,
         outputPath,
         metadata: {
-          status: "succeeded",
+          status: 'succeeded',
         },
       });
       expect(afterFailedRecords).not.toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             outputPath: duplicateOutputPath,
-            metadata: expect.objectContaining({ status: "failed" }),
+            metadata: expect.objectContaining({ status: 'failed' }),
           }),
         ]),
       );
@@ -1428,129 +1402,127 @@ describe("ontology CLI", () => {
     }
   }, 20_000);
 
-  it("registry activate-pack text output reports activation evidence append details", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-text-"));
+  it('registry activate-pack text output reports activation evidence append details', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activation-registry-text-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
-      const outputPath = join(dir, "activation.json");
-      const registryPath = join(dir, "programming-artifacts.json");
+      const storePath = join(dir, 'registry.sqlite');
+      const outputPath = join(dir, 'activation.json');
+      const registryPath = join(dir, 'programming-artifacts.json');
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-registry-text",
-          "--namespace",
-          "artifact_registry_text",
-          "--output",
+          '--ontology-id',
+          'artifact-registry-text',
+          '--namespace',
+          'artifact_registry_text',
+          '--output',
           outputPath,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
         ]);
       });
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
       expect(output.stdout).toContain(`activation evidence registry: ${registryPath}`);
       expect(output.stdout).toContain(
-        "activation evidence record: activation-evidence-programming-artifact-ontology-artifact-registry-text",
+        'activation evidence record: activation-evidence-programming-artifact-ontology-artifact-registry-text',
       );
-      expect(output.stdout).toContain("activation evidence records: 1");
+      expect(output.stdout).toContain('activation evidence records: 1');
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry activate-pack does not append evidence when output sidecar write fails", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-output-failure-"));
+  it('registry activate-pack does not append evidence when output sidecar write fails', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activation-output-failure-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
-      const registryPath = join(dir, "programming-artifacts.json");
+      const storePath = join(dir, 'registry.sqlite');
+      const registryPath = join(dir, 'programming-artifacts.json');
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-output-failure",
-          "--namespace",
-          "artifact_output_failure",
-          "--output",
+          '--ontology-id',
+          'artifact-output-failure',
+          '--namespace',
+          'artifact_output_failure',
+          '--output',
           dir,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBe(1);
-      expect(parsed.status).toBe("failed");
+      expect(parsed.status).toBe('failed');
       expect(parsed.errors).toEqual([
         expect.objectContaining({
-          code: "activation-output-write-error",
+          code: 'activation-output-write-error',
         }),
       ]);
-      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
+      await expect(readFile(registryPath, 'utf8')).rejects.toThrow();
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry activate-pack reports sanitized artifact registry append failures", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activation-registry-failure-"));
+  it('registry activate-pack reports sanitized artifact registry append failures', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activation-registry-failure-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
-      const outputPath = join(dir, "activation.json");
-      const registryPath = join(dir, "registry-directory");
+      const storePath = join(dir, 'registry.sqlite');
+      const outputPath = join(dir, 'activation.json');
+      const registryPath = join(dir, 'registry-directory');
       await mkdir(registryPath, { recursive: true });
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-registry-failure",
-          "--namespace",
-          "artifact_registry_failure",
-          "--output",
+          '--ontology-id',
+          'artifact-registry-failure',
+          '--namespace',
+          'artifact_registry_failure',
+          '--output',
           outputPath,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
-      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
+      const sidecar = JSON.parse(await readFile(outputPath, 'utf8')) as RegistryActivationJson;
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBe(1);
-      expect(parsed.status).toBe("succeeded");
+      expect(parsed.status).toBe('succeeded');
       expect(parsed.activationEvidence).toEqual({
-        appendStatus: "failed",
+        appendStatus: 'failed',
         registryPath,
-        recordId:
-          "activation-evidence-programming-artifact-ontology-artifact-registry-failure",
+        recordId: 'activation-evidence-programming-artifact-ontology-artifact-registry-failure',
         recordRef: outputPath,
         recordCount: null,
         error: {
-          code: "activation-evidence-registry-append-error",
-          message:
-            "Activation evidence could not be appended to the artifact registry.",
+          code: 'activation-evidence-registry-append-error',
+          message: 'Activation evidence could not be appended to the artifact registry.',
         },
       });
-      expect(sidecar.status).toBe("succeeded");
+      expect(sidecar.status).toBe('succeeded');
       expect(sidecar.activationEvidence).toBeUndefined();
       expectNoRawSql(output.stdout);
       expect(output.stdout).not.toMatch(/EISDIR|ENOENT|ENOTDIR|stack|open '/i);
@@ -1559,32 +1531,32 @@ describe("ontology CLI", () => {
     }
   });
 
-  it("registry activate-pack activates authorization ontology through the public command path", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-authorization-command-activate-"));
+  it('registry activate-pack activates authorization ontology through the public command path', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-authorization-command-activate-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
+      const storePath = join(dir, 'registry.sqlite');
       const output = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "authorization-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'authorization-ontology',
+          '--store',
           storePath,
-          "--json",
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as RegistryActivationJson;
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBeUndefined();
       expect(parsed).toMatchObject({
-        status: "succeeded",
-        packId: "authorization-ontology",
-        ontologyId: "authorization-ontology",
+        status: 'succeeded',
+        packId: 'authorization-ontology',
+        ontologyId: 'authorization-ontology',
         namespaceSummary: {
-          ontologyId: "authorization-ontology",
-          namespace: "authorization_ontology",
+          ontologyId: 'authorization-ontology',
+          namespace: 'authorization_ontology',
         },
         warnings: [],
         errors: [],
@@ -1596,18 +1568,18 @@ describe("ontology CLI", () => {
       expect(parsed.allocationSummaries).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            taxonomyId: "authorization-node",
-            prefix: "authorization_ontology_authorization_node",
+            taxonomyId: 'authorization-node',
+            prefix: 'authorization_ontology_authorization_node',
             capacity: 512,
-            activationStatus: "active",
-            syncStatus: "synced",
+            activationStatus: 'active',
+            syncStatus: 'synced',
           }),
           expect.objectContaining({
-            taxonomyId: "authorization-lineage",
-            prefix: "authorization_ontology_authorization_lineage",
+            taxonomyId: 'authorization-lineage',
+            prefix: 'authorization_ontology_authorization_lineage',
             capacity: 256,
-            activationStatus: "active",
-            syncStatus: "synced",
+            activationStatus: 'active',
+            syncStatus: 'synced',
           }),
         ]),
       );
@@ -1615,9 +1587,7 @@ describe("ontology CLI", () => {
       const allocationIds = parsed.allocationSummaries
         .map((summary) => summary.allocationId)
         .toSorted();
-      expect(Object.keys(parsed.syncSummariesByAllocationId).toSorted()).toEqual(
-        allocationIds,
-      );
+      expect(Object.keys(parsed.syncSummariesByAllocationId).toSorted()).toEqual(allocationIds);
       expect(Object.keys(parsed.smokeCheckSummary.byAllocationId).toSorted()).toEqual(
         allocationIds,
       );
@@ -1625,12 +1595,12 @@ describe("ontology CLI", () => {
       for (const allocation of parsed.allocationSummaries) {
         expect(allocation).toEqual(
           expect.objectContaining({
-            ontologyId: "authorization-ontology",
-            versionId: "v1",
-            addressModel: "product",
-            status: "active",
-            activationStatus: "active",
-            syncStatus: "synced",
+            ontologyId: 'authorization-ontology',
+            versionId: 'v1',
+            addressModel: 'product',
+            status: 'active',
+            activationStatus: 'active',
+            syncStatus: 'synced',
           }),
         );
 
@@ -1641,7 +1611,7 @@ describe("ontology CLI", () => {
             taxonomyId: allocation.taxonomyId,
             prefix: allocation.prefix,
             versionId: allocation.versionId,
-            syncStatus: "synced",
+            syncStatus: 'synced',
             collisionCount: 0,
           }),
         );
@@ -1655,9 +1625,9 @@ describe("ontology CLI", () => {
             taxonomyId: allocation.taxonomyId,
             prefix: allocation.prefix,
             versionId: allocation.versionId,
-            addressModel: "product",
-            kind: "product",
-            syncStatus: "synced",
+            addressModel: 'product',
+            kind: 'product',
+            syncStatus: 'synced',
             passed: true,
             failedCheckCount: 0,
           }),
@@ -1670,150 +1640,136 @@ describe("ontology CLI", () => {
         failedAllocationCount: 0,
         failedCheckCount: 0,
       });
-      expect(parsed.smokeCheckSummary.passedCheckCount).toBe(
-        parsed.smokeCheckSummary.checkCount,
-      );
+      expect(parsed.smokeCheckSummary.passedCheckCount).toBe(parsed.smokeCheckSummary.checkCount);
 
       const materializedAxisIds = new Set(
         parsed.syncReports
           .flatMap((report) => report.materializedRecords ?? [])
           .map((record) => record.axisId)
-          .filter((axisId): axisId is string => typeof axisId === "string"),
+          .filter((axisId): axisId is string => typeof axisId === 'string'),
       );
       expect([...materializedAxisIds].toSorted()).toEqual([
-        "authorization_action_kind",
-        "authorization_decision_effect",
-        "authorization_enforcement_kind",
-        "authorization_lineage_transform",
-        "authorization_node_kind",
-        "authorization_policy_kind",
-        "authorization_policy_propagation_mode",
-        "authorization_principal_kind",
-        "authorization_realm_kind",
-        "authorization_resource_kind",
+        'authorization_action_kind',
+        'authorization_decision_effect',
+        'authorization_enforcement_kind',
+        'authorization_lineage_transform',
+        'authorization_node_kind',
+        'authorization_policy_kind',
+        'authorization_policy_propagation_mode',
+        'authorization_principal_kind',
+        'authorization_realm_kind',
+        'authorization_resource_kind',
       ]);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry authorization activation evidence is consumable end to end and preserves successful evidence", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-authorization-activation-e2e-"));
+  it('registry authorization activation evidence is consumable end to end and preserves successful evidence', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-authorization-activation-e2e-'));
     try {
-      const sidecarOnlyStorePath = join(dir, "state-sidecar", "registry.sqlite");
-      const storePath = join(dir, "state", "registry.sqlite");
-      const rerunStorePath = join(dir, "state-rerun", "registry.sqlite");
-      const sidecarOnlyOutputPath = join(dir, "activation", "authorization-sidecar-only.json");
-      const outputPath = join(dir, "activation", "authorization-ontology.json");
-      const duplicateOutputPath = join(dir, "activation", "authorization-duplicate-failed.json");
-      const registryPath = join(dir, "programming-artifacts.json");
+      const sidecarOnlyStorePath = join(dir, 'state-sidecar', 'registry.sqlite');
+      const storePath = join(dir, 'state', 'registry.sqlite');
+      const rerunStorePath = join(dir, 'state-rerun', 'registry.sqlite');
+      const sidecarOnlyOutputPath = join(dir, 'activation', 'authorization-sidecar-only.json');
+      const outputPath = join(dir, 'activation', 'authorization-ontology.json');
+      const duplicateOutputPath = join(dir, 'activation', 'authorization-duplicate-failed.json');
+      const registryPath = join(dir, 'programming-artifacts.json');
       const activationArgs = (store: string, output = outputPath) => [
-        "ontology",
-        "registry",
-        "activate-pack",
-        "authorization-ontology",
-        "--store",
+        'ontology',
+        'registry',
+        'activate-pack',
+        'authorization-ontology',
+        '--store',
         store,
-        "--output",
+        '--output',
         output,
-        "--artifact-registry",
+        '--artifact-registry',
         registryPath,
-        "--json",
+        '--json',
       ];
       const readActivationEvidenceRecords = async () => {
-        const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+        const registry = JSON.parse(await readFile(registryPath, 'utf8')) as {
           artifacts?: ActivationEvidenceRegistryRecordJson[];
         };
-        return (registry.artifacts ?? []).filter(
-          (record) => record.kind === "activation-evidence",
-        );
+        return (registry.artifacts ?? []).filter((record) => record.kind === 'activation-evidence');
       };
 
       const sidecarOnlyOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "authorization-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'authorization-ontology',
+          '--store',
           sidecarOnlyStorePath,
-          "--output",
+          '--output',
           sidecarOnlyOutputPath,
-          "--json",
+          '--json',
         ]);
       });
       const sidecarOnly = JSON.parse(sidecarOnlyOutput.stdout) as RegistryActivationJson;
       const sidecarOnlyFile = JSON.parse(
-        await readFile(sidecarOnlyOutputPath, "utf8"),
+        await readFile(sidecarOnlyOutputPath, 'utf8'),
       ) as RegistryActivationJson;
-      expect(sidecarOnlyOutput.stderr).toBe("");
+      expect(sidecarOnlyOutput.stderr).toBe('');
       expect(sidecarOnlyOutput.exitCode).toBeUndefined();
-      expect(sidecarOnly.status).toBe("succeeded");
+      expect(sidecarOnly.status).toBe('succeeded');
       expect(sidecarOnly.activationEvidence).toBeUndefined();
-      expect(sidecarOnlyFile.status).toBe("succeeded");
+      expect(sidecarOnlyFile.status).toBe('succeeded');
       expect(sidecarOnlyFile.activationEvidence).toBeUndefined();
-      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
+      await expect(readFile(registryPath, 'utf8')).rejects.toThrow();
 
       const firstOutput = await captureConsoleWithExitCode(async () => {
         await main(activationArgs(storePath));
       });
       const first = JSON.parse(firstOutput.stdout) as RegistryActivationJson;
-      const sidecar = JSON.parse(await readFile(outputPath, "utf8")) as RegistryActivationJson;
+      const sidecar = JSON.parse(await readFile(outputPath, 'utf8')) as RegistryActivationJson;
 
-      expect(firstOutput.stderr).toBe("");
+      expect(firstOutput.stderr).toBe('');
       expect(firstOutput.exitCode).toBeUndefined();
-      expect(first.status).toBe("succeeded");
+      expect(first.status).toBe('succeeded');
       expect(first.activationEvidence).toEqual({
-        appendStatus: "appended",
+        appendStatus: 'appended',
         registryPath,
-        recordId:
-          "activation-evidence-authorization-ontology-authorization-ontology",
+        recordId: 'activation-evidence-authorization-ontology-authorization-ontology',
         recordRef: outputPath,
         recordCount: 1,
       });
-      expect(sidecar.status).toBe("succeeded");
+      expect(sidecar.status).toBe('succeeded');
       expect(sidecar.activationEvidence).toBeUndefined();
       expect(first.allocationSummaries.map((summary) => summary.taxonomyId).toSorted()).toEqual(
         AUTHORIZATION_TAXONOMY_IDS,
       );
       expect(first.allocationSummaries).toHaveLength(8);
       expect(first.namespaceSummary).toMatchObject({
-        ontologyId: "authorization-ontology",
-        namespace: "authorization_ontology",
+        ontologyId: 'authorization-ontology',
+        namespace: 'authorization_ontology',
       });
 
       const allocationIds = first.allocationSummaries
         .map((summary) => summary.allocationId)
         .toSorted();
-      expect(Object.keys(first.syncSummariesByAllocationId).toSorted()).toEqual(
-        allocationIds,
-      );
-      expect(Object.keys(first.smokeCheckSummary.byAllocationId).toSorted()).toEqual(
-        allocationIds,
-      );
+      expect(Object.keys(first.syncSummariesByAllocationId).toSorted()).toEqual(allocationIds);
+      expect(Object.keys(first.smokeCheckSummary.byAllocationId).toSorted()).toEqual(allocationIds);
       expect(first.warnings).toEqual([]);
       expect(first.errors).toEqual([]);
 
       const firstRecords = await readActivationEvidenceRecords();
       expect(firstRecords).toHaveLength(1);
       expect(firstRecords[0]).toMatchObject({
-        artifactId:
-          "activation-evidence-authorization-ontology-authorization-ontology",
+        artifactId: 'activation-evidence-authorization-ontology-authorization-ontology',
         artifactRef: outputPath,
         outputPath,
-        kind: "activation-evidence",
-        producedByRef:
-          "qa-sdk ontology registry activate-pack authorization-ontology",
-        derivedFromRefs: ["authorization-ontology"],
-        verifiesRefs: [
-          "authorization-ontology",
-          "operational-ontology-registry-allocation",
-        ],
+        kind: 'activation-evidence',
+        producedByRef: 'qa-sdk ontology registry activate-pack authorization-ontology',
+        derivedFromRefs: ['authorization-ontology'],
+        verifiesRefs: ['authorization-ontology', 'operational-ontology-registry-allocation'],
         metadata: {
-          status: "succeeded",
-          packId: "authorization-ontology",
-          ontologyId: "authorization-ontology",
-          namespace: "authorization_ontology",
+          status: 'succeeded',
+          packId: 'authorization-ontology',
+          ontologyId: 'authorization-ontology',
+          namespace: 'authorization_ontology',
           allocationCount: 8,
           activationStatusCounts: { active: 8 },
           syncStatusCounts: { synced: 8 },
@@ -1837,13 +1793,13 @@ describe("ontology CLI", () => {
 
       const validateOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "artifact",
-          "registry",
-          "validate",
-          "--input",
+          'ontology',
+          'artifact',
+          'registry',
+          'validate',
+          '--input',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const validation = JSON.parse(validateOutput.stdout) as {
@@ -1851,7 +1807,7 @@ describe("ontology CLI", () => {
         artifactCount: number;
         errors: unknown[];
       };
-      expect(validateOutput.stderr).toBe("");
+      expect(validateOutput.stderr).toBe('');
       expect(validateOutput.exitCode).toBeUndefined();
       expect(validation).toMatchObject({
         valid: true,
@@ -1861,27 +1817,26 @@ describe("ontology CLI", () => {
 
       const listOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "artifact",
-          "registry",
-          "list",
-          "--input",
+          'ontology',
+          'artifact',
+          'registry',
+          'list',
+          '--input',
           registryPath,
-          "--kind",
-          "activation-evidence",
-          "--json",
+          '--kind',
+          'activation-evidence',
+          '--json',
         ]);
       });
       const listed = JSON.parse(listOutput.stdout) as {
         artifacts: ActivationEvidenceRegistryRecordJson[];
       };
-      expect(listOutput.stderr).toBe("");
+      expect(listOutput.stderr).toBe('');
       expect(listOutput.exitCode).toBeUndefined();
       expect(listed.artifacts).toEqual([
         expect.objectContaining({
-          artifactId:
-            "activation-evidence-authorization-ontology-authorization-ontology",
-          kind: "activation-evidence",
+          artifactId: 'activation-evidence-authorization-ontology-authorization-ontology',
+          kind: 'activation-evidence',
           artifactRef: outputPath,
           outputPath,
         }),
@@ -1889,15 +1844,15 @@ describe("ontology CLI", () => {
 
       const extractOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "prompt",
-          "extract-artifact",
+          'ontology',
+          'prompt',
+          'extract-artifact',
           outputPath,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
-          "--kind",
-          "self_reflection",
-          "--json",
+          '--kind',
+          'self_reflection',
+          '--json',
         ]);
       });
       const extracted = JSON.parse(extractOutput.stdout) as {
@@ -1910,13 +1865,13 @@ describe("ontology CLI", () => {
           paths?: string[];
         };
       };
-      expect(extractOutput.stderr).toBe("");
+      expect(extractOutput.stderr).toBe('');
       expect(extractOutput.exitCode).toBeUndefined();
       expect(extracted.source).toMatchObject({
-        kind: "artifact-registry-hit",
+        kind: 'artifact-registry-hit',
         registry: {
-          status: "hit",
-          providerId: "programming-artifact-registry",
+          status: 'hit',
+          providerId: 'programming-artifact-registry',
           recordCount: 1,
         },
       });
@@ -1927,9 +1882,9 @@ describe("ontology CLI", () => {
         await main(activationArgs(rerunStorePath));
       });
       const rerun = JSON.parse(rerunOutput.stdout) as RegistryActivationJson;
-      expect(rerunOutput.stderr).toBe("");
+      expect(rerunOutput.stderr).toBe('');
       expect(rerunOutput.exitCode).toBeUndefined();
-      expect(rerun.status).toBe("succeeded");
+      expect(rerun.status).toBe('succeeded');
       expect(rerun.activationEvidence?.recordCount).toBe(1);
       expect(rerun.activationEvidence?.recordId).toBe(first.activationEvidence?.recordId);
 
@@ -1940,9 +1895,9 @@ describe("ontology CLI", () => {
         artifactRef: outputPath,
         outputPath,
         metadata: {
-          status: "succeeded",
-          packId: "authorization-ontology",
-          ontologyId: "authorization-ontology",
+          status: 'succeeded',
+          packId: 'authorization-ontology',
+          ontologyId: 'authorization-ontology',
         },
       });
 
@@ -1950,13 +1905,13 @@ describe("ontology CLI", () => {
         await main(activationArgs(storePath, duplicateOutputPath));
       });
       const duplicate = JSON.parse(duplicateOutput.stdout) as RegistryActivationJson;
-      expect(duplicateOutput.stderr).toBe("");
+      expect(duplicateOutput.stderr).toBe('');
       expect(duplicateOutput.exitCode).toBe(1);
-      expect(duplicate.status).toBe("failed");
+      expect(duplicate.status).toBe('failed');
       expect(duplicate.activationEvidence).toBeUndefined();
       expect(duplicate.errors).toEqual([
         expect.objectContaining({
-          code: "duplicate-allocation",
+          code: 'duplicate-allocation',
         }),
       ]);
 
@@ -1967,16 +1922,16 @@ describe("ontology CLI", () => {
         artifactRef: outputPath,
         outputPath,
         metadata: {
-          status: "succeeded",
-          packId: "authorization-ontology",
-          ontologyId: "authorization-ontology",
+          status: 'succeeded',
+          packId: 'authorization-ontology',
+          ontologyId: 'authorization-ontology',
         },
       });
       expect(afterFailedRecords).not.toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             outputPath: duplicateOutputPath,
-            metadata: expect.objectContaining({ status: "failed" }),
+            metadata: expect.objectContaining({ status: 'failed' }),
           }),
         ]),
       );
@@ -1985,80 +1940,78 @@ describe("ontology CLI", () => {
     }
   }, 20_000);
 
-  it("registry authorization activation failure modes preserve operator evidence boundaries", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-authorization-activation-failures-"));
+  it('registry authorization activation failure modes preserve operator evidence boundaries', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-authorization-activation-failures-'));
     try {
-      const outputFailureStorePath = join(dir, "state-output-failure", "registry.sqlite");
-      const outputFailureRegistryPath = join(dir, "output-failure-registry.json");
+      const outputFailureStorePath = join(dir, 'state-output-failure', 'registry.sqlite');
+      const outputFailureRegistryPath = join(dir, 'output-failure-registry.json');
       const outputFailure = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "authorization-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'authorization-ontology',
+          '--store',
           outputFailureStorePath,
-          "--output",
+          '--output',
           dir,
-          "--artifact-registry",
+          '--artifact-registry',
           outputFailureRegistryPath,
-          "--json",
+          '--json',
         ]);
       });
       const outputFailureJson = JSON.parse(outputFailure.stdout) as RegistryActivationJson;
-      expect(outputFailure.stderr).toBe("");
+      expect(outputFailure.stderr).toBe('');
       expect(outputFailure.exitCode).toBe(1);
-      expect(outputFailureJson.status).toBe("failed");
+      expect(outputFailureJson.status).toBe('failed');
       expect(outputFailureJson.errors).toEqual([
         expect.objectContaining({
-          code: "activation-output-write-error",
+          code: 'activation-output-write-error',
         }),
       ]);
       expect(outputFailureJson.activationEvidence).toBeUndefined();
-      await expect(readFile(outputFailureRegistryPath, "utf8")).rejects.toThrow();
+      await expect(readFile(outputFailureRegistryPath, 'utf8')).rejects.toThrow();
 
-      const appendFailureStorePath = join(dir, "state-append-failure", "registry.sqlite");
-      const appendFailureOutputPath = join(dir, "activation", "authorization-ontology.json");
-      const appendFailureRegistryPath = join(dir, "registry-directory");
+      const appendFailureStorePath = join(dir, 'state-append-failure', 'registry.sqlite');
+      const appendFailureOutputPath = join(dir, 'activation', 'authorization-ontology.json');
+      const appendFailureRegistryPath = join(dir, 'registry-directory');
       await mkdir(appendFailureRegistryPath, { recursive: true });
 
       const appendFailure = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "registry",
-          "activate-pack",
-          "authorization-ontology",
-          "--store",
+          'ontology',
+          'registry',
+          'activate-pack',
+          'authorization-ontology',
+          '--store',
           appendFailureStorePath,
-          "--output",
+          '--output',
           appendFailureOutputPath,
-          "--artifact-registry",
+          '--artifact-registry',
           appendFailureRegistryPath,
-          "--json",
+          '--json',
         ]);
       });
       const appendFailureJson = JSON.parse(appendFailure.stdout) as RegistryActivationJson;
       const appendFailureSidecar = JSON.parse(
-        await readFile(appendFailureOutputPath, "utf8"),
+        await readFile(appendFailureOutputPath, 'utf8'),
       ) as RegistryActivationJson;
 
-      expect(appendFailure.stderr).toBe("");
+      expect(appendFailure.stderr).toBe('');
       expect(appendFailure.exitCode).toBe(1);
-      expect(appendFailureJson.status).toBe("succeeded");
+      expect(appendFailureJson.status).toBe('succeeded');
       expect(appendFailureJson.activationEvidence).toEqual({
-        appendStatus: "failed",
+        appendStatus: 'failed',
         registryPath: appendFailureRegistryPath,
-        recordId:
-          "activation-evidence-authorization-ontology-authorization-ontology",
+        recordId: 'activation-evidence-authorization-ontology-authorization-ontology',
         recordRef: appendFailureOutputPath,
         recordCount: null,
         error: {
-          code: "activation-evidence-registry-append-error",
-          message:
-            "Activation evidence could not be appended to the artifact registry.",
+          code: 'activation-evidence-registry-append-error',
+          message: 'Activation evidence could not be appended to the artifact registry.',
         },
       });
-      expect(appendFailureSidecar.status).toBe("succeeded");
+      expect(appendFailureSidecar.status).toBe('succeeded');
       expect(appendFailureSidecar.activationEvidence).toBeUndefined();
       expectNoRawSql(appendFailure.stdout);
       expect(appendFailure.stdout).not.toMatch(/EISDIR|ENOENT|ENOTDIR|stack|open '/i);
@@ -2067,39 +2020,37 @@ describe("ontology CLI", () => {
     }
   }, 20_000);
 
-  it("registry activation evidence coexists across known packs in one artifact registry", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-cross-pack-activation-evidence-"));
+  it('registry activation evidence coexists across known packs in one artifact registry', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-cross-pack-activation-evidence-'));
     try {
-      const registryPath = join(dir, "programming-artifacts.json");
-      const programmingStorePath = join(dir, "state", "programming.sqlite");
-      const authorizationStorePath = join(dir, "state", "authorization.sqlite");
-      const programmingRerunStorePath = join(dir, "state-rerun", "programming.sqlite");
-      const programmingOutputPath = join(dir, "activation", "programming-artifact-ontology.json");
-      const authorizationOutputPath = join(dir, "activation", "authorization-ontology.json");
+      const registryPath = join(dir, 'programming-artifacts.json');
+      const programmingStorePath = join(dir, 'state', 'programming.sqlite');
+      const authorizationStorePath = join(dir, 'state', 'authorization.sqlite');
+      const programmingRerunStorePath = join(dir, 'state-rerun', 'programming.sqlite');
+      const programmingOutputPath = join(dir, 'activation', 'programming-artifact-ontology.json');
+      const authorizationOutputPath = join(dir, 'activation', 'authorization-ontology.json');
       const programmingRecordId =
-        "activation-evidence-programming-artifact-ontology-programming-artifact-ontology";
+        'activation-evidence-programming-artifact-ontology-programming-artifact-ontology';
       const authorizationRecordId =
-        "activation-evidence-authorization-ontology-authorization-ontology";
+        'activation-evidence-authorization-ontology-authorization-ontology';
       const activationArgs = (packId: string, store: string, output: string) => [
-        "ontology",
-        "registry",
-        "activate-pack",
+        'ontology',
+        'registry',
+        'activate-pack',
         packId,
-        "--store",
+        '--store',
         store,
-        "--output",
+        '--output',
         output,
-        "--artifact-registry",
+        '--artifact-registry',
         registryPath,
-        "--json",
+        '--json',
       ];
       const readActivationEvidenceRecords = async () => {
-        const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+        const registry = JSON.parse(await readFile(registryPath, 'utf8')) as {
           artifacts?: ActivationEvidenceRegistryRecordJson[];
         };
-        return (registry.artifacts ?? []).filter(
-          (record) => record.kind === "activation-evidence",
-        );
+        return (registry.artifacts ?? []).filter((record) => record.kind === 'activation-evidence');
       };
       const recordsById = (records: ActivationEvidenceRegistryRecordJson[]) =>
         new Map(records.map((record) => [record.artifactId, record]));
@@ -2115,7 +2066,7 @@ describe("ontology CLI", () => {
       const programmingOutput = await captureConsoleWithExitCode(async () => {
         await main(
           activationArgs(
-            "programming-artifact-ontology",
+            'programming-artifact-ontology',
             programmingStorePath,
             programmingOutputPath,
           ),
@@ -2123,11 +2074,11 @@ describe("ontology CLI", () => {
       });
       const programming = JSON.parse(programmingOutput.stdout) as RegistryActivationJson;
 
-      expect(programmingOutput.stderr).toBe("");
+      expect(programmingOutput.stderr).toBe('');
       expect(programmingOutput.exitCode).toBeUndefined();
-      expect(programming.status).toBe("succeeded");
+      expect(programming.status).toBe('succeeded');
       expect(programming.activationEvidence).toEqual({
-        appendStatus: "appended",
+        appendStatus: 'appended',
         registryPath,
         recordId: programmingRecordId,
         recordRef: programmingOutputPath,
@@ -2136,20 +2087,16 @@ describe("ontology CLI", () => {
 
       const authorizationOutput = await captureConsoleWithExitCode(async () => {
         await main(
-          activationArgs(
-            "authorization-ontology",
-            authorizationStorePath,
-            authorizationOutputPath,
-          ),
+          activationArgs('authorization-ontology', authorizationStorePath, authorizationOutputPath),
         );
       });
       const authorization = JSON.parse(authorizationOutput.stdout) as RegistryActivationJson;
 
-      expect(authorizationOutput.stderr).toBe("");
+      expect(authorizationOutput.stderr).toBe('');
       expect(authorizationOutput.exitCode).toBeUndefined();
-      expect(authorization.status).toBe("succeeded");
+      expect(authorization.status).toBe('succeeded');
       expect(authorization.activationEvidence).toEqual({
-        appendStatus: "appended",
+        appendStatus: 'appended',
         registryPath,
         recordId: authorizationRecordId,
         recordRef: authorizationOutputPath,
@@ -2162,22 +2109,18 @@ describe("ontology CLI", () => {
         artifactId: programmingRecordId,
         artifactRef: programmingOutputPath,
         outputPath: programmingOutputPath,
-        kind: "activation-evidence",
-        producedByRef:
-          "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+        kind: 'activation-evidence',
+        producedByRef: 'qa-sdk ontology registry activate-pack programming-artifact-ontology',
         derivedFromRefs: [
-          "programming-artifact-ontology",
-          "operational-ontology/programming-artifacts",
+          'programming-artifact-ontology',
+          'operational-ontology/programming-artifacts',
         ],
-        verifiesRefs: [
-          "programming-artifact-ontology",
-          "operational-ontology-registry-allocation",
-        ],
+        verifiesRefs: ['programming-artifact-ontology', 'operational-ontology-registry-allocation'],
         metadata: {
-          status: "succeeded",
-          packId: "programming-artifact-ontology",
-          ontologyId: "programming-artifact-ontology",
-          namespace: "programming_artifact_ontology",
+          status: 'succeeded',
+          packId: 'programming-artifact-ontology',
+          ontologyId: 'programming-artifact-ontology',
+          namespace: 'programming_artifact_ontology',
           allocationCount: 2,
           activationStatusCounts: { active: 2 },
           syncStatusCounts: { synced: 2 },
@@ -2196,19 +2139,15 @@ describe("ontology CLI", () => {
         artifactId: authorizationRecordId,
         artifactRef: authorizationOutputPath,
         outputPath: authorizationOutputPath,
-        kind: "activation-evidence",
-        producedByRef:
-          "qa-sdk ontology registry activate-pack authorization-ontology",
-        derivedFromRefs: ["authorization-ontology"],
-        verifiesRefs: [
-          "authorization-ontology",
-          "operational-ontology-registry-allocation",
-        ],
+        kind: 'activation-evidence',
+        producedByRef: 'qa-sdk ontology registry activate-pack authorization-ontology',
+        derivedFromRefs: ['authorization-ontology'],
+        verifiesRefs: ['authorization-ontology', 'operational-ontology-registry-allocation'],
         metadata: {
-          status: "succeeded",
-          packId: "authorization-ontology",
-          ontologyId: "authorization-ontology",
-          namespace: "authorization_ontology",
+          status: 'succeeded',
+          packId: 'authorization-ontology',
+          ontologyId: 'authorization-ontology',
+          namespace: 'authorization_ontology',
           allocationCount: 8,
           activationStatusCounts: { active: 8 },
           syncStatusCounts: { synced: 8 },
@@ -2226,21 +2165,21 @@ describe("ontology CLI", () => {
 
       const listOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "artifact",
-          "registry",
-          "list",
-          "--input",
+          'ontology',
+          'artifact',
+          'registry',
+          'list',
+          '--input',
           registryPath,
-          "--kind",
-          "activation-evidence",
-          "--json",
+          '--kind',
+          'activation-evidence',
+          '--json',
         ]);
       });
       const listed = JSON.parse(listOutput.stdout) as {
         artifacts: ActivationEvidenceRegistryRecordJson[];
       };
-      expect(listOutput.stderr).toBe("");
+      expect(listOutput.stderr).toBe('');
       expect(listOutput.exitCode).toBeUndefined();
       expect(listed.artifacts).toEqual([
         expect.objectContaining({
@@ -2257,13 +2196,13 @@ describe("ontology CLI", () => {
 
       const validateOutput = await captureConsoleWithExitCode(async () => {
         await main([
-          "ontology",
-          "artifact",
-          "registry",
-          "validate",
-          "--input",
+          'ontology',
+          'artifact',
+          'registry',
+          'validate',
+          '--input',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const validation = JSON.parse(validateOutput.stdout) as {
@@ -2271,7 +2210,7 @@ describe("ontology CLI", () => {
         artifactCount: number;
         errors: unknown[];
       };
-      expect(validateOutput.stderr).toBe("");
+      expect(validateOutput.stderr).toBe('');
       expect(validateOutput.exitCode).toBeUndefined();
       expect(validation).toMatchObject({
         valid: true,
@@ -2282,15 +2221,15 @@ describe("ontology CLI", () => {
       const extractActivationEvidence = async (outputPath: string) => {
         const extractOutput = await captureConsoleWithExitCode(async () => {
           await main([
-            "ontology",
-            "prompt",
-            "extract-artifact",
+            'ontology',
+            'prompt',
+            'extract-artifact',
             outputPath,
-            "--artifact-registry",
+            '--artifact-registry',
             registryPath,
-            "--kind",
-            "self_reflection",
-            "--json",
+            '--kind',
+            'self_reflection',
+            '--json',
           ]);
         });
         const extracted = JSON.parse(extractOutput.stdout) as {
@@ -2305,13 +2244,13 @@ describe("ontology CLI", () => {
             constraints?: string[];
           };
         };
-        expect(extractOutput.stderr).toBe("");
+        expect(extractOutput.stderr).toBe('');
         expect(extractOutput.exitCode).toBeUndefined();
         expect(extracted.source).toMatchObject({
-          kind: "artifact-registry-hit",
+          kind: 'artifact-registry-hit',
           registry: {
-            status: "hit",
-            providerId: "programming-artifact-registry",
+            status: 'hit',
+            providerId: 'programming-artifact-registry',
             recordCount: 2,
           },
         });
@@ -2326,10 +2265,10 @@ describe("ontology CLI", () => {
       });
       expect(extractedProgramming.workArea.constraints).toEqual(
         expect.arrayContaining([
-          "artifact-kind:activation-evidence",
-          "produced_by:qa-sdk ontology registry activate-pack programming-artifact-ontology",
-          "derived_from:operational-ontology/programming-artifacts",
-          "verifies:programming-artifact-ontology",
+          'artifact-kind:activation-evidence',
+          'produced_by:qa-sdk ontology registry activate-pack programming-artifact-ontology',
+          'derived_from:operational-ontology/programming-artifacts',
+          'verifies:programming-artifact-ontology',
         ]),
       );
 
@@ -2339,10 +2278,10 @@ describe("ontology CLI", () => {
       });
       expect(extractedAuthorization.workArea.constraints).toEqual(
         expect.arrayContaining([
-          "artifact-kind:activation-evidence",
-          "produced_by:qa-sdk ontology registry activate-pack authorization-ontology",
-          "derived_from:authorization-ontology",
-          "verifies:authorization-ontology",
+          'artifact-kind:activation-evidence',
+          'produced_by:qa-sdk ontology registry activate-pack authorization-ontology',
+          'derived_from:authorization-ontology',
+          'verifies:authorization-ontology',
         ]),
       );
 
@@ -2352,21 +2291,19 @@ describe("ontology CLI", () => {
       const programmingRerunOutput = await captureConsoleWithExitCode(async () => {
         await main(
           activationArgs(
-            "programming-artifact-ontology",
+            'programming-artifact-ontology',
             programmingRerunStorePath,
             programmingOutputPath,
           ),
         );
       });
-      const programmingRerun = JSON.parse(
-        programmingRerunOutput.stdout,
-      ) as RegistryActivationJson;
+      const programmingRerun = JSON.parse(programmingRerunOutput.stdout) as RegistryActivationJson;
 
-      expect(programmingRerunOutput.stderr).toBe("");
+      expect(programmingRerunOutput.stderr).toBe('');
       expect(programmingRerunOutput.exitCode).toBeUndefined();
-      expect(programmingRerun.status).toBe("succeeded");
+      expect(programmingRerun.status).toBe('succeeded');
       expect(programmingRerun.activationEvidence).toEqual({
-        appendStatus: "appended",
+        appendStatus: 'appended',
         registryPath,
         recordId: programmingRecordId,
         recordRef: programmingOutputPath,
@@ -2380,9 +2317,9 @@ describe("ontology CLI", () => {
         artifactRef: programmingOutputPath,
         outputPath: programmingOutputPath,
         metadata: {
-          status: "succeeded",
-          packId: "programming-artifact-ontology",
-          ontologyId: "programming-artifact-ontology",
+          status: 'succeeded',
+          packId: 'programming-artifact-ontology',
+          ontologyId: 'programming-artifact-ontology',
         },
       });
       expect(expectRegistryRecord(afterRerunRecords, authorizationRecordId)).toEqual(
@@ -2393,15 +2330,9 @@ describe("ontology CLI", () => {
     }
   }, 30_000);
 
-  it("registry activate-pack reports unknown pack failures through the public command path", async () => {
+  it('registry activate-pack reports unknown pack failures through the public command path', async () => {
     const output = await captureConsoleWithExitCode(async () => {
-      await main([
-        "ontology",
-        "registry",
-        "activate-pack",
-        "missing-pack",
-        "--json",
-      ]);
+      await main(['ontology', 'registry', 'activate-pack', 'missing-pack', '--json']);
     });
     const parsed = JSON.parse(output.stdout) as {
       status: string;
@@ -2421,12 +2352,12 @@ describe("ontology CLI", () => {
       }>;
     };
 
-    expect(output.stderr).toBe("");
+    expect(output.stderr).toBe('');
     expect(output.exitCode).toBe(1);
     expect(parsed).toMatchObject({
-      status: "failed",
-      packId: "missing-pack",
-      ontologyId: "missing-pack",
+      status: 'failed',
+      packId: 'missing-pack',
+      ontologyId: 'missing-pack',
       namespaceSummary: null,
       allocationSummaries: [],
       syncSummariesByAllocationId: {},
@@ -2434,10 +2365,10 @@ describe("ontology CLI", () => {
       warnings: [],
       errors: [
         expect.objectContaining({
-          level: "error",
-          phase: "cli",
-          code: "unknown-ontology-pack",
-          packId: "missing-pack",
+          level: 'error',
+          phase: 'cli',
+          code: 'unknown-ontology-pack',
+          packId: 'missing-pack',
         }),
       ],
     });
@@ -2445,30 +2376,25 @@ describe("ontology CLI", () => {
     expectNoRawSql(output.stdout);
 
     const textOutput = await captureConsoleWithExitCode(async () => {
-      await main([
-        "ontology",
-        "registry",
-        "activate-pack",
-        "missing-pack",
-      ]);
+      await main(['ontology', 'registry', 'activate-pack', 'missing-pack']);
     });
 
-    expect(textOutput.stdout).toBe("");
-    expect(textOutput.stderr).toContain("unknown-ontology-pack:");
+    expect(textOutput.stdout).toBe('');
+    expect(textOutput.stderr).toContain('unknown-ontology-pack:');
     expect(textOutput.stderr).toContain('Unknown ontology pack id "missing-pack"');
-    expect(textOutput.stderr).toContain("Supported pack ids:");
+    expect(textOutput.stderr).toContain('Supported pack ids:');
     expect(textOutput.exitCode).toBe(1);
     expectNoRawSql(textOutput.stderr);
   });
 
-  it("registry activate-pack --json rejects invalid flags as structured JSON", async () => {
+  it('registry activate-pack --json rejects invalid flags as structured JSON', async () => {
     const output = await captureConsoleWithExitCode(async () => {
       await cliOntology([
-        "registry.activate-pack",
-        "programming-artifact-ontology",
-        "--not-a-real-flag",
-        "value",
-        "--json",
+        'registry.activate-pack',
+        'programming-artifact-ontology',
+        '--not-a-real-flag',
+        'value',
+        '--json',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -2480,29 +2406,27 @@ describe("ontology CLI", () => {
       }>;
     };
 
-    expect(output.stderr).toBe("");
+    expect(output.stderr).toBe('');
     expect(output.exitCode).toBe(1);
-    expect(parsed.status).toBe("failed");
-    expect(parsed.packId).toBe("programming-artifact-ontology");
+    expect(parsed.status).toBe('failed');
+    expect(parsed.packId).toBe('programming-artifact-ontology');
     expect(parsed.errors[0]).toMatchObject({
-      code: "invalid-cli-flag",
-      details: { flag: "--not-a-real-flag" },
+      code: 'invalid-cli-flag',
+      details: { flag: '--not-a-real-flag' },
     });
-    expect(parsed.errors[0]?.details?.supportedFlags).toContain(
-      "--artifact-registry",
-    );
+    expect(parsed.errors[0]?.details?.supportedFlags).toContain('--artifact-registry');
   });
 
-  it("registry activate-pack rejects invalid address models with structured failure output", async () => {
+  it('registry activate-pack rejects invalid address models with structured failure output', async () => {
     const output = await captureConsoleWithExitCode(async () => {
       await main([
-        "ontology",
-        "registry",
-        "activate-pack",
-        "programming-artifact-ontology",
-        "--address-model",
-        "tuple",
-        "--json",
+        'ontology',
+        'registry',
+        'activate-pack',
+        'programming-artifact-ontology',
+        '--address-model',
+        'tuple',
+        '--json',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -2521,24 +2445,24 @@ describe("ontology CLI", () => {
       }>;
     };
 
-    expect(output.stderr).toBe("");
+    expect(output.stderr).toBe('');
     expect(output.exitCode).toBe(1);
     expect(parsed).toMatchObject({
-      status: "failed",
-      packId: "programming-artifact-ontology",
-      ontologyId: "programming-artifact-ontology",
+      status: 'failed',
+      packId: 'programming-artifact-ontology',
+      ontologyId: 'programming-artifact-ontology',
       allocationSummaries: [],
       syncSummariesByAllocationId: {},
       smokeCheckSummary: { allocationCount: 0 },
       errors: [
         expect.objectContaining({
-          level: "error",
-          phase: "cli",
-          code: "invalid-address-model",
+          level: 'error',
+          phase: 'cli',
+          code: 'invalid-address-model',
           message: 'Invalid --address-model value "tuple". Expected product or sum.',
           details: {
-            value: "tuple",
-            supportedValues: ["product", "sum"],
+            value: 'tuple',
+            supportedValues: ['product', 'sum'],
           },
         }),
       ],
@@ -2547,17 +2471,17 @@ describe("ontology CLI", () => {
 
     const textOutput = await captureConsoleWithExitCode(async () => {
       await main([
-        "ontology",
-        "registry",
-        "activate-pack",
-        "programming-artifact-ontology",
-        "--address-model",
-        "tuple",
+        'ontology',
+        'registry',
+        'activate-pack',
+        'programming-artifact-ontology',
+        '--address-model',
+        'tuple',
       ]);
     });
 
-    expect(textOutput.stdout).toBe("");
-    expect(textOutput.stderr).toContain("invalid-address-model:");
+    expect(textOutput.stdout).toBe('');
+    expect(textOutput.stderr).toContain('invalid-address-model:');
     expect(textOutput.stderr).toContain(
       'Invalid --address-model value "tuple". Expected product or sum.',
     );
@@ -2565,49 +2489,49 @@ describe("ontology CLI", () => {
     expectNoRawSql(textOutput.stderr);
   });
 
-  it("registry activate-pack emits helper failed results without wrapping them", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-failure-"));
+  it('registry activate-pack emits helper failed results without wrapping them', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activate-failure-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
-      const outputPath = join(dir, "failed-activation.json");
-      const registryPath = join(dir, "programming-artifacts.json");
+      const storePath = join(dir, 'registry.sqlite');
+      const outputPath = join(dir, 'failed-activation.json');
+      const registryPath = join(dir, 'programming-artifacts.json');
       await captureConsoleAsync(async () => {
         await cliOntology([
-          "registry.activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'registry.activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-collision-a",
-          "--namespace",
-          "artifact_collision_a",
-          "--version",
-          "v-collision",
-          "--prefix",
-          "programming-artifact=artifact_collision",
-          "--json",
+          '--ontology-id',
+          'artifact-collision-a',
+          '--namespace',
+          'artifact_collision_a',
+          '--version',
+          'v-collision',
+          '--prefix',
+          'programming-artifact=artifact_collision',
+          '--json',
         ]);
       });
 
       const output = await captureConsoleWithExitCode(async () => {
         await cliOntology([
-          "registry.activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'registry.activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-collision-b",
-          "--namespace",
-          "artifact_collision_b",
-          "--version",
-          "v-collision",
-          "--prefix",
-          "programming-artifact=artifact_collision",
-          "--output",
+          '--ontology-id',
+          'artifact-collision-b',
+          '--namespace',
+          'artifact_collision_b',
+          '--version',
+          'v-collision',
+          '--prefix',
+          'programming-artifact=artifact_collision',
+          '--output',
           outputPath,
-          "--artifact-registry",
+          '--artifact-registry',
           registryPath,
-          "--json",
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as {
@@ -2622,12 +2546,12 @@ describe("ontology CLI", () => {
         errors: Array<{ phase: string; code: string; message: string }>;
       };
 
-      expect(output.stderr).toBe("");
+      expect(output.stderr).toBe('');
       expect(output.exitCode).toBe(1);
       expect(parsed).toMatchObject({
-        status: "failed",
-        packId: "programming-artifact-ontology",
-        ontologyId: "artifact-collision-b",
+        status: 'failed',
+        packId: 'programming-artifact-ontology',
+        ontologyId: 'artifact-collision-b',
         namespaceSummary: null,
         allocationSummaries: [],
         syncSummariesByAllocationId: {},
@@ -2635,29 +2559,29 @@ describe("ontology CLI", () => {
         warnings: [],
         errors: [
           expect.objectContaining({
-            phase: "register",
-            code: "duplicate-allocation",
+            phase: 'register',
+            code: 'duplicate-allocation',
           }),
         ],
       });
       expect(parsed.activationEvidence).toBeUndefined();
-      await expect(readFile(registryPath, "utf8")).rejects.toThrow();
+      await expect(readFile(registryPath, 'utf8')).rejects.toThrow();
       expect(output.stdout).not.toMatch(/SQLITE|SqliteError|sqlite/i);
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("registry activate-pack hides raw runtime storage errors in JSON output", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-store-error-"));
+  it('registry activate-pack hides raw runtime storage errors in JSON output', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-store-error-'));
     try {
       const output = await captureConsoleWithExitCode(async () => {
         await cliOntology([
-          "registry.activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'registry.activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           dir,
-          "--json",
+          '--json',
         ]);
       });
       const parsed = JSON.parse(output.stdout) as {
@@ -2666,12 +2590,11 @@ describe("ontology CLI", () => {
       };
 
       expect(output.exitCode).toBe(1);
-      expect(parsed.status).toBe("failed");
+      expect(parsed.status).toBe('failed');
       expect(parsed.errors[0]).toEqual(
         expect.objectContaining({
-          code: "activation-runtime-error",
-          message:
-            "Ontology activation failed before a structured helper result was produced.",
+          code: 'activation-runtime-error',
+          message: 'Ontology activation failed before a structured helper result was produced.',
         }),
       );
       expect(output.stdout).not.toMatch(/SQLITE|SqliteError|sqlite/i);
@@ -2680,103 +2603,103 @@ describe("ontology CLI", () => {
     }
   });
 
-  it("registry activate-pack text output stays concise and includes action hints", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-activate-text-"));
+  it('registry activate-pack text output stays concise and includes action hints', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-activate-text-'));
     try {
-      const storePath = join(dir, "registry.sqlite");
+      const storePath = join(dir, 'registry.sqlite');
       const output = await captureConsoleAsync(async () => {
         await cliOntology([
-          "registry.activate-pack",
-          "programming-artifact-ontology",
-          "--store",
+          'registry.activate-pack',
+          'programming-artifact-ontology',
+          '--store',
           storePath,
-          "--ontology-id",
-          "artifact-text",
-          "--namespace",
-          "artifact_text",
-          "--version",
-          "v-text",
+          '--ontology-id',
+          'artifact-text',
+          '--namespace',
+          'artifact_text',
+          '--version',
+          'v-text',
         ]);
       });
 
-      expect(output.stderr).toBe("");
-      expect(output.stdout).toContain("Ontology pack activation: programming-artifact-ontology");
-      expect(output.stdout).toContain("status: succeeded");
-      expect(output.stdout).toContain("allocations:");
-      expect(output.stdout).toContain("smoke:");
-      expect(output.stdout).toContain("action hints:");
+      expect(output.stderr).toBe('');
+      expect(output.stdout).toContain('Ontology pack activation: programming-artifact-ontology');
+      expect(output.stdout).toContain('status: succeeded');
+      expect(output.stdout).toContain('allocations:');
+      expect(output.stdout).toContain('smoke:');
+      expect(output.stdout).toContain('action hints:');
     } finally {
       await rm(dir, { force: true, recursive: true });
     }
   });
 
-  it("prompt extract-file can persist governance evidence", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-prompt-"));
-    const storePath = join(dir, "store.json");
+  it('prompt extract-file can persist governance evidence', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-prompt-'));
+    const storePath = join(dir, 'store.json');
 
     const first = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-file",
-        "packages/operational-ontology/src/internal/checkpoint-core.ts",
-        "--use-case",
-        "feature_modification",
-        "--kind",
-        "code_editing_rules",
-        "--store",
+        'prompt.extract-file',
+        'packages/operational-ontology/src/internal/checkpoint-core.ts',
+        '--use-case',
+        'feature_modification',
+        '--kind',
+        'code_editing_rules',
+        '--store',
         storePath,
-        "--quality-only",
+        '--quality-only',
       ]);
     });
-    expect(first.stdout).toContain("actions: close_governance_evidence");
+    expect(first.stdout).toContain('actions: close_governance_evidence');
 
     const persisted = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-file",
-        "packages/operational-ontology/src/internal/checkpoint-core.ts",
-        "--use-case",
-        "feature_modification",
-        "--kind",
-        "code_editing_rules",
-        "--store",
+        'prompt.extract-file',
+        'packages/operational-ontology/src/internal/checkpoint-core.ts',
+        '--use-case',
+        'feature_modification',
+        '--kind',
+        'code_editing_rules',
+        '--store',
         storePath,
-        "--persist-governance",
-        "--quality-only",
+        '--persist-governance',
+        '--quality-only',
       ]);
     });
-    expect(persisted.stdout).toContain("ontologyManagementRequired: false");
-    expect(persisted.stdout).not.toContain("actions: close_governance_evidence");
+    expect(persisted.stdout).toContain('ontologyManagementRequired: false');
+    expect(persisted.stdout).not.toContain('actions: close_governance_evidence');
   });
 
-  it("prompt extract-artifact --json reports registry hits as structured source", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-hit-"));
-    const registryPath = join(dir, "artifact-registry.json");
+  it('prompt extract-artifact --json reports registry hits as structured source', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-hit-'));
+    const registryPath = join(dir, 'artifact-registry.json');
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "build-dist-index",
-            artifactRef: "dist/index.js",
-            kind: "build",
-            producedByRef: "pnpm --filter @qa-sdk/cli build",
-            ownerDefinitionId: "programming-artifact-ontology-system",
-            materializesOutputRefs: ["@qa-sdk/cli"],
-            outputPath: "dist/index.js",
+            artifactId: 'build-dist-index',
+            artifactRef: 'dist/index.js',
+            kind: 'build',
+            producedByRef: 'pnpm --filter @qa-sdk/cli build',
+            ownerDefinitionId: 'programming-artifact-ontology-system',
+            materializesOutputRefs: ['@qa-sdk/cli'],
+            outputPath: 'dist/index.js',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "dist/index.js",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'dist/index.js',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
+        '--kind',
+        'self_reflection',
+        '--json',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -2795,49 +2718,49 @@ describe("ontology CLI", () => {
     };
 
     expect(parsed.source).toMatchObject({
-      kind: "artifact-registry-hit",
+      kind: 'artifact-registry-hit',
       registry: {
-        status: "hit",
-        providerId: "programming-artifact-registry",
+        status: 'hit',
+        providerId: 'programming-artifact-registry',
         recordCount: 1,
       },
       warnings: [],
       qualitySignal: {
-        code: "artifact-registry-hit",
-        grade: "ready",
+        code: 'artifact-registry-hit',
+        grade: 'ready',
       },
     });
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-missing",
+      status: 'quality-status-missing',
       matchedQualityStatusArtifactRefs: [],
       warning: {
-        code: "prompt-quality-status-evidence-missing",
+        code: 'prompt-quality-status-evidence-missing',
       },
       recommendedManagementActions: [
         expect.objectContaining({
-          kind: "close_governance_evidence",
-          plane: "governance",
+          kind: 'close_governance_evidence',
+          plane: 'governance',
         }),
       ],
     });
-    expect(parsed.source.governanceClosure.warning?.sourceRefs).toEqual(["dist/index.js"]);
+    expect(parsed.source.governanceClosure.warning?.sourceRefs).toEqual(['dist/index.js']);
   });
 
-  it("prompt extract-artifact --json reports registry misses and search fallback", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-miss-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    await writeFile(registryPath, JSON.stringify({ artifacts: [] }), "utf8");
+  it('prompt extract-artifact --json reports registry misses and search fallback', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-miss-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    await writeFile(registryPath, JSON.stringify({ artifacts: [] }), 'utf8');
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -2863,51 +2786,48 @@ describe("ontology CLI", () => {
     };
 
     expect(parsed.source).toMatchObject({
-      kind: "artifact-search-fallback",
+      kind: 'artifact-search-fallback',
       registry: {
-        status: "miss",
+        status: 'miss',
         recordCount: 0,
       },
       fallback: {
-        kind: "search",
-        target: "unmanaged-artifact",
+        kind: 'search',
+        target: 'unmanaged-artifact',
       },
-      recommendedManagementActions: ["create_programming_artifact_registry_record"],
+      recommendedManagementActions: ['create_programming_artifact_registry_record'],
       qualitySignal: {
-        code: "artifact-search-fallback",
-        grade: "degraded",
-        recommendedManagementActions: ["create_programming_artifact_registry_record"],
+        code: 'artifact-search-fallback',
+        grade: 'degraded',
+        recommendedManagementActions: ['create_programming_artifact_registry_record'],
       },
     });
-    expect(parsed.source.qualitySignal.warning).toContain("free-string search");
+    expect(parsed.source.qualitySignal.warning).toContain('free-string search');
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-missing",
+      status: 'quality-status-missing',
       matchedQualityStatusArtifactRefs: [],
       warning: {
-        code: "prompt-quality-status-evidence-missing",
+        code: 'prompt-quality-status-evidence-missing',
       },
       recommendedManagementActions: [
         expect.objectContaining({
-          kind: "close_governance_evidence",
+          kind: 'close_governance_evidence',
         }),
       ],
     });
-    expect(parsed.source.governanceClosure.warning?.message).not.toContain("free-string search");
-    expect(parsed.source.warnings).toEqual([
-      "artifact-registry-miss",
-      "artifact-search-fallback",
-    ]);
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain('free-string search');
+    expect(parsed.source.warnings).toEqual(['artifact-registry-miss', 'artifact-search-fallback']);
   }, 10_000);
 
-  it("prompt extract-artifact preserves release verification use case through definition fallback", async () => {
+  it('prompt extract-artifact preserves release verification use case through definition fallback', async () => {
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "quality-gates-system",
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        'prompt.extract-artifact',
+        'quality-gates-system',
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -2916,49 +2836,49 @@ describe("ontology CLI", () => {
       artifacts: Array<{ artifact: { useCase?: string } }>;
     };
 
-    expect(parsed.useCase).toBe("release_verification");
+    expect(parsed.useCase).toBe('release_verification');
     expect(parsed.source).toMatchObject({
-      kind: "artifact-definition-fallback",
+      kind: 'artifact-definition-fallback',
       fallback: {
-        kind: "definition",
-        target: "quality-gates-system",
+        kind: 'definition',
+        target: 'quality-gates-system',
       },
     });
-    expect(parsed.artifacts[0]!.artifact.useCase).toBe("release_verification");
+    expect(parsed.artifacts[0]!.artifact.useCase).toBe('release_verification');
   }, 10_000);
 
-  it("prompt extract-artifact --json attaches related quality-status records on registry miss", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-"));
-    const registryPath = join(dir, "artifact-registry.json");
+  it('prompt extract-artifact --json attaches related quality-status records on registry miss', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-'));
+    const registryPath = join(dir, 'artifact-registry.json');
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-unmanaged-artifact",
-            artifactRef: "artifacts/quality-status-unmanaged-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            materializesOutputRefs: ["artifact:unmanaged-artifact"],
-            sourceRefs: ["packages/cli/src/commands/ontology.ts"],
-            outputPath: "artifacts/quality-status-unmanaged-artifact.json",
-            verificationRefs: ["packages/cli/src/commands/ontology.test.ts"],
+            artifactId: 'quality-status-unmanaged-artifact',
+            artifactRef: 'artifacts/quality-status-unmanaged-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            materializesOutputRefs: ['artifact:unmanaged-artifact'],
+            sourceRefs: ['packages/cli/src/commands/ontology.ts'],
+            outputPath: 'artifacts/quality-status-unmanaged-artifact.json',
+            verificationRefs: ['packages/cli/src/commands/ontology.test.ts'],
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -2992,120 +2912,120 @@ describe("ontology CLI", () => {
     };
 
     expect(parsed.source).toMatchObject({
-      kind: "artifact-search-fallback",
+      kind: 'artifact-search-fallback',
       registry: {
-        status: "miss",
+        status: 'miss',
         recordCount: 1,
       },
       fallback: {
-        kind: "search",
-        target: "unmanaged-artifact",
+        kind: 'search',
+        target: 'unmanaged-artifact',
       },
       warnings: [
-        "artifact-registry-miss",
-        "artifact-search-fallback",
-        "quality-status-snapshot-missing",
-        "quality-status-ledger-no-gate-descriptors",
+        'artifact-registry-miss',
+        'artifact-search-fallback',
+        'quality-status-snapshot-missing',
+        'quality-status-ledger-no-gate-descriptors',
       ],
       qualityStatusRecords: {
         total: 1,
         records: [
           expect.objectContaining({
-            artifactId: "quality-status-unmanaged-artifact",
-            artifactRef: "artifacts/quality-status-unmanaged-artifact.json",
+            artifactId: 'quality-status-unmanaged-artifact',
+            artifactRef: 'artifacts/quality-status-unmanaged-artifact.json',
             matchRefs: expect.arrayContaining([
-              "unmanaged-artifact",
-              "artifact:unmanaged-artifact",
+              'unmanaged-artifact',
+              'artifact:unmanaged-artifact',
             ]),
             qualityGateDescriptorWarning: expect.objectContaining({
-              code: "quality-status-ledger-no-gate-descriptors",
+              code: 'quality-status-ledger-no-gate-descriptors',
             }),
           }),
         ],
       },
     });
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-incomplete",
-      matchedQualityStatusArtifactRefs: ["artifacts/quality-status-unmanaged-artifact.json"],
+      status: 'quality-status-incomplete',
+      matchedQualityStatusArtifactRefs: ['artifacts/quality-status-unmanaged-artifact.json'],
       warning: {
-        code: "prompt-quality-status-evidence-incomplete",
+        code: 'prompt-quality-status-evidence-incomplete',
       },
       recommendedManagementActions: [
         expect.objectContaining({
-          kind: "close_governance_evidence",
+          kind: 'close_governance_evidence',
         }),
       ],
     });
     expect(parsed.source.governanceClosure.warning?.sourceRefs).toEqual(
       expect.arrayContaining([
-        "quality-status:quality-status-unmanaged-artifact",
-        "artifacts/quality-status-unmanaged-artifact.json",
+        'quality-status:quality-status-unmanaged-artifact',
+        'artifacts/quality-status-unmanaged-artifact.json',
       ]),
     );
-    expect(parsed.source.qualitySignal.warning).toContain("free-string search");
-    expect(parsed.source.governanceClosure.warning?.message).not.toContain("free-string search");
+    expect(parsed.source.qualitySignal.warning).toContain('free-string search');
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain('free-string search');
     expect(
       parsed.source.qualityStatusRecords.records[0]!.matchReasons.map((reason) => reason.field),
-    ).toEqual(expect.arrayContaining(["verifiesRefs", "materializesOutputRefs"]));
+    ).toEqual(expect.arrayContaining(['verifiesRefs', 'materializesOutputRefs']));
     expect(parsed.artifacts[0]!.artifact.sourceRefs).toEqual(
       expect.arrayContaining([
-        "governance-run:governance:artifact:quality-status-unmanaged-artifact:definition-context",
+        'governance-run:governance:artifact:quality-status-unmanaged-artifact:definition-context',
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact --json loads quality export snapshots from related quality-status records", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-snapshot-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-unmanaged-artifact.json");
+  it('prompt extract-artifact --json loads quality export snapshots from related quality-status records', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-snapshot-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-unmanaged-artifact.json');
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2026-04-13T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2026-04-13T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            title: "Work domain quality bundle",
+            bundleId: 'work-domain-quality-bundle',
+            title: 'Work domain quality bundle',
             gateCount: 3,
             claimCount: 4,
             verifiedClaimCount: 3,
-            bundleState: "verified",
+            bundleState: 'verified',
             verifiedGates: 3,
             totalGates: 3,
             reviewScopes: [],
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-unmanaged-artifact",
-            artifactRef: "quality-status-unmanaged-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "quality-status-unmanaged-artifact.json",
-            verificationRefs: ["packages/cli/src/commands/ontology.test.ts"],
+            artifactId: 'quality-status-unmanaged-artifact',
+            artifactRef: 'quality-status-unmanaged-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'quality-status-unmanaged-artifact.json',
+            verificationRefs: ['packages/cli/src/commands/ontology.test.ts'],
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3156,15 +3076,15 @@ describe("ontology CLI", () => {
 
     expect(parsed.source.qualityStatusRecords.warnings).toEqual([]);
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-found",
-      matchedQualityStatusArtifactRefs: ["quality-status-unmanaged-artifact.json"],
+      status: 'quality-status-found',
+      matchedQualityStatusArtifactRefs: ['quality-status-unmanaged-artifact.json'],
       recommendedManagementActions: [],
     });
     expect(parsed.source.governanceClosure.warning).toBeUndefined();
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityExportSnapshot).toMatchObject({
-      rootId: "quality-gates-system",
-      bundleIds: ["work-domain-quality-bundle"],
-      generatedAt: "2026-04-13T00:00:00.000Z",
+      rootId: 'quality-gates-system',
+      bundleIds: ['work-domain-quality-bundle'],
+      generatedAt: '2026-04-13T00:00:00.000Z',
       sourcePath: snapshotPath,
       totals: {
         verifiedGates: 3,
@@ -3174,8 +3094,8 @@ describe("ontology CLI", () => {
       },
       bundles: [
         {
-          bundleId: "work-domain-quality-bundle",
-          bundleState: "verified",
+          bundleId: 'work-domain-quality-bundle',
+          bundleState: 'verified',
           verifiedGates: 3,
           totalGates: 3,
           claimCount: 4,
@@ -3186,42 +3106,42 @@ describe("ontology CLI", () => {
     expect(parsed.source.qualityStatusRecords.records[0]!.gateDescriptors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          gateDocId: "gate-work-domain-typecheck",
+          gateDocId: 'gate-work-domain-typecheck',
           docVersion: expect.any(Number),
-          bundleId: "work-domain-quality-bundle",
+          bundleId: 'work-domain-quality-bundle',
         }),
         expect.objectContaining({
-          gateDocId: "gate-work-domain-build",
+          gateDocId: 'gate-work-domain-build',
           docVersion: expect.any(Number),
-          bundleId: "work-domain-quality-bundle",
+          bundleId: 'work-domain-quality-bundle',
         }),
         expect.objectContaining({
-          gateDocId: "gate-work-domain-test",
+          gateDocId: 'gate-work-domain-test',
           docVersion: expect.any(Number),
-          bundleId: "work-domain-quality-bundle",
+          bundleId: 'work-domain-quality-bundle',
         }),
       ]),
     );
     expect(parsed.artifacts[0]!.artifact.sourceRefs).toEqual(
       expect.arrayContaining([
-        "governance-run:governance:quality-status-unmanaged-artifact:quality-export-snapshot",
+        'governance-run:governance:quality-status-unmanaged-artifact:quality-export-snapshot',
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact simulates a non-quality build artifact with a quality-status sidecar", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-build-sidecar-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-build-artifact.json");
+  it('prompt extract-artifact simulates a non-quality build artifact with a quality-status sidecar', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-build-sidecar-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-build-artifact.json');
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2026-04-13T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2026-04-13T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            bundleState: "verified",
+            bundleId: 'work-domain-quality-bundle',
+            bundleState: 'verified',
             verifiedGates: 3,
             totalGates: 3,
             claimCount: 4,
@@ -3229,44 +3149,44 @@ describe("ontology CLI", () => {
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "build-cli-dist-index",
-            artifactRef: "packages/cli/dist/index.js",
-            kind: "build",
-            producedByRef: "pnpm --filter @qa-sdk/cli build",
-            ownerDefinitionId: "programming-artifact-ontology-cli",
-            materializesOutputRefs: ["@qa-sdk/cli"],
-            outputPath: "packages/cli/dist/index.js",
+            artifactId: 'build-cli-dist-index',
+            artifactRef: 'packages/cli/dist/index.js',
+            kind: 'build',
+            producedByRef: 'pnpm --filter @qa-sdk/cli build',
+            ownerDefinitionId: 'programming-artifact-ontology-cli',
+            materializesOutputRefs: ['@qa-sdk/cli'],
+            outputPath: 'packages/cli/dist/index.js',
           },
           {
-            artifactId: "quality-status-build-artifact",
-            artifactRef: "quality-status-build-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["packages/cli/dist/index.js"],
-            materializesOutputRefs: ["artifact:packages/cli/dist/index.js"],
-            sourceRefs: ["packages/cli/src/commands/ontology.ts"],
-            outputPath: "quality-status-build-artifact.json",
+            artifactId: 'quality-status-build-artifact',
+            artifactRef: 'quality-status-build-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['packages/cli/dist/index.js'],
+            materializesOutputRefs: ['artifact:packages/cli/dist/index.js'],
+            sourceRefs: ['packages/cli/src/commands/ontology.ts'],
+            outputPath: 'quality-status-build-artifact.json',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "packages/cli/dist/index.js",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'packages/cli/dist/index.js',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
+        '--kind',
+        'self_reflection',
+        '--json',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3300,28 +3220,28 @@ describe("ontology CLI", () => {
     };
     const record = parsed.source.qualityStatusRecords.records[0]!;
     const governanceMetric = parsed.artifacts[0]!.quality.metrics.find(
-      (metric) => metric.dimension === "governance_closure",
+      (metric) => metric.dimension === 'governance_closure',
     );
 
     expect(parsed.source).toMatchObject({
-      kind: "artifact-registry-hit",
+      kind: 'artifact-registry-hit',
       registry: {
-        status: "hit",
+        status: 'hit',
         recordCount: 2,
       },
       qualityStatusRecords: {
         total: 1,
       },
       governanceClosure: {
-        status: "quality-status-found",
+        status: 'quality-status-found',
         recommendedManagementActions: [],
       },
     });
     expect(record).toMatchObject({
-      artifactId: "quality-status-build-artifact",
+      artifactId: 'quality-status-build-artifact',
       qualityExportSnapshot: {
-        rootId: "quality-gates-system",
-        bundleIds: ["work-domain-quality-bundle"],
+        rootId: 'quality-gates-system',
+        bundleIds: ['work-domain-quality-bundle'],
         totals: {
           verifiedGates: 3,
           totalGates: 3,
@@ -3331,16 +3251,16 @@ describe("ontology CLI", () => {
     expect(record.matchReasons).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          field: "verifiesRefs",
-          ref: "packages/cli/dist/index.js",
+          field: 'verifiesRefs',
+          ref: 'packages/cli/dist/index.js',
         }),
       ]),
     );
     expect(record.gateDescriptors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          gateDocId: "gate-work-domain-typecheck",
-          bundleId: "work-domain-quality-bundle",
+          gateDocId: 'gate-work-domain-typecheck',
+          bundleId: 'work-domain-quality-bundle',
         }),
       ]),
     );
@@ -3348,24 +3268,24 @@ describe("ontology CLI", () => {
     expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-incomplete",
+          code: 'prompt-quality-status-evidence-incomplete',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact rejects invalid quality-status max-age values", async () => {
+  it('prompt extract-artifact rejects invalid quality-status max-age values', async () => {
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--quality-status-max-age-days",
-        "0",
-        "--json",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--quality-status-max-age-days',
+        '0',
+        '--json',
       ]);
     });
 
-    expect(output.stdout).toBe("");
+    expect(output.stdout).toBe('');
     expect(output.stderr).toContain(
       'Invalid --quality-status-max-age-days value "0". Expected a positive integer number of days.',
     );
@@ -3373,52 +3293,52 @@ describe("ontology CLI", () => {
     process.exitCode = undefined;
   });
 
-  it("prompt extract-artifact leaves old generatedAt evidence unchanged when no max-age policy is provided", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-no-sla-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-old-artifact.json");
+  it('prompt extract-artifact leaves old generatedAt evidence unchanged when no max-age policy is provided', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-no-sla-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-old-artifact.json');
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2000-01-01T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2000-01-01T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            bundleState: "verified",
+            bundleId: 'work-domain-quality-bundle',
+            bundleState: 'verified',
             verifiedGates: 3,
             totalGates: 3,
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-old-artifact",
-            artifactRef: "quality-status-old-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "quality-status-old-artifact.json",
+            artifactId: 'quality-status-old-artifact',
+            artifactRef: 'quality-status-old-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'quality-status-old-artifact.json',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3437,72 +3357,72 @@ describe("ontology CLI", () => {
     };
 
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-found",
+      status: 'quality-status-found',
     });
     expect(parsed.source.governanceClosure.warning).toBeUndefined();
-    expect(parsed.source.warnings).not.toContain("quality-status-generated-at-stale");
+    expect(parsed.source.warnings).not.toContain('quality-status-generated-at-stale');
     expect(parsed.source.qualityStatusRecords.warnings).toEqual([]);
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityExportSnapshot).toMatchObject({
-      generatedAt: "2000-01-01T00:00:00.000Z",
+      generatedAt: '2000-01-01T00:00:00.000Z',
     });
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityFreshness).toBeUndefined();
     expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-stale",
+          code: 'prompt-quality-status-evidence-stale',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact treats verified snapshots older than max-age as generatedAt freshness stale", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-snapshot-stale-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-stale-artifact.json");
+  it('prompt extract-artifact treats verified snapshots older than max-age as generatedAt freshness stale', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-snapshot-stale-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-stale-artifact.json');
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2000-01-01T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2000-01-01T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            bundleState: "verified",
+            bundleId: 'work-domain-quality-bundle',
+            bundleState: 'verified',
             verifiedGates: 3,
             totalGates: 3,
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-stale-artifact",
-            artifactRef: "quality-status-stale-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "quality-status-stale-artifact.json",
+            artifactId: 'quality-status-stale-artifact',
+            artifactRef: 'quality-status-stale-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'quality-status-stale-artifact.json',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-status-max-age-days",
-        "1",
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--quality-status-max-age-days',
+        '1',
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3529,94 +3449,96 @@ describe("ontology CLI", () => {
     };
     const record = parsed.source.qualityStatusRecords.records[0]!;
 
-    expect(parsed.source.warnings).toContain("quality-status-generated-at-stale");
+    expect(parsed.source.warnings).toContain('quality-status-generated-at-stale');
     expect(parsed.source.qualityStatusRecords.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "quality-status-generated-at-stale",
+          code: 'quality-status-generated-at-stale',
         }),
       ]),
     );
     expect(record.qualityFreshness).toMatchObject({
-      status: "stale",
-      source: "snapshot-generated-at",
-      generatedAt: "2000-01-01T00:00:00.000Z",
+      status: 'stale',
+      source: 'snapshot-generated-at',
+      generatedAt: '2000-01-01T00:00:00.000Z',
       maxAgeDays: 1,
     });
     expect(record.qualityFreshnessWarning).toMatchObject({
-      code: "quality-status-generated-at-stale",
+      code: 'quality-status-generated-at-stale',
     });
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-invalid",
+      status: 'quality-status-invalid',
       warning: {
-        code: "prompt-quality-status-evidence-stale",
+        code: 'prompt-quality-status-evidence-stale',
       },
     });
-    expect(parsed.source.governanceClosure.warning?.message).toContain("generatedAt freshness stale");
-    expect(parsed.source.governanceClosure.warning?.message).toContain("not gate docVersion stale");
+    expect(parsed.source.governanceClosure.warning?.message).toContain(
+      'generatedAt freshness stale',
+    );
+    expect(parsed.source.governanceClosure.warning?.message).toContain('not gate docVersion stale');
     expect(parsed.artifacts[0]!.quality.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-stale",
+          code: 'prompt-quality-status-evidence-stale',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact keeps verified snapshots authoritative over ledger fallback", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-snapshot-primary-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-unmanaged-artifact.json");
-    const ledgerPath = join(dir, "quality-ledger.sqlite");
+  it('prompt extract-artifact keeps verified snapshots authoritative over ledger fallback', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-snapshot-primary-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-unmanaged-artifact.json');
+    const ledgerPath = join(dir, 'quality-ledger.sqlite');
     writeQualityLedgerRuns(ledgerPath, [
-      { gateDocId: "gate-work-domain-typecheck", outcome: "fail" },
-      { gateDocId: "gate-work-domain-build", outcome: "fail" },
-      { gateDocId: "gate-work-domain-test", outcome: "fail" },
+      { gateDocId: 'gate-work-domain-typecheck', outcome: 'fail' },
+      { gateDocId: 'gate-work-domain-build', outcome: 'fail' },
+      { gateDocId: 'gate-work-domain-test', outcome: 'fail' },
     ]);
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2026-04-13T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2026-04-13T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            bundleState: "verified",
+            bundleId: 'work-domain-quality-bundle',
+            bundleState: 'verified',
             verifiedGates: 3,
             totalGates: 3,
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-unmanaged-artifact",
-            artifactRef: "quality-status-unmanaged-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "quality-status-unmanaged-artifact.json",
+            artifactId: 'quality-status-unmanaged-artifact',
+            artifactRef: 'quality-status-unmanaged-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'quality-status-unmanaged-artifact.json',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         ledgerPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3641,65 +3563,67 @@ describe("ontology CLI", () => {
     };
 
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-found",
+      status: 'quality-status-found',
     });
     expect(parsed.source.governanceClosure.warning).toBeUndefined();
-    expect(parsed.source.warnings).not.toContain("quality-status-ledger-conflict");
+    expect(parsed.source.warnings).not.toContain('quality-status-ledger-conflict');
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence).toBeUndefined();
-    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerConflictWarning).toBeUndefined();
+    expect(
+      parsed.source.qualityStatusRecords.records[0]!.qualityLedgerConflictWarning,
+    ).toBeUndefined();
     expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-failed",
+          code: 'prompt-quality-status-evidence-failed',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact uses ledger fallback when snapshot evidence is missing", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-fallback-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const ledgerPath = join(dir, "quality-ledger.sqlite");
+  it('prompt extract-artifact uses ledger fallback when snapshot evidence is missing', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-ledger-fallback-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const ledgerPath = join(dir, 'quality-ledger.sqlite');
     writeQualityLedgerRuns(ledgerPath, [
-      { gateDocId: "gate-work-domain-typecheck", outcome: "pass" },
-      { gateDocId: "gate-work-domain-build", outcome: "pass" },
-      { gateDocId: "gate-work-domain-test", outcome: "pass" },
+      { gateDocId: 'gate-work-domain-typecheck', outcome: 'pass' },
+      { gateDocId: 'gate-work-domain-build', outcome: 'pass' },
+      { gateDocId: 'gate-work-domain-test', outcome: 'pass' },
     ]);
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-ledger-artifact",
-            artifactRef: "quality-status-ledger-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
+            artifactId: 'quality-status-ledger-artifact',
+            artifactRef: 'quality-status-ledger-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         ledgerPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3745,34 +3669,33 @@ describe("ontology CLI", () => {
         };
       }>;
     };
-    const ledgerEvidence =
-      parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence!;
+    const ledgerEvidence = parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence!;
 
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-found",
+      status: 'quality-status-found',
     });
     expect(parsed.source.governanceClosure.warning).toBeUndefined();
-    expect(parsed.source.warnings).not.toContain("quality-status-ledger-conflict");
+    expect(parsed.source.warnings).not.toContain('quality-status-ledger-conflict');
     expect(ledgerEvidence).toMatchObject({
       sourcePath: ledgerPath,
       ledgerPath,
-      bundleId: "work-domain-quality-bundle",
-      bundleIds: ["work-domain-quality-bundle"],
-      bundleRefs: ["work-domain-quality-bundle"],
+      bundleId: 'work-domain-quality-bundle',
+      bundleIds: ['work-domain-quality-bundle'],
+      bundleRefs: ['work-domain-quality-bundle'],
       totalGates: 3,
       totalGateCount: 3,
       verifiedGates: 3,
       verifiedGateCount: 3,
       verified: true,
       gateRefs: expect.arrayContaining([
-        "gate-work-domain-typecheck",
-        "gate-work-domain-build",
-        "gate-work-domain-test",
+        'gate-work-domain-typecheck',
+        'gate-work-domain-build',
+        'gate-work-domain-test',
       ]),
       verifiedGateRefs: expect.arrayContaining([
-        "gate-work-domain-typecheck",
-        "gate-work-domain-build",
-        "gate-work-domain-test",
+        'gate-work-domain-typecheck',
+        'gate-work-domain-build',
+        'gate-work-domain-test',
       ]),
       blockingGates: [],
       blockingGateStatuses: [],
@@ -3789,72 +3712,72 @@ describe("ontology CLI", () => {
     expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-incomplete",
+          code: 'prompt-quality-status-evidence-incomplete',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact keeps closure open for mixed verified and incomplete quality-status evidence", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-mixed-incomplete-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-verified-artifact.json");
+  it('prompt extract-artifact keeps closure open for mixed verified and incomplete quality-status evidence', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-mixed-incomplete-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-verified-artifact.json');
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2026-04-13T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2026-04-13T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            bundleState: "verified",
+            bundleId: 'work-domain-quality-bundle',
+            bundleState: 'verified',
             verifiedGates: 3,
             totalGates: 3,
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-verified-artifact",
-            artifactRef: "quality-status-verified-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "quality-status-verified-artifact.json",
+            artifactId: 'quality-status-verified-artifact',
+            artifactRef: 'quality-status-verified-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'quality-status-verified-artifact.json',
           },
           {
-            artifactId: "quality-status-incomplete-artifact",
-            artifactRef: "quality-status-incomplete-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
+            artifactId: 'quality-status-incomplete-artifact',
+            artifactRef: 'quality-status-incomplete-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3876,47 +3799,47 @@ describe("ontology CLI", () => {
       }>;
     };
     const governanceMetric = parsed.artifacts[0]!.quality.metrics.find(
-      (item) => item.dimension === "governance_closure",
+      (item) => item.dimension === 'governance_closure',
     );
 
     expect(parsed.source.qualityStatusRecords.total).toBe(2);
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-incomplete",
+      status: 'quality-status-incomplete',
       warning: {
-        code: "prompt-quality-status-evidence-incomplete",
+        code: 'prompt-quality-status-evidence-incomplete',
       },
       recommendedManagementActions: [
-        expect.objectContaining({ kind: "close_governance_evidence" }),
+        expect.objectContaining({ kind: 'close_governance_evidence' }),
       ],
     });
     expect(governanceMetric?.score).toBeLessThan(85);
     expect(parsed.artifacts[0]!.quality.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-incomplete",
+          code: 'prompt-quality-status-evidence-incomplete',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact applies max-age to the oldest verified ledger gate timestamp", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-stale-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const ledgerPath = join(dir, "quality-ledger.sqlite");
+  it('prompt extract-artifact applies max-age to the oldest verified ledger gate timestamp', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-ledger-stale-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const ledgerPath = join(dir, 'quality-ledger.sqlite');
     writeQualityLedgerRuns(ledgerPath, [
       {
-        gateDocId: "gate-work-domain-typecheck",
-        outcome: "pass",
-        executedAt: "2000-01-01T00:00:00.000Z",
+        gateDocId: 'gate-work-domain-typecheck',
+        outcome: 'pass',
+        executedAt: '2000-01-01T00:00:00.000Z',
       },
       {
-        gateDocId: "gate-work-domain-build",
-        outcome: "pass",
+        gateDocId: 'gate-work-domain-build',
+        outcome: 'pass',
         executedAt: new Date().toISOString(),
       },
       {
-        gateDocId: "gate-work-domain-test",
-        outcome: "pass",
+        gateDocId: 'gate-work-domain-test',
+        outcome: 'pass',
         executedAt: new Date().toISOString(),
       },
     ]);
@@ -3925,38 +3848,38 @@ describe("ontology CLI", () => {
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-ledger-artifact",
-            artifactRef: "quality-status-ledger-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
+            artifactId: 'quality-status-ledger-artifact',
+            artifactRef: 'quality-status-ledger-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         ledgerPath,
-        "--quality-status-max-age-days",
-        "1",
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--quality-status-max-age-days',
+        '1',
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -3987,61 +3910,61 @@ describe("ontology CLI", () => {
     };
     const record = parsed.source.qualityStatusRecords.records[0]!;
 
-    expect(parsed.source.warnings).toContain("quality-status-generated-at-stale");
+    expect(parsed.source.warnings).toContain('quality-status-generated-at-stale');
     expect(parsed.source.qualityStatusRecords.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "quality-status-generated-at-stale",
+          code: 'quality-status-generated-at-stale',
         }),
       ]),
     );
     expect(record.qualityLedgerEvidence).toMatchObject({
       verified: true,
-      oldestVerifiedGateExecutedAt: "2000-01-01T00:00:00.000Z",
+      oldestVerifiedGateExecutedAt: '2000-01-01T00:00:00.000Z',
       freshness: {
-        status: "stale",
-        source: "ledger-verified-gate-executed-at",
-        oldestVerifiedGateExecutedAt: "2000-01-01T00:00:00.000Z",
-        staleGateRefs: ["gate-work-domain-typecheck"],
+        status: 'stale',
+        source: 'ledger-verified-gate-executed-at',
+        oldestVerifiedGateExecutedAt: '2000-01-01T00:00:00.000Z',
+        staleGateRefs: ['gate-work-domain-typecheck'],
       },
     });
     expect(record.qualityFreshnessWarning).toMatchObject({
-      code: "quality-status-generated-at-stale",
+      code: 'quality-status-generated-at-stale',
     });
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-invalid",
+      status: 'quality-status-invalid',
       warning: {
-        code: "prompt-quality-status-evidence-stale",
+        code: 'prompt-quality-status-evidence-stale',
       },
     });
-    expect(parsed.source.governanceClosure.warning?.message).toContain("oldest verified gate");
+    expect(parsed.source.governanceClosure.warning?.message).toContain('oldest verified gate');
     expect(parsed.artifacts[0]!.quality.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-stale",
+          code: 'prompt-quality-status-evidence-stale',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact treats missing verified ledger timestamps as incomplete not stale", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-no-time-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const ledgerPath = join(dir, "quality-ledger.sqlite");
+  it('prompt extract-artifact treats missing verified ledger timestamps as incomplete not stale', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-ledger-no-time-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const ledgerPath = join(dir, 'quality-ledger.sqlite');
     writeQualityLedgerRuns(ledgerPath, [
       {
-        gateDocId: "gate-work-domain-typecheck",
-        outcome: "pass",
-        executedAt: "not-a-date",
+        gateDocId: 'gate-work-domain-typecheck',
+        outcome: 'pass',
+        executedAt: 'not-a-date',
       },
       {
-        gateDocId: "gate-work-domain-build",
-        outcome: "pass",
+        gateDocId: 'gate-work-domain-build',
+        outcome: 'pass',
         executedAt: new Date().toISOString(),
       },
       {
-        gateDocId: "gate-work-domain-test",
-        outcome: "pass",
+        gateDocId: 'gate-work-domain-test',
+        outcome: 'pass',
         executedAt: new Date().toISOString(),
       },
     ]);
@@ -4050,38 +3973,38 @@ describe("ontology CLI", () => {
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-ledger-artifact",
-            artifactRef: "quality-status-ledger-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
+            artifactId: 'quality-status-ledger-artifact',
+            artifactRef: 'quality-status-ledger-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         ledgerPath,
-        "--quality-status-max-age-days",
-        "1",
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--quality-status-max-age-days',
+        '1',
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4105,82 +4028,83 @@ describe("ontology CLI", () => {
       };
       artifacts: Array<{ quality: { issues: Array<{ code: string }> } }>;
     };
-    const ledgerEvidence =
-      parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence!;
+    const ledgerEvidence = parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence!;
 
-    expect(parsed.source.warnings).not.toContain("quality-status-generated-at-stale");
+    expect(parsed.source.warnings).not.toContain('quality-status-generated-at-stale');
     expect(ledgerEvidence).toMatchObject({
       verified: true,
       freshness: {
-        status: "incomplete",
-        missingTimestampGateRefs: ["gate-work-domain-typecheck"],
+        status: 'incomplete',
+        missingTimestampGateRefs: ['gate-work-domain-typecheck'],
       },
     });
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-incomplete",
+      status: 'quality-status-incomplete',
       warning: {
-        code: "prompt-quality-status-evidence-incomplete",
+        code: 'prompt-quality-status-evidence-incomplete',
       },
     });
     expect(parsed.artifacts[0]!.quality.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-incomplete",
+          code: 'prompt-quality-status-evidence-incomplete',
         }),
       ]),
     );
     expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-stale",
+          code: 'prompt-quality-status-evidence-stale',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact reports incomplete ledger fallback evidence without new closure statuses", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-incomplete-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const ledgerPath = join(dir, "quality-ledger.sqlite");
+  it('prompt extract-artifact reports incomplete ledger fallback evidence without new closure statuses', async () => {
+    const dir = await mkdtemp(
+      join(tmpdir(), 'qa-sdk-ontology-artifact-quality-ledger-incomplete-'),
+    );
+    const registryPath = join(dir, 'artifact-registry.json');
+    const ledgerPath = join(dir, 'quality-ledger.sqlite');
     writeQualityLedgerRuns(ledgerPath, [
-      { gateDocId: "gate-work-domain-typecheck", outcome: "pass" },
-      { gateDocId: "gate-work-domain-build", outcome: "pass" },
+      { gateDocId: 'gate-work-domain-typecheck', outcome: 'pass' },
+      { gateDocId: 'gate-work-domain-build', outcome: 'pass' },
     ]);
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-ledger-artifact",
-            artifactRef: "quality-status-ledger-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
+            artifactId: 'quality-status-ledger-artifact',
+            artifactRef: 'quality-status-ledger-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         ledgerPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4212,24 +4136,24 @@ describe("ontology CLI", () => {
     };
     const record = parsed.source.qualityStatusRecords.records[0]!;
 
-    expect(parsed.source.warnings).toContain("quality-status-ledger-incomplete");
+    expect(parsed.source.warnings).toContain('quality-status-ledger-incomplete');
     expect(parsed.source.qualityStatusRecords.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "quality-status-ledger-incomplete",
+          code: 'quality-status-ledger-incomplete',
           resolvedPath: ledgerPath,
         }),
       ]),
     );
     expect(record.qualityLedgerEvidence).toMatchObject({
       ledgerPath,
-      bundleIds: ["work-domain-quality-bundle"],
+      bundleIds: ['work-domain-quality-bundle'],
       totalGateCount: 3,
       verifiedGateCount: 2,
       blockingGates: [
         expect.objectContaining({
-          gateDocId: "gate-work-domain-test",
-          status: "unverified",
+          gateDocId: 'gate-work-domain-test',
+          status: 'unverified',
         }),
       ],
       timestampSummary: {
@@ -4239,71 +4163,71 @@ describe("ontology CLI", () => {
       },
     });
     expect(record.qualityLedgerIncompleteWarning).toMatchObject({
-      code: "quality-status-ledger-incomplete",
+      code: 'quality-status-ledger-incomplete',
       resolvedPath: ledgerPath,
     });
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-incomplete",
+      status: 'quality-status-incomplete',
       warning: {
-        code: "prompt-quality-status-evidence-incomplete",
+        code: 'prompt-quality-status-evidence-incomplete',
       },
     });
   }, 10_000);
 
-  it("prompt extract-artifact warns on determinate snapshot and ledger conflicts without overriding the snapshot", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-conflict-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-conflict-artifact.json");
-    const ledgerPath = join(dir, "quality-ledger.sqlite");
+  it('prompt extract-artifact warns on determinate snapshot and ledger conflicts without overriding the snapshot', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-ledger-conflict-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-conflict-artifact.json');
+    const ledgerPath = join(dir, 'quality-ledger.sqlite');
     writeQualityLedgerRuns(ledgerPath, [
-      { gateDocId: "gate-work-domain-typecheck", outcome: "pass" },
-      { gateDocId: "gate-work-domain-build", outcome: "pass" },
-      { gateDocId: "gate-work-domain-test", outcome: "pass" },
+      { gateDocId: 'gate-work-domain-typecheck', outcome: 'pass' },
+      { gateDocId: 'gate-work-domain-build', outcome: 'pass' },
+      { gateDocId: 'gate-work-domain-test', outcome: 'pass' },
     ]);
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2026-04-13T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2026-04-13T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            bundleState: "failed",
+            bundleId: 'work-domain-quality-bundle',
+            bundleState: 'failed',
             verifiedGates: 0,
             totalGates: 3,
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-conflict-artifact",
-            artifactRef: "quality-status-conflict-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "quality-status-conflict-artifact.json",
+            artifactId: 'quality-status-conflict-artifact',
+            artifactRef: 'quality-status-conflict-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'quality-status-conflict-artifact.json',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         ledgerPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4328,11 +4252,11 @@ describe("ontology CLI", () => {
       }>;
     };
 
-    expect(parsed.source.warnings).toContain("quality-status-ledger-conflict");
+    expect(parsed.source.warnings).toContain('quality-status-ledger-conflict');
     expect(parsed.source.qualityStatusRecords.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "quality-status-ledger-conflict",
+          code: 'quality-status-ledger-conflict',
           resolvedPath: ledgerPath,
         }),
       ]),
@@ -4340,69 +4264,71 @@ describe("ontology CLI", () => {
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerEvidence).toMatchObject({
       verified: true,
     });
-    expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerConflictWarning).toMatchObject({
-      code: "quality-status-ledger-conflict",
+    expect(
+      parsed.source.qualityStatusRecords.records[0]!.qualityLedgerConflictWarning,
+    ).toMatchObject({
+      code: 'quality-status-ledger-conflict',
       resolvedPath: ledgerPath,
     });
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-invalid",
+      status: 'quality-status-invalid',
       warning: {
-        code: "prompt-quality-status-evidence-failed",
+        code: 'prompt-quality-status-evidence-failed',
       },
     });
     expect(parsed.artifacts[0]!.quality.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-failed",
+          code: 'prompt-quality-status-evidence-failed',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact --json resolves quality-status metadata, direct gate refs, and relations into descriptors", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-descriptors-"));
-    const registryPath = join(dir, "artifact-registry.json");
+  it('prompt extract-artifact --json resolves quality-status metadata, direct gate refs, and relations into descriptors', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-descriptors-'));
+    const registryPath = join(dir, 'artifact-registry.json');
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-descriptor-artifact",
-            artifactRef: "quality-status-descriptor-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            verificationRefs: ["gate-registry-test"],
+            artifactId: 'quality-status-descriptor-artifact',
+            artifactRef: 'quality-status-descriptor-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            verificationRefs: ['gate-registry-test'],
             relations: [
               {
-                kind: "materializes_output",
-                fromRef: "quality-status-descriptor-artifact.json",
-                toRef: "query-quality-bundle",
+                kind: 'materializes_output',
+                fromRef: 'quality-status-descriptor-artifact.json',
+                toRef: 'query-quality-bundle',
               },
             ],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4427,75 +4353,75 @@ describe("ontology CLI", () => {
     };
     const record = parsed.source.qualityStatusRecords.records[0]!;
 
-    expect(parsed.source.warnings).not.toContain("quality-status-ledger-no-gate-descriptors");
+    expect(parsed.source.warnings).not.toContain('quality-status-ledger-no-gate-descriptors');
     expect(record.qualityGateDescriptorWarning).toBeUndefined();
     expect(record.gateDescriptors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          gateDocId: "gate-work-domain-typecheck",
+          gateDocId: 'gate-work-domain-typecheck',
           docVersion: expect.any(Number),
-          bundleId: "work-domain-quality-bundle",
+          bundleId: 'work-domain-quality-bundle',
         }),
         expect.objectContaining({
-          gateDocId: "gate-registry-test",
+          gateDocId: 'gate-registry-test',
           docVersion: expect.any(Number),
           bundleId: null,
         }),
         expect.objectContaining({
-          gateDocId: "gate-query-test",
+          gateDocId: 'gate-query-test',
           docVersion: expect.any(Number),
-          bundleId: "query-quality-bundle",
+          bundleId: 'query-quality-bundle',
         }),
       ]),
     );
     expect(record.gateDescriptors?.map((descriptor) => descriptor.gateDocId)).not.toEqual(
       expect.arrayContaining([
-        "gate-decision-flow-build",
-        "gate-decode-build",
-        "gate-definition-service-build",
+        'gate-decision-flow-build',
+        'gate-decode-build',
+        'gate-definition-service-build',
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact --json warns without crashing for missing quality ledger input", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-missing-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const missingLedgerPath = join(dir, "missing-quality-ledger.sqlite");
+  it('prompt extract-artifact --json warns without crashing for missing quality ledger input', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-ledger-missing-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const missingLedgerPath = join(dir, 'missing-quality-ledger.sqlite');
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-ledger-artifact",
-            artifactRef: "quality-status-ledger-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
+            artifactId: 'quality-status-ledger-artifact',
+            artifactRef: 'quality-status-ledger-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         missingLedgerPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4513,62 +4439,62 @@ describe("ontology CLI", () => {
 
     expect(parsed.artifacts).toHaveLength(1);
     expect(parsed.source.warnings).toEqual(
-      expect.arrayContaining(["quality-status-ledger-missing"]),
+      expect.arrayContaining(['quality-status-ledger-missing']),
     );
     expect(parsed.source.qualityStatusRecords.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "quality-status-ledger-missing",
+          code: 'quality-status-ledger-missing',
           resolvedPath: missingLedgerPath,
         }),
       ]),
     );
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerWarning).toMatchObject({
-      code: "quality-status-ledger-missing",
+      code: 'quality-status-ledger-missing',
       resolvedPath: missingLedgerPath,
     });
   }, 10_000);
 
-  it("prompt extract-artifact --json warns without crashing for corrupt quality ledger input", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-ledger-corrupt-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const corruptLedgerPath = join(dir, "corrupt-quality-ledger.sqlite");
-    await writeFile(corruptLedgerPath, "not a sqlite database", "utf8");
+  it('prompt extract-artifact --json warns without crashing for corrupt quality ledger input', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-ledger-corrupt-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const corruptLedgerPath = join(dir, 'corrupt-quality-ledger.sqlite');
+    await writeFile(corruptLedgerPath, 'not a sqlite database', 'utf8');
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-ledger-artifact",
-            artifactRef: "quality-status-ledger-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
+            artifactId: 'quality-status-ledger-artifact',
+            artifactRef: 'quality-status-ledger-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         corruptLedgerPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4586,81 +4512,81 @@ describe("ontology CLI", () => {
 
     expect(parsed.artifacts).toHaveLength(1);
     expect(parsed.source.warnings).toEqual(
-      expect.arrayContaining(["quality-status-ledger-read-failed"]),
+      expect.arrayContaining(['quality-status-ledger-read-failed']),
     );
     expect(parsed.source.qualityStatusRecords.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "quality-status-ledger-read-failed",
+          code: 'quality-status-ledger-read-failed',
           resolvedPath: corruptLedgerPath,
         }),
       ]),
     );
     expect(parsed.source.qualityStatusRecords.records[0]!.qualityLedgerWarning).toMatchObject({
-      code: "quality-status-ledger-read-failed",
+      code: 'quality-status-ledger-read-failed',
       resolvedPath: corruptLedgerPath,
     });
   }, 10_000);
 
-  it("non-artifact prompt extraction ignores quality ledger input", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-non-artifact-quality-ledger-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const missingLedgerPath = join(dir, "missing-quality-ledger.sqlite");
+  it('non-artifact prompt extraction ignores quality ledger input', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-non-artifact-quality-ledger-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const missingLedgerPath = join(dir, 'missing-quality-ledger.sqlite');
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-quality-gates-system",
-            artifactRef: "quality-status-quality-gates-system.json",
-            kind: "quality-status",
-            verifiesRefs: ["quality-gates-system"],
+            artifactId: 'quality-status-quality-gates-system',
+            artifactRef: 'quality-status-quality-gates-system.json',
+            kind: 'quality-status',
+            verifiesRefs: ['quality-gates-system'],
             metadata: {
-              rootId: "quality-gates-system",
+              rootId: 'quality-gates-system',
               bundles: [
                 {
-                  bundleId: "work-domain-quality-bundle",
+                  bundleId: 'work-domain-quality-bundle',
                 },
               ],
             },
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract",
-        "quality-gates-system",
-        "--artifact-registry",
+        'prompt.extract',
+        'quality-gates-system',
+        '--artifact-registry',
         registryPath,
-        "--quality-ledger",
+        '--quality-ledger',
         missingLedgerPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
 
-    expect(output.stdout).not.toContain("quality-status-ledger-missing");
-    expect(output.stdout).not.toContain("quality-status-ledger-read-failed");
+    expect(output.stdout).not.toContain('quality-status-ledger-missing');
+    expect(output.stdout).not.toContain('quality-status-ledger-read-failed');
   }, 10_000);
 
-  it("prompt extract-artifact treats partially verified snapshots as incomplete not failed", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-partial-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const snapshotPath = join(dir, "quality-status-partial-artifact.json");
+  it('prompt extract-artifact treats partially verified snapshots as incomplete not failed', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-partial-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const snapshotPath = join(dir, 'quality-status-partial-artifact.json');
     await writeFile(
       snapshotPath,
       JSON.stringify({
-        rootId: "quality-gates-system",
-        generatedAt: "2026-04-13T00:00:00.000Z",
+        rootId: 'quality-gates-system',
+        generatedAt: '2026-04-13T00:00:00.000Z',
         bundles: [
           {
-            bundleId: "work-domain-quality-bundle",
-            bundleState: "gate-bound",
+            bundleId: 'work-domain-quality-bundle',
+            bundleState: 'gate-bound',
             verifiedGates: 1,
             totalGates: 3,
             claimCount: 4,
@@ -4668,34 +4594,34 @@ describe("ontology CLI", () => {
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-partial-artifact",
-            artifactRef: "quality-status-partial-artifact.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "quality-status-partial-artifact.json",
+            artifactId: 'quality-status-partial-artifact',
+            artifactRef: 'quality-status-partial-artifact.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'quality-status-partial-artifact.json',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4713,66 +4639,66 @@ describe("ontology CLI", () => {
     };
 
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-incomplete",
+      status: 'quality-status-incomplete',
       warning: {
-        code: "prompt-quality-status-evidence-incomplete",
+        code: 'prompt-quality-status-evidence-incomplete',
       },
     });
-    expect(parsed.source.governanceClosure.warning?.message).not.toContain("failed");
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain('failed');
     expect(parsed.artifacts[0]!.quality.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-incomplete",
+          code: 'prompt-quality-status-evidence-incomplete',
         }),
       ]),
     );
     expect(parsed.artifacts[0]!.quality.issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "prompt-quality-status-evidence-failed",
+          code: 'prompt-quality-status-evidence-failed',
         }),
       ]),
     );
   }, 10_000);
 
-  it("prompt extract-artifact --json warns for missing or invalid quality export snapshots", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-artifact-quality-warning-"));
-    const registryPath = join(dir, "artifact-registry.json");
-    const invalidPath = join(dir, "invalid-quality-status.json");
-    await writeFile(invalidPath, "{not-json", "utf8");
+  it('prompt extract-artifact --json warns for missing or invalid quality export snapshots', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-artifact-quality-warning-'));
+    const registryPath = join(dir, 'artifact-registry.json');
+    const invalidPath = join(dir, 'invalid-quality-status.json');
+    await writeFile(invalidPath, '{not-json', 'utf8');
     await writeFile(
       registryPath,
       JSON.stringify({
         artifacts: [
           {
-            artifactId: "quality-status-missing",
-            artifactRef: "missing-quality-status.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "missing-quality-status.json",
+            artifactId: 'quality-status-missing',
+            artifactRef: 'missing-quality-status.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'missing-quality-status.json',
           },
           {
-            artifactId: "quality-status-invalid",
-            artifactRef: "invalid-quality-status.json",
-            kind: "quality-status",
-            verifiesRefs: ["unmanaged-artifact"],
-            outputPath: "invalid-quality-status.json",
+            artifactId: 'quality-status-invalid',
+            artifactRef: 'invalid-quality-status.json',
+            kind: 'quality-status',
+            verifiesRefs: ['unmanaged-artifact'],
+            outputPath: 'invalid-quality-status.json',
           },
         ],
       }),
-      "utf8",
+      'utf8',
     );
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
@@ -4806,83 +4732,83 @@ describe("ontology CLI", () => {
     expect(parsed.source.qualityStatusRecords.total).toBe(2);
     expect(parsed.source.warnings).toEqual(
       expect.arrayContaining([
-        "quality-status-snapshot-missing",
-        "quality-status-snapshot-invalid-json",
+        'quality-status-snapshot-missing',
+        'quality-status-snapshot-invalid-json',
       ]),
     );
     expect(parsed.source.qualityStatusRecords.warnings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "quality-status-snapshot-missing",
-          artifactId: "quality-status-missing",
-          outputPath: "missing-quality-status.json",
+          code: 'quality-status-snapshot-missing',
+          artifactId: 'quality-status-missing',
+          outputPath: 'missing-quality-status.json',
         }),
         expect.objectContaining({
-          code: "quality-status-snapshot-invalid-json",
-          artifactId: "quality-status-invalid",
-          outputPath: "invalid-quality-status.json",
+          code: 'quality-status-snapshot-invalid-json',
+          artifactId: 'quality-status-invalid',
+          outputPath: 'invalid-quality-status.json',
         }),
       ]),
     );
     expect(parsed.source.qualityStatusRecords.records).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          artifactId: "quality-status-missing",
+          artifactId: 'quality-status-missing',
           qualityExportWarning: expect.objectContaining({
-            code: "quality-status-snapshot-missing",
+            code: 'quality-status-snapshot-missing',
           }),
         }),
         expect.objectContaining({
-          artifactId: "quality-status-invalid",
+          artifactId: 'quality-status-invalid',
           qualityExportWarning: expect.objectContaining({
-            code: "quality-status-snapshot-invalid-json",
+            code: 'quality-status-snapshot-invalid-json',
           }),
         }),
       ]),
     );
     expect(parsed.source.governanceClosure).toMatchObject({
-      status: "quality-status-invalid",
+      status: 'quality-status-invalid',
       matchedQualityStatusArtifactRefs: [
-        "missing-quality-status.json",
-        "invalid-quality-status.json",
+        'missing-quality-status.json',
+        'invalid-quality-status.json',
       ],
       warning: {
-        code: "prompt-quality-status-evidence-invalid",
+        code: 'prompt-quality-status-evidence-invalid',
       },
       recommendedManagementActions: [
         expect.objectContaining({
-          kind: "close_governance_evidence",
+          kind: 'close_governance_evidence',
         }),
       ],
     });
-    expect(parsed.source.qualitySignal.warning).toContain("free-string search");
-    expect(parsed.source.governanceClosure.warning?.message).not.toContain("free-string search");
+    expect(parsed.source.qualitySignal.warning).toContain('free-string search');
+    expect(parsed.source.governanceClosure.warning?.message).not.toContain('free-string search');
   }, 10_000);
 
-  it("prompt extract-artifact materializes prompt artifacts and appends registry records", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-prompt-output-"));
-    const outputPath = join(dir, "self-reflection.md");
-    const registryPath = join(dir, "programming-artifacts.json");
+  it('prompt extract-artifact materializes prompt artifacts and appends registry records', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-prompt-output-'));
+    const outputPath = join(dir, 'self-reflection.md');
+    const registryPath = join(dir, 'programming-artifacts.json');
 
     const output = await captureConsoleAsync(async () => {
       await cliOntology([
-        "prompt.extract-artifact",
-        "unmanaged-artifact",
-        "--artifact-registry",
+        'prompt.extract-artifact',
+        'unmanaged-artifact',
+        '--artifact-registry',
         registryPath,
-        "--output",
+        '--output',
         outputPath,
-        "--kind",
-        "self_reflection",
-        "--json",
-        "--scan",
+        '--kind',
+        'self_reflection',
+        '--json',
+        '--scan',
       ]);
     });
     const parsed = JSON.parse(output.stdout) as {
       outputs: Array<{ artifactId: string; kind: string; outputPath: string }>;
     };
-    const promptContent = await readFile(outputPath, "utf8");
-    const registry = JSON.parse(await readFile(registryPath, "utf8")) as {
+    const promptContent = await readFile(outputPath, 'utf8');
+    const registry = JSON.parse(await readFile(registryPath, 'utf8')) as {
       artifacts: Array<{
         kind: string;
         artifactRef: string;
@@ -4894,50 +4820,50 @@ describe("ontology CLI", () => {
 
     expect(parsed.outputs).toEqual([
       {
-        artifactId: "prompt-artifact:artifact:unmanaged-artifact:self_reflection",
-        kind: "self_reflection",
+        artifactId: 'prompt-artifact:artifact:unmanaged-artifact:self_reflection',
+        kind: 'self_reflection',
         outputPath,
       },
     ]);
-    expect(promptContent).toContain("<self_reflection>");
+    expect(promptContent).toContain('<self_reflection>');
     expect(registry.artifacts).toHaveLength(1);
     expect(registry.artifacts[0]).toMatchObject({
-      kind: "prompt-artifact",
+      kind: 'prompt-artifact',
       artifactRef: outputPath,
       outputPath,
-      producedByRef: "qa-sdk ontology prompt extract-artifact unmanaged-artifact",
+      producedByRef: 'qa-sdk ontology prompt extract-artifact unmanaged-artifact',
     });
     expect(registry.artifacts[0]!.materializesOutputRefs).toEqual(
       expect.arrayContaining([
-        "prompt-artifact:artifact:unmanaged-artifact:self_reflection",
-        "work-area:artifact:unmanaged-artifact",
-        "unmanaged-artifact",
+        'prompt-artifact:artifact:unmanaged-artifact:self_reflection',
+        'work-area:artifact:unmanaged-artifact',
+        'unmanaged-artifact',
       ]),
     );
   }, 10_000);
 
-  it("artifact registry append/list/validate supports build and activation-evidence records", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-registry-cli-"));
-    const registryPath = join(dir, "programming-artifacts.json");
+  it('artifact registry append/list/validate supports build and activation-evidence records', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-registry-cli-'));
+    const registryPath = join(dir, 'programming-artifacts.json');
 
     const appendOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "artifact.registry.append",
-        "--output",
+        'artifact.registry.append',
+        '--output',
         registryPath,
-        "--kind",
-        "build",
-        "--artifact-ref",
-        "packages/cli/dist/index.js",
-        "--produced-by",
-        "pnpm --filter @qa-sdk/cli build",
-        "--derived-from",
-        "packages/cli/src/index.ts,packages/cli/package.json",
-        "--owner-definition",
-        "programming-artifact-ontology-cli",
-        "--materializes-output",
-        "@qa-sdk/cli",
-        "--json",
+        '--kind',
+        'build',
+        '--artifact-ref',
+        'packages/cli/dist/index.js',
+        '--produced-by',
+        'pnpm --filter @qa-sdk/cli build',
+        '--derived-from',
+        'packages/cli/src/index.ts,packages/cli/package.json',
+        '--owner-definition',
+        'programming-artifact-ontology-cli',
+        '--materializes-output',
+        '@qa-sdk/cli',
+        '--json',
       ]);
     });
     const append = JSON.parse(appendOutput.stdout) as {
@@ -4946,34 +4872,34 @@ describe("ontology CLI", () => {
     };
 
     expect(append.record).toMatchObject({
-      kind: "build",
-      artifactRef: "packages/cli/dist/index.js",
-      producedByRef: "pnpm --filter @qa-sdk/cli build",
+      kind: 'build',
+      artifactRef: 'packages/cli/dist/index.js',
+      producedByRef: 'pnpm --filter @qa-sdk/cli build',
     });
     expect(append.recordCount).toBe(1);
 
     const activationAppendOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "artifact.registry.append",
-        "--output",
+        'artifact.registry.append',
+        '--output',
         registryPath,
-        "--kind",
-        "activation-evidence",
-        "--artifact-ref",
-        "artifacts/activation/programming-artifact-ontology.json",
-        "--produced-by",
-        "qa-sdk ontology registry activate-pack programming-artifact-ontology",
-        "--derived-from",
-        "programming-artifact-ontology",
-        "--verifies",
-        "programming-artifact-ontology,operational-ontology-registry-allocation",
-        "--owner-definition",
-        "operational-ontology-registry-activation-cli",
-        "--materializes-output",
-        "artifacts/activation/programming-artifact-ontology.json",
-        "--output-path",
-        "artifacts/activation/programming-artifact-ontology.json",
-        "--json",
+        '--kind',
+        'activation-evidence',
+        '--artifact-ref',
+        'artifacts/activation/programming-artifact-ontology.json',
+        '--produced-by',
+        'qa-sdk ontology registry activate-pack programming-artifact-ontology',
+        '--derived-from',
+        'programming-artifact-ontology',
+        '--verifies',
+        'programming-artifact-ontology,operational-ontology-registry-allocation',
+        '--owner-definition',
+        'operational-ontology-registry-activation-cli',
+        '--materializes-output',
+        'artifacts/activation/programming-artifact-ontology.json',
+        '--output-path',
+        'artifacts/activation/programming-artifact-ontology.json',
+        '--json',
       ]);
     });
     const activationAppend = JSON.parse(activationAppendOutput.stdout) as {
@@ -4982,20 +4908,20 @@ describe("ontology CLI", () => {
     };
 
     expect(activationAppend.record).toMatchObject({
-      kind: "activation-evidence",
-      artifactRef: "artifacts/activation/programming-artifact-ontology.json",
-      producedByRef: "qa-sdk ontology registry activate-pack programming-artifact-ontology",
+      kind: 'activation-evidence',
+      artifactRef: 'artifacts/activation/programming-artifact-ontology.json',
+      producedByRef: 'qa-sdk ontology registry activate-pack programming-artifact-ontology',
     });
     expect(activationAppend.recordCount).toBe(2);
 
     const listOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "artifact.registry.list",
-        "--input",
+        'artifact.registry.list',
+        '--input',
         registryPath,
-        "--kind",
-        "build",
-        "--json",
+        '--kind',
+        'build',
+        '--json',
       ]);
     });
     const listed = JSON.parse(listOutput.stdout) as {
@@ -5003,19 +4929,19 @@ describe("ontology CLI", () => {
     };
     expect(listed.artifacts).toEqual([
       expect.objectContaining({
-        kind: "build",
-        artifactRef: "packages/cli/dist/index.js",
+        kind: 'build',
+        artifactRef: 'packages/cli/dist/index.js',
       }),
     ]);
 
     const activationListOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "artifact.registry.list",
-        "--input",
+        'artifact.registry.list',
+        '--input',
         registryPath,
-        "--kind",
-        "activation-evidence",
-        "--json",
+        '--kind',
+        'activation-evidence',
+        '--json',
       ]);
     });
     const activationListed = JSON.parse(activationListOutput.stdout) as {
@@ -5023,18 +4949,13 @@ describe("ontology CLI", () => {
     };
     expect(activationListed.artifacts).toEqual([
       expect.objectContaining({
-        kind: "activation-evidence",
-        artifactRef: "artifacts/activation/programming-artifact-ontology.json",
+        kind: 'activation-evidence',
+        artifactRef: 'artifacts/activation/programming-artifact-ontology.json',
       }),
     ]);
 
     const validateOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "artifact.registry.validate",
-        "--input",
-        registryPath,
-        "--json",
-      ]);
+      await cliOntology(['artifact.registry.validate', '--input', registryPath, '--json']);
     });
     const validation = JSON.parse(validateOutput.stdout) as {
       valid: boolean;
@@ -5048,171 +4969,146 @@ describe("ontology CLI", () => {
     });
   });
 
-  it("event ingest 후 snapshot list/show를 수행한다", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-event-"));
-    const storePath = join(dir, "store.json");
-    const inputPath = join(dir, "event.json");
+  it('event ingest 후 snapshot list/show를 수행한다', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-event-'));
+    const storePath = join(dir, 'store.json');
+    const inputPath = join(dir, 'event.json');
 
     await writeFile(
       inputPath,
       JSON.stringify(
         {
           record: {
-            log_id: "log-cli",
-            timestamp: "2026-04-10T00:00:00.000Z",
-            record_kind: "log",
-            trace_id: "trace-cli",
-            span_id: "span-cli",
-            event_key: "order.submit",
-            event_version: "v1",
-            payload_format: "json",
-            payload_encoding: "identity",
+            log_id: 'log-cli',
+            timestamp: '2026-04-10T00:00:00.000Z',
+            record_kind: 'log',
+            trace_id: 'trace-cli',
+            span_id: 'span-cli',
+            event_key: 'order.submit',
+            event_version: 'v1',
+            payload_format: 'json',
+            payload_encoding: 'identity',
             payload_masking_applied: false,
             payload_masked_fields: [],
-            payload: { orderId: "ord-cli" },
+            payload: { orderId: 'ord-cli' },
             address_context: {},
           },
         },
         null,
         2,
       ),
-      "utf8",
+      'utf8',
     );
 
     const ingestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "event.ingest",
-        "--input",
+        'event.ingest',
+        '--input',
         inputPath,
-        "--store",
+        '--store',
         storePath,
-        "--snapshot-id",
-        "snapshot:event-cli",
-        "--scope",
-        "event-scope",
+        '--snapshot-id',
+        'snapshot:event-cli',
+        '--scope',
+        'event-scope',
       ]);
     });
-    expect(ingestOutput.stdout).toContain("Event snapshot ingested: snapshot:event-cli");
+    expect(ingestOutput.stdout).toContain('Event snapshot ingested: snapshot:event-cli');
 
     const listOutput = await captureConsoleAsync(async () => {
-      await cliOntology(["snapshot.list", "--store", storePath]);
+      await cliOntology(['snapshot.list', '--store', storePath]);
     });
-    expect(listOutput.stdout).toContain("snapshot:event-cli");
+    expect(listOutput.stdout).toContain('snapshot:event-cli');
 
     const showOutput = await captureConsoleAsync(async () => {
-      await cliOntology(["snapshot.show", "snapshot:event-cli", "--store", storePath]);
+      await cliOntology(['snapshot.show', 'snapshot:event-cli', '--store', storePath]);
     });
-    expect(showOutput.stdout).toContain("Snapshot: snapshot:event-cli");
-    expect(showOutput.stdout).toContain("corridors: 1");
+    expect(showOutput.stdout).toContain('Snapshot: snapshot:event-cli');
+    expect(showOutput.stdout).toContain('corridors: 1');
 
     const checkpointListOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "checkpoint.list",
-        "--scope",
-        "event-scope",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['checkpoint.list', '--scope', 'event-scope', '--store', storePath]);
     });
-    expect(checkpointListOutput.stdout).toContain("checkpoint:event-record:log-cli");
+    expect(checkpointListOutput.stdout).toContain('checkpoint:event-record:log-cli');
 
     const checkpointShowOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "checkpoint.show",
-        "checkpoint:event-record:log-cli",
-        "--scope",
-        "event-scope",
-        "--store",
+        'checkpoint.show',
+        'checkpoint:event-record:log-cli',
+        '--scope',
+        'event-scope',
+        '--store',
         storePath,
       ]);
     });
     expect(checkpointShowOutput.stdout).toContain(
-      "Checkpoint lattice: checkpoint:event-record:log-cli",
+      'Checkpoint lattice: checkpoint:event-record:log-cli',
     );
 
     const checkpointDiffOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "checkpoint.diff-latest",
-        "checkpoint:event-record:log-cli",
-        "--scope",
-        "event-scope",
-        "--store",
+        'checkpoint.diff-latest',
+        'checkpoint:event-record:log-cli',
+        '--scope',
+        'event-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(checkpointDiffOutput.stderr).toContain("Checkpoint diff-latest 없음");
+    expect(checkpointDiffOutput.stderr).toContain('Checkpoint diff-latest 없음');
 
     const statusOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "status",
-        "--scope",
-        "event-scope",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['status', '--scope', 'event-scope', '--store', storePath]);
     });
-    expect(statusOutput.stdout).toContain("Ontology status: event-scope");
-    expect(statusOutput.stdout).toContain("snapshots: 1");
+    expect(statusOutput.stdout).toContain('Ontology status: event-scope');
+    expect(statusOutput.stdout).toContain('snapshots: 1');
 
     const statusTableOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "status",
-        "--scope",
-        "event-scope",
-        "--store",
-        storePath,
-        "--table",
-      ]);
+      await cliOntology(['status', '--scope', 'event-scope', '--store', storePath, '--table']);
     });
-    expect(statusTableOutput.stdout).toContain("scope");
-    expect(statusTableOutput.stdout).toContain("event-scope");
+    expect(statusTableOutput.stdout).toContain('scope');
+    expect(statusTableOutput.stdout).toContain('event-scope');
 
     const snapshotStatusOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "status",
-        "--snapshot",
-        "snapshot:event-cli",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['status', '--snapshot', 'snapshot:event-cli', '--store', storePath]);
     });
-    expect(snapshotStatusOutput.stdout).toContain("Ontology status: event-scope");
-    expect(snapshotStatusOutput.stdout).toContain("snapshot: snapshot:event-cli");
+    expect(snapshotStatusOutput.stdout).toContain('Ontology status: event-scope');
+    expect(snapshotStatusOutput.stdout).toContain('snapshot: snapshot:event-cli');
   });
 
-  it("pipe ingest 후 corridor show를 수행한다", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-pipe-"));
-    const storePath = join(dir, "store.json");
-    const inputPath = join(dir, "pipe.json");
+  it('pipe ingest 후 corridor show를 수행한다', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-pipe-'));
+    const storePath = join(dir, 'store.json');
+    const inputPath = join(dir, 'pipe.json');
 
     await writeFile(
       inputPath,
       JSON.stringify(
         {
           graph: {
-            graphId: "pipe-cli",
-            version: "v1",
-            entryPipeId: "collect-order",
+            graphId: 'pipe-cli',
+            version: 'v1',
+            entryPipeId: 'collect-order',
             pipes: [
               {
-                pipeId: "collect-order",
-                version: "v1",
-                trigger: { eventKey: "order.submit" },
-                flow: { kind: "step", facet: "produced" },
+                pipeId: 'collect-order',
+                version: 'v1',
+                trigger: { eventKey: 'order.submit' },
+                flow: { kind: 'step', facet: 'produced' },
               },
               {
-                pipeId: "persist-order",
-                version: "v1",
-                trigger: { eventKey: "order.created" },
-                flow: { kind: "step", facet: "consumed" },
+                pipeId: 'persist-order',
+                version: 'v1',
+                trigger: { eventKey: 'order.created' },
+                flow: { kind: 'step', facet: 'consumed' },
               },
             ],
             connections: [
               {
-                from: "collect-order",
-                to: "persist-order",
-                kind: "conditional",
-                condition: "order.valid == true",
+                from: 'collect-order',
+                to: 'persist-order',
+                kind: 'conditional',
+                condition: 'order.valid == true',
               },
             ],
           },
@@ -5220,168 +5116,150 @@ describe("ontology CLI", () => {
         null,
         2,
       ),
-      "utf8",
+      'utf8',
     );
 
     const ingestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "pipe.ingest",
-        "--input",
+        'pipe.ingest',
+        '--input',
         inputPath,
-        "--store",
+        '--store',
         storePath,
-        "--snapshot-id",
-        "snapshot:pipe-cli",
-        "--scope",
-        "pipe-scope",
+        '--snapshot-id',
+        'snapshot:pipe-cli',
+        '--scope',
+        'pipe-scope',
       ]);
     });
-    expect(ingestOutput.stdout).toContain("Pipe snapshot ingested: snapshot:pipe-cli");
+    expect(ingestOutput.stdout).toContain('Pipe snapshot ingested: snapshot:pipe-cli');
 
     const corridorOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "corridor.show",
-        "pipe-cli",
-        "--snapshot",
-        "snapshot:pipe-cli",
-        "--store",
+        'corridor.show',
+        'pipe-cli',
+        '--snapshot',
+        'snapshot:pipe-cli',
+        '--store',
         storePath,
       ]);
     });
-    expect(corridorOutput.stdout).toContain("Corridor: pipe-cli");
-    expect(corridorOutput.stdout).toContain("controlFlow: pipe-cli");
+    expect(corridorOutput.stdout).toContain('Corridor: pipe-cli');
+    expect(corridorOutput.stdout).toContain('controlFlow: pipe-cli');
 
     const corridorListOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "corridor.list",
-        "--scope",
-        "pipe-scope",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['corridor.list', '--scope', 'pipe-scope', '--store', storePath]);
     });
-    expect(corridorListOutput.stdout).toContain("pipe-cli");
+    expect(corridorListOutput.stdout).toContain('pipe-cli');
 
     const corridorLatestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "corridor.show-latest",
-        "pipe-cli",
-        "--scope",
-        "pipe-scope",
-        "--store",
+        'corridor.show-latest',
+        'pipe-cli',
+        '--scope',
+        'pipe-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(corridorLatestOutput.stdout).toContain("Corridor: pipe-cli");
-    expect(corridorLatestOutput.stdout).toContain("snapshot: snapshot:pipe-cli");
+    expect(corridorLatestOutput.stdout).toContain('Corridor: pipe-cli');
+    expect(corridorLatestOutput.stdout).toContain('snapshot: snapshot:pipe-cli');
 
     const junctionListOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "junction.list",
-        "--scope",
-        "pipe-scope",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['junction.list', '--scope', 'pipe-scope', '--store', storePath]);
     });
-    expect(junctionListOutput.stdout).toContain("collect-order");
+    expect(junctionListOutput.stdout).toContain('collect-order');
 
     const junctionShowOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "junction.show",
-        "collect-order",
-        "--scope",
-        "pipe-scope",
-        "--store",
+        'junction.show',
+        'collect-order',
+        '--scope',
+        'pipe-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(junctionShowOutput.stdout).toContain("Junction: collect-order");
-    expect(junctionShowOutput.stdout).toContain("mode: first_match");
+    expect(junctionShowOutput.stdout).toContain('Junction: collect-order');
+    expect(junctionShowOutput.stdout).toContain('mode: first_match');
 
     const routeListOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "route.list",
-        "--scope",
-        "pipe-scope",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['route.list', '--scope', 'pipe-scope', '--store', storePath]);
     });
-    expect(routeListOutput.stdout).toContain("Route decision 없음");
+    expect(routeListOutput.stdout).toContain('Route decision 없음');
   });
 
-  it("snapshot ingest 후 route/traversal/junction 조회를 수행한다", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "qa-sdk-ontology-snapshot-"));
-    const storePath = join(dir, "store.json");
-    const inputPath = join(dir, "snapshot.json");
+  it('snapshot ingest 후 route/traversal/junction 조회를 수행한다', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-snapshot-'));
+    const storePath = join(dir, 'store.json');
+    const inputPath = join(dir, 'snapshot.json');
 
     await writeFile(
       inputPath,
       JSON.stringify(
         {
           graph: {
-            graphId: "snapshot-cli",
-            version: "v1",
-            entryPipeId: "collect-order",
+            graphId: 'snapshot-cli',
+            version: 'v1',
+            entryPipeId: 'collect-order',
             pipes: [
               {
-                pipeId: "collect-order",
-                version: "v1",
-                trigger: { eventKey: "order.submit" },
-                flow: { kind: "step", facet: "produced" },
+                pipeId: 'collect-order',
+                version: 'v1',
+                trigger: { eventKey: 'order.submit' },
+                flow: { kind: 'step', facet: 'produced' },
               },
               {
-                pipeId: "validate-order",
-                version: "v1",
-                trigger: { eventKey: "order.created" },
-                flow: { kind: "step", facet: "consumed" },
+                pipeId: 'validate-order',
+                version: 'v1',
+                trigger: { eventKey: 'order.created' },
+                flow: { kind: 'step', facet: 'consumed' },
               },
             ],
             connections: [
               {
-                from: "collect-order",
-                to: "validate-order",
-                kind: "conditional",
-                condition: "order.valid == true",
+                from: 'collect-order',
+                to: 'validate-order',
+                kind: 'conditional',
+                condition: 'order.valid == true',
               },
             ],
           },
           pathObservation: {
             reached_nodes: [
               {
-                spec_step_id: "collect-order",
-                runtime_node_id: "run-1",
-                event_key: "order.submit",
-                timestamp: "2026-04-10T00:03:00.000Z",
+                spec_step_id: 'collect-order',
+                runtime_node_id: 'run-1',
+                event_key: 'order.submit',
+                timestamp: '2026-04-10T00:03:00.000Z',
               },
               {
-                spec_step_id: "validate-order",
-                runtime_node_id: "run-2",
-                event_key: "order.created",
-                timestamp: "2026-04-10T00:03:01.000Z",
+                spec_step_id: 'validate-order',
+                runtime_node_id: 'run-2',
+                event_key: 'order.created',
+                timestamp: '2026-04-10T00:03:01.000Z',
               },
             ],
             traversed_edges: [
               {
-                from_step_id: "collect-order",
-                to_step_id: "validate-order",
-                edge_type: "branch",
+                from_step_id: 'collect-order',
+                to_step_id: 'validate-order',
+                edge_type: 'branch',
               },
             ],
-            reached_goals: ["validate-order"],
+            reached_goals: ['validate-order'],
             unreachable_goals: [],
             loop_detected: false,
             recovery_used: false,
-            terminal_node: "run-2",
-            terminal_reason: "goal_reached",
+            terminal_node: 'run-2',
+            terminal_reason: 'goal_reached',
             branchPoints: [
               {
-                sourceStepId: "collect-order",
+                sourceStepId: 'collect-order',
                 branches: [
                   {
-                    targetStepId: "validate-order",
-                    edgeType: "branch",
+                    targetStepId: 'validate-order',
+                    edgeType: 'branch',
                     taken: true,
                     reachedNodes: [],
                   },
@@ -5394,20 +5272,20 @@ describe("ontology CLI", () => {
         null,
         2,
       ),
-      "utf8",
+      'utf8',
     );
 
     await captureConsoleAsync(async () => {
       await cliOntology([
-        "snapshot.ingest",
-        "--input",
+        'snapshot.ingest',
+        '--input',
         inputPath,
-        "--store",
+        '--store',
         storePath,
-        "--snapshot-id",
-        "snapshot:rich-cli",
-        "--scope",
-        "snapshot-scope",
+        '--snapshot-id',
+        'snapshot:rich-cli',
+        '--scope',
+        'snapshot-scope',
       ]);
     });
 
@@ -5416,30 +5294,30 @@ describe("ontology CLI", () => {
       JSON.stringify(
         {
           graph: {
-            graphId: "snapshot-cli",
-            version: "v2",
-            entryPipeId: "collect-order",
+            graphId: 'snapshot-cli',
+            version: 'v2',
+            entryPipeId: 'collect-order',
             pipes: [
               {
-                pipeId: "collect-order",
-                version: "v2",
-                trigger: { eventKey: "order.submit" },
-                flow: { kind: "step", facet: "produced" },
-                ports: [{ portId: "out", direction: "out", facetType: "produced" }],
+                pipeId: 'collect-order',
+                version: 'v2',
+                trigger: { eventKey: 'order.submit' },
+                flow: { kind: 'step', facet: 'produced' },
+                ports: [{ portId: 'out', direction: 'out', facetType: 'produced' }],
               },
               {
-                pipeId: "validate-order",
-                version: "v2",
-                trigger: { eventKey: "order.created" },
-                flow: { kind: "step", facet: "consumed" },
-                ports: [{ portId: "in", direction: "in", facetType: "consumed" }],
+                pipeId: 'validate-order',
+                version: 'v2',
+                trigger: { eventKey: 'order.created' },
+                flow: { kind: 'step', facet: 'consumed' },
+                ports: [{ portId: 'in', direction: 'in', facetType: 'consumed' }],
               },
             ],
             connections: [
               {
-                from: { pipeId: "collect-order", portId: "out" },
-                to: { pipeId: "validate-order", portId: "in" },
-                kind: "next",
+                from: { pipeId: 'collect-order', portId: 'out' },
+                to: { pipeId: 'validate-order', portId: 'in' },
+                kind: 'next',
               },
             ],
           },
@@ -5447,92 +5325,78 @@ describe("ontology CLI", () => {
         null,
         2,
       ),
-      "utf8",
+      'utf8',
     );
 
     await captureConsoleAsync(async () => {
       await cliOntology([
-        "snapshot.ingest",
-        "--input",
+        'snapshot.ingest',
+        '--input',
         inputPath,
-        "--store",
+        '--store',
         storePath,
-        "--snapshot-id",
-        "snapshot:rich-cli-2",
-        "--scope",
-        "snapshot-scope",
+        '--snapshot-id',
+        'snapshot:rich-cli-2',
+        '--scope',
+        'snapshot-scope',
       ]);
     });
 
     const junctionListOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "junction.list",
-        "--scope",
-        "snapshot-scope",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['junction.list', '--scope', 'snapshot-scope', '--store', storePath]);
     });
-    expect(junctionListOutput.stdout).toContain("collect-order");
+    expect(junctionListOutput.stdout).toContain('collect-order');
 
     const junctionShowOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "junction.show",
-        "collect-order",
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        'junction.show',
+        'collect-order',
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(junctionShowOutput.stdout).toContain("Junction: collect-order");
+    expect(junctionShowOutput.stdout).toContain('Junction: collect-order');
 
     const routeShowOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "route.show",
-        "collect-order",
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        'route.show',
+        'collect-order',
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(routeShowOutput.stdout).toContain("Route decision: collect-order");
+    expect(routeShowOutput.stdout).toContain('Route decision: collect-order');
 
     const routeDiffLatestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "route.diff-latest",
-        "collect-order",
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        'route.diff-latest',
+        'collect-order',
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(routeDiffLatestOutput.stdout).toContain(
-      "Route diff-latest: collect-order",
-    );
+    expect(routeDiffLatestOutput.stdout).toContain('Route diff-latest: collect-order');
 
     const traversalListOutput = await captureConsoleAsync(async () => {
-      await cliOntology([
-        "traversal.list",
-        "--scope",
-        "snapshot-scope",
-        "--store",
-        storePath,
-      ]);
+      await cliOntology(['traversal.list', '--scope', 'snapshot-scope', '--store', storePath]);
     });
-    expect(traversalListOutput.stdout).toContain("traversal:observe:collect-order");
+    expect(traversalListOutput.stdout).toContain('traversal:observe:collect-order');
 
     const traversalKey =
-      "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order";
+      'traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order';
     const traversalShowOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "traversal.show",
+        'traversal.show',
         traversalKey,
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
@@ -5540,98 +5404,90 @@ describe("ontology CLI", () => {
 
     const traversalDiffLatestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "traversal.diff-latest",
+        'traversal.diff-latest',
         traversalKey,
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(traversalDiffLatestOutput.stdout).toContain(
-      `Traversal diff-latest: ${traversalKey}`,
-    );
+    expect(traversalDiffLatestOutput.stdout).toContain(`Traversal diff-latest: ${traversalKey}`);
 
     const snapshotDiffOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "snapshot.diff",
-        "snapshot:rich-cli",
-        "snapshot:rich-cli-2",
-        "--store",
+        'snapshot.diff',
+        'snapshot:rich-cli',
+        'snapshot:rich-cli-2',
+        '--store',
         storePath,
       ]);
     });
     expect(snapshotDiffOutput.stdout).toContain(
-      "Snapshot diff: snapshot:rich-cli -> snapshot:rich-cli-2",
+      'Snapshot diff: snapshot:rich-cli -> snapshot:rich-cli-2',
     );
 
     const snapshotDiffLatestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "snapshot.diff-latest",
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        'snapshot.diff-latest',
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(snapshotDiffLatestOutput.stdout).toContain(
-      "Snapshot diff-latest: snapshot-scope",
-    );
+    expect(snapshotDiffLatestOutput.stdout).toContain('Snapshot diff-latest: snapshot-scope');
 
     const corridorDiffOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "corridor.diff",
-        "snapshot-cli",
-        "--from",
-        "snapshot:rich-cli",
-        "--to",
-        "snapshot:rich-cli-2",
-        "--store",
+        'corridor.diff',
+        'snapshot-cli',
+        '--from',
+        'snapshot:rich-cli',
+        '--to',
+        'snapshot:rich-cli-2',
+        '--store',
         storePath,
       ]);
     });
-    expect(corridorDiffOutput.stdout).toContain("Corridor diff: snapshot-cli");
+    expect(corridorDiffOutput.stdout).toContain('Corridor diff: snapshot-cli');
 
     const corridorDiffLatestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "corridor.diff-latest",
-        "snapshot-cli",
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        'corridor.diff-latest',
+        'snapshot-cli',
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(corridorDiffLatestOutput.stdout).toContain(
-      "Corridor diff-latest: snapshot-cli",
-    );
+    expect(corridorDiffLatestOutput.stdout).toContain('Corridor diff-latest: snapshot-cli');
 
     const junctionDiffLatestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "junction.diff-latest",
-        "collect-order",
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        'junction.diff-latest',
+        'collect-order',
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
-    expect(junctionDiffLatestOutput.stdout).toContain(
-      "Junction diff-latest: collect-order",
-    );
+    expect(junctionDiffLatestOutput.stdout).toContain('Junction diff-latest: collect-order');
 
     const checkpointDiffLatestOutput = await captureConsoleAsync(async () => {
       await cliOntology([
-        "checkpoint.diff-latest",
-        "checkpoint:event-record:log-cli",
-        "--scope",
-        "snapshot-scope",
-        "--store",
+        'checkpoint.diff-latest',
+        'checkpoint:event-record:log-cli',
+        '--scope',
+        'snapshot-scope',
+        '--store',
         storePath,
       ]);
     });
     expect(checkpointDiffLatestOutput.stderr).toContain(
-      "Checkpoint diff-latest 없음: checkpoint:event-record:log-cli @ snapshot-scope",
+      'Checkpoint diff-latest 없음: checkpoint:event-record:log-cli @ snapshot-scope',
     );
   });
 });
@@ -5665,16 +5521,19 @@ interface RegistryActivationJson {
       axisId?: string;
     }>;
   }>;
-  syncSummariesByAllocationId: Record<string, {
-    allocationId: string;
-    taxonomyId: string;
-    prefix: string;
-    versionId: string;
-    syncStatus: string;
-    materializedRecordCount: number;
-    collisionCount: number;
-    targetRecordCount: number;
-  }>;
+  syncSummariesByAllocationId: Record<
+    string,
+    {
+      allocationId: string;
+      taxonomyId: string;
+      prefix: string;
+      versionId: string;
+      syncStatus: string;
+      materializedRecordCount: number;
+      collisionCount: number;
+      targetRecordCount: number;
+    }
+  >;
   smokeCheckSummary: {
     allocationCount: number;
     passedAllocationCount: number;
@@ -5682,18 +5541,21 @@ interface RegistryActivationJson {
     checkCount: number;
     passedCheckCount: number;
     failedCheckCount: number;
-    byAllocationId: Record<string, {
-      allocationId: string;
-      taxonomyId: string;
-      prefix: string;
-      versionId: string;
-      addressModel?: string;
-      kind?: string;
-      syncStatus: string;
-      passed: boolean;
-      checkCount: number;
-      failedCheckCount: number;
-    }>;
+    byAllocationId: Record<
+      string,
+      {
+        allocationId: string;
+        taxonomyId: string;
+        prefix: string;
+        versionId: string;
+        addressModel?: string;
+        kind?: string;
+        syncStatus: string;
+        passed: boolean;
+        checkCount: number;
+        failedCheckCount: number;
+      }
+    >;
   };
   warnings: unknown[];
   errors: Array<{
@@ -5702,7 +5564,7 @@ interface RegistryActivationJson {
     code?: string;
   }>;
   activationEvidence?: {
-    appendStatus: "appended" | "failed";
+    appendStatus: 'appended' | 'failed';
     registryPath: string;
     recordId: string;
     recordRef: string;
@@ -5730,7 +5592,7 @@ interface ActivationEvidenceRegistryRecordJson {
     allocationCount?: number;
     activationStatusCounts?: Record<string, number>;
     syncStatusCounts?: Record<string, number>;
-    smokeCheckSummary?: RegistryActivationJson["smokeCheckSummary"];
+    smokeCheckSummary?: RegistryActivationJson['smokeCheckSummary'];
     warningCount?: number;
     errorCount?: number;
     generatedAt?: string;
@@ -5739,23 +5601,23 @@ interface ActivationEvidenceRegistryRecordJson {
 
 function validFilePack() {
   return {
-    packId: "file-pack-ontology",
+    packId: 'file-pack-ontology',
     schema: {
       axes: [
         {
-          id: "file_pack_kind",
-          values: ["example"],
+          id: 'file_pack_kind',
+          values: ['example'],
           stable: true,
           capacity: 4,
         },
       ],
       taxonomies: [
         {
-          id: "file-pack",
-          appliesTo: ["node"],
-          axisIds: ["file_pack_kind"],
-          identityAxisIds: ["file_pack_kind"],
-          space: "file-pack-ontology",
+          id: 'file-pack',
+          appliesTo: ['node'],
+          axisIds: ['file_pack_kind'],
+          identityAxisIds: ['file_pack_kind'],
+          space: 'file-pack-ontology',
         },
       ],
       relationCategories: [],
@@ -5768,11 +5630,11 @@ function validFilePack() {
 async function captureConsoleAsync(run: () => Promise<void>) {
   const stdout: string[] = [];
   const stderr: string[] = [];
-  const logSpy = vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
-    stdout.push(args.join(" "));
+  const logSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+    stdout.push(args.join(' '));
   });
-  const errorSpy = vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
-    stderr.push(args.join(" "));
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+    stderr.push(args.join(' '));
   });
 
   try {
@@ -5783,8 +5645,8 @@ async function captureConsoleAsync(run: () => Promise<void>) {
   }
 
   return {
-    stdout: stdout.join("\n"),
-    stderr: stderr.join("\n"),
+    stdout: stdout.join('\n'),
+    stderr: stderr.join('\n'),
   };
 }
 
@@ -5813,7 +5675,7 @@ function writeQualityLedgerRuns(
   ledgerPath: string,
   runs: readonly {
     gateDocId: string;
-    outcome: "pass" | "fail";
+    outcome: 'pass' | 'fail';
     docVersion?: number;
     bundleId?: string;
     executedAt?: string;
@@ -5825,10 +5687,10 @@ function writeQualityLedgerRuns(
       store.insert({
         gateDocId: run.gateDocId,
         docVersion: run.docVersion ?? 1,
-        bundleId: run.bundleId ?? "work-domain-quality-bundle",
-        command: "pnpm test",
+        bundleId: run.bundleId ?? 'work-domain-quality-bundle',
+        command: 'pnpm test',
         outcome: run.outcome,
-        exitCode: run.outcome === "pass" ? 0 : 1,
+        exitCode: run.outcome === 'pass' ? 0 : 1,
         executedAt: run.executedAt ?? new Date().toISOString(),
       });
     }

@@ -27,7 +27,7 @@ export class WeightedIndexError extends Error {
     // V8 스택 트레이스에서 이 생성자를 제외 (V8 전용 API)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const E = Error as any;
-    if (typeof E.captureStackTrace === "function") {
+    if (typeof E.captureStackTrace === 'function') {
       E.captureStackTrace(this, this.constructor);
     }
   }

@@ -5,7 +5,7 @@
  * WASM 미사용 시 JS fallback으로 동작.
  */
 
-type WasmModule = typeof import("../pkg/weighted_wasm.js");
+type WasmModule = typeof import('../pkg/weighted_wasm.js');
 
 // wasm-pack 빌드 산출물 (pkg/ 디렉토리)
 let wasm: WasmModule | null = null;
@@ -14,7 +14,7 @@ function isNodeRuntime(): boolean {
   const maybeProcess = globalThis as typeof globalThis & {
     process?: { versions?: { node?: string } };
   };
-  return typeof maybeProcess.process?.versions?.node === "string";
+  return typeof maybeProcess.process?.versions?.node === 'string';
 }
 
 async function getNodeWasmBytes(): Promise<Uint8Array | undefined> {
@@ -22,8 +22,8 @@ async function getNodeWasmBytes(): Promise<Uint8Array | undefined> {
     return undefined;
   }
 
-  const { readFile } = await import("node:fs/promises");
-  return readFile(new URL("../pkg/weighted_wasm_bg.wasm", import.meta.url));
+  const { readFile } = await import('node:fs/promises');
+  return readFile(new URL('../pkg/weighted_wasm_bg.wasm', import.meta.url));
 }
 
 /**
@@ -36,11 +36,11 @@ export async function initWasm(): Promise<boolean> {
   }
 
   try {
-    const wasmModule = await import("../pkg/weighted_wasm.js");
+    const wasmModule = await import('../pkg/weighted_wasm.js');
     const moduleOrPath = await getNodeWasmBytes();
 
-    if (typeof wasmModule.default !== "function") {
-      throw new TypeError("weighted-wasm init export is missing");
+    if (typeof wasmModule.default !== 'function') {
+      throw new TypeError('weighted-wasm init export is missing');
     }
 
     if (moduleOrPath) {
@@ -86,12 +86,7 @@ export function encodeBatch(
         flat[i * dims + j] = coordsBatch[i][j];
       }
     }
-    const result = wasm.encodeBatch(
-      new Uint32Array(strides),
-      flat,
-      dims,
-      n,
-    );
+    const result = wasm.encodeBatch(new Uint32Array(strides), flat, dims, n);
     return new Uint32Array(result);
   }
 
@@ -165,7 +160,10 @@ export function popcountWasm(mask: Uint8Array): number {
   let n = 0;
   for (const byte of mask) {
     let b = byte;
-    while (b) { n += b & 1; b >>>= 1; }
+    while (b) {
+      n += b & 1;
+      b >>>= 1;
+    }
   }
   return n;
 }

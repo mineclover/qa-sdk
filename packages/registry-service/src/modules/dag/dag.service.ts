@@ -1,15 +1,13 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import { REGISTRY_SERVICE } from "../../registry-core.module.js";
-import { RegistryService } from "../../lib/registry-service.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { REGISTRY_SERVICE } from '../../registry-core.module.js';
+import { RegistryService } from '../../lib/registry-service.js';
 
 @Injectable()
 export class DagService {
-  constructor(
-    @Inject(REGISTRY_SERVICE) private readonly registry: RegistryService,
-  ) {}
+  constructor(@Inject(REGISTRY_SERVICE) private readonly registry: RegistryService) {}
 
   getDeps(prefix: string, versionId: string) {
     return this.registry.getDeps(prefix, versionId);

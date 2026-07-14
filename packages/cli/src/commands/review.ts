@@ -17,19 +17,16 @@
  * qa-sdk review bridge-request <id> --target <nodeId> --decision-type <type> --title <text> --rationale <text>
  */
 
-import { join } from "node:path";
-import { existsSync, mkdirSync } from "node:fs";
-import { execaSync } from "execa";
-import {
-  ReviewLedger,
-  SqliteReviewStore,
-} from "review-ledger";
-import { getQaSdkDir } from "../lib/qa-dir.js";
-import { bridgeFeedbackRequestToDkg } from "../lib/review-feedback-dkg.js";
-import { resolveRelatedDocsForFiles } from "../lib/review-feedback-docs.js";
+import { join } from 'node:path';
+import { existsSync, mkdirSync } from 'node:fs';
+import { execaSync } from 'execa';
+import { ReviewLedger, SqliteReviewStore } from 'review-ledger';
+import { getQaSdkDir } from '../lib/qa-dir.js';
+import { bridgeFeedbackRequestToDkg } from '../lib/review-feedback-dkg.js';
+import { resolveRelatedDocsForFiles } from '../lib/review-feedback-docs.js';
 
 const QA_DIR = getQaSdkDir();
-const DB_PATH = join(QA_DIR, "review-ledger.sqlite");
+const DB_PATH = join(QA_DIR, 'review-ledger.sqlite');
 
 function ensureDir(): void {
   if (!existsSync(QA_DIR)) mkdirSync(QA_DIR, { recursive: true });
@@ -45,11 +42,11 @@ function createLedger(cwd: string): ReviewLedger {
 function expandGlobs(cwd: string, patterns: string[]): string[] {
   const files = new Set<string>();
   for (const pattern of patterns) {
-    if (pattern.includes("*")) {
+    if (pattern.includes('*')) {
       // git ls-files로 glob 매칭
       try {
-        const { stdout } = execaSync("git", ["ls-files", "--", pattern], { cwd });
-        for (const line of stdout.split("\n")) {
+        const { stdout } = execaSync('git', ['ls-files', '--', pattern], { cwd });
+        for (const line of stdout.split('\n')) {
           const trimmed = line.trim();
           if (trimmed) files.add(trimmed);
         }
@@ -76,25 +73,31 @@ function hasFlag(args: string[], flag: string): boolean {
 function positionalArgs(args: string[]): string[] {
   const result: string[] = [];
   const flags = new Set([
-    "--reviewer",
-    "--model",
-    "--notes",
-    "--commit",
-    "--service",
-    "--purpose",
-    "--limit",
-    "--dkg-target",
-    "--target",
-    "--decision-id",
-    "--decision-type",
-    "--title",
-    "--rationale",
+    '--reviewer',
+    '--model',
+    '--notes',
+    '--commit',
+    '--service',
+    '--purpose',
+    '--limit',
+    '--dkg-target',
+    '--target',
+    '--decision-id',
+    '--decision-type',
+    '--title',
+    '--rationale',
   ]);
   let skip = false;
   for (const arg of args) {
-    if (skip) { skip = false; continue; }
-    if (flags.has(arg)) { skip = true; continue; }
-    if (arg.startsWith("--")) continue;
+    if (skip) {
+      skip = false;
+      continue;
+    }
+    if (flags.has(arg)) {
+      skip = true;
+      continue;
+    }
+    if (arg.startsWith('--')) continue;
     result.push(arg);
   }
   return result;
@@ -104,25 +107,25 @@ function positionalArgs(args: string[]): string[] {
 
 export function reviewMark(args: string[]): void {
   const cwd = process.cwd();
-  const reviewer = parseFlag(args, "--reviewer");
+  const reviewer = parseFlag(args, '--reviewer');
   if (!reviewer) {
-    console.error("--reviewer 필수");
+    console.error('--reviewer 필수');
     process.exit(1);
   }
 
-  const aiModel = parseFlag(args, "--model");
-  const notes = parseFlag(args, "--notes");
-  const commit = parseFlag(args, "--commit");
+  const aiModel = parseFlag(args, '--model');
+  const notes = parseFlag(args, '--notes');
+  const commit = parseFlag(args, '--commit');
   const patterns = positionalArgs(args);
 
   if (patterns.length === 0) {
-    console.error("파일 경로 또는 glob 패턴을 지정하세요");
+    console.error('파일 경로 또는 glob 패턴을 지정하세요');
     process.exit(1);
   }
 
   const filePaths = expandGlobs(cwd, patterns);
   if (filePaths.length === 0) {
-    console.error("매칭되는 파일이 없습니다");
+    console.error('매칭되는 파일이 없습니다');
     process.exit(1);
   }
 
@@ -146,16 +149,16 @@ export function reviewMark(args: string[]): void {
 
 export function reviewStatus(args: string[]): void {
   const cwd = process.cwd();
-  const scope = parseFlag(args, "--service");
-  const stale = hasFlag(args, "--stale");
-  const unreviewed = hasFlag(args, "--unreviewed");
+  const scope = parseFlag(args, '--service');
+  const stale = hasFlag(args, '--stale');
+  const unreviewed = hasFlag(args, '--unreviewed');
 
   const ledger = createLedger(cwd);
   try {
     const statuses = ledger.statusAll({ scope, stale, unreviewed });
 
     if (statuses.length === 0) {
-      console.log("표시할 파일이 없습니다");
+      console.log('표시할 파일이 없습니다');
       return;
     }
 
@@ -166,21 +169,21 @@ export function reviewStatus(args: string[]): void {
     console.log(
       `총 ${statuses.length}건 — reviewed: ${counts.reviewed}, stale: ${counts.stale}, unreviewed: ${counts.unreviewed}`,
     );
-    console.log("");
+    console.log('');
 
     // stale/unreviewed만 표시 (전체 출력 시 너무 많을 수 있음)
     const needsAttention = statuses.filter(
-      (s) => s.status === "stale" || s.status === "unreviewed",
+      (s) => s.status === 'stale' || s.status === 'unreviewed',
     );
 
     if (needsAttention.length > 0) {
       const maxShow = 30;
       const shown = needsAttention.slice(0, maxShow);
       for (const s of shown) {
-        const tag = s.status === "stale" ? "[stale]" : "[unreviewed]";
+        const tag = s.status === 'stale' ? '[stale]' : '[unreviewed]';
         const info = s.lastEntry
           ? `reviewed: ${s.lastEntry.reviewedCommit.slice(0, 7)} (${s.lastEntry.reviewer})`
-          : "";
+          : '';
         console.log(`  ${tag} ${s.filePath}  ${info}`);
       }
       if (needsAttention.length > maxShow) {
@@ -204,14 +207,17 @@ export function reviewDashboard(_args: string[]): void {
     }
 
     // 테이블 헤더
-    const header = padRow("Service", "Reviewed", "Stale", "Unreviewed", "Coverage");
-    const sep = "─".repeat(header.length);
+    const header = padRow('Service', 'Reviewed', 'Stale', 'Unreviewed', 'Coverage');
+    const sep = '─'.repeat(header.length);
 
-    console.log("");
+    console.log('');
     console.log(header);
     console.log(sep);
 
-    let totalR = 0, totalS = 0, totalU = 0, totalT = 0;
+    let totalR = 0,
+      totalS = 0,
+      totalU = 0,
+      totalT = 0;
 
     for (const c of coverages) {
       console.log(
@@ -231,8 +237,8 @@ export function reviewDashboard(_args: string[]): void {
 
     console.log(sep);
     const totalPct = totalT > 0 ? Math.round((totalR / totalT) * 1000) / 10 : 0;
-    console.log(padRow("Total", String(totalR), String(totalS), String(totalU), `${totalPct}%`));
-    console.log("");
+    console.log(padRow('Total', String(totalR), String(totalS), String(totalU), `${totalPct}%`));
+    console.log('');
   } finally {
     ledger.close();
   }
@@ -241,7 +247,7 @@ export function reviewDashboard(_args: string[]): void {
 export function reviewLog(args: string[]): void {
   const file = args[0];
   if (!file) {
-    console.error("파일 경로를 지정하세요");
+    console.error('파일 경로를 지정하세요');
     process.exit(1);
   }
 
@@ -257,8 +263,8 @@ export function reviewLog(args: string[]): void {
 
     console.log(`${file} 리뷰 이력 (${entries.length}건):\n`);
     for (const e of entries) {
-      const model = e.aiModel ? ` [${e.aiModel}]` : "";
-      const note = e.notes ? ` — ${e.notes}` : "";
+      const model = e.aiModel ? ` [${e.aiModel}]` : '';
+      const note = e.notes ? ` — ${e.notes}` : '';
       console.log(
         `  ${e.reviewedAt.slice(0, 16)}  ${e.reviewedCommit.slice(0, 7)}  ${e.reviewer}${model}${note}`,
       );
@@ -270,39 +276,37 @@ export function reviewLog(args: string[]): void {
 
 export async function reviewRequest(args: string[]): Promise<void> {
   const cwd = process.cwd();
-  const reviewer = parseFlag(args, "--reviewer");
-  const purpose = parseFlag(args, "--purpose");
-  const targetModel = parseFlag(args, "--model");
-  const notes = parseFlag(args, "--notes");
-  const scope = parseFlag(args, "--service");
-  const dkgTarget = parseFlag(args, "--dkg-target");
-  const json = hasFlag(args, "--json");
+  const reviewer = parseFlag(args, '--reviewer');
+  const purpose = parseFlag(args, '--purpose');
+  const targetModel = parseFlag(args, '--model');
+  const notes = parseFlag(args, '--notes');
+  const scope = parseFlag(args, '--service');
+  const dkgTarget = parseFlag(args, '--dkg-target');
+  const json = hasFlag(args, '--json');
   const patterns = positionalArgs(args);
 
   if (!reviewer) {
-    console.error("--reviewer 필수");
+    console.error('--reviewer 필수');
     process.exit(1);
   }
   if (!purpose) {
-    console.error("--purpose 필수");
+    console.error('--purpose 필수');
     process.exit(1);
   }
   if (!scope && patterns.length === 0) {
-    console.error("파일 경로/glob 또는 --service 중 하나는 지정해야 합니다");
+    console.error('파일 경로/glob 또는 --service 중 하나는 지정해야 합니다');
     process.exit(1);
   }
 
   const filePaths = patterns.length > 0 ? expandGlobs(cwd, patterns) : undefined;
   if (patterns.length > 0 && (!filePaths || filePaths.length === 0)) {
-    console.error("매칭되는 파일이 없습니다");
+    console.error('매칭되는 파일이 없습니다');
     process.exit(1);
   }
 
   const ledger = createLedger(cwd);
   try {
-    const relatedDocsByFile = filePaths
-      ? await resolveRelatedDocsForFiles(cwd, filePaths)
-      : {};
+    const relatedDocsByFile = filePaths ? await resolveRelatedDocsForFiles(cwd, filePaths) : {};
 
     const request = ledger.createFeedbackRequest({
       requestedBy: reviewer,
@@ -314,10 +318,10 @@ export async function reviewRequest(args: string[]): Promise<void> {
       relatedDocsByFile,
     });
 
-    const decisionId = parseFlag(args, "--decision-id");
-    const decisionType = parseFlag(args, "--decision-type");
-    const title = parseFlag(args, "--title");
-    const rationale = parseFlag(args, "--rationale");
+    const decisionId = parseFlag(args, '--decision-id');
+    const decisionType = parseFlag(args, '--decision-type');
+    const title = parseFlag(args, '--title');
+    const rationale = parseFlag(args, '--rationale');
 
     const bridgeResult = dkgTarget
       ? bridgeFeedbackRequestToDkg(request, {
@@ -326,7 +330,9 @@ export async function reviewRequest(args: string[]): Promise<void> {
           ...(decisionType || title || rationale
             ? {
                 decision: {
-                  type: decisionType as NonNullable<Parameters<typeof bridgeFeedbackRequestToDkg>[1]["decision"]>["type"],
+                  type: decisionType as NonNullable<
+                    Parameters<typeof bridgeFeedbackRequestToDkg>[1]['decision']
+                  >['type'],
                   title: title ?? request.purpose,
                   rationale: rationale ?? request.prompt,
                 },
@@ -336,10 +342,16 @@ export async function reviewRequest(args: string[]): Promise<void> {
       : null;
 
     if (json) {
-      console.log(JSON.stringify({
-        request,
-        ...(bridgeResult ? { bridge: bridgeResult } : {}),
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            request,
+            ...(bridgeResult ? { bridge: bridgeResult } : {}),
+          },
+          null,
+          2,
+        ),
+      );
       return;
     }
 
@@ -357,7 +369,7 @@ export async function reviewRequest(args: string[]): Promise<void> {
         console.log(`  dkg decision:    ${bridgeResult.decisionId}`);
       }
     }
-    console.log("");
+    console.log('');
     console.log(request.prompt);
   } finally {
     ledger.close();
@@ -366,9 +378,9 @@ export async function reviewRequest(args: string[]): Promise<void> {
 
 export function reviewRequests(args: string[]): void {
   const cwd = process.cwd();
-  const scope = parseFlag(args, "--service");
-  const limit = Number.parseInt(parseFlag(args, "--limit") ?? "20", 10);
-  const json = hasFlag(args, "--json");
+  const scope = parseFlag(args, '--service');
+  const limit = Number.parseInt(parseFlag(args, '--limit') ?? '20', 10);
+  const json = hasFlag(args, '--json');
 
   const ledger = createLedger(cwd);
   try {
@@ -383,13 +395,13 @@ export function reviewRequests(args: string[]): void {
     }
 
     if (requests.length === 0) {
-      console.log("피드백 요청이 없습니다");
+      console.log('피드백 요청이 없습니다');
       return;
     }
 
     for (const request of requests) {
-      const model = request.targetModel ? ` [${request.targetModel}]` : "";
-      const scopeLabel = request.serviceScope ? ` ${request.serviceScope}` : "";
+      const model = request.targetModel ? ` [${request.targetModel}]` : '';
+      const scopeLabel = request.serviceScope ? ` ${request.serviceScope}` : '';
       console.log(
         `${request.id}  ${request.createdAt.slice(0, 16)}${scopeLabel}${model}  ${request.purpose}`,
       );
@@ -402,12 +414,12 @@ export function reviewRequests(args: string[]): void {
 export function reviewShowRequest(args: string[]): void {
   const id = args[0];
   if (!id) {
-    console.error("request id를 지정하세요");
+    console.error('request id를 지정하세요');
     process.exit(1);
   }
 
   const cwd = process.cwd();
-  const json = hasFlag(args, "--json");
+  const json = hasFlag(args, '--json');
   const ledger = createLedger(cwd);
   try {
     const request = ledger.getFeedbackRequest(id);
@@ -431,7 +443,7 @@ export function reviewShowRequest(args: string[]): void {
     console.log(
       `evidence: total=${request.evidenceBundle.total}, reviewed=${request.evidenceBundle.reviewed}, stale=${request.evidenceBundle.stale}, unreviewed=${request.evidenceBundle.unreviewed}`,
     );
-    console.log("");
+    console.log('');
     console.log(request.prompt);
   } finally {
     ledger.close();
@@ -441,20 +453,20 @@ export function reviewShowRequest(args: string[]): void {
 export function reviewBridgeRequest(args: string[]): void {
   const requestId = args[0];
   if (!requestId) {
-    console.error("request id를 지정하세요");
+    console.error('request id를 지정하세요');
     process.exit(1);
   }
 
-  const targetId = parseFlag(args, "--target");
+  const targetId = parseFlag(args, '--target');
   if (!targetId) {
-    console.error("--target 필수");
+    console.error('--target 필수');
     process.exit(1);
   }
 
-  const decisionId = parseFlag(args, "--decision-id");
-  const decisionType = parseFlag(args, "--decision-type");
-  const title = parseFlag(args, "--title");
-  const rationale = parseFlag(args, "--rationale");
+  const decisionId = parseFlag(args, '--decision-id');
+  const decisionType = parseFlag(args, '--decision-type');
+  const title = parseFlag(args, '--title');
+  const rationale = parseFlag(args, '--rationale');
 
   const ledger = createLedger(process.cwd());
   try {
@@ -470,7 +482,9 @@ export function reviewBridgeRequest(args: string[]): void {
       ...(decisionType || title || rationale
         ? {
             decision: {
-              type: decisionType as NonNullable<Parameters<typeof bridgeFeedbackRequestToDkg>[1]["decision"]>["type"],
+              type: decisionType as NonNullable<
+                Parameters<typeof bridgeFeedbackRequestToDkg>[1]['decision']
+              >['type'],
               title: title ?? request.purpose,
               rationale: rationale ?? request.prompt,
             },
@@ -483,9 +497,9 @@ export function reviewBridgeRequest(args: string[]): void {
     console.log(`  target:      ${result.targetId}`);
     if (result.decisionId) {
       console.log(`  decision:    ${result.decisionId}`);
-      console.log(`  mode:        ${result.createdDecision ? "created" : "linked"}`);
+      console.log(`  mode:        ${result.createdDecision ? 'created' : 'linked'}`);
     } else {
-      console.log("  mode:        observation-only");
+      console.log('  mode:        observation-only');
     }
   } finally {
     ledger.close();
@@ -507,5 +521,5 @@ function padRow(
     stale.padStart(8),
     unreviewed.padStart(12),
     coverage.padStart(10),
-  ].join("  ");
+  ].join('  ');
 }

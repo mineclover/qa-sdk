@@ -12,8 +12,8 @@ import type {
   MigrationStore,
   MigrationMapping,
   MigrationResolveResult,
-} from "./migration-store.js";
-import { CoalescingCache } from "./coalescing-cache.js";
+} from './migration-store.js';
+import { CoalescingCache } from './coalescing-cache.js';
 
 // ── MigrationCache ───────────────────────────────────────
 
@@ -30,9 +30,8 @@ export class MigrationCache {
 
   /** position의 변경 이력 조회 (캐시 우선). */
   async getHistory(prefix: string, position: number): Promise<MigrationMapping[]> {
-    return this._historyCache.get(
-      `${prefix}\0history\0${position}`,
-      () => this._store.getHistory(prefix, position),
+    return this._historyCache.get(`${prefix}\0history\0${position}`, () =>
+      this._store.getHistory(prefix, position),
     );
   }
 
@@ -42,9 +41,8 @@ export class MigrationCache {
     fromVersionId: string,
     toVersionId: string,
   ): Promise<MigrationMapping[]> {
-    return this._pairCache.get(
-      `${prefix}\0${fromVersionId}\0${toVersionId}`,
-      () => this._store.getMappings(prefix, fromVersionId, toVersionId),
+    return this._pairCache.get(`${prefix}\0${fromVersionId}\0${toVersionId}`, () =>
+      this._store.getMappings(prefix, fromVersionId, toVersionId),
     );
   }
 

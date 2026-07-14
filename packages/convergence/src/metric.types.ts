@@ -14,13 +14,13 @@
  * @layer 측정 (Measurement)
  */
 
-import type { AddressContextRecord } from "./usage-aggregator.js";
+import type { AddressContextRecord } from './usage-aggregator.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Metric 정의
 // ═══════════════════════════════════════════════════════════════
 
-export type MetricStatus = "ok" | "warning" | "critical";
+export type MetricStatus = 'ok' | 'warning' | 'critical';
 
 export interface MetricValue {
   readonly id: string;
@@ -43,7 +43,15 @@ export interface MetricDef {
   readonly id: string;
   readonly name: string;
   readonly description: string;
-  readonly category: "headroom" | "skew" | "coverage" | "overlap" | "conflict" | "health" | "invariant" | "transition";
+  readonly category:
+    | 'headroom'
+    | 'skew'
+    | 'coverage'
+    | 'overlap'
+    | 'conflict'
+    | 'health'
+    | 'invariant'
+    | 'transition';
   readonly autoRunnable: boolean;
   readonly threshold: MetricThreshold;
   /** 이 metric을 측정하는 convergence 함수 */
@@ -56,22 +64,22 @@ export interface MetricDef {
 
 /** ingest-server의 데이터 흐름 입력 */
 export interface IngestFlowInput {
-  readonly source: "ingest";
+  readonly source: 'ingest';
   readonly records: readonly AddressContextRecord[];
 }
 
 /** registry-service의 데이터 흐름 입력 */
 export interface RegistryFlowInput {
-  readonly source: "registry";
+  readonly source: 'registry';
   readonly catalog: unknown;
 }
 
 /** gate-service의 데이터 흐름 입력 */
 export interface GateFlowInput {
-  readonly source: "gate";
+  readonly source: 'gate';
   readonly versionEvent: {
     readonly subjectId: string;
-    readonly subjectKind: "axis" | "prefix";
+    readonly subjectKind: 'axis' | 'prefix';
     readonly fromVersion: string;
     readonly toVersion: string;
   };

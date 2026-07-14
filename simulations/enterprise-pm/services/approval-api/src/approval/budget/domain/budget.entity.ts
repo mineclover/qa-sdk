@@ -1,18 +1,13 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import {
-  toBudgetRequestId,
-  toDepartmentId,
-  toProjectId,
-  toRequesterId,
-} from "./budget.ids.js";
+import { toBudgetRequestId, toDepartmentId, toProjectId, toRequesterId } from './budget.ids.js';
 import {
   BudgetStageConflictException,
   BudgetTransitionConflictException,
   InvalidBudgetAmountException,
-} from "./budget.exceptions.js";
-import type { BudgetProps, BudgetSnapshot, BudgetStatus } from "./budget.types.js";
+} from './budget.exceptions.js';
+import type { BudgetProps, BudgetSnapshot, BudgetStatus } from './budget.types.js';
 
 /**
  * design.md §3 — amount-based stage 결정.
@@ -55,7 +50,7 @@ export class BudgetEntity {
       projectDepartmentId: toDepartmentId(input.projectDepartmentId),
       amount: input.amount,
       requesterId: toRequesterId(input.requesterId),
-      status: "draft",
+      status: 'draft',
       currentStage: 1,
       totalStages: determineStages(input.amount),
       createdAt: now,
@@ -79,31 +74,31 @@ export class BudgetEntity {
   }
 
   submit(now = new Date()): BudgetEntity {
-    if (this.props.status !== "draft" && this.props.status !== "revision_requested") {
-      throw new BudgetTransitionConflictException(this.props.status, "submit");
+    if (this.props.status !== 'draft' && this.props.status !== 'revision_requested') {
+      throw new BudgetTransitionConflictException(this.props.status, 'submit');
     }
-    return new BudgetEntity({ ...this.props, status: "submitted", updatedAt: now });
+    return new BudgetEntity({ ...this.props, status: 'submitted', updatedAt: now });
   }
 
   startReview(now = new Date()): BudgetEntity {
-    if (this.props.status !== "submitted") {
-      throw new BudgetTransitionConflictException(this.props.status, "review");
+    if (this.props.status !== 'submitted') {
+      throw new BudgetTransitionConflictException(this.props.status, 'review');
     }
-    return new BudgetEntity({ ...this.props, status: "in_review", updatedAt: now });
+    return new BudgetEntity({ ...this.props, status: 'in_review', updatedAt: now });
   }
 
   /** in_review 상태에서만 호출. approved=stage++ (마지막이면 approved), rejected=즉시 rejected. */
-  decide(decision: "approved" | "rejected", now = new Date()): BudgetEntity {
-    if (this.props.status !== "in_review") {
+  decide(decision: 'approved' | 'rejected', now = new Date()): BudgetEntity {
+    if (this.props.status !== 'in_review') {
       throw new BudgetStageConflictException(
         `decide() requires status=in_review, current=${this.props.status}`,
       );
     }
-    if (decision === "rejected") {
-      return new BudgetEntity({ ...this.props, status: "rejected", updatedAt: now });
+    if (decision === 'rejected') {
+      return new BudgetEntity({ ...this.props, status: 'rejected', updatedAt: now });
     }
     if (this.props.currentStage >= this.props.totalStages) {
-      return new BudgetEntity({ ...this.props, status: "approved", updatedAt: now });
+      return new BudgetEntity({ ...this.props, status: 'approved', updatedAt: now });
     }
     return new BudgetEntity({
       ...this.props,

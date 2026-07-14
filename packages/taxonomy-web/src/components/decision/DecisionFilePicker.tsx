@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   fetchDecisionList,
   fetchDecisionFile,
   type DecisionListItem,
-} from "../../data/decisionListApi";
+} from '../../data/decisionListApi';
 
 export function DecisionFilePicker({
   onLoad,
@@ -45,18 +45,10 @@ export function DecisionFilePicker({
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 z-20 bg-white border rounded shadow-lg w-80 max-h-72 overflow-auto">
-          {error && (
-            <div className="px-2 py-1 text-xs text-red-700 bg-red-50">
-              {error}
-            </div>
-          )}
-          {!items && !error && (
-            <div className="px-2 py-2 text-xs text-gray-500">로딩...</div>
-          )}
+          {error && <div className="px-2 py-1 text-xs text-red-700 bg-red-50">{error}</div>}
+          {!items && !error && <div className="px-2 py-2 text-xs text-gray-500">로딩...</div>}
           {items && items.length === 0 && (
-            <div className="px-2 py-2 text-xs text-gray-500">
-              docs/decisions/ 에 파일 없음
-            </div>
+            <div className="px-2 py-2 text-xs text-gray-500">docs/decisions/ 에 파일 없음</div>
           )}
           {items?.map((item) => (
             <button

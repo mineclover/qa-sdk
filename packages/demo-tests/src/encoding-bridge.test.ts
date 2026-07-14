@@ -28,24 +28,24 @@
  * [BR-5] 대규모 shape: 랜덤 샘플링 왕복
  */
 
-import { describe, it, expect } from "vitest";
-import { IndexBridge } from "bit-index";
-import { calcAddressRanges, containsAddress } from "weighted-index";
+import { describe, it, expect } from 'vitest';
+import { IndexBridge } from 'bit-index';
+import { calcAddressRanges, containsAddress } from 'weighted-index';
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  [BR-1] 전수 왕복
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BR-1] 전수 왕복 — toBit → toWeighted = identity", () => {
-  it("shape [3,4,2] (24건): WI → BI → WI 전수 identity", () => {
-    const bridge = new IndexBridge([3, 4, 2], ["a", "b", "c"]);
+describe('[BR-1] 전수 왕복 — toBit → toWeighted = identity', () => {
+  it('shape [3,4,2] (24건): WI → BI → WI 전수 identity', () => {
+    const bridge = new IndexBridge([3, 4, 2], ['a', 'b', 'c']);
     for (let i = 0; i < bridge.wi.size; i++) {
       expect(bridge.toWeighted(bridge.toBit(i))).toBe(i);
     }
   });
 
-  it("shape [3,4,2] (24건): BI → WI → BI 전수 identity", () => {
-    const bridge = new IndexBridge([3, 4, 2], ["a", "b", "c"]);
+  it('shape [3,4,2] (24건): BI → WI → BI 전수 identity', () => {
+    const bridge = new IndexBridge([3, 4, 2], ['a', 'b', 'c']);
     for (let a = 1; a <= 3; a++) {
       for (let b = 1; b <= 4; b++) {
         for (let c = 1; c <= 2; c++) {
@@ -56,8 +56,8 @@ describe("[BR-1] 전수 왕복 — toBit → toWeighted = identity", () => {
     }
   });
 
-  it("shape [5,8,20] (800건): 양방향 전수 identity", () => {
-    const bridge = new IndexBridge([5, 8, 20], ["role", "action", "resource"]);
+  it('shape [5,8,20] (800건): 양방향 전수 identity', () => {
+    const bridge = new IndexBridge([5, 8, 20], ['role', 'action', 'resource']);
     for (let i = 0; i < bridge.wi.size; i++) {
       const biPacked = bridge.toBit(i);
       expect(bridge.toWeighted(biPacked)).toBe(i);
@@ -69,10 +69,10 @@ describe("[BR-1] 전수 왕복 — toBit → toWeighted = identity", () => {
 //  [BR-2] 좌표 보존
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BR-2] 좌표 보존 — 어느 경로든 같은 좌표", () => {
-  const bridge = new IndexBridge([5, 8, 20], ["role", "action", "resource"]);
+describe('[BR-2] 좌표 보존 — 어느 경로든 같은 좌표', () => {
+  const bridge = new IndexBridge([5, 8, 20], ['role', 'action', 'resource']);
 
-  it("WI decode === BI decode(toBit(wiIndex))", () => {
+  it('WI decode === BI decode(toBit(wiIndex))', () => {
     for (let i = 0; i < bridge.wi.size; i++) {
       const wiCoords = bridge.wi.decode(i);
       const biCoords = bridge.bi.decode(bridge.toBit(i));
@@ -80,7 +80,7 @@ describe("[BR-2] 좌표 보존 — 어느 경로든 같은 좌표", () => {
     }
   });
 
-  it("BI extractDim(toBit(wiIndex)) === WI decode[dim]", () => {
+  it('BI extractDim(toBit(wiIndex)) === WI decode[dim]', () => {
     const samples = [0, 1, 42, 399, 799];
     for (const wiIndex of samples) {
       const biPacked = bridge.toBit(wiIndex);
@@ -96,13 +96,13 @@ describe("[BR-2] 좌표 보존 — 어느 경로든 같은 좌표", () => {
 //  [BR-3] 파이프라인: DB 범위 질의 → BI 필터 → DB 복원
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BR-3] DB → BI 필터 → DB 파이프라인", () => {
+describe('[BR-3] DB → BI 필터 → DB 파이프라인', () => {
   const shape = [5, 8, 20];
-  const bridge = new IndexBridge(shape, ["role", "action", "resource"]);
+  const bridge = new IndexBridge(shape, ['role', 'action', 'resource']);
 
-  it("role=2 질의 → action=5 필터 → DB 주소 복원", () => {
+  it('role=2 질의 → action=5 필터 → DB 주소 복원', () => {
     // Step 1: DB 범위 질의 (WeightedIndex)
-    const ranges = calcAddressRanges(shape, ["2", null, null]);
+    const ranges = calcAddressRanges(shape, ['2', null, null]);
     const dbResults: number[] = [];
     for (const [lo, hi] of ranges) {
       for (let a = lo; a <= hi; a++) dbResults.push(a);
@@ -111,7 +111,7 @@ describe("[BR-3] DB → BI 필터 → DB 파이프라인", () => {
 
     // Step 2: BI로 변환 + extractDim 필터
     const biPackeds = bridge.toBitBatch(dbResults);
-    const filtered = biPackeds.filter(p => bridge.bi.extractDim(p, 1) === 5);
+    const filtered = biPackeds.filter((p) => bridge.bi.extractDim(p, 1) === 5);
     expect(filtered).toHaveLength(20); // resource 20개
 
     // Step 3: DB 주소로 복원
@@ -126,9 +126,9 @@ describe("[BR-3] DB → BI 필터 → DB 파이프라인", () => {
     }
   });
 
-  it("복합 조건: role=1-3, action=2,7 → resource=10-15 필터", () => {
+  it('복합 조건: role=1-3, action=2,7 → resource=10-15 필터', () => {
     // Step 1: DB 범위 질의
-    const ranges = calcAddressRanges(shape, ["1-3", "2,7", null]);
+    const ranges = calcAddressRanges(shape, ['1-3', '2,7', null]);
     const dbResults: number[] = [];
     for (const [lo, hi] of ranges) {
       for (let a = lo; a <= hi; a++) dbResults.push(a);
@@ -136,7 +136,7 @@ describe("[BR-3] DB → BI 필터 → DB 파이프라인", () => {
 
     // Step 2: BI 변환 + 필터
     const biPackeds = bridge.toBitBatch(dbResults);
-    const filtered = biPackeds.filter(p => {
+    const filtered = biPackeds.filter((p) => {
       const res = bridge.bi.extractDim(p, 2);
       return res >= 10 && res <= 15;
     });
@@ -160,11 +160,11 @@ describe("[BR-3] DB → BI 필터 → DB 파이프라인", () => {
 //  [BR-4] 파이프라인: BI 인메모리 → DB 저장 → DB 범위 검증
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BR-4] BI 인메모리 → DB 저장 → 범위 검증", () => {
+describe('[BR-4] BI 인메모리 → DB 저장 → 범위 검증', () => {
   const shape = [5, 8, 20];
-  const bridge = new IndexBridge(shape, ["role", "action", "resource"]);
+  const bridge = new IndexBridge(shape, ['role', 'action', 'resource']);
 
-  it("BI Set 구축 → WI 변환 → calcAddressRanges로 검증", () => {
+  it('BI Set 구축 → WI 변환 → calcAddressRanges로 검증', () => {
     // 인메모리: admin(role=1)의 read(action=1) 권한만
     const permSet = new Set<number>();
     for (let r = 1; r <= 20; r++) {
@@ -175,13 +175,13 @@ describe("[BR-4] BI 인메모리 → DB 저장 → 범위 검증", () => {
     const wiIndices = bridge.toWeightedBatch([...permSet]);
 
     // DB 범위로 검증: role=1, action=1 범위에 모두 포함되어야 함
-    const expectedRanges = calcAddressRanges(shape, ["1", "1", null]);
+    const expectedRanges = calcAddressRanges(shape, ['1', '1', null]);
     for (const wiIdx of wiIndices) {
       expect(containsAddress(wiIdx, expectedRanges)).toBe(true);
     }
 
     // 범위 밖(role=2) 주소는 포함되지 않음
-    const role2Ranges = calcAddressRanges(shape, ["2", null, null]);
+    const role2Ranges = calcAddressRanges(shape, ['2', null, null]);
     for (const wiIdx of wiIndices) {
       expect(containsAddress(wiIdx, role2Ranges)).toBe(false);
     }
@@ -192,13 +192,13 @@ describe("[BR-4] BI 인메모리 → DB 저장 → 범위 검증", () => {
 //  [BR-5] 대규모 shape 랜덤 샘플링
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BR-5] 대규모 shape — 랜덤 샘플링 왕복", () => {
-  it("shape [100, 200, 50, 80] — 500건 왕복", () => {
+describe('[BR-5] 대규모 shape — 랜덤 샘플링 왕복', () => {
+  it('shape [100, 200, 50, 80] — 500건 왕복', () => {
     const shape = [100, 200, 50, 80];
     const bridge = new IndexBridge(shape);
 
     for (let i = 0; i < 500; i++) {
-      const coords = shape.map(s => Math.floor(Math.random() * s) + 1);
+      const coords = shape.map((s) => Math.floor(Math.random() * s) + 1);
       const wiIndex = bridge.wi.encode(coords);
       const biPacked = bridge.toBit(wiIndex);
 
@@ -212,12 +212,12 @@ describe("[BR-5] 대규모 shape — 랜덤 샘플링 왕복", () => {
     }
   });
 
-  it("shape [10, 50, 8, 20, 4, 3] — 6차원 500건 왕복", () => {
+  it('shape [10, 50, 8, 20, 4, 3] — 6차원 500건 왕복', () => {
     const shape = [10, 50, 8, 20, 4, 3];
     const bridge = new IndexBridge(shape);
 
     for (let i = 0; i < 500; i++) {
-      const coords = shape.map(s => Math.floor(Math.random() * s) + 1);
+      const coords = shape.map((s) => Math.floor(Math.random() * s) + 1);
       const wiIndex = bridge.wi.encode(coords);
 
       expect(bridge.toWeighted(bridge.toBit(wiIndex))).toBe(wiIndex);

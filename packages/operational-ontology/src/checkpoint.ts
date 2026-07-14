@@ -11,12 +11,10 @@ export {
   type CheckpointObservation,
   type CheckpointLink,
   type CheckpointLattice,
-} from "./internal/checkpoint-core.js";
+} from './internal/checkpoint-core.js';
 
-import {
-  projectEventRecordToOperationalOntology,
-} from "./internal/projector-core.js";
-import { defaultCheckpointTemplateRegistry } from "./internal/checkpoint-core.js";
+import { projectEventRecordToOperationalOntology } from './internal/projector-core.js';
+import { defaultCheckpointTemplateRegistry } from './internal/checkpoint-core.js';
 
 export const operationalOntologyCheckpointPlane = {
   defaultCheckpointTemplateRegistry,

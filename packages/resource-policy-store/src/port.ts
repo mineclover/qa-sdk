@@ -21,4 +21,4 @@ export {
   type ResourcePolicyCreateArgs,
   type ResourcePolicyRegisterArgs,
   type ResourcePolicyDelegateArgs,
-} from "permission-engine";
+} from 'permission-engine';

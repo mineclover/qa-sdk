@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "bf4ecab6-4061-4c6a-98e0-8d1fd161f19c",
-  "prevIds": [
-    "2446dd5d-84f1-4f53-aee1-ec26c2fc43d1"
-  ],
+  "prevIds": ["2446dd5d-84f1-4f53-aee1-ec26c2fc43d1"],
   "ddl": [
     {
       "name": "data_object_bindings",
@@ -635,63 +633,49 @@
       "table": "service_manifests"
     },
     {
-      "columns": [
-        "schema_id"
-      ],
+      "columns": ["schema_id"],
       "nameExplicit": false,
       "name": "data_object_bindings_pk",
       "table": "data_object_bindings",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "facet"
-      ],
+      "columns": ["facet"],
       "nameExplicit": false,
       "name": "facet_code_mappings_pk",
       "table": "facet_code_mappings",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "lineage_validations_pk",
       "table": "lineage_validations",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "pipe_graphs_pk",
       "table": "pipe_graphs",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "pipe_specs_pk",
       "table": "pipe_specs",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "prefix_versions_pk",
       "table": "prefix_versions",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "service_manifests_pk",
       "table": "service_manifests",

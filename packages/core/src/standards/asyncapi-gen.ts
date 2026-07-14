@@ -8,8 +8,8 @@
  * 출력: AsyncAPI 3.0 호환 YAML 문자열
  */
 
-import type { PipeGraph, PipeSpec } from "../types/pipe-spec.js";
-import type { ManifestRef } from "./cloud-events.js";
+import type { PipeGraph, PipeSpec } from '../types/pipe-spec.js';
+import type { ManifestRef } from './cloud-events.js';
 
 export interface AsyncApiOptions {
   title: string;
@@ -19,7 +19,7 @@ export interface AsyncApiOptions {
 }
 
 export interface AsyncApiSpec {
-  asyncapi: "3.0.0";
+  asyncapi: '3.0.0';
   info: { title: string; version: string; description?: string };
   servers?: Record<string, { host: string; protocol: string }>;
   channels: Record<string, AsyncApiChannel>;
@@ -33,13 +33,13 @@ interface AsyncApiChannel {
 
 interface AsyncApiMessage {
   payload: {
-    type: "object";
+    type: 'object';
     properties: Record<string, { type: string }>;
   };
 }
 
 interface AsyncApiOperation {
-  action: "send" | "receive";
+  action: 'send' | 'receive';
   channel: { $ref: string };
   summary?: string;
 }
@@ -62,7 +62,7 @@ export function generateAsyncApi(
         messages: {
           [eventKey]: {
             payload: {
-              type: "object",
+              type: 'object',
               properties: extractPayloadFields(pipe),
             },
           },
@@ -71,7 +71,7 @@ export function generateAsyncApi(
     }
 
     operations[`receive_${pipe.pipeId}`] = {
-      action: "receive",
+      action: 'receive',
       channel: { $ref: `#/channels/${eventKey}` },
       summary: `${pipe.pipeId}가 ${eventKey} 이벤트를 수신`,
     };
@@ -86,14 +86,14 @@ export function generateAsyncApi(
           address: eventKey,
           messages: {
             [eventKey]: {
-              payload: { type: "object", properties: {} },
+              payload: { type: 'object', properties: {} },
             },
           },
         };
       }
 
       operations[`send_${pipe.pipeId}_${eventKey}`] = {
-        action: "send",
+        action: 'send',
         channel: { $ref: `#/channels/${eventKey}` },
         summary: `${pipe.pipeId}가 ${eventKey} 이벤트를 발행`,
       };
@@ -101,7 +101,7 @@ export function generateAsyncApi(
   }
 
   const spec: AsyncApiSpec = {
-    asyncapi: "3.0.0",
+    asyncapi: '3.0.0',
     info: {
       title: options.title,
       version: options.version,
@@ -126,13 +126,13 @@ export function asyncApiToYaml(spec: AsyncApiSpec): string {
   const lines: string[] = [];
 
   lines.push(`asyncapi: '${spec.asyncapi}'`);
-  lines.push("info:");
+  lines.push('info:');
   lines.push(`  title: ${spec.info.title}`);
   lines.push(`  version: '${spec.info.version}'`);
   if (spec.info.description) lines.push(`  description: ${spec.info.description}`);
 
   if (spec.servers) {
-    lines.push("servers:");
+    lines.push('servers:');
     for (const [name, server] of Object.entries(spec.servers)) {
       lines.push(`  ${name}:`);
       lines.push(`    host: ${server.host}`);
@@ -140,17 +140,17 @@ export function asyncApiToYaml(spec: AsyncApiSpec): string {
     }
   }
 
-  lines.push("channels:");
+  lines.push('channels:');
   for (const [name, channel] of Object.entries(spec.channels)) {
     lines.push(`  ${name}:`);
     lines.push(`    address: ${channel.address}`);
-    lines.push("    messages:");
+    lines.push('    messages:');
     for (const [msgName, msg] of Object.entries(channel.messages)) {
       lines.push(`      ${msgName}:`);
-      lines.push("        payload:");
-      lines.push("          type: object");
+      lines.push('        payload:');
+      lines.push('          type: object');
       if (Object.keys(msg.payload.properties).length > 0) {
-        lines.push("          properties:");
+        lines.push('          properties:');
         for (const [prop, propType] of Object.entries(msg.payload.properties)) {
           lines.push(`            ${prop}:`);
           lines.push(`              type: ${propType.type}`);
@@ -159,7 +159,7 @@ export function asyncApiToYaml(spec: AsyncApiSpec): string {
     }
   }
 
-  lines.push("operations:");
+  lines.push('operations:');
   for (const [name, op] of Object.entries(spec.operations)) {
     lines.push(`  ${name}:`);
     lines.push(`    action: ${op.action}`);
@@ -168,7 +168,7 @@ export function asyncApiToYaml(spec: AsyncApiSpec): string {
     if (op.summary) lines.push(`    summary: ${op.summary}`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** AsyncAPI 스펙 → JSON 문자열 */
@@ -182,7 +182,7 @@ function extractPayloadFields(pipe: PipeSpec): Record<string, { type: string }> 
   const fields: Record<string, { type: string }> = {};
 
   // dataContract에서 consumes 필드 추출
-  if (pipe.flow.kind === "step" && pipe.flow.dataContract?.consumes) {
+  if (pipe.flow.kind === 'step' && pipe.flow.dataContract?.consumes) {
     for (const [name, spec] of Object.entries(pipe.flow.dataContract.consumes)) {
       fields[name] = { type: spec.type };
     }
@@ -191,7 +191,7 @@ function extractPayloadFields(pipe: PipeSpec): Record<string, { type: string }> 
   // trigger entryConditions에서 필드 추출
   if (pipe.trigger.entryConditions) {
     for (const cond of pipe.trigger.entryConditions) {
-      fields[cond.field] = { type: "string" };
+      fields[cond.field] = { type: 'string' };
     }
   }
 

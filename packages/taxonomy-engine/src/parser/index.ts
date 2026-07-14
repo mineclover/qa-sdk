@@ -6,17 +6,11 @@ import {
   isSeq,
   isScalar,
   YAMLParseError,
-} from "yaml";
-import { createHash } from "node:crypto";
-import { TaxonomyDocSchema, type TaxonomyDoc } from "../schema/zod.js";
-import type {
-  TaxonomyIR,
-  AxisIR,
-  EntryIR,
-  RelationIR,
-  ConstraintIR,
-} from "../schema/ir.js";
-import type { Diagnostic } from "../schema/diagnostic.js";
+} from 'yaml';
+import { createHash } from 'node:crypto';
+import { TaxonomyDocSchema, type TaxonomyDoc } from '../schema/zod.js';
+import type { TaxonomyIR, AxisIR, EntryIR, RelationIR, ConstraintIR } from '../schema/ir.js';
+import type { Diagnostic } from '../schema/diagnostic.js';
 
 export type ParseError = Diagnostic;
 
@@ -34,8 +28,8 @@ export function parse(yamlText: string): ParseResult {
     }
     return {
       error: {
-        severity: "error",
-        code: "parse-yaml-syntax",
+        severity: 'error',
+        code: 'parse-yaml-syntax',
         message: `YAML 문법 오류: ${(e as Error).message}`,
         location,
       },
@@ -45,20 +39,20 @@ export function parse(yamlText: string): ParseResult {
   const parsed = TaxonomyDocSchema.safeParse(raw);
   if (!parsed.success) {
     const first = parsed.error.issues[0];
-    if (first.message.includes("entries는 최소 1개")) {
+    if (first.message.includes('entries는 최소 1개')) {
       return {
         error: {
-          severity: "error",
-          code: "structural-empty-entries",
-          message: `entries가 비어있음: ${first.path.join(".")}`,
+          severity: 'error',
+          code: 'structural-empty-entries',
+          message: `entries가 비어있음: ${first.path.join('.')}`,
         },
       };
     }
     return {
       error: {
-        severity: "error",
-        code: "parse-missing-axes",
-        message: `${first.path.join(".")}: ${first.message}`,
+        severity: 'error',
+        code: 'parse-missing-axes',
+        message: `${first.path.join('.')}: ${first.message}`,
       },
     };
   }
@@ -75,14 +69,13 @@ function buildIR(
   const axes = new Map<string, AxisIR>();
   for (const [name, axis] of Object.entries(doc.axes)) {
     const entries: EntryIR[] = axis.entries.map((e, i) => {
-      const id = typeof e === "string" ? e : e.id;
-      const address = typeof e === "string" ? i : (e.address ?? i);
-      const label = typeof e === "string" ? undefined : e.label;
-      const meta = typeof e === "string" ? undefined : e.meta;
-      const lifecycle = typeof e === "string" ? undefined : e.lifecycle;
-      const placeholderReason =
-        typeof e === "string" ? undefined : e.placeholderReason;
-      const decisionLink = typeof e === "string" ? undefined : e.decisionLink;
+      const id = typeof e === 'string' ? e : e.id;
+      const address = typeof e === 'string' ? i : (e.address ?? i);
+      const label = typeof e === 'string' ? undefined : e.label;
+      const meta = typeof e === 'string' ? undefined : e.meta;
+      const lifecycle = typeof e === 'string' ? undefined : e.lifecycle;
+      const placeholderReason = typeof e === 'string' ? undefined : e.placeholderReason;
+      const decisionLink = typeof e === 'string' ? undefined : e.decisionLink;
       return {
         id,
         address,
@@ -150,15 +143,15 @@ function nextPowerOf2(n: number): number {
 
 function computeHash(obj: unknown): string {
   const json = stableStringify(obj);
-  return createHash("sha256").update(json).digest("hex").slice(0, 16);
+  return createHash('sha256').update(json).digest('hex').slice(0, 16);
 }
 
 function stableStringify(v: unknown): string {
-  if (v === null || typeof v !== "object") return JSON.stringify(v);
-  if (Array.isArray(v)) return `[${v.map(stableStringify).join(",")}]`;
+  if (v === null || typeof v !== 'object') return JSON.stringify(v);
+  if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`;
   const obj = v as Record<string, unknown>;
   const keys = Object.keys(obj).sort();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(",")}}`;
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(',')}}`;
 }
 
 /**
@@ -180,9 +173,7 @@ function extractLocs(yamlText: string): Map<string, { line: number; column: numb
     if (!isMap(doc.contents)) return locs;
 
     // axes 키 찾기
-    const axesPair = doc.contents.items.find(
-      (p) => isScalar(p.key) && p.key.value === "axes",
-    );
+    const axesPair = doc.contents.items.find((p) => isScalar(p.key) && p.key.value === 'axes');
     if (!axesPair || !isMap(axesPair.value)) return locs;
 
     // 각 축 처리
@@ -200,7 +191,7 @@ function extractLocs(yamlText: string): Map<string, { line: number; column: numb
 
       // entries 키 찾기
       const entriesPair = axisPair.value.items.find(
-        (p) => isScalar(p.key) && p.key.value === "entries",
+        (p) => isScalar(p.key) && p.key.value === 'entries',
       );
       if (!entriesPair || !isSeq(entriesPair.value)) continue;
 

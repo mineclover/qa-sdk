@@ -12,15 +12,12 @@
  * 모든 판정 단계는 AuditRecorder에 기록된다.
  */
 
-import { hasBit } from "weighted-index";
-import { DisjointUnionIndex } from "weighted-index";
+import { hasBit } from 'weighted-index';
+import { DisjointUnionIndex } from 'weighted-index';
 
-import type { AuditRecorder, CheckPass } from "../audit/index.js";
-import type { VersionedBitmap } from "../versioned-bitmap/index.js";
-import type {
-  ResourcePolicy,
-  ResourcePolicyRegistry,
-} from "../resource-policy/index.js";
+import type { AuditRecorder, CheckPass } from '../audit/index.js';
+import type { VersionedBitmap } from '../versioned-bitmap/index.js';
+import type { ResourcePolicy, ResourcePolicyRegistry } from '../resource-policy/index.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +37,7 @@ export interface AccessContext {
 
 export interface ApiCall {
   /** DisjointUnionIndex variant. */
-  kind: "resource" | "transaction";
+  kind: 'resource' | 'transaction';
   /** 사람이 읽는 API 식별자 (로깅용). */
   apiId: string;
   /** bitmap encode용 좌표. variant의 shape에 맞음. */
@@ -127,55 +124,51 @@ export class AccessChecker {
       spanId: ctx.newSpanId(),
       traceId: ctx.traceId,
       parentSpanId: execSpanId,
-      pass: "bitmap",
-      outcome: pass1 ? "allow" : "deny",
+      pass: 'bitmap',
+      outcome: pass1 ? 'allow' : 'deny',
       address: addr,
       unionKind: call.kind,
-      denyReason: pass1 ? undefined : "bitmap_bit_not_set",
+      denyReason: pass1 ? undefined : 'bitmap_bit_not_set',
     });
 
     if (!pass1) {
-      await this.deps.audit.finishExecution(execSpanId, "deny");
+      await this.deps.audit.finishExecution(execSpanId, 'deny');
       return {
         allowed: false,
-        denyReason: "bitmap_bit_not_set",
+        denyReason: 'bitmap_bit_not_set',
         executionSpanId: execSpanId,
       };
     }
 
     // 3. Pass 2 — transaction kind는 Pass 2 스킵
-    if (call.kind === "transaction" || !call.resource) {
-      await this.deps.audit.finishExecution(execSpanId, "allow");
+    if (call.kind === 'transaction' || !call.resource) {
+      await this.deps.audit.finishExecution(execSpanId, 'allow');
       return { allowed: true, executionSpanId: execSpanId };
     }
 
     // 4. 인스턴스 lifecycle
     const policy = await this.deps.policyRegistry.resolve(call.resource.id);
     if (!policy) {
-      await this.logCheckAndFinish(
-        ctx, execSpanId, "lifecycle", "deny", "policy_not_found",
-      );
+      await this.logCheckAndFinish(ctx, execSpanId, 'lifecycle', 'deny', 'policy_not_found');
       return {
         allowed: false,
-        denyReason: "policy_not_found",
+        denyReason: 'policy_not_found',
         executionSpanId: execSpanId,
       };
     }
 
-    const [ok, pass, denyReason] = await this.evaluateInstance(
-      ctx.userId, call.resource, policy,
-    );
+    const [ok, pass, denyReason] = await this.evaluateInstance(ctx.userId, call.resource, policy);
 
     await this.deps.audit.recordCheck({
       spanId: ctx.newSpanId(),
       traceId: ctx.traceId,
       parentSpanId: execSpanId,
       pass,
-      outcome: ok ? "allow" : "deny",
+      outcome: ok ? 'allow' : 'deny',
       denyReason: ok ? undefined : denyReason,
     });
 
-    await this.deps.audit.finishExecution(execSpanId, ok ? "allow" : "deny");
+    await this.deps.audit.finishExecution(execSpanId, ok ? 'allow' : 'deny');
     return {
       allowed: ok,
       denyReason: ok ? undefined : denyReason,
@@ -189,31 +182,43 @@ export class AccessChecker {
     policy: ResourcePolicy,
   ): Promise<[boolean, CheckPass, string | undefined]> {
     switch (policy.state) {
-      case "UNREGISTERED": {
+      case 'UNREGISTERED': {
         const ok = resource.ownerId === userId;
-        return [ok, "lifecycle", ok ? undefined : "not_owner"];
+        return [ok, 'lifecycle', ok ? undefined : 'not_owner'];
       }
-      case "REGISTERED": {
+      case 'REGISTERED': {
         if (!policy.cerbosPolicyRef) {
-          return [false, "cerbos", "missing_policy_ref"];
+          return [false, 'cerbos', 'missing_policy_ref'];
         }
         const ok = await this.deps.evaluator.evaluateRegistered({
-          userId, resourceId: resource.id, policyRef: policy.cerbosPolicyRef,
+          userId,
+          resourceId: resource.id,
+          policyRef: policy.cerbosPolicyRef,
           attributes: resource.attributes,
         });
         const decision = normalizeInstancePolicyEvaluation(ok);
-        return [decision.allowed, "cerbos", decision.allowed ? undefined : (decision.denyReason ?? "cerbos_deny")];
+        return [
+          decision.allowed,
+          'cerbos',
+          decision.allowed ? undefined : (decision.denyReason ?? 'cerbos_deny'),
+        ];
       }
-      case "DELEGATED": {
+      case 'DELEGATED': {
         if (!policy.graphRootId) {
-          return [false, "acl", "missing_graph_root"];
+          return [false, 'acl', 'missing_graph_root'];
         }
         const ok = await this.deps.evaluator.evaluateDelegated({
-          userId, resourceId: resource.id, graphRootId: policy.graphRootId,
+          userId,
+          resourceId: resource.id,
+          graphRootId: policy.graphRootId,
           attributes: resource.attributes,
         });
         const decision = normalizeInstancePolicyEvaluation(ok);
-        return [decision.allowed, "acl", decision.allowed ? undefined : (decision.denyReason ?? "acl_deny")];
+        return [
+          decision.allowed,
+          'acl',
+          decision.allowed ? undefined : (decision.denyReason ?? 'acl_deny'),
+        ];
       }
     }
   }
@@ -222,7 +227,7 @@ export class AccessChecker {
     ctx: AccessContext,
     execSpanId: string,
     pass: CheckPass,
-    outcome: "allow" | "deny",
+    outcome: 'allow' | 'deny',
     denyReason?: string,
   ): Promise<void> {
     await this.deps.audit.recordCheck({
@@ -240,5 +245,5 @@ export class AccessChecker {
 function normalizeInstancePolicyEvaluation(
   value: InstancePolicyEvaluation,
 ): InstancePolicyDecision {
-  return typeof value === "boolean" ? { allowed: value } : value;
+  return typeof value === 'boolean' ? { allowed: value } : value;
 }

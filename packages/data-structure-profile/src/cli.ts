@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { runDataStructureProfileCli } from "./cli-runner.js";
+import { runDataStructureProfileCli } from './cli-runner.js';
 
 void runDataStructureProfileCli(process.argv.slice(2))
   .then((exitCode) => {

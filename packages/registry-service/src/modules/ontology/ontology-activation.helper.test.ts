@@ -917,452 +917,442 @@ describe('OntologyPackActivationHelper', () => {
     );
   });
 
-  describe.each(activationBackendCases)(
-    'invalid activation no-write with $name',
-    ({ create }) => {
-      async function setup(): Promise<ActivationBackendContext> {
-        const context = await create();
-        activeBackends.push(context);
-        return context;
-      }
+  describe.each(activationBackendCases)('invalid activation no-write with $name', ({ create }) => {
+    async function setup(): Promise<ActivationBackendContext> {
+      const context = await create();
+      activeBackends.push(context);
+      return context;
+    }
 
-      it('returns a structured invalid-pack error and leaves no registry or index-meta rows', async () => {
-        const context = await setup();
-        const service = new OntologyRegistryService({
-          store: context.store,
-          syncAdapter: createOntologyIndexMetaSyncAdapter({
-            prefixRegistry: context.prefixRegistry,
-            schemaVersionStore: context.schemaVersionStore,
-          }),
-        });
-        const helper = new OntologyPackActivationHelper(service);
-        const write = vi.spyOn(context.store, 'writeAllocationPlan');
-        const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
-        const schemaVersionInsert = vi.spyOn(
-          context.schemaVersionStore,
-          'insertSchemaVersion',
-        );
+    it('returns a structured invalid-pack error and leaves no registry or index-meta rows', async () => {
+      const context = await setup();
+      const service = new OntologyRegistryService({
+        store: context.store,
+        syncAdapter: createOntologyIndexMetaSyncAdapter({
+          prefixRegistry: context.prefixRegistry,
+          schemaVersionStore: context.schemaVersionStore,
+        }),
+      });
+      const helper = new OntologyPackActivationHelper(service);
+      const write = vi.spyOn(context.store, 'writeAllocationPlan');
+      const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
+      const schemaVersionInsert = vi.spyOn(context.schemaVersionStore, 'insertSchemaVersion');
 
-        const result = await helper.activateOntologyPack(invalidPack, {
+      const result = await helper.activateOntologyPack(invalidPack, {
+        ontologyId: 'broken-runtime',
+        namespace: 'broken',
+        versionId: 'v2',
+      });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: 'failed',
+          packId: 'broken-pack',
           ontologyId: 'broken-runtime',
-          namespace: 'broken',
-          versionId: 'v2',
-        });
-
-        expect(result).toEqual(
-          expect.objectContaining({
-            status: 'failed',
-            packId: 'broken-pack',
-            ontologyId: 'broken-runtime',
-            namespaceRecord: null,
-            allocations: [],
-            activationStatuses: [],
-            syncReports: [],
-            smokeChecks: [],
-            warnings: [],
-            errors: [
-              expect.objectContaining({
-                level: 'error',
-                phase: 'register',
+          namespaceRecord: null,
+          allocations: [],
+          activationStatuses: [],
+          syncReports: [],
+          smokeChecks: [],
+          warnings: [],
+          errors: [
+            expect.objectContaining({
+              level: 'error',
+              phase: 'register',
+              code: 'invalid-pack',
+              details: expect.objectContaining({
                 code: 'invalid-pack',
-                details: expect.objectContaining({
-                  code: 'invalid-pack',
-                  packId: 'broken-pack',
-                  issues: expect.arrayContaining([
-                    expect.objectContaining({ code: 'axis-values-duplicate' }),
-                  ]),
-                }),
+                packId: 'broken-pack',
+                issues: expect.arrayContaining([
+                  expect.objectContaining({ code: 'axis-values-duplicate' }),
+                ]),
               }),
-            ],
-          }),
-        );
-        expect(write).not.toHaveBeenCalled();
-        expect(prefixRegister).not.toHaveBeenCalled();
-        expect(schemaVersionInsert).not.toHaveBeenCalled();
-        await expectActivationStoresEmpty(context, {
-          ontologyId: 'broken-runtime',
-          versionId: 'v2',
-          allocationIds: [],
-          indexMetaTargets: [
-            { prefix: 'broken_axis_resource_kind', versionId: 'v2' },
-            { prefix: 'broken_authorization_resource', versionId: 'v2' },
+            }),
           ],
-        });
+        }),
+      );
+      expect(write).not.toHaveBeenCalled();
+      expect(prefixRegister).not.toHaveBeenCalled();
+      expect(schemaVersionInsert).not.toHaveBeenCalled();
+      await expectActivationStoresEmpty(context, {
+        ontologyId: 'broken-runtime',
+        versionId: 'v2',
+        allocationIds: [],
+        indexMetaTargets: [
+          { prefix: 'broken_axis_resource_kind', versionId: 'v2' },
+          { prefix: 'broken_authorization_resource', versionId: 'v2' },
+        ],
+      });
+    });
+
+    it('returns a structured invalid-allocation-plan error and leaves no registry or index-meta rows', async () => {
+      const context = await setup();
+      const service = new OntologyRegistryService({
+        store: context.store,
+        syncAdapter: createOntologyIndexMetaSyncAdapter({
+          prefixRegistry: context.prefixRegistry,
+          schemaVersionStore: context.schemaVersionStore,
+        }),
+      });
+      const helper = new OntologyPackActivationHelper(service);
+      const write = vi.spyOn(context.store, 'writeAllocationPlan');
+      const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
+      const schemaVersionInsert = vi.spyOn(context.schemaVersionStore, 'insertSchemaVersion');
+
+      const result = await helper.activateOntologyPack(multiAllocationPack, {
+        ontologyId: 'authz-runtime',
+        namespace: 'authz',
+        owner: 'registry-service',
+        versionId: 'v2',
+        prefixByTaxonomyId: {
+          'authorization-resource': 'authz_shared',
+          'authorization-decision': 'authz_shared',
+        },
+        timestamp: '2026-04-14T00:00:00.000Z',
       });
 
-      it('returns a structured invalid-allocation-plan error and leaves no registry or index-meta rows', async () => {
-        const context = await setup();
-        const service = new OntologyRegistryService({
-          store: context.store,
-          syncAdapter: createOntologyIndexMetaSyncAdapter({
-            prefixRegistry: context.prefixRegistry,
-            schemaVersionStore: context.schemaVersionStore,
-          }),
-        });
-        const helper = new OntologyPackActivationHelper(service);
-        const write = vi.spyOn(context.store, 'writeAllocationPlan');
-        const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
-        const schemaVersionInsert = vi.spyOn(
-          context.schemaVersionStore,
-          'insertSchemaVersion',
-        );
-
-        const result = await helper.activateOntologyPack(multiAllocationPack, {
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: 'failed',
+          packId: 'authorization-ontology',
           ontologyId: 'authz-runtime',
-          namespace: 'authz',
-          owner: 'registry-service',
-          versionId: 'v2',
-          prefixByTaxonomyId: {
-            'authorization-resource': 'authz_shared',
-            'authorization-decision': 'authz_shared',
-          },
-          timestamp: '2026-04-14T00:00:00.000Z',
-        });
-
-        expect(result).toEqual(
-          expect.objectContaining({
-            status: 'failed',
-            packId: 'authorization-ontology',
-            ontologyId: 'authz-runtime',
-            namespaceRecord: null,
-            allocations: [],
-            activationStatuses: [],
-            syncReports: [],
-            smokeChecks: [],
-            warnings: [],
-            errors: [
-              expect.objectContaining({
-                level: 'error',
-                phase: 'register',
+          namespaceRecord: null,
+          allocations: [],
+          activationStatuses: [],
+          syncReports: [],
+          smokeChecks: [],
+          warnings: [],
+          errors: [
+            expect.objectContaining({
+              level: 'error',
+              phase: 'register',
+              code: 'invalid-allocation-plan',
+              details: expect.objectContaining({
                 code: 'invalid-allocation-plan',
-                details: expect.objectContaining({
-                  code: 'invalid-allocation-plan',
-                  packId: 'authorization-ontology',
-                  issues: expect.arrayContaining([
-                    expect.objectContaining({ code: 'ontology-prefix-version-duplicate' }),
-                  ]),
-                }),
+                packId: 'authorization-ontology',
+                issues: expect.arrayContaining([
+                  expect.objectContaining({ code: 'ontology-prefix-version-duplicate' }),
+                ]),
               }),
-            ],
-          }),
-        );
-        expect(write).not.toHaveBeenCalled();
-        expect(prefixRegister).not.toHaveBeenCalled();
-        expect(schemaVersionInsert).not.toHaveBeenCalled();
-        await expectActivationStoresEmpty(context, {
-          ontologyId: 'authz-runtime',
-          versionId: 'v2',
-          allocationIds: [
-            'authz-runtime:authorization-resource:v2',
-            'authz-runtime:authorization-decision:v2',
+            }),
           ],
-          indexMetaTargets: [
-            { prefix: 'authz_axis_resource_kind', versionId: 'v2' },
-            { prefix: 'authz_axis_decision_kind', versionId: 'v2' },
-            { prefix: 'authz_shared', versionId: 'v2' },
-          ],
-        });
+        }),
+      );
+      expect(write).not.toHaveBeenCalled();
+      expect(prefixRegister).not.toHaveBeenCalled();
+      expect(schemaVersionInsert).not.toHaveBeenCalled();
+      await expectActivationStoresEmpty(context, {
+        ontologyId: 'authz-runtime',
+        versionId: 'v2',
+        allocationIds: [
+          'authz-runtime:authorization-resource:v2',
+          'authz-runtime:authorization-decision:v2',
+        ],
+        indexMetaTargets: [
+          { prefix: 'authz_axis_resource_kind', versionId: 'v2' },
+          { prefix: 'authz_axis_decision_kind', versionId: 'v2' },
+          { prefix: 'authz_shared', versionId: 'v2' },
+        ],
       });
+    });
 
-      it('blocks activation when another active allocation owns the prefix/version', async () => {
-        const context = await setup();
-        const service = new OntologyRegistryService({
-          store: context.store,
-          syncAdapter: createOntologyIndexMetaSyncAdapter({
-            prefixRegistry: context.prefixRegistry,
-            schemaVersionStore: context.schemaVersionStore,
-          }),
-        });
-        const helper = new OntologyPackActivationHelper(service);
-        const activeAllocation: OntologyAddressAllocationRecord = {
-          allocationId: 'legacy-runtime:authorization-resource:v2',
-          ontologyId: 'legacy-runtime',
-          taxonomyId: 'authorization-resource',
-          prefix: AUTHZ_RESOURCE_PREFIX,
-          versionId: 'v2',
-          addressModel: 'product',
-          capacity: 8,
-          addressOffset: 0,
-          addressSize: 8,
-          status: 'active',
-        };
-        const listActive = vi
-          .spyOn(context.store, 'listActiveAllocations')
-          .mockResolvedValue([activeAllocation]);
-        const updateStatus = vi.spyOn(context.store, 'updateAllocationStatus');
-        const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
-        const schemaVersionInsert = vi.spyOn(
-          context.schemaVersionStore,
-          'insertSchemaVersion',
-        );
+    it('blocks activation when another active allocation owns the prefix/version', async () => {
+      const context = await setup();
+      const service = new OntologyRegistryService({
+        store: context.store,
+        syncAdapter: createOntologyIndexMetaSyncAdapter({
+          prefixRegistry: context.prefixRegistry,
+          schemaVersionStore: context.schemaVersionStore,
+        }),
+      });
+      const helper = new OntologyPackActivationHelper(service);
+      const activeAllocation: OntologyAddressAllocationRecord = {
+        allocationId: 'legacy-runtime:authorization-resource:v2',
+        ontologyId: 'legacy-runtime',
+        taxonomyId: 'authorization-resource',
+        prefix: AUTHZ_RESOURCE_PREFIX,
+        versionId: 'v2',
+        addressModel: 'product',
+        capacity: 8,
+        addressOffset: 0,
+        addressSize: 8,
+        status: 'active',
+      };
+      const listActive = vi
+        .spyOn(context.store, 'listActiveAllocations')
+        .mockResolvedValue([activeAllocation]);
+      const updateStatus = vi.spyOn(context.store, 'updateAllocationStatus');
+      const prefixRegister = vi.spyOn(context.prefixRegistry, 'register');
+      const schemaVersionInsert = vi.spyOn(context.schemaVersionStore, 'insertSchemaVersion');
 
-        const result = await helper.activateOntologyPack(validPack, activationOptions());
+      const result = await helper.activateOntologyPack(validPack, activationOptions());
 
-        expect(listActive).toHaveBeenCalled();
-        expect(updateStatus).not.toHaveBeenCalled();
-        expect(prefixRegister).not.toHaveBeenCalled();
-        expect(schemaVersionInsert).not.toHaveBeenCalled();
-        expect(result).toEqual(
-          expect.objectContaining({
-            status: 'failed',
-            packId: 'authorization-ontology',
-            ontologyId: 'authz-runtime',
-            activationStatuses: [
-              {
-                allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-                taxonomyId: 'authorization-resource',
-                prefix: AUTHZ_RESOURCE_PREFIX,
-                versionId: 'v2',
-                status: 'reserved',
-                activationStatus: 'failed',
-              },
-            ],
-            syncReports: [],
-            smokeChecks: [],
-            errors: [
-              expect.objectContaining({
-                level: 'error',
-                phase: 'activate',
+      expect(listActive).toHaveBeenCalled();
+      expect(updateStatus).not.toHaveBeenCalled();
+      expect(prefixRegister).not.toHaveBeenCalled();
+      expect(schemaVersionInsert).not.toHaveBeenCalled();
+      expect(result).toEqual(
+        expect.objectContaining({
+          status: 'failed',
+          packId: 'authorization-ontology',
+          ontologyId: 'authz-runtime',
+          activationStatuses: [
+            {
+              allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+              taxonomyId: 'authorization-resource',
+              prefix: AUTHZ_RESOURCE_PREFIX,
+              versionId: 'v2',
+              status: 'reserved',
+              activationStatus: 'failed',
+            },
+          ],
+          syncReports: [],
+          smokeChecks: [],
+          errors: [
+            expect.objectContaining({
+              level: 'error',
+              phase: 'activate',
+              code: 'duplicate-allocation',
+              allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+              prefix: AUTHZ_RESOURCE_PREFIX,
+              versionId: 'v2',
+              details: expect.objectContaining({
                 code: 'duplicate-allocation',
-                allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-                prefix: AUTHZ_RESOURCE_PREFIX,
-                versionId: 'v2',
-                details: expect.objectContaining({
-                  code: 'duplicate-allocation',
-                  allocationIds: [
-                    AUTHZ_RESOURCE_ALLOCATION_ID,
-                    'legacy-runtime:authorization-resource:v2',
-                  ],
-                  allocationKeys: expect.arrayContaining([
-                    {
+                allocationIds: [
+                  AUTHZ_RESOURCE_ALLOCATION_ID,
+                  'legacy-runtime:authorization-resource:v2',
+                ],
+                allocationKeys: expect.arrayContaining([
+                  {
+                    recordKind: 'allocation',
+                    prefix: AUTHZ_RESOURCE_PREFIX,
+                    versionId: 'v2',
+                  },
+                ]),
+                storeConflicts: expect.arrayContaining([
+                  expect.objectContaining({
+                    code: 'duplicate-key',
+                    key: {
                       recordKind: 'allocation',
                       prefix: AUTHZ_RESOURCE_PREFIX,
                       versionId: 'v2',
                     },
-                  ]),
-                  storeConflicts: expect.arrayContaining([
-                    expect.objectContaining({
-                      code: 'duplicate-key',
-                      key: {
-                        recordKind: 'allocation',
-                        prefix: AUTHZ_RESOURCE_PREFIX,
-                        versionId: 'v2',
-                      },
-                    }),
-                  ]),
-                }),
+                  }),
+                ]),
               }),
-            ],
-          }),
-        );
-        await expect(context.store.getAllocation(AUTHZ_RESOURCE_ALLOCATION_ID)).resolves.toEqual(
-          expect.objectContaining({ status: 'reserved' }),
-        );
-        expect(await context.prefixRegistry.listAll()).toEqual([]);
-        await expect(
-          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
-        ).resolves.toBeNull();
-        await expect(
-          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
-        ).resolves.toBeNull();
-        await expectSqlIndexMetaRowCounts(context, {
-          prefixRegistry: 0,
-          prefixRef: 0,
-          schemaVersion: 0,
-        });
+            }),
+          ],
+        }),
+      );
+      await expect(context.store.getAllocation(AUTHZ_RESOURCE_ALLOCATION_ID)).resolves.toEqual(
+        expect.objectContaining({ status: 'reserved' }),
+      );
+      expect(await context.prefixRegistry.listAll()).toEqual([]);
+      await expect(
+        context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expect(
+        context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expectSqlIndexMetaRowCounts(context, {
+        prefixRegistry: 0,
+        prefixRef: 0,
+        schemaVersion: 0,
       });
+    });
 
-      it('blocks sync when index-meta has a mismatched prefix registry record', async () => {
-        const context = await setup();
-        const existingPrefixRecord = {
+    it('blocks sync when index-meta has a mismatched prefix registry record', async () => {
+      const context = await setup();
+      const existingPrefixRecord = {
+        prefix: AUTHZ_RESOURCE_PREFIX,
+        versionId: 'v2',
+        capacity: 4,
+      };
+      await context.prefixRegistry.register(existingPrefixRecord);
+      const service = new OntologyRegistryService({
+        store: context.store,
+        syncAdapter: createOntologyIndexMetaSyncAdapter({
+          prefixRegistry: context.prefixRegistry,
+          schemaVersionStore: context.schemaVersionStore,
+        }),
+      });
+      const helper = new OntologyPackActivationHelper(service);
+
+      const result = await helper.activateOntologyPack(validPack, activationOptions());
+
+      expect(result.status).toBe('failed');
+      expect(result.activationStatuses).toEqual([
+        {
+          allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+          taxonomyId: 'authorization-resource',
           prefix: AUTHZ_RESOURCE_PREFIX,
           versionId: 'v2',
-          capacity: 4,
-        };
-        await context.prefixRegistry.register(existingPrefixRecord);
-        const service = new OntologyRegistryService({
-          store: context.store,
-          syncAdapter: createOntologyIndexMetaSyncAdapter({
-            prefixRegistry: context.prefixRegistry,
-            schemaVersionStore: context.schemaVersionStore,
-          }),
-        });
-        const helper = new OntologyPackActivationHelper(service);
-
-        const result = await helper.activateOntologyPack(validPack, activationOptions());
-
-        expect(result.status).toBe('failed');
-        expect(result.activationStatuses).toEqual([
-          {
-            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-            taxonomyId: 'authorization-resource',
-            prefix: AUTHZ_RESOURCE_PREFIX,
-            versionId: 'v2',
-            status: 'active',
-            activationStatus: 'sync-blocked',
-            syncStatus: 'blocked',
-          },
-        ]);
-        expect(result.syncReports).toEqual([
-          expect.objectContaining({
-            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-            prefix: AUTHZ_RESOURCE_PREFIX,
-            versionId: 'v2',
-            syncStatus: 'blocked',
+          status: 'active',
+          activationStatus: 'sync-blocked',
+          syncStatus: 'blocked',
+        },
+      ]);
+      expect(result.syncReports).toEqual([
+        expect.objectContaining({
+          allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+          prefix: AUTHZ_RESOURCE_PREFIX,
+          versionId: 'v2',
+          syncStatus: 'blocked',
+          collisions: expect.arrayContaining([
+            expect.objectContaining({
+              code: 'prefix-capacity-drift',
+              record: expect.objectContaining({
+                prefix: AUTHZ_RESOURCE_PREFIX,
+                versionId: 'v2',
+                capacity: 8,
+              }),
+              existing: existingPrefixRecord,
+              intended: expect.objectContaining({
+                prefix: AUTHZ_RESOURCE_PREFIX,
+                versionId: 'v2',
+                capacity: 8,
+              }),
+            }),
+          ]),
+        }),
+      ]);
+      expect(result.errors).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          phase: 'sync',
+          code: 'sync-blocked',
+          allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+          prefix: AUTHZ_RESOURCE_PREFIX,
+          versionId: 'v2',
+          details: {
             collisions: expect.arrayContaining([
               expect.objectContaining({
                 code: 'prefix-capacity-drift',
                 record: expect.objectContaining({
                   prefix: AUTHZ_RESOURCE_PREFIX,
                   versionId: 'v2',
-                  capacity: 8,
-                }),
-                existing: existingPrefixRecord,
-                intended: expect.objectContaining({
-                  prefix: AUTHZ_RESOURCE_PREFIX,
-                  versionId: 'v2',
-                  capacity: 8,
                 }),
               }),
             ]),
-          }),
-        ]);
-        expect(result.errors).toEqual([
-          expect.objectContaining({
-            level: 'error',
-            phase: 'sync',
-            code: 'sync-blocked',
-            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-            prefix: AUTHZ_RESOURCE_PREFIX,
-            versionId: 'v2',
-            details: {
-              collisions: expect.arrayContaining([
-                expect.objectContaining({
-                  code: 'prefix-capacity-drift',
-                  record: expect.objectContaining({
-                    prefix: AUTHZ_RESOURCE_PREFIX,
-                    versionId: 'v2',
-                  }),
-                }),
-              ]),
-            },
-          }),
-        ]);
-        await expect(context.prefixRegistry.getRecord(AUTHZ_RESOURCE_PREFIX, 'v2')).resolves.toEqual(
-          existingPrefixRecord,
-        );
-        await expect(
-          context.prefixRegistry.getRecord(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
-        ).resolves.toBeNull();
-        await expect(
-          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
-        ).resolves.toBeNull();
-        await expect(
-          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
-        ).resolves.toBeNull();
-        await expectSqlIndexMetaRowCounts(context, {
-          prefixRegistry: 1,
-          prefixRef: 0,
-          schemaVersion: 0,
-        });
+          },
+        }),
+      ]);
+      await expect(context.prefixRegistry.getRecord(AUTHZ_RESOURCE_PREFIX, 'v2')).resolves.toEqual(
+        existingPrefixRecord,
+      );
+      await expect(
+        context.prefixRegistry.getRecord(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expect(
+        context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expect(
+        context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expectSqlIndexMetaRowCounts(context, {
+        prefixRegistry: 1,
+        prefixRef: 0,
+        schemaVersion: 0,
       });
+    });
 
-      it('blocks sync when index-meta has mismatched schema version capacity', async () => {
-        const context = await setup();
-        const existingSchemaVersion = {
+    it('blocks sync when index-meta has mismatched schema version capacity', async () => {
+      const context = await setup();
+      const existingSchemaVersion = {
+        prefix: AUTHZ_RESOURCE_PREFIX,
+        versionId: 'v2',
+        capacity: 4,
+        createdAt: ACTIVATION_NOW,
+      };
+      await context.schemaVersionStore.insertSchemaVersion(existingSchemaVersion);
+      const service = new OntologyRegistryService({
+        store: context.store,
+        syncAdapter: createOntologyIndexMetaSyncAdapter({
+          prefixRegistry: context.prefixRegistry,
+          schemaVersionStore: context.schemaVersionStore,
+        }),
+      });
+      const helper = new OntologyPackActivationHelper(service);
+
+      const result = await helper.activateOntologyPack(validPack, activationOptions());
+
+      expect(result.status).toBe('failed');
+      expect(result.activationStatuses).toEqual([
+        {
+          allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+          taxonomyId: 'authorization-resource',
           prefix: AUTHZ_RESOURCE_PREFIX,
           versionId: 'v2',
-          capacity: 4,
-          createdAt: ACTIVATION_NOW,
-        };
-        await context.schemaVersionStore.insertSchemaVersion(existingSchemaVersion);
-        const service = new OntologyRegistryService({
-          store: context.store,
-          syncAdapter: createOntologyIndexMetaSyncAdapter({
-            prefixRegistry: context.prefixRegistry,
-            schemaVersionStore: context.schemaVersionStore,
-          }),
-        });
-        const helper = new OntologyPackActivationHelper(service);
-
-        const result = await helper.activateOntologyPack(validPack, activationOptions());
-
-        expect(result.status).toBe('failed');
-        expect(result.activationStatuses).toEqual([
-          {
-            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-            taxonomyId: 'authorization-resource',
-            prefix: AUTHZ_RESOURCE_PREFIX,
-            versionId: 'v2',
-            status: 'active',
-            activationStatus: 'sync-blocked',
-            syncStatus: 'blocked',
-          },
-        ]);
-        expect(result.syncReports).toEqual([
-          expect.objectContaining({
-            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-            prefix: AUTHZ_RESOURCE_PREFIX,
-            versionId: 'v2',
-            syncStatus: 'blocked',
+          status: 'active',
+          activationStatus: 'sync-blocked',
+          syncStatus: 'blocked',
+        },
+      ]);
+      expect(result.syncReports).toEqual([
+        expect.objectContaining({
+          allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+          prefix: AUTHZ_RESOURCE_PREFIX,
+          versionId: 'v2',
+          syncStatus: 'blocked',
+          collisions: [
+            expect.objectContaining({
+              code: 'schema-version-capacity-drift',
+              record: expect.objectContaining({
+                kind: 'schema-version',
+                prefix: AUTHZ_RESOURCE_PREFIX,
+                versionId: 'v2',
+                capacity: 8,
+              }),
+              existing: existingSchemaVersion,
+              intended: expect.objectContaining({
+                prefix: AUTHZ_RESOURCE_PREFIX,
+                versionId: 'v2',
+                capacity: 8,
+              }),
+            }),
+          ],
+        }),
+      ]);
+      expect(result.errors).toEqual([
+        expect.objectContaining({
+          level: 'error',
+          phase: 'sync',
+          code: 'sync-blocked',
+          allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
+          prefix: AUTHZ_RESOURCE_PREFIX,
+          versionId: 'v2',
+          details: {
             collisions: [
               expect.objectContaining({
                 code: 'schema-version-capacity-drift',
                 record: expect.objectContaining({
-                  kind: 'schema-version',
                   prefix: AUTHZ_RESOURCE_PREFIX,
                   versionId: 'v2',
-                  capacity: 8,
-                }),
-                existing: existingSchemaVersion,
-                intended: expect.objectContaining({
-                  prefix: AUTHZ_RESOURCE_PREFIX,
-                  versionId: 'v2',
-                  capacity: 8,
                 }),
               }),
             ],
-          }),
-        ]);
-        expect(result.errors).toEqual([
-          expect.objectContaining({
-            level: 'error',
-            phase: 'sync',
-            code: 'sync-blocked',
-            allocationId: AUTHZ_RESOURCE_ALLOCATION_ID,
-            prefix: AUTHZ_RESOURCE_PREFIX,
-            versionId: 'v2',
-            details: {
-              collisions: [
-                expect.objectContaining({
-                  code: 'schema-version-capacity-drift',
-                  record: expect.objectContaining({
-                    prefix: AUTHZ_RESOURCE_PREFIX,
-                    versionId: 'v2',
-                  }),
-                }),
-              ],
-            },
-          }),
-        ]);
-        await expect(
-          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
-        ).resolves.toEqual(existingSchemaVersion);
-        await expect(context.prefixRegistry.getRecord(AUTHZ_RESOURCE_PREFIX, 'v2')).resolves.toBeNull();
-        await expect(
-          context.prefixRegistry.getRecord(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
-        ).resolves.toBeNull();
-        await expect(
-          context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
-        ).resolves.toBeNull();
-        await expectSqlIndexMetaRowCounts(context, {
-          prefixRegistry: 0,
-          prefixRef: 0,
-          schemaVersion: 1,
-        });
+          },
+        }),
+      ]);
+      await expect(
+        context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_PREFIX, 'v2'),
+      ).resolves.toEqual(existingSchemaVersion);
+      await expect(
+        context.prefixRegistry.getRecord(AUTHZ_RESOURCE_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expect(
+        context.prefixRegistry.getRecord(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expect(
+        context.schemaVersionStore.getSchemaVersion(AUTHZ_RESOURCE_AXIS_PREFIX, 'v2'),
+      ).resolves.toBeNull();
+      await expectSqlIndexMetaRowCounts(context, {
+        prefixRegistry: 0,
+        prefixRef: 0,
+        schemaVersion: 1,
       });
-    },
-  );
+    });
+  });
 });
 
 function activationOptions() {

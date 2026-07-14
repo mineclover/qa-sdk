@@ -1,7 +1,7 @@
 // @def.boundary nest-service-port-contract
 // @def.doc nest-service-port-contract
 
-import type { EventEnvelope } from "./event-envelope.js";
+import type { EventEnvelope } from './event-envelope.js';
 
 export abstract class EventPublisherPort {
   abstract publish<TPayload extends Record<string, unknown>>(

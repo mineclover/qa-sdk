@@ -12,18 +12,25 @@
  * zero-dependency를 유지한다.
  */
 
-import type { WorkDomainId } from "./types.js";
+import type { WorkDomainId } from './types.js';
 
 // ─── definition-catalog 타입 재선언 (의존 없이) ─────────
 
 /** definition-catalog DefScope 7종 (참조용) */
-export type DefScope = "ui" | "feature" | "flow" | "state" | "constraint" | "data" | "interface";
+export type DefScope = 'ui' | 'feature' | 'flow' | 'state' | 'constraint' | 'data' | 'interface';
 
 /** definition-catalog DefLayer 4종 (참조용) */
-export type DefLayer = "domain" | "operation" | "mediation" | "experience";
+export type DefLayer = 'domain' | 'operation' | 'mediation' | 'experience';
 
 /** definition-catalog ConcernTag 7종 (참조용) */
-export type ConcernTag = "security" | "performance" | "accessibility" | "observability" | "testing" | "migration" | "deprecation";
+export type ConcernTag =
+  | 'security'
+  | 'performance'
+  | 'accessibility'
+  | 'observability'
+  | 'testing'
+  | 'migration'
+  | 'deprecation';
 
 // ─── 매핑 인터페이스 ────────────────────────────────────
 
@@ -46,54 +53,54 @@ export interface ScopeMapping {
  * 관련 문서를 definition-service에서 검색할 수 있다.
  */
 export const DOMAIN_TO_DEF_MAP: Record<WorkDomainId, ScopeMapping> = {
-  "data-infra": {
-    primaryScopes: ["data"],
-    primaryLayer: "operation",
-    concerns: ["migration"],
+  'data-infra': {
+    primaryScopes: ['data'],
+    primaryLayer: 'operation',
+    concerns: ['migration'],
   },
-  "backend-logic": {
-    primaryScopes: ["feature", "interface"],
-    primaryLayer: "domain",
+  'backend-logic': {
+    primaryScopes: ['feature', 'interface'],
+    primaryLayer: 'domain',
     concerns: [],
   },
-  "ui-component": {
-    primaryScopes: ["ui"],
-    primaryLayer: "experience",
-    concerns: ["accessibility"],
+  'ui-component': {
+    primaryScopes: ['ui'],
+    primaryLayer: 'experience',
+    concerns: ['accessibility'],
   },
-  "frontend-app": {
-    primaryScopes: ["ui", "flow"],
-    primaryLayer: "experience",
-    concerns: ["performance"],
+  'frontend-app': {
+    primaryScopes: ['ui', 'flow'],
+    primaryLayer: 'experience',
+    concerns: ['performance'],
   },
-  "ai-engineering": {
-    primaryScopes: ["feature", "data"],
-    primaryLayer: "domain",
-    concerns: ["performance"],
+  'ai-engineering': {
+    primaryScopes: ['feature', 'data'],
+    primaryLayer: 'domain',
+    concerns: ['performance'],
   },
-  "observability": {
-    primaryScopes: ["state"],
-    primaryLayer: "operation",
-    concerns: ["observability"],
+  observability: {
+    primaryScopes: ['state'],
+    primaryLayer: 'operation',
+    concerns: ['observability'],
   },
-  "global-inclusion": {
-    primaryScopes: ["constraint"],
-    primaryLayer: "experience",
-    concerns: ["accessibility"],
+  'global-inclusion': {
+    primaryScopes: ['constraint'],
+    primaryLayer: 'experience',
+    concerns: ['accessibility'],
   },
-  "security-guardrail": {
-    primaryScopes: ["constraint"],
-    primaryLayer: "domain",
-    concerns: ["security"],
+  'security-guardrail': {
+    primaryScopes: ['constraint'],
+    primaryLayer: 'domain',
+    concerns: ['security'],
   },
-  "productivity": {
-    primaryScopes: ["constraint", "flow"],
-    primaryLayer: "operation",
-    concerns: ["testing"],
+  productivity: {
+    primaryScopes: ['constraint', 'flow'],
+    primaryLayer: 'operation',
+    concerns: ['testing'],
   },
-  "tech-docs": {
-    primaryScopes: ["data", "interface"],
-    primaryLayer: "mediation",
+  'tech-docs': {
+    primaryScopes: ['data', 'interface'],
+    primaryLayer: 'mediation',
     concerns: [],
   },
 };
@@ -131,43 +138,43 @@ export function buildDocQuery(domainId: WorkDomainId): DocQueryParams {
  */
 const ARTIFACT_DOMAIN_MAP: Record<string, WorkDomainId> = {
   // data-infra
-  "schema": "data-infra",
-  "migration": "data-infra",
-  "table": "data-infra",
+  schema: 'data-infra',
+  migration: 'data-infra',
+  table: 'data-infra',
 
   // backend-logic
-  "module": "backend-logic",
-  "service": "backend-logic",
-  "endpoint": "backend-logic",
-  "api": "backend-logic",
+  module: 'backend-logic',
+  service: 'backend-logic',
+  endpoint: 'backend-logic',
+  api: 'backend-logic',
 
   // ui-component
-  "component": "ui-component",
-  "widget": "ui-component",
+  component: 'ui-component',
+  widget: 'ui-component',
 
   // frontend-app
-  "page": "frontend-app",
-  "screen": "frontend-app",
-  "layout": "frontend-app",
+  page: 'frontend-app',
+  screen: 'frontend-app',
+  layout: 'frontend-app',
 
   // observability
-  "metric": "observability",
-  "trace": "observability",
-  "alert": "observability",
+  metric: 'observability',
+  trace: 'observability',
+  alert: 'observability',
 
   // security-guardrail
-  "policy": "security-guardrail",
-  "rule": "security-guardrail",
+  policy: 'security-guardrail',
+  rule: 'security-guardrail',
 
   // productivity
-  "refactor": "productivity",
-  "config": "productivity",
-  "config-change": "productivity",
+  refactor: 'productivity',
+  config: 'productivity',
+  'config-change': 'productivity',
 
   // tech-docs
-  "doc": "tech-docs",
-  "guide": "tech-docs",
-  "readme": "tech-docs",
+  doc: 'tech-docs',
+  guide: 'tech-docs',
+  readme: 'tech-docs',
 };
 
 export function suggestDomainFromArtifact(artifactType: string): WorkDomainId | undefined {

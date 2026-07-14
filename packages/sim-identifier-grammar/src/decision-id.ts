@@ -1,7 +1,7 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
+import { z } from 'zod';
 
-export const DECISION_PASSES = ["safety", "resource"] as const;
+export const DECISION_PASSES = ['safety', 'resource'] as const;
 export type DecisionPass = (typeof DECISION_PASSES)[number];
 
 const ULID_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/;

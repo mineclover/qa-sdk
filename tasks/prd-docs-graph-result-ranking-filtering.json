@@ -61,9 +61,7 @@
       "priority": 2,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -94,10 +92,7 @@
       "priority": 3,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-001",
-        "US-002"
-      ],
+      "dependsOn": ["US-001", "US-002"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -128,10 +123,7 @@
       "priority": 4,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-001",
-        "US-003"
-      ],
+      "dependsOn": ["US-001", "US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -160,11 +152,7 @@
       "priority": 5,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-002",
-        "US-003",
-        "US-004"
-      ],
+      "dependsOn": ["US-002", "US-003", "US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -191,9 +179,7 @@
       "priority": 6,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-005"
-      ],
+      "dependsOn": ["US-005"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -221,10 +207,7 @@
       "priority": 7,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-005",
-        "US-006"
-      ],
+      "dependsOn": ["US-005", "US-006"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -253,11 +236,7 @@
       "priority": 8,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-005",
-        "US-006",
-        "US-007"
-      ],
+      "dependsOn": ["US-005", "US-006", "US-007"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -288,9 +267,7 @@
       "priority": 9,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-008"
-      ],
+      "dependsOn": ["US-008"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -320,9 +297,7 @@
       "priority": 10,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-009"
-      ],
+      "dependsOn": ["US-009"],
       "completionNotes": "Completed by agent"
     }
   ],

@@ -13,13 +13,13 @@
  * 스펙: docs/specs/meta-semantic/meta-semantic-ir/
  */
 
-import type { FoldLevel } from "../pipe/pipe-fold.js";
+import type { FoldLevel } from '../pipe/pipe-fold.js';
 import type {
   ProjectionPlane,
   IntentHierarchy,
   LineageFacet,
   LineageKind,
-} from "definition-catalog";
+} from 'definition-catalog';
 
 // ── 참조 타입 ─────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export interface RuleRef {
 export interface SourceLocation {
   readonly filePath: string;
   readonly line: number;
-  readonly kind: "class" | "function" | "module" | "namespace";
+  readonly kind: 'class' | 'function' | 'module' | 'namespace';
 }
 
 /** 모듈 외부 계약 — 이 바운더리가 소비/생산하는 것 */
@@ -73,7 +73,7 @@ export interface ModuleRelations {
 /** definition-catalog 대응 메타데이터 */
 export interface ModuleMeta {
   readonly level: FoldLevel;
-  readonly layer?: "domain" | "operation" | "mediation" | "experience";
+  readonly layer?: 'domain' | 'operation' | 'mediation' | 'experience';
   readonly defDocRef?: string;
   readonly projectionPlane?: ProjectionPlane;
   readonly intentHierarchy?: IntentHierarchy;
@@ -108,14 +108,14 @@ export interface DataDefinition {
   readonly type: string;
   readonly schemaHash: string;
   readonly fields: readonly FieldDescriptor[];
-  readonly certainty: "strict" | "flexible";
+  readonly certainty: 'strict' | 'flexible';
 }
 
 /** 데이터 관리 — 정합성 보장 주체 */
 export interface DataManagement {
   readonly managedBy: ModuleRef;
   readonly validationRules: readonly RuleRef[];
-  readonly transactionScope: "local" | "distributed";
+  readonly transactionScope: 'local' | 'distributed';
 }
 
 /** 데이터 생산/소비 수명 */
@@ -131,10 +131,10 @@ export interface DataLifecycle {
 export interface DataStorage {
   readonly uid: string;
   readonly uidScheme: string;
-  readonly axisType?: "finite" | "structural";
+  readonly axisType?: 'finite' | 'structural';
   readonly stableAnchor?: string; // UID or Axis ID
-  readonly storageType: "memory" | "db" | "event-stream";
-  readonly retention: "ephemeral" | "session" | "persistent";
+  readonly storageType: 'memory' | 'db' | 'event-stream';
+  readonly retention: 'ephemeral' | 'session' | 'persistent';
 }
 
 /**
@@ -159,7 +159,7 @@ export interface DataIR {
 export interface PipeSourceLocation {
   readonly filePath: string;
   readonly line: number;
-  readonly kind: "method-call" | "event-emit" | "http-request" | "db-query";
+  readonly kind: 'method-call' | 'event-emit' | 'http-request' | 'db-query';
 }
 
 /**
@@ -172,7 +172,7 @@ export interface PipeIR {
   readonly transactionId: string;
   readonly targetModule: ModuleRef;
   readonly payload: DataRef;
-  readonly state: "pending" | "committed" | "rolledBack";
+  readonly state: 'pending' | 'committed' | 'rolledBack';
   readonly triggers: readonly PipeRef[];
   readonly source: PipeSourceLocation;
 }
@@ -187,9 +187,9 @@ export interface PipeIR {
  * children === 0                  → leaf
  */
 export function inferModuleLevel(relations: ModuleRelations): FoldLevel {
-  if (relations.children.length === 0) return "leaf";
-  if (relations.parent === null) return "group";
-  return "module";
+  if (relations.children.length === 0) return 'leaf';
+  if (relations.parent === null) return 'group';
+  return 'module';
 }
 
 /**
@@ -199,14 +199,14 @@ export function inferModuleLevel(relations: ModuleRelations): FoldLevel {
  */
 export function computeSchemaHash(fields: readonly FieldDescriptor[]): string {
   const sorted = [...fields].toSorted((a, b) => a.name.localeCompare(b.name));
-  const sig = sorted.map(f => `${f.name}:${f.type}:${f.optional}`).join("|");
+  const sig = sorted.map((f) => `${f.name}:${f.type}:${f.optional}`).join('|');
   // 간단한 결정론적 해시 (FNV-1a 32bit)
   let hash = 0x811c9dc5;
   for (let i = 0; i < sig.length; i++) {
     hash ^= sig.charCodeAt(i);
     hash = Math.imul(hash, 0x01000193);
   }
-  return (hash >>> 0).toString(16).padStart(8, "0");
+  return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
 /**
@@ -214,10 +214,10 @@ export function computeSchemaHash(fields: readonly FieldDescriptor[]): string {
  *
  * any, unknown, Record<string, any> 등이 포함되면 flexible.
  */
-export function deriveCertainty(fields: readonly FieldDescriptor[]): "strict" | "flexible" {
-  const flexiblePatterns = ["any", "unknown", "Record<string, any>", "Record<string, unknown>"];
+export function deriveCertainty(fields: readonly FieldDescriptor[]): 'strict' | 'flexible' {
+  const flexiblePatterns = ['any', 'unknown', 'Record<string, any>', 'Record<string, unknown>'];
   for (const f of fields) {
-    if (flexiblePatterns.some(p => f.type.includes(p))) return "flexible";
+    if (flexiblePatterns.some((p) => f.type.includes(p))) return 'flexible';
   }
-  return "strict";
+  return 'strict';
 }

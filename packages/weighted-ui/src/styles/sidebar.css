@@ -39,7 +39,9 @@
   border-bottom: 1px solid var(--border-cell);
   border-left: 3px solid transparent;
   cursor: pointer;
-  transition: background 0.08s, border-left-color 0.08s;
+  transition:
+    background 0.08s,
+    border-left-color 0.08s;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -78,4 +80,6 @@
   border-bottom: 1px solid var(--border-cell);
   flex-shrink: 0;
 }
-.sb-sep:last-child { border-bottom: none; }
+.sb-sep:last-child {
+  border-bottom: none;
+}

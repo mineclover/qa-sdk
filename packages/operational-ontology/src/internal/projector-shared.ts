@@ -4,17 +4,17 @@ import type {
   FieldLineage,
   NonLinearPathObservation,
   PathObservation,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 import {
   createInformationFacetRef,
   type InformationFacetKind,
   type InformationFacetRef,
-} from "./runtime-core.js";
+} from './runtime-core.js';
 
 export function createFieldFacetRef(
   pipeId: string,
-  direction: "consumes" | "produces",
+  direction: 'consumes' | 'produces',
   field: string,
   facetKind: InformationFacetKind,
 ): InformationFacetRef {
@@ -30,7 +30,7 @@ export function createPortEndpointId(pipeId: string, portId: string): string {
 
 export function createContractEndpointId(
   pipeId: string,
-  direction: "in" | "out",
+  direction: 'in' | 'out',
   field: string,
 ): string {
   return `endpoint:${pipeId}:${direction}:${field}`;
@@ -45,15 +45,15 @@ export function mapFacetRoleToInformationFacetKind(
   }
 
   switch (role) {
-    case "produced":
-    case "derived":
-      return "production";
-    case "consumed":
-      return "consumption";
-    case "managed":
-      return "management";
-    case "identity":
-      return "definition";
+    case 'produced':
+    case 'derived':
+      return 'production';
+    case 'consumed':
+      return 'consumption';
+    case 'managed':
+      return 'management';
+    case 'identity':
+      return 'definition';
     default:
       return fallback;
   }
@@ -73,7 +73,7 @@ export function createSchemaColumnFacetRef(
 export function parseSchemaColumnNodeId(
   nodeId: string,
 ): { schemaId: string; column: string } | undefined {
-  const separatorIndex = nodeId.indexOf(":");
+  const separatorIndex = nodeId.indexOf(':');
   if (separatorIndex === -1) {
     return undefined;
   }
@@ -87,10 +87,7 @@ export function parseSchemaColumnNodeId(
 export function buildSchemaColumnIndex(
   schemas: readonly DataSchema[] | undefined,
 ): Map<string, { schema: DataSchema; column: string; facetRole?: FacetRole }> {
-  const index = new Map<
-    string,
-    { schema: DataSchema; column: string; facetRole?: FacetRole }
-  >();
+  const index = new Map<string, { schema: DataSchema; column: string; facetRole?: FacetRole }>();
 
   for (const schema of schemas ?? []) {
     for (const [column, descriptor] of Object.entries(schema.columns)) {
@@ -147,10 +144,7 @@ export function resolveSingleSchemaId(
   return [...matched][0];
 }
 
-export function dedupeByKey<T>(
-  values: readonly T[],
-  getKey: (value: T) => string,
-): T[] {
+export function dedupeByKey<T>(values: readonly T[], getKey: (value: T) => string): T[] {
   const map = new Map<string, T>();
   for (const value of values) {
     map.set(getKey(value), value);

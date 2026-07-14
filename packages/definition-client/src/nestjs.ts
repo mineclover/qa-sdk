@@ -22,12 +22,12 @@
  * ```
  */
 
-import { Module, type DynamicModule, type InjectionToken } from "@nestjs/common";
-import { DefinitionClient, type DefinitionClientOptions } from "./client.js";
+import { Module, type DynamicModule, type InjectionToken } from '@nestjs/common';
+import { DefinitionClient, type DefinitionClientOptions } from './client.js';
 
 /** DI 토큰 */
-export const DEFINITION_CLIENT = "DEFINITION_CLIENT";
-export const DEFINITION_CLIENT_OPTIONS = "DEFINITION_CLIENT_OPTIONS";
+export const DEFINITION_CLIENT = 'DEFINITION_CLIENT';
+export const DEFINITION_CLIENT_OPTIONS = 'DEFINITION_CLIENT_OPTIONS';
 
 /** forRoot 옵션 */
 export interface DefinitionModuleOptions {

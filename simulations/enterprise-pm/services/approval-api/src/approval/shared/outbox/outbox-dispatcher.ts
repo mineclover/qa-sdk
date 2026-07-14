@@ -17,12 +17,9 @@
  * idempotency_key 는 grammar #12(`buildIdempotencyKey`) 결과만 허용한다. consumer 측에서도
  * `parseIdempotencyKey` 로 한 번 더 형식을 검증해 raw 보간 row 를 즉시 throw 시킨다.
  */
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type { Sql } from "postgres";
-import {
-  buildIdempotencyKey,
-  parseIdempotencyKey,
-} from "sim-identifier-grammar";
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { Sql } from 'postgres';
+import { buildIdempotencyKey, parseIdempotencyKey } from 'sim-identifier-grammar';
 
 export interface OutboxEvent {
   readonly id: string;
@@ -62,9 +59,7 @@ export interface OutboxDispatcher {
   tick(): Promise<number>;
 }
 
-export function createOutboxDispatcher(
-  opts: OutboxDispatcherOptions,
-): OutboxDispatcher {
+export function createOutboxDispatcher(opts: OutboxDispatcherOptions): OutboxDispatcher {
   return {
     async tick(): Promise<number> {
       let processed = 0;
@@ -141,13 +136,13 @@ export function createOutboxDispatcher(
                 SET status = 'dlq'
                 WHERE id = ${row.id}`;
               // DLQ 진입 자체를 outbox 이벤트로 발행 — controller 안전 가드 카테고리 신호.
-              const dlqEventName = "approval.outbox.dlq-entered";
+              const dlqEventName = 'approval.outbox.dlq-entered';
               const dlqId = `dlq-${row.id}`;
               // DLQ 이벤트의 idempotencyKey 도 grammar #12 형식 준수.
               // aggregateId 는 원본 row.id 를 kebab-safe 한 형태로 prefix 한다.
               const dlqOccurredAt = Date.now();
               const dlqIdempotencyKey = buildIdempotencyKey({
-                aggregateId: `dlq-${row.id}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                aggregateId: `dlq-${row.id}`.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
                 eventName: dlqEventName,
                 occurredAt: dlqOccurredAt,
               });

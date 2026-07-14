@@ -1,6 +1,6 @@
 // @def.boundary db-traffic-control-spec
 // @def.doc db-traffic-control-spec
-import type { ConcurrencyStatus } from "./types.js";
+import type { ConcurrencyStatus } from './types.js';
 
 interface Slot {
   current: number;
@@ -23,7 +23,8 @@ export class ConcurrencyLimiter {
 
   /** budget별 동시성 상한 등록 */
   register(key: string, maxConcurrency: number): void {
-    if (maxConcurrency < 1) throw new Error(`maxConcurrency는 1 이상이어야 한다: ${maxConcurrency}`);
+    if (maxConcurrency < 1)
+      throw new Error(`maxConcurrency는 1 이상이어야 한다: ${maxConcurrency}`);
     const existing = this.slots.get(key);
     if (existing) {
       existing.max = maxConcurrency;
@@ -79,7 +80,7 @@ export class ConcurrencyLimiter {
         this.release(key);
       };
 
-      const waiter: Slot["waiters"][number] = {
+      const waiter: Slot['waiters'][number] = {
         resolve: () => resolve(release),
       };
 
@@ -128,4 +129,4 @@ export class ConcurrencyLimiter {
 }
 
 /** 전역 동시성 제한기의 예약 키 */
-export const GLOBAL_CONCURRENCY_KEY = "__global__";
+export const GLOBAL_CONCURRENCY_KEY = '__global__';

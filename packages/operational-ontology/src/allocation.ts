@@ -13,12 +13,12 @@ export {
   type OntologyAddressAllocationPlan,
   allocateOntologyAddressSpace,
   validateOntologyAddressAllocationPlan,
-} from "./internal/ontology-allocation-core.js";
+} from './internal/ontology-allocation-core.js';
 
 import {
   allocateOntologyAddressSpace,
   validateOntologyAddressAllocationPlan,
-} from "./internal/ontology-allocation-core.js";
+} from './internal/ontology-allocation-core.js';
 
 export const operationalOntologyAllocationPlane = {
   allocateOntologyAddressSpace,

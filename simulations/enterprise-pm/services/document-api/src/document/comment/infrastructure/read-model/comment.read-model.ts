@@ -4,8 +4,8 @@
 import {
   CommentReadModelQuery,
   type CommentDetailReadModel,
-} from "../../application/queries/comment-read-model.query.js";
-import type { CommentRepositoryPort } from "../../application/ports/comment-repository.port.js";
+} from '../../application/queries/comment-read-model.query.js';
+import type { CommentRepositoryPort } from '../../application/ports/comment-repository.port.js';
 
 export class RepositoryCommentReadModel extends CommentReadModelQuery {
   constructor(private readonly repository: CommentRepositoryPort) {

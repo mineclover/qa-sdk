@@ -1,12 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type {
-  TaskHandler,
-  TaskPayload,
-  TaskQueue,
-  TaskQueueOptions,
-} from "@qa-sdk/core";
+import type { TaskHandler, TaskPayload, TaskQueue, TaskQueueOptions } from '@qa-sdk/core';
 
 interface PendingTask<T> {
   task: T;
@@ -14,9 +9,7 @@ interface PendingTask<T> {
 }
 
 /** 테스트용 즉시 실행 TaskQueue 구현 */
-export class InMemoryTaskQueue<T extends TaskPayload = TaskPayload>
-  implements TaskQueue<T>
-{
+export class InMemoryTaskQueue<T extends TaskPayload = TaskPayload> implements TaskQueue<T> {
   private activeHandlerDepth = 0;
   private handler: TaskHandler<T> | null = null;
   private closed = false;
@@ -25,7 +18,7 @@ export class InMemoryTaskQueue<T extends TaskPayload = TaskPayload>
 
   async enqueue(task: T, opts?: TaskQueueOptions): Promise<void> {
     if (this.closed) {
-      throw new Error("TaskQueue is closed");
+      throw new Error('TaskQueue is closed');
     }
 
     const pendingTask: PendingTask<T> = {
@@ -48,7 +41,7 @@ export class InMemoryTaskQueue<T extends TaskPayload = TaskPayload>
 
   async process(handler: TaskHandler<T>): Promise<void> {
     if (this.closed) {
-      throw new Error("TaskQueue is closed");
+      throw new Error('TaskQueue is closed');
     }
 
     this.handler = handler;
@@ -89,10 +82,7 @@ export class InMemoryTaskQueue<T extends TaskPayload = TaskPayload>
     return next;
   }
 
-  private async runWithRetry(
-    handler: TaskHandler<T>,
-    pendingTask: PendingTask<T>,
-  ): Promise<void> {
+  private async runWithRetry(handler: TaskHandler<T>, pendingTask: PendingTask<T>): Promise<void> {
     const retryAttempts = pendingTask.opts?.retryAttempts ?? 0;
     const retryDelayMs = pendingTask.opts?.retryDelayMs ?? 0;
 

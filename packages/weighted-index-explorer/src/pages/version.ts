@@ -6,8 +6,8 @@
 //  cross-index migration, address state gate, sparse migration warning
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { SCHEMA_VERSIONS, getVersion, type DimKey } from "../data.js";
-import { dimBadge } from "../utils/badge.js";
+import { SCHEMA_VERSIONS, getVersion, type DimKey } from '../data.js';
+import { dimBadge } from '../utils/badge.js';
 import {
   WeightedIndex,
   calcAddressRanges,
@@ -18,7 +18,7 @@ import {
   positionsToConstraint,
   complementRanges,
   type CoordConstraint,
-} from "weighted-index";
+} from 'weighted-index';
 
 export function renderVersion(container: HTMLElement): void {
   container.innerHTML = `<div class="concept-wrap">${buildVersionPage()}</div>`;
@@ -78,21 +78,24 @@ function buildVersionMatrix(): string {
   const rows = SCHEMA_VERSIONS.map((vd) => {
     const newEntries = Object.entries(vd.newDimValues)
       .map(([dim, set]) => {
-        const vals = Array.from(set ?? []).map((v) => dimBadge(dim as DimKey, v)).join(" ");
+        const vals = Array.from(set ?? [])
+          .map((v) => dimBadge(dim as DimKey, v))
+          .join(' ');
         return `<span class="vt-dim-tag">${dim}</span> ${vals}`;
-      }).join("<br/>");
+      })
+      .join('<br/>');
 
     return `
       <tr class="vt-row">
         <td class="vt-ver"><strong>${vd.v}</strong></td>
-        <td class="vt-shape">[${vd.shape.join(", ")}]</td>
+        <td class="vt-shape">[${vd.shape.join(', ')}]</td>
         <td class="vt-size">${vd.size.toLocaleString()}</td>
-        <td class="vt-weights">[${vd.weights.join(", ")}]</td>
+        <td class="vt-weights">[${vd.weights.join(', ')}]</td>
         <td class="vt-new">${newEntries || '<span style="color:#aaa">없음 (초기)</span>'}</td>
         <td class="vt-changelog">${vd.changelog}</td>
       </tr>
     `;
-  }).join("");
+  }).join('');
 
   return `
     <h2 class="concept-section-title">버전 매트릭스</h2>
@@ -125,12 +128,19 @@ function buildVersionMatrix(): string {
 function buildWeightAnalysis(): string {
   const [v1, v2, v3] = SCHEMA_VERSIONS;
 
-  const compareRow = (label: string, w1: number, w2: number, w3: number, c12: boolean, c23: boolean) => `
+  const compareRow = (
+    label: string,
+    w1: number,
+    w2: number,
+    w3: number,
+    c12: boolean,
+    c23: boolean,
+  ) => `
     <tr>
       <td><code>${label}</code></td>
       <td class="td-num">${w1}</td>
-      <td class="td-num ${c12 ? "vt-changed" : "vt-stable"}">${w2} ${c12 ? "⚠" : "="}</td>
-      <td class="td-num ${c23 ? "vt-changed" : "vt-stable"}">${w3} ${c23 ? "⚠" : "="}</td>
+      <td class="td-num ${c12 ? 'vt-changed' : 'vt-stable'}">${w2} ${c12 ? '⚠' : '='}</td>
+      <td class="td-num ${c23 ? 'vt-changed' : 'vt-stable'}">${w3} ${c23 ? '⚠' : '='}</td>
     </tr>
   `;
 
@@ -149,10 +159,10 @@ function buildWeightAnalysis(): string {
             <tr><th>차원</th><th>v1 W</th><th>v2 W</th><th>v3 W</th></tr>
           </thead>
           <tbody>
-            ${compareRow("resource (W₁)", w1_1, w2_1, w3_1, w1_1 !== w2_1, w2_1 !== w3_1)}
-            ${compareRow("action (W₂)",   w1_2, w2_2, w3_2, w1_2 !== w2_2, w2_2 !== w3_2)}
-            ${compareRow("role (W₃)",     w1_3, w2_3, w3_3, w1_3 !== w2_3, w2_3 !== w3_3)}
-            ${compareRow("env (W₄)",      w1_4, w2_4, w3_4, w1_4 !== w2_4, w2_4 !== w3_4)}
+            ${compareRow('resource (W₁)', w1_1, w2_1, w3_1, w1_1 !== w2_1, w2_1 !== w3_1)}
+            ${compareRow('action (W₂)', w1_2, w2_2, w3_2, w1_2 !== w2_2, w2_2 !== w3_2)}
+            ${compareRow('role (W₃)', w1_3, w2_3, w3_3, w1_3 !== w2_3, w2_3 !== w3_3)}
+            ${compareRow('env (W₄)', w1_4, w2_4, w3_4, w1_4 !== w2_4, w2_4 !== w3_4)}
           </tbody>
         </table>
         <p class="mini-note">
@@ -194,13 +204,14 @@ function buildWeightAnalysis(): string {
 // ── 4. 재계산 데모 ─────────────────────────────────────────────────────────
 
 function buildRecalcDemo(): string {
-  const versionOpts = SCHEMA_VERSIONS.map((vd) =>
-    `<option value="${vd.v}">${vd.v} — [${vd.shape.join(",")}] · ${vd.size}개</option>`
-  ).join("");
+  const versionOpts = SCHEMA_VERSIONS.map(
+    (vd) => `<option value="${vd.v}">${vd.v} — [${vd.shape.join(',')}] · ${vd.size}개</option>`,
+  ).join('');
 
-  const toOpts = SCHEMA_VERSIONS.map((vd, i) =>
-    `<option value="${vd.v}"${i === 2 ? " selected" : ""}>${vd.v} — [${vd.shape.join(",")}] · ${vd.size}개</option>`
-  ).join("");
+  const toOpts = SCHEMA_VERSIONS.map(
+    (vd, i) =>
+      `<option value="${vd.v}"${i === 2 ? ' selected' : ''}>${vd.v} — [${vd.shape.join(',')}] · ${vd.size}개</option>`,
+  ).join('');
 
   return `
     <h2 class="concept-section-title">재계산 데모</h2>
@@ -231,33 +242,41 @@ function buildRecalcDemo(): string {
 // ── 5. 크로스 인덱스 마이그레이션 ────────────────────────────────────────────
 
 // Demo indices — self-contained, no external registry dependency
-interface CiDimDef { id: string; label: string; entries: string[] }
+interface CiDimDef {
+  id: string;
+  label: string;
+  entries: string[];
+}
 interface CiIndexDef {
-  id: string; label: string;
-  dims: CiDimDef[]; wi: WeightedIndex;
+  id: string;
+  label: string;
+  dims: CiDimDef[];
+  wi: WeightedIndex;
 }
 
-const CI_ROLE_ENTRIES  = ["admin", "editor", "viewer"];
-const CI_ACTION_ENTRIES = ["read", "write", "delete"];
-const CI_RESOURCE_ENTRIES = ["posts", "comments", "users"];
+const CI_ROLE_ENTRIES = ['admin', 'editor', 'viewer'];
+const CI_ACTION_ENTRIES = ['read', 'write', 'delete'];
+const CI_RESOURCE_ENTRIES = ['posts', 'comments', 'users'];
 
 const CI_INDICES: CiIndexDef[] = [
   {
-    id: "perm", label: "perm (2D: role x action)",
+    id: 'perm',
+    label: 'perm (2D: role x action)',
     dims: [
-      { id: "role", label: "역할", entries: CI_ROLE_ENTRIES },
-      { id: "action", label: "액션", entries: CI_ACTION_ENTRIES },
+      { id: 'role', label: '역할', entries: CI_ROLE_ENTRIES },
+      { id: 'action', label: '액션', entries: CI_ACTION_ENTRIES },
     ],
-    wi: new WeightedIndex([3, 3], ["role", "action"]),
+    wi: new WeightedIndex([3, 3], ['role', 'action']),
   },
   {
-    id: "perm_full", label: "perm_full (3D: role x action x resource)",
+    id: 'perm_full',
+    label: 'perm_full (3D: role x action x resource)',
     dims: [
-      { id: "role", label: "역할", entries: CI_ROLE_ENTRIES },
-      { id: "action", label: "액션", entries: CI_ACTION_ENTRIES },
-      { id: "resource", label: "리소스", entries: CI_RESOURCE_ENTRIES },
+      { id: 'role', label: '역할', entries: CI_ROLE_ENTRIES },
+      { id: 'action', label: '액션', entries: CI_ACTION_ENTRIES },
+      { id: 'resource', label: '리소스', entries: CI_RESOURCE_ENTRIES },
     ],
-    wi: new WeightedIndex([3, 3, 3], ["role", "action", "resource"]),
+    wi: new WeightedIndex([3, 3, 3], ['role', 'action', 'resource']),
   },
 ];
 
@@ -266,12 +285,12 @@ function getCiIndex(id: string): CiIndexDef {
 }
 
 function buildCrossIndexMigration(): string {
-  const sourceOpts = CI_INDICES.map((idx) =>
-    `<option value="${idx.id}">${idx.label}</option>`
-  ).join("");
-  const targetOpts = CI_INDICES.map((idx, i) =>
-    `<option value="${idx.id}"${i === 1 ? " selected" : ""}>${idx.label}</option>`
-  ).join("");
+  const sourceOpts = CI_INDICES.map(
+    (idx) => `<option value="${idx.id}">${idx.label}</option>`,
+  ).join('');
+  const targetOpts = CI_INDICES.map(
+    (idx, i) => `<option value="${idx.id}"${i === 1 ? ' selected' : ''}>${idx.label}</option>`,
+  ).join('');
 
   return `
     <h2 class="concept-section-title">크로스 인덱스 마이그레이션</h2>
@@ -532,11 +551,11 @@ function buildSparseMigrationWarning(): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireDemo(container: HTMLElement): void {
-  const fromSel = container.querySelector<HTMLSelectElement>("#rc-from");
-  const toSel   = container.querySelector<HTMLSelectElement>("#rc-to");
-  const idInput = container.querySelector<HTMLInputElement>("#rc-id");
-  const runBtn  = container.querySelector<HTMLButtonElement>("#rc-run");
-  const result  = container.querySelector<HTMLDivElement>("#rc-result");
+  const fromSel = container.querySelector<HTMLSelectElement>('#rc-from');
+  const toSel = container.querySelector<HTMLSelectElement>('#rc-to');
+  const idInput = container.querySelector<HTMLInputElement>('#rc-id');
+  const runBtn = container.querySelector<HTMLButtonElement>('#rc-run');
+  const result = container.querySelector<HTMLDivElement>('#rc-result');
   if (!fromSel || !toSel || !idInput || !runBtn || !result) return;
   const fromSelect = fromSel;
   const toSelect = toSel;
@@ -545,12 +564,12 @@ function wireDemo(container: HTMLElement): void {
   const resultEl = result;
 
   function run(): void {
-    const fromV   = fromSelect.value;
-    const toV     = toSelect.value;
+    const fromV = fromSelect.value;
+    const toV = toSelect.value;
     const inputId = parseInt(idInputEl.value, 10);
 
     const fromDef = getVersion(fromV);
-    const toDef   = getVersion(toV);
+    const toDef = getVersion(toV);
 
     if (isNaN(inputId) || inputId < 0 || inputId >= fromDef.size) {
       resultEl.innerHTML = `<div class="recalc-error">ID ${inputId}는 ${fromV} 범위 [0, ${fromDef.size - 1}] 밖입니다.</div>`;
@@ -563,23 +582,23 @@ function wireDemo(container: HTMLElement): void {
     const [N1, N2, N3, N4] = toDef.shape;
     if (r > N1 || a > N2 || ro > N3 || e > N4) {
       resultEl.innerHTML = `<div class="recalc-error">
-        좌표 [${r},${a},${ro},${e}]는 ${toV} shape [${toDef.shape.join(",")}] 범위를 초과합니다.
+        좌표 [${r},${a},${ro},${e}]는 ${toV} shape [${toDef.shape.join(',')}] 범위를 초과합니다.
       </div>`;
       return;
     }
 
     const newId = toDef.wi.encode(coords);
 
-    const rVal  = String(fromDef.dims.resource.values[r  - 1]);
-    const aVal  = String(fromDef.dims.action.values[a    - 1]);
-    const roVal = String(fromDef.dims.role.values[ro     - 1]);
-    const eVal  = String(fromDef.dims.env.values[e       - 1]);
+    const rVal = String(fromDef.dims.resource.values[r - 1]);
+    const aVal = String(fromDef.dims.action.values[a - 1]);
+    const roVal = String(fromDef.dims.role.values[ro - 1]);
+    const eVal = String(fromDef.dims.env.values[e - 1]);
 
-    const wFrom   = fromDef.weights;
-    const wTo     = toDef.weights;
-    const sameId  = inputId === newId;
+    const wFrom = fromDef.weights;
+    const wTo = toDef.weights;
+    const sameId = inputId === newId;
     const wChange = JSON.stringify(wFrom) !== JSON.stringify(wTo);
-    const isNewInTo = (toDef.newDimValues.role?.has(roVal) ?? false);
+    const isNewInTo = toDef.newDimValues.role?.has(roVal) ?? false;
 
     resultEl.innerHTML = `
       <div class="recalc-steps">
@@ -588,33 +607,37 @@ function wireDemo(container: HTMLElement): void {
           <span class="rc-step-label">입력 ID (${fromV})</span>
           <code class="rc-code">perm:${fromV}:${inputId}</code>
         </div>
-        <div class="rc-arrow">↓ decode(W = [${wFrom.join(",")}])</div>
+        <div class="rc-arrow">↓ decode(W = [${wFrom.join(',')}])</div>
         <div class="rc-step">
           <span class="rc-step-num">②</span>
           <span class="rc-step-label">좌표 (불변)</span>
           <span class="rc-coords">
             [${r}, ${a}, ${ro}, ${e}] →
-            ${dimBadge("resource", rVal)}
-            ${dimBadge("action",   aVal)}
-            ${dimBadge("role",     roVal)}${isNewInTo ? " <span class='new-tag'>NEW</span>" : ""}
-            ${dimBadge("env",      eVal)}
+            ${dimBadge('resource', rVal)}
+            ${dimBadge('action', aVal)}
+            ${dimBadge('role', roVal)}${isNewInTo ? " <span class='new-tag'>NEW</span>" : ''}
+            ${dimBadge('env', eVal)}
           </span>
         </div>
-        <div class="rc-arrow">↓ encode(W = [${wTo.join(",")}])${wChange ? " — 가중치 변경" : " — 가중치 동일"}</div>
+        <div class="rc-arrow">↓ encode(W = [${wTo.join(',')}])${wChange ? ' — 가중치 변경' : ' — 가중치 동일'}</div>
         <div class="rc-step">
           <span class="rc-step-num">③</span>
           <span class="rc-step-label">새 ID (${toV})</span>
-          <code class="rc-code ${sameId ? "rc-same" : "rc-different"}">perm:${toV}:${newId}</code>
-          ${sameId
-            ? '<span class="rc-note rc-note-same">ID 불변 ✓</span>'
-            : `<span class="rc-note rc-note-changed">${inputId} → ${newId}</span>`}
+          <code class="rc-code ${sameId ? 'rc-same' : 'rc-different'}">perm:${toV}:${newId}</code>
+          ${
+            sameId
+              ? '<span class="rc-note rc-note-same">ID 불변 ✓</span>'
+              : `<span class="rc-note rc-note-changed">${inputId} → ${newId}</span>`
+          }
         </div>
       </div>
     `;
   }
 
-  runButton.addEventListener("click", run);
-  idInputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+  runButton.addEventListener('click', run);
+  idInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') run();
+  });
   run();
 
   // ── Section 5: Cross-index migration wiring ────────────────────────────
@@ -632,12 +655,12 @@ function wireDemo(container: HTMLElement): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireCrossIndexDemo(container: HTMLElement): void {
-  const sourceSel  = container.querySelector<HTMLSelectElement>("#ci-source");
-  const targetSel  = container.querySelector<HTMLSelectElement>("#ci-target");
-  const srcDimsDiv = container.querySelector<HTMLDivElement>("#ci-source-dims");
-  const missDimsDiv = container.querySelector<HTMLDivElement>("#ci-missing-dims");
-  const runBtn     = container.querySelector<HTMLButtonElement>("#ci-run");
-  const resultDiv  = container.querySelector<HTMLDivElement>("#ci-result");
+  const sourceSel = container.querySelector<HTMLSelectElement>('#ci-source');
+  const targetSel = container.querySelector<HTMLSelectElement>('#ci-target');
+  const srcDimsDiv = container.querySelector<HTMLDivElement>('#ci-source-dims');
+  const missDimsDiv = container.querySelector<HTMLDivElement>('#ci-missing-dims');
+  const runBtn = container.querySelector<HTMLButtonElement>('#ci-run');
+  const resultDiv = container.querySelector<HTMLDivElement>('#ci-result');
   if (!sourceSel || !targetSel || !srcDimsDiv || !missDimsDiv || !runBtn || !resultDiv) return;
   const sourceSelect = sourceSel;
   const targetSelect = targetSel;
@@ -648,14 +671,18 @@ function wireCrossIndexDemo(container: HTMLElement): void {
 
   function buildSourceDimSelectors(): void {
     const src = getCiIndex(sourceSelect.value);
-    sourceDims.innerHTML = src.dims.map((d) => `
+    sourceDims.innerHTML = src.dims
+      .map(
+        (d) => `
       <div style="display:inline-flex;align-items:center;gap:4px;margin:4px 6px 4px 0">
         <label class="recalc-label">${d.label}:</label>
         <select class="recalc-sel ci-src-dim" data-dim="${d.id}">
-          ${d.entries.map((e) => `<option value="${e}">${e}</option>`).join("")}
+          ${d.entries.map((e) => `<option value="${e}">${e}</option>`).join('')}
         </select>
       </div>
-    `).join("");
+    `,
+      )
+      .join('');
     updateMissingDims();
   }
 
@@ -666,16 +693,21 @@ function wireCrossIndexDemo(container: HTMLElement): void {
     const missing = tgt.dims.filter((d) => !srcDimIds.has(d.id));
 
     if (missing.length === 0) {
-      missingDims.innerHTML = '<span style="font-size:0.72rem;color:var(--text-muted);margin:4px 0">누락 dim 없음 — 모든 dim이 source에서 carry-over됩니다.</span>';
+      missingDims.innerHTML =
+        '<span style="font-size:0.72rem;color:var(--text-muted);margin:4px 0">누락 dim 없음 — 모든 dim이 source에서 carry-over됩니다.</span>';
     } else {
-      missingDims.innerHTML = missing.map((d) => `
+      missingDims.innerHTML = missing
+        .map(
+          (d) => `
         <div style="display:inline-flex;align-items:center;gap:4px;margin:4px 6px 4px 0">
           <label class="recalc-label" style="color:#c05000">${d.label} (누락):</label>
           <select class="recalc-sel ci-miss-dim" data-dim="${d.id}">
-            ${d.entries.map((e) => `<option value="${e}">${e}</option>`).join("")}
+            ${d.entries.map((e) => `<option value="${e}">${e}</option>`).join('')}
           </select>
         </div>
-      `).join("");
+      `,
+        )
+        .join('');
     }
   }
 
@@ -684,7 +716,7 @@ function wireCrossIndexDemo(container: HTMLElement): void {
     const tgt = getCiIndex(targetSelect.value);
 
     // Collect source coords
-    const srcDimSels = sourceDims.querySelectorAll<HTMLSelectElement>(".ci-src-dim");
+    const srcDimSels = sourceDims.querySelectorAll<HTMLSelectElement>('.ci-src-dim');
     const sourceEntities: Record<string, string> = {};
     srcDimSels.forEach((sel) => {
       const dim = sel.dataset.dim;
@@ -714,7 +746,7 @@ function wireCrossIndexDemo(container: HTMLElement): void {
 
     // Collect missing dim values
     const missingEntities: Record<string, string> = {};
-    const missDimSels = missingDims.querySelectorAll<HTMLSelectElement>(".ci-miss-dim");
+    const missDimSels = missingDims.querySelectorAll<HTMLSelectElement>('.ci-miss-dim');
     missDimSels.forEach((sel) => {
       const dim = sel.dataset.dim;
       if (dim) missingEntities[dim] = sel.value;
@@ -729,31 +761,48 @@ function wireCrossIndexDemo(container: HTMLElement): void {
     const tgtValue = tgt.wi.encode(tgtCoords);
 
     // Build source entity display
-    const srcEntityHtml = src.dims.map((d) =>
-      `<span class="lib-badge" style="background:#dce6f1;color:#1f497d">${d.id}:${sourceEntities[d.id]}</span>`
-    ).join(" ");
+    const srcEntityHtml = src.dims
+      .map(
+        (d) =>
+          `<span class="lib-badge" style="background:#dce6f1;color:#1f497d">${d.id}:${sourceEntities[d.id]}</span>`,
+      )
+      .join(' ');
 
     // Build carry-over display
-    const carryHtml = Object.entries(carryOver).map(([k, v]) =>
-      `<span class="lib-badge" style="background:#e2efda;color:#375623">${k}=${v}</span>`
-    ).join(" ");
+    const carryHtml = Object.entries(carryOver)
+      .map(
+        ([k, v]) =>
+          `<span class="lib-badge" style="background:#e2efda;color:#375623">${k}=${v}</span>`,
+      )
+      .join(' ');
 
-    const droppedHtml = droppedDims.length > 0
-      ? droppedDims.map((d) =>
-          `<span class="lib-badge" style="background:#fde9e9;color:#922b21">${d} (drop)</span>`
-        ).join(" ")
-      : "";
+    const droppedHtml =
+      droppedDims.length > 0
+        ? droppedDims
+            .map(
+              (d) =>
+                `<span class="lib-badge" style="background:#fde9e9;color:#922b21">${d} (drop)</span>`,
+            )
+            .join(' ')
+        : '';
 
-    const missingHtml = missingDimIds.length > 0
-      ? missingDimIds.map((d) =>
-          `<span class="lib-badge" style="background:#fff2cc;color:#7f6000">${d}=${missingEntities[d]}</span>`
-        ).join(" ")
-      : "";
+    const missingHtml =
+      missingDimIds.length > 0
+        ? missingDimIds
+            .map(
+              (d) =>
+                `<span class="lib-badge" style="background:#fff2cc;color:#7f6000">${d}=${missingEntities[d]}</span>`,
+            )
+            .join(' ')
+        : '';
 
     // Build target entity display
-    const tgtEntityHtml = tgt.dims.map((d) =>
-      `<span class="lib-badge" style="background:#dce6f1;color:#1f497d">${d.id}:${allEntities[d.id]}</span>`
-    ).join(" ");
+    const tgtEntityHtml = tgt.dims
+      .map(
+        (d) =>
+          `<span class="lib-badge" style="background:#dce6f1;color:#1f497d">${d.id}:${allEntities[d.id]}</span>`,
+      )
+      .join(' ');
 
     resultEl.innerHTML = `
       <div class="recalc-steps">
@@ -768,11 +817,13 @@ function wireCrossIndexDemo(container: HTMLElement): void {
           <span class="rc-step-label">Carry-over</span>
           <span class="rc-coords">
             ${carryHtml}
-            ${droppedHtml ? `<span style="margin-left:6px">${droppedHtml}</span>` : ""}
+            ${droppedHtml ? `<span style="margin-left:6px">${droppedHtml}</span>` : ''}
           </span>
         </div>
-        ${missingDimIds.length > 0 ? `
-        <div class="rc-arrow">↓ missing dim: ${missingDimIds.join(", ")} — 값 선택 필요</div>
+        ${
+          missingDimIds.length > 0
+            ? `
+        <div class="rc-arrow">↓ missing dim: ${missingDimIds.join(', ')} — 값 선택 필요</div>
         <div class="rc-step">
           <span class="rc-step-num">③</span>
           <span class="rc-step-label">Fill missing</span>
@@ -784,21 +835,23 @@ function wireCrossIndexDemo(container: HTMLElement): void {
           <span class="rc-step-label">Target (${tgt.id}:v1)</span>
           <span>value <code class="rc-code">${tgtValue}</code> → ${tgtEntityHtml}</span>
         </div>
-        ` : `
+        `
+            : `
         <div class="rc-arrow">↓ encode → target (누락 dim 없음, 바로 완성)</div>
         <div class="rc-step">
           <span class="rc-step-num">③</span>
           <span class="rc-step-label">Target (${tgt.id}:v1)</span>
           <span>value <code class="rc-code">${tgtValue}</code> → ${tgtEntityHtml}</span>
         </div>
-        `}
+        `
+        }
       </div>
     `;
   }
 
-  sourceSelect.addEventListener("change", buildSourceDimSelectors);
-  targetSelect.addEventListener("change", updateMissingDims);
-  runButton.addEventListener("click", run);
+  sourceSelect.addEventListener('change', buildSourceDimSelectors);
+  targetSelect.addEventListener('change', updateMissingDims);
+  runButton.addEventListener('click', run);
   buildSourceDimSelectors();
   run();
 }
@@ -807,29 +860,29 @@ function wireCrossIndexDemo(container: HTMLElement): void {
 //  Section 6 wiring — Address state gate
 // ─────────────────────────────────────────────────────────────────────────
 
-type GateState = "active" | "inactive" | "open";
+type GateState = 'active' | 'inactive' | 'open';
 
 function wireAddressStateGate(container: HTMLElement): void {
   const RESOURCE_COUNT = 5;
   const ENV_COUNT = 3;
   const SHAPE: readonly number[] = [RESOURCE_COUNT, ENV_COUNT];
   const CAPACITY = RESOURCE_COUNT * ENV_COUNT;
-  const RESOURCE_NAMES = ["posts", "comments", "users", "files", "logs"];
-  const ENV_NAMES = ["prod", "staging", "dev"];
+  const RESOURCE_NAMES = ['posts', 'comments', 'users', 'files', 'logs'];
+  const ENV_NAMES = ['prod', 'staging', 'dev'];
 
   // Per-dim state (active by default)
-  const resourceStates: GateState[] = Array(RESOURCE_COUNT).fill("active");
-  const envStates: GateState[] = Array(ENV_COUNT).fill("active");
+  const resourceStates: GateState[] = Array(RESOURCE_COUNT).fill('active');
+  const envStates: GateState[] = Array(ENV_COUNT).fill('active');
 
   // Pre-set defaults: resource 4-5 inactive, env 3 open
-  resourceStates[3] = "inactive";
-  resourceStates[4] = "inactive";
-  envStates[2] = "open";
+  resourceStates[3] = 'inactive';
+  resourceStates[4] = 'inactive';
+  envStates[2] = 'open';
 
-  const resCtrls = container.querySelector<HTMLDivElement>("#gate-resource-ctrls");
-  const envCtrls = container.querySelector<HTMLDivElement>("#gate-env-ctrls");
-  const gridDiv  = container.querySelector<HTMLDivElement>("#gate-grid");
-  const summaryDiv = container.querySelector<HTMLDivElement>("#gate-range-summary");
+  const resCtrls = container.querySelector<HTMLDivElement>('#gate-resource-ctrls');
+  const envCtrls = container.querySelector<HTMLDivElement>('#gate-env-ctrls');
+  const gridDiv = container.querySelector<HTMLDivElement>('#gate-grid');
+  const summaryDiv = container.querySelector<HTMLDivElement>('#gate-range-summary');
   if (!resCtrls || !envCtrls || !gridDiv || !summaryDiv) return;
   const resourceControls = resCtrls;
   const envControls = envCtrls;
@@ -837,34 +890,38 @@ function wireAddressStateGate(container: HTMLElement): void {
   const rangeSummary = summaryDiv;
 
   function buildControls(): void {
-    resourceControls.innerHTML = RESOURCE_NAMES.map((name, i) => `
+    resourceControls.innerHTML = RESOURCE_NAMES.map(
+      (name, i) => `
       <div class="gate-ctrl-item">
         <span class="gate-ctrl-name">${name}</span>
         <select class="recalc-sel gate-dim-sel" data-dim="resource" data-idx="${i}">
-          <option value="active"${resourceStates[i] === "active" ? " selected" : ""}>active</option>
-          <option value="inactive"${resourceStates[i] === "inactive" ? " selected" : ""}>inactive</option>
-          <option value="open"${resourceStates[i] === "open" ? " selected" : ""}>open</option>
+          <option value="active"${resourceStates[i] === 'active' ? ' selected' : ''}>active</option>
+          <option value="inactive"${resourceStates[i] === 'inactive' ? ' selected' : ''}>inactive</option>
+          <option value="open"${resourceStates[i] === 'open' ? ' selected' : ''}>open</option>
         </select>
       </div>
-    `).join("");
+    `,
+    ).join('');
 
-    envControls.innerHTML = ENV_NAMES.map((name, i) => `
+    envControls.innerHTML = ENV_NAMES.map(
+      (name, i) => `
       <div class="gate-ctrl-item">
         <span class="gate-ctrl-name">${name}</span>
         <select class="recalc-sel gate-dim-sel" data-dim="env" data-idx="${i}">
-          <option value="active"${envStates[i] === "active" ? " selected" : ""}>active</option>
-          <option value="inactive"${envStates[i] === "inactive" ? " selected" : ""}>inactive</option>
-          <option value="open"${envStates[i] === "open" ? " selected" : ""}>open</option>
+          <option value="active"${envStates[i] === 'active' ? ' selected' : ''}>active</option>
+          <option value="inactive"${envStates[i] === 'inactive' ? ' selected' : ''}>inactive</option>
+          <option value="open"${envStates[i] === 'open' ? ' selected' : ''}>open</option>
         </select>
       </div>
-    `).join("");
+    `,
+    ).join('');
 
-    container.querySelectorAll<HTMLSelectElement>(".gate-dim-sel").forEach((sel) => {
-      sel.addEventListener("change", () => {
-        const dim = sel.dataset.dim ?? "";
+    container.querySelectorAll<HTMLSelectElement>('.gate-dim-sel').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        const dim = sel.dataset.dim ?? '';
         const idx = Number(sel.dataset.idx);
         const val = sel.value as GateState;
-        if (dim === "resource") resourceStates[idx] = val;
+        if (dim === 'resource') resourceStates[idx] = val;
         else envStates[idx] = val;
         renderGrid();
       });
@@ -880,7 +937,11 @@ function wireAddressStateGate(container: HTMLElement): void {
   }
 
   /** Build address ranges for positions of a given state in the specified dimension. */
-  function rangesForDimState(dimIndex: number, states: GateState[], target: GateState): [number, number][] {
+  function rangesForDimState(
+    dimIndex: number,
+    states: GateState[],
+    target: GateState,
+  ): [number, number][] {
     const positions = positionsWithState(states, target);
     if (positions.length === 0) return [];
     const constraints: CoordConstraint[] = SHAPE.map(() => null);
@@ -896,13 +957,13 @@ function wireAddressStateGate(container: HTMLElement): void {
   } {
     // Inactive ranges: addresses where any dim is "inactive"
     // → union of resource-inactive ranges and env-inactive ranges
-    const resInactiveRanges = rangesForDimState(0, resourceStates, "inactive");
-    const envInactiveRanges = rangesForDimState(1, envStates, "inactive");
+    const resInactiveRanges = rangesForDimState(0, resourceStates, 'inactive');
+    const envInactiveRanges = rangesForDimState(1, envStates, 'inactive');
     const allInactiveRanges = mergeRanges([...resInactiveRanges, ...envInactiveRanges]);
 
     // Open ranges: addresses where any dim is "open"
-    const resOpenRanges = rangesForDimState(0, resourceStates, "open");
-    const envOpenRanges = rangesForDimState(1, envStates, "open");
+    const resOpenRanges = rangesForDimState(0, resourceStates, 'open');
+    const envOpenRanges = rangesForDimState(1, envStates, 'open');
     const allOpenRanges = mergeRanges([...resOpenRanges, ...envOpenRanges]);
 
     // Reserved = inactive AND open (both encode and decode blocked)
@@ -922,19 +983,16 @@ function wireAddressStateGate(container: HTMLElement): void {
     return { inactiveRanges, openRanges, reservedRanges, activeRanges };
   }
 
-  function stateForAddress(
-    addr: number,
-    ranges: ReturnType<typeof computeRanges>,
-  ): string {
-    if (containsAddress(addr, ranges.reservedRanges)) return "reserved";
-    if (containsAddress(addr, ranges.inactiveRanges)) return "inactive";
-    if (containsAddress(addr, ranges.openRanges)) return "open";
-    return "active";
+  function stateForAddress(addr: number, ranges: ReturnType<typeof computeRanges>): string {
+    if (containsAddress(addr, ranges.reservedRanges)) return 'reserved';
+    if (containsAddress(addr, ranges.inactiveRanges)) return 'inactive';
+    if (containsAddress(addr, ranges.openRanges)) return 'open';
+    return 'active';
   }
 
   function formatRanges(ranges: [number, number][]): string {
-    if (ranges.length === 0) return "(없음)";
-    return ranges.map(([f, t]) => f === t ? `${f}` : `${f}-${t}`).join(", ");
+    if (ranges.length === 0) return '(없음)';
+    return ranges.map(([f, t]) => (f === t ? `${f}` : `${f}-${t}`)).join(', ');
   }
 
   function rangeAddressCount(ranges: [number, number][]): number {
@@ -947,27 +1005,27 @@ function wireAddressStateGate(container: HTMLElement): void {
     // Header row
     let html = '<table class="gate-table"><thead><tr><th class="gate-corner"></th>';
     for (let e = 0; e < ENV_COUNT; e++) {
-      const cls = envStates[e] === "active" ? "" : ` gate-th-${envStates[e]}`;
+      const cls = envStates[e] === 'active' ? '' : ` gate-th-${envStates[e]}`;
       html += `<th class="gate-th${cls}">${ENV_NAMES[e]}</th>`;
     }
-    html += "</tr></thead><tbody>";
+    html += '</tr></thead><tbody>';
 
     for (let r = 0; r < RESOURCE_COUNT; r++) {
-      const rhCls = resourceStates[r] === "active" ? "" : ` gate-th-${resourceStates[r]}`;
+      const rhCls = resourceStates[r] === 'active' ? '' : ` gate-th-${resourceStates[r]}`;
       html += `<tr><td class="gate-rh${rhCls}">${RESOURCE_NAMES[r]}</td>`;
       for (let e = 0; e < ENV_COUNT; e++) {
         const addr = r * ENV_COUNT + e;
         const state = stateForAddress(addr, ranges);
-        const verify = state === "open" ? '<span class="gate-verify">verify</span>' : "";
+        const verify = state === 'open' ? '<span class="gate-verify">verify</span>' : '';
         html += `<td class="gate-cell gate-cell-${state}">
           <span class="gate-addr">${addr}</span>
           <span class="gate-state-label">${state}</span>
           ${verify}
         </td>`;
       }
-      html += "</tr>";
+      html += '</tr>';
     }
-    html += "</tbody></table>";
+    html += '</tbody></table>';
     gateGrid.innerHTML = html;
 
     // Range summary panel
@@ -1025,54 +1083,57 @@ function wireAddressStateGate(container: HTMLElement): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireSparseMigrationDemo(container: HTMLElement): void {
-  const rowsDiv   = container.querySelector<HTMLDivElement>("#sparse-demo-rows");
-  const summaryDiv = container.querySelector<HTMLDivElement>("#sparse-demo-summary");
+  const rowsDiv = container.querySelector<HTMLDivElement>('#sparse-demo-rows');
+  const summaryDiv = container.querySelector<HTMLDivElement>('#sparse-demo-summary');
   if (!rowsDiv || !summaryDiv) return;
   const rows = rowsDiv;
   const summary = summaryDiv;
 
   // v1: [A, B, C]  →  v2: [A, C, B, D]
   // Correct map: { 2→3, 3→2 }  (B and C swapped)
-  const v1Entries = ["A", "B", "C"];
-  const v2Entries = ["A", "C", "B", "D"];
+  const v1Entries = ['A', 'B', 'C'];
+  const v2Entries = ['A', 'C', 'B', 'D'];
   const correctMap: Record<number, number> = { 2: 3, 3: 2 };
   const mapEnabled = [false, true, true]; // pos 1 = identity (no need), pos 2-3 = mapped
 
   function render(): void {
-    rows.innerHTML = v1Entries.map((entry, i) => {
-      const pos = i + 1;
-      const targetPos = mapEnabled[i] ? (correctMap[pos] ?? pos) : pos;
-      const targetEntry = v2Entries[targetPos - 1];
-      const isCorrect = targetEntry === entry;
-      const needsMap = correctMap[pos] !== undefined;
+    rows.innerHTML = v1Entries
+      .map((entry, i) => {
+        const pos = i + 1;
+        const targetPos = mapEnabled[i] ? (correctMap[pos] ?? pos) : pos;
+        const targetEntry = v2Entries[targetPos - 1];
+        const isCorrect = targetEntry === entry;
+        const needsMap = correctMap[pos] !== undefined;
 
-      return `
+        return `
         <div class="sparse-demo-row">
           <span class="sparse-demo-v1">
             <span class="sparse-pos">${pos}</span>
-            <span class="sparse-val${needsMap ? " sparse-val-moved" : ""}">${entry}</span>
+            <span class="sparse-val${needsMap ? ' sparse-val-moved' : ''}">${entry}</span>
           </span>
           <span class="sparse-demo-arrow">→</span>
           <span class="sparse-demo-v2">
             <span class="sparse-pos">${targetPos}</span>
-            <span class="sparse-val${needsMap ? " sparse-val-moved" : ""}">${targetEntry}</span>
+            <span class="sparse-val${needsMap ? ' sparse-val-moved' : ''}">${targetEntry}</span>
           </span>
           <span class="sparse-demo-toggle">
-            ${needsMap
-              ? `<label class="sparse-toggle-label">
+            ${
+              needsMap
+                ? `<label class="sparse-toggle-label">
                   <input type="checkbox" class="sparse-toggle-cb" data-idx="${i}"
-                    ${mapEnabled[i] ? "checked" : ""} />
+                    ${mapEnabled[i] ? 'checked' : ''} />
                   ${pos}→${correctMap[pos]}
                 </label>`
-              : `<span style="font-size:0.7rem;color:var(--text-muted)">identity</span>`
+                : `<span style="font-size:0.7rem;color:var(--text-muted)">identity</span>`
             }
           </span>
-          <span class="sparse-demo-result ${isCorrect ? "sparse-cell-safe" : "sparse-cell-danger"}">
+          <span class="sparse-demo-result ${isCorrect ? 'sparse-cell-safe' : 'sparse-cell-danger'}">
             ${isCorrect ? `${entry}→${targetEntry} ✓` : `${entry}→${targetEntry} ✗`}
           </span>
         </div>
       `;
-    }).join("");
+      })
+      .join('');
 
     // Summary
     const allCorrect = v1Entries.every((entry, i) => {
@@ -1088,26 +1149,30 @@ function wireSparseMigrationDemo(container: HTMLElement): void {
         currentMap[pos] = correctMap[pos];
       }
     });
-    const mapStr = Object.keys(currentMap).length > 0
-      ? `{ ${Object.entries(currentMap).map(([k, v]) => `${k}→${v}`).join(", ")} }`
-      : "{ } (빈 맵)";
+    const mapStr =
+      Object.keys(currentMap).length > 0
+        ? `{ ${Object.entries(currentMap)
+            .map(([k, v]) => `${k}→${v}`)
+            .join(', ')} }`
+        : '{ } (빈 맵)';
 
     summary.innerHTML = `
-      <div class="insight-box" style="margin:0;${allCorrect ? "" : "border-color:#f0b0b0;background:#fff5f5"}">
-        <span class="insight-icon">${allCorrect ? "✅" : "⚠"}</span>
+      <div class="insight-box" style="margin:0;${allCorrect ? '' : 'border-color:#f0b0b0;background:#fff5f5'}">
+        <span class="insight-icon">${allCorrect ? '✅' : '⚠'}</span>
         <span>
           <strong>현재 indexMap:</strong> <code>${mapStr}</code><br/>
-          ${allCorrect
-            ? "모든 entry가 올바른 position으로 매핑됩니다."
-            : '<span style="color:#922b21">일부 entry가 잘못된 position으로 매핑됩니다. 누락된 매핑을 추가하세요.</span>'
+          ${
+            allCorrect
+              ? '모든 entry가 올바른 position으로 매핑됩니다.'
+              : '<span style="color:#922b21">일부 entry가 잘못된 position으로 매핑됩니다. 누락된 매핑을 추가하세요.</span>'
           }
         </span>
       </div>
     `;
 
     // Wire toggle checkboxes
-    rows.querySelectorAll<HTMLInputElement>(".sparse-toggle-cb").forEach((cb) => {
-      cb.addEventListener("change", () => {
+    rows.querySelectorAll<HTMLInputElement>('.sparse-toggle-cb').forEach((cb) => {
+      cb.addEventListener('change', () => {
         const idx = Number(cb.dataset.idx);
         mapEnabled[idx] = cb.checked;
         render();

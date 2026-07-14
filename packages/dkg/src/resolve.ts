@@ -10,8 +10,8 @@
  * 이것이 DSL DB의 마이그레이션 전략.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { decodePrefix, encodePrefixByValue, parseSerializedAddress } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
+import { decodePrefix, encodePrefixByValue, parseSerializedAddress } from '@qa-sdk/core';
 
 export interface ResolveResult {
   /** 최신 version의 주소 (prefix:version:address) */

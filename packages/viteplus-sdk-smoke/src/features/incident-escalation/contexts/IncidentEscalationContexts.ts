@@ -5,10 +5,7 @@ import {
   type PlaybookFocusable,
   type PlaybookSubmissionReceipt,
 } from '../../shared/runtime/playbookPersist.js';
-import {
-  createPlaybookStore,
-  type PlaybookStore,
-} from '../../shared/runtime/playbookStore.js';
+import { createPlaybookStore, type PlaybookStore } from '../../shared/runtime/playbookStore.js';
 import type { IncidentEscalationActivity } from '../business/incidentEscalationActivity.js';
 import type { IncidentEscalationDraft } from '../business/incidentEscalationDraft.js';
 import type { IncidentEscalationResult } from '../business/incidentEscalationResult.js';
@@ -31,10 +28,7 @@ export interface IncidentEscalationState {
   lastSubmittedAt: string | null;
 }
 
-export type IncidentEscalationRefs = Record<
-  IncidentEscalationField,
-  PlaybookFocusable | null
->;
+export type IncidentEscalationRefs = Record<IncidentEscalationField, PlaybookFocusable | null>;
 
 export type PersistIncidentEscalation = (
   draft: IncidentEscalationDraft,
@@ -71,10 +65,9 @@ export function createIncidentEscalationContext(
     ]),
     persistIncidentEscalation:
       options.persistIncidentEscalation ??
-      createDefaultPersistPlaybookSubmission<
-        IncidentEscalationDraft,
-        IncidentEscalationResult
-      >('incident_submission'),
+      createDefaultPersistPlaybookSubmission<IncidentEscalationDraft, IncidentEscalationResult>(
+        'incident_submission',
+      ),
   };
 }
 

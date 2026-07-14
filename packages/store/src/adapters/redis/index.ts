@@ -2,4 +2,4 @@
 // @def.doc persistence-system-root
 
 // packages/store/src/adapters/redis/index.ts
-export { RedisKeyCache } from "./key-cache.adapter.js";
+export { RedisKeyCache } from './key-cache.adapter.js';

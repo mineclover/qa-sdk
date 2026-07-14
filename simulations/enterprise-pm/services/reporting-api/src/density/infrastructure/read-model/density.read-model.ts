@@ -20,18 +20,18 @@
 import {
   DensityReadModelQuery,
   type ComputeDensityArgs,
-} from "../../application/queries/density-read-model.query.js";
-import { KeyObservationQueryPort } from "../../application/ports/key-observation.query.port.js";
-import { PrefixCatalogQueryPort } from "../../application/ports/prefix-catalog.query.port.js";
-import type { DensityLoggerPort } from "../../application/ports/density-logger.port.js";
+} from '../../application/queries/density-read-model.query.js';
+import { KeyObservationQueryPort } from '../../application/ports/key-observation.query.port.js';
+import { PrefixCatalogQueryPort } from '../../application/ports/prefix-catalog.query.port.js';
+import type { DensityLoggerPort } from '../../application/ports/density-logger.port.js';
 import type {
   MarginalDensityAxisReadModel,
   MarginalDensityReadModel,
-} from "../../domain/density.types.js";
+} from '../../domain/density.types.js';
 import {
   PrefixNotFoundException,
   PrefixVersionMismatchException,
-} from "../../domain/density.exceptions.js";
+} from '../../domain/density.exceptions.js';
 
 export interface MarginalDensityThresholds {
   /** density < this → underutilized. §5 §3.4 default 0.1. */
@@ -81,7 +81,7 @@ export class MarginalDensityReadModelAdapter extends DensityReadModelQuery {
             prefix: args.prefix,
             err: (err as Error).message,
           },
-          "key_observations decode 실패 — silent skip + warn",
+          'key_observations decode 실패 — silent skip + warn',
         );
         continue;
       }
@@ -90,7 +90,7 @@ export class MarginalDensityReadModelAdapter extends DensityReadModelQuery {
         // axis not in catalog — schema drift
         this.warn(
           { kind: decoded.kind, prefix: args.prefix },
-          "decoded kind not in catalog axes — skip",
+          'decoded kind not in catalog axes — skip',
         );
         continue;
       }
@@ -101,7 +101,7 @@ export class MarginalDensityReadModelAdapter extends DensityReadModelQuery {
       if (idx < 0) {
         this.warn(
           { kind: decoded.kind, raw, prefix: args.prefix },
-          "decoded coord index out of range — skip",
+          'decoded coord index out of range — skip',
         );
         continue;
       }
@@ -112,8 +112,7 @@ export class MarginalDensityReadModelAdapter extends DensityReadModelQuery {
       const observed = observedByAxis.get(axis.name)!;
       const shapeCapacity = axis.labels.length;
       const observedDistinct = observed.size;
-      const marginalDensity =
-        shapeCapacity === 0 ? 0 : observedDistinct / shapeCapacity;
+      const marginalDensity = shapeCapacity === 0 ? 0 : observedDistinct / shapeCapacity;
       const unobservedEntries: string[] = [];
       for (let i = 0; i < axis.labels.length; i++) {
         if (!observed.has(i)) unobservedEntries.push(axis.labels[i]);
@@ -150,8 +149,8 @@ export class MarginalDensityReadModelAdapter extends DensityReadModelQuery {
     // 흡수한다 — strict 타입은 SliceLogContext 만 허용하므로 cast.
     this.logger.warn(
       {
-        domain: "density",
-        useCase: "MarginalDensity.compute",
+        domain: 'density',
+        useCase: 'MarginalDensity.compute',
         ...obj,
       } as never,
       msg,

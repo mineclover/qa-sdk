@@ -1,8 +1,8 @@
 import type {
   OperationalOntologyPack,
   OperationalOntologyPackValidationResult,
-} from "./pack-core.js";
-import { validateOperationalOntologyPack } from "./pack-core.js";
+} from './pack-core.js';
+import { validateOperationalOntologyPack } from './pack-core.js';
 import {
   extractPromptArtifactSourcesFromDefinitionContext,
   type PromptArtifactContextProvider,
@@ -10,30 +10,28 @@ import {
   type PromptArtifactDefinitionContextExtraction,
   type PromptArtifactDefinitionDoc,
   type PromptArtifactDefinitionLink,
-} from "./prompt-artifact-core.js";
+} from './prompt-artifact-core.js';
 
 export const PROGRAMMING_ARTIFACT_KINDS = [
-  "build",
-  "generated-source",
-  "quality-status",
-  "deployment-output",
-  "prompt-artifact",
-  "activation-evidence",
+  'build',
+  'generated-source',
+  'quality-status',
+  'deployment-output',
+  'prompt-artifact',
+  'activation-evidence',
 ] as const;
 
-export type ProgrammingArtifactKind =
-  (typeof PROGRAMMING_ARTIFACT_KINDS)[number];
+export type ProgrammingArtifactKind = (typeof PROGRAMMING_ARTIFACT_KINDS)[number];
 
 export const PROGRAMMING_ARTIFACT_RELATION_KINDS = [
-  "produced_by",
-  "derived_from",
-  "verifies",
-  "owned_by_definition",
-  "materializes_output",
+  'produced_by',
+  'derived_from',
+  'verifies',
+  'owned_by_definition',
+  'materializes_output',
 ] as const;
 
-export type ProgrammingArtifactRelationKind =
-  (typeof PROGRAMMING_ARTIFACT_RELATION_KINDS)[number];
+export type ProgrammingArtifactRelationKind = (typeof PROGRAMMING_ARTIFACT_RELATION_KINDS)[number];
 
 export interface ProgrammingArtifactRelation {
   kind: ProgrammingArtifactRelationKind | string;
@@ -89,11 +87,11 @@ export interface ArtifactRegistryPromptArtifactContextProviderOptions {
 }
 
 export type RelatedQualityStatusRegistryMatchField =
-  | "outputPath"
-  | "verifiesRefs"
-  | "materializesOutputRefs"
-  | "sourceRefs"
-  | "relations";
+  | 'outputPath'
+  | 'verifiesRefs'
+  | 'materializesOutputRefs'
+  | 'sourceRefs'
+  | 'relations';
 
 export interface RelatedQualityStatusRegistryMatchReason {
   field: RelatedQualityStatusRegistryMatchField;
@@ -108,7 +106,10 @@ export interface RelatedQualityStatusRegistryRecordSummary {
   verifiesRefs: readonly string[];
   materializesOutputRefs: readonly string[];
   sourceRefs: readonly string[];
-  relations: readonly Pick<ProgrammingArtifactRelation, "kind" | "fromRef" | "toRef" | "evidenceRef">[];
+  relations: readonly Pick<
+    ProgrammingArtifactRelation,
+    'kind' | 'fromRef' | 'toRef' | 'evidenceRef'
+  >[];
   matchRefs: readonly string[];
   matchReasons: readonly RelatedQualityStatusRegistryMatchReason[];
 }
@@ -118,12 +119,12 @@ export interface RelatedQualityStatusRegistryRecordMatch {
   summary: RelatedQualityStatusRegistryRecordSummary;
 }
 
-const ARTIFACT_AXIS_ID = "programming_artifact_kind";
-const ARTIFACT_RELATION_AXIS_ID = "programming_artifact_relation_kind";
-const ARTIFACT_RELATION_CATEGORY = "programming_artifact_relation";
+const ARTIFACT_AXIS_ID = 'programming_artifact_kind';
+const ARTIFACT_RELATION_AXIS_ID = 'programming_artifact_relation_kind';
+const ARTIFACT_RELATION_CATEGORY = 'programming_artifact_relation';
 
 export const programmingArtifactOntologyPack = {
-  packId: "programming-artifact-ontology",
+  packId: 'programming-artifact-ontology',
   schema: {
     axes: [
       {
@@ -141,38 +142,38 @@ export const programmingArtifactOntologyPack = {
     ],
     taxonomies: [
       {
-        id: "programming-artifact",
-        appliesTo: ["node"],
+        id: 'programming-artifact',
+        appliesTo: ['node'],
         axisIds: [ARTIFACT_AXIS_ID],
         identityAxisIds: [ARTIFACT_AXIS_ID],
-        space: "programming-artifact",
+        space: 'programming-artifact',
       },
       {
-        id: "programming-artifact-relation",
-        appliesTo: ["edge"],
+        id: 'programming-artifact-relation',
+        appliesTo: ['edge'],
         axisIds: [ARTIFACT_RELATION_AXIS_ID],
         identityAxisIds: [ARTIFACT_RELATION_AXIS_ID],
-        space: "programming-artifact",
+        space: 'programming-artifact',
       },
     ],
     relationCategories: [
       {
         category: ARTIFACT_RELATION_CATEGORY,
         requiredAxes: [ARTIFACT_RELATION_AXIS_ID],
-        allowedStartKinds: ["artifact"],
+        allowedStartKinds: ['artifact'],
         allowedEndKinds: [
-          "artifact",
-          "command",
-          "definition",
-          "governance-run",
-          "quality-gate",
-          "deployment",
+          'artifact',
+          'command',
+          'definition',
+          'governance-run',
+          'quality-gate',
+          'deployment',
         ],
       },
     ],
     traversals: [
       {
-        purpose: "artifact_prompt_context",
+        purpose: 'artifact_prompt_context',
         allowedRelationCategories: [ARTIFACT_RELATION_CATEGORY],
         canonicalizable: true,
       },
@@ -180,40 +181,40 @@ export const programmingArtifactOntologyPack = {
   },
   blueprints: [
     {
-      blueprintId: "programming-artifact-registry-provider",
-      coordinateRef: "corridor:programming-artifact-registry-provider",
-      unitKind: "corridor_bundle",
+      blueprintId: 'programming-artifact-registry-provider',
+      coordinateRef: 'corridor:programming-artifact-registry-provider',
+      unitKind: 'corridor_bundle',
       requiredSchemas: [
-        "programming-artifact",
-        "programming-artifact-relation",
+        'programming-artifact',
+        'programming-artifact-relation',
         ARTIFACT_RELATION_CATEGORY,
-        "artifact_prompt_context",
+        'artifact_prompt_context',
       ],
       implementationBinding: {
-        coordinateRef: "corridor:programming-artifact-registry-provider",
+        coordinateRef: 'corridor:programming-artifact-registry-provider',
         implementationRefs: [
           {
-            kind: "code",
-            ref: "packages/operational-ontology/src/internal/programming-artifact-core.ts",
+            kind: 'code',
+            ref: 'packages/operational-ontology/src/internal/programming-artifact-core.ts',
           },
         ],
         relationCategories: [ARTIFACT_RELATION_CATEGORY],
       },
       verificationBinding: {
-        coordinateRef: "corridor:programming-artifact-registry-provider",
+        coordinateRef: 'corridor:programming-artifact-registry-provider',
         verificationRefs: [
           {
-            kind: "test",
-            ref: "packages/operational-ontology/src/programming-artifacts.test.ts",
+            kind: 'test',
+            ref: 'packages/operational-ontology/src/programming-artifacts.test.ts',
           },
         ],
       },
       constraints: [
-        { kind: "unit_boundary", severity: "core" },
-        { kind: "allowed_relations", allowedRefs: [ARTIFACT_RELATION_CATEGORY] },
-        { kind: "validation_surface", requiredRefs: ["test"] },
+        { kind: 'unit_boundary', severity: 'core' },
+        { kind: 'allowed_relations', allowedRefs: [ARTIFACT_RELATION_CATEGORY] },
+        { kind: 'validation_surface', requiredRefs: ['test'] },
       ],
-      evolutionPolicy: { kind: "append_only" },
+      evolutionPolicy: { kind: 'append_only' },
     },
   ],
   metadata: {
@@ -233,7 +234,9 @@ export function createProgrammingArtifactRegistryRecord(
 ): ProgrammingArtifactRegistryRecord {
   const artifactRef = input.artifactRef ?? input.outputPath ?? input.artifactId;
   if (!artifactRef) {
-    throw new Error("Programming artifact registry record requires artifactRef, outputPath, or artifactId");
+    throw new Error(
+      'Programming artifact registry record requires artifactRef, outputPath, or artifactId',
+    );
   }
 
   const record: ProgrammingArtifactRegistryRecord = {
@@ -241,14 +244,14 @@ export function createProgrammingArtifactRegistryRecord(
     artifactRef,
     kind: input.kind,
     ...(input.producedByRef ? { producedByRef: input.producedByRef } : {}),
-    ...optionalStringArray("derivedFromRefs", input.derivedFromRefs),
-    ...optionalStringArray("verifiesRefs", input.verifiesRefs),
+    ...optionalStringArray('derivedFromRefs', input.derivedFromRefs),
+    ...optionalStringArray('verifiesRefs', input.verifiesRefs),
     ...(input.ownerDefinitionId ? { ownerDefinitionId: input.ownerDefinitionId } : {}),
-    ...optionalStringArray("materializesOutputRefs", input.materializesOutputRefs),
-    ...optionalStringArray("sourceRefs", input.sourceRefs),
+    ...optionalStringArray('materializesOutputRefs', input.materializesOutputRefs),
+    ...optionalStringArray('sourceRefs', input.sourceRefs),
     ...(input.outputPath ? { outputPath: input.outputPath } : {}),
     ...(input.contextDocs ? { contextDocs: input.contextDocs } : {}),
-    ...optionalStringArray("verificationRefs", input.verificationRefs),
+    ...optionalStringArray('verificationRefs', input.verificationRefs),
     ...(input.createdAt ? { createdAt: input.createdAt } : {}),
     ...(input.metadata ? { metadata: input.metadata } : {}),
   };
@@ -263,33 +266,31 @@ export function createProgrammingArtifactRegistryRecord(
 export function buildProgrammingArtifactRelations(
   record: Pick<
     ProgrammingArtifactRegistryRecord,
-    | "artifactRef"
-    | "producedByRef"
-    | "derivedFromRefs"
-    | "verifiesRefs"
-    | "ownerDefinitionId"
-    | "materializesOutputRefs"
-    | "relations"
+    | 'artifactRef'
+    | 'producedByRef'
+    | 'derivedFromRefs'
+    | 'verifiesRefs'
+    | 'ownerDefinitionId'
+    | 'materializesOutputRefs'
+    | 'relations'
   >,
 ): ProgrammingArtifactRelation[] {
   const fromRef = record.artifactRef;
   return uniqueRelations([
-    ...asRelations("produced_by", fromRef, record.producedByRef ? [record.producedByRef] : []),
-    ...asRelations("derived_from", fromRef, record.derivedFromRefs ?? []),
-    ...asRelations("verifies", fromRef, record.verifiesRefs ?? []),
+    ...asRelations('produced_by', fromRef, record.producedByRef ? [record.producedByRef] : []),
+    ...asRelations('derived_from', fromRef, record.derivedFromRefs ?? []),
+    ...asRelations('verifies', fromRef, record.verifiesRefs ?? []),
     ...asRelations(
-      "owned_by_definition",
+      'owned_by_definition',
       fromRef,
       record.ownerDefinitionId ? [record.ownerDefinitionId] : [],
     ),
-    ...asRelations("materializes_output", fromRef, record.materializesOutputRefs ?? []),
+    ...asRelations('materializes_output', fromRef, record.materializesOutputRefs ?? []),
     ...(record.relations ?? []),
   ]);
 }
 
-export class InMemoryProgrammingArtifactRegistryStore
-  implements ProgrammingArtifactRegistryStore
-{
+export class InMemoryProgrammingArtifactRegistryStore implements ProgrammingArtifactRegistryStore {
   private readonly recordsByRef = new Map<string, ProgrammingArtifactRegistryRecord>();
 
   constructor(records: readonly ProgrammingArtifactRegistryRecord[] = []) {
@@ -317,30 +318,25 @@ export class InMemoryProgrammingArtifactRegistryStore
   }
 }
 
-export class ArtifactRegistryPromptArtifactContextProvider
-  implements PromptArtifactContextProvider
-{
+export class ArtifactRegistryPromptArtifactContextProvider implements PromptArtifactContextProvider {
   readonly providerId: string;
-  readonly targetKinds = ["artifact"] as const;
+  readonly targetKinds = ['artifact'] as const;
 
   constructor(
     private readonly store: ProgrammingArtifactRegistryStore,
     options: ArtifactRegistryPromptArtifactContextProviderOptions = {},
   ) {
-    this.providerId = options.providerId ?? "programming-artifact-registry";
+    this.providerId = options.providerId ?? 'programming-artifact-registry';
   }
 
   canResolve(request: PromptArtifactContextRequest): boolean {
     return (
-      request.targetKind === "artifact" &&
-      Boolean(this.store.getArtifactByRef(request.targetRef))
+      request.targetKind === 'artifact' && Boolean(this.store.getArtifactByRef(request.targetRef))
     );
   }
 
-  resolve(
-    request: PromptArtifactContextRequest,
-  ): PromptArtifactDefinitionContextExtraction | null {
-    if (request.targetKind !== "artifact") return null;
+  resolve(request: PromptArtifactContextRequest): PromptArtifactDefinitionContextExtraction | null {
+    if (request.targetKind !== 'artifact') return null;
     const record = this.store.getArtifactByRef(request.targetRef);
     if (!record) return null;
     return extractPromptArtifactSourcesFromProgrammingArtifactRecord(record, request);
@@ -358,7 +354,7 @@ export class ArtifactRegistryPromptArtifactContextProvider
 
 export function extractPromptArtifactSourcesFromProgrammingArtifactRecord(
   record: ProgrammingArtifactRegistryRecord,
-  request: Pick<PromptArtifactContextRequest, "useCase" | "now"> = {},
+  request: Pick<PromptArtifactContextRequest, 'useCase' | 'now'> = {},
 ): PromptArtifactDefinitionContextExtraction {
   const relationDocs = relationTargetDocs(record);
   const children = [...relationDocs, ...(record.contextDocs ?? [])];
@@ -368,10 +364,7 @@ export function extractPromptArtifactSourcesFromProgrammingArtifactRecord(
     children,
     outgoingLinks,
     useCase: request.useCase,
-    verificationRefs: unique([
-      ...(record.verificationRefs ?? []),
-      ...(record.verifiesRefs ?? []),
-    ]),
+    verificationRefs: unique([...(record.verificationRefs ?? []), ...(record.verifiesRefs ?? [])]),
     now: request.now ?? record.createdAt,
   });
 
@@ -386,18 +379,15 @@ export function extractPromptArtifactSourcesFromProgrammingArtifactRecord(
         ...pathLikeRefs(record.sourceRefs),
         ...(extraction.workArea.paths ?? []),
       ]),
-      stack: unique([
-        "Programming Artifact Ontology",
-        ...(extraction.workArea.stack ?? []),
-      ]),
+      stack: unique(['Programming Artifact Ontology', ...(extraction.workArea.stack ?? [])]),
       constraints: unique([
         `artifact-kind:${record.kind}`,
         ...relationConstraintLines(record),
         ...(extraction.workArea.constraints ?? []),
       ]),
       localInstructions: [
-        "Treat artifact registry records as deliverable evidence before falling back to definition search.",
-        "Resolve edits through owned_by_definition, derived_from, produced_by, verifies, and materializes_output relations.",
+        'Treat artifact registry records as deliverable evidence before falling back to definition search.',
+        'Resolve edits through owned_by_definition, derived_from, produced_by, verifies, and materializes_output relations.',
       ],
     },
     sources: extraction.sources,
@@ -414,7 +404,7 @@ export function findRelatedQualityStatusRegistryRecords(input: {
   const targetSet = new Set(targetRefs);
   const matches: RelatedQualityStatusRegistryRecordMatch[] = [];
   for (const record of input.records) {
-    if (record.kind !== "quality-status") continue;
+    if (record.kind !== 'quality-status') continue;
     const matchReasons = qualityStatusMatchReasons(record, targetSet);
     if (matchReasons.length === 0) continue;
     matches.push({
@@ -428,7 +418,7 @@ export function findRelatedQualityStatusRegistryRecords(input: {
 export function appendQualityStatusEvidenceToPromptArtifactExtraction(
   extraction: PromptArtifactDefinitionContextExtraction,
   qualityStatusRecords: readonly ProgrammingArtifactRegistryRecord[],
-  request: Pick<PromptArtifactContextRequest, "useCase" | "now"> = {},
+  request: Pick<PromptArtifactContextRequest, 'useCase' | 'now'> = {},
 ): PromptArtifactDefinitionContextExtraction {
   const records = qualityStatusRecords.filter(
     (record) => `artifact:${record.artifactId}` !== extraction.workArea.workAreaId,
@@ -443,7 +433,9 @@ export function appendQualityStatusEvidenceToPromptArtifactExtraction(
       ...extraction.workArea,
       paths: unique([
         ...(extraction.workArea.paths ?? []),
-        ...records.flatMap((record) => pathLikeRefs([record.outputPath, ...(record.sourceRefs ?? [])])),
+        ...records.flatMap((record) =>
+          pathLikeRefs([record.outputPath, ...(record.sourceRefs ?? [])]),
+        ),
         ...qualityExtractions.flatMap((item) => item.workArea.paths ?? []),
       ]),
       constraints: unique([
@@ -453,7 +445,7 @@ export function appendQualityStatusEvidenceToPromptArtifactExtraction(
       ]),
       localInstructions: unique([
         ...(extraction.workArea.localInstructions ?? []),
-        "Treat related quality-status registry records as governance evidence for this artifact extraction.",
+        'Treat related quality-status registry records as governance evidence for this artifact extraction.',
         ...qualityExtractions.flatMap((item) => item.workArea.localInstructions ?? []),
       ]),
     },
@@ -470,18 +462,14 @@ function artifactRootDoc(record: ProgrammingArtifactRegistryRecord): PromptArtif
     title: `Programming artifact: ${record.artifactRef}`,
     purpose: [
       `Manage ${record.kind} artifact ${record.artifactRef}.`,
-      record.ownerDefinitionId
-        ? `Owner definition: ${record.ownerDefinitionId}.`
-        : undefined,
+      record.ownerDefinitionId ? `Owner definition: ${record.ownerDefinitionId}.` : undefined,
       record.producedByRef ? `Produced by: ${record.producedByRef}.` : undefined,
-    ].filter(Boolean).join(" "),
-    tags: [
-      "programming-artifact",
-      "artifact",
-      `artifact-kind:${record.kind}`,
-    ],
+    ]
+      .filter(Boolean)
+      .join(' '),
+    tags: ['programming-artifact', 'artifact', `artifact-kind:${record.kind}`],
     sourcePath: record.outputPath ?? pathLikeRefs([record.artifactRef])[0],
-    lifecycle: "draft",
+    lifecycle: 'draft',
     body: artifactBody(record),
   };
 }
@@ -490,15 +478,15 @@ function artifactBody(record: ProgrammingArtifactRegistryRecord): string {
   const lines = [
     `artifactRef: \`${record.artifactRef}\``,
     `kind: \`${record.kind}\``,
-    ...maybeLine("produced_by", record.producedByRef),
-    ...maybeLines("derived_from", record.derivedFromRefs),
-    ...maybeLines("verifies", record.verifiesRefs),
-    ...maybeLine("owned_by_definition", record.ownerDefinitionId),
-    ...maybeLines("materializes_output", record.materializesOutputRefs),
-    ...maybeLines("sourceRefs", record.sourceRefs),
-    ...maybeLine("outputPath", record.outputPath),
+    ...maybeLine('produced_by', record.producedByRef),
+    ...maybeLines('derived_from', record.derivedFromRefs),
+    ...maybeLines('verifies', record.verifiesRefs),
+    ...maybeLine('owned_by_definition', record.ownerDefinitionId),
+    ...maybeLines('materializes_output', record.materializesOutputRefs),
+    ...maybeLines('sourceRefs', record.sourceRefs),
+    ...maybeLine('outputPath', record.outputPath),
   ];
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function maybeLine(label: string, value: string | undefined): string[] {
@@ -525,12 +513,9 @@ function relationTargetDocs(
     docId: relationDocId(pair.kind, pair.toRef),
     title: `${pair.kind}: ${pair.toRef}`,
     purpose: `Artifact relation ${pair.kind} connects ${record.artifactRef} to ${pair.toRef}.`,
-    tags: [
-      "programming-artifact-relation",
-      `artifact-relation:${pair.kind}`,
-    ],
+    tags: ['programming-artifact-relation', `artifact-relation:${pair.kind}`],
     sourcePath: pathLikeRefs([pair.toRef])[0],
-    lifecycle: "draft",
+    lifecycle: 'draft',
     body: pair.evidenceRef
       ? `relation: \`${pair.kind}\`\ntarget: \`${pair.toRef}\`\nevidence: \`${pair.evidenceRef}\``
       : `relation: \`${pair.kind}\`\ntarget: \`${pair.toRef}\``,
@@ -558,7 +543,9 @@ function qualityStatusConstraintLines(record: ProgrammingArtifactRegistryRecord)
     `quality-status:${record.artifactRef}`,
     ...(record.verifiesRefs ?? []).map((ref) => `quality-status-verifies:${ref}`),
     ...(record.materializesOutputRefs ?? []).map((ref) => `quality-status-materializes:${ref}`),
-    ...qualityStatusRelationPairs(record).map((pair) => `quality-status-${pair.kind}:${pair.toRef}`),
+    ...qualityStatusRelationPairs(record).map(
+      (pair) => `quality-status-${pair.kind}:${pair.toRef}`,
+    ),
   ]);
 }
 
@@ -567,10 +554,10 @@ function qualityStatusMatchReasons(
   targetRefs: ReadonlySet<string>,
 ): RelatedQualityStatusRegistryMatchReason[] {
   return uniqueMatchReasons([
-    ...matchSingleRef("outputPath", record.outputPath, targetRefs),
-    ...matchArrayRefs("verifiesRefs", record.verifiesRefs, targetRefs),
-    ...matchArrayRefs("materializesOutputRefs", record.materializesOutputRefs, targetRefs),
-    ...matchArrayRefs("sourceRefs", record.sourceRefs, targetRefs),
+    ...matchSingleRef('outputPath', record.outputPath, targetRefs),
+    ...matchArrayRefs('verifiesRefs', record.verifiesRefs, targetRefs),
+    ...matchArrayRefs('materializesOutputRefs', record.materializesOutputRefs, targetRefs),
+    ...matchArrayRefs('sourceRefs', record.sourceRefs, targetRefs),
     ...matchRelationRefs(record.relations, targetRefs),
   ]);
 }
@@ -586,7 +573,12 @@ function summarizeRelatedQualityStatusRecord(
     verifiesRefs: [...(record.verifiesRefs ?? [])],
     materializesOutputRefs: [...(record.materializesOutputRefs ?? [])],
     sourceRefs: [...(record.sourceRefs ?? [])],
-    relations: qualityStatusRelationPairs(record).map((relation) => (Object.assign({kind:relation.kind,fromRef:relation.fromRef,toRef:relation.toRef}, relation.evidenceRef?{evidenceRef:relation.evidenceRef}:{}))),
+    relations: qualityStatusRelationPairs(record).map((relation) =>
+      Object.assign(
+        { kind: relation.kind, fromRef: relation.fromRef, toRef: relation.toRef },
+        relation.evidenceRef ? { evidenceRef: relation.evidenceRef } : {},
+      ),
+    ),
     matchRefs: unique(matchReasons.map((reason) => reason.ref)),
     matchReasons: [...matchReasons],
   };
@@ -596,8 +588,7 @@ function qualityStatusRelationPairs(
   record: ProgrammingArtifactRegistryRecord,
 ): ProgrammingArtifactRelation[] {
   return relationPairs(record).filter(
-    (relation) =>
-      relation.kind === "verifies" || relation.kind === "materializes_output",
+    (relation) => relation.kind === 'verifies' || relation.kind === 'materializes_output',
   );
 }
 
@@ -614,9 +605,7 @@ function matchArrayRefs(
   refs: readonly string[] | undefined,
   targetRefs: ReadonlySet<string>,
 ): RelatedQualityStatusRegistryMatchReason[] {
-  return (refs ?? [])
-    .filter((ref) => targetRefs.has(ref))
-    .map((ref) => ({ field, ref }));
+  return (refs ?? []).filter((ref) => targetRefs.has(ref)).map((ref) => ({ field, ref }));
 }
 
 function matchRelationRefs(
@@ -624,18 +613,18 @@ function matchRelationRefs(
   targetRefs: ReadonlySet<string>,
 ): RelatedQualityStatusRegistryMatchReason[] {
   return (relations ?? []).flatMap((relation) => {
-    if (relation.kind !== "verifies" && relation.kind !== "materializes_output") {
+    if (relation.kind !== 'verifies' && relation.kind !== 'materializes_output') {
       return [];
     }
     return [
-      ...matchSingleRef("relations", relation.toRef, targetRefs),
-      ...matchSingleRef("relations", relation.fromRef, targetRefs),
+      ...matchSingleRef('relations', relation.toRef, targetRefs),
+      ...matchSingleRef('relations', relation.fromRef, targetRefs),
     ].map((reason) => ({ ...reason, relationKind: relation.kind }));
   });
 }
 
 function relationDocId(kind: string, ref: string): string {
-  if (kind === "owned_by_definition" && /^[a-z0-9][a-z0-9-]*$/.test(ref)) {
+  if (kind === 'owned_by_definition' && /^[a-z0-9][a-z0-9-]*$/.test(ref)) {
     return ref;
   }
   return `artifact-relation:${kind}:${slugRef(ref)}`;
@@ -645,20 +634,20 @@ function slugRef(ref: string): string {
   const slug = ref
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || "unknown";
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'unknown';
 }
 
 function pathLikeRefs(values: readonly (string | undefined)[] | undefined): string[] {
   return (values ?? []).filter(
     (value): value is string =>
       Boolean(value) &&
-      (value!.startsWith("packages/") ||
-        value!.startsWith("docs/") ||
-        value!.startsWith("artifacts/") ||
-        value!.startsWith("dist/") ||
-        value!.includes("/")),
+      (value!.startsWith('packages/') ||
+        value!.startsWith('docs/') ||
+        value!.startsWith('artifacts/') ||
+        value!.startsWith('dist/') ||
+        value!.includes('/')),
   );
 }
 
@@ -667,7 +656,7 @@ function optionalStringArray<Key extends string>(
   values: readonly (string | undefined)[] | undefined,
 ): Partial<Record<Key, string[]>> {
   const filtered = unique(values?.filter((value): value is string => Boolean(value)) ?? []);
-  return filtered.length > 0 ? { [key]: filtered } as Partial<Record<Key, string[]>> : {};
+  return filtered.length > 0 ? ({ [key]: filtered } as Partial<Record<Key, string[]>>) : {};
 }
 
 function uniqueRelations(
@@ -677,12 +666,7 @@ function uniqueRelations(
   for (const relation of relations) {
     if (!relation.fromRef.trim() || !relation.toRef.trim()) continue;
     byKey.set(
-      [
-        relation.kind,
-        relation.fromRef,
-        relation.toRef,
-        relation.evidenceRef ?? "",
-      ].join("\0"),
+      [relation.kind, relation.fromRef, relation.toRef, relation.evidenceRef ?? ''].join('\0'),
       relation,
     );
   }
@@ -694,14 +678,7 @@ function uniqueMatchReasons(
 ): RelatedQualityStatusRegistryMatchReason[] {
   const byKey = new Map<string, RelatedQualityStatusRegistryMatchReason>();
   for (const reason of reasons) {
-    byKey.set(
-      [
-        reason.field,
-        reason.ref,
-        reason.relationKind ?? "",
-      ].join("\0"),
-      reason,
-    );
+    byKey.set([reason.field, reason.ref, reason.relationKind ?? ''].join('\0'), reason);
   }
   return [...byKey.values()];
 }
@@ -715,8 +692,8 @@ function uniqueBy<T>(values: readonly T[], keyOf: (value: T) => string): T[] {
 }
 
 function mergePromptArtifactSourceSets(
-  sourceSets: readonly PromptArtifactDefinitionContextExtraction["sources"][],
-): PromptArtifactDefinitionContextExtraction["sources"] {
+  sourceSets: readonly PromptArtifactDefinitionContextExtraction['sources'][],
+): PromptArtifactDefinitionContextExtraction['sources'] {
   return {
     corridors: uniqueBy(
       sourceSets.flatMap((sourceSet) => sourceSet.corridors ?? []),

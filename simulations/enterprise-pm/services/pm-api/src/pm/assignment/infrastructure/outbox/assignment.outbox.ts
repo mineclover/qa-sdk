@@ -1,11 +1,11 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { createDrizzleOutboxPort, type OutboxPort } from "@qa-sdk/sim-domain-slice-kit";
-import { pmOutboxEvents as sqliteAssignmentOutbox } from "../../../sqlite/schema.js";
-import { pmOutboxEvents as pgAssignmentOutbox } from "../../../pg/schema.js";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { createDrizzleOutboxPort, type OutboxPort } from '@qa-sdk/sim-domain-slice-kit';
+import { pmOutboxEvents as sqliteAssignmentOutbox } from '../../../sqlite/schema.js';
+import { pmOutboxEvents as pgAssignmentOutbox } from '../../../pg/schema.js';
 
 /**
  * Assignment slice 용 OutboxPort 생성기.
@@ -14,7 +14,7 @@ import { pmOutboxEvents as pgAssignmentOutbox } from "../../../pg/schema.js";
  * - 컬럼명은 snake_case (aggregate_id, event_name, ...) — kit 어댑터가 그대로
  *   row 에 채워 넣는다.
  */
-export type AssignmentDialect = "sqlite" | "pg";
+export type AssignmentDialect = 'sqlite' | 'pg';
 
 export interface AssignmentOutboxFactoryOpts {
   readonly dialect: AssignmentDialect;
@@ -22,13 +22,13 @@ export interface AssignmentOutboxFactoryOpts {
 }
 
 export function createAssignmentOutboxPort(opts: AssignmentOutboxFactoryOpts): OutboxPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return createDrizzleOutboxPort({
       db: opts.db as never,
       table: sqliteAssignmentOutbox,
     });
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return createDrizzleOutboxPort({
       db: opts.db as never,
       table: pgAssignmentOutbox,

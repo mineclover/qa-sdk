@@ -3,8 +3,8 @@
 //
 // prefix별 stable version을 1부터 시작하는 정수로 관리하고, bump마다 retired 누적.
 // VersionTag grammar로 round-trip 검증해 식별자 일관성 보장.
-import { Injectable, Optional } from "@nestjs/common";
-import { buildVersionTag, parseVersionTag } from "sim-identifier-grammar";
+import { Injectable, Optional } from '@nestjs/common';
+import { buildVersionTag, parseVersionTag } from 'sim-identifier-grammar';
 
 export interface BumpResult {
   /** 대상 prefix (예: "sim.bitmap"). */
@@ -66,7 +66,7 @@ export class BitmapVersionService {
   }
 
   private tagOf(value: number): string {
-    return buildVersionTag({ axis: "version", value, state: "stable" });
+    return buildVersionTag({ axis: 'version', value, state: 'stable' });
   }
 
   private ensure(prefix: string): PrefixState {

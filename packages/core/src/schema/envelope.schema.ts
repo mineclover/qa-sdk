@@ -1,16 +1,11 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import { z } from "zod";
-import { AddressContextV1Schema } from "../coordinates/address-context-schema.js";
-import { eventRecordSchema } from "./record.schema.js";
+import { z } from 'zod';
+import { AddressContextV1Schema } from '../coordinates/address-context-schema.js';
+import { eventRecordSchema } from './record.schema.js';
 
-export const ownerTypeSchema = z.enum([
-  "tenant",
-  "workspace",
-  "user",
-  "agent",
-]);
+export const ownerTypeSchema = z.enum(['tenant', 'workspace', 'user', 'agent']);
 
 export const transmissionOwnerSchema = z.object({
   owner_type: ownerTypeSchema,

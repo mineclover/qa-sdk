@@ -1,25 +1,18 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import { z } from "zod";
-import { AddressContextV1Schema } from "../coordinates/address-context-schema.js";
+import { z } from 'zod';
+import { AddressContextV1Schema } from '../coordinates/address-context-schema.js';
 
-export const recordKindSchema = z.enum(["log", "span", "metric"]);
+export const recordKindSchema = z.enum(['log', 'span', 'metric']);
 
-export const spanStatusCodeSchema = z.enum(["ok", "error", "unset"]);
+export const spanStatusCodeSchema = z.enum(['ok', 'error', 'unset']);
 
-export const metricTypeSchema = z.enum(["counter", "gauge", "histogram", "summary"]);
+export const metricTypeSchema = z.enum(['counter', 'gauge', 'histogram', 'summary']);
 
-export const payloadFormatSchema = z.enum([
-  "json",
-  "rpc",
-  "protobuf",
-  "text",
-  "binary",
-  "stream",
-]);
+export const payloadFormatSchema = z.enum(['json', 'rpc', 'protobuf', 'text', 'binary', 'stream']);
 
-export const payloadEncodingSchema = z.enum(["raw", "base64", "gzip+base64", "protobuf"]);
+export const payloadEncodingSchema = z.enum(['raw', 'base64', 'gzip+base64', 'protobuf']);
 
 export const eventRecordSchema = z.object({
   log_id: z.string().min(1),

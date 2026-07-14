@@ -1,8 +1,8 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 
 export interface SchemaPullOptions {
   registry: string;
@@ -15,9 +15,9 @@ export interface SchemaPullOptions {
  * GET /schema/export?versionId={snapshotId}
  */
 export async function schemaPull(opts: SchemaPullOptions): Promise<void> {
-  const url = new URL("/schema/export", opts.registry);
+  const url = new URL('/schema/export', opts.registry);
   if (opts.snapshotId) {
-    url.searchParams.set("versionId", opts.snapshotId);
+    url.searchParams.set('versionId', opts.snapshotId);
   }
 
   console.log(`Pulling schema from ${url.toString()} ...`);
@@ -29,11 +29,11 @@ export async function schemaPull(opts: SchemaPullOptions): Promise<void> {
   }
 
   const snapshot = await res.json();
-  const id = snapshot.id ?? "active";
+  const id = snapshot.id ?? 'active';
 
   await mkdir(opts.output, { recursive: true });
   const outPath = join(opts.output, `${id}.json`);
-  await writeFile(outPath, JSON.stringify(snapshot, null, 2), "utf-8");
+  await writeFile(outPath, JSON.stringify(snapshot, null, 2), 'utf-8');
 
   console.log(`Saved → ${outPath}`);
 }

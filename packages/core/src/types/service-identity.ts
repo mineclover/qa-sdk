@@ -19,7 +19,7 @@
  *   TypeScript structural typing으로 ServiceBootConfig → ServiceRef 자동 할당 가능.
  */
 
-import type { TransmissionSource, TransmissionBuild } from "./envelope.js";
+import type { TransmissionSource, TransmissionBuild } from './envelope.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -106,13 +106,13 @@ export function toTransmissionBuild(config: ServiceBootConfig): TransmissionBuil
 // ── Env Normalization ────────────────────────────────────────────────────────
 
 const CATALOG_TO_BUILD: Record<string, string> = {
-  prod: "production",
-  stage: "staging",
+  prod: 'production',
+  stage: 'staging',
 };
 
 const BUILD_TO_CATALOG: Record<string, string> = {
-  production: "prod",
-  staging: "stage",
+  production: 'prod',
+  staging: 'stage',
 };
 
 /**
@@ -151,13 +151,13 @@ export function buildEnvToCatalogEnv(buildEnv: string): string {
  */
 export function createServiceBootConfig(
   svcName: string,
-  source: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {},
+  source: Record<string, string | undefined> = typeof process !== 'undefined' ? process.env : {},
 ): ServiceBootConfig {
   return {
-    namespace: source.QA_SVC_NAMESPACE ?? "shop",
+    namespace: source.QA_SVC_NAMESPACE ?? 'shop',
     name: source.QA_SVC_NAME ?? svcName,
-    env: source.QA_SVC_ENV ?? "dev",
-    region: source.QA_SVC_REGION ?? "asia",
+    env: source.QA_SVC_ENV ?? 'dev',
+    region: source.QA_SVC_REGION ?? 'asia',
     build: source.QA_SVC_BUILD,
     releaseVersion: source.QA_SVC_RELEASE,
   };

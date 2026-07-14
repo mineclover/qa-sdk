@@ -7,14 +7,14 @@ import {
   type OntologyAddressAllocationPlan,
   type OntologyAddressAllocationPolicy,
   type OntologyAddressAllocationValidationResult,
-} from "operational-ontology/allocation";
+} from 'operational-ontology/allocation';
 import {
   operationalOntologyPackPlane,
   type OperationalOntologyPack,
   type OperationalOntologyPackValidationIssue,
   type OperationalOntologyPackValidationResult,
-} from "operational-ontology/pack";
-import type { OperationalOntologySchema } from "operational-ontology/schema";
+} from 'operational-ontology/pack';
+import type { OperationalOntologySchema } from 'operational-ontology/schema';
 import {
   OntologyRegistryStoreError,
   type OntologyAddressAllocationRecord,
@@ -22,12 +22,12 @@ import {
   type OntologyAllocationPlanWriteSet,
   type OntologyRegistryStore,
   type OntologyRegistryStoreConflict,
-} from "../../stores/ontology-registry-store.js";
+} from '../../stores/ontology-registry-store.js';
 import {
   type OntologyIndexMetaSyncAdapter,
   type OntologyIndexMetaSyncBundle,
   type OntologyIndexMetaSyncReport,
-} from "./index-meta-sync.adapter.js";
+} from './index-meta-sync.adapter.js';
 
 export interface OntologyRegistryServiceDeps {
   readonly store: OntologyRegistryStore;
@@ -40,15 +40,11 @@ export interface RegisterOntologyPackInput {
   readonly policy?: RegisterOntologyPackOptions;
 }
 
-export type RegisterOntologyPackOptions = Omit<
-  OntologyAddressAllocationPolicy,
-  "ontologyId"
-> & {
+export type RegisterOntologyPackOptions = Omit<OntologyAddressAllocationPolicy, 'ontologyId'> & {
   readonly ontologyId?: string;
 };
 
-export interface ProjectedOntologyAllocationPlan
-  extends OntologyAddressAllocationPlan {
+export interface ProjectedOntologyAllocationPlan extends OntologyAddressAllocationPlan {
   readonly validation: OntologyAddressAllocationValidationResult;
 }
 
@@ -98,12 +94,12 @@ export interface SyncToPrefixRegistryInput {
 export type SyncToPrefixRegistryResult = OntologyIndexMetaSyncReport;
 
 export type OntologyRegistryServiceErrorCode =
-  | "invalid-pack"
-  | "invalid-allocation-plan"
-  | "duplicate-allocation"
-  | "invalid-transition"
-  | "missing-allocation"
-  | "sync-precondition-failure";
+  | 'invalid-pack'
+  | 'invalid-allocation-plan'
+  | 'duplicate-allocation'
+  | 'invalid-transition'
+  | 'missing-allocation'
+  | 'sync-precondition-failure';
 
 export type OntologyRegistryServiceConflict =
   | InvalidOntologyPackConflict
@@ -118,65 +114,59 @@ export interface OntologyRegistryServiceConflictBase {
   readonly message: string;
 }
 
-export interface InvalidOntologyPackConflict
-  extends OntologyRegistryServiceConflictBase {
-  readonly code: "invalid-pack";
+export interface InvalidOntologyPackConflict extends OntologyRegistryServiceConflictBase {
+  readonly code: 'invalid-pack';
   readonly packId: string;
   readonly validation: OperationalOntologyPackValidationResult;
   readonly issues: readonly OperationalOntologyPackValidationIssue[];
 }
 
-export interface InvalidOntologyAllocationPlanConflict
-  extends OntologyRegistryServiceConflictBase {
-  readonly code: "invalid-allocation-plan";
+export interface InvalidOntologyAllocationPlanConflict extends OntologyRegistryServiceConflictBase {
+  readonly code: 'invalid-allocation-plan';
   readonly packId: string;
   readonly validation: OntologyAddressAllocationValidationResult;
   readonly issues: readonly OntologyAddressAllocationIssue[];
   readonly storeConflicts?: readonly OntologyRegistryStoreConflict[];
 }
 
-export interface DuplicateOntologyAllocationConflict
-  extends OntologyRegistryServiceConflictBase {
-  readonly code: "duplicate-allocation";
+export interface DuplicateOntologyAllocationConflict extends OntologyRegistryServiceConflictBase {
+  readonly code: 'duplicate-allocation';
   readonly packId?: string;
   readonly allocationIds: readonly string[];
   readonly allocationKeys: readonly OntologyAddressAllocationRecordKey[];
   readonly storeConflicts: readonly OntologyRegistryStoreConflict[];
 }
 
-export interface InvalidOntologyAllocationTransitionConflict
-  extends OntologyRegistryServiceConflictBase {
-  readonly code: "invalid-transition";
+export interface InvalidOntologyAllocationTransitionConflict extends OntologyRegistryServiceConflictBase {
+  readonly code: 'invalid-transition';
   readonly allocationId: string;
-  readonly from: OntologyAddressAllocationRecord["status"];
-  readonly to: OntologyAddressAllocationRecord["status"];
+  readonly from: OntologyAddressAllocationRecord['status'];
+  readonly to: OntologyAddressAllocationRecord['status'];
 }
 
-export interface MissingOntologyAllocationConflict
-  extends OntologyRegistryServiceConflictBase {
-  readonly code: "missing-allocation";
+export interface MissingOntologyAllocationConflict extends OntologyRegistryServiceConflictBase {
+  readonly code: 'missing-allocation';
   readonly allocationId: string;
 }
 
-export interface OntologyPrefixSyncPreconditionFailureConflict
-  extends OntologyRegistryServiceConflictBase {
-  readonly code: "sync-precondition-failure";
+export interface OntologyPrefixSyncPreconditionFailureConflict extends OntologyRegistryServiceConflictBase {
+  readonly code: 'sync-precondition-failure';
   readonly allocationId: string;
   readonly reason:
-    | "allocation-not-active"
-    | "missing-namespace"
-    | "missing-taxonomy"
-    | "missing-axis"
-    | "missing-segment"
-    | "prefix-registry-conflict";
-  readonly missingRecordKind?: "namespace" | "taxonomy" | "axis" | "segment";
+    | 'allocation-not-active'
+    | 'missing-namespace'
+    | 'missing-taxonomy'
+    | 'missing-axis'
+    | 'missing-segment'
+    | 'prefix-registry-conflict';
+  readonly missingRecordKind?: 'namespace' | 'taxonomy' | 'axis' | 'segment';
   readonly ontologyId?: string;
   readonly taxonomyId?: string;
   readonly axisId?: string;
   readonly axisIds?: readonly string[];
   readonly prefix?: string;
   readonly versionId?: string;
-  readonly status?: OntologyAddressAllocationRecord["status"];
+  readonly status?: OntologyAddressAllocationRecord['status'];
 }
 
 export class OntologyRegistryServiceError extends Error {
@@ -184,7 +174,7 @@ export class OntologyRegistryServiceError extends Error {
 
   constructor(conflict: OntologyRegistryServiceConflict) {
     super(conflict.message);
-    this.name = "OntologyRegistryServiceError";
+    this.name = 'OntologyRegistryServiceError';
     this.conflict = conflict;
   }
 }
@@ -211,12 +201,10 @@ export class OntologyRegistryService {
     options?: RegisterOntologyPackOptions,
   ): Promise<RegisterOntologyPackResult> {
     const input = normalizeRegisterOntologyPackInput(inputOrPack, options);
-    const validation = operationalOntologyPackPlane.validateOperationalOntologyPack(
-      input.pack,
-    );
+    const validation = operationalOntologyPackPlane.validateOperationalOntologyPack(input.pack);
     if (!validation.valid) {
       throw new OntologyRegistryServiceError({
-        code: "invalid-pack",
+        code: 'invalid-pack',
         message: `Invalid operational ontology pack "${input.pack.packId}"`,
         packId: input.pack.packId,
         validation,
@@ -244,9 +232,7 @@ export class OntologyRegistryService {
     };
   }
 
-  async reserveAddressSpace(
-    input: ReserveAddressSpaceInput,
-  ): Promise<ReserveAddressSpaceResult>;
+  async reserveAddressSpace(input: ReserveAddressSpaceInput): Promise<ReserveAddressSpaceResult>;
   async reserveAddressSpace(
     schema: OperationalOntologySchema,
     policy: OntologyAddressAllocationPolicy,
@@ -256,7 +242,7 @@ export class OntologyRegistryService {
     policy?: OntologyAddressAllocationPolicy,
   ): Promise<ReserveAddressSpaceResult> {
     const input = normalizeReserveAddressSpaceInput(inputOrSchema, policy);
-    if ("pack" in input) {
+    if ('pack' in input) {
       const registration = await this.registerOntologyPack(input.pack, input.policy);
 
       return {
@@ -282,25 +268,23 @@ export class OntologyRegistryService {
     };
   }
 
-  async activateAllocation(
-    input: ActivateAllocationInput,
-  ): Promise<ActivateAllocationResult>;
+  async activateAllocation(input: ActivateAllocationInput): Promise<ActivateAllocationResult>;
   async activateAllocation(allocationId: string): Promise<ActivateAllocationResult>;
   async activateAllocation(
     inputOrAllocationId: ActivateAllocationInput | string,
   ): Promise<ActivateAllocationResult> {
     const allocationId =
-      typeof inputOrAllocationId === "string"
+      typeof inputOrAllocationId === 'string'
         ? inputOrAllocationId
         : inputOrAllocationId.allocationId;
     const allocation = await this.requireAllocation(allocationId);
-    if (allocation.status !== "reserved") {
+    if (allocation.status !== 'reserved') {
       throw new OntologyRegistryServiceError({
-        code: "invalid-transition",
+        code: 'invalid-transition',
         message: `Cannot activate ontology allocation "${allocation.allocationId}" from status "${allocation.status}"`,
         allocationId: allocation.allocationId,
         from: allocation.status,
-        to: "active",
+        to: 'active',
       });
     }
 
@@ -309,10 +293,7 @@ export class OntologyRegistryService {
       throw duplicateActiveAllocation(allocation, activeConflict);
     }
 
-    const updated = await this.store.updateAllocationStatus(
-      allocation.allocationId,
-      "active",
-    );
+    const updated = await this.store.updateAllocationStatus(allocation.allocationId, 'active');
     if (!updated) {
       throw missingAllocation(allocation.allocationId);
     }
@@ -320,17 +301,13 @@ export class OntologyRegistryService {
     return { allocation: updated };
   }
 
-  async syncToPrefixRegistry(
-    input: SyncToPrefixRegistryInput,
-  ): Promise<SyncToPrefixRegistryResult>;
-  async syncToPrefixRegistry(
-    allocationId: string,
-  ): Promise<SyncToPrefixRegistryResult>;
+  async syncToPrefixRegistry(input: SyncToPrefixRegistryInput): Promise<SyncToPrefixRegistryResult>;
+  async syncToPrefixRegistry(allocationId: string): Promise<SyncToPrefixRegistryResult>;
   async syncToPrefixRegistry(
     inputOrAllocationId: SyncToPrefixRegistryInput | string,
   ): Promise<SyncToPrefixRegistryResult> {
     const allocationId =
-      typeof inputOrAllocationId === "string"
+      typeof inputOrAllocationId === 'string'
         ? inputOrAllocationId
         : inputOrAllocationId.allocationId;
     const bundle = await this.collectActiveAllocationSyncBundle(allocationId);
@@ -342,20 +319,17 @@ export class OntologyRegistryService {
     allocationId: string,
   ): Promise<OntologyIndexMetaSyncBundle> {
     const allocation = await this.requireAllocation(allocationId);
-    if (allocation.status !== "active") {
+    if (allocation.status !== 'active') {
       throw allocationNotActiveSyncPrecondition(allocation);
     }
 
     const activeAllocation = {
       ...allocation,
-      status: "active",
+      status: 'active',
     } as const;
     const [namespace, taxonomies, axes, segments] = await Promise.all([
       this.store.getNamespace(activeAllocation.ontologyId),
-      this.store.listTaxonomies(
-        activeAllocation.ontologyId,
-        activeAllocation.versionId,
-      ),
+      this.store.listTaxonomies(activeAllocation.ontologyId, activeAllocation.versionId),
       this.store.listAxes(activeAllocation.ontologyId, activeAllocation.versionId),
       this.store.listSegments(activeAllocation.allocationId),
     ]);
@@ -363,8 +337,8 @@ export class OntologyRegistryService {
     if (!namespace) {
       throw missingSyncBundleRecord({
         allocation: activeAllocation,
-        missingRecordKind: "namespace",
-        reason: "missing-namespace",
+        missingRecordKind: 'namespace',
+        reason: 'missing-namespace',
         message: `Cannot sync ontology allocation "${activeAllocation.allocationId}" because namespace "${activeAllocation.ontologyId}" is missing`,
       });
     }
@@ -379,22 +353,20 @@ export class OntologyRegistryService {
     if (!taxonomy) {
       throw missingSyncBundleRecord({
         allocation: activeAllocation,
-        missingRecordKind: "taxonomy",
-        reason: "missing-taxonomy",
+        missingRecordKind: 'taxonomy',
+        reason: 'missing-taxonomy',
         taxonomyId: activeAllocation.taxonomyId,
         message: `Cannot sync ontology allocation "${activeAllocation.allocationId}" because taxonomy "${activeAllocation.taxonomyId}" version "${activeAllocation.versionId}" is missing`,
       });
     }
 
     const axesById = new Map(axes.map((axis) => [axis.axisId, axis]));
-    const missingAxisIds = taxonomy.axisIds.filter(
-      (axisId) => !axesById.has(axisId),
-    );
+    const missingAxisIds = taxonomy.axisIds.filter((axisId) => !axesById.has(axisId));
     if (missingAxisIds.length > 0) {
       throw missingSyncBundleRecord({
         allocation: activeAllocation,
-        missingRecordKind: "axis",
-        reason: "missing-axis",
+        missingRecordKind: 'axis',
+        reason: 'missing-axis',
         axisId: missingAxisIds[0],
         axisIds: missingAxisIds,
         taxonomyId: taxonomy.taxonomyId,
@@ -405,8 +377,8 @@ export class OntologyRegistryService {
     if (segments.length === 0) {
       throw missingSyncBundleRecord({
         allocation: activeAllocation,
-        missingRecordKind: "segment",
-        reason: "missing-segment",
+        missingRecordKind: 'segment',
+        reason: 'missing-segment',
         taxonomyId: taxonomy.taxonomyId,
         message: `Cannot sync ontology allocation "${activeAllocation.allocationId}" because no allocation segments were found`,
       });
@@ -421,9 +393,7 @@ export class OntologyRegistryService {
     };
   }
 
-  private async requireAllocation(
-    allocationId: string,
-  ): Promise<OntologyAddressAllocationRecord> {
+  private async requireAllocation(allocationId: string): Promise<OntologyAddressAllocationRecord> {
     const allocation = await this.store.getAllocation(allocationId);
     if (!allocation) {
       throw missingAllocation(allocationId);
@@ -473,7 +443,7 @@ export class OntologyRegistryService {
 
     if (!allocationValidation.valid) {
       throw new OntologyRegistryServiceError({
-        code: "invalid-allocation-plan",
+        code: 'invalid-allocation-plan',
         message: `Invalid ontology allocation plan for pack "${input.packId}"`,
         packId: input.packId,
         validation: allocationValidation,
@@ -498,9 +468,8 @@ export class OntologyRegistryService {
 function normalizeRegisterOntologyPackInput(
   inputOrPack: RegisterOntologyPackInput | OperationalOntologyPack,
   options?: RegisterOntologyPackOptions,
-): Required<Pick<RegisterOntologyPackInput, "pack">> &
-  Pick<RegisterOntologyPackInput, "options"> {
-  if ("pack" in inputOrPack) {
+): Required<Pick<RegisterOntologyPackInput, 'pack'>> & Pick<RegisterOntologyPackInput, 'options'> {
+  if ('pack' in inputOrPack) {
     return {
       pack: inputOrPack.pack,
       options: options ?? inputOrPack.options ?? inputOrPack.policy,
@@ -517,11 +486,9 @@ function normalizeReserveAddressSpaceInput(
   inputOrSchema: ReserveAddressSpaceInput | OperationalOntologySchema,
   policy?: OntologyAddressAllocationPolicy,
 ): ReserveAddressSpaceInput {
-  if ("axes" in inputOrSchema) {
+  if ('axes' in inputOrSchema) {
     if (!policy) {
-      throw new TypeError(
-        "reserveAddressSpace(schema, policy) requires an allocation policy",
-      );
+      throw new TypeError('reserveAddressSpace(schema, policy) requires an allocation policy');
     }
     return {
       schema: inputOrSchema,
@@ -538,13 +505,11 @@ function toReservedAllocationPolicy(
 ): OntologyAddressAllocationPolicy {
   return {
     ...policy,
-    status: "reserved",
+    status: 'reserved',
   };
 }
 
-function toWriteSet(
-  plan: OntologyAddressAllocationPlan,
-): OntologyAllocationPlanWriteSet {
+function toWriteSet(plan: OntologyAddressAllocationPlan): OntologyAllocationPlanWriteSet {
   return {
     namespace: plan.namespace,
     axes: plan.axes,
@@ -566,7 +531,7 @@ function mapStoreReservationError(
   const storeConflicts = collectStoreConflicts(error.conflict);
   if (storeConflicts.some(isDuplicateAllocationConflict)) {
     return new OntologyRegistryServiceError({
-      code: "duplicate-allocation",
+      code: 'duplicate-allocation',
       message: `Ontology allocation plan for pack "${packId}" conflicts with existing registry rows`,
       packId,
       allocationIds: plan.allocations.map((allocation) => allocation.allocationId),
@@ -576,7 +541,7 @@ function mapStoreReservationError(
   }
 
   return new OntologyRegistryServiceError({
-    code: "invalid-allocation-plan",
+    code: 'invalid-allocation-plan',
     message: `Ontology allocation plan for pack "${packId}" was rejected by registry persistence validation`,
     packId,
     validation: plan.validation,
@@ -588,19 +553,17 @@ function mapStoreReservationError(
 function collectStoreConflicts(
   conflict: OntologyRegistryStoreConflict,
 ): readonly OntologyRegistryStoreConflict[] {
-  if (conflict.code !== "partial-write-rejected") {
+  if (conflict.code !== 'partial-write-rejected') {
     return [conflict];
   }
   return [...conflict.conflicts];
 }
 
-function isDuplicateAllocationConflict(
-  conflict: OntologyRegistryStoreConflict,
-): boolean {
-  if (conflict.code === "duplicate-key" || conflict.code === "drift") {
-    return conflict.key.recordKind === "allocation";
+function isDuplicateAllocationConflict(conflict: OntologyRegistryStoreConflict): boolean {
+  if (conflict.code === 'duplicate-key' || conflict.code === 'drift') {
+    return conflict.key.recordKind === 'allocation';
   }
-  if (conflict.code !== "partial-write-rejected") {
+  if (conflict.code !== 'partial-write-rejected') {
     return false;
   }
   return conflict.conflicts.some(isDuplicateAllocationConflict);
@@ -616,16 +579,16 @@ function buildAllocationConflictKeys(
   };
   const addAllocationKeys = (allocation: OntologyAddressAllocationRecord) => {
     addKey({
-      recordKind: "allocation",
+      recordKind: 'allocation',
       allocationId: allocation.allocationId,
     });
     addKey({
-      recordKind: "allocation",
+      recordKind: 'allocation',
       prefix: allocation.prefix,
       versionId: allocation.versionId,
     });
     addKey({
-      recordKind: "allocation",
+      recordKind: 'allocation',
       ontologyId: allocation.ontologyId,
       taxonomyId: allocation.taxonomyId,
       versionId: allocation.versionId,
@@ -634,8 +597,8 @@ function buildAllocationConflictKeys(
 
   for (const conflict of storeConflicts) {
     if (
-      (conflict.code === "duplicate-key" || conflict.code === "drift") &&
-      conflict.key.recordKind === "allocation"
+      (conflict.code === 'duplicate-key' || conflict.code === 'drift') &&
+      conflict.key.recordKind === 'allocation'
     ) {
       addKey(conflict.key);
       for (const allocation of allocations) {
@@ -664,7 +627,7 @@ function allocationMatchesKey(
 
 function missingAllocation(allocationId: string): OntologyRegistryServiceError {
   return new OntologyRegistryServiceError({
-    code: "missing-allocation",
+    code: 'missing-allocation',
     message: `Missing ontology allocation "${allocationId}"`,
     allocationId,
   });
@@ -674,10 +637,10 @@ function allocationNotActiveSyncPrecondition(
   allocation: OntologyAddressAllocationRecord,
 ): OntologyRegistryServiceError {
   return new OntologyRegistryServiceError({
-    code: "sync-precondition-failure",
+    code: 'sync-precondition-failure',
     message: `Cannot sync ontology allocation "${allocation.allocationId}" while status is "${allocation.status}"`,
     allocationId: allocation.allocationId,
-    reason: "allocation-not-active",
+    reason: 'allocation-not-active',
     ontologyId: allocation.ontologyId,
     taxonomyId: allocation.taxonomyId,
     prefix: allocation.prefix,
@@ -687,20 +650,16 @@ function allocationNotActiveSyncPrecondition(
 }
 
 function missingSyncBundleRecord(input: {
-  readonly allocation: OntologyIndexMetaSyncBundle["allocation"];
-  readonly missingRecordKind: "namespace" | "taxonomy" | "axis" | "segment";
-  readonly reason:
-    | "missing-namespace"
-    | "missing-taxonomy"
-    | "missing-axis"
-    | "missing-segment";
+  readonly allocation: OntologyIndexMetaSyncBundle['allocation'];
+  readonly missingRecordKind: 'namespace' | 'taxonomy' | 'axis' | 'segment';
+  readonly reason: 'missing-namespace' | 'missing-taxonomy' | 'missing-axis' | 'missing-segment';
   readonly message: string;
   readonly taxonomyId?: string;
   readonly axisId?: string;
   readonly axisIds?: readonly string[];
 }): OntologyRegistryServiceError {
   return new OntologyRegistryServiceError({
-    code: "sync-precondition-failure",
+    code: 'sync-precondition-failure',
     message: input.message,
     allocationId: input.allocation.allocationId,
     reason: input.reason,
@@ -720,29 +679,29 @@ function duplicateActiveAllocation(
   activeAllocation: OntologyAddressAllocationRecord,
 ): OntologyRegistryServiceError {
   const prefixVersionKey: OntologyAddressAllocationRecordKey = {
-    recordKind: "allocation",
+    recordKind: 'allocation',
     prefix: allocation.prefix,
     versionId: allocation.versionId,
   };
 
   return new OntologyRegistryServiceError({
-    code: "duplicate-allocation",
+    code: 'duplicate-allocation',
     message: `Cannot activate ontology allocation "${allocation.allocationId}" because active allocation "${activeAllocation.allocationId}" already uses prefix "${allocation.prefix}" version "${allocation.versionId}"`,
     allocationIds: [allocation.allocationId, activeAllocation.allocationId],
     allocationKeys: [
       {
-        recordKind: "allocation",
+        recordKind: 'allocation',
         allocationId: allocation.allocationId,
       },
       {
-        recordKind: "allocation",
+        recordKind: 'allocation',
         allocationId: activeAllocation.allocationId,
       },
       prefixVersionKey,
     ],
     storeConflicts: [
       {
-        code: "duplicate-key",
+        code: 'duplicate-key',
         message: `Active allocation "${activeAllocation.allocationId}" already uses prefix "${allocation.prefix}" version "${allocation.versionId}"`,
         key: prefixVersionKey,
       },

@@ -44,14 +44,14 @@ export function createBitmapVersionMutator(
         ...(init ?? {}),
         signal: AbortSignal.timeout(args.timeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
-  const base = args.authApiUrl.replace(/\/$/, "");
+  const base = args.authApiUrl.replace(/\/$/, '');
 
   return async function bumpVersion(): Promise<{ newVersion: string }> {
     const url = `${base}/admin/bitmap/bump-version`;
     const res = await fetchImpl(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: "{}",
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
     });
     if (!res.ok) {
       const body = await res.text();
@@ -63,15 +63,11 @@ export function createBitmapVersionMutator(
     try {
       json = await res.json();
     } catch (e) {
-      throw new Error(
-        `bitmap-version-mutator JSON parse failed: ${(e as Error).message}`,
-      );
+      throw new Error(`bitmap-version-mutator JSON parse failed: ${(e as Error).message}`);
     }
     const v = (json as { newVersion?: unknown }).newVersion;
-    if (typeof v !== "string" || v.length === 0) {
-      throw new Error(
-        `bitmap-version-mutator invalid newVersion: ${JSON.stringify(json)}`,
-      );
+    if (typeof v !== 'string' || v.length === 0) {
+      throw new Error(`bitmap-version-mutator invalid newVersion: ${JSON.stringify(json)}`);
     }
     return { newVersion: v };
   };

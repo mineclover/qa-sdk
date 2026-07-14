@@ -7,16 +7,9 @@
  * translateConstraint를 이용해 StoredPolicyRule의 pattern을
  * 이전 버전에서 새 버전의 position 기준으로 변환한다.
  */
-import {
-  translateConstraint,
-  type MetaRegistry,
-  type CoordConstraint,
-} from "index-meta-workers";
-import type {
-  PolicyRuleStore,
-  StoredPolicyRule,
-} from "../stores/policy-rule-store.js";
-import { AppError } from "./errors.js";
+import { translateConstraint, type MetaRegistry, type CoordConstraint } from 'index-meta-workers';
+import type { PolicyRuleStore, StoredPolicyRule } from '../stores/policy-rule-store.js';
+import { AppError } from './errors.js';
 
 export interface RuleMigrationServiceDeps {
   policyRuleStore: PolicyRuleStore<unknown>;
@@ -83,11 +76,7 @@ export class RuleMigrationService {
     toVersion: string,
   ): Promise<RuleMigrationResult> {
     if (fromVersion === toVersion) {
-      throw new AppError(
-        "INVALID_INPUT",
-        "fromVersion과 toVersion이 동일합니다",
-        400,
-      );
+      throw new AppError('INVALID_INPUT', 'fromVersion과 toVersion이 동일합니다', 400);
     }
 
     // index 정의에서 dim 목록 확보 (translateConstraint에 필요)
@@ -96,11 +85,7 @@ export class RuleMigrationService {
       const indexDef = this.metaRegistry.getIndexDef(indexId);
       dimIds = indexDef.dims;
     } catch {
-      throw new AppError(
-        "NOT_FOUND",
-        `index "${indexId}" not found in MetaRegistry`,
-        404,
-      );
+      throw new AppError('NOT_FOUND', `index "${indexId}" not found in MetaRegistry`, 404);
     }
 
     // fromVersion, toVersion 유효성 확인
@@ -108,7 +93,7 @@ export class RuleMigrationService {
       this.metaRegistry.getIndexVersion(indexId, fromVersion);
     } catch {
       throw new AppError(
-        "NOT_FOUND",
+        'NOT_FOUND',
         `version "${fromVersion}" not found for index "${indexId}"`,
         404,
       );
@@ -117,7 +102,7 @@ export class RuleMigrationService {
       this.metaRegistry.getIndexVersion(indexId, toVersion);
     } catch {
       throw new AppError(
-        "NOT_FOUND",
+        'NOT_FOUND',
         `version "${toVersion}" not found for index "${indexId}"`,
         404,
       );
@@ -172,9 +157,7 @@ export class RuleMigrationService {
   }
 }
 
-export function createRuleMigrationService(
-  deps: RuleMigrationServiceDeps,
-): RuleMigrationService {
+export function createRuleMigrationService(deps: RuleMigrationServiceDeps): RuleMigrationService {
   return new RuleMigrationService(
     deps.policyRuleStore,
     deps.metaRegistry,

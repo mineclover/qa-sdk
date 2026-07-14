@@ -13,14 +13,17 @@ export class MetricDomainException extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "MetricDomainException";
+    this.name = 'MetricDomainException';
   }
 }
 
 /** Metric 시계열 record 부재 (HTTP 404 매핑). */
 export class MetricNotFoundException extends MetricDomainException {
-  constructor(public readonly metricKey: string, public readonly date: string) {
-    super("METRIC_NOT_FOUND", `Metric not found: ${metricKey}/${date}`);
-    this.name = "NotFoundError";
+  constructor(
+    public readonly metricKey: string,
+    public readonly date: string,
+  ) {
+    super('METRIC_NOT_FOUND', `Metric not found: ${metricKey}/${date}`);
+    this.name = 'NotFoundError';
   }
 }

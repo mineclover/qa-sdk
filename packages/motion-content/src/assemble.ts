@@ -9,23 +9,21 @@ import type {
   MotionTargetDef,
   MotionTransitionDef,
   SequenceLayerSlot,
-} from "./model.js";
-import { endMs } from "./utils.js";
+} from './model.js';
+import { endMs } from './utils.js';
 
-type SceneSequenceTargetSlot = NonNullable<MotionSceneSequenceDef["layers"]>[number];
+type SceneSequenceTargetSlot = NonNullable<MotionSceneSequenceDef['layers']>[number];
 
 type MotionTargetCompat = MotionTargetDef & {
   readonly label?: string;
 };
 
-type SceneLayerPlacementCompat = MotionSceneDef["layers"][number] & {
+type SceneLayerPlacementCompat = MotionSceneDef['layers'][number] & {
   readonly layerId?: string;
   readonly label?: string;
 };
 
-function migrateTarget(
-  layer: MotionLayerDef,
-): MotionTargetCompat {
+function migrateTarget(layer: MotionLayerDef): MotionTargetCompat {
   return {
     id: layer.id,
     label: layer.label,
@@ -34,9 +32,7 @@ function migrateTarget(
   };
 }
 
-function migratePlacement(
-  layer: MotionLayerDef,
-): SceneLayerPlacementCompat {
+function migratePlacement(layer: MotionLayerDef): SceneLayerPlacementCompat {
   return {
     targetId: layer.id,
     layerId: layer.id,
@@ -49,7 +45,7 @@ function migratePlacement(
 }
 
 function migrateSequence(
-  sequence: MotionCompositionDef["sequences"][number],
+  sequence: MotionCompositionDef['sequences'][number],
 ): MotionSceneSequenceDef {
   return {
     id: sequence.id,
@@ -59,13 +55,13 @@ function migrateSequence(
     targetIds: sequence.layerIds,
     ...(sequence.layers
       ? {
-        layers: sequence.layers.map((slot) => ({
-          targetId: slot.layerId,
-          ...(slot.offsetMs !== undefined ? { offsetMs: slot.offsetMs } : {}),
-          ...(slot.zIndex !== undefined ? { zIndex: slot.zIndex } : {}),
-          ...(slot.role ? { role: slot.role } : {}),
-        })),
-      }
+          layers: sequence.layers.map((slot) => ({
+            targetId: slot.layerId,
+            ...(slot.offsetMs !== undefined ? { offsetMs: slot.offsetMs } : {}),
+            ...(slot.zIndex !== undefined ? { zIndex: slot.zIndex } : {}),
+            ...(slot.role ? { role: slot.role } : {}),
+          })),
+        }
       : {}),
     ...(sequence.stagger ? { stagger: sequence.stagger } : {}),
     ...(sequence.captionIds ? { captionIds: sequence.captionIds } : {}),
@@ -76,8 +72,8 @@ export function migrateCompositionV1toV2(
   composition: MotionCompositionDef,
 ): MotionCompositionDefV2 {
   const mainScene: MotionSceneDef = {
-    id: "main",
-    title: "Main",
+    id: 'main',
+    title: 'Main',
     startMs: 0,
     durationMs: composition.durationMs,
     layers: composition.layers.map(migratePlacement),
@@ -108,20 +104,18 @@ export function migrateCompositionV1toV2(
 }
 
 function readOptionalString(value: unknown, key: string): string | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const candidate = (value as Record<string, unknown>)[key];
-  return typeof candidate === "string" ? candidate : undefined;
+  return typeof candidate === 'string' ? candidate : undefined;
 }
 
-function readTransitions(
-  composition: MotionCompositionDefV2,
-): readonly MotionTransitionDef[] {
+function readTransitions(composition: MotionCompositionDefV2): readonly MotionTransitionDef[] {
   const candidate = (composition as { readonly transitions?: unknown }).transitions;
   return Array.isArray(candidate) ? (candidate as readonly MotionTransitionDef[]) : [];
 }
 
 function createUniqueId(baseId: string, usedIds: Set<string>): string {
-  const normalized = baseId.length > 0 ? baseId : "item";
+  const normalized = baseId.length > 0 ? baseId : 'item';
   if (!usedIds.has(normalized)) {
     usedIds.add(normalized);
     return normalized;
@@ -184,7 +178,7 @@ function buildSequenceLayers(
   layerIdBySceneTarget: ReadonlyMap<string, string>,
 ): {
   readonly layers?: readonly SequenceLayerSlot[];
-  readonly stagger?: MotionSceneSequenceDef["stagger"];
+  readonly stagger?: MotionSceneSequenceDef['stagger'];
 } {
   if (!sequence.layers || sequence.layers.length === 0) return {};
 
@@ -218,9 +212,7 @@ function buildSequenceLayers(
   };
 }
 
-export function assembleComposition(
-  composition: MotionCompositionDefV2,
-): MotionCompositionDef {
+export function assembleComposition(composition: MotionCompositionDefV2): MotionCompositionDef {
   const targetById = new Map<string, MotionTargetDef>(
     composition.targets.map((target) => [target.id, target]),
   );
@@ -249,9 +241,10 @@ export function assembleComposition(
       const target = targetById.get(placement.targetId);
       if (!target) continue;
 
-      const explicitLayerId = readOptionalString(placement, "layerId");
-      const candidateLayerId = explicitLayerId
-        ?? ((targetUsageCounts.get(placement.targetId) ?? 0) === 1
+      const explicitLayerId = readOptionalString(placement, 'layerId');
+      const candidateLayerId =
+        explicitLayerId ??
+        ((targetUsageCounts.get(placement.targetId) ?? 0) === 1
           ? placement.targetId
           : `${scene.id}-${placement.targetId}`);
       const layerId = createUniqueId(candidateLayerId, usedLayerIds);
@@ -262,9 +255,10 @@ export function assembleComposition(
 
       layers.push({
         id: layerId,
-        label: readOptionalString(placement, "label")
-          ?? readOptionalString(target, "label")
-          ?? placement.targetId,
+        label:
+          readOptionalString(placement, 'label') ??
+          readOptionalString(target, 'label') ??
+          placement.targetId,
         target: target.target,
         ...(target.content ? { content: target.content } : {}),
         startMs: scene.startMs + placement.startMs,
@@ -279,9 +273,8 @@ export function assembleComposition(
 
   for (const scene of composition.scenes) {
     for (const caption of scene.captions) {
-      const candidateCaptionId = (captionIdCounts.get(caption.id) ?? 0) === 1
-        ? caption.id
-        : `${scene.id}-${caption.id}`;
+      const candidateCaptionId =
+        (captionIdCounts.get(caption.id) ?? 0) === 1 ? caption.id : `${scene.id}-${caption.id}`;
       const captionId = createUniqueId(candidateCaptionId, usedCaptionIds);
       captionIdBySceneCaption.set(sceneTargetKey(scene.id, caption.id), captionId);
       captions.push({
@@ -296,9 +289,8 @@ export function assembleComposition(
 
   const sequences = composition.scenes.flatMap((scene) =>
     scene.sequences.map((sequence) => {
-      const candidateSequenceId = (sequenceIdCounts.get(sequence.id) ?? 0) === 1
-        ? sequence.id
-        : `${scene.id}-${sequence.id}`;
+      const candidateSequenceId =
+        (sequenceIdCounts.get(sequence.id) ?? 0) === 1 ? sequence.id : `${scene.id}-${sequence.id}`;
       const sequenceId = createUniqueId(candidateSequenceId, usedSequenceIds);
       const compositeKey = sceneTargetKey(scene.id, sequence.id);
       sequenceIdBySceneSequence.set(compositeKey, sequenceId);
@@ -306,8 +298,8 @@ export function assembleComposition(
         sequenceIdByOriginalId.set(sequence.id, sequenceId);
       }
 
-      const layerIds = sequence.targetIds.map((targetId) =>
-        layerIdBySceneTarget.get(sceneTargetKey(scene.id, targetId)) ?? targetId
+      const layerIds = sequence.targetIds.map(
+        (targetId) => layerIdBySceneTarget.get(sceneTargetKey(scene.id, targetId)) ?? targetId,
       );
       const sequenceLayers = buildSequenceLayers(scene, sequence, layerIdBySceneTarget);
 
@@ -321,23 +313,28 @@ export function assembleComposition(
         ...(sequenceLayers.stagger ? { stagger: sequenceLayers.stagger } : {}),
         ...(sequence.captionIds
           ? {
-            captionIds: sequence.captionIds.map((captionId) =>
-              captionIdBySceneCaption.get(sceneTargetKey(scene.id, captionId)) ?? captionId
-            ),
-          }
+              captionIds: sequence.captionIds.map(
+                (captionId) =>
+                  captionIdBySceneCaption.get(sceneTargetKey(scene.id, captionId)) ?? captionId,
+              ),
+            }
           : {}),
       };
     }),
   );
 
-  const transitions = readTransitions(composition).map((transition) => Object.assign({}, transition, {
-    fromSequenceId: sequenceIdByOriginalId.get(transition.fromSequenceId)
-      ?? sequenceIdBySceneSequence.get(sceneTargetKey("main", transition.fromSequenceId))
-      ?? transition.fromSequenceId,
-    toSequenceId: sequenceIdByOriginalId.get(transition.toSequenceId)
-      ?? sequenceIdBySceneSequence.get(sceneTargetKey("main", transition.toSequenceId))
-      ?? transition.toSequenceId,
-  }));
+  const transitions = readTransitions(composition).map((transition) =>
+    Object.assign({}, transition, {
+      fromSequenceId:
+        sequenceIdByOriginalId.get(transition.fromSequenceId) ??
+        sequenceIdBySceneSequence.get(sceneTargetKey('main', transition.fromSequenceId)) ??
+        transition.fromSequenceId,
+      toSequenceId:
+        sequenceIdByOriginalId.get(transition.toSequenceId) ??
+        sequenceIdBySceneSequence.get(sceneTargetKey('main', transition.toSequenceId)) ??
+        transition.toSequenceId,
+    }),
+  );
 
   const durationMs = Math.max(
     composition.durationMs,

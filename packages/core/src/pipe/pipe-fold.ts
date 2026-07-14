@@ -9,20 +9,30 @@
  */
 
 import type {
-  PipeSpec, PipeGraph, PipeConnection, ConnectionKind,
-  PipeFlow, PipeStep, StepDataContract,
-} from "../types/pipe-spec.js";
-import { countGraphPaths } from "./pipe-path.js";
-import { getChildFlows } from "./pipe-flow-utils.js";
-import { endpointIdentity, isPortRef, normalizeEndpointPipeIds, toEndpointArray } from "./pipe-endpoint.js";
-import type { FlowLineageSummary } from "./pipe-lineage.js";
-import { summarizeFlowLineage, deriveStaticLineage } from "./pipe-lineage.js";
-import type { FieldLineage } from "../types/data-schema.js";
+  PipeSpec,
+  PipeGraph,
+  PipeConnection,
+  ConnectionKind,
+  PipeFlow,
+  PipeStep,
+  StepDataContract,
+} from '../types/pipe-spec.js';
+import { countGraphPaths } from './pipe-path.js';
+import { getChildFlows } from './pipe-flow-utils.js';
+import {
+  endpointIdentity,
+  isPortRef,
+  normalizeEndpointPipeIds,
+  toEndpointArray,
+} from './pipe-endpoint.js';
+import type { FlowLineageSummary } from './pipe-lineage.js';
+import { summarizeFlowLineage, deriveStaticLineage } from './pipe-lineage.js';
+import type { FieldLineage } from '../types/data-schema.js';
 
 // ── 타입 정의 ─────────────────────────────────────────
 
 /** 3단계 접기 레벨 (L0=group, L1=module, L2=leaf) */
-export type FoldLevel = "group" | "module" | "leaf";
+export type FoldLevel = 'group' | 'module' | 'leaf';
 
 /** 접힌 경계에서 노출되는 데이터 참조 */
 export interface FoldDataRef {
@@ -82,15 +92,18 @@ export interface FoldedGraph {
   /** 접힌 후의 PipeGraph */
   graph: PipeGraph;
   /** 접힌 노드 → 원본 서브그래프 매핑 (unfold 복원용) */
-  foldMap: Map<string, {
-    contract: FoldedContract;
-    originalPipes: PipeSpec[];
-    originalConnections: PipeConnection[];
-    entryPipeIds: string[];
-    exitPipeIds: string[];
-    /** 원본 pipe별 정적 계보 (unfold 시 복원용) */
-    originalLineages: Map<string, FieldLineage[]>;
-  }>;
+  foldMap: Map<
+    string,
+    {
+      contract: FoldedContract;
+      originalPipes: PipeSpec[];
+      originalConnections: PipeConnection[];
+      entryPipeIds: string[];
+      exitPipeIds: string[];
+      /** 원본 pipe별 정적 계보 (unfold 시 복원용) */
+      originalLineages: Map<string, FieldLineage[]>;
+    }
+  >;
 }
 
 /** 자동 감지된 접기 후보 영역 */
@@ -100,7 +113,7 @@ export interface FoldRegion {
   /** 포함된 파이프 ID들 */
   pipeIds: string[];
   /** 감지 근거 */
-  reason: "scope-cluster" | "aspect-cluster" | "linear-chain" | "strongly-connected";
+  reason: 'scope-cluster' | 'aspect-cluster' | 'linear-chain' | 'strongly-connected';
   /** 경계 진입 파이프 */
   entryPipeIds: string[];
   /** 경계 출구 파이프 */
@@ -112,19 +125,19 @@ export interface FoldRegion {
 // ── 내부 헬퍼 ─────────────────────────────────────────
 
 /** from/to 정규화 (pipe-level 비교용: PortRef → pipeId) */
-export function normalize(endpoint: PipeConnection["from"]): string[] {
+export function normalize(endpoint: PipeConnection['from']): string[] {
   return normalizeEndpointPipeIds(endpoint);
 }
 
 function rebuildEndpoint(
-  source: PipeConnection["from"],
+  source: PipeConnection['from'],
   values: Array<string | { pipeId: string; portId?: string }>,
-): PipeConnection["from"] {
+): PipeConnection['from'] {
   if (Array.isArray(source)) {
-    if (source.every(value => isPortRef(value))) {
-      return values.map(value => isPortRef(value) ? value : { pipeId: value });
+    if (source.every((value) => isPortRef(value))) {
+      return values.map((value) => (isPortRef(value) ? value : { pipeId: value }));
     }
-    return values.map(value => isPortRef(value) ? value.pipeId : value);
+    return values.map((value) => (isPortRef(value) ? value.pipeId : value));
   }
 
   const [first] = values;
@@ -134,9 +147,11 @@ function rebuildEndpoint(
   return isPortRef(first) ? first.pipeId : first;
 }
 
-function dedupeEndpointValues(values: Array<string | { pipeId: string; portId?: string }>): Array<string | { pipeId: string; portId?: string }> {
+function dedupeEndpointValues(
+  values: Array<string | { pipeId: string; portId?: string }>,
+): Array<string | { pipeId: string; portId?: string }> {
   const seen = new Set<string>();
-  return values.filter(value => {
+  return values.filter((value) => {
     const key = endpointIdentity(value);
     if (seen.has(key)) return false;
     seen.add(key);
@@ -146,13 +161,19 @@ function dedupeEndpointValues(values: Array<string | { pipeId: string; portId?: 
 
 /** PipeFlow 트리에서 모든 PipeStep 수집 */
 export function collectFlowSteps(flow: PipeFlow): PipeStep[] {
-  if (flow.kind === "step") return [flow];
+  if (flow.kind === 'step') return [flow];
   return getChildFlows(flow).flatMap(collectFlowSteps);
 }
 
 /** 패싯 유니온 수집 */
 function collectFlowFacets(flow: PipeFlow): string[] {
-  return [...new Set(collectFlowSteps(flow).map(s => s.facet).filter(Boolean))];
+  return [
+    ...new Set(
+      collectFlowSteps(flow)
+        .map((s) => s.facet)
+        .filter(Boolean),
+    ),
+  ];
 }
 
 /** 흐름 종류 유니온 수집 */
@@ -180,10 +201,10 @@ function identifyBoundary(
   for (const conn of graph.connections) {
     const froms = normalize(conn.from);
     const tos = normalize(conn.to);
-    const anyFromInside = froms.some(f => pipeSet.has(f));
-    const anyFromOutside = froms.some(f => !pipeSet.has(f));
-    const anyToInside = tos.some(t => pipeSet.has(t));
-    const anyToOutside = tos.some(t => !pipeSet.has(t));
+    const anyFromInside = froms.some((f) => pipeSet.has(f));
+    const anyFromOutside = froms.some((f) => !pipeSet.has(f));
+    const anyToInside = tos.some((t) => pipeSet.has(t));
+    const anyToOutside = tos.some((t) => !pipeSet.has(t));
 
     // 외부→내부: to가 entry
     if (anyFromOutside && anyToInside) {
@@ -215,7 +236,7 @@ function identifyBoundary(
     for (const conn of graph.connections) {
       const froms = normalize(conn.from);
       const tos = normalize(conn.to);
-      if (froms.some(f => pipeSet.has(f)) && tos.some(t => pipeSet.has(t))) {
+      if (froms.some((f) => pipeSet.has(f)) && tos.some((t) => pipeSet.has(t))) {
         for (const f of froms) if (pipeSet.has(f)) hasInternalOutgoing.add(f);
       }
     }
@@ -230,15 +251,15 @@ function identifyBoundary(
 /** 서브그래프 구축 (내부 연결만) */
 function buildSubgraph(graph: PipeGraph, pipeIds: string[], entryPipeId: string): PipeGraph {
   const pipeSet = new Set(pipeIds);
-  const pipes = graph.pipes.filter(p => pipeSet.has(p.pipeId));
-  const connections = graph.connections.filter(c => {
+  const pipes = graph.pipes.filter((p) => pipeSet.has(p.pipeId));
+  const connections = graph.connections.filter((c) => {
     const froms = normalize(c.from);
     const tos = normalize(c.to);
-    return froms.every(f => pipeSet.has(f)) && tos.every(t => pipeSet.has(t));
+    return froms.every((f) => pipeSet.has(f)) && tos.every((t) => pipeSet.has(t));
   });
 
   return {
-    graphId: graph.graphId + "__sub",
+    graphId: graph.graphId + '__sub',
     version: graph.version,
     description: undefined,
     pipes,
@@ -249,11 +270,11 @@ function buildSubgraph(graph: PipeGraph, pipeIds: string[], entryPipeId: string)
 
 /** 연결의 endpoint를 교체 */
 function rewireEndpoint(
-  endpoint: PipeConnection["from"],
+  endpoint: PipeConnection['from'],
   pipeSet: Set<string>,
   replacementId: string,
-): PipeConnection["from"] {
-  const rewired = toEndpointArray(endpoint).map(value => {
+): PipeConnection['from'] {
+  const rewired = toEndpointArray(endpoint).map((value) => {
     const pipeId = isPortRef(value) ? value.pipeId : value;
     return pipeSet.has(pipeId) ? replacementId : value;
   });
@@ -268,14 +289,14 @@ function rewireEndpoint(
 export function computeFoldedContract(
   graph: PipeGraph,
   pipeIds: string[],
-  level: FoldLevel = "module",
+  level: FoldLevel = 'module',
 ): FoldedContract {
   if (pipeIds.length === 0) {
-    throw new Error("접기 대상 pipeIds가 비어있음");
+    throw new Error('접기 대상 pipeIds가 비어있음');
   }
 
   const pipeSet = new Set(pipeIds);
-  const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
+  const pipeMap = new Map(graph.pipes.map((p) => [p.pipeId, p]));
 
   // 유효성 검증
   for (const id of pipeIds) {
@@ -285,7 +306,7 @@ export function computeFoldedContract(
   }
 
   const { entry, exit } = identifyBoundary(graph, pipeSet);
-  const foldId = "fold_" + pipeIds.slice().toSorted().join("_");
+  const foldId = 'fold_' + pipeIds.slice().toSorted().join('_');
 
   // inputs 수집: entryPipe의 trigger + consumes
   const inputs: FoldDataRef[] = [];
@@ -294,7 +315,7 @@ export function computeFoldedContract(
     // trigger eventKey를 입력으로 기록
     inputs.push({
       field: pipe.trigger.eventKey,
-      type: "event",
+      type: 'event',
       required: true,
       sourcePipeId: entryId,
     });
@@ -322,7 +343,7 @@ export function computeFoldedContract(
       for (const eventKey of pipe.produces) {
         outputs.push({
           field: eventKey,
-          type: "event",
+          type: 'event',
           required: true,
           sourcePipeId: exitId,
         });
@@ -365,7 +386,7 @@ export function computeFoldedContract(
       }
     }
   }
-  const sideEffects = [...sideEffectMap.values()].map(s => ({
+  const sideEffects = [...sideEffectMap.values()].map((s) => ({
     schemaId: s.schemaId,
     columns: [...s.columns],
     mode: s.mode,
@@ -446,7 +467,7 @@ export function foldSubgraph(
 ): FoldedGraph {
   const contract = computeFoldedContract(graph, pipeIds, level);
   const pipeSet = new Set(pipeIds);
-  const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
+  const pipeMap = new Map(graph.pipes.map((p) => [p.pipeId, p]));
   const resolvedFoldId = foldId ?? contract.foldId;
   contract.foldId = resolvedFoldId;
 
@@ -459,10 +480,10 @@ export function foldSubgraph(
   for (const conn of graph.connections) {
     const froms = normalize(conn.from);
     const tos = normalize(conn.to);
-    const allFromInside = froms.every(f => pipeSet.has(f));
-    const allToInside = tos.every(t => pipeSet.has(t));
-    const anyFromInside = froms.some(f => pipeSet.has(f));
-    const anyToInside = tos.some(t => pipeSet.has(t));
+    const allFromInside = froms.every((f) => pipeSet.has(f));
+    const allToInside = tos.every((t) => pipeSet.has(t));
+    const anyFromInside = froms.some((f) => pipeSet.has(f));
+    const anyToInside = tos.some((t) => pipeSet.has(t));
 
     if (allFromInside && allToInside) {
       // 내부 연결 → 보관
@@ -486,7 +507,7 @@ export function foldSubgraph(
   const connKey = (c: PipeConnection) =>
     `${JSON.stringify(toEndpointArray(c.from).map(endpointIdentity).toSorted())}→${JSON.stringify(toEndpointArray(c.to).map(endpointIdentity).toSorted())}:${c.kind}`;
   const seen = new Set<string>();
-  const dedupedConnections = rewiredConnections.filter(c => {
+  const dedupedConnections = rewiredConnections.filter((c) => {
     const key = connKey(c);
     if (seen.has(key)) return false;
     seen.add(key);
@@ -517,19 +538,16 @@ export function foldSubgraph(
   const foldedPipe: PipeSpec = {
     pipeId: resolvedFoldId,
     version: graph.version,
-    description: `접힌 노드: ${pipeIds.join(", ")}`,
+    description: `접힌 노드: ${pipeIds.join(', ')}`,
     trigger: { ...firstEntry.trigger },
-    flow: { kind: "step", facet: "접힌" },
+    flow: { kind: 'step', facet: '접힌' },
     produces: allProduces.size > 0 ? [...allProduces] : undefined,
     scope: topScope,
     aspect: topAspect,
   };
 
   // 새 그래프 구성
-  const newPipes = [
-    ...graph.pipes.filter(p => !pipeSet.has(p.pipeId)),
-    foldedPipe,
-  ];
+  const newPipes = [...graph.pipes.filter((p) => !pipeSet.has(p.pipeId)), foldedPipe];
 
   const newGraph: PipeGraph = {
     graphId: graph.graphId,
@@ -547,18 +565,21 @@ export function foldSubgraph(
     originalLineages.set(id, deriveStaticLineage(pipe.flow, id));
   }
 
-  const foldMap = new Map<string, {
-    contract: FoldedContract;
-    originalPipes: PipeSpec[];
-    originalConnections: PipeConnection[];
-    entryPipeIds: string[];
-    exitPipeIds: string[];
-    originalLineages: Map<string, FieldLineage[]>;
-  }>();
+  const foldMap = new Map<
+    string,
+    {
+      contract: FoldedContract;
+      originalPipes: PipeSpec[];
+      originalConnections: PipeConnection[];
+      entryPipeIds: string[];
+      exitPipeIds: string[];
+      originalLineages: Map<string, FieldLineage[]>;
+    }
+  >();
 
   foldMap.set(resolvedFoldId, {
     contract,
-    originalPipes: graph.pipes.filter(p => pipeSet.has(p.pipeId)),
+    originalPipes: graph.pipes.filter((p) => pipeSet.has(p.pipeId)),
     originalConnections: internalConnections,
     entryPipeIds: entry,
     exitPipeIds: exit,
@@ -571,10 +592,7 @@ export function foldSubgraph(
 /**
  * 접힌 노드를 원래 파이프들로 복원한다.
  */
-export function unfoldNode(
-  foldedGraph: FoldedGraph,
-  foldedNodeId: string,
-): PipeGraph {
+export function unfoldNode(foldedGraph: FoldedGraph, foldedNodeId: string): PipeGraph {
   const foldEntry = foldedGraph.foldMap.get(foldedNodeId);
   if (!foldEntry) {
     throw new Error(`접힌 노드 '${foldedNodeId}'를 찾을 수 없음`);
@@ -584,10 +602,7 @@ export function unfoldNode(
   const graph = foldedGraph.graph;
 
   // 접힌 노드 제거, 원본 파이프 복원
-  const newPipes = [
-    ...graph.pipes.filter(p => p.pipeId !== foldedNodeId),
-    ...originalPipes,
-  ];
+  const newPipes = [...graph.pipes.filter((p) => p.pipeId !== foldedNodeId), ...originalPipes];
 
   // 연결 재배선: foldedNodeId → 원래 entry/exit 파이프
   const newConnections: PipeConnection[] = [];
@@ -632,9 +647,7 @@ export function unfoldNode(
   newConnections.push(...originalConnections);
 
   // entryPipeId 복원
-  const entryPipeId = graph.entryPipeId === foldedNodeId
-    ? entryPipeIds[0]
-    : graph.entryPipeId;
+  const entryPipeId = graph.entryPipeId === foldedNodeId ? entryPipeIds[0] : graph.entryPipeId;
 
   return {
     graphId: graph.graphId,
@@ -703,12 +716,10 @@ export function validateFoldCheckpoint(contract: FoldedContract): FoldCheckpoint
   }
 
   // 입력 중 어떤 출력에도 기여하지 않는 것
-  const disconnectedInputs = inputs.filter(i => !contributingInputs.has(i));
+  const disconnectedInputs = inputs.filter((i) => !contributingInputs.has(i));
 
   // 출력 중 기여 입력이 없는 것
-  const orphanOutputs = outputs.filter(o =>
-    !outputLineage[o] || outputLineage[o].length === 0,
-  );
+  const orphanOutputs = outputs.filter((o) => !outputLineage[o] || outputLineage[o].length === 0);
 
   return {
     valid: disconnectedInputs.length === 0 && orphanOutputs.length === 0,
@@ -721,11 +732,11 @@ export function validateFoldCheckpoint(contract: FoldedContract): FoldCheckpoint
 
 /** endpoint 내 특정 ID를 교체 */
 function replaceInEndpoint(
-  endpoint: PipeConnection["from"],
+  endpoint: PipeConnection['from'],
   oldId: string,
   newId: string,
-): PipeConnection["from"] {
-  const replaced = toEndpointArray(endpoint).map(value => {
+): PipeConnection['from'] {
+  const replaced = toEndpointArray(endpoint).map((value) => {
     if (isPortRef(value)) {
       return value.pipeId === oldId ? { ...value, pipeId: newId } : value;
     }
@@ -782,10 +793,10 @@ export function detectFoldRegions(graph: PipeGraph): FoldRegion[] {
       regions.push({
         regionId: `scope_${scope}`,
         pipeIds,
-        reason: "scope-cluster",
+        reason: 'scope-cluster',
         entryPipeIds: entry,
         exitPipeIds: exit,
-        suggestedLevel: "module",
+        suggestedLevel: 'module',
       });
     }
   }
@@ -805,7 +816,7 @@ export function detectFoldRegions(graph: PipeGraph): FoldRegion[] {
       if (!outs || outs.size !== 1) break;
       const next = [...outs][0];
       if (visited.has(next)) break;
-      if (connKindMap.get(`${current}→${next}`) !== "next") break;
+      if (connKindMap.get(`${current}→${next}`) !== 'next') break;
       // next의 incoming이 1개인지 확인
       const ins = inAdj.get(next);
       if (!ins || ins.size !== 1) break;
@@ -820,16 +831,19 @@ export function detectFoldRegions(graph: PipeGraph): FoldRegion[] {
       regions.push({
         regionId: `chain_${chain[0]}`,
         pipeIds: chain,
-        reason: "linear-chain",
+        reason: 'linear-chain',
         entryPipeIds: entry,
         exitPipeIds: exit,
-        suggestedLevel: "module",
+        suggestedLevel: 'module',
       });
     }
   }
 
   // 전략 C: 강결합 컴포넌트 (Tarjan's SCC)
-  const sccs = tarjanSCC(graph.pipes.map(p => p.pipeId), outAdj);
+  const sccs = tarjanSCC(
+    graph.pipes.map((p) => p.pipeId),
+    outAdj,
+  );
   for (const scc of sccs) {
     if (scc.length < 2) continue;
     const pipeSet = new Set(scc);
@@ -837,10 +851,10 @@ export function detectFoldRegions(graph: PipeGraph): FoldRegion[] {
     regions.push({
       regionId: `scc_${scc[0]}`,
       pipeIds: scc,
-      reason: "strongly-connected",
+      reason: 'strongly-connected',
       entryPipeIds: entry,
       exitPipeIds: exit,
-      suggestedLevel: "group",
+      suggestedLevel: 'group',
     });
   }
 
@@ -880,10 +894,7 @@ function bfsConnected(
 }
 
 /** Tarjan's SCC 알고리즘 */
-function tarjanSCC(
-  nodes: string[],
-  outAdj: Map<string, Set<string>>,
-): string[][] {
+function tarjanSCC(nodes: string[], outAdj: Map<string, Set<string>>): string[][] {
   let index = 0;
   const indices = new Map<string, number>();
   const lowlinks = new Map<string, number>();

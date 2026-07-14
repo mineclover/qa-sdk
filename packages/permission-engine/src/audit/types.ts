@@ -8,9 +8,9 @@
  * 본 패키지는 OTEL에 직접 의존하지 않으므로 span_id 문자열만 받는다.
  */
 
-export type AuditKind = "execution" | "check";
-export type AuditOutcome = "allow" | "deny" | "error";
-export type CheckPass = "bitmap" | "lifecycle" | "cerbos" | "acl";
+export type AuditKind = 'execution' | 'check';
+export type AuditOutcome = 'allow' | 'deny' | 'error';
+export type CheckPass = 'bitmap' | 'lifecycle' | 'cerbos' | 'acl';
 
 interface AuditEntryBase {
   /** OTEL span_id 재사용. 트리 내 고유. */
@@ -32,7 +32,7 @@ interface AuditEntryBase {
 }
 
 export interface ExecutionEntry extends AuditEntryBase {
-  kind: "execution";
+  kind: 'execution';
   /** 호출된 API 식별자 (apiId, transition_id 등). */
   apiId: string;
   /** 실행 주체. */
@@ -48,7 +48,7 @@ export interface ExecutionEntry extends AuditEntryBase {
 }
 
 export interface CheckEntry extends AuditEntryBase {
-  kind: "check";
+  kind: 'check';
   /** 판정 단계. */
   pass: CheckPass;
   /** bitmap check일 때 좌표 address. */

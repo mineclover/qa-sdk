@@ -3,14 +3,14 @@
 
 /**
  * 품질 게이트 분류 및 스펙 타입
- * 
+ *
  * demo-catalog의 quality_gate 관련 도메인을 정의하며,
  * core, work-domain, definition-catalog에서 공통으로 참조한다.
  */
 
 // ─── 작업 도메인 ID (대분류 10종) ────────────────────────
 
-import type { GateKindId, WorkDomainId } from "./work-domain-data.js";
+import type { GateKindId, WorkDomainId } from './work-domain-data.js';
 
 /** 품질 게이트 문서 스펙. */
 export interface QualityGateSpec {

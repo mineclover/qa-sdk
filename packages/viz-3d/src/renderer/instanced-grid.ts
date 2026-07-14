@@ -12,10 +12,10 @@
  * 각 인스턴스의 색상/emissive는 per-instance attribute로 제어.
  */
 
-import * as THREE from "three";
-import type { GridLayout } from "../core/grid-builder.js";
-import type { CategoryColor } from "../core/color-tokens.js";
-import { CATEGORY_COLORS } from "../core/color-tokens.js";
+import * as THREE from 'three';
+import type { GridLayout } from '../core/grid-builder.js';
+import type { CategoryColor } from '../core/color-tokens.js';
+import { CATEGORY_COLORS } from '../core/color-tokens.js';
 
 export interface InstancedGridState {
   readonly gridId: string;

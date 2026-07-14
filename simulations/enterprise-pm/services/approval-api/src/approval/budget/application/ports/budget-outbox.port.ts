@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { OutboxPort, OutboxRecord } from "@qa-sdk/sim-domain-slice-kit";
+import type { OutboxPort, OutboxRecord } from '@qa-sdk/sim-domain-slice-kit';
 
 export type BudgetOutboxPort = OutboxPort;
 export type BudgetOutboxRecord = OutboxRecord;
@@ -21,7 +21,7 @@ export interface BudgetCreatedEventPayload {
 export interface BudgetDecidedEventPayload {
   readonly id: string;
   readonly approverId: string;
-  readonly decision: "approved" | "rejected";
+  readonly decision: 'approved' | 'rejected';
   readonly stage: number;
   readonly nextStatus: string;
   readonly occurredAt: string;

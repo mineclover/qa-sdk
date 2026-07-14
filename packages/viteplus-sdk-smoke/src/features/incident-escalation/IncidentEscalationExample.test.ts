@@ -73,18 +73,12 @@ describe('incident escalation example', () => {
     actions.updateTextField('incidentTitle', 'registry decode latency spike');
     actions.updateTextField('serviceName', 'registry-service');
     actions.updateSeverity('sev1');
-    actions.updateTextField(
-      'customerImpact',
-      '전체 조회 요청의 40%가 timeout에 걸리고 있습니다.',
-    );
+    actions.updateTextField('customerImpact', '전체 조회 요청의 40%가 timeout에 걸리고 있습니다.');
     actions.updateTextField(
       'mitigationPlan',
       'slow query guard를 적용하고 read replica로 우회합니다.',
     );
-    actions.updateTextField(
-      'stakeholderNote',
-      '15분 단위 상태 공유와 rollback fallback 준비',
-    );
+    actions.updateTextField('stakeholderNote', '15분 단위 상태 공유와 rollback fallback 준비');
 
     await actions.submit();
 

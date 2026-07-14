@@ -1,7 +1,7 @@
 // @def.boundary sim-test-fixtures
 // @def.doc 02-canary-topology
 
-import type { ScenarioFixture } from "./scenario-fixture.types.js";
+import type { ScenarioFixture } from './scenario-fixture.types.js';
 
 /**
  * 시나리오 9: v2 = v1과 schema/behavior 동일 (no-op canary).
@@ -18,14 +18,14 @@ import type { ScenarioFixture } from "./scenario-fixture.types.js";
  * - controller가 weight=1.0까지 진행 (승격 성공)
  */
 export const scenarioV1EqualsV2: ScenarioFixture = {
-  id: "09-v1-equals-v2",
-  v1Tag: "v3",
-  v2Tag: "v4-stable-clone",
+  id: '09-v1-equals-v2',
+  v1Tag: 'v3',
+  v2Tag: 'v4-stable-clone',
   // v2Patch 의도적으로 비움 — v2 코드가 v1과 동일.
   expectedAssertions: {
-    "ingest-server.schema_drift_count": { eq: 0 },
-    "controller.schemaCompatRate": { eq: 1.0 },
-    "controller.audit_anomaly_count": { eq: 0 },
-    "controller.final_weight_v2": { eq: 1.0 },
+    'ingest-server.schema_drift_count': { eq: 0 },
+    'controller.schemaCompatRate': { eq: 1.0 },
+    'controller.audit_anomaly_count': { eq: 0 },
+    'controller.final_weight_v2': { eq: 1.0 },
   },
 };

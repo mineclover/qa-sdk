@@ -1,9 +1,9 @@
-import { parse as parseTaxonomy } from "taxonomy-engine";
-import type { TaxonomyVocabulary } from "./types.js";
+import { parse as parseTaxonomy } from 'taxonomy-engine';
+import type { TaxonomyVocabulary } from './types.js';
 
 export function parseProfileTaxonomy(yamlText: string): TaxonomyVocabulary {
   const result = parseTaxonomy(yamlText);
-  if ("error" in result) {
+  if ('error' in result) {
     throw new Error(`Failed to parse profile taxonomy: ${result.error.message}`);
   }
 

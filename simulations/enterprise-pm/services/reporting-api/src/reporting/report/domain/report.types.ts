@@ -1,7 +1,7 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import type { ReportId } from "./report.ids.js";
+import type { ReportId } from './report.ids.js';
 
 /**
  * Read-side Report DTO — 본 슬라이스는 read-model 슬라이스이므로 entity 가

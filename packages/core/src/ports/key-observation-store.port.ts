@@ -64,7 +64,7 @@ export interface KeyObservationStore {
   /** prefix별 관측 현황 조회 */
   findByPrefix(
     prefixId: string,
-    opts?: { limit?: number; orderBy?: "count" | "last_seen" },
+    opts?: { limit?: number; orderBy?: 'count' | 'last_seen' },
   ): Promise<KeyObservation[]>;
   /** 전체 관측 통계 */
   summary(): Promise<KeyObservationSummary>;

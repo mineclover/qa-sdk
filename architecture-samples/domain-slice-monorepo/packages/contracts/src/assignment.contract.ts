@@ -1,10 +1,10 @@
 export const ASSIGNMENT_EVENTS = {
-  created: "assignment.created.v1",
+  created: 'assignment.created.v1',
 } as const;
 
 export const ASSIGNMENT_LOG_EVENTS = {
-  useCaseCreate: "assignment.use_case.create",
-  bffDetail: "assignment.bff.detail",
+  useCaseCreate: 'assignment.use_case.create',
+  bffDetail: 'assignment.bff.detail',
 } as const;
 
 export interface AssignmentCreatedPayload {
@@ -23,16 +23,16 @@ export interface AssignmentDetailBffResponse {
 
 export const ASSIGNMENT_OPENAPI_FRAGMENT = {
   paths: {
-    "/assignments": {
+    '/assignments': {
       post: {
-        operationId: "createAssignment",
-        tags: ["assignment"],
+        operationId: 'createAssignment',
+        tags: ['assignment'],
       },
     },
-    "/bff/assignments/{id}": {
+    '/bff/assignments/{id}': {
       get: {
-        operationId: "getAssignmentDetail",
-        tags: ["assignment-bff"],
+        operationId: 'getAssignmentDetail',
+        tags: ['assignment-bff'],
       },
     },
   },

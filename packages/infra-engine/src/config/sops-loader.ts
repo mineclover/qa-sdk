@@ -2,7 +2,7 @@
 // @def.doc infra-engine-system
 
 // config/sops-loader.ts — SOPS CLI 래퍼 + 평문 JSON 로더
-import { readFile } from "node:fs/promises";
+import { readFile } from 'node:fs/promises';
 
 export interface SopsLoader {
   decrypt(configPath: string): Promise<Record<string, unknown>>;
@@ -11,14 +11,17 @@ export interface SopsLoader {
 export function createSopsLoader(): SopsLoader {
   return {
     async decrypt(configPath) {
-      const { execa } = await import("execa");
+      const { execa } = await import('execa');
       try {
-        const { stdout } = await execa("sops", ["--decrypt", "--output-type", "json", configPath]);
+        const { stdout } = await execa('sops', ['--decrypt', '--output-type', 'json', configPath]);
         return JSON.parse(stdout);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("ENOENT")) {
-          throw new Error("sops CLI가 설치되어 있지 않습니다. brew install sops 또는 공식 릴리스에서 설치하세요.", { cause: err });
+        if (msg.includes('ENOENT')) {
+          throw new Error(
+            'sops CLI가 설치되어 있지 않습니다. brew install sops 또는 공식 릴리스에서 설치하세요.',
+            { cause: err },
+          );
         }
         throw new Error(`SOPS 복호화 실패: ${msg}`, { cause: err });
       }
@@ -30,7 +33,7 @@ export function createSopsLoader(): SopsLoader {
 export function createPlainLoader(): SopsLoader {
   return {
     async decrypt(configPath) {
-      const content = await readFile(configPath, "utf-8");
+      const content = await readFile(configPath, 'utf-8');
       return JSON.parse(content);
     },
   };

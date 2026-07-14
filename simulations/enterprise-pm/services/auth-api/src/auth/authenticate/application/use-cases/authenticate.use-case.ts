@@ -6,14 +6,14 @@ import {
   InvalidCredentialsException,
   type AuthenticatedSession,
   type AuthenticatedRoleAssignment,
-} from "../../domain/index.js";
-import type { AuthenticateCommand } from "../commands/authenticate.command.js";
-import type { AuthenticateLoggerPort } from "../ports/authenticate-logger.port.js";
-import type { UserQueryPort } from "../ports/user-query.port.js";
-import type { RoleAssignmentQueryPort } from "../ports/role-assignment-query.port.js";
-import type { RoleQueryPort } from "../ports/role-query.port.js";
-import type { CredentialStore } from "../ports/credential-store.port.js";
-import type { TransactionPort, LoggerPort } from "@qa-sdk/sim-domain-slice-kit";
+} from '../../domain/index.js';
+import type { AuthenticateCommand } from '../commands/authenticate.command.js';
+import type { AuthenticateLoggerPort } from '../ports/authenticate-logger.port.js';
+import type { UserQueryPort } from '../ports/user-query.port.js';
+import type { RoleAssignmentQueryPort } from '../ports/role-assignment-query.port.js';
+import type { RoleQueryPort } from '../ports/role-query.port.js';
+import type { CredentialStore } from '../ports/credential-store.port.js';
+import type { TransactionPort, LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
 
 /**
  * Command-only 슬라이스 — write 가 없으므로 실 TransactionPort 는 사용하지
@@ -50,18 +50,18 @@ export class AuthenticateUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "authenticate",
-      useCase: "AuthenticateUseCase.authenticate",
-      commandName: "AuthenticateCommand",
+      domain: 'authenticate',
+      useCase: 'AuthenticateUseCase.authenticate',
+      commandName: 'AuthenticateCommand',
     } as const;
-    this.deps.logger.info({ ...ctxBase }, "authenticate.started");
+    this.deps.logger.info({ ...ctxBase }, 'authenticate.started');
 
     try {
       if (command.email.trim().length === 0) {
-        throw new InvalidAuthenticateInputException("email must not be empty.");
+        throw new InvalidAuthenticateInputException('email must not be empty.');
       }
       if (command.password.length === 0) {
-        throw new InvalidAuthenticateInputException("password must not be empty.");
+        throw new InvalidAuthenticateInputException('password must not be empty.');
       }
 
       const user = await this.deps.userQuery.findByEmail(command.email);
@@ -77,22 +77,25 @@ export class AuthenticateUseCase {
           role: await this.deps.roleQuery.findById(a.roleId),
         })),
       );
-      const roleAssignments: AuthenticatedRoleAssignment[] = roleViews.flatMap(({ assignment, role }) =>
-        role
-          ? [{
-              roleId: assignment.roleId,
-              roleName: role.name,
-              scopeType: assignment.scopeType,
-              scopeId: assignment.scopeId,
-            }]
-          : [],
+      const roleAssignments: AuthenticatedRoleAssignment[] = roleViews.flatMap(
+        ({ assignment, role }) =>
+          role
+            ? [
+                {
+                  roleId: assignment.roleId,
+                  roleName: role.name,
+                  scopeType: assignment.scopeType,
+                  scopeId: assignment.scopeId,
+                },
+              ]
+            : [],
       );
       const roleIds = [...new Set(roleAssignments.map((r) => r.roleId))];
       const roleNames = [...new Set(roleAssignments.map((r) => r.roleName))];
 
       this.deps.logger.info(
-        { ...ctxBase, aggregateId: user.id, outcome: "success" },
-        "authenticate.success",
+        { ...ctxBase, aggregateId: user.id, outcome: 'success' },
+        'authenticate.success',
       );
 
       return {
@@ -108,11 +111,11 @@ export class AuthenticateUseCase {
       this.deps.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "authenticate.failure",
+        'authenticate.failure',
       );
       throw error;
     }

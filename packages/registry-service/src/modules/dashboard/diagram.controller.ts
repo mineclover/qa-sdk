@@ -1,12 +1,12 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Controller, Get, Inject, Param, Query, UseFilters } from "@nestjs/common";
-import { DiagramService } from "./diagram.service.js";
-import { DashboardExceptionFilter } from "./dashboard.exception-filter.js";
+import { Controller, Get, Inject, Param, Query, UseFilters } from '@nestjs/common';
+import { DiagramService } from './diagram.service.js';
+import { DashboardExceptionFilter } from './dashboard.exception-filter.js';
 
 @UseFilters(new DashboardExceptionFilter())
-@Controller("api/diagrams")
+@Controller('api/diagrams')
 export class DiagramController {
   constructor(@Inject(DiagramService) private readonly diagrams: DiagramService) {}
 
@@ -15,12 +15,12 @@ export class DiagramController {
     return this.diagrams.list();
   }
 
-  @Get(":kind/:id")
+  @Get(':kind/:id')
   get(
-    @Param("kind") kind: string,
-    @Param("id") id: string,
-    @Query("invariants") invariants?: string,
+    @Param('kind') kind: string,
+    @Param('id') id: string,
+    @Query('invariants') invariants?: string,
   ) {
-    return this.diagrams.get(kind, id, invariants !== "false");
+    return this.diagrams.get(kind, id, invariants !== 'false');
   }
 }

@@ -14,9 +14,9 @@
  * D1은 Cloudflare Workers 전용이므로 이 팩토리 대상이 아니다.
  */
 
-import type { SqlDriver } from "./sql-store.js";
+import type { SqlDriver } from './sql-store.js';
 
-export type SqliteDriverType = "node" | "better";
+export type SqliteDriverType = 'node' | 'better';
 
 export interface CreateSqliteDriverOptions {
   /** 드라이버 종류. 기본 `"node"`. */
@@ -30,15 +30,15 @@ export interface CreateSqliteDriverOptions {
 export async function createSqliteDriver(
   options: CreateSqliteDriverOptions = {},
 ): Promise<SqlDriver> {
-  const { driver = "node", path = ":memory:", schema } = options;
+  const { driver = 'node', path = ':memory:', schema } = options;
 
   switch (driver) {
-    case "node": {
-      const { NodeSqliteDriver } = await import("./node-sqlite-driver.js");
+    case 'node': {
+      const { NodeSqliteDriver } = await import('./node-sqlite-driver.js');
       return new NodeSqliteDriver(path, schema);
     }
-    case "better": {
-      const { BetterSqliteDriver } = await import("./better-sqlite-driver.js");
+    case 'better': {
+      const { BetterSqliteDriver } = await import('./better-sqlite-driver.js');
       return new BetterSqliteDriver(path, schema);
     }
     default:

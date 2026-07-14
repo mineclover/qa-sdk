@@ -8,5 +8,5 @@
  * publisher 가 비활성화 (operational fail-open) 인 경우 noop.
  */
 export abstract class PermissionChangePublisherPort {
-  abstract publishUserChange(userId: string, reason: "permission_change"): Promise<void>;
+  abstract publishUserChange(userId: string, reason: 'permission_change'): Promise<void>;
 }

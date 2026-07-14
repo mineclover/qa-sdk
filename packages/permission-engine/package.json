@@ -3,14 +3,20 @@
   "version": "0.1.0",
   "description": "Bitmask-based permission engine built on weighted-index — encode [feature, role] into compact integer addresses with O(1) grant/check.",
   "keywords": [
+    "authorization",
+    "bitmask",
     "permission",
     "rbac",
-    "bitmask",
-    "weighted-index",
-    "authorization"
+    "weighted-index"
   ],
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -23,12 +29,6 @@
       "require": "./dist/browser.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -38,8 +38,8 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "weighted-index": "workspace:*",
-    "bit-index": "workspace:*"
+    "bit-index": "workspace:*",
+    "weighted-index": "workspace:*"
   },
   "devDependencies": {
     "@opentelemetry/context-async-hooks": "^1.30.0",

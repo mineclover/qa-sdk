@@ -8,10 +8,10 @@
  * 소형 shape에서는 B-2에서 Number 동등성을 검증했으므로,
  * 여기서는 Number로 불가능한 영역에서의 정확성을 확인한다.
  */
-import { describe, it, expect } from "vitest";
-import { MetaCodecBig } from "index-meta";
-import type { DecodeMap, EntityId } from "index-meta";
-import { WeightedIndexBig, calcAddressRangesBig, containsAddressBig } from "weighted-index";
+import { describe, it, expect } from 'vitest';
+import { MetaCodecBig } from 'index-meta';
+import type { DecodeMap, EntityId } from 'index-meta';
+import { WeightedIndexBig, calcAddressRangesBig, containsAddressBig } from 'weighted-index';
 
 // ── 테스트 데이터: shape product > 2^53 ─────────────────────────────────────
 
@@ -35,25 +35,40 @@ const generateEntries = (prefix: string, count: number): EntityId[] =>
 
 // 3차원: 500 × 400 × 300 = 60,000,000 (Number 안전 범위, BigInt 정확성 검증용)
 const largeMap: DecodeMap = {
-  indexId: "large",
-  versionId: "v1",
+  indexId: 'large',
+  versionId: 'v1',
   shape: [500, 400, 300],
   size: 60_000_000,
   dims: [
-    { dimId: "a", snapshotId: "s1", kind: { type: "string_enum" }, entries: generateEntries("a", 500) },
-    { dimId: "b", snapshotId: "s1", kind: { type: "string_enum" }, entries: generateEntries("b", 400) },
-    { dimId: "c", snapshotId: "s1", kind: { type: "string_enum" }, entries: generateEntries("c", 300) },
+    {
+      dimId: 'a',
+      snapshotId: 's1',
+      kind: { type: 'string_enum' },
+      entries: generateEntries('a', 500),
+    },
+    {
+      dimId: 'b',
+      snapshotId: 's1',
+      kind: { type: 'string_enum' },
+      entries: generateEntries('b', 400),
+    },
+    {
+      dimId: 'c',
+      snapshotId: 's1',
+      kind: { type: 'string_enum' },
+      entries: generateEntries('c', 300),
+    },
   ],
 };
 
 // ── 테스트 ─────────────────────────────────────────────────────────────────
 
-describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
+describe('B-3: MetaCodecBig.matchRanges 대형 shape', () => {
   const codec = new MetaCodecBig(largeMap);
 
-  describe("단일 축 제약", () => {
-    it("첫 번째 축 고정 → 연속 범위 1개", () => {
-      const ranges = codec.matchRanges({ a: "a_0", b: null, c: null });
+  describe('단일 축 제약', () => {
+    it('첫 번째 축 고정 → 연속 범위 1개', () => {
+      const ranges = codec.matchRanges({ a: 'a_0', b: null, c: null });
 
       // a=0 → 연속 범위 [0, 400*300-1] = [0, 119999]
       expect(ranges.length).toBe(1);
@@ -61,8 +76,8 @@ describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
       expect(ranges[0][1]).toBe(BigInt(400 * 300 - 1));
     });
 
-    it("마지막 축 고정 → 비연속 범위", () => {
-      const ranges = codec.matchRanges({ a: null, b: null, c: "c_0" });
+    it('마지막 축 고정 → 비연속 범위', () => {
+      const ranges = codec.matchRanges({ a: null, b: null, c: 'c_0' });
 
       // c=0 → 각 (a,b) 조합마다 범위 1개
       // stride[c] = 1, 간격 = 300 → 비연속
@@ -70,14 +85,14 @@ describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
 
       // 모든 범위가 BigInt 타입
       for (const [lo, hi] of ranges) {
-        expect(typeof lo).toBe("bigint");
-        expect(typeof hi).toBe("bigint");
+        expect(typeof lo).toBe('bigint');
+        expect(typeof hi).toBe('bigint');
         expect(hi).toBeGreaterThanOrEqual(lo);
       }
     });
 
-    it("중간 축 고정", () => {
-      const ranges = codec.matchRanges({ a: null, b: "b_199", c: null });
+    it('중간 축 고정', () => {
+      const ranges = codec.matchRanges({ a: null, b: 'b_199', c: null });
 
       // b=199 → 각 a마다 연속 300개 범위
       expect(ranges.length).toBe(500); // a 차원 500개 각각에 1개 범위
@@ -88,9 +103,9 @@ describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
     });
   });
 
-  describe("복수 축 제약", () => {
-    it("2개 축 고정 → 좁은 범위", () => {
-      const ranges = codec.matchRanges({ a: "a_0", b: "b_0", c: null });
+  describe('복수 축 제약', () => {
+    it('2개 축 고정 → 좁은 범위', () => {
+      const ranges = codec.matchRanges({ a: 'a_0', b: 'b_0', c: null });
 
       // a=0, b=0 → 연속 [0, 299]
       expect(ranges.length).toBe(1);
@@ -98,15 +113,15 @@ describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
       expect(ranges[0][1]).toBe(299n);
     });
 
-    it("3개 축 모두 고정 → 단일 값 범위", () => {
-      const ranges = codec.matchRanges({ a: "a_0", b: "b_0", c: "c_0" });
+    it('3개 축 모두 고정 → 단일 값 범위', () => {
+      const ranges = codec.matchRanges({ a: 'a_0', b: 'b_0', c: 'c_0' });
 
       expect(ranges.length).toBe(1);
       expect(ranges[0][0]).toBe(ranges[0][1]); // 시작 = 끝
       expect(ranges[0][0]).toBe(0n);
     });
 
-    it("전체 wildcard → 전체 범위", () => {
+    it('전체 wildcard → 전체 범위', () => {
       const ranges = codec.matchRanges({ a: null, b: null, c: null });
 
       expect(ranges.length).toBe(1);
@@ -115,15 +130,15 @@ describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
     });
   });
 
-  describe("encode → matchRanges 포함 관계", () => {
-    it("encode 결과가 matchRanges 범위에 포함", () => {
-      const entities = { a: "a_250", b: "b_100", c: "c_50" } as Record<string, EntityId>;
+  describe('encode → matchRanges 포함 관계', () => {
+    it('encode 결과가 matchRanges 범위에 포함', () => {
+      const entities = { a: 'a_250', b: 'b_100', c: 'c_50' } as Record<string, EntityId>;
       const vv = codec.encode(entities);
 
       // 단일 축 제약으로 범위 계산
-      const rangesA = codec.matchRanges({ a: "a_250", b: null, c: null });
-      const rangesB = codec.matchRanges({ a: null, b: "b_100", c: null });
-      const rangesAB = codec.matchRanges({ a: "a_250", b: "b_100", c: null });
+      const rangesA = codec.matchRanges({ a: 'a_250', b: null, c: null });
+      const rangesB = codec.matchRanges({ a: null, b: 'b_100', c: null });
+      const rangesAB = codec.matchRanges({ a: 'a_250', b: 'b_100', c: null });
 
       // encode된 값이 각 범위에 포함되어야 함
       expect(containsAddressBig(vv.value, rangesA)).toBe(true);
@@ -131,27 +146,27 @@ describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
       expect(containsAddressBig(vv.value, rangesAB)).toBe(true);
     });
 
-    it("encode 결과가 다른 축 제약 범위에 미포함", () => {
-      const entities = { a: "a_0", b: "b_0", c: "c_0" } as Record<string, EntityId>;
+    it('encode 결과가 다른 축 제약 범위에 미포함', () => {
+      const entities = { a: 'a_0', b: 'b_0', c: 'c_0' } as Record<string, EntityId>;
       const vv = codec.encode(entities);
 
-      const rangesOther = codec.matchRanges({ a: "a_499", b: null, c: null });
+      const rangesOther = codec.matchRanges({ a: 'a_499', b: null, c: null });
       expect(containsAddressBig(vv.value, rangesOther)).toBe(false);
     });
   });
 
-  describe("WeightedIndexBig 직접 — 2^53 초과 shape", () => {
+  describe('WeightedIndexBig 직접 — 2^53 초과 shape', () => {
     // entries 배열 없이 순수 수학 레이어에서 BigInt 범위 정확성 검증
     // 10_000_000 × 10_000_000 × 10_000_000 = 10^21 >> 2^53 (≈ 9×10^15)
     const hugeDims = [10_000_000n, 10_000_000n, 10_000_000n];
     const wi = new WeightedIndexBig(hugeDims);
 
-    it("size가 BigInt이고 2^53 초과", () => {
+    it('size가 BigInt이고 2^53 초과', () => {
       expect(wi.size).toBe(10_000_000n * 10_000_000n * 10_000_000n);
       expect(wi.size).toBeGreaterThan(BigInt(Number.MAX_SAFE_INTEGER));
     });
 
-    it("encode → decode 왕복 (2^53 초과 주소)", () => {
+    it('encode → decode 왕복 (2^53 초과 주소)', () => {
       const coords = [5_000_000n, 5_000_000n, 5_000_000n];
       const encoded = wi.encode(coords);
 
@@ -161,18 +176,15 @@ describe("B-3: MetaCodecBig.matchRanges 대형 shape", () => {
       expect(decoded).toEqual(coords);
     });
 
-    it("calcAddressRangesBig — 단일 축 제약", () => {
-      const ranges = calcAddressRangesBig(
-        hugeDims,
-        ["1", null, null],
-      );
+    it('calcAddressRangesBig — 단일 축 제약', () => {
+      const ranges = calcAddressRangesBig(hugeDims, ['1', null, null]);
 
       // dim[0]=1 → 연속 범위 1개, 크기 = 10_000_000 * 10_000_000
       expect(ranges.length).toBe(1);
       expect(ranges[0][1] - ranges[0][0] + 1n).toBe(10_000_000n * 10_000_000n);
     });
 
-    it("calcAddressRangesBig — 경계값 (마지막 좌표)", () => {
+    it('calcAddressRangesBig — 경계값 (마지막 좌표)', () => {
       const lastCoords = [10_000_000n, 10_000_000n, 10_000_000n];
       const lastEncoded = wi.encode(lastCoords);
 

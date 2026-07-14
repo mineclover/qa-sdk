@@ -1,10 +1,10 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
-import { ulid, decodeTime } from "ulid";
+import { z } from 'zod';
+import { ulid, decodeTime } from 'ulid';
 
 export interface CycleId {
   controllerId: string; // 8 chars, [0-9A-Z]
-  cycleAt: number;      // epoch ms
+  cycleAt: number; // epoch ms
 }
 
 export const CycleIdInputSchema = z.object({

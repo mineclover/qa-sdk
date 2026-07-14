@@ -2,8 +2,8 @@
 // @def.doc infra-engine-system
 
 // monitor/sync-loop.ts — 서비스 헬스 체크 주기 실행
-import type { CoordinateAdapter, InfraProfileAdapter, IngestAdapter } from "../adapters/adapter.js";
-import type { MonitorTarget, SyncStatus } from "../core/types.js";
+import type { CoordinateAdapter, InfraProfileAdapter, IngestAdapter } from '../adapters/adapter.js';
+import type { MonitorTarget, SyncStatus } from '../core/types.js';
 
 export interface SyncLoopOptions {
   infraProfile: InfraProfileAdapter;
@@ -25,14 +25,14 @@ export interface SyncCheckResult {
   detail: string;
 }
 
-function mapSyncStatusToHealthStatus(status: SyncStatus): "healthy" | "degraded" | "unhealthy" {
+function mapSyncStatusToHealthStatus(status: SyncStatus): 'healthy' | 'degraded' | 'unhealthy' {
   switch (status) {
-    case "Synced":
-      return "healthy";
-    case "Degraded":
-      return "degraded";
+    case 'Synced':
+      return 'healthy';
+    case 'Degraded':
+      return 'degraded';
     default:
-      return "unhealthy";
+      return 'unhealthy';
   }
 }
 
@@ -44,7 +44,7 @@ export function createSyncLoop(options: SyncLoopOptions) {
 
   async function checkOne(target: MonitorTarget): Promise<SyncCheckResult> {
     const checkedAt = new Date().toISOString();
-    const prev = target.lastStatus ?? "Unknown";
+    const prev = target.lastStatus ?? 'Unknown';
 
     try {
       const start = Date.now();
@@ -54,11 +54,11 @@ export function createSyncLoop(options: SyncLoopOptions) {
 
       let current: SyncStatus;
       if (res.ok) {
-        current = "Synced";
+        current = 'Synced';
       } else if (res.status >= 500) {
-        current = "OutOfSync";
+        current = 'OutOfSync';
       } else {
-        current = "Degraded";
+        current = 'Degraded';
       }
 
       return {
@@ -74,8 +74,8 @@ export function createSyncLoop(options: SyncLoopOptions) {
       return {
         serviceId: target.serviceId,
         previousStatus: prev,
-        currentStatus: "Unknown",
-        changed: prev !== "Unknown",
+        currentStatus: 'Unknown',
+        changed: prev !== 'Unknown',
         checkedAt,
         detail: err instanceof Error ? err.message : String(err),
       };
@@ -103,8 +103,8 @@ export function createSyncLoop(options: SyncLoopOptions) {
             if (wh.events.includes(r.currentStatus)) {
               try {
                 await fetch(wh.url, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     text: `[infra-engine] ${r.serviceId}: ${r.previousStatus} -> ${r.currentStatus}`,
                     service: r.serviceId,
@@ -143,7 +143,7 @@ export function createSyncLoop(options: SyncLoopOptions) {
             })();
 
             await options.ingest.emit(
-              "health_event",
+              'health_event',
               {
                 service_id: r.serviceId,
                 previous_status: r.previousStatus,
@@ -187,7 +187,7 @@ export function createSyncLoop(options: SyncLoopOptions) {
       if (timer) {
         clearInterval(timer);
         timer = null;
-        console.log("[sync-loop] 중지");
+        console.log('[sync-loop] 중지');
       }
     },
 

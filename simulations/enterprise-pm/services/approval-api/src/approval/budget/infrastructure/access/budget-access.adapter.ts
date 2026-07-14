@@ -1,14 +1,14 @@
 // @def.boundary sim-approval-api
 // @def.doc authorization-ontology-resource-lifecycle
 
-import { randomBytes } from "node:crypto";
+import { randomBytes } from 'node:crypto';
 import type {
   AccessChecker,
   AccessContext,
   AccessResult,
   ApiCall,
   ResourcePolicyRegistry,
-} from "permission-engine";
+} from 'permission-engine';
 
 import {
   BudgetAccessQueryPort,
@@ -16,7 +16,7 @@ import {
   type BudgetAccessQueryInput,
   type BudgetAccessQueryResult,
   type BudgetApiId,
-} from "../../application/ports/access-check.port.js";
+} from '../../application/ports/access-check.port.js';
 
 /**
  * BUDGET_API_COORDS — DisjointUnionIndex encode() 용 1-based 좌표.
@@ -26,20 +26,20 @@ import {
  * 은 [1..6].
  */
 const BUDGET_API_COORDS: Record<BudgetApiId, number[]> = {
-  "budget.create": [1],
-  "budget.read": [2],
-  "budget.submit": [3],
-  "budget.start-review": [4],
-  "budget.approve": [5],
-  "budget.reject": [6],
+  'budget.create': [1],
+  'budget.read': [2],
+  'budget.submit': [3],
+  'budget.start-review': [4],
+  'budget.approve': [5],
+  'budget.reject': [6],
 };
 
 function newSpanId(): string {
-  return randomBytes(8).toString("hex");
+  return randomBytes(8).toString('hex');
 }
 
 function newTraceId(): string {
-  return randomBytes(16).toString("hex");
+  return randomBytes(16).toString('hex');
 }
 
 /**
@@ -63,7 +63,7 @@ export class BudgetAccessAdapter extends BudgetAccessQueryPort {
 
     const call: ApiCall = hasResource
       ? {
-          kind: "resource",
+          kind: 'resource',
           apiId: input.apiId,
           coords: BUDGET_API_COORDS[input.apiId],
           targetId: input.requestId!,
@@ -83,7 +83,7 @@ export class BudgetAccessAdapter extends BudgetAccessQueryPort {
           },
         }
       : {
-          kind: "transaction",
+          kind: 'transaction',
           apiId: input.apiId,
           coords: BUDGET_API_COORDS[input.apiId],
           targetId: input.requestId ?? input.apiId,
@@ -92,13 +92,13 @@ export class BudgetAccessAdapter extends BudgetAccessQueryPort {
     const ctx: AccessContext = {
       userId: input.user.userId,
       bitmap: {
-        prefix: "sim.bitmap",
+        prefix: 'sim.bitmap',
         v: input.user.bitmapVersion,
         mask: input.user.bitmapMask,
         issuedAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 3600_000).toISOString(),
-        issuer: "sim-approval-api",
-        signature: "",
+        issuer: 'sim-approval-api',
+        signature: '',
       },
       parentSpanId: null,
       traceId: newTraceId(),
@@ -132,7 +132,7 @@ export class BudgetPolicyLifecycleAdapter extends BudgetPolicyLifecyclePort {
   }): Promise<void> {
     await this.registry.create({
       resourceId: input.requestId,
-      resourceType: "budget_request",
+      resourceType: 'budget_request',
       ownerId: input.requesterId,
     });
     // Plan 13 시나리오 3/5: 다른 user 가 승인자로 참여할 수 있도록 즉시 REGISTERED 로

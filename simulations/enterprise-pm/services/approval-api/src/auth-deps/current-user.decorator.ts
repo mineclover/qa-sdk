@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { createParamDecorator, type ExecutionContext } from "@nestjs/common";
+import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 
 export interface CurrentUserContext {
   userId: string;

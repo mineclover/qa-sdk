@@ -17,7 +17,7 @@
  * });
  * ```
  */
-import { registerPfEntry, removePfEntry } from "./pf-registry.js";
+import { registerPfEntry, removePfEntry } from './pf-registry.js';
 
 export interface VitePfPluginOptions {
   /** 서비스 식별자 (infra pf list에 표시) */
@@ -37,13 +37,13 @@ export interface VitePfPluginOptions {
  */
 export function vitePfPlugin(options: VitePfPluginOptions) {
   const pfKey = options.key ?? `${options.service}-dev`;
-  const namespace = options.namespace ?? "local";
-  const note = options.note ?? "Vite dev server";
+  const namespace = options.namespace ?? 'local';
+  const note = options.note ?? 'Vite dev server';
 
   // Vite의 Plugin 타입을 직접 import하지 않고 구조로 반환
   // (vite는 devDependency가 아닐 수 있으므로)
   return {
-    name: "infra-pf-registry",
+    name: 'infra-pf-registry',
 
     configureServer(server: {
       httpServer?: {
@@ -51,9 +51,9 @@ export function vitePfPlugin(options: VitePfPluginOptions) {
         once(event: string, cb: () => void): void;
       } | null;
     }) {
-      server.httpServer?.once("listening", () => {
+      server.httpServer?.once('listening', () => {
         const addr = server.httpServer?.address();
-        if (!addr || typeof addr === "string") return;
+        if (!addr || typeof addr === 'string') return;
         const port = addr.port;
 
         registerPfEntry(pfKey, {
@@ -61,7 +61,7 @@ export function vitePfPlugin(options: VitePfPluginOptions) {
           localPort: port,
           service: options.service,
           namespace,
-          kind: "dev-server",
+          kind: 'dev-server',
           note,
         }).catch(() => {});
 
@@ -74,9 +74,9 @@ export function vitePfPlugin(options: VitePfPluginOptions) {
         cleaned = true;
         removePfEntry(pfKey).catch(() => {});
       };
-      process.on("SIGINT", cleanup);
-      process.on("SIGTERM", cleanup);
-      process.on("exit", cleanup);
+      process.on('SIGINT', cleanup);
+      process.on('SIGTERM', cleanup);
+      process.on('exit', cleanup);
     },
   };
 }

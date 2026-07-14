@@ -1,26 +1,22 @@
 #!/usr/bin/env node
 
-import { writeFile } from "node:fs/promises";
-import { parseArgs } from "node:util";
-import { DEMO_CATALOG } from "demo-snapshot";
-import type { OwnerType } from "@qa-sdk/core";
+import { writeFile } from 'node:fs/promises';
+import { parseArgs } from 'node:util';
+import { DEMO_CATALOG } from 'demo-snapshot';
+import type { OwnerType } from '@qa-sdk/core';
 import {
   HttpTransport,
   NoopTransport,
   toTransmissionBuild,
   toTransmissionSource,
   type ServiceBootConfig,
-} from "@qa-sdk/sdk";
-import { createBenchmarkQaContext } from "./context.js";
-import { createQaLoggerBenchmarkHarness } from "./logger-harness.js";
-import { renderBenchmarkReport } from "./report.js";
-import { runBenchmark } from "./runner.js";
-import {
-  createCheckoutScenario,
-  createLoginScenario,
-  createSearchScenario,
-} from "./scenario.js";
-import type { BenchmarkScenario } from "./types.js";
+} from '@qa-sdk/sdk';
+import { createBenchmarkQaContext } from './context.js';
+import { createQaLoggerBenchmarkHarness } from './logger-harness.js';
+import { renderBenchmarkReport } from './report.js';
+import { runBenchmark } from './runner.js';
+import { createCheckoutScenario, createLoginScenario, createSearchScenario } from './scenario.js';
+import type { BenchmarkScenario } from './types.js';
 
 const HELP = `
 qa-bench — qa-bridge/QaLogger 기반 benchmark harness
@@ -53,25 +49,25 @@ Options:
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
-      scenario: { type: "string" },
-      concurrency: { type: "string" },
-      iterations: { type: "string" },
-      warmup: { type: "string" },
-      transport: { type: "string" },
-      "ingest-url": { type: "string" },
-      "batch-size": { type: "string" },
-      "flush-interval-ms": { type: "string" },
-      "owner-type": { type: "string" },
-      "owner-id": { type: "string" },
-      namespace: { type: "string" },
-      service: { type: "string" },
-      env: { type: "string" },
-      region: { type: "string" },
-      "sdk-version": { type: "string" },
-      format: { type: "string" },
-      "report-out": { type: "string" },
-      "json-out": { type: "string" },
-      help: { type: "boolean", short: "h" },
+      scenario: { type: 'string' },
+      concurrency: { type: 'string' },
+      iterations: { type: 'string' },
+      warmup: { type: 'string' },
+      transport: { type: 'string' },
+      'ingest-url': { type: 'string' },
+      'batch-size': { type: 'string' },
+      'flush-interval-ms': { type: 'string' },
+      'owner-type': { type: 'string' },
+      'owner-id': { type: 'string' },
+      namespace: { type: 'string' },
+      service: { type: 'string' },
+      env: { type: 'string' },
+      region: { type: 'string' },
+      'sdk-version': { type: 'string' },
+      format: { type: 'string' },
+      'report-out': { type: 'string' },
+      'json-out': { type: 'string' },
+      help: { type: 'boolean', short: 'h' },
     },
     allowPositionals: false,
   });
@@ -83,10 +79,10 @@ async function main(): Promise<void> {
 
   const scenario = resolveScenario(values.scenario);
   const serviceConfig: ServiceBootConfig = {
-    namespace: values.namespace ?? "shop",
-    name: values.service ?? "shopping-web",
-    env: values.env ?? "dev",
-    region: values.region ?? "asia",
+    namespace: values.namespace ?? 'shop',
+    name: values.service ?? 'shopping-web',
+    env: values.env ?? 'dev',
+    region: values.region ?? 'asia',
   };
 
   let infraContext: Record<string, string> | undefined;
@@ -103,7 +99,7 @@ async function main(): Promise<void> {
     // fail-open: 벤치 자체는 계속 진행
   }
 
-  const transportKind = values.transport ?? "noop";
+  const transportKind = values.transport ?? 'noop';
   const summary = await runBenchmark({
     scenario: resolveScenario(values.scenario, benchmarkContext),
     concurrency: parseIntOption(values.concurrency, 1),
@@ -111,23 +107,23 @@ async function main(): Promise<void> {
     measuredIterations: parseIntOption(values.iterations, 10),
     harnessFactory: () =>
       createQaLoggerBenchmarkHarness({
-        transport: resolveTransport(transportKind, values["ingest-url"]),
+        transport: resolveTransport(transportKind, values['ingest-url']),
         owner: {
-          owner_type: resolveOwnerType(values["owner-type"]),
-          owner_id: values["owner-id"] ?? "qa-sdk-bench",
+          owner_type: resolveOwnerType(values['owner-type']),
+          owner_id: values['owner-id'] ?? 'qa-sdk-bench',
         },
         source: toTransmissionSource(
           serviceConfig,
-          "@qa-sdk/bench",
-          values["sdk-version"] ?? "0.1.0",
+          '@qa-sdk/bench',
+          values['sdk-version'] ?? '0.1.0',
         ),
         runtime: {
-          platform: "node",
+          platform: 'node',
           os_version: process.version,
         },
         build: toTransmissionBuild(serviceConfig),
-        batchSize: parseIntOption(values["batch-size"], 8),
-        flushIntervalMs: parseIntOption(values["flush-interval-ms"], 0),
+        batchSize: parseIntOption(values['batch-size'], 8),
+        flushIntervalMs: parseIntOption(values['flush-interval-ms'], 0),
         measureEnvelopeBytes: true,
         ...(infraContext ? { infraContext } : {}),
       }),
@@ -138,48 +134,48 @@ async function main(): Promise<void> {
     concurrency: summary.concurrency,
     warmupIterations: summary.warmupIterations,
     measuredIterations: summary.measuredIterations,
-    batchSize: parseIntOption(values["batch-size"], 8),
-    flushIntervalMs: parseIntOption(values["flush-interval-ms"], 0),
+    batchSize: parseIntOption(values['batch-size'], 8),
+    flushIntervalMs: parseIntOption(values['flush-interval-ms'], 0),
     service: `${serviceConfig.namespace}/${serviceConfig.name}`,
     env: serviceConfig.env,
     region: serviceConfig.region,
     ...(infraContext ? { serviceContext: infraContext.service } : {}),
-    ...(values["ingest-url"] ? { ingestUrl: values["ingest-url"] } : {}),
+    ...(values['ingest-url'] ? { ingestUrl: values['ingest-url'] } : {}),
   };
 
-  const format = values.format ?? "text";
-  if (format === "json") {
+  const format = values.format ?? 'text';
+  if (format === 'json') {
     const json = JSON.stringify(summary, null, 2);
     console.log(json);
-    if (values["json-out"]) {
-      await writeFile(values["json-out"], `${json}\n`, "utf8");
+    if (values['json-out']) {
+      await writeFile(values['json-out'], `${json}\n`, 'utf8');
     }
     return;
   }
 
   const report = renderBenchmarkReport(summary, {
-    format: format === "markdown" ? "markdown" : "text",
-    title: "qa-bench Report",
+    format: format === 'markdown' ? 'markdown' : 'text',
+    title: 'qa-bench Report',
     metadata,
   });
 
   console.log(report);
 
-  if (values["report-out"]) {
-    await writeFile(values["report-out"], `${report}\n`, "utf8");
+  if (values['report-out']) {
+    await writeFile(values['report-out'], `${report}\n`, 'utf8');
   }
-  if (values["json-out"]) {
-    await writeFile(values["json-out"], `${JSON.stringify(summary, null, 2)}\n`, "utf8");
+  if (values['json-out']) {
+    await writeFile(values['json-out'], `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
   }
 }
 
 function resolveTransport(kind: string, ingestUrl?: string) {
-  if (kind === "noop") {
+  if (kind === 'noop') {
     return new NoopTransport();
   }
-  if (kind === "http") {
+  if (kind === 'http') {
     if (!ingestUrl) {
-      throw new Error("--transport http requires --ingest-url");
+      throw new Error('--transport http requires --ingest-url');
     }
     return new HttpTransport({ endpoint: normalizeIngestUrl(ingestUrl) });
   }
@@ -187,8 +183,8 @@ function resolveTransport(kind: string, ingestUrl?: string) {
 }
 
 function normalizeIngestUrl(ingestUrl: string): string {
-  const normalized = ingestUrl.replace(/\/+$/, "");
-  return normalized.endsWith("/v1/ingest") ? normalized : `${normalized}/v1/ingest`;
+  const normalized = ingestUrl.replace(/\/+$/, '');
+  return normalized.endsWith('/v1/ingest') ? normalized : `${normalized}/v1/ingest`;
 }
 
 function resolveScenario(
@@ -196,12 +192,12 @@ function resolveScenario(
   benchmarkContext?: ReturnType<typeof createBenchmarkQaContext<typeof DEMO_CATALOG>>,
 ): BenchmarkScenario {
   const options = benchmarkContext ? { qaContext: benchmarkContext } : undefined;
-  switch (name ?? "checkout") {
-    case "checkout":
+  switch (name ?? 'checkout') {
+    case 'checkout':
       return createCheckoutScenario(options);
-    case "search":
+    case 'search':
       return createSearchScenario(options);
-    case "login":
+    case 'login':
       return createLoginScenario(options);
     default:
       throw new Error(`Unknown scenario: ${name}`);
@@ -215,12 +211,12 @@ function parseIntOption(input: string | undefined, fallback: number): number {
 }
 
 function resolveOwnerType(input: string | undefined): OwnerType {
-  const value = input ?? "workspace";
+  const value = input ?? 'workspace';
   switch (value) {
-    case "tenant":
-    case "workspace":
-    case "user":
-    case "agent":
+    case 'tenant':
+    case 'workspace':
+    case 'user':
+    case 'agent':
       return value;
     default:
       throw new Error(`Unsupported owner type: ${input}`);

@@ -1,16 +1,13 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type {
-  BddContract,
-  BddEgressAssertion,
-} from "../types/bdd-contract.js";
+import type { BddContract, BddEgressAssertion } from '../types/bdd-contract.js';
 import type {
   EntryCondition,
   ScenarioSpec,
   ScenarioStep,
   StepConstraint,
-} from "../types/scenario.js";
+} from '../types/scenario.js';
 import type {
   Constraint,
   PipeConnection,
@@ -18,7 +15,7 @@ import type {
   PipeGraph,
   PipeSpec,
   PipeStep,
-} from "../types/pipe-spec.js";
+} from '../types/pipe-spec.js';
 
 export interface BddScenarioCompileOptions {
   readonly version?: string;
@@ -26,7 +23,7 @@ export interface BddScenarioCompileOptions {
 }
 
 export interface BddScenarioCompileIssue {
-  readonly severity: "warning" | "error";
+  readonly severity: 'warning' | 'error';
   readonly code: string;
   readonly contractId: string;
   readonly message: string;
@@ -91,8 +88,8 @@ function compileEntryConditions(contract: BddContract): EntryCondition[] {
   const conditions: EntryCondition[] = [];
   if (contract.given.state) {
     conditions.push({
-      field: "payload.state",
-      op: "eq",
+      field: 'payload.state',
+      op: 'eq',
       value: contract.given.state,
     });
   }
@@ -103,16 +100,16 @@ function compileEntryConditions(contract: BddContract): EntryCondition[] {
 }
 
 function predicateToEntryCondition(predicate: string): EntryCondition {
-  if (predicate.startsWith("!")) {
+  if (predicate.startsWith('!')) {
     return {
       field: `payload.predicate.${predicate.slice(1)}`,
-      op: "neq",
+      op: 'neq',
       value: true,
     };
   }
   return {
     field: `payload.predicate.${predicate}`,
-    op: "eq",
+    op: 'eq',
     value: true,
   };
 }
@@ -123,11 +120,11 @@ function compileScenarioStep(
 ): ScenarioStep {
   const constraints = compileStepConstraints(contract);
   return {
-    id: "when",
+    id: 'when',
     event_key: contract.when.eventKey ?? contract.when.operation ?? contract.id,
     ...(options.source ? { source: options.source } : {}),
     required: true,
-    kind: "sequence",
+    kind: 'sequence',
     ...(constraints.length > 0 ? { constraints } : {}),
   };
 }
@@ -135,31 +132,31 @@ function compileScenarioStep(
 function compileStepConstraints(contract: BddContract): StepConstraint[] {
   const constraints: StepConstraint[] = [];
   if (contract.when.actor) {
-    constraints.push({ field: "payload.actor", op: "eq", value: contract.when.actor });
+    constraints.push({ field: 'payload.actor', op: 'eq', value: contract.when.actor });
   }
   if (contract.when.operation) {
     constraints.push({
-      field: "payload.operation",
-      op: "eq",
+      field: 'payload.operation',
+      op: 'eq',
       value: contract.when.operation,
     });
   }
   if (contract.then.state) {
-    constraints.push({ field: "payload.state", op: "eq", value: contract.then.state });
+    constraints.push({ field: 'payload.state', op: 'eq', value: contract.then.state });
   }
   for (const eventKey of contract.then.emits ?? []) {
-    constraints.push({ field: "payload.emits", op: "contains", value: eventKey });
+    constraints.push({ field: 'payload.emits', op: 'contains', value: eventKey });
   }
   for (const [key, value] of Object.entries(contract.then.returns ?? {})) {
-    constraints.push({ field: `payload.return.${key}`, op: "eq", value });
+    constraints.push({ field: `payload.return.${key}`, op: 'eq', value });
   }
   for (const egress of contract.then.egress ?? []) {
     constraints.push(egressToConstraint(egress));
   }
   if (contract.then.error) {
     constraints.push({
-      field: "payload.error.code",
-      op: "eq",
+      field: 'payload.error.code',
+      op: 'eq',
       value: contract.then.error.code,
     });
   }
@@ -170,52 +167,53 @@ function egressToConstraint(egress: BddEgressAssertion): StepConstraint {
   if (egress.value !== undefined) {
     return {
       field: `payload.egress.${egress.axis}`,
-      op: "eq",
+      op: 'eq',
       value: egress.value,
     };
   }
   if (egress.ref) {
     return {
       field: `payload.egress.${egress.axis}`,
-      op: "eq",
+      op: 'eq',
       value: egress.ref,
     };
   }
   return {
     field: `payload.egress.${egress.axis}`,
-    op: "exists",
+    op: 'exists',
   };
 }
 
 function inferContractVersion(contractId: string): string {
   const match = contractId.match(/(?:^|\.)v([A-Za-z0-9_-]+)$/);
-  return match?.[1] ?? "1";
+  return match?.[1] ?? '1';
 }
 
 function validateCompileReady(contract: BddContract): BddScenarioCompileIssue[] {
   const issues: BddScenarioCompileIssue[] = [];
   if (!contract.when.eventKey && !contract.when.operation) {
     issues.push({
-      severity: "warning",
-      code: "bdd-scenario-missing-event-or-operation",
+      severity: 'warning',
+      code: 'bdd-scenario-missing-event-or-operation',
       contractId: contract.id,
-      message: "BDD contract has neither when.event_key nor when.operation; event_key falls back to contract id.",
+      message:
+        'BDD contract has neither when.event_key nor when.operation; event_key falls back to contract id.',
     });
   }
-  if (contract.contractKind === "state-transition" && !contract.then.state) {
+  if (contract.contractKind === 'state-transition' && !contract.then.state) {
     issues.push({
-      severity: "error",
-      code: "bdd-scenario-state-transition-missing-target",
+      severity: 'error',
+      code: 'bdd-scenario-state-transition-missing-target',
       contractId: contract.id,
-      message: "state-transition contract requires then.state before ScenarioSpec compile.",
+      message: 'state-transition contract requires then.state before ScenarioSpec compile.',
     });
   }
-  if (contract.contractKind === "validation-failure" && !contract.then.error) {
+  if (contract.contractKind === 'validation-failure' && !contract.then.error) {
     issues.push({
-      severity: "error",
-      code: "bdd-scenario-validation-failure-missing-error",
+      severity: 'error',
+      code: 'bdd-scenario-validation-failure-missing-error',
       contractId: contract.id,
-      message: "validation-failure contract requires then.error before ScenarioSpec compile.",
+      message: 'validation-failure contract requires then.error before ScenarioSpec compile.',
     });
   }
   return issues;
@@ -229,7 +227,7 @@ function scenarioSpecToPipeGraph(spec: ScenarioSpec): PipeGraph {
       ...(spec.description ? { description: spec.description } : {}),
       pipes: [],
       connections: [],
-      entryPipeId: "",
+      entryPipeId: '',
     };
   }
 
@@ -251,13 +249,13 @@ function scenarioSpecToPipeGraph(spec: ScenarioSpec): PipeGraph {
     ...(spec.description ? { description: spec.description } : {}),
     pipes,
     connections: scenarioStepsToConnections(spec.steps),
-    entryPipeId: spec.steps[0]?.id ?? "",
+    entryPipeId: spec.steps[0]?.id ?? '',
   };
 }
 
 function scenarioStepToFlow(step: ScenarioStep): PipeFlow {
   const base: PipeStep = {
-    kind: "step",
+    kind: 'step',
     facet: step.event_key,
     eventKey: step.event_key,
     ...(step.constraints?.length
@@ -265,8 +263,8 @@ function scenarioStepToFlow(step: ScenarioStep): PipeFlow {
       : {}),
     ...(step.timeout_ms !== undefined ? { timeout: step.timeout_ms } : {}),
   };
-  if (step.kind === "optional") {
-    return { kind: "optional", step: base };
+  if (step.kind === 'optional') {
+    return { kind: 'optional', step: base };
   }
   return base;
 }
@@ -276,8 +274,8 @@ function scenarioStepsToConnections(steps: readonly ScenarioStep[]): PipeConnect
   if (!hasExplicit) {
     return steps.slice(0, -1).map((step, index) => ({
       from: step.id,
-      to: steps[index + 1]?.id ?? "",
-      kind: "next" as const,
+      to: steps[index + 1]?.id ?? '',
+      kind: 'next' as const,
     }));
   }
 
@@ -287,16 +285,16 @@ function scenarioStepsToConnections(steps: readonly ScenarioStep[]): PipeConnect
       for (const branch of step.branches) {
         connections.push({
           from: step.id,
-          to: branch.next.length === 1 ? branch.next[0] ?? "" : [...branch.next],
-          kind: "conditional",
+          to: branch.next.length === 1 ? (branch.next[0] ?? '') : [...branch.next],
+          kind: 'conditional',
           condition: formatConstraint(branch.condition),
         });
       }
     } else if (step.next?.length) {
       connections.push({
         from: step.id,
-        to: step.next.length === 1 ? step.next[0] ?? "" : [...step.next],
-        kind: "next",
+        to: step.next.length === 1 ? (step.next[0] ?? '') : [...step.next],
+        kind: 'next',
       });
     }
   }
@@ -320,6 +318,6 @@ function stepConstraintToConstraint(constraint: StepConstraint): Constraint {
 }
 
 function formatConstraint(constraint: StepConstraint): string {
-  const value = constraint.value !== undefined ? ` ${JSON.stringify(constraint.value)}` : "";
+  const value = constraint.value !== undefined ? ` ${JSON.stringify(constraint.value)}` : '';
   return `${constraint.field} ${constraint.op}${value}`;
 }

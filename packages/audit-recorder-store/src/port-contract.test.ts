@@ -20,18 +20,14 @@
  *   - 매 테스트마다 audit.audit_entries를 DROP/CREATE + fileParallelism:false.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  EntryNotFoundError,
-  ParentNotFoundError,
-  type AuditRecorder,
-} from "permission-engine";
+import { EntryNotFoundError, ParentNotFoundError, type AuditRecorder } from 'permission-engine';
 
-import { createSqliteTestFixture } from "db-bootstrap";
+import { createSqliteTestFixture } from 'db-bootstrap';
 
-import { createAuditRecorder } from "./factory.js";
-import { AUDIT_ENTRIES_DDL } from "./sqlite/schema.js";
+import { createAuditRecorder } from './factory.js';
+import { AUDIT_ENTRIES_DDL } from './sqlite/schema.js';
 
 // ── Fixture 정의 ───────────────────────────────────────────────────────────────
 
@@ -45,7 +41,7 @@ interface ContractFixture {
 const sqliteFixture: ContractFixture = {
   async setup() {
     const f = await createSqliteTestFixture(AUDIT_ENTRIES_DDL);
-    const recorder = await createAuditRecorder({ dialect: "sqlite", db: f.db });
+    const recorder = await createAuditRecorder({ dialect: 'sqlite', db: f.db });
     return { recorder, cleanup: f.cleanup };
   },
 };
@@ -93,20 +89,20 @@ CREATE POLICY ae_temp_allow_all ON audit.audit_entries
 function makePgFixture(): ContractFixture {
   return {
     async setup() {
-      const postgres = (await import("postgres")).default;
-      const { drizzle } = await import("drizzle-orm/postgres-js");
+      const postgres = (await import('postgres')).default;
+      const { drizzle } = await import('drizzle-orm/postgres-js');
       const sql = postgres({
-        host: process.env.QA_TEST_PG_HOST ?? "localhost",
-        port: Number(process.env.QA_TEST_PG_PORT ?? "5434"),
-        database: process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test",
-        user: process.env.QA_TEST_PG_USER ?? "qa_admin",
-        password: process.env.QA_TEST_PG_PASSWORD ?? "",
+        host: process.env.QA_TEST_PG_HOST ?? 'localhost',
+        port: Number(process.env.QA_TEST_PG_PORT ?? '5434'),
+        database: process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test',
+        user: process.env.QA_TEST_PG_USER ?? 'qa_admin',
+        password: process.env.QA_TEST_PG_PASSWORD ?? '',
         max: 5,
         onnotice: () => {},
       });
       await sql.unsafe(PG_RESET_DDL);
       const recorder = await createAuditRecorder({
-        dialect: "pg",
+        dialect: 'pg',
         db: drizzle({ client: sql }),
       });
       return {
@@ -123,16 +119,16 @@ function makePgFixture(): ContractFixture {
   };
 }
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
 const fixtures: Array<readonly [string, ContractFixture]> = [
-  ["sqlite", sqliteFixture],
-  ...(PG_AVAILABLE ? ([["pg", makePgFixture()]] as const) : []),
+  ['sqlite', sqliteFixture],
+  ...(PG_AVAILABLE ? ([['pg', makePgFixture()]] as const) : []),
 ];
 
 // ── Contract 시나리오 ──────────────────────────────────────────────────────────
 
-describe.each(fixtures)("AuditRecorder contract — %s", (_dialect, fixture) => {
+describe.each(fixtures)('AuditRecorder contract — %s', (_dialect, fixture) => {
   let recorder: AuditRecorder;
   let cleanup: () => Promise<void>;
 
@@ -146,201 +142,309 @@ describe.each(fixtures)("AuditRecorder contract — %s", (_dialect, fixture) => 
     await cleanup();
   });
 
-  describe("startExecution — 트리 구축", () => {
-    it("root execution: parent=null → rootSpanId=self, depth=0", async () => {
+  describe('startExecution — 트리 구축', () => {
+    it('root execution: parent=null → rootSpanId=self, depth=0', async () => {
       const e = await recorder.startExecution({
-        spanId: "root", traceId: "t1", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "transaction", targetId: "tx-A",
+        spanId: 'root',
+        traceId: 't1',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'transaction',
+        targetId: 'tx-A',
       });
-      expect(e.rootSpanId).toBe("root");
+      expect(e.rootSpanId).toBe('root');
       expect(e.depth).toBe(0);
-      expect(e.kind).toBe("execution");
+      expect(e.kind).toBe('execution');
     });
 
-    it("child execution: rootSpanId/depth는 parent에서 상속", async () => {
+    it('child execution: rootSpanId/depth는 parent에서 상속', async () => {
       await recorder.startExecution({
-        spanId: "root", traceId: "t1", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "transaction", targetId: "tx-A",
+        spanId: 'root',
+        traceId: 't1',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'transaction',
+        targetId: 'tx-A',
       });
       const c = await recorder.startExecution({
-        spanId: "child", traceId: "t1", parentSpanId: "root",
-        apiId: "B", actorUserId: "u", targetKind: "resource", targetId: "doc",
+        spanId: 'child',
+        traceId: 't1',
+        parentSpanId: 'root',
+        apiId: 'B',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'doc',
       });
-      expect(c.rootSpanId).toBe("root");
+      expect(c.rootSpanId).toBe('root');
       expect(c.depth).toBe(1);
     });
 
-    it("parent 누락 → ParentNotFoundError", async () => {
+    it('parent 누락 → ParentNotFoundError', async () => {
       await expect(
         recorder.startExecution({
-          spanId: "c", traceId: "t", parentSpanId: "missing",
-          apiId: "A", actorUserId: "u", targetKind: "resource", targetId: "r",
+          spanId: 'c',
+          traceId: 't',
+          parentSpanId: 'missing',
+          apiId: 'A',
+          actorUserId: 'u',
+          targetKind: 'resource',
+          targetId: 'r',
         }),
       ).rejects.toThrow(ParentNotFoundError);
     });
   });
 
-  describe("recordCheck", () => {
-    it("execution의 child로 check entry 기록", async () => {
+  describe('recordCheck', () => {
+    it('execution의 child로 check entry 기록', async () => {
       await recorder.startExecution({
-        spanId: "e", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "resource", targetId: "r",
+        spanId: 'e',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r',
       });
       const c = await recorder.recordCheck({
-        spanId: "c1", traceId: "t", parentSpanId: "e",
-        pass: "bitmap", outcome: "allow", address: 42, unionKind: "resource",
+        spanId: 'c1',
+        traceId: 't',
+        parentSpanId: 'e',
+        pass: 'bitmap',
+        outcome: 'allow',
+        address: 42,
+        unionKind: 'resource',
       });
-      expect(c.kind).toBe("check");
-      expect(c.rootSpanId).toBe("e");
+      expect(c.kind).toBe('check');
+      expect(c.rootSpanId).toBe('e');
       expect(c.depth).toBe(1);
-      expect(c.pass).toBe("bitmap");
+      expect(c.pass).toBe('bitmap');
       expect(c.address).toBe(42);
     });
 
-    it("parent 누락 → ParentNotFoundError", async () => {
+    it('parent 누락 → ParentNotFoundError', async () => {
       await expect(
         recorder.recordCheck({
-          spanId: "c", traceId: "t", parentSpanId: "missing",
-          pass: "bitmap", outcome: "allow",
+          spanId: 'c',
+          traceId: 't',
+          parentSpanId: 'missing',
+          pass: 'bitmap',
+          outcome: 'allow',
         }),
       ).rejects.toThrow(ParentNotFoundError);
     });
   });
 
-  describe("finishExecution", () => {
-    it("outcome 기록 + endedAt 채움", async () => {
+  describe('finishExecution', () => {
+    it('outcome 기록 + endedAt 채움', async () => {
       await recorder.startExecution({
-        spanId: "e", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "resource", targetId: "r",
+        spanId: 'e',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r',
       });
-      const done = await recorder.finishExecution("e", "allow", "2026-04-22T10:05:00Z");
-      expect(done.outcome).toBe("allow");
-      expect(done.endedAt).toBe("2026-04-22T10:05:00Z");
+      const done = await recorder.finishExecution('e', 'allow', '2026-04-22T10:05:00Z');
+      expect(done.outcome).toBe('allow');
+      expect(done.endedAt).toBe('2026-04-22T10:05:00Z');
     });
 
-    it("미존재 spanId → EntryNotFoundError", async () => {
-      await expect(recorder.finishExecution("missing", "allow"))
-        .rejects.toThrow(EntryNotFoundError);
+    it('미존재 spanId → EntryNotFoundError', async () => {
+      await expect(recorder.finishExecution('missing', 'allow')).rejects.toThrow(
+        EntryNotFoundError,
+      );
     });
 
-    it("check entry에 finishExecution → throw", async () => {
+    it('check entry에 finishExecution → throw', async () => {
       await recorder.startExecution({
-        spanId: "e", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "resource", targetId: "r",
+        spanId: 'e',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r',
       });
       await recorder.recordCheck({
-        spanId: "c", traceId: "t", parentSpanId: "e",
-        pass: "bitmap", outcome: "allow",
+        spanId: 'c',
+        traceId: 't',
+        parentSpanId: 'e',
+        pass: 'bitmap',
+        outcome: 'allow',
       });
-      await expect(recorder.finishExecution("c", "allow")).rejects.toThrow();
+      await expect(recorder.finishExecution('c', 'allow')).rejects.toThrow();
     });
   });
 
-  describe("get", () => {
-    it("존재하는 spanId → entry 반환", async () => {
+  describe('get', () => {
+    it('존재하는 spanId → entry 반환', async () => {
       await recorder.startExecution({
-        spanId: "e", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "resource", targetId: "r",
+        spanId: 'e',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r',
       });
-      const got = await recorder.get("e");
-      expect(got?.spanId).toBe("e");
-      expect(got?.kind).toBe("execution");
+      const got = await recorder.get('e');
+      expect(got?.spanId).toBe('e');
+      expect(got?.kind).toBe('execution');
     });
 
-    it("미존재 → null", async () => {
-      const got = await recorder.get("nonexistent");
+    it('미존재 → null', async () => {
+      const got = await recorder.get('nonexistent');
       expect(got).toBeNull();
     });
   });
 
-  describe("listByRoot — depth asc, startedAt asc", () => {
-    it("동일 root의 모든 entry를 정렬해 반환", async () => {
-      const t0 = "2026-04-22T10:00:00.000Z";
-      const t1 = "2026-04-22T10:00:01.000Z";
-      const t2 = "2026-04-22T10:00:02.000Z";
-      const t3 = "2026-04-22T10:00:03.000Z";
+  describe('listByRoot — depth asc, startedAt asc', () => {
+    it('동일 root의 모든 entry를 정렬해 반환', async () => {
+      const t0 = '2026-04-22T10:00:00.000Z';
+      const t1 = '2026-04-22T10:00:01.000Z';
+      const t2 = '2026-04-22T10:00:02.000Z';
+      const t3 = '2026-04-22T10:00:03.000Z';
       await recorder.startExecution({
-        spanId: "r", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "transaction", targetId: "A", now: t0,
+        spanId: 'r',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'transaction',
+        targetId: 'A',
+        now: t0,
       });
       await recorder.startExecution({
-        spanId: "c1", traceId: "t", parentSpanId: "r",
-        apiId: "B", actorUserId: "u", targetKind: "resource", targetId: "r1", now: t1,
+        spanId: 'c1',
+        traceId: 't',
+        parentSpanId: 'r',
+        apiId: 'B',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r1',
+        now: t1,
       });
       await recorder.startExecution({
-        spanId: "c2", traceId: "t", parentSpanId: "r",
-        apiId: "C", actorUserId: "u", targetKind: "resource", targetId: "r2", now: t2,
+        spanId: 'c2',
+        traceId: 't',
+        parentSpanId: 'r',
+        apiId: 'C',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r2',
+        now: t2,
       });
       await recorder.recordCheck({
-        spanId: "chk", traceId: "t", parentSpanId: "c1",
-        pass: "bitmap", outcome: "allow", now: t3,
+        spanId: 'chk',
+        traceId: 't',
+        parentSpanId: 'c1',
+        pass: 'bitmap',
+        outcome: 'allow',
+        now: t3,
       });
-      const list = await recorder.listByRoot("r");
-      expect(list.map((e) => e.spanId)).toEqual(["r", "c1", "c2", "chk"]);
+      const list = await recorder.listByRoot('r');
+      expect(list.map((e) => e.spanId)).toEqual(['r', 'c1', 'c2', 'chk']);
       expect(list.map((e) => e.depth)).toEqual([0, 1, 1, 2]);
     });
 
-    it("미존재 root → 빈 배열", async () => {
-      const list = await recorder.listByRoot("missing");
+    it('미존재 root → 빈 배열', async () => {
+      const list = await recorder.listByRoot('missing');
       expect(list).toEqual([]);
     });
   });
 
-  describe("firstFailure", () => {
-    it("deny entry를 트리에서 찾는다", async () => {
-      const t0 = "2026-04-22T10:00:00.000Z";
-      const t1 = "2026-04-22T10:00:01.000Z";
-      const t2 = "2026-04-22T10:00:02.000Z";
+  describe('firstFailure', () => {
+    it('deny entry를 트리에서 찾는다', async () => {
+      const t0 = '2026-04-22T10:00:00.000Z';
+      const t1 = '2026-04-22T10:00:01.000Z';
+      const t2 = '2026-04-22T10:00:02.000Z';
       await recorder.startExecution({
-        spanId: "r", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "transaction", targetId: "A", now: t0,
+        spanId: 'r',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'transaction',
+        targetId: 'A',
+        now: t0,
       });
       await recorder.recordCheck({
-        spanId: "c1", traceId: "t", parentSpanId: "r",
-        pass: "bitmap", outcome: "allow", address: 0, now: t1,
+        spanId: 'c1',
+        traceId: 't',
+        parentSpanId: 'r',
+        pass: 'bitmap',
+        outcome: 'allow',
+        address: 0,
+        now: t1,
       });
       await recorder.recordCheck({
-        spanId: "c2", traceId: "t", parentSpanId: "r",
-        pass: "lifecycle", outcome: "deny", denyReason: "not_owner", now: t2,
+        spanId: 'c2',
+        traceId: 't',
+        parentSpanId: 'r',
+        pass: 'lifecycle',
+        outcome: 'deny',
+        denyReason: 'not_owner',
+        now: t2,
       });
-      const fail = await recorder.firstFailure("r");
-      expect(fail?.spanId).toBe("c2");
-      if (fail?.kind === "check") {
-        expect(fail.denyReason).toBe("not_owner");
+      const fail = await recorder.firstFailure('r');
+      expect(fail?.spanId).toBe('c2');
+      if (fail?.kind === 'check') {
+        expect(fail.denyReason).toBe('not_owner');
       }
     });
 
-    it("모두 성공 → null", async () => {
+    it('모두 성공 → null', async () => {
       await recorder.startExecution({
-        spanId: "r", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "transaction", targetId: "A",
+        spanId: 'r',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'transaction',
+        targetId: 'A',
       });
       await recorder.recordCheck({
-        spanId: "c1", traceId: "t", parentSpanId: "r",
-        pass: "bitmap", outcome: "allow",
+        spanId: 'c1',
+        traceId: 't',
+        parentSpanId: 'r',
+        pass: 'bitmap',
+        outcome: 'allow',
       });
-      await recorder.finishExecution("r", "allow");
-      expect(await recorder.firstFailure("r")).toBeNull();
+      await recorder.finishExecution('r', 'allow');
+      expect(await recorder.firstFailure('r')).toBeNull();
     });
   });
 
-  describe("metadata 라운드트립", () => {
-    it("객체 metadata 저장·복원", async () => {
+  describe('metadata 라운드트립', () => {
+    it('객체 metadata 저장·복원', async () => {
       await recorder.startExecution({
-        spanId: "e", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "resource", targetId: "r",
-        metadata: { source: "http", reqId: "abc-123" },
+        spanId: 'e',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r',
+        metadata: { source: 'http', reqId: 'abc-123' },
       });
-      const got = await recorder.get("e");
-      expect(got?.metadata).toEqual({ source: "http", reqId: "abc-123" });
+      const got = await recorder.get('e');
+      expect(got?.metadata).toEqual({ source: 'http', reqId: 'abc-123' });
     });
 
-    it("metadata 없는 entry → metadata=undefined로 복원", async () => {
+    it('metadata 없는 entry → metadata=undefined로 복원', async () => {
       await recorder.startExecution({
-        spanId: "e", traceId: "t", parentSpanId: null,
-        apiId: "A", actorUserId: "u", targetKind: "resource", targetId: "r",
+        spanId: 'e',
+        traceId: 't',
+        parentSpanId: null,
+        apiId: 'A',
+        actorUserId: 'u',
+        targetKind: 'resource',
+        targetId: 'r',
       });
-      const got = await recorder.get("e");
+      const got = await recorder.get('e');
       expect(got?.metadata).toBeUndefined();
     });
   });

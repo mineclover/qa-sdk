@@ -1,5 +1,5 @@
-export type FeedbackTag = "bug" | "improvement" | "question" | "approval" | "concern";
-export type FeedbackStatus = "open" | "resolved" | "rejected";
+export type FeedbackTag = 'bug' | 'improvement' | 'question' | 'approval' | 'concern';
+export type FeedbackStatus = 'open' | 'resolved' | 'rejected';
 
 export type StatusChange = {
   at: string;
@@ -19,5 +19,11 @@ export type Feedback = {
   history: StatusChange[];
 };
 
-export const FEEDBACK_TAGS: FeedbackTag[] = ["bug", "improvement", "question", "approval", "concern"];
-export const FEEDBACK_STATUSES: FeedbackStatus[] = ["open", "resolved", "rejected"];
+export const FEEDBACK_TAGS: FeedbackTag[] = [
+  'bug',
+  'improvement',
+  'question',
+  'approval',
+  'concern',
+];
+export const FEEDBACK_STATUSES: FeedbackStatus[] = ['open', 'resolved', 'rejected'];

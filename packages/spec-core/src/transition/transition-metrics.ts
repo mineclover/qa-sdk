@@ -8,25 +8,25 @@
  * MetricValue[]로 변환한다. convergence-runner에서 병합 가능.
  */
 
-import type { MetricStatus } from "../shared/metric-port.js";
-import type { MetricValue } from "../shared/metric-port.js";
-import type { TransitionSessionResult, TransitionFlushResult } from "./transition-pipeline.js";
+import type { MetricStatus } from '../shared/metric-port.js';
+import type { MetricValue } from '../shared/metric-port.js';
+import type { TransitionSessionResult, TransitionFlushResult } from './transition-pipeline.js';
 
 const METRIC_IDS = {
-  coverage: "metric:transition:coverage",
-  violationRate: "metric:transition:violation-rate",
-  orphanSequences: "metric:transition:orphan-sequences",
+  coverage: 'metric:transition:coverage',
+  violationRate: 'metric:transition:violation-rate',
+  orphanSequences: 'metric:transition:orphan-sequences',
 } as const;
 
 function status(value: number, warning: number, critical: number, above: boolean): MetricStatus {
   if (above) {
-    if (value >= critical) return "critical";
-    if (value >= warning) return "warning";
-    return "ok";
+    if (value >= critical) return 'critical';
+    if (value >= warning) return 'warning';
+    return 'ok';
   }
-  if (value <= critical) return "critical";
-  if (value <= warning) return "warning";
-  return "ok";
+  if (value <= critical) return 'critical';
+  if (value <= warning) return 'warning';
+  return 'ok';
 }
 
 /**
@@ -86,29 +86,29 @@ export function transitionFlushToMetrics(
   return [
     {
       id: METRIC_IDS.coverage,
-      name: "전이 커버리지",
+      name: '전이 커버리지',
       value: Math.round(flush.coverageRate),
       status: status(flush.coverageRate, 50, 20, false),
       detail: `${flush.coverageRate.toFixed(0)}% specs 매칭`,
-      target: "transition",
+      target: 'transition',
       measuredAt: d,
     },
     {
       id: METRIC_IDS.violationRate,
-      name: "전이 위반율",
+      name: '전이 위반율',
       value: Math.round(flush.violationRate),
       status: status(flush.violationRate, 20, 50, true),
       detail: `${flush.violationRate.toFixed(1)}% 위반율 (${flush.violationsDetected}/${flush.transitionsDetected + flush.violationsDetected})`,
-      target: "transition",
+      target: 'transition',
       measuredAt: d,
     },
     {
       id: METRIC_IDS.orphanSequences,
-      name: "미매칭 시퀀스",
+      name: '미매칭 시퀀스',
       value: flush.orphanSequences,
       status: status(flush.orphanSequences, 10, 50, true),
       detail: `${flush.orphanSequences}개 세션에 미매칭 이벤트`,
-      target: "transition",
+      target: 'transition',
       measuredAt: d,
     },
   ];

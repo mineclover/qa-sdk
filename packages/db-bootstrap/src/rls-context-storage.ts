@@ -1,10 +1,10 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import { AsyncLocalStorage } from "node:async_hooks";
+import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { RlsSessionContext } from "./rls-session.js";
-import { EMPTY_RLS_CONTEXT } from "./rls-session.js";
+import type { RlsSessionContext } from './rls-session.js';
+import { EMPTY_RLS_CONTEXT } from './rls-session.js';
 
 const storage = new AsyncLocalStorage<RlsSessionContext>();
 

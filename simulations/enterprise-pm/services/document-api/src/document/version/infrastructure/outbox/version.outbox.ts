@@ -1,18 +1,18 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { createDrizzleOutboxPort, type OutboxPort } from "@qa-sdk/sim-domain-slice-kit";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { createDrizzleOutboxPort, type OutboxPort } from '@qa-sdk/sim-domain-slice-kit';
 import {
   sqliteDocumentOutboxEvents as sqliteOutbox,
   pgDocumentOutboxEvents as pgOutbox,
-} from "../../../shared/outbox/index.js";
+} from '../../../shared/outbox/index.js';
 
 /**
  * Version slice 용 OutboxPort 생성기 — service-wide shared `document_outbox_events`.
  */
-export type VersionDialect = "sqlite" | "pg";
+export type VersionDialect = 'sqlite' | 'pg';
 
 export interface VersionOutboxFactoryOpts {
   readonly dialect: VersionDialect;
@@ -20,10 +20,10 @@ export interface VersionOutboxFactoryOpts {
 }
 
 export function createVersionOutboxPort(opts: VersionOutboxFactoryOpts): OutboxPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return createDrizzleOutboxPort({ db: opts.db as never, table: sqliteOutbox });
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return createDrizzleOutboxPort({ db: opts.db as never, table: pgOutbox });
   }
   throw new Error(

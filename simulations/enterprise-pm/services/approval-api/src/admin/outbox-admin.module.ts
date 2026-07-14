@@ -11,39 +11,32 @@
 // PG 연결정보는 process.env (SIM_APPROVAL_PG_URL) — 본 module 은 통합 환경에서만 활성화된다.
 // SIM_APPROVAL_PG_URL 미설정 시 module 자체 import 는 가능하지만 첫 실제 호출 시 throw.
 
-import {
-  Module,
-  type OnModuleDestroy,
-  Inject,
-  Injectable,
-} from "@nestjs/common";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import type { Sql } from "postgres";
-import { OutboxAdminController } from "./outbox-admin.controller.js";
-import { OutboxAdminInsertService } from "./outbox-admin-insert.service.js";
-import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
+import { Module, type OnModuleDestroy, Inject, Injectable } from '@nestjs/common';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import type { Sql } from 'postgres';
+import { OutboxAdminController } from './outbox-admin.controller.js';
+import { OutboxAdminInsertService } from './outbox-admin-insert.service.js';
+import { OutboxAdminStateQueryService } from './outbox-admin-state-query.service.js';
 import {
   OutboxAdminDispatchService,
   type OutboxAdminDispatcher,
   type OutboxDispatcherFactory,
-} from "./outbox-admin-dispatch.service.js";
+} from './outbox-admin-dispatch.service.js';
 import {
   OUTBOX_ADMIN_REPO,
   OUTBOX_DISPATCHER_FACTORY,
   OUTBOX_INSERT_CLIENT,
   type OutboxAdminRepo,
   type OutboxAdminRepoTx,
-} from "./outbox-admin.tokens.js";
-import { approvalOutboxEvents } from "../approval/pg/schema.js";
-import { createOutboxDispatcher } from "../approval/shared/outbox/outbox-dispatcher.js";
+} from './outbox-admin.tokens.js';
+import { approvalOutboxEvents } from '../approval/pg/schema.js';
+import { createOutboxDispatcher } from '../approval/shared/outbox/outbox-dispatcher.js';
 
 function resolvePgUrl(): string {
   const url = process.env.SIM_APPROVAL_PG_URL;
   if (!url || url.length === 0) {
-    throw new Error(
-      "SIM_APPROVAL_PG_URL is not set — OutboxAdminModule requires PG connection",
-    );
+    throw new Error('SIM_APPROVAL_PG_URL is not set — OutboxAdminModule requires PG connection');
   }
   return url;
 }
@@ -116,9 +109,7 @@ export class InsertConnectionHolder implements OnModuleDestroy {
           return dbInstance;
         };
         return {
-          transaction: async <T>(
-            cb: (tx: OutboxAdminRepoTx) => Promise<T>,
-          ): Promise<T> => {
+          transaction: async <T>(cb: (tx: OutboxAdminRepoTx) => Promise<T>): Promise<T> => {
             return lazyDb().transaction(async (tx) => {
               const txRepo: OutboxAdminRepoTx = {
                 async insertMany(rows) {

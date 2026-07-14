@@ -4,13 +4,13 @@
 import {
   InvalidMemberProjectIdException,
   InvalidMemberUserIdException,
-} from "./member.exceptions.js";
+} from './member.exceptions.js';
 
 /** Project (cross-aggregate ref). */
-export type MemberProjectId = string & { readonly __brand: "MemberProjectId" };
+export type MemberProjectId = string & { readonly __brand: 'MemberProjectId' };
 
 /** User 식별자. */
-export type MemberUserId = string & { readonly __brand: "MemberUserId" };
+export type MemberUserId = string & { readonly __brand: 'MemberUserId' };
 
 export function toMemberProjectId(value: string): MemberProjectId {
   if (value.trim().length === 0) throw new InvalidMemberProjectIdException();

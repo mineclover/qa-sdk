@@ -8,12 +8,12 @@
  * body hash를 계산하여 변경 여부를 판별할 수 있게 한다.
  */
 
-import { createHash } from "node:crypto";
-import { extractByMarker, type DefinitionEntry } from "definition-catalog";
-import type { DocRecord } from "./types.js";
-import { computeDocumentAddress } from "./compute-address.js";
+import { createHash } from 'node:crypto';
+import { extractByMarker, type DefinitionEntry } from 'definition-catalog';
+import type { DocRecord } from './types.js';
+import { computeDocumentAddress } from './compute-address.js';
 
-type CoordinateKey = "scope" | "aspect" | "depth";
+type CoordinateKey = 'scope' | 'aspect' | 'depth';
 
 function requireCoordinatePart(entry: DefinitionEntry, key: CoordinateKey): string {
   const value = entry[key];
@@ -25,7 +25,7 @@ function requireCoordinatePart(entry: DefinitionEntry, key: CoordinateKey): stri
 
 /** body 문자열의 SHA-256 해시 */
 export function hashBody(body: string): string {
-  return createHash("sha256").update(body).digest("hex");
+  return createHash('sha256').update(body).digest('hex');
 }
 
 /**
@@ -40,10 +40,10 @@ export function extractMarkers(body: string): {
 } {
   const toVal = (text: string) => text || undefined;
   return {
-    purpose: toVal(extractByMarker(body, "purpose").text),
-    intent: toVal(extractByMarker(body, "intent").text),
-    context: toVal(extractByMarker(body, "context").text),
-    caveat: toVal(extractByMarker(body, "caveat").text),
+    purpose: toVal(extractByMarker(body, 'purpose').text),
+    intent: toVal(extractByMarker(body, 'intent').text),
+    context: toVal(extractByMarker(body, 'context').text),
+    caveat: toVal(extractByMarker(body, 'caveat').text),
   };
 }
 
@@ -65,14 +65,15 @@ export function buildDocRecord(
   sourcePath: string,
 ): DocRecord {
   const markers = extractMarkers(body);
-  const scope = requireCoordinatePart(entry, "scope");
-  const aspect = requireCoordinatePart(entry, "aspect");
-  const depth = requireCoordinatePart(entry, "depth");
+  const scope = requireCoordinatePart(entry, 'scope');
+  const aspect = requireCoordinatePart(entry, 'aspect');
+  const depth = requireCoordinatePart(entry, 'depth');
   const address = entry.serialized ?? computeDocumentAddress(scope, aspect, depth);
   // prefix_schema 문서의 target_prefix 자동 추론: prefix-<id> → <id>
-  const targetPrefix = aspect === "prefix_schema" && entry.id.startsWith("prefix-")
-    ? entry.id.slice("prefix-".length)
-    : undefined;
+  const targetPrefix =
+    aspect === 'prefix_schema' && entry.id.startsWith('prefix-')
+      ? entry.id.slice('prefix-'.length)
+      : undefined;
 
   return {
     docId: entry.id,

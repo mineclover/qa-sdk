@@ -12,9 +12,9 @@ import type {
   MigrationStore,
   MigrationMapping,
   MigrationResolveResult,
-} from "../migration-store.js";
-import type { EntityId } from "../types.js";
-import type { SqlDriver } from "./sql-store.js";
+} from '../migration-store.js';
+import type { EntityId } from '../types.js';
+import type { SqlDriver } from './sql-store.js';
 
 interface MigrationMappingRow extends Record<string, unknown> {
   prefix: string;
@@ -133,7 +133,7 @@ export class SqlMigrationStore implements MigrationStore {
 
       const mapping = toMapping(row);
       chain.push(mapping);
-      if (mapping.changeType === "deactivated") {
+      if (mapping.changeType === 'deactivated') {
         return {
           currentVersionId: nextVersion,
           currentEntityId: null,
@@ -203,7 +203,7 @@ function toMapping(row: MigrationMappingRow): MigrationMapping {
     fromVersionId: row.from_version_id,
     toVersionId: row.to_version_id,
     position: row.position,
-    changeType: row.change_type as "modified" | "deactivated",
+    changeType: row.change_type as 'modified' | 'deactivated',
     oldEntityId: row.old_entity_id as EntityId | null,
     newEntityId: row.new_entity_id as EntityId | null,
     createdAt: row.created_at,

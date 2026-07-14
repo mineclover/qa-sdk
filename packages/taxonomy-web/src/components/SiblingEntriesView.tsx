@@ -1,5 +1,5 @@
-import { parseRef } from "taxonomy-engine";
-import type { StaticTaxonomy } from "../types/taxonomy";
+import { parseRef } from 'taxonomy-engine';
+import type { StaticTaxonomy } from '../types/taxonomy';
 
 export function SiblingEntriesView({
   selectedRef,
@@ -16,7 +16,7 @@ export function SiblingEntriesView({
   } catch {
     return null;
   }
-  if (ref.kind !== "entry") return null;
+  if (ref.kind !== 'entry') return null;
 
   const axis = taxonomy.axes[ref.axis];
   if (!axis) return null;

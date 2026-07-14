@@ -1,9 +1,9 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { TransmissionStore, TransmissionInsert } from "@qa-sdk/core";
-import { transmissions } from "../db/schema.js";
-import type { D1Db } from "./d1-db-type.js";
+import type { TransmissionStore, TransmissionInsert } from '@qa-sdk/core';
+import { transmissions } from '../db/schema.js';
+import type { D1Db } from './d1-db-type.js';
 
 /** TransmissionStore의 D1/SQLite 구현 */
 export class D1TransmissionStore implements TransmissionStore {

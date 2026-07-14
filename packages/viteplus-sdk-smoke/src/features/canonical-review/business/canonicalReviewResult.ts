@@ -9,9 +9,7 @@ export interface CanonicalReviewResult {
   rationale: string[];
 }
 
-export function buildCanonicalReviewResult(
-  draft: CanonicalReviewDraft,
-): CanonicalReviewResult {
+export function buildCanonicalReviewResult(draft: CanonicalReviewDraft): CanonicalReviewResult {
   const score = calculateCanonicalReviewScore(draft);
   const recommendedRoute = resolveCanonicalReviewRoute(draft);
 
@@ -43,9 +41,7 @@ function calculateCanonicalReviewScore(draft: CanonicalReviewDraft): number {
   return clamp(base + rollbackAdjustment + summaryAdjustment, 0, 99);
 }
 
-function resolveCanonicalReviewRoute(
-  draft: CanonicalReviewDraft,
-): CanonicalReviewRoute {
+function resolveCanonicalReviewRoute(draft: CanonicalReviewDraft): CanonicalReviewRoute {
   if (draft.riskLevel === 'high') {
     return 'office-hours';
   }
@@ -72,9 +68,7 @@ function resolveCanonicalReviewSummary(
   return `"${draft.changeTitle}"는 ship 레인으로 바로 이어갈 수 있는 수준입니다.`;
 }
 
-function resolveRiskRationale(
-  riskLevel: CanonicalReviewDraft['riskLevel'],
-): string {
+function resolveRiskRationale(riskLevel: CanonicalReviewDraft['riskLevel']): string {
   if (riskLevel === 'high') {
     return '리스크 레벨이 high라 strategic 레인으로 연결해야 합니다.';
   }

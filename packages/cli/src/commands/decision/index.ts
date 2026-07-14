@@ -1,17 +1,17 @@
-import { decisionSyncCmd } from "./sync.js";
-import { decisionAnalyzeCmd } from "./analyze.js";
-import { decisionRenderCmd } from "./render.js";
+import { decisionSyncCmd } from './sync.js';
+import { decisionAnalyzeCmd } from './analyze.js';
+import { decisionRenderCmd } from './render.js';
 
 export async function cliDecision(rest: string[]): Promise<void> {
   const [sub, ...args] = rest;
   switch (sub) {
-    case "sync":
+    case 'sync':
       return decisionSyncCmd(args);
-    case "analyze":
+    case 'analyze':
       return decisionAnalyzeCmd(args);
-    case "render":
+    case 'render':
       return decisionRenderCmd(args);
-    case "help":
+    case 'help':
     case undefined:
       printHelp();
       return;

@@ -1,19 +1,19 @@
 // @def.doc definition-service
 // @def.boundary definition-service-system
 
-import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
-import { createLogger } from "../../lib/logger.js";
-import type { DocRecord } from "../../core/types.js";
-import { DocsService } from "../docs/docs.service.js";
-import { SemanticGroundingService } from "../semantic-grounding/semantic-grounding.service.js";
-import { SearchService } from "../search/search.service.js";
-import { syncDocsToDb, type SyncResult } from "../../sync/scanner.js";
-import { syncDbToFiles, type ReverseSyncResult } from "../../sync/reverse-sync.js";
-import { syncAspectParents } from "../../sync/aspect-parents-sync.js";
-import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
-import { env } from "../../config/env.js";
+import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
+import { createLogger } from '../../lib/logger.js';
+import type { DocRecord } from '../../core/types.js';
+import { DocsService } from '../docs/docs.service.js';
+import { SemanticGroundingService } from '../semantic-grounding/semantic-grounding.service.js';
+import { SearchService } from '../search/search.service.js';
+import { syncDocsToDb, type SyncResult } from '../../sync/scanner.js';
+import { syncDbToFiles, type ReverseSyncResult } from '../../sync/reverse-sync.js';
+import { syncAspectParents } from '../../sync/aspect-parents-sync.js';
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from '../../database.module.js';
+import { env } from '../../config/env.js';
 
-const logger = createLogger("definition-service");
+const logger = createLogger('definition-service');
 
 @Injectable()
 export class SyncService implements OnModuleInit {
@@ -39,27 +39,30 @@ export class SyncService implements OnModuleInit {
           unchanged: report.unchanged,
           driftOrphans: report.driftOrphans.length,
         },
-        "aspect_parents 초기 동기화 완료",
+        'aspect_parents 초기 동기화 완료',
       );
       if (report.driftOrphans.length > 0) {
         logger.warn(
           { orphans: report.driftOrphans },
-          "aspect_parents drift — DB 에만 존재 (수동 검토 필요)",
+          'aspect_parents drift — DB 에만 존재 (수동 검토 필요)',
         );
       }
     } catch (err) {
-      logger.warn({ err }, "aspect_parents 동기화 실패 — runtime map fallback 으로 진행");
+      logger.warn({ err }, 'aspect_parents 동기화 실패 — runtime map fallback 으로 진행');
     }
 
     if (!env.SYNC_ON_START) return;
     try {
       const result = await this.run();
-      logger.info({
-        created: result.created,
-        synced: result.synced,
-      }, "시작 시 동기화 완료");
+      logger.info(
+        {
+          created: result.created,
+          synced: result.synced,
+        },
+        '시작 시 동기화 완료',
+      );
     } catch (err) {
-      logger.warn({ err }, "시작 시 동기화 실패 — 서비스는 정상 기동");
+      logger.warn({ err }, '시작 시 동기화 실패 — 서비스는 정상 기동');
     }
   }
 
@@ -69,7 +72,7 @@ export class SyncService implements OnModuleInit {
    * @facet.hierarchy core
    */
   async run(): Promise<SyncResult> {
-    logger.info("동기화 프로세스 시작"); // @facet.hierarchy auxiliary
+    logger.info('동기화 프로세스 시작'); // @facet.hierarchy auxiliary
     const result = await syncDocsToDb(env.DOCS_DIR, env.ROOT_DIR, this.docs.getStore());
     this.lastResult = { ...result, timestamp: new Date().toISOString() };
 
@@ -84,24 +87,24 @@ export class SyncService implements OnModuleInit {
           unchanged: apReport.unchanged,
           driftOrphans: apReport.driftOrphans.length,
         },
-        "aspect_parents insert-on-discovery 완료",
+        'aspect_parents insert-on-discovery 완료',
       );
       if (apReport.driftOrphans.length > 0) {
         logger.warn(
           { orphans: apReport.driftOrphans },
-          "aspect_parents drift — DB 에만 존재 (수동 검토 필요)",
+          'aspect_parents drift — DB 에만 존재 (수동 검토 필요)',
         );
       }
     } catch (err) {
-      logger.warn({ err }, "aspect_parents self-heal 실패 — runtime map fallback 유지");
+      logger.warn({ err }, 'aspect_parents self-heal 실패 — runtime map fallback 유지');
     }
 
     // sync 완료 후 검색 인덱스 재구축
     const allDocs = this.rebuildSearchIndex(); // @facet.hierarchy core
     const semanticReport = this.semantic.materializeDocuments(allDocs, { replaceSnapshot: true });
-    logger.info(semanticReport, "semantic grounding materialization 완료");
+    logger.info(semanticReport, 'semantic grounding materialization 완료');
 
-    logger.info({ synced: result.synced }, "동기화 완료"); // @facet.hierarchy auxiliary
+    logger.info({ synced: result.synced }, '동기화 완료'); // @facet.hierarchy auxiliary
     return result;
   }
 
@@ -124,7 +127,7 @@ export class SyncService implements OnModuleInit {
       if (page.length < pageSize) break;
     }
 
-    logger.info({ indexed }, "검색 인덱스 재구축 완료");
+    logger.info({ indexed }, '검색 인덱스 재구축 완료');
     return allDocs;
   }
 

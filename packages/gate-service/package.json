@@ -1,12 +1,12 @@
 {
   "name": "gate-service",
   "version": "0.1.0",
-  "description": "주소 상태 게이트와 cascade recompute를 제공하는 gate 서비스",
   "private": true,
-  "type": "module",
+  "description": "주소 상태 게이트와 cascade recompute를 제공하는 gate 서비스",
   "files": [
     "dist"
   ],
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsup",

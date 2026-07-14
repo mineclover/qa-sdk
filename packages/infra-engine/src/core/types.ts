@@ -3,7 +3,7 @@
 
 // core/types.ts — qa-sdk 무의존 범용 타입
 
-export type ProviderId = "cloudflare" | "aws" | "gcp" | "railway" | "vultr" | "local";
+export type ProviderId = 'cloudflare' | 'aws' | 'gcp' | 'railway' | 'vultr' | 'local';
 
 export interface DeployContext {
   readonly service: string;
@@ -11,7 +11,7 @@ export interface DeployContext {
   readonly env: string;
   readonly region: string;
   readonly configPath: string;
-  readonly triggeredBy: "ci" | "manual";
+  readonly triggeredBy: 'ci' | 'manual';
 
   config?: ResolvedConfig;
   provision?: ProvisionResult;
@@ -64,7 +64,7 @@ export interface RecoveryConfig {
 
 export interface GateDefinition {
   name: string;
-  type: "custom";
+  type: 'custom';
   check: string;
   expect_status: number;
   required: boolean;
@@ -93,7 +93,7 @@ export interface ConnectionCheck {
 }
 
 export interface VerifyResult {
-  healthStatus: "healthy" | "degraded" | "failed";
+  healthStatus: 'healthy' | 'degraded' | 'failed';
   gateVerdict: GateVerdict;
   checks: GateCheckResult[];
   retryCount: number;
@@ -102,12 +102,12 @@ export interface VerifyResult {
 
 export interface GateCheckResult {
   gate: string;
-  verdict: "pass" | "warn" | "fail";
+  verdict: 'pass' | 'warn' | 'fail';
   detail: string;
   latency?: number;
 }
 
-export type GateVerdict = "pass" | "warn" | "fail";
+export type GateVerdict = 'pass' | 'warn' | 'fail';
 
 export interface ObserveResult {
   eventEmitted: boolean;
@@ -118,7 +118,7 @@ export interface ObserveResult {
 export interface DeployResult {
   success: boolean;
   endpoint?: string;
-  healthStatus: "healthy" | "degraded" | "failed";
+  healthStatus: 'healthy' | 'degraded' | 'failed';
   gateVerdict: GateVerdict;
   duration: number;
   stageResults: StageResult[];
@@ -126,7 +126,7 @@ export interface DeployResult {
 
 export interface StageResult {
   stage: string;
-  status: "success" | "failed" | "skipped" | "rolled_back";
+  status: 'success' | 'failed' | 'skipped' | 'rolled_back';
   duration: number;
   error?: string;
 }
@@ -152,7 +152,7 @@ export interface InfraDeploymentEntry {
   stackName: string;
   deploymentVersion: string;
   deployedAt: string;
-  triggeredBy: "ci" | "manual";
+  triggeredBy: 'ci' | 'manual';
   metadata: Record<string, string>;
 }
 
@@ -169,7 +169,7 @@ export interface MonitorTarget {
   lastStatus?: SyncStatus;
 }
 
-export type SyncStatus = "Synced" | "OutOfSync" | "Degraded" | "Unknown";
+export type SyncStatus = 'Synced' | 'OutOfSync' | 'Degraded' | 'Unknown';
 
 export interface DeployHistoryEntry {
   deployedAt: string;
@@ -179,8 +179,8 @@ export interface DeployHistoryEntry {
   endpoint: string;
   duration: number;
   success: boolean;
-  triggeredBy: "ci" | "manual";
-  mode?: "single" | "fleet-service" | "fleet-summary";
+  triggeredBy: 'ci' | 'manual';
+  mode?: 'single' | 'fleet-service' | 'fleet-summary';
   runId?: string;
   scope?: string;
   configPath?: string;

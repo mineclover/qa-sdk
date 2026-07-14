@@ -19,7 +19,7 @@ export interface BudgetStepReadModel {
   readonly requestId: string;
   readonly stageNumber: number;
   readonly approverId: string | null;
-  readonly decision: "approved" | "rejected" | "pending";
+  readonly decision: 'approved' | 'rejected' | 'pending';
   readonly comment: string | null;
   readonly decidedAt: string | null;
 }

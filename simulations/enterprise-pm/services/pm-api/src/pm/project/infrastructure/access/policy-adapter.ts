@@ -1,12 +1,12 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { ResourcePolicyRegistry } from "permission-engine";
+import type { ResourcePolicyRegistry } from 'permission-engine';
 import type {
   PolicyLifecyclePort,
   DelegationGraphPort,
-} from "../../application/ports/project-policy.port.js";
-import type { ProjectDelegationGraphStore } from "../../../../auth-deps/delegation-graph-store.js";
+} from '../../application/ports/project-policy.port.js';
+import type { ProjectDelegationGraphStore } from '../../../../auth-deps/delegation-graph-store.js';
 
 /**
  * permission-engine 의 ResourcePolicyRegistry 를

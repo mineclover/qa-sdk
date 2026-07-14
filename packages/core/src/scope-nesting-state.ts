@@ -10,21 +10,15 @@
 
 // ── 타입 ─────────────────────────────────────────────
 
-export type PlaybookStatus =
-  | "idle"
-  | "editing"
-  | "invalid"
-  | "submitting"
-  | "success"
-  | "error";
+export type PlaybookStatus = 'idle' | 'editing' | 'invalid' | 'submitting' | 'success' | 'error';
 
 export type TransitionTrigger =
-  | "draft-change"
-  | "invalid-submit"
-  | "valid-submit"
-  | "submit-success"
-  | "submit-failure"
-  | "reset";
+  | 'draft-change'
+  | 'invalid-submit'
+  | 'valid-submit'
+  | 'submit-success'
+  | 'submit-failure'
+  | 'reset';
 
 export interface TransitionResult {
   next: PlaybookStatus;
@@ -32,14 +26,14 @@ export interface TransitionResult {
 }
 
 export type SideEffect =
-  | "clear-stale-result"
-  | "update-validation-issues"
-  | "focus-first-invalid"
-  | "disable-submit-button"
-  | "update-result"
-  | "update-last-submitted"
-  | "update-submission-error"
-  | "reset-all-to-baseline";
+  | 'clear-stale-result'
+  | 'update-validation-issues'
+  | 'focus-first-invalid'
+  | 'disable-submit-button'
+  | 'update-result'
+  | 'update-last-submitted'
+  | 'update-submission-error'
+  | 'reset-all-to-baseline';
 
 export interface TransitionViolation {
   from: PlaybookStatus;
@@ -49,38 +43,41 @@ export interface TransitionViolation {
 
 // ── 전이 테이블 ──────────────────────────────────────
 
-const TRANSITION_TABLE: Record<TransitionTrigger, (from: PlaybookStatus) => TransitionResult | TransitionViolation> = {
-  "draft-change": (from) => {
-    if (from === "submitting") {
-      return { from, trigger: "draft-change", message: "submitting 상태에서 draft 변경 불가" };
+const TRANSITION_TABLE: Record<
+  TransitionTrigger,
+  (from: PlaybookStatus) => TransitionResult | TransitionViolation
+> = {
+  'draft-change': (from) => {
+    if (from === 'submitting') {
+      return { from, trigger: 'draft-change', message: 'submitting 상태에서 draft 변경 불가' };
     }
-    const sideEffects: SideEffect[] = from === "success" ? ["clear-stale-result"] : [];
-    return { next: "editing", sideEffects };
+    const sideEffects: SideEffect[] = from === 'success' ? ['clear-stale-result'] : [];
+    return { next: 'editing', sideEffects };
   },
 
-  "invalid-submit": () => ({
-    next: "invalid",
-    sideEffects: ["update-validation-issues", "focus-first-invalid"],
+  'invalid-submit': () => ({
+    next: 'invalid',
+    sideEffects: ['update-validation-issues', 'focus-first-invalid'],
   }),
 
-  "valid-submit": () => ({
-    next: "submitting",
-    sideEffects: ["disable-submit-button"],
+  'valid-submit': () => ({
+    next: 'submitting',
+    sideEffects: ['disable-submit-button'],
   }),
 
-  "submit-success": () => ({
-    next: "success",
-    sideEffects: ["update-result", "update-last-submitted"],
+  'submit-success': () => ({
+    next: 'success',
+    sideEffects: ['update-result', 'update-last-submitted'],
   }),
 
-  "submit-failure": () => ({
-    next: "error",
-    sideEffects: ["update-submission-error"],
+  'submit-failure': () => ({
+    next: 'error',
+    sideEffects: ['update-submission-error'],
   }),
 
-  "reset": () => ({
-    next: "idle",
-    sideEffects: ["reset-all-to-baseline"],
+  reset: () => ({
+    next: 'idle',
+    sideEffects: ['reset-all-to-baseline'],
   }),
 };
 
@@ -97,13 +94,18 @@ export function transition(
 export function isViolation(
   result: TransitionResult | TransitionViolation,
 ): result is TransitionViolation {
-  return !("next" in result);
+  return !('next' in result);
 }
 
 // ── 불변량 검증 ───────────────────────────────────────
 
 const ALL_STATUSES: PlaybookStatus[] = [
-  "idle", "editing", "invalid", "submitting", "success", "error",
+  'idle',
+  'editing',
+  'invalid',
+  'submitting',
+  'success',
+  'error',
 ];
 
 /**
@@ -123,53 +125,53 @@ export function verifyInvariants(): InvariantValidation {
 
   for (const status of ALL_STATUSES) {
     // 불변량 3: reset은 어디서든 idle
-    const resetResult = transition(status, "reset");
+    const resetResult = transition(status, 'reset');
     if (isViolation(resetResult)) {
       violations.push({
         from: status,
-        trigger: "reset",
+        trigger: 'reset',
         message: `reset이 ${status}에서 violation 발생 — 어디서든 idle이어야 함`,
       });
-    } else if (resetResult.next !== "idle") {
+    } else if (resetResult.next !== 'idle') {
       violations.push({
         from: status,
-        trigger: "reset",
+        trigger: 'reset',
         message: `reset이 ${status}에서 ${resetResult.next}로 전이 — idle이어야 함`,
       });
     }
   }
 
   // 불변량 1: submitting에서 draft-change는 violation
-  const submittingDraft = transition("submitting", "draft-change");
+  const submittingDraft = transition('submitting', 'draft-change');
   if (!isViolation(submittingDraft)) {
     violations.push({
-      from: "submitting",
-      trigger: "draft-change",
-      message: "submitting에서 draft-change가 violation이 아님",
+      from: 'submitting',
+      trigger: 'draft-change',
+      message: 'submitting에서 draft-change가 violation이 아님',
     });
   }
 
   // 불변량 2: success에서 draft-change → editing + clear-stale-result
-  const successDraft = transition("success", "draft-change");
+  const successDraft = transition('success', 'draft-change');
   if (isViolation(successDraft)) {
     violations.push({
-      from: "success",
-      trigger: "draft-change",
-      message: "success에서 draft-change가 violation — editing이어야 함",
+      from: 'success',
+      trigger: 'draft-change',
+      message: 'success에서 draft-change가 violation — editing이어야 함',
     });
   } else {
-    if (successDraft.next !== "editing") {
+    if (successDraft.next !== 'editing') {
       violations.push({
-        from: "success",
-        trigger: "draft-change",
+        from: 'success',
+        trigger: 'draft-change',
         message: `success에서 ${successDraft.next}로 전이 — editing이어야 함`,
       });
     }
-    if (!successDraft.sideEffects.includes("clear-stale-result")) {
+    if (!successDraft.sideEffects.includes('clear-stale-result')) {
       violations.push({
-        from: "success",
-        trigger: "draft-change",
-        message: "success→editing에서 clear-stale-result 부수효과 누락",
+        from: 'success',
+        trigger: 'draft-change',
+        message: 'success→editing에서 clear-stale-result 부수효과 누락',
       });
     }
   }

@@ -65,9 +65,7 @@ interface DispatchResponse {
   dispatcherIds?: unknown;
 }
 
-export function createOutboxClient(
-  args: OutboxClientFactoryArgs,
-): OutboxClientHandle {
+export function createOutboxClient(args: OutboxClientFactoryArgs): OutboxClientHandle {
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -76,11 +74,10 @@ export function createOutboxClient(
         signal: AbortSignal.timeout(args.requestTimeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
   const sleep =
-    args.sleepImpl ??
-    ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+    args.sleepImpl ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const now = args.nowImpl ?? (() => Date.now());
   const pollMs = args.pollIntervalMs ?? 200;
-  const base = args.approvalApiUrl.replace(/\/$/, "");
+  const base = args.approvalApiUrl.replace(/\/$/, '');
 
   let lastInsertedAtMs = 0;
 
@@ -94,39 +91,31 @@ export function createOutboxClient(
       const occurredAt = now();
       const events = Array.from({ length: count }, (_, i) => ({
         aggregateId: `budget-${occurredAt}-${i}`,
-        eventName: "approval.budget.submitted",
+        eventName: 'approval.budget.submitted',
         payload: { i },
         occurredAt: occurredAt + i,
       }));
       const url = `${base}/admin/outbox/insert`;
       const res = await fetchImpl(url, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ events }),
       });
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(
-          `outbox-client POST ${url} failed: status=${res.status} body=${body}`,
-        );
+        throw new Error(`outbox-client POST ${url} failed: status=${res.status} body=${body}`);
       }
       let json: InsertResponse;
       try {
         json = (await res.json()) as InsertResponse;
       } catch (e) {
-        throw new Error(
-          `outbox-client JSON parse failed: ${(e as Error).message}`,
-        );
+        throw new Error(`outbox-client JSON parse failed: ${(e as Error).message}`);
       }
       if (!Array.isArray(json.ids)) {
-        throw new Error(
-          `outbox-client invalid insert response: ${JSON.stringify(json)}`,
-        );
+        throw new Error(`outbox-client invalid insert response: ${JSON.stringify(json)}`);
       }
-      if (typeof json.insertedAtMs !== "number") {
-        throw new Error(
-          `outbox-client invalid insertedAtMs: ${JSON.stringify(json)}`,
-        );
+      if (typeof json.insertedAtMs !== 'number') {
+        throw new Error(`outbox-client invalid insertedAtMs: ${JSON.stringify(json)}`);
       }
       lastInsertedAtMs = json.insertedAtMs;
       return json.ids as string[];
@@ -143,48 +132,34 @@ export function createOutboxClient(
       const deadline = now() + timeoutMs;
       while (now() < deadline) {
         const params = new URLSearchParams();
-        params.set("ids", eventIds.join(","));
+        params.set('ids', eventIds.join(','));
         const url = `${base}/admin/outbox/dispatch?${params.toString()}`;
-        const res = await fetchImpl(url, { method: "GET" });
+        const res = await fetchImpl(url, { method: 'GET' });
         if (!res.ok) {
           const body = await res.text();
-          throw new Error(
-            `outbox-client GET ${url} failed: status=${res.status} body=${body}`,
-          );
+          throw new Error(`outbox-client GET ${url} failed: status=${res.status} body=${body}`);
         }
         let json: DispatchResponse;
         try {
           json = (await res.json()) as DispatchResponse;
         } catch (e) {
-          throw new Error(
-            `outbox-client JSON parse failed: ${(e as Error).message}`,
-          );
+          throw new Error(`outbox-client JSON parse failed: ${(e as Error).message}`);
         }
         const publishedEntries = (json.publishedAt ?? []) as unknown;
         const dispatcherEntries = (json.dispatcherIds ?? []) as unknown;
         if (!Array.isArray(publishedEntries) || !Array.isArray(dispatcherEntries)) {
-          throw new Error(
-            `outbox-client invalid dispatch shape: ${JSON.stringify(json)}`,
-          );
+          throw new Error(`outbox-client invalid dispatch shape: ${JSON.stringify(json)}`);
         }
-        const publishedAt = new Map<string, number>(
-          publishedEntries as [string, number][],
-        );
-        const dispatcherIds = new Map<string, string>(
-          dispatcherEntries as [string, string][],
-        );
-        const allDone = eventIds.every(
-          (id) => publishedAt.has(id) && dispatcherIds.has(id),
-        );
+        const publishedAt = new Map<string, number>(publishedEntries as [string, number][]);
+        const dispatcherIds = new Map<string, string>(dispatcherEntries as [string, string][]);
+        const allDone = eventIds.every((id) => publishedAt.has(id) && dispatcherIds.has(id));
         if (allDone) {
           return { publishedAt, dispatcherIds, insertedAtMs: lastInsertedAtMs };
         }
         if (now() + pollMs >= deadline) break;
         await sleep(pollMs);
       }
-      throw new Error(
-        `outbox-client waitForDispatch timeout: timeoutMs=${timeoutMs}`,
-      );
+      throw new Error(`outbox-client waitForDispatch timeout: timeoutMs=${timeoutMs}`);
     },
   };
 }

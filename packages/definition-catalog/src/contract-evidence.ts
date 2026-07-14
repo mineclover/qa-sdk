@@ -11,7 +11,7 @@
  * reversible: 원본 데이터 복원 가능 (이벤트 소싱, raw event log)
  * irreversible: 정보 손실로 원본 복원 불가 (집계 메트릭, verdict 판정)
  */
-export type Reversibility = "reversible" | "irreversible";
+export type Reversibility = 'reversible' | 'irreversible';
 
 /** 파싱된 증거 항목 */
 export interface EvidenceItem {
@@ -29,7 +29,7 @@ const REVERSIBILITY_REGEX = /\s*\[(reversible|irreversible)\]\s*$/;
  */
 export function parseEvidenceItems(body: string, sourceId: string): readonly EvidenceItem[] {
   const items: EvidenceItem[] = [];
-  for (const line of body.split("\n")) {
+  for (const line of body.split('\n')) {
     const bulletMatch = line.match(/^\s*[-*]\s+(.+)/);
     if (!bulletMatch) continue;
 
@@ -38,7 +38,7 @@ export function parseEvidenceItems(body: string, sourceId: string): readonly Evi
 
     if (revMatch) {
       items.push({
-        description: raw.replace(REVERSIBILITY_REGEX, "").trim(),
+        description: raw.replace(REVERSIBILITY_REGEX, '').trim(),
         reversibility: revMatch[1] as Reversibility,
         sourceId,
         raw,

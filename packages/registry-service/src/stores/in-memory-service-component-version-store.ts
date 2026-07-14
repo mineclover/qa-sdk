@@ -1,16 +1,21 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { ComponentVersionKind } from "../modules/services/service.types.js";
+import type { ComponentVersionKind } from '../modules/services/service.types.js';
 import type {
   ServiceComponentVersionRecord,
   ServiceComponentVersionStore,
-} from "./service-component-version-store.js";
+} from './service-component-version-store.js';
 
 export class InMemoryServiceComponentVersionStore implements ServiceComponentVersionStore {
   private readonly store = new Map<string, ServiceComponentVersionRecord>();
 
-  private key(catalogId: string, kind: ComponentVersionKind, serviceId: string, version: string): string {
+  private key(
+    catalogId: string,
+    kind: ComponentVersionKind,
+    serviceId: string,
+    version: string,
+  ): string {
     return `${catalogId}:${kind}:${serviceId}:${version}`;
   }
 
@@ -36,10 +41,9 @@ export class InMemoryServiceComponentVersionStore implements ServiceComponentVer
     serviceId: string,
   ): Promise<ServiceComponentVersionRecord[]> {
     return [...this.store.values()]
-      .filter(record =>
-        record.catalogId === catalogId
-        && record.kind === kind
-        && record.serviceId === serviceId,
+      .filter(
+        (record) =>
+          record.catalogId === catalogId && record.kind === kind && record.serviceId === serviceId,
       )
       .toSorted((a, b) => a.version.localeCompare(b.version));
   }

@@ -8,4 +8,3 @@ export interface AssignmentDetailReadModel {
 export abstract class AssignmentReadModelPort {
   abstract findDetail(id: string): Promise<AssignmentDetailReadModel | null>;
 }
-

@@ -17,26 +17,24 @@ export interface CreateCanvasChromeOptions {
   minimapClassName?: string;
 }
 
-export function createCanvasChrome(
-  options: CreateCanvasChromeOptions = {},
-): CanvasChromeElements {
-  const shell = document.createElement("div");
-  shell.className = joinClasses("cv-shell", options.shellClassName);
+export function createCanvasChrome(options: CreateCanvasChromeOptions = {}): CanvasChromeElements {
+  const shell = document.createElement('div');
+  shell.className = joinClasses('cv-shell', options.shellClassName);
 
-  const surfaceHost = document.createElement("div");
-  surfaceHost.className = joinClasses("cv-surface", options.surfaceClassName);
+  const surfaceHost = document.createElement('div');
+  surfaceHost.className = joinClasses('cv-surface', options.surfaceClassName);
   shell.appendChild(surfaceHost);
 
-  const supportHost = document.createElement("div");
-  supportHost.className = joinClasses("cv-support-host", options.supportHostClassName);
+  const supportHost = document.createElement('div');
+  supportHost.className = joinClasses('cv-support-host', options.supportHostClassName);
   shell.appendChild(supportHost);
 
-  const hudHost = document.createElement("div");
-  hudHost.className = joinClasses("cv-hud-host", options.hudHostClassName);
+  const hudHost = document.createElement('div');
+  hudHost.className = joinClasses('cv-hud-host', options.hudHostClassName);
   shell.appendChild(hudHost);
 
-  const minimapHost = document.createElement("div");
-  minimapHost.className = joinClasses("cv-minimap", options.minimapClassName);
+  const minimapHost = document.createElement('div');
+  minimapHost.className = joinClasses('cv-minimap', options.minimapClassName);
   shell.appendChild(minimapHost);
 
   return {
@@ -49,5 +47,5 @@ export function createCanvasChrome(
 }
 
 function joinClasses(...values: Array<string | undefined>): string {
-  return values.filter(Boolean).join(" ");
+  return values.filter(Boolean).join(' ');
 }

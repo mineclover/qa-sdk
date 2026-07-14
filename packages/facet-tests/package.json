@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/facet-tests",
   "version": "0.1.0",
-  "description": "환경 의존을 제거한 서비스 패싯 회귀 테스트 모음",
   "private": true,
+  "description": "환경 의존을 제거한 서비스 패싯 회귀 테스트 모음",
   "type": "module",
   "scripts": {
     "test": "test -d synced && vitest run --passWithNoTests || echo 'synced/ rclone 복제본 없음 — 로컬 전용 테스트 skip'"

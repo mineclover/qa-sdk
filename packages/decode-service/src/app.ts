@@ -1,17 +1,17 @@
 // @def.boundary decode-service-system
 // @def.doc decode-service-system
 
-import { Hono } from "hono";
-import type { Logger } from "pino";
-import type { KeyCache } from "@qa-sdk/core";
-import { requestId } from "./middleware/request-id.js";
-import { createErrorHandler } from "./middleware/error-handler.js";
-import { createHealthRoutes } from "./routes/health.js";
-import type { DecodeCacheHealth } from "./routes/health.js";
-import { createMetricsRoutes } from "./routes/metrics.js";
-import { createDecodeRoutes } from "./routes/decode.js";
-import { DecoderPool } from "./lib/decoder-pool.js";
-import { createLogger } from "./lib/logger.js";
+import { Hono } from 'hono';
+import type { Logger } from 'pino';
+import type { KeyCache } from '@qa-sdk/core';
+import { requestId } from './middleware/request-id.js';
+import { createErrorHandler } from './middleware/error-handler.js';
+import { createHealthRoutes } from './routes/health.js';
+import type { DecodeCacheHealth } from './routes/health.js';
+import { createMetricsRoutes } from './routes/metrics.js';
+import { createDecodeRoutes } from './routes/decode.js';
+import { DecoderPool } from './lib/decoder-pool.js';
+import { createLogger } from './lib/logger.js';
 
 export interface AppDeps {
   pool: DecoderPool;
@@ -27,27 +27,37 @@ export interface AppDeps {
 
 export function createApp(deps: AppDeps) {
   const app = new Hono();
-  const logger = deps.logger ?? createLogger("decode-service");
+  const logger = deps.logger ?? createLogger('decode-service');
 
   // middleware
-  app.use("*", requestId);
+  app.use('*', requestId);
 
   // routes
-  app.route("/", createHealthRoutes({
-    pool: deps.pool,
-    getUptimeSeconds: deps.getUptimeSeconds,
-    version: deps.version,
-    decodeCache: deps.decodeCache,
-    cacheHealth: deps.cacheHealth,
-  }));
   app.route(
-    "/",
+    '/',
+    createHealthRoutes({
+      pool: deps.pool,
+      getUptimeSeconds: deps.getUptimeSeconds,
+      version: deps.version,
+      decodeCache: deps.decodeCache,
+      cacheHealth: deps.cacheHealth,
+    }),
+  );
+  app.route(
+    '/',
     createMetricsRoutes({
       pool: deps.pool,
       getUptimeSeconds: deps.getUptimeSeconds,
     }),
   );
-  app.route("/", createDecodeRoutes({ pool: deps.pool, decodeCache: deps.decodeCache, cacheTtlMs: deps.cacheTtlMs }));
+  app.route(
+    '/',
+    createDecodeRoutes({
+      pool: deps.pool,
+      decodeCache: deps.decodeCache,
+      cacheTtlMs: deps.cacheTtlMs,
+    }),
+  );
 
   // error handler
   app.onError(createErrorHandler(logger));

@@ -9,4 +9,3 @@ export abstract class AssignmentTransactionPort {
     handler: (scope: AssignmentTransactionScope) => Promise<T>,
   ): Promise<T>;
 }
-

@@ -7,15 +7,15 @@
 // audit evidence에 SKIP 사유 기록 — evidence.find(source="pass-priority-skip")?.content === "pass1-not-promote-or-stable".
 // spec 01 §4 "Pass 1이 promote/stable이 아니면 SKIP" 분기.
 
-import { equal, ok } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
+import { equal, ok } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
 import {
   getAuditFetcher,
   waitForCycles,
   type ResourceDecisionRecordView,
   type SafetyDecisionRecordView,
-} from "../lib/audit-fetcher.js";
-import { assertSafetyVerdict } from "../lib/assertions/decision-assertions.js";
+} from '../lib/audit-fetcher.js';
+import { assertSafetyVerdict } from '../lib/assertions/decision-assertions.js';
 
 interface S17Ctx {
   perfHandle: { off: () => Promise<void> };
@@ -23,12 +23,11 @@ interface S17Ctx {
 }
 
 export const scenario17PassPriorityCanaryBlocksScale: Scenario<S17Ctx> = {
-  name: "scenario-17-pass-priority-canary-blocks-scale",
-  description:
-    "카나리 진행 중 perf WARN + RPS burst → Pass 1 hold + Pass 2 SKIP",
+  name: 'scenario-17-pass-priority-canary-blocks-scale',
+  description: '카나리 진행 중 perf WARN + RPS burst → Pass 1 hold + Pass 2 SKIP',
   validates: [
-    "spec 01 §4 Pass 1이 promote/stable이 아니면 Pass 2 SKIP",
-    "audit evidence에 SKIP 사유 기록",
+    'spec 01 §4 Pass 1이 promote/stable이 아니면 Pass 2 SKIP',
+    'audit evidence에 SKIP 사유 기록',
   ],
 
   async setup() {
@@ -39,7 +38,7 @@ export const scenario17PassPriorityCanaryBlocksScale: Scenario<S17Ctx> = {
         };
       }
     ).__simFaultInjector;
-    if (!inj) throw new Error("__simFaultInjector not bound");
+    if (!inj) throw new Error('__simFaultInjector not bound');
     const perfHandle = await inj.perfWarn.on();
 
     const burst = (
@@ -47,7 +46,7 @@ export const scenario17PassPriorityCanaryBlocksScale: Scenario<S17Ctx> = {
         __simBurstLoad?: (rps: number) => Promise<{ stop: () => Promise<void> }>;
       }
     ).__simBurstLoad;
-    if (!burst) throw new Error("__simBurstLoad not bound");
+    if (!burst) throw new Error('__simBurstLoad not bound');
     const burstHandle = await burst(200);
 
     return { perfHandle, burstHandle };
@@ -63,20 +62,18 @@ export const scenario17PassPriorityCanaryBlocksScale: Scenario<S17Ctx> = {
     const audit = getAuditFetcher();
     const decisions = await audit.queryDecisions({ cycleIds });
 
-    const safety = decisions.filter(
-      (d): d is SafetyDecisionRecordView => d.pass === "safety",
-    );
-    ok(safety.length >= 1, "expected at least 1 safety decision");
+    const safety = decisions.filter((d): d is SafetyDecisionRecordView => d.pass === 'safety');
+    ok(safety.length >= 1, 'expected at least 1 safety decision');
 
     const first = safety[0];
     assertSafetyVerdict(first, {
-      verdict: "hold",
-      categoryVerdicts: { perf: "WARN" },
+      verdict: 'hold',
+      categoryVerdicts: { perf: 'WARN' },
     });
 
     // Pass 2 SKIP — resource 결정 record 0건.
     const resourceDecisions = decisions.filter(
-      (d): d is ResourceDecisionRecordView => d.pass === "resource",
+      (d): d is ResourceDecisionRecordView => d.pass === 'resource',
     );
     equal(
       resourceDecisions.length,
@@ -85,13 +82,11 @@ export const scenario17PassPriorityCanaryBlocksScale: Scenario<S17Ctx> = {
     );
 
     // SKIP 사유 evidence — pass-priority-skip source.
-    const skipEvidence = first.evidence.find(
-      (e) => e.source === "pass-priority-skip",
-    );
-    ok(skipEvidence, "expected pass-priority-skip evidence on hold safety");
+    const skipEvidence = first.evidence.find((e) => e.source === 'pass-priority-skip');
+    ok(skipEvidence, 'expected pass-priority-skip evidence on hold safety');
     equal(
       skipEvidence.content,
-      "pass1-not-promote-or-stable",
+      'pass1-not-promote-or-stable',
       `evidence content mismatch, got ${JSON.stringify(skipEvidence.content)}`,
     );
   },

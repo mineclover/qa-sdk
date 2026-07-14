@@ -2,10 +2,7 @@ import type { CanonicalRiskLevel } from '../business/canonicalReviewDraft.js';
 import type { CanonicalReviewHandlers } from '../handlers/CanonicalReviewHandlers.js';
 
 export interface CanonicalReviewActions {
-  updateTextField(
-    field: 'changeTitle' | 'owner' | 'rollbackPlan' | 'summary',
-    value: string,
-  ): void;
+  updateTextField(field: 'changeTitle' | 'owner' | 'rollbackPlan' | 'summary', value: string): void;
   updateRiskLevel(value: CanonicalRiskLevel): void;
   submit(): Promise<void>;
   reset(): Promise<void>;

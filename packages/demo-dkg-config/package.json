@@ -2,6 +2,9 @@
   "name": "demo-dkg-config",
   "version": "0.1.0",
   "description": "DEMO DKG bootstrap 설정 데이터 (decision-flow flow schema 포함)",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -13,13 +16,12 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
-  "dependencies": {
-    "decision-flow": "workspace:*"
-  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "decision-flow": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

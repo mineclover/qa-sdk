@@ -1,9 +1,9 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { createHash } from "node:crypto";
-import { AppError } from "../../lib/errors.js";
-import type { RuntimeServiceAddress } from "../services/service.types.js";
+import { createHash } from 'node:crypto';
+import { AppError } from '../../lib/errors.js';
+import type { RuntimeServiceAddress } from '../services/service.types.js';
 
 export interface AssembleManifestBody {
   readonly serviceId: string;
@@ -49,24 +49,26 @@ export function normalizeAssembleManifestBody(body: AssembleManifestBody): Assem
 
 export function validateAssembleManifestBody(body: AssembleManifestBody): void {
   if (!body.serviceId) {
-    throw new AppError("INVALID_INPUT", "serviceId 필수", 400);
+    throw new AppError('INVALID_INPUT', 'serviceId 필수', 400);
   }
   if (!body.manifestVersion) {
-    throw new AppError("INVALID_INPUT", "manifestVersion 필수", 400);
+    throw new AppError('INVALID_INPUT', 'manifestVersion 필수', 400);
   }
-  if (!body.prefixes || typeof body.prefixes !== "object" || Array.isArray(body.prefixes)) {
-    throw new AppError("INVALID_INPUT", "prefixes 객체 필수", 400);
+  if (!body.prefixes || typeof body.prefixes !== 'object' || Array.isArray(body.prefixes)) {
+    throw new AppError('INVALID_INPUT', 'prefixes 객체 필수', 400);
   }
   if (body.runtimeAddress && body.runtimeAddress.serviceId !== body.serviceId) {
     throw new AppError(
-      "INVALID_INPUT",
+      'INVALID_INPUT',
       `runtimeAddress.serviceId "${body.runtimeAddress.serviceId}" != manifest serviceId "${body.serviceId}"`,
       400,
     );
   }
 }
 
-export function createManifestAssemblyContract(body: AssembleManifestBody): ManifestAssemblyContract {
+export function createManifestAssemblyContract(
+  body: AssembleManifestBody,
+): ManifestAssemblyContract {
   const normalizedPrefixes = Object.fromEntries(
     Object.entries(body.prefixes).toSorted(([left], [right]) => left.localeCompare(right)),
   );
@@ -82,13 +84,15 @@ export function createManifestAssemblyContract(body: AssembleManifestBody): Mani
   };
 
   return {
-    semanticsKey: createHash("sha256")
+    semanticsKey: createHash('sha256')
       .update(JSON.stringify(semanticsPayload))
-      .digest("hex")
+      .digest('hex')
       .slice(0, 16),
     normalizedPrefixes,
     componentVersions: {
-      ...(body.runtimeAddressVersion != null ? { runtimeAddressVersion: body.runtimeAddressVersion } : {}),
+      ...(body.runtimeAddressVersion != null
+        ? { runtimeAddressVersion: body.runtimeAddressVersion }
+        : {}),
       ...(body.serviceUnitVersion != null ? { serviceUnitVersion: body.serviceUnitVersion } : {}),
       ...(body.ownershipVersion != null ? { ownershipVersion: body.ownershipVersion } : {}),
       ...(body.exposureVersion != null ? { exposureVersion: body.exposureVersion } : {}),
@@ -97,21 +101,24 @@ export function createManifestAssemblyContract(body: AssembleManifestBody): Mani
   };
 }
 
-export function toServiceManifestOptions(body: AssembleManifestBody): ServiceManifestMetadata | undefined {
+export function toServiceManifestOptions(
+  body: AssembleManifestBody,
+): ServiceManifestMetadata | undefined {
   if (
-    body.runtimeAddressVersion == null
-    && 
-    body.serviceUnitVersion == null
-    && body.ownershipVersion == null
-    && body.exposureVersion == null
-    && body.deploymentVersion == null
-    && body.runtimeAddress == null
+    body.runtimeAddressVersion == null &&
+    body.serviceUnitVersion == null &&
+    body.ownershipVersion == null &&
+    body.exposureVersion == null &&
+    body.deploymentVersion == null &&
+    body.runtimeAddress == null
   ) {
     return undefined;
   }
 
   return {
-    ...(body.runtimeAddressVersion != null ? { runtimeAddressVersion: body.runtimeAddressVersion } : {}),
+    ...(body.runtimeAddressVersion != null
+      ? { runtimeAddressVersion: body.runtimeAddressVersion }
+      : {}),
     ...(body.serviceUnitVersion != null ? { serviceUnitVersion: body.serviceUnitVersion } : {}),
     ...(body.ownershipVersion != null ? { ownershipVersion: body.ownershipVersion } : {}),
     ...(body.exposureVersion != null ? { exposureVersion: body.exposureVersion } : {}),

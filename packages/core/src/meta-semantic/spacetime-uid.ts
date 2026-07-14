@@ -51,8 +51,8 @@ export function buildSegments(
   paths: readonly { pathId: string; branchChain: readonly PathBranchPoint[] }[],
 ): IntentPathSegment[] {
   let offset = 0;
-  return paths.map(p => {
-    const shape = p.branchChain.map(bp => bp.branchCount);
+  return paths.map((p) => {
+    const shape = p.branchChain.map((bp) => bp.branchCount);
     const size = shape.reduce((a, b) => a * b, 1);
     const segment: IntentPathSegment = {
       pathId: p.pathId,
@@ -90,7 +90,10 @@ export function encodePathAddress(segment: IntentPathSegment, coord: readonly nu
 }
 
 /** 전역 주소 → 세그먼트 + 좌표 */
-export function decodePathAddress(segments: readonly IntentPathSegment[], globalAddr: number): DecodedPath {
+export function decodePathAddress(
+  segments: readonly IntentPathSegment[],
+  globalAddr: number,
+): DecodedPath {
   for (const seg of segments) {
     if (globalAddr < seg.addressOffset + seg.size) {
       const local = globalAddr - seg.addressOffset;
@@ -108,17 +111,21 @@ export function decodePathAddress(segments: readonly IntentPathSegment[], global
 
 // ── 시공간 UID ────────────────────────────────────────
 
-const PREFIX = "intent";
-const VERSION = "v1";
+const PREFIX = 'intent';
+const VERSION = 'v1';
 
 /** 시공간 UID 생성 */
-export function createSpacetimeUID(functionIndex: number, pathAddress: number, txSeq: number): string {
+export function createSpacetimeUID(
+  functionIndex: number,
+  pathAddress: number,
+  txSeq: number,
+): string {
   return `${PREFIX}:${VERSION}:${functionIndex}:${pathAddress}:${txSeq}`;
 }
 
 /** 시공간 UID 파싱 */
 export function parseSpacetimeUID(uid: string): SpacetimeUID {
-  const parts = uid.split(":");
+  const parts = uid.split(':');
   if (parts.length !== 5 || parts[0] !== PREFIX || parts[1] !== VERSION) {
     throw new Error(`유효하지 않은 Spacetime UID: ${uid}`);
   }
@@ -144,7 +151,7 @@ export function addressesForBranch(
 ): number[] {
   const addresses: number[] = [];
   for (const seg of segments) {
-    const dimIdx = seg.branchChain.findIndex(bp => bp.id === branchId);
+    const dimIdx = seg.branchChain.findIndex((bp) => bp.id === branchId);
     if (dimIdx < 0) continue;
 
     // 이 세그먼트에서 해당 분기값이 고정된 모든 좌표를 열거

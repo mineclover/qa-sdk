@@ -1,33 +1,33 @@
 // @def.boundary weighted-index-system
 // @def.doc weighted-index-system
 
-import { describe, it, expect } from "vitest";
-import { compose } from "./compose.js";
-import { xorObfuscate } from "./xor.js";
-import { rotateLeft, rotateRight } from "./rotate.js";
-import { reverseBits } from "./reverse.js";
+import { describe, it, expect } from 'vitest';
+import { compose } from './compose.js';
+import { xorObfuscate } from './xor.js';
+import { rotateLeft, rotateRight } from './rotate.js';
+import { reverseBits } from './reverse.js';
 
-describe("compose", () => {
-  it("empty compose is identity", () => {
+describe('compose', () => {
+  it('empty compose is identity', () => {
     const identity = compose();
     expect(identity(42, 8)).toBe(42);
   });
 
-  it("single transform: same as calling directly", () => {
-    const enc = compose((id, w) => xorObfuscate(id, w, 0xA3));
+  it('single transform: same as calling directly', () => {
+    const enc = compose((id, w) => xorObfuscate(id, w, 0xa3));
     for (let id = 0; id < 256; id++) {
-      expect(enc(id, 8)).toBe(xorObfuscate(id, 8, 0xA3));
+      expect(enc(id, 8)).toBe(xorObfuscate(id, 8, 0xa3));
     }
   });
 
-  it("enc/dec round-trip: rotateLeft(3) → xorObfuscate(0xA3)", () => {
+  it('enc/dec round-trip: rotateLeft(3) → xorObfuscate(0xA3)', () => {
     const w = 8;
     const enc = compose(
       (id, bw) => rotateLeft(id, bw, 3),
-      (id, bw) => xorObfuscate(id, bw, 0xA3),
+      (id, bw) => xorObfuscate(id, bw, 0xa3),
     );
     const dec = compose(
-      (id, bw) => xorObfuscate(id, bw, 0xA3),
+      (id, bw) => xorObfuscate(id, bw, 0xa3),
       (id, bw) => rotateRight(id, bw, 3),
     );
     for (let id = 0; id < 256; id++) {
@@ -35,7 +35,7 @@ describe("compose", () => {
     }
   });
 
-  it("triple chain enc/dec: reverseBits → rotateLeft(2) → xorObfuscate(0x55)", () => {
+  it('triple chain enc/dec: reverseBits → rotateLeft(2) → xorObfuscate(0x55)', () => {
     const w = 8;
     const enc = compose(
       (id, bw) => reverseBits(id, bw),
@@ -52,7 +52,7 @@ describe("compose", () => {
     }
   });
 
-  it("self-inverse composed twice = identity", () => {
+  it('self-inverse composed twice = identity', () => {
     const w = 8;
     const double = compose(
       (id, bw) => reverseBits(id, bw),
@@ -63,11 +63,11 @@ describe("compose", () => {
     }
   });
 
-  it("bijection: composed transform produces distinct values for all IDs", () => {
+  it('bijection: composed transform produces distinct values for all IDs', () => {
     const w = 8;
     const enc = compose(
       (id, bw) => rotateLeft(id, bw, 3),
-      (id, bw) => xorObfuscate(id, bw, 0xA3),
+      (id, bw) => xorObfuscate(id, bw, 0xa3),
       (id, bw) => reverseBits(id, bw),
     );
     const results = new Set<number>();

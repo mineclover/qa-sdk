@@ -16,12 +16,12 @@ import {
   Post,
   Query,
   UseGuards,
-} from "@nestjs/common";
-import { z } from "zod";
-import { InternalIpGuard } from "sim-internal-network";
-import { OutboxAdminInsertService } from "./outbox-admin-insert.service.js";
-import { OutboxAdminDispatchService } from "./outbox-admin-dispatch.service.js";
-import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
+} from '@nestjs/common';
+import { z } from 'zod';
+import { InternalIpGuard } from 'sim-internal-network';
+import { OutboxAdminInsertService } from './outbox-admin-insert.service.js';
+import { OutboxAdminDispatchService } from './outbox-admin-dispatch.service.js';
+import { OutboxAdminStateQueryService } from './outbox-admin-state-query.service.js';
 
 const InsertBody = z.object({
   events: z.array(
@@ -44,7 +44,7 @@ const DispatchBody = z.object({
 function validation(title: string, detail: string): HttpException {
   return new HttpException(
     {
-      type: "https://qa-sdk.dev/errors/validation",
+      type: 'https://qa-sdk.dev/errors/validation',
       title,
       status: 400,
       detail,
@@ -53,7 +53,7 @@ function validation(title: string, detail: string): HttpException {
   );
 }
 
-@Controller("admin/outbox")
+@Controller('admin/outbox')
 @UseGuards(InternalIpGuard)
 export class OutboxAdminController {
   constructor(
@@ -67,22 +67,22 @@ export class OutboxAdminController {
     private readonly stateSvc: OutboxAdminStateQueryService,
   ) {}
 
-  @Post("insert")
+  @Post('insert')
   @HttpCode(HttpStatus.OK)
   async insert(@Body() raw: unknown) {
     const p = InsertBody.safeParse(raw);
     if (!p.success) {
-      throw validation("Invalid /admin/outbox/insert body", p.error.message);
+      throw validation('Invalid /admin/outbox/insert body', p.error.message);
     }
     return this.insertSvc.insertEvents(p.data.events);
   }
 
-  @Post("dispatch")
+  @Post('dispatch')
   @HttpCode(HttpStatus.OK)
   async dispatch(@Body() raw: unknown) {
     const p = DispatchBody.safeParse(raw);
     if (!p.success) {
-      throw validation("Invalid /admin/outbox/dispatch body", p.error.message);
+      throw validation('Invalid /admin/outbox/dispatch body', p.error.message);
     }
     return this.dispatchSvc.dispatchAll(p.data);
   }
@@ -98,21 +98,16 @@ export class OutboxAdminController {
    * scope_id 로 자기 claim 마킹). dispatcher worker 자동 가동되지 않는
    * 환경에서도 본 endpoint 호출 시 dispatchAll 트리거 후 state 조회 보장.
    */
-  @Get("dispatch")
-  async dispatchState(
-    @Query("ids") idsCsv: string,
-  ): Promise<{
+  @Get('dispatch')
+  async dispatchState(@Query('ids') idsCsv: string): Promise<{
     publishedAt: Array<[string, number]>;
     dispatcherIds: Array<[string, string]>;
   }> {
-    if (typeof idsCsv !== "string" || idsCsv.length === 0) {
-      throw validation(
-        "Invalid /admin/outbox/dispatch query",
-        "ids CSV query required",
-      );
+    if (typeof idsCsv !== 'string' || idsCsv.length === 0) {
+      throw validation('Invalid /admin/outbox/dispatch query', 'ids CSV query required');
     }
     const ids = idsCsv
-      .split(",")
+      .split(',')
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
     if (ids.length === 0) {

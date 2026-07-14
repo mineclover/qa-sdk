@@ -1,10 +1,10 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { AssigneeId, TaskId, TaskProjectId } from "./task.ids.js";
+import type { AssigneeId, TaskId, TaskProjectId } from './task.ids.js';
 
 /** 상태 머신 — task 라이프사이클의 유한 상태. */
-export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
+export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked';
 
 /** 도메인 entity 의 내부 props (불변, branded ids). */
 export interface TaskProps {

@@ -1,16 +1,16 @@
 // @def.boundary sim-canary-controller
 // @def.doc canary-controller-config
 
-import { Module } from "@nestjs/common";
-import { ScheduleModule } from "@nestjs/schedule";
-import { CycleSchedulerService } from "./cycle-scheduler.service.js";
-import { AdvisoryLockModule } from "../lock/advisory-lock.module.js";
-import { MetricsScrapeModule } from "../metrics/metrics-scrape.module.js";
-import { DecisionModule } from "../decision/decision.module.js";
-import { ActionModule } from "../action/action.module.js";
-import { CatalogModule } from "../catalog/catalog.module.js";
-import { FaultModule } from "../fault/fault.module.js";
-import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
+import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CycleSchedulerService } from './cycle-scheduler.service.js';
+import { AdvisoryLockModule } from '../lock/advisory-lock.module.js';
+import { MetricsScrapeModule } from '../metrics/metrics-scrape.module.js';
+import { DecisionModule } from '../decision/decision.module.js';
+import { ActionModule } from '../action/action.module.js';
+import { CatalogModule } from '../catalog/catalog.module.js';
+import { FaultModule } from '../fault/fault.module.js';
+import { DecisionRingBuffer } from '../decision/decision-ring-buffer.js';
 
 @Module({
   imports: [
@@ -32,7 +32,7 @@ import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
       provide: DecisionRingBuffer,
       useFactory: () =>
         new DecisionRingBuffer({
-          maxSize: Number(process.env.SIM_CONTROLLER_RING_SIZE ?? "100"),
+          maxSize: Number(process.env.SIM_CONTROLLER_RING_SIZE ?? '100'),
         }),
     },
   ],

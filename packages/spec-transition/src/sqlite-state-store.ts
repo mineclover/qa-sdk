@@ -49,7 +49,9 @@ export class SqliteStateStore implements AsyncStateStore {
 
   private async ensureSchema(): Promise<void> {
     if (this.initialized) return;
-    for (const stmt of DDL.split(";").map(s => s.trim()).filter(Boolean)) {
+    for (const stmt of DDL.split(';')
+      .map((s) => s.trim())
+      .filter(Boolean)) {
       await this.db.execute(stmt);
     }
     this.initialized = true;
@@ -58,7 +60,7 @@ export class SqliteStateStore implements AsyncStateStore {
   async get(contextId: string, resourceId: string, axis: string): Promise<string | null> {
     await this.ensureSchema();
     const row = await this.db.queryOne<{ value: string }>(
-      "SELECT value FROM transition_state WHERE context_id = ? AND resource_id = ? AND axis = ?",
+      'SELECT value FROM transition_state WHERE context_id = ? AND resource_id = ? AND axis = ?',
       [contextId, resourceId, axis],
     );
     return row?.value ?? null;
@@ -78,7 +80,7 @@ export class SqliteStateStore implements AsyncStateStore {
   async unset(contextId: string, resourceId: string, axis: string): Promise<void> {
     await this.ensureSchema();
     await this.db.execute(
-      "DELETE FROM transition_state WHERE context_id = ? AND resource_id = ? AND axis = ?",
+      'DELETE FROM transition_state WHERE context_id = ? AND resource_id = ? AND axis = ?',
       [contextId, resourceId, axis],
     );
   }
@@ -86,7 +88,7 @@ export class SqliteStateStore implements AsyncStateStore {
   async snapshot(contextId: string, resourceId: string): Promise<Record<string, string>> {
     await this.ensureSchema();
     const rows = await this.db.query<{ axis: string; value: string }>(
-      "SELECT axis, value FROM transition_state WHERE context_id = ? AND resource_id = ?",
+      'SELECT axis, value FROM transition_state WHERE context_id = ? AND resource_id = ?',
       [contextId, resourceId],
     );
     const result: Record<string, string> = {};
@@ -96,6 +98,6 @@ export class SqliteStateStore implements AsyncStateStore {
 
   async clear(): Promise<void> {
     await this.ensureSchema();
-    await this.db.execute("DELETE FROM transition_state");
+    await this.db.execute('DELETE FROM transition_state');
   }
 }

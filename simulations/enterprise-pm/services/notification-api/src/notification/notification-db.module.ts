@@ -1,21 +1,21 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { Module, type DynamicModule, type Provider } from "@nestjs/common";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { createConnection } from "db-bootstrap";
-import { env } from "../config/env.js";
+import { Module, type DynamicModule, type Provider } from '@nestjs/common';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { createConnection } from 'db-bootstrap';
+import { env } from '../config/env.js';
 import {
   SIM_NOTIF_NOTIFICATION_SQLITE_DDL,
   SIM_NOTIF_OUTBOX_SQLITE_DDL,
-} from "./notification/infrastructure/persistence/sqlite.schema.js";
-import { SIM_NOTIF_SUBSCRIPTION_SQLITE_DDL } from "./subscription/infrastructure/persistence/sqlite.schema.js";
+} from './notification/infrastructure/persistence/sqlite.schema.js';
+import { SIM_NOTIF_SUBSCRIPTION_SQLITE_DDL } from './subscription/infrastructure/persistence/sqlite.schema.js';
 import {
   SIM_NOTIF_NOTIFICATION_PG_DDL,
   SIM_NOTIF_OUTBOX_PG_DDL,
-} from "./notification/infrastructure/persistence/pg.schema.js";
-import { SIM_NOTIF_SUBSCRIPTION_PG_DDL } from "./subscription/infrastructure/persistence/pg.schema.js";
+} from './notification/infrastructure/persistence/pg.schema.js';
+import { SIM_NOTIF_SUBSCRIPTION_PG_DDL } from './subscription/infrastructure/persistence/pg.schema.js';
 
 /**
  * NestJS DI 토큰 — notification-api 의 모든 슬라이스가 공유하는 Drizzle DB 핸들.
@@ -25,11 +25,11 @@ import { SIM_NOTIF_SUBSCRIPTION_PG_DDL } from "./subscription/infrastructure/per
  * - Phase 2 슬라이스 모듈 (NotificationSliceModule, SubscriptionSliceModule)
  *   은 모두 본 토큰을 inject 한다.
  */
-export const NOTIF_DB_INSTANCE = Symbol("NOTIF_DB_INSTANCE");
+export const NOTIF_DB_INSTANCE = Symbol('NOTIF_DB_INSTANCE');
 
 /** notification-db.module 가 export 하는 dialect-aware DB 핸들. */
 export interface NotifDbInstanceHandle {
-  readonly dialect: "sqlite" | "pg";
+  readonly dialect: 'sqlite' | 'pg';
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
@@ -45,9 +45,9 @@ export interface NotifDbInstanceHandle {
  * 운영 환경은 drizzle-kit migration이 SSOT이지만, dev/test는 본 auto-apply로 충분.
  */
 async function applyDdl(conn: Awaited<ReturnType<typeof createConnection>>): Promise<void> {
-  if (conn.dialect === "sqlite") {
+  if (conn.dialect === 'sqlite') {
     const raw = (conn.db as unknown as { $client: { exec: (sql: string) => void } }).$client;
-    if (raw && typeof raw.exec === "function") {
+    if (raw && typeof raw.exec === 'function') {
       raw.exec(SIM_NOTIF_NOTIFICATION_SQLITE_DDL);
       raw.exec(SIM_NOTIF_SUBSCRIPTION_SQLITE_DDL);
       raw.exec(SIM_NOTIF_OUTBOX_SQLITE_DDL);
@@ -57,7 +57,7 @@ async function applyDdl(conn: Awaited<ReturnType<typeof createConnection>>): Pro
   const raw = (conn.db as unknown as { $client: unknown }).$client as unknown as {
     unsafe: (q: string) => Promise<unknown>;
   };
-  if (raw && typeof raw.unsafe === "function") {
+  if (raw && typeof raw.unsafe === 'function') {
     await raw.unsafe(SIM_NOTIF_NOTIFICATION_PG_DDL);
     await raw.unsafe(SIM_NOTIF_SUBSCRIPTION_PG_DDL);
     await raw.unsafe(SIM_NOTIF_OUTBOX_PG_DDL);
@@ -76,16 +76,16 @@ export class NotificationDbModule {
       if (connectionPromise) return connectionPromise;
       connectionPromise = (async () => {
         const conn = await createConnection(
-          env.QA_DB_DIALECT === "sqlite"
-            ? { dialect: "sqlite", sqlitePath: env.QA_SQLITE_PATH }
+          env.QA_DB_DIALECT === 'sqlite'
+            ? { dialect: 'sqlite', sqlitePath: env.QA_SQLITE_PATH }
             : {
-                dialect: "pg",
+                dialect: 'pg',
                 pgHost: env.QA_PG_HOST!,
                 pgPort: env.QA_PG_PORT!,
                 pgDatabase: env.QA_PG_DATABASE!,
                 pgUser: env.QA_PG_USER!,
                 pgPassword: env.QA_PG_PASSWORD!,
-                pgSchema: env.QA_PG_SCHEMA ?? "sim",
+                pgSchema: env.QA_PG_SCHEMA ?? 'sim',
               },
         );
         await applyDdl(conn);

@@ -1,8 +1,14 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { Logger } from "pino";
-import type { RuntimeGraph, StoredRecord, StoredSession, StoredTrace, StoredVerdict } from "@qa-sdk/core";
+import type { Logger } from 'pino';
+import type {
+  RuntimeGraph,
+  StoredRecord,
+  StoredSession,
+  StoredTrace,
+  StoredVerdict,
+} from '@qa-sdk/core';
 import {
   InMemoryGraphStore,
   InMemoryRecordStore,
@@ -10,7 +16,7 @@ import {
   InMemoryTraceStore,
   InMemoryVerdictStore,
   getClient,
-} from "@qa-sdk/store";
+} from '@qa-sdk/store';
 
 const DEFAULT_TRACE_RETENTION_DAYS = 30;
 const DEFAULT_VERDICT_RETENTION_DAYS = 90;
@@ -96,9 +102,7 @@ export async function cleanupExpiredData(
       break;
     }
 
-    const deletedCount = await deps.cleanupStore.deleteVerdictReportsByIds(
-      verdictIds,
-    );
+    const deletedCount = await deps.cleanupStore.deleteVerdictReportsByIds(verdictIds);
     deleted.verdictReports += deletedCount;
     deps.logger?.info(
       {
@@ -106,9 +110,9 @@ export async function cleanupExpiredData(
         cutoff: verdictCutoff.toISOString(),
         deletedCount,
         retentionDays: resolvedOptions.verdictRetentionDays,
-        table: "verdict_reports",
+        table: 'verdict_reports',
       },
-      "deleted expired cleanup batch",
+      'deleted expired cleanup batch',
     );
   }
 
@@ -121,12 +125,9 @@ export async function cleanupExpiredData(
       break;
     }
 
-    const eventRecordCount =
-      await deps.cleanupStore.deleteEventRecordsByTraceIds(traceIds);
-    const runtimeGraphCount =
-      await deps.cleanupStore.deleteRuntimeGraphsByTraceIds(traceIds);
-    const verdictReportCount =
-      await deps.cleanupStore.deleteVerdictReportsByTraceIds(traceIds);
+    const eventRecordCount = await deps.cleanupStore.deleteEventRecordsByTraceIds(traceIds);
+    const runtimeGraphCount = await deps.cleanupStore.deleteRuntimeGraphsByTraceIds(traceIds);
+    const verdictReportCount = await deps.cleanupStore.deleteVerdictReportsByTraceIds(traceIds);
     const traceCount = await deps.cleanupStore.deleteTracesByIds(traceIds);
 
     deleted.eventRecords += eventRecordCount;
@@ -140,9 +141,9 @@ export async function cleanupExpiredData(
         cutoff: traceCutoff.toISOString(),
         deletedCount: eventRecordCount,
         retentionDays: resolvedOptions.traceRetentionDays,
-        table: "event_records",
+        table: 'event_records',
       },
-      "deleted expired cleanup batch",
+      'deleted expired cleanup batch',
     );
     deps.logger?.info(
       {
@@ -150,9 +151,9 @@ export async function cleanupExpiredData(
         cutoff: traceCutoff.toISOString(),
         deletedCount: runtimeGraphCount,
         retentionDays: resolvedOptions.traceRetentionDays,
-        table: "runtime_graphs",
+        table: 'runtime_graphs',
       },
-      "deleted expired cleanup batch",
+      'deleted expired cleanup batch',
     );
     deps.logger?.info(
       {
@@ -160,9 +161,9 @@ export async function cleanupExpiredData(
         cutoff: traceCutoff.toISOString(),
         deletedCount: verdictReportCount,
         retentionDays: resolvedOptions.traceRetentionDays,
-        table: "verdict_reports",
+        table: 'verdict_reports',
       },
-      "deleted expired cleanup batch",
+      'deleted expired cleanup batch',
     );
     deps.logger?.info(
       {
@@ -170,9 +171,9 @@ export async function cleanupExpiredData(
         cutoff: traceCutoff.toISOString(),
         deletedCount: traceCount,
         retentionDays: resolvedOptions.traceRetentionDays,
-        table: "traces",
+        table: 'traces',
       },
-      "deleted expired cleanup batch",
+      'deleted expired cleanup batch',
     );
   }
 
@@ -191,7 +192,7 @@ export async function cleanupExpiredData(
       deleted,
       options: resolvedOptions,
     },
-    "expired data cleanup complete",
+    'expired data cleanup complete',
   );
 
   return {
@@ -204,15 +205,11 @@ export async function cleanupExpiredData(
   };
 }
 
-export function resolveCleanupOptions(
-  options: Partial<CleanupOptions> = {},
-): CleanupOptions {
+export function resolveCleanupOptions(options: Partial<CleanupOptions> = {}): CleanupOptions {
   return {
-    traceRetentionDays:
-      options.traceRetentionDays ?? defaultCleanupOptions.traceRetentionDays,
+    traceRetentionDays: options.traceRetentionDays ?? defaultCleanupOptions.traceRetentionDays,
     verdictRetentionDays:
-      options.verdictRetentionDays ??
-      defaultCleanupOptions.verdictRetentionDays,
+      options.verdictRetentionDays ?? defaultCleanupOptions.verdictRetentionDays,
     batchSize: options.batchSize ?? defaultCleanupOptions.batchSize,
   };
 }
@@ -344,24 +341,16 @@ export function createDatabaseCleanupStore(databaseUrl: string): CleanupStore {
   };
 }
 
-export function createInMemoryCleanupStore(
-  deps: InMemoryCleanupStoreDeps,
-): CleanupStore {
-  const recordMap = getPrivateMap<string, StoredRecord>(deps.recordStore, "records");
-  const traceMap = getPrivateMap<string, StoredTrace>(deps.traceStore, "traces");
-  const graphMap = getPrivateMap<string, RuntimeGraph>(deps.graphStore, "graphs");
-  const verdictMap = getPrivateMap<string, StoredVerdict>(
-    deps.verdictStore,
-    "verdicts",
-  );
+export function createInMemoryCleanupStore(deps: InMemoryCleanupStoreDeps): CleanupStore {
+  const recordMap = getPrivateMap<string, StoredRecord>(deps.recordStore, 'records');
+  const traceMap = getPrivateMap<string, StoredTrace>(deps.traceStore, 'traces');
+  const graphMap = getPrivateMap<string, RuntimeGraph>(deps.graphStore, 'graphs');
+  const verdictMap = getPrivateMap<string, StoredVerdict>(deps.verdictStore, 'verdicts');
   const verdictIdsByScenarioTrace = getPrivateMap<string, string>(
     deps.verdictStore,
-    "verdictIdsByScenarioTrace",
+    'verdictIdsByScenarioTrace',
   );
-  const sessionMap = getPrivateMap<string, StoredSession>(
-    deps.sessionStore,
-    "sessions",
-  );
+  const sessionMap = getPrivateMap<string, StoredSession>(deps.sessionStore, 'sessions');
 
   return {
     async listExpiredTraceIds(cutoff, limit) {
@@ -421,9 +410,7 @@ export function createInMemoryCleanupStore(
       return Array.from(sessionMap.values())
         .filter(
           (session) =>
-            !Array.from(traceMap.values()).some(
-              (trace) => trace.sessionId === session.sessionId,
-            ),
+            !Array.from(traceMap.values()).some((trace) => trace.sessionId === session.sessionId),
         )
         .toSorted(
           (left, right) =>
@@ -464,9 +451,9 @@ async function cleanupOrphanSessions(
       {
         batchSize: sessionIds.length,
         deletedCount,
-        table: "qa_sessions",
+        table: 'qa_sessions',
       },
-      "deleted expired cleanup batch",
+      'deleted expired cleanup batch',
     );
   }
 }
@@ -475,10 +462,7 @@ function subtractDays(date: Date, days: number): Date {
   return new Date(date.getTime() - days * MS_PER_DAY);
 }
 
-function getPrivateMap<TKey, TValue>(
-  target: unknown,
-  fieldName: string,
-): Map<TKey, TValue> {
+function getPrivateMap<TKey, TValue>(target: unknown, fieldName: string): Map<TKey, TValue> {
   return (target as Record<string, Map<TKey, TValue>>)[fieldName];
 }
 
@@ -513,9 +497,7 @@ function deleteVerdicts(
     }
 
     verdictMap.delete(id);
-    verdictIdsByScenarioTrace.delete(
-      toScenarioTraceKey(verdict.scenarioId, verdict.traceId),
-    );
+    verdictIdsByScenarioTrace.delete(toScenarioTraceKey(verdict.scenarioId, verdict.traceId));
     deleted += 1;
   }
 

@@ -1,13 +1,13 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { createDeterministicLabelInventoryAdapters } from "./deterministic-label-inventory-adapters.js";
+import { createDeterministicLabelInventoryAdapters } from './deterministic-label-inventory-adapters.js';
 
 import {
   buildDeterministicLabelRecord,
@@ -21,166 +21,166 @@ import {
   type DeterministicLabelRecord,
   type SemanticCoordinateCandidate,
   type SemanticCoordinateCandidateInput,
-} from "deterministic-label-registry";
+} from 'deterministic-label-registry';
 import {
   normalizeDocumentEnvelope,
   type CompletedRecordState,
   type DocumentEnvelope,
-} from "doc-envelope";
+} from 'doc-envelope';
 
-describe("semantic coordinate candidates", () => {
-  it("supports the canonical deterministic label kinds", () => {
+describe('semantic coordinate candidates', () => {
+  it('supports the canonical deterministic label kinds', () => {
     expect(SEMANTIC_COORDINATE_LABEL_KINDS).toEqual([
-      "definition-doc",
-      "source-file",
-      "ontology-pack",
-      "artifact",
-      "prd-markdown",
-      "ralph-prd-json",
-      "prd-story",
-      "evidence",
+      'definition-doc',
+      'source-file',
+      'ontology-pack',
+      'artifact',
+      'prd-markdown',
+      'ralph-prd-json',
+      'prd-story',
+      'evidence',
     ]);
   });
 
-  it("defines canonical candidate format examples", () => {
+  it('defines canonical candidate format examples', () => {
     expect(SEMANTIC_COORDINATE_CANONICAL_EXAMPLES).toEqual({
-      definitionDoc: "urn:def:spec:docs-control-plane:v1",
-      sourceFile: "urn:source:typescript:packages/cli/src/commands/docs.ts",
-      ontologyPack: "urn:pack:ontology:programming-artifact-ontology:v1",
-      artifact: "urn:artifact:activation-evidence:programming-artifact-ontology:v1",
-      prdMarkdown: "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
-      ralphPrdJson: "urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
-      prdStory: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001",
-      evidence: "urn:artifact:evidence:checkout-proof:v1",
+      definitionDoc: 'urn:def:spec:docs-control-plane:v1',
+      sourceFile: 'urn:source:typescript:packages/cli/src/commands/docs.ts',
+      ontologyPack: 'urn:pack:ontology:programming-artifact-ontology:v1',
+      artifact: 'urn:artifact:activation-evidence:programming-artifact-ontology:v1',
+      prdMarkdown: 'urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
+      ralphPrdJson: 'urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
+      prdStory: 'urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001',
+      evidence: 'urn:artifact:evidence:checkout-proof:v1',
     });
   });
 
-  it("generates coordinates from representative ids without replacing source ids or paths", () => {
+  it('generates coordinates from representative ids without replacing source ids or paths', () => {
     const cases: Array<{
       readonly input: SemanticCoordinateCandidateInput;
       readonly label: string;
     }> = [
       {
         input: {
-          kind: "definition-doc",
-          id: "docs-control-plane",
-          subtype: "spec",
-          version: "v1",
+          kind: 'definition-doc',
+          id: 'docs-control-plane',
+          subtype: 'spec',
+          version: 'v1',
           physicalRefs: [
             {
-              kind: "definition-path",
-              ref: "docs\\specs\\definition-catalog\\docs-control-plane.spec.md",
-              role: "primary",
+              kind: 'definition-path',
+              ref: 'docs\\specs\\definition-catalog\\docs-control-plane.spec.md',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:def:spec:docs-control-plane:v1",
+        label: 'urn:def:spec:docs-control-plane:v1',
       },
       {
         input: {
-          kind: "source-file",
-          id: "packages\\cli\\src\\commands\\docs.ts",
-          subtype: "typescript",
+          kind: 'source-file',
+          id: 'packages\\cli\\src\\commands\\docs.ts',
+          subtype: 'typescript',
           physicalRefs: [
             {
-              kind: "source-path",
-              ref: "packages\\cli\\src\\commands\\docs.ts",
-              role: "primary",
+              kind: 'source-path',
+              ref: 'packages\\cli\\src\\commands\\docs.ts',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:source:typescript:packages/cli/src/commands/docs.ts",
+        label: 'urn:source:typescript:packages/cli/src/commands/docs.ts',
       },
       {
         input: {
-          kind: "ontology-pack",
-          id: "programming-artifact-ontology",
-          version: "v1",
+          kind: 'ontology-pack',
+          id: 'programming-artifact-ontology',
+          version: 'v1',
           physicalRefs: [
             {
-              kind: "pack-id",
-              ref: "programming-artifact-ontology",
-              role: "primary",
+              kind: 'pack-id',
+              ref: 'programming-artifact-ontology',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:pack:ontology:programming-artifact-ontology:v1",
+        label: 'urn:pack:ontology:programming-artifact-ontology:v1',
       },
       {
         input: {
-          kind: "artifact",
-          id: "programming-artifact-ontology",
-          subtype: "activation-evidence",
-          version: "v1",
+          kind: 'artifact',
+          id: 'programming-artifact-ontology',
+          subtype: 'activation-evidence',
+          version: 'v1',
           physicalRefs: [
             {
-              kind: "artifact-output-path",
-              ref: "artifacts/activation/programming-artifact-ontology.json",
-              role: "primary",
+              kind: 'artifact-output-path',
+              ref: 'artifacts/activation/programming-artifact-ontology.json',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:artifact:activation-evidence:programming-artifact-ontology:v1",
+        label: 'urn:artifact:activation-evidence:programming-artifact-ontology:v1',
       },
       {
         input: {
-          kind: "prd-markdown",
-          id: "tasks/prd-deterministic-label-registry-fsm-read-model",
-          version: "v1",
+          kind: 'prd-markdown',
+          id: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+          version: 'v1',
           physicalRefs: [
             {
-              kind: "prd-path",
-              ref: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
-              role: "primary",
+              kind: 'prd-path',
+              ref: 'tasks/prd-deterministic-label-registry-fsm-read-model.md',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
+        label: 'urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
       },
       {
         input: {
-          kind: "ralph-prd-json",
-          id: "tasks/prd-deterministic-label-registry-fsm-read-model",
-          version: "v1",
+          kind: 'ralph-prd-json',
+          id: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+          version: 'v1',
           physicalRefs: [
             {
-              kind: "ralph-prd-json-path",
-              ref: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
-              role: "primary",
+              kind: 'ralph-prd-json-path',
+              ref: 'tasks/prd-deterministic-label-registry-fsm-read-model.json',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
+        label: 'urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
       },
       {
         input: {
-          kind: "prd-story",
-          parentId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-          id: "US-001",
+          kind: 'prd-story',
+          parentId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+          id: 'US-001',
           physicalRefs: [
             {
-              kind: "ralph-prd-json-path",
-              ref: "tasks/prd-deterministic-label-registry-fsm-read-model.json#/userStories/0",
-              role: "primary",
+              kind: 'ralph-prd-json-path',
+              ref: 'tasks/prd-deterministic-label-registry-fsm-read-model.json#/userStories/0',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001",
+        label: 'urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-001',
       },
       {
         input: {
-          kind: "evidence",
-          id: "checkout-proof",
-          version: "v1",
+          kind: 'evidence',
+          id: 'checkout-proof',
+          version: 'v1',
           physicalRefs: [
             {
-              kind: "evidence-ref",
-              ref: "artifacts/checkout-proof.json",
-              role: "primary",
+              kind: 'evidence-ref',
+              ref: 'artifacts/checkout-proof.json',
+              role: 'primary',
             },
           ],
         },
-        label: "urn:artifact:evidence:checkout-proof:v1",
+        label: 'urn:artifact:evidence:checkout-proof:v1',
       },
     ];
 
@@ -189,61 +189,61 @@ describe("semantic coordinate candidates", () => {
       expect(result.diagnostics).toEqual([]);
       expect(result.candidate).toMatchObject({
         label,
-        id: input.id.replaceAll("\\", "/"),
+        id: input.id.replaceAll('\\', '/'),
         originalId: input.id,
       });
       expect(result.candidate?.physicalRefs[0]?.ref).toBe(
-        input.physicalRefs?.[0]?.ref.replaceAll("\\", "/"),
+        input.physicalRefs?.[0]?.ref.replaceAll('\\', '/'),
       );
     }
   });
 
-  it("reports missing kind, invalid version, and ambiguous physical refs as diagnostics", () => {
+  it('reports missing kind, invalid version, and ambiguous physical refs as diagnostics', () => {
     const missingKind = buildSemanticCoordinateCandidate({
-      id: "docs-control-plane",
+      id: 'docs-control-plane',
     });
     expect(missingKind.candidate).toBeUndefined();
     expect(missingKind.diagnostics).toEqual([
       expect.objectContaining({
-        code: "semantic-coordinate-missing-kind",
-        severity: "error",
+        code: 'semantic-coordinate-missing-kind',
+        severity: 'error',
       }),
     ]);
 
     const invalidVersion = buildSemanticCoordinateCandidate({
-      kind: "definition-doc",
-      id: "docs-control-plane",
-      version: "1",
+      kind: 'definition-doc',
+      id: 'docs-control-plane',
+      version: '1',
     });
-    expect(invalidVersion.candidate?.label).toBe("urn:def:spec:docs-control-plane");
+    expect(invalidVersion.candidate?.label).toBe('urn:def:spec:docs-control-plane');
     expect(invalidVersion.diagnostics).toEqual([
       expect.objectContaining({
-        code: "semantic-coordinate-invalid-version",
-        severity: "error",
+        code: 'semantic-coordinate-invalid-version',
+        severity: 'error',
       }),
     ]);
 
     const ambiguousPhysicalRef = buildSemanticCoordinateCandidate({
-      kind: "definition-doc",
-      id: "docs-control-plane",
-      version: "v1",
+      kind: 'definition-doc',
+      id: 'docs-control-plane',
+      version: 'v1',
       physicalRefs: [
         {
-          kind: "definition-path",
-          ref: "docs/specs/definition-catalog/docs-control-plane.spec.md",
-          role: "primary",
+          kind: 'definition-path',
+          ref: 'docs/specs/definition-catalog/docs-control-plane.spec.md',
+          role: 'primary',
         },
         {
-          kind: "definition-path",
-          ref: "docs/specs/definition-catalog/archive/docs-control-plane.spec.md",
-          role: "primary",
+          kind: 'definition-path',
+          ref: 'docs/specs/definition-catalog/archive/docs-control-plane.spec.md',
+          role: 'primary',
         },
       ],
     });
     expect(ambiguousPhysicalRef.candidate?.diagnostics).toEqual([
       expect.objectContaining({
-        code: "semantic-coordinate-ambiguous-physical-ref",
-        severity: "warning",
+        code: 'semantic-coordinate-ambiguous-physical-ref',
+        severity: 'warning',
       }),
     ]);
   });
@@ -252,74 +252,72 @@ describe("semantic coordinate candidates", () => {
   // 본 테스트들은 `deterministic-label-coordinate-stability.spec.md`의 v1 URN
   // 계약을 기계적으로 잠근다. 추가 시 해당 spec도 함께 갱신.
 
-  it("preserves unicode (Korean) id characters verbatim in URN", () => {
+  it('preserves unicode (Korean) id characters verbatim in URN', () => {
     const result = buildSemanticCoordinateCandidate({
-      kind: "definition-doc",
-      id: "한글-문서-사양",
-      subtype: "spec",
-      version: "v1",
+      kind: 'definition-doc',
+      id: '한글-문서-사양',
+      subtype: 'spec',
+      version: 'v1',
     });
-    expect(result.candidate?.label).toBe("urn:def:spec:한글-문서-사양:v1");
-    expect(result.candidate?.originalId).toBe("한글-문서-사양");
+    expect(result.candidate?.label).toBe('urn:def:spec:한글-문서-사양:v1');
+    expect(result.candidate?.originalId).toBe('한글-문서-사양');
   });
 
-  it("normalizes Windows backslash path separators to forward slash", () => {
+  it('normalizes Windows backslash path separators to forward slash', () => {
     const result = buildSemanticCoordinateCandidate({
-      kind: "source-file",
-      id: "packages\\cli\\src\\commands\\docs.ts",
-      subtype: "typescript",
+      kind: 'source-file',
+      id: 'packages\\cli\\src\\commands\\docs.ts',
+      subtype: 'typescript',
     });
-    expect(result.candidate?.label).toBe(
-      "urn:source:typescript:packages/cli/src/commands/docs.ts",
-    );
-    expect(result.candidate?.id).toBe("packages/cli/src/commands/docs.ts");
+    expect(result.candidate?.label).toBe('urn:source:typescript:packages/cli/src/commands/docs.ts');
+    expect(result.candidate?.id).toBe('packages/cli/src/commands/docs.ts');
   });
 
-  it("collapses duplicate forward slashes to single slash", () => {
+  it('collapses duplicate forward slashes to single slash', () => {
     const result = buildSemanticCoordinateCandidate({
-      kind: "source-file",
-      id: "a//b///c/d",
-      subtype: "file",
+      kind: 'source-file',
+      id: 'a//b///c/d',
+      subtype: 'file',
     });
-    expect(result.candidate?.label).toBe("urn:source:file:a/b/c/d");
+    expect(result.candidate?.label).toBe('urn:source:file:a/b/c/d');
   });
 
-  it("omits version part from URN when version is undefined", () => {
+  it('omits version part from URN when version is undefined', () => {
     const result = buildSemanticCoordinateCandidate({
-      kind: "source-file",
-      id: "src/lib.ts",
-      subtype: "typescript",
+      kind: 'source-file',
+      id: 'src/lib.ts',
+      subtype: 'typescript',
     });
-    expect(result.candidate?.label).toBe("urn:source:typescript:src/lib.ts");
+    expect(result.candidate?.label).toBe('urn:source:typescript:src/lib.ts');
     expect(result.candidate?.version).toBeUndefined();
   });
 
-  it("rejects invalid version formats with invalid-version diagnostic", () => {
-    const invalidVersions = ["v0", "1.0", "v1.0", "latest", "V1", "v1a"];
+  it('rejects invalid version formats with invalid-version diagnostic', () => {
+    const invalidVersions = ['v0', '1.0', 'v1.0', 'latest', 'V1', 'v1a'];
     for (const version of invalidVersions) {
       const result = buildSemanticCoordinateCandidate({
-        kind: "definition-doc",
-        id: "test",
-        subtype: "spec",
+        kind: 'definition-doc',
+        id: 'test',
+        subtype: 'spec',
         version,
       });
       expect(result.diagnostics).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            code: "semantic-coordinate-invalid-version",
-            severity: "error",
+            code: 'semantic-coordinate-invalid-version',
+            severity: 'error',
           }),
         ]),
       );
     }
   });
 
-  it("accepts multi-digit versions (v10, v99) that match the frozen pattern", () => {
-    for (const version of ["v10", "v99", "v100"]) {
+  it('accepts multi-digit versions (v10, v99) that match the frozen pattern', () => {
+    for (const version of ['v10', 'v99', 'v100']) {
       const result = buildSemanticCoordinateCandidate({
-        kind: "definition-doc",
-        id: "test",
-        subtype: "spec",
+        kind: 'definition-doc',
+        id: 'test',
+        subtype: 'spec',
         version,
       });
       expect(result.candidate?.version).toBe(version);
@@ -329,27 +327,30 @@ describe("semantic coordinate candidates", () => {
 
   it("falls back to subtype 'file' for unknown source-file extensions", () => {
     const result = buildSemanticCoordinateCandidate({
-      kind: "source-file",
-      id: "data/archive.bin",
+      kind: 'source-file',
+      id: 'data/archive.bin',
     });
-    expect(result.candidate?.subtype).toBe("file");
-    expect(result.candidate?.label).toBe("urn:source:file:data/archive.bin");
+    expect(result.candidate?.subtype).toBe('file');
+    expect(result.candidate?.label).toBe('urn:source:file:data/archive.bin');
   });
 
-  it("applies DEFAULT_SUBTYPE_BY_KIND when input subtype is omitted", () => {
-    const kinds: Array<{ kind: Parameters<typeof buildSemanticCoordinateCandidate>[0]["kind"]; expectedSubtype: string }> = [
-      { kind: "definition-doc", expectedSubtype: "spec" },
-      { kind: "ontology-pack", expectedSubtype: "ontology" },
-      { kind: "artifact", expectedSubtype: "artifact" },
-      { kind: "prd-markdown", expectedSubtype: "markdown" },
-      { kind: "ralph-prd-json", expectedSubtype: "ralph-json" },
-      { kind: "evidence", expectedSubtype: "evidence" },
+  it('applies DEFAULT_SUBTYPE_BY_KIND when input subtype is omitted', () => {
+    const kinds: Array<{
+      kind: Parameters<typeof buildSemanticCoordinateCandidate>[0]['kind'];
+      expectedSubtype: string;
+    }> = [
+      { kind: 'definition-doc', expectedSubtype: 'spec' },
+      { kind: 'ontology-pack', expectedSubtype: 'ontology' },
+      { kind: 'artifact', expectedSubtype: 'artifact' },
+      { kind: 'prd-markdown', expectedSubtype: 'markdown' },
+      { kind: 'ralph-prd-json', expectedSubtype: 'ralph-json' },
+      { kind: 'evidence', expectedSubtype: 'evidence' },
     ];
     for (const { kind, expectedSubtype } of kinds) {
       const result = buildSemanticCoordinateCandidate({
         kind,
-        id: "test",
-        version: "v1",
+        id: 'test',
+        version: 'v1',
       });
       expect(result.candidate?.subtype).toBe(expectedSubtype);
     }
@@ -357,200 +358,202 @@ describe("semantic coordinate candidates", () => {
 
   // ─── /Stability PRD US-001 ────────────────────────────────────────────────
 
-  it("reports collision candidates when one label maps to distinct physical records", () => {
+  it('reports collision candidates when one label maps to distinct physical records', () => {
     const first = candidate({
-      kind: "definition-doc",
-      id: "docs-control-plane",
-      version: "v1",
+      kind: 'definition-doc',
+      id: 'docs-control-plane',
+      version: 'v1',
       physicalRefs: [
         {
-          kind: "definition-path",
-          ref: "docs/specs/definition-catalog/docs-control-plane.spec.md",
-          role: "primary",
+          kind: 'definition-path',
+          ref: 'docs/specs/definition-catalog/docs-control-plane.spec.md',
+          role: 'primary',
         },
       ],
     });
     const second = candidate({
-      kind: "definition-doc",
-      id: "docs-control-plane",
-      version: "v1",
+      kind: 'definition-doc',
+      id: 'docs-control-plane',
+      version: 'v1',
       physicalRefs: [
         {
-          kind: "definition-path",
-          ref: "docs/specs/definition-catalog/duplicate/docs-control-plane.spec.md",
-          role: "primary",
+          kind: 'definition-path',
+          ref: 'docs/specs/definition-catalog/duplicate/docs-control-plane.spec.md',
+          role: 'primary',
         },
       ],
     });
 
     expect(detectSemanticCoordinateCandidateCollisions([first, second])).toEqual([
       expect.objectContaining({
-        code: "semantic-coordinate-collision-candidate",
-        severity: "warning",
-        label: "urn:def:spec:docs-control-plane:v1",
+        code: 'semantic-coordinate-collision-candidate',
+        severity: 'warning',
+        label: 'urn:def:spec:docs-control-plane:v1',
       }),
     ]);
   });
 
-  it("maps existing document ids and physical refs into inventory candidates", () => {
-    const docs = [
-      definitionDoc(),
-      prdMarkdownDoc(),
-      ralphPrdJsonDoc(),
-      artifactEvidenceDoc(),
-    ];
+  it('maps existing document ids and physical refs into inventory candidates', () => {
+    const docs = [definitionDoc(), prdMarkdownDoc(), ralphPrdJsonDoc(), artifactEvidenceDoc()];
 
     const inventory = collectSemanticCoordinateCandidatesFromDocuments(docs);
     const labels = inventory.candidates.map((item) => item.label);
 
-    expect(labels).toEqual(expect.arrayContaining([
-      "urn:def:spec:docs-control-plane-def:v1",
-      "urn:def:spec:docs-control-plane-stable:v1",
-      "urn:def:family:docs/specs/definition-catalog/docs-control-plane:v1",
-      "urn:source:markdown:docs/specs/definition-catalog/docs-control-plane.spec.md",
-      "urn:source:typescript:packages/cli/src/commands/docs.ts",
-      "urn:pack:ontology:programming-artifact-ontology:v1",
-      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
-      "urn:artifact:activation-evidence:activation-evidence-proof:v1",
-      "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
-      "urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
-      "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-002",
-    ]));
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        'urn:def:spec:docs-control-plane-def:v1',
+        'urn:def:spec:docs-control-plane-stable:v1',
+        'urn:def:family:docs/specs/definition-catalog/docs-control-plane:v1',
+        'urn:source:markdown:docs/specs/definition-catalog/docs-control-plane.spec.md',
+        'urn:source:typescript:packages/cli/src/commands/docs.ts',
+        'urn:pack:ontology:programming-artifact-ontology:v1',
+        'urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1',
+        'urn:artifact:activation-evidence:activation-evidence-proof:v1',
+        'urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
+        'urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
+        'urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-002',
+      ]),
+    );
 
-    expect(candidateByLabel(
-      inventory.candidates,
-      "urn:def:spec:docs-control-plane-def:v1",
-    )?.metadata).toMatchObject({
-      idSource: "def.id",
-      documentStableId: "docs-control-plane-stable",
+    expect(
+      candidateByLabel(inventory.candidates, 'urn:def:spec:docs-control-plane-def:v1')?.metadata,
+    ).toMatchObject({
+      idSource: 'def.id',
+      documentStableId: 'docs-control-plane-stable',
     });
-    expect(candidateByLabel(
-      inventory.candidates,
-      "urn:source:typescript:packages/cli/src/commands/docs.ts",
-    )?.physicalRefs).toEqual([
+    expect(
+      candidateByLabel(
+        inventory.candidates,
+        'urn:source:typescript:packages/cli/src/commands/docs.ts',
+      )?.physicalRefs,
+    ).toEqual([
       expect.objectContaining({
-        kind: "source-path",
-        ref: "packages/cli/src/commands/docs.ts",
-        role: "primary",
+        kind: 'source-path',
+        ref: 'packages/cli/src/commands/docs.ts',
+        role: 'primary',
       }),
     ]);
-    expect(candidateByLabel(
-      inventory.candidates,
-      "urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1",
-    )?.physicalRefs).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        kind: "artifact-output-path",
-        ref: "artifacts/activation/programming-artifact-ontology.json",
-        role: "primary",
-      }),
-      expect.objectContaining({
-        kind: "artifact-ref",
-        ref: "artifacts/programming-artifacts.json#/artifacts/0",
-      }),
-    ]));
+    expect(
+      candidateByLabel(
+        inventory.candidates,
+        'urn:artifact:activation-evidence:activation-evidence-programming-artifact-ontology:v1',
+      )?.physicalRefs,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'artifact-output-path',
+          ref: 'artifacts/activation/programming-artifact-ontology.json',
+          role: 'primary',
+        }),
+        expect.objectContaining({
+          kind: 'artifact-ref',
+          ref: 'artifacts/programming-artifacts.json#/artifacts/0',
+        }),
+      ]),
+    );
     expect(inventory.diagnostics).toEqual([
       expect.objectContaining({
-        code: "semantic-coordinate-collision-candidate",
-        label: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-002",
+        code: 'semantic-coordinate-collision-candidate',
+        label: 'urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-002',
       }),
     ]);
   });
 
-  it("keeps duplicate labels as candidates and reports diagnostics", () => {
+  it('keeps duplicate labels as candidates and reports diagnostics', () => {
     const first = definitionDoc({
-      stableId: "checkout-spec",
-      familyId: "docs/specs/checkout/checkout",
-      path: "docs/specs/checkout/checkout.spec.md",
+      stableId: 'checkout-spec',
+      familyId: 'docs/specs/checkout/checkout',
+      path: 'docs/specs/checkout/checkout.spec.md',
       metadata: {
-        defId: "checkout",
-        sourcePath: "docs/specs/checkout/checkout.spec.md",
-        documentKind: "spec",
+        defId: 'checkout',
+        sourcePath: 'docs/specs/checkout/checkout.spec.md',
+        documentKind: 'spec',
       },
     });
     const second = definitionDoc({
-      stableId: "checkout-spec-copy",
-      familyId: "docs/specs/checkout-copy/checkout",
-      path: "docs/specs/checkout-copy/checkout.spec.md",
+      stableId: 'checkout-spec-copy',
+      familyId: 'docs/specs/checkout-copy/checkout',
+      path: 'docs/specs/checkout-copy/checkout.spec.md',
       metadata: {
-        defId: "checkout",
-        sourcePath: "docs/specs/checkout-copy/checkout.spec.md",
-        documentKind: "spec",
+        defId: 'checkout',
+        sourcePath: 'docs/specs/checkout-copy/checkout.spec.md',
+        documentKind: 'spec',
       },
     });
 
     const inventory = collectSemanticCoordinateCandidatesFromDocuments([first, second]);
-    const duplicateLabel = "urn:def:spec:checkout:v1";
+    const duplicateLabel = 'urn:def:spec:checkout:v1';
 
     expect(inventory.candidates.filter((item) => item.label === duplicateLabel)).toHaveLength(2);
     expect(inventory.diagnostics).toEqual([
       expect.objectContaining({
-        code: "semantic-coordinate-collision-candidate",
+        code: 'semantic-coordinate-collision-candidate',
         label: duplicateLabel,
       }),
     ]);
   });
 
-  it("excludes archive PRDs and transient session documents unless targeted or opted in", () => {
+  it('excludes archive PRDs and transient session documents unless targeted or opted in', () => {
     const archived = prdMarkdownDoc({
-      stableId: "tasks/archive/archived-prd",
-      familyId: "tasks/archive/archived-prd",
-      path: "tasks/archive/archived-prd.md",
+      stableId: 'tasks/archive/archived-prd',
+      familyId: 'tasks/archive/archived-prd',
+      path: 'tasks/archive/archived-prd.md',
       metadata: {
-        title: "Archived PRD",
-        sourcePath: "tasks/archive/archived-prd.md",
+        title: 'Archived PRD',
+        sourcePath: 'tasks/archive/archived-prd.md',
       },
     });
     const session = normalizeDocumentEnvelope({
-      adapterId: "ralph-session",
-      kind: "ralph-session",
-      stableId: "ralph-session:current",
-      familyId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-      path: ".ralph-tui/session-meta.json",
+      adapterId: 'ralph-session',
+      kind: 'ralph-session',
+      stableId: 'ralph-session:current',
+      familyId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+      path: '.ralph-tui/session-meta.json',
       metadata: {
-        sourcePath: ".ralph-tui/session-meta.json",
+        sourcePath: '.ralph-tui/session-meta.json',
         transient: true,
       },
       rawSource: {
-        path: ".ralph-tui/session-meta.json",
-        sourceSchema: "ralph-session",
+        path: '.ralph-tui/session-meta.json',
+        sourceSchema: 'ralph-session',
       },
     });
 
     const defaultInventory = collectSemanticCoordinateCandidatesFromDocuments([archived, session]);
     expect(defaultInventory.candidates).toEqual([]);
     expect(defaultInventory.skippedDocuments).toEqual([
-      expect.objectContaining({ path: "tasks/archive/archived-prd.md", reason: "archive" }),
-      expect.objectContaining({ path: ".ralph-tui/session-meta.json", reason: "transient" }),
+      expect.objectContaining({ path: 'tasks/archive/archived-prd.md', reason: 'archive' }),
+      expect.objectContaining({ path: '.ralph-tui/session-meta.json', reason: 'transient' }),
     ]);
 
-    expect(collectSemanticCoordinateCandidatesFromDocuments([archived], {
-      exactTarget: "tasks/archive/archived-prd.md",
-    }).candidates.map((item) => item.label)).toContain(
-      "urn:prd:markdown:tasks/archive/archived-prd:v1",
-    );
-    expect(collectSemanticCoordinateCandidatesFromDocuments([archived], {
-      includeArchive: true,
-    }).candidates.map((item) => item.label)).toContain(
-      "urn:prd:markdown:tasks/archive/archived-prd:v1",
-    );
-    expect(collectSemanticCoordinateCandidatesFromDocuments([session], {
-      includeTransient: true,
-    }).candidates.map((item) => item.label)).toContain(
-      "urn:source:json:.ralph-tui/session-meta.json",
-    );
+    expect(
+      collectSemanticCoordinateCandidatesFromDocuments([archived], {
+        exactTarget: 'tasks/archive/archived-prd.md',
+      }).candidates.map((item) => item.label),
+    ).toContain('urn:prd:markdown:tasks/archive/archived-prd:v1');
+    expect(
+      collectSemanticCoordinateCandidatesFromDocuments([archived], {
+        includeArchive: true,
+      }).candidates.map((item) => item.label),
+    ).toContain('urn:prd:markdown:tasks/archive/archived-prd:v1');
+    expect(
+      collectSemanticCoordinateCandidatesFromDocuments([session], {
+        includeTransient: true,
+      }).candidates.map((item) => item.label),
+    ).toContain('urn:source:json:.ralph-tui/session-meta.json');
   });
 
-  it("constructs a read-only deterministic label record with empty relationship refs", () => {
+  it('constructs a read-only deterministic label record with empty relationship refs', () => {
     const source = candidate({
-      kind: "definition-doc",
-      id: "docs-control-plane",
-      subtype: "spec",
-      version: "v1",
+      kind: 'definition-doc',
+      id: 'docs-control-plane',
+      subtype: 'spec',
+      version: 'v1',
       physicalRefs: [
         {
-          kind: "definition-path",
-          ref: "docs/specs/definition-catalog/docs-control-plane.spec.md",
-          role: "primary",
+          kind: 'definition-path',
+          ref: 'docs/specs/definition-catalog/docs-control-plane.spec.md',
+          role: 'primary',
         },
       ],
     });
@@ -558,8 +561,8 @@ describe("semantic coordinate candidates", () => {
     const record = buildDeterministicLabelRecord({ candidate: source });
 
     expect(record).toMatchObject({
-      label: "urn:def:spec:docs-control-plane:v1",
-      kind: "definition-doc",
+      label: 'urn:def:spec:docs-control-plane:v1',
+      kind: 'definition-doc',
       dependencyLabels: [],
       sourceRefs: [],
       evidenceRefs: [],
@@ -568,151 +571,146 @@ describe("semantic coordinate candidates", () => {
     });
     expect(record.physicalRefs).toEqual([
       expect.objectContaining({
-        kind: "definition-path",
-        ref: "docs/specs/definition-catalog/docs-control-plane.spec.md",
-        role: "primary",
+        kind: 'definition-path',
+        ref: 'docs/specs/definition-catalog/docs-control-plane.spec.md',
+        role: 'primary',
       }),
     ]);
   });
 
-  it("constructs a deterministic label record with populated dependency, source, and evidence refs", () => {
+  it('constructs a deterministic label record with populated dependency, source, and evidence refs', () => {
     const source = candidate({
-      kind: "prd-story",
-      parentId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-      id: "US-003",
+      kind: 'prd-story',
+      parentId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+      id: 'US-003',
       physicalRefs: [
         {
-          kind: "ralph-prd-json-path",
-          ref: "tasks\\prd-deterministic-label-registry-fsm-read-model.json#/userStories/2",
-          role: "primary",
+          kind: 'ralph-prd-json-path',
+          ref: 'tasks\\prd-deterministic-label-registry-fsm-read-model.json#/userStories/2',
+          role: 'primary',
         },
       ],
       metadata: {
-        documentStableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
+        documentStableId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
       },
     });
 
     const record = buildDeterministicLabelRecord({
       candidate: source,
       dependencyLabels: [
-        "urn:def:spec:docs-control-plane:v1",
-        " ",
-        "urn:def:spec:definition-catalog:v1",
-        "urn:def:spec:docs-control-plane:v1",
+        'urn:def:spec:docs-control-plane:v1',
+        ' ',
+        'urn:def:spec:definition-catalog:v1',
+        'urn:def:spec:docs-control-plane:v1',
       ],
       sourceRefs: [
-        "packages\\cli\\src\\lib\\docs-control-plane\\deterministic-labels.ts",
-        "packages/cli/src/lib/docs-control-plane/deterministic-labels.test.ts",
+        'packages\\cli\\src\\lib\\docs-control-plane\\deterministic-labels.ts',
+        'packages/cli/src/lib/docs-control-plane/deterministic-labels.test.ts',
       ],
       evidenceRefs: [
-        "urn:artifact:evidence:us-003-proof:v1",
-        "urn:artifact:evidence:us-003-proof:v1",
+        'urn:artifact:evidence:us-003-proof:v1',
+        'urn:artifact:evidence:us-003-proof:v1',
       ],
       metadata: {
-        projection: "record-shape",
+        projection: 'record-shape',
       },
     });
 
     expect(record).toMatchObject({
-      label: "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-003",
-      kind: "prd-story",
+      label: 'urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-003',
+      kind: 'prd-story',
       dependencyLabels: [
-        "urn:def:spec:definition-catalog:v1",
-        "urn:def:spec:docs-control-plane:v1",
+        'urn:def:spec:definition-catalog:v1',
+        'urn:def:spec:docs-control-plane:v1',
       ],
       sourceRefs: [
-        "packages/cli/src/lib/docs-control-plane/deterministic-labels.test.ts",
-        "packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
+        'packages/cli/src/lib/docs-control-plane/deterministic-labels.test.ts',
+        'packages/cli/src/lib/docs-control-plane/deterministic-labels.ts',
       ],
-      evidenceRefs: [
-        "urn:artifact:evidence:us-003-proof:v1",
-      ],
+      evidenceRefs: ['urn:artifact:evidence:us-003-proof:v1'],
       metadata: {
-        documentStableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-        projection: "record-shape",
+        documentStableId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+        projection: 'record-shape',
       },
       candidate: source,
     });
     expect(record.physicalRefs).toEqual([
       expect.objectContaining({
-        kind: "ralph-prd-json-path",
-        ref: "tasks/prd-deterministic-label-registry-fsm-read-model.json#/userStories/2",
-        role: "primary",
+        kind: 'ralph-prd-json-path',
+        ref: 'tasks/prd-deterministic-label-registry-fsm-read-model.json#/userStories/2',
+        role: 'primary',
       }),
     ]);
   });
 
-  it("projects definition markdown envelopes into records with dependency, source, and evidence refs", () => {
+  it('projects definition markdown envelopes into records with dependency, source, and evidence refs', () => {
     const target = definitionDoc({
-      stableId: "definition-catalog-spec",
-      familyId: "docs/specs/definition-catalog/definition-catalog",
-      path: "docs/specs/definition-catalog/definition-catalog.spec.md",
+      stableId: 'definition-catalog-spec',
+      familyId: 'docs/specs/definition-catalog/definition-catalog',
+      path: 'docs/specs/definition-catalog/definition-catalog.spec.md',
       metadata: {
-        defId: "definition-catalog-spec",
-        sourcePath: "docs/specs/definition-catalog/definition-catalog.spec.md",
-        documentKind: "spec",
+        defId: 'definition-catalog-spec',
+        sourcePath: 'docs/specs/definition-catalog/definition-catalog.spec.md',
+        documentKind: 'spec',
       },
     });
     const source = definitionDoc({
       links: [
         {
-          type: "depends_on",
-          sourceId: "docs-control-plane-def",
-          targetId: "definition-catalog-spec",
+          type: 'depends_on',
+          sourceId: 'docs-control-plane-def',
+          targetId: 'definition-catalog-spec',
         },
       ],
       evidence: [
         {
-          id: "docs-control-plane-proof",
-          kind: "validation-evidence",
+          id: 'docs-control-plane-proof',
+          kind: 'validation-evidence',
           rawSource: {
-            path: "artifacts/docs-control-plane-proof.json",
+            path: 'artifacts/docs-control-plane-proof.json',
           },
         },
       ],
     });
 
     const projection = projectDeterministicLabelRecordsFromDocuments([source, target]);
-    const record = recordByLabel(
-      projection.records,
-      "urn:def:spec:docs-control-plane-def:v1",
-    );
+    const record = recordByLabel(projection.records, 'urn:def:spec:docs-control-plane-def:v1');
 
     expect(record).toMatchObject({
-      dependencyLabels: ["urn:def:spec:definition-catalog-spec:v1"],
-      sourceRefs: ["urn:source:typescript:packages/cli/src/commands/docs.ts"],
-      evidenceRefs: ["urn:artifact:validation-evidence:docs-control-plane-proof:v1"],
+      dependencyLabels: ['urn:def:spec:definition-catalog-spec:v1'],
+      sourceRefs: ['urn:source:typescript:packages/cli/src/commands/docs.ts'],
+      evidenceRefs: ['urn:artifact:validation-evidence:docs-control-plane-proof:v1'],
       metadata: {
-        projection: "document-envelope",
-        documentScope: "active",
+        projection: 'document-envelope',
+        documentScope: 'active',
         activeScope: true,
         archiveScope: false,
       },
     });
-    expect(projection.records.map((item) => item.label)).toEqual(expect.arrayContaining([
-      "urn:source:typescript:packages/cli/src/commands/docs.ts",
-      "urn:artifact:validation-evidence:docs-control-plane-proof:v1",
-    ]));
+    expect(projection.records.map((item) => item.label)).toEqual(
+      expect.arrayContaining([
+        'urn:source:typescript:packages/cli/src/commands/docs.ts',
+        'urn:artifact:validation-evidence:docs-control-plane-proof:v1',
+      ]),
+    );
   });
 
-  it("projects PRD markdown and ralph PRD JSON envelopes into document and story records", () => {
+  it('projects PRD markdown and ralph PRD JSON envelopes into document and story records', () => {
     const prd = prdMarkdownDoc({
       metadata: {
-        contextSources: [
-          "packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
-        ],
+        contextSources: ['packages/cli/src/lib/docs-control-plane/deterministic-labels.ts'],
       },
       tasks: [
         {
-          id: "US-004",
-          title: "Project DocumentEnvelope Inputs Into Label Records",
-          evidenceIds: ["prd-projection-proof"],
+          id: 'US-004',
+          title: 'Project DocumentEnvelope Inputs Into Label Records',
+          evidenceIds: ['prd-projection-proof'],
           rawSource: {
-            path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
-            pointer: "### US-004",
+            path: 'tasks/prd-deterministic-label-registry-fsm-read-model.md',
+            pointer: '### US-004',
           },
           metadata: {
-            prerequisites: ["US-003"],
+            prerequisites: ['US-003'],
           },
         },
       ],
@@ -720,15 +718,15 @@ describe("semantic coordinate candidates", () => {
     const ralph = ralphPrdJsonDoc({
       tasks: [
         {
-          id: "US-004",
-          title: "Project DocumentEnvelope Inputs Into Label Records",
-          evidenceIds: ["ralph-projection-proof"],
+          id: 'US-004',
+          title: 'Project DocumentEnvelope Inputs Into Label Records',
+          evidenceIds: ['ralph-projection-proof'],
           rawSource: {
-            path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
-            pointer: "/userStories/3",
+            path: 'tasks/prd-deterministic-label-registry-fsm-read-model.json',
+            pointer: '/userStories/3',
           },
           metadata: {
-            dependsOn: ["US-003"],
+            dependsOn: ['US-003'],
             passes: false,
           },
         },
@@ -737,65 +735,68 @@ describe("semantic coordinate candidates", () => {
 
     const projection = projectDeterministicLabelRecordsFromDocuments([prd, ralph]);
     const labels = projection.records.map((item) => item.label);
-    const ralphStory = projection.records.find((item) =>
-      item.label === "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-004"
-      && item.physicalRefs.some((ref) => ref.kind === "ralph-prd-json-path")
+    const ralphStory = projection.records.find(
+      (item) =>
+        item.label ===
+          'urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-004' &&
+        item.physicalRefs.some((ref) => ref.kind === 'ralph-prd-json-path'),
     );
 
-    expect(labels).toEqual(expect.arrayContaining([
-      "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
-      "urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
-      "urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
-    ]));
-    expect(recordByLabel(
-      projection.records,
-      "urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1",
-    ).sourceRefs).toContain(
-      "urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-labels.ts",
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        'urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
+        'urn:prd:ralph-json:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
+        'urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-labels.ts',
+      ]),
+    );
+    expect(
+      recordByLabel(
+        projection.records,
+        'urn:prd:markdown:tasks/prd-deterministic-label-registry-fsm-read-model:v1',
+      ).sourceRefs,
+    ).toContain(
+      'urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-labels.ts',
     );
     expect(ralphStory).toMatchObject({
       dependencyLabels: [
-        "urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-003",
+        'urn:prd:story:tasks/prd-deterministic-label-registry-fsm-read-model:US-003',
       ],
-      evidenceRefs: [
-        "urn:artifact:evidence:ralph-projection-proof:v1",
-      ],
+      evidenceRefs: ['urn:artifact:evidence:ralph-projection-proof:v1'],
     });
   });
 
-
-  it("preserves active/archive scope and completed-record metadata on projected records", () => {
+  it('preserves active/archive scope and completed-record metadata on projected records', () => {
     const archived = prdMarkdownDoc({
-      stableId: "tasks/archive/prd-completed",
-      familyId: "tasks/archive/prd-completed",
-      path: "tasks/archive/prd-completed.md",
+      stableId: 'tasks/archive/prd-completed',
+      familyId: 'tasks/archive/prd-completed',
+      path: 'tasks/archive/prd-completed.md',
       metadata: {
-        title: "Completed PRD",
-        sourcePath: "tasks/archive/prd-completed.md",
-        lifecycle: "archived",
+        title: 'Completed PRD',
+        sourcePath: 'tasks/archive/prd-completed.md',
+        lifecycle: 'archived',
       },
     });
     const completedRecord: CompletedRecordState = {
-      source: "prd-markdown",
-      kind: "prd",
-      documentId: "tasks/archive/prd-completed",
-      path: "tasks/archive/prd-completed.md",
-      state: "completed-record",
-      title: "Completed PRD",
-      lifecycle: "archived",
+      source: 'prd-markdown',
+      kind: 'prd',
+      documentId: 'tasks/archive/prd-completed',
+      path: 'tasks/archive/prd-completed.md',
+      state: 'completed-record',
+      title: 'Completed PRD',
+      lifecycle: 'archived',
       storyCount: 2,
       passedStoryCount: 2,
-      pairedDocumentId: "tasks/archive/prd-completed",
-      pairedPath: "tasks/archive/prd-completed.json",
-      reason: "paired PRD JSON has all stories passing",
+      pairedDocumentId: 'tasks/archive/prd-completed',
+      pairedPath: 'tasks/archive/prd-completed.json',
+      reason: 'paired PRD JSON has all stories passing',
     };
 
     const skipped = projectDeterministicLabelRecordsFromDocuments([archived]);
     expect(skipped.records).toEqual([]);
     expect(skipped.skippedDocuments).toEqual([
       expect.objectContaining({
-        path: "tasks/archive/prd-completed.md",
-        reason: "archive",
+        path: 'tasks/archive/prd-completed.md',
+        reason: 'archive',
       }),
     ]);
 
@@ -805,31 +806,27 @@ describe("semantic coordinate candidates", () => {
     });
     const record = recordByLabel(
       included.records,
-      "urn:prd:markdown:tasks/archive/prd-completed:v1",
+      'urn:prd:markdown:tasks/archive/prd-completed:v1',
     );
 
     expect(record.metadata).toMatchObject({
-      documentScope: "archive",
+      documentScope: 'archive',
       activeScope: false,
       archiveScope: true,
       completedRecord: {
-        state: "completed-record",
-        lifecycle: "archived",
+        state: 'completed-record',
+        lifecycle: 'archived',
         storyCount: 2,
         passedStoryCount: 2,
-        reason: "paired PRD JSON has all stories passing",
+        reason: 'paired PRD JSON has all stories passing',
       },
     });
   });
 });
 
-describe("deterministic label inventory", () => {
-  it("returns summary counts for prebuilt document envelopes", async () => {
-    const documents = [
-      ralphPrdJsonDoc(),
-      definitionDoc(),
-      prdMarkdownDoc(),
-    ];
+describe('deterministic label inventory', () => {
+  it('returns summary counts for prebuilt document envelopes', async () => {
+    const documents = [ralphPrdJsonDoc(), definitionDoc(), prdMarkdownDoc()];
 
     const inventory = await buildDeterministicLabelInventory({
       rootDir: process.cwd(),
@@ -845,13 +842,13 @@ describe("deterministic label inventory", () => {
       skippedDocuments: 0,
       completedRecords: 0,
       byKind: {
-        "definition-doc": 3,
-        "source-file": 4,
-        "ontology-pack": 0,
+        'definition-doc': 3,
+        'source-file': 4,
+        'ontology-pack': 0,
         artifact: 0,
-        "prd-markdown": 1,
-        "ralph-prd-json": 1,
-        "prd-story": 2,
+        'prd-markdown': 1,
+        'ralph-prd-json': 1,
+        'prd-story': 2,
         evidence: 0,
       },
       byDiagnosticSeverity: {
@@ -859,12 +856,12 @@ describe("deterministic label inventory", () => {
         warning: 1,
       },
       byDiagnosticCode: {
-        "semantic-coordinate-collision-candidate": 1,
+        'semantic-coordinate-collision-candidate': 1,
       },
     });
   });
 
-  it("keeps deterministic record ordering independent of envelope input order", async () => {
+  it('keeps deterministic record ordering independent of envelope input order', async () => {
     const definition = definitionDoc();
     const prd = prdMarkdownDoc();
     const ralph = ralphPrdJsonDoc();
@@ -885,31 +882,31 @@ describe("deterministic label inventory", () => {
     );
   });
 
-  it("builds document envelopes through the existing adapters when documents are omitted", async () => {
-    const rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-label-inventory-"));
-    await mkdir(join(rootDir, "docs"), { recursive: true });
+  it('builds document envelopes through the existing adapters when documents are omitted', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'qa-sdk-label-inventory-'));
+    await mkdir(join(rootDir, 'docs'), { recursive: true });
     await writeFile(
-      join(rootDir, "docs", "adapter-inventory.spec.md"),
+      join(rootDir, 'docs', 'adapter-inventory.spec.md'),
       [
-        "---",
-        "def:",
-        "  id: adapter-inventory",
-        "  level: leaf",
-        "  scope: interface",
-        "  aspect: cli_contract",
-        "  depth: specification",
-        "  lifecycle: approved",
-        "sources:",
-        "  - packages/cli/src/lib/docs-control-plane/deterministic-label-inventory.ts",
-        "---",
-        "",
-        "# Adapter Inventory",
-        "",
-        "## 목적 ^purpose",
-        "",
-        "Adapter-built inventory fixture.",
-        "",
-      ].join("\n"),
+        '---',
+        'def:',
+        '  id: adapter-inventory',
+        '  level: leaf',
+        '  scope: interface',
+        '  aspect: cli_contract',
+        '  depth: specification',
+        '  lifecycle: approved',
+        'sources:',
+        '  - packages/cli/src/lib/docs-control-plane/deterministic-label-inventory.ts',
+        '---',
+        '',
+        '# Adapter Inventory',
+        '',
+        '## 목적 ^purpose',
+        '',
+        'Adapter-built inventory fixture.',
+        '',
+      ].join('\n'),
     );
 
     const inventory = await buildDeterministicLabelInventory({
@@ -919,20 +916,19 @@ describe("deterministic label inventory", () => {
     });
 
     expect(inventory.documents.map((document) => document.path)).toEqual([
-      "docs/adapter-inventory.spec.md",
+      'docs/adapter-inventory.spec.md',
     ]);
     expect(inventory.summary.documents).toBe(1);
-    expect(inventory.records.map((record) => record.label)).toEqual(expect.arrayContaining([
-      "urn:def:spec:adapter-inventory:v1",
-      "urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-label-inventory.ts",
-    ]));
+    expect(inventory.records.map((record) => record.label)).toEqual(
+      expect.arrayContaining([
+        'urn:def:spec:adapter-inventory:v1',
+        'urn:source:typescript:packages/cli/src/lib/docs-control-plane/deterministic-label-inventory.ts',
+      ]),
+    );
   });
 });
 
-
-function candidate(
-  input: SemanticCoordinateCandidateInput,
-): SemanticCoordinateCandidate {
+function candidate(input: SemanticCoordinateCandidateInput): SemanticCoordinateCandidate {
   const result = buildSemanticCoordinateCandidate(input);
   expect(result.candidate).toBeDefined();
   return result.candidate!;
@@ -956,11 +952,7 @@ function recordByLabel(
 
 function recordOrder(records: readonly DeterministicLabelRecord[]): readonly string[] {
   return records.map((record) =>
-    [
-      record.label,
-      record.kind,
-      record.physicalRefs[0]?.ref ?? "",
-    ].join("\u001f")
+    [record.label, record.kind, record.physicalRefs[0]?.ref ?? ''].join('\u001f'),
   );
 }
 
@@ -968,33 +960,31 @@ function definitionDoc(
   overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
 ): DocumentEnvelope {
   return normalizeDocumentEnvelope({
-    adapterId: "definition-markdown",
-    kind: "spec",
-    stableId: "docs-control-plane-stable",
-    familyId: "docs/specs/definition-catalog/docs-control-plane",
-    path: "docs/specs/definition-catalog/docs-control-plane.spec.md",
+    adapterId: 'definition-markdown',
+    kind: 'spec',
+    stableId: 'docs-control-plane-stable',
+    familyId: 'docs/specs/definition-catalog/docs-control-plane',
+    path: 'docs/specs/definition-catalog/docs-control-plane.spec.md',
     metadata: {
-      defId: "docs-control-plane-def",
-      sourcePath: "docs/specs/definition-catalog/docs-control-plane.spec.md",
-      documentKind: "spec",
+      defId: 'docs-control-plane-def',
+      sourcePath: 'docs/specs/definition-catalog/docs-control-plane.spec.md',
+      documentKind: 'spec',
       ...overrides.metadata,
     },
     sources: [
       {
-        id: "docs-command",
-        path: "packages/cli/src/commands/docs.ts",
+        id: 'docs-command',
+        path: 'packages/cli/src/commands/docs.ts',
         metadata: {
-          sourceKind: "doc_frontmatter",
+          sourceKind: 'doc_frontmatter',
         },
       },
       ...(overrides.sources ?? []),
     ],
-    evidence: [
-      ...(overrides.evidence ?? []),
-    ],
+    evidence: [...(overrides.evidence ?? [])],
     rawSource: {
-      path: "docs/specs/definition-catalog/docs-control-plane.spec.md",
-      sourceSchema: "definition-frontmatter",
+      path: 'docs/specs/definition-catalog/docs-control-plane.spec.md',
+      sourceSchema: 'definition-frontmatter',
       ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
@@ -1005,30 +995,30 @@ function prdMarkdownDoc(
   overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
 ): DocumentEnvelope {
   return normalizeDocumentEnvelope({
-    adapterId: "prd-markdown",
-    kind: "prd",
-    stableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-    familyId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-    path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
+    adapterId: 'prd-markdown',
+    kind: 'prd',
+    stableId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+    familyId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+    path: 'tasks/prd-deterministic-label-registry-fsm-read-model.md',
     metadata: {
-      title: "Deterministic Label Registry FSM Read Model",
-      sourcePath: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
+      title: 'Deterministic Label Registry FSM Read Model',
+      sourcePath: 'tasks/prd-deterministic-label-registry-fsm-read-model.md',
       ...overrides.metadata,
     },
     tasks: [
       {
-        id: "US-002",
-        title: "Map Existing IDs To Label Candidates",
+        id: 'US-002',
+        title: 'Map Existing IDs To Label Candidates',
         rawSource: {
-          path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
-          pointer: "### US-002",
+          path: 'tasks/prd-deterministic-label-registry-fsm-read-model.md',
+          pointer: '### US-002',
         },
       },
       ...(overrides.tasks ?? []),
     ],
     rawSource: {
-      path: "tasks/prd-deterministic-label-registry-fsm-read-model.md",
-      sourceSchema: "prd-markdown",
+      path: 'tasks/prd-deterministic-label-registry-fsm-read-model.md',
+      sourceSchema: 'prd-markdown',
       ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
@@ -1039,30 +1029,30 @@ function ralphPrdJsonDoc(
   overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
 ): DocumentEnvelope {
   return normalizeDocumentEnvelope({
-    adapterId: "ralph-prd-json",
-    kind: "ralph-prd-json",
-    stableId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-    familyId: "tasks/prd-deterministic-label-registry-fsm-read-model",
-    path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
+    adapterId: 'ralph-prd-json',
+    kind: 'ralph-prd-json',
+    stableId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+    familyId: 'tasks/prd-deterministic-label-registry-fsm-read-model',
+    path: 'tasks/prd-deterministic-label-registry-fsm-read-model.json',
     metadata: {
-      name: "Deterministic Label Registry FSM Read Model",
-      sourcePath: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
+      name: 'Deterministic Label Registry FSM Read Model',
+      sourcePath: 'tasks/prd-deterministic-label-registry-fsm-read-model.json',
       ...overrides.metadata,
     },
     tasks: [
       {
-        id: "US-002",
-        title: "Map Existing IDs To Label Candidates",
+        id: 'US-002',
+        title: 'Map Existing IDs To Label Candidates',
         rawSource: {
-          path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
-          pointer: "/userStories/1",
+          path: 'tasks/prd-deterministic-label-registry-fsm-read-model.json',
+          pointer: '/userStories/1',
         },
       },
       ...(overrides.tasks ?? []),
     ],
     rawSource: {
-      path: "tasks/prd-deterministic-label-registry-fsm-read-model.json",
-      sourceSchema: "ralph-prd-json",
+      path: 'tasks/prd-deterministic-label-registry-fsm-read-model.json',
+      sourceSchema: 'ralph-prd-json',
       ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
@@ -1073,40 +1063,39 @@ function artifactEvidenceDoc(
   overrides: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]> = {},
 ): DocumentEnvelope {
   return normalizeDocumentEnvelope({
-    adapterId: "artifact-evidence",
-    kind: "activation-evidence",
-    stableId: "activation-evidence-programming-artifact-ontology",
-    familyId: "docs-control-plane-def",
-    path: "artifacts/activation/programming-artifact-ontology.json",
+    adapterId: 'artifact-evidence',
+    kind: 'activation-evidence',
+    stableId: 'activation-evidence-programming-artifact-ontology',
+    familyId: 'docs-control-plane-def',
+    path: 'artifacts/activation/programming-artifact-ontology.json',
     metadata: {
-      artifactId: "activation-evidence-programming-artifact-ontology",
-      artifactKind: "activation-evidence",
-      artifactRef: "artifacts/programming-artifacts.json#/artifacts/0",
-      outputPath: "artifacts/activation/programming-artifact-ontology.json",
-      packId: "programming-artifact-ontology",
-      sourcePath: "artifacts/programming-artifacts.json",
+      artifactId: 'activation-evidence-programming-artifact-ontology',
+      artifactKind: 'activation-evidence',
+      artifactRef: 'artifacts/programming-artifacts.json#/artifacts/0',
+      outputPath: 'artifacts/activation/programming-artifact-ontology.json',
+      packId: 'programming-artifact-ontology',
+      sourcePath: 'artifacts/programming-artifacts.json',
       ...overrides.metadata,
     },
     evidence: [
       {
-        id: "activation-evidence-proof",
-        kind: "activation-evidence",
+        id: 'activation-evidence-proof',
+        kind: 'activation-evidence',
         rawSource: {
-          path: "artifacts/programming-artifacts.json",
-          pointer: "/artifacts/0",
+          path: 'artifacts/programming-artifacts.json',
+          pointer: '/artifacts/0',
         },
       },
       ...(overrides.evidence ?? []),
     ],
     rawSource: {
-      path: "artifacts/programming-artifacts.json",
-      sourceSchema: "programming-artifact-registry",
+      path: 'artifacts/programming-artifacts.json',
+      sourceSchema: 'programming-artifact-registry',
       ...overrides.rawSource,
     },
     ...withoutEnvelopeNested(overrides),
   });
 }
-
 
 function withoutEnvelopeNested(
   input: Partial<Parameters<typeof normalizeDocumentEnvelope>[0]>,

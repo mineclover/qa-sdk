@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { SpecEdgeType } from "./graph.js";
+import type { SpecEdgeType } from './graph.js';
 
 // ── Path Observation ─────────────────────────────────────
 // MatchResult를 기반으로 파생되는 경로 관측 결과.
@@ -47,7 +47,7 @@ export interface TraversedEdge {
  * goal_reached  — 마지막 관측 노드가 terminal spec 노드(outgoing edge 없음)
  * partial       — 시나리오가 중간에 끝남
  */
-export type TerminalReason = "goal_reached" | "partial";
+export type TerminalReason = 'goal_reached' | 'partial';
 
 // ── Branch Path Observation (비선형 경로) ────────────────
 
@@ -56,7 +56,7 @@ export interface BranchPath {
   /** 분기 대상 step (엣지 target) */
   targetStepId: string;
   /** 엣지 타입 */
-  edgeType: import("./graph.js").SpecEdgeType;
+  edgeType: import('./graph.js').SpecEdgeType;
   /** 이 분기가 실제로 관측되었는가 */
   taken: boolean;
   /** 이 분기 경로의 관측 노드 (taken=true일 때만 비어있지 않음) */

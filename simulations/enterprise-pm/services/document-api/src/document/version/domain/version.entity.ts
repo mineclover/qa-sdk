@@ -1,9 +1,9 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { toAuthorId, toDocumentId, toVersionNumber } from "./version.ids.js";
-import { InvalidVersionContentRefException } from "./version.exceptions.js";
-import type { VersionProps, VersionSnapshot } from "./version.types.js";
+import { toAuthorId, toDocumentId, toVersionNumber } from './version.ids.js';
+import { InvalidVersionContentRefException } from './version.exceptions.js';
+import type { VersionProps, VersionSnapshot } from './version.types.js';
 
 /**
  * DocumentVersion Aggregate Root.

@@ -1,10 +1,10 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { asc, eq, isNull, sql } from "drizzle-orm";
-import type { DlqInsert, DlqPhase, DlqStore, StoredDlqItem } from "@qa-sdk/core";
-import { deadLetterQueue } from "../db/schema.js";
-import type { D1Db } from "./d1-db-type.js";
+import { asc, eq, isNull, sql } from 'drizzle-orm';
+import type { DlqInsert, DlqPhase, DlqStore, StoredDlqItem } from '@qa-sdk/core';
+import { deadLetterQueue } from '../db/schema.js';
+import type { D1Db } from './d1-db-type.js';
 
 /** DlqStore의 D1/SQLite 구현 */
 export class D1DlqStore implements DlqStore {

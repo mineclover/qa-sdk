@@ -1,24 +1,24 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import { NotificationEntity } from "../../domain/index.js";
-import { NotificationNotFoundException } from "../../domain/notification.exceptions.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type { NotificationStatus } from "../../domain/notification.types.js";
-import type { CreateNotificationCommand } from "../commands/create-notification.command.js";
-import type { MarkNotificationSentCommand } from "../commands/mark-notification-sent.command.js";
-import type { MarkNotificationReadCommand } from "../commands/mark-notification-read.command.js";
-import type { MarkNotificationFailedCommand } from "../commands/mark-notification-failed.command.js";
-import type { NotificationLoggerPort } from "../ports/notification-logger.port.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { NotificationEntity } from '../../domain/index.js';
+import { NotificationNotFoundException } from '../../domain/notification.exceptions.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { NotificationStatus } from '../../domain/notification.types.js';
+import type { CreateNotificationCommand } from '../commands/create-notification.command.js';
+import type { MarkNotificationSentCommand } from '../commands/mark-notification-sent.command.js';
+import type { MarkNotificationReadCommand } from '../commands/mark-notification-read.command.js';
+import type { MarkNotificationFailedCommand } from '../commands/mark-notification-failed.command.js';
+import type { NotificationLoggerPort } from '../ports/notification-logger.port.js';
 import type {
   NotificationOutboxPort,
   NotificationDeliveredEventPayload,
   NotificationFailedEventPayload,
   NotificationSentEventPayload,
-} from "../ports/notification-outbox.port.js";
-import type { NotificationRepositoryPort } from "../ports/notification-repository.port.js";
-import type { NotificationTransactionPort } from "../ports/notification-transaction.port.js";
+} from '../ports/notification-outbox.port.js';
+import type { NotificationRepositoryPort } from '../ports/notification-repository.port.js';
+import type { NotificationTransactionPort } from '../ports/notification-transaction.port.js';
 
 interface NotificationCreatedResult {
   readonly id: string;
@@ -44,11 +44,15 @@ export class NotificationUseCase {
   ) {}
 
   async create(command: CreateNotificationCommand): Promise<NotificationCreatedResult> {
-    const ctxBase = this.makeCtx(command, "NotificationUseCase.create", "CreateNotificationCommand");
-    this.logger.info({ ...ctxBase }, "notification.create.started");
+    const ctxBase = this.makeCtx(
+      command,
+      'NotificationUseCase.create',
+      'CreateNotificationCommand',
+    );
+    this.logger.info({ ...ctxBase }, 'notification.create.started');
 
     try {
-      const entity = await this.transaction.run("notification.create", async (scope) => {
+      const entity = await this.transaction.run('notification.create', async (scope) => {
         const e = NotificationEntity.create({
           id: command.id,
           recipientUserId: command.recipientUserId,
@@ -63,9 +67,9 @@ export class NotificationUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          outcome: "success",
+          outcome: 'success',
         },
-        "notification.create.success",
+        'notification.create.success',
       );
 
       return { id: entity.id, status: entity.status };
@@ -73,22 +77,26 @@ export class NotificationUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "notification.create.failure",
+        'notification.create.failure',
       );
       throw error;
     }
   }
 
   async markSent(command: MarkNotificationSentCommand): Promise<NotificationCreatedResult> {
-    const ctxBase = this.makeCtx(command, "NotificationUseCase.markSent", "MarkNotificationSentCommand");
-    this.logger.info({ ...ctxBase }, "notification.markSent.started");
+    const ctxBase = this.makeCtx(
+      command,
+      'NotificationUseCase.markSent',
+      'MarkNotificationSentCommand',
+    );
+    this.logger.info({ ...ctxBase }, 'notification.markSent.started');
 
     try {
-      const entity = await this.transaction.run("notification.markSent", async (scope) => {
+      const entity = await this.transaction.run('notification.markSent', async (scope) => {
         const cur = await this.repository.findById(command.id);
         if (!cur) throw new NotificationNotFoundException(command.id);
         const next = cur.markSent();
@@ -100,7 +108,7 @@ export class NotificationUseCase {
           type: next.toSnapshot().type,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.notification.sent";
+        const eventName = 'notification.notification.sent';
         await this.outbox.append(
           {
             aggregateId: next.id,
@@ -122,11 +130,11 @@ export class NotificationUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.notification.sent",
+          eventName: 'notification.notification.sent',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "notification.markSent.success",
+        'notification.markSent.success',
       );
 
       return { id: entity.id, status: entity.status };
@@ -134,22 +142,26 @@ export class NotificationUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "notification.markSent.failure",
+        'notification.markSent.failure',
       );
       throw error;
     }
   }
 
   async markRead(command: MarkNotificationReadCommand): Promise<NotificationCreatedResult> {
-    const ctxBase = this.makeCtx(command, "NotificationUseCase.markRead", "MarkNotificationReadCommand");
-    this.logger.info({ ...ctxBase }, "notification.markRead.started");
+    const ctxBase = this.makeCtx(
+      command,
+      'NotificationUseCase.markRead',
+      'MarkNotificationReadCommand',
+    );
+    this.logger.info({ ...ctxBase }, 'notification.markRead.started');
 
     try {
-      const entity = await this.transaction.run("notification.markRead", async (scope) => {
+      const entity = await this.transaction.run('notification.markRead', async (scope) => {
         const cur = await this.repository.findById(command.id);
         if (!cur) throw new NotificationNotFoundException(command.id);
         const next = cur.markRead();
@@ -161,7 +173,7 @@ export class NotificationUseCase {
           type: next.toSnapshot().type,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.notification.delivered";
+        const eventName = 'notification.notification.delivered';
         await this.outbox.append(
           {
             aggregateId: next.id,
@@ -183,11 +195,11 @@ export class NotificationUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.notification.delivered",
+          eventName: 'notification.notification.delivered',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "notification.markRead.success",
+        'notification.markRead.success',
       );
 
       return { id: entity.id, status: entity.status };
@@ -195,11 +207,11 @@ export class NotificationUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "notification.markRead.failure",
+        'notification.markRead.failure',
       );
       throw error;
     }
@@ -208,13 +220,13 @@ export class NotificationUseCase {
   async markFailed(command: MarkNotificationFailedCommand): Promise<NotificationCreatedResult> {
     const ctxBase = this.makeCtx(
       command,
-      "NotificationUseCase.markFailed",
-      "MarkNotificationFailedCommand",
+      'NotificationUseCase.markFailed',
+      'MarkNotificationFailedCommand',
     );
-    this.logger.info({ ...ctxBase }, "notification.markFailed.started");
+    this.logger.info({ ...ctxBase }, 'notification.markFailed.started');
 
     try {
-      const entity = await this.transaction.run("notification.markFailed", async (scope) => {
+      const entity = await this.transaction.run('notification.markFailed', async (scope) => {
         const cur = await this.repository.findById(command.id);
         if (!cur) throw new NotificationNotFoundException(command.id);
         const next = cur.markFailed();
@@ -226,7 +238,7 @@ export class NotificationUseCase {
           type: next.toSnapshot().type,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "notification.notification.failed";
+        const eventName = 'notification.notification.failed';
         await this.outbox.append(
           {
             aggregateId: next.id,
@@ -248,11 +260,11 @@ export class NotificationUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "notification.notification.failed",
+          eventName: 'notification.notification.failed',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "notification.markFailed.success",
+        'notification.markFailed.success',
       );
 
       return { id: entity.id, status: entity.status };
@@ -260,11 +272,11 @@ export class NotificationUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "notification.markFailed.failure",
+        'notification.markFailed.failure',
       );
       throw error;
     }
@@ -280,7 +292,7 @@ export class NotificationUseCase {
     return {
       traceId,
       correlationId,
-      domain: "notification",
+      domain: 'notification',
       useCase,
       aggregateId: command.id,
       commandName,

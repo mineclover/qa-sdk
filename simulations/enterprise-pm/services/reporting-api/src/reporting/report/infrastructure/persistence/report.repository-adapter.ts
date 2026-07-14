@@ -1,16 +1,16 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import { ReportAdminPort } from "../../application/ports/report-admin.port.js";
+import { ReportAdminPort } from '../../application/ports/report-admin.port.js';
 import type {
   CreateReportCommand,
   DeleteReportCommand,
   UpdateReportCommand,
-} from "../../application/commands/upsert-report.command.js";
-import type { ReportReadModel } from "../../domain/report.types.js";
-import { toReportId } from "../../domain/report.ids.js";
-import type { ReportingRepository } from "../../../shared/port.js";
-import type { Report } from "../../../shared/types.js";
+} from '../../application/commands/upsert-report.command.js';
+import type { ReportReadModel } from '../../domain/report.types.js';
+import { toReportId } from '../../domain/report.ids.js';
+import type { ReportingRepository } from '../../../shared/port.js';
+import type { Report } from '../../../shared/types.js';
 
 /**
  * Report admin 어댑터 — 기존 ReportingRepository 위에 얹는다.

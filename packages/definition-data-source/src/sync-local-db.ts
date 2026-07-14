@@ -1,12 +1,12 @@
 // @def.doc definition-data-source
 
-import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import { createHash } from 'node:crypto';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { sql } from 'drizzle-orm';
+import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core';
 import {
   ASPECT_PARENTS,
   DEFINITION_TAXONOMY,
@@ -16,7 +16,7 @@ import {
   parseDocument,
   scanAndBuild,
   type DefinitionEntry,
-} from "definition-catalog";
+} from 'definition-catalog';
 
 export interface SyncLocalDbOptions {
   rootDir: string;
@@ -31,55 +31,55 @@ export interface SyncLocalDbResult {
   dbPath: string;
 }
 
-const DEFAULT_DB_PATH = "data/definition-service.sqlite";
+const DEFAULT_DB_PATH = 'data/definition-service.sqlite';
 const SQLITE_INSERT_BATCH_SIZE = 50;
 
 // ─── Drizzle 스키마 정의 (SSOT) ──────────────────────────
 
-const documents = sqliteTable("documents", {
-  docId: text("doc_id").primaryKey(),
-  title: text("title"),
-  docType: text("doc_type"),
-  knowledgeKind: text("knowledge_kind"),
-  level: text("level"),
-  tier: text("tier"),
-  scope: text("scope"),
-  aspect: text("aspect"),
-  depth: text("depth"),
-  lifecycle: text("lifecycle").notNull(),
-  targetPrefix: text("target_prefix"),
-  layer: text("layer"),
-  ownerSystem: text("owner_system"),
-  projectionPlane: text("projection_plane"),
-  intentHierarchy: text("intent_hierarchy"),
-  lineageFacet: text("lineage_facet"),
-  lineageKind: text("lineage_kind"),
-  tagsJson: text("tags_json").notNull(),
-  linksJson: text("links_json").notNull(),
-  svc: text("svc"),
-  docVersion: text("doc_version"),
-  revision: integer("revision"),
-  address: text("address"),
-  version: integer("version").notNull(),
-  bodyHash: text("body_hash").notNull(),
-  body: text("body").notNull(),
-  purpose: text("purpose"),
-  intent: text("intent"),
-  context: text("context"),
-  caveat: text("caveat"),
-  gateJson: text("gate_json"),
-  syncedAt: text("synced_at").notNull(),
-  sourcePath: text("source_path"),
+const documents = sqliteTable('documents', {
+  docId: text('doc_id').primaryKey(),
+  title: text('title'),
+  docType: text('doc_type'),
+  knowledgeKind: text('knowledge_kind'),
+  level: text('level'),
+  tier: text('tier'),
+  scope: text('scope'),
+  aspect: text('aspect'),
+  depth: text('depth'),
+  lifecycle: text('lifecycle').notNull(),
+  targetPrefix: text('target_prefix'),
+  layer: text('layer'),
+  ownerSystem: text('owner_system'),
+  projectionPlane: text('projection_plane'),
+  intentHierarchy: text('intent_hierarchy'),
+  lineageFacet: text('lineage_facet'),
+  lineageKind: text('lineage_kind'),
+  tagsJson: text('tags_json').notNull(),
+  linksJson: text('links_json').notNull(),
+  svc: text('svc'),
+  docVersion: text('doc_version'),
+  revision: integer('revision'),
+  address: text('address'),
+  version: integer('version').notNull(),
+  bodyHash: text('body_hash').notNull(),
+  body: text('body').notNull(),
+  purpose: text('purpose'),
+  intent: text('intent'),
+  context: text('context'),
+  caveat: text('caveat'),
+  gateJson: text('gate_json'),
+  syncedAt: text('synced_at').notNull(),
+  sourcePath: text('source_path'),
 });
 
 const documentLinks = sqliteTable(
-  "document_links",
+  'document_links',
   {
-    sourceId: text("source_id").notNull(),
-    targetId: text("target_id").notNull(),
-    sourceAddress: text("source_address"),
-    targetAddress: text("target_address"),
-    linkType: text("link_type").notNull(),
+    sourceId: text('source_id').notNull(),
+    targetId: text('target_id').notNull(),
+    sourceAddress: text('source_address'),
+    targetAddress: text('target_address'),
+    linkType: text('link_type').notNull(),
   },
   (table) => ({
     pk: primaryKey({
@@ -89,24 +89,18 @@ const documentLinks = sqliteTable(
 );
 
 const codeReferences = sqliteTable(
-  "code_references",
+  'code_references',
   {
-    codePath: text("code_path").notNull(),
-    docId: text("doc_id").notNull(),
-    relationType: text("relation_type").notNull(),
-    sourceKind: text("source_kind").notNull(),
-    symbol: text("symbol").notNull(),
-    line: integer("line"),
+    codePath: text('code_path').notNull(),
+    docId: text('doc_id').notNull(),
+    relationType: text('relation_type').notNull(),
+    sourceKind: text('source_kind').notNull(),
+    symbol: text('symbol').notNull(),
+    line: integer('line'),
   },
   (table) => ({
     pk: primaryKey({
-      columns: [
-        table.codePath,
-        table.docId,
-        table.relationType,
-        table.sourceKind,
-        table.symbol,
-      ],
+      columns: [table.codePath, table.docId, table.relationType, table.sourceKind, table.symbol],
     }),
   }),
 );
@@ -114,22 +108,20 @@ const codeReferences = sqliteTable(
 // Phase C-0 (aspect-schema-hierarchy RFC): aspect 계층 metadata.
 // Source of truth: definition-catalog/src/vocabulary.ts §ASPECT_PARENTS (build-time).
 // 본 테이블은 파생 복제본 — CLI 로컬 DB 에서도 외부 도구 접근을 위해 유지.
-const aspectParents = sqliteTable("aspect_parents", {
-  childId: text("child_id").primaryKey(),
-  parentId: text("parent_id").notNull(),
-  description: text("description"),
-  registeredAt: text("registered_at")
+const aspectParents = sqliteTable('aspect_parents', {
+  childId: text('child_id').primaryKey(),
+  parentId: text('parent_id').notNull(),
+  description: text('description'),
+  registeredAt: text('registered_at')
     .notNull()
     .default(sql`(datetime('now'))`),
 });
 
 // ─── 동기화 로직 ──────────────────────────────────────────
 
-export async function syncDocsToLocalDb(
-  options: SyncLocalDbOptions,
-): Promise<SyncLocalDbResult> {
+export async function syncDocsToLocalDb(options: SyncLocalDbOptions): Promise<SyncLocalDbResult> {
   const rootDir = options.rootDir;
-  const docsDir = options.docsDir ?? "docs";
+  const docsDir = options.docsDir ?? 'docs';
   const dbPath = resolve(rootDir, options.dbPath ?? DEFAULT_DB_PATH);
   // CI/clean 환경에서 부모 디렉토리가 없으면 better-sqlite3 가 directory 미존재로 fail.
   mkdirSync(dirname(dbPath), { recursive: true });
@@ -152,35 +144,43 @@ export async function syncDocsToLocalDb(
 
     // 3. 일괄 재적재 (단일 트랜잭션)
     db.transaction((tx) => {
-      const addressById = new Map(entries.map((entry) => [entry.id, entry.serialized ?? null] as const));
-      
+      const addressById = new Map(
+        entries.map((entry) => [entry.id, entry.serialized ?? null] as const),
+      );
+
       for (const entry of entries) {
         const sourcePath = entry.ref ? join(rootDir, entry.ref) : null;
-        const body = sourcePath ? extractMarkdownBody(sourcePath) : "";
+        const body = sourcePath ? extractMarkdownBody(sourcePath) : '';
         const declared = sourcePath
-          ? parseDocument(readFileSync(sourcePath, "utf8"), sourcePath).def.links
+          ? parseDocument(readFileSync(sourcePath, 'utf8'), sourcePath).def.links
           : undefined;
-        const links = declared ? declared.map((link) => ({ target: link.target, type: link.type })) : [];
+        const links = declared
+          ? declared.map((link) => ({ target: link.target, type: link.type }))
+          : [];
         const row = toDocumentRow(rootDir, entry, body, links);
 
         tx.insert(documents).values(row).run();
-        
+
         // FTS 가상 테이블 인덱싱
-        tx.run(sql.raw(
-          `INSERT INTO documents_fts (doc_id, purpose, intent, context, caveat)
-           VALUES (${quote(row.docId)}, ${quote(row.purpose ?? "")}, ${quote(row.intent ?? "")}, ${quote(row.context ?? "")}, ${quote(row.caveat ?? "")})`,
-        ));
+        tx.run(
+          sql.raw(
+            `INSERT INTO documents_fts (doc_id, purpose, intent, context, caveat)
+           VALUES (${quote(row.docId)}, ${quote(row.purpose ?? '')}, ${quote(row.intent ?? '')}, ${quote(row.context ?? '')}, ${quote(row.caveat ?? '')})`,
+          ),
+        );
 
         if (links.length > 0) {
-          tx.insert(documentLinks).values(
-            links.map((link) => ({
-              sourceId: entry.id,
-              targetId: link.target,
-              sourceAddress: entry.serialized ?? null,
-              targetAddress: addressById.get(link.target) ?? null,
-              linkType: link.type,
-            })),
-          ).run();
+          tx.insert(documentLinks)
+            .values(
+              links.map((link) => ({
+                sourceId: entry.id,
+                targetId: link.target,
+                sourceAddress: entry.serialized ?? null,
+                targetAddress: addressById.get(link.target) ?? null,
+                linkType: link.type,
+              })),
+            )
+            .run();
           linkCount += links.length;
         }
       }
@@ -193,7 +193,7 @@ export async function syncDocsToLocalDb(
           docId: ref.docId,
           relationType: ref.relationType,
           sourceKind: ref.sourceKind,
-          symbol: ref.symbol ?? "", // NOT NULL 제약 준수
+          symbol: ref.symbol ?? '', // NOT NULL 제약 준수
           line: ref.line,
         }));
         for (const batch of chunks(rows, SQLITE_INSERT_BATCH_SIZE)) {
@@ -331,7 +331,7 @@ function buildAspectDescriptionMap(): Map<string, string> {
 }
 
 function extractMarkdownBody(filePath: string): string {
-  const content = readFileSync(filePath, "utf8");
+  const content = readFileSync(filePath, 'utf8');
   const parsed = extractFrontmatter(content);
   return parsed?.body ?? content;
 }
@@ -356,8 +356,8 @@ function toDocumentRow(
     depth: entry.depth,
     lifecycle: entry.lifecycle,
     targetPrefix:
-      entry.aspect === "prefix_schema" && entry.id.startsWith("prefix-")
-        ? entry.id.slice("prefix-".length)
+      entry.aspect === 'prefix_schema' && entry.id.startsWith('prefix-')
+        ? entry.id.slice('prefix-'.length)
         : null,
     layer: entry.layer ?? null,
     ownerSystem: entry.owner_system ?? null,
@@ -374,10 +374,10 @@ function toDocumentRow(
     version: entry.revision ?? 1,
     bodyHash: hashBody(body),
     body,
-    purpose: extractByMarker(body, "purpose").text || null,
-    intent: extractByMarker(body, "intent").text || null,
-    context: extractByMarker(body, "context").text || null,
-    caveat: extractByMarker(body, "caveat").text || null,
+    purpose: extractByMarker(body, 'purpose').text || null,
+    intent: extractByMarker(body, 'intent').text || null,
+    context: extractByMarker(body, 'context').text || null,
+    caveat: extractByMarker(body, 'caveat').text || null,
     gateJson: entry.gate ? JSON.stringify(entry.gate) : null,
     syncedAt: new Date().toISOString(),
     sourcePath,
@@ -385,7 +385,7 @@ function toDocumentRow(
 }
 
 function hashBody(body: string): string {
-  return createHash("sha256").update(body).digest("hex");
+  return createHash('sha256').update(body).digest('hex');
 }
 
 function quote(value: string): string {

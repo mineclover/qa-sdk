@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { DraftLock } from "../types/index.js";
+import type { DraftLock } from '../types/index.js';
 
 export interface DraftLockStore {
   acquire(lock: DraftLock): Promise<void>;

@@ -1,21 +1,18 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+import { Module, type Provider } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
 
-import { REPORTING_REPOSITORY } from "../reporting-db.module.js";
-import type { ReportingRepository } from "../shared/port.js";
+import { REPORTING_REPOSITORY } from '../reporting-db.module.js';
+import type { ReportingRepository } from '../shared/port.js';
 
-import { ReportAdminPort } from "./application/ports/report-admin.port.js";
-import { ReportReadModelQuery } from "./application/queries/report-read-model.query.js";
-import { RepositoryReportAdminAdapter } from "./infrastructure/persistence/report.repository-adapter.js";
-import { RepositoryReportReadModel } from "./infrastructure/read-model/report.read-model.js";
-import { createReportLogger } from "./infrastructure/logging/report.logger.js";
-import { ReportController } from "./presentation/http/report.controller.js";
+import { ReportAdminPort } from './application/ports/report-admin.port.js';
+import { ReportReadModelQuery } from './application/queries/report-read-model.query.js';
+import { RepositoryReportAdminAdapter } from './infrastructure/persistence/report.repository-adapter.js';
+import { RepositoryReportReadModel } from './infrastructure/read-model/report.read-model.js';
+import { createReportLogger } from './infrastructure/logging/report.logger.js';
+import { ReportController } from './presentation/http/report.controller.js';
 
 /**
  * Report 슬라이스 — read-model 위상.

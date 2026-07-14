@@ -10,22 +10,22 @@
  * Plan 14b 의 통합 smoke 에서 실 PG 통합 검증.
  */
 
-import { sql } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { sql } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import {
   KeyObservationQueryPort,
   type KeyObservationRow,
-} from "../../application/ports/key-observation.query.port.js";
+} from '../../application/ports/key-observation.query.port.js';
 
 export interface PgIngestStoreOpts {
-  readonly dialect: "pg";
+  readonly dialect: 'pg';
   readonly db: PostgresJsDatabase;
 }
 
 export interface SqliteIngestStoreOpts {
-  readonly dialect: "sqlite";
+  readonly dialect: 'sqlite';
   readonly db: BetterSQLite3Database;
 }
 
@@ -95,17 +95,15 @@ class InMemoryKeyObservationAdapter extends KeyObservationQueryPort {
     prefix_id: string;
     version: string;
   }): Promise<KeyObservationRow[]> {
-    return this.seed.filter(
-      (r) => r.prefix_id === args.prefix_id && r.version === args.version,
-    );
+    return this.seed.filter((r) => r.prefix_id === args.prefix_id && r.version === args.version);
   }
 }
 
 export function createKeyObservationQueryAdapter(
   opts: KeyObservationStoreOpts,
 ): KeyObservationQueryPort {
-  if (opts.dialect === "pg") return new PgKeyObservationAdapter(opts.db);
-  if (opts.dialect === "sqlite") return new SqliteKeyObservationAdapter(opts.db);
+  if (opts.dialect === 'pg') return new PgKeyObservationAdapter(opts.db);
+  if (opts.dialect === 'sqlite') return new SqliteKeyObservationAdapter(opts.db);
   throw new Error(
     `createKeyObservationQueryAdapter: unsupported dialect=${(opts as { dialect: string }).dialect}`,
   );

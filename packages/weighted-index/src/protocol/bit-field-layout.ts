@@ -26,7 +26,7 @@
  * // totalBits: 26, hex 기준: 32 → 6 bits 절약 (64× 용량 증가 가능)
  */
 
-import { charsForMax } from "./uuid-layout.js";
+import { charsForMax } from './uuid-layout.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Types
@@ -86,7 +86,7 @@ export function bitsForMax(maxValue: number): number {
  */
 export function createBitFieldLayout(specs: readonly BitFieldSpec[]): BitFieldLayout {
   if (specs.length === 0) {
-    throw new RangeError("BitFieldLayout: 최소 하나의 필드가 필요합니다");
+    throw new RangeError('BitFieldLayout: 최소 하나의 필드가 필요합니다');
   }
 
   let offset = 0;
@@ -97,12 +97,14 @@ export function createBitFieldLayout(specs: readonly BitFieldSpec[]): BitFieldLa
     if (bits <= 0) {
       throw new RangeError(`BitFieldLayout: "${s.name}" 필드는 1비트 이상 필요합니다`);
     }
-    fields.push(Object.freeze({
-      name: s.name,
-      bits,
-      maxValue: (1n << BigInt(bits)) - 1n,
-      offset,
-    }));
+    fields.push(
+      Object.freeze({
+        name: s.name,
+        bits,
+        maxValue: (1n << BigInt(bits)) - 1n,
+        offset,
+      }),
+    );
     offset += bits;
   }
 
@@ -129,7 +131,7 @@ export function bitPack(
   let result = 0n;
   for (const field of layout.fields) {
     const raw = values[field.name] ?? 0;
-    const val = typeof raw === "bigint" ? raw : BigInt(raw);
+    const val = typeof raw === 'bigint' ? raw : BigInt(raw);
     const shift = BigInt(layout.totalBits - field.offset - field.bits);
     result |= (val & field.maxValue) << shift;
   }
@@ -139,10 +141,7 @@ export function bitPack(
 /**
  * bigint를 필드 값들로 언패킹.
  */
-export function bitUnpack(
-  layout: BitFieldLayout,
-  packed: bigint,
-): Record<string, bigint> {
+export function bitUnpack(layout: BitFieldLayout, packed: bigint): Record<string, bigint> {
   const result: Record<string, bigint> = {};
   for (const field of layout.fields) {
     const shift = BigInt(layout.totalBits - field.offset - field.bits);
@@ -160,7 +159,7 @@ export function bigintToBytes(value: bigint, byteLength: number): Uint8Array {
   const bytes = new Uint8Array(byteLength);
   let v = value < 0n ? 0n : value;
   for (let i = byteLength - 1; i >= 0; i--) {
-    bytes[i] = Number(v & 0xFFn);
+    bytes[i] = Number(v & 0xffn);
     v >>= 8n;
   }
   return bytes;
@@ -202,16 +201,13 @@ export function bitPackToHex(
 ): string {
   const packed = bitPack(layout, values);
   const hexChars = Math.ceil(layout.totalBits / 4);
-  return packed.toString(16).padStart(hexChars, "0");
+  return packed.toString(16).padStart(hexChars, '0');
 }
 
 /** hex 문자열 → Unpack. dash/공백 자동 제거. */
-export function bitUnpackFromHex(
-  layout: BitFieldLayout,
-  hex: string,
-): Record<string, bigint> {
-  const clean = hex.replace(/[-\s]/g, "").toLowerCase();
-  return bitUnpack(layout, BigInt("0x" + (clean || "0")));
+export function bitUnpackFromHex(layout: BitFieldLayout, hex: string): Record<string, bigint> {
+  const clean = hex.replace(/[-\s]/g, '').toLowerCase();
+  return bitUnpack(layout, BigInt('0x' + (clean || '0')));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -253,12 +249,10 @@ export interface BitVsHexAnalysis {
  * // → savedBits: 6, capacityMultiplier: 64
  */
 export function analyzeBitVsHex(specs: readonly BitFieldSpec[]): BitVsHexAnalysis {
-  const fields: BitVsHexField[] = specs.map(s => {
+  const fields: BitVsHexField[] = specs.map((s) => {
     const bitWidth = s.bits ?? bitsForMax(s.maxValue);
     // bits 명시 시 hex 폭은 비트 폭 기반으로 계산 (maxValue: 0 + bits: 119 같은 경우)
-    const hexChars = s.bits != null
-      ? Math.ceil(s.bits / 4)
-      : charsForMax(s.maxValue);
+    const hexChars = s.bits != null ? Math.ceil(s.bits / 4) : charsForMax(s.maxValue);
     const hexWidth = hexChars * 4;
     return {
       name: s.name,

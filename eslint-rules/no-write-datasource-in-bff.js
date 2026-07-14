@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * spec 04-scaling-infra.md §4.3 — BFF 슬라이스가 write DataSource를 import하면 lint error.
@@ -15,40 +15,32 @@
  */
 module.exports = {
   meta: {
-    type: "problem",
+    type: 'problem',
     docs: {
-      description: "BFF/reporting slice may not import write DataSource",
+      description: 'BFF/reporting slice may not import write DataSource',
       recommended: true,
     },
     schema: [],
     messages: {
       noWriteDataSource:
-        "BFF/reporting slice may not import write DataSource (spec 04-scaling-infra.md §4.3). Use READ_DATA_SOURCE instead.",
+        'BFF/reporting slice may not import write DataSource (spec 04-scaling-infra.md §4.3). Use READ_DATA_SOURCE instead.',
     },
   },
   create(context) {
     const filename =
-      typeof context.getFilename === "function"
-        ? context.getFilename()
-        : context.filename || "";
+      typeof context.getFilename === 'function' ? context.getFilename() : context.filename || '';
     const inBff = /\/(presentation\/bff|reporting-api)\//.test(filename);
     if (!inBff) return {};
     // 테스트 파일은 architectural invariant 검증을 위해 두 토큰 모두 import 필요 — runtime 가드 scope 외.
     if (/\.(test|spec)\.tsx?$/.test(filename)) return {};
 
-    const FORBIDDEN_NAMES = new Set([
-      "WRITE_DATA_SOURCE",
-      "APPROVAL_REPOSITORY",
-    ]);
+    const FORBIDDEN_NAMES = new Set(['WRITE_DATA_SOURCE', 'APPROVAL_REPOSITORY']);
 
     return {
       ImportDeclaration(node) {
         for (const spec of node.specifiers) {
-          if (
-            spec.type === "ImportSpecifier" &&
-            FORBIDDEN_NAMES.has(spec.imported.name)
-          ) {
-            context.report({ node: spec, messageId: "noWriteDataSource" });
+          if (spec.type === 'ImportSpecifier' && FORBIDDEN_NAMES.has(spec.imported.name)) {
+            context.report({ node: spec, messageId: 'noWriteDataSource' });
           }
         }
       },

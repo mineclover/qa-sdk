@@ -1,17 +1,17 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   buildDeterministicLabelInventory,
   type DeterministicLabelInventory,
-} from "deterministic-label-registry";
+} from 'deterministic-label-registry';
 import {
   normalizeDocumentEnvelope,
   type DocumentEnvelope,
   type DocumentEnvelopeInput,
-} from "doc-envelope";
+} from 'doc-envelope';
 
 /**
  * Stability PRD US-003 — fixture-scale byte-identical re-run.
@@ -21,11 +21,11 @@ import {
  * snapshot(US-004/US-005)의 baseline 확인 역할.
  */
 
-describe("deterministic-label-registry — byte-identical fixture rerun", () => {
-  it("produces identical JSON output across two consecutive inventory calls", async () => {
+describe('deterministic-label-registry — byte-identical fixture rerun', () => {
+  it('produces identical JSON output across two consecutive inventory calls', async () => {
     const documents = buildFixtureEnvelopes();
     const options = {
-      rootDir: "/fixture-root",
+      rootDir: '/fixture-root',
       documents,
       detectCompletedRecords: false,
       computeReadiness: true,
@@ -37,10 +37,10 @@ describe("deterministic-label-registry — byte-identical fixture rerun", () => 
     expect(serialize(first)).toBe(serialize(second));
   });
 
-  it("keeps record ordering stable regardless of input envelope order", async () => {
+  it('keeps record ordering stable regardless of input envelope order', async () => {
     const documents = buildFixtureEnvelopes();
     const forwardOptions = {
-      rootDir: "/fixture-root",
+      rootDir: '/fixture-root',
       documents,
       detectCompletedRecords: false,
       computeReadiness: true,
@@ -58,10 +58,10 @@ describe("deterministic-label-registry — byte-identical fixture rerun", () => 
     expect(forwardLabels).toEqual(reverseLabels);
   });
 
-  it("emits no absolute path or timestamp fields in serialized output", async () => {
+  it('emits no absolute path or timestamp fields in serialized output', async () => {
     const documents = buildFixtureEnvelopes();
     const inventory = await buildDeterministicLabelInventory({
-      rootDir: "/fixture-root",
+      rootDir: '/fixture-root',
       documents,
       detectCompletedRecords: false,
       computeReadiness: true,
@@ -86,52 +86,52 @@ function serialize(inventory: DeterministicLabelInventory): string {
 function buildFixtureEnvelopes(): readonly DocumentEnvelope[] {
   return [
     envelope({
-      adapterId: "definition-markdown",
-      kind: "spec",
-      stableId: "example-spec",
-      familyId: "docs/specs/example/example",
-      path: "docs/specs/example/example.spec.md",
+      adapterId: 'definition-markdown',
+      kind: 'spec',
+      stableId: 'example-spec',
+      familyId: 'docs/specs/example/example',
+      path: 'docs/specs/example/example.spec.md',
       metadata: {
-        defId: "example-spec",
-        title: "Example Spec",
-        level: "leaf",
-        scope: "flow",
-        aspect: "process_flow",
-        depth: "specification",
-        lifecycle: "draft",
-        tags: ["structural"],
+        defId: 'example-spec',
+        title: 'Example Spec',
+        level: 'leaf',
+        scope: 'flow',
+        aspect: 'process_flow',
+        depth: 'specification',
+        lifecycle: 'draft',
+        tags: ['structural'],
       },
     }),
     envelope({
-      adapterId: "prd-markdown",
-      kind: "prd",
-      stableId: "tasks/example-prd",
-      familyId: "tasks/example-prd",
-      path: "tasks/example-prd.md",
+      adapterId: 'prd-markdown',
+      kind: 'prd',
+      stableId: 'tasks/example-prd',
+      familyId: 'tasks/example-prd',
+      path: 'tasks/example-prd.md',
       metadata: {
-        title: "Example PRD",
+        title: 'Example PRD',
       },
     }),
     envelope({
-      adapterId: "ralph-prd-json",
-      kind: "ralph-prd-json",
-      stableId: "tasks/example-prd",
-      familyId: "tasks/example-prd",
-      path: "tasks/example-prd.json",
+      adapterId: 'ralph-prd-json',
+      kind: 'ralph-prd-json',
+      stableId: 'tasks/example-prd',
+      familyId: 'tasks/example-prd',
+      path: 'tasks/example-prd.json',
       metadata: {
-        name: "Example PRD",
+        name: 'Example PRD',
         storyCount: 2,
         passedStoryCount: 1,
       },
       tasks: [
         {
-          id: "US-001",
-          title: "First story",
+          id: 'US-001',
+          title: 'First story',
           metadata: { passes: true },
         },
         {
-          id: "US-002",
-          title: "Second story",
+          id: 'US-002',
+          title: 'Second story',
           metadata: { passes: false },
         },
       ],
@@ -139,7 +139,7 @@ function buildFixtureEnvelopes(): readonly DocumentEnvelope[] {
   ];
 }
 
-function envelope(input: Omit<DocumentEnvelopeInput, "rawSource">): DocumentEnvelope {
+function envelope(input: Omit<DocumentEnvelopeInput, 'rawSource'>): DocumentEnvelope {
   return normalizeDocumentEnvelope({
     ...input,
     rawSource: {

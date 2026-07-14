@@ -8,11 +8,11 @@
  * AccessChecker 실 도입은 Plan 11b 이후. 본 파일은 wrapper 단독 동작 회귀만 수행.
  */
 
-import { describe, expect, it, vi } from "vitest";
-import { OtelAuditRecorder } from "permission-engine";
+import { describe, expect, it, vi } from 'vitest';
+import { OtelAuditRecorder } from 'permission-engine';
 
-describe("PM AccessChecker — OtelAuditRecorder 부착 검증", () => {
-  it("wrapper가 random ID 자동 생성 (active span 없을 때)", async () => {
+describe('PM AccessChecker — OtelAuditRecorder 부착 검증', () => {
+  it('wrapper가 random ID 자동 생성 (active span 없을 때)', async () => {
     const baseAudit = {
       startExecution: vi.fn(async (args) => args),
       finishExecution: vi.fn(async () => ({}) as never),
@@ -24,10 +24,10 @@ describe("PM AccessChecker — OtelAuditRecorder 부착 검증", () => {
     const wrapped = new OtelAuditRecorder(baseAudit);
 
     await wrapped.startExecution({
-      apiId: "test-api",
-      actorUserId: "u1",
-      targetKind: "resource",
-      targetId: "r1",
+      apiId: 'test-api',
+      actorUserId: 'u1',
+      targetKind: 'resource',
+      targetId: 'r1',
     } as never);
 
     expect(baseAudit.startExecution).toHaveBeenCalledTimes(1);

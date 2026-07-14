@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/platform-demo",
   "version": "0.2.0",
-  "description": "좌표 시각화와 데모 페이지를 제공하는 Vite 프론트엔드",
   "private": true,
+  "description": "좌표 시각화와 데모 페이지를 제공하는 Vite 프론트엔드",
   "type": "module",
   "scripts": {
     "dev": "vite",

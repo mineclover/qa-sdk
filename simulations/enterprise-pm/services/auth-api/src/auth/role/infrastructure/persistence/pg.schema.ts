@@ -1,16 +1,16 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text } from "drizzle-orm/pg-core";
+import { pgSchema, text } from 'drizzle-orm/pg-core';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
-export const roles = sim.table("auth_roles", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  scopeType: text("scope_type", { enum: ["global", "department", "project"] }).notNull(),
-  defaultMaskHex: text("default_mask_hex").notNull(),
-  createdAt: text("created_at").notNull(),
+export const roles = sim.table('auth_roles', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  scopeType: text('scope_type', { enum: ['global', 'department', 'project'] }).notNull(),
+  defaultMaskHex: text('default_mask_hex').notNull(),
+  createdAt: text('created_at').notNull(),
 });
 
 export const SIM_AUTH_ROLE_PG_DDL = `

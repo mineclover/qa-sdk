@@ -5,11 +5,11 @@
  * D1VerdictStore — VerdictStore의 D1/SQLite drizzle ORM 구현.
  * ON CONFLICT (scenario_id, trace_id) → 기존 verdict 업데이트.
  */
-import { and, desc, eq } from "drizzle-orm";
-import type { VerdictStore, VerdictInsert, StoredVerdict } from "@qa-sdk/core";
-import { verdictReports } from "../db/schema.js";
-import { parseJsonColumn, type VerdictReportJson } from "../db/json-types.js";
-import type { D1Db } from "./d1-db-type.js";
+import { and, desc, eq } from 'drizzle-orm';
+import type { VerdictStore, VerdictInsert, StoredVerdict } from '@qa-sdk/core';
+import { verdictReports } from '../db/schema.js';
+import { parseJsonColumn, type VerdictReportJson } from '../db/json-types.js';
+import type { D1Db } from './d1-db-type.js';
 
 export class D1VerdictStore implements VerdictStore {
   constructor(private readonly db: D1Db) {}
@@ -81,13 +81,13 @@ function toStoredVerdict(row: typeof verdictReports.$inferSelect): StoredVerdict
     report: parseJsonColumn<VerdictReportJson>(row.report, {
       scenario_id: row.scenarioId,
       trace_id: row.traceId,
-      overall_verdict: "unknown",
+      overall_verdict: 'unknown',
       step_matches: [],
       missing_steps: [],
       unexpected_nodes: [],
       latency_violations: [],
       ordering_violations: [],
-      summary: "",
+      summary: '',
       computed_at: row.computedAt,
     }),
     computedAt: new Date(row.computedAt),

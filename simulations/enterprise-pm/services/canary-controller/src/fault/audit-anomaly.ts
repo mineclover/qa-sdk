@@ -5,15 +5,11 @@
 // append-only 적재 — CON-005에 따라 controller Pass 1 auditSafety가 즉시 FAIL을 산출하고
 // 결정 객체가 verdict="rollback", triggerCategory="auditSafety"로 떨어진다.
 
-import { z } from "zod";
-import type { Fault } from "./types.js";
+import { z } from 'zod';
+import type { Fault } from './types.js';
 
 export interface AuditAnomalyStore {
-  appendAnomaly(row: {
-    severity: string;
-    reason: string;
-    recordedAt: number;
-  }): Promise<void>;
+  appendAnomaly(row: { severity: string; reason: string; recordedAt: number }): Promise<void>;
   clearInjected(): Promise<void>;
 }
 
@@ -28,7 +24,7 @@ export class AuditAnomalyFault implements Fault {
     const { reason } = ParamsSchema.parse(params);
     // CON-005: severity "critical" 고정.
     await this.store.appendAnomaly({
-      severity: "critical",
+      severity: 'critical',
       reason,
       recordedAt: this.now(),
     });

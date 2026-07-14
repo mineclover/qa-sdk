@@ -1,14 +1,14 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
-import { homedir } from "node:os";
-import { resolve } from "node:path";
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { resolve } from 'node:path';
 
-const PF_DIR = resolve(homedir(), ".qa-sdk");
-const PF_FILE = resolve(PF_DIR, "infra-pf.json");
+const PF_DIR = resolve(homedir(), '.qa-sdk');
+const PF_FILE = resolve(PF_DIR, 'infra-pf.json');
 
-export type PfEntryKind = "port-forward" | "dev-server";
+export type PfEntryKind = 'port-forward' | 'dev-server';
 
 export interface PfEntry {
   pid?: number;
@@ -23,7 +23,7 @@ export interface PfEntry {
 
 export async function loadPfMap(): Promise<Record<string, PfEntry>> {
   try {
-    return JSON.parse(await readFile(PF_FILE, "utf-8")) as Record<string, PfEntry>;
+    return JSON.parse(await readFile(PF_FILE, 'utf-8')) as Record<string, PfEntry>;
   } catch {
     return {};
   }
@@ -31,7 +31,7 @@ export async function loadPfMap(): Promise<Record<string, PfEntry>> {
 
 export async function savePfMap(map: Record<string, PfEntry>): Promise<void> {
   await mkdir(PF_DIR, { recursive: true });
-  const tmp = PF_FILE + ".tmp";
+  const tmp = PF_FILE + '.tmp';
   await writeFile(tmp, JSON.stringify(map, null, 2));
   await rename(tmp, PF_FILE);
 }
@@ -40,7 +40,7 @@ export async function registerPfEntry(key: string, entry: PfEntry): Promise<void
   const map = await loadPfMap();
   map[key] = {
     ...entry,
-    kind: entry.kind ?? "dev-server",
+    kind: entry.kind ?? 'dev-server',
     endpoint: entry.endpoint ?? `http://127.0.0.1:${entry.localPort}`,
     updatedAt: entry.updatedAt ?? new Date().toISOString(),
   };

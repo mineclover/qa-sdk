@@ -1,9 +1,9 @@
 // @def.doc definition-service
 // @def.boundary definition-service-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
-import type { DocRecord } from "../../core/types.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from '../../database.module.js';
+import type { DocRecord } from '../../core/types.js';
 import {
   buildFeedbackProposal,
   normalizeSemanticText,
@@ -14,12 +14,12 @@ import {
   type SemanticResolution,
   type SemanticDocumentSearchRecordInput,
   type SemanticTermWithAliases,
-} from "../../core/semantic-grounding/index.js";
+} from '../../core/semantic-grounding/index.js';
 import {
   SqlSemanticGroundingStore,
   createSemanticTermId,
   type SemanticGroundingStore,
-} from "../../stores/semantic-grounding-store.js";
+} from '../../stores/semantic-grounding-store.js';
 
 const aliasMarkerPattern = /(?:alias|aliases)\s*:\s*([^.;\n]+)/gi;
 const addressPattern = /^([^:]+):([^:]+):(\d+)$/;
@@ -34,7 +34,10 @@ export class SemanticGroundingService {
       : new SqlSemanticGroundingStore(dbOrStore);
   }
 
-  materializeDocuments(docs: readonly DocRecord[], options: { replaceSnapshot?: boolean } = {}): { terms: number; aliases: number } {
+  materializeDocuments(
+    docs: readonly DocRecord[],
+    options: { replaceSnapshot?: boolean } = {},
+  ): { terms: number; aliases: number } {
     let terms = 0;
     let aliases = 0;
     const now = new Date().toISOString();
@@ -46,7 +49,7 @@ export class SemanticGroundingService {
       const canonicalLabel = doc.title || doc.docId;
       const parsedAddress = parseCoordinate(doc.address);
       const termId = createSemanticTermId({
-        kind: "document",
+        kind: 'document',
         canonicalLabel,
         coordinate: doc.address,
         docId: doc.docId,
@@ -54,17 +57,21 @@ export class SemanticGroundingService {
 
       this.store.upsertTerm({
         termId,
-        kind: "document",
+        kind: 'document',
         canonicalLabel,
         normalizedLabel: normalizeSemanticText(canonicalLabel),
         ...(doc.address ? { coordinate: doc.address } : {}),
-        ...(doc.targetPrefix ? { prefixId: doc.targetPrefix } : parsedAddress?.prefixId ? { prefixId: parsedAddress.prefixId } : {}),
+        ...(doc.targetPrefix
+          ? { prefixId: doc.targetPrefix }
+          : parsedAddress?.prefixId
+            ? { prefixId: parsedAddress.prefixId }
+            : {}),
         ...(parsedAddress?.versionId ? { versionId: parsedAddress.versionId } : {}),
         ...(parsedAddress?.address !== undefined ? { address: parsedAddress.address } : {}),
         docId: doc.docId,
         ...(doc.sourcePath ? { sourcePath: doc.sourcePath } : {}),
         evidence: {
-          source: "definition-service.documents",
+          source: 'definition-service.documents',
           tags: doc.tags,
           svc: doc.svc,
         },
@@ -123,12 +130,16 @@ export class SemanticGroundingService {
     const hasLegacyHits = input.legacyCount > 0;
     const hasDisagreement = input.semanticOnlyCount > 0 || input.legacyOnlyCount > 0;
     const outcome = hasSemanticHits
-      ? hasLegacyHits ? "mixed" as const : "semantic-hit" as const
-      : hasLegacyHits ? "legacy-fallback" as const : "no-hit" as const;
+      ? hasLegacyHits
+        ? ('mixed' as const)
+        : ('semantic-hit' as const)
+      : hasLegacyHits
+        ? ('legacy-fallback' as const)
+        : ('no-hit' as const);
 
     this.store.recordGroundingEvent({
       query: input.query,
-      intent: "document-search",
+      intent: 'document-search',
       candidates: input.plan.candidates,
       plan: input.plan,
       outcome,
@@ -138,47 +149,67 @@ export class SemanticGroundingService {
     if (!normalizedQuery) return;
 
     if (input.semanticCandidateCount > 0 && (input.semanticHitCount === 0 || hasDisagreement)) {
-      this.store.upsertFeedbackProposal(buildFeedbackProposal({
-        kind: "wrong-scope-or-alias-missing",
-        term: input.query,
-        query: input.query,
-        evidence: {
-          reason: input.semanticHitCount === 0 ? "semantic-candidates-no-scoped-hits" : "semantic-legacy-disagreement",
-          legacyCount: input.legacyCount,
-          semanticCandidateCount: input.semanticCandidateCount,
-          semanticHitCount: input.semanticHitCount,
-          semanticOnlyCount: input.semanticOnlyCount,
-          legacyOnlyCount: input.legacyOnlyCount,
-          fallbackReason: input.plan.fallbackReason ?? null,
-        },
-      }));
+      this.store.upsertFeedbackProposal(
+        buildFeedbackProposal({
+          kind: 'wrong-scope-or-alias-missing',
+          term: input.query,
+          query: input.query,
+          evidence: {
+            reason:
+              input.semanticHitCount === 0
+                ? 'semantic-candidates-no-scoped-hits'
+                : 'semantic-legacy-disagreement',
+            legacyCount: input.legacyCount,
+            semanticCandidateCount: input.semanticCandidateCount,
+            semanticHitCount: input.semanticHitCount,
+            semanticOnlyCount: input.semanticOnlyCount,
+            legacyOnlyCount: input.legacyOnlyCount,
+            fallbackReason: input.plan.fallbackReason ?? null,
+          },
+        }),
+      );
       return;
     }
 
-    if ((input.plan.fallbackReason && input.plan.fallbackReason !== "empty-query") || (!hasSemanticHits && !hasLegacyHits)) {
-      this.store.upsertFeedbackProposal(buildFeedbackProposal({
-        kind: "alias-add",
-        term: input.query,
-        query: input.query,
-        evidence: {
-          fallbackReason: input.plan.fallbackReason ?? "no-hit",
-          legacyCount: input.legacyCount,
-          semanticCandidateCount: input.semanticCandidateCount,
-          semanticHitCount: input.semanticHitCount,
-          semanticOnlyCount: input.semanticOnlyCount,
-          legacyOnlyCount: input.legacyOnlyCount,
-        },
-      }));
+    if (
+      (input.plan.fallbackReason && input.plan.fallbackReason !== 'empty-query') ||
+      (!hasSemanticHits && !hasLegacyHits)
+    ) {
+      this.store.upsertFeedbackProposal(
+        buildFeedbackProposal({
+          kind: 'alias-add',
+          term: input.query,
+          query: input.query,
+          evidence: {
+            fallbackReason: input.plan.fallbackReason ?? 'no-hit',
+            legacyCount: input.legacyCount,
+            semanticCandidateCount: input.semanticCandidateCount,
+            semanticHitCount: input.semanticHitCount,
+            semanticOnlyCount: input.semanticOnlyCount,
+            legacyOnlyCount: input.legacyOnlyCount,
+          },
+        }),
+      );
     }
   }
 }
 
-function aliasesForDoc(doc: DocRecord): Array<{ value: string; source: "document" | "deterministic-label"; confidence: number; locale?: string }> {
-  const aliases: Array<{ value: string; source: "document" | "deterministic-label"; confidence: number; locale?: string }> = [];
+function aliasesForDoc(doc: DocRecord): Array<{
+  value: string;
+  source: 'document' | 'deterministic-label';
+  confidence: number;
+  locale?: string;
+}> {
+  const aliases: Array<{
+    value: string;
+    source: 'document' | 'deterministic-label';
+    confidence: number;
+    locale?: string;
+  }> = [];
   const seen = new Set<string>();
   const addAlias = (
     value: string,
-    source: "document" | "deterministic-label",
+    source: 'document' | 'deterministic-label',
     confidence: number,
   ) => {
     if (!value) return;
@@ -189,26 +220,26 @@ function aliasesForDoc(doc: DocRecord): Array<{ value: string; source: "document
       value,
       source,
       confidence,
-      ...(containsKorean(value) ? { locale: "ko" } : {}),
+      ...(containsKorean(value) ? { locale: 'ko' } : {}),
     });
   };
 
   for (const marker of [doc.purpose, doc.intent, doc.context, doc.caveat]) {
     if (!marker) continue;
     for (const match of marker.matchAll(aliasMarkerPattern)) {
-      for (const value of match[1].split(",")) {
+      for (const value of match[1].split(',')) {
         const trimmed = value.trim();
-        if (trimmed) addAlias(trimmed, "deterministic-label", 0.85);
+        if (trimmed) addAlias(trimmed, 'deterministic-label', 0.85);
       }
     }
   }
 
   for (const value of [doc.docId, doc.targetPrefix]) {
-    if (value) addAlias(value, "document", 0.85);
+    if (value) addAlias(value, 'document', 0.85);
   }
 
   for (const value of [doc.svc, ...doc.tags]) {
-    if (value) addAlias(value, "document", 0.75);
+    if (value) addAlias(value, 'document', 0.75);
   }
 
   return aliases;
@@ -218,7 +249,9 @@ function containsKorean(value: string): boolean {
   return /[가-힣]/.test(value);
 }
 
-function parseCoordinate(value?: string): { prefixId: string; versionId: string; address: number } | null {
+function parseCoordinate(
+  value?: string,
+): { prefixId: string; versionId: string; address: number } | null {
   if (!value) return null;
   const match = value.match(addressPattern);
   if (!match) return null;
@@ -237,8 +270,8 @@ function hashAlias(value: string): string {
 function isSemanticGroundingStore(value: unknown): value is SemanticGroundingStore {
   return Boolean(
     value &&
-    typeof value === "object" &&
-    "listTermsForResolution" in value &&
-    "upsertFeedbackProposal" in value,
+    typeof value === 'object' &&
+    'listTermsForResolution' in value &&
+    'upsertFeedbackProposal' in value,
   );
 }

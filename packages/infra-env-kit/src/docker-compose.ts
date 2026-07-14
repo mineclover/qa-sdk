@@ -1,7 +1,7 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import type { EnvDiscoveryClient } from "./types.js";
+import type { EnvDiscoveryClient } from './types.js';
 
 export async function generateDockerComposeOverride(
   discovery: EnvDiscoveryClient,
@@ -19,15 +19,17 @@ export async function generateDockerComposeOverride(
     `services:`,
   ];
 
-  for (const service of services.filter((candidate) => candidate.url && candidate.tier !== "system")) {
-    const port = service.url.match(/:(\d+)$/)?.[1] ?? "3200";
+  for (const service of services.filter(
+    (candidate) => candidate.url && candidate.tier !== 'system',
+  )) {
+    const port = service.url.match(/:(\d+)$/)?.[1] ?? '3200';
     const envVars: string[] = [];
 
     for (const [id, url] of Object.entries(urls).toSorted(([left], [right]) =>
       left.localeCompare(right),
     )) {
       if (id !== service.serviceId) {
-        const envKey = id.replace(/-/g, "_").toUpperCase() + "_URL";
+        const envKey = id.replace(/-/g, '_').toUpperCase() + '_URL';
         envVars.push(`      ${envKey}: "${url}"`);
       }
     }
@@ -35,11 +37,11 @@ export async function generateDockerComposeOverride(
     lines.push(
       `  ${service.serviceId}:`,
       `    environment:`,
-      `      NODE_ENV: ${env === "prod" ? "production" : "development"}`,
+      `      NODE_ENV: ${env === 'prod' ? 'production' : 'development'}`,
       `      PORT: "${port}"`,
       ...envVars,
     );
   }
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }

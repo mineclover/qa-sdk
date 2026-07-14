@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import type { Feedback, FeedbackTag } from "../types/feedback";
-import { FEEDBACK_TAGS } from "../types/feedback";
-import { newFeedbackId } from "../lib/newFeedbackId";
-import { isValidRef } from "../lib/refFormat";
-import { postFeedback } from "../data/feedbacksApi";
+import { useEffect, useState } from 'react';
+import type { Feedback, FeedbackTag } from '../types/feedback';
+import { FEEDBACK_TAGS } from '../types/feedback';
+import { newFeedbackId } from '../lib/newFeedbackId';
+import { isValidRef } from '../lib/refFormat';
+import { postFeedback } from '../data/feedbacksApi';
 
 export function FeedbackForm({
   initialRef,
@@ -12,12 +12,12 @@ export function FeedbackForm({
   initialRef?: string;
   onSubmitted?: (feedback: Feedback) => void;
 }) {
-  const [ref, setRef] = useState(initialRef ?? "");
+  const [ref, setRef] = useState(initialRef ?? '');
   useEffect(() => {
-    setRef(initialRef ?? "");
+    setRef(initialRef ?? '');
   }, [initialRef]);
-  const [tag, setTag] = useState<FeedbackTag>("improvement");
-  const [text, setText] = useState("");
+  const [tag, setTag] = useState<FeedbackTag>('improvement');
+  const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,11 +25,11 @@ export function FeedbackForm({
     e.preventDefault();
     setError(null);
     if (!isValidRef(ref)) {
-      setError("잘못된 ref 형식");
+      setError('잘못된 ref 형식');
       return;
     }
     if (text.trim().length === 0) {
-      setError("내용 필수");
+      setError('내용 필수');
       return;
     }
     setSubmitting(true);
@@ -38,7 +38,7 @@ export function FeedbackForm({
       id: newFeedbackId(),
       ref,
       tag,
-      status: "open",
+      status: 'open',
       text: text.trim(),
       createdAt: now,
       updatedAt: now,
@@ -47,7 +47,7 @@ export function FeedbackForm({
     try {
       const created = await postFeedback(feedback);
       onSubmitted?.(created);
-      setText("");
+      setText('');
     } catch (e) {
       setError(`전송 실패: ${(e as Error).message}`);
     } finally {
@@ -74,7 +74,9 @@ export function FeedbackForm({
           className="border px-2 py-1 rounded text-sm"
         >
           {FEEDBACK_TAGS.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </select>
       </div>
@@ -91,7 +93,7 @@ export function FeedbackForm({
         disabled={submitting}
         className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:bg-gray-400"
       >
-        {submitting ? "전송 중..." : "피드백 작성"}
+        {submitting ? '전송 중...' : '피드백 작성'}
       </button>
     </form>
   );

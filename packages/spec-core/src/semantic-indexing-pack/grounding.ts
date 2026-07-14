@@ -1,7 +1,7 @@
 // @def.boundary spec-engine-system
 // @def.doc coord-semantic-indexing-pack
 
-import { sortSemanticIndexingPackSurfaces } from "./sort.js";
+import { sortSemanticIndexingPackSurfaces } from './sort.js';
 import type {
   SemanticIndexingGroundingIntent,
   SemanticIndexingGroundingPlan,
@@ -10,12 +10,12 @@ import type {
   SemanticIndexingPackReport,
   SemanticIndexingPlane,
   SemanticIndexingSurfaceRef,
-} from "./types.js";
+} from './types.js';
 
 const INTENT_PLANES: Record<SemanticIndexingGroundingIntent, readonly SemanticIndexingPlane[]> = {
-  rag: ["semantic-source", "taxonomy", "coordinate", "materialization"],
-  "text-to-sql": ["semantic-source", "taxonomy", "coordinate", "materialization"],
-  "user-search": ["semantic-source", "taxonomy", "materialization", "feedback"],
+  rag: ['semantic-source', 'taxonomy', 'coordinate', 'materialization'],
+  'text-to-sql': ['semantic-source', 'taxonomy', 'coordinate', 'materialization'],
+  'user-search': ['semantic-source', 'taxonomy', 'materialization', 'feedback'],
 };
 
 function surfacesForPlane(
@@ -28,10 +28,10 @@ function surfacesForPlane(
 function materializedIndexDelegations(
   report: SemanticIndexingPackReport,
 ): readonly SemanticIndexingMaterializedIndexDelegation[] {
-  return surfacesForPlane(report, "materialization").map((surface) => ({
+  return surfacesForPlane(report, 'materialization').map((surface) => ({
     surfaceId: surface.id,
     ...(surface.path ? { ownerPath: surface.path } : {}),
-    action: "delegate-to-owner-package",
+    action: 'delegate-to-owner-package',
   }));
 }
 
@@ -40,7 +40,9 @@ function candidateSurfaces(
   planes: readonly SemanticIndexingPlane[],
   limit: number | undefined,
 ): readonly SemanticIndexingSurfaceRef[] {
-  const candidates = planes.flatMap((plane) => [...sortSemanticIndexingPackSurfaces(surfacesForPlane(report, plane))]);
+  const candidates = planes.flatMap((plane) => [
+    ...sortSemanticIndexingPackSurfaces(surfacesForPlane(report, plane)),
+  ]);
   return limit === undefined ? candidates : candidates.slice(0, limit);
 }
 
@@ -51,7 +53,7 @@ export function planSemanticIndexingGrounding(
   const delegations = materializedIndexDelegations(input.report);
   const packVerdict = input.report.compatibility.verdict;
 
-  if (packVerdict === "invalid") {
+  if (packVerdict === 'invalid') {
     return {
       intent: input.intent,
       query: input.query,
@@ -63,11 +65,11 @@ export function planSemanticIndexingGrounding(
       allowedPlanes,
       candidateSurfaces: [],
       materializedIndexDelegations: delegations,
-      fallbackReason: "invalid-pack",
+      fallbackReason: 'invalid-pack',
     };
   }
 
-  if (packVerdict === "version-transition-required") {
+  if (packVerdict === 'version-transition-required') {
     return {
       intent: input.intent,
       query: input.query,
@@ -79,7 +81,7 @@ export function planSemanticIndexingGrounding(
       allowedPlanes,
       candidateSurfaces: [],
       materializedIndexDelegations: delegations,
-      fallbackReason: "version-transition-required",
+      fallbackReason: 'version-transition-required',
     };
   }
 

@@ -13,7 +13,7 @@
  * "유저 클릭 → API 호출 → DB 저장" 흐름이 된다.
  */
 
-import { type Catalog, type PrefixDef, compareTimestamps } from "@qa-sdk/core";
+import { type Catalog, type PrefixDef, compareTimestamps } from '@qa-sdk/core';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -115,45 +115,58 @@ export interface Projection {
 
 /** 서비스 계층 projection — svc_name으로 이벤트 발생 위치 기준 배치 */
 export const SERVICE_PROJECTION: Projection = {
-  name: "service",
-  description: "이벤트 발생 서비스 기준 배치. 같은 prefix도 서비스에 따라 다른 layer.",
-  servicePrefix: "service",
-  groupByAxis: "svc_name",
+  name: 'service',
+  description: '이벤트 발생 서비스 기준 배치. 같은 prefix도 서비스에 따라 다른 layer.',
+  servicePrefix: 'service',
+  groupByAxis: 'svc_name',
   groupLayerMap: {
     // Frontend
-    "shopping-web": 0,
-    "content-service": 0,
-    "monitor": 0,
+    'shopping-web': 0,
+    'content-service': 0,
+    monitor: 0,
     // Backend
-    "shopping-backend": 1,
-    "auth": 1,
-    "payment": 1,
-    "gateway": 1,
+    'shopping-backend': 1,
+    auth: 1,
+    payment: 1,
+    gateway: 1,
     // Infrastructure
-    "registry": 2,
-    "ingest-server": 2,
-    "infra-controller": 2,
+    registry: 2,
+    'ingest-server': 2,
+    'infra-controller': 2,
   },
   prefixMap: {
     // svc 바인딩 없는 UI prefix
     tracking: 0,
     // svc 바인딩 없는 비즈니스
-    content: 1, relational: 1, event: 1,
-    execution_context: 1, event_classification: 1, metric_point: 1,
+    content: 1,
+    relational: 1,
+    event: 1,
+    execution_context: 1,
+    event_classification: 1,
+    metric_point: 1,
     // svc 바인딩 없는 인프라
-    service: 2, version_point: 2, gate_point: 2,
-    observation_event: 2, spec_event: 2, edge_activity: 2,
+    service: 2,
+    version_point: 2,
+    gate_point: 2,
+    observation_event: 2,
+    spec_event: 2,
+    edge_activity: 2,
     // System / DKG
-    dkg_event: 3, dkg_decision_event: 3, dkg_observation_event: 3,
-    cli_event: 3, skill_execution: 3, contract_check: 3,
-    build_event: 3, test_event: 3,
+    dkg_event: 3,
+    dkg_decision_event: 3,
+    dkg_observation_event: 3,
+    cli_event: 3,
+    skill_execution: 3,
+    contract_check: 3,
+    build_event: 3,
+    test_event: 3,
   },
-  layerNames: { 0: "Frontend", 1: "Backend", 2: "Infrastructure", 3: "System / DKG" },
+  layerNames: { 0: 'Frontend', 1: 'Backend', 2: 'Infrastructure', 3: 'System / DKG' },
   layerDescriptions: {
-    0: "유저 접점 — 프론트엔드 서비스에서 발생한 이벤트",
-    1: "비즈니스 로직 — 백엔드 서비스에서 발생한 이벤트",
-    2: "인프라 — 인프라 서비스에서 발생한 이벤트",
-    3: "시스템 — DKG 자기참조, CLI, 빌드/테스트",
+    0: '유저 접점 — 프론트엔드 서비스에서 발생한 이벤트',
+    1: '비즈니스 로직 — 백엔드 서비스에서 발생한 이벤트',
+    2: '인프라 — 인프라 서비스에서 발생한 이벤트',
+    3: '시스템 — DKG 자기참조, CLI, 빌드/테스트',
   },
   defaultLayer: 1,
 };
@@ -161,41 +174,60 @@ export const SERVICE_PROJECTION: Projection = {
 /** prod + asia 환경만 보는 projection */
 export const PROD_ASIA_PROJECTION: Projection = {
   ...SERVICE_PROJECTION,
-  name: "prod-asia",
-  description: "프로덕션 아시아 리전만 필터링",
-  axisFilters: { env: ["prod"], region: ["asia"] },
+  name: 'prod-asia',
+  description: '프로덕션 아시아 리전만 필터링',
+  axisFilters: { env: ['prod'], region: ['asia'] },
 };
 
 /** dev 환경 전체를 보는 projection */
 export const DEV_PROJECTION: Projection = {
   ...SERVICE_PROJECTION,
-  name: "dev",
-  description: "개발 환경만 필터링",
-  axisFilters: { env: ["dev"] },
+  name: 'dev',
+  description: '개발 환경만 필터링',
+  axisFilters: { env: ['dev'] },
 };
 
 /** checkout 흐름만 보는 projection */
 export const CHECKOUT_PROJECTION: Projection = {
   ...SERVICE_PROJECTION,
-  name: "checkout",
-  description: "결제 흐름 관련 prefix만 표시",
+  name: 'checkout',
+  description: '결제 흐름 관련 prefix만 표시',
   includePrefixes: [
-    "page_view", "endpoint", "flow_point", "permission",
-    "cart_event", "order_event", "auth_event", "service",
+    'page_view',
+    'endpoint',
+    'flow_point',
+    'permission',
+    'cart_event',
+    'order_event',
+    'auth_event',
+    'service',
   ],
 };
 
 /** 레거시 하드코딩 호환 projection */
 export const LEGACY_PROJECTION: Projection = {
-  name: "legacy",
+  name: 'legacy',
   groupLayerMap: {},
   prefixMap: {
-    page_view: 0, tracking: 0,
-    endpoint: 1, flow_point: 1, permission: 1, rbac: 1,
-    cart_event: 1, auth_event: 1, order_event: 1, event: 1,
-    content: 1, relational: 1, engine_event: 1,
-    service: 2, deploy_event: 2, health_event: 2,
-    pipeline_point: 2, data_policy: 2, schema_event: 2,
+    page_view: 0,
+    tracking: 0,
+    endpoint: 1,
+    flow_point: 1,
+    permission: 1,
+    rbac: 1,
+    cart_event: 1,
+    auth_event: 1,
+    order_event: 1,
+    event: 1,
+    content: 1,
+    relational: 1,
+    engine_event: 1,
+    service: 2,
+    deploy_event: 2,
+    health_event: 2,
+    pipeline_point: 2,
+    data_policy: 2,
+    schema_event: 2,
   },
   defaultLayer: 1,
 };
@@ -205,26 +237,27 @@ export const LEGACY_PROJECTION: Projection = {
 // ═══════════════════════════════════════════════════════════════
 
 const DEFAULT_LAYER_NAMES: Record<LayerLevel, string> = {
-  0: "UI / 사용자 인터페이스",
-  1: "비즈니스 로직",
-  2: "인프라 / 데이터",
-  3: "시스템",
+  0: 'UI / 사용자 인터페이스',
+  1: '비즈니스 로직',
+  2: '인프라 / 데이터',
+  3: '시스템',
 };
 
 const DEFAULT_LAYER_DESCRIPTIONS: Record<LayerLevel, string> = {
-  0: "유저 접점 — 화면 관측, 행동 추적. 이벤트의 시작점.",
-  1: "비즈니스 로직 — API 호출, 흐름 분기, 권한 검사, 도메인 이벤트.",
-  2: "인프라/데이터 — 파이프라인, 배포, 헬스, 서비스 컨텍스트.",
-  3: "시스템 — DKG 자기참조, CLI 관측, 빌드/테스트.",
+  0: '유저 접점 — 화면 관측, 행동 추적. 이벤트의 시작점.',
+  1: '비즈니스 로직 — API 호출, 흐름 분기, 권한 검사, 도메인 이벤트.',
+  2: '인프라/데이터 — 파이프라인, 배포, 헬스, 서비스 컨텍스트.',
+  3: '시스템 — DKG 자기참조, CLI 관측, 빌드/테스트.',
 };
 
 function inferCategoryFromStructure(prefixId: string, prefix: PrefixDef): string {
-  const hasTableRef = Object.values(prefix.dims).some(d => d.kind === "table_ref");
-  if (hasTableRef || prefixId.endsWith("_event")) return "event";
-  if (prefixId === "relational") return "relation";
-  if (["page_view", "endpoint", "flow_point", "pipeline_point", "data_policy"].includes(prefixId)) return "observation";
-  if (["permission", "rbac"].includes(prefixId)) return "policy";
-  return "entity";
+  const hasTableRef = Object.values(prefix.dims).some((d) => d.kind === 'table_ref');
+  if (hasTableRef || prefixId.endsWith('_event')) return 'event';
+  if (prefixId === 'relational') return 'relation';
+  if (['page_view', 'endpoint', 'flow_point', 'pipeline_point', 'data_policy'].includes(prefixId))
+    return 'observation';
+  if (['permission', 'rbac'].includes(prefixId)) return 'policy';
+  return 'entity';
 }
 
 /**
@@ -259,7 +292,10 @@ export function buildLayerMap(
 
   const placementMap = new Map<string, PrefixPlacement>();
   const layerBuckets = new Map<LayerLevel, PrefixPlacement[]>([
-    [0, []], [1, []], [2, []], [3, []],
+    [0, []],
+    [1, []],
+    [2, []],
+    [3, []],
   ]);
 
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
@@ -327,10 +363,10 @@ export function buildLayerMap(
     .map(([level]) => level)
     .toSorted();
 
-  const layers: LayerDefinition[] = usedLevels.map(level => ({
+  const layers: LayerDefinition[] = usedLevels.map((level) => ({
     level,
     name: layerNames[level] ?? `Layer ${level}`,
-    description: layerDescs[level] ?? "",
+    description: layerDescs[level] ?? '',
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- layerBuckets initialized with all LayerLevel keys
     prefixes: layerBuckets.get(level)!,
   }));
@@ -396,7 +432,11 @@ export interface TracePath {
  * 레코드 목록에서 trace별 prefix 활성화 경로를 추출한다.
  */
 export function extractTracePaths(
-  records: readonly { traceId: string; timestamp: string; addressContext: Record<string, string> }[],
+  records: readonly {
+    traceId: string;
+    timestamp: string;
+    addressContext: Record<string, string>;
+  }[],
   layerMap: LayerMapResult,
 ): TracePath[] {
   const traceGroups = new Map<string, TraceStep[]>();
@@ -420,7 +460,7 @@ export function extractTracePaths(
   const paths: TracePath[] = [];
   for (const [traceId, steps] of traceGroups) {
     const sorted = steps.toSorted((a, b) => compareTimestamps(a.timestamp, b.timestamp));
-    const layerPath = sorted.map(s => s.layer);
+    const layerPath = sorted.map((s) => s.layer);
     const t0 = new Date(sorted[0].timestamp).getTime();
     const t1 = new Date(sorted[sorted.length - 1].timestamp).getTime();
 
@@ -470,7 +510,7 @@ export function computeActivity(
     }
   }
 
-  const maxCount = Math.max(1, ...[...countMap.values()].map(v => v.count));
+  const maxCount = Math.max(1, ...[...countMap.values()].map((v) => v.count));
 
   const activities: PrefixActivity[] = [];
   for (const [prefixId, { count, lastSeen }] of countMap) {

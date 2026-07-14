@@ -37,6 +37,5 @@ export type ObfuscateTransform = (id: number, bitWidth: number) => number;
  * Empty compose returns the identity transform.
  */
 export function compose(...transforms: ObfuscateTransform[]): ObfuscateTransform {
-  return (id, bitWidth) =>
-    transforms.reduce((acc, fn) => fn(acc, bitWidth), id);
+  return (id, bitWidth) => transforms.reduce((acc, fn) => fn(acc, bitWidth), id);
 }

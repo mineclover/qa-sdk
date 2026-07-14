@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { StoredRecord, MetricRollupStore, MetricRollupInsert } from "@qa-sdk/core";
+import type { StoredRecord, MetricRollupStore, MetricRollupInsert } from '@qa-sdk/core';
 
 /**
  * metric RecordKind 레코드를 1분 윈도우로 집계하여 MetricRollupStore에 upsert한다.
@@ -20,7 +20,7 @@ export async function aggregateMetrics(
   // metric_name + address_context 기준으로 그룹핑
   const groups = new Map<string, StoredRecord[]>();
   for (const m of metrics) {
-    const key = `${m.metricName ?? ""}:${JSON.stringify(m.addressContext ?? {})}`;
+    const key = `${m.metricName ?? ''}:${JSON.stringify(m.addressContext ?? {})}`;
     const group = groups.get(key);
     if (group) group.push(m);
     else groups.set(key, [m]);
@@ -30,14 +30,14 @@ export async function aggregateMetrics(
 
   for (const [, group] of groups) {
     const first = group[0];
-    const metricType = first.metricType ?? "counter";
+    const metricType = first.metricType ?? 'counter';
     const windowStart = truncateToMinute(first.timestamp);
     const windowEnd = new Date(windowStart.getTime() + 60_000);
 
     const rollup: MetricRollupInsert = {
-      metricName: first.metricName ?? "",
+      metricName: first.metricName ?? '',
       metricType,
-      windowType: "1m",
+      windowType: '1m',
       windowStart,
       windowEnd,
       addressContext: first.addressContext,
@@ -52,23 +52,18 @@ export async function aggregateMetrics(
   return upsertCount;
 }
 
-function aggregateByType(
-  type: string,
-  records: StoredRecord[],
-): Partial<MetricRollupInsert> {
-  const values = records
-    .map((r) => r.metricValue)
-    .filter((v): v is number => v !== undefined);
+function aggregateByType(type: string, records: StoredRecord[]): Partial<MetricRollupInsert> {
+  const values = records.map((r) => r.metricValue).filter((v): v is number => v !== undefined);
 
   if (values.length === 0) return { aggCount: 0 };
 
   switch (type) {
-    case "counter":
+    case 'counter':
       return {
         aggSum: values.reduce((s, v) => s + v, 0),
         aggCount: values.length,
       };
-    case "gauge":
+    case 'gauge':
       return {
         aggLast: values[values.length - 1],
         aggMin: Math.min(...values),
@@ -76,13 +71,13 @@ function aggregateByType(
         aggAvg: values.reduce((s, v) => s + v, 0) / values.length,
         aggCount: values.length,
       };
-    case "histogram":
+    case 'histogram':
       // histogram: 단순 합산 (버킷 머지는 향후 구현)
       return {
         aggSum: values.reduce((s, v) => s + v, 0),
         aggCount: values.length,
       };
-    case "summary":
+    case 'summary':
       // summary: 집계 불가, 마지막 값 보존
       return {
         aggLast: values[values.length - 1],

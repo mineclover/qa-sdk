@@ -12,24 +12,15 @@
  *   tracker.runProcess("prefix-release", "service:v2");
  */
 
-import type {
-  StateMachineInstance,
-} from "./state-model.js";
-import {
-  availableTransitions,
-  transition,
-  createInstance,
-} from "./state-model.js";
+import type { StateMachineInstance } from './state-model.js';
+import { availableTransitions, transition, createInstance } from './state-model.js';
 import type {
   HarnessRegistry,
   CompositeInstance,
   TransitionResult,
   ProcessResult,
-} from "./harness-state-model.js";
-import {
-  checkGuards,
-  collectCascades,
-} from "./harness-state-model.js";
+} from './harness-state-model.js';
+import { checkGuards, collectCascades } from './harness-state-model.js';
 
 // ═══════════════════════════════════════════════════════════════
 // 로거 인터페이스 — SDK 의존 최소화
@@ -98,7 +89,7 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
     if (!composite) {
       composite = {
         entityId,
-        entityKind: "unknown",
+        entityKind: 'unknown',
         states: new Map(),
       };
       entities.set(entityId, composite);
@@ -130,8 +121,8 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
     trigger: string,
   ): void {
     logger.log({
-      event_key: "harness.transition",
-      event_version: "1",
+      event_key: 'harness.transition',
+      event_version: '1',
       payload: {
         machine_id: machineId,
         entity_id: entityId,
@@ -153,10 +144,10 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
     ok: boolean,
     violations: string[],
   ): void {
-    const verdict = ok ? "pass" : "fail";
+    const verdict = ok ? 'pass' : 'fail';
     logger.log({
-      event_key: "harness.guard_check",
-      event_version: "1",
+      event_key: 'harness.guard_check',
+      event_version: '1',
       payload: {
         target_machine: machineId,
         target_state: targetState,
@@ -178,10 +169,10 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
     success: boolean,
     error?: string,
   ): void {
-    const verdict = success ? "pass" : "fail";
+    const verdict = success ? 'pass' : 'fail';
     logger.log({
-      event_key: "harness.process_step",
-      event_version: "1",
+      event_key: 'harness.process_step',
+      event_version: '1',
       payload: {
         process_id: processId,
         step_index: stepIndex,
@@ -207,7 +198,7 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
       machineId: string,
       entityId: string,
       targetState: string,
-      trigger = "system_auto",
+      trigger = 'system_auto',
     ): TransitionResult {
       const composite = getOrCreateComposite(entityId);
       const machine = registry.machines.get(machineId);
@@ -220,7 +211,7 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
       const guardResult = checkGuards(registry, composite, machineId, targetState);
       emitGuardCheck(machineId, targetState, guardResult.ok, guardResult.violations);
       if (!guardResult.ok) {
-        throw new Error(`가드 위반: ${guardResult.violations.join(", ")}`);
+        throw new Error(`가드 위반: ${guardResult.violations.join(', ')}`);
       }
 
       // 전이 실행
@@ -232,7 +223,7 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
 
       // cascade 수집 + 실행
       const cascades = collectCascades(registry, machineId, targetState);
-      const cascadedRecords: typeof primaryRecord[] = [];
+      const cascadedRecords: (typeof primaryRecord)[] = [];
 
       for (const dep of cascades) {
         try {
@@ -244,21 +235,25 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
 
           // cascade 전이가 가능한지 확인
           const rule = cascadeMachine.transitions.find(
-            (t: { from: string; to: string }) => t.from === cascadeInst.current && t.to === dep.targetState,
+            (t: { from: string; to: string }) =>
+              t.from === cascadeInst.current && t.to === dep.targetState,
           );
           if (!rule) continue;
 
           const cascadeUpdated = transition(cascadeMachine, cascadeInst, dep.targetState);
-          (composite.states as Map<string, StateMachineInstance>).set(dep.targetMachine, cascadeUpdated);
+          (composite.states as Map<string, StateMachineInstance>).set(
+            dep.targetMachine,
+            cascadeUpdated,
+          );
 
           const cascadeRecord = cascadeUpdated.history[cascadeUpdated.history.length - 1];
           cascadedRecords.push(cascadeRecord);
-          emitTransition(dep.targetMachine, entityId, cascadeFrom, dep.targetState, "cascade");
+          emitTransition(dep.targetMachine, entityId, cascadeFrom, dep.targetState, 'cascade');
         } catch (err) {
           // cascade 실패는 원본 전이를 차단하지 않음 (fail-open)
           logger.log({
-            event_key: "harness.guard_check",
-            event_version: "1",
+            event_key: 'harness.guard_check',
+            event_version: '1',
             payload: {
               target_machine: dep.targetMachine,
               target_state: dep.targetState,
@@ -289,7 +284,7 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
         const step = process.steps[i];
 
         try {
-          const result = this.transition(step.machineId, entityId, step.targetState, "system_auto");
+          const result = this.transition(step.machineId, entityId, step.targetState, 'system_auto');
           stepResults.push(result);
           emitProcessStep(processId, i, step.machineId, step.targetState, true);
         } catch (e) {
@@ -324,7 +319,7 @@ export function createHarnessTracker(config: HarnessTrackerConfig): HarnessTrack
       const inst = composite.states.get(machineId);
       if (!inst) return [];
 
-      return availableTransitions(machine, inst.current).map(t => t.to);
+      return availableTransitions(machine, inst.current).map((t) => t.to);
     },
   };
 }

@@ -17,14 +17,14 @@
 //     - build-time drift gate (_typecheck import) 는 sim-handles 가 타입을 export 한
 //       이후에 별도 commit 으로 활성화 (defect log 참조).
 
-import { describe, it, expect, expectTypeOf } from "vitest";
-import { Hono } from "hono";
+import { describe, it, expect, expectTypeOf } from 'vitest';
+import { Hono } from 'hono';
 import {
   createStickyConsistencyHandler,
   type StickyConsistencyResponse,
-} from "./sticky-consistency.handler.js";
-import { StickyDecisionTracker } from "../routing/sticky-decision-tracker.js";
-import { internalIpMiddleware } from "sim-internal-network";
+} from './sticky-consistency.handler.js';
+import { StickyDecisionTracker } from '../routing/sticky-decision-tracker.js';
+import { internalIpMiddleware } from 'sim-internal-network';
 
 /**
  * spec §9 Stage 2 응답 shape (canonical SSOT — spec 문서에서 인용).
@@ -38,39 +38,31 @@ interface SpecGatewayStickyConsistencyResponse {
   window: { from: string; to: string };
 }
 
-describe("Stage 2 contract — gateway endpoint ↔ spec §9 shape", () => {
-  it("StickyConsistencyResponse ≡ spec §9 응답 shape (양방향 typecheck)", () => {
+describe('Stage 2 contract — gateway endpoint ↔ spec §9 shape', () => {
+  it('StickyConsistencyResponse ≡ spec §9 응답 shape (양방향 typecheck)', () => {
     expectTypeOf<StickyConsistencyResponse>().toMatchTypeOf<SpecGatewayStickyConsistencyResponse>();
     expectTypeOf<SpecGatewayStickyConsistencyResponse>().toMatchTypeOf<StickyConsistencyResponse>();
   });
 
-  it("실제 JSON 키 셋 + 타입 매치", async () => {
+  it('실제 JSON 키 셋 + 타입 매치', async () => {
     const t = new StickyDecisionTracker({ maxSize: 10 });
-    t.record("u-1", "v3", new Date("2026-05-02T00:00:00Z"));
+    t.record('u-1', 'v3', new Date('2026-05-02T00:00:00Z'));
     const app = new Hono();
-    app.use("/admin/*", internalIpMiddleware());
-    app.get(
-      "/admin/routing/sticky-consistency",
-      createStickyConsistencyHandler({ tracker: t }),
-    );
+    app.use('/admin/*', internalIpMiddleware());
+    app.get('/admin/routing/sticky-consistency', createStickyConsistencyHandler({ tracker: t }));
     const res = await app.fetch(
-      new Request("http://gw/admin/routing/sticky-consistency", {
-        headers: { "x-forwarded-for": "172.17.0.5" },
+      new Request('http://gw/admin/routing/sticky-consistency', {
+        headers: { 'x-forwarded-for': '172.17.0.5' },
       }),
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as SpecGatewayStickyConsistencyResponse;
-    expect(Object.keys(body).sort()).toEqual([
-      "inconsistentUsers",
-      "ratio",
-      "sample",
-      "window",
-    ]);
-    expect(typeof body.ratio).toBe("number");
-    expect(typeof body.sample).toBe("number");
-    expect(typeof body.inconsistentUsers).toBe("number");
-    expect(typeof body.window.from).toBe("string");
-    expect(typeof body.window.to).toBe("string");
+    expect(Object.keys(body).sort()).toEqual(['inconsistentUsers', 'ratio', 'sample', 'window']);
+    expect(typeof body.ratio).toBe('number');
+    expect(typeof body.sample).toBe('number');
+    expect(typeof body.inconsistentUsers).toBe('number');
+    expect(typeof body.window.from).toBe('string');
+    expect(typeof body.window.to).toBe('string');
     expect(() => new Date(body.window.from)).not.toThrow();
     expect(() => new Date(body.window.to)).not.toThrow();
   });

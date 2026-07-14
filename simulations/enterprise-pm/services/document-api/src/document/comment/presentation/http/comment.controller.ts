@@ -1,25 +1,16 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Inject,
-  Param,
-  Post,
-  UseFilters,
-} from "@nestjs/common";
-import { z } from "zod";
-import { randomUUID } from "node:crypto";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { CommentUseCase } from "../../application/use-cases/comment.use-case.js";
+import { Body, Controller, Delete, Get, Inject, Param, Post, UseFilters } from '@nestjs/common';
+import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { CommentUseCase } from '../../application/use-cases/comment.use-case.js';
 import {
   CommentReadModelQuery,
   type CommentDetailReadModel,
-} from "../../application/queries/comment-read-model.query.js";
-import { CommentNotFoundException } from "../../domain/index.js";
+} from '../../application/queries/comment-read-model.query.js';
+import { CommentNotFoundException } from '../../domain/index.js';
 
 const createSchema = z.object({
   documentId: z.string().min(1),
@@ -30,7 +21,7 @@ const createSchema = z.object({
 
 interface CommentCommandAccepted {
   readonly id: string;
-  readonly status: "CREATED" | "DELETED";
+  readonly status: 'CREATED' | 'DELETED';
 }
 
 @Controller()
@@ -41,7 +32,7 @@ export class CommentController {
     @Inject(CommentReadModelQuery) private readonly readModel: CommentReadModelQuery,
   ) {}
 
-  @Post("comments")
+  @Post('comments')
   async create(@Body() body: unknown): Promise<CommentCommandAccepted> {
     const parsed = createSchema.parse(body);
     const id = randomUUID();
@@ -55,29 +46,25 @@ export class CommentController {
     return { id: result.id, status: result.status };
   }
 
-  @Get("comments/:id")
-  async get(@Param("id") id: string): Promise<CommentDetailReadModel> {
+  @Get('comments/:id')
+  async get(@Param('id') id: string): Promise<CommentDetailReadModel> {
     const detail = await this.readModel.findDetail(id);
     if (!detail) throw new CommentNotFoundException(id);
     return detail;
   }
 
-  @Get("documents/:docId/comments")
-  async listForDocument(
-    @Param("docId") docId: string,
-  ): Promise<CommentDetailReadModel[]> {
+  @Get('documents/:docId/comments')
+  async listForDocument(@Param('docId') docId: string): Promise<CommentDetailReadModel[]> {
     return this.readModel.listByDocument(docId);
   }
 
-  @Get("comments/:parentId/replies")
-  async listReplies(
-    @Param("parentId") parentId: string,
-  ): Promise<CommentDetailReadModel[]> {
+  @Get('comments/:parentId/replies')
+  async listReplies(@Param('parentId') parentId: string): Promise<CommentDetailReadModel[]> {
     return this.readModel.listReplies(parentId);
   }
 
-  @Delete("comments/:id")
-  async remove(@Param("id") id: string): Promise<CommentCommandAccepted> {
+  @Delete('comments/:id')
+  async remove(@Param('id') id: string): Promise<CommentCommandAccepted> {
     const result = await this.useCase.delete({ id });
     return { id: result.id, status: result.status };
   }

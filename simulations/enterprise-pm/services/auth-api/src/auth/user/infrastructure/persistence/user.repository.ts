@@ -1,16 +1,16 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { UserEntity } from "../../domain/index.js";
-import type { UserSnapshot } from "../../domain/index.js";
-import { UserRepositoryPort } from "../../application/ports/user-repository.port.js";
-import type { UserTransactionScope } from "../../application/ports/user-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { UserEntity } from '../../domain/index.js';
+import type { UserSnapshot } from '../../domain/index.js';
+import { UserRepositoryPort } from '../../application/ports/user-repository.port.js';
+import type { UserTransactionScope } from '../../application/ports/user-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface UserRow {
   id: string;
@@ -29,7 +29,7 @@ function toSnapshot(row: UserRow): UserSnapshot {
     displayName: row.displayName,
     departmentId: row.departmentId,
     primaryRoleId: row.primaryRoleId,
-    status: "active",
+    status: 'active',
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -157,7 +157,7 @@ export class PgUserRepository extends UserRepositoryPort {
   }
 }
 
-export type UserDialect = "sqlite" | "pg";
+export type UserDialect = 'sqlite' | 'pg';
 
 export interface UserRepositoryFactoryOpts {
   readonly dialect: UserDialect;
@@ -165,11 +165,13 @@ export interface UserRepositoryFactoryOpts {
 }
 
 export function createUserRepository(opts: UserRepositoryFactoryOpts): UserRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteUserRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgUserRepository(opts.db as PostgresJsDatabase);
   }
-  throw new Error(`createUserRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  throw new Error(
+    `createUserRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

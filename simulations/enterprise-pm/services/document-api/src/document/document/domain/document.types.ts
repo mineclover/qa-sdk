@@ -1,7 +1,7 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { DocumentId, OwnerId, ProjectId } from "./document.ids.js";
+import type { DocumentId, OwnerId, ProjectId } from './document.ids.js';
 
 /** 도메인 entity 의 내부 props (불변, branded ids). */
 export interface DocumentProps {

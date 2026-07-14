@@ -1,28 +1,28 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable, Optional } from "@nestjs/common";
-import { DefinitionClient } from "@qa-sdk/definition-client";
-import type { PrefixRegistry, VersionLifecycleStore } from "index-meta";
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { DefinitionClient } from '@qa-sdk/definition-client';
+import type { PrefixRegistry, VersionLifecycleStore } from 'index-meta';
 import {
   PREFIX_REGISTRY,
   VERSION_STORE,
   OWNER_STORE,
   LOCK_STORE,
-} from "../../registry-core.module.js";
-import { runDefinitionClientCall } from "../../lib/definition-client-fail-open.js";
-import { RegistryService, type PostActivationHookPort } from "../../lib/registry-service.js";
-import { createLogger } from "../../lib/logger.js";
-import type { PatchDraftInput, CreateDraftInput } from "../../schemas/version.js";
-import type { DraftLockStore } from "../../stores/draft-lock-store.js";
-import type { PrefixOwnerStore } from "../../stores/prefix-owner-store.js";
-import type { ActivationGatePort } from "../../lib/activation-gate-adapter.js";
-import type { ExtendedVersionStatus } from "../../types/index.js";
+} from '../../registry-core.module.js';
+import { runDefinitionClientCall } from '../../lib/definition-client-fail-open.js';
+import { RegistryService, type PostActivationHookPort } from '../../lib/registry-service.js';
+import { createLogger } from '../../lib/logger.js';
+import type { PatchDraftInput, CreateDraftInput } from '../../schemas/version.js';
+import type { DraftLockStore } from '../../stores/draft-lock-store.js';
+import type { PrefixOwnerStore } from '../../stores/prefix-owner-store.js';
+import type { ActivationGatePort } from '../../lib/activation-gate-adapter.js';
+import type { ExtendedVersionStatus } from '../../types/index.js';
 
-export const ACTIVATION_GATE = "ACTIVATION_GATE";
-export const POST_ACTIVATION_HOOK = "POST_ACTIVATION_HOOK";
+export const ACTIVATION_GATE = 'ACTIVATION_GATE';
+export const POST_ACTIVATION_HOOK = 'POST_ACTIVATION_HOOK';
 
-const logger = createLogger("registry-service");
+const logger = createLogger('registry-service');
 
 /**
  * VersionService는 공유 store를 inject받되, activationGate/postActivationHook이 필요하므로
@@ -85,21 +85,25 @@ export class VersionService {
 
     const recorded = await runDefinitionClientCall(
       `recordConsumption(${prefix}/${versionId})`,
-      async () => this.definitionClient?.recordConsumption(prefix, {
-        prefixVersion: versionId,
-        totalSpace: version.capacity,
-        observedAddresses: 0,
-        dimStats: {},
-      }),
+      async () =>
+        this.definitionClient?.recordConsumption(prefix, {
+          prefixVersion: versionId,
+          totalSpace: version.capacity,
+          observedAddresses: 0,
+          dimStats: {},
+        }),
     );
 
     if (recorded) {
-      logger.info({
-        prefix,
-        versionId,
-        totalSpace: version.capacity,
-        consumptionRate: recorded.consumptionRate,
-      }, "definition-service consumption snapshot recorded");
+      logger.info(
+        {
+          prefix,
+          versionId,
+          totalSpace: version.capacity,
+          consumptionRate: recorded.consumptionRate,
+        },
+        'definition-service consumption snapshot recorded',
+      );
     }
 
     return result;

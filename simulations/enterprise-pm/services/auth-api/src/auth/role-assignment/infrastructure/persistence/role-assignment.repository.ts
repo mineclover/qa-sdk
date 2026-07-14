@@ -1,19 +1,16 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { and, eq, isNull } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { and, eq, isNull } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { RoleAssignmentEntity } from "../../domain/index.js";
-import type {
-  AssignmentScopeType,
-  RoleAssignmentSnapshot,
-} from "../../domain/index.js";
-import { RoleAssignmentRepositoryPort } from "../../application/ports/role-assignment-repository.port.js";
-import type { RoleAssignmentTransactionScope } from "../../application/ports/role-assignment-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { RoleAssignmentEntity } from '../../domain/index.js';
+import type { AssignmentScopeType, RoleAssignmentSnapshot } from '../../domain/index.js';
+import { RoleAssignmentRepositoryPort } from '../../application/ports/role-assignment-repository.port.js';
+import type { RoleAssignmentTransactionScope } from '../../application/ports/role-assignment-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface RoleAssignmentRow {
   userId: string;
@@ -25,7 +22,7 @@ interface RoleAssignmentRow {
 
 function toSnapshot(row: RoleAssignmentRow): RoleAssignmentSnapshot {
   return {
-    id: `${row.userId}|${row.roleId}|${row.scopeType}|${row.scopeId ?? ""}`,
+    id: `${row.userId}|${row.roleId}|${row.scopeType}|${row.scopeId ?? ''}`,
     userId: row.userId,
     roleId: row.roleId,
     scopeType: row.scopeType,
@@ -36,12 +33,12 @@ function toSnapshot(row: RoleAssignmentRow): RoleAssignmentSnapshot {
 
 /** PG sentinel '' → null (port 경계 매핑). */
 function decodeScopeId(scopeId: string | null): string | null {
-  return scopeId === null || scopeId === "" ? null : scopeId;
+  return scopeId === null || scopeId === '' ? null : scopeId;
 }
 
 /** null → '' (PG NOT NULL PRIMARY KEY 호환). */
 function encodeScopeIdPg(scopeId: string | null): string {
-  return scopeId ?? "";
+  return scopeId ?? '';
 }
 
 export class SqliteRoleAssignmentRepository extends RoleAssignmentRepositoryPort {
@@ -102,16 +99,18 @@ export class SqliteRoleAssignmentRepository extends RoleAssignmentRepositoryPort
     scopeId: string | null,
     _scope: RoleAssignmentTransactionScope,
   ): Promise<void> {
-    await this.db.delete(sqliteSchema.roleAssignments).where(
-      and(
-        eq(sqliteSchema.roleAssignments.userId, userId),
-        eq(sqliteSchema.roleAssignments.roleId, roleId),
-        eq(sqliteSchema.roleAssignments.scopeType, scopeType as AssignmentScopeType),
-        scopeId === null
-          ? isNull(sqliteSchema.roleAssignments.scopeId)
-          : eq(sqliteSchema.roleAssignments.scopeId, scopeId),
-      ),
-    );
+    await this.db
+      .delete(sqliteSchema.roleAssignments)
+      .where(
+        and(
+          eq(sqliteSchema.roleAssignments.userId, userId),
+          eq(sqliteSchema.roleAssignments.roleId, roleId),
+          eq(sqliteSchema.roleAssignments.scopeType, scopeType as AssignmentScopeType),
+          scopeId === null
+            ? isNull(sqliteSchema.roleAssignments.scopeId)
+            : eq(sqliteSchema.roleAssignments.scopeId, scopeId),
+        ),
+      );
   }
 }
 
@@ -179,18 +178,20 @@ export class PgRoleAssignmentRepository extends RoleAssignmentRepositoryPort {
     scopeId: string | null,
     _scope: RoleAssignmentTransactionScope,
   ): Promise<void> {
-    await this.db.delete(pgSchema.roleAssignments).where(
-      and(
-        eq(pgSchema.roleAssignments.userId, userId),
-        eq(pgSchema.roleAssignments.roleId, roleId),
-        eq(pgSchema.roleAssignments.scopeType, scopeType as AssignmentScopeType),
-        eq(pgSchema.roleAssignments.scopeId, encodeScopeIdPg(scopeId)),
-      ),
-    );
+    await this.db
+      .delete(pgSchema.roleAssignments)
+      .where(
+        and(
+          eq(pgSchema.roleAssignments.userId, userId),
+          eq(pgSchema.roleAssignments.roleId, roleId),
+          eq(pgSchema.roleAssignments.scopeType, scopeType as AssignmentScopeType),
+          eq(pgSchema.roleAssignments.scopeId, encodeScopeIdPg(scopeId)),
+        ),
+      );
   }
 }
 
-export type RoleAssignmentDialect = "sqlite" | "pg";
+export type RoleAssignmentDialect = 'sqlite' | 'pg';
 
 export interface RoleAssignmentRepositoryFactoryOpts {
   readonly dialect: RoleAssignmentDialect;
@@ -200,10 +201,10 @@ export interface RoleAssignmentRepositoryFactoryOpts {
 export function createRoleAssignmentRepository(
   opts: RoleAssignmentRepositoryFactoryOpts,
 ): RoleAssignmentRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteRoleAssignmentRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgRoleAssignmentRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(

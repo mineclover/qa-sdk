@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { PrefixOwnerRecord, PrefixProfileMeta } from "../types/index.js";
+import type { PrefixOwnerRecord, PrefixProfileMeta } from '../types/index.js';
 
 export interface PrefixProfilePatch {
   name?: string;

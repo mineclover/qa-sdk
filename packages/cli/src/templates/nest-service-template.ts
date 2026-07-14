@@ -9,45 +9,51 @@ export interface NestServiceTemplateInput {
 }
 
 export function generateNestServicePackageJson(input: NestServiceTemplateInput): string {
-  return JSON.stringify({
-    name: input.packageName,
-    version: "0.1.0",
-    private: true,
-    type: "module",
-    main: "dist/main.js",
-    exports: {
-      ".": {
-        import: "./dist/main.js",
-        types: "./dist/main.d.ts",
+  return (
+    JSON.stringify(
+      {
+        name: input.packageName,
+        version: '0.1.0',
+        private: true,
+        type: 'module',
+        main: 'dist/main.js',
+        exports: {
+          '.': {
+            import: './dist/main.js',
+            types: './dist/main.d.ts',
+          },
+        },
+        files: ['dist', 'README.md'],
+        scripts: {
+          dev: 'tsx watch src/main.ts',
+          build: 'tsc',
+          start: 'node dist/main.js',
+          typecheck: 'tsc --noEmit',
+          test: 'vitest run',
+          clean: 'rm -rf dist',
+        },
+        dependencies: {
+          '@nestjs/common': '^11.0.0',
+          '@nestjs/core': '^11.0.0',
+          '@nestjs/platform-fastify': '^11.0.0',
+          '@qa-sdk/nest-service-kit': 'workspace:*',
+          '@qa-sdk/otel': 'workspace:*',
+          'db-bootstrap': 'workspace:*',
+          'reflect-metadata': '^0.2.2',
+          zod: '^3.24.2',
+        },
+        devDependencies: {
+          '@nestjs/testing': '^11.0.0',
+          '@types/node': '^22.0.0',
+          tsx: '^4.19.3',
+          typescript: '^5.8.2',
+          vitest: '^1.6.1',
+        },
       },
-    },
-    files: ["dist", "README.md"],
-    scripts: {
-      dev: "tsx watch src/main.ts",
-      build: "tsc",
-      start: "node dist/main.js",
-      typecheck: "tsc --noEmit",
-      test: "vitest run",
-      clean: "rm -rf dist",
-    },
-    dependencies: {
-      "@nestjs/common": "^11.0.0",
-      "@nestjs/core": "^11.0.0",
-      "@nestjs/platform-fastify": "^11.0.0",
-      "@qa-sdk/nest-service-kit": "workspace:*",
-      "@qa-sdk/otel": "workspace:*",
-      "db-bootstrap": "workspace:*",
-      "reflect-metadata": "^0.2.2",
-      "zod": "^3.24.2",
-    },
-    devDependencies: {
-      "@nestjs/testing": "^11.0.0",
-      "@types/node": "^22.0.0",
-      "tsx": "^4.19.3",
-      "typescript": "^5.8.2",
-      "vitest": "^1.6.1",
-    },
-  }, null, 2) + "\n";
+      null,
+      2,
+    ) + '\n'
+  );
 }
 
 export function generateNestServiceTsconfig(extendsPath: string): string {
@@ -272,5 +278,5 @@ export class ExampleModule {}
 }
 
 function escapeTemplateLiteral(value: string): string {
-  return value.replaceAll("\\", "\\\\").replaceAll("`", "\\`").replaceAll("${", "\\${");
+  return value.replaceAll('\\', '\\\\').replaceAll('`', '\\`').replaceAll('${', '\\${');
 }

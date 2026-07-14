@@ -3,19 +3,19 @@
 
 // packages/ingest-server/src/stores/d1-key-observation-store.ts
 
-import { count as countFn, desc, eq, lt, sql, sum, asc, and } from "drizzle-orm";
+import { count as countFn, desc, eq, lt, sql, sum, asc, and } from 'drizzle-orm';
 import type {
   KeyObservationStore,
   KeyObservationEntry,
   KeyObservation,
   KeyObservationSummary,
   PrefixObservationSummary,
-} from "@qa-sdk/core";
-import { parsePackedAddress } from "@qa-sdk/core/coordinates/address-context-schema";
-import { keyObservations, keyObservationPrefixes } from "../db/schema.js";
-import { parseJsonColumn, type PayloadSummaryJson } from "../db/json-types.js";
-import { EMPTY_PAYLOAD_SUMMARY, mergePayloadSummary } from "./shared/payload-summary.js";
-import type { D1Db } from "./d1-db-type.js";
+} from '@qa-sdk/core';
+import { parsePackedAddress } from '@qa-sdk/core/coordinates/address-context-schema';
+import { keyObservations, keyObservationPrefixes } from '../db/schema.js';
+import { parseJsonColumn, type PayloadSummaryJson } from '../db/json-types.js';
+import { EMPTY_PAYLOAD_SUMMARY, mergePayloadSummary } from './shared/payload-summary.js';
+import type { D1Db } from './d1-db-type.js';
 
 export class D1KeyObservationStore implements KeyObservationStore {
   constructor(private readonly db: D1Db) {}
@@ -28,12 +28,13 @@ export class D1KeyObservationStore implements KeyObservationStore {
     for (const entry of entries) {
       // entry에 explicit version/address가 있으면 우선 사용, 없으면 packed_key parse.
       // 포맷 위반은 silent skip (ingest hot path — 이상 데이터로 트래픽 차단 방지).
-      const resolved = entry.version !== undefined && entry.address !== undefined
-        ? { version: entry.version, address: entry.address }
-        : (() => {
-            const p = parsePackedAddress(entry.packedKey);
-            return p ? { version: p.version, address: p.address } : null;
-          })();
+      const resolved =
+        entry.version !== undefined && entry.address !== undefined
+          ? { version: entry.version, address: entry.address }
+          : (() => {
+              const p = parsePackedAddress(entry.packedKey);
+              return p ? { version: p.version, address: p.address } : null;
+            })();
 
       if (!resolved) continue;
       const { version, address } = resolved;
@@ -42,11 +43,13 @@ export class D1KeyObservationStore implements KeyObservationStore {
       const [existing] = await this.db
         .select({ payloadSummary: keyObservations.payloadSummary })
         .from(keyObservations)
-        .where(and(
-          eq(keyObservations.prefixId, entry.prefixId),
-          eq(keyObservations.version, version),
-          eq(keyObservations.address, address),
-        ));
+        .where(
+          and(
+            eq(keyObservations.prefixId, entry.prefixId),
+            eq(keyObservations.version, version),
+            eq(keyObservations.address, address),
+          ),
+        );
 
       const prevSummary = existing
         ? parseJsonColumn<PayloadSummaryJson>(existing.payloadSummary, EMPTY_PAYLOAD_SUMMARY)
@@ -111,11 +114,10 @@ export class D1KeyObservationStore implements KeyObservationStore {
 
   async findByPrefix(
     prefixId: string,
-    opts?: { limit?: number; orderBy?: "count" | "last_seen" },
+    opts?: { limit?: number; orderBy?: 'count' | 'last_seen' },
   ): Promise<KeyObservation[]> {
-    const orderCol = opts?.orderBy === "last_seen"
-      ? desc(keyObservations.lastSeen)
-      : desc(keyObservations.count);
+    const orderCol =
+      opts?.orderBy === 'last_seen' ? desc(keyObservations.lastSeen) : desc(keyObservations.count);
 
     const rows = await this.db
       .select()
@@ -212,4 +214,3 @@ function toKeyObservation(row: typeof keyObservations.$inferSelect): KeyObservat
     payloadSummary: parseJsonColumn<PayloadSummaryJson>(row.payloadSummary, EMPTY_PAYLOAD_SUMMARY),
   };
 }
-

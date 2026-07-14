@@ -24,49 +24,49 @@ export type {
   TransitionInstance,
   ValidationIssue,
   ValidationResult,
-} from "./transition.types.js";
+} from './transition.types.js';
 
-export { EFFECT_KINDS } from "./transition.types.js";
+export { EFFECT_KINDS } from './transition.types.js';
 
 // ── Schema Validation ────────────────────────────────────
-export { validateTransitionSpec } from "./transition.schema.js";
+export { validateTransitionSpec } from './transition.schema.js';
 
 // ── Catalog Validation ───────────────────────────────────
-export { validateWithCatalog } from "./catalog-validator.js";
+export { validateWithCatalog } from './catalog-validator.js';
 
 // ── Registry ─────────────────────────────────────────────
-export { TransitionRegistry } from "./transition.registry.js";
+export { TransitionRegistry } from './transition.registry.js';
 
 // ── Match Adapter ────────────────────────────────────────
 export {
   deriveEventKey,
   coordToConstraints,
   transitionMatchToScenarioSteps,
-} from "./match-adapter.js";
+} from './match-adapter.js';
 
 // ── State Store ──────────────────────────────────────────
-export type { StateStore } from "./state-store.js";
-export { InMemoryStateStore } from "./state-store.js";
-export { SqliteStateStore } from "./sqlite-state-store.js";
-export type { AsyncStateStore } from "./sqlite-state-store.js";
+export type { StateStore } from './state-store.js';
+export { InMemoryStateStore } from './state-store.js';
+export { SqliteStateStore } from './sqlite-state-store.js';
+export type { AsyncStateStore } from './sqlite-state-store.js';
 
 // ── Bind Extractor ───────────────────────────────────────
-export { extractBind } from "./bind-extractor.js";
-export type { BindResult, BindError } from "./bind-extractor.js";
+export { extractBind } from './bind-extractor.js';
+export type { BindResult, BindError } from './bind-extractor.js';
 
 // ── Input Validator ──────────────────────────────────────
-export { validateInput } from "./input-validator.js";
-export type { InputViolation, InputValidationResult } from "./input-validator.js";
+export { validateInput } from './input-validator.js';
+export type { InputViolation, InputValidationResult } from './input-validator.js';
 
 // ── Output Applier ───────────────────────────────────────
-export { applyOutput } from "./output-applier.js";
+export { applyOutput } from './output-applier.js';
 
 // ── Engine ───────────────────────────────────────────────
-export { TransitionEngine } from "./transition-engine.js";
-export type { TransitionResult, TransitionEvent } from "./transition-engine.js";
+export { TransitionEngine } from './transition-engine.js';
+export type { TransitionResult, TransitionEvent } from './transition-engine.js';
 
 // ── Decode Adapter ───────────────────────────────────────
-export { decodeAddressContext } from "./decode-adapter.js";
+export { decodeAddressContext } from './decode-adapter.js';
 
 // ── Demo Specs ───────────────────────────────────────────
 export {
@@ -74,4 +74,4 @@ export {
   USER_LOGIN_SPEC,
   PAYMENT_CAPTURE_SPEC,
   DEMO_TRANSITION_SPECS,
-} from "./demo-transition-specs.js";
+} from './demo-transition-specs.js';

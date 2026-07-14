@@ -1,7 +1,7 @@
-import type { StaticTaxonomy, TaxonomyIndex } from "../types/taxonomy";
+import type { StaticTaxonomy, TaxonomyIndex } from '../types/taxonomy';
 
 export async function loadTaxonomyIndex(): Promise<TaxonomyIndex> {
-  const res = await fetch("/data/index.json");
+  const res = await fetch('/data/index.json');
   if (!res.ok) throw new Error(`index.json 로드 실패: ${res.status}`);
   return res.json();
 }

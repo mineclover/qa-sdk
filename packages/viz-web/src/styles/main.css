@@ -24,14 +24,14 @@
   --accent-orange: #fb923c;
   --accent-gray: #6b7280;
   --radius: 6px;
-  --font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 }
 
 html,
 body {
   height: 100%;
   width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   overflow: hidden;
@@ -104,7 +104,9 @@ body {
   position: relative;
   outline: 2px solid transparent;
   outline-offset: -2px;
-  transition: flex 0.25s ease, outline-color 0.2s;
+  transition:
+    flex 0.25s ease,
+    outline-color 0.2s;
 }
 
 .split-pane.focused {
@@ -133,7 +135,6 @@ body {
   font-weight: 600;
   color: var(--accent-blue);
 }
-
 
 /* ── Sidebar ──────────────────────────────────────────── */
 
@@ -309,7 +310,9 @@ body {
   cursor: default;
   user-select: none;
   flex-shrink: 0;
-  transition: transform 0.1s ease, background 0.1s ease;
+  transition:
+    transform 0.1s ease,
+    background 0.1s ease;
 }
 
 .event-seq-chip:hover {
@@ -357,8 +360,14 @@ body {
 }
 
 @keyframes tt-in {
-  from { opacity: 0; transform: translateY(3px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tt-header {
@@ -706,26 +715,31 @@ details summary {
   flex-shrink: 0;
 }
 
-#ws-status[data-status="connecting"] {
+#ws-status[data-status='connecting'] {
   background: var(--accent-yellow);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
-#ws-status[data-status="connected"] {
+#ws-status[data-status='connected'] {
   background: var(--accent-green);
 }
 
-#ws-status[data-status="disconnected"] {
+#ws-status[data-status='disconnected'] {
   background: var(--accent-gray);
 }
 
-#ws-status[data-status="error"] {
+#ws-status[data-status='error'] {
   background: var(--accent-red);
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 #recompute-btn {
@@ -767,7 +781,9 @@ details summary {
   border-radius: var(--radius);
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
 }
 
 .session-item:hover {

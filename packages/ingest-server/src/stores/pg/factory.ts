@@ -8,11 +8,11 @@
  * close 함수 반환 — 호출자가 lifecycle 관리.
  */
 
-import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-import { PgKeyObservationStore } from "./key-observation.adapter.js";
-import { PgRecordStore } from "./event-record.adapter.js";
+import { PgKeyObservationStore } from './key-observation.adapter.js';
+import { PgRecordStore } from './event-record.adapter.js';
 
 export interface CreatePgIngestStoresOpts {
   /** PG 연결 URL (예: postgres://qa_admin:pw@localhost:5434/qa_sdk) */
@@ -34,7 +34,7 @@ export interface PgIngestStoreSet {
 export async function createPgIngestStores(
   opts: CreatePgIngestStoresOpts,
 ): Promise<PgIngestStoreSet> {
-  const schema = opts.schema ?? "ingest";
+  const schema = opts.schema ?? 'ingest';
   const sql = postgres(opts.url, {
     max: opts.poolMax ?? 10,
     onnotice: () => {},

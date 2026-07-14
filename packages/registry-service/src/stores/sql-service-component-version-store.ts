@@ -1,12 +1,12 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { SqlDriver } from "index-meta";
-import type { ComponentVersionKind } from "../modules/services/service.types.js";
+import type { SqlDriver } from 'index-meta';
+import type { ComponentVersionKind } from '../modules/services/service.types.js';
 import type {
   ServiceComponentVersionRecord,
   ServiceComponentVersionStore,
-} from "./service-component-version-store.js";
+} from './service-component-version-store.js';
 
 export class SqlServiceComponentVersionStore implements ServiceComponentVersionStore {
   constructor(private readonly driver: SqlDriver) {}
@@ -91,7 +91,7 @@ function toRecord(row: Row): ServiceComponentVersionRecord {
     kind: row.kind as ComponentVersionKind,
     serviceId: row.service_id,
     version: row.version,
-    state: row.state as ServiceComponentVersionRecord["state"],
+    state: row.state as ServiceComponentVersionRecord['state'],
     valueJson: row.value_json,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

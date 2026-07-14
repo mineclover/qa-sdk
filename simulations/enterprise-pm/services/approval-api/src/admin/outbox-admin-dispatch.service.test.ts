@@ -4,12 +4,12 @@
 // Stage 4 §4.2 — N-replica dispatch 시뮬 단위 테스트.
 // disjoint / default opts / duplicates>0 / timeout 4 케이스.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
 import {
   OutboxAdminDispatchService,
   type OutboxAdminDispatcher,
   type OutboxDispatcherFactory,
-} from "./outbox-admin-dispatch.service.js";
+} from './outbox-admin-dispatch.service.js';
 
 // disjoint factory — 모든 worker 가 동일 cursor 를 공유, 각 tick 에서 batchSize 만큼 분배.
 // SKIP LOCKED 모사: cursor 진행 후 자기 worker 의 claimed 에 push.
@@ -46,7 +46,7 @@ function makeCollisionFactory(): OutboxDispatcherFactory {
         callCount++;
         // 처음 두 호출(서로 다른 worker 의 첫 tick)은 같은 id "evt-x" 를 yield.
         if (myCalls === 1 && callCount <= 2) {
-          claimed.push("evt-x");
+          claimed.push('evt-x');
           return 1;
         }
         return 0;
@@ -69,40 +69,40 @@ function slowFactory(consumerName: string): OutboxAdminDispatcher {
   };
 }
 
-describe("OutboxAdminDispatchService", () => {
-  it("replicaCount=3, ROWS=30 — disjoint + totalDispatched=30 + duplicates=0", async () => {
+describe('OutboxAdminDispatchService', () => {
+  it('replicaCount=3, ROWS=30 — disjoint + totalDispatched=30 + duplicates=0', async () => {
     const ids = Array.from({ length: 30 }, (_, i) => `evt-${i}`);
-    const r = await new OutboxAdminDispatchService(disjointFactory(ids)).dispatchAll(
-      { replicaCount: 3, timeoutMs: 5_000 },
-    );
+    const r = await new OutboxAdminDispatchService(disjointFactory(ids)).dispatchAll({
+      replicaCount: 3,
+      timeoutMs: 5_000,
+    });
     expect(r.byReplica).toHaveLength(3);
     expect(r.totalDispatched).toBe(30);
     expect(r.duplicates).toBe(0);
     expect(new Set(r.byReplica.flatMap((x) => x.dispatchedEventIds)).size).toBe(30);
     expect(r.byReplica.map((x) => x.replicaId).sort()).toEqual([
-      "sim-approval-api-0",
-      "sim-approval-api-1",
-      "sim-approval-api-2",
+      'sim-approval-api-0',
+      'sim-approval-api-1',
+      'sim-approval-api-2',
     ]);
   });
 
-  it("default replicaCount=3, timeoutMs=5000", async () => {
-    const r = await new OutboxAdminDispatchService(disjointFactory([])).dispatchAll(
-      {},
-    );
+  it('default replicaCount=3, timeoutMs=5000', async () => {
+    const r = await new OutboxAdminDispatchService(disjointFactory([])).dispatchAll({});
     expect(r.byReplica).toHaveLength(3);
     expect(r.totalDispatched).toBe(0);
   });
 
-  it("duplicates>0 — 같은 id가 여러 replica 에 잡히면 정확히 카운트", async () => {
-    const r = await new OutboxAdminDispatchService(makeCollisionFactory()).dispatchAll(
-      { replicaCount: 2, timeoutMs: 1_000 },
-    );
+  it('duplicates>0 — 같은 id가 여러 replica 에 잡히면 정확히 카운트', async () => {
+    const r = await new OutboxAdminDispatchService(makeCollisionFactory()).dispatchAll({
+      replicaCount: 2,
+      timeoutMs: 1_000,
+    });
     expect(r.totalDispatched).toBe(2);
     expect(r.duplicates).toBe(1);
   });
 
-  it("timeoutMs 도달 → worker 가 현재 tick 종료 후 stop", async () => {
+  it('timeoutMs 도달 → worker 가 현재 tick 종료 후 stop', async () => {
     const r = await new OutboxAdminDispatchService(slowFactory).dispatchAll({
       replicaCount: 2,
       timeoutMs: 50,

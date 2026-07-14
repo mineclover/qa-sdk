@@ -1,11 +1,11 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import type { InfraProfileAdapter } from "../adapters/adapter.js";
+import type { InfraProfileAdapter } from '../adapters/adapter.js';
 
 export interface DeployVersion {
   serviceId: string;
-  version: string;       // semver or git sha
+  version: string; // semver or git sha
   env: string;
   provider: string;
   endpoint: string;
@@ -30,7 +30,7 @@ export async function recordDeployVersion(
     endpoint: version.endpoint,
     duration: 0,
     success: true,
-    triggeredBy: "manual",
+    triggeredBy: 'manual',
   });
 
   return previousVersion;
@@ -48,7 +48,9 @@ export async function syncToDefinitionService(
       signal: AbortSignal.timeout(5_000),
     });
     if (res.ok) {
-      console.log(`[definition-sync] ${serviceId} v${version.version} → definition-service 연동 확인`);
+      console.log(
+        `[definition-sync] ${serviceId} v${version.version} → definition-service 연동 확인`,
+      );
     }
     return true;
   } catch {

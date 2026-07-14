@@ -1,30 +1,32 @@
 // @def.doc definition-service
 // @def.boundary definition-service-system
 
-import { Injectable, Inject, Optional } from "@nestjs/common";
-import { isAbsolute, relative } from "node:path";
-import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
-import { SqlDocStore } from "../../stores/doc-store.js";
-import type { DocRecord, DocHistoryRecord } from "../../core/types.js";
-import type { DocStore, DocMetadataUpdate, DocListFilter, DocListResult } from "../../core/interfaces.js";
+import { Injectable, Inject, Optional } from '@nestjs/common';
+import { isAbsolute, relative } from 'node:path';
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from '../../database.module.js';
+import { SqlDocStore } from '../../stores/doc-store.js';
+import type { DocRecord, DocHistoryRecord } from '../../core/types.js';
+import type {
+  DocStore,
+  DocMetadataUpdate,
+  DocListFilter,
+  DocListResult,
+} from '../../core/interfaces.js';
 import type {
   DefBoundaryResolutionCandidate,
   DefCodeReference,
   DefFeedbackRequestSummary,
   DefFileBoundaryResolution,
   DefSyntheticIncomingLink,
-} from "definition-catalog";
-import {
-  formatCodeReferenceTarget,
-  parseCodeReferenceTarget,
-} from "definition-catalog";
-import { mergeSemanticDocumentResults } from "../../core/semantic-grounding/planner.js";
-import { SearchService } from "../search/search.service.js";
-import { SemanticGroundingService } from "../semantic-grounding/semantic-grounding.service.js";
+} from 'definition-catalog';
+import { formatCodeReferenceTarget, parseCodeReferenceTarget } from 'definition-catalog';
+import { mergeSemanticDocumentResults } from '../../core/semantic-grounding/planner.js';
+import { SearchService } from '../search/search.service.js';
+import { SemanticGroundingService } from '../semantic-grounding/semantic-grounding.service.js';
 import {
   getFeedbackRequestSummariesForDoc,
   getSyntheticIncomingLinksForDoc,
-} from "./review-feedback.js";
+} from './review-feedback.js';
 
 @Injectable()
 export class DocsService {
@@ -33,7 +35,9 @@ export class DocsService {
   constructor(
     @Inject(DRIZZLE_DB) db: DefinitionServiceDatabase,
     @Optional() @Inject(SearchService) private readonly search?: SearchService,
-    @Optional() @Inject(SemanticGroundingService) private readonly semantic?: SemanticGroundingService,
+    @Optional()
+    @Inject(SemanticGroundingService)
+    private readonly semantic?: SemanticGroundingService,
   ) {
     this.store = new SqlDocStore(db);
   }
@@ -46,7 +50,8 @@ export class DocsService {
   list(filter?: DocListFilter): DocRecord[] {
     // 전문 검색은 SearchService로 위임
     if (filter?.q && this.search) {
-      return this.searchWithSemanticGrounding(filter.q, filter?.limit ?? 50, filter?.offset ?? 0).docs;
+      return this.searchWithSemanticGrounding(filter.q, filter?.limit ?? 50, filter?.offset ?? 0)
+        .docs;
     }
     return this.store.list(filter);
   }
@@ -66,7 +71,11 @@ export class DocsService {
     return { docs, total, offset, limit };
   }
 
-  private searchWithSemanticGrounding(query: string, limit: number, offset: number): { docs: DocRecord[]; total: number } {
+  private searchWithSemanticGrounding(
+    query: string,
+    limit: number,
+    offset: number,
+  ): { docs: DocRecord[]; total: number } {
     if (!this.semantic) {
       return this.searchLegacy(query, limit, offset);
     }
@@ -91,14 +100,15 @@ export class DocsService {
     const legacy = this.searchLegacy(query, Math.max(limit + offset, 50), 0);
     const legacyDocs = legacy.docs;
     const legacyCount = legacy.total;
-    const semanticDocs = hasSemanticCandidates
-      ? this.store.getMany(plan.candidateDocIds)
-      : [];
+    const semanticDocs = hasSemanticCandidates ? this.store.getMany(plan.candidateDocIds) : [];
     const semanticDocIdSet = new Set(semanticDocs.map((doc) => doc.docId));
-    const realizedCandidateDocIds = plan.candidateDocIds.filter((docId) => semanticDocIdSet.has(docId));
-    const legacyCandidateDocIds = realizedCandidateDocIds.length > 0
-      ? this.matchLegacyDocIds(query, realizedCandidateDocIds, legacyDocs, semanticDocIdSet)
-      : new Set<string>();
+    const realizedCandidateDocIds = plan.candidateDocIds.filter((docId) =>
+      semanticDocIdSet.has(docId),
+    );
+    const legacyCandidateDocIds =
+      realizedCandidateDocIds.length > 0
+        ? this.matchLegacyDocIds(query, realizedCandidateDocIds, legacyDocs, semanticDocIdSet)
+        : new Set<string>();
     const semanticOnlyDocs = semanticDocs.filter((doc) => !legacyCandidateDocIds.has(doc.docId));
     const legacyOnlyCount = Math.max(legacyCount - legacyCandidateDocIds.size, 0);
     const merged = hasSemanticCandidates
@@ -121,10 +131,17 @@ export class DocsService {
       legacyOnlyCount,
     });
 
-    return { docs: merged.slice(offset, offset + limit), total: legacyCount + semanticOnlyDocs.length };
+    return {
+      docs: merged.slice(offset, offset + limit),
+      total: legacyCount + semanticOnlyDocs.length,
+    };
   }
 
-  private searchLegacy(query: string, limit: number, offset: number): { docs: DocRecord[]; total: number } {
+  private searchLegacy(
+    query: string,
+    limit: number,
+    offset: number,
+  ): { docs: DocRecord[]; total: number } {
     const docs = this.search?.search(query, limit, offset) ?? [];
     return { docs, total: this.search?.searchCount(query) ?? docs.length };
   }
@@ -135,11 +152,10 @@ export class DocsService {
     legacyDocs: readonly DocRecord[],
     semanticDocIdSet: ReadonlySet<string>,
   ): Set<string> {
-    return this.search?.matchDocIds?.(query, candidateDocIds) ?? new Set(
-          legacyDocs
-            .filter((doc) => semanticDocIdSet.has(doc.docId))
-            .map((doc) => doc.docId),
-        );
+    return (
+      this.search?.matchDocIds?.(query, candidateDocIds) ??
+      new Set(legacyDocs.filter((doc) => semanticDocIdSet.has(doc.docId)).map((doc) => doc.docId))
+    );
   }
 
   get(docId: string): DocRecord | null {
@@ -159,27 +175,27 @@ export class DocsService {
   }
 
   private normalizeCodeReferenceTarget(filePath: string): { codePath: string; symbol?: string } {
-    const parsed = parseCodeReferenceTarget(filePath.replaceAll("\\", "/"));
+    const parsed = parseCodeReferenceTarget(filePath.replaceAll('\\', '/'));
     const rawPath = parsed?.codePath ?? filePath;
     const symbol = parsed?.symbol;
     if (isAbsolute(rawPath)) {
-      const relPath = relative(process.cwd(), rawPath).replaceAll("\\", "/");
-      if (relPath !== "" && !relPath.startsWith("../")) {
+      const relPath = relative(process.cwd(), rawPath).replaceAll('\\', '/');
+      if (relPath !== '' && !relPath.startsWith('../')) {
         return { codePath: relPath, symbol };
       }
     }
-    return { codePath: rawPath.replaceAll("\\", "/"), symbol };
+    return { codePath: rawPath.replaceAll('\\', '/'), symbol };
   }
 
   private resolveBoundaryAnchor(doc: DocRecord): DocRecord {
-    if (doc.level === "group" || doc.level === "module") return doc;
+    if (doc.level === 'group' || doc.level === 'module') return doc;
 
     let current = doc;
     const visited = new Set<string>([doc.docId]);
     while (true) {
       const parent = this.getParent(current.docId);
       if (!parent || visited.has(parent.docId)) return current;
-      if (parent.level === "group" || parent.level === "module") return parent;
+      if (parent.level === 'group' || parent.level === 'module') return parent;
       visited.add(parent.docId);
       current = parent;
     }
@@ -187,24 +203,47 @@ export class DocsService {
 
   resolveByFile(filePath: string): DefFileBoundaryResolution {
     const requested = this.normalizeCodeReferenceTarget(filePath);
-    const references = this.store.getCodeReferencesByPath(requested.codePath).map((ref) => (Object.assign({codePath:ref.codePath,docId:ref.docId,relationType:ref.relationType,sourceKind:ref.sourceKind}, ref.symbol?{symbol:ref.symbol}:{}, ref.line!==undefined?{line:ref.line}:{}))) as DefCodeReference[];
+    const references = this.store.getCodeReferencesByPath(requested.codePath).map((ref) =>
+      Object.assign(
+        {
+          codePath: ref.codePath,
+          docId: ref.docId,
+          relationType: ref.relationType,
+          sourceKind: ref.sourceKind,
+        },
+        ref.symbol ? { symbol: ref.symbol } : {},
+        ref.line !== undefined ? { line: ref.line } : {},
+      ),
+    ) as DefCodeReference[];
 
     const scopedReferences = requested.symbol
-      ? references.filter((ref) => (ref.symbol ?? "") === requested.symbol || !ref.symbol)
+      ? references.filter((ref) => (ref.symbol ?? '') === requested.symbol || !ref.symbol)
       : references;
 
     if (scopedReferences.length === 0) {
-      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+      return {
+        kind: 'none',
+        codePath: formatCodeReferenceTarget(requested),
+        references: scopedReferences,
+      };
     }
 
     const docs = [...new Set(scopedReferences.map((ref) => ref.docId))]
       .map((docId) => this.get(docId))
       .filter((doc): doc is DocRecord => Boolean(doc));
     if (docs.length === 0) {
-      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+      return {
+        kind: 'none',
+        codePath: formatCodeReferenceTarget(requested),
+        references: scopedReferences,
+      };
     }
 
-    const boundaryDocIds = [...new Set(scopedReferences.filter((ref) => ref.relationType === "boundary").map((ref) => ref.docId))];
+    const boundaryDocIds = [
+      ...new Set(
+        scopedReferences.filter((ref) => ref.relationType === 'boundary').map((ref) => ref.docId),
+      ),
+    ];
     if (boundaryDocIds.length > 1) {
       const candidates = docs
         .filter((doc) => boundaryDocIds.includes(doc.docId))
@@ -213,17 +252,24 @@ export class DocsService {
           supportingDocs: docs.filter((doc) => doc.docId === anchor.docId),
           references: scopedReferences,
         })) as DefBoundaryResolutionCandidate[];
-      return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
+      return {
+        kind: 'ambiguous',
+        codePath: formatCodeReferenceTarget(requested),
+        candidates,
+        references: scopedReferences,
+      };
     }
 
     const byAnchor = new Map<string, DefBoundaryResolutionCandidate>();
     for (const doc of docs) {
-      const anchor = boundaryDocIds.length === 1
-        ? docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc
-        : this.resolveBoundaryAnchor(doc);
+      const anchor =
+        boundaryDocIds.length === 1
+          ? (docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc)
+          : this.resolveBoundaryAnchor(doc);
       const existing = byAnchor.get(anchor.docId);
       if (existing) existing.supportingDocs.push(doc);
-      else byAnchor.set(anchor.docId, { anchor, supportingDocs: [doc], references: scopedReferences });
+      else
+        byAnchor.set(anchor.docId, { anchor, supportingDocs: [doc], references: scopedReferences });
     }
 
     const candidates = [...byAnchor.values()].map((candidate) => ({
@@ -234,7 +280,7 @@ export class DocsService {
 
     if (candidates.length === 1) {
       return {
-        kind: "unique",
+        kind: 'unique',
         codePath: formatCodeReferenceTarget(requested),
         anchor: candidates[0]!.anchor,
         supportingDocs: candidates[0]!.supportingDocs,
@@ -242,7 +288,12 @@ export class DocsService {
       };
     }
 
-    return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
+    return {
+      kind: 'ambiguous',
+      codePath: formatCodeReferenceTarget(requested),
+      candidates,
+      references: scopedReferences,
+    };
   }
 
   getHistory(docId: string, limit?: number): DocHistoryRecord[] {
@@ -256,7 +307,7 @@ export class DocsService {
   updateMetadata(docId: string, patch: DocMetadataUpdate) {
     const result = this.store.updateMetadata(docId, patch);
     // 메타데이터 변경 후 검색 인덱스 갱신
-    if (result && result.action === "updated") {
+    if (result && result.action === 'updated') {
       const doc = this.store.get(docId);
       if (doc) this.search?.index(docId, doc.purpose, doc.intent, doc.context, doc.caveat);
       if (doc) this.semantic?.materializeDocuments([doc]);
@@ -303,21 +354,20 @@ export class DocsService {
       }
     }
 
-    return trace.toSorted((left, right) =>
-      right.createdAt.localeCompare(left.createdAt),
-    ).slice(0, limit);
+    return trace
+      .toSorted((left, right) => right.createdAt.localeCompare(left.createdAt))
+      .slice(0, limit);
   }
 
-  getBoundary(docId: string, level: "purpose" | "overview" = "overview") {
+  getBoundary(docId: string, level: 'purpose' | 'overview' = 'overview') {
     const doc = this.store.get(docId);
     if (!doc) return null;
 
-    const scopeOrder = ["constraint", "state", "data", "feature", "flow", "interface", "ui"];
-    const linkOrder = ["constrains", "depends_on", "refines"];
+    const scopeOrder = ['constraint', 'state', 'data', 'feature', 'flow', 'interface', 'ui'];
+    const linkOrder = ['constrains', 'depends_on', 'refines'];
     const summary = (purpose?: string, overview?: string) =>
-      (level === "purpose" ? purpose : (purpose ?? overview))
-        ?.split("\n")[0]
-        ?.trim() || "(요약 없음)";
+      (level === 'purpose' ? purpose : (purpose ?? overview))?.split('\n')[0]?.trim() ||
+      '(요약 없음)';
     const scopeIndex = (scope: string) => {
       const idx = scopeOrder.indexOf(scope);
       return idx === -1 ? 999 : idx;
@@ -328,8 +378,9 @@ export class DocsService {
     };
 
     const children = this.getChildren(docId)
-      .toSorted((left, right) =>
-        scopeIndex(left.scope) - scopeIndex(right.scope) || left.docId.localeCompare(right.docId),
+      .toSorted(
+        (left, right) =>
+          scopeIndex(left.scope) - scopeIndex(right.scope) || left.docId.localeCompare(right.docId),
       )
       .map((child) => ({
         docId: child.docId,
@@ -341,9 +392,13 @@ export class DocsService {
       }));
 
     const outgoing = this.getOutgoingLinks(docId)
-      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
-      .toSorted((left, right) =>
-        linkIndex(left.type) - linkIndex(right.type) || left.target.localeCompare(right.target),
+      .filter(
+        (link) =>
+          link.type === 'depends_on' || link.type === 'constrains' || link.type === 'refines',
+      )
+      .toSorted(
+        (left, right) =>
+          linkIndex(left.type) - linkIndex(right.type) || left.target.localeCompare(right.target),
       )
       .map((link) => {
         const target = this.store.get(link.target);
@@ -355,9 +410,13 @@ export class DocsService {
       });
 
     const incoming = this.getIncomingLinks(docId)
-      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
-      .toSorted((left, right) =>
-        linkIndex(left.type) - linkIndex(right.type) || left.source.localeCompare(right.source),
+      .filter(
+        (link) =>
+          link.type === 'depends_on' || link.type === 'constrains' || link.type === 'refines',
+      )
+      .toSorted(
+        (left, right) =>
+          linkIndex(left.type) - linkIndex(right.type) || left.source.localeCompare(right.source),
       )
       .map((link) => {
         const source = this.store.get(link.source);
@@ -379,7 +438,7 @@ export class DocsService {
         ...(doc.layer ? { layer: doc.layer } : {}),
         ...(doc.svc ? { svc: doc.svc } : {}),
         ...(doc.purpose ? { purpose: doc.purpose } : {}),
-        ...(level === "overview" && doc.context ? { overview: doc.context } : {}),
+        ...(level === 'overview' && doc.context ? { overview: doc.context } : {}),
       },
       members: children,
       couplings: { outgoing, incoming },
@@ -391,8 +450,8 @@ export class DocsService {
   addLink(docId: string, target: string, type: string) {
     const doc = this.store.get(docId);
     if (!doc) return null;
-    const existing = doc.links.find(l => l.target === target && l.type === type);
-    if (existing) return { action: "unchanged" as const };
+    const existing = doc.links.find((l) => l.target === target && l.type === type);
+    if (existing) return { action: 'unchanged' as const };
     const newLinks = [...doc.links, { target, type }];
     return this.store.updateMetadata(docId, { links: newLinks });
   }
@@ -400,23 +459,23 @@ export class DocsService {
   removeLink(docId: string, target: string, type: string) {
     const doc = this.store.get(docId);
     if (!doc) return null;
-    const newLinks = doc.links.filter(l => !(l.target === target && l.type === type));
-    if (newLinks.length === doc.links.length) return { action: "unchanged" as const };
+    const newLinks = doc.links.filter((l) => !(l.target === target && l.type === type));
+    if (newLinks.length === doc.links.length) return { action: 'unchanged' as const };
     return this.store.updateMetadata(docId, { links: newLinks });
   }
 
   addTag(docId: string, tag: string) {
     const doc = this.store.get(docId);
     if (!doc) return null;
-    if (doc.tags.includes(tag)) return { action: "unchanged" as const };
+    if (doc.tags.includes(tag)) return { action: 'unchanged' as const };
     return this.store.updateMetadata(docId, { tags: [...doc.tags, tag] });
   }
 
   removeTag(docId: string, tag: string) {
     const doc = this.store.get(docId);
     if (!doc) return null;
-    const newTags = doc.tags.filter(t => t !== tag);
-    if (newTags.length === doc.tags.length) return { action: "unchanged" as const };
+    const newTags = doc.tags.filter((t) => t !== tag);
+    if (newTags.length === doc.tags.length) return { action: 'unchanged' as const };
     return this.store.updateMetadata(docId, { tags: newTags });
   }
 }

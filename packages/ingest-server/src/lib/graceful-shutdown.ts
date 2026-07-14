@@ -1,11 +1,11 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { ServerType } from "@hono/node-server";
-import type { Logger } from "pino";
-import type { AppLifecycle } from "./app-lifecycle.js";
-import type { RecordStreamBroker } from "./record-stream-broker.js";
-import type { StreamConnectionRegistry } from "./stream-connection-registry.js";
+import type { ServerType } from '@hono/node-server';
+import type { Logger } from 'pino';
+import type { AppLifecycle } from './app-lifecycle.js';
+import type { RecordStreamBroker } from './record-stream-broker.js';
+import type { StreamConnectionRegistry } from './stream-connection-registry.js';
 
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 30_000;
 
@@ -27,13 +27,10 @@ export interface GracefulShutdownDeps {
   streamConnectionRegistry: StreamConnectionRegistry;
 }
 
-export function installGracefulShutdown(
-  deps: GracefulShutdownDeps,
-) {
+export function installGracefulShutdown(deps: GracefulShutdownDeps) {
   const exit = deps.exit ?? process.exit;
   const signalRegistrar = deps.process ?? process;
-  const shutdownTimeoutMs =
-    deps.shutdownTimeoutMs ?? DEFAULT_SHUTDOWN_TIMEOUT_MS;
+  const shutdownTimeoutMs = deps.shutdownTimeoutMs ?? DEFAULT_SHUTDOWN_TIMEOUT_MS;
   let shutdownPromise: Promise<void> | null = null;
 
   const shutdown = (signal: NodeJS.Signals | string) => {
@@ -46,7 +43,7 @@ export function installGracefulShutdown(
   };
 
   const performShutdown = async (signal: NodeJS.Signals | string) => {
-    deps.logger.info({ signal }, "shutdown requested");
+    deps.logger.info({ signal }, 'shutdown requested');
     deps.appLifecycle.beginShutdown();
 
     let timedOut = false;
@@ -55,11 +52,10 @@ export function installGracefulShutdown(
       deps.logger.error(
         {
           activeSseConnections: deps.streamConnectionRegistry.getConnectionCount(),
-          inFlightIngestRequests:
-            deps.appLifecycle.getInFlightIngestRequestCount(),
+          inFlightIngestRequests: deps.appLifecycle.getInFlightIngestRequestCount(),
           timeoutMs: shutdownTimeoutMs,
         },
-        "shutdown timed out",
+        'shutdown timed out',
       );
       closeAllConnections(deps.server);
       exit(1);
@@ -69,13 +65,10 @@ export function installGracefulShutdown(
       const serverClosed = closeServer(deps.server);
       closeIdleConnections(deps.server);
 
-      await deps.streamConnectionRegistry.shutdown("server_shutdown");
+      await deps.streamConnectionRegistry.shutdown('server_shutdown');
       deps.recordStreamBroker.shutdown();
 
-      await Promise.all([
-        serverClosed,
-        deps.appLifecycle.waitForInFlightIngestRequests(),
-      ]);
+      await Promise.all([serverClosed, deps.appLifecycle.waitForInFlightIngestRequests()]);
 
       await deps.closeDb();
 
@@ -84,22 +77,22 @@ export function installGracefulShutdown(
       }
 
       clearTimeout(timeout);
-      deps.logger.info("shutdown complete");
+      deps.logger.info('shutdown complete');
       exit(0);
     } catch (err) {
       if (!timedOut) {
         clearTimeout(timeout);
-        deps.logger.error({ err }, "error during shutdown");
+        deps.logger.error({ err }, 'error during shutdown');
         exit(1);
       }
     }
   };
 
-  signalRegistrar.on("SIGTERM", () => {
-    void shutdown("SIGTERM");
+  signalRegistrar.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
   });
-  signalRegistrar.on("SIGINT", () => {
-    void shutdown("SIGINT");
+  signalRegistrar.on('SIGINT', () => {
+    void shutdown('SIGINT');
   });
 
   return { shutdown };
@@ -119,19 +112,13 @@ function closeServer(server: ServerType): Promise<void> {
 }
 
 function closeIdleConnections(server: ServerType) {
-  if (
-    "closeIdleConnections" in server &&
-    typeof server.closeIdleConnections === "function"
-  ) {
+  if ('closeIdleConnections' in server && typeof server.closeIdleConnections === 'function') {
     server.closeIdleConnections();
   }
 }
 
 function closeAllConnections(server: ServerType) {
-  if (
-    "closeAllConnections" in server &&
-    typeof server.closeAllConnections === "function"
-  ) {
+  if ('closeAllConnections' in server && typeof server.closeAllConnections === 'function') {
     server.closeAllConnections();
   }
 }

@@ -1,11 +1,11 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import type { ResolvedConfig } from "../core/types.js";
+import type { ResolvedConfig } from '../core/types.js';
 
 export interface CascadeTarget {
   serviceId: string;
-  reason: string;  // "depends_on ingest-server" 등
+  reason: string; // "depends_on ingest-server" 등
 }
 
 /** config에서 deployedServiceId에 의존하는 서비스 찾기 */
@@ -33,7 +33,7 @@ export async function executeCascade(
   options?: { dryRun?: boolean },
 ): Promise<void> {
   if (targets.length === 0) {
-    console.log("[cascade] 의존 서비스 없음");
+    console.log('[cascade] 의존 서비스 없음');
     return;
   }
 
@@ -43,12 +43,12 @@ export async function executeCascade(
   }
 
   if (options?.dryRun) {
-    console.log("[cascade] dry-run — 재배포 건너뜀");
+    console.log('[cascade] dry-run — 재배포 건너뜀');
     return;
   }
 
   // 실제 재배포는 호출자가 infra deploy를 다시 실행
-  console.log("[cascade] 재배포하려면:");
+  console.log('[cascade] 재배포하려면:');
   for (const t of targets) {
     console.log(`  infra deploy ${t.serviceId} ${env}`);
   }

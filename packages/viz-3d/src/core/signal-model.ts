@@ -36,33 +36,32 @@
 // ═══════════════════════════════════════════════════
 
 export type SignalRole =
-  | "context"   // 어디서 — service, page_view (환경/위치)
-  | "trigger"   // 뭘 했는가 — tracking, *_event (유저 행동/시스템 이벤트)
-  | "channel"   // 어떤 경로로 — endpoint (API/webhook/gRPC)
-  | "state"     // 흐름 어디 — flow_point (비즈니스 흐름 위치)
-  | "guard"     // 어떤 조건 — permission, rbac (권한/정책)
-  | "effect"    // 결과 — pipeline_point, health_event, deploy_event
-  | "data"      // 데이터 접점 — table refs (DB 읽기/쓰기)
-  ;
+  | 'context' // 어디서 — service, page_view (환경/위치)
+  | 'trigger' // 뭘 했는가 — tracking, *_event (유저 행동/시스템 이벤트)
+  | 'channel' // 어떤 경로로 — endpoint (API/webhook/gRPC)
+  | 'state' // 흐름 어디 — flow_point (비즈니스 흐름 위치)
+  | 'guard' // 어떤 조건 — permission, rbac (권한/정책)
+  | 'effect' // 결과 — pipeline_point, health_event, deploy_event
+  | 'data'; // 데이터 접점 — table refs (DB 읽기/쓰기)
 
 export const SIGNAL_ROLE_LABELS: Record<SignalRole, string> = {
-  context: "어디서",
-  trigger: "뭘 했는가",
-  channel: "어떤 경로",
-  state: "흐름 어디",
-  guard: "어떤 조건",
-  effect: "결과",
-  data: "데이터 접점",
+  context: '어디서',
+  trigger: '뭘 했는가',
+  channel: '어떤 경로',
+  state: '흐름 어디',
+  guard: '어떤 조건',
+  effect: '결과',
+  data: '데이터 접점',
 };
 
 export const SIGNAL_ROLE_COLORS: Record<SignalRole, string> = {
-  context: "#546e7a",
-  trigger: "#ff9100",
-  channel: "#00e5ff",
-  state: "#b388ff",
-  guard: "#00e676",
-  effect: "#ff5252",
-  data: "#fd79a8",
+  context: '#546e7a',
+  trigger: '#ff9100',
+  channel: '#00e5ff',
+  state: '#b388ff',
+  guard: '#00e676',
+  effect: '#ff5252',
+  data: '#fd79a8',
 };
 
 // ═══════════════════════════════════════════════════
@@ -71,42 +70,42 @@ export const SIGNAL_ROLE_COLORS: Record<SignalRole, string> = {
 
 const PREFIX_ROLE_MAP: Record<string, SignalRole> = {
   // context
-  service: "context",
-  page_view: "context",
+  service: 'context',
+  page_view: 'context',
   // trigger
-  tracking: "trigger",
-  cart_event: "trigger",
-  auth_event: "trigger",
-  order_event: "trigger",
-  event: "trigger",
-  engine_event: "trigger",
-  schema_event: "trigger",
+  tracking: 'trigger',
+  cart_event: 'trigger',
+  auth_event: 'trigger',
+  order_event: 'trigger',
+  event: 'trigger',
+  engine_event: 'trigger',
+  schema_event: 'trigger',
   // channel
-  endpoint: "channel",
+  endpoint: 'channel',
   // state
-  flow_point: "state",
+  flow_point: 'state',
   // guard
-  permission: "guard",
-  rbac: "guard",
+  permission: 'guard',
+  rbac: 'guard',
   // effect
-  pipeline_point: "effect",
-  health_event: "effect",
-  deploy_event: "effect",
-  data_policy: "effect",
+  pipeline_point: 'effect',
+  health_event: 'effect',
+  deploy_event: 'effect',
+  data_policy: 'effect',
   // data
-  members: "data",
-  orders: "data",
-  items: "data",
-  orgs: "data",
-  carts: "data",
-  cart_items: "data",
+  members: 'data',
+  orders: 'data',
+  items: 'data',
+  orgs: 'data',
+  carts: 'data',
+  cart_items: 'data',
   // relation
-  relational: "context",
-  content: "context",
+  relational: 'context',
+  content: 'context',
 };
 
 export function getPrefixRole(prefixId: string): SignalRole {
-  return PREFIX_ROLE_MAP[prefixId] ?? "trigger";
+  return PREFIX_ROLE_MAP[prefixId] ?? 'trigger';
 }
 
 // ═══════════════════════════════════════════════════
@@ -149,9 +148,17 @@ export interface SignalInstance {
 /**
  * address_context를 role별로 분류한다.
  */
-export function classifyByRole(addressContext: Record<string, string>): Record<SignalRole, { prefixId: string; serialized: string }[]> {
+export function classifyByRole(
+  addressContext: Record<string, string>,
+): Record<SignalRole, { prefixId: string; serialized: string }[]> {
   const result: Record<SignalRole, { prefixId: string; serialized: string }[]> = {
-    context: [], trigger: [], channel: [], state: [], guard: [], effect: [], data: [],
+    context: [],
+    trigger: [],
+    channel: [],
+    state: [],
+    guard: [],
+    effect: [],
+    data: [],
   };
   for (const [prefixId, serialized] of Object.entries(addressContext)) {
     const role = getPrefixRole(prefixId);
@@ -166,117 +173,179 @@ export function classifyByRole(addressContext: Record<string, string>): Record<S
 
 export const DEMO_SIGNALS: SignalDef[] = [
   {
-    id: "auth.login", name: "로그인", description: "사용자 인증 → 세션 생성",
-    dsl: "dsl-auth",
+    id: 'auth.login',
+    name: '로그인',
+    description: '사용자 인증 → 세션 생성',
+    dsl: 'dsl-auth',
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "login" } },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "submit" } },
-      { prefixId: "auth_event", role: "trigger", fixedValues: { action: "login" } },
-      { prefixId: "endpoint", role: "channel", fixedValues: { http_method: "POST" } },
-      { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "login", flow_step: "entry" } },
-      { prefixId: "permission", role: "guard", fixedValues: { role: "customer" } },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'login' } },
+      { prefixId: 'tracking', role: 'trigger', fixedValues: { trackAction: 'submit' } },
+      { prefixId: 'auth_event', role: 'trigger', fixedValues: { action: 'login' } },
+      { prefixId: 'endpoint', role: 'channel', fixedValues: { http_method: 'POST' } },
+      {
+        prefixId: 'flow_point',
+        role: 'state',
+        fixedValues: { flow_name: 'login', flow_step: 'entry' },
+      },
+      { prefixId: 'permission', role: 'guard', fixedValues: { role: 'customer' } },
     ],
   },
   {
-    id: "page.view", name: "화면 조회", description: "사용자가 페이지를 방문 (generic)",
+    id: 'page.view',
+    name: '화면 조회',
+    description: '사용자가 페이지를 방문 (generic)',
     members: [
-      { prefixId: "page_view", role: "context" },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view" } },
+      { prefixId: 'page_view', role: 'context' },
+      { prefixId: 'tracking', role: 'trigger', fixedValues: { trackAction: 'view' } },
     ],
   },
   {
-    id: "page.home", name: "홈 화면", description: "홈 페이지 방문",
+    id: 'page.home',
+    name: '홈 화면',
+    description: '홈 페이지 방문',
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "home" } },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view", page: "home" } },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'home' } },
+      { prefixId: 'tracking', role: 'trigger', fixedValues: { trackAction: 'view', page: 'home' } },
     ],
   },
   {
-    id: "page.product", name: "상품 상세", description: "상품 상세 페이지 방문",
-    requires: ["page.home"],
+    id: 'page.product',
+    name: '상품 상세',
+    description: '상품 상세 페이지 방문',
+    requires: ['page.home'],
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "product_detail" } },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "click", page: "product_detail" } },
-      { prefixId: "endpoint", role: "channel", fixedValues: { resource_type: "api", http_method: "GET" } },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'product_detail' } },
+      {
+        prefixId: 'tracking',
+        role: 'trigger',
+        fixedValues: { trackAction: 'click', page: 'product_detail' },
+      },
+      {
+        prefixId: 'endpoint',
+        role: 'channel',
+        fixedValues: { resource_type: 'api', http_method: 'GET' },
+      },
     ],
   },
   {
-    id: "page.mypage", name: "마이페이지", description: "마이페이지 방문",
-    requires: ["auth.login"],
+    id: 'page.mypage',
+    name: '마이페이지',
+    description: '마이페이지 방문',
+    requires: ['auth.login'],
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "mypage" } },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view", page: "mypage" } },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'mypage' } },
+      {
+        prefixId: 'tracking',
+        role: 'trigger',
+        fixedValues: { trackAction: 'view', page: 'mypage' },
+      },
     ],
   },
   {
-    id: "page.order_complete", name: "주문 완료", description: "주문 완료 페이지",
-    requires: ["payment.success"],
+    id: 'page.order_complete',
+    name: '주문 완료',
+    description: '주문 완료 페이지',
+    requires: ['payment.success'],
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "order_complete" } },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "view", page: "order_complete" } },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'order_complete' } },
+      {
+        prefixId: 'tracking',
+        role: 'trigger',
+        fixedValues: { trackAction: 'view', page: 'order_complete' },
+      },
     ],
   },
   {
-    id: "api.call", name: "API 호출", description: "서버 API 요청",
+    id: 'api.call',
+    name: 'API 호출',
+    description: '서버 API 요청',
+    members: [{ prefixId: 'endpoint', role: 'channel' }],
+  },
+  {
+    id: 'cart.add',
+    name: '장바구니 담기',
+    description: '상품을 장바구니에 추가',
+    dsl: 'dsl-commerce',
+    requires: ['auth.login'],
     members: [
-      { prefixId: "endpoint", role: "channel" },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'product_detail' } },
+      { prefixId: 'tracking', role: 'trigger', fixedValues: { trackAction: 'add_to_cart' } },
+      { prefixId: 'endpoint', role: 'channel', fixedValues: { http_method: 'POST' } },
+      { prefixId: 'cart_event', role: 'trigger', fixedValues: { action: 'add' } },
     ],
   },
   {
-    id: "cart.add", name: "장바구니 담기", description: "상품을 장바구니에 추가",
-    dsl: "dsl-commerce",
-    requires: ["auth.login"],
+    id: 'checkout.entry',
+    name: '결제 진입',
+    description: '결제 페이지 진입',
+    dsl: 'dsl-checkout',
+    requires: ['cart.add'],
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "product_detail" } },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "add_to_cart" } },
-      { prefixId: "endpoint", role: "channel", fixedValues: { http_method: "POST" } },
-      { prefixId: "cart_event", role: "trigger", fixedValues: { action: "add" } },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'checkout' } },
+      { prefixId: 'tracking', role: 'trigger', fixedValues: { trackAction: 'navigate' } },
+      {
+        prefixId: 'endpoint',
+        role: 'channel',
+        fixedValues: { resource_type: 'page', http_method: 'GET' },
+      },
+      {
+        prefixId: 'flow_point',
+        role: 'state',
+        fixedValues: { flow_name: 'checkout', flow_step: 'entry' },
+      },
+      { prefixId: 'permission', role: 'guard', fixedValues: { role: 'customer' } },
     ],
   },
   {
-    id: "checkout.entry", name: "결제 진입", description: "결제 페이지 진입",
-    dsl: "dsl-checkout",
-    requires: ["cart.add"],
+    id: 'checkout.process',
+    name: '주문 생성',
+    description: '주문 데이터 생성 + 결제 요청',
+    dsl: 'dsl-checkout',
+    requires: ['checkout.entry'],
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "checkout" } },
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "navigate" } },
-      { prefixId: "endpoint", role: "channel", fixedValues: { resource_type: "page", http_method: "GET" } },
-      { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "checkout", flow_step: "entry" } },
-      { prefixId: "permission", role: "guard", fixedValues: { role: "customer" } },
+      { prefixId: 'page_view', role: 'context', fixedValues: { page: 'checkout' } },
+      { prefixId: 'endpoint', role: 'channel', fixedValues: { http_method: 'POST' } },
+      {
+        prefixId: 'flow_point',
+        role: 'state',
+        fixedValues: { flow_name: 'checkout', flow_step: 'processing' },
+      },
+      { prefixId: 'permission', role: 'guard', fixedValues: { role: 'customer' } },
+      { prefixId: 'order_event', role: 'trigger', fixedValues: { action: 'create' } },
+      { prefixId: 'pipeline_point', role: 'effect', fixedValues: { pipeline_phase: 'ingest' } },
     ],
   },
   {
-    id: "checkout.process", name: "주문 생성", description: "주문 데이터 생성 + 결제 요청",
-    dsl: "dsl-checkout",
-    requires: ["checkout.entry"],
+    id: 'payment.success',
+    name: '결제 성공',
+    description: '결제 완료 → 주문 확정',
+    dsl: 'dsl-checkout',
+    requires: ['checkout.process'],
     members: [
-      { prefixId: "page_view", role: "context", fixedValues: { page: "checkout" } },
-      { prefixId: "endpoint", role: "channel", fixedValues: { http_method: "POST" } },
-      { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "checkout", flow_step: "processing" } },
-      { prefixId: "permission", role: "guard", fixedValues: { role: "customer" } },
-      { prefixId: "order_event", role: "trigger", fixedValues: { action: "create" } },
-      { prefixId: "pipeline_point", role: "effect", fixedValues: { pipeline_phase: "ingest" } },
+      { prefixId: 'order_event', role: 'trigger', fixedValues: { action: 'complete' } },
+      {
+        prefixId: 'flow_point',
+        role: 'state',
+        fixedValues: { flow_name: 'checkout', flow_step: 'success' },
+      },
+      { prefixId: 'health_event', role: 'effect', fixedValues: { health_status: 'healthy' } },
+      { prefixId: 'pipeline_point', role: 'effect', fixedValues: { pipeline_phase: 'verdict' } },
     ],
   },
   {
-    id: "payment.success", name: "결제 성공", description: "결제 완료 → 주문 확정",
-    dsl: "dsl-checkout",
-    requires: ["checkout.process"],
+    id: 'auth.logout',
+    name: '로그아웃',
+    description: '세션 종료',
+    dsl: 'dsl-auth',
     members: [
-      { prefixId: "order_event", role: "trigger", fixedValues: { action: "complete" } },
-      { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "checkout", flow_step: "success" } },
-      { prefixId: "health_event", role: "effect", fixedValues: { health_status: "healthy" } },
-      { prefixId: "pipeline_point", role: "effect", fixedValues: { pipeline_phase: "verdict" } },
-    ],
-  },
-  {
-    id: "auth.logout", name: "로그아웃", description: "세션 종료",
-    dsl: "dsl-auth",
-    members: [
-      { prefixId: "tracking", role: "trigger", fixedValues: { trackAction: "close" } },
-      { prefixId: "auth_event", role: "trigger", fixedValues: { action: "logout" } },
-      { prefixId: "endpoint", role: "channel", fixedValues: { http_method: "POST" } },
-      { prefixId: "flow_point", role: "state", fixedValues: { flow_name: "browse", flow_step: "exit" } },
+      { prefixId: 'tracking', role: 'trigger', fixedValues: { trackAction: 'close' } },
+      { prefixId: 'auth_event', role: 'trigger', fixedValues: { action: 'logout' } },
+      { prefixId: 'endpoint', role: 'channel', fixedValues: { http_method: 'POST' } },
+      {
+        prefixId: 'flow_point',
+        role: 'state',
+        fixedValues: { flow_name: 'browse', flow_step: 'exit' },
+      },
     ],
   },
 ];
@@ -302,7 +371,7 @@ export function validateSignal(
   addressContext: Record<string, string>,
 ): SignalValidation {
   const presentPrefixes = new Set(Object.keys(addressContext));
-  const expectedPrefixes = new Set(signalDef.members.map(m => m.prefixId));
+  const expectedPrefixes = new Set(signalDef.members.map((m) => m.prefixId));
 
   let matched = 0;
   const missingRoles = new Set<SignalRole>();
@@ -315,7 +384,9 @@ export function validateSignal(
     }
   }
 
-  const extraPrefixes = [...presentPrefixes].filter(p => !expectedPrefixes.has(p) && p !== "service");
+  const extraPrefixes = [...presentPrefixes].filter(
+    (p) => !expectedPrefixes.has(p) && p !== 'service',
+  );
 
   return {
     signalId: signalDef.id,

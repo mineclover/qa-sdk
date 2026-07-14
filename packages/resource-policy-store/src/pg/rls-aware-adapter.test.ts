@@ -1,14 +1,14 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { withRlsContext } from "db-bootstrap";
-import { RP_READ_BIT, RP_WRITE_BIT } from "./rls-bits.js";
-import { RlsAwarePgResourcePolicyRegistry } from "./rls-aware-adapter.js";
+import { withRlsContext } from 'db-bootstrap';
+import { RP_READ_BIT, RP_WRITE_BIT } from './rls-bits.js';
+import { RlsAwarePgResourcePolicyRegistry } from './rls-aware-adapter.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
 function maskWithBit(pos: number): Uint8Array {
   const byteIdx = Math.floor(pos / 8);
@@ -83,12 +83,12 @@ CREATE POLICY rp_delete_policy ON auth.resource_policies
 GRANT SELECT, INSERT, UPDATE, DELETE ON auth.resource_policies TO auth_app;
 `;
 
-describe.skipIf(!PG_AVAILABLE)("RlsAwarePgResourcePolicyRegistry — Plan 15c", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const AUTH_APP_PASSWORD = process.env.QA_TEST_PG_AUTH_APP_PASSWORD ?? "";
-  const ADMIN_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('RlsAwarePgResourcePolicyRegistry — Plan 15c', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const AUTH_APP_PASSWORD = process.env.QA_TEST_PG_AUTH_APP_PASSWORD ?? '';
+  const ADMIN_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
 
   let adminSql: ReturnType<typeof postgres>;
   let appSql: ReturnType<typeof postgres>;
@@ -96,13 +96,23 @@ describe.skipIf(!PG_AVAILABLE)("RlsAwarePgResourcePolicyRegistry — Plan 15c", 
 
   beforeEach(async () => {
     adminSql = postgres({
-      host: PG_HOST, port: PG_PORT, database: PG_DATABASE,
-      user: "qa_admin", password: ADMIN_PASSWORD, max: 3, onnotice: () => {},
+      host: PG_HOST,
+      port: PG_PORT,
+      database: PG_DATABASE,
+      user: 'qa_admin',
+      password: ADMIN_PASSWORD,
+      max: 3,
+      onnotice: () => {},
     });
     await adminSql.unsafe(RESET_TABLE_DDL);
     appSql = postgres({
-      host: PG_HOST, port: PG_PORT, database: PG_DATABASE,
-      user: "auth_app", password: AUTH_APP_PASSWORD, max: 3, onnotice: () => {},
+      host: PG_HOST,
+      port: PG_PORT,
+      database: PG_DATABASE,
+      user: 'auth_app',
+      password: AUTH_APP_PASSWORD,
+      max: 3,
+      onnotice: () => {},
     });
     registry = new RlsAwarePgResourcePolicyRegistry(appSql);
   });
@@ -116,46 +126,58 @@ describe.skipIf(!PG_AVAILABLE)("RlsAwarePgResourcePolicyRegistry — Plan 15c", 
     }
   });
 
-  it("ALS context 없으면 default deny (SELECT 0 row)", async () => {
-    await adminSql.unsafe(`INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`);
-    const rows = await registry.listByOwner("alice");
+  it('ALS context 없으면 default deny (SELECT 0 row)', async () => {
+    await adminSql.unsafe(
+      `INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`,
+    );
+    const rows = await registry.listByOwner('alice');
     expect(rows.length).toBe(0);
   });
 
-  it("ALS context 주입 후 호출 — owner policy 통과", async () => {
-    await adminSql.unsafe(`INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`);
+  it('ALS context 주입 후 호출 — owner policy 통과', async () => {
+    await adminSql.unsafe(
+      `INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`,
+    );
     const rows = await withRlsContext(
-      { userId: "alice", tenantId: null, bitmapMask: maskWithBit(RP_READ_BIT), role: null },
-      () => registry.listByOwner("alice"),
+      { userId: 'alice', tenantId: null, bitmapMask: maskWithBit(RP_READ_BIT), role: null },
+      () => registry.listByOwner('alice'),
     );
     expect(rows.length).toBe(1);
   });
 
-  it("explicit overrideContext", async () => {
-    await adminSql.unsafe(`INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`);
+  it('explicit overrideContext', async () => {
+    await adminSql.unsafe(
+      `INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`,
+    );
     const cliRegistry = new RlsAwarePgResourcePolicyRegistry(appSql, {
-      userId: "alice", tenantId: null, bitmapMask: maskWithBit(RP_READ_BIT), role: null,
+      userId: 'alice',
+      tenantId: null,
+      bitmapMask: maskWithBit(RP_READ_BIT),
+      role: null,
     });
-    const rows = await cliRegistry.listByOwner("alice");
+    const rows = await cliRegistry.listByOwner('alice');
     expect(rows.length).toBe(1);
   });
 
-  it("create — WITH CHECK 정책 통과", async () => {
+  it('create — WITH CHECK 정책 통과', async () => {
     await withRlsContext(
-      { userId: "alice", tenantId: null, bitmapMask: maskWithBit(RP_WRITE_BIT), role: null },
+      { userId: 'alice', tenantId: null, bitmapMask: maskWithBit(RP_WRITE_BIT), role: null },
       async () => {
-        await registry.create({ resourceId: "new-r", resourceType: "doc", ownerId: "alice" });
+        await registry.create({ resourceId: 'new-r', resourceType: 'doc', ownerId: 'alice' });
       },
     );
-    const rows = await adminSql`SELECT resource_id FROM auth.resource_policies WHERE resource_id='new-r'`;
+    const rows =
+      await adminSql`SELECT resource_id FROM auth.resource_policies WHERE resource_id='new-r'`;
     expect(rows.length).toBe(1);
   });
 
   it("admin bypass — role='admin' context → REGISTERED 리소스도 보임", async () => {
-    await adminSql.unsafe(`INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r-reg', 'doc', 'REGISTERED', 'alice', '2026-04-22')`);
+    await adminSql.unsafe(
+      `INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r-reg', 'doc', 'REGISTERED', 'alice', '2026-04-22')`,
+    );
     const rows = await withRlsContext(
-      { userId: null, tenantId: null, bitmapMask: null, role: "admin" },
-      () => registry.listByState("REGISTERED"),
+      { userId: null, tenantId: null, bitmapMask: null, role: 'admin' },
+      () => registry.listByState('REGISTERED'),
     );
     expect(rows.length).toBe(1);
   });

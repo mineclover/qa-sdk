@@ -1,9 +1,9 @@
-import type { AssignmentCreatedPayload } from "@sample/contracts";
+import type { AssignmentCreatedPayload } from '@sample/contracts';
 
 export interface AssignmentProjectedReadModel {
   readonly id: string;
   readonly assigneeId: string;
-  readonly status: "assigned";
+  readonly status: 'assigned';
   readonly updatedAt: string;
 }
 
@@ -14,7 +14,7 @@ export class AssignmentReadModelProjector {
     this.rows.set(event.id, {
       id: event.id,
       assigneeId: event.assigneeId,
-      status: "assigned",
+      status: 'assigned',
       updatedAt: event.occurredAt,
     });
   }
@@ -23,4 +23,3 @@ export class AssignmentReadModelProjector {
     return this.rows.get(id) ?? null;
   }
 }
-

@@ -1,11 +1,11 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { eq, and } from "drizzle-orm";
-import type { VerdictStore, VerdictInsert, StoredVerdict } from "@qa-sdk/core";
-import type { VerdictReport } from "@qa-sdk/core";
-import type { DbExecutor } from "../../db/client.js";
-import { verdictReports } from "../../db/schema.js";
+import { eq, and } from 'drizzle-orm';
+import type { VerdictStore, VerdictInsert, StoredVerdict } from '@qa-sdk/core';
+import type { VerdictReport } from '@qa-sdk/core';
+import type { DbExecutor } from '../../db/client.js';
+import { verdictReports } from '../../db/schema.js';
 
 /** VerdictStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleVerdictStore implements VerdictStore {
@@ -13,50 +13,37 @@ export class DrizzleVerdictStore implements VerdictStore {
 
   async insert(params: VerdictInsert): Promise<void> {
     const pathObs = params.report.path_observation;
-    await this.db.insert(verdictReports).values({
-      id: params.id,
-      scenarioId: params.scenarioId,
-      traceId: params.traceId,
-      qaSessionId: params.qaSessionId,
-      overallVerdict: params.overallVerdict,
-      report: params.report,
-      pathObservation: pathObs ?? null,
-      loopDetected: pathObs?.loop_detected ?? null,
-      terminalReason: pathObs?.terminal_reason ?? null,
-    }).comment({ adapter: "VerdictStore", method: "insert" });
+    await this.db
+      .insert(verdictReports)
+      .values({
+        id: params.id,
+        scenarioId: params.scenarioId,
+        traceId: params.traceId,
+        qaSessionId: params.qaSessionId,
+        overallVerdict: params.overallVerdict,
+        report: params.report,
+        pathObservation: pathObs ?? null,
+        loopDetected: pathObs?.loop_detected ?? null,
+        terminalReason: pathObs?.terminal_reason ?? null,
+      })
+      .comment({ adapter: 'VerdictStore', method: 'insert' });
   }
 
-  async removeByScenarioAndTrace(
-    scenarioId: string,
-    traceId: string,
-  ): Promise<boolean> {
+  async removeByScenarioAndTrace(scenarioId: string, traceId: string): Promise<boolean> {
     const result = await this.db
       .delete(verdictReports)
-      .where(
-        and(
-          eq(verdictReports.scenarioId, scenarioId),
-          eq(verdictReports.traceId, traceId),
-        ),
-      )
+      .where(and(eq(verdictReports.scenarioId, scenarioId), eq(verdictReports.traceId, traceId)))
       .returning({ id: verdictReports.id })
-      .comment({ adapter: "VerdictStore", method: "removeByScenarioAndTrace" });
+      .comment({ adapter: 'VerdictStore', method: 'removeByScenarioAndTrace' });
     return result.length > 0;
   }
 
-  async findByScenarioAndTrace(
-    scenarioId: string,
-    traceId: string,
-  ): Promise<StoredVerdict | null> {
+  async findByScenarioAndTrace(scenarioId: string, traceId: string): Promise<StoredVerdict | null> {
     const [row] = await this.db
       .select()
       .from(verdictReports)
-      .where(
-        and(
-          eq(verdictReports.scenarioId, scenarioId),
-          eq(verdictReports.traceId, traceId),
-        ),
-      )
-      .comment({ adapter: "VerdictStore", method: "findByScenarioAndTrace" });
+      .where(and(eq(verdictReports.scenarioId, scenarioId), eq(verdictReports.traceId, traceId)))
+      .comment({ adapter: 'VerdictStore', method: 'findByScenarioAndTrace' });
     return row ? toStoredVerdict(row) : null;
   }
 
@@ -65,7 +52,7 @@ export class DrizzleVerdictStore implements VerdictStore {
       .select()
       .from(verdictReports)
       .where(eq(verdictReports.traceId, traceId))
-      .comment({ adapter: "VerdictStore", method: "findByTraceId" });
+      .comment({ adapter: 'VerdictStore', method: 'findByTraceId' });
     return rows.map(toStoredVerdict);
   }
 
@@ -74,7 +61,7 @@ export class DrizzleVerdictStore implements VerdictStore {
       .select()
       .from(verdictReports)
       .where(eq(verdictReports.qaSessionId, sessionId))
-      .comment({ adapter: "VerdictStore", method: "findBySessionId" });
+      .comment({ adapter: 'VerdictStore', method: 'findBySessionId' });
     return rows.map(toStoredVerdict);
   }
 }

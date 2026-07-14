@@ -10,12 +10,12 @@
  */
 
 export interface EntryFlagRecord {
-  readonly prefix:    string;
+  readonly prefix: string;
   readonly versionId: string;
-  readonly position:  number;    // 1-based
-  readonly status:    "active" | "inactive";
-  readonly reason?:   string;
-  readonly updatedAt: string;    // ISO 8601
+  readonly position: number; // 1-based
+  readonly status: 'active' | 'inactive';
+  readonly reason?: string;
+  readonly updatedAt: string; // ISO 8601
 }
 
 export interface EntryFlagStore {

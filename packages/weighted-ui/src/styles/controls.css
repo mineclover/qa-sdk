@@ -16,7 +16,9 @@
   background: var(--surface-1);
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   font-family: var(--font);
 }
 .ui-toggle-btn:not(:first-child) {

@@ -8,7 +8,7 @@ export {
   collectCommitTypes,
   commitCountsByScope,
   type ConventionalCommit,
-} from "./git.js";
+} from './git.js';
 export {
   analyzeRemoteBranchConflicts,
   type AnalyzeRemoteBranchConflictsOptions,
@@ -27,5 +27,5 @@ export {
   type RemoteBranchConflictAnalysis,
   type SharedConflictHotspot,
   type WorkspaceChangeSet,
-} from "./branch-conflicts.js";
-export type { GitConflictReport } from "./branch-conflicts-types.js";
+} from './branch-conflicts.js';
+export type { GitConflictReport } from './branch-conflicts-types.js';

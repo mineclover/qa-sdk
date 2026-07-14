@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/viteplus-sdk-smoke",
   "version": "0.1.0",
-  "description": "Vite 소비처용 qa-sdk 브리지와 import, build smoke 검증 앱",
   "private": true,
+  "description": "Vite 소비처용 qa-sdk 브리지와 import, build smoke 검증 앱",
   "type": "module",
   "scripts": {
     "dev": "vp dev",

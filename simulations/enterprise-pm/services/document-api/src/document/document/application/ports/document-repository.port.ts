@@ -1,8 +1,8 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { DocumentEntity } from "../../domain/index.js";
-import type { DocumentTransactionScope } from "./document-transaction.port.js";
+import type { DocumentEntity } from '../../domain/index.js';
+import type { DocumentTransactionScope } from './document-transaction.port.js';
 
 /**
  * Document Aggregate 의 영속 추상.

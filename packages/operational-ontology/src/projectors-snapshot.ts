@@ -5,4 +5,4 @@ export {
   createDefaultOperationalOntologyRuntimePorts,
   defaultOperationalOntologyRuntimePorts,
   projectOperationalOntologySnapshot,
-} from "./internal/projector-core.js";
+} from './internal/projector-core.js';

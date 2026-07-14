@@ -1,7 +1,7 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { EntryFlagStore, EntryFlagRecord } from "../entry-flag-store.js";
+import type { EntryFlagStore, EntryFlagRecord } from '../entry-flag-store.js';
 
 export class InMemoryEntryFlagStore implements EntryFlagStore {
   // Store all records (append-only), key = "prefix:versionId:position"
@@ -12,7 +12,11 @@ export class InMemoryEntryFlagStore implements EntryFlagStore {
     this._records.push(record);
   }
 
-  async getFlag(prefix: string, versionId: string, position: number): Promise<EntryFlagRecord | null> {
+  async getFlag(
+    prefix: string,
+    versionId: string,
+    position: number,
+  ): Promise<EntryFlagRecord | null> {
     const matches = this._records
       .filter((r) => r.prefix === prefix && r.versionId === versionId && r.position === position)
       .toSorted((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -34,8 +38,6 @@ export class InMemoryEntryFlagStore implements EntryFlagStore {
 
   async getInactivePositions(prefix: string, versionId: string): Promise<number[]> {
     const flags = await this.getFlags(prefix, versionId);
-    return flags
-      .filter((f) => f.status === "inactive")
-      .map((f) => f.position);
+    return flags.filter((f) => f.status === 'inactive').map((f) => f.position);
   }
 }

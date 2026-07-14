@@ -20,39 +20,40 @@
  * 포트: 3900 (ENRICHMENT_PORT 환경변수로 변경 가능)
  */
 
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { serve } from "@hono/node-server";
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { serve } from '@hono/node-server';
 
 const app = new Hono();
-app.use("*", cors({ origin: "*" }));
+app.use('*', cors({ origin: '*' }));
 
 // ── Feature 정의 ─────────────────────────────────────
 // route-permissions.ts의 feature 이름과 일치해야 한다.
 // 인덱스 = bitmask 내 비트 위치
 
 const FEATURES = [
-  "ingest_read",      // 0
-  "ingest_write",     // 1
-  "registry_read",    // 2
-  "gate_read",        // 3
-  "query_read",       // 4
-  "decode_read",      // 5
-  "definition_read",  // 6
-  "definition_write", // 7
-  "decision_read",    // 8
-  "decision_write",   // 9
-  "deploy_execute",   // 10
-  "monitoring_read",  // 11
-  "ingest_admin",     // 12
+  'ingest_read', // 0
+  'ingest_write', // 1
+  'registry_read', // 2
+  'gate_read', // 3
+  'query_read', // 4
+  'decode_read', // 5
+  'definition_read', // 6
+  'definition_write', // 7
+  'decision_read', // 8
+  'decision_write', // 9
+  'deploy_execute', // 10
+  'monitoring_read', // 11
+  'ingest_admin', // 12
 ] as const;
 
-type FeatureName = typeof FEATURES[number];
+type FeatureName = (typeof FEATURES)[number];
 
 /** feature 이름 -> 비트 인덱스 */
-const FEATURE_INDEX = Object.fromEntries(
-  FEATURES.map((f, i) => [f, i]),
-) as Record<FeatureName, number>;
+const FEATURE_INDEX = Object.fromEntries(FEATURES.map((f, i) => [f, i])) as Record<
+  FeatureName,
+  number
+>;
 
 // ── Role Registry (계층 상속) ────────────────────────
 
@@ -64,26 +65,28 @@ interface RoleDef {
 
 const ROLE_DEFS: Record<string, RoleDef> = {
   viewer: {
-    name: "viewer",
+    name: 'viewer',
     parents: [],
     features: [
-      "ingest_read", "registry_read", "gate_read", "query_read",
-      "decode_read", "definition_read", "decision_read", "monitoring_read",
+      'ingest_read',
+      'registry_read',
+      'gate_read',
+      'query_read',
+      'decode_read',
+      'definition_read',
+      'decision_read',
+      'monitoring_read',
     ],
   },
   operator: {
-    name: "operator",
-    parents: ["viewer"],
-    features: [
-      "ingest_write", "deploy_execute",
-    ],
+    name: 'operator',
+    parents: ['viewer'],
+    features: ['ingest_write', 'deploy_execute'],
   },
   admin: {
-    name: "admin",
-    parents: ["operator"],
-    features: [
-      "definition_write", "decision_write", "ingest_admin",
-    ],
+    name: 'admin',
+    parents: ['operator'],
+    features: ['definition_write', 'decision_write', 'ingest_admin'],
   },
 };
 
@@ -114,11 +117,11 @@ const ROLE_FEATURES: Record<string, readonly FeatureName[]> = Object.fromEntries
  */
 const ENV_RESTRICTIONS: Record<string, Record<string, FeatureName[]>> = {
   prod: {
-    operator: ["deploy_execute"],
-    viewer: ["deploy_execute", "ingest_write", "definition_write", "decision_write"],
+    operator: ['deploy_execute'],
+    viewer: ['deploy_execute', 'ingest_write', 'definition_write', 'decision_write'],
   },
   staging: {
-    viewer: ["ingest_write", "definition_write", "decision_write"],
+    viewer: ['ingest_write', 'definition_write', 'decision_write'],
   },
   dev: {},
 };
@@ -151,16 +154,16 @@ function createBitmask(features: readonly FeatureName[]): string {
     if (idx === undefined) continue;
     const byteIdx = Math.floor(idx / 8);
     const bitIdx = idx % 8;
-    if (byteIdx < bytes.length) bytes[byteIdx] |= (1 << bitIdx);
+    if (byteIdx < bytes.length) bytes[byteIdx] |= 1 << bitIdx;
   }
-  return Buffer.from(bytes).toString("base64");
+  return Buffer.from(bytes).toString('base64');
 }
 
 /** base64 bitmask에서 특정 feature 비트 확인 */
 function hasBit(bitmaskB64: string, featureName: string): boolean {
   const idx = FEATURE_INDEX[featureName as FeatureName];
   if (idx === undefined) return false;
-  const bytes = Buffer.from(bitmaskB64, "base64");
+  const bytes = Buffer.from(bitmaskB64, 'base64');
   const byteIdx = Math.floor(idx / 8);
   const bitIdx = idx % 8;
   if (byteIdx >= bytes.length) return false;
@@ -186,39 +189,42 @@ async function fetchZitadelMetadata(userId: string): Promise<ZitadelPerms | null
   if (!ZITADEL_URL || !ZITADEL_SERVICE_TOKEN) return null;
 
   try {
-    const resp = await fetch(
-      `${ZITADEL_URL}/management/v1/users/${userId}/metadata/_search`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ZITADEL_SERVICE_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-        signal: AbortSignal.timeout(3_000),
+    const resp = await fetch(`${ZITADEL_URL}/management/v1/users/${userId}/metadata/_search`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${ZITADEL_SERVICE_TOKEN}`,
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({}),
+      signal: AbortSignal.timeout(3_000),
+    });
     if (!resp.ok) return null;
 
-    const meta = await resp.json() as {
+    const meta = (await resp.json()) as {
       result?: Array<{ key: string; value: string }>;
     };
 
     let perms: Record<string, string> | undefined;
     let perms_v = 1;
-    let perms_schema = "qa-v1";
+    let perms_schema = 'qa-v1';
 
     for (const m of meta.result ?? []) {
-      const val = Buffer.from(m.value, "base64").toString();
-      if (m.key === "perms") {
-        try { perms = JSON.parse(val) as Record<string, string>; } catch { /* 무시 */ }
+      const val = Buffer.from(m.value, 'base64').toString();
+      if (m.key === 'perms') {
+        try {
+          perms = JSON.parse(val) as Record<string, string>;
+        } catch {
+          /* 무시 */
+        }
       }
-      if (m.key === "perms_v") perms_v = parseInt(val) || 1;
-      if (m.key === "perms_schema") perms_schema = val;
+      if (m.key === 'perms_v') perms_v = parseInt(val) || 1;
+      if (m.key === 'perms_schema') perms_schema = val;
     }
 
     if (perms) return { perms, perms_v, perms_schema };
-  } catch { /* metadata 조회 실패 — fail-open */ }
+  } catch {
+    /* metadata 조회 실패 — fail-open */
+  }
 
   return null;
 }
@@ -242,7 +248,7 @@ const users = new Map<string, UserState>();
 function getUser(userId: string): UserState {
   if (!users.has(userId)) {
     users.set(userId, {
-      roles: ["viewer"],
+      roles: ['viewer'],
       overrides: [],
       perms_v: 1,
       active: true,
@@ -264,7 +270,7 @@ function checkFeature(userId: string, feature: string): CheckResult {
 
   // 1. 비활성 사용자 — 세션 무효화됨
   if (!user.active) {
-    return { granted: false, reason: "session_invalidated", sources: [] };
+    return { granted: false, reason: 'session_invalidated', sources: [] };
   }
 
   // 2. Override 확인 (deny wins)
@@ -272,7 +278,7 @@ function checkFeature(userId: string, feature: string): CheckResult {
   if (override) {
     return {
       granted: override.granted,
-      reason: override.granted ? "user_override_grant" : "user_override_deny",
+      reason: override.granted ? 'user_override_grant' : 'user_override_deny',
       sources: [`override:${feature}`],
     };
   }
@@ -285,10 +291,10 @@ function checkFeature(userId: string, feature: string): CheckResult {
   }
 
   if (grantingRoles.length > 0) {
-    return { granted: true, reason: "role_grant", sources: grantingRoles };
+    return { granted: true, reason: 'role_grant', sources: grantingRoles };
   }
 
-  return { granted: false, reason: "not_assigned", sources: [] };
+  return { granted: false, reason: 'not_assigned', sources: [] };
 }
 
 // ── JWT 발급 설정 ───────────────────────────────────
@@ -296,8 +302,8 @@ function checkFeature(userId: string, feature: string): CheckResult {
 // Zitadel Action의 metadata 주입이 v2에서 불안정하므로,
 // enrichment 서버가 token exchange (RFC 8693 유사) 역할을 수행.
 
-const JWT_SECRET = process.env.ENRICHMENT_JWT_SECRET ?? "enrichment-local-dev-secret-32ch";
-const JWT_ISSUER = "qa-enrichment";
+const JWT_SECRET = process.env.ENRICHMENT_JWT_SECRET ?? 'enrichment-local-dev-secret-32ch';
+const JWT_ISSUER = 'qa-enrichment';
 const JWT_EXPIRY = 43200; // 12시간
 
 // ── Enrich 공통 로직 ────────────────────────────────
@@ -343,16 +349,14 @@ async function computeEnrich(userId: string, env?: string): Promise<EnrichResult
     }
   }
 
-  const finalFeatures = env
-    ? [...restricted] as FeatureName[]
-    : [...allFeatures];
+  const finalFeatures = env ? ([...restricted] as FeatureName[]) : [...allFeatures];
 
   const bitmask = createBitmask(finalFeatures);
 
   return {
     perms: { infra: bitmask },
     perms_v: user.perms_v,
-    perms_schema: "qa-v1",
+    perms_schema: 'qa-v1',
   };
 }
 
@@ -360,8 +364,8 @@ async function computeEnrich(userId: string, env?: string): Promise<EnrichResult
 
 // ── 유저 상태 조회 ──────────────────────────────────
 
-app.get("/users/:userId", (c) => {
-  const userId = c.req.param("userId");
+app.get('/users/:userId', (c) => {
+  const userId = c.req.param('userId');
   const user = getUser(userId);
   return c.json({
     userId,
@@ -374,8 +378,8 @@ app.get("/users/:userId", (c) => {
 
 // ── Role 부여/제거 ──────────────────────────────────
 
-app.post("/users/:userId/grant-role", async (c) => {
-  const userId = c.req.param("userId");
+app.post('/users/:userId/grant-role', async (c) => {
+  const userId = c.req.param('userId');
   const body = await c.req.json<{ role: string }>();
   const { role } = body;
 
@@ -390,9 +394,9 @@ app.post("/users/:userId/grant-role", async (c) => {
   return c.json({ ok: true, userId, roles: user.roles });
 });
 
-app.delete("/users/:userId/revoke-role/:role", (c) => {
-  const userId = c.req.param("userId");
-  const role = c.req.param("role");
+app.delete('/users/:userId/revoke-role/:role', (c) => {
+  const userId = c.req.param('userId');
+  const role = c.req.param('role');
   const user = getUser(userId);
 
   const idx = user.roles.indexOf(role);
@@ -403,7 +407,7 @@ app.delete("/users/:userId/revoke-role/:role", (c) => {
 
   // 최소 1개 role 보장 (빈 roles 방지)
   if (user.roles.length === 0) {
-    user.roles.push("viewer");
+    user.roles.push('viewer');
   }
 
   return c.json({ ok: true, userId, roles: user.roles });
@@ -411,7 +415,7 @@ app.delete("/users/:userId/revoke-role/:role", (c) => {
 
 // ── Permission Check ────────────────────────────────
 
-app.post("/check", async (c) => {
+app.post('/check', async (c) => {
   const body = await c.req.json<{
     userId: string;
     domain?: string;
@@ -424,7 +428,7 @@ app.post("/check", async (c) => {
 
 // ── Explain ─────────────────────────────────────────
 
-app.post("/explain", async (c) => {
+app.post('/explain', async (c) => {
   const body = await c.req.json<{
     userId: string;
     domain?: string;
@@ -436,7 +440,7 @@ app.post("/explain", async (c) => {
   if (!user.active) {
     return c.json({
       granted: false,
-      reason: "session_invalidated",
+      reason: 'session_invalidated',
       sources: [],
       roles: user.roles,
       overrides: user.overrides,
@@ -449,7 +453,7 @@ app.post("/explain", async (c) => {
   if (override) {
     return c.json({
       granted: override.granted,
-      reason: override.granted ? "user_override_grant" : "user_override_deny",
+      reason: override.granted ? 'user_override_grant' : 'user_override_deny',
       sources: [`override:${body.feature}`],
       roles: user.roles,
       overrides: user.overrides,
@@ -470,7 +474,7 @@ app.post("/explain", async (c) => {
 
   return c.json({
     granted: grantingRoles.length > 0,
-    reason: grantingRoles.length > 0 ? "role_grant" : "not_assigned",
+    reason: grantingRoles.length > 0 ? 'role_grant' : 'not_assigned',
     sources: grantingRoles,
     roles: user.roles,
     overrides: user.overrides,
@@ -480,8 +484,8 @@ app.post("/explain", async (c) => {
 
 // ── User Override ───────────────────────────────────
 
-app.post("/users/:userId/override", async (c) => {
-  const userId = c.req.param("userId");
+app.post('/users/:userId/override', async (c) => {
+  const userId = c.req.param('userId');
   const body = await c.req.json<{ feature: string; granted: boolean }>();
   const user = getUser(userId);
 
@@ -496,9 +500,9 @@ app.post("/users/:userId/override", async (c) => {
   return c.json({ ok: true, userId, overrides: user.overrides });
 });
 
-app.delete("/users/:userId/override/:feature", (c) => {
-  const userId = c.req.param("userId");
-  const feature = c.req.param("feature");
+app.delete('/users/:userId/override/:feature', (c) => {
+  const userId = c.req.param('userId');
+  const feature = c.req.param('feature');
   const user = getUser(userId);
 
   const idx = user.overrides.findIndex((o) => o.feature === feature);
@@ -520,19 +524,16 @@ async function revokeZitadelSessions(userId: string): Promise<{ revoked: number 
 
   const headers = {
     Authorization: `Bearer ${ZITADEL_SERVICE_TOKEN}`,
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
 
   // 1. 전체 세션 조회 후 userId로 필터 (Zitadel v2 connect API 호환)
-  const listRes = await fetch(
-    `${ZITADEL_URL}/zitadel.session.v2.SessionService/ListSessions`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify({}),
-      signal: AbortSignal.timeout(5_000),
-    },
-  );
+  const listRes = await fetch(`${ZITADEL_URL}/zitadel.session.v2.SessionService/ListSessions`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({}),
+    signal: AbortSignal.timeout(5_000),
+  });
 
   if (!listRes.ok) {
     console.warn(`[enrichment] Zitadel 세션 조회 실패: ${listRes.status}`);
@@ -544,19 +545,17 @@ async function revokeZitadelSessions(userId: string): Promise<{ revoked: number 
     sessionToken?: string;
     factors?: { user?: { id?: string } };
   };
-  const { sessions: allSessions = [] } = await listRes.json() as {
+  const { sessions: allSessions = [] } = (await listRes.json()) as {
     sessions?: ZitadelSession[];
   };
-  const sessions = allSessions.filter(
-    s => s.factors?.user?.id === userId,
-  );
+  const sessions = allSessions.filter((s) => s.factors?.user?.id === userId);
   if (sessions.length === 0) return { revoked: 0 };
 
   // 2. 각 세션 삭제
   const results = await Promise.allSettled(
-    sessions.map(s =>
+    sessions.map((s) =>
       fetch(`${ZITADEL_URL}/zitadel.session.v2.SessionService/DeleteSession`, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify({ sessionId: s.id, sessionToken: s.sessionToken }),
         signal: AbortSignal.timeout(5_000),
@@ -564,14 +563,14 @@ async function revokeZitadelSessions(userId: string): Promise<{ revoked: number 
     ),
   );
 
-  const revoked = results.filter(r => r.status === "fulfilled").length;
+  const revoked = results.filter((r) => r.status === 'fulfilled').length;
   return { revoked };
 }
 
 // ── 세션 무효화 / 재활성화 ────────────────────────────
 
-app.post("/users/:userId/invalidate", async (c) => {
-  const userId = c.req.param("userId");
+app.post('/users/:userId/invalidate', async (c) => {
+  const userId = c.req.param('userId');
   const user = getUser(userId);
 
   // 1. 내부 상태 무효화
@@ -584,7 +583,7 @@ app.post("/users/:userId/invalidate", async (c) => {
     const result = await revokeZitadelSessions(userId);
     zitadelRevoked = result.revoked;
   } catch (err) {
-    console.warn("[enrichment] Zitadel 세션 종료 실패 (fail-open):", err);
+    console.warn('[enrichment] Zitadel 세션 종료 실패 (fail-open):', err);
   }
 
   return c.json({
@@ -596,8 +595,8 @@ app.post("/users/:userId/invalidate", async (c) => {
   });
 });
 
-app.post("/users/:userId/activate", (c) => {
-  const userId = c.req.param("userId");
+app.post('/users/:userId/activate', (c) => {
+  const userId = c.req.param('userId');
   const user = getUser(userId);
 
   user.active = true;
@@ -622,21 +621,21 @@ app.post("/users/:userId/activate", (c) => {
  *
  * RFC 8693 (Token Exchange) 유사 패턴.
  */
-app.post("/token", async (c) => {
+app.post('/token', async (c) => {
   let body: { zitadel_token?: string };
   try {
     body = await c.req.json<{ zitadel_token?: string }>();
   } catch {
-    return c.json({ error: "Invalid JSON body" }, 400);
+    return c.json({ error: 'Invalid JSON body' }, 400);
   }
 
   const { zitadel_token } = body;
   if (!zitadel_token) {
-    return c.json({ error: "zitadel_token required" }, 400);
+    return c.json({ error: 'zitadel_token required' }, 400);
   }
 
   // 1. Zitadel userinfo로 토큰 검증
-  const zitadelUrl = process.env.ZITADEL_URL ?? "http://localhost:8085";
+  const zitadelUrl = process.env.ZITADEL_URL ?? 'http://localhost:8085';
   let userinfo: { sub: string; name?: string; email?: string };
 
   try {
@@ -645,19 +644,19 @@ app.post("/token", async (c) => {
       signal: AbortSignal.timeout(5_000),
     });
     if (!userinfoResp.ok) {
-      return c.json({ error: "Invalid Zitadel token" }, 401);
+      return c.json({ error: 'Invalid Zitadel token' }, 401);
     }
-    userinfo = await userinfoResp.json() as { sub: string; name?: string; email?: string };
+    userinfo = (await userinfoResp.json()) as { sub: string; name?: string; email?: string };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: "Zitadel userinfo unreachable", detail: message }, 502);
+    return c.json({ error: 'Zitadel userinfo unreachable', detail: message }, 502);
   }
 
   // 2. Permission claims 계산
   const enrichResult = await computeEnrich(userinfo.sub);
 
   // 3. JWT 생성 (HS256)
-  const { createHmac } = await import("node:crypto");
+  const { createHmac } = await import('node:crypto');
   const now = Math.floor(Date.now() / 1000);
   const payload = {
     iss: JWT_ISSUER,
@@ -671,11 +670,11 @@ app.post("/token", async (c) => {
     exp: now + JWT_EXPIRY,
   };
 
-  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = createHmac("sha256", JWT_SECRET)
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = createHmac('sha256', JWT_SECRET)
     .update(`${header}.${payloadB64}`)
-    .digest("base64url");
+    .digest('base64url');
   const token = `${header}.${payloadB64}.${signature}`;
 
   return c.json({ token, expires_in: JWT_EXPIRY });
@@ -690,7 +689,7 @@ app.post("/token", async (c) => {
  * 1. Zitadel metadata에 perms가 이미 있으면 그대로 반환
  * 2. 없으면 role 기반으로 bitmask 계산 (env 제한 적용)
  */
-app.post("/enrich", async (c) => {
+app.post('/enrich', async (c) => {
   const body = await c.req.json<{
     userId: string;
     roles?: string[];
@@ -710,29 +709,29 @@ app.post("/enrich", async (c) => {
     perms: result.perms,
     perms_v: result.perms_v,
     perms_schema: result.perms_schema,
-    source: "role-computed",
+    source: 'role-computed',
   });
 });
 
 // ── 레거시 호환: Role 할당 API ──────────────────────
 
-app.put("/roles/:userId", async (c) => {
-  const userId = c.req.param("userId");
+app.put('/roles/:userId', async (c) => {
+  const userId = c.req.param('userId');
   const { role } = await c.req.json<{ role: string }>();
-  if (!ROLE_DEFS[role]) return c.json({ error: "Unknown role" }, 400);
+  if (!ROLE_DEFS[role]) return c.json({ error: 'Unknown role' }, 400);
   const user = getUser(userId);
   user.roles = [role]; // 레거시 API: 단일 role 교체
   return c.json({ userId, role, ok: true });
 });
 
-app.get("/roles/:userId", (c) => {
-  const userId = c.req.param("userId");
+app.get('/roles/:userId', (c) => {
+  const userId = c.req.param('userId');
   const user = getUser(userId);
-  return c.json({ userId, role: user.roles[0] ?? "viewer", roles: user.roles });
+  return c.json({ userId, role: user.roles[0] ?? 'viewer', roles: user.roles });
 });
 
 /** Feature 목록 + role 정의 + env 제한 */
-app.get("/features", (c) => {
+app.get('/features', (c) => {
   return c.json({
     features: [...FEATURES],
     featureIndex: FEATURE_INDEX,
@@ -745,11 +744,11 @@ app.get("/features", (c) => {
 });
 
 /** 헬스체크 */
-app.get("/health", (c) => c.json({ status: "ok", service: "enrichment" }));
+app.get('/health', (c) => c.json({ status: 'ok', service: 'enrichment' }));
 
 // ── 서버 시작 (직접 실행 시) ─────────────────────────
 
-const PORT = parseInt(process.env.ENRICHMENT_PORT ?? "3900");
+const PORT = parseInt(process.env.ENRICHMENT_PORT ?? '3900');
 
 function startServer(): void {
   serve({ fetch: app.fetch, port: PORT }, () => {
@@ -761,16 +760,29 @@ function startServer(): void {
 }
 
 // 직접 실행 감지 (tsx 또는 node)
-const isDirectRun = process.argv[1]?.includes("enrichment-server");
+const isDirectRun = process.argv[1]?.includes('enrichment-server');
 if (isDirectRun) {
   startServer();
 }
 
 export {
-  app, startServer, FEATURES, FEATURE_INDEX, ROLE_FEATURES, ROLE_DEFS,
-  createBitmask, applyEnvRestrictions, ENV_RESTRICTIONS,
-  hasBit, resolveRoleFeatures, checkFeature, computeEnrich,
+  app,
+  startServer,
+  FEATURES,
+  FEATURE_INDEX,
+  ROLE_FEATURES,
+  ROLE_DEFS,
+  createBitmask,
+  applyEnvRestrictions,
+  ENV_RESTRICTIONS,
+  hasBit,
+  resolveRoleFeatures,
+  checkFeature,
+  computeEnrich,
   revokeZitadelSessions,
-  users, getUser,
-  JWT_SECRET, JWT_ISSUER, JWT_EXPIRY,
+  users,
+  getUser,
+  JWT_SECRET,
+  JWT_ISSUER,
+  JWT_EXPIRY,
 };

@@ -5,9 +5,9 @@ import {
   NotificationReadModelQuery,
   type NotificationDetailReadModel,
   type NotificationListItemReadModel,
-} from "../../application/queries/notification-read-model.query.js";
-import type { NotificationRepositoryPort } from "../../application/ports/notification-repository.port.js";
-import type { NotificationStatus } from "../../domain/notification.types.js";
+} from '../../application/queries/notification-read-model.query.js';
+import type { NotificationRepositoryPort } from '../../application/ports/notification-repository.port.js';
+import type { NotificationStatus } from '../../domain/notification.types.js';
 
 /**
  * Repository 위에 얇게 얹은 Read Model.

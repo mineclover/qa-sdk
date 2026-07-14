@@ -1,12 +1,12 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { AssignmentRepositoryPort } from "../../application/ports/assignment-repository.port.js";
-import type { AssignmentOutboxPort } from "../../application/ports/assignment-outbox.port.js";
+import type { AssignmentRepositoryPort } from '../../application/ports/assignment-repository.port.js';
+import type { AssignmentOutboxPort } from '../../application/ports/assignment-outbox.port.js';
 import type {
   AssignmentTransactionPort,
   AssignmentTransactionScope,
-} from "../../application/ports/assignment-transaction.port.js";
+} from '../../application/ports/assignment-transaction.port.js';
 
 /**
  * Unit of Work — TransactionPort + RepositoryPort + OutboxPort 합성.

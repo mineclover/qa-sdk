@@ -14,18 +14,18 @@
 
 /** entry flag 변경 이벤트 (inactive/open/active 전이) */
 export interface FlagChangeEvent {
-  readonly type: "flag-change";
+  readonly type: 'flag-change';
   readonly prefix: string;
   readonly versionId: string;
   readonly position: number;
   /** 변경 후 상태 */
-  readonly status: "active" | "inactive" | "open" | "reserved";
+  readonly status: 'active' | 'inactive' | 'open' | 'reserved';
   readonly timestamp: string;
 }
 
 /** prefix version release 이벤트 */
 export interface ReleaseEvent {
-  readonly type: "release";
+  readonly type: 'release';
   readonly prefix: string;
   readonly versionId: string;
   readonly timestamp: string;
@@ -33,7 +33,7 @@ export interface ReleaseEvent {
 
 /** recompute 완료 이벤트 — 캐시 갱신 후 발행 */
 export interface RecomputeCompleteEvent {
-  readonly type: "recompute-complete";
+  readonly type: 'recompute-complete';
   readonly prefix: string;
   readonly versionId: string;
   /** cascade에 의한 recompute인 경우 원본 prefix */
@@ -43,7 +43,7 @@ export interface RecomputeCompleteEvent {
 
 export type GateEvent = FlagChangeEvent | ReleaseEvent | RecomputeCompleteEvent;
 
-export type GateEventType = GateEvent["type"];
+export type GateEventType = GateEvent['type'];
 
 // ── 구독자 타입 ──────────────────────────────────────────
 

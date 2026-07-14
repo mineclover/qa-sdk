@@ -23,14 +23,14 @@
  *   - **CI-friendly** — 외부 네트워크 불필요, workspace 내 sqlite DB 공유
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
-import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { describe, it, expect, beforeAll } from 'vitest';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import {
   createDataSource,
   syncDocsToLocalDb,
   type DataSourceOptions,
-} from "definition-data-source";
+} from 'definition-data-source';
 import {
   deriveAllDomainRoots,
   type DefDataSource,
@@ -38,7 +38,7 @@ import {
   type DefinitionEntry,
   type DefinitionLink,
   type DomainRootRegistry,
-} from "definition-catalog";
+} from 'definition-catalog';
 
 // ── 환경 탐색 ─────────────────────────────────────────────
 
@@ -46,7 +46,7 @@ import {
 function findWorkspaceRoot(startDir: string): string {
   let current = resolve(startDir);
   while (true) {
-    if (existsSync(join(current, "pnpm-workspace.yaml")) && existsSync(join(current, "docs"))) {
+    if (existsSync(join(current, 'pnpm-workspace.yaml')) && existsSync(join(current, 'docs'))) {
       return current;
     }
     const parent = dirname(current);
@@ -61,21 +61,18 @@ const ROOT = findWorkspaceRoot(process.cwd());
 
 /** 공유 DB 가 있으면 local, 없으면 DB 를 생성한 뒤 local 로 사용. */
 async function ensureDataSource(): Promise<DefDataSource> {
-  const defaultDb = join(ROOT, "data", "definition-service.sqlite");
+  const defaultDb = join(ROOT, 'data', 'definition-service.sqlite');
   if (!existsSync(defaultDb)) {
     // CI 환경에서 DB 가 없을 때 자동 복원. 실제 docs/ 를 소스로 하므로 결과는 실데이터와 동일.
-    await syncDocsToLocalDb({ rootDir: ROOT, docsDir: "docs" });
+    await syncDocsToLocalDb({ rootDir: ROOT, docsDir: 'docs' });
   }
-  const options: DataSourceOptions = { mode: "local", rootDir: ROOT };
+  const options: DataSourceOptions = { mode: 'local', rootDir: ROOT };
   return createDataSource(options);
 }
 
 // ── 도메인 루트 멤버 union helper (def.ts collectDomainMembers 와 동일 의미) ──
 
-async function collectDomainMembers(
-  source: DefDataSource,
-  parentId: string,
-): Promise<DefDoc[]> {
+async function collectDomainMembers(source: DefDataSource, parentId: string): Promise<DefDoc[]> {
   const seen = new Set<string>();
   const members: DefDoc[] = [];
 
@@ -91,7 +88,7 @@ async function collectDomainMembers(
 
   const incoming = await source.getIncomingLinks(parentId);
   for (const link of incoming) {
-    if (link.type !== "depends_on" && link.type !== "refines") continue;
+    if (link.type !== 'depends_on' && link.type !== 'refines') continue;
     appendDoc(await source.get(link.source));
   }
 
@@ -110,15 +107,15 @@ async function buildRegistry(source: DefDataSource): Promise<DomainRootRegistry>
     entries.set(d.docId, {
       id: d.docId,
       title: d.title ?? d.docId,
-      tier: d.tier as DefinitionEntry["tier"],
-      scope: d.scope as DefinitionEntry["scope"],
-      aspect: d.aspect as DefinitionEntry["aspect"],
-      depth: d.depth as DefinitionEntry["depth"],
-      layer: d.layer as DefinitionEntry["layer"],
-      lifecycle: d.lifecycle as DefinitionEntry["lifecycle"],
+      tier: d.tier as DefinitionEntry['tier'],
+      scope: d.scope as DefinitionEntry['scope'],
+      aspect: d.aspect as DefinitionEntry['aspect'],
+      depth: d.depth as DefinitionEntry['depth'],
+      layer: d.layer as DefinitionEntry['layer'],
+      lifecycle: d.lifecycle as DefinitionEntry['lifecycle'],
       owner_system: d.ownerSystem,
-      createdAt: "",
-      updatedAt: "",
+      createdAt: '',
+      updatedAt: '',
     });
   }
 
@@ -127,19 +124,21 @@ async function buildRegistry(source: DefDataSource): Promise<DomainRootRegistry>
       const l: DefinitionLink = {
         sourceId: d.docId,
         targetId: link.target,
-        linkType: link.type as DefinitionLink["linkType"],
+        linkType: link.type as DefinitionLink['linkType'],
       };
       (outgoingLinks.get(d.docId) ?? outgoingLinks.set(d.docId, []).get(d.docId)!).push(l);
-      (incomingLinks.get(link.target) ?? incomingLinks.set(link.target, []).get(link.target)!).push(l);
+      (incomingLinks.get(link.target) ?? incomingLinks.set(link.target, []).get(link.target)!).push(
+        l,
+      );
     }
   }
 
   return {
     all: () => [...entries.values()],
     get: (id: string) => entries.get(id),
-    getLinks: (id: string, direction = "both" as "outgoing" | "incoming" | "both") => {
-      if (direction === "outgoing") return outgoingLinks.get(id) ?? [];
-      if (direction === "incoming") return incomingLinks.get(id) ?? [];
+    getLinks: (id: string, direction = 'both' as 'outgoing' | 'incoming' | 'both') => {
+      if (direction === 'outgoing') return outgoingLinks.get(id) ?? [];
+      if (direction === 'incoming') return incomingLinks.get(id) ?? [];
       return [...(outgoingLinks.get(id) ?? []), ...(incomingLinks.get(id) ?? [])];
     },
   };
@@ -156,11 +155,11 @@ async function buildRegistry(source: DefDataSource): Promise<DomainRootRegistry>
  * topdown union 은 정상 작동한다 (member 링크는 있음).
  */
 const CORE_DOMAIN_ROOTS = [
-  "gate-system",
-  "apm-system",
-  "registry-system",
-  "dkg-system",
-  "storage-system",
+  'gate-system',
+  'apm-system',
+  'registry-system',
+  'dkg-system',
+  'storage-system',
 ] as const;
 
 /**
@@ -168,11 +167,11 @@ const CORE_DOMAIN_ROOTS = [
  * 가 ≥ 2 member 를 반환해야 하는 문서. 최상위 root 일 필요는 없다.
  */
 const TOPDOWN_ROOTS = [
-  "gate-system",
-  "apm-system",
-  "df-system",
-  "ingest-system",
-  "decode-system",
+  'gate-system',
+  'apm-system',
+  'df-system',
+  'ingest-system',
+  'decode-system',
 ] as const;
 const MIN_MEMBERS_PER_ROOT = 2;
 
@@ -181,24 +180,24 @@ const RULE_MIN_COUNT = 8;
 
 // 샘플 boundary 주석 검증 대상 (L4 round-trip)
 const BOUNDARY_SAMPLES = [
-  "packages/decode-service/src/server.ts",
-  "packages/gate-service/src/server.ts",
-  "packages/definition-service/src/main.ts",
+  'packages/decode-service/src/server.ts',
+  'packages/gate-service/src/server.ts',
+  'packages/definition-service/src/main.ts',
 ] as const;
 
-describe("workflow smoke — L3 layer regression sentinels", () => {
+describe('workflow smoke — L3 layer regression sentinels', () => {
   let source: DefDataSource;
 
   beforeAll(async () => {
     source = await ensureDataSource();
   }, 30_000);
 
-  describe("Scenario A — audit --by-domain 은 핵심 루트를 모두 보고한다", () => {
-    it("핵심 도메인 루트가 deriveAllDomainRoots 결과에 등장하고 문서 수가 > 0", async () => {
+  describe('Scenario A — audit --by-domain 은 핵심 루트를 모두 보고한다', () => {
+    it('핵심 도메인 루트가 deriveAllDomainRoots 결과에 등장하고 문서 수가 > 0', async () => {
       const registry = await buildRegistry(source);
       const rootMap = deriveAllDomainRoots(registry);
       const all = registry.all();
-      const active = all.filter((d) => d.lifecycle !== "deprecated" && d.lifecycle !== "archived");
+      const active = all.filter((d) => d.lifecycle !== 'deprecated' && d.lifecycle !== 'archived');
 
       // rootMap: docId → rootId. 루트별로 몇 개 문서가 매핑되는지 집계.
       const byRoot = new Map<string, number>();
@@ -217,18 +216,18 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
 
       expect(
         missing,
-        `audit --by-domain 에 누락된 핵심 루트: ${missing.join(", ")}. rootMap 크기=${byRoot.size}. ` +
+        `audit --by-domain 에 누락된 핵심 루트: ${missing.join(', ')}. rootMap 크기=${byRoot.size}. ` +
           `이 루트들은 deriveDomainRoot/depends_on/refines 체인을 통해 자기 자신으로 해석되어야 한다.`,
       ).toEqual([]);
       expect(
         empty,
-        `0 건만 매핑된 루트: ${empty.join(", ")}. 루트 자체는 존재하나 멤버 문서가 없음.`,
+        `0 건만 매핑된 루트: ${empty.join(', ')}. 루트 자체는 존재하나 멤버 문서가 없음.`,
       ).toEqual([]);
     });
   });
 
-  describe("Scenario B — topdown 은 핵심 루트에 ≥ 2 member 반환 (collectDomainMembers union)", () => {
-    it.each(TOPDOWN_ROOTS)("%s 의 topdown union member 수가 ≥ 2", async (root) => {
+  describe('Scenario B — topdown 은 핵심 루트에 ≥ 2 member 반환 (collectDomainMembers union)', () => {
+    it.each(TOPDOWN_ROOTS)('%s 의 topdown union member 수가 ≥ 2', async (root) => {
       const parent = await source.get(root);
       expect(parent, `도메인 루트 문서 "${root}" 가 DB 에 없다.`).not.toBeNull();
 
@@ -242,15 +241,15 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
     });
   });
 
-  describe("Scenario C — domain-root 필터 리스팅", () => {
-    it.each(["gate-system", "apm-system"] as const)(
-      "list --domain-root=%s 가 ≥ 3 건 반환",
+  describe('Scenario C — domain-root 필터 리스팅', () => {
+    it.each(['gate-system', 'apm-system'] as const)(
+      'list --domain-root=%s 가 ≥ 3 건 반환',
       async (root) => {
         const registry = await buildRegistry(source);
         const rootMap = deriveAllDomainRoots(registry);
         const all = await source.list({ limit: 100000 });
         const active = all.filter(
-          (d) => d.lifecycle !== "deprecated" && d.lifecycle !== "archived",
+          (d) => d.lifecycle !== 'deprecated' && d.lifecycle !== 'archived',
         );
         const matched = active.filter((d) => (rootMap.get(d.docId) ?? d.docId) === root);
 
@@ -262,9 +261,9 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
     );
   });
 
-  describe("Scenario D — rule 확장자 필터", () => {
+  describe('Scenario D — rule 확장자 필터', () => {
     it(`list --type=rule (ext=rule) 이 ≥ ${RULE_MIN_COUNT} 건 반환`, async () => {
-      const docs = await source.list({ ext: "rule", limit: 1000 });
+      const docs = await source.list({ ext: 'rule', limit: 1000 });
       expect(
         docs.length,
         `def list --type=rule 이 ${docs.length} 건 반환 (≥ ${RULE_MIN_COUNT} 기대). ` +
@@ -273,9 +272,9 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
     });
   });
 
-  describe("Scenario E — boundary annotation round-trip (L4 round-trip)", () => {
+  describe('Scenario E — boundary annotation round-trip (L4 round-trip)', () => {
     it.each(BOUNDARY_SAMPLES)(
-      "%s 의 boundary 타깃이 DB 에 존재하고 deprecated 가 아님",
+      '%s 의 boundary 타깃이 DB 에 존재하고 deprecated 가 아님',
       async (relPath) => {
         const absPath = join(ROOT, relPath);
         expect(existsSync(absPath), `샘플 소스 파일이 없음: ${absPath}`).toBe(true);
@@ -284,20 +283,17 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
         expect(
           resolution.kind,
           `${relPath}: resolveByFile 결과가 "none" — @def.boundary 주석이 없거나 DB code_references 가 비어있음.`,
-        ).not.toBe("none");
+        ).not.toBe('none');
 
-        if (resolution.kind === "unique") {
+        if (resolution.kind === 'unique') {
           const anchor = resolution.anchor;
-          expect(
-            anchor,
-            `${relPath}: unique boundary anchor 가 비었다.`,
-          ).toBeTruthy();
+          expect(anchor, `${relPath}: unique boundary anchor 가 비었다.`).toBeTruthy();
           expect(
             anchor.lifecycle,
             `${relPath}: boundary 타깃 "${anchor.docId}" 이 lifecycle=${anchor.lifecycle} — ` +
               `approved 로 재지정하거나 소스 주석을 현재 권위 문서로 갱신 필요.`,
-          ).not.toBe("deprecated");
-          expect(anchor.lifecycle).not.toBe("archived");
+          ).not.toBe('deprecated');
+          expect(anchor.lifecycle).not.toBe('archived');
         }
       },
     );
@@ -310,25 +306,25 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
    * 각 카테고리별 메트릭을 내보내는지 확인한다. 개별 체크 값 (coverage %, 문서 수)
    * 은 자연스럽게 변하므로 **존재와 shape** 만 검증한다.
    */
-  describe("Scenario F — doctor 명령이 구조화된 헬스 요약을 낸다", () => {
-    it("Core/Domains/Aspects/Annotations/Summary 섹션 + errors 집계 포함", async () => {
-      const { cliDef } = await import("./commands/def.js");
+  describe('Scenario F — doctor 명령이 구조화된 헬스 요약을 낸다', () => {
+    it('Core/Domains/Aspects/Annotations/Summary 섹션 + errors 집계 포함', async () => {
+      const { cliDef } = await import('./commands/def.js');
 
       const originalLog = console.log;
       const captured: string[] = [];
       console.log = (...args: unknown[]) => {
-        captured.push(args.map((arg) => String(arg)).join(" "));
+        captured.push(args.map((arg) => String(arg)).join(' '));
       };
 
       const originalExitCode = process.exitCode;
       try {
-        await cliDef(["doctor"]);
+        await cliDef(['doctor']);
       } finally {
         console.log = originalLog;
       }
 
-      const output = captured.join("\n");
-      for (const section of ["Core", "Domains", "Aspects", "Annotations", "Summary"]) {
+      const output = captured.join('\n');
+      for (const section of ['Core', 'Domains', 'Aspects', 'Annotations', 'Summary']) {
         expect(
           output,
           `doctor 출력에 "${section}" 섹션 헤더가 없음. Scenario F 는 onboarding 명령의 ` +
@@ -339,17 +335,11 @@ describe("workflow smoke — L3 layer regression sentinels", () => {
         output,
         `doctor 출력에 "errors" 집계가 없음. Summary 섹션이 누락되었거나 포맷 변경.`,
       ).toMatch(/\d+ errors/);
-      expect(
-        output,
-        `doctor 출력에 validate 체크가 없음.`,
-      ).toMatch(/validate\s/);
+      expect(output, `doctor 출력에 validate 체크가 없음.`).toMatch(/validate\s/);
 
       // exit code 는 warnings-only 면 2, errors 있으면 1, 없으면 0.
       const exit = process.exitCode ?? 0;
-      expect(
-        [0, 1, 2],
-        `doctor exit code 가 예상 범위(0/1/2)를 벗어남: ${exit}`,
-      ).toContain(exit);
+      expect([0, 1, 2], `doctor exit code 가 예상 범위(0/1/2)를 벗어남: ${exit}`).toContain(exit);
       process.exitCode = originalExitCode;
     }, 30_000);
   });

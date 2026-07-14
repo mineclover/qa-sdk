@@ -1,115 +1,115 @@
-import { describe, expect, it } from "vitest";
-import { resolveSemanticCandidates } from "./resolver.js";
-import type { SemanticTermWithAliases } from "./types.js";
+import { describe, expect, it } from 'vitest';
+import { resolveSemanticCandidates } from './resolver.js';
+import type { SemanticTermWithAliases } from './types.js';
 
 const terms: SemanticTermWithAliases[] = [
   {
-    termId: "term-cart-add",
-    kind: "document",
-    canonicalLabel: "cart add",
-    normalizedLabel: "cart add",
-    coordinate: "cart_event:v2:10",
-    prefixId: "cart_event",
-    versionId: "v2",
+    termId: 'term-cart-add',
+    kind: 'document',
+    canonicalLabel: 'cart add',
+    normalizedLabel: 'cart add',
+    coordinate: 'cart_event:v2:10',
+    prefixId: 'cart_event',
+    versionId: 'v2',
     address: 10,
-    docId: "prefix-cart_event",
-    sourcePath: "docs/specs/prefix-catalog/event-prefix-group/prefix-cart_event.spec.md",
-    evidence: { source: "test" },
+    docId: 'prefix-cart_event',
+    sourcePath: 'docs/specs/prefix-catalog/event-prefix-group/prefix-cart_event.spec.md',
+    evidence: { source: 'test' },
     aliases: [
       {
-        aliasId: "alias-1",
-        termId: "term-cart-add",
-        alias: "상품 담기",
-        normalizedAlias: "상품 담기",
-        locale: "ko",
-        source: "manual",
+        aliasId: 'alias-1',
+        termId: 'term-cart-add',
+        alias: '상품 담기',
+        normalizedAlias: '상품 담기',
+        locale: 'ko',
+        source: 'manual',
         confidence: 0.95,
-        createdAt: "2026-06-30T00:00:00.000Z",
+        createdAt: '2026-06-30T00:00:00.000Z',
       },
     ],
     relations: [],
-    updatedAt: "2026-06-30T00:00:00.000Z",
+    updatedAt: '2026-06-30T00:00:00.000Z',
   },
   {
-    termId: "term-cart-remove",
-    kind: "document",
-    canonicalLabel: "cart remove",
-    normalizedLabel: "cart remove",
-    coordinate: "cart_event:v2:11",
-    prefixId: "cart_event",
-    versionId: "v2",
+    termId: 'term-cart-remove',
+    kind: 'document',
+    canonicalLabel: 'cart remove',
+    normalizedLabel: 'cart remove',
+    coordinate: 'cart_event:v2:11',
+    prefixId: 'cart_event',
+    versionId: 'v2',
     address: 11,
-    docId: "prefix-cart_event",
-    sourcePath: "docs/specs/prefix-catalog/event-prefix-group/prefix-cart_event.spec.md",
-    evidence: { source: "test" },
+    docId: 'prefix-cart_event',
+    sourcePath: 'docs/specs/prefix-catalog/event-prefix-group/prefix-cart_event.spec.md',
+    evidence: { source: 'test' },
     aliases: [],
     relations: [],
-    updatedAt: "2026-06-30T00:00:00.000Z",
+    updatedAt: '2026-06-30T00:00:00.000Z',
   },
 ];
 
-describe("resolveSemanticCandidates", () => {
-  it("ranks exact aliases above token overlap", () => {
-    const resolution = resolveSemanticCandidates("상품 담기", terms);
-    expect(resolution.query.normalized).toBe("상품 담기");
+describe('resolveSemanticCandidates', () => {
+  it('ranks exact aliases above token overlap', () => {
+    const resolution = resolveSemanticCandidates('상품 담기', terms);
+    expect(resolution.query.normalized).toBe('상품 담기');
     expect(resolution.candidates[0]).toMatchObject({
-      termId: "term-cart-add",
+      termId: 'term-cart-add',
       confidence: 0.95,
-      matchedBy: "alias",
+      matchedBy: 'alias',
     });
     expect(resolution.confident).toBe(true);
   });
 
-  it("keeps ambiguous candidates instead of collapsing them", () => {
-    const resolution = resolveSemanticCandidates("cart", terms, { confidenceThreshold: 0.51 });
+  it('keeps ambiguous candidates instead of collapsing them', () => {
+    const resolution = resolveSemanticCandidates('cart', terms, { confidenceThreshold: 0.51 });
     expect(resolution.candidates.map((candidate) => candidate.termId)).toEqual([
-      "term-cart-add",
-      "term-cart-remove",
+      'term-cart-add',
+      'term-cart-remove',
     ]);
     expect(resolution.confident).toBe(false);
   });
 
-  it("treats confidence equal to the threshold as confident", () => {
-    const resolution = resolveSemanticCandidates("상품 담기", terms, { confidenceThreshold: 0.95 });
+  it('treats confidence equal to the threshold as confident', () => {
+    const resolution = resolveSemanticCandidates('상품 담기', terms, { confidenceThreshold: 0.95 });
     expect(resolution.candidates[0]).toMatchObject({
-      termId: "term-cart-add",
+      termId: 'term-cart-add',
       confidence: 0.95,
     });
     expect(resolution.confident).toBe(true);
   });
 
-  it("uses the highest-confidence exact alias when several sources share one normalized alias", () => {
-    const resolution = resolveSemanticCandidates("상품 담기", [
+  it('uses the highest-confidence exact alias when several sources share one normalized alias', () => {
+    const resolution = resolveSemanticCandidates('상품 담기', [
       {
         ...terms[0],
         aliases: [
           {
-            aliasId: "alias-low",
-            termId: "term-cart-add",
-            alias: "상품 담기",
-            normalizedAlias: "상품 담기",
-            source: "document",
+            aliasId: 'alias-low',
+            termId: 'term-cart-add',
+            alias: '상품 담기',
+            normalizedAlias: '상품 담기',
+            source: 'document',
             confidence: 0.85,
-            createdAt: "2026-06-30T00:00:00.000Z",
+            createdAt: '2026-06-30T00:00:00.000Z',
           },
           {
-            aliasId: "alias-high",
-            termId: "term-cart-add",
-            alias: "상품 담기",
-            normalizedAlias: "상품 담기",
-            locale: "ko",
-            source: "manual",
+            aliasId: 'alias-high',
+            termId: 'term-cart-add',
+            alias: '상품 담기',
+            normalizedAlias: '상품 담기',
+            locale: 'ko',
+            source: 'manual',
             confidence: 0.97,
-            createdAt: "2026-06-30T00:00:00.000Z",
+            createdAt: '2026-06-30T00:00:00.000Z',
           },
         ],
       },
     ]);
 
     expect(resolution.candidates[0]).toMatchObject({
-      termId: "term-cart-add",
+      termId: 'term-cart-add',
       confidence: 0.97,
-      matchedBy: "alias",
+      matchedBy: 'alias',
     });
   });
 });

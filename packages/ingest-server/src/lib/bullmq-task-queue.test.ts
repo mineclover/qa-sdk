@@ -1,19 +1,16 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { TaskPayload } from "@qa-sdk/core";
-import type { Logger } from "pino";
-import { describe, expect, it, vi } from "vitest";
-import {
-  BullMQTaskQueue,
-  type BullMQModule,
-} from "./bullmq-task-queue.js";
+import type { TaskPayload } from '@qa-sdk/core';
+import type { Logger } from 'pino';
+import { describe, expect, it, vi } from 'vitest';
+import { BullMQTaskQueue, type BullMQModule } from './bullmq-task-queue.js';
 
 function buildTask(overrides: Partial<TaskPayload> = {}): TaskPayload {
   return {
-    enqueuedAt: "2026-03-18T00:00:00.000Z",
-    phase: "reconstruction",
-    traceId: "trace_123",
+    enqueuedAt: '2026-03-18T00:00:00.000Z',
+    phase: 'reconstruction',
+    traceId: 'trace_123',
     ...overrides,
   };
 }
@@ -37,7 +34,7 @@ interface FakeEnqueuedJob<T> {
     attempts?: number;
     backoff?: {
       delay: number;
-      type: "exponential";
+      type: 'exponential';
     };
     jobId?: string;
   };
@@ -52,18 +49,12 @@ interface FakeBullMQState<T> {
   workerReadyError?: Error;
 }
 
-function createFakeBullMQ<T>(
-  state: FakeBullMQState<T>,
-): BullMQModule {
+function createFakeBullMQ<T>(state: FakeBullMQState<T>): BullMQModule {
   const pendingJobs: FakeEnqueuedJob<T>[] = [];
   let activeWorker: FakeWorker<T> | null = null;
 
   class FakeQueue {
-    async add(
-      name: string,
-      data: T,
-      opts?: FakeEnqueuedJob<T>["opts"],
-    ) {
+    async add(name: string, data: T, opts?: FakeEnqueuedJob<T>['opts']) {
       const job = {
         data: structuredClone(data),
         name,
@@ -89,18 +80,19 @@ function createFakeBullMQ<T>(
   class FakeWorker<TJob> {
     private errorListener: ((error: Error) => void) | null = null;
     private failedListener:
-      | ((job: { data: TJob; attemptsMade?: number; opts?: FakeEnqueuedJob<TJob>["opts"] }, error: Error) => void)
+      | ((
+          job: { data: TJob; attemptsMade?: number; opts?: FakeEnqueuedJob<TJob>['opts'] },
+          error: Error,
+        ) => void)
       | null = null;
 
     constructor(
       _name: string,
-      private readonly processor: (
-        job: {
-          data: TJob;
-          attemptsMade?: number;
-          opts?: FakeEnqueuedJob<TJob>["opts"];
-        },
-      ) => Promise<unknown>,
+      private readonly processor: (job: {
+        data: TJob;
+        attemptsMade?: number;
+        opts?: FakeEnqueuedJob<TJob>['opts'];
+      }) => Promise<unknown>,
       options: {
         concurrency: number;
         connection: unknown;
@@ -118,22 +110,29 @@ function createFakeBullMQ<T>(
     }
 
     on(
-      event: "error" | "failed",
+      event: 'error' | 'failed',
       listener:
         | ((error: Error) => void)
-        | ((job: { data: TJob; attemptsMade?: number; opts?: FakeEnqueuedJob<TJob>["opts"] } | undefined, error: Error) => void),
+        | ((
+            job:
+              | { data: TJob; attemptsMade?: number; opts?: FakeEnqueuedJob<TJob>['opts'] }
+              | undefined,
+            error: Error,
+          ) => void),
     ) {
-      if (event === "error") {
+      if (event === 'error') {
         this.errorListener = listener as (error: Error) => void;
         return this;
       }
 
       this.failedListener = listener as (
-        job: {
-          data: TJob;
-          attemptsMade?: number;
-          opts?: FakeEnqueuedJob<TJob>["opts"];
-        } | undefined,
+        job:
+          | {
+              data: TJob;
+              attemptsMade?: number;
+              opts?: FakeEnqueuedJob<TJob>['opts'];
+            }
+          | undefined,
         error: Error,
       ) => void;
       return this;
@@ -169,8 +168,7 @@ function createFakeBullMQ<T>(
         } catch (error) {
           attemptsRemaining -= 1;
           attemptsMade += 1;
-          const normalized =
-            error instanceof Error ? error : new Error(String(error));
+          const normalized = error instanceof Error ? error : new Error(String(error));
 
           this.failedListener?.(
             {
@@ -191,8 +189,8 @@ function createFakeBullMQ<T>(
   }
 
   return {
-    Queue: FakeQueue as unknown as BullMQModule["Queue"],
-    Worker: FakeWorker as unknown as BullMQModule["Worker"],
+    Queue: FakeQueue as unknown as BullMQModule['Queue'],
+    Worker: FakeWorker as unknown as BullMQModule['Worker'],
   };
 }
 
@@ -202,8 +200,8 @@ function createLoggerMock() {
   } as unknown as Logger;
 }
 
-describe("BullMQTaskQueue", () => {
-  it("enqueues jobs with phase-scoped dedupe and BullMQ retry options", async () => {
+describe('BullMQTaskQueue', () => {
+  it('enqueues jobs with phase-scoped dedupe and BullMQ retry options', async () => {
     const state: FakeBullMQState<TaskPayload> = {
       enqueuedJobs: [],
       queueClosed: false,
@@ -212,8 +210,8 @@ describe("BullMQTaskQueue", () => {
     const handled = createDeferred<TaskPayload>();
     const queue = new BullMQTaskQueue<TaskPayload>({
       bullmq: createFakeBullMQ(state),
-      queueName: "ingest-tasks",
-      redisUrl: "redis://localhost:6379/0",
+      queueName: 'ingest-tasks',
+      redisUrl: 'redis://localhost:6379/0',
       workerConcurrency: 7,
     });
 
@@ -232,14 +230,14 @@ describe("BullMQTaskQueue", () => {
       attempts: 3,
       backoff: {
         delay: 250,
-        type: "exponential",
+        type: 'exponential',
       },
-      jobId: "reconstruction:trace_123",
+      jobId: 'reconstruction:trace_123',
     });
     expect(state.workerConcurrency).toBe(7);
   });
 
-  it("drains jobs enqueued before process registration", async () => {
+  it('drains jobs enqueued before process registration', async () => {
     const state: FakeBullMQState<TaskPayload> = {
       enqueuedJobs: [],
       queueClosed: false,
@@ -248,8 +246,8 @@ describe("BullMQTaskQueue", () => {
     const handled = createDeferred<TaskPayload>();
     const queue = new BullMQTaskQueue<TaskPayload>({
       bullmq: createFakeBullMQ(state),
-      queueName: "ingest-tasks",
-      redisUrl: "redis://localhost:6379/0",
+      queueName: 'ingest-tasks',
+      redisUrl: 'redis://localhost:6379/0',
     });
 
     await queue.enqueue(buildTask());
@@ -260,7 +258,7 @@ describe("BullMQTaskQueue", () => {
     await expect(handled.promise).resolves.toEqual(buildTask());
   });
 
-  it("gracefully closes the queue and worker and rejects new jobs after close", async () => {
+  it('gracefully closes the queue and worker and rejects new jobs after close', async () => {
     const state: FakeBullMQState<TaskPayload> = {
       enqueuedJobs: [],
       queueClosed: false,
@@ -268,8 +266,8 @@ describe("BullMQTaskQueue", () => {
     };
     const queue = new BullMQTaskQueue<TaskPayload>({
       bullmq: createFakeBullMQ(state),
-      queueName: "ingest-tasks",
-      redisUrl: "redis://localhost:6379/0",
+      queueName: 'ingest-tasks',
+      redisUrl: 'redis://localhost:6379/0',
     });
 
     await queue.process(async () => {});
@@ -277,22 +275,22 @@ describe("BullMQTaskQueue", () => {
 
     expect(state.queueClosed).toBe(true);
     expect(state.workerClosed).toBe(true);
-    await expect(queue.enqueue(buildTask())).rejects.toThrow("TaskQueue is closed");
+    await expect(queue.enqueue(buildTask())).rejects.toThrow('TaskQueue is closed');
   });
 
-  it("logs and throws a clear error when Redis connection fails", async () => {
+  it('logs and throws a clear error when Redis connection fails', async () => {
     const state: FakeBullMQState<TaskPayload> = {
       enqueuedJobs: [],
       queueClosed: false,
-      queueReadyError: new Error("ECONNREFUSED"),
+      queueReadyError: new Error('ECONNREFUSED'),
       workerClosed: false,
     };
     const logger = createLoggerMock();
     const queue = new BullMQTaskQueue<TaskPayload>({
       bullmq: createFakeBullMQ(state),
       logger,
-      queueName: "ingest-tasks",
-      redisUrl: "redis://default:secret@localhost:6379/0",
+      queueName: 'ingest-tasks',
+      redisUrl: 'redis://default:secret@localhost:6379/0',
     });
 
     await expect(queue.enqueue(buildTask())).rejects.toThrow(
@@ -300,15 +298,15 @@ describe("BullMQTaskQueue", () => {
     );
     expect(logger.error).toHaveBeenCalledWith(
       expect.objectContaining({
-        component: "queue",
-        queueName: "ingest-tasks",
-        redisUrl: "redis://default:***@localhost:6379/0",
+        component: 'queue',
+        queueName: 'ingest-tasks',
+        redisUrl: 'redis://default:***@localhost:6379/0',
       }),
-      "failed to connect to Redis for BullMQ",
+      'failed to connect to Redis for BullMQ',
     );
   });
 
-  it("calls the final failure hook once after retries are exhausted", async () => {
+  it('calls the final failure hook once after retries are exhausted', async () => {
     const state: FakeBullMQState<TaskPayload> = {
       enqueuedJobs: [],
       queueClosed: false,
@@ -325,21 +323,21 @@ describe("BullMQTaskQueue", () => {
       onFinalFailure: (task, error) => {
         failed.resolve({ error, task });
       },
-      queueName: "ingest-tasks",
-      redisUrl: "redis://localhost:6379/0",
+      queueName: 'ingest-tasks',
+      redisUrl: 'redis://localhost:6379/0',
     });
 
     await queue.process(async () => {
-      throw new Error("boom");
+      throw new Error('boom');
     });
 
-    await queue.enqueue(buildTask({ phase: "verdict" }), {
+    await queue.enqueue(buildTask({ phase: 'verdict' }), {
       retryAttempts: 2,
     });
 
     await expect(failed.promise).resolves.toEqual({
       error: expect.any(Error),
-      task: buildTask({ phase: "verdict" }),
+      task: buildTask({ phase: 'verdict' }),
     });
   });
 });

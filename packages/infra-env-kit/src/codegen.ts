@@ -1,12 +1,12 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import type { EnvDiscoveryClient } from "./types.js";
-import { generateTypescriptModule } from "./typescript-module.js";
-import { generateEnvFile } from "./env-file.js";
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { EnvDiscoveryClient } from './types.js';
+import { generateTypescriptModule } from './typescript-module.js';
+import { generateEnvFile } from './env-file.js';
 
 export interface CodegenOptions {
   /** TypeScript 모듈 출력 경로 (기본: generated/service-connections.{env}.ts) */
@@ -27,11 +27,8 @@ async function loadServiceConfigs(
   try {
     const path =
       configPath ??
-      resolve(
-        dirname(fileURLToPath(import.meta.url)),
-        `../../../infra-engine/config/${env}.json`,
-      );
-    const raw = JSON.parse(await readFile(path, "utf-8"));
+      resolve(dirname(fileURLToPath(import.meta.url)), `../../../infra-engine/config/${env}.json`);
+    const raw = JSON.parse(await readFile(path, 'utf-8'));
     return (raw.services ?? {}) as Record<string, Record<string, unknown>>;
   } catch {
     return {};
@@ -44,8 +41,8 @@ export async function runPostDeployCodegen(
   env: string,
   options?: CodegenOptions,
 ): Promise<{ tsPath?: string; envPaths: string[] }> {
-  const tsDir = options?.tsOutputDir ?? "generated";
-  const envDir = options?.envOutputDir ?? "generated/env";
+  const tsDir = options?.tsOutputDir ?? 'generated';
+  const envDir = options?.envOutputDir ?? 'generated/env';
   const envPaths: string[] = [];
 
   const serviceConfigs = await loadServiceConfigs(env, options?.configPath);
@@ -84,7 +81,7 @@ export async function runPostDeployCodegen(
 
 /** deployedServiceId에 의존하는 서비스 찾기 (consumedPrefixes 기반 역추적) */
 function findDependentServices(
-  services: Awaited<ReturnType<EnvDiscoveryClient["listServices"]>>,
+  services: Awaited<ReturnType<EnvDiscoveryClient['listServices']>>,
   deployedServiceId: string,
 ): string[] {
   const deployed = services.find((service) => service.serviceId === deployedServiceId);

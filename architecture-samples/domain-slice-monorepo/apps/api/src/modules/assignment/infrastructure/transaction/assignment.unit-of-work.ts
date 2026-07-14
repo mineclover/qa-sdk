@@ -1,11 +1,11 @@
-import type { AssignmentCreatedEvent } from "../../application/ports/assignment-outbox.port.js";
-import type { AssignmentTransactionScope } from "../../application/ports/assignment-transaction.port.js";
-import type { AssignmentSnapshot } from "../../domain/index.js";
+import type { AssignmentCreatedEvent } from '../../application/ports/assignment-outbox.port.js';
+import type { AssignmentTransactionScope } from '../../application/ports/assignment-transaction.port.js';
+import type { AssignmentSnapshot } from '../../domain/index.js';
 
 export interface AssignmentOutboxRecord {
   readonly id: string;
-  readonly eventName: "assignment.created";
-  readonly eventVersion: "v1";
+  readonly eventName: 'assignment.created';
+  readonly eventVersion: 'v1';
   readonly aggregateId: string;
   readonly payload: AssignmentCreatedEvent;
   readonly transactionId: string;
@@ -53,5 +53,5 @@ export class TransactionalAssignmentStore {
 export function isAssignmentUnitOfWorkScope(
   scope: AssignmentTransactionScope | undefined,
 ): scope is AssignmentUnitOfWorkScope {
-  return Boolean(scope && "pendingAssignments" in scope && "pendingOutbox" in scope);
+  return Boolean(scope && 'pendingAssignments' in scope && 'pendingOutbox' in scope);
 }

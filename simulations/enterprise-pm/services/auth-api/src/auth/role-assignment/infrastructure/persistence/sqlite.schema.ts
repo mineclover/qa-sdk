@@ -1,20 +1,20 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, primaryKey, index } from 'drizzle-orm/sqlite-core';
 
 export const roleAssignments = sqliteTable(
-  "role_assignments",
+  'role_assignments',
   {
-    userId: text("user_id").notNull(),
-    roleId: text("role_id").notNull(),
-    scopeType: text("scope_type", { enum: ["global", "department", "project"] }).notNull(),
-    scopeId: text("scope_id"),
-    assignedAt: text("assigned_at").notNull(),
+    userId: text('user_id').notNull(),
+    roleId: text('role_id').notNull(),
+    scopeType: text('scope_type', { enum: ['global', 'department', 'project'] }).notNull(),
+    scopeId: text('scope_id'),
+    assignedAt: text('assigned_at').notNull(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.roleId, t.scopeType, t.scopeId] }),
-    index("idx_ra_user").on(t.userId),
+    index('idx_ra_user').on(t.userId),
   ],
 );
 

@@ -12,25 +12,26 @@
  *   node scripts/assign-layers.mjs [--dry-run]
  */
 
-import { readdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(SCRIPT_DIR, "../../..");
-const DOCS_DIR = join(ROOT, "docs");
-const DRY_RUN = process.argv.includes("--dry-run");
+const ROOT = resolve(SCRIPT_DIR, '../../..');
+const DOCS_DIR = join(ROOT, 'docs');
+const DRY_RUN = process.argv.includes('--dry-run');
 
 // ── 자동 분류 규칙 ──────────────────────────────────────
 
 function classifyLayer(scope, aspect) {
   // domain: 비즈니스 본질 — "이것이 참이다"
-  if (scope === "constraint") return "domain";
-  if (scope === "data") return "domain";
-  if (scope === "state" && (aspect === "domain_state" || aspect === "system_state")) return "domain";
+  if (scope === 'constraint') return 'domain';
+  if (scope === 'data') return 'domain';
+  if (scope === 'state' && (aspect === 'domain_state' || aspect === 'system_state'))
+    return 'domain';
 
   // experience: 경험 설계 — "사용자 행동을 유도한다"
-  if (scope === "ui") return "experience";
+  if (scope === 'ui') return 'experience';
 
   // operation, mediation: 수동 판단 필요
   return null;
@@ -46,14 +47,17 @@ function extractFrontmatter(content) {
 
 function parseDefFields(yaml) {
   const fields = {};
-  const lines = yaml.split("\n");
+  const lines = yaml.split('\n');
   let inDef = false;
 
   for (const line of lines) {
     const indent = line.length - line.trimStart().length;
     const trimmed = line.trim();
 
-    if (trimmed === "def:") { inDef = true; continue; }
+    if (trimmed === 'def:') {
+      inDef = true;
+      continue;
+    }
     if (indent === 0 && inDef) break;
 
     if (inDef && indent === 2) {
@@ -67,7 +71,7 @@ function parseDefFields(yaml) {
 // ── layer 삽입 ──────────────────────────────────────────
 
 function insertLayer(yaml, layer) {
-  const lines = yaml.split("\n");
+  const lines = yaml.split('\n');
   const result = [];
   let inserted = false;
 
@@ -81,7 +85,7 @@ function insertLayer(yaml, layer) {
     }
   }
 
-  return result.join("\n");
+  return result.join('\n');
 }
 
 // ── 파일 스캔 ───────────────────────────────────────────
@@ -92,7 +96,7 @@ function walkMarkdownFiles(dir) {
     const fullPath = join(dir, entry);
     const info = statSync(fullPath);
     if (info.isDirectory()) files.push(...walkMarkdownFiles(fullPath));
-    else if (entry.endsWith(".md")) files.push(fullPath);
+    else if (entry.endsWith('.md')) files.push(fullPath);
   }
   return files;
 }
@@ -105,7 +109,7 @@ let skipped = 0;
 let alreadyHas = 0;
 
 for (const filePath of files) {
-  const content = readFileSync(filePath, "utf-8");
+  const content = readFileSync(filePath, 'utf-8');
   const fm = extractFrontmatter(content);
   if (!fm) continue;
 
@@ -113,13 +117,22 @@ for (const filePath of files) {
   if (!fields.scope || !fields.aspect) continue;
 
   // 이미 layer가 있으면 건너뜀
-  if (fields.layer) { alreadyHas++; continue; }
+  if (fields.layer) {
+    alreadyHas++;
+    continue;
+  }
 
   // lifecycle이 approved가 아니면 건너뜀
-  if (fields.lifecycle && fields.lifecycle !== "approved") { skipped++; continue; }
+  if (fields.lifecycle && fields.lifecycle !== 'approved') {
+    skipped++;
+    continue;
+  }
 
   const layer = classifyLayer(fields.scope, fields.aspect);
-  if (!layer) { skipped++; continue; }
+  if (!layer) {
+    skipped++;
+    continue;
+  }
 
   const newYaml = insertLayer(fm.yaml, layer);
   const newContent = `---\n${newYaml}\n---\n${fm.body}`;
@@ -132,4 +145,6 @@ for (const filePath of files) {
   assigned++;
 }
 
-console.log(`\n${DRY_RUN ? "[dry-run] " : ""}layer 부여: ${assigned}건, 건너뜀: ${skipped}건, 이미 있음: ${alreadyHas}건`);
+console.log(
+  `\n${DRY_RUN ? '[dry-run] ' : ''}layer 부여: ${assigned}건, 건너뜀: ${skipped}건, 이미 있음: ${alreadyHas}건`,
+);

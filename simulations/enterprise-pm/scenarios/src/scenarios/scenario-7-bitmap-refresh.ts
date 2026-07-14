@@ -1,9 +1,9 @@
 // @def.boundary sim-scenarios
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { ok, equal, notEqual } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
-import { auditTraceHint } from "../post-run/operator-handoff.js";
+import { ok, equal, notEqual } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
+import { auditTraceHint } from '../post-run/operator-handoff.js';
 
 interface S7Ctx {
   alice: { email: string; password: string; departmentId: string };
@@ -25,30 +25,30 @@ interface S7Ctx {
  * 본 시나리오는 jwtTtlSeconds=2 로 설정된 환경이 필요.
  */
 export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
-  name: "scenario-7-bitmap-refresh",
-  description: "JWT 만료 → POST /auth/refresh → 새 token 으로 protected route 접근",
+  name: 'scenario-7-bitmap-refresh',
+  description: 'JWT 만료 → POST /auth/refresh → 새 token 으로 protected route 접근',
   validates: [
-    "VersionedBitmap refresh (§2 §4)",
-    "JWT TTL 만료 처리",
-    "WWW-Authenticate: invalid_token reason=expired",
+    'VersionedBitmap refresh (§2 §4)',
+    'JWT TTL 만료 처리',
+    'WWW-Authenticate: invalid_token reason=expired',
   ],
 
   async setup() {
     const handle = (globalThis as any).__simHandle;
-    if (!handle) throw new Error("__simHandle not bound");
+    if (!handle) throw new Error('__simHandle not bound');
     return { alice: handle.fixtures.alice };
   },
 
   async act(ctx) {
     const gatewayFetch = (globalThis as any).__simGatewayFetch;
-    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
+    if (!gatewayFetch) throw new Error('__simGatewayFetch not bound');
     const traceIds: string[] = [];
 
     // 1. login — short TTL bootstrap (jwtTtlSeconds=2)
     const loginRes = await gatewayFetch(
-      new Request("http://sim/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://sim/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email: ctx.alice.email, password: ctx.alice.password }),
       }),
     );
@@ -57,18 +57,18 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
       token: string;
       expiresIn: number;
     };
-    traceIds.push(loginRes.headers.get("x-trace-id") ?? "");
+    traceIds.push(loginRes.headers.get('x-trace-id') ?? '');
 
     // 2. 즉시 호출 — 200/201 (projects 생성 시도)
     const immediateRes = await gatewayFetch(
-      new Request("http://sim/projects", {
-        method: "POST",
+      new Request('http://sim/projects', {
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${token1}`,
         },
         body: JSON.stringify({
-          name: "Scenario 7 probe",
+          name: 'Scenario 7 probe',
           departmentId: ctx.alice.departmentId,
         }),
       }),
@@ -86,23 +86,23 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
 
     // 4. 만료된 token 으로 호출 → 401 + reason=expired
     const expiredRes = await gatewayFetch(
-      new Request("http://sim/projects?departmentId=dept-eng", {
+      new Request('http://sim/projects?departmentId=dept-eng', {
         headers: { Authorization: `Bearer ${token1}` },
       }),
     );
     const expiredStatus = expiredRes.status;
-    const wwwAuth = expiredRes.headers.get("www-authenticate") ?? "";
+    const wwwAuth = expiredRes.headers.get('www-authenticate') ?? '';
     await expiredRes.text().catch(() => null);
 
     // 5. POST /auth/refresh
     const refreshRes = await gatewayFetch(
-      new Request("http://sim/auth/refresh", {
-        method: "POST",
+      new Request('http://sim/auth/refresh', {
+        method: 'POST',
         headers: { Authorization: `Bearer ${token1}` },
       }),
     );
     const refreshStatus = refreshRes.status;
-    let token2 = "";
+    let token2 = '';
     if (refreshRes.ok) {
       const body = (await refreshRes.json()) as { token: string };
       token2 = body.token;
@@ -113,19 +113,19 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
     // 6. 새 token 으로 protected route 재시도 → 200/201
     const reauthRes = token2
       ? await gatewayFetch(
-          new Request("http://sim/projects", {
-            method: "POST",
+          new Request('http://sim/projects', {
+            method: 'POST',
             headers: {
-              "content-type": "application/json",
+              'content-type': 'application/json',
               Authorization: `Bearer ${token2}`,
             },
             body: JSON.stringify({
-              name: "Scenario 7 reauth",
+              name: 'Scenario 7 reauth',
               departmentId: ctx.alice.departmentId,
             }),
           }),
         )
-      : new Response("", { status: 0 });
+      : new Response('', { status: 0 });
     let reauthBody: { rootSpanId?: string } | null = null;
     try {
       reauthBody = (await reauthRes.json()) as { rootSpanId?: string };
@@ -150,10 +150,10 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
       stepCount: 6,
       operatorHints: [
         ...(immediateBody?.rootSpanId
-          ? [auditTraceHint(immediateBody.rootSpanId, "pre-expiry-trace")]
+          ? [auditTraceHint(immediateBody.rootSpanId, 'pre-expiry-trace')]
           : []),
         ...(reauthBody?.rootSpanId
-          ? [auditTraceHint(reauthBody.rootSpanId, "post-refresh-trace")]
+          ? [auditTraceHint(reauthBody.rootSpanId, 'post-refresh-trace')]
           : []),
       ],
     };
@@ -161,18 +161,18 @@ export const scenario7BitmapRefresh: Scenario<S7Ctx> = {
 
   async assert(_ctx, actResult) {
     const d = actResult.data as Record<string, unknown>;
-    equal(d.ttlSeconds, 2, "TTL must be 2 seconds (in-process bootstrap option)");
+    equal(d.ttlSeconds, 2, 'TTL must be 2 seconds (in-process bootstrap option)');
     ok(
       d.immediateStatus === 200 || d.immediateStatus === 201,
       `immediate call must be 200/201, got ${d.immediateStatus}`,
     );
-    equal(d.expiredStatus, 401, "expired token must yield 401");
+    equal(d.expiredStatus, 401, 'expired token must yield 401');
     ok(
-      (d.expiredWwwAuth as string).includes("expired"),
+      (d.expiredWwwAuth as string).includes('expired'),
       `WWW-Authenticate must contain "expired", got: ${d.expiredWwwAuth}`,
     );
-    equal(d.refreshStatus, 200, "refresh must yield 200");
-    notEqual(d.token1, d.token2, "new token must differ from old");
+    equal(d.refreshStatus, 200, 'refresh must yield 200');
+    notEqual(d.token1, d.token2, 'new token must differ from old');
     ok(
       d.reauthStatus === 200 || d.reauthStatus === 201,
       `reauth with new token must be 200/201, got ${d.reauthStatus}`,

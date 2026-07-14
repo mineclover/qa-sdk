@@ -1,8 +1,8 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { MemberEntity } from "../../domain/index.js";
-import type { MemberTransactionScope } from "./member-transaction.port.js";
+import type { MemberEntity } from '../../domain/index.js';
+import type { MemberTransactionScope } from './member-transaction.port.js';
 
 export abstract class MemberRepositoryPort {
   abstract save(entity: MemberEntity, scope: MemberTransactionScope): Promise<void>;

@@ -1,4 +1,4 @@
-import type { EntryIR, TaxonomyIR } from "../schema/ir.js";
+import type { EntryIR, TaxonomyIR } from '../schema/ir.js';
 
 export type IdRename = {
   axis: string;
@@ -24,7 +24,7 @@ export type DecisionImpact = {
   axis: string;
   id: string;
   decisionLink: string;
-  impact: "lifecycle-changed" | "address-changed" | "removed";
+  impact: 'lifecycle-changed' | 'address-changed' | 'removed';
   /** lifecycle-changed: 이전 lifecycle */
   fromLifecycle?: string;
   /** lifecycle-changed: 이후 lifecycle */
@@ -67,7 +67,7 @@ export function migrationPlan(from: TaxonomyIR, to: TaxonomyIR): MigrationPlan {
             axis: axisName,
             id: entry.id,
             decisionLink: entry.decisionLink,
-            impact: "removed",
+            impact: 'removed',
           });
         }
       }
@@ -116,7 +116,7 @@ export function migrationPlan(from: TaxonomyIR, to: TaxonomyIR): MigrationPlan {
           axis: axisName,
           id,
           decisionLink: fromEntry.decisionLink,
-          impact: "removed",
+          impact: 'removed',
         });
         continue;
       }
@@ -126,7 +126,7 @@ export function migrationPlan(from: TaxonomyIR, to: TaxonomyIR): MigrationPlan {
           axis: axisName,
           id,
           decisionLink: fromEntry.decisionLink,
-          impact: "address-changed",
+          impact: 'address-changed',
           fromAddress: fromEntry.address,
           toAddress: toEntry.address,
         });
@@ -138,7 +138,7 @@ export function migrationPlan(from: TaxonomyIR, to: TaxonomyIR): MigrationPlan {
           axis: axisName,
           id,
           decisionLink: fromEntry.decisionLink,
-          impact: "lifecycle-changed",
+          impact: 'lifecycle-changed',
           fromLifecycle: fromEntry.lifecycle,
           toLifecycle: toEntry.lifecycle,
         });

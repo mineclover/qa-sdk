@@ -15,13 +15,9 @@
  *  - 불변성: register() 후 정의 변경 불가 — 캐시 항상 유효
  */
 
-import {
-  createMask,
-  setBit,
-  hasBit,
-} from "weighted-index";
+import { createMask, setBit, hasBit } from 'weighted-index';
 
-import { PermissionSet, type DimDef } from "./permission-set.js";
+import { PermissionSet, type DimDef } from './permission-set.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,7 +55,7 @@ export interface DomainRoleDef {
 export interface RoleRegistryValidationError {
   domain: string;
   roleId: string;
-  kind: "cycle" | "unknown-parent" | "duplicate" | "unknown-deny-role" | "self-deny-role";
+  kind: 'cycle' | 'unknown-parent' | 'duplicate' | 'unknown-deny-role' | 'self-deny-role';
   message: string;
 }
 
@@ -211,7 +207,7 @@ export class RoleRegistry {
             errors.push({
               domain,
               roleId,
-              kind: "unknown-parent",
+              kind: 'unknown-parent',
               message: `Role "${roleId}" in domain "${domain}" references unknown parent "${parentId}"`,
             });
           }
@@ -222,14 +218,14 @@ export class RoleRegistry {
             errors.push({
               domain,
               roleId,
-              kind: "self-deny-role",
+              kind: 'self-deny-role',
               message: `Role "${roleId}" in domain "${domain}" denies itself`,
             });
           } else if (!domainMap.has(denyRoleId)) {
             errors.push({
               domain,
               roleId,
-              kind: "unknown-deny-role",
+              kind: 'unknown-deny-role',
               message: `Role "${roleId}" in domain "${domain}" denies unknown role "${denyRoleId}"`,
             });
           }
@@ -238,8 +234,8 @@ export class RoleRegistry {
         try {
           this._resolveFeatures(domain, roleId, new Set());
         } catch (e) {
-          if (e instanceof RangeError && (e.message.includes("Circular"))) {
-            errors.push({ domain, roleId, kind: "cycle", message: e.message });
+          if (e instanceof RangeError && e.message.includes('Circular')) {
+            errors.push({ domain, roleId, kind: 'cycle', message: e.message });
           }
         }
       }
@@ -256,15 +252,9 @@ export class RoleRegistry {
   }
 
   /** DFS로 상속 체인을 순회하며 feature 집합을 flatten한다. */
-  private _resolveFeatures(
-    domain: string,
-    roleId: string,
-    visiting: Set<string>,
-  ): Set<string> {
+  private _resolveFeatures(domain: string, roleId: string, visiting: Set<string>): Set<string> {
     if (visiting.has(roleId)) {
-      throw new RangeError(
-        `Circular inheritance detected: role "${roleId}" in domain "${domain}"`,
-      );
+      throw new RangeError(`Circular inheritance detected: role "${roleId}" in domain "${domain}"`);
     }
 
     const node = this._getNode(domain, roleId);
@@ -276,8 +266,8 @@ export class RoleRegistry {
     const result = new Set<string>(node.def.ownFeatures);
     for (const parentId of node.def.parents) {
       const parentNode = this._getNode(domain, parentId);
-      const parentFeats = parentNode.resolved
-        ?? this._resolveFeatures(domain, parentId, new Set(visiting));
+      const parentFeats =
+        parentNode.resolved ?? this._resolveFeatures(domain, parentId, new Set(visiting));
       for (const f of parentFeats) result.add(f);
     }
 
@@ -287,8 +277,8 @@ export class RoleRegistry {
       const denySet = new Set<string>(denyFeatures ?? []);
       for (const denyRoleId of denyRoles ?? []) {
         const denyNode = this._getNode(domain, denyRoleId);
-        const denyFeats = denyNode.resolved
-          ?? this._resolveFeatures(domain, denyRoleId, new Set(visiting));
+        const denyFeats =
+          denyNode.resolved ?? this._resolveFeatures(domain, denyRoleId, new Set(visiting));
         for (const f of denyFeats) denySet.add(f);
       }
       // 3. grant - deny

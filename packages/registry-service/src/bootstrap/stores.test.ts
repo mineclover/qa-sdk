@@ -1,14 +1,14 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { InMemoryOntologyRegistryStore } from "../stores/in-memory-ontology-registry-store.js";
-import { SqlOntologyRegistryStore } from "../stores/sql-ontology-registry-store.js";
-import { createRegistryStores } from "./stores.js";
+import { InMemoryOntologyRegistryStore } from '../stores/in-memory-ontology-registry-store.js';
+import { SqlOntologyRegistryStore } from '../stores/sql-ontology-registry-store.js';
+import { createRegistryStores } from './stores.js';
 
 const tempDirs: string[] = [];
 
@@ -18,15 +18,15 @@ afterEach(async () => {
   }
 });
 
-describe("createRegistryStores", () => {
-  it("returns an ontology store for :memory: stores", async () => {
-    const stores = await createRegistryStores(":memory:");
+describe('createRegistryStores', () => {
+  it('returns an ontology store for :memory: stores', async () => {
+    const stores = await createRegistryStores(':memory:');
 
     expect(stores.ontologyStore).toBeInstanceOf(InMemoryOntologyRegistryStore);
     expect(await stores.ontologyStore.listNamespaces()).toEqual([]);
   });
 
-  it("returns an ontology store for SQL-backed stores", async () => {
+  it('returns an ontology store for SQL-backed stores', async () => {
     const stores = await createRegistryStores(await createSqlitePath());
 
     expect(stores.ontologyStore).toBeInstanceOf(SqlOntologyRegistryStore);
@@ -35,7 +35,7 @@ describe("createRegistryStores", () => {
 });
 
 async function createSqlitePath(): Promise<string> {
-  const tempDir = await mkdtemp(join(tmpdir(), "registry-stores-"));
+  const tempDir = await mkdtemp(join(tmpdir(), 'registry-stores-'));
   tempDirs.push(tempDir);
-  return join(tempDir, "registry.sqlite");
+  return join(tempDir, 'registry.sqlite');
 }

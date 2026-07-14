@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-engine-system
 // @def.doc qa-sdk-engine-system
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest';
 import type {
   DlqInsert,
   DlqStore,
@@ -11,16 +11,11 @@ import type {
   StoredRecord,
   StoredTrace,
   TraceStore,
-} from "@qa-sdk/core";
-import { reconstructPendingTraces, reconstructTrace } from "./reconstruct-pending-traces.js";
+} from '@qa-sdk/core';
+import { reconstructPendingTraces, reconstructTrace } from './reconstruct-pending-traces.js';
 
 function makeTrace(traceId: string, overrides: Partial<StoredTrace> = {}): StoredTrace {
-  const {
-    actorId = null,
-    userAttributes = null,
-    userId = null,
-    ...restOverrides
-  } = overrides;
+  const { actorId = null, userAttributes = null, userId = null, ...restOverrides } = overrides;
 
   return {
     traceId,
@@ -30,11 +25,11 @@ function makeTrace(traceId: string, overrides: Partial<StoredTrace> = {}): Store
     userId,
     userAttributes,
     recordCount: 1,
-    firstTimestamp: new Date("2026-03-13T00:00:00.000Z"),
-    lastTimestamp: new Date("2026-03-13T00:00:01.000Z"),
+    firstTimestamp: new Date('2026-03-13T00:00:00.000Z'),
+    lastTimestamp: new Date('2026-03-13T00:00:01.000Z'),
     reconstructed: false,
-    createdAt: new Date("2026-03-13T00:00:00.000Z"),
-    updatedAt: new Date("2026-03-13T00:00:00.000Z"),
+    createdAt: new Date('2026-03-13T00:00:00.000Z'),
+    updatedAt: new Date('2026-03-13T00:00:00.000Z'),
     ...restOverrides,
   };
 }
@@ -45,22 +40,22 @@ function makeRecord(traceId: string): StoredRecord {
     traceId,
     spanId: `spn_${traceId}`,
     parentSpanId: undefined,
-    timestamp: new Date("2026-03-13T00:00:00.000Z"),
-    recordKind: "log",
-    eventKey: "page_view",
-    eventVersion: "1",
+    timestamp: new Date('2026-03-13T00:00:00.000Z'),
+    recordKind: 'log',
+    eventKey: 'page_view',
+    eventVersion: '1',
     spanName: undefined,
     startTime: undefined,
     endTime: undefined,
     statusCode: undefined,
-    payloadFormat: "json",
-    payloadEncoding: "raw",
+    payloadFormat: 'json',
+    payloadEncoding: 'raw',
     payloadMaskingApplied: false,
     payloadMaskedFields: [],
     payload: {},
     qaSessionId: undefined,
     registryWarning: undefined,
-    createdAt: new Date("2026-03-13T00:00:00.000Z"),
+    createdAt: new Date('2026-03-13T00:00:00.000Z'),
   };
 }
 
@@ -69,14 +64,18 @@ function buildDeps(traces: StoredTrace[] = [], records: Map<string, StoredRecord
   const dlqItems: DlqInsert[] = [];
   const reconstructedIds: string[] = [];
 
-  const recordStore: Pick<RecordStore, "findByTraceId"> = {
-    findByTraceId: vi.fn().mockImplementation(async (traceId: string) => records.get(traceId) ?? []),
+  const recordStore: Pick<RecordStore, 'findByTraceId'> = {
+    findByTraceId: vi
+      .fn()
+      .mockImplementation(async (traceId: string) => records.get(traceId) ?? []),
   };
 
-  const traceStore: Pick<TraceStore, "findById" | "findUnreconstructed" | "markReconstructed"> = {
-    findById: vi.fn().mockImplementation(async (traceId: string) =>
-      traces.find((t) => t.traceId === traceId) ?? null,
-    ),
+  const traceStore: Pick<TraceStore, 'findById' | 'findUnreconstructed' | 'markReconstructed'> = {
+    findById: vi
+      .fn()
+      .mockImplementation(
+        async (traceId: string) => traces.find((t) => t.traceId === traceId) ?? null,
+      ),
     findUnreconstructed: vi.fn().mockResolvedValue(traces),
     markReconstructed: vi.fn().mockImplementation(async (traceId: string) => {
       reconstructedIds.push(traceId);
@@ -87,10 +86,12 @@ function buildDeps(traces: StoredTrace[] = [], records: Map<string, StoredRecord
     upsert: vi.fn().mockImplementation(async (traceId: string, graph: RuntimeGraph) => {
       graphs.set(traceId, graph);
     }),
-    findByTraceId: vi.fn().mockImplementation(async (traceId: string) => graphs.get(traceId) ?? null),
+    findByTraceId: vi
+      .fn()
+      .mockImplementation(async (traceId: string) => graphs.get(traceId) ?? null),
   };
 
-  const dlqStore: Pick<DlqStore, "insert"> = {
+  const dlqStore: Pick<DlqStore, 'insert'> = {
     insert: vi.fn().mockImplementation(async (item: DlqInsert) => {
       dlqItems.push(item);
     }),
@@ -99,16 +100,16 @@ function buildDeps(traces: StoredTrace[] = [], records: Map<string, StoredRecord
   return { recordStore, traceStore, graphStore, dlqStore, graphs, dlqItems, reconstructedIds };
 }
 
-describe("reconstructPendingTraces", () => {
-  it("returns empty results when no unreconstructed traces exist", async () => {
+describe('reconstructPendingTraces', () => {
+  it('returns empty results when no unreconstructed traces exist', async () => {
     const deps = buildDeps([]);
     const result = await reconstructPendingTraces(deps);
     expect(result.reconstructedTraceIds).toEqual([]);
     expect(result.failedTraceIds).toEqual([]);
   });
 
-  it("reconstructs a pending trace and marks it as reconstructed", async () => {
-    const traceId = "trc_001";
+  it('reconstructs a pending trace and marks it as reconstructed', async () => {
+    const traceId = 'trc_001';
     const records = new Map([[traceId, [makeRecord(traceId)]]]);
     const deps = buildDeps([makeTrace(traceId)], records);
 
@@ -120,48 +121,50 @@ describe("reconstructPendingTraces", () => {
     expect(deps.reconstructedIds).toContain(traceId);
   });
 
-  it("reconstructs multiple pending traces", async () => {
-    const traces = ["trc_001", "trc_002"].map((id) => makeTrace(id));
+  it('reconstructs multiple pending traces', async () => {
+    const traces = ['trc_001', 'trc_002'].map((id) => makeTrace(id));
     const records = new Map([
-      ["trc_001", [makeRecord("trc_001")]],
-      ["trc_002", [makeRecord("trc_002")]],
+      ['trc_001', [makeRecord('trc_001')]],
+      ['trc_002', [makeRecord('trc_002')]],
     ]);
     const deps = buildDeps(traces, records);
 
     const result = await reconstructPendingTraces(deps);
 
     expect(result.reconstructedTraceIds).toHaveLength(2);
-    expect(result.reconstructedTraceIds).toContain("trc_001");
-    expect(result.reconstructedTraceIds).toContain("trc_002");
+    expect(result.reconstructedTraceIds).toContain('trc_001');
+    expect(result.reconstructedTraceIds).toContain('trc_002');
   });
 
-  it("targets specific trace IDs and skips already reconstructed traces", async () => {
+  it('targets specific trace IDs and skips already reconstructed traces', async () => {
     const traces = [
-      makeTrace("trc_001"),
-      makeTrace("trc_002", { reconstructed: true }),
-      makeTrace("trc_003"),
+      makeTrace('trc_001'),
+      makeTrace('trc_002', { reconstructed: true }),
+      makeTrace('trc_003'),
     ];
     const records = new Map([
-      ["trc_001", [makeRecord("trc_001")]],
-      ["trc_002", [makeRecord("trc_002")]],
-      ["trc_003", [makeRecord("trc_003")]],
+      ['trc_001', [makeRecord('trc_001')]],
+      ['trc_002', [makeRecord('trc_002')]],
+      ['trc_003', [makeRecord('trc_003')]],
     ]);
     const deps = buildDeps(traces, records);
 
     const result = await reconstructPendingTraces(deps, {
-      traceIds: ["trc_003", "trc_002", "trc_003"],
+      traceIds: ['trc_003', 'trc_002', 'trc_003'],
     });
 
-    expect(result.reconstructedTraceIds).toEqual(["trc_003"]);
+    expect(result.reconstructedTraceIds).toEqual(['trc_003']);
     expect(result.failedTraceIds).toEqual([]);
-    expect(deps.reconstructedIds).toEqual(["trc_003"]);
+    expect(deps.reconstructedIds).toEqual(['trc_003']);
     expect(deps.traceStore.findUnreconstructed).not.toHaveBeenCalled();
   });
 
-  it("adds to DLQ and calls onError when reconstruction fails", async () => {
-    const traceId = "trc_fail";
+  it('adds to DLQ and calls onError when reconstruction fails', async () => {
+    const traceId = 'trc_fail';
     const deps = buildDeps([makeTrace(traceId)]);
-    (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("db error"));
+    (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('db error'),
+    );
 
     const onError = vi.fn();
     const result = await reconstructPendingTraces(deps, { onError });
@@ -170,31 +173,33 @@ describe("reconstructPendingTraces", () => {
     expect(result.reconstructedTraceIds).toEqual([]);
     expect(onError).toHaveBeenCalledWith(traceId, expect.any(Error));
     expect(deps.dlqItems).toHaveLength(1);
-    expect(deps.dlqItems[0]?.phase).toBe("reconstruction");
+    expect(deps.dlqItems[0]?.phase).toBe('reconstruction');
     expect(deps.dlqItems[0]?.traceId).toBe(traceId);
   });
 
-  it("handles partial failure: reconstructs successful traces even when one fails", async () => {
-    const traces = ["trc_001", "trc_fail"].map((id) => makeTrace(id));
-    const records = new Map([["trc_001", [makeRecord("trc_001")]]]);
+  it('handles partial failure: reconstructs successful traces even when one fails', async () => {
+    const traces = ['trc_001', 'trc_fail'].map((id) => makeTrace(id));
+    const records = new Map([['trc_001', [makeRecord('trc_001')]]]);
     const deps = buildDeps(traces, records);
     (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockImplementation(
       async (traceId: string) => {
-        if (traceId === "trc_fail") throw new Error("db error");
+        if (traceId === 'trc_fail') throw new Error('db error');
         return records.get(traceId) ?? [];
       },
     );
 
     const result = await reconstructPendingTraces(deps);
 
-    expect(result.reconstructedTraceIds).toContain("trc_001");
-    expect(result.failedTraceIds).toContain("trc_fail");
+    expect(result.reconstructedTraceIds).toContain('trc_001');
+    expect(result.failedTraceIds).toContain('trc_fail');
   });
 
-  it("does not throw when no onError callback is provided and reconstruction fails", async () => {
-    const traceId = "trc_fail";
+  it('does not throw when no onError callback is provided and reconstruction fails', async () => {
+    const traceId = 'trc_fail';
     const deps = buildDeps([makeTrace(traceId)]);
-    (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("db error"));
+    (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('db error'),
+    );
 
     const result = await reconstructPendingTraces(deps);
 
@@ -202,10 +207,12 @@ describe("reconstructPendingTraces", () => {
     expect(deps.dlqItems).toHaveLength(1);
   });
 
-  it("can suppress DLQ writes when the caller handles final failure elsewhere", async () => {
-    const traceId = "trc_fail";
+  it('can suppress DLQ writes when the caller handles final failure elsewhere', async () => {
+    const traceId = 'trc_fail';
     const deps = buildDeps([makeTrace(traceId)]);
-    (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("db error"));
+    (deps.recordStore.findByTraceId as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('db error'),
+    );
 
     const result = await reconstructPendingTraces(deps, {
       captureFailuresInDlq: false,
@@ -216,9 +223,9 @@ describe("reconstructPendingTraces", () => {
   });
 });
 
-describe("reconstructTrace", () => {
-  it("stores the graph and marks the trace as reconstructed", async () => {
-    const traceId = "trc_001";
+describe('reconstructTrace', () => {
+  it('stores the graph and marks the trace as reconstructed', async () => {
+    const traceId = 'trc_001';
     const records = new Map([[traceId, [makeRecord(traceId)]]]);
     const deps = buildDeps([makeTrace(traceId)], records);
 

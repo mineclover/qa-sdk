@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { performance } from "node:perf_hooks";
+import { performance } from 'node:perf_hooks';
 import {
   newDlqId,
   type GraphStore,
@@ -10,7 +10,7 @@ import {
   type TaskQueue,
   type TransmissionEnvelope,
   type VerdictStore,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 import {
   InMemoryDlqStore,
   InMemoryGraphStore,
@@ -20,17 +20,14 @@ import {
   InMemoryTraceStore,
   InMemoryTransmissionStore,
   InMemoryVerdictStore,
-} from "@qa-sdk/store";
-import pino from "pino";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp } from "./app.js";
-import {
-  BullMQTaskQueue,
-  type BullMQModule,
-} from "./lib/bullmq-task-queue.js";
-import { InMemoryTaskQueue } from "./lib/in-memory-task-queue.js";
-import { registerTaskQueueWorker } from "./lib/phase-two-worker.js";
-import { RecordStreamBroker } from "./lib/record-stream-broker.js";
+} from '@qa-sdk/store';
+import pino from 'pino';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createApp } from './app.js';
+import { BullMQTaskQueue, type BullMQModule } from './lib/bullmq-task-queue.js';
+import { InMemoryTaskQueue } from './lib/in-memory-task-queue.js';
+import { registerTaskQueueWorker } from './lib/phase-two-worker.js';
+import { RecordStreamBroker } from './lib/record-stream-broker.js';
 
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -51,7 +48,7 @@ interface FakeEnqueuedJob<T> {
     attempts?: number;
     backoff?: {
       delay: number;
-      type: "exponential";
+      type: 'exponential';
     };
     jobId?: string;
   };
@@ -62,11 +59,7 @@ function createFakeBullMQ<T>(): BullMQModule {
   let activeWorker: FakeWorker<T> | null = null;
 
   class FakeQueue {
-    async add(
-      name: string,
-      data: T,
-      opts?: FakeEnqueuedJob<T>["opts"],
-    ) {
+    async add(name: string, data: T, opts?: FakeEnqueuedJob<T>['opts']) {
       pendingJobs.push({
         data: structuredClone(data),
         name,
@@ -88,7 +81,7 @@ function createFakeBullMQ<T>(): BullMQModule {
             | {
                 data: TJob;
                 attemptsMade?: number;
-                opts?: FakeEnqueuedJob<TJob>["opts"];
+                opts?: FakeEnqueuedJob<TJob>['opts'];
               }
             | undefined,
           error: Error,
@@ -100,7 +93,7 @@ function createFakeBullMQ<T>(): BullMQModule {
       private readonly processor: (job: {
         data: TJob;
         attemptsMade?: number;
-        opts?: FakeEnqueuedJob<TJob>["opts"];
+        opts?: FakeEnqueuedJob<TJob>['opts'];
       }) => Promise<unknown>,
       _options: {
         concurrency: number;
@@ -118,7 +111,7 @@ function createFakeBullMQ<T>(): BullMQModule {
     }
 
     on(
-      event: "error" | "failed",
+      event: 'error' | 'failed',
       listener:
         | ((error: Error) => void)
         | ((
@@ -126,13 +119,13 @@ function createFakeBullMQ<T>(): BullMQModule {
               | {
                   data: TJob;
                   attemptsMade?: number;
-                  opts?: FakeEnqueuedJob<TJob>["opts"];
+                  opts?: FakeEnqueuedJob<TJob>['opts'];
                 }
               | undefined,
             error: Error,
           ) => void),
     ) {
-      if (event === "error") {
+      if (event === 'error') {
         this.errorListener = listener as (error: Error) => void;
         return this;
       }
@@ -142,7 +135,7 @@ function createFakeBullMQ<T>(): BullMQModule {
           | {
               data: TJob;
               attemptsMade?: number;
-              opts?: FakeEnqueuedJob<TJob>["opts"];
+              opts?: FakeEnqueuedJob<TJob>['opts'];
             }
           | undefined,
         error: Error,
@@ -173,8 +166,7 @@ function createFakeBullMQ<T>(): BullMQModule {
         } catch (error) {
           attemptsRemaining -= 1;
           attemptsMade += 1;
-          const normalized =
-            error instanceof Error ? error : new Error(String(error));
+          const normalized = error instanceof Error ? error : new Error(String(error));
 
           this.failedListener?.(
             {
@@ -195,32 +187,32 @@ function createFakeBullMQ<T>(): BullMQModule {
   }
 
   return {
-    Queue: FakeQueue as unknown as BullMQModule["Queue"],
-    Worker: FakeWorker as unknown as BullMQModule["Worker"],
+    Queue: FakeQueue as unknown as BullMQModule['Queue'],
+    Worker: FakeWorker as unknown as BullMQModule['Worker'],
   };
 }
 
 function createSilentLogger() {
-  return pino({ level: "silent" });
+  return pino({ level: 'silent' });
 }
 
 function buildScenarioSpec(scenarioId: string): ScenarioSpec {
   return {
     scenario_id: scenarioId,
-    version: "1.0.0",
-    domain: "checkout",
+    version: '1.0.0',
+    domain: 'checkout',
     steps: [
       {
-        id: "step_form",
-        event_key: "checkout.form.updated",
+        id: 'step_form',
+        event_key: 'checkout.form.updated',
         required: true,
-        kind: "sequence",
+        kind: 'sequence',
       },
       {
-        id: "step_save",
-        event_key: "checkout.save",
+        id: 'step_save',
+        event_key: 'checkout.save',
         required: true,
-        kind: "sequence",
+        kind: 'sequence',
       },
     ],
   };
@@ -235,58 +227,58 @@ function buildEnvelope({
 }): TransmissionEnvelope {
   return {
     transmission_id: `tx_${traceId}`,
-    sent_at: "2026-03-18T10:00:05.000Z",
+    sent_at: '2026-03-18T10:00:05.000Z',
     owner: {
-      owner_type: "workspace",
-      owner_id: "workspace_async_worker",
+      owner_type: 'workspace',
+      owner_id: 'workspace_async_worker',
     },
     source: {
-      service_name: "checkout-api",
-      sdk_name: "qa-sdk-js",
-      sdk_version: "0.1.0",
+      service_name: 'checkout-api',
+      sdk_name: 'qa-sdk-js',
+      sdk_version: '0.1.0',
     },
     runtime: {
-      platform: "node",
+      platform: 'node',
       app_version: process.version,
     },
     build: {
-      env: "dev",
-      release_version: "2026.03.18",
+      env: 'dev',
+      release_version: '2026.03.18',
     },
     records: [
       {
         log_id: `log_form_${traceId}`,
-        timestamp: "2026-03-18T10:00:01.000Z",
-        record_kind: "log",
+        timestamp: '2026-03-18T10:00:01.000Z',
+        record_kind: 'log',
         trace_id: traceId,
-        span_id: "span_form",
-        event_key: "checkout.form.updated",
-        event_version: "001",
-        payload_format: "json",
-        payload_encoding: "raw",
+        span_id: 'span_form',
+        event_key: 'checkout.form.updated',
+        event_version: '001',
+        payload_format: 'json',
+        payload_encoding: 'raw',
         payload_masking_applied: false,
         payload_masked_fields: [],
-        payload: { field: "email" },
+        payload: { field: 'email' },
         qa_session_id: sessionId,
       },
       {
         log_id: `log_save_${traceId}`,
-        timestamp: "2026-03-18T10:00:02.000Z",
-        record_kind: "span",
+        timestamp: '2026-03-18T10:00:02.000Z',
+        record_kind: 'span',
         trace_id: traceId,
-        span_id: "span_save",
-        parent_span_id: "span_form",
-        event_key: "checkout.save",
-        event_version: "001",
-        span_name: "persist_order",
-        start_time: "2026-03-18T10:00:01.500Z",
-        end_time: "2026-03-18T10:00:02.000Z",
-        status_code: "ok",
-        payload_format: "json",
-        payload_encoding: "raw",
+        span_id: 'span_save',
+        parent_span_id: 'span_form',
+        event_key: 'checkout.save',
+        event_version: '001',
+        span_name: 'persist_order',
+        start_time: '2026-03-18T10:00:01.500Z',
+        end_time: '2026-03-18T10:00:02.000Z',
+        status_code: 'ok',
+        payload_format: 'json',
+        payload_encoding: 'raw',
         payload_masking_applied: false,
         payload_masked_fields: [],
-        payload: { orderId: "order_1" },
+        payload: { orderId: 'order_1' },
         qa_session_id: sessionId,
       },
     ],
@@ -315,12 +307,10 @@ function createTestHarness(
   const dlqStore = overrides.dlqStore ?? new InMemoryDlqStore();
   const graphStore = overrides.graphStore ?? new InMemoryGraphStore();
   const recordStore = overrides.recordStore ?? new InMemoryRecordStore();
-  const scenarioSpecStore =
-    overrides.scenarioSpecStore ?? new InMemoryScenarioSpecStore();
+  const scenarioSpecStore = overrides.scenarioSpecStore ?? new InMemoryScenarioSpecStore();
   const sessionStore = overrides.sessionStore ?? new InMemorySessionStore();
   const traceStore = overrides.traceStore ?? new InMemoryTraceStore();
-  const transmissionStore =
-    overrides.transmissionStore ?? new InMemoryTransmissionStore();
+  const transmissionStore = overrides.transmissionStore ?? new InMemoryTransmissionStore();
   const verdictStore = overrides.verdictStore ?? new InMemoryVerdictStore();
 
   const app = createApp({
@@ -366,21 +356,15 @@ async function seedScenarioContext(
   });
 }
 
-async function postIngest(
-  app: ReturnType<typeof createApp>,
-  envelope: TransmissionEnvelope,
-) {
-  return app.request("/v1/ingest", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
+async function postIngest(app: ReturnType<typeof createApp>, envelope: TransmissionEnvelope) {
+  return app.request('/v1/ingest', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify(envelope),
   });
 }
 
-async function measureIngestMs(
-  app: ReturnType<typeof createApp>,
-  envelope: TransmissionEnvelope,
-) {
+async function measureIngestMs(app: ReturnType<typeof createApp>, envelope: TransmissionEnvelope) {
   const startedAt = performance.now();
   const response = await postIngest(app, envelope);
   const durationMs = performance.now() - startedAt;
@@ -394,27 +378,22 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("async worker acceptance", () => {
-  it("returns 202 before phase two completes, then exposes verdicts after the worker finishes", async () => {
+describe('async worker acceptance', () => {
+  it('returns 202 before phase two completes, then exposes verdicts after the worker finishes', async () => {
     const taskQueue = new InMemoryTaskQueue<TaskPayload>();
     const harness = createTestHarness({ taskQueue });
-    const traceId = "trace_async_acceptance";
-    const sessionId = "session_async_acceptance";
-    const scenarioId = "scenario_async_acceptance";
+    const traceId = 'trace_async_acceptance';
+    const sessionId = 'session_async_acceptance';
+    const scenarioId = 'scenario_async_acceptance';
 
     try {
       await seedScenarioContext(harness, { scenarioId, sessionId });
 
-      const ingestResponse = await postIngest(
-        harness.app,
-        buildEnvelope({ traceId, sessionId }),
-      );
+      const ingestResponse = await postIngest(harness.app, buildEnvelope({ traceId, sessionId }));
 
       expect(ingestResponse.status).toBe(202);
 
-      const verdictsBeforeWorker = await harness.app.request(
-        `/v1/traces/${traceId}/verdicts`,
-      );
+      const verdictsBeforeWorker = await harness.app.request(`/v1/traces/${traceId}/verdicts`);
       expect(verdictsBeforeWorker.status).toBe(200);
       await expect(verdictsBeforeWorker.json()).resolves.toEqual({ items: [] });
 
@@ -430,14 +409,12 @@ describe("async worker acceptance", () => {
       });
       await taskQueue.close();
 
-      const verdictsAfterWorker = await harness.app.request(
-        `/v1/traces/${traceId}/verdicts`,
-      );
+      const verdictsAfterWorker = await harness.app.request(`/v1/traces/${traceId}/verdicts`);
       expect(verdictsAfterWorker.status).toBe(200);
       await expect(verdictsAfterWorker.json()).resolves.toEqual({
         items: [
           expect.objectContaining({
-            overallVerdict: "pass",
+            overallVerdict: 'pass',
             scenarioId,
           }),
         ],
@@ -447,70 +424,59 @@ describe("async worker acceptance", () => {
     }
   });
 
-  it("logs before/after ingest timings and shows the async queue path is faster than inline phase two", async () => {
+  it('logs before/after ingest timings and shows the async queue path is faster than inline phase two', async () => {
     const phaseTwoDelayMs = 80;
 
     const syncHarness = createTestHarness();
     await seedScenarioContext(syncHarness, {
-      scenarioId: "scenario_sync_latency",
-      sessionId: "session_sync_latency",
+      scenarioId: 'scenario_sync_latency',
+      sessionId: 'session_sync_latency',
     });
 
     const syncGraphUpsert = syncHarness.graphStore.upsert.bind(syncHarness.graphStore);
-    vi.spyOn(syncHarness.graphStore, "upsert").mockImplementation(
-      async (...args) => {
-        await delay(phaseTwoDelayMs);
-        return syncGraphUpsert(...args);
-      },
-    );
+    vi.spyOn(syncHarness.graphStore, 'upsert').mockImplementation(async (...args) => {
+      await delay(phaseTwoDelayMs);
+      return syncGraphUpsert(...args);
+    });
 
-    const syncVerdictInsert =
-      syncHarness.verdictStore.insert.bind(syncHarness.verdictStore);
-    vi.spyOn(syncHarness.verdictStore, "insert").mockImplementation(
-      async (...args) => {
-        await delay(phaseTwoDelayMs);
-        return syncVerdictInsert(...args);
-      },
-    );
+    const syncVerdictInsert = syncHarness.verdictStore.insert.bind(syncHarness.verdictStore);
+    vi.spyOn(syncHarness.verdictStore, 'insert').mockImplementation(async (...args) => {
+      await delay(phaseTwoDelayMs);
+      return syncVerdictInsert(...args);
+    });
 
     const asyncTaskQueue = new InMemoryTaskQueue<TaskPayload>();
     const asyncHarness = createTestHarness({ taskQueue: asyncTaskQueue });
     await seedScenarioContext(asyncHarness, {
-      scenarioId: "scenario_async_latency",
-      sessionId: "session_async_latency",
+      scenarioId: 'scenario_async_latency',
+      sessionId: 'session_async_latency',
     });
 
-    const asyncGraphUpsert =
-      asyncHarness.graphStore.upsert.bind(asyncHarness.graphStore);
-    vi.spyOn(asyncHarness.graphStore, "upsert").mockImplementation(
-      async (...args) => {
-        await delay(phaseTwoDelayMs);
-        return asyncGraphUpsert(...args);
-      },
-    );
+    const asyncGraphUpsert = asyncHarness.graphStore.upsert.bind(asyncHarness.graphStore);
+    vi.spyOn(asyncHarness.graphStore, 'upsert').mockImplementation(async (...args) => {
+      await delay(phaseTwoDelayMs);
+      return asyncGraphUpsert(...args);
+    });
 
-    const asyncVerdictInsert =
-      asyncHarness.verdictStore.insert.bind(asyncHarness.verdictStore);
-    vi.spyOn(asyncHarness.verdictStore, "insert").mockImplementation(
-      async (...args) => {
-        await delay(phaseTwoDelayMs);
-        return asyncVerdictInsert(...args);
-      },
-    );
+    const asyncVerdictInsert = asyncHarness.verdictStore.insert.bind(asyncHarness.verdictStore);
+    vi.spyOn(asyncHarness.verdictStore, 'insert').mockImplementation(async (...args) => {
+      await delay(phaseTwoDelayMs);
+      return asyncVerdictInsert(...args);
+    });
 
     try {
       const syncDurationMs = await measureIngestMs(
         syncHarness.app,
         buildEnvelope({
-          traceId: "trace_sync_latency",
-          sessionId: "session_sync_latency",
+          traceId: 'trace_sync_latency',
+          sessionId: 'session_sync_latency',
         }),
       );
       const asyncDurationMs = await measureIngestMs(
         asyncHarness.app,
         buildEnvelope({
-          traceId: "trace_async_latency",
-          sessionId: "session_async_latency",
+          traceId: 'trace_async_latency',
+          sessionId: 'session_async_latency',
         }),
       );
 
@@ -525,25 +491,25 @@ describe("async worker acceptance", () => {
     }
   });
 
-  it("keeps DLQ retry working after a worker final failure", async () => {
+  it('keeps DLQ retry working after a worker final failure', async () => {
     const dlqRecorded = createDeferred<void>();
     const graphStore = new InMemoryGraphStore();
     const dlqStore = new InMemoryDlqStore();
     const recordStore = new InMemoryRecordStore();
     const scenarioSpecStore = new InMemoryScenarioSpecStore();
     const sessionStore = new InMemorySessionStore();
-    const traceId = "trace_async_dlq";
+    const traceId = 'trace_async_dlq';
     const traceStore = new InMemoryTraceStore();
-    const sessionId = "session_async_dlq";
-    const scenarioId = "scenario_async_dlq";
+    const sessionId = 'session_async_dlq';
+    const scenarioId = 'scenario_async_dlq';
     const transmissionStore = new InMemoryTransmissionStore();
     const verdictStore = new InMemoryVerdictStore();
     let shouldFail = true;
 
     const graphUpsert = graphStore.upsert.bind(graphStore);
-    vi.spyOn(graphStore, "upsert").mockImplementation(async (...args) => {
+    vi.spyOn(graphStore, 'upsert').mockImplementation(async (...args) => {
       if (args[0] === traceId && shouldFail) {
-        throw new Error("reconstruction boom");
+        throw new Error('reconstruction boom');
       }
 
       return graphUpsert(...args);
@@ -561,8 +527,8 @@ describe("async worker acceptance", () => {
         });
         dlqRecorded.resolve();
       },
-      queueName: "ingest-phase-two",
-      redisUrl: "redis://localhost:6379/0",
+      queueName: 'ingest-phase-two',
+      redisUrl: 'redis://localhost:6379/0',
     });
     const harness = createTestHarness({
       dlqStore,
@@ -590,16 +556,13 @@ describe("async worker acceptance", () => {
         verdictStore,
       });
 
-      const ingestResponse = await postIngest(
-        harness.app,
-        buildEnvelope({ traceId, sessionId }),
-      );
+      const ingestResponse = await postIngest(harness.app, buildEnvelope({ traceId, sessionId }));
 
       expect(ingestResponse.status).toBe(202);
       await dlqRecorded.promise;
 
       const listedPendingResponse = await harness.app.request(
-        "/v1/admin/dlq?status=pending&limit=10",
+        '/v1/admin/dlq?status=pending&limit=10',
       );
 
       expect(listedPendingResponse.status).toBe(200);
@@ -607,8 +570,8 @@ describe("async worker acceptance", () => {
         items: [
           expect.objectContaining({
             attemptCount: 0,
-            errorMessage: "reconstruction boom",
-            phase: "reconstruction",
+            errorMessage: 'reconstruction boom',
+            phase: 'reconstruction',
             traceId,
           }),
         ],
@@ -616,8 +579,8 @@ describe("async worker acceptance", () => {
 
       shouldFail = false;
 
-      const retryResponse = await harness.app.request("/v1/admin/dlq/retry", {
-        method: "POST",
+      const retryResponse = await harness.app.request('/v1/admin/dlq/retry', {
+        method: 'POST',
       });
 
       expect(retryResponse.status).toBe(200);
@@ -628,15 +591,13 @@ describe("async worker acceptance", () => {
         skipped: [],
       });
 
-      const verdictsResponse = await harness.app.request(
-        `/v1/traces/${traceId}/verdicts`,
-      );
+      const verdictsResponse = await harness.app.request(`/v1/traces/${traceId}/verdicts`);
 
       expect(verdictsResponse.status).toBe(200);
       await expect(verdictsResponse.json()).resolves.toEqual({
         items: [
           expect.objectContaining({
-            overallVerdict: "pass",
+            overallVerdict: 'pass',
             scenarioId,
           }),
         ],

@@ -1,5 +1,5 @@
 // @def.boundary motion-content-system
-import { gsap } from "gsap";
+import { gsap } from 'gsap';
 import {
   type CrossfadeParams,
   type FlashParams,
@@ -11,18 +11,18 @@ import {
   type MotionStageTargetV1,
   type ResolvedMotionComposition,
   resolveCue,
-} from "./model.js";
+} from './model.js';
 import type {
   MotionRuntimeSnapshot,
   MotionResolvedAssetSnapshot,
   MotionTransportState,
-} from "./editor.js";
+} from './editor.js';
 import {
   buildResolvedLayerStartMap,
   createMotionDebugSnapshot as buildMotionDebugSnapshot,
   resolveMotionAssetSnapshots,
-} from "./editor.js";
-import { endMs, normalizePlaybackRate } from "./utils.js";
+} from './editor.js';
+import { endMs, normalizePlaybackRate } from './utils.js';
 
 export interface MotionStageAdapter {
   readonly stageRoot: HTMLElement;
@@ -41,7 +41,7 @@ export interface MotionDomStageAdapterOptions {
 export function createMotionDomStageAdapter(
   options: MotionDomStageAdapterOptions,
 ): MotionStageAdapter {
-  const targetAttribute = options.targetAttribute ?? "data-motion-id";
+  const targetAttribute = options.targetAttribute ?? 'data-motion-id';
   const targetMap = new Map<string, HTMLElement>();
   const elements = Array.from(
     options.stageRoot.querySelectorAll<HTMLElement>(`[${targetAttribute}]`),
@@ -108,30 +108,30 @@ function getCueVars(cue: MotionCueDef): {
   const amount = cue.amount ?? 48;
   const opacity = cue.opacity ?? 0;
   const duration = cue.durationMs / 1000;
-  const ease = cue.ease ?? "power2.out";
+  const ease = cue.ease ?? 'power2.out';
 
   switch (cue.kind) {
-    case "fade":
+    case 'fade':
       return {
         from: { autoAlpha: opacity },
         to: { autoAlpha: 1, duration, ease },
       };
-    case "slide-left":
+    case 'slide-left':
       return {
         from: { autoAlpha: opacity, x: amount },
         to: { autoAlpha: 1, x: 0, duration, ease },
       };
-    case "slide-right":
+    case 'slide-right':
       return {
         from: { autoAlpha: opacity, x: -amount },
         to: { autoAlpha: 1, x: 0, duration, ease },
       };
-    case "scale-pop":
+    case 'scale-pop':
       return {
         from: { autoAlpha: opacity, scale: 0.84, y: amount * 0.2 },
         to: { autoAlpha: 1, scale: 1, y: 0, duration, ease },
       };
-    case "slide-up":
+    case 'slide-up':
     default:
       return {
         from: { autoAlpha: opacity, y: amount },
@@ -159,7 +159,7 @@ function applyAssets(
     if (!target) continue;
     const entry = resolved.find((item) => item.id === asset.id);
     if (!entry) continue;
-    if (asset.type === "text") target.textContent = entry.value;
+    if (asset.type === 'text') target.textContent = entry.value;
     else target.style[asset.property] = entry.value;
   }
   return resolved;
@@ -187,7 +187,7 @@ function addLayerTimeline(
 
   const startAt = resolvedStartMs / 1000;
   const enter = getCueVars(enterCue);
-  gsap.set(element, { clearProps: "all" });
+  gsap.set(element, { clearProps: 'all' });
   timeline.set(element, { autoAlpha: 0 }, 0);
   timeline.fromTo(element, enter.from, enter.to, startAt);
 
@@ -203,7 +203,7 @@ function addLayerTimeline(
   const exit = getCueVars(exitCue);
   timeline.to(
     element,
-    { ...exit.from, duration: exitCue.durationMs / 1000, ease: exitCue.ease ?? "power2.in" },
+    { ...exit.from, duration: exitCue.durationMs / 1000, ease: exitCue.ease ?? 'power2.in' },
     exitAt,
   );
 }
@@ -219,19 +219,39 @@ function addTransitionTimeline(
     if (!toSequence) continue;
     const startAt = Math.max((toSequence.startMs - transition.durationMs) / 1000, 0);
     const params = transition.params ?? {};
-    if (transition.style === "crossfade") {
+    if (transition.style === 'crossfade') {
       const brightness = (params as CrossfadeParams).brightness ?? 0.86;
-      timeline.fromTo(root, { filter: `brightness(${brightness})` }, { filter: "brightness(1)", duration: transition.durationMs / 1000, ease: "sine.out" }, startAt);
+      timeline.fromTo(
+        root,
+        { filter: `brightness(${brightness})` },
+        { filter: 'brightness(1)', duration: transition.durationMs / 1000, ease: 'sine.out' },
+        startAt,
+      );
       continue;
     }
-    if (transition.style === "flash") {
-      const glowColor = (params as FlashParams).glowColor ?? "rgba(240,143,32,0.24)";
+    if (transition.style === 'flash') {
+      const glowColor = (params as FlashParams).glowColor ?? 'rgba(240,143,32,0.24)';
       const glowSize = (params as FlashParams).glowSize ?? 120;
-      timeline.fromTo(root, { boxShadow: "0 0 0 rgba(0,0,0,0)" }, { boxShadow: `0 0 ${glowSize}px ${glowColor}`, duration: transition.durationMs / 2000, yoyo: true, repeat: 1 }, startAt);
+      timeline.fromTo(
+        root,
+        { boxShadow: '0 0 0 rgba(0,0,0,0)' },
+        {
+          boxShadow: `0 0 ${glowSize}px ${glowColor}`,
+          duration: transition.durationMs / 2000,
+          yoyo: true,
+          repeat: 1,
+        },
+        startAt,
+      );
       continue;
     }
     const liftY = (params as LiftParams).liftY ?? 18;
-    timeline.fromTo(root, { y: liftY }, { y: 0, duration: transition.durationMs / 1000, ease: "power2.out" }, startAt);
+    timeline.fromTo(
+      root,
+      { y: liftY },
+      { y: 0, duration: transition.durationMs / 1000, ease: 'power2.out' },
+      startAt,
+    );
   }
 }
 
@@ -257,13 +277,13 @@ export function createMotionPlayer(
 
   const timeline = gsap.timeline({
     paused: true,
-    defaults: { ease: "power2.out" },
+    defaults: { ease: 'power2.out' },
     repeat: 0,
     onUpdate: () => {
       const timeMs = timeline.time() * 1000;
       const active = activeCaptionAt(composition.captions, timeMs);
-      adapter.captionElement.textContent = active?.text ?? "";
-      adapter.captionElement.dataset["tone"] = active?.tone ?? "neutral";
+      adapter.captionElement.textContent = active?.text ?? '';
+      adapter.captionElement.dataset['tone'] = active?.tone ?? 'neutral';
       options?.onTimeUpdate?.(timeMs);
     },
     onComplete: () => {
@@ -274,7 +294,13 @@ export function createMotionPlayer(
   const layerStartMap = buildResolvedLayerStartMap(composition);
   const presets = composition.cuePresets ?? [];
   for (const layer of composition.layers) {
-    addLayerTimeline(timeline, adapter, layer, layerStartMap.get(layer.id) ?? layer.startMs, presets);
+    addLayerTimeline(
+      timeline,
+      adapter,
+      layer,
+      layerStartMap.get(layer.id) ?? layer.startMs,
+      presets,
+    );
   }
   addTransitionTimeline(timeline, adapter.stageRoot, composition);
   const resolvedAssets = applyAssets(adapter, composition);
@@ -332,8 +358,8 @@ export function createMotionPlayer(
       if (isDestroyed) return;
       isDestroyed = true;
       timeline.kill();
-      gsap.set(adapter.managedElements(), { clearProps: "all" });
-      adapter.captionElement.textContent = "";
+      gsap.set(adapter.managedElements(), { clearProps: 'all' });
+      adapter.captionElement.textContent = '';
     },
   };
 

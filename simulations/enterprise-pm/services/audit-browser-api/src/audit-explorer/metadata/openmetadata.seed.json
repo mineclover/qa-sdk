@@ -49,9 +49,7 @@
       "purpose": "bff_trace",
       "version": "v1",
       "prefix": "audit-explorer-bff-trace",
-      "segments": [
-        { "name": "rootSpanId" }
-      ],
+      "segments": [{ "name": "rootSpanId" }],
       "ttl": "short",
       "openmetadataEntity": "experience.audit_trace"
     },
@@ -61,10 +59,7 @@
       "purpose": "bff_context",
       "version": "v1",
       "prefix": "audit-explorer-bff-trace",
-      "segments": [
-        { "name": "rootSpanId" },
-        { "name": "graphId" }
-      ],
+      "segments": [{ "name": "rootSpanId" }, { "name": "graphId" }],
       "ttl": "short",
       "openmetadataEntity": "experience.audit_trace_context"
     }

@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc authorization-ontology-resource-lifecycle
 
-import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 import {
   AccessChecker,
   InMemoryAuditRecorder,
@@ -10,22 +10,22 @@ import {
   type InstancePolicyDecision,
   type InstancePolicyEvaluator,
   type ResourcePolicyRegistry,
-} from "permission-engine";
-import { createSimAuthorizationGraphStore } from "@qa-sdk/sim-authorization-graph-provider";
-import { createResourcePolicyRegistry, RESOURCE_POLICIES_DDL } from "resource-policy-store";
-import { createSimAuditRecorder } from "@qa-sdk/sim-audit-recorder-provider";
-import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
-import type { AuthorizationGraphStore } from "authorization-ontology";
-import { DisjointUnionIndex } from "weighted-index";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import type { PmRepository } from "../pm/shared/port.js";
-import { ProjectDelegationGraphStore } from "./delegation-graph-store.js";
+} from 'permission-engine';
+import { createSimAuthorizationGraphStore } from '@qa-sdk/sim-authorization-graph-provider';
+import { createResourcePolicyRegistry, RESOURCE_POLICIES_DDL } from 'resource-policy-store';
+import { createSimAuditRecorder } from '@qa-sdk/sim-audit-recorder-provider';
+import { AUDIT_ENTRIES_DDL } from 'audit-recorder-store';
+import type { AuthorizationGraphStore } from 'authorization-ontology';
+import { DisjointUnionIndex } from 'weighted-index';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { PmRepository } from '../pm/shared/port.js';
+import { ProjectDelegationGraphStore } from './delegation-graph-store.js';
 
-export const PROJECT_ACCESS_CHECKER = Symbol("PROJECT_ACCESS_CHECKER");
-export const PROJECT_POLICY_REGISTRY = Symbol("PROJECT_POLICY_REGISTRY");
-export const PROJECT_DELEGATION_GRAPH = Symbol("PROJECT_DELEGATION_GRAPH");
-export const PROJECT_AUTHORIZATION_GRAPH_STORE = Symbol("PROJECT_AUTHORIZATION_GRAPH_STORE");
+export const PROJECT_ACCESS_CHECKER = Symbol('PROJECT_ACCESS_CHECKER');
+export const PROJECT_POLICY_REGISTRY = Symbol('PROJECT_POLICY_REGISTRY');
+export const PROJECT_DELEGATION_GRAPH = Symbol('PROJECT_DELEGATION_GRAPH');
+export const PROJECT_AUTHORIZATION_GRAPH_STORE = Symbol('PROJECT_AUTHORIZATION_GRAPH_STORE');
 
 /**
  * 기본 InstancePolicyEvaluator — sim 시뮬용.
@@ -52,11 +52,11 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
     attributes?: Record<string, unknown>;
   }): Promise<InstancePolicyDecision> {
     if (!this.repo) {
-      return { allowed: args.policyRef.length > 0, denyReason: "pm_repo_unavailable" };
+      return { allowed: args.policyRef.length > 0, denyReason: 'pm_repo_unavailable' };
     }
     const project = await this.repo.findProject(args.resourceId);
     if (!project) {
-      return { allowed: false, denyReason: "project_not_found" };
+      return { allowed: false, denyReason: 'project_not_found' };
     }
     if (project.ownerId === args.userId) {
       return { allowed: true };
@@ -66,10 +66,10 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
       return { allowed: true };
     }
     const roleNames = asStringArray(args.attributes?.actorRoleNames);
-    if (roleNames.includes("admin")) {
+    if (roleNames.includes('admin')) {
       return { allowed: true };
     }
-    return { allowed: false, denyReason: "project_membership_required" };
+    return { allowed: false, denyReason: 'project_membership_required' };
   }
 
   async evaluateDelegated(args: {
@@ -79,11 +79,11 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
     attributes?: Record<string, unknown>;
   }): Promise<InstancePolicyDecision> {
     if (!this.repo) {
-      return { allowed: args.graphRootId.length > 0, denyReason: "pm_repo_unavailable" };
+      return { allowed: args.graphRootId.length > 0, denyReason: 'pm_repo_unavailable' };
     }
     const project = await this.repo.findProject(args.resourceId);
     if (!project) {
-      return { allowed: false, denyReason: "project_not_found" };
+      return { allowed: false, denyReason: 'project_not_found' };
     }
     if (project.ownerId === args.userId) {
       return { allowed: true };
@@ -93,13 +93,13 @@ class SimInstanceEvaluator implements InstancePolicyEvaluator {
       return { allowed: true };
     }
     const roleNames = asStringArray(args.attributes?.actorRoleNames);
-    if (roleNames.includes("admin")) {
+    if (roleNames.includes('admin')) {
       return { allowed: true };
     }
     if (await this.delegationGraph.hasDelegate(args.graphRootId, args.userId)) {
       return { allowed: true };
     }
-    return { allowed: false, denyReason: "delegation_not_found" };
+    return { allowed: false, denyReason: 'delegation_not_found' };
   }
 }
 
@@ -115,15 +115,15 @@ function buildDefaultUnion(): DisjointUnionIndex {
   // labels 는 dimension name (WeightedIndex 요구) — 1 dim 이므로 label 1개.
   // kind="transaction" 과 "resource" 양쪽에 동일 action 공간 제공.
   return new DisjointUnionIndex([
-    { kind: "transaction", shape: [4], labels: ["action"] },
-    { kind: "resource", shape: [4], labels: ["action"] },
+    { kind: 'transaction', shape: [4], labels: ['action'] },
+    { kind: 'resource', shape: [4], labels: ['action'] },
   ]);
 }
 
 export interface AccessCheckerModuleOptions {
   /** Plan 05c factory 에 전달할 db. 테스트에서는 SQLite in-memory. */
   db?: unknown;
-  dialect?: "sqlite" | "pg";
+  dialect?: 'sqlite' | 'pg';
   /** 테스트에서 AccessChecker fake 를 주입하고 싶을 때. */
   overrideChecker?: AccessChecker;
   overrideRegistry?: ResourcePolicyRegistry;
@@ -138,9 +138,11 @@ export interface AccessCheckerModuleOptions {
 }
 
 export interface AccessCheckerAsyncOptions {
-  imports?: NonNullable<DynamicModule["imports"]>;
+  imports?: NonNullable<DynamicModule['imports']>;
   inject?: Array<string | symbol | (new (...args: never[]) => unknown)>;
-  useFactory: (...args: unknown[]) => Promise<AccessCheckerModuleOptions> | AccessCheckerModuleOptions;
+  useFactory: (
+    ...args: unknown[]
+  ) => Promise<AccessCheckerModuleOptions> | AccessCheckerModuleOptions;
 }
 
 @Module({})
@@ -157,7 +159,7 @@ export class AccessCheckerModule {
       useFactory: async (...deps: unknown[]) => {
         const resolved = await opts.useFactory(...deps);
         if (!resolved.db || !resolved.dialect) {
-          throw new Error("AccessCheckerModule: db + dialect 또는 overrideRegistry 필수");
+          throw new Error('AccessCheckerModule: db + dialect 또는 overrideRegistry 필수');
         }
         return createSimAuthorizationGraphStore({
           dialect: resolved.dialect,
@@ -177,16 +179,16 @@ export class AccessCheckerModule {
         const resolved = await opts.useFactory(...deps);
         if (resolved.overrideRegistry) return resolved.overrideRegistry;
         if (!resolved.db || !resolved.dialect) {
-          throw new Error(
-            "AccessCheckerModule: db + dialect 또는 overrideRegistry 필수",
-          );
+          throw new Error('AccessCheckerModule: db + dialect 또는 overrideRegistry 필수');
         }
         // SQLite 경로는 resource-policies DDL 자동 적용 (in-memory fixture 대비).
-        if (resolved.dialect === "sqlite") {
-          const raw = (resolved.db as BetterSQLite3Database as unknown as {
-            $client: { exec: (sql: string) => void };
-          }).$client;
-          if (raw && typeof raw.exec === "function") {
+        if (resolved.dialect === 'sqlite') {
+          const raw = (
+            resolved.db as BetterSQLite3Database as unknown as {
+              $client: { exec: (sql: string) => void };
+            }
+          ).$client;
+          if (raw && typeof raw.exec === 'function') {
             raw.exec(RESOURCE_POLICIES_DDL);
           }
         }
@@ -213,11 +215,13 @@ export class AccessCheckerModule {
         if (resolved.overrideAudit) {
           audit = resolved.overrideAudit;
         } else if (resolved.db && resolved.dialect) {
-          if (resolved.dialect === "sqlite") {
-            const raw = (resolved.db as BetterSQLite3Database as unknown as {
-              $client: { exec: (sql: string) => void };
-            }).$client;
-            if (raw && typeof raw.exec === "function") {
+          if (resolved.dialect === 'sqlite') {
+            const raw = (
+              resolved.db as BetterSQLite3Database as unknown as {
+                $client: { exec: (sql: string) => void };
+              }
+            ).$client;
+            if (raw && typeof raw.exec === 'function') {
               raw.exec(AUDIT_ENTRIES_DDL);
             }
           }
@@ -232,7 +236,8 @@ export class AccessCheckerModule {
         const checkerDeps: AccessCheckerDeps = {
           union: resolved.overrideUnion ?? buildDefaultUnion(),
           policyRegistry: registry,
-          evaluator: resolved.overrideEvaluator ?? new SimInstanceEvaluator(resolved.repo, delegationGraph),
+          evaluator:
+            resolved.overrideEvaluator ?? new SimInstanceEvaluator(resolved.repo, delegationGraph),
           audit,
         };
         return new AccessChecker(checkerDeps);
@@ -257,5 +262,5 @@ export class AccessCheckerModule {
 
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
+  return value.filter((item): item is string => typeof item === 'string');
 }

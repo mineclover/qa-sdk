@@ -3,9 +3,9 @@
 // CycleModule 이 DecisionRingBuffer 를 export 하므로 imports 만 추가하면 module-level
 // singleton 을 그대로 공유한다. controller 만 새로 등록한다.
 
-import { Module } from "@nestjs/common";
-import { CycleModule } from "../cycle/cycle.module.js";
-import { DecisionQueryController } from "./decision-query.controller.js";
+import { Module } from '@nestjs/common';
+import { CycleModule } from '../cycle/cycle.module.js';
+import { DecisionQueryController } from './decision-query.controller.js';
 
 @Module({
   imports: [CycleModule],

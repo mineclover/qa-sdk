@@ -1,16 +1,16 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-export type GateRunOutcome = "pass" | "fail";
+export type GateRunOutcome = 'pass' | 'fail';
 export type GateFailureClass =
-  | "command-not-found"
-  | "infra-transient"
-  | "static-check-failure"
-  | "test-failure"
-  | "build-failure"
-  | "audit-failure"
-  | "ai-eval-failure"
-  | "success-pattern-mismatch";
+  | 'command-not-found'
+  | 'infra-transient'
+  | 'static-check-failure'
+  | 'test-failure'
+  | 'build-failure'
+  | 'audit-failure'
+  | 'ai-eval-failure'
+  | 'success-pattern-mismatch';
 
 export interface GateRunEntry {
   id: number;
@@ -31,11 +31,7 @@ export interface GateRunEntry {
   failureClass: GateFailureClass | null;
 }
 
-export type GateVerificationStatus =
-  | "verified"
-  | "failed"
-  | "stale"
-  | "unverified";
+export type GateVerificationStatus = 'verified' | 'failed' | 'stale' | 'unverified';
 
 export interface GateDescriptor {
   gateDocId: string;

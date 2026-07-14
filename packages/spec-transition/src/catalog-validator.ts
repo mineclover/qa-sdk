@@ -9,8 +9,8 @@
  * 실제 catalog에 존재하는지 검증한다.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { TransitionSpec, ValidationResult, ValidationIssue } from "./transition.types.js";
+import type { Catalog } from '@qa-sdk/core';
+import type { TransitionSpec, ValidationResult, ValidationIssue } from './transition.types.js';
 
 /**
  * 축의 모든 버전에 걸친 전체 entry 집합을 반환한다.
@@ -41,10 +41,7 @@ function allEntriesForAxis(catalog: Catalog, axisId: string): Set<string> | null
  * - output.set[].axis가 catalog.axes에 존재하는지
  * - output.set[].value가 해당 축의 entries에 있는지 (null 제외)
  */
-export function validateWithCatalog(
-  spec: TransitionSpec,
-  catalog: Catalog,
-): ValidationResult {
+export function validateWithCatalog(spec: TransitionSpec, catalog: Catalog): ValidationResult {
   const issues: ValidationIssue[] = [];
 
   // match.coordinates 검증
@@ -84,7 +81,7 @@ export function validateWithCatalog(
     if (cond.eq !== undefined && cond.eq !== null && !entries.has(cond.eq)) {
       issues.push({
         path: `input.all[${i}].eq`,
-        message: `entry "${cond.eq}" not found in axis "${cond.axis}" (valid: ${[...entries].slice(0, 5).join(", ")}${entries.size > 5 ? "..." : ""})`,
+        message: `entry "${cond.eq}" not found in axis "${cond.axis}" (valid: ${[...entries].slice(0, 5).join(', ')}${entries.size > 5 ? '...' : ''})`,
       });
     }
 
@@ -123,7 +120,7 @@ export function validateWithCatalog(
     if (assign.value !== null && !entries.has(assign.value)) {
       issues.push({
         path: `output.set[${i}].value`,
-        message: `entry "${assign.value}" not found in axis "${assign.axis}" (valid: ${[...entries].slice(0, 5).join(", ")}${entries.size > 5 ? "..." : ""})`,
+        message: `entry "${assign.value}" not found in axis "${assign.axis}" (valid: ${[...entries].slice(0, 5).join(', ')}${entries.size > 5 ? '...' : ''})`,
       });
     }
   }

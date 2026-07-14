@@ -3,13 +3,19 @@
   "version": "0.1.0",
   "description": "Document envelope model — neutral read-only data types for PRD/definition/ralph/evidence documents plus pure scope utilities.",
   "keywords": [
+    "collection-layer",
     "doc-envelope",
     "document-model",
-    "frontmatter",
-    "collection-layer"
+    "frontmatter"
   ],
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,12 +23,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -9,15 +9,15 @@
  * 2. 데이터 소스가 없으면 markdown scan fallback
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { execa, execaSync } from "execa";
-import { createDataSource, type DataSourceOptions } from "definition-data-source";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { execa, execaSync } from 'execa';
+import { createDataSource, type DataSourceOptions } from 'definition-data-source';
 import {
   createProgrammingArtifactRegistryRecord,
   type ProgrammingArtifactRegistryRecord,
-} from "operational-ontology/programming-artifacts";
+} from 'operational-ontology/programming-artifacts';
 import {
   CONTRACT_MARKER_NAMES,
   assembleContract,
@@ -26,7 +26,7 @@ import {
   type DefDataSource,
   type DefDoc,
   type MemoryDefinitionRegistry,
-} from "definition-catalog";
+} from 'definition-catalog';
 import {
   classifyHarnessDocRole,
   deriveHarnessState,
@@ -34,7 +34,7 @@ import {
   getDomainDef,
   getGateKindDef,
   type QualityGateSpec,
-} from "work-domain";
+} from 'work-domain';
 import {
   QualityLedger,
   SqliteQualityStore,
@@ -42,32 +42,28 @@ import {
   type GateRunEntry,
   type GateStatus,
   type GateVerificationStatus,
-} from "quality-ledger";
-import type { FileReviewStatus } from "review-ledger";
+} from 'quality-ledger';
+import type { FileReviewStatus } from 'review-ledger';
 import type {
   ClaimAuditBinding,
   ClaimAuditFileReview,
   ClaimAuditGateStatus,
   ClaimSectionInput,
   VerificationClaimAuditReport,
-} from "spec-tracker";
-import {
-  generateVerificationClaimAudit,
-} from "spec-tracker";
-import {
-  appendProgrammingArtifactRegistryRecord,
-} from "../lib/programming-artifact-registry.js";
-import { getQaSdkDir } from "../lib/qa-dir.js";
+} from 'spec-tracker';
+import { generateVerificationClaimAudit } from 'spec-tracker';
+import { appendProgrammingArtifactRegistryRecord } from '../lib/programming-artifact-registry.js';
+import { getQaSdkDir } from '../lib/qa-dir.js';
 import {
   collectContainedQualityDocs,
   toGateDescriptors,
   toQualityTopologyDoc,
   type QualityTopologyDoc,
-} from "../lib/quality-gate-topology.js";
+} from '../lib/quality-gate-topology.js';
 
 const QA_DIR = getQaSdkDir();
-const QUALITY_LEDGER_DB = join(QA_DIR, "quality-ledger.sqlite");
-const REVIEW_LEDGER_DB = join(QA_DIR, "review-ledger.sqlite");
+const QUALITY_LEDGER_DB = join(QA_DIR, 'quality-ledger.sqlite');
+const REVIEW_LEDGER_DB = join(QA_DIR, 'review-ledger.sqlite');
 
 interface QualityEntry {
   readonly id: string;
@@ -104,7 +100,7 @@ interface LoadedDocGraph {
 }
 
 function qualityDocDimension(value: string | undefined): string {
-  return value ?? "unknown";
+  return value ?? 'unknown';
 }
 
 interface QualityBundleStatusSummary {
@@ -135,14 +131,14 @@ interface BundleVerification {
 }
 
 type QualityRunFailureClass =
-  | "command-not-found"
-  | "infra-transient"
-  | "static-check-failure"
-  | "test-failure"
-  | "build-failure"
-  | "audit-failure"
-  | "ai-eval-failure"
-  | "success-pattern-mismatch";
+  | 'command-not-found'
+  | 'infra-transient'
+  | 'static-check-failure'
+  | 'test-failure'
+  | 'build-failure'
+  | 'audit-failure'
+  | 'ai-eval-failure'
+  | 'success-pattern-mismatch';
 
 interface QualityLedgerWithBundleVerification {
   resolveBundleVerification(descriptors: GateDescriptor[]): BundleVerification;
@@ -154,7 +150,7 @@ interface QualityLedgerWithRunContext {
     docVersion: number;
     bundleId?: string | null;
     command: string;
-    outcome: "pass" | "fail";
+    outcome: 'pass' | 'fail';
     exitCode?: number | null;
     notes?: string | null;
     repoRoot?: string | null;
@@ -174,7 +170,7 @@ interface GitRunContext {
 }
 
 export interface EvaluatedGateRunResult {
-  readonly outcome: "pass" | "fail";
+  readonly outcome: 'pass' | 'fail';
   readonly note?: string;
   readonly failureClass?: QualityRunFailureClass;
   readonly successPatternMatched: boolean | null;
@@ -184,7 +180,7 @@ export interface QualityRunJsonResult {
   readonly gateDocId: string;
   readonly bundleId: string | null;
   readonly command: string;
-  readonly outcome: "pass" | "fail";
+  readonly outcome: 'pass' | 'fail';
   readonly exitCode: number;
   readonly durationMs: number;
   readonly note?: string;
@@ -207,7 +203,7 @@ export interface QualityRunJsonResult {
     }[];
   };
   readonly next: {
-    readonly onOutcome: "pass" | "fail";
+    readonly onOutcome: 'pass' | 'fail';
     readonly candidates: readonly string[];
     readonly ranked?: readonly {
       readonly gateDocId: string;
@@ -227,9 +223,9 @@ export interface GateDiagnosis {
   readonly failureClass?: QualityRunFailureClass;
   readonly flaky: boolean;
   readonly recommendations: readonly string[];
-  readonly recentOutcomes: readonly ("pass" | "fail")[];
+  readonly recentOutcomes: readonly ('pass' | 'fail')[];
   readonly lastRun: {
-    readonly outcome: "pass" | "fail";
+    readonly outcome: 'pass' | 'fail';
     readonly exitCode: number | null;
     readonly executedAt: string;
     readonly note: string | null;
@@ -264,7 +260,7 @@ function resolveBundleVerification(
 
 function getGitValue(cwd: string, args: string[]): string | null {
   try {
-    const { stdout } = execaSync("git", args, { cwd });
+    const { stdout } = execaSync('git', args, { cwd });
     const trimmed = stdout.trim();
     return trimmed || null;
   } catch {
@@ -274,15 +270,15 @@ function getGitValue(cwd: string, args: string[]): string | null {
 
 function detectGitRunContext(cwd: string): GitRunContext {
   return {
-    repoRoot: getGitValue(cwd, ["rev-parse", "--show-toplevel"]) ?? cwd,
-    branch: getGitValue(cwd, ["branch", "--show-current"]),
-    sha: getGitValue(cwd, ["rev-parse", "HEAD"]),
+    repoRoot: getGitValue(cwd, ['rev-parse', '--show-toplevel']) ?? cwd,
+    branch: getGitValue(cwd, ['branch', '--show-current']),
+    sha: getGitValue(cwd, ['rev-parse', 'HEAD']),
   };
 }
 
 async function createReviewLedger(cwd: string) {
   ensureLedgerDir();
-  const { ReviewLedger, SqliteReviewStore } = await import("review-ledger");
+  const { ReviewLedger, SqliteReviewStore } = await import('review-ledger');
   return new ReviewLedger(new SqliteReviewStore(REVIEW_LEDGER_DB), cwd);
 }
 
@@ -300,23 +296,32 @@ export function parseQualityCommandArgs(args: string[]): {
 } {
   const positional: string[] = [];
   const flags: Record<string, string> = {};
-  let mode: DataSourceOptions["mode"];
+  let mode: DataSourceOptions['mode'];
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
-    if (arg === "--local") { mode = "local"; continue; }
-    if (arg === "--server") { mode = "server"; continue; }
-    if (arg === "--scan") { mode = "scan"; continue; }
-    if (arg.startsWith("--")) {
-      const [key, inline] = arg.slice(2).split("=", 2);
+    if (arg === '--local') {
+      mode = 'local';
+      continue;
+    }
+    if (arg === '--server') {
+      mode = 'server';
+      continue;
+    }
+    if (arg === '--scan') {
+      mode = 'scan';
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      const [key, inline] = arg.slice(2).split('=', 2);
       const next = args[index + 1];
       if (inline !== undefined) {
         flags[key] = inline;
-      } else if (next && !next.startsWith("--")) {
+      } else if (next && !next.startsWith('--')) {
         flags[key] = next;
         index += 1;
       } else {
-        flags[key] = "true";
+        flags[key] = 'true';
       }
       continue;
     }
@@ -344,7 +349,7 @@ function toQualityDoc(doc: DefDoc): LoadedQualityDoc | undefined {
       ref: doc.sourcePath,
       gate: doc.gate,
     },
-    purpose: doc.purpose ?? "",
+    purpose: doc.purpose ?? '',
   };
 }
 
@@ -368,7 +373,7 @@ async function loadQualityDocsFromDataSource(
   options: DataSourceOptions,
 ): Promise<LoadedQualityIndex> {
   const source = await createDataSource(options);
-  const docs = (await source.list({ tag: "quality-gate", limit: 1000 }))
+  const docs = (await source.list({ tag: 'quality-gate', limit: 1000 }))
     .map(toQualityDoc)
     .filter((doc): doc is LoadedQualityDoc => doc !== undefined)
     .toSorted((a, b) => a.entry.id.localeCompare(b.entry.id));
@@ -382,13 +387,13 @@ async function loadQualityDocsFromDataSource(
 }
 
 async function loadQualityDocsFromScan(rootDir: string): Promise<LoadedQualityIndex> {
-  const result = await scanAndBuild(rootDir, [join(rootDir, "docs")]);
+  const result = await scanAndBuild(rootDir, [join(rootDir, 'docs')]);
   const docs: LoadedQualityDoc[] = [];
 
   for (const entry of result.registry.all()) {
     if (!entry.gate || !entry.ref) continue;
     const absPath = join(rootDir, entry.ref);
-    const content = await readFile(absPath, "utf-8");
+    const content = await readFile(absPath, 'utf-8');
     docs.push({
       entry: {
         id: entry.id,
@@ -401,7 +406,7 @@ async function loadQualityDocsFromScan(rootDir: string): Promise<LoadedQualityIn
         ref: entry.ref,
         gate: entry.gate,
       },
-      purpose: extractByLevel(content, "purpose").text.trim(),
+      purpose: extractByLevel(content, 'purpose').text.trim(),
     });
   }
 
@@ -415,7 +420,7 @@ async function loadQualityDocsFromScan(rootDir: string): Promise<LoadedQualityIn
 }
 
 async function loadDocGraph(rootDir: string): Promise<LoadedDocGraph> {
-  const result = await scanAndBuild(rootDir, [join(rootDir, "docs")]);
+  const result = await scanAndBuild(rootDir, [join(rootDir, 'docs')]);
   const bodies = new Map<string, string>();
   const getBody = (id: string): string | undefined => {
     const cached = bodies.get(id);
@@ -425,7 +430,7 @@ async function loadDocGraph(rootDir: string): Promise<LoadedDocGraph> {
     if (!entry?.ref) return undefined;
 
     try {
-      const body = readFileSync(join(rootDir, entry.ref), "utf-8");
+      const body = readFileSync(join(rootDir, entry.ref), 'utf-8');
       bodies.set(id, body);
       return body;
     } catch {
@@ -458,7 +463,7 @@ function loadQualityDocsFromGraph(graph: LoadedDocGraph): LoadedQualityIndex {
         ref: entry.ref,
         gate: entry.gate,
       },
-      purpose: extractByLevel(graph.getBody(entry.id) ?? "", "purpose").text.trim(),
+      purpose: extractByLevel(graph.getBody(entry.id) ?? '', 'purpose').text.trim(),
     });
   }
 
@@ -516,20 +521,22 @@ async function loadQualityDocs(
 
 function matchesFilter(doc: LoadedQualityDoc, flags: Record<string, string>): boolean {
   const gate = doc.entry.gate;
-  if (flags["kind"] && gate.kind !== flags["kind"]) return false;
-  if (flags["domain"] && gate.workDomain !== flags["domain"]) return false;
-  if (flags["story"] && gate.storyId !== flags["story"]) return false;
-  if (flags["pkg"] && gate.package !== flags["pkg"]) return false;
-  if (flags["q"]) {
-    const q = flags["q"].toLowerCase();
+  if (flags['kind'] && gate.kind !== flags['kind']) return false;
+  if (flags['domain'] && gate.workDomain !== flags['domain']) return false;
+  if (flags['story'] && gate.storyId !== flags['story']) return false;
+  if (flags['pkg'] && gate.package !== flags['pkg']) return false;
+  if (flags['q']) {
+    const q = flags['q'].toLowerCase();
     const haystack = [
       doc.entry.id,
       doc.entry.title,
       gate.command,
-      gate.storyId ?? "",
-      gate.package ?? "",
+      gate.storyId ?? '',
+      gate.package ?? '',
       doc.purpose,
-    ].join(" ").toLowerCase();
+    ]
+      .join(' ')
+      .toLowerCase();
     if (!haystack.includes(q)) return false;
   }
   return true;
@@ -540,12 +547,14 @@ function printDocLine(doc: LoadedQualityDoc): void {
   const domain = getDomainDef(gate.workDomain);
   const kind = getGateKindDef(gate.kind);
   const extras = [
-    gate.package ? `pkg=${gate.package}` : "",
-    gate.storyId ? `story=${gate.storyId}` : "",
-  ].filter(Boolean).join(" ");
+    gate.package ? `pkg=${gate.package}` : '',
+    gate.storyId ? `story=${gate.storyId}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   console.log(
-    `  ${doc.entry.id}  ${kind.scope}/${gate.kind}  ${domain.id}${extras ? `  ${extras}` : ""}`,
+    `  ${doc.entry.id}  ${kind.scope}/${gate.kind}  ${domain.id}${extras ? `  ${extras}` : ''}`,
   );
   console.log(`    ${gate.command}`);
   if (doc.purpose) console.log(`    ${doc.purpose.slice(0, 100)}`);
@@ -554,23 +563,22 @@ function printDocLine(doc: LoadedQualityDoc): void {
 export function selectNextDocs(
   current: LoadedQualityDoc,
   allDocs: readonly LoadedQualityDoc[],
-  outcome: "pass" | "fail",
+  outcome: 'pass' | 'fail',
 ): LoadedQualityDoc[] {
-  const ids = outcome === "pass"
-    ? (current.entry.gate.suggestOnPass ?? [])
-    : (current.entry.gate.suggestOnFail ?? []);
+  const ids =
+    outcome === 'pass'
+      ? (current.entry.gate.suggestOnPass ?? [])
+      : (current.entry.gate.suggestOnFail ?? []);
   if (ids.length === 0) return [];
 
   const byId = new Map(allDocs.map((doc) => [doc.entry.id, doc]));
-  return ids
-    .map((id) => byId.get(id))
-    .filter((doc): doc is LoadedQualityDoc => doc !== undefined);
+  return ids.map((id) => byId.get(id)).filter((doc): doc is LoadedQualityDoc => doc !== undefined);
 }
 
 function stripWrappingQuotes(value: string): string {
   if (
-    (value.startsWith("\"") && value.endsWith("\""))
-    || (value.startsWith("'") && value.endsWith("'"))
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
   ) {
     return value.slice(1, -1);
   }
@@ -579,7 +587,7 @@ function stripWrappingQuotes(value: string): string {
 }
 
 export function evaluateGateRunResult(params: {
-  gateKind: QualityGateSpec["kind"];
+  gateKind: QualityGateSpec['kind'];
   exitCode: number | null | undefined;
   stdout: string;
   stderr: string;
@@ -593,36 +601,37 @@ export function evaluateGateRunResult(params: {
     let failureClass: QualityRunFailureClass;
 
     if (
-      output.includes("command not found")
-      || output.includes("is not recognized as an internal or external command")
-      || output.includes("no such file or directory")
+      output.includes('command not found') ||
+      output.includes('is not recognized as an internal or external command') ||
+      output.includes('no such file or directory')
     ) {
-      failureClass = "command-not-found";
+      failureClass = 'command-not-found';
     } else if (
-      output.includes("econnreset")
-      || output.includes("econnrefused")
-      || output.includes("etimedout")
-      || output.includes("eai_again")
-      || output.includes("network error")
-      || output.includes("socket hang up")
-      || output.includes("fetch failed")
+      output.includes('econnreset') ||
+      output.includes('econnrefused') ||
+      output.includes('etimedout') ||
+      output.includes('eai_again') ||
+      output.includes('network error') ||
+      output.includes('socket hang up') ||
+      output.includes('fetch failed')
     ) {
-      failureClass = "infra-transient";
+      failureClass = 'infra-transient';
     } else {
       const scope = getGateKindDef(params.gateKind).scope;
-      failureClass = scope === "static"
-        ? "static-check-failure"
-        : scope === "build"
-          ? "build-failure"
-          : scope === "audit"
-            ? "audit-failure"
-            : scope === "ai"
-              ? "ai-eval-failure"
-              : "test-failure";
+      failureClass =
+        scope === 'static'
+          ? 'static-check-failure'
+          : scope === 'build'
+            ? 'build-failure'
+            : scope === 'audit'
+              ? 'audit-failure'
+              : scope === 'ai'
+                ? 'ai-eval-failure'
+                : 'test-failure';
     }
 
     return {
-      outcome: "fail",
+      outcome: 'fail',
       note: `command exited with code ${exitCode}`,
       failureClass,
       successPatternMatched: successPattern ? false : null,
@@ -631,14 +640,14 @@ export function evaluateGateRunResult(params: {
 
   if (!successPattern) {
     return {
-      outcome: "pass",
+      outcome: 'pass',
       successPatternMatched: null,
     };
   }
 
-  if (successPattern === "exit_code=0") {
+  if (successPattern === 'exit_code=0') {
     return {
-      outcome: "pass",
+      outcome: 'pass',
       successPatternMatched: true,
     };
   }
@@ -646,7 +655,7 @@ export function evaluateGateRunResult(params: {
   const containsMatch = successPattern.match(/^(stdout|stderr|output)\s+contains\s+(.+)$/);
   if (!containsMatch) {
     return {
-      outcome: "pass",
+      outcome: 'pass',
       note: `unsupported successPattern "${successPattern}" ignored; fallback=exit_code=0`,
       successPatternMatched: null,
     };
@@ -654,23 +663,24 @@ export function evaluateGateRunResult(params: {
 
   const [, source, rawNeedle] = containsMatch;
   const needle = stripWrappingQuotes(rawNeedle.trim());
-  const haystack = source === "stdout"
-    ? params.stdout
-    : source === "stderr"
-      ? params.stderr
-      : `${params.stdout}\n${params.stderr}`.trim();
+  const haystack =
+    source === 'stdout'
+      ? params.stdout
+      : source === 'stderr'
+        ? params.stderr
+        : `${params.stdout}\n${params.stderr}`.trim();
 
   if (haystack.includes(needle)) {
     return {
-      outcome: "pass",
+      outcome: 'pass',
       successPatternMatched: true,
     };
   }
 
   return {
-    outcome: "fail",
+    outcome: 'fail',
     note: `successPattern mismatch: ${source} missing "${needle}"`,
-    failureClass: "success-pattern-mismatch",
+    failureClass: 'success-pattern-mismatch',
     successPatternMatched: false,
   };
 }
@@ -679,7 +689,7 @@ export function buildQualityRunJsonResult(params: {
   gateDocId: string;
   bundleId: string | null;
   command: string;
-  outcome: "pass" | "fail";
+  outcome: 'pass' | 'fail';
   exitCode: number;
   durationMs: number;
   note?: string;
@@ -747,16 +757,16 @@ function normalizeFailureClass(
   failureClass: string | null | undefined,
 ): QualityRunFailureClass | undefined {
   if (!failureClass) return undefined;
-  if (failureClass === "command-exit") return "test-failure";
+  if (failureClass === 'command-exit') return 'test-failure';
   if (
-    failureClass === "command-not-found"
-    || failureClass === "infra-transient"
-    || failureClass === "static-check-failure"
-    || failureClass === "test-failure"
-    || failureClass === "build-failure"
-    || failureClass === "audit-failure"
-    || failureClass === "ai-eval-failure"
-    || failureClass === "success-pattern-mismatch"
+    failureClass === 'command-not-found' ||
+    failureClass === 'infra-transient' ||
+    failureClass === 'static-check-failure' ||
+    failureClass === 'test-failure' ||
+    failureClass === 'build-failure' ||
+    failureClass === 'audit-failure' ||
+    failureClass === 'ai-eval-failure' ||
+    failureClass === 'success-pattern-mismatch'
   ) {
     return failureClass;
   }
@@ -773,58 +783,60 @@ export function buildGateDiagnosis(params: {
   const lastRun = status.lastRun;
   const flaky = detectFlakyHistory(history);
   const recommendations: string[] = [];
-  let summary = "";
+  let summary = '';
   let failureClass: QualityRunFailureClass | undefined;
 
   if (!lastRun) {
-    summary = "실행 이력이 없어 아직 검증되지 않았다.";
+    summary = '실행 이력이 없어 아직 검증되지 않았다.';
     recommendations.push(`qa-sdk quality run ${gateDocId}`);
-  } else if (status.status === "stale") {
+  } else if (status.status === 'stale') {
     summary = `최신 실행이 현재 문서 버전(${status.currentVersion})보다 오래돼 다시 검증이 필요하다.`;
     recommendations.push(`qa-sdk quality run ${gateDocId}`);
-  } else if (status.status === "verified") {
-    summary = "최신 실행이 현재 문서 버전에서 통과했다.";
+  } else if (status.status === 'verified') {
+    summary = '최신 실행이 현재 문서 버전에서 통과했다.';
     if (flaky) {
-      summary += " 최근 결과 변동이 있어 flake 가능성은 남아 있다.";
-      recommendations.push("최근 pass/fail 변동이 있어 환경 또는 비결정성 요인을 점검한다.");
+      summary += ' 최근 결과 변동이 있어 flake 가능성은 남아 있다.';
+      recommendations.push('최근 pass/fail 변동이 있어 환경 또는 비결정성 요인을 점검한다.');
     }
   } else {
-    failureClass = normalizeFailureClass(lastRun.failureClass) ?? "test-failure";
+    failureClass = normalizeFailureClass(lastRun.failureClass) ?? 'test-failure';
 
-    if (failureClass === "success-pattern-mismatch") {
-      summary = "명령 자체는 종료됐지만 successPattern 판정에 실패했다.";
-      recommendations.push("gate 문서의 successPattern과 실제 stdout/stderr를 비교한다.");
-    } else if (failureClass === "command-not-found") {
-      summary = "실행 명령 자체를 찾지 못했다.";
-      recommendations.push("PATH, 패키지 스크립트, 실행 명령 오탈자를 점검한다.");
-    } else if (failureClass === "infra-transient") {
-      summary = "네트워크/환경 계열의 일시적 실패로 보인다.";
-      recommendations.push("재시도 전 네트워크/레지스트리/외부 서비스 상태를 확인한다.");
-    } else if (failureClass === "static-check-failure") {
-      summary = "정적 검증 단계에서 실패했다.";
-      recommendations.push("타입/린트/정적 분석 오류를 먼저 정리한다.");
-    } else if (failureClass === "build-failure") {
-      summary = "빌드 단계에서 실패했다.";
-      recommendations.push("빌드 로그와 export/tsup/vite 설정을 점검한다.");
-    } else if (failureClass === "audit-failure") {
-      summary = "감사/메타 검증 단계에서 실패했다.";
-      recommendations.push("의존성, 라이선스, 문서/보안 감사 출력을 확인한다.");
-    } else if (failureClass === "ai-eval-failure") {
-      summary = "AI 평가/비용 추적 단계에서 실패했다.";
-      recommendations.push("평가 데이터셋, 모델 출력, 비용 한도 조건을 점검한다.");
+    if (failureClass === 'success-pattern-mismatch') {
+      summary = '명령 자체는 종료됐지만 successPattern 판정에 실패했다.';
+      recommendations.push('gate 문서의 successPattern과 실제 stdout/stderr를 비교한다.');
+    } else if (failureClass === 'command-not-found') {
+      summary = '실행 명령 자체를 찾지 못했다.';
+      recommendations.push('PATH, 패키지 스크립트, 실행 명령 오탈자를 점검한다.');
+    } else if (failureClass === 'infra-transient') {
+      summary = '네트워크/환경 계열의 일시적 실패로 보인다.';
+      recommendations.push('재시도 전 네트워크/레지스트리/외부 서비스 상태를 확인한다.');
+    } else if (failureClass === 'static-check-failure') {
+      summary = '정적 검증 단계에서 실패했다.';
+      recommendations.push('타입/린트/정적 분석 오류를 먼저 정리한다.');
+    } else if (failureClass === 'build-failure') {
+      summary = '빌드 단계에서 실패했다.';
+      recommendations.push('빌드 로그와 export/tsup/vite 설정을 점검한다.');
+    } else if (failureClass === 'audit-failure') {
+      summary = '감사/메타 검증 단계에서 실패했다.';
+      recommendations.push('의존성, 라이선스, 문서/보안 감사 출력을 확인한다.');
+    } else if (failureClass === 'ai-eval-failure') {
+      summary = 'AI 평가/비용 추적 단계에서 실패했다.';
+      recommendations.push('평가 데이터셋, 모델 출력, 비용 한도 조건을 점검한다.');
     } else {
       summary = `테스트/통합 검증이 exit code ${lastRun.exitCode ?? 1}로 실패했다.`;
-      recommendations.push("실패 테스트와 직전 변경 범위를 함께 확인한다.");
+      recommendations.push('실패 테스트와 직전 변경 범위를 함께 확인한다.');
     }
 
     if (flaky) {
-      summary += " 최근 성공/실패가 교차해 flake 가능성이 있다.";
-      recommendations.push("직전 성공 실행과 현재 실패 실행의 환경 차이를 비교한다.");
+      summary += ' 최근 성공/실패가 교차해 flake 가능성이 있다.';
+      recommendations.push('직전 성공 실행과 현재 실패 실행의 환경 차이를 비교한다.');
     }
   }
 
   if (nextCandidateIds.length > 0) {
-    recommendations.push(`qa-sdk quality next ${gateDocId} --outcome=${status.status === "verified" ? "pass" : "fail"}`);
+    recommendations.push(
+      `qa-sdk quality next ${gateDocId} --outcome=${status.status === 'verified' ? 'pass' : 'fail'}`,
+    );
   }
 
   return {
@@ -862,75 +874,78 @@ const NEXT_SCOPE_BONUS: Record<string, number> = {
 export function rankNextDocs(params: {
   current: LoadedQualityDoc;
   candidates: readonly LoadedQualityDoc[];
-  outcome: "pass" | "fail";
+  outcome: 'pass' | 'fail';
   candidateStatuses: ReadonlyMap<string, GateStatus>;
   diagnosis?: GateDiagnosis;
 }): RankedNextDoc[] {
   const { current, candidates, outcome, candidateStatuses, diagnosis } = params;
 
-  return candidates.map((doc, index) => {
-    const status = candidateStatuses.get(doc.entry.id)?.status ?? "unverified";
-    const reasons: string[] = ["명시적 suggest 경로"];
-    let score = 100 - (index * 5);
+  return candidates
+    .map((doc, index) => {
+      const status = candidateStatuses.get(doc.entry.id)?.status ?? 'unverified';
+      const reasons: string[] = ['명시적 suggest 경로'];
+      let score = 100 - index * 5;
 
-    const scope = getGateKindDef(doc.entry.gate.kind).scope;
-    score += NEXT_SCOPE_BONUS[scope] ?? 0;
-    reasons.push(`${scope} scope`);
+      const scope = getGateKindDef(doc.entry.gate.kind).scope;
+      score += NEXT_SCOPE_BONUS[scope] ?? 0;
+      reasons.push(`${scope} scope`);
 
-    if (status === "unverified") {
-      score += 16;
-      reasons.push("아직 실행되지 않음");
-    } else if (status === "stale") {
-      score += 14;
-      reasons.push("현재 버전 기준 stale");
-    } else if (status === "failed") {
-      score += 8;
-      reasons.push("최근 실패 이력");
-    } else {
-      score -= 12;
-      reasons.push("이미 verified");
-    }
-
-    if (outcome === "fail" && (
-      diagnosis?.failureClass === "command-not-found"
-      || diagnosis?.failureClass === "build-failure"
-      || diagnosis?.failureClass === "static-check-failure"
-      || diagnosis?.failureClass === "test-failure"
-      || diagnosis?.failureClass === "audit-failure"
-      || diagnosis?.failureClass === "ai-eval-failure"
-      || diagnosis?.failureClass === "infra-transient"
-    )) {
-      if (current.entry.gate.kind === "build" && doc.entry.gate.kind === "typecheck") {
-        score += 20;
-        reasons.push("build 실패의 선행 정적 검증");
-      }
-      if (current.entry.gate.kind === "unit-test" && doc.entry.gate.kind === "build") {
+      if (status === 'unverified') {
+        score += 16;
+        reasons.push('아직 실행되지 않음');
+      } else if (status === 'stale') {
         score += 14;
-        reasons.push("test 실패 전 빌드/산출물 확인");
+        reasons.push('현재 버전 기준 stale');
+      } else if (status === 'failed') {
+        score += 8;
+        reasons.push('최근 실패 이력');
+      } else {
+        score -= 12;
+        reasons.push('이미 verified');
       }
-    }
 
-    if (outcome === "fail" && diagnosis?.failureClass === "success-pattern-mismatch") {
-      if (status === "verified") {
-        score += 6;
-        reasons.push("이미 통과한 이웃 gate와 결과 비교");
+      if (
+        outcome === 'fail' &&
+        (diagnosis?.failureClass === 'command-not-found' ||
+          diagnosis?.failureClass === 'build-failure' ||
+          diagnosis?.failureClass === 'static-check-failure' ||
+          diagnosis?.failureClass === 'test-failure' ||
+          diagnosis?.failureClass === 'audit-failure' ||
+          diagnosis?.failureClass === 'ai-eval-failure' ||
+          diagnosis?.failureClass === 'infra-transient')
+      ) {
+        if (current.entry.gate.kind === 'build' && doc.entry.gate.kind === 'typecheck') {
+          score += 20;
+          reasons.push('build 실패의 선행 정적 검증');
+        }
+        if (current.entry.gate.kind === 'unit-test' && doc.entry.gate.kind === 'build') {
+          score += 14;
+          reasons.push('test 실패 전 빌드/산출물 확인');
+        }
       }
-    }
 
-    if (outcome === "fail" && diagnosis?.failureClass === "infra-transient") {
-      if (status === "verified") {
-        score += 10;
-        reasons.push("환경성 실패 여부 비교용 verified 이웃 gate");
+      if (outcome === 'fail' && diagnosis?.failureClass === 'success-pattern-mismatch') {
+        if (status === 'verified') {
+          score += 6;
+          reasons.push('이미 통과한 이웃 gate와 결과 비교');
+        }
       }
-    }
 
-    return {
-      doc,
-      score,
-      status,
-      reasons,
-    };
-  }).toSorted((a, b) => b.score - a.score || a.doc.entry.id.localeCompare(b.doc.entry.id));
+      if (outcome === 'fail' && diagnosis?.failureClass === 'infra-transient') {
+        if (status === 'verified') {
+          score += 10;
+          reasons.push('환경성 실패 여부 비교용 verified 이웃 gate');
+        }
+      }
+
+      return {
+        doc,
+        score,
+        status,
+        reasons,
+      };
+    })
+    .toSorted((a, b) => b.score - a.score || a.doc.entry.id.localeCompare(b.doc.entry.id));
 }
 
 async function findParentBundle(
@@ -942,37 +957,35 @@ async function findParentBundle(
   }
 
   const parentLink = index.registry
-    ?.getLinks(entryId, "incoming")
-    .find((link) => link.linkType === "contains");
+    ?.getLinks(entryId, 'incoming')
+    .find((link) => link.linkType === 'contains');
   const doc = parentLink ? index.registry?.get(parentLink.sourceId) : undefined;
   return doc ? toQualityTopologyDoc(doc, { version: 0 }) : undefined;
 }
 
-async function findContractDocs(
-  index: LoadedQualityIndex,
-  entryId: string,
-): Promise<SimpleDoc[]> {
+async function findContractDocs(index: LoadedQualityIndex, entryId: string): Promise<SimpleDoc[]> {
   if (index.source) {
     const links = await index.source.getOutgoingLinks(entryId);
     const results: SimpleDoc[] = [];
     for (const link of links) {
-      if (link.type !== "depends_on") continue;
+      if (link.type !== 'depends_on') continue;
       const doc = await index.source.get(link.target);
       const simple = toSimpleDoc(doc);
-      if (simple && simple.scope === "interface") results.push(simple);
+      if (simple && simple.scope === 'interface') results.push(simple);
     }
     return results;
   }
 
-  const ids = index.registry
-    ?.getLinks(entryId, "outgoing")
-    .filter((link) => link.linkType === "depends_on")
-    .map((link) => link.targetId) ?? [];
+  const ids =
+    index.registry
+      ?.getLinks(entryId, 'outgoing')
+      .filter((link) => link.linkType === 'depends_on')
+      .map((link) => link.targetId) ?? [];
 
   return ids
     .map((id) => index.registry?.get(id))
     .filter((doc): doc is NonNullable<typeof doc> => doc !== undefined)
-    .filter((doc) => doc.scope === "interface")
+    .filter((doc) => doc.scope === 'interface')
     .map((doc) => toQualityTopologyDoc(doc, { version: 0 }));
 }
 
@@ -981,15 +994,16 @@ async function findBundleChildren(
   bundleId: string,
 ): Promise<SimpleDoc[]> {
   if (index.source) {
-    return (await index.source.getChildren(bundleId)).map((doc) => toSimpleDoc(doc)).filter(
-      (doc): doc is SimpleDoc => doc !== undefined,
-    );
+    return (await index.source.getChildren(bundleId))
+      .map((doc) => toSimpleDoc(doc))
+      .filter((doc): doc is SimpleDoc => doc !== undefined);
   }
 
-  const ids = index.registry
-    ?.getLinks(bundleId, "outgoing")
-    .filter((link) => link.linkType === "contains")
-    .map((link) => link.targetId) ?? [];
+  const ids =
+    index.registry
+      ?.getLinks(bundleId, 'outgoing')
+      .filter((link) => link.linkType === 'contains')
+      .map((link) => link.targetId) ?? [];
 
   return ids
     .map((id) => index.registry?.get(id))
@@ -1026,15 +1040,13 @@ export function collectClaimAuditReviewScopes(
   return [...scopes].toSorted();
 }
 
-export function buildClaimAuditBindings(
-  packageScopes: readonly string[],
-): ClaimAuditBinding[] {
+export function buildClaimAuditBindings(packageScopes: readonly string[]): ClaimAuditBinding[] {
   if (packageScopes.length === 0) return [];
 
   const bindings = packageScopes.map((scope) => `scope:${scope}`);
 
   return CONTRACT_MARKER_NAMES.map((marker) => ({
-    marker: marker as ClaimSectionInput["marker"],
+    marker: marker as ClaimSectionInput['marker'],
     implementation: {
       bindings,
       implementedBindings: bindings,
@@ -1051,9 +1063,7 @@ function toClaimAuditGateStatuses(
   }));
 }
 
-function toClaimAuditReviews(
-  reviews: readonly FileReviewStatus[],
-): ClaimAuditFileReview[] {
+function toClaimAuditReviews(reviews: readonly FileReviewStatus[]): ClaimAuditFileReview[] {
   return reviews.map((review) => ({
     filePath: review.filePath,
     status: review.status,
@@ -1067,9 +1077,11 @@ function printBundleVerificationSummary(bundleVerification: BundleVerification):
   if (bundleVerification.blockingGateStatuses.length === 0) return;
 
   const blockers = bundleVerification.blockingGateStatuses
-    .map((status: { gateDocId: string; status: GateVerificationStatus }) =>
-      `${status.gateDocId}(${status.status})`)
-    .join(", ");
+    .map(
+      (status: { gateDocId: string; status: GateVerificationStatus }) =>
+        `${status.gateDocId}(${status.status})`,
+    )
+    .join(', ');
   console.log(`  blockers: ${blockers}`);
 }
 
@@ -1080,7 +1092,8 @@ export function buildReviewBindings(
   const reviewByFile = new Map(reviews.map((review) => [review.filePath, review]));
 
   return bindings.map((binding) => {
-    const files = binding.implementation?.implementedBindings ?? binding.implementation?.bindings ?? [];
+    const files =
+      binding.implementation?.implementedBindings ?? binding.implementation?.bindings ?? [];
     if (files.length === 0) return binding;
 
     const matched = files
@@ -1089,9 +1102,9 @@ export function buildReviewBindings(
 
     if (matched.length === 0) return binding;
 
-    const anyReviewed = matched.some((review) => review.status === "reviewed");
-    const allReviewed = matched.every((review) => review.status === "reviewed");
-    const hasStale = matched.some((review) => review.status === "stale");
+    const anyReviewed = matched.some((review) => review.status === 'reviewed');
+    const allReviewed = matched.every((review) => review.status === 'reviewed');
+    const hasStale = matched.some((review) => review.status === 'stale');
 
     return {
       ...binding,
@@ -1110,7 +1123,9 @@ function reviewStatusesForBindings(
 ): FileReviewStatus[] {
   const files = new Set<string>();
   for (const binding of bindings) {
-    for (const file of binding.implementation?.implementedBindings ?? binding.implementation?.bindings ?? []) {
+    for (const file of binding.implementation?.implementedBindings ??
+      binding.implementation?.bindings ??
+      []) {
       files.add(file);
     }
   }
@@ -1145,7 +1160,7 @@ export function extractSourceFileBindings(
 }
 
 function resolveRepoPath(rawPath: string, rootDir: string): string | null {
-  const normalized = rawPath.replace(/^\.?\//, "");
+  const normalized = rawPath.replace(/^\.?\//, '');
   const candidates = [
     normalized,
     `packages/${normalized}`,
@@ -1162,10 +1177,7 @@ function resolveRepoPath(rawPath: string, rootDir: string): string | null {
   return null;
 }
 
-function deriveTestPaths(
-  implementationPath: string,
-  rootDir: string,
-): string[] {
+function deriveTestPaths(implementationPath: string, rootDir: string): string[] {
   if (/\.(test|spec)\.[cm]?[jt]sx?$/.test(implementationPath)) {
     return [implementationPath];
   }
@@ -1175,10 +1187,7 @@ function deriveTestPaths(
 
   const ext = extMatch[1];
   const base = implementationPath.slice(0, -(ext.length + 1));
-  const candidates = [
-    `${base}.test.${ext}`,
-    `${base}.spec.${ext}`,
-  ];
+  const candidates = [`${base}.test.${ext}`, `${base}.spec.${ext}`];
 
   return candidates.filter((candidate) => existsSync(join(rootDir, candidate)));
 }
@@ -1190,9 +1199,8 @@ export function buildSourceBindings(
 ): ClaimAuditBinding[] {
   const sourceIds = [...new Set(contract.allSections.map((section) => section.sourceId))];
   const results: ClaimAuditBinding[] = [];
-  const getBody = typeof bodies === "function"
-    ? bodies
-    : (sourceId: string) => bodies.get(sourceId);
+  const getBody =
+    typeof bodies === 'function' ? bodies : (sourceId: string) => bodies.get(sourceId);
 
   for (const sourceId of sourceIds) {
     const body = getBody(sourceId);
@@ -1205,15 +1213,14 @@ export function buildSourceBindings(
 
     results.push({
       sourceId,
-      implementation: bindings.implementation.length > 0
-        ? {
-            bindings: bindings.implementation,
-            implementedBindings: bindings.implementation,
-          }
-        : undefined,
-      testing: bindings.tests.length > 0
-        ? { bindings: bindings.tests }
-        : undefined,
+      implementation:
+        bindings.implementation.length > 0
+          ? {
+              bindings: bindings.implementation,
+              implementedBindings: bindings.implementation,
+            }
+          : undefined,
+      testing: bindings.tests.length > 0 ? { bindings: bindings.tests } : undefined,
     });
   }
 
@@ -1221,24 +1228,24 @@ export function buildSourceBindings(
 }
 
 function printClaimAudit(report: VerificationClaimAuditReport): void {
-  console.log("claim audit");
-  for (const [state, count] of Object.entries(report.counts).toSorted(([a], [b]) => a.localeCompare(b))) {
+  console.log('claim audit');
+  for (const [state, count] of Object.entries(report.counts).toSorted(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
     console.log(`  ${state.padEnd(12)} ${count}`);
   }
 
   const rows = report.claims.slice(0, 20);
   if (rows.length > 0) {
-    console.log("\n  claims:");
+    console.log('\n  claims:');
     for (const row of rows) {
-      console.log(
-        `    [${row.compositeState}] ${row.claim.claimId}`,
-      );
+      console.log(`    [${row.compositeState}] ${row.claim.claimId}`);
       console.log(`      ${row.claim.text}`);
       if (row.missing.length > 0) {
-        console.log(`      missing: ${row.missing.join(", ")}`);
+        console.log(`      missing: ${row.missing.join(', ')}`);
       }
       if (row.blockers.length > 0) {
-        console.log(`      blockers: ${row.blockers.join(", ")}`);
+        console.log(`      blockers: ${row.blockers.join(', ')}`);
       }
     }
     if (report.claims.length > rows.length) {
@@ -1257,8 +1264,8 @@ async function buildBundleStatusSummary(
   const bundle = graph.registry.get(bundleId);
   if (!bundle) return null;
 
-  const descendants = collectContainedQualityDocs(graph.registry, bundleId, { version: 0 })
-    .map((doc) => {
+  const descendants = collectContainedQualityDocs(graph.registry, bundleId, { version: 0 }).map(
+    (doc) => {
       const indexed = index.byId.get(doc.id);
       if (!indexed) return doc;
       return {
@@ -1266,7 +1273,8 @@ async function buildBundleStatusSummary(
         version: indexed.entry.version,
         gate: indexed.entry.gate,
       };
-    });
+    },
+  );
 
   const gateDocs = descendants
     .map((doc) => index.byId.get(doc.id))
@@ -1291,22 +1299,26 @@ async function buildBundleStatusSummary(
     graph.getBody,
   );
 
-  const bundleVerification = resolveBundleVerification(context.ledger, toGateDescriptors(bundle.id, gateDocs));
-  const reviewScopes = collectClaimAuditReviewScopes({
-    id: bundle.id,
-    title: bundle.title,
-    version: 0,
-    level: bundle.level,
-    scope: qualityDocDimension(bundle.scope),
-    aspect: qualityDocDimension(bundle.aspect),
-    depth: qualityDocDimension(bundle.depth),
-    serviceId: bundle.serviceId,
-    tags: bundle.tags,
-  }, gateDocs);
+  const bundleVerification = resolveBundleVerification(
+    context.ledger,
+    toGateDescriptors(bundle.id, gateDocs),
+  );
+  const reviewScopes = collectClaimAuditReviewScopes(
+    {
+      id: bundle.id,
+      title: bundle.title,
+      version: 0,
+      level: bundle.level,
+      scope: qualityDocDimension(bundle.scope),
+      aspect: qualityDocDimension(bundle.aspect),
+      depth: qualityDocDimension(bundle.depth),
+      serviceId: bundle.serviceId,
+      tags: bundle.tags,
+    },
+    gateDocs,
+  );
 
-  const sourceBindings = contract
-    ? buildSourceBindings(contract, graph.getBody, rootDir)
-    : [];
+  const sourceBindings = contract ? buildSourceBindings(contract, graph.getBody, rootDir) : [];
   const reviews = reviewStatusesForBindings(context.reviewLedger, sourceBindings);
   const report = contract
     ? generateVerificationClaimAudit({
@@ -1349,7 +1361,7 @@ async function buildBundleStatusSummary(
     title: bundle.title,
     gateCount: gateDocs.length,
     claimCount: report?.claims.length ?? 0,
-    verifiedClaimCount: report?.counts["verified"] ?? 0,
+    verifiedClaimCount: report?.counts['verified'] ?? 0,
     bundleState: stateSnapshot.current,
     verifiedGates: bundleVerification.verifiedGates,
     totalGates: bundleVerification.totalGates,
@@ -1366,14 +1378,14 @@ async function cmdStatus(
   const snapshot = await buildQualityStatus(rootDir, rootId, sourceOptions);
   if (!snapshot) return;
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     console.log(JSON.stringify(snapshot, null, 2));
     return;
   }
 
   console.log(snapshot.rootId);
   console.log(`  bundles: ${snapshot.bundles.length}`);
-  console.log("");
+  console.log('');
   for (const summary of snapshot.bundles) {
     console.log(
       `  ${summary.bundleId} :: state=${summary.bundleState} :: claims=${summary.verifiedClaimCount}/${summary.claimCount} :: gates=${summary.verifiedGates}/${summary.totalGates}`,
@@ -1387,9 +1399,10 @@ async function buildQualityStatus(
   sourceOptions: DataSourceOptions,
 ): Promise<QualityStatusSnapshot | null> {
   const graph = await loadDocGraph(rootDir);
-  const index = sourceOptions.mode === "scan"
-    ? loadQualityDocsFromGraph(graph)
-    : await loadQualityDocs(rootDir, sourceOptions);
+  const index =
+    sourceOptions.mode === 'scan'
+      ? loadQualityDocsFromGraph(graph)
+      : await loadQualityDocs(rootDir, sourceOptions);
   const root = graph.registry.get(rootId);
   if (!root) {
     console.error(`bundle/system 문서 "${rootId}" 없음`);
@@ -1398,8 +1411,8 @@ async function buildQualityStatus(
   }
 
   const directChildren = graph.registry
-    .getLinks(rootId, "outgoing")
-    .filter((link) => link.linkType === "contains")
+    .getLinks(rootId, 'outgoing')
+    .filter((link) => link.linkType === 'contains')
     .map((link) => link.targetId);
 
   const ledger = createLedger();
@@ -1435,21 +1448,21 @@ async function cmdExport(
 ): Promise<void> {
   const snapshot = await buildQualityStatus(rootDir, rootId, sourceOptions);
   if (!snapshot) return;
-  const output = flags["output"] ?? join(rootDir, "artifacts", `quality-status-${rootId}.json`);
+  const output = flags['output'] ?? join(rootDir, 'artifacts', `quality-status-${rootId}.json`);
 
   const dir = dirname(output);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(output, JSON.stringify(snapshot, null, 2) + "\n");
+  writeFileSync(output, JSON.stringify(snapshot, null, 2) + '\n');
 
-  if (flags["artifact-registry"]) {
+  if (flags['artifact-registry']) {
     const record = buildQualityStatusArtifactRegistryRecord({
       rootDir,
       rootId,
       output,
       snapshot,
     });
-    await appendProgrammingArtifactRegistryRecord(flags["artifact-registry"], record);
-    console.log(`artifact registry: ${record.artifactId} -> ${flags["artifact-registry"]}`);
+    await appendProgrammingArtifactRegistryRecord(flags['artifact-registry'], record);
+    console.log(`artifact registry: ${record.artifactId} -> ${flags['artifact-registry']}`);
   }
 
   console.log(`written: ${output}`);
@@ -1467,7 +1480,7 @@ export function buildQualityStatusArtifactRegistryRecord(input: {
   return createProgrammingArtifactRegistryRecord({
     artifactId: `quality-status-${input.rootId}`,
     artifactRef: outputPath,
-    kind: "quality-status",
+    kind: 'quality-status',
     producedByRef: `qa-sdk quality export ${input.rootId}`,
     derivedFromRefs: [input.rootId, ...bundleIds],
     verifiesRefs: [input.rootId, ...bundleIds],
@@ -1512,7 +1525,7 @@ function buildQualityStatusArtifactRegistryMetadata(
 function portablePath(rootDir: string, filePath: string): string {
   const resolved = resolve(filePath);
   const rel = relative(rootDir, resolved);
-  if (rel && !rel.startsWith("..") && !isAbsolute(rel)) return rel;
+  if (rel && !rel.startsWith('..') && !isAbsolute(rel)) return rel;
   return filePath;
 }
 
@@ -1571,25 +1584,25 @@ async function cmdShow(
 
   const contracts = await findContractDocs(index, doc.entry.id);
   if (contracts.length > 0) {
-    console.log("\n  contracts:");
+    console.log('\n  contracts:');
     for (const contract of contracts) {
       console.log(`    - ${contract.id} (${contract.scope}/${contract.aspect})`);
     }
   }
 
   if (gate.references?.length) {
-    console.log("\n  references:");
+    console.log('\n  references:');
     for (const ref of gate.references) console.log(`    - ${ref}`);
   }
 
-  const nextOnPass = selectNextDocs(doc, index.docs, "pass");
-  const nextOnFail = selectNextDocs(doc, index.docs, "fail");
+  const nextOnPass = selectNextDocs(doc, index.docs, 'pass');
+  const nextOnFail = selectNextDocs(doc, index.docs, 'fail');
   if (nextOnPass.length > 0) {
-    console.log("\n  next on pass:");
+    console.log('\n  next on pass:');
     for (const next of nextOnPass) console.log(`    - ${next.entry.id}`);
   }
   if (nextOnFail.length > 0) {
-    console.log("\n  next on fail:");
+    console.log('\n  next on fail:');
     for (const next of nextOnFail) console.log(`    - ${next.entry.id}`);
   }
 
@@ -1609,18 +1622,19 @@ async function cmdBundle(
     return;
   }
 
-  const children = (index.registry
-    ? collectContainedQualityDocs(index.registry, bundleId, { version: 0 })
-    : await findBundleChildren(index, bundleId))
-    .map((doc) => {
-      const indexed = index.byId.get(doc.id);
-      if (!indexed) return doc;
-      return {
-        ...doc,
-        version: indexed.entry.version,
-        gate: indexed.entry.gate,
-      };
-    });
+  const children = (
+    index.registry
+      ? collectContainedQualityDocs(index.registry, bundleId, { version: 0 })
+      : await findBundleChildren(index, bundleId)
+  ).map((doc) => {
+    const indexed = index.byId.get(doc.id);
+    if (!indexed) return doc;
+    return {
+      ...doc,
+      version: indexed.entry.version,
+      gate: indexed.entry.gate,
+    };
+  });
 
   const gateDocs = children
     .map((doc) => index.byId.get(doc.id))
@@ -1647,7 +1661,7 @@ async function cmdBundle(
 
   for (const child of children) {
     const role = classifyHarnessDocRole(child);
-    const key = `${role} / ${child.level ?? "leaf"} / ${child.scope}`;
+    const key = `${role} / ${child.level ?? 'leaf'} / ${child.scope}`;
     const list = groups.get(key) ?? [];
     list.push(child);
     groups.set(key, list);
@@ -1660,20 +1674,26 @@ async function cmdBundle(
   if (bundle.level) console.log(`  level: ${bundle.level}`);
   console.log(`  state: ${stateSnapshot.current} (${stateDef.nameKo})`);
   if (stateSnapshot.next) {
-    console.log(`  next:  ${stateSnapshot.next} (${getHarnessStateDef(stateSnapshot.next).nameKo})`);
+    console.log(
+      `  next:  ${stateSnapshot.next} (${getHarnessStateDef(stateSnapshot.next).nameKo})`,
+    );
   }
   if (stateSnapshot.missing.length > 0) {
-    console.log(`  missing: ${stateSnapshot.missing.join(", ")}`);
+    console.log(`  missing: ${stateSnapshot.missing.join(', ')}`);
   }
   printBundleVerificationSummary(bundleVerification);
 
-  for (const [groupKey, entries] of [...groups.entries()].toSorted(([a], [b]) => a.localeCompare(b))) {
+  for (const [groupKey, entries] of [...groups.entries()].toSorted(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
     console.log(`\n  ${groupKey}`);
     for (const entry of entries.toSorted((a, b) => a.id.localeCompare(b.id))) {
       const gateDoc = index.byId.get(entry.id);
       if (gateDoc) {
-        const status = gateStatuses.get(entry.id)?.status ?? "unverified";
-        console.log(`    - ${entry.id} :: ${gateDoc.entry.gate.kind} :: ${gateDoc.entry.gate.command} [${status}]`);
+        const status = gateStatuses.get(entry.id)?.status ?? 'unverified';
+        console.log(
+          `    - ${entry.id} :: ${gateDoc.entry.gate.kind} :: ${gateDoc.entry.gate.command} [${status}]`,
+        );
       } else {
         console.log(`    - ${entry.id} :: ${entry.scope}/${entry.aspect} :: ${entry.depth}`);
       }
@@ -1698,38 +1718,44 @@ async function cmdRun(
   }
 
   const gate = doc.entry.gate;
-  const json = flags["json"] === "true";
+  const json = flags['json'] === 'true';
   if (!json) {
     console.log(`${doc.entry.id} 실행`);
     console.log(`  command: ${gate.command}`);
   }
 
-  if (flags["dry-run"] === "true") {
+  if (flags['dry-run'] === 'true') {
     if (json) {
-      console.log(JSON.stringify({
-        gateDocId: doc.entry.id,
-        command: gate.command,
-        dryRun: true,
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            gateDocId: doc.entry.id,
+            command: gate.command,
+            dryRun: true,
+          },
+          null,
+          2,
+        ),
+      );
       return;
     }
-    console.log("  dry-run: 명령을 실행하지 않았습니다");
+    console.log('  dry-run: 명령을 실행하지 않았습니다');
     return;
   }
 
   const git = detectGitRunContext(rootDir);
   const startedAt = Date.now();
-  const result = await execa("/bin/zsh", ["-lc", gate.command], {
+  const result = await execa('/bin/zsh', ['-lc', gate.command], {
     cwd: rootDir,
     reject: false,
   });
   const durationMs = Date.now() - startedAt;
 
   if (!json && result.stdout) {
-    process.stdout.write(result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`);
+    process.stdout.write(result.stdout.endsWith('\n') ? result.stdout : `${result.stdout}\n`);
   }
   if (!json && result.stderr) {
-    process.stderr.write(result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`);
+    process.stderr.write(result.stderr.endsWith('\n') ? result.stderr : `${result.stderr}\n`);
   }
 
   const evaluation = evaluateGateRunResult({
@@ -1742,7 +1768,7 @@ async function cmdRun(
   const outcome = evaluation.outcome;
   const exitCode = result.exitCode ?? 1;
 
-  if (!json && outcome === "pass") {
+  if (!json && outcome === 'pass') {
     console.log(`\n✓ ${doc.entry.id} 통과`);
     if (evaluation.note) {
       console.log(`  note: ${evaluation.note}`);
@@ -1753,7 +1779,7 @@ async function cmdRun(
       console.error(`  reason: ${evaluation.note}`);
     }
   }
-  if (outcome === "fail") {
+  if (outcome === 'fail') {
     process.exitCode = exitCode === 0 ? 1 : exitCode;
   }
 
@@ -1815,24 +1841,30 @@ async function cmdRun(
     diagnosis,
   });
   if (json) {
-    console.log(JSON.stringify(buildQualityRunJsonResult({
-      gateDocId: doc.entry.id,
-      bundleId: parentBundle?.id ?? null,
-      command: gate.command,
-      outcome,
-      exitCode,
-      durationMs,
-      note: evaluation.note,
-      failureClass: evaluation.failureClass,
-      successPattern: gate.successPattern,
-      successPatternMatched: evaluation.successPatternMatched,
-      git,
-      diagnosis,
-      bundleVerification,
-      rankedNextDocs,
-      stdout: result.stdout,
-      stderr: result.stderr,
-    }), null, 2));
+    console.log(
+      JSON.stringify(
+        buildQualityRunJsonResult({
+          gateDocId: doc.entry.id,
+          bundleId: parentBundle?.id ?? null,
+          command: gate.command,
+          outcome,
+          exitCode,
+          durationMs,
+          note: evaluation.note,
+          failureClass: evaluation.failureClass,
+          successPattern: gate.successPattern,
+          successPatternMatched: evaluation.successPatternMatched,
+          git,
+          diagnosis,
+          bundleVerification,
+          rankedNextDocs,
+          stdout: result.stdout,
+          stderr: result.stderr,
+        }),
+        null,
+        2,
+      ),
+    );
     ledger.store.close();
     return;
   }
@@ -1841,7 +1873,9 @@ async function cmdRun(
   if (rankedNextDocs.length > 0) {
     console.log(`\n추천 다음 작업 (${outcome} 기준):`);
     for (const next of rankedNextDocs) {
-      console.log(`  - ${next.doc.entry.id} [score=${next.score}] :: ${next.doc.entry.gate.command}`);
+      console.log(
+        `  - ${next.doc.entry.id} [score=${next.score}] :: ${next.doc.entry.gate.command}`,
+      );
     }
   }
 }
@@ -1852,8 +1886,8 @@ async function cmdNext(
   flags: Record<string, string>,
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
-  const outcome = flags["outcome"] === "fail" ? "fail" : "pass";
-  const json = flags["json"] === "true";
+  const outcome = flags['outcome'] === 'fail' ? 'fail' : 'pass';
+  const json = flags['json'] === 'true';
   const index = await loadQualityDocs(rootDir, sourceOptions);
   const doc = index.byId.get(gateId);
   if (!doc) {
@@ -1890,18 +1924,24 @@ async function cmdNext(
   });
 
   if (json) {
-    console.log(JSON.stringify({
-      gateDocId: gateId,
-      outcome,
-      diagnosis,
-      candidates: rankedNextDocs.map((candidate) => ({
-        gateDocId: candidate.doc.entry.id,
-        score: candidate.score,
-        status: candidate.status,
-        reasons: candidate.reasons,
-        command: candidate.doc.entry.gate.command,
-      })),
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          gateDocId: gateId,
+          outcome,
+          diagnosis,
+          candidates: rankedNextDocs.map((candidate) => ({
+            gateDocId: candidate.doc.entry.id,
+            score: candidate.score,
+            status: candidate.status,
+            reasons: candidate.reasons,
+            command: candidate.doc.entry.gate.command,
+          })),
+        },
+        null,
+        2,
+      ),
+    );
     ledger.store.close();
     return;
   }
@@ -1909,7 +1949,7 @@ async function cmdNext(
   console.log(`${gateId} → next (${outcome})`);
   console.log(`  diagnosis: ${diagnosis.summary}`);
   if (rankedNextDocs.length === 0) {
-    console.log("  추천할 다음 gate/doc 없음");
+    console.log('  추천할 다음 gate/doc 없음');
     ledger.store.close();
     return;
   }
@@ -1917,7 +1957,7 @@ async function cmdNext(
   for (const next of rankedNextDocs) {
     printDocLine(next.doc);
     console.log(`    score=${next.score}  status=${next.status}`);
-    console.log(`    reasons: ${next.reasons.join(", ")}`);
+    console.log(`    reasons: ${next.reasons.join(', ')}`);
   }
   ledger.store.close();
 }
@@ -1928,8 +1968,8 @@ async function cmdDiagnose(
   flags: Record<string, string>,
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
-  const json = flags["json"] === "true";
-  const outcome = flags["outcome"] === "pass" ? "pass" : "fail";
+  const json = flags['json'] === 'true';
+  const outcome = flags['outcome'] === 'pass' ? 'pass' : 'fail';
   const index = await loadQualityDocs(rootDir, sourceOptions);
   const doc = index.byId.get(gateId);
   if (!doc) {
@@ -1967,16 +2007,22 @@ async function cmdDiagnose(
   ledger.store.close();
 
   if (json) {
-    console.log(JSON.stringify({
-      gateDocId: gateId,
-      diagnosis,
-      candidates: rankedNextDocs.map((candidate) => ({
-        gateDocId: candidate.doc.entry.id,
-        score: candidate.score,
-        status: candidate.status,
-        reasons: candidate.reasons,
-      })),
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          gateDocId: gateId,
+          diagnosis,
+          candidates: rankedNextDocs.map((candidate) => ({
+            gateDocId: candidate.doc.entry.id,
+            score: candidate.score,
+            status: candidate.status,
+            reasons: candidate.reasons,
+          })),
+        },
+        null,
+        2,
+      ),
+    );
     return;
   }
 
@@ -1984,7 +2030,7 @@ async function cmdDiagnose(
   console.log(`  status: ${diagnosis.status}`);
   console.log(`  summary: ${diagnosis.summary}`);
   if (diagnosis.failureClass) console.log(`  failureClass: ${diagnosis.failureClass}`);
-  console.log(`  flaky: ${diagnosis.flaky ? "yes" : "no"}`);
+  console.log(`  flaky: ${diagnosis.flaky ? 'yes' : 'no'}`);
   if (diagnosis.lastRun) {
     console.log(`  lastRun: ${diagnosis.lastRun.executedAt}`);
     console.log(`  exit: ${diagnosis.lastRun.exitCode ?? 0}`);
@@ -1992,15 +2038,17 @@ async function cmdDiagnose(
     if (diagnosis.lastRun.gitSha) console.log(`  sha: ${diagnosis.lastRun.gitSha}`);
   }
   if (diagnosis.recommendations.length > 0) {
-    console.log("  recommendations:");
+    console.log('  recommendations:');
     for (const recommendation of diagnosis.recommendations) {
       console.log(`    - ${recommendation}`);
     }
   }
   if (rankedNextDocs.length > 0) {
-    console.log("  ranked next:");
+    console.log('  ranked next:');
     for (const candidate of rankedNextDocs) {
-      console.log(`    - ${candidate.doc.entry.id} [score=${candidate.score}] ${candidate.reasons.join(", ")}`);
+      console.log(
+        `    - ${candidate.doc.entry.id} [score=${candidate.score}] ${candidate.reasons.join(', ')}`,
+      );
     }
   }
 }
@@ -2053,17 +2101,20 @@ async function cmdClaims(
   const gateStatuses = bundleVerification.gateStatuses;
 
   const reviewLedger = await createReviewLedger(rootDir);
-  const reviewScopes = collectClaimAuditReviewScopes({
-    id: bundle.id,
-    title: bundle.title,
-    version: 0,
-    level: bundle.level,
-    scope: qualityDocDimension(bundle.scope),
-    aspect: qualityDocDimension(bundle.aspect),
-    depth: qualityDocDimension(bundle.depth),
-    serviceId: bundle.serviceId,
-    tags: bundle.tags,
-  }, gateDocs);
+  const reviewScopes = collectClaimAuditReviewScopes(
+    {
+      id: bundle.id,
+      title: bundle.title,
+      version: 0,
+      level: bundle.level,
+      scope: qualityDocDimension(bundle.scope),
+      aspect: qualityDocDimension(bundle.aspect),
+      depth: qualityDocDimension(bundle.depth),
+      serviceId: bundle.serviceId,
+      tags: bundle.tags,
+    },
+    gateDocs,
+  );
   const sourceBindings = buildSourceBindings(contract, graph.getBody, rootDir);
   const reviews = reviewStatusesForBindings(reviewLedger, sourceBindings);
   const reviewedBindings = buildReviewBindings(sourceBindings, reviews);
@@ -2076,10 +2127,7 @@ async function cmdClaims(
       sourceId: section.sourceId,
       body: section.body,
     })),
-    bindings: [
-      ...reviewedBindings,
-      ...buildClaimAuditBindings(reviewScopes),
-    ],
+    bindings: [...reviewedBindings, ...buildClaimAuditBindings(reviewScopes)],
     gateStatuses: toClaimAuditGateStatuses(gateStatuses),
     reviews: [],
   });
@@ -2088,9 +2136,13 @@ async function cmdClaims(
   console.log(`  contract sections: ${contract.allSections.length}`);
   console.log(`  claims:            ${report.claims.length}`);
   console.log(`  gate docs:         ${gateDocs.length}`);
-  console.log(`  review scopes:     ${reviewScopes.length > 0 ? reviewScopes.join(", ") : "(없음)"}`);
+  console.log(
+    `  review scopes:     ${reviewScopes.length > 0 ? reviewScopes.join(', ') : '(없음)'}`,
+  );
   if (report.claims.length === 0) {
-    console.log("  note: contract marker(^inputs/^outputs/^evidence 등)가 없어 claim audit 결과가 비어 있음");
+    console.log(
+      '  note: contract marker(^inputs/^outputs/^evidence 등)가 없어 claim audit 결과가 비어 있음',
+    );
   }
   printClaimAudit(report);
 
@@ -2121,37 +2173,55 @@ export async function cliQuality(
 
   switch (cmd) {
     case undefined:
-    case "list":
+    case 'list':
       await cmdList(rootDir, flags, sourceOptions);
       return;
-    case "status":
-      await cmdStatus(rootDir, rest[0] ?? "quality-gates-system", flags, sourceOptions);
+    case 'status':
+      await cmdStatus(rootDir, rest[0] ?? 'quality-gates-system', flags, sourceOptions);
       return;
-    case "export":
-      await cmdExport(rootDir, rest[0] ?? "quality-gates-system", flags, sourceOptions);
+    case 'export':
+      await cmdExport(rootDir, rest[0] ?? 'quality-gates-system', flags, sourceOptions);
       return;
-    case "bundle":
-      if (!rest[0]) { printUsage(); return; }
+    case 'bundle':
+      if (!rest[0]) {
+        printUsage();
+        return;
+      }
       await cmdBundle(rootDir, rest[0], sourceOptions);
       return;
-    case "claims":
-      if (!rest[0]) { printUsage(); return; }
+    case 'claims':
+      if (!rest[0]) {
+        printUsage();
+        return;
+      }
       await cmdClaims(rootDir, rest[0], sourceOptions);
       return;
-    case "show":
-      if (!rest[0]) { printUsage(); return; }
+    case 'show':
+      if (!rest[0]) {
+        printUsage();
+        return;
+      }
       await cmdShow(rootDir, rest[0], sourceOptions);
       return;
-    case "run":
-      if (!rest[0]) { printUsage(); return; }
+    case 'run':
+      if (!rest[0]) {
+        printUsage();
+        return;
+      }
       await cmdRun(rootDir, rest[0], flags, sourceOptions);
       return;
-    case "next":
-      if (!rest[0]) { printUsage(); return; }
+    case 'next':
+      if (!rest[0]) {
+        printUsage();
+        return;
+      }
       await cmdNext(rootDir, rest[0], flags, sourceOptions);
       return;
-    case "diagnose":
-      if (!rest[0]) { printUsage(); return; }
+    case 'diagnose':
+      if (!rest[0]) {
+        printUsage();
+        return;
+      }
       await cmdDiagnose(rootDir, rest[0], flags, sourceOptions);
       return;
     default:

@@ -1,12 +1,12 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import { MetricAdminPort } from "../../application/ports/metric-admin.port.js";
-import type { RecordMetricCommand } from "../../application/commands/record-metric.command.js";
-import type { DailyMetricReadModel } from "../../domain/metric.types.js";
-import { toMetricId, toMetricKey } from "../../domain/metric.ids.js";
-import type { ReportingRepository } from "../../../shared/port.js";
-import type { DailyMetric } from "../../../shared/types.js";
+import { MetricAdminPort } from '../../application/ports/metric-admin.port.js';
+import type { RecordMetricCommand } from '../../application/commands/record-metric.command.js';
+import type { DailyMetricReadModel } from '../../domain/metric.types.js';
+import { toMetricId, toMetricKey } from '../../domain/metric.ids.js';
+import type { ReportingRepository } from '../../../shared/port.js';
+import type { DailyMetric } from '../../../shared/types.js';
 
 /** Metric admin 어댑터 — ReportingRepository 위에 얹는다. */
 export class RepositoryMetricAdminAdapter extends MetricAdminPort {

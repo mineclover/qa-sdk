@@ -11,8 +11,8 @@
  * 완전히 복원할 수 있게 된다.
  */
 
-import type { CompiledSchema, SchemaDiff, CompositeVersionSpec } from "./compile-schema.js";
-import type { PrefixRegistry, PrefixRegistryRecord, DimRef } from "./prefix-registry.js";
+import type { CompiledSchema, SchemaDiff, CompositeVersionSpec } from './compile-schema.js';
+import type { PrefixRegistry, PrefixRegistryRecord, DimRef } from './prefix-registry.js';
 
 /**
  * CompiledSchema → PrefixRegistry 일괄 등록.
@@ -25,7 +25,7 @@ import type { PrefixRegistry, PrefixRegistryRecord, DimRef } from "./prefix-regi
  */
 export async function syncSchemaToRegistry(
   schema: CompiledSchema,
-  registry: PrefixRegistry
+  registry: PrefixRegistry,
 ): Promise<void> {
   for (const table of schema.tables) {
     for (const [, version] of table.versions) {
@@ -33,22 +33,22 @@ export async function syncSchemaToRegistry(
       if (existing !== null) continue; // 이미 등록됨
 
       const record: PrefixRegistryRecord =
-        table.kind === "leaf"
+        table.kind === 'leaf'
           ? {
-              prefix:    table.id,
+              prefix: table.id,
               versionId: version.versionId,
-              capacity:  version.capacity,
+              capacity: version.capacity,
             }
           : {
-              prefix:    table.id,
+              prefix: table.id,
               versionId: version.versionId,
-              capacity:  version.capacity,
-              refs: (version as import("./compile-schema.js").CompositeVersionSpec).dims.map(
+              capacity: version.capacity,
+              refs: (version as import('./compile-schema.js').CompositeVersionSpec).dims.map(
                 (dim): DimRef => ({
-                  prefix:    dim.ref.prefix,
+                  prefix: dim.ref.prefix,
                   versionId: dim.ref.version,
-                  capacity:  dim.ref.capacity,
-                })
+                  capacity: dim.ref.capacity,
+                }),
               ),
             };
 
@@ -63,7 +63,12 @@ export interface ApplySchemaDiffResult {
   /** 신규 등록된 (prefix, versionId) 목록 */
   readonly registered: readonly { prefix: string; versionId: string }[];
   /** capacity가 갱신된 (prefix, versionId) 목록 */
-  readonly updated: readonly { prefix: string; versionId: string; previousCapacity: number; capacity: number }[];
+  readonly updated: readonly {
+    prefix: string;
+    versionId: string;
+    previousCapacity: number;
+    capacity: number;
+  }[];
   /** 스키마에서 제거되었으나 레지스트리에서 삭제하지 않은 테이블 */
   readonly removedWarnings: readonly string[];
 }
@@ -86,7 +91,12 @@ export async function applySchemaDiff(
   registry: PrefixRegistry,
 ): Promise<ApplySchemaDiffResult> {
   const registered: { prefix: string; versionId: string }[] = [];
-  const updated: { prefix: string; versionId: string; previousCapacity: number; capacity: number }[] = [];
+  const updated: {
+    prefix: string;
+    versionId: string;
+    previousCapacity: number;
+    capacity: number;
+  }[] = [];
 
   // 1. 신규 테이블 등록
   for (const table of diff.added) {
@@ -108,15 +118,16 @@ export async function applySchemaDiff(
 
       if (vc.previousCapacity !== undefined) {
         // capacity 변경 → updateCapacity
-        const refs = table.kind === "composite"
-          ? (version as CompositeVersionSpec).dims.map(
-              (dim): DimRef => ({
-                prefix: dim.ref.prefix,
-                versionId: dim.ref.version,
-                capacity: dim.ref.capacity,
-              })
-            )
-          : undefined;
+        const refs =
+          table.kind === 'composite'
+            ? (version as CompositeVersionSpec).dims.map(
+                (dim): DimRef => ({
+                  prefix: dim.ref.prefix,
+                  versionId: dim.ref.version,
+                  capacity: dim.ref.capacity,
+                }),
+              )
+            : undefined;
         await registry.updateCapacity(table.id, vc.versionId, vc.capacity, refs);
         updated.push({
           prefix: table.id,
@@ -142,10 +153,10 @@ export async function applySchemaDiff(
 
 function buildRecord(
   tableId: string,
-  kind: "leaf" | "composite",
+  kind: 'leaf' | 'composite',
   version: { versionId: string; capacity: number },
 ): PrefixRegistryRecord {
-  if (kind === "leaf") {
+  if (kind === 'leaf') {
     return { prefix: tableId, versionId: version.versionId, capacity: version.capacity };
   }
   const cv = version as CompositeVersionSpec;
@@ -158,7 +169,7 @@ function buildRecord(
         prefix: dim.ref.prefix,
         versionId: dim.ref.version,
         capacity: dim.ref.capacity,
-      })
+      }),
     ),
   };
 }

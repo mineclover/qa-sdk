@@ -9,37 +9,41 @@
  */
 
 import type {
-  ScopeNesting, NestingValidation,
+  ScopeNesting,
+  NestingValidation,
   MountSnapshot,
-  TimingValidation, ReadinessEntry, DelegationGap,
-  SimulationResult, SimStep,
-} from "@qa-sdk/core";
-import { svgRect, svgText, svgLine, svgGroup, svgSvg } from "./primitives.js";
+  TimingValidation,
+  ReadinessEntry,
+  DelegationGap,
+  SimulationResult,
+  SimStep,
+} from '@qa-sdk/core';
+import { svgRect, svgText, svgLine, svgGroup, svgSvg } from './primitives.js';
 
 // ── 타임라인 전용 토큰 ───────────────────────────────
 
 /** depth별 scope 배경색 (0~3, 이후 순환) */
-export const SCOPE_DEPTH_COLORS = ["#b2ebf2", "#c5cae9", "#f8bbd0", "#ffe0b2"] as const;
+export const SCOPE_DEPTH_COLORS = ['#b2ebf2', '#c5cae9', '#f8bbd0', '#ffe0b2'] as const;
 
 /** contract type별 색상 */
 export const CONTRACT_TYPE_COLORS: Record<string, string> = {
-  state: "#42a5f5",
-  logging: "#ffca28",
-  persist: "#66bb6a",
-  adapter: "#ab47bc",
-  custom: "#78909c",
+  state: '#42a5f5',
+  logging: '#ffca28',
+  persist: '#66bb6a',
+  adapter: '#ab47bc',
+  custom: '#78909c',
 };
 
 /** timing 상태 색상 */
 export const TIMING_COLORS = {
-  pending: "#ef5350",
-  ready: "#66bb6a",
-  delegation: "#ec407a",
+  pending: '#ef5350',
+  ready: '#66bb6a',
+  delegation: '#ec407a',
 } as const;
 
 // ── 타임라인 타입 ────────────────────────────────────
 
-export type RowType = "scope" | "contract" | "pipe" | "delegation";
+export type RowType = 'scope' | 'contract' | 'pipe' | 'delegation';
 
 export interface TimelineBlock {
   start: number;
@@ -93,28 +97,30 @@ export function buildTimelineRows(data: ScopeTimelineData): ScopeTimelineRow[] {
   for (let i = 0; i < data.nesting.scopes.length; i++) {
     const scope = data.nesting.scopes[i];
     const snap = data.snapshots[i];
-    const provides = scope.provides.map(c => c.contractId).join(", ");
-    const facets = scope.facets?.join(", ") ?? "";
+    const provides = scope.provides.map((c) => c.contractId).join(', ');
+    const facets = scope.facets?.join(', ') ?? '';
     const color = SCOPE_DEPTH_COLORS[i % SCOPE_DEPTH_COLORS.length];
 
     rows.push({
-      type: "scope",
+      type: 'scope',
       id: scope.scopeId,
       label: scope.scopeId,
-      blocks: [{
-        start: 0,
-        end: totalSteps,
-        color,
-        opacity: 0.5,
-        label: provides ? `provides: ${provides}` : undefined,
-        sublabel: facets ? `facets: ${facets}` : undefined,
-        tooltip: {
-          scope: scope.scopeId,
-          depth: String(i),
-          ...(provides ? { provides } : {}),
-          ...(snap ? { activeContracts: snap.activeContracts.join(", ") } : {}),
+      blocks: [
+        {
+          start: 0,
+          end: totalSteps,
+          color,
+          opacity: 0.5,
+          label: provides ? `provides: ${provides}` : undefined,
+          sublabel: facets ? `facets: ${facets}` : undefined,
+          tooltip: {
+            scope: scope.scopeId,
+            depth: String(i),
+            ...(provides ? { provides } : {}),
+            ...(snap ? { activeContracts: snap.activeContracts.join(', ') } : {}),
+          },
         },
-      }],
+      ],
     });
   }
 
@@ -131,7 +137,7 @@ export function buildTimelineRows(data: ScopeTimelineData): ScopeTimelineRow[] {
           color: TIMING_COLORS.ready,
           opacity: 0.6,
           label: entry.contractId,
-          sublabel: "즉시",
+          sublabel: '즉시',
         });
       } else {
         // pending → ready 전환
@@ -153,7 +159,7 @@ export function buildTimelineRows(data: ScopeTimelineData): ScopeTimelineRow[] {
       }
 
       rows.push({
-        type: "contract",
+        type: 'contract',
         id: `contract:${entry.contractId}`,
         label: entry.contractId,
         blocks,
@@ -174,8 +180,8 @@ export function buildTimelineRows(data: ScopeTimelineData): ScopeTimelineRow[] {
       const blocks: TimelineBlock[] = steps.map((s, idx) => ({
         start: idx,
         end: idx + 1,
-        color: s.status === "executed" ? "#42a5f5" : "#bdbdbd",
-        opacity: s.status === "executed" ? 0.8 : 0.3,
+        color: s.status === 'executed' ? '#42a5f5' : '#bdbdbd',
+        opacity: s.status === 'executed' ? 0.8 : 0.3,
         label: s.facet ?? s.kind,
         tooltip: {
           pipe: s.pipeId,
@@ -187,7 +193,7 @@ export function buildTimelineRows(data: ScopeTimelineData): ScopeTimelineRow[] {
       }));
 
       rows.push({
-        type: "pipe",
+        type: 'pipe',
         id: `pipe:${pipeId}`,
         label: pipeId,
         blocks,
@@ -199,22 +205,24 @@ export function buildTimelineRows(data: ScopeTimelineData): ScopeTimelineRow[] {
   if (data.timing) {
     for (const gap of data.timing.delegationGaps) {
       rows.push({
-        type: "delegation",
+        type: 'delegation',
         id: `delegation:${gap.contractId}:${gap.delegatorPipeId}`,
         label: `${gap.contractId} gap`,
-        blocks: [{
-          start: gap.gapStartStep,
-          end: gap.gapEndStep,
-          color: TIMING_COLORS.delegation,
-          opacity: 0.6,
-          label: `${gap.contractId} (${gap.staleConsumers.join(", ")})`,
-          marker: { position: gap.gapEndStep, color: TIMING_COLORS.delegation },
-          tooltip: {
-            contract: gap.contractId,
-            delegator: gap.delegatorPipeId,
-            consumers: gap.staleConsumers.join(", "),
+        blocks: [
+          {
+            start: gap.gapStartStep,
+            end: gap.gapEndStep,
+            color: TIMING_COLORS.delegation,
+            opacity: 0.6,
+            label: `${gap.contractId} (${gap.staleConsumers.join(', ')})`,
+            marker: { position: gap.gapEndStep, color: TIMING_COLORS.delegation },
+            tooltip: {
+              contract: gap.contractId,
+              delegator: gap.delegatorPipeId,
+              consumers: gap.staleConsumers.join(', '),
+            },
           },
-        }],
+        ],
       });
     }
   }
@@ -234,7 +242,7 @@ export function scopeTimelineToSvg(
 ): string {
   const allRows = buildTimelineRows(data);
   const rows = options?.showRows
-    ? allRows.filter(r => options.showRows!.includes(r.type))
+    ? allRows.filter((r) => options.showRows!.includes(r.type))
     : allRows;
 
   const width = options?.width ?? DEFAULT_WIDTH;
@@ -256,12 +264,18 @@ export function scopeTimelineToSvg(
   const tickInterval = Math.max(1, Math.ceil(totalSteps / 20));
   for (let i = 0; i <= totalSteps; i += tickInterval) {
     const x = pad.left + i * stepW;
-    tickElements.push(svgLine(x, pad.top - 4, x, pad.top, { stroke: "#90a4ae", "stroke-width": 1 }));
-    tickElements.push(svgText(x, pad.top - 8, String(i), {
-      "text-anchor": "middle", "font-size": 9, fill: "#78909c",
-    }));
+    tickElements.push(
+      svgLine(x, pad.top - 4, x, pad.top, { stroke: '#90a4ae', 'stroke-width': 1 }),
+    );
+    tickElements.push(
+      svgText(x, pad.top - 8, String(i), {
+        'text-anchor': 'middle',
+        'font-size': 9,
+        fill: '#78909c',
+      }),
+    );
   }
-  children.push(svgGroup(tickElements, { class: "timeline-ticks" }));
+  children.push(svgGroup(tickElements, { class: 'timeline-ticks' }));
 
   // 행 렌더링
   for (let ri = 0; ri < rows.length; ri++) {
@@ -270,15 +284,22 @@ export function scopeTimelineToSvg(
     const rowElements: string[] = [];
 
     // 행 라벨
-    rowElements.push(svgText(pad.left - 8, y + rowH / 2 + 4, row.label, {
-      "text-anchor": "end", "font-size": 11, fill: "#37474f",
-    }));
+    rowElements.push(
+      svgText(pad.left - 8, y + rowH / 2 + 4, row.label, {
+        'text-anchor': 'end',
+        'font-size': 11,
+        fill: '#37474f',
+      }),
+    );
 
     // 행 배경 (짝수/홀수 줄무늬)
     if (ri % 2 === 0) {
-      rowElements.push(svgRect(pad.left, y, chartW, rowH, {
-        fill: "#f5f5f5", opacity: 0.5,
-      }));
+      rowElements.push(
+        svgRect(pad.left, y, chartW, rowH, {
+          fill: '#f5f5f5',
+          opacity: 0.5,
+        }),
+      );
     }
 
     // 블록 렌더링
@@ -288,32 +309,44 @@ export function scopeTimelineToSvg(
       const by = y + 4;
       const bh = rowH - 8;
 
-      rowElements.push(svgRect(bx, by, bw, bh, {
-        rx: 3,
-        fill: block.color,
-        opacity: block.opacity,
-      }));
+      rowElements.push(
+        svgRect(bx, by, bw, bh, {
+          rx: 3,
+          fill: block.color,
+          opacity: block.opacity,
+        }),
+      );
 
       // 블록 라벨 (충분한 너비가 있을 때만)
       if (block.label && bw > 40) {
-        rowElements.push(svgText(bx + 6, by + bh / 2 + 4, truncate(block.label, bw / 6.5), {
-          "font-size": 10, fill: "#263238", "pointer-events": "none",
-        }));
+        rowElements.push(
+          svgText(bx + 6, by + bh / 2 + 4, truncate(block.label, bw / 6.5), {
+            'font-size': 10,
+            fill: '#263238',
+            'pointer-events': 'none',
+          }),
+        );
       }
 
       // 수직 마커
       if (block.marker) {
         const mx = pad.left + block.marker.position * stepW;
-        rowElements.push(svgLine(mx, y, mx, y + rowH, {
-          stroke: block.marker.color, "stroke-width": 2, "stroke-dasharray": "3 2",
-        }));
+        rowElements.push(
+          svgLine(mx, y, mx, y + rowH, {
+            stroke: block.marker.color,
+            'stroke-width': 2,
+            'stroke-dasharray': '3 2',
+          }),
+        );
       }
     }
 
-    children.push(svgGroup(rowElements, {
-      class: `timeline-row timeline-${row.type}`,
-      "data-id": row.id,
-    }));
+    children.push(
+      svgGroup(rowElements, {
+        class: `timeline-row timeline-${row.type}`,
+        'data-id': row.id,
+      }),
+    );
   }
 
   return svgSvg(width, height, children);
@@ -327,7 +360,7 @@ export function scopeTimelineToD3(
 ): D3TimelineData {
   const allRows = buildTimelineRows(data);
   const rows = options?.showRows
-    ? allRows.filter(r => options.showRows!.includes(r.type))
+    ? allRows.filter((r) => options.showRows!.includes(r.type))
     : allRows;
 
   const width = options?.width ?? DEFAULT_WIDTH;
@@ -348,5 +381,5 @@ export function scopeTimelineToD3(
 
 function truncate(s: string, maxLen: number): string {
   const max = Math.max(3, Math.floor(maxLen));
-  return s.length > max ? s.slice(0, max - 1) + "…" : s;
+  return s.length > max ? s.slice(0, max - 1) + '…' : s;
 }

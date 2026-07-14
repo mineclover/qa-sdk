@@ -1,14 +1,8 @@
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-  mkdirSync,
-} from "node:fs";
-import { dirname, join, basename, relative } from "node:path";
-import { execSync } from "node:child_process";
-import { parse as parseYaml } from "taxonomy-engine";
-import type { EntryIR, Lifecycle } from "taxonomy-engine";
+import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join, basename, relative } from 'node:path';
+import { execSync } from 'node:child_process';
+import { parse as parseYaml } from 'taxonomy-engine';
+import type { EntryIR, Lifecycle } from 'taxonomy-engine';
 import {
   computeSyncAction,
   createDecisionSkeletonText,
@@ -19,10 +13,10 @@ import {
   type DecisionFile,
   type DecisionEvidence,
   type SyncAction,
-} from "taxonomy-decision-bridge";
+} from 'taxonomy-decision-bridge';
 
-const TAX_DIR = "docs/taxonomies";
-const DECISIONS_DIR = "docs/decisions";
+const TAX_DIR = 'docs/taxonomies';
+const DECISIONS_DIR = 'docs/decisions';
 
 type SyncArgs = {
   dryRun: boolean;
@@ -42,7 +36,7 @@ type SyncReport = {
 
 export async function decisionSyncCmd(args: string[]): Promise<void> {
   const parsed = parseSyncArgs(args);
-  if ("error" in parsed) {
+  if ('error' in parsed) {
     console.error(parsed.error);
     process.exit(1);
     return;
@@ -51,14 +45,14 @@ export async function decisionSyncCmd(args: string[]): Promise<void> {
   const cwd = process.cwd();
   const reports: SyncReport[] = [];
   const yamlFiles = readdirSync(join(cwd, TAX_DIR))
-    .filter((f) => f.endsWith(".yaml"))
+    .filter((f) => f.endsWith('.yaml'))
     .map((f) => join(TAX_DIR, f));
 
   for (const yamlFile of yamlFiles) {
     const abs = join(cwd, yamlFile);
-    const text = readFileSync(abs, "utf8");
+    const text = readFileSync(abs, 'utf8');
     const r = parseYaml(text);
-    if ("error" in r) continue;
+    if ('error' in r) continue;
     for (const [axisName, axis] of r.ir.axes) {
       for (const entry of axis.entries) {
         if (!entry.decisionLink) continue;
@@ -86,13 +80,13 @@ function parseSyncArgs(args: string[]): SyncArgs | { error: string } {
   const opts: SyncArgs = { dryRun: false, json: false, noCommit: false };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--dry-run") opts.dryRun = true;
-    else if (a === "--json") opts.json = true;
-    else if (a === "--no-commit") opts.noCommit = true;
-    else if (a === "--accept-yaml") opts.conflict = "accept-yaml";
-    else if (a === "--accept-decision") opts.conflict = "accept-decision";
-    else if (a === "--merge") opts.conflict = "merge";
-    else if (!a.startsWith("--")) opts.refFilter = a;
+    if (a === '--dry-run') opts.dryRun = true;
+    else if (a === '--json') opts.json = true;
+    else if (a === '--no-commit') opts.noCommit = true;
+    else if (a === '--accept-yaml') opts.conflict = 'accept-yaml';
+    else if (a === '--accept-decision') opts.conflict = 'accept-decision';
+    else if (a === '--merge') opts.conflict = 'merge';
+    else if (!a.startsWith('--')) opts.refFilter = a;
     else return { error: `알 수 없는 옵션: ${a}` };
   }
   return opts;
@@ -112,7 +106,7 @@ function processEntry(opts: ProcessOpts): SyncReport {
   let decisionFile: DecisionFile | undefined;
   if (decisionPath && existsSync(decisionPath)) {
     try {
-      decisionFile = parseDecisionFile(readFileSync(decisionPath, "utf8"));
+      decisionFile = parseDecisionFile(readFileSync(decisionPath, 'utf8'));
     } catch {
       decisionFile = undefined;
     }
@@ -131,8 +125,7 @@ function processEntry(opts: ProcessOpts): SyncReport {
   const action = computeSyncAction(entry, subject, decisionFile, state, {
     conflict,
   });
-  const applied =
-    action.kind !== "noop" && action.kind !== "conflict";
+  const applied = action.kind !== 'noop' && action.kind !== 'conflict';
 
   return {
     ref: subject,
@@ -153,7 +146,7 @@ function resolveDecisionPath(
     yamlAbsDir: dirname(join(cwd, yamlFile)),
     decisionsDir: join(cwd, DECISIONS_DIR),
   });
-  if (resolved.kind === "external" || resolved.kind === "unsupported") {
+  if (resolved.kind === 'external' || resolved.kind === 'unsupported') {
     return undefined;
   }
   return resolved.absPath;
@@ -214,8 +207,8 @@ function hasUnstagedChanges(cwd: string, relPath: string): boolean {
   try {
     const out = execSync(`git status --porcelain -- "${relPath}"`, {
       cwd,
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
     return out.trim().length > 0;
   } catch {
@@ -227,8 +220,8 @@ function lastCommitTimestamp(cwd: string, relPath: string): number | undefined {
   try {
     const out = execSync(`git log -1 --format=%at -- "${relPath}"`, {
       cwd,
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
     if (!out) return undefined;
     const n = Number(out);
@@ -242,15 +235,12 @@ function lastCommitTimestamp(cwd: string, relPath: string): number | undefined {
  * git HEAD에 마지막으로 커밋된 decision 파일 버전을 파싱.
  * markers 비교(부채 #8)에 사용. 실패 시 undefined.
  */
-function readPreviousDecision(
-  cwd: string,
-  relPath: string,
-): DecisionFile | undefined {
+function readPreviousDecision(cwd: string, relPath: string): DecisionFile | undefined {
   try {
     const text = execSync(`git show HEAD:"${relPath}"`, {
       cwd,
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
     return parseDecisionFile(text);
   } catch {
@@ -260,7 +250,7 @@ function readPreviousDecision(
 
 function applyAndCommit(cwd: string, report: SyncReport, opts: SyncArgs): void {
   const action = report.action;
-  if (action.kind === "push-create") {
+  if (action.kind === 'push-create') {
     createDecisionSkeleton({
       cwd,
       decisionPath: report.decisionPath!,
@@ -273,7 +263,7 @@ function applyAndCommit(cwd: string, report: SyncReport, opts: SyncArgs): void {
     }
     return;
   }
-  if (action.kind === "pull-yaml-lifecycle") {
+  if (action.kind === 'pull-yaml-lifecycle') {
     updateYamlLifecycle({
       cwd,
       yamlFile: report.taxonomyFile,
@@ -281,15 +271,11 @@ function applyAndCommit(cwd: string, report: SyncReport, opts: SyncArgs): void {
       newLifecycle: action.newLifecycle,
     });
     if (!opts.noCommit) {
-      commitChanges(
-        cwd,
-        [report.taxonomyFile],
-        buildCommitMessage(action, report),
-      );
+      commitChanges(cwd, [report.taxonomyFile], buildCommitMessage(action, report));
     }
     return;
   }
-  if (action.kind === "pull-decision-lifecycle") {
+  if (action.kind === 'pull-decision-lifecycle') {
     updateDecisionLifecycle({
       decisionPath: report.decisionPath!,
       newLifecycle: action.newLifecycle,
@@ -310,7 +296,7 @@ function createDecisionSkeleton(opts: {
 }): void {
   mkdirSync(dirname(opts.decisionPath), { recursive: true });
   const text = createDecisionSkeletonText({
-    id: basename(opts.decisionPath, ".md"),
+    id: basename(opts.decisionPath, '.md'),
     subject: opts.subject,
     question: opts.question,
     lifecycle: opts.lifecycle,
@@ -329,32 +315,27 @@ function updateYamlLifecycle(opts: {
   if (!m) throw new Error(`잘못된 ref 형식: ${opts.ref}`);
   const [, , axis, entryId] = m;
   const abs = join(opts.cwd, opts.yamlFile);
-  const text = readFileSync(abs, "utf8");
+  const text = readFileSync(abs, 'utf8');
 
   // entry 한 줄 찾기 (`- { id: <entryId>, ... lifecycle: <X> ... }`)
-  const lines = text.split("\n");
+  const lines = text.split('\n');
   let updated = false;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (!line.includes(`id: ${entryId}`)) continue;
-    if (!line.includes("lifecycle:")) continue;
+    if (!line.includes('lifecycle:')) continue;
     lines[i] = line.replace(/lifecycle:\s*\w+/, `lifecycle: ${opts.newLifecycle}`);
     updated = true;
     break;
   }
   if (!updated) {
-    throw new Error(
-      `yaml 갱신 실패 — axis=${axis} entry=${entryId} lifecycle 라인 못 찾음`,
-    );
+    throw new Error(`yaml 갱신 실패 — axis=${axis} entry=${entryId} lifecycle 라인 못 찾음`);
   }
-  writeFileSync(abs, lines.join("\n"));
+  writeFileSync(abs, lines.join('\n'));
 }
 
-function updateDecisionLifecycle(opts: {
-  decisionPath: string;
-  newLifecycle: Lifecycle;
-}): void {
-  const text = readFileSync(opts.decisionPath, "utf8");
+function updateDecisionLifecycle(opts: { decisionPath: string; newLifecycle: Lifecycle }): void {
+  const text = readFileSync(opts.decisionPath, 'utf8');
   const file = parseDecisionFile(text);
   file.meta.lifecycle = opts.newLifecycle;
   file.meta.updated = new Date().toISOString();
@@ -363,12 +344,12 @@ function updateDecisionLifecycle(opts: {
 
 function commitChanges(cwd: string, files: string[], message: string): void {
   try {
-    execSync(`git add ${files.map((f) => `"${f}"`).join(" ")}`, { cwd });
+    execSync(`git add ${files.map((f) => `"${f}"`).join(' ')}`, { cwd });
     // multi-line 메시지 지원 — -F로 stdin 전달
     execSync(`git commit -F -`, {
       cwd,
       input: message,
-      stdio: ["pipe", "pipe", "pipe"],
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
   } catch (e) {
     console.error(`commit 실패: ${(e as Error).message}`);
@@ -390,14 +371,14 @@ function commitChanges(cwd: string, files: string[], message: string): void {
  */
 function buildCommitMessage(action: SyncAction, report: SyncReport): string {
   switch (action.kind) {
-    case "push-create":
+    case 'push-create':
       return `chore(decision): create skeleton for ${report.ref}`;
-    case "pull-yaml-lifecycle": {
+    case 'pull-yaml-lifecycle': {
       const header = `sync(taxonomy): ${report.ref} lifecycle → ${action.newLifecycle}`;
       const body = renderEvidenceBlock(action.evidence);
       return body ? `${header}\n\n${body}` : header;
     }
-    case "pull-decision-lifecycle":
+    case 'pull-decision-lifecycle':
       return `sync(decision): ${report.ref} lifecycle → ${action.newLifecycle}`;
     default:
       return `sync: ${report.ref}`;
@@ -405,12 +386,12 @@ function buildCommitMessage(action: SyncAction, report: SyncReport): string {
 }
 
 function renderEvidenceBlock(evidence: DecisionEvidence[]): string {
-  if (evidence.length === 0) return "";
-  const lines = ["  Evidence:"];
+  if (evidence.length === 0) return '';
+  const lines = ['  Evidence:'];
   for (const e of evidence) {
     lines.push(`    - ${e.kind}: ${e.content} (weight ${e.weight})`);
   }
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function outputReport(reports: SyncReport[], opts: SyncArgs): void {
@@ -419,33 +400,31 @@ function outputReport(reports: SyncReport[], opts: SyncArgs): void {
     return;
   }
   if (reports.length === 0) {
-    console.log("✔ 동기화 대상 없음 (decisionLink를 가진 entry 없음)");
+    console.log('✔ 동기화 대상 없음 (decisionLink를 가진 entry 없음)');
     return;
   }
   for (const r of reports) {
     const tag = describeAction(r);
     console.log(`${tag}  ${r.ref}`);
-    if (r.action.kind === "conflict") {
+    if (r.action.kind === 'conflict') {
       console.log(
         `       yaml=${r.action.yaml.lifecycle}  decision=${r.action.decision.lifecycle}  evidence=${r.action.decision.evidenceCount}`,
       );
       console.log(`       옵션: --accept-yaml | --accept-decision | --merge`);
     }
-    if (r.action.kind === "noop" && r.action.reason === "markers-only") {
-      console.log(
-        `       decision markers 변경 감지 (lifecycle 동일) — commit은 사용자 몫`,
-      );
+    if (r.action.kind === 'noop' && r.action.reason === 'markers-only') {
+      console.log(`       decision markers 변경 감지 (lifecycle 동일) — commit은 사용자 몫`);
     }
   }
   const applied = reports.filter((r) => r.applied).length;
-  const conflicts = reports.filter((r) => r.action.kind === "conflict").length;
-  const noop = reports.filter((r) => r.action.kind === "noop").length;
+  const conflicts = reports.filter((r) => r.action.kind === 'conflict').length;
+  const noop = reports.filter((r) => r.action.kind === 'noop').length;
   const markersOnly = reports.filter(
-    (r) => r.action.kind === "noop" && r.action.reason === "markers-only",
+    (r) => r.action.kind === 'noop' && r.action.reason === 'markers-only',
   ).length;
-  const noCommitNote = opts.noCommit ? ", commit 생략 (--no-commit)" : "";
-  const dryNote = opts.dryRun ? " (dry-run, 미적용)" : "";
-  const markersNote = markersOnly > 0 ? `, ${markersOnly}건 markers-only` : "";
+  const noCommitNote = opts.noCommit ? ', commit 생략 (--no-commit)' : '';
+  const dryNote = opts.dryRun ? ' (dry-run, 미적용)' : '';
+  const markersNote = markersOnly > 0 ? `, ${markersOnly}건 markers-only` : '';
   console.log(
     `\n총 ${reports.length}건 — ${applied}건 적용${dryNote}${noCommitNote}, ${conflicts}건 충돌, ${noop}건 변경 없음${markersNote}`,
   );
@@ -454,12 +433,16 @@ function outputReport(reports: SyncReport[], opts: SyncArgs): void {
 
 function describeAction(r: SyncReport): string {
   switch (r.action.kind) {
-    case "push-create": return "+";
-    case "pull-yaml-lifecycle": return "←";
-    case "pull-decision-lifecycle": return "→";
-    case "conflict": return "!";
-    case "noop":
-      if (r.action.reason === "markers-only") return "≈";
-      return "✔";
+    case 'push-create':
+      return '+';
+    case 'pull-yaml-lifecycle':
+      return '←';
+    case 'pull-decision-lifecycle':
+      return '→';
+    case 'conflict':
+      return '!';
+    case 'noop':
+      if (r.action.reason === 'markers-only') return '≈';
+      return '✔';
   }
 }

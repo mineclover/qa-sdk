@@ -1,8 +1,8 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import type { TransmissionEnvelope } from "@qa-sdk/core";
-import type { Transport } from "./transport.js";
+import type { TransmissionEnvelope } from '@qa-sdk/core';
+import type { Transport } from './transport.js';
 
 /**
  * No-op transport for testing and dry-run scenarios.

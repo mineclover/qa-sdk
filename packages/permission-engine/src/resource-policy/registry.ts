@@ -17,7 +17,7 @@ import {
   type DelegateArgs,
   type RegisterArgs,
   type ResourcePolicy,
-} from "./state.js";
+} from './state.js';
 
 // ── Interface ────────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ export interface ResourcePolicyRegistry {
   listByOwner(ownerId: string): Promise<ResourcePolicy[]>;
 
   /** 상태별 리소스 목록 (배치 감사용). */
-  listByState(state: ResourcePolicy["state"]): Promise<ResourcePolicy[]>;
+  listByState(state: ResourcePolicy['state']): Promise<ResourcePolicy[]>;
 }
 
 // ── Errors ───────────────────────────────────────────────────────────────────
@@ -49,14 +49,14 @@ export interface ResourcePolicyRegistry {
 export class PolicyNotFoundError extends Error {
   constructor(public readonly resourceId: string) {
     super(`Resource policy not found: ${resourceId}`);
-    this.name = "PolicyNotFoundError";
+    this.name = 'PolicyNotFoundError';
   }
 }
 
 export class DuplicatePolicyError extends Error {
   constructor(public readonly resourceId: string) {
     super(`Resource policy already exists: ${resourceId}`);
-    this.name = "DuplicatePolicyError";
+    this.name = 'DuplicatePolicyError';
   }
 }
 
@@ -110,7 +110,7 @@ export class InMemoryResourcePolicyRegistry implements ResourcePolicyRegistry {
     return result;
   }
 
-  async listByState(state: ResourcePolicy["state"]): Promise<ResourcePolicy[]> {
+  async listByState(state: ResourcePolicy['state']): Promise<ResourcePolicy[]> {
     const result: ResourcePolicy[] = [];
     for (const p of this.store.values()) {
       if (p.state === state) result.push(p);

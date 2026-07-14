@@ -1,10 +1,10 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
-import type { ServiceEndpointStore } from "../../stores/service-endpoint-store.js";
-import { SERVICE_ENDPOINT_STORE } from "./service-topology.service.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
+import type { ServiceEndpointStore } from '../../stores/service-endpoint-store.js';
+import { SERVICE_ENDPOINT_STORE } from './service-topology.service.js';
 
 type EndpointPayload = {
   url?: string | null;
@@ -32,12 +32,16 @@ export class EndpointService {
     region?: string,
   ) {
     if (!namespace || !name || !env || !region) {
-      throw new AppError("INVALID_INPUT", "namespace, name, env, region 필수", 400);
+      throw new AppError('INVALID_INPUT', 'namespace, name, env, region 필수', 400);
     }
 
     const record = await this.endpointStore.get(catalogId, namespace, name, env, region);
     if (!record) {
-      throw new AppError("NOT_FOUND", `Endpoint not found: ${namespace}/${name}@${env}.${region}`, 404);
+      throw new AppError(
+        'NOT_FOUND',
+        `Endpoint not found: ${namespace}/${name}@${env}.${region}`,
+        404,
+      );
     }
 
     return { url: record.url };
@@ -47,10 +51,16 @@ export class EndpointService {
     return this.endpointStore.listByService(catalogId, namespace, serviceName);
   }
 
-  async get(catalogId: string, namespace: string, serviceName: string, env: string, region: string) {
+  async get(
+    catalogId: string,
+    namespace: string,
+    serviceName: string,
+    env: string,
+    region: string,
+  ) {
     const record = await this.endpointStore.get(catalogId, namespace, serviceName, env, region);
     if (!record) {
-      throw new AppError("NOT_FOUND", "Endpoint not found", 404);
+      throw new AppError('NOT_FOUND', 'Endpoint not found', 404);
     }
 
     return record;
@@ -66,7 +76,7 @@ export class EndpointService {
   ) {
     const body = this.asPayload(input);
     if (!body.url) {
-      throw new AppError("INVALID_INPUT", "url 필수", 400);
+      throw new AppError('INVALID_INPUT', 'url 필수', 400);
     }
 
     await this.endpointStore.upsert({
@@ -82,13 +92,19 @@ export class EndpointService {
     return { ok: true };
   }
 
-  async remove(catalogId: string, namespace: string, serviceName: string, env: string, region: string) {
+  async remove(
+    catalogId: string,
+    namespace: string,
+    serviceName: string,
+    env: string,
+    region: string,
+  ) {
     await this.endpointStore.delete(catalogId, namespace, serviceName, env, region);
     return { ok: true };
   }
 
   private asPayload(input: unknown): EndpointPayload {
-    if (!input || typeof input !== "object") {
+    if (!input || typeof input !== 'object') {
       return {};
     }
 

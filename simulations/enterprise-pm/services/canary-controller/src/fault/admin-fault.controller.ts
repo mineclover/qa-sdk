@@ -17,10 +17,10 @@ import {
   InternalServerErrorException,
   Param,
   Post,
-} from "@nestjs/common";
-import { z } from "zod";
-import { FaultInjector } from "./fault-injector.js";
-import { FAULT_KINDS, type FaultKind } from "./types.js";
+} from '@nestjs/common';
+import { z } from 'zod';
+import { FaultInjector } from './fault-injector.js';
+import { FAULT_KINDS, type FaultKind } from './types.js';
 
 const KindSchema = z.enum(FAULT_KINDS);
 
@@ -33,30 +33,25 @@ const BodySchema = z.object({
   target: z.unknown().optional(),
 });
 
-export const FAULT_INJECTOR_TOKEN = Symbol("FAULT_INJECTOR");
+export const FAULT_INJECTOR_TOKEN = Symbol('FAULT_INJECTOR');
 
-const ERR_VALIDATION = "https://qa-sdk.dev/errors/validation";
-const ERR_STORE_FAILURE = "https://qa-sdk.dev/errors/store-failure";
+const ERR_VALIDATION = 'https://qa-sdk.dev/errors/validation';
+const ERR_STORE_FAILURE = 'https://qa-sdk.dev/errors/store-failure';
 
-@Controller("admin/fault")
+@Controller('admin/fault')
 export class AdminFaultController {
   /**
    * spec §6 응답 shape `active` 도출용 — admin endpoint 가 enable/disable 후 자체적으로
    * 추적 (기존 4 Fault 클래스가 isEnabled 를 노출하지 않는 backward compat 이슈 대응).
    * 신규 2 클래스는 isEnabled() 를 노출하지만, 응답 일관성을 위해 본 sideMap 을 SSOT 로 한다.
    */
-  private readonly active = new Map<
-    FaultKind,
-    { params: unknown; target: unknown }
-  >();
+  private readonly active = new Map<FaultKind, { params: unknown; target: unknown }>();
 
-  constructor(
-    @Inject(FAULT_INJECTOR_TOKEN) private readonly injector: FaultInjector,
-  ) {}
+  constructor(@Inject(FAULT_INJECTOR_TOKEN) private readonly injector: FaultInjector) {}
 
-  @Post(":kind")
+  @Post(':kind')
   async toggle(
-    @Param("kind") kindRaw: string,
+    @Param('kind') kindRaw: string,
     @Body() bodyRaw: unknown,
   ): Promise<{
     kind: FaultKind;
@@ -68,20 +63,18 @@ export class AdminFaultController {
     if (!kindParsed.success) {
       throw new BadRequestException({
         type: ERR_VALIDATION,
-        title: "unknown fault kind",
+        title: 'unknown fault kind',
         status: 400,
-        detail: `kind=${kindRaw} (allowed: ${FAULT_KINDS.join(", ")})`,
+        detail: `kind=${kindRaw} (allowed: ${FAULT_KINDS.join(', ')})`,
       });
     }
     const bodyParsed = BodySchema.safeParse(bodyRaw);
     if (!bodyParsed.success) {
       throw new BadRequestException({
         type: ERR_VALIDATION,
-        title: "fault body invalid",
+        title: 'fault body invalid',
         status: 400,
-        detail: bodyParsed.error.issues
-          .map((i) => `${i.path.join(".")}: ${i.message}`)
-          .join("; "),
+        detail: bodyParsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
       });
     }
     const kind = kindParsed.data;
@@ -95,7 +88,7 @@ export class AdminFaultController {
         // FaultInjector.enable 은 단순 위임이라 throw 는 fault 클래스 측의 zod/throw.
         throw new BadRequestException({
           type: ERR_VALIDATION,
-          title: "fault params invalid",
+          title: 'fault params invalid',
           status: 400,
           detail: (err as Error).message,
         });
@@ -107,7 +100,7 @@ export class AdminFaultController {
       } catch (err) {
         throw new InternalServerErrorException({
           type: ERR_STORE_FAILURE,
-          title: "fault disable failed",
+          title: 'fault disable failed',
           status: 500,
           detail: (err as Error).message,
         });

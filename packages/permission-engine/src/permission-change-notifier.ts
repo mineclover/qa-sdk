@@ -15,8 +15,8 @@
  *   보안 이슈, 긴급 권한 회수 시 사용.
  */
 
-import { type PermissionVersionStore } from "./permission-version.js";
-import { type AuthProvider } from "./auth-provider.js";
+import { type PermissionVersionStore } from './permission-version.js';
+import { type AuthProvider } from './auth-provider.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,10 +61,7 @@ export class PermissionChangeNotifier {
    * 여러 유저의 권한 변경을 동시에 알린다.
    * 예: org role 정의가 바뀌어서 해당 org role을 가진 모든 유저에게 영향
    */
-  async notifyBatch(
-    userIds: readonly string[],
-    opts: NotifyOptions = {},
-  ): Promise<NotifyResult[]> {
-    return Promise.all(userIds.map(id => this.notify(id, opts)));
+  async notifyBatch(userIds: readonly string[], opts: NotifyOptions = {}): Promise<NotifyResult[]> {
+    return Promise.all(userIds.map((id) => this.notify(id, opts)));
   }
 }

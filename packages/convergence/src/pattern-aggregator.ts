@@ -11,7 +11,7 @@ import type {
   PatternHealthReport,
   BehaviorPattern,
   IdentificationMode,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 /**
  * 분류 결과 배열에서 패턴별 통계를 집계한다.
@@ -20,14 +20,17 @@ export function aggregatePatternStats(
   classifications: readonly PatternClassification[],
 ): PatternStats[] {
   const total = classifications.length || 1;
-  const groups = new Map<string, {
-    pattern: BehaviorPattern;
-    identificationMode: IdentificationMode;
-    count: number;
-    totalEvents: number;
-    totalDuration: number;
-    lastSeen: string;
-  }>();
+  const groups = new Map<
+    string,
+    {
+      pattern: BehaviorPattern;
+      identificationMode: IdentificationMode;
+      count: number;
+      totalEvents: number;
+      totalDuration: number;
+      lastSeen: string;
+    }
+  >();
 
   for (const c of classifications) {
     const key = `${c.identificationMode}:${c.pattern}`;
@@ -50,7 +53,7 @@ export function aggregatePatternStats(
   }
 
   return [...groups.values()]
-    .map(g => ({
+    .map((g) => ({
       pattern: g.pattern,
       identificationMode: g.identificationMode,
       count: g.count,
@@ -72,15 +75,15 @@ export function buildPatternHealthReport(
   const stats = aggregatePatternStats(classifications);
   const total = classifications.length || 1;
 
-  const unclassifiedCount = classifications.filter(c => c.pattern === "unclassified").length;
+  const unclassifiedCount = classifications.filter((c) => c.pattern === 'unclassified').length;
   const identifiedCount = classifications.filter(
-    c => c.identificationMode === "identified" || c.identificationMode === "pseudonymized",
+    (c) => c.identificationMode === 'identified' || c.identificationMode === 'pseudonymized',
   ).length;
 
   return {
     totalSessions: classifications.length,
     stats,
-    classificationRate: 1 - (unclassifiedCount / total),
+    classificationRate: 1 - unclassifiedCount / total,
     identifiedRate: identifiedCount / total,
     anomalyCount,
     generatedAt: new Date().toISOString(),

@@ -1,35 +1,32 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  APPROVAL_DB_INSTANCE,
-  type ApprovalDbInstanceHandle,
-} from "../approval-db.module.js";
+import { APPROVAL_DB_INSTANCE, type ApprovalDbInstanceHandle } from '../approval-db.module.js';
 
-import { ExpenseRepositoryPort } from "./application/ports/expense-repository.port.js";
-import { ExpenseReadModelQuery } from "./application/queries/expense-read-model.query.js";
-import { ExpenseUseCase } from "./application/use-cases/expense.use-case.js";
+import { ExpenseRepositoryPort } from './application/ports/expense-repository.port.js';
+import { ExpenseReadModelQuery } from './application/queries/expense-read-model.query.js';
+import { ExpenseUseCase } from './application/use-cases/expense.use-case.js';
 
-import { createExpenseRepository } from "./infrastructure/persistence/expense.repository.js";
-import { createExpenseTransactionPort } from "./infrastructure/transaction/expense.transaction.js";
-import { createExpenseOutboxPort } from "./infrastructure/outbox/expense.outbox.js";
-import { createExpenseLogger } from "./infrastructure/logging/expense.logger.js";
-import { RepositoryExpenseReadModel } from "./infrastructure/read-model/expense.read-model.js";
+import { createExpenseRepository } from './infrastructure/persistence/expense.repository.js';
+import { createExpenseTransactionPort } from './infrastructure/transaction/expense.transaction.js';
+import { createExpenseOutboxPort } from './infrastructure/outbox/expense.outbox.js';
+import { createExpenseLogger } from './infrastructure/logging/expense.logger.js';
+import { RepositoryExpenseReadModel } from './infrastructure/read-model/expense.read-model.js';
 
-import { ExpenseController } from "./presentation/http/expense.controller.js";
-import { ExpenseDetailBff } from "./presentation/bff/expense-detail.bff.js";
-import { ExpenseDetailController } from "./presentation/bff/expense-detail.controller.js";
+import { ExpenseController } from './presentation/http/expense.controller.js';
+import { ExpenseDetailBff } from './presentation/bff/expense-detail.bff.js';
+import { ExpenseDetailController } from './presentation/bff/expense-detail.controller.js';
 
-const EXPENSE_TRANSACTION_PORT = Symbol.for("sim-approval-api/expense/TransactionPort");
-const EXPENSE_OUTBOX_PORT = Symbol.for("sim-approval-api/expense/OutboxPort");
+const EXPENSE_TRANSACTION_PORT = Symbol.for('sim-approval-api/expense/TransactionPort');
+const EXPENSE_OUTBOX_PORT = Symbol.for('sim-approval-api/expense/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: ExpenseRepositoryPort,
@@ -71,18 +68,12 @@ const useCaseProvider: Provider = {
     transaction: TransactionPort,
     logger: LoggerPort,
   ) => new ExpenseUseCase(repo, outbox, transaction, logger),
-  inject: [
-    ExpenseRepositoryPort,
-    EXPENSE_OUTBOX_PORT,
-    EXPENSE_TRANSACTION_PORT,
-    SLICE_LOGGER_PORT,
-  ],
+  inject: [ExpenseRepositoryPort, EXPENSE_OUTBOX_PORT, EXPENSE_TRANSACTION_PORT, SLICE_LOGGER_PORT],
 };
 
 const detailBffProvider: Provider = {
   provide: ExpenseDetailBff,
-  useFactory: (rm: ExpenseReadModelQuery, logger: LoggerPort) =>
-    new ExpenseDetailBff(rm, logger),
+  useFactory: (rm: ExpenseReadModelQuery, logger: LoggerPort) => new ExpenseDetailBff(rm, logger),
   inject: [ExpenseReadModelQuery, SLICE_LOGGER_PORT],
 };
 
@@ -103,11 +94,6 @@ const detailBffProvider: Provider = {
     detailBffProvider,
   ],
   controllers: [ExpenseController, ExpenseDetailController],
-  exports: [
-    ExpenseRepositoryPort,
-    ExpenseReadModelQuery,
-    ExpenseUseCase,
-    ExpenseDetailBff,
-  ],
+  exports: [ExpenseRepositoryPort, ExpenseReadModelQuery, ExpenseUseCase, ExpenseDetailBff],
 })
 export class ExpenseSliceModule {}

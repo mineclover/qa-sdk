@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "description": "Fixture-first Data Structure Profile parser, validator, and compiler.",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "data-structure-profile": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,12 +24,6 @@
       "import": "./dist/cli.js"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

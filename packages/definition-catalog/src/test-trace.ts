@@ -12,8 +12,8 @@
  *   test-trace: traces_to 역추적 → "어떤 테스트가 검증하는가"
  */
 
-import type { DefinitionEntry, DefinitionLink } from "./types.js";
-import { analyzeImpact } from "./impact.js";
+import type { DefinitionEntry, DefinitionLink } from './types.js';
+import { analyzeImpact } from './impact.js';
 
 /** 테스트 참조 1건 */
 export interface TestRef {
@@ -48,7 +48,7 @@ export interface TestTraceResult {
 export function traceTests(
   changedDocId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
 ): TestTraceResult {
   // 직접 traces_to 역추적: 이 문서를 traces_to로 가리키는 validation 문서
   const directTests = findTracesToValidation(changedDocId, getEntry, getLinks);
@@ -58,7 +58,7 @@ export function traceTests(
 
   // 영향받는 각 문서에서도 traces_to 역추적
   const impactedTests: TestRef[] = [];
-  const seen = new Set(directTests.map(t => t.validationDocId));
+  const seen = new Set(directTests.map((t) => t.validationDocId));
 
   for (const impacted of impact.impacted) {
     const tests = findTracesToValidation(impacted.id, getEntry, getLinks);
@@ -82,17 +82,17 @@ export function traceTests(
 function findTracesToValidation(
   docId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
 ): TestRef[] {
-  const incoming = getLinks(docId, "incoming");
+  const incoming = getLinks(docId, 'incoming');
   const result: TestRef[] = [];
 
   for (const link of incoming) {
-    if (link.linkType !== "traces_to") continue;
+    if (link.linkType !== 'traces_to') continue;
     const source = getEntry(link.sourceId);
     if (!source) continue;
     // validation depth 문서만 (테스트/검증 문서)
-    if (source.depth === "validation") {
+    if (source.depth === 'validation') {
       result.push({
         validationDocId: source.id,
         verifiedDocId: docId,

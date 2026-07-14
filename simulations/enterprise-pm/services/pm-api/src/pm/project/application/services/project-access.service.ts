@@ -1,17 +1,13 @@
 // @def.boundary sim-pm-api
 // @def.doc authorization-ontology-resource-lifecycle
 
-import { randomBytes } from "node:crypto";
-import { Inject, Injectable } from "@nestjs/common";
-import type { AccessChecker, AccessResult, ApiCall } from "permission-engine";
-import { PROJECT_ACCESS_CHECKER } from "../../../../auth-deps/access-checker.module.js";
-import type { CurrentUserContext } from "../../../../auth-deps/current-user.decorator.js";
+import { randomBytes } from 'node:crypto';
+import { Inject, Injectable } from '@nestjs/common';
+import type { AccessChecker, AccessResult, ApiCall } from 'permission-engine';
+import { PROJECT_ACCESS_CHECKER } from '../../../../auth-deps/access-checker.module.js';
+import type { CurrentUserContext } from '../../../../auth-deps/current-user.decorator.js';
 
-export type ProjectApiId =
-  | "project.create"
-  | "project.read"
-  | "project.update"
-  | "project.delete";
+export type ProjectApiId = 'project.create' | 'project.read' | 'project.update' | 'project.delete';
 
 export interface ProjectCheckInput {
   apiId: ProjectApiId;
@@ -43,25 +39,23 @@ export interface ProjectCheckResult {
  * buildDefaultUnion labels (project.create/read/update/delete) 순서와 1:1.
  */
 const PROJECT_API_COORDS: Record<ProjectApiId, number[]> = {
-  "project.create": [1],
-  "project.read": [2],
-  "project.update": [3],
-  "project.delete": [4],
+  'project.create': [1],
+  'project.read': [2],
+  'project.update': [3],
+  'project.delete': [4],
 };
 
 function newSpanId(): string {
-  return randomBytes(8).toString("hex");
+  return randomBytes(8).toString('hex');
 }
 
 function newTraceId(): string {
-  return randomBytes(16).toString("hex");
+  return randomBytes(16).toString('hex');
 }
 
 @Injectable()
 export class ProjectAccessService {
-  constructor(
-    @Inject(PROJECT_ACCESS_CHECKER) private readonly checker: AccessChecker,
-  ) {}
+  constructor(@Inject(PROJECT_ACCESS_CHECKER) private readonly checker: AccessChecker) {}
 
   async check(input: ProjectCheckInput): Promise<ProjectCheckResult> {
     const hasResource =
@@ -71,7 +65,7 @@ export class ProjectAccessService {
 
     const call: ApiCall = hasResource
       ? {
-          kind: "resource",
+          kind: 'resource',
           apiId: input.apiId,
           coords: PROJECT_API_COORDS[input.apiId],
           targetId: input.targetId!,
@@ -90,7 +84,7 @@ export class ProjectAccessService {
           },
         }
       : {
-          kind: "transaction",
+          kind: 'transaction',
           apiId: input.apiId,
           coords: PROJECT_API_COORDS[input.apiId],
           targetId: input.targetId ?? input.apiId,
@@ -100,13 +94,13 @@ export class ProjectAccessService {
       {
         userId: input.user.userId,
         bitmap: {
-          prefix: "sim.bitmap",
+          prefix: 'sim.bitmap',
           v: input.user.bitmapVersion,
           mask: input.user.bitmapMask,
           issuedAt: new Date().toISOString(),
           expiresAt: new Date(Date.now() + 3600_000).toISOString(),
-          issuer: "sim-pm-api",
-          signature: "", // verify 는 caller 가 이미 수행 (gateway)
+          issuer: 'sim-pm-api',
+          signature: '', // verify 는 caller 가 이미 수행 (gateway)
         },
         parentSpanId: null,
         traceId: newTraceId(),

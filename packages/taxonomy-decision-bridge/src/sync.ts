@@ -1,7 +1,7 @@
-import type { EntryIR, Lifecycle } from "taxonomy-engine";
-import type { DecisionFile, DecisionEvidence } from "./decision-file.js";
+import type { EntryIR, Lifecycle } from 'taxonomy-engine';
+import type { DecisionFile, DecisionEvidence } from './decision-file.js';
 
-export type ConflictResolution = "accept-yaml" | "accept-decision" | "merge";
+export type ConflictResolution = 'accept-yaml' | 'accept-decision' | 'merge';
 
 export type SyncOptions = {
   /** 충돌 시 해소 방식. 누락 시 "conflict" 액션 반환 (호출자가 interactive prompt). */
@@ -10,31 +10,31 @@ export type SyncOptions = {
 
 export type SyncAction =
   | {
-      kind: "noop";
+      kind: 'noop';
       reason:
-        | "no-decision-link"
-        | "lifecycle-missing"
-        | "in-sync"
-        | "in-sync-tbd-draft"
-        | "markers-only";
+        | 'no-decision-link'
+        | 'lifecycle-missing'
+        | 'in-sync'
+        | 'in-sync-tbd-draft'
+        | 'markers-only';
     }
   | {
-      kind: "push-create";
+      kind: 'push-create';
       subject: string;
       question: string;
       initialLifecycle: Lifecycle;
     }
   | {
-      kind: "pull-yaml-lifecycle";
+      kind: 'pull-yaml-lifecycle';
       newLifecycle: Lifecycle;
       evidence: DecisionEvidence[];
     }
   | {
-      kind: "pull-decision-lifecycle";
+      kind: 'pull-decision-lifecycle';
       newLifecycle: Lifecycle;
     }
   | {
-      kind: "conflict";
+      kind: 'conflict';
       yaml: { lifecycle: Lifecycle };
       decision: { lifecycle: Lifecycle; evidenceCount: number };
     };
@@ -70,19 +70,19 @@ export function computeSyncAction(
   options: SyncOptions = {},
 ): SyncAction {
   if (!yamlEntry.decisionLink) {
-    return { kind: "noop", reason: "no-decision-link" };
+    return { kind: 'noop', reason: 'no-decision-link' };
   }
   if (yamlEntry.lifecycle === undefined) {
-    return { kind: "noop", reason: "lifecycle-missing" };
+    return { kind: 'noop', reason: 'lifecycle-missing' };
   }
 
   // decision 파일 없음 → push-create
   if (!decisionFile) {
     return {
-      kind: "push-create",
+      kind: 'push-create',
       subject,
-      question: yamlEntry.placeholderReason ?? "(질문 미정)",
-      initialLifecycle: "draft",
+      question: yamlEntry.placeholderReason ?? '(질문 미정)',
+      initialLifecycle: 'draft',
     };
   }
 
@@ -91,27 +91,27 @@ export function computeSyncAction(
 
   // 부채 #1: yaml tbd + decision draft → "결정 시작 전" 동일 상태로 간주.
   // 사용자가 yaml에 박은 tbd 표시는 의도적이므로 보존.
-  if (yamlLc === "tbd" && decisionLc === "draft") {
+  if (yamlLc === 'tbd' && decisionLc === 'draft') {
     // markers 변경 여부도 같이 검토 (부채 #8) — draft 상태에서도 evidence 수집은 진행될 수 있음
     if (markersChanged(decisionFile, state.previousDecision)) {
-      return { kind: "noop", reason: "markers-only" };
+      return { kind: 'noop', reason: 'markers-only' };
     }
-    return { kind: "noop", reason: "in-sync-tbd-draft" };
+    return { kind: 'noop', reason: 'in-sync-tbd-draft' };
   }
 
   if (yamlLc === decisionLc) {
     // 부채 #8: lifecycle 동일하지만 markers만 변경된 경우 별도 보고.
     if (markersChanged(decisionFile, state.previousDecision)) {
-      return { kind: "noop", reason: "markers-only" };
+      return { kind: 'noop', reason: 'markers-only' };
     }
-    return { kind: "noop", reason: "in-sync" };
+    return { kind: 'noop', reason: 'in-sync' };
   }
 
   // 양쪽 모두 변경 → 충돌
   if (state.yamlChanged && state.decisionChanged) {
     if (!options.conflict) {
       return {
-        kind: "conflict",
+        kind: 'conflict',
         yaml: { lifecycle: yamlLc },
         decision: {
           lifecycle: decisionLc,
@@ -119,22 +119,22 @@ export function computeSyncAction(
         },
       };
     }
-    if (options.conflict === "accept-yaml") {
+    if (options.conflict === 'accept-yaml') {
       return {
-        kind: "pull-decision-lifecycle",
+        kind: 'pull-decision-lifecycle',
         newLifecycle: yamlLc,
       };
     }
-    if (options.conflict === "accept-decision") {
+    if (options.conflict === 'accept-decision') {
       return {
-        kind: "pull-yaml-lifecycle",
+        kind: 'pull-yaml-lifecycle',
         newLifecycle: decisionLc,
         evidence: decisionFile.markers.evidence,
       };
     }
     // merge: yaml lifecycle 우선 + decision evidence 보존 → yaml 갱신
     return {
-      kind: "pull-yaml-lifecycle",
+      kind: 'pull-yaml-lifecycle',
       newLifecycle: yamlLc,
       evidence: decisionFile.markers.evidence,
     };
@@ -143,14 +143,14 @@ export function computeSyncAction(
   // yaml만 변경 (decision 변경 없음) → decision에 반영
   if (state.yamlChanged && !state.decisionChanged) {
     return {
-      kind: "pull-decision-lifecycle",
+      kind: 'pull-decision-lifecycle',
       newLifecycle: yamlLc,
     };
   }
 
   // decision만 변경 또는 변경 정보 모름 → yaml에 반영 (단순 lifecycle 비교 폴백)
   return {
-    kind: "pull-yaml-lifecycle",
+    kind: 'pull-yaml-lifecycle',
     newLifecycle: decisionLc,
     evidence: decisionFile.markers.evidence,
   };
@@ -160,10 +160,7 @@ export function computeSyncAction(
  * decision 파일의 markers(evidence/option/outcome 등)가 직전 상태 대비 변경됐는지 판단.
  * previousDecision이 없으면 비교 불가 → false 반환 (보수적).
  */
-function markersChanged(
-  current: DecisionFile,
-  previous: DecisionFile | undefined,
-): boolean {
+function markersChanged(current: DecisionFile, previous: DecisionFile | undefined): boolean {
   if (!previous) return false;
   const cur = current.markers;
   const prev = previous.markers;

@@ -7,16 +7,42 @@
       "owner": "sim-approval-owner"
     },
     "glossary": [
-      { "term": "BudgetRequest", "description": "An employee's request to allocate budget to a project." },
-      { "term": "ApprovalStage", "description": "Discrete approval step. Determined by amount: <1M=1, <10M=2, ≥10M=3." }
+      {
+        "term": "BudgetRequest",
+        "description": "An employee's request to allocate budget to a project."
+      },
+      {
+        "term": "ApprovalStage",
+        "description": "Discrete approval step. Determined by amount: <1M=1, <10M=2, ≥10M=3."
+      }
     ],
     "lineage": [
-      { "name": "budget-write-path", "from": "approval.budget_requests", "to": "approval.outbox_events", "via": "transactional-outbox" },
-      { "name": "budget-read-path", "from": "approval.outbox_events", "to": "reporting.budget_read_model", "via": "budget-read-model-sync" }
+      {
+        "name": "budget-write-path",
+        "from": "approval.budget_requests",
+        "to": "approval.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "budget-read-path",
+        "from": "approval.outbox_events",
+        "to": "reporting.budget_read_model",
+        "via": "budget-read-model-sync"
+      }
     ],
     "qualityTests": [
-      { "name": "budget_status_values", "type": "columnValuesToBeInSet", "entity": "approval.budget_requests.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] },
-      { "name": "budget_amount_positive", "type": "columnValuesToBeBetween", "entity": "approval.budget_requests.amount", "min": 0 }
+      {
+        "name": "budget_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "approval.budget_requests.status",
+        "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"]
+      },
+      {
+        "name": "budget_amount_positive",
+        "type": "columnValuesToBeBetween",
+        "entity": "approval.budget_requests.amount",
+        "min": 0
+      }
     ]
   },
   "cacheKeys": [

@@ -1,15 +1,19 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { toUserId, toRoleId, makeRoleAssignmentId } from "./role-assignment.ids.js";
-import { InvalidScopeException } from "./role-assignment.exceptions.js";
+import { toUserId, toRoleId, makeRoleAssignmentId } from './role-assignment.ids.js';
+import { InvalidScopeException } from './role-assignment.exceptions.js';
 import type {
   AssignmentScopeType,
   RoleAssignmentProps,
   RoleAssignmentSnapshot,
-} from "./role-assignment.types.js";
+} from './role-assignment.types.js';
 
-const ALLOWED_SCOPES: ReadonlySet<AssignmentScopeType> = new Set(["global", "department", "project"]);
+const ALLOWED_SCOPES: ReadonlySet<AssignmentScopeType> = new Set([
+  'global',
+  'department',
+  'project',
+]);
 
 /**
  * RoleAssignment Aggregate Root.
@@ -33,7 +37,10 @@ export class RoleAssignmentEntity {
     if (!ALLOWED_SCOPES.has(input.scopeType)) {
       throw new InvalidScopeException(`Unknown scopeType=${input.scopeType}`);
     }
-    if ((input.scopeType === "department" || input.scopeType === "project") && input.scopeId === null) {
+    if (
+      (input.scopeType === 'department' || input.scopeType === 'project') &&
+      input.scopeId === null
+    ) {
       throw new InvalidScopeException(
         `scopeType=${input.scopeType} requires scopeId to be non-null.`,
       );
@@ -51,7 +58,12 @@ export class RoleAssignmentEntity {
 
   static rehydrate(snapshot: RoleAssignmentSnapshot): RoleAssignmentEntity {
     return new RoleAssignmentEntity({
-      id: makeRoleAssignmentId(snapshot.userId, snapshot.roleId, snapshot.scopeType, snapshot.scopeId),
+      id: makeRoleAssignmentId(
+        snapshot.userId,
+        snapshot.roleId,
+        snapshot.scopeType,
+        snapshot.scopeId,
+      ),
       userId: toUserId(snapshot.userId),
       roleId: toRoleId(snapshot.roleId),
       scopeType: snapshot.scopeType,

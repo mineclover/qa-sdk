@@ -1,17 +1,17 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { describe, expect, it } from "vitest";
-import * as schema from "../../db/schema.js";
-import { SqlDocStore } from "../../stores/doc-store.js";
-import { SqlSemanticGroundingStore } from "../../stores/semantic-grounding-store.js";
-import type { DocRecord } from "../../core/types.js";
-import { normalizeSemanticText } from "../../core/semantic-grounding/normalize.js";
-import { DocsService } from "./docs.service.js";
-import { SemanticGroundingService } from "../semantic-grounding/semantic-grounding.service.js";
-import type { SearchService } from "../search/search.service.js";
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { describe, expect, it } from 'vitest';
+import * as schema from '../../db/schema.js';
+import { SqlDocStore } from '../../stores/doc-store.js';
+import { SqlSemanticGroundingStore } from '../../stores/semantic-grounding-store.js';
+import type { DocRecord } from '../../core/types.js';
+import { normalizeSemanticText } from '../../core/semantic-grounding/normalize.js';
+import { DocsService } from './docs.service.js';
+import { SemanticGroundingService } from '../semantic-grounding/semantic-grounding.service.js';
+import type { SearchService } from '../search/search.service.js';
 
 function createDatabase() {
-  const raw = new Database(":memory:");
+  const raw = new Database(':memory:');
   raw.exec(`
     CREATE TABLE documents (
       doc_id text PRIMARY KEY NOT NULL,
@@ -158,26 +158,26 @@ function createDatabase() {
 
 function makeDoc(): DocRecord {
   return {
-    docId: "prefix-cart_event",
-    title: "Cart Event Canonical",
-    scope: "data",
-    aspect: "domain_data",
-    depth: "overview",
-    lifecycle: "approved",
-    tags: ["cart"],
+    docId: 'prefix-cart_event',
+    title: 'Cart Event Canonical',
+    scope: 'data',
+    aspect: 'domain_data',
+    depth: 'overview',
+    lifecycle: 'approved',
+    tags: ['cart'],
     links: [],
-    address: "cart_event:v2:10",
-    targetPrefix: "cart_event",
+    address: 'cart_event:v2:10',
+    targetPrefix: 'cart_event',
     version: 1,
-    bodyHash: "hash",
-    purpose: "Canonical cart event document.",
-    context: "aliases: 상품 담기",
-    syncedAt: "2026-06-30T00:00:00.000Z",
+    bodyHash: 'hash',
+    purpose: 'Canonical cart event document.',
+    context: 'aliases: 상품 담기',
+    syncedAt: '2026-06-30T00:00:00.000Z',
   };
 }
 
-describe("semantic document search integration", () => {
-  it("grounds an alias to the canonical document through SQLite semantic tables", () => {
+describe('semantic document search integration', () => {
+  it('grounds an alias to the canonical document through SQLite semantic tables', () => {
     const db = createDatabase();
     const docStore = new SqlDocStore(db);
     const semanticStore = new SqlSemanticGroundingStore(db);
@@ -199,65 +199,73 @@ describe("semantic document search integration", () => {
       semantic,
     );
 
-    docStore.upsert(makeDoc(), "Canonical cart event document.");
+    docStore.upsert(makeDoc(), 'Canonical cart event document.');
     const materialized = semantic.materializeDocuments(docStore.list({ limit: 100 }));
 
-    const plan = semantic.planDocumentSearch("상품 담기");
-    const result = docs.listPaginated({ q: "상품 담기", limit: 10, offset: 0 });
-    const aliasRows = rawRows<{ alias: string; normalized_alias: string; source: string; locale: string | null }>(
+    const plan = semantic.planDocumentSearch('상품 담기');
+    const result = docs.listPaginated({ q: '상품 담기', limit: 10, offset: 0 });
+    const aliasRows = rawRows<{
+      alias: string;
+      normalized_alias: string;
+      source: string;
+      locale: string | null;
+    }>(
       db,
-      "SELECT alias, normalized_alias, source, locale FROM semantic_aliases ORDER BY alias_id",
+      'SELECT alias, normalized_alias, source, locale FROM semantic_aliases ORDER BY alias_id',
     );
-    const termRows = rawRows<{ doc_id: string | null; canonical_label: string; coordinate: string | null }>(
-      db,
-      "SELECT doc_id, canonical_label, coordinate FROM semantic_terms ORDER BY term_id",
-    );
+    const termRows = rawRows<{
+      doc_id: string | null;
+      canonical_label: string;
+      coordinate: string | null;
+    }>(db, 'SELECT doc_id, canonical_label, coordinate FROM semantic_terms ORDER BY term_id');
     const eventRows = rawRows<{ query: string; outcome: string }>(
       db,
-      "SELECT query, outcome FROM semantic_grounding_events ORDER BY created_at",
+      'SELECT query, outcome FROM semantic_grounding_events ORDER BY created_at',
     );
 
-    expect(normalizeSemanticText("상품 담기")).toBe("상품 담기");
+    expect(normalizeSemanticText('상품 담기')).toBe('상품 담기');
     expect(materialized).toEqual({ terms: 1, aliases: 4 });
     expect(aliasRows).toHaveLength(4);
-    expect(aliasRows).toEqual(expect.arrayContaining([
-      {
-        alias: "cart",
-        normalized_alias: "cart",
-        source: "document",
-        locale: null,
-      },
-      {
-        alias: "cart_event",
-        normalized_alias: "cart event",
-        source: "document",
-        locale: null,
-      },
-      {
-        alias: "prefix-cart_event",
-        normalized_alias: "prefix cart event",
-        source: "document",
-        locale: null,
-      },
-      {
-        alias: "상품 담기",
-        normalized_alias: "상품 담기",
-        source: "deterministic-label",
-        locale: "ko",
-      },
-    ]));
+    expect(aliasRows).toEqual(
+      expect.arrayContaining([
+        {
+          alias: 'cart',
+          normalized_alias: 'cart',
+          source: 'document',
+          locale: null,
+        },
+        {
+          alias: 'cart_event',
+          normalized_alias: 'cart event',
+          source: 'document',
+          locale: null,
+        },
+        {
+          alias: 'prefix-cart_event',
+          normalized_alias: 'prefix cart event',
+          source: 'document',
+          locale: null,
+        },
+        {
+          alias: '상품 담기',
+          normalized_alias: '상품 담기',
+          source: 'deterministic-label',
+          locale: 'ko',
+        },
+      ]),
+    );
     expect(termRows).toEqual([
       {
-        doc_id: "prefix-cart_event",
-        canonical_label: "Cart Event Canonical",
-        coordinate: "cart_event:v2:10",
+        doc_id: 'prefix-cart_event',
+        canonical_label: 'Cart Event Canonical',
+        coordinate: 'cart_event:v2:10',
       },
     ]);
-    expect(plan.candidateDocIds).toEqual(["prefix-cart_event"]);
+    expect(plan.candidateDocIds).toEqual(['prefix-cart_event']);
     expect(result.total).toBe(1);
-    expect(result.docs.map((item) => item.docId)).toEqual(["prefix-cart_event"]);
-    expect(eventRows).toEqual([{ query: "상품 담기", outcome: "semantic-hit" }]);
-    expect(legacyQueries).toEqual(["상품 담기", "상품 담기:count"]);
+    expect(result.docs.map((item) => item.docId)).toEqual(['prefix-cart_event']);
+    expect(eventRows).toEqual([{ query: '상품 담기', outcome: 'semantic-hit' }]);
+    expect(legacyQueries).toEqual(['상품 담기', '상품 담기:count']);
   });
 });
 

@@ -2,7 +2,7 @@ import type {
   InformationFacetKind,
   TransmissionMedium,
   TransmissionSemantic,
-} from "./runtime-core.js";
+} from './runtime-core.js';
 
 export interface DataFlowField {
   field: string;
@@ -12,42 +12,36 @@ export interface DataFlowField {
   schemaId?: string;
 }
 
-export const CORRIDOR_TEMPLATE_KINDS = [
-  "pipe_graph",
-  "event_record_observed",
-] as const;
+export const CORRIDOR_TEMPLATE_KINDS = ['pipe_graph', 'event_record_observed'] as const;
 
 export type CorridorTemplateKind = (typeof CORRIDOR_TEMPLATE_KINDS)[number];
 
 export const CORRIDOR_ENDPOINT_TEMPLATE_KINDS = [
-  "port",
-  "contract_field",
-  "payload_root",
-  "payload_field",
-  "address_binding",
+  'port',
+  'contract_field',
+  'payload_root',
+  'payload_field',
+  'address_binding',
 ] as const;
 
-export type CorridorEndpointTemplateKind =
-  (typeof CORRIDOR_ENDPOINT_TEMPLATE_KINDS)[number];
+export type CorridorEndpointTemplateKind = (typeof CORRIDOR_ENDPOINT_TEMPLATE_KINDS)[number];
 
 export const CORRIDOR_CONTRACT_TEMPLATE_KINDS = [
-  "pipe_contract",
-  "event_record_contract",
-  "address_binding_contract",
+  'pipe_contract',
+  'event_record_contract',
+  'address_binding_contract',
 ] as const;
 
-export type CorridorContractTemplateKind =
-  (typeof CORRIDOR_CONTRACT_TEMPLATE_KINDS)[number];
+export type CorridorContractTemplateKind = (typeof CORRIDOR_CONTRACT_TEMPLATE_KINDS)[number];
 
 export const CORRIDOR_LINK_TEMPLATE_KINDS = [
-  "pipe_connection",
-  "lineage_link",
-  "payload_projection",
-  "observation_link",
+  'pipe_connection',
+  'lineage_link',
+  'payload_projection',
+  'observation_link',
 ] as const;
 
-export type CorridorLinkTemplateKind =
-  (typeof CORRIDOR_LINK_TEMPLATE_KINDS)[number];
+export type CorridorLinkTemplateKind = (typeof CORRIDOR_LINK_TEMPLATE_KINDS)[number];
 
 export interface CorridorTemplate {
   kind: CorridorTemplateKind;
@@ -67,22 +61,21 @@ export interface CorridorTemplateRegistry {
 
 export const DEFAULT_CORRIDOR_TEMPLATES = {
   pipe_graph: {
-    kind: "pipe_graph",
-    description:
-      "Corridor materialized from PipeGraph and optional schema/lineage alignment",
-    allowedEndpointKinds: ["port", "contract_field"],
-    allowedContractKinds: ["pipe_contract"],
-    allowedLinkKinds: ["pipe_connection", "lineage_link"],
+    kind: 'pipe_graph',
+    description: 'Corridor materialized from PipeGraph and optional schema/lineage alignment',
+    allowedEndpointKinds: ['port', 'contract_field'],
+    allowedContractKinds: ['pipe_contract'],
+    allowedLinkKinds: ['pipe_connection', 'lineage_link'],
   },
   event_record_observed: {
-    kind: "event_record_observed",
+    kind: 'event_record_observed',
     description:
-      "Synthetic observed corridor materialized from EventRecord payload and address_context",
-    allowedEndpointKinds: ["payload_root", "payload_field", "address_binding"],
-    requiredEndpointKinds: ["payload_root"],
-    allowedContractKinds: ["event_record_contract", "address_binding_contract"],
-    requiredContractKinds: ["event_record_contract"],
-    allowedLinkKinds: ["payload_projection", "observation_link"],
+      'Synthetic observed corridor materialized from EventRecord payload and address_context',
+    allowedEndpointKinds: ['payload_root', 'payload_field', 'address_binding'],
+    requiredEndpointKinds: ['payload_root'],
+    allowedContractKinds: ['event_record_contract', 'address_binding_contract'],
+    requiredContractKinds: ['event_record_contract'],
+    allowedLinkKinds: ['payload_projection', 'observation_link'],
   },
 } as const satisfies Record<CorridorTemplateKind, CorridorTemplate>;
 
@@ -90,12 +83,12 @@ export interface DataFlowEndpoint {
   endpointId: string;
   templateKind: CorridorEndpointTemplateKind;
   nodeId: string;
-  direction: "in" | "out";
+  direction: 'in' | 'out';
   facetKind: InformationFacetKind;
   portId?: string;
   field?: string;
   schemaId?: string;
-  sourceKind: "port" | "contract";
+  sourceKind: 'port' | 'contract';
 }
 
 export interface DataFlowContract {
@@ -107,7 +100,7 @@ export interface DataFlowContract {
   accesses?: Array<{
     schemaId: string;
     columns: string[];
-    mode: "read" | "write" | "readwrite";
+    mode: 'read' | 'write' | 'readwrite';
   }>;
 }
 
@@ -120,7 +113,7 @@ export interface DataFlowLink {
   medium: TransmissionMedium;
   condition?: string;
   relationType?: string;
-  sourceKind: "connection" | "lineage" | "payload";
+  sourceKind: 'connection' | 'lineage' | 'payload';
 }
 
 export interface DataFlowDefinition {

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import type { TaxonomyIndex } from "../types/taxonomy";
-import { loadTaxonomyIndex } from "../data/loadStaticTaxonomies";
+import { useEffect, useState } from 'react';
+import type { TaxonomyIndex } from '../types/taxonomy';
+import { loadTaxonomyIndex } from '../data/loadStaticTaxonomies';
 
 export function TaxonomyListPage({ onSelect }: { onSelect: (file: string) => void }) {
   const [index, setIndex] = useState<TaxonomyIndex | null>(null);
@@ -21,7 +21,8 @@ export function TaxonomyListPage({ onSelect }: { onSelect: (file: string) => voi
         >
           <div className="font-mono text-blue-700">{t.name}</div>
           <div className="text-xs text-gray-600">
-            v{t.version} · axes={t.axesCount} · relations={t.relationsCount} · constraints={t.constraintsCount}
+            v{t.version} · axes={t.axesCount} · relations={t.relationsCount} · constraints=
+            {t.constraintsCount}
           </div>
         </li>
       ))}

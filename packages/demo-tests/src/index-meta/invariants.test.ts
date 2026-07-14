@@ -13,7 +13,7 @@
  * [INV-G4] Full stack 4-protocol roundtrip (INV-11 + INV-12 보강)
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
 import {
   WeightedIndex,
   WeightedIndexBig,
@@ -23,14 +23,14 @@ import {
   createLayoutProtocol,
   PACK_FORMATS,
   type AddressProtocol,
-} from "weighted-index";
+} from 'weighted-index';
 import {
   MetaRegistry,
   deepDecode,
   computeStateRanges,
   checkGate,
   type DimStateSpec,
-} from "index-meta";
+} from 'index-meta';
 
 // ── 공통 픽스처 ──────────────────────────────────────────────
 
@@ -39,26 +39,26 @@ function createCrossIndexFixture() {
   return new MetaRegistry({
     dims: {
       format: {
-        kind: { type: "string_enum" },
+        kind: { type: 'string_enum' },
         snapshots: {
-          v1: { entries: ["HTML", "PDF", "EPUB"] },
+          v1: { entries: ['HTML', 'PDF', 'EPUB'] },
         },
       },
       lang: {
-        kind: { type: "string_enum" },
+        kind: { type: 'string_enum' },
         snapshots: {
-          v1: { entries: ["en", "ko"] },
+          v1: { entries: ['en', 'ko'] },
         },
       },
       tier: {
-        kind: { type: "index_ref", indexId: "doc_meta" },
+        kind: { type: 'index_ref', indexId: 'doc_meta' },
         snapshots: {
           // doc_meta: format(3) × lang(2) = 6
           v1: { entries: [0, 1, 2, 3, 4, 5] },
         },
       },
       priority: {
-        kind: { type: "number_enum" },
+        kind: { type: 'number_enum' },
         snapshots: {
           v1: { entries: [0, 1, 2] },
         },
@@ -66,15 +66,15 @@ function createCrossIndexFixture() {
     },
     indices: {
       doc_meta: {
-        dims: ["format", "lang"],
+        dims: ['format', 'lang'],
         versions: {
-          v1: { snapshots: { format: "v1", lang: "v1" } },
+          v1: { snapshots: { format: 'v1', lang: 'v1' } },
         },
       },
       article: {
-        dims: ["tier", "priority"],
+        dims: ['tier', 'priority'],
         versions: {
-          v1: { snapshots: { tier: "v1", priority: "v1" } },
+          v1: { snapshots: { tier: 'v1', priority: 'v1' } },
         },
       },
     },
@@ -90,14 +90,12 @@ function createCrossIndexFixture() {
 
 // ── INV-G1: gate inactive 주소 decode 보존 ───────────────────
 
-describe("[INV-G1] inactive 주소는 decode 가능, encode 불가 (INV-6 보강)", () => {
-  it("entry 비활성 → checkGate encode=false → MetaCodec.decode 정상", () => {
+describe('[INV-G1] inactive 주소는 decode 가능, encode 불가 (INV-6 보강)', () => {
+  it('entry 비활성 → checkGate encode=false → MetaCodec.decode 정상', () => {
     // shape [4, 3] → capacity 12
     // dim0 position 3 = inactive
     const shape = [4, 3];
-    const specs: DimStateSpec[] = [
-      { dimIndex: 0, state: "inactive", coords: "3" },
-    ];
+    const specs: DimStateSpec[] = [{ dimIndex: 0, state: 'inactive', coords: '3' }];
     const { reservedRanges, inactiveRanges, openRanges } = computeStateRanges(shape, specs);
 
     // dim0 position 3의 주소 범위: (3-1)*3 = 6 ~ 8
@@ -105,79 +103,79 @@ describe("[INV-G1] inactive 주소는 decode 가능, encode 불가 (INV-6 보강
     const gate = checkGate(addr, reservedRanges, inactiveRanges, openRanges);
     expect(gate.encode).toBe(false);
     expect(gate.decode).toBe(true);
-    expect(gate.state).toBe("inactive");
+    expect(gate.state).toBe('inactive');
 
     // MetaCodec를 사용한 decode — inactive 주소도 정상적으로 decode 가능해야 한다
     const registry = new MetaRegistry({
       dims: {
         role: {
-          kind: { type: "string_enum" },
+          kind: { type: 'string_enum' },
           snapshots: {
-            v1: { entries: ["admin", "editor", "viewer", "guest"] },
+            v1: { entries: ['admin', 'editor', 'viewer', 'guest'] },
           },
         },
         action: {
-          kind: { type: "string_enum" },
+          kind: { type: 'string_enum' },
           snapshots: {
-            v1: { entries: ["read", "write", "delete"] },
+            v1: { entries: ['read', 'write', 'delete'] },
           },
         },
       },
       indices: {
         perm: {
-          dims: ["role", "action"],
+          dims: ['role', 'action'],
           versions: {
-            v1: { snapshots: { role: "v1", action: "v1" } },
+            v1: { snapshots: { role: 'v1', action: 'v1' } },
           },
         },
       },
     });
 
-    const codec = registry.createCodec("perm", "v1");
+    const codec = registry.createCodec('perm', 'v1');
     // addr=6 → role=3(viewer), action=1(read) in 1-based → viewer, read
     const decoded = codec.decodeValue(addr);
-    expect(decoded.role).toBe("viewer");
-    expect(decoded.action).toBe("read");
+    expect(decoded.role).toBe('viewer');
+    expect(decoded.action).toBe('read');
   });
 });
 
 // ── INV-G2: deepDecode through serialization ─────────────────
 
-describe("[INV-G2] full stack: encode → serialize → parse → deepDecode (INV-11 보강)", () => {
-  it("encode composite → serialize(colon) → parse → deepDecode → entity 일치", () => {
+describe('[INV-G2] full stack: encode → serialize → parse → deepDecode (INV-11 보강)', () => {
+  it('encode composite → serialize(colon) → parse → deepDecode → entity 일치', () => {
     const registry = createCrossIndexFixture();
 
     // encode article entity
-    const articleCodec = registry.createCodec("article", "v1");
-    const docMetaCodec = registry.createCodec("doc_meta", "v1");
+    const articleCodec = registry.createCodec('article', 'v1');
+    const docMetaCodec = registry.createCodec('doc_meta', 'v1');
 
     // doc_meta: format=PDF(2), lang=ko(2) → value = (2-1)*2 + (2-1) = 3
-    const docMetaVV = docMetaCodec.encode({ format: "PDF", lang: "ko" });
+    const docMetaVV = docMetaCodec.encode({ format: 'PDF', lang: 'ko' });
     expect(docMetaVV.value).toBe(3);
 
     // article: tier=3 (doc_meta addr=3), priority=1 (value=0)
     const articleVV = articleCodec.encode({ tier: 3, priority: 0 });
 
     // serialize → parse roundtrip (colon)
-    const serialized = registry.serialize(articleVV, "colon");
+    const serialized = registry.serialize(articleVV, 'colon');
     const parsed = registry.parse(serialized);
     expect(parsed).toEqual(articleVV);
 
     // deepDecode from parsed value
     const result = deepDecode(parsed, registry);
-    expect(result.layers.has("article")).toBe(true);
-    expect(result.layers.has("doc_meta")).toBe(true);
+    expect(result.layers.has('article')).toBe(true);
+    expect(result.layers.has('doc_meta')).toBe(true);
 
-    const docMetaLayer = result.layers.get("doc_meta")!;
-    expect(docMetaLayer.format).toBe("PDF");
-    expect(docMetaLayer.lang).toBe("ko");
+    const docMetaLayer = result.layers.get('doc_meta')!;
+    expect(docMetaLayer.format).toBe('PDF');
+    expect(docMetaLayer.lang).toBe('ko');
   });
 });
 
 // ── INV-G3: BigInt/Number 교차 검증 ─────────────────────────
 
-describe("[INV-G3] BigInt/Number 동일 결과 (INV-9 보강)", () => {
-  it("동일 shape에서 WeightedIndex vs WeightedIndexBig 결과 동일", () => {
+describe('[INV-G3] BigInt/Number 동일 결과 (INV-9 보강)', () => {
+  it('동일 shape에서 WeightedIndex vs WeightedIndexBig 결과 동일', () => {
     const shape = [5, 8, 3];
     const shapeBig = shape.map(BigInt);
 
@@ -199,7 +197,7 @@ describe("[INV-G3] BigInt/Number 동일 결과 (INV-9 보강)", () => {
     }
   });
 
-  it("비대칭 shape에서도 일치", () => {
+  it('비대칭 shape에서도 일치', () => {
     const shape = [2, 10, 7, 3];
     const shapeBig = shape.map(BigInt);
 
@@ -219,9 +217,9 @@ describe("[INV-G3] BigInt/Number 동일 결과 (INV-9 보강)", () => {
 
 // ── INV-G4: Full stack 4-protocol roundtrip ──────────────────
 
-describe("[INV-G4] Full stack 4-protocol roundtrip (INV-11 + INV-12 보강)", () => {
+describe('[INV-G4] Full stack 4-protocol roundtrip (INV-11 + INV-12 보강)', () => {
   const registry = createCrossIndexFixture();
-  const codec = registry.createCodec("doc_meta", "v1");
+  const codec = registry.createCodec('doc_meta', 'v1');
 
   // 4개 프로토콜: colon, uri, compact, layout:uuid
   const layoutProto = createLayoutProtocol({
@@ -233,15 +231,15 @@ describe("[INV-G4] Full stack 4-protocol roundtrip (INV-11 + INV-12 보강)", ()
   });
 
   const protocols: [string, AddressProtocol][] = [
-    ["colon", colonProtocol],
-    ["uri", uriProtocol],
-    ["compact", compactProtocol],
-    ["layout:uuid", layoutProto],
+    ['colon', colonProtocol],
+    ['uri', uriProtocol],
+    ['compact', compactProtocol],
+    ['layout:uuid', layoutProto],
   ];
 
-  it("encode → serialize(p) → parse → decode 를 4개 프로토콜 각각", () => {
+  it('encode → serialize(p) → parse → decode 를 4개 프로토콜 각각', () => {
     // encode entity
-    const entities = { format: "EPUB", lang: "en" };
+    const entities = { format: 'EPUB', lang: 'en' };
     const vv = codec.encode(entities);
 
     for (const [name, proto] of protocols) {
@@ -261,8 +259,8 @@ describe("[INV-G4] Full stack 4-protocol roundtrip (INV-11 + INV-12 보강)", ()
     }
   });
 
-  it("cross-protocol: serialize(p1) → convert to p2 → parse(p2) → 동일 VersionedValue", () => {
-    const entities = { format: "HTML", lang: "ko" };
+  it('cross-protocol: serialize(p1) → convert to p2 → parse(p2) → 동일 VersionedValue', () => {
+    const entities = { format: 'HTML', lang: 'ko' };
     const vv = codec.encode(entities);
     const addr = { schema: vv.indexId, version: vv.versionId, index: vv.value };
 

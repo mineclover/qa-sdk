@@ -1,11 +1,11 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 /**
  * Deterministic label 아키텍처 경계 강제 테스트.
@@ -28,41 +28,39 @@ interface PackageBoundary {
 
 const BOUNDARIES: readonly PackageBoundary[] = [
   {
-    name: "doc-envelope",
-    layer: "1 (collection)",
+    name: 'doc-envelope',
+    layer: '1 (collection)',
     allowedDeps: new Set<string>(),
   },
   {
-    name: "ralph-tui-integration",
-    layer: "2 (integration, parallel)",
-    allowedDeps: new Set(["doc-envelope"]),
+    name: 'ralph-tui-integration',
+    layer: '2 (integration, parallel)',
+    allowedDeps: new Set(['doc-envelope']),
   },
   {
-    name: "ontology-pack-validate",
-    layer: "2 (integration, parallel)",
+    name: 'ontology-pack-validate',
+    layer: '2 (integration, parallel)',
     allowedDeps: new Set([
-      "doc-envelope",
-      "definition-catalog",
-      "authorization-ontology",
-      "operational-ontology",
+      'doc-envelope',
+      'definition-catalog',
+      'authorization-ontology',
+      'operational-ontology',
     ]),
   },
   {
-    name: "deterministic-label-registry",
-    layer: "3 (interpretation)",
-    allowedDeps: new Set([
-      "doc-envelope",
-    ]),
+    name: 'deterministic-label-registry',
+    layer: '3 (interpretation)',
+    allowedDeps: new Set(['doc-envelope']),
   },
 ];
 
-describe("deterministic-label architecture boundary", () => {
+describe('deterministic-label architecture boundary', () => {
   it.each(BOUNDARIES)(
-    "$name (Layer $layer) only depends on permitted packages",
+    '$name (Layer $layer) only depends on permitted packages',
     async ({ name, allowedDeps }) => {
       const repoRoot = resolveRepoRoot();
-      const pkgPath = resolve(repoRoot, "packages", name, "package.json");
-      const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as {
+      const pkgPath = resolve(repoRoot, 'packages', name, 'package.json');
+      const pkg = JSON.parse(await readFile(pkgPath, 'utf8')) as {
         dependencies?: Record<string, string>;
       };
       const deps = Object.keys(pkg.dependencies ?? {});
@@ -70,11 +68,11 @@ describe("deterministic-label architecture boundary", () => {
       const violations = deps.filter((dep) => !allowedDeps.has(dep));
       if (violations.length > 0) {
         throw new Error(
-          `${name} has forbidden dependencies: ${violations.join(", ")}\n` +
-            "Permitted: " +
-            (allowedDeps.size === 0 ? "(none)" : [...allowedDeps].join(", ")) +
-            "\n" +
-            "See docs/specs/definition-catalog/deterministic-label-architecture.spec.md",
+          `${name} has forbidden dependencies: ${violations.join(', ')}\n` +
+            'Permitted: ' +
+            (allowedDeps.size === 0 ? '(none)' : [...allowedDeps].join(', ')) +
+            '\n' +
+            'See docs/specs/definition-catalog/deterministic-label-architecture.spec.md',
         );
       }
 
@@ -82,21 +80,21 @@ describe("deterministic-label architecture boundary", () => {
     },
   );
 
-  it("ralph-tui-integration and ontology-pack-validate do not cross-depend (Layer 2 horizontal)", async () => {
+  it('ralph-tui-integration and ontology-pack-validate do not cross-depend (Layer 2 horizontal)', async () => {
     const repoRoot = resolveRepoRoot();
     const ralphPkg = JSON.parse(
-      await readFile(resolve(repoRoot, "packages/ralph-tui-integration/package.json"), "utf8"),
+      await readFile(resolve(repoRoot, 'packages/ralph-tui-integration/package.json'), 'utf8'),
     ) as { dependencies?: Record<string, string> };
     const packPkg = JSON.parse(
-      await readFile(resolve(repoRoot, "packages/ontology-pack-validate/package.json"), "utf8"),
+      await readFile(resolve(repoRoot, 'packages/ontology-pack-validate/package.json'), 'utf8'),
     ) as { dependencies?: Record<string, string> };
 
-    expect(Object.keys(ralphPkg.dependencies ?? {})).not.toContain("ontology-pack-validate");
-    expect(Object.keys(packPkg.dependencies ?? {})).not.toContain("ralph-tui-integration");
+    expect(Object.keys(ralphPkg.dependencies ?? {})).not.toContain('ontology-pack-validate');
+    expect(Object.keys(packPkg.dependencies ?? {})).not.toContain('ralph-tui-integration');
   });
 });
 
 function resolveRepoRoot(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  return resolve(__dirname, "../../../..");
+  return resolve(__dirname, '../../../..');
 }

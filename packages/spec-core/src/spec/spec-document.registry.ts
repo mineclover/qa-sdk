@@ -1,8 +1,8 @@
 // @def.boundary spec-engine-system
 // @def.doc spec-engine-system
 
-import type { SpecDocument, SpecId, SpecRelation, SpecLifecycle } from "./spec.types.js";
-import { DuplicateRegistrationError, NotFoundError } from "spec-schema";
+import type { SpecDocument, SpecId, SpecRelation, SpecLifecycle } from './spec.types.js';
+import { DuplicateRegistrationError, NotFoundError } from 'spec-schema';
 
 /**
  * 스펙 문서를 등록하고 관계를 탐색하는 레지스트리.
@@ -14,14 +14,14 @@ export class SpecDocumentRegistry {
 
   register(doc: SpecDocument): void {
     if (this.docs.has(doc.id)) {
-      throw new DuplicateRegistrationError("SpecDocument", doc.id);
+      throw new DuplicateRegistrationError('SpecDocument', doc.id);
     }
     this.docs.set(doc.id, doc);
   }
 
   get(id: SpecId): SpecDocument {
     const doc = this.docs.get(id);
-    if (!doc) throw new NotFoundError("SpecDocument", id);
+    if (!doc) throw new NotFoundError('SpecDocument', id);
     return doc;
   }
 
@@ -32,7 +32,7 @@ export class SpecDocumentRegistry {
   /** 특정 spec에서 출발하는 모든 관계 */
   relationsFrom(id: SpecId): readonly SpecRelation[] {
     const doc = this.get(id);
-    return (doc.relations ?? []).filter(r => r.from === id);
+    return (doc.relations ?? []).filter((r) => r.from === id);
   }
 
   /** 특정 spec을 참조하는 모든 관계 (전체 문서 탐색) */
@@ -49,7 +49,7 @@ export class SpecDocumentRegistry {
 
   /** lifecycle 기준 필터 */
   getByLifecycle(lifecycle: SpecLifecycle): SpecDocument[] {
-    return [...this.docs.values()].filter(d => d.lifecycle === lifecycle);
+    return [...this.docs.values()].filter((d) => d.lifecycle === lifecycle);
   }
 
   /** 등록된 모든 spec ID */

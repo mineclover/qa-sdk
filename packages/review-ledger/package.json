@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "description": "Git 커밋 기준 파일 리뷰 완료 기록 원장 — SQLite 기반 중앙 리뷰 추적",
   "license": "MIT",
+  "files": [
+    "dist",
+    "drizzle"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -11,10 +18,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist", "drizzle"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

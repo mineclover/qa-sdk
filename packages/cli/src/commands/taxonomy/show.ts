@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
-import { parse, show, TaxonomyRegistry } from "taxonomy-engine";
-import type { RefResult } from "taxonomy-engine";
-import { loadRegistryDir, extractRegistryDir, filterRegistryArgs } from "./shared.js";
+import { readFileSync } from 'node:fs';
+import { parse, show, TaxonomyRegistry } from 'taxonomy-engine';
+import type { RefResult } from 'taxonomy-engine';
+import { loadRegistryDir, extractRegistryDir, filterRegistryArgs } from './shared.js';
 
 function runShowOnRegistry(reg: TaxonomyRegistry, ref: string, json: boolean): void {
   let result: RefResult | undefined;
@@ -27,15 +27,15 @@ function runShowOnRegistry(reg: TaxonomyRegistry, ref: string, json: boolean): v
 }
 
 export function showCmd(args: string[]): void {
-  const json = args.includes("--json");
+  const json = args.includes('--json');
   const registryDir = extractRegistryDir(args);
   const filteredArgs = filterRegistryArgs(args);
-  const positional = filteredArgs.filter((a) => !a.startsWith("--"));
+  const positional = filteredArgs.filter((a) => !a.startsWith('--'));
 
   // registryDir 있으면 file 없어도 OK (registry로 충분)
   if (registryDir) {
     if (positional.length < 1) {
-      console.error("사용법: qa-sdk tax show <ref> --registry <dir>");
+      console.error('사용법: qa-sdk tax show <ref> --registry <dir>');
       process.exit(1);
       return;
     }
@@ -47,7 +47,9 @@ export function showCmd(args: string[]): void {
 
   // 기존: file + ref
   if (positional.length < 2) {
-    console.error("사용법: qa-sdk tax show <file> <ref> [--json]  또는  qa-sdk tax show <ref> --registry <dir>");
+    console.error(
+      '사용법: qa-sdk tax show <file> <ref> [--json]  또는  qa-sdk tax show <ref> --registry <dir>',
+    );
     process.exit(1);
     return;
   }
@@ -55,7 +57,7 @@ export function showCmd(args: string[]): void {
 
   let text: string;
   try {
-    text = readFileSync(file, "utf8");
+    text = readFileSync(file, 'utf8');
   } catch (e) {
     console.error(`파일 읽기 실패: ${file} — ${(e as Error).message}`);
     process.exit(1);
@@ -63,7 +65,7 @@ export function showCmd(args: string[]): void {
   }
 
   const parsed = parse(text);
-  if ("error" in parsed) {
+  if ('error' in parsed) {
     console.error(`parse 실패: ${parsed.error.message}`);
     process.exit(1);
     return;
@@ -77,7 +79,7 @@ export function showCmd(args: string[]): void {
 function printShowResult(result: RefResult): void {
   console.log(`kind: ${result.kind}`);
   switch (result.kind) {
-    case "entry": {
+    case 'entry': {
       const entry = result.entry as {
         id: string;
         address: number;
@@ -94,7 +96,7 @@ function printShowResult(result: RefResult): void {
       if (entry.decisionLink) console.log(`decision:  ${entry.decisionLink}`);
       break;
     }
-    case "axis": {
+    case 'axis': {
       const axis = result.axis as {
         name: string;
         entries?: Array<{ id: string; address: number }>;
@@ -103,20 +105,22 @@ function printShowResult(result: RefResult): void {
       };
       console.log(`name:      ${axis.name}`);
       if (axis.entries) {
-        console.log(`entries:   ${axis.entries.length} (${axis.entries.map((e) => e.id).join(", ")})`);
+        console.log(
+          `entries:   ${axis.entries.length} (${axis.entries.map((e) => e.id).join(', ')})`,
+        );
       }
       console.log(`capacity:  ${axis.capacity}`);
       if (axis.lifecycle) console.log(`lifecycle: ${axis.lifecycle}`);
       break;
     }
-    case "coordinate": {
+    case 'coordinate': {
       const coord = result.coord as Record<string, string>;
       const addresses = result.addresses as number[];
       console.log(`coord:     ${JSON.stringify(coord)}`);
-      console.log(`addresses: [${addresses.join(", ")}]`);
+      console.log(`addresses: [${addresses.join(', ')}]`);
       break;
     }
-    case "taxonomy": {
+    case 'taxonomy': {
       const ir = result.ir as { taxonomy: string; version: number; axes?: Map<string, unknown> };
       console.log(`name:    ${ir.taxonomy}`);
       console.log(`version: ${ir.version}`);

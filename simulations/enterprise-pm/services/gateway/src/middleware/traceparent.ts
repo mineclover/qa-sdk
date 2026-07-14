@@ -1,16 +1,10 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import type { MiddlewareHandler } from "hono";
-import {
-  context,
-  propagation,
-  trace,
-  type Span,
-  type Tracer,
-} from "@opentelemetry/api";
+import type { MiddlewareHandler } from 'hono';
+import { context, propagation, trace, type Span, type Tracer } from '@opentelemetry/api';
 
-const tracer: Tracer = trace.getTracer("sim-gateway");
+const tracer: Tracer = trace.getTracer('sim-gateway');
 
 /**
  * W3C traceparent propagation 미들웨어.
@@ -38,9 +32,9 @@ export const traceparent: MiddlewareHandler = async (c, next) => {
     `gateway ${c.req.method} ${new URL(c.req.url).pathname}`,
     {
       attributes: {
-        "http.method": c.req.method,
-        "http.target": new URL(c.req.url).pathname,
-        "service.name": "sim-gateway",
+        'http.method': c.req.method,
+        'http.target': new URL(c.req.url).pathname,
+        'service.name': 'sim-gateway',
       },
     },
     upstreamCtx,
@@ -50,8 +44,8 @@ export const traceparent: MiddlewareHandler = async (c, next) => {
     await context.with(trace.setSpan(upstreamCtx, span), async () => {
       await next();
       const ctx = span.spanContext();
-      if (ctx.traceId) c.header("x-trace-id", ctx.traceId);
-      span.setAttribute("http.status_code", c.res.status);
+      if (ctx.traceId) c.header('x-trace-id', ctx.traceId);
+      span.setAttribute('http.status_code', c.res.status);
     });
   } catch (err) {
     span.recordException(err as Error);

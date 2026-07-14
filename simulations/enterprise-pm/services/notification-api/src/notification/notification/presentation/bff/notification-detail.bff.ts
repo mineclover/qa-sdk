@@ -4,8 +4,8 @@
 import {
   NotificationReadModelQuery,
   type NotificationDetailReadModel,
-} from "../../application/queries/notification-read-model.query.js";
-import type { NotificationLoggerPort } from "../../application/ports/notification-logger.port.js";
+} from '../../application/queries/notification-read-model.query.js';
+import type { NotificationLoggerPort } from '../../application/ports/notification-logger.port.js';
 
 /** BFF detail composition — UI 친화적 라벨 + cacheKey. */
 export interface NotificationDetailBffModel {
@@ -25,7 +25,7 @@ export interface NotificationDetailBffModel {
  * - read-model 만 호출, write 금지.
  */
 export class NotificationDetailBff {
-  readonly cachePrefix = "notification-bff-detail:v1";
+  readonly cachePrefix = 'notification-bff-detail:v1';
 
   constructor(
     private readonly readModel: NotificationReadModelQuery,
@@ -43,15 +43,15 @@ export class NotificationDetailBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "notification",
-        useCase: "NotificationDetailBff.getDetail",
+        domain: 'notification',
+        useCase: 'NotificationDetailBff.getDetail',
         aggregateId: input.id,
-        queryName: "NotificationDetailBffQuery",
-        outcome: detail ? "success" : "failure",
+        queryName: 'NotificationDetailBffQuery',
+        outcome: detail ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      detail ? "notification-detail.bff.success" : "notification-detail.bff.miss",
+      detail ? 'notification-detail.bff.success' : 'notification-detail.bff.miss',
     );
 
     if (!detail) return null;

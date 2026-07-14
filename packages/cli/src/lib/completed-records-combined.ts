@@ -6,8 +6,8 @@ import {
   detectCompletedRecords,
   type CompletedRecordDetectionOptions,
   type CompletedRecordState,
-} from "doc-envelope";
-import { detectCompletedRalphPrdRecords } from "ralph-tui-integration";
+} from 'doc-envelope';
+import { detectCompletedRalphPrdRecords } from 'ralph-tui-integration';
 
 /**
  * cli에서 `doc-envelope`의 범용 `.todo.md` 감지와 `ralph-tui-integration`의

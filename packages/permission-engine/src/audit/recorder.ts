@@ -15,7 +15,7 @@ import type {
   ExecutionEntry,
   RecordCheckArgs,
   RecordExecutionArgs,
-} from "./types.js";
+} from './types.js';
 
 // ── Interface ────────────────────────────────────────────────────────────────
 
@@ -44,14 +44,14 @@ export interface AuditRecorder {
 export class ParentNotFoundError extends Error {
   constructor(public readonly parentSpanId: string) {
     super(`Parent audit entry not found: ${parentSpanId}`);
-    this.name = "ParentNotFoundError";
+    this.name = 'ParentNotFoundError';
   }
 }
 
 export class EntryNotFoundError extends Error {
   constructor(public readonly spanId: string) {
     super(`Audit entry not found: ${spanId}`);
-    this.name = "EntryNotFoundError";
+    this.name = 'EntryNotFoundError';
   }
 }
 
@@ -76,7 +76,7 @@ export class InMemoryAuditRecorder implements AuditRecorder {
 
     const now = args.now ?? new Date().toISOString();
     const entry: ExecutionEntry = {
-      kind: "execution",
+      kind: 'execution',
       spanId: args.spanId,
       traceId: args.traceId,
       parentSpanId: args.parentSpanId,
@@ -103,7 +103,7 @@ export class InMemoryAuditRecorder implements AuditRecorder {
   ): Promise<ExecutionEntry> {
     const entry = this.store.get(spanId);
     if (!entry) throw new EntryNotFoundError(spanId);
-    if (entry.kind !== "execution") {
+    if (entry.kind !== 'execution') {
       throw new Error(`finishExecution called on non-execution entry: ${spanId}`);
     }
     const updated: ExecutionEntry = {
@@ -121,7 +121,7 @@ export class InMemoryAuditRecorder implements AuditRecorder {
 
     const now = args.now ?? new Date().toISOString();
     const entry: CheckEntry = {
-      kind: "check",
+      kind: 'check',
       spanId: args.spanId,
       traceId: args.traceId,
       parentSpanId: args.parentSpanId,
@@ -159,8 +159,8 @@ export class InMemoryAuditRecorder implements AuditRecorder {
   async firstFailure(rootSpanId: string): Promise<AuditEntry | null> {
     const all = await this.listByRoot(rootSpanId);
     for (const e of all) {
-      const outcome = e.kind === "execution" ? e.outcome : e.outcome;
-      if (outcome === "deny" || outcome === "error") return e;
+      const outcome = e.kind === 'execution' ? e.outcome : e.outcome;
+      if (outcome === 'deny' || outcome === 'error') return e;
     }
     return null;
   }

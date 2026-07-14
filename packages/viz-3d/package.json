@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/viz-3d",
   "version": "0.1.0",
-  "description": "좌표 시그널을 Three.js로 시각화하는 3D 데모 패키지",
   "private": true,
+  "description": "좌표 시그널을 Three.js로 시각화하는 3D 데모 패키지",
   "type": "module",
   "main": "src/index.ts",
   "exports": {

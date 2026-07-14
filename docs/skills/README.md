@@ -37,7 +37,7 @@ corepack pnpm skills:check
 
 `skills:check`는 모든 `SKILL.md`의 표준 frontmatter, 디렉터리 이름, 본문 크기, 로컬 Markdown 링크를 검사한다. 동기화 스크립트는 `SKILL.md`만 복사하지 않고 `references/`와 `agents/`를 포함한 해당 스킬 디렉터리 전체를 `~/.claude/skills/`와 `~/.codex/skills/`에 전파한다. 실행 위치의 추가 스킬은 보존하지만, 같은 이름의 repo-owned 스킬은 `skills/` 원본으로 덮어쓴다.
 
-포맷 게이트는 작업 범위를 분리한다. `corepack pnpm format:check`는 현재 작업 트리에서 변경되었거나 추가된 oxfmt 대상 코드·설정 파일만 검사하며, 문서와 셸 파일의 whitespace는 `git diff --check`로 확인한다. CI나 PR에서는 `corepack pnpm format:check -- --base origin/main`처럼 기준 브랜치를 지정한다. 전체 추적 파일을 점검할 때는 `corepack pnpm format:check:all`을 사용한다. 이 명령은 기존 baseline 포맷 문제를 포함하므로 baseline 정리 전에는 실패할 수 있으며, 일반 변경의 closeout 게이트와 분리해 관리한다.
+포맷 게이트는 추적 소스 전체를 기준으로 한다. `corepack pnpm format:check`는 생성물과 의존성을 제외한 전체 추적 코드·설정 파일을 검사하고, `corepack pnpm format:check:changed`는 현재 작업 트리의 변경 파일만 빠르게 검사한다. CI나 PR에서는 `corepack pnpm format:check -- --base origin/main`처럼 기준 브랜치를 지정할 수 있다. `corepack pnpm format`은 같은 추적 범위를 실제 정리한다. 문서와 셸 파일의 whitespace는 `git diff --check`로 확인한다.
 
 ## 계층(L1-L4) 관점 skill navigation
 

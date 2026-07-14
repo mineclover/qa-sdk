@@ -11,15 +11,15 @@
  * TransitionDef (이벤트 카탈로그 레벨)
  */
 
-import type { PathSegment } from "./catalog.types.js";
-import type { PipeFlow, PipeGraph } from "../types/pipe-spec.js";
-import { getChildFlows } from "../pipe/pipe-flow-utils.js";
+import type { PathSegment } from './catalog.types.js';
+import type { PipeFlow, PipeGraph } from '../types/pipe-spec.js';
+import { getChildFlows } from '../pipe/pipe-flow-utils.js';
 
 // ── 타입 ──────────────────────────────────────────
 
 export interface TransitionBridgeIssue {
-  readonly severity: "error" | "warning";
-  readonly layer: "coordinate" | "control-flow" | "event-catalog";
+  readonly severity: 'error' | 'warning';
+  readonly layer: 'coordinate' | 'control-flow' | 'event-catalog';
   readonly message: string;
 }
 
@@ -61,7 +61,7 @@ export function collectControlFlowTransitions(graph: PipeGraph): string[] {
 }
 
 function walkFlow(flow: PipeFlow, ids: string[]): void {
-  if (flow.kind === "transition-scope") {
+  if (flow.kind === 'transition-scope') {
     ids.push(flow.transitionId);
   }
   for (const child of getChildFlows(flow)) {
@@ -104,8 +104,8 @@ export function validateTransitionBridge(
   for (const key of summary.coordinate) {
     if (!flowSet.has(key)) {
       issues.push({
-        severity: "warning",
-        layer: "coordinate",
+        severity: 'warning',
+        layer: 'coordinate',
         message: `PathSegment transition "${key}" → PipeGraph에 대응하는 transition-scope 없음`,
       });
     }
@@ -115,8 +115,8 @@ export function validateTransitionBridge(
   for (const id of summary.controlFlow) {
     if (!coordSet.has(id)) {
       issues.push({
-        severity: "warning",
-        layer: "control-flow",
+        severity: 'warning',
+        layer: 'control-flow',
         message: `PipeTransitionScope "${id}" → PathSegment에 대응하는 transition 없음`,
       });
     }

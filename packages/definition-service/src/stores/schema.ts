@@ -23,4 +23,4 @@ export {
   semanticRelations,
   semanticGroundingEvents,
   semanticFeedbackProposals,
-} from "../db/schema.js";
+} from '../db/schema.js';

@@ -6,19 +6,17 @@ import type {
   MotionLayerDef,
   MotionParameterValues,
   ResolvedMotionComposition,
-} from "./model.js";
-import { applyMotionTemplate, resolveCue } from "./model.js";
+} from './model.js';
+import { applyMotionTemplate, resolveCue } from './model.js';
 import type {
   MotionActiveLayerPhase,
   MotionDebugSnapshot,
   MotionResolvedAssetSnapshot,
-} from "./types.js";
-import { buildResolvedLayerStartMap, resolveMotionTransitionWindow } from "./query.js";
-import { endMs } from "./utils.js";
+} from './types.js';
+import { buildResolvedLayerStartMap, resolveMotionTransitionWindow } from './query.js';
+import { endMs } from './utils.js';
 
-function buildDefaultParameterValues(
-  composition: MotionCompositionDef,
-): MotionParameterValues {
+function buildDefaultParameterValues(composition: MotionCompositionDef): MotionParameterValues {
   const values: MotionParameterValues = {};
   for (const parameter of composition.parameters) {
     values[parameter.id] = parameter.defaultValue;
@@ -38,7 +36,7 @@ export function resolveMotionAssetSnapshots(
       id: asset.id,
       type: asset.type,
       target: asset.target,
-      property: asset.type === "style" ? asset.property : undefined,
+      property: asset.type === 'style' ? asset.property : undefined,
       template: asset.template,
       value,
       defaultValue,
@@ -48,18 +46,11 @@ export function resolveMotionAssetSnapshots(
   });
 }
 
-function isWithinWindow(
-  timeMs: number,
-  startMs: number,
-  windowEndMs: number,
-): boolean {
+function isWithinWindow(timeMs: number, startMs: number, windowEndMs: number): boolean {
   return timeMs >= startMs && timeMs <= windowEndMs;
 }
 
-function remainingMs(
-  timeMs: number,
-  windowEndMs: number,
-): number {
+function remainingMs(timeMs: number, windowEndMs: number): number {
   return Math.max(0, windowEndMs - timeMs);
 }
 
@@ -69,18 +60,18 @@ function resolveMotionLayerPhase(
   presets: readonly MotionCuePreset[],
 ): MotionActiveLayerPhase {
   const enterCue = resolveCue(layer.enter, presets);
-  if (!enterCue) return "hold";
+  if (!enterCue) return 'hold';
   const enterEndMs = layer.startMs + enterCue.durationMs;
-  if (timeMs <= enterEndMs) return "enter";
-  if (!layer.exit) return "hold";
+  if (timeMs <= enterEndMs) return 'enter';
+  if (!layer.exit) return 'hold';
   const exitCue = resolveCue(layer.exit, presets);
-  if (!exitCue) return "hold";
+  if (!exitCue) return 'hold';
   const exitStartMs = Math.max(
     layer.startMs,
     endMs(layer) - exitCue.durationMs - (exitCue.overlapMs ?? 0),
   );
-  if (timeMs >= exitStartMs) return "exit";
-  return "hold";
+  if (timeMs >= exitStartMs) return 'exit';
+  return 'hold';
 }
 
 interface MotionCueBoundary {
@@ -132,18 +123,18 @@ export function createMotionDebugSnapshot(
       return {
         id: layer.id,
         label: layer.label,
-        contentType: layer.content?.type ?? "dom",
+        contentType: layer.content?.type ?? 'dom',
         target: layer.target,
         startMs: start,
         endMs: start + layer.durationMs,
         remainingMs: remainingMs(timeMs, start + layer.durationMs),
         phase: resolveMotionLayerPhase(resolvedLayer, timeMs, presets),
-        enterKind: resolveCue(layer.enter, presets)?.kind ?? "fade",
+        enterKind: resolveCue(layer.enter, presets)?.kind ?? 'fade',
         exitKind: layer.exit ? (resolveCue(layer.exit, presets)?.kind ?? null) : null,
       };
     });
   const activeCaption = composition.captions.find((caption) =>
-    isWithinWindow(timeMs, caption.startMs, endMs(caption))
+    isWithinWindow(timeMs, caption.startMs, endMs(caption)),
   );
   const activeTransitionIds = composition.transitions
     .filter((transition) => {
@@ -153,10 +144,10 @@ export function createMotionDebugSnapshot(
     .map((transition) => transition.id);
 
   const boundaries: MotionCueBoundary[] = [
-    ...composition.sequences.flatMap((sequence) => ([
+    ...composition.sequences.flatMap((sequence) => [
       { atMs: sequence.startMs, label: `sequence:${sequence.id}:start` },
       { atMs: endMs(sequence), label: `sequence:${sequence.id}:end` },
-    ])),
+    ]),
     ...composition.layers.flatMap((layer) => {
       const start = layerStartMap.get(layer.id) ?? layer.startMs;
       return [
@@ -164,10 +155,10 @@ export function createMotionDebugSnapshot(
         { atMs: start + layer.durationMs, label: `layer:${layer.id}:end` },
       ];
     }),
-    ...composition.captions.flatMap((caption) => ([
+    ...composition.captions.flatMap((caption) => [
       { atMs: caption.startMs, label: `caption:${caption.id}:start` },
       { atMs: endMs(caption), label: `caption:${caption.id}:end` },
-    ])),
+    ]),
     ...composition.transitions.flatMap((transition) => {
       const window = resolveMotionTransitionWindow(composition, transition);
       return [
@@ -183,19 +174,19 @@ export function createMotionDebugSnapshot(
     activeSequenceIds: activeSequences.map((sequence) => sequence.id),
     activeLayerIds: activeLayers.map((layer) => layer.id),
     activeCaptionId: activeCaption?.id ?? null,
-    captionText: activeCaption?.text ?? "",
+    captionText: activeCaption?.text ?? '',
     active: {
       sequences: activeSequences,
       layers: activeLayers,
       caption: activeCaption
         ? {
-          id: activeCaption.id,
-          text: activeCaption.text,
-          tone: activeCaption.tone,
-          startMs: activeCaption.startMs,
-          endMs: endMs(activeCaption),
-          remainingMs: remainingMs(timeMs, endMs(activeCaption)),
-        }
+            id: activeCaption.id,
+            text: activeCaption.text,
+            tone: activeCaption.tone,
+            startMs: activeCaption.startMs,
+            endMs: endMs(activeCaption),
+            remainingMs: remainingMs(timeMs, endMs(activeCaption)),
+          }
         : null,
     },
     timing: {

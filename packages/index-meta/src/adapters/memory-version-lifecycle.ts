@@ -6,7 +6,7 @@ import type {
   VersionRecord,
   VersionStatus,
   DeactivationMode,
-} from "../version-lifecycle.js";
+} from '../version-lifecycle.js';
 
 export class InMemoryVersionLifecycleStore implements VersionLifecycleStore {
   private readonly _records = new Map<string, VersionRecord>();
@@ -33,15 +33,15 @@ export class InMemoryVersionLifecycleStore implements VersionLifecycleStore {
       mode = deactivationMode;
     } else if (baseVersionId) {
       const base = this._records.get(this.key(prefix, baseVersionId));
-      mode = base?.deactivationMode ?? "strict";
+      mode = base?.deactivationMode ?? 'strict';
     } else {
-      mode = "strict";
+      mode = 'strict';
     }
 
     const record: VersionRecord = {
       prefix,
       versionId,
-      status: "draft",
+      status: 'draft',
       baseVersionId,
       capacity,
       deactivationMode: mode,
@@ -54,44 +54,46 @@ export class InMemoryVersionLifecycleStore implements VersionLifecycleStore {
 
   async release(prefix: string, versionId: string): Promise<void> {
     const r = this.mustGet(prefix, versionId);
-    if (r.status !== "draft") {
+    if (r.status !== 'draft') {
       throw new Error(`Cannot release: version ${versionId} is "${r.status}", expected "draft"`);
     }
     this._records.set(this.key(prefix, versionId), {
       ...r,
-      status: "released",
+      status: 'released',
       releasedAt: new Date().toISOString(),
     });
   }
 
   async activate(prefix: string, versionId: string): Promise<void> {
     const r = this.mustGet(prefix, versionId);
-    if (r.status !== "released") {
-      throw new Error(`Cannot activate: version ${versionId} is "${r.status}", expected "released"`);
+    if (r.status !== 'released') {
+      throw new Error(
+        `Cannot activate: version ${versionId} is "${r.status}", expected "released"`,
+      );
     }
     // 기존 active → released
     for (const rec of this._records.values()) {
-      if (rec.prefix === prefix && rec.status === "active") {
+      if (rec.prefix === prefix && rec.status === 'active') {
         this._records.set(this.key(prefix, rec.versionId), {
           ...rec,
-          status: "released",
+          status: 'released',
         });
       }
     }
-    this._records.set(this.key(prefix, versionId), { ...r, status: "active" });
+    this._records.set(this.key(prefix, versionId), { ...r, status: 'active' });
   }
 
   async deprecate(prefix: string, versionId: string): Promise<void> {
     const r = this.mustGet(prefix, versionId);
-    if (r.status === "draft") {
+    if (r.status === 'draft') {
       throw new Error(`Cannot deprecate a draft version`);
     }
-    this._records.set(this.key(prefix, versionId), { ...r, status: "deprecated" });
+    this._records.set(this.key(prefix, versionId), { ...r, status: 'deprecated' });
   }
 
   async getActive(prefix: string): Promise<VersionRecord | null> {
     for (const rec of this._records.values()) {
-      if (rec.prefix === prefix && rec.status === "active") return rec;
+      if (rec.prefix === prefix && rec.status === 'active') return rec;
     }
     return null;
   }

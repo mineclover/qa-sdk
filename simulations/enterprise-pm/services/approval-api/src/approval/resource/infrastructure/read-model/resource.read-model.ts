@@ -4,8 +4,8 @@
 import {
   ResourceReadModelQuery,
   type ResourceDetailReadModel,
-} from "../../application/queries/resource-read-model.query.js";
-import type { ResourceRepositoryPort } from "../../application/ports/resource-repository.port.js";
+} from '../../application/queries/resource-read-model.query.js';
+import type { ResourceRepositoryPort } from '../../application/ports/resource-repository.port.js';
 
 export class RepositoryResourceReadModel extends ResourceReadModelQuery {
   constructor(private readonly repository: ResourceRepositoryPort) {

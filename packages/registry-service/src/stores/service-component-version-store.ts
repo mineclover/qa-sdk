@@ -1,13 +1,9 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { ComponentVersionKind } from "../modules/services/service.types.js";
+import type { ComponentVersionKind } from '../modules/services/service.types.js';
 
-export type ServiceComponentLifecycleState =
-  | "draft"
-  | "published"
-  | "deprecated"
-  | "archived";
+export type ServiceComponentLifecycleState = 'draft' | 'published' | 'deprecated' | 'archived';
 
 export interface ServiceComponentVersionRecord {
   readonly catalogId: string;

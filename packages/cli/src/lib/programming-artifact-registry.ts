@@ -1,11 +1,11 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 
-import type { ProgrammingArtifactRegistryRecord } from "operational-ontology/programming-artifacts";
+import type { ProgrammingArtifactRegistryRecord } from 'operational-ontology/programming-artifacts';
 
 interface ProgrammingArtifactRegistryEnvelope {
   artifacts?: ProgrammingArtifactRegistryRecord[];
@@ -28,11 +28,7 @@ export async function appendProgrammingArtifactRegistryRecord(
   const artifacts = upsertProgrammingArtifactRecord(existing, record);
 
   await mkdir(dirname(resolvedPath), { recursive: true });
-  await writeFile(
-    resolvedPath,
-    JSON.stringify({ ...payload, artifacts }, null, 2) + "\n",
-    "utf8",
-  );
+  await writeFile(resolvedPath, JSON.stringify({ ...payload, artifacts }, null, 2) + '\n', 'utf8');
 
   return {
     registryPath: resolvedPath,
@@ -57,7 +53,7 @@ async function readProgrammingArtifactRegistryEnvelope(
 ): Promise<ProgrammingArtifactRegistryEnvelope> {
   if (!existsSync(registryPath)) return { artifacts: [] };
 
-  const payload = JSON.parse(await readFile(registryPath, "utf8")) as
+  const payload = JSON.parse(await readFile(registryPath, 'utf8')) as
     | ProgrammingArtifactRegistryRecord[]
     | ProgrammingArtifactRegistryEnvelope;
   if (Array.isArray(payload)) return { artifacts: payload };

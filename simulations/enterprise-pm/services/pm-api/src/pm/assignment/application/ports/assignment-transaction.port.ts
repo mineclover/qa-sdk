@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { TransactionPort, TransactionScope } from "@qa-sdk/sim-domain-slice-kit";
+import type { TransactionPort, TransactionScope } from '@qa-sdk/sim-domain-slice-kit';
 
 /**
  * Assignment 슬라이스의 TransactionPort.

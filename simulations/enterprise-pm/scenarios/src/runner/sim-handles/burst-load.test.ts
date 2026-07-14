@@ -1,10 +1,10 @@
 // @def.boundary sim-scenarios
 
-import { describe, expect, it } from "vitest";
-import { createBurstLoad, type FetchLike } from "./burst-load.js";
+import { describe, expect, it } from 'vitest';
+import { createBurstLoad, type FetchLike } from './burst-load.js';
 
-describe("burst-load handle", () => {
-  it("rps 100으로 setInterval 호출 후 stop()시 fetch 발사 + interval clear", async () => {
+describe('burst-load handle', () => {
+  it('rps 100으로 setInterval 호출 후 stop()시 fetch 발사 + interval clear', async () => {
     let fired = 0;
     const fetchImpl: FetchLike = async () => {
       fired += 1;
@@ -15,14 +15,14 @@ describe("burst-load handle", () => {
     let cleared = false;
     const setIntervalImpl = (cb: () => void) => {
       intervalCb = cb;
-      return Symbol("handle");
+      return Symbol('handle');
     };
     const clearIntervalImpl = () => {
       cleared = true;
     };
 
     const burst = createBurstLoad({
-      targetUrl: "http://x/healthz",
+      targetUrl: 'http://x/healthz',
       fetchImpl,
       setIntervalImpl,
       clearIntervalImpl,
@@ -39,24 +39,24 @@ describe("burst-load handle", () => {
     expect(fired).toBe(3);
   });
 
-  it("rps invalid → throw", async () => {
-    const burst = createBurstLoad({ targetUrl: "http://x" });
+  it('rps invalid → throw', async () => {
+    const burst = createBurstLoad({ targetUrl: 'http://x' });
     await expect(burst(0)).rejects.toThrow(/positive number/);
     await expect(burst(-5)).rejects.toThrow(/positive number/);
     await expect(burst(Number.NaN)).rejects.toThrow(/positive number/);
   });
 
-  it("fetch reject되어도 stop() 정상 settle", async () => {
+  it('fetch reject되어도 stop() 정상 settle', async () => {
     const fetchImpl: FetchLike = async () => {
-      throw new Error("network");
+      throw new Error('network');
     };
     let intervalCb: (() => void) | null = null;
     const burst = createBurstLoad({
-      targetUrl: "http://x",
+      targetUrl: 'http://x',
       fetchImpl,
       setIntervalImpl: (cb) => {
         intervalCb = cb;
-        return Symbol("h");
+        return Symbol('h');
       },
       clearIntervalImpl: () => {},
     });
@@ -65,7 +65,7 @@ describe("burst-load handle", () => {
     await expect(h.stop()).resolves.toBeUndefined();
   });
 
-  it("rps가 매우 크면 batchPerTick으로 1 tick에 다회 발사", async () => {
+  it('rps가 매우 크면 batchPerTick으로 1 tick에 다회 발사', async () => {
     let fired = 0;
     const fetchImpl: FetchLike = async () => {
       fired += 1;
@@ -73,11 +73,11 @@ describe("burst-load handle", () => {
     };
     let intervalCb: (() => void) | null = null;
     const burst = createBurstLoad({
-      targetUrl: "http://x",
+      targetUrl: 'http://x',
       fetchImpl,
       setIntervalImpl: (cb) => {
         intervalCb = cb;
-        return Symbol("h");
+        return Symbol('h');
       },
       clearIntervalImpl: () => {},
     });

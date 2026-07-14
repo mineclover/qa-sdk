@@ -2,13 +2,13 @@
 // @def.doc authorization-ontology-bitmap-pipeline
 // spec 2026-05-02 §9 Stage 2 — decideRouteWithTracking + StickyDecisionTracker DI.
 
-import { Hono, type Context } from "hono";
-import { parseVersionTag, type VersionTag } from "sim-identifier-grammar";
-import { proxyRequest } from "../lib/proxy.js";
-import type { InMemoryRoutingStore } from "../routing/routing-table.js";
-import { decideRoute, decideRouteWithTracking } from "../routing/route-decision.js";
-import type { StickyDecisionTracker } from "../routing/sticky-decision-tracker.js";
-import type { CanaryOverride } from "../middleware/canary-override.js";
+import { Hono, type Context } from 'hono';
+import { parseVersionTag, type VersionTag } from 'sim-identifier-grammar';
+import { proxyRequest } from '../lib/proxy.js';
+import type { InMemoryRoutingStore } from '../routing/routing-table.js';
+import { decideRoute, decideRouteWithTracking } from '../routing/route-decision.js';
+import type { StickyDecisionTracker } from '../routing/sticky-decision-tracker.js';
+import type { CanaryOverride } from '../middleware/canary-override.js';
 
 /**
  * 라우팅 종류:
@@ -22,7 +22,7 @@ import type { CanaryOverride } from "../middleware/canary-override.js";
  *  나눠 쓸 수 있다. 두 서비스가 동일 user prefix 를 공유해도 leaf path 가 다르므로
  *  exact 패턴으로 분리 라우팅.
  */
-export type ProxyKind = "prefix" | "exact";
+export type ProxyKind = 'prefix' | 'exact';
 
 export interface ProxyTarget {
   /**
@@ -39,45 +39,112 @@ export interface ProxyTarget {
 
 export const PROXY_TARGETS: readonly ProxyTarget[] = [
   // --- 기존 6 서비스 prefix ---
-  { path: "/projects", serviceKey: "sim-pm-api", description: "PM domain — projects" },
-  { path: "/approvals", serviceKey: "sim-approval-api", description: "Approval workflows — budget" },
-  { path: "/notifications", serviceKey: "sim-notification-api", description: "Notifications" },
-  { path: "/reports", serviceKey: "sim-reporting-api", description: "Reporting" },
-  { path: "/documents", serviceKey: "sim-document-api", description: "Documents" },
-  { path: "/audit", serviceKey: "sim-audit-browser-api", description: "Audit explorer" },
+  { path: '/projects', serviceKey: 'sim-pm-api', description: 'PM domain — projects' },
+  {
+    path: '/approvals',
+    serviceKey: 'sim-approval-api',
+    description: 'Approval workflows — budget',
+  },
+  { path: '/notifications', serviceKey: 'sim-notification-api', description: 'Notifications' },
+  { path: '/reports', serviceKey: 'sim-reporting-api', description: 'Reporting' },
+  { path: '/documents', serviceKey: 'sim-document-api', description: 'Documents' },
+  { path: '/audit', serviceKey: 'sim-audit-browser-api', description: 'Audit explorer' },
 
   // --- pm-api 추가 슬라이스 ---
-  { path: "/tasks", serviceKey: "sim-pm-api", description: "PM domain — tasks" },
-  { path: "/assignments", serviceKey: "sim-pm-api", description: "PM domain — assignments (NB: auth-api role-assignments 는 우회)" },
-  { path: "/members", serviceKey: "sim-pm-api", description: "PM domain — project members" },
+  { path: '/tasks', serviceKey: 'sim-pm-api', description: 'PM domain — tasks' },
+  {
+    path: '/assignments',
+    serviceKey: 'sim-pm-api',
+    description: 'PM domain — assignments (NB: auth-api role-assignments 는 우회)',
+  },
+  { path: '/members', serviceKey: 'sim-pm-api', description: 'PM domain — project members' },
   // path-param specific — auth-api `/users` 와 leaf path 로 분리
-  { path: "/users/:userId/projects", serviceKey: "sim-pm-api", description: "PM domain — user's projects", kind: "exact" },
+  {
+    path: '/users/:userId/projects',
+    serviceKey: 'sim-pm-api',
+    description: "PM domain — user's projects",
+    kind: 'exact',
+  },
 
   // --- approval-api 추가 슬라이스 ---
-  { path: "/expense-reports", serviceKey: "sim-approval-api", description: "Approval — expense reports" },
-  { path: "/resource-requests", serviceKey: "sim-approval-api", description: "Approval — resource requests" },
-  { path: "/time-off-requests", serviceKey: "sim-approval-api", description: "Approval — time off requests" },
+  {
+    path: '/expense-reports',
+    serviceKey: 'sim-approval-api',
+    description: 'Approval — expense reports',
+  },
+  {
+    path: '/resource-requests',
+    serviceKey: 'sim-approval-api',
+    description: 'Approval — resource requests',
+  },
+  {
+    path: '/time-off-requests',
+    serviceKey: 'sim-approval-api',
+    description: 'Approval — time off requests',
+  },
 
   // --- notification-api 추가 슬라이스 ---
-  { path: "/subscriptions", serviceKey: "sim-notification-api", description: "Notification — subscriptions" },
-  { path: "/users/:userId/notifications", serviceKey: "sim-notification-api", description: "Notification — user's notifications", kind: "exact" },
-  { path: "/users/:userId/subscriptions", serviceKey: "sim-notification-api", description: "Notification — user's subscriptions", kind: "exact" },
+  {
+    path: '/subscriptions',
+    serviceKey: 'sim-notification-api',
+    description: 'Notification — subscriptions',
+  },
+  {
+    path: '/users/:userId/notifications',
+    serviceKey: 'sim-notification-api',
+    description: "Notification — user's notifications",
+    kind: 'exact',
+  },
+  {
+    path: '/users/:userId/subscriptions',
+    serviceKey: 'sim-notification-api',
+    description: "Notification — user's subscriptions",
+    kind: 'exact',
+  },
 
   // --- reporting-api 추가 슬라이스 ---
-  { path: "/metrics", serviceKey: "sim-reporting-api", description: "Reporting — metrics" },
-  { path: "/density", serviceKey: "sim-reporting-api", description: "Reporting — density" },
+  { path: '/metrics', serviceKey: 'sim-reporting-api', description: 'Reporting — metrics' },
+  { path: '/density', serviceKey: 'sim-reporting-api', description: 'Reporting — density' },
 
   // --- BFF read-model (옵션 A: 슬라이스별 path 추가) ---
   // 이유: 7 BFF resource (assignments / budget-requests / expense-reports / resource-requests /
   // time-off-requests / notifications / subscriptions) 가 모두 unique 하고, controller path
   // 를 변경하지 않으려면 slice 별 path 추가가 가장 단순. `/bff/<resource>` 형태 유지.
-  { path: "/bff/assignments", serviceKey: "sim-pm-api", description: "BFF — assignment detail (pm-api)" },
-  { path: "/bff/budget-requests", serviceKey: "sim-approval-api", description: "BFF — budget request detail" },
-  { path: "/bff/expense-reports", serviceKey: "sim-approval-api", description: "BFF — expense report detail" },
-  { path: "/bff/resource-requests", serviceKey: "sim-approval-api", description: "BFF — resource request detail" },
-  { path: "/bff/time-off-requests", serviceKey: "sim-approval-api", description: "BFF — time off request detail" },
-  { path: "/bff/notifications", serviceKey: "sim-notification-api", description: "BFF — notification detail" },
-  { path: "/bff/subscriptions", serviceKey: "sim-notification-api", description: "BFF — subscription detail" },
+  {
+    path: '/bff/assignments',
+    serviceKey: 'sim-pm-api',
+    description: 'BFF — assignment detail (pm-api)',
+  },
+  {
+    path: '/bff/budget-requests',
+    serviceKey: 'sim-approval-api',
+    description: 'BFF — budget request detail',
+  },
+  {
+    path: '/bff/expense-reports',
+    serviceKey: 'sim-approval-api',
+    description: 'BFF — expense report detail',
+  },
+  {
+    path: '/bff/resource-requests',
+    serviceKey: 'sim-approval-api',
+    description: 'BFF — resource request detail',
+  },
+  {
+    path: '/bff/time-off-requests',
+    serviceKey: 'sim-approval-api',
+    description: 'BFF — time off request detail',
+  },
+  {
+    path: '/bff/notifications',
+    serviceKey: 'sim-notification-api',
+    description: 'BFF — notification detail',
+  },
+  {
+    path: '/bff/subscriptions',
+    serviceKey: 'sim-notification-api',
+    description: 'BFF — subscription detail',
+  },
 ];
 
 export interface CreateProxyRoutesOptions {
@@ -103,9 +170,7 @@ export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
   for (const target of PROXY_TARGETS) {
     const fallbackBase = opts.targets[target.serviceKey];
     if (!fallbackBase) {
-      throw new Error(
-        `createProxyRoutes: target ${target.serviceKey} URL missing`,
-      );
+      throw new Error(`createProxyRoutes: target ${target.serviceKey} URL missing`);
     }
     const handler = async (c: Context) => {
       const url = new URL(c.req.url);
@@ -118,16 +183,16 @@ export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
       let targetVersion: VersionTag | undefined;
 
       if (entry) {
-        const override = c.get("canary-override") as CanaryOverride | undefined;
+        const override = c.get('canary-override') as CanaryOverride | undefined;
         if (override) {
           // spec §3.4 — internal IP에서 검증된 강제 라우팅.
-          const pair = override.target === "candidate" ? entry.candidate : entry.stable;
+          const pair = override.target === 'candidate' ? entry.candidate : entry.stable;
           if (pair) {
             targetBaseUrl = pair.upstream;
             targetVersion = parseVersionTag(pair.version);
           }
         } else {
-          const userId = c.req.raw.headers.get("x-auth-user-id") ?? undefined;
+          const userId = c.req.raw.headers.get('x-auth-user-id') ?? undefined;
           // spec §9 Stage 2 — tracker 주입 시 decideRouteWithTracking 으로 record.
           // 미주입 / anonymous 는 wrapper 내부에서 skip → legacy decideRoute 와 동일.
           const decision = opts.stickyTracker
@@ -150,8 +215,8 @@ export function createProxyRoutes(opts: CreateProxyRoutesOptions) {
         targetVersion,
       });
     };
-    const kind: ProxyKind = target.kind ?? "prefix";
-    if (kind === "exact") {
+    const kind: ProxyKind = target.kind ?? 'prefix';
+    if (kind === 'exact') {
       // path-param specific. wildcard suffix 없이 정확 매칭.
       r.all(target.path, handler);
     } else {

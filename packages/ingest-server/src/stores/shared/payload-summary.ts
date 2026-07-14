@@ -8,10 +8,10 @@
  * 원본: packages/ingest-server/src/stores/d1-key-observation-store.ts (Plan 07b 추출).
  */
 
-import type { KeyObservationEntry } from "@qa-sdk/core";
-import type { PayloadSummaryJson } from "../../db/json-types.js";
+import type { KeyObservationEntry } from '@qa-sdk/core';
+import type { PayloadSummaryJson } from '../../db/json-types.js';
 
-export type { PayloadSummaryJson } from "../../db/json-types.js";
+export type { PayloadSummaryJson } from '../../db/json-types.js';
 
 /** PayloadSummary SSOT — db/json-types.ts에서 정의된 빈 기본값을 그대로 재노출. */
 export const EMPTY_PAYLOAD_SUMMARY: PayloadSummaryJson = {

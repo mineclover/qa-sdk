@@ -1,21 +1,21 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Injectable } from "@nestjs/common";
-import type { Logger } from "pino";
-import { env } from "../../config/env.js";
+import { Injectable } from '@nestjs/common';
+import type { Logger } from 'pino';
+import { env } from '../../config/env.js';
 import {
   createActivationGate,
   type ActivationGateDiagnostic,
   type ActivationGatePort,
-} from "../../lib/activation-gate-adapter.js";
-import { createLogger } from "../../lib/logger.js";
+} from '../../lib/activation-gate-adapter.js';
+import { createLogger } from '../../lib/logger.js';
 import type {
   AnalysisModulePort,
   CatalogPort,
   DkgConfigPort,
   PropagationModulePort,
-} from "../../types/spec-core-ports.js";
+} from '../../types/spec-core-ports.js';
 
 interface DemoSnapshotModulePort {
   readonly DEMO_CATALOG: CatalogPort;
@@ -24,7 +24,7 @@ interface DemoSnapshotModulePort {
 
 export interface BuildActivationGateOptions {
   enabled?: boolean;
-  mode?: "strict" | "warn";
+  mode?: 'strict' | 'warn';
   logger?: Logger;
   loadPropagationModule?: () => Promise<PropagationModulePort>;
   loadAnalysisModule?: () => Promise<AnalysisModulePort>;
@@ -41,21 +41,27 @@ export async function buildActivationGatePort(
 
   try {
     const [propagation, analysis, demoSnapshot] = await Promise.all([
-      (options.loadPropagationModule
-        ?? (async () => import("@qa-sdk/spec-core/propagation") as unknown as PropagationModulePort))(),
-      (options.loadAnalysisModule
-        ?? (async () => import("dkg-enrichment") as unknown as AnalysisModulePort))(),
-      (options.loadDemoSnapshot
-        ?? (async () => {
+      (
+        options.loadPropagationModule ??
+        (async () => import('@qa-sdk/spec-core/propagation') as unknown as PropagationModulePort)
+      )(),
+      (
+        options.loadAnalysisModule ??
+        (async () => import('dkg-enrichment') as unknown as AnalysisModulePort)
+      )(),
+      (
+        options.loadDemoSnapshot ??
+        (async () => {
           const [catalogMod, configMod] = await Promise.all([
-            import("demo-snapshot"),
-            import("demo-dkg-config"),
+            import('demo-snapshot'),
+            import('demo-dkg-config'),
           ]);
           return {
             DEMO_CATALOG: catalogMod.DEMO_CATALOG,
             DEMO_DKG_CONFIG: configMod.DEMO_DKG_CONFIG,
           } as DemoSnapshotModulePort;
-        }))(),
+        })
+      )(),
     ]);
 
     const graph = analysis.bootstrapDkg({
@@ -63,7 +69,7 @@ export async function buildActivationGatePort(
       config: demoSnapshot.DEMO_DKG_CONFIG,
     });
 
-    options.logger?.info({ mode }, "Activation constraint gate enabled");
+    options.logger?.info({ mode }, 'Activation constraint gate enabled');
 
     return createActivationGate({
       mode,
@@ -84,7 +90,7 @@ export async function buildActivationGatePort(
   } catch (error) {
     options.logger?.warn(
       { error: error instanceof Error ? error.message : String(error) },
-      "Failed to initialize constraint gate — gate disabled",
+      'Failed to initialize constraint gate — gate disabled',
     );
     return undefined;
   }
@@ -92,15 +98,15 @@ export async function buildActivationGatePort(
 
 @Injectable()
 export class ActivationGateService {
-  private readonly logger = createLogger("registry-service");
+  private readonly logger = createLogger('registry-service');
 
   createPort() {
     return buildActivationGatePort({ logger: this.logger });
   }
 }
 
-function normalizeDiagnosticLevel(level: string): ActivationGateDiagnostic["level"] {
-  if (level === "error") return "error";
-  if (level === "info") return "info";
-  return "warning";
+function normalizeDiagnosticLevel(level: string): ActivationGateDiagnostic['level'] {
+  if (level === 'error') return 'error';
+  if (level === 'info') return 'info';
+  return 'warning';
 }

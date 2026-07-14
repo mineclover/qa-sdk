@@ -1,9 +1,15 @@
 {
   "name": "@qa-sdk/registry-service",
   "version": "0.1.0",
-  "description": "catalog, prefix, version, service, event를 관리하는 registry 서비스",
   "private": true,
+  "description": "catalog, prefix, version, service, event를 관리하는 registry 서비스",
+  "files": [
+    "dist",
+    "src"
+  ],
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -14,12 +20,6 @@
       "import": "./dist/ontology-local-runtime.js"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "src"
-  ],
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsup",
@@ -38,35 +38,25 @@
     "@nestjs/websockets": "^11.0.0",
     "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/core": "workspace:*",
-    "pipe-store-sqlite": "workspace:*",
-    "@qa-sdk/otel": "workspace:*",
     "@qa-sdk/definition-client": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
+    "@qa-sdk/otel": "workspace:*",
     "definition-catalog": "workspace:*",
     "dotenv": "^17.3.1",
     "drizzle-orm": "catalog:",
     "index-meta": "workspace:*",
     "operational-ontology": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
+    "pipe-store-sqlite": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "weighted-index": "workspace:*",
     "ws": "^8.19.0",
     "zod": "^3.25.76"
   },
-  "peerDependencies": {
-    "@qa-sdk/spec-core": "workspace:*"
-  },
-  "peerDependenciesMeta": {
-    "@qa-sdk/spec-core": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
-    "drizzle-kit": "catalog:",
-    "tsup": "^8.5.1",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.30.0",
     "@opentelemetry/sdk-trace-node": "^1.30.0",
@@ -75,9 +65,19 @@
     "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
     "dkg-enrichment": "workspace:*",
+    "drizzle-kit": "catalog:",
+    "tsup": "^8.5.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vitest": "^3",
     "wrangler": "^4.73.0"
+  },
+  "peerDependencies": {
+    "@qa-sdk/spec-core": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@qa-sdk/spec-core": {
+      "optional": true
+    }
   }
 }

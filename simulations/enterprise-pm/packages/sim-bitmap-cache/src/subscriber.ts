@@ -13,13 +13,9 @@
  *   parse/schema 실패 → warn 로그, cache 변경 없음 (fail-safe)
  */
 
-import type { Redis } from "ioredis";
-import { BitmapLruCache } from "./lru-cache.js";
-import {
-  INVALIDATION_CHANNEL,
-  parseMessage,
-  type InvalidationMessage,
-} from "./message.js";
+import type { Redis } from 'ioredis';
+import { BitmapLruCache } from './lru-cache.js';
+import { INVALIDATION_CHANNEL, parseMessage, type InvalidationMessage } from './message.js';
 
 export interface SubscriberLogger {
   info: (obj: object, msg?: string) => void;
@@ -46,19 +42,16 @@ export class BitmapInvalidationSubscriber {
       if (channel !== INVALIDATION_CHANNEL) return;
       this.handleMessage(message);
     };
-    this.opts.redis.on("message", this.boundHandler);
+    this.opts.redis.on('message', this.boundHandler);
     await this.opts.redis.subscribe(INVALIDATION_CHANNEL);
     this.started = true;
-    this.opts.logger.info(
-      { channel: INVALIDATION_CHANNEL },
-      "BitmapInvalidationSubscriber 시작",
-    );
+    this.opts.logger.info({ channel: INVALIDATION_CHANNEL }, 'BitmapInvalidationSubscriber 시작');
   }
 
   async stop(): Promise<void> {
     if (!this.started) return;
     if (this.boundHandler) {
-      this.opts.redis.off("message", this.boundHandler);
+      this.opts.redis.off('message', this.boundHandler);
     }
     await this.opts.redis.unsubscribe(INVALIDATION_CHANNEL);
     this.started = false;
@@ -71,61 +64,61 @@ export class BitmapInvalidationSubscriber {
     } catch (err) {
       this.opts.logger.warn(
         { err: (err as Error).message, raw },
-        "InvalidationMessage parse 실패 — TTL+version-check가 회복 보장 (spec 04 §3.2)",
+        'InvalidationMessage parse 실패 — TTL+version-check가 회복 보장 (spec 04 §3.2)',
       );
       return;
     }
 
     // spec 04 §3.3 — subscriber는 evict trigger. 회복은 §3.2 TTL+version-check.
-    const recovery = "fallthrough-trigger" as const;
+    const recovery = 'fallthrough-trigger' as const;
 
     switch (msg.scope) {
-      case "user": {
+      case 'user': {
         const removed = this.opts.cache.invalidateUser(msg.target);
         this.opts.logger.info(
           {
-            scope: "user",
+            scope: 'user',
             target: msg.target,
             removed,
             reason: msg.reason,
             recovery,
           },
-          "cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)",
+          'cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)',
         );
         break;
       }
-      case "role": {
+      case 'role': {
         if (!msg.affectedUserIds || msg.affectedUserIds.length === 0) {
           this.opts.logger.warn(
             { roleId: msg.target },
-            "role scope이지만 affectedUserIds 누락 — 정합성은 §3.2 TTL+version-check 보장",
+            'role scope이지만 affectedUserIds 누락 — 정합성은 §3.2 TTL+version-check 보장',
           );
           return;
         }
         const removed = this.opts.cache.invalidateUsers(msg.affectedUserIds);
         this.opts.logger.info(
           {
-            scope: "role",
+            scope: 'role',
             target: msg.target,
             removed,
             reason: msg.reason,
             recovery,
           },
-          "cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)",
+          'cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)',
         );
         break;
       }
-      case "prefix": {
+      case 'prefix': {
         const removed = this.opts.cache.invalidatePrefix(msg.target);
         this.opts.logger.info(
           {
-            scope: "prefix",
+            scope: 'prefix',
             target: msg.target,
             removed,
             reason: msg.reason,
             recovery,
           },
-          "cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)",
+          'cache evicted (latency 최적화 trigger; 정합성은 §3.2 보장)',
         );
         break;
       }

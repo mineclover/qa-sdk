@@ -1,23 +1,19 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Global, Module } from "@nestjs/common";
-import {
-  SqlPrefixRegistry,
-  SqlVersionLifecycleStore,
-  type SqlDriver,
-} from "index-meta";
-import { DATABASE } from "./database.module.js";
-import { RegistryService } from "./lib/registry-service.js";
-import { SqlDraftLockStore } from "./stores/sql-draft-lock-store.js";
-import { SqlPrefixOwnerStore } from "./stores/sql-prefix-owner-store.js";
+import { Global, Module } from '@nestjs/common';
+import { SqlPrefixRegistry, SqlVersionLifecycleStore, type SqlDriver } from 'index-meta';
+import { DATABASE } from './database.module.js';
+import { RegistryService } from './lib/registry-service.js';
+import { SqlDraftLockStore } from './stores/sql-draft-lock-store.js';
+import { SqlPrefixOwnerStore } from './stores/sql-prefix-owner-store.js';
 
 /** 공유 DI 토큰 — RegistryService 의존 store 4종 + base RegistryService */
-export const PREFIX_REGISTRY = "PREFIX_REGISTRY";
-export const VERSION_STORE = "VERSION_STORE";
-export const OWNER_STORE = "OWNER_STORE";
-export const LOCK_STORE = "LOCK_STORE";
-export const REGISTRY_SERVICE = "REGISTRY_SERVICE";
+export const PREFIX_REGISTRY = 'PREFIX_REGISTRY';
+export const VERSION_STORE = 'VERSION_STORE';
+export const OWNER_STORE = 'OWNER_STORE';
+export const LOCK_STORE = 'LOCK_STORE';
+export const REGISTRY_SERVICE = 'REGISTRY_SERVICE';
 
 /**
  * RegistryService 핵심 store를 싱글턴으로 제공하는 글로벌 모듈.
@@ -65,12 +61,6 @@ export const REGISTRY_SERVICE = "REGISTRY_SERVICE";
       inject: [PREFIX_REGISTRY, VERSION_STORE, OWNER_STORE, LOCK_STORE],
     },
   ],
-  exports: [
-    PREFIX_REGISTRY,
-    VERSION_STORE,
-    OWNER_STORE,
-    LOCK_STORE,
-    REGISTRY_SERVICE,
-  ],
+  exports: [PREFIX_REGISTRY, VERSION_STORE, OWNER_STORE, LOCK_STORE, REGISTRY_SERVICE],
 })
 export class RegistryCoreModule {}

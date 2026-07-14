@@ -10,23 +10,24 @@
  *
  * GraphPort는 spec-schema에서 직접 import하므로 드리프트 검사 불필요.
  */
-import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const DKG = resolve(import.meta.dirname, "../../../dkg/src");
-const CONVERGENCE = resolve(import.meta.dirname, "../../../convergence/src");
+const DKG = resolve(import.meta.dirname, '../../../dkg/src');
+const CONVERGENCE = resolve(import.meta.dirname, '../../../convergence/src');
 
-describe("convergence 복사본 드리프트 방지", () => {
-  it("decision-scaffold 함수 시그니처가 동기화되어 있다", () => {
-    const dkgFile = readFileSync(resolve(DKG, "decision-scaffold.ts"), "utf-8");
-    const convFile = readFileSync(resolve(CONVERGENCE, "decision-scaffold.ts"), "utf-8");
+describe('convergence 복사본 드리프트 방지', () => {
+  it('decision-scaffold 함수 시그니처가 동기화되어 있다', () => {
+    const dkgFile = readFileSync(resolve(DKG, 'decision-scaffold.ts'), 'utf-8');
+    const convFile = readFileSync(resolve(CONVERGENCE, 'decision-scaffold.ts'), 'utf-8');
 
     // export function 시그니처 추출
     const extractExports = (content: string) =>
-      content.split("\n")
-        .filter(l => l.startsWith("export function") || l.startsWith("export interface"))
-        .map(l => l.trim());
+      content
+        .split('\n')
+        .filter((l) => l.startsWith('export function') || l.startsWith('export interface'))
+        .map((l) => l.trim());
 
     const dkgExports = extractExports(dkgFile);
     const convExports = extractExports(convFile);
@@ -35,16 +36,16 @@ describe("convergence 복사본 드리프트 방지", () => {
     expect(convExports).toEqual(dkgExports);
   });
 
-  it("DkgNodePort 기본 형태가 서비스 포트와 호환된다", () => {
+  it('DkgNodePort 기본 형태가 서비스 포트와 호환된다', () => {
     // convergence의 dkg-types.ts에서 DecisionNode 형태 확인
-    const convTypes = readFileSync(resolve(CONVERGENCE, "dkg-types.ts"), "utf-8");
+    const convTypes = readFileSync(resolve(CONVERGENCE, 'dkg-types.ts'), 'utf-8');
 
     // 최소 필수 타입이 존재하는지
-    expect(convTypes).toContain("DecisionNode");
-    expect(convTypes).toContain("ObservationNode");
-    expect(convTypes).toContain("ConstraintNode");
-    expect(convTypes).toContain("kind: \"decision\"");
-    expect(convTypes).toContain("kind: \"observation\"");
-    expect(convTypes).toContain("kind: \"constraint\"");
+    expect(convTypes).toContain('DecisionNode');
+    expect(convTypes).toContain('ObservationNode');
+    expect(convTypes).toContain('ConstraintNode');
+    expect(convTypes).toContain('kind: "decision"');
+    expect(convTypes).toContain('kind: "observation"');
+    expect(convTypes).toContain('kind: "constraint"');
   });
 });

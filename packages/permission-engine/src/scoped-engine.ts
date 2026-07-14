@@ -14,7 +14,7 @@
  *   engine.scope("dev:usa").has("payment_history", "admin");   // false
  */
 
-import { PermissionSet, type DimDef } from "./permission-set.js";
+import { PermissionSet, type DimDef } from './permission-set.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,8 +107,8 @@ export class ScopedEngine {
   }
 
   static fromSnapshot(snap: ScopedEngineSnapshot): ScopedEngine {
-    const features: DimDef = { name: "features", ids: snap.features };
-    const roles: DimDef = { name: "roles", ids: snap.roles };
+    const features: DimDef = { name: 'features', ids: snap.features };
+    const roles: DimDef = { name: 'roles', ids: snap.roles };
     const engine = new ScopedEngine(features, roles);
     for (const [key, maskB64] of Object.entries(snap.scopes)) {
       const ps = PermissionSet.fromSnapshot({

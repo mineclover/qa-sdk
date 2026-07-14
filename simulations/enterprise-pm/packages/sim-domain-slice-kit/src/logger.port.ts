@@ -27,7 +27,7 @@ export interface SliceLogContext {
   /** 도메인 이벤트 스키마 버전 */
   eventVersion?: number;
   /** 처리 결과 */
-  outcome?: "success" | "failure";
+  outcome?: 'success' | 'failure';
   /** 도메인 에러 코드 (실패 시) */
   errorCode?: string;
   /** 캐시 키 prefix (캐시 히트율 분석용) */

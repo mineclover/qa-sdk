@@ -1,9 +1,9 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 
 import {
   InMemoryOperationalOntologyStore,
@@ -11,9 +11,9 @@ import {
   type OperationalOntologyObjectRecord,
   type OperationalOntologyObservationRecord,
   type OperationalOntologyProjectionRecord,
-} from "operational-ontology/persistence";
+} from 'operational-ontology/persistence';
 
-import { getQaSdkDir } from "../../lib/qa-dir.js";
+import { getQaSdkDir } from '../../lib/qa-dir.js';
 
 interface PersistedOntologyStoreFile {
   objects: OperationalOntologyObjectRecord[];
@@ -22,10 +22,7 @@ interface PersistedOntologyStoreFile {
   projections: OperationalOntologyProjectionRecord[];
 }
 
-export const DEFAULT_STORE_FILE = join(
-  getQaSdkDir(),
-  "operational-ontology-store.json",
-);
+export const DEFAULT_STORE_FILE = join(getQaSdkDir(), 'operational-ontology-store.json');
 
 export function parseFlags(args: string[]): {
   positional: string[];
@@ -36,20 +33,20 @@ export function parseFlags(args: string[]): {
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
-    if (!arg.startsWith("--")) {
+    if (!arg.startsWith('--')) {
       positional.push(arg);
       continue;
     }
 
-    const [key, inline] = arg.slice(2).split("=", 2);
+    const [key, inline] = arg.slice(2).split('=', 2);
     const next = args[index + 1];
     if (inline !== undefined) {
       flags[key] = inline;
-    } else if (next && !next.startsWith("--")) {
+    } else if (next && !next.startsWith('--')) {
       flags[key] = next;
       index += 1;
     } else {
-      flags[key] = "true";
+      flags[key] = 'true';
     }
   }
 
@@ -57,17 +54,15 @@ export function parseFlags(args: string[]): {
 }
 
 export function getStorePath(flags: Record<string, string>): string {
-  return resolve(flags["store"] ?? DEFAULT_STORE_FILE);
+  return resolve(flags['store'] ?? DEFAULT_STORE_FILE);
 }
 
 export async function loadJsonFile<T>(filePath: string): Promise<T> {
-  const content = await readFile(filePath, "utf8");
+  const content = await readFile(filePath, 'utf8');
   return JSON.parse(content) as T;
 }
 
-export async function loadStore(
-  storePath: string,
-): Promise<InMemoryOperationalOntologyStore> {
+export async function loadStore(storePath: string): Promise<InMemoryOperationalOntologyStore> {
   const store = new InMemoryOperationalOntologyStore();
   if (!existsSync(storePath)) {
     return store;
@@ -113,7 +108,7 @@ export async function saveStore(
       null,
       2,
     ),
-    "utf8",
+    'utf8',
   );
 }
 
@@ -126,12 +121,8 @@ export function toPrettyJson(data: unknown): string {
 }
 
 export function printTable(headers: string[], row: string[]): void {
-  const widths = headers.map((header, index) =>
-    Math.max(header.length, row[index]?.length ?? 0),
-  );
-  console.log(
-    headers.map((header, index) => header.padEnd(widths[index]!)).join("  "),
-  );
-  console.log(widths.map((width) => "-".repeat(width)).join("  "));
-  console.log(row.map((value, index) => value.padEnd(widths[index]!)).join("  "));
+  const widths = headers.map((header, index) => Math.max(header.length, row[index]?.length ?? 0));
+  console.log(headers.map((header, index) => header.padEnd(widths[index]!)).join('  '));
+  console.log(widths.map((width) => '-'.repeat(width)).join('  '));
+  console.log(row.map((value, index) => value.padEnd(widths[index]!)).join('  '));
 }

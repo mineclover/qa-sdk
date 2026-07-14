@@ -1,7 +1,7 @@
 // @def.boundary query-api-spec
 // @def.doc query-api-spec
 
-import { z } from "zod";
+import { z } from 'zod';
 
 const coordConstraintInputSchema = z.union([
   z.string().min(1),
@@ -11,8 +11,8 @@ const coordConstraintInputSchema = z.union([
 
 const forceQueryValueSchema = z.preprocess((value) => {
   if (value === undefined) return false;
-  if (value === true || value === "true") return true;
-  if (value === false || value === "false") return false;
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
   return value;
 }, z.boolean());
 

@@ -7,8 +7,8 @@ import type {
   SchemaValidationResult,
   TaxonomySchema,
   TraversalSchema,
-} from "./schema-core.js";
-import { validateOperationalOntologySchema } from "./schema-core.js";
+} from './schema-core.js';
+import { validateOperationalOntologySchema } from './schema-core.js';
 
 export interface InMemoryOperationalOntologySchemaRegistryOptions {
   allowInvalid?: boolean;
@@ -46,9 +46,9 @@ export class InMemoryOperationalOntologySchemaRegistry
     if (!validation.valid && !this.options.allowInvalid) {
       throw new Error(
         `Operational ontology schema is invalid: ${validation.issues
-          .filter((issue) => issue.level === "error")
+          .filter((issue) => issue.level === 'error')
           .map((issue) => `${issue.code}@${issue.path}`)
-          .join(", ")}`,
+          .join(', ')}`,
       );
     }
 
@@ -57,9 +57,7 @@ export class InMemoryOperationalOntologySchemaRegistry
   }
 
   get(category: string): RelationCategorySchema | undefined {
-    return this.schema.relationCategories.find(
-      (definition) => definition.category === category,
-    );
+    return this.schema.relationCategories.find((definition) => definition.category === category);
   }
 
   getAxis(axisId: string): AxisSchema | undefined {

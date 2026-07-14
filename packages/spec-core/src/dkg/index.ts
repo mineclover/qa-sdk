@@ -8,4 +8,4 @@
  * Re-export from dkg 패키지.
  */
 
-export * from "dkg";
+export * from 'dkg';

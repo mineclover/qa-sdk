@@ -6,14 +6,8 @@ export {
   type DimDef,
   type PermissionSetOptions,
   type PermissionSetSnapshot,
-} from "./permission-set.js";
+} from './permission-set.js';
 
-export {
-  ScopedEngine,
-  type ScopedEngineSnapshot,
-} from "./scoped-engine.js";
+export { ScopedEngine, type ScopedEngineSnapshot } from './scoped-engine.js';
 
-export {
-  migratePermissions,
-  type CoordMapper,
-} from "./migration.js";
+export { migratePermissions, type CoordMapper } from './migration.js';

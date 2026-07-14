@@ -1,10 +1,9 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
+import { z } from 'zod';
 
 const AGGREGATE_ID_REGEX = /^[a-z][a-z0-9-]+$/;
 // Task 2.6 (event-name)와 병렬 작성 우회: 3-tier kebab-case 형식만 검증한다.
-const EVENT_NAME_REGEX =
-  /^[a-z][a-z0-9-]+\.[a-z][a-z0-9-]+\.[a-z][a-z0-9-]+$/;
+const EVENT_NAME_REGEX = /^[a-z][a-z0-9-]+\.[a-z][a-z0-9-]+\.[a-z][a-z0-9-]+$/;
 
 export interface IdempotencyKeyInput {
   aggregateId: string;
@@ -27,10 +26,7 @@ const NormalizedSchema = z.object({
 export const IdempotencyKeySchema = NormalizedSchema;
 
 function normalize(input: IdempotencyKeyInput): IdempotencyKey {
-  const epoch =
-    input.occurredAt instanceof Date
-      ? input.occurredAt.getTime()
-      : input.occurredAt;
+  const epoch = input.occurredAt instanceof Date ? input.occurredAt.getTime() : input.occurredAt;
   return NormalizedSchema.parse({
     aggregateId: input.aggregateId,
     eventName: input.eventName,

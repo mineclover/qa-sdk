@@ -9,4 +9,3 @@ export const SCOPE_ADDR = {
   apm: 0,
   ingest: 1,
 } as const;
-

@@ -13,8 +13,8 @@
  * - 시간축으로 스냅샷을 x축으로 스택 → 시간 큐브
  */
 
-import type { MatrixStackDef, ViewPosition, StackAxis } from "../core/types.js";
-import type { GridLayout } from "../core/grid-builder.js";
+import type { MatrixStackDef, ViewPosition, StackAxis } from '../core/types.js';
+import type { GridLayout } from '../core/grid-builder.js';
 
 export interface StackLayout {
   readonly stackId: string;
@@ -31,19 +31,23 @@ export function computeStackLayout(
   stack: MatrixStackDef,
   grids: readonly GridLayout[],
 ): StackLayout {
-  const gridMap = new Map(grids.map(g => [g.id, g]));
+  const gridMap = new Map(grids.map((g) => [g.id, g]));
   const positions: Record<string, ViewPosition> = {};
-  let maxW = 0, maxD = 0;
+  let maxW = 0,
+    maxD = 0;
 
   stack.grids.forEach((gridId, i) => {
     const grid = gridMap.get(gridId);
-    if (grid) { maxW = Math.max(maxW, grid.width); maxD = Math.max(maxD, grid.depth); }
+    if (grid) {
+      maxW = Math.max(maxW, grid.width);
+      maxD = Math.max(maxD, grid.depth);
+    }
 
     const offset = i * stack.gap;
     positions[gridId] = {
-      x: stack.position.x + (stack.axis === "x" ? offset : 0),
-      y: stack.position.y + (stack.axis === "y" ? offset : 0),
-      z: stack.position.z + (stack.axis === "z" ? offset : 0),
+      x: stack.position.x + (stack.axis === 'x' ? offset : 0),
+      y: stack.position.y + (stack.axis === 'y' ? offset : 0),
+      z: stack.position.z + (stack.axis === 'z' ? offset : 0),
     };
   });
 
@@ -53,9 +57,9 @@ export function computeStackLayout(
     axis: stack.axis,
     gridPositions: positions,
     bounds: {
-      width: stack.axis === "x" ? totalLen : maxW,
-      height: stack.axis === "y" ? totalLen : 1,
-      depth: stack.axis === "z" ? totalLen : maxD,
+      width: stack.axis === 'x' ? totalLen : maxW,
+      height: stack.axis === 'y' ? totalLen : 1,
+      depth: stack.axis === 'z' ? totalLen : maxD,
     },
   };
 }
@@ -92,27 +96,27 @@ export function computeAllStacks(
 
 /** checkout 흐름 수직 스택 */
 export const STACK_CHECKOUT: MatrixStackDef = {
-  id: "stack-checkout",
-  grids: ["page_view", "endpoint", "flow_point", "permission", "order_event", "orders"],
-  axis: "y",
+  id: 'stack-checkout',
+  grids: ['page_view', 'endpoint', 'flow_point', 'permission', 'order_event', 'orders'],
+  axis: 'y',
   gap: 3,
   position: { x: 0, y: -4, z: 0 },
 };
 
 /** 인프라 관측 수직 스택 */
 export const STACK_INFRA: MatrixStackDef = {
-  id: "stack-infra",
-  grids: ["service", "deploy_event", "health_event", "pipeline_point", "data_policy"],
-  axis: "y",
+  id: 'stack-infra',
+  grids: ['service', 'deploy_event', 'health_event', 'pipeline_point', 'data_policy'],
+  axis: 'y',
   gap: 3,
   position: { x: 12, y: -4, z: 0 },
 };
 
 /** 서비스별 깊이 스택 */
 export const STACK_BY_SERVICE: MatrixStackDef = {
-  id: "stack-by-service",
-  grids: ["page_view", "tracking", "cart_event", "auth_event", "order_event"],
-  axis: "z",
+  id: 'stack-by-service',
+  grids: ['page_view', 'tracking', 'cart_event', 'auth_event', 'order_event'],
+  axis: 'z',
   gap: 4,
   position: { x: -12, y: 0, z: -8 },
 };

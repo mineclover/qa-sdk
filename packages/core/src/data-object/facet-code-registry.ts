@@ -1,9 +1,9 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { PipeGraph } from "../types/pipe-spec.js";
-import type { FacetCodeMapping } from "./types.js";
-import { collectFlowSteps } from "../pipe/pipe-fold.js";
+import type { PipeGraph } from '../types/pipe-spec.js';
+import type { FacetCodeMapping } from './types.js';
+import { collectFlowSteps } from '../pipe/pipe-fold.js';
 
 // ── 포트 ────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export class FacetCodeRegistry implements FacetCodeStore {
     const facets = this.byFile.get(file);
     if (!facets) return [];
     return [...facets]
-      .map(f => this.byFacet.get(f))
+      .map((f) => this.byFacet.get(f))
       .filter((m): m is FacetCodeMapping => m !== undefined);
   }
 
@@ -60,7 +60,7 @@ export class FacetCodeRegistry implements FacetCodeStore {
     const facets = this.bySchema.get(schemaId);
     if (!facets) return [];
     return [...facets]
-      .map(f => this.byFacet.get(f))
+      .map((f) => this.byFacet.get(f))
       .filter((m): m is FacetCodeMapping => m !== undefined);
   }
 

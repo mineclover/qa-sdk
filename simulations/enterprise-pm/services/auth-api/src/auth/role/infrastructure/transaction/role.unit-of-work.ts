@@ -1,12 +1,12 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { RoleRepositoryPort } from "../../application/ports/role-repository.port.js";
-import type { RoleOutboxPort } from "../../application/ports/role-outbox.port.js";
+import type { RoleRepositoryPort } from '../../application/ports/role-repository.port.js';
+import type { RoleOutboxPort } from '../../application/ports/role-outbox.port.js';
 import type {
   RoleTransactionPort,
   RoleTransactionScope,
-} from "../../application/ports/role-transaction.port.js";
+} from '../../application/ports/role-transaction.port.js';
 
 export class RoleUnitOfWork {
   constructor(

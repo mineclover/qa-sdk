@@ -26,7 +26,13 @@
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "DOWN", "color": "red" },
+                "1": { "text": "UP", "color": "green" }
+              }
+            }
           ]
         }
       },
@@ -199,7 +205,13 @@
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "type": "value", "options": { "0": { "text": "OFF", "color": "yellow" }, "1": { "text": "ON", "color": "green" } } }
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "OFF", "color": "yellow" },
+                "1": { "text": "ON", "color": "green" }
+              }
+            }
           ]
         }
       }

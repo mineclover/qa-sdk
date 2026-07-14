@@ -40,9 +40,7 @@ interface TopologyResponse {
  * topology 응답 shape: `{ stable: {value: N}, candidate: {value: M} | null, retired: [{value}...] }`
  * 시나리오 기대 shape: `{ v1: "retired", v3: "stable", ... }`
  */
-export function createCatalogStore(
-  args: CatalogStoreFactoryArgs,
-): CatalogStoreHandle {
+export function createCatalogStore(args: CatalogStoreFactoryArgs): CatalogStoreHandle {
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -50,53 +48,44 @@ export function createCatalogStore(
         ...(init ?? {}),
         signal: AbortSignal.timeout(args.timeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
-  const base = args.controllerUrl.replace(/\/$/, "");
-  const prefix = args.prefix ?? "sim.svc.approval";
+  const base = args.controllerUrl.replace(/\/$/, '');
+  const prefix = args.prefix ?? 'sim.svc.approval';
 
   return {
     async getStates() {
       const url = `${base}/v1/catalog/states?prefix=${encodeURIComponent(prefix)}`;
-      const res = await fetchImpl(url, { method: "GET" });
+      const res = await fetchImpl(url, { method: 'GET' });
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(
-          `catalog-store GET ${url} failed: status=${res.status} body=${body}`,
-        );
+        throw new Error(`catalog-store GET ${url} failed: status=${res.status} body=${body}`);
       }
       let json: unknown;
       try {
         json = await res.json();
       } catch (e) {
-        throw new Error(
-          `catalog-store JSON parse failed: ${(e as Error).message}`,
-        );
+        throw new Error(`catalog-store JSON parse failed: ${(e as Error).message}`);
       }
       const t = json as TopologyResponse;
-      if (
-        typeof t?.stable?.value !== "number" ||
-        !Array.isArray(t.retired)
-      ) {
-        throw new Error(
-          `catalog-store invalid topology shape: ${JSON.stringify(json)}`,
-        );
+      if (typeof t?.stable?.value !== 'number' || !Array.isArray(t.retired)) {
+        throw new Error(`catalog-store invalid topology shape: ${JSON.stringify(json)}`);
       }
 
       const states: CatalogStateView = {
-        v3: "undeployed",
-        v4: "undeployed",
+        v3: 'undeployed',
+        v4: 'undeployed',
       };
-      
+
       // 1. Stable
-      states[`v${t.stable.value}`] = "stable";
-      
+      states[`v${t.stable.value}`] = 'stable';
+
       // 2. Candidate
       if (t.candidate) {
-        states[`v${t.candidate.value}`] = "candidate";
+        states[`v${t.candidate.value}`] = 'candidate';
       }
-      
+
       // 3. Retired
       for (const r of t.retired) {
-        states[`v${r.value}`] = "retired";
+        states[`v${r.value}`] = 'retired';
       }
 
       return states;

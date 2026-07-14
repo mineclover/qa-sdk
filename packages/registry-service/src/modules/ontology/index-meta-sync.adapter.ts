@@ -1,30 +1,21 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type {
-  DimRef,
-  PrefixRegistry,
-  PrefixRegistryRecord,
-  SchemaVersionRecord,
-} from "index-meta";
+import type { DimRef, PrefixRegistry, PrefixRegistryRecord, SchemaVersionRecord } from 'index-meta';
 import type {
   OntologyAddressAllocationRecord,
   OntologyAddressSegmentRecord,
   OntologyAxisRecord,
   OntologyNamespaceRecord,
   OntologyTaxonomyRecord,
-} from "../../stores/ontology-registry-store.js";
+} from '../../stores/ontology-registry-store.js';
 
-export type OntologyActiveAddressAllocationRecord =
-  OntologyAddressAllocationRecord & {
-    readonly status: "active";
-  };
+export type OntologyActiveAddressAllocationRecord = OntologyAddressAllocationRecord & {
+  readonly status: 'active';
+};
 
 export interface OntologyIndexMetaSchemaVersionStore {
-  getSchemaVersion(
-    prefix: string,
-    versionId: string,
-  ): Promise<SchemaVersionRecord | null>;
+  getSchemaVersion(prefix: string, versionId: string): Promise<SchemaVersionRecord | null>;
   insertSchemaVersion(record: SchemaVersionRecord): Promise<void>;
 }
 
@@ -47,27 +38,25 @@ export interface OntologyIndexMetaSyncBundle {
   readonly segments: readonly OntologyAddressSegmentRecord[];
 }
 
-export type OntologyIndexMetaSyncStatus = "synced" | "blocked" | "deferred";
+export type OntologyIndexMetaSyncStatus = 'synced' | 'blocked' | 'deferred';
 
 export interface OntologyIndexMetaSyncReportBase {
   readonly allocationId: string;
   readonly prefix: string;
   readonly versionId: string;
   readonly taxonomyId: string;
-  readonly status: "active";
+  readonly status: 'active';
 }
 
-export interface OntologyIndexMetaSyncDeferredReport
-  extends OntologyIndexMetaSyncReportBase {
-  readonly syncStatus: "deferred";
+export interface OntologyIndexMetaSyncDeferredReport extends OntologyIndexMetaSyncReportBase {
+  readonly syncStatus: 'deferred';
   readonly deferredReason:
-    | "phase-4-index-meta-sync-not-implemented"
-    | "sum-segment-semantics-unsupported";
+    | 'phase-4-index-meta-sync-not-implemented'
+    | 'sum-segment-semantics-unsupported';
 }
 
-export interface OntologyIndexMetaSyncMaterializationReport
-  extends OntologyIndexMetaSyncReportBase {
-  readonly syncStatus: Exclude<OntologyIndexMetaSyncStatus, "deferred">;
+export interface OntologyIndexMetaSyncMaterializationReport extends OntologyIndexMetaSyncReportBase {
+  readonly syncStatus: Exclude<OntologyIndexMetaSyncStatus, 'deferred'>;
   readonly materializedRecords: readonly OntologyIndexMetaSyncRecord[];
   readonly idempotentRecords: readonly OntologyIndexMetaSyncRecord[];
   readonly repairedRecords: readonly OntologyIndexMetaSyncRecord[];
@@ -81,14 +70,14 @@ export type OntologyIndexMetaSyncReport =
   | OntologyIndexMetaSyncMaterializationReport;
 
 export type OntologyIndexMetaSyncRecordKind =
-  | "prefix-registry"
-  | "schema-version"
-  | "segment-sidecar";
+  | 'prefix-registry'
+  | 'schema-version'
+  | 'segment-sidecar';
 
 export type OntologyIndexMetaSyncRecordRole =
-  | "axis-leaf"
-  | "allocation-prefix"
-  | "sum-segment-sidecar";
+  | 'axis-leaf'
+  | 'allocation-prefix'
+  | 'sum-segment-sidecar';
 
 export interface OntologyIndexMetaSyncRecord {
   readonly kind: OntologyIndexMetaSyncRecordKind;
@@ -105,12 +94,12 @@ export interface OntologyIndexMetaSyncRecord {
 }
 
 export type OntologyIndexMetaSyncCollisionCode =
-  | "prefix-capacity-drift"
-  | "prefix-refs-drift"
-  | "schema-version-capacity-drift"
-  | "allocation-shape-drift"
-  | "sum-segment-coverage-drift"
-  | "index-meta-write-conflict";
+  | 'prefix-capacity-drift'
+  | 'prefix-refs-drift'
+  | 'schema-version-capacity-drift'
+  | 'allocation-shape-drift'
+  | 'sum-segment-coverage-drift'
+  | 'index-meta-write-conflict';
 
 export interface OntologyIndexMetaSyncCollision {
   readonly code: OntologyIndexMetaSyncCollisionCode;
@@ -121,11 +110,9 @@ export interface OntologyIndexMetaSyncCollision {
 }
 
 export interface OntologyIndexMetaSyncDeferredSemantics {
-  readonly code:
-    | "sum-segment-prefix-ref-unsupported"
-    | "index-meta-segment-store-unavailable";
+  readonly code: 'sum-segment-prefix-ref-unsupported' | 'index-meta-segment-store-unavailable';
   readonly message: string;
-  readonly coveragePolicy?: "exact-allocation-range";
+  readonly coveragePolicy?: 'exact-allocation-range';
   readonly segments: readonly OntologyIndexMetaSyncSegmentSidecar[];
 }
 
@@ -184,7 +171,7 @@ export interface OntologyIndexMetaAddressPostSyncCheck {
 export interface OntologyIndexMetaSumAllocationPostSyncCheck {
   readonly prefix: string;
   readonly versionId: string;
-  readonly coveragePolicy: "exact-allocation-range" | null;
+  readonly coveragePolicy: 'exact-allocation-range' | null;
   readonly segmentSidecarCoversAllocation: boolean;
   readonly allocationStart: number;
   readonly allocationEnd: number;
@@ -201,7 +188,7 @@ export function buildDeferredOntologyIndexMetaSyncReport(
 export function buildDeferredOntologyIndexMetaSyncReport(
   input: OntologyIndexMetaSyncBundle | OntologyActiveAddressAllocationRecord,
 ): OntologyIndexMetaSyncDeferredReport {
-  const allocation = "allocation" in input ? input.allocation : input;
+  const allocation = 'allocation' in input ? input.allocation : input;
 
   return {
     allocationId: allocation.allocationId,
@@ -209,8 +196,8 @@ export function buildDeferredOntologyIndexMetaSyncReport(
     versionId: allocation.versionId,
     taxonomyId: allocation.taxonomyId,
     status: allocation.status,
-    syncStatus: "deferred",
-    deferredReason: "phase-4-index-meta-sync-not-implemented",
+    syncStatus: 'deferred',
+    deferredReason: 'phase-4-index-meta-sync-not-implemented',
   };
 }
 
@@ -220,10 +207,7 @@ export function createOntologyIndexMetaSyncAdapter(
   return new OntologyIndexMetaSyncAdapterImpl(deps);
 }
 
-export function deriveOntologyAxisLeafPrefix(
-  namespace: string,
-  axisId: string,
-): string {
+export function deriveOntologyAxisLeafPrefix(namespace: string, axisId: string): string {
   return `${normalizeIdentifier(namespace)}_axis_${normalizeIdentifier(axisId)}`;
 }
 
@@ -245,21 +229,17 @@ interface OntologyIndexMetaSyncPlan {
   readonly deferredSemantics?: readonly OntologyIndexMetaSyncDeferredSemantics[];
 }
 
-class OntologyIndexMetaSyncAdapterImpl
-  implements OntologyIndexMetaSyncAdapter<OntologyIndexMetaSyncReport>
-{
+class OntologyIndexMetaSyncAdapterImpl implements OntologyIndexMetaSyncAdapter<OntologyIndexMetaSyncReport> {
   constructor(private readonly deps: OntologyIndexMetaSyncAdapterDeps) {}
 
-  async sync(
-    bundle: OntologyIndexMetaSyncBundle,
-  ): Promise<OntologyIndexMetaSyncReport> {
+  async sync(bundle: OntologyIndexMetaSyncBundle): Promise<OntologyIndexMetaSyncReport> {
     const plan: OntologyIndexMetaSyncPlan =
-      bundle.allocation.addressModel === "product"
+      bundle.allocation.addressModel === 'product'
         ? planProductSyncTargets(bundle)
         : planSumSyncTargets(bundle);
     if (plan.collisions.length > 0) {
       return buildMaterializationReport(bundle, {
-        syncStatus: "blocked",
+        syncStatus: 'blocked',
         collisions: plan.collisions,
         deferredSemantics: plan.deferredSemantics,
       });
@@ -268,7 +248,7 @@ class OntologyIndexMetaSyncAdapterImpl
     const preflight = await this.preflightTargets(plan.targets);
     if (preflight.collisions.length > 0) {
       return buildMaterializationReport(bundle, {
-        syncStatus: "blocked",
+        syncStatus: 'blocked',
         collisions: preflight.collisions,
         deferredSemantics: plan.deferredSemantics,
       });
@@ -277,9 +257,7 @@ class OntologyIndexMetaSyncAdapterImpl
     return this.writeTargets(bundle, preflight.targets, plan.deferredSemantics);
   }
 
-  private async preflightTargets(
-    targets: readonly OntologyIndexMetaSyncTarget[],
-  ): Promise<{
+  private async preflightTargets(targets: readonly OntologyIndexMetaSyncTarget[]): Promise<{
     readonly targets: readonly OntologyIndexMetaPreflightTarget[];
     readonly collisions: readonly OntologyIndexMetaSyncCollision[];
   }> {
@@ -287,27 +265,22 @@ class OntologyIndexMetaSyncAdapterImpl
     const collisions: OntologyIndexMetaSyncCollision[] = [];
 
     for (const target of targets) {
-      const [existingPrefixRecord, existingSchemaVersionRecord] =
-        await Promise.all([
-          this.deps.prefixRegistry.getRecord(
-            target.prefixRecord.prefix,
-            target.prefixRecord.versionId,
-          ),
-          this.deps.schemaVersionStore.getSchemaVersion(
-            target.schemaVersionRecord.prefix,
-            target.schemaVersionRecord.versionId,
-          ),
-        ]);
+      const [existingPrefixRecord, existingSchemaVersionRecord] = await Promise.all([
+        this.deps.prefixRegistry.getRecord(
+          target.prefixRecord.prefix,
+          target.prefixRecord.versionId,
+        ),
+        this.deps.schemaVersionStore.getSchemaVersion(
+          target.schemaVersionRecord.prefix,
+          target.schemaVersionRecord.versionId,
+        ),
+      ]);
 
       if (existingPrefixRecord) {
-        collisions.push(
-          ...comparePrefixRecord(target, existingPrefixRecord),
-        );
+        collisions.push(...comparePrefixRecord(target, existingPrefixRecord));
       }
       if (existingSchemaVersionRecord) {
-        collisions.push(
-          ...compareSchemaVersionRecord(target, existingSchemaVersionRecord),
-        );
+        collisions.push(...compareSchemaVersionRecord(target, existingSchemaVersionRecord));
       }
 
       preflightTargets.push({
@@ -332,33 +305,28 @@ class OntologyIndexMetaSyncAdapterImpl
 
     for (const target of targets) {
       const prefixSyncRecord = toSyncRecord({
-        kind: "prefix-registry",
+        kind: 'prefix-registry',
         role: target.role,
         axisId: target.axisId,
         record: target.prefixRecord,
       });
       const schemaVersionSyncRecord = toSyncRecord({
-        kind: "schema-version",
+        kind: 'schema-version',
         role: target.role,
         axisId: target.axisId,
         record: target.schemaVersionRecord,
       });
       const isRepair =
-        Boolean(target.existingPrefixRecord) !==
-        Boolean(target.existingSchemaVersionRecord);
+        Boolean(target.existingPrefixRecord) !== Boolean(target.existingSchemaVersionRecord);
 
       if (target.existingPrefixRecord) {
         idempotentRecords.push(prefixSyncRecord);
       } else {
         try {
           await this.deps.prefixRegistry.register(target.prefixRecord);
-          (isRepair ? repairedRecords : materializedRecords).push(
-            prefixSyncRecord,
-          );
+          (isRepair ? repairedRecords : materializedRecords).push(prefixSyncRecord);
         } catch (error) {
-          collisions.push(
-            writeConflict(prefixSyncRecord, target.prefixRecord, error),
-          );
+          collisions.push(writeConflict(prefixSyncRecord, target.prefixRecord, error));
           break;
         }
       }
@@ -367,19 +335,11 @@ class OntologyIndexMetaSyncAdapterImpl
         idempotentRecords.push(schemaVersionSyncRecord);
       } else {
         try {
-          await this.deps.schemaVersionStore.insertSchemaVersion(
-            target.schemaVersionRecord,
-          );
-          (isRepair ? repairedRecords : materializedRecords).push(
-            schemaVersionSyncRecord,
-          );
+          await this.deps.schemaVersionStore.insertSchemaVersion(target.schemaVersionRecord);
+          (isRepair ? repairedRecords : materializedRecords).push(schemaVersionSyncRecord);
         } catch (error) {
           collisions.push(
-            writeConflict(
-              schemaVersionSyncRecord,
-              target.schemaVersionRecord,
-              error,
-            ),
+            writeConflict(schemaVersionSyncRecord, target.schemaVersionRecord, error),
           );
           break;
         }
@@ -388,16 +348,11 @@ class OntologyIndexMetaSyncAdapterImpl
 
     const postSyncChecks =
       collisions.length === 0
-        ? await collectPostSyncChecks(
-            this.deps,
-            bundle,
-            targets,
-            deferredSemantics ?? [],
-          )
+        ? await collectPostSyncChecks(this.deps, bundle, targets, deferredSemantics ?? [])
         : emptyPostSyncChecks();
 
     return buildMaterializationReport(bundle, {
-      syncStatus: collisions.length > 0 ? "blocked" : "synced",
+      syncStatus: collisions.length > 0 ? 'blocked' : 'synced',
       materializedRecords,
       idempotentRecords,
       repairedRecords,
@@ -428,28 +383,20 @@ function planProductSyncTargets(bundle: OntologyIndexMetaSyncBundle): {
     refs,
   };
   const parentSyncRecord = toSyncRecord({
-    kind: "prefix-registry",
-    role: "allocation-prefix",
+    kind: 'prefix-registry',
+    role: 'allocation-prefix',
     record: parentRecord,
   });
-  const shapeCollisions = validateProductShape(
-    bundle,
-    orderedAxes,
-    refs,
-    parentSyncRecord,
-  );
+  const shapeCollisions = validateProductShape(bundle, orderedAxes, refs, parentSyncRecord);
   if (shapeCollisions.length > 0) {
     return { targets: [], collisions: shapeCollisions };
   }
 
   const createdAt = schemaVersionCreatedAt(bundle.namespace);
   const targets: OntologyIndexMetaSyncTarget[] = orderedAxes.map((axis) => {
-    const prefix = deriveOntologyAxisLeafPrefix(
-      bundle.namespace.namespace,
-      axis.axisId,
-    );
+    const prefix = deriveOntologyAxisLeafPrefix(bundle.namespace.namespace, axis.axisId);
     return {
-      role: "axis-leaf",
+      role: 'axis-leaf',
       axisId: axis.axisId,
       prefixRecord: {
         prefix,
@@ -465,7 +412,7 @@ function planProductSyncTargets(bundle: OntologyIndexMetaSyncBundle): {
     };
   });
   targets.push({
-    role: "allocation-prefix",
+    role: 'allocation-prefix',
     prefixRecord: parentRecord,
     schemaVersionRecord: {
       prefix: parentRecord.prefix,
@@ -481,17 +428,15 @@ function planProductSyncTargets(bundle: OntologyIndexMetaSyncBundle): {
   };
 }
 
-function planSumSyncTargets(
-  bundle: OntologyIndexMetaSyncBundle,
-): OntologyIndexMetaSyncPlan {
+function planSumSyncTargets(bundle: OntologyIndexMetaSyncBundle): OntologyIndexMetaSyncPlan {
   const prefixRecord: PrefixRegistryRecord = {
     prefix: bundle.allocation.prefix,
     versionId: bundle.allocation.versionId,
     capacity: bundle.allocation.capacity,
   };
   const syncRecord = toSyncRecord({
-    kind: "prefix-registry",
-    role: "allocation-prefix",
+    kind: 'prefix-registry',
+    role: 'allocation-prefix',
     record: prefixRecord,
   });
   const shapeCollisions = validateSumSegmentCoverage(bundle, syncRecord);
@@ -505,7 +450,7 @@ function planSumSyncTargets(
   }
 
   const target = {
-    role: "allocation-prefix",
+    role: 'allocation-prefix',
     prefixRecord,
     schemaVersionRecord: {
       prefix: prefixRecord.prefix,
@@ -529,12 +474,8 @@ function validateProductShape(
   record: OntologyIndexMetaSyncRecord,
 ): readonly OntologyIndexMetaSyncCollision[] {
   const collisions: OntologyIndexMetaSyncCollision[] = [];
-  const productCapacity = refs.reduce(
-    (product, ref) => product * ref.capacity,
-    1,
-  );
-  const productSegment =
-    bundle.segments.length === 1 ? bundle.segments[0] : null;
+  const productCapacity = refs.reduce((product, ref) => product * ref.capacity, 1);
+  const productSegment = bundle.segments.length === 1 ? bundle.segments[0] : null;
   const messagePrefix = `Cannot materialize product allocation "${bundle.allocation.allocationId}"`;
 
   if (orderedAxes.length !== bundle.taxonomy.axisIds.length) {
@@ -657,9 +598,7 @@ function validateSumSegmentCoverage(
 
   const orderedSegments = [...bundle.segments].toSorted((left, right) => {
     const offsetDelta = left.addressOffset - right.addressOffset;
-    return offsetDelta !== 0
-      ? offsetDelta
-      : left.segmentId.localeCompare(right.segmentId);
+    return offsetDelta !== 0 ? offsetDelta : left.segmentId.localeCompare(right.segmentId);
   });
   let expectedOffset = allocationStart;
   let totalCovered = 0;
@@ -759,7 +698,7 @@ function validateIntendedTargetSet(
       collisions.push(
         allocationShapeDrift(
           toSyncRecord({
-            kind: "prefix-registry",
+            kind: 'prefix-registry',
             role: target.role,
             axisId: target.axisId,
             record: target.prefixRecord,
@@ -778,7 +717,7 @@ function comparePrefixRecord(
 ): readonly OntologyIndexMetaSyncCollision[] {
   const collisions: OntologyIndexMetaSyncCollision[] = [];
   const record = toSyncRecord({
-    kind: "prefix-registry",
+    kind: 'prefix-registry',
     role: target.role,
     axisId: target.axisId,
     record: target.prefixRecord,
@@ -786,7 +725,7 @@ function comparePrefixRecord(
 
   if (existing.capacity !== target.prefixRecord.capacity) {
     collisions.push({
-      code: "prefix-capacity-drift",
+      code: 'prefix-capacity-drift',
       message: `PrefixRegistry record "${target.prefixRecord.prefix}/${target.prefixRecord.versionId}" has capacity ${existing.capacity}, expected ${target.prefixRecord.capacity}`,
       record,
       existing,
@@ -795,7 +734,7 @@ function comparePrefixRecord(
   }
   if (!sameRefs(existing.refs, target.prefixRecord.refs)) {
     collisions.push({
-      code: "prefix-refs-drift",
+      code: 'prefix-refs-drift',
       message: `PrefixRegistry record "${target.prefixRecord.prefix}/${target.prefixRecord.versionId}" has refs that differ from ontology allocation shape`,
       record,
       existing,
@@ -816,10 +755,10 @@ function compareSchemaVersionRecord(
 
   return [
     {
-      code: "schema-version-capacity-drift",
+      code: 'schema-version-capacity-drift',
       message: `SchemaVersion record "${target.schemaVersionRecord.prefix}/${target.schemaVersionRecord.versionId}" has capacity ${existing.capacity}, expected ${target.schemaVersionRecord.capacity}`,
       record: toSyncRecord({
-        kind: "schema-version",
+        kind: 'schema-version',
         role: target.role,
         axisId: target.axisId,
         record: target.schemaVersionRecord,
@@ -833,7 +772,7 @@ function compareSchemaVersionRecord(
 function buildMaterializationReport(
   bundle: OntologyIndexMetaSyncBundle,
   input: {
-    readonly syncStatus: Exclude<OntologyIndexMetaSyncStatus, "deferred">;
+    readonly syncStatus: Exclude<OntologyIndexMetaSyncStatus, 'deferred'>;
     readonly materializedRecords?: readonly OntologyIndexMetaSyncRecord[];
     readonly idempotentRecords?: readonly OntologyIndexMetaSyncRecord[];
     readonly repairedRecords?: readonly OntologyIndexMetaSyncRecord[];
@@ -868,13 +807,10 @@ async function collectPostSyncChecks(
     targets.map((target) => collectTargetPostSyncCheck(deps, target)),
   );
 
-  if (bundle.allocation.addressModel === "product") {
+  if (bundle.allocation.addressModel === 'product') {
     return {
       targetRecords,
-      productAllocation: await collectProductAllocationPostSyncCheck(
-        deps.prefixRegistry,
-        bundle,
-      ),
+      productAllocation: await collectProductAllocationPostSyncCheck(deps.prefixRegistry, bundle),
     };
   }
 
@@ -889,10 +825,7 @@ async function collectTargetPostSyncCheck(
   target: OntologyIndexMetaPreflightTarget,
 ): Promise<OntologyIndexMetaTargetPostSyncCheck> {
   const [prefixRecord, schemaVersionRecord] = await Promise.all([
-    deps.prefixRegistry.getRecord(
-      target.prefixRecord.prefix,
-      target.prefixRecord.versionId,
-    ),
+    deps.prefixRegistry.getRecord(target.prefixRecord.prefix, target.prefixRecord.versionId),
     deps.schemaVersionStore.getSchemaVersion(
       target.schemaVersionRecord.prefix,
       target.schemaVersionRecord.versionId,
@@ -909,19 +842,15 @@ async function collectTargetPostSyncCheck(
       Boolean(prefixRecord) &&
       prefixRecord?.capacity === target.prefixRecord.capacity &&
       sameRefs(prefixRecord?.refs, target.prefixRecord.refs),
-    prefixRegistryCapacityMatches:
-      prefixRecord?.capacity === target.prefixRecord.capacity,
+    prefixRegistryCapacityMatches: prefixRecord?.capacity === target.prefixRecord.capacity,
     prefixRegistryRefsMatch:
-      Boolean(prefixRecord) &&
-      sameRefs(prefixRecord?.refs, target.prefixRecord.refs),
+      Boolean(prefixRecord) && sameRefs(prefixRecord?.refs, target.prefixRecord.refs),
     schemaVersionCapacityExists: Boolean(schemaVersionRecord),
     schemaVersionCapacityMatches:
       schemaVersionRecord?.capacity === target.schemaVersionRecord.capacity,
     ...(target.axisId ? { axisId: target.axisId } : {}),
     ...(prefixRecord ? { prefixRegistryCapacity: prefixRecord.capacity } : {}),
-    ...(schemaVersionRecord
-      ? { schemaVersionCapacity: schemaVersionRecord.capacity }
-      : {}),
+    ...(schemaVersionRecord ? { schemaVersionCapacity: schemaVersionRecord.capacity } : {}),
   };
 }
 
@@ -956,10 +885,8 @@ async function collectProductAllocationPostSyncCheck(
     resolverChecks: {
       lastValidAddress,
       capacityAddress,
-      lastValidAddressInRange:
-        lastValidAddress.resolved && lastValidAddress.valid,
-      capacityAddressOutOfRange:
-        capacityAddress.resolved && !capacityAddress.valid,
+      lastValidAddressInRange: lastValidAddress.resolved && lastValidAddress.valid,
+      capacityAddressOutOfRange: capacityAddress.resolved && !capacityAddress.valid,
     },
   };
 }
@@ -987,20 +914,16 @@ function collectSumAllocationPostSyncCheck(
   const allocationStart = bundle.allocation.addressOffset;
   const allocationEnd = allocationStart + bundle.allocation.addressSize;
   const exactRangeSidecar = deferredSemantics.find(
-    (semantics) => semantics.coveragePolicy === "exact-allocation-range",
+    (semantics) => semantics.coveragePolicy === 'exact-allocation-range',
   );
   const segments = exactRangeSidecar?.segments ?? [];
-  const coverage = evaluateExactAllocationRangeCoverage(
-    bundle.allocation,
-    segments,
-  );
+  const coverage = evaluateExactAllocationRangeCoverage(bundle.allocation, segments);
 
   return {
     prefix: bundle.allocation.prefix,
     versionId: bundle.allocation.versionId,
     coveragePolicy: exactRangeSidecar?.coveragePolicy ?? null,
-    segmentSidecarCoversAllocation:
-      Boolean(exactRangeSidecar) && coverage.coversAllocation,
+    segmentSidecarCoversAllocation: Boolean(exactRangeSidecar) && coverage.coversAllocation,
     allocationStart,
     allocationEnd,
     coveredSize: coverage.coveredSize,
@@ -1019,9 +942,7 @@ function evaluateExactAllocationRangeCoverage(
   const allocationEnd = allocationStart + allocation.addressSize;
   const orderedSegments = [...segments].toSorted((left, right) => {
     const offsetDelta = left.addressOffset - right.addressOffset;
-    return offsetDelta !== 0
-      ? offsetDelta
-      : left.segmentId.localeCompare(right.segmentId);
+    return offsetDelta !== 0 ? offsetDelta : left.segmentId.localeCompare(right.segmentId);
   });
   let expectedOffset = allocationStart;
   let coveredSize = 0;
@@ -1055,15 +976,12 @@ function evaluateExactAllocationRangeCoverage(
   }
 
   return {
-    coversAllocation:
-      expectedOffset === allocationEnd && coveredSize === allocation.addressSize,
+    coversAllocation: expectedOffset === allocationEnd && coveredSize === allocation.addressSize,
     coveredSize,
   };
 }
 
-function buildSyncReportBase(
-  bundle: OntologyIndexMetaSyncBundle,
-): OntologyIndexMetaSyncReportBase {
+function buildSyncReportBase(bundle: OntologyIndexMetaSyncBundle): OntologyIndexMetaSyncReportBase {
   return {
     allocationId: bundle.allocation.allocationId,
     prefix: bundle.allocation.prefix,
@@ -1077,9 +995,9 @@ function buildSumSegmentDeferredSemantics(
   bundle: OntologyIndexMetaSyncBundle,
 ): OntologyIndexMetaSyncDeferredSemantics {
   return {
-    code: "sum-segment-prefix-ref-unsupported",
+    code: 'sum-segment-prefix-ref-unsupported',
     message: `Sum allocation "${bundle.allocation.allocationId}" is materialized as a leaf prefix; segment ranges are report sidecars until index-meta owns a segment model`,
-    coveragePolicy: "exact-allocation-range",
+    coveragePolicy: 'exact-allocation-range',
     segments: bundle.segments.map(toSegmentSidecar),
   };
 }
@@ -1100,8 +1018,8 @@ function toSegmentSidecarSyncRecord(
   segment: OntologyAddressSegmentRecord,
 ): OntologyIndexMetaSyncRecord {
   return {
-    kind: "segment-sidecar",
-    role: "sum-segment-sidecar",
+    kind: 'segment-sidecar',
+    role: 'sum-segment-sidecar',
     prefix: bundle.allocation.prefix,
     versionId: bundle.allocation.versionId,
     capacity: segment.addressSize,
@@ -1113,19 +1031,19 @@ function toSegmentSidecarSyncRecord(
 }
 
 function toSyncRecord(input: {
-  readonly kind: "prefix-registry";
+  readonly kind: 'prefix-registry';
   readonly role: OntologyIndexMetaSyncRecordRole;
   readonly axisId?: string;
   readonly record: PrefixRegistryRecord;
 }): OntologyIndexMetaSyncRecord;
 function toSyncRecord(input: {
-  readonly kind: "schema-version";
+  readonly kind: 'schema-version';
   readonly role: OntologyIndexMetaSyncRecordRole;
   readonly axisId?: string;
   readonly record: SchemaVersionRecord;
 }): OntologyIndexMetaSyncRecord;
 function toSyncRecord(input: {
-  readonly kind: "prefix-registry" | "schema-version";
+  readonly kind: 'prefix-registry' | 'schema-version';
   readonly role: OntologyIndexMetaSyncRecordRole;
   readonly axisId?: string;
   readonly record: PrefixRegistryRecord | SchemaVersionRecord;
@@ -1137,9 +1055,7 @@ function toSyncRecord(input: {
     versionId: input.record.versionId,
     capacity: input.record.capacity,
     ...(input.axisId ? { axisId: input.axisId } : {}),
-    ...("refs" in input.record && input.record.refs
-      ? { refs: input.record.refs }
-      : {}),
+    ...('refs' in input.record && input.record.refs ? { refs: input.record.refs } : {}),
   };
 }
 
@@ -1148,7 +1064,7 @@ function allocationShapeDrift(
   message: string,
 ): OntologyIndexMetaSyncCollision {
   return {
-    code: "allocation-shape-drift",
+    code: 'allocation-shape-drift',
     message,
     record,
   };
@@ -1159,7 +1075,7 @@ function sumSegmentCoverageDrift(
   message: string,
 ): OntologyIndexMetaSyncCollision {
   return {
-    code: "sum-segment-coverage-drift",
+    code: 'sum-segment-coverage-drift',
     message,
     record,
   };
@@ -1171,7 +1087,7 @@ function writeConflict(
   error: unknown,
 ): OntologyIndexMetaSyncCollision {
   return {
-    code: "index-meta-write-conflict",
+    code: 'index-meta-write-conflict',
     message: `Index-meta write failed for "${record.prefix}/${record.versionId}": ${errorMessage(error)}`,
     record,
     intended,
@@ -1198,9 +1114,7 @@ function sameRefs(
   });
 }
 
-function orderedAxisCapacities(
-  bundle: OntologyIndexMetaSyncBundle,
-): readonly number[] {
+function orderedAxisCapacities(bundle: OntologyIndexMetaSyncBundle): readonly number[] {
   const axesById = new Map(bundle.axes.map((axis) => [axis.axisId, axis]));
   return bundle.taxonomy.axisIds
     .map((axisId) => axesById.get(axisId))
@@ -1208,10 +1122,7 @@ function orderedAxisCapacities(
     .map((axis) => axis.capacity);
 }
 
-function sameNumbers(
-  left: readonly number[] | null,
-  right: readonly number[],
-): boolean {
+function sameNumbers(left: readonly number[] | null, right: readonly number[]): boolean {
   return (
     left !== null &&
     left.length === right.length &&
@@ -1219,14 +1130,8 @@ function sameNumbers(
   );
 }
 
-function sameStrings(
-  left: readonly string[],
-  right: readonly string[],
-): boolean {
-  return (
-    left.length === right.length &&
-    left.every((value, index) => value === right[index])
-  );
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function schemaVersionCreatedAt(namespace: OntologyNamespaceRecord): string {
@@ -1238,8 +1143,8 @@ function normalizeIdentifier(value: string): string {
     value
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "") || "ontology"
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'ontology'
   );
 }
 

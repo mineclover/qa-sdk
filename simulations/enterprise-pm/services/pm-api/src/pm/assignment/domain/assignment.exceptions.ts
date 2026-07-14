@@ -17,23 +17,23 @@ export class AssignmentDomainException extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "AssignmentDomainException";
+    this.name = 'AssignmentDomainException';
   }
 }
 
 /** Assignment ID 가 비어 있는 경우 (HTTP 400 매핑). */
 export class InvalidAssignmentIdException extends AssignmentDomainException {
   constructor() {
-    super("INVALID_ASSIGNMENT_ID", "AssignmentId must not be empty.");
+    super('INVALID_ASSIGNMENT_ID', 'AssignmentId must not be empty.');
     // mapDomainErrorToHttp 표준 이름
-    this.name = "ValidationError";
+    this.name = 'ValidationError';
   }
 }
 
 /** 이미 cancelled 상태인 assignment 를 다시 assign 하려고 했을 때 (HTTP 409). */
 export class AssignmentCancelledException extends AssignmentDomainException {
   constructor() {
-    super("ASSIGNMENT_CANCELLED", "Cancelled assignment cannot be assigned.");
-    this.name = "ConflictError";
+    super('ASSIGNMENT_CANCELLED', 'Cancelled assignment cannot be assigned.');
+    this.name = 'ConflictError';
   }
 }

@@ -12,19 +12,14 @@
  *   - 영향 prefix의 버전 핀 자동 갱신
  */
 
-import { nextPowerOf2 } from "weighted-index";
-import type {
-  Catalog,
-  VersionedAxis,
-  PrefixDef,
-  PrefixVersionDef,
-} from "@qa-sdk/core";
+import { nextPowerOf2 } from 'weighted-index';
+import type { Catalog, VersionedAxis, PrefixDef, PrefixVersionDef } from '@qa-sdk/core';
 import {
   latestVersionKey,
   nextVersionKey,
   createAxisVersion,
   bumpVersionString,
-} from "./axis-version-builder.js";
+} from './axis-version-builder.js';
 
 export interface CatalogMutationResult {
   readonly catalog: Catalog;
@@ -82,8 +77,12 @@ export function addEntryToCatalog(
   };
 
   // ── 2. 영향 prefix 탐색 + 버전 핀 갱신 ──
-  const { updatedPrefixes, affectedPrefixes, updatedPrefixVersions } =
-    updateAffectedPrefixes(catalog.prefixes, axisId, oldVersion, newVersion);
+  const { updatedPrefixes, affectedPrefixes, updatedPrefixVersions } = updateAffectedPrefixes(
+    catalog.prefixes,
+    axisId,
+    oldVersion,
+    newVersion,
+  );
 
   return {
     catalog: {
@@ -160,7 +159,7 @@ function updateAffectedPrefixes(
 
   for (const [prefixId, prefix] of Object.entries(prefixes)) {
     const usesAxis = Object.values(prefix.dims).some(
-      (dim) => dim.kind === "axis" && dim.axisId === axisId,
+      (dim) => dim.kind === 'axis' && dim.axisId === axisId,
     );
     if (!usesAxis) {
       updatedPrefixes[prefixId] = prefix;
@@ -194,4 +193,3 @@ function updateAffectedPrefixes(
 
   return { updatedPrefixes, affectedPrefixes, updatedPrefixVersions };
 }
-

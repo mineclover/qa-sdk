@@ -1,13 +1,13 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Global, Module } from "@nestjs/common";
-import type { SqlDriver } from "index-meta";
-import { env } from "./config/env.js";
-import { createRegistryDatabaseDriver } from "./bootstrap/stores.js";
+import { Global, Module } from '@nestjs/common';
+import type { SqlDriver } from 'index-meta';
+import { env } from './config/env.js';
+import { createRegistryDatabaseDriver } from './bootstrap/stores.js';
 
 /** DI 토큰 — 문자열 (ESM 호환) */
-export const DATABASE = "DATABASE";
+export const DATABASE = 'DATABASE';
 
 @Global()
 @Module({

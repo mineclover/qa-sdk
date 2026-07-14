@@ -1,16 +1,8 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc domain-slice-architecture
 
-import {
-  Controller,
-  Delete,
-  Get,
-  Headers,
-  Inject,
-  NotFoundException,
-  Param,
-} from "@nestjs/common";
-import { GraphCatalogBff } from "./graph-catalog.bff.js";
+import { Controller, Delete, Get, Headers, Inject, NotFoundException, Param } from '@nestjs/common';
+import { GraphCatalogBff } from './graph-catalog.bff.js';
 
 /**
  * Graph Explorer BFF 컨트롤러.
@@ -24,44 +16,44 @@ import { GraphCatalogBff } from "./graph-catalog.bff.js";
  *   - GET    /audit/graphs/diff/:fromSnapshotId/:toSnapshotId
  *   - DELETE /audit/graphs/:graphId/prune/:keepLatest
  */
-@Controller("audit/graphs")
+@Controller('audit/graphs')
 export class GraphCatalogController {
   constructor(@Inject(GraphCatalogBff) private readonly bff: GraphCatalogBff) {}
 
-  @Get("catalog")
+  @Get('catalog')
   async catalog(
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const result = await this.bff.getCatalog({
-      traceId: traceId ?? "trace-catalog",
-      correlationId: correlationId ?? traceId ?? "trace-catalog",
+      traceId: traceId ?? 'trace-catalog',
+      correlationId: correlationId ?? traceId ?? 'trace-catalog',
     });
     return { count: result.count, graphIds: result.graphIds };
   }
 
-  @Delete("prune/:keepLatest")
+  @Delete('prune/:keepLatest')
   async pruneAll(
-    @Param("keepLatest") keepLatest: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('keepLatest') keepLatest: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const parsed = Number.parseInt(keepLatest, 10);
     if (!Number.isFinite(parsed) || parsed < 0) {
-      throw new NotFoundException({ error: "invalid_keep_latest", keepLatest });
+      throw new NotFoundException({ error: 'invalid_keep_latest', keepLatest });
     }
     return this.bff.pruneAll({
       keepLatest: parsed,
-      traceId: traceId ?? "trace-prune-all",
-      correlationId: correlationId ?? traceId ?? "trace-prune-all",
+      traceId: traceId ?? 'trace-prune-all',
+      correlationId: correlationId ?? traceId ?? 'trace-prune-all',
     });
   }
 
-  @Get(":graphId/latest")
+  @Get(':graphId/latest')
   async latest(
-    @Param("graphId") graphId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('graphId') graphId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const snapshot = await this.bff.getLatest({
       graphId,
@@ -69,16 +61,16 @@ export class GraphCatalogController {
       correlationId: correlationId ?? traceId ?? `trace-${graphId}`,
     });
     if (!snapshot) {
-      throw new NotFoundException({ error: "graph_not_found", graphId });
+      throw new NotFoundException({ error: 'graph_not_found', graphId });
     }
     return snapshot;
   }
 
-  @Get(":graphId")
+  @Get(':graphId')
   async list(
-    @Param("graphId") graphId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('graphId') graphId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const result = await this.bff.listSnapshots({
       graphId,
@@ -92,11 +84,11 @@ export class GraphCatalogController {
     };
   }
 
-  @Get("snapshots/:snapshotId")
+  @Get('snapshots/:snapshotId')
   async snapshot(
-    @Param("snapshotId") snapshotId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('snapshotId') snapshotId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const snapshot = await this.bff.getSnapshot({
       snapshotId,
@@ -104,17 +96,17 @@ export class GraphCatalogController {
       correlationId: correlationId ?? traceId ?? `trace-${snapshotId}`,
     });
     if (!snapshot) {
-      throw new NotFoundException({ error: "snapshot_not_found", snapshotId });
+      throw new NotFoundException({ error: 'snapshot_not_found', snapshotId });
     }
     return snapshot;
   }
 
-  @Get("diff/:fromSnapshotId/:toSnapshotId")
+  @Get('diff/:fromSnapshotId/:toSnapshotId')
   async diff(
-    @Param("fromSnapshotId") fromSnapshotId: string,
-    @Param("toSnapshotId") toSnapshotId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('fromSnapshotId') fromSnapshotId: string,
+    @Param('toSnapshotId') toSnapshotId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const diff = await this.bff.getDiff({
       fromSnapshotId,
@@ -124,7 +116,7 @@ export class GraphCatalogController {
     });
     if (!diff) {
       throw new NotFoundException({
-        error: "graph_diff_not_found",
+        error: 'graph_diff_not_found',
         fromSnapshotId,
         toSnapshotId,
       });
@@ -132,16 +124,16 @@ export class GraphCatalogController {
     return diff;
   }
 
-  @Delete(":graphId/prune/:keepLatest")
+  @Delete(':graphId/prune/:keepLatest')
   async prune(
-    @Param("graphId") graphId: string,
-    @Param("keepLatest") keepLatest: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('graphId') graphId: string,
+    @Param('keepLatest') keepLatest: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const parsed = Number.parseInt(keepLatest, 10);
     if (!Number.isFinite(parsed) || parsed < 0) {
-      throw new NotFoundException({ error: "invalid_keep_latest", keepLatest });
+      throw new NotFoundException({ error: 'invalid_keep_latest', keepLatest });
     }
     return this.bff.prune({
       graphId,

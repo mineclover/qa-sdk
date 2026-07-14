@@ -1,21 +1,21 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import { DocumentEntity, DocumentNotFoundException } from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type { CreateDocumentCommand } from "../commands/create-document.command.js";
-import type { UpdateDocumentCommand } from "../commands/update-document.command.js";
-import type { DeleteDocumentCommand } from "../commands/delete-document.command.js";
-import type { DocumentLoggerPort } from "../ports/document-logger.port.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { DocumentEntity, DocumentNotFoundException } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { CreateDocumentCommand } from '../commands/create-document.command.js';
+import type { UpdateDocumentCommand } from '../commands/update-document.command.js';
+import type { DeleteDocumentCommand } from '../commands/delete-document.command.js';
+import type { DocumentLoggerPort } from '../ports/document-logger.port.js';
 import type {
   DocumentOutboxPort,
   DocumentCreatedEventPayload,
   DocumentUpdatedEventPayload,
   DocumentDeletedEventPayload,
-} from "../ports/document-outbox.port.js";
-import type { DocumentRepositoryPort } from "../ports/document-repository.port.js";
-import type { DocumentTransactionPort } from "../ports/document-transaction.port.js";
+} from '../ports/document-outbox.port.js';
+import type { DocumentRepositoryPort } from '../ports/document-repository.port.js';
+import type { DocumentTransactionPort } from '../ports/document-transaction.port.js';
 
 /**
  * Document 슬라이스의 use-case.
@@ -36,22 +36,22 @@ export class DocumentUseCase {
 
   async create(
     command: CreateDocumentCommand,
-  ): Promise<{ readonly id: string; readonly status: "CREATED" }> {
+  ): Promise<{ readonly id: string; readonly status: 'CREATED' }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "document",
-      useCase: "DocumentUseCase.create",
+      domain: 'document',
+      useCase: 'DocumentUseCase.create',
       aggregateId: command.id,
-      commandName: "CreateDocumentCommand",
+      commandName: 'CreateDocumentCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "document.create.started");
+    this.logger.info({ ...ctxBase }, 'document.create.started');
 
     try {
-      await this.transaction.run("document.create", async (scope) => {
+      await this.transaction.run('document.create', async (scope) => {
         const document = DocumentEntity.create({
           id: command.id,
           projectId: command.projectId,
@@ -67,8 +67,8 @@ export class DocumentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.document.created";
-        const idempotencyEventName = "document.document.created";
+        const eventName = 'document.document.created';
+        const idempotencyEventName = 'document.document.created';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -89,23 +89,23 @@ export class DocumentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.document.created",
+          eventName: 'document.document.created',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "document.create.success",
+        'document.create.success',
       );
 
-      return { id: command.id, status: "CREATED" };
+      return { id: command.id, status: 'CREATED' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "document.create.failure",
+        'document.create.failure',
       );
       throw error;
     }
@@ -113,22 +113,22 @@ export class DocumentUseCase {
 
   async update(
     command: UpdateDocumentCommand,
-  ): Promise<{ readonly id: string; readonly status: "UPDATED" }> {
+  ): Promise<{ readonly id: string; readonly status: 'UPDATED' }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "document",
-      useCase: "DocumentUseCase.update",
+      domain: 'document',
+      useCase: 'DocumentUseCase.update',
       aggregateId: command.id,
-      commandName: "UpdateDocumentCommand",
+      commandName: 'UpdateDocumentCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "document.update.started");
+    this.logger.info({ ...ctxBase }, 'document.update.started');
 
     try {
-      await this.transaction.run("document.update", async (scope) => {
+      await this.transaction.run('document.update', async (scope) => {
         const existing = await this.repository.findById(command.id);
         if (!existing) {
           throw new DocumentNotFoundException(command.id);
@@ -148,8 +148,8 @@ export class DocumentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.document.updated";
-        const idempotencyEventName = "document.document.updated";
+        const eventName = 'document.document.updated';
+        const idempotencyEventName = 'document.document.updated';
         await this.outbox.append(
           {
             aggregateId: snapshot.id,
@@ -170,23 +170,23 @@ export class DocumentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.document.updated",
+          eventName: 'document.document.updated',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "document.update.success",
+        'document.update.success',
       );
 
-      return { id: command.id, status: "UPDATED" };
+      return { id: command.id, status: 'UPDATED' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "document.update.failure",
+        'document.update.failure',
       );
       throw error;
     }
@@ -194,30 +194,30 @@ export class DocumentUseCase {
 
   async delete(
     command: DeleteDocumentCommand,
-  ): Promise<{ readonly id: string; readonly status: "DELETED" }> {
+  ): Promise<{ readonly id: string; readonly status: 'DELETED' }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "document",
-      useCase: "DocumentUseCase.delete",
+      domain: 'document',
+      useCase: 'DocumentUseCase.delete',
       aggregateId: command.id,
-      commandName: "DeleteDocumentCommand",
+      commandName: 'DeleteDocumentCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "document.delete.started");
+    this.logger.info({ ...ctxBase }, 'document.delete.started');
 
     try {
-      await this.transaction.run("document.delete", async (scope) => {
+      await this.transaction.run('document.delete', async (scope) => {
         await this.repository.delete(command.id, scope);
         const payload: DocumentDeletedEventPayload = {
           id: command.id,
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.document.deleted";
-        const idempotencyEventName = "document.document.deleted";
+        const eventName = 'document.document.deleted';
+        const idempotencyEventName = 'document.document.deleted';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -238,23 +238,23 @@ export class DocumentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.document.deleted",
+          eventName: 'document.document.deleted',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "document.delete.success",
+        'document.delete.success',
       );
 
-      return { id: command.id, status: "DELETED" };
+      return { id: command.id, status: 'DELETED' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "document.delete.failure",
+        'document.delete.failure',
       );
       throw error;
     }

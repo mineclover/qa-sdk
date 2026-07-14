@@ -13,7 +13,7 @@ export type {
   CommandDetailOptionSpec,
   CommandDetailSpec,
   CommandHelpSectionSpec,
-} from "cli-command";
+} from 'cli-command';
 
 export type RestCommandHandler = (rest: string[]) => Promise<void> | void;
 
@@ -30,4 +30,4 @@ export {
   formatUsageSpecs,
   formatCommandDetailBlocks,
   formatHelpSections,
-} from "cli-command";
+} from 'cli-command';

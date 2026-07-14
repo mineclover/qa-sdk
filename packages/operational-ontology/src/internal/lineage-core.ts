@@ -1,16 +1,16 @@
-import type { InformationFacetRef } from "./runtime-core.js";
+import type { InformationFacetRef } from './runtime-core.js';
 
 export const LINEAGE_TRANSFORM_KINDS = [
-  "direct",
-  "rename",
-  "compute",
-  "aggregate",
-  "lookup",
-  "derive",
-  "concat",
-  "split",
-  "filter",
-  "cast",
+  'direct',
+  'rename',
+  'compute',
+  'aggregate',
+  'lookup',
+  'derive',
+  'concat',
+  'split',
+  'filter',
+  'cast',
 ] as const;
 
 export type LineageTransformKind = (typeof LINEAGE_TRANSFORM_KINDS)[number];
@@ -29,6 +29,9 @@ export function createDataLineageId(input: {
   sources: InformationFacetRef[];
   transform: LineageTransformKind;
 }): string {
-  const sourceKeys = input.sources.map((source) => source.key).toSorted().join(",");
+  const sourceKeys = input.sources
+    .map((source) => source.key)
+    .toSorted()
+    .join(',');
   return `lineage:${sourceKeys}->${input.transform}->${input.target.key}`;
 }

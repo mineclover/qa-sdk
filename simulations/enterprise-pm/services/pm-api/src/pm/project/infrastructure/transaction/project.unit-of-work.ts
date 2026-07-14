@@ -1,12 +1,12 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { ProjectRepositoryPort } from "../../application/ports/project-repository.port.js";
-import type { ProjectOutboxPort } from "../../application/ports/project-outbox.port.js";
+import type { ProjectRepositoryPort } from '../../application/ports/project-repository.port.js';
+import type { ProjectOutboxPort } from '../../application/ports/project-outbox.port.js';
 import type {
   ProjectTransactionPort,
   ProjectTransactionScope,
-} from "../../application/ports/project-transaction.port.js";
+} from '../../application/ports/project-transaction.port.js';
 
 export class ProjectUnitOfWork {
   constructor(

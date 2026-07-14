@@ -5,14 +5,11 @@
 // fault disabled (기본) → passthrough. enabled → scrape() 결과를 PASS 합성으로 wrap.
 // 시뮬 환경의 외부 metrics endpoint 가 미연결/오류 응답일 때 scenario 9 진입점 역할.
 
-import { Module } from "@nestjs/common";
-import {
-  MetricsScrapeService,
-  type ScrapeResult,
-} from "./metrics-scrape.service.js";
-import { HealthyMetricsFault } from "../fault/healthy-metrics.js";
-import { FaultModule } from "../fault/fault.module.js";
-import { env } from "../config/env.js";
+import { Module } from '@nestjs/common';
+import { MetricsScrapeService, type ScrapeResult } from './metrics-scrape.service.js';
+import { HealthyMetricsFault } from '../fault/healthy-metrics.js';
+import { FaultModule } from '../fault/fault.module.js';
+import { env } from '../config/env.js';
 
 /**
  * HealthyMetricsFault aware wrapper — scrape 결과를 fault 가 enabled 시 wrap.

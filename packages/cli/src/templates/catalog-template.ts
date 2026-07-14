@@ -8,8 +8,16 @@
 export interface CatalogTemplateInput {
   readonly name: string;
   readonly id: string;
-  readonly axes?: readonly { readonly id: string; readonly name: string; readonly entries: readonly string[] }[];
-  readonly prefixes?: readonly { readonly id: string; readonly name: string; readonly dims: readonly string[] }[];
+  readonly axes?: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly entries: readonly string[];
+  }[];
+  readonly prefixes?: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly dims: readonly string[];
+  }[];
 }
 
 /** .catalog.ts 파일 내용 생성 */
@@ -30,7 +38,7 @@ export function generateCatalogTs(input: CatalogTemplateInput): string {
   lines.push(`  axes: {`);
 
   for (const axis of input.axes ?? []) {
-    const entriesStr = axis.entries.map(e => `"${e}"`).join(", ");
+    const entriesStr = axis.entries.map((e) => `"${e}"`).join(', ');
     lines.push(`    ${axis.id}: {`);
     lines.push(`      id: "${axis.id}", name: "${axis.name}",`);
     lines.push(`      versions: {`);
@@ -45,7 +53,7 @@ export function generateCatalogTs(input: CatalogTemplateInput): string {
   lines.push(`  prefixes: {`);
 
   for (const prefix of input.prefixes ?? []) {
-    const labels = prefix.dims.map(d => `"${d}"`).join(", ");
+    const labels = prefix.dims.map((d) => `"${d}"`).join(', ');
     lines.push(`    ${prefix.id}: {`);
     lines.push(`      id: "${prefix.id}", name: "${prefix.name}",`);
     lines.push(`      labels: [${labels}],`);
@@ -55,7 +63,7 @@ export function generateCatalogTs(input: CatalogTemplateInput): string {
     }
     lines.push(`      },`);
     lines.push(`      versions: [`);
-    const axisVersions = prefix.dims.map(d => `${d}: "v1"`).join(", ");
+    const axisVersions = prefix.dims.map((d) => `${d}: "v1"`).join(', ');
     lines.push(`        { version: "v1", axisVersions: { ${axisVersions} } },`);
     lines.push(`      ],`);
     lines.push(`    },`);
@@ -65,7 +73,7 @@ export function generateCatalogTs(input: CatalogTemplateInput): string {
   lines.push(`} as const;`);
   lines.push(``);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** DKG config 파일 내용 생성 (빈 템플릿) */

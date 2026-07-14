@@ -17,15 +17,12 @@ function attrs(a: Attrs): string {
   return Object.entries(a)
     .filter(([, v]) => v !== undefined)
     .map(([k, v]) => `${k}="${v}"`)
-    .join(" ");
+    .join(' ');
 }
 
 // ── 기본 요소 ─────────────────────────────────────────
 
-export function svgRect(
-  x: number, y: number, w: number, h: number,
-  a: Attrs = {},
-): string {
+export function svgRect(x: number, y: number, w: number, h: number, a: Attrs = {}): string {
   return `<rect x="${r(x)}" y="${r(y)}" width="${r(w)}" height="${r(h)}" ${attrs(a)}/>`;
 }
 
@@ -34,7 +31,7 @@ export function svgCircle(cx: number, cy: number, radius: number, a: Attrs = {})
 }
 
 export function svgPolygon(points: [number, number][], a: Attrs = {}): string {
-  const pts = points.map(([x, y]) => `${r(x)},${r(y)}`).join(" ");
+  const pts = points.map(([x, y]) => `${r(x)},${r(y)}`).join(' ');
   return `<polygon points="${pts}" ${attrs(a)}/>`;
 }
 
@@ -46,33 +43,30 @@ export function svgPath(d: string, a: Attrs = {}): string {
   return `<path d="${d}" ${attrs(a)}/>`;
 }
 
-export function svgText(
-  x: number, y: number,
-  content: string,
-  a: Attrs = {},
-): string {
+export function svgText(x: number, y: number, content: string, a: Attrs = {}): string {
   return `<text x="${r(x)}" y="${r(y)}" ${attrs(a)}>${escapeXml(content)}</text>`;
 }
 
 export function svgGroup(children: string[], a: Attrs = {}): string {
-  const attrStr = Object.keys(a).length ? ` ${attrs(a)}` : "";
-  return `<g${attrStr}>\n  ${children.join("\n  ")}\n</g>`;
+  const attrStr = Object.keys(a).length ? ` ${attrs(a)}` : '';
+  return `<g${attrStr}>\n  ${children.join('\n  ')}\n</g>`;
 }
 
 export function svgSvg(
-  width: number, height: number,
+  width: number,
+  height: number,
   children: string[],
   extra: Attrs = {},
 ): string {
   const baseAttrs = attrs({
-    xmlns: "http://www.w3.org/2000/svg",
+    xmlns: 'http://www.w3.org/2000/svg',
     width: r(width),
     height: r(height),
     viewBox: `0 0 ${r(width)} ${r(height)}`,
-    "font-family": "system-ui,sans-serif",
+    'font-family': 'system-ui,sans-serif',
     ...extra,
   });
-  return `<svg ${baseAttrs}>\n${children.join("\n")}\n</svg>`;
+  return `<svg ${baseAttrs}>\n${children.join('\n')}\n</svg>`;
 }
 
 // ── 경로 빌더 ─────────────────────────────────────────
@@ -101,12 +95,12 @@ export interface MarkerDef {
 }
 
 export function svgMarker(def: MarkerDef): string {
-  const orient = def.orient ?? "auto";
+  const orient = def.orient ?? 'auto';
   return `<marker id="${def.id}" markerWidth="${def.markerWidth}" markerHeight="${def.markerHeight}" refX="${def.refX}" refY="${def.refY}" orient="${orient}">${def.inner}</marker>`;
 }
 
 export function svgDefs(children: string[]): string {
-  return `<defs>\n  ${children.join("\n  ")}\n</defs>`;
+  return `<defs>\n  ${children.join('\n  ')}\n</defs>`;
 }
 
 // ── 유틸 ─────────────────────────────────────────────
@@ -118,12 +112,12 @@ export function r(n: number): number {
 
 export function escapeXml(s: string): string {
   return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export function escapeAttr(s: string): string {
-  return s.replace(/"/g, "&quot;");
+  return s.replace(/"/g, '&quot;');
 }

@@ -19,7 +19,7 @@
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type ResourcePolicyState = "UNREGISTERED" | "REGISTERED" | "DELEGATED";
+export type ResourcePolicyState = 'UNREGISTERED' | 'REGISTERED' | 'DELEGATED';
 
 export interface ResourcePolicy {
   resourceId: string;
@@ -40,15 +40,12 @@ export interface ResourcePolicy {
 // ── Transitions ──────────────────────────────────────────────────────────────
 
 const ALLOWED_TRANSITIONS: Record<ResourcePolicyState, readonly ResourcePolicyState[]> = {
-  UNREGISTERED: ["REGISTERED"],
-  REGISTERED: ["DELEGATED"],
+  UNREGISTERED: ['REGISTERED'],
+  REGISTERED: ['DELEGATED'],
   DELEGATED: [],
 };
 
-export function canTransition(
-  from: ResourcePolicyState,
-  to: ResourcePolicyState,
-): boolean {
+export function canTransition(from: ResourcePolicyState, to: ResourcePolicyState): boolean {
   return ALLOWED_TRANSITIONS[from].includes(to);
 }
 
@@ -58,7 +55,7 @@ export class InvalidTransitionError extends Error {
     public readonly to: ResourcePolicyState,
   ) {
     super(`Illegal resource policy transition: ${from} → ${to}`);
-    this.name = "InvalidTransitionError";
+    this.name = 'InvalidTransitionError';
   }
 }
 
@@ -83,13 +80,13 @@ export interface DelegateArgs {
  * cerbosPolicyRef와 registeredAt이 설정된다.
  */
 export function register(policy: ResourcePolicy, args: RegisterArgs): ResourcePolicy {
-  if (!canTransition(policy.state, "REGISTERED")) {
-    throw new InvalidTransitionError(policy.state, "REGISTERED");
+  if (!canTransition(policy.state, 'REGISTERED')) {
+    throw new InvalidTransitionError(policy.state, 'REGISTERED');
   }
   const now = args.now ?? new Date().toISOString();
   return {
     ...policy,
-    state: "REGISTERED",
+    state: 'REGISTERED',
     cerbosPolicyRef: args.cerbosPolicyRef,
     registeredAt: now,
     updatedAt: now,
@@ -101,16 +98,16 @@ export function register(policy: ResourcePolicy, args: RegisterArgs): ResourcePo
  * graphRootId와 delegatedAt이 설정된다. cerbosPolicyRef는 유지.
  */
 export function delegate(policy: ResourcePolicy, args: DelegateArgs): ResourcePolicy {
-  if (!canTransition(policy.state, "DELEGATED")) {
-    throw new InvalidTransitionError(policy.state, "DELEGATED");
+  if (!canTransition(policy.state, 'DELEGATED')) {
+    throw new InvalidTransitionError(policy.state, 'DELEGATED');
   }
   if (!policy.cerbosPolicyRef) {
-    throw new InvalidTransitionError(policy.state, "DELEGATED");
+    throw new InvalidTransitionError(policy.state, 'DELEGATED');
   }
   const now = args.now ?? new Date().toISOString();
   return {
     ...policy,
-    state: "DELEGATED",
+    state: 'DELEGATED',
     graphRootId: args.graphRootId,
     delegatedAt: now,
     updatedAt: now,
@@ -135,7 +132,7 @@ export function createUnregistered(args: CreateArgs): ResourcePolicy {
   return {
     resourceId: args.resourceId,
     resourceType: args.resourceType,
-    state: "UNREGISTERED",
+    state: 'UNREGISTERED',
     ownerId: args.ownerId,
     updatedAt: now,
   };
@@ -147,11 +144,8 @@ export function createUnregistered(args: CreateArgs): ResourcePolicy {
  * UNREGISTERED 상태에서 `actorUserId`가 접근 가능한지 판정.
  * REGISTERED/DELEGATED는 Cerbos/ACL에 위임되므로 본 함수 대상 아님.
  */
-export function canAccessUnregistered(
-  policy: ResourcePolicy,
-  actorUserId: string,
-): boolean {
-  if (policy.state !== "UNREGISTERED") {
+export function canAccessUnregistered(policy: ResourcePolicy, actorUserId: string): boolean {
+  if (policy.state !== 'UNREGISTERED') {
     throw new Error(
       `canAccessUnregistered called on ${policy.state} policy for resource ${policy.resourceId}`,
     );

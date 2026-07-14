@@ -15,7 +15,7 @@
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 
-export type Level = "trace" | "debug" | "info" | "warn" | "error" | "fatal" | "silent";
+export type Level = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal' | 'silent';
 
 /** 구조화 로그 메서드. pino의 3가지 호출 패턴을 지원. */
 export interface LogMethod {
@@ -82,29 +82,29 @@ const LEVEL_PRIORITY: Readonly<Record<Level, number>> = {
 };
 
 const LEVEL_NAMES: Readonly<Record<number, Level>> = {
-  10: "trace",
-  20: "debug",
-  30: "info",
-  40: "warn",
-  50: "error",
-  60: "fatal",
+  10: 'trace',
+  20: 'debug',
+  30: 'info',
+  40: 'warn',
+  50: 'error',
+  60: 'fatal',
 };
 
 // ── 내부 헬퍼 ────────────────────────────────────────────────────────────────
 
 function resolveLevel(input: string | undefined): Level {
   if (
-    input === "trace" ||
-    input === "debug" ||
-    input === "info" ||
-    input === "warn" ||
-    input === "error" ||
-    input === "fatal" ||
-    input === "silent"
+    input === 'trace' ||
+    input === 'debug' ||
+    input === 'info' ||
+    input === 'warn' ||
+    input === 'error' ||
+    input === 'fatal' ||
+    input === 'silent'
   ) {
     return input;
   }
-  return "info";
+  return 'info';
 }
 
 function serializeError(error: unknown): Record<string, unknown> {
@@ -126,20 +126,21 @@ function serializeError(error: unknown): Record<string, unknown> {
   }
 
   // ES2022 cause 지원
-  if ("cause" in error && error.cause !== undefined && !("cause" in base)) {
-    base.cause = error.cause instanceof Error
-      ? serializeError(error.cause)
-      : error.cause;
+  if ('cause' in error && error.cause !== undefined && !('cause' in base)) {
+    base.cause = error.cause instanceof Error ? serializeError(error.cause) : error.cause;
   }
 
   return base;
 }
 
-function normalizeFirstArg(value: unknown, errorKey: string): {
+function normalizeFirstArg(
+  value: unknown,
+  errorKey: string,
+): {
   details: Record<string, unknown>;
   text: string | undefined;
 } {
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return { details: {}, text: value };
   }
 
@@ -147,7 +148,7 @@ function normalizeFirstArg(value: unknown, errorKey: string): {
     return { details: { [errorKey]: serializeError(value) }, text: undefined };
   }
 
-  if (value !== null && value !== undefined && typeof value === "object") {
+  if (value !== null && value !== undefined && typeof value === 'object') {
     return { details: { ...(value as Record<string, unknown>) }, text: undefined };
   }
 
@@ -177,8 +178,8 @@ class PinoLoggerImpl implements Logger {
     this.#base = Object.freeze({ ...base });
     this.#dest = dest;
     this.#options = options;
-    this.#messageKey = options.messageKey ?? "msg";
-    this.#errorKey = options.errorKey ?? "err";
+    this.#messageKey = options.messageKey ?? 'msg';
+    this.#errorKey = options.errorKey ?? 'err';
     this.#levelFormatter = options.formatters?.level;
     this.#timestamp = options.timestamp ?? true;
   }
@@ -197,27 +198,27 @@ class PinoLoggerImpl implements Logger {
   }
 
   readonly trace: LogMethod = (...args: unknown[]) => {
-    this.#write("trace", args);
+    this.#write('trace', args);
   };
 
   readonly debug: LogMethod = (...args: unknown[]) => {
-    this.#write("debug", args);
+    this.#write('debug', args);
   };
 
   readonly info: LogMethod = (...args: unknown[]) => {
-    this.#write("info", args);
+    this.#write('info', args);
   };
 
   readonly warn: LogMethod = (...args: unknown[]) => {
-    this.#write("warn", args);
+    this.#write('warn', args);
   };
 
   readonly error: LogMethod = (...args: unknown[]) => {
-    this.#write("error", args);
+    this.#write('error', args);
   };
 
   readonly fatal: LogMethod = (...args: unknown[]) => {
-    this.#write("fatal", args);
+    this.#write('fatal', args);
   };
 
   readonly silent: LogMethod = () => {
@@ -236,7 +237,7 @@ class PinoLoggerImpl implements Logger {
 
     if (text === undefined && second !== undefined) {
       // first가 객체/에러, second가 메시지
-      if (typeof second === "string") {
+      if (typeof second === 'string') {
         text = second;
       } else if (second instanceof Error) {
         details[this.#errorKey] = this.#serialize(this.#errorKey, second);
@@ -271,12 +272,12 @@ class PinoLoggerImpl implements Logger {
     // 타임스탬프
     if (this.#timestamp === true) {
       payload.time = Date.now();
-    } else if (typeof this.#timestamp === "function") {
+    } else if (typeof this.#timestamp === 'function') {
       // pino 호환: 함수가 `,"time":1234` 형태를 반환하는 패턴
       const ts = this.#timestamp();
       if (ts) {
         try {
-          const parsed = JSON.parse(`{${ts.replace(/^,/, "")}}`);
+          const parsed = JSON.parse(`{${ts.replace(/^,/, '')}}`);
           Object.assign(payload, parsed);
         } catch {
           payload.time = Date.now();
@@ -306,16 +307,22 @@ class PinoLoggerImpl implements Logger {
   #interpolate(template: string, args: unknown[]): string {
     let i = 0;
     return template.replace(/%([sdjo%])/g, (match, spec: string) => {
-      if (spec === "%" || i >= args.length) return match;
+      if (spec === '%' || i >= args.length) return match;
       const arg = args[i++];
       switch (spec) {
-        case "s": return String(arg);
-        case "d": return Number(arg).toString();
-        case "j":
-        case "o":
-          try { return JSON.stringify(arg); }
-          catch { return String(arg); }
-        default: return match;
+        case 's':
+          return String(arg);
+        case 'd':
+          return Number(arg).toString();
+        case 'j':
+        case 'o':
+          try {
+            return JSON.stringify(arg);
+          } catch {
+            return String(arg);
+          }
+        default:
+          return match;
       }
     });
   }
@@ -325,11 +332,15 @@ class PinoLoggerImpl implements Logger {
 
 function createDefaultDestination(): Destination {
   // Edge runtime 호환: globalThis 기반 stdout 탐색
-  const write = typeof globalThis !== "undefined" && "process" in globalThis
-    ? (msg: string) => (globalThis as unknown as { process: { stdout: { write: (m: string) => void } } }).process.stdout.write(msg)
-    : typeof console !== "undefined"
-      ? (msg: string) => console.log(msg.replace(/\n$/, ""))
-      : (_msg: string) => {};
+  const write =
+    typeof globalThis !== 'undefined' && 'process' in globalThis
+      ? (msg: string) =>
+          (
+            globalThis as unknown as { process: { stdout: { write: (m: string) => void } } }
+          ).process.stdout.write(msg)
+      : typeof console !== 'undefined'
+        ? (msg: string) => console.log(msg.replace(/\n$/, ''))
+        : (_msg: string) => {};
 
   return { write };
 }

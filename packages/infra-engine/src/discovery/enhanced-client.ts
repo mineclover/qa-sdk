@@ -8,13 +8,13 @@
  * 서비스별 문서/테스트/prefix 상세를 함께 제공한다.
  */
 
-import type { DiscoveryClient, ServiceInfo } from "./client.js";
+import type { DiscoveryClient, ServiceInfo } from './client.js';
 import type {
   DefinitionAdapter,
   ServiceDocsInfo,
   ServiceTestInfo,
   ServicePrefixInfo,
-} from "../adapters/definition.js";
+} from '../adapters/definition.js';
 
 export interface EnhancedServiceInfo extends ServiceInfo {
   docs?: ServiceDocsInfo;

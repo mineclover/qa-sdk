@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { randomUUID } from "node:crypto";
+import { randomUUID } from 'node:crypto';
 import {
   Body,
   Controller,
@@ -15,21 +15,24 @@ import {
   Put,
   Query,
   UseGuards,
-} from "@nestjs/common";
-import { z } from "zod";
-import { ProjectUseCase } from "../../application/use-cases/project.use-case.js";
+} from '@nestjs/common';
+import { z } from 'zod';
+import { ProjectUseCase } from '../../application/use-cases/project.use-case.js';
 import {
   ProjectReadModelQuery,
   type ProjectDetailReadModel,
-} from "../../application/queries/project-read-model.query.js";
-import { ProjectAccessService } from "../../application/services/project-access.service.js";
-import { CurrentUser, type CurrentUserContext } from "../../../../auth-deps/current-user.decorator.js";
-import { CurrentUserGuard } from "../../../../auth-deps/current-user.guard.js";
+} from '../../application/queries/project-read-model.query.js';
+import { ProjectAccessService } from '../../application/services/project-access.service.js';
+import {
+  CurrentUser,
+  type CurrentUserContext,
+} from '../../../../auth-deps/current-user.decorator.js';
+import { CurrentUserGuard } from '../../../../auth-deps/current-user.guard.js';
 
 const createSchema = z.object({
   name: z.string().min(1),
   departmentId: z.string().min(1),
-  status: z.enum(["draft", "active", "archived"]).optional(),
+  status: z.enum(['draft', 'active', 'archived']).optional(),
 });
 
 const updateSchema = createSchema.partial();
@@ -47,7 +50,7 @@ const updateSchema = createSchema.partial();
  *   - POST /projects/:id/delegates
  *   - DELETE /projects/:id
  */
-@Controller("projects")
+@Controller('projects')
 @UseGuards(CurrentUserGuard)
 export class ProjectController {
   constructor(
@@ -64,14 +67,14 @@ export class ProjectController {
     const parsed = createSchema.parse(body);
 
     const pre = await this.access.check({
-      apiId: "project.create",
+      apiId: 'project.create',
       user,
       targetId: null,
       departmentId: parsed.departmentId,
     });
     if (!pre.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: pre.denyReason,
         rootSpanId: pre.rootSpanId,
       });
@@ -87,16 +90,13 @@ export class ProjectController {
     return { ...result, rootSpanId: pre.rootSpanId };
   }
 
-  @Get(":id/delegation-graph")
-  async delegationGraph(
-    @Param("id") id: string,
-    @CurrentUser() user: CurrentUserContext,
-  ) {
+  @Get(':id/delegation-graph')
+  async delegationGraph(@Param('id') id: string, @CurrentUser() user: CurrentUserContext) {
     const p = await this.readModel.findDetail(id);
     if (!p) throw new NotFoundException(`Project not found: ${id}`);
 
     const check = await this.access.check({
-      apiId: "project.read",
+      apiId: 'project.read',
       user,
       targetId: id,
       resourceOwnerId: p.ownerId,
@@ -104,7 +104,7 @@ export class ProjectController {
     });
     if (!check.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: check.denyReason,
         rootSpanId: check.rootSpanId,
       });
@@ -113,7 +113,7 @@ export class ProjectController {
     const snapshot = await this.readModel.findDelegationSnapshot(id);
     if (!snapshot) {
       throw new NotFoundException({
-        error: "delegation_graph_not_found",
+        error: 'delegation_graph_not_found',
         projectId: id,
       });
     }
@@ -128,16 +128,16 @@ export class ProjectController {
     };
   }
 
-  @Get(":id")
+  @Get(':id')
   async get(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @CurrentUser() user: CurrentUserContext,
   ): Promise<ProjectDetailReadModel & { rootSpanId: string }> {
     const p = await this.readModel.findDetail(id);
     if (!p) throw new NotFoundException(`Project not found: ${id}`);
 
     const check = await this.access.check({
-      apiId: "project.read",
+      apiId: 'project.read',
       user,
       targetId: id,
       resourceOwnerId: p.ownerId,
@@ -145,7 +145,7 @@ export class ProjectController {
     });
     if (!check.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: check.denyReason,
         rootSpanId: check.rootSpanId,
       });
@@ -155,17 +155,17 @@ export class ProjectController {
 
   @Get()
   async list(
-    @Query("departmentId") deptId: string,
-    @Query("ownerId") ownerId: string,
+    @Query('departmentId') deptId: string,
+    @Query('ownerId') ownerId: string,
   ): Promise<ProjectDetailReadModel[]> {
     if (deptId) return this.readModel.listByDepartment(deptId);
     if (ownerId) return this.readModel.listByOwner(ownerId);
-    throw new NotFoundException("departmentId or ownerId query required");
+    throw new NotFoundException('departmentId or ownerId query required');
   }
 
-  @Put(":id")
+  @Put(':id')
   async update(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @Body() body: unknown,
     @CurrentUser() user: CurrentUserContext,
   ): Promise<ProjectDetailReadModel & { rootSpanId: string }> {
@@ -174,7 +174,7 @@ export class ProjectController {
     if (!p) throw new NotFoundException(`Project not found: ${id}`);
 
     const check = await this.access.check({
-      apiId: "project.update",
+      apiId: 'project.update',
       user,
       targetId: id,
       resourceOwnerId: p.ownerId,
@@ -182,7 +182,7 @@ export class ProjectController {
     });
     if (!check.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: check.denyReason,
         rootSpanId: check.rootSpanId,
       });
@@ -191,9 +191,9 @@ export class ProjectController {
     return { ...updated, rootSpanId: check.rootSpanId };
   }
 
-  @Post(":id/delegate")
+  @Post(':id/delegate')
   async delegate(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @Body() body: unknown,
     @CurrentUser() user: CurrentUserContext,
   ) {
@@ -206,7 +206,7 @@ export class ProjectController {
     const p = await this.readModel.findDetail(id);
     if (!p) throw new NotFoundException(`Project not found: ${id}`);
     const check = await this.access.check({
-      apiId: "project.update",
+      apiId: 'project.update',
       user,
       targetId: id,
       resourceOwnerId: p.ownerId,
@@ -214,7 +214,7 @@ export class ProjectController {
     });
     if (!check.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: check.denyReason,
         rootSpanId: check.rootSpanId,
       });
@@ -227,9 +227,9 @@ export class ProjectController {
     return { ...res, rootSpanId: check.rootSpanId };
   }
 
-  @Post(":id/delegates")
+  @Post(':id/delegates')
   async addDelegate(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @Body() body: unknown,
     @CurrentUser() user: CurrentUserContext,
   ) {
@@ -241,7 +241,7 @@ export class ProjectController {
     const p = await this.readModel.findDetail(id);
     if (!p) throw new NotFoundException(`Project not found: ${id}`);
     const check = await this.access.check({
-      apiId: "project.update",
+      apiId: 'project.update',
       user,
       targetId: id,
       resourceOwnerId: p.ownerId,
@@ -249,7 +249,7 @@ export class ProjectController {
     });
     if (!check.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: check.denyReason,
         rootSpanId: check.rootSpanId,
       });
@@ -261,16 +261,13 @@ export class ProjectController {
     return { ...res, rootSpanId: check.rootSpanId };
   }
 
-  @Delete(":id")
-  async remove(
-    @Param("id") id: string,
-    @CurrentUser() user: CurrentUserContext,
-  ) {
+  @Delete(':id')
+  async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserContext) {
     const p = await this.readModel.findDetail(id);
     if (!p) throw new NotFoundException(`Project not found: ${id}`);
 
     const check = await this.access.check({
-      apiId: "project.delete",
+      apiId: 'project.delete',
       user,
       targetId: id,
       resourceOwnerId: p.ownerId,
@@ -278,12 +275,12 @@ export class ProjectController {
     });
     if (!check.allow) {
       throw new ForbiddenException({
-        error: "access_denied",
+        error: 'access_denied',
         denyReason: check.denyReason,
         rootSpanId: check.rootSpanId,
       });
     }
     await this.useCase.delete({ id });
-    return { status: "deleted", rootSpanId: check.rootSpanId };
+    return { status: 'deleted', rootSpanId: check.rootSpanId };
   }
 }

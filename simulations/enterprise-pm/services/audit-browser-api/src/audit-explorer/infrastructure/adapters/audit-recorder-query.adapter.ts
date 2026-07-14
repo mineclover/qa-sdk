@@ -1,8 +1,8 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc domain-slice-architecture
 
-import type { AuditEntry, AuditRecorder } from "permission-engine";
-import { AuditRecorderQueryPort } from "../../application/ports/audit-recorder-query.port.js";
+import type { AuditEntry, AuditRecorder } from 'permission-engine';
+import { AuditRecorderQueryPort } from '../../application/ports/audit-recorder-query.port.js';
 
 /**
  * AuditRecorderQueryPort 의 어댑터.

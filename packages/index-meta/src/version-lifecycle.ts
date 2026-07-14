@@ -28,7 +28,7 @@
 
 // ── 타입 ──────────────────────────────────────────────────
 
-export type VersionStatus = "draft" | "released" | "active" | "deprecated";
+export type VersionStatus = 'draft' | 'released' | 'active' | 'deprecated';
 
 /**
  * 비활성화 모드. prefix 단위로 설정, 모든 버전이 동일 모드 공유.
@@ -36,7 +36,7 @@ export type VersionStatus = "draft" | "released" | "active" | "deprecated";
  * - strict:   draft→release 사이클에서만 비활성화/재활성화 허용.
  * - flexible: 런타임 즉시 토글 (EntryFlagStore 기반).
  */
-export type DeactivationMode = "strict" | "flexible";
+export type DeactivationMode = 'strict' | 'flexible';
 
 export interface VersionRecord {
   readonly prefix: string;

@@ -10,14 +10,14 @@
  * @def.doc pipe-store-sqlite
  */
 
-import type { PipeGraphStore, PipeSpecStore } from "@qa-sdk/core";
-import type { PipeGraph, PipeSpec, PipeConnection } from "@qa-sdk/core";
-import { eq, sql } from "drizzle-orm";
+import type { PipeGraphStore, PipeSpecStore } from '@qa-sdk/core';
+import type { PipeGraph, PipeSpec, PipeConnection } from '@qa-sdk/core';
+import { eq, sql } from 'drizzle-orm';
 
-import { createDb, type DrizzleDb } from "./db/connection.js";
-import { SqliteBindingStore, SqliteLineageValidationStore } from "./data-object-store.js";
-import { pipeGraphs, pipeSpecs } from "./db/schema.js";
-import { SqliteManifestRegistry } from "./manifest-store.js";
+import { createDb, type DrizzleDb } from './db/connection.js';
+import { SqliteBindingStore, SqliteLineageValidationStore } from './data-object-store.js';
+import { pipeGraphs, pipeSpecs } from './db/schema.js';
+import { SqliteManifestRegistry } from './manifest-store.js';
 
 /** 단일 DB에서 여러 store 생성 */
 export function createStores(path: string): {
@@ -52,7 +52,7 @@ export class SqlitePipeGraphStore implements PipeGraphStore {
   private db: DrizzleDb;
 
   constructor(pathOrDb: string | DrizzleDb) {
-    if (typeof pathOrDb === "string") {
+    if (typeof pathOrDb === 'string') {
       const { db } = createDb(pathOrDb);
       this.db = db;
     } else {
@@ -97,22 +97,14 @@ export class SqlitePipeGraphStore implements PipeGraphStore {
   }
 
   getLatest(graphId: string): PipeGraph | null {
-    const rows = this.db
-      .select()
-      .from(pipeGraphs)
-      .where(eq(pipeGraphs.graphId, graphId))
-      .all();
+    const rows = this.db.select().from(pipeGraphs).where(eq(pipeGraphs.graphId, graphId)).all();
     if (rows.length === 0) return null;
     rows.sort((a, b) => compareVersions(b.version, a.version));
     return rowToGraph(rows[0]);
   }
 
   listVersions(graphId: string): PipeGraph[] {
-    const rows = this.db
-      .select()
-      .from(pipeGraphs)
-      .where(eq(pipeGraphs.graphId, graphId))
-      .all();
+    const rows = this.db.select().from(pipeGraphs).where(eq(pipeGraphs.graphId, graphId)).all();
     rows.sort((a, b) => compareVersions(a.version, b.version));
     return rows.map(rowToGraph);
   }
@@ -120,7 +112,7 @@ export class SqlitePipeGraphStore implements PipeGraphStore {
   listAll(): PipeGraph[] {
     const all = this.db.select().from(pipeGraphs).all();
     all.sort((a, b) => compareVersions(b.version, a.version));
-    const latestMap = new Map<string, typeof all[number]>();
+    const latestMap = new Map<string, (typeof all)[number]>();
     for (const row of all) {
       if (!latestMap.has(row.graphId)) latestMap.set(row.graphId, row);
     }
@@ -171,7 +163,7 @@ export class SqlitePipeSpecStore implements PipeSpecStore {
   private db: DrizzleDb;
 
   constructor(pathOrDb: string | DrizzleDb) {
-    if (typeof pathOrDb === "string") {
+    if (typeof pathOrDb === 'string') {
       const { db } = createDb(pathOrDb);
       this.db = db;
     } else {
@@ -218,11 +210,7 @@ export class SqlitePipeSpecStore implements PipeSpecStore {
   }
 
   getLatest(pipeId: string): PipeSpec | null {
-    const rows = this.db
-      .select()
-      .from(pipeSpecs)
-      .where(eq(pipeSpecs.pipeId, pipeId))
-      .all();
+    const rows = this.db.select().from(pipeSpecs).where(eq(pipeSpecs.pipeId, pipeId)).all();
     if (rows.length === 0) return null;
     rows.sort((a, b) => compareVersions(b.version, a.version));
     return rowToSpec(rows[0]);

@@ -14,9 +14,7 @@ export function createIncidentEscalationInitialState(
   sessionId: string,
   traceId: string,
 ): IncidentEscalationState {
-  const activity: IncidentEscalationActivity[] = [
-    recordIncidentEscalationSessionReady(sessionId),
-  ];
+  const activity: IncidentEscalationActivity[] = [recordIncidentEscalationSessionReady(sessionId)];
 
   return {
     sessionId,

@@ -1,17 +1,17 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const originalHome = process.env.HOME;
 const originalQaSdkHome = process.env.QA_SDK_HOME;
 const tempDirs: string[] = [];
 
-describe("quality CLI smoke", () => {
+describe('quality CLI smoke', () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     vi.resetModules();
@@ -22,32 +22,32 @@ describe("quality CLI smoke", () => {
     await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
   });
 
-  it("quality show/run을 fixture gate 문서 기준 실제 실행 smoke로 검증한다", async () => {
+  it('quality show/run을 fixture gate 문서 기준 실제 실행 smoke로 검증한다', async () => {
     const root = await createQualityFixtureRepo();
     process.env.HOME = root;
-    process.env.QA_SDK_HOME = join(root, ".qa-sdk-home");
+    process.env.QA_SDK_HOME = join(root, '.qa-sdk-home');
     await mkdir(process.env.QA_SDK_HOME, { recursive: true });
-    vi.spyOn(process, "cwd").mockReturnValue(root);
+    vi.spyOn(process, 'cwd').mockReturnValue(root);
 
     vi.resetModules();
-    const { main } = await import("../index.js");
+    const { main } = await import('../index.js');
 
     const showOutput = await captureConsoleAsync(async () => {
-      await main(["quality", "show", "gate-quality-fixture", "--scan"]);
+      await main(['quality', 'show', 'gate-quality-fixture', '--scan']);
     });
 
-    expect(showOutput.stdout).toContain("gate-quality-fixture");
-    expect(showOutput.stdout).toContain("bundle:     quality-fixture-bundle");
-    expect(showOutput.stdout).toContain("command:    printf fixture-pass");
+    expect(showOutput.stdout).toContain('gate-quality-fixture');
+    expect(showOutput.stdout).toContain('bundle:     quality-fixture-bundle');
+    expect(showOutput.stdout).toContain('command:    printf fixture-pass');
 
     const runOutput = await captureConsoleAsync(async () => {
-      await main(["quality", "run", "gate-quality-fixture", "--scan", "--json"]);
+      await main(['quality', 'run', 'gate-quality-fixture', '--scan', '--json']);
     });
 
     const json = JSON.parse(runOutput.stdout);
-    expect(json.gateDocId).toBe("gate-quality-fixture");
-    expect(json.outcome).toBe("pass");
-    expect(json.bundleId).toBe("quality-fixture-bundle");
+    expect(json.gateDocId).toBe('gate-quality-fixture');
+    expect(json.outcome).toBe('pass');
+    expect(json.bundleId).toBe('quality-fixture-bundle');
     expect(json.bundleVerification).toEqual(
       expect.objectContaining({
         verified: true,
@@ -55,18 +55,20 @@ describe("quality CLI smoke", () => {
         totalGates: 1,
       }),
     );
-    expect(existsSync(join(process.env.QA_SDK_HOME!, ".qa-sdk", "quality-ledger.sqlite"))).toBe(true);
+    expect(existsSync(join(process.env.QA_SDK_HOME!, '.qa-sdk', 'quality-ledger.sqlite'))).toBe(
+      true,
+    );
   });
 });
 
 async function createQualityFixtureRepo(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "qa-quality-smoke-"));
+  const root = await mkdtemp(join(tmpdir(), 'qa-quality-smoke-'));
   tempDirs.push(root);
-  const docsDir = join(root, "docs", "specs");
+  const docsDir = join(root, 'docs', 'specs');
   await mkdir(docsDir, { recursive: true });
 
   await writeFile(
-    join(docsDir, "quality-fixture-bundle.md"),
+    join(docsDir, 'quality-fixture-bundle.md'),
     `---
 def:
   id: quality-fixture-bundle
@@ -91,11 +93,11 @@ fixture gate smoke를 묶는 최소 번들이다.
 
 - gate-quality-fixture: printf 기반 fixture gate
 `,
-    "utf-8",
+    'utf-8',
   );
 
   await writeFile(
-    join(docsDir, "gate-quality-fixture.spec.md"),
+    join(docsDir, 'gate-quality-fixture.spec.md'),
     `---
 def:
   id: gate-quality-fixture
@@ -122,13 +124,15 @@ gate:
 
 quality show/run smoke에서 실제 명령 실행 경로를 검증하는 fixture gate다.
 `,
-    "utf-8",
+    'utf-8',
   );
 
   return root;
 }
 
-async function captureConsoleAsync(run: () => Promise<void>): Promise<{ stdout: string; stderr: string }> {
+async function captureConsoleAsync(
+  run: () => Promise<void>,
+): Promise<{ stdout: string; stderr: string }> {
   const stdout: string[] = [];
   const stderr: string[] = [];
   const originalLog = console.log;
@@ -136,13 +140,13 @@ async function captureConsoleAsync(run: () => Promise<void>): Promise<{ stdout: 
   const originalWarn = console.warn;
 
   console.log = (...args: unknown[]) => {
-    stdout.push(args.join(" "));
+    stdout.push(args.join(' '));
   };
   console.error = (...args: unknown[]) => {
-    stderr.push(args.join(" "));
+    stderr.push(args.join(' '));
   };
   console.warn = (...args: unknown[]) => {
-    stderr.push(args.join(" "));
+    stderr.push(args.join(' '));
   };
 
   try {
@@ -154,7 +158,7 @@ async function captureConsoleAsync(run: () => Promise<void>): Promise<{ stdout: 
   }
 
   return {
-    stdout: stdout.join("\n"),
-    stderr: stderr.join("\n"),
+    stdout: stdout.join('\n'),
+    stderr: stderr.join('\n'),
   };
 }

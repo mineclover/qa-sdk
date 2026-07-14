@@ -1,14 +1,14 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
-import type { DefDataSource, DefDoc, DefIncomingLink, DefOutgoingLink } from "definition-catalog";
-import { createDataSource, type DataSourceOptions } from "definition-data-source";
-import type { InMemoryOperationalOntologyStore } from "operational-ontology/persistence";
-import { persistImplementationGovernanceRun } from "operational-ontology/governance";
+import type { DefDataSource, DefDoc, DefIncomingLink, DefOutgoingLink } from 'definition-catalog';
+import { createDataSource, type DataSourceOptions } from 'definition-data-source';
+import type { InMemoryOperationalOntologyStore } from 'operational-ontology/persistence';
+import { persistImplementationGovernanceRun } from 'operational-ontology/governance';
 import {
   extractPromptArtifactSourcesFromDefinitionContext,
   generatePromptArtifact,
@@ -19,27 +19,20 @@ import {
   type PromptArtifactUseCase,
   PROMPT_ARTIFACT_KINDS,
   PROMPT_ARTIFACT_USE_CASES,
-} from "operational-ontology/prompt-artifacts";
+} from 'operational-ontology/prompt-artifacts';
 import {
   appendQualityStatusEvidenceToPromptArtifactExtraction,
   createProgrammingArtifactRegistryRecord,
-} from "operational-ontology/programming-artifacts";
-import { appendProgrammingArtifactRegistryRecords } from "../lib/programming-artifact-registry.js";
-import { cmdRegistryActivatePack } from "./ontology/activation.js";
+} from 'operational-ontology/programming-artifacts';
+import { appendProgrammingArtifactRegistryRecords } from '../lib/programming-artifact-registry.js';
+import { cmdRegistryActivatePack } from './ontology/activation.js';
 import {
   cmdArtifactRegistryAppend,
   cmdArtifactRegistryList,
   cmdArtifactRegistryValidate,
-} from "./ontology/artifact-registry.js";
-import {
-  cmdEventIngest,
-  cmdPipeIngest,
-  cmdSnapshotIngest,
-} from "./ontology/ingest.js";
-import {
-  cmdPackScaffold,
-  cmdPackValidate,
-} from "./ontology/pack-authoring.js";
+} from './ontology/artifact-registry.js';
+import { cmdEventIngest, cmdPipeIngest, cmdSnapshotIngest } from './ontology/ingest.js';
+import { cmdPackScaffold, cmdPackValidate } from './ontology/pack-authoring.js';
 import {
   cmdCheckpointDiff,
   cmdCheckpointDiffLatest,
@@ -62,14 +55,12 @@ import {
   cmdTraversalDiffLatest,
   cmdTraversalList,
   cmdTraversalShow,
-} from "./ontology/navigation-diff.js";
-import {
-  qualityStatusRecords,
-} from "./ontology/quality-status-evidence.js";
+} from './ontology/navigation-diff.js';
+import { qualityStatusRecords } from './ontology/quality-status-evidence.js';
 import {
   appendQualityStatusSnapshotGovernanceEvidence,
   promptQualityStatusEvidenceFromArtifactExtraction,
-} from "./ontology/quality-ledger-evidence.js";
+} from './ontology/quality-ledger-evidence.js';
 import {
   cmdPromptExtractArtifact,
   expandQualityTopologyTargetRefs,
@@ -77,21 +68,15 @@ import {
   parseArtifactExtractionSource,
   withQualityStatusRecordsSummary,
   workAreaQualityTargetRefs,
-} from "./ontology/prompt-extract-artifact.js";
-import {
-  getStorePath,
-  loadStore,
-  parseFlags,
-  printJson,
-  saveStore,
-} from "./ontology/support.js";
+} from './ontology/prompt-extract-artifact.js';
+import { getStorePath, loadStore, parseFlags, printJson, saveStore } from './ontology/support.js';
 import {
   cmdSnapshotDiff,
   cmdSnapshotDiffLatest,
   cmdSnapshotList,
   cmdSnapshotShow,
   cmdStatus,
-} from "./ontology/status.js";
+} from './ontology/status.js';
 
 interface PromptArtifactMaterialization {
   artifactId: string;
@@ -101,21 +86,22 @@ interface PromptArtifactMaterialization {
 
 function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourceOptions {
   return {
-    mode: flags["local"] === "true"
-      ? "local"
-      : flags["server"] === "true"
-        ? "server"
-        : flags["scan"] === "true"
-          ? "scan"
-          : undefined,
-    dbPath: flags["db"],
-    serverUrl: flags["server-url"],
+    mode:
+      flags['local'] === 'true'
+        ? 'local'
+        : flags['server'] === 'true'
+          ? 'server'
+          : flags['scan'] === 'true'
+            ? 'scan'
+            : undefined,
+    dbPath: flags['db'],
+    serverUrl: flags['server-url'],
   };
 }
 
 async function loadQualityStatusDescriptorSource(
   flags: Record<string, string>,
-): Promise<Pick<DefDataSource, "get" | "getChildren"> | undefined> {
+): Promise<Pick<DefDataSource, 'get' | 'getChildren'> | undefined> {
   try {
     return await createDataSource(toDefinitionDataSourceOptions(flags));
   } catch {
@@ -123,8 +109,8 @@ async function loadQualityStatusDescriptorSource(
   }
 }
 
-function parsePromptArtifactKind(value: string | undefined): PromptArtifactKind | "all" {
-  if (!value || value === "all") return "all";
+function parsePromptArtifactKind(value: string | undefined): PromptArtifactKind | 'all' {
+  if (!value || value === 'all') return 'all';
   if ((PROMPT_ARTIFACT_KINDS as readonly string[]).includes(value)) {
     return value as PromptArtifactKind;
   }
@@ -132,7 +118,7 @@ function parsePromptArtifactKind(value: string | undefined): PromptArtifactKind 
 }
 
 function parsePromptArtifactUseCase(value: string | undefined): PromptArtifactUseCase {
-  const useCase = value ?? "feature_modification";
+  const useCase = value ?? 'feature_modification';
   if ((PROMPT_ARTIFACT_USE_CASES as readonly string[]).includes(useCase)) {
     return useCase as PromptArtifactUseCase;
   }
@@ -150,16 +136,18 @@ async function materializePromptArtifacts(input: {
   ownerDefinitionId?: string;
   materializesOutputRefs?: readonly string[];
 }): Promise<PromptArtifactMaterialization[]> {
-  const output = input.flags["output"];
+  const output = input.flags['output'];
   if (!output) return [];
 
   const outputs = resolvePromptArtifactOutputs(output, input.artifacts);
-  await Promise.all(outputs.map(async ({ artifact, outputPath }) => {
-    await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, artifact.content + "\n", "utf8");
-  }));
+  await Promise.all(
+    outputs.map(async ({ artifact, outputPath }) => {
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, artifact.content + '\n', 'utf8');
+    }),
+  );
 
-  const registryPath = input.flags["artifact-registry"] ?? input.flags["artifact-registry-file"];
+  const registryPath = input.flags['artifact-registry'] ?? input.flags['artifact-registry-file'];
   if (registryPath) {
     await appendProgrammingArtifactRegistryRecords(
       registryPath,
@@ -167,7 +155,7 @@ async function materializePromptArtifacts(input: {
         createProgrammingArtifactRegistryRecord({
           artifactId: `prompt-artifact-${slugCliRef(artifact.artifactId)}`,
           artifactRef: outputPath,
-          kind: "prompt-artifact",
+          kind: 'prompt-artifact',
           producedByRef: input.producedByRef,
           derivedFromRefs: artifact.sourceRefs,
           verifiesRefs: artifact.validation.valid ? [artifact.workAreaId] : [],
@@ -204,7 +192,7 @@ function resolvePromptArtifactOutputs(
   artifacts: readonly PromptArtifact[],
 ): Array<{ artifact: PromptArtifact; outputPath: string }> {
   const resolvedOutput = resolve(output);
-  const outputIsDirectory = artifacts.length > 1 || output.endsWith("/");
+  const outputIsDirectory = artifacts.length > 1 || output.endsWith('/');
   return artifacts.map((artifact) => ({
     artifact,
     outputPath: outputIsDirectory
@@ -217,17 +205,16 @@ function slugCliRef(ref: string): string {
   const slug = ref
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || "unknown";
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'unknown';
 }
 
 async function defDocWithBody(source: Awaited<ReturnType<typeof createDataSource>>, doc: DefDoc) {
   const body = await source.getBody(doc.docId);
   const sourcePath = doc.sourcePath ?? body?.sourcePath;
-  const rawBody = sourcePath && existsSync(sourcePath)
-    ? await readFile(sourcePath, "utf8")
-    : body?.body;
+  const rawBody =
+    sourcePath && existsSync(sourcePath) ? await readFile(sourcePath, 'utf8') : body?.body;
   return {
     docId: doc.docId,
     title: doc.title,
@@ -244,11 +231,11 @@ async function defDocWithBody(source: Awaited<ReturnType<typeof createDataSource
 }
 
 const AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS = [
-  "authorization-ontology-permission-engine-bridge",
-  "authorization-management-usecases",
-  "authorization-management-usage-rule",
-  "authorization-ontology-decision-observation",
-  "authorization-ontology-audit-layer",
+  'authorization-ontology-permission-engine-bridge',
+  'authorization-management-usecases',
+  'authorization-management-usage-rule',
+  'authorization-ontology-decision-observation',
+  'authorization-ontology-audit-layer',
 ] as const;
 
 function outgoingLinkToPromptLink(root: DefDoc, link: DefOutgoingLink) {
@@ -274,9 +261,7 @@ async function markPersistedGovernanceEvidence(
   const runs = extraction.sources.governanceRuns ?? [];
   if (runs.length === 0) return;
 
-  const persistedObjects = await Promise.all(
-    runs.map((run) => store.findObjectById(run.runId)),
-  );
+  const persistedObjects = await Promise.all(runs.map((run) => store.findObjectById(run.runId)));
   if (persistedObjects.some(Boolean)) {
     extraction.sources.governanceRuns = runs.map((run, index) =>
       persistedObjects[index] ? { ...run, runId: `${run.runId}:persisted` } : run,
@@ -289,10 +274,10 @@ async function maybePersistGovernanceEvidence(
   extraction: ReturnType<typeof extractPromptArtifactSourcesFromDefinitionContext>,
 ): Promise<void> {
   const store = await loadStore(getStorePath(flags));
-  if (flags["persist-governance"] === "true") {
+  if (flags['persist-governance'] === 'true') {
     for (const run of extraction.sources.governanceRuns ?? []) {
       await persistImplementationGovernanceRun(store, run, {
-        now: flags["built-at"] ?? new Date().toISOString(),
+        now: flags['built-at'] ?? new Date().toISOString(),
       });
     }
     await saveStore(store, getStorePath(flags));
@@ -305,13 +290,13 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
   const docId = positional[0];
   if (!docId) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
+      'Usage: qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]',
     );
     return;
   }
 
-  const kind = parsePromptArtifactKind(flags["kind"]);
-  const useCase = parsePromptArtifactUseCase(flags["use-case"]);
+  const kind = parsePromptArtifactKind(flags['kind']);
+  const useCase = parsePromptArtifactUseCase(flags['use-case']);
   const source = await createDataSource(toDefinitionDataSourceOptions(flags));
   const root = await source.get(docId);
   if (!root) {
@@ -369,9 +354,10 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     ? promptQualityStatusEvidenceFromExtraction
     : undefined;
   await maybePersistGovernanceEvidence(flags, extractionWithQuality);
-  const artifacts = kind === "all"
-    ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
-    : [generatePromptArtifact({ ...extractionWithQuality, kind, useCase })];
+  const artifacts =
+    kind === 'all'
+      ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
+      : [generatePromptArtifact({ ...extractionWithQuality, kind, useCase })];
   const evaluations = artifacts.map((artifact) => ({
     artifact,
     quality: evaluatePromptArtifactQuality({
@@ -389,7 +375,7 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
     materializesOutputRefs: [docId],
   });
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson({
       docId,
       useCase,
@@ -414,15 +400,15 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
   for (const { artifact, quality } of evaluations) {
     console.log(`--- ${artifact.kind} ---`);
     console.log(`artifactId: ${artifact.artifactId}`);
-    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+    console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
     console.log(`quality: ${quality.grade} (${quality.score})`);
     console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
     if (quality.recommendedManagementActions.length > 0) {
       console.log(
-        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
       );
     }
-    if (flags["quality-only"] !== "true") {
+    if (flags['quality-only'] !== 'true') {
       console.log(artifact.content);
     }
   }
@@ -433,27 +419,29 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
   const filePath = positional[0];
   if (!filePath) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server] [--db <path>]",
+      'Usage: qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server] [--db <path>]',
     );
     return;
   }
 
-  const kind = parsePromptArtifactKind(flags["kind"]);
-  const useCase = parsePromptArtifactUseCase(flags["use-case"]);
+  const kind = parsePromptArtifactKind(flags['kind']);
+  const useCase = parsePromptArtifactUseCase(flags['use-case']);
   const source = await createDataSource(toDefinitionDataSourceOptions(flags));
-  if (source.mode === "scan") {
-    console.error("extract-file requires DB-owned code references. Run `qa-sdk def sync` and use local/server datasource.");
+  if (source.mode === 'scan') {
+    console.error(
+      'extract-file requires DB-owned code references. Run `qa-sdk def sync` and use local/server datasource.',
+    );
     process.exitCode = 1;
     return;
   }
 
   const mapping = await source.resolveByFile(filePath);
-  if (mapping.kind === "none") {
+  if (mapping.kind === 'none') {
     console.error(`No definition boundary mapping for file: ${filePath}`);
     process.exitCode = 1;
     return;
   }
-  if (mapping.kind === "ambiguous") {
+  if (mapping.kind === 'ambiguous') {
     console.error(`Ambiguous definition boundary mapping for file: ${filePath}`);
     for (const candidate of mapping.candidates) {
       console.error(`  candidate: ${candidate.anchor.docId}`);
@@ -489,7 +477,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
     incomingLinks: incomingLinks.map((link) => incomingLinkToPromptLink(specificDoc, link)),
     useCase,
     verificationRefs: mapping.references
-      .filter((ref) => ref.codePath.endsWith(".test.ts"))
+      .filter((ref) => ref.codePath.endsWith('.test.ts'))
       .map((ref) => ref.codePath),
     now: new Date().toISOString(),
   });
@@ -536,9 +524,17 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
       ...(extractionWithQuality.workArea.constraints ?? []),
     ]),
   };
-  const artifacts = kind === "all"
-    ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
-    : [generatePromptArtifact({ workArea, sources: extractionWithQuality.sources, kind, useCase })];
+  const artifacts =
+    kind === 'all'
+      ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
+      : [
+          generatePromptArtifact({
+            workArea,
+            sources: extractionWithQuality.sources,
+            kind,
+            useCase,
+          }),
+        ];
   const evaluations = artifacts.map((artifact) => ({
     artifact,
     quality: evaluatePromptArtifactQuality({
@@ -556,7 +552,7 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
     materializesOutputRefs: [docId, mapping.codePath],
   });
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson({
       filePath,
       boundaryDocId: mapping.anchor.docId,
@@ -581,15 +577,15 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
   for (const { artifact, quality } of evaluations) {
     console.log(`--- ${artifact.kind} ---`);
     console.log(`artifactId: ${artifact.artifactId}`);
-    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+    console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
     console.log(`quality: ${quality.grade} (${quality.score})`);
     console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
     if (quality.recommendedManagementActions.length > 0) {
       console.log(
-        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
       );
     }
-    if (flags["quality-only"] !== "true") {
+    if (flags['quality-only'] !== 'true') {
       console.log(artifact.content);
     }
   }
@@ -600,32 +596,31 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
   const permissionRef = positional[0];
   if (!permissionRef) {
     console.error(
-      "Usage: qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]",
+      'Usage: qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--store <file>] [--output <file|dir>] [--json] [--local|--server|--scan] [--db <path>]',
     );
     return;
   }
 
-  const kind = parsePromptArtifactKind(flags["kind"]);
-  const useCase = parsePromptArtifactUseCase(flags["use-case"] ?? "schema_governance_review");
+  const kind = parsePromptArtifactKind(flags['kind']);
+  const useCase = parsePromptArtifactUseCase(flags['use-case'] ?? 'schema_governance_review');
   const source = await createDataSource(toDefinitionDataSourceOptions(flags));
-  const root = await source.get("authorization-ontology-system");
+  const root = await source.get('authorization-ontology-system');
   if (!root) {
-    console.error("Definition document not found: authorization-ontology-system");
+    console.error('Definition document not found: authorization-ontology-system');
     process.exitCode = 1;
     return;
   }
 
   const contextDocs = (
-    await Promise.all(
-      AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.map((docId) => source.get(docId)),
-    )
+    await Promise.all(AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.map((docId) => source.get(docId)))
   ).filter((doc): doc is DefDoc => Boolean(doc));
   const rootDoc = await defDocWithBody(source, root);
   const childDocs = await Promise.all(contextDocs.map((doc) => defDocWithBody(source, doc)));
   const outgoingLinks = (await source.getOutgoingLinks(root.docId))
-    .filter((link) =>
-      AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.includes(link.target as never) ||
-      link.target === "permission-system",
+    .filter(
+      (link) =>
+        AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.includes(link.target as never) ||
+        link.target === 'permission-system',
     )
     .map((link) => outgoingLinkToPromptLink(root, link));
   const extraction = extractPromptArtifactSourcesFromDefinitionContext({
@@ -637,8 +632,8 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
     outgoingLinks,
     useCase,
     verificationRefs: [
-      "packages/authorization-ontology/src/index.test.ts",
-      "packages/authorization-ontology/src/permission-engine-bridge.test.ts",
+      'packages/authorization-ontology/src/index.test.ts',
+      'packages/authorization-ontology/src/permission-engine-bridge.test.ts',
     ],
     now: new Date().toISOString(),
   });
@@ -651,14 +646,15 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
       ...(extraction.workArea.constraints ?? []),
     ]),
     localInstructions: [
-      "Resolve permission refs through permission_feature, grants_feature, denies_feature, materializes_permission, and decision_* relations.",
-      "Treat this extraction as authorization-context evidence until a graph-store permission query is available.",
+      'Resolve permission refs through permission_feature, grants_feature, denies_feature, materializes_permission, and decision_* relations.',
+      'Treat this extraction as authorization-context evidence until a graph-store permission query is available.',
     ],
   };
   await maybePersistGovernanceEvidence(flags, extraction);
-  const artifacts = kind === "all"
-    ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
-    : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
+  const artifacts =
+    kind === 'all'
+      ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
+      : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
   const evaluations = artifacts.map((artifact) => ({
     artifact,
     quality: evaluatePromptArtifactQuality({
@@ -671,11 +667,11 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
     flags,
     artifacts,
     producedByRef: `qa-sdk ontology prompt extract-permission ${permissionRef}`,
-    ownerDefinitionId: "authorization-ontology-system",
-    materializesOutputRefs: ["authorization-ontology-system", permissionRef],
+    ownerDefinitionId: 'authorization-ontology-system',
+    materializesOutputRefs: ['authorization-ontology-system', permissionRef],
   });
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson({
       permissionRef,
       useCase,
@@ -693,15 +689,15 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
   for (const { artifact, quality } of evaluations) {
     console.log(`--- ${artifact.kind} ---`);
     console.log(`artifactId: ${artifact.artifactId}`);
-    console.log(`useCase: ${artifact.useCase ?? "(none)"}`);
+    console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
     console.log(`quality: ${quality.grade} (${quality.score})`);
     console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
     if (quality.recommendedManagementActions.length > 0) {
       console.log(
-        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(", ")}`,
+        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
       );
     }
-    if (flags["quality-only"] !== "true") {
+    if (flags['quality-only'] !== 'true') {
       console.log(artifact.content);
     }
   }
@@ -711,85 +707,85 @@ export async function cliOntology(args: string[]): Promise<void> {
   const [cmd, ...rest] = args;
 
   switch (cmd) {
-    case "help":
+    case 'help':
       console.log(
         [
-          "qa-sdk ontology",
-          "",
-          "  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
-          "  qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]",
-          "  qa-sdk ontology pack validate <pack-ref> [--json]",
-          "",
-          "Pack authoring contract:",
-          "  OperationalOntologyPack remains the canonical pack contract.",
-          "  Scaffold is dry-run by default; file writes require explicit --write.",
-          "  Known-pack registration is reported as a candidate, not applied automatically.",
-          "  Validate resolves known pack ids through the known-pack resolver.",
-          "  Validate file refs support .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack.",
-          "  Registry activation is out of scope for scaffold.",
-          "  Identity ids, component data, and system transforms stay architecture-neutral; ECS is one model, not a limit.",
-          "",
-          "  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]",
-          "  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
-          "  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
-          "  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
-          "  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--quality-status-max-age-days <n>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]",
-          "  qa-sdk ontology artifact registry validate --input <file> [--json]",
-          "  qa-sdk ontology artifact registry list --input <file> [--kind <kind>] [--json]",
-          "  qa-sdk ontology artifact registry append --output <file> (--input <record.json> | --kind <kind> --artifact-ref <ref>) [--json]",
-          "  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
-          "  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]",
-          "  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology snapshot diff <from-snapshot-id> <to-snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology snapshot diff-latest --scope <scope> [--store <file>] [--json]",
-          "  qa-sdk ontology corridor list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology corridor show <corridor-id> --snapshot <snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology corridor show-latest <corridor-id> --scope <scope> [--store <file>] [--json]",
-          "  qa-sdk ontology corridor diff <corridor-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology corridor diff-latest <corridor-id> --scope <scope> [--store <file>] [--json]",
-          "  qa-sdk ontology checkpoint list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology checkpoint show <root-checkpoint-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology checkpoint diff <root-checkpoint-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology checkpoint diff-latest <root-checkpoint-id> --scope <scope> [--store <file>] [--json]",
-          "  qa-sdk ontology junction list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology junction show <junction-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology junction diff <junction-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology junction diff-latest <junction-id> --scope <scope> [--store <file>] [--json]",
-          "  qa-sdk ontology route list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology route show <branch-node-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology route diff <branch-node-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology route diff-latest <branch-node-id> --scope <scope> [--store <file>] [--json]",
-          "  qa-sdk ontology traversal list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology traversal show <traversal-key> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]",
-          "  qa-sdk ontology traversal diff <traversal-key> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]",
-          "  qa-sdk ontology traversal diff-latest <traversal-key> --scope <scope> [--store <file>] [--json]",
-          "  qa-sdk ontology event ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
-          "  qa-sdk ontology pipe ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]",
-        ].join("\n"),
+          'qa-sdk ontology',
+          '',
+          '  qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]',
+          '  qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]',
+          '  qa-sdk ontology pack validate <pack-ref> [--json]',
+          '',
+          'Pack authoring contract:',
+          '  OperationalOntologyPack remains the canonical pack contract.',
+          '  Scaffold is dry-run by default; file writes require explicit --write.',
+          '  Known-pack registration is reported as a candidate, not applied automatically.',
+          '  Validate resolves known pack ids through the known-pack resolver.',
+          '  Validate file refs support .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack.',
+          '  Registry activation is out of scope for scaffold.',
+          '  Identity ids, component data, and system transforms stay architecture-neutral; ECS is one model, not a limit.',
+          '',
+          '  qa-sdk ontology registry activate-pack <pack-id> [--store <path>] [--ontology-id <id>] [--namespace <namespace>] [--owner <owner>] [--version <versionId>] [--address-model product|sum] [--prefix <taxonomyId>=<prefix>] [--output <file>] [--artifact-registry <file>] [--json]',
+          '  qa-sdk ontology prompt extract <doc-id> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]',
+          '  qa-sdk ontology prompt extract-file <code-path[:symbol]> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]',
+          '  qa-sdk ontology prompt extract-permission <permission-ref> [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]',
+          '  qa-sdk ontology prompt extract-artifact <artifact-ref> [--artifact-type <type>] [--artifact-registry <file>] [--quality-ledger <path>] [--quality-status-max-age-days <n>] [--kind self_reflection|code_editing_rules|all] [--use-case <usecase>] [--persist-governance] [--output <file|dir>] [--json]',
+          '  qa-sdk ontology artifact registry validate --input <file> [--json]',
+          '  qa-sdk ontology artifact registry list --input <file> [--kind <kind>] [--json]',
+          '  qa-sdk ontology artifact registry append --output <file> (--input <record.json> | --kind <kind> --artifact-ref <ref>) [--json]',
+          '  qa-sdk ontology snapshot ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]',
+          '  qa-sdk ontology snapshot list [--store <file>] [--scope <scope>] [--json]',
+          '  qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology snapshot diff <from-snapshot-id> <to-snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology snapshot diff-latest --scope <scope> [--store <file>] [--json]',
+          '  qa-sdk ontology corridor list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology corridor show <corridor-id> --snapshot <snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology corridor show-latest <corridor-id> --scope <scope> [--store <file>] [--json]',
+          '  qa-sdk ontology corridor diff <corridor-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology corridor diff-latest <corridor-id> --scope <scope> [--store <file>] [--json]',
+          '  qa-sdk ontology checkpoint list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology checkpoint show <root-checkpoint-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology checkpoint diff <root-checkpoint-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology checkpoint diff-latest <root-checkpoint-id> --scope <scope> [--store <file>] [--json]',
+          '  qa-sdk ontology junction list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology junction show <junction-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology junction diff <junction-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology junction diff-latest <junction-id> --scope <scope> [--store <file>] [--json]',
+          '  qa-sdk ontology route list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology route show <branch-node-id> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology route diff <branch-node-id> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology route diff-latest <branch-node-id> --scope <scope> [--store <file>] [--json]',
+          '  qa-sdk ontology traversal list [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology traversal show <traversal-key> [--snapshot <id> | --scope <scope>] [--store <file>] [--json]',
+          '  qa-sdk ontology traversal diff <traversal-key> --from <snapshot-id> --to <snapshot-id> [--store <file>] [--json]',
+          '  qa-sdk ontology traversal diff-latest <traversal-key> --scope <scope> [--store <file>] [--json]',
+          '  qa-sdk ontology event ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]',
+          '  qa-sdk ontology pipe ingest --input <file> [--store <file>] [--snapshot-id <id>] [--scope <scope>] [--json]',
+        ].join('\n'),
       );
       return;
-    case "status":
+    case 'status':
       await cmdStatus(rest);
       return;
-    case "pack.scaffold":
+    case 'pack.scaffold':
       await cmdPackScaffold(rest);
       return;
-    case "pack.validate":
+    case 'pack.validate':
       await cmdPackValidate(rest);
       return;
-    case "registry.activate-pack":
+    case 'registry.activate-pack':
       await cmdRegistryActivatePack(rest);
       return;
-    case "prompt.extract":
+    case 'prompt.extract':
       await cmdPromptExtract(rest);
       return;
-    case "prompt.extract-file":
+    case 'prompt.extract-file':
       await cmdPromptExtractFile(rest);
       return;
-    case "prompt.extract-permission":
+    case 'prompt.extract-permission':
       await cmdPromptExtractPermission(rest);
       return;
-    case "prompt.extract-artifact":
+    case 'prompt.extract-artifact':
       await cmdPromptExtractArtifact(rest, {
         parseFlags,
         parsePromptArtifactKind,
@@ -804,101 +800,101 @@ export async function cliOntology(args: string[]): Promise<void> {
         printJson,
       });
       return;
-    case "artifact.registry.validate":
+    case 'artifact.registry.validate':
       await cmdArtifactRegistryValidate(rest);
       return;
-    case "artifact.registry.list":
+    case 'artifact.registry.list':
       await cmdArtifactRegistryList(rest);
       return;
-    case "artifact.registry.append":
+    case 'artifact.registry.append':
       await cmdArtifactRegistryAppend(rest);
       return;
-    case "snapshot.ingest":
+    case 'snapshot.ingest':
       await cmdSnapshotIngest(rest);
       return;
-    case "snapshot.list":
+    case 'snapshot.list':
       await cmdSnapshotList(rest);
       return;
-    case "snapshot.show":
+    case 'snapshot.show':
       await cmdSnapshotShow(rest);
       return;
-    case "snapshot.diff":
+    case 'snapshot.diff':
       await cmdSnapshotDiff(rest);
       return;
-    case "snapshot.diff-latest":
+    case 'snapshot.diff-latest':
       await cmdSnapshotDiffLatest(rest);
       return;
-    case "corridor.show":
+    case 'corridor.show':
       await cmdCorridorShow(rest);
       return;
-    case "corridor.list":
+    case 'corridor.list':
       await cmdCorridorList(rest);
       return;
-    case "corridor.show-latest":
+    case 'corridor.show-latest':
       await cmdCorridorShowLatest(rest);
       return;
-    case "corridor.diff":
+    case 'corridor.diff':
       await cmdCorridorDiff(rest);
       return;
-    case "corridor.diff-latest":
+    case 'corridor.diff-latest':
       await cmdCorridorDiffLatest(rest);
       return;
-    case "checkpoint.list":
+    case 'checkpoint.list':
       await cmdCheckpointList(rest);
       return;
-    case "checkpoint.show":
+    case 'checkpoint.show':
       await cmdCheckpointShow(rest);
       return;
-    case "checkpoint.diff":
+    case 'checkpoint.diff':
       await cmdCheckpointDiff(rest);
       return;
-    case "checkpoint.diff-latest":
+    case 'checkpoint.diff-latest':
       await cmdCheckpointDiffLatest(rest);
       return;
-    case "junction.list":
+    case 'junction.list':
       await cmdJunctionList(rest);
       return;
-    case "junction.show":
+    case 'junction.show':
       await cmdJunctionShow(rest);
       return;
-    case "junction.diff":
+    case 'junction.diff':
       await cmdJunctionDiff(rest);
       return;
-    case "junction.diff-latest":
+    case 'junction.diff-latest':
       await cmdJunctionDiffLatest(rest);
       return;
-    case "route.list":
+    case 'route.list':
       await cmdRouteList(rest);
       return;
-    case "route.show":
+    case 'route.show':
       await cmdRouteShow(rest);
       return;
-    case "route.diff":
+    case 'route.diff':
       await cmdRouteDiff(rest);
       return;
-    case "route.diff-latest":
+    case 'route.diff-latest':
       await cmdRouteDiffLatest(rest);
       return;
-    case "traversal.list":
+    case 'traversal.list':
       await cmdTraversalList(rest);
       return;
-    case "traversal.show":
+    case 'traversal.show':
       await cmdTraversalShow(rest);
       return;
-    case "traversal.diff":
+    case 'traversal.diff':
       await cmdTraversalDiff(rest);
       return;
-    case "traversal.diff-latest":
+    case 'traversal.diff-latest':
       await cmdTraversalDiffLatest(rest);
       return;
-    case "event.ingest":
+    case 'event.ingest':
       await cmdEventIngest(rest);
       return;
-    case "pipe.ingest":
+    case 'pipe.ingest':
       await cmdPipeIngest(rest);
       return;
     default:
-      console.error(`알 수 없는 ontology 명령: ${cmd ?? "(none)"}`);
+      console.error(`알 수 없는 ontology 명령: ${cmd ?? '(none)'}`);
       process.exitCode = 1;
   }
 }

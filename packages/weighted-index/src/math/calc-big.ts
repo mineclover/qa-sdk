@@ -8,8 +8,8 @@
  * Number.MAX_SAFE_INTEGER를 초과하는 shape product에서 사용한다.
  */
 
-import type { CoordConstraint } from "./calc.js";
-import { parseConstraintSegments } from "./calc.js";
+import type { CoordConstraint } from './calc.js';
+import { parseConstraintSegments } from './calc.js';
 
 /**
  * BigInt 기반 weight 배열 계산.
@@ -61,16 +61,14 @@ export function mergeRangesBig(ranges: [bigint, bigint][]): [bigint, bigint][] {
 /**
  * BigInt 범위 내 주소 포함 여부 (O(log n) binary search).
  */
-export function containsAddressBig(
-  address: bigint,
-  ranges: readonly [bigint, bigint][],
-): boolean {
+export function containsAddressBig(address: bigint, ranges: readonly [bigint, bigint][]): boolean {
   if (ranges.length === 0) return false;
-  let lo = 0, hi = ranges.length - 1;
+  let lo = 0,
+    hi = ranges.length - 1;
   while (lo <= hi) {
     const mid = (lo + hi) >>> 1;
     const [from, to] = ranges[mid];
-    if (address < from)    hi = mid - 1;
+    if (address < from) hi = mid - 1;
     else if (address > to) lo = mid + 1;
     else return true;
   }
@@ -78,11 +76,11 @@ export function containsAddressBig(
 }
 
 function _calcRangesBig(
-  shape:       readonly bigint[],
+  shape: readonly bigint[],
   constraints: ReadonlyArray<CoordConstraint>,
-  weights:     readonly bigint[],
-  dimIndex:    number,
-  baseAddr:    bigint,
+  weights: readonly bigint[],
+  dimIndex: number,
+  baseAddr: bigint,
 ): [bigint, bigint][] {
   if (dimIndex === shape.length) {
     return [[baseAddr, baseAddr]];
@@ -92,9 +90,7 @@ function _calcRangesBig(
   const dimSize = Number(shape[dimIndex]);
   const segments = parseConstraintSegments(constraints[dimIndex], dimSize);
 
-  const allRemainingWild = constraints
-    .slice(dimIndex + 1)
-    .every((c) => c === null);
+  const allRemainingWild = constraints.slice(dimIndex + 1).every((c) => c === null);
 
   if (allRemainingWild) {
     const raw: [bigint, bigint][] = segments.map(({ from, to }) => [
@@ -108,7 +104,9 @@ function _calcRangesBig(
   for (const { from, to } of segments) {
     for (let coord = from; coord <= to; coord++) {
       const sub = _calcRangesBig(
-        shape, constraints, weights,
+        shape,
+        constraints,
+        weights,
         dimIndex + 1,
         baseAddr + BigInt(coord - 1) * weight,
       );

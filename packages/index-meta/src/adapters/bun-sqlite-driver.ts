@@ -13,10 +13,10 @@
  * const registry = new SqlPrefixRegistry(driver);
  */
 
-import type { SqlDriver, SqlDialect, ExecuteResult } from "./sql-store.js";
+import type { SqlDriver, SqlDialect, ExecuteResult } from './sql-store.js';
 
 const BUN_DIALECT: SqlDialect = {
-  name: "bun-sqlite",
+  name: 'bun-sqlite',
   supportsTransaction: true,
   supportsReturning: true,
   supportsJsonType: false,
@@ -44,11 +44,17 @@ export class BunSqliteDriver implements SqlDriver {
 
   constructor(private readonly db: BunDatabase) {}
 
-  async query<T extends Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+  async query<T extends Record<string, unknown>>(
+    sql: string,
+    params: unknown[] = [],
+  ): Promise<T[]> {
     return this.db.query<T>(sql).all(...params);
   }
 
-  async queryOne<T extends Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T | null> {
+  async queryOne<T extends Record<string, unknown>>(
+    sql: string,
+    params: unknown[] = [],
+  ): Promise<T | null> {
     return this.db.query<T>(sql).get(...params) ?? null;
   }
 
@@ -63,7 +69,10 @@ export class BunSqliteDriver implements SqlDriver {
       // 동기 컨텍스트에서 async fn 실행은 제한적이지만,
       // bun:sqlite는 동기 DB이므로 실제로는 동기 실행됨
       let result: T;
-      fn(this).then(r => { result = r; return undefined; });
+      fn(this).then((r) => {
+        result = r;
+        return undefined;
+      });
       // eslint-disable-next-line typescript/no-non-null-assertion -- bun:sqlite 동기 트랜잭션에서 Promise가 동기 해소됨
       return result!;
     });

@@ -4,8 +4,8 @@
 import {
   UserReadModelQuery,
   type UserDetailReadModel,
-} from "../../application/queries/user-read-model.query.js";
-import type { UserRepositoryPort } from "../../application/ports/user-repository.port.js";
+} from '../../application/queries/user-read-model.query.js';
+import type { UserRepositoryPort } from '../../application/ports/user-repository.port.js';
 
 /**
  * Repository 위에 얹은 Read Model — Phase 2 단순 슬라이스용.

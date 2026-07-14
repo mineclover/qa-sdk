@@ -60,23 +60,112 @@ interface RouteEntry {
 }
 
 const ROUTES: RouteEntry[] = [
-  { prefix: "/v1/ingest",    urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/v1/traces",    urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/v1/sessions",  urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/v1/scenarios", urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/v1/streams",   urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/v1/admin",     urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/v1/insights",  urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/v1/labels",   urlKey: "INGEST_URL",   defaultUrl: "http://localhost:3200", bindingKey: "INGEST_SERVICE" },
-  { prefix: "/api/",         urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
-  { prefix: "/dev/",         urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
-  { prefix: "/catalogs",     urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
-  { prefix: "/metrics",      urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
-  { prefix: "/health/",      urlKey: "REGISTRY_URL",  defaultUrl: "http://localhost:3300", bindingKey: "REGISTRY_SERVICE" },
-  { prefix: "/gate/",        urlKey: "GATE_URL",      defaultUrl: "http://localhost:3400", bindingKey: "GATE_SERVICE",    strip: true },
-  { prefix: "/query/",       urlKey: "QUERY_URL",     defaultUrl: "http://localhost:3500", bindingKey: "QUERY_SERVICE",   strip: true },
-  { prefix: "/state/",       urlKey: "QUERY_URL",     defaultUrl: "http://localhost:3500", bindingKey: "QUERY_SERVICE",   strip: true },
-  { prefix: "/decode/",      urlKey: "DECODE_URL",    defaultUrl: "http://localhost:3600", bindingKey: "DECODE_SERVICE",  strip: true },
+  {
+    prefix: '/v1/ingest',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/v1/traces',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/v1/sessions',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/v1/scenarios',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/v1/streams',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/v1/admin',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/v1/insights',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/v1/labels',
+    urlKey: 'INGEST_URL',
+    defaultUrl: 'http://localhost:3200',
+    bindingKey: 'INGEST_SERVICE',
+  },
+  {
+    prefix: '/api/',
+    urlKey: 'REGISTRY_URL',
+    defaultUrl: 'http://localhost:3300',
+    bindingKey: 'REGISTRY_SERVICE',
+  },
+  {
+    prefix: '/dev/',
+    urlKey: 'REGISTRY_URL',
+    defaultUrl: 'http://localhost:3300',
+    bindingKey: 'REGISTRY_SERVICE',
+  },
+  {
+    prefix: '/catalogs',
+    urlKey: 'REGISTRY_URL',
+    defaultUrl: 'http://localhost:3300',
+    bindingKey: 'REGISTRY_SERVICE',
+  },
+  {
+    prefix: '/metrics',
+    urlKey: 'REGISTRY_URL',
+    defaultUrl: 'http://localhost:3300',
+    bindingKey: 'REGISTRY_SERVICE',
+  },
+  {
+    prefix: '/health/',
+    urlKey: 'REGISTRY_URL',
+    defaultUrl: 'http://localhost:3300',
+    bindingKey: 'REGISTRY_SERVICE',
+  },
+  {
+    prefix: '/gate/',
+    urlKey: 'GATE_URL',
+    defaultUrl: 'http://localhost:3400',
+    bindingKey: 'GATE_SERVICE',
+    strip: true,
+  },
+  {
+    prefix: '/query/',
+    urlKey: 'QUERY_URL',
+    defaultUrl: 'http://localhost:3500',
+    bindingKey: 'QUERY_SERVICE',
+    strip: true,
+  },
+  {
+    prefix: '/state/',
+    urlKey: 'QUERY_URL',
+    defaultUrl: 'http://localhost:3500',
+    bindingKey: 'QUERY_SERVICE',
+    strip: true,
+  },
+  {
+    prefix: '/decode/',
+    urlKey: 'DECODE_URL',
+    defaultUrl: 'http://localhost:3600',
+    bindingKey: 'DECODE_SERVICE',
+    strip: true,
+  },
 ];
 
 // ── 프록시 ──────────────────────────────────────────
@@ -95,15 +184,13 @@ async function proxyRequest(
   headers: Headers,
 ): Promise<Response> {
   const targetPath = route.strip
-    ? url.pathname.slice(route.prefix.replace(/\/$/, "").length) || "/"
+    ? url.pathname.slice(route.prefix.replace(/\/$/, '').length) || '/'
     : url.pathname;
 
-  const body = request.method !== "GET" && request.method !== "HEAD"
-    ? request.body
-    : undefined;
+  const body = request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined;
 
   // 1) Service Binding — Worker-to-Worker 직접 호출
-  const binding = route.bindingKey ? env[route.bindingKey] as Fetcher | undefined : undefined;
+  const binding = route.bindingKey ? (env[route.bindingKey] as Fetcher | undefined) : undefined;
   if (binding) {
     const bindingUrl = new URL(`https://internal${targetPath}${url.search}`);
     return binding.fetch(bindingUrl, {
@@ -130,25 +217,36 @@ export default {
     const url = new URL(request.url);
 
     // /health — 게이트웨이 자체 헬스
-    if (url.pathname === "/health") {
-      const bindings = ["REGISTRY_SERVICE", "INGEST_SERVICE", "GATE_SERVICE", "QUERY_SERVICE", "DECODE_SERVICE"]
-        .filter(k => !!(env as Record<string, unknown>)[k]);
+    if (url.pathname === '/health') {
+      const bindings = [
+        'REGISTRY_SERVICE',
+        'INGEST_SERVICE',
+        'GATE_SERVICE',
+        'QUERY_SERVICE',
+        'DECODE_SERVICE',
+      ].filter((k) => !!(env as Record<string, unknown>)[k]);
       return Response.json({
-        status: "ok",
-        service: "gateway",
-        auth: env.AUTH_MODE ?? "bypass",
-        serviceBindings: bindings.length > 0 ? bindings : "none (URL fallback)",
+        status: 'ok',
+        service: 'gateway',
+        auth: env.AUTH_MODE ?? 'bypass',
+        serviceBindings: bindings.length > 0 ? bindings : 'none (URL fallback)',
       });
     }
 
     // WebSocket upgrade — /v1/ws → ingest-server로 직접 프록시
-    if (url.pathname === "/v1/ws" && request.headers.get("Upgrade")?.toLowerCase() === "websocket") {
+    if (
+      url.pathname === '/v1/ws' &&
+      request.headers.get('Upgrade')?.toLowerCase() === 'websocket'
+    ) {
       const binding = env.INGEST_SERVICE;
       if (binding) {
         return binding.fetch(request);
       }
       // fallback: 502 (WebSocket은 HTTP fallback 불가)
-      return Response.json({ error: "WebSocket not available (no INGEST_SERVICE binding)" }, { status: 502 });
+      return Response.json(
+        { error: 'WebSocket not available (no INGEST_SERVICE binding)' },
+        { status: 502 },
+      );
     }
 
     // 인증
@@ -159,27 +257,27 @@ export default {
     for (const route of ROUTES) {
       if (url.pathname.startsWith(route.prefix)) {
         const headers = new Headers(request.headers);
-        headers.set("X-Gateway-Identity", authResult.identity);
-        headers.set("X-Gateway-Auth-Method", authResult.method);
-        headers.delete("Authorization");
+        headers.set('X-Gateway-Identity', authResult.identity);
+        headers.set('X-Gateway-Auth-Method', authResult.method);
+        headers.delete('Authorization');
 
         try {
           return await proxyRequest(request, url, route, env, headers);
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           // 에러 self-report (fire-and-forget, 순환 방지: /v1/ingest 에러는 스킵)
-          if (!route.prefix.startsWith("/v1/ingest") && env.INGEST_SERVICE) {
+          if (!route.prefix.startsWith('/v1/ingest') && env.INGEST_SERVICE) {
             reportProxyError(env.INGEST_SERVICE, route.prefix, message);
           }
           return Response.json(
-            { error: "Service unavailable", target: route.prefix, message },
+            { error: 'Service unavailable', target: route.prefix, message },
             { status: 502 },
           );
         }
       }
     }
 
-    return Response.json({ error: "Not found", path: url.pathname }, { status: 404 });
+    return Response.json({ error: 'Not found', path: url.pathname }, { status: 404 });
   },
 };
 
@@ -191,41 +289,44 @@ interface AuthOk {
 }
 
 function authenticate(request: Request, env: Env): AuthOk | Response {
-  const mode = env.AUTH_MODE ?? "bypass";
+  const mode = env.AUTH_MODE ?? 'bypass';
 
-  if (mode === "bypass") {
-    return { identity: "dev", method: "bypass" };
+  if (mode === 'bypass') {
+    return { identity: 'dev', method: 'bypass' };
   }
 
-  if (mode === "api-key") {
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return Response.json({ error: "Missing Authorization header" }, { status: 401 });
+  if (mode === 'api-key') {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return Response.json({ error: 'Missing Authorization header' }, { status: 401 });
     }
     const key = authHeader.slice(7);
-    const validKeys = (env.AUTH_API_KEYS ?? "").split(",").map(k => k.trim()).filter(Boolean);
+    const validKeys = (env.AUTH_API_KEYS ?? '')
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
     if (!validKeys.includes(key)) {
-      return Response.json({ error: "Invalid API key" }, { status: 403 });
+      return Response.json({ error: 'Invalid API key' }, { status: 403 });
     }
-    return { identity: `key:${key.slice(0, 8)}`, method: "api-key" };
+    return { identity: `key:${key.slice(0, 8)}`, method: 'api-key' };
   }
 
-  if (mode === "cf-access") {
-    const jwt = request.headers.get("Cf-Access-Jwt-Assertion");
+  if (mode === 'cf-access') {
+    const jwt = request.headers.get('Cf-Access-Jwt-Assertion');
     if (!jwt) {
-      return Response.json({ error: "Missing CF Access token" }, { status: 401 });
+      return Response.json({ error: 'Missing CF Access token' }, { status: 401 });
     }
     try {
-      const parts = jwt.split(".");
-      if (parts.length !== 3) throw new Error("bad jwt");
+      const parts = jwt.split('.');
+      if (parts.length !== 3) throw new Error('bad jwt');
       const payload = JSON.parse(atob(parts[1]));
-      return { identity: payload.email ?? payload.sub ?? "cf-user", method: "cf-access" };
+      return { identity: payload.email ?? payload.sub ?? 'cf-user', method: 'cf-access' };
     } catch {
-      return Response.json({ error: "Invalid CF Access token" }, { status: 401 });
+      return Response.json({ error: 'Invalid CF Access token' }, { status: 401 });
     }
   }
 
-  return Response.json({ error: "Unknown auth mode" }, { status: 500 });
+  return Response.json({ error: 'Unknown auth mode' }, { status: 500 });
 }
 
 // ── Error Self-Report ─────────────────────────────
@@ -234,31 +335,42 @@ function reportProxyError(binding: Fetcher, target: string, message?: string): v
   const now = new Date().toISOString();
   const id = `gerr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   try {
-    binding.fetch(new Request("https://internal/v1/ingest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        transmission_id: id,
-        sent_at: now,
-        source: { service_name: "gateway", sdk_name: "error-reporter", sdk_version: "1.0" },
-        build: { env: "prod" },
-        owner: { owner_type: "agent", owner_id: "error-reporter" },
-        runtime: { platform: "worker" },
-        records: [{
-          log_id: id,
-          trace_id: `err-gw-${Date.now()}`,
-          span_id: "err",
-          timestamp: now,
-          record_kind: "log",
-          event_key: "error.service",
-          event_version: "001",
-          payload_format: "json",
-          payload_encoding: "raw",
-          payload_masking_applied: false,
-          payload_masked_fields: [],
-          payload: { service: "gateway", code: "PROXY_ERROR", message: (message ?? "").slice(0, 500), target },
-        }],
-      }),
-    })).catch(() => {});
+    binding
+      .fetch(
+        new Request('https://internal/v1/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transmission_id: id,
+            sent_at: now,
+            source: { service_name: 'gateway', sdk_name: 'error-reporter', sdk_version: '1.0' },
+            build: { env: 'prod' },
+            owner: { owner_type: 'agent', owner_id: 'error-reporter' },
+            runtime: { platform: 'worker' },
+            records: [
+              {
+                log_id: id,
+                trace_id: `err-gw-${Date.now()}`,
+                span_id: 'err',
+                timestamp: now,
+                record_kind: 'log',
+                event_key: 'error.service',
+                event_version: '001',
+                payload_format: 'json',
+                payload_encoding: 'raw',
+                payload_masking_applied: false,
+                payload_masked_fields: [],
+                payload: {
+                  service: 'gateway',
+                  code: 'PROXY_ERROR',
+                  message: (message ?? '').slice(0, 500),
+                  target,
+                },
+              },
+            ],
+          }),
+        }),
+      )
+      .catch(() => {});
   } catch {}
 }

@@ -8,7 +8,7 @@ import type {
   SafetyDecisionRecordInput,
   ResourceDecisionRecordInput,
   AlertEventRecordInput,
-} from "sim-decision-view";
+} from 'sim-decision-view';
 
 export interface DecisionRingBufferOptions {
   /** maxSize. env SIM_CONTROLLER_RING_SIZE 로 override. default 100. */
@@ -16,7 +16,7 @@ export interface DecisionRingBufferOptions {
 }
 
 export interface DecisionFilter {
-  pass: "safety" | "resource";
+  pass: 'safety' | 'resource';
   verdict?: string;
   cycleIds?: readonly string[];
   since?: string;
@@ -64,10 +64,8 @@ export class DecisionRingBuffer {
     this.push(this.alertEvents, e);
   }
 
-  queryDecisions(
-    f: DecisionFilter,
-  ): SafetyDecisionRecordInput[] | ResourceDecisionRecordInput[] {
-    const ring = f.pass === "safety" ? this.safetyRing : this.resourceRing;
+  queryDecisions(f: DecisionFilter): SafetyDecisionRecordInput[] | ResourceDecisionRecordInput[] {
+    const ring = f.pass === 'safety' ? this.safetyRing : this.resourceRing;
     let out = ring.filter(
       (r) =>
         (f.verdict === undefined || r.verdict === f.verdict) &&
@@ -79,7 +77,7 @@ export class DecisionRingBuffer {
   }
 
   queryFirst(
-    f: Omit<DecisionFilter, "limit">,
+    f: Omit<DecisionFilter, 'limit'>,
   ): SafetyDecisionRecordInput | ResourceDecisionRecordInput | null {
     return this.queryDecisions({ ...f, limit: 1 })[0] ?? null;
   }
@@ -102,9 +100,7 @@ export class DecisionRingBuffer {
   }
 
   recentCycleCount(): number {
-    return new Set(
-      [...this.safetyRing, ...this.resourceRing].map((r) => r.cycleId),
-    ).size;
+    return new Set([...this.safetyRing, ...this.resourceRing].map((r) => r.cycleId)).size;
   }
 
   countAlerts(f: AlertFilter): number {
@@ -134,8 +130,6 @@ export class DecisionRingBuffer {
 
   /** spec 01 §3 dwell window — Pass 1 soft rollback 카운트용. true = FAIL. */
   recentSafetyHistory(n: number): boolean[] {
-    return this.safetyRing
-      .slice(-Math.max(0, Math.floor(n)))
-      .map((r) => r.verdict === "rollback");
+    return this.safetyRing.slice(-Math.max(0, Math.floor(n))).map((r) => r.verdict === 'rollback');
   }
 }

@@ -1,4 +1,4 @@
-import type { DataSchema, FacetRole, PipeGraph } from "@qa-sdk/core";
+import type { DataSchema, FacetRole, PipeGraph } from '@qa-sdk/core';
 
 import {
   defaultCorridorTemplateRegistry,
@@ -11,24 +11,21 @@ import {
   type DataFlowField,
   type DataFlowLink,
   type FlowCorridor,
-} from "./corridor-core.js";
+} from './corridor-core.js';
 import {
   defaultJunctionTemplateRegistry,
   getJunctionTemplate,
   validateJunctionAgainstTemplate,
   type BranchDefinition,
   type JunctionTemplateRegistry,
-} from "./junction-core.js";
-import type { DataLineageLink } from "./lineage-core.js";
+} from './junction-core.js';
+import type { DataLineageLink } from './lineage-core.js';
 import {
   inferLineageLinksFromPipe,
   normalizeContractFields,
   projectLineageToOperationalOntology,
-} from "./lineage-projector.js";
-import type {
-  PipeGraphProjectionInput,
-  PipeGraphProjectionResult,
-} from "./projector-types.js";
+} from './lineage-projector.js';
+import type { PipeGraphProjectionInput, PipeGraphProjectionResult } from './projector-types.js';
 import {
   buildPipeFieldSchemaHints,
   buildSchemaColumnIndex,
@@ -36,7 +33,7 @@ import {
   createPortEndpointId,
   mapFacetRoleToInformationFacetKind,
   parseSchemaColumnNodeId,
-} from "./projector-shared.js";
+} from './projector-shared.js';
 import {
   formatPipeConstraint,
   inferTransmissionDirection,
@@ -47,7 +44,7 @@ import {
   normalizeFacetHint,
   normalizePipeEndpoint,
   resolvePipeFacetHint,
-} from "./projector-utils.js";
+} from './projector-utils.js';
 import {
   createInformationFacetRef,
   createSemanticTransmissionId,
@@ -55,7 +52,7 @@ import {
   type ControlFlowGraph,
   type ControlFlowNode,
   type SemanticTransmission,
-} from "./runtime-core.js";
+} from './runtime-core.js';
 
 function createPipeDataFlowContracts(
   graph: PipeGraph,
@@ -65,9 +62,9 @@ function createPipeDataFlowContracts(
   >,
   corridorTemplateRegistry: CorridorTemplateRegistry = defaultCorridorTemplateRegistry,
 ): DataFlowContract[] {
-  getCorridorTemplate(corridorTemplateRegistry, "pipe_graph");
+  getCorridorTemplate(corridorTemplateRegistry, 'pipe_graph');
   return graph.pipes.flatMap((pipe) => {
-    if (pipe.flow.kind !== "step" || !pipe.flow.dataContract) {
+    if (pipe.flow.kind !== 'step' || !pipe.flow.dataContract) {
       return [];
     }
 
@@ -76,16 +73,10 @@ function createPipeDataFlowContracts(
     return [
       {
         contractId: `contract:${pipe.pipeId}`,
-        templateKind: "pipe_contract",
+        templateKind: 'pipe_contract',
         nodeId: pipe.pipeId,
-        consumes: normalizeContractFields(
-          pipe.flow.dataContract.consumes,
-          schemaHints?.consumes,
-        ),
-        produces: normalizeContractFields(
-          pipe.flow.dataContract.produces,
-          schemaHints?.produces,
-        ),
+        consumes: normalizeContractFields(pipe.flow.dataContract.consumes, schemaHints?.consumes),
+        produces: normalizeContractFields(pipe.flow.dataContract.produces, schemaHints?.produces),
         accesses: pipe.flow.dataContract.accesses,
       },
     ];
@@ -94,36 +85,33 @@ function createPipeDataFlowContracts(
 
 function createPipeDataFlowEndpoints(
   graph: PipeGraph,
-  schemaColumnIndex: Map<
-    string,
-    { schema: DataSchema; column: string; facetRole?: FacetRole }
-  >,
+  schemaColumnIndex: Map<string, { schema: DataSchema; column: string; facetRole?: FacetRole }>,
   pipeFieldSchemaHints: Map<
     string,
     { consumes: Map<string, Set<string>>; produces: Map<string, Set<string>> }
   >,
   corridorTemplateRegistry: CorridorTemplateRegistry = defaultCorridorTemplateRegistry,
 ): DataFlowEndpoint[] {
-  getCorridorTemplate(corridorTemplateRegistry, "pipe_graph");
+  getCorridorTemplate(corridorTemplateRegistry, 'pipe_graph');
   const endpoints: DataFlowEndpoint[] = [];
 
   for (const pipe of graph.pipes) {
     for (const port of pipe.ports ?? []) {
       endpoints.push({
         endpointId: createPortEndpointId(pipe.pipeId, port.portId),
-        templateKind: "port",
+        templateKind: 'port',
         nodeId: pipe.pipeId,
         direction: port.direction,
         facetKind: normalizeFacetHint(
           port.facetType,
-          port.direction === "out" ? "production" : "consumption",
+          port.direction === 'out' ? 'production' : 'consumption',
         ),
         portId: port.portId,
-        sourceKind: "port",
+        sourceKind: 'port',
       });
     }
 
-    if (pipe.flow.kind !== "step" || !pipe.flow.dataContract) {
+    if (pipe.flow.kind !== 'step' || !pipe.flow.dataContract) {
       continue;
     }
 
@@ -133,19 +121,19 @@ function createPipeDataFlowEndpoints(
       schemaHints?.consumes,
     )) {
       endpoints.push({
-        endpointId: createContractEndpointId(pipe.pipeId, "in", field.field),
-        templateKind: "contract_field",
+        endpointId: createContractEndpointId(pipe.pipeId, 'in', field.field),
+        templateKind: 'contract_field',
         nodeId: pipe.pipeId,
-        direction: "in",
+        direction: 'in',
         facetKind: mapFacetRoleToInformationFacetKind(
           field.schemaId
             ? schemaColumnIndex.get(`${field.schemaId}:${field.field}`)?.facetRole
             : undefined,
-          "consumption",
+          'consumption',
         ),
         field: field.field,
         schemaId: field.schemaId,
-        sourceKind: "contract",
+        sourceKind: 'contract',
       });
     }
 
@@ -154,19 +142,19 @@ function createPipeDataFlowEndpoints(
       schemaHints?.produces,
     )) {
       endpoints.push({
-        endpointId: createContractEndpointId(pipe.pipeId, "out", field.field),
-        templateKind: "contract_field",
+        endpointId: createContractEndpointId(pipe.pipeId, 'out', field.field),
+        templateKind: 'contract_field',
         nodeId: pipe.pipeId,
-        direction: "out",
+        direction: 'out',
         facetKind: mapFacetRoleToInformationFacetKind(
           field.schemaId
             ? schemaColumnIndex.get(`${field.schemaId}:${field.field}`)?.facetRole
             : undefined,
-          "production",
+          'production',
         ),
         field: field.field,
         schemaId: field.schemaId,
-        sourceKind: "contract",
+        sourceKind: 'contract',
       });
     }
   }
@@ -177,7 +165,7 @@ function createPipeDataFlowEndpoints(
 function resolveEndpointId(
   endpointMap: Map<string, DataFlowEndpoint>,
   pipeId: string,
-  direction: "in" | "out",
+  direction: 'in' | 'out',
   portId?: string,
 ): string {
   if (portId) {
@@ -194,7 +182,7 @@ function resolveEndpointId(
     return matching.endpointId;
   }
 
-  return createContractEndpointId(pipeId, direction, "_node");
+  return createContractEndpointId(pipeId, direction, '_node');
 }
 
 function createPipeDataFlowLinks(
@@ -203,7 +191,7 @@ function createPipeDataFlowLinks(
   lineageLinks: DataLineageLink[],
   corridorTemplateRegistry: CorridorTemplateRegistry = defaultCorridorTemplateRegistry,
 ): DataFlowLink[] {
-  getCorridorTemplate(corridorTemplateRegistry, "pipe_graph");
+  getCorridorTemplate(corridorTemplateRegistry, 'pipe_graph');
   const links: DataFlowLink[] = [];
 
   for (const connection of graph.connections) {
@@ -215,40 +203,29 @@ function createPipeDataFlowLinks(
         const sourcePipe = graph.pipes.find((pipe) => pipe.pipeId === fromEndpoint.pipeId);
         const targetPipe = graph.pipes.find((pipe) => pipe.pipeId === toEndpoint.pipeId);
         const sourceFacet = normalizeFacetHint(
-          resolvePipeFacetHint(sourcePipe, fromEndpoint, "out") ??
-            connection.facetType,
-          "production",
+          resolvePipeFacetHint(sourcePipe, fromEndpoint, 'out') ?? connection.facetType,
+          'production',
         );
         const targetFacet = normalizeFacetHint(
-          resolvePipeFacetHint(targetPipe, toEndpoint, "in") ??
-            connection.facetType,
-          "consumption",
+          resolvePipeFacetHint(targetPipe, toEndpoint, 'in') ?? connection.facetType,
+          'consumption',
         );
 
         links.push({
-          linkId: `flow-link:${fromEndpoint.pipeId}:${connection.kind}:${toEndpoint.pipeId}:${connection.condition ?? ""}`,
-          templateKind: "pipe_connection",
+          linkId: `flow-link:${fromEndpoint.pipeId}:${connection.kind}:${toEndpoint.pipeId}:${connection.condition ?? ''}`,
+          templateKind: 'pipe_connection',
           fromEndpointId: resolveEndpointId(
             endpointMap,
             fromEndpoint.pipeId,
-            "out",
+            'out',
             fromEndpoint.portId,
           ),
-          toEndpointId: resolveEndpointId(
-            endpointMap,
-            toEndpoint.pipeId,
-            "in",
-            toEndpoint.portId,
-          ),
-          semantic: inferTransmissionSemantic(
-            connection.kind,
-            sourceFacet,
-            targetFacet,
-          ),
+          toEndpointId: resolveEndpointId(endpointMap, toEndpoint.pipeId, 'in', toEndpoint.portId),
+          semantic: inferTransmissionSemantic(connection.kind, sourceFacet, targetFacet),
           medium: inferTransmissionMedium(connection.kind, sourceFacet, targetFacet),
           condition: connection.condition,
           relationType: `pipe_connection:${connection.kind}`,
-          sourceKind: "connection",
+          sourceKind: 'connection',
         });
       }
     }
@@ -262,19 +239,19 @@ function createPipeDataFlowLinks(
 
       links.push({
         linkId: `flow-link:lineage:${source.key}->${lineage.target.key}`,
-        templateKind: "lineage_link",
+        templateKind: 'lineage_link',
         fromEndpointId:
           pipeId && sourceField
-            ? createContractEndpointId(pipeId, "in", sourceField)
+            ? createContractEndpointId(pipeId, 'in', sourceField)
             : source.nodeId,
         toEndpointId:
           pipeId && targetField
-            ? createContractEndpointId(pipeId, "out", targetField)
+            ? createContractEndpointId(pipeId, 'out', targetField)
             : lineage.target.nodeId,
-        semantic: "production_to_consumption",
-        medium: "direct",
-        relationType: "lineage",
-        sourceKind: "lineage",
+        semantic: 'production_to_consumption',
+        medium: 'direct',
+        relationType: 'lineage',
+        sourceKind: 'lineage',
       });
     }
   }
@@ -286,11 +263,8 @@ function extractBranchDefinitions(
   graph: PipeGraph,
   junctionTemplateRegistry: JunctionTemplateRegistry = defaultJunctionTemplateRegistry,
 ): BranchDefinition[] {
-  const junctionTemplate = getJunctionTemplate(
-    junctionTemplateRegistry,
-    "conditional_branch",
-  );
-  const connectionsBySource = new Map<string, PipeGraph["connections"]>();
+  const junctionTemplate = getJunctionTemplate(junctionTemplateRegistry, 'conditional_branch');
+  const connectionsBySource = new Map<string, PipeGraph['connections']>();
 
   for (const connection of graph.connections) {
     const fromEndpoints = normalizePipeEndpoint(connection.from);
@@ -305,7 +279,7 @@ function extractBranchDefinitions(
 
   for (const [branchNodeId, connections] of connectionsBySource) {
     const conditionalConnections = connections.filter(
-      (connection) => connection.kind === "conditional",
+      (connection) => connection.kind === 'conditional',
     );
     if (conditionalConnections.length === 0) {
       continue;
@@ -321,7 +295,7 @@ function extractBranchDefinitions(
         {
           pathId: `${branchNodeId}->${toEndpoints
             .map((endpoint) => endpoint.pipeId)
-            .join("+")}:${index}`,
+            .join('+')}:${index}`,
           when: connection.condition
             ? {
                 conditionId: `${branchNodeId}:condition:${index}`,
@@ -335,15 +309,11 @@ function extractBranchDefinitions(
     });
 
     branchDefinitions.push({
-      templateKind: "conditional_branch",
+      templateKind: 'conditional_branch',
       templateDescription: junctionTemplate.description,
-      templateValidation: validateJunctionAgainstTemplate(
-        "first_match",
-        junctionTemplate,
-        paths,
-      ),
+      templateValidation: validateJunctionAgainstTemplate('first_match', junctionTemplate, paths),
       branchNodeId,
-      mode: "first_match",
+      mode: 'first_match',
       paths,
     });
   }
@@ -351,7 +321,7 @@ function extractBranchDefinitions(
   return branchDefinitions;
 }
 
-function createPipeEntryCondition(pipe: PipeGraph["pipes"][number]): string | undefined {
+function createPipeEntryCondition(pipe: PipeGraph['pipes'][number]): string | undefined {
   const triggerCondition = `event:${pipe.trigger.eventKey}`;
   const entryConditions = pipe.trigger.entryConditions?.map(formatPipeConstraint) ?? [];
 
@@ -359,25 +329,25 @@ function createPipeEntryCondition(pipe: PipeGraph["pipes"][number]): string | un
     return triggerCondition;
   }
 
-  return `${triggerCondition} && ${entryConditions.join(" && ")}`;
+  return `${triggerCondition} && ${entryConditions.join(' && ')}`;
 }
 
-function createPipeExitCondition(pipe: PipeGraph["pipes"][number]): string | undefined {
+function createPipeExitCondition(pipe: PipeGraph['pipes'][number]): string | undefined {
   const flow = pipe.flow;
 
   switch (flow.kind) {
-    case "branch":
-    case "await":
-    case "filter":
+    case 'branch':
+    case 'await':
+    case 'filter':
       return flow.condition;
-    case "loop":
-    case "feedback":
+    case 'loop':
+    case 'feedback':
       return flow.until;
-    case "correlation":
+    case 'correlation':
       return `response:${flow.responseEvent}`;
     default:
       return pipe.produces && pipe.produces.length > 0
-        ? `emit:${pipe.produces.join(",")}`
+        ? `emit:${pipe.produces.join(',')}`
         : undefined;
   }
 }
@@ -388,15 +358,12 @@ export function projectPipeGraphToOperationalOntology(
   const { graph } = input;
   const corridorTemplate = getCorridorTemplate(
     input.corridorTemplateRegistry ?? defaultCorridorTemplateRegistry,
-    "pipe_graph",
+    'pipe_graph',
   );
   const pipesById = new Map(graph.pipes.map((pipe) => [pipe.pipeId, pipe]));
   const schemaColumnIndex = buildSchemaColumnIndex(input.schemas);
   const pipeFieldSchemaHints = buildPipeFieldSchemaHints(input.lineages);
-  const branchDefinitions = extractBranchDefinitions(
-    graph,
-    input.junctionTemplateRegistry,
-  );
+  const branchDefinitions = extractBranchDefinitions(graph, input.junctionTemplateRegistry);
   const lineageLinks =
     input.lineages && input.lineages.length > 0
       ? projectLineageToOperationalOntology({
@@ -428,9 +395,7 @@ export function projectPipeGraphToOperationalOntology(
     nodeId: pipe.pipeId,
     kind: mapPipeFlowKindToControlFlowNodeKind(pipe.flow.kind),
     facet:
-      pipe.flow.kind === "step"
-        ? normalizeFacetHint(pipe.flow.facet, "production")
-        : undefined,
+      pipe.flow.kind === 'step' ? normalizeFacetHint(pipe.flow.facet, 'production') : undefined,
     entryCondition: createPipeEntryCondition(pipe),
     exitCondition: createPipeExitCondition(pipe),
     sourceKind: pipe.flow.kind,
@@ -446,7 +411,7 @@ export function projectPipeGraphToOperationalOntology(
 
     for (const fromEndpoint of fromEndpoints) {
       for (const toEndpoint of toEndpoints) {
-        const edgeKey = `${fromEndpoint.pipeId}:${connection.kind}:${toEndpoint.pipeId}:${connection.condition ?? ""}`;
+        const edgeKey = `${fromEndpoint.pipeId}:${connection.kind}:${toEndpoint.pipeId}:${connection.condition ?? ''}`;
         if (!edgeSet.has(edgeKey)) {
           edgeSet.add(edgeKey);
           controlFlowEdges.push({
@@ -461,14 +426,12 @@ export function projectPipeGraphToOperationalOntology(
         const sourcePipe = pipesById.get(fromEndpoint.pipeId);
         const targetPipe = pipesById.get(toEndpoint.pipeId);
         const sourceFacet = normalizeFacetHint(
-          resolvePipeFacetHint(sourcePipe, fromEndpoint, "out") ??
-            connection.facetType,
-          "production",
+          resolvePipeFacetHint(sourcePipe, fromEndpoint, 'out') ?? connection.facetType,
+          'production',
         );
         const targetFacet = normalizeFacetHint(
-          resolvePipeFacetHint(targetPipe, toEndpoint, "in") ??
-            connection.facetType,
-          "consumption",
+          resolvePipeFacetHint(targetPipe, toEndpoint, 'in') ?? connection.facetType,
+          'consumption',
         );
         const source = createInformationFacetRef({
           nodeId: fromEndpoint.pipeId,
@@ -478,11 +441,7 @@ export function projectPipeGraphToOperationalOntology(
           nodeId: toEndpoint.pipeId,
           facetKind: targetFacet,
         });
-        const semantic = inferTransmissionSemantic(
-          connection.kind,
-          sourceFacet,
-          targetFacet,
-        );
+        const semantic = inferTransmissionSemantic(connection.kind, sourceFacet, targetFacet);
         transmissions.set(
           createSemanticTransmissionId({
             source,
@@ -510,7 +469,7 @@ export function projectPipeGraphToOperationalOntology(
 
   const corridor: FlowCorridor = {
     flowId: graph.graphId,
-    templateKind: "pipe_graph",
+    templateKind: 'pipe_graph',
     templateDescription: corridorTemplate.description,
     entryNodeId: graph.entryPipeId,
     nodeIds: graph.pipes.map((pipe) => pipe.pipeId),

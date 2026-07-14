@@ -7,15 +7,15 @@ export {
   defaultObservationTopologyTemplateRegistry,
   type ObservationTopologyTemplateValidationResult,
   validateObservationTopologyAgainstTemplate,
-} from "./internal/topology-core.js";
+} from './internal/topology-core.js';
 
-export { type OperationalOntologySnapshot } from "./internal/projector-core.js";
+export { type OperationalOntologySnapshot } from './internal/projector-core.js';
 
 import {
   defaultObservationTopologyTemplateRegistry,
   validateObservationTopologyAgainstTemplate,
-} from "./internal/topology-core.js";
-import { projectOperationalOntologySnapshot } from "./internal/projector-core.js";
+} from './internal/topology-core.js';
+import { projectOperationalOntologySnapshot } from './internal/projector-core.js';
 
 export const operationalOntologyTopologyPlane = {
   defaultObservationTopologyTemplateRegistry,

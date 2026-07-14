@@ -36,4 +36,4 @@ export class TestCredentialStore implements CredentialStore {
 }
 
 /** NestJS DI token. */
-export const CREDENTIAL_STORE = Symbol("CREDENTIAL_STORE");
+export const CREDENTIAL_STORE = Symbol('CREDENTIAL_STORE');

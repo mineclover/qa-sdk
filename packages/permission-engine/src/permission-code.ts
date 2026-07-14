@@ -16,11 +16,8 @@
  *   packed — 각 파트를 정수 인코딩 (varint-like, 크기 최적화)
  */
 
-import { type ServiceContext } from "./service-ref.js";
-import {
-  canonicalizeResource,
-  type ResourceType,
-} from "./resource.js";
+import { type ServiceContext } from './service-ref.js';
+import { canonicalizeResource, type ResourceType } from './resource.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,27 +65,32 @@ export function formatPermCode(code: PermissionCode): string {
  *   4. 중간 전부 → resource (내부에 `.`이 없으므로 안전)
  */
 export function parsePermCode(raw: string): PermissionCode {
-  if (typeof raw !== "string") {
+  if (typeof raw !== 'string') {
     throw new RangeError(`Invalid permission code "${String(raw)}": string 형식 필요`);
   }
 
   // 첫 `.` 이후 split
-  const firstDot = raw.indexOf(".");
-  if (firstDot < 0) throw new RangeError(`Invalid permission code "${raw}": service.type.resource.action 형식 필요`);
+  const firstDot = raw.indexOf('.');
+  if (firstDot < 0)
+    throw new RangeError(
+      `Invalid permission code "${raw}": service.type.resource.action 형식 필요`,
+    );
 
   const service = raw.slice(0, firstDot);
 
   const rest = raw.slice(firstDot + 1);
   // type은 다음 `.`까지
-  const typeDot = rest.indexOf(".");
-  if (typeDot < 0) throw new RangeError(`Invalid permission code "${raw}": type.resource.action 부분 없음`);
+  const typeDot = rest.indexOf('.');
+  if (typeDot < 0)
+    throw new RangeError(`Invalid permission code "${raw}": type.resource.action 부분 없음`);
 
   const type = rest.slice(0, typeDot);
 
   const afterType = rest.slice(typeDot + 1);
   // action은 마지막 `.` 이후
-  const lastDot = afterType.lastIndexOf(".");
-  if (lastDot < 0) throw new RangeError(`Invalid permission code "${raw}": resource.action 구분 없음`);
+  const lastDot = afterType.lastIndexOf('.');
+  if (lastDot < 0)
+    throw new RangeError(`Invalid permission code "${raw}": resource.action 구분 없음`);
 
   const resource = afterType.slice(0, lastDot);
   const action = afterType.slice(lastDot + 1);
@@ -125,20 +127,12 @@ export interface PermCodeFactory {
 export function createPermCodeFactory(ctx: ServiceContext): PermCodeFactory {
   const service = ctx.ref();
 
-  const factory = (
-    type: ResourceType,
-    resource: string,
-    action: string,
-  ): PermissionCode => {
+  const factory = (type: ResourceType, resource: string, action: string): PermissionCode => {
     const canonical = canonicalizeResource(resource);
     return { service, type, resource: canonical, action };
   };
 
-  factory.format = (
-    type: ResourceType,
-    resource: string,
-    action: string,
-  ): string => {
+  factory.format = (type: ResourceType, resource: string, action: string): string => {
     return formatPermCode(factory(type, resource, action));
   };
 

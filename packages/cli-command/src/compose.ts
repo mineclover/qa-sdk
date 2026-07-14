@@ -1,7 +1,7 @@
 // @def.boundary cli-command-spec
 // @def.doc cli-command-spec
 
-import type { CliCommandNode, CommandDescriptor } from "./types.js";
+import type { CliCommandNode, CommandDescriptor } from './types.js';
 
 /**
  * 여러 서브트리를 하나의 루트 트리로 합성한다.
@@ -32,9 +32,9 @@ type MutableCliCommandNode = {
   usage?: string;
   continuation?: readonly string[];
   children?: MutableCliCommandNode[];
-  args?: CliCommandNode["args"];
-  options?: CliCommandNode["options"];
-  handler?: CliCommandNode["handler"];
+  args?: CliCommandNode['args'];
+  options?: CliCommandNode['options'];
+  handler?: CliCommandNode['handler'];
   handlerKey?: string;
 };
 
@@ -42,9 +42,7 @@ type MutableCliCommandNode = {
  * authored descriptor 목록을 재귀 명령 트리로 변환한다.
  * descriptor 순서를 그대로 보존하여 help/usage 표시 순서를 제어한다.
  */
-export function descriptorsToTree(
-  descriptors: readonly CommandDescriptor[],
-): CliCommandNode[] {
+export function descriptorsToTree(descriptors: readonly CommandDescriptor[]): CliCommandNode[] {
   const roots: MutableCliCommandNode[] = [];
 
   for (const descriptor of descriptors) {

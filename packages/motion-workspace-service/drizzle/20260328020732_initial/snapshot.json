@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "ced903ae-0894-4f24-a844-ac355a3d0aaf",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "motion_workspace_scenes",
@@ -165,13 +163,9 @@
       "table": "motion_workspaces"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "motion_workspaces",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -180,19 +174,14 @@
       "table": "motion_workspace_scenes"
     },
     {
-      "columns": [
-        "workspace_id",
-        "scene_id"
-      ],
+      "columns": ["workspace_id", "scene_id"],
       "nameExplicit": false,
       "name": "motion_workspace_scenes_pk",
       "entityType": "pks",
       "table": "motion_workspace_scenes"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "motion_workspaces_pk",
       "table": "motion_workspaces",

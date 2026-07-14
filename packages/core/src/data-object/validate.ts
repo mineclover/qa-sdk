@@ -1,10 +1,23 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { Catalog, PathSegment, PrefixDef, PrefixVersionDef, TableSchema } from "../catalog/catalog.types.js";
-import type { FieldLineage, FieldRef } from "../types/data-schema.js";
-import { BindingRegistry } from "./registry.js";
-import type { BindingValidation, ChainIssue, ColumnAxisMapping, DataObjectBinding, DetailedChainValidation, LineageChainValidation } from "./types.js";
+import type {
+  Catalog,
+  PathSegment,
+  PrefixDef,
+  PrefixVersionDef,
+  TableSchema,
+} from '../catalog/catalog.types.js';
+import type { FieldLineage, FieldRef } from '../types/data-schema.js';
+import { BindingRegistry } from './registry.js';
+import type {
+  BindingValidation,
+  ChainIssue,
+  ColumnAxisMapping,
+  DataObjectBinding,
+  DetailedChainValidation,
+  LineageChainValidation,
+} from './types.js';
 
 export function validateBindings(
   bindings: readonly DataObjectBinding[],
@@ -69,19 +82,33 @@ export function validateLineageChainDetailed(
 
     if (!targetBinding) {
       unbound += 1;
-      issues.push({ kind: "unbound", target: targetRef, reason: `target schema "${lineage.target.schemaId}" binding 없음` });
+      issues.push({
+        kind: 'unbound',
+        target: targetRef,
+        reason: `target schema "${lineage.target.schemaId}" binding 없음`,
+      });
       continue;
     }
     if (sourceBindings.some(({ binding }) => binding === null)) {
       unbound += 1;
-      const missing = sourceBindings.filter(({ binding }) => binding === null).map(({ source }) => source.schemaId);
-      issues.push({ kind: "unbound", target: targetRef, reason: `source schema binding 없음: ${missing.join(", ")}` });
+      const missing = sourceBindings
+        .filter(({ binding }) => binding === null)
+        .map(({ source }) => source.schemaId);
+      issues.push({
+        kind: 'unbound',
+        target: targetRef,
+        reason: `source schema binding 없음: ${missing.join(', ')}`,
+      });
       continue;
     }
 
     if (hasLineageDimMismatch(lineage.target, targetBinding, sourceBindings)) {
       mismatched += 1;
-      issues.push({ kind: "mismatched", target: targetRef, reason: `dim 매핑 불일치 (target.column="${lineage.target.column}")` });
+      issues.push({
+        kind: 'mismatched',
+        target: targetRef,
+        reason: `dim 매핑 불일치 (target.column="${lineage.target.column}")`,
+      });
       continue;
     }
 
@@ -139,12 +166,14 @@ function validateIdentityColumn(
     return;
   }
 
-  if (!Object.hasOwn(schemaTable.columns, "id")) {
-    warnings.push(`schema "${binding.schemaId}"에 identity 후보 컬럼 "id" 없음; identity 검증 생략`);
+  if (!Object.hasOwn(schemaTable.columns, 'id')) {
+    warnings.push(
+      `schema "${binding.schemaId}"에 identity 후보 컬럼 "id" 없음; identity 검증 생략`,
+    );
     return;
   }
 
-  if (!Object.hasOwn(binding.columnToAxis, "id")) {
+  if (!Object.hasOwn(binding.columnToAxis, 'id')) {
     errors.push(`schema "${binding.schemaId}" identity 컬럼 "id"가 columnToAxis에 매핑되지 않음`);
   }
 }
@@ -157,12 +186,14 @@ function validateMappings(
   warnings: string[],
 ): void {
   const dimLabels = new Set(Object.keys(prefix.dims));
-  const addressModel = prefix.addressModel ?? "product";
+  const addressModel = prefix.addressModel ?? 'product';
   const segmentIds = new Set<string>();
 
-  if (addressModel === "sum") {
+  if (addressModel === 'sum') {
     if (!versionDef?.segments || versionDef.segments.length === 0) {
-      errors.push(`prefix "${binding.prefixId}:${binding.prefixVersion}" — addressModel:sum이지만 segments 없음`);
+      errors.push(
+        `prefix "${binding.prefixId}:${binding.prefixVersion}" — addressModel:sum이지만 segments 없음`,
+      );
     } else {
       collectSegmentIds(versionDef.segments, segmentIds);
     }
@@ -170,15 +201,19 @@ function validateMappings(
 
   for (const [columnId, mapping] of Object.entries(binding.columnToAxis)) {
     if (!dimLabels.has(mapping.dimLabel)) {
-      errors.push(`column "${columnId}" → dim "${mapping.dimLabel}"이 prefix "${binding.prefixId}"에 없음`);
+      errors.push(
+        `column "${columnId}" → dim "${mapping.dimLabel}"이 prefix "${binding.prefixId}"에 없음`,
+      );
     }
 
     if (!mapping.segmentId) {
       continue;
     }
 
-    if (addressModel !== "sum") {
-      warnings.push(`column "${columnId}"의 segmentId "${mapping.segmentId}"는 product prefix에서 사용되지 않음`);
+    if (addressModel !== 'sum') {
+      warnings.push(
+        `column "${columnId}"의 segmentId "${mapping.segmentId}"는 product prefix에서 사용되지 않음`,
+      );
       continue;
     }
 
@@ -201,13 +236,15 @@ function validateDuplicateBinding(
     return;
   }
 
-  const schemaIds = duplicates.map((item) => item.schemaId).join(", ");
+  const schemaIds = duplicates.map((item) => item.schemaId).join(', ');
   errors.push(
     `prefix "${binding.prefixId}:${binding.prefixVersion}"에 중복 바인딩 존재: ${schemaIds}`,
   );
 }
 
-function collectDuplicateBindings(bindings: readonly DataObjectBinding[]): Map<string, DataObjectBinding[]> {
+function collectDuplicateBindings(
+  bindings: readonly DataObjectBinding[],
+): Map<string, DataObjectBinding[]> {
   const grouped = new Map<string, DataObjectBinding[]>();
 
   for (const binding of bindings) {
@@ -217,9 +254,7 @@ function collectDuplicateBindings(bindings: readonly DataObjectBinding[]): Map<s
     grouped.set(key, list);
   }
 
-  return new Map(
-    [...grouped.entries()].filter(([, list]) => list.length > 1),
-  );
+  return new Map([...grouped.entries()].filter(([, list]) => list.length > 1));
 }
 
 function bindingKey(binding: DataObjectBinding): string {
@@ -250,10 +285,7 @@ function hasLineageDimMismatch(
       return false;
     }
 
-    return mappingsMatch(
-      targetMapping,
-      getColumnMapping(binding, source.column),
-    );
+    return mappingsMatch(targetMapping, getColumnMapping(binding, source.column));
   });
 }
 
@@ -266,10 +298,12 @@ function mappingsMatch(expected: ColumnAxisMapping, actual: ColumnAxisMapping | 
     return false;
   }
 
-  return expected.dimLabel === actual.dimLabel
-    && normalizeSegmentId(expected.segmentId) === normalizeSegmentId(actual.segmentId);
+  return (
+    expected.dimLabel === actual.dimLabel &&
+    normalizeSegmentId(expected.segmentId) === normalizeSegmentId(actual.segmentId)
+  );
 }
 
 function normalizeSegmentId(segmentId?: string): string {
-  return segmentId ?? "";
+  return segmentId ?? '';
 }

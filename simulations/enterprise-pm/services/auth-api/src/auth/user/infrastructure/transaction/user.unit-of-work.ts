@@ -1,12 +1,12 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { UserRepositoryPort } from "../../application/ports/user-repository.port.js";
-import type { UserOutboxPort } from "../../application/ports/user-outbox.port.js";
+import type { UserRepositoryPort } from '../../application/ports/user-repository.port.js';
+import type { UserOutboxPort } from '../../application/ports/user-outbox.port.js';
 import type {
   UserTransactionPort,
   UserTransactionScope,
-} from "../../application/ports/user-transaction.port.js";
+} from '../../application/ports/user-transaction.port.js';
 
 /**
  * Unit of Work — TransactionPort + RepositoryPort + OutboxPort 합성.

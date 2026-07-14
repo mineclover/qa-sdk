@@ -1,26 +1,26 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { afterEach, describe, expect, it } from "vitest";
-import type { SqlDriver } from "index-meta";
+import { afterEach, describe, expect, it } from 'vitest';
+import type { SqlDriver } from 'index-meta';
 
-import { createRegistryDatabaseDriver } from "../bootstrap/stores.js";
-import { InMemoryOntologyRegistryStore } from "./in-memory-ontology-registry-store.js";
+import { createRegistryDatabaseDriver } from '../bootstrap/stores.js';
+import { InMemoryOntologyRegistryStore } from './in-memory-ontology-registry-store.js';
 import {
   OntologyRegistryStoreError,
   type OntologyAddressAllocationRecord,
   type OntologyAllocationPlanWriteSet,
   type OntologyRegistryStore,
   type OntologyRegistryStoreConflict,
-} from "./ontology-registry-store.js";
-import { SqlOntologyRegistryStore } from "./sql-ontology-registry-store.js";
+} from './ontology-registry-store.js';
+import { SqlOntologyRegistryStore } from './sql-ontology-registry-store.js';
 import {
   buildOntologyAddressAllocationRecord,
   buildOntologyAddressSegmentRecord,
   buildOntologyAxisRecord,
   buildOntologyNamespaceRecord,
   buildOntologyTaxonomyRecord,
-} from "./ontology-registry-validation.js";
+} from './ontology-registry-validation.js';
 
 interface StoreContractContext {
   readonly store: OntologyRegistryStore;
@@ -37,15 +37,15 @@ const activeContexts: StoreContractContext[] = [];
 
 const storeContractCases = [
   {
-    name: "InMemoryOntologyRegistryStore",
+    name: 'InMemoryOntologyRegistryStore',
     create: async () => ({
       store: new InMemoryOntologyRegistryStore(),
     }),
   },
   {
-    name: "SqlOntologyRegistryStore",
+    name: 'SqlOntologyRegistryStore',
     create: async () => {
-      const driver = await createRegistryDatabaseDriver(":memory:");
+      const driver = await createRegistryDatabaseDriver(':memory:');
       return {
         store: new SqlOntologyRegistryStore(driver),
         cleanup: () => driver.close(),
@@ -61,123 +61,106 @@ afterEach(async () => {
   }
 });
 
-describe.each(storeContractCases)("$name contract", ({ create }) => {
+describe.each(storeContractCases)('$name contract', ({ create }) => {
   async function setup(): Promise<StoreContractContext> {
     const context = await create();
     activeContexts.push(context);
     return context;
   }
 
-  it("persists a complete allocation plan", async () => {
+  it('persists a complete allocation plan', async () => {
     const { store } = await setup();
     const writeSet = buildWriteSet();
 
     await store.writeAllocationPlan(writeSet);
 
     expect(await store.listNamespaces()).toEqual([writeSet.namespace]);
-    expect(await store.getNamespace("ontology-a")).toEqual(writeSet.namespace);
-    expect(await store.getNamespace("missing")).toBeNull();
-    expect(await store.listAxes("ontology-a", "v1")).toEqual([
-      writeSet.axes[1],
-      writeSet.axes[0],
-    ]);
-    expect(await store.listTaxonomies("ontology-a", "v1")).toEqual([
+    expect(await store.getNamespace('ontology-a')).toEqual(writeSet.namespace);
+    expect(await store.getNamespace('missing')).toBeNull();
+    expect(await store.listAxes('ontology-a', 'v1')).toEqual([writeSet.axes[1], writeSet.axes[0]]);
+    expect(await store.listTaxonomies('ontology-a', 'v1')).toEqual([
       writeSet.taxonomies[1],
       writeSet.taxonomies[0],
     ]);
-    expect(await store.listAllocations("ontology-a", "v1")).toEqual([
+    expect(await store.listAllocations('ontology-a', 'v1')).toEqual([
       writeSet.allocations[1],
       writeSet.allocations[0],
     ]);
-    expect(await store.getAllocation("ontology-a:deployment-surface:v1")).toEqual(
+    expect(await store.getAllocation('ontology-a:deployment-surface:v1')).toEqual(
       writeSet.allocations[1],
     );
-    expect(await store.getAllocation("missing")).toBeNull();
+    expect(await store.getAllocation('missing')).toBeNull();
     expect(await store.listActiveAllocations()).toEqual([writeSet.allocations[1]]);
-    expect(await store.listSegments("ontology-a:runtime-surface:v1")).toEqual([
+    expect(await store.listSegments('ontology-a:runtime-surface:v1')).toEqual([
       writeSet.segments[0],
     ]);
-    expect(await store.listSegments("missing")).toEqual([]);
+    expect(await store.listSegments('missing')).toEqual([]);
   });
 
-  it("updates allocation status through the store boundary", async () => {
+  it('updates allocation status through the store boundary', async () => {
     const { store } = await setup();
     const writeSet = buildWriteSet();
     await store.writeAllocationPlan(writeSet);
 
-    const updated = await store.updateAllocationStatus(
-      "ontology-a:runtime-surface:v1",
-      "active",
-    );
+    const updated = await store.updateAllocationStatus('ontology-a:runtime-surface:v1', 'active');
 
     expect(updated).toEqual(
       expect.objectContaining({
-        allocationId: "ontology-a:runtime-surface:v1",
-        status: "active",
+        allocationId: 'ontology-a:runtime-surface:v1',
+        status: 'active',
       }),
     );
-    expect(await store.getAllocation("ontology-a:runtime-surface:v1")).toEqual(
-      updated,
-    );
+    expect(await store.getAllocation('ontology-a:runtime-surface:v1')).toEqual(updated);
     expect(
-      (await store.listActiveAllocations()).map(
-        (allocation) => allocation.allocationId,
-      ),
-    ).toEqual([
-      "ontology-a:deployment-surface:v1",
-      "ontology-a:runtime-surface:v1",
-    ]);
-    expect(await store.updateAllocationStatus("missing", "active")).toBeNull();
+      (await store.listActiveAllocations()).map((allocation) => allocation.allocationId),
+    ).toEqual(['ontology-a:deployment-surface:v1', 'ontology-a:runtime-surface:v1']);
+    expect(await store.updateAllocationStatus('missing', 'active')).toBeNull();
   });
 
-  it("rejects namespace reuse and exact duplicate keys without changing existing rows", async () => {
+  it('rejects namespace reuse and exact duplicate keys without changing existing rows', async () => {
     const { store } = await setup();
     const writeSet = buildWriteSet();
 
     await store.writeAllocationPlan(writeSet);
-    const beforeDuplicate = await readOntologySnapshot(store, "ontology-a", "v1");
+    const beforeDuplicate = await readOntologySnapshot(store, 'ontology-a', 'v1');
 
-    const duplicateConflicts = await expectRejectedConflicts(
-      store.writeAllocationPlan(writeSet),
-    );
+    const duplicateConflicts = await expectRejectedConflicts(store.writeAllocationPlan(writeSet));
 
     expect(duplicateConflicts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "duplicate-key",
+          code: 'duplicate-key',
           key: {
-            recordKind: "namespace",
-            ontologyId: "ontology-a",
+            recordKind: 'namespace',
+            ontologyId: 'ontology-a',
           },
         }),
         expect.objectContaining({
-          code: "duplicate-key",
-          key: expect.objectContaining({ recordKind: "axis" }),
+          code: 'duplicate-key',
+          key: expect.objectContaining({ recordKind: 'axis' }),
         }),
         expect.objectContaining({
-          code: "duplicate-key",
-          key: expect.objectContaining({ recordKind: "taxonomy" }),
+          code: 'duplicate-key',
+          key: expect.objectContaining({ recordKind: 'taxonomy' }),
         }),
         expect.objectContaining({
-          code: "duplicate-key",
-          key: expect.objectContaining({ recordKind: "allocation" }),
+          code: 'duplicate-key',
+          key: expect.objectContaining({ recordKind: 'allocation' }),
         }),
         expect.objectContaining({
-          code: "duplicate-key",
-          key: expect.objectContaining({ recordKind: "segment" }),
+          code: 'duplicate-key',
+          key: expect.objectContaining({ recordKind: 'segment' }),
         }),
       ]),
     );
-    expect(await readOntologySnapshot(store, "ontology-a", "v1")).toEqual(
-      beforeDuplicate,
-    );
+    expect(await readOntologySnapshot(store, 'ontology-a', 'v1')).toEqual(beforeDuplicate);
 
     const namespaceConflicts = await expectRejectedConflicts(
       store.writeAllocationPlan(
         buildWriteSet({
-          ontologyId: "ontology-b",
-          namespace: "qa.runtime",
-          prefixSeed: "qb",
+          ontologyId: 'ontology-b',
+          namespace: 'qa.runtime',
+          prefixSeed: 'qb',
         }),
       ),
     );
@@ -185,32 +168,30 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
     expect(namespaceConflicts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "drift",
+          code: 'drift',
           key: {
-            recordKind: "namespace",
-            namespace: "qa.runtime",
+            recordKind: 'namespace',
+            namespace: 'qa.runtime',
           },
-          fields: ["ontologyId"],
+          fields: ['ontologyId'],
         }),
       ]),
     );
-    expect(await readOntologySnapshot(store, "ontology-a", "v1")).toEqual(
-      beforeDuplicate,
-    );
-    expect(await store.getNamespace("ontology-b")).toBeNull();
-    expect(await store.listAllocations("ontology-b", "v1")).toEqual([]);
+    expect(await readOntologySnapshot(store, 'ontology-a', 'v1')).toEqual(beforeDuplicate);
+    expect(await store.getNamespace('ontology-b')).toBeNull();
+    expect(await store.listAllocations('ontology-b', 'v1')).toEqual([]);
   });
 
-  it("rejects same-key drift for changed hash, capacity, axis list, prefix, and segment shape", async () => {
+  it('rejects same-key drift for changed hash, capacity, axis list, prefix, and segment shape', async () => {
     const { store } = await setup();
     const writeSet = buildWriteSet();
 
     await store.writeAllocationPlan(writeSet);
-    const before = await readOntologySnapshot(store, "ontology-a", "v1");
+    const before = await readOntologySnapshot(store, 'ontology-a', 'v1');
     const drifted = buildWriteSet();
     const runtimeAllocationId = drifted.allocations[0]?.allocationId;
     if (!runtimeAllocationId) {
-      throw new Error("test fixture is missing the runtime allocation");
+      throw new Error('test fixture is missing the runtime allocation');
     }
 
     const conflicts = await expectRejectedConflicts(
@@ -218,25 +199,25 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
         ...drifted,
         axes: [
           buildOntologyAxisRecord({
-            axisId: "region",
-            valuesHash: "fnv1a32:region-v2",
+            axisId: 'region',
+            valuesHash: 'fnv1a32:region-v2',
             capacity: 8,
           }),
           drifted.axes[1],
         ],
         taxonomies: [
           buildOntologyTaxonomyRecord({
-            taxonomyId: "runtime-surface",
-            axisIds: ["region", "env"],
-            identityAxisIds: ["region"],
-            space: "runtime",
+            taxonomyId: 'runtime-surface',
+            axisIds: ['region', 'env'],
+            identityAxisIds: ['region'],
+            space: 'runtime',
           }),
           drifted.taxonomies[1],
         ],
         allocations: [
           {
             ...drifted.allocations[0],
-            prefix: "qa_runtime_surface_v2",
+            prefix: 'qa_runtime_surface_v2',
           },
           drifted.allocations[1],
         ],
@@ -244,7 +225,7 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
           buildOntologyAddressSegmentRecord({
             allocationId: runtimeAllocationId,
             segmentId: `${runtimeAllocationId}:product`,
-            consumes: ["region"],
+            consumes: ['region'],
             addressOffset: 4,
             addressSize: 12,
           }),
@@ -256,43 +237,43 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
     expect(conflicts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "drift",
+          code: 'drift',
           key: expect.objectContaining({
-            recordKind: "axis",
-            axisId: "region",
+            recordKind: 'axis',
+            axisId: 'region',
           }),
-          fields: expect.arrayContaining(["valuesHash", "capacity"]),
+          fields: expect.arrayContaining(['valuesHash', 'capacity']),
         }),
         expect.objectContaining({
-          code: "drift",
+          code: 'drift',
           key: expect.objectContaining({
-            recordKind: "taxonomy",
-            taxonomyId: "runtime-surface",
+            recordKind: 'taxonomy',
+            taxonomyId: 'runtime-surface',
           }),
-          fields: ["axisIds"],
+          fields: ['axisIds'],
         }),
         expect.objectContaining({
-          code: "drift",
+          code: 'drift',
           key: expect.objectContaining({
-            recordKind: "allocation",
+            recordKind: 'allocation',
             allocationId: runtimeAllocationId,
           }),
-          fields: ["prefix"],
+          fields: ['prefix'],
         }),
         expect.objectContaining({
-          code: "drift",
+          code: 'drift',
           key: expect.objectContaining({
-            recordKind: "segment",
+            recordKind: 'segment',
             allocationId: runtimeAllocationId,
           }),
-          fields: expect.arrayContaining(["addressOffset", "addressSize"]),
+          fields: expect.arrayContaining(['addressOffset', 'addressSize']),
         }),
       ]),
     );
-    expect(await readOntologySnapshot(store, "ontology-a", "v1")).toEqual(before);
+    expect(await readOntologySnapshot(store, 'ontology-a', 'v1')).toEqual(before);
   });
 
-  it("rejects taxonomy records that reference missing axes and leaves no rows", async () => {
+  it('rejects taxonomy records that reference missing axes and leaves no rows', async () => {
     const context = await setup();
     const writeSet = buildWriteSet();
 
@@ -306,11 +287,11 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
     expect(conflicts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "missing-taxonomy-axis",
-          ontologyId: "ontology-a",
-          taxonomyId: "deployment-surface",
-          versionId: "v1",
-          axisId: "env",
+          code: 'missing-taxonomy-axis',
+          ontologyId: 'ontology-a',
+          taxonomyId: 'deployment-surface',
+          versionId: 'v1',
+          axisId: 'env',
         }),
       ]),
     );
@@ -318,7 +299,7 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
     await context.assertNoBackendRows?.();
   });
 
-  it("rejects out-of-range and overlapping segments and leaves no rows", async () => {
+  it('rejects out-of-range and overlapping segments and leaves no rows', async () => {
     const context = await setup();
     const writeSet = buildWriteSet();
 
@@ -327,20 +308,20 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
         ...writeSet,
         segments: [
           buildOntologyAddressSegmentRecord({
-            allocationId: "ontology-a:runtime-surface:v1",
-            segmentId: "runtime-base",
+            allocationId: 'ontology-a:runtime-surface:v1',
+            segmentId: 'runtime-base',
             addressOffset: 0,
             addressSize: 8,
           }),
           buildOntologyAddressSegmentRecord({
-            allocationId: "ontology-a:runtime-surface:v1",
-            segmentId: "runtime-overlap",
+            allocationId: 'ontology-a:runtime-surface:v1',
+            segmentId: 'runtime-overlap',
             addressOffset: 7,
             addressSize: 4,
           }),
           buildOntologyAddressSegmentRecord({
-            allocationId: "ontology-a:runtime-surface:v1",
-            segmentId: "runtime-outside",
+            allocationId: 'ontology-a:runtime-surface:v1',
+            segmentId: 'runtime-outside',
             addressOffset: 15,
             addressSize: 2,
           }),
@@ -351,16 +332,16 @@ describe.each(storeContractCases)("$name contract", ({ create }) => {
     expect(conflicts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: "invalid-segment",
-          allocationId: "ontology-a:runtime-surface:v1",
-          segmentId: "runtime-outside",
-          reason: "outside-allocation-range",
+          code: 'invalid-segment',
+          allocationId: 'ontology-a:runtime-surface:v1',
+          segmentId: 'runtime-outside',
+          reason: 'outside-allocation-range',
         }),
         expect.objectContaining({
-          code: "segment-overlap",
-          allocationId: "ontology-a:runtime-surface:v1",
-          segmentId: "runtime-overlap",
-          overlapsWithSegmentId: "runtime-base",
+          code: 'segment-overlap',
+          allocationId: 'ontology-a:runtime-surface:v1',
+          segmentId: 'runtime-overlap',
+          overlapsWithSegmentId: 'runtime-base',
         }),
       ]),
     );
@@ -377,10 +358,10 @@ interface WriteSetOptions {
 }
 
 function buildWriteSet(options: WriteSetOptions = {}): OntologyAllocationPlanWriteSet {
-  const ontologyId = options.ontologyId ?? "ontology-a";
-  const namespace = options.namespace ?? "qa.runtime";
-  const prefixSeed = options.prefixSeed ?? "qa";
-  const versionId = options.versionId ?? "v1";
+  const ontologyId = options.ontologyId ?? 'ontology-a';
+  const namespace = options.namespace ?? 'qa.runtime';
+  const prefixSeed = options.prefixSeed ?? 'qa';
+  const versionId = options.versionId ?? 'v1';
   const runtimeAllocationId = `${ontologyId}:runtime-surface:${versionId}`;
   const deploymentAllocationId = `${ontologyId}:deployment-surface:${versionId}`;
 
@@ -392,77 +373,77 @@ function buildWriteSet(options: WriteSetOptions = {}): OntologyAllocationPlanWri
     axes: [
       buildOntologyAxisRecord({
         ontologyId,
-        axisId: "region",
+        axisId: 'region',
         versionId,
-        values: ["us", "eu"],
-        valuesHash: "fnv1a32:region",
+        values: ['us', 'eu'],
+        valuesHash: 'fnv1a32:region',
         capacity: 4,
       }),
       buildOntologyAxisRecord({
         ontologyId,
-        axisId: "env",
+        axisId: 'env',
         versionId,
-        values: ["prod", "stage"],
-        valuesHash: "fnv1a32:env",
+        values: ['prod', 'stage'],
+        valuesHash: 'fnv1a32:env',
         capacity: 4,
       }),
     ],
     taxonomies: [
       buildOntologyTaxonomyRecord({
         ontologyId,
-        taxonomyId: "runtime-surface",
+        taxonomyId: 'runtime-surface',
         versionId,
-        appliesTo: ["service"],
-        axisIds: ["region"],
-        identityAxisIds: ["region"],
-        space: "runtime",
+        appliesTo: ['service'],
+        axisIds: ['region'],
+        identityAxisIds: ['region'],
+        space: 'runtime',
       }),
       buildOntologyTaxonomyRecord({
         ontologyId,
-        taxonomyId: "deployment-surface",
+        taxonomyId: 'deployment-surface',
         versionId,
-        appliesTo: ["deployment"],
-        axisIds: ["env"],
-        identityAxisIds: ["env"],
-        space: "deployment",
+        appliesTo: ['deployment'],
+        axisIds: ['env'],
+        identityAxisIds: ['env'],
+        space: 'deployment',
       }),
     ],
     allocations: [
       buildAllocation({
         allocationId: runtimeAllocationId,
         ontologyId,
-        taxonomyId: "runtime-surface",
+        taxonomyId: 'runtime-surface',
         prefix: `${prefixSeed}_runtime_surface`,
         versionId,
         capacity: 16,
         addressOffset: 0,
         addressSize: 16,
-        status: "reserved",
+        status: 'reserved',
       }),
       buildAllocation({
         allocationId: deploymentAllocationId,
         ontologyId,
-        taxonomyId: "deployment-surface",
+        taxonomyId: 'deployment-surface',
         prefix: `${prefixSeed}_deployment_surface`,
         versionId,
         capacity: 8,
         addressOffset: 16,
         addressSize: 8,
-        status: "active",
+        status: 'active',
       }),
     ],
     segments: [
       buildOntologyAddressSegmentRecord({
         allocationId: runtimeAllocationId,
         segmentId: `${runtimeAllocationId}:product`,
-        consumes: ["region"],
+        consumes: ['region'],
         addressOffset: 0,
         addressSize: 16,
       }),
       buildOntologyAddressSegmentRecord({
         allocationId: deploymentAllocationId,
         segmentId: `${deploymentAllocationId}:product`,
-        consumes: ["env"],
+        consumes: ['env'],
         addressOffset: 16,
         addressSize: 8,
       }),
@@ -478,7 +459,7 @@ function buildAllocation(
 
 async function expectRejectedConflicts(
   write: Promise<void>,
-): Promise<readonly Exclude<OntologyRegistryStoreConflict, { code: "partial-write-rejected" }>[]> {
+): Promise<readonly Exclude<OntologyRegistryStoreConflict, { code: 'partial-write-rejected' }>[]> {
   let thrown: unknown;
   try {
     await write;
@@ -488,18 +469,18 @@ async function expectRejectedConflicts(
 
   expect(thrown).toBeInstanceOf(OntologyRegistryStoreError);
   const conflict = (thrown as OntologyRegistryStoreError).conflict;
-  expect(conflict.code).toBe("partial-write-rejected");
-  return conflict.code === "partial-write-rejected" ? conflict.conflicts : [];
+  expect(conflict.code).toBe('partial-write-rejected');
+  return conflict.code === 'partial-write-rejected' ? conflict.conflicts : [];
 }
 
 async function expectEmptyStore(store: OntologyRegistryStore): Promise<void> {
   expect(await store.listNamespaces()).toEqual([]);
-  expect(await store.listAxes("ontology-a", "v1")).toEqual([]);
-  expect(await store.listTaxonomies("ontology-a", "v1")).toEqual([]);
-  expect(await store.listAllocations("ontology-a", "v1")).toEqual([]);
+  expect(await store.listAxes('ontology-a', 'v1')).toEqual([]);
+  expect(await store.listTaxonomies('ontology-a', 'v1')).toEqual([]);
+  expect(await store.listAllocations('ontology-a', 'v1')).toEqual([]);
   expect(await store.listActiveAllocations()).toEqual([]);
-  expect(await store.listSegments("ontology-a:runtime-surface:v1")).toEqual([]);
-  expect(await store.listSegments("ontology-a:deployment-surface:v1")).toEqual([]);
+  expect(await store.listSegments('ontology-a:runtime-surface:v1')).toEqual([]);
+  expect(await store.listSegments('ontology-a:deployment-surface:v1')).toEqual([]);
 }
 
 async function readOntologySnapshot(
@@ -527,11 +508,11 @@ async function readOntologySnapshot(
 async function expectEmptySqlTables(driver: SqlDriver): Promise<void> {
   const counts = await Promise.all(
     [
-      "ontology_namespace",
-      "ontology_axis",
-      "ontology_taxonomy",
-      "ontology_address_allocation",
-      "ontology_address_segment",
+      'ontology_namespace',
+      'ontology_axis',
+      'ontology_taxonomy',
+      'ontology_address_allocation',
+      'ontology_address_segment',
     ].map(async (tableName) => {
       const row = await driver.queryOne<{ count: number }>(
         `SELECT COUNT(*) AS count FROM ${tableName}`,

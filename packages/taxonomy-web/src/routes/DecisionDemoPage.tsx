@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   parseDecisionFile,
   toFlowSchema,
@@ -6,42 +6,42 @@ import {
   extractEvidence,
   extractOptionAnnotations,
   type DecisionFile,
-} from "taxonomy-decision-bridge";
-import type { FlowSchema, GateSchema } from "decision-flow";
+} from 'taxonomy-decision-bridge';
+import type { FlowSchema, GateSchema } from 'decision-flow';
 import {
   SAMPLE_SKELETON,
   SAMPLE_SINGLE_GATE,
   SAMPLE_MULTI_GATE,
-} from "../data/decisionDemoSamples";
+} from '../data/decisionDemoSamples';
 import {
   detectSkeleton,
   analyzeEvidenceFanout,
   detectCycles,
   findUnknownMarkers,
   computeMarkerStats,
-} from "../lib/decisionDemo";
-import { MarkerCheatsheet } from "../components/decision/MarkerCheatsheet";
-import { RoundtripDiff } from "../components/decision/RoundtripDiff";
-import { SchemaGraph } from "../components/decision/SchemaGraph";
-import { EvidenceFanoutWarning } from "../components/decision/EvidenceFanoutWarning";
-import { ParseErrorPanel } from "../components/decision/ParseErrorPanel";
-import { CycleWarning } from "../components/decision/CycleWarning";
-import { UnknownMarkersPanel } from "../components/decision/UnknownMarkersPanel";
-import { MarkerStatsPanel } from "../components/decision/MarkerStatsPanel";
-import { RoundtripBadge } from "../components/decision/RoundtripBadge";
-import { MarkerAutocomplete } from "../components/decision/MarkerAutocomplete";
-import { DecisionFilePicker } from "../components/decision/DecisionFilePicker";
-import { SyncPreviewPanel } from "../components/decision/SyncPreviewPanel";
+} from '../lib/decisionDemo';
+import { MarkerCheatsheet } from '../components/decision/MarkerCheatsheet';
+import { RoundtripDiff } from '../components/decision/RoundtripDiff';
+import { SchemaGraph } from '../components/decision/SchemaGraph';
+import { EvidenceFanoutWarning } from '../components/decision/EvidenceFanoutWarning';
+import { ParseErrorPanel } from '../components/decision/ParseErrorPanel';
+import { CycleWarning } from '../components/decision/CycleWarning';
+import { UnknownMarkersPanel } from '../components/decision/UnknownMarkersPanel';
+import { MarkerStatsPanel } from '../components/decision/MarkerStatsPanel';
+import { RoundtripBadge } from '../components/decision/RoundtripBadge';
+import { MarkerAutocomplete } from '../components/decision/MarkerAutocomplete';
+import { DecisionFilePicker } from '../components/decision/DecisionFilePicker';
+import { SyncPreviewPanel } from '../components/decision/SyncPreviewPanel';
 
-type SampleKey = "skeleton" | "single" | "multi";
+type SampleKey = 'skeleton' | 'single' | 'multi';
 
 type ParseState =
-  | { kind: "ok"; file: DecisionFile; schema: FlowSchema }
-  | { kind: "error"; message: string };
+  | { kind: 'ok'; file: DecisionFile; schema: FlowSchema }
+  | { kind: 'error'; message: string };
 
 export function DecisionDemoPage() {
   const [text, setText] = useState<string>(SAMPLE_MULTI_GATE);
-  const [active, setActive] = useState<SampleKey>("multi");
+  const [active, setActive] = useState<SampleKey>('multi');
   const [roundtrip, setRoundtrip] = useState<string | null>(null);
 
   const deferredText = useDeferredValue(text);
@@ -49,9 +49,9 @@ export function DecisionDemoPage() {
     try {
       const file = parseDecisionFile(deferredText);
       const schema = toFlowSchema(file);
-      return { kind: "ok", file, schema };
+      return { kind: 'ok', file, schema };
     } catch (e) {
-      return { kind: "error", message: (e as Error).message };
+      return { kind: 'error', message: (e as Error).message };
     }
   }, [deferredText]);
 
@@ -59,20 +59,19 @@ export function DecisionDemoPage() {
     setActive(key);
     setRoundtrip(null);
     setText(
-      key === "skeleton"
+      key === 'skeleton'
         ? SAMPLE_SKELETON
-        : key === "single"
+        : key === 'single'
           ? SAMPLE_SINGLE_GATE
           : SAMPLE_MULTI_GATE,
     );
   }
 
   function downloadMarkdown() {
-    const fileName =
-      state.kind === "ok" ? `${state.file.meta.id}.md` : "decision.md";
-    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+    const fileName = state.kind === 'ok' ? `${state.file.meta.id}.md` : 'decision.md';
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
     a.click();
@@ -80,7 +79,7 @@ export function DecisionDemoPage() {
   }
 
   function runRoundtrip() {
-    if (state.kind !== "ok") return;
+    if (state.kind !== 'ok') return;
     const evidence = extractEvidence(state.file);
     const md = toMarkdownText({
       schema: state.schema,
@@ -99,24 +98,24 @@ export function DecisionDemoPage() {
     function onKey(e: KeyboardEvent) {
       const meta = e.metaKey || e.ctrlKey;
       if (!meta) return;
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         runRoundtrip();
         return;
       }
-      if (e.key === "1") {
+      if (e.key === '1') {
         e.preventDefault();
-        loadSample("skeleton");
-      } else if (e.key === "2") {
+        loadSample('skeleton');
+      } else if (e.key === '2') {
         e.preventDefault();
-        loadSample("single");
-      } else if (e.key === "3") {
+        loadSample('single');
+      } else if (e.key === '3') {
         e.preventDefault();
-        loadSample("multi");
+        loadSample('multi');
       }
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   });
 
   return (
@@ -126,13 +125,11 @@ export function DecisionDemoPage() {
         <span className="text-xs text-gray-500">
           markdown → 마커 추출 → FlowSchema → 역방향 라운드트립
         </span>
-        {state.kind === "ok" && (
-          <RoundtripBadge file={state.file} schema={state.schema} />
-        )}
+        {state.kind === 'ok' && <RoundtripBadge file={state.file} schema={state.schema} />}
         <div className="ml-auto flex gap-1 items-center">
           <DecisionFilePicker
             onLoad={(md) => {
-              setActive("multi");
+              setActive('multi');
               setRoundtrip(null);
               setText(md);
             }}
@@ -145,13 +142,13 @@ export function DecisionDemoPage() {
             ⬇ .md 다운로드
           </button>
           <span className="w-px h-5 bg-gray-300 mx-1" />
-          <SampleButton active={active === "skeleton"} onClick={() => loadSample("skeleton")}>
+          <SampleButton active={active === 'skeleton'} onClick={() => loadSample('skeleton')}>
             🌱 skeleton
           </SampleButton>
-          <SampleButton active={active === "single"} onClick={() => loadSample("single")}>
+          <SampleButton active={active === 'single'} onClick={() => loadSample('single')}>
             single-gate
           </SampleButton>
-          <SampleButton active={active === "multi"} onClick={() => loadSample("multi")}>
+          <SampleButton active={active === 'multi'} onClick={() => loadSample('multi')}>
             multi-gate
           </SampleButton>
         </div>
@@ -167,14 +164,14 @@ export function DecisionDemoPage() {
             setText(v);
             setRoundtrip(null);
           }}
-          canRoundtrip={state.kind === "ok"}
+          canRoundtrip={state.kind === 'ok'}
           onRoundtrip={runRoundtrip}
           roundtrip={roundtrip}
         />
 
         <div className="flex flex-col gap-3 min-h-0 overflow-auto">
           <MarkerCheatsheet />
-          {state.kind === "error" ? (
+          {state.kind === 'error' ? (
             <ParseErrorPanel message={state.message} />
           ) : (
             <ParsedView file={state.file} schema={state.schema} body={state.file.body} />
@@ -234,7 +231,7 @@ function SampleButton({
     <button
       onClick={onClick}
       className={`text-xs px-2 py-1 rounded border ${
-        active ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white hover:bg-gray-50"
+        active ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white hover:bg-gray-50'
       }`}
     >
       {children}
@@ -277,13 +274,7 @@ function ParsedView({
   );
 }
 
-function MetaBlock({
-  file,
-  skeletonStatus,
-}: {
-  file: DecisionFile;
-  skeletonStatus: string;
-}) {
+function MetaBlock({ file, skeletonStatus }: { file: DecisionFile; skeletonStatus: string }) {
   const { meta } = file;
   return (
     <section className="border rounded p-2 bg-white">
@@ -306,13 +297,13 @@ function MetaBlock({
 
 function LifecyclePill({ value }: { value: string }) {
   const color =
-    value === "approved"
-      ? "bg-green-100 text-green-800"
-      : value === "review"
-        ? "bg-blue-100 text-blue-800"
-        : value === "deprecated" || value === "archived"
-          ? "bg-gray-200 text-gray-700"
-          : "bg-amber-100 text-amber-800";
+    value === 'approved'
+      ? 'bg-green-100 text-green-800'
+      : value === 'review'
+        ? 'bg-blue-100 text-blue-800'
+        : value === 'deprecated' || value === 'archived'
+          ? 'bg-gray-200 text-gray-700'
+          : 'bg-amber-100 text-amber-800';
   return <span className={`px-1.5 rounded ${color}`}>{value}</span>;
 }
 
@@ -322,7 +313,7 @@ function MarkersBlock({ file }: { file: DecisionFile }) {
   return (
     <section className="border rounded p-2 bg-white">
       <h3 className="text-xs font-semibold text-gray-600 mb-1">
-        markers {isMulti ? `(multi-gate × ${m.gates.length})` : "(single-gate)"}
+        markers {isMulti ? `(multi-gate × ${m.gates.length})` : '(single-gate)'}
       </h3>
       {m.purpose && <MarkerRow label="^purpose" body={m.purpose} />}
       {m.context && <MarkerRow label="^context" body={m.context} />}
@@ -336,10 +327,7 @@ function MarkersBlock({ file }: { file: DecisionFile }) {
           {m.phase && <Chip label={`^phase:${m.phase}`} />}
           {m.weight && <Chip label={`^weight:${m.weight}`} />}
           {m.dependsOn.length > 0 && (
-            <ChipRow
-              label="^depends_on"
-              items={m.dependsOn.map((d) => `${d.gateId}:${d.kind}`)}
-            />
+            <ChipRow label="^depends_on" items={m.dependsOn.map((d) => `${d.gateId}:${d.kind}`)} />
           )}
         </>
       )}
@@ -375,7 +363,7 @@ function MarkersBlock({ file }: { file: DecisionFile }) {
 function MarkerRow({ label, body }: { label: string; body: string }) {
   return (
     <div className="text-xs mt-1">
-      <span className="font-mono text-gray-500">{label}</span>{" "}
+      <span className="font-mono text-gray-500">{label}</span>{' '}
       <span className="text-gray-800">{body}</span>
     </div>
   );
@@ -384,7 +372,11 @@ function MarkerRow({ label, body }: { label: string; body: string }) {
 function OptionList({
   options,
 }: {
-  options: readonly { id: string; body: string; annotations?: readonly { kind: string; body: string }[] }[];
+  options: readonly {
+    id: string;
+    body: string;
+    annotations?: readonly { kind: string; body: string }[];
+  }[];
 }) {
   if (options.length === 0) return null;
   return (
@@ -413,11 +405,11 @@ function OptionList({
 
 function AnnotationChip({ kind, body }: { kind: string; body: string }) {
   const color =
-    kind === "cost"
-      ? "bg-red-50 text-red-700 border-red-200"
-      : kind === "benefit"
-        ? "bg-green-50 text-green-700 border-green-200"
-        : "bg-amber-50 text-amber-700 border-amber-200";
+    kind === 'cost'
+      ? 'bg-red-50 text-red-700 border-red-200'
+      : kind === 'benefit'
+        ? 'bg-green-50 text-green-700 border-green-200'
+        : 'bg-amber-50 text-amber-700 border-amber-200';
   return (
     <span className={`px-1.5 py-0.5 rounded text-[11px] border ${color}`}>
       <span className="font-mono">{kind}</span>
@@ -440,29 +432,25 @@ function ChipRow({ label, items }: { label: string; items: string[] }) {
 
 function Chip({
   label,
-  tone = "gray",
+  tone = 'gray',
 }: {
   label: string;
-  tone?: "gray" | "blue" | "green" | "purple";
+  tone?: 'gray' | 'blue' | 'green' | 'purple';
 }) {
   const colors: Record<string, string> = {
-    gray: "bg-gray-100 text-gray-700",
-    blue: "bg-blue-100 text-blue-700",
-    green: "bg-green-100 text-green-700",
-    purple: "bg-purple-100 text-purple-700",
+    gray: 'bg-gray-100 text-gray-700',
+    blue: 'bg-blue-100 text-blue-700',
+    green: 'bg-green-100 text-green-700',
+    purple: 'bg-purple-100 text-purple-700',
   };
-  return (
-    <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${colors[tone]}`}>
-      {label}
-    </span>
-  );
+  return <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${colors[tone]}`}>{label}</span>;
 }
 
 function SchemaBlock({ schema }: { schema: FlowSchema }) {
   return (
     <section className="border rounded p-2 bg-white">
       <h3 className="text-xs font-semibold text-gray-600 mb-1">
-        FlowSchema ({schema.gates.length} gate{schema.gates.length > 1 ? "s" : ""})
+        FlowSchema ({schema.gates.length} gate{schema.gates.length > 1 ? 's' : ''})
       </h3>
       <div className="text-xs font-mono text-gray-600 mb-2">
         {schema.id} · {schema.name}
@@ -493,7 +481,7 @@ function GateNode({ gate }: { gate: GateSchema }) {
         <span className="text-blue-700">{gate.id}</span>
         {gate.name !== gate.id && <span className="text-gray-500"> · {gate.name}</span>}
         <span className="ml-2 text-gray-400">
-          phase={gate.phase} weight={gate.weight ?? "tactical"}
+          phase={gate.phase} weight={gate.weight ?? 'tactical'}
         </span>
       </div>
       {gate.branches && gate.branches.length > 0 && (
@@ -507,12 +495,12 @@ function GateNode({ gate }: { gate: GateSchema }) {
       )}
       {gate.requiredEvidence && gate.requiredEvidence.length > 0 && (
         <div className="ml-2 text-xs text-gray-500">
-          requires: {gate.requiredEvidence.join(", ")}
+          requires: {gate.requiredEvidence.join(', ')}
         </div>
       )}
       {gate.affects && gate.affects.length > 0 && (
         <div className="ml-2 text-xs text-purple-600">
-          affects: {gate.affects.map((d) => `${d.gateId}(${d.kind})`).join(", ")}
+          affects: {gate.affects.map((d) => `${d.gateId}(${d.kind})`).join(', ')}
         </div>
       )}
     </div>

@@ -1,17 +1,17 @@
 {
   "name": "@qa-sdk/decision-service",
   "version": "0.1.0",
-  "description": "FlowSchema, FlowInstance, flow_links를 관리하는 decision-flow 서비스",
   "private": true,
+  "description": "FlowSchema, FlowInstance, flow_links를 관리하는 decision-flow 서비스",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsup",
@@ -27,9 +27,9 @@
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
     "better-sqlite3": "catalog:",
-    "drizzle-orm": "catalog:",
     "decision-flow": "workspace:*",
     "dotenv": "^16.0.0",
+    "drizzle-orm": "catalog:",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.0.0",
     "zod": "^3.25.76"

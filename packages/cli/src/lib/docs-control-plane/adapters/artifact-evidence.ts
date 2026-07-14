@@ -1,19 +1,16 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { readFile, stat } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
+import { readFile, stat } from 'node:fs/promises';
+import { isAbsolute, relative, resolve } from 'node:path';
 
 import type {
   ProgrammingArtifactRegistryRecord,
   ProgrammingArtifactRelation,
-} from "operational-ontology/programming-artifacts";
+} from 'operational-ontology/programming-artifacts';
 
-import {
-  defineDocumentAdapter,
-  normalizeDocumentEnvelope,
-} from "doc-envelope";
-import { matchesDocumentQuery } from "doc-envelope";
+import { defineDocumentAdapter, normalizeDocumentEnvelope } from 'doc-envelope';
+import { matchesDocumentQuery } from 'doc-envelope';
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -23,9 +20,9 @@ import type {
   DocumentLinkInput,
   DocumentMetadata,
   DocumentSourceInput,
-} from "doc-envelope";
+} from 'doc-envelope';
 
-export const ARTIFACT_EVIDENCE_ADAPTER_ID = "artifact-evidence";
+export const ARTIFACT_EVIDENCE_ADAPTER_ID = 'artifact-evidence';
 
 export interface ArtifactEvidenceAdapterOptions {
   readonly rootDir: string;
@@ -38,8 +35,7 @@ export interface ArtifactEvidenceAdapterOptions {
   readonly warnOnMissing?: boolean;
 }
 
-export interface ArtifactEvidenceCollectionQuery
-  extends DocumentCollectionQuery {
+export interface ArtifactEvidenceCollectionQuery extends DocumentCollectionQuery {
   readonly documentId?: string;
   readonly artifactRef?: string;
   readonly outputPath?: string;
@@ -54,8 +50,8 @@ interface LoadedRegistryRecord {
   readonly record: ProgrammingArtifactRegistryRecord;
 }
 
-const DEFAULT_REGISTRY_PATHS = ["artifacts/programming-artifacts.json"];
-const REGISTRY_SOURCE_SCHEMA = "programming-artifact-registry";
+const DEFAULT_REGISTRY_PATHS = ['artifacts/programming-artifacts.json'];
+const REGISTRY_SOURCE_SCHEMA = 'programming-artifact-registry';
 
 export function createArtifactEvidenceAdapter(
   options: ArtifactEvidenceAdapterOptions,
@@ -72,9 +68,7 @@ export function createArtifactEvidenceAdapter(
         registryPaths,
         warnOnMissing,
       });
-      return envelopes.filter((envelope) =>
-        matchesArtifactEvidenceQuery(envelope, query),
-      );
+      return envelopes.filter((envelope) => matchesArtifactEvidenceQuery(envelope, query));
     },
     async getDocument(stableId: string) {
       const envelopes = await collectArtifactEvidenceEnvelopes({
@@ -82,10 +76,12 @@ export function createArtifactEvidenceAdapter(
         registryPaths,
         warnOnMissing,
       });
-      return envelopes.find((envelope) => envelope.stableId === stableId)
-        ?? envelopes.find((envelope) => envelope.metadata.artifactRef === stableId)
-        ?? envelopes.find((envelope) => envelope.metadata.outputPath === stableId)
-        ?? null;
+      return (
+        envelopes.find((envelope) => envelope.stableId === stableId) ??
+        envelopes.find((envelope) => envelope.metadata.artifactRef === stableId) ??
+        envelopes.find((envelope) => envelope.metadata.outputPath === stableId) ??
+        null
+      );
     },
   });
 }
@@ -102,22 +98,21 @@ async function collectArtifactEvidenceEnvelopes(input: {
     const sourcePath = toRepoPath(input.rootDir, registryPath);
     const records = await readRegistryRecords(registryPath, sourcePath);
 
-    if (records.status === "missing") {
+    if (records.status === 'missing') {
       if (input.warnOnMissing) {
         envelopes.push(missingRegistryEnvelope(sourcePath));
       }
       continue;
     }
 
-    if (records.status === "invalid") {
+    if (records.status === 'invalid') {
       envelopes.push(invalidRegistryEnvelope(sourcePath, records.message));
       continue;
     }
 
     for (const record of records.records) {
-      const pointer = records.pointerPrefix === "array"
-        ? `/${record.index}`
-        : `/artifacts/${record.index}`;
+      const pointer =
+        records.pointerPrefix === 'array' ? `/${record.index}` : `/artifacts/${record.index}`;
       if (!isProgrammingArtifactRegistryRecord(record.value)) {
         envelopes.push(
           invalidRegistryEnvelope(
@@ -128,12 +123,14 @@ async function collectArtifactEvidenceEnvelopes(input: {
         continue;
       }
 
-      envelopes.push(artifactRecordEnvelope(input.rootDir, {
-        registryPath,
-        sourcePath,
-        pointer,
-        record: record.value,
-      }));
+      envelopes.push(
+        artifactRecordEnvelope(input.rootDir, {
+          registryPath,
+          sourcePath,
+          pointer,
+          record: record.value,
+        }),
+      );
     }
   }
 
@@ -144,11 +141,11 @@ async function readRegistryRecords(
   registryPath: string,
   sourcePath: string,
 ): Promise<
-  | { readonly status: "missing" }
-  | { readonly status: "invalid"; readonly message: string }
+  | { readonly status: 'missing' }
+  | { readonly status: 'invalid'; readonly message: string }
   | {
-      readonly status: "ok";
-      readonly pointerPrefix: "array" | "artifacts";
+      readonly status: 'ok';
+      readonly pointerPrefix: 'array' | 'artifacts';
       readonly records: readonly {
         readonly index: number;
         readonly value: unknown;
@@ -159,50 +156,47 @@ async function readRegistryRecords(
     const registryStat = await stat(registryPath);
     if (!registryStat.isFile()) {
       return {
-        status: "invalid",
+        status: 'invalid',
         message: `Artifact evidence source is not a file: ${sourcePath}`,
       };
     }
   } catch {
-    return { status: "missing" };
+    return { status: 'missing' };
   }
 
   let payload: unknown;
   try {
-    payload = JSON.parse(await readFile(registryPath, "utf8")) as unknown;
+    payload = JSON.parse(await readFile(registryPath, 'utf8')) as unknown;
   } catch (error) {
     return {
-      status: "invalid",
+      status: 'invalid',
       message: `Artifact evidence source is not valid JSON: ${errorMessage(error)}`,
     };
   }
 
   if (Array.isArray(payload)) {
     return {
-      status: "ok",
-      pointerPrefix: "array",
+      status: 'ok',
+      pointerPrefix: 'array',
       records: payload.map((value, index) => ({ index, value })),
     };
   }
 
   if (isRecord(payload) && Array.isArray(payload.artifacts)) {
     return {
-      status: "ok",
-      pointerPrefix: "artifacts",
+      status: 'ok',
+      pointerPrefix: 'artifacts',
       records: payload.artifacts.map((value, index) => ({ index, value })),
     };
   }
 
   return {
-    status: "invalid",
-    message: "Artifact evidence source must be an array or object with artifacts[].",
+    status: 'invalid',
+    message: 'Artifact evidence source must be an array or object with artifacts[].',
   };
 }
 
-function artifactRecordEnvelope(
-  rootDir: string,
-  loaded: LoadedRegistryRecord,
-): DocumentEnvelope {
+function artifactRecordEnvelope(rootDir: string, loaded: LoadedRegistryRecord): DocumentEnvelope {
   const { record } = loaded;
   const artifactPath = toRepoPath(
     rootDir,
@@ -231,9 +225,7 @@ function artifactRecordEnvelope(
   });
 }
 
-function artifactRecordMetadata(
-  loaded: LoadedRegistryRecord,
-): DocumentMetadata {
+function artifactRecordMetadata(loaded: LoadedRegistryRecord): DocumentMetadata {
   const { record } = loaded;
   const metadata = record.metadata ?? {};
 
@@ -253,8 +245,8 @@ function artifactRecordMetadata(
     ...(record.createdAt ? { createdAt: record.createdAt } : {}),
     registryPath: loaded.sourcePath,
     artifactMetadata: { ...metadata },
-    ...(typeof metadata.packId === "string" ? { packId: metadata.packId } : {}),
-    ...(typeof metadata.ontologyId === "string" ? { ontologyId: metadata.ontologyId } : {}),
+    ...(typeof metadata.packId === 'string' ? { packId: metadata.packId } : {}),
+    ...(typeof metadata.ontologyId === 'string' ? { ontologyId: metadata.ontologyId } : {}),
   };
 }
 
@@ -279,9 +271,7 @@ function artifactEvidence(
   };
 }
 
-function artifactEvidenceSummary(
-  record: ProgrammingArtifactRegistryRecord,
-): string {
+function artifactEvidenceSummary(record: ProgrammingArtifactRegistryRecord): string {
   const pieces = [
     record.kind,
     record.artifactRef,
@@ -290,7 +280,7 @@ function artifactEvidenceSummary(
       : undefined,
     record.ownerDefinitionId ? `owner ${record.ownerDefinitionId}` : undefined,
   ].filter((piece): piece is string => Boolean(piece));
-  return pieces.join(" | ");
+  return pieces.join(' | ');
 }
 
 function artifactRelationLinks(
@@ -319,23 +309,37 @@ function artifactSources(
     readonly value: string | undefined;
     readonly sourceKind: string;
   }> = [
-    { id: "artifact-ref", value: record.artifactRef, sourceKind: "artifact_ref" },
-    { id: "output-path", value: record.outputPath, sourceKind: "output_path" },
+    { id: 'artifact-ref', value: record.artifactRef, sourceKind: 'artifact_ref' },
+    { id: 'output-path', value: record.outputPath, sourceKind: 'output_path' },
     ...(record.sourceRefs ?? []).map((value, index) => ({
       id: `source-ref:${index + 1}`,
       value,
-      sourceKind: "source_ref",
+      sourceKind: 'source_ref',
     })),
     ...(record.verificationRefs ?? []).map((value, index) => ({
       id: `verification-ref:${index + 1}`,
       value,
-      sourceKind: "verification_ref",
+      sourceKind: 'verification_ref',
     })),
   ];
 
   return refs
     .filter((ref) => ref.value && ref.value.trim().length > 0)
-    .map((ref) => (Object.assign({id:ref.id}, pathLikeRef(ref.value! )?{path:toRepoPath(rootDir,ref.value! )}:{}, {label:ref.value,rawSource:{path:loaded.sourcePath,pointer:loaded.pointer,sourceSchema:REGISTRY_SOURCE_SCHEMA},metadata:{value:ref.value,sourceKind:ref.sourceKind}})));
+    .map((ref) =>
+      Object.assign(
+        { id: ref.id },
+        pathLikeRef(ref.value!) ? { path: toRepoPath(rootDir, ref.value!) } : {},
+        {
+          label: ref.value,
+          rawSource: {
+            path: loaded.sourcePath,
+            pointer: loaded.pointer,
+            sourceSchema: REGISTRY_SOURCE_SCHEMA,
+          },
+          metadata: { value: ref.value, sourceKind: ref.sourceKind },
+        },
+      ),
+    );
 }
 
 function artifactRelationMetadata(
@@ -352,16 +356,16 @@ function artifactRelationMetadata(
 
 function missingRegistryEnvelope(sourcePath: string): DocumentEnvelope {
   return registryDiagnosticEnvelope(sourcePath, {
-    code: "artifact-evidence-source-missing",
-    severity: "warning",
+    code: 'artifact-evidence-source-missing',
+    severity: 'warning',
     message: `Artifact evidence source does not exist: ${sourcePath}`,
   });
 }
 
 function invalidRegistryEnvelope(sourcePath: string, message: string): DocumentEnvelope {
   return registryDiagnosticEnvelope(sourcePath, {
-    code: "artifact-evidence-source-invalid",
-    severity: "error",
+    code: 'artifact-evidence-source-invalid',
+    severity: 'error',
     message,
   });
 }
@@ -373,7 +377,7 @@ function registryDiagnosticEnvelope(
   const stableId = `${ARTIFACT_EVIDENCE_ADAPTER_ID}:${diagnostic.code}:${sourcePath}`;
   return normalizeDocumentEnvelope({
     adapterId: ARTIFACT_EVIDENCE_ADAPTER_ID,
-    kind: "artifact-evidence-source",
+    kind: 'artifact-evidence-source',
     stableId,
     path: sourcePath,
     metadata: {
@@ -408,7 +412,8 @@ function matchesArtifactEvidenceQuery(
   }
   if (
     artifactQuery.artifactRef &&
-    normalizeOptionalPath(envelope.metadata.artifactRef) !== normalizePath(artifactQuery.artifactRef)
+    normalizeOptionalPath(envelope.metadata.artifactRef) !==
+      normalizePath(artifactQuery.artifactRef)
   ) {
     return false;
   }
@@ -418,10 +423,7 @@ function matchesArtifactEvidenceQuery(
   ) {
     return false;
   }
-  if (
-    artifactQuery.packId &&
-    !artifactRecordRefs(envelope).includes(artifactQuery.packId)
-  ) {
+  if (artifactQuery.packId && !artifactRecordRefs(envelope).includes(artifactQuery.packId)) {
     return false;
   }
   if (
@@ -457,18 +459,19 @@ function relationRefs(value: unknown): readonly string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     if (!isRecord(item)) return [];
-    return [asString(item.fromRef), asString(item.toRef), asString(item.evidenceRef)]
-      .filter((ref): ref is string => Boolean(ref));
+    return [asString(item.fromRef), asString(item.toRef), asString(item.evidenceRef)].filter(
+      (ref): ref is string => Boolean(ref),
+    );
   });
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
 }
 
 function asStringArray(value: unknown): readonly string[] {
   return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
+    ? value.filter((item): item is string => typeof item === 'string')
     : [];
 }
 
@@ -484,32 +487,32 @@ function toRepoPath(rootDir: string, path: string): string {
   if (!pathLikeRef(path)) return path;
   const resolved = resolvePath(rootDir, path);
   const relativePath = relative(rootDir, resolved);
-  return relativePath && !relativePath.startsWith("..")
+  return relativePath && !relativePath.startsWith('..')
     ? normalizePath(relativePath)
     : normalizePath(path);
 }
 
 function pathLikeRef(value: string): boolean {
   return (
-    value.includes("/") ||
-    value.includes("\\") ||
-    value.endsWith(".json") ||
-    value.endsWith(".js") ||
-    value.endsWith(".ts") ||
-    value.endsWith(".md")
+    value.includes('/') ||
+    value.includes('\\') ||
+    value.endsWith('.json') ||
+    value.endsWith('.js') ||
+    value.endsWith('.ts') ||
+    value.endsWith('.md')
   );
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function normalizeOptionalPath(value: unknown): string | undefined {
-  return typeof value === "string" ? normalizePath(value) : undefined;
+  return typeof value === 'string' ? normalizePath(value) : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isProgrammingArtifactRegistryRecord(
@@ -517,9 +520,9 @@ function isProgrammingArtifactRegistryRecord(
 ): value is ProgrammingArtifactRegistryRecord {
   return (
     isRecord(value) &&
-    typeof value.artifactId === "string" &&
-    typeof value.artifactRef === "string" &&
-    typeof value.kind === "string"
+    typeof value.artifactId === 'string' &&
+    typeof value.artifactRef === 'string' &&
+    typeof value.kind === 'string'
   );
 }
 

@@ -1,27 +1,27 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text, integer, index } from "drizzle-orm/pg-core";
+import { pgSchema, text, integer, index } from 'drizzle-orm/pg-core';
 
 /**
  * Postgres schema (document slice).
  */
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 export const documents = sim.table(
-  "doc_documents",
+  'doc_documents',
   {
-    id: text("id").primaryKey(),
-    projectId: text("project_id").notNull(),
-    title: text("title").notNull(),
-    currentVersion: integer("current_version").notNull().default(0),
-    ownerId: text("owner_id").notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    title: text('title').notNull(),
+    currentVersion: integer('current_version').notNull().default(0),
+    ownerId: text('owner_id').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
   (t) => [
-    index("idx_sim_doc_documents_project").on(t.projectId),
-    index("idx_sim_doc_documents_owner").on(t.ownerId),
+    index('idx_sim_doc_documents_project').on(t.projectId),
+    index('idx_sim_doc_documents_owner').on(t.ownerId),
   ],
 );
 

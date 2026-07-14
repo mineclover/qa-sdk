@@ -1,7 +1,7 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (notification slice).
@@ -15,21 +15,21 @@ import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
  * `notification_outbox_events` 테이블). outbox 정의는 본 파일에서 export.
  */
 export const notifications = sqliteTable(
-  "notif_notifications",
+  'notif_notifications',
   {
-    id: text("id").primaryKey(),
-    recipientUserId: text("recipient_user_id").notNull(),
-    type: text("type").notNull(),
-    title: text("title").notNull(),
-    body: text("body").notNull(),
-    status: text("status", { enum: ["pending", "sent", "read", "failed"] }).notNull(),
-    createdAt: text("created_at").notNull(),
-    sentAt: text("sent_at"),
-    readAt: text("read_at"),
+    id: text('id').primaryKey(),
+    recipientUserId: text('recipient_user_id').notNull(),
+    type: text('type').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    status: text('status', { enum: ['pending', 'sent', 'read', 'failed'] }).notNull(),
+    createdAt: text('created_at').notNull(),
+    sentAt: text('sent_at'),
+    readAt: text('read_at'),
   },
   (t) => [
-    index("idx_notif_recipient").on(t.recipientUserId),
-    index("idx_notif_status").on(t.status),
+    index('idx_notif_recipient').on(t.recipientUserId),
+    index('idx_notif_status').on(t.status),
   ],
 );
 
@@ -41,20 +41,20 @@ export const notifications = sqliteTable(
  * (snake_case).
  */
 export const notificationOutbox = sqliteTable(
-  "notification_outbox_events",
+  'notification_outbox_events',
   {
-    id: text("id").primaryKey(),
-    aggregate_id: text("aggregate_id").notNull(),
-    event_name: text("event_name").notNull(),
-    event_version: integer("event_version").notNull(),
-    payload: text("payload").notNull(),
-    occurred_at: integer("occurred_at").notNull(),
-    scope_id: text("scope_id").notNull(),
-    status: text("status", { enum: ["pending", "published", "failed"] })
+    id: text('id').primaryKey(),
+    aggregate_id: text('aggregate_id').notNull(),
+    event_name: text('event_name').notNull(),
+    event_version: integer('event_version').notNull(),
+    payload: text('payload').notNull(),
+    occurred_at: integer('occurred_at').notNull(),
+    scope_id: text('scope_id').notNull(),
+    status: text('status', { enum: ['pending', 'published', 'failed'] })
       .notNull()
-      .default("pending"),
+      .default('pending'),
   },
-  (t) => [index("idx_notification_outbox_status").on(t.status, t.occurred_at)],
+  (t) => [index('idx_notification_outbox_status').on(t.status, t.occurred_at)],
 );
 
 export const SIM_NOTIF_NOTIFICATION_SQLITE_DDL = `

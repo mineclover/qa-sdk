@@ -51,9 +51,7 @@
       "purpose": "read_model",
       "version": "v1",
       "prefix": "user-read-model",
-      "segments": [
-        { "name": "userId" }
-      ],
+      "segments": [{ "name": "userId" }],
       "ttl": "medium",
       "openmetadataEntity": "reporting.user_read_model"
     },
@@ -63,9 +61,7 @@
       "purpose": "idempotency",
       "version": "v1",
       "prefix": "user-idempotency",
-      "segments": [
-        { "name": "idempotencyKey", "pii": true, "encoding": "hash" }
-      ],
+      "segments": [{ "name": "idempotencyKey", "pii": true, "encoding": "hash" }],
       "ttl": "short"
     }
   ]

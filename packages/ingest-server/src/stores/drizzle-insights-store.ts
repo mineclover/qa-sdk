@@ -8,10 +8,29 @@
  * 읽기 메서드는 drizzle query builder로 집계 쿼리 수행.
  */
 
-import { count, countDistinct, sum, min, max, eq, desc, asc, isNotNull, inArray, notInArray, like, gte, sql } from "drizzle-orm";
-import type { drizzle } from "drizzle-orm/node-sqlite";
-import { traces, eventRecords, qaSessions } from "../db/schema.js";
-import { parseJsonColumn, type AddressContextJson, type EventPayloadJson } from "../db/json-types.js";
+import {
+  count,
+  countDistinct,
+  sum,
+  min,
+  max,
+  eq,
+  desc,
+  asc,
+  isNotNull,
+  inArray,
+  notInArray,
+  like,
+  gte,
+  sql,
+} from 'drizzle-orm';
+import type { drizzle } from 'drizzle-orm/node-sqlite';
+import { traces, eventRecords, qaSessions } from '../db/schema.js';
+import {
+  parseJsonColumn,
+  type AddressContextJson,
+  type EventPayloadJson,
+} from '../db/json-types.js';
 import type {
   InsightsStore,
   InsightsCollectBatch,
@@ -30,35 +49,41 @@ import type {
   GraphRetentionInsight,
   PrefixCorrelation,
   IntentLinkSuggestion,
-} from "../ports/insights-store.port.js";
+} from '../ports/insights-store.port.js';
 
 type DrizzleDb = ReturnType<typeof drizzle>;
 
-const AUTO_EVENT_KEY_LIST = ["click", "page_view", "form_submit", "scroll", "visibility_change"] as const;
+const AUTO_EVENT_KEY_LIST = [
+  'click',
+  'page_view',
+  'form_submit',
+  'scroll',
+  'visibility_change',
+] as const;
 const AUTO_EVENT_KEYS = new Set<string>(AUTO_EVENT_KEY_LIST);
 const GRAPH_RETENTION_EVENT_KEYS = [
-  "sim.graph_retention.sweep",
-  "sim.graph_retention.graph_pruned",
-  "sim.graph_retention.failed",
+  'sim.graph_retention.sweep',
+  'sim.graph_retention.graph_pruned',
+  'sim.graph_retention.failed',
 ] as const;
 
 const EVENT_CATEGORY_PATTERNS: Array<{ pattern: RegExp; category: string }> = [
-  { pattern: /^page\.|^screen\.|^route\./, category: "navigation" },
-  { pattern: /^click|^tap|^scroll|^drag|^select/, category: "interaction" },
-  { pattern: /^form\.|^input\./, category: "form" },
-  { pattern: /^auth\.|^session\.|^login|^logout/, category: "session" },
-  { pattern: /^api\.|^http\.|^rpc\.|^endpoint\./, category: "network" },
-  { pattern: /^cart\.|^checkout\.|^order\.|^payment\.|^purchase/, category: "outcome" },
-  { pattern: /^permission\.|^rbac\.|^guard\./, category: "quality" },
-  { pattern: /^deploy\.|^build\.|^test\.|^pipeline\./, category: "execution" },
-  { pattern: /^error\.|^warn\.|^metric\./, category: "quality" },
+  { pattern: /^page\.|^screen\.|^route\./, category: 'navigation' },
+  { pattern: /^click|^tap|^scroll|^drag|^select/, category: 'interaction' },
+  { pattern: /^form\.|^input\./, category: 'form' },
+  { pattern: /^auth\.|^session\.|^login|^logout/, category: 'session' },
+  { pattern: /^api\.|^http\.|^rpc\.|^endpoint\./, category: 'network' },
+  { pattern: /^cart\.|^checkout\.|^order\.|^payment\.|^purchase/, category: 'outcome' },
+  { pattern: /^permission\.|^rbac\.|^guard\./, category: 'quality' },
+  { pattern: /^deploy\.|^build\.|^test\.|^pipeline\./, category: 'execution' },
+  { pattern: /^error\.|^warn\.|^metric\./, category: 'quality' },
 ];
 
 function categorizeEventKey(key: string): string {
   for (const { pattern, category } of EVENT_CATEGORY_PATTERNS) {
     if (pattern.test(key)) return category;
   }
-  return "uncategorized";
+  return 'uncategorized';
 }
 
 export class DrizzleInsightsStore implements InsightsStore {
@@ -90,7 +115,10 @@ export class DrizzleInsightsStore implements InsightsStore {
       .select({
         total: count(),
         eventKeys: countDistinct(eventRecords.eventKey),
-        autoRecords: sql<number>`SUM(CASE WHEN ${eventRecords.eventKey} IN (${sql.join(AUTO_EVENT_KEY_LIST.map(k => sql`${k}`), sql`, `)}) THEN 1 ELSE 0 END)`,
+        autoRecords: sql<number>`SUM(CASE WHEN ${eventRecords.eventKey} IN (${sql.join(
+          AUTO_EVENT_KEY_LIST.map((k) => sql`${k}`),
+          sql`, `,
+        )}) THEN 1 ELSE 0 END)`,
         actors: sql<number>`COUNT(DISTINCT CASE WHEN ${eventRecords.actorId} IS NOT NULL THEN ${eventRecords.actorId} END)`,
         errorRecords: sql<number>`SUM(CASE WHEN ${eventRecords.eventKey} LIKE 'error.%' THEN 1 ELSE 0 END)`,
       })
@@ -128,8 +156,8 @@ export class DrizzleInsightsStore implements InsightsStore {
       .orderBy(desc(sum(traces.recordCount)))
       .all();
 
-    return rows.map(r => ({
-      service: r.serviceName ?? "",
+    return rows.map((r) => ({
+      service: r.serviceName ?? '',
       traces: r.traceCount,
       records: Number(r.recordSum) || 0,
       firstSeen: r.firstSeen,
@@ -151,10 +179,10 @@ export class DrizzleInsightsStore implements InsightsStore {
       .limit(opts?.limit ?? 50)
       .all();
 
-    return rows.map(r => ({
+    return rows.map((r) => ({
       eventKey: r.eventKey,
       count: r.cnt,
-      source: AUTO_EVENT_KEYS.has(r.eventKey) ? "auto" as const : "manual" as const,
+      source: AUTO_EVENT_KEYS.has(r.eventKey) ? ('auto' as const) : ('manual' as const),
       category: categorizeEventKey(r.eventKey),
       firstSeen: r.firstTs,
       lastSeen: r.lastTs,
@@ -183,7 +211,7 @@ export class DrizzleInsightsStore implements InsightsStore {
   }
 
   async getTimeline(opts?: { limit?: number }): Promise<readonly TimelineBucket[]> {
-    const hour = sql<string>`SUBSTR(${eventRecords.timestamp}, 1, 13)`.as("hour");
+    const hour = sql<string>`SUBSTR(${eventRecords.timestamp}, 1, 13)`.as('hour');
     const rows = this.db
       .select({ hour, cnt: count() })
       .from(eventRecords)
@@ -192,7 +220,7 @@ export class DrizzleInsightsStore implements InsightsStore {
       .limit(opts?.limit ?? 48)
       .all();
 
-    return rows.map(r => ({ hour: r.hour, count: r.cnt }));
+    return rows.map((r) => ({ hour: r.hour, count: r.cnt }));
   }
 
   async getFlows(opts?: { limit?: number }): Promise<readonly FlowInsight[]> {
@@ -212,7 +240,7 @@ export class DrizzleInsightsStore implements InsightsStore {
     if (traceRows.length === 0) return [];
 
     // 배치 쿼리: 관련 trace의 모든 record를 한번에 가져옴
-    const traceIds = traceRows.map(t => t.traceId);
+    const traceIds = traceRows.map((t) => t.traceId);
     const allRecords = this.db
       .select({
         traceId: eventRecords.traceId,
@@ -233,7 +261,7 @@ export class DrizzleInsightsStore implements InsightsStore {
       else recordsByTrace.set(r.traceId, [r]);
     }
 
-    return traceRows.map(t => {
+    return traceRows.map((t) => {
       const records = recordsByTrace.get(t.traceId) ?? [];
       const prefixSet = new Set<string>();
       for (const r of records) {
@@ -244,10 +272,10 @@ export class DrizzleInsightsStore implements InsightsStore {
       }
       return {
         traceId: t.traceId,
-        service: t.serviceName ?? "",
+        service: t.serviceName ?? '',
         recordCount: t.recordCount,
-        firstTimestamp: t.firstTimestamp ?? "",
-        sequence: records.map(r => r.eventKey),
+        firstTimestamp: t.firstTimestamp ?? '',
+        sequence: records.map((r) => r.eventKey),
         prefixes: [...prefixSet],
       };
     });
@@ -269,7 +297,7 @@ export class DrizzleInsightsStore implements InsightsStore {
     if (sessionRows.length === 0) return [];
 
     // 배치 쿼리: 관련 session의 모든 trace를 한번에 가져옴
-    const sessionIds = sessionRows.map(s => s.sessionId);
+    const sessionIds = sessionRows.map((s) => s.sessionId);
     const allTraces = this.db
       .select({
         sessionId: traces.sessionId,
@@ -290,7 +318,7 @@ export class DrizzleInsightsStore implements InsightsStore {
       else tracesBySession.set(t.sessionId, [t]);
     }
 
-    return sessionRows.map(s => {
+    return sessionRows.map((s) => {
       const sessionTraces = tracesBySession.get(s.sessionId) ?? [];
       return {
         sessionId: s.sessionId,
@@ -299,7 +327,7 @@ export class DrizzleInsightsStore implements InsightsStore {
         scenarioId: s.scenarioId,
         traces: sessionTraces.length,
         records: sessionTraces.reduce((acc, t) => acc + t.recordCount, 0),
-        services: [...new Set(sessionTraces.map(t => t.serviceName).filter(Boolean))] as string[],
+        services: [...new Set(sessionTraces.map((t) => t.serviceName).filter(Boolean))] as string[],
       };
     });
   }
@@ -313,7 +341,17 @@ export class DrizzleInsightsStore implements InsightsStore {
       .all();
 
     const categories: Record<string, { observed: string[]; count: number }> = {};
-    for (const cat of ["navigation", "interaction", "form", "session", "network", "execution", "outcome", "quality", "uncategorized"]) {
+    for (const cat of [
+      'navigation',
+      'interaction',
+      'form',
+      'session',
+      'network',
+      'execution',
+      'outcome',
+      'quality',
+      'uncategorized',
+    ]) {
       categories[cat] = { observed: [], count: 0 };
     }
     for (const r of rows) {
@@ -338,7 +376,7 @@ export class DrizzleInsightsStore implements InsightsStore {
   }
 
   async getPermissionEvents(opts?: { limit?: number }): Promise<PermissionInsight> {
-    const PERM_EVENT_KEYS = ["permission.check", "permission.denied", "auth.login", "auth.logout"];
+    const PERM_EVENT_KEYS = ['permission.check', 'permission.denied', 'auth.login', 'auth.logout'];
     const rows = this.db
       .select({
         logId: eventRecords.logId,
@@ -357,7 +395,7 @@ export class DrizzleInsightsStore implements InsightsStore {
       .limit(opts?.limit ?? 50)
       .all();
 
-    const items = rows.map(r => ({
+    const items = rows.map((r) => ({
       logId: r.logId,
       traceId: r.traceId,
       timestamp: r.timestamp,
@@ -366,7 +404,10 @@ export class DrizzleInsightsStore implements InsightsStore {
       userId: r.userId,
       sessionId: r.qaSessionId,
       payload: parseJsonColumn<Record<string, unknown> | undefined>(r.payload, undefined),
-      addressContext: parseJsonColumn<Record<string, string> | undefined>(r.addressContext, undefined),
+      addressContext: parseJsonColumn<Record<string, string> | undefined>(
+        r.addressContext,
+        undefined,
+      ),
     }));
 
     const summary: Record<string, number> = {};
@@ -390,7 +431,7 @@ export class DrizzleInsightsStore implements InsightsStore {
 
     const servicePrefixMap: Record<string, Record<string, number>> = {};
     for (const r of rows) {
-      const svc = r.serviceName ?? "unknown";
+      const svc = r.serviceName ?? 'unknown';
       if (!servicePrefixMap[svc]) servicePrefixMap[svc] = {};
       const ac = parseJsonColumn<AddressContextJson>(r.addressContext, {});
       for (const prefix of Object.keys(ac)) {
@@ -410,7 +451,7 @@ export class DrizzleInsightsStore implements InsightsStore {
 
   async getCorrelations(opts?: { minSupport?: number }): Promise<CorrelationInsight> {
     const minSupport = opts?.minSupport ?? 2;
-    const EXCLUDED_KEYS = ["synthetic.coverage", "system.change", "error.service", "health.check"];
+    const EXCLUDED_KEYS = ['synthetic.coverage', 'system.change', 'error.service', 'health.check'];
 
     const rows = this.db
       .select({
@@ -420,7 +461,10 @@ export class DrizzleInsightsStore implements InsightsStore {
       })
       .from(eventRecords)
       .where(
-        sql`${eventRecords.addressContext} IS NOT NULL AND ${eventRecords.eventKey} NOT IN (${sql.join(EXCLUDED_KEYS.map(k => sql`${k}`), sql`, `)})`,
+        sql`${eventRecords.addressContext} IS NOT NULL AND ${eventRecords.eventKey} NOT IN (${sql.join(
+          EXCLUDED_KEYS.map((k) => sql`${k}`),
+          sql`, `,
+        )})`,
       )
       .limit(2000)
       .all();
@@ -460,7 +504,7 @@ export class DrizzleInsightsStore implements InsightsStore {
     const correlations: PrefixCorrelation[] = [];
     for (const [key, cnt] of Object.entries(pairCounts)) {
       if (cnt < minSupport) continue;
-      const [a, b] = key.split("|");
+      const [a, b] = key.split('|');
       const countA = prefixCounts[a] ?? 0;
       const countB = prefixCounts[b] ?? 0;
       const union = countA + countB - cnt;
@@ -500,9 +544,12 @@ export class DrizzleInsightsStore implements InsightsStore {
         let pairCount = 0;
         for (let i = 0; i < cluster.length; i++) {
           for (let j = i + 1; j < cluster.length; j++) {
-            const key = `${[cluster[i], cluster[j]].toSorted().join("|")}`;
-            const pair = correlations.find(c => `${c.prefixA}|${c.prefixB}` === key);
-            if (pair) { totalJaccard += pair.jaccard; pairCount++; }
+            const key = `${[cluster[i], cluster[j]].toSorted().join('|')}`;
+            const pair = correlations.find((c) => `${c.prefixA}|${c.prefixB}` === key);
+            if (pair) {
+              totalJaccard += pair.jaccard;
+              pairCount++;
+            }
           }
         }
         suggestions.push({
@@ -548,21 +595,21 @@ export class DrizzleInsightsStore implements InsightsStore {
         qaSessionId: eventRecords.qaSessionId,
       })
       .from(eventRecords)
-      .where(like(eventRecords.eventKey, "error.%"))
+      .where(like(eventRecords.eventKey, 'error.%'))
       .orderBy(desc(eventRecords.timestamp))
       .limit(opts?.limit ?? 50)
       .all();
 
-    const items = rows.map(r => {
+    const items = rows.map((r) => {
       const payload = parseJsonColumn<EventPayloadJson | undefined>(r.payload, undefined);
       return {
         logId: r.logId,
         traceId: r.traceId,
         timestamp: r.timestamp,
         eventKey: r.eventKey,
-        service: (payload?.service as string) ?? "unknown",
-        code: (payload?.code as string) ?? "UNKNOWN",
-        message: (payload?.message as string) ?? "",
+        service: (payload?.service as string) ?? 'unknown',
+        code: (payload?.code as string) ?? 'UNKNOWN',
+        message: (payload?.message as string) ?? '',
         path: payload?.path as string | undefined,
         statusCode: payload?.statusCode as number | undefined,
       };
@@ -593,7 +640,10 @@ export class DrizzleInsightsStore implements InsightsStore {
       .from(eventRecords)
       .where(
         opts?.graphId
-          ? sql`${eventRecords.eventKey} IN (${sql.join(GRAPH_RETENTION_EVENT_KEYS.map((key) => sql`${key}`), sql`, `)})
+          ? sql`${eventRecords.eventKey} IN (${sql.join(
+              GRAPH_RETENTION_EVENT_KEYS.map((key) => sql`${key}`),
+              sql`, `,
+            )})
               AND ${eventRecords.addressContext} LIKE ${`%authorization_graph:v1:${opts.graphId}%`}`
           : inArray(eventRecords.eventKey, GRAPH_RETENTION_EVENT_KEYS as unknown as string[]),
       )
@@ -609,8 +659,8 @@ export class DrizzleInsightsStore implements InsightsStore {
       );
       const graphRef = addressContext?.graph;
       const graphScope = addressContext?.graph_scope ?? null;
-      const graphId = graphRef?.startsWith("authorization_graph:v1:")
-        ? graphRef.slice("authorization_graph:v1:".length)
+      const graphId = graphRef?.startsWith('authorization_graph:v1:')
+        ? graphRef.slice('authorization_graph:v1:'.length)
         : null;
 
       return {
@@ -620,16 +670,12 @@ export class DrizzleInsightsStore implements InsightsStore {
         eventKey: row.eventKey,
         graphId,
         graphScope,
-        trigger: typeof payload?.trigger === "string" ? payload.trigger : null,
-        keepLatest:
-          typeof payload?.keepLatest === "number" ? payload.keepLatest : null,
-        beforeCount:
-          typeof payload?.beforeCount === "number" ? payload.beforeCount : null,
-        afterCount:
-          typeof payload?.afterCount === "number" ? payload.afterCount : null,
-        deletedCount:
-          typeof payload?.deletedCount === "number" ? payload.deletedCount : null,
-        error: typeof payload?.error === "string" ? payload.error : null,
+        trigger: typeof payload?.trigger === 'string' ? payload.trigger : null,
+        keepLatest: typeof payload?.keepLatest === 'number' ? payload.keepLatest : null,
+        beforeCount: typeof payload?.beforeCount === 'number' ? payload.beforeCount : null,
+        afterCount: typeof payload?.afterCount === 'number' ? payload.afterCount : null,
+        deletedCount: typeof payload?.deletedCount === 'number' ? payload.deletedCount : null,
+        error: typeof payload?.error === 'string' ? payload.error : null,
         addressContext,
       };
     });

@@ -7,7 +7,7 @@
  * 4. exp 만료 체크
  */
 
-import { createVerify } from "node:crypto";
+import { createVerify } from 'node:crypto';
 
 export interface JWK {
   kid: string;
@@ -30,26 +30,26 @@ export class JwksVerifier {
 
   constructor(private jwksUrl: string) {}
 
-  async verify(
-    token: string,
-  ): Promise<{
+  async verify(token: string): Promise<{
     payload: Record<string, unknown>;
     header: Record<string, unknown>;
   }> {
-    const parts = token.split(".");
-    if (parts.length !== 3) throw new Error("Invalid JWT format");
+    const parts = token.split('.');
+    if (parts.length !== 3) throw new Error('Invalid JWT format');
 
-    const header = JSON.parse(
-      Buffer.from(parts[0], "base64url").toString(),
-    ) as Record<string, unknown>;
-    const payload = JSON.parse(
-      Buffer.from(parts[1], "base64url").toString(),
-    ) as Record<string, unknown>;
+    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString()) as Record<
+      string,
+      unknown
+    >;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString()) as Record<
+      string,
+      unknown
+    >;
 
     // 만료 체크
     const now = Math.floor(Date.now() / 1000);
-    if (typeof payload.exp === "number" && payload.exp < now) {
-      throw new Error("Token expired");
+    if (typeof payload.exp === 'number' && payload.exp < now) {
+      throw new Error('Token expired');
     }
 
     // 서명 키 조회
@@ -61,10 +61,8 @@ export class JwksVerifier {
       // 캐시 리프레시 후 재시도
       this.cache = null;
       const refreshedKeys = await this.getKeys();
-      const refreshedKey = kid
-        ? refreshedKeys.find((k) => k.kid === kid)
-        : undefined;
-      if (!refreshedKey) throw new Error("Signing key not found");
+      const refreshedKey = kid ? refreshedKeys.find((k) => k.kid === kid) : undefined;
+      if (!refreshedKey) throw new Error('Signing key not found');
       return this.verifyWithKey(parts, refreshedKey, header, payload);
     }
 
@@ -79,13 +77,13 @@ export class JwksVerifier {
   ): { payload: Record<string, unknown>; header: Record<string, unknown> } {
     const pem = jwkToPem(key);
     const data = `${parts[0]}.${parts[1]}`;
-    const signature = Buffer.from(parts[2], "base64url");
+    const signature = Buffer.from(parts[2], 'base64url');
 
-    const verifier = createVerify("RSA-SHA256");
+    const verifier = createVerify('RSA-SHA256');
     verifier.update(data);
     const valid = verifier.verify(pem, signature);
 
-    if (!valid) throw new Error("Invalid signature");
+    if (!valid) throw new Error('Invalid signature');
     return { payload, header };
   }
 
@@ -103,7 +101,7 @@ export class JwksVerifier {
     try {
       data = (await res.json()) as { keys: JWK[] };
     } catch {
-      throw new Error("JWKS response is not valid JSON");
+      throw new Error('JWKS response is not valid JSON');
     }
 
     this.cache = { keys: data.keys, fetchedAt: Date.now() };
@@ -115,38 +113,24 @@ export class JwksVerifier {
 
 /** JWK RSA 공개키를 PEM 형식으로 변환 */
 function jwkToPem(jwk: JWK): string {
-  const n = Buffer.from(jwk.n, "base64url");
-  const e = Buffer.from(jwk.e, "base64url");
+  const n = Buffer.from(jwk.n, 'base64url');
+  const e = Buffer.from(jwk.e, 'base64url');
 
   // INTEGER for n (high bit 세팅 시 leading zero 추가)
   const nInt =
     n[0] & 0x80
-      ? Buffer.concat([
-          Buffer.from([0x02]),
-          encodeLength(n.length + 1),
-          Buffer.from([0x00]),
-          n,
-        ])
+      ? Buffer.concat([Buffer.from([0x02]), encodeLength(n.length + 1), Buffer.from([0x00]), n])
       : Buffer.concat([Buffer.from([0x02]), encodeLength(n.length), n]);
 
   // INTEGER for e
   const eInt =
     e[0] & 0x80
-      ? Buffer.concat([
-          Buffer.from([0x02]),
-          encodeLength(e.length + 1),
-          Buffer.from([0x00]),
-          e,
-        ])
+      ? Buffer.concat([Buffer.from([0x02]), encodeLength(e.length + 1), Buffer.from([0x00]), e])
       : Buffer.concat([Buffer.from([0x02]), encodeLength(e.length), e]);
 
   // SEQUENCE { n, e }
   const seq = Buffer.concat([nInt, eInt]);
-  const rsaPub = Buffer.concat([
-    Buffer.from([0x30]),
-    encodeLength(seq.length),
-    seq,
-  ]);
+  const rsaPub = Buffer.concat([Buffer.from([0x30]), encodeLength(seq.length), seq]);
 
   // BIT STRING wrapping
   const bitString = Buffer.concat([
@@ -158,21 +142,16 @@ function jwkToPem(jwk: JWK): string {
 
   // rsaEncryption OID (1.2.840.113549.1.1.1)
   const algId = Buffer.from([
-    0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01,
-    0x01, 0x05, 0x00,
+    0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
   ]);
 
   // 최종 SEQUENCE { algorithmIdentifier, subjectPublicKey }
   const outer = Buffer.concat([algId, bitString]);
-  const der = Buffer.concat([
-    Buffer.from([0x30]),
-    encodeLength(outer.length),
-    outer,
-  ]);
+  const der = Buffer.concat([Buffer.from([0x30]), encodeLength(outer.length), outer]);
 
-  const b64 = der.toString("base64");
+  const b64 = der.toString('base64');
   const lines = b64.match(/.{1,64}/g) ?? [];
-  return `-----BEGIN PUBLIC KEY-----\n${lines.join("\n")}\n-----END PUBLIC KEY-----`;
+  return `-----BEGIN PUBLIC KEY-----\n${lines.join('\n')}\n-----END PUBLIC KEY-----`;
 }
 
 /** ASN.1 DER 길이 인코딩 */

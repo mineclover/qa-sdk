@@ -1,30 +1,40 @@
 // @def.doc definition-service
 
-import { Controller, Get, Post, Delete, Inject, Param, Query, Body, NotFoundException } from "@nestjs/common";
-import { PrefixesService } from "./prefixes.service.js";
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Inject,
+  Param,
+  Query,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrefixesService } from './prefixes.service.js';
 
-@Controller("prefixes")
+@Controller('prefixes')
 export class PrefixesController {
   constructor(@Inject(PrefixesService) private readonly prefixes: PrefixesService) {}
 
   /** GET /prefixes — prefix 목록 (category 필터 가능) */
   @Get()
-  list(@Query("category") category?: string) {
+  list(@Query('category') category?: string) {
     const prefixes = this.prefixes.list(category ? { category } : undefined);
     return { prefixes, total: prefixes.length };
   }
 
   /** GET /prefixes/:prefixId — prefix 상세 */
-  @Get(":prefixId")
-  get(@Param("prefixId") prefixId: string) {
+  @Get(':prefixId')
+  get(@Param('prefixId') prefixId: string) {
     const record = this.prefixes.get(prefixId);
     if (!record) throw new NotFoundException(`prefix ${prefixId} 없음`);
     return record;
   }
 
   /** GET /prefixes/:prefixId/deps — 의존 체인 (prefix_ref 재귀) */
-  @Get(":prefixId/deps")
-  deps(@Param("prefixId") prefixId: string) {
+  @Get(':prefixId/deps')
+  deps(@Param('prefixId') prefixId: string) {
     const record = this.prefixes.get(prefixId);
     if (!record) throw new NotFoundException(`prefix ${prefixId} 없음`);
     const chain = this.prefixes.getDependencyChain(prefixId);
@@ -32,29 +42,31 @@ export class PrefixesController {
   }
 
   /** GET /prefixes/:prefixId/dependents — 이 prefix를 참조하는 prefix 목록 */
-  @Get(":prefixId/dependents")
-  dependents(@Param("prefixId") prefixId: string) {
+  @Get(':prefixId/dependents')
+  dependents(@Param('prefixId') prefixId: string) {
     const record = this.prefixes.get(prefixId);
     if (!record) throw new NotFoundException(`prefix ${prefixId} 없음`);
     const deps = this.prefixes.getDependents(prefixId);
-    return { prefixId, dependents: deps.map(d => d.prefixId), total: deps.length };
+    return { prefixId, dependents: deps.map((d) => d.prefixId), total: deps.length };
   }
 
   /** POST /prefixes — prefix 등록/갱신 */
   @Post()
-  register(@Body() body: {
-    prefixId: string;
-    name: string;
-    description?: string;
-    category?: string;
-    labels: string[];
-    dims: Record<string, { kind: string; axisId?: string; prefixId?: string }>;
-    versions: { version: string; axisVersions: Record<string, string> }[];
-    meta?: Record<string, unknown>;
-  }) {
+  register(
+    @Body() body: {
+      prefixId: string;
+      name: string;
+      description?: string;
+      category?: string;
+      labels: string[];
+      dims: Record<string, { kind: string; axisId?: string; prefixId?: string }>;
+      versions: { version: string; axisVersions: Record<string, string> }[];
+      meta?: Record<string, unknown>;
+    },
+  ) {
     const depPrefixIds = Object.values(body.dims)
-      .filter((d): d is { kind: "prefix_ref"; prefixId: string } => d.kind === "prefix_ref")
-      .map(d => d.prefixId);
+      .filter((d): d is { kind: 'prefix_ref'; prefixId: string } => d.kind === 'prefix_ref')
+      .map((d) => d.prefixId);
 
     const { action } = this.prefixes.upsert({
       prefixId: body.prefixId,
@@ -67,15 +79,15 @@ export class PrefixesController {
       meta: body.meta ?? {},
       depPrefixIds,
       version: 0,
-      registeredAt: "",
-      updatedAt: "",
+      registeredAt: '',
+      updatedAt: '',
     });
 
     return { prefixId: body.prefixId, action };
   }
 
   /** POST /prefixes/validate-batch — prefix ID 배치 존재 확인 (OTEL/ingest 연동용) */
-  @Post("validate-batch")
+  @Post('validate-batch')
   validateBatch(@Body() body: { prefixIds: string[] }) {
     const results: Record<string, { exists: boolean; hasDoc: boolean }> = {};
     for (const id of body.prefixIds ?? []) {
@@ -85,14 +97,18 @@ export class PrefixesController {
         hasDoc: !!this.prefixes.getDocByPrefix(id),
       };
     }
-    const missing = Object.entries(results).filter(([, v]) => !v.exists).map(([k]) => k);
-    const undocumented = Object.entries(results).filter(([, v]) => v.exists && !v.hasDoc).map(([k]) => k);
+    const missing = Object.entries(results)
+      .filter(([, v]) => !v.exists)
+      .map(([k]) => k);
+    const undocumented = Object.entries(results)
+      .filter(([, v]) => v.exists && !v.hasDoc)
+      .map(([k]) => k);
     return { results, missing, undocumented };
   }
 
   /** DELETE /prefixes/:prefixId — prefix 제거 */
-  @Delete(":prefixId")
-  remove(@Param("prefixId") prefixId: string) {
+  @Delete(':prefixId')
+  remove(@Param('prefixId') prefixId: string) {
     const deleted = this.prefixes.remove(prefixId);
     if (!deleted) throw new NotFoundException(`prefix ${prefixId} 없음`);
     return { ok: true, prefixId };

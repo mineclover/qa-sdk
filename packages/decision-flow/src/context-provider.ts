@@ -14,14 +14,10 @@
  *   컨텍스트 축적 → 다음 결정 시 표면화 → 쉬운 결정 → 결과가 다시 축적
  */
 
-import type { InstanceStore } from "./instance-store.js";
-import type {
-  FlowInstance,
-  FlowPolicy,
-  FlowSchema,
-} from "./types.js";
-import { detectPatterns } from "./policy-learning.js";
-import type { DetectedPattern } from "./policy-learning.js";
+import type { InstanceStore } from './instance-store.js';
+import type { FlowInstance, FlowPolicy, FlowSchema } from './types.js';
+import { detectPatterns } from './policy-learning.js';
+import type { DetectedPattern } from './policy-learning.js';
 
 // ─── 제공되는 컨텍스트 타입 ──────────────────────────────
 
@@ -116,13 +112,10 @@ export class ContextProvider {
    * @param schemaId - 시작할 플로우 스키마 ID
    * @param context - 현재 결정의 컨텍스트 (team, feature 등)
    */
-  provide(
-    schemaId: string,
-    context: Record<string, unknown> = {},
-  ): DecisionContext {
+  provide(schemaId: string, context: Record<string, unknown> = {}): DecisionContext {
     const schema = this.schemas.get(schemaId);
     const instances = this.store.findBySchema(schemaId);
-    const completed = instances.filter((i) => i.status === "completed");
+    const completed = instances.filter((i) => i.status === 'completed');
 
     return {
       history: this.buildHistory(completed),
@@ -144,7 +137,7 @@ export class ContextProvider {
     const schema = this.schemas.get(schemaId);
     const gate = schema?.gates.find((g) => g.id === gateId);
     const instances = this.store.findBySchema(schemaId);
-    const completed = instances.filter((i) => i.status === "completed");
+    const completed = instances.filter((i) => i.status === 'completed');
 
     // 이 gate에서의 이전 선택 분포
     const distribution = new Map<string, number>();
@@ -178,14 +171,16 @@ export class ContextProvider {
     return {
       gateId,
       gateName: gate?.name ?? gateId,
-      isCore: gate?.weight === "core",
+      isCore: gate?.weight === 'core',
       branchDistribution,
       modelHints,
-      autoPolicy: applicablePolicy ? {
-        name: applicablePolicy.name,
-        branchId: applicablePolicy.action.branchId,
-        rationale: applicablePolicy.rationale,
-      } : undefined,
+      autoPolicy: applicablePolicy
+        ? {
+            name: applicablePolicy.name,
+            branchId: applicablePolicy.action.branchId,
+            rationale: applicablePolicy.rationale,
+          }
+        : undefined,
       previousChoiceCount: total,
     };
   }
@@ -215,27 +210,28 @@ export class ContextProvider {
           const coreSelections: Record<string, string> = {};
           for (const sel of inst.selections) {
             const gate = schema?.gates.find((g) => g.id === sel.gateId);
-            if (gate?.weight === "core") {
+            if (gate?.weight === 'core') {
               coreSelections[sel.gateId] = sel.branchId;
             }
           }
           const summaryParts = Object.entries(coreSelections)
             .map(([k, v]) => `${k}=${v}`)
-            .join(", ");
+            .join(', ');
           relatedInstances.push({
             instanceId: inst.id,
             schemaId: inst.schemaId,
             status: inst.status,
             completedAt: inst.completedAt,
             coreSelections,
-            summary: summaryParts || inst.selections.map((s) => `${s.gateId}=${s.branchId}`).join(", "),
+            summary:
+              summaryParts || inst.selections.map((s) => `${s.gateId}=${s.branchId}`).join(', '),
           });
 
           // openQuestions 수집
           const oq = inst.context.openQuestions;
           if (Array.isArray(oq)) {
             for (const q of oq) {
-              if (typeof q === "string" && !openQuestions.includes(q)) {
+              if (typeof q === 'string' && !openQuestions.includes(q)) {
                 openQuestions.push(q);
               }
             }
@@ -246,8 +242,10 @@ export class ContextProvider {
       // 관련 정책
       const policies = this.policies.get(schemaId) ?? [];
       for (const p of policies) {
-        if (p.name.toLowerCase().includes(queryLower) ||
-            p.rationale.toLowerCase().includes(queryLower)) {
+        if (
+          p.name.toLowerCase().includes(queryLower) ||
+          p.rationale.toLowerCase().includes(queryLower)
+        ) {
           allPolicies.push(p);
         }
       }
@@ -257,7 +255,7 @@ export class ContextProvider {
         const patterns = detectPatterns(this.store, schemaId, { minFrequency: 3 });
         for (const p of patterns) {
           if (String(p.contextValue).toLowerCase().includes(queryLower)) {
-            const pathDesc = p.gatePath.map((g) => `${g.gateId}=${g.branchId}`).join(" → ");
+            const pathDesc = p.gatePath.map((g) => `${g.gateId}=${g.branchId}`).join(' → ');
             allPatterns.push({
               description: `${p.contextKey}=${String(p.contextValue)}: ${pathDesc}`,
               frequency: p.frequency,
@@ -272,8 +270,7 @@ export class ContextProvider {
     }
 
     // 최신순 정렬
-    relatedInstances.sort((a, b) =>
-      (b.completedAt ?? "").localeCompare(a.completedAt ?? ""));
+    relatedInstances.sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
 
     return {
       query,
@@ -288,7 +285,7 @@ export class ContextProvider {
   private instanceMatchesQuery(inst: FlowInstance, queryLower: string): boolean {
     // context 값에서 키워드 검색
     for (const value of Object.values(inst.context)) {
-      if (typeof value === "string" && value.toLowerCase().includes(queryLower)) {
+      if (typeof value === 'string' && value.toLowerCase().includes(queryLower)) {
         return true;
       }
     }
@@ -305,7 +302,10 @@ export class ContextProvider {
     }
 
     // 가장 흔한 코어 경로
-    const pathCounts = new Map<string, { count: number; path: { gateId: string; branchId: string }[] }>();
+    const pathCounts = new Map<
+      string,
+      { count: number; path: { gateId: string; branchId: string }[] }
+    >();
     let totalConf = 0;
     let selCount = 0;
 
@@ -317,7 +317,7 @@ export class ContextProvider {
         })
         .map((s) => ({ gateId: s.gateId, branchId: s.branchId }));
 
-      const key = corePath.map((s) => `${s.gateId}:${s.branchId}`).join("|");
+      const key = corePath.map((s) => `${s.gateId}:${s.branchId}`).join('|');
       const existing = pathCounts.get(key);
       if (existing) {
         existing.count++;
@@ -334,7 +334,8 @@ export class ContextProvider {
     const mostCommon = [...pathCounts.values()].toSorted((a, b) => b.count - a.count)[0];
 
     const sorted = [...completed].toSorted((a, b) =>
-      (b.completedAt ?? "").localeCompare(a.completedAt ?? ""));
+      (b.completedAt ?? '').localeCompare(a.completedAt ?? ''),
+    );
 
     return {
       totalCompleted: completed.length,
@@ -344,10 +345,7 @@ export class ContextProvider {
     };
   }
 
-  private buildPatternHints(
-    schemaId: string,
-    context: Record<string, unknown>,
-  ): PatternHint[] {
+  private buildPatternHints(schemaId: string, context: Record<string, unknown>): PatternHint[] {
     let patterns: DetectedPattern[];
     try {
       patterns = detectPatterns(this.store, schemaId, { minFrequency: 3 });
@@ -356,9 +354,8 @@ export class ContextProvider {
     }
 
     return patterns.slice(0, 5).map((p) => {
-      const pathDesc = p.gatePath.map((g) => `${g.gateId}=${g.branchId}`).join(" → ");
-      const matchesCurrent = p.contextKey in context
-        && context[p.contextKey] === p.contextValue;
+      const pathDesc = p.gatePath.map((g) => `${g.gateId}=${g.branchId}`).join(' → ');
+      const matchesCurrent = p.contextKey in context && context[p.contextKey] === p.contextValue;
 
       return {
         description: `${p.contextKey}=${String(p.contextValue)}일 때, ${pathDesc} 경로를 ${p.frequency}회 선택`,
@@ -369,10 +366,7 @@ export class ContextProvider {
     });
   }
 
-  private buildPolicyHints(
-    schemaId: string,
-    _context: Record<string, unknown>,
-  ): PolicyHint[] {
+  private buildPolicyHints(schemaId: string, _context: Record<string, unknown>): PolicyHint[] {
     const policies = this.policies.get(schemaId) ?? [];
 
     return policies.map((p) => ({
@@ -406,14 +400,14 @@ export class ContextProvider {
     // 최근 5건의 context에서 openQuestions 추출
     const questions: string[] = [];
     const recent = [...completed]
-      .toSorted((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""))
+      .toSorted((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
       .slice(0, 5);
 
     for (const inst of recent) {
       const oq = inst.context.openQuestions;
       if (Array.isArray(oq)) {
         for (const q of oq) {
-          if (typeof q === "string" && !questions.includes(q)) {
+          if (typeof q === 'string' && !questions.includes(q)) {
             questions.push(q);
           }
         }

@@ -8,25 +8,23 @@
  * PipeGraph 도메인의 고유 용어(PipeConcern, ConnectionKind)를 사용한다.
  */
 
-import type {
-  PipeSpec, PipeGraph, ConnectionKind, PipeFlow,
-} from "../types/pipe-spec.js";
-import { getChildFlows } from "./pipe-flow-utils.js";
-import { normalize } from "./pipe-fold.js";
-import { resolvePorts } from "./pipe-port.js";
+import type { PipeSpec, PipeGraph, ConnectionKind, PipeFlow } from '../types/pipe-spec.js';
+import { getChildFlows } from './pipe-flow-utils.js';
+import { normalize } from './pipe-fold.js';
+import { resolvePorts } from './pipe-port.js';
 
 // ── 타입 정의 ─────────────────────────────────────────
 
 /** 파이프 흐름 패턴에서 추론되는 8종 관심사 */
 export type PipeConcern =
-  | "resilience"      // retry, circuit-breaker, fallback
-  | "latency"         // timeout, await, step.timeout
-  | "concurrency"     // parallel, race
-  | "data-mutation"   // accesses mode:"write"|"readwrite"
-  | "data-read"       // accesses mode:"read"|"readwrite"
-  | "async-coupling"  // emit, correlation
-  | "data-filtering"  // dedup, filter
-  | "observability";  // tap
+  | 'resilience' // retry, circuit-breaker, fallback
+  | 'latency' // timeout, await, step.timeout
+  | 'concurrency' // parallel, race
+  | 'data-mutation' // accesses mode:"write"|"readwrite"
+  | 'data-read' // accesses mode:"read"|"readwrite"
+  | 'async-coupling' // emit, correlation
+  | 'data-filtering' // dedup, filter
+  | 'observability'; // tap
 
 /** 전파를 통해 상속된 관심사 */
 export interface InheritedPipeConcern {
@@ -55,7 +53,7 @@ export interface ImpactedPipe {
   readonly pipeId: string;
   readonly via: ConnectionKind;
   readonly path: readonly string[];
-  readonly direction: "downstream" | "upstream";
+  readonly direction: 'downstream' | 'upstream';
   readonly depth: number;
 }
 
@@ -69,15 +67,15 @@ export interface PipeImpactAnalysis {
 
 /** 파이프 역할 */
 export type PipeRole =
-  | "producer"     // 출력 포트 또는 emit 중심
-  | "consumer"     // 입력 위주 소비
-  | "transformer"  // 입력+출력 포트 공존
-  | "router"       // branch 중심, 데이터 포트 없음
-  | "observer";    // tap 중심, 출력 포트 없음
+  | 'producer' // 출력 포트 또는 emit 중심
+  | 'consumer' // 입력 위주 소비
+  | 'transformer' // 입력+출력 포트 공존
+  | 'router' // branch 중심, 데이터 포트 없음
+  | 'observer'; // tap 중심, 출력 포트 없음
 
 // ── 전파 규칙 ─────────────────────────────────────────
 
-type PropagateDirection = "downstream" | "upstream" | "bidirectional";
+type PropagateDirection = 'downstream' | 'upstream' | 'bidirectional';
 
 interface PipePropagationRule {
   readonly connectionKind: ConnectionKind;
@@ -87,18 +85,29 @@ interface PipePropagationRule {
 
 /** ConnectionKind별 관심사 전파 규칙 */
 export const PIPE_PROPAGATION_RULES: readonly PipePropagationRule[] = [
-  { connectionKind: "next",       direction: "downstream",    propagates: ["resilience", "latency", "data-mutation"] },
-  { connectionKind: "conditional", direction: "downstream",   propagates: ["latency"] },
-  { connectionKind: "event",      direction: "downstream",    propagates: ["async-coupling"] },
-  { connectionKind: "error",      direction: "downstream",    propagates: ["resilience"] },
-  { connectionKind: "compensate", direction: "bidirectional", propagates: ["resilience", "data-mutation"] },
-  { connectionKind: "fan-out",    direction: "downstream",    propagates: ["concurrency", "latency"] },
-  { connectionKind: "join",       direction: "downstream",    propagates: ["concurrency", "latency"] },
-  { connectionKind: "feedback",   direction: "upstream",      propagates: ["latency"] },
+  {
+    connectionKind: 'next',
+    direction: 'downstream',
+    propagates: ['resilience', 'latency', 'data-mutation'],
+  },
+  { connectionKind: 'conditional', direction: 'downstream', propagates: ['latency'] },
+  { connectionKind: 'event', direction: 'downstream', propagates: ['async-coupling'] },
+  { connectionKind: 'error', direction: 'downstream', propagates: ['resilience'] },
+  {
+    connectionKind: 'compensate',
+    direction: 'bidirectional',
+    propagates: ['resilience', 'data-mutation'],
+  },
+  { connectionKind: 'fan-out', direction: 'downstream', propagates: ['concurrency', 'latency'] },
+  { connectionKind: 'join', direction: 'downstream', propagates: ['concurrency', 'latency'] },
+  { connectionKind: 'feedback', direction: 'upstream', propagates: ['latency'] },
 ];
 
 // 룩업 인덱스
-const PROPAGATION_INDEX = new Map<ConnectionKind, { direction: PropagateDirection; concerns: Set<PipeConcern> }>();
+const PROPAGATION_INDEX = new Map<
+  ConnectionKind,
+  { direction: PropagateDirection; concerns: Set<PipeConcern> }
+>();
 for (const rule of PIPE_PROPAGATION_RULES) {
   PROPAGATION_INDEX.set(rule.connectionKind, {
     direction: rule.direction,
@@ -116,48 +125,48 @@ export function extractPipeConcerns(pipe: PipeSpec): PipeConcern[] {
 
   function walk(flow: PipeFlow): void {
     switch (flow.kind) {
-      case "retry":
-      case "circuit-breaker":
-      case "fallback":
-        concerns.add("resilience");
+      case 'retry':
+      case 'circuit-breaker':
+      case 'fallback':
+        concerns.add('resilience');
         break;
-      case "timeout":
-        concerns.add("latency");
+      case 'timeout':
+        concerns.add('latency');
         break;
-      case "await":
-        concerns.add("latency");
+      case 'await':
+        concerns.add('latency');
         break;
-      case "parallel":
-      case "race":
-        concerns.add("concurrency");
+      case 'parallel':
+      case 'race':
+        concerns.add('concurrency');
         break;
-      case "emit":
-        concerns.add("async-coupling");
+      case 'emit':
+        concerns.add('async-coupling');
         break;
-      case "correlation":
-        concerns.add("async-coupling");
+      case 'correlation':
+        concerns.add('async-coupling');
         break;
-      case "dedup":
-      case "filter":
-        concerns.add("data-filtering");
+      case 'dedup':
+      case 'filter':
+        concerns.add('data-filtering');
         break;
-      case "tap":
-        concerns.add("observability");
+      case 'tap':
+        concerns.add('observability');
         break;
-      case "transition-scope":
-        if (flow.compensate) concerns.add("resilience");
+      case 'transition-scope':
+        if (flow.compensate) concerns.add('resilience');
         break;
-      case "step":
+      case 'step':
         // step 레벨 timeout
-        if (flow.timeout) concerns.add("latency");
+        if (flow.timeout) concerns.add('latency');
         // dataContract.accesses
         if (flow.dataContract?.accesses) {
           for (const access of flow.dataContract.accesses) {
-            if (access.mode === "write" || access.mode === "readwrite") {
-              concerns.add("data-mutation");
+            if (access.mode === 'write' || access.mode === 'readwrite') {
+              concerns.add('data-mutation');
             }
-            if (access.mode === "read" || access.mode === "readwrite") {
-              concerns.add("data-read");
+            if (access.mode === 'read' || access.mode === 'readwrite') {
+              concerns.add('data-read');
             }
           }
         }
@@ -184,7 +193,7 @@ export function propagatePipeConcerns(graph: PipeGraph): PipeConcernMap {
   // Phase 2: 인접 리스트 구축
   // adjacency[pipeId] = [{ neighbor, kind, adjDirection }]
   //   adjDirection: "incoming" = neighbor→this, "outgoing" = this→neighbor
-  type AdjEntry = { neighbor: string; kind: ConnectionKind; adjDirection: "incoming" | "outgoing" };
+  type AdjEntry = { neighbor: string; kind: ConnectionKind; adjDirection: 'incoming' | 'outgoing' };
   const adjacency = new Map<string, AdjEntry[]>();
 
   for (const pipe of graph.pipes) {
@@ -196,8 +205,8 @@ export function propagatePipeConcerns(graph: PipeGraph): PipeConcernMap {
     const tos = normalize(conn.to);
     for (const f of froms) {
       for (const t of tos) {
-        adjacency.get(f)?.push({ neighbor: t, kind: conn.kind, adjDirection: "outgoing" });
-        adjacency.get(t)?.push({ neighbor: f, kind: conn.kind, adjDirection: "incoming" });
+        adjacency.get(f)?.push({ neighbor: t, kind: conn.kind, adjDirection: 'outgoing' });
+        adjacency.get(t)?.push({ neighbor: f, kind: conn.kind, adjDirection: 'incoming' });
       }
     }
   }
@@ -276,7 +285,7 @@ export function propagatePipeConcerns(graph: PipeGraph): PipeConcernMap {
     }
 
     const direct = directMap.get(pipe.pipeId) ?? [];
-    const allConcerns = [...new Set([...direct, ...inherited.map(i => i.concern)])];
+    const allConcerns = [...new Set([...direct, ...inherited.map((i) => i.concern)])];
     resultMap.set(pipe.pipeId, { direct, inherited, all: allConcerns });
   }
 
@@ -297,26 +306,28 @@ export function propagatePipeConcerns(graph: PipeGraph): PipeConcernMap {
  */
 function shouldPropagate(
   ruleDirection: PropagateDirection,
-  adjDirection: "incoming" | "outgoing",
+  adjDirection: 'incoming' | 'outgoing',
 ): boolean {
-  if (ruleDirection === "bidirectional") return true;
+  if (ruleDirection === 'bidirectional') return true;
   // downstream/upstream 모두: concern은 화살표(from→to) 따라 전파
   // 수신자 관점에서는 incoming 연결에서만 도달
-  return adjDirection === "incoming";
+  return adjDirection === 'incoming';
 }
 
 /**
  * 변경된 파이프에서 BFS로 영향 범위를 계산한다.
  */
-export function analyzePipeImpact(
-  graph: PipeGraph,
-  pipeId: string,
-): PipeImpactAnalysis {
-  const pipeSet = new Set(graph.pipes.map(p => p.pipeId));
+export function analyzePipeImpact(graph: PipeGraph, pipeId: string): PipeImpactAnalysis {
+  const pipeSet = new Set(graph.pipes.map((p) => p.pipeId));
   const emptyConcern: Record<PipeConcern, number> = {
-    "resilience": 0, "latency": 0, "concurrency": 0,
-    "data-mutation": 0, "data-read": 0, "async-coupling": 0,
-    "data-filtering": 0, "observability": 0,
+    resilience: 0,
+    latency: 0,
+    concurrency: 0,
+    'data-mutation': 0,
+    'data-read': 0,
+    'async-coupling': 0,
+    'data-filtering': 0,
+    observability: 0,
   };
 
   if (!pipeSet.has(pipeId)) {
@@ -352,7 +363,7 @@ export function analyzePipeImpact(
     pipeId: string;
     via: ConnectionKind;
     path: string[];
-    direction: "downstream" | "upstream";
+    direction: 'downstream' | 'upstream';
     depth: number;
   };
   const queue: QueueItem[] = [];
@@ -360,17 +371,23 @@ export function analyzePipeImpact(
   // 초기: downstream (outgoing)
   for (const adj of outAdj.get(pipeId) ?? []) {
     queue.push({
-      pipeId: adj.neighbor, via: adj.kind,
-      path: [pipeId, adj.neighbor], direction: "downstream", depth: 1,
+      pipeId: adj.neighbor,
+      via: adj.kind,
+      path: [pipeId, adj.neighbor],
+      direction: 'downstream',
+      depth: 1,
     });
   }
 
   // 초기: upstream (compensate, feedback의 incoming)
   for (const adj of inAdj.get(pipeId) ?? []) {
-    if (adj.kind === "compensate" || adj.kind === "feedback") {
+    if (adj.kind === 'compensate' || adj.kind === 'feedback') {
       queue.push({
-        pipeId: adj.neighbor, via: adj.kind,
-        path: [pipeId, adj.neighbor], direction: "upstream", depth: 1,
+        pipeId: adj.neighbor,
+        via: adj.kind,
+        path: [pipeId, adj.neighbor],
+        direction: 'upstream',
+        depth: 1,
       });
     }
   }
@@ -393,18 +410,24 @@ export function analyzePipeImpact(
     for (const adj of outAdj.get(item.pipeId) ?? []) {
       if (!visited.has(adj.neighbor)) {
         queue.push({
-          pipeId: adj.neighbor, via: adj.kind,
-          path: [...item.path, adj.neighbor], direction: "downstream", depth: item.depth + 1,
+          pipeId: adj.neighbor,
+          via: adj.kind,
+          path: [...item.path, adj.neighbor],
+          direction: 'downstream',
+          depth: item.depth + 1,
         });
       }
     }
 
     // compensate: 역방향도 탐색
     for (const adj of inAdj.get(item.pipeId) ?? []) {
-      if (adj.kind === "compensate" && !visited.has(adj.neighbor)) {
+      if (adj.kind === 'compensate' && !visited.has(adj.neighbor)) {
         queue.push({
-          pipeId: adj.neighbor, via: adj.kind,
-          path: [...item.path, adj.neighbor], direction: "upstream", depth: item.depth + 1,
+          pipeId: adj.neighbor,
+          via: adj.kind,
+          path: [...item.path, adj.neighbor],
+          direction: 'upstream',
+          depth: item.depth + 1,
         });
       }
     }
@@ -427,34 +450,34 @@ export function analyzePipeImpact(
  */
 export function classifyPipeRole(pipe: PipeSpec): PipeRole {
   const ports = resolvePorts(pipe);
-  const hasInputPort = ports.some(port => port.direction === "in");
-  const hasOutputPort = ports.some(port => port.direction === "out");
+  const hasInputPort = ports.some((port) => port.direction === 'in');
+  const hasOutputPort = ports.some((port) => port.direction === 'out');
   const hasAnyPort = ports.length > 0;
   const hasLegacyProduces = (pipe.produces?.length ?? 0) > 0;
-  const hasTap = flowContainsKind(pipe.flow, "tap");
-  const hasBranch = flowContainsKind(pipe.flow, "branch");
-  const hasEmit = flowContainsKind(pipe.flow, "emit");
+  const hasTap = flowContainsKind(pipe.flow, 'tap');
+  const hasBranch = flowContainsKind(pipe.flow, 'branch');
+  const hasEmit = flowContainsKind(pipe.flow, 'emit');
 
   // Port shape is the primary signal: bidirectional data flow implies transformation.
-  if (hasInputPort && hasOutputPort) return "transformer";
+  if (hasInputPort && hasOutputPort) return 'transformer';
 
   // Output-only pipes behave as producers regardless of flow kind.
-  if (hasOutputPort) return "producer";
+  if (hasOutputPort) return 'producer';
 
   // Fallback to the legacy flow-kind heuristics when port metadata is absent or input-only.
-  if (hasTap && !hasLegacyProduces && !hasEmit) return "observer";
+  if (hasTap && !hasLegacyProduces && !hasEmit) return 'observer';
 
-  if (hasBranch && !hasAnyPort) return "router";
+  if (hasBranch && !hasAnyPort) return 'router';
 
-  if (hasLegacyProduces) return "transformer";
+  if (hasLegacyProduces) return 'transformer';
 
-  if (hasEmit) return "producer";
+  if (hasEmit) return 'producer';
 
-  return "consumer";
+  return 'consumer';
 }
 
 /** PipeFlow 트리에 특정 kind가 포함되어 있는지 확인 */
 function flowContainsKind(flow: PipeFlow, targetKind: string): boolean {
   if (flow.kind === targetKind) return true;
-  return getChildFlows(flow).some(child => flowContainsKind(child, targetKind));
+  return getChildFlows(flow).some((child) => flowContainsKind(child, targetKind));
 }

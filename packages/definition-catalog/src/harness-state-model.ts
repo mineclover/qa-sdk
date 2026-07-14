@@ -20,22 +20,40 @@ import type {
   TransitionRule,
   StateMachineInstance,
   StateTransitionRecord,
-} from "./state-model.js";
-import { createInstance } from "./state-model.js";
+} from './state-model.js';
+import { createInstance } from './state-model.js';
 
 // ── 머신 선언 (harness-machines.ts에서 추출) — import + re-export ──
 import {
-  ADDRESS_STATE_MACHINE, VERSION_LIFECYCLE_MACHINE, FLOW_STATE_MACHINE,
-  SERVICE_STATE_MACHINE, EVENT_STATE_MACHINE, METRIC_HEALTH_MACHINE, POLICY_STATE_MACHINE,
-} from "./harness-machines.js";
-export type { AddressState, VersionLifecycleState, FlowState, ServiceState, EventState, MetricHealthState, PolicyState } from "./harness-machines.js";
+  ADDRESS_STATE_MACHINE,
+  VERSION_LIFECYCLE_MACHINE,
+  FLOW_STATE_MACHINE,
+  SERVICE_STATE_MACHINE,
+  EVENT_STATE_MACHINE,
+  METRIC_HEALTH_MACHINE,
+  POLICY_STATE_MACHINE,
+} from './harness-machines.js';
+export type {
+  AddressState,
+  VersionLifecycleState,
+  FlowState,
+  ServiceState,
+  EventState,
+  MetricHealthState,
+  PolicyState,
+} from './harness-machines.js';
 export {
-  ADDRESS_STATE_MACHINE, VERSION_LIFECYCLE_MACHINE, FLOW_STATE_MACHINE,
-  SERVICE_STATE_MACHINE, EVENT_STATE_MACHINE, METRIC_HEALTH_MACHINE, POLICY_STATE_MACHINE,
+  ADDRESS_STATE_MACHINE,
+  VERSION_LIFECYCLE_MACHINE,
+  FLOW_STATE_MACHINE,
+  SERVICE_STATE_MACHINE,
+  EVENT_STATE_MACHINE,
+  METRIC_HEALTH_MACHINE,
+  POLICY_STATE_MACHINE,
 };
 
 // ── guard/cascade (harness-guards.ts에서 추출) — re-export ──
-export { checkGuards, collectCascades } from "./harness-guards.js";
+export { checkGuards, collectCascades } from './harness-guards.js';
 
 // ═══════════════════════════════════════════════════════════════
 // 1. 머신 간 의�� 관계
@@ -48,7 +66,7 @@ export { checkGuards, collectCascades } from "./harness-guards.js";
  * guard:   A가 특정 상태여야 B의 전이가 허용됨 (전제 조건)
  * notify:  A가 전이하면 B에 이벤트 전달 (관찰)
  */
-export type DependencyKind = "cascade" | "guard" | "notify";
+export type DependencyKind = 'cascade' | 'guard' | 'notify';
 
 export interface MachineDependency {
   /** 의존 유형 */
@@ -191,7 +209,7 @@ export function validateProcess(
         const currentState = simulatedStates.get(pre.machineId);
         if (currentState !== pre.requiredState) {
           errors.push(
-            `스텝 ${i}: ${pre.machineId}이 ${pre.requiredState}여야 하지만 ${currentState ?? "미초기화"}`,
+            `스텝 ${i}: ${pre.machineId}이 ${pre.requiredState}여야 하지만 ${currentState ?? '미초기화'}`,
           );
         }
       }
@@ -217,80 +235,79 @@ export function validateProcess(
 
 // 시스템 머신 선언은 harness-machines.ts에 분리됨
 
-
 export const SYSTEM_DEPENDENCIES: readonly MachineDependency[] = [
   // version이 deprecated되면 address도 inactive로 전이
   {
-    kind: "cascade",
-    sourceMachine: "version-lifecycle",
-    sourceState: "deprecated",
-    targetMachine: "address-state",
-    targetState: "inactive",
-    label: "버전 폐기 → 주소 비활성화",
+    kind: 'cascade',
+    sourceMachine: 'version-lifecycle',
+    sourceState: 'deprecated',
+    targetMachine: 'address-state',
+    targetState: 'inactive',
+    label: '버전 폐기 → 주소 비활성화',
   },
   // version이 active여야 address를 active로 만들 수 있음
   {
-    kind: "guard",
-    sourceMachine: "version-lifecycle",
-    sourceState: "active",
-    targetMachine: "address-state",
-    targetState: "active",
-    label: "주소 활성화에는 active 버전 필요",
+    kind: 'guard',
+    sourceMachine: 'version-lifecycle',
+    sourceState: 'active',
+    targetMachine: 'address-state',
+    targetState: 'active',
+    label: '주소 활성화에는 active 버전 필요',
   },
   // 문서가 approved여야 convention 검증이 의미 있음
   {
-    kind: "guard",
-    sourceMachine: "doc-lifecycle",
-    sourceState: "approved",
-    targetMachine: "convention-compliance",
-    targetState: "compliant",
-    label: "컨벤션 준수는 승인된 문서만",
+    kind: 'guard',
+    sourceMachine: 'doc-lifecycle',
+    sourceState: 'approved',
+    targetMachine: 'convention-compliance',
+    targetState: 'compliant',
+    label: '컨벤션 준수는 승인된 문서만',
   },
   // service가 deprecated되면 event도 deprecated
   {
-    kind: "cascade",
-    sourceMachine: "service-status",
-    sourceState: "deprecated",
-    targetMachine: "event-status",
-    targetState: "deprecated",
-    label: "서비스 폐기 → 소유 이벤트 폐기",
+    kind: 'cascade',
+    sourceMachine: 'service-status',
+    sourceState: 'deprecated',
+    targetMachine: 'event-status',
+    targetState: 'deprecated',
+    label: '서비스 폐기 → 소유 이벤트 폐기',
   },
   // metric이 critical이면 decision-flow에 notify
   {
-    kind: "notify",
-    sourceMachine: "metric-health",
-    sourceState: "critical",
-    targetMachine: "decision-flow",
-    targetState: "blocked",
-    label: "메트릭 위험 → 의사결정 차단 알림",
+    kind: 'notify',
+    sourceMachine: 'metric-health',
+    sourceState: 'critical',
+    targetMachine: 'decision-flow',
+    targetState: 'blocked',
+    label: '메트릭 위험 → 의사결정 차단 알림',
   },
   // flow 완료가 doc lifecycle에 notify
   {
-    kind: "notify",
-    sourceMachine: "decision-flow",
-    sourceState: "completed",
-    targetMachine: "doc-lifecycle",
-    targetState: "review",
-    label: "의사결정 완료 → 문서 검토 요청",
+    kind: 'notify',
+    sourceMachine: 'decision-flow',
+    sourceState: 'completed',
+    targetMachine: 'doc-lifecycle',
+    targetState: 'review',
+    label: '의사결정 완료 → 문서 검토 요청',
   },
   // spec이 verified되면 convention을 compliant로 cascade
   {
-    kind: "cascade",
-    sourceMachine: "spec-impl",
-    sourceState: "verified",
-    targetMachine: "convention-compliance",
-    targetState: "compliant",
-    label: "스펙 검증 완료 → 컨벤션 준수",
+    kind: 'cascade',
+    sourceMachine: 'spec-impl',
+    sourceState: 'verified',
+    targetMachine: 'convention-compliance',
+    targetState: 'compliant',
+    label: '스펙 검증 완료 → 컨벤션 준수',
   },
   // convention이 compliant여야 spec을 verified로 만들 수 있음 (gate enforcement)
   // 흐름: gate 통과 → convention:compliant → spec:verified 허용
   {
-    kind: "guard",
-    sourceMachine: "convention-compliance",
-    sourceState: "compliant",
-    targetMachine: "spec-impl",
-    targetState: "verified",
-    label: "스펙 검증에는 컨벤션 준수(게이트 통과) 필요",
+    kind: 'guard',
+    sourceMachine: 'convention-compliance',
+    sourceState: 'compliant',
+    targetMachine: 'spec-impl',
+    targetState: 'verified',
+    label: '스펙 검증에는 컨벤션 준수(게이트 통과) 필요',
   },
 ];
 
@@ -300,89 +317,89 @@ export const SYSTEM_DEPENDENCIES: readonly MachineDependency[] = [
 
 /** prefix 릴리스 프로세스 */
 export const PREFIX_RELEASE_PROCESS: ProcessDefinition = {
-  id: "prefix-release",
-  label: "Prefix 릴리스",
-  description: "draft 버전을 릴리스하고 활성화하여 주소를 개방하는 전체 흐름",
+  id: 'prefix-release',
+  label: 'Prefix 릴리스',
+  description: 'draft 버전을 릴리스하고 활성화하여 주소를 개방하는 전체 흐름',
   steps: [
     {
-      machineId: "version-lifecycle",
-      targetState: "released",
-      label: "버전 릴리스",
+      machineId: 'version-lifecycle',
+      targetState: 'released',
+      label: '버전 릴리스',
     },
     {
-      machineId: "version-lifecycle",
-      targetState: "active",
-      label: "버전 활성화",
-      preconditions: [{ machineId: "version-lifecycle", requiredState: "released" }],
+      machineId: 'version-lifecycle',
+      targetState: 'active',
+      label: '버전 활성화',
+      preconditions: [{ machineId: 'version-lifecycle', requiredState: 'released' }],
     },
     {
-      machineId: "address-state",
-      targetState: "active",
-      label: "주소 활성화",
-      preconditions: [{ machineId: "version-lifecycle", requiredState: "active" }],
+      machineId: 'address-state',
+      targetState: 'active',
+      label: '주소 활성화',
+      preconditions: [{ machineId: 'version-lifecycle', requiredState: 'active' }],
     },
     {
-      machineId: "db-sync",
-      targetState: "syncing",
-      label: "DB 동기화 시작",
+      machineId: 'db-sync',
+      targetState: 'syncing',
+      label: 'DB 동기화 시작',
     },
     {
-      machineId: "db-sync",
-      targetState: "synced",
-      label: "DB 동기화 완료",
-      preconditions: [{ machineId: "db-sync", requiredState: "syncing" }],
+      machineId: 'db-sync',
+      targetState: 'synced',
+      label: 'DB 동기화 완료',
+      preconditions: [{ machineId: 'db-sync', requiredState: 'syncing' }],
     },
   ],
 };
 
 /** 문서 승인 프로세스 */
 export const DOC_APPROVAL_PROCESS: ProcessDefinition = {
-  id: "doc-approval",
-  label: "문서 승인",
-  description: "초안 → 검토 → 승인 → 컨벤션 검증까지의 전체 흐름",
+  id: 'doc-approval',
+  label: '문서 승인',
+  description: '초안 → 검토 → 승인 → 컨벤션 검증까지의 전체 흐름',
   steps: [
     {
-      machineId: "doc-lifecycle",
-      targetState: "review",
-      label: "검토 요청",
+      machineId: 'doc-lifecycle',
+      targetState: 'review',
+      label: '검토 요청',
     },
     {
-      machineId: "doc-lifecycle",
-      targetState: "approved",
-      label: "문서 승인",
-      preconditions: [{ machineId: "doc-lifecycle", requiredState: "review" }],
+      machineId: 'doc-lifecycle',
+      targetState: 'approved',
+      label: '문서 승인',
+      preconditions: [{ machineId: 'doc-lifecycle', requiredState: 'review' }],
     },
     {
-      machineId: "convention-compliance",
-      targetState: "compliant",
-      label: "컨벤션 검증",
-      preconditions: [{ machineId: "doc-lifecycle", requiredState: "approved" }],
+      machineId: 'convention-compliance',
+      targetState: 'compliant',
+      label: '컨벤션 검증',
+      preconditions: [{ machineId: 'doc-lifecycle', requiredState: 'approved' }],
     },
   ],
 };
 
 /** 서비스 폐기 프로세스 */
 export const SERVICE_DEPRECATION_PROCESS: ProcessDefinition = {
-  id: "service-deprecation",
-  label: "서비스 폐기",
-  description: "서비스 폐기 선언 → 이벤트 폐기 → 버전 폐기 → 주소 비활성화",
+  id: 'service-deprecation',
+  label: '서비스 폐기',
+  description: '서비스 폐기 선언 → 이벤트 폐기 → 버전 폐기 → 주소 비활성화',
   steps: [
     {
-      machineId: "service-status",
-      targetState: "deprecated",
-      label: "서비스 폐기 선언",
+      machineId: 'service-status',
+      targetState: 'deprecated',
+      label: '서비스 폐기 선언',
     },
     // cascade: service deprecated → event deprecated (자동)
     {
-      machineId: "version-lifecycle",
-      targetState: "deprecated",
-      label: "관련 prefix 버전 폐기",
+      machineId: 'version-lifecycle',
+      targetState: 'deprecated',
+      label: '관련 prefix 버전 폐기',
     },
     // cascade: version deprecated → address inactive (자동)
     {
-      machineId: "doc-lifecycle",
-      targetState: "deprecated",
-      label: "관련 문서 폐기 예정",
+      machineId: 'doc-lifecycle',
+      targetState: 'deprecated',
+      label: '관련 문서 폐기 예정',
     },
   ],
 };
@@ -396,7 +413,7 @@ import {
   SPEC_IMPL_MACHINE,
   CONVENTION_MACHINE,
   SYNC_MACHINE,
-} from "./state-model.js";
+} from './state-model.js';
 
 /** 시스템 전체 하네스 레지스트리 생성 */
 export function createHarnessRegistry(): HarnessRegistry {

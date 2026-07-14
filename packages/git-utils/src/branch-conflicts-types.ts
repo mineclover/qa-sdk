@@ -1,7 +1,7 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import type { DeltaType } from "es-git";
+import type { DeltaType } from 'es-git';
 
 export interface BranchChangeFile {
   path: string;
@@ -57,7 +57,7 @@ export interface BranchChangeSet {
 }
 
 export interface WorkspaceChangeSet {
-  scope: "repo" | "execution";
+  scope: 'repo' | 'execution';
   executionCwd: string;
   relativePath: string;
   diffStats: BranchChangeStats;
@@ -117,7 +117,7 @@ export interface RemoteBranchConflictAnalysis {
 }
 
 export interface GitConflictReport {
-  schemaVersion: "git-conflicts-report/v1";
+  schemaVersion: 'git-conflicts-report/v1';
   generatedAt: string;
   analysis: RemoteBranchConflictAnalysis;
   workspaceScopes: string[];

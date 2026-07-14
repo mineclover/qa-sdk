@@ -1,9 +1,9 @@
 // @def.boundary experience-layer-group
 // @def.doc experience-layer-group
 
-import { filterTreeByMode, findNodeById, normalizeReport } from "./normalize.js";
-import { SAMPLE_REPORT } from "./sample-report.js";
-import type { FileTreeNode, JsonRecord, RenderState } from "./types.js";
+import { filterTreeByMode, findNodeById, normalizeReport } from './normalize.js';
+import { SAMPLE_REPORT } from './sample-report.js';
+import type { FileTreeNode, JsonRecord, RenderState } from './types.js';
 
 export function createInitialState(): RenderState {
   const normalized = normalizeReport(SAMPLE_REPORT as unknown as JsonRecord);
@@ -13,9 +13,9 @@ export function createInitialState(): RenderState {
     selectedNodeId: normalized.tree.id,
     autoLoadAttempted: false,
     autoRefreshEnabled: true,
-    inputSource: "sample",
-    drawerState: "closed",
-    viewMode: "all",
+    inputSource: 'sample',
+    drawerState: 'closed',
+    viewMode: 'all',
   };
 }
 
@@ -31,16 +31,17 @@ export function applyRawInputToState(
   state: RenderState,
   rawText: string,
   options?: {
-    inputSource?: RenderState["inputSource"];
+    inputSource?: RenderState['inputSource'];
     autoRefreshEnabled?: boolean;
     preserveSelection?: boolean;
   },
 ): RenderState {
   const parsed = JSON.parse(rawText) as JsonRecord;
   const normalized = normalizeReport(parsed);
-  const nextSelectedId = options?.preserveSelection && findNodeById(normalized.tree, state.selectedNodeId)
-    ? state.selectedNodeId
-    : normalized.tree.id;
+  const nextSelectedId =
+    options?.preserveSelection && findNodeById(normalized.tree, state.selectedNodeId)
+      ? state.selectedNodeId
+      : normalized.tree.id;
   return {
     report: normalized,
     rawInput: rawText,

@@ -176,47 +176,51 @@ function renderProperties(): string {
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
           ${[
             {
-              icon: "✓",
-              color: "#22c55e",
-              title: "목적",
+              icon: '✓',
+              color: '#22c55e',
+              title: '목적',
               items: [
-                "다차원 좌표의 1D 표현",
-                "스키마 기반 규칙적 ID",
-                "버전 관리 가능한 식별자",
-                "압축된 메타데이터 주소",
+                '다차원 좌표의 1D 표현',
+                '스키마 기반 규칙적 ID',
+                '버전 관리 가능한 식별자',
+                '압축된 메타데이터 주소',
               ],
             },
             {
-              icon: "≈",
-              color: "#f59e0b",
-              title: "부수 효과",
+              icon: '≈',
+              color: '#f59e0b',
+              title: '부수 효과',
               items: [
-                "스키마 없으면 예측 어려움",
-                "연속 정수 → 비트맵 최적화",
-                "슬롯 사전 계산 가능",
-                "범위 질의 가능 (차원 정렬 시)",
+                '스키마 없으면 예측 어려움',
+                '연속 정수 → 비트맵 최적화',
+                '슬롯 사전 계산 가능',
+                '범위 질의 가능 (차원 정렬 시)',
               ],
             },
             {
-              icon: "✗",
-              color: "#ef4444",
-              title: "목적 아닌 것",
+              icon: '✗',
+              color: '#ef4444',
+              title: '목적 아닌 것',
               items: [
-                "암호화 / 난독화",
-                "충돌 없는 전역 UUID",
-                "분산 시스템 고유성 보장",
-                "해시 기반 조회 최적화",
+                '암호화 / 난독화',
+                '충돌 없는 전역 UUID',
+                '분산 시스템 고유성 보장',
+                '해시 기반 조회 최적화',
               ],
             },
-          ].map(({ icon, color, title, items }) => `
+          ]
+            .map(
+              ({ icon, color, title, items }) => `
             <div class="phi-purpose-box" style="border-top-color:${color}">
               <div class="phi-purpose-icon" style="color:${color}">${icon}</div>
               <div class="phi-purpose-title">${title}</div>
               <ul class="phi-purpose-list">
-                ${items.map((i) => `<li>${i}</li>`).join("")}
+                ${items.map((i) => `<li>${i}</li>`).join('')}
               </ul>
             </div>
-          `).join("")}
+          `,
+            )
+            .join('')}
         </div>
 
         <div class="insight-box">
@@ -239,62 +243,64 @@ function renderProperties(): string {
 function renderUseCases(): string {
   const cases = [
     {
-      title: "다차원 권한 모델",
-      tag: "권한",
-      tagColor: "#1f497d",
-      tagBg: "#dce6f1",
-      desc: "resource × action × role × env 조합을 단일 정수로. 비트마스크 없이 다차원 권한을 직관적으로 표현.",
-      dims: "resource(8) × action(4) × role(5) × env(4) = 640",
-      example: "perm:v2:42 → [document, read, editor, staging]",
+      title: '다차원 권한 모델',
+      tag: '권한',
+      tagColor: '#1f497d',
+      tagBg: '#dce6f1',
+      desc: 'resource × action × role × env 조합을 단일 정수로. 비트마스크 없이 다차원 권한을 직관적으로 표현.',
+      dims: 'resource(8) × action(4) × role(5) × env(4) = 640',
+      example: 'perm:v2:42 → [document, read, editor, staging]',
     },
     {
-      title: "데이터 스토리지 주소",
-      tag: "스토리지",
-      tagColor: "#375623",
-      tagBg: "#e2efda",
-      desc: "tenant × schema × table × shard 좌표를 단일 주소로 압축. UUID 없이 구조화된 스토리지 주소 체계 구현.",
-      dims: "tenant(50) × schema(10) × table(30) × shard(8) = 120,000",
-      example: "addr:v1:12564 → [tenant#5, schema#3, table#12, shard#4]",
+      title: '데이터 스토리지 주소',
+      tag: '스토리지',
+      tagColor: '#375623',
+      tagBg: '#e2efda',
+      desc: 'tenant × schema × table × shard 좌표를 단일 주소로 압축. UUID 없이 구조화된 스토리지 주소 체계 구현.',
+      dims: 'tenant(50) × schema(10) × table(30) × shard(8) = 120,000',
+      example: 'addr:v1:12564 → [tenant#5, schema#3, table#12, shard#4]',
     },
     {
-      title: "이벤트 분류 인덱스",
-      tag: "이벤트",
-      tagColor: "#7f6000",
-      tagBg: "#fff2cc",
-      desc: "category × subcategory × trigger × auto_manual 조합을 이벤트 타입 ID로. 이벤트 테이블 없이 ID만으로 분류 추론.",
-      dims: "category(8) × subcategory(10) × trigger(5) × mode(2) = 800",
-      example: "evt:v1:123 → [interaction, click, user, manual]",
+      title: '이벤트 분류 인덱스',
+      tag: '이벤트',
+      tagColor: '#7f6000',
+      tagBg: '#fff2cc',
+      desc: 'category × subcategory × trigger × auto_manual 조합을 이벤트 타입 ID로. 이벤트 테이블 없이 ID만으로 분류 추론.',
+      dims: 'category(8) × subcategory(10) × trigger(5) × mode(2) = 800',
+      example: 'evt:v1:123 → [interaction, click, user, manual]',
     },
     {
-      title: "네트워크 엔드포인트",
-      tag: "네트워크",
-      tagColor: "#0e5f75",
-      tagBg: "#ddf4f9",
-      desc: "datacenter × cluster × service × instance 주소를 정수 하나로. IP/포트 없이 논리적 위치를 표현.",
-      dims: "datacenter(5) × cluster(20) × service(50) × instance(10) = 50,000",
-      example: "ep:v1:7234 → [dc-ap1, cluster-03, auth-svc, instance-4]",
+      title: '네트워크 엔드포인트',
+      tag: '네트워크',
+      tagColor: '#0e5f75',
+      tagBg: '#ddf4f9',
+      desc: 'datacenter × cluster × service × instance 주소를 정수 하나로. IP/포트 없이 논리적 위치를 표현.',
+      dims: 'datacenter(5) × cluster(20) × service(50) × instance(10) = 50,000',
+      example: 'ep:v1:7234 → [dc-ap1, cluster-03, auth-svc, instance-4]',
     },
     {
-      title: "A/B 테스트 슬롯",
-      tag: "실험",
-      tagColor: "#843c0c",
-      tagBg: "#fce4d6",
-      desc: "experiment × variant × cohort × feature 조합을 단일 슬롯 ID로. 실험 설계를 테이블 없이 ID만으로 역산.",
-      dims: "experiment(100) × variant(4) × cohort(10) × feature(5) = 20,000",
-      example: "exp:v1:4523 → [exp#23, variant-B, cohort-5, feature-3]",
+      title: 'A/B 테스트 슬롯',
+      tag: '실험',
+      tagColor: '#843c0c',
+      tagBg: '#fce4d6',
+      desc: 'experiment × variant × cohort × feature 조합을 단일 슬롯 ID로. 실험 설계를 테이블 없이 ID만으로 역산.',
+      dims: 'experiment(100) × variant(4) × cohort(10) × feature(5) = 20,000',
+      example: 'exp:v1:4523 → [exp#23, variant-B, cohort-5, feature-3]',
     },
     {
-      title: "물리 공간 주소",
-      tag: "공간",
-      tagColor: "#493073",
-      tagBg: "#e8e0f0",
-      desc: "building × floor × zone × unit 좌표를 공간 주소로. 도시 규모 자산 관리 시스템의 위치 식별자.",
-      dims: "building(200) × floor(50) × zone(10) × unit(20) = 2,000,000",
-      example: "loc:v1:184522 → [building#8, floor#9, zone-A, unit#12]",
+      title: '물리 공간 주소',
+      tag: '공간',
+      tagColor: '#493073',
+      tagBg: '#e8e0f0',
+      desc: 'building × floor × zone × unit 좌표를 공간 주소로. 도시 규모 자산 관리 시스템의 위치 식별자.',
+      dims: 'building(200) × floor(50) × zone(10) × unit(20) = 2,000,000',
+      example: 'loc:v1:184522 → [building#8, floor#9, zone-A, unit#12]',
     },
   ];
 
-  const cards = cases.map(({ title, tag, tagColor, tagBg, desc, dims, example }) => `
+  const cards = cases
+    .map(
+      ({ title, tag, tagColor, tagBg, desc, dims, example }) => `
     <div class="phi-usecase-card">
       <div class="phi-uc-header">
         <span class="phi-uc-title">${title}</span>
@@ -304,7 +310,9 @@ function renderUseCases(): string {
       <div class="phi-uc-dims">${dims}</div>
       <div class="phi-uc-example"><code>${example}</code></div>
     </div>
-  `).join("");
+  `,
+    )
+    .join('');
 
   return `
     <div class="concept-block">

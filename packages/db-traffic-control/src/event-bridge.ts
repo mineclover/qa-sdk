@@ -14,7 +14,7 @@ export interface EventKeyCollector {
 }
 
 export interface EventBridgeIssue {
-  readonly severity: "warning";
+  readonly severity: 'warning';
   readonly eventKey: string;
   readonly message: string;
 }
@@ -35,7 +35,7 @@ export function validateQueryEventKeys(
   for (const ek of eventKeys) {
     if (!hasMapping(ek)) {
       issues.push({
-        severity: "warning",
+        severity: 'warning',
         eventKey: ek,
         message: `쿼리 event_key "${ek}" → event-catalog에 매핑 없음`,
       });
@@ -63,7 +63,7 @@ export function validateQueryTransitions(
 
     if (!defEvents) {
       issues.push({
-        severity: "warning",
+        severity: 'warning',
         eventKey: transitionId,
         message: `쿼리 transition "${transitionId}" → TransitionDef에 미등록`,
       });
@@ -74,7 +74,7 @@ export function validateQueryTransitions(
     for (const ek of queryEvents) {
       if (!defSet.has(ek)) {
         issues.push({
-          severity: "warning",
+          severity: 'warning',
           eventKey: ek,
           message: `쿼리 transition "${transitionId}" 내 event_key "${ek}" → TransitionDef.events에 없음`,
         });

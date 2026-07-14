@@ -12,14 +12,10 @@
  * 합성 레이어에서 별도 cascade 불필요.
  */
 
-import {
-  subtractRanges,
-  mergeRanges,
-  positionsToConstraint,
-} from "weighted-index";
-import type { AddressState, DimStateSpec } from "./invalid-ranges.js";
-import type { AddressStateCacheRecord } from "./invalid-range-store.js";
-import type { ResolveResult, PatternRule, ConflictStrategy } from "./policy-resolver.js";
+import { subtractRanges, mergeRanges, positionsToConstraint } from 'weighted-index';
+import type { AddressState, DimStateSpec } from './invalid-ranges.js';
+import type { AddressStateCacheRecord } from './invalid-range-store.js';
+import type { ResolveResult, PatternRule, ConflictStrategy } from './policy-resolver.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,7 +44,7 @@ export interface GateAwareResult<T> {
 export function gateFilterRanges(
   ranges: readonly [number, number][],
   gateRecord: AddressStateCacheRecord | null,
-  mode: "encodable" | "decodable" | "active",
+  mode: 'encodable' | 'decodable' | 'active',
 ): [number, number][] {
   if (!gateRecord) return ranges as [number, number][];
 
@@ -56,19 +52,19 @@ export function gateFilterRanges(
 
   let blocked: [number, number][];
   switch (mode) {
-    case "encodable":
+    case 'encodable':
       blocked = mergeRanges([
         ...(reservedRanges as [number, number][]),
         ...(inactiveRanges as [number, number][]),
       ]);
       break;
-    case "decodable":
+    case 'decodable':
       blocked = mergeRanges([
         ...(reservedRanges as [number, number][]),
         ...(openRanges as [number, number][]),
       ]);
       break;
-    case "active":
+    case 'active':
       blocked = mergeRanges([
         ...(reservedRanges as [number, number][]),
         ...(inactiveRanges as [number, number][]),
@@ -106,7 +102,7 @@ export function gateAwareResolve<T>(
     const { reservedRanges, inactiveRanges, openRanges } = gateRecord;
     gateState = classifyFromRanges(address, reservedRanges, inactiveRanges, openRanges);
     // gate 차단 = active가 아닌 모든 상태
-    gateBlocked = gateState !== "active";
+    gateBlocked = gateState !== 'active';
   }
 
   return {
@@ -134,7 +130,7 @@ export function gateAwareResolve<T>(
 export function buildDenialSpecs(
   deniedPositions: readonly number[],
   dimIndex: number,
-  state: Exclude<AddressState, "active"> = "reserved",
+  state: Exclude<AddressState, 'active'> = 'reserved',
 ): DimStateSpec[] {
   if (deniedPositions.length === 0) return [];
 
@@ -160,17 +156,14 @@ function classifyFromRanges(
   const encodeBlocked = inReserved || inInactive;
   const decodeBlocked = inReserved || inOpen;
 
-  if (encodeBlocked && decodeBlocked) return "reserved";
-  if (encodeBlocked) return "inactive";
-  if (decodeBlocked) return "open";
-  return "active";
+  if (encodeBlocked && decodeBlocked) return 'reserved';
+  if (encodeBlocked) return 'inactive';
+  if (decodeBlocked) return 'open';
+  return 'active';
 }
 
 /** 정렬된 구간에서 주소 포함 여부 (binary search). */
-function containsInRanges(
-  address: number,
-  ranges: readonly [number, number][],
-): boolean {
+function containsInRanges(address: number, ranges: readonly [number, number][]): boolean {
   let lo = 0;
   let hi = ranges.length - 1;
   while (lo <= hi) {

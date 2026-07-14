@@ -10,10 +10,6 @@ export type {
   DocHistoryRecord,
   SliceIntentRecord,
   ConsumptionSnapshot,
-} from "../core/types.js";
+} from '../core/types.js';
 
-export type {
-  DocStore,
-  IntentStore,
-  ConsumptionStore,
-} from "../core/interfaces.js";
+export type { DocStore, IntentStore, ConsumptionStore } from '../core/interfaces.js';

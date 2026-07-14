@@ -1,6 +1,6 @@
 // @def.doc definition-service
 
-import { Injectable, Inject } from "@nestjs/common";
+import { Injectable, Inject } from '@nestjs/common';
 import {
   analyzeImpact,
   computeEffectiveConcerns,
@@ -17,25 +17,25 @@ import {
   type DefinitionEntry,
   type DefinitionLink,
   type ValidationIssue,
-} from "definition-catalog";
-import { DocsService } from "../docs/docs.service.js";
-import type { DocRecord } from "../../core/types.js";
+} from 'definition-catalog';
+import { DocsService } from '../docs/docs.service.js';
+import type { DocRecord } from '../../core/types.js';
 
 /** DocRecord → DefinitionEntry 변환 (콜백 호환) */
 function toEntry(doc: DocRecord): DefinitionEntry {
   return {
     id: doc.docId,
     title: doc.docId,
-    ...(doc.tier ? { tier: doc.tier as DefinitionEntry["tier"] } : {}),
-    scope: doc.scope as DefinitionEntry["scope"],
-    aspect: doc.aspect as DefinitionEntry["aspect"],
-    depth: doc.depth as DefinitionEntry["depth"],
-    lifecycle: doc.lifecycle as DefinitionEntry["lifecycle"],
-    layer: doc.layer as DefinitionEntry["layer"],
+    ...(doc.tier ? { tier: doc.tier as DefinitionEntry['tier'] } : {}),
+    scope: doc.scope as DefinitionEntry['scope'],
+    aspect: doc.aspect as DefinitionEntry['aspect'],
+    depth: doc.depth as DefinitionEntry['depth'],
+    lifecycle: doc.lifecycle as DefinitionEntry['lifecycle'],
+    layer: doc.layer as DefinitionEntry['layer'],
     tags: doc.tags,
     serviceId: doc.svc,
     address: 0,
-    serialized: doc.address ?? "",
+    serialized: doc.address ?? '',
     createdAt: doc.syncedAt,
     updatedAt: doc.syncedAt,
   };
@@ -52,34 +52,34 @@ export class GraphService {
   }
 
   /** DB edge 테이블에서 링크 조회 */
-  private getLinks(id: string, direction: "outgoing" | "incoming"): readonly DefinitionLink[] {
-    if (direction === "outgoing") {
-      return this.docs.getOutgoingLinks(id).map(l => ({
+  private getLinks(id: string, direction: 'outgoing' | 'incoming'): readonly DefinitionLink[] {
+    if (direction === 'outgoing') {
+      return this.docs.getOutgoingLinks(id).map((l) => ({
         sourceId: id,
         targetId: l.target,
-        linkType: l.type as DefinitionLink["linkType"],
+        linkType: l.type as DefinitionLink['linkType'],
         address: 0,
-        serialized: "",
+        serialized: '',
       }));
     }
-    return this.docs.getIncomingLinks(id).map(l => ({
+    return this.docs.getIncomingLinks(id).map((l) => ({
       sourceId: l.source,
       targetId: id,
-      linkType: l.type as DefinitionLink["linkType"],
+      linkType: l.type as DefinitionLink['linkType'],
       address: 0,
-      serialized: "",
+      serialized: '',
     }));
   }
 
   private resolveBoundaryAnchor(doc: DocRecord): DocRecord {
-    if (doc.level === "group" || doc.level === "module") return doc;
+    if (doc.level === 'group' || doc.level === 'module') return doc;
 
     let current = doc;
     const visited = new Set<string>([doc.docId]);
     while (true) {
       const parent = this.docs.getParent(current.docId);
       if (!parent || visited.has(parent.docId)) return current;
-      if (parent.level === "group" || parent.level === "module") return parent;
+      if (parent.level === 'group' || parent.level === 'module') return parent;
       visited.add(parent.docId);
       current = parent;
     }
@@ -114,8 +114,8 @@ export class GraphService {
 
   boundaryContext(
     docId: string,
-    level: "purpose" | "overview" = "overview",
-    mode: "direct" | "transitive" = "transitive",
+    level: 'purpose' | 'overview' = 'overview',
+    mode: 'direct' | 'transitive' = 'transitive',
   ): DefBoundaryContextResult | null {
     if (!this.docs.get(docId)) return null;
 
@@ -154,7 +154,7 @@ export class GraphService {
           docId: item.id,
           ...(item.address ? { address: item.address } : {}),
           via: item.via,
-          path: item.path.join(" → "),
+          path: item.path.join(' → '),
           direction: item.direction,
           distance: item.depth,
           ...(item.layer ? { layer: item.layer } : {}),
@@ -170,8 +170,8 @@ export class GraphService {
 
   boundaryContextByAddress(
     address: string,
-    level: "purpose" | "overview" = "overview",
-    mode: "direct" | "transitive" = "transitive",
+    level: 'purpose' | 'overview' = 'overview',
+    mode: 'direct' | 'transitive' = 'transitive',
   ): DefBoundaryContextResult | null {
     const doc = this.docs.getByAddress(address);
     if (!doc) return null;
@@ -181,7 +181,7 @@ export class GraphService {
   /** 그래프 검증 — 깨진 링크, 순환 참조, 고아 문서 (DB 기반) */
   validate(): { issues: ValidationIssue[]; errors: number; warnings: number; passed: boolean } {
     const allDocs = this.docs.list();
-    const allIds = new Set(allDocs.map(d => d.docId));
+    const allIds = new Set(allDocs.map((d) => d.docId));
     const issues: ValidationIssue[] = [];
     const registry = new MemoryDefinitionRegistry();
 
@@ -194,41 +194,41 @@ export class GraphService {
       for (const link of outgoing) {
         if (!allIds.has(link.target)) {
           issues.push({
-            severity: "error",
-            type: "broken-link",
+            severity: 'error',
+            type: 'broken-link',
             docId: doc.docId,
             message: `target "${link.target}" (${link.type})가 존재하지 않음`,
           });
           continue;
         }
-        registry.link(doc.docId, link.target, link.type as DefinitionLink["linkType"]);
+        registry.link(doc.docId, link.target, link.type as DefinitionLink['linkType']);
       }
     }
 
     issues.push(...validateGraph(registry).issues);
 
     const docsById = new Map(allDocs.map((doc) => [doc.docId, doc]));
-    const refsByPath = new Map<string, ReturnType<DocsService["listCodeReferences"]>>();
+    const refsByPath = new Map<string, ReturnType<DocsService['listCodeReferences']>>();
     for (const ref of this.docs.listCodeReferences()) {
       const doc = docsById.get(ref.docId);
       if (!doc) {
         issues.push({
-          severity: "error",
-          type: "broken-code-reference",
+          severity: 'error',
+          type: 'broken-code-reference',
           docId: ref.docId,
           message: `code reference "${ref.codePath}"가 존재하지 않는 문서 "${ref.docId}"를 참조`,
         });
         continue;
       }
       const isBoundaryEligible =
-        doc.tier === "system" ||
-        doc.tier === "layout" ||
-        doc.level === "group" ||
-        doc.level === "module";
-      if (ref.relationType === "boundary" && !isBoundaryEligible) {
+        doc.tier === 'system' ||
+        doc.tier === 'layout' ||
+        doc.level === 'group' ||
+        doc.level === 'module';
+      if (ref.relationType === 'boundary' && !isBoundaryEligible) {
         issues.push({
-          severity: "error",
-          type: "invalid-code-boundary",
+          severity: 'error',
+          type: 'invalid-code-boundary',
           docId: ref.docId,
           message: `boundary reference "${ref.codePath}"는 tier:system/layout 또는 legacy contains parent 문서를 가리켜야 함`,
         });
@@ -244,18 +244,20 @@ export class GraphService {
         codePath: pathRefs[0]!.codePath,
         symbol: pathRefs[0]!.symbol,
       });
-      const boundaryIds = [...new Set(
-        pathRefs
-          .filter((ref) => ref.relationType === "boundary" && docsById.has(ref.docId))
-          .map((ref) => ref.docId),
-      )];
+      const boundaryIds = [
+        ...new Set(
+          pathRefs
+            .filter((ref) => ref.relationType === 'boundary' && docsById.has(ref.docId))
+            .map((ref) => ref.docId),
+        ),
+      ];
 
       if (boundaryIds.length > 1) {
         issues.push({
-          severity: "error",
-          type: "ambiguous-code-boundary",
+          severity: 'error',
+          type: 'ambiguous-code-boundary',
           docId: boundaryIds[0]!,
-          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(", ")}`,
+          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(', ')}`,
         });
         continue;
       }
@@ -269,8 +271,8 @@ export class GraphService {
         inferredAnchorIds.add(anchor.docId);
         if (explicitBoundaryId && anchor.docId !== explicitBoundaryId) {
           issues.push({
-            severity: "error",
-            type: "inconsistent-code-boundary",
+            severity: 'error',
+            type: 'inconsistent-code-boundary',
             docId: ref.docId,
             message: `code reference "${targetLabel}"의 explicit boundary "${explicitBoundaryId}"와 문서 "${ref.docId}"의 anchor "${anchor.docId}"가 다름`,
           });
@@ -279,16 +281,16 @@ export class GraphService {
 
       if (!explicitBoundaryId && inferredAnchorIds.size > 1) {
         issues.push({
-          severity: "error",
-          type: "ambiguous-code-boundary",
+          severity: 'error',
+          type: 'ambiguous-code-boundary',
           docId: pathRefs[0]!.docId,
-          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(", ")}`,
+          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(', ')}`,
         });
       }
     }
 
-    const errors = issues.filter(i => i.severity === "error").length;
-    const warnings = issues.filter(i => i.severity === "warning").length;
+    const errors = issues.filter((i) => i.severity === 'error').length;
+    const warnings = issues.filter((i) => i.severity === 'warning').length;
     return { issues, errors, warnings, passed: errors === 0 };
   }
 }

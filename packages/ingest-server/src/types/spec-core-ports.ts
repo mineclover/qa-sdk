@@ -31,7 +31,10 @@ export interface GraphRegistryPort {
 
 export interface DkgSqliteStorePort {
   loadGraph(): GraphRegistryPort;
-  saveGraph(graph: GraphRegistryPort, source: string): { nodesWritten: number; edgesWritten: number };
+  saveGraph(
+    graph: GraphRegistryPort,
+    source: string,
+  ): { nodesWritten: number; edgesWritten: number };
   saveUsageSnapshotWithObservations(
     usage: unknown,
     observations: readonly unknown[],

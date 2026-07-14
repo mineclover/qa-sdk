@@ -6,32 +6,32 @@
 // promote 한다. simulations 환경 전용 (architecture-schematics 의 promote-openapi
 // 는 json 만 지원).
 
-import { existsSync, copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const REPO_ROOT = resolve(__dirname, "..");
-const DOMAINS_ROOT = resolve(REPO_ROOT, "contracts/openapi/src/domains");
+const REPO_ROOT = resolve(__dirname, '..');
+const DOMAINS_ROOT = resolve(REPO_ROOT, 'contracts/openapi/src/domains');
 
 function printUsage() {
   process.stdout.write(
     [
-      "promote-openapi — promote a slice OpenAPI fragment into contracts/openapi/src/domains/<slice>/spec.yaml",
-      "",
-      "Usage:",
-      "  node scripts/promote-openapi.mjs --fragment <path> --slice <name> [--force] [--dry-run]",
-      "  node scripts/promote-openapi.mjs --help",
-      "",
-      "Options:",
-      "  --fragment <path>   Path to the source fragment (.yaml/.yml). Required.",
-      "  --slice <name>      Slice name; output goes to contracts/openapi/src/domains/<slice>/spec.yaml. Required.",
-      "  --force             Overwrite an existing spec.yaml. Default: refuse.",
-      "  --dry-run           Print intended action without writing.",
-      "  --help              Show this help.",
-      "",
-    ].join("\n"),
+      'promote-openapi — promote a slice OpenAPI fragment into contracts/openapi/src/domains/<slice>/spec.yaml',
+      '',
+      'Usage:',
+      '  node scripts/promote-openapi.mjs --fragment <path> --slice <name> [--force] [--dry-run]',
+      '  node scripts/promote-openapi.mjs --help',
+      '',
+      'Options:',
+      '  --fragment <path>   Path to the source fragment (.yaml/.yml). Required.',
+      '  --slice <name>      Slice name; output goes to contracts/openapi/src/domains/<slice>/spec.yaml. Required.',
+      '  --force             Overwrite an existing spec.yaml. Default: refuse.',
+      '  --dry-run           Print intended action without writing.',
+      '  --help              Show this help.',
+      '',
+    ].join('\n'),
   );
 }
 
@@ -40,25 +40,25 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
-      case "--help":
-      case "-h":
+      case '--help':
+      case '-h':
         args.help = true;
         break;
-      case "--force":
+      case '--force':
         args.force = true;
         break;
-      case "--dry-run":
+      case '--dry-run':
         args.dryRun = true;
         break;
-      case "--fragment":
+      case '--fragment':
         args.fragment = argv[++i];
         break;
-      case "--slice":
+      case '--slice':
         args.slice = argv[++i];
         break;
       default:
-        if (arg.startsWith("--fragment=")) args.fragment = arg.slice("--fragment=".length);
-        else if (arg.startsWith("--slice=")) args.slice = arg.slice("--slice=".length);
+        if (arg.startsWith('--fragment=')) args.fragment = arg.slice('--fragment='.length);
+        else if (arg.startsWith('--slice=')) args.slice = arg.slice('--slice='.length);
         else throw new Error(`unknown argument: ${arg}`);
     }
   }
@@ -71,7 +71,7 @@ function isValidSliceName(name) {
 
 async function loadYamlIfAvailable() {
   try {
-    const mod = await import("yaml");
+    const mod = await import('yaml');
     return mod;
   } catch {
     return null;
@@ -94,7 +94,7 @@ async function main() {
   }
 
   if (!args.fragment || !args.slice) {
-    process.stderr.write("error: --fragment and --slice are both required\n\n");
+    process.stderr.write('error: --fragment and --slice are both required\n\n');
     printUsage();
     process.exit(2);
   }
@@ -106,20 +106,21 @@ async function main() {
     process.exit(2);
   }
 
-  const fragmentPath = isAbsolute(args.fragment) ? args.fragment : resolve(process.cwd(), args.fragment);
+  const fragmentPath = isAbsolute(args.fragment)
+    ? args.fragment
+    : resolve(process.cwd(), args.fragment);
   if (!existsSync(fragmentPath)) {
     process.stderr.write(`error: fragment not found: ${fragmentPath}\n`);
     process.exit(2);
   }
 
   const targetDir = join(DOMAINS_ROOT, args.slice);
-  const targetPath = join(targetDir, "spec.yaml");
+  const targetPath = join(targetDir, 'spec.yaml');
   const targetExists = existsSync(targetPath);
 
   if (targetExists && !args.force && !args.dryRun) {
     process.stderr.write(
-      `error: target already exists: ${targetPath}\n` +
-        "       pass --force to overwrite\n",
+      `error: target already exists: ${targetPath}\n` + '       pass --force to overwrite\n',
     );
     process.exit(1);
   }
@@ -128,8 +129,8 @@ async function main() {
   const yaml = await loadYamlIfAvailable();
   if (yaml) {
     try {
-      const parsed = yaml.parse(readFileSync(fragmentPath, "utf-8"));
-      if (parsed === null || typeof parsed !== "object") {
+      const parsed = yaml.parse(readFileSync(fragmentPath, 'utf-8'));
+      if (parsed === null || typeof parsed !== 'object') {
         process.stderr.write(`error: fragment does not parse as a YAML object\n`);
         process.exit(1);
       }
@@ -150,8 +151,8 @@ async function main() {
     }
     process.stdout.write(
       `[dry-run] would promote ${fragmentPath} → ${targetPath}` +
-        (args.force ? " (force)" : "") +
-        "\n",
+        (args.force ? ' (force)' : '') +
+        '\n',
     );
     process.exit(0);
   }
@@ -173,7 +174,7 @@ async function main() {
 
 main().catch((err) => {
   process.stderr.write(
-    `error: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`,
+    `error: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n`,
   );
   process.exit(1);
 });

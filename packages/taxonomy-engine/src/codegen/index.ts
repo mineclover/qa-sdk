@@ -1,14 +1,14 @@
-import { createHash } from "node:crypto";
-import type { TaxonomyIR } from "../schema/ir.js";
-import type { Diagnostic } from "../schema/diagnostic.js";
-import { validate } from "../validate/index.js";
+import { createHash } from 'node:crypto';
+import type { TaxonomyIR } from '../schema/ir.js';
+import type { Diagnostic } from '../schema/diagnostic.js';
+import { validate } from '../validate/index.js';
 import {
   renderAxes,
   renderAddresses,
   renderRegistry,
   renderRelations,
   renderMeta,
-} from "./render.js";
+} from './render.js';
 
 export type CodegenOptions = {
   taxonomyName?: string;
@@ -23,19 +23,14 @@ export type CodegenResult = {
 
 export class CodegenValidationError extends Error {
   constructor(public diagnostics: Diagnostic[]) {
-    super(
-      `codegen 거부: validate errors=${diagnostics.length} (spec §7.3 — errors=0 필수)`
-    );
-    this.name = "CodegenValidationError";
+    super(`codegen 거부: validate errors=${diagnostics.length} (spec §7.3 — errors=0 필수)`);
+    this.name = 'CodegenValidationError';
   }
 }
 
-export function codegen(
-  ir: TaxonomyIR,
-  opts: CodegenOptions = {}
-): CodegenResult {
+export function codegen(ir: TaxonomyIR, opts: CodegenOptions = {}): CodegenResult {
   if (!opts.skipValidate) {
-    const errs = validate(ir).filter((d) => d.severity === "error");
+    const errs = validate(ir).filter((d) => d.severity === 'error');
     if (errs.length > 0) {
       throw new CodegenValidationError(errs);
     }
@@ -45,25 +40,25 @@ export function codegen(
   const generatedAt = opts.generatedAt ?? `derived-from-${ir.contentHash}`;
 
   const filesNoMeta: Record<string, string> = {
-    "axes.ts": renderAxes(ir),
-    "addresses.ts": renderAddresses(ir),
-    "registry.ts": renderRegistry(ir),
-    "relations.ts": renderRelations(ir),
+    'axes.ts': renderAxes(ir),
+    'addresses.ts': renderAddresses(ir),
+    'registry.ts': renderRegistry(ir),
+    'relations.ts': renderRelations(ir),
   };
 
-  const contentHash = createHash("sha256")
+  const contentHash = createHash('sha256')
     .update(
       Object.entries(filesNoMeta)
         .sort()
         .map(([k, v]) => `${k}\0${v}`)
-        .join("\0")
+        .join('\0'),
     )
-    .digest("hex")
+    .digest('hex')
     .slice(0, 16);
 
   const files = {
     ...filesNoMeta,
-    "meta.ts": renderMeta(ir, contentHash, generatedAt),
+    'meta.ts': renderMeta(ir, contentHash, generatedAt),
   };
 
   return { files, contentHash };

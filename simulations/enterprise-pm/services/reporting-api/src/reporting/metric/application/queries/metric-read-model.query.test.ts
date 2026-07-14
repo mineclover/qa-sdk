@@ -1,10 +1,10 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import { describe, expect, it } from "vitest";
-import { MetricReadModelQuery } from "./metric-read-model.query.js";
-import type { DailyMetricReadModel } from "../../domain/metric.types.js";
-import type { MetricId, MetricKey } from "../../domain/metric.ids.js";
+import { describe, expect, it } from 'vitest';
+import { MetricReadModelQuery } from './metric-read-model.query.js';
+import type { DailyMetricReadModel } from '../../domain/metric.types.js';
+import type { MetricId, MetricKey } from '../../domain/metric.ids.js';
 
 class StubQuery extends MetricReadModelQuery {
   constructor(private readonly seed: DailyMetricReadModel[]) {
@@ -27,29 +27,29 @@ class StubQuery extends MetricReadModelQuery {
   }
 }
 
-describe("MetricReadModelQuery (port contract)", () => {
+describe('MetricReadModelQuery (port contract)', () => {
   const sample: DailyMetricReadModel = {
-    id: "m-1" as MetricId,
-    metricKey: "k.density" as MetricKey,
-    date: "2026-04-22",
+    id: 'm-1' as MetricId,
+    metricKey: 'k.density' as MetricKey,
+    date: '2026-04-22',
     value: 0.5,
-    dimensions: "{}",
-    computedAt: "2026-04-22T00:00:00.000Z",
+    dimensions: '{}',
+    computedAt: '2026-04-22T00:00:00.000Z',
   };
 
-  it("findOne returns matching entry", async () => {
+  it('findOne returns matching entry', async () => {
     const q = new StubQuery([sample]);
-    expect(await q.findOne("k.density", "2026-04-22")).toEqual(sample);
+    expect(await q.findOne('k.density', '2026-04-22')).toEqual(sample);
   });
 
-  it("listByKey filters by range", async () => {
+  it('listByKey filters by range', async () => {
     const q = new StubQuery([sample]);
-    expect((await q.listByKey("k.density", "2026-04-21", "2026-04-23")).length).toBe(1);
-    expect((await q.listByKey("k.density", "2026-04-23", "2026-04-24")).length).toBe(0);
+    expect((await q.listByKey('k.density', '2026-04-21', '2026-04-23')).length).toBe(1);
+    expect((await q.listByKey('k.density', '2026-04-23', '2026-04-24')).length).toBe(0);
   });
 
-  it("listKeys distinct", async () => {
-    const q = new StubQuery([sample, { ...sample, date: "2026-04-23" }]);
-    expect(await q.listKeys()).toEqual(["k.density"]);
+  it('listKeys distinct', async () => {
+    const q = new StubQuery([sample, { ...sample, date: '2026-04-23' }]);
+    expect(await q.listKeys()).toEqual(['k.density']);
   });
 });

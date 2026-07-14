@@ -1,11 +1,11 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   createArtifactEvidenceAdapter,
@@ -17,147 +17,147 @@ import {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
   type ArtifactEvidenceCollectionQuery,
-} from "./index.js";
+} from './index.js';
 import {
   buildActivationEvidenceRegistryRecord,
   type ActivationEvidenceRegistryActivationResult,
-} from "../activation-evidence-registry.js";
+} from '../activation-evidence-registry.js';
 
-describe("docs-control-plane envelope normalization", () => {
-  it("normalizes identifiers, paths, collection defaults, and raw source pointers", () => {
-    const metadata = { lifecycle: "approved" };
+describe('docs-control-plane envelope normalization', () => {
+  it('normalizes identifiers, paths, collection defaults, and raw source pointers', () => {
+    const metadata = { lifecycle: 'approved' };
 
     const envelope = normalizeDocumentEnvelope({
-      adapterId: " definition-docs ",
-      kind: " spec ",
-      stableId: " definition-addressing ",
-      familyId: " definition-catalog ",
-      path: "docs\\specs\\definition-catalog\\definition-addressing.spec.md",
+      adapterId: ' definition-docs ',
+      kind: ' spec ',
+      stableId: ' definition-addressing ',
+      familyId: ' definition-catalog ',
+      path: 'docs\\specs\\definition-catalog\\definition-addressing.spec.md',
       metadata,
       links: [
         {
-          type: " contains ",
-          targetId: " definition-taxonomy ",
-          sourceId: " definition-addressing ",
+          type: ' contains ',
+          targetId: ' definition-taxonomy ',
+          sourceId: ' definition-addressing ',
         },
       ],
       sources: [
         {
-          id: " frontmatter ",
-          path: "docs\\specs\\definition-catalog\\definition-addressing.spec.md",
+          id: ' frontmatter ',
+          path: 'docs\\specs\\definition-catalog\\definition-addressing.spec.md',
           rawSource: {
-            path: "docs\\specs\\definition-catalog\\definition-addressing.spec.md",
-            pointer: " /def ",
+            path: 'docs\\specs\\definition-catalog\\definition-addressing.spec.md',
+            pointer: ' /def ',
           },
         },
       ],
       sections: [
         {
-          id: " purpose ",
-          title: " Purpose ",
-          anchor: " ^purpose ",
-          content: "  keep source whitespace  ",
+          id: ' purpose ',
+          title: ' Purpose ',
+          anchor: ' ^purpose ',
+          content: '  keep source whitespace  ',
         },
       ],
       tasks: [
         {
-          id: " US-001 ",
-          title: " Define docs control-plane boundary ",
-          status: " open ",
-          evidenceIds: [" evidence-1 ", " "],
+          id: ' US-001 ',
+          title: ' Define docs control-plane boundary ',
+          status: ' open ',
+          evidenceIds: [' evidence-1 ', ' '],
         },
       ],
       evidence: [
         {
-          id: " evidence-1 ",
-          kind: " acceptance ",
-          summary: " module boundary exists ",
+          id: ' evidence-1 ',
+          kind: ' acceptance ',
+          summary: ' module boundary exists ',
           rawSource: {
-            path: ".ralph-tui\\progress.md",
+            path: '.ralph-tui\\progress.md',
           },
         },
       ],
       diagnostics: [
         {
-          code: " missing-section ",
-          severity: " warning ",
-          message: " section missing ",
+          code: ' missing-section ',
+          severity: ' warning ',
+          message: ' section missing ',
         },
       ],
       rawSource: {
-        path: "docs\\specs\\definition-catalog\\definition-addressing.spec.md",
-        sourceSchema: " definition-frontmatter ",
+        path: 'docs\\specs\\definition-catalog\\definition-addressing.spec.md',
+        sourceSchema: ' definition-frontmatter ',
       },
     });
 
     expect(envelope).toMatchObject({
-      adapterId: "definition-docs",
-      kind: "spec",
-      stableId: "definition-addressing",
-      familyId: "definition-catalog",
-      path: "docs/specs/definition-catalog/definition-addressing.spec.md",
+      adapterId: 'definition-docs',
+      kind: 'spec',
+      stableId: 'definition-addressing',
+      familyId: 'definition-catalog',
+      path: 'docs/specs/definition-catalog/definition-addressing.spec.md',
       rawSource: {
-        path: "docs/specs/definition-catalog/definition-addressing.spec.md",
-        sourceSchema: "definition-frontmatter",
+        path: 'docs/specs/definition-catalog/definition-addressing.spec.md',
+        sourceSchema: 'definition-frontmatter',
       },
     });
     expect(envelope.metadata).toEqual(metadata);
     expect(envelope.metadata).not.toBe(metadata);
     expect(envelope.links).toEqual([
       {
-        type: "contains",
-        sourceId: "definition-addressing",
-        targetId: "definition-taxonomy",
+        type: 'contains',
+        sourceId: 'definition-addressing',
+        targetId: 'definition-taxonomy',
         metadata: {},
       },
     ]);
     expect(envelope.sources[0]).toMatchObject({
-      id: "frontmatter",
-      path: "docs/specs/definition-catalog/definition-addressing.spec.md",
+      id: 'frontmatter',
+      path: 'docs/specs/definition-catalog/definition-addressing.spec.md',
       rawSource: {
-        path: "docs/specs/definition-catalog/definition-addressing.spec.md",
-        pointer: "/def",
+        path: 'docs/specs/definition-catalog/definition-addressing.spec.md',
+        pointer: '/def',
       },
       metadata: {},
     });
     expect(envelope.sections[0]).toMatchObject({
-      id: "purpose",
-      title: "Purpose",
-      anchor: "^purpose",
-      content: "  keep source whitespace  ",
+      id: 'purpose',
+      title: 'Purpose',
+      anchor: '^purpose',
+      content: '  keep source whitespace  ',
       metadata: {},
     });
     expect(envelope.tasks[0]).toMatchObject({
-      id: "US-001",
-      title: "Define docs control-plane boundary",
-      status: "open",
-      evidenceIds: ["evidence-1"],
+      id: 'US-001',
+      title: 'Define docs control-plane boundary',
+      status: 'open',
+      evidenceIds: ['evidence-1'],
       metadata: {},
     });
     expect(envelope.evidence[0]).toMatchObject({
-      id: "evidence-1",
-      kind: "acceptance",
-      summary: "module boundary exists",
+      id: 'evidence-1',
+      kind: 'acceptance',
+      summary: 'module boundary exists',
       rawSource: {
-        path: ".ralph-tui/progress.md",
+        path: '.ralph-tui/progress.md',
       },
       metadata: {},
     });
     expect(envelope.diagnostics[0]).toEqual({
-      code: "missing-section",
-      severity: "warning",
-      message: "section missing",
+      code: 'missing-section',
+      severity: 'warning',
+      message: 'section missing',
       metadata: {},
     });
   });
 
-  it("defaults optional collections to empty arrays and rejects missing stable identity", () => {
+  it('defaults optional collections to empty arrays and rejects missing stable identity', () => {
     const envelope = normalizeDocumentEnvelope({
-      adapterId: "prd",
-      kind: "prd",
-      stableId: "us-001",
-      path: "docs/prd.md",
-      rawSource: { path: "docs/prd.md" },
+      adapterId: 'prd',
+      kind: 'prd',
+      stableId: 'us-001',
+      path: 'docs/prd.md',
+      rawSource: { path: 'docs/prd.md' },
     });
 
     expect(envelope.links).toEqual([]);
@@ -169,34 +169,34 @@ describe("docs-control-plane envelope normalization", () => {
 
     expect(() =>
       normalizeDocumentEnvelope({
-        adapterId: "prd",
-        kind: "prd",
-        stableId: " ",
-        path: "docs/prd.md",
-        rawSource: { path: "docs/prd.md" },
+        adapterId: 'prd',
+        kind: 'prd',
+        stableId: ' ',
+        path: 'docs/prd.md',
+        rawSource: { path: 'docs/prd.md' },
       }),
-    ).toThrow("stableId");
+    ).toThrow('stableId');
   });
 });
 
-describe("docs-control-plane adapter capability declarations", () => {
-  it("declares adapters as read-only unless write or transform is explicitly enabled", async () => {
+describe('docs-control-plane adapter capability declarations', () => {
+  it('declares adapters as read-only unless write or transform is explicitly enabled', async () => {
     const adapter = defineDocumentAdapter({
-      id: " definition-docs ",
+      id: ' definition-docs ',
       listDocuments: async () => [],
       getDocument: async () => null,
     });
 
-    expect(adapter.id).toBe("definition-docs");
+    expect(adapter.id).toBe('definition-docs');
     expect(adapter.capabilities).toEqual({
       write: false,
       transform: false,
     });
     await expect(adapter.listDocuments()).resolves.toEqual([]);
-    await expect(adapter.getDocument("missing")).resolves.toBeNull();
+    await expect(adapter.getDocument('missing')).resolves.toBeNull();
   });
 
-  it("preserves explicit write and transform capability declarations", () => {
+  it('preserves explicit write and transform capability declarations', () => {
     expect(
       declareDocumentAdapterCapabilities({
         write: true,
@@ -208,7 +208,7 @@ describe("docs-control-plane adapter capability declarations", () => {
     });
 
     const adapter = defineDocumentAdapter({
-      id: "ralph-json",
+      id: 'ralph-json',
       capabilities: {
         write: true,
         transform: false,
@@ -224,13 +224,13 @@ describe("docs-control-plane adapter capability declarations", () => {
   });
 });
 
-describe("artifact-evidence adapter", () => {
+describe('artifact-evidence adapter', () => {
   async function withTempArtifactRegistry(
     callback: (rootDir: string) => Promise<void>,
   ): Promise<void> {
-    const rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-artifact-evidence-"));
+    const rootDir = await mkdtemp(join(tmpdir(), 'qa-sdk-artifact-evidence-'));
     try {
-      await mkdir(join(rootDir, "artifacts/activation"), { recursive: true });
+      await mkdir(join(rootDir, 'artifacts/activation'), { recursive: true });
       await callback(rootDir);
     } finally {
       await rm(rootDir, { recursive: true, force: true });
@@ -241,16 +241,16 @@ describe("artifact-evidence adapter", () => {
     overrides: Partial<ActivationEvidenceRegistryActivationResult> = {},
   ): ActivationEvidenceRegistryActivationResult {
     return {
-      status: "succeeded",
-      packId: "programming-artifact-ontology",
-      ontologyId: "workspace-programming-artifacts",
+      status: 'succeeded',
+      packId: 'programming-artifact-ontology',
+      ontologyId: 'workspace-programming-artifacts',
       namespaceSummary: {
-        namespace: "qa-sdk",
+        namespace: 'qa-sdk',
       },
       allocationSummaries: [
         {
-          activationStatus: "active",
-          syncStatus: "synced",
+          activationStatus: 'active',
+          syncStatus: 'synced',
         },
       ],
       smokeCheckSummary: {
@@ -267,18 +267,18 @@ describe("artifact-evidence adapter", () => {
     };
   }
 
-  it("collects activation-evidence registry records as document evidence", async () => {
+  it('collects activation-evidence registry records as document evidence', async () => {
     await withTempArtifactRegistry(async (rootDir) => {
-      const outputPath = join(rootDir, "artifacts/activation/programming-artifact-ontology.json");
-      const registryPath = join(rootDir, "artifacts/programming-artifacts.json");
+      const outputPath = join(rootDir, 'artifacts/activation/programming-artifact-ontology.json');
+      const registryPath = join(rootDir, 'artifacts/programming-artifacts.json');
       const record = buildActivationEvidenceRegistryRecord({
         activationResult: activationResult(),
         resolvedOutputPath: outputPath,
         commandContext: {
-          packId: "programming-artifact-ontology",
-          knownPackImportRef: "operational-ontology/programming-artifacts",
+          packId: 'programming-artifact-ontology',
+          knownPackImportRef: 'operational-ontology/programming-artifacts',
         },
-        generatedAt: "2026-04-15T00:00:00.000Z",
+        generatedAt: '2026-04-15T00:00:00.000Z',
       });
       await writeFile(
         registryPath,
@@ -287,178 +287,184 @@ describe("artifact-evidence adapter", () => {
 
       const adapter = createArtifactEvidenceAdapter({
         rootDir,
-        registryPaths: ["artifacts/programming-artifacts.json"],
+        registryPaths: ['artifacts/programming-artifacts.json'],
       });
       const [doc] = await adapter.listDocuments();
 
       expect(doc).toMatchObject({
-        adapterId: "artifact-evidence",
-        kind: "activation-evidence",
+        adapterId: 'artifact-evidence',
+        kind: 'activation-evidence',
         stableId:
-          "activation-evidence-programming-artifact-ontology-workspace-programming-artifacts",
-        familyId: "operational-ontology-registry-activation-cli",
+          'activation-evidence-programming-artifact-ontology-workspace-programming-artifacts',
+        familyId: 'operational-ontology-registry-activation-cli',
         rawSource: {
-          path: "artifacts/programming-artifacts.json",
-          pointer: "/artifacts/0",
-          sourceSchema: "programming-artifact-registry",
+          path: 'artifacts/programming-artifacts.json',
+          pointer: '/artifacts/0',
+          sourceSchema: 'programming-artifact-registry',
         },
       });
       expect(doc!.metadata).toMatchObject({
         artifactId:
-          "activation-evidence-programming-artifact-ontology-workspace-programming-artifacts",
-        artifactKind: "activation-evidence",
+          'activation-evidence-programming-artifact-ontology-workspace-programming-artifacts',
+        artifactKind: 'activation-evidence',
         artifactRef: outputPath,
         outputPath,
-        producedByRef:
-          "qa-sdk ontology registry activate-pack programming-artifact-ontology",
-        ownerDefinitionId: "operational-ontology-registry-activation-cli",
-        registryPath: "artifacts/programming-artifacts.json",
-        packId: "programming-artifact-ontology",
-        ontologyId: "workspace-programming-artifacts",
+        producedByRef: 'qa-sdk ontology registry activate-pack programming-artifact-ontology',
+        ownerDefinitionId: 'operational-ontology-registry-activation-cli',
+        registryPath: 'artifacts/programming-artifacts.json',
+        packId: 'programming-artifact-ontology',
+        ontologyId: 'workspace-programming-artifacts',
       });
       expect(doc!.metadata.derivedFromRefs).toEqual([
-        "programming-artifact-ontology",
-        "operational-ontology/programming-artifacts",
+        'programming-artifact-ontology',
+        'operational-ontology/programming-artifacts',
       ]);
       expect(doc!.metadata.verifiesRefs).toEqual([
-        "programming-artifact-ontology",
-        "workspace-programming-artifacts",
-        "operational-ontology-registry-allocation",
+        'programming-artifact-ontology',
+        'workspace-programming-artifacts',
+        'operational-ontology-registry-allocation',
       ]);
       expect(doc!.metadata.materializesOutputRefs).toEqual([
         outputPath,
-        "activation-result:programming-artifact-ontology:workspace-programming-artifacts",
+        'activation-result:programming-artifact-ontology:workspace-programming-artifacts',
       ]);
       expect(doc!.metadata.artifactMetadata).toMatchObject({
-        status: "succeeded",
-        packId: "programming-artifact-ontology",
+        status: 'succeeded',
+        packId: 'programming-artifact-ontology',
       });
       expect(doc!.evidence).toEqual([
         expect.objectContaining({
           id: record.artifactId,
-          kind: "activation-evidence",
+          kind: 'activation-evidence',
           rawSource: expect.objectContaining({
-            path: "artifacts/programming-artifacts.json",
-            pointer: "/artifacts/0",
+            path: 'artifacts/programming-artifacts.json',
+            pointer: '/artifacts/0',
           }),
         }),
       ]);
       expect(doc!.links.map((link) => link.type)).toEqual(
         expect.arrayContaining([
-          "produced_by",
-          "derived_from",
-          "verifies",
-          "owned_by_definition",
-          "materializes_output",
+          'produced_by',
+          'derived_from',
+          'verifies',
+          'owned_by_definition',
+          'materializes_output',
         ]),
       );
       expect(doc!.sources.map((source) => source.metadata.sourceKind)).toEqual([
-        "artifact_ref",
-        "output_path",
+        'artifact_ref',
+        'output_path',
       ]);
     });
   });
 
-  it("supports artifact evidence filters for document, ref, path, pack, and kind", async () => {
+  it('supports artifact evidence filters for document, ref, path, pack, and kind', async () => {
     await withTempArtifactRegistry(async (rootDir) => {
-      const outputPath = join(rootDir, "artifacts/activation/programming-artifact-ontology.json");
-      const registryPath = join(rootDir, "artifacts/programming-artifacts.json");
+      const outputPath = join(rootDir, 'artifacts/activation/programming-artifact-ontology.json');
+      const registryPath = join(rootDir, 'artifacts/programming-artifacts.json');
       const record = buildActivationEvidenceRegistryRecord({
         activationResult: activationResult(),
         resolvedOutputPath: outputPath,
         commandContext: {
-          packId: "programming-artifact-ontology",
-          knownPackImportRef: "operational-ontology/programming-artifacts",
+          packId: 'programming-artifact-ontology',
+          knownPackImportRef: 'operational-ontology/programming-artifacts',
         },
-        generatedAt: "2026-04-15T00:00:00.000Z",
+        generatedAt: '2026-04-15T00:00:00.000Z',
       });
       await writeFile(registryPath, JSON.stringify({ artifacts: [record] }, null, 2));
 
       const adapter = createArtifactEvidenceAdapter({
         rootDir,
-        registryPaths: ["artifacts/programming-artifacts.json"],
+        registryPaths: ['artifacts/programming-artifacts.json'],
       });
       const filters: ArtifactEvidenceCollectionQuery[] = [
-        { documentId: "operational-ontology-registry-activation-cli" },
+        { documentId: 'operational-ontology-registry-activation-cli' },
         { artifactRef: outputPath },
         { outputPath },
-        { packId: "programming-artifact-ontology" },
-        { kind: "activation-evidence" },
-        { artifactKind: "activation-evidence" },
+        { packId: 'programming-artifact-ontology' },
+        { kind: 'activation-evidence' },
+        { artifactKind: 'activation-evidence' },
       ];
 
       for (const filter of filters) {
         await expect(adapter.listDocuments(filter)).resolves.toHaveLength(1);
       }
       await expect(
-        adapter.listDocuments({ documentId: "unrelated-definition" } as ArtifactEvidenceCollectionQuery),
+        adapter.listDocuments({
+          documentId: 'unrelated-definition',
+        } as ArtifactEvidenceCollectionQuery),
       ).resolves.toHaveLength(0);
     });
   });
 
-  it("reads array-form registries without requiring an artifacts envelope", async () => {
+  it('reads array-form registries without requiring an artifacts envelope', async () => {
     await withTempArtifactRegistry(async (rootDir) => {
-      await writeFile(join(rootDir, "registry-array.json"), JSON.stringify([
-        {
-          artifactId: "build-cli",
-          kind: "build",
-          artifactRef: "packages/cli/dist/index.js",
-          outputPath: "packages/cli/dist/index.js",
-          producedByRef: "pnpm --filter @qa-sdk/cli build",
-          sourceRefs: ["packages/cli/src/index.ts"],
-          verificationRefs: ["packages/cli/src/index.test.ts"],
-          metadata: {
-            packId: "cli-build",
-          },
-        },
-      ], null, 2));
+      await writeFile(
+        join(rootDir, 'registry-array.json'),
+        JSON.stringify(
+          [
+            {
+              artifactId: 'build-cli',
+              kind: 'build',
+              artifactRef: 'packages/cli/dist/index.js',
+              outputPath: 'packages/cli/dist/index.js',
+              producedByRef: 'pnpm --filter @qa-sdk/cli build',
+              sourceRefs: ['packages/cli/src/index.ts'],
+              verificationRefs: ['packages/cli/src/index.test.ts'],
+              metadata: {
+                packId: 'cli-build',
+              },
+            },
+          ],
+          null,
+          2,
+        ),
+      );
 
       const adapter = createArtifactEvidenceAdapter({
         rootDir,
-        registryPaths: ["registry-array.json"],
+        registryPaths: ['registry-array.json'],
       });
-      const [doc] = await adapter.listDocuments({ kind: "build" });
+      const [doc] = await adapter.listDocuments({ kind: 'build' });
 
       expect(doc).toMatchObject({
-        kind: "build",
-        stableId: "build-cli",
-        path: "packages/cli/dist/index.js",
+        kind: 'build',
+        stableId: 'build-cli',
+        path: 'packages/cli/dist/index.js',
         rawSource: {
-          path: "registry-array.json",
-          pointer: "/0",
+          path: 'registry-array.json',
+          pointer: '/0',
         },
       });
-      expect(doc!.metadata.sourceRefs).toEqual(["packages/cli/src/index.ts"]);
-      expect(doc!.metadata.verificationRefs).toEqual([
-        "packages/cli/src/index.test.ts",
-      ]);
+      expect(doc!.metadata.sourceRefs).toEqual(['packages/cli/src/index.ts']);
+      expect(doc!.metadata.verificationRefs).toEqual(['packages/cli/src/index.test.ts']);
       expect(doc!.sources.map((source) => source.id)).toEqual([
-        "artifact-ref",
-        "output-path",
-        "source-ref:1",
-        "verification-ref:1",
+        'artifact-ref',
+        'output-path',
+        'source-ref:1',
+        'verification-ref:1',
       ]);
     });
   });
 
-  it("does not surface missing registry warnings unless explicitly requested", async () => {
+  it('does not surface missing registry warnings unless explicitly requested', async () => {
     await withTempArtifactRegistry(async (rootDir) => {
       const silentAdapter = createArtifactEvidenceAdapter({ rootDir });
       await expect(silentAdapter.listDocuments()).resolves.toEqual([]);
 
       const warningAdapter = createArtifactEvidenceAdapter({
         rootDir,
-        registryPaths: ["artifacts/programming-artifacts.json"],
+        registryPaths: ['artifacts/programming-artifacts.json'],
         warnOnMissing: true,
       });
       const [doc] = await warningAdapter.listDocuments();
 
       expect(doc).toMatchObject({
-        kind: "artifact-evidence-source",
+        kind: 'artifact-evidence-source',
         diagnostics: [
           expect.objectContaining({
-            code: "artifact-evidence-source-missing",
-            severity: "warning",
+            code: 'artifact-evidence-source-missing',
+            severity: 'warning',
           }),
         ],
       });
@@ -466,22 +472,22 @@ describe("artifact-evidence adapter", () => {
   });
 });
 
-describe("definition-markdown adapter", () => {
-  async function withTempDocs(
-    callback: (rootDir: string) => Promise<void>,
-  ): Promise<void> {
-    const rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-definition-markdown-"));
+describe('definition-markdown adapter', () => {
+  async function withTempDocs(callback: (rootDir: string) => Promise<void>): Promise<void> {
+    const rootDir = await mkdtemp(join(tmpdir(), 'qa-sdk-definition-markdown-'));
     try {
-      await mkdir(join(rootDir, "docs/specs/checkout"), { recursive: true });
+      await mkdir(join(rootDir, 'docs/specs/checkout'), { recursive: true });
       await callback(rootDir);
     } finally {
       await rm(rootDir, { recursive: true, force: true });
     }
   }
 
-  it("collects definition frontmatter, sources, sections, links, and source path", async () => {
+  it('collects definition frontmatter, sources, sections, links, and source path', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout-flow.spec.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout-flow.spec.md'),
+        `---
 def:
   id: checkout-flow
   type: knowledge
@@ -512,9 +518,12 @@ Coordinate checkout decisions.
 
 - Entry validates the cart.
 - Step records payment handoff.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout-step.spec.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout-step.spec.md'),
+        `---
 def:
   id: checkout-step
   level: leaf
@@ -528,74 +537,77 @@ def:
 ## 목적 ^purpose
 
 Define one checkout step.
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const docs = await adapter.listDocuments();
-      const doc = docs.find((item) => item.metadata.defId === "checkout-flow");
+      const doc = docs.find((item) => item.metadata.defId === 'checkout-flow');
 
       expect(doc).toBeDefined();
       expect(doc).toMatchObject({
-        adapterId: "definition-markdown",
-        kind: "spec",
-        stableId: "checkout-flow",
-        familyId: "docs/specs/checkout/checkout-flow",
-        path: "docs/specs/checkout/checkout-flow.spec.md",
+        adapterId: 'definition-markdown',
+        kind: 'spec',
+        stableId: 'checkout-flow',
+        familyId: 'docs/specs/checkout/checkout-flow',
+        path: 'docs/specs/checkout/checkout-flow.spec.md',
         rawSource: {
-          path: "docs/specs/checkout/checkout-flow.spec.md",
-          sourceSchema: "definition-frontmatter",
+          path: 'docs/specs/checkout/checkout-flow.spec.md',
+          sourceSchema: 'definition-frontmatter',
         },
       });
       expect(doc!.metadata).toMatchObject({
-        defId: "checkout-flow",
-        title: "Checkout Flow",
-        type: "knowledge",
-        knowledgeKind: "guide",
-        tier: "system",
-        level: "module",
-        scope: "flow",
-        aspect: "process_flow",
-        depth: "overview",
-        lifecycle: "approved",
-        layer: "domain",
-        tags: ["testing", "generated"],
-        svc: "checkout-service",
-        sourcePath: "docs/specs/checkout/checkout-flow.spec.md",
-        purpose: "Coordinate checkout decisions.",
+        defId: 'checkout-flow',
+        title: 'Checkout Flow',
+        type: 'knowledge',
+        knowledgeKind: 'guide',
+        tier: 'system',
+        level: 'module',
+        scope: 'flow',
+        aspect: 'process_flow',
+        depth: 'overview',
+        lifecycle: 'approved',
+        layer: 'domain',
+        tags: ['testing', 'generated'],
+        svc: 'checkout-service',
+        sourcePath: 'docs/specs/checkout/checkout-flow.spec.md',
+        purpose: 'Coordinate checkout decisions.',
       });
-      expect(doc!.metadata.overview).toContain("Entry validates the cart");
+      expect(doc!.metadata.overview).toContain('Entry validates the cart');
       expect(doc!.links).toEqual([
         {
-          sourceId: "checkout-flow",
-          targetId: "checkout-step",
-          type: "contains",
+          sourceId: 'checkout-flow',
+          targetId: 'checkout-step',
+          type: 'contains',
           metadata: {},
         },
       ]);
       expect(doc!.sources).toHaveLength(2);
       expect(doc!.sources[0]).toMatchObject({
-        id: "source:1",
-        path: "packages/checkout/src/flow.ts",
-        label: "CheckoutFlow",
+        id: 'source:1',
+        path: 'packages/checkout/src/flow.ts',
+        label: 'CheckoutFlow',
         metadata: {
-          value: "packages/checkout/src/flow.ts:CheckoutFlow",
-          sourceKind: "doc_frontmatter",
-          symbol: "CheckoutFlow",
+          value: 'packages/checkout/src/flow.ts:CheckoutFlow',
+          sourceKind: 'doc_frontmatter',
+          symbol: 'CheckoutFlow',
         },
       });
       expect(doc!.sources[1]).toMatchObject({
-        id: "source:2",
-        path: "packages/checkout/src/steps.ts",
+        id: 'source:2',
+        path: 'packages/checkout/src/steps.ts',
       });
-      expect(doc!.sections.map((section) => section.id)).toEqual(["purpose", "overview"]);
-      expect(doc!.sections[0].content).toBe("Coordinate checkout decisions.");
-      expect(doc!.sections[1].content).toContain("Step records payment handoff.");
+      expect(doc!.sections.map((section) => section.id)).toEqual(['purpose', 'overview']);
+      expect(doc!.sections[0].content).toBe('Coordinate checkout decisions.');
+      expect(doc!.sections[1].content).toContain('Step records payment handoff.');
     });
   });
 
-  it("extracts constraint and scenario-matrix sections with source/evidence refs", async () => {
+  it('extracts constraint and scenario-matrix sections with source/evidence refs', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout-constraints.spec.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout-constraints.spec.md'),
+        `---
 def:
   id: checkout-constraints
   level: leaf
@@ -619,42 +631,45 @@ Guard checkout completion proof boundaries.
 | scenario | evidence | source |
 |----------|----------|--------|
 | checkout rule | \`E-CHECKOUT-SMOKE\` | \`packages/checkout/src/checkout.test.ts\` |
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const docs = await adapter.listDocuments();
-      const doc = docs.find((item) => item.metadata.defId === "checkout-constraints");
+      const doc = docs.find((item) => item.metadata.defId === 'checkout-constraints');
 
       expect(doc).toBeDefined();
       expect(doc!.sections.map((section) => section.id)).toEqual([
-        "purpose",
-        "constraint",
-        "scenario-matrix",
+        'purpose',
+        'constraint',
+        'scenario-matrix',
       ]);
       expect(doc!.sections[1]).toMatchObject({
-        id: "constraint",
-        anchor: "^constraint",
+        id: 'constraint',
+        anchor: '^constraint',
         metadata: {
-          sectionKind: "constraint",
-          sourceRefs: ["packages/checkout/src/rules.ts"],
-          evidenceIds: ["E-CHECKOUT-RULE"],
+          sectionKind: 'constraint',
+          sourceRefs: ['packages/checkout/src/rules.ts'],
+          evidenceIds: ['E-CHECKOUT-RULE'],
         },
       });
       expect(doc!.sections[2]).toMatchObject({
-        id: "scenario-matrix",
-        anchor: "scenario-matrix",
+        id: 'scenario-matrix',
+        anchor: 'scenario-matrix',
         metadata: {
-          sectionKind: "scenario-matrix",
-          sourceRefs: ["packages/checkout/src/checkout.test.ts"],
-          evidenceIds: ["E-CHECKOUT-SMOKE"],
+          sectionKind: 'scenario-matrix',
+          sourceRefs: ['packages/checkout/src/checkout.test.ts'],
+          evidenceIds: ['E-CHECKOUT-SMOKE'],
         },
       });
     });
   });
 
-  it("[contract:docs-control-plane.bdd.parse.valid-block.v1] projects BDD contracts and units from cases markdown metadata", async () => {
+  it('[contract:docs-control-plane.bdd.parse.valid-block.v1] projects BDD contracts and units from cases markdown metadata', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.cases.md'),
+        `---
 def:
   id: checkout-cases
   level: leaf
@@ -697,47 +712,50 @@ implementation_unit:
   owned_by: checkout-system
   source_target: packages/checkout/src/checkout-system.ts
 \`\`\`
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const docs = await adapter.listDocuments();
-      const doc = docs.find((item) => item.metadata.defId === "checkout-cases");
+      const doc = docs.find((item) => item.metadata.defId === 'checkout-cases');
 
       expect(doc).toBeDefined();
-      expect(doc!.kind).toBe("cases");
+      expect(doc!.kind).toBe('cases');
       expect(doc!.metadata.bdd).toMatchObject({
         contracts: [
           {
-            id: "checkout.pending.submit.accepted.v1",
-            ownerSystem: "checkout-system",
-            contractKind: "state-transition",
-            mode: "write",
+            id: 'checkout.pending.submit.accepted.v1',
+            ownerSystem: 'checkout-system',
+            contractKind: 'state-transition',
+            mode: 'write',
           },
         ],
         testUnits: [
           {
-            id: "TU-checkout-submit-accepted",
-            contract: "checkout.pending.submit.accepted.v1",
-            level: "integration",
-            testFile: "packages/checkout/src/checkout-system.test.ts",
+            id: 'TU-checkout-submit-accepted',
+            contract: 'checkout.pending.submit.accepted.v1',
+            level: 'integration',
+            testFile: 'packages/checkout/src/checkout-system.test.ts',
           },
         ],
         implementationUnits: [
           {
-            id: "IU-checkout-submit-operation",
-            contract: "checkout.pending.submit.accepted.v1",
-            unitKind: "operation",
-            ownedBy: "checkout-system",
-            sourceTarget: "packages/checkout/src/checkout-system.ts",
+            id: 'IU-checkout-submit-operation',
+            contract: 'checkout.pending.submit.accepted.v1',
+            unitKind: 'operation',
+            ownedBy: 'checkout-system',
+            sourceTarget: 'packages/checkout/src/checkout-system.ts',
           },
         ],
       });
     });
   });
 
-  it("[contract:docs-control-plane.bdd.parse.invalid-block-diagnostic.v1] keeps invalid BDD blocks as diagnostics without dropping the document", async () => {
+  it('[contract:docs-control-plane.bdd.parse.invalid-block-diagnostic.v1] keeps invalid BDD blocks as diagnostics without dropping the document', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.cases.md'),
+        `---
 def:
   id: checkout-cases
   level: leaf
@@ -765,21 +783,24 @@ bdd_contract:
   then:
     emits: [checkout.accepted]
 \`\`\`
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const docs = await adapter.listDocuments();
-      const doc = docs.find((item) => item.metadata.defId === "checkout-cases");
+      const doc = docs.find((item) => item.metadata.defId === 'checkout-cases');
 
       expect(doc).toBeDefined();
-      expect(doc!.diagnostics.some((item) => item.code === "bdd-schema-error")).toBe(true);
-      expect(String(doc!.metadata.bdd)).not.toBe("");
+      expect(doc!.diagnostics.some((item) => item.code === 'bdd-schema-error')).toBe(true);
+      expect(String(doc!.metadata.bdd)).not.toBe('');
     });
   });
 
-  it("extracts work-topic blocks into document metadata without changing document kind", async () => {
+  it('extracts work-topic blocks into document metadata without changing document kind', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.plan.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.plan.md'),
+        `---
 def:
   id: checkout-plan
   level: leaf
@@ -816,29 +837,30 @@ work_topic:
     forbidden:
       - unrelated-owner-system
 \`\`\`
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const docs = await adapter.listDocuments();
-      const doc = docs.find((item) => item.metadata.defId === "checkout-plan");
+      const doc = docs.find((item) => item.metadata.defId === 'checkout-plan');
 
       expect(doc).toBeDefined();
-      expect(doc!.kind).toBe("plan");
+      expect(doc!.kind).toBe('plan');
       expect(doc!.metadata.workTopic).toMatchObject({
         topics: [
           {
-            id: "checkout.submit.readiness.v1",
-            ownerSystem: "checkout-system",
-            goal: "close checkout submit lifecycle",
-            topicKind: "feature-delivery",
-            contracts: ["checkout.pending.submit.accepted.v1"],
-            sourceTargets: ["packages/checkout/src/checkout-system.ts"],
-            proofSurface: ["packages/checkout/src/checkout-system.test.ts"],
-            assimilationTarget: ["docs/specs/checkout/checkout.spec.md"],
+            id: 'checkout.submit.readiness.v1',
+            ownerSystem: 'checkout-system',
+            goal: 'close checkout submit lifecycle',
+            topicKind: 'feature-delivery',
+            contracts: ['checkout.pending.submit.accepted.v1'],
+            sourceTargets: ['packages/checkout/src/checkout-system.ts'],
+            proofSurface: ['packages/checkout/src/checkout-system.test.ts'],
+            assimilationTarget: ['docs/specs/checkout/checkout.spec.md'],
             boundaries: {
-              read: ["checkout-system"],
-              write: ["checkout-system"],
-              forbidden: ["unrelated-owner-system"],
+              read: ['checkout-system'],
+              write: ['checkout-system'],
+              forbidden: ['unrelated-owner-system'],
             },
           },
         ],
@@ -847,9 +869,11 @@ work_topic:
     });
   });
 
-  it("warns and does not consume work-topic blocks from behavior contract documents", async () => {
+  it('warns and does not consume work-topic blocks from behavior contract documents', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.cases.md'),
+        `---
 def:
   id: checkout-cases
   level: leaf
@@ -878,26 +902,31 @@ work_topic:
   assimilation_target:
     - docs/specs/checkout/checkout.spec.md
 \`\`\`
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const docs = await adapter.listDocuments();
-      const doc = docs.find((item) => item.metadata.defId === "checkout-cases");
+      const doc = docs.find((item) => item.metadata.defId === 'checkout-cases');
 
       expect(doc).toBeDefined();
       expect(doc!.metadata.workTopic).toBeUndefined();
-      expect(doc!.diagnostics).toEqual(expect.arrayContaining([
-        expect.objectContaining({
-          code: "work-topic-invalid-document-kind",
-          severity: "warning",
-        }),
-      ]));
+      expect(doc!.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'work-topic-invalid-document-kind',
+            severity: 'warning',
+          }),
+        ]),
+      );
     });
   });
 
-  it("groups role markdown by extension and explicit family context", async () => {
+  it('groups role markdown by extension and explicit family context', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.spec.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.spec.md'),
+        `---
 def:
   id: checkout-spec
   level: leaf
@@ -911,9 +940,12 @@ def:
 ## 목적 ^purpose
 
 Spec member.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.rule.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.rule.md'),
+        `---
 def:
   id: checkout-rule
   level: leaf
@@ -927,9 +959,12 @@ def:
 ## 목적 ^purpose
 
 Rule member.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.test.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.test.md'),
+        `---
 def:
   id: checkout-test
   level: leaf
@@ -943,9 +978,12 @@ def:
 ## 목적 ^purpose
 
 Test member.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.cases.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.cases.md'),
+        `---
 def:
   id: checkout-cases
   level: leaf
@@ -959,9 +997,12 @@ def:
 ## 목적 ^purpose
 
 Cases member.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.memo.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.memo.md'),
+        `---
 def:
   id: checkout-memo
   level: leaf
@@ -975,9 +1016,12 @@ def:
 ## 목적 ^purpose
 
 Memo member.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.todo.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.todo.md'),
+        `---
 def:
   id: checkout-todo
   level: leaf
@@ -991,9 +1035,12 @@ def:
 ## 목적 ^purpose
 
 Todo member.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout.plan.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout.plan.md'),
+        `---
 def:
   id: checkout-plan
   level: leaf
@@ -1007,9 +1054,12 @@ def:
 ## 목적 ^purpose
 
 Plan member.
-`);
+`,
+      );
 
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout-knowledge.spec.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout-knowledge.spec.md'),
+        `---
 def:
   id: checkout-knowledge
   type: knowledge
@@ -1026,50 +1076,53 @@ familyId: docs/specs/checkout/checkout
 ## 목적 ^purpose
 
 Knowledge member.
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
       const family = await adapter.listDocuments({
-        familyId: "docs/specs/checkout/checkout",
+        familyId: 'docs/specs/checkout/checkout',
       });
 
       expect(family.map((doc) => doc.kind)).toEqual([
-        "spec",
-        "spec",
-        "rule",
-        "cases",
-        "test",
-        "memo",
-        "plan",
-        "todo",
+        'spec',
+        'spec',
+        'rule',
+        'cases',
+        'test',
+        'memo',
+        'plan',
+        'todo',
       ]);
       expect(family.map((doc) => doc.metadata.defId)).toEqual([
-        "checkout-knowledge",
-        "checkout-spec",
-        "checkout-rule",
-        "checkout-cases",
-        "checkout-test",
-        "checkout-memo",
-        "checkout-plan",
-        "checkout-todo",
+        'checkout-knowledge',
+        'checkout-spec',
+        'checkout-rule',
+        'checkout-cases',
+        'checkout-test',
+        'checkout-memo',
+        'checkout-plan',
+        'checkout-todo',
       ]);
-      expect(family.find((doc) => doc.metadata.defId === "checkout-knowledge")).toMatchObject({
-        kind: "spec",
+      expect(family.find((doc) => doc.metadata.defId === 'checkout-knowledge')).toMatchObject({
+        kind: 'spec',
         metadata: {
-          type: "knowledge",
-          knowledgeKind: "guide",
-          documentKind: "spec",
+          type: 'knowledge',
+          knowledgeKind: 'guide',
+          documentKind: 'spec',
         },
       });
       expect(new Set(family.map((doc) => doc.familyId))).toEqual(
-        new Set(["docs/specs/checkout/checkout"]),
+        new Set(['docs/specs/checkout/checkout']),
       );
     });
   });
 
-  it("surfaces level diagnostics from definition-catalog validation", async () => {
+  it('surfaces level diagnostics from definition-catalog validation', async () => {
     await withTempDocs(async (rootDir) => {
-      await writeFile(join(rootDir, "docs/specs/checkout/checkout-group.spec.md"), `---
+      await writeFile(
+        join(rootDir, 'docs/specs/checkout/checkout-group.spec.md'),
+        `---
 def:
   id: checkout-group
   level: group
@@ -1083,18 +1136,19 @@ def:
 ## 목적 ^purpose
 
 Groups checkout docs without children.
-`);
+`,
+      );
 
       const adapter = createDefinitionMarkdownAdapter({ rootDir });
-      const doc = await adapter.getDocument("checkout-group");
+      const doc = await adapter.getDocument('checkout-group');
 
       expect(doc).toBeDefined();
       expect(doc!.diagnostics).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            code: "level-violation",
-            severity: "error",
-            message: expect.stringContaining("level=group"),
+            code: 'level-violation',
+            severity: 'error',
+            message: expect.stringContaining('level=group'),
           }),
         ]),
       );
@@ -1102,23 +1156,23 @@ Groups checkout docs without children.
   });
 });
 
-describe("PRD and ralph compatibility adapters", () => {
-  async function withTempWorkflow(
-    callback: (rootDir: string) => Promise<void>,
-  ): Promise<void> {
-    const rootDir = await mkdtemp(join(tmpdir(), "qa-sdk-prd-adapters-"));
+describe('PRD and ralph compatibility adapters', () => {
+  async function withTempWorkflow(callback: (rootDir: string) => Promise<void>): Promise<void> {
+    const rootDir = await mkdtemp(join(tmpdir(), 'qa-sdk-prd-adapters-'));
     try {
-      await mkdir(join(rootDir, "tasks"), { recursive: true });
-      await mkdir(join(rootDir, ".ralph-tui"), { recursive: true });
+      await mkdir(join(rootDir, 'tasks'), { recursive: true });
+      await mkdir(join(rootDir, '.ralph-tui'), { recursive: true });
       await callback(rootDir);
     } finally {
       await rm(rootDir, { recursive: true, force: true });
     }
   }
 
-  it("collects PRD markdown sections and story acceptance criteria from a [PRD] block", async () => {
+  it('collects PRD markdown sections and story acceptance criteria from a [PRD] block', async () => {
     await withTempWorkflow(async (rootDir) => {
-      await writeFile(join(rootDir, "tasks/sample-prd.md"), `[PRD]
+      await writeFile(
+        join(rootDir, 'tasks/sample-prd.md'),
+        `[PRD]
 # PRD: Sample Workflow
 
 ## Overview
@@ -1166,214 +1220,237 @@ Coordinate documentation adapters. Literal marker text like \`[PRD]...[/PRD]\` m
 
 - Which CLI command should expose drift later?
 [/PRD]
-`);
+`,
+      );
 
       const adapter = createPrdMarkdownAdapter({
         rootDir,
-        paths: ["tasks/sample-prd.md"],
+        paths: ['tasks/sample-prd.md'],
       });
       const [doc] = await adapter.listDocuments();
 
       expect(doc).toMatchObject({
-        adapterId: "prd-markdown",
-        kind: "prd",
-        stableId: "tasks/sample-prd",
-        familyId: "tasks/sample-prd",
-        path: "tasks/sample-prd.md",
+        adapterId: 'prd-markdown',
+        kind: 'prd',
+        stableId: 'tasks/sample-prd',
+        familyId: 'tasks/sample-prd',
+        path: 'tasks/sample-prd.md',
       });
       expect(doc!.metadata).toMatchObject({
-        title: "Sample Workflow",
-        overview: "Coordinate documentation adapters. Literal marker text like `[PRD]...[/PRD]` must not close the PRD block unless it appears on its own marker line.",
-        goals: ["Preserve source documents.", "Expose workflow state."],
+        title: 'Sample Workflow',
+        overview:
+          'Coordinate documentation adapters. Literal marker text like `[PRD]...[/PRD]` must not close the PRD block unless it appears on its own marker line.',
+        goals: ['Preserve source documents.', 'Expose workflow state.'],
         qualityGates: [
-          "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
-          "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+          '`pnpm --filter @qa-sdk/cli test -- docs` passes.',
+          '`pnpm --filter @qa-sdk/cli typecheck` passes.',
         ],
-        functionalRequirements: ["FR-1: PRD blocks are read without mutating files."],
-        nonGoals: ["Running ralph-tui."],
-        openQuestions: ["Which CLI command should expose drift later?"],
+        functionalRequirements: ['FR-1: PRD blocks are read without mutating files.'],
+        nonGoals: ['Running ralph-tui.'],
+        openQuestions: ['Which CLI command should expose drift later?'],
       });
       expect(doc!.sections.map((section) => section.id)).toEqual([
-        "overview",
-        "goals",
-        "quality-gates",
-        "user-stories",
-        "functional-requirements",
-        "non-goals",
-        "open-questions",
+        'overview',
+        'goals',
+        'quality-gates',
+        'user-stories',
+        'functional-requirements',
+        'non-goals',
+        'open-questions',
       ]);
       expect(doc!.tasks).toHaveLength(2);
       expect(doc!.tasks[0]).toMatchObject({
-        id: "US-001",
-        title: "Parse PRD Markdown",
+        id: 'US-001',
+        title: 'Parse PRD Markdown',
         metadata: {
-          description: "As a maintainer, I want PRD markdown available through the control plane.",
+          description: 'As a maintainer, I want PRD markdown available through the control plane.',
           passes: false,
           qualityGates: [
-            "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
-            "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+            '`pnpm --filter @qa-sdk/cli test -- docs` passes.',
+            '`pnpm --filter @qa-sdk/cli typecheck` passes.',
           ],
         },
       });
       expect(doc!.tasks[0]!.metadata.acceptanceCriteria).toEqual([
-        { text: "Overview is collected.", checked: true },
-        { text: "Open criteria remain visible.", checked: false },
+        { text: 'Overview is collected.', checked: true },
+        { text: 'Open criteria remain visible.', checked: false },
       ]);
-      expect(doc!.tasks[1]!.metadata.prerequisites).toEqual(["US-001"]);
+      expect(doc!.tasks[1]!.metadata.prerequisites).toEqual(['US-001']);
     });
   });
 
-  it("maps flat ralph PRD JSON stories to tasks and reports schema anti-patterns", async () => {
+  it('maps flat ralph PRD JSON stories to tasks and reports schema anti-patterns', async () => {
     await withTempWorkflow(async (rootDir) => {
-      await writeFile(join(rootDir, "tasks/sample-prd.json"), JSON.stringify({
-        name: "Sample Ralph PRD",
-        branchName: "ralph/sample",
-        description: "A tasks/prd-ontology-registry-cli-scenario-hardening.json-style fixture.",
-        prd: {},
-        tasks: [],
-        metadata: {
-          updatedAt: "2026-04-15T00:00:00.000Z",
-          custom: "domain metadata should stay out of the ralph JSON root",
-        },
-        userStories: [
+      await writeFile(
+        join(rootDir, 'tasks/sample-prd.json'),
+        JSON.stringify(
           {
-            id: "US-001",
-            title: "Completed Story",
-            description: "A completed story.",
-            acceptanceCriteria: [
-              "Feature works.",
-              "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+            name: 'Sample Ralph PRD',
+            branchName: 'ralph/sample',
+            description: 'A tasks/prd-ontology-registry-cli-scenario-hardening.json-style fixture.',
+            prd: {},
+            tasks: [],
+            metadata: {
+              updatedAt: '2026-04-15T00:00:00.000Z',
+              custom: 'domain metadata should stay out of the ralph JSON root',
+            },
+            userStories: [
+              {
+                id: 'US-001',
+                title: 'Completed Story',
+                description: 'A completed story.',
+                acceptanceCriteria: [
+                  'Feature works.',
+                  '`pnpm --filter @qa-sdk/cli test -- docs` passes.',
+                ],
+                priority: 1,
+                passes: true,
+                notes: 'Implementation notes',
+                dependsOn: [],
+                completionNotes: 'Completed by agent',
+              },
+              {
+                id: 'US-002',
+                title: 'Invalid Story',
+                description: 'A story with ralph JSON anti-patterns.',
+                acceptanceCriteria: [],
+                passes: 'yes',
+                status: 'completed',
+              },
             ],
-            priority: 1,
-            passes: true,
-            notes: "Implementation notes",
-            dependsOn: [],
-            completionNotes: "Completed by agent",
           },
-          {
-            id: "US-002",
-            title: "Invalid Story",
-            description: "A story with ralph JSON anti-patterns.",
-            acceptanceCriteria: [],
-            passes: "yes",
-            status: "completed",
-          },
-        ],
-      }, null, 2));
+          null,
+          2,
+        ),
+      );
 
       const adapter = createRalphPrdJsonAdapter({
         rootDir,
-        paths: ["tasks/sample-prd.json"],
+        paths: ['tasks/sample-prd.json'],
       });
       const [doc] = await adapter.listDocuments();
 
       expect(doc).toMatchObject({
-        adapterId: "ralph-prd-json",
-        kind: "ralph-prd-json",
-        stableId: "tasks/sample-prd",
-        familyId: "tasks/sample-prd",
+        adapterId: 'ralph-prd-json',
+        kind: 'ralph-prd-json',
+        stableId: 'tasks/sample-prd',
+        familyId: 'tasks/sample-prd',
       });
       expect(doc!.metadata).toMatchObject({
-        name: "Sample Ralph PRD",
-        branchName: "ralph/sample",
+        name: 'Sample Ralph PRD',
+        branchName: 'ralph/sample',
         storyCount: 2,
         passedStoryCount: 1,
       });
       expect(doc!.tasks[0]).toMatchObject({
-        id: "US-001",
-        title: "Completed Story",
+        id: 'US-001',
+        title: 'Completed Story',
         metadata: {
-          description: "A completed story.",
+          description: 'A completed story.',
           priority: 1,
           passes: true,
           dependsOn: [],
-          notes: "Implementation notes",
-          completionNotes: "Completed by agent",
+          notes: 'Implementation notes',
+          completionNotes: 'Completed by agent',
           acceptanceCriteria: [
-            "Feature works.",
-            "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
+            'Feature works.',
+            '`pnpm --filter @qa-sdk/cli test -- docs` passes.',
           ],
-          qualityGates: ["`pnpm --filter @qa-sdk/cli test -- docs` passes."],
+          qualityGates: ['`pnpm --filter @qa-sdk/cli test -- docs` passes.'],
         },
       });
       expect(doc!.tasks[1]).toMatchObject({
-        id: "US-002",
+        id: 'US-002',
         metadata: {
           passes: false,
           dependsOn: [],
-          storyStatus: "completed",
+          storyStatus: 'completed',
         },
       });
       expect(doc!.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
         expect.arrayContaining([
-          "ralph-prd-json-root-prd",
-          "ralph-prd-json-root-tasks",
-          "ralph-prd-json-root-metadata",
-          "ralph-prd-json-story-status",
-          "ralph-prd-json-story-passes-non-boolean",
-          "ralph-prd-json-story-depends-on-missing",
+          'ralph-prd-json-root-prd',
+          'ralph-prd-json-root-tasks',
+          'ralph-prd-json-root-metadata',
+          'ralph-prd-json-story-status',
+          'ralph-prd-json-story-passes-non-boolean',
+          'ralph-prd-json-story-depends-on-missing',
         ]),
       );
     });
   });
 
-  it("reports ralph session drift against PRD JSON story state", async () => {
+  it('reports ralph session drift against PRD JSON story state', async () => {
     await withTempWorkflow(async (rootDir) => {
-      await writeFile(join(rootDir, "tasks/completed-prd.json"), JSON.stringify({
-        name: "Completed PRD",
-        branchName: "ralph/completed",
-        description: "Completed fixture.",
-        userStories: [
+      await writeFile(
+        join(rootDir, 'tasks/completed-prd.json'),
+        JSON.stringify(
           {
-            id: "US-001",
-            title: "One",
-            description: "First story.",
-            acceptanceCriteria: [],
-            passes: true,
-            notes: "",
-            dependsOn: [],
-            completionNotes: "Completed by agent",
+            name: 'Completed PRD',
+            branchName: 'ralph/completed',
+            description: 'Completed fixture.',
+            userStories: [
+              {
+                id: 'US-001',
+                title: 'One',
+                description: 'First story.',
+                acceptanceCriteria: [],
+                passes: true,
+                notes: '',
+                dependsOn: [],
+                completionNotes: 'Completed by agent',
+              },
+              {
+                id: 'US-002',
+                title: 'Two',
+                description: 'Second story.',
+                acceptanceCriteria: [],
+                passes: true,
+                notes: '',
+                dependsOn: ['US-001'],
+                completionNotes: 'Completed by agent',
+              },
+            ],
           },
+          null,
+          2,
+        ),
+      );
+      await writeFile(
+        join(rootDir, '.ralph-tui/session-meta.json'),
+        JSON.stringify(
           {
-            id: "US-002",
-            title: "Two",
-            description: "Second story.",
-            acceptanceCriteria: [],
-            passes: true,
-            notes: "",
-            dependsOn: ["US-001"],
-            completionNotes: "Completed by agent",
+            id: 'session-1',
+            status: 'running',
+            startedAt: '2026-04-15T00:00:00.000Z',
+            updatedAt: '2026-04-15T00:10:00.000Z',
+            agentPlugin: 'codex',
+            trackerPlugin: 'json',
+            prdPath: 'tasks/completed-prd.json',
+            currentIteration: 2,
+            maxIterations: 0,
+            totalTasks: 3,
+            tasksCompleted: 1,
+            cwd: rootDir,
           },
-        ],
-      }, null, 2));
-      await writeFile(join(rootDir, ".ralph-tui/session-meta.json"), JSON.stringify({
-        id: "session-1",
-        status: "running",
-        startedAt: "2026-04-15T00:00:00.000Z",
-        updatedAt: "2026-04-15T00:10:00.000Z",
-        agentPlugin: "codex",
-        trackerPlugin: "json",
-        prdPath: "tasks/completed-prd.json",
-        currentIteration: 2,
-        maxIterations: 0,
-        totalTasks: 3,
-        tasksCompleted: 1,
-        cwd: rootDir,
-      }, null, 2));
+          null,
+          2,
+        ),
+      );
 
       const adapter = createRalphSessionAdapter({ rootDir });
       const [doc] = await adapter.listDocuments();
 
       expect(doc).toMatchObject({
-        adapterId: "ralph-session",
-        kind: "ralph-session",
-        stableId: "ralph-session:session-1",
-        familyId: "tasks/completed-prd",
-        path: ".ralph-tui/session-meta.json",
+        adapterId: 'ralph-session',
+        kind: 'ralph-session',
+        stableId: 'ralph-session:session-1',
+        familyId: 'tasks/completed-prd',
+        path: '.ralph-tui/session-meta.json',
         metadata: {
-          id: "session-1",
-          status: "running",
-          prdPath: "tasks/completed-prd.json",
+          id: 'session-1',
+          status: 'running',
+          prdPath: 'tasks/completed-prd.json',
           prdStoryCount: 2,
           prdPassedStoryCount: 2,
           prdAllStoriesPassing: true,
@@ -1381,9 +1458,9 @@ Coordinate documentation adapters. Literal marker text like \`[PRD]...[/PRD]\` m
       });
       expect(doc!.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(
         expect.arrayContaining([
-          "ralph-session-prd-complete-session-running",
-          "ralph-session-total-tasks-drift",
-          "ralph-session-completed-tasks-drift",
+          'ralph-session-prd-complete-session-running',
+          'ralph-session-total-tasks-drift',
+          'ralph-session-completed-tasks-drift',
         ]),
       );
     });

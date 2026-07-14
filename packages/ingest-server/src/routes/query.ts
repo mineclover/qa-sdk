@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { Hono } from "hono";
+import { Hono } from 'hono';
 import type {
   EventRecord,
   GraphStore,
@@ -14,18 +14,10 @@ import type {
   StoredSession,
   StoredTrace,
   TraceStore,
-} from "@qa-sdk/core";
-import { z } from "zod";
-import {
-  createNoopDebugStore,
-  type DebugStore,
-} from "../lib/debug-store.js";
-import {
-  badRequest,
-  graphNotFound,
-  sessionNotFound,
-  traceNotFound,
-} from "../lib/errors.js";
+} from '@qa-sdk/core';
+import { z } from 'zod';
+import { createNoopDebugStore, type DebugStore } from '../lib/debug-store.js';
+import { badRequest, graphNotFound, sessionNotFound, traceNotFound } from '../lib/errors.js';
 
 const paginationQuerySchema = z.object({
   cursor: z.string().min(1).optional(),
@@ -53,8 +45,8 @@ export function createQueryRoutes(deps: QueryDeps) {
   const app = new Hono();
 
   // 최근 trace 목록 — :traceId 보다 먼저 매칭되어야 함
-  app.get("/v1/traces/recent", async (c) => {
-    const limit = parseInt(c.req.query("limit") ?? "50");
+  app.get('/v1/traces/recent', async (c) => {
+    const limit = parseInt(c.req.query('limit') ?? '50');
     if (deps.traceStore.findRecent) {
       const traces = await deps.traceStore.findRecent(limit);
       return c.json({ items: traces.map(toTraceResponse), total: traces.length });
@@ -63,25 +55,27 @@ export function createQueryRoutes(deps: QueryDeps) {
   });
 
   // POST /v1/traces/bulk-records — 여러 trace의 records를 한 번에 조회 (N+1 해소)
-  app.post("/v1/traces/bulk-records", async (c) => {
+  app.post('/v1/traces/bulk-records', async (c) => {
     const body = await c.req.json<{ traceIds: string[]; limit?: number }>();
     if (!body.traceIds || !Array.isArray(body.traceIds)) {
-      return c.json({ error: "traceIds array required" }, 400);
+      return c.json({ error: 'traceIds array required' }, 400);
     }
     const limit = body.limit ?? 20;
     const traceIds = body.traceIds.slice(0, limit);
 
     const result: Record<string, unknown[]> = {};
-    await Promise.all(traceIds.map(async (traceId) => {
-      const records = await deps.recordStore.findByTraceId(traceId);
-      result[traceId] = records.map(toEventRecord);
-    }));
+    await Promise.all(
+      traceIds.map(async (traceId) => {
+        const records = await deps.recordStore.findByTraceId(traceId);
+        result[traceId] = records.map(toEventRecord);
+      }),
+    );
 
     return c.json(result);
   });
 
-  app.get("/v1/traces/:traceId", async (c) => {
-    const traceId = c.req.param("traceId");
+  app.get('/v1/traces/:traceId', async (c) => {
+    const traceId = c.req.param('traceId');
     const trace = await deps.traceStore.findById(traceId);
 
     if (!trace) {
@@ -91,8 +85,8 @@ export function createQueryRoutes(deps: QueryDeps) {
     return c.json(toTraceResponse(trace));
   });
 
-  app.get("/v1/traces/:traceId/records", async (c) => {
-    const traceId = c.req.param("traceId");
+  app.get('/v1/traces/:traceId/records', async (c) => {
+    const traceId = c.req.param('traceId');
     const pagination = parsePaginationQuery(c.req.query());
     const trace = await deps.traceStore.findById(traceId);
 
@@ -105,8 +99,8 @@ export function createQueryRoutes(deps: QueryDeps) {
     return c.json(toPaginatedRecordResponse(page));
   });
 
-  app.get("/v1/traces/:traceId/graph", async (c) => {
-    const traceId = c.req.param("traceId");
+  app.get('/v1/traces/:traceId/graph', async (c) => {
+    const traceId = c.req.param('traceId');
     const graph = await deps.graphStore.findByTraceId(traceId);
 
     if (!graph) {
@@ -116,8 +110,8 @@ export function createQueryRoutes(deps: QueryDeps) {
     return c.json(toRuntimeGraphResponse(graph));
   });
 
-  app.get("/v1/debug/traces/:traceId/recent", async (c) => {
-    const traceId = c.req.param("traceId");
+  app.get('/v1/debug/traces/:traceId/recent', async (c) => {
+    const traceId = c.req.param('traceId');
     const trace = await deps.traceStore.findById(traceId);
 
     if (!trace) {
@@ -134,8 +128,8 @@ export function createQueryRoutes(deps: QueryDeps) {
     });
   });
 
-  app.get("/v1/sessions/:sessionId", async (c) => {
-    const sessionId = c.req.param("sessionId");
+  app.get('/v1/sessions/:sessionId', async (c) => {
+    const sessionId = c.req.param('sessionId');
     const session = await deps.sessionStore.findById(sessionId);
 
     if (!session) {
@@ -145,8 +139,8 @@ export function createQueryRoutes(deps: QueryDeps) {
     return c.json(toSessionResponse(session));
   });
 
-  app.get("/v1/sessions/:sessionId/records", async (c) => {
-    const sessionId = c.req.param("sessionId");
+  app.get('/v1/sessions/:sessionId/records', async (c) => {
+    const sessionId = c.req.param('sessionId');
     const pagination = parsePaginationQuery(c.req.query());
     const session = await deps.sessionStore.findById(sessionId);
 
@@ -154,16 +148,13 @@ export function createQueryRoutes(deps: QueryDeps) {
       throw sessionNotFound(sessionId);
     }
 
-    const page = await deps.recordStore.findBySessionIdPaginated(
-      sessionId,
-      pagination,
-    );
+    const page = await deps.recordStore.findBySessionIdPaginated(sessionId, pagination);
 
     return c.json(toPaginatedRecordResponse(page));
   });
 
-  app.get("/v1/debug/sessions/:sessionId/recent", async (c) => {
-    const sessionId = c.req.param("sessionId");
+  app.get('/v1/debug/sessions/:sessionId/recent', async (c) => {
+    const sessionId = c.req.param('sessionId');
     const session = await deps.sessionStore.findById(sessionId);
 
     if (!session) {
@@ -203,7 +194,7 @@ function parseRecentLimit(query: Record<string, string | undefined>): number {
 
 function decodeCursor(cursor: string): RecordPaginationCursor {
   try {
-    const decoded = Buffer.from(cursor, "base64url").toString("utf8");
+    const decoded = Buffer.from(cursor, 'base64url').toString('utf8');
     const parsed = cursorSchema.parse(JSON.parse(decoded));
 
     return {
@@ -211,7 +202,7 @@ function decodeCursor(cursor: string): RecordPaginationCursor {
       logId: parsed.logId,
     };
   } catch {
-    throw badRequest("cursor: invalid cursor");
+    throw badRequest('cursor: invalid cursor');
   }
 }
 
@@ -221,7 +212,7 @@ function encodeCursor(cursor: RecordPaginationCursor): string {
       timestamp: cursor.timestamp.toISOString(),
       logId: cursor.logId,
     }),
-  ).toString("base64url");
+  ).toString('base64url');
 }
 
 function toTraceResponse(trace: StoredTrace) {
@@ -272,7 +263,7 @@ function toEventRecord(record: StoredRecord): EventRecord {
   return {
     log_id: record.logId,
     timestamp: record.timestamp.toISOString(),
-    record_kind: record.recordKind as EventRecord["record_kind"],
+    record_kind: record.recordKind as EventRecord['record_kind'],
     trace_id: record.traceId,
     span_id: record.spanId,
     parent_span_id: record.parentSpanId,
@@ -281,9 +272,9 @@ function toEventRecord(record: StoredRecord): EventRecord {
     span_name: record.spanName,
     start_time: record.startTime?.toISOString(),
     end_time: record.endTime?.toISOString(),
-    status_code: record.statusCode as EventRecord["status_code"],
-    payload_format: record.payloadFormat as EventRecord["payload_format"],
-    payload_encoding: record.payloadEncoding as EventRecord["payload_encoding"],
+    status_code: record.statusCode as EventRecord['status_code'],
+    payload_format: record.payloadFormat as EventRecord['payload_format'],
+    payload_encoding: record.payloadEncoding as EventRecord['payload_encoding'],
     payload_masking_applied: record.payloadMaskingApplied,
     payload_masked_fields: record.payloadMaskedFields,
     payload: record.payload,

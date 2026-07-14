@@ -1,17 +1,9 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
-import {
-  buildServicePrefix,
-  parseServicePrefix,
-  type ServicePrefix,
-} from "./service-prefix.js";
-import {
-  buildVersionTag,
-  parseVersionTag,
-  type VersionTag,
-} from "./version-tag.js";
+import { z } from 'zod';
+import { buildServicePrefix, parseServicePrefix, type ServicePrefix } from './service-prefix.js';
+import { buildVersionTag, parseVersionTag, type VersionTag } from './version-tag.js';
 
-export const IMAGE_REGISTRIES = ["qa-sdk"] as const;
+export const IMAGE_REGISTRIES = ['qa-sdk'] as const;
 export type ImageRegistry = (typeof IMAGE_REGISTRIES)[number];
 
 export interface ImageTag {
@@ -23,14 +15,14 @@ export interface ImageTag {
 const ImageTagInputSchema = z.object({
   registry: z.enum(IMAGE_REGISTRIES),
   servicePrefix: z.object({
-    namespace: z.literal("sim"),
-    category: z.literal("svc"),
+    namespace: z.literal('sim'),
+    category: z.literal('svc'),
     name: z.string().regex(/^[a-z][a-z0-9-]{0,30}$/),
   }),
   versionTag: z.object({
-    axis: z.literal("version"),
+    axis: z.literal('version'),
     value: z.number().int().positive(),
-    state: z.enum(["stable", "candidate", "retired"]),
+    state: z.enum(['stable', 'candidate', 'retired']),
   }),
 });
 
@@ -43,7 +35,7 @@ function imageNameToPrefix(image: string): ServicePrefix {
   // sim-approval-api → { sim, svc, approval }
   const m = image.match(/^sim-([a-z][a-z0-9-]{0,30})-api$/);
   if (!m) throw new Error(`invalid image name: ${image}`);
-  return { namespace: "sim", category: "svc", name: m[1] };
+  return { namespace: 'sim', category: 'svc', name: m[1] };
 }
 
 export function buildImageTag(input: ImageTag): string {

@@ -1,9 +1,9 @@
-import type { Plugin } from "vite";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { resolve } from "node:path";
-import { parseDecisionFile } from "taxonomy-decision-bridge";
+import type { Plugin } from 'vite';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { parseDecisionFile } from 'taxonomy-decision-bridge';
 
-const DECISIONS_DIR = "docs/decisions";
+const DECISIONS_DIR = 'docs/decisions';
 
 export type DecisionListItem = {
   id: string;
@@ -19,10 +19,10 @@ export function listDecisions(repoRoot: string): DecisionListItem[] {
   if (!existsSync(dir)) return [];
   const items: DecisionListItem[] = [];
   for (const name of readdirSync(dir)) {
-    if (!name.endsWith(".md")) continue;
+    if (!name.endsWith('.md')) continue;
     const full = resolve(dir, name);
     try {
-      const text = readFileSync(full, "utf8");
+      const text = readFileSync(full, 'utf8');
       const file = parseDecisionFile(text);
       items.push({
         id: file.meta.id,
@@ -47,41 +47,41 @@ export function loadDecisionByFileName(
   if (!/^[a-zA-Z0-9_-]+\.md$/.test(fileName)) return null;
   const full = resolve(repoRoot, DECISIONS_DIR, fileName);
   if (!existsSync(full)) return null;
-  return { text: readFileSync(full, "utf8") };
+  return { text: readFileSync(full, 'utf8') };
 }
 
 export function decisionListApiPlugin(repoRoot: string): Plugin {
   return {
-    name: "taxonomy-web:decision-list-api",
+    name: 'taxonomy-web:decision-list-api',
     configureServer(server) {
-      server.middlewares.use("/api/decision-list", (req, res, next) => {
-        if (req.method !== "GET") {
+      server.middlewares.use('/api/decision-list', (req, res, next) => {
+        if (req.method !== 'GET') {
           next();
           return;
         }
         const items = listDecisions(repoRoot);
-        res.setHeader("Content-Type", "application/json");
+        res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ items }));
       });
-      server.middlewares.use("/api/decision-file", (req, res, next) => {
-        if (req.method !== "GET") {
+      server.middlewares.use('/api/decision-file', (req, res, next) => {
+        if (req.method !== 'GET') {
           next();
           return;
         }
-        const url = new URL(req.url ?? "/", "http://localhost");
-        const fileName = url.searchParams.get("fileName");
+        const url = new URL(req.url ?? '/', 'http://localhost');
+        const fileName = url.searchParams.get('fileName');
         if (!fileName) {
           res.statusCode = 400;
-          res.end("fileName 쿼리 파라미터 필수");
+          res.end('fileName 쿼리 파라미터 필수');
           return;
         }
         const loaded = loadDecisionByFileName(repoRoot, fileName);
         if (!loaded) {
           res.statusCode = 404;
-          res.end("not found");
+          res.end('not found');
           return;
         }
-        res.setHeader("Content-Type", "text/markdown; charset=utf-8");
+        res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
         res.end(loaded.text);
       });
     },

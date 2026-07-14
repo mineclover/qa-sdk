@@ -10,8 +10,8 @@
  * 주소는 관계 유형을 식별한다. 구체적 인스턴스(42, admin)는 좌표 밖.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { encodePrefixByValue, decodePrefix } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
+import { encodePrefixByValue, decodePrefix } from '@qa-sdk/core';
 
 export interface RelationTypeAddress {
   /** relational prefix 주소 */
@@ -46,7 +46,7 @@ export function encodeRelationType(
   const prefix = catalog.prefixes.relational;
   const ver = version ?? prefix.versions[prefix.versions.length - 1].version;
 
-  const address = encodePrefixByValue(catalog, "relational", ver, {
+  const address = encodePrefixByValue(catalog, 'relational', ver, {
     subjectKind: subject,
     predicate,
     objectKind: object,
@@ -63,13 +63,10 @@ export function encodeRelationType(
 /**
  * 관계 유형 주소를 디코딩한다.
  */
-export function decodeRelationType(
-  catalog: Catalog,
-  serialized: string,
-): RelationTypeAddress {
-  const [, version, addrStr] = serialized.split(":");
+export function decodeRelationType(catalog: Catalog, serialized: string): RelationTypeAddress {
+  const [, version, addrStr] = serialized.split(':');
   const address = Number(addrStr);
-  const decoded = decodePrefix(catalog, "relational", version, address);
+  const decoded = decodePrefix(catalog, 'relational', version, address);
 
   return {
     address: serialized,
@@ -110,12 +107,14 @@ export function listRelationObjects(
   predicate: string,
   version?: string,
 ): string[] {
-  const axis = (catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>).objectKind;
+  const axis = (
+    catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>
+  ).objectKind;
   if (!axis) return [];
 
   const versions = Object.keys(axis.versions);
   const ver = version ?? versions[versions.length - 1];
   const entries = axis.versions[ver]?.entries ?? [];
 
-  return entries.filter(e => e !== "_").map(e => String(e));
+  return entries.filter((e) => e !== '_').map((e) => String(e));
 }

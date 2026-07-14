@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { OutboxPort, OutboxRecord } from "@qa-sdk/sim-domain-slice-kit";
+import type { OutboxPort, OutboxRecord } from '@qa-sdk/sim-domain-slice-kit';
 
 export type TimeOffOutboxPort = OutboxPort;
 export type TimeOffOutboxRecord = OutboxRecord;

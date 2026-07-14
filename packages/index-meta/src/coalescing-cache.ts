@@ -96,7 +96,11 @@ export class CoalescingCache<V> {
     const existing = this.inflight.get(key);
     if (existing) {
       // inflight 완료 대기 (결과는 사용하지 않음)
-      try { await existing; } catch { /* 무시 — 자체 쓰기를 수행할 것 */ }
+      try {
+        await existing;
+      } catch {
+        /* 무시 — 자체 쓰기를 수행할 것 */
+      }
       // 대기 중 다른 쓰기가 시작했을 수 있으므로 재확인
       return this.set(key, updater);
     }

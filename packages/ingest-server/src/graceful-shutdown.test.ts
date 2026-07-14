@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { ServerType } from "@hono/node-server";
+import type { ServerType } from '@hono/node-server';
 import type {
   RecordStore,
   TraceStore,
@@ -10,7 +10,7 @@ import type {
   VerdictStore,
   ScenarioSpecStore,
   DlqStore,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 import {
   InMemoryDlqStore,
   InMemoryGraphStore,
@@ -20,17 +20,17 @@ import {
   InMemoryTraceStore,
   InMemoryTransmissionStore,
   InMemoryVerdictStore,
-} from "@qa-sdk/store";
-import pino, { type Logger } from "pino";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp } from "./app.js";
-import { createAppLifecycle } from "./lib/app-lifecycle.js";
-import { installGracefulShutdown } from "./lib/graceful-shutdown.js";
-import { RecordStreamBroker } from "./lib/record-stream-broker.js";
-import { createStreamConnectionRegistry } from "./lib/stream-connection-registry.js";
+} from '@qa-sdk/store';
+import pino, { type Logger } from 'pino';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createApp } from './app.js';
+import { createAppLifecycle } from './lib/app-lifecycle.js';
+import { installGracefulShutdown } from './lib/graceful-shutdown.js';
+import { RecordStreamBroker } from './lib/record-stream-broker.js';
+import { createStreamConnectionRegistry } from './lib/stream-connection-registry.js';
 
 function createNoopLogger(): Logger {
-  return pino({ level: "silent" });
+  return pino({ level: 'silent' });
 }
 
 function createTestHarness(
@@ -54,8 +54,7 @@ function createTestHarness(
   const transmissionStore = new InMemoryTransmissionStore();
   const sessionStore = options.sessionStore ?? new InMemorySessionStore();
   const verdictStore = options.verdictStore ?? new InMemoryVerdictStore();
-  const scenarioSpecStore =
-    options.scenarioSpecStore ?? new InMemoryScenarioSpecStore();
+  const scenarioSpecStore = options.scenarioSpecStore ?? new InMemoryScenarioSpecStore();
   const dlqStore = options.dlqStore ?? new InMemoryDlqStore();
 
   const app = createApp({
@@ -84,21 +83,21 @@ function createTestHarness(
 interface SseEventFrame {
   event: string | null;
   payload: unknown;
-  type: "event";
+  type: 'event';
 }
 
 function createSseClient(response: Response) {
   if (!response.body) {
-    throw new Error("expected SSE response body");
+    throw new Error('expected SSE response body');
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
-  let buffer = "";
+  let buffer = '';
 
   const nextFrame = async (): Promise<SseEventFrame> => {
     while (true) {
-      const delimiterIndex = buffer.indexOf("\n\n");
+      const delimiterIndex = buffer.indexOf('\n\n');
 
       if (delimiterIndex >= 0) {
         const rawEvent = buffer.slice(0, delimiterIndex);
@@ -114,7 +113,7 @@ function createSseClient(response: Response) {
       const { done, value } = await reader.read();
 
       if (done) {
-        throw new Error("SSE stream closed before the next event arrived");
+        throw new Error('SSE stream closed before the next event arrived');
       }
 
       buffer += decoder.decode(value, { stream: true });
@@ -138,25 +137,25 @@ function createSseClient(response: Response) {
 }
 
 function parseSseEventFrame(rawEvent: string): SseEventFrame {
-  const lines = rawEvent.split("\n");
+  const lines = rawEvent.split('\n');
   let event: string | null = null;
   const dataLines: string[] = [];
 
   for (const line of lines) {
-    if (line.startsWith("event:")) {
-      event = line.slice("event:".length).trimStart();
+    if (line.startsWith('event:')) {
+      event = line.slice('event:'.length).trimStart();
       continue;
     }
 
-    if (line.startsWith("data:")) {
-      dataLines.push(line.slice("data:".length).trimStart());
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice('data:'.length).trimStart());
     }
   }
 
   return {
     event,
-    payload: JSON.parse(dataLines.join("\n")),
-    type: "event",
+    payload: JSON.parse(dataLines.join('\n')),
+    type: 'event',
   };
 }
 
@@ -181,12 +180,12 @@ function createFakeServer() {
   return server;
 }
 
-describe("installGracefulShutdown", () => {
+describe('installGracefulShutdown', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("registers SIGTERM and SIGINT handlers", () => {
+  it('registers SIGTERM and SIGINT handlers', () => {
     const on = vi.fn();
 
     installGracefulShutdown({
@@ -200,18 +199,16 @@ describe("installGracefulShutdown", () => {
     });
 
     expect(on).toHaveBeenCalledTimes(2);
-    expect(on).toHaveBeenNthCalledWith(1, "SIGTERM", expect.any(Function));
-    expect(on).toHaveBeenNthCalledWith(2, "SIGINT", expect.any(Function));
+    expect(on).toHaveBeenNthCalledWith(1, 'SIGTERM', expect.any(Function));
+    expect(on).toHaveBeenNthCalledWith(2, 'SIGINT', expect.any(Function));
   });
 
-  it("sends close events to active SSE clients and cleans up subscriptions", async () => {
+  it('sends close events to active SSE clients and cleans up subscriptions', async () => {
     const harness = createTestHarness();
-    const response = await harness.app.request("/v1/streams/traces/trace_shutdown");
+    const response = await harness.app.request('/v1/streams/traces/trace_shutdown');
 
     expect(response.status).toBe(200);
-    expect(harness.recordStreamBroker.getTraceSubscriberCount("trace_shutdown")).toBe(
-      1,
-    );
+    expect(harness.recordStreamBroker.getTraceSubscriberCount('trace_shutdown')).toBe(1);
 
     const client = createSseClient(response);
     const exitCodes: number[] = [];
@@ -228,18 +225,16 @@ describe("installGracefulShutdown", () => {
       streamConnectionRegistry: harness.streamConnectionRegistry,
     });
 
-    const closeEventPromise = client.nextEvent("close");
+    const closeEventPromise = client.nextEvent('close');
 
-    await shutdown("SIGTERM");
+    await shutdown('SIGTERM');
 
     await expect(closeEventPromise).resolves.toEqual({
-      event: "close",
-      payload: { reason: "server_shutdown" },
-      type: "event",
+      event: 'close',
+      payload: { reason: 'server_shutdown' },
+      type: 'event',
     });
-    expect(harness.recordStreamBroker.getTraceSubscriberCount("trace_shutdown")).toBe(
-      0,
-    );
+    expect(harness.recordStreamBroker.getTraceSubscriberCount('trace_shutdown')).toBe(0);
     expect(harness.streamConnectionRegistry.getConnectionCount()).toBe(0);
     expect(closeDb).toHaveBeenCalledOnce();
     expect(exitCodes).toEqual([0]);
@@ -247,7 +242,7 @@ describe("installGracefulShutdown", () => {
     await client.close();
   });
 
-  it("rejects new requests after shutdown starts and waits for tracked ingest work to drain", async () => {
+  it('rejects new requests after shutdown starts and waits for tracked ingest work to drain', async () => {
     const harness = createTestHarness();
     const server = createFakeServer();
     const exitCodes: number[] = [];
@@ -268,20 +263,20 @@ describe("installGracefulShutdown", () => {
 
     expect(finishInFlightIngest).not.toBeNull();
 
-    const shutdownPromise = shutdown("SIGTERM");
+    const shutdownPromise = shutdown('SIGTERM');
     let shutdownSettled = false;
     void shutdownPromise.then(() => {
       shutdownSettled = true;
       return undefined;
     });
 
-    const rejectedResponse = await harness.app.request("/health");
+    const rejectedResponse = await harness.app.request('/health');
 
     expect(rejectedResponse.status).toBe(503);
     await expect(rejectedResponse.json()).resolves.toEqual({
       error: {
-        code: "SERVER_SHUTTING_DOWN",
-        message: "server is shutting down",
+        code: 'SERVER_SHUTTING_DOWN',
+        message: 'server is shutting down',
       },
     });
     expect(shutdownSettled).toBe(false);

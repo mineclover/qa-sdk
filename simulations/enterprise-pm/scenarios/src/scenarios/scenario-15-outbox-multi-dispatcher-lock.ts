@@ -6,8 +6,8 @@
 // 락 경합 추가 lag < 100ms.
 // Plan D outbox dispatcher PG advisory lock(row lease) 검증.
 
-import { equal, ok } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
+import { equal, ok } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
 
 interface S15Ctx {
   insertedEventIds: string[];
@@ -15,12 +15,12 @@ interface S15Ctx {
 }
 
 export const scenario15OutboxMultiDispatcherLock: Scenario<S15Ctx> = {
-  name: "scenario-15-outbox-multi-dispatcher-lock",
-  description: "outbox replica=3 + 5 동시 INSERT → 정확히 5 발행 + disjoint 처리",
+  name: 'scenario-15-outbox-multi-dispatcher-lock',
+  description: 'outbox replica=3 + 5 동시 INSERT → 정확히 5 발행 + disjoint 처리',
   validates: [
-    "Plan D outbox dispatcher PG advisory lock (row lease)",
-    "spec 05 §1 outbox dispatcher fail policy (retry + DLQ)",
-    "락 경합 추가 lag < 100ms",
+    'Plan D outbox dispatcher PG advisory lock (row lease)',
+    'spec 05 §1 outbox dispatcher fail policy (retry + DLQ)',
+    '락 경합 추가 lag < 100ms',
   ],
 
   async setup() {
@@ -43,7 +43,7 @@ export const scenario15OutboxMultiDispatcherLock: Scenario<S15Ctx> = {
         };
       }
     ).__simOutboxClient;
-    if (!oc) throw new Error("__simOutboxClient not bound");
+    if (!oc) throw new Error('__simOutboxClient not bound');
 
     const ids = await oc.insertEvents(5);
     ctx.insertedEventIds = ids;
@@ -65,21 +65,13 @@ export const scenario15OutboxMultiDispatcherLock: Scenario<S15Ctx> = {
 
   async assert(_ctx, actResult) {
     const ids = actResult.data.ids as string[];
-    const publishedAt = new Map(
-      actResult.data.publishedAt as [string, number][],
-    );
-    const dispatcherIds = new Map(
-      actResult.data.dispatcherIds as [string, string][],
-    );
+    const publishedAt = new Map(actResult.data.publishedAt as [string, number][]);
+    const dispatcherIds = new Map(actResult.data.dispatcherIds as [string, string][]);
     const insertedAtMs = actResult.data.insertedAtMs as number;
 
     // 정확히 5 발행 — 중복도 누락도 없음.
-    equal(ids.length, 5, "5 events inserted");
-    equal(
-      publishedAt.size,
-      5,
-      "exactly 5 events published (no dup, no miss)",
-    );
+    equal(ids.length, 5, '5 events inserted');
+    equal(publishedAt.size, 5, 'exactly 5 events published (no dup, no miss)');
 
     // dispatcher별 처리 row disjoint — 한 이벤트 → 한 dispatcher.
     const inverse = new Map<string, Set<string>>();
@@ -88,24 +80,15 @@ export const scenario15OutboxMultiDispatcherLock: Scenario<S15Ctx> = {
       set.add(eid);
       inverse.set(did, set);
     }
-    const allEvents = Array.from(inverse.values()).flatMap((s) =>
-      Array.from(s),
-    );
-    equal(
-      new Set(allEvents).size,
-      allEvents.length,
-      "dispatcher event sets must be disjoint",
-    );
+    const allEvents = Array.from(inverse.values()).flatMap((s) => Array.from(s));
+    equal(new Set(allEvents).size, allEvents.length, 'dispatcher event sets must be disjoint');
 
     // 락 경합 추가 lag — first publish vs last publish 차이.
     const times = Array.from(publishedAt.values()).sort((a, b) => a - b);
     const baselineLagMs = times[0] - insertedAtMs;
     const maxLagMs = times[times.length - 1] - insertedAtMs;
     const contentionLagMs = maxLagMs - baselineLagMs;
-    ok(
-      contentionLagMs < 100,
-      `lock contention lag must be < 100ms, got ${contentionLagMs}ms`,
-    );
+    ok(contentionLagMs < 100, `lock contention lag must be < 100ms, got ${contentionLagMs}ms`);
   },
 
   async teardown() {},

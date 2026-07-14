@@ -2,11 +2,11 @@
 // @def.doc infra-engine-system
 
 // providers/pulumi-deploy.ts — Pulumi Automation API 기반 배포 함수
-import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
-import type { DeployProvider } from "../adapters/adapter.js";
-import type { ResolvedConfig } from "../core/types.js";
-import { isSafePid } from "../lib/validation.js";
-import { loadPfMap, registerPfEntry } from "../lib/pf-registry.js";
+import { LocalWorkspace } from '@pulumi/pulumi/automation/index.js';
+import type { DeployProvider } from '../adapters/adapter.js';
+import type { ResolvedConfig } from '../core/types.js';
+import { isSafePid } from '../lib/validation.js';
+import { loadPfMap, registerPfEntry } from '../lib/pf-registry.js';
 
 /**
  * Pulumi Automation API를 사용하여 프로바이더의 프로그램을 실행한다.
@@ -18,8 +18,8 @@ import { loadPfMap, registerPfEntry } from "../lib/pf-registry.js";
 export interface PulumiDeployOptions {
   env?: string;
   dryRun?: boolean;
-  backendUrl?: string;   // 기본: process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local"
-  k8sContext?: string;    // 기본: process.env.KUBECONFIG_CONTEXT ?? "k3d-qa-local"
+  backendUrl?: string; // 기본: process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local"
+  k8sContext?: string; // 기본: process.env.KUBECONFIG_CONTEXT ?? "k3d-qa-local"
 }
 
 export function resolveLocalPort(env: string, port: number): number {
@@ -49,13 +49,10 @@ export async function pulumiDeployFn(
   const program = provider.getProgram(config, serviceId);
   const projectName = `infra-engine-${serviceId}`;
 
-  const backendUrl = options?.backendUrl
-    ?? process.env.PULUMI_BACKEND_URL
-    ?? "file://~/.pulumi-local";
+  const backendUrl =
+    options?.backendUrl ?? process.env.PULUMI_BACKEND_URL ?? 'file://~/.pulumi-local';
 
-  const k8sContext = options?.k8sContext
-    ?? process.env.KUBECONFIG_CONTEXT
-    ?? "k3d-qa-local";
+  const k8sContext = options?.k8sContext ?? process.env.KUBECONFIG_CONTEXT ?? 'k3d-qa-local';
 
   const stack = await LocalWorkspace.createOrSelectStack(
     {
@@ -66,14 +63,14 @@ export async function pulumiDeployFn(
     {
       projectSettings: {
         name: projectName,
-        runtime: "nodejs",
+        runtime: 'nodejs',
         backend: { url: backendUrl },
       },
     },
   );
 
   // K8s 컨텍스트 설정
-  await stack.setConfig("kubernetes:context", { value: k8sContext });
+  await stack.setConfig('kubernetes:context', { value: k8sContext });
 
   // dry-run: preview만 실행하고 반환
   if (options?.dryRun) {
@@ -81,7 +78,7 @@ export async function pulumiDeployFn(
     const preview = await stack.preview({ onOutput: (msg) => process.stdout.write(msg) });
     return {
       stackName,
-      outputs: { endpoint: "(dry-run)", changeSummary: JSON.stringify(preview.changeSummary) },
+      outputs: { endpoint: '(dry-run)', changeSummary: JSON.stringify(preview.changeSummary) },
     };
   }
 
@@ -98,32 +95,40 @@ export async function pulumiDeployFn(
 
   // K3s NodePort → kubectl port-forward로 호스트에서 접근 가능하게
   const port = config.services[serviceId]?.port ?? 3200;
-  const env = options?.env ?? "dev";
-  const ENV_NS: Record<string, string> = { test: "qa-dev", dev: "qa-dev", stage: "qa-stage", staging: "qa-stage", prod: "qa-prod", production: "qa-prod" };
-  const namespace = ENV_NS[env] ?? "qa-dev";
+  const env = options?.env ?? 'dev';
+  const ENV_NS: Record<string, string> = {
+    test: 'qa-dev',
+    dev: 'qa-dev',
+    stage: 'qa-stage',
+    staging: 'qa-stage',
+    prod: 'qa-prod',
+    production: 'qa-prod',
+  };
+  const namespace = ENV_NS[env] ?? 'qa-dev';
   const localPort = resolveLocalPort(env, port);
 
   if (outputs.serviceName) {
     const pfKey = `${serviceId}-${env}`;
     try {
-      const { execa } = await import("execa");
+      const { execa } = await import('execa');
 
       // 기존 port-forward 프로세스 정리 — PID 기반 (pkill fallback)
       const pfMap = await loadPfMap();
       if (isSafePid(pfMap[pfKey]?.pid)) {
         try {
-          process.kill(pfMap[pfKey].pid, "SIGTERM");
+          process.kill(pfMap[pfKey].pid, 'SIGTERM');
           console.log(`[port-forward] 기존 PID ${pfMap[pfKey].pid} 종료`);
-        } catch { /* 이미 종료됨 */ }
+        } catch {
+          /* 이미 종료됨 */
+        }
       }
 
       // 백그라운드 port-forward 실행
-      const pf = execa("kubectl", [
-        "-n", namespace,
-        "port-forward",
-        `svc/${outputs.serviceName}`,
-        `${localPort}:${port}`,
-      ], { detached: true, stdio: "ignore" });
+      const pf = execa(
+        'kubectl',
+        ['-n', namespace, 'port-forward', `svc/${outputs.serviceName}`, `${localPort}:${port}`],
+        { detached: true, stdio: 'ignore' },
+      );
       pf.unref();
 
       // PID를 infra-pf.json에 저장
@@ -134,7 +139,7 @@ export async function pulumiDeployFn(
           service: outputs.serviceName,
           namespace,
           endpoint: `http://127.0.0.1:${localPort}`,
-          kind: "port-forward",
+          kind: 'port-forward',
         });
       }
 
@@ -142,11 +147,17 @@ export async function pulumiDeployFn(
       for (let i = 0; i < 10; i++) {
         await new Promise((r) => setTimeout(r, 1000));
         try {
-          await globalThis.fetch(`http://127.0.0.1:${localPort}/`, { signal: AbortSignal.timeout(2000) });
+          await globalThis.fetch(`http://127.0.0.1:${localPort}/`, {
+            signal: AbortSignal.timeout(2000),
+          });
           break;
-        } catch { /* 아직 준비 안 됨 */ }
+        } catch {
+          /* 아직 준비 안 됨 */
+        }
       }
-      console.log(`[port-forward] svc/${outputs.serviceName} → localhost:${localPort} (PID: ${pf.pid})`);
+      console.log(
+        `[port-forward] svc/${outputs.serviceName} → localhost:${localPort} (PID: ${pf.pid})`,
+      );
     } catch (err) {
       console.warn(`[port-forward] 설정 실패: ${err}`);
     }

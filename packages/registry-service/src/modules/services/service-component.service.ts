@@ -1,27 +1,27 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { forwardRef, Inject, Injectable, Optional } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
+import { forwardRef, Inject, Injectable, Optional } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
 import type {
   ServiceComponentLifecycleState,
   ServiceComponentVersionStore,
-} from "../../stores/service-component-version-store.js";
+} from '../../stores/service-component-version-store.js';
 import type {
   ComponentVersionKind,
   DeploymentBinding,
   RuntimeServiceAddress,
   ServiceOwnershipSpec,
-} from "./service.types.js";
-import { ManifestService } from "../manifests/manifest.service.js";
-import { ServiceTopologyService } from "./service-topology.service.js";
+} from './service.types.js';
+import { ManifestService } from '../manifests/manifest.service.js';
+import { ServiceTopologyService } from './service-topology.service.js';
 import {
   isComponentVersionKind,
   ServiceComponentStore,
   type ServiceComponentRecord,
-} from "./service-component-store.js";
+} from './service-component-store.js';
 
-export const SERVICE_COMPONENT_VERSION_STORE = "SERVICE_COMPONENT_VERSION_STORE";
+export const SERVICE_COMPONENT_VERSION_STORE = 'SERVICE_COMPONENT_VERSION_STORE';
 
 @Injectable()
 export class ServiceComponentService {
@@ -29,7 +29,9 @@ export class ServiceComponentService {
 
   constructor(
     @Inject(SERVICE_COMPONENT_VERSION_STORE) componentStore: ServiceComponentVersionStore,
-    @Optional() @Inject(forwardRef(() => ManifestService)) private readonly manifests?: ManifestService,
+    @Optional()
+    @Inject(forwardRef(() => ManifestService))
+    private readonly manifests?: ManifestService,
     @Optional() @Inject(ServiceTopologyService) private readonly topology?: ServiceTopologyService,
   ) {
     this.store = new ServiceComponentStore(componentStore);
@@ -49,24 +51,24 @@ export class ServiceComponentService {
 
   async listPublishedVersions(catalogId: string, kind: string, serviceId: string) {
     const versions = await this.listVersions(catalogId, kind, serviceId);
-    return versions.filter(record => record.state === "published");
+    return versions.filter((record) => record.state === 'published');
   }
 
   async getAssemblyCandidates(catalogId: string, serviceId: string) {
-    const serviceUnit = await this.listVersions(catalogId, "service-unit", serviceId);
-    const ownership = await this.listVersions(catalogId, "ownership", serviceId);
-    const runtimeAddress = await this.listVersions(catalogId, "runtime-address", serviceId);
-    const exposure = await this.listVersions(catalogId, "exposure", serviceId);
-    const deploymentBinding = await this.listVersions(catalogId, "deployment-binding", serviceId);
+    const serviceUnit = await this.listVersions(catalogId, 'service-unit', serviceId);
+    const ownership = await this.listVersions(catalogId, 'ownership', serviceId);
+    const runtimeAddress = await this.listVersions(catalogId, 'runtime-address', serviceId);
+    const exposure = await this.listVersions(catalogId, 'exposure', serviceId);
+    const deploymentBinding = await this.listVersions(catalogId, 'deployment-binding', serviceId);
 
     const required = {
-      "service-unit": this.toCandidateBucket(serviceUnit, "required"),
-      "ownership": this.toCandidateBucket(ownership, "required"),
-      "runtime-address": this.toCandidateBucket(runtimeAddress, "required"),
+      'service-unit': this.toCandidateBucket(serviceUnit, 'required'),
+      ownership: this.toCandidateBucket(ownership, 'required'),
+      'runtime-address': this.toCandidateBucket(runtimeAddress, 'required'),
     };
     const optional = {
-      "exposure": this.toCandidateBucket(exposure, "optional"),
-      "deployment-binding": this.toCandidateBucket(deploymentBinding, "optional"),
+      exposure: this.toCandidateBucket(exposure, 'optional'),
+      'deployment-binding': this.toCandidateBucket(deploymentBinding, 'optional'),
     };
 
     const missingRequired = Object.entries(required)
@@ -74,8 +76,8 @@ export class ServiceComponentService {
       .map(([kind]) => kind);
 
     const allExcluded = [
-      ...Object.values(required).flatMap(bucket => bucket.excluded),
-      ...Object.values(optional).flatMap(bucket => bucket.excluded),
+      ...Object.values(required).flatMap((bucket) => bucket.excluded),
+      ...Object.values(optional).flatMap((bucket) => bucket.excluded),
     ];
 
     return {
@@ -88,33 +90,35 @@ export class ServiceComponentService {
       },
       summary: {
         published: {
-          required: Object.values(required).reduce((sum, bucket) => sum + bucket.published.length, 0),
-          optional: Object.values(optional).reduce((sum, bucket) => sum + bucket.published.length, 0),
+          required: Object.values(required).reduce(
+            (sum, bucket) => sum + bucket.published.length,
+            0,
+          ),
+          optional: Object.values(optional).reduce(
+            (sum, bucket) => sum + bucket.published.length,
+            0,
+          ),
         },
         excluded: {
-          draft: allExcluded.filter(item => item.state === "draft").length,
-          deprecated: allExcluded.filter(item => item.state === "deprecated").length,
-          archived: allExcluded.filter(item => item.state === "archived").length,
+          draft: allExcluded.filter((item) => item.state === 'draft').length,
+          deprecated: allExcluded.filter((item) => item.state === 'deprecated').length,
+          archived: allExcluded.filter((item) => item.state === 'archived').length,
         },
       },
     };
   }
 
-  async getOwnershipTopologyAlignment(
-    catalogId: string,
-    serviceId: string,
-    version?: string,
-  ) {
+  async getOwnershipTopologyAlignment(catalogId: string, serviceId: string, version?: string) {
     if (!this.topology) {
-      throw new AppError("SERVICE_UNAVAILABLE", "service topology not available", 503);
+      throw new AppError('SERVICE_UNAVAILABLE', 'service topology not available', 503);
     }
 
     const topologyRecord = await this.topology.get(catalogId, serviceId);
     const topologyServices = await this.topology.list(catalogId);
     const owners = await this.topology.listSvcOwners(catalogId);
-    const versions = await this.listVersions(catalogId, "ownership", serviceId);
+    const versions = await this.listVersions(catalogId, 'ownership', serviceId);
     const selected = version
-      ? await this.store.require(catalogId, "ownership", serviceId, version)
+      ? await this.store.require(catalogId, 'ownership', serviceId, version)
       : this.selectPreferredOwnershipVersion(versions);
 
     if (!selected) {
@@ -126,7 +130,7 @@ export class ServiceComponentService {
         },
         ownershipComponent: null,
         alignment: {
-          status: "topology-only" as const,
+          status: 'topology-only' as const,
           ownedPrefixes: {
             matching: [],
             onlyInComponent: [],
@@ -151,7 +155,10 @@ export class ServiceComponentService {
     }
 
     const ownership = selected.value as ServiceOwnershipSpec;
-    const ownedAlignment = this.compareStringSets(ownership.ownedPrefixes, topologyRecord.ownedPrefixes);
+    const ownedAlignment = this.compareStringSets(
+      ownership.ownedPrefixes,
+      topologyRecord.ownedPrefixes,
+    );
     const consumedAlignment = this.compareStringSets(
       ownership.consumedPrefixes ?? [],
       topologyRecord.consumedPrefixes ?? [],
@@ -163,11 +170,11 @@ export class ServiceComponentService {
         topologyOwnerServiceId: owners[prefixId]!,
       }));
     const driftCount =
-      ownedAlignment.onlyInComponent.length
-      + ownedAlignment.onlyInTopology.length
-      + consumedAlignment.onlyInComponent.length
-      + consumedAlignment.onlyInTopology.length
-      + conflictingOwners.length;
+      ownedAlignment.onlyInComponent.length +
+      ownedAlignment.onlyInTopology.length +
+      consumedAlignment.onlyInComponent.length +
+      consumedAlignment.onlyInTopology.length +
+      conflictingOwners.length;
 
     return {
       serviceId,
@@ -182,7 +189,7 @@ export class ServiceComponentService {
         consumedPrefixes: [...(ownership.consumedPrefixes ?? [])],
       },
       alignment: {
-        status: driftCount === 0 ? "aligned" as const : "drifted" as const,
+        status: driftCount === 0 ? ('aligned' as const) : ('drifted' as const),
         ownedPrefixes: ownedAlignment,
         consumedPrefixes: consumedAlignment,
         conflictingOwners,
@@ -214,10 +221,10 @@ export class ServiceComponentService {
     },
   ) {
     if (!body.runtimeAddressVersion) {
-      throw new AppError("INVALID_INPUT", "runtimeAddressVersion 필수", 400);
+      throw new AppError('INVALID_INPUT', 'runtimeAddressVersion 필수', 400);
     }
     if (!body.namespace || !body.name || !body.env || !body.region) {
-      throw new AppError("INVALID_INPUT", "namespace/name/env/region 필수", 400);
+      throw new AppError('INVALID_INPUT', 'namespace/name/env/region 필수', 400);
     }
 
     const value: RuntimeServiceAddress = {
@@ -230,7 +237,7 @@ export class ServiceComponentService {
 
     const result = await this.upsert(
       catalogId,
-      "runtime-address",
+      'runtime-address',
       serviceId,
       body.runtimeAddressVersion,
       value,
@@ -239,7 +246,10 @@ export class ServiceComponentService {
     return {
       ...result,
       synced: true,
-      manifestImpact: await this.describeRuntimeAddressManifestImpact(serviceId, body.runtimeAddressVersion),
+      manifestImpact: await this.describeRuntimeAddressManifestImpact(
+        serviceId,
+        body.runtimeAddressVersion,
+      ),
     };
   }
 
@@ -264,13 +274,18 @@ export class ServiceComponentService {
     },
   ) {
     if (!body.deploymentVersion) {
-      throw new AppError("INVALID_INPUT", "deploymentVersion 필수", 400);
+      throw new AppError('INVALID_INPUT', 'deploymentVersion 필수', 400);
     }
-    if (!body.runtime?.namespace || !body.runtime?.name || !body.runtime?.env || !body.runtime?.region) {
-      throw new AppError("INVALID_INPUT", "runtime.namespace/name/env/region 필수", 400);
+    if (
+      !body.runtime?.namespace ||
+      !body.runtime?.name ||
+      !body.runtime?.env ||
+      !body.runtime?.region
+    ) {
+      throw new AppError('INVALID_INPUT', 'runtime.namespace/name/env/region 필수', 400);
     }
     if (!body.provider || !body.project || !body.stack || !body.resourceKey) {
-      throw new AppError("INVALID_INPUT", "provider/project/stack/resourceKey 필수", 400);
+      throw new AppError('INVALID_INPUT', 'provider/project/stack/resourceKey 필수', 400);
     }
 
     const value: DeploymentBinding = {
@@ -297,13 +312,16 @@ export class ServiceComponentService {
 
     const result = await this.upsert(
       catalogId,
-      "deployment-binding",
+      'deployment-binding',
       serviceId,
       body.deploymentVersion,
       value,
     );
 
-    const manifestImpact = await this.describeDeploymentManifestImpact(serviceId, body.deploymentVersion);
+    const manifestImpact = await this.describeDeploymentManifestImpact(
+      serviceId,
+      body.deploymentVersion,
+    );
 
     return {
       ...result,
@@ -320,9 +338,9 @@ export class ServiceComponentService {
     value: unknown,
   ) {
     const existing = await this.store.get(catalogId, this.parseKind(kind), serviceId, version);
-    if (existing && existing.state !== "draft") {
+    if (existing && existing.state !== 'draft') {
       throw new AppError(
-        "INVALID_TRANSITION",
+        'INVALID_TRANSITION',
         `Only draft component can be updated: ${kind}/${serviceId}/${version}`,
         409,
       );
@@ -331,15 +349,17 @@ export class ServiceComponentService {
       kind: this.parseKind(kind),
       serviceId,
       version,
-      ...(existing ? {
-        state: existing.state,
-        createdAt: existing.createdAt,
-        publishedAt: existing.publishedAt,
-        deprecatedAt: existing.deprecatedAt,
-        archivedAt: existing.archivedAt,
-      } : {
-        state: "draft" as const,
-      }),
+      ...(existing
+        ? {
+            state: existing.state,
+            createdAt: existing.createdAt,
+            publishedAt: existing.publishedAt,
+            deprecatedAt: existing.deprecatedAt,
+            archivedAt: existing.archivedAt,
+          }
+        : {
+            state: 'draft' as const,
+          }),
       value: this.asValue(value),
     };
     await this.store.upsert(catalogId, record);
@@ -356,11 +376,16 @@ export class ServiceComponentService {
     return this.store.require(catalogId, kind, serviceId, version);
   }
 
-  async requirePublished(catalogId: string, kind: ComponentVersionKind, serviceId: string, version: string) {
+  async requirePublished(
+    catalogId: string,
+    kind: ComponentVersionKind,
+    serviceId: string,
+    version: string,
+  ) {
     const record = await this.require(catalogId, kind, serviceId, version);
-    if (record.state !== "published") {
+    if (record.state !== 'published') {
       throw new AppError(
-        "INVALID_TRANSITION",
+        'INVALID_TRANSITION',
         `Component must be published before assembly: ${kind}/${serviceId}/${version}`,
         409,
       );
@@ -376,11 +401,15 @@ export class ServiceComponentService {
     targetState: ServiceComponentLifecycleState,
   ) {
     const record = await this.store.require(catalogId, this.parseKind(kind), serviceId, version);
-    if (targetState === "archived" && this.manifests) {
-      const activeManifest = await this.manifests.findActiveManifestForComponent(serviceId, record.kind, version);
+    if (targetState === 'archived' && this.manifests) {
+      const activeManifest = await this.manifests.findActiveManifestForComponent(
+        serviceId,
+        record.kind,
+        version,
+      );
       if (activeManifest) {
         throw new AppError(
-          "INVALID_TRANSITION",
+          'INVALID_TRANSITION',
           `Active manifest '${activeManifest.serviceId}:${activeManifest.manifestVersion}' still references ${record.kind}/${serviceId}/${version}`,
           409,
         );
@@ -393,14 +422,14 @@ export class ServiceComponentService {
 
   private parseKind(kind: string): ComponentVersionKind {
     if (!isComponentVersionKind(kind)) {
-      throw new AppError("INVALID_INPUT", `Unknown component kind: ${kind}`, 400);
+      throw new AppError('INVALID_INPUT', `Unknown component kind: ${kind}`, 400);
     }
     return kind;
   }
 
   private asValue(value: unknown) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      throw new AppError("INVALID_INPUT", "value 객체 필수", 400);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new AppError('INVALID_INPUT', 'value 객체 필수', 400);
     }
     return value as Record<string, unknown>;
   }
@@ -409,11 +438,11 @@ export class ServiceComponentService {
     record: ServiceComponentRecord,
     targetState: ServiceComponentLifecycleState,
   ): ServiceComponentRecord {
-    const allowed = transitionMap[record.state ?? "draft"];
+    const allowed = transitionMap[record.state ?? 'draft'];
     if (!allowed.includes(targetState)) {
       throw new AppError(
-        "INVALID_TRANSITION",
-        `Invalid component transition: ${(record.state ?? "draft")} -> ${targetState}`,
+        'INVALID_TRANSITION',
+        `Invalid component transition: ${record.state ?? 'draft'} -> ${targetState}`,
         409,
       );
     }
@@ -422,23 +451,20 @@ export class ServiceComponentService {
       ...record,
       state: targetState,
       updatedAt: now,
-      ...(targetState === "published" ? { publishedAt: now } : {}),
-      ...(targetState === "deprecated" ? { deprecatedAt: now } : {}),
-      ...(targetState === "archived" ? { archivedAt: now } : {}),
+      ...(targetState === 'published' ? { publishedAt: now } : {}),
+      ...(targetState === 'deprecated' ? { deprecatedAt: now } : {}),
+      ...(targetState === 'archived' ? { archivedAt: now } : {}),
     };
   }
 
-  private toCandidateBucket(
-    records: ServiceComponentRecord[],
-    required: "required" | "optional",
-  ) {
-    const published = records.filter(record => record.state === "published");
+  private toCandidateBucket(records: ServiceComponentRecord[], required: 'required' | 'optional') {
+    const published = records.filter((record) => record.state === 'published');
     const excluded = records
-      .filter(record => record.state !== "published")
-      .map(record => ({
+      .filter((record) => record.state !== 'published')
+      .map((record) => ({
         version: record.version,
         state: record.state,
-        reason: this.exclusionReason(record.state ?? "draft", required),
+        reason: this.exclusionReason(record.state ?? 'draft', required),
       }));
 
     return {
@@ -449,22 +475,22 @@ export class ServiceComponentService {
 
   private exclusionReason(
     state: ServiceComponentLifecycleState,
-    required: "required" | "optional",
+    required: 'required' | 'optional',
   ): string {
-    if (state === "draft") {
-      return "Not assembly-ready: publish required";
+    if (state === 'draft') {
+      return 'Not assembly-ready: publish required';
     }
-    if (state === "deprecated") {
-      return required === "required"
-        ? "Deprecated: replace before new assembly"
-        : "Deprecated: optional component omitted from new assembly";
+    if (state === 'deprecated') {
+      return required === 'required'
+        ? 'Deprecated: replace before new assembly'
+        : 'Deprecated: optional component omitted from new assembly';
     }
-    return "Archived: unusable for new assembly";
+    return 'Archived: unusable for new assembly';
   }
 
   private selectPreferredOwnershipVersion(records: readonly ServiceComponentRecord[]) {
     const published = records
-      .filter((record) => record.state === "published")
+      .filter((record) => record.state === 'published')
       .toSorted((left, right) => this.compareRecordRecency(left, right));
     if (published.length > 0) {
       return published[0]!;
@@ -492,7 +518,10 @@ export class ServiceComponentService {
     serviceId: string,
   ) {
     return topologyServices
-      .filter((service) => service.serviceId !== serviceId && (service.consumedPrefixes ?? []).includes(prefixId))
+      .filter(
+        (service) =>
+          service.serviceId !== serviceId && (service.consumedPrefixes ?? []).includes(prefixId),
+      )
       .map((service) => service.serviceId)
       .toSorted();
   }
@@ -507,50 +536,50 @@ export class ServiceComponentService {
     serviceId: string,
     runtimeAddressVersion: string,
   ): Promise<{
-    status: "already-pinned" | "republish-recommended" | "unpinned" | "no-active-manifest";
+    status: 'already-pinned' | 'republish-recommended' | 'unpinned' | 'no-active-manifest';
     activeManifestVersion: string | null;
     pinnedRuntimeAddressVersion?: string;
-    action: "none" | "review-and-republish" | "optional-republish";
+    action: 'none' | 'review-and-republish' | 'optional-republish';
   }> {
     if (!this.manifests) {
       return {
-        status: "no-active-manifest",
+        status: 'no-active-manifest',
         activeManifestVersion: null,
-        action: "optional-republish",
+        action: 'optional-republish',
       };
     }
 
     const activeManifest = this.manifests.getActiveManifest(serviceId);
     if (!activeManifest) {
       return {
-        status: "no-active-manifest",
+        status: 'no-active-manifest',
         activeManifestVersion: null,
-        action: "optional-republish",
+        action: 'optional-republish',
       };
     }
 
     if (!activeManifest.runtimeAddressVersion) {
       return {
-        status: "unpinned",
+        status: 'unpinned',
         activeManifestVersion: activeManifest.manifestVersion,
-        action: "optional-republish",
+        action: 'optional-republish',
       };
     }
 
     if (activeManifest.runtimeAddressVersion === runtimeAddressVersion) {
       return {
-        status: "already-pinned",
+        status: 'already-pinned',
         activeManifestVersion: activeManifest.manifestVersion,
         pinnedRuntimeAddressVersion: activeManifest.runtimeAddressVersion,
-        action: "none",
+        action: 'none',
       };
     }
 
     return {
-      status: "republish-recommended",
+      status: 'republish-recommended',
       activeManifestVersion: activeManifest.manifestVersion,
       pinnedRuntimeAddressVersion: activeManifest.runtimeAddressVersion,
-      action: "review-and-republish",
+      action: 'review-and-republish',
     };
   }
 
@@ -558,57 +587,60 @@ export class ServiceComponentService {
     serviceId: string,
     deploymentVersion: string,
   ): Promise<{
-    status: "already-pinned" | "republish-recommended" | "unpinned" | "no-active-manifest";
+    status: 'already-pinned' | 'republish-recommended' | 'unpinned' | 'no-active-manifest';
     activeManifestVersion: string | null;
     pinnedDeploymentVersion?: string;
-    action: "none" | "review-and-republish" | "optional-republish";
+    action: 'none' | 'review-and-republish' | 'optional-republish';
   }> {
     if (!this.manifests) {
       return {
-        status: "no-active-manifest",
+        status: 'no-active-manifest',
         activeManifestVersion: null,
-        action: "optional-republish",
+        action: 'optional-republish',
       };
     }
 
     const activeManifest = this.manifests.getActiveManifest(serviceId);
     if (!activeManifest) {
       return {
-        status: "no-active-manifest",
+        status: 'no-active-manifest',
         activeManifestVersion: null,
-        action: "optional-republish",
+        action: 'optional-republish',
       };
     }
 
     if (!activeManifest.deploymentVersion) {
       return {
-        status: "unpinned",
+        status: 'unpinned',
         activeManifestVersion: activeManifest.manifestVersion,
-        action: "optional-republish",
+        action: 'optional-republish',
       };
     }
 
     if (activeManifest.deploymentVersion === deploymentVersion) {
       return {
-        status: "already-pinned",
+        status: 'already-pinned',
         activeManifestVersion: activeManifest.manifestVersion,
         pinnedDeploymentVersion: activeManifest.deploymentVersion,
-        action: "none",
+        action: 'none',
       };
     }
 
     return {
-      status: "republish-recommended",
+      status: 'republish-recommended',
       activeManifestVersion: activeManifest.manifestVersion,
       pinnedDeploymentVersion: activeManifest.deploymentVersion,
-      action: "review-and-republish",
+      action: 'review-and-republish',
     };
   }
 }
 
-const transitionMap: Record<ServiceComponentLifecycleState, readonly ServiceComponentLifecycleState[]> = {
-  draft: ["published"],
-  published: ["deprecated"],
-  deprecated: ["archived"],
+const transitionMap: Record<
+  ServiceComponentLifecycleState,
+  readonly ServiceComponentLifecycleState[]
+> = {
+  draft: ['published'],
+  published: ['deprecated'],
+  deprecated: ['archived'],
   archived: [],
 };

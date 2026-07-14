@@ -1,8 +1,8 @@
 // @def.boundary sim-domain-slice-kit
 // @def.doc domain-slice-architecture
 
-import { randomUUID } from "node:crypto";
-import type { TransactionPort, TransactionScope } from "../transaction.port.js";
+import { randomUUID } from 'node:crypto';
+import type { TransactionPort, TransactionScope } from '../transaction.port.js';
 
 /**
  * 슬라이스에서 사용할 SQLite TransactionPort 어댑터가 의존하는 최소 구조.

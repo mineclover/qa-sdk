@@ -8,7 +8,7 @@ import type {
   SpecNode,
   SpecEdge,
   SpecEdgeType,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 /**
  * ScenarioSpec DSL → SpecGraph 변환.
@@ -25,9 +25,7 @@ export function compileSpec(spec: ScenarioSpec): SpecGraph {
     // sequence / optional / branch next
     if (step.next) {
       const edgeType: SpecEdgeType =
-        step.kind === "optional" ? "optional" :
-        step.kind === "branch" ? "branch" :
-        "sequence";
+        step.kind === 'optional' ? 'optional' : step.kind === 'branch' ? 'branch' : 'sequence';
 
       for (const targetId of step.next) {
         edges.push({
@@ -45,7 +43,7 @@ export function compileSpec(spec: ScenarioSpec): SpecGraph {
           edges.push({
             source: step.id,
             target: targetId,
-            type: "branch",
+            type: 'branch',
             condition: branch.condition,
           });
         }
@@ -58,9 +56,7 @@ export function compileSpec(spec: ScenarioSpec): SpecGraph {
     version: spec.version,
     nodes,
     edges,
-    ...(spec.entry_conditions !== undefined
-      ? { entry_conditions: spec.entry_conditions }
-      : {}),
+    ...(spec.entry_conditions !== undefined ? { entry_conditions: spec.entry_conditions } : {}),
   };
 }
 

@@ -8,8 +8,16 @@
  * CLI에서 파일 저장 + mmdc 렌더링을 담당.
  */
 
-import type { GraphRegistry } from "dkg";
-import type { IntentLinkNode, DslBundleNode, DomainNode, ConstraintNode, TableNode, PrefixNode, TransitionSpecNode } from "dkg";
+import type { GraphRegistry } from 'dkg';
+import type {
+  IntentLinkNode,
+  DslBundleNode,
+  DomainNode,
+  ConstraintNode,
+  TableNode,
+  PrefixNode,
+  TransitionSpecNode,
+} from 'dkg';
 
 // ── SignalDef duck type (viz-3d 의존 없이) ──────────────────
 
@@ -37,7 +45,7 @@ export interface MermaidDiagramOptions {
 
 /** Mermaid note 안에서 특수문자 이스케이프 */
 function escapeNote(text: string): string {
-  return text.replace(/"/g, "#quot;").replace(/;/g, "#semi;");
+  return text.replace(/"/g, '#quot;').replace(/;/g, '#semi;');
 }
 
 // ── IntentLink Diagrams ─────────────────────────────────────
@@ -51,12 +59,12 @@ export function intentLinkDiagram(
   options?: MermaidDiagramOptions,
 ): string {
   const node = graph.getNode(intentLinkId) as IntentLinkNode | undefined;
-  if (!node || node.kind !== "intent-link") {
+  if (!node || node.kind !== 'intent-link') {
     throw new Error(`IntentLink not found: ${intentLinkId}`);
   }
 
   const showInv = options?.showInvariants !== false;
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
 
   const title = options?.title ?? `${node.id}: ${node.intent}`;
   lines.push(`  title ${title}`);
@@ -67,7 +75,9 @@ export function intentLinkDiagram(
   }
 
   // via annotation
-  lines.push(`  note over ${node.endpoints[0]},${node.endpoints[node.endpoints.length - 1]}: via ${node.via}`);
+  lines.push(
+    `  note over ${node.endpoints[0]},${node.endpoints[node.endpoints.length - 1]}: via ${node.via}`,
+  );
 
   // sequential arrows between endpoints
   for (let i = 0; i < node.endpoints.length - 1; i++) {
@@ -81,7 +91,7 @@ export function intentLinkDiagram(
     lines.push(`  note over ${first},${last}: ${escapeNote(node.invariant)}`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /**
@@ -91,12 +101,12 @@ export function allIntentLinksDiagram(
   graph: GraphRegistry,
   options?: MermaidDiagramOptions,
 ): string {
-  const nodes = graph.getNodesByKind("intent-link");
-  if (nodes.length === 0) return "sequenceDiagram\n  note right of Actor: IntentLink 없음";
+  const nodes = graph.getNodesByKind('intent-link');
+  if (nodes.length === 0) return 'sequenceDiagram\n  note right of Actor: IntentLink 없음';
 
   const showInv = options?.showInvariants !== false;
-  const lines: string[] = ["sequenceDiagram"];
-  lines.push(`  title ${options?.title ?? "전체 IntentLink 흐름"}`);
+  const lines: string[] = ['sequenceDiagram'];
+  lines.push(`  title ${options?.title ?? '전체 IntentLink 흐름'}`);
 
   // 모든 endpoint를 중복 없이 수집
   const allEndpoints = new Set<string>();
@@ -109,7 +119,7 @@ export function allIntentLinksDiagram(
 
   // 각 IntentLink별 블록
   for (const n of nodes) {
-    lines.push("");
+    lines.push('');
     lines.push(`  rect rgb(240, 248, 255)`);
     lines.push(`  note right of ${n.endpoints[0]}: ${n.id} — ${escapeNote(n.intent)}`);
 
@@ -118,12 +128,14 @@ export function allIntentLinksDiagram(
     }
 
     if (showInv && n.invariant) {
-      lines.push(`  note over ${n.endpoints[0]},${n.endpoints[n.endpoints.length - 1]}: ${escapeNote(n.invariant)}`);
+      lines.push(
+        `  note over ${n.endpoints[0]},${n.endpoints[n.endpoints.length - 1]}: ${escapeNote(n.invariant)}`,
+      );
     }
     lines.push(`  end`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── DSL Bundle Diagrams ─────────────────────────────────────
@@ -137,12 +149,12 @@ export function dslDiagram(
   options?: MermaidDiagramOptions,
 ): string {
   const node = graph.getNode(dslId) as DslBundleNode | undefined;
-  if (!node || node.kind !== "dsl-bundle") {
+  if (!node || node.kind !== 'dsl-bundle') {
     throw new Error(`DslBundle not found: ${dslId}`);
   }
 
   const showInv = options?.showInvariants !== false;
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
 
   const title = options?.title ?? `${node.id}: ${node.name}`;
   lines.push(`  title ${title}`);
@@ -156,12 +168,14 @@ export function dslDiagram(
   if (node.fixedDims.length > 0) {
     const first = node.memberPrefixes[0];
     const last = node.memberPrefixes[node.memberPrefixes.length - 1];
-    lines.push(`  note over ${first},${last}: fixedDims: ${node.fixedDims.join(", ")}`);
+    lines.push(`  note over ${first},${last}: fixedDims: ${node.fixedDims.join(', ')}`);
   }
 
   // sequential arrows
   for (let i = 0; i < node.memberPrefixes.length - 1; i++) {
-    lines.push(`  ${node.memberPrefixes[i]} ->> ${node.memberPrefixes[i + 1]}: ${node.memberPrefixes[i + 1]}`);
+    lines.push(
+      `  ${node.memberPrefixes[i]} ->> ${node.memberPrefixes[i + 1]}: ${node.memberPrefixes[i + 1]}`,
+    );
   }
 
   // invariant notes
@@ -173,7 +187,7 @@ export function dslDiagram(
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── Signal Diagrams ─────────────────────────────────────────
@@ -186,19 +200,21 @@ export function signalDiagram(
   signalId: string,
   options?: MermaidDiagramOptions,
 ): string {
-  const signal = signalDefs.find(s => s.id === signalId);
+  const signal = signalDefs.find((s) => s.id === signalId);
   if (!signal) {
-    throw new Error(`Signal not found: ${signalId}. Available: ${signalDefs.map(s => s.id).join(", ")}`);
+    throw new Error(
+      `Signal not found: ${signalId}. Available: ${signalDefs.map((s) => s.id).join(', ')}`,
+    );
   }
 
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
 
   const title = options?.title ?? `Signal: ${signal.id} (${signal.name})`;
   lines.push(`  title ${title}`);
 
   // requires annotation
   if (signal.requires && signal.requires.length > 0) {
-    lines.push(`  note left of Actor: requires: ${signal.requires.join(", ")}`);
+    lines.push(`  note left of Actor: requires: ${signal.requires.join(', ')}`);
   }
 
   lines.push(`  actor Actor`);
@@ -212,21 +228,19 @@ export function signalDiagram(
   if (signal.members.length > 0) {
     const first = signal.members[0];
     const firstLabel = first.fixedValues
-      ? Object.values(first.fixedValues).join("/")
+      ? Object.values(first.fixedValues).join('/')
       : first.prefixId;
     lines.push(`  Actor ->> ${first.prefixId}: ${firstLabel}`);
 
     for (let i = 0; i < signal.members.length - 1; i++) {
       const from = signal.members[i];
       const to = signal.members[i + 1];
-      const label = to.fixedValues
-        ? Object.values(to.fixedValues).join("/")
-        : to.prefixId;
+      const label = to.fixedValues ? Object.values(to.fixedValues).join('/') : to.prefixId;
       lines.push(`  ${from.prefixId} ->> ${to.prefixId}: ${label}`);
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── Types ───────────────────────────────────────────────────
@@ -241,7 +255,11 @@ export interface DiagramEntry {
 
 /** ServiceTopology duck type (service-topology.ts 직접 의존 없이) */
 export interface ServiceTopologyLike {
-  listServices(): ReadonlyArray<{ serviceId: string; name: string; ownedPrefixes: readonly string[] }>;
+  listServices(): ReadonlyArray<{
+    serviceId: string;
+    name: string;
+    ownedPrefixes: readonly string[];
+  }>;
   getConsumers(prefixId: string): string[];
 }
 
@@ -256,18 +274,18 @@ export function domainDiagram(
   options?: MermaidDiagramOptions,
 ): string {
   const node = graph.getNode(domainId) as DomainNode | undefined;
-  if (!node || node.kind !== "domain") {
+  if (!node || node.kind !== 'domain') {
     throw new Error(`Domain not found: ${domainId}`);
   }
 
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
   const title = options?.title ?? `Domain: ${node.name} (${node.id})`;
   lines.push(`  title ${title}`);
 
   // participants = domain 소속 prefix 순서
   for (const pid of node.prefixes) {
     const pNode = graph.getNode(pid) as PrefixNode | undefined;
-    const label = pNode ? `${pid} [${pNode.category ?? "entity"}]` : pid;
+    const label = pNode ? `${pid} [${pNode.category ?? 'entity'}]` : pid;
     lines.push(`  participant ${pid} as ${label}`);
   }
 
@@ -280,7 +298,7 @@ export function domainDiagram(
   if (node.sharedAxes.length > 0) {
     const first = node.prefixes[0];
     const last = node.prefixes[node.prefixes.length - 1];
-    lines.push(`  note over ${first},${last}: sharedAxes: ${node.sharedAxes.join(", ")}`);
+    lines.push(`  note over ${first},${last}: sharedAxes: ${node.sharedAxes.join(', ')}`);
   }
 
   // boundary annotation
@@ -288,10 +306,10 @@ export function domainDiagram(
     const first = node.prefixes[0];
     const last = node.prefixes[node.prefixes.length - 1];
     if (node.boundary.exports.length > 0) {
-      lines.push(`  note over ${first},${last}: exports: ${node.boundary.exports.join(", ")}`);
+      lines.push(`  note over ${first},${last}: exports: ${node.boundary.exports.join(', ')}`);
     }
     if (node.boundary.internal.length > 0) {
-      lines.push(`  note over ${first},${last}: internal: ${node.boundary.internal.join(", ")}`);
+      lines.push(`  note over ${first},${last}: internal: ${node.boundary.internal.join(', ')}`);
     }
   }
 
@@ -305,7 +323,7 @@ export function domainDiagram(
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── Service Diagram ─────────────────────────────────────────
@@ -320,12 +338,14 @@ export function serviceDiagram(
   options?: MermaidDiagramOptions,
 ): string {
   const services = topo.listServices();
-  const svc = services.find(s => s.serviceId === serviceId);
+  const svc = services.find((s) => s.serviceId === serviceId);
   if (!svc) {
-    throw new Error(`Service not found: ${serviceId}. Available: ${services.map(s => s.serviceId).join(", ")}`);
+    throw new Error(
+      `Service not found: ${serviceId}. Available: ${services.map((s) => s.serviceId).join(', ')}`,
+    );
   }
 
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
   const title = options?.title ?? `Service: ${svc.name} (${serviceId})`;
   lines.push(`  title ${title}`);
 
@@ -336,7 +356,7 @@ export function serviceDiagram(
   const consumedByOthers = new Set<string>();
   for (const pid of svc.ownedPrefixes) {
     const pNode = graph.getNode(pid) as PrefixNode | undefined;
-    const label = pNode ? `${pid} [${pNode.category ?? "entity"}]` : pid;
+    const label = pNode ? `${pid} [${pNode.category ?? 'entity'}]` : pid;
     lines.push(`  participant ${pid} as ${label}`);
 
     const consumers = topo.getConsumers(pid);
@@ -348,7 +368,7 @@ export function serviceDiagram(
   // consumer services as participants
   for (const cId of consumedByOthers) {
     if (cId !== serviceId) {
-      const cSvc = services.find(s => s.serviceId === cId);
+      const cSvc = services.find((s) => s.serviceId === cId);
       lines.push(`  participant ${cId} as ${cSvc?.name ?? cId}`);
     }
   }
@@ -371,7 +391,7 @@ export function serviceDiagram(
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── Constraint Diagram ──────────────────────────────────────
@@ -385,11 +405,11 @@ export function constraintDiagram(
   options?: MermaidDiagramOptions,
 ): string {
   const node = graph.getNode(constraintId) as ConstraintNode | undefined;
-  if (!node || node.kind !== "constraint") {
+  if (!node || node.kind !== 'constraint') {
     throw new Error(`Constraint not found: ${constraintId}`);
   }
 
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
   const title = options?.title ?? `Constraint: ${constraintId}`;
   lines.push(`  title ${title}`);
 
@@ -397,7 +417,7 @@ export function constraintDiagram(
   lines.push(`  actor ${constraintId} as ${constraintId} [${node.lifecycle}]`);
 
   // targets from constrains edges
-  const targets = graph.neighbors(constraintId, "constrains");
+  const targets = graph.neighbors(constraintId, 'constrains');
 
   for (const tid of targets) {
     const tNode = graph.getNode(tid);
@@ -420,10 +440,10 @@ export function constraintDiagram(
 
   // scope annotation
   if (node.scope.length > 0) {
-    lines.push(`  note right of ${constraintId}: scope: ${node.scope.join(", ")}`);
+    lines.push(`  note right of ${constraintId}: scope: ${node.scope.join(', ')}`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── Table Diagram ───────────────────────────────────────────
@@ -443,11 +463,11 @@ export function tableDiagram(
   options?: MermaidDiagramOptions,
 ): string {
   const node = graph.getNode(tableId) as TableNode | undefined;
-  if (!node || node.kind !== "table") {
+  if (!node || node.kind !== 'table') {
     throw new Error(`Table not found: ${tableId}`);
   }
 
-  const lines: string[] = ["erDiagram"];
+  const lines: string[] = ['erDiagram'];
   const title = options?.title ?? `Table: ${node.name}`;
   lines.push(`  %% ${title}`);
 
@@ -455,15 +475,15 @@ export function tableDiagram(
   const relatedTables = new Set<string>();
   const colRefs = graph.getTableColumnRefs(tableId);
   for (const cr of colRefs) {
-    if (cr.refKind === "fk") relatedTables.add(cr.targetId);
+    if (cr.refKind === 'fk') relatedTables.add(cr.targetId);
   }
 
   // 역방향 FK (이 테이블을 참조하는 테이블)
-  const allTables = graph.getNodesByKind("table") as TableNode[];
+  const allTables = graph.getNodesByKind('table') as TableNode[];
   for (const t of allTables) {
     if (t.id === tableId) continue;
     const refs = graph.getTableColumnRefs(t.id);
-    if (refs.some(r => r.refKind === "fk" && r.targetId === tableId)) {
+    if (refs.some((r) => r.refKind === 'fk' && r.targetId === tableId)) {
       relatedTables.add(t.id);
     }
   }
@@ -476,21 +496,23 @@ export function tableDiagram(
     lines.push(`  ${safeId(tid)} {`);
     for (const col of tNode.columns) {
       const refs = graph.getTableColumnRefs(tid);
-      const colRef = refs.find(r => r.column === col);
+      const colRef = refs.find((r) => r.column === col);
       const typeLabel = colRef
-        ? colRef.refKind === "fk" ? "FK"
-        : colRef.refKind === "column_axis" ? `axis(${colRef.targetId})`
-        : `ref(${colRef.targetId})`
-        : "scalar";
-      const pk = col === "id" ? "PK" : "";
-      lines.push(`    string ${col} ${pk ? pk + " " : ""}"${typeLabel}"`);
+        ? colRef.refKind === 'fk'
+          ? 'FK'
+          : colRef.refKind === 'column_axis'
+            ? `axis(${colRef.targetId})`
+            : `ref(${colRef.targetId})`
+        : 'scalar';
+      const pk = col === 'id' ? 'PK' : '';
+      lines.push(`    string ${col} ${pk ? pk + ' ' : ''}"${typeLabel}"`);
     }
     lines.push(`  }`);
   }
 
   // FK 관계
   for (const cr of colRefs) {
-    if (cr.refKind === "fk") {
+    if (cr.refKind === 'fk') {
       lines.push(`  ${safeId(tableId)} }o--|| ${safeId(cr.targetId)} : "${cr.column}"`);
     }
   }
@@ -500,7 +522,7 @@ export function tableDiagram(
     if (tid === tableId) continue;
     const refs = graph.getTableColumnRefs(tid);
     for (const r of refs) {
-      if (r.refKind === "fk" && r.targetId === tableId) {
+      if (r.refKind === 'fk' && r.targetId === tableId) {
         lines.push(`  ${safeId(tid)} }o--|| ${safeId(tableId)} : "${r.column}"`);
       }
     }
@@ -511,11 +533,13 @@ export function tableDiagram(
   if (prefixRefs.length > 0) {
     lines.push(`  %% prefix references`);
     for (const pr of prefixRefs) {
-      lines.push(`  ${safeId(pr.prefixId)}["${pr.prefixId} (prefix)"] }o..|| ${safeId(tableId)} : "${pr.dimLabel}"`);
+      lines.push(
+        `  ${safeId(pr.prefixId)}["${pr.prefixId} (prefix)"] }o..|| ${safeId(tableId)} : "${pr.dimLabel}"`,
+      );
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /**
@@ -523,12 +547,14 @@ export function tableDiagram(
  */
 export function tableErDiagram(
   graph: GraphRegistry,
-  options?: MermaidDiagramOptions & { ddlStatus?: Record<string, "deployed" | "catalog-only" | "ddl-only"> },
+  options?: MermaidDiagramOptions & {
+    ddlStatus?: Record<string, 'deployed' | 'catalog-only' | 'ddl-only'>;
+  },
 ): string {
-  const allTables = graph.getNodesByKind("table") as TableNode[];
-  if (allTables.length === 0) return "erDiagram\n  %% No tables";
+  const allTables = graph.getNodesByKind('table') as TableNode[];
+  if (allTables.length === 0) return 'erDiagram\n  %% No tables';
 
-  const lines: string[] = ["erDiagram"];
+  const lines: string[] = ['erDiagram'];
   const title = options?.title ?? `All Tables (${allTables.length})`;
   lines.push(`  %% ${title}`);
 
@@ -537,13 +563,13 @@ export function tableErDiagram(
     lines.push(`  ${safeId(t.id)} {`);
     for (const col of t.columns) {
       const refs = graph.getTableColumnRefs(t.id);
-      const colRef = refs.find(r => r.column === col);
+      const colRef = refs.find((r) => r.column === col);
       let typeLabel: string;
       if (!colRef) {
-        typeLabel = "scalar";
-      } else if (colRef.refKind === "fk") {
+        typeLabel = 'scalar';
+      } else if (colRef.refKind === 'fk') {
         typeLabel = `FK(${colRef.targetId})`;
-      } else if (colRef.refKind === "column_axis") {
+      } else if (colRef.refKind === 'column_axis') {
         typeLabel = `axis(${colRef.targetId})`;
       } else {
         typeLabel = `ref(${colRef.targetId})`;
@@ -558,7 +584,7 @@ export function tableErDiagram(
   for (const t of allTables) {
     const refs = graph.getTableColumnRefs(t.id);
     for (const r of refs) {
-      if (r.refKind === "fk") {
+      if (r.refKind === 'fk') {
         const edgeKey = `${t.id}->${r.targetId}:${r.column}`;
         if (seenEdges.has(edgeKey)) continue;
         seenEdges.add(edgeKey);
@@ -567,18 +593,29 @@ export function tableErDiagram(
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** Mermaid erDiagram 예약어 — 엔티티 이름으로 사용 불가 */
 const MERMAID_RESERVED = new Set([
-  "entry", "order", "group", "index", "table", "key", "type",
-  "string", "int", "float", "boolean", "date", "datetime",
+  'entry',
+  'order',
+  'group',
+  'index',
+  'table',
+  'key',
+  'type',
+  'string',
+  'int',
+  'float',
+  'boolean',
+  'date',
+  'datetime',
 ]);
 
 /** Mermaid ID에 안전한 문자열 변환 (예약어 + 특수문자 처리) */
 function safeId(id: string): string {
-  const cleaned = id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const cleaned = id.replace(/[^a-zA-Z0-9_-]/g, '_');
   // 예약어 충돌 시 접두사 추가
   if (MERMAID_RESERVED.has(cleaned.toLowerCase())) {
     return `tbl_${cleaned}`;
@@ -595,16 +632,16 @@ export function observationLoopDiagram(
   graph: GraphRegistry,
   options?: MermaidDiagramOptions,
 ): string {
-  const observations = graph.getNodesByKind("observation");
-  const decisions = graph.getNodesByKind("decision");
+  const observations = graph.getNodesByKind('observation');
+  const decisions = graph.getNodesByKind('decision');
 
-  const lines: string[] = ["sequenceDiagram"];
-  const title = options?.title ?? "Observation Loop";
+  const lines: string[] = ['sequenceDiagram'];
+  const title = options?.title ?? 'Observation Loop';
   lines.push(`  title ${title}`);
 
   if (observations.length === 0 && decisions.length === 0) {
     lines.push(`  note right of Actor: observation/decision 없음`);
-    return lines.join("\n");
+    return lines.join('\n');
   }
 
   lines.push(`  actor Runtime`);
@@ -612,25 +649,27 @@ export function observationLoopDiagram(
   lines.push(`  participant Decisions`);
 
   // open observations (no resolution)
-  const open = observations.filter(o => !o.resolution);
-  const linked = observations.filter(o => {
-    const promptEdges = graph.edgesFrom(o.id, "prompts");
+  const open = observations.filter((o) => !o.resolution);
+  const linked = observations.filter((o) => {
+    const promptEdges = graph.edgesFrom(o.id, 'prompts');
     return promptEdges.length > 0 && !o.resolution;
   });
-  const closed = observations.filter(o => o.resolution);
+  const closed = observations.filter((o) => o.resolution);
 
   // summary notes
-  lines.push(`  note over Observations: total: ${observations.length} (open: ${open.length}, linked: ${linked.length}, closed: ${closed.length})`);
+  lines.push(
+    `  note over Observations: total: ${observations.length} (open: ${open.length}, linked: ${linked.length}, closed: ${closed.length})`,
+  );
   lines.push(`  note over Decisions: total: ${decisions.length}`);
 
   // open observations → prompts → decisions
   for (const obs of observations) {
     const source = obs.source;
-    const intent = obs.intent ?? "action-needed";
+    const intent = obs.intent ?? 'action-needed';
     lines.push(`  Runtime ->> Observations: ${obs.id} [${source}/${intent}]`);
 
     // prompts edges
-    const promptTargets = graph.neighbors(obs.id, "prompts");
+    const promptTargets = graph.neighbors(obs.id, 'prompts');
     for (const dt of promptTargets) {
       lines.push(`  Observations ->> Decisions: prompts ${dt}`);
     }
@@ -641,7 +680,7 @@ export function observationLoopDiagram(
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── List All Diagrams ───────────────────────────────────────
@@ -656,10 +695,10 @@ export function listAllDiagrams(
   const result: Record<string, DiagramEntry[]> = {};
 
   // intent-links
-  const intentLinks = graph.getNodesByKind("intent-link");
+  const intentLinks = graph.getNodesByKind('intent-link');
   if (intentLinks.length > 0) {
-    result["intent-links"] = intentLinks.map(il => ({
-      kind: "intent-links",
+    result['intent-links'] = intentLinks.map((il) => ({
+      kind: 'intent-links',
       id: il.id,
       label: il.intent,
       endpoints: il.endpoints,
@@ -667,20 +706,20 @@ export function listAllDiagrams(
   }
 
   // dsl
-  const dslBundles = graph.getNodesByKind("dsl-bundle");
+  const dslBundles = graph.getNodesByKind('dsl-bundle');
   if (dslBundles.length > 0) {
-    result["dsl"] = dslBundles.map(d => ({
-      kind: "dsl",
+    result['dsl'] = dslBundles.map((d) => ({
+      kind: 'dsl',
       id: d.id,
       label: d.name,
     }));
   }
 
   // domain
-  const domains = graph.getNodesByKind("domain");
+  const domains = graph.getNodesByKind('domain');
   if (domains.length > 0) {
-    result["domain"] = domains.map(d => ({
-      kind: "domain",
+    result['domain'] = domains.map((d) => ({
+      kind: 'domain',
       id: d.id,
       label: `${d.name} (${d.prefixes.length} prefixes)`,
     }));
@@ -690,8 +729,8 @@ export function listAllDiagrams(
   if (topo) {
     const services = topo.listServices();
     if (services.length > 0) {
-      result["service"] = services.map(s => ({
-        kind: "service",
+      result['service'] = services.map((s) => ({
+        kind: 'service',
         id: s.serviceId,
         label: `${s.name} (${s.ownedPrefixes.length} owned)`,
       }));
@@ -699,53 +738,59 @@ export function listAllDiagrams(
   }
 
   // constraint
-  const constraints = graph.getNodesByKind("constraint");
+  const constraints = graph.getNodesByKind('constraint');
   if (constraints.length > 0) {
-    result["constraint"] = constraints.map(c => ({
-      kind: "constraint",
+    result['constraint'] = constraints.map((c) => ({
+      kind: 'constraint',
       id: c.id,
-      label: c.rule.length > 60 ? c.rule.slice(0, 57) + "..." : c.rule,
+      label: c.rule.length > 60 ? c.rule.slice(0, 57) + '...' : c.rule,
     }));
   }
 
   // table
-  const tables = graph.getNodesByKind("table");
+  const tables = graph.getNodesByKind('table');
   if (tables.length > 0) {
-    result["table"] = tables.map(t => ({
-      kind: "table",
+    result['table'] = tables.map((t) => ({
+      kind: 'table',
       id: t.id,
       label: t.name,
     }));
-    result["table-er"] = [{
-      kind: "table-er",
-      id: "table-er",
-      label: `All Tables ER (${tables.length})`,
-    }];
+    result['table-er'] = [
+      {
+        kind: 'table-er',
+        id: 'table-er',
+        label: `All Tables ER (${tables.length})`,
+      },
+    ];
   }
 
   // observation-loop (always available as single entry)
-  const observations = graph.getNodesByKind("observation");
-  const decisions = graph.getNodesByKind("decision");
-  result["observation-loop"] = [{
-    kind: "observation-loop",
-    id: "observation-loop",
-    label: `${observations.length} observations, ${decisions.length} decisions`,
-  }];
+  const observations = graph.getNodesByKind('observation');
+  const decisions = graph.getNodesByKind('decision');
+  result['observation-loop'] = [
+    {
+      kind: 'observation-loop',
+      id: 'observation-loop',
+      label: `${observations.length} observations, ${decisions.length} decisions`,
+    },
+  ];
 
   // transition-spec
-  const tspecs = graph.getNodesByKind("transition-spec");
+  const tspecs = graph.getNodesByKind('transition-spec');
   if (tspecs.length > 0) {
-    result["transition-spec"] = tspecs.map(t => ({
-      kind: "transition-spec",
+    result['transition-spec'] = tspecs.map((t) => ({
+      kind: 'transition-spec',
       id: t.id,
       label: `${t.transition} (${t.effectKind})`,
     }));
     // inter-spec DAG (전체 전이 관계도)
-    result["transition-dag"] = [{
-      kind: "transition-dag",
-      id: "transition-dag",
-      label: `${tspecs.length} specs — depends-on + satisfies`,
-    }];
+    result['transition-dag'] = [
+      {
+        kind: 'transition-dag',
+        id: 'transition-dag',
+        label: `${tspecs.length} specs — depends-on + satisfies`,
+      },
+    ];
   }
 
   // Note: traces are dynamic (runtime), not from DKG graph — excluded here.
@@ -777,22 +822,24 @@ export interface TracePathLike {
  */
 export function traceSequenceDiagram(
   trace: TracePathLike,
-  options?: MermaidDiagramOptions & { decode?: (serialized: string) => Record<string, string | number> | null },
+  options?: MermaidDiagramOptions & {
+    decode?: (serialized: string) => Record<string, string | number> | null;
+  },
 ): string {
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
   lines.push(`  title Trace: ${trace.traceId} (${trace.duration}ms)`);
 
   // 빈 trace 가드
   if (trace.steps.length === 0) {
     lines.push(`  note right of Actor: 이벤트 없음`);
-    return lines.join("\n");
+    return lines.join('\n');
   }
 
   // prefix → layer 매핑 수집
   const prefixLayers = new Map<string, number>();
   for (const s of trace.steps) prefixLayers.set(s.prefixId, s.layer);
 
-  const layerNames = ["L0 UI", "L1 Business", "L2 Infra", "L3 Data"];
+  const layerNames = ['L0 UI', 'L1 Business', 'L2 Infra', 'L3 Data'];
   const byLayer = new Map<number, string[]>();
   for (const [pid, layer] of prefixLayers) {
     if (!byLayer.has(layer)) byLayer.set(layer, []);
@@ -817,13 +864,17 @@ export function traceSequenceDiagram(
       try {
         const vals = options.decode(step.serialized);
         if (vals) {
-          label = Object.entries(vals).map(([k, v]) => `${k}=${v}`).join(", ");
-          if (label.length > 50) label = label.slice(0, 47) + "...";
+          label = Object.entries(vals)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', ');
+          if (label.length > 50) label = label.slice(0, 47) + '...';
         }
-      } catch { /* decode 실패 시 prefixId 사용 */ }
+      } catch {
+        /* decode 실패 시 prefixId 사용 */
+      }
     }
 
-    const ts = step.timestamp.split("T")[1]?.slice(0, 12) ?? step.timestamp;
+    const ts = step.timestamp.split('T')[1]?.slice(0, 12) ?? step.timestamp;
     const sameTime = prevTs === step.timestamp;
 
     if (!prevPrefix) {
@@ -850,7 +901,7 @@ export function traceSequenceDiagram(
   const last = trace.steps[trace.steps.length - 1].prefixId;
   lines.push(`  note over ${first},${last}: ${trace.duration}ms / ${trace.steps.length} steps`);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── Transition Spec Diagrams ──────────────────────────────
@@ -867,10 +918,11 @@ export function transitionSpecDiagram(
   options?: MermaidDiagramOptions,
 ): string {
   const node = graph.getNode(specId) as TransitionSpecNode | undefined;
-  if (!node || node.kind !== "transition-spec") return `sequenceDiagram\n  note right of Actor: ${specId} not found`;
+  if (!node || node.kind !== 'transition-spec')
+    return `sequenceDiagram\n  note right of Actor: ${specId} not found`;
 
   const title = options?.title ?? `Transition: ${node.transition} (${node.version})`;
-  const lines: string[] = ["sequenceDiagram"];
+  const lines: string[] = ['sequenceDiagram'];
   lines.push(`  title ${title}`);
 
   // 참여자
@@ -911,18 +963,20 @@ export function transitionSpecDiagram(
   lines.push(`  note over Engine: effect: ${node.effectKind}`);
 
   // depends-on 관계
-  const dependsOn = graph.edgesFrom(specId, "depends-on");
+  const dependsOn = graph.edgesFrom(specId, 'depends-on');
   if (dependsOn.length > 0) {
-    lines.push(`  note right of Engine: depends-on: ${dependsOn.map(e => (graph.getNode(e.to) as TransitionSpecNode)?.transition ?? e.to).join(", ")}`);
+    lines.push(
+      `  note right of Engine: depends-on: ${dependsOn.map((e) => (graph.getNode(e.to) as TransitionSpecNode)?.transition ?? e.to).join(', ')}`,
+    );
   }
 
   // satisfies 관계
-  const satisfies = graph.edgesFrom(specId, "satisfies");
+  const satisfies = graph.edgesFrom(specId, 'satisfies');
   if (satisfies.length > 0) {
-    lines.push(`  note right of Output: satisfies: ${satisfies.map(e => e.to).join(", ")}`);
+    lines.push(`  note right of Output: satisfies: ${satisfies.map((e) => e.to).join(', ')}`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /**
@@ -935,10 +989,10 @@ export function transitionDagDiagram(
   graph: GraphRegistry,
   options?: MermaidDiagramOptions,
 ): string {
-  const tspecs = graph.getNodesByKind("transition-spec") as TransitionSpecNode[];
-  if (tspecs.length === 0) return "graph TD\n  EMPTY[No transition specs]";
+  const tspecs = graph.getNodesByKind('transition-spec') as TransitionSpecNode[];
+  if (tspecs.length === 0) return 'graph TD\n  EMPTY[No transition specs]';
 
-  const title = options?.title ?? "Transition Spec DAG";
+  const title = options?.title ?? 'Transition Spec DAG';
   const lines: string[] = [`graph TD`];
   lines.push(`  %% ${title}`);
 
@@ -950,10 +1004,12 @@ export function transitionDagDiagram(
 
   // depends-on 엣지
   for (const t of tspecs) {
-    const deps = graph.edgesFrom(t.id, "depends-on");
+    const deps = graph.edgesFrom(t.id, 'depends-on');
     for (const e of deps) {
-      const shared = Array.isArray(e.meta?.sharedAxes) ? e.meta.sharedAxes as string[] : undefined;
-      const label = shared ? shared.join(",") : "state";
+      const shared = Array.isArray(e.meta?.sharedAxes)
+        ? (e.meta.sharedAxes as string[])
+        : undefined;
+      const label = shared ? shared.join(',') : 'state';
       lines.push(`  ${t.id} -->|${label}| ${e.to}`);
     }
   }
@@ -961,7 +1017,7 @@ export function transitionDagDiagram(
   // satisfies 엣지 (DSL 연결)
   const dslIds = new Set<string>();
   for (const t of tspecs) {
-    const sats = graph.edgesFrom(t.id, "satisfies");
+    const sats = graph.edgesFrom(t.id, 'satisfies');
     for (const e of sats) {
       if (!dslIds.has(e.to)) {
         const dsl = graph.getNode(e.to) as DslBundleNode | undefined;
@@ -974,12 +1030,16 @@ export function transitionDagDiagram(
 
   // 스타일
   for (const t of tspecs) {
-    const color = t.effectKind === "create" ? "#e8f5e9"
-      : t.effectKind === "close" ? "#fce4ec"
-      : t.effectKind === "open" ? "#e3f2fd"
-      : "#fff3e0";
+    const color =
+      t.effectKind === 'create'
+        ? '#e8f5e9'
+        : t.effectKind === 'close'
+          ? '#fce4ec'
+          : t.effectKind === 'open'
+            ? '#e3f2fd'
+            : '#fff3e0';
     lines.push(`  style ${t.id} fill:${color}`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }

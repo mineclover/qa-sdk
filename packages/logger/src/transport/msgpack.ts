@@ -1,9 +1,9 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import { encode } from "@msgpack/msgpack";
-import type { TransmissionEnvelope } from "@qa-sdk/core";
-import type { Transport } from "./transport.js";
+import { encode } from '@msgpack/msgpack';
+import type { TransmissionEnvelope } from '@qa-sdk/core';
+import type { Transport } from './transport.js';
 
 export interface MsgpackTransportOptions {
   endpoint: string;
@@ -35,9 +35,9 @@ export class MsgpackTransport implements Transport {
 
     try {
       const res = await fetch(this.endpoint, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/msgpack",
+          'Content-Type': 'application/msgpack',
           ...this.headers,
         },
         body: new Uint8Array(bytes) as unknown as ArrayBuffer,

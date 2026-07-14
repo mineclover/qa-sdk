@@ -18,7 +18,7 @@
  * ```
  */
 
-export { DefinitionClient, DefinitionClientError, type DefinitionClientOptions } from "./client.js";
+export { DefinitionClient, DefinitionClientError, type DefinitionClientOptions } from './client.js';
 
 export type {
   DocRecord,
@@ -33,4 +33,4 @@ export type {
   ConsumptionRecordInput,
   ImpactResult,
   SyncResult,
-} from "./types.js";
+} from './types.js';

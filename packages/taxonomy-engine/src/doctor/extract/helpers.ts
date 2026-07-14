@@ -7,19 +7,16 @@
  * `columnIndex` (0-based)로 어느 칼럼에서 추출할지 지정.
  * 반환: id 문자열 배열 (등장 순서 보존).
  */
-export function extractIdsFromMarkdownTable(
-  markdown: string,
-  columnIndex: number,
-): string[] {
+export function extractIdsFromMarkdownTable(markdown: string, columnIndex: number): string[] {
   const ids: string[] = [];
-  const lines = markdown.split("\n");
+  const lines = markdown.split('\n');
   let inTable = false;
   let headerSeen = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed.startsWith("|")) {
-      if (inTable && trimmed === "") {
+    if (!trimmed.startsWith('|')) {
+      if (inTable && trimmed === '') {
         // 표 종료
         inTable = false;
         headerSeen = false;
@@ -39,7 +36,10 @@ export function extractIdsFromMarkdownTable(
     if (!headerSeen) continue;
 
     // 데이터 row — 칼럼 추출
-    const cells = trimmed.split("|").slice(1, -1).map((c) => c.trim());
+    const cells = trimmed
+      .split('|')
+      .slice(1, -1)
+      .map((c) => c.trim());
     if (columnIndex >= cells.length) continue;
     const targetCell = cells[columnIndex];
     // backtick 둘러싸인 id 추출
@@ -64,7 +64,7 @@ export function extractTextsFromMarkdownTable(
   opts: { skipBold?: boolean; tableIndex?: number } = {},
 ): string[] {
   const out: string[] = [];
-  const lines = markdown.split("\n");
+  const lines = markdown.split('\n');
   let inTable = false;
   let headerSeen = false;
   const skipBold = opts.skipBold ?? true;
@@ -73,8 +73,8 @@ export function extractTextsFromMarkdownTable(
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed.startsWith("|")) {
-      if (inTable && trimmed === "") {
+    if (!trimmed.startsWith('|')) {
+      if (inTable && trimmed === '') {
         // 표 종료
         inTable = false;
         headerSeen = false;
@@ -99,14 +99,17 @@ export function extractTextsFromMarkdownTable(
     if (!headerSeen) continue;
 
     // 데이터 row — 칼럼 추출
-    const cells = trimmed.split("|").slice(1, -1).map((c) => c.trim());
+    const cells = trimmed
+      .split('|')
+      .slice(1, -1)
+      .map((c) => c.trim());
     if (columnIndex >= cells.length) continue;
     const cell = cells[columnIndex];
     // skipBold: **텍스트** 형태의 셀 제외
     if (skipBold && /^\*\*.*\*\*$/.test(cell)) continue;
     // backtick 제거 (있을 경우)
-    const cleaned = cell.replace(/`/g, "").trim();
-    if (cleaned === "") continue;
+    const cleaned = cell.replace(/`/g, '').trim();
+    if (cleaned === '') continue;
     out.push(cleaned);
   }
 

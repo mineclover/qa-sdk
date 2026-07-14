@@ -7,7 +7,7 @@ import {
   type GateKindDef,
   GATE_KINDS,
   ALL_GATE_KIND_IDS,
-} from "test-types";
+} from 'test-types';
 
 export type { GateKindId, GateScope, GateKindDef };
 export { GATE_KINDS, ALL_GATE_KIND_IDS };

@@ -14,106 +14,103 @@
  *   node scripts/definition-topology-migrate.js rewrite --write
  */
 
-const fs = require("node:fs");
-const path = require("node:path");
-const childProcess = require("node:child_process");
+const fs = require('node:fs');
+const path = require('node:path');
+const childProcess = require('node:child_process');
 
-const REPO_ROOT = path.resolve(__dirname, "..");
-const DOC_ROOTS = [
-  path.join(REPO_ROOT, "docs", "specs"),
-  path.join(REPO_ROOT, "docs", "guides"),
-];
+const REPO_ROOT = path.resolve(__dirname, '..');
+const DOC_ROOTS = [path.join(REPO_ROOT, 'docs', 'specs'), path.join(REPO_ROOT, 'docs', 'guides')];
 const SEARCH_ROOTS = [
-  path.join(REPO_ROOT, "README.md"),
-  path.join(REPO_ROOT, "docs"),
-  path.join(REPO_ROOT, "packages"),
-  path.join(REPO_ROOT, "scripts"),
+  path.join(REPO_ROOT, 'README.md'),
+  path.join(REPO_ROOT, 'docs'),
+  path.join(REPO_ROOT, 'packages'),
+  path.join(REPO_ROOT, 'scripts'),
 ];
 
 const TEXT_FILE_EXTENSIONS = new Set([
-  ".md",
-  ".ts",
-  ".tsx",
-  ".js",
-  ".jsx",
-  ".mjs",
-  ".cjs",
-  ".json",
-  ".sh",
-  ".yaml",
-  ".yml",
-  ".d.ts",
+  '.md',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.json',
+  '.sh',
+  '.yaml',
+  '.yml',
+  '.d.ts',
 ]);
 
 const IGNORED_DIR_NAMES = new Set([
-  ".git",
-  ".pnpm-store",
-  "node_modules",
-  "dist",
-  "coverage",
-  ".next",
-  ".turbo",
+  '.git',
+  '.pnpm-store',
+  'node_modules',
+  'dist',
+  'coverage',
+  '.next',
+  '.turbo',
 ]);
 
 const IGNORED_RELATIVE_PATHS = new Set([
-  "packages/docs-explorer/public/data.json",
-  "packages/platform-demo/public/def-catalog-data.json",
-  "packages/platform-demo/public/diagram-presets.js",
+  'packages/docs-explorer/public/data.json',
+  'packages/platform-demo/public/def-catalog-data.json',
+  'packages/platform-demo/public/diagram-presets.js',
 ]);
 
-const SOURCE_LINE_PREFIXES = ["원본:", "분할 전 원본:"];
+const SOURCE_LINE_PREFIXES = ['원본:', '분할 전 원본:'];
 const PREFERRED_PARENT_BY_DOC_ID = new Map([
-  ["definition-harness", "definition-catalog-spec"],
-  ["definition-harness-cli", "definition-harness"],
-  ["definition-harness-derive", "definition-harness"],
-  ["definition-harness-persistence", "definition-harness"],
-  ["definition-quality-gates", "quality-gates-system"],
-  ["definition-gate-derivation", "definition-quality-gates"],
-  ["definition-gate-fsm", "definition-quality-gates"],
-  ["definition-quality-contract", "definition-quality-gates"],
-  ["gate-definition-quality-cli", "definition-quality-gates"],
-  ["gate-definition-quality-spec-tracker", "definition-quality-gates"],
-  ["gate-definition-quality-work-domain", "definition-quality-gates"],
+  ['definition-harness', 'definition-catalog-spec'],
+  ['definition-harness-cli', 'definition-harness'],
+  ['definition-harness-derive', 'definition-harness'],
+  ['definition-harness-persistence', 'definition-harness'],
+  ['definition-quality-gates', 'quality-gates-system'],
+  ['definition-gate-derivation', 'definition-quality-gates'],
+  ['definition-gate-fsm', 'definition-quality-gates'],
+  ['definition-quality-contract', 'definition-quality-gates'],
+  ['gate-definition-quality-cli', 'definition-quality-gates'],
+  ['gate-definition-quality-spec-tracker', 'definition-quality-gates'],
+  ['gate-definition-quality-work-domain', 'definition-quality-gates'],
 ]);
 
 function parseArgs(argv) {
   const args = argv.slice(2);
   const options = {
-    mode: "report",
+    mode: 'report',
     write: false,
     limit: 120,
     json: false,
     out: null,
-    strategy: "anchored",
+    strategy: 'anchored',
   };
 
   for (const arg of args) {
-    if (arg === "report" || arg === "rewrite" || arg === "move-plan" || arg === "move-batch") {
+    if (arg === 'report' || arg === 'rewrite' || arg === 'move-plan' || arg === 'move-batch') {
       options.mode = arg;
       continue;
     }
-    if (arg === "--write") {
+    if (arg === '--write') {
       options.write = true;
       continue;
     }
-    if (arg === "--json") {
+    if (arg === '--json') {
       options.json = true;
       continue;
     }
-    if (arg.startsWith("--limit=")) {
-      const value = Number(arg.slice("--limit=".length));
+    if (arg.startsWith('--limit=')) {
+      const value = Number(arg.slice('--limit='.length));
       if (Number.isFinite(value) && value > 0) {
         options.limit = value;
       }
       continue;
     }
-    if (arg.startsWith("--out=")) {
-      options.out = arg.slice("--out=".length);
+    if (arg.startsWith('--out=')) {
+      options.out = arg.slice('--out='.length);
       continue;
     }
-    if (arg.startsWith("--strategy=")) {
-      const value = arg.slice("--strategy=".length);
-      if (value === "strict" || value === "anchored") {
+    if (arg.startsWith('--strategy=')) {
+      const value = arg.slice('--strategy='.length);
+      if (value === 'strict' || value === 'anchored') {
         options.strategy = value;
       }
       continue;
@@ -124,11 +121,11 @@ function parseArgs(argv) {
 }
 
 function toPosix(relativePath) {
-  return relativePath.split(path.sep).join("/");
+  return relativePath.split(path.sep).join('/');
 }
 
 function readFileUtf8(filePath) {
-  return fs.readFileSync(filePath, "utf8");
+  return fs.readFileSync(filePath, 'utf8');
 }
 
 function collectFiles(startPath) {
@@ -169,14 +166,14 @@ function extractDocMeta(filePath) {
   const contains = [];
   const lines = yaml.split(/\r?\n/);
   for (let index = 0; index < lines.length; index++) {
-    if (!lines[index].includes("type: contains") || index === 0) continue;
+    if (!lines[index].includes('type: contains') || index === 0) continue;
     const targetMatch = lines[index - 1].match(/target:\s*(.+)$/);
     if (targetMatch) contains.push(targetMatch[1].trim());
   }
   return {
     id: idMatch ? idMatch[1].trim() : path.basename(filePath, path.extname(filePath)),
-    level: levelMatch ? levelMatch[1].trim() : "leaf",
-    lifecycle: lifecycleMatch ? lifecycleMatch[1].trim() : "draft",
+    level: levelMatch ? levelMatch[1].trim() : 'leaf',
+    lifecycle: lifecycleMatch ? lifecycleMatch[1].trim() : 'draft',
     title: titleMatch ? titleMatch[1].trim() : path.basename(filePath, path.extname(filePath)),
     contains,
   };
@@ -221,14 +218,14 @@ function computeAncestorChain(docId, docs, parentsByChild) {
 
   while (currentId) {
     if (visited.has(currentId)) {
-      return { status: "cycle", chain };
+      return { status: 'cycle', chain };
     }
     visited.add(currentId);
     chain.unshift(currentId);
 
     const parents = parentsByChild.get(currentId) ?? [];
     if (parents.length === 0) {
-      return { status: "ok", chain };
+      return { status: 'ok', chain };
     }
     if (parents.length > 1) {
       const preferredParent = PREFERRED_PARENT_BY_DOC_ID.get(currentId);
@@ -236,20 +233,20 @@ function computeAncestorChain(docId, docs, parentsByChild) {
         currentId = preferredParent;
         continue;
       }
-      return { status: "multi-parent", chain, parents };
+      return { status: 'multi-parent', chain, parents };
     }
 
     currentId = parents[0];
     if (!docs.has(currentId)) {
-      return { status: "missing-parent", chain, parent: currentId };
+      return { status: 'missing-parent', chain, parent: currentId };
     }
   }
 
-  return { status: "ok", chain };
+  return { status: 'ok', chain };
 }
 
 function chooseAnchor(chain, docs, strategy) {
-  if (strategy === "strict") {
+  if (strategy === 'strict') {
     return { anchorId: chain[0], anchorIndex: 0 };
   }
 
@@ -273,18 +270,20 @@ function computeMovePlan(docs, strategy) {
   const roots = [];
   const blocked = [];
 
-  for (const doc of [...docs.values()].sort((left, right) => left.relativePath.localeCompare(right.relativePath))) {
-    if (doc.lifecycle === "deprecated" || doc.lifecycle === "archived") continue;
+  for (const doc of [...docs.values()].sort((left, right) =>
+    left.relativePath.localeCompare(right.relativePath),
+  )) {
+    if (doc.lifecycle === 'deprecated' || doc.lifecycle === 'archived') continue;
 
     const chainResult = computeAncestorChain(doc.id, docs, parentsByChild);
-    if (chainResult.status !== "ok") {
+    if (chainResult.status !== 'ok') {
       blocked.push({
         docId: doc.id,
         title: doc.title,
         currentPath: doc.relativePath,
         reason: chainResult.status,
         details:
-          chainResult.status === "multi-parent"
+          chainResult.status === 'multi-parent'
             ? chainResult.parents
             : chainResult.parent
               ? [chainResult.parent]
@@ -311,18 +310,14 @@ function computeMovePlan(docs, strategy) {
         docId: doc.id,
         title: doc.title,
         currentPath: doc.relativePath,
-        reason: "missing-anchor",
+        reason: 'missing-anchor',
         details: chain,
       });
       continue;
     }
 
     const targetPath = toPosix(
-      path.join(
-        anchorDoc.directory,
-        ...chain.slice(anchorIndex + 1, -1),
-        doc.fileName,
-      ),
+      path.join(anchorDoc.directory, ...chain.slice(anchorIndex + 1, -1), doc.fileName),
     );
 
     preliminaryMoves.push({
@@ -344,19 +339,17 @@ function computeMovePlan(docs, strategy) {
   }
 
   const moves = preliminaryMoves.map((move) => {
-    const targetOccupiedByCurrent = currentPaths.has(move.targetPath) && move.targetPath !== move.currentPath;
-    const duplicateTarget = preliminaryMoves.some((other) =>
-      other.docId !== move.docId && other.targetPath === move.targetPath,
+    const targetOccupiedByCurrent =
+      currentPaths.has(move.targetPath) && move.targetPath !== move.currentPath;
+    const duplicateTarget = preliminaryMoves.some(
+      (other) => other.docId !== move.docId && other.targetPath === move.targetPath,
     );
     if (!targetOccupiedByCurrent && !duplicateTarget) {
       return move;
     }
 
     const fallbackTargetPath = toPosix(
-      path.join(
-        path.dirname(move.targetPath),
-        fallbackFileName(move),
-      ),
+      path.join(path.dirname(move.targetPath), fallbackFileName(move)),
     );
 
     return {
@@ -376,55 +369,55 @@ function computeMovePlan(docs, strategy) {
 function formatMovePlanMarkdown(plan, strategy) {
   const changedMoves = plan.moves.filter((move) => move.changed);
   const lines = [
-    "# Definition Topology Move Plan",
-    "",
-    "규칙:",
+    '# Definition Topology Move Plan',
+    '',
+    '규칙:',
     `- 전략: \`${strategy}\``,
-    strategy === "strict"
-      ? "- `contains` 체인을 root부터 파일 경로 계층으로 투영한다."
-      : "- 실제 subsystem bucket이 갈라지는 지점(anchor)부터 `contains` 체인을 파일 경로 계층으로 투영한다.",
-    "- root 문서(contains 부모 없음)는 현재 위치를 유지한다.",
-    "- active 문서만 대상으로 본다. `deprecated`/`archived`는 일단 제외한다.",
-    strategy === "strict"
-      ? "- child 문서는 `root-dir/<ancestor-id...>/<filename>`으로 이동시킨다."
-      : "- child 문서는 `anchor-dir/<post-anchor-ancestor-id...>/<filename>`으로 이동시킨다.",
-    "",
+    strategy === 'strict'
+      ? '- `contains` 체인을 root부터 파일 경로 계층으로 투영한다.'
+      : '- 실제 subsystem bucket이 갈라지는 지점(anchor)부터 `contains` 체인을 파일 경로 계층으로 투영한다.',
+    '- root 문서(contains 부모 없음)는 현재 위치를 유지한다.',
+    '- active 문서만 대상으로 본다. `deprecated`/`archived`는 일단 제외한다.',
+    strategy === 'strict'
+      ? '- child 문서는 `root-dir/<ancestor-id...>/<filename>`으로 이동시킨다.'
+      : '- child 문서는 `anchor-dir/<post-anchor-ancestor-id...>/<filename>`으로 이동시킨다.',
+    '',
     `요약: root ${plan.roots.length}건, move 대상 ${changedMoves.length}건, blocked ${plan.blocked.length}건`,
-    "",
-    "## Root Documents",
-    "",
+    '',
+    '## Root Documents',
+    '',
   ];
 
   for (const root of plan.roots) {
     lines.push(`- \`${root.docId}\` → \`${root.currentPath}\``);
   }
 
-  lines.push("", "## Proposed Moves", "");
+  lines.push('', '## Proposed Moves', '');
   if (changedMoves.length === 0) {
-    lines.push("- none");
+    lines.push('- none');
   } else {
     for (const move of changedMoves) {
       lines.push(`- \`${move.docId}\``);
       lines.push(`  current: \`${move.currentPath}\``);
       lines.push(`  target: \`${move.targetPath}\``);
       lines.push(`  anchor: \`${move.anchorId}\``);
-      lines.push(`  chain: \`${move.chain.join(" > ")}\``);
+      lines.push(`  chain: \`${move.chain.join(' > ')}\``);
     }
   }
 
-  lines.push("", "## Blocked", "");
+  lines.push('', '## Blocked', '');
   if (plan.blocked.length === 0) {
-    lines.push("- none");
+    lines.push('- none');
   } else {
     for (const item of plan.blocked) {
       lines.push(`- \`${item.docId}\` (\`${item.currentPath}\`)`);
       lines.push(`  reason: \`${item.reason}\``);
-      lines.push(`  details: \`${(item.details ?? []).join(", ")}\``);
+      lines.push(`  details: \`${(item.details ?? []).join(', ')}\``);
     }
   }
 
-  lines.push("");
-  return `${lines.join("\n")}\n`;
+  lines.push('');
+  return `${lines.join('\n')}\n`;
 }
 
 function shellQuote(value) {
@@ -434,21 +427,21 @@ function shellQuote(value) {
 function formatMoveBatchShell(plan, strategy) {
   const changedMoves = plan.moves.filter((move) => move.changed);
   const lines = [
-    "#!/usr/bin/env bash",
-    "set -euo pipefail",
-    "",
+    '#!/usr/bin/env bash',
+    'set -euo pipefail',
+    '',
     `# Generated by scripts/definition-topology-migrate.js --strategy=${strategy}`,
     `# Moves: ${changedMoves.length}`,
-    "",
+    '',
   ];
 
   for (const move of changedMoves) {
     lines.push(`mkdir -p ${shellQuote(path.dirname(move.targetPath))}`);
     lines.push(`git mv ${shellQuote(move.currentPath)} ${shellQuote(move.targetPath)}`);
-    lines.push("");
+    lines.push('');
   }
 
-  return `${lines.join("\n")}\n`;
+  return `${lines.join('\n')}\n`;
 }
 
 function parseOriginCandidates() {
@@ -501,19 +494,22 @@ function parseOriginCandidates() {
 }
 
 function scoreCandidate(candidate) {
-  const sourceScore = candidate.sourceKind === "분할 전 원본:" ? 100 : 90;
+  const sourceScore = candidate.sourceKind === '분할 전 원본:' ? 100 : 90;
   const levelScore =
-    candidate.level === "group" ? 30 :
-    candidate.level === "module" ? 20 :
-    candidate.level === "leaf" ? 10 :
-    0;
+    candidate.level === 'group'
+      ? 30
+      : candidate.level === 'module'
+        ? 20
+        : candidate.level === 'leaf'
+          ? 10
+          : 0;
   return sourceScore + levelScore;
 }
 
 function dedupeCandidates(candidates) {
   const deduped = new Map();
   for (const candidate of candidates) {
-    const key = `${candidate.newId}|${candidate.newPath}|${candidate.oldPath}|${candidate.oldId ?? ""}`;
+    const key = `${candidate.newId}|${candidate.newPath}|${candidate.oldPath}|${candidate.oldId ?? ''}`;
     if (!deduped.has(key)) deduped.set(key, candidate);
   }
   return [...deduped.values()];
@@ -521,18 +517,25 @@ function dedupeCandidates(candidates) {
 
 function chooseCanonical(candidates) {
   const uniqueCandidates = dedupeCandidates(candidates);
-  if (uniqueCandidates.length === 0) return { status: "missing", candidate: null, alternatives: [] };
+  if (uniqueCandidates.length === 0)
+    return { status: 'missing', candidate: null, alternatives: [] };
 
   const sorted = [...uniqueCandidates].sort((a, b) => scoreCandidate(b) - scoreCandidate(a));
   const bestScore = scoreCandidate(sorted[0]);
   const best = sorted.filter((candidate) => scoreCandidate(candidate) === bestScore);
-  const uniqueBestTargets = new Map(best.map((candidate) => [`${candidate.newId}|${candidate.newPath}`, candidate]));
+  const uniqueBestTargets = new Map(
+    best.map((candidate) => [`${candidate.newId}|${candidate.newPath}`, candidate]),
+  );
 
   if (uniqueBestTargets.size === 1) {
-    return { status: "unique", candidate: [...uniqueBestTargets.values()][0], alternatives: sorted.slice(1) };
+    return {
+      status: 'unique',
+      candidate: [...uniqueBestTargets.values()][0],
+      alternatives: sorted.slice(1),
+    };
   }
 
-  return { status: "ambiguous", candidate: null, alternatives: sorted };
+  return { status: 'ambiguous', candidate: null, alternatives: sorted };
 }
 
 function buildCanonicalMap(candidates, keyName) {
@@ -553,15 +556,14 @@ function buildCanonicalMap(candidates, keyName) {
 
 function getDeletedDocs() {
   try {
-    const output = childProcess.execFileSync(
-      "git",
-      ["status", "--short", "--", "docs/specs"],
-      { cwd: REPO_ROOT, encoding: "utf8" },
-    );
+    const output = childProcess.execFileSync('git', ['status', '--short', '--', 'docs/specs'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    });
     return output
       .split(/\r?\n/)
       .map((line) => line.trim())
-      .filter((line) => line.startsWith("D ") || line.startsWith("D\t") || line.startsWith("D"))
+      .filter((line) => line.startsWith('D ') || line.startsWith('D\t') || line.startsWith('D'))
       .map((line) => line.slice(1).trim())
       .filter(Boolean);
   } catch {
@@ -570,7 +572,7 @@ function getDeletedDocs() {
 }
 
 function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isSourceLine(line) {
@@ -596,9 +598,9 @@ function collectStaleReferences(pathMap, idMap, options) {
         stale.push({
           file: relativePath,
           line: index + 1,
-          kind: "path",
+          kind: 'path',
           from: oldPath,
-          to: resolution.status === "unique" ? resolution.candidate.newPath : null,
+          to: resolution.status === 'unique' ? resolution.candidate.newPath : null,
           resolution: resolution.status,
         });
       }
@@ -609,9 +611,9 @@ function collectStaleReferences(pathMap, idMap, options) {
         stale.push({
           file: relativePath,
           line: index + 1,
-          kind: "id",
+          kind: 'id',
           from: oldId,
-          to: resolution.status === "unique" ? resolution.candidate.newId : null,
+          to: resolution.status === 'unique' ? resolution.candidate.newId : null,
           resolution: resolution.status,
         });
       }
@@ -641,14 +643,17 @@ function applyRewrites(pathMap, idMap) {
       let next = lines[index];
 
       for (const [oldPath, resolution] of pathMap) {
-        if (resolution.status !== "unique") continue;
+        if (resolution.status !== 'unique') continue;
         if (!next.includes(oldPath)) continue;
         next = next.split(oldPath).join(resolution.candidate.newPath);
       }
 
       for (const [oldId, resolution] of idMap) {
-        if (resolution.status !== "unique") continue;
-        const pattern = new RegExp(`(^|[^A-Za-z0-9_-])(${escapeRegExp(oldId)})([^A-Za-z0-9_-]|$)`, "g");
+        if (resolution.status !== 'unique') continue;
+        const pattern = new RegExp(
+          `(^|[^A-Za-z0-9_-])(${escapeRegExp(oldId)})([^A-Za-z0-9_-]|$)`,
+          'g',
+        );
         if (!pattern.test(next)) continue;
         next = next.replace(pattern, `$1${resolution.candidate.newId}$3`);
       }
@@ -662,7 +667,7 @@ function applyRewrites(pathMap, idMap) {
 
     if (!changed) continue;
 
-    fs.writeFileSync(filePath, `${lines.join("\n")}\n`);
+    fs.writeFileSync(filePath, `${lines.join('\n')}\n`);
     changedFiles++;
     console.log(`  rewrote ${relativePath}`);
   }
@@ -674,7 +679,7 @@ function formatCanonicalEntries(canonicalMap, formatter) {
   return [...canonicalMap.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([from, resolution]) => {
-      if (resolution.status !== "unique") {
+      if (resolution.status !== 'unique') {
         return {
           from,
           status: resolution.status,
@@ -695,17 +700,20 @@ function main() {
   const candidates = parseOriginCandidates();
   const canonicalByOldId = buildCanonicalMap(
     candidates.filter((candidate) => candidate.oldId),
-    "oldId",
+    'oldId',
   );
-  const canonicalByOldPath = buildCanonicalMap(candidates, "oldPath");
+  const canonicalByOldPath = buildCanonicalMap(candidates, 'oldPath');
 
   const deletedDocs = getDeletedDocs();
   const deletedSummary = deletedDocs.map((deletedPath) => {
-    const resolution = canonicalByOldPath.get(deletedPath) ?? { status: "missing", candidate: null };
+    const resolution = canonicalByOldPath.get(deletedPath) ?? {
+      status: 'missing',
+      candidate: null,
+    };
     return {
       deletedPath,
-      replacement: resolution.status === "unique" ? resolution.candidate.newPath : null,
-      replacementId: resolution.status === "unique" ? resolution.candidate.newId : null,
+      replacement: resolution.status === 'unique' ? resolution.candidate.newPath : null,
+      replacementId: resolution.status === 'unique' ? resolution.candidate.newId : null,
       status: resolution.status,
     };
   });
@@ -715,14 +723,14 @@ function main() {
   const report = {
     mappingsById: formatCanonicalEntries(canonicalByOldId, (from, candidate) => ({
       from,
-      status: "unique",
+      status: 'unique',
       to: candidate.newId,
       targetPath: candidate.newPath,
       alternatives: [],
     })),
     mappingsByPath: formatCanonicalEntries(canonicalByOldPath, (from, candidate) => ({
       from,
-      status: "unique",
+      status: 'unique',
       to: candidate.newPath,
       targetPath: candidate.newPath,
       replacementId: candidate.newId,
@@ -732,7 +740,7 @@ function main() {
     staleReferences: stale,
   };
 
-  if (options.mode === "move-plan") {
+  if (options.mode === 'move-plan') {
     const docs = collectDocs();
     const movePlan = computeMovePlan(docs, options.strategy);
     const markdown = formatMovePlanMarkdown(movePlan, options.strategy);
@@ -748,7 +756,7 @@ function main() {
     return;
   }
 
-  if (options.mode === "move-batch") {
+  if (options.mode === 'move-batch') {
     const docs = collectDocs();
     const movePlan = computeMovePlan(docs, options.strategy);
     const shell = formatMoveBatchShell(movePlan, options.strategy);
@@ -767,12 +775,12 @@ function main() {
     return;
   }
 
-  if (options.mode === "rewrite") {
+  if (options.mode === 'rewrite') {
     const dryRun = !options.write;
-    console.log(dryRun ? "Rewrite dry-run" : "Rewrite apply");
+    console.log(dryRun ? 'Rewrite dry-run' : 'Rewrite apply');
     console.log(`  stale references sampled: ${stale.length}`);
     if (dryRun) {
-      console.log("  pass --write to apply unique replacements");
+      console.log('  pass --write to apply unique replacements');
     } else {
       const rewritten = applyRewrites(canonicalByOldPath, canonicalByOldId);
       console.log(`  changed files: ${rewritten.changedFiles}`);
@@ -786,24 +794,26 @@ function main() {
     return;
   }
 
-  console.log("Canonical old-id -> new-id mappings");
+  console.log('Canonical old-id -> new-id mappings');
   for (const entry of report.mappingsById) {
-    if (entry.status === "unique") {
+    if (entry.status === 'unique') {
       console.log(`  ${entry.from} -> ${entry.to} (${entry.targetPath})`);
       continue;
     }
     console.log(`  ${entry.from} -> [${entry.status}]`);
   }
 
-  console.log("\nDeleted docs in working tree");
+  console.log('\nDeleted docs in working tree');
   for (const entry of report.deletedDocs) {
-    const target = entry.replacement ? `${entry.replacementId} (${entry.replacement})` : `[${entry.status}]`;
+    const target = entry.replacement
+      ? `${entry.replacementId} (${entry.replacement})`
+      : `[${entry.status}]`;
     console.log(`  ${entry.deletedPath} -> ${target}`);
   }
 
   console.log(`\nSample stale references (limit ${options.limit})`);
   if (report.staleReferences.length === 0) {
-    console.log("  none");
+    console.log('  none');
   } else {
     for (const entry of report.staleReferences) {
       const target = entry.to ?? `[${entry.resolution}]`;

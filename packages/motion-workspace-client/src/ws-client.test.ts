@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { MotionWorkspaceClient } from "./client.js";
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MotionWorkspaceClient } from './client.js';
 import type {
   MotionWorkspaceWebSocketLike,
   MotionWorkspaceWsCloseEvent,
@@ -7,7 +7,7 @@ import type {
   MotionWorkspaceWsMessageEvent,
   MotionWorkspaceWsReconnectEvent,
   MotionWorkspaceWsServerMessage,
-} from "./ws-client.js";
+} from './ws-client.js';
 
 const originalFetch = globalThis.fetch;
 
@@ -33,26 +33,26 @@ class FakeWebSocket implements MotionWorkspaceWebSocketLike {
 
   close(code?: number, reason?: string): void {
     this.readyState = 3;
-    for (const fn of this.listeners.get("close") ?? []) {
+    for (const fn of this.listeners.get('close') ?? []) {
       fn({ code, reason, wasClean: code === 1000 });
     }
   }
 
   open(): void {
     this.readyState = 1;
-    for (const fn of this.listeners.get("open") ?? []) {
+    for (const fn of this.listeners.get('open') ?? []) {
       fn({});
     }
   }
 
   receive(payload: unknown): void {
-    for (const fn of this.listeners.get("message") ?? []) {
+    for (const fn of this.listeners.get('message') ?? []) {
       fn({ data: JSON.stringify(payload) });
     }
   }
 
   fail(error: unknown): void {
-    for (const fn of this.listeners.get("error") ?? []) {
+    for (const fn of this.listeners.get('error') ?? []) {
       fn(error);
     }
   }
@@ -77,16 +77,16 @@ async function flushMicrotasks(): Promise<void> {
 
 afterEach(() => {
   vi.useRealTimers();
-  Object.defineProperty(globalThis, "fetch", {
+  Object.defineProperty(globalThis, 'fetch', {
     value: originalFetch,
     configurable: true,
     writable: true,
   });
 });
 
-describe("motion workspace websocket client", () => {
-  it("connects to the workspace ws endpoint, dispatches typed handlers, and sends scene/presence commands", async () => {
-    Object.defineProperty(globalThis, "fetch", {
+describe('motion workspace websocket client', () => {
+  it('connects to the workspace ws endpoint, dispatches typed handlers, and sends scene/presence commands', async () => {
+    Object.defineProperty(globalThis, 'fetch', {
       value: undefined,
       configurable: true,
       writable: true,
@@ -107,7 +107,7 @@ describe("motion workspace websocket client", () => {
     const disconnects: MotionWorkspaceWsCloseEvent[] = [];
 
     const handlers: MotionWorkspaceWsHandlers = {
-      userId: "alice",
+      userId: 'alice',
       createWebSocket,
       onMessage(message) {
         messages.push(message);
@@ -148,167 +148,167 @@ describe("motion workspace websocket client", () => {
     };
 
     const client = new MotionWorkspaceClient({
-      baseUrl: "https://workspace.qa/api",
+      baseUrl: 'https://workspace.qa/api',
     });
-    const connection = client.connectWorkspace("demo/workspace 1", handlers);
+    const connection = client.connectWorkspace('demo/workspace 1', handlers);
 
     await flushMicrotasks();
 
     expect(sockets).toHaveLength(1);
     const socket = sockets[0]!;
     expect(socket.url).toBe(
-      "wss://workspace.qa/api/workspaces/demo%2Fworkspace%201/ws?userId=alice",
+      'wss://workspace.qa/api/workspaces/demo%2Fworkspace%201/ws?userId=alice',
     );
 
     socket.open();
     socket.receive({
-      type: "connected",
-      workspaceId: "demo/workspace 1",
-      userId: "alice",
+      type: 'connected',
+      workspaceId: 'demo/workspace 1',
+      userId: 'alice',
       sceneLocks: [],
       presences: [],
     });
     socket.receive({
-      type: "scene:updated",
-      workspaceId: "demo/workspace 1",
-      sceneId: "scene-a",
+      type: 'scene:updated',
+      workspaceId: 'demo/workspace 1',
+      sceneId: 'scene-a',
       revision: 2,
     });
     socket.receive({
-      type: "resource:updated",
-      workspaceId: "demo/workspace 1",
+      type: 'resource:updated',
+      workspaceId: 'demo/workspace 1',
       revision: 3,
     });
     socket.receive({
-      type: "scene:lock",
-      workspaceId: "demo/workspace 1",
-      sceneId: "scene-a",
-      userId: "bob",
-      holders: ["alice", "bob"],
+      type: 'scene:lock',
+      workspaceId: 'demo/workspace 1',
+      sceneId: 'scene-a',
+      userId: 'bob',
+      holders: ['alice', 'bob'],
       warning: true,
     });
     socket.receive({
-      type: "scene:unlock",
-      workspaceId: "demo/workspace 1",
-      sceneId: "scene-a",
-      userId: "bob",
-      holders: ["alice"],
-      reason: "explicit",
+      type: 'scene:unlock',
+      workspaceId: 'demo/workspace 1',
+      sceneId: 'scene-a',
+      userId: 'bob',
+      holders: ['alice'],
+      reason: 'explicit',
     });
     socket.receive({
-      type: "presence",
-      workspaceId: "demo/workspace 1",
-      userId: "bob",
-      activeSceneId: "scene-b",
+      type: 'presence',
+      workspaceId: 'demo/workspace 1',
+      userId: 'bob',
+      activeSceneId: 'scene-b',
       cursor: { x: 44, y: 88 },
     });
     socket.receive({
-      type: "workspace-message",
-      workspaceId: "demo/workspace 1",
-      userId: "bob",
-      payload: { type: "cursor-update", x: 12, y: 34 },
+      type: 'workspace-message',
+      workspaceId: 'demo/workspace 1',
+      userId: 'bob',
+      payload: { type: 'cursor-update', x: 12, y: 34 },
     });
     socket.receive({
-      type: "error",
-      code: "invalid_request",
-      message: "bad payload",
+      type: 'error',
+      code: 'invalid_request',
+      message: 'bad payload',
     });
 
-    connection.lockScene("scene-a");
+    connection.lockScene('scene-a');
     connection.sendPresence({
-      activeSceneId: "scene-a",
+      activeSceneId: 'scene-a',
       cursor: { x: 12, y: 24 },
     });
-    connection.unlockScene("scene-a");
+    connection.unlockScene('scene-a');
 
     expect(messages.map((message) => message.type)).toEqual([
-      "connected",
-      "scene:updated",
-      "resource:updated",
-      "scene:lock",
-      "scene:unlock",
-      "presence",
-      "workspace-message",
-      "error",
+      'connected',
+      'scene:updated',
+      'resource:updated',
+      'scene:lock',
+      'scene:unlock',
+      'presence',
+      'workspace-message',
+      'error',
     ]);
     expect(connected).toHaveLength(1);
     expect(sceneUpdates).toEqual([
       {
-        type: "scene:updated",
-        workspaceId: "demo/workspace 1",
-        sceneId: "scene-a",
+        type: 'scene:updated',
+        workspaceId: 'demo/workspace 1',
+        sceneId: 'scene-a',
         revision: 2,
       },
     ]);
     expect(resourceUpdates).toEqual([
       {
-        type: "resource:updated",
-        workspaceId: "demo/workspace 1",
+        type: 'resource:updated',
+        workspaceId: 'demo/workspace 1',
         revision: 3,
       },
     ]);
     expect(locks).toEqual([
       {
-        type: "scene:lock",
-        workspaceId: "demo/workspace 1",
-        sceneId: "scene-a",
-        userId: "bob",
-        holders: ["alice", "bob"],
+        type: 'scene:lock',
+        workspaceId: 'demo/workspace 1',
+        sceneId: 'scene-a',
+        userId: 'bob',
+        holders: ['alice', 'bob'],
         warning: true,
       },
     ]);
     expect(unlocks).toEqual([
       {
-        type: "scene:unlock",
-        workspaceId: "demo/workspace 1",
-        sceneId: "scene-a",
-        userId: "bob",
-        holders: ["alice"],
-        reason: "explicit",
+        type: 'scene:unlock',
+        workspaceId: 'demo/workspace 1',
+        sceneId: 'scene-a',
+        userId: 'bob',
+        holders: ['alice'],
+        reason: 'explicit',
       },
     ]);
     expect(presences).toEqual([
       {
-        type: "presence",
-        workspaceId: "demo/workspace 1",
-        userId: "bob",
-        activeSceneId: "scene-b",
+        type: 'presence',
+        workspaceId: 'demo/workspace 1',
+        userId: 'bob',
+        activeSceneId: 'scene-b',
         cursor: { x: 44, y: 88 },
       },
     ]);
     expect(workspaceMessages).toEqual([
       {
-        type: "workspace-message",
-        workspaceId: "demo/workspace 1",
-        userId: "bob",
-        payload: { type: "cursor-update", x: 12, y: 34 },
+        type: 'workspace-message',
+        workspaceId: 'demo/workspace 1',
+        userId: 'bob',
+        payload: { type: 'cursor-update', x: 12, y: 34 },
       },
     ]);
     expect(serverErrors).toEqual([
       {
-        type: "error",
-        code: "invalid_request",
-        message: "bad payload",
+        type: 'error',
+        code: 'invalid_request',
+        message: 'bad payload',
       },
     ]);
     expect(reconnects).toEqual([]);
     expect(transportErrors).toEqual([]);
     expect(socket.sent.map((payload) => JSON.parse(payload) as unknown)).toEqual([
       {
-        type: "scene:lock",
-        sceneId: "scene-a",
-        userId: "alice",
+        type: 'scene:lock',
+        sceneId: 'scene-a',
+        userId: 'alice',
       },
       {
-        type: "presence",
-        userId: "alice",
-        activeSceneId: "scene-a",
+        type: 'presence',
+        userId: 'alice',
+        activeSceneId: 'scene-a',
         cursor: { x: 12, y: 24 },
       },
       {
-        type: "scene:unlock",
-        sceneId: "scene-a",
-        userId: "alice",
+        type: 'scene:unlock',
+        sceneId: 'scene-a',
+        userId: 'alice',
       },
     ]);
 
@@ -316,23 +316,23 @@ describe("motion workspace websocket client", () => {
     expect(disconnects).toEqual([
       {
         code: 1000,
-        reason: "client_disconnect",
+        reason: 'client_disconnect',
         wasClean: true,
       },
     ]);
   });
 
-  it("reconnects with exponential backoff and replays desired state after the next connected event", async () => {
+  it('reconnects with exponential backoff and replays desired state after the next connected event', async () => {
     vi.useFakeTimers();
 
     const { createWebSocket, sockets } = createWebSocketHarness();
     const reconnects: MotionWorkspaceWsReconnectEvent[] = [];
 
     const client = new MotionWorkspaceClient({
-      baseUrl: "https://workspace.qa/api",
+      baseUrl: 'https://workspace.qa/api',
     });
-    const connection = client.connectWorkspace("demo/reconnect", {
-      userId: "alice",
+    const connection = client.connectWorkspace('demo/reconnect', {
+      userId: 'alice',
       createWebSocket,
       reconnect: {
         initialDelayMs: 100,
@@ -349,40 +349,40 @@ describe("motion workspace websocket client", () => {
     const firstSocket = sockets[0]!;
     firstSocket.open();
     firstSocket.receive({
-      type: "connected",
-      workspaceId: "demo/reconnect",
-      userId: "alice",
+      type: 'connected',
+      workspaceId: 'demo/reconnect',
+      userId: 'alice',
       sceneLocks: [],
       presences: [],
     });
 
-    connection.lockScene("scene-a");
+    connection.lockScene('scene-a');
     connection.sendPresence({
-      activeSceneId: "scene-a",
+      activeSceneId: 'scene-a',
       cursor: { x: 1, y: 2 },
     });
 
     expect(firstSocket.sent.map((payload) => JSON.parse(payload) as unknown)).toEqual([
       {
-        type: "scene:lock",
-        sceneId: "scene-a",
-        userId: "alice",
+        type: 'scene:lock',
+        sceneId: 'scene-a',
+        userId: 'alice',
       },
       {
-        type: "presence",
-        userId: "alice",
-        activeSceneId: "scene-a",
+        type: 'presence',
+        userId: 'alice',
+        activeSceneId: 'scene-a',
         cursor: { x: 1, y: 2 },
       },
     ]);
 
-    firstSocket.close(1006, "network_lost");
+    firstSocket.close(1006, 'network_lost');
     expect(reconnects).toEqual([
       {
         attempt: 1,
         delayMs: 100,
-        workspaceId: "demo/reconnect",
-        userId: "alice",
+        workspaceId: 'demo/reconnect',
+        userId: 'alice',
       },
     ]);
 
@@ -391,19 +391,19 @@ describe("motion workspace websocket client", () => {
 
     const secondSocket = sockets[1]!;
     secondSocket.open();
-    secondSocket.close(1006, "network_lost_again");
+    secondSocket.close(1006, 'network_lost_again');
     expect(reconnects).toEqual([
       {
         attempt: 1,
         delayMs: 100,
-        workspaceId: "demo/reconnect",
-        userId: "alice",
+        workspaceId: 'demo/reconnect',
+        userId: 'alice',
       },
       {
         attempt: 2,
         delayMs: 200,
-        workspaceId: "demo/reconnect",
-        userId: "alice",
+        workspaceId: 'demo/reconnect',
+        userId: 'alice',
       },
     ]);
 
@@ -413,23 +413,23 @@ describe("motion workspace websocket client", () => {
     const thirdSocket = sockets[2]!;
     thirdSocket.open();
     thirdSocket.receive({
-      type: "connected",
-      workspaceId: "demo/reconnect",
-      userId: "alice",
+      type: 'connected',
+      workspaceId: 'demo/reconnect',
+      userId: 'alice',
       sceneLocks: [],
       presences: [],
     });
 
     expect(thirdSocket.sent.map((payload) => JSON.parse(payload) as unknown)).toEqual([
       {
-        type: "scene:lock",
-        sceneId: "scene-a",
-        userId: "alice",
+        type: 'scene:lock',
+        sceneId: 'scene-a',
+        userId: 'alice',
       },
       {
-        type: "presence",
-        userId: "alice",
-        activeSceneId: "scene-a",
+        type: 'presence',
+        userId: 'alice',
+        activeSceneId: 'scene-a',
         cursor: { x: 1, y: 2 },
       },
     ]);

@@ -1,25 +1,29 @@
 // @def.boundary sim-reporting-api
 // @def.doc sim-erp-pm-design
 
-import { sqliteTable, text, real, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, real, index } from 'drizzle-orm/sqlite-core';
 
-export const reports = sqliteTable("reports", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  queryDefinition: text("query_definition").notNull(),
-  createdBy: text("created_by").notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+export const reports = sqliteTable('reports', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  queryDefinition: text('query_definition').notNull(),
+  createdBy: text('created_by').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
-export const dailyMetrics = sqliteTable("daily_metrics", {
-  id: text("id").primaryKey(),
-  metricKey: text("metric_key").notNull(),
-  date: text("date").notNull(),
-  value: real("value").notNull(),
-  dimensions: text("dimensions").notNull(),
-  computedAt: text("computed_at").notNull(),
-}, (t) => [index("idx_dm_key_date").on(t.metricKey, t.date)]);
+export const dailyMetrics = sqliteTable(
+  'daily_metrics',
+  {
+    id: text('id').primaryKey(),
+    metricKey: text('metric_key').notNull(),
+    date: text('date').notNull(),
+    value: real('value').notNull(),
+    dimensions: text('dimensions').notNull(),
+    computedAt: text('computed_at').notNull(),
+  },
+  (t) => [index('idx_dm_key_date').on(t.metricKey, t.date)],
+);
 
 export const SIM_REPORTING_SQLITE_DDL = `
 CREATE TABLE IF NOT EXISTS reports (

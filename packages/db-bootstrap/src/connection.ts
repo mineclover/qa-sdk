@@ -8,16 +8,16 @@
  * 드라이버는 dialect별 dynamic import — 미설치 환경에서도 본 모듈 import는 실패하지 않음.
  */
 
-export type DialectKind = "sqlite" | "pg";
+export type DialectKind = 'sqlite' | 'pg';
 
 export interface SqliteConfig {
-  dialect: "sqlite";
+  dialect: 'sqlite';
   /** 파일 경로. 미지정 시 :memory: */
   sqlitePath?: string;
 }
 
 export interface PgConfig {
-  dialect: "pg";
+  dialect: 'pg';
   pgHost: string;
   pgPort: number;
   pgDatabase: string;
@@ -40,19 +40,21 @@ export interface Connection {
 }
 
 export async function createConnection(cfg: ConnectionConfig): Promise<Connection> {
-  if (cfg.dialect === "sqlite") {
-    const Database = (await import("better-sqlite3")).default;
-    const { drizzle } = await import("drizzle-orm/better-sqlite3");
-    const raw = new Database(cfg.sqlitePath ?? ":memory:");
+  if (cfg.dialect === 'sqlite') {
+    const Database = (await import('better-sqlite3')).default;
+    const { drizzle } = await import('drizzle-orm/better-sqlite3');
+    const raw = new Database(cfg.sqlitePath ?? ':memory:');
     return {
-      dialect: "sqlite",
+      dialect: 'sqlite',
       db: drizzle({ client: raw }),
-      async close() { raw.close(); },
+      async close() {
+        raw.close();
+      },
     };
   }
 
-  const postgres = (await import("postgres")).default;
-  const { drizzle } = await import("drizzle-orm/postgres-js");
+  const postgres = (await import('postgres')).default;
+  const { drizzle } = await import('drizzle-orm/postgres-js');
 
   const sql = postgres({
     host: cfg.pgHost,
@@ -69,9 +71,11 @@ export async function createConnection(cfg: ConnectionConfig): Promise<Connectio
   }
 
   return {
-    dialect: "pg",
+    dialect: 'pg',
     db: drizzle({ client: sql }),
-    async close() { await sql.end(); },
+    async close() {
+      await sql.end();
+    },
   };
 }
 
@@ -95,14 +99,14 @@ export interface DualConnection {
 
 export type DualConnectionConfig =
   | {
-      dialect: "pg";
-      write: Omit<PgConfig, "dialect">;
-      read: Omit<PgConfig, "dialect">;
+      dialect: 'pg';
+      write: Omit<PgConfig, 'dialect'>;
+      read: Omit<PgConfig, 'dialect'>;
     }
   | {
-      dialect: "sqlite";
-      write: Omit<SqliteConfig, "dialect">;
-      read: Omit<SqliteConfig, "dialect">;
+      dialect: 'sqlite';
+      write: Omit<SqliteConfig, 'dialect'>;
+      read: Omit<SqliteConfig, 'dialect'>;
     };
 
 /**
@@ -112,14 +116,12 @@ export type DualConnectionConfig =
  * - sqlite의 경우에도 별도 인스턴스를 생성한다 (호출자가 같은 파일/`:memory:`를
  *   지정하더라도 connection 자체는 분리됨).
  */
-export async function createDualConnection(
-  cfg: DualConnectionConfig,
-): Promise<DualConnection> {
-  if (cfg.dialect === "pg") {
-    const write = await createConnection({ dialect: "pg", ...cfg.write });
-    const read = await createConnection({ dialect: "pg", ...cfg.read });
+export async function createDualConnection(cfg: DualConnectionConfig): Promise<DualConnection> {
+  if (cfg.dialect === 'pg') {
+    const write = await createConnection({ dialect: 'pg', ...cfg.write });
+    const read = await createConnection({ dialect: 'pg', ...cfg.read });
     return {
-      dialect: "pg",
+      dialect: 'pg',
       write,
       read,
       close: async () => {
@@ -127,10 +129,10 @@ export async function createDualConnection(
       },
     };
   }
-  const write = await createConnection({ dialect: "sqlite", ...cfg.write });
-  const read = await createConnection({ dialect: "sqlite", ...cfg.read });
+  const write = await createConnection({ dialect: 'sqlite', ...cfg.write });
+  const read = await createConnection({ dialect: 'sqlite', ...cfg.read });
   return {
-    dialect: "sqlite",
+    dialect: 'sqlite',
     write,
     read,
     close: async () => {

@@ -1,13 +1,13 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
-import type { OntologyPackDocsFamilyReader } from "ontology-pack-validate";
-import { filterMatchingDocsForPack } from "ontology-pack-validate";
+import type { OntologyPackDocsFamilyReader } from 'ontology-pack-validate';
+import { filterMatchingDocsForPack } from 'ontology-pack-validate';
 
-import { createDefinitionMarkdownAdapter } from "./docs-control-plane/adapters/definition-markdown.js";
+import { createDefinitionMarkdownAdapter } from './docs-control-plane/adapters/definition-markdown.js';
 
 /**
  * docs family reader backed by the cli's definition-markdown adapter.
@@ -21,8 +21,8 @@ export const readDocsFamilyFromDefinitionMarkdown: OntologyPackDocsFamilyReader 
   packId,
   rootDir,
 }) => {
-  if (!existsSync(join(rootDir, "docs"))) return [];
-  const adapter = createDefinitionMarkdownAdapter({ rootDir, docsDirs: ["docs"] });
+  if (!existsSync(join(rootDir, 'docs'))) return [];
+  const adapter = createDefinitionMarkdownAdapter({ rootDir, docsDirs: ['docs'] });
   const docs = await adapter.listDocuments();
   return filterMatchingDocsForPack(packId, docs);
 };

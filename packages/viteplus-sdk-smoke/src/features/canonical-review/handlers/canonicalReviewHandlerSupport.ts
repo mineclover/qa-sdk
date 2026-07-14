@@ -28,9 +28,7 @@ export function focusCanonicalReviewField(
   focusPlaybookField(context, field);
 }
 
-export async function flushCanonicalReviewBridge(
-  context: CanonicalReviewContext,
-): Promise<void> {
+export async function flushCanonicalReviewBridge(context: CanonicalReviewContext): Promise<void> {
   await flushPlaybookBridge(context);
 }
 
@@ -90,9 +88,7 @@ export function presentCanonicalReviewActivity(
   }
 }
 
-export function getCanonicalReviewFieldLabel(
-  field: CanonicalReviewField,
-): string {
+export function getCanonicalReviewFieldLabel(field: CanonicalReviewField): string {
   switch (field) {
     case 'changeTitle':
       return '변경 제목';

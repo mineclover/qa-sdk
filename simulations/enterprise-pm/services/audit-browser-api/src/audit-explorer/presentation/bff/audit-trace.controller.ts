@@ -1,8 +1,8 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc domain-slice-architecture
 
-import { Controller, Get, Headers, Inject, NotFoundException, Param } from "@nestjs/common";
-import { AuditTraceBff } from "./audit-trace.bff.js";
+import { Controller, Get, Headers, Inject, NotFoundException, Param } from '@nestjs/common';
+import { AuditTraceBff } from './audit-trace.bff.js';
 
 /**
  * Audit Explorer BFF 컨트롤러.
@@ -17,15 +17,15 @@ import { AuditTraceBff } from "./audit-trace.bff.js";
  * AuditEntry, rootSpanId/graphId/trace/firstFailure/graphSnapshot/
  * graphRetentionInsight). traceId/correlationId 는 표준 헤더로 받는다.
  */
-@Controller("audit")
+@Controller('audit')
 export class AuditTraceController {
   constructor(@Inject(AuditTraceBff) private readonly bff: AuditTraceBff) {}
 
-  @Get("trace/:rootSpanId")
+  @Get('trace/:rootSpanId')
   async trace(
-    @Param("rootSpanId") rootSpanId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('rootSpanId') rootSpanId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const result = await this.bff.getTrace({
       rootSpanId,
@@ -39,11 +39,11 @@ export class AuditTraceController {
     };
   }
 
-  @Get("firstFailure/:rootSpanId")
+  @Get('firstFailure/:rootSpanId')
   async firstFailure(
-    @Param("rootSpanId") rootSpanId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('rootSpanId') rootSpanId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const result = await this.bff.getFirstFailure({
       rootSpanId,
@@ -56,11 +56,11 @@ export class AuditTraceController {
     };
   }
 
-  @Get("entry/:spanId")
+  @Get('entry/:spanId')
   async entry(
-    @Param("spanId") spanId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('spanId') spanId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const entry = await this.bff.getEntry({
       spanId,
@@ -68,17 +68,17 @@ export class AuditTraceController {
       correlationId: correlationId ?? traceId ?? `trace-${spanId}`,
     });
     if (!entry) {
-      throw new NotFoundException({ error: "not_found", spanId });
+      throw new NotFoundException({ error: 'not_found', spanId });
     }
     return entry;
   }
 
-  @Get("context/:rootSpanId/:graphId")
+  @Get('context/:rootSpanId/:graphId')
   async context(
-    @Param("rootSpanId") rootSpanId: string,
-    @Param("graphId") graphId: string,
-    @Headers("x-trace-id") traceId?: string,
-    @Headers("x-correlation-id") correlationId?: string,
+    @Param('rootSpanId') rootSpanId: string,
+    @Param('graphId') graphId: string,
+    @Headers('x-trace-id') traceId?: string,
+    @Headers('x-correlation-id') correlationId?: string,
   ) {
     const result = await this.bff.getContext({
       rootSpanId,
@@ -87,7 +87,7 @@ export class AuditTraceController {
       correlationId: correlationId ?? traceId ?? `trace-${rootSpanId}`,
     });
     if (!result) {
-      throw new NotFoundException({ error: "graph_not_found", graphId });
+      throw new NotFoundException({ error: 'graph_not_found', graphId });
     }
     return {
       rootSpanId: result.rootSpanId,

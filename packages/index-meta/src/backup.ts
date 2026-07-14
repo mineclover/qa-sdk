@@ -1,10 +1,10 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { PrefixRegistry, PrefixRegistryRecord } from "./prefix-registry.js";
-import type { IndexMetaStore } from "./index-meta-store.js";
-import { ValidationError } from "./errors.js";
-import type { EntityId } from "./types.js";
+import type { PrefixRegistry, PrefixRegistryRecord } from './prefix-registry.js';
+import type { IndexMetaStore } from './index-meta-store.js';
+import { ValidationError } from './errors.js';
+import type { EntityId } from './types.js';
 
 // ── 백업 포맷 ─────────────────────────────────────────────
 
@@ -21,13 +21,13 @@ import type { EntityId } from "./types.js";
  */
 export interface VersionBackup {
   /** 포맷 식별자 — 파싱 호환성 검증용 */
-  format: "index-meta/v1";
-  exportedAt: string;  // ISO 8601
+  format: 'index-meta/v1';
+  exportedAt: string; // ISO 8601
 
   prefix: string;
   versionId: string;
   capacity: number;
-  refs?: PrefixRegistryRecord["refs"];
+  refs?: PrefixRegistryRecord['refs'];
 
   /**
    * position → value (sparse).
@@ -56,12 +56,12 @@ export async function exportVersion(
   versionId: string,
   registry: PrefixRegistry,
   store: IndexMetaStore,
-  exportedAt = new Date().toISOString()
+  exportedAt = new Date().toISOString(),
 ): Promise<VersionBackup> {
   const record = await registry.getRecord(prefix, versionId);
   if (record === null) {
     throw new ValidationError(
-      `exportVersion: "${prefix}/${versionId}" not found in PrefixRegistry`
+      `exportVersion: "${prefix}/${versionId}" not found in PrefixRegistry`,
     );
   }
 
@@ -72,7 +72,7 @@ export async function exportVersion(
   }
 
   return {
-    format: "index-meta/v1",
+    format: 'index-meta/v1',
     exportedAt,
     prefix,
     versionId,
@@ -117,11 +117,11 @@ export async function exportVersion(
 export async function importVersion(
   backup: VersionBackup,
   registry: PrefixRegistry,
-  store: IndexMetaStore
+  store: IndexMetaStore,
 ): Promise<void> {
-  if (backup.format !== "index-meta/v1") {
+  if (backup.format !== 'index-meta/v1') {
     throw new ValidationError(
-      `importVersion: unknown format "${(backup as { format: string }).format}"`
+      `importVersion: unknown format "${(backup as { format: string }).format}"`,
     );
   }
 
@@ -135,9 +135,9 @@ export async function importVersion(
 
   // 2. schema_version 등록
   await store.insertSchemaVersion({
-    prefix:    backup.prefix,
+    prefix: backup.prefix,
     versionId: backup.versionId,
-    capacity:  backup.capacity,
+    capacity: backup.capacity,
     createdAt: backup.exportedAt,
   });
 
@@ -145,7 +145,7 @@ export async function importVersion(
   for (const [posStr, value] of Object.entries(backup.entries)) {
     const position = Number(posStr);
     await store.insertEntry({
-      prefix:    backup.prefix,
+      prefix: backup.prefix,
       versionId: backup.versionId,
       position,
       value,

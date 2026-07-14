@@ -7,8 +7,8 @@
  * DefDataSource 인터페이스를 구현한다. 서버 기동 불필요.
  */
 
-import Database from "better-sqlite3";
-import { isAbsolute, relative } from "node:path";
+import Database from 'better-sqlite3';
+import { isAbsolute, relative } from 'node:path';
 import type {
   DefBoundaryContextResult,
   DefBoundaryResolutionCandidate,
@@ -26,7 +26,7 @@ import type {
   DefinitionEntry,
   DefinitionLink,
   ValidateGraphOptions,
-} from "definition-catalog";
+} from 'definition-catalog';
 import {
   analyzeImpact,
   computeEffectiveConcerns,
@@ -38,48 +38,48 @@ import {
   selectConcernContext,
   selectImpactContext,
   validateGraph,
-} from "definition-catalog";
+} from 'definition-catalog';
 import {
   getFeedbackRequestSummariesForDoc,
   getSyntheticIncomingLinksForDoc,
-} from "./review-feedback-source.js";
+} from './review-feedback-source.js';
 
 function rowToDoc(row: Record<string, unknown>): DefDoc {
   return {
-    docId: row["doc_id"] as string,
-    title: (row["title"] as string) || (row["doc_id"] as string),
-    type: (row["doc_type"] as string) || undefined,
-    knowledgeKind: (row["knowledge_kind"] as string) || undefined,
-    level: (row["level"] as string) || undefined,
-    tier: (row["tier"] as string) || undefined,
-    scope: (row["scope"] as string) || undefined,
-    aspect: (row["aspect"] as string) || undefined,
-    depth: (row["depth"] as string) || undefined,
-    lifecycle: row["lifecycle"] as string,
-    layer: (row["layer"] as string) || undefined,
-    ownerSystem: (row["owner_system"] as string) || undefined,
-    projectionPlane: (row["projection_plane"] as string) || undefined,
-    intentHierarchy: (row["intent_hierarchy"] as string) || undefined,
-    lineageFacet: (row["lineage_facet"] as string) || undefined,
-    lineageKind: (row["lineage_kind"] as string) || undefined,
-    tags: JSON.parse((row["tags_json"] as string) || "[]"),
-    links: JSON.parse((row["links_json"] as string) || "[]"),
-    svc: (row["svc"] as string) || undefined,
-    docVersion: (row["doc_version"] as string) || undefined,
-    revision: (row["revision"] as number | null) ?? undefined,
-    address: (row["address"] as string) || undefined,
-    version: row["version"] as number,
-    purpose: (row["purpose"] as string) || undefined,
-    intent: (row["intent"] as string) || undefined,
-    context: (row["context"] as string) || undefined,
-    caveat: (row["caveat"] as string) || undefined,
-    gate: row["gate_json"] ? JSON.parse(row["gate_json"] as string) as DefDoc["gate"] : undefined,
-    sourcePath: (row["source_path"] as string) || undefined,
+    docId: row['doc_id'] as string,
+    title: (row['title'] as string) || (row['doc_id'] as string),
+    type: (row['doc_type'] as string) || undefined,
+    knowledgeKind: (row['knowledge_kind'] as string) || undefined,
+    level: (row['level'] as string) || undefined,
+    tier: (row['tier'] as string) || undefined,
+    scope: (row['scope'] as string) || undefined,
+    aspect: (row['aspect'] as string) || undefined,
+    depth: (row['depth'] as string) || undefined,
+    lifecycle: row['lifecycle'] as string,
+    layer: (row['layer'] as string) || undefined,
+    ownerSystem: (row['owner_system'] as string) || undefined,
+    projectionPlane: (row['projection_plane'] as string) || undefined,
+    intentHierarchy: (row['intent_hierarchy'] as string) || undefined,
+    lineageFacet: (row['lineage_facet'] as string) || undefined,
+    lineageKind: (row['lineage_kind'] as string) || undefined,
+    tags: JSON.parse((row['tags_json'] as string) || '[]'),
+    links: JSON.parse((row['links_json'] as string) || '[]'),
+    svc: (row['svc'] as string) || undefined,
+    docVersion: (row['doc_version'] as string) || undefined,
+    revision: (row['revision'] as number | null) ?? undefined,
+    address: (row['address'] as string) || undefined,
+    version: row['version'] as number,
+    purpose: (row['purpose'] as string) || undefined,
+    intent: (row['intent'] as string) || undefined,
+    context: (row['context'] as string) || undefined,
+    caveat: (row['caveat'] as string) || undefined,
+    gate: row['gate_json'] ? (JSON.parse(row['gate_json'] as string) as DefDoc['gate']) : undefined,
+    sourcePath: (row['source_path'] as string) || undefined,
   };
 }
 
 export class LocalDataSource implements DefDataSource {
-  readonly mode = "local" as const;
+  readonly mode = 'local' as const;
   private readonly db: Database.Database;
   private readonly cwd: string;
 
@@ -89,12 +89,16 @@ export class LocalDataSource implements DefDataSource {
   }
 
   async get(docId: string): Promise<DefDoc | null> {
-    const row = this.db.prepare("SELECT * FROM documents WHERE doc_id = ?").get(docId) as Record<string, unknown> | undefined;
+    const row = this.db.prepare('SELECT * FROM documents WHERE doc_id = ?').get(docId) as
+      | Record<string, unknown>
+      | undefined;
     return row ? rowToDoc(row) : null;
   }
 
   async getByAddress(address: string): Promise<DefDoc | null> {
-    const row = this.db.prepare("SELECT * FROM documents WHERE address = ?").get(address) as Record<string, unknown> | undefined;
+    const row = this.db.prepare('SELECT * FROM documents WHERE address = ?').get(address) as
+      | Record<string, unknown>
+      | undefined;
     return row ? rowToDoc(row) : null;
   }
 
@@ -108,12 +112,12 @@ export class LocalDataSource implements DefDataSource {
       .get(docId) as Record<string, unknown> | undefined;
     if (!row) return null;
     return {
-      docId: row["doc_id"] as string,
-      body: (row["body"] as string) || "",
-      bodyHash: (row["body_hash"] as string) || undefined,
-      docVersion: (row["doc_version"] as string) || undefined,
-      revision: (row["revision"] as number | null) ?? undefined,
-      sourcePath: (row["source_path"] as string) || undefined,
+      docId: row['doc_id'] as string,
+      body: (row['body'] as string) || '',
+      bodyHash: (row['body_hash'] as string) || undefined,
+      docVersion: (row['doc_version'] as string) || undefined,
+      revision: (row['revision'] as number | null) ?? undefined,
+      sourcePath: (row['source_path'] as string) || undefined,
     };
   }
 
@@ -129,20 +133,24 @@ export class LocalDataSource implements DefDataSource {
       .all(requested.codePath) as Array<Record<string, unknown>>;
 
     const references: DefCodeReference[] = refs.map((row) => ({
-      codePath: row["code_path"] as string,
-      docId: row["doc_id"] as string,
-      relationType: row["relation_type"] as DefCodeReference["relationType"],
-      sourceKind: row["source_kind"] as DefCodeReference["sourceKind"],
-      symbol: (row["symbol"] as string) || undefined,
-      line: (row["line"] as number | null) ?? undefined,
+      codePath: row['code_path'] as string,
+      docId: row['doc_id'] as string,
+      relationType: row['relation_type'] as DefCodeReference['relationType'],
+      sourceKind: row['source_kind'] as DefCodeReference['sourceKind'],
+      symbol: (row['symbol'] as string) || undefined,
+      line: (row['line'] as number | null) ?? undefined,
     }));
 
     const scopedReferences = requested.symbol
-      ? references.filter((ref) => (ref.symbol ?? "") === requested.symbol || !ref.symbol)
+      ? references.filter((ref) => (ref.symbol ?? '') === requested.symbol || !ref.symbol)
       : references;
 
     if (scopedReferences.length === 0) {
-      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+      return {
+        kind: 'none',
+        codePath: formatCodeReferenceTarget(requested),
+        references: scopedReferences,
+      };
     }
 
     const supportingDocs = await Promise.all(
@@ -150,10 +158,14 @@ export class LocalDataSource implements DefDataSource {
     );
     const docs = supportingDocs.filter((doc): doc is DefDoc => Boolean(doc));
     if (docs.length === 0) {
-      return { kind: "none", codePath: formatCodeReferenceTarget(requested), references: scopedReferences };
+      return {
+        kind: 'none',
+        codePath: formatCodeReferenceTarget(requested),
+        references: scopedReferences,
+      };
     }
 
-    const boundaryRefs = scopedReferences.filter((ref) => ref.relationType === "boundary");
+    const boundaryRefs = scopedReferences.filter((ref) => ref.relationType === 'boundary');
     const boundaryDocIds = [...new Set(boundaryRefs.map((ref) => ref.docId))];
     if (boundaryDocIds.length > 1) {
       const candidates = docs
@@ -163,15 +175,21 @@ export class LocalDataSource implements DefDataSource {
           supportingDocs: docs.filter((doc) => doc.docId === anchor.docId),
           references: scopedReferences,
         }));
-      return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
+      return {
+        kind: 'ambiguous',
+        codePath: formatCodeReferenceTarget(requested),
+        candidates,
+        references: scopedReferences,
+      };
     }
 
     const byAnchor = new Map<string, DefBoundaryResolutionCandidate>();
 
     for (const doc of docs) {
-      const anchor = boundaryDocIds.length === 1
-        ? docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc
-        : await this.resolveBoundaryAnchor(doc);
+      const anchor =
+        boundaryDocIds.length === 1
+          ? (docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc)
+          : await this.resolveBoundaryAnchor(doc);
       const existing = byAnchor.get(anchor.docId);
       if (existing) {
         existing.supportingDocs.push(doc);
@@ -182,13 +200,15 @@ export class LocalDataSource implements DefDataSource {
 
     const candidates = [...byAnchor.values()].map((candidate) => ({
       anchor: candidate.anchor,
-          supportingDocs: candidate.supportingDocs.toSorted((a: DefDoc, b: DefDoc) => a.docId.localeCompare(b.docId)),
+      supportingDocs: candidate.supportingDocs.toSorted((a: DefDoc, b: DefDoc) =>
+        a.docId.localeCompare(b.docId),
+      ),
       references: scopedReferences,
     }));
 
     if (candidates.length === 1) {
       return {
-        kind: "unique",
+        kind: 'unique',
         codePath: formatCodeReferenceTarget(requested),
         anchor: candidates[0]!.anchor,
         supportingDocs: candidates[0]!.supportingDocs,
@@ -196,7 +216,12 @@ export class LocalDataSource implements DefDataSource {
       };
     }
 
-    return { kind: "ambiguous", codePath: formatCodeReferenceTarget(requested), candidates, references: scopedReferences };
+    return {
+      kind: 'ambiguous',
+      codePath: formatCodeReferenceTarget(requested),
+      candidates,
+      references: scopedReferences,
+    };
   }
 
   async list(filter?: DefListFilter): Promise<DefDoc[]> {
@@ -204,9 +229,9 @@ export class LocalDataSource implements DefDataSource {
     if (filter?.q) {
       const ftsQuery = filter.q
         .split(/\s+/)
-        .filter(t => t.length > 0)
-        .map(t => t.endsWith("*") ? t : `${t}*`)
-        .join(" ");
+        .filter((t) => t.length > 0)
+        .map((t) => (t.endsWith('*') ? t : `${t}*`))
+        .join(' ');
       try {
         const stmt = this.db.prepare(`
           SELECT d.* FROM documents d
@@ -214,7 +239,10 @@ export class LocalDataSource implements DefDataSource {
           WHERE documents_fts MATCH ?
           LIMIT ? OFFSET ?
         `);
-        const rows = stmt.all(ftsQuery, filter?.limit ?? 50, filter?.offset ?? 0) as Record<string, unknown>[];
+        const rows = stmt.all(ftsQuery, filter?.limit ?? 50, filter?.offset ?? 0) as Record<
+          string,
+          unknown
+        >[];
         if (rows.length > 0) {
           return rows.map(rowToDoc);
         }
@@ -228,27 +256,62 @@ export class LocalDataSource implements DefDataSource {
     const conditions: string[] = [];
     const params: unknown[] = [];
 
-    if (filter?.type) { conditions.push("doc_type = ?"); params.push(filter.type); }
-    if (filter?.knowledgeKind) { conditions.push("knowledge_kind = ?"); params.push(filter.knowledgeKind); }
-    if (filter?.scope) { conditions.push("scope = ?"); params.push(filter.scope); }
-    if (filter?.aspect) { conditions.push("aspect = ?"); params.push(filter.aspect); }
-    if (filter?.depth) { conditions.push("depth = ?"); params.push(filter.depth); }
-    if (filter?.lifecycle) { conditions.push("lifecycle = ?"); params.push(filter.lifecycle); }
-    if (filter?.layer) { conditions.push("layer = ?"); params.push(filter.layer); }
-    if (filter?.level) { conditions.push("level = ?"); params.push(filter.level); }
-    if (filter?.svc) { conditions.push("svc = ?"); params.push(filter.svc); }
-    if (filter?.address) { conditions.push("address = ?"); params.push(filter.address); }
-    if (filter?.tag) { conditions.push("tags_json LIKE ?"); params.push(`%"${filter.tag}"%`); }
+    if (filter?.type) {
+      conditions.push('doc_type = ?');
+      params.push(filter.type);
+    }
+    if (filter?.knowledgeKind) {
+      conditions.push('knowledge_kind = ?');
+      params.push(filter.knowledgeKind);
+    }
+    if (filter?.scope) {
+      conditions.push('scope = ?');
+      params.push(filter.scope);
+    }
+    if (filter?.aspect) {
+      conditions.push('aspect = ?');
+      params.push(filter.aspect);
+    }
+    if (filter?.depth) {
+      conditions.push('depth = ?');
+      params.push(filter.depth);
+    }
+    if (filter?.lifecycle) {
+      conditions.push('lifecycle = ?');
+      params.push(filter.lifecycle);
+    }
+    if (filter?.layer) {
+      conditions.push('layer = ?');
+      params.push(filter.layer);
+    }
+    if (filter?.level) {
+      conditions.push('level = ?');
+      params.push(filter.level);
+    }
+    if (filter?.svc) {
+      conditions.push('svc = ?');
+      params.push(filter.svc);
+    }
+    if (filter?.address) {
+      conditions.push('address = ?');
+      params.push(filter.address);
+    }
+    if (filter?.tag) {
+      conditions.push('tags_json LIKE ?');
+      params.push(`%"${filter.tag}"%`);
+    }
     if (filter?.ext) {
       // 파일 확장자 기준 필터 — `.rule.md`, `.cases.md`, `.test.md` 등 소스 파일명 패턴으로 구분.
-      conditions.push("source_path LIKE ?");
+      conditions.push('source_path LIKE ?');
       params.push(`%.${filter.ext}.md`);
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const limit = filter?.limit ?? 500;
     const offset = filter?.offset ?? 0;
-    const stmt = this.db.prepare(`SELECT * FROM documents ${where} ORDER BY doc_id LIMIT ? OFFSET ?`);
+    const stmt = this.db.prepare(
+      `SELECT * FROM documents ${where} ORDER BY doc_id LIMIT ? OFFSET ?`,
+    );
     return (stmt.all(...params, limit, offset) as Record<string, unknown>[]).map(rowToDoc);
   }
 
@@ -315,11 +378,19 @@ export class LocalDataSource implements DefDataSource {
       LEFT JOIN documents d ON d.doc_id = dl.source_id
       WHERE dl.target_id = ?
     `);
-    return (stmt.all(docId) as {
-      source_id: string;
-      link_type: string;
-      source_address: string | null;
-    }[]).map((r) => (Object.assign({source:r.source_id,type:r.link_type}, r.source_address?{sourceAddress:r.source_address}:{}, targetAddress?{targetAddress}:{})));
+    return (
+      stmt.all(docId) as {
+        source_id: string;
+        link_type: string;
+        source_address: string | null;
+      }[]
+    ).map((r) =>
+      Object.assign(
+        { source: r.source_id, type: r.link_type },
+        r.source_address ? { sourceAddress: r.source_address } : {},
+        targetAddress ? { targetAddress } : {},
+      ),
+    );
   }
 
   async getSyntheticIncomingLinks(
@@ -337,21 +408,32 @@ export class LocalDataSource implements DefDataSource {
       LEFT JOIN documents d ON d.doc_id = dl.target_id
       WHERE dl.source_id = ?
     `);
-    return (stmt.all(docId) as {
-      target_id: string;
-      link_type: string;
-      target_address: string | null;
-    }[]).map((r) => (Object.assign({target:r.target_id,type:r.link_type}, sourceAddress?{sourceAddress}:{}, r.target_address?{targetAddress:r.target_address}:{})));
+    return (
+      stmt.all(docId) as {
+        target_id: string;
+        link_type: string;
+        target_address: string | null;
+      }[]
+    ).map((r) =>
+      Object.assign(
+        { target: r.target_id, type: r.link_type },
+        sourceAddress ? { sourceAddress } : {},
+        r.target_address ? { targetAddress: r.target_address } : {},
+      ),
+    );
   }
 
   /** 전체 링크를 한번에 조회 — validate() 등 일괄 처리용. source_id 기준 그룹핑. */
   private getAllLinks(): Map<string, { target: string; type: string }[]> {
-    const stmt = this.db.prepare("SELECT source_id, target_id, link_type FROM document_links");
+    const stmt = this.db.prepare('SELECT source_id, target_id, link_type FROM document_links');
     const rows = stmt.all() as { source_id: string; target_id: string; link_type: string }[];
     const grouped = new Map<string, { target: string; type: string }[]>();
     for (const r of rows) {
       let list = grouped.get(r.source_id);
-      if (!list) { list = []; grouped.set(r.source_id, list); }
+      if (!list) {
+        list = [];
+        grouped.set(r.source_id, list);
+      }
       list.push({ target: r.target_id, type: r.link_type });
     }
     return grouped;
@@ -366,17 +448,16 @@ export class LocalDataSource implements DefDataSource {
 
   async getBoundary(
     docId: string,
-    level: "purpose" | "overview" = "overview",
+    level: 'purpose' | 'overview' = 'overview',
   ): Promise<DefBoundaryResult | null> {
     const doc = await this.get(docId);
     if (!doc) return null;
 
-    const scopeOrder = ["constraint", "state", "data", "feature", "flow", "interface", "ui"];
-    const linkOrder = ["constrains", "depends_on", "refines"];
+    const scopeOrder = ['constraint', 'state', 'data', 'feature', 'flow', 'interface', 'ui'];
+    const linkOrder = ['constrains', 'depends_on', 'refines'];
     const summary = (purpose?: string, overview?: string) =>
-      (level === "purpose" ? purpose : (purpose ?? overview))
-        ?.split("\n")[0]
-        ?.trim() || "(요약 없음)";
+      (level === 'purpose' ? purpose : (purpose ?? overview))?.split('\n')[0]?.trim() ||
+      '(요약 없음)';
     const scopeIndex = (scope?: string) => {
       if (!scope) return 999;
       const idx = scopeOrder.indexOf(scope);
@@ -388,8 +469,9 @@ export class LocalDataSource implements DefDataSource {
     };
 
     const children = (await this.getChildren(docId))
-      .toSorted((left, right) =>
-        scopeIndex(left.scope) - scopeIndex(right.scope) || left.docId.localeCompare(right.docId),
+      .toSorted(
+        (left, right) =>
+          scopeIndex(left.scope) - scopeIndex(right.scope) || left.docId.localeCompare(right.docId),
       )
       .map((child) => ({
         docId: child.docId,
@@ -401,15 +483,23 @@ export class LocalDataSource implements DefDataSource {
       }));
 
     const outgoing = (await this.getOutgoingLinks(docId))
-      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
-      .toSorted((left, right) =>
-        linkIndex(left.type) - linkIndex(right.type) || left.target.localeCompare(right.target),
+      .filter(
+        (link) =>
+          link.type === 'depends_on' || link.type === 'constrains' || link.type === 'refines',
+      )
+      .toSorted(
+        (left, right) =>
+          linkIndex(left.type) - linkIndex(right.type) || left.target.localeCompare(right.target),
       );
 
     const incoming = (await this.getIncomingLinks(docId))
-      .filter((link) => link.type === "depends_on" || link.type === "constrains" || link.type === "refines")
-      .toSorted((left, right) =>
-        linkIndex(left.type) - linkIndex(right.type) || left.source.localeCompare(right.source),
+      .filter(
+        (link) =>
+          link.type === 'depends_on' || link.type === 'constrains' || link.type === 'refines',
+      )
+      .toSorted(
+        (left, right) =>
+          linkIndex(left.type) - linkIndex(right.type) || left.source.localeCompare(right.source),
       );
 
     return {
@@ -423,34 +513,38 @@ export class LocalDataSource implements DefDataSource {
         ...(doc.layer ? { layer: doc.layer } : {}),
         ...(doc.svc ? { svc: doc.svc } : {}),
         ...(doc.purpose ? { purpose: doc.purpose } : {}),
-        ...(level === "overview" && doc.context ? { overview: doc.context } : {}),
+        ...(level === 'overview' && doc.context ? { overview: doc.context } : {}),
       },
       members: children,
       couplings: {
-        outgoing: await Promise.all(outgoing.map(async (link) => {
-          const target = await this.get(link.target);
-          return {
-            type: link.type,
-            target: link.target,
-            summary: summary(target?.purpose, target?.context),
-          };
-        })),
-        incoming: await Promise.all(incoming.map(async (link) => {
-          const source = await this.get(link.source);
-          return {
-            type: link.type,
-            source: link.source,
-            summary: summary(source?.purpose, source?.context),
-          };
-        })),
+        outgoing: await Promise.all(
+          outgoing.map(async (link) => {
+            const target = await this.get(link.target);
+            return {
+              type: link.type,
+              target: link.target,
+              summary: summary(target?.purpose, target?.context),
+            };
+          }),
+        ),
+        incoming: await Promise.all(
+          incoming.map(async (link) => {
+            const source = await this.get(link.source);
+            return {
+              type: link.type,
+              source: link.source,
+              summary: summary(source?.purpose, source?.context),
+            };
+          }),
+        ),
       },
     };
   }
 
   async getBoundaryContext(
     docId: string,
-    level: "purpose" | "overview" = "overview",
-    mode: "direct" | "transitive" = "transitive",
+    level: 'purpose' | 'overview' = 'overview',
+    mode: 'direct' | 'transitive' = 'transitive',
   ): Promise<DefBoundaryContextResult | null> {
     const boundary = await this.getBoundary(docId, level);
     if (!boundary) return null;
@@ -459,17 +553,18 @@ export class LocalDataSource implements DefDataSource {
     const linkCache = new Map<string, readonly DefinitionLink[]>();
 
     const getEntry = (id: string): DefinitionEntry | undefined => entryCache.get(id);
-    const getLinks = (id: string, direction: "outgoing" | "incoming"): readonly DefinitionLink[] =>
+    const getLinks = (id: string, direction: 'outgoing' | 'incoming'): readonly DefinitionLink[] =>
       linkCache.get(`${direction}:${id}`) ?? [];
 
-    const seedIds = mode === "transitive"
-      ? new Set((await this.list({ limit: 10000 })).map((doc) => doc.docId))
-      : new Set<string>([
-          docId,
-          ...boundary.members.map((member) => member.docId),
-          ...boundary.couplings.outgoing.map((coupling) => coupling.target),
-          ...boundary.couplings.incoming.map((coupling) => coupling.source),
-        ]);
+    const seedIds =
+      mode === 'transitive'
+        ? new Set((await this.list({ limit: 10000 })).map((doc) => doc.docId))
+        : new Set<string>([
+            docId,
+            ...boundary.members.map((member) => member.docId),
+            ...boundary.couplings.outgoing.map((coupling) => coupling.target),
+            ...boundary.couplings.incoming.map((coupling) => coupling.source),
+          ]);
 
     for (const id of seedIds) {
       const doc = await this.get(id);
@@ -479,17 +574,17 @@ export class LocalDataSource implements DefDataSource {
           ? {
               id: doc.docId,
               title: doc.title ?? doc.docId,
-              scope: doc.scope as DefinitionEntry["scope"],
-              aspect: doc.aspect as DefinitionEntry["aspect"],
-              depth: doc.depth as DefinitionEntry["depth"],
-              lifecycle: doc.lifecycle as DefinitionEntry["lifecycle"],
-              layer: doc.layer as DefinitionEntry["layer"],
+              scope: doc.scope as DefinitionEntry['scope'],
+              aspect: doc.aspect as DefinitionEntry['aspect'],
+              depth: doc.depth as DefinitionEntry['depth'],
+              lifecycle: doc.lifecycle as DefinitionEntry['lifecycle'],
+              layer: doc.layer as DefinitionEntry['layer'],
               tags: doc.tags,
               serviceId: doc.svc,
               address: 0,
-              serialized: doc.address ?? "",
-              createdAt: "",
-              updatedAt: "",
+              serialized: doc.address ?? '',
+              createdAt: '',
+              updatedAt: '',
             }
           : undefined,
       );
@@ -499,9 +594,9 @@ export class LocalDataSource implements DefDataSource {
         (await this.getOutgoingLinks(id)).map((link) => ({
           sourceId: id,
           targetId: link.target,
-          linkType: link.type as DefinitionLink["linkType"],
+          linkType: link.type as DefinitionLink['linkType'],
           address: 0,
-          serialized: "",
+          serialized: '',
         })),
       );
       linkCache.set(
@@ -509,9 +604,9 @@ export class LocalDataSource implements DefDataSource {
         (await this.getIncomingLinks(id)).map((link) => ({
           sourceId: link.source,
           targetId: id,
-          linkType: link.type as DefinitionLink["linkType"],
+          linkType: link.type as DefinitionLink['linkType'],
           address: 0,
-          serialized: "",
+          serialized: '',
         })),
       );
     }
@@ -520,10 +615,7 @@ export class LocalDataSource implements DefDataSource {
       computeEffectiveConcerns(docId, getEntry, getLinks),
       mode,
     );
-    const impact = selectImpactContext(
-      analyzeImpact(docId, getEntry, getLinks),
-      mode,
-    );
+    const impact = selectImpactContext(analyzeImpact(docId, getEntry, getLinks), mode);
     const feedbackTrace = (
       await Promise.all(
         [docId, ...impact.impacted.map((item) => item.id)].map((id) =>
@@ -532,7 +624,9 @@ export class LocalDataSource implements DefDataSource {
       )
     )
       .flat()
-      .filter((item, index, items) => index === items.findIndex((candidate) => candidate.id === item.id));
+      .filter(
+        (item, index, items) => index === items.findIndex((candidate) => candidate.id === item.id),
+      );
 
     return {
       mode,
@@ -555,7 +649,7 @@ export class LocalDataSource implements DefDataSource {
           docId: item.id,
           ...(item.address ? { address: item.address } : {}),
           via: item.via,
-          path: item.path.join(" → "),
+          path: item.path.join(' → '),
           direction: item.direction,
           distance: item.depth,
           ...(item.layer ? { layer: item.layer } : {}),
@@ -571,8 +665,8 @@ export class LocalDataSource implements DefDataSource {
 
   async validate(options: DefValidateOptions = {}): Promise<DefValidationResult> {
     const allDocs = await this.list({ limit: 10000 });
-    const allIds = new Set(allDocs.map(d => d.docId));
-    const issues: DefValidationResult["issues"] = [];
+    const allIds = new Set(allDocs.map((d) => d.docId));
+    const issues: DefValidationResult['issues'] = [];
     const registry = new MemoryDefinitionRegistry();
 
     for (const doc of allDocs) {
@@ -585,14 +679,14 @@ export class LocalDataSource implements DefDataSource {
       for (const link of outgoing) {
         if (!allIds.has(link.target)) {
           issues.push({
-            severity: "error",
-            type: "broken-link",
+            severity: 'error',
+            type: 'broken-link',
             docId: doc.docId,
             message: `target "${link.target}" (${link.type})가 존재하지 않음`,
           });
           continue;
         }
-        registry.link(doc.docId, link.target, link.type as DefinitionLink["linkType"]);
+        registry.link(doc.docId, link.target, link.type as DefinitionLink['linkType']);
       }
     }
 
@@ -610,22 +704,22 @@ export class LocalDataSource implements DefDataSource {
       const doc = docsById.get(ref.docId);
       if (!doc) {
         issues.push({
-          severity: "error",
-          type: "broken-code-reference",
+          severity: 'error',
+          type: 'broken-code-reference',
           docId: ref.docId,
           message: `code reference "${ref.codePath}"가 존재하지 않는 문서 "${ref.docId}"를 참조`,
         });
         continue;
       }
       const isBoundaryEligible =
-        doc.tier === "system" ||
-        doc.tier === "layout" ||
-        doc.level === "group" ||
-        doc.level === "module";
-      if (ref.relationType === "boundary" && !isBoundaryEligible) {
+        doc.tier === 'system' ||
+        doc.tier === 'layout' ||
+        doc.level === 'group' ||
+        doc.level === 'module';
+      if (ref.relationType === 'boundary' && !isBoundaryEligible) {
         issues.push({
-          severity: "error",
-          type: "invalid-code-boundary",
+          severity: 'error',
+          type: 'invalid-code-boundary',
           docId: ref.docId,
           message: `boundary reference "${ref.codePath}"는 tier:system/layout 또는 legacy contains parent 문서를 가리켜야 함`,
         });
@@ -641,18 +735,20 @@ export class LocalDataSource implements DefDataSource {
         codePath: pathRefs[0]!.codePath,
         symbol: pathRefs[0]!.symbol,
       });
-      const boundaryIds = [...new Set(
-        pathRefs
-          .filter((ref) => ref.relationType === "boundary" && docsById.has(ref.docId))
-          .map((ref) => ref.docId),
-      )];
+      const boundaryIds = [
+        ...new Set(
+          pathRefs
+            .filter((ref) => ref.relationType === 'boundary' && docsById.has(ref.docId))
+            .map((ref) => ref.docId),
+        ),
+      ];
 
       if (boundaryIds.length > 1) {
         issues.push({
-          severity: "error",
-          type: "ambiguous-code-boundary",
+          severity: 'error',
+          type: 'ambiguous-code-boundary',
           docId: boundaryIds[0]!,
-          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(", ")}`,
+          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(', ')}`,
         });
         continue;
       }
@@ -668,16 +764,16 @@ export class LocalDataSource implements DefDataSource {
 
       if (!explicitBoundaryId && inferredAnchorIds.size > 1) {
         issues.push({
-          severity: "error",
-          type: "ambiguous-code-boundary",
+          severity: 'error',
+          type: 'ambiguous-code-boundary',
           docId: pathRefs[0]!.docId,
-          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(", ")}`,
+          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(', ')}`,
         });
       }
     }
 
-    const errors = issues.filter(i => i.severity === "error").length;
-    const warnings = issues.filter(i => i.severity === "warning").length;
+    const errors = issues.filter((i) => i.severity === 'error').length;
+    const warnings = issues.filter((i) => i.severity === 'warning').length;
     return { issues, errors, warnings, passed: errors === 0 };
   }
 
@@ -695,34 +791,31 @@ export class LocalDataSource implements DefDataSource {
       .all() as Array<Record<string, unknown>>;
 
     return rows.map((row) => ({
-      codePath: row["code_path"] as string,
-      docId: row["doc_id"] as string,
-      relationType: row["relation_type"] as DefCodeReference["relationType"],
-      sourceKind: row["source_kind"] as DefCodeReference["sourceKind"],
-      symbol: (row["symbol"] as string) || undefined,
-      line: (row["line"] as number | null) ?? undefined,
+      codePath: row['code_path'] as string,
+      docId: row['doc_id'] as string,
+      relationType: row['relation_type'] as DefCodeReference['relationType'],
+      sourceKind: row['source_kind'] as DefCodeReference['sourceKind'],
+      symbol: (row['symbol'] as string) || undefined,
+      line: (row['line'] as number | null) ?? undefined,
     }));
   }
 
   private normalizeCodeReferenceTarget(filePath: string): { codePath: string; symbol?: string } {
-    const parsed = parseCodeReferenceTarget(filePath.replaceAll("\\", "/"));
+    const parsed = parseCodeReferenceTarget(filePath.replaceAll('\\', '/'));
     const rawPath = parsed?.codePath ?? filePath;
     const symbol = parsed?.symbol;
     if (isAbsolute(rawPath)) {
-      const relPath = relative(this.cwd, rawPath).replaceAll("\\", "/");
-      if (relPath !== "" && !relPath.startsWith("../")) {
+      const relPath = relative(this.cwd, rawPath).replaceAll('\\', '/');
+      if (relPath !== '' && !relPath.startsWith('../')) {
         return { codePath: relPath, symbol };
       }
     }
-    return { codePath: rawPath.replaceAll("\\", "/"), symbol };
+    return { codePath: rawPath.replaceAll('\\', '/'), symbol };
   }
 
   private async resolveBoundaryAnchor(doc: DefDoc): Promise<DefDoc> {
     const isBoundaryDoc = (d: DefDoc) =>
-      d.level === "group" ||
-      d.level === "module" ||
-      d.tier === "system" ||
-      d.tier === "layout";
+      d.level === 'group' || d.level === 'module' || d.tier === 'system' || d.tier === 'layout';
     if (isBoundaryDoc(doc)) return doc;
     let current = doc;
     const visited = new Set<string>([doc.docId]);

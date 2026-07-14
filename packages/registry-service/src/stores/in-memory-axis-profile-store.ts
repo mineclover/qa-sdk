@@ -1,7 +1,11 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { AxisProfileRecord, AxisProfilePatch, AxisProfileStore } from "./axis-profile-store.js";
+import type {
+  AxisProfileRecord,
+  AxisProfilePatch,
+  AxisProfileStore,
+} from './axis-profile-store.js';
 
 export class InMemoryAxisProfileStore implements AxisProfileStore {
   private readonly _store = new Map<string, AxisProfileRecord>();
@@ -12,7 +16,8 @@ export class InMemoryAxisProfileStore implements AxisProfileStore {
 
   async register(record: AxisProfileRecord): Promise<void> {
     const k = this.key(record.id, record.catalogId);
-    if (this._store.has(k)) throw new Error(`Axis '${record.id}' in '${record.catalogId}' already exists`);
+    if (this._store.has(k))
+      throw new Error(`Axis '${record.id}' in '${record.catalogId}' already exists`);
     this._store.set(k, record);
   }
 
@@ -21,7 +26,7 @@ export class InMemoryAxisProfileStore implements AxisProfileStore {
   }
 
   async list(catalogId: string): Promise<AxisProfileRecord[]> {
-    return [...this._store.values()].filter(r => r.catalogId === catalogId);
+    return [...this._store.values()].filter((r) => r.catalogId === catalogId);
   }
 
   async patch(id: string, catalogId: string, patch: AxisProfilePatch): Promise<void> {

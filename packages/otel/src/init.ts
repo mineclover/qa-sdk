@@ -1,12 +1,12 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
-import { Resource } from "@opentelemetry/resources";
-import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
-import type { OtelEnv } from "./env.js";
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { Resource } from '@opentelemetry/resources';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import type { OtelEnv } from './env.js';
 
 export interface InitTelemetryOptions {
   /** 서비스 이름 (ATTR_SERVICE_NAME) */
@@ -63,8 +63,8 @@ export function initTelemetry(options: InitTelemetryOptions): () => Promise<void
 function parseHeaders(raw?: string): Record<string, string> | undefined {
   if (!raw) return undefined;
   const headers: Record<string, string> = {};
-  for (const pair of raw.split(",")) {
-    const idx = pair.indexOf("=");
+  for (const pair of raw.split(',')) {
+    const idx = pair.indexOf('=');
     if (idx > 0) {
       headers[pair.slice(0, idx).trim()] = pair.slice(idx + 1).trim();
     }

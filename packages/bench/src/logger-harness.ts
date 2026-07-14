@@ -1,8 +1,8 @@
-import { getCoreEvent } from "@qa-sdk/event-catalog";
-import { QaLogger, newQaSessionId } from "@qa-sdk/sdk";
-import { createErrorTracker, createInstrumentedHarness } from "./harness.js";
-import { createProbeTransport } from "./probe-transport.js";
-import type { BenchmarkHarness, QaLoggerBenchmarkHarnessConfig } from "./types.js";
+import { getCoreEvent } from '@qa-sdk/event-catalog';
+import { QaLogger, newQaSessionId } from '@qa-sdk/sdk';
+import { createErrorTracker, createInstrumentedHarness } from './harness.js';
+import { createProbeTransport } from './probe-transport.js';
+import type { BenchmarkHarness, QaLoggerBenchmarkHarnessConfig } from './types.js';
 
 export function createQaLoggerBenchmarkHarness(
   config: QaLoggerBenchmarkHarnessConfig,
@@ -32,8 +32,8 @@ export function createQaLoggerBenchmarkHarness(
 
         if (scenarioId) {
           logger.log({
-            event_key: "session_start",
-            event_version: resolveEventVersion("session_start"),
+            event_key: 'session_start',
+            event_version: resolveEventVersion('session_start'),
             payload: { scenario_id: scenarioId },
           });
         }
@@ -76,8 +76,8 @@ export function createQaLoggerBenchmarkHarness(
 
 function resolveEventVersion(eventKey: string, explicitVersion?: string): string {
   if (explicitVersion) {
-    return explicitVersion.padStart(3, "0");
+    return explicitVersion.padStart(3, '0');
   }
 
-  return (getCoreEvent(eventKey)?.event_version ?? "1").padStart(3, "0");
+  return (getCoreEvent(eventKey)?.event_version ?? '1').padStart(3, '0');
 }

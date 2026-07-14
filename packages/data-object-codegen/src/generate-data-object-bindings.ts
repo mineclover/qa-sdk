@@ -1,5 +1,5 @@
 // @def.boundary meta-semantic-system
-import { createHash } from "node:crypto";
+import { createHash } from 'node:crypto';
 import type {
   AxisVersionSnapshot,
   Catalog,
@@ -8,7 +8,7 @@ import type {
   DataSchema,
   PrefixDef,
   PrefixVersionDef,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 export interface CodegenFile {
   readonly path: string;
@@ -46,10 +46,16 @@ export function generateDataObjectBindings(
   const records = buildBindingRecords(catalog, schemas, bindings);
 
   const files: CodegenFile[] = [
-    { path: "data-objects.ts", content: generateDataObjectsFile(catalog, contentHash, records) },
-    { path: "binding-registry.ts", content: generateBindingRegistryFile(catalog.id, contentHash, records) },
-    { path: "lineage-types.ts", content: generateLineageTypesFile(catalog.id, contentHash, records) },
-    { path: "index.ts", content: generateIndexFile(catalog.id, contentHash) },
+    { path: 'data-objects.ts', content: generateDataObjectsFile(catalog, contentHash, records) },
+    {
+      path: 'binding-registry.ts',
+      content: generateBindingRegistryFile(catalog.id, contentHash, records),
+    },
+    {
+      path: 'lineage-types.ts',
+      content: generateLineageTypesFile(catalog.id, contentHash, records),
+    },
+    { path: 'index.ts', content: generateIndexFile(catalog.id, contentHash) },
   ];
 
   return {
@@ -69,10 +75,7 @@ function computeContentHash(
     bindings: normalizeBindings(bindings),
   };
 
-  return createHash("sha256")
-    .update(stableStringify(normalized))
-    .digest("hex")
-    .slice(0, 12);
+  return createHash('sha256').update(stableStringify(normalized)).digest('hex').slice(0, 12);
 }
 
 function buildBindingRecords(
@@ -98,12 +101,18 @@ function buildBindingRecords(
       throw new Error(`prefix "${binding.prefixId}" 없음`);
     }
 
-    const prefixVersion = prefix.versions.find((version) => version.version === binding.prefixVersion);
+    const prefixVersion = prefix.versions.find(
+      (version) => version.version === binding.prefixVersion,
+    );
     if (!prefixVersion) {
       throw new Error(`prefix version "${binding.prefixId}:${binding.prefixVersion}" 없음`);
     }
 
-    const interfaceName = allocateInterfaceName(usedInterfaceNames, binding.prefixId, binding.schemaId);
+    const interfaceName = allocateInterfaceName(
+      usedInterfaceNames,
+      binding.prefixId,
+      binding.schemaId,
+    );
 
     return {
       binding,
@@ -117,11 +126,7 @@ function buildBindingRecords(
   });
 }
 
-function allocateInterfaceName(
-  usedNames: Set<string>,
-  prefixId: string,
-  schemaId: string,
-): string {
+function allocateInterfaceName(usedNames: Set<string>, prefixId: string, schemaId: string): string {
   const base = `${toPascal(prefixId)}Data`;
   if (!usedNames.has(base)) {
     usedNames.add(base);
@@ -155,13 +160,19 @@ function generateDataObjectsFile(
   lines.push(``);
 
   for (const record of records) {
-    lines.push(`/** ${record.schema.schemaId}@${record.schema.version} → ${record.binding.prefixId}:${record.binding.prefixVersion} */`);
+    lines.push(
+      `/** ${record.schema.schemaId}@${record.schema.version} → ${record.binding.prefixId}:${record.binding.prefixVersion} */`,
+    );
     lines.push(`export interface ${record.interfaceName} {`);
 
-    const mappings = Object.entries(record.binding.columnToAxis).toSorted(([left], [right]) => left.localeCompare(right));
+    const mappings = Object.entries(record.binding.columnToAxis).toSorted(([left], [right]) =>
+      left.localeCompare(right),
+    );
     for (const [columnId, mapping] of mappings) {
-      const optional = record.schema.columns[columnId]?.required === false ? "?" : "";
-      lines.push(`  ${renderPropertyKey(columnId)}${optional}: ${resolveMappedType(catalog, record, mapping.dimLabel)};`);
+      const optional = record.schema.columns[columnId]?.required === false ? '?' : '';
+      lines.push(
+        `  ${renderPropertyKey(columnId)}${optional}: ${resolveMappedType(catalog, record, mapping.dimLabel)};`,
+      );
     }
 
     lines.push(`}`);
@@ -177,15 +188,17 @@ function generateDataObjectsFile(
   }
 
   lines.push(`export interface PrefixDataObjectMap {`);
-  for (const [prefixId, interfaceNames] of [...prefixToInterfaces.entries()].toSorted(([left], [right]) => left.localeCompare(right))) {
-    lines.push(`  ${JSON.stringify(prefixId)}: ${interfaceNames.join(" | ")};`);
+  for (const [prefixId, interfaceNames] of [...prefixToInterfaces.entries()].toSorted(
+    ([left], [right]) => left.localeCompare(right),
+  )) {
+    lines.push(`  ${JSON.stringify(prefixId)}: ${interfaceNames.join(' | ')};`);
   }
   lines.push(`}`);
   lines.push(``);
   lines.push(`export type PrefixDataObject = PrefixDataObjectMap[keyof PrefixDataObjectMap];`);
   lines.push(``);
 
-  return `${lines.join("\n")}\n`;
+  return `${lines.join('\n')}\n`;
 }
 
 function generateBindingRegistryFile(
@@ -223,7 +236,9 @@ function generateBindingRegistryFile(
     lines.push(`  prefixId: ${JSON.stringify(record.binding.prefixId)},`);
     lines.push(`  prefixVersion: ${JSON.stringify(record.binding.prefixVersion)},`);
     lines.push(`  columnToAxis: {`);
-    for (const [columnId, mapping] of Object.entries(record.binding.columnToAxis).toSorted(([left], [right]) => left.localeCompare(right))) {
+    for (const [columnId, mapping] of Object.entries(record.binding.columnToAxis).toSorted(
+      ([left], [right]) => left.localeCompare(right),
+    )) {
       lines.push(`    ${renderObjectLiteralKey(columnId)}: {`);
       lines.push(`      dimLabel: ${JSON.stringify(mapping.dimLabel)},`);
       if (mapping.segmentId) {
@@ -259,8 +274,12 @@ function generateBindingRegistryFile(
   }
   lines.push(`    },`);
   lines.push(`    byPrefix: {`);
-  for (const [prefixId, groupedRecords] of [...prefixGroups.entries()].toSorted(([left], [right]) => left.localeCompare(right))) {
-    lines.push(`      ${JSON.stringify(prefixId)}: [${groupedRecords.map((record) => record.bindingConstName).join(", ")}],`);
+  for (const [prefixId, groupedRecords] of [...prefixGroups.entries()].toSorted(([left], [right]) =>
+    left.localeCompare(right),
+  )) {
+    lines.push(
+      `      ${JSON.stringify(prefixId)}: [${groupedRecords.map((record) => record.bindingConstName).join(', ')}],`,
+    );
   }
   lines.push(`    },`);
   lines.push(`  };`);
@@ -269,7 +288,7 @@ function generateBindingRegistryFile(
   lines.push(`export const BINDING_REGISTRY = createBindingRegistry();`);
   lines.push(``);
 
-  return `${lines.join("\n")}\n`;
+  return `${lines.join('\n')}\n`;
 }
 
 function generateLineageTypesFile(
@@ -286,7 +305,7 @@ function generateLineageTypesFile(
     );
     lines.push(`export type ${pair.aliasName} =`);
     for (let index = 0; index < pair.fields.length; index += 1) {
-      const suffix = index === pair.fields.length - 1 ? ";" : "";
+      const suffix = index === pair.fields.length - 1 ? ';' : '';
       lines.push(`  | ${JSON.stringify(pair.fields[index])}${suffix}`);
     }
     lines.push(``);
@@ -294,7 +313,9 @@ function generateLineageTypesFile(
 
   lines.push(`export interface ValidLineageMap {`);
   for (const pair of lineagePairs) {
-    lines.push(`  ${JSON.stringify(`${pair.source.schema.schemaId}->${pair.target.schema.schemaId}`)}: ${pair.aliasName};`);
+    lines.push(
+      `  ${JSON.stringify(`${pair.source.schema.schemaId}->${pair.target.schema.schemaId}`)}: ${pair.aliasName};`,
+    );
   }
   lines.push(`}`);
   lines.push(``);
@@ -302,13 +323,13 @@ function generateLineageTypesFile(
   if (lineagePairs.length === 0) {
     lines.push(`export type ValidLineage = never;`);
     lines.push(``);
-    return `${lines.join("\n")}\n`;
+    return `${lines.join('\n')}\n`;
   }
 
   lines.push(`export type ValidLineage =`);
   for (let index = 0; index < lineagePairs.length; index += 1) {
     const pair = lineagePairs[index];
-    const suffix = index === lineagePairs.length - 1 ? ";" : "";
+    const suffix = index === lineagePairs.length - 1 ? ';' : '';
     lines.push(`  | {`);
     lines.push(`      source: ${JSON.stringify(pair.source.schema.schemaId)};`);
     lines.push(`      target: ${JSON.stringify(pair.target.schema.schemaId)};`);
@@ -318,7 +339,7 @@ function generateLineageTypesFile(
   }
   lines.push(``);
 
-  return `${lines.join("\n")}\n`;
+  return `${lines.join('\n')}\n`;
 }
 
 function generateIndexFile(catalogId: string, contentHash: string): string {
@@ -328,7 +349,7 @@ function generateIndexFile(catalogId: string, contentHash: string): string {
     `export * from "./binding-registry.js";`,
     `export * from "./lineage-types.js";`,
     ``,
-  ].join("\n");
+  ].join('\n');
 }
 
 function buildLineagePairs(records: readonly BindingRecord[]): LineagePair[] {
@@ -336,7 +357,10 @@ function buildLineagePairs(records: readonly BindingRecord[]): LineagePair[] {
 
   for (const source of records) {
     for (const target of records) {
-      if (source.schema.schemaId === target.schema.schemaId && source.schema.version === target.schema.version) {
+      if (
+        source.schema.schemaId === target.schema.schemaId &&
+        source.schema.version === target.schema.version
+      ) {
         continue;
       }
 
@@ -366,11 +390,13 @@ function findCompatibleFields(source: BindingRecord, target: BindingRecord): str
     const sourceColumn = source.schema.columns[columnId];
     const targetColumn = target.schema.columns[columnId];
 
-    return areColumnRefsCompatible(sourceColumn, targetColumn)
-      && isLineageMappingCompatible(
+    return (
+      areColumnRefsCompatible(sourceColumn, targetColumn) &&
+      isLineageMappingCompatible(
         source.binding.columnToAxis[columnId] ?? null,
         target.binding.columnToAxis[columnId] ?? null,
-      );
+      )
+    );
   });
 }
 
@@ -379,20 +405,20 @@ function areColumnRefsCompatible(sourceColumn: DataColumn, targetColumn: DataCol
   const targetRef = targetColumn.ref;
 
   switch (sourceRef.kind) {
-    case "scalar":
-      return targetRef.kind === "scalar" && sourceRef.type === targetRef.type;
-    case "axis_ref":
-      return targetRef.kind === "axis_ref" && sourceRef.axisId === targetRef.axisId;
-    case "prefix_ref":
-      return targetRef.kind === "prefix_ref" && sourceRef.prefixId === targetRef.prefixId;
-    case "table_ref":
-      return targetRef.kind === "table_ref" && sourceRef.table === targetRef.table;
+    case 'scalar':
+      return targetRef.kind === 'scalar' && sourceRef.type === targetRef.type;
+    case 'axis_ref':
+      return targetRef.kind === 'axis_ref' && sourceRef.axisId === targetRef.axisId;
+    case 'prefix_ref':
+      return targetRef.kind === 'prefix_ref' && sourceRef.prefixId === targetRef.prefixId;
+    case 'table_ref':
+      return targetRef.kind === 'table_ref' && sourceRef.table === targetRef.table;
   }
 }
 
 function isLineageMappingCompatible(
-  sourceMapping: DataObjectBinding["columnToAxis"][string] | null,
-  targetMapping: DataObjectBinding["columnToAxis"][string] | null,
+  sourceMapping: DataObjectBinding['columnToAxis'][string] | null,
+  targetMapping: DataObjectBinding['columnToAxis'][string] | null,
 ): boolean {
   if (!targetMapping) {
     return true;
@@ -402,8 +428,10 @@ function isLineageMappingCompatible(
     return false;
   }
 
-  return sourceMapping.dimLabel === targetMapping.dimLabel
-    && (sourceMapping.segmentId ?? "") === (targetMapping.segmentId ?? "");
+  return (
+    sourceMapping.dimLabel === targetMapping.dimLabel &&
+    (sourceMapping.segmentId ?? '') === (targetMapping.segmentId ?? '')
+  );
 }
 
 function resolveMappedType(catalog: Catalog, record: BindingRecord, dimLabel: string): string {
@@ -413,14 +441,15 @@ function resolveMappedType(catalog: Catalog, record: BindingRecord, dimLabel: st
   }
 
   switch (dim.kind) {
-    case "axis": {
+    case 'axis': {
       const axis = catalog.axes[dim.axisId];
       if (!axis) {
         throw new Error(`axis "${dim.axisId}" 없음`);
       }
 
-      const axisVersion = record.prefixVersion.axisVersions[dim.axisId]
-        ?? Object.keys(axis.versions).toSorted().at(-1);
+      const axisVersion =
+        record.prefixVersion.axisVersions[dim.axisId] ??
+        Object.keys(axis.versions).toSorted().at(-1);
       if (!axisVersion) {
         throw new Error(`axis "${dim.axisId}" version 정보를 찾을 수 없음`);
       }
@@ -432,9 +461,9 @@ function resolveMappedType(catalog: Catalog, record: BindingRecord, dimLabel: st
 
       return axisEntriesToType(snapshot);
     }
-    case "prefix_ref":
-    case "table_ref":
-      return "number";
+    case 'prefix_ref':
+    case 'table_ref':
+      return 'number';
     default:
       return assertNever(dim);
   }
@@ -442,24 +471,28 @@ function resolveMappedType(catalog: Catalog, record: BindingRecord, dimLabel: st
 
 function axisEntriesToType(snapshot: AxisVersionSnapshot): string {
   if (snapshot.entries.length === 0) {
-    return "string";
+    return 'string';
   }
 
-  return snapshot.entries.map((entry) => JSON.stringify(entry)).join(" | ");
+  return snapshot.entries.map((entry) => JSON.stringify(entry)).join(' | ');
 }
 
 function compareBindings(left: DataObjectBinding, right: DataObjectBinding): number {
-  return left.prefixId.localeCompare(right.prefixId)
-    || left.prefixVersion.localeCompare(right.prefixVersion)
-    || left.schemaId.localeCompare(right.schemaId)
-    || left.schemaVersion.localeCompare(right.schemaVersion);
+  return (
+    left.prefixId.localeCompare(right.prefixId) ||
+    left.prefixVersion.localeCompare(right.prefixVersion) ||
+    left.schemaId.localeCompare(right.schemaId) ||
+    left.schemaVersion.localeCompare(right.schemaVersion)
+  );
 }
 
 function compareLineagePairs(left: LineagePair, right: LineagePair): number {
-  return left.source.schema.schemaId.localeCompare(right.source.schema.schemaId)
-    || left.target.schema.schemaId.localeCompare(right.target.schema.schemaId)
-    || left.source.schema.version.localeCompare(right.source.schema.version)
-    || left.target.schema.version.localeCompare(right.target.schema.version);
+  return (
+    left.source.schema.schemaId.localeCompare(right.source.schema.schemaId) ||
+    left.target.schema.schemaId.localeCompare(right.target.schema.schemaId) ||
+    left.source.schema.version.localeCompare(right.source.schema.version) ||
+    left.target.schema.version.localeCompare(right.target.schema.version)
+  );
 }
 
 function toSchemaKey(schemaId: string, version: string): string {
@@ -471,7 +504,7 @@ function header(catalogId: string, contentHash: string): string {
     `// Generated from Data Object Catalog "${catalogId}" (hash: ${contentHash})`,
     `// !! 자동 생성 파일 — 직접 수정 금지 !!`,
     ``,
-  ].join("\n");
+  ].join('\n');
 }
 
 function renderPropertyKey(key: string): string {
@@ -491,25 +524,27 @@ function toPascal(value: string): string {
     .split(/[^A-Za-z0-9]+/u)
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("");
+    .join('');
 }
 
 function toUpperSnake(value: string): string {
   return value
-    .replace(/([a-z0-9])([A-Z])/gu, "$1_$2")
-    .replace(/[^A-Za-z0-9]+/gu, "_")
-    .replace(/^_+|_+$/gu, "")
+    .replace(/([a-z0-9])([A-Z])/gu, '$1_$2')
+    .replace(/[^A-Za-z0-9]+/gu, '_')
+    .replace(/^_+|_+$/gu, '')
     .toUpperCase();
 }
 
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
   }
 
-  if (value && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).toSorted(([left], [right]) => left.localeCompare(right));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(",")}}`;
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).toSorted(([left], [right]) =>
+      left.localeCompare(right),
+    );
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`;
   }
 
   return JSON.stringify(value);
@@ -553,20 +588,25 @@ function normalizeCatalog(catalog: Catalog): unknown {
                 .toSorted(([left], [right]) => left.localeCompare(right))
                 .map(([dimLabel, dim]) => [dimLabel, { ...dim }]),
             ),
-            addressModel: prefix.addressModel ?? "product",
+            addressModel: prefix.addressModel ?? 'product',
             versions: prefix.versions
               .toSorted((left, right) => left.version.localeCompare(right.version))
               .map((version) => ({
                 version: version.version,
                 axisVersions: Object.fromEntries(
-                  Object.entries(version.axisVersions).toSorted(([left], [right]) => left.localeCompare(right)),
+                  Object.entries(version.axisVersions).toSorted(([left], [right]) =>
+                    left.localeCompare(right),
+                  ),
                 ),
                 refEntries: version.refEntries
                   ? Object.fromEntries(
-                    Object.entries(version.refEntries)
-                      .toSorted(([left], [right]) => left.localeCompare(right))
-                      .map(([key, value]) => [key, { refVersion: value.refVersion, values: [...value.values] }]),
-                  )
+                      Object.entries(version.refEntries)
+                        .toSorted(([left], [right]) => left.localeCompare(right))
+                        .map(([key, value]) => [
+                          key,
+                          { refVersion: value.refVersion, values: [...value.values] },
+                        ]),
+                    )
                   : null,
                 segments: normalizeSegments(version.segments),
               })),
@@ -576,7 +616,7 @@ function normalizeCatalog(catalog: Catalog): unknown {
   };
 }
 
-function normalizeSegments(segments: PrefixVersionDef["segments"]): unknown {
+function normalizeSegments(segments: PrefixVersionDef['segments']): unknown {
   if (!segments) {
     return null;
   }
@@ -590,9 +630,9 @@ function normalizeSegments(segments: PrefixVersionDef["segments"]): unknown {
     transition: segment.transition ?? null,
     routes: segment.routes
       ? segment.routes.map((route) => ({
-        when: route.when,
-        transition: route.transition,
-      }))
+          when: route.when,
+          transition: route.transition,
+        }))
       : null,
     children: normalizeSegments(segment.children),
   }));
@@ -600,7 +640,10 @@ function normalizeSegments(segments: PrefixVersionDef["segments"]): unknown {
 
 function normalizeSchemas(schemas: readonly DataSchema[]): unknown {
   return schemas
-    .toSorted((left, right) => left.schemaId.localeCompare(right.schemaId) || left.version.localeCompare(right.version))
+    .toSorted(
+      (left, right) =>
+        left.schemaId.localeCompare(right.schemaId) || left.version.localeCompare(right.version),
+    )
     .map((schema) => ({
       schemaId: schema.schemaId,
       version: schema.version,
@@ -624,19 +667,20 @@ function normalizeSchemas(schemas: readonly DataSchema[]): unknown {
 }
 
 function normalizeBindings(bindings: readonly DataObjectBinding[]): unknown {
-  return bindings
-    .toSorted(compareBindings)
-    .map((binding) => ({
-      schemaId: binding.schemaId,
-      schemaVersion: binding.schemaVersion,
-      prefixId: binding.prefixId,
-      prefixVersion: binding.prefixVersion,
-      columnToAxis: Object.fromEntries(
-        Object.entries(binding.columnToAxis)
-          .toSorted(([left], [right]) => left.localeCompare(right))
-          .map(([columnId, mapping]) => [columnId, { dimLabel: mapping.dimLabel, segmentId: mapping.segmentId ?? null }]),
-      ),
-    }));
+  return bindings.toSorted(compareBindings).map((binding) => ({
+    schemaId: binding.schemaId,
+    schemaVersion: binding.schemaVersion,
+    prefixId: binding.prefixId,
+    prefixVersion: binding.prefixVersion,
+    columnToAxis: Object.fromEntries(
+      Object.entries(binding.columnToAxis)
+        .toSorted(([left], [right]) => left.localeCompare(right))
+        .map(([columnId, mapping]) => [
+          columnId,
+          { dimLabel: mapping.dimLabel, segmentId: mapping.segmentId ?? null },
+        ]),
+    ),
+  }));
 }
 
 function assertNever(value: never): never {

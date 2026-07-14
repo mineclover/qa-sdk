@@ -6,8 +6,8 @@
  * - catalogToPrefixCodecInput(): PrefixCodec 생성에 필요한 데이터
  */
 
-import { DEMO_CATALOG, type DemoCatalog } from "./demo-catalog.js";
-import { decodePrefix } from "@qa-sdk/core/catalog";
+import { DEMO_CATALOG, type DemoCatalog } from './demo-catalog.js';
+import { decodePrefix } from '@qa-sdk/core/catalog';
 
 // ── MetaRegistry 입력 ───────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ function getRegistryDimSize(
   }
 
   const dim = prefix.dims[label];
-  if (dim.kind === "axis") {
+  if (dim.kind === 'axis') {
     return catalog.axes[dim.axisId].versions[version.axisVersions[label]].entries.length;
   }
 
@@ -67,15 +67,21 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
   const evtPrefix = catalog.prefixes.event;
 
   // dims: 각 label을 MetaRegistry dim으로 변환
-  const dims: Record<string, {
-    kind: { type: string; indexId?: string };
-    snapshots: Record<string, { entries: readonly (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }>;
-  }> = {};
+  const dims: Record<
+    string,
+    {
+      kind: { type: string; indexId?: string };
+      snapshots: Record<
+        string,
+        { entries: readonly (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }
+      >;
+    }
+  > = {};
 
   // service prefix의 axis dims
   for (const label of svcPrefix.labels) {
     const dim = svcPrefix.dims[label];
-    if (dim.kind !== "axis") continue;
+    if (dim.kind !== 'axis') continue;
     const axis = catalog.axes[dim.axisId];
     const snapshots: Record<string, { entries: (string | number)[] }> = {};
     for (const vdef of svcPrefix.versions) {
@@ -83,15 +89,18 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
       const snap = axis.versions[axisVer];
       snapshots[vdef.version] = { entries: [...snap.entries] };
     }
-    dims[label] = { kind: { type: "string_enum" }, snapshots };
+    dims[label] = { kind: { type: 'string_enum' }, snapshots };
   }
 
   // permission prefix dims
   for (const label of permPrefix.labels) {
     const dim = permPrefix.dims[label];
-    if (dim.kind === "prefix_ref") {
+    if (dim.kind === 'prefix_ref') {
       // index_ref dim (perm_svc)
-      const snapshots: Record<string, { entries: (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }> = {};
+      const snapshots: Record<
+        string,
+        { entries: (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }
+      > = {};
       for (const vdef of permPrefix.versions) {
         const ref = vdef.refEntries?.[label];
         if (ref) {
@@ -103,8 +112,8 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
           };
         }
       }
-      dims[label] = { kind: { type: "index_ref", indexId: dim.prefixId }, snapshots };
-    } else if (dim.kind === "axis") {
+      dims[label] = { kind: { type: 'index_ref', indexId: dim.prefixId }, snapshots };
+    } else if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snapshots: Record<string, { entries: (string | number)[] }> = {};
       for (const vdef of permPrefix.versions) {
@@ -112,7 +121,7 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
         const snap = axis.versions[axisVer];
         snapshots[vdef.version] = { entries: [...snap.entries] };
       }
-      dims[label] = { kind: { type: "string_enum" }, snapshots };
+      dims[label] = { kind: { type: 'string_enum' }, snapshots };
     }
     // table_ref: MetaRegistry dims에 포함하지 않음 (동적 데이터)
   }
@@ -121,8 +130,11 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
   for (const label of evtPrefix.labels) {
     if (dims[label]) continue; // initiator는 이미 처리 가능
     const dim = evtPrefix.dims[label];
-    if (dim.kind === "prefix_ref") {
-      const snapshots: Record<string, { entries: (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }> = {};
+    if (dim.kind === 'prefix_ref') {
+      const snapshots: Record<
+        string,
+        { entries: (string | number)[]; entryRefs?: ReturnType<typeof buildEntryRefs> }
+      > = {};
       for (const vdef of evtPrefix.versions) {
         const ref = vdef.refEntries?.[label];
         if (ref) {
@@ -134,8 +146,8 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
           };
         }
       }
-      dims[label] = { kind: { type: "index_ref", indexId: dim.prefixId }, snapshots };
-    } else if (dim.kind === "axis") {
+      dims[label] = { kind: { type: 'index_ref', indexId: dim.prefixId }, snapshots };
+    } else if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snapshots: Record<string, { entries: (string | number)[] }> = {};
       for (const vdef of evtPrefix.versions) {
@@ -143,19 +155,19 @@ export function catalogToRegistryInput(catalog: DemoCatalog = DEMO_CATALOG) {
         const snap = axis.versions[axisVer];
         snapshots[vdef.version] = { entries: [...snap.entries] };
       }
-      dims[label] = { kind: { type: "string_enum" }, snapshots };
+      dims[label] = { kind: { type: 'string_enum' }, snapshots };
     }
     // table_ref: skip
   }
 
   // indices: 각 prefix → index 변환
-  function buildIndexVersions(prefix: typeof catalog.prefixes[string]) {
+  function buildIndexVersions(prefix: (typeof catalog.prefixes)[string]) {
     const versions: Record<string, { snapshots: Record<string, string> }> = {};
     for (const vdef of prefix.versions) {
       const snapshots: Record<string, string> = {};
       for (const label of prefix.labels) {
         const dim = prefix.dims[label];
-        if (dim.kind === "axis") {
+        if (dim.kind === 'axis') {
           snapshots[label] = vdef.axisVersions[label];
         } else {
           // prefix_ref: use the version of the prefix itself
@@ -214,7 +226,7 @@ export function catalogToPrefixCodecInput(catalog: DemoCatalog = DEMO_CATALOG): 
     for (const label of prefix.labels) {
       if (labels[label]) continue;
       const dim = prefix.dims[label];
-      if (dim.kind !== "axis") continue;
+      if (dim.kind !== 'axis') continue;
 
       const axis = catalog.axes[dim.axisId];
       const versionEntries: { version: string; ids: string[] }[] = [];
@@ -229,11 +241,11 @@ export function catalogToPrefixCodecInput(catalog: DemoCatalog = DEMO_CATALOG): 
   const prefixes: Record<string, PrefixCodecPrefixInput> = {};
 
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
-    const axisLabels = prefix.labels.filter(l => prefix.dims[l].kind === "axis");
-    const versions = prefix.versions.map(vdef => ({
+    const axisLabels = prefix.labels.filter((l) => prefix.dims[l].kind === 'axis');
+    const versions = prefix.versions.map((vdef) => ({
       version: vdef.version,
       labelVersions: Object.fromEntries(
-        axisLabels.map(label => [label, vdef.axisVersions[label]]),
+        axisLabels.map((label) => [label, vdef.axisVersions[label]]),
       ),
     }));
     prefixes[prefixId] = { labels: [...axisLabels], versions };

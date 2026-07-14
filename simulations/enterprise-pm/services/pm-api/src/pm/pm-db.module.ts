@@ -1,24 +1,24 @@
 // @def.boundary sim-pm-api
 // @def.doc sim-erp-pm-design
 
-import { Module, type DynamicModule, type Provider } from "@nestjs/common";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { createConnection } from "db-bootstrap";
-import { createPmRepository } from "./factory.js";
-import { env } from "../config/env.js";
-import type { PmRepository } from "./shared/port.js";
-import { SIM_PM_SQLITE_DDL } from "./sqlite/schema.js";
-import { SIM_PM_PG_DDL } from "./pg/schema.js";
-import { SIM_PM_ASSIGNMENT_SQLITE_DDL } from "./assignment/infrastructure/persistence/sqlite.schema.js";
-import { SIM_PM_ASSIGNMENT_PG_DDL } from "./assignment/infrastructure/persistence/pg.schema.js";
+import { Module, type DynamicModule, type Provider } from '@nestjs/common';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { createConnection } from 'db-bootstrap';
+import { createPmRepository } from './factory.js';
+import { env } from '../config/env.js';
+import type { PmRepository } from './shared/port.js';
+import { SIM_PM_SQLITE_DDL } from './sqlite/schema.js';
+import { SIM_PM_PG_DDL } from './pg/schema.js';
+import { SIM_PM_ASSIGNMENT_SQLITE_DDL } from './assignment/infrastructure/persistence/sqlite.schema.js';
+import { SIM_PM_ASSIGNMENT_PG_DDL } from './assignment/infrastructure/persistence/pg.schema.js';
 
-export const PM_REPOSITORY = Symbol("PM_REPOSITORY");
-export const PM_DB_INSTANCE = Symbol("PM_DB_INSTANCE");
-export const PM_DB_DIALECT = Symbol("PM_DB_DIALECT");
+export const PM_REPOSITORY = Symbol('PM_REPOSITORY');
+export const PM_DB_INSTANCE = Symbol('PM_DB_INSTANCE');
+export const PM_DB_DIALECT = Symbol('PM_DB_DIALECT');
 
 export interface PmDbInstanceHandle {
-  dialect: "sqlite" | "pg";
+  dialect: 'sqlite' | 'pg';
   db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
@@ -31,9 +31,9 @@ export interface PmDbInstanceHandle {
  *   - pm_assignments → assignment 슬라이스 전용 SIM_PM_ASSIGNMENT_*_DDL 이 정의.
  */
 async function applyDdl(conn: Awaited<ReturnType<typeof createConnection>>): Promise<void> {
-  if (conn.dialect === "sqlite") {
+  if (conn.dialect === 'sqlite') {
     const raw = (conn.db as unknown as { $client: { exec: (sql: string) => void } }).$client;
-    if (raw && typeof raw.exec === "function") {
+    if (raw && typeof raw.exec === 'function') {
       raw.exec(SIM_PM_SQLITE_DDL);
       raw.exec(SIM_PM_ASSIGNMENT_SQLITE_DDL);
     }
@@ -42,7 +42,7 @@ async function applyDdl(conn: Awaited<ReturnType<typeof createConnection>>): Pro
   const raw = (conn.db as unknown as { $client: unknown }).$client as unknown as {
     unsafe: (q: string) => Promise<unknown>;
   };
-  if (raw && typeof raw.unsafe === "function") {
+  if (raw && typeof raw.unsafe === 'function') {
     await raw.unsafe(SIM_PM_PG_DDL);
     await raw.unsafe(SIM_PM_ASSIGNMENT_PG_DDL);
   }
@@ -56,19 +56,19 @@ export class PmDbModule {
       provide: PM_DB_INSTANCE,
       useFactory: async (): Promise<PmDbInstanceHandle> => {
         const conn = await createConnection(
-          env.QA_DB_DIALECT === "sqlite"
+          env.QA_DB_DIALECT === 'sqlite'
             ? {
-                dialect: "sqlite",
+                dialect: 'sqlite',
                 sqlitePath: env.QA_SQLITE_PATH,
               }
             : {
-                dialect: "pg",
+                dialect: 'pg',
                 pgHost: env.QA_PG_HOST!,
                 pgPort: env.QA_PG_PORT!,
                 pgDatabase: env.QA_PG_DATABASE!,
                 pgUser: env.QA_PG_USER!,
                 pgPassword: env.QA_PG_PASSWORD!,
-                pgSchema: env.QA_PG_SCHEMA ?? "sim",
+                pgSchema: env.QA_PG_SCHEMA ?? 'sim',
               },
         );
         await applyDdl(conn);

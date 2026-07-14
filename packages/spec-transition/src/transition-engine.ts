@@ -10,19 +10,19 @@
  * 이벤트는 timestamp 순으로 처리되며, 같은 입력 → 같은 출력 (deterministic).
  */
 
-import { compareTimestamps } from "@qa-sdk/core";
+import { compareTimestamps } from '@qa-sdk/core';
 import type {
   TransitionSpec,
   TransitionInstance,
   MatchPattern,
   CoordinatePattern,
-} from "./transition.types.js";
-import type { StateStore } from "./state-store.js";
-import type { InputViolation } from "./input-validator.js";
-import { TransitionRegistry } from "./transition.registry.js";
-import { extractBind, type BindEventObject } from "./bind-extractor.js";
-import { validateInput } from "./input-validator.js";
-import { applyOutput } from "./output-applier.js";
+} from './transition.types.js';
+import type { StateStore } from './state-store.js';
+import type { InputViolation } from './input-validator.js';
+import { TransitionRegistry } from './transition.registry.js';
+import { extractBind, type BindEventObject } from './bind-extractor.js';
+import { validateInput } from './input-validator.js';
+import { applyOutput } from './output-applier.js';
 
 type TransitionEventValue =
   | string
@@ -174,9 +174,7 @@ export class TransitionEngine {
     }
 
     // 매칭되지 않은 이벤트
-    const unmatched = sorted
-      .filter((e) => !matchedEventIds.has(e.log_id))
-      .map((e) => e.log_id);
+    const unmatched = sorted.filter((e) => !matchedEventIds.has(e.log_id)).map((e) => e.log_id);
 
     return { instances, unmatched_events: unmatched, violations };
   }
@@ -194,7 +192,7 @@ export class TransitionEngine {
   ): TransitionEvent[] | null {
     const coords = match.coordinates;
 
-    if (match.mode === "single") {
+    if (match.mode === 'single') {
       for (const event of events) {
         if (this.matchCoordinate(coords[0], event)) {
           return [event];
@@ -219,10 +217,7 @@ export class TransitionEngine {
   }
 
   /** 단일 좌표 패턴과 이벤트 매칭 */
-  private matchCoordinate(
-    coord: CoordinatePattern,
-    event: TransitionEvent,
-  ): boolean {
+  private matchCoordinate(coord: CoordinatePattern, event: TransitionEvent): boolean {
     const ctx = event.address_context;
     if (!ctx) return false;
 

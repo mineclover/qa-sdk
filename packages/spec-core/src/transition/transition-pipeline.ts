@@ -8,16 +8,16 @@
  * 세션 단위 처리: 세션마다 fresh engine (상태 격리).
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { TransitionSpec, TransitionInstance } from "spec-transition";
-import type { TransitionEvent } from "spec-transition";
-import type { InputViolation } from "spec-transition";
-import type { ObservationNode } from "dkg";
-import { TransitionRegistry } from "spec-transition";
-import { InMemoryStateStore } from "spec-transition";
-import { TransitionEngine } from "spec-transition";
-import { violationsToObservations } from "dkg";
-import { decodeAddressContext } from "spec-transition";
+import type { Catalog } from '@qa-sdk/core';
+import type { TransitionSpec, TransitionInstance } from 'spec-transition';
+import type { TransitionEvent } from 'spec-transition';
+import type { InputViolation } from 'spec-transition';
+import type { ObservationNode } from 'dkg';
+import { TransitionRegistry } from 'spec-transition';
+import { InMemoryStateStore } from 'spec-transition';
+import { TransitionEngine } from 'spec-transition';
+import { violationsToObservations } from 'dkg';
+import { decodeAddressContext } from 'spec-transition';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -52,7 +52,10 @@ export interface TransitionFlushResult {
 /** Phase 2.5 + convergence pipeline에 주입되는 전이 함수 번들 */
 export interface TransitionFunctions {
   processSession: (input: TransitionSessionInput) => TransitionSessionResult;
-  violationsToObs: (violations: readonly InputViolation[], opts?: { date?: string }) => ObservationNode[];
+  violationsToObs: (
+    violations: readonly InputViolation[],
+    opts?: { date?: string },
+  ) => ObservationNode[];
   /** 인코딩된 address_context → 디코딩된 축:entry flat map */
   decodeCtx: (catalog: Catalog, encoded: Record<string, string>) => Record<string, string>;
   specs: readonly TransitionSpec[];
@@ -68,9 +71,7 @@ export interface TransitionFunctions {
  * 세션마다 fresh InMemoryStateStore를 생성하여 상태 격리.
  * registry는 공유 (spec 정의는 불변).
  */
-export function createTransitionFunctions(
-  specs: readonly TransitionSpec[],
-): TransitionFunctions {
+export function createTransitionFunctions(specs: readonly TransitionSpec[]): TransitionFunctions {
   const registry = new TransitionRegistry();
   for (const spec of specs) {
     registry.register(spec);

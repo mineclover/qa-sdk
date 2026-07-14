@@ -9,7 +9,7 @@
  * @def.doc pipe-store-memory
  */
 
-import type { PipeSpec, PipeGraph } from "../types/pipe-spec.js";
+import type { PipeSpec, PipeGraph } from '../types/pipe-spec.js';
 
 // ── 포트 ─────────────────────────────────────────────
 
@@ -83,14 +83,19 @@ export class MemoryPipeGraphStore implements PipeGraphStore {
     for (const graph of this.graphs.values()) {
       if (graph.graphId === graphId) result.push(graph);
     }
-    return result.toSorted((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
+    return result.toSorted((a, b) =>
+      a.version.localeCompare(b.version, undefined, { numeric: true }),
+    );
   }
 
   listAll(): PipeGraph[] {
     const latestMap = new Map<string, PipeGraph>();
     for (const graph of this.graphs.values()) {
       const existing = latestMap.get(graph.graphId);
-      if (!existing || graph.version.localeCompare(existing.version, undefined, { numeric: true }) > 0) {
+      if (
+        !existing ||
+        graph.version.localeCompare(existing.version, undefined, { numeric: true }) > 0
+      ) {
         latestMap.set(graph.graphId, graph);
       }
     }
@@ -104,7 +109,7 @@ export class MemoryPipeGraphStore implements PipeGraphStore {
   findByPipeId(pipeId: string): PipeGraph[] {
     const result: PipeGraph[] = [];
     for (const graph of this.graphs.values()) {
-      if (graph.pipes.some(p => p.pipeId === pipeId)) result.push(graph);
+      if (graph.pipes.some((p) => p.pipeId === pipeId)) result.push(graph);
     }
     return result;
   }
@@ -112,7 +117,7 @@ export class MemoryPipeGraphStore implements PipeGraphStore {
   findByTriggerEvent(eventKey: string): PipeGraph[] {
     const result: PipeGraph[] = [];
     for (const graph of this.graphs.values()) {
-      if (graph.pipes.some(p => p.trigger.eventKey === eventKey)) result.push(graph);
+      if (graph.pipes.some((p) => p.trigger.eventKey === eventKey)) result.push(graph);
     }
     return result;
   }

@@ -14,7 +14,7 @@ import type {
   ServiceRecord,
   ServiceReleaseManifestRef,
   ServiceUnitSpec,
-} from "./service.types.js";
+} from './service.types.js';
 
 export interface ServiceRecordSplitOptions {
   readonly namespace: string;
@@ -102,7 +102,7 @@ export function splitServiceRecord(
 }
 
 export function createRuntimeServiceAddress(
-  unit: Pick<ServiceUnitSpec, "serviceId" | "namespace" | "name">,
+  unit: Pick<ServiceUnitSpec, 'serviceId' | 'namespace' | 'name'>,
   target: RuntimeTarget,
 ): RuntimeServiceAddress {
   return {
@@ -115,7 +115,7 @@ export function createRuntimeServiceAddress(
 }
 
 export function createDeploymentAddress(
-  unit: Pick<ServiceUnitSpec, "serviceId" | "namespace" | "name">,
+  unit: Pick<ServiceUnitSpec, 'serviceId' | 'namespace' | 'name'>,
   target: DeploymentTarget,
 ): DeploymentAddress {
   return {
@@ -163,7 +163,7 @@ export function createServiceAddressAggregate(
   input: ServiceAddressAggregateInput,
 ): ServiceAddressAggregate {
   const split = splitServiceRecord(input.record, { namespace: input.namespace });
-  const runtimeAddresses = (input.runtimeTargets ?? []).map(target =>
+  const runtimeAddresses = (input.runtimeTargets ?? []).map((target) =>
     createRuntimeServiceAddress(split.unit, target),
   );
   const deployments = (input.deployments ?? []).map(({ target, binding }) =>

@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { ProjectStatus } from "../../domain/index.js";
+import type { ProjectStatus } from '../../domain/index.js';
 
 /** 새 project 생성 명령. */
 export interface CreateProjectCommand {

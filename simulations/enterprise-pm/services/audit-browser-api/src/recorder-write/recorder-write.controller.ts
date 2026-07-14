@@ -16,7 +16,7 @@ import {
   HttpException,
   HttpStatus,
   Post,
-} from "@nestjs/common";
+} from '@nestjs/common';
 
 interface DecisionEnvelope {
   decisionId?: unknown;
@@ -26,38 +26,38 @@ interface DecisionEnvelope {
   verdict?: unknown;
 }
 
-@Controller("v1")
+@Controller('v1')
 export class RecorderWriteController {
   // (cycleId, pass) 복합 키 멱등 store. 같은 key 두 번째 호출 → 409.
   private readonly seen = new Map<string, { decisionId: string; receivedAt: string }>();
 
-  @Post("decisions")
+  @Post('decisions')
   @HttpCode(HttpStatus.OK)
   async writeDecision(
     @Body() body: DecisionEnvelope,
-    @Headers("idempotency-key") idemKey?: string,
+    @Headers('idempotency-key') idemKey?: string,
   ): Promise<{ ok: true; decisionId: string; receivedAt: string }> {
-    if (typeof body !== "object" || body === null) {
+    if (typeof body !== 'object' || body === null) {
       throw new HttpException(
-        { type: "https://qa-sdk.dev/errors/validation", title: "body must be object", status: 400 },
+        { type: 'https://qa-sdk.dev/errors/validation', title: 'body must be object', status: 400 },
         HttpStatus.BAD_REQUEST,
       );
     }
     const { decisionId, cycleId, pass } = body;
-    if (typeof decisionId !== "string" || typeof cycleId !== "string") {
+    if (typeof decisionId !== 'string' || typeof cycleId !== 'string') {
       throw new HttpException(
         {
-          type: "https://qa-sdk.dev/errors/validation",
-          title: "decisionId/cycleId required",
+          type: 'https://qa-sdk.dev/errors/validation',
+          title: 'decisionId/cycleId required',
           status: 400,
         },
         HttpStatus.BAD_REQUEST,
       );
     }
-    if (pass !== "safety" && pass !== "resource") {
+    if (pass !== 'safety' && pass !== 'resource') {
       throw new HttpException(
         {
-          type: "https://qa-sdk.dev/errors/validation",
+          type: 'https://qa-sdk.dev/errors/validation',
           title: "pass must be 'safety' or 'resource'",
           status: 400,
         },
@@ -71,8 +71,8 @@ export class RecorderWriteController {
     if (existing) {
       throw new HttpException(
         {
-          type: "https://qa-sdk.dev/errors/conflict",
-          title: "decision already recorded",
+          type: 'https://qa-sdk.dev/errors/conflict',
+          title: 'decision already recorded',
           status: 409,
           detail: `key=${key} prev decisionId=${existing.decisionId}`,
         },

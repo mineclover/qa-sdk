@@ -1,8 +1,8 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import type { TransmissionEnvelope } from "@qa-sdk/core";
-import type { Transport } from "./transport.js";
+import type { TransmissionEnvelope } from '@qa-sdk/core';
+import type { Transport } from './transport.js';
 
 export interface HttpTransportOptions {
   endpoint: string;
@@ -23,16 +23,13 @@ export class HttpTransport implements Transport {
 
   async send(envelope: TransmissionEnvelope): Promise<void> {
     const controller = new AbortController();
-    const timer = setTimeout(
-      () => controller.abort(),
-      this.timeout_ms,
-    );
+    const timer = setTimeout(() => controller.abort(), this.timeout_ms);
 
     try {
       const res = await fetch(this.endpoint, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...this.headers,
         },
         body: JSON.stringify(envelope),
@@ -40,9 +37,7 @@ export class HttpTransport implements Transport {
       });
 
       if (!res.ok) {
-        throw new Error(
-          `Transport send failed: ${res.status} ${res.statusText}`,
-        );
+        throw new Error(`Transport send failed: ${res.status} ${res.statusText}`);
       }
     } finally {
       clearTimeout(timer);

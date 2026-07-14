@@ -1,10 +1,10 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { desc, eq } from "drizzle-orm";
-import type { SessionStore, SessionUpsert, StoredSession } from "@qa-sdk/core";
-import type { DbExecutor } from "../../db/client.js";
-import { qaSessions } from "../../db/schema.js";
+import { desc, eq } from 'drizzle-orm';
+import type { SessionStore, SessionUpsert, StoredSession } from '@qa-sdk/core';
+import type { DbExecutor } from '../../db/client.js';
+import { qaSessions } from '../../db/schema.js';
 
 /** SessionStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleSessionStore implements SessionStore {
@@ -24,7 +24,7 @@ export class DrizzleSessionStore implements SessionStore {
         userId: params.userId,
         userAttributes: params.userAttributes,
       })
-      .comment({ adapter: "SessionStore", method: "upsert" });
+      .comment({ adapter: 'SessionStore', method: 'upsert' });
   }
 
   async findById(sessionId: string): Promise<StoredSession | null> {
@@ -32,7 +32,7 @@ export class DrizzleSessionStore implements SessionStore {
       .select()
       .from(qaSessions)
       .where(eq(qaSessions.sessionId, sessionId))
-      .comment({ adapter: "SessionStore", method: "findById" });
+      .comment({ adapter: 'SessionStore', method: 'findById' });
     return row ? toStoredSession(row) : null;
   }
 
@@ -43,7 +43,7 @@ export class DrizzleSessionStore implements SessionStore {
       .where(eq(qaSessions.scenarioId, scenarioId))
       .orderBy(desc(qaSessions.startedAt))
       .limit(limit)
-      .comment({ adapter: "SessionStore", method: "findByScenarioId" });
+      .comment({ adapter: 'SessionStore', method: 'findByScenarioId' });
     return rows.map(toStoredSession);
   }
 
@@ -52,7 +52,7 @@ export class DrizzleSessionStore implements SessionStore {
       .update(qaSessions)
       .set({ closedAt: new Date() })
       .where(eq(qaSessions.sessionId, sessionId))
-      .comment({ adapter: "SessionStore", method: "close" });
+      .comment({ adapter: 'SessionStore', method: 'close' });
   }
 }
 

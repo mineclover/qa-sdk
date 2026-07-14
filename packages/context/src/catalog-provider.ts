@@ -21,10 +21,10 @@
  *   const version = provider.latestVersion("permission");
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { createLogger } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
+import { createLogger } from '@qa-sdk/core';
 
-const logger = createLogger("catalog-provider");
+const logger = createLogger('catalog-provider');
 
 export interface CatalogProvider {
   /** catalog 조회 (registry 또는 로컬) */
@@ -32,7 +32,7 @@ export interface CatalogProvider {
   /** prefix의 최신 version */
   latestVersion(prefixId: string): string;
   /** 소스 식별자 */
-  readonly source: "local" | "registry";
+  readonly source: 'local' | 'registry';
   /** registry URL (registry 모드일 때) */
   readonly registryUrl?: string;
 }
@@ -54,7 +54,7 @@ export interface CatalogProviderConfig {
  */
 export function createCatalogProvider(config?: CatalogProviderConfig): CatalogProvider {
   if (config?.registry) {
-    return createRegistryProvider(config.registry, config.catalogId ?? "demo");
+    return createRegistryProvider(config.registry, config.catalogId ?? 'demo');
   }
   return createLocalProvider(config?.catalog);
 }
@@ -65,21 +65,21 @@ function createLocalProvider(catalog?: Catalog): CatalogProvider {
   let _catalog: Catalog | null = catalog ?? null;
 
   return {
-    source: "local",
+    source: 'local',
     async getCatalog() {
       if (_catalog) return _catalog;
       try {
-        const mod = await import("demo-snapshot");
+        const mod = await import('demo-snapshot');
         _catalog = mod.DEMO_CATALOG;
         return _catalog;
       } catch {
-        throw new Error("DEMO_CATALOG not available. Pass catalog in config or set registry URL.");
+        throw new Error('DEMO_CATALOG not available. Pass catalog in config or set registry URL.');
       }
     },
     latestVersion(prefixId: string) {
-      if (!_catalog) return "v1";
+      if (!_catalog) return 'v1';
       const prefix = _catalog.prefixes[prefixId];
-      if (!prefix?.versions?.length) return "v1";
+      if (!prefix?.versions?.length) return 'v1';
       return prefix.versions[prefix.versions.length - 1].version;
     },
   };
@@ -91,32 +91,32 @@ function createRegistryProvider(registryUrl: string, catalogId: string): Catalog
   let _catalog: Catalog | null = null;
 
   return {
-    source: "registry",
+    source: 'registry',
     registryUrl,
     async getCatalog() {
       if (_catalog) return _catalog;
       try {
         const res = await fetch(`${registryUrl}/catalogs/${catalogId}`);
         if (!res.ok) throw new Error(`Registry ${res.status}`);
-        const body = await res.json() as { data: string };
+        const body = (await res.json()) as { data: string };
         _catalog = JSON.parse(body.data) as Catalog;
         return _catalog;
       } catch (err: unknown) {
         // Fallback: 로컬 catalog
-        logger.warn({ err, registryUrl }, "Registry 연결 실패. 로컬 fallback.");
+        logger.warn({ err, registryUrl }, 'Registry 연결 실패. 로컬 fallback.');
         try {
-          const mod = await import("demo-snapshot");
+          const mod = await import('demo-snapshot');
           _catalog = mod.DEMO_CATALOG;
           return _catalog;
         } catch {
-          throw new Error("Registry 연결 실패 + 로컬 catalog 없음.");
+          throw new Error('Registry 연결 실패 + 로컬 catalog 없음.');
         }
       }
     },
     latestVersion(prefixId: string) {
-      if (!_catalog) return "v1";
+      if (!_catalog) return 'v1';
       const prefix = _catalog.prefixes[prefixId];
-      if (!prefix?.versions?.length) return "v1";
+      if (!prefix?.versions?.length) return 'v1';
       return prefix.versions[prefix.versions.length - 1].version;
     },
   };

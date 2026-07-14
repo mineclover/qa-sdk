@@ -36,7 +36,7 @@ export interface TableRefAnnotation {
  */
 export function extractTableRefAnnotations(source: string, filePath: string): TableRefAnnotation[] {
   const results: TableRefAnnotation[] = [];
-  const lines = source.split("\n");
+  const lines = source.split('\n');
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -44,9 +44,9 @@ export function extractTableRefAnnotations(source: string, filePath: string): Ta
     if (!match) continue;
 
     const refs = match[1]
-      .replace(/\*\/\s*$/, "") // JSDoc 닫는 태그 제거
-      .split(",")
-      .map(r => r.trim())
+      .replace(/\*\/\s*$/, '') // JSDoc 닫는 태그 제거
+      .split(',')
+      .map((r) => r.trim())
       .filter(Boolean);
 
     // 다음 비빈줄에서 테이블 이름 추출
@@ -82,7 +82,7 @@ export interface AxisAnnotation {
  */
 export function extractAxisAnnotations(source: string, filePath: string): AxisAnnotation[] {
   const results: AxisAnnotation[] = [];
-  const lines = source.split("\n");
+  const lines = source.split('\n');
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -90,7 +90,7 @@ export function extractAxisAnnotations(source: string, filePath: string): AxisAn
     if (!match) continue;
 
     const axisId = match[1];
-    const version = match[2] ?? "v1";
+    const version = match[2] ?? 'v1';
 
     // 다음 줄들에서 entries 추출
     const entries = findNextEntries(lines, i + 1);
@@ -108,7 +108,7 @@ export function extractAxisAnnotations(source: string, filePath: string): AxisAn
 function findNextExportName(lines: string[], startLine: number): string | null {
   for (let i = startLine; i < Math.min(startLine + 5, lines.length); i++) {
     const line = lines[i].trim();
-    if (!line || line.startsWith("*") || line.startsWith("//")) continue;
+    if (!line || line.startsWith('*') || line.startsWith('//')) continue;
 
     // export const NAME = sqliteTable("name", ...)
     const constMatch = line.match(/export\s+const\s+(\w+)/);
@@ -126,19 +126,19 @@ function findNextExportName(lines: string[], startLine: number): string | null {
 /** 다음 const/enum 선언에서 entries(문자열 배열)를 추출한다 */
 function findNextEntries(lines: string[], startLine: number): string[] {
   // JSDoc 닫기 + export 선언까지 수집
-  let block = "";
+  let block = '';
   for (let i = startLine; i < Math.min(startLine + 20, lines.length); i++) {
-    block += lines[i] + "\n";
+    block += lines[i] + '\n';
     // 세미콜론 또는 }로 선언이 끝나면 중단
-    if (lines[i].includes(";") || lines[i].includes("}")) break;
+    if (lines[i].includes(';') || lines[i].includes('}')) break;
   }
 
   // const NAME = ["a", "b", "c"] as const 패턴
   const arrayMatch = block.match(/\[([^\]]+)\]/);
   if (arrayMatch) {
     return arrayMatch[1]
-      .split(",")
-      .map(e => e.replace(/["'`\s]/g, "").trim())
+      .split(',')
+      .map((e) => e.replace(/["'`\s]/g, '').trim())
       .filter(Boolean);
   }
 

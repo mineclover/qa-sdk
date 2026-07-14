@@ -10,13 +10,13 @@
 // candidate, weight, stickyKey}). gateway 는 revision 큰 것만 적용 (spec 02 §6).
 // compose scale: target == current 시 no-op.
 
-import { Injectable } from "@nestjs/common";
-import { spawn } from "node:child_process";
-import { buildVersionTag, type VersionTag } from "sim-identifier-grammar";
-import type { RoutingPush } from "@qa-sdk/sim-gateway/routing";
-import { createLogger } from "../lib/logger.js";
-import type { ScalePinService } from "../admin/scale-pin.service.js";
-import type { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
+import { Injectable } from '@nestjs/common';
+import { spawn } from 'node:child_process';
+import { buildVersionTag, type VersionTag } from 'sim-identifier-grammar';
+import type { RoutingPush } from '@qa-sdk/sim-gateway/routing';
+import { createLogger } from '../lib/logger.js';
+import type { ScalePinService } from '../admin/scale-pin.service.js';
+import type { DecisionRingBuffer } from '../decision/decision-ring-buffer.js';
 
 interface ExecResult {
   stdout: string;
@@ -61,25 +61,25 @@ export interface ActionConfig {
 }
 
 export type SafetyAction =
-  | { kind: "weight-update"; weight: number; revision: number }
-  | { kind: "noop" };
+  | { kind: 'weight-update'; weight: number; revision: number }
+  | { kind: 'noop' };
 
 export type ResourceAction =
-  | { kind: "scale"; target: { v1: number; v2: number }; reason: string }
-  | { kind: "noop" };
+  | { kind: 'scale'; target: { v1: number; v2: number }; reason: string }
+  | { kind: 'noop' };
 
 const dockerExec = (argv: string[]): Promise<ExecResult> =>
   new Promise((resolve, reject) => {
-    const p = spawn("docker", argv, { stdio: ["ignore", "pipe", "pipe"] });
-    let stdout = "";
-    let stderr = "";
-    p.stdout.on("data", (b) => {
+    const p = spawn('docker', argv, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    p.stdout.on('data', (b) => {
       stdout += String(b);
     });
-    p.stderr.on("data", (b) => {
+    p.stderr.on('data', (b) => {
       stderr += String(b);
     });
-    p.on("close", (code) =>
+    p.on('close', (code) =>
       code === 0
         ? resolve({ stdout, stderr })
         : reject(new Error(`docker exited ${code}: ${stderr}`)),
@@ -88,8 +88,8 @@ const dockerExec = (argv: string[]): Promise<ExecResult> =>
 
 @Injectable()
 export class ActionExecutorService {
-  private readonly logger = createLogger("sim-canary-controller:action");
-  private readonly exec: NonNullable<ActionConfig["scaleExec"]>;
+  private readonly logger = createLogger('sim-canary-controller:action');
+  private readonly exec: NonNullable<ActionConfig['scaleExec']>;
 
   constructor(private readonly cfg: ActionConfig) {
     this.exec = cfg.scaleExec ?? dockerExec;
@@ -104,20 +104,18 @@ export class ActionExecutorService {
    * weight-update 가 아니면 (noop) → 외부 호출 없이 return.
    */
   async executeSafety(action: SafetyAction): Promise<void> {
-    if (action.kind === "noop") return;
+    if (action.kind === 'noop') return;
 
     const { weight, revision } = action;
     const { serviceName, catalog, portRegistry } = this.cfg;
     const topology = await catalog.getCurrentTopology(`sim.svc.${serviceName}`);
 
     const stableTag: VersionTag = {
-      axis: "version",
+      axis: 'version',
       value: topology.stable.value,
-      state: "stable",
+      state: 'stable',
     };
-    const stableUpstream = portRegistry.getUpstream(
-      `sim-${serviceName}-v${topology.stable.value}`,
-    );
+    const stableUpstream = portRegistry.getUpstream(`sim-${serviceName}-v${topology.stable.value}`);
 
     const candidate = topology.candidate;
     const candidatePair =
@@ -125,13 +123,11 @@ export class ActionExecutorService {
         ? null
         : {
             version: buildVersionTag({
-              axis: "version",
+              axis: 'version',
               value: candidate.value,
-              state: "candidate",
+              state: 'candidate',
             }),
-            upstream: portRegistry.getUpstream(
-              `sim-${serviceName}-v${candidate.value}`,
-            ),
+            upstream: portRegistry.getUpstream(`sim-${serviceName}-v${candidate.value}`),
           };
 
     const body: RoutingPush = {
@@ -144,28 +140,25 @@ export class ActionExecutorService {
           },
           candidate: candidatePair,
           weight,
-          stickyKey: "user_id",
+          stickyKey: 'user_id',
         },
       },
     };
 
     const res = await fetch(`${this.cfg.gatewayUrl}/admin/routing`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(5_000),
     });
     if (!res.ok) {
       this.logger.error(
         { status: res.status, weight, revision, serviceName },
-        "routing push failed",
+        'routing push failed',
       );
       throw new Error(`routing push failed: ${res.status}`);
     }
-    this.logger.info(
-      { weight, revision, serviceName },
-      "routing push ok (RoutingPushSchema)",
-    );
+    this.logger.info({ weight, revision, serviceName }, 'routing push ok (RoutingPushSchema)');
   }
 
   /**
@@ -180,27 +173,23 @@ export class ActionExecutorService {
     current: { v1: number; v2: number },
     ctx: { cycleId: string },
   ): Promise<void> {
-    if (action.kind === "noop") return;
+    if (action.kind === 'noop') return;
     if (action.target.v1 === current.v1 && action.target.v2 === current.v2) {
-      this.logger.debug({ target: action.target }, "scale no-op");
+      this.logger.debug({ target: action.target }, 'scale no-op');
       return;
     }
 
-    const apply = async (
-      service: string,
-      currentN: number,
-      targetN: number,
-    ): Promise<void> => {
+    const apply = async (service: string, currentN: number, targetN: number): Promise<void> => {
       if (currentN === targetN) return;
       const pinned = this.cfg.pin?.getPin(service);
       if (pinned !== undefined && pinned !== null) {
         // compose --scale SKIP — alert 1 건만 ring 에 추가.
         this.cfg.ring?.appendAlert({
           cycleId: ctx.cycleId,
-          kind: "scale-up-rejected",
+          kind: 'scale-up-rejected',
           occurredAt: new Date().toISOString(),
           details: {
-            reason: "pin-active",
+            reason: 'pin-active',
             service,
             pinnedReplicas: pinned,
             attemptedReplicas: targetN,
@@ -208,28 +197,28 @@ export class ActionExecutorService {
         });
         this.logger.info(
           { service, pinned, attempted: targetN, cycleId: ctx.cycleId },
-          "scale skipped — pin active",
+          'scale skipped — pin active',
         );
         return;
       }
       await this.exec([
-        "compose",
-        "-p",
+        'compose',
+        '-p',
         this.cfg.composeProject,
-        "up",
-        "-d",
-        "--no-recreate",
-        "--scale",
+        'up',
+        '-d',
+        '--no-recreate',
+        '--scale',
         `${service}=${targetN}`,
       ]);
     };
 
-    await apply("sim-approval-api-v1", current.v1, action.target.v1);
-    await apply("sim-approval-api-v2", current.v2, action.target.v2);
+    await apply('sim-approval-api-v1', current.v1, action.target.v1);
+    await apply('sim-approval-api-v2', current.v2, action.target.v2);
 
     this.logger.info(
       { target: action.target, reason: action.reason, cycleId: ctx.cycleId },
-      "compose scale ok (pin-aware)",
+      'compose scale ok (pin-aware)',
     );
   }
 }

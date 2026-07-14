@@ -1,38 +1,35 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
-import { BitmapCacheService } from "@qa-sdk/sim-bitmap-cache";
+} from '@qa-sdk/sim-domain-slice-kit';
+import { BitmapCacheService } from '@qa-sdk/sim-bitmap-cache';
 
-import {
-  AUTH_DB_INSTANCE,
-  type AuthDbInstanceHandle,
-} from "../auth-db.module.js";
-import { RoleSliceModule } from "../role/role.module.js";
-import { RoleReadModelQuery } from "../role/application/queries/role-read-model.query.js";
+import { AUTH_DB_INSTANCE, type AuthDbInstanceHandle } from '../auth-db.module.js';
+import { RoleSliceModule } from '../role/role.module.js';
+import { RoleReadModelQuery } from '../role/application/queries/role-read-model.query.js';
 
-import { RoleAssignmentRepositoryPort } from "./application/ports/role-assignment-repository.port.js";
-import { RoleAssignmentReadModelQuery } from "./application/queries/role-assignment-read-model.query.js";
-import { RoleAssignmentUseCase } from "./application/use-cases/role-assignment.use-case.js";
-import { RoleQueryPort } from "./application/ports/role-query.port.js";
-import { PermissionChangePublisherPort } from "./application/ports/permission-change-publisher.port.js";
+import { RoleAssignmentRepositoryPort } from './application/ports/role-assignment-repository.port.js';
+import { RoleAssignmentReadModelQuery } from './application/queries/role-assignment-read-model.query.js';
+import { RoleAssignmentUseCase } from './application/use-cases/role-assignment.use-case.js';
+import { RoleQueryPort } from './application/ports/role-query.port.js';
+import { PermissionChangePublisherPort } from './application/ports/permission-change-publisher.port.js';
 
-import { createRoleAssignmentRepository } from "./infrastructure/persistence/role-assignment.repository.js";
-import { createRoleAssignmentTransactionPort } from "./infrastructure/transaction/role-assignment.drizzle-transaction.js";
-import { createRoleAssignmentOutboxPort } from "./infrastructure/outbox/role-assignment.outbox.js";
-import { createRoleAssignmentLogger } from "./infrastructure/logging/role-assignment.logger.js";
-import { RepositoryRoleAssignmentReadModel } from "./infrastructure/read-model/role-assignment.read-model.js";
+import { createRoleAssignmentRepository } from './infrastructure/persistence/role-assignment.repository.js';
+import { createRoleAssignmentTransactionPort } from './infrastructure/transaction/role-assignment.drizzle-transaction.js';
+import { createRoleAssignmentOutboxPort } from './infrastructure/outbox/role-assignment.outbox.js';
+import { createRoleAssignmentLogger } from './infrastructure/logging/role-assignment.logger.js';
+import { RepositoryRoleAssignmentReadModel } from './infrastructure/read-model/role-assignment.read-model.js';
 
-import { RoleAssignmentController } from "./presentation/http/role-assignment.controller.js";
+import { RoleAssignmentController } from './presentation/http/role-assignment.controller.js';
 
-const RA_TRANSACTION_PORT = Symbol.for("sim-auth-api/role-assignment/TransactionPort");
-const RA_OUTBOX_PORT = Symbol.for("sim-auth-api/role-assignment/OutboxPort");
+const RA_TRANSACTION_PORT = Symbol.for('sim-auth-api/role-assignment/TransactionPort');
+const RA_OUTBOX_PORT = Symbol.for('sim-auth-api/role-assignment/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: RoleAssignmentRepositoryPort,
@@ -62,8 +59,7 @@ const loggerProvider: Provider = {
 
 const readModelProvider: Provider = {
   provide: RoleAssignmentReadModelQuery,
-  useFactory: (repo: RoleAssignmentRepositoryPort) =>
-    new RepositoryRoleAssignmentReadModel(repo),
+  useFactory: (repo: RoleAssignmentRepositoryPort) => new RepositoryRoleAssignmentReadModel(repo),
   inject: [RoleAssignmentRepositoryPort],
 };
 
@@ -89,10 +85,7 @@ class BitmapCachePermissionChangePublisher extends PermissionChangePublisherPort
   constructor(private readonly bitmapCache?: BitmapCacheService) {
     super();
   }
-  async publishUserChange(
-    userId: string,
-    reason: "permission_change",
-  ): Promise<void> {
+  async publishUserChange(userId: string, reason: 'permission_change'): Promise<void> {
     if (!this.bitmapCache?.publisher) return;
     await this.bitmapCache.publisher.publishUserChange(userId, reason);
   }
@@ -155,10 +148,6 @@ const useCaseProvider: Provider = {
     useCaseProvider,
   ],
   controllers: [RoleAssignmentController],
-  exports: [
-    RoleAssignmentRepositoryPort,
-    RoleAssignmentReadModelQuery,
-    RoleAssignmentUseCase,
-  ],
+  exports: [RoleAssignmentRepositoryPort, RoleAssignmentReadModelQuery, RoleAssignmentUseCase],
 })
 export class RoleAssignmentSliceModule {}

@@ -14,9 +14,7 @@
           "valid": false,
           "corridorCount": 1,
           "maxCheckpointLatticeDepth": 2,
-          "missingCorridorKinds": [
-            "pipe_graph"
-          ],
+          "missingCorridorKinds": ["pipe_graph"],
           "missingJunctionTemplateKinds": [],
           "missingCheckpointTemplateKinds": [],
           "missingCheckpointLattices": false,
@@ -257,9 +255,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               },
               {
                 "transmissionId": "transmission:observation_emission:facet:event-record:log-web-event:production->facet:address-context:service:service:v1:12:consumption",
@@ -277,9 +273,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "service"
-                ]
+                "contractRefs": ["service"]
               }
             ],
             "dataFlow": {
@@ -489,9 +483,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:00:00.000Z",
             "corridorId": "event-record:log-web-event",
-            "observedNodeKeys": [
-              "event-record:log-web-event"
-            ],
+            "observedNodeKeys": ["event-record:log-web-event"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-event->payload_field->event-record:log-web-event:orderId"
             ],
@@ -703,9 +695,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:00:00.000Z",
             "corridorId": "event-record:log-web-event",
-            "observedNodeKeys": [
-              "event-record:log-web-event"
-            ],
+            "observedNodeKeys": ["event-record:log-web-event"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-event->payload_field->event-record:log-web-event:amount"
             ],
@@ -917,9 +907,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:00:00.000Z",
             "corridorId": "event-record:log-web-event",
-            "observedNodeKeys": [
-              "event-record:log-web-event"
-            ],
+            "observedNodeKeys": ["event-record:log-web-event"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-event->payload_field->event-record:log-web-event:customerTier"
             ],
@@ -1155,9 +1143,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               }
             ],
             "dataFlow": {
@@ -1391,9 +1377,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "service"
-                ]
+                "contractRefs": ["service"]
               }
             ],
             "dataFlow": {
@@ -1612,15 +1596,8 @@
                   "nodeNotObserved": false
                 },
                 "nodeId": "event-record:log-web-event",
-                "observedPrefixIds": [
-                  "order_event",
-                  "service"
-                ],
-                "observedFields": [
-                  "orderId",
-                  "amount",
-                  "customerTier"
-                ]
+                "observedPrefixIds": ["order_event", "service"],
+                "observedFields": ["orderId", "amount", "customerTier"]
               },
               {
                 "checkpointId": "checkpoint:event-record:log-web-event:payload:orderId",
@@ -1634,9 +1611,7 @@
                 },
                 "nodeId": "event-record:log-web-event",
                 "observedPrefixIds": [],
-                "observedFields": [
-                  "orderId"
-                ]
+                "observedFields": ["orderId"]
               },
               {
                 "checkpointId": "checkpoint:event-record:log-web-event:payload:amount",
@@ -1650,9 +1625,7 @@
                 },
                 "nodeId": "event-record:log-web-event",
                 "observedPrefixIds": [],
-                "observedFields": [
-                  "amount"
-                ]
+                "observedFields": ["amount"]
               },
               {
                 "checkpointId": "checkpoint:event-record:log-web-event:payload:customerTier",
@@ -1666,9 +1639,7 @@
                 },
                 "nodeId": "event-record:log-web-event",
                 "observedPrefixIds": [],
-                "observedFields": [
-                  "customerTier"
-                ]
+                "observedFields": ["customerTier"]
               },
               {
                 "checkpointId": "checkpoint:event-record:log-web-event:binding:order_event:0",
@@ -1681,9 +1652,7 @@
                   "nodeNotObserved": false
                 },
                 "nodeId": "address-context:order_event:order_event:v1:5",
-                "observedPrefixIds": [
-                  "order_event"
-                ],
+                "observedPrefixIds": ["order_event"],
                 "observedFields": []
               },
               {
@@ -1697,9 +1666,7 @@
                   "nodeNotObserved": false
                 },
                 "nodeId": "address-context:service:service:v1:12",
-                "observedPrefixIds": [
-                  "service"
-                ],
+                "observedPrefixIds": ["service"],
                 "observedFields": []
               }
             ],
@@ -1738,9 +1705,7 @@
                     "medium": "observation",
                     "direction": "forward",
                     "relationType": "observes_address_context",
-                    "contractRefs": [
-                      "order_event"
-                    ]
+                    "contractRefs": ["order_event"]
                   },
                   {
                     "transmissionId": "transmission:observation_emission:facet:event-record:log-web-event:production->facet:address-context:service:service:v1:12:consumption",
@@ -1758,9 +1723,7 @@
                     "medium": "observation",
                     "direction": "forward",
                     "relationType": "observes_address_context",
-                    "contractRefs": [
-                      "service"
-                    ]
+                    "contractRefs": ["service"]
                   }
                 ],
                 "dataFlow": {
@@ -1970,9 +1933,7 @@
                 "eventKey": "order.submit",
                 "timestamp": "2026-04-12T00:00:00.000Z",
                 "corridorId": "event-record:log-web-event",
-                "observedNodeKeys": [
-                  "event-record:log-web-event"
-                ],
+                "observedNodeKeys": ["event-record:log-web-event"],
                 "observedEdgeKeys": [
                   "edge:event-record:log-web-event->payload_field->event-record:log-web-event:orderId"
                 ],
@@ -2184,9 +2145,7 @@
                 "eventKey": "order.submit",
                 "timestamp": "2026-04-12T00:00:00.000Z",
                 "corridorId": "event-record:log-web-event",
-                "observedNodeKeys": [
-                  "event-record:log-web-event"
-                ],
+                "observedNodeKeys": ["event-record:log-web-event"],
                 "observedEdgeKeys": [
                   "edge:event-record:log-web-event->payload_field->event-record:log-web-event:amount"
                 ],
@@ -2398,9 +2357,7 @@
                 "eventKey": "order.submit",
                 "timestamp": "2026-04-12T00:00:00.000Z",
                 "corridorId": "event-record:log-web-event",
-                "observedNodeKeys": [
-                  "event-record:log-web-event"
-                ],
+                "observedNodeKeys": ["event-record:log-web-event"],
                 "observedEdgeKeys": [
                   "edge:event-record:log-web-event->payload_field->event-record:log-web-event:customerTier"
                 ],
@@ -2636,9 +2593,7 @@
                     "medium": "observation",
                     "direction": "forward",
                     "relationType": "observes_address_context",
-                    "contractRefs": [
-                      "order_event"
-                    ]
+                    "contractRefs": ["order_event"]
                   }
                 ],
                 "dataFlow": {
@@ -2872,9 +2827,7 @@
                     "medium": "observation",
                     "direction": "forward",
                     "relationType": "observes_address_context",
-                    "contractRefs": [
-                      "service"
-                    ]
+                    "contractRefs": ["service"]
                   }
                 ],
                 "dataFlow": {
@@ -3126,9 +3079,7 @@
             "medium": "observation",
             "direction": "forward",
             "relationType": "observes_address_context",
-            "contractRefs": [
-              "order_event"
-            ]
+            "contractRefs": ["order_event"]
           },
           {
             "transmissionId": "transmission:observation_emission:facet:event-record:log-web-event:production->facet:address-context:service:service:v1:12:consumption",
@@ -3146,9 +3097,7 @@
             "medium": "observation",
             "direction": "forward",
             "relationType": "observes_address_context",
-            "contractRefs": [
-              "service"
-            ]
+            "contractRefs": ["service"]
           }
         ],
         "lineageLinks": [],
@@ -3162,9 +3111,7 @@
           "edge:event-record:log-web-event->observes_address_context->address-context:service:service:v1:12"
         ]
       },
-      "builtFrom": [
-        "event-record:log-web-event"
-      ],
+      "builtFrom": ["event-record:log-web-event"],
       "builtAt": "2026-04-11T22:27:20.907Z"
     },
     {
@@ -3362,9 +3309,7 @@
           "disallowedLinkKinds": []
         }
       },
-      "builtFrom": [
-        "snapshot:web-event"
-      ],
+      "builtFrom": ["snapshot:web-event"],
       "builtAt": "2026-04-11T22:27:20.907Z"
     },
     {
@@ -3386,15 +3331,8 @@
               "nodeNotObserved": false
             },
             "nodeId": "event-record:log-web-event",
-            "observedPrefixIds": [
-              "order_event",
-              "service"
-            ],
-            "observedFields": [
-              "orderId",
-              "amount",
-              "customerTier"
-            ]
+            "observedPrefixIds": ["order_event", "service"],
+            "observedFields": ["orderId", "amount", "customerTier"]
           },
           {
             "checkpointId": "checkpoint:event-record:log-web-event:payload:orderId",
@@ -3408,9 +3346,7 @@
             },
             "nodeId": "event-record:log-web-event",
             "observedPrefixIds": [],
-            "observedFields": [
-              "orderId"
-            ]
+            "observedFields": ["orderId"]
           },
           {
             "checkpointId": "checkpoint:event-record:log-web-event:payload:amount",
@@ -3424,9 +3360,7 @@
             },
             "nodeId": "event-record:log-web-event",
             "observedPrefixIds": [],
-            "observedFields": [
-              "amount"
-            ]
+            "observedFields": ["amount"]
           },
           {
             "checkpointId": "checkpoint:event-record:log-web-event:payload:customerTier",
@@ -3440,9 +3374,7 @@
             },
             "nodeId": "event-record:log-web-event",
             "observedPrefixIds": [],
-            "observedFields": [
-              "customerTier"
-            ]
+            "observedFields": ["customerTier"]
           },
           {
             "checkpointId": "checkpoint:event-record:log-web-event:binding:order_event:0",
@@ -3455,9 +3387,7 @@
               "nodeNotObserved": false
             },
             "nodeId": "address-context:order_event:order_event:v1:5",
-            "observedPrefixIds": [
-              "order_event"
-            ],
+            "observedPrefixIds": ["order_event"],
             "observedFields": []
           },
           {
@@ -3471,9 +3401,7 @@
               "nodeNotObserved": false
             },
             "nodeId": "address-context:service:service:v1:12",
-            "observedPrefixIds": [
-              "service"
-            ],
+            "observedPrefixIds": ["service"],
             "observedFields": []
           }
         ],
@@ -3512,9 +3440,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               },
               {
                 "transmissionId": "transmission:observation_emission:facet:event-record:log-web-event:production->facet:address-context:service:service:v1:12:consumption",
@@ -3532,9 +3458,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "service"
-                ]
+                "contractRefs": ["service"]
               }
             ],
             "dataFlow": {
@@ -3744,9 +3668,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:00:00.000Z",
             "corridorId": "event-record:log-web-event",
-            "observedNodeKeys": [
-              "event-record:log-web-event"
-            ],
+            "observedNodeKeys": ["event-record:log-web-event"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-event->payload_field->event-record:log-web-event:orderId"
             ],
@@ -3958,9 +3880,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:00:00.000Z",
             "corridorId": "event-record:log-web-event",
-            "observedNodeKeys": [
-              "event-record:log-web-event"
-            ],
+            "observedNodeKeys": ["event-record:log-web-event"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-event->payload_field->event-record:log-web-event:amount"
             ],
@@ -4172,9 +4092,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:00:00.000Z",
             "corridorId": "event-record:log-web-event",
-            "observedNodeKeys": [
-              "event-record:log-web-event"
-            ],
+            "observedNodeKeys": ["event-record:log-web-event"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-event->payload_field->event-record:log-web-event:customerTier"
             ],
@@ -4410,9 +4328,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               }
             ],
             "dataFlow": {
@@ -4646,9 +4562,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "service"
-                ]
+                "contractRefs": ["service"]
               }
             ],
             "dataFlow": {
@@ -4879,9 +4793,7 @@
           }
         ]
       },
-      "builtFrom": [
-        "snapshot:web-event"
-      ],
+      "builtFrom": ["snapshot:web-event"],
       "builtAt": "2026-04-11T22:27:20.907Z"
     }
   ]

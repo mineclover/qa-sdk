@@ -1,11 +1,11 @@
 // @def.boundary sim-pm-api
 // @def.doc sim-erp-pm-design
 
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { and, eq } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { and, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
-import type { PmRepository } from "../shared/port.js";
+import type { PmRepository } from '../shared/port.js';
 import type {
   Project,
   ProjectCreate,
@@ -13,9 +13,9 @@ import type {
   TaskCreate,
   ProjectMember,
   MemberCreate,
-} from "../shared/types.js";
-import { ProjectNotFoundError, TaskNotFoundError } from "../shared/errors.js";
-import { projects, tasks, projectMembers } from "./schema.js";
+} from '../shared/types.js';
+import { ProjectNotFoundError, TaskNotFoundError } from '../shared/errors.js';
+import { projects, tasks, projectMembers } from './schema.js';
 
 export class PgPmRepository implements PmRepository {
   constructor(private readonly db: PostgresJsDatabase) {}
@@ -28,7 +28,7 @@ export class PgPmRepository implements PmRepository {
       name: args.name,
       ownerId: args.ownerId,
       departmentId: args.departmentId,
-      status: args.status ?? "draft",
+      status: args.status ?? 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -42,11 +42,17 @@ export class PgPmRepository implements PmRepository {
   }
 
   async listProjectsByDepartment(departmentId: string): Promise<Project[]> {
-    return (await this.db.select().from(projects).where(eq(projects.departmentId, departmentId))) as Project[];
+    return (await this.db
+      .select()
+      .from(projects)
+      .where(eq(projects.departmentId, departmentId))) as Project[];
   }
 
   async listProjectsByOwner(ownerId: string): Promise<Project[]> {
-    return (await this.db.select().from(projects).where(eq(projects.ownerId, ownerId))) as Project[];
+    return (await this.db
+      .select()
+      .from(projects)
+      .where(eq(projects.ownerId, ownerId))) as Project[];
   }
 
   async updateProject(id: string, patch: Partial<ProjectCreate>): Promise<Project> {
@@ -61,13 +67,16 @@ export class PgPmRepository implements PmRepository {
       status: patch.status ?? cur.status,
       updatedAt: now,
     };
-    await this.db.update(projects).set({
-      name: next.name,
-      ownerId: next.ownerId,
-      departmentId: next.departmentId,
-      status: next.status,
-      updatedAt: next.updatedAt,
-    }).where(eq(projects.id, id));
+    await this.db
+      .update(projects)
+      .set({
+        name: next.name,
+        ownerId: next.ownerId,
+        departmentId: next.departmentId,
+        status: next.status,
+        updatedAt: next.updatedAt,
+      })
+      .where(eq(projects.id, id));
     return next;
   }
 
@@ -83,7 +92,7 @@ export class PgPmRepository implements PmRepository {
       projectId: args.projectId,
       title: args.title,
       assigneeId: args.assigneeId ?? null,
-      status: args.status ?? "todo",
+      status: args.status ?? 'todo',
       parentTaskId: args.parentTaskId ?? null,
       createdAt: now,
       updatedAt: now,
@@ -129,14 +138,17 @@ export class PgPmRepository implements PmRepository {
       parentTaskId: patch.parentTaskId ?? cur.parentTaskId,
       updatedAt: now,
     };
-    await this.db.update(tasks).set({
-      projectId: next.projectId,
-      title: next.title,
-      assigneeId: next.assigneeId,
-      status: next.status,
-      parentTaskId: next.parentTaskId,
-      updatedAt: next.updatedAt,
-    }).where(eq(tasks.id, id));
+    await this.db
+      .update(tasks)
+      .set({
+        projectId: next.projectId,
+        title: next.title,
+        assigneeId: next.assigneeId,
+        status: next.status,
+        parentTaskId: next.parentTaskId,
+        updatedAt: next.updatedAt,
+      })
+      .where(eq(tasks.id, id));
     return next;
   }
 
@@ -158,17 +170,23 @@ export class PgPmRepository implements PmRepository {
   }
 
   async removeMember(projectId: string, userId: string): Promise<void> {
-    await this.db.delete(projectMembers).where(
-      and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)),
-    );
+    await this.db
+      .delete(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
   }
 
   async listMembers(projectId: string): Promise<ProjectMember[]> {
-    return (await this.db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId))) as ProjectMember[];
+    return (await this.db
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, projectId))) as ProjectMember[];
   }
 
   async listProjectsForUser(userId: string): Promise<ProjectMember[]> {
-    return (await this.db.select().from(projectMembers).where(eq(projectMembers.userId, userId))) as ProjectMember[];
+    return (await this.db
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId))) as ProjectMember[];
   }
 }
 

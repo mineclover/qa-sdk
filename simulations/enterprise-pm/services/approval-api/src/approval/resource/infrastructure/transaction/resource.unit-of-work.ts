@@ -1,12 +1,12 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { ResourceRepositoryPort } from "../../application/ports/resource-repository.port.js";
-import type { ResourceOutboxPort } from "../../application/ports/resource-outbox.port.js";
+import type { ResourceRepositoryPort } from '../../application/ports/resource-repository.port.js';
+import type { ResourceOutboxPort } from '../../application/ports/resource-outbox.port.js';
 import type {
   ResourceTransactionPort,
   ResourceTransactionScope,
-} from "../../application/ports/resource-transaction.port.js";
+} from '../../application/ports/resource-transaction.port.js';
 
 export class ResourceUnitOfWork {
   constructor(

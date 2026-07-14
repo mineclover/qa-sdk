@@ -1,18 +1,18 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text, integer, primaryKey } from "drizzle-orm/pg-core";
+import { pgSchema, text, integer, primaryKey } from 'drizzle-orm/pg-core';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 export const versions = sim.table(
-  "doc_versions",
+  'doc_versions',
   {
-    documentId: text("document_id").notNull(),
-    versionNumber: integer("version_number").notNull(),
-    contentRef: text("content_ref").notNull(),
-    authorId: text("author_id").notNull(),
-    createdAt: text("created_at").notNull(),
+    documentId: text('document_id').notNull(),
+    versionNumber: integer('version_number').notNull(),
+    contentRef: text('content_ref').notNull(),
+    authorId: text('author_id').notNull(),
+    createdAt: text('created_at').notNull(),
   },
   (t) => [primaryKey({ columns: [t.documentId, t.versionNumber] })],
 );

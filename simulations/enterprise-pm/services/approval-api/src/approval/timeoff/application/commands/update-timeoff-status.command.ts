@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { TimeOffStatus } from "../../domain/index.js";
+import type { TimeOffStatus } from '../../domain/index.js';
 
 export interface UpdateTimeOffStatusCommand {
   readonly id: string;

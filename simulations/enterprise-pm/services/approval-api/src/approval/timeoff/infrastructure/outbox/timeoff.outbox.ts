@@ -1,20 +1,20 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createDrizzleOutboxPort,
   type OutboxPort,
   type OutboxRecord,
-} from "@qa-sdk/sim-domain-slice-kit";
-import type { TransactionScope } from "@qa-sdk/sim-domain-slice-kit";
-import { buildSchemaHash } from "sim-identifier-grammar";
-import { approvalOutboxEvents as sqliteApprovalOutbox } from "../../../sqlite/schema.js";
-import { approvalOutboxEvents as pgApprovalOutbox } from "../../../pg/schema.js";
-import { withServiceVersion } from "../../../../lib/service-version.js";
+} from '@qa-sdk/sim-domain-slice-kit';
+import type { TransactionScope } from '@qa-sdk/sim-domain-slice-kit';
+import { buildSchemaHash } from 'sim-identifier-grammar';
+import { approvalOutboxEvents as sqliteApprovalOutbox } from '../../../sqlite/schema.js';
+import { approvalOutboxEvents as pgApprovalOutbox } from '../../../pg/schema.js';
+import { withServiceVersion } from '../../../../lib/service-version.js';
 
-export type TimeOffDialect = "sqlite" | "pg";
+export type TimeOffDialect = 'sqlite' | 'pg';
 
 export interface TimeOffOutboxFactoryOpts {
   readonly dialect: TimeOffDialect;
@@ -25,20 +25,20 @@ export interface TimeOffOutboxFactoryOpts {
 // EventName 계약: { domain, aggregate, verbPast } — sim-identifier-grammar/event-name.ts SSOT.
 // timeoff aggregate 식별자는 event-vocabulary 카탈로그에 "time-off" 으로 등록되어 있다.
 const TIMEOFF_EVENT_NAME = {
-  domain: "approval",
-  aggregate: "time-off",
-  verbPast: "submitted",
+  domain: 'approval',
+  aggregate: 'time-off',
+  verbPast: 'submitted',
 } as const;
 const TIMEOFF_PAYLOAD_SHAPE = {
-  id: "string",
-  requesterId: "string",
-  startDate: "string",
-  endDate: "string",
-  reason: "string",
-  status: "string",
-  currentStage: "number",
-  totalStages: "number",
-  occurredAt: "string",
+  id: 'string',
+  requesterId: 'string',
+  startDate: 'string',
+  endDate: 'string',
+  reason: 'string',
+  status: 'string',
+  currentStage: 'number',
+  totalStages: 'number',
+  occurredAt: 'string',
 } as const;
 export const TIMEOFF_SCHEMA_HASH: string = buildSchemaHash({
   eventName: TIMEOFF_EVENT_NAME,
@@ -47,7 +47,7 @@ export const TIMEOFF_SCHEMA_HASH: string = buildSchemaHash({
 
 function withTimeOffStamps(record: OutboxRecord): OutboxRecord {
   const stamped =
-    typeof record.payload === "object" && record.payload !== null
+    typeof record.payload === 'object' && record.payload !== null
       ? withServiceVersion({
           ...(record.payload as Record<string, unknown>),
           schemaHash: TIMEOFF_SCHEMA_HASH,
@@ -67,10 +67,8 @@ function wrap(port: OutboxPort): OutboxPort {
   };
 }
 
-export function createTimeOffOutboxPort(
-  opts: TimeOffOutboxFactoryOpts,
-): OutboxPort {
-  if (opts.dialect === "sqlite") {
+export function createTimeOffOutboxPort(opts: TimeOffOutboxFactoryOpts): OutboxPort {
+  if (opts.dialect === 'sqlite') {
     return wrap(
       createDrizzleOutboxPort({
         db: opts.db as never,
@@ -78,7 +76,7 @@ export function createTimeOffOutboxPort(
       }),
     );
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return wrap(
       createDrizzleOutboxPort({
         db: opts.db as never,
@@ -86,7 +84,5 @@ export function createTimeOffOutboxPort(
       }),
     );
   }
-  throw new Error(
-    `createTimeOffOutboxPort: dialect=${(opts as { dialect: string }).dialect}`,
-  );
+  throw new Error(`createTimeOffOutboxPort: dialect=${(opts as { dialect: string }).dialect}`);
 }

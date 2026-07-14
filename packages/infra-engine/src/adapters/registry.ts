@@ -1,15 +1,15 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import type { RegistryAdapter, DeploymentSyncParams, DeploymentSyncResult } from "./adapter.js";
+import type { RegistryAdapter, DeploymentSyncParams, DeploymentSyncResult } from './adapter.js';
 
 export function createRegistryAdapter(baseUrl: string): RegistryAdapter {
   return {
     async syncDeployment(params: DeploymentSyncParams): Promise<DeploymentSyncResult> {
-      const url = `${baseUrl}/api/services/${params.serviceId}/deployments/sync?catalog=${params.catalogId ?? "demo"}`;
+      const url = `${baseUrl}/api/services/${params.serviceId}/deployments/sync?catalog=${params.catalogId ?? 'demo'}`;
       const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deploymentVersion: params.deploymentVersion,
           runtime: params.runtime,
@@ -25,7 +25,7 @@ export function createRegistryAdapter(baseUrl: string): RegistryAdapter {
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
+        const text = await res.text().catch(() => '');
         throw new Error(`registry sync 실패 (${res.status}): ${text}`);
       }
 

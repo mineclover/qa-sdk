@@ -1,7 +1,7 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import type { Sql } from "postgres";
+import type { Sql } from 'postgres';
 
 /**
  * postgres driver 의 begin() 콜백이 받는 트랜잭션 객체 타입.
@@ -24,7 +24,7 @@ export interface RlsSessionContext {
   readonly userId: string | null;
   readonly tenantId: string | null;
   readonly bitmapMask: Uint8Array | null;
-  readonly role: "admin" | null;
+  readonly role: 'admin' | null;
 }
 
 export const EMPTY_RLS_CONTEXT: RlsSessionContext = Object.freeze({
@@ -40,7 +40,7 @@ export const MAX_BITMAP_BYTES = 128 * 1024;
 export class BitmapTooLargeError extends Error {
   constructor(public readonly size: number) {
     super(`bitmap mask ${size} bytes exceeds MAX_BITMAP_BYTES=${MAX_BITMAP_BYTES}`);
-    this.name = "BitmapTooLargeError";
+    this.name = 'BitmapTooLargeError';
   }
 }
 
@@ -49,9 +49,9 @@ export function encodeBitmapHex(mask: Uint8Array): string {
   if (mask.byteLength > MAX_BITMAP_BYTES) {
     throw new BitmapTooLargeError(mask.byteLength);
   }
-  let out = "";
+  let out = '';
   for (let i = 0; i < mask.length; i += 1) {
-    out += mask[i].toString(16).padStart(2, "0");
+    out += mask[i].toString(16).padStart(2, '0');
   }
   return out;
 }

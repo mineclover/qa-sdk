@@ -1,20 +1,15 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type {
-  ProjectId,
-  RequesterId,
-  ResourceRequestId,
-  ResourceTypeId,
-} from "./resource.ids.js";
+import type { ProjectId, RequesterId, ResourceRequestId, ResourceTypeId } from './resource.ids.js';
 
 export type ResourceStatus =
-  | "draft"
-  | "submitted"
-  | "in_review"
-  | "approved"
-  | "rejected"
-  | "revision_requested";
+  | 'draft'
+  | 'submitted'
+  | 'in_review'
+  | 'approved'
+  | 'rejected'
+  | 'revision_requested';
 
 export interface ResourceProps {
   readonly id: ResourceRequestId;

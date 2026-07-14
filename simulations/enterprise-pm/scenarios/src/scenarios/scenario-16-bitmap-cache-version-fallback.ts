@@ -7,8 +7,8 @@
 // 권한 정합성이 가용성보다 우선이므로 invalidate drop 후에도 stale data로
 // 부정확한 allow가 발생하지 않아야 함.
 
-import { ok } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
+import { ok } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
 
 interface S16Ctx {
   faultHandle: { off: () => Promise<void> };
@@ -17,13 +17,12 @@ interface S16Ctx {
 }
 
 export const scenario16BitmapCacheVersionFallback: Scenario<S16Ctx> = {
-  name: "scenario-16-bitmap-cache-version-fallback",
-  description:
-    "pub/sub drop → version 진화 → TTL/version-check refresh → denyRate 유지",
+  name: 'scenario-16-bitmap-cache-version-fallback',
+  description: 'pub/sub drop → version 진화 → TTL/version-check refresh → denyRate 유지',
   validates: [
-    "spec 05 §1 bitmap cache deny fail-closed",
-    "TTL/version-check 기반 refresh fallback",
-    "stale data로 부정확한 allow 미발생",
+    'spec 05 §1 bitmap cache deny fail-closed',
+    'TTL/version-check 기반 refresh fallback',
+    'stale data로 부정확한 allow 미발생',
   ],
 
   async setup() {
@@ -36,7 +35,7 @@ export const scenario16BitmapCacheVersionFallback: Scenario<S16Ctx> = {
         };
       }
     ).__simFaultInjector;
-    if (!inj) throw new Error("__simFaultInjector not bound");
+    if (!inj) throw new Error('__simFaultInjector not bound');
 
     const m = (
       globalThis as unknown as {
@@ -46,7 +45,7 @@ export const scenario16BitmapCacheVersionFallback: Scenario<S16Ctx> = {
         };
       }
     ).__simBitmapMetrics;
-    if (!m) throw new Error("__simBitmapMetrics not bound");
+    if (!m) throw new Error('__simBitmapMetrics not bound');
     const baselineDenyRate = await m.denyRate();
     const ttlMs = await m.bitmapTtlMs();
 
@@ -61,7 +60,7 @@ export const scenario16BitmapCacheVersionFallback: Scenario<S16Ctx> = {
         __simBitmapVersionMutator?: () => Promise<{ newVersion: string }>;
       }
     ).__simBitmapVersionMutator;
-    if (!mut) throw new Error("__simBitmapVersionMutator not bound");
+    if (!mut) throw new Error('__simBitmapVersionMutator not bound');
     const { newVersion } = await mut();
 
     // refresh 발동 경로 둘 — version-check (즉시) 또는 TTL 만료.
@@ -73,11 +72,11 @@ export const scenario16BitmapCacheVersionFallback: Scenario<S16Ctx> = {
           timeoutMs: number,
         ) => Promise<{
           recoveredAtMs: number;
-          recoveredVia: "version-check" | "ttl";
+          recoveredVia: 'version-check' | 'ttl';
         }>;
       }
     ).__simBitmapVersionCheck;
-    if (!checker) throw new Error("__simBitmapVersionCheck not bound");
+    if (!checker) throw new Error('__simBitmapVersionCheck not bound');
     const recovery = await checker(newVersion, ctx.ttlMs + 30_000);
     const elapsedMs = recovery.recoveredAtMs - startedAt;
 
@@ -90,9 +89,7 @@ export const scenario16BitmapCacheVersionFallback: Scenario<S16Ctx> = {
 
   async assert(ctx, actResult) {
     const elapsedMs = actResult.data.elapsedMs as number;
-    const recoveredVia = actResult.data.recoveredVia as
-      | "version-check"
-      | "ttl";
+    const recoveredVia = actResult.data.recoveredVia as 'version-check' | 'ttl';
 
     // 회복 시간 ≤ TTL+1cycle (cycle=2s).
     const cycleMs = 2_000;
@@ -102,7 +99,7 @@ export const scenario16BitmapCacheVersionFallback: Scenario<S16Ctx> = {
     );
 
     ok(
-      recoveredVia === "version-check" || recoveredVia === "ttl",
+      recoveredVia === 'version-check' || recoveredVia === 'ttl',
       `recoveredVia must be 'version-check' or 'ttl', got ${recoveredVia}`,
     );
 

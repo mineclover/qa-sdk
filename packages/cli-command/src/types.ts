@@ -3,13 +3,13 @@
 
 /** 옵션 정의 */
 export interface OptionDef {
-  flag: string;           // "--dry-run" | "--provider"
-  short?: string;         // "-d" | "-p"
-  type: "boolean" | "string";
+  flag: string; // "--dry-run" | "--provider"
+  short?: string; // "-d" | "-p"
+  type: 'boolean' | 'string';
   default?: unknown;
   description?: string;
   choices?: string[];
-  valueHint?: string;     // help에서 표시할 값 힌트 (예: "<name>")
+  valueHint?: string; // help에서 표시할 값 힌트 (예: "<name>")
 }
 
 /** 위치 인자 정의 */

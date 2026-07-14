@@ -16,17 +16,17 @@ export type {
   QualityGateSpec,
   WorkDomainDef,
   ClassificationResult,
-} from "./types.js";
+} from './types.js';
 
 // 게이트 유형 택소노미
-export type { GateScope, GateKindId, GateKindDef } from "./gate-kind.js";
+export type { GateScope, GateKindId, GateKindDef } from './gate-kind.js';
 export {
   GATE_KINDS,
   ALL_GATE_KIND_IDS,
   getGateKindDef,
   getGateKindsByScope,
   countByScope,
-} from "./gate-kind.js";
+} from './gate-kind.js';
 
 // 하네스 상태 모델
 export type {
@@ -35,13 +35,13 @@ export type {
   HarnessStateDef,
   HarnessBundleDoc,
   HarnessStateSnapshot,
-} from "./harness-model.js";
+} from './harness-model.js';
 export {
   HARNESS_STATES,
   getHarnessStateDef,
   classifyHarnessDocRole,
   deriveHarnessState,
-} from "./harness-model.js";
+} from './harness-model.js';
 
 // 하네스 런타임 (게이트 실행 상태 머신)
 export type {
@@ -55,7 +55,7 @@ export type {
   HarnessPlan,
   GateInstance,
   HarnessInstance,
-} from "./harness.js";
+} from './harness.js';
 export {
   transitionGate,
   deriveBundleState,
@@ -65,21 +65,26 @@ export {
   createHarnessInstance,
   applyGateEvent,
   nextReadyGates,
-} from "./harness.js";
+} from './harness.js';
 
 // 게이트 트래커 (런타임 수집)
-export type { GateLogger, GateTrackerConfig, GateTracker, BundleStateListener } from "./gate-tracker.js";
-export { createGateTracker } from "./gate-tracker.js";
+export type {
+  GateLogger,
+  GateTrackerConfig,
+  GateTracker,
+  BundleStateListener,
+} from './gate-tracker.js';
+export { createGateTracker } from './gate-tracker.js';
 
 // 레지스트리
-export { WORK_DOMAINS, ALL_DOMAIN_IDS, getDomainDef, getSubDomain } from "./registry.js";
+export { WORK_DOMAINS, ALL_DOMAIN_IDS, getDomainDef, getSubDomain } from './registry.js';
 
 // 품질 게이트
-export { resolveQualityGates, gatesToCriteria, mergeQualityGates } from "./quality-gates.js";
+export { resolveQualityGates, gatesToCriteria, mergeQualityGates } from './quality-gates.js';
 
 // definition-catalog 매핑
-export type { ScopeMapping, DocQueryParams, DefScope, DefLayer, ConcernTag } from "./mapping.js";
-export { DOMAIN_TO_DEF_MAP, buildDocQuery, suggestDomainFromArtifact } from "./mapping.js";
+export type { ScopeMapping, DocQueryParams, DefScope, DefLayer, ConcernTag } from './mapping.js';
+export { DOMAIN_TO_DEF_MAP, buildDocQuery, suggestDomainFromArtifact } from './mapping.js';
 
 // 자동 분류
-export { classifyUserStory, classifyStories } from "./classify.js";
+export { classifyUserStory, classifyStories } from './classify.js';

@@ -9,15 +9,15 @@
  * inspect family state, collect related facts, and search across sources.
  */
 
-import { existsSync } from "node:fs";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync } from 'node:fs';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   compileBddContractsToPipeGraphs,
   compileBddContractsToScenarioSpecs,
   type PipeGraph,
   type ScenarioSpec,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 import {
   createArtifactEvidenceAdapter,
@@ -77,39 +77,51 @@ import {
   type TraversalAxis,
   type TraversalDirection,
   type TraversalPresetId,
-} from "../lib/docs-control-plane/index.js";
+} from '../lib/docs-control-plane/index.js';
 import {
   loadMetadataTransformRule,
   previewMetadataTransform,
   unsupportedMetadataTransformApplyError,
   type MetadataTransformPreview,
   type StructuredDocsError,
-} from "../lib/docs-control-plane/metadata-transform.js";
+} from '../lib/docs-control-plane/metadata-transform.js';
 import {
   detectDocumentDrift,
   type DocumentDriftIssue,
   type DocumentDriftResult,
   type DocumentDriftSeverity,
-} from "../lib/docs-control-plane/drift.js";
-import { detectCompletedRecordsWithRalphIntegration } from "../lib/completed-records-combined.js";
+} from '../lib/docs-control-plane/drift.js';
+import { detectCompletedRecordsWithRalphIntegration } from '../lib/completed-records-combined.js';
 import {
   previewPrdToRalphJson,
   type PrdToRalphJsonPreview,
-} from "../lib/docs-control-plane/prd-to-ralph-json.js";
+} from '../lib/docs-control-plane/prd-to-ralph-json.js';
 import {
   buildCompletedRecordCleanupReview,
   type CompletedRecordCleanupAction,
   type CompletedRecordCleanupCandidate,
-} from "../lib/docs-control-plane/completed-record-review.js";
+} from '../lib/docs-control-plane/completed-record-review.js';
 import {
   buildCompletedRecordCleanupPlan,
   type CompletedRecordCleanupPathOverrides,
   type CompletedRecordCleanupPlanAction,
-} from "../lib/docs-control-plane/completed-record-cleanup-plan.js";
-import { applyCompletedRecordCleanup } from "../lib/docs-control-plane/completed-record-cleanup-apply.js";
-import { formatHelpSections, type CommandHelpSectionSpec } from "../command-spec.js";
+} from '../lib/docs-control-plane/completed-record-cleanup-plan.js';
+import { applyCompletedRecordCleanup } from '../lib/docs-control-plane/completed-record-cleanup-apply.js';
+import { formatHelpSections, type CommandHelpSectionSpec } from '../command-spec.js';
 
-type DocsCommand = "help" | "status" | "explore" | "collect" | "closure" | "search" | "drift" | "bdd" | "transform" | "prd" | "graph" | "cleanup";
+type DocsCommand =
+  | 'help'
+  | 'status'
+  | 'explore'
+  | 'collect'
+  | 'closure'
+  | 'search'
+  | 'drift'
+  | 'bdd'
+  | 'transform'
+  | 'prd'
+  | 'graph'
+  | 'cleanup';
 
 interface ParsedDocsArgs {
   readonly command: DocsCommand;
@@ -192,19 +204,19 @@ interface CollectResult extends StatusResult {
   readonly graph?: DocsGraphCliResult;
 }
 
-type ClosureState = "unmapped" | "mapped" | "partially-closed" | "closed" | "drifted";
+type ClosureState = 'unmapped' | 'mapped' | 'partially-closed' | 'closed' | 'drifted';
 
 type ClosureResponsibility =
-  | "Entry / Identity"
-  | "Component"
-  | "Interface / DSL"
-  | "System"
-  | "Layout / Pack"
-  | "Unknown";
+  | 'Entry / Identity'
+  | 'Component'
+  | 'Interface / DSL'
+  | 'System'
+  | 'Layout / Pack'
+  | 'Unknown';
 
 interface ClosureMissingItem {
   readonly code: string;
-  readonly severity: "info" | "warning" | "error";
+  readonly severity: 'info' | 'warning' | 'error';
   readonly message: string;
 }
 
@@ -221,7 +233,7 @@ interface ClosureResult {
   readonly state: ClosureState;
   readonly responsibility: ClosureResponsibility;
   readonly document?: DocumentSummary;
-  readonly sourceTarget?: StatusResult["sourceTarget"];
+  readonly sourceTarget?: StatusResult['sourceTarget'];
   readonly boundary?: DocumentSummary;
   readonly consumedRules: readonly DocumentSummary[];
   readonly evidence: ClosureEvidenceSummary;
@@ -248,9 +260,9 @@ interface ExploreResult {
   readonly recommendedCommands: readonly string[];
 }
 
-type ExploreMode = "intent" | "map" | "diagnostic";
-type SelectorKind = "doc" | "service" | "package" | "owner" | "family";
-type SelectorScope = "root" | "family" | "owned";
+type ExploreMode = 'intent' | 'map' | 'diagnostic';
+type SelectorKind = 'doc' | 'service' | 'package' | 'owner' | 'family';
+type SelectorScope = 'root' | 'family' | 'owned';
 
 interface SelectorRoute {
   readonly kind: SelectorKind;
@@ -277,7 +289,7 @@ interface BddSummary {
 }
 
 interface LifecycleArtifactStatus {
-  readonly role: "plan" | "cases" | "todo" | "test" | "spec";
+  readonly role: 'plan' | 'cases' | 'todo' | 'test' | 'spec';
   readonly present: boolean;
   readonly sameFamilyPresent: boolean;
   readonly linkedPresent: boolean;
@@ -303,7 +315,7 @@ interface LifecycleTopicSummary {
   readonly sourceTargets: readonly string[];
   readonly proofSurface: readonly string[];
   readonly assimilationTarget: readonly string[];
-  readonly boundaries: WorkTopic["boundaries"];
+  readonly boundaries: WorkTopic['boundaries'];
   readonly sourcePath: string;
   readonly readiness: LifecycleTopicReadiness;
 }
@@ -393,7 +405,7 @@ interface BddUnitsResult {
 interface BddCompileResult {
   readonly target: string;
   readonly familyOnly: boolean;
-  readonly format: "scenario" | "pipe" | "both";
+  readonly format: 'scenario' | 'pipe' | 'both';
   readonly scenarios: readonly ScenarioSpec[];
   readonly pipeGraphs?: readonly PipeGraph[];
   readonly issues: readonly BddIssueSummary[];
@@ -437,25 +449,25 @@ interface BddImplementationPlanResult {
 }
 
 interface DocsGraphCliResult {
-  readonly input: DocumentGraphTraversalResult["input"];
-  readonly targetResolution: DocumentGraphTraversalResult["targetResolution"];
+  readonly input: DocumentGraphTraversalResult['input'];
+  readonly targetResolution: DocumentGraphTraversalResult['targetResolution'];
   readonly targetNodeId?: string;
-  readonly nodes: DocumentGraphTraversalResult["nodes"];
-  readonly edges: DocumentGraphTraversalResult["edges"];
-  readonly paths: DocumentGraphTraversalResult["paths"];
-  readonly roleGroups: DocumentGraphTraversalResult["roleGroups"];
-  readonly missingRoles: DocumentGraphTraversalResult["missingRoles"];
+  readonly nodes: DocumentGraphTraversalResult['nodes'];
+  readonly edges: DocumentGraphTraversalResult['edges'];
+  readonly paths: DocumentGraphTraversalResult['paths'];
+  readonly roleGroups: DocumentGraphTraversalResult['roleGroups'];
+  readonly missingRoles: DocumentGraphTraversalResult['missingRoles'];
   readonly missingRoleSummary: readonly {
     readonly familyId: string;
     readonly roleTypes: readonly string[];
     readonly optionalCount: number;
   }[];
-  readonly filters: DocumentGraphFilterResult["filters"];
+  readonly filters: DocumentGraphFilterResult['filters'];
   readonly filtering: DocumentGraphFilterResult;
   readonly ranking: DocumentGraphRankingResult;
   readonly summary: DocumentGraphResultSummary;
-  readonly rankedNodes: DocumentGraphRankingResult["rankedNodes"];
-  readonly filteredNodes: DocumentGraphRankingResult["rankedNodes"];
+  readonly rankedNodes: DocumentGraphRankingResult['rankedNodes'];
+  readonly filteredNodes: DocumentGraphRankingResult['rankedNodes'];
   readonly counts: {
     readonly nodes: number;
     readonly edges: number;
@@ -466,7 +478,7 @@ interface DocsGraphCliResult {
     readonly missingRoleFamilies: number;
   };
   readonly truncated: boolean;
-  readonly omittedCounts: DocumentGraphTraversalResult["omittedCounts"];
+  readonly omittedCounts: DocumentGraphTraversalResult['omittedCounts'];
   readonly omittedCount: number;
   readonly diagnostics: readonly string[];
 }
@@ -494,7 +506,7 @@ interface PrdContextSource {
 interface PrdContextSourceRanking {
   readonly rank: number;
   readonly score: number;
-  readonly strength: DocumentGraphRankingResult["rankedNodes"][number]["strength"];
+  readonly strength: DocumentGraphRankingResult['rankedNodes'][number]['strength'];
   readonly reasons: readonly string[];
 }
 
@@ -602,7 +614,7 @@ interface PrdScaffoldResult {
 
 interface CleanupReviewResult {
   readonly target?: string;
-  readonly scope: "repo" | "family" | "prd";
+  readonly scope: 'repo' | 'family' | 'prd';
   readonly counts: {
     readonly completedRecords: number;
     readonly candidates: number;
@@ -649,7 +661,7 @@ interface CleanupPlanResult {
   readonly action: CompletedRecordCleanupPlanAction;
   readonly dryRunDefaulted: boolean;
   readonly target: string;
-  readonly targetValidatedAs: "record-path" | "document-id" | "paired-path";
+  readonly targetValidatedAs: 'record-path' | 'document-id' | 'paired-path';
   readonly proposedOutputPath: string;
   readonly secondaryOutputPath?: string;
   readonly assimilationTargetPath?: string;
@@ -677,12 +689,12 @@ interface CleanupPlanResult {
 interface CleanupApplyResult {
   readonly action: CompletedRecordCleanupPlanAction;
   readonly target: string;
-  readonly targetValidatedAs: "record-path" | "document-id" | "paired-path";
+  readonly targetValidatedAs: 'record-path' | 'document-id' | 'paired-path';
   readonly record: CompletedRecordState;
   readonly moved: readonly {
     readonly from: string;
     readonly to: string;
-    readonly kind: "record" | "paired";
+    readonly kind: 'record' | 'paired';
   }[];
   readonly updated: readonly string[];
   readonly preservedEvidencePaths: readonly string[];
@@ -699,9 +711,9 @@ interface CleanupBatchSkip {
 }
 
 interface CleanupBatchPlanResult {
-  readonly mode: "batch";
-  readonly strategy: "recommended" | "action-map";
-  readonly scope: "repo" | "family" | "prd";
+  readonly mode: 'batch';
+  readonly strategy: 'recommended' | 'action-map';
+  readonly scope: 'repo' | 'family' | 'prd';
   readonly target?: string;
   readonly actionMapSource?: string;
   readonly dryRunDefaulted: boolean;
@@ -718,9 +730,9 @@ interface CleanupBatchPlanResult {
 }
 
 interface CleanupBatchApplyResult {
-  readonly mode: "batch";
-  readonly strategy: "recommended" | "action-map";
-  readonly scope: "repo" | "family" | "prd";
+  readonly mode: 'batch';
+  readonly strategy: 'recommended' | 'action-map';
+  readonly scope: 'repo' | 'family' | 'prd';
   readonly target?: string;
   readonly actionMapSource?: string;
   readonly counts: {
@@ -736,117 +748,122 @@ interface CleanupBatchApplyResult {
 }
 
 interface CleanupScopeResolution {
-  readonly scope: "repo" | "family" | "prd";
+  readonly scope: 'repo' | 'family' | 'prd';
   readonly target?: string;
   readonly documents: readonly DocumentEnvelope[];
 }
 
 interface CleanupBatchStrategySelection {
-  readonly strategy: "recommended" | "action-map";
-  readonly actionMap?: Readonly<Record<string, {
-    readonly action: CompletedRecordCleanupPlanAction;
-    readonly overrides?: CompletedRecordCleanupPathOverrides;
-  }>>;
+  readonly strategy: 'recommended' | 'action-map';
+  readonly actionMap?: Readonly<
+    Record<
+      string,
+      {
+        readonly action: CompletedRecordCleanupPlanAction;
+        readonly overrides?: CompletedRecordCleanupPathOverrides;
+      }
+    >
+  >;
   readonly actionMapSource?: string;
 }
 
 const HELP_SECTIONS: readonly CommandHelpSectionSpec[] = [
   {
-    title: "Quick Start",
+    title: 'Quick Start',
     lines: [
-      "1. qa-sdk docs explore <doc-id|path>            guided entrypoint for a document family",
-      "2. qa-sdk docs collect <doc-id|path> --family-only  inspect same-family artifacts",
-      "3. qa-sdk docs closure <doc-id|source>           inspect responsibility closure state",
-      "4. qa-sdk docs graph <doc-id|path> --preset family   inspect relationships; add --verbose for edge evidence",
-      "5. qa-sdk docs bdd validate <doc-id|path> --family-only  validate BDD contracts when present",
+      '1. qa-sdk docs explore <doc-id|path>            guided entrypoint for a document family',
+      '2. qa-sdk docs collect <doc-id|path> --family-only  inspect same-family artifacts',
+      '3. qa-sdk docs closure <doc-id|source>           inspect responsibility closure state',
+      '4. qa-sdk docs graph <doc-id|path> --preset family   inspect relationships; add --verbose for edge evidence',
+      '5. qa-sdk docs bdd validate <doc-id|path> --family-only  validate BDD contracts when present',
     ],
   },
   {
-    title: "Usage",
+    title: 'Usage',
     lines: [
-      "qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]",
-      "qa-sdk docs explore <doc-id|path> [--mode intent|map|diagnostic] [--json]",
-      "qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session] [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]",
-      "qa-sdk docs closure <doc-id|path|source-file[:symbol]> [--json]",
-      "qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--verbose] [--json]",
-      "qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]",
-      "qa-sdk docs drift [--prd <file>] [--include-session] [--json]",
-      "qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]",
-      "qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]",
-      "qa-sdk docs cleanup plan --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--dry-run] [--json]",
-      "qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--json]",
-      "qa-sdk docs cleanup apply --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--json]",
-      "qa-sdk docs bdd list <doc-id|path> [--family-only] [--json]",
-      "qa-sdk docs bdd validate <doc-id|path> [--family-only] [--json]",
-      "qa-sdk docs bdd units <doc-id|path> [--family-only] [--json]",
-      "qa-sdk docs bdd compile <doc-id|path> [--format scenario|pipe|both] [--family-only] [--json]",
-      "qa-sdk docs bdd test-plan <doc-id|path> [--family-only] [--json]",
-      "qa-sdk docs bdd impl-plan <doc-id|path> [--family-only] [--json]",
-      "qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]",
-      "qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]",
-      "qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]",
-      "qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--strict] [--evidence-only] [--json]",
-      "qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]",
+      'qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]',
+      'qa-sdk docs explore <doc-id|path> [--mode intent|map|diagnostic] [--json]',
+      'qa-sdk docs collect <doc-id|path> [--graph] [--family-only] [--include-session] [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--json]',
+      'qa-sdk docs closure <doc-id|path|source-file[:symbol]> [--json]',
+      'qa-sdk docs graph <target> [--axis <csv>] [--filter-axis <csv>] [--kind <csv>] [--role <csv>] [--follow-up-category <csv>] [--include-archive] [--direction out|in|both] [--depth <n>] [--limit <n>] [--preset <name>] [--verbose] [--json]',
+      'qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]',
+      'qa-sdk docs drift [--prd <file>] [--include-session] [--json]',
+      'qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]',
+      'qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]',
+      'qa-sdk docs cleanup plan --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--dry-run] [--json]',
+      'qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--json]',
+      'qa-sdk docs cleanup apply --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--json]',
+      'qa-sdk docs bdd list <doc-id|path> [--family-only] [--json]',
+      'qa-sdk docs bdd validate <doc-id|path> [--family-only] [--json]',
+      'qa-sdk docs bdd units <doc-id|path> [--family-only] [--json]',
+      'qa-sdk docs bdd compile <doc-id|path> [--format scenario|pipe|both] [--family-only] [--json]',
+      'qa-sdk docs bdd test-plan <doc-id|path> [--family-only] [--json]',
+      'qa-sdk docs bdd impl-plan <doc-id|path> [--family-only] [--json]',
+      'qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]',
+      'qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]',
+      'qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]',
+      'qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--strict] [--evidence-only] [--json]',
+      'qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]',
     ],
   },
   {
-    title: "Options",
+    title: 'Options',
     lines: [
-      "--root <dir>                 repository root override",
-      "--docs-dir <dir>             definition markdown directory (repeatable)",
-      "--prd-dir <dir>              PRD markdown/JSON directory (repeatable)",
-      "--session <file>             ralph session metadata path",
-      "--prd-json <file>            PRD JSON path for session comparison",
-      "--prd <file>                 scope drift checks to a PRD markdown/JSON family",
-      "--family-only                limit inventory commands to same-family role docs and direct module children",
-      "--include-session            include transient .ralph-tui session state in family/drift/completion checks",
-      "--axis <csv>                 graph traversal axes: composition, refinement, dependency, constraint, trace, source, evidence, role, context",
-      "--filter-axis <csv>          filter post-traversal ranked/filtered views by traversal axis; does not change traversal",
-      "--kind <csv>                 filter post-traversal graph views by document/node kind",
-      "--role <csv>                 filter post-traversal graph views by artifact role metadata",
-      "--follow-up-category <csv>   filter post-traversal graph views by follow-up category metadata",
-      "--include-archive            include archived documents in post-traversal graph views",
-      "--verbose                    include raw graph nodes, edge reasons, and role groups in text graph output",
-      "--direction out|in|both      graph traversal direction",
+      '--root <dir>                 repository root override',
+      '--docs-dir <dir>             definition markdown directory (repeatable)',
+      '--prd-dir <dir>              PRD markdown/JSON directory (repeatable)',
+      '--session <file>             ralph session metadata path',
+      '--prd-json <file>            PRD JSON path for session comparison',
+      '--prd <file>                 scope drift checks to a PRD markdown/JSON family',
+      '--family-only                limit inventory commands to same-family role docs and direct module children',
+      '--include-session            include transient .ralph-tui session state in family/drift/completion checks',
+      '--axis <csv>                 graph traversal axes: composition, refinement, dependency, constraint, trace, source, evidence, role, context',
+      '--filter-axis <csv>          filter post-traversal ranked/filtered views by traversal axis; does not change traversal',
+      '--kind <csv>                 filter post-traversal graph views by document/node kind',
+      '--role <csv>                 filter post-traversal graph views by artifact role metadata',
+      '--follow-up-category <csv>   filter post-traversal graph views by follow-up category metadata',
+      '--include-archive            include archived documents in post-traversal graph views',
+      '--verbose                    include raw graph nodes, edge reasons, and role groups in text graph output',
+      '--direction out|in|both      graph traversal direction',
       `--depth <n>                  graph traversal depth (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_DEPTH}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_DEPTH})`,
       `--limit <n>                  maximum graph nodes to return (default ${DEFAULT_DOCUMENT_GRAPH_TRAVERSAL_LIMIT}, max ${MAX_DOCUMENT_GRAPH_TRAVERSAL_LIMIT})`,
-      "--preset <name>              graph traversal preset: family, implementation, review, impact, prd-completion",
-      "--graph                      use graph traversal for docs collect; defaults to the family preset",
-      "--output <file>              PRD markdown scaffold or PRD JSON conversion output path",
-      "--rule <json-file|inline-json> metadata transform rule for dry-run preview",
-      "--dry-run                    preview only; this is the default",
-      "--strict                     fail preview when blocked promotions, session drift, or diagnostics remain",
-      "--evidence-only              count only evidence refs toward promotion support; ignore source/test-only proof",
-      "--all                        apply the cleanup command to every candidate in scope",
-      "--recommended                use review recommendations as the batch cleanup strategy",
-      "--action-map <json>          explicit completed-record -> action mapping for batch cleanup",
-      "--override <json>            explicit override object for a single cleanup target",
-      "--apply                      unsupported in this PRD; returns a structured error",
-      "--artifact-registry <file>   artifact evidence registry path (repeatable)",
-      "--json                       emit structured JSON",
+      '--preset <name>              graph traversal preset: family, implementation, review, impact, prd-completion',
+      '--graph                      use graph traversal for docs collect; defaults to the family preset',
+      '--output <file>              PRD markdown scaffold or PRD JSON conversion output path',
+      '--rule <json-file|inline-json> metadata transform rule for dry-run preview',
+      '--dry-run                    preview only; this is the default',
+      '--strict                     fail preview when blocked promotions, session drift, or diagnostics remain',
+      '--evidence-only              count only evidence refs toward promotion support; ignore source/test-only proof',
+      '--all                        apply the cleanup command to every candidate in scope',
+      '--recommended                use review recommendations as the batch cleanup strategy',
+      '--action-map <json>          explicit completed-record -> action mapping for batch cleanup',
+      '--override <json>            explicit override object for a single cleanup target',
+      '--apply                      unsupported in this PRD; returns a structured error',
+      '--artifact-registry <file>   artifact evidence registry path (repeatable)',
+      '--json                       emit structured JSON',
     ],
   },
 ];
 
-const DEFAULT_DOCS_DIRS = ["docs"];
-const DEFAULT_PRD_DIRS = ["tasks"];
-const DEFAULT_ARTIFACT_REGISTRY_PATHS = ["artifacts/programming-artifacts.json"];
+const DEFAULT_DOCS_DIRS = ['docs'];
+const DEFAULT_PRD_DIRS = ['tasks'];
+const DEFAULT_ARTIFACT_REGISTRY_PATHS = ['artifacts/programming-artifacts.json'];
 const GENERIC_TOPIC_TOKENS = new Set([
-  "doc",
-  "docs",
-  "document",
-  "documents",
-  "json",
-  "markdown",
-  "memo",
-  "plan",
-  "prd",
-  "rule",
-  "spec",
-  "task",
-  "tasks",
-  "test",
-  "todo",
+  'doc',
+  'docs',
+  'document',
+  'documents',
+  'json',
+  'markdown',
+  'memo',
+  'plan',
+  'prd',
+  'rule',
+  'spec',
+  'task',
+  'tasks',
+  'test',
+  'todo',
 ]);
 const RESOLUTION_KIND_PRIORITY: Readonly<Record<string, number>> = {
   spec: 0,
@@ -856,33 +873,33 @@ const RESOLUTION_KIND_PRIORITY: Readonly<Record<string, number>> = {
   memo: 4,
   plan: 5,
   todo: 6,
-  "ralph-prd-json": 7,
-  "ralph-session": 8,
-  "activation-evidence": 9,
+  'ralph-prd-json': 7,
+  'ralph-session': 8,
+  'activation-evidence': 9,
 };
 const COLLECT_GRAPH_FLAG_NAMES = new Set([
-  "axis",
-  "filter-axis",
-  "kind",
-  "role",
-  "follow-up-category",
-  "include-archive",
-  "direction",
-  "depth",
-  "limit",
-  "preset",
+  'axis',
+  'filter-axis',
+  'kind',
+  'role',
+  'follow-up-category',
+  'include-archive',
+  'direction',
+  'depth',
+  'limit',
+  'preset',
 ]);
-const STATUS_TRAVERSAL_AXES = ["role", "composition"] as const satisfies readonly TraversalAxis[];
+const STATUS_TRAVERSAL_AXES = ['role', 'composition'] as const satisfies readonly TraversalAxis[];
 const PRD_CONTEXT_TRAVERSAL_AXES = [
-  "role",
-  "dependency",
-  "source",
-  "evidence",
+  'role',
+  'dependency',
+  'source',
+  'evidence',
 ] as const satisfies readonly TraversalAxis[];
 
 export async function cliDocs(args: string[]): Promise<void> {
   const parsed = parseDocsArgs(args);
-  if (parsed.command === "help") {
+  if (parsed.command === 'help') {
     printDocsHelp();
     return;
   }
@@ -890,74 +907,74 @@ export async function cliDocs(args: string[]): Promise<void> {
   const options = runtimeOptions(parsed.flags);
   const documents = await collectAllDocuments(createDocsAdapters(options));
 
-  if (parsed.command === "status") {
+  if (parsed.command === 'status') {
     await cmdStatus(documents, options, parsed.positional[0], parsed.flags);
     return;
   }
 
-  if (parsed.command === "explore") {
+  if (parsed.command === 'explore') {
     await cmdExplore(documents, options, parsed.positional[0], parsed.flags);
     return;
   }
 
-  if (parsed.command === "collect") {
+  if (parsed.command === 'collect') {
     await cmdCollect(documents, options, parsed.positional[0], parsed.flags);
     return;
   }
 
-  if (parsed.command === "closure") {
+  if (parsed.command === 'closure') {
     await cmdClosure(documents, options, parsed.positional[0], parsed.flags);
     return;
   }
 
-  if (parsed.command === "graph") {
+  if (parsed.command === 'graph') {
     await cmdGraph(documents, options, parsed.positional[0], parsed.flags);
     return;
   }
 
-  if (parsed.command === "drift") {
+  if (parsed.command === 'drift') {
     await cmdDrift(documents, options, parsed.flags);
     return;
   }
 
-  if (parsed.command === "cleanup") {
+  if (parsed.command === 'cleanup') {
     await cmdCleanup(documents, options, parsed.positional, parsed.flags);
     return;
   }
 
-  if (parsed.command === "bdd") {
+  if (parsed.command === 'bdd') {
     await cmdBdd(documents, options, parsed.positional, parsed.flags);
     return;
   }
 
-  if (parsed.command === "transform") {
+  if (parsed.command === 'transform') {
     await cmdTransform(documents, options, parsed.positional, parsed.flags);
     return;
   }
 
-  if (parsed.command === "prd") {
+  if (parsed.command === 'prd') {
     await cmdPrd(documents, options, parsed.positional, parsed.flags);
     return;
   }
 
-  await cmdSearch(documents, parsed.positional, parsed.flags, hasFlag(parsed.flags, "json"));
+  await cmdSearch(documents, parsed.positional, parsed.flags, hasFlag(parsed.flags, 'json'));
 }
 
 function parseDocsArgs(args: readonly string[]): ParsedDocsArgs {
   const command = normalizeCommand(args[0]);
-  const rawRest = command === "help" && args[0] !== "help" ? args : args.slice(1);
+  const rawRest = command === 'help' && args[0] !== 'help' ? args : args.slice(1);
   const positional: string[] = [];
   const flags: Record<string, string[]> = {};
 
   for (let index = 0; index < rawRest.length; index += 1) {
     const arg = rawRest[index]!;
-    if (!arg.startsWith("--")) {
+    if (!arg.startsWith('--')) {
       positional.push(arg);
       continue;
     }
 
     const rawFlag = arg.slice(2);
-    const separator = rawFlag.indexOf("=");
+    const separator = rawFlag.indexOf('=');
     const name = separator >= 0 ? rawFlag.slice(0, separator) : rawFlag;
     const inlineValue = separator >= 0 ? rawFlag.slice(separator + 1) : undefined;
     if (!name) continue;
@@ -968,13 +985,13 @@ function parseDocsArgs(args: readonly string[]): ParsedDocsArgs {
     }
 
     const next = rawRest[index + 1];
-    if (next && !next.startsWith("--")) {
+    if (next && !next.startsWith('--')) {
       addFlag(flags, name, next);
       index += 1;
       continue;
     }
 
-    addFlag(flags, name, "true");
+    addFlag(flags, name, 'true');
   }
 
   return { command, positional, flags };
@@ -982,22 +999,22 @@ function parseDocsArgs(args: readonly string[]): ParsedDocsArgs {
 
 function normalizeCommand(value: string | undefined): DocsCommand {
   if (
-    value === "status"
-    || value === "explore"
-    || value === "collect"
-    || value === "closure"
-    || value === "search"
-    || value === "help"
-    || value === "drift"
-    || value === "cleanup"
-    || value === "bdd"
-    || value === "transform"
-    || value === "prd"
-    || value === "graph"
+    value === 'status' ||
+    value === 'explore' ||
+    value === 'collect' ||
+    value === 'closure' ||
+    value === 'search' ||
+    value === 'help' ||
+    value === 'drift' ||
+    value === 'cleanup' ||
+    value === 'bdd' ||
+    value === 'transform' ||
+    value === 'prd' ||
+    value === 'graph'
   ) {
     return value;
   }
-  return "help";
+  return 'help';
 }
 
 async function cmdCleanup(
@@ -1006,25 +1023,39 @@ async function cmdCleanup(
   positional: readonly string[],
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   const action = positional[0];
-  const target = positional.slice(1).join(" ").trim();
-  const batchAll = hasFlag(flags, "all");
-  const recommended = hasFlag(flags, "recommended");
+  const target = positional.slice(1).join(' ').trim();
+  const batchAll = hasFlag(flags, 'all');
+  const recommended = hasFlag(flags, 'recommended');
 
-  if (action !== "review" && action !== "plan" && action !== "apply") {
-    console.error("Usage: qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]");
-    console.error("Usage: qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]");
-    console.error("Usage: qa-sdk docs cleanup plan --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--dry-run] [--json]");
-    console.error("Usage: qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--json]");
-    console.error("Usage: qa-sdk docs cleanup apply --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--json]");
+  if (action !== 'review' && action !== 'plan' && action !== 'apply') {
+    console.error(
+      'Usage: qa-sdk docs cleanup review [doc-id|path] [--prd <file>] [--family-only] [--include-session] [--json]',
+    );
+    console.error(
+      'Usage: qa-sdk docs cleanup plan <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--dry-run] [--json]',
+    );
+    console.error(
+      'Usage: qa-sdk docs cleanup plan --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--dry-run] [--json]',
+    );
+    console.error(
+      'Usage: qa-sdk docs cleanup apply <record-path|doc-id|paired-path> --action archive|memo-conversion|promote-spec|rewrite [--override <json-file|inline-json>] [--json]',
+    );
+    console.error(
+      'Usage: qa-sdk docs cleanup apply --all (--recommended | --action-map <json-file|inline-json>) [doc-id|path|--prd <file>] [--json]',
+    );
     process.exitCode = 1;
     return;
   }
 
-  if (action === "plan") {
+  if (action === 'plan') {
     if (batchAll) {
-      const strategy = await resolveCleanupBatchStrategy(options.rootDir, flags, "docs.cleanup.plan");
+      const strategy = await resolveCleanupBatchStrategy(
+        options.rootDir,
+        flags,
+        'docs.cleanup.plan',
+      );
       if (isStructuredDocsError(strategy)) {
         printStructuredError(strategy, json);
         process.exitCode = 1;
@@ -1033,8 +1064,8 @@ async function cmdCleanup(
       const result = await buildCleanupBatchPlanResult(documents, options.rootDir, {
         target: target || undefined,
         prdPath: options.prdPath,
-        includeTransient: hasFlag(flags, "include-session"),
-        dryRunDefaulted: !hasFlag(flags, "dry-run"),
+        includeTransient: hasFlag(flags, 'include-session'),
+        dryRunDefaulted: !hasFlag(flags, 'dry-run'),
         strategy,
       });
       if (isStructuredDocsError(result)) {
@@ -1050,45 +1081,64 @@ async function cmdCleanup(
       return;
     }
 
-    if (hasFlag(flags, "apply")) {
-      printStructuredError({
-        error: {
-          code: "unsupported-operation",
-          operation: "docs.cleanup.plan.apply",
-          message: "docs cleanup plan is dry-run only until an explicit write workflow is approved.",
-          remediation: "Run docs cleanup plan with --dry-run, review the planned paths and validations, and keep writes in a separate explicit workflow.",
+    if (hasFlag(flags, 'apply')) {
+      printStructuredError(
+        {
+          error: {
+            code: 'unsupported-operation',
+            operation: 'docs.cleanup.plan.apply',
+            message:
+              'docs cleanup plan is dry-run only until an explicit write workflow is approved.',
+            remediation:
+              'Run docs cleanup plan with --dry-run, review the planned paths and validations, and keep writes in a separate explicit workflow.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
 
     const cleanupAction = parseCleanupPlanAction(flags);
     if (!cleanupAction) {
-      printStructuredError({
-        error: {
-          code: "missing-required-option",
-          operation: "docs.cleanup.plan",
-          message: "docs cleanup plan requires --action archive|memo-conversion|promote-spec|rewrite.",
-          remediation: "Choose one explicit cleanup action with --action archive, --action memo-conversion, --action promote-spec, or --action rewrite.",
+      printStructuredError(
+        {
+          error: {
+            code: 'missing-required-option',
+            operation: 'docs.cleanup.plan',
+            message:
+              'docs cleanup plan requires --action archive|memo-conversion|promote-spec|rewrite.',
+            remediation:
+              'Choose one explicit cleanup action with --action archive, --action memo-conversion, --action promote-spec, or --action rewrite.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
     if (!target) {
-      printStructuredError({
-        error: {
-          code: "missing-required-option",
-          operation: "docs.cleanup.plan",
-          message: "docs cleanup plan requires a completed record target path, document id, or paired PRD JSON path.",
-          remediation: "Pass the completed record path/document id as a positional argument, e.g. docs cleanup plan tasks/example-prd.md --action archive.",
+      printStructuredError(
+        {
+          error: {
+            code: 'missing-required-option',
+            operation: 'docs.cleanup.plan',
+            message:
+              'docs cleanup plan requires a completed record target path, document id, or paired PRD JSON path.',
+            remediation:
+              'Pass the completed record path/document id as a positional argument, e.g. docs cleanup plan tasks/example-prd.md --action archive.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
-    const override = await loadCleanupOverride(options.rootDir, pickLast(flags, "override"), cleanupAction);
+    const override = await loadCleanupOverride(
+      options.rootDir,
+      pickLast(flags, 'override'),
+      cleanupAction,
+    );
     if (isStructuredDocsError(override)) {
       printStructuredError(override, json);
       process.exitCode = 1;
@@ -1098,7 +1148,7 @@ async function cmdCleanup(
     const result = await buildCleanupPlanResult(documents, options.rootDir, {
       target,
       action: cleanupAction,
-      dryRunDefaulted: !hasFlag(flags, "dry-run"),
+      dryRunDefaulted: !hasFlag(flags, 'dry-run'),
       ...(override ? { overrides: override } : {}),
     });
     if (isStructuredDocsError(result)) {
@@ -1115,9 +1165,13 @@ async function cmdCleanup(
     return;
   }
 
-  if (action === "apply") {
+  if (action === 'apply') {
     if (batchAll) {
-      const strategy = await resolveCleanupBatchStrategy(options.rootDir, flags, "docs.cleanup.apply");
+      const strategy = await resolveCleanupBatchStrategy(
+        options.rootDir,
+        flags,
+        'docs.cleanup.apply',
+      );
       if (isStructuredDocsError(strategy)) {
         printStructuredError(strategy, json);
         process.exitCode = 1;
@@ -1126,7 +1180,7 @@ async function cmdCleanup(
       const result = await buildCleanupBatchApplyResult(documents, options.rootDir, {
         target: target || undefined,
         prdPath: options.prdPath,
-        includeTransient: hasFlag(flags, "include-session"),
+        includeTransient: hasFlag(flags, 'include-session'),
         strategy,
       });
       if (isStructuredDocsError(result)) {
@@ -1144,30 +1198,44 @@ async function cmdCleanup(
 
     const cleanupAction = parseCleanupPlanAction(flags);
     if (!cleanupAction) {
-      printStructuredError({
-        error: {
-          code: "missing-required-option",
-          operation: "docs.cleanup.apply",
-          message: "docs cleanup apply requires --action archive|memo-conversion|promote-spec|rewrite.",
-          remediation: "Choose one explicit cleanup action with --action archive, --action memo-conversion, --action promote-spec, or --action rewrite. Use --all --recommended for batch cleanup.",
+      printStructuredError(
+        {
+          error: {
+            code: 'missing-required-option',
+            operation: 'docs.cleanup.apply',
+            message:
+              'docs cleanup apply requires --action archive|memo-conversion|promote-spec|rewrite.',
+            remediation:
+              'Choose one explicit cleanup action with --action archive, --action memo-conversion, --action promote-spec, or --action rewrite. Use --all --recommended for batch cleanup.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
     if (!target) {
-      printStructuredError({
-        error: {
-          code: "missing-required-option",
-          operation: "docs.cleanup.apply",
-          message: "docs cleanup apply requires a completed record target path, document id, or paired PRD JSON path.",
-          remediation: "Pass the completed record path/document id as a positional argument, e.g. docs cleanup apply tasks/example-prd.md --action archive.",
+      printStructuredError(
+        {
+          error: {
+            code: 'missing-required-option',
+            operation: 'docs.cleanup.apply',
+            message:
+              'docs cleanup apply requires a completed record target path, document id, or paired PRD JSON path.',
+            remediation:
+              'Pass the completed record path/document id as a positional argument, e.g. docs cleanup apply tasks/example-prd.md --action archive.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
-    const override = await loadCleanupOverride(options.rootDir, pickLast(flags, "override"), cleanupAction);
+    const override = await loadCleanupOverride(
+      options.rootDir,
+      pickLast(flags, 'override'),
+      cleanupAction,
+    );
     if (isStructuredDocsError(override)) {
       printStructuredError(override, json);
       process.exitCode = 1;
@@ -1194,14 +1262,18 @@ async function cmdCleanup(
   }
 
   if (target && options.prdPath) {
-    printStructuredError({
-      error: {
-        code: "ambiguous-cleanup-target",
-        operation: "docs.cleanup.review",
-        message: "docs cleanup review accepts either a positional target or --prd, not both.",
-        remediation: "Use a positional doc-id/path for family cleanup, or use --prd to scope cleanup review to one PRD family.",
+    printStructuredError(
+      {
+        error: {
+          code: 'ambiguous-cleanup-target',
+          operation: 'docs.cleanup.review',
+          message: 'docs cleanup review accepts either a positional target or --prd, not both.',
+          remediation:
+            'Use a positional doc-id/path for family cleanup, or use --prd to scope cleanup review to one PRD family.',
+        },
       },
-    }, json);
+      json,
+    );
     process.exitCode = 1;
     return;
   }
@@ -1209,7 +1281,7 @@ async function cmdCleanup(
   const result = await buildCleanupReviewResult(documents, options.rootDir, {
     target: target || undefined,
     prdPath: options.prdPath,
-    includeTransient: hasFlag(flags, "include-session"),
+    includeTransient: hasFlag(flags, 'include-session'),
   });
   if (isStructuredDocsError(result)) {
     printStructuredError(result, json);
@@ -1227,8 +1299,14 @@ async function cmdCleanup(
 function parseCleanupPlanAction(
   flags: Readonly<Record<string, readonly string[]>>,
 ): CompletedRecordCleanupPlanAction | null {
-  const action = pickLast(flags, "action");
-  if (action === "archive" || action === "memo-conversion" || action === "promote-spec" || action === "rewrite") return action;
+  const action = pickLast(flags, 'action');
+  if (
+    action === 'archive' ||
+    action === 'memo-conversion' ||
+    action === 'promote-spec' ||
+    action === 'rewrite'
+  )
+    return action;
   return null;
 }
 
@@ -1237,26 +1315,27 @@ async function resolveCleanupBatchStrategy(
   flags: Readonly<Record<string, readonly string[]>>,
   operation: string,
 ): Promise<CleanupBatchStrategySelection | StructuredDocsError> {
-  const recommended = hasFlag(flags, "recommended");
-  const actionMap = pickLast(flags, "action-map");
+  const recommended = hasFlag(flags, 'recommended');
+  const actionMap = pickLast(flags, 'action-map');
   if (recommended === Boolean(actionMap)) {
     return {
       error: {
-        code: "missing-required-option",
+        code: 'missing-required-option',
         operation,
         message: `${operation} --all requires exactly one strategy: --recommended or --action-map <json-file|inline-json>.`,
-        remediation: "Choose either --recommended for recommendation-driven cleanup, or --action-map with an explicit record-to-action mapping.",
+        remediation:
+          'Choose either --recommended for recommendation-driven cleanup, or --action-map with an explicit record-to-action mapping.',
       },
     };
   }
   if (recommended) {
-    return { strategy: "recommended" };
+    return { strategy: 'recommended' };
   }
 
   const loaded = await loadCleanupActionMap(rootDir, actionMap!);
   if (isStructuredDocsError(loaded)) return loaded;
   return {
-    strategy: "action-map",
+    strategy: 'action-map',
     actionMap: loaded.actionMap,
     actionMapSource: loaded.source,
   };
@@ -1265,23 +1344,38 @@ async function resolveCleanupBatchStrategy(
 async function loadCleanupActionMap(
   rootDir: string,
   rawValue: string,
-): Promise<{ readonly source: string; readonly actionMap: Readonly<Record<string, { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides }>> } | StructuredDocsError> {
+): Promise<
+  | {
+      readonly source: string;
+      readonly actionMap: Readonly<
+        Record<
+          string,
+          {
+            readonly action: CompletedRecordCleanupPlanAction;
+            readonly overrides?: CompletedRecordCleanupPathOverrides;
+          }
+        >
+      >;
+    }
+  | StructuredDocsError
+> {
   const trimmed = rawValue.trim();
-  const source = trimmed.startsWith("{") ? "inline-json" : trimmed;
+  const source = trimmed.startsWith('{') ? 'inline-json' : trimmed;
   let content = trimmed;
-  if (!trimmed.startsWith("{")) {
+  if (!trimmed.startsWith('{')) {
     const fullPath = isAbsolute(trimmed) ? trimmed : join(rootDir, trimmed);
     if (!existsSync(fullPath)) {
       return {
         error: {
-          code: "cleanup-action-map-not-found",
-          operation: "docs.cleanup",
+          code: 'cleanup-action-map-not-found',
+          operation: 'docs.cleanup',
           message: `Cleanup action-map file not found: ${trimmed}.`,
-          remediation: "Pass --action-map with an existing JSON file path or an inline JSON object.",
+          remediation:
+            'Pass --action-map with an existing JSON file path or an inline JSON object.',
         },
       };
     }
-    content = await readFile(fullPath, "utf8");
+    content = await readFile(fullPath, 'utf8');
   }
 
   let parsed: unknown;
@@ -1290,34 +1384,39 @@ async function loadCleanupActionMap(
   } catch (error) {
     return {
       error: {
-        code: "cleanup-action-map-invalid-json",
-        operation: "docs.cleanup",
+        code: 'cleanup-action-map-invalid-json',
+        operation: 'docs.cleanup',
         message: `Cleanup action-map is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
-        remediation: "Use a JSON object mapping completed record identifiers to archive|memo-conversion|promote-spec|rewrite.",
+        remediation:
+          'Use a JSON object mapping completed record identifiers to archive|memo-conversion|promote-spec|rewrite.',
       },
     };
   }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return {
       error: {
-        code: "cleanup-action-map-invalid-shape",
-        operation: "docs.cleanup",
-        message: "Cleanup action-map must be a JSON object.",
-        remediation: "Use a JSON object like {\"tasks/example-prd.md\":\"memo-conversion\"}.",
+        code: 'cleanup-action-map-invalid-shape',
+        operation: 'docs.cleanup',
+        message: 'Cleanup action-map must be a JSON object.',
+        remediation: 'Use a JSON object like {"tasks/example-prd.md":"memo-conversion"}.',
       },
     };
   }
 
-  const actionMap: Record<string, { action: CompletedRecordCleanupPlanAction; overrides?: CompletedRecordCleanupPathOverrides }> = {};
+  const actionMap: Record<
+    string,
+    { action: CompletedRecordCleanupPlanAction; overrides?: CompletedRecordCleanupPathOverrides }
+  > = {};
   for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
     const normalizedKey = key.trim();
     if (!normalizedKey) {
       return {
         error: {
-          code: "cleanup-action-map-invalid-key",
-          operation: "docs.cleanup",
-          message: "Cleanup action-map keys must be non-empty strings.",
-          remediation: "Use record paths, document ids, or paired PRD JSON paths as action-map keys.",
+          code: 'cleanup-action-map-invalid-key',
+          operation: 'docs.cleanup',
+          message: 'Cleanup action-map keys must be non-empty strings.',
+          remediation:
+            'Use record paths, document ids, or paired PRD JSON paths as action-map keys.',
         },
       };
     }
@@ -1339,21 +1438,21 @@ async function loadCleanupOverride(
 ): Promise<CompletedRecordCleanupPathOverrides | StructuredDocsError | null> {
   if (!rawValue) return null;
   const trimmed = rawValue.trim();
-  const source = trimmed.startsWith("{") ? "inline-json" : trimmed;
+  const source = trimmed.startsWith('{') ? 'inline-json' : trimmed;
   let content = trimmed;
-  if (!trimmed.startsWith("{")) {
+  if (!trimmed.startsWith('{')) {
     const fullPath = isAbsolute(trimmed) ? trimmed : join(rootDir, trimmed);
     if (!existsSync(fullPath)) {
       return {
         error: {
-          code: "cleanup-override-not-found",
-          operation: "docs.cleanup",
+          code: 'cleanup-override-not-found',
+          operation: 'docs.cleanup',
           message: `Cleanup override file not found: ${trimmed}.`,
-          remediation: "Pass --override with an existing JSON file path or an inline JSON object.",
+          remediation: 'Pass --override with an existing JSON file path or an inline JSON object.',
         },
       };
     }
-    content = await readFile(fullPath, "utf8");
+    content = await readFile(fullPath, 'utf8');
   }
 
   let parsed: unknown;
@@ -1362,94 +1461,120 @@ async function loadCleanupOverride(
   } catch (error) {
     return {
       error: {
-        code: "cleanup-override-invalid-json",
-        operation: "docs.cleanup",
+        code: 'cleanup-override-invalid-json',
+        operation: 'docs.cleanup',
         message: `Cleanup override is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
-        remediation: "Use a JSON object like {\"outputPath\":\"docs/archive/example.md\"}.",
+        remediation: 'Use a JSON object like {"outputPath":"docs/archive/example.md"}.',
       },
     };
   }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return {
       error: {
-        code: "cleanup-override-invalid-shape",
-        operation: "docs.cleanup",
-        message: "Single-target cleanup override must be a JSON object.",
-        remediation: "Pass --override with one inline JSON object or file that contains one cleanup override definition.",
+        code: 'cleanup-override-invalid-shape',
+        operation: 'docs.cleanup',
+        message: 'Single-target cleanup override must be a JSON object.',
+        remediation:
+          'Pass --override with one inline JSON object or file that contains one cleanup override definition.',
       },
     };
   }
   const entry = normalizeCleanupActionMapEntry(
-    "__override__",
+    '__override__',
     isRecordWithAction(parsed) ? parsed : { action, ...(parsed as Record<string, unknown>) },
   );
   if (isStructuredDocsError(entry)) return entry;
   if (entry.action !== action) {
     return {
       error: {
-        code: "cleanup-override-action-mismatch",
-        operation: "docs.cleanup",
+        code: 'cleanup-override-action-mismatch',
+        operation: 'docs.cleanup',
         message: `Single-target cleanup override action ${entry.action} does not match --action ${action}.`,
-        remediation: "Keep --action and the override entry action aligned, or omit action from the override and use --action as the source of truth.",
+        remediation:
+          'Keep --action and the override entry action aligned, or omit action from the override and use --action as the source of truth.',
       },
     };
   }
   return entry.overrides ?? {};
 }
 
-function isRecordWithAction(value: unknown): value is Record<string, unknown> & { action: unknown } {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value) && "action" in value);
+function isRecordWithAction(
+  value: unknown,
+): value is Record<string, unknown> & { action: unknown } {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value) && 'action' in value);
 }
 
 function normalizeCleanupActionMapEntry(
   key: string,
   value: unknown,
-): { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides } | StructuredDocsError {
-  if (value === "archive" || value === "memo-conversion" || value === "promote-spec" || value === "rewrite") {
+):
+  | {
+      readonly action: CompletedRecordCleanupPlanAction;
+      readonly overrides?: CompletedRecordCleanupPathOverrides;
+    }
+  | StructuredDocsError {
+  if (
+    value === 'archive' ||
+    value === 'memo-conversion' ||
+    value === 'promote-spec' ||
+    value === 'rewrite'
+  ) {
     return { action: value };
   }
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {
       error: {
-        code: "cleanup-action-map-invalid-action",
-        operation: "docs.cleanup",
+        code: 'cleanup-action-map-invalid-action',
+        operation: 'docs.cleanup',
         message: `Cleanup action-map entry ${key} has unsupported action ${String(value)}.`,
-        remediation: "Use archive, memo-conversion, promote-spec, rewrite, or an object like {\"action\":\"archive\",\"outputPath\":\"...\"}.",
+        remediation:
+          'Use archive, memo-conversion, promote-spec, rewrite, or an object like {"action":"archive","outputPath":"..."}.',
       },
     };
   }
   const record = value as Record<string, unknown>;
   const action = record.action;
-  if (action !== "archive" && action !== "memo-conversion" && action !== "promote-spec" && action !== "rewrite") {
+  if (
+    action !== 'archive' &&
+    action !== 'memo-conversion' &&
+    action !== 'promote-spec' &&
+    action !== 'rewrite'
+  ) {
     return {
       error: {
-        code: "cleanup-action-map-invalid-action",
-        operation: "docs.cleanup",
+        code: 'cleanup-action-map-invalid-action',
+        operation: 'docs.cleanup',
         message: `Cleanup action-map entry ${key} has unsupported action ${String(action)}.`,
-        remediation: "Use only archive, memo-conversion, promote-spec, or rewrite as cleanup actions.",
+        remediation:
+          'Use only archive, memo-conversion, promote-spec, or rewrite as cleanup actions.',
       },
     };
   }
-  const frontmatterPatch = record.frontmatterPatch && typeof record.frontmatterPatch === "object" && !Array.isArray(record.frontmatterPatch)
-    ? normalizeCleanupFrontmatterPatch(key, record.frontmatterPatch as Record<string, unknown>)
-    : null;
+  const frontmatterPatch =
+    record.frontmatterPatch &&
+    typeof record.frontmatterPatch === 'object' &&
+    !Array.isArray(record.frontmatterPatch)
+      ? normalizeCleanupFrontmatterPatch(key, record.frontmatterPatch as Record<string, unknown>)
+      : null;
   if (frontmatterPatch && isStructuredDocsError(frontmatterPatch)) {
     return frontmatterPatch;
   }
   const overrides: CompletedRecordCleanupPathOverrides = {
-    ...(typeof record.outputPath === "string" && record.outputPath.trim().length > 0
+    ...(typeof record.outputPath === 'string' && record.outputPath.trim().length > 0
       ? { outputPath: record.outputPath.trim() }
       : {}),
-    ...(typeof record.secondaryOutputPath === "string" && record.secondaryOutputPath.trim().length > 0
+    ...(typeof record.secondaryOutputPath === 'string' &&
+    record.secondaryOutputPath.trim().length > 0
       ? { secondaryOutputPath: record.secondaryOutputPath.trim() }
       : {}),
-    ...(typeof record.assimilationTargetPath === "string" && record.assimilationTargetPath.trim().length > 0
+    ...(typeof record.assimilationTargetPath === 'string' &&
+    record.assimilationTargetPath.trim().length > 0
       ? { assimilationTargetPath: record.assimilationTargetPath.trim() }
       : {}),
-    ...(typeof record.appendMarkdown === "string" && record.appendMarkdown.trim().length > 0
+    ...(typeof record.appendMarkdown === 'string' && record.appendMarkdown.trim().length > 0
       ? { appendMarkdown: record.appendMarkdown }
       : {}),
-    ...(typeof record.bodyTemplate === "string" && record.bodyTemplate.trim().length > 0
+    ...(typeof record.bodyTemplate === 'string' && record.bodyTemplate.trim().length > 0
       ? { bodyTemplate: record.bodyTemplate }
       : {}),
     ...(frontmatterPatch ? frontmatterPatch : {}),
@@ -1463,7 +1588,16 @@ function normalizeCleanupActionMapEntry(
 function normalizeCleanupFrontmatterPatch(
   key: string,
   value: Record<string, unknown>,
-): { readonly frontmatterPatch: { readonly lifecycle?: string; readonly svc?: string; readonly tags?: readonly string[]; readonly links?: readonly { readonly target: string; readonly type: string }[] } } | StructuredDocsError {
+):
+  | {
+      readonly frontmatterPatch: {
+        readonly lifecycle?: string;
+        readonly svc?: string;
+        readonly tags?: readonly string[];
+        readonly links?: readonly { readonly target: string; readonly type: string }[];
+      };
+    }
+  | StructuredDocsError {
   const patch: {
     level?: string;
     scope?: string;
@@ -1477,62 +1611,65 @@ function normalizeCleanupFrontmatterPatch(
   } = {};
   for (const field of Object.keys(value)) {
     if (
-      field !== "level" &&
-      field !== "scope" &&
-      field !== "aspect" &&
-      field !== "depth" &&
-      field !== "layer" &&
-      field !== "lifecycle" &&
-      field !== "svc" &&
-      field !== "tags" &&
-      field !== "links"
+      field !== 'level' &&
+      field !== 'scope' &&
+      field !== 'aspect' &&
+      field !== 'depth' &&
+      field !== 'layer' &&
+      field !== 'lifecycle' &&
+      field !== 'svc' &&
+      field !== 'tags' &&
+      field !== 'links'
     ) {
       return {
         error: {
-          code: "cleanup-action-map-invalid-frontmatter-patch",
-          operation: "docs.cleanup",
+          code: 'cleanup-action-map-invalid-frontmatter-patch',
+          operation: 'docs.cleanup',
           message: `Cleanup action-map entry ${key} has unsupported frontmatterPatch field ${field}.`,
-          remediation: "Use only level, scope, aspect, depth, layer, lifecycle, svc, tags, or links in frontmatterPatch.",
+          remediation:
+            'Use only level, scope, aspect, depth, layer, lifecycle, svc, tags, or links in frontmatterPatch.',
         },
       };
     }
   }
-  if (typeof value.level === "string" && value.level.trim().length > 0) {
+  if (typeof value.level === 'string' && value.level.trim().length > 0) {
     patch.level = value.level.trim();
   }
-  if (typeof value.scope === "string" && value.scope.trim().length > 0) {
+  if (typeof value.scope === 'string' && value.scope.trim().length > 0) {
     patch.scope = value.scope.trim();
   }
-  if (typeof value.aspect === "string" && value.aspect.trim().length > 0) {
+  if (typeof value.aspect === 'string' && value.aspect.trim().length > 0) {
     patch.aspect = value.aspect.trim();
   }
-  if (typeof value.depth === "string" && value.depth.trim().length > 0) {
+  if (typeof value.depth === 'string' && value.depth.trim().length > 0) {
     patch.depth = value.depth.trim();
   }
-  if (typeof value.layer === "string" && value.layer.trim().length > 0) {
+  if (typeof value.layer === 'string' && value.layer.trim().length > 0) {
     patch.layer = value.layer.trim();
   }
-  if (typeof value.lifecycle === "string" && value.lifecycle.trim().length > 0) {
+  if (typeof value.lifecycle === 'string' && value.lifecycle.trim().length > 0) {
     patch.lifecycle = value.lifecycle.trim();
   }
-  if (typeof value.svc === "string" && value.svc.trim().length > 0) {
+  if (typeof value.svc === 'string' && value.svc.trim().length > 0) {
     patch.svc = value.svc.trim();
   }
   if (Array.isArray(value.tags)) {
     patch.tags = value.tags
-      .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
       .map((item) => item.trim());
   }
   if (Array.isArray(value.links)) {
-    const links = value.links.map((item) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
-      const record = item as Record<string, unknown>;
-      const targetValue = record.target;
-      const typeValue = record.type;
-      const target = typeof targetValue === "string" ? targetValue.trim() : "";
-      const type = typeof typeValue === "string" ? typeValue.trim() : "";
-      return target && type ? { target, type } : null;
-    }).filter((item): item is { target: string; type: string } => item !== null);
+    const links = value.links
+      .map((item) => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+        const record = item as Record<string, unknown>;
+        const targetValue = record.target;
+        const typeValue = record.type;
+        const target = typeof targetValue === 'string' ? targetValue.trim() : '';
+        const type = typeof typeValue === 'string' ? typeValue.trim() : '';
+        return target && type ? { target, type } : null;
+      })
+      .filter((item): item is { target: string; type: string } => item !== null);
     patch.links = links;
   }
   return Object.keys(patch).length > 0 ? { frontmatterPatch: patch } : { frontmatterPatch: {} };
@@ -1544,24 +1681,26 @@ async function cmdBdd(
   positional: readonly string[],
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   const action = positional[0];
-  const target = positional.slice(1).join(" ").trim();
+  const target = positional.slice(1).join(' ').trim();
 
   if (
-    action !== "list" &&
-    action !== "validate" &&
-    action !== "units" &&
-    action !== "compile" &&
-    action !== "test-plan" &&
-    action !== "impl-plan"
+    action !== 'list' &&
+    action !== 'validate' &&
+    action !== 'units' &&
+    action !== 'compile' &&
+    action !== 'test-plan' &&
+    action !== 'impl-plan'
   ) {
-    console.error("Usage: qa-sdk docs bdd list <doc-id|path> [--family-only] [--json]");
-    console.error("Usage: qa-sdk docs bdd validate <doc-id|path> [--family-only] [--json]");
-    console.error("Usage: qa-sdk docs bdd units <doc-id|path> [--family-only] [--json]");
-    console.error("Usage: qa-sdk docs bdd compile <doc-id|path> [--format scenario|pipe|both] [--family-only] [--json]");
-    console.error("Usage: qa-sdk docs bdd test-plan <doc-id|path> [--family-only] [--json]");
-    console.error("Usage: qa-sdk docs bdd impl-plan <doc-id|path> [--family-only] [--json]");
+    console.error('Usage: qa-sdk docs bdd list <doc-id|path> [--family-only] [--json]');
+    console.error('Usage: qa-sdk docs bdd validate <doc-id|path> [--family-only] [--json]');
+    console.error('Usage: qa-sdk docs bdd units <doc-id|path> [--family-only] [--json]');
+    console.error(
+      'Usage: qa-sdk docs bdd compile <doc-id|path> [--format scenario|pipe|both] [--family-only] [--json]',
+    );
+    console.error('Usage: qa-sdk docs bdd test-plan <doc-id|path> [--family-only] [--json]');
+    console.error('Usage: qa-sdk docs bdd impl-plan <doc-id|path> [--family-only] [--json]');
     process.exitCode = 1;
     return;
   }
@@ -1573,13 +1712,13 @@ async function cmdBdd(
   }
 
   const scope = collectBddScope(documents, target, scopeOptionsFromFlags(flags));
-  if ("error" in scope) {
+  if ('error' in scope) {
     printStructuredError(scope, json);
     process.exitCode = 1;
     return;
   }
 
-  if (action === "list") {
+  if (action === 'list') {
     const result = buildBddListResult(target, scope);
     if (json) {
       printJson(result);
@@ -1589,7 +1728,7 @@ async function cmdBdd(
     return;
   }
 
-  if (action === "validate") {
+  if (action === 'validate') {
     const result = buildBddValidateResult(target, scope);
     if (!result.passed) process.exitCode = 1;
     if (json) {
@@ -1600,7 +1739,7 @@ async function cmdBdd(
     return;
   }
 
-  if (action === "compile") {
+  if (action === 'compile') {
     const format = parseBddCompileFormat(flags);
     if (isStructuredDocsError(format)) {
       printStructuredError(format, json);
@@ -1608,7 +1747,7 @@ async function cmdBdd(
       return;
     }
     const compileResult = buildBddCompileResult(target, scope, format);
-    if (compileResult.issues.some((issue) => issue.severity === "error")) {
+    if (compileResult.issues.some((issue) => issue.severity === 'error')) {
       process.exitCode = 1;
     }
     if (json) {
@@ -1619,7 +1758,7 @@ async function cmdBdd(
     return;
   }
 
-  if (action === "test-plan") {
+  if (action === 'test-plan') {
     const result = buildBddTestPlanResult(target, scope);
     if (json) {
       printJson(result);
@@ -1629,7 +1768,7 @@ async function cmdBdd(
     return;
   }
 
-  if (action === "impl-plan") {
+  if (action === 'impl-plan') {
     const result = buildBddImplementationPlanResult(target, scope);
     if (json) {
       printJson(result);
@@ -1652,15 +1791,18 @@ function collectBddScope(
   documents: readonly DocumentEnvelope[],
   target: string,
   scopeOptions: DocumentCommandScopeOptions,
-): { readonly documents: readonly DocumentEnvelope[]; readonly familyOnly: boolean } | StructuredDocsError {
+):
+  | { readonly documents: readonly DocumentEnvelope[]; readonly familyOnly: boolean }
+  | StructuredDocsError {
   const resolved = resolveDocument(documents, target);
   if (!resolved) {
     return {
       error: {
-        code: "bdd-target-not-found",
-        operation: "docs.bdd",
+        code: 'bdd-target-not-found',
+        operation: 'docs.bdd',
         message: `Could not resolve BDD target: ${target}`,
-        remediation: "Pass a document id, stable id, family id, or repository path for a .cases.md/.test.md document.",
+        remediation:
+          'Pass a document id, stable id, family id, or repository path for a .cases.md/.test.md document.',
       },
     };
   }
@@ -1673,7 +1815,7 @@ function collectBddScope(
   const scope = collectFamilyOnlyScope(documents, resolved, scopeOptions, {
     target: statusTraversalTarget(target, resolved),
     axes: STATUS_TRAVERSAL_AXES,
-    direction: "both",
+    direction: 'both',
     depth: 1,
     includeContext: false,
   });
@@ -1697,7 +1839,7 @@ function buildBddListResult(
         contractKind: contract.contractKind,
         mode: contract.mode,
         sourcePath: document.path,
-      }))
+      })),
     ),
   };
 }
@@ -1707,17 +1849,43 @@ function buildBddValidateResult(
   scope: { readonly documents: readonly DocumentEnvelope[]; readonly familyOnly: boolean },
 ): BddValidateResult {
   const metadataIssues = scope.documents.flatMap((document) =>
-    bddMetadata(document).diagnostics.map((issue) => (Object.assign({severity:issue.severity,code:issue.code,message:issue.message,sourcePath:issue.sourcePath,pointer:issue.pointer}, issue.contractId?{contractId:issue.contractId}:{}, issue.metadata?{metadata:issue.metadata}:{})))
+    bddMetadata(document).diagnostics.map((issue) =>
+      Object.assign(
+        {
+          severity: issue.severity,
+          code: issue.code,
+          message: issue.message,
+          sourcePath: issue.sourcePath,
+          pointer: issue.pointer,
+        },
+        issue.contractId ? { contractId: issue.contractId } : {},
+        issue.metadata ? { metadata: issue.metadata } : {},
+      ),
+    ),
   );
-  const scopeIssues = validateBddDocumentSet(scope.documents.map((document) => ({
-    sourcePath: document.path,
-    bdd: bddMetadata(document),
-  }))).map((issue) => (Object.assign({severity:issue.severity,code:issue.code,message:issue.message,sourcePath:issue.sourcePath,pointer:issue.pointer}, issue.contractId?{contractId:issue.contractId}:{}, issue.metadata?{metadata:issue.metadata}:{})));
+  const scopeIssues = validateBddDocumentSet(
+    scope.documents.map((document) => ({
+      sourcePath: document.path,
+      bdd: bddMetadata(document),
+    })),
+  ).map((issue) =>
+    Object.assign(
+      {
+        severity: issue.severity,
+        code: issue.code,
+        message: issue.message,
+        sourcePath: issue.sourcePath,
+        pointer: issue.pointer,
+      },
+      issue.contractId ? { contractId: issue.contractId } : {},
+      issue.metadata ? { metadata: issue.metadata } : {},
+    ),
+  );
   const issues = [...metadataIssues, ...scopeIssues];
   return {
     target,
     familyOnly: scope.familyOnly,
-    passed: !issues.some((issue) => issue.severity === "error"),
+    passed: !issues.some((issue) => issue.severity === 'error'),
     issues,
   };
 }
@@ -1727,8 +1895,11 @@ function buildBddUnitsResult(
   scope: { readonly documents: readonly DocumentEnvelope[]; readonly familyOnly: boolean },
 ): BddUnitsResult {
   const contracts = new Map<string, BddContractSummary>();
-  const testUnits = new Map<string, BddContractUnitGroup["testUnits"][number][]>();
-  const implementationUnits = new Map<string, BddContractUnitGroup["implementationUnits"][number][]>();
+  const testUnits = new Map<string, BddContractUnitGroup['testUnits'][number][]>();
+  const implementationUnits = new Map<
+    string,
+    BddContractUnitGroup['implementationUnits'][number][]
+  >();
 
   for (const document of scope.documents) {
     const bdd = bddMetadata(document);
@@ -1773,32 +1944,40 @@ function buildBddUnitsResult(
   return {
     target,
     familyOnly: scope.familyOnly,
-    units: contractIds.map((contractId) => (Object.assign({contractId}, contracts.get(contractId)?{contract:contracts.get(contractId)! }:{}, {testUnits:testUnits.get(contractId)??[],implementationUnits:implementationUnits.get(contractId)??[]}))),
+    units: contractIds.map((contractId) =>
+      Object.assign(
+        { contractId },
+        contracts.get(contractId) ? { contract: contracts.get(contractId)! } : {},
+        {
+          testUnits: testUnits.get(contractId) ?? [],
+          implementationUnits: implementationUnits.get(contractId) ?? [],
+        },
+      ),
+    ),
   };
 }
 
 function buildBddCompileResult(
   target: string,
   scope: { readonly documents: readonly DocumentEnvelope[]; readonly familyOnly: boolean },
-  format: BddCompileResult["format"],
+  format: BddCompileResult['format'],
 ): BddCompileResult {
   const contracts = scope.documents.flatMap((document) => bddMetadata(document).contracts);
   const compiled = compileBddContractsToScenarioSpecs(contracts);
-  const pipeCompiled = format === "pipe" || format === "both"
-    ? compileBddContractsToPipeGraphs(contracts)
-    : undefined;
+  const pipeCompiled =
+    format === 'pipe' || format === 'both' ? compileBddContractsToPipeGraphs(contracts) : undefined;
   return {
     target,
     familyOnly: scope.familyOnly,
     format,
-    scenarios: format === "pipe" ? [] : compiled.scenarios,
+    scenarios: format === 'pipe' ? [] : compiled.scenarios,
     ...(pipeCompiled ? { pipeGraphs: pipeCompiled.graphs } : {}),
     issues: [...compiled.issues, ...(pipeCompiled?.issues ?? [])].map((issue) => ({
       severity: issue.severity,
       code: issue.code,
       message: issue.message,
-      sourcePath: "",
-      pointer: "bdd.compile",
+      sourcePath: '',
+      pointer: 'bdd.compile',
       contractId: issue.contractId,
     })),
   };
@@ -1806,15 +1985,15 @@ function buildBddCompileResult(
 
 function parseBddCompileFormat(
   flags: Readonly<Record<string, readonly string[]>>,
-): BddCompileResult["format"] | StructuredDocsError {
-  const raw = pickLast(flags, "format") ?? "scenario";
-  if (raw === "scenario" || raw === "pipe" || raw === "both") return raw;
+): BddCompileResult['format'] | StructuredDocsError {
+  const raw = pickLast(flags, 'format') ?? 'scenario';
+  if (raw === 'scenario' || raw === 'pipe' || raw === 'both') return raw;
   return {
     error: {
-      code: "invalid-bdd-compile-format",
-      operation: "docs.bdd.compile",
+      code: 'invalid-bdd-compile-format',
+      operation: 'docs.bdd.compile',
       message: `Unknown BDD compile format: ${raw}`,
-      remediation: "Use --format scenario, --format pipe, or --format both.",
+      remediation: 'Use --format scenario, --format pipe, or --format both.',
     },
   };
 }
@@ -1840,7 +2019,7 @@ function buildBddTestPlanResult(
   for (const document of scope.documents) {
     for (const unit of bddMetadata(document).testUnits) {
       const contract = contracts.get(unit.contract);
-      const testName = `[contract:${unit.contract}] ${contract?.contractKind ?? "bdd"} ${unit.level}`;
+      const testName = `[contract:${unit.contract}] ${contract?.contractKind ?? 'bdd'} ${unit.level}`;
       tests.push({
         contractId: unit.contract,
         testUnitId: unit.id,
@@ -1864,10 +2043,10 @@ function buildBddImplementationPlanResult(
   target: string,
   scope: { readonly documents: readonly DocumentEnvelope[]; readonly familyOnly: boolean },
 ): BddImplementationPlanResult {
-  const bySource = new Map<string, BddImplementationPlanSource["units"][number][]>();
+  const bySource = new Map<string, BddImplementationPlanSource['units'][number][]>();
   for (const document of scope.documents) {
     for (const unit of bddMetadata(document).implementationUnits) {
-      const sourceTarget = unit.sourceTarget ?? "(unassigned)";
+      const sourceTarget = unit.sourceTarget ?? '(unassigned)';
       const items = bySource.get(sourceTarget) ?? [];
       items.push({
         id: unit.id,
@@ -1895,15 +2074,16 @@ function buildBddImplementationPlanResult(
 }
 
 function buildTestSkeleton(testName: string, assertions: readonly string[]): string {
-  const assertionLines = assertions.length > 0
-    ? assertions.map((assertion) => `  // assert ${assertion}`).join("\n")
-    : "  // add assertions from then.*";
+  const assertionLines =
+    assertions.length > 0
+      ? assertions.map((assertion) => `  // assert ${assertion}`).join('\n')
+      : '  // add assertions from then.*';
   return `it(${JSON.stringify(testName)}, async () => {\n${assertionLines}\n});`;
 }
 
 function bddMetadata(document: DocumentEnvelope): BddDocumentMetadata {
   const raw = document.metadata.bdd;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return {
       contracts: [],
       testUnits: [],
@@ -1916,7 +2096,7 @@ function bddMetadata(document: DocumentEnvelope): BddDocumentMetadata {
 
 function workTopicMetadata(document: DocumentEnvelope): WorkTopicDocumentMetadata {
   const raw = document.metadata.workTopic;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return {
       topics: [],
       diagnostics: [],
@@ -1925,9 +2105,7 @@ function workTopicMetadata(document: DocumentEnvelope): WorkTopicDocumentMetadat
   return raw as unknown as WorkTopicDocumentMetadata;
 }
 
-function summarizeBddDocuments(
-  documents: readonly DocumentEnvelope[],
-): BddSummary | undefined {
+function summarizeBddDocuments(documents: readonly DocumentEnvelope[]): BddSummary | undefined {
   const summary = documents.reduce(
     (acc, document) => {
       const bdd = bddMetadata(document);
@@ -1954,7 +2132,7 @@ function summarizeLifecycle(
   roleCoverage: DocumentRoleMatrix | undefined,
   completedRecords: readonly CompletedRecordState[],
 ): LifecycleSummary | undefined {
-  const artifactRoles = ["plan", "cases", "todo", "test", "spec"] as const;
+  const artifactRoles = ['plan', 'cases', 'todo', 'test', 'spec'] as const;
   const artifactCoverage = artifactRoles.map((role) => {
     const entry = roleCoverage?.roles.find((item) => item.role === role);
     const documentKindPresent = documents.some((document) => document.kind === role);
@@ -1969,37 +2147,41 @@ function summarizeLifecycle(
   });
 
   const bddContracts = new Set(
-    allDocuments.flatMap((document) => bddMetadata(document).contracts.map((contract) => contract.id)),
+    allDocuments.flatMap((document) =>
+      bddMetadata(document).contracts.map((contract) => contract.id),
+    ),
   );
   const lifecycleDiagnostics: LifecycleIssueSummary[] = [];
   const topics: LifecycleTopicSummary[] = [];
 
   for (const document of documents) {
     const workTopic = workTopicMetadata(document);
-    lifecycleDiagnostics.push(...workTopic.diagnostics.map((issue) => ({
-      severity: issue.severity,
-      code: issue.code,
-      message: issue.message,
-      sourcePath: issue.sourcePath,
-      ...(issue.topicId ? { topicId: issue.topicId } : {}),
-    })));
+    lifecycleDiagnostics.push(
+      ...workTopic.diagnostics.map((issue) => ({
+        severity: issue.severity,
+        code: issue.code,
+        message: issue.message,
+        sourcePath: issue.sourcePath,
+        ...(issue.topicId ? { topicId: issue.topicId } : {}),
+      })),
+    );
 
     for (const topic of workTopic.topics) {
       const contractsLinked = topic.contracts.every((contractId) => bddContracts.has(contractId));
       const sourceTargetsPresent = topic.sourceTargets.every((target) =>
-        workTopicTargetExists(rootDir, target)
+        workTopicTargetExists(rootDir, target),
       );
       const proofSurfacePresent = topic.proofSurface.every((target) =>
-        workTopicTargetExists(rootDir, target)
+        workTopicTargetExists(rootDir, target),
       );
       const assimilationTargetPresent = topic.assimilationTarget.every((target) =>
-        workTopicTargetExists(rootDir, target)
+        workTopicTargetExists(rootDir, target),
       );
 
       if (topic.contracts.length === 0) {
         lifecycleDiagnostics.push({
-          severity: "warning",
-          code: "work-topic-missing-contracts",
+          severity: 'warning',
+          code: 'work-topic-missing-contracts',
           message: `work_topic ${topic.id} has no contracts.`,
           sourcePath: document.path,
           topicId: topic.id,
@@ -2007,8 +2189,8 @@ function summarizeLifecycle(
       }
       if (topic.sourceTargets.length === 0) {
         lifecycleDiagnostics.push({
-          severity: "warning",
-          code: "work-topic-missing-source-targets",
+          severity: 'warning',
+          code: 'work-topic-missing-source-targets',
           message: `work_topic ${topic.id} has no source_targets.`,
           sourcePath: document.path,
           topicId: topic.id,
@@ -2016,8 +2198,8 @@ function summarizeLifecycle(
       }
       if (topic.proofSurface.length === 0) {
         lifecycleDiagnostics.push({
-          severity: "warning",
-          code: "work-topic-missing-proof-surface",
+          severity: 'warning',
+          code: 'work-topic-missing-proof-surface',
           message: `work_topic ${topic.id} has no proof_surface.`,
           sourcePath: document.path,
           topicId: topic.id,
@@ -2025,31 +2207,33 @@ function summarizeLifecycle(
       }
       if (topic.assimilationTarget.length === 0) {
         lifecycleDiagnostics.push({
-          severity: "warning",
-          code: "work-topic-missing-assimilation-target",
+          severity: 'warning',
+          code: 'work-topic-missing-assimilation-target',
           message: `work_topic ${topic.id} has no assimilation_target.`,
           sourcePath: document.path,
           topicId: topic.id,
         });
       }
       if (topic.contracts.length > 0 && !contractsLinked) {
-        const missingContracts = topic.contracts.filter((contractId) => !bddContracts.has(contractId));
+        const missingContracts = topic.contracts.filter(
+          (contractId) => !bddContracts.has(contractId),
+        );
         lifecycleDiagnostics.push({
-          severity: "warning",
-          code: "work-topic-contract-unresolved",
-          message: `work_topic ${topic.id} references unresolved contract ids: ${missingContracts.join(", ")}`,
+          severity: 'warning',
+          code: 'work-topic-contract-unresolved',
+          message: `work_topic ${topic.id} references unresolved contract ids: ${missingContracts.join(', ')}`,
           sourcePath: document.path,
           topicId: topic.id,
         });
       }
       if (topic.assimilationTarget.length > 0 && !assimilationTargetPresent) {
-        const missingTargets = topic.assimilationTarget.filter((target) =>
-          !workTopicTargetExists(rootDir, target)
+        const missingTargets = topic.assimilationTarget.filter(
+          (target) => !workTopicTargetExists(rootDir, target),
         );
         lifecycleDiagnostics.push({
-          severity: "warning",
-          code: "work-topic-assimilation-target-missing",
-          message: `work_topic ${topic.id} references missing assimilation target paths: ${missingTargets.join(", ")}`,
+          severity: 'warning',
+          code: 'work-topic-assimilation-target-missing',
+          message: `work_topic ${topic.id} references missing assimilation target paths: ${missingTargets.join(', ')}`,
           sourcePath: document.path,
           topicId: topic.id,
         });
@@ -2084,27 +2268,23 @@ function summarizeLifecycle(
     for (const role of artifactCoverage) {
       if (role.sameFamilyPresent) continue;
       lifecycleDiagnostics.push({
-        severity: "warning",
+        severity: 'warning',
         code: `lifecycle-missing-${role.role}`,
         message: `Lifecycle family is missing same-family ${role.role} authority.`,
-        sourcePath: roleCoverage?.familyId ?? documents[0]?.path ?? "",
+        sourcePath: roleCoverage?.familyId ?? documents[0]?.path ?? '',
       });
     }
   }
 
   const pruneCandidates = completedRecords
-    .filter((record) => record.kind === "todo")
+    .filter((record) => record.kind === 'todo')
     .map((record) => ({
       documentId: record.documentId,
       path: record.path,
       reason: record.reason,
     }));
 
-  if (
-    topics.length === 0
-    && lifecycleDiagnostics.length === 0
-    && pruneCandidates.length === 0
-  ) {
+  if (topics.length === 0 && lifecycleDiagnostics.length === 0 && pruneCandidates.length === 0) {
     return undefined;
   }
 
@@ -2127,7 +2307,7 @@ function workTopicTargetExists(rootDir: string, target: string): boolean {
 }
 
 function normalizeWorkTopicTargetPath(target: string): string {
-  const withoutAnchor = normalizePath(target).split("#")[0] ?? "";
+  const withoutAnchor = normalizePath(target).split('#')[0] ?? '';
   const match = withoutAnchor.match(
     /^(.+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|py|rb|rs|ts|tsx|txt|yaml|yml))(?:[:].*)?$/,
   );
@@ -2141,19 +2321,15 @@ function addFlag(flags: Record<string, string[]>, name: string, value: string): 
 }
 
 function runtimeOptions(flags: Readonly<Record<string, readonly string[]>>): DocsRuntimeOptions {
-  const rootDir = resolve(pickLast(flags, "root") ?? getRootDir());
+  const rootDir = resolve(pickLast(flags, 'root') ?? getRootDir());
   return {
     rootDir,
-    docsDirs: pickAll(flags, "docs-dir", DEFAULT_DOCS_DIRS),
-    prdDirs: pickAll(flags, "prd-dir", DEFAULT_PRD_DIRS),
-    artifactRegistryPaths: pickAll(
-      flags,
-      "artifact-registry",
-      DEFAULT_ARTIFACT_REGISTRY_PATHS,
-    ),
-    sessionPath: pickLast(flags, "session"),
-    prdJsonPath: pickLast(flags, "prd-json"),
-    prdPath: pickLast(flags, "prd"),
+    docsDirs: pickAll(flags, 'docs-dir', DEFAULT_DOCS_DIRS),
+    prdDirs: pickAll(flags, 'prd-dir', DEFAULT_PRD_DIRS),
+    artifactRegistryPaths: pickAll(flags, 'artifact-registry', DEFAULT_ARTIFACT_REGISTRY_PATHS),
+    sessionPath: pickLast(flags, 'session'),
+    prdJsonPath: pickLast(flags, 'prd-json'),
+    prdPath: pickLast(flags, 'prd'),
   };
 }
 
@@ -2174,7 +2350,7 @@ function createDocsAdapters(options: DocsRuntimeOptions): readonly DocumentAdapt
     createRalphSessionAdapter({
       rootDir: options.rootDir,
       ...(options.sessionPath ? { path: options.sessionPath } : {}),
-      ...(options.prdJsonPath || options.prdPath?.endsWith(".json")
+      ...(options.prdJsonPath || options.prdPath?.endsWith('.json')
         ? { prdJsonPath: options.prdJsonPath ?? options.prdPath }
         : {}),
     }),
@@ -2198,8 +2374,13 @@ async function cmdStatus(
   target: string | undefined,
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
-  const result = await buildStatusResult(documents, options.rootDir, target, scopeOptionsFromFlags(flags));
+  const json = hasFlag(flags, 'json');
+  const result = await buildStatusResult(
+    documents,
+    options.rootDir,
+    target,
+    scopeOptionsFromFlags(flags),
+  );
   if (json) {
     printJson(result);
     return;
@@ -2213,16 +2394,18 @@ async function cmdExplore(
   target: string | undefined,
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   if (!target) {
-    console.error("docs explore requires <doc-id|path>");
+    console.error('docs explore requires <doc-id|path>');
     process.exitCode = 1;
     return;
   }
 
   const mode = parseExploreMode(flags);
   if (!mode) {
-    console.error("Usage: qa-sdk docs explore <doc-id|path> [--mode intent|map|diagnostic] [--json]");
+    console.error(
+      'Usage: qa-sdk docs explore <doc-id|path> [--mode intent|map|diagnostic] [--json]',
+    );
     process.exitCode = 1;
     return;
   }
@@ -2241,9 +2424,9 @@ async function cmdCollect(
   target: string | undefined,
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   if (!target) {
-    console.error("docs collect requires <doc-id|path>");
+    console.error('docs collect requires <doc-id|path>');
     process.exitCode = 1;
     return;
   }
@@ -2254,7 +2437,7 @@ async function cmdCollect(
     process.exitCode = 1;
     return;
   }
-  const graphFilters = graphInput ? parseDocsGraphViewFilters(flags, "docs.collect") : {};
+  const graphFilters = graphInput ? parseDocsGraphViewFilters(flags, 'docs.collect') : {};
   if (isStructuredDocsError(graphFilters)) {
     printStructuredError(graphFilters, json);
     process.exitCode = 1;
@@ -2282,9 +2465,9 @@ async function cmdClosure(
   target: string | undefined,
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   if (!target) {
-    console.error("docs closure requires <doc-id|path|source-file[:symbol]>");
+    console.error('docs closure requires <doc-id|path|source-file[:symbol]>');
     process.exitCode = 1;
     return;
   }
@@ -2303,25 +2486,27 @@ async function cmdSearch(
   flags: Readonly<Record<string, readonly string[]>>,
   json: boolean,
 ): Promise<void> {
-  const query = positional.join(" ").trim();
+  const query = positional.join(' ').trim();
   if (!query) {
-    console.error("docs search requires <query>");
+    console.error('docs search requires <query>');
     process.exitCode = 1;
     return;
   }
 
-  const metadataFilter = parseMetadataFilters(pickAll(flags, "metadata", []));
-  const kinds = pickAll(flags, "kind", []).flatMap(splitCsv);
+  const metadataFilter = parseMetadataFilters(pickAll(flags, 'metadata', []));
+  const kinds = pickAll(flags, 'kind', []).flatMap(splitCsv);
   const selector = parseSelectorRoute(query);
   const selectorScope = selector ? parseSelectorScope(flags) : undefined;
   if (selector && !selectorScope) {
-    console.error("Usage: qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]");
+    console.error(
+      'Usage: qa-sdk docs search <selector|query> [--selector-scope root|family|owned] [--kind <kind>] [--metadata key=value] [--json]',
+    );
     process.exitCode = 1;
     return;
   }
   const selectorRoot = selector ? resolveSelectorDocument(documents, selector) : undefined;
   const selectorDocuments = selector
-    ? selectSelectorSearchScope(documents, selector, selectorRoot, selectorScope ?? "root")
+    ? selectSelectorSearchScope(documents, selector, selectorRoot, selectorScope ?? 'root')
     : documents;
   const result: SearchResult = {
     query,
@@ -2333,11 +2518,11 @@ async function cmdSearch(
       metadata: metadataFilter,
     },
     results: selectorDocuments
-      .filter((document) => matchesSearch(document, selector ? "" : query, kinds, metadataFilter))
+      .filter((document) => matchesSearch(document, selector ? '' : query, kinds, metadataFilter))
       .toSorted((left, right) =>
         selector
           ? compareSelectorDocuments(left, right, selector)
-          : compareSearchDocuments(left, right, query)
+          : compareSearchDocuments(left, right, query),
       )
       .map(summarizeDocument),
   };
@@ -2355,9 +2540,9 @@ async function cmdGraph(
   target: string | undefined,
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   const parsed = parseDocsGraphInput(target, flags);
-  if ("error" in parsed) {
+  if ('error' in parsed) {
     printStructuredError(parsed, json);
     process.exitCode = 1;
     return;
@@ -2368,7 +2553,7 @@ async function cmdGraph(
     includeContext: parsed.includeContext,
   });
   const traversal = traverseDocumentGraph(index, parsed);
-  const filters = parseDocsGraphViewFilters(flags, "docs.graph");
+  const filters = parseDocsGraphViewFilters(flags, 'docs.graph');
   if (isStructuredDocsError(filters)) {
     printStructuredError(filters, json);
     process.exitCode = 1;
@@ -2380,69 +2565,69 @@ async function cmdGraph(
     printJson(result);
     return;
   }
-  printGraph(result, { verbose: hasFlag(flags, "verbose") });
+  printGraph(result, { verbose: hasFlag(flags, 'verbose') });
 }
 
 function parseDocsGraphInput(
   target: string | undefined,
   flags: Readonly<Record<string, readonly string[]>>,
-  operation = "docs.graph",
+  operation = 'docs.graph',
 ): DocumentGraphTraversalInput | StructuredDocsError {
   if (!target) {
     return docsGraphError(
       operation,
-      "missing-required-argument",
+      'missing-required-argument',
       `${operation} requires <target>.`,
-      "Pass a document id, family id, task id, evidence id, graph node id, or source path.",
+      'Pass a document id, family id, task id, evidence id, graph node id, or source path.',
     );
   }
 
-  const axes = pickAll(flags, "axis", []);
+  const axes = pickAll(flags, 'axis', []);
   const parsedAxes: TraversalAxis[] = [];
   for (const axis of axes) {
     if (!isTraversalAxis(axis)) {
       return docsGraphError(
         operation,
-        "unknown-docs-graph-axis",
+        'unknown-docs-graph-axis',
         `Unknown docs graph axis: ${axis}.`,
-        `Use one of: ${CANONICAL_TRAVERSAL_AXES.join(", ")}.`,
+        `Use one of: ${CANONICAL_TRAVERSAL_AXES.join(', ')}.`,
       );
     }
     parsedAxes.push(axis);
   }
 
-  const rawDirection = pickLast(flags, "direction");
+  const rawDirection = pickLast(flags, 'direction');
   let direction: TraversalDirection | undefined;
   if (rawDirection) {
     if (!isTraversalDirection(rawDirection)) {
       return docsGraphError(
         operation,
-        "unknown-docs-graph-direction",
+        'unknown-docs-graph-direction',
         `Unknown docs graph direction: ${rawDirection}.`,
-        `Use one of: ${TRAVERSAL_DIRECTIONS.join(", ")}.`,
+        `Use one of: ${TRAVERSAL_DIRECTIONS.join(', ')}.`,
       );
     }
     direction = rawDirection;
   }
 
-  const rawPreset = pickLast(flags, "preset");
+  const rawPreset = pickLast(flags, 'preset');
   let preset: TraversalPresetId | undefined;
   if (rawPreset) {
     if (!isTraversalPresetId(rawPreset)) {
       return docsGraphError(
         operation,
-        "unknown-docs-graph-preset",
+        'unknown-docs-graph-preset',
         `Unknown docs graph preset: ${rawPreset}.`,
-        `Use one of: ${TRAVERSAL_PRESET_IDS.join(", ")}.`,
+        `Use one of: ${TRAVERSAL_PRESET_IDS.join(', ')}.`,
       );
     }
     preset = rawPreset;
   }
 
-  const depth = parseDocsGraphIntegerFlag(flags, "depth", operation);
+  const depth = parseDocsGraphIntegerFlag(flags, 'depth', operation);
   if (isStructuredDocsError(depth)) return depth;
 
-  const limit = parseDocsGraphIntegerFlag(flags, "limit", operation);
+  const limit = parseDocsGraphIntegerFlag(flags, 'limit', operation);
   if (isStructuredDocsError(limit)) return limit;
 
   return {
@@ -2452,14 +2637,14 @@ function parseDocsGraphInput(
     ...(depth !== undefined ? { depth } : {}),
     ...(limit !== undefined ? { limit } : {}),
     ...(preset ? { preset } : {}),
-    includeContext: parsedAxes.includes("context"),
+    includeContext: parsedAxes.includes('context'),
   };
 }
 
 function parseDocsGraphIntegerFlag(
   flags: Readonly<Record<string, readonly string[]>>,
-  name: "depth" | "limit",
-  operation = "docs.graph",
+  name: 'depth' | 'limit',
+  operation = 'docs.graph',
 ): number | StructuredDocsError | undefined {
   const raw = pickLast(flags, name);
   if (!raw) return undefined;
@@ -2477,27 +2662,27 @@ function parseDocsGraphIntegerFlag(
 
 function parseDocsGraphViewFilters(
   flags: Readonly<Record<string, readonly string[]>>,
-  operation = "docs.graph",
+  operation = 'docs.graph',
 ): DocumentGraphViewFilterInput | StructuredDocsError {
   const filterAxes: TraversalAxis[] = [];
-  for (const axis of pickAll(flags, "filter-axis", [])) {
+  for (const axis of pickAll(flags, 'filter-axis', [])) {
     if (!isTraversalAxis(axis)) {
       return docsGraphError(
         operation,
-        "unknown-docs-graph-filter-axis",
+        'unknown-docs-graph-filter-axis',
         `Unknown docs graph filter axis: ${axis}.`,
-        `Use one of: ${CANONICAL_TRAVERSAL_AXES.join(", ")}. --axis selects traversal axes; --filter-axis filters the post-traversal result view.`,
+        `Use one of: ${CANONICAL_TRAVERSAL_AXES.join(', ')}. --axis selects traversal axes; --filter-axis filters the post-traversal result view.`,
       );
     }
     filterAxes.push(axis);
   }
 
   return {
-    kinds: pickAll(flags, "kind", []),
-    roles: pickAll(flags, "role", []),
+    kinds: pickAll(flags, 'kind', []),
+    roles: pickAll(flags, 'role', []),
     axes: filterAxes,
-    followUpCategories: pickAll(flags, "follow-up-category", []),
-    includeArchive: hasFlag(flags, "include-archive"),
+    followUpCategories: pickAll(flags, 'follow-up-category', []),
+    includeArchive: hasFlag(flags, 'include-archive'),
   };
 }
 
@@ -2521,22 +2706,20 @@ function parseDocsCollectGraphInput(
   target: string,
   flags: Readonly<Record<string, readonly string[]>>,
 ): DocumentGraphTraversalInput | StructuredDocsError | undefined {
-  if (!hasFlag(flags, "graph") && !hasDocsGraphTraversalFlags(flags)) return undefined;
+  if (!hasFlag(flags, 'graph') && !hasDocsGraphTraversalFlags(flags)) return undefined;
 
-  const parsed = parseDocsGraphInput(target, flags, "docs.collect");
+  const parsed = parseDocsGraphInput(target, flags, 'docs.collect');
   if (isStructuredDocsError(parsed)) return parsed;
   if (!parsed.preset && !parsed.axes) {
     return {
       ...parsed,
-      preset: "family",
+      preset: 'family',
     };
   }
   return parsed;
 }
 
-function hasDocsGraphTraversalFlags(
-  flags: Readonly<Record<string, readonly string[]>>,
-): boolean {
+function hasDocsGraphTraversalFlags(flags: Readonly<Record<string, readonly string[]>>): boolean {
   return [...COLLECT_GRAPH_FLAG_NAMES].some((name) => (flags[name]?.length ?? 0) > 0);
 }
 
@@ -2544,29 +2727,27 @@ function scopeOptionsFromFlags(
   flags: Readonly<Record<string, readonly string[]>>,
 ): DocumentCommandScopeOptions {
   return {
-    familyOnly: hasFlag(flags, "family-only"),
-    includeTransient: hasFlag(flags, "include-session"),
+    familyOnly: hasFlag(flags, 'family-only'),
+    includeTransient: hasFlag(flags, 'include-session'),
   };
 }
 
 function parseExploreMode(flags: Readonly<Record<string, readonly string[]>>): ExploreMode | null {
-  const raw = pickLast(flags, "mode") ?? "intent";
-  if (raw === "intent" || raw === "map" || raw === "diagnostic") return raw;
+  const raw = pickLast(flags, 'mode') ?? 'intent';
+  if (raw === 'intent' || raw === 'map' || raw === 'diagnostic') return raw;
   return null;
 }
 
-function parseSelectorScope(flags: Readonly<Record<string, readonly string[]>>): SelectorScope | null {
-  const raw = pickLast(flags, "selector-scope") ?? "root";
-  if (raw === "root" || raw === "family" || raw === "owned") return raw;
+function parseSelectorScope(
+  flags: Readonly<Record<string, readonly string[]>>,
+): SelectorScope | null {
+  const raw = pickLast(flags, 'selector-scope') ?? 'root';
+  if (raw === 'root' || raw === 'family' || raw === 'owned') return raw;
   return null;
 }
 
 function isStructuredDocsError(value: unknown): value is StructuredDocsError {
-  return Boolean(
-    value &&
-    typeof value === "object" &&
-    "error" in value,
-  );
+  return Boolean(value && typeof value === 'object' && 'error' in value);
 }
 
 function toDocsGraphCliResult(
@@ -2617,10 +2798,10 @@ async function cmdDrift(
   const result = await detectDocumentDrift(documents, {
     rootDir: options.rootDir,
     ...(options.prdPath ? { prdPath: options.prdPath } : {}),
-    includeTransient: hasFlag(flags, "include-session"),
+    includeTransient: hasFlag(flags, 'include-session'),
   });
 
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   if (json) {
     printJson(result);
     return;
@@ -2634,29 +2815,34 @@ async function cmdTransform(
   positional: readonly string[],
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
-  if (positional[0] !== "metadata") {
-    console.error("Usage: qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]");
+  const json = hasFlag(flags, 'json');
+  if (positional[0] !== 'metadata') {
+    console.error(
+      'Usage: qa-sdk docs transform metadata --rule <json-file|inline-json> [--dry-run] [--json]',
+    );
     process.exitCode = 1;
     return;
   }
 
-  if (hasFlag(flags, "apply")) {
+  if (hasFlag(flags, 'apply')) {
     printStructuredError(unsupportedMetadataTransformApplyError(), json);
     process.exitCode = 1;
     return;
   }
 
-  const rawRule = pickLast(flags, "rule");
+  const rawRule = pickLast(flags, 'rule');
   if (!rawRule) {
-    printStructuredError({
-      error: {
-        code: "missing-required-option",
-        operation: "docs.transform.metadata",
-        message: "docs transform metadata requires --rule <json-file|inline-json>",
-        remediation: "Pass a JSON rule file path or quoted inline JSON object with --rule.",
+    printStructuredError(
+      {
+        error: {
+          code: 'missing-required-option',
+          operation: 'docs.transform.metadata',
+          message: 'docs transform metadata requires --rule <json-file|inline-json>',
+          remediation: 'Pass a JSON rule file path or quoted inline JSON object with --rule.',
+        },
       },
-    }, json);
+      json,
+    );
     process.exitCode = 1;
     return;
   }
@@ -2665,14 +2851,17 @@ async function cmdTransform(
   try {
     loadedRule = await loadMetadataTransformRule(options.rootDir, rawRule);
   } catch (error) {
-    printStructuredError({
-      error: {
-        code: "invalid-transform-rule",
-        operation: "docs.transform.metadata",
-        message: error instanceof Error ? error.message : String(error),
-        remediation: "Pass a valid JSON object as inline JSON or a path to a JSON rule file.",
+    printStructuredError(
+      {
+        error: {
+          code: 'invalid-transform-rule',
+          operation: 'docs.transform.metadata',
+          message: error instanceof Error ? error.message : String(error),
+          remediation: 'Pass a valid JSON object as inline JSON or a path to a JSON rule file.',
+        },
       },
-    }, json);
+      json,
+    );
     process.exitCode = 1;
     return;
   }
@@ -2682,10 +2871,10 @@ async function cmdTransform(
     documents,
     rule: loadedRule.rule,
     ruleSource: loadedRule.source,
-    dryRunDefaulted: !hasFlag(flags, "dry-run"),
+    dryRunDefaulted: !hasFlag(flags, 'dry-run'),
   });
 
-  if (result.diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
+  if (result.diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
     process.exitCode = 1;
   }
 
@@ -2702,61 +2891,79 @@ async function cmdPrd(
   positional: readonly string[],
   flags: Readonly<Record<string, readonly string[]>>,
 ): Promise<void> {
-  const json = hasFlag(flags, "json");
+  const json = hasFlag(flags, 'json');
   const action = positional[0];
-  const target = positional.slice(1).join(" ").trim();
+  const target = positional.slice(1).join(' ').trim();
 
-  if (action !== "context" && action !== "scaffold" && action !== "to-ralph-json" && action !== "sync-completion") {
-    console.error("Usage: qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]");
-    console.error("Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]");
-    console.error("Usage: qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]");
-    console.error("Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--strict] [--evidence-only] [--json]");
+  if (
+    action !== 'context' &&
+    action !== 'scaffold' &&
+    action !== 'to-ralph-json' &&
+    action !== 'sync-completion'
+  ) {
+    console.error(
+      'Usage: qa-sdk docs prd context <topic|doc-id> [--family-only] [--include-session] [--kind <csv>] [--role <csv>] [--filter-axis <csv>] [--follow-up-category <csv>] [--include-archive] [--json]',
+    );
+    console.error('Usage: qa-sdk docs prd scaffold <topic|doc-id> --output <file> [--json]');
+    console.error('Usage: qa-sdk docs prd to-ralph-json <prd.md> --output <prd.json> [--json]');
+    console.error(
+      'Usage: qa-sdk docs prd sync-completion --prd <prd.json> --dry-run [--family-only] [--include-session] [--strict] [--evidence-only] [--json]',
+    );
     process.exitCode = 1;
     return;
   }
 
-  if (action !== "sync-completion" && !target) {
+  if (action !== 'sync-completion' && !target) {
     console.error(`docs prd ${action} requires <topic|doc-id>`);
     process.exitCode = 1;
     return;
   }
 
-  if (action === "sync-completion") {
-    if (hasFlag(flags, "apply")) {
-      printStructuredError({
-        error: {
-          code: "unsupported-operation",
-          operation: "docs.prd.sync-completion.apply",
-          message: "docs prd sync-completion is dry-run only in this PRD.",
-          remediation: "Run with --dry-run and review the proposed docs update plan.",
+  if (action === 'sync-completion') {
+    if (hasFlag(flags, 'apply')) {
+      printStructuredError(
+        {
+          error: {
+            code: 'unsupported-operation',
+            operation: 'docs.prd.sync-completion.apply',
+            message: 'docs prd sync-completion is dry-run only in this PRD.',
+            remediation: 'Run with --dry-run and review the proposed docs update plan.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
 
-    const prdPath = pickLast(flags, "prd");
+    const prdPath = pickLast(flags, 'prd');
     if (!prdPath) {
-      printStructuredError({
-        error: {
-          code: "missing-required-option",
-          operation: "docs.prd.sync-completion",
-          message: "docs prd sync-completion requires --prd <prd.json>.",
-          remediation: "Pass the completed ralph PRD JSON path with --prd tasks/example.json.",
+      printStructuredError(
+        {
+          error: {
+            code: 'missing-required-option',
+            operation: 'docs.prd.sync-completion',
+            message: 'docs prd sync-completion requires --prd <prd.json>.',
+            remediation: 'Pass the completed ralph PRD JSON path with --prd tasks/example.json.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
-    if (!prdPath.toLowerCase().endsWith(".json")) {
-      printStructuredError({
-        error: {
-          code: "unsupported-input-format",
-          operation: "docs.prd.sync-completion",
-          message: "docs prd sync-completion reads completed ralph PRD JSON.",
-          remediation: "Use --prd with a .json file produced for ralph execution.",
+    if (!prdPath.toLowerCase().endsWith('.json')) {
+      printStructuredError(
+        {
+          error: {
+            code: 'unsupported-input-format',
+            operation: 'docs.prd.sync-completion',
+            message: 'docs prd sync-completion reads completed ralph PRD JSON.',
+            remediation: 'Use --prd with a .json file produced for ralph execution.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
@@ -2765,11 +2972,11 @@ async function cmdPrd(
       rootDir: options.rootDir,
       documents,
       prdPath,
-      dryRunDefaulted: !hasFlag(flags, "dry-run"),
-      familyOnly: hasFlag(flags, "family-only"),
-      includeTransient: hasFlag(flags, "include-session"),
-      strict: hasFlag(flags, "strict"),
-      evidenceOnly: hasFlag(flags, "evidence-only"),
+      dryRunDefaulted: !hasFlag(flags, 'dry-run'),
+      familyOnly: hasFlag(flags, 'family-only'),
+      includeTransient: hasFlag(flags, 'include-session'),
+      strict: hasFlag(flags, 'strict'),
+      evidenceOnly: hasFlag(flags, 'evidence-only'),
     });
     if (hasErrorDiagnostic(result.diagnostics)) {
       process.exitCode = 1;
@@ -2785,30 +2992,37 @@ async function cmdPrd(
     return;
   }
 
-  if (action === "to-ralph-json") {
-    const output = pickLast(flags, "output");
+  if (action === 'to-ralph-json') {
+    const output = pickLast(flags, 'output');
     if (!output) {
-      printStructuredError({
-        error: {
-          code: "missing-required-option",
-          operation: "docs.prd.to-ralph-json",
-          message: "docs prd to-ralph-json requires --output <prd.json>.",
-          remediation: "Pass a repository-relative JSON output path such as --output tasks/prd.json.",
+      printStructuredError(
+        {
+          error: {
+            code: 'missing-required-option',
+            operation: 'docs.prd.to-ralph-json',
+            message: 'docs prd to-ralph-json requires --output <prd.json>.',
+            remediation:
+              'Pass a repository-relative JSON output path such as --output tasks/prd.json.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
 
-    if (!output.toLowerCase().endsWith(".json")) {
-      printStructuredError({
-        error: {
-          code: "unsupported-output-format",
-          operation: "docs.prd.to-ralph-json",
-          message: "docs prd to-ralph-json writes ralph-compatible JSON.",
-          remediation: "Use a .json output path.",
+    if (!output.toLowerCase().endsWith('.json')) {
+      printStructuredError(
+        {
+          error: {
+            code: 'unsupported-output-format',
+            operation: 'docs.prd.to-ralph-json',
+            message: 'docs prd to-ralph-json writes ralph-compatible JSON.',
+            remediation: 'Use a .json output path.',
+          },
         },
-      }, json);
+        json,
+      );
       process.exitCode = 1;
       return;
     }
@@ -2830,7 +3044,7 @@ async function cmdPrd(
     }
 
     await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, result.content, "utf8");
+    await writeFile(outputPath, result.content, 'utf8');
     if (json) {
       printJson(toPrdToRalphJsonOutput(result));
       return;
@@ -2854,7 +3068,7 @@ async function cmdPrd(
     scopeOptionsFromFlags(flags),
   );
 
-  if (action === "context") {
+  if (action === 'context') {
     if (json) {
       printJson(context);
       return;
@@ -2863,29 +3077,37 @@ async function cmdPrd(
     return;
   }
 
-  const output = pickLast(flags, "output");
+  const output = pickLast(flags, 'output');
   if (!output) {
-    printStructuredError({
-      error: {
-        code: "missing-required-option",
-        operation: "docs.prd.scaffold",
-        message: "docs prd scaffold requires --output <file>.",
-        remediation: "Pass a repository-relative markdown output path such as --output tasks/new-prd.md.",
+    printStructuredError(
+      {
+        error: {
+          code: 'missing-required-option',
+          operation: 'docs.prd.scaffold',
+          message: 'docs prd scaffold requires --output <file>.',
+          remediation:
+            'Pass a repository-relative markdown output path such as --output tasks/new-prd.md.',
+        },
       },
-    }, json);
+      json,
+    );
     process.exitCode = 1;
     return;
   }
 
-  if (output.toLowerCase().endsWith(".json")) {
-    printStructuredError({
-      error: {
-        code: "unsupported-output-format",
-        operation: "docs.prd.scaffold",
-        message: "docs prd scaffold writes markdown only and must not create ralph PRD JSON.",
-        remediation: "Use a .md output path. PRD JSON creation belongs to an explicit adapter command.",
+  if (output.toLowerCase().endsWith('.json')) {
+    printStructuredError(
+      {
+        error: {
+          code: 'unsupported-output-format',
+          operation: 'docs.prd.scaffold',
+          message: 'docs prd scaffold writes markdown only and must not create ralph PRD JSON.',
+          remediation:
+            'Use a .md output path. PRD JSON creation belongs to an explicit adapter command.',
+        },
       },
-    }, json);
+      json,
+    );
     process.exitCode = 1;
     return;
   }
@@ -2893,12 +3115,12 @@ async function cmdPrd(
   const markdown = buildPrdScaffoldMarkdown(context);
   const outputPath = resolveOutputPath(options.rootDir, output);
   await mkdir(dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, markdown, "utf8");
+  await writeFile(outputPath, markdown, 'utf8');
 
   const result: PrdScaffoldResult = {
     target,
     output: formatMaterializedOutputPath(options.rootDir, outputPath),
-    bytes: Buffer.byteLength(markdown, "utf8"),
+    bytes: Buffer.byteLength(markdown, 'utf8'),
     context,
   };
 
@@ -2916,30 +3138,36 @@ async function buildStatusResult(
   scopeOptions: DocumentCommandScopeOptions = {},
 ): Promise<StatusResult> {
   const resolved = target ? resolveDocument(documents, target) : undefined;
-  const resolvedSource = !resolved && target && isPathLikeTarget(target)
-    ? resolveSourceTarget(documents, target)
-    : undefined;
-  const familyOnlyScope = resolved && scopeOptions.familyOnly === true
-    ? collectFamilyOnlyScope(documents, resolved, scopeOptions)
-    : undefined;
-  const graphScope = resolved && !familyOnlyScope
-    ? collectGraphScopedDocuments(documents, rootDir, {
-      target: statusTraversalTarget(target ?? resolved.document.stableId, resolved),
-      axes: STATUS_TRAVERSAL_AXES,
-      direction: "both",
-      depth: 1,
-      includeContext: false,
-    })
-    : undefined;
+  const resolvedSource =
+    !resolved && target && isPathLikeTarget(target)
+      ? resolveSourceTarget(documents, target)
+      : undefined;
+  const familyOnlyScope =
+    resolved && scopeOptions.familyOnly === true
+      ? collectFamilyOnlyScope(documents, resolved, scopeOptions)
+      : undefined;
+  const graphScope =
+    resolved && !familyOnlyScope
+      ? collectGraphScopedDocuments(documents, rootDir, {
+          target: statusTraversalTarget(target ?? resolved.document.stableId, resolved),
+          axes: STATUS_TRAVERSAL_AXES,
+          direction: 'both',
+          depth: 1,
+          includeContext: false,
+        })
+      : undefined;
   const scopedDocuments = familyOnlyScope
     ? familyOnlyScope.documents
     : graphScope
-    ? graphScope.documents
-    : resolvedSource
-      ? resolvedSource.documents
-      : documents;
+      ? graphScope.documents
+      : resolvedSource
+        ? resolvedSource.documents
+        : documents;
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
-  const completedRecords = await detectCompletedRecordsWithRalphIntegration({ rootDir, documents: scopedDocuments });
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({
+    rootDir,
+    documents: scopedDocuments,
+  });
   const nextFollowUps = await findNextFollowUps({
     rootDir,
     documents: scopedDocuments,
@@ -2949,28 +3177,38 @@ async function buildStatusResult(
     ? buildDocumentRoleMatrix(documents, { target: resolved.document })
     : undefined;
   const bdd = summarizeBddDocuments(scopedDocuments);
-  const lifecycle = summarizeLifecycle(scopedDocuments, documents, rootDir, roleCoverage, completedRecords);
+  const lifecycle = summarizeLifecycle(
+    scopedDocuments,
+    documents,
+    rootDir,
+    roleCoverage,
+    completedRecords,
+  );
 
   return {
     ...(target ? { target } : {}),
     ...(resolved ? { document: summarizeDocument(resolved.document) } : {}),
-    ...(resolvedSource ? {
-      sourceTarget: {
-        path: resolvedSource.path,
-        matches: resolvedSource.matches.map((match) => ({
-          document: summarizeDocument(match.document),
-          source: match.source,
-        })),
-        limitation: resolvedSource.limitation,
-      },
-    } : {}),
-    ...(resolved?.matchedTask ? {
-      matchedTask: {
-        id: resolved.matchedTask.id,
-        title: resolved.matchedTask.title,
-        state: taskState(resolved.matchedTask),
-      },
-    } : {}),
+    ...(resolvedSource
+      ? {
+          sourceTarget: {
+            path: resolvedSource.path,
+            matches: resolvedSource.matches.map((match) => ({
+              document: summarizeDocument(match.document),
+              source: match.source,
+            })),
+            limitation: resolvedSource.limitation,
+          },
+        }
+      : {}),
+    ...(resolved?.matchedTask
+      ? {
+          matchedTask: {
+            id: resolved.matchedTask.id,
+            title: resolved.matchedTask.title,
+            state: taskState(resolved.matchedTask),
+          },
+        }
+      : {}),
     ...(resolved?.document.familyId ? { familyId: resolved.document.familyId } : {}),
     counts: countDocuments(documents, scopedDocuments),
     nextFollowUp: nextFollowUps[0] ?? null,
@@ -2994,7 +3232,9 @@ async function buildExploreResult(
   const rootIndex = selector ? resolveSelectorDocument(documents, selector) : undefined;
   const resolved = resolveDocument(documents, target);
   const familyMembers = resolved
-    ? collectFamilyOnlyScope(documents, resolved, { familyOnly: true }).documents.map(summarizeDocument)
+    ? collectFamilyOnlyScope(documents, resolved, { familyOnly: true }).documents.map(
+        summarizeDocument,
+      )
     : [];
 
   return {
@@ -3018,38 +3258,41 @@ async function buildCollectResult(
 ): Promise<CollectResult> {
   const status = await buildStatusResult(documents, rootDir, target, scopeOptions);
   const resolved = resolveDocument(documents, target);
-  const resolvedSource = !resolved && isPathLikeTarget(target)
-    ? resolveSourceTarget(documents, target)
-    : undefined;
-  const familyOnlyScope = resolved && scopeOptions.familyOnly === true
-    ? collectFamilyOnlyScope(documents, resolved, scopeOptions, graphInput)
-    : undefined;
-  const graphScope = graphInput && !familyOnlyScope
-    ? collectGraphScopedDocuments(documents, rootDir, graphInput)
-    : resolved && !familyOnlyScope
-      ? collectGraphScopedDocuments(documents, rootDir, {
-        target: collectTraversalTarget(target, resolved),
-        preset: "family",
-        includeContext: false,
-      })
+  const resolvedSource =
+    !resolved && isPathLikeTarget(target) ? resolveSourceTarget(documents, target) : undefined;
+  const familyOnlyScope =
+    resolved && scopeOptions.familyOnly === true
+      ? collectFamilyOnlyScope(documents, resolved, scopeOptions, graphInput)
       : undefined;
+  const graphScope =
+    graphInput && !familyOnlyScope
+      ? collectGraphScopedDocuments(documents, rootDir, graphInput)
+      : resolved && !familyOnlyScope
+        ? collectGraphScopedDocuments(documents, rootDir, {
+            target: collectTraversalTarget(target, resolved),
+            preset: 'family',
+            includeContext: false,
+          })
+        : undefined;
   const scopedDocuments = familyOnlyScope
     ? familyOnlyScope.documents
     : graphScope
-    ? graphScope.documents
-    : resolvedSource
-      ? resolvedSource.documents
-      : [];
-  const graphResult = graphInput && (familyOnlyScope ?? graphScope)
-    ? toDocsGraphCliResult((familyOnlyScope ?? graphScope)!.traversal, graphFilters)
-    : undefined;
-  const viewDocuments = graphResult && (familyOnlyScope ?? graphScope)
-    ? collectDocumentsForGraphView(
-      documents,
-      (familyOnlyScope ?? graphScope)!.traversal,
-      graphResult.filtering.filteredNodeIds,
-    ).documents
-    : scopedDocuments;
+      ? graphScope.documents
+      : resolvedSource
+        ? resolvedSource.documents
+        : [];
+  const graphResult =
+    graphInput && (familyOnlyScope ?? graphScope)
+      ? toDocsGraphCliResult((familyOnlyScope ?? graphScope)!.traversal, graphFilters)
+      : undefined;
+  const viewDocuments =
+    graphResult && (familyOnlyScope ?? graphScope)
+      ? collectDocumentsForGraphView(
+          documents,
+          (familyOnlyScope ?? graphScope)!.traversal,
+          graphResult.filtering.filteredNodeIds,
+        ).documents
+      : scopedDocuments;
   const completedRecords = graphResult
     ? await detectCompletedRecordsWithRalphIntegration({ rootDir, documents: viewDocuments })
     : status.completedRecords;
@@ -3108,7 +3351,10 @@ async function buildCleanupReviewResult(
     counts: {
       completedRecords: completedRecords.length,
       candidates: review.candidates.length,
-      relatedDocuments: review.candidates.reduce((count, candidate) => count + candidate.relatedDocuments.length, 0),
+      relatedDocuments: review.candidates.reduce(
+        (count, candidate) => count + candidate.relatedDocuments.length,
+        0,
+      ),
       diagnostics: review.diagnostics.length,
     },
     candidates: review.candidates,
@@ -3128,14 +3374,14 @@ function resolveCleanupScope(
     const resolvedPrd = resolveDocument(documents, options.prdPath);
     if (!resolvedPrd) {
       return docsGraphError(
-        "docs.cleanup",
-        "cleanup-prd-not-found",
+        'docs.cleanup',
+        'cleanup-prd-not-found',
         `Cleanup scope could not resolve PRD target "${options.prdPath}".`,
-        "Use --prd with a PRD markdown/JSON path that is already visible to docs control-plane adapters.",
+        'Use --prd with a PRD markdown/JSON path that is already visible to docs control-plane adapters.',
       );
     }
     return {
-      scope: "prd",
+      scope: 'prd',
       target: options.prdPath,
       documents: collectFamilyOnlyScope(documents, resolvedPrd, {
         familyOnly: true,
@@ -3148,14 +3394,14 @@ function resolveCleanupScope(
     const resolved = resolveDocument(documents, options.target);
     if (!resolved) {
       return docsGraphError(
-        "docs.cleanup",
-        "cleanup-target-not-found",
+        'docs.cleanup',
+        'cleanup-target-not-found',
         `Cleanup scope could not resolve "${options.target}".`,
-        "Use a document id/path already visible to docs control-plane adapters, or omit the target to review all active completed records.",
+        'Use a document id/path already visible to docs control-plane adapters, or omit the target to review all active completed records.',
       );
     }
     return {
-      scope: "family",
+      scope: 'family',
       target: options.target,
       documents: collectFamilyOnlyScope(documents, resolved, {
         familyOnly: true,
@@ -3165,7 +3411,7 @@ function resolveCleanupScope(
   }
 
   return {
-    scope: "repo",
+    scope: 'repo',
     documents,
   };
 }
@@ -3194,8 +3440,8 @@ async function buildCleanupPlanResult(
   });
   if (!plan) {
     return docsGraphError(
-      "docs.cleanup.plan",
-      "cleanup-plan-target-not-found",
+      'docs.cleanup.plan',
+      'cleanup-plan-target-not-found',
       `Cleanup plan could not resolve completed record target "${options.target}".`,
       "Run docs cleanup review --json first and then use one candidate's record path, document id, or paired PRD JSON path.",
     );
@@ -3238,22 +3484,23 @@ async function buildCleanupApplyResult(
     rootDir,
     documents,
   });
-  const overridePlan = !options.plan && options.overrides
-    ? buildCompletedRecordCleanupPlan({
-      documents,
-      completedRecords,
-      target: options.target,
-      action: options.action,
-      dryRunDefaulted: false,
-      overrides: options.overrides,
-    })
-    : undefined;
+  const overridePlan =
+    !options.plan && options.overrides
+      ? buildCompletedRecordCleanupPlan({
+          documents,
+          completedRecords,
+          target: options.target,
+          action: options.action,
+          dryRunDefaulted: false,
+          overrides: options.overrides,
+        })
+      : undefined;
   if (!options.plan && options.overrides && !overridePlan) {
     return docsGraphError(
-      "docs.cleanup.apply",
-      "cleanup-override-target-invalid",
+      'docs.cleanup.apply',
+      'cleanup-override-target-invalid',
       `Cleanup apply override could not build a valid plan for "${options.target}".`,
-      "Run docs cleanup plan with the same --override first and confirm the target/action/override combination is valid.",
+      'Run docs cleanup plan with the same --override first and confirm the target/action/override combination is valid.',
     );
   }
 
@@ -3265,21 +3512,34 @@ async function buildCleanupApplyResult(
       target: options.target,
       action: options.action,
       ...(overridePlan ? { plan: overridePlan } : {}),
-      ...(options.plan ? { plan: buildCompletedRecordCleanupPlan({
-        documents,
-        completedRecords,
-        target: options.plan.target,
-        action: options.plan.action,
-        dryRunDefaulted: false,
-        overrides: {
-          outputPath: options.plan.proposedOutputPath,
-          ...(options.plan.secondaryOutputPath ? { secondaryOutputPath: options.plan.secondaryOutputPath } : {}),
-          ...(options.plan.assimilationTargetPath ? { assimilationTargetPath: options.plan.assimilationTargetPath } : {}),
-          ...(options.plan.appendMarkdown ? { appendMarkdown: options.plan.appendMarkdown } : {}),
-          ...(options.plan.bodyTemplate ? { bodyTemplate: options.plan.bodyTemplate } : {}),
-          ...(options.plan.frontmatterPatch ? { frontmatterPatch: options.plan.frontmatterPatch } : {}),
-        },
-      }) ?? undefined } : {}),
+      ...(options.plan
+        ? {
+            plan:
+              buildCompletedRecordCleanupPlan({
+                documents,
+                completedRecords,
+                target: options.plan.target,
+                action: options.plan.action,
+                dryRunDefaulted: false,
+                overrides: {
+                  outputPath: options.plan.proposedOutputPath,
+                  ...(options.plan.secondaryOutputPath
+                    ? { secondaryOutputPath: options.plan.secondaryOutputPath }
+                    : {}),
+                  ...(options.plan.assimilationTargetPath
+                    ? { assimilationTargetPath: options.plan.assimilationTargetPath }
+                    : {}),
+                  ...(options.plan.appendMarkdown
+                    ? { appendMarkdown: options.plan.appendMarkdown }
+                    : {}),
+                  ...(options.plan.bodyTemplate ? { bodyTemplate: options.plan.bodyTemplate } : {}),
+                  ...(options.plan.frontmatterPatch
+                    ? { frontmatterPatch: options.plan.frontmatterPatch }
+                    : {}),
+                },
+              }) ?? undefined,
+          }
+        : {}),
     });
     if (!result) {
       const plan = buildCompletedRecordCleanupPlan({
@@ -3292,16 +3552,17 @@ async function buildCleanupApplyResult(
       if (plan) {
         return {
           error: {
-            code: "unsupported-operation",
-            operation: "docs.cleanup.apply",
+            code: 'unsupported-operation',
+            operation: 'docs.cleanup.apply',
             message: `docs cleanup apply does not support --action ${options.action} for target "${options.target}".`,
-            remediation: "Use docs cleanup plan to review the proposal, or choose a supported cleanup target/action combination with explicit output paths and preserved evidence links.",
+            remediation:
+              'Use docs cleanup plan to review the proposal, or choose a supported cleanup target/action combination with explicit output paths and preserved evidence links.',
           },
         };
       }
       return docsGraphError(
-        "docs.cleanup.apply",
-        "cleanup-apply-target-not-found",
+        'docs.cleanup.apply',
+        'cleanup-apply-target-not-found',
         `Cleanup apply could not resolve completed record target "${options.target}".`,
         "Run docs cleanup review --json first and then use one candidate's record path, document id, or paired PRD JSON path.",
       );
@@ -3309,21 +3570,21 @@ async function buildCleanupApplyResult(
     return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (message.startsWith("cleanup output path already exists:")) {
-      const path = message.slice("cleanup output path already exists:".length).trim();
+    if (message.startsWith('cleanup output path already exists:')) {
+      const path = message.slice('cleanup output path already exists:'.length).trim();
       return docsGraphError(
-        "docs.cleanup.apply",
-        "cleanup-output-exists",
+        'docs.cleanup.apply',
+        'cleanup-output-exists',
         `Cleanup apply would overwrite existing path "${path}".`,
-        "Choose a different target or move the existing archive output before retrying cleanup apply.",
+        'Choose a different target or move the existing archive output before retrying cleanup apply.',
       );
     }
-    if (message.includes("ENOENT")) {
+    if (message.includes('ENOENT')) {
       return docsGraphError(
-        "docs.cleanup.apply",
-        "cleanup-source-missing",
+        'docs.cleanup.apply',
+        'cleanup-source-missing',
         `Cleanup apply could not find one of the planned source files for "${options.target}".`,
-        "Run docs cleanup review and docs cleanup plan again to confirm the target still exists in the current workspace.",
+        'Run docs cleanup review and docs cleanup plan again to confirm the target still exists in the current workspace.',
       );
     }
     throw error;
@@ -3357,12 +3618,12 @@ async function buildCleanupBatchPlanResult(
   const skipped: CleanupBatchSkip[] = [];
   for (const candidate of review.candidates) {
     const selection = selectCleanupBatchAction(candidate, options.strategy);
-    if ("error" in selection) {
+    if ('error' in selection) {
       return docsGraphError(
-        "docs.cleanup",
-        "cleanup-action-map-conflict",
+        'docs.cleanup',
+        'cleanup-action-map-conflict',
         selection.error,
-        "Use exactly one cleanup action per completed record when supplying --action-map.",
+        'Use exactly one cleanup action per completed record when supplying --action-map.',
       );
     }
     if (!selection.action) {
@@ -3392,11 +3653,13 @@ async function buildCleanupBatchPlanResult(
 
   const warnings = planned.flatMap((plan) => plan.warnings);
   return {
-    mode: "batch",
+    mode: 'batch',
     strategy: options.strategy.strategy,
     scope: scope.scope,
     ...(scope.target ? { target: scope.target } : {}),
-    ...(options.strategy.actionMapSource ? { actionMapSource: options.strategy.actionMapSource } : {}),
+    ...(options.strategy.actionMapSource
+      ? { actionMapSource: options.strategy.actionMapSource }
+      : {}),
     dryRunDefaulted: options.dryRunDefaulted,
     counts: {
       completedRecords: completedRecords.length,
@@ -3448,11 +3711,13 @@ async function buildCleanupBatchApplyResult(
   }
 
   return {
-    mode: "batch",
+    mode: 'batch',
     strategy: options.strategy.strategy,
     scope: scope.scope,
     ...(scope.target ? { target: scope.target } : {}),
-    ...(options.strategy.actionMapSource ? { actionMapSource: options.strategy.actionMapSource } : {}),
+    ...(options.strategy.actionMapSource
+      ? { actionMapSource: options.strategy.actionMapSource }
+      : {}),
     counts: {
       applied: applied.length,
       skipped: batchPlan.skipped.length,
@@ -3469,27 +3734,33 @@ async function buildCleanupBatchApplyResult(
 function recommendationToCleanupPlanAction(
   action: CompletedRecordCleanupAction,
 ): CompletedRecordCleanupPlanAction | null {
-  if (action === "archive-review") return "archive";
-  if (action === "memo-conversion-review") return "memo-conversion";
-  if (action === "promote-spec-review") return "promote-spec";
+  if (action === 'archive-review') return 'archive';
+  if (action === 'memo-conversion-review') return 'memo-conversion';
+  if (action === 'promote-spec-review') return 'promote-spec';
   return null;
 }
 
 function selectCleanupBatchAction(
   candidate: CompletedRecordCleanupCandidate,
   strategy: CleanupBatchStrategySelection,
-): { readonly action: CompletedRecordCleanupPlanAction | null; readonly reason: string; readonly overrides?: CompletedRecordCleanupPathOverrides } | { readonly error: string } {
-  if (strategy.strategy === "recommended") {
+):
+  | {
+      readonly action: CompletedRecordCleanupPlanAction | null;
+      readonly reason: string;
+      readonly overrides?: CompletedRecordCleanupPathOverrides;
+    }
+  | { readonly error: string } {
+  if (strategy.strategy === 'recommended') {
     const action = recommendationToCleanupPlanAction(candidate.recommendation.action);
     if (!action) {
       return {
         action: null,
-        reason: "Recommendation stays advisory; no write plan is generated for keep-as-evidence.",
+        reason: 'Recommendation stays advisory; no write plan is generated for keep-as-evidence.',
       };
     }
     return {
       action,
-      reason: "Recommendation-derived cleanup action.",
+      reason: 'Recommendation-derived cleanup action.',
     };
   }
 
@@ -3501,25 +3772,40 @@ function selectCleanupBatchAction(
   if (mappedEntries.length === 0) {
     return {
       action: null,
-      reason: "No action-map entry selected this completed record.",
+      reason: 'No action-map entry selected this completed record.',
     };
   }
   if (mappedEntries.length > 1) {
     return {
-      error: `Cleanup action-map selects conflicting actions for ${candidate.record.path}: ${mappedEntries.map((entry) => entry.action).join(", ")}.`,
+      error: `Cleanup action-map selects conflicting actions for ${candidate.record.path}: ${mappedEntries.map((entry) => entry.action).join(', ')}.`,
     };
   }
   return {
     action: mappedEntries[0]!.action,
-    reason: "Action-map selected cleanup action.",
+    reason: 'Action-map selected cleanup action.',
     ...(mappedEntries[0]!.overrides ? { overrides: mappedEntries[0]!.overrides } : {}),
   };
 }
 
 function uniqueActionMapEntries(
-  values: readonly ({ readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides } | undefined)[],
-): readonly { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides }[] {
-  const byKey = new Map<string, { readonly action: CompletedRecordCleanupPlanAction; readonly overrides?: CompletedRecordCleanupPathOverrides }>();
+  values: readonly (
+    | {
+        readonly action: CompletedRecordCleanupPlanAction;
+        readonly overrides?: CompletedRecordCleanupPathOverrides;
+      }
+    | undefined
+  )[],
+): readonly {
+  readonly action: CompletedRecordCleanupPlanAction;
+  readonly overrides?: CompletedRecordCleanupPathOverrides;
+}[] {
+  const byKey = new Map<
+    string,
+    {
+      readonly action: CompletedRecordCleanupPlanAction;
+      readonly overrides?: CompletedRecordCleanupPathOverrides;
+    }
+  >();
   for (const value of values) {
     if (!value) continue;
     const key = JSON.stringify(value);
@@ -3536,20 +3822,20 @@ async function preflightCleanupBatchPlans(
   const duplicates = duplicateStrings(moveOutputs);
   if (duplicates.length > 0) {
     return docsGraphError(
-      "docs.cleanup.apply",
-      "cleanup-batch-conflict",
-      `Batch cleanup apply has conflicting output paths: ${duplicates.join(", ")}.`,
-      "Adjust the scope or run the conflicting cleanup operations one at a time.",
+      'docs.cleanup.apply',
+      'cleanup-batch-conflict',
+      `Batch cleanup apply has conflicting output paths: ${duplicates.join(', ')}.`,
+      'Adjust the scope or run the conflicting cleanup operations one at a time.',
     );
   }
 
   for (const path of moveOutputs) {
     if (await pathExists(rootDir, path)) {
       return docsGraphError(
-        "docs.cleanup.apply",
-        "cleanup-output-exists",
+        'docs.cleanup.apply',
+        'cleanup-output-exists',
         `Batch cleanup apply would overwrite existing path "${path}".`,
-        "Move the existing output path away or choose a narrower cleanup scope before retrying.",
+        'Move the existing output path away or choose a narrower cleanup scope before retrying.',
       );
     }
   }
@@ -3558,13 +3844,13 @@ async function preflightCleanupBatchPlans(
 }
 
 function cleanupMoveOutputPaths(plan: CleanupPlanResult): readonly string[] {
-  if (plan.action === "archive") {
+  if (plan.action === 'archive') {
     return unique([plan.proposedOutputPath, plan.secondaryOutputPath]);
   }
-  if (plan.action === "memo-conversion") {
+  if (plan.action === 'memo-conversion') {
     return unique([plan.proposedOutputPath, plan.secondaryOutputPath]);
   }
-  if (plan.action === "promote-spec") {
+  if (plan.action === 'promote-spec') {
     return unique([plan.secondaryOutputPath]);
   }
   return [];
@@ -3596,9 +3882,8 @@ async function buildClosureResult(
   target: string,
 ): Promise<ClosureResult> {
   const resolved = resolveDocument(documents, target);
-  const resolvedSource = !resolved && isPathLikeTarget(target)
-    ? resolveSourceTarget(documents, target)
-    : undefined;
+  const resolvedSource =
+    !resolved && isPathLikeTarget(target) ? resolveSourceTarget(documents, target) : undefined;
   const familyOnlyScope = resolved
     ? collectFamilyOnlyScope(documents, resolved, { familyOnly: true })
     : undefined;
@@ -3607,7 +3892,8 @@ async function buildClosureResult(
     : resolvedSource
       ? resolvedSource.documents
       : [];
-  const primaryDocument = resolved?.document ?? selectPrimaryClosureDocument(initialScopedDocuments);
+  const primaryDocument =
+    resolved?.document ?? selectPrimaryClosureDocument(initialScopedDocuments);
   const primaryFamilyScope = primaryDocument
     ? collectFamilyOnlyScope(documents, { document: primaryDocument }, { familyOnly: true })
     : undefined;
@@ -3617,24 +3903,28 @@ async function buildClosureResult(
   ]);
   const graphScope = primaryDocument
     ? collectGraphScopedDocuments(documents, rootDir, {
-      target: primaryDocument.stableId,
-      axes: ["role", "composition", "dependency", "trace"],
-      direction: "both",
-      depth: 1,
-      includeContext: false,
-    })
+        target: primaryDocument.stableId,
+        axes: ['role', 'composition', 'dependency', 'trace'],
+        direction: 'both',
+        depth: 1,
+        includeContext: false,
+      })
     : undefined;
-  const scopedDocuments = uniqueDocuments([
-    ...closureDocuments,
-    ...(graphScope?.documents ?? []),
-  ]);
+  const scopedDocuments = uniqueDocuments([...closureDocuments, ...(graphScope?.documents ?? [])]);
   const boundaryDocument = primaryDocument
     ? selectClosureBoundaryDocument(documents, primaryDocument, scopedDocuments)
     : undefined;
   const consumedRules = collectClosureConsumedRules(documents, closureDocuments);
   const evidence = collectClosureEvidence(closureDocuments);
-  const completedRecords = await detectCompletedRecordsWithRalphIntegration({ rootDir, documents: scopedDocuments });
-  const nextFollowUps = await findNextFollowUps({ rootDir, documents: scopedDocuments, completedRecords });
+  const completedRecords = await detectCompletedRecordsWithRalphIntegration({
+    rootDir,
+    documents: scopedDocuments,
+  });
+  const nextFollowUps = await findNextFollowUps({
+    rootDir,
+    documents: scopedDocuments,
+    completedRecords,
+  });
   const diagnostics = scopedDocuments.flatMap((document) => document.diagnostics);
   const responsibility = inferClosureResponsibility(primaryDocument ?? boundaryDocument);
   const missing = collectClosureMissingItems({
@@ -3663,16 +3953,18 @@ async function buildClosureResult(
     state,
     responsibility,
     ...(primaryDocument ? { document: summarizeDocument(primaryDocument) } : {}),
-    ...(resolvedSource ? {
-      sourceTarget: {
-        path: resolvedSource.path,
-        matches: resolvedSource.matches.map((match) => ({
-          document: summarizeDocument(match.document),
-          source: match.source,
-        })),
-        limitation: resolvedSource.limitation,
-      },
-    } : {}),
+    ...(resolvedSource
+      ? {
+          sourceTarget: {
+            path: resolvedSource.path,
+            matches: resolvedSource.matches.map((match) => ({
+              document: summarizeDocument(match.document),
+              source: match.source,
+            })),
+            limitation: resolvedSource.limitation,
+          },
+        }
+      : {}),
     ...(boundaryDocument ? { boundary: summarizeDocument(boundaryDocument) } : {}),
     consumedRules: consumedRules.map(summarizeDocument),
     evidence,
@@ -3702,11 +3994,11 @@ function compareClosurePrimaryDocument(left: DocumentEnvelope, right: DocumentEn
 
 function closureDocumentRank(document: DocumentEnvelope): number {
   const tier = asString(document.metadata.tier);
-  if (tier === "system") return 0;
-  if (tier === "layout") return 1;
-  if (document.kind === "spec") return 2;
-  if (asString(document.metadata.scope) === "interface") return 3;
-  if (tier === "component") return 4;
+  if (tier === 'system') return 0;
+  if (tier === 'layout') return 1;
+  if (document.kind === 'spec') return 2;
+  if (asString(document.metadata.scope) === 'interface') return 3;
+  if (tier === 'component') return 4;
   return 10;
 }
 
@@ -3716,17 +4008,16 @@ function selectClosureBoundaryDocument(
   scopedDocuments: readonly DocumentEnvelope[],
 ): DocumentEnvelope {
   const primaryResponsibility = inferClosureResponsibility(primaryDocument);
-  if (primaryResponsibility === "System" || primaryResponsibility === "Layout / Pack") {
+  if (primaryResponsibility === 'System' || primaryResponsibility === 'Layout / Pack') {
     return primaryDocument;
   }
 
   const targetIds = new Set(documentIdentityValues(primaryDocument));
   const incomingBoundary = documents.find((document) => {
     const responsibility = inferClosureResponsibility(document);
-    if (responsibility !== "System" && responsibility !== "Layout / Pack") return false;
-    return document.links.some((link) =>
-      (link.type === "contains" || link.type === "refs") &&
-      targetIds.has(link.targetId)
+    if (responsibility !== 'System' && responsibility !== 'Layout / Pack') return false;
+    return document.links.some(
+      (link) => (link.type === 'contains' || link.type === 'refs') && targetIds.has(link.targetId),
     );
   });
 
@@ -3734,30 +4025,35 @@ function selectClosureBoundaryDocument(
 }
 
 function inferClosureResponsibility(document: DocumentEnvelope | undefined): ClosureResponsibility {
-  if (!document) return "Unknown";
+  if (!document) return 'Unknown';
   const tier = asString(document.metadata.tier);
   const scope = asString(document.metadata.scope);
   const aspect = asString(document.metadata.aspect);
-  if (tier === "entry") return "Entry / Identity";
-  if (tier === "layout") return "Layout / Pack";
-  if (tier === "system") return "System";
-  if (scope === "interface") return "Interface / DSL";
-  if (tier === "component") return "Component";
-  if (scope === "flow" || scope === "feature" || aspect === "process_flow" || aspect === "func_def") {
-    return "System";
+  if (tier === 'entry') return 'Entry / Identity';
+  if (tier === 'layout') return 'Layout / Pack';
+  if (tier === 'system') return 'System';
+  if (scope === 'interface') return 'Interface / DSL';
+  if (tier === 'component') return 'Component';
+  if (
+    scope === 'flow' ||
+    scope === 'feature' ||
+    aspect === 'process_flow' ||
+    aspect === 'func_def'
+  ) {
+    return 'System';
   }
-  return "Unknown";
+  return 'Unknown';
 }
 
 function collectClosureConsumedRules(
   documents: readonly DocumentEnvelope[],
   scopedDocuments: readonly DocumentEnvelope[],
 ): readonly DocumentEnvelope[] {
-  const directRules = scopedDocuments.filter((document) => document.kind === "rule");
+  const directRules = scopedDocuments.filter((document) => document.kind === 'rule');
   const linkedRules = scopedDocuments.flatMap((document) =>
     document.links
       .map((link) => resolveDocument(documents, link.targetId)?.document)
-      .filter((target): target is DocumentEnvelope => target?.kind === "rule")
+      .filter((target): target is DocumentEnvelope => target?.kind === 'rule'),
   );
   return uniqueDocuments([...directRules, ...linkedRules]).toSorted(compareDocuments);
 }
@@ -3766,10 +4062,10 @@ function collectClosureEvidence(
   scopedDocuments: readonly DocumentEnvelope[],
 ): ClosureEvidenceSummary {
   const tests = scopedDocuments
-    .filter((document) => document.kind === "test")
+    .filter((document) => document.kind === 'test')
     .map(summarizeDocument);
   const cases = scopedDocuments
-    .filter((document) => document.kind === "cases")
+    .filter((document) => document.kind === 'cases')
     .map(summarizeDocument);
   const sources = scopedDocuments.flatMap((document) => document.sources);
   const evidence = scopedDocuments.flatMap((document) => document.evidence);
@@ -3798,8 +4094,8 @@ function collectClosureMissingItems(input: {
   const missing: ClosureMissingItem[] = [];
   if (!input.primaryDocument) {
     missing.push({
-      code: "code-boundary-map",
-      severity: "error",
+      code: 'code-boundary-map',
+      severity: 'error',
       message: `No definition document or source mapping matched "${input.target}".`,
     });
     return missing;
@@ -3807,83 +4103,118 @@ function collectClosureMissingItems(input: {
 
   if (!input.boundaryDocument) {
     missing.push({
-      code: "system-boundary",
-      severity: "warning",
-      message: "No System/Layout boundary document could be identified.",
+      code: 'system-boundary',
+      severity: 'warning',
+      message: 'No System/Layout boundary document could be identified.',
     });
   }
 
-  if (requiresSourceMappingEvidence(input.primaryDocument, input.responsibility) && input.evidence.sources.length === 0 && !input.resolvedSource) {
+  if (
+    requiresSourceMappingEvidence(input.primaryDocument, input.responsibility) &&
+    input.evidence.sources.length === 0 &&
+    !input.resolvedSource
+  ) {
     missing.push({
-      code: "source-mapping",
-      severity: "warning",
-      message: "No source mapping is present for the scoped responsibility.",
+      code: 'source-mapping',
+      severity: 'warning',
+      message: 'No source mapping is present for the scoped responsibility.',
     });
   }
 
   if (requiresConsumedRuleEvidence(input.responsibility) && input.consumedRules.length === 0) {
     missing.push({
-      code: "consumed-rule",
-      severity: "warning",
-      message: "No same-family or linked rule document was found.",
+      code: 'consumed-rule',
+      severity: 'warning',
+      message: 'No same-family or linked rule document was found.',
     });
   }
 
-  if (requiresVerificationEvidence(input.responsibility) && !hasClosureVerificationEvidence(input.evidence)) {
+  if (
+    requiresVerificationEvidence(input.responsibility) &&
+    !hasClosureVerificationEvidence(input.evidence)
+  ) {
     missing.push({
-      code: "verification-evidence",
-      severity: "warning",
-      message: "No test/cases/BDD/evidence source was found for this responsibility.",
+      code: 'verification-evidence',
+      severity: 'warning',
+      message: 'No test/cases/BDD/evidence source was found for this responsibility.',
     });
   }
 
   const concernSignals = collectClosureConcernSignals(input.scopedDocuments);
-  if (concernSignals.error && !hasClosureConcernEvidence(input.scopedDocuments, input.consumedRules, input.evidence, ERROR_EVIDENCE_KEYWORDS)) {
+  if (
+    concernSignals.error &&
+    !hasClosureConcernEvidence(
+      input.scopedDocuments,
+      input.consumedRules,
+      input.evidence,
+      ERROR_EVIDENCE_KEYWORDS,
+    )
+  ) {
     missing.push({
-      code: "error-policy-evidence",
-      severity: "warning",
-      message: "Error/failure concern is present but no error policy or failure-path evidence was found.",
+      code: 'error-policy-evidence',
+      severity: 'warning',
+      message:
+        'Error/failure concern is present but no error policy or failure-path evidence was found.',
     });
   }
-  if (concernSignals.permission && !hasClosureConcernEvidence(input.scopedDocuments, input.consumedRules, input.evidence, PERMISSION_EVIDENCE_KEYWORDS)) {
+  if (
+    concernSignals.permission &&
+    !hasClosureConcernEvidence(
+      input.scopedDocuments,
+      input.consumedRules,
+      input.evidence,
+      PERMISSION_EVIDENCE_KEYWORDS,
+    )
+  ) {
     missing.push({
-      code: "permission-policy-evidence",
-      severity: "warning",
-      message: "Permission/authorization concern is present but no permission policy evidence was found.",
+      code: 'permission-policy-evidence',
+      severity: 'warning',
+      message:
+        'Permission/authorization concern is present but no permission policy evidence was found.',
     });
   }
-  if (concernSignals.observability && !hasClosureConcernEvidence(input.scopedDocuments, input.consumedRules, input.evidence, OBSERVABILITY_EVIDENCE_KEYWORDS)) {
+  if (
+    concernSignals.observability &&
+    !hasClosureConcernEvidence(
+      input.scopedDocuments,
+      input.consumedRules,
+      input.evidence,
+      OBSERVABILITY_EVIDENCE_KEYWORDS,
+    )
+  ) {
     missing.push({
-      code: "observability-evidence",
-      severity: "warning",
-      message: "Observability concern is present but no event/audit/metric/log evidence was found.",
+      code: 'observability-evidence',
+      severity: 'warning',
+      message: 'Observability concern is present but no event/audit/metric/log evidence was found.',
     });
   }
 
   if (input.nextFollowUps.length > 0) {
-    const actionableCount = input.nextFollowUps.filter((followUp) =>
-      followUp.category === "actionable" || followUp.category === "uncategorized"
+    const actionableCount = input.nextFollowUps.filter(
+      (followUp) => followUp.category === 'actionable' || followUp.category === 'uncategorized',
     ).length;
     missing.push({
-      code: "lifecycle-follow-up",
-      severity: actionableCount > 0 ? "warning" : "info",
-      message: `${input.nextFollowUps.length} open follow-up item(s) remain in scope${actionableCount > 0 ? ` (${actionableCount} actionable/uncategorized)` : ""}.`,
+      code: 'lifecycle-follow-up',
+      severity: actionableCount > 0 ? 'warning' : 'info',
+      message: `${input.nextFollowUps.length} open follow-up item(s) remain in scope${actionableCount > 0 ? ` (${actionableCount} actionable/uncategorized)` : ''}.`,
     });
   }
 
   if (input.completedRecords.length > 0) {
     missing.push({
-      code: "completed-record-review",
-      severity: "info",
+      code: 'completed-record-review',
+      severity: 'info',
       message: `${input.completedRecords.length} completed record candidate(s) need assimilation/archive review.`,
     });
   }
 
-  const errorDiagnostics = input.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
+  const errorDiagnostics = input.diagnostics.filter(
+    (diagnostic) => diagnostic.severity === 'error',
+  );
   if (errorDiagnostics.length > 0) {
     missing.push({
-      code: "diagnostic-error",
-      severity: "error",
+      code: 'diagnostic-error',
+      severity: 'error',
       message: `${errorDiagnostics.length} error diagnostic(s) are present in scope.`,
     });
   }
@@ -3892,37 +4223,39 @@ function collectClosureMissingItems(input: {
 }
 
 const ERROR_EVIDENCE_KEYWORDS = [
-  "error",
-  "failure",
-  "exception",
-  "fail-open",
-  "fail-closed",
-  "fallback",
+  'error',
+  'failure',
+  'exception',
+  'fail-open',
+  'fail-closed',
+  'fallback',
 ];
 
 const PERMISSION_EVIDENCE_KEYWORDS = [
-  "permission",
-  "authorization",
-  "auth",
-  "rbac",
-  "realm",
-  "role",
-  "policy",
+  'permission',
+  'authorization',
+  'auth',
+  'rbac',
+  'realm',
+  'role',
+  'policy',
 ];
 
 const OBSERVABILITY_EVIDENCE_KEYWORDS = [
-  "observability",
-  "event",
-  "audit",
-  "metric",
-  "log",
-  "trace",
+  'observability',
+  'event',
+  'audit',
+  'metric',
+  'log',
+  'trace',
 ];
 
-function collectClosureConcernSignals(
-  documents: readonly DocumentEnvelope[],
-): { readonly error: boolean; readonly permission: boolean; readonly observability: boolean } {
-  const text = documents.map(closureSignalText).join("\n").toLowerCase();
+function collectClosureConcernSignals(documents: readonly DocumentEnvelope[]): {
+  readonly error: boolean;
+  readonly permission: boolean;
+  readonly observability: boolean;
+} {
+  const text = documents.map(closureSignalText).join('\n').toLowerCase();
   return {
     error: matchesAnyKeyword(text, ERROR_EVIDENCE_KEYWORDS),
     permission: matchesAnyKeyword(text, PERMISSION_EVIDENCE_KEYWORDS),
@@ -3936,8 +4269,10 @@ function hasClosureConcernEvidence(
   evidence: ClosureEvidenceSummary,
   keywords: readonly string[],
 ): boolean {
-  return hasClosureConcernPolicyEvidence(documents, consumedRules, keywords) &&
-    hasClosureConcernVerificationEvidence(documents, evidence, keywords);
+  return (
+    hasClosureConcernPolicyEvidence(documents, consumedRules, keywords) &&
+    hasClosureConcernVerificationEvidence(documents, evidence, keywords)
+  );
 }
 
 function hasClosureConcernPolicyEvidence(
@@ -3945,16 +4280,16 @@ function hasClosureConcernPolicyEvidence(
   consumedRules: readonly DocumentSummary[],
   keywords: readonly string[],
 ): boolean {
-  const policyDocuments = documents.filter((document) =>
-    document.kind === "rule" ||
-    document.kind === "memo" ||
-    asString(document.metadata.scope) === "constraint" ||
-    asString(document.metadata.aspect) === "tech_constraint"
+  const policyDocuments = documents.filter(
+    (document) =>
+      document.kind === 'rule' ||
+      document.kind === 'memo' ||
+      asString(document.metadata.scope) === 'constraint' ||
+      asString(document.metadata.aspect) === 'tech_constraint',
   );
-  const text = [
-    ...policyDocuments.map(closureSignalText),
-    ...consumedRules.map(closureSummaryText),
-  ].join("\n").toLowerCase();
+  const text = [...policyDocuments.map(closureSignalText), ...consumedRules.map(closureSummaryText)]
+    .join('\n')
+    .toLowerCase();
   return matchesAnyKeyword(text, keywords);
 }
 
@@ -3963,19 +4298,28 @@ function hasClosureConcernVerificationEvidence(
   evidence: ClosureEvidenceSummary,
   keywords: readonly string[],
 ): boolean {
-  const verificationDocuments = documents.filter((document) =>
-    document.kind === "test" ||
-    document.kind === "cases"
+  const verificationDocuments = documents.filter(
+    (document) => document.kind === 'test' || document.kind === 'cases',
   );
   const text = [
     ...verificationDocuments.map(closureSignalText),
     ...evidence.tests.map(closureSummaryText),
     ...evidence.cases.map(closureSummaryText),
-    ...evidence.evidence.map((item) => `${item.id} ${item.kind ?? ""} ${item.summary ?? ""} ${metadataSearchText(item.metadata)}`),
+    ...evidence.evidence.map(
+      (item) =>
+        `${item.id} ${item.kind ?? ''} ${item.summary ?? ''} ${metadataSearchText(item.metadata)}`,
+    ),
     ...evidence.sources
-      .filter((source) => isTestLikePath(source.path) || isTestLikePath(asString(source.metadata.value)))
-      .map((source) => `${source.id} ${source.path ?? ""} ${source.label ?? ""} ${metadataSearchText(source.metadata)}`),
-  ].join("\n").toLowerCase();
+      .filter(
+        (source) => isTestLikePath(source.path) || isTestLikePath(asString(source.metadata.value)),
+      )
+      .map(
+        (source) =>
+          `${source.id} ${source.path ?? ''} ${source.label ?? ''} ${metadataSearchText(source.metadata)}`,
+      ),
+  ]
+    .join('\n')
+    .toLowerCase();
   return matchesAnyKeyword(text, keywords);
 }
 
@@ -3986,7 +4330,7 @@ function closureSignalText(document: DocumentEnvelope): string {
     titleOf(document),
     metadataSearchText(document.metadata),
     ...document.links.map((link) => `${link.type} ${link.targetId}`),
-  ].join(" ");
+  ].join(' ');
 }
 
 function closureSummaryText(document: DocumentSummary): string {
@@ -3995,21 +4339,21 @@ function closureSummaryText(document: DocumentSummary): string {
     document.path,
     document.title,
     metadataSearchText(document.metadata),
-  ].join(" ");
+  ].join(' ');
 }
 
 function metadataSearchText(metadata: DocumentMetadata): string {
-  return Object.values(metadata).map(stringifyMetadataValue).join(" ");
+  return Object.values(metadata).map(stringifyMetadataValue).join(' ');
 }
 
 function stringifyMetadataValue(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return String(value);
   }
-  if (Array.isArray(value)) return value.map(stringifyMetadataValue).join(" ");
-  if (typeof value === "object") return Object.values(value).map(stringifyMetadataValue).join(" ");
-  return "";
+  if (Array.isArray(value)) return value.map(stringifyMetadataValue).join(' ');
+  if (typeof value === 'object') return Object.values(value).map(stringifyMetadataValue).join(' ');
+  return '';
 }
 
 function matchesAnyKeyword(text: string, keywords: readonly string[]): boolean {
@@ -4024,32 +4368,39 @@ function matchesKeyword(text: string, keyword: string): boolean {
 }
 
 function requiresVerificationEvidence(responsibility: ClosureResponsibility): boolean {
-  return responsibility !== "Layout / Pack" && responsibility !== "Entry / Identity";
+  return responsibility !== 'Layout / Pack' && responsibility !== 'Entry / Identity';
 }
 
 function requiresSourceMappingEvidence(
   document: DocumentEnvelope | undefined,
   responsibility: ClosureResponsibility,
 ): boolean {
-  if (responsibility === "Layout / Pack") return false;
-  if (document?.kind === "rule") return false;
+  if (responsibility === 'Layout / Pack') return false;
+  if (document?.kind === 'rule') return false;
   return true;
 }
 
 function requiresConsumedRuleEvidence(responsibility: ClosureResponsibility): boolean {
-  return responsibility !== "Layout / Pack" && responsibility !== "Entry / Identity";
+  return responsibility !== 'Layout / Pack' && responsibility !== 'Entry / Identity';
 }
 
 function hasClosureVerificationEvidence(evidence: ClosureEvidenceSummary): boolean {
-  return evidence.tests.length > 0 ||
+  return (
+    evidence.tests.length > 0 ||
     evidence.cases.length > 0 ||
     evidence.evidence.length > 0 ||
-    evidence.sources.some((source) => isTestLikePath(source.path) || isTestLikePath(asString(source.metadata.value))) ||
-    ((evidence.bdd?.contracts ?? 0) + (evidence.bdd?.testUnits ?? 0) + (evidence.bdd?.implementationUnits ?? 0)) > 0;
+    evidence.sources.some(
+      (source) => isTestLikePath(source.path) || isTestLikePath(asString(source.metadata.value)),
+    ) ||
+    (evidence.bdd?.contracts ?? 0) +
+      (evidence.bdd?.testUnits ?? 0) +
+      (evidence.bdd?.implementationUnits ?? 0) >
+      0
+  );
 }
 
 function isTestLikePath(path: string | undefined): boolean {
-  return typeof path === "string" && /(?:^|[./-])(?:test|spec)\.[cm]?[jt]sx?$/.test(path);
+  return typeof path === 'string' && /(?:^|[./-])(?:test|spec)\.[cm]?[jt]sx?$/.test(path);
 }
 
 function deriveClosureState(input: {
@@ -4059,16 +4410,19 @@ function deriveClosureState(input: {
   readonly diagnostics: readonly DocumentDiagnostic[];
   readonly evidence: ClosureEvidenceSummary;
 }): ClosureState {
-  if (!input.primaryDocument) return "unmapped";
-  if (input.diagnostics.some((diagnostic) => diagnostic.severity === "error") ||
-    input.missing.some((item) => item.severity === "error")) {
-    return "drifted";
+  if (!input.primaryDocument) return 'unmapped';
+  if (
+    input.diagnostics.some((diagnostic) => diagnostic.severity === 'error') ||
+    input.missing.some((item) => item.severity === 'error')
+  ) {
+    return 'drifted';
   }
-  if (!input.missing.some((item) => item.severity === "warning" || item.severity === "error")) {
-    return "closed";
+  if (!input.missing.some((item) => item.severity === 'warning' || item.severity === 'error')) {
+    return 'closed';
   }
-  if (hasClosureVerificationEvidence(input.evidence) || input.resolvedSource) return "partially-closed";
-  return "mapped";
+  if (hasClosureVerificationEvidence(input.evidence) || input.resolvedSource)
+    return 'partially-closed';
+  return 'mapped';
 }
 
 async function buildPrdAuthoringContext(
@@ -4079,76 +4433,80 @@ async function buildPrdAuthoringContext(
   scopeOptions: DocumentCommandScopeOptions = {},
 ): Promise<PrdAuthoringContext> {
   const resolved = resolveDocument(documents, target);
-  const familyOnlyScope = resolved && scopeOptions.familyOnly === true
-    ? collectFamilyOnlyScope(documents, resolved, scopeOptions)
-    : undefined;
-  const graphScope = resolved && !familyOnlyScope
-    ? collectGraphScopedDocuments(documents, rootDir, {
-      target: prdContextTraversalTarget(target, resolved),
-      axes: PRD_CONTEXT_TRAVERSAL_AXES,
-      direction: "both",
-      depth: 2,
-      includeContext: false,
-    })
-    : undefined;
+  const familyOnlyScope =
+    resolved && scopeOptions.familyOnly === true
+      ? collectFamilyOnlyScope(documents, resolved, scopeOptions)
+      : undefined;
+  const graphScope =
+    resolved && !familyOnlyScope
+      ? collectGraphScopedDocuments(documents, rootDir, {
+          target: prdContextTraversalTarget(target, resolved),
+          axes: PRD_CONTEXT_TRAVERSAL_AXES,
+          direction: 'both',
+          depth: 2,
+          includeContext: false,
+        })
+      : undefined;
   const relatedScope = familyOnlyScope ?? graphScope;
   const graphResult = relatedScope
     ? toDocsGraphCliResult(relatedScope.traversal, graphFilters)
     : undefined;
-  const relatedViewScope = graphResult && relatedScope
-    ? collectDocumentsForGraphView(
-      documents,
-      relatedScope.traversal,
-      graphResult.filtering.filteredNodeIds,
-    )
-    : relatedScope;
-  const relatedDocuments = relatedViewScope
-    ? relatedViewScope.documents
-    : [];
+  const relatedViewScope =
+    graphResult && relatedScope
+      ? collectDocumentsForGraphView(
+          documents,
+          relatedScope.traversal,
+          graphResult.filtering.filteredNodeIds,
+        )
+      : relatedScope;
+  const relatedDocuments = relatedViewScope ? relatedViewScope.documents : [];
   const topicTokens = prdTopicTokens(target, resolved?.document);
   const normalizedFilters = normalizeDocumentGraphViewFilters(graphFilters);
   const topicDocuments = resolved
     ? []
-    : documents.filter((document) =>
-      matchesPrdTopic(document, target, topicTokens)
-      && prdTopicDocumentAllowed(document, scopeOptions)
-      && documentMatchesGraphViewFilters(document, normalizedFilters, false)
-    );
-  const scopedDocuments = uniqueDocuments([...relatedDocuments, ...topicDocuments])
-    .toSorted(compareDocuments);
-  const rankingByDocumentKey = graphResult && relatedScope
-    ? buildPrdContextRankingByDocumentKey(
-      documents,
-      relatedScope.traversal,
-      graphResult.rankedNodes,
-    )
-    : new Map<string, PrdContextSourceRanking>();
+    : documents.filter(
+        (document) =>
+          matchesPrdTopic(document, target, topicTokens) &&
+          prdTopicDocumentAllowed(document, scopeOptions) &&
+          documentMatchesGraphViewFilters(document, normalizedFilters, false),
+      );
+  const scopedDocuments = uniqueDocuments([...relatedDocuments, ...topicDocuments]).toSorted(
+    compareDocuments,
+  );
+  const rankingByDocumentKey =
+    graphResult && relatedScope
+      ? buildPrdContextRankingByDocumentKey(
+          documents,
+          relatedScope.traversal,
+          graphResult.rankedNodes,
+        )
+      : new Map<string, PrdContextSourceRanking>();
   const rankedScopedDocuments = orderPrdContextDocuments(scopedDocuments, rankingByDocumentKey);
   const relatedKeys = new Set(relatedDocuments.map(documentKey));
   const topicKeys = new Set(topicDocuments.map(documentKey));
   const openTodos = await collectPrdOpenTodos(rootDir, rankedScopedDocuments);
   const scenarioMatrixRows = await collectScenarioMatrixRows(rootDir, rankedScopedDocuments);
-  const sources = rankedScopedDocuments.flatMap((document) => document.sources.map((source) =>
-    toPrdContextSourceRef(document, source)
-  ));
-  const evidence = rankedScopedDocuments.flatMap((document) => document.evidence.map((item) =>
-    toPrdContextEvidence(document, item)
-  ));
+  const sources = rankedScopedDocuments.flatMap((document) =>
+    document.sources.map((source) => toPrdContextSourceRef(document, source)),
+  );
+  const evidence = rankedScopedDocuments.flatMap((document) =>
+    document.evidence.map((item) => toPrdContextEvidence(document, item)),
+  );
   const diagnostics = rankedScopedDocuments.flatMap((document) => document.diagnostics);
   const relatedSpecs = rankedScopedDocuments
-    .filter((document) => document.kind === "spec")
+    .filter((document) => document.kind === 'spec')
     .map(summarizePrdContextDocument);
   const plans = rankedScopedDocuments
-    .filter((document) => document.kind === "plan")
+    .filter((document) => document.kind === 'plan')
     .map(summarizePrdContextDocument);
   const priorPrds = rankedScopedDocuments
-    .filter((document) => document.kind === "prd")
+    .filter((document) => document.kind === 'prd')
     .map(summarizePrdContextDocument);
   const prdJsonCompletion = rankedScopedDocuments
-    .filter((document) => document.kind === "ralph-prd-json")
+    .filter((document) => document.kind === 'ralph-prd-json')
     .map(toPrdJsonCompletionState);
   const ralphSessionState = rankedScopedDocuments
-    .filter((document) => document.kind === "ralph-session")
+    .filter((document) => document.kind === 'ralph-session')
     .map(toRalphSessionContextState);
   const contextSources = rankedScopedDocuments.map((document) =>
     toPrdContextSource(
@@ -4158,7 +4516,7 @@ async function buildPrdAuthoringContext(
       topicKeys,
       relatedViewScope?.reasonByDocumentKey,
       rankingByDocumentKey,
-    )
+    ),
   );
 
   return {
@@ -4198,9 +4556,11 @@ function prdTopicDocumentAllowed(
 ): boolean {
   if (scopeOptions.familyOnly !== true) return true;
   if (isTransientDocument(document)) return scopeOptions.includeTransient === true;
-  if (document.kind === "prd" || document.kind === "ralph-prd-json") {
-    return !normalizePath(document.path).split("/").includes("archive")
-      && document.metadata.lifecycle !== "archived";
+  if (document.kind === 'prd' || document.kind === 'ralph-prd-json') {
+    return (
+      !normalizePath(document.path).split('/').includes('archive') &&
+      document.metadata.lifecycle !== 'archived'
+    );
   }
   return true;
 }
@@ -4229,17 +4589,14 @@ function documentMatchesGraphViewFilters(
 
 function isArchiveViewDocument(document: DocumentEnvelope): boolean {
   const lifecycle = asString(document.metadata.lifecycle)?.toLowerCase();
-  if (lifecycle === "archived" || lifecycle === "historical") return true;
+  if (lifecycle === 'archived' || lifecycle === 'historical') return true;
   const status = asString(document.metadata.status)?.toLowerCase();
-  if (status === "archived" || status === "historical") return true;
-  return normalizePath(document.path).split("/").includes("archive");
+  if (status === 'archived' || status === 'historical') return true;
+  return normalizePath(document.path).split('/').includes('archive');
 }
 
 function documentKindValues(document: DocumentEnvelope): readonly string[] {
-  return unique([
-    document.kind,
-    asString(document.metadata.documentKind),
-  ]);
+  return unique([document.kind, asString(document.metadata.documentKind)]);
 }
 
 function documentRoleValues(document: DocumentEnvelope): readonly string[] {
@@ -4263,15 +4620,15 @@ function documentFollowUpCategoryValues(document: DocumentEnvelope): readonly st
 
 function isRoleLikeDocumentKind(kind: string): boolean {
   return [
-    "spec",
-    "todo",
-    "plan",
-    "rule",
-    "cases",
-    "test",
-    "memo",
-    "prd",
-    "ralph-prd-json",
+    'spec',
+    'todo',
+    'plan',
+    'rule',
+    'cases',
+    'test',
+    'memo',
+    'prd',
+    'ralph-prd-json',
   ].includes(kind);
 }
 
@@ -4304,14 +4661,15 @@ function toPrdContextSource(
     stableId: document.stableId,
     path: document.path,
     ...(summary.title ? { title: summary.title } : {}),
-    reason: document === resolvedTarget
-      ? "target"
-      : graphReasons?.get(key)
-        ?? (relatedKeys.has(key)
-          ? "graph-related"
-          : topicKeys.has(key)
-          ? "topic-match"
-          : "included"),
+    reason:
+      document === resolvedTarget
+        ? 'target'
+        : (graphReasons?.get(key) ??
+          (relatedKeys.has(key)
+            ? 'graph-related'
+            : topicKeys.has(key)
+              ? 'topic-match'
+              : 'included')),
     ...(ranking ? { ranking } : {}),
   };
 }
@@ -4319,7 +4677,7 @@ function toPrdContextSource(
 function buildPrdContextRankingByDocumentKey(
   documents: readonly DocumentEnvelope[],
   traversal: DocumentGraphTraversalResult,
-  rankedNodes: DocumentGraphRankingResult["rankedNodes"],
+  rankedNodes: DocumentGraphRankingResult['rankedNodes'],
 ): ReadonlyMap<string, PrdContextSourceRanking> {
   const rankingByDocumentKey = new Map<string, PrdContextSourceRanking>();
   const traversalNodeById = new Map(traversal.nodes.map((node) => [node.id, node]));
@@ -4382,7 +4740,7 @@ async function collectPrdOpenTodos(
 ): Promise<readonly PrdOpenTodo[]> {
   const todos: PrdOpenTodo[] = [];
   for (const document of documents) {
-    if (document.kind !== "todo") continue;
+    if (document.kind !== 'todo') continue;
     const content = await readRepoFile(rootDir, document.path);
     if (content === null) continue;
     for (const item of parseOpenTodoItems(content)) {
@@ -4405,7 +4763,7 @@ async function collectScenarioMatrixRows(
   for (const document of documents) {
     const content = await readRepoFile(rootDir, document.path);
     if (content === null || !/Scenario Matrix/i.test(content)) continue;
-    const section = extractMarkdownSection(content, "Scenario Matrix");
+    const section = extractMarkdownSection(content, 'Scenario Matrix');
     if (!section) continue;
     const parsedRows = parseMarkdownTableRows(section);
     parsedRows.forEach((cells, index) => {
@@ -4414,9 +4772,11 @@ async function collectScenarioMatrixRows(
         path: document.path,
         rowIndex: index + 1,
         cells,
-        evidenceIds: unique(Object.values(cells).flatMap((value) =>
-          value.match(/\bE-[A-Za-z0-9][A-Za-z0-9_-]*\b/g) ?? []
-        )),
+        evidenceIds: unique(
+          Object.values(cells).flatMap(
+            (value) => value.match(/\bE-[A-Za-z0-9][A-Za-z0-9_-]*\b/g) ?? [],
+          ),
+        ),
       });
     });
   }
@@ -4455,8 +4815,9 @@ function toPrdContextEvidence(
 
 function toPrdJsonCompletionState(document: DocumentEnvelope): PrdJsonCompletionState {
   const storyCount = asNumber(document.metadata.storyCount) ?? document.tasks.length;
-  const passedStoryCount = asNumber(document.metadata.passedStoryCount)
-    ?? document.tasks.filter((task) => task.metadata.passes === true).length;
+  const passedStoryCount =
+    asNumber(document.metadata.passedStoryCount) ??
+    document.tasks.filter((task) => task.metadata.passes === true).length;
   const name = asString(document.metadata.name);
   return {
     documentId: document.stableId,
@@ -4494,20 +4855,22 @@ function toRalphSessionContextState(document: DocumentEnvelope): RalphSessionCon
 
 function buildPrdScaffoldMarkdown(context: PrdAuthoringContext): string {
   const title = prdScaffoldTitle(context);
-  const sourceLines = context.contextSources.length > 0
-    ? context.contextSources.map((source) =>
-      `- [${source.kind}] \`${source.stableId}\` (${source.path}) - ${source.reason}`
-    )
-    : ["- No matching control-plane sources were found; fill this PRD from planner input."];
-  const specLines = context.relatedSpecs.slice(0, 5).map((spec) =>
-    `- \`${spec.stableId}\`: ${spec.summary ?? spec.title ?? spec.path}`
-  );
-  const todoLines = context.openTodos.slice(0, 5).map((todo) =>
-    `- ${todo.text} (${todo.path} ${todo.pointer})`
-  );
-  const planLines = context.plans.slice(0, 5).map((plan) =>
-    `- \`${plan.stableId}\`: ${plan.summary ?? plan.title ?? plan.path}`
-  );
+  const sourceLines =
+    context.contextSources.length > 0
+      ? context.contextSources.map(
+          (source) =>
+            `- [${source.kind}] \`${source.stableId}\` (${source.path}) - ${source.reason}`,
+        )
+      : ['- No matching control-plane sources were found; fill this PRD from planner input.'];
+  const specLines = context.relatedSpecs
+    .slice(0, 5)
+    .map((spec) => `- \`${spec.stableId}\`: ${spec.summary ?? spec.title ?? spec.path}`);
+  const todoLines = context.openTodos
+    .slice(0, 5)
+    .map((todo) => `- ${todo.text} (${todo.path} ${todo.pointer})`);
+  const planLines = context.plans
+    .slice(0, 5)
+    .map((plan) => `- \`${plan.stableId}\`: ${plan.summary ?? plan.title ?? plan.path}`);
   const qualityGates = scaffoldQualityGates(context);
 
   return `[PRD]
@@ -4516,17 +4879,17 @@ function buildPrdScaffoldMarkdown(context: PrdAuthoringContext): string {
 ## Overview
 
 Draft the product requirement for \`${context.target}\` using the docs control-plane context below.
-${specLines.length > 0 ? `\nRelated specs:\n${specLines.join("\n")}\n` : ""}
+${specLines.length > 0 ? `\nRelated specs:\n${specLines.join('\n')}\n` : ''}
 
 ## Goals
 
 - [ ] Define the planner-visible outcome for this PRD.
 - [ ] Ground implementation scope in existing specs, TODOs, plans, evidence, and ralph state.
-${todoLines.length > 0 ? `- [ ] Resolve or explicitly defer surfaced open TODOs.\n` : ""}
+${todoLines.length > 0 ? `- [ ] Resolve or explicitly defer surfaced open TODOs.\n` : ''}
 
 ## Quality Gates
 
-${qualityGates.map((gate) => `- [ ] ${gate}`).join("\n")}
+${qualityGates.map((gate) => `- [ ] ${gate}`).join('\n')}
 
 ## User Stories
 
@@ -4547,7 +4910,7 @@ ${qualityGates.map((gate) => `- [ ] ${gate}`).join("\n")}
 
 ## Technical Considerations
 
-${planLines.length > 0 ? `Existing plans:\n${planLines.join("\n")}\n` : "- TODO: Capture architectural constraints and source-owned vocabulary boundaries.\n"}
+${planLines.length > 0 ? `Existing plans:\n${planLines.join('\n')}\n` : '- TODO: Capture architectural constraints and source-owned vocabulary boundaries.\n'}
 - PRD authoring reads neutral control-plane envelopes; repository documents remain source of truth.
 - PRD JSON completion states surfaced: ${context.prdJsonCompletion.length}.
 - Ralph session states surfaced: ${context.ralphSessionState.length}.
@@ -4567,7 +4930,7 @@ ${planLines.length > 0 ? `Existing plans:\n${planLines.join("\n")}\n` : "- TODO:
 
 ## Control-Plane Context Sources
 
-${sourceLines.join("\n")}
+${sourceLines.join('\n')}
 [/PRD]
 `;
 }
@@ -4575,35 +4938,31 @@ ${sourceLines.join("\n")}
 function scaffoldQualityGates(context: PrdAuthoringContext): readonly string[] {
   const fromPriorPrds = context.priorPrds.flatMap((prd) =>
     Array.isArray(prd.metadata.qualityGates)
-      ? prd.metadata.qualityGates.filter((item): item is string => typeof item === "string")
-      : []
+      ? prd.metadata.qualityGates.filter((item): item is string => typeof item === 'string')
+      : [],
   );
   const fromJsonTasks = context.prdJsonCompletion.flatMap((prd) =>
     prd.tasks.flatMap((task) => {
       const source = context.contextSources.find((item) => item.stableId === prd.documentId);
       return source ? [`Review \`${source.path}\` state for ${task.id}.`] : [];
-    })
+    }),
   );
   return unique([
     ...fromPriorPrds,
     ...fromJsonTasks,
-    "`pnpm --filter @qa-sdk/cli test -- docs` passes.",
-    "`pnpm --filter @qa-sdk/cli typecheck` passes.",
+    '`pnpm --filter @qa-sdk/cli test -- docs` passes.',
+    '`pnpm --filter @qa-sdk/cli typecheck` passes.',
   ]).slice(0, 8);
 }
 
 function prdScaffoldTitle(context: PrdAuthoringContext): string {
-  const sourceTitle = context.resolvedTarget?.title
-    ?? context.relatedSpecs[0]?.title
-    ?? context.priorPrds[0]?.title;
-  if (sourceTitle) return sourceTitle.replace(/^PRD:\s*/i, "").trim();
+  const sourceTitle =
+    context.resolvedTarget?.title ?? context.relatedSpecs[0]?.title ?? context.priorPrds[0]?.title;
+  if (sourceTitle) return sourceTitle.replace(/^PRD:\s*/i, '').trim();
   return titleizeTopic(context.target);
 }
 
-function prdTopicTokens(
-  target: string,
-  document: DocumentEnvelope | undefined,
-): readonly string[] {
+function prdTopicTokens(target: string, document: DocumentEnvelope | undefined): readonly string[] {
   const values = [
     target,
     document?.stableId,
@@ -4613,7 +4972,8 @@ function prdTopicTokens(
     asString(document?.metadata.name),
     ...asStringArray(document?.metadata.tags),
   ];
-  const tokens = values.flatMap((value) => tokenizeTopic(value ?? ""))
+  const tokens = values
+    .flatMap((value) => tokenizeTopic(value ?? ''))
     .filter((token) => !GENERIC_TOPIC_TOKENS.has(token));
   return unique(tokens.length > 0 ? tokens : tokenizeTopic(target));
 }
@@ -4631,28 +4991,31 @@ function matchesPrdTopic(
 
 function tokenizeTopic(value: string): readonly string[] {
   return normalizeSearchText(value)
-    .split(" ")
+    .split(' ')
     .filter((token) => token.length >= 3);
 }
 
-function parseOpenTodoItems(content: string): readonly { readonly text: string; readonly pointer: string }[] {
+function parseOpenTodoItems(
+  content: string,
+): readonly { readonly text: string; readonly pointer: string }[] {
   return content
     .split(/\r?\n/)
     .map((line, index) => {
       const match = line.match(/^\s*[-*]\s+\[ \]\s+(.+?)\s*$/);
       if (!match) return null;
       return {
-        text: match[1]?.trim() ?? "",
+        text: match[1]?.trim() ?? '',
         pointer: `line ${index + 1}`,
       };
     })
-    .filter((item): item is { readonly text: string; readonly pointer: string } =>
-      item !== null && item.text.length > 0
+    .filter(
+      (item): item is { readonly text: string; readonly pointer: string } =>
+        item !== null && item.text.length > 0,
     );
 }
 
 function extractMarkdownSection(content: string, title: string): string | null {
-  const headingRe = new RegExp(String.raw`^##\s+${escapeRegExp(title)}\s*$`, "im");
+  const headingRe = new RegExp(String.raw`^##\s+${escapeRegExp(title)}\s*$`, 'im');
   const match = content.match(headingRe);
   if (!match || match.index === undefined) return null;
   const start = match.index + match[0].length;
@@ -4665,52 +5028,60 @@ function parseMarkdownTableRows(section: string): readonly Readonly<Record<strin
   const tableLines = section
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line.startsWith("|") && line.endsWith("|"));
+    .filter((line) => line.startsWith('|') && line.endsWith('|'));
   if (tableLines.length < 2) return [];
   const headers = splitMarkdownTableRow(tableLines[0]!);
-  return tableLines.slice(2).map((line) => {
-    const cells = splitMarkdownTableRow(line);
-    const row: Record<string, string> = {};
-    headers.forEach((header, index) => {
-      row[header || `column${index + 1}`] = cells[index] ?? "";
-    });
-    return row;
-  }).filter((row) => Object.values(row).some((value) => value.length > 0));
+  return tableLines
+    .slice(2)
+    .map((line) => {
+      const cells = splitMarkdownTableRow(line);
+      const row: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        row[header || `column${index + 1}`] = cells[index] ?? '';
+      });
+      return row;
+    })
+    .filter((row) => Object.values(row).some((value) => value.length > 0));
 }
 
 function splitMarkdownTableRow(line: string): readonly string[] {
   return line
-    .replace(/^\|/, "")
-    .replace(/\|$/, "")
-    .split("|")
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
     .map((cell) => cell.trim());
 }
 
 async function readRepoFile(rootDir: string, path: string): Promise<string | null> {
   try {
-    return await readFile(resolve(rootDir, normalizePath(path)), "utf8");
+    return await readFile(resolve(rootDir, normalizePath(path)), 'utf8');
   } catch {
     return null;
   }
 }
 
 function resolveOutputPath(rootDir: string, path: string): string {
-  return path.startsWith("/") ? resolve(path) : resolve(rootDir, path);
+  return path.startsWith('/') ? resolve(path) : resolve(rootDir, path);
 }
 
 function formatMaterializedOutputPath(rootDir: string, outputPath: string): string {
   const resolved = resolve(outputPath);
-  const relativePath = relative(rootDir, resolved).replaceAll("\\", "/");
-  if (relativePath && relativePath !== ".." && !relativePath.startsWith("../") && !isAbsolute(relativePath)) {
+  const relativePath = relative(rootDir, resolved).replaceAll('\\', '/');
+  if (
+    relativePath &&
+    relativePath !== '..' &&
+    !relativePath.startsWith('../') &&
+    !isAbsolute(relativePath)
+  ) {
     return relativePath;
   }
-  return resolved.replaceAll("\\", "/");
+  return resolved.replaceAll('\\', '/');
 }
 
 function countDocuments(
   allDocuments: readonly DocumentEnvelope[],
   scopedDocuments: readonly DocumentEnvelope[],
-): StatusResult["counts"] {
+): StatusResult['counts'] {
   return {
     documents: allDocuments.length,
     relatedDocuments: scopedDocuments.length,
@@ -4719,7 +5090,10 @@ function countDocuments(
     sources: scopedDocuments.reduce((count, document) => count + document.sources.length, 0),
     tasks: scopedDocuments.reduce((count, document) => count + document.tasks.length, 0),
     evidence: scopedDocuments.reduce((count, document) => count + document.evidence.length, 0),
-    diagnostics: scopedDocuments.reduce((count, document) => count + document.diagnostics.length, 0),
+    diagnostics: scopedDocuments.reduce(
+      (count, document) => count + document.diagnostics.length,
+      0,
+    ),
   };
 }
 
@@ -4811,8 +5185,8 @@ function toFamilyOnlyTraversal(
   return {
     input: {
       target: graphInput?.target ?? target.stableId,
-      axes: graphInput?.axes ?? ["role", "composition"],
-      direction: graphInput?.direction ?? "both",
+      axes: graphInput?.axes ?? ['role', 'composition'],
+      direction: graphInput?.direction ?? 'both',
       depth: graphInput?.depth ?? 1,
       limit: graphInput?.limit ?? documents.length,
       includeContext: graphInput?.includeContext ?? false,
@@ -4820,7 +5194,7 @@ function toFamilyOnlyTraversal(
     },
     targetResolution: {
       target: graphInput?.target ?? target.stableId,
-      lookupKind: "stable-id",
+      lookupKind: 'stable-id',
       indexed: true,
       nodes: [],
       diagnostics: [],
@@ -4846,43 +5220,34 @@ function toFamilyOnlyTraversal(
 
 function familyOnlyGraphNodeKind(
   document: DocumentEnvelope,
-): DocumentGraphTraversalResult["nodes"][number]["kind"] {
-  if (document.kind === "knowledge" || document.metadata.type === "knowledge") return "knowledge";
+): DocumentGraphTraversalResult['nodes'][number]['kind'] {
+  if (document.kind === 'knowledge' || document.metadata.type === 'knowledge') return 'knowledge';
   switch (document.kind) {
-    case "spec":
-    case "todo":
-    case "plan":
-    case "rule":
-    case "cases":
-    case "test":
-    case "memo":
-    case "prd":
-    case "ralph-prd-json":
-    case "ralph-session":
+    case 'spec':
+    case 'todo':
+    case 'plan':
+    case 'rule':
+    case 'cases':
+    case 'test':
+    case 'memo':
+    case 'prd':
+    case 'ralph-prd-json':
+    case 'ralph-session':
       return document.kind;
     default:
-      return "document";
+      return 'document';
   }
 }
 
-function statusTraversalTarget(
-  target: string,
-  resolved: ResolvedDocument,
-): string {
+function statusTraversalTarget(target: string, resolved: ResolvedDocument): string {
   return resolved.matchedTask ? resolved.document.stableId : target;
 }
 
-function collectTraversalTarget(
-  target: string,
-  resolved: ResolvedDocument,
-): string {
+function collectTraversalTarget(target: string, resolved: ResolvedDocument): string {
   return resolved.matchedTask ? resolved.document.stableId : target;
 }
 
-function prdContextTraversalTarget(
-  target: string,
-  resolved: ResolvedDocument,
-): string {
+function prdContextTraversalTarget(target: string, resolved: ResolvedDocument): string {
   return resolved.matchedTask ? resolved.document.stableId : target;
 }
 
@@ -4897,8 +5262,12 @@ function resolveDocument(
   }
 
   const normalizedTarget = normalizePath(target);
-  const identityMatches = documents.filter((document) => documentIdentityValues(document).includes(target));
-  const pathMatches = documents.filter((document) => documentPathValues(document).includes(normalizedTarget));
+  const identityMatches = documents.filter((document) =>
+    documentIdentityValues(document).includes(target),
+  );
+  const pathMatches = documents.filter((document) =>
+    documentPathValues(document).includes(normalizedTarget),
+  );
   const byDocument = [...identityMatches, ...pathMatches].toSorted(compareResolutionPriority)[0];
   if (byDocument) return { document: byDocument };
 
@@ -4927,15 +5296,17 @@ function resolveSourceTarget(
   const matches = documents.flatMap((document) =>
     document.sources
       .filter((source) => sourceMatchesPath(source, normalizedTarget))
-      .map((source) => ({ document, source }))
+      .map((source) => ({ document, source })),
   );
-  const matchedDocuments = uniqueDocuments(matches.map((match) => match.document))
-    .toSorted(compareDocuments);
+  const matchedDocuments = uniqueDocuments(matches.map((match) => match.document)).toSorted(
+    compareDocuments,
+  );
   return {
     path: normalizedTarget,
     documents: matchedDocuments,
     matches: matches.toSorted((left, right) => compareDocuments(left.document, right.document)),
-    limitation: "Source-path status is limited to documents that declare this path in frontmatter or evidence sources; it does not scan the full repository.",
+    limitation:
+      'Source-path status is limited to documents that declare this path in frontmatter or evidence sources; it does not scan the full repository.',
   };
 }
 
@@ -4949,12 +5320,14 @@ function sourceMatchesPath(source: DocumentSource, normalizedTarget: string): bo
 }
 
 function isPathLikeTarget(target: string): boolean {
-  return target.includes("/") || target.includes("\\") || /\.[A-Za-z0-9]+(?::|$)/.test(target);
+  return target.includes('/') || target.includes('\\') || /\.[A-Za-z0-9]+(?::|$)/.test(target);
 }
 
 function compareResolutionPriority(left: DocumentEnvelope, right: DocumentEnvelope): number {
-  return (RESOLUTION_KIND_PRIORITY[left.kind] ?? 50) - (RESOLUTION_KIND_PRIORITY[right.kind] ?? 50)
-    || compareDocuments(left, right);
+  return (
+    (RESOLUTION_KIND_PRIORITY[left.kind] ?? 50) - (RESOLUTION_KIND_PRIORITY[right.kind] ?? 50) ||
+    compareDocuments(left, right)
+  );
 }
 
 function parseSelectorRoute(value: string): SelectorRoute | undefined {
@@ -4971,10 +5344,10 @@ function parseSelectorRoute(value: string): SelectorRoute | undefined {
 }
 
 function normalizeSelectorKind(raw: string): SelectorKind {
-  if (raw === "svc") return "service";
-  if (raw === "pkg") return "package";
-  if (raw === "own") return "owner";
-  if (raw === "fam") return "family";
+  if (raw === 'svc') return 'service';
+  if (raw === 'pkg') return 'package';
+  if (raw === 'own') return 'owner';
+  if (raw === 'fam') return 'family';
   return raw as SelectorKind;
 }
 
@@ -4982,8 +5355,9 @@ function resolveSelectorDocument(
   documents: readonly DocumentEnvelope[],
   selector: SelectorRoute,
 ): DocumentEnvelope | undefined {
-  return [...selectDocumentsBySelector(documents, selector)]
-    .toSorted((left, right) => compareSelectorDocuments(left, right, selector))[0];
+  return [...selectDocumentsBySelector(documents, selector)].toSorted((left, right) =>
+    compareSelectorDocuments(left, right, selector),
+  )[0];
 }
 
 function selectSelectorSearchScope(
@@ -4993,8 +5367,8 @@ function selectSelectorSearchScope(
   scope: SelectorScope,
 ): readonly DocumentEnvelope[] {
   if (!rootIndex) return selectDocumentsBySelector(documents, selector);
-  if (scope === "root") return [rootIndex];
-  if (scope === "family") {
+  if (scope === 'root') return [rootIndex];
+  if (scope === 'family') {
     if (!rootIndex.familyId) return [rootIndex];
     return uniqueDocuments([
       rootIndex,
@@ -5009,15 +5383,19 @@ function selectDocumentsBySelector(
   selector: SelectorRoute,
 ): readonly DocumentEnvelope[] {
   switch (selector.kind) {
-    case "doc":
-      return documents.filter((document) => documentIdentityValues(document).includes(selector.value));
-    case "service":
+    case 'doc':
+      return documents.filter((document) =>
+        documentIdentityValues(document).includes(selector.value),
+      );
+    case 'service':
       return documents.filter((document) => asString(document.metadata.svc) === selector.value);
-    case "package":
+    case 'package':
       return documents.filter((document) => asString(document.metadata.svc) === selector.value);
-    case "owner":
-      return documents.filter((document) => asString(document.metadata.ownerSystem) === selector.value);
-    case "family":
+    case 'owner':
+      return documents.filter(
+        (document) => asString(document.metadata.ownerSystem) === selector.value,
+      );
+    case 'family':
       return documents.filter((document) => document.familyId === selector.value);
   }
 }
@@ -5027,14 +5405,13 @@ function compareSelectorDocuments(
   right: DocumentEnvelope,
   selector: SelectorRoute,
 ): number {
-  return selectorRootScore(right, selector) - selectorRootScore(left, selector)
-    || compareResolutionPriority(left, right);
+  return (
+    selectorRootScore(right, selector) - selectorRootScore(left, selector) ||
+    compareResolutionPriority(left, right)
+  );
 }
 
-function selectorRootScore(
-  document: DocumentEnvelope,
-  selector: SelectorRoute,
-): number {
+function selectorRootScore(document: DocumentEnvelope, selector: SelectorRoute): number {
   const stableId = document.stableId.toLowerCase();
   const value = selector.value.toLowerCase();
   const tags = asStringArray(document.metadata.tags).map((tag) => tag.toLowerCase());
@@ -5043,30 +5420,30 @@ function selectorRootScore(
   const path = document.path.toLowerCase();
   const type = asString(document.metadata.type)?.toLowerCase();
   let score = 0;
-  if (tags.includes("entry-point")) score += 120;
-  if (depth === "overview") score += 100;
-  if (tier === "layout") score += 90;
-  else if (tier === "system") score += 80;
-  if (path.startsWith("docs/specs/")) score += 80;
-  if (path.startsWith("docs/proposals/")) score -= 180;
-  if (document.kind === "spec" && type === "design") score += 70;
-  else if (document.kind === "spec") score += 60;
-  else if (document.kind === "rule") score += 40;
-  else if (type === "knowledge") score -= 40;
-  if (selector.kind === "service" || selector.kind === "package" || selector.kind === "owner") {
+  if (tags.includes('entry-point')) score += 120;
+  if (depth === 'overview') score += 100;
+  if (tier === 'layout') score += 90;
+  else if (tier === 'system') score += 80;
+  if (path.startsWith('docs/specs/')) score += 80;
+  if (path.startsWith('docs/proposals/')) score -= 180;
+  if (document.kind === 'spec' && type === 'design') score += 70;
+  else if (document.kind === 'spec') score += 60;
+  else if (document.kind === 'rule') score += 40;
+  else if (type === 'knowledge') score -= 40;
+  if (selector.kind === 'service' || selector.kind === 'package' || selector.kind === 'owner') {
     if (stableId === `${value}-system`) score += 240;
     if (stableId === value) score += 200;
   }
-  if (selector.kind === "family" && document.familyId === selector.value) score += 180;
-  if (selector.kind === "doc" && stableId === value) score += 260;
+  if (selector.kind === 'family' && document.familyId === selector.value) score += 180;
+  if (selector.kind === 'doc' && stableId === value) score += 260;
   return score;
 }
 
 function taskState(task: DocumentTask): string {
-  if (typeof task.status === "string" && task.status.trim()) return task.status.trim();
-  if (task.metadata.passes === true) return "passed";
-  if (task.metadata.passes === false) return "open";
-  return "open";
+  if (typeof task.status === 'string' && task.status.trim()) return task.status.trim();
+  if (task.metadata.passes === true) return 'passed';
+  if (task.metadata.passes === false) return 'open';
+  return 'open';
 }
 
 function matchesSearch(
@@ -5094,8 +5471,7 @@ function compareSearchDocuments(
   right: DocumentEnvelope,
   query: string,
 ): number {
-  return searchScore(right, query) - searchScore(left, query)
-    || compareDocuments(left, right);
+  return searchScore(right, query) - searchScore(left, query) || compareDocuments(left, right);
 }
 
 function searchScore(document: DocumentEnvelope, query: string): number {
@@ -5113,14 +5489,14 @@ function searchScore(document: DocumentEnvelope, query: string): number {
 }
 
 function searchAuthorityScore(document: DocumentEnvelope): number {
-  if (document.kind === "spec" && document.metadata.type === "design") return 90;
-  if (document.kind === "spec") return 80;
-  if (document.kind === "plan") return 60;
-  if (document.kind === "cases") return 50;
-  if (document.kind === "todo") return 40;
-  if (document.kind === "test") return 30;
-  if (document.kind === "rule") return 25;
-  if (document.kind === "memo") return 10;
+  if (document.kind === 'spec' && document.metadata.type === 'design') return 90;
+  if (document.kind === 'spec') return 80;
+  if (document.kind === 'plan') return 60;
+  if (document.kind === 'cases') return 50;
+  if (document.kind === 'todo') return 40;
+  if (document.kind === 'test') return 30;
+  if (document.kind === 'rule') return 25;
+  if (document.kind === 'memo') return 10;
   return 0;
 }
 
@@ -5164,7 +5540,9 @@ function searchableText(document: DocumentEnvelope): string {
       evidence.summary,
       ...metadataReferenceValues(evidence.metadata),
     ]),
-  ].filter((value): value is string => typeof value === "string").join("\n");
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .join('\n');
 }
 
 function summarizeDocument(document: DocumentEnvelope): DocumentSummary {
@@ -5180,9 +5558,9 @@ function summarizeDocument(document: DocumentEnvelope): DocumentSummary {
 }
 
 function titleOf(document: DocumentEnvelope): string {
-  for (const key of ["title", "name", "defId"] as const) {
+  for (const key of ['title', 'name', 'defId'] as const) {
     const value = document.metadata[key];
-    if (typeof value === "string" && value.trim().length > 0) return value;
+    if (typeof value === 'string' && value.trim().length > 0) return value;
   }
   return document.stableId;
 }
@@ -5222,7 +5600,7 @@ function metadataReferenceValues(metadata: DocumentMetadata): readonly string[] 
 }
 
 function appendMetadataValue(values: string[], value: unknown): void {
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     values.push(String(value));
     return;
   }
@@ -5230,7 +5608,7 @@ function appendMetadataValue(values: string[], value: unknown): void {
     for (const item of value) appendMetadataValue(values, item);
     return;
   }
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     for (const item of Object.values(value)) appendMetadataValue(values, item);
   }
 }
@@ -5238,7 +5616,7 @@ function appendMetadataValue(values: string[], value: unknown): void {
 function parseMetadataFilters(values: readonly string[]): DocumentMetadata {
   const metadata: Record<string, string> = {};
   for (const value of values.flatMap(splitCsv)) {
-    const separator = value.indexOf("=");
+    const separator = value.indexOf('=');
     if (separator <= 0) continue;
     const key = value.slice(0, separator).trim();
     const expected = value.slice(separator + 1).trim();
@@ -5247,13 +5625,15 @@ function parseMetadataFilters(values: readonly string[]): DocumentMetadata {
   return metadata;
 }
 
-function printStatus(result: StatusResult, command: "status" | "collect" = "status"): void {
+function printStatus(result: StatusResult, command: 'status' | 'collect' = 'status'): void {
   if (result.target && !result.document && !result.sourceTarget) {
     console.log(`docs ${command}: ${result.target} not found`);
     return;
   }
 
-  console.log(`docs ${command}: ${result.sourceTarget ? `source ${result.sourceTarget.path}` : result.document?.stableId ?? "workspace"}`);
+  console.log(
+    `docs ${command}: ${result.sourceTarget ? `source ${result.sourceTarget.path}` : (result.document?.stableId ?? 'workspace')}`,
+  );
   if (result.document) {
     console.log(`  kind: ${result.document.kind}`);
     console.log(`  path: ${result.document.path}`);
@@ -5263,13 +5643,21 @@ function printStatus(result: StatusResult, command: "status" | "collect" = "stat
     console.log(`  limitation: ${result.sourceTarget.limitation}`);
   }
   if (result.familyId) console.log(`  family: ${result.familyId}`);
-  console.log(`  documents: ${result.counts.relatedDocuments} related / ${result.counts.documents} total`);
-  console.log(`  links/sources/tasks/evidence/diagnostics: ${result.counts.links}/${result.counts.sources}/${result.counts.tasks}/${result.counts.evidence}/${result.counts.diagnostics}`);
+  console.log(
+    `  documents: ${result.counts.relatedDocuments} related / ${result.counts.documents} total`,
+  );
+  console.log(
+    `  links/sources/tasks/evidence/diagnostics: ${result.counts.links}/${result.counts.sources}/${result.counts.tasks}/${result.counts.evidence}/${result.counts.diagnostics}`,
+  );
   if (result.bdd) {
-    console.log(`  bdd contracts/test/impl/diagnostics: ${result.bdd.contracts}/${result.bdd.testUnits}/${result.bdd.implementationUnits}/${result.bdd.diagnostics}`);
+    console.log(
+      `  bdd contracts/test/impl/diagnostics: ${result.bdd.contracts}/${result.bdd.testUnits}/${result.bdd.implementationUnits}/${result.bdd.diagnostics}`,
+    );
   }
   if (result.lifecycle) {
-    console.log(`  lifecycle artifacts/work-topics/issues/prune: ${result.lifecycle.counts.artifactsPresent}/${result.lifecycle.counts.workTopics}/${result.lifecycle.counts.diagnostics}/${result.lifecycle.counts.pruneCandidates}`);
+    console.log(
+      `  lifecycle artifacts/work-topics/issues/prune: ${result.lifecycle.counts.artifactsPresent}/${result.lifecycle.counts.workTopics}/${result.lifecycle.counts.diagnostics}/${result.lifecycle.counts.pruneCandidates}`,
+    );
   }
   printFollowUp(result.nextFollowUp);
   printAdditionalFollowUps(result.nextFollowUps);
@@ -5283,11 +5671,11 @@ function printCollect(result: CollectResult): void {
     return;
   }
 
-  printStatus(result, "collect");
+  printStatus(result, 'collect');
   if (result.graph) {
     printCollectGraphView(result.graph);
   }
-  console.log("");
+  console.log('');
   console.log(`family members (${result.familyMembers.length}):`);
   for (const member of result.familyMembers) {
     console.log(`  - [${member.kind}] ${member.stableId}`);
@@ -5295,14 +5683,22 @@ function printCollect(result: CollectResult): void {
     if (member.title) console.log(`    title: ${member.title}`);
   }
   printLinksBySource(result.links);
-  printNamedCollection("sources", result.sources, (source) =>
-    `${source.id}${source.path ? ` ${source.path}` : ""}${source.label ? ` (${source.label})` : ""}`
+  printNamedCollection(
+    'sources',
+    result.sources,
+    (source) =>
+      `${source.id}${source.path ? ` ${source.path}` : ''}${source.label ? ` (${source.label})` : ''}`,
   );
-  printNamedCollection("tasks", result.tasks, (task) =>
-    `${task.id}: ${task.title} [${taskState(task)}]`
+  printNamedCollection(
+    'tasks',
+    result.tasks,
+    (task) => `${task.id}: ${task.title} [${taskState(task)}]`,
   );
-  printNamedCollection("evidence", result.evidence, (evidence) =>
-    `${evidence.id}${evidence.kind ? ` [${evidence.kind}]` : ""}${evidence.summary ? ` ${evidence.summary}` : ""}`
+  printNamedCollection(
+    'evidence',
+    result.evidence,
+    (evidence) =>
+      `${evidence.id}${evidence.kind ? ` [${evidence.kind}]` : ''}${evidence.summary ? ` ${evidence.summary}` : ''}`,
   );
 }
 
@@ -5322,14 +5718,16 @@ function printClosure(result: ClosureResult): void {
     console.log(`  boundary: ${result.boundary.stableId}`);
   }
   console.log(`  related documents: ${result.counts.relatedDocuments}/${result.counts.documents}`);
-  console.log(`  consumed rules: ${result.consumedRules.length > 0 ? result.consumedRules.map((doc) => doc.stableId).join(", ") : "(none)"}`);
+  console.log(
+    `  consumed rules: ${result.consumedRules.length > 0 ? result.consumedRules.map((doc) => doc.stableId).join(', ') : '(none)'}`,
+  );
   console.log(
     `  evidence: sources=${result.evidence.sources.length} tests=${result.evidence.tests.length} cases=${result.evidence.cases.length} bdd=${result.evidence.bdd?.contracts ?? 0} evidence=${result.evidence.evidence.length}`,
   );
   if (result.missing.length === 0) {
-    console.log("  missing: none");
+    console.log('  missing: none');
   } else {
-    console.log("  missing:");
+    console.log('  missing:');
     for (const item of result.missing) {
       console.log(`    - [${item.severity}] ${item.code}: ${item.message}`);
     }
@@ -5338,11 +5736,11 @@ function printClosure(result: ClosureResult): void {
 }
 
 function printExplore(result: ExploreResult): void {
-  if (result.mode === "map") {
+  if (result.mode === 'map') {
     printExploreMap(result);
     return;
   }
-  if (result.mode === "diagnostic") {
+  if (result.mode === 'diagnostic') {
     printExploreDiagnostic(result);
     return;
   }
@@ -5354,7 +5752,8 @@ function printExploreIntent(result: ExploreResult): void {
   console.log(`docs explore: ${result.target}`);
   console.log(`  mode: intent`);
   if (result.selector) console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
-  if (result.rootIndex) console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
+  if (result.rootIndex)
+    console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
   if (status.document) {
     console.log(`  entry: [${status.document.kind}] ${status.document.stableId}`);
     console.log(`  path: ${status.document.path}`);
@@ -5365,7 +5764,7 @@ function printExploreIntent(result: ExploreResult): void {
   if (status.familyId) console.log(`  family: ${status.familyId}`);
   console.log(`  family members: ${result.familyMembers.length} (use --mode=map)`);
   printFollowUp(status.nextFollowUp);
-  console.log("  next:");
+  console.log('  next:');
   for (const command of recommendedExploreCommands(result.target, status).slice(0, 3)) {
     console.log(`    ${command}`);
   }
@@ -5376,7 +5775,8 @@ function printExploreMap(result: ExploreResult): void {
   console.log(`docs explore: ${result.target}`);
   console.log(`  mode: map`);
   if (result.selector) console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
-  if (result.rootIndex) console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
+  if (result.rootIndex)
+    console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
   if (status.document) {
     console.log(`  entry: [${status.document.kind}] ${status.document.stableId}`);
     console.log(`  path: ${status.document.path}`);
@@ -5386,22 +5786,25 @@ function printExploreMap(result: ExploreResult): void {
   for (const member of result.familyMembers.slice(0, 8)) {
     console.log(`    - [${formatDocumentDisplayRole(member)}] ${member.stableId}`);
   }
-  if (result.familyMembers.length > 8) console.log(`    ... ${result.familyMembers.length - 8} more`);
+  if (result.familyMembers.length > 8)
+    console.log(`    ... ${result.familyMembers.length - 8} more`);
   if (status.roleCoverage) {
     const presentRoles = status.roleCoverage.roles
       .filter((role) => role.present)
       .map((role) => role.role);
-    console.log(`  artifact roles: ${presentRoles.length > 0 ? presentRoles.join(", ") : "(none)"}`);
+    console.log(
+      `  artifact roles: ${presentRoles.length > 0 ? presentRoles.join(', ') : '(none)'}`,
+    );
     const presentTypes = status.roleCoverage.typeCoverage.types
       .filter((type) => type.present)
       .map((type) => type.type);
-    if (presentTypes.length > 0) console.log(`  semantic types: ${presentTypes.join(", ")}`);
+    if (presentTypes.length > 0) console.log(`  semantic types: ${presentTypes.join(', ')}`);
   }
   if (status.lifecycle) {
     console.log(`  work topics: ${status.lifecycle.counts.workTopics}`);
     console.log(`  lifecycle issues: ${status.lifecycle.counts.diagnostics}`);
   }
-  console.log("  recommended next commands:");
+  console.log('  recommended next commands:');
   for (const command of result.recommendedCommands) console.log(`    ${command}`);
 }
 
@@ -5410,24 +5813,33 @@ function printExploreDiagnostic(result: ExploreResult): void {
   console.log(`docs explore: ${result.target}`);
   console.log(`  mode: diagnostic`);
   if (result.selector) console.log(`  selector: ${result.selector.kind}=${result.selector.value}`);
-  if (result.rootIndex) console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
+  if (result.rootIndex)
+    console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
   if (status.document) {
     console.log(`  entry: [${status.document.kind}] ${status.document.stableId}`);
     console.log(`  path: ${status.document.path}`);
   }
-  console.log(`  documents: ${status.counts.relatedDocuments} related / ${status.counts.documents} total`);
-  console.log(`  links/sources/tasks/evidence/diagnostics: ${status.counts.links}/${status.counts.sources}/${status.counts.tasks}/${status.counts.evidence}/${status.counts.diagnostics}`);
+  console.log(
+    `  documents: ${status.counts.relatedDocuments} related / ${status.counts.documents} total`,
+  );
+  console.log(
+    `  links/sources/tasks/evidence/diagnostics: ${status.counts.links}/${status.counts.sources}/${status.counts.tasks}/${status.counts.evidence}/${status.counts.diagnostics}`,
+  );
   if (status.bdd) {
-    console.log(`  bdd contracts/test/impl/diagnostics: ${status.bdd.contracts}/${status.bdd.testUnits}/${status.bdd.implementationUnits}/${status.bdd.diagnostics}`);
+    console.log(
+      `  bdd contracts/test/impl/diagnostics: ${status.bdd.contracts}/${status.bdd.testUnits}/${status.bdd.implementationUnits}/${status.bdd.diagnostics}`,
+    );
   }
   if (status.lifecycle) {
-    console.log(`  lifecycle artifacts/work-topics/issues/prune: ${status.lifecycle.counts.artifactsPresent}/${status.lifecycle.counts.workTopics}/${status.lifecycle.counts.diagnostics}/${status.lifecycle.counts.pruneCandidates}`);
+    console.log(
+      `  lifecycle artifacts/work-topics/issues/prune: ${status.lifecycle.counts.artifactsPresent}/${status.lifecycle.counts.workTopics}/${status.lifecycle.counts.diagnostics}/${status.lifecycle.counts.pruneCandidates}`,
+    );
   }
   printFollowUp(status.nextFollowUp);
   printAdditionalFollowUps(status.nextFollowUps);
   printCompletedRecords(status.completedRecords);
   printDiagnostics(status.diagnostics);
-  console.log("  recommended next commands:");
+  console.log('  recommended next commands:');
   for (const command of result.recommendedCommands) console.log(`    ${command}`);
 }
 
@@ -5436,15 +5848,16 @@ function formatExploreOwnership(document: DocumentSummary): string {
   const scope = asString(document.metadata.scope);
   const aspect = asString(document.metadata.aspect);
   const kind = document.kind;
-  if (tier === "layout") return "Layout / Pack view; refs/catalog organization only";
-  if (tier === "system") return "System behavior/runtime boundary";
-  if (scope === "interface") return "Interface / DSL contract";
-  if (tier === "entry") return "Entry / Identity value";
-  if (kind === "rule") return "Consumption rule / decision checklist";
-  if (kind === "cases") return "User scenario / behavior expectation";
-  if (kind === "test") return "Validation mapping";
-  if (tier === "component") return `Component vocabulary (${scope ?? "unknown"}/${aspect ?? "unknown"})`;
-  return `${scope ?? "unknown"}/${aspect ?? "unknown"} responsibility`;
+  if (tier === 'layout') return 'Layout / Pack view; refs/catalog organization only';
+  if (tier === 'system') return 'System behavior/runtime boundary';
+  if (scope === 'interface') return 'Interface / DSL contract';
+  if (tier === 'entry') return 'Entry / Identity value';
+  if (kind === 'rule') return 'Consumption rule / decision checklist';
+  if (kind === 'cases') return 'User scenario / behavior expectation';
+  if (kind === 'test') return 'Validation mapping';
+  if (tier === 'component')
+    return `Component vocabulary (${scope ?? 'unknown'}/${aspect ?? 'unknown'})`;
+  return `${scope ?? 'unknown'}/${aspect ?? 'unknown'} responsibility`;
 }
 
 function printLinksBySource(links: readonly DocumentLink[]): void {
@@ -5452,14 +5865,19 @@ function printLinksBySource(links: readonly DocumentLink[]): void {
   if (links.length === 0) return;
   const bySource = new Map<string, DocumentLink[]>();
   for (const link of links) {
-    const source = link.sourceId ?? "(source)";
+    const source = link.sourceId ?? '(source)';
     const items = bySource.get(source) ?? [];
     items.push(link);
     bySource.set(source, items);
   }
-  for (const [source, items] of [...bySource.entries()].toSorted(([left], [right]) => left.localeCompare(right))) {
+  for (const [source, items] of [...bySource.entries()].toSorted(([left], [right]) =>
+    left.localeCompare(right),
+  )) {
     console.log(`  ${source}:`);
-    for (const link of items.toSorted((left, right) => left.targetId.localeCompare(right.targetId) || left.type.localeCompare(right.type))) {
+    for (const link of items.toSorted(
+      (left, right) =>
+        left.targetId.localeCompare(right.targetId) || left.type.localeCompare(right.type),
+    )) {
       console.log(`    - ${link.type} -> ${link.targetId}`);
     }
   }
@@ -5475,10 +5893,10 @@ function printBddList(result: BddListResult): void {
 }
 
 function printBddValidate(result: BddValidateResult): void {
-  console.log(`docs bdd validate: ${result.target} ${result.passed ? "passed" : "failed"}`);
+  console.log(`docs bdd validate: ${result.target} ${result.passed ? 'passed' : 'failed'}`);
   console.log(`  issues: ${result.issues.length}`);
   for (const issue of result.issues.slice(0, 20)) {
-    const contract = issue.contractId ? ` contract=${issue.contractId}` : "";
+    const contract = issue.contractId ? ` contract=${issue.contractId}` : '';
     console.log(`  - [${issue.severity}] ${issue.code}${contract}`);
     console.log(`    ${issue.message}`);
     console.log(`    source: ${issue.sourcePath} ${issue.pointer}`);
@@ -5493,35 +5911,47 @@ function printBddUnits(result: BddUnitsResult): void {
   for (const group of result.units) {
     console.log(`  - ${group.contractId}`);
     if (group.contract) {
-      console.log(`    ${group.contract.contractKind} ${group.contract.mode} owner=${group.contract.ownerSystem}`);
+      console.log(
+        `    ${group.contract.contractKind} ${group.contract.mode} owner=${group.contract.ownerSystem}`,
+      );
     }
     console.log(`    tests: ${group.testUnits.length}`);
     for (const unit of group.testUnits) {
-      console.log(`      - ${unit.id} [${unit.level}]${unit.testFile ? ` ${unit.testFile}` : ""}`);
+      console.log(`      - ${unit.id} [${unit.level}]${unit.testFile ? ` ${unit.testFile}` : ''}`);
     }
     console.log(`    implementation: ${group.implementationUnits.length}`);
     for (const unit of group.implementationUnits) {
-      console.log(`      - ${unit.id} [${unit.unitKind}] owner=${unit.ownedBy}${unit.sourceTarget ? ` ${unit.sourceTarget}` : ""}`);
+      console.log(
+        `      - ${unit.id} [${unit.unitKind}] owner=${unit.ownedBy}${unit.sourceTarget ? ` ${unit.sourceTarget}` : ''}`,
+      );
     }
   }
 }
 
 function printBddCompile(result: BddCompileResult): void {
-  console.log(`docs bdd compile: ${result.target} format=${result.format} -> ${result.scenarios.length} scenario(s), ${result.pipeGraphs?.length ?? 0} pipe graph(s)`);
+  console.log(
+    `docs bdd compile: ${result.target} format=${result.format} -> ${result.scenarios.length} scenario(s), ${result.pipeGraphs?.length ?? 0} pipe graph(s)`,
+  );
   if (result.issues.length > 0) {
     console.log(`  issues: ${result.issues.length}`);
     for (const issue of result.issues) {
-      console.log(`  - [${issue.severity}] ${issue.code}${issue.contractId ? ` contract=${issue.contractId}` : ""}`);
+      console.log(
+        `  - [${issue.severity}] ${issue.code}${issue.contractId ? ` contract=${issue.contractId}` : ''}`,
+      );
       console.log(`    ${issue.message}`);
     }
   }
   for (const scenario of result.scenarios) {
     console.log(`  - ${scenario.scenario_id}`);
-    console.log(`    domain=${scenario.domain} version=${scenario.version} steps=${scenario.steps.length}`);
+    console.log(
+      `    domain=${scenario.domain} version=${scenario.version} steps=${scenario.steps.length}`,
+    );
   }
   for (const graph of result.pipeGraphs ?? []) {
     console.log(`  - ${graph.graphId}`);
-    console.log(`    version=${graph.version} pipes=${graph.pipes.length} connections=${graph.connections.length}`);
+    console.log(
+      `    version=${graph.version} pipes=${graph.pipes.length} connections=${graph.connections.length}`,
+    );
   }
 }
 
@@ -5541,30 +5971,43 @@ function printBddImplementationPlan(result: BddImplementationPlanResult): void {
   for (const source of result.sources) {
     console.log(`  - ${source.sourceTarget}`);
     for (const unit of source.units) {
-      console.log(`    - ${unit.id} [${unit.unitKind}] contract=${unit.contractId} owner=${unit.ownedBy}`);
-      if (unit.effects.length > 0) console.log(`      effects: ${unit.effects.join(", ")}`);
-      if (unit.mustNotOwn.length > 0) console.log(`      must not own: ${unit.mustNotOwn.join(", ")}`);
+      console.log(
+        `    - ${unit.id} [${unit.unitKind}] contract=${unit.contractId} owner=${unit.ownedBy}`,
+      );
+      if (unit.effects.length > 0) console.log(`      effects: ${unit.effects.join(', ')}`);
+      if (unit.mustNotOwn.length > 0)
+        console.log(`      must not own: ${unit.mustNotOwn.join(', ')}`);
     }
   }
 }
 
 function printCollectGraphView(result: DocsGraphCliResult): void {
-  console.log("");
-  console.log("graph view:");
-  console.log(`  active ranked nodes: ${result.filtering.counts.filteredNodes}/${result.filtering.counts.rawRankedNodes}`);
-  console.log(`  view nodes/edges/paths: ${result.summary.nodes}/${result.summary.edges}/${result.summary.paths}`);
+  console.log('');
+  console.log('graph view:');
+  console.log(
+    `  active ranked nodes: ${result.filtering.counts.filteredNodes}/${result.filtering.counts.rawRankedNodes}`,
+  );
+  console.log(
+    `  view nodes/edges/paths: ${result.summary.nodes}/${result.summary.edges}/${result.summary.paths}`,
+  );
   console.log(`  node kinds: ${formatGraphSummaryCounts(result.summary.counts.byNodeKind)}`);
-  console.log(`  traversal axes: ${formatGraphSummaryCounts(result.summary.counts.byTraversalAxis)}`);
+  console.log(
+    `  traversal axes: ${formatGraphSummaryCounts(result.summary.counts.byTraversalAxis)}`,
+  );
   if (Object.keys(result.summary.counts.byDocumentRole).length > 0) {
-    console.log(`  artifact roles: ${formatGraphSummaryCounts(result.summary.counts.byDocumentRole)}`);
+    console.log(
+      `  artifact roles: ${formatGraphSummaryCounts(result.summary.counts.byDocumentRole)}`,
+    );
   }
   if (Object.keys(result.summary.counts.bySemanticType).length > 0) {
-    console.log(`  semantic types: ${formatGraphSummaryCounts(result.summary.counts.bySemanticType)}`);
+    console.log(
+      `  semantic types: ${formatGraphSummaryCounts(result.summary.counts.bySemanticType)}`,
+    );
   }
-  const topRanked = result.rankedNodes.slice(0, 3).map((node) =>
-    `#${node.rank} [${node.kind}] ${node.stableId ?? node.nodeId}`
-  );
-  console.log(`  top ranked: ${topRanked.length > 0 ? topRanked.join("; ") : "(none)"}`);
+  const topRanked = result.rankedNodes
+    .slice(0, 3)
+    .map((node) => `#${node.rank} [${node.kind}] ${node.stableId ?? node.nodeId}`);
+  console.log(`  top ranked: ${topRanked.length > 0 ? topRanked.join('; ') : '(none)'}`);
   for (const line of graphFilterText(result)) {
     console.log(`  ${line}`);
   }
@@ -5578,9 +6021,11 @@ function printSearch(result: SearchResult): void {
     if (result.rootIndex) {
       console.log(`  root index: [${result.rootIndex.kind}] ${result.rootIndex.stableId}`);
     }
-    console.log("  bounded by selector root-index routing");
+    console.log('  bounded by selector root-index routing');
   } else {
-    console.log("  warning: text search is broad; prefer metadata filters or docs graph with explicit axes for bounded traversal");
+    console.log(
+      '  warning: text search is broad; prefer metadata filters or docs graph with explicit axes for bounded traversal',
+    );
   }
   for (const item of result.results) {
     console.log(`  - [${item.kind}] ${item.stableId}`);
@@ -5596,7 +6041,8 @@ function recommendedExploreCommands(target: string, status: StatusResult): reado
     `qa-sdk docs graph ${target} --preset family`,
   ];
   if (status.bdd) commands.push(`qa-sdk docs bdd validate ${target} --family-only`);
-  if (status.nextFollowUp) commands.push(`if authoring a PRD: qa-sdk docs prd context ${target} --family-only`);
+  if (status.nextFollowUp)
+    commands.push(`if authoring a PRD: qa-sdk docs prd context ${target} --family-only`);
   return commands;
 }
 
@@ -5607,25 +6053,30 @@ function formatDocumentDisplayRole(document: DocumentSummary): string {
   return type && type !== role ? `${role} type=${type}` : role;
 }
 
-function formatRankedNodeLabel(node: DocsGraphCliResult["rankedNodes"][number]): string {
-  const roleType = node.factors.find((factor) => factor.factor === "role")?.metadata.roleType;
-  const role = typeof roleType === "string" ? roleType : node.kind;
-  const type = node.factors.find((factor) => factor.factor === "node-kind")?.metadata.type;
-  return typeof type === "string" && type !== role ? `${role} type=${type}` : role;
+function formatRankedNodeLabel(node: DocsGraphCliResult['rankedNodes'][number]): string {
+  const roleType = node.factors.find((factor) => factor.factor === 'role')?.metadata.roleType;
+  const role = typeof roleType === 'string' ? roleType : node.kind;
+  const type = node.factors.find((factor) => factor.factor === 'node-kind')?.metadata.type;
+  return typeof type === 'string' && type !== role ? `${role} type=${type}` : role;
 }
 
-function formatTraversalNodeLabel(node: DocsGraphCliResult["nodes"][number]): string {
+function formatTraversalNodeLabel(node: DocsGraphCliResult['nodes'][number]): string {
   const documentKind = asString(node.metadata.documentKind);
   const type = asString(node.metadata.type);
   const role = documentKind && documentKind !== node.kind ? documentKind : node.kind;
   return type && type !== role ? `${role} type=${type}` : role;
 }
 
-function printGraph(result: DocsGraphCliResult, options: { readonly verbose?: boolean } = {}): void {
+function printGraph(
+  result: DocsGraphCliResult,
+  options: { readonly verbose?: boolean } = {},
+): void {
   console.log(`docs graph: ${result.input.target}`);
-  console.log(`  target: ${result.targetNodeId ?? "(not found)"}`);
-  console.log(`  lookup: ${result.targetResolution.lookupKind}${result.targetResolution.indexed ? " indexed" : " unindexed"}`);
-  console.log(`  axes: ${result.input.axes.join(", ") || "(none)"}`);
+  console.log(`  target: ${result.targetNodeId ?? '(not found)'}`);
+  console.log(
+    `  lookup: ${result.targetResolution.lookupKind}${result.targetResolution.indexed ? ' indexed' : ' unindexed'}`,
+  );
+  console.log(`  axes: ${result.input.axes.join(', ') || '(none)'}`);
   console.log(`  direction: ${result.input.direction}`);
   console.log(`  depth: ${result.input.depth}`);
   console.log(`  limit: ${result.input.limit}`);
@@ -5637,51 +6088,63 @@ function printGraph(result: DocsGraphCliResult, options: { readonly verbose?: bo
     console.log(`  ${warning}`);
   }
   if (result.filtering.counts.filteredNodes !== result.filtering.counts.rawRankedNodes) {
-    console.log(`  active ranked view: ${result.filtering.counts.filteredNodes}/${result.filtering.counts.rawRankedNodes} node(s)`);
+    console.log(
+      `  active ranked view: ${result.filtering.counts.filteredNodes}/${result.filtering.counts.rawRankedNodes} node(s)`,
+    );
   }
 
   const rankedPreview = options.verbose ? result.rankedNodes : result.rankedNodes.slice(0, 8);
-  console.log("");
-  console.log(`ranked view (${result.rankedNodes.length}${options.verbose ? "" : ", top 8 shown"}):`);
+  console.log('');
+  console.log(
+    `ranked view (${result.rankedNodes.length}${options.verbose ? '' : ', top 8 shown'}):`,
+  );
   for (const node of rankedPreview) {
-    const path = node.path ? ` ${node.path}` : "";
+    const path = node.path ? ` ${node.path}` : '';
     console.log(
       `  - #${node.rank} [${formatRankedNodeLabel(node)}] ${node.nodeId} score=${node.score} strength=${node.strength}${path}`,
     );
   }
   if (!options.verbose && result.rankedNodes.length > rankedPreview.length) {
-    console.log(`  ... ${result.rankedNodes.length - rankedPreview.length} more (use --verbose for raw nodes and edge reasons)`);
+    console.log(
+      `  ... ${result.rankedNodes.length - rankedPreview.length} more (use --verbose for raw nodes and edge reasons)`,
+    );
   }
 
-  const compactDiagnostics = result.diagnostics.filter((diagnostic) => !isGraphWarningDiagnostic(diagnostic));
+  const compactDiagnostics = result.diagnostics.filter(
+    (diagnostic) => !isGraphWarningDiagnostic(diagnostic),
+  );
   if (compactDiagnostics.length > 0) {
     console.log(`  diagnostics: ${compactDiagnostics.length} (use --verbose for details)`);
   }
 
-  console.log("");
-  console.log("graph stats:");
+  console.log('');
+  console.log('graph stats:');
   console.log(`  node count: ${result.counts.nodes}`);
   console.log(`  edge count: ${result.counts.edges}`);
-  console.log(`  truncated: ${result.truncated ? "yes" : "no"}${formatOmittedCounts(result)}`);
+  console.log(`  truncated: ${result.truncated ? 'yes' : 'no'}${formatOmittedCounts(result)}`);
   printGraphSummary(result);
 
   if (!options.verbose) {
     return;
   }
 
-  console.log("");
+  console.log('');
   console.log(`nodes (${result.nodes.length} raw traversal):`);
   for (const node of result.nodes) {
-    const path = node.path ? ` ${node.path}` : "";
+    const path = node.path ? ` ${node.path}` : '';
     console.log(`  - [${formatTraversalNodeLabel(node)}] ${node.id}${path}`);
   }
 
-  console.log("");
+  console.log('');
   console.log(`edge reasons (${result.edges.length}):`);
   for (const edge of result.edges) {
-    const authored = edge.authoredType ? ` ${edge.authoredType}` : "";
-    console.log(`  - [${edge.axis}] ${edge.fromNodeId} -> ${edge.toNodeId} (${edge.kind}${authored})`);
-    console.log(`    traversal: ${edge.traversal.direction} from ${edge.traversal.fromNodeId} to ${edge.traversal.toNodeId}`);
+    const authored = edge.authoredType ? ` ${edge.authoredType}` : '';
+    console.log(
+      `  - [${edge.axis}] ${edge.fromNodeId} -> ${edge.toNodeId} (${edge.kind}${authored})`,
+    );
+    console.log(
+      `    traversal: ${edge.traversal.direction} from ${edge.traversal.fromNodeId} to ${edge.traversal.toNodeId}`,
+    );
     for (const reason of edge.reasons) {
       console.log(`    reason: ${reason.reason}`);
       if (reason.rawSource) {
@@ -5694,9 +6157,11 @@ function printGraph(result: DocsGraphCliResult, options: { readonly verbose?: bo
     console.log(line);
   }
 
-  const diagnostics = result.diagnostics.filter((diagnostic) => !isGraphWarningDiagnostic(diagnostic));
+  const diagnostics = result.diagnostics.filter(
+    (diagnostic) => !isGraphWarningDiagnostic(diagnostic),
+  );
   if (diagnostics.length > 0) {
-    console.log("");
+    console.log('');
     console.log(`diagnostics (${diagnostics.length}):`);
     for (const diagnostic of diagnostics.slice(0, 5)) {
       console.log(`  - ${diagnostic}`);
@@ -5726,7 +6191,9 @@ function printGraphSummary(result: DocsGraphCliResult): void {
     summary.archive.excluded > 0 ||
     result.filters.includeArchive
   ) {
-    console.log(`    archive: included ${summary.archive.included}, excluded ${summary.archive.excluded}`);
+    console.log(
+      `    archive: included ${summary.archive.included}, excluded ${summary.archive.excluded}`,
+    );
   }
   if (result.missingRoleSummary.length > 0) {
     console.log(
@@ -5738,57 +6205,66 @@ function printGraphSummary(result: DocsGraphCliResult): void {
 
 function formatGraphSummaryCounts(counts: Readonly<Record<string, number>>): string {
   const entries = Object.entries(counts);
-  if (entries.length === 0) return "(none)";
-  return entries.map(([name, count]) => `${name}=${count}`).join(", ");
+  if (entries.length === 0) return '(none)';
+  return entries.map(([name, count]) => `${name}=${count}`).join(', ');
 }
 
 function graphTextWarnings(result: DocsGraphCliResult): readonly string[] {
   const warnings = result.diagnostics.filter(isGraphWarningDiagnostic);
   if (warnings.length > 0) return warnings;
-  if (result.input.axes.includes("context")) return [BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING];
+  if (result.input.axes.includes('context')) return [BROAD_DOCUMENT_GRAPH_TRAVERSAL_WARNING];
   return [];
 }
 
 function graphFilterText(result: DocsGraphCliResult): readonly string[] {
   const lines: string[] = [];
-  if (result.filters.kinds.length > 0) lines.push(`kind filter: ${result.filters.kinds.join(", ")}`);
-  if (result.filters.roles.length > 0) lines.push(`role filter: ${result.filters.roles.join(", ")}`);
-  if (result.filters.axes.length > 0) lines.push(`post-traversal axis filter: ${result.filters.axes.join(", ")}`);
+  if (result.filters.kinds.length > 0)
+    lines.push(`kind filter: ${result.filters.kinds.join(', ')}`);
+  if (result.filters.roles.length > 0)
+    lines.push(`role filter: ${result.filters.roles.join(', ')}`);
+  if (result.filters.axes.length > 0)
+    lines.push(`post-traversal axis filter: ${result.filters.axes.join(', ')}`);
   if (result.filters.followUpCategories.length > 0) {
-    lines.push(`follow-up category filter: ${result.filters.followUpCategories.join(", ")}`);
+    lines.push(`follow-up category filter: ${result.filters.followUpCategories.join(', ')}`);
   }
   if (result.filters.includeArchive) {
-    lines.push("archive view: included");
+    lines.push('archive view: included');
   } else if (result.filtering.counts.excludedByArchive > 0) {
-    lines.push(`archive view: excluded ${result.filtering.counts.excludedByArchive} archived node(s)`);
+    lines.push(
+      `archive view: excluded ${result.filtering.counts.excludedByArchive} archived node(s)`,
+    );
   }
   return lines;
 }
 
 function isGraphWarningDiagnostic(diagnostic: string): boolean {
-  return diagnostic.startsWith("warning:");
+  return diagnostic.startsWith('warning:');
 }
 
 function formatOmittedCounts(result: DocsGraphCliResult): string {
-  if (!result.truncated) return "";
+  if (!result.truncated) return '';
   const parts = [];
   if (result.omittedCounts.nodes > 0) parts.push(`${result.omittedCounts.nodes} node(s)`);
   if (result.omittedCounts.edges > 0) parts.push(`${result.omittedCounts.edges} edge(s)`);
   if (result.omittedCounts.depth > 0) {
     parts.push(`${result.omittedCounts.depth} depth-frontier node(s)`);
   }
-  return parts.length > 0 ? ` (omitted ${parts.join(", ")})` : "";
+  return parts.length > 0 ? ` (omitted ${parts.join(', ')})` : '';
 }
 
 function formatRawSource(rawSource: DocumentRawSourcePointer): string {
-  return `${rawSource.path}${rawSource.pointer ? `#${rawSource.pointer}` : ""}`;
+  return `${rawSource.path}${rawSource.pointer ? `#${rawSource.pointer}` : ''}`;
 }
 
 function printDrift(result: DocumentDriftResult): void {
   console.log(`docs drift: ${result.counts.total} issue(s)`);
   if (result.scope.prd) console.log(`  prd: ${result.scope.prd}`);
   console.log(`  documents: ${result.scope.documents}`);
-  for (const severity of ["error", "warning", "info"] as const satisfies readonly DocumentDriftSeverity[]) {
+  for (const severity of [
+    'error',
+    'warning',
+    'info',
+  ] as const satisfies readonly DocumentDriftSeverity[]) {
     printDriftIssueGroup(severity, result.issuesBySeverity[severity]);
   }
 }
@@ -5796,7 +6272,7 @@ function printDrift(result: DocumentDriftResult): void {
 function printMetadataTransformPreview(result: MetadataTransformPreview): void {
   console.log(`docs transform metadata: ${result.mode}`);
   console.log(`  rule: ${result.ruleSource}`);
-  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? 'yes' : 'no'}`);
   console.log(`  affected paths: ${result.counts.affected} / ${result.counts.matched} matched`);
   for (const changeSet of result.changeSets) {
     console.log(`  - ${changeSet.path}`);
@@ -5816,32 +6292,57 @@ function printPrdAuthoringContext(context: PrdAuthoringContext): void {
     console.log(`  path: ${context.resolvedTarget.path}`);
   }
   console.log(`  context sources: ${context.counts.contextSources}`);
-  console.log(`  specs/todos/plans/prds: ${context.counts.relatedSpecs}/${context.counts.openTodos}/${context.counts.plans}/${context.counts.priorPrds}`);
-  console.log(`  prd-json/session/scenario rows: ${context.counts.prdJsonCompletion}/${context.counts.ralphSessions}/${context.counts.scenarioMatrixRows}`);
-  console.log(`  sources/evidence/diagnostics: ${context.counts.sources}/${context.counts.evidence}/${context.counts.diagnostics}`);
-  printNamedCollection("related specs", context.relatedSpecs.slice(0, 8), (spec) =>
-    `${spec.stableId} ${spec.path}${spec.summary ? ` - ${spec.summary}` : ""}`
+  console.log(
+    `  specs/todos/plans/prds: ${context.counts.relatedSpecs}/${context.counts.openTodos}/${context.counts.plans}/${context.counts.priorPrds}`,
   );
-  printNamedCollection("open TODOs", context.openTodos.slice(0, 8), (todo) =>
-    `${todo.text} (${todo.path} ${todo.pointer})`
+  console.log(
+    `  prd-json/session/scenario rows: ${context.counts.prdJsonCompletion}/${context.counts.ralphSessions}/${context.counts.scenarioMatrixRows}`,
   );
-  printNamedCollection("plans", context.plans.slice(0, 8), (plan) =>
-    `${plan.stableId} ${plan.path}${plan.summary ? ` - ${plan.summary}` : ""}`
+  console.log(
+    `  sources/evidence/diagnostics: ${context.counts.sources}/${context.counts.evidence}/${context.counts.diagnostics}`,
   );
-  printNamedCollection("prior PRDs", context.priorPrds.slice(0, 8), (prd) =>
-    `${prd.stableId} ${prd.path}${prd.title ? ` - ${prd.title}` : ""}`
+  printNamedCollection(
+    'related specs',
+    context.relatedSpecs.slice(0, 8),
+    (spec) => `${spec.stableId} ${spec.path}${spec.summary ? ` - ${spec.summary}` : ''}`,
   );
-  printNamedCollection("PRD JSON completion", context.prdJsonCompletion, (state) =>
-    `${state.documentId} ${state.passedStoryCount}/${state.storyCount} passing (${state.path})`
+  printNamedCollection(
+    'open TODOs',
+    context.openTodos.slice(0, 8),
+    (todo) => `${todo.text} (${todo.path} ${todo.pointer})`,
   );
-  printNamedCollection("ralph sessions", context.ralphSessionState, (state) =>
-    `${state.documentId} ${state.status ?? "unknown"}${state.prdPath ? ` prd=${state.prdPath}` : ""}`
+  printNamedCollection(
+    'plans',
+    context.plans.slice(0, 8),
+    (plan) => `${plan.stableId} ${plan.path}${plan.summary ? ` - ${plan.summary}` : ''}`,
   );
-  printNamedCollection("scenario matrix rows", context.scenarioMatrixRows.slice(0, 8), (row) =>
-    `${row.path} row ${row.rowIndex}${row.evidenceIds.length > 0 ? ` evidence=${row.evidenceIds.join(",")}` : ""}`
+  printNamedCollection(
+    'prior PRDs',
+    context.priorPrds.slice(0, 8),
+    (prd) => `${prd.stableId} ${prd.path}${prd.title ? ` - ${prd.title}` : ''}`,
   );
-  printNamedCollection("context sources", context.contextSources.slice(0, 12), (source) =>
-    `[${source.kind}] ${source.stableId} ${source.path} (${source.reason})`
+  printNamedCollection(
+    'PRD JSON completion',
+    context.prdJsonCompletion,
+    (state) =>
+      `${state.documentId} ${state.passedStoryCount}/${state.storyCount} passing (${state.path})`,
+  );
+  printNamedCollection(
+    'ralph sessions',
+    context.ralphSessionState,
+    (state) =>
+      `${state.documentId} ${state.status ?? 'unknown'}${state.prdPath ? ` prd=${state.prdPath}` : ''}`,
+  );
+  printNamedCollection(
+    'scenario matrix rows',
+    context.scenarioMatrixRows.slice(0, 8),
+    (row) =>
+      `${row.path} row ${row.rowIndex}${row.evidenceIds.length > 0 ? ` evidence=${row.evidenceIds.join(',')}` : ''}`,
+  );
+  printNamedCollection(
+    'context sources',
+    context.contextSources.slice(0, 12),
+    (source) => `[${source.kind}] ${source.stableId} ${source.path} (${source.reason})`,
   );
 }
 
@@ -5854,7 +6355,7 @@ function printPrdScaffoldResult(result: PrdScaffoldResult): void {
 }
 
 function printPrdToRalphJsonResult(result: PrdToRalphJsonPreview, wrote: boolean): void {
-  console.log(`docs prd to-ralph-json: ${wrote ? "wrote" : "blocked"} ${result.output}`);
+  console.log(`docs prd to-ralph-json: ${wrote ? 'wrote' : 'blocked'} ${result.output}`);
   console.log(`  input: ${result.input}`);
   console.log(`  stories: ${result.storyCount}`);
   console.log(`  bytes: ${result.bytes}`);
@@ -5867,52 +6368,71 @@ function printPrdCompletionSyncPreview(result: PrdCompletionSyncPreview): void {
     console.log(`  prd: ${result.prd.path}`);
     console.log(`  completed stories: ${result.prd.completedStoryCount}/${result.prd.storyCount}`);
   }
-  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
-  console.log(`  strict: ${result.options.strict ? "yes" : "no"}`);
-  console.log(`  evidence-only: ${result.options.evidenceOnly ? "yes" : "no"}`);
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? 'yes' : 'no'}`);
+  console.log(`  strict: ${result.options.strict ? 'yes' : 'no'}`);
+  console.log(`  evidence-only: ${result.options.evidenceOnly ? 'yes' : 'no'}`);
   console.log(`  affected docs: ${result.counts.affectedDocs}`);
   console.log(`  open TODO candidates: ${result.counts.openTodoCandidates}`);
   console.log(`  spec update candidates: ${result.counts.specUpdateCandidates}`);
   console.log(`  blocked promotions: ${result.counts.blockedPromotions}`);
   console.log(`  strict failures: ${result.counts.strictFailures}`);
   console.log(`  roadmap update candidates: ${result.counts.roadmapUpdateCandidates}`);
-  console.log(`  scenario matrix update candidates: ${result.counts.scenarioMatrixUpdateCandidates}`);
+  console.log(
+    `  scenario matrix update candidates: ${result.counts.scenarioMatrixUpdateCandidates}`,
+  );
   console.log(`  session drift: ${result.counts.sessionDrift}`);
-  printNamedCollection("completed stories", result.completedStories, (story) =>
-    `${story.id}: ${story.title}${story.evidenceRefs.length > 0 ? ` evidence=${story.evidenceRefs.join(",")}` : ""}`
+  printNamedCollection(
+    'completed stories',
+    result.completedStories,
+    (story) =>
+      `${story.id}: ${story.title}${story.evidenceRefs.length > 0 ? ` evidence=${story.evidenceRefs.join(',')}` : ''}`,
   );
-  printNamedCollection("affected docs", result.affectedDocs.slice(0, 12), (document) =>
-    `[${document.kind}] ${document.stableId} ${document.path} (${document.reason}, score=${document.score})`
+  printNamedCollection(
+    'affected docs',
+    result.affectedDocs.slice(0, 12),
+    (document) =>
+      `[${document.kind}] ${document.stableId} ${document.path} (${document.reason}, score=${document.score})`,
   );
-  printNamedCollection("open TODO candidates", result.openTodoCandidates, (candidate) =>
-    `${candidate.promotionState} score=${candidate.score.total} ${candidate.text} (${candidate.path} ${candidate.pointer})${candidate.blockedReasons[0] ? ` :: ${candidate.blockedReasons[0]}` : ""}`
+  printNamedCollection(
+    'open TODO candidates',
+    result.openTodoCandidates,
+    (candidate) =>
+      `${candidate.promotionState} score=${candidate.score.total} ${candidate.text} (${candidate.path} ${candidate.pointer})${candidate.blockedReasons[0] ? ` :: ${candidate.blockedReasons[0]}` : ''}`,
   );
-  printNamedCollection("spec update candidates", result.specUpdateCandidates, (candidate) =>
-    `${candidate.promotionState} score=${candidate.score.total} ${candidate.documentId} ${candidate.path}${candidate.blockedReasons[0] ? ` :: ${candidate.blockedReasons[0]}` : ""}`
+  printNamedCollection(
+    'spec update candidates',
+    result.specUpdateCandidates,
+    (candidate) =>
+      `${candidate.promotionState} score=${candidate.score.total} ${candidate.documentId} ${candidate.path}${candidate.blockedReasons[0] ? ` :: ${candidate.blockedReasons[0]}` : ''}`,
   );
-  printNamedCollection("roadmap update candidates", result.roadmapUpdateCandidates, (candidate) =>
-    `${candidate.documentId} ${candidate.path}`
+  printNamedCollection(
+    'roadmap update candidates',
+    result.roadmapUpdateCandidates,
+    (candidate) => `${candidate.documentId} ${candidate.path}`,
   );
-  printNamedCollection("scenario matrix update candidates", result.scenarioMatrixUpdateCandidates, (candidate) =>
-    `${candidate.path}${candidate.rowIndex ? ` row ${candidate.rowIndex}` : ""}${candidate.evidenceIds.length > 0 ? ` evidence=${candidate.evidenceIds.join(",")}` : ""}`
+  printNamedCollection(
+    'scenario matrix update candidates',
+    result.scenarioMatrixUpdateCandidates,
+    (candidate) =>
+      `${candidate.path}${candidate.rowIndex ? ` row ${candidate.rowIndex}` : ''}${candidate.evidenceIds.length > 0 ? ` evidence=${candidate.evidenceIds.join(',')}` : ''}`,
   );
   printDiagnostics([...result.sessionDrift, ...result.diagnostics]);
 }
 
 function printCleanupReview(result: CleanupReviewResult): void {
-  console.log(`docs cleanup review: ${result.target ?? "repo"}`);
+  console.log(`docs cleanup review: ${result.target ?? 'repo'}`);
   console.log(`  scope: ${result.scope}`);
   console.log(`  completed records: ${result.counts.completedRecords}`);
   console.log(`  candidates: ${result.counts.candidates}`);
   console.log(`  diagnostics: ${result.counts.diagnostics}`);
-  printNamedCollection("cleanup candidates", result.candidates, (candidate) => {
-    const family = candidate.familyId ? ` family=${candidate.familyId}` : "";
-    const paired = candidate.pairedDocument ? ` paired=${candidate.pairedDocument.path}` : "";
+  printNamedCollection('cleanup candidates', result.candidates, (candidate) => {
+    const family = candidate.familyId ? ` family=${candidate.familyId}` : '';
+    const paired = candidate.pairedDocument ? ` paired=${candidate.pairedDocument.path}` : '';
     return `[${candidate.record.kind}] ${candidate.record.path} -> ${candidate.recommendation.action}${family}${paired}`;
   });
   for (const candidate of result.candidates) {
     console.log(`    reason: ${candidate.recommendation.reason}`);
-    console.log(`    allowed: ${candidate.allowedActions.join(", ")}`);
+    console.log(`    allowed: ${candidate.allowedActions.join(', ')}`);
     console.log(
       `    related docs/sources/evidence/diagnostics: ${candidate.evidenceSummary.documents}/${candidate.evidenceSummary.sources}/${candidate.evidenceSummary.evidence}/${candidate.evidenceSummary.diagnostics}`,
     );
@@ -5923,7 +6443,7 @@ function printCleanupReview(result: CleanupReviewResult): void {
 function printCleanupPlan(result: CleanupPlanResult): void {
   console.log(`docs cleanup plan: ${result.target}`);
   console.log(`  action: ${result.action}`);
-  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? 'yes' : 'no'}`);
   console.log(`  target validated as: ${result.targetValidatedAs}`);
   console.log(`  proposed output: ${result.proposedOutputPath}`);
   if (result.secondaryOutputPath) {
@@ -5932,14 +6452,14 @@ function printCleanupPlan(result: CleanupPlanResult): void {
   if (result.assimilationTargetPath) {
     console.log(`  assimilation target: ${result.assimilationTargetPath}`);
   }
-  console.log(`  recommendation match: ${result.recommendationMatchesAction ? "yes" : "no"}`);
+  console.log(`  recommendation match: ${result.recommendationMatchesAction ? 'yes' : 'no'}`);
   console.log(`  review recommendation: ${result.recommendation.action}`);
   console.log(`    reason: ${result.recommendation.reason}`);
-  printNamedCollection("cleanup steps", result.steps, (step) => step);
-  printNamedCollection("validation commands", result.validationCommands, (command) => command);
-  printNamedCollection("preserved evidence paths", result.preservedEvidencePaths, (path) => path);
+  printNamedCollection('cleanup steps', result.steps, (step) => step);
+  printNamedCollection('validation commands', result.validationCommands, (command) => command);
+  printNamedCollection('preserved evidence paths', result.preservedEvidencePaths, (path) => path);
   if (result.warnings.length > 0) {
-    printNamedCollection("warnings", result.warnings, (warning) => warning);
+    printNamedCollection('warnings', result.warnings, (warning) => warning);
   }
 }
 
@@ -5947,13 +6467,17 @@ function printCleanupApply(result: CleanupApplyResult): void {
   console.log(`docs cleanup apply: ${result.target}`);
   console.log(`  action: ${result.action}`);
   console.log(`  target validated as: ${result.targetValidatedAs}`);
-  printNamedCollection("moved", result.moved, (move) => `[${move.kind}] ${move.from} -> ${move.to}`);
+  printNamedCollection(
+    'moved',
+    result.moved,
+    (move) => `[${move.kind}] ${move.from} -> ${move.to}`,
+  );
   if (result.updated.length > 0) {
-    printNamedCollection("updated", result.updated, (path) => path);
+    printNamedCollection('updated', result.updated, (path) => path);
   }
-  printNamedCollection("preserved evidence paths", result.preservedEvidencePaths, (path) => path);
+  printNamedCollection('preserved evidence paths', result.preservedEvidencePaths, (path) => path);
   if (result.warnings.length > 0) {
-    printNamedCollection("warnings", result.warnings, (warning) => warning);
+    printNamedCollection('warnings', result.warnings, (warning) => warning);
   }
 }
 
@@ -5961,14 +6485,20 @@ function printCleanupBatchPlan(result: CleanupBatchPlanResult): void {
   console.log(`docs cleanup plan: batch ${result.target ?? result.scope}`);
   console.log(`  strategy: ${result.strategy}`);
   console.log(`  scope: ${result.scope}`);
-  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? "yes" : "no"}`);
-  console.log(`  completed records/candidates/planned/skipped: ${result.counts.completedRecords}/${result.counts.candidates}/${result.counts.planned}/${result.counts.skipped}`);
-  printNamedCollection("planned cleanup actions", result.plans, (plan) =>
-    `${plan.action} ${plan.record.path} -> ${plan.proposedOutputPath}`,
+  console.log(`  dry-run defaulted: ${result.dryRunDefaulted ? 'yes' : 'no'}`);
+  console.log(
+    `  completed records/candidates/planned/skipped: ${result.counts.completedRecords}/${result.counts.candidates}/${result.counts.planned}/${result.counts.skipped}`,
+  );
+  printNamedCollection(
+    'planned cleanup actions',
+    result.plans,
+    (plan) => `${plan.action} ${plan.record.path} -> ${plan.proposedOutputPath}`,
   );
   if (result.skipped.length > 0) {
-    printNamedCollection("skipped cleanup candidates", result.skipped, (item) =>
-      `${item.record.path} (${item.recommendation.action}) :: ${item.reason}`,
+    printNamedCollection(
+      'skipped cleanup candidates',
+      result.skipped,
+      (item) => `${item.record.path} (${item.recommendation.action}) :: ${item.reason}`,
     );
   }
 }
@@ -5977,13 +6507,19 @@ function printCleanupBatchApply(result: CleanupBatchApplyResult): void {
   console.log(`docs cleanup apply: batch ${result.target ?? result.scope}`);
   console.log(`  strategy: ${result.strategy}`);
   console.log(`  scope: ${result.scope}`);
-  console.log(`  applied/skipped/moved/updated: ${result.counts.applied}/${result.counts.skipped}/${result.counts.moved}/${result.counts.updated}`);
-  printNamedCollection("applied cleanup actions", result.applied, (item) =>
-    `${item.action} ${item.record.path}`,
+  console.log(
+    `  applied/skipped/moved/updated: ${result.counts.applied}/${result.counts.skipped}/${result.counts.moved}/${result.counts.updated}`,
+  );
+  printNamedCollection(
+    'applied cleanup actions',
+    result.applied,
+    (item) => `${item.action} ${item.record.path}`,
   );
   if (result.skipped.length > 0) {
-    printNamedCollection("skipped cleanup candidates", result.skipped, (item) =>
-      `${item.record.path} (${item.recommendation.action}) :: ${item.reason}`,
+    printNamedCollection(
+      'skipped cleanup candidates',
+      result.skipped,
+      (item) => `${item.record.path} (${item.recommendation.action}) :: ${item.reason}`,
     );
   }
 }
@@ -6004,10 +6540,10 @@ function printDriftIssueGroup(
   issues: readonly DocumentDriftIssue[],
 ): void {
   if (issues.length === 0) return;
-  console.log("");
+  console.log('');
   console.log(`${severity}s (${issues.length}):`);
   for (const issue of issues) {
-    const pointer = issue.pointer ? ` ${issue.pointer}` : "";
+    const pointer = issue.pointer ? ` ${issue.pointer}` : '';
     console.log(`  - [${issue.code}] ${issue.path}${pointer}`);
     console.log(`    ${issue.message}`);
     console.log(`    hint: ${issue.remediation}`);
@@ -6016,12 +6552,13 @@ function printDriftIssueGroup(
 
 function printFollowUp(followUp: FollowUpState | null): void {
   if (!followUp) {
-    console.log("  next follow-up: none");
+    console.log('  next follow-up: none');
     return;
   }
-  const task = followUp.taskId ? ` ${followUp.taskId}` : "";
+  const task = followUp.taskId ? ` ${followUp.taskId}` : '';
   console.log(`  next follow-up: ${followUp.state} ${followUp.kind}${task} - ${followUp.title}`);
-  if (followUp.category) console.log(`    category: ${followUp.categoryLabel ?? followUp.category}`);
+  if (followUp.category)
+    console.log(`    category: ${followUp.categoryLabel ?? followUp.category}`);
   console.log(`    source: ${followUp.source} ${followUp.path}`);
   console.log(`    reason: ${followUp.reason}`);
 }
@@ -6031,8 +6568,10 @@ function printAdditionalFollowUps(followUps: readonly FollowUpState[]): void {
   if (additional.length === 0) return;
   console.log(`  additional follow-ups (${followUps.length - 1}):`);
   for (const followUp of additional) {
-    const category = followUp.categoryLabel ?? followUp.category ?? "uncategorized";
-    console.log(`    - [${category}] ${followUp.title} (${followUp.path}${followUp.pointer ? ` ${followUp.pointer}` : ""})`);
+    const category = followUp.categoryLabel ?? followUp.category ?? 'uncategorized';
+    console.log(
+      `    - [${category}] ${followUp.title} (${followUp.path}${followUp.pointer ? ` ${followUp.pointer}` : ''})`,
+    );
   }
   if (followUps.length > 6) {
     console.log(`    ... ${followUps.length - 6} more`);
@@ -6043,7 +6582,7 @@ function printCompletedRecords(records: readonly CompletedRecordState[]): void {
   if (records.length === 0) return;
   console.log(`  completed records (${records.length}):`);
   for (const record of records.slice(0, 5)) {
-    const paired = record.pairedPath ? ` paired=${record.pairedPath}` : "";
+    const paired = record.pairedPath ? ` paired=${record.pairedPath}` : '';
     console.log(`    - [${record.state}] ${record.title} (${record.path}${paired})`);
   }
   if (records.length > 5) {
@@ -6055,7 +6594,7 @@ function printDiagnostics(diagnostics: readonly DocumentDiagnostic[]): void {
   if (diagnostics.length === 0) return;
   console.log(`  diagnostics (${diagnostics.length}):`);
   for (const diagnostic of diagnostics.slice(0, 5)) {
-    const path = diagnostic.rawSource?.path ? ` ${diagnostic.rawSource.path}` : "";
+    const path = diagnostic.rawSource?.path ? ` ${diagnostic.rawSource.path}` : '';
     console.log(`    - ${diagnostic.severity} ${diagnostic.code}:${path} ${diagnostic.message}`);
   }
   if (diagnostics.length > 5) {
@@ -6064,7 +6603,7 @@ function printDiagnostics(diagnostics: readonly DocumentDiagnostic[]): void {
 }
 
 function hasErrorDiagnostic(diagnostics: readonly DocumentDiagnostic[]): boolean {
-  return diagnostics.some((diagnostic) => diagnostic.severity === "error");
+  return diagnostics.some((diagnostic) => diagnostic.severity === 'error');
 }
 
 function printNamedCollection<T>(
@@ -6072,7 +6611,7 @@ function printNamedCollection<T>(
   items: readonly T[],
   lineOf: (item: T) => string,
 ): void {
-  console.log("");
+  console.log('');
   console.log(`${title} (${items.length}):`);
   for (const item of items) {
     console.log(`  - ${lineOf(item)}`);
@@ -6099,7 +6638,7 @@ function printStructuredError(value: StructuredDocsError, json: boolean): void {
 function getRootDir(): string {
   let current = process.cwd();
   while (true) {
-    if (existsSync(join(current, "pnpm-workspace.yaml")) && existsSync(join(current, "docs"))) {
+    if (existsSync(join(current, 'pnpm-workspace.yaml')) && existsSync(join(current, 'docs'))) {
       return current;
     }
     const parent = dirname(current);
@@ -6125,21 +6664,23 @@ function pickAll(
   return values && values.length > 0 ? values.flatMap(splitCsv) : fallback;
 }
 
-function hasFlag(
-  flags: Readonly<Record<string, readonly string[]>>,
-  name: string,
-): boolean {
-  return flags[name]?.some((value) => value === "true") ?? false;
+function hasFlag(flags: Readonly<Record<string, readonly string[]>>, name: string): boolean {
+  return flags[name]?.some((value) => value === 'true') ?? false;
 }
 
 function splitCsv(value: string): readonly string[] {
-  return value.split(",").map((item) => item.trim()).filter(Boolean);
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function compareDocuments(left: DocumentEnvelope, right: DocumentEnvelope): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.stableId.localeCompare(right.stableId);
+  return (
+    left.path.localeCompare(right.path) ||
+    left.kind.localeCompare(right.kind) ||
+    left.stableId.localeCompare(right.stableId)
+  );
 }
 
 function uniqueDocuments(documents: readonly DocumentEnvelope[]): readonly DocumentEnvelope[] {
@@ -6159,16 +6700,16 @@ function unique(values: readonly (string | undefined)[]): readonly string[] {
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
 }
 
 function asNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function asStringArray(value: unknown): readonly string[] {
   return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
+    ? value.filter((item): item is string => typeof item === 'string')
     : [];
 }
 
@@ -6179,37 +6720,37 @@ function documentKey(document: DocumentEnvelope): string {
 function normalizeSearchText(value: string): string {
   return value
     .toLowerCase()
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .replace(/\s+/g, " ")
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
 function titleizeTopic(value: string): string {
-  const base = basename(value.replace(/[/\\]+$/, "")) || value;
+  const base = basename(value.replace(/[/\\]+$/, '')) || value;
   const words = base
-    .replace(/\.(?:md|json)$/i, "")
+    .replace(/\.(?:md|json)$/i, '')
     .split(/[-_\s]+/)
-    .map((word) => word ? `${word[0]!.toUpperCase()}${word.slice(1)}` : "")
+    .map((word) => (word ? `${word[0]!.toUpperCase()}${word.slice(1)}` : ''))
     .filter(Boolean);
-  return words.length > 0 ? words.join(" ") : "New PRD";
+  return words.length > 0 ? words.join(' ') : 'New PRD';
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function normalizeOptionalPath(value: unknown): string | undefined {
-  return typeof value === "string" ? normalizePath(value) : undefined;
+  return typeof value === 'string' ? normalizePath(value) : undefined;
 }
 
 function normalizePath(value: string): string {
-  const normalized = value.replaceAll("\\", "/").replace(/\/+/g, "/");
-  if (normalized.startsWith("/")) {
+  const normalized = value.replaceAll('\\', '/').replace(/\/+/g, '/');
+  if (normalized.startsWith('/')) {
     const root = getRootDir();
     const relativePath = relative(root, resolve(normalized));
-    return relativePath && !relativePath.startsWith("..")
-      ? relativePath.replaceAll("\\", "/")
+    return relativePath && !relativePath.startsWith('..')
+      ? relativePath.replaceAll('\\', '/')
       : normalized;
   }
   return normalized;

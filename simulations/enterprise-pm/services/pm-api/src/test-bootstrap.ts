@@ -8,31 +8,28 @@
  * seedTestData({ projects, members }) 는 optional — fixture 시드 없이 API 호출만 테스트도 가능.
  */
 
-import { randomUUID } from "node:crypto";
-import { Test } from "@nestjs/testing";
-import type { DynamicModule } from "@nestjs/common";
-import { Module } from "@nestjs/common";
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from "@nestjs/platform-fastify";
-import type { AccessChecker, AuditRecorder, ResourcePolicyRegistry } from "permission-engine";
-import { HealthModule } from "./health/health.module.js";
+import { randomUUID } from 'node:crypto';
+import { Test } from '@nestjs/testing';
+import type { DynamicModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { AccessChecker, AuditRecorder, ResourcePolicyRegistry } from 'permission-engine';
+import { HealthModule } from './health/health.module.js';
 import {
   PmDbModule,
   PM_DB_INSTANCE,
   PM_REPOSITORY,
   type PmDbInstanceHandle,
-} from "./pm/pm-db.module.js";
-import { PM_SLICE_MODULES } from "./pm/pm-slices.registry.js";
-import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
-import { ProjectUseCase } from "./pm/project/application/use-cases/project.use-case.js";
-import { ProjectReadModelQuery } from "./pm/project/application/queries/project-read-model.query.js";
-import { MemberUseCase } from "./pm/member/application/use-cases/member.use-case.js";
-import type { PmRepository } from "./pm/shared/port.js";
+} from './pm/pm-db.module.js';
+import { PM_SLICE_MODULES } from './pm/pm-slices.registry.js';
+import { AccessCheckerModule } from './auth-deps/access-checker.module.js';
+import { ProjectUseCase } from './pm/project/application/use-cases/project.use-case.js';
+import { ProjectReadModelQuery } from './pm/project/application/queries/project-read-model.query.js';
+import { MemberUseCase } from './pm/member/application/use-cases/member.use-case.js';
+import type { PmRepository } from './pm/shared/port.js';
 
-export { AppModule } from "./app.module.js";
-export { PROJECT_AUTHORIZATION_GRAPH_STORE } from "./auth-deps/access-checker.module.js";
+export { AppModule } from './app.module.js';
+export { PROJECT_AUTHORIZATION_GRAPH_STORE } from './auth-deps/access-checker.module.js';
 
 export interface TestBootstrapOptions {
   sqlitePath?: string; // 기본 ":memory:"
@@ -81,7 +78,7 @@ export interface TestDelegationGraphFixture {
 
 export interface TestSeedInput {
   projects?: Array<{ name: string; ownerId: string; departmentId: string }>;
-  members?: Array<{ projectId: string; userId: string; role: "lead" | "contributor" | "viewer" }>;
+  members?: Array<{ projectId: string; userId: string; role: 'lead' | 'contributor' | 'viewer' }>;
 }
 
 export interface TestSeedHandle {
@@ -116,28 +113,24 @@ function buildTestAppModule(opts: TestBootstrapOptions): DynamicModule {
   return { module: TestAppModule };
 }
 
-export async function bootstrapTestApi(
-  opts: TestBootstrapOptions = {},
-): Promise<TestPmApiHandle> {
+export async function bootstrapTestApi(opts: TestBootstrapOptions = {}): Promise<TestPmApiHandle> {
   const prev = {
     QA_DB_DIALECT: process.env.QA_DB_DIALECT,
     QA_SQLITE_PATH: process.env.QA_SQLITE_PATH,
   };
-  process.env.QA_DB_DIALECT = "sqlite";
-  process.env.QA_SQLITE_PATH = opts.sqlitePath ?? ":memory:";
+  process.env.QA_DB_DIALECT = 'sqlite';
+  process.env.QA_SQLITE_PATH = opts.sqlitePath ?? ':memory:';
 
   const moduleRef = await Test.createTestingModule({
     imports: [buildTestAppModule(opts)],
   }).compile();
 
-  const app = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter(),
-  );
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
-  await app.listen(0, "127.0.0.1");
+  await app.listen(0, '127.0.0.1');
   const addr = app.getHttpServer().address() as { port: number } | null;
-  if (!addr) throw new Error("bootstrapTestApi: HTTP server not listening");
+  if (!addr) throw new Error('bootstrapTestApi: HTTP server not listening');
   const port = addr.port;
 
   return {
@@ -244,6 +237,6 @@ export async function getDelegationGraph(
     snapshotId: snapshot.snapshotId,
     nodeCount: snapshot.nodeCount,
     relationCount: snapshot.relationCount,
-    graph: snapshot.graph as TestDelegationGraphFixture["graph"],
+    graph: snapshot.graph as TestDelegationGraphFixture['graph'],
   };
 }

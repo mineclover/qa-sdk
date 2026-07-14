@@ -1,20 +1,20 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
 
-import { ExpenseEntity, ExpenseNotFoundException } from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type { CreateExpenseCommand } from "../commands/create-expense.command.js";
-import type { UpdateExpenseStatusCommand } from "../commands/update-expense-status.command.js";
-import type { ExpenseLoggerPort } from "../ports/expense-logger.port.js";
+import { ExpenseEntity, ExpenseNotFoundException } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { CreateExpenseCommand } from '../commands/create-expense.command.js';
+import type { UpdateExpenseStatusCommand } from '../commands/update-expense-status.command.js';
+import type { ExpenseLoggerPort } from '../ports/expense-logger.port.js';
 import type {
   ExpenseCreatedEventPayload,
   ExpenseOutboxPort,
   ExpenseStatusChangedEventPayload,
-} from "../ports/expense-outbox.port.js";
-import type { ExpenseRepositoryPort } from "../ports/expense-repository.port.js";
-import type { ExpenseTransactionPort } from "../ports/expense-transaction.port.js";
+} from '../ports/expense-outbox.port.js';
+import type { ExpenseRepositoryPort } from '../ports/expense-repository.port.js';
+import type { ExpenseTransactionPort } from '../ports/expense-transaction.port.js';
 
 export class ExpenseUseCase {
   constructor(
@@ -24,22 +24,24 @@ export class ExpenseUseCase {
     private readonly logger: ExpenseLoggerPort,
   ) {}
 
-  async create(command: CreateExpenseCommand): Promise<{ readonly id: string; readonly status: string }> {
+  async create(
+    command: CreateExpenseCommand,
+  ): Promise<{ readonly id: string; readonly status: string }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "expense",
-      useCase: "ExpenseUseCase.create",
+      domain: 'expense',
+      useCase: 'ExpenseUseCase.create',
       aggregateId: command.id,
-      commandName: "CreateExpenseCommand",
+      commandName: 'CreateExpenseCommand',
     } as const;
-    this.logger.info({ ...ctxBase }, "expense.create.started");
+    this.logger.info({ ...ctxBase }, 'expense.create.started');
     try {
       const entity = ExpenseEntity.create(command);
-      const eventName = "approval.expense.submitted";
-      await this.transaction.run("expense.create", async (scope) => {
+      const eventName = 'approval.expense.submitted';
+      await this.transaction.run('expense.create', async (scope) => {
         await this.repository.save(entity, scope);
         const occurredAt = new Date();
         const payload: ExpenseCreatedEventPayload = {
@@ -66,39 +68,41 @@ export class ExpenseUseCase {
         );
       });
       this.logger.info(
-        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
-        "expense.create.success",
+        { ...ctxBase, eventName, eventVersion: 1, outcome: 'success' },
+        'expense.create.success',
       );
       return { id: entity.id, status: entity.status };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "expense.create.failure",
+        'expense.create.failure',
       );
       throw error;
     }
   }
 
-  async updateStatus(command: UpdateExpenseStatusCommand): Promise<{ readonly id: string; readonly status: string }> {
+  async updateStatus(
+    command: UpdateExpenseStatusCommand,
+  ): Promise<{ readonly id: string; readonly status: string }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "expense",
-      useCase: "ExpenseUseCase.updateStatus",
+      domain: 'expense',
+      useCase: 'ExpenseUseCase.updateStatus',
       aggregateId: command.id,
-      commandName: "UpdateExpenseStatusCommand",
+      commandName: 'UpdateExpenseStatusCommand',
     } as const;
-    this.logger.info({ ...ctxBase }, "expense.updateStatus.started");
+    this.logger.info({ ...ctxBase }, 'expense.updateStatus.started');
     try {
-      const eventName = "approval.expense.status-changed";
-      const result = await this.transaction.run("expense.updateStatus", async (scope) => {
+      const eventName = 'approval.expense.status-changed';
+      const result = await this.transaction.run('expense.updateStatus', async (scope) => {
         const entity = await this.repository.findById(command.id);
         if (!entity) throw new ExpenseNotFoundException(command.id);
         const next = entity.changeStatus(command.status);
@@ -127,19 +131,19 @@ export class ExpenseUseCase {
         return { id: next.id, status: next.status };
       });
       this.logger.info(
-        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
-        "expense.updateStatus.success",
+        { ...ctxBase, eventName, eventVersion: 1, outcome: 'success' },
+        'expense.updateStatus.success',
       );
       return result;
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "expense.updateStatus.failure",
+        'expense.updateStatus.failure',
       );
       throw error;
     }

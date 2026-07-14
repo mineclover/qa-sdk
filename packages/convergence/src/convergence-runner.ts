@@ -8,8 +8,8 @@
  * @layer 기록 (Recording)
  */
 
-import type { GraphPort } from "spec-schema";
-import type { ObservationNode } from "./dkg-types.js";
+import type { GraphPort } from 'spec-schema';
+import type { ObservationNode } from './dkg-types.js';
 import type {
   UsageData,
   AxisOverlap,
@@ -18,13 +18,13 @@ import type {
   CausalCandidate,
   SimplificationCandidate,
   BoundaryRecommendation,
-} from "./convergence.types.js";
+} from './convergence.types.js';
 
-import { scanAxisOverlaps, comparePrefixes } from "./symbol-comparator.js";
-import { scanDecisionConflicts } from "./decision-comparator.js";
-import { discoverCausalityWithObservations } from "./causal-discovery.js";
-import { scanAllSimplifications } from "./simplification-advisor.js";
-import { recommendAll } from "./boundary-recommender.js";
+import { scanAxisOverlaps, comparePrefixes } from './symbol-comparator.js';
+import { scanDecisionConflicts } from './decision-comparator.js';
+import { discoverCausalityWithObservations } from './causal-discovery.js';
+import { scanAllSimplifications } from './simplification-advisor.js';
+import { recommendAll } from './boundary-recommender.js';
 
 // ═══════════════════════════════════════════════════════════════
 
@@ -59,12 +59,10 @@ export function runConvergenceAnalysis(
   const allObservations: ObservationNode[] = [];
 
   // 1. SymbolComparator — 축 중복 스캔
-  const axisOverlaps = options?.entriesMap
-    ? scanAxisOverlaps(graph, options.entriesMap)
-    : [];
+  const axisOverlaps = options?.entriesMap ? scanAxisOverlaps(graph, options.entriesMap) : [];
 
   // 1b. Prefix 구조 비교 (모든 쌍)
-  const prefixes = graph.getNodesByKind("prefix").map(n => n.id);
+  const prefixes = graph.getNodesByKind('prefix').map((n) => n.id);
   const prefixOverlaps: PrefixOverlap[] = [];
   for (let i = 0; i < prefixes.length; i++) {
     for (let j = i + 1; j < prefixes.length; j++) {
@@ -90,7 +88,10 @@ export function runConvergenceAnalysis(
   let simplifications: SimplificationCandidate[] = [];
   if (usage) {
     simplifications = scanAllSimplifications(
-      graph, prefixes, usage.entryUsages, usage.addressUsages,
+      graph,
+      prefixes,
+      usage.entryUsages,
+      usage.addressUsages,
     );
   }
 
@@ -106,10 +107,11 @@ export function runConvergenceAnalysis(
   if (prefixOverlaps.length > 0) parts.push(`prefix 유사 ${prefixOverlaps.length}건`);
   if (decisionConflicts.length > 0) parts.push(`결정 충돌 ${decisionConflicts.length}건`);
   if (causalCandidates.length > 0) parts.push(`인과 후보 ${causalCandidates.length}건`);
-  const actionable = simplifications.filter(s => !s.suggestions.every(sg => sg.kind === "ok"));
+  const actionable = simplifications.filter((s) => !s.suggestions.every((sg) => sg.kind === 'ok'));
   if (actionable.length > 0) parts.push(`단순화 대상 ${actionable.length}건`);
-  if (boundaryRecommendations.length > 0) parts.push(`경계 추천 ${boundaryRecommendations.length}건`);
-  const summary = parts.length > 0 ? parts.join(", ") : "수렴 이슈 없음";
+  if (boundaryRecommendations.length > 0)
+    parts.push(`경계 추천 ${boundaryRecommendations.length}건`);
+  const summary = parts.length > 0 ? parts.join(', ') : '수렴 이슈 없음';
 
   return {
     axisOverlaps,

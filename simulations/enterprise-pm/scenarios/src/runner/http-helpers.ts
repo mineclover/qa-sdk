@@ -21,8 +21,8 @@ export async function loginViaGateway(
   creds: { email: string; password: string },
 ): Promise<LoginResponse> {
   const res = await fetch(`${gatewayUrl}/auth/login`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify(creds),
   });
   if (!res.ok) {
@@ -42,5 +42,5 @@ export function authHeaders(
 
 /** 응답에서 x-trace-id 추출 (없으면 빈 문자열). */
 export function extractTraceId(res: Response): string {
-  return res.headers.get("x-trace-id") ?? "";
+  return res.headers.get('x-trace-id') ?? '';
 }

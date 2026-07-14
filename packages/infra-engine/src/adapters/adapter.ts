@@ -9,7 +9,7 @@ import type {
   InfraDeploymentEntry,
   MonitorTarget,
   ResolvedConfig,
-} from "../core/types.js";
+} from '../core/types.js';
 
 // --- 1. RegistryAdapter ---
 export interface DeploymentSyncParams {

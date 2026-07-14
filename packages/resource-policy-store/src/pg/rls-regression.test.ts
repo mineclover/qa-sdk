@@ -3,15 +3,15 @@
 // 시나리오 4 회귀 — Plan 13b 의 cross-department deny 가 DB RLS 레벨에서도 차단되는지 확인.
 // 본 저장소에는 budget_request 테이블이 없으므로 auth.resource_policies 의 cross-actor deny 로 대리.
 
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { withRlsContext } from "db-bootstrap";
-import { RP_READ_BIT, RP_WRITE_BIT } from "./rls-bits.js";
-import { RlsAwarePgResourcePolicyRegistry } from "./rls-aware-adapter.js";
+import { withRlsContext } from 'db-bootstrap';
+import { RP_READ_BIT, RP_WRITE_BIT } from './rls-bits.js';
+import { RlsAwarePgResourcePolicyRegistry } from './rls-aware-adapter.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
-const FORCE_APPLIED = process.env.QA_TEST_PG_FORCE === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
+const FORCE_APPLIED = process.env.QA_TEST_PG_FORCE === '1';
 
 function setBitBytes(pos: number): Uint8Array {
   const byteIdx = Math.floor(pos / 8);
@@ -88,88 +88,103 @@ CREATE POLICY rp_delete_policy ON auth.resource_policies
 GRANT SELECT, INSERT, UPDATE, DELETE ON auth.resource_policies TO auth_app;
 `;
 
-describe.skipIf(!(PG_AVAILABLE && FORCE_APPLIED))("RLS enforce 회귀 — 시나리오 4 대리 (resource_policies)", () => {
-  const cfg = {
-    host: process.env.QA_TEST_PG_HOST ?? "localhost",
-    port: Number(process.env.QA_TEST_PG_PORT ?? "5434"),
-    database: process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test",
-  };
-  let adminSql: ReturnType<typeof postgres>;
-  let appSql: ReturnType<typeof postgres>;
-  let registry: RlsAwarePgResourcePolicyRegistry;
+describe.skipIf(!(PG_AVAILABLE && FORCE_APPLIED))(
+  'RLS enforce 회귀 — 시나리오 4 대리 (resource_policies)',
+  () => {
+    const cfg = {
+      host: process.env.QA_TEST_PG_HOST ?? 'localhost',
+      port: Number(process.env.QA_TEST_PG_PORT ?? '5434'),
+      database: process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test',
+    };
+    let adminSql: ReturnType<typeof postgres>;
+    let appSql: ReturnType<typeof postgres>;
+    let registry: RlsAwarePgResourcePolicyRegistry;
 
-  beforeEach(async () => {
-    adminSql = postgres({ ...cfg, user: "qa_admin", password: process.env.QA_TEST_PG_PASSWORD ?? "", max: 3, onnotice: () => {} });
-    await adminSql.unsafe(RESET_TABLE_DDL);
-    appSql = postgres({ ...cfg, user: "auth_app", password: process.env.QA_TEST_PG_AUTH_APP_PASSWORD ?? "", max: 3, onnotice: () => {} });
-    registry = new RlsAwarePgResourcePolicyRegistry(appSql);
-  });
-
-  afterEach(async () => {
-    try {
-      await adminSql.unsafe(`DROP TABLE IF EXISTS auth.resource_policies CASCADE`);
-    } finally {
-      await adminSql.end();
-      await appSql.end();
-    }
-  });
-
-  it("alice 가 소유한 UNREGISTERED 리소스를 bob 이 cross-actor 로 조회 시 0 row", async () => {
-    // alice 가 자기 리소스를 create
-    await withRlsContext(
-      { userId: "alice", tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
-      () => registry.create({ resourceId: "r-alice", resourceType: "doc", ownerId: "alice" }),
-    );
-    // bob 이 alice 의 리소스 listByOwner 호출 — RLS 로 0 row (cross-actor deny)
-    const rows = await withRlsContext(
-      { userId: "bob", tenantId: null, bitmapMask: setBitBytes(RP_READ_BIT), role: null },
-      () => registry.listByOwner("alice"),
-    );
-    expect(rows.length).toBe(0);
-  });
-
-  it("bob 이 직접 resolve(r-alice) 호출 → null (RLS 로 invisible)", async () => {
-    await withRlsContext(
-      { userId: "alice", tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
-      () => registry.create({ resourceId: "r-alice", resourceType: "doc", ownerId: "alice" }),
-    );
-    const policy = await withRlsContext(
-      { userId: "bob", tenantId: null, bitmapMask: setBitBytes(RP_READ_BIT), role: null },
-      () => registry.resolve("r-alice"),
-    );
-    expect(policy).toBeNull();
-  });
-
-  it("bob 이 대리 create(r-alice, ownerId='alice') 시도 → WITH CHECK 위반 throw", async () => {
-    await expect(
-      withRlsContext(
-        { userId: "bob", tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
-        () => registry.create({ resourceId: "r-forged", resourceType: "doc", ownerId: "alice" }),
-      ),
-    ).rejects.toThrow(/row-level security|row violates/i);
-  });
-
-  it("admin bypass (app.role=admin) → alice 리소스 가시", async () => {
-    await withRlsContext(
-      { userId: "alice", tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
-      () => registry.create({ resourceId: "r-alice", resourceType: "doc", ownerId: "alice" }),
-    );
-    const policy = await withRlsContext(
-      { userId: null, tenantId: null, bitmapMask: null, role: "admin" },
-      () => registry.resolve("r-alice"),
-    );
-    expect(policy?.ownerId).toBe("alice");
-  });
-
-  it("FORCE 상태에서 table owner(qa_admin) 도 일반 정책 대상 (BYPASSRLS 없음)", async () => {
-    // adminSql (qa_admin) 은 FORCE 에 의해 RLS 적용된다 — INSERT/SELECT 모두 block.
-    // 먼저 admin context (app.role='admin') 로 seed → INSERT 통과.
-    await adminSql.begin(async (tx) => {
-      await tx`SELECT set_config('app.role', 'admin', true)`;
-      await tx`INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r-admin', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`;
+    beforeEach(async () => {
+      adminSql = postgres({
+        ...cfg,
+        user: 'qa_admin',
+        password: process.env.QA_TEST_PG_PASSWORD ?? '',
+        max: 3,
+        onnotice: () => {},
+      });
+      await adminSql.unsafe(RESET_TABLE_DDL);
+      appSql = postgres({
+        ...cfg,
+        user: 'auth_app',
+        password: process.env.QA_TEST_PG_AUTH_APP_PASSWORD ?? '',
+        max: 3,
+        onnotice: () => {},
+      });
+      registry = new RlsAwarePgResourcePolicyRegistry(appSql);
     });
-    // 이제 admin context 없이 SELECT — qa_admin 은 BYPASSRLS 없으므로 0 row.
-    const rows = await adminSql.unsafe(`SELECT * FROM auth.resource_policies`);
-    expect(rows.length).toBe(0);
-  });
-});
+
+    afterEach(async () => {
+      try {
+        await adminSql.unsafe(`DROP TABLE IF EXISTS auth.resource_policies CASCADE`);
+      } finally {
+        await adminSql.end();
+        await appSql.end();
+      }
+    });
+
+    it('alice 가 소유한 UNREGISTERED 리소스를 bob 이 cross-actor 로 조회 시 0 row', async () => {
+      // alice 가 자기 리소스를 create
+      await withRlsContext(
+        { userId: 'alice', tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
+        () => registry.create({ resourceId: 'r-alice', resourceType: 'doc', ownerId: 'alice' }),
+      );
+      // bob 이 alice 의 리소스 listByOwner 호출 — RLS 로 0 row (cross-actor deny)
+      const rows = await withRlsContext(
+        { userId: 'bob', tenantId: null, bitmapMask: setBitBytes(RP_READ_BIT), role: null },
+        () => registry.listByOwner('alice'),
+      );
+      expect(rows.length).toBe(0);
+    });
+
+    it('bob 이 직접 resolve(r-alice) 호출 → null (RLS 로 invisible)', async () => {
+      await withRlsContext(
+        { userId: 'alice', tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
+        () => registry.create({ resourceId: 'r-alice', resourceType: 'doc', ownerId: 'alice' }),
+      );
+      const policy = await withRlsContext(
+        { userId: 'bob', tenantId: null, bitmapMask: setBitBytes(RP_READ_BIT), role: null },
+        () => registry.resolve('r-alice'),
+      );
+      expect(policy).toBeNull();
+    });
+
+    it("bob 이 대리 create(r-alice, ownerId='alice') 시도 → WITH CHECK 위반 throw", async () => {
+      await expect(
+        withRlsContext(
+          { userId: 'bob', tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
+          () => registry.create({ resourceId: 'r-forged', resourceType: 'doc', ownerId: 'alice' }),
+        ),
+      ).rejects.toThrow(/row-level security|row violates/i);
+    });
+
+    it('admin bypass (app.role=admin) → alice 리소스 가시', async () => {
+      await withRlsContext(
+        { userId: 'alice', tenantId: null, bitmapMask: setBitBytes(RP_WRITE_BIT), role: null },
+        () => registry.create({ resourceId: 'r-alice', resourceType: 'doc', ownerId: 'alice' }),
+      );
+      const policy = await withRlsContext(
+        { userId: null, tenantId: null, bitmapMask: null, role: 'admin' },
+        () => registry.resolve('r-alice'),
+      );
+      expect(policy?.ownerId).toBe('alice');
+    });
+
+    it('FORCE 상태에서 table owner(qa_admin) 도 일반 정책 대상 (BYPASSRLS 없음)', async () => {
+      // adminSql (qa_admin) 은 FORCE 에 의해 RLS 적용된다 — INSERT/SELECT 모두 block.
+      // 먼저 admin context (app.role='admin') 로 seed → INSERT 통과.
+      await adminSql.begin(async (tx) => {
+        await tx`SELECT set_config('app.role', 'admin', true)`;
+        await tx`INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r-admin', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`;
+      });
+      // 이제 admin context 없이 SELECT — qa_admin 은 BYPASSRLS 없으므로 0 row.
+      const rows = await adminSql.unsafe(`SELECT * FROM auth.resource_policies`);
+      expect(rows.length).toBe(0);
+    });
+  },
+);

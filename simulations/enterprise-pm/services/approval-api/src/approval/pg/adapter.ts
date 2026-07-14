@@ -1,11 +1,11 @@
 // @def.boundary sim-approval-api
 // @def.doc sim-erp-pm-design
 
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { and, asc, eq } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { and, asc, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
-import type { ApprovalRepository } from "../shared/port.js";
+import type { ApprovalRepository } from '../shared/port.js';
 import type {
   BudgetRequest,
   BudgetRequestCreate,
@@ -18,16 +18,16 @@ import type {
   ExpenseReportCreate,
   RequestStatus,
   StepDecision,
-} from "../shared/types.js";
-import { RequestNotFoundError } from "../shared/errors.js";
-import { determineStages } from "../shared/budget-state.js";
+} from '../shared/types.js';
+import { RequestNotFoundError } from '../shared/errors.js';
+import { determineStages } from '../shared/budget-state.js';
 import {
   budgetRequests,
   approvalSteps,
   resourceRequests,
   timeOffRequests,
   expenseReports,
-} from "./schema.js";
+} from './schema.js';
 
 export class PgApprovalRepository implements ApprovalRepository {
   constructor(private readonly db: PostgresJsDatabase) {}
@@ -39,10 +39,10 @@ export class PgApprovalRepository implements ApprovalRepository {
     const request: BudgetRequest = {
       id: randomUUID(),
       projectId: args.projectId,
-      projectDepartmentId: args.projectDepartmentId ?? "",
+      projectDepartmentId: args.projectDepartmentId ?? '',
       amount: args.amount,
       requesterId: args.requesterId,
-      status: "draft",
+      status: 'draft',
       currentStage: 1,
       totalStages,
       createdAt: now,
@@ -54,16 +54,26 @@ export class PgApprovalRepository implements ApprovalRepository {
   }
 
   async findBudgetRequest(id: string): Promise<BudgetRequest | null> {
-    const rows = await this.db.select().from(budgetRequests).where(eq(budgetRequests.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(budgetRequests)
+      .where(eq(budgetRequests.id, id))
+      .limit(1);
     return rows[0] ? (rows[0] as BudgetRequest) : null;
   }
 
   async listBudgetRequestsByProject(projectId: string): Promise<BudgetRequest[]> {
-    return (await this.db.select().from(budgetRequests).where(eq(budgetRequests.projectId, projectId))) as BudgetRequest[];
+    return (await this.db
+      .select()
+      .from(budgetRequests)
+      .where(eq(budgetRequests.projectId, projectId))) as BudgetRequest[];
   }
 
   async listBudgetRequestsByRequester(requesterId: string): Promise<BudgetRequest[]> {
-    return (await this.db.select().from(budgetRequests).where(eq(budgetRequests.requesterId, requesterId))) as BudgetRequest[];
+    return (await this.db
+      .select()
+      .from(budgetRequests)
+      .where(eq(budgetRequests.requesterId, requesterId))) as BudgetRequest[];
   }
 
   async updateBudgetRequestState(
@@ -75,11 +85,14 @@ export class PgApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: BudgetRequest = { ...cur, status, currentStage, updatedAt: now };
-    await this.db.update(budgetRequests).set({
-      status: next.status,
-      currentStage: next.currentStage,
-      updatedAt: next.updatedAt,
-    }).where(eq(budgetRequests.id, id));
+    await this.db
+      .update(budgetRequests)
+      .set({
+        status: next.status,
+        currentStage: next.currentStage,
+        updatedAt: next.updatedAt,
+      })
+      .where(eq(budgetRequests.id, id));
     return next;
   }
 
@@ -91,7 +104,7 @@ export class PgApprovalRepository implements ApprovalRepository {
         requestId,
         stageNumber: i,
         approverId: null,
-        decision: "pending",
+        decision: 'pending',
         comment: null,
         decidedAt: null,
       };
@@ -109,15 +122,17 @@ export class PgApprovalRepository implements ApprovalRepository {
     comment?: string,
   ): Promise<ApprovalStep> {
     const now = new Date().toISOString();
-    await this.db.update(approvalSteps).set({
-      approverId,
-      decision,
-      comment: comment ?? null,
-      decidedAt: now,
-    }).where(and(
-      eq(approvalSteps.requestId, requestId),
-      eq(approvalSteps.stageNumber, stageNumber),
-    ));
+    await this.db
+      .update(approvalSteps)
+      .set({
+        approverId,
+        decision,
+        comment: comment ?? null,
+        decidedAt: now,
+      })
+      .where(
+        and(eq(approvalSteps.requestId, requestId), eq(approvalSteps.stageNumber, stageNumber)),
+      );
     return {
       requestId,
       stageNumber,
@@ -129,7 +144,9 @@ export class PgApprovalRepository implements ApprovalRepository {
   }
 
   async listSteps(requestId: string): Promise<ApprovalStep[]> {
-    return (await this.db.select().from(approvalSteps)
+    return (await this.db
+      .select()
+      .from(approvalSteps)
       .where(eq(approvalSteps.requestId, requestId))
       .orderBy(asc(approvalSteps.stageNumber))) as ApprovalStep[];
   }
@@ -143,7 +160,7 @@ export class PgApprovalRepository implements ApprovalRepository {
       requesterId: args.requesterId,
       resourceType: args.resourceType,
       description: args.description,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -152,7 +169,11 @@ export class PgApprovalRepository implements ApprovalRepository {
   }
 
   async findResourceRequest(id: string): Promise<ResourceRequest | null> {
-    const rows = await this.db.select().from(resourceRequests).where(eq(resourceRequests.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(resourceRequests)
+      .where(eq(resourceRequests.id, id))
+      .limit(1);
     return rows[0] ? (rows[0] as ResourceRequest) : null;
   }
 
@@ -161,7 +182,9 @@ export class PgApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: ResourceRequest = { ...cur, status, updatedAt: now };
-    await this.db.update(resourceRequests).set({ status: next.status, updatedAt: next.updatedAt })
+    await this.db
+      .update(resourceRequests)
+      .set({ status: next.status, updatedAt: next.updatedAt })
       .where(eq(resourceRequests.id, id));
     return next;
   }
@@ -175,7 +198,7 @@ export class PgApprovalRepository implements ApprovalRepository {
       startDate: args.startDate,
       endDate: args.endDate,
       reason: args.reason,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -184,7 +207,11 @@ export class PgApprovalRepository implements ApprovalRepository {
   }
 
   async findTimeOffRequest(id: string): Promise<TimeOffRequest | null> {
-    const rows = await this.db.select().from(timeOffRequests).where(eq(timeOffRequests.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(timeOffRequests)
+      .where(eq(timeOffRequests.id, id))
+      .limit(1);
     return rows[0] ? (rows[0] as TimeOffRequest) : null;
   }
 
@@ -193,7 +220,9 @@ export class PgApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: TimeOffRequest = { ...cur, status, updatedAt: now };
-    await this.db.update(timeOffRequests).set({ status: next.status, updatedAt: next.updatedAt })
+    await this.db
+      .update(timeOffRequests)
+      .set({ status: next.status, updatedAt: next.updatedAt })
       .where(eq(timeOffRequests.id, id));
     return next;
   }
@@ -207,7 +236,7 @@ export class PgApprovalRepository implements ApprovalRepository {
       amount: args.amount,
       category: args.category,
       description: args.description,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -216,7 +245,11 @@ export class PgApprovalRepository implements ApprovalRepository {
   }
 
   async findExpenseReport(id: string): Promise<ExpenseReport | null> {
-    const rows = await this.db.select().from(expenseReports).where(eq(expenseReports.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(expenseReports)
+      .where(eq(expenseReports.id, id))
+      .limit(1);
     return rows[0] ? (rows[0] as ExpenseReport) : null;
   }
 
@@ -225,7 +258,9 @@ export class PgApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: ExpenseReport = { ...cur, status, updatedAt: now };
-    await this.db.update(expenseReports).set({ status: next.status, updatedAt: next.updatedAt })
+    await this.db
+      .update(expenseReports)
+      .set({ status: next.status, updatedAt: next.updatedAt })
       .where(eq(expenseReports.id, id));
     return next;
   }

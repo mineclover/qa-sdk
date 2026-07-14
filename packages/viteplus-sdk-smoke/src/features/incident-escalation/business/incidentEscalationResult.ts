@@ -43,9 +43,7 @@ function calculateUrgencyScore(draft: IncidentEscalationDraft): number {
   return Math.min(99, Math.max(0, base + mitigationAdjustment + customerImpactAdjustment));
 }
 
-function resolveIncidentEscalationRoute(
-  draft: IncidentEscalationDraft,
-): IncidentEscalationRoute {
+function resolveIncidentEscalationRoute(draft: IncidentEscalationDraft): IncidentEscalationRoute {
   if (draft.severity === 'sev0') {
     return 'office-hours';
   }

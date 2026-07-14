@@ -1,15 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { parse } from "../../src/parser/index.js";
-import { diff } from "../../src/diff/index.js";
+import { describe, it, expect } from 'vitest';
+import { parse } from '../../src/parser/index.js';
+import { diff } from '../../src/diff/index.js';
 
 function ir(y: string) {
   const r = parse(y);
-  if (!("ir" in r)) throw new Error("parse failed: " + JSON.stringify(r));
+  if (!('ir' in r)) throw new Error('parse failed: ' + JSON.stringify(r));
   return r.ir;
 }
 
-describe("diff breakingLevel", () => {
-  it("entry-removed → major", () => {
+describe('diff breakingLevel', () => {
+  it('entry-removed → major', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -25,10 +25,10 @@ axes:
     lifecycle: approved
     entries:
       - { id: x, address: 0, lifecycle: approved }`);
-    expect(diff(a, b).breakingLevel).toBe("major");
+    expect(diff(a, b).breakingLevel).toBe('major');
   });
 
-  it("entry-added → minor", () => {
+  it('entry-added → minor', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -44,10 +44,10 @@ axes:
     entries:
       - { id: x, address: 0, lifecycle: approved }
       - { id: y, address: 1, lifecycle: approved }`);
-    expect(diff(a, b).breakingLevel).toBe("minor");
+    expect(diff(a, b).breakingLevel).toBe('minor');
   });
 
-  it("entry-lifecycle-changed → patch", () => {
+  it('entry-lifecycle-changed → patch', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -62,10 +62,10 @@ axes:
     lifecycle: approved
     entries:
       - { id: x, address: 0, lifecycle: approved }`);
-    expect(diff(a, b).breakingLevel).toBe("patch");
+    expect(diff(a, b).breakingLevel).toBe('patch');
   });
 
-  it("entry-address-changed → major", () => {
+  it('entry-address-changed → major', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -80,10 +80,10 @@ axes:
     lifecycle: approved
     entries:
       - { id: x, address: 5, lifecycle: approved }`);
-    expect(diff(a, b).breakingLevel).toBe("major");
+    expect(diff(a, b).breakingLevel).toBe('major');
   });
 
-  it("capacity 감소 → major, 증가 → minor", () => {
+  it('capacity 감소 → major, 증가 → minor', () => {
     const base = ir(`taxonomy: t
 version: 1
 axes:
@@ -108,11 +108,11 @@ axes:
     capacity: 32
     entries:
       - { id: x, address: 0, lifecycle: approved }`);
-    expect(diff(base, smaller).breakingLevel).toBe("major");
-    expect(diff(base, bigger).breakingLevel).toBe("minor");
+    expect(diff(base, smaller).breakingLevel).toBe('major');
+    expect(diff(base, bigger).breakingLevel).toBe('minor');
   });
 
-  it("major + minor + patch 동시 → major (최고 우선)", () => {
+  it('major + minor + patch 동시 → major (최고 우선)', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -130,10 +130,10 @@ axes:
       - { id: x, address: 0, lifecycle: tbd, placeholderReason: "y" }
       - { id: z, address: 2, lifecycle: approved }`);
     // y removed (major), z added (minor), x lifecycle changed (patch)
-    expect(diff(a, b).breakingLevel).toBe("major");
+    expect(diff(a, b).breakingLevel).toBe('major');
   });
 
-  it("same → none", () => {
+  it('same → none', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -143,10 +143,10 @@ axes:
       - { id: x, address: 0, lifecycle: approved }`);
     const result = diff(a, a);
     expect(result.same).toBe(true);
-    expect(result.breakingLevel).toBe("none");
+    expect(result.breakingLevel).toBe('none');
   });
 
-  it("relation-rule-removed → major", () => {
+  it('relation-rule-removed → major', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -178,10 +178,10 @@ relations:
     kind: depends-on
     rules:
       - { a: x }`);
-    expect(diff(a, b).breakingLevel).toBe("major");
+    expect(diff(a, b).breakingLevel).toBe('major');
   });
 
-  it("relation-rule-added (minor) + label-changed (patch) → minor", () => {
+  it('relation-rule-added (minor) + label-changed (patch) → minor', () => {
     const a = ir(`taxonomy: t
 version: 1
 axes:
@@ -213,6 +213,6 @@ relations:
     rules:
       - { a: x }
       - { a: y }`);
-    expect(diff(a, b).breakingLevel).toBe("minor");
+    expect(diff(a, b).breakingLevel).toBe('minor');
   });
 });

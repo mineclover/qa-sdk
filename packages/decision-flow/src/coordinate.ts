@@ -6,13 +6,8 @@
  * Gate → 차원(axis), Branch → 엔트리(entry), Path → 1D 주소(address).
  */
 
-import { WeightedIndex } from "weighted-index";
-import type {
-  DecodedPath,
-  FlowCoordinateSpace,
-  FlowSchema,
-  GateSelection,
-} from "./types.js";
+import { WeightedIndex } from 'weighted-index';
+import type { DecodedPath, FlowCoordinateSpace, FlowSchema, GateSelection } from './types.js';
 
 // ─── 좌표 공간 구성 ──────────────────────────────────────
 
@@ -110,9 +105,7 @@ export function encodeSelections(
       // subFlow gate: 하위 플로우의 좌표 주소를 값으로 사용 (0-based → 1-based)
       const subAddr = subFlowAddresses?.get(sel.gateId);
       if (subAddr === undefined) {
-        throw new Error(
-          `subFlow gate "${gate.id}"의 하위 플로우 주소가 제공되지 않았다`,
-        );
+        throw new Error(`subFlow gate "${gate.id}"의 하위 플로우 주소가 제공되지 않았다`);
       }
       coords.push(subAddr + 1); // WeightedIndex는 1-based
     } else {
@@ -120,9 +113,7 @@ export function encodeSelections(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- non-subFlow gate always has branches
       const branchIdx = gate.branches!.findIndex((b) => b.id === sel.branchId);
       if (branchIdx === -1) {
-        throw new Error(
-          `gate "${gate.id}"에서 branch "${sel.branchId}"를 찾을 수 없다`,
-        );
+        throw new Error(`gate "${gate.id}"에서 branch "${sel.branchId}"를 찾을 수 없다`);
       }
       coords.push(branchIdx + 1); // 1-based
     }

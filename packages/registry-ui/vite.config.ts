@@ -1,18 +1,18 @@
-import { defineConfig } from "vite";
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  root: ".",
-  appType: "spa",
+  root: '.',
+  appType: 'spa',
   build: {
-    outDir: "dist",
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {
     port: 5180,
     proxy: {
-      "/api": {
-        target: "http://localhost:3300",
-        rewrite: (path) => path.replace(/^\/api/, ""),
+      '/api': {
+        target: 'http://localhost:3300',
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

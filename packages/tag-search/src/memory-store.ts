@@ -8,14 +8,9 @@
 /*    meta     : targetId → { kind, createdAt }                         */
 /* ------------------------------------------------------------------ */
 
-import type { TagStore } from "./port.js";
-import type {
-  TagTarget,
-  TagQuery,
-  TagSearchResult,
-  TagSummary,
-} from "./types.js";
-import { normalizeTag } from "./types.js";
+import type { TagStore } from './port.js';
+import type { TagTarget, TagQuery, TagSearchResult, TagSummary } from './types.js';
+import { normalizeTag } from './types.js';
 
 interface TargetMeta {
   kind: TagTarget;
@@ -33,11 +28,7 @@ export class InMemoryTagStore implements TagStore {
 
   /* ---- 쓰기 ---- */
 
-  async attach(
-    targetId: string,
-    targetKind: TagTarget,
-    tags: string[],
-  ): Promise<void> {
+  async attach(targetId: string, targetKind: TagTarget, tags: string[]): Promise<void> {
     const normalized = tags.map(normalizeTag).filter(Boolean);
     if (normalized.length === 0) return;
 
@@ -107,14 +98,7 @@ export class InMemoryTagStore implements TagStore {
   }
 
   async search(query: TagQuery): Promise<TagSearchResult[]> {
-    const {
-      tags,
-      operator = "OR",
-      targetKind,
-      timeRange,
-      limit = 100,
-      offset = 0,
-    } = query;
+    const { tags, operator = 'OR', targetKind, timeRange, limit = 100, offset = 0 } = query;
 
     const normalized = tags.map(normalizeTag).filter(Boolean);
     if (normalized.length === 0) return [];
@@ -122,7 +106,7 @@ export class InMemoryTagStore implements TagStore {
     // 역색인으로 후보 수집
     let candidateIds: Set<string>;
 
-    if (operator === "AND") {
+    if (operator === 'AND') {
       // 모든 태그를 가진 대상만 (교집합)
       const sets = normalized
         .map((t) => this.inverted.get(t))

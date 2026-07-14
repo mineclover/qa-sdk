@@ -13,11 +13,11 @@ export {
   type RegisterArgs,
   type ResourcePolicy,
   type ResourcePolicyState,
-} from "./state.js";
+} from './state.js';
 
 export {
   DuplicatePolicyError,
   InMemoryResourcePolicyRegistry,
   PolicyNotFoundError,
   type ResourcePolicyRegistry,
-} from "./registry.js";
+} from './registry.js';

@@ -1,8 +1,8 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { SqlDriver } from "index-meta";
-import type { EventSchemaRecord, EventSchemaStore } from "./event-schema-store.js";
+import type { SqlDriver } from 'index-meta';
+import type { EventSchemaRecord, EventSchemaStore } from './event-schema-store.js';
 
 export class SqlEventSchemaStore implements EventSchemaStore {
   constructor(private readonly driver: SqlDriver) {}
@@ -14,15 +14,29 @@ export class SqlEventSchemaStore implements EventSchemaStore {
        ON CONFLICT (catalog_id, service_id, event_key, event_version)
        DO UPDATE SET display_name = excluded.display_name, description = excluded.description,
                      record_kind = excluded.record_kind, status = excluded.status, updated_at = excluded.updated_at`,
-      [record.catalogId, record.serviceId, record.eventKey, record.eventVersion,
-       record.displayName, record.description ?? null, record.recordKind, record.status,
-       record.createdAt, record.updatedAt],
+      [
+        record.catalogId,
+        record.serviceId,
+        record.eventKey,
+        record.eventVersion,
+        record.displayName,
+        record.description ?? null,
+        record.recordKind,
+        record.status,
+        record.createdAt,
+        record.updatedAt,
+      ],
     );
   }
 
-  async get(catalogId: string, serviceId: string, eventKey: string, eventVersion: string): Promise<EventSchemaRecord | null> {
+  async get(
+    catalogId: string,
+    serviceId: string,
+    eventKey: string,
+    eventVersion: string,
+  ): Promise<EventSchemaRecord | null> {
     const row = await this.driver.queryOne<Row>(
-      "SELECT * FROM event_schema WHERE catalog_id = ? AND service_id = ? AND event_key = ? AND event_version = ?",
+      'SELECT * FROM event_schema WHERE catalog_id = ? AND service_id = ? AND event_key = ? AND event_version = ?',
       [catalogId, serviceId, eventKey, eventVersion],
     );
     return row ? toRecord(row) : null;
@@ -30,7 +44,7 @@ export class SqlEventSchemaStore implements EventSchemaStore {
 
   async listByService(catalogId: string, serviceId: string): Promise<EventSchemaRecord[]> {
     const rows = await this.driver.query<Row>(
-      "SELECT * FROM event_schema WHERE catalog_id = ? AND service_id = ? ORDER BY event_key, event_version",
+      'SELECT * FROM event_schema WHERE catalog_id = ? AND service_id = ? ORDER BY event_key, event_version',
       [catalogId, serviceId],
     );
     return rows.map(toRecord);
@@ -38,15 +52,20 @@ export class SqlEventSchemaStore implements EventSchemaStore {
 
   async list(catalogId: string): Promise<EventSchemaRecord[]> {
     const rows = await this.driver.query<Row>(
-      "SELECT * FROM event_schema WHERE catalog_id = ? ORDER BY service_id, event_key, event_version",
+      'SELECT * FROM event_schema WHERE catalog_id = ? ORDER BY service_id, event_key, event_version',
       [catalogId],
     );
     return rows.map(toRecord);
   }
 
-  async delete(catalogId: string, serviceId: string, eventKey: string, eventVersion: string): Promise<boolean> {
+  async delete(
+    catalogId: string,
+    serviceId: string,
+    eventKey: string,
+    eventVersion: string,
+  ): Promise<boolean> {
     await this.driver.execute(
-      "DELETE FROM event_schema WHERE catalog_id = ? AND service_id = ? AND event_key = ? AND event_version = ?",
+      'DELETE FROM event_schema WHERE catalog_id = ? AND service_id = ? AND event_key = ? AND event_version = ?',
       [catalogId, serviceId, eventKey, eventVersion],
     );
     return true;
@@ -74,8 +93,8 @@ function toRecord(row: Row): EventSchemaRecord {
     eventVersion: row.event_version,
     displayName: row.display_name,
     description: row.description ?? undefined,
-    recordKind: row.record_kind as EventSchemaRecord["recordKind"],
-    status: row.status as EventSchemaRecord["status"],
+    recordKind: row.record_kind as EventSchemaRecord['recordKind'],
+    status: row.status as EventSchemaRecord['status'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

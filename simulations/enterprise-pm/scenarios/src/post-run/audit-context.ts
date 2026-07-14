@@ -45,21 +45,19 @@ export async function fetchAuditContextComposite(
   return (await res.json()) as AuditContextCompositeResponse;
 }
 
-export function summarizeAuditContextComposite(
-  result: AuditContextCompositeResponse,
-): string {
+export function summarizeAuditContextComposite(result: AuditContextCompositeResponse): string {
   const retentionSummary = result.graphRetentionInsight
     ? Object.entries(result.graphRetentionInsight.summary)
         .map(([eventKey, count]) => `${eventKey}=${count}`)
-        .join(", ")
-    : "none";
+        .join(', ')
+    : 'none';
 
   return [
     `audit-context root=${result.rootSpanId}`,
     `graph=${result.graphId}`,
     `trace=${result.trace.count}`,
     `snapshot=${result.graphSnapshot.snapshotId}`,
-    `firstFailure=${result.firstFailure ? "present" : "none"}`,
-    `retention=${retentionSummary || "none"}`,
-  ].join(" | ");
+    `firstFailure=${result.firstFailure ? 'present' : 'none'}`,
+    `retention=${retentionSummary || 'none'}`,
+  ].join(' | ');
 }

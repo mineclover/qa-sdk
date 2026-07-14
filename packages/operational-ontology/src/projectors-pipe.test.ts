@@ -1,87 +1,87 @@
-import { describe, expect, it } from "vitest";
-import type { DataSchema, FieldLineage, PipeGraph } from "@qa-sdk/core";
+import { describe, expect, it } from 'vitest';
+import type { DataSchema, FieldLineage, PipeGraph } from '@qa-sdk/core';
 
-import { type CorridorTemplateRegistry, projectPipeGraphToOperationalOntology } from "./index.js";
+import { type CorridorTemplateRegistry, projectPipeGraphToOperationalOntology } from './index.js';
 
-describe("projectPipeGraphToOperationalOntology", () => {
-  it("projects pipes and connections into control flow and transmission skeletons", () => {
+describe('projectPipeGraphToOperationalOntology', () => {
+  it('projects pipes and connections into control flow and transmission skeletons', () => {
     const graph: PipeGraph = {
-      graphId: "checkout",
-      version: "v1",
-      entryPipeId: "collect-order",
+      graphId: 'checkout',
+      version: 'v1',
+      entryPipeId: 'collect-order',
       pipes: [
         {
-          pipeId: "collect-order",
-          version: "v1",
-          trigger: { eventKey: "order.submit" },
+          pipeId: 'collect-order',
+          version: 'v1',
+          trigger: { eventKey: 'order.submit' },
           flow: {
-            kind: "step",
-            facet: "produced",
+            kind: 'step',
+            facet: 'produced',
             dataContract: {
               consumes: {
-                orderInput: { type: "OrderInput", required: true },
+                orderInput: { type: 'OrderInput', required: true },
               },
               produces: {
-                order: { type: "Order", required: true },
+                order: { type: 'Order', required: true },
               },
               lineageHints: {
                 order: {
-                  sources: ["orderInput"],
-                  transform: "derive",
+                  sources: ['orderInput'],
+                  transform: 'derive',
                 },
               },
             },
           },
-          ports: [{ portId: "out", direction: "out", facetType: "produced" }],
-          produces: ["order.created"],
+          ports: [{ portId: 'out', direction: 'out', facetType: 'produced' }],
+          produces: ['order.created'],
         },
         {
-          pipeId: "persist-order",
-          version: "v1",
-          trigger: { eventKey: "order.created" },
-          flow: { kind: "step", facet: "consumed" },
-          ports: [{ portId: "in", direction: "in", facetType: "consumed" }],
+          pipeId: 'persist-order',
+          version: 'v1',
+          trigger: { eventKey: 'order.created' },
+          flow: { kind: 'step', facet: 'consumed' },
+          ports: [{ portId: 'in', direction: 'in', facetType: 'consumed' }],
         },
       ],
       connections: [
         {
-          from: { pipeId: "collect-order", portId: "out" },
-          to: { pipeId: "persist-order", portId: "in" },
-          kind: "next",
+          from: { pipeId: 'collect-order', portId: 'out' },
+          to: { pipeId: 'persist-order', portId: 'in' },
+          kind: 'next',
         },
         {
-          from: "collect-order",
-          to: "persist-order",
-          kind: "conditional",
-          condition: "order.valid == true",
+          from: 'collect-order',
+          to: 'persist-order',
+          kind: 'conditional',
+          condition: 'order.valid == true',
         },
       ],
     };
 
     const schemas: DataSchema[] = [
       {
-        schemaId: "order_input",
-        version: "v1",
-        schemaHash: "hash-input",
-        primaryKey: ["id"],
+        schemaId: 'order_input',
+        version: 'v1',
+        schemaHash: 'hash-input',
+        primaryKey: ['id'],
         columns: {
           orderInput: {
-            ref: { kind: "scalar", type: "OrderInput" },
+            ref: { kind: 'scalar', type: 'OrderInput' },
             required: true,
-            facetRole: "consumed",
+            facetRole: 'consumed',
           },
         },
       },
       {
-        schemaId: "order_state",
-        version: "v1",
-        schemaHash: "hash-state",
-        primaryKey: ["id"],
+        schemaId: 'order_state',
+        version: 'v1',
+        schemaHash: 'hash-state',
+        primaryKey: ['id'],
         columns: {
           order: {
-            ref: { kind: "scalar", type: "Order" },
+            ref: { kind: 'scalar', type: 'Order' },
             required: true,
-            facetRole: "managed",
+            facetRole: 'managed',
           },
         },
       },
@@ -89,72 +89,72 @@ describe("projectPipeGraphToOperationalOntology", () => {
 
     const lineages: FieldLineage[] = [
       {
-        target: { schemaId: "order_state", column: "order" },
-        sources: [{ schemaId: "order_input", column: "orderInput" }],
-        transform: "derive",
-        pipeId: "collect-order",
-        stepPath: "collect-order/order",
+        target: { schemaId: 'order_state', column: 'order' },
+        sources: [{ schemaId: 'order_input', column: 'orderInput' }],
+        transform: 'derive',
+        pipeId: 'collect-order',
+        stepPath: 'collect-order/order',
       },
     ];
 
     const result = projectPipeGraphToOperationalOntology({ graph, schemas, lineages });
 
-    expect(result.controlFlow.entryNodeId).toBe("collect-order");
+    expect(result.controlFlow.entryNodeId).toBe('collect-order');
     expect(result.controlFlow.nodes).toHaveLength(2);
     expect(result.controlFlow.edges).toEqual([
       {
-        from: "collect-order",
-        to: "persist-order",
-        kind: "next",
+        from: 'collect-order',
+        to: 'persist-order',
+        kind: 'next',
         condition: undefined,
-        sourceKind: "next",
+        sourceKind: 'next',
       },
       {
-        from: "collect-order",
-        to: "persist-order",
-        kind: "conditional",
-        condition: "order.valid == true",
-        sourceKind: "conditional",
+        from: 'collect-order',
+        to: 'persist-order',
+        kind: 'conditional',
+        condition: 'order.valid == true',
+        sourceKind: 'conditional',
       },
     ]);
     expect(result.transmissions).toHaveLength(1);
     expect(result.transmissions[0]).toMatchObject({
-      semantic: "production_to_consumption",
-      medium: "direct",
-      direction: "forward",
+      semantic: 'production_to_consumption',
+      medium: 'direct',
+      direction: 'forward',
     });
-    expect(result.transmissions[0].source.facetKind).toBe("production");
-    expect(result.transmissions[0].target.facetKind).toBe("consumption");
+    expect(result.transmissions[0].source.facetKind).toBe('production');
+    expect(result.transmissions[0].target.facetKind).toBe('consumption');
     expect(result.dataFlow).toMatchObject({
-      flowId: "checkout",
-      templateKind: "pipe_graph",
-      entryNodeId: "collect-order",
-      nodeIds: ["collect-order", "persist-order"],
-      schemaIds: ["order_input", "order_state"],
+      flowId: 'checkout',
+      templateKind: 'pipe_graph',
+      entryNodeId: 'collect-order',
+      nodeIds: ['collect-order', 'persist-order'],
+      schemaIds: ['order_input', 'order_state'],
     });
     expect(result.dataFlow.templateValidation?.valid).toBe(true);
     expect(result.corridor).toEqual(result.dataFlow);
     expect(result.dataFlow.contracts).toEqual([
       {
-        contractId: "contract:collect-order",
-        templateKind: "pipe_contract",
-        nodeId: "collect-order",
+        contractId: 'contract:collect-order',
+        templateKind: 'pipe_contract',
+        nodeId: 'collect-order',
         consumes: [
           {
-            field: "orderInput",
-            type: "OrderInput",
+            field: 'orderInput',
+            type: 'OrderInput',
             required: true,
             source: undefined,
-            schemaId: "order_input",
+            schemaId: 'order_input',
           },
         ],
         produces: [
           {
-            field: "order",
-            type: "Order",
+            field: 'order',
+            type: 'Order',
             required: true,
             source: undefined,
-            schemaId: "order_state",
+            schemaId: 'order_state',
           },
         ],
         accesses: undefined,
@@ -163,90 +163,90 @@ describe("projectPipeGraphToOperationalOntology", () => {
     expect(result.dataFlow.endpoints).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          endpointId: "endpoint:collect-order:port:out",
-          templateKind: "port",
-          nodeId: "collect-order",
-          direction: "out",
-          facetKind: "production",
+          endpointId: 'endpoint:collect-order:port:out',
+          templateKind: 'port',
+          nodeId: 'collect-order',
+          direction: 'out',
+          facetKind: 'production',
         }),
         expect.objectContaining({
-          endpointId: "endpoint:collect-order:in:orderInput",
-          templateKind: "contract_field",
-          nodeId: "collect-order",
-          direction: "in",
-          field: "orderInput",
-          facetKind: "consumption",
-          schemaId: "order_input",
+          endpointId: 'endpoint:collect-order:in:orderInput',
+          templateKind: 'contract_field',
+          nodeId: 'collect-order',
+          direction: 'in',
+          field: 'orderInput',
+          facetKind: 'consumption',
+          schemaId: 'order_input',
         }),
         expect.objectContaining({
-          endpointId: "endpoint:collect-order:out:order",
-          templateKind: "contract_field",
-          nodeId: "collect-order",
-          direction: "out",
-          field: "order",
-          facetKind: "management",
-          schemaId: "order_state",
+          endpointId: 'endpoint:collect-order:out:order',
+          templateKind: 'contract_field',
+          nodeId: 'collect-order',
+          direction: 'out',
+          field: 'order',
+          facetKind: 'management',
+          schemaId: 'order_state',
         }),
       ]),
     );
     expect(result.dataFlow.links).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          templateKind: "pipe_connection",
-          sourceKind: "connection",
-          relationType: "pipe_connection:next",
+          templateKind: 'pipe_connection',
+          sourceKind: 'connection',
+          relationType: 'pipe_connection:next',
         }),
         expect.objectContaining({
-          templateKind: "pipe_connection",
-          sourceKind: "connection",
-          relationType: "pipe_connection:conditional",
+          templateKind: 'pipe_connection',
+          sourceKind: 'connection',
+          relationType: 'pipe_connection:conditional',
         }),
         expect.objectContaining({
-          templateKind: "lineage_link",
-          sourceKind: "lineage",
-          relationType: "lineage",
-          fromEndpointId: "endpoint:collect-order:in:orderInput",
-          toEndpointId: "endpoint:collect-order:out:order",
+          templateKind: 'lineage_link',
+          sourceKind: 'lineage',
+          relationType: 'lineage',
+          fromEndpointId: 'endpoint:collect-order:in:orderInput',
+          toEndpointId: 'endpoint:collect-order:out:order',
         }),
       ]),
     );
     expect(result.lineageLinks).toEqual([
       expect.objectContaining({
-        transform: "derive",
-        transmissionRef: "collect-order",
+        transform: 'derive',
+        transmissionRef: 'collect-order',
         target: expect.objectContaining({
-          nodeId: "order_state:order",
-          facetKind: "management",
+          nodeId: 'order_state:order',
+          facetKind: 'management',
         }),
         sources: [
           expect.objectContaining({
-            nodeId: "order_input:orderInput",
-            facetKind: "consumption",
+            nodeId: 'order_input:orderInput',
+            facetKind: 'consumption',
           }),
         ],
       }),
     ]);
     expect(result.branchDefinitions).toEqual([
       {
-        templateKind: "conditional_branch",
-        templateDescription: "Junction materialized from conditional PipeConnection paths",
+        templateKind: 'conditional_branch',
+        templateDescription: 'Junction materialized from conditional PipeConnection paths',
         templateValidation: expect.objectContaining({ valid: true, pathCount: 2 }),
-        branchNodeId: "collect-order",
-        mode: "first_match",
+        branchNodeId: 'collect-order',
+        mode: 'first_match',
         paths: [
           {
-            pathId: "collect-order->persist-order:0",
+            pathId: 'collect-order->persist-order:0',
             when: undefined,
-            nextNodeIds: ["persist-order"],
+            nextNodeIds: ['persist-order'],
             priority: 0,
           },
           {
-            pathId: "collect-order->persist-order:1",
+            pathId: 'collect-order->persist-order:1',
             when: {
-              conditionId: "collect-order:condition:1",
-              expression: "order.valid == true",
+              conditionId: 'collect-order:condition:1',
+              expression: 'order.valid == true',
             },
-            nextNodeIds: ["persist-order"],
+            nextNodeIds: ['persist-order'],
             priority: 1,
           },
         ],
@@ -255,17 +255,17 @@ describe("projectPipeGraphToOperationalOntology", () => {
     expect(result.junctions).toEqual(result.branchDefinitions);
   });
 
-  it("materializes corridor metadata through the provided corridor template registry", () => {
+  it('materializes corridor metadata through the provided corridor template registry', () => {
     const graph: PipeGraph = {
-      graphId: "pipe-custom",
-      version: "v1",
-      entryPipeId: "only-step",
+      graphId: 'pipe-custom',
+      version: 'v1',
+      entryPipeId: 'only-step',
       pipes: [
         {
-          pipeId: "only-step",
-          version: "v1",
-          trigger: { eventKey: "custom.start" },
-          flow: { kind: "step", facet: "produced" },
+          pipeId: 'only-step',
+          version: 'v1',
+          trigger: { eventKey: 'custom.start' },
+          flow: { kind: 'step', facet: 'produced' },
         },
       ],
       connections: [],
@@ -275,13 +275,13 @@ describe("projectPipeGraphToOperationalOntology", () => {
       list() {
         return [
           {
-            kind: "pipe_graph",
-            description: "Custom pipe corridor",
-            requiredEndpointKinds: ["port"],
+            kind: 'pipe_graph',
+            description: 'Custom pipe corridor',
+            requiredEndpointKinds: ['port'],
           },
           {
-            kind: "event_record_observed",
-            description: "Custom event corridor",
+            kind: 'event_record_observed',
+            description: 'Custom event corridor',
           },
         ];
       },
@@ -295,11 +295,11 @@ describe("projectPipeGraphToOperationalOntology", () => {
       corridorTemplateRegistry: customRegistry,
     });
 
-    expect(result.dataFlow.templateDescription).toBe("Custom pipe corridor");
-    expect(result.corridor.templateDescription).toBe("Custom pipe corridor");
+    expect(result.dataFlow.templateDescription).toBe('Custom pipe corridor');
+    expect(result.corridor.templateDescription).toBe('Custom pipe corridor');
     expect(result.dataFlow.templateValidation).toEqual({
       valid: false,
-      missingEndpointKinds: ["port"],
+      missingEndpointKinds: ['port'],
       disallowedEndpointKinds: [],
       missingContractKinds: [],
       disallowedContractKinds: [],
@@ -308,31 +308,31 @@ describe("projectPipeGraphToOperationalOntology", () => {
     });
   });
 
-  it("materializes junction metadata through the provided junction template registry", () => {
+  it('materializes junction metadata through the provided junction template registry', () => {
     const graph: PipeGraph = {
-      graphId: "pipe-junction",
-      version: "v1",
-      entryPipeId: "step-a",
+      graphId: 'pipe-junction',
+      version: 'v1',
+      entryPipeId: 'step-a',
       pipes: [
         {
-          pipeId: "step-a",
-          version: "v1",
-          trigger: { eventKey: "custom.start" },
-          flow: { kind: "step", facet: "produced" },
+          pipeId: 'step-a',
+          version: 'v1',
+          trigger: { eventKey: 'custom.start' },
+          flow: { kind: 'step', facet: 'produced' },
         },
         {
-          pipeId: "step-b",
-          version: "v1",
-          trigger: { eventKey: "custom.next" },
-          flow: { kind: "step", facet: "consumed" },
+          pipeId: 'step-b',
+          version: 'v1',
+          trigger: { eventKey: 'custom.next' },
+          flow: { kind: 'step', facet: 'consumed' },
         },
       ],
       connections: [
         {
-          from: "step-a",
-          to: "step-b",
-          kind: "conditional",
-          condition: "ok == true",
+          from: 'step-a',
+          to: 'step-b',
+          kind: 'conditional',
+          condition: 'ok == true',
         },
       ],
     };
@@ -341,18 +341,18 @@ describe("projectPipeGraphToOperationalOntology", () => {
       list() {
         return [
           {
-            kind: "conditional_branch",
-            description: "Custom conditional junction",
-            allowedModes: ["first_match"],
+            kind: 'conditional_branch',
+            description: 'Custom conditional junction',
+            allowedModes: ['first_match'],
           },
           {
-            kind: "observed_route_decision",
-            description: "Custom route decision junction",
-            allowedModes: ["first_match"],
+            kind: 'observed_route_decision',
+            description: 'Custom route decision junction',
+            allowedModes: ['first_match'],
           },
         ] as const;
       },
-      get(kind: "conditional_branch" | "observed_route_decision") {
+      get(kind: 'conditional_branch' | 'observed_route_decision') {
         return this.list().find((template) => template.kind === kind);
       },
     };
@@ -364,19 +364,19 @@ describe("projectPipeGraphToOperationalOntology", () => {
 
     expect(result.branchDefinitions).toEqual([
       {
-        templateKind: "conditional_branch",
-        templateDescription: "Custom conditional junction",
+        templateKind: 'conditional_branch',
+        templateDescription: 'Custom conditional junction',
         templateValidation: expect.objectContaining({ valid: true, pathCount: 1 }),
-        branchNodeId: "step-a",
-        mode: "first_match",
+        branchNodeId: 'step-a',
+        mode: 'first_match',
         paths: [
           {
-            pathId: "step-a->step-b:0",
+            pathId: 'step-a->step-b:0',
             when: {
-              conditionId: "step-a:condition:0",
-              expression: "ok == true",
+              conditionId: 'step-a:condition:0',
+              expression: 'ok == true',
             },
-            nextNodeIds: ["step-b"],
+            nextNodeIds: ['step-b'],
             priority: 0,
           },
         ],

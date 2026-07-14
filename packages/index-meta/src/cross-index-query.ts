@@ -12,10 +12,10 @@ import {
   positionsToConstraint,
   type CoordConstraint,
   type EntityId,
-} from "weighted-index";
-import type { MetaRegistry } from "./meta-registry.js";
-import type { VersionedValue } from "./types.js";
-import { IndexNotFoundError, ValidationError } from "./errors.js";
+} from 'weighted-index';
+import type { MetaRegistry } from './meta-registry.js';
+import type { VersionedValue } from './types.js';
+import { IndexNotFoundError, ValidationError } from './errors.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,15 +65,15 @@ export function composeQuery(
   const throughDimIndex = sourceDef.dims.indexOf(through);
   if (throughDimIndex === -1) {
     throw new ValidationError(
-      `composeQuery: dim "${through}" not found in index "${source.indexId}"`
+      `composeQuery: dim "${through}" not found in index "${source.indexId}"`,
     );
   }
 
   // 2. through dim의 kind 확인 (index_ref여야 함)
   const throughDimDef = registry.getDimDef(through);
-  if (throughDimDef.kind.type !== "index_ref") {
+  if (throughDimDef.kind.type !== 'index_ref') {
     throw new ValidationError(
-      `composeQuery: dim "${through}" is "${throughDimDef.kind.type}", expected "index_ref"`
+      `composeQuery: dim "${through}" is "${throughDimDef.kind.type}", expected "index_ref"`,
     );
   }
 
@@ -81,9 +81,7 @@ export function composeQuery(
   const targetIndexId = throughDimDef.kind.indexId;
   const targetVersionIds = registry.getVersionIds(targetIndexId);
   if (targetVersionIds.length === 0) {
-    throw new IndexNotFoundError(
-      `composeQuery: target index "${targetIndexId}" has no versions`
-    );
+    throw new IndexNotFoundError(`composeQuery: target index "${targetIndexId}" has no versions`);
   }
 
   const targetVersionId = targetVersionIds[targetVersionIds.length - 1];
@@ -97,9 +95,7 @@ export function composeQuery(
   const matchingPositions: number[] = [];
   for (let i = 0; i < throughSnapshot.entries.length; i++) {
     const entryValue = throughSnapshot.entries[i] as number;
-    const inRange = targetRanges.some(
-      ([from, to]) => entryValue >= from && entryValue <= to
-    );
+    const inRange = targetRanges.some(([from, to]) => entryValue >= from && entryValue <= to);
     if (inRange) {
       matchingPositions.push(i + 1); // 1-based
     }
@@ -178,7 +174,7 @@ function _deepDecodeRecursive(
     const dimDef = registry.getDimDef(dimId);
     const entityValue = decoded[dimId];
 
-    if (dimDef.kind.type === "index_ref" && typeof entityValue === "number") {
+    if (dimDef.kind.type === 'index_ref' && typeof entityValue === 'number') {
       // dim-level index_ref: entityValue is a compressed address in the target index
       const targetIndexId = dimDef.kind.indexId;
       const targetVersionIds = registry.getVersionIds(targetIndexId);
@@ -186,7 +182,11 @@ function _deepDecodeRecursive(
         const targetVersionId = targetVersionIds[targetVersionIds.length - 1];
         _deepDecodeRecursive(
           { indexId: targetIndexId, versionId: targetVersionId, value: entityValue },
-          registry, layers, path, visited, remaining - 1,
+          registry,
+          layers,
+          path,
+          visited,
+          remaining - 1,
         );
       }
     }
@@ -198,10 +198,14 @@ function _deepDecodeRecursive(
     if (pos !== -1) {
       const oneBasedPos = pos + 1;
       const entryRef = snapshot.entryRefs?.[oneBasedPos];
-      if (entryRef && typeof entityValue === "number") {
+      if (entryRef && typeof entityValue === 'number') {
         _deepDecodeRecursive(
           { indexId: entryRef.indexId, versionId: entryRef.versionId, value: entityValue },
-          registry, layers, path, visited, remaining - 1,
+          registry,
+          layers,
+          path,
+          visited,
+          remaining - 1,
         );
       }
     }

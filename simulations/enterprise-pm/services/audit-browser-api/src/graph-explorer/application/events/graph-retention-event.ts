@@ -1,11 +1,11 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc authorization-graph-store
 
-const SERVICE_CONTEXT = "service:v1:sim-audit-browser-api";
-const HOUSEKEEPING_CONTEXT = "housekeeping:v1:graph-retention";
+const SERVICE_CONTEXT = 'service:v1:sim-audit-browser-api';
+const HOUSEKEEPING_CONTEXT = 'housekeeping:v1:graph-retention';
 
 export interface GraphRetentionSweepLogInput {
-  trigger: "api" | "boot" | "interval";
+  trigger: 'api' | 'boot' | 'interval';
   keepLatest: number;
   graphCount: number;
   beforeCount: number;
@@ -15,7 +15,7 @@ export interface GraphRetentionSweepLogInput {
 }
 
 export interface GraphRetentionGraphLogInput {
-  trigger: "api";
+  trigger: 'api';
   graphId: string;
   keepLatest: number;
   beforeCount: number;
@@ -25,7 +25,7 @@ export interface GraphRetentionGraphLogInput {
 }
 
 export interface GraphRetentionFailureLogInput {
-  trigger: "boot" | "interval";
+  trigger: 'boot' | 'interval';
   keepLatest: number;
   error: string;
 }
@@ -34,11 +34,11 @@ export function buildGraphRetentionSweepLog(
   input: GraphRetentionSweepLogInput,
 ): Record<string, unknown> {
   return {
-    eventKey: "sim.graph_retention.sweep",
+    eventKey: 'sim.graph_retention.sweep',
     addressContext: {
       service: SERVICE_CONTEXT,
       housekeeping: HOUSEKEEPING_CONTEXT,
-      graph_scope: "authorization_graph:v1:all",
+      graph_scope: 'authorization_graph:v1:all',
     },
     trigger: input.trigger,
     keepLatest: input.keepLatest,
@@ -55,7 +55,7 @@ export function buildGraphRetentionGraphLog(
   input: GraphRetentionGraphLogInput,
 ): Record<string, unknown> {
   return {
-    eventKey: "sim.graph_retention.graph_pruned",
+    eventKey: 'sim.graph_retention.graph_pruned',
     addressContext: {
       service: SERVICE_CONTEXT,
       housekeeping: HOUSEKEEPING_CONTEXT,
@@ -76,11 +76,11 @@ export function buildGraphRetentionFailureLog(
   input: GraphRetentionFailureLogInput,
 ): Record<string, unknown> {
   return {
-    eventKey: "sim.graph_retention.failed",
+    eventKey: 'sim.graph_retention.failed',
     addressContext: {
       service: SERVICE_CONTEXT,
       housekeeping: HOUSEKEEPING_CONTEXT,
-      graph_scope: "authorization_graph:v1:all",
+      graph_scope: 'authorization_graph:v1:all',
     },
     trigger: input.trigger,
     keepLatest: input.keepLatest,

@@ -8,15 +8,15 @@
  * They depend only on colors.ts and data.ts (type imports only).
  */
 
-export { newTag } from "weighted-ui";
-import { getDimFill, getDimInk } from "./colors.js";
-import type { DimKey } from "../data.js";
+export { newTag } from 'weighted-ui';
+import { getDimFill, getDimInk } from './colors.js';
+import type { DimKey } from '../data.js';
 
 // ── Inline colored span for a single dimension value ──────────────────────
 
 export function dimBadge(dim: DimKey, val: string): string {
   const fill = getDimFill(dim, val);
-  const ink  = getDimInk(dim, val);
+  const ink = getDimInk(dim, val);
   return `<span class="lib-badge" style="background:${fill};color:${ink}">${val}</span>`;
 }
 
@@ -31,12 +31,12 @@ export function coordChip(
   isNew = false,
 ): string {
   const fill = getDimFill(dim, val);
-  const ink  = getDimInk(dim, val);
+  const ink = getDimInk(dim, val);
   return `
-    <div class="coord-chip${isNew ? " coord-chip-new" : ""}" style="--c:${ink}">
+    <div class="coord-chip${isNew ? ' coord-chip-new' : ''}" style="--c:${ink}">
       <span class="cc-label">${dimLabel}</span>
       <span class="cc-val" style="background:${fill};color:${ink}">${val}</span>
-      <span class="cc-ko">${ko}${isNew ? " <span class='new-tag'>NEW</span>" : ""}</span>
+      <span class="cc-ko">${ko}${isNew ? " <span class='new-tag'>NEW</span>" : ''}</span>
       <span class="cc-idx">x = ${idx}</span>
     </div>
   `;
@@ -53,4 +53,3 @@ export function permIdCode(ver: string, id: number): string {
 export function permVersionSpan(ver: string, id: number): string {
   return `<code class="perm-version-id">perm:${ver}:${id}</code>`;
 }
-

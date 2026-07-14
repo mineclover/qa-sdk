@@ -3,13 +3,19 @@
   "version": "0.1.0",
   "description": "ralph-tui integration — adapters + completion detection specific to ralph-tui's `.ralph-tui/` session state and flat-root JSON PRD format. Isolated from doc-envelope collection layer.",
   "keywords": [
-    "ralph-tui",
     "adapter",
+    "doc-envelope",
     "integration",
-    "doc-envelope"
+    "ralph-tui"
   ],
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,12 +23,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -2,21 +2,21 @@
 // @def.doc infra-engine-system
 
 // commands/destroy.ts — 서비스 리소스 삭제 (Pulumi stack + port-forward + 프로필 정리)
-import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
-import { createInfraProfileAdapter } from "../adapters/infra-profile.js";
-import { createServiceProfileAdapter } from "../adapters/service-profile.js";
-import { homedir } from "node:os";
-import { resolve } from "node:path";
-import { readFile, writeFile, rename } from "node:fs/promises";
-import { validateId, isSafePid } from "../lib/validation.js";
-import { loadPfMap, savePfMap } from "../lib/pf-registry.js";
-import { loadInfraConfig, resolvePulumiBackendUrl } from "./config-manager.js";
+import { LocalWorkspace } from '@pulumi/pulumi/automation/index.js';
+import { createInfraProfileAdapter } from '../adapters/infra-profile.js';
+import { createServiceProfileAdapter } from '../adapters/service-profile.js';
+import { homedir } from 'node:os';
+import { resolve } from 'node:path';
+import { readFile, writeFile, rename } from 'node:fs/promises';
+import { validateId, isSafePid } from '../lib/validation.js';
+import { loadPfMap, savePfMap } from '../lib/pf-registry.js';
+import { loadInfraConfig, resolvePulumiBackendUrl } from './config-manager.js';
 
-const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
+const PROFILE_DIR = resolve(homedir(), '.qa-sdk');
 
 export async function destroy(serviceId: string, env: string): Promise<void> {
-  validateId(serviceId, "serviceId");
-  validateId(env, "env");
+  validateId(serviceId, 'serviceId');
+  validateId(env, 'env');
   const key = `${serviceId}-${env}`;
   const infraProfile = createInfraProfileAdapter(PROFILE_DIR);
   const serviceProfile = createServiceProfileAdapter(PROFILE_DIR);
@@ -30,7 +30,7 @@ export async function destroy(serviceId: string, env: string): Promise<void> {
   if (pfMap[key]) {
     if (isSafePid(pfMap[key].pid)) {
       try {
-        process.kill(pfMap[key].pid, "SIGTERM");
+        process.kill(pfMap[key].pid, 'SIGTERM');
         console.log(`[port-forward] PID ${pfMap[key].pid} 종료 (port ${pfMap[key].localPort})`);
       } catch {
         console.log(`[port-forward] PID ${pfMap[key].pid} 이미 종료됨`);
@@ -50,50 +50,57 @@ export async function destroy(serviceId: string, env: string): Promise<void> {
   if (!backendUrl) {
     try {
       const config = await loadInfraConfig();
-      backendUrl = resolvePulumiBackendUrl(config) ?? "file://~/.pulumi-local";
+      backendUrl = resolvePulumiBackendUrl(config) ?? 'file://~/.pulumi-local';
     } catch {
-      backendUrl = "file://~/.pulumi-local";
+      backendUrl = 'file://~/.pulumi-local';
     }
   }
   try {
-    if (deployment?.provider === "cloudflare") {
-      console.log("[pulumi] cloudflare 배포는 Pulumi stack destroy 대상이 아님 — stack 삭제 생략");
+    if (deployment?.provider === 'cloudflare') {
+      console.log('[pulumi] cloudflare 배포는 Pulumi stack destroy 대상이 아님 — stack 삭제 생략');
     } else {
-      console.log(`[pulumi] backend: ${backendUrl.split("?")[0]}`);
+      console.log(`[pulumi] backend: ${backendUrl.split('?')[0]}`);
       console.log(`[pulumi] destroying stack ${stackName}...`);
-      const stack = await LocalWorkspace.selectStack({
-        stackName,
-        projectName,
-        program: async () => {},
-      }, {
-        projectSettings: {
-          name: projectName,
-          runtime: "nodejs",
-          backend: { url: backendUrl },
+      const stack = await LocalWorkspace.selectStack(
+        {
+          stackName,
+          projectName,
+          program: async () => {},
         },
-      });
+        {
+          projectSettings: {
+            name: projectName,
+            runtime: 'nodejs',
+            backend: { url: backendUrl },
+          },
+        },
+      );
 
       await stack.destroy({ onOutput: (msg) => process.stdout.write(msg) });
-      console.log("[pulumi] 스택 삭제 완료");
+      console.log('[pulumi] 스택 삭제 완료');
 
       // 스택 완전 제거
       await stack.workspace.removeStack(stackName);
     }
   } catch (err) {
-    console.warn(`[pulumi] destroy 실패 (스택 없을 수 있음): ${err instanceof Error ? err.message : err}`);
+    console.warn(
+      `[pulumi] destroy 실패 (스택 없을 수 있음): ${err instanceof Error ? err.message : err}`,
+    );
   }
 
   // 3. Remove from infra-profile — 전체 필드 보존하며 대상만 삭제
-  const profilePath = resolve(PROFILE_DIR, "infra-profile.json");
+  const profilePath = resolve(PROFILE_DIR, 'infra-profile.json');
   try {
-    const raw = JSON.parse(await readFile(profilePath, "utf-8"));
+    const raw = JSON.parse(await readFile(profilePath, 'utf-8'));
     delete raw.deployments?.[serviceId];
     raw.monitors = (raw.monitors ?? []).filter((m: any) => m.serviceId !== serviceId);
-    const tmp = profilePath + ".tmp";
+    const tmp = profilePath + '.tmp';
     await writeFile(tmp, JSON.stringify(raw, null, 2));
     await rename(tmp, profilePath);
     console.log(`[infra-profile] ${serviceId} 배포/모니터 기록 제거`);
-  } catch { /* profile 파일 없으면 무시 */ }
+  } catch {
+    /* profile 파일 없으면 무시 */
+  }
 
   // 4. Restore service-profile
   await serviceProfile.restore(serviceId);

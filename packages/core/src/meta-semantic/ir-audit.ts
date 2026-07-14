@@ -8,28 +8,28 @@
  * "올바르지만 개선이 필요한" 구조적 품질 이슈를 감지한다.
  */
 
-import type { ModuleIR, DataIR, PipeIR } from "./ir-types.js";
-import type { IRGraph } from "./ir-validate.js";
-import { inferModuleLevel, computeSchemaHash, deriveCertainty } from "./ir-types.js";
+import type { ModuleIR, DataIR, PipeIR } from './ir-types.js';
+import type { IRGraph } from './ir-validate.js';
+import { inferModuleLevel, computeSchemaHash, deriveCertainty } from './ir-types.js';
 
 // ── 감사 결과 타입 ────────────────────────────────────
 
-export type AuditSeverity = "error" | "warning" | "info";
+export type AuditSeverity = 'error' | 'warning' | 'info';
 
 export type AuditRule =
-  | "level-mismatch"
-  | "certainty-mismatch"
-  | "hash-mismatch"
-  | "nonstandard-uid-scheme"
-  | "too-many-inputs"
-  | "too-many-outputs"
-  | "too-many-children"
-  | "mixed-certainty"
-  | "shared-data";
+  | 'level-mismatch'
+  | 'certainty-mismatch'
+  | 'hash-mismatch'
+  | 'nonstandard-uid-scheme'
+  | 'too-many-inputs'
+  | 'too-many-outputs'
+  | 'too-many-children'
+  | 'mixed-certainty'
+  | 'shared-data';
 
 export interface AuditIssue {
   readonly severity: AuditSeverity;
-  readonly category: "consistency" | "split-signal" | "quality";
+  readonly category: 'consistency' | 'split-signal' | 'quality';
   readonly target: string;
   readonly rule: AuditRule;
   readonly message: string;
@@ -56,10 +56,10 @@ function auditModuleConsistency(modules: readonly ModuleIR[], issues: AuditIssue
     const inferred = inferModuleLevel(mod.relations);
     if (mod.meta.level !== inferred) {
       issues.push({
-        severity: "error",
-        category: "consistency",
+        severity: 'error',
+        category: 'consistency',
         target: mod.id,
-        rule: "level-mismatch",
+        rule: 'level-mismatch',
         message: `meta.level="${mod.meta.level}" ≠ inferModuleLevel="${inferred}"`,
       });
     }
@@ -72,10 +72,10 @@ function auditDataConsistency(data: readonly DataIR[], issues: AuditIssue[]): vo
     const inferred = deriveCertainty(d.definition.fields);
     if (d.definition.certainty !== inferred) {
       issues.push({
-        severity: "error",
-        category: "consistency",
+        severity: 'error',
+        category: 'consistency',
         target: d.definition.type,
-        rule: "certainty-mismatch",
+        rule: 'certainty-mismatch',
         message: `certainty="${d.definition.certainty}" ≠ deriveCertainty="${inferred}"`,
       });
     }
@@ -84,21 +84,21 @@ function auditDataConsistency(data: readonly DataIR[], issues: AuditIssue[]): vo
     const computed = computeSchemaHash(d.definition.fields);
     if (d.definition.schemaHash !== computed) {
       issues.push({
-        severity: "error",
-        category: "consistency",
+        severity: 'error',
+        category: 'consistency',
         target: d.definition.type,
-        rule: "hash-mismatch",
+        rule: 'hash-mismatch',
         message: `schemaHash="${d.definition.schemaHash}" ≠ computed="${computed}"`,
       });
     }
 
     // uidScheme 비표준
-    if (d.storage.uid && !d.storage.uidScheme.startsWith("intent:")) {
+    if (d.storage.uid && !d.storage.uidScheme.startsWith('intent:')) {
       issues.push({
-        severity: "warning",
-        category: "quality",
+        severity: 'warning',
+        category: 'quality',
         target: d.definition.type,
-        rule: "nonstandard-uid-scheme",
+        rule: 'nonstandard-uid-scheme',
         message: `uidScheme="${d.storage.uidScheme}" — 표준은 "intent:v1"`,
       });
     }
@@ -114,10 +114,10 @@ function auditSplitSignals(graph: IRGraph, issues: AuditIssue[]): void {
     // inputs > 5
     if (mod.interface.inputs.length > 5) {
       issues.push({
-        severity: "info",
-        category: "split-signal",
+        severity: 'info',
+        category: 'split-signal',
         target: mod.id,
-        rule: "too-many-inputs",
+        rule: 'too-many-inputs',
         message: `interface.inputs=${mod.interface.inputs.length}개 (>5) — 하위 module로 분할 검토`,
       });
     }
@@ -125,10 +125,10 @@ function auditSplitSignals(graph: IRGraph, issues: AuditIssue[]): void {
     // outputs > 3
     if (mod.interface.outputs.length > 3) {
       issues.push({
-        severity: "info",
-        category: "split-signal",
+        severity: 'info',
+        category: 'split-signal',
         target: mod.id,
-        rule: "too-many-outputs",
+        rule: 'too-many-outputs',
         message: `interface.outputs=${mod.interface.outputs.length}개 (>3) — 패싯별 leaf로 분할 검토`,
       });
     }
@@ -136,10 +136,10 @@ function auditSplitSignals(graph: IRGraph, issues: AuditIssue[]): void {
     // children > 7
     if (mod.relations.children.length > 7) {
       issues.push({
-        severity: "info",
-        category: "split-signal",
+        severity: 'info',
+        category: 'split-signal',
         target: mod.id,
-        rule: "too-many-children",
+        rule: 'too-many-children',
         message: `relations.children=${mod.relations.children.length}개 (>7) — 중간 module 계층 삽입 검토`,
       });
     }
@@ -147,13 +147,13 @@ function auditSplitSignals(graph: IRGraph, issues: AuditIssue[]): void {
     // certainty 혼재
     const dataItems = moduleDataMap.get(mod.id);
     if (dataItems && dataItems.length > 1) {
-      const certainties = new Set(dataItems.map(d => d.definition.certainty));
+      const certainties = new Set(dataItems.map((d) => d.definition.certainty));
       if (certainties.size > 1) {
         issues.push({
-          severity: "warning",
-          category: "split-signal",
+          severity: 'warning',
+          category: 'split-signal',
           target: mod.id,
-          rule: "mixed-certainty",
+          rule: 'mixed-certainty',
           message: `strict + flexible 데이터 공존 — 경로 분리 검토`,
         });
       }
@@ -163,20 +163,27 @@ function auditSplitSignals(graph: IRGraph, issues: AuditIssue[]): void {
   // 공유 데이터 3+
   const managerCount = new Map<string, Set<string>>();
   for (const d of graph.data) {
-    const consumers = [...d.lifecycle.producedBy, ...d.lifecycle.consumedBy, ...d.lifecycle.transformedBy];
+    const consumers = [
+      ...d.lifecycle.producedBy,
+      ...d.lifecycle.consumedBy,
+      ...d.lifecycle.transformedBy,
+    ];
     for (const ref of consumers) {
       let set = managerCount.get(d.definition.type);
-      if (!set) { set = new Set(); managerCount.set(d.definition.type, set); }
+      if (!set) {
+        set = new Set();
+        managerCount.set(d.definition.type, set);
+      }
       set.add(ref.moduleId);
     }
   }
   for (const [dataType, modules] of managerCount) {
     if (modules.size >= 3) {
       issues.push({
-        severity: "info",
-        category: "split-signal",
+        severity: 'info',
+        category: 'split-signal',
         target: dataType,
-        rule: "shared-data",
+        rule: 'shared-data',
         message: `${modules.size}개 모듈이 공유 — managedBy를 상위 계층으로 끌어올림 검토`,
       });
     }
@@ -196,7 +203,10 @@ function buildModuleDataMap(graph: IRGraph): Map<string, DataIR[]> {
     }
     for (const modId of relatedModules) {
       let list = map.get(modId);
-      if (!list) { list = []; map.set(modId, list); }
+      if (!list) {
+        list = [];
+        map.set(modId, list);
+      }
       list.push(d);
     }
   }

@@ -6,17 +6,11 @@
 // aggregateId 는 toGrammarSafeAggregateId 로 정규화 후 builder 에 주입.
 // eventName 은 parseEventName 으로 트랜잭션 진입 전 사전 검증한다 (grammar #5).
 
-import { Inject, Injectable } from "@nestjs/common";
-import { randomUUID } from "node:crypto";
-import {
-  buildIdempotencyKey,
-  parseEventName,
-} from "sim-identifier-grammar";
-import { toGrammarSafeAggregateId } from "../approval/shared/outbox/idempotency-key-source.js";
-import {
-  OUTBOX_ADMIN_REPO,
-  type OutboxAdminRepo,
-} from "./outbox-admin.tokens.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { buildIdempotencyKey, parseEventName } from 'sim-identifier-grammar';
+import { toGrammarSafeAggregateId } from '../approval/shared/outbox/idempotency-key-source.js';
+import { OUTBOX_ADMIN_REPO, type OutboxAdminRepo } from './outbox-admin.tokens.js';
 
 export interface OutboxEventInput {
   aggregateId: string;
@@ -38,9 +32,7 @@ export interface OutboxInsertResult {
 
 @Injectable()
 export class OutboxAdminInsertService {
-  constructor(
-    @Inject(OUTBOX_ADMIN_REPO) private readonly repo: OutboxAdminRepo,
-  ) {}
+  constructor(@Inject(OUTBOX_ADMIN_REPO) private readonly repo: OutboxAdminRepo) {}
 
   async insertEvents(events: OutboxEventInput[]): Promise<OutboxInsertResult> {
     if (events.length === 0) {
@@ -71,13 +63,10 @@ export class OutboxAdminInsertService {
         aggregate_id,
         event_name: e.eventName,
         event_version: e.eventVersion ?? 1,
-        payload:
-          typeof e.payload === "string"
-            ? e.payload
-            : JSON.stringify(e.payload ?? {}),
+        payload: typeof e.payload === 'string' ? e.payload : JSON.stringify(e.payload ?? {}),
         occurred_at: e.occurredAt,
         scope_id: scopeId,
-        status: "pending" as const,
+        status: 'pending' as const,
         idempotency_key,
         retry_count: 0,
       };

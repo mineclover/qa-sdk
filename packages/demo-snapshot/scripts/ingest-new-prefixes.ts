@@ -10,13 +10,23 @@
  * table_ref dim은 스킵.
  */
 
-import { DEMO_CATALOG, encodePrefixByValue, decodePrefix, latestPrefixVersion } from "../src/index.js";
-import type { PrefixDef, DimRef, VersionedAxis } from "../src/demo-catalog.js";
+import {
+  DEMO_CATALOG,
+  encodePrefixByValue,
+  decodePrefix,
+  latestPrefixVersion,
+} from '../src/index.js';
+import type { PrefixDef, DimRef, VersionedAxis } from '../src/demo-catalog.js';
 
-const INGEST_URL = process.env.INGEST_URL ?? "http://localhost:3200";
+const INGEST_URL = process.env.INGEST_URL ?? 'http://localhost:3200';
 const NEW_PREFIXES = [
-  "version_state", "metric_aggregate", "validation_event",
-  "resource_lifecycle", "test_coverage", "cli_tracking", "tag_lifecycle",
+  'version_state',
+  'metric_aggregate',
+  'validation_event',
+  'resource_lifecycle',
+  'test_coverage',
+  'cli_tracking',
+  'tag_lifecycle',
 ] as const;
 
 // ── 카탈로그 구조 순회 ──────────────────────────────────────────
@@ -32,7 +42,7 @@ function traversePrefix(prefixId: string): SyntheticEvent[] {
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
 
   const version = latestPrefixVersion(DEMO_CATALOG, prefixId);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`No version ${version} for ${prefixId}`);
 
   // 1. 차원 분류: axis / prefix_ref / table_ref
@@ -41,14 +51,14 @@ function traversePrefix(prefixId: string): SyntheticEvent[] {
 
   for (const [label, dimRef] of Object.entries(prefix.dims)) {
     const dr = dimRef as DimRef;
-    if (dr.kind === "axis") {
+    if (dr.kind === 'axis') {
       const axis = (DEMO_CATALOG.axes as Record<string, VersionedAxis>)[dr.axisId];
       if (!axis) continue;
       const axisVer = vdef.axisVersions[label] ?? vdef.axisVersions[dr.axisId];
       const snap = axisVer ? axis.versions[axisVer] : Object.values(axis.versions).pop();
       if (!snap?.entries) continue;
       axisDims.push({ label, axisId: dr.axisId, entries: snap.entries });
-    } else if (dr.kind === "prefix_ref") {
+    } else if (dr.kind === 'prefix_ref') {
       // refEntries에서 첫 번째 값
       const re = vdef.refEntries?.[label];
       const firstVal = re?.values?.[0] ?? 0;
@@ -91,7 +101,7 @@ interface EncodedEvent {
 }
 
 function encodeAndVerify(events: SyntheticEvent[]): EncodedEvent[] {
-  return events.map(event => {
+  return events.map((event) => {
     const version = latestPrefixVersion(DEMO_CATALOG, event.prefix);
     const address = encodePrefixByValue(DEMO_CATALOG, event.prefix, version, event.dims);
     const serialized = `${event.prefix}:${version}:${address}`;
@@ -99,13 +109,14 @@ function encodeAndVerify(events: SyntheticEvent[]): EncodedEvent[] {
     const rawDecoded = decodePrefix(DEMO_CATALOG, event.prefix, version, address);
     const decoded: Record<string, string | number> = {};
     for (const [key, val] of Object.entries(rawDecoded)) {
-      decoded[key] = typeof val === "object" && val !== null && "value" in val
-        ? (val as { value: string | number }).value
-        : val as string | number;
+      decoded[key] =
+        typeof val === 'object' && val !== null && 'value' in val
+          ? (val as { value: string | number }).value
+          : (val as string | number);
     }
 
     let roundTripOk = true;
-    let mismatch: EncodedEvent["mismatch"];
+    let mismatch: EncodedEvent['mismatch'];
     for (const [key, val] of Object.entries(event.dims)) {
       if (decoded[key] !== val) {
         roundTripOk = false;
@@ -129,8 +140,8 @@ function buildEnvelope(encoded: EncodedEvent[]) {
     const addressContext: Record<string, string> = {
       [e.event.prefix]: e.serialized,
     };
-    if ("svc_ref" in e.event.dims) {
-      const svcVer = latestPrefixVersion(DEMO_CATALOG, "service");
+    if ('svc_ref' in e.event.dims) {
+      const svcVer = latestPrefixVersion(DEMO_CATALOG, 'service');
       addressContext.service = `service:${svcVer}:${e.event.dims.svc_ref}`;
     }
 
@@ -139,14 +150,14 @@ function buildEnvelope(encoded: EncodedEvent[]) {
       timestamp: now,
       trace_id: `trc_npfx_${batch}`,
       span_id: `spn_npfx_${batch}_${i}`,
-      record_kind: "log",
+      record_kind: 'log',
       event_key: e.event.eventKey,
-      event_version: "001",
-      payload_format: "json",
-      payload_encoding: "raw",
+      event_version: '001',
+      payload_format: 'json',
+      payload_encoding: 'raw',
       payload_masking_applied: false,
       payload_masked_fields: [] as string[],
-      payload: { source: "catalog-traverse", prefix: e.event.prefix, dims: e.event.dims },
+      payload: { source: 'catalog-traverse', prefix: e.event.prefix, dims: e.event.dims },
       qa_session_id: sessionId,
       address_context: addressContext,
     };
@@ -155,10 +166,10 @@ function buildEnvelope(encoded: EncodedEvent[]) {
   return {
     transmission_id: `tx_npfx_${batch}`,
     sent_at: now,
-    owner: { owner_type: "agent", owner_id: "catalog-traverse" },
-    source: { service_name: "cli", sdk_name: "@qa-sdk/cli", sdk_version: "0.1.0" },
-    runtime: { platform: "node" },
-    build: { env: "dev" },
+    owner: { owner_type: 'agent', owner_id: 'catalog-traverse' },
+    source: { service_name: 'cli', sdk_name: '@qa-sdk/cli', sdk_version: '0.1.0' },
+    runtime: { platform: 'node' },
+    build: { env: 'dev' },
     records,
   };
 }
@@ -168,8 +179,8 @@ function buildEnvelope(encoded: EncodedEvent[]) {
 async function sendToIngest(envelope: ReturnType<typeof buildEnvelope>): Promise<boolean> {
   try {
     const res = await fetch(`${INGEST_URL}/v1/ingest`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(envelope),
       signal: AbortSignal.timeout(5_000),
     });
@@ -177,11 +188,13 @@ async function sendToIngest(envelope: ReturnType<typeof buildEnvelope>): Promise
       console.error(`  HTTP ${res.status}: ${await res.text()}`);
       return false;
     }
-    const data = await res.json() as Record<string, unknown>;
-    console.log(`  accepted: ${data.accepted}, records: ${data.record_count ?? envelope.records.length}`);
+    const data = (await res.json()) as Record<string, unknown>;
+    console.log(
+      `  accepted: ${data.accepted}, records: ${data.record_count ?? envelope.records.length}`,
+    );
     return true;
   } catch (err: any) {
-    if (err.name === "TimeoutError" || err.cause?.code === "ECONNREFUSED") {
+    if (err.name === 'TimeoutError' || err.cause?.code === 'ECONNREFUSED') {
       console.log(`  ingest-server 미실행 (${INGEST_URL}) — 로컬 검증만 수행`);
     } else {
       console.error(`  전송 실패: ${err.message}`);
@@ -193,11 +206,16 @@ async function sendToIngest(envelope: ReturnType<typeof buildEnvelope>): Promise
 // ── main ────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("══ 카탈로그 구조 순회 — 새 Prefix 수집 ══\n");
+  console.log('══ 카탈로그 구조 순회 — 새 Prefix 수집 ══\n');
 
   // 1. 구조 순회로 합성 이벤트 생성
   const allEvents: SyntheticEvent[] = [];
-  const prefixStats: Array<{ prefix: string; axisDimCount: number; eventCount: number; axes: string[] }> = [];
+  const prefixStats: Array<{
+    prefix: string;
+    axisDimCount: number;
+    eventCount: number;
+    axes: string[];
+  }> = [];
 
   for (const pfx of NEW_PREFIXES) {
     const events = traversePrefix(pfx);
@@ -206,7 +224,7 @@ async function main() {
     // 축 정보 수집
     const prefix = (DEMO_CATALOG.prefixes as Record<string, PrefixDef>)[pfx];
     const axisLabels = Object.entries(prefix.dims)
-      .filter(([, d]) => (d as DimRef).kind === "axis")
+      .filter(([, d]) => (d as DimRef).kind === 'axis')
       .map(([l]) => l);
 
     prefixStats.push({
@@ -218,14 +236,14 @@ async function main() {
   }
 
   // 2. 구조 요약
-  console.log("── 구조 순회 결과 ──\n");
+  console.log('── 구조 순회 결과 ──\n');
   for (const s of prefixStats) {
-    console.log(`  ${s.prefix}  ${s.axisDimCount}D  ${s.eventCount}건  [${s.axes.join(" × ")}]`);
+    console.log(`  ${s.prefix}  ${s.axisDimCount}D  ${s.eventCount}건  [${s.axes.join(' × ')}]`);
   }
   console.log(`\n  합계: ${allEvents.length}건 (${NEW_PREFIXES.length} prefix)\n`);
 
   // 3. 인코딩 + 라운드트립
-  console.log("── 인코딩 + 라운드트립 ──\n");
+  console.log('── 인코딩 + 라운드트립 ──\n');
   const encoded = encodeAndVerify(allEvents);
 
   let failCount = 0;
@@ -237,17 +255,21 @@ async function main() {
   }
 
   for (const [prefix, events] of byPrefix) {
-    const ok = events.filter(e => e.roundTripOk).length;
+    const ok = events.filter((e) => e.roundTripOk).length;
     const total = events.length;
-    const addrs = events.map(e => e.address);
+    const addrs = events.map((e) => e.address);
     const uniqueAddrs = new Set(addrs).size;
-    const status = ok === total ? "OK" : "FAIL";
+    const status = ok === total ? 'OK' : 'FAIL';
 
-    console.log(`  [${status}] ${prefix}  ${ok}/${total} 성공  주소 ${uniqueAddrs}개 (${Math.min(...addrs)}~${Math.max(...addrs)})`);
+    console.log(
+      `  [${status}] ${prefix}  ${ok}/${total} 성공  주소 ${uniqueAddrs}개 (${Math.min(...addrs)}~${Math.max(...addrs)})`,
+    );
 
     if (ok < total) {
-      for (const e of events.filter(e => !e.roundTripOk)) {
-        console.log(`    ✗ ${e.serialized}: ${e.mismatch?.key} expected=${e.mismatch?.expected} got=${e.mismatch?.got}`);
+      for (const e of events.filter((e) => !e.roundTripOk)) {
+        console.log(
+          `    ✗ ${e.serialized}: ${e.mismatch?.key} expected=${e.mismatch?.expected} got=${e.mismatch?.got}`,
+        );
       }
     }
   }
@@ -260,14 +282,14 @@ async function main() {
   }
 
   // 4. 전송
-  console.log("\n── Ingest 전송 ──\n");
+  console.log('\n── Ingest 전송 ──\n');
   const envelope = buildEnvelope(encoded);
   console.log(`  transmission: ${envelope.transmission_id}`);
   console.log(`  records: ${envelope.records.length}`);
   const sent = await sendToIngest(envelope);
 
   // 5. address_context 샘플
-  console.log("\n── address_context 샘플 (prefix별 1건) ──\n");
+  console.log('\n── address_context 샘플 (prefix별 1건) ──\n');
   const seen = new Set<string>();
   for (const rec of envelope.records) {
     const pfx = (rec.payload as { prefix: string }).prefix;
@@ -277,10 +299,12 @@ async function main() {
     console.log(`    ${JSON.stringify(rec.address_context)}`);
   }
 
-  console.log(`\n══ 완료 ══ (전송: ${sent ? "성공" : "로컬만"}, 이벤트: ${encoded.length}건, 라운드트립: 100%)`);
+  console.log(
+    `\n══ 완료 ══ (전송: ${sent ? '성공' : '로컬만'}, 이벤트: ${encoded.length}건, 라운드트립: 100%)`,
+  );
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

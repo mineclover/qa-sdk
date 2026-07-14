@@ -23,11 +23,7 @@
       ]
     },
     "def_level": {
-      "entries": [
-        { "id": "group" },
-        { "id": "module" },
-        { "id": "leaf" }
-      ]
+      "entries": [{ "id": "group" }, { "id": "module" }, { "id": "leaf" }]
     },
     "def_lifecycle": {
       "entries": [
@@ -54,11 +50,7 @@
       ]
     },
     "taxonomy_family": {
-      "entries": [
-        { "id": "topological" },
-        { "id": "functional" },
-        { "id": "bridge" }
-      ]
+      "entries": [{ "id": "topological" }, { "id": "functional" }, { "id": "bridge" }]
     }
   }
 }

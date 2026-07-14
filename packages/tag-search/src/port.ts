@@ -3,20 +3,11 @@
 /*  TagStore — 태그 저장/검색 포트 (드라이버 교체 가능)                  */
 /* ------------------------------------------------------------------ */
 
-import type {
-  TagTarget,
-  TagQuery,
-  TagSearchResult,
-  TagSummary,
-} from "./types.js";
+import type { TagTarget, TagQuery, TagSearchResult, TagSummary } from './types.js';
 
 export interface TagStore {
   /** 대상에 태그 부착 (중복 무시) */
-  attach(
-    targetId: string,
-    targetKind: TagTarget,
-    tags: string[],
-  ): Promise<void>;
+  attach(targetId: string, targetKind: TagTarget, tags: string[]): Promise<void>;
 
   /** 대상에서 태그 제거 */
   detach(targetId: string, tags: string[]): Promise<void>;

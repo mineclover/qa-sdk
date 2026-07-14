@@ -8,14 +8,14 @@
  * 검증 함수들을 모아 중복 제거.
  */
 
-import { SerializeError, ShapeError } from "./errors.js";
+import { SerializeError, ShapeError } from './errors.js';
 
 /**
  * 에러 메시지용: Iterable 항목들을 ", " 로 연결해 목록 문자열 생성.
  * @example formatList(["a", "b", "c"]) // "a, b, c"
  */
 export function formatList(items: Iterable<string>): string {
-  return [...items].join(", ");
+  return [...items].join(', ');
 }
 
 /**
@@ -26,9 +26,9 @@ export function assertNoColon(value: string, context: string): void {
   if (!value) {
     throw new SerializeError(`${context} must be non-empty`);
   }
-  if (value.includes(":")) {
+  if (value.includes(':')) {
     throw new SerializeError(
-      `${context} cannot contain ":" (used as serialize separator): "${value}"`
+      `${context} cannot contain ":" (used as serialize separator): "${value}"`,
     );
   }
 }

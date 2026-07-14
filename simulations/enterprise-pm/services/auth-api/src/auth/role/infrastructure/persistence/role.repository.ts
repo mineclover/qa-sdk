@@ -1,16 +1,16 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { RoleEntity } from "../../domain/index.js";
-import type { RoleSnapshot, RoleScopeType } from "../../domain/index.js";
-import { RoleRepositoryPort } from "../../application/ports/role-repository.port.js";
-import type { RoleTransactionScope } from "../../application/ports/role-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { RoleEntity } from '../../domain/index.js';
+import type { RoleSnapshot, RoleScopeType } from '../../domain/index.js';
+import { RoleRepositoryPort } from '../../application/ports/role-repository.port.js';
+import type { RoleTransactionScope } from '../../application/ports/role-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface RoleRow {
   id: string;
@@ -47,20 +47,31 @@ export class SqliteRoleRepository extends RoleRepositoryPort {
 
   async save(entity: RoleEntity, _scope: RoleTransactionScope): Promise<void> {
     const row = toRow(entity.toSnapshot());
-    await this.db.insert(sqliteSchema.roles).values(row).onConflictDoUpdate({
-      target: sqliteSchema.roles.id,
-      set: { name: row.name, scopeType: row.scopeType, defaultMaskHex: row.defaultMaskHex },
-    });
+    await this.db
+      .insert(sqliteSchema.roles)
+      .values(row)
+      .onConflictDoUpdate({
+        target: sqliteSchema.roles.id,
+        set: { name: row.name, scopeType: row.scopeType, defaultMaskHex: row.defaultMaskHex },
+      });
   }
 
   async findById(id: string): Promise<RoleEntity | null> {
-    const rows = await this.db.select().from(sqliteSchema.roles).where(eq(sqliteSchema.roles.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(sqliteSchema.roles)
+      .where(eq(sqliteSchema.roles.id, id))
+      .limit(1);
     if (rows.length === 0) return null;
     return RoleEntity.rehydrate(toSnapshot(rows[0] as RoleRow));
   }
 
   async findByName(name: string): Promise<RoleEntity | null> {
-    const rows = await this.db.select().from(sqliteSchema.roles).where(eq(sqliteSchema.roles.name, name)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(sqliteSchema.roles)
+      .where(eq(sqliteSchema.roles.name, name))
+      .limit(1);
     if (rows.length === 0) return null;
     return RoleEntity.rehydrate(toSnapshot(rows[0] as RoleRow));
   }
@@ -82,20 +93,31 @@ export class PgRoleRepository extends RoleRepositoryPort {
 
   async save(entity: RoleEntity, _scope: RoleTransactionScope): Promise<void> {
     const row = toRow(entity.toSnapshot());
-    await this.db.insert(pgSchema.roles).values(row).onConflictDoUpdate({
-      target: pgSchema.roles.id,
-      set: { name: row.name, scopeType: row.scopeType, defaultMaskHex: row.defaultMaskHex },
-    });
+    await this.db
+      .insert(pgSchema.roles)
+      .values(row)
+      .onConflictDoUpdate({
+        target: pgSchema.roles.id,
+        set: { name: row.name, scopeType: row.scopeType, defaultMaskHex: row.defaultMaskHex },
+      });
   }
 
   async findById(id: string): Promise<RoleEntity | null> {
-    const rows = await this.db.select().from(pgSchema.roles).where(eq(pgSchema.roles.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(pgSchema.roles)
+      .where(eq(pgSchema.roles.id, id))
+      .limit(1);
     if (rows.length === 0) return null;
     return RoleEntity.rehydrate(toSnapshot(rows[0] as RoleRow));
   }
 
   async findByName(name: string): Promise<RoleEntity | null> {
-    const rows = await this.db.select().from(pgSchema.roles).where(eq(pgSchema.roles.name, name)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(pgSchema.roles)
+      .where(eq(pgSchema.roles.name, name))
+      .limit(1);
     if (rows.length === 0) return null;
     return RoleEntity.rehydrate(toSnapshot(rows[0] as RoleRow));
   }
@@ -110,7 +132,7 @@ export class PgRoleRepository extends RoleRepositoryPort {
   }
 }
 
-export type RoleDialect = "sqlite" | "pg";
+export type RoleDialect = 'sqlite' | 'pg';
 
 export interface RoleRepositoryFactoryOpts {
   readonly dialect: RoleDialect;
@@ -118,11 +140,13 @@ export interface RoleRepositoryFactoryOpts {
 }
 
 export function createRoleRepository(opts: RoleRepositoryFactoryOpts): RoleRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteRoleRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgRoleRepository(opts.db as PostgresJsDatabase);
   }
-  throw new Error(`createRoleRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  throw new Error(
+    `createRoleRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

@@ -1,9 +1,9 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { toDepartmentId, toManagerId } from "./department.ids.js";
-import { InvalidDepartmentInputException } from "./department.exceptions.js";
-import type { DepartmentProps, DepartmentSnapshot } from "./department.types.js";
+import { toDepartmentId, toManagerId } from './department.ids.js';
+import { InvalidDepartmentInputException } from './department.exceptions.js';
+import type { DepartmentProps, DepartmentSnapshot } from './department.types.js';
 
 /**
  * Department Aggregate Root.
@@ -22,7 +22,7 @@ export class DepartmentEntity {
     readonly now?: Date;
   }): DepartmentEntity {
     if (input.name.trim().length === 0) {
-      throw new InvalidDepartmentInputException("Department name must not be empty.");
+      throw new InvalidDepartmentInputException('Department name must not be empty.');
     }
     const now = input.now ?? new Date();
     return new DepartmentEntity({
@@ -56,7 +56,7 @@ export class DepartmentEntity {
   ): DepartmentEntity {
     const nextName = patch.name !== undefined ? patch.name : this.props.name;
     if (nextName.trim().length === 0) {
-      throw new InvalidDepartmentInputException("Department name must not be empty.");
+      throw new InvalidDepartmentInputException('Department name must not be empty.');
     }
     const nextParent =
       patch.parentId === undefined

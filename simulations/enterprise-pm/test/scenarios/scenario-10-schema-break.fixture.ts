@@ -1,7 +1,7 @@
 // @def.boundary sim-test-fixtures
 // @def.doc 02-canary-topology
 
-import type { ScenarioFixture } from "./scenario-fixture.types.js";
+import type { ScenarioFixture } from './scenario-fixture.types.js';
 
 /**
  * 시나리오 10: v2 outbox payloadShape 변경 → schemaHash drift → 자동 롤백.
@@ -19,11 +19,11 @@ import type { ScenarioFixture } from "./scenario-fixture.types.js";
  * - gateway.upstream = approval-api-v1 (전부 v1로 라우팅)
  */
 export const scenarioSchemaBreak: ScenarioFixture = {
-  id: "10-schema-break",
-  v1Tag: "v3",
-  v2Tag: "v4-schema-break",
+  id: '10-schema-break',
+  v1Tag: 'v3',
+  v2Tag: 'v4-schema-break',
   v2Patch: {
-    "simulations/enterprise-pm/services/approval-api/src/approval/budget/infrastructure/outbox/budget.outbox.ts":
+    'simulations/enterprise-pm/services/approval-api/src/approval/budget/infrastructure/outbox/budget.outbox.ts':
       (src) =>
         src.replace(
           /totalStages: "number",/,
@@ -31,9 +31,9 @@ export const scenarioSchemaBreak: ScenarioFixture = {
         ),
   },
   expectedAssertions: {
-    "ingest-server.schema_drift_count": { gte: 1 },
-    "controller.schemaCompatRate": { lt: 1.0 },
-    "controller.weight_v2": { eq: 0 },
-    "gateway.upstream": { eq: "approval-api-v1" },
+    'ingest-server.schema_drift_count': { gte: 1 },
+    'controller.schemaCompatRate': { lt: 1.0 },
+    'controller.weight_v2': { eq: 0 },
+    'gateway.upstream': { eq: 'approval-api-v1' },
   },
 };

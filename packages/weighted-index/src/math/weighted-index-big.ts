@@ -16,7 +16,7 @@
  * shape와 coords는 bigint[] 타입이다.
  */
 
-import { CoordError, IndexRangeError, ShapeError } from "./errors.js";
+import { CoordError, IndexRangeError, ShapeError } from './errors.js';
 
 export class WeightedIndexBig {
   readonly shape: readonly bigint[];
@@ -26,7 +26,7 @@ export class WeightedIndexBig {
 
   constructor(shape: bigint[], labels?: string[]) {
     if (shape.length === 0) {
-      throw new ShapeError("shape must not be empty");
+      throw new ShapeError('shape must not be empty');
     }
     for (let i = 0; i < shape.length; i++) {
       if (shape[i] < 1n) {
@@ -35,7 +35,7 @@ export class WeightedIndexBig {
     }
     if (labels !== undefined && labels.length !== shape.length) {
       throw new ShapeError(
-        `labels length (${labels.length}) must match shape length (${shape.length})`
+        `labels length (${labels.length}) must match shape length (${shape.length})`,
       );
     }
 
@@ -140,14 +140,14 @@ export class WeightedIndexBig {
   private _validateCoords(coords: bigint[]): void {
     if (coords.length !== this.shape.length) {
       throw new CoordError(
-        `coords length (${coords.length}) must match shape length (${this.shape.length})`
+        `coords length (${coords.length}) must match shape length (${this.shape.length})`,
       );
     }
     for (let i = 0; i < this.shape.length; i++) {
       const x = coords[i];
       if (x < 1n || x > this.shape[i]) {
         throw new CoordError(
-          `coords[${i}] (label: "${this.labels[i]}") must be in [1, ${this.shape[i]}], got ${x}`
+          `coords[${i}] (label: "${this.labels[i]}") must be in [1, ${this.shape[i]}], got ${x}`,
         );
       }
     }
@@ -155,9 +155,7 @@ export class WeightedIndexBig {
 
   private _validateIndex(index: bigint): void {
     if (index < 0n || index >= this.size) {
-      throw new IndexRangeError(
-        `index must be in [0, ${this.size - 1n}], got ${index}`
-      );
+      throw new IndexRangeError(`index must be in [0, ${this.size - 1n}], got ${index}`);
     }
   }
 }

@@ -1,5 +1,5 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { MARKER_CHEATSHEET, type MarkerSpec } from "../../lib/decisionDemo";
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { MARKER_CHEATSHEET, type MarkerSpec } from '../../lib/decisionDemo';
 
 export type MarkerAutocompleteHandle = {
   focus: () => void;
@@ -48,12 +48,12 @@ export const MarkerAutocomplete = forwardRef<
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (!popover) return;
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       setPopover(null);
       e.preventDefault();
       return;
     }
-    if (e.key === "Enter" && filteredCandidates(popover.query).length > 0) {
+    if (e.key === 'Enter' && filteredCandidates(popover.query).length > 0) {
       e.preventDefault();
       handleSelect(filteredCandidates(popover.query)[0]);
     }
@@ -119,15 +119,13 @@ export const MarkerAutocomplete = forwardRef<
 
 function filteredCandidates(query: string): MarkerSpec[] {
   const q = query.toLowerCase();
-  return MARKER_CHEATSHEET.filter((m) =>
-    nameFromSyntax(m.syntax).startsWith(q),
-  );
+  return MARKER_CHEATSHEET.filter((m) => nameFromSyntax(m.syntax).startsWith(q));
 }
 
 function nameFromSyntax(syntax: string): string {
   // `^purpose` → "purpose", `^option:<id>` → "option"
-  const after = syntax.startsWith("^") ? syntax.slice(1) : syntax;
-  return after.split(":")[0].toLowerCase();
+  const after = syntax.startsWith('^') ? syntax.slice(1) : syntax;
+  return after.split(':')[0].toLowerCase();
 }
 
 /**
@@ -136,5 +134,5 @@ function nameFromSyntax(syntax: string): string {
  * 단, weight=N은 weight=1로 기본값 부여.
  */
 function markerSnippet(spec: MarkerSpec): string {
-  return spec.syntax.replace(/weight=N/g, "weight=1");
+  return spec.syntax.replace(/weight=N/g, 'weight=1');
 }

@@ -6,11 +6,11 @@ import {
   toRequesterId,
   toResourceRequestId,
   toResourceTypeId,
-} from "./resource.ids.js";
-import { ResourceStatusConflictException } from "./resource.exceptions.js";
-import type { ResourceProps, ResourceSnapshot, ResourceStatus } from "./resource.types.js";
+} from './resource.ids.js';
+import { ResourceStatusConflictException } from './resource.exceptions.js';
+import type { ResourceProps, ResourceSnapshot, ResourceStatus } from './resource.types.js';
 
-const TERMINAL: ResourceStatus[] = ["approved", "rejected"];
+const TERMINAL: ResourceStatus[] = ['approved', 'rejected'];
 
 export class ResourceEntity {
   private constructor(private readonly props: ResourceProps) {}
@@ -30,7 +30,7 @@ export class ResourceEntity {
       requesterId: toRequesterId(input.requesterId),
       resourceType: toResourceTypeId(input.resourceType),
       description: input.description,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     });

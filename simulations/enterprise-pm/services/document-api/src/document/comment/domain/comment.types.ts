@@ -1,7 +1,7 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { AuthorId, CommentId, DocumentId } from "./comment.ids.js";
+import type { AuthorId, CommentId, DocumentId } from './comment.ids.js';
 
 export interface CommentProps {
   readonly id: CommentId;

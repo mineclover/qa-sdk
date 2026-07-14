@@ -8,10 +8,10 @@ import {
   Module,
   type OnModuleDestroy,
   type OnModuleInit,
-} from "@nestjs/common";
-import Redis from "ioredis";
-import { BitmapCacheService } from "../cache-service.js";
-import type { SubscriberLogger } from "../subscriber.js";
+} from '@nestjs/common';
+import Redis from 'ioredis';
+import { BitmapCacheService } from '../cache-service.js';
+import type { SubscriberLogger } from '../subscriber.js';
 
 export interface BitmapCacheModuleOptions {
   /** Redis URL (예: "redis://sim-redis:6379"). */
@@ -34,9 +34,7 @@ export interface BitmapCacheModuleOptions {
  */
 @Injectable()
 class BitmapCacheLifecycle implements OnModuleInit, OnModuleDestroy {
-  constructor(
-    @Inject(BitmapCacheService) private readonly svc: BitmapCacheService,
-  ) {}
+  constructor(@Inject(BitmapCacheService) private readonly svc: BitmapCacheService) {}
 
   async onModuleInit(): Promise<void> {
     await this.svc.start();
@@ -53,12 +51,8 @@ export class BitmapCacheModule {
     const provider = {
       provide: BitmapCacheService,
       useFactory: (): BitmapCacheService => {
-        const publisherRedis = opts.publisherEnabled
-          ? new Redis(opts.redisUrl)
-          : undefined;
-        const subscriberRedis = opts.listenerEnabled
-          ? new Redis(opts.redisUrl)
-          : undefined;
+        const publisherRedis = opts.publisherEnabled ? new Redis(opts.redisUrl) : undefined;
+        const subscriberRedis = opts.listenerEnabled ? new Redis(opts.redisUrl) : undefined;
         return new BitmapCacheService({
           publisherRedis,
           subscriberRedis,

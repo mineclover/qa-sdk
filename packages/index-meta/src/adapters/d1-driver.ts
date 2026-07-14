@@ -14,11 +14,11 @@
  * const flagStore = new SqlEntryFlagStore(driver);
  */
 
-import type { SqlDriver, SqlDialect, ExecuteResult } from "./sql-store.js";
-import type { D1Database } from "./d1-store.js";
+import type { SqlDriver, SqlDialect, ExecuteResult } from './sql-store.js';
+import type { D1Database } from './d1-store.js';
 
 const D1_DIALECT: SqlDialect = {
-  name: "d1",
+  name: 'd1',
   supportsTransaction: false,
   supportsReturning: true,
   supportsJsonType: false,
@@ -31,16 +31,27 @@ export class D1SqlDriver implements SqlDriver {
   constructor(private readonly db: D1Database) {}
 
   async query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
-    const result = await this.db.prepare(sql).bind(...params).all<T>();
+    const result = await this.db
+      .prepare(sql)
+      .bind(...params)
+      .all<T>();
     return result.results;
   }
 
   async queryOne<T>(sql: string, params: unknown[] = []): Promise<T | null> {
-    return await this.db.prepare(sql).bind(...params).first<T>() ?? null;
+    return (
+      (await this.db
+        .prepare(sql)
+        .bind(...params)
+        .first<T>()) ?? null
+    );
   }
 
   async execute(sql: string, params: unknown[] = []): Promise<ExecuteResult> {
-    await this.db.prepare(sql).bind(...params).run();
+    await this.db
+      .prepare(sql)
+      .bind(...params)
+      .run();
     // D1 run() does not reliably expose changes count
     return { rowsAffected: 0 };
   }

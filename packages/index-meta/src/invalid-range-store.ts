@@ -8,7 +8,7 @@
  * 캐시이므로 언제든 삭제 후 재계산 가능.
  */
 
-import type { DimStateSpec } from "./invalid-ranges.js";
+import type { DimStateSpec } from './invalid-ranges.js';
 
 // ── 저장 타입 ─────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ export interface AddressStateCacheRecord {
   /** encode ✗, decode ✓ */
   readonly inactiveRanges: readonly [number, number][];
   /** encode ✓, decode ✗ */
-  readonly openRanges:     readonly [number, number][];
+  readonly openRanges: readonly [number, number][];
   readonly computedAt: string;
 }
 

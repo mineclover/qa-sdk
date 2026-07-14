@@ -14,7 +14,7 @@ import type {
   GateDependency,
   GateSelection,
   GateWeight,
-} from "./types.js";
+} from './types.js';
 
 // ─── 코어 게이트 식별 ────────────────────────────────────
 
@@ -84,27 +84,29 @@ export function analyzeGateStructure(schema: FlowSchema): GateProfile[] {
     return visited;
   }
 
-  return gates.map((gate) => {
-    const weight = gate.weight ?? "tactical";
-    const directImpact = forwardEdges.get(gate.id)?.length ?? 0;
-    const transitive = transitiveReach(gate.id);
-    const transitiveImpact = transitive.size;
-    const dependents = reverseEdges.get(gate.id)?.length ?? 0;
+  return gates
+    .map((gate) => {
+      const weight = gate.weight ?? 'tactical';
+      const directImpact = forwardEdges.get(gate.id)?.length ?? 0;
+      const transitive = transitiveReach(gate.id);
+      const transitiveImpact = transitive.size;
+      const dependents = reverseEdges.get(gate.id)?.length ?? 0;
 
-    // 코어 점수 산출
-    const weightScore = weight === "core" ? 10 : weight === "structural" ? 5 : 1;
-    const coreScore = weightScore + transitiveImpact * 3 + directImpact * 2 - dependents;
+      // 코어 점수 산출
+      const weightScore = weight === 'core' ? 10 : weight === 'structural' ? 5 : 1;
+      const coreScore = weightScore + transitiveImpact * 3 + directImpact * 2 - dependents;
 
-    return {
-      gateId: gate.id,
-      name: gate.name,
-      weight,
-      directImpact,
-      transitiveImpact,
-      dependents,
-      coreScore,
-    };
-  }).toSorted((a, b) => b.coreScore - a.coreScore);
+      return {
+        gateId: gate.id,
+        name: gate.name,
+        weight,
+        directImpact,
+        transitiveImpact,
+        dependents,
+        coreScore,
+      };
+    })
+    .toSorted((a, b) => b.coreScore - a.coreScore);
 }
 
 /** 코어 gate만 필터 (weight="core" 또는 coreScore 상위) */
@@ -113,7 +115,7 @@ export function identifyCoreGates(
   options?: { minScore?: number },
 ): GateProfile[] {
   const minScore = options?.minScore ?? 8;
-  return profiles.filter((p) => p.weight === "core" || p.coreScore >= minScore);
+  return profiles.filter((p) => p.weight === 'core' || p.coreScore >= minScore);
 }
 
 // ─── 인과 그래프 ─────────────────────────────────────────
@@ -122,13 +124,13 @@ export function identifyCoreGates(
 export interface CausalEdge {
   readonly from: string;
   readonly to: string;
-  readonly kind: GateDependency["kind"];
+  readonly kind: GateDependency['kind'];
 }
 
 /** 플로우 스키마에서 인과 그래프를 추출한다 */
 export function extractCausalGraph(schema: FlowSchema): {
   readonly edges: readonly CausalEdge[];
-  readonly roots: readonly string[];  // 의존 없는 gate (루트 결정)
+  readonly roots: readonly string[]; // 의존 없는 gate (루트 결정)
   readonly leaves: readonly string[]; // 누구에게도 영향 안 주는 gate
 } {
   const edges: CausalEdge[] = [];
@@ -173,17 +175,14 @@ export interface ImpactAnalysis {
  * invalidates 엣지를 따라 전이적으로 추적.
  * constrains/enables 엣지는 직접 영향만 보고.
  */
-export function analyzeImpact(
-  schema: FlowSchema,
-  changedGateId: string,
-): ImpactAnalysis {
+export function analyzeImpact(schema: FlowSchema, changedGateId: string): ImpactAnalysis {
   const gateMap = new Map(schema.gates.map((g) => [g.id, g]));
   const gate = gateMap.get(changedGateId);
   if (!gate) throw new Error(`gate "${changedGateId}" not found`);
 
   // 직접 영향
   const directlyInvalidated = (gate.affects ?? [])
-    .filter((d) => d.kind === "invalidates")
+    .filter((d) => d.kind === 'invalidates')
     .map((d) => d.gateId)
     .filter((id) => gateMap.has(id));
 
@@ -198,7 +197,7 @@ export function analyzeImpact(
     const g = gateMap.get(current);
     if (g?.affects) {
       for (const dep of g.affects) {
-        if (dep.kind === "invalidates" && !transitiveSet.has(dep.gateId)) {
+        if (dep.kind === 'invalidates' && !transitiveSet.has(dep.gateId)) {
           queue.push(dep.gateId);
         }
       }
@@ -207,7 +206,7 @@ export function analyzeImpact(
 
   // constrains/enables는 직접 영향만
   const _constrainsOrEnables = (gate.affects ?? [])
-    .filter((d) => d.kind !== "invalidates")
+    .filter((d) => d.kind !== 'invalidates')
     .map((d) => d.gateId)
     .filter((id) => gateMap.has(id));
 
@@ -216,12 +215,12 @@ export function analyzeImpact(
   // weight 분포
   const impactedWeights: Record<GateWeight, number> = { core: 0, structural: 0, tactical: 0 };
   for (const id of allInvalidated) {
-    const w = gateMap.get(id)?.weight ?? "tactical";
+    const w = gateMap.get(id)?.weight ?? 'tactical';
     impactedWeights[w]++;
   }
 
-  const invalidatesCore = allInvalidated.some((id) =>
-    (gateMap.get(id)?.weight ?? "tactical") === "core",
+  const invalidatesCore = allInvalidated.some(
+    (id) => (gateMap.get(id)?.weight ?? 'tactical') === 'core',
   );
 
   return {
@@ -263,10 +262,7 @@ export interface PivotPoint {
  * 코어 gate의 선택만 추출하고,
  * 각 코어 선택이 배제한 대안과 영향 범위를 기록한다.
  */
-export function traceCorePath(
-  schema: FlowSchema,
-  instance: FlowInstance,
-): CoreDecisionTrace {
+export function traceCorePath(schema: FlowSchema, instance: FlowInstance): CoreDecisionTrace {
   const gateMap = new Map(schema.gates.map((g) => [g.id, g]));
   const profiles = analyzeGateStructure(schema);
   const coreIds = new Set(identifyCoreGates(profiles).map((p) => p.gateId));
@@ -293,7 +289,7 @@ export function traceCorePath(
       impact.directlyInvalidated.length + impact.transitivelyInvalidated.length;
 
     let reason: string;
-    if (gate.weight === "core") {
+    if (gate.weight === 'core') {
       reason = `명시적 코어 gate — ${excludedBranches}개 대안 배제, ${downstreamImpact}개 후속 영향`;
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- profiles derived from same schema, gate guaranteed to exist

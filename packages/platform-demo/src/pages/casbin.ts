@@ -10,28 +10,43 @@ import {
   fetchFeatures,
   type GrantRow,
   type FeaturesResponse,
-} from "../registry.js";
+} from '../registry.js';
 
 // ── Step navigation ───────────────────────────────────────────────────────
 
-type StepId = "ours" | "casbin-rbac" | "casbin-abac";
+type StepId = 'ours' | 'casbin-rbac' | 'casbin-abac';
 
 const STEPS: { id: StepId; num: string; title: string; desc: string }[] = [
-  { id: "ours",        num: "1", title: "qa-sdk가 이미 하고 있는 것",     desc: "weighted-index 기반 정수 주소 인코딩" },
-  { id: "casbin-rbac", num: "2", title: "같은 것을 Casbin으로 표현하면",   desc: "RBAC 모델 + 정책 CSV 매핑" },
-  { id: "casbin-abac", num: "3", title: "ABAC로 확장하면",               desc: "객체 속성 기반 다차원 권한 검사" },
+  {
+    id: 'ours',
+    num: '1',
+    title: 'qa-sdk가 이미 하고 있는 것',
+    desc: 'weighted-index 기반 정수 주소 인코딩',
+  },
+  {
+    id: 'casbin-rbac',
+    num: '2',
+    title: '같은 것을 Casbin으로 표현하면',
+    desc: 'RBAC 모델 + 정책 CSV 매핑',
+  },
+  {
+    id: 'casbin-abac',
+    num: '3',
+    title: 'ABAC로 확장하면',
+    desc: '객체 속성 기반 다차원 권한 검사',
+  },
 ];
 
 // ── Render helpers ────────────────────────────────────────────────────────
 
 function renderStepNav(active: StepId, onSwitch: (id: StepId) => void): HTMLElement {
-  const nav = document.createElement("div");
-  nav.className = "cb-step-nav";
+  const nav = document.createElement('div');
+  nav.className = 'cb-step-nav';
   for (const s of STEPS) {
-    const btn = document.createElement("button");
-    btn.className = `cb-step-btn${s.id === active ? " cb-step-active" : ""}`;
+    const btn = document.createElement('button');
+    btn.className = `cb-step-btn${s.id === active ? ' cb-step-active' : ''}`;
     btn.innerHTML = `<span class="cb-step-num">${s.num}</span><span class="cb-step-label">${s.title}</span>`;
-    btn.addEventListener("click", () => onSwitch(s.id));
+    btn.addEventListener('click', () => onSwitch(s.id));
     nav.appendChild(btn);
   }
   return nav;
@@ -40,12 +55,12 @@ function renderStepNav(active: StepId, onSwitch: (id: StepId) => void): HTMLElem
 // ── Step 1: qa-sdk 기존 시스템 ────────────────────────────────────────────
 
 function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLElement {
-  const el = document.createElement("div");
-  el.className = "cb-step-content cb-fade-in";
+  const el = document.createElement('div');
+  el.className = 'cb-step-content cb-fade-in';
 
   // 인코딩 설명
-  const intro = document.createElement("div");
-  intro.className = "cb-card";
+  const intro = document.createElement('div');
+  intro.className = 'cb-card';
   intro.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">⊞</span>
@@ -68,48 +83,48 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
   el.appendChild(intro);
 
   // 실제 grant 데이터로 매트릭스 미리보기
-  const matrix = document.createElement("div");
-  matrix.className = "cb-card";
+  const matrix = document.createElement('div');
+  matrix.className = 'cb-card';
   matrix.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">⊡</span>
       <span class="cb-card-title">grant 매트릭스 (현재 상태)</span>
     </div>
   `;
-  const matBody = document.createElement("div");
-  matBody.className = "cb-card-body";
+  const matBody = document.createElement('div');
+  matBody.className = 'cb-card-body';
 
   // 매트릭스 테이블 빌드
-  const tbl = document.createElement("table");
-  tbl.className = "cb-matrix-table";
+  const tbl = document.createElement('table');
+  tbl.className = 'cb-matrix-table';
 
-  const thead = document.createElement("thead");
-  const hr = document.createElement("tr");
-  const thCorner = document.createElement("th");
-  thCorner.textContent = "기능 \\ 역할";
+  const thead = document.createElement('thead');
+  const hr = document.createElement('tr');
+  const thCorner = document.createElement('th');
+  thCorner.textContent = '기능 \\ 역할';
   hr.appendChild(thCorner);
   for (const role of features.roles) {
-    const th = document.createElement("th");
+    const th = document.createElement('th');
     th.innerHTML = `<span class="role-tag role-tag-${role.id}">${role.ko}</span>`;
     hr.appendChild(th);
   }
   thead.appendChild(hr);
   tbl.appendChild(thead);
 
-  const tbody = document.createElement("tbody");
+  const tbody = document.createElement('tbody');
   features.features.forEach((feat, fi) => {
-    const tr = document.createElement("tr");
-    const tdName = document.createElement("td");
-    tdName.className = "cb-matrix-feat";
+    const tr = document.createElement('tr');
+    const tdName = document.createElement('td');
+    tdName.className = 'cb-matrix-feat';
     tdName.textContent = feat.name;
     tr.appendChild(tdName);
 
     features.roles.forEach((role, ri) => {
-      const td = document.createElement("td");
-      td.className = "cb-matrix-cell";
+      const td = document.createElement('td');
+      td.className = 'cb-matrix-cell';
       const granted = features.matrix[fi]?.[ri] ?? false;
-      td.textContent = granted ? "✓" : "✗";
-      td.style.color = granted ? "#27ae60" : "#c0392b";
+      td.textContent = granted ? '✓' : '✗';
+      td.style.color = granted ? '#27ae60' : '#c0392b';
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -119,20 +134,20 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
   matrix.appendChild(matBody);
 
   // 주소 매핑 예시 (실제 데이터에서 추출)
-  const examples = rows.filter(r => r.featureId === "payment_history").slice(0, 3);
+  const examples = rows.filter((r) => r.featureId === 'payment_history').slice(0, 3);
   if (examples.length > 0) {
-    const addrCard = document.createElement("div");
-    addrCard.className = "cb-addr-examples";
+    const addrCard = document.createElement('div');
+    addrCard.className = 'cb-addr-examples';
     addrCard.innerHTML = `<div class="cb-addr-title">결제 내역 조회 — 주소 매핑 예시</div>`;
     for (const ex of examples) {
-      const row = document.createElement("div");
-      row.className = `cb-addr-row ${ex.granted ? "cb-addr-ok" : "cb-addr-denied"}`;
+      const row = document.createElement('div');
+      row.className = `cb-addr-row ${ex.granted ? 'cb-addr-ok' : 'cb-addr-denied'}`;
       row.innerHTML = `
         <span class="scenario-addr-chip">${ex.permAddr}</span>
         <span class="cb-addr-svc">${ex.svcNameKo}</span>
         <span class="cb-addr-sep">×</span>
         <span class="role-tag role-tag-${ex.role}">${ex.roleKo}</span>
-        <span class="cb-addr-result">${ex.granted ? "✓ 부여됨" : "✗ 미부여"}</span>
+        <span class="cb-addr-result">${ex.granted ? '✓ 부여됨' : '✗ 미부여'}</span>
       `;
       addrCard.appendChild(row);
     }
@@ -142,8 +157,8 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
   el.appendChild(matrix);
 
   // 특성 요약
-  const traits = document.createElement("div");
-  traits.className = "cb-card";
+  const traits = document.createElement('div');
+  traits.className = 'cb-card';
   traits.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">◈</span>
@@ -178,12 +193,12 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
 // ── Step 2: Casbin RBAC ───────────────────────────────────────────────────
 
 function renderStepCasbinRbac(features: FeaturesResponse): HTMLElement {
-  const el = document.createElement("div");
-  el.className = "cb-step-content cb-fade-in";
+  const el = document.createElement('div');
+  el.className = 'cb-step-content cb-fade-in';
 
   // model.conf
-  const modelCard = document.createElement("div");
-  modelCard.className = "cb-card";
+  const modelCard = document.createElement('div');
+  modelCard.className = 'cb-card';
   modelCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x2699;</span>
@@ -214,8 +229,8 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
   el.appendChild(modelCard);
 
   // policy.csv — 실제 grant 데이터에서 생성
-  const policyCard = document.createElement("div");
-  policyCard.className = "cb-card";
+  const policyCard = document.createElement('div');
+  policyCard.className = 'cb-card';
 
   let policyLines = `<span class="cb-code-comment"># ── 역할 계층 (role hierarchy) ──</span>\n`;
   policyLines += `g, admin, operator\n`;
@@ -226,7 +241,7 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
   features.features.forEach((feat) => {
     const granted = features.roles
       .filter((_, ri) => features.matrix[features.features.indexOf(feat)]?.[ri])
-      .map(r => r.id);
+      .map((r) => r.id);
     for (const role of granted) {
       policyLines += `p, ${role}, ${feat.id}, read\n`;
     }
@@ -245,8 +260,8 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
   el.appendChild(policyCard);
 
   // enforce 예시
-  const enforceCard = document.createElement("div");
-  enforceCard.className = "cb-card";
+  const enforceCard = document.createElement('div');
+  enforceCard.className = 'cb-card';
   enforceCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x25B6;</span>
@@ -277,8 +292,8 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
   el.appendChild(enforceCard);
 
   // 역할 계층 동치 증명
-  const hierarchyCard = document.createElement("div");
-  hierarchyCard.className = "cb-card";
+  const hierarchyCard = document.createElement('div');
+  hierarchyCard.className = 'cb-card';
   hierarchyCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x2261;</span>
@@ -373,8 +388,8 @@ admin.<span class="cb-code-fn">check</span>(0); <span class="cb-code-comment">//
   el.appendChild(hierarchyCard);
 
   // 비교 테이블
-  const cmpCard = document.createElement("div");
-  cmpCard.className = "cb-card";
+  const cmpCard = document.createElement('div');
+  cmpCard.className = 'cb-card';
   cmpCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x2194;</span>
@@ -456,12 +471,12 @@ admin.<span class="cb-code-fn">check</span>(0); <span class="cb-code-comment">//
 // ── Step 3: Casbin ABAC ───────────────────────────────────────────────────
 
 function renderStepCasbinAbac(): HTMLElement {
-  const el = document.createElement("div");
-  el.className = "cb-step-content cb-fade-in";
+  const el = document.createElement('div');
+  el.className = 'cb-step-content cb-fade-in';
 
   // ABAC 개념
-  const conceptCard = document.createElement("div");
-  conceptCard.className = "cb-card";
+  const conceptCard = document.createElement('div');
+  conceptCard.className = 'cb-card';
   conceptCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x1F50D;</span>
@@ -490,8 +505,8 @@ function renderStepCasbinAbac(): HTMLElement {
   el.appendChild(conceptCard);
 
   // ABAC model.conf
-  const modelCard = document.createElement("div");
-  modelCard.className = "cb-card";
+  const modelCard = document.createElement('div');
+  modelCard.className = 'cb-card';
   modelCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x2699;</span>
@@ -523,8 +538,8 @@ m = r.sub.role == p.sub_role \\
   el.appendChild(modelCard);
 
   // enforce 코드
-  const codeCard = document.createElement("div");
-  codeCard.className = "cb-card";
+  const codeCard = document.createElement('div');
+  codeCard.className = 'cb-card';
   codeCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x25B6;</span>
@@ -552,8 +567,8 @@ m = r.sub.role == p.sub_role \\
   el.appendChild(codeCard);
 
   // 소유자 규칙 확장
-  const ownerCard = document.createElement("div");
-  ownerCard.className = "cb-card";
+  const ownerCard = document.createElement('div');
+  ownerCard.className = 'cb-card';
   ownerCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x1F513;</span>
@@ -573,8 +588,8 @@ m = r.sub.role == p.sub_role \\
   el.appendChild(ownerCard);
 
   // Trade-off 비교
-  const tradeoffCard = document.createElement("div");
-  tradeoffCard.className = "cb-card";
+  const tradeoffCard = document.createElement('div');
+  tradeoffCard.className = 'cb-card';
   tradeoffCard.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">&#x2696;</span>
@@ -674,18 +689,18 @@ m = r.sub.role == p.sub_role \\
 
 // ── Main export ───────────────────────────────────────────────────────────
 
-export function renderCasbinPage(container: HTMLElement, ver = "v2"): void {
-  container.innerHTML = "";
-  container.classList.add("cb-body");
+export function renderCasbinPage(container: HTMLElement, ver = 'v2'): void {
+  container.innerHTML = '';
+  container.classList.add('cb-body');
 
-  let activeStep: StepId = "ours";
+  let activeStep: StepId = 'ours';
   let navEl: HTMLElement | null = null;
   let contentEl: HTMLElement | null = null;
   let grantRows: GrantRow[] = [];
   let featuresData: FeaturesResponse | null = null;
 
   // 로딩 스켈레톤
-  const loading = document.createElement("div");
+  const loading = document.createElement('div');
   loading.innerHTML = `
     <div class="scenario-skeleton">
       <div class="scenario-spinner-wrap">
@@ -703,13 +718,13 @@ export function renderCasbinPage(container: HTMLElement, ver = "v2"): void {
     if (contentEl) contentEl.remove();
 
     switch (activeStep) {
-      case "ours":
+      case 'ours':
         contentEl = renderStepOurs(grantRows, featuresData);
         break;
-      case "casbin-rbac":
+      case 'casbin-rbac':
         contentEl = renderStepCasbinRbac(featuresData);
         break;
-      case "casbin-abac":
+      case 'casbin-abac':
         contentEl = renderStepCasbinAbac();
         break;
     }
@@ -729,16 +744,15 @@ export function renderCasbinPage(container: HTMLElement, ver = "v2"): void {
   }
 
   // 데이터 로드
-  Promise.all([
-    fetchGrantTable(ver),
-    fetchFeatures(ver),
-  ]).then(([grantData, features]) => {
-    grantRows = grantData.rows;
-    featuresData = features;
-    loading.remove();
-    switchStep("ours");
-    return undefined;
-  }).catch((e: unknown) => {
-    loading.innerHTML = `<div style="padding:16px;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
-  });
+  Promise.all([fetchGrantTable(ver), fetchFeatures(ver)])
+    .then(([grantData, features]) => {
+      grantRows = grantData.rows;
+      featuresData = features;
+      loading.remove();
+      switchStep('ours');
+      return undefined;
+    })
+    .catch((e: unknown) => {
+      loading.innerHTML = `<div style="padding:16px;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
+    });
 }

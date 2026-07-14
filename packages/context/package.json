@@ -2,6 +2,9 @@
   "name": "@qa-sdk/context",
   "version": "0.1.0",
   "description": "CatalogProvider와 ServiceBootConfig를 조립하는 QA 컨텍스트 레이어",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -9,9 +12,6 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsc",
     "test": "tsc && node scripts/smoke.mjs",

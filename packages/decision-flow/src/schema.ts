@@ -11,12 +11,12 @@ import type {
   GateSchema,
   GateWeight,
   OutcomeSchema,
-} from "./types.js";
+} from './types.js';
 
 // ─── 검증 ────────────────────────────────────────────────
 
 export interface ValidationIssue {
-  readonly level: "error" | "warning";
+  readonly level: 'error' | 'warning';
   readonly path: string;
   readonly message: string;
 }
@@ -42,7 +42,7 @@ export function validateFlowSchema(schema: FlowSchema): ValidationResult {
   const gateIds = new Set<string>();
 
   if (schema.gates.length === 0) {
-    issues.push({ level: "error", path: "gates", message: "최소 1개의 gate가 필요하다" });
+    issues.push({ level: 'error', path: 'gates', message: '최소 1개의 gate가 필요하다' });
   }
 
   for (let gi = 0; gi < schema.gates.length; gi++) {
@@ -51,25 +51,25 @@ export function validateFlowSchema(schema: FlowSchema): ValidationResult {
 
     // gate ID 중복 검사
     if (gateIds.has(gate.id)) {
-      issues.push({ level: "error", path: `${gPath}.id`, message: `gate ID 중복: "${gate.id}"` });
+      issues.push({ level: 'error', path: `${gPath}.id`, message: `gate ID 중복: "${gate.id}"` });
     }
     gateIds.add(gate.id);
 
     // subFlowId와 branches 상호 배타
     if (gate.subFlowId && gate.branches && gate.branches.length > 0) {
       issues.push({
-        level: "error",
+        level: 'error',
         path: gPath,
-        message: "subFlowId와 branches는 동시에 정의할 수 없다",
+        message: 'subFlowId와 branches는 동시에 정의할 수 없다',
       });
     }
 
     // subFlowId도 branches도 없는 gate
     if (!gate.subFlowId && (!gate.branches || gate.branches.length === 0)) {
       issues.push({
-        level: "error",
+        level: 'error',
         path: gPath,
-        message: "branches 또는 subFlowId 중 하나는 필수",
+        message: 'branches 또는 subFlowId 중 하나는 필수',
       });
     }
 
@@ -80,7 +80,7 @@ export function validateFlowSchema(schema: FlowSchema): ValidationResult {
         const branch = gate.branches[bi];
         if (branchIds.has(branch.id)) {
           issues.push({
-            level: "error",
+            level: 'error',
             path: `${gPath}.branches[${bi}].id`,
             message: `branch ID 중복: "${branch.id}"`,
           });
@@ -98,7 +98,7 @@ export function validateFlowSchema(schema: FlowSchema): ValidationResult {
       const branch = gate.branches[bi];
       if (branch.nextGateId && !gateIds.has(branch.nextGateId)) {
         issues.push({
-          level: "error",
+          level: 'error',
           path: `gates[${gi}].branches[${bi}].nextGateId`,
           message: `참조 대상 gate가 없다: "${branch.nextGateId}"`,
         });
@@ -106,15 +106,15 @@ export function validateFlowSchema(schema: FlowSchema): ValidationResult {
       // terminal branch 이후 gate가 있으면 경고
       if (branch.terminal && gi < schema.gates.length - 1) {
         issues.push({
-          level: "warning",
+          level: 'warning',
           path: `gates[${gi}].branches[${bi}]`,
-          message: "terminal branch 뒤에 추가 gate가 존재한다 — 해당 gate는 건너뛸 수 있음",
+          message: 'terminal branch 뒤에 추가 gate가 존재한다 — 해당 gate는 건너뛸 수 있음',
         });
       }
     }
   }
 
-  return { valid: issues.every((i) => i.level !== "error"), issues };
+  return { valid: issues.every((i) => i.level !== 'error'), issues };
 }
 
 // ─── 빌더 ────────────────────────────────────────────────
@@ -155,8 +155,8 @@ interface BranchInput {
 export class FlowSchemaBuilder {
   private readonly _id: string;
   private readonly _name: string;
-  private _description = "";
-  private _version = "v1";
+  private _description = '';
+  private _version = 'v1';
   private readonly _gates: GateSchema[] = [];
   private readonly _outcomes: OutcomeSchema[] = [];
 
@@ -248,9 +248,9 @@ export class FlowSchemaBuilder {
     };
     const result = validateFlowSchema(schema);
     if (!result.valid) {
-      const errors = result.issues.filter((i) => i.level === "error");
+      const errors = result.issues.filter((i) => i.level === 'error');
       throw new Error(
-        `FlowSchema "${this._id}" 검증 실패:\n${errors.map((e) => `  - [${e.path}] ${e.message}`).join("\n")}`,
+        `FlowSchema "${this._id}" 검증 실패:\n${errors.map((e) => `  - [${e.path}] ${e.message}`).join('\n')}`,
       );
     }
     return schema;

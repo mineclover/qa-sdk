@@ -10,36 +10,36 @@
  * 별도 파일 없이 바로 validate 가능.
  */
 
-import type { SchemaDef, SchemaFragment } from "./schema.types.js";
-import type { SchemaRegistry } from "./schema.registry.js";
+import type { SchemaDef, SchemaFragment } from './schema.types.js';
+import type { SchemaRegistry } from './schema.registry.js';
 
 // ── Fragments ───────────────────────────────────────
 
 export const FRAGMENT_HAS_ACTOR: SchemaFragment = {
-  id: "HasActor",
+  id: 'HasActor',
   axes: {
-    actor_ref: { axisId: "actor_ref", required: false, multi: false, valueType: "ref" },
+    actor_ref: { axisId: 'actor_ref', required: false, multi: false, valueType: 'ref' },
   },
 };
 
 export const FRAGMENT_HAS_TARGET: SchemaFragment = {
-  id: "HasTarget",
+  id: 'HasTarget',
   axes: {
-    target_ref: { axisId: "target_ref", required: false, multi: false, valueType: "ref" },
+    target_ref: { axisId: 'target_ref', required: false, multi: false, valueType: 'ref' },
   },
 };
 
 export const FRAGMENT_HAS_OUTCOME: SchemaFragment = {
-  id: "HasOutcome",
+  id: 'HasOutcome',
   axes: {
-    outcome: { axisId: "outcome", required: false, multi: false, valueType: "vocabulary" },
+    outcome: { axisId: 'outcome', required: false, multi: false, valueType: 'vocabulary' },
   },
 };
 
 export const FRAGMENT_IDENTIFIED: SchemaFragment = {
-  id: "Identified",
+  id: 'Identified',
   axes: {
-    identity: { axisId: "identity", required: true, multi: false, valueType: "ref" },
+    identity: { axisId: 'identity', required: true, multi: false, valueType: 'ref' },
   },
 };
 
@@ -53,77 +53,87 @@ export const DEFAULT_FRAGMENTS: readonly SchemaFragment[] = [
 // ── Base Schemas ────────────────────────────────────
 
 export const SCHEMA_EVENT_BASE: SchemaDef = {
-  id: "event.base",
-  version: "v1",
-  category: "event",
-  use: ["HasActor", "HasTarget"],
+  id: 'event.base',
+  version: 'v1',
+  category: 'event',
+  use: ['HasActor', 'HasTarget'],
   axes: {
-    event_kind: { axisId: "event_kind", required: true, multi: false, valueType: "vocabulary" },
-    action: { axisId: "action", required: true, multi: false, valueType: "vocabulary" },
+    event_kind: { axisId: 'event_kind', required: true, multi: false, valueType: 'vocabulary' },
+    action: { axisId: 'action', required: true, multi: false, valueType: 'vocabulary' },
   },
   constraints: [
-    { rule: "maxCount", axis: "actor_ref", value: 1 },
-    { rule: "maxCount", axis: "target_ref", value: 1 },
+    { rule: 'maxCount', axis: 'actor_ref', value: 1 },
+    { rule: 'maxCount', axis: 'target_ref', value: 1 },
   ],
 };
 
 export const SCHEMA_ENTITY_BASE: SchemaDef = {
-  id: "entity.base",
-  version: "v1",
-  category: "entity",
-  use: ["Identified"],
+  id: 'entity.base',
+  version: 'v1',
+  category: 'entity',
+  use: ['Identified'],
   axes: {
-    entity_kind: { axisId: "entity_kind", required: true, multi: false, valueType: "vocabulary" },
-    state: { axisId: "state", required: false, multi: false, valueType: "vocabulary" },
+    entity_kind: { axisId: 'entity_kind', required: true, multi: false, valueType: 'vocabulary' },
+    state: { axisId: 'state', required: false, multi: false, valueType: 'vocabulary' },
   },
 };
 
 export const SCHEMA_RELATION_BASE: SchemaDef = {
-  id: "relation.base",
-  version: "v1",
-  category: "relation",
+  id: 'relation.base',
+  version: 'v1',
+  category: 'relation',
   axes: {
-    source_ref: { axisId: "source_ref", required: true, multi: false, valueType: "ref" },
-    relation_kind: { axisId: "relation_kind", required: true, multi: false, valueType: "vocabulary" },
-    target_ref: { axisId: "target_ref", required: true, multi: false, valueType: "ref" },
-    qualifier: { axisId: "qualifier", required: false, multi: true, valueType: "vocabulary" },
+    source_ref: { axisId: 'source_ref', required: true, multi: false, valueType: 'ref' },
+    relation_kind: {
+      axisId: 'relation_kind',
+      required: true,
+      multi: false,
+      valueType: 'vocabulary',
+    },
+    target_ref: { axisId: 'target_ref', required: true, multi: false, valueType: 'ref' },
+    qualifier: { axisId: 'qualifier', required: false, multi: true, valueType: 'vocabulary' },
   },
 };
 
 export const SCHEMA_STATE_BASE: SchemaDef = {
-  id: "state.base",
-  version: "v1",
-  category: "state",
+  id: 'state.base',
+  version: 'v1',
+  category: 'state',
   axes: {
-    subject_ref: { axisId: "subject_ref", required: true, multi: false, valueType: "ref" },
-    state_kind: { axisId: "state_kind", required: true, multi: false, valueType: "vocabulary" },
-    state_value: { axisId: "state_value", required: true, multi: false, valueType: "vocabulary" },
-    scope: { axisId: "scope", required: false, multi: false, valueType: "coordinate" },
+    subject_ref: { axisId: 'subject_ref', required: true, multi: false, valueType: 'ref' },
+    state_kind: { axisId: 'state_kind', required: true, multi: false, valueType: 'vocabulary' },
+    state_value: { axisId: 'state_value', required: true, multi: false, valueType: 'vocabulary' },
+    scope: { axisId: 'scope', required: false, multi: false, valueType: 'coordinate' },
   },
 };
 
 export const SCHEMA_POLICY_BASE: SchemaDef = {
-  id: "policy.base",
-  version: "v1",
-  category: "policy",
+  id: 'policy.base',
+  version: 'v1',
+  category: 'policy',
   axes: {
-    subject: { axisId: "subject", required: true, multi: false, valueType: "ref" },
-    action: { axisId: "action", required: true, multi: false, valueType: "vocabulary" },
-    resource: { axisId: "resource", required: true, multi: false, valueType: "vocabulary" },
-    effect: { axisId: "effect", required: true, multi: false, valueType: "vocabulary" },
-    scope: { axisId: "scope", required: false, multi: false, valueType: "coordinate" },
+    subject: { axisId: 'subject', required: true, multi: false, valueType: 'ref' },
+    action: { axisId: 'action', required: true, multi: false, valueType: 'vocabulary' },
+    resource: { axisId: 'resource', required: true, multi: false, valueType: 'vocabulary' },
+    effect: { axisId: 'effect', required: true, multi: false, valueType: 'vocabulary' },
+    scope: { axisId: 'scope', required: false, multi: false, valueType: 'coordinate' },
   },
 };
 
 export const SCHEMA_OBSERVATION_BASE: SchemaDef = {
-  id: "observation.base",
-  version: "v1",
-  category: "observation",
+  id: 'observation.base',
+  version: 'v1',
+  category: 'observation',
   axes: {
-    observed_ref: { axisId: "observed_ref", required: true, multi: false, valueType: "coordinate" },
-    observation_kind: { axisId: "observation_kind", required: true, multi: false, valueType: "vocabulary" },
-    metric: { axisId: "metric", required: false, multi: false, valueType: "literal" },
-    trace_id: { axisId: "trace_id", required: false, multi: false, valueType: "literal" },
+    observed_ref: { axisId: 'observed_ref', required: true, multi: false, valueType: 'coordinate' },
+    observation_kind: {
+      axisId: 'observation_kind',
+      required: true,
+      multi: false,
+      valueType: 'vocabulary',
+    },
+    metric: { axisId: 'metric', required: false, multi: false, valueType: 'literal' },
+    trace_id: { axisId: 'trace_id', required: false, multi: false, valueType: 'literal' },
   },
 };
 

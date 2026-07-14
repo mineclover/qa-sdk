@@ -1,8 +1,8 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { SqlDriver } from "index-meta";
-import type { ServiceEndpointRecord, ServiceEndpointStore } from "./service-endpoint-store.js";
+import type { SqlDriver } from 'index-meta';
+import type { ServiceEndpointRecord, ServiceEndpointStore } from './service-endpoint-store.js';
 
 export class SqlServiceEndpointStore implements ServiceEndpointStore {
   constructor(private readonly driver: SqlDriver) {}
@@ -13,21 +13,39 @@ export class SqlServiceEndpointStore implements ServiceEndpointStore {
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (catalog_id, namespace, svc_name, env, region)
        DO UPDATE SET url = excluded.url, updated_at = excluded.updated_at`,
-      [record.catalogId, record.namespace, record.svcName, record.env, record.region, record.url, record.updatedAt],
+      [
+        record.catalogId,
+        record.namespace,
+        record.svcName,
+        record.env,
+        record.region,
+        record.url,
+        record.updatedAt,
+      ],
     );
   }
 
-  async get(catalogId: string, ns: string, svc: string, env: string, region: string): Promise<ServiceEndpointRecord | null> {
+  async get(
+    catalogId: string,
+    ns: string,
+    svc: string,
+    env: string,
+    region: string,
+  ): Promise<ServiceEndpointRecord | null> {
     const row = await this.driver.queryOne<Row>(
-      "SELECT * FROM service_endpoint WHERE catalog_id = ? AND namespace = ? AND svc_name = ? AND env = ? AND region = ?",
+      'SELECT * FROM service_endpoint WHERE catalog_id = ? AND namespace = ? AND svc_name = ? AND env = ? AND region = ?',
       [catalogId, ns, svc, env, region],
     );
     return row ? toRecord(row) : null;
   }
 
-  async listByService(catalogId: string, ns: string, svc: string): Promise<ServiceEndpointRecord[]> {
+  async listByService(
+    catalogId: string,
+    ns: string,
+    svc: string,
+  ): Promise<ServiceEndpointRecord[]> {
     const rows = await this.driver.query<Row>(
-      "SELECT * FROM service_endpoint WHERE catalog_id = ? AND namespace = ? AND svc_name = ? ORDER BY env, region",
+      'SELECT * FROM service_endpoint WHERE catalog_id = ? AND namespace = ? AND svc_name = ? ORDER BY env, region',
       [catalogId, ns, svc],
     );
     return rows.map(toRecord);
@@ -35,15 +53,21 @@ export class SqlServiceEndpointStore implements ServiceEndpointStore {
 
   async list(catalogId: string): Promise<ServiceEndpointRecord[]> {
     const rows = await this.driver.query<Row>(
-      "SELECT * FROM service_endpoint WHERE catalog_id = ? ORDER BY namespace, svc_name, env, region",
+      'SELECT * FROM service_endpoint WHERE catalog_id = ? ORDER BY namespace, svc_name, env, region',
       [catalogId],
     );
     return rows.map(toRecord);
   }
 
-  async delete(catalogId: string, ns: string, svc: string, env: string, region: string): Promise<void> {
+  async delete(
+    catalogId: string,
+    ns: string,
+    svc: string,
+    env: string,
+    region: string,
+  ): Promise<void> {
     await this.driver.execute(
-      "DELETE FROM service_endpoint WHERE catalog_id = ? AND namespace = ? AND svc_name = ? AND env = ? AND region = ?",
+      'DELETE FROM service_endpoint WHERE catalog_id = ? AND namespace = ? AND svc_name = ? AND env = ? AND region = ?',
       [catalogId, ns, svc, env, region],
     );
   }

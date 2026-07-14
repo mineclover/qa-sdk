@@ -1,15 +1,15 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import type { DocumentGraphTraversalResult } from "./graph-traverse.js";
-import type { DocumentEnvelope } from "doc-envelope";
+import type { DocumentGraphTraversalResult } from './graph-traverse.js';
+import type { DocumentEnvelope } from 'doc-envelope';
 
 export interface DocumentGraphTraversalDocumentScope {
   readonly documents: readonly DocumentEnvelope[];
   readonly reasonByDocumentKey: ReadonlyMap<string, string>;
 }
 
-type TraversalNode = DocumentGraphTraversalResult["nodes"][number];
+type TraversalNode = DocumentGraphTraversalResult['nodes'][number];
 
 export function collectDocumentGraphTraversalDocuments(
   documents: readonly DocumentEnvelope[],
@@ -24,7 +24,7 @@ export function collectDocumentGraphTraversalDocuments(
     for (const document of documentsForTraversalNode(documents, node)) {
       const key = documentKey(document);
       selected.set(key, document);
-      if (!reasonByDocumentKey.has(key) || reason === "target") {
+      if (!reasonByDocumentKey.has(key) || reason === 'target') {
         reasonByDocumentKey.set(key, reason);
       }
     }
@@ -37,9 +37,9 @@ export function collectDocumentGraphTraversalDocuments(
 }
 
 export function defaultDocumentGraphTraversalNodeReason(node: TraversalNode): string {
-  if (node.depth === 0) return "target";
+  if (node.depth === 0) return 'target';
   const axis = node.pathFromTarget.steps[node.pathFromTarget.steps.length - 1]?.axis;
-  return axis ? `graph:${axis}` : "graph";
+  return axis ? `graph:${axis}` : 'graph';
 }
 
 function documentsForTraversalNode(
@@ -48,7 +48,7 @@ function documentsForTraversalNode(
 ): readonly DocumentEnvelope[] {
   const identities: Array<{ readonly stableId?: string; readonly path?: string }> = [];
 
-  if (node.id.startsWith("document:")) {
+  if (node.id.startsWith('document:')) {
     identities.push({
       stableId: node.stableId,
       path: node.path,
@@ -97,7 +97,7 @@ function documentMatchesTraversalIdentity(
 }
 
 function stripNodePathAnchor(path: string): string {
-  return path.split("#")[0] ?? path;
+  return path.split('#')[0] ?? path;
 }
 
 function documentKey(document: DocumentEnvelope): string {
@@ -105,15 +105,17 @@ function documentKey(document: DocumentEnvelope): string {
 }
 
 function compareDocuments(left: DocumentEnvelope, right: DocumentEnvelope): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.stableId.localeCompare(right.stableId);
+  return (
+    left.path.localeCompare(right.path) ||
+    left.kind.localeCompare(right.kind) ||
+    left.stableId.localeCompare(right.stableId)
+  );
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }

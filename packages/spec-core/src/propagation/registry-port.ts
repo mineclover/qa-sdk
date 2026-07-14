@@ -13,8 +13,8 @@ export interface RegistryPort {
   registerPrefix(input: {
     prefix: string;
     owner: string;
-    kind: "leaf" | "composite";
-    numberType: "number" | "bigint";
+    kind: 'leaf' | 'composite';
+    numberType: 'number' | 'bigint';
   }): Promise<void>;
 
   /** draft 생성 */
@@ -53,33 +53,43 @@ export interface RegistryPort {
  */
 export class InMemoryRegistry implements RegistryPort {
   private prefixes = new Map<string, { owner: string; kind: string; numberType: string }>();
-  private versions = new Map<string, {
-    prefix: string;
-    versionId: string;
-    status: string;
-    baseVersionId: string | null;
-    capacity: number;
-    refs?: Array<{ prefix: string; versionId: string }>;
-  }>();
+  private versions = new Map<
+    string,
+    {
+      prefix: string;
+      versionId: string;
+      status: string;
+      baseVersionId: string | null;
+      capacity: number;
+      refs?: Array<{ prefix: string; versionId: string }>;
+    }
+  >();
 
   async registerPrefix(input: {
-    prefix: string; owner: string; kind: "leaf" | "composite"; numberType: "number" | "bigint";
+    prefix: string;
+    owner: string;
+    kind: 'leaf' | 'composite';
+    numberType: 'number' | 'bigint';
   }): Promise<void> {
     this.prefixes.set(input.prefix, input);
   }
 
   async createDraft(input: {
-    prefix: string; versionId: string; baseVersionId: string | null;
-    capacity: number; refs?: Array<{ prefix: string; versionId: string }>;
+    prefix: string;
+    versionId: string;
+    baseVersionId: string | null;
+    capacity: number;
+    refs?: Array<{ prefix: string; versionId: string }>;
   }): Promise<void> {
     this.versions.set(`${input.prefix}:${input.versionId}`, {
-      ...input, status: "draft",
+      ...input,
+      status: 'draft',
     });
   }
 
   async getActiveVersion(prefix: string): Promise<string | null> {
     for (const v of this.versions.values()) {
-      if (v.prefix === prefix && v.status === "active") return v.versionId;
+      if (v.prefix === prefix && v.status === 'active') return v.versionId;
     }
     return null;
   }
@@ -94,32 +104,35 @@ export class InMemoryRegistry implements RegistryPort {
 
   async lockDraft(prefix: string, versionId: string): Promise<void> {
     const v = this.versions.get(`${prefix}:${versionId}`);
-    if (v) v.status = "locked";
+    if (v) v.status = 'locked';
   }
 
   async release(prefix: string, versionId: string): Promise<void> {
     const v = this.versions.get(`${prefix}:${versionId}`);
-    if (v) v.status = "released";
+    if (v) v.status = 'released';
   }
 
   async activate(prefix: string, versionId: string): Promise<void> {
     // 이전 active를 deprecated로
     for (const v of this.versions.values()) {
-      if (v.prefix === prefix && v.status === "active") v.status = "deprecated";
+      if (v.prefix === prefix && v.status === 'active') v.status = 'deprecated';
     }
     const v = this.versions.get(`${prefix}:${versionId}`);
-    if (v) v.status = "active";
+    if (v) v.status = 'active';
   }
 
   async deprecate(prefix: string, versionId: string): Promise<void> {
     const v = this.versions.get(`${prefix}:${versionId}`);
-    if (v) v.status = "deprecated";
+    if (v) v.status = 'deprecated';
   }
 
   /** 테스트용: 전체 상태 조회 */
   getAll(): Array<{ prefix: string; versionId: string; status: string; capacity: number }> {
-    return [...this.versions.values()].map(v => ({
-      prefix: v.prefix, versionId: v.versionId, status: v.status, capacity: v.capacity,
+    return [...this.versions.values()].map((v) => ({
+      prefix: v.prefix,
+      versionId: v.versionId,
+      status: v.status,
+      capacity: v.capacity,
     }));
   }
 }

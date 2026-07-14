@@ -1,6 +1,6 @@
 // @def.boundary motion-workspace-system
-import type { MotionEditorCommand, MotionSceneDef } from "motion-content";
-import type { MotionWorkspaceSnapshot } from "motion-workspace";
+import type { MotionEditorCommand, MotionSceneDef } from 'motion-content';
+import type { MotionWorkspaceSnapshot } from 'motion-workspace';
 import type {
   MotionWorkspaceApplyRequest,
   MotionWorkspaceCreateRequest,
@@ -16,11 +16,8 @@ import type {
   MotionWorkspaceSceneListResponse,
   MotionWorkspaceSceneMutationRequest,
   MotionWorkspaceSceneStructureRequest,
-} from "./types.js";
-import {
-  MotionWorkspaceWsConnection,
-  type MotionWorkspaceWsHandlers,
-} from "./ws-client.js";
+} from './types.js';
+import { MotionWorkspaceWsConnection, type MotionWorkspaceWsHandlers } from './ws-client.js';
 
 export class MotionWorkspaceClientError extends Error {
   readonly status: number;
@@ -28,7 +25,7 @@ export class MotionWorkspaceClientError extends Error {
 
   constructor(message: string, status: number, payload?: unknown) {
     super(message);
-    this.name = "MotionWorkspaceClientError";
+    this.name = 'MotionWorkspaceClientError';
     this.status = status;
     this.payload = payload;
   }
@@ -49,31 +46,30 @@ export class MotionWorkspaceClientError extends Error {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function isMotionWorkspaceConflictErrorShape(
   payload: unknown,
 ): payload is MotionWorkspaceConflictErrorShape {
-  return isRecord(payload)
-    && payload["code"] === "revision_conflict"
-    && typeof payload["message"] === "string"
-    && (
-      payload["expectedRevision"] === undefined
-      || typeof payload["expectedRevision"] === "number"
-    )
-    && (
-      payload["actualRevision"] === undefined
-      || typeof payload["actualRevision"] === "number"
-    );
+  return (
+    isRecord(payload) &&
+    payload['code'] === 'revision_conflict' &&
+    typeof payload['message'] === 'string' &&
+    (payload['expectedRevision'] === undefined ||
+      typeof payload['expectedRevision'] === 'number') &&
+    (payload['actualRevision'] === undefined || typeof payload['actualRevision'] === 'number')
+  );
 }
 
 export function isMotionWorkspaceSceneConflictErrorShape(
   payload: unknown,
 ): payload is MotionWorkspaceSceneConflictErrorShape {
-  return isMotionWorkspaceConflictErrorShape(payload)
-    && isRecord(payload)
-    && typeof payload["sceneId"] === "string";
+  return (
+    isMotionWorkspaceConflictErrorShape(payload) &&
+    isRecord(payload) &&
+    typeof payload['sceneId'] === 'string'
+  );
 }
 
 export function isMotionWorkspaceConflictError(
@@ -81,8 +77,10 @@ export function isMotionWorkspaceConflictError(
 ): error is MotionWorkspaceClientError & {
   readonly payload: MotionWorkspaceConflictErrorShape;
 } {
-  return error instanceof MotionWorkspaceClientError
-    && isMotionWorkspaceConflictErrorShape(error.payload);
+  return (
+    error instanceof MotionWorkspaceClientError &&
+    isMotionWorkspaceConflictErrorShape(error.payload)
+  );
 }
 
 export function isMotionWorkspaceSceneConflictError(
@@ -90,18 +88,18 @@ export function isMotionWorkspaceSceneConflictError(
 ): error is MotionWorkspaceClientError & {
   readonly payload: MotionWorkspaceSceneConflictErrorShape;
 } {
-  return error instanceof MotionWorkspaceClientError
-    && isMotionWorkspaceSceneConflictErrorShape(error.payload);
+  return (
+    error instanceof MotionWorkspaceClientError &&
+    isMotionWorkspaceSceneConflictErrorShape(error.payload)
+  );
 }
 
-function resolveFetch(
-  customFetch?: MotionWorkspaceClientFetch,
-): MotionWorkspaceClientFetch {
+function resolveFetch(customFetch?: MotionWorkspaceClientFetch): MotionWorkspaceClientFetch {
   if (customFetch) {
     return customFetch;
   }
-  if (typeof globalThis.fetch !== "function") {
-    throw new Error("global fetch가 없어 MotionWorkspaceClient를 초기화할 수 없습니다.");
+  if (typeof globalThis.fetch !== 'function') {
+    throw new Error('global fetch가 없어 MotionWorkspaceClient를 초기화할 수 없습니다.');
   }
   return globalThis.fetch.bind(globalThis) as unknown as MotionWorkspaceClientFetch;
 }
@@ -123,36 +121,42 @@ export class MotionWorkspaceClient {
   private fetchImpl?: MotionWorkspaceClientFetch;
 
   constructor(options: MotionWorkspaceClientOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/+$/, "");
+    this.baseUrl = options.baseUrl.replace(/\/+$/, '');
     this.fetchImpl = options.fetch;
   }
 
   async list(): Promise<MotionWorkspaceListResponse> {
-    return this.request<MotionWorkspaceListResponse>("/workspaces");
+    return this.request<MotionWorkspaceListResponse>('/workspaces');
   }
 
   async get(id: string): Promise<MotionWorkspaceGetResponse> {
     return this.request<MotionWorkspaceGetResponse>(`/workspaces/${encodeURIComponent(id)}`);
   }
 
-  async create(id: string, workspace: MotionWorkspaceSnapshot): Promise<MotionWorkspaceGetResponse> {
+  async create(
+    id: string,
+    workspace: MotionWorkspaceSnapshot,
+  ): Promise<MotionWorkspaceGetResponse> {
     const payload: MotionWorkspaceCreateRequest = { workspace };
     return this.request<MotionWorkspaceGetResponse>(`/workspaces/${encodeURIComponent(id)}`, {
-      method: "PUT",
+      method: 'PUT',
       body: JSON.stringify(payload),
     });
   }
 
-  async update(id: string, workspace: MotionWorkspaceSnapshot): Promise<MotionWorkspaceGetResponse> {
+  async update(
+    id: string,
+    workspace: MotionWorkspaceSnapshot,
+  ): Promise<MotionWorkspaceGetResponse> {
     const payload: MotionWorkspaceCreateRequest = { workspace };
     return this.request<MotionWorkspaceGetResponse>(`/workspaces/${encodeURIComponent(id)}`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify(payload),
     });
   }
 
   async delete(id: string): Promise<void> {
-    await this.request<void>(`/workspaces/${encodeURIComponent(id)}`, { method: "DELETE" });
+    await this.request<void>(`/workspaces/${encodeURIComponent(id)}`, { method: 'DELETE' });
     return undefined;
   }
 
@@ -162,10 +166,13 @@ export class MotionWorkspaceClient {
     revision: number,
   ): Promise<MotionWorkspaceGetResponse> {
     const payload: MotionWorkspaceApplyRequest = { revision, command };
-    return this.request<MotionWorkspaceGetResponse>(`/workspaces/${encodeURIComponent(id)}/apply-command`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    return this.request<MotionWorkspaceGetResponse>(
+      `/workspaces/${encodeURIComponent(id)}/apply-command`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    );
   }
 
   async listScenes(workspaceId: string): Promise<MotionWorkspaceSceneListResponse> {
@@ -174,10 +181,7 @@ export class MotionWorkspaceClient {
     );
   }
 
-  async getScene(
-    workspaceId: string,
-    sceneId: string,
-  ): Promise<MotionWorkspaceSceneGetResponse> {
+  async getScene(workspaceId: string, sceneId: string): Promise<MotionWorkspaceSceneGetResponse> {
     return this.request<MotionWorkspaceSceneGetResponse>(
       `/workspaces/${encodeURIComponent(workspaceId)}/scenes/${encodeURIComponent(sceneId)}`,
     );
@@ -193,7 +197,7 @@ export class MotionWorkspaceClient {
     return this.request<MotionWorkspaceSceneGetResponse>(
       `/workspaces/${encodeURIComponent(workspaceId)}/scenes/${encodeURIComponent(sceneId)}`,
       {
-        method: "PUT",
+        method: 'PUT',
         body: JSON.stringify(payload),
       },
     );
@@ -208,7 +212,7 @@ export class MotionWorkspaceClient {
     return this.request<MotionWorkspaceSceneGetResponse>(
       `/workspaces/${encodeURIComponent(workspaceId)}/scenes`,
       {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify(payload),
       },
     );
@@ -223,7 +227,7 @@ export class MotionWorkspaceClient {
     return this.request<MotionWorkspaceDeleteSceneResponse>(
       `/workspaces/${encodeURIComponent(workspaceId)}/scenes/${encodeURIComponent(sceneId)}`,
       {
-        method: "DELETE",
+        method: 'DELETE',
         body: JSON.stringify(payload),
       },
     );
@@ -245,9 +249,9 @@ export class MotionWorkspaceClient {
     init: MotionWorkspaceClientRequestInit = {},
   ): Promise<T> {
     const response = await this.getFetchImpl()(`${this.baseUrl}${path}`, {
-      method: init.method ?? "GET",
+      method: init.method ?? 'GET',
       headers: {
-        ...(init.body !== undefined ? { "content-type": "application/json" } : {}),
+        ...(init.body !== undefined ? { 'content-type': 'application/json' } : {}),
         ...init.headers,
       },
       body: init.body,
@@ -255,7 +259,7 @@ export class MotionWorkspaceClient {
     const payload = await parseResponse(response);
     if (!response.ok) {
       throw new MotionWorkspaceClientError(
-        typeof payload === "object" && payload && "message" in payload
+        typeof payload === 'object' && payload && 'message' in payload
           ? String((payload as MotionWorkspaceConflictErrorShape).message)
           : `HTTP ${response.status}`,
         response.status,

@@ -2,7 +2,7 @@
 // @def.doc infra-engine-system
 
 // core/pipeline.ts — 순차 실행 + 역순 rollback 파이프라인
-import type { DeployContext, DeployPipeline, DeployResult, Stage, StageResult } from "./types.js";
+import type { DeployContext, DeployPipeline, DeployResult, Stage, StageResult } from './types.js';
 
 export function createPipeline(stages: Stage[]): DeployPipeline {
   return {
@@ -19,14 +19,14 @@ export function createPipeline(stages: Stage[]): DeployPipeline {
           ctx = await stage.execute(ctx);
           stageResults.push({
             stage: stage.name,
-            status: "success",
+            status: 'success',
             duration: Date.now() - stageStart,
           });
           completedStages.push(stage);
         } catch (err) {
           stageResults.push({
             stage: stage.name,
-            status: "failed",
+            status: 'failed',
             duration: Date.now() - stageStart,
             error: err instanceof Error ? err.message : String(err),
           });
@@ -38,19 +38,19 @@ export function createPipeline(stages: Stage[]): DeployPipeline {
             if (completed.rollback) {
               try {
                 await completed.rollback(ctx);
-                stageResults[idx].status = "rolled_back";
+                stageResults[idx].status = 'rolled_back';
               } catch {
                 // rollback 실패는 무시 (best-effort)
               }
             } else {
-              stageResults[idx].status = "skipped";
+              stageResults[idx].status = 'skipped';
             }
           }
 
           return {
             success: false,
-            healthStatus: "failed",
-            gateVerdict: "fail",
+            healthStatus: 'failed',
+            gateVerdict: 'fail',
             duration: Date.now() - startTime,
             stageResults,
           };
@@ -60,8 +60,8 @@ export function createPipeline(stages: Stage[]): DeployPipeline {
       return {
         success: true,
         endpoint: ctx.provision?.outputs.endpoint,
-        healthStatus: ctx.verification?.healthStatus ?? "healthy",
-        gateVerdict: ctx.verification?.gateVerdict ?? "pass",
+        healthStatus: ctx.verification?.healthStatus ?? 'healthy',
+        gateVerdict: ctx.verification?.gateVerdict ?? 'pass',
         duration: Date.now() - startTime,
         stageResults,
       };

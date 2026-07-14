@@ -50,7 +50,7 @@ export interface DiscoveryClient {
 }
 
 export function createDiscoveryClient(registryUrl: string, catalogId?: string): DiscoveryClient {
-  const catalog = catalogId ?? "demo";
+  const catalog = catalogId ?? 'demo';
 
   async function fetchJson<T>(path: string): Promise<T> {
     const res = await fetch(`${registryUrl}${path}`, {
@@ -78,7 +78,7 @@ export function createDiscoveryClient(registryUrl: string, catalogId?: string): 
     },
 
     async resolveAll(env) {
-      const envParam = env ? `&env=${env}` : "";
+      const envParam = env ? `&env=${env}` : '';
       return fetchJson<Record<string, string>>(`/api/services/urls?catalog=${catalog}${envParam}`);
     },
 
@@ -90,19 +90,19 @@ export function createDiscoveryClient(registryUrl: string, catalogId?: string): 
       const svc = await this.resolve(serviceId, env);
       if (!svc) return `// 서비스 "${serviceId}"를 찾을 수 없습니다`;
 
-      const varName = serviceId.replace(/-/g, "_").toUpperCase();
+      const varName = serviceId.replace(/-/g, '_').toUpperCase();
       const fnName = serviceId
-        .split("-")
+        .split('-')
         .map((s, i) => (i === 0 ? s : s[0].toUpperCase() + s.slice(1)))
-        .join("");
+        .join('');
 
       const fallbackWarning = svc.urlFallback
         ? `// ⚠ ${env} URL이 registry에 등록되어 있지 않습니다. 기본 URL을 사용합니다.\n`
-        : "";
+        : '';
 
       return [
         `// ${svc.name} (${svc.serviceId})`,
-        `// env: ${env ?? "default"}, tier: ${svc.tier}, team: ${svc.team}`,
+        `// env: ${env ?? 'default'}, tier: ${svc.tier}, team: ${svc.team}`,
         ...(fallbackWarning ? [fallbackWarning.trimEnd()] : []),
         `export const ${varName}_URL = "${svc.url}";`,
         ``,
@@ -116,18 +116,18 @@ export function createDiscoveryClient(registryUrl: string, catalogId?: string): 
         ``,
         `// ownedPrefixes: ${JSON.stringify(svc.ownedPrefixes)}`,
         `// consumedPrefixes: ${JSON.stringify(svc.consumedPrefixes)}`,
-      ].join("\n");
+      ].join('\n');
     },
 
     async generateConnectCodeAll(serviceIds, env) {
       const codes = await Promise.all(serviceIds.map((id) => this.generateConnectCode(id, env)));
       return [
         `// 자동 생성된 서비스 연결 코드`,
-        `// env: ${env ?? "default"}`,
+        `// env: ${env ?? 'default'}`,
         `// 생성 시각: ${new Date().toISOString()}`,
         ``,
         ...codes,
-      ].join("\n\n");
+      ].join('\n\n');
     },
   };
 }

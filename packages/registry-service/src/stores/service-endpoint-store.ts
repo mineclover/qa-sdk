@@ -28,8 +28,24 @@ export interface ServiceEndpointRecord {
 
 export interface ServiceEndpointStore {
   upsert(record: ServiceEndpointRecord): Promise<void>;
-  get(catalogId: string, namespace: string, svcName: string, env: string, region: string): Promise<ServiceEndpointRecord | null>;
-  listByService(catalogId: string, namespace: string, svcName: string): Promise<ServiceEndpointRecord[]>;
+  get(
+    catalogId: string,
+    namespace: string,
+    svcName: string,
+    env: string,
+    region: string,
+  ): Promise<ServiceEndpointRecord | null>;
+  listByService(
+    catalogId: string,
+    namespace: string,
+    svcName: string,
+  ): Promise<ServiceEndpointRecord[]>;
   list(catalogId: string): Promise<ServiceEndpointRecord[]>;
-  delete(catalogId: string, namespace: string, svcName: string, env: string, region: string): Promise<void>;
+  delete(
+    catalogId: string,
+    namespace: string,
+    svcName: string,
+    env: string,
+    region: string,
+  ): Promise<void>;
 }

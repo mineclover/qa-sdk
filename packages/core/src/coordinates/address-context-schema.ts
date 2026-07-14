@@ -14,7 +14,7 @@
  * 본 스키마는 coordinate-storage.rule §1.2 (range-distance 비음수 + version 동봉) 충족.
  */
 
-import { z } from "zod";
+import { z } from 'zod';
 
 export interface ParsedPackedAddress {
   catalogId?: string;
@@ -26,16 +26,14 @@ export interface ParsedPackedAddress {
 const PACKED_KEY_RE = /^(?:([^:]+):)?([^:]+):([^:]+):(\d+)$/;
 
 export function parsePackedAddress(value: string): ParsedPackedAddress | null {
-  if (!value || typeof value !== "string") return null;
+  if (!value || typeof value !== 'string') return null;
   const m = PACKED_KEY_RE.exec(value);
   if (!m) return null;
   const [, catalogId, prefix, version, addrStr] = m;
   const address = Number(addrStr);
   if (!Number.isFinite(address) || address < 0) return null;
   if (!Number.isInteger(address)) return null;
-  return catalogId
-    ? { catalogId, prefix, version, address }
-    : { prefix, version, address };
+  return catalogId ? { catalogId, prefix, version, address } : { prefix, version, address };
 }
 
 export function serializePackedAddress(p: ParsedPackedAddress): string {
@@ -44,10 +42,9 @@ export function serializePackedAddress(p: ParsedPackedAddress): string {
     : `${p.prefix}:${p.version}:${p.address}`;
 }
 
-const PackedKeySchema = z.string().refine(
-  (v) => parsePackedAddress(v) !== null,
-  { message: "packed key 포맷 위반: 'prefix:version:address' 또는 'catalogId:prefix:version:address'" },
-);
+const PackedKeySchema = z.string().refine((v) => parsePackedAddress(v) !== null, {
+  message: "packed key 포맷 위반: 'prefix:version:address' 또는 'catalogId:prefix:version:address'",
+});
 
 /**
  * address_context 전체 계약. key는 prefix(또는 catalogId:prefix), value는 packed key.

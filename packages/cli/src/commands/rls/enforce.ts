@@ -10,12 +10,12 @@ export interface RlsCliSql {
 }
 
 export const PROTECTED_TABLES = Object.freeze([
-  "auth.resource_policies",
-  "audit.audit_entries",
-  "audit.rls_shadow_decisions",
-  "ingest.key_observations",
-  "ingest.key_observation_prefixes",
-  "ingest.event_records",
+  'auth.resource_policies',
+  'audit.audit_entries',
+  'audit.rls_shadow_decisions',
+  'ingest.key_observations',
+  'ingest.key_observation_prefixes',
+  'ingest.event_records',
 ] as const);
 
 export interface EnforcePreflight {
@@ -35,7 +35,7 @@ export async function preflightEnforce(sql: RlsCliSql): Promise<EnforcePreflight
        AND p.proname IN ('current_user_id','has_bit','resource_state','current_role_tag')
   `;
   const helperNames = new Set(helpers.map((r) => r.proname));
-  const expectedHelpers = ["current_user_id", "has_bit", "resource_state", "current_role_tag"];
+  const expectedHelpers = ['current_user_id', 'has_bit', 'resource_state', 'current_role_tag'];
   const missingHelpers = expectedHelpers.filter((n) => !helperNames.has(n));
 
   const policies = await sql<{ polname: string }>`
@@ -46,9 +46,12 @@ export async function preflightEnforce(sql: RlsCliSql): Promise<EnforcePreflight
   `;
   const polnames = new Set(policies.map((r) => r.polname));
   const expectedPolicies = [
-    "rp_select_policy","rp_admin_bypass",
-    "ae_select_policy","ae_admin_bypass",
-    "ko_select_policy","er_select_policy",
+    'rp_select_policy',
+    'rp_admin_bypass',
+    'ae_select_policy',
+    'ae_admin_bypass',
+    'ko_select_policy',
+    'er_select_policy',
   ];
   const missingPolicies = expectedPolicies.filter((p) => !polnames.has(p));
 
@@ -89,10 +92,11 @@ export async function queryEnforceStatus(sql: RlsCliSql): Promise<EnforceStatus[
 }
 
 export function formatEnforceStatus(rows: EnforceStatus[]): string {
-  const header = "table                                     | RLS enabled | FORCE";
-  const sep = "-".repeat(header.length);
-  const lines = rows.map((r) =>
-    `${r.table.padEnd(42)} | ${String(r.rowSecurityEnabled).padEnd(11)} | ${String(r.forced)}`,
+  const header = 'table                                     | RLS enabled | FORCE';
+  const sep = '-'.repeat(header.length);
+  const lines = rows.map(
+    (r) =>
+      `${r.table.padEnd(42)} | ${String(r.rowSecurityEnabled).padEnd(11)} | ${String(r.forced)}`,
   );
-  return [header, sep, ...lines].join("\n");
+  return [header, sep, ...lines].join('\n');
 }

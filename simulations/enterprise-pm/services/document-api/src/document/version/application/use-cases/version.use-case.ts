@@ -1,21 +1,18 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import {
-  VersionDocumentNotFoundException,
-  VersionEntity,
-} from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type { CreateVersionCommand } from "../commands/create-version.command.js";
-import type { VersionLoggerPort } from "../ports/version-logger.port.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { VersionDocumentNotFoundException, VersionEntity } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { CreateVersionCommand } from '../commands/create-version.command.js';
+import type { VersionLoggerPort } from '../ports/version-logger.port.js';
 import type {
   VersionOutboxPort,
   VersionCreatedEventPayload,
-} from "../ports/version-outbox.port.js";
-import type { VersionRepositoryPort } from "../ports/version-repository.port.js";
-import type { VersionTransactionPort } from "../ports/version-transaction.port.js";
-import type { DocumentQueryPort } from "../ports/document-query.port.js";
+} from '../ports/version-outbox.port.js';
+import type { VersionRepositoryPort } from '../ports/version-repository.port.js';
+import type { VersionTransactionPort } from '../ports/version-transaction.port.js';
+import type { DocumentQueryPort } from '../ports/document-query.port.js';
 
 /**
  * Version use-case.
@@ -32,25 +29,23 @@ export class VersionUseCase {
     private readonly documentQuery: DocumentQueryPort,
   ) {}
 
-  async create(
-    command: CreateVersionCommand,
-  ): Promise<{
+  async create(command: CreateVersionCommand): Promise<{
     readonly documentId: string;
     readonly versionNumber: number;
-    readonly status: "CREATED";
+    readonly status: 'CREATED';
   }> {
     const traceId = command.traceId ?? `trace-${command.documentId}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "version",
-      useCase: "VersionUseCase.create",
+      domain: 'version',
+      useCase: 'VersionUseCase.create',
       aggregateId: command.documentId,
-      commandName: "CreateVersionCommand",
+      commandName: 'CreateVersionCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "version.create.started");
+    this.logger.info({ ...ctxBase }, 'version.create.started');
 
     try {
       // Cross-domain query: document 존재 검증.
@@ -60,7 +55,7 @@ export class VersionUseCase {
       }
 
       let nextVersion = 0;
-      await this.transaction.run("version.create", async (scope) => {
+      await this.transaction.run('version.create', async (scope) => {
         const latest = await this.repository.latestVersionNumber(command.documentId);
         nextVersion = latest + 1;
         const entity = VersionEntity.create({
@@ -78,8 +73,8 @@ export class VersionUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.version.created";
-        const idempotencyEventName = "document.version.created";
+        const eventName = 'document.version.created';
+        const idempotencyEventName = 'document.version.created';
         await this.outbox.append(
           {
             aggregateId: command.documentId,
@@ -100,23 +95,23 @@ export class VersionUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.version.created",
+          eventName: 'document.version.created',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "version.create.success",
+        'version.create.success',
       );
 
-      return { documentId: command.documentId, versionNumber: nextVersion, status: "CREATED" };
+      return { documentId: command.documentId, versionNumber: nextVersion, status: 'CREATED' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "version.create.failure",
+        'version.create.failure',
       );
       throw error;
     }

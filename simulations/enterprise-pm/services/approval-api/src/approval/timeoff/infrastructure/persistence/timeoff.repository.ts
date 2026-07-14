@@ -1,16 +1,16 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { TimeOffEntity } from "../../domain/index.js";
-import type { TimeOffSnapshot } from "../../domain/index.js";
-import { TimeOffRepositoryPort } from "../../application/ports/timeoff-repository.port.js";
-import type { TimeOffTransactionScope } from "../../application/ports/timeoff-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { TimeOffEntity } from '../../domain/index.js';
+import type { TimeOffSnapshot } from '../../domain/index.js';
+import { TimeOffRepositoryPort } from '../../application/ports/timeoff-repository.port.js';
+import type { TimeOffTransactionScope } from '../../application/ports/timeoff-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface TimeOffRow {
   id: string;
@@ -18,7 +18,7 @@ interface TimeOffRow {
   startDate: string;
   endDate: string;
   reason: string;
-  status: TimeOffSnapshot["status"];
+  status: TimeOffSnapshot['status'];
   createdAt: string;
   updatedAt: string;
 }
@@ -79,7 +79,7 @@ export class PgTimeOffRepository extends TimeOffRepositoryPort {
   }
 }
 
-export type TimeOffDialect = "sqlite" | "pg";
+export type TimeOffDialect = 'sqlite' | 'pg';
 
 export interface TimeOffRepositoryFactoryOpts {
   readonly dialect: TimeOffDialect;
@@ -87,10 +87,10 @@ export interface TimeOffRepositoryFactoryOpts {
 }
 
 export function createTimeOffRepository(opts: TimeOffRepositoryFactoryOpts): TimeOffRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteTimeOffRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgTimeOffRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(`createTimeOffRepository: dialect=${(opts as { dialect: string }).dialect}`);

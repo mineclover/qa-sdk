@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "8902509e-ba60-4a80-af0d-edcd79210ef1",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "dead_letter_queue",
@@ -855,63 +853,49 @@
       "table": "verdict_reports"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "dead_letter_queue_pk",
       "table": "dead_letter_queue",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "log_id"
-      ],
+      "columns": ["log_id"],
       "nameExplicit": false,
       "name": "event_records_pk",
       "table": "event_records",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "insight_labels_pk",
       "table": "insight_labels",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "nameExplicit": false,
       "name": "qa_sessions_pk",
       "table": "qa_sessions",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "trace_id"
-      ],
+      "columns": ["trace_id"],
       "nameExplicit": false,
       "name": "traces_pk",
       "table": "traces",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "transmission_id"
-      ],
+      "columns": ["transmission_id"],
       "nameExplicit": false,
       "name": "transmissions_pk",
       "table": "transmissions",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "verdict_reports_pk",
       "table": "verdict_reports",

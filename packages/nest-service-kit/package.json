@@ -2,6 +2,9 @@
   "name": "@qa-sdk/nest-service-kit",
   "version": "0.1.0",
   "description": "NestJS modular-monolith service bootstrap + event/outbox standard kit",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -9,7 +12,6 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
@@ -19,6 +21,15 @@
   "dependencies": {
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/otel": "workspace:*"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-fastify": "^11.0.0",
+    "@nestjs/platform-ws": "^11.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
@@ -30,14 +41,5 @@
     "@nestjs/platform-ws": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/platform-fastify": "^11.0.0",
-    "@nestjs/platform-ws": "^11.0.0",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.8.2",
-    "vitest": "^1.6.1"
   }
 }

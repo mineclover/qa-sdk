@@ -15,7 +15,7 @@
  *   결제 DSL = { permission, endpoint, flow_point, order_event } × prod 바인딩
  */
 
-import type { Catalog } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -32,11 +32,11 @@ export interface DslMember {
 }
 
 export type DslMemberRole =
-  | "observation"   // 관측 (page_view, endpoint, flow_point)
-  | "permission"    // 권한 (permission, rbac)
-  | "event"         // 비즈니스 이벤트 (cart_event, order_event)
-  | "infra"         // 인프라 이벤트 (deploy_event, health_event)
-  | "context";      // 컨텍스트 제공 (service)
+  | 'observation' // 관측 (page_view, endpoint, flow_point)
+  | 'permission' // 권한 (permission, rbac)
+  | 'event' // 비즈니스 이벤트 (cart_event, order_event)
+  | 'infra' // 인프라 이벤트 (deploy_event, health_event)
+  | 'context'; // 컨텍스트 제공 (service)
 
 /** 서비스 바인딩 — SDK 부트 시 고정되는 차원 */
 export interface ServiceBinding {
@@ -54,7 +54,7 @@ export interface ServiceBinding {
  * - build:     코드가 어떻게 빌드됐는가 (CI/CD, envelope에 포함)
  * - execution: 이 데이터가 왜 존재하는가 (테스트 목적, 필터/격리 기준)
  */
-export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
+export type ExecutionMode = 'live' | 'test' | 'synthetic' | 'replay';
 
 export interface ExecutionContext {
   /** 실행 모드 — 이 데이터가 왜 존재하는가 */
@@ -114,10 +114,7 @@ export interface DslMemberInput {
  * 각 멤버 prefix의 dims를 검사하여 svcRefLabel을 자동 감지한다.
  * prefix_ref → serviceBinding.prefixId 인 차원이 있으면 그것이 svcRefLabel.
  */
-export function defineDslBundle(
-  catalog: Catalog,
-  input: DslBundleInput,
-): DslBundle {
+export function defineDslBundle(catalog: Catalog, input: DslBundleInput): DslBundle {
   // serviceBinding.prefixId가 실제로 존재하는지 검증
   const svcPrefix = catalog.prefixes[input.serviceBinding.prefixId];
   if (!svcPrefix) {
@@ -134,7 +131,7 @@ export function defineDslBundle(
   }
 
   // 각 멤버 prefix를 검증하고 svcRefLabel 자동 감지
-  const members: DslMember[] = input.members.map(m => {
+  const members: DslMember[] = input.members.map((m) => {
     const prefix = catalog.prefixes[m.prefixId];
     if (!prefix) {
       throw new Error(`Unknown prefix: ${m.prefixId}`);
@@ -143,10 +140,7 @@ export function defineDslBundle(
     // prefix_ref → service 인 차원을 찾는다
     let svcRefLabel: string | undefined;
     for (const [label, dimRef] of Object.entries(prefix.dims)) {
-      if (
-        dimRef.kind === "prefix_ref" &&
-        dimRef.prefixId === input.serviceBinding.prefixId
-      ) {
+      if (dimRef.kind === 'prefix_ref' && dimRef.prefixId === input.serviceBinding.prefixId) {
         svcRefLabel = label;
         break;
       }
@@ -197,12 +191,12 @@ export class DslBundleRegistry {
 
   /** 특정 prefix가 포함된 모든 DSL 반환 */
   findByPrefix(prefixId: string): DslBundle[] {
-    return this.list().filter(b => b.members.some(m => m.prefixId === prefixId));
+    return this.list().filter((b) => b.members.some((m) => m.prefixId === prefixId));
   }
 
   /** 특정 역할의 멤버를 가진 모든 DSL 반환 */
   findByRole(role: DslMemberRole): DslBundle[] {
-    return this.list().filter(b => b.members.some(m => m.role === role));
+    return this.list().filter((b) => b.members.some((m) => m.role === role));
   }
 
   /** 서비스 바인딩된 모든 prefix 목록 (svcRefLabel 있는 멤버) */
@@ -211,7 +205,11 @@ export class DslBundleRegistry {
     for (const bundle of this.bundles.values()) {
       for (const member of bundle.members) {
         if (member.svcRefLabel) {
-          result.push({ prefixId: member.prefixId, svcRefLabel: member.svcRefLabel, bundleId: bundle.id });
+          result.push({
+            prefixId: member.prefixId,
+            svcRefLabel: member.svcRefLabel,
+            bundleId: bundle.id,
+          });
         }
       }
     }
@@ -254,7 +252,7 @@ export interface DslVersionSkewReport {
   /** 멤버 간 prefix 버전 수 차이 (max - min) */
   readonly maxVersionSpread: number;
   /** 경고 수준 */
-  readonly severity: "ok" | "minor" | "major";
+  readonly severity: 'ok' | 'minor' | 'major';
   /** 사람이 읽을 수 있는 요약 */
   readonly summary: string;
 }
@@ -267,17 +265,14 @@ export interface DslVersionSkewReport {
  * 2. prefix 버전 수 차이가 큰 멤버 (예: permission은 4개 버전, endpoint는 1개)
  * 3. refEntries가 다른 service 집합을 참조하는 멤버
  */
-export function analyzeDslVersionSkew(
-  catalog: Catalog,
-  bundle: DslBundle,
-): DslVersionSkewReport {
+export function analyzeDslVersionSkew(catalog: Catalog, bundle: DslBundle): DslVersionSkewReport {
   const members: MemberVersionInfo[] = [];
 
   for (const member of bundle.members) {
     const prefix = catalog.prefixes[member.prefixId];
     if (!prefix) continue;
 
-    const versions = prefix.versions.map(v => v.version);
+    const versions = prefix.versions.map((v) => v.version);
     const latest = prefix.versions[prefix.versions.length - 1];
 
     members.push({
@@ -298,7 +293,7 @@ export function analyzeDslVersionSkew(
       const prefix = catalog.prefixes[m.prefixId];
       if (!prefix) continue;
       const dimRef = prefix.dims[label];
-      if (!dimRef || dimRef.kind !== "axis") continue;
+      if (!dimRef || dimRef.kind !== 'axis') continue;
       const axisId = dimRef.axisId;
 
       if (!axisVersionMap.has(axisId)) {
@@ -313,7 +308,7 @@ export function analyzeDslVersionSkew(
   for (const [axisId, prefixVersions] of axisVersionMap) {
     const uniqueVersions = new Set(prefixVersions.values());
     if (uniqueVersions.size > 1) {
-      const nums = [...uniqueVersions].map(v => parseInt(v.replace(/\D/g, ""), 10) || 0);
+      const nums = [...uniqueVersions].map((v) => parseInt(v.replace(/\D/g, ''), 10) || 0);
       axisConflicts.push({
         axisId,
         versions: Object.fromEntries(prefixVersions),
@@ -323,26 +318,25 @@ export function analyzeDslVersionSkew(
   }
 
   // prefix 버전 수 차이
-  const versionCounts = members.map(m => m.versionCount);
-  const maxVersionSpread = versionCounts.length > 0
-    ? Math.max(...versionCounts) - Math.min(...versionCounts)
-    : 0;
+  const versionCounts = members.map((m) => m.versionCount);
+  const maxVersionSpread =
+    versionCounts.length > 0 ? Math.max(...versionCounts) - Math.min(...versionCounts) : 0;
 
   // 심각도 판정
-  let severity: "ok" | "minor" | "major" = "ok";
-  if (axisConflicts.some(c => c.spread >= 3)) severity = "major";
-  else if (axisConflicts.length > 0 || maxVersionSpread >= 3) severity = "minor";
+  let severity: 'ok' | 'minor' | 'major' = 'ok';
+  if (axisConflicts.some((c) => c.spread >= 3)) severity = 'major';
+  else if (axisConflicts.length > 0 || maxVersionSpread >= 3) severity = 'minor';
 
   // 요약
   const summaryParts: string[] = [];
   if (axisConflicts.length > 0) {
     summaryParts.push(
-      `축 버전 충돌 ${axisConflicts.length}건: ${axisConflicts.map(c => `${c.axisId}(spread=${c.spread})`).join(", ")}`,
+      `축 버전 충돌 ${axisConflicts.length}건: ${axisConflicts.map((c) => `${c.axisId}(spread=${c.spread})`).join(', ')}`,
     );
   }
   if (maxVersionSpread >= 2) {
-    const newest = members.reduce((a, b) => a.versionCount > b.versionCount ? a : b);
-    const oldest = members.reduce((a, b) => a.versionCount < b.versionCount ? a : b);
+    const newest = members.reduce((a, b) => (a.versionCount > b.versionCount ? a : b));
+    const oldest = members.reduce((a, b) => (a.versionCount < b.versionCount ? a : b));
     summaryParts.push(
       `prefix 버전 격차: ${newest.prefixId}(${newest.versionCount}개) vs ${oldest.prefixId}(${oldest.versionCount}개)`,
     );
@@ -354,7 +348,7 @@ export function analyzeDslVersionSkew(
     axisConflicts,
     maxVersionSpread,
     severity,
-    summary: summaryParts.length > 0 ? summaryParts.join(". ") : "버전 스큐 없음",
+    summary: summaryParts.length > 0 ? summaryParts.join('. ') : '버전 스큐 없음',
   };
 }
 
@@ -365,7 +359,7 @@ export function analyzeAllVersionSkew(
   catalog: Catalog,
   registry: DslBundleRegistry,
 ): DslVersionSkewReport[] {
-  return registry.list().map(bundle => analyzeDslVersionSkew(catalog, bundle));
+  return registry.list().map((bundle) => analyzeDslVersionSkew(catalog, bundle));
 }
 
 export interface DslCoverageReport {
@@ -397,15 +391,15 @@ export function analyzeDslCoverage(
     for (const member of bundle.members) {
       coveredSet.add(member.prefixId);
       roleCounts[member.role] = (roleCounts[member.role] ?? 0) + 1;
-      if (!member.svcRefLabel && member.role !== "context") {
+      if (!member.svcRefLabel && member.role !== 'context') {
         unboundMembers.push(member.prefixId);
       }
     }
   }
 
   return {
-    covered: allPrefixes.filter(p => coveredSet.has(p)),
-    uncovered: allPrefixes.filter(p => !coveredSet.has(p)),
+    covered: allPrefixes.filter((p) => coveredSet.has(p)),
+    uncovered: allPrefixes.filter((p) => !coveredSet.has(p)),
     unboundMembers,
     roleCounts: roleCounts as Record<DslMemberRole, number>,
   };

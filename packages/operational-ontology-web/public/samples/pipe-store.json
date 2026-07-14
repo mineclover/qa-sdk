@@ -14,9 +14,7 @@
           "valid": false,
           "corridorCount": 1,
           "maxCheckpointLatticeDepth": 0,
-          "missingCorridorKinds": [
-            "event_record_observed"
-          ],
+          "missingCorridorKinds": ["event_record_observed"],
           "missingJunctionTemplateKinds": [],
           "missingCheckpointTemplateKinds": [],
           "missingCheckpointLattices": true,
@@ -34,11 +32,7 @@
             "templateKind": "pipe_graph",
             "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
             "entryNodeId": "collect-order",
-            "nodeIds": [
-              "collect-order",
-              "validate-order",
-              "persist-order"
-            ],
+            "nodeIds": ["collect-order", "validate-order", "persist-order"],
             "schemaIds": [],
             "endpoints": [
               {
@@ -171,9 +165,7 @@
                   "conditionId": "collect-order:condition:0",
                   "expression": "order.valid == true"
                 },
-                "nextNodeIds": [
-                  "validate-order"
-                ],
+                "nextNodeIds": ["validate-order"],
                 "priority": 0
               }
             ]
@@ -198,9 +190,7 @@
             "medium": "direct",
             "direction": "forward",
             "relationType": "pipe_connection:conditional",
-            "contractRefs": [
-              "order.valid == true"
-            ]
+            "contractRefs": ["order.valid == true"]
           },
           {
             "transmissionId": "transmission:production_to_consumption:facet:validate-order:consumption->facet:persist-order:consumption",
@@ -224,9 +214,7 @@
         "observedNodeKeys": [],
         "observedEdgeKeys": []
       },
-      "builtFrom": [
-        "pipe-web"
-      ],
+      "builtFrom": ["pipe-web"],
       "builtAt": "2026-04-11T22:27:21.369Z"
     },
     {
@@ -238,11 +226,7 @@
         "templateKind": "pipe_graph",
         "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
         "entryNodeId": "collect-order",
-        "nodeIds": [
-          "collect-order",
-          "validate-order",
-          "persist-order"
-        ],
+        "nodeIds": ["collect-order", "validate-order", "persist-order"],
         "schemaIds": [],
         "endpoints": [
           {
@@ -307,9 +291,7 @@
           "disallowedLinkKinds": []
         }
       },
-      "builtFrom": [
-        "snapshot:web-pipe"
-      ],
+      "builtFrom": ["snapshot:web-pipe"],
       "builtAt": "2026-04-11T22:27:21.369Z"
     },
     {
@@ -359,9 +341,7 @@
         ],
         "version": "v1"
       },
-      "builtFrom": [
-        "snapshot:web-pipe"
-      ],
+      "builtFrom": ["snapshot:web-pipe"],
       "builtAt": "2026-04-11T22:27:21.369Z"
     },
     {
@@ -387,16 +367,12 @@
               "conditionId": "collect-order:condition:0",
               "expression": "order.valid == true"
             },
-            "nextNodeIds": [
-              "validate-order"
-            ],
+            "nextNodeIds": ["validate-order"],
             "priority": 0
           }
         ]
       },
-      "builtFrom": [
-        "snapshot:web-pipe"
-      ],
+      "builtFrom": ["snapshot:web-pipe"],
       "builtAt": "2026-04-11T22:27:21.369Z"
     }
   ]

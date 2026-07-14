@@ -1,8 +1,8 @@
 // @def.boundary sim-domain-slice-kit
 // @def.doc domain-slice-architecture
 
-import { randomUUID } from "node:crypto";
-import type { TransactionPort, TransactionScope } from "../transaction.port.js";
+import { randomUUID } from 'node:crypto';
+import type { TransactionPort, TransactionScope } from '../transaction.port.js';
 
 /**
  * drizzle 의 transaction 메서드만 의존하는 최소 구조 타입.

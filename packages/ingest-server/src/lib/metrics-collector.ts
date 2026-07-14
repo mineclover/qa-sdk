@@ -33,8 +33,8 @@ export function createMetricsCollector(): MetricsCollector {
 /** labels → Prometheus label string: `{key="val",key2="val2"}` or `` */
 export function serializeLabels(labels: Record<string, string>): string {
   const entries = Object.entries(labels);
-  if (entries.length === 0) return "";
-  return `{${entries.map(([k, v]) => `${k}="${v}"`).join(",")}}`;
+  if (entries.length === 0) return '';
+  return `{${entries.map(([k, v]) => `${k}="${v}"`).join(',')}}`;
 }
 
 /** counter Map → Prometheus text format lines */

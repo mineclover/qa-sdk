@@ -83,14 +83,14 @@ export interface AddressStats {
  * 실패 시 null 반환 (fail-open)
  */
 export function parseAddressValue(raw: string): ParsedAddress | null {
-  const parts = raw.split(":");
+  const parts = raw.split(':');
   if (parts.length < 3) return null;
 
   const address = Number(parts[parts.length - 1]);
   if (!Number.isFinite(address) || address < 0) return null;
 
   const version = parts[parts.length - 2];
-  const prefixId = parts.slice(0, parts.length - 2).join(":");
+  const prefixId = parts.slice(0, parts.length - 2).join(':');
 
   if (!prefixId || !version) return null;
 
@@ -102,9 +102,7 @@ export function parseAddressValue(raw: string): ParsedAddress | null {
  * { "tracking": "tracking:v2:1200", "content": "content:v1:42" }
  * → ParsedAddress[]
  */
-export function parseAddressContext(
-  ctx: Record<string, string>,
-): ParsedAddress[] {
+export function parseAddressContext(ctx: Record<string, string>): ParsedAddress[] {
   const results: ParsedAddress[] = [];
   for (const value of Object.values(ctx)) {
     const parsed = parseAddressValue(value);

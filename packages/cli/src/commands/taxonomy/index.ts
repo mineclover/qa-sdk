@@ -1,30 +1,30 @@
-import { validateCmd } from "./validate.js";
-import { showCmd } from "./show.js";
-import { codegenCmd } from "./codegen.js";
-import { diffCmd } from "./diff.js";
-import { doctorCmd } from "./doctor.js";
-import { gitDiffCmd } from "./git-diff.js";
-import { migrationCmd } from "./migration.js";
-import { printHelp } from "./help.js";
+import { validateCmd } from './validate.js';
+import { showCmd } from './show.js';
+import { codegenCmd } from './codegen.js';
+import { diffCmd } from './diff.js';
+import { doctorCmd } from './doctor.js';
+import { gitDiffCmd } from './git-diff.js';
+import { migrationCmd } from './migration.js';
+import { printHelp } from './help.js';
 
 export async function cliTaxonomy(rest: string[]): Promise<void> {
   const [sub, ...args] = rest;
   switch (sub) {
-    case "validate":
+    case 'validate':
       return validateCmd(args);
-    case "show":
+    case 'show':
       return showCmd(args);
-    case "codegen":
+    case 'codegen':
       return codegenCmd(args);
-    case "diff":
+    case 'diff':
       return diffCmd(args);
-    case "git-diff":
+    case 'git-diff':
       return gitDiffCmd(args);
-    case "migration":
+    case 'migration':
       return migrationCmd(args);
-    case "doctor":
+    case 'doctor':
       return doctorCmd(args);
-    case "help":
+    case 'help':
     case undefined:
       printHelp();
       return;

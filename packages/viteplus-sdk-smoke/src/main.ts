@@ -19,7 +19,11 @@ function formatPayload(value: unknown): string {
   return escapeHtml(JSON.stringify(value, null, 2));
 }
 
-function formatRecordSummary(record: { event_key?: string; metric_name?: string; payload?: unknown }): string {
+function formatRecordSummary(record: {
+  event_key?: string;
+  metric_name?: string;
+  payload?: unknown;
+}): string {
   const key = record.event_key ?? record.metric_name ?? 'unknown';
   const payload =
     record.payload && typeof record.payload === 'object'
@@ -31,8 +35,12 @@ function formatRecordSummary(record: { event_key?: string; metric_name?: string;
 async function render(): Promise<void> {
   const snapshot = await runSdkSmoke(import.meta.env.MODE);
   const firstRecord = snapshot.firstEnvelope.records[0];
-  const eventCount = snapshot.firstEnvelope.records.filter((record) => 'event_key' in record).length;
-  const metricCount = snapshot.firstEnvelope.records.filter((record) => 'metric_name' in record).length;
+  const eventCount = snapshot.firstEnvelope.records.filter(
+    (record) => 'event_key' in record,
+  ).length;
+  const metricCount = snapshot.firstEnvelope.records.filter(
+    (record) => 'metric_name' in record,
+  ).length;
   const recordSummaries = snapshot.firstEnvelope.records
     .map(
       (record, index) => `
@@ -193,15 +201,13 @@ async function render(): Promise<void> {
     window.location.reload();
   });
 
-  const exampleRoot =
-    appRoot.querySelector<HTMLElement>('#canonical-review-example');
+  const exampleRoot = appRoot.querySelector<HTMLElement>('#canonical-review-example');
   if (!exampleRoot) {
     throw new Error('canonical example mount root를 찾지 못했습니다.');
   }
   await mountCanonicalReviewExample(exampleRoot, import.meta.env.MODE);
 
-  const incidentRoot =
-    appRoot.querySelector<HTMLElement>('#incident-escalation-example');
+  const incidentRoot = appRoot.querySelector<HTMLElement>('#incident-escalation-example');
   if (!incidentRoot) {
     throw new Error('incident escalation mount root를 찾지 못했습니다.');
   }

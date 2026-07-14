@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-engine-system
 // @def.doc qa-sdk-engine-system
 
-import type { EventRecord, RuntimeEdge } from "@qa-sdk/core";
+import type { EventRecord, RuntimeEdge } from '@qa-sdk/core';
 
 /**
  * Step 4: 시간 순서 기반 temporal edge를 생성한다.
@@ -29,7 +29,7 @@ export function buildTemporalEdges(sortedRecords: EventRecord[]): RuntimeEdge[] 
       edges.push({
         source: group[i].log_id,
         target: group[i + 1].log_id,
-        type: "temporal",
+        type: 'temporal',
       });
     }
   }
@@ -49,7 +49,7 @@ export function buildGlobalTemporalEdges(sortedRecords: EventRecord[]): RuntimeE
     edges.push({
       source: sortedRecords[i].log_id,
       target: sortedRecords[i + 1].log_id,
-      type: "temporal",
+      type: 'temporal',
     });
   }
 

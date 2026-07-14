@@ -13,8 +13,8 @@
  *   --registry (원격): Registry API POST /workspace/simulate 호출
  */
 
-import { latestPrefixVersion, type Catalog } from "@qa-sdk/core";
-import { loadCatalog } from "config-loader";
+import { latestPrefixVersion, type Catalog } from '@qa-sdk/core';
+import { loadCatalog } from 'config-loader';
 
 const MAX_SAFE = Number.MAX_SAFE_INTEGER;
 
@@ -71,7 +71,7 @@ interface CompositeImpact {
 // ── Main ─────────────────────────────────────────────
 
 function isRegistryOptions(opts: DryRunOptions): opts is DryRunRegistryOptions {
-  return "registry" in opts && !!opts.registry;
+  return 'registry' in opts && !!opts.registry;
 }
 
 export async function dryRun(opts: DryRunOptions): Promise<void> {
@@ -79,8 +79,8 @@ export async function dryRun(opts: DryRunOptions): Promise<void> {
     return dryRunRemote(opts.registry, opts.changes);
   }
 
-  const catalog = opts.loadedCatalog ?? await loadCatalog(opts.catalog) as Catalog | undefined;
-  if (!catalog) throw new Error("--catalog <경로> 필수 (또는 자동 탐색 가능한 위치에 배치)");
+  const catalog = opts.loadedCatalog ?? ((await loadCatalog(opts.catalog)) as Catalog | undefined);
+  if (!catalog) throw new Error('--catalog <경로> 필수 (또는 자동 탐색 가능한 위치에 배치)');
   return dryRunWithCatalog(catalog, opts.changes);
 }
 
@@ -89,7 +89,7 @@ export async function dryRun(opts: DryRunOptions): Promise<void> {
 function catalogToSimData(catalog: Catalog): { axes: AxisData[]; composites: CompositeData[] } {
   const axes: AxisData[] = Object.entries(catalog.axes).map(([id, axis]) => {
     const versionKeys = Object.keys(axis.versions);
-    const latestVer = versionKeys[versionKeys.length - 1] ?? "v1";
+    const latestVer = versionKeys[versionKeys.length - 1] ?? 'v1';
     const snap = axis.versions[latestVer];
     return {
       id,
@@ -103,8 +103,8 @@ function catalogToSimData(catalog: Catalog): { axes: AxisData[]; composites: Com
     const version = latestPrefixVersion(catalog, prefixId);
     // prefix.dims에서 axis kind만 추출
     const axisDims = Object.entries(prefix.dims)
-      .filter(([, ref]) => ref.kind === "axis")
-      .map(([, ref]) => (ref as { kind: "axis"; axisId: string }).axisId);
+      .filter(([, ref]) => ref.kind === 'axis')
+      .map(([, ref]) => (ref as { kind: 'axis'; axisId: string }).axisId);
     if (axisDims.length === 0) continue;
     composites.push({
       id: `${prefixId}:${version}`,
@@ -117,7 +117,7 @@ function catalogToSimData(catalog: Catalog): { axes: AxisData[]; composites: Com
 
 async function dryRunWithCatalog(catalog: Catalog, changes: ChangeScenario): Promise<void> {
   console.log(`Dry-run: catalog "${catalog.id}"`);
-  console.log(`Changes: ${Object.keys(changes).join(", ")}\n`);
+  console.log(`Changes: ${Object.keys(changes).join(', ')}\n`);
 
   const { axes, composites } = catalogToSimData(catalog);
   simulateAndPrint(axes, composites, changes);
@@ -125,8 +125,12 @@ async function dryRunWithCatalog(catalog: Catalog, changes: ChangeScenario): Pro
 
 // ── 시뮬레이션 공통 로직 ───────────────────────────
 
-function simulateAndPrint(axes: AxisData[], composites: CompositeData[], changes: ChangeScenario): void {
-  const axisMap = new Map(axes.map(a => [a.id, a]));
+function simulateAndPrint(
+  axes: AxisData[],
+  composites: CompositeData[],
+  changes: ChangeScenario,
+): void {
+  const axisMap = new Map(axes.map((a) => [a.id, a]));
 
   // 변경 적용 후의 축 상태 계산
   const newAxes = new Map<string, { entries: string[]; capacity: number }>();
@@ -141,7 +145,7 @@ function simulateAndPrint(axes: AxisData[], composites: CompositeData[], changes
     if (change.addEntries) entries.push(...change.addEntries);
     if (change.removeEntries) {
       const toRemove = change.removeEntries;
-      entries = entries.filter(e => !toRemove.includes(e));
+      entries = entries.filter((e) => !toRemove.includes(e));
     }
     const capacity = change.capacity ?? axis.capacity;
 
@@ -150,18 +154,20 @@ function simulateAndPrint(axes: AxisData[], composites: CompositeData[], changes
     }
 
     newAxes.set(axis.id, { entries, capacity });
-    console.log(`  ${axis.id}: ${axis.entries.length} entries (cap ${axis.capacity}) → ${entries.length} entries (cap ${capacity})`);
+    console.log(
+      `  ${axis.id}: ${axis.entries.length} entries (cap ${axis.capacity}) → ${entries.length} entries (cap ${capacity})`,
+    );
   }
 
   // 각 composite의 영향 계산
   const impacts: CompositeImpact[] = [];
 
   for (const comp of composites) {
-    const currentShape = comp.dims.map(d => axisMap.get(d)?.capacity ?? 0);
+    const currentShape = comp.dims.map((d) => axisMap.get(d)?.capacity ?? 0);
     const currentStride = calcStrides(currentShape);
     const currentProduct = currentShape.reduce((a, b) => a * b, 1);
 
-    const newShape = comp.dims.map(d => newAxes.get(d)?.capacity ?? 0);
+    const newShape = comp.dims.map((d) => newAxes.get(d)?.capacity ?? 0);
     const newStride = calcStrides(newShape);
     const newProduct = newShape.reduce((a, b) => a * b, 1);
 
@@ -183,8 +189,8 @@ function simulateAndPrint(axes: AxisData[], composites: CompositeData[], changes
   console.log(`\n── Impact ──\n`);
 
   for (const imp of impacts) {
-    const status = imp.overflow ? "[E]" : imp.strideChanged ? "[W]" : "[I]";
-    console.log(`${status} ${imp.id} (${imp.dims.join(" × ")})`);
+    const status = imp.overflow ? '[E]' : imp.strideChanged ? '[W]' : '[I]';
+    console.log(`${status} ${imp.id} (${imp.dims.join(' × ')})`);
     console.log(`    shape:   [${imp.currentShape}] → [${imp.newShape}]`);
     console.log(`    stride:  [${imp.currentStride}] → [${imp.newStride}]`);
     console.log(`    product: ${imp.currentProduct} → ${imp.newProduct}`);
@@ -200,9 +206,9 @@ function simulateAndPrint(axes: AxisData[], composites: CompositeData[], changes
   }
 
   // 요약
-  const errors = impacts.filter(i => i.overflow).length;
-  const warnings = impacts.filter(i => i.strideChanged && !i.overflow).length;
-  const safe = impacts.filter(i => !i.strideChanged && !i.overflow).length;
+  const errors = impacts.filter((i) => i.overflow).length;
+  const warnings = impacts.filter((i) => i.strideChanged && !i.overflow).length;
+  const safe = impacts.filter((i) => !i.strideChanged && !i.overflow).length;
 
   console.log(`── Summary ──`);
   console.log(`  composites: ${impacts.length}`);
@@ -222,10 +228,10 @@ async function dryRunRemote(registry: string, changes: ChangeScenario): Promise<
     }
   }
 
-  const url = new URL("/workspace/simulate", registry);
+  const url = new URL('/workspace/simulate', registry);
   const res = await fetch(url.toString(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ changes: apiChanges }),
   });
 
@@ -234,7 +240,7 @@ async function dryRunRemote(registry: string, changes: ChangeScenario): Promise<
     throw new Error(`Registry 오류 (${res.status}): ${errBody}`);
   }
 
-  const result = await res.json() as {
+  const result = (await res.json()) as {
     impact: Array<{
       prefix: string;
       owner: string;
@@ -255,7 +261,7 @@ async function dryRunRemote(registry: string, changes: ChangeScenario): Promise<
   console.log(`Dry-run (remote): ${registry}\n`);
 
   for (const imp of result.impact) {
-    const status = imp.migrationRequired ? "[W]" : "[I]";
+    const status = imp.migrationRequired ? '[W]' : '[I]';
     console.log(`${status} ${imp.prefix} (${imp.owner})`);
     console.log(`    shape:   [${imp.currentShape}] → [${imp.newShape}]`);
     console.log(`    stride:  [${imp.currentStride}] → [${imp.newStride}]`);
@@ -266,7 +272,7 @@ async function dryRunRemote(registry: string, changes: ChangeScenario): Promise<
   if (result.diagnostics.length > 0) {
     console.log(`── Diagnostics ──\n`);
     for (const d of result.diagnostics) {
-      const icon = d.level === "error" ? "E" : d.level === "warn" ? "W" : "I";
+      const icon = d.level === 'error' ? 'E' : d.level === 'warn' ? 'W' : 'I';
       console.log(`  [${icon}] ${d.prefix}: ${d.message}`);
     }
     console.log();
@@ -274,7 +280,7 @@ async function dryRunRemote(registry: string, changes: ChangeScenario): Promise<
 
   console.log(`ready: ${result.ready}`);
   if (result.releaseOrder.length > 0) {
-    console.log(`release order: ${result.releaseOrder.join(" → ")}`);
+    console.log(`release order: ${result.releaseOrder.join(' → ')}`);
   }
 }
 

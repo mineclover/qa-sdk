@@ -8,7 +8,7 @@
  * 렌더러가 이 상태를 읽어 시각 효과를 적용한다.
  */
 
-import type { CellState, ActivationEvent } from "../core/types.js";
+import type { CellState, ActivationEvent } from '../core/types.js';
 
 // ═══════════════════════════════════════════════════
 //  Cell States
@@ -26,7 +26,10 @@ export class CellStateManager {
 
   getOrCreate(key: string): CellState {
     let s = this.states.get(key);
-    if (!s) { s = { glow: 0, hits: 0 }; this.states.set(key, s); }
+    if (!s) {
+      s = { glow: 0, hits: 0 };
+      this.states.set(key, s);
+    }
     return s;
   }
 
@@ -52,10 +55,18 @@ export class CellStateManager {
     }
   }
 
-  isActive(key: string): boolean { return this._activeSet.has(key); }
-  get activeSet(): ReadonlySet<string> { return this._activeSet; }
-  get layerHits(): readonly number[] { return this._layerHits; }
-  get totalHits(): number { return this._totalHits; }
+  isActive(key: string): boolean {
+    return this._activeSet.has(key);
+  }
+  get activeSet(): ReadonlySet<string> {
+    return this._activeSet;
+  }
+  get layerHits(): readonly number[] {
+    return this._layerHits;
+  }
+  get totalHits(): number {
+    return this._totalHits;
+  }
 
   reset(): void {
     this.states.clear();
@@ -70,8 +81,12 @@ export class CellStateManager {
 // ═══════════════════════════════════════════════════
 
 export interface BeamState {
-  fromX: number; fromY: number; fromZ: number;
-  toX: number; toY: number; toZ: number;
+  fromX: number;
+  fromY: number;
+  fromZ: number;
+  toX: number;
+  toY: number;
+  toZ: number;
   color: number;
   life: number;
 }
@@ -82,16 +97,32 @@ export class BeamPool {
 
   constructor(maxBeams: number) {
     this.beams = Array.from({ length: maxBeams }, () => ({
-      fromX: 0, fromY: 0, fromZ: 0, toX: 0, toY: 0, toZ: 0, color: 0xffffff, life: 0,
+      fromX: 0,
+      fromY: 0,
+      fromZ: 0,
+      toX: 0,
+      toY: 0,
+      toZ: 0,
+      color: 0xffffff,
+      life: 0,
     }));
   }
 
-  spawn(from: { x: number; y: number; z: number }, to: { x: number; y: number; z: number }, color: number): void {
+  spawn(
+    from: { x: number; y: number; z: number },
+    to: { x: number; y: number; z: number },
+    color: number,
+  ): void {
     const b = this.beams[this.index % this.beams.length];
     this.index++;
-    b.fromX = from.x; b.fromY = from.y; b.fromZ = from.z;
-    b.toX = to.x; b.toY = to.y; b.toZ = to.z;
-    b.color = color; b.life = 1;
+    b.fromX = from.x;
+    b.fromY = from.y;
+    b.fromZ = from.z;
+    b.toX = to.x;
+    b.toY = to.y;
+    b.toZ = to.z;
+    b.color = color;
+    b.life = 1;
   }
 
   decay(dt: number, decayRate: number = 0.5): void {
@@ -101,7 +132,7 @@ export class BeamPool {
   }
 
   getActive(): readonly BeamState[] {
-    return this.beams.filter(b => b.life > 0);
+    return this.beams.filter((b) => b.life > 0);
   }
 
   getAll(): readonly BeamState[] {
@@ -132,7 +163,10 @@ export class ActivationProcessor {
   /**
    * 셀 키 목록을 활성화하고, 크로스 레이어 빔을 생성한다.
    */
-  fire(keys: readonly string[], cellInfoLookup: (key: string) => CellInfo | undefined): ActivationEvent {
+  fire(
+    keys: readonly string[],
+    cellInfoLookup: (key: string) => CellInfo | undefined,
+  ): ActivationEvent {
     this.cells.deactivateAll();
     const activated: CellInfo[] = [];
 
@@ -158,7 +192,7 @@ export class ActivationProcessor {
 
     return {
       keys,
-      source: "manual",
+      source: 'manual',
       timestamp: new Date().toISOString(),
     };
   }

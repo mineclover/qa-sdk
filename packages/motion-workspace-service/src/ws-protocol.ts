@@ -15,13 +15,10 @@ export interface WorkspacePresenceInfo {
   readonly cursor?: WorkspacePresenceCursor;
 }
 
-export type WorkspaceSceneUnlockReason =
-  | "explicit"
-  | "disconnect"
-  | "timeout";
+export type WorkspaceSceneUnlockReason = 'explicit' | 'disconnect' | 'timeout';
 
 export interface WorkspaceWsConnectedMessage {
-  readonly type: "connected";
+  readonly type: 'connected';
   readonly workspaceId: string;
   readonly userId: string;
   readonly sceneLocks: readonly WorkspaceSceneLockInfo[];
@@ -29,46 +26,46 @@ export interface WorkspaceWsConnectedMessage {
 }
 
 export interface WorkspaceWsBroadcastMessage {
-  readonly type: "workspace-message";
+  readonly type: 'workspace-message';
   readonly workspaceId: string;
   readonly userId: string;
   readonly payload: unknown;
 }
 
 export interface WorkspaceSceneLockMessage extends WorkspaceSceneLockInfo {
-  readonly type: "scene:lock";
+  readonly type: 'scene:lock';
   readonly workspaceId: string;
   readonly holders: readonly string[];
   readonly warning: boolean;
 }
 
 export interface WorkspaceSceneUnlockMessage extends WorkspaceSceneLockInfo {
-  readonly type: "scene:unlock";
+  readonly type: 'scene:unlock';
   readonly workspaceId: string;
   readonly holders: readonly string[];
   readonly reason: WorkspaceSceneUnlockReason;
 }
 
 export interface WorkspacePresenceMessage extends WorkspacePresenceInfo {
-  readonly type: "presence";
+  readonly type: 'presence';
   readonly workspaceId: string;
 }
 
 export interface WorkspaceSceneUpdatedMessage {
-  readonly type: "scene:updated";
+  readonly type: 'scene:updated';
   readonly workspaceId: string;
   readonly sceneId: string;
   readonly revision: number;
 }
 
 export interface WorkspaceResourceUpdatedMessage {
-  readonly type: "resource:updated";
+  readonly type: 'resource:updated';
   readonly workspaceId: string;
   readonly revision: number;
 }
 
 export interface WorkspaceWsErrorMessage {
-  readonly type: "error";
+  readonly type: 'error';
   readonly code: string;
   readonly message: string;
 }
@@ -84,37 +81,39 @@ export type WorkspaceWsServerMessage =
   | WorkspaceWsErrorMessage;
 
 export type WorkspaceWsSceneControlMessage =
-  | Pick<WorkspaceSceneLockMessage, "type" | "sceneId" | "userId">
-  | Pick<WorkspaceSceneUnlockMessage, "type" | "sceneId" | "userId">;
+  | Pick<WorkspaceSceneLockMessage, 'type' | 'sceneId' | 'userId'>
+  | Pick<WorkspaceSceneUnlockMessage, 'type' | 'sceneId' | 'userId'>;
 
-export type WorkspaceWsPresenceInputMessage =
-  Pick<WorkspacePresenceMessage, "type" | "userId" | "activeSceneId" | "cursor">;
+export type WorkspaceWsPresenceInputMessage = Pick<
+  WorkspacePresenceMessage,
+  'type' | 'userId' | 'activeSceneId' | 'cursor'
+>;
 
 export type ParseWorkspaceWsSceneControlMessageResult =
   | WorkspaceWsSceneControlMessage
-  | "invalid"
+  | 'invalid'
   | null;
 
 export type ParseWorkspaceWsPresenceMessageResult =
   | WorkspaceWsPresenceInputMessage
-  | "invalid"
+  | 'invalid'
   | null;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  return typeof value === 'object' && value !== null;
 }
 
 function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
-function parseOptionalNonEmptyString(value: unknown): string | undefined | "invalid" {
+function parseOptionalNonEmptyString(value: unknown): string | undefined | 'invalid' {
   if (value === undefined) {
     return undefined;
   }
 
-  if (typeof value !== "string" || value.trim().length === 0) {
-    return "invalid";
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return 'invalid';
   }
 
   return value.trim();
@@ -127,20 +126,20 @@ export function parseWorkspaceWsSceneControlMessage(
     return null;
   }
 
-  const type = value["type"];
-  if (type !== "scene:lock" && type !== "scene:unlock") {
+  const type = value['type'];
+  if (type !== 'scene:lock' && type !== 'scene:unlock') {
     return null;
   }
 
-  const sceneId = value["sceneId"];
-  const userId = value["userId"];
+  const sceneId = value['sceneId'];
+  const userId = value['userId'];
   if (
-    typeof sceneId !== "string" ||
+    typeof sceneId !== 'string' ||
     sceneId.trim().length === 0 ||
-    typeof userId !== "string" ||
+    typeof userId !== 'string' ||
     userId.trim().length === 0
   ) {
-    return "invalid";
+    return 'invalid';
   }
 
   return {
@@ -157,37 +156,37 @@ export function parseWorkspaceWsPresenceMessage(
     return null;
   }
 
-  if (value["type"] !== "presence") {
+  if (value['type'] !== 'presence') {
     return null;
   }
 
-  const userId = value["userId"];
-  if (typeof userId !== "string" || userId.trim().length === 0) {
-    return "invalid";
+  const userId = value['userId'];
+  if (typeof userId !== 'string' || userId.trim().length === 0) {
+    return 'invalid';
   }
 
-  const activeSceneId = parseOptionalNonEmptyString(value["activeSceneId"]);
-  if (activeSceneId === "invalid") {
-    return "invalid";
+  const activeSceneId = parseOptionalNonEmptyString(value['activeSceneId']);
+  if (activeSceneId === 'invalid') {
+    return 'invalid';
   }
 
   let cursor: WorkspacePresenceCursor | undefined;
-  if (value["cursor"] !== undefined) {
-    if (!isRecord(value["cursor"])) {
-      return "invalid";
+  if (value['cursor'] !== undefined) {
+    if (!isRecord(value['cursor'])) {
+      return 'invalid';
     }
 
-    const x = value["cursor"]["x"];
-    const y = value["cursor"]["y"];
+    const x = value['cursor']['x'];
+    const y = value['cursor']['y'];
     if (!isFiniteNumber(x) || !isFiniteNumber(y)) {
-      return "invalid";
+      return 'invalid';
     }
 
     cursor = { x, y };
   }
 
   return {
-    type: "presence",
+    type: 'presence',
     userId: userId.trim(),
     ...(activeSceneId ? { activeSceneId } : {}),
     ...(cursor ? { cursor } : {}),

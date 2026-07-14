@@ -11,14 +11,14 @@
  * report:  커버리지 매트릭스
  */
 
-import { join, resolve, dirname } from "node:path";
-import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from "node:fs";
-import { SqliteTestScenarioStore } from "test-scenario-store";
-import type { TestPhaseLabel } from "test-scenario-store";
-import type { TestKind, TestScope } from "test-types";
-import { TEST_KINDS, TEST_SCOPES, TEST_PHASES } from "test-types";
-import { getQaSdkDir } from "../lib/qa-dir.js";
-import { extractFrontmatter, parseYaml } from "definition-catalog";
+import { join, resolve, dirname } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from 'node:fs';
+import { SqliteTestScenarioStore } from 'test-scenario-store';
+import type { TestPhaseLabel } from 'test-scenario-store';
+import type { TestKind, TestScope } from 'test-types';
+import { TEST_KINDS, TEST_SCOPES, TEST_PHASES } from 'test-types';
+import { getQaSdkDir } from '../lib/qa-dir.js';
+import { extractFrontmatter, parseYaml } from 'definition-catalog';
 
 const VALID_KINDS = new Set<string>(TEST_KINDS);
 const VALID_SCOPES = new Set<string>(TEST_SCOPES);
@@ -43,25 +43,25 @@ export function parseTestsDeclaration(
 ): ParsedTestDeclaration[] {
   const results: ParsedTestDeclaration[] = [];
   for (const item of raw) {
-    if (typeof item !== "object" || item === null) continue;
+    if (typeof item !== 'object' || item === null) continue;
     const obj = item as Record<string, unknown>;
-    const kind = obj["kind"] as string | undefined;
+    const kind = obj['kind'] as string | undefined;
     if (!kind || !VALID_KINDS.has(kind)) continue;
 
-    const scope = (obj["scope"] as string | undefined) ?? "single";
-    const rawPhase = obj["phase"] as string | undefined;
+    const scope = (obj['scope'] as string | undefined) ?? 'single';
+    const rawPhase = obj['phase'] as string | undefined;
     const phase = rawPhase && VALID_PHASES.has(rawPhase) ? (rawPhase as TestPhaseLabel) : null;
-    const intent = (obj["intent"] as string | undefined) ?? "";
-    const primarySvc = (obj["module"] as string | undefined) ?? "";
-    const participants = Array.isArray(obj["participants"])
-      ? (obj["participants"] as string[])
+    const intent = (obj['intent'] as string | undefined) ?? '';
+    const primarySvc = (obj['module'] as string | undefined) ?? '';
+    const participants = Array.isArray(obj['participants'])
+      ? (obj['participants'] as string[])
       : [];
 
     results.push({
       aCoord: `${specAddress}/${kind}`,
       specAddress,
       kind: kind as TestKind,
-      scope: VALID_SCOPES.has(scope) ? (scope as TestScope) : "single",
+      scope: VALID_SCOPES.has(scope) ? (scope as TestScope) : 'single',
       phase,
       intent,
       primarySvc,
@@ -77,7 +77,7 @@ function extractFrontmatterTests(content: string): unknown[] {
   const result = extractFrontmatter(content);
   if (!result) return [];
   const parsed = parseYaml(result.yaml) as Record<string, unknown>;
-  const tests = parsed["tests"];
+  const tests = parsed['tests'];
   if (!Array.isArray(tests)) return [];
   return tests;
 }
@@ -86,10 +86,10 @@ function extractSpecAddress(content: string): string | null {
   const result = extractFrontmatter(content);
   if (!result) return null;
   const parsed = parseYaml(result.yaml) as Record<string, unknown>;
-  const address = parsed["address"];
+  const address = parsed['address'];
   if (address !== undefined) return `def:${address}`;
-  const id = parsed["id"];
-  if (typeof id === "string") return `def:${id.trim()}`;
+  const id = parsed['id'];
+  if (typeof id === 'string') return `def:${id.trim()}`;
   return null;
 }
 
@@ -97,8 +97,8 @@ function extractSpecAddress(content: string): string | null {
 
 export function testScan(opts: { dir?: string; db?: string }): void {
   const root = opts.dir ?? process.cwd();
-  const docsDir = join(root, "docs");
-  const dbPath = opts.db ?? join(getQaSdkDir(), "test-scenarios.sqlite");
+  const docsDir = join(root, 'docs');
+  const dbPath = opts.db ?? join(getQaSdkDir(), 'test-scenarios.sqlite');
 
   if (!existsSync(docsDir)) {
     console.error(`docs/ 디렉토리 없음: ${docsDir}`);
@@ -116,11 +116,11 @@ export function testScan(opts: { dir?: string; db?: string }): void {
         walk(fullPath);
         continue;
       }
-      if (!entry.name.endsWith(".spec.md")) continue;
+      if (!entry.name.endsWith('.spec.md')) continue;
 
       let content: string;
       try {
-        content = readFileSync(fullPath, "utf-8");
+        content = readFileSync(fullPath, 'utf-8');
       } catch {
         continue;
       }
@@ -145,15 +145,15 @@ export function testScan(opts: { dir?: string; db?: string }): void {
 // ── testAssign ───────────────────────────────────────────
 
 export function testAssign(opts: { aCoord?: string; force?: boolean; db?: string }): void {
-  const dbPath = opts.db ?? join(getQaSdkDir(), "test-scenarios.sqlite");
+  const dbPath = opts.db ?? join(getQaSdkDir(), 'test-scenarios.sqlite');
   const store = new SqliteTestScenarioStore(dbPath);
 
   const targets = opts.aCoord
     ? [store.getByACoord(opts.aCoord)].filter(Boolean)
-    : store.listByLifecycle("declared");
+    : store.listByLifecycle('declared');
 
   if (targets.length === 0) {
-    console.log("할당할 declared 시나리오 없음. qa-sdk test scan을 먼저 실행하세요.");
+    console.log('할당할 declared 시나리오 없음. qa-sdk test scan을 먼저 실행하세요.');
     return;
   }
 
@@ -168,7 +168,7 @@ export function testAssign(opts: { aCoord?: string; force?: boolean; db?: string
       console.warn(`⚠ [${scenario.aCoord}] primarySvc 미선언 — 모듈 경로 추가 필요`);
       violation = true;
       if (!opts.force) {
-        console.log("  --force로 강제 진행 가능");
+        console.log('  --force로 강제 진행 가능');
         continue;
       }
     }
@@ -188,10 +188,10 @@ export function testAssign(opts: { aCoord?: string; force?: boolean; db?: string
 }
 
 function deriveFilePath(modulePath: string, kind: TestKind): string {
-  const packageName = modulePath.replace(/^@qa-sdk\//, "").replace(/^workspace:/, "");
-  const parts = packageName.split("/");
+  const packageName = modulePath.replace(/^@qa-sdk\//, '').replace(/^workspace:/, '');
+  const parts = packageName.split('/');
   if (parts.length >= 2) {
-    return `packages/${parts[0]}/src/${parts.slice(1).join("/")}.${kind}.test.ts`;
+    return `packages/${parts[0]}/src/${parts.slice(1).join('/')}.${kind}.test.ts`;
   }
   return `packages/${packageName}/src/index.${kind}.test.ts`;
 }
@@ -199,12 +199,12 @@ function deriveFilePath(modulePath: string, kind: TestKind): string {
 // ── testScaffold ─────────────────────────────────────────
 
 export function testScaffold(opts: { bCoord?: string; mirror?: string; db?: string }): void {
-  const dbPath = opts.db ?? join(getQaSdkDir(), "test-scenarios.sqlite");
+  const dbPath = opts.db ?? join(getQaSdkDir(), 'test-scenarios.sqlite');
   const store = new SqliteTestScenarioStore(dbPath);
 
   const targets = opts.bCoord
     ? [store.getById(opts.bCoord)].filter(Boolean)
-    : store.listByLifecycle("assigned");
+    : store.listByLifecycle('assigned');
 
   for (const scenario of targets) {
     if (!scenario || !scenario.filePath) continue;
@@ -216,13 +216,27 @@ export function testScaffold(opts: { bCoord?: string; mirror?: string; db?: stri
     }
 
     mkdirSync(dirname(fullPath), { recursive: true });
-    writeFileSync(fullPath, generateTestStub(scenario.primarySvc, scenario.kind, scenario.intent, scenario.phase ?? undefined), "utf-8");
+    writeFileSync(
+      fullPath,
+      generateTestStub(
+        scenario.primarySvc,
+        scenario.kind,
+        scenario.intent,
+        scenario.phase ?? undefined,
+      ),
+      'utf-8',
+    );
     console.log(`생성: ${scenario.filePath}`);
   }
 }
 
-function generateTestStub(modulePath: string, kind: TestKind, intent: string, phase?: string): string {
-  const phaseComment = phase ? `\n// 테스트 단계: ${phase}` : "";
+function generateTestStub(
+  modulePath: string,
+  kind: TestKind,
+  intent: string,
+  phase?: string,
+): string {
+  const phaseComment = phase ? `\n// 테스트 단계: ${phase}` : '';
   return `import { describe, it, expect } from "vitest";
 // import { ... } from "${modulePath}";
 
@@ -248,47 +262,51 @@ describe("${intent}", () => {
 // ── testStatus ───────────────────────────────────────────
 
 export function testStatus(opts: { db?: string }): void {
-  const dbPath = opts.db ?? join(getQaSdkDir(), "test-scenarios.sqlite");
+  const dbPath = opts.db ?? join(getQaSdkDir(), 'test-scenarios.sqlite');
   const store = new SqliteTestScenarioStore(dbPath);
   const all = store.listAll();
 
   if (all.length === 0) {
-    console.log("시나리오 없음. qa-sdk test scan을 먼저 실행하세요.");
+    console.log('시나리오 없음. qa-sdk test scan을 먼저 실행하세요.');
     return;
   }
 
   const byLifecycle: Record<string, number> = {
-    declared: 0, assigned: 0, collected: 0, verified: 0, archived: 0,
+    declared: 0,
+    assigned: 0,
+    collected: 0,
+    verified: 0,
+    archived: 0,
   };
   for (const s of all) {
     byLifecycle[s.lifecycle] = (byLifecycle[s.lifecycle] ?? 0) + 1;
   }
 
-  console.log("\n테스트 시나리오 생명주기 현황");
-  console.log("─".repeat(40));
+  console.log('\n테스트 시나리오 생명주기 현황');
+  console.log('─'.repeat(40));
   for (const [state, count] of Object.entries(byLifecycle)) {
-    const bar = "█".repeat(count);
+    const bar = '█'.repeat(count);
     console.log(`${state.padEnd(12)} ${String(count).padStart(4)}  ${bar}`);
   }
-  console.log("─".repeat(40));
+  console.log('─'.repeat(40));
   console.log(`합계: ${all.length}개`);
 
   // phase별 분포
   const byPhase: Record<string, number> = {};
   for (const s of all) {
-    const p = s.phase ?? "(미지정)";
+    const p = s.phase ?? '(미지정)';
     byPhase[p] = (byPhase[p] ?? 0) + 1;
   }
-  if (Object.keys(byPhase).length > 1 || !byPhase["(미지정)"]) {
-    console.log("\n단계별 분포");
-    console.log("─".repeat(40));
+  if (Object.keys(byPhase).length > 1 || !byPhase['(미지정)']) {
+    console.log('\n단계별 분포');
+    console.log('─'.repeat(40));
     for (const [phase, count] of Object.entries(byPhase).toSorted((a, b) => b[1] - a[1])) {
-      const bar = "█".repeat(count);
+      const bar = '█'.repeat(count);
       console.log(`${phase.padEnd(18)} ${String(count).padStart(4)}  ${bar}`);
     }
   }
 
-  const violations = all.filter(s => s.conventionViolation);
+  const violations = all.filter((s) => s.conventionViolation);
   if (violations.length > 0) {
     console.log(`\n⚠ convention_violation: ${violations.length}개`);
     for (const v of violations) {
@@ -300,53 +318,62 @@ export function testStatus(opts: { db?: string }): void {
 // ── testReport ───────────────────────────────────────────
 
 const KINDS: TestKind[] = [
-  "unit", "ui-logic", "ui", "db-transaction",
-  "data-exchange", "auth-flow", "e2e", "simulation",
+  'unit',
+  'ui-logic',
+  'ui',
+  'db-transaction',
+  'data-exchange',
+  'auth-flow',
+  'e2e',
+  'simulation',
 ];
 
 const LIFECYCLE_ICON: Record<string, string> = {
-  declared: "·",
-  assigned: "○",
-  collected: "🔄",
-  verified: "✅",
-  archived: "—",
+  declared: '·',
+  assigned: '○',
+  collected: '🔄',
+  verified: '✅',
+  archived: '—',
 };
 
 export function testReport(opts: { db?: string }): void {
-  const dbPath = opts.db ?? join(getQaSdkDir(), "test-scenarios.sqlite");
+  const dbPath = opts.db ?? join(getQaSdkDir(), 'test-scenarios.sqlite');
   const store = new SqliteTestScenarioStore(dbPath);
   const all = store.listAll();
 
   if (all.length === 0) {
-    console.log("시나리오 없음.");
+    console.log('시나리오 없음.');
     return;
   }
 
-  const svcs = [...new Set(all.map(s => s.primarySvc))].toSorted();
+  const svcs = [...new Set(all.map((s) => s.primarySvc))].toSorted();
 
   const colWidth = 10;
-  const header = "서비스".padEnd(30) + KINDS.map(k => k.slice(0, colWidth - 1).padEnd(colWidth)).join("");
-  console.log("\n" + header);
-  console.log("─".repeat(header.length));
+  const header =
+    '서비스'.padEnd(30) + KINDS.map((k) => k.slice(0, colWidth - 1).padEnd(colWidth)).join('');
+  console.log('\n' + header);
+  console.log('─'.repeat(header.length));
 
   for (const svc of svcs) {
-    const scenarios = all.filter(s => s.primarySvc === svc);
-    const cells = KINDS.map(kind => {
-      const s = scenarios.find(x => x.kind === kind);
-      return s ? (LIFECYCLE_ICON[s.lifecycle] ?? "?") : "-";
+    const scenarios = all.filter((s) => s.primarySvc === svc);
+    const cells = KINDS.map((kind) => {
+      const s = scenarios.find((x) => x.kind === kind);
+      return s ? (LIFECYCLE_ICON[s.lifecycle] ?? '?') : '-';
     });
-    const row = svc.slice(-28).padEnd(30) + cells.map(c => c.padEnd(colWidth)).join("");
+    const row = svc.slice(-28).padEnd(30) + cells.map((c) => c.padEnd(colWidth)).join('');
     console.log(row);
   }
 
-  console.log("\n범례: ✅ verified  🔄 collected  ○ assigned  · declared  - 없음");
+  console.log('\n범례: ✅ verified  🔄 collected  ○ assigned  · declared  - 없음');
 
   // phase 커버리지 요약
-  const withPhase = all.filter(s => s.phase);
+  const withPhase = all.filter((s) => s.phase);
   if (withPhase.length > 0) {
-    const coveredPhases = new Set(withPhase.map(s => s.phase!));
+    const coveredPhases = new Set(withPhase.map((s) => s.phase!));
     const allPhases = [...VALID_PHASES] as string[];
-    const uncovered = allPhases.filter(p => !coveredPhases.has(p as TestPhaseLabel));
-    console.log(`\nphase 커버리지: ${coveredPhases.size}/${allPhases.length} (${uncovered.length > 0 ? `미커버: ${uncovered.join(", ")}` : "전부 커버"})`);
+    const uncovered = allPhases.filter((p) => !coveredPhases.has(p as TestPhaseLabel));
+    console.log(
+      `\nphase 커버리지: ${coveredPhases.size}/${allPhases.length} (${uncovered.length > 0 ? `미커버: ${uncovered.join(', ')}` : '전부 커버'})`,
+    );
   }
 }

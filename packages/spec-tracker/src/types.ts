@@ -10,16 +10,20 @@
 
 /** 계약 마커 종류 (definition-catalog ContractMarkerKind와 동일) */
 export type ContractMarkerKind =
-  | "inputs" | "outputs"
-  | "precondition" | "postcondition"
-  | "decision-point" | "failure"
-  | "evidence" | "flow-steps";
+  | 'inputs'
+  | 'outputs'
+  | 'precondition'
+  | 'postcondition'
+  | 'decision-point'
+  | 'failure'
+  | 'evidence'
+  | 'flow-steps';
 
 /** 증거 상태 */
-export type EvidenceStatus = "pass" | "fail" | "skip";
+export type EvidenceStatus = 'pass' | 'fail' | 'skip';
 
 /** 증거 출처 */
-export type EvidenceSource = "test" | "runtime";
+export type EvidenceSource = 'test' | 'runtime';
 
 /** 계약 증거 1건 — 테스트 또는 런타임에서 수집 */
 export interface ContractEvidence {

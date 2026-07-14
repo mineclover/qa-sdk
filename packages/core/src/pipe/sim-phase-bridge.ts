@@ -8,29 +8,29 @@
  * 우선순위: PipeStep.testPhase 명시 > facet 기본 매핑 > "act" fallback
  */
 
-import type { TestPhase } from "../types/test-tracking.js";
-import { TEST_PHASES } from "../types/test-tracking.js";
-import type { SimulationResult, SimStep } from "./pipe-simulate.js";
+import type { TestPhase } from '../types/test-tracking.js';
+import { TEST_PHASES } from '../types/test-tracking.js';
+import type { SimulationResult, SimStep } from './pipe-simulate.js';
 
 // ── facet → phase 기본 매핑 ─────────────────────────
 
 const FACET_PHASE_MAP: Record<string, TestPhase> = {
-  "정의": "arrange",
-  "저장": "fixture",
-  "소비": "act",
-  "관리": "act",
-  "생산": "observe",
+  정의: 'arrange',
+  저장: 'fixture',
+  소비: 'act',
+  관리: 'act',
+  생산: 'observe',
 };
 
-const DEFAULT_PHASE: TestPhase = "act";
+const DEFAULT_PHASE: TestPhase = 'act';
 
 // ── 타입 ──────────────────────────────────────────────
 
-export type PhaseAnnotatedStep = Omit<SimStep, "phase"> & {
+export type PhaseAnnotatedStep = Omit<SimStep, 'phase'> & {
   /** 부여된 테스트 단계 */
   phase: TestPhase;
   /** phase 출처: "explicit" (PipeStep.testPhase) | "facet-map" | "default" */
-  phaseSource: "explicit" | "facet-map" | "default";
+  phaseSource: 'explicit' | 'facet-map' | 'default';
 };
 
 export interface SimPhaseResult {
@@ -60,29 +60,27 @@ export function annotateSimPhases(
   result: SimulationResult,
   customMap?: Partial<Record<string, TestPhase>>,
 ): SimPhaseResult {
-  const effectiveMap = customMap
-    ? { ...FACET_PHASE_MAP, ...customMap }
-    : FACET_PHASE_MAP;
+  const effectiveMap = customMap ? { ...FACET_PHASE_MAP, ...customMap } : FACET_PHASE_MAP;
 
   const steps: PhaseAnnotatedStep[] = [];
   const phaseTrace: TestPhase[] = [];
 
   for (const step of result.steps) {
     // step kind가 아닌 것(branch, parallel 등 제어 노드)은 phase 부여 안 함
-    if (step.kind !== "step") continue;
+    if (step.kind !== 'step') continue;
 
     let phase: TestPhase;
-    let phaseSource: PhaseAnnotatedStep["phaseSource"];
+    let phaseSource: PhaseAnnotatedStep['phaseSource'];
 
     if (step.phase && isValidPhase(step.phase)) {
       phase = step.phase as TestPhase;
-      phaseSource = "explicit";
+      phaseSource = 'explicit';
     } else if (step.facet && step.facet in effectiveMap) {
       phase = effectiveMap[step.facet]!;
-      phaseSource = "facet-map";
+      phaseSource = 'facet-map';
     } else {
       phase = DEFAULT_PHASE;
-      phaseSource = "default";
+      phaseSource = 'default';
     }
 
     steps.push({
@@ -100,8 +98,8 @@ export function annotateSimPhases(
   }
 
   const coveredSet = new Set(phaseTrace);
-  const covered = TEST_PHASES.filter(p => coveredSet.has(p));
-  const uncovered = TEST_PHASES.filter(p => !coveredSet.has(p));
+  const covered = TEST_PHASES.filter((p) => coveredSet.has(p));
+  const uncovered = TEST_PHASES.filter((p) => !coveredSet.has(p));
 
   return {
     steps,
@@ -109,9 +107,7 @@ export function annotateSimPhases(
     coverage: {
       covered,
       uncovered,
-      rate: TEST_PHASES.length > 0
-        ? Math.round((covered.length / TEST_PHASES.length) * 100)
-        : 0,
+      rate: TEST_PHASES.length > 0 ? Math.round((covered.length / TEST_PHASES.length) * 100) : 0,
     },
   };
 }

@@ -32,7 +32,7 @@ import type {
   PipeFlow,
   PipeStep,
   Constraint,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 export function convertScenarioToPipeGraph(spec: ScenarioSpec): PipeGraph {
   if (spec.steps.length === 0) {
@@ -42,7 +42,7 @@ export function convertScenarioToPipeGraph(spec: ScenarioSpec): PipeGraph {
       ...(spec.description ? { description: spec.description } : {}),
       pipes: [],
       connections: [],
-      entryPipeId: "",
+      entryPipeId: '',
     };
   }
 
@@ -72,27 +72,29 @@ export function convertScenarioToPipeGraph(spec: ScenarioSpec): PipeGraph {
 
 function buildFlow(step: ScenarioStep): PipeFlow {
   const base: PipeStep = {
-    kind: "step",
+    kind: 'step',
     facet: step.event_key,
     eventKey: step.event_key,
-    ...(step.constraints?.length ? { constraints: step.constraints.map(convertStepConstraint) } : {}),
+    ...(step.constraints?.length
+      ? { constraints: step.constraints.map(convertStepConstraint) }
+      : {}),
     ...(step.timeout_ms !== undefined ? { timeout: step.timeout_ms } : {}),
   };
-  if (step.kind === "optional") {
-    return { kind: "optional", step: base };
+  if (step.kind === 'optional') {
+    return { kind: 'optional', step: base };
   }
   // "sequence" / "branch" — 분기는 connections으로 표현
   return base;
 }
 
 function buildConnections(steps: ScenarioStep[]): PipeConnection[] {
-  const hasExplicit = steps.some(s => s.next?.length || s.branches?.length);
+  const hasExplicit = steps.some((s) => s.next?.length || s.branches?.length);
 
   if (!hasExplicit) {
     return steps.slice(0, -1).map((s, i) => ({
       from: s.id,
       to: steps[i + 1].id,
-      kind: "next" as const,
+      kind: 'next' as const,
     }));
   }
 
@@ -103,7 +105,7 @@ function buildConnections(steps: ScenarioStep[]): PipeConnection[] {
         connections.push({
           from: step.id,
           to: branch.next.length === 1 ? branch.next[0] : branch.next,
-          kind: "conditional",
+          kind: 'conditional',
           condition: formatCondition(branch.condition),
         });
       }
@@ -111,7 +113,7 @@ function buildConnections(steps: ScenarioStep[]): PipeConnection[] {
       connections.push({
         from: step.id,
         to: step.next.length === 1 ? step.next[0] : step.next,
-        kind: "next",
+        kind: 'next',
       });
     }
   }
@@ -119,7 +121,7 @@ function buildConnections(steps: ScenarioStep[]): PipeConnection[] {
 }
 
 function formatCondition(c: StepConstraint): string {
-  const val = c.value !== undefined ? ` ${JSON.stringify(c.value)}` : "";
+  const val = c.value !== undefined ? ` ${JSON.stringify(c.value)}` : '';
   return `${c.field} ${c.op}${val}`;
 }
 

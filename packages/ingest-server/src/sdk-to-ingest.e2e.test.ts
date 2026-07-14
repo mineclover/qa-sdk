@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { EventRecord, ScenarioSpec } from "@qa-sdk/core";
+import type { EventRecord, ScenarioSpec } from '@qa-sdk/core';
 import {
   InMemoryDlqStore,
   InMemoryGraphStore,
@@ -11,12 +11,12 @@ import {
   InMemoryTraceStore,
   InMemoryTransmissionStore,
   InMemoryVerdictStore,
-} from "@qa-sdk/store";
-import pino from "pino";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { HttpTransport, QaLogger } from "../../sdk/dist/index.js";
-import { createApp } from "./app.js";
-import { RecordStreamBroker } from "./lib/record-stream-broker.js";
+} from '@qa-sdk/store';
+import pino from 'pino';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { HttpTransport, QaLogger } from '../../sdk/dist/index.js';
+import { createApp } from './app.js';
+import { RecordStreamBroker } from './lib/record-stream-broker.js';
 
 interface PaginatedRecordResponse {
   items: EventRecord[];
@@ -40,16 +40,16 @@ interface RuntimeGraphResponse {
   edgeCount: number;
 }
 
-describe("SDK to ingest E2E", () => {
+describe('SDK to ingest E2E', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("sends SDK records through HttpTransport and exposes them through trace, session, and graph queries", async () => {
-    const traceId = "trace_sdk_to_ingest";
-    const sessionId = "session_sdk_to_ingest";
-    const rootSpanId = "span_root_checkout";
-    const maskedField = "creditCard";
+  it('sends SDK records through HttpTransport and exposes them through trace, session, and graph queries', async () => {
+    const traceId = 'trace_sdk_to_ingest';
+    const sessionId = 'session_sdk_to_ingest';
+    const rootSpanId = 'span_root_checkout';
+    const maskedField = 'creditCard';
 
     const graphStore = new InMemoryGraphStore();
     const recordStore = new InMemoryRecordStore();
@@ -69,19 +69,15 @@ describe("SDK to ingest E2E", () => {
       scenarioSpecStore,
       dlqStore,
       recordStreamBroker: new RecordStreamBroker(),
-      logger: pino({ level: "silent" }),
+      logger: pino({ level: 'silent' }),
     });
 
-    vi.stubGlobal(
-      "fetch",
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const request =
-          input instanceof Request ? input : new Request(input, init);
-        return app.fetch(request);
-      },
-    );
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(input, init);
+      return app.fetch(request);
+    });
 
-    const baseUrl = "http://ingest.local";
+    const baseUrl = 'http://ingest.local';
 
     const logger = new QaLogger({
       transport: new HttpTransport({
@@ -89,23 +85,23 @@ describe("SDK to ingest E2E", () => {
         timeout_ms: 5_000,
       }),
       owner: {
-        owner_type: "workspace",
-        owner_id: "workspace_e2e",
+        owner_type: 'workspace',
+        owner_id: 'workspace_e2e',
       },
       source: {
-        service_name: "sdk-e2e-client",
-        sdk_name: "@qa-sdk/sdk",
-        sdk_version: "0.1.0",
+        service_name: 'sdk-e2e-client',
+        sdk_name: '@qa-sdk/sdk',
+        sdk_version: '0.1.0',
       },
       runtime: {
-        platform: "node",
+        platform: 'node',
         app_version: process.version,
       },
       build: {
-        env: "dev",
-        release_version: "2026.03.12",
+        env: 'dev',
+        release_version: '2026.03.12',
       },
-      maskingRules: [{ field: maskedField, mode: "mask" }],
+      maskingRules: [{ field: maskedField, mode: 'mask' }],
       flushIntervalMs: 0,
       batchSize: 10,
     });
@@ -118,25 +114,25 @@ describe("SDK to ingest E2E", () => {
       context.pushSpan(rootSpanId);
 
       const firstLog = logger.log({
-        event_key: "checkout.started",
-        event_version: "001",
-        payload: { step: "opened" },
+        event_key: 'checkout.started',
+        event_version: '001',
+        payload: { step: 'opened' },
       });
       const nestedSpan = logger.startSpan({
-        event_key: "checkout.authorize",
-        event_version: "001",
-        span_name: "authorize-payment",
+        event_key: 'checkout.authorize',
+        event_version: '001',
+        span_name: 'authorize-payment',
       });
       const maskedLog = logger.log({
-        event_key: "checkout.card.entered",
-        event_version: "001",
+        event_key: 'checkout.card.entered',
+        event_version: '001',
         payload: {
-          [maskedField]: "4111111111111111",
-          last4: "1111",
+          [maskedField]: '4111111111111111',
+          last4: '1111',
         },
       });
       const nestedSpanRecord = nestedSpan.end({
-        payload: { outcome: "approved" },
+        payload: { outcome: 'approved' },
       });
 
       await logger.flush();
@@ -144,11 +140,8 @@ describe("SDK to ingest E2E", () => {
       const recordsResponse = await fetch(`${baseUrl}/v1/traces/${traceId}/records`);
       expect(recordsResponse.status).toBe(200);
 
-      const recordsBody =
-        (await recordsResponse.json()) as PaginatedRecordResponse;
-      const expectedRecords = [firstLog, maskedLog, nestedSpanRecord].toSorted(
-        compareEventRecords,
-      );
+      const recordsBody = (await recordsResponse.json()) as PaginatedRecordResponse;
+      const expectedRecords = [firstLog, maskedLog, nestedSpanRecord].toSorted(compareEventRecords);
 
       expect(recordsBody.items).toHaveLength(3);
       expect(recordsBody.items.map((record) => record.timestamp)).toEqual(
@@ -157,9 +150,7 @@ describe("SDK to ingest E2E", () => {
       expect(recordsBody.items.map(normalizeEventRecord)).toEqual(
         expectedRecords.map(normalizeEventRecord),
       );
-      expect(recordsBody.items.every((record) => record.qa_session_id === sessionId)).toBe(
-        true,
-      );
+      expect(recordsBody.items.every((record) => record.qa_session_id === sessionId)).toBe(true);
 
       const maskedRecord = recordsBody.items.find(
         (record) => record.event_key === maskedLog.event_key,
@@ -173,18 +164,15 @@ describe("SDK to ingest E2E", () => {
               _masked: true,
               _present: true,
             },
-            last4: "1111",
+            last4: '1111',
           },
         }),
       );
 
-      const paginatedResponse = await fetch(
-        `${baseUrl}/v1/traces/${traceId}/records?limit=1`,
-      );
+      const paginatedResponse = await fetch(`${baseUrl}/v1/traces/${traceId}/records?limit=1`);
       expect(paginatedResponse.status).toBe(200);
 
-      const paginatedBody =
-        (await paginatedResponse.json()) as PaginatedRecordResponse;
+      const paginatedBody = (await paginatedResponse.json()) as PaginatedRecordResponse;
       expect(paginatedBody.items).toHaveLength(1);
       expect(normalizeEventRecord(paginatedBody.items[0]!)).toEqual(
         normalizeEventRecord(expectedRecords[0]!),
@@ -206,9 +194,7 @@ describe("SDK to ingest E2E", () => {
         startedAt: expect.any(String),
         closedAt: null,
       });
-      expect(new Date(sessionBody.startedAt).toISOString()).toBe(
-        sessionBody.startedAt,
-      );
+      expect(new Date(sessionBody.startedAt).toISOString()).toBe(sessionBody.startedAt);
 
       const graphResponse = await fetch(`${baseUrl}/v1/traces/${traceId}/graph`);
       expect(graphResponse.status).toBe(200);
@@ -276,7 +262,7 @@ interface E2EScenarioCase {
   scenario: ScenarioSpec;
   events: Array<{ event_key: string; event_version: string; payload?: Record<string, unknown> }>;
   expected: {
-    verdict: "pass" | "fail" | "warn";
+    verdict: 'pass' | 'fail' | 'warn';
     // missing_steps: 이벤트 자체가 발생하지 않은 step ID 목록
     // constraint 실패는 이벤트가 발생했으므로 missing_steps에 포함되지 않음
     missing_steps: string[];
@@ -286,154 +272,160 @@ interface E2EScenarioCase {
 const E2E_SCENARIO_CASES: E2EScenarioCase[] = [
   {
     // 정상 흐름: 모든 required step이 순서대로 발생
-    name: "required step 전체 발생 → pass",
+    name: 'required step 전체 발생 → pass',
     scenario: {
-      scenario_id: "e2e-all-required",
-      version: "1.0.0",
-      domain: "test",
+      scenario_id: 'e2e-all-required',
+      version: '1.0.0',
+      domain: 'test',
       steps: [
-        { id: "s1", event_key: "flow.started", required: true, kind: "sequence" },
-        { id: "s2", event_key: "flow.processed", required: true, kind: "sequence" },
-        { id: "s3", event_key: "flow.completed", required: true, kind: "sequence" },
+        { id: 's1', event_key: 'flow.started', required: true, kind: 'sequence' },
+        { id: 's2', event_key: 'flow.processed', required: true, kind: 'sequence' },
+        { id: 's3', event_key: 'flow.completed', required: true, kind: 'sequence' },
       ],
     },
     events: [
-      { event_key: "flow.started", event_version: "001" },
-      { event_key: "flow.processed", event_version: "001" },
-      { event_key: "flow.completed", event_version: "001" },
+      { event_key: 'flow.started', event_version: '001' },
+      { event_key: 'flow.processed', event_version: '001' },
+      { event_key: 'flow.completed', event_version: '001' },
     ],
-    expected: { verdict: "pass", missing_steps: [] },
+    expected: { verdict: 'pass', missing_steps: [] },
   },
   {
     // required step 누락: 이벤트가 발생하지 않아 missing_steps에 기록됨
-    name: "required step 누락 → fail (missing_steps 포함)",
+    name: 'required step 누락 → fail (missing_steps 포함)',
     scenario: {
-      scenario_id: "e2e-required-missing",
-      version: "1.0.0",
-      domain: "test",
+      scenario_id: 'e2e-required-missing',
+      version: '1.0.0',
+      domain: 'test',
       steps: [
-        { id: "s1", event_key: "flow.started", required: true, kind: "sequence" },
-        { id: "s2", event_key: "flow.processed", required: true, kind: "sequence" },
-        { id: "s3", event_key: "flow.completed", required: true, kind: "sequence" },
+        { id: 's1', event_key: 'flow.started', required: true, kind: 'sequence' },
+        { id: 's2', event_key: 'flow.processed', required: true, kind: 'sequence' },
+        { id: 's3', event_key: 'flow.completed', required: true, kind: 'sequence' },
       ],
     },
     events: [
-      { event_key: "flow.started", event_version: "001" },
-      { event_key: "flow.processed", event_version: "001" },
+      { event_key: 'flow.started', event_version: '001' },
+      { event_key: 'flow.processed', event_version: '001' },
       // flow.completed 누락 → missing_steps: ["s3"]
     ],
-    expected: { verdict: "fail", missing_steps: ["s3"] },
+    expected: { verdict: 'fail', missing_steps: ['s3'] },
   },
   {
     // optional step 누락: required는 통과했으므로 fail이 아닌 warn
-    name: "optional step 누락 → warn (fail 아님)",
+    name: 'optional step 누락 → warn (fail 아님)',
     scenario: {
-      scenario_id: "e2e-optional-missing",
-      version: "1.0.0",
-      domain: "test",
+      scenario_id: 'e2e-optional-missing',
+      version: '1.0.0',
+      domain: 'test',
       steps: [
-        { id: "s1", event_key: "flow.started", required: true, kind: "sequence" },
-        { id: "s2", event_key: "flow.bonus", required: false, kind: "optional" },
+        { id: 's1', event_key: 'flow.started', required: true, kind: 'sequence' },
+        { id: 's2', event_key: 'flow.bonus', required: false, kind: 'optional' },
       ],
     },
     events: [
-      { event_key: "flow.started", event_version: "001" },
+      { event_key: 'flow.started', event_version: '001' },
       // flow.bonus 누락 — optional이므로 warn
     ],
-    expected: { verdict: "warn", missing_steps: ["s2"] },
+    expected: { verdict: 'warn', missing_steps: ['s2'] },
   },
   {
     // payload constraint 통과: 이벤트는 발생했고 payload 값도 스펙 일치
-    name: "payload constraint 통과 → pass",
+    name: 'payload constraint 통과 → pass',
     scenario: {
-      scenario_id: "e2e-constraint-pass",
-      version: "1.0.0",
-      domain: "checkout",
+      scenario_id: 'e2e-constraint-pass',
+      version: '1.0.0',
+      domain: 'checkout',
       steps: [
         {
-          id: "s1",
-          event_key: "order.confirmed",
+          id: 's1',
+          event_key: 'order.confirmed',
           required: true,
-          kind: "sequence",
-          constraints: [{ field: "payload.status", op: "eq", value: "approved" }],
+          kind: 'sequence',
+          constraints: [{ field: 'payload.status', op: 'eq', value: 'approved' }],
         },
       ],
     },
     events: [
-      { event_key: "order.confirmed", event_version: "001", payload: { status: "approved" } },
+      { event_key: 'order.confirmed', event_version: '001', payload: { status: 'approved' } },
     ],
-    expected: { verdict: "pass", missing_steps: [] },
+    expected: { verdict: 'pass', missing_steps: [] },
   },
   {
     // payload constraint 실패: 이벤트는 발생했으나 payload가 스펙 불일치
     // → missing_steps에 포함되지 않음 (노드는 매칭됨), step_match.verdict = "fail"
-    name: "payload constraint 실패 → fail (missing_steps는 비어 있음)",
+    name: 'payload constraint 실패 → fail (missing_steps는 비어 있음)',
     scenario: {
-      scenario_id: "e2e-constraint-fail",
-      version: "1.0.0",
-      domain: "checkout",
+      scenario_id: 'e2e-constraint-fail',
+      version: '1.0.0',
+      domain: 'checkout',
       steps: [
         {
-          id: "s1",
-          event_key: "order.confirmed",
+          id: 's1',
+          event_key: 'order.confirmed',
           required: true,
-          kind: "sequence",
-          constraints: [{ field: "payload.status", op: "eq", value: "approved" }],
+          kind: 'sequence',
+          constraints: [{ field: 'payload.status', op: 'eq', value: 'approved' }],
         },
       ],
     },
     events: [
-      { event_key: "order.confirmed", event_version: "001", payload: { status: "declined" } },
+      { event_key: 'order.confirmed', event_version: '001', payload: { status: 'declined' } },
     ],
-    expected: { verdict: "fail", missing_steps: [] },
+    expected: { verdict: 'fail', missing_steps: [] },
   },
   {
     // 시나리오 외 이벤트: unmatched_nodes로 기록되지만 verdict에 영향 없음
-    name: "시나리오 외 이벤트 발생 → pass 유지",
+    name: '시나리오 외 이벤트 발생 → pass 유지',
     scenario: {
-      scenario_id: "e2e-extra-events",
-      version: "1.0.0",
-      domain: "checkout",
-      steps: [
-        { id: "s1", event_key: "checkout.started", required: true, kind: "sequence" },
-      ],
+      scenario_id: 'e2e-extra-events',
+      version: '1.0.0',
+      domain: 'checkout',
+      steps: [{ id: 's1', event_key: 'checkout.started', required: true, kind: 'sequence' }],
     },
     events: [
-      { event_key: "checkout.started", event_version: "001" },
-      { event_key: "analytics.tracked", event_version: "001" },
-      { event_key: "debug.breadcrumb", event_version: "001" },
+      { event_key: 'checkout.started', event_version: '001' },
+      { event_key: 'analytics.tracked', event_version: '001' },
+      { event_key: 'debug.breadcrumb', event_version: '001' },
     ],
-    expected: { verdict: "pass", missing_steps: [] },
+    expected: { verdict: 'pass', missing_steps: [] },
   },
   {
     // 백엔드 도메인: 프론트엔드가 아닌 API 요청 흐름도 동일하게 수집·검증 가능
-    name: "백엔드 API 요청 흐름 → pass",
+    name: '백엔드 API 요청 흐름 → pass',
     scenario: {
-      scenario_id: "e2e-api-flow",
-      version: "1.0.0",
-      domain: "backend",
+      scenario_id: 'e2e-api-flow',
+      version: '1.0.0',
+      domain: 'backend',
       steps: [
-        { id: "s1", event_key: "api.request.received", required: true, kind: "sequence" },
-        { id: "s2", event_key: "api.validation.passed", required: true, kind: "sequence" },
-        { id: "s3", event_key: "api.response.sent", required: true, kind: "sequence" },
+        { id: 's1', event_key: 'api.request.received', required: true, kind: 'sequence' },
+        { id: 's2', event_key: 'api.validation.passed', required: true, kind: 'sequence' },
+        { id: 's3', event_key: 'api.response.sent', required: true, kind: 'sequence' },
       ],
     },
     events: [
-      { event_key: "api.request.received", event_version: "001", payload: { method: "POST", path: "/v1/ingest" } },
-      { event_key: "api.validation.passed", event_version: "001", payload: { schema: "TransmissionEnvelope" } },
-      { event_key: "api.response.sent", event_version: "001", payload: { status: 202 } },
+      {
+        event_key: 'api.request.received',
+        event_version: '001',
+        payload: { method: 'POST', path: '/v1/ingest' },
+      },
+      {
+        event_key: 'api.validation.passed',
+        event_version: '001',
+        payload: { schema: 'TransmissionEnvelope' },
+      },
+      { event_key: 'api.response.sent', event_version: '001', payload: { status: 202 } },
     ],
-    expected: { verdict: "pass", missing_steps: [] },
+    expected: { verdict: 'pass', missing_steps: [] },
   },
 ];
 
-describe("SDK scenario E2E — systematic verdict coverage", () => {
+describe('SDK scenario E2E — systematic verdict coverage', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
   function createTestSetup() {
-    const baseUrl = "http://ingest.local";
+    const baseUrl = 'http://ingest.local';
     const scenarioSpecStore = new InMemoryScenarioSpecStore();
     const sessionStore = new InMemorySessionStore();
 
@@ -447,24 +439,21 @@ describe("SDK scenario E2E — systematic verdict coverage", () => {
       scenarioSpecStore,
       dlqStore: new InMemoryDlqStore(),
       recordStreamBroker: new RecordStreamBroker(),
-      logger: pino({ level: "silent" }),
+      logger: pino({ level: 'silent' }),
     });
 
-    vi.stubGlobal(
-      "fetch",
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const request = input instanceof Request ? input : new Request(input, init);
-        return app.fetch(request);
-      },
-    );
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = input instanceof Request ? input : new Request(input, init);
+      return app.fetch(request);
+    });
 
     const makeLogger = () =>
       new QaLogger({
         transport: new HttpTransport({ endpoint: `${baseUrl}/v1/ingest`, timeout_ms: 5_000 }),
-        owner: { owner_type: "workspace", owner_id: "workspace_e2e" },
-        source: { service_name: "test-runner", sdk_name: "@qa-sdk/sdk", sdk_version: "0.1.0" },
-        runtime: { platform: "node" },
-        build: { env: "dev" },
+        owner: { owner_type: 'workspace', owner_id: 'workspace_e2e' },
+        source: { service_name: 'test-runner', sdk_name: '@qa-sdk/sdk', sdk_version: '0.1.0' },
+        runtime: { platform: 'node' },
+        build: { env: 'dev' },
         flushIntervalMs: 0,
         batchSize: 100,
       });
@@ -472,38 +461,35 @@ describe("SDK scenario E2E — systematic verdict coverage", () => {
     return { scenarioSpecStore, sessionStore, baseUrl, makeLogger };
   }
 
-  it.each(E2E_SCENARIO_CASES)(
-    "$name",
-    async ({ scenario, events, expected }) => {
-      const { scenarioSpecStore, sessionStore, baseUrl, makeLogger } = createTestSetup();
-      const traceId = `trace_${scenario.scenario_id}`;
-      const sessionId = `session_${scenario.scenario_id}`;
+  it.each(E2E_SCENARIO_CASES)('$name', async ({ scenario, events, expected }) => {
+    const { scenarioSpecStore, sessionStore, baseUrl, makeLogger } = createTestSetup();
+    const traceId = `trace_${scenario.scenario_id}`;
+    const sessionId = `session_${scenario.scenario_id}`;
 
-      await scenarioSpecStore.upsert(scenario);
-      await sessionStore.upsert({ sessionId, scenarioId: scenario.scenario_id });
+    await scenarioSpecStore.upsert(scenario);
+    await sessionStore.upsert({ sessionId, scenarioId: scenario.scenario_id });
 
-      const logger = makeLogger();
-      try {
-        const ctx = logger.startTrace({ trace_id: traceId, qa_session_id: sessionId });
-        ctx.pushSpan("span_root");
+    const logger = makeLogger();
+    try {
+      const ctx = logger.startTrace({ trace_id: traceId, qa_session_id: sessionId });
+      ctx.pushSpan('span_root');
 
-        for (const event of events) {
-          logger.log(event);
-        }
-
-        await logger.flush();
-      } finally {
-        await logger.shutdown();
+      for (const event of events) {
+        logger.log(event);
       }
 
-      const res = await fetch(`${baseUrl}/v1/traces/${traceId}/verdicts`);
-      expect(res.status).toBe(200);
-      const body = await res.json() as { items: VerdictItemResponse[] };
-      expect(body.items).toHaveLength(1);
-      expect(body.items[0]!.overallVerdict).toBe(expected.verdict);
-      expect(body.items[0]!.report.missing_steps).toEqual(expected.missing_steps);
-    },
-  );
+      await logger.flush();
+    } finally {
+      await logger.shutdown();
+    }
+
+    const res = await fetch(`${baseUrl}/v1/traces/${traceId}/verdicts`);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { items: VerdictItemResponse[] };
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]!.overallVerdict).toBe(expected.verdict);
+    expect(body.items[0]!.report.missing_steps).toEqual(expected.missing_steps);
+  });
 });
 
 function compareEventRecords(left: EventRecord, right: EventRecord): number {

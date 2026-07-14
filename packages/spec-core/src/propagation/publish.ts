@@ -8,20 +8,20 @@
  * DimRef를 분류하여 refs/capacity를 자동 산출한다.
  */
 
-import type { PrefixSpec } from "../spec/prefix-spec.types.js";
-import type { RegistryPort } from "./registry-port.js";
+import type { PrefixSpec } from '../spec/prefix-spec.types.js';
+import type { RegistryPort } from './registry-port.js';
 
 export interface PublishInput {
   readonly spec: PrefixSpec;
   readonly owner: string;
-  readonly mode: "new" | "version";
+  readonly mode: 'new' | 'version';
   readonly baseVersion?: string;
 }
 
 export interface PublishResult {
   readonly prefix: string;
   readonly versionId: string;
-  readonly status: "draft";
+  readonly status: 'draft';
   readonly capacity: number;
   readonly refs: Array<{ prefix: string; versionId: string }>;
 }
@@ -39,18 +39,18 @@ export async function publishSpec(
   const { spec, owner, mode, baseVersion } = input;
 
   // prefix_ref를 가지고 있으면 composite
-  const hasRefs = Object.values(spec.dims).some(d => d.kind === "prefix_ref");
-  const kind = hasRefs ? "composite" as const : "leaf" as const;
+  const hasRefs = Object.values(spec.dims).some((d) => d.kind === 'prefix_ref');
+  const kind = hasRefs ? ('composite' as const) : ('leaf' as const);
 
   // 1. mode=new이면 prefix 등록
-  if (mode === "new") {
+  if (mode === 'new') {
     const exists = await registry.hasPrefix(spec.id);
     if (!exists) {
       await registry.registerPrefix({
         prefix: spec.id,
         owner,
         kind,
-        numberType: "number",
+        numberType: 'number',
       });
     }
   }
@@ -58,7 +58,7 @@ export async function publishSpec(
   // 2. refs 구성 (prefix_ref 차원)
   const refs: Array<{ prefix: string; versionId: string }> = [];
   for (const [, dimRef] of Object.entries(spec.dims)) {
-    if (dimRef.kind === "prefix_ref") {
+    if (dimRef.kind === 'prefix_ref') {
       const activeVersion = await registry.getActiveVersion(dimRef.prefixId);
       if (activeVersion) {
         refs.push({ prefix: dimRef.prefixId, versionId: activeVersion });
@@ -83,7 +83,7 @@ export async function publishSpec(
   return {
     prefix: spec.id,
     versionId: spec.version,
-    status: "draft",
+    status: 'draft',
     capacity,
     refs,
   };
@@ -96,7 +96,7 @@ export async function publishSpec(
 function estimateCapacity(spec: PrefixSpec): number {
   let capacity = 1;
   for (const [, dimRef] of Object.entries(spec.dims)) {
-    if (dimRef.kind === "axis") {
+    if (dimRef.kind === 'axis') {
       // axis의 실제 capacity는 카탈로그에서 오지만,
       // publishSpec 단계에서는 export dims 수 기반 기본값 사용
       capacity *= 16; // 기본 headroom

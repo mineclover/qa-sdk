@@ -14,9 +14,9 @@
  * @layer 측정 (Measurement)
  */
 
-import type { GraphPort } from "spec-schema";
-import type { ObservationNode, DecisionNode } from "./dkg.types.js";
-import { validateAllCategories } from "spec-schema";
+import type { GraphPort } from 'spec-schema';
+import type { ObservationNode, DecisionNode } from './dkg.types.js';
+import { validateAllCategories } from 'spec-schema';
 
 // ═══════════════════════════════════════════════════════════════
 
@@ -50,8 +50,8 @@ export function auditSchemaHealth(
   const result = validateAllCategories(graph);
 
   const violations: SchemaViolationEntry[] = result.results
-    .filter(r => !r.valid)
-    .map(r => ({ prefixId: r.prefixId, category: r.category, errors: r.errors }));
+    .filter((r) => !r.valid)
+    .map((r) => ({ prefixId: r.prefixId, category: r.category, errors: r.errors }));
 
   const observations: ObservationNode[] = [];
   const decisions: DecisionNode[] = [];
@@ -61,40 +61,42 @@ export function auditSchemaHealth(
     const obsId = `OBS-SCHEMA-HEALTH-${v.prefixId}`;
 
     observations.push({
-      kind: "observation",
+      kind: 'observation',
       id: obsId,
       date,
-      source: "metric",
+      source: 'metric',
       subjects: [v.prefixId],
-      finding: `${v.prefixId} (${v.category}) 카테고리 규칙 위반: ${v.errors.join("; ")}`,
-      intent: "action-needed",
+      finding: `${v.prefixId} (${v.category}) 카테고리 규칙 위반: ${v.errors.join('; ')}`,
+      intent: 'action-needed',
       suggestion: {
-        kind: "add-constraint",
+        kind: 'add-constraint',
         rule: `${v.prefixId} prefix 구조를 ${v.category} 카테고리 규칙에 맞게 수정`,
       },
     });
 
     // 심각한 위반 (dim 수 관련) → Decision scaffold
-    const hasDimViolation = v.errors.some(e =>
-      e.includes("dimension") || e.includes("dim") || e.includes("최소") || e.includes("최대"),
+    const hasDimViolation = v.errors.some(
+      (e) =>
+        e.includes('dimension') || e.includes('dim') || e.includes('최소') || e.includes('최대'),
     );
 
     if (hasDimViolation) {
       decisions.push({
-        kind: "decision",
+        kind: 'decision',
         id: `DEC-SCHEMA-${v.prefixId}`,
         date,
         title: `${v.prefixId} prefix 구조 수정`,
         context: `${v.category} 카테고리 규칙 위반 감지`,
-        rationale: v.errors.join("; "),
-        lifecycle: "active",
+        rationale: v.errors.join('; '),
+        lifecycle: 'active',
       });
     }
   }
 
-  const summary = violations.length === 0
-    ? `${result.total}개 prefix 전체 통과`
-    : `${result.total}개 중 ${violations.length}개 위반 (${observations.length} observation, ${decisions.length} decision)`;
+  const summary =
+    violations.length === 0
+      ? `${result.total}개 prefix 전체 통과`
+      : `${result.total}개 중 ${violations.length}개 위반 (${observations.length} observation, ${decisions.length} decision)`;
 
   return {
     totalPrefixes: result.total,

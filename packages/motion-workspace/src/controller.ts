@@ -23,18 +23,16 @@ import {
   type MotionSceneDef,
   type ResolvedMotionCompositionSchema,
   undoMotionEditorSession,
-} from "motion-content";
-import {
-  createMotionWorkspaceSnapshot,
-} from "./io.js";
-import { migrateMotionWorkspaceSnapshot } from "./migrate.js";
+} from 'motion-content';
+import { createMotionWorkspaceSnapshot } from './io.js';
+import { migrateMotionWorkspaceSnapshot } from './migrate.js';
 import type {
   MotionWorkspaceControllerSnapshot,
   MotionWorkspaceCreateOptions,
   MotionWorkspaceSnapshot,
   MotionWorkspaceSnapshotV1,
   MotionWorkspaceSnapshotV2,
-} from "./types.js";
+} from './types.js';
 
 export interface MotionWorkspaceControllerSaveOptions {
   readonly savedAt?: string;
@@ -46,44 +44,43 @@ export type MotionWorkspaceControllerInput =
   | MotionWorkspaceSnapshotV1
   | Record<string, unknown>;
 
-type WorkspaceDocument =
-  | MotionCompositionDocumentV1
-  | MotionCompositionDocumentV2;
+type WorkspaceDocument = MotionCompositionDocumentV1 | MotionCompositionDocumentV2;
 
 type WorkspaceSession = MotionEditorSession<ResolvedMotionCompositionSchema>;
 type WorkspaceState = MotionEditorState<ResolvedMotionCompositionSchema>;
 
-const SCENE_SESSION_COMMAND_TYPES = new Set<MotionEditorCommand["type"]>([
-  "rename-scene",
-  "update-scene-timing",
-  "add-scene-placement",
-  "remove-scene-placement",
-  "update-scene-placement-timing",
-  "update-scene-placement-cue",
+const SCENE_SESSION_COMMAND_TYPES = new Set<MotionEditorCommand['type']>([
+  'rename-scene',
+  'update-scene-timing',
+  'add-scene-placement',
+  'remove-scene-placement',
+  'update-scene-placement-timing',
+  'update-scene-placement-cue',
 ]);
 
-const SESSION_LOCAL_COMMAND_TYPES = new Set<MotionEditorCommand["type"]>([
-  "select",
-  "play",
-  "pause",
-  "restart",
-  "set-current-time",
-  "set-loop",
-  "set-playback-rate",
+const SESSION_LOCAL_COMMAND_TYPES = new Set<MotionEditorCommand['type']>([
+  'select',
+  'play',
+  'pause',
+  'restart',
+  'set-current-time',
+  'set-loop',
+  'set-playback-rate',
 ]);
 
 function isSceneComposition(
   composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
 ): composition is MotionCompositionDefV2 {
-  return "targets" in composition && "scenes" in composition;
+  return 'targets' in composition && 'scenes' in composition;
 }
 
 function toEditableComposition(
   composition: MotionCompositionSchema | ResolvedMotionCompositionSchema,
 ): MotionCompositionSchema {
-  const { values: _resolvedValues, ...nextComposition } = composition as ResolvedMotionCompositionSchema & {
-    readonly values?: MotionParameterValues;
-  };
+  const { values: _resolvedValues, ...nextComposition } =
+    composition as ResolvedMotionCompositionSchema & {
+      readonly values?: MotionParameterValues;
+    };
   return nextComposition as MotionCompositionSchema;
 }
 
@@ -120,19 +117,19 @@ function findSceneInComposition(
     return undefined;
   }
 
-  return (toEditableComposition(composition) as MotionCompositionDefV2).scenes.find((scene) => scene.id === sceneId);
+  return (toEditableComposition(composition) as MotionCompositionDefV2).scenes.find(
+    (scene) => scene.id === sceneId,
+  );
 }
 
-function resolveSelectedSceneId(
-  selection: MotionEditorSelectionV2 | null,
-): string | null {
+function resolveSelectedSceneId(selection: MotionEditorSelectionV2 | null): string | null {
   if (!selection) {
     return null;
   }
-  if (selection.kind === "scene") {
+  if (selection.kind === 'scene') {
     return selection.id;
   }
-  if (selection.kind === "scene-layer") {
+  if (selection.kind === 'scene-layer') {
     return selection.sceneId;
   }
   return null;
@@ -178,9 +175,7 @@ function createWorkspaceExport(
   };
 }
 
-function createSessionFromWorkspace(
-  workspace: MotionWorkspaceSnapshotV2,
-): WorkspaceSession {
+function createSessionFromWorkspace(workspace: MotionWorkspaceSnapshotV2): WorkspaceSession {
   const session = createMotionEditorSession(
     workspace.document.composition,
     workspace.editor.values,
@@ -205,22 +200,17 @@ function hasPersistedWorkspaceChanges(
   candidate: MotionWorkspaceSnapshotV2,
   workspace: MotionWorkspaceSnapshotV2,
 ): boolean {
-  return JSON.stringify([
-    candidate.document,
-    candidate.editor,
-    candidate.source ?? null,
-  ]) !== JSON.stringify([
-    workspace.document,
-    workspace.editor,
-    workspace.source ?? null,
-  ]);
+  return (
+    JSON.stringify([candidate.document, candidate.editor, candidate.source ?? null]) !==
+    JSON.stringify([workspace.document, workspace.editor, workspace.source ?? null])
+  );
 }
 
 function diffSceneRevisions(
   previous: MotionCompositionSchema,
   next: MotionCompositionSchema,
-  currentSceneRevisions: MotionWorkspaceSnapshotV2["sceneRevisions"],
-): Pick<MotionWorkspaceSnapshotV2, "globalRevision" | "sceneRevisions"> {
+  currentSceneRevisions: MotionWorkspaceSnapshotV2['sceneRevisions'],
+): Pick<MotionWorkspaceSnapshotV2, 'globalRevision' | 'sceneRevisions'> {
   if (!isSceneComposition(previous) || !isSceneComposition(next)) {
     const documentChanged = JSON.stringify(previous) !== JSON.stringify(next);
     return {
@@ -233,17 +223,19 @@ function diffSceneRevisions(
   const nextScenes = new Map(next.scenes.map((scene) => [scene.id, scene]));
   const previousSceneIds = new Set(previousScenes.keys());
   const nextSceneIds = new Set(nextScenes.keys());
-  const structureChanged = previousSceneIds.size !== nextSceneIds.size
-    || [...previousSceneIds].some((sceneId) => !nextSceneIds.has(sceneId))
-    || [...nextSceneIds].some((sceneId) => !previousSceneIds.has(sceneId));
+  const structureChanged =
+    previousSceneIds.size !== nextSceneIds.size ||
+    [...previousSceneIds].some((sceneId) => !nextSceneIds.has(sceneId)) ||
+    [...nextSceneIds].some((sceneId) => !previousSceneIds.has(sceneId));
 
   const sceneRevisions: Record<string, number> = {};
   for (const scene of next.scenes) {
     const previousScene = previousScenes.get(scene.id);
     const previousRevision = currentSceneRevisions[scene.id] ?? 0;
-    sceneRevisions[scene.id] = previousScene && JSON.stringify(previousScene) !== JSON.stringify(scene)
-      ? previousRevision + 1
-      : previousRevision;
+    sceneRevisions[scene.id] =
+      previousScene && JSON.stringify(previousScene) !== JSON.stringify(scene)
+        ? previousRevision + 1
+        : previousRevision;
   }
 
   return {
@@ -314,7 +306,9 @@ export function createMotionWorkspaceController(
       return null;
     }
 
-    let composition = toEditableComposition(globalSession.present.composition) as MotionCompositionDefV2;
+    let composition = toEditableComposition(
+      globalSession.present.composition,
+    ) as MotionCompositionDefV2;
     for (const [sceneId, session] of sceneSessions) {
       if (sceneId === excludedSceneId) {
         continue;
@@ -328,9 +322,7 @@ export function createMotionWorkspaceController(
     return composition;
   }
 
-  function buildEffectiveGlobalState(
-    state: WorkspaceState,
-  ): WorkspaceState {
+  function buildEffectiveGlobalState(state: WorkspaceState): WorkspaceState {
     if (!isSceneComposition(state.composition) || sceneSessions.size === 0) {
       return state;
     }
@@ -353,12 +345,10 @@ export function createMotionWorkspaceController(
     }
 
     return {
-      past: globalSession.past.map((state) =>
-        buildEffectiveGlobalState(state as WorkspaceState)
-      ),
+      past: globalSession.past.map((state) => buildEffectiveGlobalState(state as WorkspaceState)),
       present: buildEffectiveGlobalState(globalSession.present),
       future: globalSession.future.map((state) =>
-        buildEffectiveGlobalState(state as WorkspaceState)
+        buildEffectiveGlobalState(state as WorkspaceState),
       ),
     };
   }
@@ -379,10 +369,7 @@ export function createMotionWorkspaceController(
     );
   }
 
-  function createSceneSession(
-    sceneId: string,
-    persist: boolean,
-  ): WorkspaceSession | null {
+  function createSceneSession(sceneId: string, persist: boolean): WorkspaceSession | null {
     const composition = composeGlobalSceneState();
     if (!composition || !composition.scenes.some((scene) => scene.id === sceneId)) {
       return null;
@@ -405,10 +392,7 @@ export function createMotionWorkspaceController(
     return session;
   }
 
-  function rebaseSceneSession(
-    sceneId: string,
-    session: WorkspaceSession,
-  ): WorkspaceSession | null {
+  function rebaseSceneSession(sceneId: string, session: WorkspaceSession): WorkspaceSession | null {
     const baseComposition = composeGlobalSceneState(sceneId);
     if (!baseComposition || !baseComposition.scenes.some((scene) => scene.id === sceneId)) {
       sceneSessions.delete(sceneId);
@@ -420,11 +404,11 @@ export function createMotionWorkspaceController(
 
     const nextSession: WorkspaceSession = {
       past: session.past.map((state) =>
-        buildEffectiveSceneState(state as WorkspaceState, sceneId, baseComposition)
+        buildEffectiveSceneState(state as WorkspaceState, sceneId, baseComposition),
       ),
       present: buildEffectiveSceneState(session.present, sceneId, baseComposition),
       future: session.future.map((state) =>
-        buildEffectiveSceneState(state as WorkspaceState, sceneId, baseComposition)
+        buildEffectiveSceneState(state as WorkspaceState, sceneId, baseComposition),
       ),
     };
 
@@ -432,9 +416,7 @@ export function createMotionWorkspaceController(
     return nextSession;
   }
 
-  function getSceneSession(
-    sceneId: string,
-  ): WorkspaceSession | null {
+  function getSceneSession(sceneId: string): WorkspaceSession | null {
     const existing = sceneSessions.get(sceneId);
     if (existing) {
       return rebaseSceneSession(sceneId, existing);
@@ -484,7 +466,7 @@ export function createMotionWorkspaceController(
   }
 
   function applySceneScopedCommand(command: MotionEditorCommand): WorkspaceSession | null {
-    if (!("sceneId" in command)) {
+    if (!('sceneId' in command)) {
       return null;
     }
 
@@ -493,17 +475,15 @@ export function createMotionWorkspaceController(
       return null;
     }
 
-    return setSceneSession(
-      command.sceneId,
-      applyMotionEditorSessionCommand(sceneSession, command),
-    );
+    return setSceneSession(command.sceneId, applyMotionEditorSessionCommand(sceneSession, command));
   }
 
   function applySessionLocalCommand(command: MotionEditorCommand): WorkspaceSession {
-    if (command.type === "select") {
+    if (command.type === 'select') {
       const selectedSceneId = resolveSelectedSceneId(command.selection);
       if (selectedSceneId) {
-        const targetSession = getSceneSession(selectedSceneId) ?? createSceneSession(selectedSceneId, true);
+        const targetSession =
+          getSceneSession(selectedSceneId) ?? createSceneSession(selectedSceneId, true);
         if (targetSession) {
           return setSceneSession(
             selectedSceneId,
@@ -530,10 +510,18 @@ export function createMotionWorkspaceController(
   }
 
   function applyGlobalCommand(command: MotionEditorCommand): WorkspaceSession {
-    if (command.type === "set-composition" || command.type === "add-scene" || command.type === "remove-scene") {
+    if (
+      command.type === 'set-composition' ||
+      command.type === 'add-scene' ||
+      command.type === 'remove-scene'
+    ) {
       collapseSceneSessionsIntoGlobal();
       globalSession = applyMotionEditorSessionCommand(globalSession, command);
-      if (command.type === "set-composition" || command.type === "add-scene" || command.type === "remove-scene") {
+      if (
+        command.type === 'set-composition' ||
+        command.type === 'add-scene' ||
+        command.type === 'remove-scene'
+      ) {
         sceneSessions = new Map();
       }
       syncActiveSceneAfterGlobalCommand();
@@ -545,7 +533,9 @@ export function createMotionWorkspaceController(
     return getCurrentSession();
   }
 
-  function saveCurrentWorkspace(saveOptions: MotionWorkspaceControllerSaveOptions = {}): MotionWorkspaceControllerSnapshot {
+  function saveCurrentWorkspace(
+    saveOptions: MotionWorkspaceControllerSaveOptions = {},
+  ): MotionWorkspaceControllerSnapshot {
     const currentSession = getCurrentSession();
     const candidate = createWorkspaceExport(currentSession, workspace);
     if (!hasPersistedWorkspaceChanges(candidate, workspace)) {
@@ -557,12 +547,14 @@ export function createMotionWorkspaceController(
       candidate.document.composition,
       workspace.sceneRevisions,
     );
-    const usesLegacyRevision = !isSceneComposition(workspace.document.composition)
-      && !isSceneComposition(candidate.document.composition);
+    const usesLegacyRevision =
+      !isSceneComposition(workspace.document.composition) &&
+      !isSceneComposition(candidate.document.composition);
 
     workspace = {
       ...candidate,
-      globalRevision: workspace.globalRevision + (usesLegacyRevision ? 1 : revisionDelta.globalRevision),
+      globalRevision:
+        workspace.globalRevision + (usesLegacyRevision ? 1 : revisionDelta.globalRevision),
       sceneRevisions: revisionDelta.sceneRevisions,
       savedAt: saveOptions.savedAt ?? new Date().toISOString(),
     };
@@ -601,19 +593,21 @@ export function createMotionWorkspaceController(
       }
 
       if (SCENE_SESSION_COMMAND_TYPES.has(command.type)) {
-        const sceneSession = "sceneId" in command
-          ? getSceneSession(command.sceneId) ?? createSceneSession(command.sceneId, false)
-          : null;
+        const sceneSession =
+          'sceneId' in command
+            ? (getSceneSession(command.sceneId) ?? createSceneSession(command.sceneId, false))
+            : null;
         if (sceneSession) {
           return previewMotionEditorSessionCommand(sceneSession, command);
         }
       }
 
       if (SESSION_LOCAL_COMMAND_TYPES.has(command.type)) {
-        if (command.type === "select") {
+        if (command.type === 'select') {
           const selectedSceneId = resolveSelectedSceneId(command.selection);
           if (selectedSceneId) {
-            const sceneSession = getSceneSession(selectedSceneId) ?? createSceneSession(selectedSceneId, false);
+            const sceneSession =
+              getSceneSession(selectedSceneId) ?? createSceneSession(selectedSceneId, false);
             if (sceneSession) {
               return previewMotionEditorSessionCommand(sceneSession, command);
             }
@@ -664,11 +658,13 @@ export function createMotionWorkspaceController(
       return this.loadWorkspace(snapshot);
     },
     loadDocument(document) {
-      resetWorkspace(createMotionWorkspaceSnapshot({
-        composition: document.composition,
-        values: workspace.editor.values,
-        source: workspace.source,
-      }));
+      resetWorkspace(
+        createMotionWorkspaceSnapshot({
+          composition: document.composition,
+          values: workspace.editor.values,
+          source: workspace.source,
+        }),
+      );
       return buildSnapshot(getCurrentSession(), workspace);
     },
     saveWorkspace(saveOptions = {}) {

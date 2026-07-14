@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest';
 
-vi.mock("gsap", () => {
+vi.mock('gsap', () => {
   type TargetLike = {
     style?: Record<string, string>;
     dataset?: Record<string, string>;
@@ -14,15 +14,18 @@ vi.mock("gsap", () => {
   ): void {
     const list = Array.isArray(targets) ? targets : [targets];
     for (const target of list) {
-      if (!target || typeof target !== "object") continue;
-      if (vars.clearProps === "all" && target.style) {
+      if (!target || typeof target !== 'object') continue;
+      if (vars.clearProps === 'all' && target.style) {
         for (const key of Object.keys(target.style)) {
           delete target.style[key];
         }
       }
       for (const [key, value] of Object.entries(vars)) {
-        if (key === "clearProps") continue;
-        if (target.style && ["filter", "boxShadow", "background", "borderColor", "color"].includes(key)) {
+        if (key === 'clearProps') continue;
+        if (
+          target.style &&
+          ['filter', 'boxShadow', 'background', 'borderColor', 'color'].includes(key)
+        ) {
           target.style[key] = String(value);
           continue;
         }
@@ -110,25 +113,25 @@ vi.mock("gsap", () => {
       toVars: Record<string, unknown>,
       position = 0,
     ): this {
-      const duration = typeof toVars.duration === "number" ? toVars.duration : 0;
+      const duration = typeof toVars.duration === 'number' ? toVars.duration : 0;
       this.durationSeconds = Math.max(this.durationSeconds, position + duration);
       return this;
     }
 
-    to(
-      _target: TargetLike,
-      vars: Record<string, unknown>,
-      position = 0,
-    ): this {
-      const duration = typeof vars.duration === "number" ? vars.duration : 0;
+    to(_target: TargetLike, vars: Record<string, unknown>, position = 0): this {
+      const duration = typeof vars.duration === 'number' ? vars.duration : 0;
       this.durationSeconds = Math.max(this.durationSeconds, position + duration);
       return this;
     }
   }
 
   const mockGsap = {
-    timeline: (options: { paused?: boolean; repeat?: number; onUpdate?: () => void; onComplete?: () => void }) =>
-      new MockTimeline(options),
+    timeline: (options: {
+      paused?: boolean;
+      repeat?: number;
+      onUpdate?: () => void;
+      onComplete?: () => void;
+    }) => new MockTimeline(options),
     set: applySet,
   };
 
@@ -138,12 +141,9 @@ vi.mock("gsap", () => {
   };
 });
 
-import { resolveMotionComposition } from "./model.js";
-import { createPromoGridComposition } from "./presets.js";
-import {
-  createMotionDomStageAdapter,
-  createMotionPlayer,
-} from "./runtime.js";
+import { resolveMotionComposition } from './model.js';
+import { createPromoGridComposition } from './presets.js';
+import { createMotionDomStageAdapter, createMotionPlayer } from './runtime.js';
 
 type MockElement = HTMLElement & {
   style: Record<string, string>;
@@ -151,13 +151,11 @@ type MockElement = HTMLElement & {
   textContent: string;
 };
 
-function createMockElement(
-  attrs: Record<string, string> = {},
-): MockElement {
+function createMockElement(attrs: Record<string, string> = {}): MockElement {
   return {
     style: {},
     dataset: {},
-    textContent: "",
+    textContent: '',
     getAttribute(name: string) {
       return attrs[name] ?? null;
     },
@@ -173,49 +171,49 @@ function createStageRoot(children: readonly MockElement[]): MockElement {
   return root;
 }
 
-describe("motion runtime", () => {
-  it("maps stage nodes through the adapter and applies resolved assets", () => {
-    const headline = createMockElement({ "data-motion-id": "headline" });
-    const subline = createMockElement({ "data-motion-id": "subline" });
-    const hero = createMockElement({ "data-motion-id": "hero" });
-    const chip = createMockElement({ "data-motion-id": "chip" });
+describe('motion runtime', () => {
+  it('maps stage nodes through the adapter and applies resolved assets', () => {
+    const headline = createMockElement({ 'data-motion-id': 'headline' });
+    const subline = createMockElement({ 'data-motion-id': 'subline' });
+    const hero = createMockElement({ 'data-motion-id': 'hero' });
+    const chip = createMockElement({ 'data-motion-id': 'chip' });
     const caption = createMockElement();
     const stageRoot = createStageRoot([headline, subline, hero, chip]);
     const adapter = createMotionDomStageAdapter({ stageRoot, captionElement: caption });
     const composition = resolveMotionComposition(createPromoGridComposition(), {
-      headline: "Runtime headline",
-      accent: "#00ffaa",
+      headline: 'Runtime headline',
+      accent: '#00ffaa',
     });
 
     const player = createMotionPlayer(adapter, composition);
 
-    expect(headline.textContent).toBe("Runtime headline");
-    expect(hero.style.borderColor).toBe("#00ffaa");
-    expect(chip.style.background).toBe("#00ffaa");
+    expect(headline.textContent).toBe('Runtime headline');
+    expect(hero.style.borderColor).toBe('#00ffaa');
+    expect(chip.style.background).toBe('#00ffaa');
 
     player.destroy();
 
     expect(hero.style.borderColor).toBeUndefined();
     expect(chip.style.background).toBeUndefined();
-    expect(caption.textContent).toBe("");
+    expect(caption.textContent).toBe('');
   });
 
-  it("clamps transport boundaries and mirrors them in snapshots", () => {
+  it('clamps transport boundaries and mirrors them in snapshots', () => {
     const caption = createMockElement();
     const stageRoot = createStageRoot([
-      createMockElement({ "data-motion-id": "hero" }),
-      createMockElement({ "data-motion-id": "chip" }),
-      createMockElement({ "data-motion-id": "headline" }),
-      createMockElement({ "data-motion-id": "subline" }),
-      createMockElement({ "data-motion-id": "card-a" }),
-      createMockElement({ "data-motion-id": "card-b" }),
-      createMockElement({ "data-motion-id": "card-c" }),
-      createMockElement({ "data-motion-id": "outro" }),
+      createMockElement({ 'data-motion-id': 'hero' }),
+      createMockElement({ 'data-motion-id': 'chip' }),
+      createMockElement({ 'data-motion-id': 'headline' }),
+      createMockElement({ 'data-motion-id': 'subline' }),
+      createMockElement({ 'data-motion-id': 'card-a' }),
+      createMockElement({ 'data-motion-id': 'card-b' }),
+      createMockElement({ 'data-motion-id': 'card-c' }),
+      createMockElement({ 'data-motion-id': 'outro' }),
     ]);
     const adapter = createMotionDomStageAdapter({ stageRoot, captionElement: caption });
     const player = createMotionPlayer(
       adapter,
-      resolveMotionComposition(createPromoGridComposition("flash")),
+      resolveMotionComposition(createPromoGridComposition('flash')),
     );
 
     expect(player.snapshot().transport).toEqual({
@@ -249,9 +247,9 @@ describe("motion runtime", () => {
       loop: true,
       playbackRate: 1,
     });
-    expect(player.snapshot().activeCaptionId).toBe("cap-4");
-    expect(caption.textContent).toBe("Transition 이후 CTA를 outro sequence로 분리한다.");
-    expect(caption.dataset["tone"]).toBe("warning");
+    expect(player.snapshot().activeCaptionId).toBe('cap-4');
+    expect(caption.textContent).toBe('Transition 이후 CTA를 outro sequence로 분리한다.');
+    expect(caption.dataset['tone']).toBe('warning');
 
     player.pause();
     expect(player.snapshot().transport.playing).toBe(false);
@@ -263,13 +261,13 @@ describe("motion runtime", () => {
     });
   });
 
-  it("fires onTimeUpdate callback on play and seek", () => {
+  it('fires onTimeUpdate callback on play and seek', () => {
     const caption = createMockElement();
     const stageRoot = createStageRoot([
-      createMockElement({ "data-motion-id": "hero" }),
-      createMockElement({ "data-motion-id": "chip" }),
-      createMockElement({ "data-motion-id": "headline" }),
-      createMockElement({ "data-motion-id": "subline" }),
+      createMockElement({ 'data-motion-id': 'hero' }),
+      createMockElement({ 'data-motion-id': 'chip' }),
+      createMockElement({ 'data-motion-id': 'headline' }),
+      createMockElement({ 'data-motion-id': 'subline' }),
     ]);
     const adapter = createMotionDomStageAdapter({ stageRoot, captionElement: caption });
 
@@ -294,17 +292,17 @@ describe("motion runtime", () => {
     player.destroy();
   });
 
-  it("fires onComplete when non-loop playback reaches end", () => {
+  it('fires onComplete when non-loop playback reaches end', () => {
     const caption = createMockElement();
     const stageRoot = createStageRoot([
-      createMockElement({ "data-motion-id": "hero" }),
-      createMockElement({ "data-motion-id": "chip" }),
-      createMockElement({ "data-motion-id": "headline" }),
-      createMockElement({ "data-motion-id": "subline" }),
-      createMockElement({ "data-motion-id": "card-a" }),
-      createMockElement({ "data-motion-id": "card-b" }),
-      createMockElement({ "data-motion-id": "card-c" }),
-      createMockElement({ "data-motion-id": "outro" }),
+      createMockElement({ 'data-motion-id': 'hero' }),
+      createMockElement({ 'data-motion-id': 'chip' }),
+      createMockElement({ 'data-motion-id': 'headline' }),
+      createMockElement({ 'data-motion-id': 'subline' }),
+      createMockElement({ 'data-motion-id': 'card-a' }),
+      createMockElement({ 'data-motion-id': 'card-b' }),
+      createMockElement({ 'data-motion-id': 'card-c' }),
+      createMockElement({ 'data-motion-id': 'outro' }),
     ]);
     const adapter = createMotionDomStageAdapter({ stageRoot, captionElement: caption });
 
@@ -333,11 +331,9 @@ describe("motion runtime", () => {
     player.destroy();
   });
 
-  it("sets destroyed flag and silently ignores calls after destroy", () => {
+  it('sets destroyed flag and silently ignores calls after destroy', () => {
     const caption = createMockElement();
-    const stageRoot = createStageRoot([
-      createMockElement({ "data-motion-id": "headline" }),
-    ]);
+    const stageRoot = createStageRoot([createMockElement({ 'data-motion-id': 'headline' })]);
     const adapter = createMotionDomStageAdapter({ stageRoot, captionElement: caption });
     const player = createMotionPlayer(
       adapter,

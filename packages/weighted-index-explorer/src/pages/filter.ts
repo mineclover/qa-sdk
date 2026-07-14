@@ -10,39 +10,37 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import {
-  describeRangeFormula, partialQueryBase,
-  createMask, setBit, hasBit, popcount,
+  describeRangeFormula,
+  partialQueryBase,
+  createMask,
+  setBit,
+  hasBit,
+  popcount,
   calcAddressRanges,
   type CoordConstraint,
-} from "weighted-index";
-import {
-  SCHEMA_VERSIONS,
-  type VersionDef,
-} from "../data.js";
-import { dimBadge } from "../utils/badge.js";
-import { encodeRowsHtml } from "../utils/encode-html.js";
+} from 'weighted-index';
+import { SCHEMA_VERSIONS, type VersionDef } from '../data.js';
+import { dimBadge } from '../utils/badge.js';
+import { encodeRowsHtml } from '../utils/encode-html.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 //  Sample users
 // ─────────────────────────────────────────────────────────────────────────
 
 interface SampleUser {
-  name:    string;
-  icon:    string;
+  name: string;
+  icon: string;
   // envRoles: which role they hold in each env (null = no access)
   envRoles: Partial<Record<string, string>>;
   bitmask: Uint8Array;
 }
 
-function buildUserBitmask(
-  envRoles: Partial<Record<string, string>>,
-  vDef:     VersionDef,
-): Uint8Array {
+function buildUserBitmask(envRoles: Partial<Record<string, string>>, vDef: VersionDef): Uint8Array {
   const mask = createMask(vDef.size);
   const dims = vDef.dims;
 
   for (const [env, role] of Object.entries(envRoles)) {
-    const eIdx  = Array.from(dims.env.values).indexOf(env as string)  + 1;
+    const eIdx = Array.from(dims.env.values).indexOf(env as string) + 1;
     const roIdx = Array.from(dims.role.values).indexOf(role as string) + 1;
     if (eIdx <= 0 || roIdx <= 0) continue;
 
@@ -61,12 +59,12 @@ function buildUserBitmask(
 
 function roleAllowsAction(role: string, action: string): boolean {
   const map: Record<string, string[]> = {
-    guest:       ["read"],
-    viewer:      ["read"],
-    editor:      ["read", "write"],
-    admin:       ["read", "write", "delete"],
-    super_admin: ["read", "write", "delete", "manage"],
-    owner:       ["read", "write", "delete", "manage"],
+    guest: ['read'],
+    viewer: ['read'],
+    editor: ['read', 'write'],
+    admin: ['read', 'write', 'delete'],
+    super_admin: ['read', 'write', 'delete', 'manage'],
+    owner: ['read', 'write', 'delete', 'manage'],
   };
   return (map[role] ?? []).includes(action);
 }
@@ -76,7 +74,7 @@ function roleAllowsAction(role: string, action: string): boolean {
 // ─────────────────────────────────────────────────────────────────────────
 
 export function renderFilter(container: HTMLElement): void {
-  const vDef  = SCHEMA_VERSIONS[0]; // v1 as base for the demo
+  const vDef = SCHEMA_VERSIONS[0]; // v1 as base for the demo
   const users = buildSampleUsers(vDef);
 
   container.innerHTML = `<div class="concept-wrap">${buildPage(users, vDef)}</div>`;
@@ -88,37 +86,40 @@ export function renderFilter(container: HTMLElement): void {
 // ─────────────────────────────────────────────────────────────────────────
 
 function buildSampleUsers(vDef: VersionDef): SampleUser[] {
-  const specs: Omit<SampleUser, "bitmask">[] = [
+  const specs: Omit<SampleUser, 'bitmask'>[] = [
     {
-      name: "Alice",
-      icon: "👩‍💼",
-      envRoles: { production: "super_admin", staging: "super_admin", development: "super_admin" },
+      name: 'Alice',
+      icon: '👩‍💼',
+      envRoles: { production: 'super_admin', staging: 'super_admin', development: 'super_admin' },
     },
     {
-      name: "Bob",
-      icon: "👨‍💻",
-      envRoles: { production: "viewer", staging: "viewer" },
+      name: 'Bob',
+      icon: '👨‍💻',
+      envRoles: { production: 'viewer', staging: 'viewer' },
     },
     {
-      name: "Charlie",
-      icon: "👨‍🔧",
-      envRoles: { staging: "editor", development: "editor" },
+      name: 'Charlie',
+      icon: '👨‍🔧',
+      envRoles: { staging: 'editor', development: 'editor' },
     },
     {
-      name: "Dave",
-      icon: "👨‍💼",
-      envRoles: { production: "admin", staging: "admin" },
+      name: 'Dave',
+      icon: '👨‍💼',
+      envRoles: { production: 'admin', staging: 'admin' },
     },
     {
-      name: "Eve",
-      icon: "👩‍🔬",
-      envRoles: { development: "editor", testing: "admin" },
+      name: 'Eve',
+      icon: '👩‍🔬',
+      envRoles: { development: 'editor', testing: 'admin' },
     },
   ];
 
-  return specs.map((s) => Object.assign({}, s, {
-    bitmask: buildUserBitmask(s.envRoles, vDef),
-  }) as SampleUser);
+  return specs.map(
+    (s) =>
+      Object.assign({}, s, {
+        bitmask: buildUserBitmask(s.envRoles, vDef),
+      }) as SampleUser,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -165,7 +166,10 @@ function buildIntro(): string {
 
 function buildFormulaSection(vDef: VersionDef): string {
   // Example: database(3)×delete(3)×admin(4)×production(1)
-  const r = 3, a = 3, ro = 4, e = 1; // database, delete, admin, production
+  const r = 3,
+    a = 3,
+    ro = 4,
+    e = 1; // database, delete, admin, production
   const id = vDef.wi.encode([r, a, ro, e]);
 
   return `
@@ -181,8 +185,8 @@ function buildFormulaSection(vDef: VersionDef): string {
           ${encodeRowsHtml([r, a, ro, e], vDef.weights as number[], id)}
         </table>
         <div class="filter-formula-note">
-          ${dimBadge("resource", "database")} × ${dimBadge("action", "delete")} ×
-          ${dimBadge("role", "admin")} × ${dimBadge("env", "production")} → id = <strong>${id}</strong>
+          ${dimBadge('resource', 'database')} × ${dimBadge('action', 'delete')} ×
+          ${dimBadge('role', 'admin')} × ${dimBadge('env', 'production')} → id = <strong>${id}</strong>
         </div>
       </div>
     </div>
@@ -232,10 +236,11 @@ function buildRangeSection(vDef: VersionDef): string {
   const weights = vDef.weights as number[];
   const [W1, W2] = weights;
   // admin(ro=4) in production(e=1)
-  const ro = 4, e = 1;
+  const ro = 4,
+    e = 1;
   const fixedCoords: Array<number | null> = [null, null, ro, e];
-  const base    = partialQueryBase(weights, fixedCoords);
-  const formula = describeRangeFormula(weights, fixedCoords, ["resource", "action", "role", "env"]);
+  const base = partialQueryBase(weights, fixedCoords);
+  const formula = describeRangeFormula(weights, fixedCoords, ['resource', 'action', 'role', 'env']);
 
   // compute example IDs for admin+production
   const exampleIds: number[] = [];
@@ -271,7 +276,7 @@ function buildRangeSection(vDef: VersionDef): string {
         </div>
         <p class="mini-note">
           처음 두 resource (r=1,2) 예시:
-          ${exampleIds.map((id) => `<code>${id}</code>`).join(", ")} …
+          ${exampleIds.map((id) => `<code>${id}</code>`).join(', ')} …
         </p>
         <pre class="filter-code-block">// admin의 production 권한 IDs — 루프이지만 공식적 표현 가능
 // describeRangeFormula(W, [null,null,${ro},${e}], labels) → "${formula}"
@@ -283,7 +288,7 @@ for (let r = 1; r &lt;= ${vDef.dims.resource.size}; r++) {
     permIds.push(base + (r - 1) * ${W1} + (a - 1) * ${W2});
   }
 }
-// → [${exampleIds.slice(0, 4).join(", ")}, ...]
+// → [${exampleIds.slice(0, 4).join(', ')}, ...]
 
 // 이 사용자가 그 권한들 중 하나라도 가지고 있는가?
 const canAny = permIds.some(id => user.bitmask[id &gt;&gt; 3] &amp; (1 &lt;&lt; (id &amp; 7)));</pre>
@@ -297,27 +302,31 @@ const canAny = permIds.some(id => user.bitmask[id &gt;&gt; 3] &amp; (1 &lt;&lt; 
 function buildUsersTable(users: SampleUser[], vDef: VersionDef): string {
   const dims = vDef.dims;
 
-  const rows = users.map((u) => {
-    const envCells = Array.from(dims.env.values).map((env) => {
-      const role = u.envRoles[String(env)];
-      if (!role) return `<td class="ut-empty">—</td>`;
-      return `<td class="ut-role">${dimBadge("role", role)}</td>`;
-    }).join("");
+  const rows = users
+    .map((u) => {
+      const envCells = Array.from(dims.env.values)
+        .map((env) => {
+          const role = u.envRoles[String(env)];
+          if (!role) return `<td class="ut-empty">—</td>`;
+          return `<td class="ut-role">${dimBadge('role', role)}</td>`;
+        })
+        .join('');
 
-    const bitsSet = popcount(u.bitmask);
+      const bitsSet = popcount(u.bitmask);
 
-    return `
+      return `
       <tr>
         <td class="ut-user">${u.icon} <strong>${u.name}</strong></td>
         ${envCells}
         <td class="ut-bits">${bitsSet} / ${vDef.size}</td>
       </tr>
     `;
-  }).join("");
+    })
+    .join('');
 
-  const envHeaders = Array.from(dims.env.values).map((env) =>
-    `<th>${dimBadge("env", String(env))}</th>`
-  ).join("");
+  const envHeaders = Array.from(dims.env.values)
+    .map((env) => `<th>${dimBadge('env', String(env))}</th>`)
+    .join('');
 
   return `
     <h2 class="concept-section-title">샘플 사용자</h2>
@@ -349,7 +358,9 @@ function buildDemo(vDef: VersionDef): string {
 
   const opt = (vals: readonly string[], placeholder: string) =>
     `<option value="">${placeholder}</option>` +
-    Array.from(vals).map((v) => `<option value="${v}">${v}</option>`).join("");
+    Array.from(vals)
+      .map((v) => `<option value="${v}">${v}</option>`)
+      .join('');
 
   return `
     <h2 class="concept-section-title">인터랙티브 — 권한으로 사용자 찾기</h2>
@@ -361,15 +372,15 @@ function buildDemo(vDef: VersionDef): string {
         <div class="filter-demo-row">
           <label class="filter-demo-label">resource</label>
           <select class="filter-demo-sel" id="fd-resource">
-            ${opt(dims.resource.values, "전체")}
+            ${opt(dims.resource.values, '전체')}
           </select>
           <label class="filter-demo-label">action</label>
           <select class="filter-demo-sel" id="fd-action">
-            ${opt(dims.action.values, "전체")}
+            ${opt(dims.action.values, '전체')}
           </select>
           <label class="filter-demo-label">env</label>
           <select class="filter-demo-sel" id="fd-env">
-            ${opt(dims.env.values, "전체")}
+            ${opt(dims.env.values, '전체')}
           </select>
         </div>
         <div id="fd-result" class="filter-demo-result"></div>
@@ -383,10 +394,10 @@ function buildDemo(vDef: VersionDef): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef): void {
-  const resSel = container.querySelector<HTMLSelectElement>("#fd-resource");
-  const actSel = container.querySelector<HTMLSelectElement>("#fd-action");
-  const envSel = container.querySelector<HTMLSelectElement>("#fd-env");
-  const result = container.querySelector<HTMLDivElement>("#fd-result");
+  const resSel = container.querySelector<HTMLSelectElement>('#fd-resource');
+  const actSel = container.querySelector<HTMLSelectElement>('#fd-action');
+  const envSel = container.querySelector<HTMLSelectElement>('#fd-env');
+  const result = container.querySelector<HTMLDivElement>('#fd-result');
   if (!resSel || !actSel || !envSel || !result) return;
   const resourceSelect = resSel;
   const actionSelect = actSel;
@@ -397,7 +408,7 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
     const resVal = resourceSelect.value;
     const actVal = actionSelect.value;
     const envVal = envSelect.value;
-    const dims   = vDef.dims;
+    const dims = vDef.dims;
 
     // Build CoordConstraint array and compute address ranges via calcAddressRanges
     const rIdx = resVal ? Array.from(dims.resource.values).indexOf(resVal) + 1 : null;
@@ -405,10 +416,10 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
     const eIdx = envVal ? Array.from(dims.env.values).indexOf(envVal) + 1 : null;
 
     const constraints: CoordConstraint[] = [
-      rIdx !== null ? String(rIdx) : null,  // resource
-      aIdx !== null ? String(aIdx) : null,  // action
-      null,                                  // role (always free)
-      eIdx !== null ? String(eIdx) : null,  // env
+      rIdx !== null ? String(rIdx) : null, // resource
+      aIdx !== null ? String(aIdx) : null, // action
+      null, // role (always free)
+      eIdx !== null ? String(eIdx) : null, // env
     ];
     const shape = [...vDef.shape];
     const ranges = calcAddressRanges(shape, constraints);
@@ -434,7 +445,7 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
       envVal ? `e=${eIdx}(${envVal})` : `e∈[1..${dims.env.size}]`,
     ];
 
-    const formulaLine = `IDs = { encode([${nDims.join(", ")}]) } — ${totalAddresses}개 ID`;
+    const formulaLine = `IDs = { encode([${nDims.join(', ')}]) } — ${totalAddresses}개 ID`;
 
     // Build weight formula using engine's describeRangeFormula
     const fixedCoords: Array<number | null> = [
@@ -443,14 +454,18 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
       null, // role is always free in the filter query
       eIdx,
     ];
-    const compactFormula = describeRangeFormula(
-      vDef.weights as number[], fixedCoords, ["resource", "action", "role", "env"]
-    );
+    const compactFormula = describeRangeFormula(vDef.weights as number[], fixedCoords, [
+      'resource',
+      'action',
+      'role',
+      'env',
+    ]);
 
     // Format ranges for display
-    const rangeStr = ranges.length > 0
-      ? ranges.map(([f, t]) => f === t ? `${f}` : `${f}-${t}`).join(", ")
-      : "(없음)";
+    const rangeStr =
+      ranges.length > 0
+        ? ranges.map(([f, t]) => (f === t ? `${f}` : `${f}-${t}`)).join(', ')
+        : '(없음)';
 
     resultEl.innerHTML = `
       <div class="fd-formula-box">
@@ -467,62 +482,67 @@ function wireDemo(container: HTMLElement, users: SampleUser[], vDef: VersionDef)
           매칭 사용자 <span class="fd-count">${matched.length} / ${users.length}명</span>
         </div>
         <div class="fd-user-list">
-          ${users.map((u) => {
-            const isMatch = matched.includes(u);
-            // find which envs+roles contribute to the match
-            const matchDetails: string[] = [];
-            if (isMatch) {
-              for (const [env, role] of Object.entries(u.envRoles)) {
-                if (!role) continue;
-                const envIdx  = Array.from(dims.env.values).indexOf(env)  + 1;
-                const roIdx = Array.from(dims.role.values).indexOf(role) + 1;
-                const checkEnv = envVal ? [envVal] : [env];
-                if (!checkEnv.includes(env)) continue;
-                // Build per-user range check: fix role and env, free resource and action per filter
-                const userConstraints: CoordConstraint[] = [
-                  rIdx !== null ? String(rIdx) : null,
-                  aIdx !== null ? String(aIdx) : null,
-                  String(roIdx),
-                  String(envIdx),
-                ];
-                const userRanges = calcAddressRanges(shape, userConstraints);
-                // Check if user has any bit set in these ranges
-                let found = false;
-                for (const [from, to] of userRanges) {
-                  for (let addr = from; addr <= to; addr++) {
-                    if (hasBit(u.bitmask, addr)) {
-                      matchDetails.push(`${env}/${role}`);
-                      found = true;
-                      break;
+          ${users
+            .map((u) => {
+              const isMatch = matched.includes(u);
+              // find which envs+roles contribute to the match
+              const matchDetails: string[] = [];
+              if (isMatch) {
+                for (const [env, role] of Object.entries(u.envRoles)) {
+                  if (!role) continue;
+                  const envIdx = Array.from(dims.env.values).indexOf(env) + 1;
+                  const roIdx = Array.from(dims.role.values).indexOf(role) + 1;
+                  const checkEnv = envVal ? [envVal] : [env];
+                  if (!checkEnv.includes(env)) continue;
+                  // Build per-user range check: fix role and env, free resource and action per filter
+                  const userConstraints: CoordConstraint[] = [
+                    rIdx !== null ? String(rIdx) : null,
+                    aIdx !== null ? String(aIdx) : null,
+                    String(roIdx),
+                    String(envIdx),
+                  ];
+                  const userRanges = calcAddressRanges(shape, userConstraints);
+                  // Check if user has any bit set in these ranges
+                  let found = false;
+                  for (const [from, to] of userRanges) {
+                    for (let addr = from; addr <= to; addr++) {
+                      if (hasBit(u.bitmask, addr)) {
+                        matchDetails.push(`${env}/${role}`);
+                        found = true;
+                        break;
+                      }
                     }
+                    if (found) break;
                   }
-                  if (found) break;
                 }
               }
-            }
-            const uniqDetails = [...new Set(matchDetails)];
+              const uniqDetails = [...new Set(matchDetails)];
 
-            return `
-              <div class="fd-user-card ${isMatch ? "fd-match" : "fd-no-match"}">
+              return `
+              <div class="fd-user-card ${isMatch ? 'fd-match' : 'fd-no-match'}">
                 <span class="fd-user-icon">${u.icon}</span>
                 <span class="fd-user-name">${u.name}</span>
-                ${isMatch
-                  ? `<span class="fd-user-via">via ${uniqDetails.map((d) => {
-                      const [env, role] = d.split("/");
-                      return `${dimBadge("env", env)} ${dimBadge("role", role)}`;
-                    }).join(" · ")}</span>`
-                  : '<span class="fd-user-none">권한 없음</span>'
+                ${
+                  isMatch
+                    ? `<span class="fd-user-via">via ${uniqDetails
+                        .map((d) => {
+                          const [env, role] = d.split('/');
+                          return `${dimBadge('env', env)} ${dimBadge('role', role)}`;
+                        })
+                        .join(' · ')}</span>`
+                    : '<span class="fd-user-none">권한 없음</span>'
                 }
               </div>
             `;
-          }).join("")}
+            })
+            .join('')}
         </div>
       </div>
     `;
   }
 
-  resourceSelect.addEventListener("change", run);
-  actionSelect.addEventListener("change", run);
-  envSelect.addEventListener("change", run);
+  resourceSelect.addEventListener('change', run);
+  actionSelect.addEventListener('change', run);
+  envSelect.addEventListener('change', run);
   run();
 }

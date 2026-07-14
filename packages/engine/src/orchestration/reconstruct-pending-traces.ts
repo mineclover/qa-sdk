@@ -9,15 +9,15 @@ import type {
   StoredRecord,
   StoredTrace,
   TraceStore,
-} from "@qa-sdk/core";
-import { newDlqId } from "@qa-sdk/core";
-import { reconstruct } from "../reconstruction/reconstruct.js";
+} from '@qa-sdk/core';
+import { newDlqId } from '@qa-sdk/core';
+import { reconstruct } from '../reconstruction/reconstruct.js';
 
 export interface ReconstructPendingTracesDeps {
-  recordStore: Pick<RecordStore, "findByTraceId">;
-  traceStore: Pick<TraceStore, "findById" | "findUnreconstructed" | "markReconstructed">;
+  recordStore: Pick<RecordStore, 'findByTraceId'>;
+  traceStore: Pick<TraceStore, 'findById' | 'findUnreconstructed' | 'markReconstructed'>;
   graphStore: GraphStore;
-  dlqStore: Pick<DlqStore, "insert">;
+  dlqStore: Pick<DlqStore, 'insert'>;
 }
 
 export interface ReconstructPendingTracesOptions {
@@ -50,7 +50,7 @@ export async function reconstructPendingTraces(
         await deps.dlqStore.insert({
           id: newDlqId(),
           traceId: trace.traceId,
-          phase: "reconstruction",
+          phase: 'reconstruction',
           errorMessage: toErrorMessage(error),
         });
       }
@@ -65,7 +65,7 @@ export async function reconstructPendingTraces(
 }
 
 export async function reconstructTrace(
-  deps: Pick<ReconstructPendingTracesDeps, "recordStore" | "traceStore" | "graphStore">,
+  deps: Pick<ReconstructPendingTracesDeps, 'recordStore' | 'traceStore' | 'graphStore'>,
   traceId: string,
 ): Promise<void> {
   const [records, trace] = await Promise.all([
@@ -82,10 +82,7 @@ export async function reconstructTrace(
 }
 
 async function findTracesToReconstruct(
-  traceStore: Pick<
-    ReconstructPendingTracesDeps["traceStore"],
-    "findById" | "findUnreconstructed"
-  >,
+  traceStore: Pick<ReconstructPendingTracesDeps['traceStore'], 'findById' | 'findUnreconstructed'>,
   options: ReconstructPendingTracesOptions,
 ): Promise<StoredTrace[]> {
   if (!options.traceIds) {
@@ -117,7 +114,7 @@ function toEventRecord(record: StoredRecord): EventRecord {
   return {
     log_id: record.logId,
     timestamp: record.timestamp.toISOString(),
-    record_kind: record.recordKind as EventRecord["record_kind"],
+    record_kind: record.recordKind as EventRecord['record_kind'],
     trace_id: record.traceId,
     span_id: record.spanId,
     parent_span_id: record.parentSpanId,
@@ -126,9 +123,9 @@ function toEventRecord(record: StoredRecord): EventRecord {
     span_name: record.spanName,
     start_time: record.startTime?.toISOString(),
     end_time: record.endTime?.toISOString(),
-    status_code: record.statusCode as EventRecord["status_code"],
-    payload_format: record.payloadFormat as EventRecord["payload_format"],
-    payload_encoding: record.payloadEncoding as EventRecord["payload_encoding"],
+    status_code: record.statusCode as EventRecord['status_code'],
+    payload_format: record.payloadFormat as EventRecord['payload_format'],
+    payload_encoding: record.payloadEncoding as EventRecord['payload_encoding'],
     payload_masking_applied: record.payloadMaskingApplied,
     payload_masked_fields: [...record.payloadMaskedFields],
     payload: structuredClone(record.payload),

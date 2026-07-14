@@ -73,10 +73,7 @@ export function createCanonicalReviewSubmissionHandlers(
         result: null,
         submissionError: null,
       }));
-      appendCanonicalReviewActivity(
-        context,
-        recordCanonicalReviewSubmissionStarted(result.score),
-      );
+      appendCanonicalReviewActivity(context, recordCanonicalReviewSubmissionStarted(result.score));
       context.bridge.emitEvent('canonical_review_submit_started', {
         risk_level: currentState.draft.riskLevel,
         route: result.recommendedRoute,
@@ -84,10 +81,7 @@ export function createCanonicalReviewSubmissionHandlers(
       });
 
       try {
-        const receipt = await context.persistCanonicalReview(
-          currentState.draft,
-          result,
-        );
+        const receipt = await context.persistCanonicalReview(currentState.draft, result);
         const persistedAt = receipt.persistedAt ?? now();
 
         updateCanonicalReviewState(context, (state) => ({
@@ -99,10 +93,7 @@ export function createCanonicalReviewSubmissionHandlers(
         }));
         appendCanonicalReviewActivity(
           context,
-          recordCanonicalReviewSubmissionSucceeded(
-            result.recommendedRoute,
-            persistedAt,
-          ),
+          recordCanonicalReviewSubmissionSucceeded(result.recommendedRoute, persistedAt),
         );
         context.bridge.emitEvent('form_submit', {
           change_title: currentState.draft.changeTitle,
@@ -127,10 +118,7 @@ export function createCanonicalReviewSubmissionHandlers(
           result: null,
           submissionError: message,
         }));
-        appendCanonicalReviewActivity(
-          context,
-          recordCanonicalReviewSubmissionFailed(message),
-        );
+        appendCanonicalReviewActivity(context, recordCanonicalReviewSubmissionFailed(message));
         context.bridge.emitEvent('canonical_review_submit_failed', {
           message,
         });

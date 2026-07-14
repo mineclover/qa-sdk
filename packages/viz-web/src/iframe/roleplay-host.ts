@@ -1,9 +1,9 @@
 // @def.boundary viz-system-root
 // @def.doc viz-system-root
 
-import { ROLEPLAY_WEB_URL } from "../config";
-import type { ParentMessage, ChildMessage } from "./message-protocol";
-import { isChildMessage } from "./message-protocol";
+import { ROLEPLAY_WEB_URL } from '../config';
+import type { ParentMessage, ChildMessage } from './message-protocol';
+import { isChildMessage } from './message-protocol';
 
 export interface RoleplayHost {
   sendContext(ctx: { traceId: string; sessionId: string; scenarioId: string }): void;
@@ -13,30 +13,30 @@ export interface RoleplayHost {
 }
 
 export function createRoleplayHost(container: HTMLElement): RoleplayHost {
-  const wrapper = document.createElement("div");
-  wrapper.className = "roleplay-host";
+  const wrapper = document.createElement('div');
+  wrapper.className = 'roleplay-host';
 
-  const header = document.createElement("div");
-  header.className = "roleplay-header";
+  const header = document.createElement('div');
+  header.className = 'roleplay-header';
 
-  const title = document.createElement("span");
-  title.className = "panel-label";
-  title.textContent = "Roleplay";
+  const title = document.createElement('span');
+  title.className = 'panel-label';
+  title.textContent = 'Roleplay';
 
-  const toggleBtn = document.createElement("button");
-  toggleBtn.className = "btn-toggle";
-  toggleBtn.textContent = "Collapse";
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'btn-toggle';
+  toggleBtn.textContent = 'Collapse';
 
   header.appendChild(title);
   header.appendChild(toggleBtn);
 
-  const iframeContainer = document.createElement("div");
-  iframeContainer.className = "roleplay-iframe-container";
+  const iframeContainer = document.createElement('div');
+  iframeContainer.className = 'roleplay-iframe-container';
 
-  const iframe = document.createElement("iframe");
+  const iframe = document.createElement('iframe');
   iframe.src = ROLEPLAY_WEB_URL;
-  iframe.className = "roleplay-iframe";
-  iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+  iframe.className = 'roleplay-iframe';
+  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
   iframeContainer.appendChild(iframe);
 
   wrapper.appendChild(header);
@@ -44,10 +44,10 @@ export function createRoleplayHost(container: HTMLElement): RoleplayHost {
   container.appendChild(wrapper);
 
   let collapsed = false;
-  toggleBtn.addEventListener("click", () => {
+  toggleBtn.addEventListener('click', () => {
     collapsed = !collapsed;
-    iframeContainer.classList.toggle("collapsed", collapsed);
-    toggleBtn.textContent = collapsed ? "Expand" : "Collapse";
+    iframeContainer.classList.toggle('collapsed', collapsed);
+    toggleBtn.textContent = collapsed ? 'Expand' : 'Collapse';
   });
 
   // Last known context — re-sent whenever iframe signals ready
@@ -58,7 +58,7 @@ export function createRoleplayHost(container: HTMLElement): RoleplayHost {
   function postContext(ctx: { traceId: string; sessionId: string; scenarioId: string }): void {
     if (!iframe.contentWindow) return;
     const msg: ParentMessage = {
-      type: "context",
+      type: 'context',
       traceId: ctx.traceId,
       sessionId: ctx.sessionId,
       scenarioId: ctx.scenarioId,
@@ -70,7 +70,7 @@ export function createRoleplayHost(container: HTMLElement): RoleplayHost {
     if (event.origin !== new URL(ROLEPLAY_WEB_URL).origin) return;
     if (!isChildMessage(event.data)) return;
 
-    if (event.data.type === "ready") {
+    if (event.data.type === 'ready') {
       // iframe just loaded or HMR-reloaded — re-send current context
       if (lastCtx) postContext(lastCtx);
       return;
@@ -81,7 +81,7 @@ export function createRoleplayHost(container: HTMLElement): RoleplayHost {
     }
   }
 
-  window.addEventListener("message", handleMessage);
+  window.addEventListener('message', handleMessage);
 
   return {
     sendContext(ctx) {
@@ -91,11 +91,13 @@ export function createRoleplayHost(container: HTMLElement): RoleplayHost {
 
     onEvent(handler) {
       eventHandlers.add(handler);
-      return () => { eventHandlers.delete(handler); };
+      return () => {
+        eventHandlers.delete(handler);
+      };
     },
 
     destroy() {
-      window.removeEventListener("message", handleMessage);
+      window.removeEventListener('message', handleMessage);
       eventHandlers.clear();
       if (wrapper.parentElement) {
         wrapper.parentElement.removeChild(wrapper);

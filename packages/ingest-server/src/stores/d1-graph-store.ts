@@ -1,11 +1,11 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { eq } from "drizzle-orm";
-import type { GraphStore } from "@qa-sdk/core";
-import type { RuntimeGraph } from "@qa-sdk/core";
-import { runtimeGraphs } from "../db/schema.js";
-import type { D1Db } from "./d1-db-type.js";
+import { eq } from 'drizzle-orm';
+import type { GraphStore } from '@qa-sdk/core';
+import type { RuntimeGraph } from '@qa-sdk/core';
+import { runtimeGraphs } from '../db/schema.js';
+import type { D1Db } from './d1-db-type.js';
 
 export class D1GraphStore implements GraphStore {
   constructor(private readonly db: D1Db) {}

@@ -25,7 +25,7 @@ export {
   SEMANTIC_COORDINATE_LABEL_KINDS,
   SEMANTIC_EXISTING_ID_SOURCES,
   SEMANTIC_PHYSICAL_REF_KINDS,
-} from "./coordinate.js";
+} from './coordinate.js';
 
 export type {
   SemanticCoordinate,
@@ -40,37 +40,37 @@ export type {
   SemanticPhysicalRef,
   SemanticPhysicalRefInput,
   SemanticPhysicalRefKind,
-} from "./coordinate.js";
+} from './coordinate.js';
 
 export {
   buildSemanticCoordinateCandidatesFromDocument,
   collectSemanticCoordinateCandidatesFromDocuments,
-} from "./projection.js";
+} from './projection.js';
 
 export type {
   SemanticCoordinateCandidateInventory,
   SemanticCoordinateCandidateInventoryOptions,
   SemanticCoordinateSkippedDocument,
-} from "./projection.js";
+} from './projection.js';
 
-export { detectSemanticCoordinateCandidateCollisions } from "./collision.js";
+export { detectSemanticCoordinateCandidateCollisions } from './collision.js';
 
 export {
   buildDeterministicLabelRecord,
   projectDeterministicLabelRecordsFromDocuments,
-} from "./records.js";
+} from './records.js';
 
 export type {
   DeterministicLabelRecord,
   DeterministicLabelRecordInput,
   DeterministicLabelRecordProjection,
   DeterministicLabelRecordProjectionOptions,
-} from "./records.js";
+} from './records.js';
 
-export { buildDeterministicLabelInventory } from "./inventory.js";
+export { buildDeterministicLabelInventory } from './inventory.js';
 
 export type {
   DeterministicLabelInventory,
   DeterministicLabelInventoryOptions,
   DeterministicLabelInventorySummary,
-} from "./inventory.js";
+} from './inventory.js';

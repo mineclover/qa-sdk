@@ -45,7 +45,7 @@
  * ```
  */
 
-import type { CoordConstraint } from "weighted-index";
+import type { CoordConstraint } from 'weighted-index';
 
 // ── 저장 타입 ─────────────────────────────────────────────
 

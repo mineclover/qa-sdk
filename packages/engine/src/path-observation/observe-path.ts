@@ -13,7 +13,7 @@ import type {
   BranchPoint,
   BranchPath,
   NonLinearPathObservation,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 /**
  * MatchResult를 기반으로 PathObservation을 파생한다.
@@ -43,8 +43,7 @@ export function derivePathObservation(
 
   // 2. timestamp 순 정렬
   const sorted = [...matchedPairs].toSorted(
-    (a, b) =>
-      new Date(a.node.timestamp).getTime() - new Date(b.node.timestamp).getTime(),
+    (a, b) => new Date(a.node.timestamp).getTime() - new Date(b.node.timestamp).getTime(),
   );
 
   const reached_nodes: ReachedNode[] = sorted.map((p) => ({
@@ -64,26 +63,20 @@ export function derivePathObservation(
   // 4. Terminal spec 노드: outgoing edge가 없는 노드
   const nodesWithOutgoing = new Set(specGraph.edges.map((e) => e.source));
   const terminalStepIds = new Set(
-    specGraph.nodes
-      .filter((n) => !nodesWithOutgoing.has(n.step_id))
-      .map((n) => n.step_id),
+    specGraph.nodes.filter((n) => !nodesWithOutgoing.has(n.step_id)).map((n) => n.step_id),
   );
 
   // 5. Reached / unreachable goals
   const reachedStepIds = new Set(sorted.map((p) => p.step_id));
   const reached_goals = [...terminalStepIds].filter((id) => reachedStepIds.has(id));
-  const unreachable_goals = [...terminalStepIds].filter(
-    (id) => !reachedStepIds.has(id),
-  );
+  const unreachable_goals = [...terminalStepIds].filter((id) => !reachedStepIds.has(id));
 
   // 6. Terminal node + reason
   const lastPair = sorted[sorted.length - 1] ?? null;
   const terminal_node = lastPair?.node.id ?? null;
   let terminal_reason: TerminalReason | null = null;
   if (terminal_node != null && lastPair) {
-    terminal_reason = terminalStepIds.has(lastPair.step_id)
-      ? "goal_reached"
-      : "partial";
+    terminal_reason = terminalStepIds.has(lastPair.step_id) ? 'goal_reached' : 'partial';
   }
 
   // 7. Traversed edges: 양쪽 endpoint가 모두 매칭된 spec 엣지
@@ -102,7 +95,7 @@ export function derivePathObservation(
     unreachable_goals,
     loop_detected,
     // optional 엣지를 실제로 통과했으면 recovery 경로 사용
-    recovery_used: traversed_edges.some((e) => e.edge_type === "optional"),
+    recovery_used: traversed_edges.some((e) => e.edge_type === 'optional'),
     terminal_node,
     terminal_reason,
   };
@@ -120,10 +113,8 @@ export function deriveBranchPaths(
   specGraph: SpecGraph,
   observation: PathObservation,
 ): BranchPoint[] {
-  const reachedStepIds = new Set(observation.reached_nodes.map(n => n.spec_step_id));
-  const reachedNodeMap = new Map(
-    observation.reached_nodes.map(n => [n.spec_step_id, n]),
-  );
+  const reachedStepIds = new Set(observation.reached_nodes.map((n) => n.spec_step_id));
+  const reachedNodeMap = new Map(observation.reached_nodes.map((n) => [n.spec_step_id, n]));
 
   // source별 outgoing 엣지 그룹핑
   const outgoing = new Map<string, typeof specGraph.edges>();
@@ -139,12 +130,19 @@ export function deriveBranchPaths(
     // 분기 지점: 2개 이상 outgoing 엣지
     if (edges.length < 2) continue;
 
-    const branches: BranchPath[] = edges.map(edge => {
+    const branches: BranchPath[] = edges.map((edge) => {
       const taken = reachedStepIds.has(edge.target);
       // taken인 분기의 후속 노드 수집 (BFS로 해당 분기 서브트리)
       const branchReached: ReachedNode[] = [];
       if (taken) {
-        collectBranchNodes(edge.target, specGraph, reachedStepIds, reachedNodeMap, branchReached, sourceStepId);
+        collectBranchNodes(
+          edge.target,
+          specGraph,
+          reachedStepIds,
+          reachedNodeMap,
+          branchReached,
+          sourceStepId,
+        );
       }
       return {
         targetStepId: edge.target,
@@ -180,7 +178,14 @@ function collectBranchNodes(
   for (const edge of specGraph.edges) {
     if (edge.source !== stepId) continue;
     if (edge.target === excludeSource) continue; // 역방향 방지
-    collectBranchNodes(edge.target, specGraph, reachedStepIds, reachedNodeMap, result, excludeSource);
+    collectBranchNodes(
+      edge.target,
+      specGraph,
+      reachedStepIds,
+      reachedNodeMap,
+      result,
+      excludeSource,
+    );
   }
 }
 
@@ -197,7 +202,8 @@ export function deriveNonLinearObservation(
 
   const total = branchPoints.reduce((sum, bp) => sum + bp.branches.length, 0);
   const taken = branchPoints.reduce(
-    (sum, bp) => sum + bp.branches.filter(b => b.taken).length, 0,
+    (sum, bp) => sum + bp.branches.filter((b) => b.taken).length,
+    0,
   );
 
   return {

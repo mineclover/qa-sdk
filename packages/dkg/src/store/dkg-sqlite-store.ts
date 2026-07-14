@@ -9,23 +9,13 @@
  * 집계 결과를 스냅샷으로 저장하여 누적/비교 가능.
  */
 
-import { createLogger, type EventRecord } from "@qa-sdk/core";
-import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
+import { createLogger, type EventRecord } from '@qa-sdk/core';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 
-const logger = createLogger("dkg-store");
-import {
-  eq,
-  and,
-  ne,
-  desc,
-  like,
-  sql,
-  count,
-  inArray,
-  or,
-} from "drizzle-orm";
+const logger = createLogger('dkg-store');
+import { eq, and, ne, desc, like, sql, count, inArray, or } from 'drizzle-orm';
 import {
   dkgNodes,
   dkgEdges,
@@ -33,22 +23,16 @@ import {
   versionUsages,
   cliAuditEvents,
   dkgMeta,
-} from "../db/schema.js";
-import { GraphRegistry } from "../graph-registry.js";
-import type { DkgNode, DkgEdge } from "../dkg.types.js";
-import type { UsageData, VersionUsage } from "./usage-types.js";
+} from '../db/schema.js';
+import { GraphRegistry } from '../graph-registry.js';
+import type { DkgNode, DkgEdge } from '../dkg.types.js';
+import type { UsageData, VersionUsage } from './usage-types.js';
 
-export type NodeSource = "bootstrap" | "manual" | "auto";
+export type NodeSource = 'bootstrap' | 'manual' | 'auto';
 
 type DrizzleDb = ReturnType<typeof drizzle>;
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | JsonObject;
+type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
 
 interface JsonObject {
   [key: string]: JsonValue;
@@ -103,23 +87,23 @@ export class DkgSqliteStore {
   private db: DrizzleDb;
   readonly catalogId: string;
 
-  constructor(path: string = ":memory:", catalogId: string = "demo") {
+  constructor(path: string = ':memory:', catalogId: string = 'demo') {
     this.catalogId = catalogId;
     const Ctor = getDatabaseSync();
     this.rawDb = new Ctor(path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
-    this.rawDb.exec("PRAGMA foreign_keys = ON");
+    this.rawDb.exec('PRAGMA journal_mode = WAL');
+    this.rawDb.exec('PRAGMA busy_timeout = 3000');
+    this.rawDb.exec('PRAGMA foreign_keys = ON');
 
     // drizzle-kit 마이그레이션 실행
     try {
       this.db = drizzle({ client: this.rawDb });
       migrate(this.db, {
-        migrationsFolder: new URL("../../drizzle", import.meta.url).pathname,
+        migrationsFolder: new URL('../../drizzle', import.meta.url).pathname,
       });
       this.ensureAuxTables();
     } catch (err) {
-      logger.error({ err }, "drizzle 마이그레이션 실패");
+      logger.error({ err }, 'drizzle 마이그레이션 실패');
       throw err;
     }
   }
@@ -163,7 +147,10 @@ export class DkgSqliteStore {
    * GraphRegistry의 전체 노드/엣지를 SQLite에 저장. 기존 데이터와 머지 (upsert).
    * @param source 저장 원천 — bootstrap(재생성 가능) | manual(사용자 기록) | auto(자동 파생)
    */
-  saveGraph(graph: GraphRegistry, source: NodeSource = "bootstrap"): { nodesWritten: number; edgesWritten: number } {
+  saveGraph(
+    graph: GraphRegistry,
+    source: NodeSource = 'bootstrap',
+  ): { nodesWritten: number; edgesWritten: number } {
     let nodesWritten = 0;
     let edgesWritten = 0;
 
@@ -226,7 +213,7 @@ export class DkgSqliteStore {
   saveNodes(
     nodes: readonly DkgNode[],
     edges: readonly PersistedEdgeInput[],
-    source: NodeSource = "manual",
+    source: NodeSource = 'manual',
   ): void {
     for (const node of nodes) {
       this.db
@@ -275,21 +262,21 @@ export class DkgSqliteStore {
     const nodesCountRow = this.db
       .select({ c: count() })
       .from(dkgNodes)
-      .where(and(eq(dkgNodes.source, "bootstrap"), eq(dkgNodes.catalogId, this.catalogId)))
+      .where(and(eq(dkgNodes.source, 'bootstrap'), eq(dkgNodes.catalogId, this.catalogId)))
       .get();
     const edgesCountRow = this.db
       .select({ c: count() })
       .from(dkgEdges)
-      .where(and(eq(dkgEdges.source, "bootstrap"), eq(dkgEdges.catalogId, this.catalogId)))
+      .where(and(eq(dkgEdges.source, 'bootstrap'), eq(dkgEdges.catalogId, this.catalogId)))
       .get();
 
     this.db
       .delete(dkgEdges)
-      .where(and(eq(dkgEdges.source, "bootstrap"), eq(dkgEdges.catalogId, this.catalogId)))
+      .where(and(eq(dkgEdges.source, 'bootstrap'), eq(dkgEdges.catalogId, this.catalogId)))
       .run();
     this.db
       .delete(dkgNodes)
-      .where(and(eq(dkgNodes.source, "bootstrap"), eq(dkgNodes.catalogId, this.catalogId)))
+      .where(and(eq(dkgNodes.source, 'bootstrap'), eq(dkgNodes.catalogId, this.catalogId)))
       .run();
 
     return {
@@ -325,7 +312,7 @@ export class DkgSqliteStore {
       .all();
     for (const row of edges) {
       graph.addEdge(
-        row.type as DkgEdge["type"],
+        row.type as DkgEdge['type'],
         row.fromId,
         row.toId,
         row.meta ? JSON.parse(row.meta) : undefined,
@@ -382,7 +369,8 @@ export class DkgSqliteStore {
 
   saveCliAuditEvent(input: CliAuditEventInput): number {
     const recordJson = JSON.stringify(input.record);
-    const payloadJson = input.record.payload === undefined ? null : JSON.stringify(input.record.payload);
+    const payloadJson =
+      input.record.payload === undefined ? null : JSON.stringify(input.record.payload);
     const addressContextJson = input.record.address_context
       ? JSON.stringify(input.record.address_context)
       : null;
@@ -431,7 +419,7 @@ export class DkgSqliteStore {
       .limit(limit)
       .all();
 
-    return snapshots.map(snap => {
+    return snapshots.map((snap) => {
       const rows = this.db
         .select({
           prefix: versionUsages.prefix,
@@ -447,7 +435,7 @@ export class DkgSqliteStore {
       return {
         snapshotId: snap.id,
         collectedAt: snap.collectedAt,
-        versionUsages: rows.map(r => ({
+        versionUsages: rows.map((r) => ({
           prefix: r.prefix,
           version: r.version,
           count: r.count,
@@ -476,7 +464,7 @@ export class DkgSqliteStore {
           .values({
             id: obs.id,
             kind: obs.kind,
-            source: "auto",
+            source: 'auto',
             catalogId: this.catalogId,
             data: JSON.stringify(obs),
             updatedAt: sql`datetime('now')`,
@@ -485,7 +473,7 @@ export class DkgSqliteStore {
             target: dkgNodes.id,
             set: {
               kind: obs.kind,
-              source: "auto",
+              source: 'auto',
               catalogId: this.catalogId,
               data: JSON.stringify(obs),
               updatedAt: sql`datetime('now')`,
@@ -493,16 +481,16 @@ export class DkgSqliteStore {
           })
           .run();
         // ObservationNode.subjects → observes 엣지 자동 생성
-        if (obs.kind === "observation") {
+        if (obs.kind === 'observation') {
           const subjects = obs.subjects;
           for (const subjectId of subjects) {
             this.db
               .insert(dkgEdges)
               .values({
-                type: "observes",
+                type: 'observes',
                 fromId: obs.id,
                 toId: subjectId,
-                source: "auto",
+                source: 'auto',
                 catalogId: this.catalogId,
                 meta: null,
               })
@@ -517,7 +505,7 @@ export class DkgSqliteStore {
   }
 
   /** 단일 노드 upsert. resolution 영속화 등에 사용. */
-  updateNode(node: DkgNode, source: NodeSource = "auto"): void {
+  updateNode(node: DkgNode, source: NodeSource = 'auto'): void {
     this.db
       .insert(dkgNodes)
       .values({
@@ -577,8 +565,8 @@ export class DkgSqliteStore {
       .where(
         and(
           eq(dkgNodes.catalogId, this.catalogId),
-          eq(dkgNodes.kind, "observation"),
-          like(dkgNodes.id, "OBS-METRIC-%"),
+          eq(dkgNodes.kind, 'observation'),
+          like(dkgNodes.id, 'OBS-METRIC-%'),
           sql`${dkgNodes.id} GLOB 'OBS-METRIC-*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*-[0-9]*'`,
         ),
       )
@@ -618,7 +606,7 @@ export class DkgSqliteStore {
       .where(
         and(
           eq(dkgNodes.catalogId, this.catalogId),
-          eq(dkgNodes.kind, "observation"),
+          eq(dkgNodes.kind, 'observation'),
           like(dkgNodes.data, '%"resolution":%'),
           like(dkgNodes.data, '%"outcome":%'),
         ),
@@ -652,7 +640,9 @@ export class DkgSqliteStore {
             .run();
           pruned++;
         }
-      } catch { /* JSON 파싱 실패 시 건너뜀 */ }
+      } catch {
+        /* JSON 파싱 실패 시 건너뜀 */
+      }
     }
     return pruned;
   }
@@ -660,23 +650,60 @@ export class DkgSqliteStore {
   // ── Stats ────────────────────────────────────────────
 
   stats(): {
-    nodes: number; edges: number; snapshots: number; versionUsages: number; auditEvents: number;
-    bootstrapNodes: number; manualNodes: number;
-    bootstrapEdges: number; manualEdges: number;
+    nodes: number;
+    edges: number;
+    snapshots: number;
+    versionUsages: number;
+    auditEvents: number;
+    bootstrapNodes: number;
+    manualNodes: number;
+    bootstrapEdges: number;
+    manualEdges: number;
   } {
-    const nodes = this.db.select({ c: count() }).from(dkgNodes).where(eq(dkgNodes.catalogId, this.catalogId)).get()?.c ?? 0;
-    const edges = this.db.select({ c: count() }).from(dkgEdges).where(eq(dkgEdges.catalogId, this.catalogId)).get()?.c ?? 0;
+    const nodes =
+      this.db
+        .select({ c: count() })
+        .from(dkgNodes)
+        .where(eq(dkgNodes.catalogId, this.catalogId))
+        .get()?.c ?? 0;
+    const edges =
+      this.db
+        .select({ c: count() })
+        .from(dkgEdges)
+        .where(eq(dkgEdges.catalogId, this.catalogId))
+        .get()?.c ?? 0;
     const snapshots = this.db.select({ c: count() }).from(usageSnapshots).get()?.c ?? 0;
     const vuCount = this.db.select({ c: count() }).from(versionUsages).get()?.c ?? 0;
-    const auditEvents = this.db
-      .select({ c: count() })
-      .from(cliAuditEvents)
-      .where(eq(cliAuditEvents.catalogId, this.catalogId))
-      .get()?.c ?? 0;
-    const bootstrapNodes = this.db.select({ c: count() }).from(dkgNodes).where(and(eq(dkgNodes.source, "bootstrap"), eq(dkgNodes.catalogId, this.catalogId))).get()?.c ?? 0;
-    const manualNodes = this.db.select({ c: count() }).from(dkgNodes).where(and(eq(dkgNodes.source, "manual"), eq(dkgNodes.catalogId, this.catalogId))).get()?.c ?? 0;
-    const bootstrapEdges = this.db.select({ c: count() }).from(dkgEdges).where(and(eq(dkgEdges.source, "bootstrap"), eq(dkgEdges.catalogId, this.catalogId))).get()?.c ?? 0;
-    const manualEdges = this.db.select({ c: count() }).from(dkgEdges).where(and(eq(dkgEdges.source, "manual"), eq(dkgEdges.catalogId, this.catalogId))).get()?.c ?? 0;
+    const auditEvents =
+      this.db
+        .select({ c: count() })
+        .from(cliAuditEvents)
+        .where(eq(cliAuditEvents.catalogId, this.catalogId))
+        .get()?.c ?? 0;
+    const bootstrapNodes =
+      this.db
+        .select({ c: count() })
+        .from(dkgNodes)
+        .where(and(eq(dkgNodes.source, 'bootstrap'), eq(dkgNodes.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
+    const manualNodes =
+      this.db
+        .select({ c: count() })
+        .from(dkgNodes)
+        .where(and(eq(dkgNodes.source, 'manual'), eq(dkgNodes.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
+    const bootstrapEdges =
+      this.db
+        .select({ c: count() })
+        .from(dkgEdges)
+        .where(and(eq(dkgEdges.source, 'bootstrap'), eq(dkgEdges.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
+    const manualEdges =
+      this.db
+        .select({ c: count() })
+        .from(dkgEdges)
+        .where(and(eq(dkgEdges.source, 'manual'), eq(dkgEdges.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
     return {
       nodes,
       edges,
@@ -714,20 +741,26 @@ export class DkgSqliteStore {
       .from(usageSnapshots)
       .orderBy(usageSnapshots.collectedAt)
       .all();
-    const metaRows = this.db
-      .select()
-      .from(dkgMeta)
-      .all();
+    const metaRows = this.db.select().from(dkgMeta).all();
 
-    return JSON.stringify({
-      version: 1,
-      catalogId: this.catalogId,
-      exportedAt: new Date().toISOString(),
-      nodes: nodes.map(n => (Object.assign({id:n.id,kind:n.kind}, JSON.parse(n.data)))),
-      edges: edges.map(e => ({ type: e.type, from: e.fromId, to: e.toId, meta: e.meta ? JSON.parse(e.meta) : undefined })),
-      snapshots: snapshotRows,
-      meta: metaRows,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        version: 1,
+        catalogId: this.catalogId,
+        exportedAt: new Date().toISOString(),
+        nodes: nodes.map((n) => Object.assign({ id: n.id, kind: n.kind }, JSON.parse(n.data))),
+        edges: edges.map((e) => ({
+          type: e.type,
+          from: e.fromId,
+          to: e.toId,
+          meta: e.meta ? JSON.parse(e.meta) : undefined,
+        })),
+        snapshots: snapshotRows,
+        meta: metaRows,
+      },
+      null,
+      2,
+    );
   }
 
   /** JSON에서 상태를 import. 기존 데이터에 머지. */
@@ -797,14 +830,11 @@ export class DkgSqliteStore {
       })
       .from(dkgNodes)
       .where(
-        and(
-          eq(dkgNodes.catalogId, this.catalogId),
-          inArray(dkgNodes.source, ["manual", "auto"]),
-        ),
+        and(eq(dkgNodes.catalogId, this.catalogId), inArray(dkgNodes.source, ['manual', 'auto'])),
       )
       .all();
 
-    const nodeIds = new Set(nodes.map(n => n.id));
+    const nodeIds = new Set(nodes.map((n) => n.id));
 
     // 관련 엣지: from 또는 to가 manual/auto 노드인 것
     const allEdges = this.db
@@ -819,22 +849,34 @@ export class DkgSqliteStore {
       .where(eq(dkgEdges.catalogId, this.catalogId))
       .all();
 
-    const edges = allEdges.filter(e => nodeIds.has(e.fromId) || nodeIds.has(e.toId));
+    const edges = allEdges.filter((e) => nodeIds.has(e.fromId) || nodeIds.has(e.toId));
 
-    return JSON.stringify({
-      version: 1,
-      type: "decisions",
-      catalogId: this.catalogId,
-      exportedAt: new Date().toISOString(),
-      summary: {
-        decisions: nodes.filter(n => n.kind === "decision").length,
-        observations: nodes.filter(n => n.kind === "observation").length,
-        versionEvents: nodes.filter(n => n.kind === "version-event").length,
-        edges: edges.length,
+    return JSON.stringify(
+      {
+        version: 1,
+        type: 'decisions',
+        catalogId: this.catalogId,
+        exportedAt: new Date().toISOString(),
+        summary: {
+          decisions: nodes.filter((n) => n.kind === 'decision').length,
+          observations: nodes.filter((n) => n.kind === 'observation').length,
+          versionEvents: nodes.filter((n) => n.kind === 'version-event').length,
+          edges: edges.length,
+        },
+        nodes: nodes.map((n) =>
+          Object.assign({ id: n.id, kind: n.kind, source: n.source }, JSON.parse(n.data)),
+        ),
+        edges: edges.map((e) => ({
+          type: e.type,
+          from: e.fromId,
+          to: e.toId,
+          source: e.source,
+          meta: e.meta ? JSON.parse(e.meta) : undefined,
+        })),
       },
-      nodes: nodes.map(n => (Object.assign({id:n.id,kind:n.kind,source:n.source}, JSON.parse(n.data)))),
-      edges: edges.map(e => ({ type: e.type, from: e.fromId, to: e.toId, source: e.source, meta: e.meta ? JSON.parse(e.meta) : undefined })),
-    }, null, 2);
+      null,
+      2,
+    );
   }
 
   /**
@@ -852,7 +894,7 @@ export class DkgSqliteStore {
     let edgesImported = 0;
 
     for (const node of data.nodes) {
-      const source = node.source ?? "manual";
+      const source = node.source ?? 'manual';
       this.db
         .insert(dkgNodes)
         .values({
@@ -877,7 +919,7 @@ export class DkgSqliteStore {
       nodesImported++;
     }
     for (const edge of data.edges) {
-      const source = edge.source ?? "manual";
+      const source = edge.source ?? 'manual';
       this.db
         .insert(dkgEdges)
         .values({
@@ -903,7 +945,7 @@ export class DkgSqliteStore {
    */
   listRecentDecisions(
     limit: number = 20,
-    kinds: readonly string[] = ["decision", "observation"],
+    kinds: readonly string[] = ['decision', 'observation'],
   ): Array<{ id: string; kind: string; source: string; date: string; data: JsonObject }> {
     const rows = this.db
       .select({
@@ -914,17 +956,12 @@ export class DkgSqliteStore {
         updatedAt: dkgNodes.updatedAt,
       })
       .from(dkgNodes)
-      .where(
-        and(
-          eq(dkgNodes.catalogId, this.catalogId),
-          inArray(dkgNodes.kind, kinds as string[]),
-        ),
-      )
+      .where(and(eq(dkgNodes.catalogId, this.catalogId), inArray(dkgNodes.kind, kinds as string[])))
       .orderBy(desc(dkgNodes.updatedAt))
       .limit(limit)
       .all();
 
-    return rows.map(r => {
+    return rows.map((r) => {
       const parsed = JSON.parse(r.data) as JsonObject;
       return {
         id: r.id,
@@ -941,32 +978,36 @@ export class DkgSqliteStore {
     // UNION은 drizzle query builder로 직접 표현하기 어려우므로 sql 템플릿 사용
     const rows = this.db
       .select({ catalogId: sql<string>`catalog_id` })
-      .from(sql`(SELECT DISTINCT catalog_id FROM dkg_nodes UNION SELECT DISTINCT catalog_id FROM dkg_edges)`)
+      .from(
+        sql`(SELECT DISTINCT catalog_id FROM dkg_nodes UNION SELECT DISTINCT catalog_id FROM dkg_edges)`,
+      )
       .all();
-    return [...new Set(rows.map(r => r.catalogId))];
+    return [...new Set(rows.map((r) => r.catalogId))];
   }
 
   /** 특정 카탈로그의 모든 DKG 데이터 삭제. */
   /** 관측/결정 노드만 삭제 (source=manual|auto|metric|runtime). 구조(bootstrap)는 보존. */
   clearOperational(): { nodesDeleted: number; edgesDeleted: number } {
-    const nodesBefore = this.db
-      .select({ c: count() })
-      .from(dkgNodes)
-      .where(and(ne(dkgNodes.source, "bootstrap"), eq(dkgNodes.catalogId, this.catalogId)))
-      .get()?.c ?? 0;
-    const edgesBefore = this.db
-      .select({ c: count() })
-      .from(dkgEdges)
-      .where(and(ne(dkgEdges.source, "bootstrap"), eq(dkgEdges.catalogId, this.catalogId)))
-      .get()?.c ?? 0;
+    const nodesBefore =
+      this.db
+        .select({ c: count() })
+        .from(dkgNodes)
+        .where(and(ne(dkgNodes.source, 'bootstrap'), eq(dkgNodes.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
+    const edgesBefore =
+      this.db
+        .select({ c: count() })
+        .from(dkgEdges)
+        .where(and(ne(dkgEdges.source, 'bootstrap'), eq(dkgEdges.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
 
     this.db
       .delete(dkgEdges)
-      .where(and(ne(dkgEdges.source, "bootstrap"), eq(dkgEdges.catalogId, this.catalogId)))
+      .where(and(ne(dkgEdges.source, 'bootstrap'), eq(dkgEdges.catalogId, this.catalogId)))
       .run();
     this.db
       .delete(dkgNodes)
-      .where(and(ne(dkgNodes.source, "bootstrap"), eq(dkgNodes.catalogId, this.catalogId)))
+      .where(and(ne(dkgNodes.source, 'bootstrap'), eq(dkgNodes.catalogId, this.catalogId)))
       .run();
 
     return { nodesDeleted: nodesBefore, edgesDeleted: edgesBefore };
@@ -982,27 +1023,30 @@ export class DkgSqliteStore {
   }
 
   clearCliAuditEvents(): number {
-    const before = this.db
-      .select({ c: count() })
-      .from(cliAuditEvents)
-      .where(eq(cliAuditEvents.catalogId, this.catalogId))
-      .get()?.c ?? 0;
+    const before =
+      this.db
+        .select({ c: count() })
+        .from(cliAuditEvents)
+        .where(eq(cliAuditEvents.catalogId, this.catalogId))
+        .get()?.c ?? 0;
     this.db.delete(cliAuditEvents).where(eq(cliAuditEvents.catalogId, this.catalogId)).run();
     return before;
   }
 
   /** 특정 source의 노드/엣지만 삭제. */
   clearBySource(source: NodeSource): { nodesDeleted: number; edgesDeleted: number } {
-    const nodesBefore = this.db
-      .select({ c: count() })
-      .from(dkgNodes)
-      .where(and(eq(dkgNodes.source, source), eq(dkgNodes.catalogId, this.catalogId)))
-      .get()?.c ?? 0;
-    const edgesBefore = this.db
-      .select({ c: count() })
-      .from(dkgEdges)
-      .where(and(eq(dkgEdges.source, source), eq(dkgEdges.catalogId, this.catalogId)))
-      .get()?.c ?? 0;
+    const nodesBefore =
+      this.db
+        .select({ c: count() })
+        .from(dkgNodes)
+        .where(and(eq(dkgNodes.source, source), eq(dkgNodes.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
+    const edgesBefore =
+      this.db
+        .select({ c: count() })
+        .from(dkgEdges)
+        .where(and(eq(dkgEdges.source, source), eq(dkgEdges.catalogId, this.catalogId)))
+        .get()?.c ?? 0;
 
     this.db
       .delete(dkgEdges)
@@ -1017,16 +1061,12 @@ export class DkgSqliteStore {
   }
 
   deleteCatalog(catalogId: string): { nodesDeleted: number; edgesDeleted: number } {
-    const nodesBefore = this.db
-      .select({ c: count() })
-      .from(dkgNodes)
-      .where(eq(dkgNodes.catalogId, catalogId))
-      .get()?.c ?? 0;
-    const edgesBefore = this.db
-      .select({ c: count() })
-      .from(dkgEdges)
-      .where(eq(dkgEdges.catalogId, catalogId))
-      .get()?.c ?? 0;
+    const nodesBefore =
+      this.db.select({ c: count() }).from(dkgNodes).where(eq(dkgNodes.catalogId, catalogId)).get()
+        ?.c ?? 0;
+    const edgesBefore =
+      this.db.select({ c: count() }).from(dkgEdges).where(eq(dkgEdges.catalogId, catalogId)).get()
+        ?.c ?? 0;
 
     this.db.delete(dkgEdges).where(eq(dkgEdges.catalogId, catalogId)).run();
     this.db.delete(dkgNodes).where(eq(dkgNodes.catalogId, catalogId)).run();
@@ -1096,7 +1136,7 @@ export class DkgSqliteStore {
     return this.db
       .select({ key: dkgMeta.key, value: dkgMeta.value })
       .from(dkgMeta)
-      .where(and(like(dkgMeta.key, `${prefix}%`), ne(dkgMeta.value, "")))
+      .where(and(like(dkgMeta.key, `${prefix}%`), ne(dkgMeta.value, '')))
       .all();
   }
 

@@ -1,4 +1,4 @@
-import type { TaxonomyIR, EntryIR } from "../schema/ir.js";
+import type { TaxonomyIR, EntryIR } from '../schema/ir.js';
 
 export type SliceRange = { from?: number; to?: number; ids?: string[] };
 
@@ -8,11 +8,7 @@ export type SliceRange = { from?: number; to?: number; ids?: string[] };
  * - from/to (inclusive) 제공 시 address 범위로 필터
  * - 둘 다 없으면 전체
  */
-export function slice(
-  ir: TaxonomyIR,
-  axisName: string,
-  range?: SliceRange,
-): EntryIR[] {
+export function slice(ir: TaxonomyIR, axisName: string, range?: SliceRange): EntryIR[] {
   const axis = ir.axes.get(axisName);
   if (!axis) return [];
 

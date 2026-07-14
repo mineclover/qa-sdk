@@ -19,9 +19,9 @@ export interface DocumentTemplate {
 
 export const TEMPLATE_REGISTRY: Record<string, DocumentTemplate> = {
   roadmap: {
-    type: "RoadmapDocument",
-    name: "Roadmap Document",
-    description: "목표, 범위, 마일스톤을 기술하는 로드맵 문서",
+    type: 'RoadmapDocument',
+    name: 'Roadmap Document',
+    description: '목표, 범위, 마일스톤을 기술하는 로드맵 문서',
     generateFrontmatter: (meta) => `---
 id: ${meta.id}
 type: RoadmapDocument
@@ -31,7 +31,7 @@ lifecycle:
   state: active
   created_at: ${meta.date}
   updated_at: ${meta.date}
-tags: ${JSON.stringify(meta.tags || ["roadmap"])}
+tags: ${JSON.stringify(meta.tags || ['roadmap'])}
 refs: ${JSON.stringify(meta.refs || [])}
 ---`,
     generateBody: (meta) => `# Roadmap: ${meta.title}
@@ -48,30 +48,30 @@ refs: ${JSON.stringify(meta.refs || [])}
 - [ ] Phase 1: 아키텍처 정의 CLI ('archi') 뼈대 구현 및 \\\`init\\\`/\\\`new\\\` 탑재
 - [ ] Phase 2: 검증기 포팅 및 \\\`validate\\\`/\\\`timeline\\\` 연동
 - [ ] Phase 3: 다양한 서브 프로젝트 적용 및 피드백 반영
-`
+`,
   },
 
   prd: {
-    type: "PRDDocument",
-    name: "Product Requirement Document (PRD)",
-    description: "요구사항, 검증 기준, 산출물을 정의하는 사양 문서",
+    type: 'PRDDocument',
+    name: 'Product Requirement Document (PRD)',
+    description: '요구사항, 검증 기준, 산출물을 정의하는 사양 문서',
     generateFrontmatter: (meta) => `---
 id: ${meta.id}
 type: PRDDocument
 title: "${meta.title}"
 date: ${meta.date}
-scope: ${meta.scope || "SCOPE-DSL"}
+scope: ${meta.scope || 'SCOPE-DSL'}
 lifecycle:
   state: active
   created_at: ${meta.date}
   updated_at: ${meta.date}
-tags: ${JSON.stringify(meta.tags || ["prd"])}
+tags: ${JSON.stringify(meta.tags || ['prd'])}
 refs: ${JSON.stringify(meta.refs || [])}
 ---`,
     generateBody: (meta) => `# PRD: ${meta.title}
 
 ## 목적 ^purpose
-이 사양 문서는 ${meta.scope || "SCOPE-DSL"} 범위 하위 요구사항 및 구현 스펙을 정의합니다.
+이 사양 문서는 ${meta.scope || 'SCOPE-DSL'} 범위 하위 요구사항 및 구현 스펙을 정의합니다.
 
 ## 1. 핵심 요구사항
 * R-1: 아키텍처 문서화 폴더 구조를 초기화하는 기능 지원.
@@ -81,13 +81,13 @@ refs: ${JSON.stringify(meta.refs || [])}
 ## 2. 검증 기준 (Verification Criteria)
 * VC-1: \\\`archi validate\\\` 통과율 100% 만족.
 * VC-2: 타임라인에 누락된 세션 문서가 없는지 여부 확인.
-`
+`,
   },
 
   progress: {
-    type: "ProgressDocument",
-    name: "Progress Document",
-    description: "진행 현황, 차단 요소, 다음 행동을 추적하는 진척 보고 문서",
+    type: 'ProgressDocument',
+    name: 'Progress Document',
+    description: '진행 현황, 차단 요소, 다음 행동을 추적하는 진척 보고 문서',
     generateFrontmatter: (meta) => `---
 id: ${meta.id}
 type: ProgressDocument
@@ -97,7 +97,7 @@ lifecycle:
   state: active
   created_at: ${meta.date}
   updated_at: ${meta.date}
-tags: ${JSON.stringify(meta.tags || ["progress"])}
+tags: ${JSON.stringify(meta.tags || ['progress'])}
 refs: ${JSON.stringify(meta.refs || [])}
 ---`,
     generateBody: (meta) => `# Progress: ${meta.title}
@@ -115,13 +115,13 @@ refs: ${JSON.stringify(meta.refs || [])}
 ## 3. 다음 행동 (Next Actions)
 - [ ] Commander CLI 연동 및 빌드 테스트 완료.
 - [ ] 대화형 문서 생성 로직 정교화.
-`
+`,
   },
 
   session: {
-    type: "SessionHistoryDocument",
-    name: "Session History Document",
-    description: "개별 설계 세션의 의사결정 및 변경 요약을 기록하는 문서",
+    type: 'SessionHistoryDocument',
+    name: 'Session History Document',
+    description: '개별 설계 세션의 의사결정 및 변경 요약을 기록하는 문서',
     generateFrontmatter: (meta) => `---
 id: ${meta.id}
 type: SessionHistoryDocument
@@ -131,7 +131,7 @@ lifecycle:
   state: resolved
   created_at: ${meta.date}
   resolved_at: ${meta.date}
-tags: ${JSON.stringify(meta.tags || ["session"])}
+tags: ${JSON.stringify(meta.tags || ['session'])}
 refs: ${JSON.stringify(meta.refs || [])}
 ---`,
     generateBody: (meta) => `# Session: ${meta.title}
@@ -151,13 +151,13 @@ ${meta.date} 설계 세션에서 도출된 핵심 설계 의사결정과 향후 
 ## 3. 액션 아이템 (Action Items)
 - [ ] \\\`packages/archi\\\` 패키지 내 스크립트 빌드 및 로컬 실행 권한 테스트.
 - [ ] \\\`archi timeline\\\` 수집 명령 작동 확인.
-`
+`,
   },
 
   handoff: {
-    type: "HandoffDocument",
-    name: "Handoff Document",
-    description: "현재 작업의 요약 상태와 다음 주체(인간 또는 AI)의 재개 지침",
+    type: 'HandoffDocument',
+    name: 'Handoff Document',
+    description: '현재 작업의 요약 상태와 다음 주체(인간 또는 AI)의 재개 지침',
     generateFrontmatter: (meta) => `---
 id: ${meta.id}
 type: HandoffDocument
@@ -167,7 +167,7 @@ lifecycle:
   state: active
   created_at: ${meta.date}
   updated_at: ${meta.date}
-tags: ${JSON.stringify(meta.tags || ["handoff"])}
+tags: ${JSON.stringify(meta.tags || ['handoff'])}
 refs: ${JSON.stringify(meta.refs || [])}
 ---`,
     generateBody: (meta) => `# Handoff: ${meta.title}
@@ -182,13 +182,13 @@ refs: ${JSON.stringify(meta.refs || [])}
 ## 1. 작업 요약 (State Summary)
 * **진행 완료**: \\\`packages/archi\\\` 스캐폴드 설치 및 템플릿 레지스트리 작성 완료.
 * **이슈 사항**: 없음.
-`
+`,
   },
 
   timeline: {
-    type: "TimelineDocument",
-    name: "Timeline Document",
-    description: "시간순 이벤트와 결정을 추적하는 Append-Only 리스트",
+    type: 'TimelineDocument',
+    name: 'Timeline Document',
+    description: '시간순 이벤트와 결정을 추적하는 Append-Only 리스트',
     generateFrontmatter: (meta) => `---
 id: GOV-TIMELINE
 type: TimelineDocument
@@ -208,13 +208,13 @@ lifecycle:
 
 ## ${meta.date}
 * [${meta.id}] ${meta.title}
-`
+`,
   },
 
   historyIndex: {
-    type: "HistoryIndexDocument",
-    name: "History Index Document",
-    description: "압축된 아키텍처 결정 사항 및 중요 마일스톤 문서 색인",
+    type: 'HistoryIndexDocument',
+    name: 'History Index Document',
+    description: '압축된 아키텍처 결정 사항 및 중요 마일스톤 문서 색인',
     generateFrontmatter: (meta) => `---
 id: GOV-HISTORY-INDEX
 type: HistoryIndexDocument
@@ -236,6 +236,6 @@ lifecycle:
 ### Important Files
 * [archi-adr.yaml](file:///Users/junwoobang/workflow/qa-sdk/architecture/model/archi-adr.yaml) — 아키텍처 DSL SSOT
 * [validate.mjs](file:///Users/junwoobang/workflow/qa-sdk/architecture/validation/validate.mjs) — 아키텍처 검증기
-`
-  }
+`,
+  },
 };

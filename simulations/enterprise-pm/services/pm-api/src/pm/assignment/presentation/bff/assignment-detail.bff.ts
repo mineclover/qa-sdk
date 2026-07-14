@@ -4,8 +4,8 @@
 import {
   AssignmentReadModelQuery,
   type AssignmentDetailReadModel,
-} from "../../application/queries/assignment-read-model.query.js";
-import type { AssignmentLoggerPort } from "../../application/ports/assignment-logger.port.js";
+} from '../../application/queries/assignment-read-model.query.js';
+import type { AssignmentLoggerPort } from '../../application/ports/assignment-logger.port.js';
 
 /** BFF detail composition — UI 친화적 라벨 + cacheKey. domain entity 노출 금지. */
 export interface AssignmentDetailBffModel {
@@ -25,7 +25,7 @@ export interface AssignmentDetailBffModel {
  *   본격 다중 read 합성).
  */
 export class AssignmentDetailBff {
-  readonly cachePrefix = "assignment-bff-detail:v1";
+  readonly cachePrefix = 'assignment-bff-detail:v1';
 
   constructor(
     private readonly readModel: AssignmentReadModelQuery,
@@ -43,15 +43,15 @@ export class AssignmentDetailBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "assignment",
-        useCase: "AssignmentDetailBff.getDetail",
+        domain: 'assignment',
+        useCase: 'AssignmentDetailBff.getDetail',
         aggregateId: input.id,
-        queryName: "AssignmentDetailBffQuery",
-        outcome: detail ? "success" : "failure",
+        queryName: 'AssignmentDetailBffQuery',
+        outcome: detail ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      detail ? "assignment-detail.bff.success" : "assignment-detail.bff.miss",
+      detail ? 'assignment-detail.bff.success' : 'assignment-detail.bff.miss',
     );
 
     if (!detail) return null;

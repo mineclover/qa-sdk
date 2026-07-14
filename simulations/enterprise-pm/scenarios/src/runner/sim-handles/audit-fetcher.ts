@@ -16,7 +16,7 @@ import type {
   AuditFetcher,
   ResourceDecisionRecordView,
   SafetyDecisionRecordView,
-} from "../../lib/audit-fetcher.js";
+} from '../../lib/audit-fetcher.js';
 
 export type FetchLike = (
   input: string,
@@ -46,9 +46,7 @@ export interface AuditFetcherFactoryArgs {
  *   GET /v1/alerts/count?cycleIds=a,b,c&kind=foo
  *     → { count: number }
  */
-export function createAuditFetcher(
-  args: AuditFetcherFactoryArgs,
-): AuditFetcher {
+export function createAuditFetcher(args: AuditFetcherFactoryArgs): AuditFetcher {
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -56,23 +54,21 @@ export function createAuditFetcher(
         ...(init ?? {}),
         signal: AbortSignal.timeout(args.timeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
-  const base = args.controllerUrl.replace(/\/$/, "");
+  const base = args.controllerUrl.replace(/\/$/, '');
 
   async function getDecisions(
     cycleIds: readonly string[],
-    pass?: "safety" | "resource",
+    pass?: 'safety' | 'resource',
   ): Promise<AnyDecision[]> {
     if (cycleIds.length === 0) return [];
     const params = new URLSearchParams();
-    params.set("cycleIds", cycleIds.join(","));
-    if (pass) params.set("pass", pass);
+    params.set('cycleIds', cycleIds.join(','));
+    if (pass) params.set('pass', pass);
     const url = `${base}/v1/decisions?${params.toString()}`;
-    const res = await fetchImpl(url, { method: "GET" });
+    const res = await fetchImpl(url, { method: 'GET' });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(
-        `audit-fetcher GET ${url} failed: status=${res.status} body=${body}`,
-      );
+      throw new Error(`audit-fetcher GET ${url} failed: status=${res.status} body=${body}`);
     }
     let json: unknown;
     try {
@@ -82,9 +78,7 @@ export function createAuditFetcher(
     }
     const decisions = (json as { items?: unknown }).items;
     if (!Array.isArray(decisions)) {
-      throw new Error(
-        `audit-fetcher invalid response shape: ${JSON.stringify(json)}`,
-      );
+      throw new Error(`audit-fetcher invalid response shape: ${JSON.stringify(json)}`);
     }
     return decisions as AnyDecision[];
   }
@@ -100,38 +94,33 @@ export function createAuditFetcher(
       const filtered = decisions.filter((d) => d.pass === filter.pass);
       if (filtered.length === 0) return null;
       // cycleAt ascending — 첫 결정.
-      const sorted = [...filtered].sort((a, b) =>
-        a.cycleAt.localeCompare(b.cycleAt),
-      ) as (SafetyDecisionRecordView | ResourceDecisionRecordView)[];
+      const sorted = [...filtered].sort((a, b) => a.cycleAt.localeCompare(b.cycleAt)) as (
+        | SafetyDecisionRecordView
+        | ResourceDecisionRecordView
+      )[];
       return sorted[0];
     },
 
     async countAlerts(filter) {
       if (filter.cycleIds.length === 0) return 0;
       const params = new URLSearchParams();
-      params.set("cycleIds", filter.cycleIds.join(","));
-      params.set("kind", filter.kind);
+      params.set('cycleIds', filter.cycleIds.join(','));
+      params.set('kind', filter.kind);
       const url = `${base}/v1/alerts/count?${params.toString()}`;
-      const res = await fetchImpl(url, { method: "GET" });
+      const res = await fetchImpl(url, { method: 'GET' });
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(
-          `audit-fetcher GET ${url} failed: status=${res.status} body=${body}`,
-        );
+        throw new Error(`audit-fetcher GET ${url} failed: status=${res.status} body=${body}`);
       }
       let json: unknown;
       try {
         json = await res.json();
       } catch (e) {
-        throw new Error(
-          `audit-fetcher JSON parse failed: ${(e as Error).message}`,
-        );
+        throw new Error(`audit-fetcher JSON parse failed: ${(e as Error).message}`);
       }
       const count = (json as { count?: unknown }).count;
-      if (typeof count !== "number" || !Number.isFinite(count)) {
-        throw new Error(
-          `audit-fetcher invalid count shape: ${JSON.stringify(json)}`,
-        );
+      if (typeof count !== 'number' || !Number.isFinite(count)) {
+        throw new Error(`audit-fetcher invalid count shape: ${JSON.stringify(json)}`);
       }
       return count;
     },

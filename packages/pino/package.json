@@ -2,6 +2,9 @@
   "name": "@qa-sdk/pino",
   "version": "9.9.4",
   "description": "zero-dependency pino-compatible structured logger",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -10,7 +13,6 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",

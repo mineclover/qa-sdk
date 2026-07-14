@@ -1,5 +1,5 @@
-import { toBillingId } from "./billing.ids.js";
-import type { BillingProps, BillingSnapshot } from "./billing.types.js";
+import { toBillingId } from './billing.ids.js';
+import type { BillingProps, BillingSnapshot } from './billing.types.js';
 
 export class BillingEntity {
   private constructor(private readonly props: BillingProps) {}
@@ -14,7 +14,7 @@ export class BillingEntity {
       id: toBillingId(input.id),
       assignmentId: input.assignmentId,
       assignmentVersion: input.assignmentVersion,
-      status: "created",
+      status: 'created',
       createdAt: input.now ?? new Date(),
     });
   }

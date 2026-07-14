@@ -1,15 +1,15 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { SqlDriver } from "index-meta";
-import type { ConfigRecord, ConfigStore } from "./config-store.js";
+import type { SqlDriver } from 'index-meta';
+import type { ConfigRecord, ConfigStore } from './config-store.js';
 
 export class SqlConfigStore implements ConfigStore {
   constructor(private readonly driver: SqlDriver) {}
 
   async get(catalogId: string, configType: string): Promise<ConfigRecord | null> {
     const row = await this.driver.queryOne<Row>(
-      "SELECT * FROM config WHERE catalog_id = ? AND config_type = ?",
+      'SELECT * FROM config WHERE catalog_id = ? AND config_type = ?',
       [catalogId, configType],
     );
     return row ? toRecord(row) : null;
@@ -28,17 +28,17 @@ export class SqlConfigStore implements ConfigStore {
 
   async list(catalogId: string): Promise<ConfigRecord[]> {
     const rows = await this.driver.query<Row>(
-      "SELECT * FROM config WHERE catalog_id = ? ORDER BY config_type",
+      'SELECT * FROM config WHERE catalog_id = ? ORDER BY config_type',
       [catalogId],
     );
     return rows.map(toRecord);
   }
 
   async delete(catalogId: string, configType: string): Promise<void> {
-    await this.driver.execute(
-      "DELETE FROM config WHERE catalog_id = ? AND config_type = ?",
-      [catalogId, configType],
-    );
+    await this.driver.execute('DELETE FROM config WHERE catalog_id = ? AND config_type = ?', [
+      catalogId,
+      configType,
+    ]);
   }
 }
 

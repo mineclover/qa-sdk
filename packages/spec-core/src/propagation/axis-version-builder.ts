@@ -21,7 +21,7 @@ export interface VersionedAxis {
 /** 현재 최신 버전 키를 반환한다. */
 export function latestVersionKey(axis: VersionedAxis): string {
   const keys = Object.keys(axis.versions);
-  return keys[keys.length - 1] ?? "v1";
+  return keys[keys.length - 1] ?? 'v1';
 }
 
 /** 다음 버전 키를 파생한다. "v3" → "v4" */

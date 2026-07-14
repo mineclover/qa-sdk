@@ -8,15 +8,22 @@ import type {
   BranchSplitPoint as GitConflictSplitPoint,
   GitConflictReport as GitConflictReportInput,
   WorkspaceChangeSet as GitConflictWorkspace,
-} from "git-utils";
-import type { CanvasDisclosureState } from "canvas-viewport";
+} from 'git-utils';
+import type { CanvasDisclosureState } from 'canvas-viewport';
 
 export type GitConflictSource =
-  | GitConflictReportInput["analysis"]["current"]
-  | GitConflictReportInput["analysis"]["branches"][number]
-  | NonNullable<GitConflictReportInput["analysis"]["worktrees"]>[number];
+  | GitConflictReportInput['analysis']['current']
+  | GitConflictReportInput['analysis']['branches'][number]
+  | NonNullable<GitConflictReportInput['analysis']['worktrees']>[number];
 
-export type { GitConflictCommit, GitConflictDiffStats, GitConflictFileChange, GitConflictReportInput, GitConflictSplitPoint, GitConflictWorkspace };
+export type {
+  GitConflictCommit,
+  GitConflictDiffStats,
+  GitConflictFileChange,
+  GitConflictReportInput,
+  GitConflictSplitPoint,
+  GitConflictWorkspace,
+};
 
 export type JsonRecord = Record<string, unknown>;
 
@@ -51,7 +58,7 @@ export interface FileTreeNode {
   id: string;
   name: string;
   path: string;
-  kind: "dir" | "file";
+  kind: 'dir' | 'file';
   metrics: TreeMetrics;
   pathMetrics: PathMetrics;
   children: FileTreeNode[];
@@ -59,7 +66,7 @@ export interface FileTreeNode {
 
 export interface SourceSummary {
   id: string;
-  type: "current" | "workspace" | "execution" | "remote" | "worktree";
+  type: 'current' | 'workspace' | 'execution' | 'remote' | 'worktree';
   label: string;
   worktreePath?: string;
   diffStats: GitConflictDiffStats;
@@ -72,7 +79,7 @@ export interface SourceSummary {
 
 export interface NodeSourceSummary {
   id: string;
-  type: "current" | "workspace" | "execution" | "remote" | "worktree";
+  type: 'current' | 'workspace' | 'execution' | 'remote' | 'worktree';
   label: string;
   worktreePath?: string;
   diffStats: GitConflictDiffStats;
@@ -106,7 +113,7 @@ export interface RenderState {
   selectedNodeId: string;
   autoLoadAttempted: boolean;
   autoRefreshEnabled: boolean;
-  inputSource: "sample" | "hosted" | "file" | "manual";
+  inputSource: 'sample' | 'hosted' | 'file' | 'manual';
   drawerState: CanvasDisclosureState;
-  viewMode: "all" | "current" | "workspace" | "overlap";
+  viewMode: 'all' | 'current' | 'workspace' | 'overlap';
 }

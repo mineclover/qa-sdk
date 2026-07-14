@@ -7,7 +7,7 @@
  * 구현체: LocalDataSource (SQLite 직접), ServerDataSource (HTTP), ScanDataSource (frontmatter scan)
  */
 
-import type { QualityGateSpec } from "test-types";
+import type { QualityGateSpec } from 'test-types';
 
 /** 문서 메타데이터 (DB 기준) */
 export interface DefDoc {
@@ -55,8 +55,8 @@ export interface DefDocBody {
 export interface DefCodeReference {
   codePath: string;
   docId: string;
-  relationType: "boundary" | "doc";
-  sourceKind: "code_comment" | "doc_frontmatter";
+  relationType: 'boundary' | 'doc';
+  sourceKind: 'code_comment' | 'doc_frontmatter';
   symbol?: string;
   line?: number;
 }
@@ -69,19 +69,19 @@ export interface DefBoundaryResolutionCandidate {
 
 export type DefFileBoundaryResolution =
   | {
-      kind: "none";
+      kind: 'none';
       codePath: string;
       references: DefCodeReference[];
     }
   | {
-      kind: "unique";
+      kind: 'unique';
       codePath: string;
       anchor: DefDoc;
       supportingDocs: DefDoc[];
       references: DefCodeReference[];
     }
   | {
-      kind: "ambiguous";
+      kind: 'ambiguous';
       codePath: string;
       candidates: DefBoundaryResolutionCandidate[];
       references: DefCodeReference[];
@@ -106,7 +106,7 @@ export interface DefOutgoingLink {
 /** synthetic 역링크 (review-ledger 등 외부 인덱스에서 파생) */
 export interface DefSyntheticIncomingLink extends DefIncomingLink {
   synthetic: true;
-  kind: "feedback_request";
+  kind: 'feedback_request';
   title?: string;
   createdAt?: string;
   targetModel?: string | null;
@@ -183,7 +183,7 @@ export interface DefBoundaryImpactDoc {
   address?: string;
   via: string;
   path: string;
-  direction: "upstream" | "downstream";
+  direction: 'upstream' | 'downstream';
   distance: number;
   layer?: string;
   crossLayer: boolean;
@@ -205,8 +205,8 @@ export interface DefBoundaryImpactResult {
 }
 
 export interface DefBoundaryContextResult {
-  mode: "direct" | "transitive";
-  level: "purpose" | "overview";
+  mode: 'direct' | 'transitive';
+  level: 'purpose' | 'overview';
   boundary: DefBoundaryResult;
   concerns: DefBoundaryConcernsResult;
   impact: DefBoundaryImpactResult;
@@ -238,7 +238,7 @@ export interface DefListFilter {
 
 /** 검증 이슈 */
 export interface DefValidationIssue {
-  severity: "error" | "warning" | "info";
+  severity: 'error' | 'warning' | 'info';
   type: string;
   docId: string;
   message: string;
@@ -256,7 +256,7 @@ export interface DefValidationResult {
  * 데이터 소스 인터페이스 — 서버/로컬 양쪽 구현
  */
 export interface DefDataSource {
-  readonly mode: "local" | "server" | "scan";
+  readonly mode: 'local' | 'server' | 'scan';
 
   /** 단건 조회 */
   get(docId: string): Promise<DefDoc | null>;
@@ -292,13 +292,13 @@ export interface DefDataSource {
   getFeedbackRequestsByDocId(docId: string, limit?: number): Promise<DefFeedbackRequestSummary[]>;
 
   /** 바운더리 단위 구조 + direct coupling 조회 */
-  getBoundary(docId: string, level?: "purpose" | "overview"): Promise<DefBoundaryResult | null>;
+  getBoundary(docId: string, level?: 'purpose' | 'overview'): Promise<DefBoundaryResult | null>;
 
   /** 바운더리 구조 + concerns + impact + feedback trace 조회 */
   getBoundaryContext(
     docId: string,
-    level?: "purpose" | "overview",
-    mode?: "direct" | "transitive",
+    level?: 'purpose' | 'overview',
+    mode?: 'direct' | 'transitive',
   ): Promise<DefBoundaryContextResult | null>;
 
   /** 그래프 검증 */

@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
-import { show, slice, walkRelation, walkByCoordinate } from "../../src/query/index.js";
-import { TaxonomyRegistry } from "../../src/registry/index.js";
-import { parse } from "../../src/parser/index.js";
+import { describe, it, expect } from 'vitest';
+import { show, slice, walkRelation, walkByCoordinate } from '../../src/query/index.js';
+import { TaxonomyRegistry } from '../../src/registry/index.js';
+import { parse } from '../../src/parser/index.js';
 
 const yaml = `
 taxonomy: t
@@ -13,26 +13,26 @@ axes:
 
 const reg = new TaxonomyRegistry();
 const r = parse(yaml);
-if ("ir" in r) reg.add(r.ir);
+if ('ir' in r) reg.add(r.ir);
 
-describe("show", () => {
-  it("3-tier 모두 같은 단위 반환 — entry", () => {
-    const a = show("t:scope.apm", reg);
-    const b = show("t#/axes/scope/entries/apm", reg);
-    const c = show("t::scope#0", reg);
-    expect(a?.kind).toBe("entry");
-    expect(b?.kind).toBe("entry");
-    expect(c?.kind).toBe("entry");
-    if (a?.kind === "entry" && b?.kind === "entry" && c?.kind === "entry") {
-      expect((a.entry as { id: string }).id).toBe("apm");
-      expect((b.entry as { id: string }).id).toBe("apm");
-      expect((c.entry as { id: string }).id).toBe("apm");
+describe('show', () => {
+  it('3-tier 모두 같은 단위 반환 — entry', () => {
+    const a = show('t:scope.apm', reg);
+    const b = show('t#/axes/scope/entries/apm', reg);
+    const c = show('t::scope#0', reg);
+    expect(a?.kind).toBe('entry');
+    expect(b?.kind).toBe('entry');
+    expect(c?.kind).toBe('entry');
+    if (a?.kind === 'entry' && b?.kind === 'entry' && c?.kind === 'entry') {
+      expect((a.entry as { id: string }).id).toBe('apm');
+      expect((b.entry as { id: string }).id).toBe('apm');
+      expect((c.entry as { id: string }).id).toBe('apm');
     }
   });
 
-  it("fail-open — unknown → undefined", () => {
-    expect(show("t:scope.unknown", reg)).toBeUndefined();
-    expect(show("unknown-tax:scope.apm", reg)).toBeUndefined();
+  it('fail-open — unknown → undefined', () => {
+    expect(show('t:scope.unknown', reg)).toBeUndefined();
+    expect(show('unknown-tax:scope.apm', reg)).toBeUndefined();
   });
 });
 
@@ -57,41 +57,35 @@ relations:
 const richReg = (() => {
   const reg = new TaxonomyRegistry();
   const p = parse(richYaml);
-  if ("ir" in p) reg.add(p.ir);
+  if ('ir' in p) reg.add(p.ir);
   return reg;
 })();
 
-const richIr = richReg.get("rich")!;
+const richIr = richReg.get('rich')!;
 
-describe("slice", () => {
-  it("ids 필터", () => {
-    const s = slice(richIr, "depth", { ids: ["overview", "layer"] });
-    expect(s.map((e) => e.id)).toEqual(["overview", "layer"]);
+describe('slice', () => {
+  it('ids 필터', () => {
+    const s = slice(richIr, 'depth', { ids: ['overview', 'layer'] });
+    expect(s.map((e) => e.id)).toEqual(['overview', 'layer']);
   });
 
-  it("address 범위 필터 (inclusive)", () => {
-    const s = slice(richIr, "depth", { from: 1, to: 3 });
-    expect(s.map((e) => e.id)).toEqual(["system", "layer", "component"]);
+  it('address 범위 필터 (inclusive)', () => {
+    const s = slice(richIr, 'depth', { from: 1, to: 3 });
+    expect(s.map((e) => e.id)).toEqual(['system', 'layer', 'component']);
   });
 
-  it("unknown axis → empty", () => {
-    expect(slice(richIr, "missing")).toEqual([]);
+  it('unknown axis → empty', () => {
+    expect(slice(richIr, 'missing')).toEqual([]);
   });
 });
 
-describe("walkRelation", () => {
-  it("contains 그래프 순회 (overview → entry)", () => {
-    const visited = [...walkRelation(richIr, "d-contains", "overview")];
-    expect(visited).toEqual([
-      "overview",
-      "system",
-      "layer",
-      "component",
-      "entry",
-    ]);
+describe('walkRelation', () => {
+  it('contains 그래프 순회 (overview → entry)', () => {
+    const visited = [...walkRelation(richIr, 'd-contains', 'overview')];
+    expect(visited).toEqual(['overview', 'system', 'layer', 'component', 'entry']);
   });
 
-  it("순환 방지 — 동일 노드 재방문 안 함", () => {
+  it('순환 방지 — 동일 노드 재방문 안 함', () => {
     const cycleYaml = `
 taxonomy: c
 version: 1
@@ -108,17 +102,17 @@ relations:
       - { from: y, to: x }
 `;
     const p = parse(cycleYaml);
-    if (!("ir" in p)) throw new Error("parse failed");
-    const visited = [...walkRelation(p.ir, "r", "x")];
-    expect(visited.sort()).toEqual(["x", "y"]);
+    if (!('ir' in p)) throw new Error('parse failed');
+    const visited = [...walkRelation(p.ir, 'r', 'x')];
+    expect(visited.sort()).toEqual(['x', 'y']);
   });
 
-  it("unknown relation → empty", () => {
-    expect([...walkRelation(richIr, "missing", "x")]).toEqual([]);
+  it('unknown relation → empty', () => {
+    expect([...walkRelation(richIr, 'missing', 'x')]).toEqual([]);
   });
 });
 
-describe("walkByCoordinate", () => {
+describe('walkByCoordinate', () => {
   const yaml = `
 taxonomy: t
 version: 1
@@ -148,26 +142,26 @@ relations:
 `;
   const ir = (() => {
     const p = parse(yaml);
-    if (!("ir" in p)) throw new Error("parse failed");
+    if (!('ir' in p)) throw new Error('parse failed');
     return p.ir;
   })();
 
-  it("부분 좌표 startCoord로 매칭되는 rules 도달", () => {
-    const visited = [...walkByCoordinate(ir, "clip-binds", { clip: "fade" })];
+  it('부분 좌표 startCoord로 매칭되는 rules 도달', () => {
+    const visited = [...walkByCoordinate(ir, 'clip-binds', { clip: 'fade' })];
     expect(visited.length).toBe(2);
     // 시작점 + 도착점
-    expect(visited).toContainEqual({ clip: "fade" });
-    expect(visited).toContainEqual({ clip: "fade", "param-kind": "control" });
+    expect(visited).toContainEqual({ clip: 'fade' });
+    expect(visited).toContainEqual({ clip: 'fade', 'param-kind': 'control' });
   });
 
-  it("multi-axis coord 매칭", () => {
-    const visited = [...walkByCoordinate(ir, "asset-defines", { asset: "text" })];
-    expect(visited).toContainEqual({ asset: "text" });
-    expect(visited).toContainEqual({ asset: "text", "param-kind": "content" });
-    expect(visited).toContainEqual({ asset: "text", "param-kind": "control" });
+  it('multi-axis coord 매칭', () => {
+    const visited = [...walkByCoordinate(ir, 'asset-defines', { asset: 'text' })];
+    expect(visited).toContainEqual({ asset: 'text' });
+    expect(visited).toContainEqual({ asset: 'text', 'param-kind': 'content' });
+    expect(visited).toContainEqual({ asset: 'text', 'param-kind': 'control' });
   });
 
-  it("unknown relation → 빈 iterator", () => {
-    expect([...walkByCoordinate(ir, "missing", { clip: "fade" })]).toEqual([]);
+  it('unknown relation → 빈 iterator', () => {
+    expect([...walkByCoordinate(ir, 'missing', { clip: 'fade' })]).toEqual([]);
   });
 });

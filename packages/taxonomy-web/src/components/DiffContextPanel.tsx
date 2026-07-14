@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { fetchGitDiff, type GitDiffResponse } from "../data/gitDiffApi";
-import { BreakingLevelBadge } from "./BreakingLevelBadge";
-import { MigrationPlanPanel } from "./MigrationPlanPanel";
+import { useEffect, useState } from 'react';
+import { fetchGitDiff, type GitDiffResponse } from '../data/gitDiffApi';
+import { BreakingLevelBadge } from './BreakingLevelBadge';
+import { MigrationPlanPanel } from './MigrationPlanPanel';
 
 export function DiffContextPanel({ file }: { file: string }) {
   const [resp, setResp] = useState<GitDiffResponse | null>(null);

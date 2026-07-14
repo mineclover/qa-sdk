@@ -1,25 +1,25 @@
-import { describe, it, expect } from "vitest";
-import { TaxonomyDocSchema } from "../../src/schema/zod.js";
+import { describe, it, expect } from 'vitest';
+import { TaxonomyDocSchema } from '../../src/schema/zod.js';
 
-describe("TaxonomyDocSchema", () => {
-  it("유효한 최소 yaml 객체를 파싱한다", () => {
+describe('TaxonomyDocSchema', () => {
+  it('유효한 최소 yaml 객체를 파싱한다', () => {
     const doc = {
-      taxonomy: "test",
+      taxonomy: 'test',
       version: 1,
-      axes: { scope: { entries: ["apm", "ingest"] } },
+      axes: { scope: { entries: ['apm', 'ingest'] } },
     };
     const result = TaxonomyDocSchema.safeParse(doc);
     expect(result.success).toBe(true);
   });
 
-  it("axes 누락 시 실패한다", () => {
-    const result = TaxonomyDocSchema.safeParse({ taxonomy: "t", version: 1 });
+  it('axes 누락 시 실패한다', () => {
+    const result = TaxonomyDocSchema.safeParse({ taxonomy: 't', version: 1 });
     expect(result.success).toBe(false);
   });
 
-  it("entries가 비어있으면 실패한다", () => {
+  it('entries가 비어있으면 실패한다', () => {
     const result = TaxonomyDocSchema.safeParse({
-      taxonomy: "t",
+      taxonomy: 't',
       version: 1,
       axes: { scope: { entries: [] } },
     });

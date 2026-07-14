@@ -1,12 +1,12 @@
 {
   "name": "domain-slice-architecture-sample",
   "private": true,
-  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "verify": "node scripts/verify.mjs",
     "merge:openapi": "node scripts/merge-openapi.mjs",
     "check:openapi": "node scripts/merge-openapi.mjs && node scripts/check-openapi.mjs",
     "test": "vitest run tests",
     "typecheck": "tsc -p tsconfig.base.json --noEmit"
-  }
+  },
+  "packageManager": "pnpm@10.30.3"
 }

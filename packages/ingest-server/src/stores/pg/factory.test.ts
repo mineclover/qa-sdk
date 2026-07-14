@@ -1,12 +1,12 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import postgres from "postgres";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import postgres from 'postgres';
 
-import { createPgIngestStores, type PgIngestStoreSet } from "./factory.js";
+import { createPgIngestStores, type PgIngestStoreSet } from './factory.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
 const SETUP_DDL = `
 DROP TABLE IF EXISTS ingest.key_observations CASCADE;
@@ -70,12 +70,12 @@ DROP TABLE IF EXISTS ingest.key_observation_prefixes CASCADE;
 DROP TABLE IF EXISTS ingest.event_records CASCADE;
 `;
 
-describe.skipIf(!PG_AVAILABLE)("createPgIngestStores", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('createPgIngestStores', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
   const PG_URL = `postgres://${PG_USER}:${encodeURIComponent(PG_PASSWORD)}@${PG_HOST}:${PG_PORT}/${PG_DATABASE}`;
 
   let stores: PgIngestStoreSet | undefined;
@@ -106,27 +106,27 @@ describe.skipIf(!PG_AVAILABLE)("createPgIngestStores", () => {
     }
   });
 
-  it("두 어댑터 인스턴스 + close 반환", async () => {
-    stores = await createPgIngestStores({ url: PG_URL, schema: "ingest" });
+  it('두 어댑터 인스턴스 + close 반환', async () => {
+    stores = await createPgIngestStores({ url: PG_URL, schema: 'ingest' });
     expect(stores.recordStore).toBeDefined();
     expect(stores.keyObservationStore).toBeDefined();
-    expect(typeof stores.close).toBe("function");
+    expect(typeof stores.close).toBe('function');
   });
 
-  it("search_path 설정 — 어댑터 round-trip 동작", async () => {
-    stores = await createPgIngestStores({ url: PG_URL, schema: "ingest" });
+  it('search_path 설정 — 어댑터 round-trip 동작', async () => {
+    stores = await createPgIngestStores({ url: PG_URL, schema: 'ingest' });
     await stores.keyObservationStore.observe({
-      packedKey: "svc:v1:1",
-      prefixId: "svc",
+      packedKey: 'svc:v1:1',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:00Z",
+      timestamp: '2026-04-22T10:00:00Z',
     });
-    const rows = await stores.keyObservationStore.findByPrefix("svc");
+    const rows = await stores.keyObservationStore.findByPrefix('svc');
     expect(rows).toHaveLength(1);
   });
 
-  it("close 후 재호출 안전", async () => {
-    stores = await createPgIngestStores({ url: PG_URL, schema: "ingest" });
+  it('close 후 재호출 안전', async () => {
+    stores = await createPgIngestStores({ url: PG_URL, schema: 'ingest' });
     await stores.close();
     // double close: postgres-js는 graceful.
     await expect(stores.close()).resolves.not.toThrow();
@@ -137,12 +137,12 @@ describe.skipIf(!PG_AVAILABLE)("createPgIngestStores", () => {
     stores = await createPgIngestStores({ url: PG_URL });
     // default schema 설정 검증 — 실제 SET search_path가 수행됐음을 observe round-trip으로 확인.
     await stores.keyObservationStore.observe({
-      packedKey: "svc:v1:99",
-      prefixId: "svc",
+      packedKey: 'svc:v1:99',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:00Z",
+      timestamp: '2026-04-22T10:00:00Z',
     });
-    const rows = await stores.keyObservationStore.findByPrefix("svc");
+    const rows = await stores.keyObservationStore.findByPrefix('svc');
     expect(rows).toHaveLength(1);
   });
 });

@@ -1,10 +1,5 @@
-import type {
-  MetricType,
-  QaLoggerConfig,
-  TransmissionEnvelope,
-  Transport,
-} from "@qa-sdk/sdk";
-import type { Catalog, PrefixIds, ServiceBootConfig } from "@qa-sdk/core";
+import type { MetricType, QaLoggerConfig, TransmissionEnvelope, Transport } from '@qa-sdk/sdk';
+import type { Catalog, PrefixIds, ServiceBootConfig } from '@qa-sdk/core';
 
 export interface BenchmarkClient {
   startSession(
@@ -81,7 +76,7 @@ export interface BenchmarkIterationContext {
   client: BenchmarkClient;
   workerId: number;
   iteration: number;
-  phase: "warmup" | "measure";
+  phase: 'warmup' | 'measure';
 }
 
 export interface BenchmarkScenario {
@@ -93,13 +88,13 @@ export interface BenchmarkScenario {
 export type ScenarioValue<T> = T | ((context: BenchmarkIterationContext) => T);
 
 export interface ScenarioSessionStep {
-  kind: "session";
+  kind: 'session';
   scenarioId?: ScenarioValue<string | undefined>;
   existingSessionId?: ScenarioValue<string | undefined>;
 }
 
 export interface ScenarioEventStep {
-  kind: "event";
+  kind: 'event';
   eventKey: ScenarioValue<string>;
   payload?: ScenarioValue<Record<string, unknown> | undefined>;
   eventVersion?: ScenarioValue<string | undefined>;
@@ -107,7 +102,7 @@ export interface ScenarioEventStep {
 }
 
 export interface ScenarioMetricStep {
-  kind: "metric";
+  kind: 'metric';
   name: ScenarioValue<string>;
   value: ScenarioValue<number>;
   type?: ScenarioValue<MetricType | undefined>;
@@ -117,11 +112,11 @@ export interface ScenarioMetricStep {
 }
 
 export interface ScenarioFlushStep {
-  kind: "flush";
+  kind: 'flush';
 }
 
 export interface ScenarioWaitStep {
-  kind: "wait";
+  kind: 'wait';
   durationMs: ScenarioValue<number>;
 }
 
@@ -201,7 +196,7 @@ export interface BenchmarkQaContextConfig<C extends Catalog = Catalog> {
 }
 
 export interface BenchmarkReportOptions {
-  format?: "text" | "markdown";
+  format?: 'text' | 'markdown';
   title?: string;
   metadata?: Record<string, string | number | boolean | undefined>;
 }

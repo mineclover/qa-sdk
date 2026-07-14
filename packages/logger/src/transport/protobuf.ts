@@ -1,8 +1,8 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import type { TransmissionEnvelope } from "@qa-sdk/core";
-import type { Transport } from "./transport.js";
+import type { TransmissionEnvelope } from '@qa-sdk/core';
+import type { Transport } from './transport.js';
 
 export interface ProtobufTransportOptions {
   endpoint: string;
@@ -38,9 +38,9 @@ export class ProtobufTransport implements Transport {
 
     try {
       const res = await fetch(this.endpoint, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/x-protobuf",
+          'Content-Type': 'application/x-protobuf',
           ...this.headers,
         },
         body: new Uint8Array(bytes) as unknown as ArrayBuffer,
@@ -77,12 +77,12 @@ export function encodeProtoEnvelope(envelope: TransmissionEnvelope): Uint8Array 
 
 /** proto-framed binary → TransmissionEnvelope */
 export function decodeProtoEnvelope(bytes: Uint8Array): unknown {
-  if (bytes.length < 8) throw new Error("Proto envelope too short");
+  if (bytes.length < 8) throw new Error('Proto envelope too short');
   for (let i = 0; i < 4; i++) {
-    if (bytes[i] !== MAGIC[i]) throw new Error("Invalid proto magic");
+    if (bytes[i] !== MAGIC[i]) throw new Error('Invalid proto magic');
   }
   const len = new DataView(bytes.buffer, bytes.byteOffset).getUint32(4, false);
-  if (bytes.length < 8 + len) throw new Error("Proto envelope truncated");
+  if (bytes.length < 8 + len) throw new Error('Proto envelope truncated');
   const decoder = new TextDecoder();
   return JSON.parse(decoder.decode(bytes.subarray(8, 8 + len)));
 }

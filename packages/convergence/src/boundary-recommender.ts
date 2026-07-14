@@ -5,8 +5,12 @@
  * @layer 추천 (Recommendation)
  */
 
-import type { GraphPort } from "spec-schema";
-import type { SimplificationCandidate, BoundaryRecommendation, CausalCandidate } from "./convergence.types.js";
+import type { GraphPort } from 'spec-schema';
+import type {
+  SimplificationCandidate,
+  BoundaryRecommendation,
+  CausalCandidate,
+} from './convergence.types.js';
 
 /**
  * SimplificationCandidate에서 split 후보가 있으면 경계를 추천한다.
@@ -15,25 +19,26 @@ export function recommendFromSimplification(
   graph: GraphPort,
   candidate: SimplificationCandidate,
 ): BoundaryRecommendation | null {
-  const splitSuggestion = candidate.suggestions.find(s => s.kind === "split-prefix");
+  const splitSuggestion = candidate.suggestions.find((s) => s.kind === 'split-prefix');
   if (!splitSuggestion) return null;
 
   // prefix가 속한 domain 찾기
-  const domainEdges = graph.edgesTo(candidate.prefix, "contains");
+  const domainEdges = graph.edgesTo(candidate.prefix, 'contains');
   const suggestedDomain = domainEdges.length > 0 ? domainEdges[0].from : null;
 
   // 현재 prefix의 축 목록
-  const axes = graph.edgesFrom(candidate.prefix, "composes")
-    .filter(e => e.meta?.dimKind === "axis")
-    .map(e => e.to);
+  const axes = graph
+    .edgesFrom(candidate.prefix, 'composes')
+    .filter((e) => e.meta?.dimKind === 'axis')
+    .map((e) => e.to);
 
   return {
     reason: `'${candidate.prefix}'의 차원 수가 과도함. 분할 권장.`,
     suggestedDomain,
     suggestedDims: axes.slice(Math.ceil(axes.length / 2)), // 후반부 축으로 분리 제안
-    relatedPrefixes: [{ id: candidate.prefix, relation: "splits-from" }],
+    relatedPrefixes: [{ id: candidate.prefix, relation: 'splits-from' }],
     estimatedCapacity: 16, // 기본 추정
-    confidence: "medium",
+    confidence: 'medium',
   };
 }
 
@@ -48,21 +53,24 @@ export function recommendFromObservation(
   if (unmappedAxes.length === 0) return null;
 
   let suggestedDomain: string | null = null;
-  const relatedPrefixes: Array<{ id: string; relation: "extends" | "splits-from" | "independent" }> = [];
+  const relatedPrefixes: Array<{
+    id: string;
+    relation: 'extends' | 'splits-from' | 'independent';
+  }> = [];
 
   if (relatedPrefix) {
-    const domainEdges = graph.edgesTo(relatedPrefix, "contains");
+    const domainEdges = graph.edgesTo(relatedPrefix, 'contains');
     suggestedDomain = domainEdges.length > 0 ? domainEdges[0].from : null;
-    relatedPrefixes.push({ id: relatedPrefix, relation: "extends" });
+    relatedPrefixes.push({ id: relatedPrefix, relation: 'extends' });
   }
 
   return {
-    reason: `기존 prefix에 매핑되지 않는 축 [${unmappedAxes.join(", ")}] 발견.`,
+    reason: `기존 prefix에 매핑되지 않는 축 [${unmappedAxes.join(', ')}] 발견.`,
     suggestedDomain,
     suggestedDims: unmappedAxes,
     relatedPrefixes,
     estimatedCapacity: unmappedAxes.length * 8, // 축당 8 기본 추정
-    confidence: relatedPrefix ? "medium" : "low",
+    confidence: relatedPrefix ? 'medium' : 'low',
   };
 }
 
@@ -76,14 +84,16 @@ export function recommendFromCausality(
   const results: BoundaryRecommendation[] = [];
 
   for (const c of candidates) {
-    if (c.confidence !== "high") continue;
+    if (c.confidence !== 'high') continue;
     if (c.source.prefix === c.target.prefix) continue;
 
     // source/target이 서로 다른 domain에 속하는지 확인
-    const srcDomains = graph.edgesTo(c.source.prefix, "contains").map(e => e.from);
-    const tgtDomains = graph.edgesTo(c.target.prefix, "contains").map(e => e.from);
-    const crossDomain = srcDomains.length > 0 && tgtDomains.length > 0
-      && !srcDomains.some(d => tgtDomains.includes(d));
+    const srcDomains = graph.edgesTo(c.source.prefix, 'contains').map((e) => e.from);
+    const tgtDomains = graph.edgesTo(c.target.prefix, 'contains').map((e) => e.from);
+    const crossDomain =
+      srcDomains.length > 0 &&
+      tgtDomains.length > 0 &&
+      !srcDomains.some((d) => tgtDomains.includes(d));
 
     if (!crossDomain) continue;
 
@@ -92,11 +102,11 @@ export function recommendFromCausality(
       suggestedDomain: null,
       suggestedDims: [c.source.prefix, c.target.prefix],
       relatedPrefixes: [
-        { id: c.source.prefix, relation: "extends" },
-        { id: c.target.prefix, relation: "extends" },
+        { id: c.source.prefix, relation: 'extends' },
+        { id: c.target.prefix, relation: 'extends' },
       ],
       estimatedCapacity: 16,
-      confidence: "medium",
+      confidence: 'medium',
     });
   }
 
@@ -132,8 +142,11 @@ export function recommendAll(
 
   // 중복 제거: 같은 relatedPrefixes 조합이면 첫 번째만
   const seen = new Set<string>();
-  return results.filter(r => {
-    const key = r.relatedPrefixes.map(p => `${p.id}:${p.relation}`).toSorted().join("|");
+  return results.filter((r) => {
+    const key = r.relatedPrefixes
+      .map((p) => `${p.id}:${p.relation}`)
+      .toSorted()
+      .join('|');
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

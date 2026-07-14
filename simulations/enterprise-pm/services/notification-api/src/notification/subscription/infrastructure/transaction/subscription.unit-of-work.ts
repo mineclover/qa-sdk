@@ -1,12 +1,12 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import type { SubscriptionRepositoryPort } from "../../application/ports/subscription-repository.port.js";
-import type { SubscriptionOutboxPort } from "../../application/ports/subscription-outbox.port.js";
+import type { SubscriptionRepositoryPort } from '../../application/ports/subscription-repository.port.js';
+import type { SubscriptionOutboxPort } from '../../application/ports/subscription-outbox.port.js';
 import type {
   SubscriptionTransactionPort,
   SubscriptionTransactionScope,
-} from "../../application/ports/subscription-transaction.port.js";
+} from '../../application/ports/subscription-transaction.port.js';
 
 export class SubscriptionUnitOfWork {
   constructor(

@@ -7,7 +7,7 @@
  * 제어 흐름(pipe) ↔ 이벤트 카탈로그 간 정합성을 검증한다.
  */
 
-import type { TransitionDef } from "./types.js";
+import type { TransitionDef } from './types.js';
 
 // ── Registry ──────────────────────────────────────
 
@@ -34,7 +34,7 @@ export function clearTransitions(): void {
 // ── Validation ────────────────────────────────────
 
 export interface TransitionIssue {
-  readonly severity: "error" | "warning";
+  readonly severity: 'error' | 'warning';
   readonly transitionId: string;
   readonly message: string;
 }
@@ -54,7 +54,7 @@ export function validateTransitionEvents(
 
   if (!def) {
     issues.push({
-      severity: "warning",
+      severity: 'warning',
       transitionId: pipeTransitionId,
       message: `transition "${pipeTransitionId}" 이 event-catalog에 등록되지 않음`,
     });
@@ -68,7 +68,7 @@ export function validateTransitionEvents(
   for (const ev of pipeEvents) {
     if (!defEventSet.has(ev)) {
       issues.push({
-        severity: "warning",
+        severity: 'warning',
         transitionId: pipeTransitionId,
         message: `PipeTransitionScope에 "${ev}" 이벤트가 있지만 TransitionDef에는 없음`,
       });
@@ -79,7 +79,7 @@ export function validateTransitionEvents(
   for (const ev of def.events) {
     if (!pipeEventSet.has(ev)) {
       issues.push({
-        severity: "warning",
+        severity: 'warning',
         transitionId: pipeTransitionId,
         message: `TransitionDef에 "${ev}" 이벤트가 있지만 PipeTransitionScope에는 없음`,
       });

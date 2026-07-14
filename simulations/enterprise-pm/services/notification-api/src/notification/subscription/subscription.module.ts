@@ -1,36 +1,33 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  NOTIF_DB_INSTANCE,
-  type NotifDbInstanceHandle,
-} from "../notification-db.module.js";
+import { NOTIF_DB_INSTANCE, type NotifDbInstanceHandle } from '../notification-db.module.js';
 
-import { SubscriptionRepositoryPort } from "./application/ports/subscription-repository.port.js";
-import { SubscriptionReadModelQuery } from "./application/queries/subscription-read-model.query.js";
-import { SubscriptionUseCase } from "./application/use-cases/subscription.use-case.js";
+import { SubscriptionRepositoryPort } from './application/ports/subscription-repository.port.js';
+import { SubscriptionReadModelQuery } from './application/queries/subscription-read-model.query.js';
+import { SubscriptionUseCase } from './application/use-cases/subscription.use-case.js';
 import {
   AlwaysTrueUserQuery,
   SubscriptionUserQueryPort,
-} from "./application/ports/user-query.port.js";
+} from './application/ports/user-query.port.js';
 
-import { createSubscriptionRepository } from "./infrastructure/persistence/subscription.repository.js";
-import { createSubscriptionTransactionPort } from "./infrastructure/transaction/subscription.drizzle-transaction.js";
-import { createSubscriptionOutboxPort } from "./infrastructure/outbox/subscription.outbox.js";
-import { createSubscriptionLogger } from "./infrastructure/logging/subscription.logger.js";
-import { RepositorySubscriptionReadModel } from "./infrastructure/read-model/subscription.read-model.js";
+import { createSubscriptionRepository } from './infrastructure/persistence/subscription.repository.js';
+import { createSubscriptionTransactionPort } from './infrastructure/transaction/subscription.drizzle-transaction.js';
+import { createSubscriptionOutboxPort } from './infrastructure/outbox/subscription.outbox.js';
+import { createSubscriptionLogger } from './infrastructure/logging/subscription.logger.js';
+import { RepositorySubscriptionReadModel } from './infrastructure/read-model/subscription.read-model.js';
 
-import { SubscriptionController } from "./presentation/http/subscription.controller.js";
-import { SubscriptionDetailBff } from "./presentation/bff/subscription-detail.bff.js";
-import { SubscriptionDetailController } from "./presentation/bff/subscription-detail.controller.js";
+import { SubscriptionController } from './presentation/http/subscription.controller.js';
+import { SubscriptionDetailBff } from './presentation/bff/subscription-detail.bff.js';
+import { SubscriptionDetailController } from './presentation/bff/subscription-detail.controller.js';
 
 // production user-query 어댑터 (외부 컴포지션용 re-export — 모듈 자체는
 // 기본값으로 AlwaysTrueUserQuery 를 유지). NestJS override 또는 dynamic
@@ -38,15 +35,15 @@ import { SubscriptionDetailController } from "./presentation/bff/subscription-de
 export {
   InProcessSubscriptionUserQuery,
   type UserReadModelLike,
-} from "./infrastructure/adapters/in-process-user-query.adapter.js";
+} from './infrastructure/adapters/in-process-user-query.adapter.js';
 export {
   HttpSubscriptionUserQuery,
   type HttpSubscriptionUserQueryOptions,
   type FetchLike,
-} from "./infrastructure/adapters/http-user-query.adapter.js";
+} from './infrastructure/adapters/http-user-query.adapter.js';
 
-const SUB_TRANSACTION_PORT = Symbol.for("sim-notification-api/subscription/TransactionPort");
-const SUB_OUTBOX_PORT = Symbol.for("sim-notification-api/subscription/OutboxPort");
+const SUB_TRANSACTION_PORT = Symbol.for('sim-notification-api/subscription/TransactionPort');
+const SUB_OUTBOX_PORT = Symbol.for('sim-notification-api/subscription/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: SubscriptionRepositoryPort,
@@ -76,8 +73,7 @@ const loggerProvider: Provider = {
 
 const readModelProvider: Provider = {
   provide: SubscriptionReadModelQuery,
-  useFactory: (repo: SubscriptionRepositoryPort) =>
-    new RepositorySubscriptionReadModel(repo),
+  useFactory: (repo: SubscriptionRepositoryPort) => new RepositorySubscriptionReadModel(repo),
   inject: [SubscriptionRepositoryPort],
 };
 

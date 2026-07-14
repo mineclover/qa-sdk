@@ -1,8 +1,8 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import { ValidationError } from "../errors.js";
-import type { PrefixRegistry, PrefixRegistryRecord, DimRef } from "../prefix-registry.js";
+import { ValidationError } from '../errors.js';
+import type { PrefixRegistry, PrefixRegistryRecord, DimRef } from '../prefix-registry.js';
 
 export class InMemoryPrefixRegistry implements PrefixRegistry {
   /** "prefix:versionId" → PrefixRegistryRecord */
@@ -12,7 +12,7 @@ export class InMemoryPrefixRegistry implements PrefixRegistry {
     const key = `${record.prefix}:${record.versionId}`;
     if (this._store.has(key)) {
       throw new ValidationError(
-        `PrefixRegistry: "${record.prefix}/${record.versionId}" already registered`
+        `PrefixRegistry: "${record.prefix}/${record.versionId}" already registered`,
       );
     }
     this._store.set(key, record);
@@ -22,14 +22,12 @@ export class InMemoryPrefixRegistry implements PrefixRegistry {
     prefix: string,
     versionId: string,
     capacity: number,
-    refs?: readonly import("../prefix-registry.js").DimRef[],
+    refs?: readonly import('../prefix-registry.js').DimRef[],
   ): Promise<void> {
     const key = `${prefix}:${versionId}`;
     const existing = this._store.get(key);
     if (!existing) {
-      throw new ValidationError(
-        `PrefixRegistry: "${prefix}/${versionId}" not registered`
-      );
+      throw new ValidationError(`PrefixRegistry: "${prefix}/${versionId}" not registered`);
     }
     this._store.set(key, {
       ...existing,
@@ -58,10 +56,7 @@ export class InMemoryPrefixRegistry implements PrefixRegistry {
     return this._store.get(`${prefix}:${versionId}`)?.refs ?? [];
   }
 
-  async getTransitiveDeps(
-    prefix: string,
-    versionId: string
-  ): Promise<readonly DimRef[]> {
+  async getTransitiveDeps(prefix: string, versionId: string): Promise<readonly DimRef[]> {
     const result: DimRef[] = [];
     const visited = new Set<string>();
 
@@ -85,10 +80,10 @@ export class InMemoryPrefixRegistry implements PrefixRegistry {
 
   async getReverseRefs(
     prefix: string,
-    versionId: string
+    versionId: string,
   ): Promise<readonly PrefixRegistryRecord[]> {
-    return [...this._store.values()].filter(
-      (r) => r.refs?.some((ref) => ref.prefix === prefix && ref.versionId === versionId)
+    return [...this._store.values()].filter((r) =>
+      r.refs?.some((ref) => ref.prefix === prefix && ref.versionId === versionId),
     );
   }
 
@@ -98,14 +93,16 @@ export class InMemoryPrefixRegistry implements PrefixRegistry {
     return record.refs ? record.refs.map((r) => r.capacity) : [record.capacity];
   }
 
-  async resolveAddress(serialized: string): Promise<import("../prefix-registry.js").ResolvedAddress | null> {
+  async resolveAddress(
+    serialized: string,
+  ): Promise<import('../prefix-registry.js').ResolvedAddress | null> {
     // "prefix:version:index" — 마지막 두 콜론으로 분리
-    const last = serialized.lastIndexOf(":");
+    const last = serialized.lastIndexOf(':');
     if (last === -1) return null;
     const indexStr = serialized.slice(last + 1);
     const rest = serialized.slice(0, last);
 
-    const second = rest.lastIndexOf(":");
+    const second = rest.lastIndexOf(':');
     if (second === -1) return null;
     const prefix = rest.slice(0, second);
     const versionId = rest.slice(second + 1);

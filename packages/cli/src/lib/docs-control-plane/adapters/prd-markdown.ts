@@ -1,14 +1,11 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { readdir, readFile, stat } from "node:fs/promises";
-import { basename, join, relative } from "node:path";
+import { readdir, readFile, stat } from 'node:fs/promises';
+import { basename, join, relative } from 'node:path';
 
-import {
-  defineDocumentAdapter,
-  normalizeDocumentEnvelope,
-} from "doc-envelope";
-import { matchesDocumentQuery } from "doc-envelope";
+import { defineDocumentAdapter, normalizeDocumentEnvelope } from 'doc-envelope';
+import { matchesDocumentQuery } from 'doc-envelope';
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
@@ -17,9 +14,9 @@ import type {
   DocumentMetadata,
   DocumentSectionInput,
   DocumentTaskInput,
-} from "doc-envelope";
+} from 'doc-envelope';
 
-export const PRD_MARKDOWN_ADAPTER_ID = "prd-markdown";
+export const PRD_MARKDOWN_ADAPTER_ID = 'prd-markdown';
 
 export interface PrdMarkdownAdapterOptions {
   readonly rootDir: string;
@@ -47,26 +44,24 @@ interface PrdCriterion {
   readonly checked?: boolean;
 }
 
-const DEFAULT_PRD_DIRS = ["tasks"];
-const IGNORED_DIRS = new Set(["node_modules", "dist", ".git", ".next", ".turbo", "coverage"]);
+const DEFAULT_PRD_DIRS = ['tasks'];
+const IGNORED_DIRS = new Set(['node_modules', 'dist', '.git', '.next', '.turbo', 'coverage']);
 const PRD_START_MARKER_RE = /^\[PRD\]\s*$/m;
 const PRD_END_MARKER_RE = /^\[\/PRD\]\s*$/gm;
 const SECTION_TITLES = new Set([
-  "overview",
-  "goals",
-  "quality gates",
-  "user stories",
-  "functional requirements",
-  "non-goals",
-  "technical considerations",
-  "success metrics",
-  "open questions",
-  "control-plane context sources",
+  'overview',
+  'goals',
+  'quality gates',
+  'user stories',
+  'functional requirements',
+  'non-goals',
+  'technical considerations',
+  'success metrics',
+  'open questions',
+  'control-plane context sources',
 ]);
 
-export function createPrdMarkdownAdapter(
-  options: PrdMarkdownAdapterOptions,
-): DocumentAdapter {
+export function createPrdMarkdownAdapter(options: PrdMarkdownAdapterOptions): DocumentAdapter {
   const rootDir = options.rootDir;
   const dirs = options.dirs ?? DEFAULT_PRD_DIRS;
   const paths = options.paths;
@@ -79,9 +74,11 @@ export function createPrdMarkdownAdapter(
     },
     async getDocument(stableId: string) {
       const envelopes = await collectPrdMarkdownEnvelopes(rootDir, dirs, paths);
-      return envelopes.find((envelope) => envelope.stableId === stableId)
-        ?? envelopes.find((envelope) => envelope.metadata.title === stableId)
-        ?? null;
+      return (
+        envelopes.find((envelope) => envelope.stableId === stableId) ??
+        envelopes.find((envelope) => envelope.metadata.title === stableId) ??
+        null
+      );
     },
   });
 }
@@ -94,8 +91,8 @@ async function collectPrdMarkdownEnvelopes(
   const files = paths
     ? paths.map((path) => resolvePath(rootDir, path))
     : (await Promise.all(dirs.map((dir) => findMarkdownFiles(resolvePath(rootDir, dir)))))
-      .flat()
-      .toSorted();
+        .flat()
+        .toSorted();
 
   const envelopes: DocumentEnvelope[] = [];
   for (const filePath of files) {
@@ -116,28 +113,33 @@ function buildPrdMarkdownEnvelope(
   const diagnostics: DocumentDiagnosticInput[] = [];
   const prdBlock = extractPrdBlock(relativePath, content, diagnostics);
   const sections = parseSections(prdBlock);
-  const sectionByTitle = new Map(sections.map((section) => [normalizeTitle(section.title), section]));
-  const title = prdBlock.match(/^#\s+(?:PRD:\s*)?(.+)/m)?.[1]?.trim() ?? basename(relativePath, ".md");
-  const familyId = relativePath.replace(/\.md$/, "");
-  const qualityGates = parseList(sectionByTitle.get("quality gates")?.content ?? "");
-  const stories = parseStories(sectionByTitle.get("user stories")?.content ?? "");
+  const sectionByTitle = new Map(
+    sections.map((section) => [normalizeTitle(section.title), section]),
+  );
+  const title =
+    prdBlock.match(/^#\s+(?:PRD:\s*)?(.+)/m)?.[1]?.trim() ?? basename(relativePath, '.md');
+  const familyId = relativePath.replace(/\.md$/, '');
+  const qualityGates = parseList(sectionByTitle.get('quality gates')?.content ?? '');
+  const stories = parseStories(sectionByTitle.get('user stories')?.content ?? '');
   const metadata: DocumentMetadata = {
     title,
     sourcePath: relativePath,
-    overview: normalizeBlock(sectionByTitle.get("overview")?.content ?? ""),
-    goals: parseList(sectionByTitle.get("goals")?.content ?? ""),
+    overview: normalizeBlock(sectionByTitle.get('overview')?.content ?? ''),
+    goals: parseList(sectionByTitle.get('goals')?.content ?? ''),
     qualityGates,
-    functionalRequirements: parseList(sectionByTitle.get("functional requirements")?.content ?? ""),
-    nonGoals: parseList(sectionByTitle.get("non-goals")?.content ?? ""),
-    technicalConsiderations: parseListOrParagraphs(sectionByTitle.get("technical considerations")?.content ?? ""),
-    successMetrics: parseList(sectionByTitle.get("success metrics")?.content ?? ""),
-    openQuestions: parseListOrParagraphs(sectionByTitle.get("open questions")?.content ?? ""),
-    contextSources: parseList(sectionByTitle.get("control-plane context sources")?.content ?? ""),
+    functionalRequirements: parseList(sectionByTitle.get('functional requirements')?.content ?? ''),
+    nonGoals: parseList(sectionByTitle.get('non-goals')?.content ?? ''),
+    technicalConsiderations: parseListOrParagraphs(
+      sectionByTitle.get('technical considerations')?.content ?? '',
+    ),
+    successMetrics: parseList(sectionByTitle.get('success metrics')?.content ?? ''),
+    openQuestions: parseListOrParagraphs(sectionByTitle.get('open questions')?.content ?? ''),
+    contextSources: parseList(sectionByTitle.get('control-plane context sources')?.content ?? ''),
   };
 
   return normalizeDocumentEnvelope({
     adapterId: PRD_MARKDOWN_ADAPTER_ID,
-    kind: "prd",
+    kind: 'prd',
     stableId: familyId,
     familyId,
     path: relativePath,
@@ -147,7 +149,7 @@ function buildPrdMarkdownEnvelope(
     diagnostics,
     rawSource: {
       path: relativePath,
-      sourceSchema: "prd-markdown",
+      sourceSchema: 'prd-markdown',
     },
   });
 }
@@ -160,12 +162,12 @@ function extractPrdBlock(
   const start = content.match(PRD_START_MARKER_RE);
   if (!start || start.index === undefined) {
     diagnostics.push({
-      code: "prd-markdown-missing-prd-block",
-      severity: "warning",
-      message: "PRD markdown should be wrapped in [PRD]...[/PRD].",
+      code: 'prd-markdown-missing-prd-block',
+      severity: 'warning',
+      message: 'PRD markdown should be wrapped in [PRD]...[/PRD].',
       rawSource: {
         path: sourcePath,
-        pointer: "[PRD]",
+        pointer: '[PRD]',
       },
       metadata: {
         source: PRD_MARKDOWN_ADAPTER_ID,
@@ -178,12 +180,12 @@ function extractPrdBlock(
   const end = lastPrdEndMarkerAfter(content, startIndex);
   if (!end) {
     diagnostics.push({
-      code: "prd-markdown-missing-end-marker",
-      severity: "warning",
-      message: "PRD markdown should end with a line containing [/PRD].",
+      code: 'prd-markdown-missing-end-marker',
+      severity: 'warning',
+      message: 'PRD markdown should end with a line containing [/PRD].',
       rawSource: {
         path: sourcePath,
-        pointer: "[/PRD]",
+        pointer: '[/PRD]',
       },
       metadata: {
         source: PRD_MARKDOWN_ADAPTER_ID,
@@ -218,7 +220,7 @@ function lastPrdEndMarkerAfter(
 function parseSections(content: string): readonly PrdSection[] {
   const headings = [...content.matchAll(/^##\s+(.+)$/gm)]
     .map((match) => ({
-      title: match[1]?.trim() ?? "",
+      title: match[1]?.trim() ?? '',
       index: match.index ?? 0,
       endOfHeading: (match.index ?? 0) + match[0].length,
     }))
@@ -235,13 +237,14 @@ function parseSections(content: string): readonly PrdSection[] {
 }
 
 function parseStories(content: string): readonly PrdStory[] {
-  const headings = [...content.matchAll(/^###\s+(US-[A-Za-z0-9_-]+)\s*:\s*(.+)$/gm)]
-    .map((match) => ({
-      id: match[1]?.trim() ?? "",
-      title: match[2]?.trim() ?? "",
+  const headings = [...content.matchAll(/^###\s+(US-[A-Za-z0-9_-]+)\s*:\s*(.+)$/gm)].map(
+    (match) => ({
+      id: match[1]?.trim() ?? '',
+      title: match[2]?.trim() ?? '',
       index: match.index ?? 0,
       endOfHeading: (match.index ?? 0) + match[0].length,
-    }));
+    }),
+  );
 
   return headings.map((heading, index) => {
     const next = headings[index + 1];
@@ -249,7 +252,7 @@ function parseStories(content: string): readonly PrdStory[] {
     return {
       id: heading.id,
       title: heading.title,
-      description: parseLabelBlock(block, "Description"),
+      description: parseLabelBlock(block, 'Description'),
       prerequisites: parsePrerequisites(block),
       acceptanceCriteria: parseAcceptanceCriteria(block),
       order: index,
@@ -258,18 +261,15 @@ function parseStories(content: string): readonly PrdStory[] {
 }
 
 function parsePrerequisites(block: string): readonly string[] {
-  const labels = ["Depends on", "Dependencies", "Prerequisites", "Prerequisite"];
+  const labels = ['Depends on', 'Dependencies', 'Prerequisites', 'Prerequisite'];
   return labels
-    .flatMap((label) => [
-      parseLabelBlock(block, label),
-      parseLabeledSection(block, label),
-    ])
-    .flatMap((value) => parsePrerequisiteText(value ?? ""))
+    .flatMap((label) => [parseLabelBlock(block, label), parseLabeledSection(block, label)])
+    .flatMap((value) => parsePrerequisiteText(value ?? ''))
     .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
 }
 
 function parseAcceptanceCriteria(block: string): readonly PrdCriterion[] {
-  const content = parseLabeledSection(block, "Acceptance Criteria");
+  const content = parseLabeledSection(block, 'Acceptance Criteria');
   if (!content) return [];
   return content
     .split(/\r?\n/)
@@ -277,14 +277,14 @@ function parseAcceptanceCriteria(block: string): readonly PrdCriterion[] {
       const checkbox = line.match(/^\s*-\s+\[([ xX])\]\s+(.+)$/);
       if (checkbox) {
         return {
-          text: checkbox[2]?.trim() ?? "",
-          checked: checkbox[1]?.toLowerCase() === "x",
+          text: checkbox[2]?.trim() ?? '',
+          checked: checkbox[1]?.toLowerCase() === 'x',
         };
       }
       const bullet = line.match(/^\s*-\s+(.+)$/);
       if (bullet) {
         return {
-          text: bullet[1]?.trim() ?? "",
+          text: bullet[1]?.trim() ?? '',
         };
       }
       return null;
@@ -298,9 +298,9 @@ function parseLabelBlock(block: string, label: string): string | undefined {
 }
 
 function parseLabeledSection(block: string, label: string): string {
-  const labelRe = new RegExp(String.raw`^\*\*${escapeRegExp(label)}:\*\*\s*$`, "m");
+  const labelRe = new RegExp(String.raw`^\*\*${escapeRegExp(label)}:\*\*\s*$`, 'm');
   const match = block.match(labelRe);
-  if (!match || match.index === undefined) return "";
+  if (!match || match.index === undefined) return '';
   const start = match.index + match[0].length;
   const rest = block.slice(start);
   const nextLabel = rest.search(/^\*\*[^*]+:\*\*\s*$/m);
@@ -328,8 +328,12 @@ function toDocumentTask(
   story: PrdStory,
   qualityGates: readonly string[],
 ): DocumentTaskInput {
-  const checkedCriteria = story.acceptanceCriteria.filter((criterion) => criterion.checked === true).length;
-  const checkableCriteria = story.acceptanceCriteria.filter((criterion) => criterion.checked !== undefined).length;
+  const checkedCriteria = story.acceptanceCriteria.filter(
+    (criterion) => criterion.checked === true,
+  ).length;
+  const checkableCriteria = story.acceptanceCriteria.filter(
+    (criterion) => criterion.checked !== undefined,
+  ).length;
   return {
     id: story.id,
     title: story.title,
@@ -373,7 +377,7 @@ function parsePrerequisiteText(content: string): readonly string[] {
 }
 
 function normalizeBlock(content: string): string {
-  return content.trim().replace(/\n{3,}/g, "\n\n");
+  return content.trim().replace(/\n{3,}/g, '\n\n');
 }
 
 async function findMarkdownFiles(dir: string): Promise<string[]> {
@@ -390,24 +394,24 @@ async function findMarkdownFiles(dir: string): Promise<string[]> {
   for (const entry of entries) {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!IGNORED_DIRS.has(entry.name)) files.push(...await findMarkdownFiles(fullPath));
+      if (!IGNORED_DIRS.has(entry.name)) files.push(...(await findMarkdownFiles(fullPath)));
       continue;
     }
-    if (entry.isFile() && entry.name.endsWith(".md")) files.push(fullPath);
+    if (entry.isFile() && entry.name.endsWith('.md')) files.push(fullPath);
   }
   return files;
 }
 
 async function safeRead(filePath: string): Promise<string | null> {
   try {
-    return await readFile(filePath, "utf8");
+    return await readFile(filePath, 'utf8');
   } catch {
     return null;
   }
 }
 
 function resolvePath(rootDir: string, path: string): string {
-  return path.startsWith("/") ? path : join(rootDir, path);
+  return path.startsWith('/') ? path : join(rootDir, path);
 }
 
 function toRepoPath(rootDir: string, filePath: string): string {
@@ -415,7 +419,7 @@ function toRepoPath(rootDir: string, filePath: string): string {
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function normalizeTitle(value: string): string {
@@ -423,9 +427,11 @@ function normalizeTitle(value: string): string {
 }
 
 function slug(value: string): string {
-  return normalizeTitle(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return normalizeTitle(value)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

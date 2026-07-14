@@ -6,18 +6,15 @@
  * execa 기반.
  */
 
-import { execaSync } from "execa";
+import { execaSync } from 'execa';
 
 /**
  * 파일의 최신 커밋 SHA를 조회한다.
  * 파일이 git에 추적되지 않으면 null.
  */
-export function getLatestCommitForFile(
-  cwd: string,
-  filePath: string,
-): string | null {
+export function getLatestCommitForFile(cwd: string, filePath: string): string | null {
   try {
-    const { stdout } = execaSync("git", ["log", "--format=%H", "-1", "--", filePath], { cwd });
+    const { stdout } = execaSync('git', ['log', '--format=%H', '-1', '--', filePath], { cwd });
     const trimmed = stdout.trim();
     return trimmed || null;
   } catch {
@@ -29,10 +26,7 @@ export function getLatestCommitForFile(
  * 여러 파일의 최신 커밋 SHA를 배치 조회한다.
  * 반환: Map<filePath, commitSHA>
  */
-export function getLatestCommitsForFiles(
-  cwd: string,
-  filePaths: string[],
-): Map<string, string> {
+export function getLatestCommitsForFiles(cwd: string, filePaths: string[]): Map<string, string> {
   const result = new Map<string, string>();
   for (const fp of filePaths) {
     const commit = getLatestCommitForFile(cwd, fp);
@@ -57,8 +51,8 @@ export function checkStaleness(
   // reviewedCommit 이후 변경 커밋이 있는지 확인
   try {
     const { stdout } = execaSync(
-      "git",
-      ["rev-list", "--count", `${reviewedCommit}..HEAD`, "--", filePath],
+      'git',
+      ['rev-list', '--count', `${reviewedCommit}..HEAD`, '--', filePath],
       { cwd },
     );
     return { stale: Number(stdout.trim()) > 0, latestCommit };
@@ -72,7 +66,7 @@ export function checkStaleness(
  * 현재 HEAD 커밋 SHA를 반환한다.
  */
 export function getHeadCommit(cwd: string): string {
-  const { stdout } = execaSync("git", ["rev-parse", "HEAD"], { cwd });
+  const { stdout } = execaSync('git', ['rev-parse', 'HEAD'], { cwd });
   return stdout.trim();
 }
 
@@ -80,9 +74,9 @@ export function getHeadCommit(cwd: string): string {
  * git ls-files로 추적 중인 전체 파일 목록을 반환한다.
  */
 export function listTrackedFiles(cwd: string): string[] {
-  const { stdout } = execaSync("git", ["ls-files"], { cwd });
+  const { stdout } = execaSync('git', ['ls-files'], { cwd });
   return stdout
-    .split("\n")
+    .split('\n')
     .map((l) => l.trim())
     .filter(Boolean);
 }

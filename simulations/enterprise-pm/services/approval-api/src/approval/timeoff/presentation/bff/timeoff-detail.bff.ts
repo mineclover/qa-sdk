@@ -4,8 +4,8 @@
 import {
   TimeOffReadModelQuery,
   type TimeOffDetailReadModel,
-} from "../../application/queries/timeoff-read-model.query.js";
-import type { TimeOffLoggerPort } from "../../application/ports/timeoff-logger.port.js";
+} from '../../application/queries/timeoff-read-model.query.js';
+import type { TimeOffLoggerPort } from '../../application/ports/timeoff-logger.port.js';
 
 export interface TimeOffDetailBffModel {
   readonly id: string;
@@ -17,7 +17,7 @@ export interface TimeOffDetailBffModel {
 }
 
 export class TimeOffDetailBff {
-  readonly cachePrefix = "timeoff-bff-detail:v1";
+  readonly cachePrefix = 'timeoff-bff-detail:v1';
   constructor(
     private readonly readModel: TimeOffReadModelQuery,
     private readonly logger: TimeOffLoggerPort,
@@ -33,15 +33,15 @@ export class TimeOffDetailBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "timeoff",
-        useCase: "TimeOffDetailBff.getDetail",
+        domain: 'timeoff',
+        useCase: 'TimeOffDetailBff.getDetail',
         aggregateId: input.id,
-        queryName: "TimeOffDetailBffQuery",
-        outcome: detail ? "success" : "failure",
+        queryName: 'TimeOffDetailBffQuery',
+        outcome: detail ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      detail ? "timeoff-detail.bff.success" : "timeoff-detail.bff.miss",
+      detail ? 'timeoff-detail.bff.success' : 'timeoff-detail.bff.miss',
     );
     if (!detail) return null;
     return {

@@ -10,11 +10,11 @@
  * MigrationStore와 무관 — 마이그레이션은 오직 release 시 EntityId 수정/비활성화만 추적.
  */
 
-import type { EntityId } from "./types.js";
-import type { VersionLifecycleStore } from "./version-lifecycle.js";
-import type { IndexMetaStore } from "./index-meta-store.js";
-import type { EntryCache } from "./entry-cache.js";
-import { ValidationError } from "./errors.js";
+import type { EntityId } from './types.js';
+import type { VersionLifecycleStore } from './version-lifecycle.js';
+import type { IndexMetaStore } from './index-meta-store.js';
+import type { EntryCache } from './entry-cache.js';
+import { ValidationError } from './errors.js';
 
 // ── 결과 타입 ────────────────────────────────────────────
 
@@ -34,11 +34,7 @@ export class CrossVersionEntrySync {
   private readonly _store: IndexMetaStore;
   private readonly _cache: EntryCache;
 
-  constructor(
-    versions: VersionLifecycleStore,
-    store: IndexMetaStore,
-    cache: EntryCache,
-  ) {
+  constructor(versions: VersionLifecycleStore, store: IndexMetaStore, cache: EntryCache) {
     this._versions = versions;
     this._store = store;
     this._cache = cache;
@@ -65,31 +61,29 @@ export class CrossVersionEntrySync {
       // 모든 writable 버전을 duplicate로 보고 (품질 게이트 완전성 보장)
       const allVersions = await this._versions.getVersions(prefix);
       const writable = allVersions.filter(
-        v => v.status === "draft" || v.status === "released" || v.status === "active",
+        (v) => v.status === 'draft' || v.status === 'released' || v.status === 'active',
       );
-      const skipped = writable.map(v => ({ versionId: v.versionId, reason: "duplicate" }));
+      const skipped = writable.map((v) => ({ versionId: v.versionId, reason: 'duplicate' }));
       return { position: existingPos, added: [], skipped };
     }
 
     // 3. active 버전에서 다음 position 결정
     const entries = await this._cache.getAll(prefix, active.versionId);
-    const maxPos = entries.length > 0
-      ? Math.max(...entries.map(e => e.position))
-      : 0;
+    const maxPos = entries.length > 0 ? Math.max(...entries.map((e) => e.position)) : 0;
     const position = maxPos + 1;
 
     // 4. active 버전 capacity 체크
     if (position > active.capacity) {
       throw new ValidationError(
         `Capacity exhausted for "${prefix}/${active.versionId}": ` +
-        `position ${position} exceeds capacity ${active.capacity}`,
+          `position ${position} exceeds capacity ${active.capacity}`,
       );
     }
 
     // 5. 모든 writable 버전 조회 (draft, released, active)
     const allVersions = await this._versions.getVersions(prefix);
     const writable = allVersions.filter(
-      v => v.status === "draft" || v.status === "released" || v.status === "active",
+      (v) => v.status === 'draft' || v.status === 'released' || v.status === 'active',
     );
 
     const added: string[] = [];
@@ -112,7 +106,7 @@ export class CrossVersionEntrySync {
       // 해당 버전에 같은 value가 이미 있으면 skip
       const dupPos = await this._cache.getByValue(prefix, ver.versionId, value);
       if (dupPos !== null) {
-        skipped.push({ versionId: ver.versionId, reason: "duplicate" });
+        skipped.push({ versionId: ver.versionId, reason: 'duplicate' });
         continue;
       }
 
@@ -159,7 +153,7 @@ export class CrossVersionEntrySync {
     if (accounted !== writable.length) {
       throw new ValidationError(
         `Quality gate: version accounting mismatch — ` +
-        `writable=${writable.length}, added=${added.length}, skipped=${skipped.length}`,
+          `writable=${writable.length}, added=${added.length}, skipped=${skipped.length}`,
       );
     }
 

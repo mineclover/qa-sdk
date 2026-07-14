@@ -56,10 +56,10 @@ export type {
   DefinitionLink,
   DefinitionFilter,
   DefinitionStats,
-} from "./types.js";
+} from './types.js';
 
 // ─── 축 정의 ────────────────────────────────────────────
-export type { VersionedAxis, ExplanatoryRole, AxisExplanatoryMeta } from "./vocabulary.js";
+export type { VersionedAxis, ExplanatoryRole, AxisExplanatoryMeta } from './vocabulary.js';
 export {
   DEF_LEVEL,
   DEF_SCOPE,
@@ -76,7 +76,7 @@ export {
   deriveAspectParent,
   getAspectChildren,
   getAspectFamily,
-} from "./vocabulary.js";
+} from './vocabulary.js';
 
 // ─── 분류 체계 ──────────────────────────────────────────
 export type {
@@ -90,7 +90,7 @@ export type {
   LinkTypeRule,
   SemanticLintFamilyRule,
   SemanticLintTraversalLinkType,
-} from "./taxonomy.js";
+} from './taxonomy.js';
 export {
   DEFINITION_TAXONOMY,
   VALID_SCOPE_ASPECTS,
@@ -116,26 +116,47 @@ export {
   SCENARIO_MARKER_NAMES,
   isScenarioMarker,
   getScenarioMarkerDef,
-} from "./taxonomy.js";
+} from './taxonomy.js';
 
 // ─── scope 레지스트리 ────────────────────────────────────
-export type { ScopeVersionDef, ScopeRegistryEntry, ScopeSegment, ScopeAddress, DecodedScopeAddress } from "./scope-registry.js";
-export { ScopeRegistry } from "./scope-registry.js";
+export type {
+  ScopeVersionDef,
+  ScopeRegistryEntry,
+  ScopeSegment,
+  ScopeAddress,
+  DecodedScopeAddress,
+} from './scope-registry.js';
+export { ScopeRegistry } from './scope-registry.js';
 
 // ─── 버전 매니페스트 ─────────────────────────────────────
-export type { PrefixLifecycleState, PrefixVersionRecord, ManifestLifecycleState, ServiceVersionManifest, GuardResult } from "./version-manifest.js";
-export { ManifestRegistry } from "./version-manifest.js";
+export type {
+  PrefixLifecycleState,
+  PrefixVersionRecord,
+  ManifestLifecycleState,
+  ServiceVersionManifest,
+  GuardResult,
+} from './version-manifest.js';
+export { ManifestRegistry } from './version-manifest.js';
 
 // ─── 카탈로그 ───────────────────────────────────────────
-export type { DimRef, PrefixVersionDef, PrefixMeta, PrefixDef, DefinitionCatalog } from "./catalog.js";
-export { DEFINITION_CATALOG } from "./catalog.js";
+export type {
+  DimRef,
+  PrefixVersionDef,
+  PrefixMeta,
+  PrefixDef,
+  DefinitionCatalog,
+} from './catalog.js';
+export { DEFINITION_CATALOG } from './catalog.js';
 
 // ─── 좌표 인코딩/디코딩 ─────────────────────────────────
 export type {
-  DocumentCoordinate, DecodedDocument,
-  UniqueDocumentCoordinate, DecodedUniqueDocument,
-  LinkCoordinate, DecodedLink,
-} from "./observe.js";
+  DocumentCoordinate,
+  DecodedDocument,
+  UniqueDocumentCoordinate,
+  DecodedUniqueDocument,
+  LinkCoordinate,
+  DecodedLink,
+} from './observe.js';
 export {
   encodeDocument,
   decodeDocument,
@@ -150,84 +171,144 @@ export {
   documentTotalSpace,
   uniqueDocumentTotalSpace,
   linkTotalSpace,
-} from "./observe.js";
+} from './observe.js';
 
 // ─── 설정 파일 ─────────────────────────────────────────
-export type { DefConfig, MachineEntityState, DriftEntry } from "./def-config.js";
+export type { DefConfig, MachineEntityState, DriftEntry } from './def-config.js';
 export {
-  readDefConfig, writeDefConfig, hashFrontmatter, detectDrift, configPath,
-  readMachineState, writeMachineState, readAllMachineStates,
-} from "./def-config.js";
+  readDefConfig,
+  writeDefConfig,
+  hashFrontmatter,
+  detectDrift,
+  configPath,
+  readMachineState,
+  writeMachineState,
+  readAllMachineStates,
+} from './def-config.js';
 
 // ─── 유일 주소 할당 ────────────────────────────────────
-export type { AddressAssignment } from "./address-assign.js";
-export { assignUniqueAddresses, buildIdToAddressMap, buildAddressToIdMap } from "./address-assign.js";
+export type { AddressAssignment } from './address-assign.js';
+export {
+  assignUniqueAddresses,
+  buildIdToAddressMap,
+  buildAddressToIdMap,
+} from './address-assign.js';
 
 // ─── 상태 모델 ─────────────────────────────────────────
 export type {
-  StateDefinition, TransitionRule, StateMachineDefinition,
-  StateMachineInstance, StateTransitionRecord, StateDistribution,
-  DocLifecycleState, SpecImplState, ConventionState, SyncState,
-} from "./state-model.js";
+  StateDefinition,
+  TransitionRule,
+  StateMachineDefinition,
+  StateMachineInstance,
+  StateTransitionRecord,
+  StateDistribution,
+  DocLifecycleState,
+  SpecImplState,
+  ConventionState,
+  SyncState,
+} from './state-model.js';
 export {
-  createInstance, transition, availableTransitions, computeDistribution,
-  DOC_LIFECYCLE_MACHINE, SPEC_IMPL_MACHINE, CONVENTION_MACHINE, SYNC_MACHINE,
-} from "./state-model.js";
+  createInstance,
+  transition,
+  availableTransitions,
+  computeDistribution,
+  DOC_LIFECYCLE_MACHINE,
+  SPEC_IMPL_MACHINE,
+  CONVENTION_MACHINE,
+  SYNC_MACHINE,
+} from './state-model.js';
 
 // ─── 하네스 상태 모델 (11개 머신 + 의존 + 프로세스) ─────
 export type {
-  DependencyKind, MachineDependency, ProcessStep, ProcessDefinition,
-  HarnessRegistry, CompositeInstance, TransitionResult, ProcessResult,
-  AddressState, VersionLifecycleState, FlowState,
-  ServiceState, EventState, MetricHealthState, PolicyState,
-} from "./harness-state-model.js";
+  DependencyKind,
+  MachineDependency,
+  ProcessStep,
+  ProcessDefinition,
+  HarnessRegistry,
+  CompositeInstance,
+  TransitionResult,
+  ProcessResult,
+  AddressState,
+  VersionLifecycleState,
+  FlowState,
+  ServiceState,
+  EventState,
+  MetricHealthState,
+  PolicyState,
+} from './harness-state-model.js';
 export {
-  checkGuards, collectCascades, validateProcess,
-  ADDRESS_STATE_MACHINE, VERSION_LIFECYCLE_MACHINE, FLOW_STATE_MACHINE,
-  SERVICE_STATE_MACHINE, EVENT_STATE_MACHINE, METRIC_HEALTH_MACHINE,
-  POLICY_STATE_MACHINE, SYSTEM_DEPENDENCIES,
-  PREFIX_RELEASE_PROCESS, DOC_APPROVAL_PROCESS, SERVICE_DEPRECATION_PROCESS,
-  createHarnessRegistry, createCompositeInstance,
-} from "./harness-state-model.js";
+  checkGuards,
+  collectCascades,
+  validateProcess,
+  ADDRESS_STATE_MACHINE,
+  VERSION_LIFECYCLE_MACHINE,
+  FLOW_STATE_MACHINE,
+  SERVICE_STATE_MACHINE,
+  EVENT_STATE_MACHINE,
+  METRIC_HEALTH_MACHINE,
+  POLICY_STATE_MACHINE,
+  SYSTEM_DEPENDENCIES,
+  PREFIX_RELEASE_PROCESS,
+  DOC_APPROVAL_PROCESS,
+  SERVICE_DEPRECATION_PROCESS,
+  createHarnessRegistry,
+  createCompositeInstance,
+} from './harness-state-model.js';
 
 // ─── 하네스 트래커 (SDK 이벤트 수집) ────────────────────
-export type { HarnessLogger, HarnessTracker } from "./harness-tracker.js";
-export { createHarnessTracker } from "./harness-tracker.js";
+export type { HarnessLogger, HarnessTracker } from './harness-tracker.js';
+export { createHarnessTracker } from './harness-tracker.js';
 
 // ─── Cross-Loop 브릿지 ─────────────────────────────────
 export type {
-  GateHarnessBridgeConfig, GateHarnessBridge,
+  GateHarnessBridgeConfig,
+  GateHarnessBridge,
   HarnessContextSnapshot,
-  DecisionOutcome, DecisionInfraBridgeConfig, DecisionInfraBridge,
-} from "./cross-loop-bridge.js";
+  DecisionOutcome,
+  DecisionInfraBridgeConfig,
+  DecisionInfraBridge,
+} from './cross-loop-bridge.js';
 export {
   createGateHarnessBridge,
   buildHarnessContext,
   createDecisionInfraBridge,
-} from "./cross-loop-bridge.js";
+} from './cross-loop-bridge.js';
 
 // ─── Definition Runtime (단일 초기화 진입점) ───────────
-export type { DefinitionRuntimeConfig, DefinitionRuntime } from "./runtime.js";
-export { createDefinitionRuntime } from "./runtime.js";
+export type { DefinitionRuntimeConfig, DefinitionRuntime } from './runtime.js';
+export { createDefinitionRuntime } from './runtime.js';
 
 // ─── 하네스 상태 파생 ──────────────────────────────────
 export type {
-  SyncDeriveInput, SpecImplDeriveInput, ConventionDeriveInput,
-  AddressDeriveInput, ServiceDeriveInput, EventDeriveInput, MetricDeriveInput,
-  DeriveInputs, DerivedStates,
-} from "./harness-derive.js";
+  SyncDeriveInput,
+  SpecImplDeriveInput,
+  ConventionDeriveInput,
+  AddressDeriveInput,
+  ServiceDeriveInput,
+  EventDeriveInput,
+  MetricDeriveInput,
+  DeriveInputs,
+  DerivedStates,
+} from './harness-derive.js';
 export {
-  deriveDocLifecycle, deriveSyncState,
-  deriveSpecImplState, deriveConventionState,
-  deriveVersionLifecycle, deriveFlowState, derivePolicyState,
-  deriveAddressState, deriveServiceStatus, deriveEventStatus, deriveMetricHealth,
+  deriveDocLifecycle,
+  deriveSyncState,
+  deriveSpecImplState,
+  deriveConventionState,
+  deriveVersionLifecycle,
+  deriveFlowState,
+  derivePolicyState,
+  deriveAddressState,
+  deriveServiceStatus,
+  deriveEventStatus,
+  deriveMetricHealth,
   deriveAllStates,
-} from "./harness-derive.js";
+} from './harness-derive.js';
 
 // ─── 레지스트리 ─────────────────────────────────────────
-export type { DefinitionRegistry } from "./registry.js";
-export { MemoryDefinitionRegistry } from "./registry.js";
-export { docRowToRegistryInput } from "./registry-helpers.js";
+export type { DefinitionRegistry } from './registry.js';
+export { MemoryDefinitionRegistry } from './registry.js';
+export { docRowToRegistryInput } from './registry-helpers.js';
 
 // ─── Concern 전파 엔진 ──────────────────────────────────
 export {
@@ -236,14 +317,14 @@ export {
   extractDirectConcerns,
   computeEffectiveConcerns,
   selectConcernContext,
-} from "./concern.js";
+} from './concern.js';
 
 // ─── 검증 ───────────────────────────────────────────────
-export type { ValidationIssue, ValidationResult, ValidateGraphOptions } from "./validate.js";
-export { validateGraph } from "./validate.js";
+export type { ValidationIssue, ValidationResult, ValidateGraphOptions } from './validate.js';
+export { validateGraph } from './validate.js';
 
 // ─── 도메인 루트 파생 (domain_root) ─────────────────────
-export type { DomainRootRegistry } from "./domain-root.js";
+export type { DomainRootRegistry } from './domain-root.js';
 export {
   isDomainTier,
   selectPrimaryParent,
@@ -252,7 +333,7 @@ export {
   deriveAllDomainRoots,
   detectOwnerRootMismatch,
   SUB_DOC_EXTENSIONS,
-} from "./domain-root.js";
+} from './domain-root.js';
 
 // ─── 코드 참조 스캔 ─────────────────────────────────────
 export type {
@@ -262,7 +343,7 @@ export type {
   CodeLinkCoverageResult,
   CoverageMetrics,
   AdjustedCoverageMetrics,
-} from "./code-references.js";
+} from './code-references.js';
 export {
   collectCodeReferences,
   collectCodeLinkCoverage,
@@ -271,11 +352,11 @@ export {
   formatCodeReferenceTarget,
   makeCodeReferenceScopeKey,
   DEFAULT_EXCLUDE_PACKAGES,
-} from "./code-references.js";
+} from './code-references.js';
 
 // ─── 영향 분석 (바텀업 역추적) ───────────────────────────
-export type { ImpactedDoc, ImpactAnalysis } from "./impact.js";
-export { analyzeImpact, selectImpactContext } from "./impact.js";
+export type { ImpactedDoc, ImpactAnalysis } from './impact.js';
+export { analyzeImpact, selectImpactContext } from './impact.js';
 
 // ─── 문서 조립 ──────────────────────────────────────────
 export type {
@@ -284,12 +365,18 @@ export type {
   BoundarySummary,
   BoundaryCouplingSummary,
   AssembledBoundary,
-} from "./assemble.js";
-export { assembleFeature, assembleBoundary } from "./assemble.js";
+} from './assemble.js';
+export { assembleFeature, assembleBoundary } from './assemble.js';
 
 // ─── 계약 조립 (Contract Assembly) ──────────────────────
-export type { Reversibility, EvidenceItem, ContractSection, AssembledContract, ContractStats } from "./contract.js";
-export { parseEvidenceItems, assembleContract } from "./contract.js";
+export type {
+  Reversibility,
+  EvidenceItem,
+  ContractSection,
+  AssembledContract,
+  ContractStats,
+} from './contract.js';
+export { parseEvidenceItems, assembleContract } from './contract.js';
 
 // ─── 주소 의도 + 소비율 ─────────────────────────────────
 export type {
@@ -299,14 +386,14 @@ export type {
   PrefixConsumption,
   ConsumptionSeverity,
   ConsumptionDiagnosis,
-} from "./address-intent.js";
+} from './address-intent.js';
 export {
   sliceDepth,
   sliceContains,
   resolveIntents,
   computeConsumption,
   diagnoseConsumption,
-} from "./address-intent.js";
+} from './address-intent.js';
 
 // ─── 워크플로우 합성 (HyEvo L4) ─────────────────────────
 export type {
@@ -318,19 +405,40 @@ export type {
   WorkflowSpec,
   SpecContext,
   ReflectionResult,
-} from "./workflow.js";
-export { compileWorkflow, reflect } from "./workflow.js";
+} from './workflow.js';
+export { compileWorkflow, reflect } from './workflow.js';
 
 // ─── 테스트 추적 ────────────────────────────────────────
-export type { TestRef, TestTraceResult } from "./test-trace.js";
-export { traceTests } from "./test-trace.js";
+export type { TestRef, TestTraceResult } from './test-trace.js';
+export { traceTests } from './test-trace.js';
 
 // ─── 마커 기반 추출 ─────────────────────────────────────
-export type { ExtractLevel, StandardMarker, Marker, MarkedSection, MarkedLine, ExtractResult, DocumentSummary } from "./extract.js";
-export { findMarkedSections, findMarkers, extractByLevel, extractByMarker, summarizeDocument } from "./extract.js";
+export type {
+  ExtractLevel,
+  StandardMarker,
+  Marker,
+  MarkedSection,
+  MarkedLine,
+  ExtractResult,
+  DocumentSummary,
+} from './extract.js';
+export {
+  findMarkedSections,
+  findMarkers,
+  extractByLevel,
+  extractByMarker,
+  summarizeDocument,
+} from './extract.js';
 
 // ─── Frontmatter 파서 + 스캐너 ──────────────────────────
-export type { FrontmatterDef, FrontmatterGate, FrontmatterTest, FrontmatterLink, ParsedDocument, ScanResult } from "./frontmatter.js";
+export type {
+  FrontmatterDef,
+  FrontmatterGate,
+  FrontmatterTest,
+  FrontmatterLink,
+  ParsedDocument,
+  ScanResult,
+} from './frontmatter.js';
 export {
   extractFrontmatter,
   parseYaml,
@@ -340,11 +448,11 @@ export {
   parseDocument,
   scanAndBuild,
   computeAllConcerns,
-} from "./frontmatter.js";
+} from './frontmatter.js';
 
 // ─── Frontmatter Writer (DB → file 역동기화) ────────────
-export type { DbMetadata } from "./frontmatter-writer.js";
-export { mergeFrontmatter, writeFrontmatterToFile } from "./frontmatter-writer.js";
+export type { DbMetadata } from './frontmatter-writer.js';
+export { mergeFrontmatter, writeFrontmatterToFile } from './frontmatter-writer.js';
 
 // ─── 데이터 소스 인터페이스 (서버/로컬 추상화) ───────────
 export type {
@@ -372,17 +480,17 @@ export type {
   DefValidationResult,
   DefValidateOptions,
   DefDataSource,
-} from "./data-source.js";
+} from './data-source.js';
 
 // ─── CLI 도구 ───────────────────────────────────────────
-export { topdown, bottomup, context, boundary, boundaryContext } from "./cli-tools.js";
+export { topdown, bottomup, context, boundary, boundaryContext } from './cli-tools.js';
 
 // ─── 브릿지 (decision-flow 연결) ────────────────────────
 export {
   suggestScopeFromArtifact,
   suggestLifecycleFromVerdict,
   buildDefinitionContext,
-} from "./bridge.js";
+} from './bridge.js';
 
 // ─── 좌표 저장 자동 검출 (coordinate-storage.rule) ──────
 export {
@@ -394,4 +502,4 @@ export {
   type CoordStorageScanOptions,
   type ScannedTable,
   type DrizzleDialect,
-} from "./coordinate-storage-check.js";
+} from './coordinate-storage-check.js';

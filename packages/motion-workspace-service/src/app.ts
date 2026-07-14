@@ -1,27 +1,20 @@
 // @def.boundary motion-workspace-service-spec
-import { createNodeWebSocket } from "@hono/node-ws";
-import type { Server } from "node:http";
-import type { Http2SecureServer, Http2Server } from "node:http2";
-import { Hono } from "hono";
+import { createNodeWebSocket } from '@hono/node-ws';
+import type { Server } from 'node:http';
+import type { Http2SecureServer, Http2Server } from 'node:http2';
+import { Hono } from 'hono';
 import {
   createMotionWorkspaceController,
   type MotionWorkspaceControllerDeps,
-} from "./controller.js";
-import {
-  createErrorHandler,
-  type MotionWorkspaceServiceLogger,
-} from "./error-handler.js";
-import type { MotionWorkspaceRepository } from "./repository.js";
-import { createMotionWorkspaceRepository } from "./sqlite-repository.js";
-import { createHealthRoutes } from "./routes/health.js";
-import { createWorkspaceRoutes } from "./routes/workspaces.js";
-import {
-  createWorkspaceWsHub,
-  type WorkspaceWsHub,
-} from "./ws-hub.js";
+} from './controller.js';
+import { createErrorHandler, type MotionWorkspaceServiceLogger } from './error-handler.js';
+import type { MotionWorkspaceRepository } from './repository.js';
+import { createMotionWorkspaceRepository } from './sqlite-repository.js';
+import { createHealthRoutes } from './routes/health.js';
+import { createWorkspaceRoutes } from './routes/workspaces.js';
+import { createWorkspaceWsHub, type WorkspaceWsHub } from './ws-hub.js';
 
-export interface MotionWorkspaceAppDeps
-  extends Omit<MotionWorkspaceControllerDeps, "repository"> {
+export interface MotionWorkspaceAppDeps extends Omit<MotionWorkspaceControllerDeps, 'repository'> {
   readonly repository?: MotionWorkspaceRepository;
   readonly logger?: MotionWorkspaceServiceLogger;
   readonly wsHub?: WorkspaceWsHub;
@@ -43,12 +36,15 @@ export function createApp(deps: MotionWorkspaceAppDeps = {}): MotionWorkspaceApp
     version: deps.version,
   });
 
-  app.route("/", createHealthRoutes({ controller }));
-  app.route("/", createWorkspaceRoutes({
-    controller,
-    upgradeWebSocket: websocket.upgradeWebSocket,
-    wsHub,
-  }));
+  app.route('/', createHealthRoutes({ controller }));
+  app.route(
+    '/',
+    createWorkspaceRoutes({
+      controller,
+      upgradeWebSocket: websocket.upgradeWebSocket,
+      wsHub,
+    }),
+  );
   app.onError(createErrorHandler(deps.logger ?? console));
 
   return Object.assign(app, {

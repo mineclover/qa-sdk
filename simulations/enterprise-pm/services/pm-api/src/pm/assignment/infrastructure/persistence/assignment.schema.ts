@@ -10,12 +10,8 @@
  * 컨벤션: `import { ... } from "./assignment.schema.js"` 가 가능하지만, 어댑터
  * 구현은 dialect 별 schema 파일을 직접 import 한다 (ambiguity 방지).
  */
-export * as sqliteAssignmentSchema from "./sqlite.schema.js";
-export * as pgAssignmentSchema from "./pg.schema.js";
+export * as sqliteAssignmentSchema from './sqlite.schema.js';
+export * as pgAssignmentSchema from './pg.schema.js';
 
-export {
-  SIM_PM_ASSIGNMENT_SQLITE_DDL,
-} from "./sqlite.schema.js";
-export {
-  SIM_PM_ASSIGNMENT_PG_DDL,
-} from "./pg.schema.js";
+export { SIM_PM_ASSIGNMENT_SQLITE_DDL } from './sqlite.schema.js';
+export { SIM_PM_ASSIGNMENT_PG_DDL } from './pg.schema.js';

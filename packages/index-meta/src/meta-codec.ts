@@ -40,9 +40,9 @@ import {
   type LabelVersionEntry,
   EntityNotFoundError as WiEntityNotFoundError,
   CoordError,
-} from "weighted-index";
-import type { DecodeMap, EntityId, VersionedValue } from "./types.js";
-import { EntryNotFoundError, ValidationError } from "./errors.js";
+} from 'weighted-index';
+import type { DecodeMap, EntityId, VersionedValue } from './types.js';
+import { EntryNotFoundError, ValidationError } from './errors.js';
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -57,18 +57,18 @@ function toErrorMessage(error: unknown): string {
  * @throws {ValidationError} shape/entries 불일치, 빈 배열, 음수 등
  */
 export function validateDecodeMap(map: DecodeMap): void {
-  if (!map.indexId || typeof map.indexId !== "string") {
-    throw new ValidationError("DecodeMap.indexId must be a non-empty string");
+  if (!map.indexId || typeof map.indexId !== 'string') {
+    throw new ValidationError('DecodeMap.indexId must be a non-empty string');
   }
-  if (!map.versionId || typeof map.versionId !== "string") {
-    throw new ValidationError("DecodeMap.versionId must be a non-empty string");
+  if (!map.versionId || typeof map.versionId !== 'string') {
+    throw new ValidationError('DecodeMap.versionId must be a non-empty string');
   }
   if (!Array.isArray(map.dims) || map.dims.length === 0) {
-    throw new ValidationError("DecodeMap.dims must be a non-empty array");
+    throw new ValidationError('DecodeMap.dims must be a non-empty array');
   }
   if (!Array.isArray(map.shape) || map.shape.length !== map.dims.length) {
     throw new ValidationError(
-      `DecodeMap.shape.length (${map.shape?.length ?? 0}) must equal dims.length (${map.dims.length})`
+      `DecodeMap.shape.length (${map.shape?.length ?? 0}) must equal dims.length (${map.dims.length})`,
     );
   }
 
@@ -78,10 +78,10 @@ export function validateDecodeMap(map: DecodeMap): void {
   for (let i = 0; i < map.dims.length; i++) {
     const dim = map.dims[i];
 
-    if (!dim.dimId || typeof dim.dimId !== "string") {
+    if (!dim.dimId || typeof dim.dimId !== 'string') {
       throw new ValidationError(`DecodeMap.dims[${i}].dimId must be a non-empty string`);
     }
-    if (!dim.snapshotId || typeof dim.snapshotId !== "string") {
+    if (!dim.snapshotId || typeof dim.snapshotId !== 'string') {
       throw new ValidationError(`DecodeMap.dims[${i}].snapshotId must be a non-empty string`);
     }
 
@@ -95,7 +95,7 @@ export function validateDecodeMap(map: DecodeMap): void {
     }
     if (map.shape[i] !== dim.entries.length) {
       throw new ValidationError(
-        `DecodeMap.shape[${i}] (${map.shape[i]}) must equal dims[${i}].entries.length (${dim.entries.length})`
+        `DecodeMap.shape[${i}] (${map.shape[i]}) must equal dims[${i}].entries.length (${dim.entries.length})`,
       );
     }
 
@@ -104,7 +104,7 @@ export function validateDecodeMap(map: DecodeMap): void {
 
   if (map.size !== expectedSize) {
     throw new ValidationError(
-      `DecodeMap.size (${map.size}) must equal product of shape (${expectedSize})`
+      `DecodeMap.size (${map.size}) must equal product of shape (${expectedSize})`,
     );
   }
 }
@@ -134,9 +134,7 @@ export class MetaCodec {
         versions: [
           {
             version: map.versionId,
-            labelVersions: Object.fromEntries(
-              map.dims.map((d) => [d.dimId, d.snapshotId])
-            ),
+            labelVersions: Object.fromEntries(map.dims.map((d) => [d.dimId, d.snapshotId])),
           },
         ],
       },
@@ -152,21 +150,17 @@ export class MetaCodec {
    */
   encode(entityIds: Record<string, EntityId>): VersionedValue {
     try {
-      const vi = this._prefix.encodeFromIds(
-        this._map.indexId,
-        entityIds,
-        this._map.versionId
-      );
+      const vi = this._prefix.encodeFromIds(this._map.indexId, entityIds, this._map.versionId);
       return { indexId: vi.prefix, versionId: vi.v, value: vi.id };
     } catch (e) {
       if (e instanceof WiEntityNotFoundError) {
         throw new EntryNotFoundError(
-          `encode "${this._map.indexId}/${this._map.versionId}": ${toErrorMessage(e)}`
+          `encode "${this._map.indexId}/${this._map.versionId}": ${toErrorMessage(e)}`,
         );
       }
       if (e instanceof CoordError) {
         throw new ValidationError(
-          `encode "${this._map.indexId}/${this._map.versionId}": ${toErrorMessage(e)}`
+          `encode "${this._map.indexId}/${this._map.versionId}": ${toErrorMessage(e)}`,
         );
       }
       throw e;
@@ -187,7 +181,7 @@ export class MetaCodec {
     if (vv.indexId !== this._map.indexId || vv.versionId !== this._map.versionId) {
       throw new ValidationError(
         `decode: expected "${this._map.indexId}/${this._map.versionId}", ` +
-        `got "${vv.indexId}/${vv.versionId}"`
+          `got "${vv.indexId}/${vv.versionId}"`,
       );
     }
     return this.decodeValue(vv.value);
@@ -263,8 +257,10 @@ export class MetaCodec {
   }
 
   /** dimId로 해당 dim의 entries/kind 정보 조회. 없으면 undefined. */
-  getDimInfo(dimId: string): { dimId: string; entries: EntityId[]; kind: DecodeMap["dims"][number]["kind"] } | undefined {
-    return this._map.dims.find(d => d.dimId === dimId);
+  getDimInfo(
+    dimId: string,
+  ): { dimId: string; entries: EntityId[]; kind: DecodeMap['dims'][number]['kind'] } | undefined {
+    return this._map.dims.find((d) => d.dimId === dimId);
   }
 
   /** 내부 DecodeMap의 복사본 반환. */
@@ -312,7 +308,7 @@ export class MetaCodec {
       const idx = dim.entries.indexOf(val);
       if (idx === -1) {
         throw new EntryNotFoundError(
-          `matchRanges "${this._map.indexId}/${this._map.versionId}": entity "${val}" not found in dim "${dim.dimId}"`
+          `matchRanges "${this._map.indexId}/${this._map.versionId}": entity "${val}" not found in dim "${dim.dimId}"`,
         );
       }
       return String(idx + 1); // 1-based CoordConstraint
@@ -390,20 +386,20 @@ export class MetaCodec {
     const dim = this._map.dims.find((d) => d.dimId === dimId);
     if (!dim) {
       throw new ValidationError(
-        `resolveRef "${this._map.indexId}/${this._map.versionId}": unknown dim "${dimId}"`
+        `resolveRef "${this._map.indexId}/${this._map.versionId}": unknown dim "${dimId}"`,
       );
     }
-    if (dim.kind.type !== "index_ref") {
+    if (dim.kind.type !== 'index_ref') {
       throw new ValidationError(
-        `resolveRef "${this._map.indexId}/${this._map.versionId}": dim "${dimId}" is "${dim.kind.type}", expected "index_ref"`
+        `resolveRef "${this._map.indexId}/${this._map.versionId}": dim "${dimId}" is "${dim.kind.type}", expected "index_ref"`,
       );
     }
 
     const decoded = this.decodeValue(value);
     const refValue = decoded[dimId];
-    if (typeof refValue !== "number") {
+    if (typeof refValue !== 'number') {
       throw new ValidationError(
-        `resolveRef "${this._map.indexId}/${this._map.versionId}": dim "${dimId}" entry is not a number`
+        `resolveRef "${this._map.indexId}/${this._map.versionId}": dim "${dimId}" entry is not a number`,
       );
     }
 

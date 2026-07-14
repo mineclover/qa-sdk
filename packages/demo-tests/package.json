@@ -1,21 +1,21 @@
 {
   "name": "@qa-sdk/demo-tests",
   "version": "0.2.0",
-  "description": "데모 카탈로그와 서비스 흐름의 cross-package 통합 테스트 스위트",
   "private": true,
+  "description": "데모 카탈로그와 서비스 흐름의 cross-package 통합 테스트 스위트",
   "type": "module",
   "scripts": {
     "test": "vitest run"
   },
   "dependencies": {
+    "@qa-sdk/registry-service": "workspace:*",
+    "bit-index": "workspace:*",
     "demo-snapshot": "workspace:*",
+    "hono": "^4.7.5",
     "index-meta": "workspace:*",
     "permission-engine": "workspace:*",
-    "weighted-index": "workspace:*",
-    "bit-index": "workspace:*",
-    "@qa-sdk/registry-service": "workspace:*",
     "pino": "workspace:@qa-sdk/pino@*",
-    "hono": "^4.7.5"
+    "weighted-index": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.2",

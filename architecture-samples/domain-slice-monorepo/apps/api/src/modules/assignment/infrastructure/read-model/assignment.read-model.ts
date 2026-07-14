@@ -1,6 +1,6 @@
-import { AssignmentReadModelPort } from "../../application/queries/assignment-read-model.query.js";
-import type { AssignmentDetailReadModel } from "../../application/queries/assignment-read-model.query.js";
-import type { AssignmentRepositoryPort } from "../../application/ports/assignment-repository.port.js";
+import { AssignmentReadModelPort } from '../../application/queries/assignment-read-model.query.js';
+import type { AssignmentDetailReadModel } from '../../application/queries/assignment-read-model.query.js';
+import type { AssignmentRepositoryPort } from '../../application/ports/assignment-repository.port.js';
 
 export class RepositoryAssignmentReadModel extends AssignmentReadModelPort {
   constructor(private readonly repository: AssignmentRepositoryPort) {
@@ -20,4 +20,3 @@ export class RepositoryAssignmentReadModel extends AssignmentReadModelPort {
     };
   }
 }
-

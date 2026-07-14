@@ -1,12 +1,12 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { TimeOffRepositoryPort } from "../../application/ports/timeoff-repository.port.js";
-import type { TimeOffOutboxPort } from "../../application/ports/timeoff-outbox.port.js";
+import type { TimeOffRepositoryPort } from '../../application/ports/timeoff-repository.port.js';
+import type { TimeOffOutboxPort } from '../../application/ports/timeoff-outbox.port.js';
 import type {
   TimeOffTransactionPort,
   TimeOffTransactionScope,
-} from "../../application/ports/timeoff-transaction.port.js";
+} from '../../application/ports/timeoff-transaction.port.js';
 
 export class TimeOffUnitOfWork {
   constructor(

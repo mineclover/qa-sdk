@@ -16,11 +16,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "sdk",
-        "weighted-index"
-      ]
+      "deps": ["core", "sdk", "weighted-index"]
     },
     {
       "name": "scaffold",
@@ -36,10 +32,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "db-bootstrap",
-        "permission-engine"
-      ]
+      "deps": ["db-bootstrap", "permission-engine"]
     },
     {
       "name": "authorization-monitor-web",
@@ -47,9 +40,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "private",
-      "deps": [
-        "viz-core"
-      ]
+      "deps": ["viz-core"]
     },
     {
       "name": "authorization-ontology",
@@ -57,9 +48,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "operational-ontology"
-      ]
+      "deps": ["operational-ontology"]
     },
     {
       "name": "bench",
@@ -67,13 +56,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "context",
-        "core",
-        "event-catalog",
-        "sdk",
-        "demo-snapshot"
-      ]
+      "deps": ["context", "core", "event-catalog", "sdk", "demo-snapshot"]
     },
     {
       "name": "bit-index",
@@ -81,9 +64,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "weighted-index"
-      ]
+      "deps": ["weighted-index"]
     },
     {
       "name": "browser-codec",
@@ -99,12 +80,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "browser-codec",
-        "core",
-        "event-catalog",
-        "sdk"
-      ]
+      "deps": ["browser-codec", "core", "event-catalog", "sdk"]
     },
     {
       "name": "canvas-viewport",
@@ -171,10 +147,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "weighted-index"
-      ]
+      "deps": ["core", "weighted-index"]
     },
     {
       "name": "codec-proto",
@@ -182,9 +155,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "codegen-core",
@@ -192,9 +163,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "config-loader",
@@ -202,9 +171,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "context",
@@ -212,9 +179,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "convergence",
@@ -222,11 +187,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "spec-schema",
-        "weighted-index"
-      ]
+      "deps": ["core", "spec-schema", "weighted-index"]
     },
     {
       "name": "core",
@@ -234,11 +195,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "definition-catalog",
-        "pino",
-        "test-types"
-      ]
+      "deps": ["definition-catalog", "pino", "test-types"]
     },
     {
       "name": "data-object-codegen",
@@ -246,9 +203,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "db-bootstrap",
@@ -256,9 +211,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "db-traffic-control",
@@ -274,9 +227,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "weighted-index"
-      ]
+      "deps": ["weighted-index"]
     },
     {
       "name": "decision-flow-store",
@@ -284,11 +235,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "decision-flow",
-        "index-meta"
-      ]
+      "deps": ["core", "decision-flow", "index-meta"]
     },
     {
       "name": "decision-service",
@@ -296,11 +243,7 @@
       "tier": "service",
       "runtime": "server",
       "scope": "private",
-      "deps": [
-        "core",
-        "logger",
-        "decision-flow"
-      ]
+      "deps": ["core", "logger", "decision-flow"]
     },
     {
       "name": "decode-service",
@@ -324,10 +267,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "work-domain",
-        "weighted-index"
-      ]
+      "deps": ["work-domain", "weighted-index"]
     },
     {
       "name": "definition-client",
@@ -335,10 +275,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "definition-catalog"
-      ]
+      "deps": ["core", "definition-catalog"]
     },
     {
       "name": "definition-data-source",
@@ -346,9 +283,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "definition-catalog"
-      ]
+      "deps": ["definition-catalog"]
     },
     {
       "name": "definition-service",
@@ -356,12 +291,7 @@
       "tier": "service",
       "runtime": "server",
       "scope": "private",
-      "deps": [
-        "core",
-        "logger",
-        "definition-catalog",
-        "work-domain"
-      ]
+      "deps": ["core", "logger", "definition-catalog", "work-domain"]
     },
     {
       "name": "demo-snapshot",
@@ -369,11 +299,7 @@
       "tier": "data",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "decision-flow",
-        "weighted-index"
-      ]
+      "deps": ["core", "decision-flow", "weighted-index"]
     },
     {
       "name": "demo-tests",
@@ -397,10 +323,7 @@
       "tier": "data",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "codec",
-        "context"
-      ]
+      "deps": ["codec", "context"]
     },
     {
       "name": "deterministic-label-registry",
@@ -408,9 +331,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "doc-envelope"
-      ]
+      "deps": ["doc-envelope"]
     },
     {
       "name": "dkg",
@@ -442,9 +363,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "definition-catalog"
-      ]
+      "deps": ["definition-catalog"]
     },
     {
       "name": "e2e",
@@ -460,9 +379,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "event-catalog",
@@ -470,9 +387,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "facet-tests",
@@ -480,9 +395,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "index-meta"
-      ]
+      "deps": ["index-meta"]
     },
     {
       "name": "gate-service",
@@ -490,13 +403,7 @@
       "tier": "service",
       "runtime": "server",
       "scope": "private",
-      "deps": [
-        "core",
-        "logger",
-        "index-meta",
-        "index-meta-workers",
-        "pino"
-      ]
+      "deps": ["core", "logger", "index-meta", "index-meta-workers", "pino"]
     },
     {
       "name": "gateway",
@@ -520,9 +427,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "weighted-index"
-      ]
+      "deps": ["weighted-index"]
     },
     {
       "name": "index-meta-workers",
@@ -530,9 +435,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "index-meta"
-      ]
+      "deps": ["index-meta"]
     },
     {
       "name": "infra-engine",
@@ -555,9 +458,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "ingest-server",
@@ -582,9 +483,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "motion-content",
@@ -600,9 +499,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "motion-content"
-      ]
+      "deps": ["motion-content"]
     },
     {
       "name": "motion-workspace-client",
@@ -610,10 +507,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "motion-content",
-        "motion-workspace"
-      ]
+      "deps": ["motion-content", "motion-workspace"]
     },
     {
       "name": "motion-workspace-service",
@@ -621,12 +515,7 @@
       "tier": "service",
       "runtime": "server",
       "scope": "private",
-      "deps": [
-        "core",
-        "logger",
-        "index-meta",
-        "motion-workspace"
-      ]
+      "deps": ["core", "logger", "index-meta", "motion-workspace"]
     },
     {
       "name": "nest-service-kit",
@@ -634,10 +523,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "otel"
-      ]
+      "deps": ["core", "otel"]
     },
     {
       "name": "ontology-pack-validate",
@@ -658,9 +544,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "operational-ontology-web",
@@ -668,9 +552,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "private",
-      "deps": [
-        "viz-core"
-      ]
+      "deps": ["viz-core"]
     },
     {
       "name": "otel",
@@ -694,10 +576,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "weighted-index",
-        "bit-index"
-      ]
+      "deps": ["weighted-index", "bit-index"]
     },
     {
       "name": "pino",
@@ -713,10 +592,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "index-meta"
-      ]
+      "deps": ["core", "index-meta"]
     },
     {
       "name": "platform-demo",
@@ -739,11 +615,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "demo-snapshot",
-        "index-meta",
-        "permission-engine"
-      ]
+      "deps": ["demo-snapshot", "index-meta", "permission-engine"]
     },
     {
       "name": "quality-ledger",
@@ -751,9 +623,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "index-meta"
-      ]
+      "deps": ["index-meta"]
     },
     {
       "name": "query-service",
@@ -761,13 +631,7 @@
       "tier": "service",
       "runtime": "server",
       "scope": "private",
-      "deps": [
-        "core",
-        "logger",
-        "index-meta",
-        "index-meta-workers",
-        "pino"
-      ]
+      "deps": ["core", "logger", "index-meta", "index-meta-workers", "pino"]
     },
     {
       "name": "ralph-tui-integration",
@@ -775,9 +639,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "doc-envelope"
-      ]
+      "deps": ["doc-envelope"]
     },
     {
       "name": "registry-client",
@@ -785,9 +647,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "pino"
-      ]
+      "deps": ["pino"]
     },
     {
       "name": "registry-service",
@@ -815,11 +675,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "private",
-      "deps": [
-        "canvas-viewport",
-        "git-utils",
-        "weighted-index"
-      ]
+      "deps": ["canvas-viewport", "git-utils", "weighted-index"]
     },
     {
       "name": "resource-policy-store",
@@ -827,11 +683,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "db-bootstrap",
-        "permission-engine",
-        "weighted-index"
-      ]
+      "deps": ["db-bootstrap", "permission-engine", "weighted-index"]
     },
     {
       "name": "review-ledger",
@@ -839,10 +691,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "index-meta"
-      ]
+      "deps": ["core", "index-meta"]
     },
     {
       "name": "rlsc",
@@ -850,9 +699,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "rlsc-analysis"
-      ]
+      "deps": ["rlsc-analysis"]
     },
     {
       "name": "rlsc-analysis",
@@ -868,11 +715,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "private",
-      "deps": [
-        "rlsc-analysis",
-        "rlsc-perspective",
-        "rlsc"
-      ]
+      "deps": ["rlsc-analysis", "rlsc-perspective", "rlsc"]
     },
     {
       "name": "rlsc-perspective",
@@ -880,9 +723,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "rlsc-analysis"
-      ]
+      "deps": ["rlsc-analysis"]
     },
     {
       "name": "roleplay-web",
@@ -890,12 +731,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "private",
-      "deps": [
-        "browser-codec",
-        "core",
-        "event-catalog",
-        "sdk"
-      ]
+      "deps": ["browser-codec", "core", "event-catalog", "sdk"]
     },
     {
       "name": "sdk",
@@ -903,12 +739,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core",
-        "logger",
-        "codec",
-        "context"
-      ]
+      "deps": ["core", "logger", "codec", "context"]
     },
     {
       "name": "shop-web",
@@ -956,9 +787,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "sim-identifier-grammar"
-      ]
+      "deps": ["sim-identifier-grammar"]
     },
     {
       "name": "simulation-tests",
@@ -966,10 +795,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "index-meta",
-        "core"
-      ]
+      "deps": ["index-meta", "core"]
     },
     {
       "name": "snapshot-io",
@@ -977,9 +803,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "codegen-core"
-      ]
+      "deps": ["codegen-core"]
     },
     {
       "name": "spec-analyzer",
@@ -987,9 +811,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "definition-catalog"
-      ]
+      "deps": ["definition-catalog"]
     },
     {
       "name": "spec-core",
@@ -1030,9 +852,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "store",
@@ -1040,9 +860,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "tag-search",
@@ -1058,10 +876,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "public",
-      "deps": [
-        "index-meta",
-        "test-types"
-      ]
+      "deps": ["index-meta", "test-types"]
     },
     {
       "name": "test-types",
@@ -1085,12 +900,7 @@
       "tier": "platform",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "browser-codec",
-        "core",
-        "event-catalog",
-        "sdk"
-      ]
+      "deps": ["browser-codec", "core", "event-catalog", "sdk"]
     },
     {
       "name": "viz-3d",
@@ -1098,9 +908,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "private",
-      "deps": [
-        "browser-codec"
-      ]
+      "deps": ["browser-codec"]
     },
     {
       "name": "viz-core",
@@ -1108,9 +916,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "public",
-      "deps": [
-        "core"
-      ]
+      "deps": ["core"]
     },
     {
       "name": "viz-web",
@@ -1118,13 +924,7 @@
       "tier": "app",
       "runtime": "browser",
       "scope": "private",
-      "deps": [
-        "canvas-viewport",
-        "core",
-        "viz-core",
-        "engine",
-        "event-catalog"
-      ]
+      "deps": ["canvas-viewport", "core", "viz-core", "engine", "event-catalog"]
     },
     {
       "name": "weighted-gpu",
@@ -1148,11 +948,7 @@
       "tier": "foundation",
       "runtime": "library",
       "scope": "private",
-      "deps": [
-        "event-catalog",
-        "weighted-index",
-        "weighted-ui"
-      ]
+      "deps": ["event-catalog", "weighted-index", "weighted-ui"]
     },
     {
       "name": "weighted-ui",

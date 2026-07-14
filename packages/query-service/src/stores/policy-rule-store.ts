@@ -2,7 +2,7 @@
 // @def.doc query-api-spec
 
 // @facet
-import type { PatternRule } from "index-meta-workers";
+import type { PatternRule } from 'index-meta-workers';
 
 export interface StoredPolicyRule<T> extends PatternRule<T> {
   readonly indexId: string;
@@ -23,29 +23,21 @@ export interface PolicyRuleStore<T = unknown> {
 export class PolicyRuleNotFoundError extends Error {
   constructor(id: string) {
     super(`PolicyRule not found: "${id}"`);
-    this.name = "PolicyRuleNotFoundError";
+    this.name = 'PolicyRuleNotFoundError';
   }
 }
 
 export class PolicyRuleAlreadyExistsError extends Error {
   constructor(id: string) {
     super(`PolicyRule already exists: "${id}"`);
-    this.name = "PolicyRuleAlreadyExistsError";
+    this.name = 'PolicyRuleAlreadyExistsError';
   }
 }
 
-export function cloneStoredPolicyRule<T>(
-  rule: StoredPolicyRule<T>,
-): StoredPolicyRule<T> {
+export function cloneStoredPolicyRule<T>(rule: StoredPolicyRule<T>): StoredPolicyRule<T> {
   return structuredClone(rule);
 }
 
-export function compareStoredPolicyRules<T>(
-  left: StoredPolicyRule<T>,
-  right: StoredPolicyRule<T>,
-) {
-  return (
-    left.createdAt.localeCompare(right.createdAt) ||
-    left.id.localeCompare(right.id)
-  );
+export function compareStoredPolicyRules<T>(left: StoredPolicyRule<T>, right: StoredPolicyRule<T>) {
+  return left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id);
 }

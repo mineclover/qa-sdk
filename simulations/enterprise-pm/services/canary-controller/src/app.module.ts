@@ -12,21 +12,21 @@
 // - CatalogModule 이 SIM_SERVICE_CATALOG / PORT_REGISTRY / SIM_TARGET_SERVICE token 의
 //   단일 진입 — ActionModule + AppModule(controller) 양쪽이 import.
 
-import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
-import { ScheduleModule } from "@nestjs/schedule";
-import { InternalIpGuard } from "sim-internal-network";
-import { HealthModule } from "./health/health.module.js";
-import { AdvisoryLockModule } from "./lock/advisory-lock.module.js";
-import { MetricsScrapeModule } from "./metrics/metrics-scrape.module.js";
-import { DecisionModule } from "./decision/decision.module.js";
-import { DecisionQueryModule } from "./decision/decision-query.module.js";
-import { ActionModule } from "./action/action.module.js";
-import { CycleModule } from "./cycle/cycle.module.js";
-import { FaultModule } from "./fault/fault.module.js";
-import { AdminModule } from "./admin/admin.module.js";
-import { CatalogModule } from "./catalog/catalog.module.js";
-import { AlertsAuditCatalogController } from "./decision/alerts-audit-catalog.controller.js";
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
+import { InternalIpGuard } from 'sim-internal-network';
+import { HealthModule } from './health/health.module.js';
+import { AdvisoryLockModule } from './lock/advisory-lock.module.js';
+import { MetricsScrapeModule } from './metrics/metrics-scrape.module.js';
+import { DecisionModule } from './decision/decision.module.js';
+import { DecisionQueryModule } from './decision/decision-query.module.js';
+import { ActionModule } from './action/action.module.js';
+import { CycleModule } from './cycle/cycle.module.js';
+import { FaultModule } from './fault/fault.module.js';
+import { AdminModule } from './admin/admin.module.js';
+import { CatalogModule } from './catalog/catalog.module.js';
+import { AlertsAuditCatalogController } from './decision/alerts-audit-catalog.controller.js';
 
 @Module({
   imports: [

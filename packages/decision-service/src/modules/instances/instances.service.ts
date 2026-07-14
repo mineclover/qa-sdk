@@ -1,14 +1,18 @@
 // @def.boundary decision-service-spec
 // @def.doc decision-service-spec
 
-import { Inject, Injectable } from "@nestjs/common";
-import { desc, eq } from "drizzle-orm";
-import { DATABASE, type DecisionServiceDatabase } from "../../database.module.js";
-import { flowInstances, type FlowInstanceRow, type FlowInstanceSelection } from "../../db/schema.js";
-import { createLogger } from "../../lib/logger.js";
-import { env } from "../../config/env.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { desc, eq } from 'drizzle-orm';
+import { DATABASE, type DecisionServiceDatabase } from '../../database.module.js';
+import {
+  flowInstances,
+  type FlowInstanceRow,
+  type FlowInstanceSelection,
+} from '../../db/schema.js';
+import { createLogger } from '../../lib/logger.js';
+import { env } from '../../config/env.js';
 
-const logger = createLogger("decision-service");
+const logger = createLogger('decision-service');
 
 export interface FlowInstanceRecord {
   id: string;
@@ -78,7 +82,7 @@ export class InstancesService {
     const saved = this.get(instance.id)!;
 
     // 완료 + outcome이 있으면 definition-service에 문서 stub 생성 트리거
-    if (saved.status === "completed" && saved.outcome) {
+    if (saved.status === 'completed' && saved.outcome) {
       void this.triggerDocCreation(saved);
     }
 
@@ -99,25 +103,26 @@ export class InstancesService {
         signal: AbortSignal.timeout(3_000),
       });
       if (res.ok) {
-        logger.info({ docId, instanceId: instance.id }, "문서 이미 존재 — stub 생성 건너뜀");
+        logger.info({ docId, instanceId: instance.id }, '문서 이미 존재 — stub 생성 건너뜀');
         return;
       }
-    } catch { /* 연결 실패 → 생성 시도 */ }
+    } catch {
+      /* 연결 실패 → 생성 시도 */
+    }
 
-    logger.info({
-      instanceId: instance.id,
-      artifactType,
-      docId,
-      verdict: instance.verdict,
-    }, "의사결정 완료 → 문서 stub 생성 트리거");
+    logger.info(
+      {
+        instanceId: instance.id,
+        artifactType,
+        docId,
+        verdict: instance.verdict,
+      },
+      '의사결정 완료 → 문서 stub 생성 트리거',
+    );
   }
 
   get(id: string): FlowInstanceRecord | null {
-    const row = this.db
-      .select()
-      .from(flowInstances)
-      .where(eq(flowInstances.id, id))
-      .get();
+    const row = this.db.select().from(flowInstances).where(eq(flowInstances.id, id)).get();
     return row ? rowToInstance(row) : null;
   }
 

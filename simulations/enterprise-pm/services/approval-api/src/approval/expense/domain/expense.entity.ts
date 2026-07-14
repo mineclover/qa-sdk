@@ -1,14 +1,14 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { toExpenseReportId, toRequesterId } from "./expense.ids.js";
+import { toExpenseReportId, toRequesterId } from './expense.ids.js';
 import {
   ExpenseStatusConflictException,
   InvalidExpenseAmountException,
-} from "./expense.exceptions.js";
-import type { ExpenseProps, ExpenseSnapshot, ExpenseStatus } from "./expense.types.js";
+} from './expense.exceptions.js';
+import type { ExpenseProps, ExpenseSnapshot, ExpenseStatus } from './expense.types.js';
 
-const TERMINAL: ExpenseStatus[] = ["approved", "rejected"];
+const TERMINAL: ExpenseStatus[] = ['approved', 'rejected'];
 
 export class ExpenseEntity {
   private constructor(private readonly props: ExpenseProps) {}
@@ -31,7 +31,7 @@ export class ExpenseEntity {
       amount: input.amount,
       category: input.category,
       description: input.description,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     });

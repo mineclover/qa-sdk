@@ -8,7 +8,7 @@
  * 기존 마스크의 비트를 새 shape로 재배치한다.
  */
 
-import { PermissionSet, type DimDef } from "./permission-set.js";
+import { PermissionSet, type DimDef } from './permission-set.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,10 +52,7 @@ export function migratePermissions(
 
         const mapped = mapper(fi + 1, ri + 1);
         if (mapped) {
-          target.grant(
-            newFeatures.ids[mapped[0] - 1],
-            newRoles.ids[mapped[1] - 1],
-          );
+          target.grant(newFeatures.ids[mapped[0] - 1], newRoles.ids[mapped[1] - 1]);
         }
       }
     }

@@ -51,6 +51,6 @@ export function createReplayCache(maxSize = 100, ttlMs = 5 * 60 * 1000): ReplayC
 
 /** 캐시 키 생성 — 초 단위 truncate */
 export function replayCacheKey(contextId: string, resourceId: string, ts: string): string {
-  const truncated = ts.replace(/\.\d{3}Z$/, "Z"); // 밀리초 제거
+  const truncated = ts.replace(/\.\d{3}Z$/, 'Z'); // 밀리초 제거
   return `${contextId}:${resourceId}:${truncated}`;
 }

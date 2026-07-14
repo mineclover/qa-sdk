@@ -8,9 +8,9 @@
  * scope를 중첩 컨테이너 + 계약을 엣지로 변환.
  */
 
-import type { ScopeNesting, NestingValidation, DescentPath } from "@qa-sdk/core";
-import type { MountSnapshot } from "@qa-sdk/core";
-import type { TimingValidation } from "@qa-sdk/core";
+import type { ScopeNesting, NestingValidation, DescentPath } from '@qa-sdk/core';
+import type { MountSnapshot } from '@qa-sdk/core';
+import type { TimingValidation } from '@qa-sdk/core';
 
 // ── D3 데이터 모델 ───────────────────────────────────
 
@@ -32,7 +32,7 @@ export interface D3ScopeNode {
   width: number;
   height: number;
   /** 검증 상태 */
-  status: "valid" | "warning" | "error";
+  status: 'valid' | 'warning' | 'error';
   /** 활성 계약 (mount snapshot) */
   activeContracts: string[];
 }
@@ -41,7 +41,7 @@ export interface D3ContractEdge {
   contractId: string;
   source: string;
   target: string;
-  type: "state" | "logging" | "persist" | "adapter" | "custom";
+  type: 'state' | 'logging' | 'persist' | 'adapter' | 'custom';
   /** optional consume */
   optional: boolean;
   /** timing: pending 구간 있는지 */
@@ -77,15 +77,15 @@ export function scopeNestingToD3(
   const n = scopes.length;
 
   // issue → scope 상태 맵
-  const scopeStatus = new Map<string, "valid" | "warning" | "error">();
+  const scopeStatus = new Map<string, 'valid' | 'warning' | 'error'>();
   if (validation) {
     for (const issue of validation.issues) {
       if (!issue.scopeId) continue;
-      const current = scopeStatus.get(issue.scopeId) ?? "valid";
-      if (issue.severity === "error") {
-        scopeStatus.set(issue.scopeId, "error");
-      } else if (current !== "error") {
-        scopeStatus.set(issue.scopeId, "warning");
+      const current = scopeStatus.get(issue.scopeId) ?? 'valid';
+      if (issue.severity === 'error') {
+        scopeStatus.set(issue.scopeId, 'error');
+      } else if (current !== 'error') {
+        scopeStatus.set(issue.scopeId, 'warning');
       }
     }
   }
@@ -100,15 +100,15 @@ export function scopeNestingToD3(
       id: scope.scopeId,
       label: scope.scopeId,
       depth: i,
-      provides: scope.provides.map(c => c.contractId),
-      consumes: scope.consumes.map(c => c.contractId + (c.required === false ? "?" : "")),
+      provides: scope.provides.map((c) => c.contractId),
+      consumes: scope.consumes.map((c) => c.contractId + (c.required === false ? '?' : '')),
       facets: scope.facets ?? [],
       pipes: snap?.pipes ?? [],
       x: NEST_PADDING * i,
       y: NEST_PADDING * i + (SCOPE_HEIGHT + SCOPE_GAP) * i,
       width: SCOPE_WIDTH + (n - 1 - i) * NEST_PADDING * 2,
       height: SCOPE_HEIGHT,
-      status: scopeStatus.get(scope.scopeId) ?? "valid",
+      status: scopeStatus.get(scope.scopeId) ?? 'valid',
       activeContracts: snap?.activeContracts ?? [],
     };
   });
@@ -118,24 +118,25 @@ export function scopeNestingToD3(
   if (validation) {
     // readyAfter 맵
     const pendingContracts = new Set(
-      timing?.readinessTimeline?.filter(r => r.readyAtStep > 0).map(r => r.contractId) ?? [],
+      timing?.readinessTimeline?.filter((r) => r.readyAtStep > 0).map((r) => r.contractId) ?? [],
     );
 
     for (const path of validation.descentPaths) {
       for (const consumer of path.consumedBy) {
-        const consumerScope = scopes.find(s => s.scopeId === consumer);
+        const consumerScope = scopes.find((s) => s.scopeId === consumer);
         const contractDef = scopes
-          .find(s => s.scopeId === path.providedBy)
-          ?.provides.find(c => c.contractId === path.contractId);
-        const isOptional = consumerScope?.consumes.some(
-          c => c.contractId === path.contractId && c.required === false,
-        ) ?? false;
+          .find((s) => s.scopeId === path.providedBy)
+          ?.provides.find((c) => c.contractId === path.contractId);
+        const isOptional =
+          consumerScope?.consumes.some(
+            (c) => c.contractId === path.contractId && c.required === false,
+          ) ?? false;
 
         edges.push({
           contractId: path.contractId,
           source: path.providedBy,
           target: consumer,
-          type: (contractDef?.type ?? "custom") as D3ContractEdge["type"],
+          type: (contractDef?.type ?? 'custom') as D3ContractEdge['type'],
           optional: isOptional,
           hasPendingPhase: pendingContracts.has(path.contractId),
         });

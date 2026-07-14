@@ -1,9 +1,9 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { toUserId, toDepartmentId, toRoleId } from "./user.ids.js";
-import { InvalidUserInputException } from "./user.exceptions.js";
-import type { UserProps, UserSnapshot, UserStatus } from "./user.types.js";
+import { toUserId, toDepartmentId, toRoleId } from './user.ids.js';
+import { InvalidUserInputException } from './user.exceptions.js';
+import type { UserProps, UserSnapshot, UserStatus } from './user.types.js';
 
 /**
  * User Aggregate Root.
@@ -28,10 +28,10 @@ export class UserEntity {
   }): UserEntity {
     const trimmedEmail = input.email.trim();
     if (trimmedEmail.length === 0) {
-      throw new InvalidUserInputException("email must not be empty.");
+      throw new InvalidUserInputException('email must not be empty.');
     }
     if (input.displayName.trim().length === 0) {
-      throw new InvalidUserInputException("displayName must not be empty.");
+      throw new InvalidUserInputException('displayName must not be empty.');
     }
     const now = input.now ?? new Date();
     return new UserEntity({
@@ -40,7 +40,7 @@ export class UserEntity {
       displayName: input.displayName,
       departmentId: input.departmentId ? toDepartmentId(input.departmentId) : null,
       primaryRoleId: input.primaryRoleId ? toRoleId(input.primaryRoleId) : null,
-      status: "active",
+      status: 'active',
       createdAt: now,
       updatedAt: now,
     });
@@ -71,12 +71,12 @@ export class UserEntity {
   ): UserEntity {
     const nextEmail = patch.email !== undefined ? patch.email.trim() : this.props.email;
     if (nextEmail.length === 0) {
-      throw new InvalidUserInputException("email must not be empty.");
+      throw new InvalidUserInputException('email must not be empty.');
     }
     const nextDisplayName =
       patch.displayName !== undefined ? patch.displayName : this.props.displayName;
     if (nextDisplayName.trim().length === 0) {
-      throw new InvalidUserInputException("displayName must not be empty.");
+      throw new InvalidUserInputException('displayName must not be empty.');
     }
     const nextDeptId =
       patch.departmentId === undefined

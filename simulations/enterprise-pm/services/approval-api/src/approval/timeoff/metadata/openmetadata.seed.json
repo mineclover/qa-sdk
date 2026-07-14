@@ -7,15 +7,38 @@
       "owner": "sim-approval-owner"
     },
     "glossary": [
-      { "term": "TimeOffRequest", "description": "An employee's request for paid leave between startDate and endDate." }
+      {
+        "term": "TimeOffRequest",
+        "description": "An employee's request for paid leave between startDate and endDate."
+      }
     ],
     "lineage": [
-      { "name": "timeoff-write-path", "from": "approval.time_off_requests", "to": "approval.outbox_events", "via": "transactional-outbox" },
-      { "name": "timeoff-read-path", "from": "approval.outbox_events", "to": "reporting.timeoff_read_model", "via": "timeoff-read-model-sync" }
+      {
+        "name": "timeoff-write-path",
+        "from": "approval.time_off_requests",
+        "to": "approval.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "timeoff-read-path",
+        "from": "approval.outbox_events",
+        "to": "reporting.timeoff_read_model",
+        "via": "timeoff-read-model-sync"
+      }
     ],
     "qualityTests": [
-      { "name": "timeoff_status_values", "type": "columnValuesToBeInSet", "entity": "approval.time_off_requests.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] },
-      { "name": "timeoff_range_valid", "type": "columnValuesToBeBetween", "entity": "approval.time_off_requests.start_date", "comparison": "<= end_date" }
+      {
+        "name": "timeoff_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "approval.time_off_requests.status",
+        "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"]
+      },
+      {
+        "name": "timeoff_range_valid",
+        "type": "columnValuesToBeBetween",
+        "entity": "approval.time_off_requests.start_date",
+        "comparison": "<= end_date"
+      }
     ]
   },
   "cacheKeys": [

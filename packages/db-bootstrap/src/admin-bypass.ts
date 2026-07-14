@@ -1,8 +1,8 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import postgres from "postgres";
-import type { Sql } from "postgres";
+import postgres from 'postgres';
+import type { Sql } from 'postgres';
 
 /**
  * qa_admin_bypass 연결 전용 factory (Plan 15e Phase 5).
@@ -13,7 +13,7 @@ export interface AdminBypassConnectionConfig {
   host: string;
   port: number;
   database: string;
-  password: string;   // QA_SDK_ADMIN_BYPASS_PASSWORD
+  password: string; // QA_SDK_ADMIN_BYPASS_PASSWORD
   max?: number;
 }
 
@@ -29,7 +29,7 @@ export async function createAdminBypassConnection(
     host: cfg.host,
     port: cfg.port,
     database: cfg.database,
-    user: "qa_admin_bypass",
+    user: 'qa_admin_bypass',
     password: cfg.password,
     max: cfg.max ?? 3,
     onnotice: () => {},
@@ -44,5 +44,10 @@ export async function createAdminBypassConnection(
       `createAdminBypassConnection: current_user 가 BYPASSRLS 미보유. qa_admin_bypass role 로 로그인했는지 확인.`,
     );
   }
-  return { sql, close: async () => { await sql.end(); } };
+  return {
+    sql,
+    close: async () => {
+      await sql.end();
+    },
+  };
 }

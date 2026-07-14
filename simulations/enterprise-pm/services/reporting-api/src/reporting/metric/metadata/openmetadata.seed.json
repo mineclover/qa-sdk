@@ -46,10 +46,7 @@
       "purpose": "read_model",
       "version": "v1",
       "prefix": "metric-read-model",
-      "segments": [
-        { "name": "metricKey" },
-        { "name": "date" }
-      ],
+      "segments": [{ "name": "metricKey" }, { "name": "date" }],
       "ttl": "medium",
       "openmetadataEntity": "reporting.metric_read_model"
     }

@@ -1,15 +1,15 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc domain-slice-architecture
 
-import type { AuditEntry } from "permission-engine";
-import { AuditRecorderQueryPort } from "../../application/ports/audit-recorder-query.port.js";
-import { GraphSnapshotQueryPort } from "../../application/ports/graph-snapshot-query.port.js";
+import type { AuditEntry } from 'permission-engine';
+import { AuditRecorderQueryPort } from '../../application/ports/audit-recorder-query.port.js';
+import { GraphSnapshotQueryPort } from '../../application/ports/graph-snapshot-query.port.js';
 import {
   GraphRetentionInsightQueryPort,
   type GraphRetentionInsightResponse,
-} from "../../application/ports/graph-retention-insight.port.js";
-import type { AuditExplorerLoggerPort } from "../../application/ports/audit-explorer-logger.port.js";
-import type { AuthorizationGraphSnapshotRecord } from "authorization-ontology";
+} from '../../application/ports/graph-retention-insight.port.js';
+import type { AuditExplorerLoggerPort } from '../../application/ports/audit-explorer-logger.port.js';
+import type { AuthorizationGraphSnapshotRecord } from 'authorization-ontology';
 
 /** BFF 표면 — 화면 친화적 trace summary. domain entity 미노출. */
 export interface AuditTraceSummaryBffModel {
@@ -51,7 +51,7 @@ export interface AuditTraceContextBffModel {
  *   - GraphRetentionInsightQueryPort → ingest 서비스 (HTTP)
  */
 export class AuditTraceBff {
-  readonly cachePrefix = "audit-explorer-bff-trace:v1";
+  readonly cachePrefix = 'audit-explorer-bff-trace:v1';
 
   constructor(
     private readonly recorders: AuditRecorderQueryPort,
@@ -71,15 +71,15 @@ export class AuditTraceBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "audit-explorer",
-        useCase: "AuditTraceBff.getTrace",
+        domain: 'audit-explorer',
+        useCase: 'AuditTraceBff.getTrace',
         aggregateId: input.rootSpanId,
-        queryName: "AuditTraceQuery",
-        outcome: "success",
+        queryName: 'AuditTraceQuery',
+        outcome: 'success',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      "audit-trace.bff.success",
+      'audit-trace.bff.success',
     );
     return {
       rootSpanId: input.rootSpanId,
@@ -100,15 +100,15 @@ export class AuditTraceBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "audit-explorer",
-        useCase: "AuditTraceBff.getFirstFailure",
+        domain: 'audit-explorer',
+        useCase: 'AuditTraceBff.getFirstFailure',
         aggregateId: input.rootSpanId,
-        queryName: "AuditFirstFailureQuery",
-        outcome: firstFailure ? "success" : "failure",
+        queryName: 'AuditFirstFailureQuery',
+        outcome: firstFailure ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      firstFailure ? "audit-trace.bff.first-failure.found" : "audit-trace.bff.first-failure.miss",
+      firstFailure ? 'audit-trace.bff.first-failure.found' : 'audit-trace.bff.first-failure.miss',
     );
     return { rootSpanId: input.rootSpanId, firstFailure, cacheKey };
   }
@@ -123,15 +123,15 @@ export class AuditTraceBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "audit-explorer",
-        useCase: "AuditTraceBff.getEntry",
+        domain: 'audit-explorer',
+        useCase: 'AuditTraceBff.getEntry',
         aggregateId: input.spanId,
-        queryName: "AuditEntryQuery",
-        outcome: entry ? "success" : "failure",
+        queryName: 'AuditEntryQuery',
+        outcome: entry ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      entry ? "audit-trace.bff.entry.found" : "audit-trace.bff.entry.miss",
+      entry ? 'audit-trace.bff.entry.found' : 'audit-trace.bff.entry.miss',
     );
     return entry;
   }
@@ -155,16 +155,16 @@ export class AuditTraceBff {
         {
           traceId: input.traceId,
           correlationId: input.correlationId,
-          domain: "audit-explorer",
-          useCase: "AuditTraceBff.getContext",
+          domain: 'audit-explorer',
+          useCase: 'AuditTraceBff.getContext',
           aggregateId: input.rootSpanId,
-          queryName: "AuditTraceContextQuery",
-          outcome: "failure",
-          errorCode: "GRAPH_NOT_FOUND",
+          queryName: 'AuditTraceContextQuery',
+          outcome: 'failure',
+          errorCode: 'GRAPH_NOT_FOUND',
           cacheKeyPrefix: this.cachePrefix,
           cacheHit: false,
         },
-        "audit-trace.bff.context.graph-not-found",
+        'audit-trace.bff.context.graph-not-found',
       );
       return null;
     }
@@ -173,15 +173,15 @@ export class AuditTraceBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "audit-explorer",
-        useCase: "AuditTraceBff.getContext",
+        domain: 'audit-explorer',
+        useCase: 'AuditTraceBff.getContext',
         aggregateId: input.rootSpanId,
-        queryName: "AuditTraceContextQuery",
-        outcome: "success",
+        queryName: 'AuditTraceContextQuery',
+        outcome: 'success',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      "audit-trace.bff.context.success",
+      'audit-trace.bff.context.success',
     );
 
     return {

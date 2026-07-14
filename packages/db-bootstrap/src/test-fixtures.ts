@@ -10,7 +10,7 @@
  * 병렬 vitest 실행 시 schema 충돌 회피 위해 random suffix.
  */
 
-import { randomBytes } from "node:crypto";
+import { randomBytes } from 'node:crypto';
 
 export interface SqliteFixture {
   db: unknown;
@@ -32,24 +32,23 @@ export interface PgFixtureConfig {
 }
 
 export async function createSqliteTestFixture(ddl: string): Promise<SqliteFixture> {
-  const Database = (await import("better-sqlite3")).default;
-  const { drizzle } = await import("drizzle-orm/better-sqlite3");
-  const raw = new Database(":memory:");
+  const Database = (await import('better-sqlite3')).default;
+  const { drizzle } = await import('drizzle-orm/better-sqlite3');
+  const raw = new Database(':memory:');
   raw.exec(ddl);
   return {
     db: drizzle({ client: raw }),
-    async cleanup() { raw.close(); },
+    async cleanup() {
+      raw.close();
+    },
   };
 }
 
-export async function createPgTestFixture(
-  ddl: string,
-  cfg: PgFixtureConfig,
-): Promise<PgFixture> {
-  const postgres = (await import("postgres")).default;
-  const { drizzle } = await import("drizzle-orm/postgres-js");
+export async function createPgTestFixture(ddl: string, cfg: PgFixtureConfig): Promise<PgFixture> {
+  const postgres = (await import('postgres')).default;
+  const { drizzle } = await import('drizzle-orm/postgres-js');
 
-  const schemaName = `test_${randomBytes(4).toString("hex")}`;
+  const schemaName = `test_${randomBytes(4).toString('hex')}`;
   const sql = postgres({
     host: cfg.pgHost,
     port: cfg.pgPort,

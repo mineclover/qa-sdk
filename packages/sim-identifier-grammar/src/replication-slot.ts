@@ -1,7 +1,7 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
+import { z } from 'zod';
 
-export const REPLICATION_PURPOSES = ["read_replica", "audit_stream"] as const;
+export const REPLICATION_PURPOSES = ['read_replica', 'audit_stream'] as const;
 export type ReplicationPurpose = (typeof REPLICATION_PURPOSES)[number];
 
 export interface ReplicationSlot {
@@ -16,10 +16,7 @@ export const ReplicationSlotSchema = z.object({
 const SLOT_PATTERN = /^sim_(read_replica|audit_stream)_slot$/;
 const PG_MAX_LENGTH = 63;
 
-export const ReplicationSlotNameSchema = z
-  .string()
-  .max(PG_MAX_LENGTH)
-  .regex(SLOT_PATTERN);
+export const ReplicationSlotNameSchema = z.string().max(PG_MAX_LENGTH).regex(SLOT_PATTERN);
 
 export function buildReplicationSlot(input: ReplicationSlot): string {
   const v = ReplicationSlotSchema.parse(input);

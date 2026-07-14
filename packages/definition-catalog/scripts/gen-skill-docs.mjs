@@ -9,16 +9,16 @@
  *   node scripts/gen-skill-docs.mjs [--dry-run]
  */
 
-import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(SCRIPT_DIR, "../../..");
-const OUT_DIR = join(ROOT, "docs/specs/skill-catalog");
-const SKILLS_DIR = join(ROOT, "../.claude/skills"); // Claude Code skills 위치 (홈)
-const HOME_SKILLS = join(process.env.HOME ?? "", ".claude/skills");
-const DRY_RUN = process.argv.includes("--dry-run");
+const ROOT = resolve(SCRIPT_DIR, '../../..');
+const OUT_DIR = join(ROOT, 'docs/specs/skill-catalog');
+const SKILLS_DIR = join(ROOT, '../.claude/skills'); // Claude Code skills 위치 (홈)
+const HOME_SKILLS = join(process.env.HOME ?? '', '.claude/skills');
+const DRY_RUN = process.argv.includes('--dry-run');
 
 if (!DRY_RUN && !existsSync(OUT_DIR)) {
   mkdirSync(OUT_DIR, { recursive: true });
@@ -27,42 +27,123 @@ if (!DRY_RUN && !existsSync(OUT_DIR)) {
 // ── Claude Code Skills (def-*) ──────────────────────────
 
 const CLAUDE_SKILLS = [
-  { id: "def-topdown", name: "탑다운 조회", desc: "시스템/그룹에서 시작하여 멤버 purpose/overview를 scope 순서로 조립", category: "query" },
-  { id: "def-bottomup", name: "바텀업 역추적", desc: "특정 문서 변경 시 영향받는 문서를 역추적 (blast radius)", category: "analysis" },
-  { id: "def-context", name: "노드 컨텍스트 조회", desc: "문서 작업 전 상위/하위/제약/의존/concern 정보 수집", category: "query" },
-  { id: "def-audit", name: "문서 품질 감사", desc: "purpose 품질, 링크 누락, 태그 미부여, 마커 미사용 점검", category: "analysis" },
-  { id: "def-new", name: "새 문서 생성", desc: "frontmatter + ^purpose + ^overview 형식으로 새 스펙 문서 생성", category: "write" },
-  { id: "def-link", name: "링크 연결", desc: "고아 문서에 depends_on/implements/refines/constrains 관계 추가", category: "write" },
-  { id: "def-split", name: "대형 문서 분할", desc: "150줄 이상 리프 문서를 scope별 그룹 + 멤버로 분할", category: "write" },
+  {
+    id: 'def-topdown',
+    name: '탑다운 조회',
+    desc: '시스템/그룹에서 시작하여 멤버 purpose/overview를 scope 순서로 조립',
+    category: 'query',
+  },
+  {
+    id: 'def-bottomup',
+    name: '바텀업 역추적',
+    desc: '특정 문서 변경 시 영향받는 문서를 역추적 (blast radius)',
+    category: 'analysis',
+  },
+  {
+    id: 'def-context',
+    name: '노드 컨텍스트 조회',
+    desc: '문서 작업 전 상위/하위/제약/의존/concern 정보 수집',
+    category: 'query',
+  },
+  {
+    id: 'def-audit',
+    name: '문서 품질 감사',
+    desc: 'purpose 품질, 링크 누락, 태그 미부여, 마커 미사용 점검',
+    category: 'analysis',
+  },
+  {
+    id: 'def-new',
+    name: '새 문서 생성',
+    desc: 'frontmatter + ^purpose + ^overview 형식으로 새 스펙 문서 생성',
+    category: 'write',
+  },
+  {
+    id: 'def-link',
+    name: '링크 연결',
+    desc: '고아 문서에 depends_on/implements/refines/constrains 관계 추가',
+    category: 'write',
+  },
+  {
+    id: 'def-split',
+    name: '대형 문서 분할',
+    desc: '150줄 이상 리프 문서를 scope별 그룹 + 멤버로 분할',
+    category: 'write',
+  },
 ];
 
 // ── DKG Skills ──────────────────────────────────────────
 
 const DKG_SKILLS = [
-  { id: "dkg-skill-cascade", name: "변경 영향 전파", desc: "노드 변경이 리프까지 어떤 경로로 전파되는지 추적", category: "analysis" },
-  { id: "dkg-skill-migrator", name: "마이그레이션 추론", desc: "축/prefix 변경 시 자동 마이그레이션 경로 추론", category: "chain" },
-  { id: "dkg-skill-version-event", name: "버전 이벤트 생성", desc: "변경 diff에서 VersionEvent 자동 생성", category: "write" },
-  { id: "dkg-skill-decision", name: "의사결정 템플릿", desc: "Decision 템플릿 자동 생성 + evidence 수집", category: "write" },
-  { id: "dkg-skill-catalog", name: "스킬 카탈로그", desc: "스킬 등록/조회/실행 레지스트리", category: "read" },
+  {
+    id: 'dkg-skill-cascade',
+    name: '변경 영향 전파',
+    desc: '노드 변경이 리프까지 어떤 경로로 전파되는지 추적',
+    category: 'analysis',
+  },
+  {
+    id: 'dkg-skill-migrator',
+    name: '마이그레이션 추론',
+    desc: '축/prefix 변경 시 자동 마이그레이션 경로 추론',
+    category: 'chain',
+  },
+  {
+    id: 'dkg-skill-version-event',
+    name: '버전 이벤트 생성',
+    desc: '변경 diff에서 VersionEvent 자동 생성',
+    category: 'write',
+  },
+  {
+    id: 'dkg-skill-decision',
+    name: '의사결정 템플릿',
+    desc: 'Decision 템플릿 자동 생성 + evidence 수집',
+    category: 'write',
+  },
+  {
+    id: 'dkg-skill-catalog',
+    name: '스킬 카탈로그',
+    desc: '스킬 등록/조회/실행 레지스트리',
+    category: 'read',
+  },
 ];
 
 // ── CLI Command Groups ──────────────────────────────────
 
 const CLI_GROUPS = [
-  { id: "cli-def-commands", name: "Definition CLI", desc: "문서 관리 명령: scan, topdown, bottomup, context, audit, validate, stats", category: "interface" },
-  { id: "cli-dkg-commands", name: "DKG CLI", desc: "DKG 그래프 관리: report, axes, prefixes, skills, decide, observe, refresh", category: "interface" },
-  { id: "cli-flow-commands", name: "Decision Flow CLI", desc: "의사결정 흐름: list, start, select, status, trace, analyze, compare", category: "interface" },
-  { id: "cli-coord-commands", name: "Coordinate CLI", desc: "좌표 연산: encode, decode, resolve, find-version, impact", category: "interface" },
+  {
+    id: 'cli-def-commands',
+    name: 'Definition CLI',
+    desc: '문서 관리 명령: scan, topdown, bottomup, context, audit, validate, stats',
+    category: 'interface',
+  },
+  {
+    id: 'cli-dkg-commands',
+    name: 'DKG CLI',
+    desc: 'DKG 그래프 관리: report, axes, prefixes, skills, decide, observe, refresh',
+    category: 'interface',
+  },
+  {
+    id: 'cli-flow-commands',
+    name: 'Decision Flow CLI',
+    desc: '의사결정 흐름: list, start, select, status, trace, analyze, compare',
+    category: 'interface',
+  },
+  {
+    id: 'cli-coord-commands',
+    name: 'Coordinate CLI',
+    desc: '좌표 연산: encode, decode, resolve, find-version, impact',
+    category: 'interface',
+  },
 ];
 
 // ── 문서 생성 ───────────────────────────────────────────
 
 function generateSkillDoc(skill, group) {
-  const sourceRef = group === "claude"
-    ? `~/.claude/skills/${skill.id}/SKILL.md`
-    : group === "dkg"
-      ? `packages/spec-core/src/dkg/skills/`
-      : `packages/cli/src/commands/`;
+  const sourceRef =
+    group === 'claude'
+      ? `~/.claude/skills/${skill.id}/SKILL.md`
+      : group === 'dkg'
+        ? `packages/spec-core/src/dkg/skills/`
+        : `packages/cli/src/commands/`;
 
   return `---
 def:
@@ -107,7 +188,7 @@ def:
 }
 
 function generateGroupDoc(groupId, groupName, groupDesc, memberIds) {
-  const links = memberIds.map(id => `    - target: skill-${id}\n      type: contains`).join("\n");
+  const links = memberIds.map((id) => `    - target: skill-${id}\n      type: contains`).join('\n');
 
   return `---
 def:
@@ -128,14 +209,14 @@ ${groupDesc}
 
 ## 구성 ^overview
 
-${memberIds.map(id => `- \`${id}\``).join("\n")}
+${memberIds.map((id) => `- \`${id}\``).join('\n')}
 `;
 }
 
 // ── 루트 문서 ───────────────────────────────────────────
 
 function generateRootDoc(groupIds) {
-  const links = groupIds.map(id => `    - target: ${id}\n      type: contains`).join("\n");
+  const links = groupIds.map((id) => `    - target: ${id}\n      type: contains`).join('\n');
 
   return `---
 def:
@@ -176,7 +257,7 @@ let totalWritten = 0;
 
 // 1. Claude Code skill 문서
 for (const s of CLAUDE_SKILLS) {
-  const content = generateSkillDoc(s, "claude");
+  const content = generateSkillDoc(s, 'claude');
   const filename = `skill-${s.id}.spec.md`;
   if (DRY_RUN) {
     console.log(`[dry-run] ${filename}`);
@@ -188,7 +269,7 @@ for (const s of CLAUDE_SKILLS) {
 
 // 2. DKG skill 문서
 for (const s of DKG_SKILLS) {
-  const content = generateSkillDoc(s, "dkg");
+  const content = generateSkillDoc(s, 'dkg');
   const filename = `skill-${s.id}.spec.md`;
   if (DRY_RUN) {
     console.log(`[dry-run] ${filename}`);
@@ -200,7 +281,7 @@ for (const s of DKG_SKILLS) {
 
 // 3. CLI command group 문서
 for (const g of CLI_GROUPS) {
-  const content = generateSkillDoc(g, "cli");
+  const content = generateSkillDoc(g, 'cli');
   const filename = `skill-${g.id}.spec.md`;
   if (DRY_RUN) {
     console.log(`[dry-run] ${filename}`);
@@ -212,9 +293,24 @@ for (const g of CLI_GROUPS) {
 
 // 4. 그룹 문서
 const groups = [
-  { id: "claude-skill-group", name: "Claude Code Skills", desc: "Claude Code에서 사용하는 definition-catalog 관리 도구 7종", members: CLAUDE_SKILLS.map(s => s.id) },
-  { id: "dkg-skill-group", name: "DKG Skills", desc: "DKG 그래프 자동화 도구 5종", members: DKG_SKILLS.map(s => s.id) },
-  { id: "cli-command-group", name: "CLI Commands", desc: "qa-sdk CLI 명령 그룹 4종", members: CLI_GROUPS.map(g => g.id) },
+  {
+    id: 'claude-skill-group',
+    name: 'Claude Code Skills',
+    desc: 'Claude Code에서 사용하는 definition-catalog 관리 도구 7종',
+    members: CLAUDE_SKILLS.map((s) => s.id),
+  },
+  {
+    id: 'dkg-skill-group',
+    name: 'DKG Skills',
+    desc: 'DKG 그래프 자동화 도구 5종',
+    members: DKG_SKILLS.map((s) => s.id),
+  },
+  {
+    id: 'cli-command-group',
+    name: 'CLI Commands',
+    desc: 'qa-sdk CLI 명령 그룹 4종',
+    members: CLI_GROUPS.map((g) => g.id),
+  },
 ];
 
 for (const g of groups) {
@@ -229,15 +325,15 @@ for (const g of groups) {
 }
 
 // 5. 루트 문서
-const rootContent = generateRootDoc(groups.map(g => g.id));
+const rootContent = generateRootDoc(groups.map((g) => g.id));
 if (DRY_RUN) {
   console.log(`[dry-run] skill-catalog-system.md (root)`);
 } else {
-  writeFileSync(join(OUT_DIR, "skill-catalog-system.md"), rootContent);
+  writeFileSync(join(OUT_DIR, 'skill-catalog-system.md'), rootContent);
   totalWritten++;
 }
 
-console.log(`\n${DRY_RUN ? "[dry-run] " : ""}${OUT_DIR}에 ${totalWritten}건 생성`);
+console.log(`\n${DRY_RUN ? '[dry-run] ' : ''}${OUT_DIR}에 ${totalWritten}건 생성`);
 console.log(`  Claude skills: ${CLAUDE_SKILLS.length}개`);
 console.log(`  DKG skills: ${DKG_SKILLS.length}개`);
 console.log(`  CLI groups: ${CLI_GROUPS.length}개`);

@@ -5,16 +5,16 @@
  * 출력: 분포 JSON → stdout (observation memo 작성용).
  */
 
-import { performance } from "node:perf_hooks";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { performance } from 'node:perf_hooks';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-import { buildDeterministicLabelInventory } from "deterministic-label-registry";
+import { buildDeterministicLabelInventory } from 'deterministic-label-registry';
 
-import { createDeterministicLabelInventoryAdapters } from "../src/lib/deterministic-label-inventory-adapters.js";
+import { createDeterministicLabelInventoryAdapters } from '../src/lib/deterministic-label-inventory-adapters.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(__dirname, "../../..");
+const repoRoot = resolve(__dirname, '../../..');
 
 const start = performance.now();
 const inventory = await buildDeterministicLabelInventory({

@@ -52,7 +52,7 @@ export interface IRField {
   /** 타입 참조: enum ID → 해당 enum 타입, null → string */
   enumRef: string | null;
   /** 원본 dim kind */
-  dimKind: "axis" | "prefix_ref" | "table_ref";
+  dimKind: 'axis' | 'prefix_ref' | 'table_ref';
 }
 
 /** codegen 전체 입력 */

@@ -1,7 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
-import { createDashboardData } from "../../src/monitor/dashboard.js";
-import type { InfraProfileAdapter } from "../../src/adapters/adapter.js";
-import type { DeployHistoryEntry, InfraDeploymentEntry, MonitorTarget } from "../../src/core/types.js";
+import { describe, it, expect, vi } from 'vitest';
+import { createDashboardData } from '../../src/monitor/dashboard.js';
+import type { InfraProfileAdapter } from '../../src/adapters/adapter.js';
+import type {
+  DeployHistoryEntry,
+  InfraDeploymentEntry,
+  MonitorTarget,
+} from '../../src/core/types.js';
 
 function makeMockProfile(opts: {
   deployments?: Record<string, InfraDeploymentEntry>;
@@ -27,8 +31,8 @@ function makeMockProfile(opts: {
   };
 }
 
-describe("createDashboardData", () => {
-  it("빈 프로필 → 0건 요약", async () => {
+describe('createDashboardData', () => {
+  it('빈 프로필 → 0건 요약', async () => {
     const profile = makeMockProfile({});
     const dashboard = createDashboardData(profile);
     const summary = await dashboard.getSummary();
@@ -39,60 +43,60 @@ describe("createDashboardData", () => {
     expect(summary.byStatus.Synced).toBe(0);
   });
 
-  it("배포+모니터 있으면 카운트 반영", async () => {
+  it('배포+모니터 있으면 카운트 반영', async () => {
     const deployments: Record<string, InfraDeploymentEntry> = {
-      "svc-a": {
-        serviceId: "svc-a",
-        provider: "local",
-        env: "dev",
-        region: "local",
-        endpoint: "http://localhost:3200",
-        healthPath: "/health",
-        stackName: "qa-dev-svc-a",
-        deploymentVersion: "v1",
-        deployedAt: "2026-04-01T00:00:00Z",
-        triggeredBy: "manual",
+      'svc-a': {
+        serviceId: 'svc-a',
+        provider: 'local',
+        env: 'dev',
+        region: 'local',
+        endpoint: 'http://localhost:3200',
+        healthPath: '/health',
+        stackName: 'qa-dev-svc-a',
+        deploymentVersion: 'v1',
+        deployedAt: '2026-04-01T00:00:00Z',
+        triggeredBy: 'manual',
         metadata: {},
       },
-      "svc-b": {
-        serviceId: "svc-b",
-        provider: "cloudflare",
-        env: "prod",
-        region: "us-east",
-        endpoint: "https://svc-b.example.com",
-        healthPath: "/health",
-        stackName: "qa-prod-svc-b",
-        deploymentVersion: "v2",
-        deployedAt: "2026-04-02T00:00:00Z",
-        triggeredBy: "ci",
+      'svc-b': {
+        serviceId: 'svc-b',
+        provider: 'cloudflare',
+        env: 'prod',
+        region: 'us-east',
+        endpoint: 'https://svc-b.example.com',
+        healthPath: '/health',
+        stackName: 'qa-prod-svc-b',
+        deploymentVersion: 'v2',
+        deployedAt: '2026-04-02T00:00:00Z',
+        triggeredBy: 'ci',
         metadata: {},
       },
     };
 
     const monitors: MonitorTarget[] = [
       {
-        serviceId: "svc-a",
-        endpoint: "http://localhost:3200",
-        healthPath: "/health",
-        provider: "local",
-        env: "dev",
-        region: "local",
-        namespace: "qa-dev",
+        serviceId: 'svc-a',
+        endpoint: 'http://localhost:3200',
+        healthPath: '/health',
+        provider: 'local',
+        env: 'dev',
+        region: 'local',
+        namespace: 'qa-dev',
         interval: 60,
-        lastStatus: "Synced",
-        lastChecked: "2026-04-05T00:00:00Z",
+        lastStatus: 'Synced',
+        lastChecked: '2026-04-05T00:00:00Z',
       },
       {
-        serviceId: "svc-b",
-        endpoint: "https://svc-b.example.com",
-        healthPath: "/health",
-        provider: "cloudflare",
-        env: "prod",
-        region: "us-east",
-        namespace: "default",
+        serviceId: 'svc-b',
+        endpoint: 'https://svc-b.example.com',
+        healthPath: '/health',
+        provider: 'cloudflare',
+        env: 'prod',
+        region: 'us-east',
+        namespace: 'default',
         interval: 30,
-        lastStatus: "OutOfSync",
-        lastChecked: "2026-04-05T00:00:00Z",
+        lastStatus: 'OutOfSync',
+        lastChecked: '2026-04-05T00:00:00Z',
       },
     ];
 
@@ -111,53 +115,53 @@ describe("createDashboardData", () => {
     expect(summary.byEnv.prod).toBe(1);
   });
 
-  it("getServiceDashboard — 배포 있는 서비스", async () => {
+  it('getServiceDashboard — 배포 있는 서비스', async () => {
     const deployments: Record<string, InfraDeploymentEntry> = {
-      "svc-a": {
-        serviceId: "svc-a",
-        provider: "local",
-        env: "dev",
-        region: "local",
-        endpoint: "http://localhost:3200",
-        healthPath: "/health",
-        stackName: "qa-dev-svc-a",
-        deploymentVersion: "v1",
-        deployedAt: "2026-04-01T00:00:00Z",
-        triggeredBy: "manual",
+      'svc-a': {
+        serviceId: 'svc-a',
+        provider: 'local',
+        env: 'dev',
+        region: 'local',
+        endpoint: 'http://localhost:3200',
+        healthPath: '/health',
+        stackName: 'qa-dev-svc-a',
+        deploymentVersion: 'v1',
+        deployedAt: '2026-04-01T00:00:00Z',
+        triggeredBy: 'manual',
         metadata: {},
       },
     };
     const history: Record<string, DeployHistoryEntry[]> = {
-      "svc-a": [
+      'svc-a': [
         {
-          deployedAt: "2026-04-01T00:00:00Z",
-          version: "v1",
-          env: "dev",
-          provider: "local",
-          endpoint: "http://localhost:3200",
+          deployedAt: '2026-04-01T00:00:00Z',
+          version: 'v1',
+          env: 'dev',
+          provider: 'local',
+          endpoint: 'http://localhost:3200',
           duration: 5000,
           success: true,
-          triggeredBy: "manual",
+          triggeredBy: 'manual',
         },
       ],
     };
 
     const profile = makeMockProfile({ deployments, history });
     const dashboard = createDashboardData(profile);
-    const svc = await dashboard.getServiceDashboard("svc-a");
+    const svc = await dashboard.getServiceDashboard('svc-a');
 
-    expect(svc.serviceId).toBe("svc-a");
+    expect(svc.serviceId).toBe('svc-a');
     expect(svc.deployment).toBeDefined();
-    expect(svc.deployment!.provider).toBe("local");
+    expect(svc.deployment!.provider).toBe('local');
     expect(svc.history).toHaveLength(1);
     expect(svc.uptime).toBeDefined();
     expect(svc.uptime!.percentage).toBeGreaterThanOrEqual(0);
   });
 
-  it("getServiceDashboard — 미배포 서비스", async () => {
+  it('getServiceDashboard — 미배포 서비스', async () => {
     const profile = makeMockProfile({});
     const dashboard = createDashboardData(profile);
-    const svc = await dashboard.getServiceDashboard("nonexistent");
+    const svc = await dashboard.getServiceDashboard('nonexistent');
 
     expect(svc.deployment).toBeUndefined();
     expect(svc.monitor).toBeUndefined();
@@ -165,67 +169,67 @@ describe("createDashboardData", () => {
     expect(svc.uptime).toBeUndefined();
   });
 
-  it("uptime 비율은 100%를 넘지 않고 가장 최근 성공 배포를 기준으로 계산", async () => {
+  it('uptime 비율은 100%를 넘지 않고 가장 최근 성공 배포를 기준으로 계산', async () => {
     const history: Record<string, DeployHistoryEntry[]> = {
-      "svc-a": [
+      'svc-a': [
         {
-          deployedAt: "2026-04-01T00:00:00Z",
-          version: "v0",
-          env: "dev",
-          provider: "local",
-          endpoint: "http://localhost:3200",
+          deployedAt: '2026-04-01T00:00:00Z',
+          version: 'v0',
+          env: 'dev',
+          provider: 'local',
+          endpoint: 'http://localhost:3200',
           duration: 1000,
           success: false,
-          triggeredBy: "manual",
+          triggeredBy: 'manual',
         },
         {
-          deployedAt: "2026-04-02T00:00:00Z",
-          version: "v1",
-          env: "dev",
-          provider: "local",
-          endpoint: "http://localhost:3200",
+          deployedAt: '2026-04-02T00:00:00Z',
+          version: 'v1',
+          env: 'dev',
+          provider: 'local',
+          endpoint: 'http://localhost:3200',
           duration: 1000,
           success: true,
-          triggeredBy: "manual",
+          triggeredBy: 'manual',
         },
         {
-          deployedAt: "2026-04-03T00:00:00Z",
-          version: "v2",
-          env: "dev",
-          provider: "local",
-          endpoint: "http://localhost:3200",
+          deployedAt: '2026-04-03T00:00:00Z',
+          version: 'v2',
+          env: 'dev',
+          provider: 'local',
+          endpoint: 'http://localhost:3200',
           duration: 1000,
           success: true,
-          triggeredBy: "manual",
+          triggeredBy: 'manual',
         },
       ],
     };
 
     const profile = makeMockProfile({ history });
     const dashboard = createDashboardData(profile);
-    const svc = await dashboard.getServiceDashboard("svc-a");
+    const svc = await dashboard.getServiceDashboard('svc-a');
 
     expect(svc.uptime).toBeDefined();
-    expect(svc.uptime!.since).toBe("2026-04-03T00:00:00Z");
+    expect(svc.uptime!.since).toBe('2026-04-03T00:00:00Z');
     expect(svc.uptime!.percentage).toBeLessThanOrEqual(100);
   });
 
-  it("exportJson — JSON 문자열 반환", async () => {
+  it('exportJson — JSON 문자열 반환', async () => {
     const profile = makeMockProfile({
       history: {
-        "fleet:dev:all": [
+        'fleet:dev:all': [
           {
-            deployedAt: "2026-04-05T00:00:00Z",
-            version: "fleet-123",
-            env: "dev",
-            provider: "fleet",
-            endpoint: "",
+            deployedAt: '2026-04-05T00:00:00Z',
+            version: 'fleet-123',
+            env: 'dev',
+            provider: 'fleet',
+            endpoint: '',
             duration: 1234,
             success: true,
-            triggeredBy: "manual",
-            mode: "fleet-summary",
-            runId: "fleet-123",
-            scope: "all",
+            triggeredBy: 'manual',
+            mode: 'fleet-summary',
+            runId: 'fleet-123',
+            scope: 'all',
           },
         ],
       },
@@ -238,35 +242,35 @@ describe("createDashboardData", () => {
     expect(parsed.services).toBeDefined();
   });
 
-  it("getFleetRuns — fleet-summary history만 반환", async () => {
+  it('getFleetRuns — fleet-summary history만 반환', async () => {
     const profile = makeMockProfile({
       history: {
-        "svc-a": [
+        'svc-a': [
           {
-            deployedAt: "2026-04-05T00:00:00Z",
-            version: "v1",
-            env: "dev",
-            provider: "local",
-            endpoint: "http://localhost:3200",
+            deployedAt: '2026-04-05T00:00:00Z',
+            version: 'v1',
+            env: 'dev',
+            provider: 'local',
+            endpoint: 'http://localhost:3200',
             duration: 100,
             success: true,
-            triggeredBy: "manual",
-            mode: "single",
+            triggeredBy: 'manual',
+            mode: 'single',
           },
         ],
-        "fleet:dev:all": [
+        'fleet:dev:all': [
           {
-            deployedAt: "2026-04-06T00:00:00Z",
-            version: "fleet-456",
-            env: "dev",
-            provider: "fleet",
-            endpoint: "",
+            deployedAt: '2026-04-06T00:00:00Z',
+            version: 'fleet-456',
+            env: 'dev',
+            provider: 'fleet',
+            endpoint: '',
             duration: 500,
             success: true,
-            triggeredBy: "manual",
-            mode: "fleet-summary",
-            runId: "fleet-456",
-            scope: "all",
+            triggeredBy: 'manual',
+            mode: 'fleet-summary',
+            runId: 'fleet-456',
+            scope: 'all',
           },
         ],
       },
@@ -276,9 +280,9 @@ describe("createDashboardData", () => {
 
     expect(fleetRuns).toHaveLength(1);
     expect(fleetRuns[0]).toMatchObject({
-      historyKey: "fleet:dev:all",
-      runId: "fleet-456",
-      scope: "all",
+      historyKey: 'fleet:dev:all',
+      runId: 'fleet-456',
+      scope: 'all',
     });
   });
 });

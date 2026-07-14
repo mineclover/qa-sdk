@@ -26,24 +26,18 @@
  *       기본 allow-all + 특정 deny 패턴
  */
 
-import {
-  createMask,
-  setBit,
-  clearBit,
-  hasBit,
-  popcount,
-} from "weighted-index";
+import { createMask, setBit, clearBit, hasBit, popcount } from 'weighted-index';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export const DENY  = -1 as const;
-export const UNSET =  0 as const;
-export const ALLOW =  1 as const;
+export const DENY = -1 as const;
+export const UNSET = 0 as const;
+export const ALLOW = 1 as const;
 
 export type TriState = typeof DENY | typeof UNSET | typeof ALLOW;
 
 /** Resolve 전략: 상속 체인에서 UNSET일 때 어떻게 처리할지. */
-export type DefaultPolicy = "deny" | "allow";
+export type DefaultPolicy = 'deny' | 'allow';
 
 // ── TernaryMask ──────────────────────────────────────────────────────────────
 
@@ -89,7 +83,7 @@ export class TernaryMask {
   get(id: number): TriState {
     const a = hasBit(this.allowMask, id);
     const d = hasBit(this.denyMask, id);
-    if (d) return DENY;   // deny-wins
+    if (d) return DENY; // deny-wins
     if (a) return ALLOW;
     return UNSET;
   }
@@ -100,11 +94,11 @@ export class TernaryMask {
    * 최종 권한 판정.
    * ALLOW → true, DENY → false, UNSET → defaultPolicy에 따름.
    */
-  check(id: number, defaultPolicy: DefaultPolicy = "deny"): boolean {
+  check(id: number, defaultPolicy: DefaultPolicy = 'deny'): boolean {
     const state = this.get(id);
     if (state === ALLOW) return true;
     if (state === DENY) return false;
-    return defaultPolicy === "allow";
+    return defaultPolicy === 'allow';
   }
 
   // ── 상속 체인 merge ────────────────────────────────────────────────────
@@ -157,9 +151,15 @@ export class TernaryMask {
 
   // ── 통계 ───────────────────────────────────────────────────────────────
 
-  get allowCount(): number { return popcount(this.allowMask); }
-  get denyCount(): number { return popcount(this.denyMask); }
-  get unsetCount(): number { return this.size - this.allowCount - this.denyCount; }
+  get allowCount(): number {
+    return popcount(this.allowMask);
+  }
+  get denyCount(): number {
+    return popcount(this.denyMask);
+  }
+  get unsetCount(): number {
+    return this.size - this.allowCount - this.denyCount;
+  }
 
   // ── 변환 ───────────────────────────────────────────────────────────────
 
@@ -167,7 +167,7 @@ export class TernaryMask {
    * binary mask로 flatten. UNSET은 defaultPolicy에 따라 결정.
    * 클라이언트 전송 시 ternary → binary 변환용.
    */
-  toBinaryMask(defaultPolicy: DefaultPolicy = "deny"): Uint8Array {
+  toBinaryMask(defaultPolicy: DefaultPolicy = 'deny'): Uint8Array {
     const mask = createMask(this.size);
     for (let i = 0; i < this.size; i++) {
       if (this.check(i, defaultPolicy)) {

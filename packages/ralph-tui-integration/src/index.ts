@@ -10,12 +10,9 @@
 // @def.doc ralph-tui-integration
 
 // ─── ralph-session adapter ──────────────────────────────
-export {
-  createRalphSessionAdapter,
-  RALPH_SESSION_ADAPTER_ID,
-} from "./ralph-session.js";
+export { createRalphSessionAdapter, RALPH_SESSION_ADAPTER_ID } from './ralph-session.js';
 
-export type { RalphSessionAdapterOptions } from "./ralph-session.js";
+export type { RalphSessionAdapterOptions } from './ralph-session.js';
 
 // ─── ralph-prd-json adapter ─────────────────────────────
 export {
@@ -23,14 +20,11 @@ export {
   createRalphPrdJsonAdapter,
   readRalphPrdJsonSummary,
   RALPH_PRD_JSON_ADAPTER_ID,
-} from "./ralph-prd-json.js";
+} from './ralph-prd-json.js';
 
-export type {
-  RalphPrdJsonAdapterOptions,
-  RalphPrdJsonSummary,
-} from "./ralph-prd-json.js";
+export type { RalphPrdJsonAdapterOptions, RalphPrdJsonSummary } from './ralph-prd-json.js';
 
 // ─── ralph PRD completion detection ─────────────────────
-export { detectCompletedRalphPrdRecords } from "./completed-ralph-prd.js";
+export { detectCompletedRalphPrdRecords } from './completed-ralph-prd.js';
 
-export type { CompletedRalphPrdDetectionOptions } from "./completed-ralph-prd.js";
+export type { CompletedRalphPrdDetectionOptions } from './completed-ralph-prd.js';

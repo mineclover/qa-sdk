@@ -21,7 +21,7 @@ export interface FlowEntry {
   readonly keys: readonly string[];
   readonly ctx: Record<string, string>;
   readonly timestamp: string;
-  readonly source: "demo" | "live" | "manual";
+  readonly source: 'demo' | 'live' | 'manual';
 }
 
 export class FlowHistory {
@@ -33,9 +33,15 @@ export class FlowHistory {
     this._viewIdx = -1; // 새 항목이 오면 최신으로
   }
 
-  get length(): number { return this.entries.length; }
-  get viewIndex(): number { return this._viewIdx === -1 ? this.entries.length - 1 : this._viewIdx; }
-  get isLive(): boolean { return this._viewIdx === -1; }
+  get length(): number {
+    return this.entries.length;
+  }
+  get viewIndex(): number {
+    return this._viewIdx === -1 ? this.entries.length - 1 : this._viewIdx;
+  }
+  get isLive(): boolean {
+    return this._viewIdx === -1;
+  }
 
   /** 현재 보고 있는 entry */
   current(): FlowEntry | undefined {
@@ -68,30 +74,38 @@ export class FlowHistory {
   }
 
   /** 최신 모드로 */
-  goLive(): void { this._viewIdx = -1; }
+  goLive(): void {
+    this._viewIdx = -1;
+  }
 
   /** 전체 초기화 */
-  clear(): void { this.entries = []; this._viewIdx = -1; }
+  clear(): void {
+    this.entries = [];
+    this._viewIdx = -1;
+  }
 
   /** 전체 이력 */
-  all(): readonly FlowEntry[] { return this.entries; }
+  all(): readonly FlowEntry[] {
+    return this.entries;
+  }
 
   /** 특정 prefix를 포함하는 스텝만 필터 */
   filterByPrefix(prefixId: string): FlowEntry[] {
-    return this.entries.filter(e =>
-      e.keys.some(k => k.startsWith(prefixId + "/")) ||
-      e.flow.some(f => f.cell.startsWith(prefixId + "/"))
+    return this.entries.filter(
+      (e) =>
+        e.keys.some((k) => k.startsWith(prefixId + '/')) ||
+        e.flow.some((f) => f.cell.startsWith(prefixId + '/')),
     );
   }
 
   /** 특정 tier만 포함하는 스텝 필터 */
   filterByTier(tier: string): FlowEntry[] {
-    return this.entries.filter(e => e.flow.some(f => f.tier === tier));
+    return this.entries.filter((e) => e.flow.some((f) => f.tier === tier));
   }
 
   /** 표시용 텍스트 */
   indexLabel(): string {
-    if (this.entries.length === 0) return "-/-";
+    if (this.entries.length === 0) return '-/-';
     const idx = this._viewIdx === -1 ? this.entries.length : this._viewIdx + 1;
     return `${idx}/${this.entries.length}`;
   }

@@ -7,7 +7,7 @@ const FNV_PRIME = 0x01000193;
 
 export function stickyHashBucket(userId: string): number {
   if (!userId || userId.length === 0) {
-    throw new Error("stickyHashBucket: userId is empty");
+    throw new Error('stickyHashBucket: userId is empty');
   }
   let hash = FNV_OFFSET_BASIS;
   for (let i = 0; i < userId.length; i++) {

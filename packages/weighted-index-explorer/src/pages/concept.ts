@@ -1,22 +1,23 @@
 // @def.boundary weighted-index-system
 // @def.doc weighted-index-system
 
+import { RESOURCES, ACTIONS, ROLES, ENVS, WI4, WEIGHTS4, RESOURCE_KO, ACTION_KO } from '../data.js';
 import {
-  RESOURCES, ACTIONS, ROLES, ENVS, WI4, WEIGHTS4,
-  RESOURCE_KO, ACTION_KO,
-} from "../data.js";
-import {
-  RESOURCE_FILL, RESOURCE_INK,
-  ACTION_FILL, ACTION_INK,
-  ROLE_FILL, ROLE_INK,
-  ENV_FILL, ENV_INK,
-} from "../utils/colors.js";
-import { WeightedIndex } from "weighted-index";
-import { colLetter } from "weighted-ui";
+  RESOURCE_FILL,
+  RESOURCE_INK,
+  ACTION_FILL,
+  ACTION_INK,
+  ROLE_FILL,
+  ROLE_INK,
+  ENV_FILL,
+  ENV_INK,
+} from '../utils/colors.js';
+import { WeightedIndex } from 'weighted-index';
+import { colLetter } from 'weighted-ui';
 
 // ── Page router ───────────────────────────────────────────────────────────
 
-export type ConceptPage = "dim1" | "dim2" | "dim3" | "dim4";
+export type ConceptPage = 'dim1' | 'dim2' | 'dim3' | 'dim4';
 
 export function renderConcept(container: HTMLElement, page: ConceptPage): void {
   const html = {
@@ -42,8 +43,8 @@ export function renderConceptAll(container: HTMLElement): void {
 
 function renderDim1(): string {
   const cells = RESOURCES.map((res, i) => {
-    const fill = RESOURCE_FILL[res] ?? "#f2f2f2";
-    const ink  = RESOURCE_INK[res]  ?? "#595959";
+    const fill = RESOURCE_FILL[res] ?? '#f2f2f2';
+    const ink = RESOURCE_INK[res] ?? '#595959';
     return `
       <div class="c1d-cell" style="border-top-color:${ink}">
         <div class="c1d-idx" style="color:${ink}">${colLetter(i)}</div>
@@ -52,7 +53,7 @@ function renderDim1(): string {
         <div class="c1d-ko">${RESOURCE_KO[res]}</div>
       </div>
     `;
-  }).join("");
+  }).join('');
 
   return `
     <h2 class="concept-section-title">차원 1 — 리소스 (resource)</h2>
@@ -85,7 +86,8 @@ function renderDim1(): string {
           <thead><tr>
             <th>resource</th><th>한국어</th><th>x₁</th><th>encode(x₁)</th><th>decode(id)</th>
           </tr></thead>
-          <tbody>${RESOURCES.map((res, i) => `
+          <tbody>${RESOURCES.map(
+            (res, i) => `
             <tr>
               <td class="td-key">${res}</td>
               <td>${RESOURCE_KO[res]}</td>
@@ -93,7 +95,8 @@ function renderDim1(): string {
               <td class="td-num td-id2">${i}</td>
               <td class="td-num">${i + 1}</td>
             </tr>
-          `).join("")}</tbody>
+          `,
+          ).join('')}</tbody>
         </table>
       </div>
     </div>
@@ -114,27 +117,27 @@ function renderDim1(): string {
 // ═════════════════════════════════════════════════════════════════════════
 
 function renderDim2(): string {
-  const wi2 = new WeightedIndex([8, 4], ["resource", "action"]);
+  const wi2 = new WeightedIndex([8, 4], ['resource', 'action']);
 
   // Build 8×4 grid HTML
   const colHeaders = ACTIONS.map((act, xi) => {
-    const fill = ACTION_FILL[act] ?? "#f2f2f2";
-    const ink  = ACTION_INK[act]  ?? "#595959";
+    const fill = ACTION_FILL[act] ?? '#f2f2f2';
+    const ink = ACTION_INK[act] ?? '#595959';
     return `<th class="mini-grid-tbl-th">
       <span class="col-letter">${colLetter(xi)}</span>
       <span style="display:block;background:${fill};color:${ink};padding:0 4px;border-radius:2px;font-weight:600">${act}</span>
       <span style="display:block;font-size:0.62rem;color:${ink};font-weight:400">${ACTION_KO[act]}</span>
     </th>`;
-  }).join("");
+  }).join('');
 
   const rows = RESOURCES.map((res, ri) => {
-    const rFill = RESOURCE_FILL[res] ?? "#f2f2f2";
-    const rInk  = RESOURCE_INK[res]  ?? "#595959";
+    const rFill = RESOURCE_FILL[res] ?? '#f2f2f2';
+    const rInk = RESOURCE_INK[res] ?? '#595959';
     const cells = ACTIONS.map((act, ai) => {
       const id = wi2.encode([ri + 1, ai + 1]);
-      const aFill = ACTION_FILL[act] ?? "#f2f2f2";
+      const aFill = ACTION_FILL[act] ?? '#f2f2f2';
       return `<td style="background:${aFill};text-align:center;font-weight:700;font-size:0.9rem">${id}</td>`;
-    }).join("");
+    }).join('');
     return `<tr>
       <th class="mgt-rh">
         <span class="row-num">${ri + 1}</span>
@@ -142,7 +145,7 @@ function renderDim2(): string {
       </th>
       ${cells}
     </tr>`;
-  }).join("");
+  }).join('');
 
   return `
     <h2 class="concept-section-title">차원 2 — 리소스 × 액션 (resource × action)</h2>
@@ -210,35 +213,41 @@ function renderDim2(): string {
 // ═════════════════════════════════════════════════════════════════════════
 
 function renderDim3(): string {
-  const wi3 = new WeightedIndex([8, 4, 5], ["resource", "action", "role"]);
+  const wi3 = new WeightedIndex([8, 4, 5], ['resource', 'action', 'role']);
 
   // Show 5 "slices" - one per role - each showing a mini 2×3 grid (first 2 resources × first 3 actions)
   const slices = ROLES.map((role, ri) => {
-    const rFill = ROLE_FILL[role] ?? "#f2f2f2";
-    const rInk  = ROLE_INK[role]  ?? "#595959";
+    const rFill = ROLE_FILL[role] ?? '#f2f2f2';
+    const rInk = ROLE_INK[role] ?? '#595959';
 
-    const colH = ACTIONS.slice(0, 3).map((act, _ai) => {
-      const fill = ACTION_FILL[act] ?? "#f2f2f2";
-      const ink  = ACTION_INK[act]  ?? "#595959";
-      return `<th style="background:${fill};color:${ink};padding:3px 6px;font-size:0.65rem;min-width:52px">${act}</th>`;
-    }).join("");
+    const colH = ACTIONS.slice(0, 3)
+      .map((act, _ai) => {
+        const fill = ACTION_FILL[act] ?? '#f2f2f2';
+        const ink = ACTION_INK[act] ?? '#595959';
+        return `<th style="background:${fill};color:${ink};padding:3px 6px;font-size:0.65rem;min-width:52px">${act}</th>`;
+      })
+      .join('');
 
-    const rows = RESOURCES.slice(0, 4).map((res, resi) => {
-      const cells = ACTIONS.slice(0, 3).map((act, ai) => {
-        const id = wi3.encode([resi + 1, ai + 1, ri + 1]);
-        const aFill = ACTION_FILL[act] ?? "#f2f2f2";
-        return `<td style="background:${aFill};text-align:center;font-weight:700;font-size:0.78rem">${id}</td>`;
-      }).join("");
-      const resFill = RESOURCE_FILL[res] ?? "#f2f2f2";
-      const resInk  = RESOURCE_INK[res]  ?? "#595959";
-      return `<tr>
+    const rows = RESOURCES.slice(0, 4)
+      .map((res, resi) => {
+        const cells = ACTIONS.slice(0, 3)
+          .map((act, ai) => {
+            const id = wi3.encode([resi + 1, ai + 1, ri + 1]);
+            const aFill = ACTION_FILL[act] ?? '#f2f2f2';
+            return `<td style="background:${aFill};text-align:center;font-weight:700;font-size:0.78rem">${id}</td>`;
+          })
+          .join('');
+        const resFill = RESOURCE_FILL[res] ?? '#f2f2f2';
+        const resInk = RESOURCE_INK[res] ?? '#595959';
+        return `<tr>
         <th style="background:${resFill};color:${resInk};font-size:0.62rem;padding:2px 5px;text-align:right;border-right:1px solid #b0b0b0">${res}</th>
         ${cells}
       </tr>`;
-    }).join("");
+      })
+      .join('');
 
     const baseId = wi3.encode([1, 1, ri + 1]);
-    const maxId  = wi3.encode([8, 4, ri + 1]);
+    const maxId = wi3.encode([8, 4, ri + 1]);
 
     return `
       <div class="layer-box">
@@ -311,36 +320,41 @@ function renderDim4(): string {
 
   // Weight table
   const weightRows = [
-    ["1", "resource", "8",  String(W1)],
-    ["2", "action",   "4",  String(W2)],
-    ["3", "role",     "5",  String(W3)],
-    ["4", "env",      "4",  String(W4)],
-  ].map(([i, dim, n, w]) => `
+    ['1', 'resource', '8', String(W1)],
+    ['2', 'action', '4', String(W2)],
+    ['3', 'role', '5', String(W3)],
+    ['4', 'env', '4', String(W4)],
+  ]
+    .map(
+      ([i, dim, n, w]) => `
     <tr>
       <td class="td-num">${i}</td>
       <td><code>${dim}</code></td>
       <td class="td-num td-n">${n}</td>
       <td class="td-num td-w">${w}</td>
     </tr>
-  `).join("");
+  `,
+    )
+    .join('');
 
   // Sample encode/decode examples
   const examples = [
-    { coords: [1, 1, 1, 1], label: "guest가 production에서 document read" },
-    { coords: [1, 1, 5, 1], label: "super_admin이 production에서 document read" },
-    { coords: [6, 4, 4, 1], label: "admin이 production에서 admin_panel manage" },
-    { coords: [8, 1, 5, 1], label: "super_admin이 production에서 audit_log read" },
-    { coords: [3, 2, 3, 3], label: "editor가 development에서 database write" },
-  ].map(({ coords, label }) => {
-    const [r, a, ro, e] = coords;
-    const id = WI4.encode(coords as [number,number,number,number]);
-    const rName  = RESOURCES[r-1];
-    const aName  = ACTIONS[a-1];
-    const roName = ROLES[ro-1];
-    const eName  = ENVS[e-1];
-    return `
+    { coords: [1, 1, 1, 1], label: 'guest가 production에서 document read' },
+    { coords: [1, 1, 5, 1], label: 'super_admin이 production에서 document read' },
+    { coords: [6, 4, 4, 1], label: 'admin이 production에서 admin_panel manage' },
+    { coords: [8, 1, 5, 1], label: 'super_admin이 production에서 audit_log read' },
+    { coords: [3, 2, 3, 3], label: 'editor가 development에서 database write' },
+  ]
+    .map(({ coords, label }) => {
+      const [r, a, ro, e] = coords;
+      const id = WI4.encode(coords as [number, number, number, number]);
+      const rName = RESOURCES[r - 1];
+      const aName = ACTIONS[a - 1];
+      const roName = ROLES[ro - 1];
+      const eName = ENVS[e - 1];
+      return `
       <tr>
-        <td><code style="font-size:0.68rem">[${coords.join(", ")}]</code></td>
+        <td><code style="font-size:0.68rem">[${coords.join(', ')}]</code></td>
         <td class="td-num td-id2">${id}</td>
         <td style="font-size:0.7rem">
           <span style="background:${RESOURCE_FILL[rName]};color:${RESOURCE_INK[rName]};padding:0 3px;border-radius:2px">${rName}</span>
@@ -351,7 +365,8 @@ function renderDim4(): string {
         <td style="font-size:0.7rem;color:#767676">${label}</td>
       </tr>
     `;
-  }).join("");
+    })
+    .join('');
 
   // Bitset explanation
   return `
@@ -467,4 +482,3 @@ function hasPermission(resource, action, role, env): boolean {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-

@@ -15,9 +15,9 @@
  * RoleResolver / UserOverrideStore를 직접 쓰지 말고 이 클래스를 사용한다.
  */
 
-import { setBit, hasBit } from "weighted-index";
-import { RoleResolver, type ResolutionContext, type ExplainEntry } from "./role-resolver.js";
-import { UserOverrideStore } from "./user-override.js";
+import { setBit, hasBit } from 'weighted-index';
+import { RoleResolver, type ResolutionContext, type ExplainEntry } from './role-resolver.js';
+import { UserOverrideStore } from './user-override.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,8 +35,8 @@ export interface FinalMaskResult {
 
 /** 권한 거부 이유. */
 export type DenialReason =
-  | { kind: "not-assigned" }     // 어떤 role도 이 feature를 부여하지 않음
-  | { kind: "user-override" };   // role에서 부여됐지만 유저 override로 비활성화됨
+  | { kind: 'not-assigned' } // 어떤 role도 이 feature를 부여하지 않음
+  | { kind: 'user-override' }; // role에서 부여됐지만 유저 override로 비활성화됨
 
 /** 권한 감사 결과. */
 export interface AuditResult {
@@ -59,7 +59,7 @@ export interface AuditResult {
 }
 
 export interface GrantSource {
-  source: "direct" | "org-role";
+  source: 'direct' | 'org-role';
   /** org-role 출처일 때 org role ID. */
   orgRoleId?: string;
   /** 실제 domain role ID. */
@@ -81,15 +81,16 @@ export class UserPermissionEngine {
    *
    * role mask(OR 합산) → AND NOT override deny mask → final mask.
    */
-  resolveFinalMask(
-    userId: string,
-    ctx: ResolutionContext,
-    domain: string,
-  ): FinalMaskResult {
+  resolveFinalMask(userId: string, ctx: ResolutionContext, domain: string): FinalMaskResult {
     const { mask: roleMask, featureIds } = this.resolver.resolveDomainMask(ctx, domain);
 
     if (featureIds.length === 0) {
-      return { mask: new Uint8Array(0), featureIds: [], roleGrantedFeatures: [], deniedFeatures: [] };
+      return {
+        mask: new Uint8Array(0),
+        featureIds: [],
+        roleGrantedFeatures: [],
+        deniedFeatures: [],
+      };
     }
 
     const denied = this.overrides.getDeniedFeatures(userId, domain);
@@ -125,12 +126,7 @@ export class UserPermissionEngine {
    * 동일 도메인에서 여러 feature를 체크할 때는
    * resolveFinalMask()로 mask를 한 번만 받아 hasBit()로 직접 체크할 것.
    */
-  check(
-    userId: string,
-    ctx: ResolutionContext,
-    domain: string,
-    feature: string,
-  ): boolean {
+  check(userId: string, ctx: ResolutionContext, domain: string, feature: string): boolean {
     const { mask, featureIds } = this.resolveFinalMask(userId, ctx, domain);
     const idx = featureIds.indexOf(feature);
     if (idx === -1) return false;
@@ -143,12 +139,7 @@ export class UserPermissionEngine {
    * - 권한이 있는 경우: 어느 role 배정에서 왔는지, 상속 경로
    * - 권한이 없는 경우: not-assigned인지 user-override로 차단됐는지
    */
-  audit(
-    userId: string,
-    ctx: ResolutionContext,
-    domain: string,
-    feature: string,
-  ): AuditResult {
+  audit(userId: string, ctx: ResolutionContext, domain: string, feature: string): AuditResult {
     const { mask, featureIds, deniedFeatures } = this.resolveFinalMask(userId, ctx, domain);
 
     const idx = featureIds.indexOf(feature);
@@ -159,9 +150,9 @@ export class UserPermissionEngine {
     const roleGranted = explainEntries.length > 0;
     const userDenied = deniedFeatures.includes(feature);
 
-    const sources: GrantSource[] = explainEntries.map(e => ({
+    const sources: GrantSource[] = explainEntries.map((e) => ({
       source: e.grantedBy.source,
-      orgRoleId: e.grantedBy.source === "org-role" ? ctx.orgRoleId : undefined,
+      orgRoleId: e.grantedBy.source === 'org-role' ? ctx.orgRoleId : undefined,
       domainRole: e.grantedBy.role,
       inheritancePath: e.grantedBy.inheritancePath,
     }));
@@ -169,9 +160,9 @@ export class UserPermissionEngine {
     let denialReason: DenialReason | null = null;
     if (!finalGranted) {
       if (roleGranted && userDenied) {
-        denialReason = { kind: "user-override" };
+        denialReason = { kind: 'user-override' };
       } else {
-        denialReason = { kind: "not-assigned" };
+        denialReason = { kind: 'not-assigned' };
       }
     }
 

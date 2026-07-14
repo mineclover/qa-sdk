@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import * as schema from "../db/schema.js";
-import { SqlSemanticGroundingStore, createSemanticTermId } from "./semantic-grounding-store.js";
+import { describe, expect, it } from 'vitest';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import * as schema from '../db/schema.js';
+import { SqlSemanticGroundingStore, createSemanticTermId } from './semantic-grounding-store.js';
 
 function createStore() {
-  const raw = new Database(":memory:");
+  const raw = new Database(':memory:');
   raw.exec(`
     CREATE TABLE semantic_terms (
       term_id text PRIMARY KEY NOT NULL,
@@ -80,94 +80,94 @@ function createStore() {
   return { raw, store: new SqlSemanticGroundingStore(drizzle({ client: raw, schema })) };
 }
 
-describe("SqlSemanticGroundingStore", () => {
-  it("upserts terms and aliases, then returns terms with aliases for resolution", () => {
+describe('SqlSemanticGroundingStore', () => {
+  it('upserts terms and aliases, then returns terms with aliases for resolution', () => {
     const { store } = createStore();
     const termId = createSemanticTermId({
-      kind: "document",
-      canonicalLabel: "cart add",
-      coordinate: "cart_event:v2:10",
-      docId: "prefix-cart_event",
+      kind: 'document',
+      canonicalLabel: 'cart add',
+      coordinate: 'cart_event:v2:10',
+      docId: 'prefix-cart_event',
     });
 
     store.upsertTerm({
       termId,
-      kind: "document",
-      canonicalLabel: "cart add",
-      normalizedLabel: "cart add",
-      coordinate: "cart_event:v2:10",
-      prefixId: "cart_event",
-      versionId: "v2",
+      kind: 'document',
+      canonicalLabel: 'cart add',
+      normalizedLabel: 'cart add',
+      coordinate: 'cart_event:v2:10',
+      prefixId: 'cart_event',
+      versionId: 'v2',
       address: 10,
-      docId: "prefix-cart_event",
-      sourcePath: "docs/prefix-cart_event.md",
-      evidence: { source: "test" },
-      updatedAt: "2026-06-30T00:00:00.000Z",
+      docId: 'prefix-cart_event',
+      sourcePath: 'docs/prefix-cart_event.md',
+      evidence: { source: 'test' },
+      updatedAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertAlias({
-      aliasId: "alias-cart-add-ko",
+      aliasId: 'alias-cart-add-ko',
       termId,
-      alias: "상품 담기",
-      normalizedAlias: "상품 담기",
-      locale: "ko",
-      source: "manual",
+      alias: '상품 담기',
+      normalizedAlias: '상품 담기',
+      locale: 'ko',
+      source: 'manual',
       confidence: 0.95,
-      createdAt: "2026-06-30T00:00:00.000Z",
+      createdAt: '2026-06-30T00:00:00.000Z',
     });
 
-    const terms = store.listTermsForResolution("상품 담기");
+    const terms = store.listTermsForResolution('상품 담기');
     expect(terms).toHaveLength(1);
     expect(terms[0].termId).toBe(termId);
-    expect(terms[0].aliases[0]).toMatchObject({ alias: "상품 담기", confidence: 0.95 });
+    expect(terms[0].aliases[0]).toMatchObject({ alias: '상품 담기', confidence: 0.95 });
   });
 
-  it("updates aliases by logical identity when alias ids change", () => {
+  it('updates aliases by logical identity when alias ids change', () => {
     const { raw, store } = createStore();
     const termId = createSemanticTermId({
-      kind: "document",
-      canonicalLabel: "cart add",
-      coordinate: "cart_event:v2:10",
-      docId: "prefix-cart_event",
+      kind: 'document',
+      canonicalLabel: 'cart add',
+      coordinate: 'cart_event:v2:10',
+      docId: 'prefix-cart_event',
     });
 
     store.upsertTerm({
       termId,
-      kind: "document",
-      canonicalLabel: "cart add",
-      normalizedLabel: "cart add",
-      coordinate: "cart_event:v2:10",
-      prefixId: "cart_event",
-      versionId: "v2",
+      kind: 'document',
+      canonicalLabel: 'cart add',
+      normalizedLabel: 'cart add',
+      coordinate: 'cart_event:v2:10',
+      prefixId: 'cart_event',
+      versionId: 'v2',
       address: 10,
-      docId: "prefix-cart_event",
-      sourcePath: "docs/prefix-cart_event.md",
-      evidence: { source: "test" },
-      updatedAt: "2026-06-30T00:00:00.000Z",
+      docId: 'prefix-cart_event',
+      sourcePath: 'docs/prefix-cart_event.md',
+      evidence: { source: 'test' },
+      updatedAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertAlias({
-      aliasId: "alias-cart-add-ko-1",
+      aliasId: 'alias-cart-add-ko-1',
       termId,
-      alias: "상품 담기",
-      normalizedAlias: "상품 담기",
-      locale: "ko",
-      source: "manual",
+      alias: '상품 담기',
+      normalizedAlias: '상품 담기',
+      locale: 'ko',
+      source: 'manual',
       confidence: 0.95,
-      createdAt: "2026-06-30T00:00:00.000Z",
+      createdAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertAlias({
-      aliasId: "alias-cart-add-ko-2",
+      aliasId: 'alias-cart-add-ko-2',
       termId,
-      alias: "상품 담기 (수정)",
-      normalizedAlias: "상품 담기",
-      locale: "ko-KR",
-      source: "manual",
+      alias: '상품 담기 (수정)',
+      normalizedAlias: '상품 담기',
+      locale: 'ko-KR',
+      source: 'manual',
       confidence: 0.87,
-      createdAt: "2026-06-30T01:00:00.000Z",
+      createdAt: '2026-06-30T01:00:00.000Z',
     });
 
     const rows = raw
       .prepare(
-        "SELECT alias_id, term_id, alias, normalized_alias, locale, source, confidence, created_at FROM semantic_aliases ORDER BY alias_id",
+        'SELECT alias_id, term_id, alias, normalized_alias, locale, source, confidence, created_at FROM semantic_aliases ORDER BY alias_id',
       )
       .all() as Array<{
       alias_id: string;
@@ -182,110 +182,106 @@ describe("SqlSemanticGroundingStore", () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
-      alias_id: "alias-cart-add-ko-2",
+      alias_id: 'alias-cart-add-ko-2',
       term_id: termId,
-      alias: "상품 담기 (수정)",
-      normalized_alias: "상품 담기",
-      locale: "ko-KR",
-      source: "manual",
+      alias: '상품 담기 (수정)',
+      normalized_alias: '상품 담기',
+      locale: 'ko-KR',
+      source: 'manual',
       confidence: 0.87,
-      created_at: "2026-06-30T01:00:00.000Z",
+      created_at: '2026-06-30T01:00:00.000Z',
     });
   });
 
-  it("deletes stale doc terms and dependent aliases during snapshot replacement", () => {
+  it('deletes stale doc terms and dependent aliases during snapshot replacement', () => {
     const { raw, store } = createStore();
     const keepTermId = createSemanticTermId({
-      kind: "document",
-      canonicalLabel: "cart add",
-      coordinate: "cart_event:v2:10",
-      docId: "prefix-cart_event",
+      kind: 'document',
+      canonicalLabel: 'cart add',
+      coordinate: 'cart_event:v2:10',
+      docId: 'prefix-cart_event',
     });
     const staleTermId = createSemanticTermId({
-      kind: "document",
-      canonicalLabel: "cart remove",
-      coordinate: "cart_event:v2:11",
-      docId: "prefix-checkout_event",
+      kind: 'document',
+      canonicalLabel: 'cart remove',
+      coordinate: 'cart_event:v2:11',
+      docId: 'prefix-checkout_event',
     });
 
     store.upsertTerm({
       termId: keepTermId,
-      kind: "document",
-      canonicalLabel: "cart add",
-      normalizedLabel: "cart add",
-      coordinate: "cart_event:v2:10",
-      prefixId: "cart_event",
-      versionId: "v2",
+      kind: 'document',
+      canonicalLabel: 'cart add',
+      normalizedLabel: 'cart add',
+      coordinate: 'cart_event:v2:10',
+      prefixId: 'cart_event',
+      versionId: 'v2',
       address: 10,
-      docId: "prefix-cart_event",
-      evidence: { source: "test" },
-      updatedAt: "2026-06-30T00:00:00.000Z",
+      docId: 'prefix-cart_event',
+      evidence: { source: 'test' },
+      updatedAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertAlias({
-      aliasId: "alias-cart-add",
+      aliasId: 'alias-cart-add',
       termId: keepTermId,
-      alias: "상품 담기",
-      normalizedAlias: "상품 담기",
-      source: "manual",
+      alias: '상품 담기',
+      normalizedAlias: '상품 담기',
+      source: 'manual',
       confidence: 0.95,
-      createdAt: "2026-06-30T00:00:00.000Z",
+      createdAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertTerm({
       termId: staleTermId,
-      kind: "document",
-      canonicalLabel: "cart remove",
-      normalizedLabel: "cart remove",
-      coordinate: "cart_event:v2:11",
-      prefixId: "cart_event",
-      versionId: "v2",
+      kind: 'document',
+      canonicalLabel: 'cart remove',
+      normalizedLabel: 'cart remove',
+      coordinate: 'cart_event:v2:11',
+      prefixId: 'cart_event',
+      versionId: 'v2',
       address: 11,
-      docId: "prefix-checkout_event",
-      evidence: { source: "test" },
-      updatedAt: "2026-06-30T00:00:00.000Z",
+      docId: 'prefix-checkout_event',
+      evidence: { source: 'test' },
+      updatedAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertAlias({
-      aliasId: "alias-cart-remove",
+      aliasId: 'alias-cart-remove',
       termId: staleTermId,
-      alias: "상품 제거",
-      normalizedAlias: "상품 제거",
-      source: "manual",
+      alias: '상품 제거',
+      normalizedAlias: '상품 제거',
+      source: 'manual',
       confidence: 0.9,
-      createdAt: "2026-06-30T00:00:00.000Z",
+      createdAt: '2026-06-30T00:00:00.000Z',
     });
 
-    store.deleteTermsNotInDocIds(["prefix-cart_event"]);
+    store.deleteTermsNotInDocIds(['prefix-cart_event']);
 
     const termRows = raw
-      .prepare("SELECT term_id, doc_id FROM semantic_terms ORDER BY term_id")
+      .prepare('SELECT term_id, doc_id FROM semantic_terms ORDER BY term_id')
       .all() as Array<{ term_id: string; doc_id: string | null }>;
     const aliasRows = raw
-      .prepare("SELECT alias_id, term_id FROM semantic_aliases ORDER BY alias_id")
+      .prepare('SELECT alias_id, term_id FROM semantic_aliases ORDER BY alias_id')
       .all() as Array<{ alias_id: string; term_id: string }>;
 
-    expect(termRows).toEqual([
-      { term_id: keepTermId, doc_id: "prefix-cart_event" },
-    ]);
-    expect(aliasRows).toEqual([
-      { alias_id: "alias-cart-add", term_id: keepTermId },
-    ]);
+    expect(termRows).toEqual([{ term_id: keepTermId, doc_id: 'prefix-cart_event' }]);
+    expect(aliasRows).toEqual([{ alias_id: 'alias-cart-add', term_id: keepTermId }]);
   });
 
-  it("deduplicates feedback proposals by kind and normalized term", () => {
+  it('deduplicates feedback proposals by kind and normalized term', () => {
     const { store } = createStore();
     const first = store.upsertFeedbackProposal({
-      kind: "alias-add",
-      term: "상품 담기",
-      normalizedTerm: "상품 담기",
-      dedupeKey: "alias-add:상품 담기",
-      payload: { query: "상품 담기" },
+      kind: 'alias-add',
+      term: '상품 담기',
+      normalizedTerm: '상품 담기',
+      dedupeKey: 'alias-add:상품 담기',
+      payload: { query: '상품 담기' },
       evidence: { count: 1 },
     });
     const second = store.upsertFeedbackProposal({
-      kind: "alias-add",
-      term: "상품 담기",
-      normalizedTerm: "상품 담기",
-      dedupeKey: "alias-add:상품 담기",
-      payload: { query: "상품 담기" },
+      kind: 'alias-add',
+      term: '상품 담기',
+      normalizedTerm: '상품 담기',
+      dedupeKey: 'alias-add:상품 담기',
+      payload: { query: '상품 담기' },
       evidence: { count: 2 },
     });
 
@@ -294,120 +290,124 @@ describe("SqlSemanticGroundingStore", () => {
     expect(store.listOpenFeedbackProposals()[0].evidence).toEqual({ count: 2 });
   });
 
-  it("preserves a non-open feedback proposal status when rerun by dedupe key", () => {
+  it('preserves a non-open feedback proposal status when rerun by dedupe key', () => {
     const { raw, store } = createStore();
     const first = store.upsertFeedbackProposal({
-      kind: "alias-add",
-      term: "상품 담기",
-      normalizedTerm: "상품 담기",
-      dedupeKey: "alias-add:상품 담기",
-      payload: { query: "상품 담기" },
+      kind: 'alias-add',
+      term: '상품 담기',
+      normalizedTerm: '상품 담기',
+      dedupeKey: 'alias-add:상품 담기',
+      payload: { query: '상품 담기' },
       evidence: { count: 1 },
     });
-    raw.prepare(
-      "UPDATE semantic_feedback_proposals SET status = ?, updated_at = ? WHERE proposal_id = ?",
-    ).run("accepted", "2026-06-30T01:00:00.000Z", first.proposalId);
+    raw
+      .prepare(
+        'UPDATE semantic_feedback_proposals SET status = ?, updated_at = ? WHERE proposal_id = ?',
+      )
+      .run('accepted', '2026-06-30T01:00:00.000Z', first.proposalId);
 
     const rerun = store.upsertFeedbackProposal({
-      kind: "alias-add",
-      term: "상품 담기",
-      normalizedTerm: "상품 담기",
-      dedupeKey: "alias-add:상품 담기",
-      payload: { query: "상품 담기" },
+      kind: 'alias-add',
+      term: '상품 담기',
+      normalizedTerm: '상품 담기',
+      dedupeKey: 'alias-add:상품 담기',
+      payload: { query: '상품 담기' },
       evidence: { count: 2 },
     });
 
     expect(rerun.proposalId).toBe(first.proposalId);
-    expect(rerun.status).toBe("accepted");
+    expect(rerun.status).toBe('accepted');
     expect(rerun.evidence).toEqual({ count: 2 });
   });
 
-  it("creates a sqlite runtime snapshot with terms, aliases, relations, and open proposals", () => {
+  it('creates a sqlite runtime snapshot with terms, aliases, relations, and open proposals', () => {
     const { store } = createStore();
     const sourceTermId = createSemanticTermId({
-      kind: "document",
-      canonicalLabel: "cart event",
-      coordinate: "cart_event:v2:10",
-      docId: "prefix-cart_event",
+      kind: 'document',
+      canonicalLabel: 'cart event',
+      coordinate: 'cart_event:v2:10',
+      docId: 'prefix-cart_event',
     });
     const targetTermId = createSemanticTermId({
-      kind: "document",
-      canonicalLabel: "checkout event",
-      coordinate: "checkout_event:v1:20",
-      docId: "prefix-checkout_event",
+      kind: 'document',
+      canonicalLabel: 'checkout event',
+      coordinate: 'checkout_event:v1:20',
+      docId: 'prefix-checkout_event',
     });
 
     store.upsertTerm({
       termId: sourceTermId,
-      kind: "document",
-      canonicalLabel: "cart event",
-      normalizedLabel: "cart event",
-      coordinate: "cart_event:v2:10",
-      prefixId: "cart_event",
-      versionId: "v2",
+      kind: 'document',
+      canonicalLabel: 'cart event',
+      normalizedLabel: 'cart event',
+      coordinate: 'cart_event:v2:10',
+      prefixId: 'cart_event',
+      versionId: 'v2',
       address: 10,
-      docId: "prefix-cart_event",
-      evidence: { source: "test" },
-      updatedAt: "2026-06-30T00:00:00.000Z",
+      docId: 'prefix-cart_event',
+      evidence: { source: 'test' },
+      updatedAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertTerm({
       termId: targetTermId,
-      kind: "document",
-      canonicalLabel: "checkout event",
-      normalizedLabel: "checkout event",
-      coordinate: "checkout_event:v1:20",
-      prefixId: "checkout_event",
-      versionId: "v1",
+      kind: 'document',
+      canonicalLabel: 'checkout event',
+      normalizedLabel: 'checkout event',
+      coordinate: 'checkout_event:v1:20',
+      prefixId: 'checkout_event',
+      versionId: 'v1',
       address: 20,
-      docId: "prefix-checkout_event",
-      evidence: { source: "test" },
-      updatedAt: "2026-06-30T00:00:00.000Z",
+      docId: 'prefix-checkout_event',
+      evidence: { source: 'test' },
+      updatedAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertAlias({
-      aliasId: "alias-cart-event",
+      aliasId: 'alias-cart-event',
       termId: sourceTermId,
-      alias: "장바구니 이벤트",
-      normalizedAlias: "장바구니 이벤트",
-      source: "manual",
+      alias: '장바구니 이벤트',
+      normalizedAlias: '장바구니 이벤트',
+      source: 'manual',
       confidence: 0.95,
-      createdAt: "2026-06-30T00:00:00.000Z",
+      createdAt: '2026-06-30T00:00:00.000Z',
     });
     store.upsertRelation({
-      relationId: "relation-cart-checkout",
+      relationId: 'relation-cart-checkout',
       sourceTermId,
-      relationType: "depends-on",
+      relationType: 'depends-on',
       targetTermId,
-      evidence: { source: "test" },
+      evidence: { source: 'test' },
     });
     store.upsertFeedbackProposal({
-      kind: "axis-promotion",
-      term: "결제 흐름",
-      normalizedTerm: "결제 흐름",
-      dedupeKey: "axis-promotion:결제 흐름",
-      payload: { query: "결제 흐름" },
-      evidence: { fallbackReason: "no-confident-candidate" },
+      kind: 'axis-promotion',
+      term: '결제 흐름',
+      normalizedTerm: '결제 흐름',
+      dedupeKey: 'axis-promotion:결제 흐름',
+      payload: { query: '결제 흐름' },
+      evidence: { fallbackReason: 'no-confident-candidate' },
     });
 
     const snapshot = store.createRuntimeSnapshot();
 
-    expect(snapshot.source).toBe("definition-service.semantic-grounding");
-    expect(snapshot.storeKind).toBe("sqlite");
-    expect(snapshot.terms.map((term) => term.termId).sort()).toEqual([sourceTermId, targetTermId].sort());
+    expect(snapshot.source).toBe('definition-service.semantic-grounding');
+    expect(snapshot.storeKind).toBe('sqlite');
+    expect(snapshot.terms.map((term) => term.termId).sort()).toEqual(
+      [sourceTermId, targetTermId].sort(),
+    );
     expect(snapshot.terms.find((term) => term.termId === sourceTermId)?.aliases).toHaveLength(1);
     expect(snapshot.terms.find((term) => term.termId === sourceTermId)?.relations).toEqual([
       {
-        relationId: "relation-cart-checkout",
+        relationId: 'relation-cart-checkout',
         sourceTermId,
-        relationType: "depends-on",
+        relationType: 'depends-on',
         targetTermId,
-        evidence: { source: "test" },
+        evidence: { source: 'test' },
       },
     ]);
     expect(snapshot.feedbackProposals).toHaveLength(1);
     expect(snapshot.feedbackProposals[0]).toMatchObject({
-      kind: "axis-promotion",
-      normalizedTerm: "결제 흐름",
-      status: "open",
+      kind: 'axis-promotion',
+      normalizedTerm: '결제 흐름',
+      status: 'open',
     });
   });
 });

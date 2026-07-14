@@ -8,7 +8,7 @@
  * calcAddressRanges()로 제약 조건에 따른 주소 범위를 계산한다.
  */
 
-import { type PrefixCodec, calcAddressRanges, type CoordConstraint } from "weighted-index";
+import { type PrefixCodec, calcAddressRanges, type CoordConstraint } from 'weighted-index';
 
 export interface AddressRangeQuery {
   /** prefix 이름 (예: "svc", "perm") */

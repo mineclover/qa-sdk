@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { Hono } from "hono";
+import { Hono } from 'hono';
 import type {
   DlqStore,
   GraphStore,
@@ -10,14 +10,14 @@ import type {
   SessionStore,
   TraceStore,
   VerdictStore,
-} from "@qa-sdk/core";
-import { computePendingVerdicts, computeTraceVerdict, reconstructTrace } from "@qa-sdk/engine";
-import { z } from "zod";
-import type { Logger } from "pino";
-import { badRequest } from "../lib/errors.js";
+} from '@qa-sdk/core';
+import { computePendingVerdicts, computeTraceVerdict, reconstructTrace } from '@qa-sdk/engine';
+import { z } from 'zod';
+import type { Logger } from 'pino';
+import { badRequest } from '../lib/errors.js';
 
 const listQuerySchema = z.object({
-  status: z.enum(["pending"]).default("pending"),
+  status: z.enum(['pending']).default('pending'),
   limit: z.coerce.number().int().positive().optional(),
 });
 
@@ -37,10 +37,10 @@ export function createDlqRoutes(deps: DlqDeps) {
   const app = new Hono();
   const maxRetryAttempts = deps.maxRetryAttempts ?? 3;
 
-  app.get("/v1/admin/dlq", async (c) => {
+  app.get('/v1/admin/dlq', async (c) => {
     const query = listQuerySchema.parse(c.req.query());
 
-    if (query.status !== "pending") {
+    if (query.status !== 'pending') {
       throw badRequest("status: only 'pending' is supported");
     }
 
@@ -51,7 +51,7 @@ export function createDlqRoutes(deps: DlqDeps) {
     });
   });
 
-  app.post("/v1/admin/dlq/retry", async (c) => {
+  app.post('/v1/admin/dlq/retry', async (c) => {
     const items = await deps.dlqStore.findPending(100);
     const resolved: string[] = [];
     const failed: string[] = [];
@@ -68,7 +68,7 @@ export function createDlqRoutes(deps: DlqDeps) {
             attemptCount: item.attemptCount,
             maxRetryAttempts,
           },
-          "skipping dlq item after max retry attempts",
+          'skipping dlq item after max retry attempts',
         );
         continue;
       }
@@ -76,28 +76,24 @@ export function createDlqRoutes(deps: DlqDeps) {
       await deps.dlqStore.markAttempted(item.id);
 
       try {
-        if (item.phase === "reconstruction") {
+        if (item.phase === 'reconstruction') {
           await reconstructTrace(deps, item.traceId);
           await deps.dlqStore.markResolved(item.id);
           resolved.push(item.id);
 
-          await computePendingVerdicts(
-            deps,
-            [item.traceId],
-            {
-              onError: (traceId, error) => {
-                deps.logger?.error(
-                  {
-                    err: error,
-                    dlqId: item.id,
-                    traceId,
-                    phase: "verdict",
-                  },
-                  "failed to compute verdict while retrying reconstruction dlq item",
-                );
-              },
+          await computePendingVerdicts(deps, [item.traceId], {
+            onError: (traceId, error) => {
+              deps.logger?.error(
+                {
+                  err: error,
+                  dlqId: item.id,
+                  traceId,
+                  phase: 'verdict',
+                },
+                'failed to compute verdict while retrying reconstruction dlq item',
+              );
             },
-          );
+          });
           continue;
         }
 
@@ -113,7 +109,7 @@ export function createDlqRoutes(deps: DlqDeps) {
             traceId: item.traceId,
             phase: item.phase,
           },
-          "failed to retry dlq item",
+          'failed to retry dlq item',
         );
       }
     }

@@ -7,9 +7,9 @@
  *   tsx packages/infra-engine/scripts/destroy-gitlab.ts [--backend-url <url>] [--context <ctx>]
  */
 
-process.env.PULUMI_CONFIG_PASSPHRASE ??= "";
+process.env.PULUMI_CONFIG_PASSPHRASE ??= '';
 
-import { LocalWorkspace } from "@pulumi/pulumi/automation/index.js";
+import { LocalWorkspace } from '@pulumi/pulumi/automation/index.js';
 
 interface CliFlags {
   backendUrl?: string;
@@ -21,10 +21,10 @@ function parseFlags(argv: readonly string[]): CliFlags {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]!;
     const next = argv[i + 1];
-    if (arg === "--backend-url") {
+    if (arg === '--backend-url') {
       flags.backendUrl = next;
       i += 1;
-    } else if (arg === "--context") {
+    } else if (arg === '--context') {
       flags.k8sContext = next;
       i += 1;
     }
@@ -34,13 +34,11 @@ function parseFlags(argv: readonly string[]): CliFlags {
 
 async function main(): Promise<void> {
   const flags = parseFlags(process.argv.slice(2));
-  const backendUrl =
-    flags.backendUrl ?? process.env.PULUMI_BACKEND_URL ?? "file://~/.pulumi-local";
-  const k8sContext =
-    flags.k8sContext ?? process.env.KUBECONFIG_CONTEXT ?? "k3d-qa-local";
+  const backendUrl = flags.backendUrl ?? process.env.PULUMI_BACKEND_URL ?? 'file://~/.pulumi-local';
+  const k8sContext = flags.k8sContext ?? process.env.KUBECONFIG_CONTEXT ?? 'k3d-qa-local';
 
-  const projectName = "infra-engine-gitlab";
-  const stackName = "gitlab-local";
+  const projectName = 'infra-engine-gitlab';
+  const stackName = 'gitlab-local';
 
   const stack = await LocalWorkspace.selectStack(
     {
@@ -52,27 +50,27 @@ async function main(): Promise<void> {
     {
       projectSettings: {
         name: projectName,
-        runtime: "nodejs",
+        runtime: 'nodejs',
         backend: { url: backendUrl },
       },
     },
   );
 
-  await stack.setConfig("kubernetes:context", { value: k8sContext });
+  await stack.setConfig('kubernetes:context', { value: k8sContext });
 
   console.log(`[gitlab-destroy] stack ${stackName} destroy…`);
   await stack.destroy({ onOutput: (msg) => process.stdout.write(msg) });
 
-  console.log("");
+  console.log('');
   console.log(
-    "[gitlab-destroy] 정리 완료. emptyDir 사용으로 GitLab 데이터(repo/issue/user)는 모두 제거됨.",
+    '[gitlab-destroy] 정리 완료. emptyDir 사용으로 GitLab 데이터(repo/issue/user)는 모두 제거됨.',
   );
   console.log(
-    "[gitlab-destroy] Pulumi stack 자체를 지우려면: PULUMI_BACKEND_URL=file://~/.pulumi-local pulumi stack rm infra-engine-gitlab/gitlab-local --yes",
+    '[gitlab-destroy] Pulumi stack 자체를 지우려면: PULUMI_BACKEND_URL=file://~/.pulumi-local pulumi stack rm infra-engine-gitlab/gitlab-local --yes',
   );
 }
 
 main().catch((err) => {
-  console.error("[gitlab-destroy] 실패:", err);
+  console.error('[gitlab-destroy] 실패:', err);
   process.exit(1);
 });

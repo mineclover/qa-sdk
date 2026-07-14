@@ -11,7 +11,7 @@
 import type {
   AuthorizationGraphDiff,
   AuthorizationGraphSnapshotRecord,
-} from "authorization-ontology";
+} from 'authorization-ontology';
 
 export interface GraphRetentionPruneResult {
   readonly graphId: string;

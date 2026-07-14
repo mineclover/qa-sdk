@@ -1,6 +1,6 @@
-import { AssignmentTransactionPort } from "../../application/ports/assignment-transaction.port.js";
-import type { AssignmentTransactionScope } from "../../application/ports/assignment-transaction.port.js";
-import { TransactionalAssignmentStore } from "./assignment.unit-of-work.js";
+import { AssignmentTransactionPort } from '../../application/ports/assignment-transaction.port.js';
+import type { AssignmentTransactionScope } from '../../application/ports/assignment-transaction.port.js';
+import { TransactionalAssignmentStore } from './assignment.unit-of-work.js';
 
 export class InMemoryAssignmentTransaction extends AssignmentTransactionPort {
   private nextId = 1;

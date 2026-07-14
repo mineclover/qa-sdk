@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/operational-ontology-web",
   "version": "0.1.0",
-  "description": "operational ontology store and snapshot visualization web app",
   "private": true,
+  "description": "operational ontology store and snapshot visualization web app",
   "type": "module",
   "scripts": {
     "dev": "vite",

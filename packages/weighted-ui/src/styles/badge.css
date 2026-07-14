@@ -21,9 +21,19 @@
   padding: 4px 8px;
   font-size: 0.75rem;
 }
-.ui-chip-label { color: var(--text-muted); }
-.ui-chip-val   { font-weight: 600; color: var(--text-cell); }
-.ui-chip-info  { font-size: 0.62rem; color: var(--text-muted); flex: 1; text-align: center; }
+.ui-chip-label {
+  color: var(--text-muted);
+}
+.ui-chip-val {
+  font-weight: 600;
+  color: var(--text-cell);
+}
+.ui-chip-info {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  flex: 1;
+  text-align: center;
+}
 
 /* 코드 스타일 배지 */
 .ui-code {

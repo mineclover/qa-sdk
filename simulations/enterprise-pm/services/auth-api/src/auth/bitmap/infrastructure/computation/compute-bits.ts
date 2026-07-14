@@ -1,9 +1,9 @@
 // @def.boundary sim-auth-api
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { AUTH_BITMASK_BYTES } from "../codec/auth-codec.js";
-import type { RoleAssignmentViewForBitmap } from "../../application/ports/role-assignment-query.port.js";
-import type { RoleViewForBitmap } from "../../application/ports/role-query.port.js";
+import { AUTH_BITMASK_BYTES } from '../codec/auth-codec.js';
+import type { RoleAssignmentViewForBitmap } from '../../application/ports/role-assignment-query.port.js';
+import type { RoleViewForBitmap } from '../../application/ports/role-query.port.js';
 
 /**
  * 사용자의 RoleAssignment 목록을 기반으로 sim.bitmap mask 를 계산한다.

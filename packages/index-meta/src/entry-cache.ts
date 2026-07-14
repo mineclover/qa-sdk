@@ -11,9 +11,9 @@
  * 버전 내 바인딩은 불변이므로 TTL/invalidation 불필요.
  */
 
-import type { IndexMetaStore, EntryRecord } from "./index-meta-store.js";
-import type { EntityId } from "./types.js";
-import { CoalescingCache } from "./coalescing-cache.js";
+import type { IndexMetaStore, EntryRecord } from './index-meta-store.js';
+import type { EntityId } from './types.js';
+import { CoalescingCache } from './coalescing-cache.js';
 
 // ── 내부 타입 ──────────────────────────────────────────────
 
@@ -37,7 +37,11 @@ export class EntryCache {
   }
 
   /** position → EntityId. miss 시 파티션 전체 fetch. */
-  async getByPosition(prefix: string, versionId: string, position: number): Promise<EntityId | null> {
+  async getByPosition(
+    prefix: string,
+    versionId: string,
+    position: number,
+  ): Promise<EntityId | null> {
     const p = await this.loadPartition(prefix, versionId);
     return p.byPosition.get(position) ?? null;
   }

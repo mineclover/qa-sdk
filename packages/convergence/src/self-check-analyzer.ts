@@ -13,13 +13,12 @@
  * @layer 측정 (Measurement)
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { encodePrefixByValue, latestPrefixVersion } from "@qa-sdk/core";
-import { aggregateUsageData, analyzeCollectionHealth } from "./usage-aggregator.js";
-import { analyzeEntryCoverage } from "./entry-coverage.js";
-import type { UsageData, CollectionHealthReport, CoverageReport } from "./convergence.types.js";
-import type { AddressContextRecord } from "./usage-aggregator.js";
-
+import type { Catalog } from '@qa-sdk/core';
+import { encodePrefixByValue, latestPrefixVersion } from '@qa-sdk/core';
+import { aggregateUsageData, analyzeCollectionHealth } from './usage-aggregator.js';
+import { analyzeEntryCoverage } from './entry-coverage.js';
+import type { UsageData, CollectionHealthReport, CoverageReport } from './convergence.types.js';
+import type { AddressContextRecord } from './usage-aggregator.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -27,7 +26,7 @@ import type { AddressContextRecord } from "./usage-aggregator.js";
 
 export interface SelfCheckResult {
   readonly pkg: string;
-  readonly kind: "build" | "test";
+  readonly kind: 'build' | 'test';
   readonly result: string;
   readonly module?: string;
   readonly tests?: number;
@@ -85,7 +84,7 @@ function generateSyntheticEvents(catalog: Catalog): readonly SyntheticEvent[] {
     const refDimLabels: string[] = [];
 
     for (const [label, dimRef] of Object.entries(dims)) {
-      if (dimRef.kind === "axis") {
+      if (dimRef.kind === 'axis') {
         const axis = axes[dimRef.axisId];
         if (!axis) continue;
         const versions = Object.keys(axis.versions);
@@ -93,7 +92,7 @@ function generateSyntheticEvents(catalog: Catalog): readonly SyntheticEvent[] {
         if (latest?.entries) {
           axisDims.push({ label, axisId: dimRef.axisId, entries: latest.entries });
         }
-      } else if (dimRef.kind === "prefix_ref") {
+      } else if (dimRef.kind === 'prefix_ref') {
         refDimLabels.push(label);
       }
     }
@@ -140,14 +139,33 @@ const MANUAL_SYNTHETIC_EVENTS: readonly SyntheticEvent[] = [
 // ═══════════════════════════════════════════════════════════════
 
 export const SELF_CHECK_PKG_NAMES = [
-  "spec-core", "cli", "sdk", "demo-snapshot", "weighted-index",
-  "bit-index", "permission-engine", "index-meta", "platform-demo",
-  "ingest-server", "registry-service", "e2e",
-  "core", "engine", "store",
-  "gate-service", "query-service", "decode-service",
-  "registry-client",
-  "apm", "browser-sdk", "event-catalog", "pino",
-  "viz-3d", "viz-web", "demo-tests", "weighted-wasm",
+  'spec-core',
+  'cli',
+  'sdk',
+  'demo-snapshot',
+  'weighted-index',
+  'bit-index',
+  'permission-engine',
+  'index-meta',
+  'platform-demo',
+  'ingest-server',
+  'registry-service',
+  'e2e',
+  'core',
+  'engine',
+  'store',
+  'gate-service',
+  'query-service',
+  'decode-service',
+  'registry-client',
+  'apm',
+  'browser-sdk',
+  'event-catalog',
+  'pino',
+  'viz-3d',
+  'viz-web',
+  'demo-tests',
+  'weighted-wasm',
 ] as const;
 
 // ═══════════════════════════════════════════════════════════════
@@ -171,9 +189,9 @@ export function analyzeSelfCheck(
 
   // ── 1. 결과 → AddressContextRecord 인코딩 ──
   for (const r of results) {
-    const prefixId = r.kind === "build" ? "build_event" : "test_event";
-    const resultAxis = r.kind === "build" ? "build_result" : "test_result";
-    const qaModule = r.module ?? "_all";
+    const prefixId = r.kind === 'build' ? 'build_event' : 'test_event';
+    const resultAxis = r.kind === 'build' ? 'build_result' : 'test_result';
+    const qaModule = r.module ?? '_all';
     try {
       const ver = latestPrefixVersion(catalog, prefixId);
       const address = encodePrefixByValue(catalog, prefixId, ver, {
@@ -186,7 +204,7 @@ export function analyzeSelfCheck(
         timestamp: now,
         session_id: runId,
         event_key: `${r.kind}:${r.pkg}`,
-        execution_mode: "live",
+        execution_mode: 'live',
         execution_id: runId,
       });
     } catch {
@@ -218,11 +236,13 @@ export function analyzeSelfCheck(
         timestamp: now,
         session_id: runId,
         event_key: `synthetic:${se.prefix}`,
-        execution_mode: "synthetic",
+        execution_mode: 'synthetic',
         execution_id: runId,
       });
       bizRecords++;
-    } catch { /* 인코딩 실패 시 건너뜀 */ }
+    } catch {
+      /* 인코딩 실패 시 건너뜀 */
+    }
   }
 
   // ── 3. 집계 ──
@@ -237,21 +257,27 @@ export function analyzeSelfCheck(
 
   // "빌드 실패 후 테스트 금지" (skipped 제외)
   for (const r of results) {
-    if (r.kind !== "build" || r.result === "success" || r.result === "skipped") continue;
-    const testRan = results.find(t => t.kind === "test" && t.pkg === r.pkg);
+    if (r.kind !== 'build' || r.result === 'success' || r.result === 'skipped') continue;
+    const testRan = results.find((t) => t.kind === 'test' && t.pkg === r.pkg);
     if (testRan) {
-      invariantViolations.push({ pkg: r.pkg, message: `빌드 ${r.result}인데 테스트 실행됨 (${testRan.result})` });
+      invariantViolations.push({
+        pkg: r.pkg,
+        message: `빌드 ${r.result}인데 테스트 실행됨 (${testRan.result})`,
+      });
     }
   }
 
   // "테스트 실패 시 빌드 성공 선행" (hasBuild=false 제외)
   for (const r of results) {
-    if (r.kind !== "test" || r.result === "passed") continue;
-    const buildResult = results.find(b => b.kind === "build" && b.pkg === r.pkg);
+    if (r.kind !== 'test' || r.result === 'passed') continue;
+    const buildResult = results.find((b) => b.kind === 'build' && b.pkg === r.pkg);
     // hasBuild=false인 패키지는 빌드 결과가 없으므로 건너뜀
     if (!buildResult) continue;
-    if (buildResult.result !== "success" && buildResult.result !== "skipped") {
-      invariantViolations.push({ pkg: r.pkg, message: `테스트 ${r.result}인데 빌드 성공이 선행되지 않음` });
+    if (buildResult.result !== 'success' && buildResult.result !== 'skipped') {
+      invariantViolations.push({
+        pkg: r.pkg,
+        message: `테스트 ${r.result}인데 빌드 성공이 선행되지 않음`,
+      });
     }
   }
 
@@ -259,10 +285,10 @@ export function analyzeSelfCheck(
   const buildSummary = { success: 0, failure: 0, skipped: 0, total: 0 };
   const testSummary = { passed: 0, failed: 0, tests: 0, total: 0 };
   for (const r of results) {
-    if (r.kind === "build") {
+    if (r.kind === 'build') {
       buildSummary.total++;
-      if (r.result === "success") buildSummary.success++;
-      else if (r.result === "skipped") buildSummary.skipped++;
+      if (r.result === 'success') buildSummary.success++;
+      else if (r.result === 'skipped') buildSummary.skipped++;
       else buildSummary.failure++;
     } else {
       testSummary.total++;

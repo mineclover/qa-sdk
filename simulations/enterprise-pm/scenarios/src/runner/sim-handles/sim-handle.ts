@@ -23,16 +23,16 @@
 //   - department/role ID: deriveDeptId/deriveRoleId 와 일치 (예: dept_Engineering, role_manager).
 //   - fetchImpl 주입 가능 — unit test 에서 격리.
 
-const ENG_DEPT_ID = "dept_Engineering";
-const MARKETING_DEPT_ID = "dept_Marketing";
-const ROLE_MANAGER_ID = "role_manager";
-const ROLE_MEMBER_ID = "role_member";
-const ROLE_ADMIN_ID = "role_admin";
-const ROLE_APPROVER_ID = "role_approver";
+const ENG_DEPT_ID = 'dept_Engineering';
+const MARKETING_DEPT_ID = 'dept_Marketing';
+const ROLE_MANAGER_ID = 'role_manager';
+const ROLE_MEMBER_ID = 'role_member';
+const ROLE_ADMIN_ID = 'role_admin';
+const ROLE_APPROVER_ID = 'role_approver';
 
 /** seedTestData/seedExtendedUsers 의 deriveUserId 와 동일 규약. */
 function deriveUserId(email: string): string {
-  return `usr_${email.replace(/[^a-zA-Z0-9]/g, "_")}`;
+  return `usr_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
 }
 
 /** scenario __simHandle 의 fixture 슬라이스 — InProcessFixtures 와 호환되는 부분만 노출. */
@@ -121,52 +121,52 @@ function buildDefaultUsers(): {
 } {
   return {
     alice: {
-      id: deriveUserId("alice@example.com"),
-      email: "alice@example.com",
-      password: "alice-pass",
-      displayName: "Alice",
+      id: deriveUserId('alice@example.com'),
+      email: 'alice@example.com',
+      password: 'alice-pass',
+      displayName: 'Alice',
       departmentId: ENG_DEPT_ID,
     },
     bob: {
-      id: deriveUserId("bob@example.com"),
-      email: "bob@example.com",
-      password: "bob-pass",
-      displayName: "Bob",
+      id: deriveUserId('bob@example.com'),
+      email: 'bob@example.com',
+      password: 'bob-pass',
+      displayName: 'Bob',
       departmentId: MARKETING_DEPT_ID,
     },
     carol: {
-      id: deriveUserId("carol@example.com"),
-      email: "carol@example.com",
-      password: "carol-pass",
-      displayName: "Carol",
+      id: deriveUserId('carol@example.com'),
+      email: 'carol@example.com',
+      password: 'carol-pass',
+      displayName: 'Carol',
       departmentId: ENG_DEPT_ID,
     },
     david: {
-      id: deriveUserId("david@example.com"),
-      email: "david@example.com",
-      password: "david-pass",
-      displayName: "David",
+      id: deriveUserId('david@example.com'),
+      email: 'david@example.com',
+      password: 'david-pass',
+      displayName: 'David',
       departmentId: ENG_DEPT_ID,
     },
     eve: {
-      id: deriveUserId("eve@example.com"),
-      email: "eve@example.com",
-      password: "eve-pass",
-      displayName: "Eve",
+      id: deriveUserId('eve@example.com'),
+      email: 'eve@example.com',
+      password: 'eve-pass',
+      displayName: 'Eve',
       departmentId: ENG_DEPT_ID,
     },
     frank: {
-      id: deriveUserId("frank@example.com"),
-      email: "frank@example.com",
-      password: "frank-pass",
-      displayName: "Frank",
+      id: deriveUserId('frank@example.com'),
+      email: 'frank@example.com',
+      password: 'frank-pass',
+      displayName: 'Frank',
       departmentId: ENG_DEPT_ID,
     },
     admin: {
-      id: deriveUserId("admin@example.com"),
-      email: "admin@example.com",
-      password: "admin-pass",
-      displayName: "Admin",
+      id: deriveUserId('admin@example.com'),
+      email: 'admin@example.com',
+      password: 'admin-pass',
+      displayName: 'Admin',
       departmentId: ENG_DEPT_ID,
     },
   };
@@ -180,7 +180,7 @@ function buildAuthAppShim(authApiUrl: string): SimHandleAuthAppShim {
     port = parseInt(parsed.port, 10);
     if (!Number.isFinite(port) || port <= 0) {
       // protocol 기본 포트 fallback (http=80, https=443).
-      port = parsed.protocol === "https:" ? 443 : 80;
+      port = parsed.protocol === 'https:' ? 443 : 80;
     }
   } catch {
     port = 0;
@@ -209,7 +209,7 @@ function buildAuthAppShim(authApiUrl: string): SimHandleAuthAppShim {
 export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
   const fetchImpl: FetchLike = args.fetchImpl ?? globalThis.fetch.bind(globalThis);
   const timeoutMs = args.timeoutMs ?? 5_000;
-  const gw = args.gatewayUrl.replace(/\/$/, "");
+  const gw = args.gatewayUrl.replace(/\/$/, '');
 
   const defaults = buildDefaultUsers();
   const users = {
@@ -226,17 +226,17 @@ export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
   async function login(email: string, password: string): Promise<string> {
     const url = `${gw}/auth/login`;
     const res = await fetchImpl(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email, password }),
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
+      const body = await res.text().catch(() => '');
       throw new Error(`sim-handle login ${email} failed: status=${res.status} body=${body}`);
     }
     const json = (await res.json()) as { token?: unknown };
-    if (typeof json.token !== "string" || json.token.length === 0) {
+    if (typeof json.token !== 'string' || json.token.length === 0) {
       throw new Error(`sim-handle login ${email} returned invalid token shape`);
     }
     return json.token;
@@ -271,13 +271,13 @@ export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
       }
       const token = await login(requester.email, requester.password);
       const headers = {
-        "content-type": "application/json",
+        'content-type': 'application/json',
         Authorization: `Bearer ${token}`,
       };
 
       // 1. POST /approvals/requests
       const createRes = await fetchImpl(`${gw}/approvals/requests`, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify({
           projectId: input.projectId,
@@ -288,25 +288,27 @@ export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (createRes.status !== 201 && createRes.status !== 200) {
-        const body = await createRes.text().catch(() => "");
+        const body = await createRes.text().catch(() => '');
         throw new Error(
           `sim-handle seedBudgetRequest create failed: status=${createRes.status} body=${body}`,
         );
       }
       const created = (await createRes.json()) as { id?: unknown };
-      if (typeof created.id !== "string") {
-        throw new Error(`sim-handle seedBudgetRequest invalid create body: ${JSON.stringify(created)}`);
+      if (typeof created.id !== 'string') {
+        throw new Error(
+          `sim-handle seedBudgetRequest invalid create body: ${JSON.stringify(created)}`,
+        );
       }
       const id = created.id;
 
       // 2. POST /approvals/requests/:id/submit (draft → submitted)
       const submitRes = await fetchImpl(`${gw}/approvals/requests/${id}/submit`, {
-        method: "POST",
+        method: 'POST',
         headers,
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (!submitRes.ok) {
-        const body = await submitRes.text().catch(() => "");
+        const body = await submitRes.text().catch(() => '');
         throw new Error(
           `sim-handle seedBudgetRequest submit failed: status=${submitRes.status} body=${body}`,
         );
@@ -314,12 +316,12 @@ export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
 
       // 3. POST /approvals/requests/:id/start-review (submitted → in_review)
       const reviewRes = await fetchImpl(`${gw}/approvals/requests/${id}/start-review`, {
-        method: "POST",
+        method: 'POST',
         headers,
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (!reviewRes.ok) {
-        const body = await reviewRes.text().catch(() => "");
+        const body = await reviewRes.text().catch(() => '');
         throw new Error(
           `sim-handle seedBudgetRequest start-review failed: status=${reviewRes.status} body=${body}`,
         );
@@ -332,9 +334,9 @@ export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
       // alice (project owner) 로 delegate — 시나리오 6 보조.
       const token = await login(users.alice.email, users.alice.password);
       const res = await fetchImpl(`${gw}/projects/${input.projectId}/delegate`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "content-type": "application/json",
+          'content-type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -344,10 +346,8 @@ export function createSimHandle(args: SimHandleFactoryArgs): SimHandle {
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(
-          `sim-handle delegateProject failed: status=${res.status} body=${body}`,
-        );
+        const body = await res.text().catch(() => '');
+        throw new Error(`sim-handle delegateProject failed: status=${res.status} body=${body}`);
       }
     },
   };
@@ -372,7 +372,7 @@ export function createSimGatewayFetch(args: {
   fetchImpl?: FetchLike;
 }): (req: Request) => Promise<Response> {
   const fetchImpl: FetchLike = args.fetchImpl ?? globalThis.fetch.bind(globalThis);
-  const gw = args.gatewayUrl.replace(/\/$/, "");
+  const gw = args.gatewayUrl.replace(/\/$/, '');
   const timeoutMs = args.timeoutMs ?? 5_000;
 
   return async (req: Request): Promise<Response> => {
@@ -384,9 +384,7 @@ export function createSimGatewayFetch(args: {
       headers: req.headers,
       // GET/HEAD 가 아닌 경우만 body 전달.
       body:
-        req.method === "GET" || req.method === "HEAD"
-          ? undefined
-          : await req.clone().arrayBuffer(),
+        req.method === 'GET' || req.method === 'HEAD' ? undefined : await req.clone().arrayBuffer(),
       signal: AbortSignal.timeout(timeoutMs),
     };
     return fetchImpl(target, init);

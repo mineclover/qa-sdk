@@ -6,7 +6,7 @@
  *
  * sim-domain-slice-kit 의 LoggerPort 를 슬라이스 의존 표면으로 노출.
  */
-import type { LoggerPort, SliceLogContext } from "@qa-sdk/sim-domain-slice-kit";
+import type { LoggerPort, SliceLogContext } from '@qa-sdk/sim-domain-slice-kit';
 
 export type UserLoggerPort = LoggerPort;
 export type UserLogContext = SliceLogContext;

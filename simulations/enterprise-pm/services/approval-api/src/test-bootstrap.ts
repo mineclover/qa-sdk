@@ -5,28 +5,25 @@
  * sim-approval-api 외부 노출 test-bootstrap — Plan 13a/b in-process 진입점.
  */
 
-import { Test } from "@nestjs/testing";
-import type { DynamicModule } from "@nestjs/common";
-import { Module } from "@nestjs/common";
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from "@nestjs/platform-fastify";
-import type { AccessChecker, AuditRecorder, ResourcePolicyRegistry } from "permission-engine";
-import { HealthModule } from "./health/health.module.js";
+import { Test } from '@nestjs/testing';
+import type { DynamicModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { AccessChecker, AuditRecorder, ResourcePolicyRegistry } from 'permission-engine';
+import { HealthModule } from './health/health.module.js';
 import {
   ApprovalDbModule,
   APPROVAL_DB_INSTANCE,
   APPROVAL_REPOSITORY,
   type ApprovalDbInstanceHandle,
-} from "./approval/approval-db.module.js";
-import { APPROVAL_SLICE_MODULES } from "./approval/approval-slices.registry.js";
-import { AccessCheckerModule } from "./auth-deps/access-checker.module.js";
-import { BudgetUseCase } from "./approval/budget/application/use-cases/budget.use-case.js";
-import { BudgetReadModelQuery } from "./approval/budget/application/queries/budget-read-model.query.js";
-import type { ApprovalRepository } from "./approval/shared/port.js";
+} from './approval/approval-db.module.js';
+import { APPROVAL_SLICE_MODULES } from './approval/approval-slices.registry.js';
+import { AccessCheckerModule } from './auth-deps/access-checker.module.js';
+import { BudgetUseCase } from './approval/budget/application/use-cases/budget.use-case.js';
+import { BudgetReadModelQuery } from './approval/budget/application/queries/budget-read-model.query.js';
+import type { ApprovalRepository } from './approval/shared/port.js';
 
-export { AppModule } from "./app.module.js";
+export { AppModule } from './app.module.js';
 
 export interface TestBootstrapOptions {
   sqlitePath?: string;
@@ -93,21 +90,19 @@ export async function bootstrapTestApi(
     QA_DB_DIALECT: process.env.QA_DB_DIALECT,
     QA_SQLITE_PATH: process.env.QA_SQLITE_PATH,
   };
-  process.env.QA_DB_DIALECT = "sqlite";
-  process.env.QA_SQLITE_PATH = opts.sqlitePath ?? ":memory:";
+  process.env.QA_DB_DIALECT = 'sqlite';
+  process.env.QA_SQLITE_PATH = opts.sqlitePath ?? ':memory:';
 
   const moduleRef = await Test.createTestingModule({
     imports: [buildTestAppModule(opts)],
   }).compile();
 
-  const app = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter(),
-  );
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
-  await app.listen(0, "127.0.0.1");
+  await app.listen(0, '127.0.0.1');
   const addr = app.getHttpServer().address() as { port: number } | null;
-  if (!addr) throw new Error("bootstrapTestApi: HTTP server not listening");
+  if (!addr) throw new Error('bootstrapTestApi: HTTP server not listening');
   const port = addr.port;
 
   return {
@@ -133,7 +128,7 @@ export async function seedApprovalFixtures(
   _handle: TestApprovalApiHandle,
 ): Promise<ApprovalFixtureHandle> {
   return {
-    approver_role: { id: "role-approver" },
+    approver_role: { id: 'role-approver' },
   };
 }
 
@@ -154,7 +149,7 @@ export async function createTestBudgetRequest(
     amount: number;
     requesterId: string;
     /** Plan 13 시나리오 3/4/5 — 결정 가능 상태로 미리 전이. */
-    advanceTo?: "draft" | "submitted" | "in_review";
+    advanceTo?: 'draft' | 'submitted' | 'in_review';
   },
 ): Promise<TestBudgetRequestFixture> {
   const useCase = handle.app.get(BudgetUseCase);
@@ -167,11 +162,11 @@ export async function createTestBudgetRequest(
     amount: args.amount,
     requesterId: args.requesterId,
   });
-  const target = args.advanceTo ?? "draft";
-  if (target === "submitted" || target === "in_review") {
+  const target = args.advanceTo ?? 'draft';
+  if (target === 'submitted' || target === 'in_review') {
     await useCase.submit(id);
   }
-  if (target === "in_review") {
+  if (target === 'in_review') {
     await useCase.startReview(id);
   }
   const detail = await readModel.findDetail(id);

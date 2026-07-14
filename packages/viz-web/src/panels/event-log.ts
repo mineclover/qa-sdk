@@ -1,7 +1,7 @@
 // @def.boundary viz-system-root
 // @def.doc viz-system-root
 
-import type { StoredRecord } from "@qa-sdk/core";
+import type { StoredRecord } from '@qa-sdk/core';
 
 export interface EventLog {
   /** spec graph 기반 step 번호 맵 설정 (event_key → 1-based index) */
@@ -19,7 +19,7 @@ function truncatePayload(payload: unknown, maxLen = 200): string {
   try {
     const str = JSON.stringify(payload);
     if (str.length <= maxLen) return str;
-    return str.slice(0, maxLen) + "…";
+    return str.slice(0, maxLen) + '…';
   } catch {
     return String(payload);
   }
@@ -27,16 +27,16 @@ function truncatePayload(payload: unknown, maxLen = 200): string {
 
 // Step 번호별 고정 색상 팔레트
 const STEP_PALETTE = [
-  "#4a9eff", // 1 - blue
-  "#4ade80", // 2 - green
-  "#fbbf24", // 3 - yellow
-  "#fb923c", // 4 - orange
-  "#c084fc", // 5 - purple
-  "#f472b6", // 6 - pink
-  "#22d3ee", // 7 - cyan
-  "#a3e635", // 8 - lime
+  '#4a9eff', // 1 - blue
+  '#4ade80', // 2 - green
+  '#fbbf24', // 3 - yellow
+  '#fb923c', // 4 - orange
+  '#c084fc', // 5 - purple
+  '#f472b6', // 6 - pink
+  '#22d3ee', // 7 - cyan
+  '#a3e635', // 8 - lime
 ];
-const UNMATCHED_COLOR = "#6b7280";
+const UNMATCHED_COLOR = '#6b7280';
 
 function stepColor(n: number): string {
   if (n === 0) return UNMATCHED_COLOR;
@@ -54,33 +54,33 @@ export function createEventLog(container: HTMLElement): EventLog {
   let stepMap = new Map<string, number>();
 
   // ── DOM 구조 ──────────────────────────────────────────────
-  const wrapper = document.createElement("div");
-  wrapper.className = "event-log";
+  const wrapper = document.createElement('div');
+  wrapper.className = 'event-log';
 
-  const header = document.createElement("div");
-  header.className = "panel-header";
+  const header = document.createElement('div');
+  header.className = 'panel-header';
 
-  const title = document.createElement("span");
-  title.className = "panel-label";
-  title.textContent = "Event Log";
+  const title = document.createElement('span');
+  title.className = 'panel-label';
+  title.textContent = 'Event Log';
 
-  const clearBtn = document.createElement("button");
-  clearBtn.className = "btn-clear";
-  clearBtn.textContent = "Clear";
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'btn-clear';
+  clearBtn.textContent = 'Clear';
 
   header.appendChild(title);
   header.appendChild(clearBtn);
 
   // sequence strip: 이벤트 도착 순서를 숫자 칩으로 나열
-  const seqStrip = document.createElement("div");
-  seqStrip.className = "event-seq-strip";
-  const seqEmpty = document.createElement("span");
-  seqEmpty.className = "event-seq-empty";
-  seqEmpty.textContent = "no events";
+  const seqStrip = document.createElement('div');
+  seqStrip.className = 'event-seq-strip';
+  const seqEmpty = document.createElement('span');
+  seqEmpty.className = 'event-seq-empty';
+  seqEmpty.textContent = 'no events';
   seqStrip.appendChild(seqEmpty);
 
-  const list = document.createElement("div");
-  list.className = "event-log-list";
+  const list = document.createElement('div');
+  list.className = 'event-log-list';
 
   wrapper.appendChild(header);
   wrapper.appendChild(seqStrip);
@@ -88,18 +88,21 @@ export function createEventLog(container: HTMLElement): EventLog {
   container.appendChild(wrapper);
 
   // ── Tooltip (singleton, body에 붙임) ─────────────────────
-  const tooltip = document.createElement("div");
-  tooltip.className = "event-seq-tooltip";
+  const tooltip = document.createElement('div');
+  tooltip.className = 'event-seq-tooltip';
   tooltip.hidden = true;
   document.body.appendChild(tooltip);
 
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
 
   function showTooltip(anchor: HTMLElement, record: StoredRecord, stepNum: number): void {
-    if (hideTimer !== null) { clearTimeout(hideTimer); hideTimer = null; }
+    if (hideTimer !== null) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
 
     const color = stepColor(stepNum);
-    const label = stepNum === 0 ? "?" : String(stepNum);
+    const label = stepNum === 0 ? '?' : String(stepNum);
 
     tooltip.innerHTML = `
       <div class="tt-header">
@@ -107,7 +110,7 @@ export function createEventLog(container: HTMLElement): EventLog {
         <span class="tt-key" style="color:${color}">${record.eventKey}</span>
       </div>
       <div class="tt-time">${formatTimestamp(record.timestamp)}</div>
-      ${record.eventVersion ? `<div class="tt-version">v${record.eventVersion}</div>` : ""}
+      ${record.eventVersion ? `<div class="tt-version">v${record.eventVersion}</div>` : ''}
       <div class="tt-payload">${truncatePayload(record.payload)}</div>
     `;
     tooltip.hidden = false;
@@ -125,17 +128,19 @@ export function createEventLog(container: HTMLElement): EventLog {
   }
 
   function hideTooltip(): void {
-    hideTimer = setTimeout(() => { tooltip.hidden = true; }, 80);
+    hideTimer = setTimeout(() => {
+      tooltip.hidden = true;
+    }, 80);
   }
 
   // ── Clear ─────────────────────────────────────────────────
   function clear(): void {
-    list.innerHTML = "";
-    seqStrip.innerHTML = "";
+    list.innerHTML = '';
+    seqStrip.innerHTML = '';
     seqStrip.appendChild(seqEmpty);
   }
 
-  clearBtn.addEventListener("click", clear);
+  clearBtn.addEventListener('click', clear);
 
   return {
     setStepMap(map: Map<string, number>): void {
@@ -145,7 +150,7 @@ export function createEventLog(container: HTMLElement): EventLog {
     addEvent(record: StoredRecord): void {
       const stepNum = stepMap.get(record.eventKey) ?? 0;
       const color = stepColor(stepNum);
-      const label = stepNum === 0 ? "?" : String(stepNum);
+      const label = stepNum === 0 ? '?' : String(stepNum);
       const bgNormal = hexToRgba(color, 0.12);
       const bgHover = hexToRgba(color, 0.26);
       const borderColor = hexToRgba(color, 0.45);
@@ -154,47 +159,49 @@ export function createEventLog(container: HTMLElement): EventLog {
       seqEmpty.remove();
 
       // ── Sequence chip ──────────────────────────────────────
-      const chip = document.createElement("span");
-      chip.className = "event-seq-chip";
+      const chip = document.createElement('span');
+      chip.className = 'event-seq-chip';
       chip.textContent = label;
       chip.style.color = color;
       chip.style.background = bgNormal;
       chip.style.borderColor = borderColor;
 
-      chip.addEventListener("mouseenter", () => {
+      chip.addEventListener('mouseenter', () => {
         chip.style.background = bgHover;
         showTooltip(chip, record, stepNum);
       });
-      chip.addEventListener("mouseleave", () => {
+      chip.addEventListener('mouseleave', () => {
         chip.style.background = bgNormal;
         hideTooltip();
       });
 
       seqStrip.appendChild(chip);
       // 오른쪽 끝으로 스크롤
-      requestAnimationFrame(() => { seqStrip.scrollLeft = seqStrip.scrollWidth; });
+      requestAnimationFrame(() => {
+        seqStrip.scrollLeft = seqStrip.scrollWidth;
+      });
 
       // ── Log row ────────────────────────────────────────────
-      const entry = document.createElement("div");
-      entry.className = "event-log-entry";
+      const entry = document.createElement('div');
+      entry.className = 'event-log-entry';
 
-      const badge = document.createElement("span");
-      badge.className = "event-step-badge";
+      const badge = document.createElement('span');
+      badge.className = 'event-step-badge';
       badge.textContent = label;
       badge.style.color = color;
       badge.style.background = hexToRgba(color, 0.15);
       badge.style.borderColor = hexToRgba(color, 0.35);
 
-      const time = document.createElement("span");
-      time.className = "event-time";
+      const time = document.createElement('span');
+      time.className = 'event-time';
       time.textContent = formatTimestamp(record.timestamp);
 
-      const key = document.createElement("span");
-      key.className = "event-key";
+      const key = document.createElement('span');
+      key.className = 'event-key';
       key.textContent = record.eventKey;
 
-      const payload = document.createElement("span");
-      payload.className = "event-payload";
+      const payload = document.createElement('span');
+      payload.className = 'event-payload';
       payload.textContent = truncatePayload(record.payload, 120);
 
       entry.appendChild(badge);

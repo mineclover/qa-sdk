@@ -45,8 +45,8 @@ import {
   type AddressConverter as WiAddressConverter,
   type AddressProtocol,
   type AddressProtocolBig,
-} from "weighted-index";
-import { AddressProtocolManager } from "./address-protocol-manager.js";
+} from 'weighted-index';
+import { AddressProtocolManager } from './address-protocol-manager.js';
 import type {
   MetaRegistryInput,
   AddressConfig,
@@ -66,9 +66,9 @@ import type {
   SnapshotDiff,
   VersionDiff,
   VersionCapacityInfo,
-} from "./types.js";
-import { MetaCodec } from "./meta-codec.js";
-import { MetaCodecBig } from "./meta-codec-big.js";
+} from './types.js';
+import { MetaCodec } from './meta-codec.js';
+import { MetaCodecBig } from './meta-codec-big.js';
 import {
   DimNotFoundError,
   SnapshotNotFoundError,
@@ -78,7 +78,7 @@ import {
   ValidationError,
   ParseError,
   CapacityOverflowError,
-} from "./errors.js";
+} from './errors.js';
 
 // ── 공통 유틸 ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ export function computeActiveIndices(snapshot: DimSnapshot): number[] {
   const result: number[] = [];
   for (let i = 1; i <= snapshot.entries.length; i++) {
     const flag = snapshot.entryFlags[i];
-    if (!flag || flag.status === "active") result.push(i);
+    if (!flag || flag.status === 'active') result.push(i);
   }
   return result;
 }
@@ -153,8 +153,8 @@ export class MetaRegistry {
     const migrationsMap = new Map<string, Map<string, DimSnapshotMigration>>();
 
     for (const [dimId, dimInput] of Object.entries(input.dims)) {
-      if (!dimId) throw new ValidationError("Dim id must not be empty");
-      if (dimId.includes(":")) throw new ValidationError(`Dim id must not contain ":": "${dimId}"`);
+      if (!dimId) throw new ValidationError('Dim id must not be empty');
+      if (dimId.includes(':')) throw new ValidationError(`Dim id must not contain ":": "${dimId}"`);
 
       dimsMap.set(dimId, {
         id: dimId,
@@ -169,25 +169,32 @@ export class MetaRegistry {
         if (!snapshotId) {
           throw new ValidationError(`Dim "${dimId}": snapshot id must not be empty`);
         }
-        if (snapshotId.includes(":")) {
-          throw new ValidationError(`Dim "${dimId}": snapshot id must not contain ":": "${snapshotId}"`);
+        if (snapshotId.includes(':')) {
+          throw new ValidationError(
+            `Dim "${dimId}": snapshot id must not contain ":": "${snapshotId}"`,
+          );
         }
         if (snInput.entries.length === 0) {
           throw new ValidationError(
-            `DimSnapshot "${dimId}/${snapshotId}": entries must not be empty`
+            `DimSnapshot "${dimId}/${snapshotId}": entries must not be empty`,
           );
         }
 
-        this._validateEntriesKind(dimId, snapshotId, snInput.entries, dimInput.kind, snInput.entryRefs);
+        this._validateEntriesKind(
+          dimId,
+          snapshotId,
+          snInput.entries,
+          dimInput.kind,
+          snInput.entryRefs,
+        );
 
         const seen = new Set<EntityId>();
         for (let pos = 0; pos < snInput.entries.length; pos++) {
           const raw = snInput.entries[pos];
-          const id: EntityId =
-            typeof raw === "number" && Object.is(raw, -0) ? 0 : raw;
+          const id: EntityId = typeof raw === 'number' && Object.is(raw, -0) ? 0 : raw;
           if (seen.has(id)) {
             throw new ValidationError(
-              `DimSnapshot "${dimId}/${snapshotId}": duplicate entity id "${id}"`
+              `DimSnapshot "${dimId}/${snapshotId}": duplicate entity id "${id}"`,
             );
           }
           seen.add(id);
@@ -201,18 +208,18 @@ export class MetaRegistry {
             const pos = Number(idxStr); // 1-based
             if (!Number.isInteger(pos) || pos < 1 || pos > snInput.entries.length) {
               throw new ValidationError(
-                `DimSnapshot "${dimId}/${snapshotId}" entryRefs: key ${pos} is out of range [1, ${snInput.entries.length}]`
+                `DimSnapshot "${dimId}/${snapshotId}" entryRefs: key ${pos} is out of range [1, ${snInput.entries.length}]`,
               );
             }
             const val = snInput.entries[pos - 1];
-            if (typeof val !== "number" || !Number.isInteger(val) || val < 0) {
+            if (typeof val !== 'number' || !Number.isInteger(val) || val < 0) {
               throw new ValidationError(
-                `DimSnapshot "${dimId}/${snapshotId}" entryRefs[${pos}]: entry value must be a non-negative integer (got ${JSON.stringify(val)})`
+                `DimSnapshot "${dimId}/${snapshotId}" entryRefs[${pos}]: entry value must be a non-negative integer (got ${JSON.stringify(val)})`,
               );
             }
             if (!ref.indexId || !ref.versionId) {
               throw new ValidationError(
-                `DimSnapshot "${dimId}/${snapshotId}" entryRefs[${pos}]: indexId and versionId must not be empty`
+                `DimSnapshot "${dimId}/${snapshotId}" entryRefs[${pos}]: indexId and versionId must not be empty`,
               );
             }
           }
@@ -222,7 +229,7 @@ export class MetaRegistry {
           dimId,
           snapshotId,
           entries: Object.freeze(
-            snInput.entries.map((e) => (typeof e === "number" && Object.is(e, -0) ? 0 : e))
+            snInput.entries.map((e) => (typeof e === 'number' && Object.is(e, -0) ? 0 : e)),
           ),
           entryFlags: Object.freeze({ ...snInput.entryFlags }),
           entryRefs: Object.freeze({ ...snInput.entryRefs }),
@@ -247,26 +254,26 @@ export class MetaRegistry {
 
         if (fromSnapshotId === toSnapshotId) {
           throw new ValidationError(
-            `Dim "${dimId}" migration: fromSnapshotId and toSnapshotId must differ ("${fromSnapshotId}")`
+            `Dim "${dimId}" migration: fromSnapshotId and toSnapshotId must differ ("${fromSnapshotId}")`,
           );
         }
         const fromSnap = snMap.get(fromSnapshotId)?.snapshot;
         if (!fromSnap) {
           throw new SnapshotNotFoundError(
-            `Dim "${dimId}" migration: unknown fromSnapshotId "${fromSnapshotId}"`
+            `Dim "${dimId}" migration: unknown fromSnapshotId "${fromSnapshotId}"`,
           );
         }
         const toSnap = snMap.get(toSnapshotId)?.snapshot;
         if (!toSnap) {
           throw new SnapshotNotFoundError(
-            `Dim "${dimId}" migration: unknown toSnapshotId "${toSnapshotId}"`
+            `Dim "${dimId}" migration: unknown toSnapshotId "${toSnapshotId}"`,
           );
         }
 
         const key = `${fromSnapshotId}:${toSnapshotId}`;
         if (migMap.has(key)) {
           throw new ValidationError(
-            `Dim "${dimId}" migration: duplicate migration "${fromSnapshotId}" → "${toSnapshotId}"`
+            `Dim "${dimId}" migration: duplicate migration "${fromSnapshotId}" → "${toSnapshotId}"`,
           );
         }
 
@@ -275,17 +282,17 @@ export class MetaRegistry {
           const k = Number(kStr);
           if (!Number.isInteger(k) || k < 1 || k > fromSnap.entries.length) {
             throw new ValidationError(
-              `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": key ${k} out of range [1, ${fromSnap.entries.length}]`
+              `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": key ${k} out of range [1, ${fromSnap.entries.length}]`,
             );
           }
           if (!Number.isInteger(v) || v < 1 || v > toSnap.entries.length) {
             throw new ValidationError(
-              `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": value ${v} out of range [1, ${toSnap.entries.length}]`
+              `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": value ${v} out of range [1, ${toSnap.entries.length}]`,
             );
           }
           if (toValues.has(v)) {
             throw new ValidationError(
-              `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": duplicate target index ${v} (bijection violation)`
+              `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": duplicate target index ${v} (bijection violation)`,
             );
           }
           toValues.add(v);
@@ -310,17 +317,16 @@ export class MetaRegistry {
     const versionsMap = new Map<string, Map<string, IndexVersion>>();
 
     for (const [indexId, indexInput] of Object.entries(input.indices)) {
-      if (!indexId) throw new ValidationError("Index id must not be empty");
-      if (indexId.includes(":")) throw new ValidationError(`Index id must not contain ":": "${indexId}"`);
+      if (!indexId) throw new ValidationError('Index id must not be empty');
+      if (indexId.includes(':'))
+        throw new ValidationError(`Index id must not contain ":": "${indexId}"`);
       if (indexInput.dims.length === 0) {
         throw new ValidationError(`Index "${indexId}": dims must not be empty`);
       }
 
       for (const dimId of indexInput.dims) {
         if (!dimsMap.has(dimId)) {
-          throw new DimNotFoundError(
-            `Index "${indexId}" references unknown dim "${dimId}"`
-          );
+          throw new DimNotFoundError(`Index "${indexId}" references unknown dim "${dimId}"`);
         }
       }
 
@@ -329,7 +335,7 @@ export class MetaRegistry {
         dims: Object.freeze([...indexInput.dims]),
         description: indexInput.description,
         domain: indexInput.domain,
-        numberType: indexInput.numberType ?? "number", // 임시값, capacity guard에서 확정
+        numberType: indexInput.numberType ?? 'number', // 임시값, capacity guard에서 확정
       });
 
       const vMap = new Map<string, IndexVersion>();
@@ -338,20 +344,22 @@ export class MetaRegistry {
         if (!versionId) {
           throw new ValidationError(`Index "${indexId}": version id must not be empty`);
         }
-        if (versionId.includes(":")) {
-          throw new ValidationError(`Index "${indexId}": version id must not contain ":": "${versionId}"`);
+        if (versionId.includes(':')) {
+          throw new ValidationError(
+            `Index "${indexId}": version id must not contain ":": "${versionId}"`,
+          );
         }
 
         for (const dimId of indexInput.dims) {
           const snapshotId = vInput.snapshots[dimId];
           if (!snapshotId) {
             throw new ValidationError(
-              `IndexVersion "${indexId}/${versionId}": missing snapshot for dim "${dimId}"`
+              `IndexVersion "${indexId}/${versionId}": missing snapshot for dim "${dimId}"`,
             );
           }
           if (!snapshotsMap.get(dimId)?.has(snapshotId)) {
             throw new SnapshotNotFoundError(
-              `IndexVersion "${indexId}/${versionId}": unknown snapshot "${dimId}/${snapshotId}"`
+              `IndexVersion "${indexId}/${versionId}": unknown snapshot "${dimId}/${snapshotId}"`,
             );
           }
         }
@@ -380,12 +388,12 @@ export class MetaRegistry {
 
     // 1. dim-level index_ref: indexId(필수) + versionId(선택) 존재 검증
     for (const [dimId, dimDef] of dimsMap) {
-      if (dimDef.kind.type !== "index_ref") continue;
+      if (dimDef.kind.type !== 'index_ref') continue;
       const { indexId } = dimDef.kind;
 
       if (!indicesMap.has(indexId)) {
         throw new IndexNotFoundError(
-          `Dim "${dimId}" (index_ref) references unknown indexId "${indexId}"`
+          `Dim "${dimId}" (index_ref) references unknown indexId "${indexId}"`,
         );
       }
     }
@@ -397,12 +405,12 @@ export class MetaRegistry {
           const vMap = versionsMap.get(ref.indexId);
           if (!vMap) {
             throw new IndexNotFoundError(
-              `DimSnapshot "${snapshot.dimId}/${snapshot.snapshotId}" entryRefs[${idxStr}]: unknown indexId "${ref.indexId}"`
+              `DimSnapshot "${snapshot.dimId}/${snapshot.snapshotId}" entryRefs[${idxStr}]: unknown indexId "${ref.indexId}"`,
             );
           }
           if (!vMap.has(ref.versionId)) {
             throw new IndexVersionNotFoundError(
-              `DimSnapshot "${snapshot.dimId}/${snapshot.snapshotId}" entryRefs[${idxStr}]: unknown versionId "${ref.versionId}" for index "${ref.indexId}"`
+              `DimSnapshot "${snapshot.dimId}/${snapshot.snapshotId}" entryRefs[${idxStr}]: unknown versionId "${ref.versionId}" for index "${ref.indexId}"`,
             );
           }
         }
@@ -412,7 +420,7 @@ export class MetaRegistry {
     // 3. dim-level index_ref: 각 snapshot의 entry 값이 target index의 유효 범위 이내인지 검증
     //    entry 값은 target index의 어떤 version에서든 유효한 압축 좌표여야 한다.
     for (const [dimId, dimDef] of dimsMap) {
-      if (dimDef.kind.type !== "index_ref") continue;
+      if (dimDef.kind.type !== 'index_ref') continue;
       const { indexId: targetIndexId } = dimDef.kind;
 
       // eslint-disable-next-line typescript/no-non-null-assertion -- targetIndexId 존재는 위에서 검증됨
@@ -439,8 +447,8 @@ export class MetaRegistry {
           if (val >= maxTargetSize) {
             throw new ValidationError(
               `DimSnapshot "${dimId}/${snapshot.snapshotId}" entry at position ${pos + 1}` +
-              ` (value ${val}) is out of range for index "${targetIndexId}"` +
-              ` (max valid value: ${maxTargetSize - 1} across all versions)`
+                ` (value ${val}) is out of range for index "${targetIndexId}"` +
+                ` (max valid value: ${maxTargetSize - 1} across all versions)`,
             );
           }
         }
@@ -458,7 +466,7 @@ export class MetaRegistry {
         for (const dimId of indexDef.dims) {
           // eslint-disable-next-line typescript/no-non-null-assertion -- dimId는 indexDef.dims에서 가져왔고 dimsMap에 존재
           const dimDef = dimsMap.get(dimId)!;
-          if (dimDef.kind.type === "index_ref" && dimDef.kind.indexId !== indexId) {
+          if (dimDef.kind.type === 'index_ref' && dimDef.kind.indexId !== indexId) {
             targets.add(dimDef.kind.indexId);
           }
         }
@@ -486,9 +494,7 @@ export class MetaRegistry {
               // Cycle found: extract the cycle portion from the path
               const cycleStart = path.indexOf(target);
               const cyclePath = [...path.slice(cycleStart), target];
-              throw new ValidationError(
-                `index_ref cycle detected: ${cyclePath.join(" -> ")}`
-              );
+              throw new ValidationError(`index_ref cycle detected: ${cyclePath.join(' -> ')}`);
             }
             if (targetState === NOT_VISITED) {
               dfs(target, path);
@@ -529,11 +535,15 @@ export class MetaRegistry {
 
           if (!fits) {
             indexRequiresBigInt = true;
-            if (indexInput.numberType === "number") {
+            if (indexInput.numberType === 'number') {
               const msg = `Index "${indexId}/${versionId}": shape product (${productBig}) exceeds Number.MAX_SAFE_INTEGER. Declare numberType: "bigint" or reduce dim sizes.`;
               if (strict) {
-                throw new CapacityOverflowError(indexId, versionId, productBig,
-                  'Declare numberType: "bigint" or reduce dim sizes.');
+                throw new CapacityOverflowError(
+                  indexId,
+                  versionId,
+                  productBig,
+                  'Declare numberType: "bigint" or reduce dim sizes.',
+                );
               }
               this._capacityWarnings.push(msg);
             }
@@ -544,9 +554,9 @@ export class MetaRegistry {
         const declaredType = indexInput.numberType;
         let effectiveType: NumberType;
         if (declaredType) {
-          effectiveType = indexRequiresBigInt ? "bigint" : declaredType;
+          effectiveType = indexRequiresBigInt ? 'bigint' : declaredType;
         } else {
-          effectiveType = indexRequiresBigInt ? "bigint" : "number";
+          effectiveType = indexRequiresBigInt ? 'bigint' : 'number';
         }
 
         // IndexDef의 numberType 갱신 (freeze 전이므로 변경 가능)
@@ -688,7 +698,10 @@ export class MetaRegistry {
       indexId,
       versionId,
       shape,
-      size: productBig <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(productBig) : Number.MAX_SAFE_INTEGER,
+      size:
+        productBig <= BigInt(Number.MAX_SAFE_INTEGER)
+          ? Number(productBig)
+          : Number.MAX_SAFE_INTEGER,
       dims,
       numberType: def.numberType,
     });
@@ -728,11 +741,15 @@ export class MetaRegistry {
   serialize(vv: VersionedValue, protocol?: AddressProtocol | string): string {
     // Capacity Guard: bigint-typed index는 Number 기반 직렬화 불가
     const def = this.indices.get(vv.indexId);
-    if (def?.numberType === "bigint") {
+    if (def?.numberType === 'bigint') {
       const iv = this._getIndexVersion(vv.indexId, vv.versionId);
       const shape = this._buildShape(def, iv);
-      throw new CapacityOverflowError(vv.indexId, vv.versionId, computeShapeProductBig(shape),
-        'Number-based serialize is not available for BigInt-typed index.');
+      throw new CapacityOverflowError(
+        vv.indexId,
+        vv.versionId,
+        computeShapeProductBig(shape),
+        'Number-based serialize is not available for BigInt-typed index.',
+      );
     }
     return this.address.serialize(vv, protocol);
   }
@@ -758,7 +775,7 @@ export class MetaRegistry {
     const wi = this._getWeightedIndex(vv.indexId, vv.versionId);
     if (vv.value < 0 || vv.value >= wi.size) {
       throw new ParseError(
-        `Value ${vv.value} out of range [0, ${wi.size - 1}] for "${vv.indexId}/${vv.versionId}"`
+        `Value ${vv.value} out of range [0, ${wi.size - 1}] for "${vv.indexId}/${vv.versionId}"`,
       );
     }
     return vv;
@@ -801,7 +818,7 @@ export class MetaRegistry {
     const sizeBig = computeShapeProductBig(shape);
     if (vvb.value < 0n || vvb.value >= sizeBig) {
       throw new ParseError(
-        `Value ${vvb.value} out of range [0, ${sizeBig - 1n}] for "${vvb.indexId}/${vvb.versionId}"`
+        `Value ${vvb.value} out of range [0, ${sizeBig - 1n}] for "${vvb.indexId}/${vvb.versionId}"`,
       );
     }
     return vvb;
@@ -814,7 +831,7 @@ export class MetaRegistry {
       if (!input.address) {
         throw new ValidationError(
           'serializeBig/parseBig requires address config (layout protocol). ' +
-          'Use text protocols (colon/uri) via serialize/parse instead.'
+            'Use text protocols (colon/uri) via serialize/parse instead.',
         );
       }
       this._bigLayoutProto = createLayoutProtocolBig({
@@ -851,7 +868,7 @@ export class MetaRegistry {
     const mig = migMap?.get(`${fromSnapshotId}:${toSnapshotId}`);
     if (!mig) {
       throw new MigrationNotFoundError(
-        `No direct migration for dim "${dimId}": "${fromSnapshotId}" → "${toSnapshotId}"`
+        `No direct migration for dim "${dimId}": "${fromSnapshotId}" → "${toSnapshotId}"`,
       );
     }
     return mig;
@@ -878,7 +895,7 @@ export class MetaRegistry {
     dimId: string,
     fromSnapshotId: string,
     toSnapshotId: string,
-    index: number
+    index: number,
   ): number {
     if (!this.dims.has(dimId)) throw new DimNotFoundError(`Unknown dim: "${dimId}"`);
     if (fromSnapshotId === toSnapshotId) return index;
@@ -886,7 +903,7 @@ export class MetaRegistry {
     const path = this._findMigrationPath(dimId, fromSnapshotId, toSnapshotId);
     if (!path) {
       throw new MigrationNotFoundError(
-        `No migration path for dim "${dimId}": "${fromSnapshotId}" → "${toSnapshotId}"`
+        `No migration path for dim "${dimId}": "${fromSnapshotId}" → "${toSnapshotId}"`,
       );
     }
 
@@ -952,7 +969,7 @@ export class MetaRegistry {
       } else if (mapped !== toPos) {
         throw new ValidationError(
           `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": ` +
-          `position ${pos} maps to ${mapped}, but entity "${entity}" is at position ${toPos} in toSnapshot`
+            `position ${pos} maps to ${mapped}, but entity "${entity}" is at position ${toPos} in toSnapshot`,
         );
       }
     }
@@ -960,7 +977,7 @@ export class MetaRegistry {
     if (unmapped.length > 0) {
       throw new ValidationError(
         `Dim "${dimId}" migration "${fromSnapshotId}"→"${toSnapshotId}": ` +
-        `unmapped positions with changed entities: [${unmapped.join(", ")}]`
+          `unmapped positions with changed entities: [${unmapped.join(', ')}]`,
       );
     }
   }
@@ -1001,7 +1018,7 @@ export class MetaRegistry {
     }
 
     const fromCapa = snapshotCapacity(fromSnap);
-    const toCapa   = snapshotCapacity(toSnap);
+    const toCapa = snapshotCapacity(toSnap);
 
     return {
       dimId,
@@ -1056,7 +1073,7 @@ export class MetaRegistry {
     const idPreserved = !weightsChanged && toWi.size >= fromWi.size;
 
     // changedDims: dims where snapshotId differs between versions
-    const changedDims: VersionDiff["changedDims"] = [];
+    const changedDims: VersionDiff['changedDims'] = [];
     for (const dimId of def.dims) {
       const fromSnapshotId = fromIv.snapshots[dimId];
       const toSnapshotId = toIv.snapshots[dimId];
@@ -1064,7 +1081,7 @@ export class MetaRegistry {
         const fromSnap = this._getSnapshotCache(dimId, fromSnapshotId).snapshot;
         const toSnap = this._getSnapshotCache(dimId, toSnapshotId).snapshot;
         const fromCapa = snapshotCapacity(fromSnap);
-        const toCapa   = snapshotCapacity(toSnap);
+        const toCapa = snapshotCapacity(toSnap);
         changedDims.push({
           dimId,
           fromSnapshot: fromSnapshotId,
@@ -1120,11 +1137,11 @@ export class MetaRegistry {
     const { snapshot } = this._getSnapshotCache(dimId, snapshotId);
     if (oneBasedIndex < 1 || oneBasedIndex > snapshot.entries.length) {
       throw new ValidationError(
-        `isEntryActive "${dimId}/${snapshotId}": index ${oneBasedIndex} out of range [1, ${snapshot.entries.length}]`
+        `isEntryActive "${dimId}/${snapshotId}": index ${oneBasedIndex} out of range [1, ${snapshot.entries.length}]`,
       );
     }
     const flag = snapshot.entryFlags[oneBasedIndex];
-    return !flag || flag.status === "active";
+    return !flag || flag.status === 'active';
   }
 
   get dimIds(): readonly string[] {
@@ -1219,9 +1236,7 @@ export class MetaRegistry {
     if (!vMap) throw new IndexNotFoundError(`Unknown index: "${indexId}"`);
     const iv = vMap.get(versionId);
     if (!iv) {
-      throw new IndexVersionNotFoundError(
-        `Unknown version: "${indexId}/${versionId}"`
-      );
+      throw new IndexVersionNotFoundError(`Unknown version: "${indexId}/${versionId}"`);
     }
     return iv;
   }
@@ -1231,18 +1246,22 @@ export class MetaRegistry {
    *  headroom 기반 stride 안정성을 보장한다. */
   private _buildShape(def: IndexDef, iv: IndexVersion): number[] {
     return def.dims.map((dimId) =>
-      snapshotCapacity(this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot)
+      snapshotCapacity(this._getSnapshotCache(dimId, iv.snapshots[dimId]).snapshot),
     );
   }
 
   private _getWeightedIndex(indexId: string, versionId: string): WeightedIndex {
     const def = this._getIndexDef(indexId);
-    if (def.numberType === "bigint") {
+    if (def.numberType === 'bigint') {
       const iv = this._getIndexVersion(indexId, versionId);
       const shape = this._buildShape(def, iv);
       const productBig = computeShapeProductBig(shape);
-      throw new CapacityOverflowError(indexId, versionId, productBig,
-        'Number-based encode/decode is not available for BigInt-typed index.');
+      throw new CapacityOverflowError(
+        indexId,
+        versionId,
+        productBig,
+        'Number-based encode/decode is not available for BigInt-typed index.',
+      );
     }
 
     const key = `${indexId}:${versionId}`;
@@ -1270,16 +1289,16 @@ export class MetaRegistry {
     snapshotId: string,
     entries: EntityId[],
     kind: DimKind,
-    entryRefs?: Record<number, EntryIndexRef>
+    entryRefs?: Record<number, EntryIndexRef>,
   ): void {
-    if (kind.type === "string_enum") {
+    if (kind.type === 'string_enum') {
       for (let i = 0; i < entries.length; i++) {
         const pos = i + 1; // 1-based
         // entry-level index_ref로 선언된 위치는 number를 허용
         if (entryRefs?.[pos] !== undefined) continue;
-        if (typeof entries[i] !== "string") {
+        if (typeof entries[i] !== 'string') {
           throw new ValidationError(
-            `DimSnapshot "${dimId}/${snapshotId}" (string_enum): entry at position ${pos} must be string, got ${typeof entries[i]}`
+            `DimSnapshot "${dimId}/${snapshotId}" (string_enum): entry at position ${pos} must be string, got ${typeof entries[i]}`,
           );
         }
       }
@@ -1288,9 +1307,9 @@ export class MetaRegistry {
       const kindLabel = kind.type;
       for (let i = 0; i < entries.length; i++) {
         const v = entries[i];
-        if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
+        if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
           throw new ValidationError(
-            `DimSnapshot "${dimId}/${snapshotId}" (${kindLabel}): entry at position ${i + 1} must be a non-negative integer, got ${JSON.stringify(v)}`
+            `DimSnapshot "${dimId}/${snapshotId}" (${kindLabel}): entry at position ${i + 1} must be a non-negative integer, got ${JSON.stringify(v)}`,
           );
         }
       }
@@ -1302,11 +1321,7 @@ export class MetaRegistry {
    * 등록된 migration edge를 순방향으로 탐색.
    * 경로가 없으면 null 반환.
    */
-  private _findMigrationPath(
-    dimId: string,
-    from: string,
-    to: string
-  ): string[] | null {
+  private _findMigrationPath(dimId: string, from: string, to: string): string[] | null {
     const migMap = this.migrations.get(dimId);
     if (!migMap) return null;
 
@@ -1342,14 +1357,12 @@ export class MetaRegistry {
   private _validateAddressConfig(
     config: AddressConfig,
     indicesMap: ReadonlyMap<string, IndexDef>,
-    versionsMap: ReadonlyMap<string, ReadonlyMap<string, IndexVersion>>
+    versionsMap: ReadonlyMap<string, ReadonlyMap<string, IndexVersion>>,
   ): void {
     // 1. 모든 indexId가 schemas에 포함되어야 한다
     for (const indexId of indicesMap.keys()) {
       if (config.schemas[indexId] === undefined) {
-        throw new ValidationError(
-          `Address config: indexId "${indexId}" not mapped in schemas`
-        );
+        throw new ValidationError(`Address config: indexId "${indexId}" not mapped in schemas`);
       }
     }
 
@@ -1358,7 +1371,7 @@ export class MetaRegistry {
       for (const versionId of vMap.keys()) {
         if (config.versions[versionId] === undefined) {
           throw new ValidationError(
-            `Address config: versionId "${versionId}" (index "${indexId}") not mapped in versions`
+            `Address config: versionId "${versionId}" (index "${indexId}") not mapped in versions`,
           );
         }
       }
@@ -1366,16 +1379,16 @@ export class MetaRegistry {
 
     // 3. 매핑 값 유효성 검증
     for (const [name, num] of Object.entries(config.schemas)) {
-      if (typeof num !== "number" || !Number.isInteger(num) || num < 0) {
+      if (typeof num !== 'number' || !Number.isInteger(num) || num < 0) {
         throw new ValidationError(
-          `Address config schemas["${name}"]: must be a non-negative integer, got ${JSON.stringify(num)}`
+          `Address config schemas["${name}"]: must be a non-negative integer, got ${JSON.stringify(num)}`,
         );
       }
     }
     for (const [name, num] of Object.entries(config.versions)) {
-      if (typeof num !== "number" || !Number.isInteger(num) || num < 0) {
+      if (typeof num !== 'number' || !Number.isInteger(num) || num < 0) {
         throw new ValidationError(
-          `Address config versions["${name}"]: must be a non-negative integer, got ${JSON.stringify(num)}`
+          `Address config versions["${name}"]: must be a non-negative integer, got ${JSON.stringify(num)}`,
         );
       }
     }
@@ -1386,7 +1399,7 @@ export class MetaRegistry {
       const existing = schemaNums.get(num);
       if (existing !== undefined) {
         throw new ValidationError(
-          `Address config: duplicate schema number ${num} for "${name}" and "${existing}"`
+          `Address config: duplicate schema number ${num} for "${name}" and "${existing}"`,
         );
       }
       schemaNums.set(num, name);
@@ -1398,7 +1411,7 @@ export class MetaRegistry {
       const existing = versionNums.get(num);
       if (existing !== undefined) {
         throw new ValidationError(
-          `Address config: duplicate version number ${num} for "${name}" and "${existing}"`
+          `Address config: duplicate version number ${num} for "${name}" and "${existing}"`,
         );
       }
       versionNums.set(num, name);
@@ -1409,18 +1422,18 @@ export class MetaRegistry {
       const { chars, numShards } = config.sharding;
       if (!Number.isInteger(chars) || chars <= 0) {
         throw new ValidationError(
-          `Address config sharding.chars: must be a positive integer, got ${JSON.stringify(chars)}`
+          `Address config sharding.chars: must be a positive integer, got ${JSON.stringify(chars)}`,
         );
       }
       if (!Number.isInteger(numShards) || numShards < 1) {
         throw new ValidationError(
-          `Address config sharding.numShards: must be a positive integer, got ${JSON.stringify(numShards)}`
+          `Address config sharding.numShards: must be a positive integer, got ${JSON.stringify(numShards)}`,
         );
       }
       const shardCapacity = 16 ** chars;
       if (numShards > shardCapacity) {
         throw new ValidationError(
-          `Address config sharding.numShards(${numShards}) exceeds chars(${chars}) capacity (max ${shardCapacity})`
+          `Address config sharding.numShards(${numShards}) exceeds chars(${chars}) capacity (max ${shardCapacity})`,
         );
       }
     }

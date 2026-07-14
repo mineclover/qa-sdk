@@ -13,11 +13,17 @@
  * 결과의 usageSource로 "어디서 사용하는가"를 구분할 수 있다.
  */
 
-import type { Catalog } from "./catalog.types.js";
+import type { Catalog } from './catalog.types.js';
 
 export interface AxisUsageEntry {
   readonly axisId: string;
-  readonly source: "prefix-dim" | "transition-match" | "transition-input" | "transition-output" | "scenario" | "additional";
+  readonly source:
+    | 'prefix-dim'
+    | 'transition-match'
+    | 'transition-input'
+    | 'transition-output'
+    | 'scenario'
+    | 'additional';
   /** 사용처 ID (prefix ID, transition name, scenario ID 등) */
   readonly context: string;
 }
@@ -31,7 +37,12 @@ export interface AxisUsageSummary {
 
 export interface CollectAxisUsageOptions {
   /** TransitionSpec에서 추출한 축 참조 배열. spec-core에 의존하지 않도록 외부에서 주입. */
-  transitionAxes?: readonly { transition: string; matchAxes: readonly string[]; inputAxes: readonly string[]; outputAxes: readonly string[] }[];
+  transitionAxes?: readonly {
+    transition: string;
+    matchAxes: readonly string[];
+    inputAxes: readonly string[];
+    outputAxes: readonly string[];
+  }[];
   /** ScenarioSpec constraint에서 참조하는 축 배열 */
   scenarioAxes?: readonly { scenarioId: string; axes: readonly string[] }[];
   /** 기타 소스에서 사용하는 축 배열 */
@@ -52,8 +63,8 @@ export function collectAxisUsage(
       const dims = prefixDef.dims;
       if (!dims) continue;
       for (const [, dimRef] of Object.entries(dims)) {
-        if (dimRef.kind === "axis" && dimRef.axisId) {
-          entries.push({ axisId: dimRef.axisId, source: "prefix-dim", context: prefixId });
+        if (dimRef.kind === 'axis' && dimRef.axisId) {
+          entries.push({ axisId: dimRef.axisId, source: 'prefix-dim', context: prefixId });
         }
       }
     }
@@ -62,23 +73,28 @@ export function collectAxisUsage(
   // 2. transitionSpecs
   if (options.transitionAxes) {
     for (const t of options.transitionAxes) {
-      for (const a of t.matchAxes) entries.push({ axisId: a, source: "transition-match", context: t.transition });
-      for (const a of t.inputAxes) entries.push({ axisId: a, source: "transition-input", context: t.transition });
-      for (const a of t.outputAxes) entries.push({ axisId: a, source: "transition-output", context: t.transition });
+      for (const a of t.matchAxes)
+        entries.push({ axisId: a, source: 'transition-match', context: t.transition });
+      for (const a of t.inputAxes)
+        entries.push({ axisId: a, source: 'transition-input', context: t.transition });
+      for (const a of t.outputAxes)
+        entries.push({ axisId: a, source: 'transition-output', context: t.transition });
     }
   }
 
   // 3. scenarioSpecs
   if (options.scenarioAxes) {
     for (const s of options.scenarioAxes) {
-      for (const a of s.axes) entries.push({ axisId: a, source: "scenario", context: s.scenarioId });
+      for (const a of s.axes)
+        entries.push({ axisId: a, source: 'scenario', context: s.scenarioId });
     }
   }
 
   // 4. additional
   if (options.additionalAxes) {
     for (const item of options.additionalAxes) {
-      for (const a of item.axes) entries.push({ axisId: a, source: "additional", context: item.context });
+      for (const a of item.axes)
+        entries.push({ axisId: a, source: 'additional', context: item.context });
     }
   }
 
@@ -112,6 +128,6 @@ export function summarizeAxisUsage(entries: readonly AxisUsageEntry[]): AxisUsag
 /** 카탈로그에 정의되어 있지만 어디서도 사용하지 않는 축을 찾는다. */
 export function findUnusedAxes(catalog: Catalog, entries: readonly AxisUsageEntry[]): string[] {
   const allAxes = Object.keys(catalog.axes ?? {});
-  const used = new Set(entries.map(e => e.axisId));
-  return allAxes.filter(a => !used.has(a));
+  const used = new Set(entries.map((e) => e.axisId));
+  return allAxes.filter((a) => !used.has(a));
 }

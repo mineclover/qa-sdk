@@ -1,8 +1,8 @@
 // @def.boundary cli-command-spec
 // @def.doc cli-command-spec
 
-import { parseArgs } from "node:util";
-import type { CliCommandNode, CommandContext } from "./types.js";
+import { parseArgs } from 'node:util';
+import type { CliCommandNode, CommandContext } from './types.js';
 
 /**
  * 노드의 args/options 정의에 따라 인자를 파싱한다.
@@ -13,17 +13,22 @@ export function parseCommandArgs(rawArgs: string[], node: CliCommandNode): Comma
   const optDefs = node.options ?? [];
 
   // parseArgs 옵션 구성 — kebab-case 키 사용 (parseArgs가 --flag와 매칭)
-  const parseOptions: Record<string, {
-    type: "boolean" | "string";
-    short?: string;
-    default?: string | boolean | string[] | boolean[];
-  }> = {};
+  const parseOptions: Record<
+    string,
+    {
+      type: 'boolean' | 'string';
+      short?: string;
+      default?: string | boolean | string[] | boolean[];
+    }
+  > = {};
   for (const opt of optDefs) {
-    const kebabKey = opt.flag.replace(/^--/, "");
+    const kebabKey = opt.flag.replace(/^--/, '');
     parseOptions[kebabKey] = {
       type: opt.type,
-      ...(opt.short ? { short: opt.short.replace(/^-/, "") } : {}),
-      ...(opt.default !== undefined ? { default: opt.default as string | boolean | string[] | boolean[] } : {}),
+      ...(opt.short ? { short: opt.short.replace(/^-/, '') } : {}),
+      ...(opt.default !== undefined
+        ? { default: opt.default as string | boolean | string[] | boolean[] }
+        : {}),
     };
   }
 
@@ -61,13 +66,13 @@ export function parseCommandArgs(rawArgs: string[], node: CliCommandNode): Comma
 
   for (const optDef of optDefs) {
     if (!optDef.choices?.length) continue;
-    const kebabKey = optDef.flag.replace(/^--/, "");
+    const kebabKey = optDef.flag.replace(/^--/, '');
     const camelKey = kebabKey.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
     const value = options[camelKey];
-    if (value === undefined || typeof value !== "string") continue;
+    if (value === undefined || typeof value !== 'string') continue;
     if (!optDef.choices.includes(value)) {
       throw new Error(
-        `invalid value for ${optDef.flag}: ${value} (expected one of ${optDef.choices.join(", ")})`,
+        `invalid value for ${optDef.flag}: ${value} (expected one of ${optDef.choices.join(', ')})`,
       );
     }
   }

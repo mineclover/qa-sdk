@@ -14,20 +14,15 @@
  * 워크플로우: check → mutate → DKG record → persist
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { GraphRegistry } from "dkg";
-import type {
-  DkgNode,
-  AxisNode,
-  VersionEventNode,
-  VersionChange,
-} from "dkg";
-import { safeEntryAdd, type SafeEntryAddResult } from "dkg";
+import type { Catalog } from '@qa-sdk/core';
+import type { GraphRegistry } from 'dkg';
+import type { DkgNode, AxisNode, VersionEventNode, VersionChange } from 'dkg';
+import { safeEntryAdd, type SafeEntryAddResult } from 'dkg';
 import {
   addEntryToCatalog,
   expandCapacity,
   type CatalogMutationResult,
-} from "./catalog-mutator.js";
+} from './catalog-mutator.js';
 
 // ── Types ──
 
@@ -47,7 +42,7 @@ export interface EntryAddOptions {
   readonly expandCapacity?: boolean;
   /** DkgSqliteStore (제공 시 persist) */
   readonly store?: {
-    updateNode(node: DkgNode, source?: "bootstrap" | "manual" | "auto"): void;
+    updateNode(node: DkgNode, source?: 'bootstrap' | 'manual' | 'auto'): void;
   };
 }
 
@@ -68,15 +63,15 @@ export function executeEntryAdd(
   const warnings: string[] = [];
 
   // ── 1. 멱등성 — 동일 entry에 대한 VersionEvent가 이미 존재하는지 확인 ──
-  const existingEvents = graph.getNodesByKind("version-event");
+  const existingEvents = graph.getNodesByKind('version-event');
   const alreadyRecorded = existingEvents.some(
     (e) =>
       e.subjectId === axisId &&
-      e.changes.some((c) => c.kind === "entry-added" && c.detail.includes(`"${entry}"`)),
+      e.changes.some((c) => c.kind === 'entry-added' && c.detail.includes(`"${entry}"`)),
   );
   if (alreadyRecorded) {
     throw new EntryAddError(
-      "already-recorded",
+      'already-recorded',
       `"${entry}" → ${axisId}: 이미 VersionEvent에 기록됨. 멱등 보호.`,
     );
   }
@@ -86,14 +81,14 @@ export function executeEntryAdd(
 
   let capacityExpanded = false;
 
-  if (check.verdict === "already-exists") {
-    throw new EntryAddError("already-exists", check.summary);
+  if (check.verdict === 'already-exists') {
+    throw new EntryAddError('already-exists', check.summary);
   }
 
-  if (check.verdict === "needs-capacity") {
+  if (check.verdict === 'needs-capacity') {
     if (!options?.expandCapacity) {
       throw new EntryAddError(
-        "needs-capacity",
+        'needs-capacity',
         `${check.summary}\n  → --expand-capacity 플래그로 자동 확장 (stride-break 발생, 기존 주소 재인코딩 필요)`,
       );
     }
@@ -104,8 +99,8 @@ export function executeEntryAdd(
     );
   }
 
-  if (check.verdict === "constraint-violation") {
-    throw new EntryAddError("constraint-violation", check.summary);
+  if (check.verdict === 'constraint-violation') {
+    throw new EntryAddError('constraint-violation', check.summary);
   }
 
   // ── 3. 카탈로그 변이 ──
@@ -113,9 +108,7 @@ export function executeEntryAdd(
   if (capacityExpanded) {
     const expanded = expandCapacity(catalog, axisId);
     mutation = addEntryToCatalog(expanded.catalog, axisId, entry);
-    warnings.push(
-      `capacity: ${expanded.oldCapacity} → ${expanded.newCapacity} (×2)`,
-    );
+    warnings.push(`capacity: ${expanded.oldCapacity} → ${expanded.newCapacity} (×2)`);
     // capacity 확장도 changes에 기록
     mutation = {
       ...mutation,
@@ -128,36 +121,36 @@ export function executeEntryAdd(
   // refEntries 경고
   if (mutation.updatedPrefixVersions.length > 0) {
     warnings.push(
-      `prefix_ref를 사용하는 prefix의 refEntries 재계산이 필요합니다: ${mutation.updatedPrefixVersions.map((p) => p.prefixId).join(", ")}`,
+      `prefix_ref를 사용하는 prefix의 refEntries 재계산이 필요합니다: ${mutation.updatedPrefixVersions.map((p) => p.prefixId).join(', ')}`,
     );
   }
 
   // ── 4. VersionEvent 생성 ──
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ISO string always contains "T"
-  const date = new Date().toISOString().split("T")[0]!;
+  const date = new Date().toISOString().split('T')[0]!;
   const changes: VersionChange[] = [
-    { kind: "entry-added", detail: `"${entry}" added to ${axisId}` },
+    { kind: 'entry-added', detail: `"${entry}" added to ${axisId}` },
   ];
   if (capacityExpanded) {
     changes.push({
-      kind: "capacity-changed",
+      kind: 'capacity-changed',
       detail: `capacity expanded: ${mutation.capacityChange?.from} → ${mutation.capacityChange?.to}`,
     });
   }
 
   const versionEvent: VersionEventNode = {
-    kind: "version-event",
+    kind: 'version-event',
     id: `VER-AXIS-${axisId}-${mutation.newVersion}-${date}`,
     subjectId: axisId,
-    subjectKind: "axis",
+    subjectKind: 'axis',
     fromVersion: mutation.oldVersion,
     toVersion: mutation.newVersion,
     date,
     changes,
     impact:
       mutation.affectedPrefixes.length > 0
-        ? `${mutation.affectedPrefixes.length} prefix 영향: ${mutation.affectedPrefixes.join(", ")}`
-        : "영향 없음",
+        ? `${mutation.affectedPrefixes.length} prefix 영향: ${mutation.affectedPrefixes.join(', ')}`
+        : '영향 없음',
   };
 
   // ── 5. 그래프 반영 ──
@@ -173,7 +166,7 @@ export function executeEntryAdd(
     }
 
     graph.addNode(versionEvent);
-    graph.addEdge("evolves-from", versionEvent.id, axisId);
+    graph.addEdge('evolves-from', versionEvent.id, axisId);
 
     // ── 6. SQLite 저장 ──
     if (options?.store) {
@@ -183,10 +176,10 @@ export function executeEntryAdd(
             ...axisNode,
             currentVersions: [...axisNode.currentVersions, mutation.newVersion],
           },
-          "manual",
+          'manual',
         );
       }
-      options.store.updateNode(versionEvent, "manual");
+      options.store.updateNode(versionEvent, 'manual');
     }
   }
 
@@ -208,6 +201,6 @@ export class EntryAddError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "EntryAddError";
+    this.name = 'EntryAddError';
   }
 }

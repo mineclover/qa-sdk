@@ -1,21 +1,18 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+import { Module, type Provider } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
 
-import { REPORTING_REPOSITORY } from "../reporting-db.module.js";
-import type { ReportingRepository } from "../shared/port.js";
+import { REPORTING_REPOSITORY } from '../reporting-db.module.js';
+import type { ReportingRepository } from '../shared/port.js';
 
-import { MetricAdminPort } from "./application/ports/metric-admin.port.js";
-import { MetricReadModelQuery } from "./application/queries/metric-read-model.query.js";
-import { RepositoryMetricAdminAdapter } from "./infrastructure/persistence/metric.repository-adapter.js";
-import { RepositoryMetricReadModel } from "./infrastructure/read-model/metric.read-model.js";
-import { createMetricLogger } from "./infrastructure/logging/metric.logger.js";
-import { MetricController } from "./presentation/http/metric.controller.js";
+import { MetricAdminPort } from './application/ports/metric-admin.port.js';
+import { MetricReadModelQuery } from './application/queries/metric-read-model.query.js';
+import { RepositoryMetricAdminAdapter } from './infrastructure/persistence/metric.repository-adapter.js';
+import { RepositoryMetricReadModel } from './infrastructure/read-model/metric.read-model.js';
+import { createMetricLogger } from './infrastructure/logging/metric.logger.js';
+import { MetricController } from './presentation/http/metric.controller.js';
 
 /**
  * Metric 슬라이스 — read-model 위상.

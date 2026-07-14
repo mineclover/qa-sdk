@@ -1,21 +1,13 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import {
-  toDepartmentId,
-  toProjectId,
-  toProjectOwnerId,
-} from "./project.ids.js";
+import { toDepartmentId, toProjectId, toProjectOwnerId } from './project.ids.js';
 import {
   InvalidProjectNameException,
   ProjectArchivedException,
   ProjectStatusTransitionException,
-} from "./project.exceptions.js";
-import type {
-  ProjectProps,
-  ProjectSnapshot,
-  ProjectStatus,
-} from "./project.types.js";
+} from './project.exceptions.js';
+import type { ProjectProps, ProjectSnapshot, ProjectStatus } from './project.types.js';
 
 /**
  * Project Aggregate Root.
@@ -46,7 +38,7 @@ export class ProjectEntity {
       name: input.name,
       ownerId: toProjectOwnerId(input.ownerId),
       departmentId: toDepartmentId(input.departmentId),
-      status: input.status ?? "draft",
+      status: input.status ?? 'draft',
       createdAt: now,
       updatedAt: now,
     });
@@ -66,27 +58,30 @@ export class ProjectEntity {
 
   /** draft → active 전이. */
   activate(now = new Date()): ProjectEntity {
-    if (this.props.status === "archived") {
+    if (this.props.status === 'archived') {
       throw new ProjectArchivedException();
     }
-    if (this.props.status === "active") return this;
-    return new ProjectEntity({ ...this.props, status: "active", updatedAt: now });
+    if (this.props.status === 'active') return this;
+    return new ProjectEntity({ ...this.props, status: 'active', updatedAt: now });
   }
 
   /** active → archived 전이 (terminal). draft 에서도 archive 가능. */
   archive(now = new Date()): ProjectEntity {
-    if (this.props.status === "archived") return this;
-    return new ProjectEntity({ ...this.props, status: "archived", updatedAt: now });
+    if (this.props.status === 'archived') return this;
+    return new ProjectEntity({ ...this.props, status: 'archived', updatedAt: now });
   }
 
   /** patch 적용. archived 에서는 ConflictError. */
-  applyPatch(patch: {
-    readonly name?: string;
-    readonly ownerId?: string;
-    readonly departmentId?: string;
-    readonly status?: ProjectStatus;
-  }, now = new Date()): ProjectEntity {
-    if (this.props.status === "archived") {
+  applyPatch(
+    patch: {
+      readonly name?: string;
+      readonly ownerId?: string;
+      readonly departmentId?: string;
+      readonly status?: ProjectStatus;
+    },
+    now = new Date(),
+  ): ProjectEntity {
+    if (this.props.status === 'archived') {
       throw new ProjectArchivedException();
     }
     if (patch.name !== undefined && patch.name.trim().length === 0) {
@@ -104,7 +99,9 @@ export class ProjectEntity {
       name: patch.name ?? this.props.name,
       ownerId: patch.ownerId !== undefined ? toProjectOwnerId(patch.ownerId) : this.props.ownerId,
       departmentId:
-        patch.departmentId !== undefined ? toDepartmentId(patch.departmentId) : this.props.departmentId,
+        patch.departmentId !== undefined
+          ? toDepartmentId(patch.departmentId)
+          : this.props.departmentId,
       status: patch.status ?? this.props.status,
       updatedAt: now,
     };
@@ -142,8 +139,8 @@ export class ProjectEntity {
 
 function isValidStatusTransition(from: ProjectStatus, to: ProjectStatus): boolean {
   if (from === to) return true;
-  if (from === "archived") return false;
-  if (from === "draft" && (to === "active" || to === "archived")) return true;
-  if (from === "active" && to === "archived") return true;
+  if (from === 'archived') return false;
+  if (from === 'draft' && (to === 'active' || to === 'archived')) return true;
+  if (from === 'active' && to === 'archived') return true;
   return false;
 }

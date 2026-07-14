@@ -11,7 +11,7 @@
  * - flow-schema ─references→ flow-schema (subFlow)
  */
 
-import type { DkgEdge } from "./dkg.types.js";
+import type { DkgEdge } from './dkg.types.js';
 
 export interface FlowSchemaRelationInput {
   readonly flowSchemaId: string;
@@ -30,7 +30,7 @@ export function deriveFlowSchemaEdges(input: FlowSchemaRelationInput): DkgEdge[]
   const edges: DkgEdge[] = [];
   const seen = new Set<string>();
 
-  const push = (type: DkgEdge["type"], to: string): void => {
+  const push = (type: DkgEdge['type'], to: string): void => {
     const key = `${type}:${input.flowSchemaId}:${to}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -38,20 +38,20 @@ export function deriveFlowSchemaEdges(input: FlowSchemaRelationInput): DkgEdge[]
   };
 
   for (const axisId of input.axisIds ?? []) {
-    push("composes", axisId);
+    push('composes', axisId);
   }
 
   for (const prefixId of input.observedPrefixIds ?? []) {
-    push("observes", prefixId);
+    push('observes', prefixId);
   }
 
   if (input.domainId) {
-    push("contains", input.domainId);
+    push('contains', input.domainId);
   }
 
   for (const subFlowId of input.subFlowIds ?? []) {
     if (subFlowId !== input.flowSchemaId) {
-      push("references", subFlowId);
+      push('references', subFlowId);
     }
   }
 
@@ -59,7 +59,7 @@ export function deriveFlowSchemaEdges(input: FlowSchemaRelationInput): DkgEdge[]
 }
 
 export interface GraphEdgeWriter {
-  addEdge(type: DkgEdge["type"], from: string, to: string, meta?: Record<string, unknown>): void;
+  addEdge(type: DkgEdge['type'], from: string, to: string, meta?: Record<string, unknown>): void;
 }
 
 /**

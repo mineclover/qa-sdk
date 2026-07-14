@@ -10,10 +10,10 @@
  * 충돌 감지: 같은 ID의 axis/prefix가 다른 서비스에서 다르게 정의되면 에러.
  */
 
-import type { Catalog, PrefixDef, TableSchema, VersionedAxis } from "@qa-sdk/core";
+import type { Catalog, PrefixDef, TableSchema, VersionedAxis } from '@qa-sdk/core';
 
 export interface PartialCatalog {
-  readonly id: string;  // "shopping", "infra", "observation" 등
+  readonly id: string; // "shopping", "infra", "observation" 등
   readonly axes?: Record<string, VersionedAxis>;
   readonly prefixes?: Record<string, PrefixDef>;
   readonly tables?: Record<string, TableSchema>;
@@ -25,12 +25,12 @@ export interface MergeResult {
     prefixes: Record<string, PrefixDef>;
     tables: Record<string, TableSchema>;
   };
-  readonly sources: Record<string, string>;  // axisId/prefixId → sourceId
+  readonly sources: Record<string, string>; // axisId/prefixId → sourceId
   readonly conflicts: readonly MergeConflict[];
 }
 
 export interface MergeConflict {
-  readonly type: "axis" | "prefix" | "table";
+  readonly type: 'axis' | 'prefix' | 'table';
   readonly id: string;
   readonly sources: readonly string[];
   readonly message: string;
@@ -55,7 +55,7 @@ export function mergeCatalogs(catalogs: readonly PartialCatalog[]): MergeResult 
           // 이미 있으면 충돌 검사
           if (JSON.stringify(axes[id]) !== JSON.stringify(def)) {
             conflicts.push({
-              type: "axis",
+              type: 'axis',
               id,
               sources: [sources[`axis:${id}`], cat.id],
               message: `Axis "${id}" defined differently in ${sources[`axis:${id}`]} and ${cat.id}`,
@@ -74,7 +74,7 @@ export function mergeCatalogs(catalogs: readonly PartialCatalog[]): MergeResult 
       for (const [id, def] of Object.entries(cat.prefixes)) {
         if (prefixes[id]) {
           conflicts.push({
-            type: "prefix",
+            type: 'prefix',
             id,
             sources: [sources[`prefix:${id}`], cat.id],
             message: `Prefix "${id}" defined in both ${sources[`prefix:${id}`]} and ${cat.id}`,
@@ -104,7 +104,7 @@ export function mergeCatalogs(catalogs: readonly PartialCatalog[]): MergeResult 
  * 전체 카탈로그에서 특정 서비스의 prefix만 추출한다.
  */
 export function extractServiceCatalog(
-  fullCatalog: Pick<Catalog, "axes" | "prefixes">,
+  fullCatalog: Pick<Catalog, 'axes' | 'prefixes'>,
   prefixIds: readonly string[],
 ): { axes: Record<string, VersionedAxis>; prefixes: Record<string, PrefixDef> } {
   const prefixes: Record<string, PrefixDef> = {};
@@ -118,7 +118,7 @@ export function extractServiceCatalog(
     // 이 prefix가 사용하는 축 추출
     if (prefix.dims) {
       for (const dimRef of Object.values(prefix.dims)) {
-        if (dimRef.kind === "axis" && dimRef.axisId) {
+        if (dimRef.kind === 'axis' && dimRef.axisId) {
           usedAxes.add(dimRef.axisId);
         }
       }

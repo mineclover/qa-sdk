@@ -143,8 +143,6 @@ describe('operational ontology pack validation', () => {
       expect.objectContaining({ packId: 'authorization-ontology' }),
     );
     expect(registry.list()).toHaveLength(1);
-    expect(registry.validateAll()).toEqual(
-      expect.objectContaining({ valid: true }),
-    );
+    expect(registry.validateAll()).toEqual(expect.objectContaining({ valid: true }));
   });
 });

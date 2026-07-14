@@ -11,9 +11,9 @@
  * 이 도구가 실제 값으로 대체할 수 있다.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort } from "spec-schema";
-import type { PrefixNode } from "./dkg.types.js";
+import type { Catalog } from '@qa-sdk/core';
+import type { GraphPort } from 'spec-schema';
+import type { PrefixNode } from './dkg.types.js';
 
 export interface DocSyncReport {
   readonly timestamp: string;
@@ -24,8 +24,20 @@ export interface DocSyncReport {
     readonly tableCount: number;
     readonly totalEntries: number;
     readonly totalCapacity: number;
-    readonly axesList: readonly { id: string; name: string; entries: number; capacity: number; versions: number }[];
-    readonly prefixesList: readonly { id: string; name: string; dims: number; category: string; versions: number }[];
+    readonly axesList: readonly {
+      id: string;
+      name: string;
+      entries: number;
+      capacity: number;
+      versions: number;
+    }[];
+    readonly prefixesList: readonly {
+      id: string;
+      name: string;
+      dims: number;
+      category: string;
+      versions: number;
+    }[];
   };
   /** DKG GraphRegistry에서 파생된 현재 값 */
   readonly dkg: {
@@ -42,10 +54,7 @@ export interface DocSyncReport {
  * 현재 코드 상태에서 문서용 리포트를 생성한다.
  * 이 리포트의 값이 문서의 SSOT.
  */
-export function generateDocSyncReport(
-  catalog: Catalog,
-  graph: GraphPort,
-): DocSyncReport {
+export function generateDocSyncReport(catalog: Catalog, graph: GraphPort): DocSyncReport {
   // Catalog
   const axesList = Object.entries(catalog.axes).map(([id, axis]) => {
     const versions = Object.keys(axis.versions);
@@ -65,22 +74,34 @@ export function generateDocSyncReport(
       id,
       name: p.name,
       dims: Object.keys(p.dims).length,
-      category: prefixNode?.category ?? "entity",
+      category: prefixNode?.category ?? 'entity',
       versions: p.versions.length,
     };
   });
 
   // DKG
   const nodesByKind: Record<string, number> = {};
-  for (const kind of ["axis", "prefix", "spec", "schema", "decision", "version-event",
-    "constraint", "observation", "domain", "consumer", "intent-link", "dsl-bundle"] as const) {
+  for (const kind of [
+    'axis',
+    'prefix',
+    'spec',
+    'schema',
+    'decision',
+    'version-event',
+    'constraint',
+    'observation',
+    'domain',
+    'consumer',
+    'intent-link',
+    'dsl-bundle',
+  ] as const) {
     const count = graph.getNodesByKind(kind).length;
     if (count > 0) nodesByKind[kind] = count;
   }
 
   const prefixesByCategory: Record<string, string[]> = {};
   for (const [cat, nodes] of Object.entries(graph.groupPrefixesByCategory())) {
-    prefixesByCategory[cat] = nodes.map(n => n.id);
+    prefixesByCategory[cat] = nodes.map((n) => n.id);
   }
 
   // Snippets
@@ -94,14 +115,14 @@ export function generateDocSyncReport(
     dkg_edge_count: String(graph.edgeCount),
     dkg_node_kinds: String(Object.keys(nodesByKind).length),
     category_list: Object.entries(prefixesByCategory)
-      .map(([cat, ids]) => `[${cat}] ${ids.join(", ")}`)
-      .join("\n"),
+      .map(([cat, ids]) => `[${cat}] ${ids.join(', ')}`)
+      .join('\n'),
     prefix_table: prefixesList
-      .map(p => `| ${p.id} | ${p.name} | ${p.category} | ${p.dims} | ${p.versions} |`)
-      .join("\n"),
+      .map((p) => `| ${p.id} | ${p.name} | ${p.category} | ${p.dims} | ${p.versions} |`)
+      .join('\n'),
     axes_table: axesList
-      .map(a => `| ${a.id} | ${a.name} | ${a.entries} | ${a.capacity} | ${a.versions} |`)
-      .join("\n"),
+      .map((a) => `| ${a.id} | ${a.name} | ${a.entries} | ${a.capacity} | ${a.versions} |`)
+      .join('\n'),
   };
 
   return {

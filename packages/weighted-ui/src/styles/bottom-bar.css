@@ -13,7 +13,7 @@
   display: flex;
   align-items: stretch;
   height: 100%;
-  border-right: 1px solid rgba(255,255,255,0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 .stab {
   display: flex;
@@ -21,13 +21,18 @@
   gap: 5px;
   padding: 0 14px;
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.65);
-  border-right: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255, 255, 255, 0.65);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
   white-space: nowrap;
 }
-.stab:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.stab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
 .stab.active {
   background: var(--surface-0);
   color: var(--ui-primary);
@@ -35,7 +40,9 @@
   border-top: 2px solid var(--ui-primary);
   border-bottom: none;
 }
-.stab-icon { font-size: 0.7rem; }
+.stab-icon {
+  font-size: 0.7rem;
+}
 
 /* Status bar */
 .status-bar {
@@ -45,7 +52,12 @@
   margin-left: auto;
   padding-right: 12px;
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.75);
+  color: rgba(255, 255, 255, 0.75);
 }
-.status-bar span { padding: 0 8px; }
-.status-sep { color: rgba(255,255,255,0.25) !important; padding: 0 2px !important; }
+.status-bar span {
+  padding: 0 8px;
+}
+.status-sep {
+  color: rgba(255, 255, 255, 0.25) !important;
+  padding: 0 2px !important;
+}

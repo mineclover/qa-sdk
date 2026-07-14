@@ -2,7 +2,7 @@
 // @def.doc canary-routing-decision
 // spec 02 §3.2 RoutingTable in-memory store.
 
-import { z } from "zod";
+import { z } from 'zod';
 
 const UpstreamPairSchema = z.object({
   version: z.string().regex(/^v[1-9][0-9]*(-candidate|-retired)?$/),
@@ -14,7 +14,7 @@ export const RouteEntrySchema = z.object({
   stable: UpstreamPairSchema,
   candidate: UpstreamPairSchema.nullable(),
   weight: z.number().int().min(0).max(100),
-  stickyKey: z.literal("user_id"),
+  stickyKey: z.literal('user_id'),
 });
 
 export type RouteEntry = z.infer<typeof RouteEntrySchema>;
@@ -35,7 +35,7 @@ export interface RoutingTable {
 }
 export interface UpsertResult {
   applied: boolean;
-  reason?: "stale-revision";
+  reason?: 'stale-revision';
 }
 
 export class InMemoryRoutingStore {
@@ -45,7 +45,7 @@ export class InMemoryRoutingStore {
     const validated = RouteEntrySchema.parse(entry);
     const existing = this.routes.get(serviceName);
     if (existing && validated.revision <= existing.revision) {
-      return { applied: false, reason: "stale-revision" };
+      return { applied: false, reason: 'stale-revision' };
     }
     this.routes.set(serviceName, validated);
     return { applied: true };

@@ -1,16 +1,16 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { PrefixRegistry, DimRef, VersionLifecycleStore, VersionRecord } from "index-meta";
-import { calcWeights } from "weighted-index";
-import type { PrefixOwnerStore } from "../stores/prefix-owner-store.js";
-import type { DraftLockStore } from "../stores/draft-lock-store.js";
+import type { PrefixRegistry, DimRef, VersionLifecycleStore, VersionRecord } from 'index-meta';
+import { calcWeights } from 'weighted-index';
+import type { PrefixOwnerStore } from '../stores/prefix-owner-store.js';
+import type { DraftLockStore } from '../stores/draft-lock-store.js';
 import type {
   DraftLock,
   ExtendedVersionRecord,
   ExtendedVersionStatus,
   PrefixOwnerRecord,
-} from "../types/index.js";
+} from '../types/index.js';
 import {
   AppError,
   prefixNotFound,
@@ -22,9 +22,9 @@ import {
   notReady,
   overflow,
   duplicatePrefix,
-} from "./errors.js";
-import { analyze } from "./draft-workspace.js";
-import type { ActivationGatePort } from "./activation-gate-adapter.js";
+} from './errors.js';
+import { analyze } from './draft-workspace.js';
+import type { ActivationGatePort } from './activation-gate-adapter.js';
 
 /** post-activation hook 포트 */
 export interface PostActivationHookPort {
@@ -74,8 +74,8 @@ export class RegistryService {
   async registerPrefix(input: {
     prefix: string;
     owner: string;
-    kind: "leaf" | "composite";
-    numberType: "number" | "bigint";
+    kind: 'leaf' | 'composite';
+    numberType: 'number' | 'bigint';
   }): Promise<PrefixOwnerRecord> {
     const existing = await this.ownerStore.get(input.prefix);
     if (existing) throw duplicatePrefix(input.prefix);
@@ -101,7 +101,10 @@ export class RegistryService {
     return this.ownerStore.list();
   }
 
-  async patchPrefix(prefix: string, patch: import("../stores/prefix-owner-store.js").PrefixProfilePatch): Promise<PrefixOwnerRecord> {
+  async patchPrefix(
+    prefix: string,
+    patch: import('../stores/prefix-owner-store.js').PrefixProfilePatch,
+  ): Promise<PrefixOwnerRecord> {
     const record = await this.ownerStore.get(prefix);
     if (!record) throw prefixNotFound(prefix);
     await this.ownerStore.patch(prefix, patch);
@@ -127,7 +130,7 @@ export class RegistryService {
       );
     }
 
-    const nonDeprecated = versions.filter((v) => v.status !== "deprecated");
+    const nonDeprecated = versions.filter((v) => v.status !== 'deprecated');
     if (nonDeprecated.length > 0) {
       throw invalidTransition(
         `Cannot delete prefix '${prefix}': has ${nonDeprecated.length} non-deprecated version(s)`,
@@ -144,7 +147,7 @@ export class RegistryService {
     versionId: string;
     baseVersionId: string | null;
     capacity: number;
-    deactivationMode?: "strict" | "flexible";
+    deactivationMode?: 'strict' | 'flexible';
     refs?: { prefix: string; versionId: string }[];
   }): Promise<ExtendedVersionRecord> {
     await this.getPrefix(input.prefix);
@@ -208,7 +211,7 @@ export class RegistryService {
   ): Promise<ExtendedVersionRecord> {
     const version = await this.versionStore.getVersion(prefix, versionId);
     if (!version) throw versionNotFound(prefix, versionId);
-    if (version.status !== "draft") {
+    if (version.status !== 'draft') {
       throw invalidTransition(`Cannot modify: version '${versionId}' is '${version.status}'`);
     }
     if (await this.isLocked(prefix, versionId)) {
@@ -260,9 +263,10 @@ export class RegistryService {
     // VersionLifecycleStore has no updateCapacity method to propagate
     // the change. Reconcile here by preferring prefixRegistry's value.
     const registryCap = await this.prefixRegistry.getCapacity(prefix, versionId);
-    const corrected = registryCap !== null && registryCap !== version.capacity
-      ? { ...version, capacity: registryCap }
-      : version;
+    const corrected =
+      registryCap !== null && registryCap !== version.capacity
+        ? { ...version, capacity: registryCap }
+        : version;
 
     const deps = await this.prefixRegistry.getDeps(prefix, versionId);
     const dimRefs = deps.length > 0 ? [...deps] : undefined;
@@ -277,7 +281,7 @@ export class RegistryService {
     await this.getPrefix(prefix); // 존재 확인
 
     // locked는 서비스 레이어 개념 → draft + lock 필터
-    const libStatus = status === "locked" ? "draft" : status;
+    const libStatus = status === 'locked' ? 'draft' : status;
     const versions = await this.versionStore.getVersions(prefix, libStatus);
 
     const results: ExtendedVersionRecord[] = [];
@@ -287,9 +291,9 @@ export class RegistryService {
       const ext = await this.toExtendedVersion(v, dimRefs);
 
       // locked 필터: status=locked → locked만 반환
-      if (status === "locked" && ext.status !== "locked") continue;
+      if (status === 'locked' && ext.status !== 'locked') continue;
       // draft 필터에서 locked 제외
-      if (status === "draft" && ext.status === "locked") continue;
+      if (status === 'draft' && ext.status === 'locked') continue;
 
       results.push(ext);
     }
@@ -301,7 +305,7 @@ export class RegistryService {
   async lockDraft(prefix: string, versionId: string): Promise<void> {
     const version = await this.versionStore.getVersion(prefix, versionId);
     if (!version) throw versionNotFound(prefix, versionId);
-    if (version.status !== "draft") {
+    if (version.status !== 'draft') {
       throw invalidTransition(`Cannot lock: version '${versionId}' is '${version.status}'`);
     }
     if (await this.isLocked(prefix, versionId)) {
@@ -331,7 +335,7 @@ export class RegistryService {
     // locked → released (서비스 레이어에서 lock 해제 후 library release 호출)
     if (await this.isLocked(prefix, versionId)) {
       await this.lockStore.release(prefix, versionId);
-    } else if (version.status !== "draft") {
+    } else if (version.status !== 'draft') {
       throw invalidTransition(
         `Cannot release: version '${versionId}' is '${version.status}', expected 'draft' or 'locked'`,
       );
@@ -339,7 +343,7 @@ export class RegistryService {
 
     // 경량 overflow 체크 (composite만)
     const owner = await this.ownerStore.get(prefix);
-    if (owner?.kind === "composite" && owner.numberType === "number") {
+    if (owner?.kind === 'composite' && owner.numberType === 'number') {
       const deps = await this.prefixRegistry.getDeps(prefix, versionId);
       if (deps.length > 0) {
         const product = deps.reduce((acc, d) => acc * d.capacity, 1);
@@ -354,7 +358,13 @@ export class RegistryService {
     await this.versionStore.release(prefix, versionId);
   }
 
-  async activate(prefix: string, versionId: string): Promise<{ ok: true; diagnostics: readonly { level: string; source: string; id: string; message: string }[] }> {
+  async activate(
+    prefix: string,
+    versionId: string,
+  ): Promise<{
+    ok: true;
+    diagnostics: readonly { level: string; source: string; id: string; message: string }[];
+  }> {
     const version = await this.versionStore.getVersion(prefix, versionId);
     if (!version) throw versionNotFound(prefix, versionId);
 
@@ -366,9 +376,9 @@ export class RegistryService {
       if (!result.allowed) {
         throw notReady(
           `Activation blocked by constraints: ${result.diagnostics
-            .filter((d) => d.level === "error")
+            .filter((d) => d.level === 'error')
             .map((d) => d.message)
-            .join("; ")}`,
+            .join('; ')}`,
         );
       }
     }
@@ -380,8 +390,9 @@ export class RegistryService {
     // 마이그레이션 호환성 검증: capacity 축소 감지
     if (previousActive && version.capacity < previousActive.capacity) {
       diagnostics.push({
-        level: "warning", source: "migration",
-        id: "migration-capacity-shrink",
+        level: 'warning',
+        source: 'migration',
+        id: 'migration-capacity-shrink',
         message: `capacity ${previousActive.capacity} → ${version.capacity} 축소 — stride-break 가능`,
       });
     }
@@ -409,7 +420,7 @@ export class RegistryService {
     const locked: string[] = [];
 
     for (const p of prefixes) {
-      const drafts = await this.versionStore.getVersions(p.prefix, "draft");
+      const drafts = await this.versionStore.getVersions(p.prefix, 'draft');
       for (const d of drafts) {
         if (!(await this.isLocked(d.prefix, d.versionId))) {
           await this.lockDraft(d.prefix, d.versionId);
@@ -429,10 +440,8 @@ export class RegistryService {
       (p, v) => this.isLocked(p, v),
     );
     if (!analysis.ready) {
-      const errors = analysis.diagnostics
-        .filter((d) => d.level === "error")
-        .map((e) => e.message);
-      throw notReady(`Release blocked: ${errors.join("; ")}`);
+      const errors = analysis.diagnostics.filter((d) => d.level === 'error').map((e) => e.message);
+      throw notReady(`Release blocked: ${errors.join('; ')}`);
     }
 
     // 위상정렬 순서로 release (leaf 먼저)
@@ -440,7 +449,7 @@ export class RegistryService {
     const released: string[] = [];
 
     for (const prefix of order) {
-      const drafts = await this.versionStore.getVersions(prefix, "draft");
+      const drafts = await this.versionStore.getVersions(prefix, 'draft');
       for (const d of drafts) {
         await this.release(d.prefix, d.versionId);
         released.push(`${d.prefix}/${d.versionId}`);
@@ -459,7 +468,10 @@ export class RegistryService {
     return this.prefixRegistry.getTransitiveDeps(prefix, versionId);
   }
 
-  async getReverseRefs(prefix: string, versionId: string): Promise<readonly import("index-meta").PrefixRegistryRecord[]> {
+  async getReverseRefs(
+    prefix: string,
+    versionId: string,
+  ): Promise<readonly import('index-meta').PrefixRegistryRecord[]> {
     return this.prefixRegistry.getReverseRefs(prefix, versionId);
   }
 
@@ -475,7 +487,7 @@ export class RegistryService {
       prefix: r.prefix,
       versionId: r.versionId,
       capacity: r.capacity,
-      kind: ownerMap.get(r.prefix)?.kind ?? "leaf",
+      kind: ownerMap.get(r.prefix)?.kind ?? 'leaf',
     }));
 
     const edges: { from: string; to: string }[] = [];
@@ -511,7 +523,7 @@ export class RegistryService {
     return {
       versionId: active.versionId,
       capacity: active.capacity,
-      numberType: owner?.numberType ?? "number",
+      numberType: owner?.numberType ?? 'number',
       ...(shape && shape.length > 1 ? { shape, stride } : {}),
     };
   }
@@ -529,13 +541,16 @@ export class RegistryService {
     >
   > {
     const prefixes = await this.ownerStore.list();
-    const result: Record<string, {
-      versionId: string;
-      capacity: number;
-      numberType: string;
-      shape?: number[];
-      stride?: number[];
-    }> = {};
+    const result: Record<
+      string,
+      {
+        versionId: string;
+        capacity: number;
+        numberType: string;
+        shape?: number[];
+        stride?: number[];
+      }
+    > = {};
 
     for (const p of prefixes) {
       const active = await this.versionStore.getActive(p.prefix);
@@ -555,13 +570,16 @@ export class RegistryService {
   }
 
   async resolveManifest(): Promise<{
-    versions: Record<string, {
-      versionId: string;
-      capacity: number;
-      numberType: string;
-      shape?: number[];
-      stride?: number[];
-    }>;
+    versions: Record<
+      string,
+      {
+        versionId: string;
+        capacity: number;
+        numberType: string;
+        shape?: number[];
+        stride?: number[];
+      }
+    >;
     generatedAt: string;
   }> {
     const versions = await this.resolveAllActive();
@@ -577,7 +595,10 @@ export class RegistryService {
    * Level 1 — 메타만 조회.
    * prefix:v의 dims, capacity, stride, snapshotSupply, status, kind.
    */
-  async inspectMeta(prefix: string, versionId: string): Promise<{
+  async inspectMeta(
+    prefix: string,
+    versionId: string,
+  ): Promise<{
     prefix: string;
     versionId: string;
     kind: string;
@@ -608,7 +629,7 @@ export class RegistryService {
       status: ver.status,
       numberType: owner.numberType,
       capacity: ver.capacity,
-      dims: owner.kind === "composite" ? dims : [prefix],
+      dims: owner.kind === 'composite' ? dims : [prefix],
       shape,
       stride,
       product,
@@ -619,8 +640,11 @@ export class RegistryService {
    * Level 2 — 인덱스 키 조회.
    * 메타 + 유효 주소 범위 [min, max] + 축별 entry 개수.
    */
-  async inspectKeys(prefix: string, versionId: string): Promise<{
-    meta: Awaited<ReturnType<RegistryService["inspectMeta"]>>;
+  async inspectKeys(
+    prefix: string,
+    versionId: string,
+  ): Promise<{
+    meta: Awaited<ReturnType<RegistryService['inspectMeta']>>;
     addressRange: { min: number; max: number } | null;
     dimEntries: { dim: string; entryCount: number; capacity: number }[];
   }> {
@@ -638,11 +662,12 @@ export class RegistryService {
 
     // leaf prefix: 주소 범위 = [0, capacity-1]
     // composite: 주소 범위 = [0, product-1]
-    const addressRange = meta.product !== null
-      ? { min: 0, max: meta.product - 1 }
-      : meta.capacity > 0
-        ? { min: 0, max: meta.capacity - 1 }
-        : null;
+    const addressRange =
+      meta.product !== null
+        ? { min: 0, max: meta.product - 1 }
+        : meta.capacity > 0
+          ? { min: 0, max: meta.capacity - 1 }
+          : null;
 
     return { meta, addressRange, dimEntries };
   }
@@ -651,8 +676,12 @@ export class RegistryService {
    * Level 3 — 인덱스 밸류 조회.
    * 메타 + 키 + 특정 주소의 디코드 결과 (좌표 + dims 매핑).
    */
-  async inspectValue(prefix: string, versionId: string, address: number): Promise<{
-    meta: Awaited<ReturnType<RegistryService["inspectMeta"]>>;
+  async inspectValue(
+    prefix: string,
+    versionId: string,
+    address: number,
+  ): Promise<{
+    meta: Awaited<ReturnType<RegistryService['inspectMeta']>>;
     address: number;
     coords: number[];
     decoded: { dim: string; position: number; capacity: number }[];
@@ -692,7 +721,10 @@ export class RegistryService {
 
   // ── Schema Diff ─────────────────────────────────────────
 
-  async diffVersions(fromVersionId: string, toVersionId: string): Promise<{
+  async diffVersions(
+    fromVersionId: string,
+    toVersionId: string,
+  ): Promise<{
     from: string;
     to: string;
     diffs: {
@@ -703,7 +735,7 @@ export class RegistryService {
       capacityChanged: boolean;
       strideChanged: boolean;
       migrationRequired: boolean;
-      status: "added" | "removed" | "changed";
+      status: 'added' | 'removed' | 'changed';
     }[];
     migrationRequired: boolean;
   }> {
@@ -716,7 +748,7 @@ export class RegistryService {
       capacityChanged: boolean;
       strideChanged: boolean;
       migrationRequired: boolean;
-      status: "added" | "removed" | "changed";
+      status: 'added' | 'removed' | 'changed';
     }> = [];
 
     for (const p of prefixes) {
@@ -727,8 +759,9 @@ export class RegistryService {
 
       const fromVer = await this.versionStore.getVersion(p.prefix, fromVersionId);
       if (fromVer) {
-        fromCap = (await this.prefixRegistry.getCapacity(p.prefix, fromVersionId)) ?? fromVer.capacity;
-        if (p.kind === "composite") {
+        fromCap =
+          (await this.prefixRegistry.getCapacity(p.prefix, fromVersionId)) ?? fromVer.capacity;
+        if (p.kind === 'composite') {
           fromShape = (await this.prefixRegistry.getShape(p.prefix, fromVersionId)) ?? null;
         }
       }
@@ -736,7 +769,7 @@ export class RegistryService {
       const toVer = await this.versionStore.getVersion(p.prefix, toVersionId);
       if (toVer) {
         toCap = (await this.prefixRegistry.getCapacity(p.prefix, toVersionId)) ?? toVer.capacity;
-        if (p.kind === "composite") {
+        if (p.kind === 'composite') {
           toShape = (await this.prefixRegistry.getShape(p.prefix, toVersionId)) ?? null;
         }
       }
@@ -747,8 +780,9 @@ export class RegistryService {
       const toStride = toShape ? calcWeights(toShape) : null;
 
       const capacityChanged = fromCap !== toCap;
-      const strideChanged = !!(fromStride && toStride && !arraysEqual(fromStride, toStride))
-        || (!!fromStride !== !!toStride);
+      const strideChanged =
+        !!(fromStride && toStride && !arraysEqual(fromStride, toStride)) ||
+        !!fromStride !== !!toStride;
 
       // skip unchanged entries
       if (!capacityChanged && !strideChanged && fromCap !== null && toCap !== null) continue;
@@ -761,7 +795,7 @@ export class RegistryService {
         capacityChanged,
         strideChanged,
         migrationRequired: strideChanged,
-        status: fromCap === null ? "added" : toCap === null ? "removed" : "changed",
+        status: fromCap === null ? 'added' : toCap === null ? 'removed' : 'changed',
       });
     }
 
@@ -769,7 +803,7 @@ export class RegistryService {
       from: fromVersionId,
       to: toVersionId,
       diffs,
-      migrationRequired: diffs.some(d => d.migrationRequired),
+      migrationRequired: diffs.some((d) => d.migrationRequired),
     };
   }
 
@@ -784,13 +818,27 @@ export class RegistryService {
   }
 
   async getAllDrafts(): Promise<
-    { prefix: string; versionId: string; owner: string; kind: string; capacity: number; locked: boolean }[]
+    {
+      prefix: string;
+      versionId: string;
+      owner: string;
+      kind: string;
+      capacity: number;
+      locked: boolean;
+    }[]
   > {
     const prefixes = await this.ownerStore.list();
-    const results: Array<{ prefix: string; versionId: string; owner: string; kind: string; capacity: number; locked: boolean }> = [];
+    const results: Array<{
+      prefix: string;
+      versionId: string;
+      owner: string;
+      kind: string;
+      capacity: number;
+      locked: boolean;
+    }> = [];
 
     for (const p of prefixes) {
-      const drafts = await this.versionStore.getVersions(p.prefix, "draft");
+      const drafts = await this.versionStore.getVersions(p.prefix, 'draft');
       for (const d of drafts) {
         // prefixRegistry를 capacity 진실의 원천으로 사용
         const registryCap = await this.prefixRegistry.getCapacity(d.prefix, d.versionId);
@@ -817,7 +865,7 @@ export class RegistryService {
 
     // draft가 있는 prefix만 대상
     for (const p of prefixes) {
-      const drafts = await this.versionStore.getVersions(p.prefix, "draft");
+      const drafts = await this.versionStore.getVersions(p.prefix, 'draft');
       if (drafts.length === 0) continue;
       allPrefixes.add(p.prefix);
 
@@ -844,9 +892,7 @@ export class RegistryService {
         // cycle detected — reconstruct cycle path from stack
         const cycleStart = stack.indexOf(node);
         const cyclePath = [...stack.slice(cycleStart), node];
-        throw circularRef(
-          `Cycle detected in release DAG: ${cyclePath.join(" → ")}`,
-        );
+        throw circularRef(`Cycle detected in release DAG: ${cyclePath.join(' → ')}`);
       }
       visiting.add(node);
       stack.push(node);
@@ -892,7 +938,7 @@ export class RegistryService {
         }
       } catch (e) {
         // circularRef 에러는 반드시 전파, registry 미등록(새 생성 중)은 skip
-        if (e instanceof AppError && e.code === "CIRCULAR_REF") throw e;
+        if (e instanceof AppError && e.code === 'CIRCULAR_REF') throw e;
       }
     }
   }
@@ -911,7 +957,7 @@ export class RegistryService {
     return {
       prefix: v.prefix,
       versionId: v.versionId,
-      status: (locked ? "locked" : v.status) as ExtendedVersionStatus,
+      status: (locked ? 'locked' : v.status) as ExtendedVersionStatus,
       baseVersionId: v.baseVersionId,
       capacity: v.capacity,
       deactivationMode: v.deactivationMode,

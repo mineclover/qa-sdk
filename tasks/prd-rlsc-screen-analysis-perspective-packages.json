@@ -41,9 +41,7 @@
       "priority": 2,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -64,9 +62,7 @@
       "priority": 3,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-002"
-      ],
+      "dependsOn": ["US-002"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -87,9 +83,7 @@
       "priority": 4,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-003"
-      ],
+      "dependsOn": ["US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -110,9 +104,7 @@
       "priority": 5,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -135,9 +127,7 @@
       "priority": 6,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-002"
-      ],
+      "dependsOn": ["US-002"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -162,9 +152,7 @@
       "priority": 7,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-006"
-      ],
+      "dependsOn": ["US-006"],
       "completionNotes": "WebGL availability pre-check (probe canvas getContext) added in createPerspectiveViewer. Canvas fallback verified via headless Chrome smoke (packages/e2e/rlsc-demo-smoke.mjs) — console errors 0, screenshot shows Perspective layers + SVG overlay rendering correctly."
     },
     {
@@ -189,9 +177,7 @@
       "priority": 8,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-007"
-      ],
+      "dependsOn": ["US-007"],
       "completionNotes": "Implemented grouping, hover, selection detail, clear selection, componentId/qaAddress/role grouping, and browser-verified selection/copy workflow with screenshot /tmp/rlsc-demo-perspective-selected.png."
     },
     {
@@ -216,9 +202,7 @@
       "priority": 9,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-008"
-      ],
+      "dependsOn": ["US-008"],
       "completionNotes": "Implemented default plain identifier copy, optional JSON copy payload, containment leak issue markers, text overflow issue markers, and selected layer issue details."
     },
     {
@@ -241,10 +225,7 @@
       "priority": 10,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-005",
-        "US-006"
-      ],
+      "dependsOn": ["US-005", "US-006"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -271,10 +252,7 @@
       "priority": 11,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-009",
-        "US-010"
-      ],
+      "dependsOn": ["US-009", "US-010"],
       "completionNotes": "Migrated demo to @qa-sdk/rlsc-analysis, @qa-sdk/rlsc-analysis/browser, and @qa-sdk/rlsc-perspective; browser verification shows leaks=1, selected identifier copied, console errors=0."
     },
     {
@@ -299,9 +277,7 @@
       "priority": 12,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-011"
-      ],
+      "dependsOn": ["US-011"],
       "completionNotes": "Added/updated package docs for rlsc-analysis, rlsc-perspective, and rlsc compatibility boundaries."
     }
   ],

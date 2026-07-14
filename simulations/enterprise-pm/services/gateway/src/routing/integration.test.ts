@@ -14,48 +14,48 @@
  *   (c) 동일 user_id의 weight 5%→15% 변경 시 같은 결정 유지(spec §3.3 deterministic).
  */
 
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { VersionedBitmap } from "permission-engine";
-import { createApp } from "../app.js";
-import { signBitmapJwt } from "../lib/jwt.js";
-import { InMemoryRoutingStore, type RouteEntry } from "./routing-table.js";
-import { parseCidrList } from "../lib/internal-network.js";
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { VersionedBitmap } from 'permission-engine';
+import { createApp } from '../app.js';
+import { signBitmapJwt } from '../lib/jwt.js';
+import { InMemoryRoutingStore, type RouteEntry } from './routing-table.js';
+import { parseCidrList } from '../lib/internal-network.js';
 
-const SECRET = "x".repeat(32);
+const SECRET = 'x'.repeat(32);
 const SAMPLE_BM: VersionedBitmap = {
-  prefix: "sim.bitmap",
-  v: "uv1",
+  prefix: 'sim.bitmap',
+  v: 'uv1',
   mask: new Uint8Array([0x01]),
-  issuedAt: "2026-04-22T00:00:00Z",
-  expiresAt: "2026-04-22T00:05:00Z",
-  issuer: "sim-auth-api",
-  signature: "s",
+  issuedAt: '2026-04-22T00:00:00Z',
+  expiresAt: '2026-04-22T00:05:00Z',
+  issuer: 'sim-auth-api',
+  signature: 's',
 };
 const TARGETS = {
-  "sim-pm-api": "http://sim-pm-api:4500",
-  "sim-approval-api": "http://sim-approval-api:4600",
-  "sim-notification-api": "http://sim-notification-api:4700",
-  "sim-reporting-api": "http://sim-reporting-api:4800",
-  "sim-document-api": "http://sim-document-api:4900",
-  "sim-audit-browser-api": "http://sim-audit-browser-api:5100",
+  'sim-pm-api': 'http://sim-pm-api:4500',
+  'sim-approval-api': 'http://sim-approval-api:4600',
+  'sim-notification-api': 'http://sim-notification-api:4700',
+  'sim-reporting-api': 'http://sim-reporting-api:4800',
+  'sim-document-api': 'http://sim-document-api:4900',
+  'sim-audit-browser-api': 'http://sim-audit-browser-api:5100',
 };
 
-const APPROVAL_V1 = "http://sim-approval-api-v1:4500";
-const APPROVAL_V2 = "http://sim-approval-api-v2:4500";
+const APPROVAL_V1 = 'http://sim-approval-api-v1:4500';
+const APPROVAL_V2 = 'http://sim-approval-api-v2:4500';
 
 const STABLE_ONLY: RouteEntry = {
   revision: 1,
-  stable: { version: "v3", upstream: APPROVAL_V1 },
+  stable: { version: 'v3', upstream: APPROVAL_V1 },
   candidate: null,
   weight: 0,
-  stickyKey: "user_id",
+  stickyKey: 'user_id',
 };
 const WITH_CANDIDATE_10: RouteEntry = {
   revision: 2,
-  stable: { version: "v3", upstream: APPROVAL_V1 },
-  candidate: { version: "v4-candidate", upstream: APPROVAL_V2 },
+  stable: { version: 'v3', upstream: APPROVAL_V1 },
+  candidate: { version: 'v4-candidate', upstream: APPROVAL_V2 },
   weight: 10,
-  stickyKey: "user_id",
+  stickyKey: 'user_id',
 };
 
 afterEach(() => vi.restoreAllMocks());
@@ -77,14 +77,14 @@ interface AppHandle {
 function buildApp(): AppHandle {
   const store = new InMemoryRoutingStore();
   const app = createApp({
-    authApiUrl: "http://x",
+    authApiUrl: 'http://x',
     jwtSecret: SECRET,
     jwtTtlSeconds: 300,
-    currentBitmapV: "uv1",
+    currentBitmapV: 'uv1',
     proxyTimeoutMs: 5_000,
     proxyTargets: TARGETS,
     routingStore: store,
-    internalCidrs: parseCidrList("172.16.0.0/12"),
+    internalCidrs: parseCidrList('172.16.0.0/12'),
   });
   return { app, store };
 }
@@ -96,7 +96,7 @@ interface DistributionResult {
 }
 
 async function fireUsers(
-  app: AppHandle["app"],
+  app: AppHandle['app'],
   userIds: string[],
   extraHeaders: Record<string, string> = {},
 ): Promise<DistributionResult> {
@@ -106,16 +106,16 @@ async function fireUsers(
   const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const u = String(url);
     const headers = new Headers(init?.headers ?? {});
-    const stamp = headers.get("x-service-version") ?? "(none)";
+    const stamp = headers.get('x-service-version') ?? '(none)';
     if (u.startsWith(APPROVAL_V1)) v1++;
     else if (u.startsWith(APPROVAL_V2)) v2++;
     else throw new Error(`unexpected upstream: ${u}`);
     return Response.json({ ok: true, stamp });
   });
-  vi.stubGlobal("fetch", fetchMock);
+  vi.stubGlobal('fetch', fetchMock);
   for (const uid of userIds) {
     const tok = await tokenFor(uid);
-    const res = await app.request("/approvals/smoke", {
+    const res = await app.request('/approvals/smoke', {
       headers: { Authorization: `Bearer ${tok}`, ...extraHeaders },
     });
     expect(res.status).toBe(200);
@@ -125,19 +125,19 @@ async function fireUsers(
   return { v1Hits: v1, v2Hits: v2, versionStamps: stamps };
 }
 
-describe("routing integration — sticky-by-user (spec §3.1/§3.3)", () => {
-  it("weight=10 → ~10% (80~120 / 1000) candidate; stamps grammar #4 v3 / v4-candidate", async () => {
+describe('routing integration — sticky-by-user (spec §3.1/§3.3)', () => {
+  it('weight=10 → ~10% (80~120 / 1000) candidate; stamps grammar #4 v3 / v4-candidate', async () => {
     const { app, store } = buildApp();
-    const internalIp = "172.17.0.5";
+    const internalIp = '172.17.0.5';
     const pushRes = await app.fetch(
-      new Request("http://gw/admin/routing", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": internalIp },
-        body: JSON.stringify({ services: { "sim-approval-api": WITH_CANDIDATE_10 } }),
+      new Request('http://gw/admin/routing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': internalIp },
+        body: JSON.stringify({ services: { 'sim-approval-api': WITH_CANDIDATE_10 } }),
       }),
     );
     expect(pushRes.status).toBe(200);
-    expect(store.getRoute("sim-approval-api")?.weight).toBe(10);
+    expect(store.getRoute('sim-approval-api')?.weight).toBe(10);
 
     const userIds = Array.from({ length: 1000 }, (_, i) => `u-${i}`);
     const dist = await fireUsers(app, userIds);
@@ -146,19 +146,19 @@ describe("routing integration — sticky-by-user (spec §3.1/§3.3)", () => {
     expect(dist.v2Hits).toBeLessThanOrEqual(150);
     // 모든 stamp는 grammar #2/#4 builder 결과 — raw string 보간 금지.
     const uniqueStamps = new Set(dist.versionStamps.values());
-    expect(uniqueStamps.has("v3")).toBe(true);
-    expect(uniqueStamps.has("v4-candidate")).toBe(true);
+    expect(uniqueStamps.has('v3')).toBe(true);
+    expect(uniqueStamps.has('v4-candidate')).toBe(true);
   });
 
-  it("rollback (weight=0) 후 모든 user → v1", async () => {
+  it('rollback (weight=0) 후 모든 user → v1', async () => {
     const { app } = buildApp();
     await app.fetch(
-      new Request("http://gw/admin/routing", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": "172.17.0.5" },
+      new Request('http://gw/admin/routing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '172.17.0.5' },
         body: JSON.stringify({
           services: {
-            "sim-approval-api": { ...WITH_CANDIDATE_10, revision: 3, weight: 0 },
+            'sim-approval-api': { ...WITH_CANDIDATE_10, revision: 3, weight: 0 },
           },
         }),
       }),
@@ -171,22 +171,22 @@ describe("routing integration — sticky-by-user (spec §3.1/§3.3)", () => {
     expect(dist.v2Hits).toBe(0);
   });
 
-  it("x-canary-override (internal IP) → 강제 candidate, sticky 무시", async () => {
+  it('x-canary-override (internal IP) → 강제 candidate, sticky 무시', async () => {
     const { app } = buildApp();
     await app.fetch(
-      new Request("http://gw/admin/routing", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": "172.17.0.5" },
-        body: JSON.stringify({ services: { "sim-approval-api": STABLE_ONLY } }),
+      new Request('http://gw/admin/routing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '172.17.0.5' },
+        body: JSON.stringify({ services: { 'sim-approval-api': STABLE_ONLY } }),
       }),
     );
     // STABLE_ONLY는 candidate=null이라 override가 candidate 강제해도 적용 안 됨 → with-candidate 푸시.
     await app.fetch(
-      new Request("http://gw/admin/routing", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": "172.17.0.5" },
+      new Request('http://gw/admin/routing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '172.17.0.5' },
         body: JSON.stringify({
-          services: { "sim-approval-api": { ...WITH_CANDIDATE_10, revision: 9 } },
+          services: { 'sim-approval-api': { ...WITH_CANDIDATE_10, revision: 9 } },
         }),
       }),
     );
@@ -194,24 +194,24 @@ describe("routing integration — sticky-by-user (spec §3.1/§3.3)", () => {
       app,
       Array.from({ length: 50 }, (_, i) => `o-${i}`),
       {
-        "x-canary-override": "candidate:v4-candidate",
-        "x-forwarded-for": "172.17.0.5",
+        'x-canary-override': 'candidate:v4-candidate',
+        'x-forwarded-for': '172.17.0.5',
       },
     );
     expect(dist.v2Hits).toBe(50);
     expect(dist.v1Hits).toBe(0);
   });
 
-  it("deterministic: weight 5%→15% 변경 시 같은 user_id 라우팅 결정 안 변함 (변동폭 밖)", async () => {
+  it('deterministic: weight 5%→15% 변경 시 같은 user_id 라우팅 결정 안 변함 (변동폭 밖)', async () => {
     const { app } = buildApp();
     // 1차: weight=5
     await app.fetch(
-      new Request("http://gw/admin/routing", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": "172.17.0.5" },
+      new Request('http://gw/admin/routing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '172.17.0.5' },
         body: JSON.stringify({
           services: {
-            "sim-approval-api": { ...WITH_CANDIDATE_10, revision: 11, weight: 5 },
+            'sim-approval-api': { ...WITH_CANDIDATE_10, revision: 11, weight: 5 },
           },
         }),
       }),
@@ -222,12 +222,12 @@ describe("routing integration — sticky-by-user (spec §3.1/§3.3)", () => {
     // 2차: weight=15 — bucket이 [0,5) 또는 [15,100)에 있으면 결정 동일.
     //      [5,15) bucket만 v1→v2로 변동 (예상 ≈ 10% × 200 = 20명 이내).
     await app.fetch(
-      new Request("http://gw/admin/routing", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": "172.17.0.5" },
+      new Request('http://gw/admin/routing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '172.17.0.5' },
         body: JSON.stringify({
           services: {
-            "sim-approval-api": { ...WITH_CANDIDATE_10, revision: 12, weight: 15 },
+            'sim-approval-api': { ...WITH_CANDIDATE_10, revision: 12, weight: 15 },
           },
         }),
       }),

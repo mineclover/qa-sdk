@@ -1,8 +1,8 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { VersionEntity } from "../../domain/index.js";
-import type { VersionTransactionScope } from "./version-transaction.port.js";
+import type { VersionEntity } from '../../domain/index.js';
+import type { VersionTransactionScope } from './version-transaction.port.js';
 
 export abstract class VersionRepositoryPort {
   abstract save(entity: VersionEntity, scope: VersionTransactionScope): Promise<void>;

@@ -3,7 +3,7 @@
 
 // ── Actor Context ────────────────────────────────────────
 
-import type { IdentificationMode } from "./event-pattern.js";
+import type { IdentificationMode } from './event-pattern.js';
 
 export type { IdentificationMode };
 

@@ -5,7 +5,7 @@ import type {
   OntologyPackScaffoldComponentLikeDeclaration,
   OntologyPackScaffoldIdentity,
   OntologyPackScaffoldSystemLikeBinding,
-} from "../ontology-pack-scaffold-plan.js";
+} from '../ontology-pack-scaffold-plan.js';
 
 export function renderSpecDoc(
   identity: OntologyPackScaffoldIdentity,
@@ -53,23 +53,23 @@ Operational ontology pack authoring is architecture-neutral. ECS is one possible
 
 Identity declarations are stable names only; they do not own schema records or runtime behavior.
 
-${identity.declarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join("\n")}
+${identity.declarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join('\n')}
 
 ### Component schema
 
 Source: \`${identity.package.sourceDir}/${identity.safePackId}-schema.ts\`
 
-${componentLikeDeclarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join("\n")}
+${componentLikeDeclarations.map((declaration) => `- \`${declaration.symbolName}\` = \`${declaration.value}\` (${declaration.kind})`).join('\n')}
 
 ### System bindings
 
 Source: \`${identity.package.sourceDir}/${identity.safePackId}-pack.ts\`
 
-${systemLikeBindings.map((binding) => `- \`${binding.symbolName}\` (${binding.kind}): ${binding.description}`).join("\n")}
+${systemLikeBindings.map((binding) => `- \`${binding.symbolName}\` (${binding.kind}): ${binding.description}`).join('\n')}
 
 ## Source References
 
-${sources.map((source) => `- \`${source}\``).join("\n")}
+${sources.map((source) => `- \`${source}\``).join('\n')}
 
 ## 검증 참조
 
@@ -227,10 +227,7 @@ Preview separates identity declarations, component-like schema declarations, sys
 `;
 }
 
-export function renderTestDoc(
-  identity: OntologyPackScaffoldIdentity,
-  testPath: string,
-): string {
+export function renderTestDoc(identity: OntologyPackScaffoldIdentity, testPath: string): string {
   const displayName = toDisplayName(identity);
   return `---
 def:
@@ -262,18 +259,11 @@ ${identity.packId} pack의 generated test skeleton과 추가할 domain-specific 
 }
 
 function renderSourcesYaml(sources: readonly string[]): string {
-  return [
-    "sources:",
-    ...sources.map((source) => `  - ${source}`),
-  ].join("\n");
+  return ['sources:', ...sources.map((source) => `  - ${source}`)].join('\n');
 }
 
 function toDisplayName(identity: OntologyPackScaffoldIdentity): string {
-  return identity.safePackId
-    .split("-")
-    .filter(Boolean)
-    .map(capitalize)
-    .join(" ");
+  return identity.safePackId.split('-').filter(Boolean).map(capitalize).join(' ');
 }
 
 function capitalize(value: string): string {

@@ -18,9 +18,7 @@
       "payloadJson": {
         "purpose": "observe",
         "start": "collect-order",
-        "edges": [
-          "edge:collect-order->path:branch->validate-order"
-        ],
+        "edges": ["edge:collect-order->path:branch->validate-order"],
         "end": "validate-order",
         "canonicalizable": true
       },
@@ -49,15 +47,11 @@
         "traversal": {
           "purpose": "observe",
           "start": "collect-order",
-          "edges": [
-            "edge:collect-order->path:branch->validate-order"
-          ],
+          "edges": ["edge:collect-order->path:branch->validate-order"],
           "end": "validate-order",
           "canonicalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
         },
-        "reachedGoalIds": [
-          "validate-order"
-        ],
+        "reachedGoalIds": ["validate-order"],
         "unreachableGoalIds": [],
         "loopDetected": false,
         "recoveryUsed": false,
@@ -97,10 +91,7 @@
             "templateKind": "pipe_graph",
             "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
             "entryNodeId": "collect-order",
-            "nodeIds": [
-              "collect-order",
-              "validate-order"
-            ],
+            "nodeIds": ["collect-order", "validate-order"],
             "schemaIds": [],
             "endpoints": [],
             "contracts": [],
@@ -325,9 +316,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               }
             ],
             "dataFlow": {
@@ -480,9 +469,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:01:00.000Z",
             "corridorId": "event-record:log-web-snapshot",
-            "observedNodeKeys": [
-              "event-record:log-web-snapshot"
-            ],
+            "observedNodeKeys": ["event-record:log-web-snapshot"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:orderId"
             ],
@@ -637,9 +624,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:01:00.000Z",
             "corridorId": "event-record:log-web-snapshot",
-            "observedNodeKeys": [
-              "event-record:log-web-snapshot"
-            ],
+            "observedNodeKeys": ["event-record:log-web-snapshot"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:amount"
             ],
@@ -818,9 +803,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               }
             ],
             "dataFlow": {
@@ -1141,13 +1124,8 @@
                   "nodeNotObserved": false
                 },
                 "nodeId": "event-record:log-web-snapshot",
-                "observedPrefixIds": [
-                  "order_event"
-                ],
-                "observedFields": [
-                  "orderId",
-                  "amount"
-                ]
+                "observedPrefixIds": ["order_event"],
+                "observedFields": ["orderId", "amount"]
               },
               {
                 "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
@@ -1161,9 +1139,7 @@
                 },
                 "nodeId": "event-record:log-web-snapshot",
                 "observedPrefixIds": [],
-                "observedFields": [
-                  "orderId"
-                ]
+                "observedFields": ["orderId"]
               },
               {
                 "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
@@ -1177,9 +1153,7 @@
                 },
                 "nodeId": "event-record:log-web-snapshot",
                 "observedPrefixIds": [],
-                "observedFields": [
-                  "amount"
-                ]
+                "observedFields": ["amount"]
               },
               {
                 "checkpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
@@ -1192,9 +1166,7 @@
                   "nodeNotObserved": false
                 },
                 "nodeId": "address-context:order_event:order_event:v1:7",
-                "observedPrefixIds": [
-                  "order_event"
-                ],
+                "observedPrefixIds": ["order_event"],
                 "observedFields": []
               },
               {
@@ -1245,9 +1217,7 @@
                     "medium": "observation",
                     "direction": "forward",
                     "relationType": "observes_address_context",
-                    "contractRefs": [
-                      "order_event"
-                    ]
+                    "contractRefs": ["order_event"]
                   }
                 ],
                 "dataFlow": {
@@ -1398,9 +1368,7 @@
                 "eventKey": "order.submit",
                 "timestamp": "2026-04-12T00:01:00.000Z",
                 "corridorId": "event-record:log-web-snapshot",
-                "observedNodeKeys": [
-                  "event-record:log-web-snapshot"
-                ],
+                "observedNodeKeys": ["event-record:log-web-snapshot"],
                 "observedEdgeKeys": [
                   "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:orderId"
                 ],
@@ -1553,9 +1521,7 @@
                 "eventKey": "order.submit",
                 "timestamp": "2026-04-12T00:01:00.000Z",
                 "corridorId": "event-record:log-web-snapshot",
-                "observedNodeKeys": [
-                  "event-record:log-web-snapshot"
-                ],
+                "observedNodeKeys": ["event-record:log-web-snapshot"],
                 "observedEdgeKeys": [
                   "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:amount"
                 ],
@@ -1732,9 +1698,7 @@
                     "medium": "observation",
                     "direction": "forward",
                     "relationType": "observes_address_context",
-                    "contractRefs": [
-                      "order_event"
-                    ]
+                    "contractRefs": ["order_event"]
                   }
                 ],
                 "dataFlow": {
@@ -2081,9 +2045,7 @@
                   "conditionId": "collect-order:condition:0",
                   "expression": "order.valid == true"
                 },
-                "nextNodeIds": [
-                  "validate-order"
-                ],
+                "nextNodeIds": ["validate-order"],
                 "priority": 0
               }
             ]
@@ -2102,9 +2064,7 @@
             },
             "branchNodeId": "collect-order",
             "mode": "first_match",
-            "selectedPathIds": [
-              "collect-order->validate-order"
-            ],
+            "selectedPathIds": ["collect-order->validate-order"],
             "skippedPathIds": [],
             "reason": "observed-paths",
             "junctionId": "collect-order",
@@ -2117,15 +2077,11 @@
             "traversal": {
               "purpose": "observe",
               "start": "collect-order",
-              "edges": [
-                "edge:collect-order->path:branch->validate-order"
-              ],
+              "edges": ["edge:collect-order->path:branch->validate-order"],
               "end": "validate-order",
               "canonicalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
             },
-            "reachedGoalIds": [
-              "validate-order"
-            ],
+            "reachedGoalIds": ["validate-order"],
             "unreachableGoalIds": [],
             "loopDetected": false,
             "recoveryUsed": false,
@@ -2150,9 +2106,7 @@
             "medium": "direct",
             "direction": "forward",
             "relationType": "pipe_connection:conditional",
-            "contractRefs": [
-              "order.valid == true"
-            ]
+            "contractRefs": ["order.valid == true"]
           },
           {
             "transmissionId": "transmission:observation_emission:facet:event-record:log-web-snapshot:production->facet:address-context:order_event:order_event:v1:7:consumption",
@@ -2170,9 +2124,7 @@
             "medium": "observation",
             "direction": "forward",
             "relationType": "observes_address_context",
-            "contractRefs": [
-              "order_event"
-            ]
+            "contractRefs": ["order_event"]
           }
         ],
         "lineageLinks": [],
@@ -2200,10 +2152,7 @@
         "templateKind": "pipe_graph",
         "templateDescription": "Corridor materialized from PipeGraph and optional schema/lineage alignment",
         "entryNodeId": "collect-order",
-        "nodeIds": [
-          "collect-order",
-          "validate-order"
-        ],
+        "nodeIds": ["collect-order", "validate-order"],
         "schemaIds": [],
         "endpoints": [],
         "contracts": [],
@@ -2230,9 +2179,7 @@
           "disallowedLinkKinds": []
         }
       },
-      "builtFrom": [
-        "snapshot:web-full"
-      ],
+      "builtFrom": ["snapshot:web-full"],
       "builtAt": "2026-04-11T22:27:21.846Z"
     },
     {
@@ -2371,9 +2318,7 @@
           "disallowedLinkKinds": []
         }
       },
-      "builtFrom": [
-        "snapshot:web-full"
-      ],
+      "builtFrom": ["snapshot:web-full"],
       "builtAt": "2026-04-11T22:27:21.846Z"
     },
     {
@@ -2410,9 +2355,7 @@
         ],
         "version": "v1"
       },
-      "builtFrom": [
-        "snapshot:web-full"
-      ],
+      "builtFrom": ["snapshot:web-full"],
       "builtAt": "2026-04-11T22:27:21.846Z"
     },
     {
@@ -2434,13 +2377,8 @@
               "nodeNotObserved": false
             },
             "nodeId": "event-record:log-web-snapshot",
-            "observedPrefixIds": [
-              "order_event"
-            ],
-            "observedFields": [
-              "orderId",
-              "amount"
-            ]
+            "observedPrefixIds": ["order_event"],
+            "observedFields": ["orderId", "amount"]
           },
           {
             "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:orderId",
@@ -2454,9 +2392,7 @@
             },
             "nodeId": "event-record:log-web-snapshot",
             "observedPrefixIds": [],
-            "observedFields": [
-              "orderId"
-            ]
+            "observedFields": ["orderId"]
           },
           {
             "checkpointId": "checkpoint:event-record:log-web-snapshot:payload:amount",
@@ -2470,9 +2406,7 @@
             },
             "nodeId": "event-record:log-web-snapshot",
             "observedPrefixIds": [],
-            "observedFields": [
-              "amount"
-            ]
+            "observedFields": ["amount"]
           },
           {
             "checkpointId": "checkpoint:event-record:log-web-snapshot:binding:order_event:0",
@@ -2485,9 +2419,7 @@
               "nodeNotObserved": false
             },
             "nodeId": "address-context:order_event:order_event:v1:7",
-            "observedPrefixIds": [
-              "order_event"
-            ],
+            "observedPrefixIds": ["order_event"],
             "observedFields": []
           },
           {
@@ -2538,9 +2470,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               }
             ],
             "dataFlow": {
@@ -2691,9 +2621,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:01:00.000Z",
             "corridorId": "event-record:log-web-snapshot",
-            "observedNodeKeys": [
-              "event-record:log-web-snapshot"
-            ],
+            "observedNodeKeys": ["event-record:log-web-snapshot"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:orderId"
             ],
@@ -2846,9 +2774,7 @@
             "eventKey": "order.submit",
             "timestamp": "2026-04-12T00:01:00.000Z",
             "corridorId": "event-record:log-web-snapshot",
-            "observedNodeKeys": [
-              "event-record:log-web-snapshot"
-            ],
+            "observedNodeKeys": ["event-record:log-web-snapshot"],
             "observedEdgeKeys": [
               "edge:event-record:log-web-snapshot->payload_field->event-record:log-web-snapshot:amount"
             ],
@@ -3025,9 +2951,7 @@
                 "medium": "observation",
                 "direction": "forward",
                 "relationType": "observes_address_context",
-                "contractRefs": [
-                  "order_event"
-                ]
+                "contractRefs": ["order_event"]
               }
             ],
             "dataFlow": {
@@ -3353,9 +3277,7 @@
           }
         ]
       },
-      "builtFrom": [
-        "snapshot:web-full"
-      ],
+      "builtFrom": ["snapshot:web-full"],
       "builtAt": "2026-04-11T22:27:21.846Z"
     },
     {
@@ -3381,16 +3303,12 @@
               "conditionId": "collect-order:condition:0",
               "expression": "order.valid == true"
             },
-            "nextNodeIds": [
-              "validate-order"
-            ],
+            "nextNodeIds": ["validate-order"],
             "priority": 0
           }
         ]
       },
-      "builtFrom": [
-        "snapshot:web-full"
-      ],
+      "builtFrom": ["snapshot:web-full"],
       "builtAt": "2026-04-11T22:27:21.846Z"
     },
     {
@@ -3409,18 +3327,14 @@
         },
         "branchNodeId": "collect-order",
         "mode": "first_match",
-        "selectedPathIds": [
-          "collect-order->validate-order"
-        ],
+        "selectedPathIds": ["collect-order->validate-order"],
         "skippedPathIds": [],
         "reason": "observed-paths",
         "junctionId": "collect-order",
         "corridorId": "snapshot-web",
         "traversalKey": "traversal:observe:collect-order->edge:collect-order->path:branch->validate-order->validate-order"
       },
-      "builtFrom": [
-        "snapshot:web-full"
-      ],
+      "builtFrom": ["snapshot:web-full"],
       "builtAt": "2026-04-11T22:27:21.846Z"
     }
   ]

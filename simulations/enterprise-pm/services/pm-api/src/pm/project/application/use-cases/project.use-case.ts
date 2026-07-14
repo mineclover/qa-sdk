@@ -1,30 +1,27 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import { ProjectEntity, ProjectNotFoundException } from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { ProjectEntity, ProjectNotFoundException } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
 import type {
   CreateProjectCommand,
   DeleteProjectCommand,
   UpdateProjectCommand,
   DelegateProjectCommand,
   AddProjectDelegateCommand,
-} from "../commands/create-project.command.js";
-import type { ProjectLoggerPort } from "../ports/project-logger.port.js";
+} from '../commands/create-project.command.js';
+import type { ProjectLoggerPort } from '../ports/project-logger.port.js';
 import type {
   ProjectOutboxPort,
   ProjectCreatedEventPayload,
   ProjectUpdatedEventPayload,
   ProjectDeletedEventPayload,
   ProjectDelegatedEventPayload,
-} from "../ports/project-outbox.port.js";
-import type { ProjectRepositoryPort } from "../ports/project-repository.port.js";
-import type { ProjectTransactionPort } from "../ports/project-transaction.port.js";
-import type {
-  PolicyLifecyclePort,
-  DelegationGraphPort,
-} from "../ports/project-policy.port.js";
+} from '../ports/project-outbox.port.js';
+import type { ProjectRepositoryPort } from '../ports/project-repository.port.js';
+import type { ProjectTransactionPort } from '../ports/project-transaction.port.js';
+import type { PolicyLifecyclePort, DelegationGraphPort } from '../ports/project-policy.port.js';
 
 /**
  * Project 슬라이스의 use-case.
@@ -61,17 +58,17 @@ export class ProjectUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "project",
-      useCase: "ProjectUseCase.create",
+      domain: 'project',
+      useCase: 'ProjectUseCase.create',
       aggregateId: command.id,
-      commandName: "CreateProjectCommand",
+      commandName: 'CreateProjectCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "project.create.started");
+    this.logger.info({ ...ctxBase }, 'project.create.started');
 
     try {
-      let snapshotResult: ReturnType<ProjectEntity["toSnapshot"]>;
-      await this.transaction.run("project.create", async (scope) => {
+      let snapshotResult: ReturnType<ProjectEntity['toSnapshot']>;
+      await this.transaction.run('project.create', async (scope) => {
         const project = ProjectEntity.create({
           id: command.id,
           name: command.name,
@@ -90,7 +87,7 @@ export class ProjectUseCase {
           status: snapshotResult.status,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.project.created";
+        const eventName = 'pm.project.created';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -113,7 +110,7 @@ export class ProjectUseCase {
         try {
           await this.policies.create({
             resourceId: command.id,
-            resourceType: "project",
+            resourceType: 'project',
             ownerId: command.ownerId,
           });
         } catch (err) {
@@ -121,39 +118,36 @@ export class ProjectUseCase {
           this.logger.error(
             {
               ...ctxBase,
-              outcome: "failure",
-              errorCode: "POLICY_CREATE_FAILURE",
+              outcome: 'failure',
+              errorCode: 'POLICY_CREATE_FAILURE',
               err,
             },
-            "project.create.policy_failure_rollback",
+            'project.create.policy_failure_rollback',
           );
           // best-effort 롤백 (policy create 실패 시 project 도 제거).
-          await this.transaction.run("project.create.rollback", async (scope) => {
+          await this.transaction.run('project.create.rollback', async (scope) => {
             await this.repository.delete(command.id, scope);
           });
           throw err;
         }
       } else {
-        this.logger.warn(
-          { ...ctxBase },
-          "project.create.policy_registry_missing",
-        );
+        this.logger.warn({ ...ctxBase }, 'project.create.policy_registry_missing');
       }
 
       this.logger.info(
-        { ...ctxBase, eventName: "pm.project.created", eventVersion: 1, outcome: "success" },
-        "project.create.success",
+        { ...ctxBase, eventName: 'pm.project.created', eventVersion: 1, outcome: 'success' },
+        'project.create.success',
       );
       return snapshotResult!;
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "project.create.failure",
+        'project.create.failure',
       );
       throw error;
     }
@@ -173,17 +167,17 @@ export class ProjectUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "project",
-      useCase: "ProjectUseCase.update",
+      domain: 'project',
+      useCase: 'ProjectUseCase.update',
       aggregateId: command.id,
-      commandName: "UpdateProjectCommand",
+      commandName: 'UpdateProjectCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "project.update.started");
+    this.logger.info({ ...ctxBase }, 'project.update.started');
 
     try {
-      let snapshotResult: ReturnType<ProjectEntity["toSnapshot"]>;
-      await this.transaction.run("project.update", async (scope) => {
+      let snapshotResult: ReturnType<ProjectEntity['toSnapshot']>;
+      await this.transaction.run('project.update', async (scope) => {
         const cur = await this.repository.findById(command.id);
         if (!cur) throw new ProjectNotFoundException(command.id);
         const next = cur.applyPatch(command.patch);
@@ -195,7 +189,7 @@ export class ProjectUseCase {
           status: snapshotResult.status,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.project.updated";
+        const eventName = 'pm.project.updated';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -214,19 +208,19 @@ export class ProjectUseCase {
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "pm.project.updated", eventVersion: 1, outcome: "success" },
-        "project.update.success",
+        { ...ctxBase, eventName: 'pm.project.updated', eventVersion: 1, outcome: 'success' },
+        'project.update.success',
       );
       return snapshotResult!;
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "project.update.failure",
+        'project.update.failure',
       );
       throw error;
     }
@@ -238,23 +232,23 @@ export class ProjectUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "project",
-      useCase: "ProjectUseCase.delete",
+      domain: 'project',
+      useCase: 'ProjectUseCase.delete',
       aggregateId: command.id,
-      commandName: "DeleteProjectCommand",
+      commandName: 'DeleteProjectCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "project.delete.started");
+    this.logger.info({ ...ctxBase }, 'project.delete.started');
 
     try {
-      await this.transaction.run("project.delete", async (scope) => {
+      await this.transaction.run('project.delete', async (scope) => {
         await this.repository.delete(command.id, scope);
         const occurredAt = new Date();
         const payload: ProjectDeletedEventPayload = {
           id: command.id,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.project.deleted";
+        const eventName = 'pm.project.deleted';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -285,18 +279,18 @@ export class ProjectUseCase {
       }
 
       this.logger.info(
-        { ...ctxBase, eventName: "pm.project.deleted", eventVersion: 1, outcome: "success" },
-        "project.delete.success",
+        { ...ctxBase, eventName: 'pm.project.deleted', eventVersion: 1, outcome: 'success' },
+        'project.delete.success',
       );
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "project.delete.failure",
+        'project.delete.failure',
       );
       throw error;
     }
@@ -319,17 +313,17 @@ export class ProjectUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "project",
-      useCase: "ProjectUseCase.delegate",
+      domain: 'project',
+      useCase: 'ProjectUseCase.delegate',
       aggregateId: command.id,
-      commandName: "DelegateProjectCommand",
+      commandName: 'DelegateProjectCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "project.delegate.started");
+    this.logger.info({ ...ctxBase }, 'project.delegate.started');
 
     if (!this.policies) {
-      const err = new Error("PROJECT_POLICY_REGISTRY not registered — delegate 불가");
-      this.logger.error({ ...ctxBase, outcome: "failure", err }, "project.delegate.failure");
+      const err = new Error('PROJECT_POLICY_REGISTRY not registered — delegate 불가');
+      this.logger.error({ ...ctxBase, outcome: 'failure', err }, 'project.delegate.failure');
       throw err;
     }
 
@@ -337,10 +331,10 @@ export class ProjectUseCase {
       const cur = await this.policies.resolve(command.id);
       if (!cur) {
         const err = new Error(`policy not found for project ${command.id}`);
-        this.logger.error({ ...ctxBase, outcome: "failure", err }, "project.delegate.failure");
+        this.logger.error({ ...ctxBase, outcome: 'failure', err }, 'project.delegate.failure');
         throw err;
       }
-      if (cur.state === "UNREGISTERED") {
+      if (cur.state === 'UNREGISTERED') {
         await this.policies.register(command.id, {
           cerbosPolicyRef: `project-${command.id}`,
         });
@@ -351,7 +345,7 @@ export class ProjectUseCase {
       }
 
       // delegate event emit (별도 트랜잭션 - policy 외부 store 라 outbox 와 동일 tx 보장 안 됨).
-      await this.transaction.run("project.delegate", async (scope) => {
+      await this.transaction.run('project.delegate', async (scope) => {
         const occurredAt = new Date();
         const payload: ProjectDelegatedEventPayload = {
           id: command.id,
@@ -359,7 +353,7 @@ export class ProjectUseCase {
           delegateUserId: command.delegateUserId,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.project.delegated";
+        const eventName = 'pm.project.delegated';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -378,19 +372,19 @@ export class ProjectUseCase {
       });
 
       this.logger.info(
-        { ...ctxBase, eventName: "pm.project.delegated", eventVersion: 1, outcome: "success" },
-        "project.delegate.success",
+        { ...ctxBase, eventName: 'pm.project.delegated', eventVersion: 1, outcome: 'success' },
+        'project.delegate.success',
       );
-      return { state: "DELEGATED", graphRootId: command.graphRootId };
+      return { state: 'DELEGATED', graphRootId: command.graphRootId };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "project.delegate.failure",
+        'project.delegate.failure',
       );
       throw error;
     }
@@ -406,19 +400,19 @@ export class ProjectUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "project",
-      useCase: "ProjectUseCase.addDelegate",
+      domain: 'project',
+      useCase: 'ProjectUseCase.addDelegate',
       aggregateId: command.id,
-      commandName: "AddProjectDelegateCommand",
+      commandName: 'AddProjectDelegateCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "project.addDelegate.started");
+    this.logger.info({ ...ctxBase }, 'project.addDelegate.started');
 
     if (!this.policies || !this.delegationGraph) {
       const err = new Error(
-        "PROJECT_POLICY_REGISTRY or PROJECT_DELEGATION_GRAPH not registered — addDelegate 불가",
+        'PROJECT_POLICY_REGISTRY or PROJECT_DELEGATION_GRAPH not registered — addDelegate 불가',
       );
-      this.logger.error({ ...ctxBase, outcome: "failure", err }, "project.addDelegate.failure");
+      this.logger.error({ ...ctxBase, outcome: 'failure', err }, 'project.addDelegate.failure');
       throw err;
     }
 
@@ -426,20 +420,17 @@ export class ProjectUseCase {
       const cur = await this.policies.resolve(command.id);
       if (!cur) {
         const err = new Error(`policy not found for project ${command.id}`);
-        this.logger.error({ ...ctxBase, outcome: "failure", err }, "project.addDelegate.failure");
+        this.logger.error({ ...ctxBase, outcome: 'failure', err }, 'project.addDelegate.failure');
         throw err;
       }
-      if (cur.state !== "DELEGATED" || !cur.graphRootId) {
+      if (cur.state !== 'DELEGATED' || !cur.graphRootId) {
         const err = new Error(`project ${command.id} is not in DELEGATED state`);
-        this.logger.error({ ...ctxBase, outcome: "failure", err }, "project.addDelegate.failure");
+        this.logger.error({ ...ctxBase, outcome: 'failure', err }, 'project.addDelegate.failure');
         throw err;
       }
       await this.delegationGraph.grant(cur.graphRootId, command.delegateUserId);
 
-      this.logger.info(
-        { ...ctxBase, outcome: "success" },
-        "project.addDelegate.success",
-      );
+      this.logger.info({ ...ctxBase, outcome: 'success' }, 'project.addDelegate.success');
       return {
         state: cur.state,
         graphRootId: cur.graphRootId,
@@ -449,11 +440,11 @@ export class ProjectUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "project.addDelegate.failure",
+        'project.addDelegate.failure',
       );
       throw error;
     }

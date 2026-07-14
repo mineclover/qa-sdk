@@ -1,7 +1,7 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
 import {
   buildDocumentGraphIndex,
@@ -15,21 +15,21 @@ import {
   type DocumentGraphEdgeKind,
   type DocumentGraphEdgeSummary,
   type TraversalAxis,
-} from "./index.js";
+} from './index.js';
 
-describe("docs-control-plane graph result summary", () => {
-  it("summarizes filtered graph views by kind, axis, role, follow-up, archive, and diagnostics", () => {
+describe('docs-control-plane graph result summary', () => {
+  it('summarizes filtered graph views by kind, axis, role, follow-up, archive, and diagnostics', () => {
     const index = buildDocumentGraphIndex(summaryFixtureDocuments(), {
       edges: [
-        graphEdge("role", "document:root-spec", "document:root-todo"),
-        graphEdge("role", "document:root-spec", "document:root-plan"),
-        graphEdge("trace", "document:root-spec", "document:archived-prd"),
+        graphEdge('role', 'document:root-spec', 'document:root-todo'),
+        graphEdge('role', 'document:root-spec', 'document:root-plan'),
+        graphEdge('trace', 'document:root-spec', 'document:archived-prd'),
       ],
     });
     const traversal = traverseDocumentGraph(index, {
-      target: "root-spec",
-      axes: ["role", "trace"],
-      direction: "out",
+      target: 'root-spec',
+      axes: ['role', 'trace'],
+      direction: 'out',
       depth: 1,
       limit: 20,
     });
@@ -39,8 +39,8 @@ describe("docs-control-plane graph result summary", () => {
     const summary = summarizeDocumentGraphResult(traversal, filtered.filtering);
 
     expect(summary).toMatchObject({
-      algorithm: "docs-graph-result-summary-v1",
-      scope: "filtered",
+      algorithm: 'docs-graph-result-summary-v1',
+      scope: 'filtered',
       nodes: 3,
       edges: 2,
       paths: 3,
@@ -98,26 +98,26 @@ describe("docs-control-plane graph result summary", () => {
 
 function summaryFixtureDocuments(): readonly DocumentEnvelope[] {
   return [
-    document("root-spec", "spec", "docs/root/root.spec.md", {
-      familyId: "docs/root/root",
+    document('root-spec', 'spec', 'docs/root/root.spec.md', {
+      familyId: 'docs/root/root',
     }),
-    document("root-todo", "todo", "docs/root/root.todo.md", {
-      familyId: "docs/root/root",
+    document('root-todo', 'todo', 'docs/root/root.todo.md', {
+      familyId: 'docs/root/root',
       metadata: {
-        followUpCategory: "actionable",
+        followUpCategory: 'actionable',
       },
     }),
-    document("root-plan", "plan", "docs/root/root.plan.md", {
-      familyId: "docs/root/root",
+    document('root-plan', 'plan', 'docs/root/root.plan.md', {
+      familyId: 'docs/root/root',
       metadata: {
         diagnosticCount: 2,
-        followUpCategory: "deferred",
+        followUpCategory: 'deferred',
       },
     }),
-    document("archived-prd", "prd", "tasks/archive/archived-prd.md", {
-      familyId: "tasks/archive/archived-prd",
+    document('archived-prd', 'prd', 'tasks/archive/archived-prd.md', {
+      familyId: 'tasks/archive/archived-prd',
       metadata: {
-        lifecycle: "archived",
+        lifecycle: 'archived',
       },
     }),
   ];
@@ -133,7 +133,7 @@ function document(
   } = {},
 ): DocumentEnvelope {
   return normalizeDocumentEnvelope({
-    adapterId: "fixture",
+    adapterId: 'fixture',
     kind,
     stableId,
     ...(options.familyId ? { familyId: options.familyId } : {}),
@@ -150,7 +150,7 @@ function document(
     diagnostics: [],
     rawSource: {
       path,
-      sourceSchema: "fixture",
+      sourceSchema: 'fixture',
     },
   } satisfies DocumentEnvelopeInput);
 }
@@ -169,25 +169,25 @@ function graphEdge(
     authoredType: axis,
     reasons: [
       {
-        adapterId: "fixture",
+        adapterId: 'fixture',
         reason: `${axis} edge`,
         targetNodeId: toNodeId,
         metadata: {
           axis,
-          familyId: axis === "role" ? "docs/root/root" : undefined,
+          familyId: axis === 'role' ? 'docs/root/root' : undefined,
         },
       },
     ],
-    metadata: axis === "role" ? { familyId: "docs/root/root" } : {},
+    metadata: axis === 'role' ? { familyId: 'docs/root/root' } : {},
   };
 }
 
 function edgeKind(axis: TraversalAxis): DocumentGraphEdgeKind {
-  if (axis === "source") return "document-source";
-  if (axis === "evidence") return "document-evidence";
-  if (axis === "trace") return "task-trace";
-  if (axis === "role") return "role-membership";
-  if (axis === "context") return "context-metadata";
-  if (axis === "constraint") return "document-constraint";
-  return "authored-link";
+  if (axis === 'source') return 'document-source';
+  if (axis === 'evidence') return 'document-evidence';
+  if (axis === 'trace') return 'task-trace';
+  if (axis === 'role') return 'role-membership';
+  if (axis === 'context') return 'context-metadata';
+  if (axis === 'constraint') return 'document-constraint';
+  return 'authored-link';
 }

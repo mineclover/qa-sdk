@@ -8,15 +8,29 @@
  * ZoomView의 노드/엣지 배치 정보를 시각 도형으로 변환한다.
  */
 
-import type { PipeGraph, PipeFlow, ZoomView, ZoomNode, ZoomEdge, FoldLevel, PipeConcern } from "@qa-sdk/core";
-import { computeZoomView, computeLayout, summarizeFlowLineage } from "@qa-sdk/core";
-import { escapeAttr, svgSvg } from "./primitives.js";
+import type {
+  PipeGraph,
+  PipeFlow,
+  ZoomView,
+  ZoomNode,
+  ZoomEdge,
+  FoldLevel,
+  PipeConcern,
+} from '@qa-sdk/core';
+import { computeZoomView, computeLayout, summarizeFlowLineage } from '@qa-sdk/core';
+import { escapeAttr, svgSvg } from './primitives.js';
 import {
   renderMarkerDefs,
-  drawNodeShape, drawFoldedNode, drawEntryMarker,
-  drawConcernBadges, drawNodeLabel, drawFoldedCount, drawPortDots,
-  drawEdgePath, drawConditionBadge,
-} from "./shapes.js";
+  drawNodeShape,
+  drawFoldedNode,
+  drawEntryMarker,
+  drawConcernBadges,
+  drawNodeLabel,
+  drawFoldedCount,
+  drawPortDots,
+  drawEdgePath,
+  drawConditionBadge,
+} from './shapes.js';
 
 // ── 공개 타입 ─────────────────────────────────────────
 
@@ -37,8 +51,8 @@ export interface D3Node {
   width: number;
   height: number;
   isFolded: boolean;
-  certainty: "strict" | "flexible" | "mixed";
-  shape: "polygon" | "cloud";
+  certainty: 'strict' | 'flexible' | 'mixed';
+  shape: 'polygon' | 'cloud';
   role: string;
   concerns: readonly string[];
   /** transition-scope의 transitionId (해당 파이프에 있을 때만) */
@@ -75,7 +89,7 @@ export interface D3GraphData {
 
 export function pipeGraphToSvg(
   graph: PipeGraph,
-  level: FoldLevel = "leaf",
+  level: FoldLevel = 'leaf',
   options?: SvgOptions,
 ): string {
   return zoomViewToSvg(computeLayout(computeZoomView(graph, level)), options);
@@ -91,13 +105,16 @@ export function zoomViewToSvg(view: ZoomView, options?: SvgOptions): string {
   }
 
   const { offsetX, offsetY, svgWidth, svgHeight } = computeViewBox(
-    view.nodes, padding, minWidth, minHeight,
+    view.nodes,
+    padding,
+    minWidth,
+    minHeight,
   );
 
   const edgeLines: string[] = [];
   for (const edge of view.edges) {
-    const from = view.nodes.find(n => n.id === edge.from);
-    const to = view.nodes.find(n => n.id === edge.to);
+    const from = view.nodes.find((n) => n.id === edge.from);
+    const to = view.nodes.find((n) => n.id === edge.to);
     if (from && to) edgeLines.push(renderEdge(edge, from, to, offsetX, offsetY));
   }
 
@@ -108,12 +125,12 @@ export function zoomViewToSvg(view: ZoomView, options?: SvgOptions): string {
 
   return svgSvg(svgWidth, svgHeight, [
     renderMarkerDefs(),
-    `<g class="edges">\n${edgeLines.join("\n")}\n</g>`,
-    `<g class="nodes">\n${nodeLines.join("\n")}\n</g>`,
+    `<g class="edges">\n${edgeLines.join('\n')}\n</g>`,
+    `<g class="nodes">\n${nodeLines.join('\n')}\n</g>`,
   ]);
 }
 
-export function pipeGraphToD3(graph: PipeGraph, level: FoldLevel = "leaf"): D3GraphData {
+export function pipeGraphToD3(graph: PipeGraph, level: FoldLevel = 'leaf'): D3GraphData {
   const d3 = zoomViewToD3(computeLayout(computeZoomView(graph, level)));
 
   // transitionId 주입
@@ -142,13 +159,13 @@ export function pipeGraphToD3(graph: PipeGraph, level: FoldLevel = "leaf"): D3Gr
 
 /** PipeFlow 트리에서 최상위 transition-scope의 transitionId 탐색 */
 function findTransitionId(flow: PipeFlow): string | undefined {
-  if (flow.kind === "transition-scope") return flow.transitionId;
+  if (flow.kind === 'transition-scope') return flow.transitionId;
   return undefined;
 }
 
 export function zoomViewToD3(view: ZoomView): D3GraphData {
   return {
-    nodes: view.nodes.map(n => ({
+    nodes: view.nodes.map((n) => ({
       id: n.id,
       label: n.label,
       x: n.position.x,
@@ -161,13 +178,15 @@ export function zoomViewToD3(view: ZoomView): D3GraphData {
       role: n.role,
       concerns: n.concerns,
     })),
-    links: view.edges.map(e => ({
+    links: view.edges.map((e) => ({
       source: e.from,
       target: e.to,
       kind: e.kind,
       ...(e.sourcePorts ? { sourcePorts: e.sourcePorts } : {}),
       ...(e.targetPorts ? { targetPorts: e.targetPorts } : {}),
-      ...((e as { facetType?: string }).facetType ? { facetType: (e as { facetType?: string }).facetType } : {}),
+      ...((e as { facetType?: string }).facetType
+        ? { facetType: (e as { facetType?: string }).facetType }
+        : {}),
       ...(e.condition ? { condition: e.condition } : {}),
     })),
     entryNodeId: view.entryNodeId,
@@ -176,13 +195,11 @@ export function zoomViewToD3(view: ZoomView): D3GraphData {
 
 // ── 내부 렌더링 ───────────────────────────────────────
 
-function computeViewBox(
-  nodes: ZoomNode[],
-  padding: number,
-  minWidth: number,
-  minHeight: number,
-) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+function computeViewBox(nodes: ZoomNode[], padding: number, minWidth: number, minHeight: number) {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   for (const n of nodes) {
     minX = Math.min(minX, n.position.x - n.size.width / 2);
     minY = Math.min(minY, n.position.y - n.size.height / 2);
@@ -222,36 +239,38 @@ function renderNode(node: ZoomNode, entryId: string, ox: number, oy: number): st
   parts.push(drawNodeLabel(cx, cy, node.label));
 
   if (!node.isFolded && node.concerns.length > 0) {
-    const badgeOffset = node.ports.some(port => port.direction === "out") ? 12 : 0;
+    const badgeOffset = node.ports.some((port) => port.direction === 'out') ? 12 : 0;
     parts.push(drawConcernBadges(node.concerns as PipeConcern[], x + w + badgeOffset, y, h));
   }
 
-  return `  <g class="node" data-id="${escapeAttr(node.id)}" data-role="${node.role}">\n    ${parts.join("\n    ")}\n  </g>`;
+  return `  <g class="node" data-id="${escapeAttr(node.id)}" data-role="${node.role}">\n    ${parts.join('\n    ')}\n  </g>`;
 }
 
 function renderEdge(edge: ZoomEdge, from: ZoomNode, to: ZoomNode, ox: number, oy: number): string {
-  const start = resolveEdgeAnchor(from, edge.sourcePorts, "out", ox, oy);
-  const end = resolveEdgeAnchor(to, edge.targetPorts, "in", ox, oy);
+  const start = resolveEdgeAnchor(from, edge.sourcePorts, 'out', ox, oy);
+  const end = resolveEdgeAnchor(to, edge.targetPorts, 'in', ox, oy);
   const x1 = start.x;
   const y1 = start.y;
   const x2 = end.x;
   const y2 = end.y;
   const lift = Math.max(from.size.height, to.size.height) + 40;
 
-  const parts: string[] = [drawEdgePath(x1, y1, x2, y2, {
-    kind: edge.kind,
-    feedbackLift: lift,
-    facetType: edge.facetType,
-  })];
+  const parts: string[] = [
+    drawEdgePath(x1, y1, x2, y2, {
+      kind: edge.kind,
+      feedbackLift: lift,
+      facetType: edge.facetType,
+    }),
+  ];
   if (edge.condition) parts.push(drawConditionBadge(x1, y1, x2, y2, edge.condition));
 
-  return `  <g class="edge" data-kind="${edge.kind}">\n    ${parts.join("\n    ")}\n  </g>`;
+  return `  <g class="edge" data-kind="${edge.kind}">\n    ${parts.join('\n    ')}\n  </g>`;
 }
 
 function resolveEdgeAnchor(
   node: ZoomNode,
   portIds: string[] | undefined,
-  direction: "in" | "out",
+  direction: 'in' | 'out',
   ox: number,
   oy: number,
 ): { x: number; y: number } {
@@ -260,7 +279,7 @@ function resolveEdgeAnchor(
   const w = node.size.width;
   const h = node.size.height;
   const fallback = {
-    x: direction === "out" ? cx + w / 2 : cx - w / 2,
+    x: direction === 'out' ? cx + w / 2 : cx - w / 2,
     y: cy,
   };
 
@@ -268,17 +287,19 @@ function resolveEdgeAnchor(
     return fallback;
   }
 
-  const directionPorts = node.ports.filter(port => port.direction === direction);
+  const directionPorts = node.ports.filter((port) => port.direction === direction);
   if (directionPorts.length === 0) {
     return fallback;
   }
 
-  const portId = portIds.find(candidate => directionPorts.some(port => port.portId === candidate));
+  const portId = portIds.find((candidate) =>
+    directionPorts.some((port) => port.portId === candidate),
+  );
   if (portId == null) {
     return fallback;
   }
 
-  const portIndex = directionPorts.findIndex(port => port.portId === portId);
+  const portIndex = directionPorts.findIndex((port) => port.portId === portId);
   if (portIndex < 0) {
     return fallback;
   }

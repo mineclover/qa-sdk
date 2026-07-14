@@ -8,12 +8,12 @@
  * 각 prefix의 최신 버전만 추출하고, table_ref dim은 제외.
  */
 
-import type { Catalog, PrefixDef, VersionedAxis } from "./catalog.types.js";
+import type { Catalog, PrefixDef, VersionedAxis } from './catalog.types.js';
 
 // ── Browser 타입 (viz-3d/browser-codec.ts 호환) ──────────────
 
 export interface BrowserDimDef {
-  readonly kind: "axis" | "prefix_ref";
+  readonly kind: 'axis' | 'prefix_ref';
   readonly entries?: readonly string[];
   readonly capacity?: number;
   readonly values?: readonly number[];
@@ -62,19 +62,19 @@ function flattenPrefix(
 
   for (const [label, dimRef] of Object.entries(prefix.dims)) {
     switch (dimRef.kind) {
-      case "axis": {
+      case 'axis': {
         const axis = axes[dimRef.axisId];
         if (!axis) continue;
 
-        const axisVersion = latestVersion.axisVersions[label]
-          ?? latestVersion.axisVersions[dimRef.axisId];
+        const axisVersion =
+          latestVersion.axisVersions[label] ?? latestVersion.axisVersions[dimRef.axisId];
         if (!axisVersion) continue;
 
         const snapshot = axis.versions[axisVersion];
         if (!snapshot) continue;
 
         dims[label] = {
-          kind: "axis",
+          kind: 'axis',
           entries: snapshot.entries,
           capacity: snapshot.capacity ?? snapshot.entries.length,
         };
@@ -82,11 +82,11 @@ function flattenPrefix(
         break;
       }
 
-      case "prefix_ref": {
+      case 'prefix_ref': {
         const refEntries = latestVersion.refEntries?.[label];
         if (refEntries) {
           dims[label] = {
-            kind: "prefix_ref",
+            kind: 'prefix_ref',
             values: refEntries.values,
           };
           labels.push(label);
@@ -95,7 +95,7 @@ function flattenPrefix(
         break;
       }
 
-      case "table_ref":
+      case 'table_ref':
         // table_ref는 브라우저에서 사용 불가 → 제외
         break;
     }

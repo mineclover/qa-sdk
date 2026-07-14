@@ -4,8 +4,8 @@
 import {
   ResourceReadModelQuery,
   type ResourceDetailReadModel,
-} from "../../application/queries/resource-read-model.query.js";
-import type { ResourceLoggerPort } from "../../application/ports/resource-logger.port.js";
+} from '../../application/queries/resource-read-model.query.js';
+import type { ResourceLoggerPort } from '../../application/ports/resource-logger.port.js';
 
 export interface ResourceDetailBffModel {
   readonly id: string;
@@ -17,7 +17,7 @@ export interface ResourceDetailBffModel {
 }
 
 export class ResourceDetailBff {
-  readonly cachePrefix = "resource-bff-detail:v1";
+  readonly cachePrefix = 'resource-bff-detail:v1';
   constructor(
     private readonly readModel: ResourceReadModelQuery,
     private readonly logger: ResourceLoggerPort,
@@ -33,15 +33,15 @@ export class ResourceDetailBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "resource",
-        useCase: "ResourceDetailBff.getDetail",
+        domain: 'resource',
+        useCase: 'ResourceDetailBff.getDetail',
         aggregateId: input.id,
-        queryName: "ResourceDetailBffQuery",
-        outcome: detail ? "success" : "failure",
+        queryName: 'ResourceDetailBffQuery',
+        outcome: detail ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      detail ? "resource-detail.bff.success" : "resource-detail.bff.miss",
+      detail ? 'resource-detail.bff.success' : 'resource-detail.bff.miss',
     );
     if (!detail) return null;
     return {

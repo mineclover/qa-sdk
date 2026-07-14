@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { KeyObservationEntry, RecordInsert } from "@qa-sdk/core";
+import type { KeyObservationEntry, RecordInsert } from '@qa-sdk/core';
 
 /**
  * RecordInsert[]에서 KeyObservationEntry[]를 추출한다.
@@ -21,17 +21,15 @@ export function extractKeyObservations(
 
     const timestamp = record.timestamp.toISOString();
     const payloadFields =
-      record.payload && typeof record.payload === "object"
+      record.payload && typeof record.payload === 'object'
         ? Object.keys(record.payload as Record<string, unknown>)
         : undefined;
     const samplePayload =
-      record.payload && typeof record.payload === "object"
+      record.payload && typeof record.payload === 'object'
         ? extractSample(record.payload as Record<string, unknown>, 5)
         : undefined;
 
-    for (const [prefixId, packedKey] of Object.entries(
-      record.addressContext,
-    )) {
+    for (const [prefixId, packedKey] of Object.entries(record.addressContext)) {
       entries.push({
         packedKey,
         prefixId,

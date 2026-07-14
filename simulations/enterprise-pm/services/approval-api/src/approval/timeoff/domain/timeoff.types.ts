@@ -1,15 +1,15 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { RequesterId, TimeOffRequestId } from "./timeoff.ids.js";
+import type { RequesterId, TimeOffRequestId } from './timeoff.ids.js';
 
 export type TimeOffStatus =
-  | "draft"
-  | "submitted"
-  | "in_review"
-  | "approved"
-  | "rejected"
-  | "revision_requested";
+  | 'draft'
+  | 'submitted'
+  | 'in_review'
+  | 'approved'
+  | 'rejected'
+  | 'revision_requested';
 
 export interface TimeOffProps {
   readonly id: TimeOffRequestId;

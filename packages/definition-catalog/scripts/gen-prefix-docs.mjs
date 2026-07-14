@@ -11,22 +11,22 @@
  *   docs/specs/prefix-catalog/
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(SCRIPT_DIR, "../../..");
-const OUT_DIR = join(ROOT, "docs/specs/prefix-catalog");
-const DRY_RUN = process.argv.includes("--dry-run");
+const ROOT = resolve(SCRIPT_DIR, '../../..');
+const OUT_DIR = join(ROOT, 'docs/specs/prefix-catalog');
+const DRY_RUN = process.argv.includes('--dry-run');
 
 // ── DEMO_CATALOG 로딩 (빌드된 dist 사용) ──────────────────
 
 async function loadCatalog() {
   // demo-snapshot의 빌드 산출물에서 DEMO_CATALOG import
-  const snapshotPath = join(ROOT, "packages/demo-snapshot/dist/index.js");
+  const snapshotPath = join(ROOT, 'packages/demo-snapshot/dist/index.js');
   if (!existsSync(snapshotPath)) {
-    console.error("demo-snapshot 빌드 필요: pnpm --filter demo-snapshot build");
+    console.error('demo-snapshot 빌드 필요: pnpm --filter demo-snapshot build');
     process.exit(1);
   }
   const mod = await import(snapshotPath);
@@ -36,25 +36,41 @@ async function loadCatalog() {
 // ── 도메인 그룹 분류 ────────────────────────────────────
 
 const DOMAIN_GROUPS = {
-  "entity": { id: "entity-prefix-group", name: "엔티티 Prefix 그룹", desc: "서비스/콘텐츠 등 실체 prefix" },
-  "event": { id: "event-prefix-group", name: "이벤트 Prefix 그룹", desc: "시스템/비즈니스 이벤트 prefix" },
-  "observation": { id: "observation-prefix-group", name: "관측 Prefix 그룹", desc: "화면/엔드포인트/흐름 관측 prefix" },
-  "policy": { id: "policy-prefix-group", name: "정책 Prefix 그룹", desc: "권한/접근 제어 prefix" },
-  "relation": { id: "relation-prefix-group", name: "관계 Prefix 그룹", desc: "DKG/온톨로지 관계 prefix" },
-  "state": { id: "state-prefix-group", name: "상태 Prefix 그룹", desc: "상태 모델 prefix" },
+  entity: {
+    id: 'entity-prefix-group',
+    name: '엔티티 Prefix 그룹',
+    desc: '서비스/콘텐츠 등 실체 prefix',
+  },
+  event: {
+    id: 'event-prefix-group',
+    name: '이벤트 Prefix 그룹',
+    desc: '시스템/비즈니스 이벤트 prefix',
+  },
+  observation: {
+    id: 'observation-prefix-group',
+    name: '관측 Prefix 그룹',
+    desc: '화면/엔드포인트/흐름 관측 prefix',
+  },
+  policy: { id: 'policy-prefix-group', name: '정책 Prefix 그룹', desc: '권한/접근 제어 prefix' },
+  relation: {
+    id: 'relation-prefix-group',
+    name: '관계 Prefix 그룹',
+    desc: 'DKG/온톨로지 관계 prefix',
+  },
+  state: { id: 'state-prefix-group', name: '상태 Prefix 그룹', desc: '상태 모델 prefix' },
 };
 
 // ── dim 설명 헬퍼 ────────────────────────────────────────
 
 function describeDim(dimName, dimRef) {
-  if (dimRef.kind === "axis") return `${dimName}: axis(${dimRef.axisId})`;
-  if (dimRef.kind === "prefix_ref") return `${dimName}: prefix_ref(${dimRef.prefixId})`;
-  if (dimRef.kind === "table_ref") return `${dimName}: table_ref(${dimRef.table})`;
+  if (dimRef.kind === 'axis') return `${dimName}: axis(${dimRef.axisId})`;
+  if (dimRef.kind === 'prefix_ref') return `${dimName}: prefix_ref(${dimRef.prefixId})`;
+  if (dimRef.kind === 'table_ref') return `${dimName}: table_ref(${dimRef.table})`;
   return `${dimName}: ${dimRef.kind}`;
 }
 
 function dimConstraint(dimRef) {
-  if (dimRef.kind === "prefix_ref") {
+  if (dimRef.kind === 'prefix_ref') {
     return `- ${dimRef.prefixId} prefix의 refEntries에 존재해야 함 (CON-006)`;
   }
   return null;
@@ -63,26 +79,26 @@ function dimConstraint(dimRef) {
 // ── prefix 문서 생성 ────────────────────────────────────
 
 function generatePrefixDoc(prefix, catalog) {
-  const category = prefix.meta?.category ?? "entity";
+  const category = prefix.meta?.category ?? 'entity';
   const dimList = Object.entries(prefix.dims);
   const versionCount = prefix.versions.length;
 
   // ── prefix_ref → depends_on 링크 수집 ──
   const depLinks = [];
   for (const [name, ref] of dimList) {
-    if (ref.kind === "prefix_ref") {
-      depLinks.push({ target: `prefix-${ref.prefixId}`, type: "depends_on", dim: name });
+    if (ref.kind === 'prefix_ref') {
+      depLinks.push({ target: `prefix-${ref.prefixId}`, type: 'depends_on', dim: name });
     }
   }
 
   // ── 공유 axis 기반 관계 수집 (같은 axis를 쓰는 다른 prefix) ──
   const sharedAxisPrefixes = new Set();
   for (const [, ref] of dimList) {
-    if (ref.kind === "axis") {
+    if (ref.kind === 'axis') {
       for (const otherPrefix of Object.values(catalog.prefixes)) {
         if (otherPrefix.id === prefix.id) continue;
         for (const otherRef of Object.values(otherPrefix.dims)) {
-          if (otherRef.kind === "axis" && otherRef.axisId === ref.axisId) {
+          if (otherRef.kind === 'axis' && otherRef.axisId === ref.axisId) {
             sharedAxisPrefixes.add(otherPrefix.id);
           }
         }
@@ -91,43 +107,44 @@ function generatePrefixDoc(prefix, catalog) {
   }
 
   // ── frontmatter links 조립 ──
-  let linksYaml = "";
+  let linksYaml = '';
   if (depLinks.length > 0) {
-    const linkLines = depLinks.map(l =>
-      `    - target: ${l.target}\n      type: depends_on`
-    ).join("\n");
+    const linkLines = depLinks
+      .map((l) => `    - target: ${l.target}\n      type: depends_on`)
+      .join('\n');
     linksYaml = `\n  links:\n${linkLines}`;
   }
 
   // ── capacity 계산 (axis dims만) ──
   const axisCapacities = [];
   for (const [name, ref] of dimList) {
-    if (ref.kind === "axis") {
+    if (ref.kind === 'axis') {
       const axis = catalog.axes[ref.axisId];
       if (axis) {
         const ver = Object.values(axis.versions)[0];
-        const cap = ver?.capacity ?? ver?.entries?.length ?? "?";
+        const cap = ver?.capacity ?? ver?.entries?.length ?? '?';
         axisCapacities.push(`${name}(${cap})`);
       }
     }
   }
-  const capacityNote = axisCapacities.length > 0
-    ? `- capacity: ${axisCapacities.join(" × ")}` : "";
+  const capacityNote = axisCapacities.length > 0 ? `- capacity: ${axisCapacities.join(' × ')}` : '';
 
   // ── constraint 수집 ──
-  const constraints = dimList
-    .map(([name, ref]) => dimConstraint(ref))
-    .filter(Boolean);
+  const constraints = dimList.map(([name, ref]) => dimConstraint(ref)).filter(Boolean);
 
   // ── 공유 axis 요약 (상위 5개) ──
   const sharedList = [...sharedAxisPrefixes].slice(0, 5);
-  const sharedNote = sharedList.length > 0
-    ? `- 축 공유: ${sharedList.map(id => `\`${id}\``).join(", ")}${sharedAxisPrefixes.size > 5 ? ` 외 ${sharedAxisPrefixes.size - 5}개` : ""}` : "";
+  const sharedNote =
+    sharedList.length > 0
+      ? `- 축 공유: ${sharedList.map((id) => `\`${id}\``).join(', ')}${sharedAxisPrefixes.size > 5 ? ` 외 ${sharedAxisPrefixes.size - 5}개` : ''}`
+      : '';
 
   // ── 코드 참조 (인라인이 아닌 위치만) ──
   const sourceRef = `packages/demo-snapshot/src/demo-catalog.ts:DEMO_CATALOG.prefixes.${prefix.id}`;
-  const implRef = prefix.meta?.source?.module && prefix.meta?.source?.file
-    ? `packages/${prefix.meta.source.module}/src/${prefix.meta.source.file}` : null;
+  const implRef =
+    prefix.meta?.source?.module && prefix.meta?.source?.file
+      ? `packages/${prefix.meta.source.module}/src/${prefix.meta.source.file}`
+      : null;
 
   const doc = `---
 def:
@@ -166,16 +183,18 @@ source: ${sourceRef}
 
 ## 관련 소스
 
-${implRef && implRef !== sourceRef ? `- ${implRef}\n` : ""}- ${sourceRef}
+${implRef && implRef !== sourceRef ? `- ${implRef}\n` : ''}- ${sourceRef}
 `;
 
-  return doc.trim() + "\n";
+  return doc.trim() + '\n';
 }
 
 // ── 그룹 문서 생성 ──────────────────────────────────────
 
 function generateGroupDoc(group, memberIds) {
-  const links = memberIds.map(id => `    - target: prefix-${id}\n      type: contains`).join("\n");
+  const links = memberIds
+    .map((id) => `    - target: prefix-${id}\n      type: contains`)
+    .join('\n');
 
   const doc = `---
 def:
@@ -199,11 +218,11 @@ ${links}
 ## 목적 ^purpose
 
 ${group.desc}
-category: ${group.id.replace("-prefix-group", "")}에 해당하는 prefix를 모아 관리한다.
+category: ${group.id.replace('-prefix-group', '')}에 해당하는 prefix를 모아 관리한다.
 
 ## 구성 ^overview
 
-${memberIds.map(id => `- \`${id}\``).join("\n")}
+${memberIds.map((id) => `- \`${id}\``).join('\n')}
 
 ## 검증 ^consumes
 
@@ -214,16 +233,16 @@ node packages/cli/dist/index.js def validate
 \`\`\`
 `;
 
-  return doc.trim() + "\n";
+  return doc.trim() + '\n';
 }
 
 // ── prefix-catalog 루트 문서 ─────────────────────────────
 
 function generateRootDoc(groupIds, totalPrefixes) {
   const groupLinks = [
-    ...groupIds.map(id => `    - target: ${id}\n      type: depends_on`),
-    ...groupIds.map(id => `    - target: ${id}\n      type: refs`),
-  ].join("\n");
+    ...groupIds.map((id) => `    - target: ${id}\n      type: depends_on`),
+    ...groupIds.map((id) => `    - target: ${id}\n      type: refs`),
+  ].join('\n');
 
   const doc = `---
 def:
@@ -252,7 +271,7 @@ DEMO_CATALOG이 코드 SSOT이고, 이 문서 체계는 탐색/조립/영향분�
 ## 구성 ^overview
 
 - 총 ${totalPrefixes}개 prefix
-- ${groupIds.length}개 도메인 그룹: ${groupIds.map(id => id.replace("-prefix-group", "")).join(", ")}
+- ${groupIds.length}개 도메인 그룹: ${groupIds.map((id) => id.replace('-prefix-group', '')).join(', ')}
 - 자동 생성: scripts/gen-prefix-docs.mjs
 
 ## 검증 ^consumes
@@ -264,7 +283,7 @@ node packages/cli/dist/index.js def validate
 \`\`\`
 `;
 
-  return doc.trim() + "\n";
+  return doc.trim() + '\n';
 }
 
 // ── main ────────────────────────────────────────────────
@@ -273,12 +292,14 @@ async function main() {
   const catalog = await loadCatalog();
   const prefixes = Object.values(catalog.prefixes);
 
-  console.log(`DEMO_CATALOG: ${prefixes.length}개 prefix, ${Object.keys(catalog.axes).length}개 axis`);
+  console.log(
+    `DEMO_CATALOG: ${prefixes.length}개 prefix, ${Object.keys(catalog.axes).length}개 axis`,
+  );
 
   // 도메인별 분류
   const groups = {};
   for (const p of prefixes) {
-    const cat = p.meta?.category ?? "entity";
+    const cat = p.meta?.category ?? 'entity';
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(p);
   }
@@ -291,14 +312,16 @@ async function main() {
 
   // 1. 개별 prefix 문서 생성
   for (const p of prefixes) {
-    const cat = p.meta?.category ?? "entity";
+    const cat = p.meta?.category ?? 'entity';
     const group = DOMAIN_GROUPS[cat];
     const filename = `prefix-${p.id}.spec.md`;
     const content = generatePrefixDoc(p, catalog);
     const outputDir = group ? join(OUT_DIR, group.id) : OUT_DIR;
 
     if (DRY_RUN) {
-      console.log(`[dry-run] ${group ? `${group.id}/` : ""}${filename} (${content.split("\n").length}줄)`);
+      console.log(
+        `[dry-run] ${group ? `${group.id}/` : ''}${filename} (${content.split('\n').length}줄)`,
+      );
     } else {
       mkdirSync(outputDir, { recursive: true });
       writeFileSync(join(outputDir, filename), content);
@@ -316,7 +339,7 @@ async function main() {
     }
     usedGroupIds.push(group.id);
 
-    const memberIds = members.map(p => p.id);
+    const memberIds = members.map((p) => p.id);
     const filename = `${group.id}.md`;
     const content = generateGroupDoc(group, memberIds);
 
@@ -333,19 +356,24 @@ async function main() {
   if (DRY_RUN) {
     console.log(`[dry-run] prefix-catalog-system.md — 루트`);
   } else {
-    writeFileSync(join(OUT_DIR, "prefix-catalog-system.md"), rootContent);
+    writeFileSync(join(OUT_DIR, 'prefix-catalog-system.md'), rootContent);
     totalWritten++;
   }
 
   // 요약
-  console.log("");
+  console.log('');
   for (const [cat, members] of Object.entries(groups)) {
-    console.log(`  ${cat}: ${members.map(p => p.id).join(", ")}`);
+    console.log(`  ${cat}: ${members.map((p) => p.id).join(', ')}`);
   }
-  console.log("");
-  console.log(DRY_RUN
-    ? `[dry-run] ${prefixes.length}개 prefix + ${usedGroupIds.length}개 그룹 + 1 루트 (실제 쓰기 안 함)`
-    : `${OUT_DIR}에 ${totalWritten}건 생성 완료`);
+  console.log('');
+  console.log(
+    DRY_RUN
+      ? `[dry-run] ${prefixes.length}개 prefix + ${usedGroupIds.length}개 그룹 + 1 루트 (실제 쓰기 안 함)`
+      : `${OUT_DIR}에 ${totalWritten}건 생성 완료`,
+  );
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

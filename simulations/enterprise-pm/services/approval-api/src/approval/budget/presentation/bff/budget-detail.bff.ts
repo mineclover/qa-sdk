@@ -5,8 +5,8 @@ import {
   BudgetReadModelQuery,
   type BudgetDetailReadModel,
   type BudgetStepReadModel,
-} from "../../application/queries/budget-read-model.query.js";
-import type { BudgetLoggerPort } from "../../application/ports/budget-logger.port.js";
+} from '../../application/queries/budget-read-model.query.js';
+import type { BudgetLoggerPort } from '../../application/ports/budget-logger.port.js';
 
 /** BFF detail composition — UI 친화적 라벨 + cacheKey. domain entity 노출 금지. */
 export interface BudgetDetailBffModel {
@@ -27,7 +27,7 @@ export interface BudgetDetailBffModel {
  * - detail + steps 의 다중 read 합성.
  */
 export class BudgetDetailBff {
-  readonly cachePrefix = "budget-bff-detail:v1";
+  readonly cachePrefix = 'budget-bff-detail:v1';
 
   constructor(
     private readonly readModel: BudgetReadModelQuery,
@@ -46,21 +46,21 @@ export class BudgetDetailBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "budget",
-        useCase: "BudgetDetailBff.getDetail",
+        domain: 'budget',
+        useCase: 'BudgetDetailBff.getDetail',
         aggregateId: input.id,
-        queryName: "BudgetDetailBffQuery",
-        outcome: detail ? "success" : "failure",
+        queryName: 'BudgetDetailBffQuery',
+        outcome: detail ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      detail ? "budget-detail.bff.success" : "budget-detail.bff.miss",
+      detail ? 'budget-detail.bff.success' : 'budget-detail.bff.miss',
     );
     if (!detail) return null;
     return {
       id: detail.id,
       title: `Budget Request ${detail.id}`,
-      amountLabel: `${detail.amount.toLocaleString("en-US")} KRW`,
+      amountLabel: `${detail.amount.toLocaleString('en-US')} KRW`,
       statusLabel: detail.status.toUpperCase(),
       stageLabel: `${detail.currentStage}/${detail.totalStages}`,
       steps,

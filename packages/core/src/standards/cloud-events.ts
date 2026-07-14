@@ -12,13 +12,13 @@
  *   qasdk_traceid, qasdk_sessionid
  */
 
-import type { EventRecord } from "../types/record.js";
+import type { EventRecord } from '../types/record.js';
 
 // ── CloudEvents 타입 ─────────────────────────────────
 
 export interface CloudEvent {
   /** CloudEvents 스펙 버전 (고정) */
-  specversion: "1.0";
+  specversion: '1.0';
   /** 이벤트 고유 ID */
   id: string;
   /** 이벤트 유형 */
@@ -61,10 +61,10 @@ export interface EventRecordLike {
 
 /** 매니페스트 참조 정보 */
 export interface ManifestRef {
-  source: string;            // 서비스 URI (예: "//order-service")
-  prefix?: string;           // prefix ID
-  prefixVersion?: string;    // prefix 버전
-  manifestVersion?: string;  // 매니페스트 버전
+  source: string; // 서비스 URI (예: "//order-service")
+  prefix?: string; // prefix ID
+  prefixVersion?: string; // prefix 버전
+  manifestVersion?: string; // 매니페스트 버전
 }
 
 // ── 변환 함수 ────────────────────────────────────────
@@ -77,12 +77,12 @@ export function toCloudEvent(
 ): CloudEvent {
   const r = record as EventRecordLike;
   const ce: CloudEvent = {
-    specversion: "1.0",
+    specversion: '1.0',
     id: eventId ?? generateId(),
     type: r.event_key,
     source: manifest.source,
     time: r.timestamp,
-    datacontenttype: "application/json",
+    datacontenttype: 'application/json',
   };
 
   if (r.payload != null) ce.data = r.payload;
@@ -92,7 +92,7 @@ export function toCloudEvent(
     ce.subject = r.address_context[manifest.prefix];
   } else if (r.coordinate != null) {
     ce.subject = manifest.prefix
-      ? `${manifest.prefix}:${manifest.prefixVersion ?? "v1"}:${r.coordinate}`
+      ? `${manifest.prefix}:${manifest.prefixVersion ?? 'v1'}:${r.coordinate}`
       : String(r.coordinate);
   }
 
@@ -116,7 +116,7 @@ export function fromCloudEvent(ce: CloudEvent): EventRecordLike {
 
   // subject → address_context + 레거시 coordinate
   if (ce.subject) {
-    const parts = ce.subject.split(":");
+    const parts = ce.subject.split(':');
     const lastPart = parts[parts.length - 1];
     const num = Number(lastPart);
     if (!isNaN(num)) record.coordinate = num;
@@ -141,11 +141,11 @@ export function serializeCloudEvent(ce: CloudEvent): string {
 /** CloudEvents JSON 역직렬화 + 검증 */
 export function deserializeCloudEvent(json: string): CloudEvent {
   const parsed = JSON.parse(json);
-  if (parsed.specversion !== "1.0") {
+  if (parsed.specversion !== '1.0') {
     throw new Error(`CloudEvents specversion "${parsed.specversion}" 미지원. 1.0만 지원`);
   }
   if (!parsed.id || !parsed.type || !parsed.source || !parsed.time) {
-    throw new Error("CloudEvents 필수 필드 누락: id, type, source, time");
+    throw new Error('CloudEvents 필수 필드 누락: id, type, source, time');
   }
   return parsed as CloudEvent;
 }
@@ -155,7 +155,7 @@ export function toCloudEventBatch(
   records: readonly (EventRecord | EventRecordLike)[],
   manifest: ManifestRef,
 ): CloudEvent[] {
-  return records.map(r => toCloudEvent(r, manifest));
+  return records.map((r) => toCloudEvent(r, manifest));
 }
 
 /** 배치 역변환 — CloudEvent[] → EventRecordLike[] */

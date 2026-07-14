@@ -1,22 +1,22 @@
 #!/usr/bin/env node
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { MANAGED_PACKAGE_SCOPE, SURFACE_GROUPS, SURFACES } from "./package-surfaces.mjs";
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { MANAGED_PACKAGE_SCOPE, SURFACE_GROUPS, SURFACES } from './package-surfaces.mjs';
 
 const root = resolve(process.cwd());
-const packagesDir = join(root, "packages");
+const packagesDir = join(root, 'packages');
 const surfaceManagedPackages = new Map();
 const surfaceManagedPackageRows = [];
 
 for (const dir of readdirSync(packagesDir)) {
-  const packageJsonPath = join(packagesDir, dir, "package.json");
+  const packageJsonPath = join(packagesDir, dir, 'package.json');
   if (!existsSync(packageJsonPath)) continue;
-  const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+  const pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
   const name = pkg.name ?? dir;
   const row = { dir, name };
   surfaceManagedPackageRows.push(row);
   surfaceManagedPackages.set(name, row);
-  surfaceManagedPackages.set(name.replace(/^@[^/]+\//, ""), row);
+  surfaceManagedPackages.set(name.replace(/^@[^/]+\//, ''), row);
 }
 
 const assignments = new Map();
@@ -62,65 +62,80 @@ const groupSummaries = SURFACE_GROUPS.map((group) => {
   };
 });
 
-if (process.argv.includes("--json")) {
-  console.log(JSON.stringify({
-    surfaces: SURFACES,
-    surfaceGroups: SURFACE_GROUPS,
-    groupSummaries,
-    managedPackageScope: MANAGED_PACKAGE_SCOPE,
-    totalSurfaceManagedPackages: surfaceManagedPackageRows.length,
-    assignedSurfaceManagedPackages: assignments.size,
-    totalWorkspacePackages: surfaceManagedPackageRows.length,
-    assignedPackages: assignments.size,
-    missing,
-    duplicates,
-    unassigned,
-    unknownSurfaceGroups,
-  }, null, 2));
+if (process.argv.includes('--json')) {
+  console.log(
+    JSON.stringify(
+      {
+        surfaces: SURFACES,
+        surfaceGroups: SURFACE_GROUPS,
+        groupSummaries,
+        managedPackageScope: MANAGED_PACKAGE_SCOPE,
+        totalSurfaceManagedPackages: surfaceManagedPackageRows.length,
+        assignedSurfaceManagedPackages: assignments.size,
+        totalWorkspacePackages: surfaceManagedPackageRows.length,
+        assignedPackages: assignments.size,
+        missing,
+        duplicates,
+        unassigned,
+        unknownSurfaceGroups,
+      },
+      null,
+      2,
+    ),
+  );
 } else {
-  console.log("Package Surface Report");
-  console.log(`  surface-managed (${MANAGED_PACKAGE_SCOPE}) packages assigned: ${assignments.size}/${surfaceManagedPackageRows.length}`);
-  console.log("  feature groups:");
+  console.log('Package Surface Report');
+  console.log(
+    `  surface-managed (${MANAGED_PACKAGE_SCOPE}) packages assigned: ${assignments.size}/${surfaceManagedPackageRows.length}`,
+  );
+  console.log('  feature groups:');
   for (const group of groupSummaries) {
-    console.log(`    ${group.id}: ${group.surfaceCount} surfaces, ${group.packageCount} packages, verdicts ${formatVerdicts(group.verdicts)}`);
+    console.log(
+      `    ${group.id}: ${group.surfaceCount} surfaces, ${group.packageCount} packages, verdicts ${formatVerdicts(group.verdicts)}`,
+    );
   }
   for (const surface of SURFACES) {
     console.log(`\n[${surface.group} / ${surface.id}] ${surface.verdict}`);
     for (const pkgName of surface.packages) {
       const pkg = surfaceManagedPackages.get(pkgName);
-      const marker = pkg ? "ok" : "missing";
+      const marker = pkg ? 'ok' : 'missing';
       console.log(`  ${marker.padEnd(7)} ${pkgName}`);
     }
   }
   if (unassigned.length > 0) {
-    console.log("\n[unassigned] surface-managed package needs surface decision");
+    console.log('\n[unassigned] surface-managed package needs surface decision');
     for (const pkg of unassigned) {
       console.log(`  missing ${pkg.name}`);
     }
   }
 }
 
-if (missing.length > 0 || duplicates.length > 0 || unassigned.length > 0 || unknownSurfaceGroups.length > 0) {
+if (
+  missing.length > 0 ||
+  duplicates.length > 0 ||
+  unassigned.length > 0 ||
+  unknownSurfaceGroups.length > 0
+) {
   if (unknownSurfaceGroups.length > 0) {
-    console.error("\nUnknown surface groups:");
+    console.error('\nUnknown surface groups:');
     for (const item of unknownSurfaceGroups) {
       console.error(`  ${item.surface}: ${item.group}`);
     }
   }
   if (missing.length > 0) {
-    console.error("\nMissing packages:");
+    console.error('\nMissing packages:');
     for (const item of missing) {
       console.error(`  ${item.surface}: ${item.pkgName}`);
     }
   }
   if (duplicates.length > 0) {
-    console.error("\nDuplicate surface assignments:");
+    console.error('\nDuplicate surface assignments:');
     for (const item of duplicates) {
-      console.error(`  ${item.name}: ${item.surfaces.join(", ")}`);
+      console.error(`  ${item.name}: ${item.surfaces.join(', ')}`);
     }
   }
   if (unassigned.length > 0) {
-    console.error("\nUnassigned surface-managed packages:");
+    console.error('\nUnassigned surface-managed packages:');
     for (const item of unassigned) {
       console.error(`  ${item.name}`);
     }
@@ -139,5 +154,5 @@ function formatVerdicts(verdicts) {
   return Object.entries(verdicts)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([verdict, count]) => `${verdict}=${count}`)
-    .join(", ");
+    .join(', ');
 }

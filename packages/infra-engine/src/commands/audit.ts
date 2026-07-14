@@ -2,7 +2,7 @@
 // @def.doc infra-engine-system
 
 // commands/audit.ts — 레지스트리 감사
-import type { DiscoveryClient, ServiceInfo } from "../discovery/client.js";
+import type { DiscoveryClient, ServiceInfo } from '../discovery/client.js';
 
 export interface AuditResult {
   warnings: AuditIssue[];
@@ -26,22 +26,26 @@ export async function auditRegistry(discovery: DiscoveryClient): Promise<AuditRe
   for (const svc of services) {
     // URL 미등록 확인
     if (!svc.url) {
-      warnings.push({ serviceId: svc.serviceId, type: "no-url", message: "기본 URL 미등록" });
+      warnings.push({ serviceId: svc.serviceId, type: 'no-url', message: '기본 URL 미등록' });
     }
 
     // env별 URL 확인
-    const envs = ["dev", "staging", "prod"];
+    const envs = ['dev', 'staging', 'prod'];
     for (const env of envs) {
       if (!svc.urls?.[env]) {
-        warnings.push({ serviceId: svc.serviceId, type: "no-env-url", message: `${env} URL 미등록` });
+        warnings.push({
+          serviceId: svc.serviceId,
+          type: 'no-env-url',
+          message: `${env} URL 미등록`,
+        });
       }
     }
 
     // ownedPrefixes 확인 (infra/backend tier)
-    if (svc.ownedPrefixes.length === 0 && (svc.tier === "infra" || svc.tier === "backend")) {
+    if (svc.ownedPrefixes.length === 0 && (svc.tier === 'infra' || svc.tier === 'backend')) {
       warnings.push({
         serviceId: svc.serviceId,
-        type: "no-owned-prefixes",
+        type: 'no-owned-prefixes',
         message: `tier=${svc.tier}이지만 ownedPrefixes 없음`,
       });
     }
@@ -63,7 +67,7 @@ export async function auditRegistry(discovery: DiscoveryClient): Promise<AuditRe
       if (!allOwnedPrefixes.has(p)) {
         warnings.push({
           serviceId: svc.serviceId,
-          type: "orphan-consumed",
+          type: 'orphan-consumed',
           message: `consumed prefix "${p}"의 소유 서비스 없음`,
         });
       }
@@ -76,8 +80,8 @@ export async function auditRegistry(discovery: DiscoveryClient): Promise<AuditRe
       for (const id of ids) {
         warnings.push({
           serviceId: id,
-          type: "duplicate-url",
-          message: `URL "${url}"을 ${ids.join(", ")}이(가) 공유`,
+          type: 'duplicate-url',
+          message: `URL "${url}"을 ${ids.join(', ')}이(가) 공유`,
         });
       }
     }

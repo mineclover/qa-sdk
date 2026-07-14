@@ -1,11 +1,11 @@
 // @def.boundary sim-audit-recorder-provider
 // @def.doc authorization-ontology-nested-audit-tracing
 
-import type { AuditRecorder } from "permission-engine";
-import { createAuditRecorder } from "audit-recorder-store";
+import type { AuditRecorder } from 'permission-engine';
+import { createAuditRecorder } from 'audit-recorder-store';
 
 export interface CreateSimAuditRecorderArgs {
-  dialect: "sqlite" | "pg";
+  dialect: 'sqlite' | 'pg';
   /** drizzle DB instance — createConnection 결과의 .db 필드. */
   db: unknown;
 }
@@ -26,12 +26,10 @@ export async function createSimAuditRecorder(
   args: CreateSimAuditRecorderArgs,
 ): Promise<AuditRecorder> {
   if (args.db === null || args.db === undefined) {
-    throw new Error("createSimAuditRecorder: db instance required (no fallback)");
+    throw new Error('createSimAuditRecorder: db instance required (no fallback)');
   }
-  if (args.dialect !== "sqlite" && args.dialect !== "pg") {
-    throw new Error(
-      `createSimAuditRecorder: unsupported dialect=${String(args.dialect)}`,
-    );
+  if (args.dialect !== 'sqlite' && args.dialect !== 'pg') {
+    throw new Error(`createSimAuditRecorder: unsupported dialect=${String(args.dialect)}`);
   }
   return createAuditRecorder({ dialect: args.dialect, db: args.db as never });
 }

@@ -1,6 +1,6 @@
 export interface AssignmentStateView {
   readonly id: string;
-  readonly status: "draft" | "assigned" | "cancelled";
+  readonly status: 'draft' | 'assigned' | 'cancelled';
   readonly version: number;
 }
 

@@ -1,16 +1,16 @@
 // @def.boundary sim-canary-controller
 // @def.doc canary-controller-config
 
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get } from '@nestjs/common';
 
-const SERVICE_NAME = "sim-canary-controller";
+const SERVICE_NAME = 'sim-canary-controller';
 
 @Controller()
 export class HealthController {
-  @Get("health")
+  @Get('health')
   health() {
     return {
-      status: "ok",
+      status: 'ok',
       service: SERVICE_NAME,
       ts: new Date().toISOString(),
     };

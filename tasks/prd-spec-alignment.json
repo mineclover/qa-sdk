@@ -37,9 +37,7 @@
       "priority": 2,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -56,9 +54,7 @@
       "priority": 3,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -95,11 +91,7 @@
       "priority": 5,
       "passes": true,
       "notes": "가장 큰 스토리. core + engine 패키지만 건드리므로 store/ingest-server는 영향 없음.",
-      "dependsOn": [
-        "US-001",
-        "US-002",
-        "US-004"
-      ],
+      "dependsOn": ["US-001", "US-002", "US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -117,9 +109,7 @@
       "priority": 6,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-005"
-      ],
+      "dependsOn": ["US-005"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -142,11 +132,7 @@
       "priority": 7,
       "passes": true,
       "notes": "US-005과 유사한 규모. SpecNode 경량화가 spec-compiler + graph-matcher + computeVerdict에 영향.",
-      "dependsOn": [
-        "US-001",
-        "US-002",
-        "US-004"
-      ],
+      "dependsOn": ["US-001", "US-002", "US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -165,9 +151,7 @@
       "priority": 8,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-007"
-      ],
+      "dependsOn": ["US-007"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -206,9 +190,7 @@
       "priority": 10,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-009"
-      ],
+      "dependsOn": ["US-009"],
       "completionNotes": "Completed by agent"
     },
     {

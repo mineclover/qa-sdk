@@ -8,8 +8,8 @@
  * sql/schema.sql이 먼저 적용된 DB가 필요하다.
  */
 
-import type { PrefixRouter } from "../prefix-router.js";
-import type { SqlDriver } from "./sql-store.js";
+import type { PrefixRouter } from '../prefix-router.js';
+import type { SqlDriver } from './sql-store.js';
 
 interface PrefixRouteRow extends Record<string, unknown> {
   prefix: string;

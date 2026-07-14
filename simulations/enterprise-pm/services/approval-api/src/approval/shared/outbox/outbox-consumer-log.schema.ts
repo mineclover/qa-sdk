@@ -14,20 +14,18 @@
  *             다시 처리되는 것은 정당하므로 (key, consumer) 복합 UNIQUE.
  * - processed_at: 처리 완료 시각(epoch ms).
  */
-import { pgSchema, text, bigint, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgSchema, text, bigint, uniqueIndex } from 'drizzle-orm/pg-core';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 export const outboxConsumerLog = sim.table(
-  "outbox_consumer_log",
+  'outbox_consumer_log',
   {
-    idempotency_key: text("idempotency_key").notNull(),
-    consumer: text("consumer").notNull(),
-    processed_at: bigint("processed_at", { mode: "number" }).notNull(),
+    idempotency_key: text('idempotency_key').notNull(),
+    consumer: text('consumer').notNull(),
+    processed_at: bigint('processed_at', { mode: 'number' }).notNull(),
   },
-  (t) => [
-    uniqueIndex("uq_sim_outbox_consumer_log_key").on(t.idempotency_key, t.consumer),
-  ],
+  (t) => [uniqueIndex('uq_sim_outbox_consumer_log_key').on(t.idempotency_key, t.consumer)],
 );
 
 export const SIM_OUTBOX_CONSUMER_LOG_PG_DDL = `

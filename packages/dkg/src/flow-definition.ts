@@ -8,8 +8,8 @@
  * 각 포인트는 prefix 주소(정수)로 표현된다.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { encodePrefixByValue } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
+import { encodePrefixByValue } from '@qa-sdk/core';
 
 export interface FlowDefinition {
   readonly id: string;
@@ -41,24 +41,34 @@ export interface FlowDefinitionInput {
   readonly name: string;
   readonly description?: string;
   readonly entry: { prefix: string; version: string; values: Record<string, string | number> };
-  readonly branches: Record<string, { prefix: string; version: string; values: Record<string, string | number> }>;
-  readonly requiredPermissions?: readonly { prefix: string; version: string; values: Record<string, string | number> }[];
-  readonly expectedEvents?: readonly { prefix: string; version: string; values: Record<string, string | number> }[];
+  readonly branches: Record<
+    string,
+    { prefix: string; version: string; values: Record<string, string | number> }
+  >;
+  readonly requiredPermissions?: readonly {
+    prefix: string;
+    version: string;
+    values: Record<string, string | number>;
+  }[];
+  readonly expectedEvents?: readonly {
+    prefix: string;
+    version: string;
+    values: Record<string, string | number>;
+  }[];
 }
 
 /**
  * FlowDefinition을 생성한다.
  * 각 포인트의 values를 encode하여 주소를 확정한다.
  */
-export function defineFlow(
-  catalog: Catalog,
-  input: FlowDefinitionInput,
-): FlowDefinition {
-  const encodePoint = (
-    p: { prefix: string; version: string; values: Record<string, string | number> },
-  ): FlowPoint => {
+export function defineFlow(catalog: Catalog, input: FlowDefinitionInput): FlowDefinition {
+  const encodePoint = (p: {
+    prefix: string;
+    version: string;
+    values: Record<string, string | number>;
+  }): FlowPoint => {
     const address = encodePrefixByValue(catalog, p.prefix, p.version, p.values);
-    const label = Object.values(p.values).join(".");
+    const label = Object.values(p.values).join('.');
     return { prefix: p.prefix, version: p.version, address, label };
   };
 

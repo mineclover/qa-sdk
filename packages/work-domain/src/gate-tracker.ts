@@ -13,8 +13,20 @@
  *   // → gate.execution 이벤트 emit + bundle.observation 자동 emit
  */
 
-import type { GateEvent, GateState, BundleState, HarnessPlan, HarnessInstance, GateRequirement } from "./harness.js";
-import { transitionGate, deriveBundleState, createHarnessInstance, nextReadyGates } from "./harness.js";
+import type {
+  GateEvent,
+  GateState,
+  BundleState,
+  HarnessPlan,
+  HarnessInstance,
+  GateRequirement,
+} from './harness.js';
+import {
+  transitionGate,
+  deriveBundleState,
+  createHarnessInstance,
+  nextReadyGates,
+} from './harness.js';
 
 // ─── 로거 인터페이스 (SDK 의존 없음) ──────────────────
 
@@ -67,14 +79,10 @@ export function createGateTracker(config: GateTrackerConfig): GateTracker {
   const { logger, plan, listener } = config;
   let instance = createHarnessInstance(plan);
 
-  function emitGateExecution(
-    req: GateRequirement,
-    fromState: GateState,
-    toState: GateState,
-  ): void {
+  function emitGateExecution(req: GateRequirement, fromState: GateState, toState: GateState): void {
     logger.log({
-      event_key: "gate.execution",
-      event_version: "1",
+      event_key: 'gate.execution',
+      event_version: '1',
       payload: {
         anchor_id: plan.anchorId,
         contract_doc_id: req.contractDocId,
@@ -90,20 +98,17 @@ export function createGateTracker(config: GateTrackerConfig): GateTracker {
     });
   }
 
-  function emitBundleObservation(
-    prevState: BundleState,
-    newState: BundleState,
-  ): void {
+  function emitBundleObservation(prevState: BundleState, newState: BundleState): void {
     logger.log({
-      event_key: "bundle.observation",
-      event_version: "1",
+      event_key: 'bundle.observation',
+      event_version: '1',
       payload: {
         anchor_id: plan.anchorId,
         from_state: prevState,
         bundle_state: newState,
         total_gates: instance.gates.length,
-        passed: instance.gates.filter(g => g.state === "passed").length,
-        failed: instance.gates.filter(g => g.state === "failed").length,
+        passed: instance.gates.filter((g) => g.state === 'passed').length,
+        failed: instance.gates.filter((g) => g.state === 'failed').length,
         timestamp: new Date().toISOString(),
       },
       address_context: {
@@ -130,11 +135,11 @@ export function createGateTracker(config: GateTrackerConfig): GateTracker {
         return {
           ...g,
           state: newGateState,
-          lastExitCode: event.type === "exit" ? event.code : g.lastExitCode,
+          lastExitCode: event.type === 'exit' ? event.code : g.lastExitCode,
           lastTransitionAt: new Date().toISOString(),
         };
       });
-      const newBundleState = deriveBundleState(gates.map(g => g.state));
+      const newBundleState = deriveBundleState(gates.map((g) => g.state));
       instance = { ...instance, gates, bundleState: newBundleState };
 
       // gate 전이 emit

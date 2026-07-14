@@ -33,9 +33,7 @@
       "purpose": "read_model",
       "version": "v1",
       "prefix": "bitmap-read-model",
-      "segments": [
-        { "name": "userId" }
-      ],
+      "segments": [{ "name": "userId" }],
       "ttl": "short",
       "openmetadataEntity": "permission-engine.versioned_bitmap"
     }

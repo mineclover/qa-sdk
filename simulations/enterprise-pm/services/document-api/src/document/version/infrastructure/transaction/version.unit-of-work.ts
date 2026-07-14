@@ -1,12 +1,12 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { VersionRepositoryPort } from "../../application/ports/version-repository.port.js";
-import type { VersionOutboxPort } from "../../application/ports/version-outbox.port.js";
+import type { VersionRepositoryPort } from '../../application/ports/version-repository.port.js';
+import type { VersionOutboxPort } from '../../application/ports/version-outbox.port.js';
 import type {
   VersionTransactionPort,
   VersionTransactionScope,
-} from "../../application/ports/version-transaction.port.js";
+} from '../../application/ports/version-transaction.port.js';
 
 export class VersionUnitOfWork {
   constructor(

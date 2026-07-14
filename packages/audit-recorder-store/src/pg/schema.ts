@@ -1,7 +1,7 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-nested-audit-tracing
 
-import { index, integer, jsonb, pgSchema, text, varchar } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgSchema, text, varchar } from 'drizzle-orm/pg-core';
 
 /**
  * audit schema 안의 audit_entries 테이블.
@@ -21,42 +21,42 @@ import { index, integer, jsonb, pgSchema, text, varchar } from "drizzle-orm/pg-c
  * UPDATE는 finishExecution에서 사용 — adapter는 별도 superuser/owner role 사용 가정.
  * 본 placeholder 단계에서는 임시 fallback 정책으로 모든 access 허용.
  */
-const auditPgSchema = pgSchema("audit");
+const auditPgSchema = pgSchema('audit');
 
 export const auditEntries = auditPgSchema.table(
-  "audit_entries",
+  'audit_entries',
   {
-    spanId: text("span_id").primaryKey(),
-    traceId: text("trace_id").notNull(),
-    parentSpanId: text("parent_span_id"),
-    rootSpanId: text("root_span_id").notNull(),
-    depth: integer("depth").notNull(),
-    kind: varchar("kind", { length: 16 }).notNull(), // CHECK는 raw DDL에서
+    spanId: text('span_id').primaryKey(),
+    traceId: text('trace_id').notNull(),
+    parentSpanId: text('parent_span_id'),
+    rootSpanId: text('root_span_id').notNull(),
+    depth: integer('depth').notNull(),
+    kind: varchar('kind', { length: 16 }).notNull(), // CHECK는 raw DDL에서
 
     // execution kind
-    apiId: text("api_id"),
-    actorUserId: text("actor_user_id"),
-    actorTenantId: text("actor_tenant_id"),
-    targetKind: text("target_kind"),
-    targetId: text("target_id"),
-    outcome: varchar("outcome", { length: 16 }),
+    apiId: text('api_id'),
+    actorUserId: text('actor_user_id'),
+    actorTenantId: text('actor_tenant_id'),
+    targetKind: text('target_kind'),
+    targetId: text('target_id'),
+    outcome: varchar('outcome', { length: 16 }),
 
     // check kind
-    pass: varchar("pass", { length: 16 }),
-    address: integer("address"),
-    unionKind: text("union_kind"),
-    denyReason: text("deny_reason"),
+    pass: varchar('pass', { length: 16 }),
+    address: integer('address'),
+    unionKind: text('union_kind'),
+    denyReason: text('deny_reason'),
 
-    startedAt: text("started_at").notNull(),
-    endedAt: text("ended_at"),
-    metadata: jsonb("metadata"),
+    startedAt: text('started_at').notNull(),
+    endedAt: text('ended_at'),
+    metadata: jsonb('metadata'),
   },
   (t) => [
-    index("idx_audit_trace_pg").on(t.traceId),
-    index("idx_audit_root_pg").on(t.rootSpanId),
-    index("idx_audit_parent_pg").on(t.parentSpanId),
-    index("idx_audit_actor_pg").on(t.actorUserId, t.startedAt),
-    index("idx_audit_target_pg").on(t.targetKind, t.targetId),
+    index('idx_audit_trace_pg').on(t.traceId),
+    index('idx_audit_root_pg').on(t.rootSpanId),
+    index('idx_audit_parent_pg').on(t.parentSpanId),
+    index('idx_audit_actor_pg').on(t.actorUserId, t.startedAt),
+    index('idx_audit_target_pg').on(t.targetKind, t.targetId),
   ],
 );
 

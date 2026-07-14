@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "4ae70522-079d-42c2-94c5-7ebce1825c36",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "flow_instances",
@@ -151,9 +149,7 @@
       "table": "flow_instances"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "flow_instances_pk",
       "table": "flow_instances",

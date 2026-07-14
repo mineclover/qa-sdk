@@ -3,33 +3,23 @@ import { transitionIncidentEscalationStatus } from './incidentEscalationStateMac
 
 describe('transitionIncidentEscalationStatus', () => {
   it('success 이후 draft 변경은 editing으로 되돌린다', () => {
-    expect(transitionIncidentEscalationStatus('success', 'DRAFT_CHANGED')).toBe(
-      'editing',
-    );
+    expect(transitionIncidentEscalationStatus('success', 'DRAFT_CHANGED')).toBe('editing');
   });
 
   it('submit invalid는 invalid 상태로 고정한다', () => {
-    expect(transitionIncidentEscalationStatus('editing', 'SUBMIT_INVALID')).toBe(
-      'invalid',
-    );
+    expect(transitionIncidentEscalationStatus('editing', 'SUBMIT_INVALID')).toBe('invalid');
   });
 
   it('submit started는 submitting으로 전이한다', () => {
-    expect(transitionIncidentEscalationStatus('editing', 'SUBMIT_STARTED')).toBe(
-      'submitting',
-    );
+    expect(transitionIncidentEscalationStatus('editing', 'SUBMIT_STARTED')).toBe('submitting');
   });
 
   it('submit succeeded는 success로 전이한다', () => {
-    expect(
-      transitionIncidentEscalationStatus('submitting', 'SUBMIT_SUCCEEDED'),
-    ).toBe('success');
+    expect(transitionIncidentEscalationStatus('submitting', 'SUBMIT_SUCCEEDED')).toBe('success');
   });
 
   it('submit failed는 error로 전이한다', () => {
-    expect(transitionIncidentEscalationStatus('submitting', 'SUBMIT_FAILED')).toBe(
-      'error',
-    );
+    expect(transitionIncidentEscalationStatus('submitting', 'SUBMIT_FAILED')).toBe('error');
   });
 
   it('reset은 언제나 idle로 복귀한다', () => {

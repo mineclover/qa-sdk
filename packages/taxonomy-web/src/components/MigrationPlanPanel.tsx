@@ -1,4 +1,4 @@
-import type { MigrationPlan } from "taxonomy-engine";
+import type { MigrationPlan } from 'taxonomy-engine';
 
 export function MigrationPlanPanel({ plan }: { plan: MigrationPlan }) {
   const isEmpty =
@@ -20,10 +20,10 @@ export function MigrationPlanPanel({ plan }: { plan: MigrationPlan }) {
           <ul className="space-y-0.5 ml-2">
             {plan.idRenames.map((r, i) => (
               <li key={i} className="font-mono">
-                <span className="text-gray-500">{r.axis}</span>{" "}
-                <span className="text-gray-400">#{r.address}</span>{" "}
-                <span className="text-red-600">{r.fromId}</span>{" "}
-                <span className="text-gray-400">→</span>{" "}
+                <span className="text-gray-500">{r.axis}</span>{' '}
+                <span className="text-gray-400">#{r.address}</span>{' '}
+                <span className="text-red-600">{r.fromId}</span>{' '}
+                <span className="text-gray-400">→</span>{' '}
                 <span className="text-green-700">{r.toId}</span>
               </li>
             ))}
@@ -39,9 +39,9 @@ export function MigrationPlanPanel({ plan }: { plan: MigrationPlan }) {
           <ul className="space-y-0.5 ml-2">
             {plan.addressConflicts.map((c, i) => (
               <li key={i} className="font-mono">
-                <span className="text-gray-500">{c.axis}</span>{" "}
-                <span className="text-gray-400">#{c.address}</span>{" "}
-                <span>[{c.ids.join(", ")}]</span>
+                <span className="text-gray-500">{c.axis}</span>{' '}
+                <span className="text-gray-400">#{c.address}</span>{' '}
+                <span>[{c.ids.join(', ')}]</span>
               </li>
             ))}
           </ul>

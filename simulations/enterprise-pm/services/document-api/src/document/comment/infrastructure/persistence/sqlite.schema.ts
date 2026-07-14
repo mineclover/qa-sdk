@@ -1,7 +1,7 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (comment slice).
@@ -10,18 +10,18 @@ import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
  * Outbox 는 service-wide `document_outbox_events` 를 공유 (document slice 가 정의).
  */
 export const comments = sqliteTable(
-  "doc_comments",
+  'doc_comments',
   {
-    id: text("id").primaryKey(),
-    documentId: text("document_id").notNull(),
-    authorId: text("author_id").notNull(),
-    parentCommentId: text("parent_comment_id"),
-    body: text("body").notNull(),
-    createdAt: text("created_at").notNull(),
+    id: text('id').primaryKey(),
+    documentId: text('document_id').notNull(),
+    authorId: text('author_id').notNull(),
+    parentCommentId: text('parent_comment_id'),
+    body: text('body').notNull(),
+    createdAt: text('created_at').notNull(),
   },
   (t) => [
-    index("idx_doc_comments_document").on(t.documentId),
-    index("idx_doc_comments_parent").on(t.parentCommentId),
+    index('idx_doc_comments_document').on(t.documentId),
+    index('idx_doc_comments_parent').on(t.parentCommentId),
   ],
 );
 

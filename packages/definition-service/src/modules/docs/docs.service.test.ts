@@ -1,30 +1,30 @@
-import { describe, expect, it } from "vitest";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import * as schema from "../../db/schema.js";
-import type { DocRecord } from "../../core/types.js";
-import { mergeSemanticDocumentResults } from "../../core/semantic-grounding/planner.js";
-import { DocsService } from "./docs.service.js";
+import { describe, expect, it } from 'vitest';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import * as schema from '../../db/schema.js';
+import type { DocRecord } from '../../core/types.js';
+import { mergeSemanticDocumentResults } from '../../core/semantic-grounding/planner.js';
+import { DocsService } from './docs.service.js';
 
 function doc(docId: string, overrides: Partial<DocRecord> = {}): DocRecord {
   return {
     docId,
     title: docId,
-    scope: "data",
-    aspect: "domain_data",
-    depth: "overview",
-    lifecycle: "approved",
+    scope: 'data',
+    aspect: 'domain_data',
+    depth: 'overview',
+    lifecycle: 'approved',
     tags: [],
     links: [],
     version: 1,
     bodyHash: `${docId}-hash`,
-    syncedAt: "2026-06-30T00:00:00.000Z",
+    syncedAt: '2026-06-30T00:00:00.000Z',
     ...overrides,
   };
 }
 
 function createDb() {
-  const sqlite = new Database(":memory:");
+  const sqlite = new Database(':memory:');
   sqlite.exec(`
     CREATE TABLE documents (
       doc_id text PRIMARY KEY NOT NULL,
@@ -101,7 +101,9 @@ function createService() {
   const db = createDb();
   const searchCalls: Array<{ query: string; limit: number; offset: number }> = [];
   const countCalls: string[] = [];
-  const indexCalls: Array<[string, string | undefined, string | undefined, string | undefined, string | undefined]> = [];
+  const indexCalls: Array<
+    [string, string | undefined, string | undefined, string | undefined, string | undefined]
+  > = [];
   const planCalls: string[] = [];
   const recordCalls: Array<{
     query: string;
@@ -133,7 +135,7 @@ function createService() {
     planDocumentSearch(query: string) {
       planCalls.push(query);
       return {
-        kind: "document-search",
+        kind: 'document-search',
         query,
         candidateDocIds: [] as readonly string[],
         candidates: [],
@@ -179,44 +181,44 @@ function seedDocs(service: DocsService, docs: readonly DocRecord[]) {
   }
 }
 
-describe("DocsService semantic search merge", () => {
-  it("keeps semantic candidate docs before legacy FTS docs and removes duplicates", () => {
+describe('DocsService semantic search merge', () => {
+  it('keeps semantic candidate docs before legacy FTS docs and removes duplicates', () => {
     const result = mergeSemanticDocumentResults({
-      semanticDocs: [doc("semantic-b"), doc("semantic-a")],
-      legacyDocs: [doc("semantic-a"), doc("legacy-c")],
-      candidateDocIds: ["semantic-a", "semantic-b"],
+      semanticDocs: [doc('semantic-b'), doc('semantic-a')],
+      legacyDocs: [doc('semantic-a'), doc('legacy-c')],
+      candidateDocIds: ['semantic-a', 'semantic-b'],
       limit: 10,
       offset: 0,
     });
 
-    expect(result.map((item) => item.docId)).toEqual(["semantic-a", "semantic-b", "legacy-c"]);
+    expect(result.map((item) => item.docId)).toEqual(['semantic-a', 'semantic-b', 'legacy-c']);
   });
 
-  it("applies pagination after semantic and legacy results are merged", () => {
+  it('applies pagination after semantic and legacy results are merged', () => {
     const result = mergeSemanticDocumentResults({
-      semanticDocs: [doc("semantic-a"), doc("semantic-b")],
-      legacyDocs: [doc("legacy-c")],
-      candidateDocIds: ["semantic-a", "semantic-b"],
+      semanticDocs: [doc('semantic-a'), doc('semantic-b')],
+      legacyDocs: [doc('legacy-c')],
+      candidateDocIds: ['semantic-a', 'semantic-b'],
       limit: 1,
       offset: 1,
     });
 
-    expect(result.map((item) => item.docId)).toEqual(["semantic-b"]);
+    expect(result.map((item) => item.docId)).toEqual(['semantic-b']);
   });
 });
 
-describe("DocsService semantic search integration", () => {
-  it("merges semantic candidates into list results before legacy search docs", () => {
+describe('DocsService semantic search integration', () => {
+  it('merges semantic candidates into list results before legacy search docs', () => {
     const { service, searchCalls, planCalls, recordCalls } = createService();
-    seedDocs(service, [doc("semantic-a"), doc("semantic-b"), doc("legacy-c")]);
+    seedDocs(service, [doc('semantic-a'), doc('semantic-b'), doc('legacy-c')]);
 
     const search = {
       search(query: string, limit: number, offset: number) {
         searchCalls.push({ query, limit, offset });
-        return [doc("semantic-a"), doc("legacy-c")];
+        return [doc('semantic-a'), doc('legacy-c')];
       },
       searchCount(query: string) {
-        return query === "semantic" ? 2 : 0;
+        return query === 'semantic' ? 2 : 0;
       },
       index() {},
     };
@@ -225,9 +227,9 @@ describe("DocsService semantic search integration", () => {
       planDocumentSearch(query: string) {
         planCalls.push(query);
         return {
-          kind: "document-search",
+          kind: 'document-search',
           query,
-          candidateDocIds: ["semantic-a", "semantic-b"],
+          candidateDocIds: ['semantic-a', 'semantic-b'],
           candidates: [],
         };
       },
@@ -239,24 +241,24 @@ describe("DocsService semantic search integration", () => {
       },
     };
 
-    const docs = service.list({ q: "semantic", limit: 10, offset: 0 });
+    const docs = service.list({ q: 'semantic', limit: 10, offset: 0 });
 
-    expect(docs.map((item) => item.docId)).toEqual(["semantic-a", "semantic-b", "legacy-c"]);
-    expect(searchCalls).toEqual([{ query: "semantic", limit: 50, offset: 0 }]);
-    expect(planCalls).toEqual(["semantic"]);
+    expect(docs.map((item) => item.docId)).toEqual(['semantic-a', 'semantic-b', 'legacy-c']);
+    expect(searchCalls).toEqual([{ query: 'semantic', limit: 50, offset: 0 }]);
+    expect(planCalls).toEqual(['semantic']);
     expect(recordCalls[0]).toMatchObject({
-      query: "semantic",
+      query: 'semantic',
       legacyCount: 2,
     });
   });
 
-  it("applies semantic pagination before returning listPaginated results", () => {
+  it('applies semantic pagination before returning listPaginated results', () => {
     const { service } = createService();
-    seedDocs(service, [doc("semantic-a"), doc("semantic-b"), doc("legacy-c")]);
+    seedDocs(service, [doc('semantic-a'), doc('semantic-b'), doc('legacy-c')]);
 
     const search = {
       search() {
-        return [doc("semantic-a"), doc("legacy-c")];
+        return [doc('semantic-a'), doc('legacy-c')];
       },
       searchCount() {
         return 2;
@@ -267,9 +269,9 @@ describe("DocsService semantic search integration", () => {
     (service as any).semantic = {
       planDocumentSearch() {
         return {
-          kind: "document-search",
-          query: "semantic",
-          candidateDocIds: ["semantic-a", "semantic-b"],
+          kind: 'document-search',
+          query: 'semantic',
+          candidateDocIds: ['semantic-a', 'semantic-b'],
           candidates: [],
         };
       },
@@ -279,17 +281,17 @@ describe("DocsService semantic search integration", () => {
       },
     };
 
-    const result = service.listPaginated({ q: "semantic", limit: 1, offset: 1 });
+    const result = service.listPaginated({ q: 'semantic', limit: 1, offset: 1 });
 
-    expect(result.docs.map((item) => item.docId)).toEqual(["semantic-b"]);
+    expect(result.docs.map((item) => item.docId)).toEqual(['semantic-b']);
     expect(result.total).toBe(3);
     expect(result.offset).toBe(1);
     expect(result.limit).toBe(1);
   });
 
-  it("does not load the full legacy result set when semantic candidates extend beyond the fetched buffer", () => {
+  it('does not load the full legacy result set when semantic candidates extend beyond the fetched buffer', () => {
     const { service, searchCalls } = createService();
-    seedDocs(service, [doc("semantic-only")]);
+    seedDocs(service, [doc('semantic-only')]);
 
     const search = {
       search(query: string, limit: number, offset: number) {
@@ -308,9 +310,9 @@ describe("DocsService semantic search integration", () => {
     (service as any).semantic = {
       planDocumentSearch() {
         return {
-          kind: "document-search",
-          query: "semantic",
-          candidateDocIds: ["semantic-only"],
+          kind: 'document-search',
+          query: 'semantic',
+          candidateDocIds: ['semantic-only'],
           candidates: [],
         };
       },
@@ -320,16 +322,16 @@ describe("DocsService semantic search integration", () => {
       },
     };
 
-    const result = service.listPaginated({ q: "semantic", limit: 1, offset: 0 });
+    const result = service.listPaginated({ q: 'semantic', limit: 1, offset: 0 });
 
-    expect(result.docs.map((item) => item.docId)).toEqual(["semantic-only"]);
+    expect(result.docs.map((item) => item.docId)).toEqual(['semantic-only']);
     expect(result.total).toBe(101);
-    expect(searchCalls).toEqual([{ query: "semantic", limit: 50, offset: 0 }]);
+    expect(searchCalls).toEqual([{ query: 'semantic', limit: 50, offset: 0 }]);
   });
 
-  it("looks up semantic candidate docs by id instead of scanning the first 10000 docs", () => {
+  it('looks up semantic candidate docs by id instead of scanning the first 10000 docs', () => {
     const { service } = createService();
-    const lateDoc = doc("zz-semantic-late");
+    const lateDoc = doc('zz-semantic-late');
     (service as any).store = {
       list() {
         return [];
@@ -339,7 +341,7 @@ describe("DocsService semantic search integration", () => {
       },
       getMany(docIds: readonly string[]) {
         return docIds
-          .map((docId) => docId === lateDoc.docId ? lateDoc : null)
+          .map((docId) => (docId === lateDoc.docId ? lateDoc : null))
           .filter((item): item is DocRecord => Boolean(item));
       },
     };
@@ -359,9 +361,9 @@ describe("DocsService semantic search integration", () => {
     (service as any).semantic = {
       planDocumentSearch() {
         return {
-          kind: "document-search",
-          query: "late",
-          candidateDocIds: ["zz-semantic-late"],
+          kind: 'document-search',
+          query: 'late',
+          candidateDocIds: ['zz-semantic-late'],
           candidates: [],
         };
       },
@@ -371,19 +373,19 @@ describe("DocsService semantic search integration", () => {
       },
     };
 
-    const result = service.listPaginated({ q: "late", limit: 10, offset: 0 });
+    const result = service.listPaginated({ q: 'late', limit: 10, offset: 0 });
 
-    expect(result.docs.map((item) => item.docId)).toEqual(["zz-semantic-late"]);
+    expect(result.docs.map((item) => item.docId)).toEqual(['zz-semantic-late']);
     expect(result.total).toBe(1);
   });
 
-  it("records pre-pagination semantic hits when the requested page is empty", () => {
+  it('records pre-pagination semantic hits when the requested page is empty', () => {
     const { service, recordCalls } = createService();
-    seedDocs(service, [doc("semantic-a"), doc("semantic-b"), doc("legacy-c")]);
+    seedDocs(service, [doc('semantic-a'), doc('semantic-b'), doc('legacy-c')]);
 
     const search = {
       search() {
-        return [doc("semantic-a"), doc("legacy-c")];
+        return [doc('semantic-a'), doc('legacy-c')];
       },
       searchCount() {
         return 2;
@@ -394,9 +396,9 @@ describe("DocsService semantic search integration", () => {
     (service as any).semantic = {
       planDocumentSearch() {
         return {
-          kind: "document-search",
-          query: "semantic",
-          candidateDocIds: ["semantic-a", "semantic-b"],
+          kind: 'document-search',
+          query: 'semantic',
+          candidateDocIds: ['semantic-a', 'semantic-b'],
           candidates: [],
         };
       },
@@ -408,20 +410,24 @@ describe("DocsService semantic search integration", () => {
       },
     };
 
-    const result = service.listPaginated({ q: "semantic", limit: 1, offset: 5 });
+    const result = service.listPaginated({ q: 'semantic', limit: 1, offset: 5 });
 
     expect(result.docs).toHaveLength(0);
     expect(result.total).toBe(3);
-    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["semantic-a", "semantic-b", "legacy-c"]);
+    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual([
+      'semantic-a',
+      'semantic-b',
+      'legacy-c',
+    ]);
   });
 
-  it("keeps legacy list behavior when semantic grounding is absent", () => {
+  it('keeps legacy list behavior when semantic grounding is absent', () => {
     const db = createDb();
     const searchCalls: Array<{ query: string; limit: number; offset: number }> = [];
     const search = {
       search(query: string, limit: number, offset: number) {
         searchCalls.push({ query, limit, offset });
-        return [doc("legacy-a"), doc("legacy-b")].slice(offset, offset + limit);
+        return [doc('legacy-a'), doc('legacy-b')].slice(offset, offset + limit);
       },
       searchCount() {
         return 2;
@@ -429,28 +435,28 @@ describe("DocsService semantic search integration", () => {
       index() {},
     };
     const service = new DocsService(db, search as any);
-    seedDocs(service, [doc("legacy-a"), doc("legacy-b")]);
+    seedDocs(service, [doc('legacy-a'), doc('legacy-b')]);
 
-    const docs = service.list({ q: "legacy", limit: 10, offset: 0 });
-    const paginated = service.listPaginated({ q: "legacy", limit: 1, offset: 1 });
+    const docs = service.list({ q: 'legacy', limit: 10, offset: 0 });
+    const paginated = service.listPaginated({ q: 'legacy', limit: 1, offset: 1 });
 
-    expect(docs.map((item) => item.docId)).toEqual(["legacy-a", "legacy-b"]);
-    expect(paginated.docs.map((item) => item.docId)).toEqual(["legacy-b"]);
+    expect(docs.map((item) => item.docId)).toEqual(['legacy-a', 'legacy-b']);
+    expect(paginated.docs.map((item) => item.docId)).toEqual(['legacy-b']);
     expect(paginated.total).toBe(2);
     expect(searchCalls).toEqual([
-      { query: "legacy", limit: 10, offset: 0 },
-      { query: "legacy", limit: 1, offset: 1 },
+      { query: 'legacy', limit: 10, offset: 0 },
+      { query: 'legacy', limit: 1, offset: 1 },
     ]);
   });
 
-  it("keeps legacy counts stable when semantic planning yields no candidates", () => {
+  it('keeps legacy counts stable when semantic planning yields no candidates', () => {
     const { service, planCalls, recordCalls, searchCalls } = createService();
-    seedDocs(service, [doc("legacy-a"), doc("legacy-b")]);
+    seedDocs(service, [doc('legacy-a'), doc('legacy-b')]);
 
     const search = {
       search(query: string, limit: number, offset: number) {
         searchCalls.push({ query, limit, offset });
-        return [doc("legacy-a"), doc("legacy-b")].slice(offset, offset + limit);
+        return [doc('legacy-a'), doc('legacy-b')].slice(offset, offset + limit);
       },
       searchCount() {
         return 2;
@@ -462,11 +468,11 @@ describe("DocsService semantic search integration", () => {
       planDocumentSearch(query: string) {
         planCalls.push(query);
         return {
-          kind: "document-search",
+          kind: 'document-search',
           query,
           candidateDocIds: [],
           candidates: [],
-          fallbackReason: "no-candidate",
+          fallbackReason: 'no-candidate',
         };
       },
       recordDocumentSearch(input: any) {
@@ -477,22 +483,22 @@ describe("DocsService semantic search integration", () => {
       },
     };
 
-    const result = service.listPaginated({ q: "legacy", limit: 1, offset: 1 });
+    const result = service.listPaginated({ q: 'legacy', limit: 1, offset: 1 });
 
-    expect(result.docs.map((item) => item.docId)).toEqual(["legacy-b"]);
+    expect(result.docs.map((item) => item.docId)).toEqual(['legacy-b']);
     expect(result.total).toBe(2);
-    expect(searchCalls).toEqual([{ query: "legacy", limit: 1, offset: 1 }]);
-    expect(planCalls).toEqual(["legacy"]);
-    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["legacy-b"]);
+    expect(searchCalls).toEqual([{ query: 'legacy', limit: 1, offset: 1 }]);
+    expect(planCalls).toEqual(['legacy']);
+    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(['legacy-b']);
   });
 
-  it("ignores stale semantic candidates that no longer have matching docs", () => {
+  it('ignores stale semantic candidates that no longer have matching docs', () => {
     const { service, planCalls, recordCalls } = createService();
-    seedDocs(service, [doc("legacy-a")]);
+    seedDocs(service, [doc('legacy-a')]);
 
     const search = {
       search(query: string, limit: number, offset: number) {
-        return [doc("legacy-a")].slice(offset, offset + limit);
+        return [doc('legacy-a')].slice(offset, offset + limit);
       },
       searchCount() {
         return 1;
@@ -504,9 +510,9 @@ describe("DocsService semantic search integration", () => {
       planDocumentSearch(query: string) {
         planCalls.push(query);
         return {
-          kind: "document-search",
+          kind: 'document-search',
           query,
-          candidateDocIds: ["stale-semantic-doc"],
+          candidateDocIds: ['stale-semantic-doc'],
           candidates: [],
         };
       },
@@ -518,11 +524,11 @@ describe("DocsService semantic search integration", () => {
       },
     };
 
-    const result = service.listPaginated({ q: "semantic", limit: 10, offset: 0 });
+    const result = service.listPaginated({ q: 'semantic', limit: 10, offset: 0 });
 
-    expect(result.docs.map((item) => item.docId)).toEqual(["legacy-a"]);
+    expect(result.docs.map((item) => item.docId)).toEqual(['legacy-a']);
     expect(result.total).toBe(1);
-    expect(planCalls).toEqual(["semantic"]);
+    expect(planCalls).toEqual(['semantic']);
     expect(recordCalls[0]).toMatchObject({
       semanticCandidateCount: 1,
       semanticHitCount: 0,
@@ -530,21 +536,28 @@ describe("DocsService semantic search integration", () => {
       semanticOnlyCount: 0,
       legacyOnlyCount: 1,
     });
-    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(["legacy-a"]);
+    expect(recordCalls[0]?.docs.map((item: DocRecord) => item.docId)).toEqual(['legacy-a']);
   });
 
-  it("materializes updated documents after metadata updates", () => {
+  it('materializes updated documents after metadata updates', () => {
     const { service, materializeCalls, indexCalls } = createService();
-    seedDocs(service, [doc("semantic-a", { purpose: "old purpose", intent: "old intent", context: "old context", caveat: "old caveat" })]);
+    seedDocs(service, [
+      doc('semantic-a', {
+        purpose: 'old purpose',
+        intent: 'old intent',
+        context: 'old context',
+        caveat: 'old caveat',
+      }),
+    ]);
 
-    const result = service.updateMetadata("semantic-a", { tags: ["updated"] });
+    const result = service.updateMetadata('semantic-a', { tags: ['updated'] });
 
-    expect(result?.action).toBe("updated");
+    expect(result?.action).toBe('updated');
     expect(indexCalls).toHaveLength(1);
     expect(materializeCalls).toHaveLength(1);
     expect(materializeCalls[0]?.[0]).toMatchObject({
-      docId: "semantic-a",
-      tags: ["updated"],
+      docId: 'semantic-a',
+      tags: ['updated'],
     });
   });
 });

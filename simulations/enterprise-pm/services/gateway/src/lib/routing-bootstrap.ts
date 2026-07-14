@@ -3,12 +3,12 @@
 // spec 02 §3.2 — controller 재시작 시 gateway가 권위. 부팅 시에는 controller에서 sync 시도.
 // 실패 시 fail-open fallback (revision=0, v1 stable, weight=0).
 
-import { z } from "zod";
+import { z } from 'zod';
 import {
   InMemoryRoutingStore,
   RouteEntrySchema,
   type RouteEntry,
-} from "../routing/routing-table.js";
+} from '../routing/routing-table.js';
 
 /** service name → { v1, v2 } upstream URL map. v1 = stable seed; v2 = candidate (사용 X — fallback은 stable-only). */
 export type FallbackTargets = Record<string, { v1: string; v2?: string }>;
@@ -30,11 +30,17 @@ export interface BootstrapRoutingArgs {
 
 export interface BootstrapResult {
   /** "controller" — controller에서 sync 성공. "fallback" — controller 미가동/오류로 fallback seed. */
-  source: "controller" | "fallback";
+  source: 'controller' | 'fallback';
   /** store에 적용된 service 이름들. */
   applied: string[];
   /** fallback인 경우 사유. */
-  reason?: "no-url" | "timeout" | "non-200" | "malformed-json" | "schema-mismatch" | "fetch-failure";
+  reason?:
+    | 'no-url'
+    | 'timeout'
+    | 'non-200'
+    | 'malformed-json'
+    | 'schema-mismatch'
+    | 'fetch-failure';
 }
 
 const ControllerResponseSchema = z.object({
@@ -50,10 +56,10 @@ export function buildFallbackSeed(targets: FallbackTargets): Record<string, Rout
   for (const [name, urls] of Object.entries(targets)) {
     seed[name] = {
       revision: 0,
-      stable: { version: "v1", upstream: urls.v1 },
+      stable: { version: 'v1', upstream: urls.v1 },
       candidate: null,
       weight: 0,
-      stickyKey: "user_id",
+      stickyKey: 'user_id',
     };
   }
   return seed;
@@ -71,8 +77,8 @@ function applySeed(store: InMemoryRoutingStore, seed: Record<string, RouteEntry>
 function fallback(
   store: InMemoryRoutingStore,
   fallbackTargets: FallbackTargets,
-  reason: BootstrapResult["reason"],
-  logger: BootstrapRoutingArgs["logger"],
+  reason: BootstrapResult['reason'],
+  logger: BootstrapRoutingArgs['logger'],
 ): BootstrapResult {
   const seed = buildFallbackSeed(fallbackTargets);
   const applied = applySeed(store, seed);
@@ -80,7 +86,7 @@ function fallback(
     { reason, services: applied },
     `routing-bootstrap: controller sync failed, fallback seed applied`,
   );
-  return { source: "fallback", applied, reason };
+  return { source: 'fallback', applied, reason };
 }
 
 /**
@@ -92,38 +98,38 @@ export async function bootstrapRouting(args: BootstrapRoutingArgs): Promise<Boot
   const { store, controllerUrl, fallbackTargets, fetchTimeoutMs, logger } = args;
 
   if (!controllerUrl) {
-    return fallback(store, fallbackTargets, "no-url", logger);
+    return fallback(store, fallbackTargets, 'no-url', logger);
   }
 
-  const target = new URL("/controller/routing", controllerUrl).toString();
+  const target = new URL('/controller/routing', controllerUrl).toString();
   let response: Response;
   try {
     response = await fetch(target, {
-      method: "GET",
-      headers: { accept: "application/json" },
+      method: 'GET',
+      headers: { accept: 'application/json' },
       signal: AbortSignal.timeout(fetchTimeoutMs),
     });
   } catch (err) {
     const name = (err as Error).name;
-    const reason: BootstrapResult["reason"] =
-      name === "AbortError" || name === "TimeoutError" ? "timeout" : "fetch-failure";
+    const reason: BootstrapResult['reason'] =
+      name === 'AbortError' || name === 'TimeoutError' ? 'timeout' : 'fetch-failure';
     return fallback(store, fallbackTargets, reason, logger);
   }
 
   if (!response.ok) {
-    return fallback(store, fallbackTargets, "non-200", logger);
+    return fallback(store, fallbackTargets, 'non-200', logger);
   }
 
   let raw: unknown;
   try {
     raw = await response.json();
   } catch {
-    return fallback(store, fallbackTargets, "malformed-json", logger);
+    return fallback(store, fallbackTargets, 'malformed-json', logger);
   }
 
   const parsed = ControllerResponseSchema.safeParse(raw);
   if (!parsed.success) {
-    return fallback(store, fallbackTargets, "schema-mismatch", logger);
+    return fallback(store, fallbackTargets, 'schema-mismatch', logger);
   }
 
   const applied: string[] = [];
@@ -133,7 +139,7 @@ export async function bootstrapRouting(args: BootstrapRoutingArgs): Promise<Boot
   }
   logger?.info(
     { services: applied, controllerUrl: target },
-    "routing-bootstrap: controller sync ok",
+    'routing-bootstrap: controller sync ok',
   );
-  return { source: "controller", applied };
+  return { source: 'controller', applied };
 }

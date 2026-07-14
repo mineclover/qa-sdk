@@ -1,14 +1,14 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { sql } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { sql } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createSqliteTransactionPort,
   createPgTransactionPort,
   type TransactionPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
 /**
  * dialect 별 TransactionPort 생성 헬퍼.
@@ -29,7 +29,7 @@ export function createNotificationPgTransactionPort(db: PostgresJsDatabase): Tra
   );
 }
 
-export type NotificationDialect = "sqlite" | "pg";
+export type NotificationDialect = 'sqlite' | 'pg';
 
 export interface NotificationTransactionFactoryOpts {
   readonly dialect: NotificationDialect;
@@ -39,10 +39,10 @@ export interface NotificationTransactionFactoryOpts {
 export function createNotificationTransactionPort(
   opts: NotificationTransactionFactoryOpts,
 ): TransactionPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return createNotificationSqliteTransactionPort(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return createNotificationPgTransactionPort(opts.db as PostgresJsDatabase);
   }
   throw new Error(

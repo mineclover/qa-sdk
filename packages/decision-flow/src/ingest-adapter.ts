@@ -26,7 +26,7 @@
  *                                              └──────────────┘
  */
 
-import type { FlowInstance, GateSelection, FlowSchema } from "./types.js";
+import type { FlowInstance, GateSelection, FlowSchema } from './types.js';
 import {
   encodeDecisionEvent,
   encodeDecisionPath,
@@ -34,9 +34,9 @@ import {
   encodeModelApplication,
   encodeForcingResponse,
   serializeObservedEvent,
-} from "./observe.js";
-import type { AutoDecisionPrinciple } from "./mental-model.js";
-import { FLOW_TYPE } from "./vocabulary.js";
+} from './observe.js';
+import type { AutoDecisionPrinciple } from './mental-model.js';
+import { FLOW_TYPE } from './vocabulary.js';
 
 // ─── AddressContext 빌더 ─────────────────────────────────
 
@@ -47,20 +47,20 @@ import { FLOW_TYPE } from "./vocabulary.js";
 export type AddressContext = Record<string, string>;
 
 const KNOWN_FLOW_TYPE_BY_SCHEMA_ID: Record<string, string> = {
-  "office-hours": "office_hours",
-  "ceo-review": "ceo_review",
-  "eng-review": "eng_review",
-  "design-review": "design_review",
-  "code-review": "code_review",
-  investigation: "investigation",
-  ship: "ship",
+  'office-hours': 'office_hours',
+  'ceo-review': 'ceo_review',
+  'eng-review': 'eng_review',
+  'design-review': 'design_review',
+  'code-review': 'code_review',
+  investigation: 'investigation',
+  ship: 'ship',
 };
 
 function resolveObservedFlowType(flowId: string): string {
-  const mapped = KNOWN_FLOW_TYPE_BY_SCHEMA_ID[flowId] ?? flowId.replace(/-/g, "_");
+  const mapped = KNOWN_FLOW_TYPE_BY_SCHEMA_ID[flowId] ?? flowId.replace(/-/g, '_');
   return FLOW_TYPE.entries.includes(mapped as (typeof FLOW_TYPE.entries)[number])
     ? mapped
-    : "custom";
+    : 'custom';
 }
 
 /**
@@ -170,22 +170,14 @@ export function buildFlowCompletionContext(
   const flowType = resolveObservedFlowType(schema.id);
 
   // 경로 요약
-  contexts.push(buildPathContext(
-    flowType,
-    instance,
-    scopeMode,
-  ));
+  contexts.push(buildPathContext(flowType, instance, scopeMode));
 
   // 마지막 선택 이벤트
   if (instance.selections.length > 0) {
     const lastSel = instance.selections[instance.selections.length - 1];
     const gate = schema.gates.find((g) => g.id === lastSel.gateId);
     if (gate) {
-      contexts.push(buildSelectionContext(
-        flowType,
-        gate.phase,
-        lastSel,
-      ));
+      contexts.push(buildSelectionContext(flowType, gate.phase, lastSel));
     }
   }
 

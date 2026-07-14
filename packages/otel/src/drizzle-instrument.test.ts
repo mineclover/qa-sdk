@@ -1,11 +1,11 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import { describe, it, expect, vi } from "vitest";
-import { withQueryTracing } from "./drizzle-instrument.js";
+import { describe, it, expect, vi } from 'vitest';
+import { withQueryTracing } from './drizzle-instrument.js';
 
-describe("withQueryTracing", () => {
-  it("select 호출을 가로채서 쿼리 빌더를 반환한다", () => {
+describe('withQueryTracing', () => {
+  it('select 호출을 가로채서 쿼리 빌더를 반환한다', () => {
     const mockBuilder = {
       from: vi.fn().mockReturnThis(),
       then: vi.fn((resolve) => resolve([{ id: 1 }])),
@@ -22,7 +22,7 @@ describe("withQueryTracing", () => {
     expect(result).toBeDefined();
   });
 
-  it("쿼리 메서드가 아닌 프로퍼티는 원본을 그대로 반환한다", () => {
+  it('쿼리 메서드가 아닌 프로퍼티는 원본을 그대로 반환한다', () => {
     const mockDb = {
       schema: { tables: {} },
       select: vi.fn(),
@@ -32,8 +32,8 @@ describe("withQueryTracing", () => {
     expect(instrumented.schema).toBe(mockDb.schema);
   });
 
-  it("then() 실행 시 결과를 정상적으로 전달한다", async () => {
-    const expectedRows = [{ id: 1, name: "test" }];
+  it('then() 실행 시 결과를 정상적으로 전달한다', async () => {
+    const expectedRows = [{ id: 1, name: 'test' }];
     const mockBuilder = {
       from: vi.fn().mockReturnThis(),
       then: vi.fn((resolve) => resolve(expectedRows)),
@@ -53,8 +53,8 @@ describe("withQueryTracing", () => {
     expect(result).toEqual(expectedRows);
   });
 
-  it("then()에서 에러가 발생하면 rejection을 전파한다", async () => {
-    const mockError = new Error("connection lost");
+  it('then()에서 에러가 발생하면 rejection을 전파한다', async () => {
+    const mockError = new Error('connection lost');
     const mockBuilder = {
       then: vi.fn((_resolve, reject) => reject(mockError)),
     };
@@ -69,6 +69,6 @@ describe("withQueryTracing", () => {
       new Promise((resolve, reject) => {
         builder.then(resolve, reject);
       }),
-    ).rejects.toThrow("connection lost");
+    ).rejects.toThrow('connection lost');
   });
 });

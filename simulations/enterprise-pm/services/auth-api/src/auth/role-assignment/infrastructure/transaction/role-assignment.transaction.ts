@@ -5,8 +5,8 @@ export {
   createRoleAssignmentTransactionPort,
   createRoleAssignmentSqliteTransactionPort,
   createRoleAssignmentPgTransactionPort,
-} from "./role-assignment.drizzle-transaction.js";
+} from './role-assignment.drizzle-transaction.js';
 export type {
   RoleAssignmentDialect,
   RoleAssignmentTransactionFactoryOpts,
-} from "./role-assignment.drizzle-transaction.js";
+} from './role-assignment.drizzle-transaction.js';

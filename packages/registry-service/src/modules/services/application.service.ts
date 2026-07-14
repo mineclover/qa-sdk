@@ -1,22 +1,19 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
-import {
-  SERVICE_CONFIG_STORE,
-  ServiceTopologyService,
-} from "./service-topology.service.js";
-import type { ConfigStore } from "../../stores/config-store.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
+import { SERVICE_CONFIG_STORE, ServiceTopologyService } from './service-topology.service.js';
+import type { ConfigStore } from '../../stores/config-store.js';
 
-const APPLICATIONS_CONFIG_TYPE = "applications";
+const APPLICATIONS_CONFIG_TYPE = 'applications';
 
 export interface ApplicationRecord {
   readonly applicationId: string;
   readonly name: string;
   readonly description?: string;
   readonly serviceIds: readonly string[];
-  readonly criticality?: "critical" | "high" | "medium" | "low";
+  readonly criticality?: 'critical' | 'high' | 'medium' | 'low';
   readonly owner?: {
     readonly team?: string;
     readonly developer?: string;
@@ -48,7 +45,7 @@ export class ApplicationService {
     const applications = await this.list(catalogId);
     const found = applications.find((application) => application.applicationId === applicationId);
     if (!found) {
-      throw new AppError("NOT_FOUND", `Application '${applicationId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Application '${applicationId}' not found`, 404);
     }
 
     const services = await this.serviceTopology.list(catalogId);
@@ -60,9 +57,11 @@ export class ApplicationService {
 
   async replaceAll(catalogId: string, input: unknown) {
     const body = this.asListPayload(input);
-    const applications = Array.isArray(body.applications) ? body.applications as ApplicationRecord[] : null;
+    const applications = Array.isArray(body.applications)
+      ? (body.applications as ApplicationRecord[])
+      : null;
     if (!applications) {
-      throw new AppError("INVALID_INPUT", "applications 배열 필수", 400);
+      throw new AppError('INVALID_INPUT', 'applications 배열 필수', 400);
     }
 
     await this.configStore.set(catalogId, APPLICATIONS_CONFIG_TYPE, JSON.stringify(applications));
@@ -78,7 +77,7 @@ export class ApplicationService {
   }
 
   private asListPayload(input: unknown): ApplicationListPayload {
-    if (!input || typeof input !== "object") {
+    if (!input || typeof input !== 'object') {
       return {};
     }
     return input as ApplicationListPayload;

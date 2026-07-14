@@ -25,14 +25,14 @@
 
 // ── PrefixDecoder facade ────────────────────────────────────────────────────
 
-export { PrefixDecoder } from "./prefix-decoder.js";
-export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from "./prefix-decoder.js";
+export { PrefixDecoder } from './prefix-decoder.js';
+export type { PrefixDecoderConfig, PrefixDeepDecodeResult } from './prefix-decoder.js';
 
 // ── Core codecs ─────────────────────────────────────────────────────────────
 
-export { MetaCodec, validateDecodeMap } from "./meta-codec.js";
-export { AddressProtocolManager } from "./address-protocol-manager.js";
-export type { FallbackStats } from "./address-protocol-manager.js";
+export { MetaCodec, validateDecodeMap } from './meta-codec.js';
+export { AddressProtocolManager } from './address-protocol-manager.js';
+export type { FallbackStats } from './address-protocol-manager.js';
 
 // ── Errors ──────────────────────────────────────────────────────────────────
 
@@ -42,14 +42,8 @@ export {
   ValidationError,
   ParseError,
   NegotiationError,
-} from "./errors.js";
+} from './errors.js';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
-export type {
-  EntityId,
-  VersionedValue,
-  DecodeMap,
-  DimKind,
-  AddressConfig,
-} from "./types.js";
+export type { EntityId, VersionedValue, DecodeMap, DimKind, AddressConfig } from './types.js';

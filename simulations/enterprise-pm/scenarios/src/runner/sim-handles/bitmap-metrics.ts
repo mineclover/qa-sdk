@@ -33,9 +33,9 @@ export interface BitmapMetricsHandle {
   bitmapTtlMs(): Promise<number>;
 }
 
-const LOOKUP_NAME = "bitmap_cache_lookup_total";
-const DENY_NAME = "bitmap_cache_deny_total";
-const TTL_NAME = "bitmap_cache_ttl_ms";
+const LOOKUP_NAME = 'bitmap_cache_lookup_total';
+const DENY_NAME = 'bitmap_cache_deny_total';
+const TTL_NAME = 'bitmap_cache_ttl_ms';
 
 /**
  * parsePrometheusMetric — 단순 Prometheus exposition 파서.
@@ -43,22 +43,19 @@ const TTL_NAME = "bitmap_cache_ttl_ms";
  * 같은 metric name이 여러 label로 나오면 모두 sum.
  * `# HELP`, `# TYPE`, 빈 줄은 skip.
  */
-export function parsePrometheusMetric(
-  text: string,
-  metricName: string,
-): number {
-  const lines = text.split("\n");
+export function parsePrometheusMetric(text: string, metricName: string): number {
+  const lines = text.split('\n');
   let sum = 0;
   let found = false;
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
+    if (!trimmed || trimmed.startsWith('#')) continue;
     // 형식: name{labels} value [timestamp]
-    const spaceIdx = trimmed.lastIndexOf(" ");
+    const spaceIdx = trimmed.lastIndexOf(' ');
     if (spaceIdx < 0) continue;
     const head = trimmed.slice(0, spaceIdx);
     const valStr = trimmed.slice(spaceIdx + 1).trim();
-    const nameEnd = head.indexOf("{");
+    const nameEnd = head.indexOf('{');
     const name = nameEnd < 0 ? head : head.slice(0, nameEnd);
     if (name !== metricName) continue;
     const v = Number(valStr);
@@ -72,9 +69,7 @@ export function parsePrometheusMetric(
   return sum;
 }
 
-export function createBitmapMetrics(
-  args: BitmapMetricsFactoryArgs,
-): BitmapMetricsHandle {
+export function createBitmapMetrics(args: BitmapMetricsFactoryArgs): BitmapMetricsHandle {
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -82,16 +77,14 @@ export function createBitmapMetrics(
         ...(init ?? {}),
         signal: AbortSignal.timeout(args.timeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
-  const base = args.authApiUrl.replace(/\/$/, "");
+  const base = args.authApiUrl.replace(/\/$/, '');
 
   async function scrape(): Promise<string> {
     const url = `${base}/metrics`;
-    const res = await fetchImpl(url, { method: "GET" });
+    const res = await fetchImpl(url, { method: 'GET' });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(
-        `bitmap-metrics GET ${url} failed: status=${res.status} body=${body}`,
-      );
+      throw new Error(`bitmap-metrics GET ${url} failed: status=${res.status} body=${body}`);
     }
     return res.text();
   }

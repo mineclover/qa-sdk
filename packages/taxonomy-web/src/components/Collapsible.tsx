@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 export function Collapsible({
   title,
@@ -17,7 +17,7 @@ export function Collapsible({
         className="w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 font-bold text-sm flex justify-between"
       >
         <span>{title}</span>
-        <span>{open ? "▾" : "▸"}</span>
+        <span>{open ? '▾' : '▸'}</span>
       </button>
       {open && <div className="p-3">{children}</div>}
     </section>

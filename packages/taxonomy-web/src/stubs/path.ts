@@ -5,10 +5,10 @@ export function isAbsolute(_p: string): boolean {
 }
 
 export function resolve(...segments: string[]): string {
-  return segments.join("/");
+  return segments.join('/');
 }
 
 export function dirname(p: string): string {
-  const idx = p.lastIndexOf("/");
-  return idx < 0 ? "" : p.slice(0, idx);
+  const idx = p.lastIndexOf('/');
+  return idx < 0 ? '' : p.slice(0, idx);
 }

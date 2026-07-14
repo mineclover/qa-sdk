@@ -8,7 +8,7 @@
  * 환경 변수: QA_REGISTRY_URL (기본: http://localhost:3300)
  */
 
-import type { RegistryPort } from "./registry-port.js";
+import type { RegistryPort } from './registry-port.js';
 
 export class RegistryHttpClient implements RegistryPort {
   private readonly baseUrl: string;
@@ -18,37 +18,43 @@ export class RegistryHttpClient implements RegistryPort {
    *   라이브러리에서 process.env 직접 접근은 최소화하되, CLI/SDK 편의를 위해 fallback 유지.
    */
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl ?? process.env.QA_REGISTRY_URL ?? "http://localhost:3300";
+    this.baseUrl = baseUrl ?? process.env.QA_REGISTRY_URL ?? 'http://localhost:3300';
   }
 
   private async request(path: string, options?: RequestInit): Promise<Response> {
     const url = `${this.baseUrl}${path}`;
     const res = await fetch(url, {
       ...options,
-      headers: { "Content-Type": "application/json", ...options?.headers },
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
     });
     if (!res.ok) {
-      const body = await res.text().catch(() => "");
+      const body = await res.text().catch(() => '');
       throw new Error(`Registry API error: ${res.status} ${res.statusText} — ${body}`);
     }
     return res;
   }
 
   async registerPrefix(input: {
-    prefix: string; owner: string; kind: "leaf" | "composite"; numberType: "number" | "bigint";
+    prefix: string;
+    owner: string;
+    kind: 'leaf' | 'composite';
+    numberType: 'number' | 'bigint';
   }): Promise<void> {
-    await this.request("/prefixes", {
-      method: "POST",
+    await this.request('/prefixes', {
+      method: 'POST',
       body: JSON.stringify(input),
     });
   }
 
   async createDraft(input: {
-    prefix: string; versionId: string; baseVersionId: string | null;
-    capacity: number; refs?: Array<{ prefix: string; versionId: string }>;
+    prefix: string;
+    versionId: string;
+    baseVersionId: string | null;
+    capacity: number;
+    refs?: Array<{ prefix: string; versionId: string }>;
   }): Promise<void> {
     await this.request(`/prefixes/${input.prefix}/versions`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({
         versionId: input.versionId,
         baseVersionId: input.baseVersionId,
@@ -61,7 +67,7 @@ export class RegistryHttpClient implements RegistryPort {
   async getActiveVersion(prefix: string): Promise<string | null> {
     try {
       const res = await this.request(`/prefixes/${prefix}/versions?status=active`);
-      const versions = await res.json() as Array<{ versionId: string }>;
+      const versions = (await res.json()) as Array<{ versionId: string }>;
       return versions.length > 0 ? versions[0].versionId : null;
     } catch {
       return null;
@@ -80,7 +86,7 @@ export class RegistryHttpClient implements RegistryPort {
   async getVersionStatus(prefix: string, versionId: string): Promise<string | null> {
     try {
       const res = await this.request(`/prefixes/${prefix}/versions/${versionId}`);
-      const data = await res.json() as { status: string };
+      const data = (await res.json()) as { status: string };
       return data.status;
     } catch {
       return null;
@@ -88,18 +94,18 @@ export class RegistryHttpClient implements RegistryPort {
   }
 
   async lockDraft(prefix: string, versionId: string): Promise<void> {
-    await this.request(`/prefixes/${prefix}/versions/${versionId}/lock`, { method: "POST" });
+    await this.request(`/prefixes/${prefix}/versions/${versionId}/lock`, { method: 'POST' });
   }
 
   async release(prefix: string, versionId: string): Promise<void> {
-    await this.request(`/prefixes/${prefix}/versions/${versionId}/release`, { method: "POST" });
+    await this.request(`/prefixes/${prefix}/versions/${versionId}/release`, { method: 'POST' });
   }
 
   async activate(prefix: string, versionId: string): Promise<void> {
-    await this.request(`/prefixes/${prefix}/versions/${versionId}/activate`, { method: "POST" });
+    await this.request(`/prefixes/${prefix}/versions/${versionId}/activate`, { method: 'POST' });
   }
 
   async deprecate(prefix: string, versionId: string): Promise<void> {
-    await this.request(`/prefixes/${prefix}/versions/${versionId}/deprecate`, { method: "POST" });
+    await this.request(`/prefixes/${prefix}/versions/${versionId}/deprecate`, { method: 'POST' });
   }
 }

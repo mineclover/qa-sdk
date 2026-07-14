@@ -4,7 +4,7 @@
 import {
   GraphRetentionInsightQueryPort,
   type GraphRetentionInsightResponse,
-} from "../../application/ports/graph-retention-insight.port.js";
+} from '../../application/ports/graph-retention-insight.port.js';
 
 /**
  * GraphRetentionInsightQueryPort 의 HTTP 어댑터.
@@ -18,18 +18,15 @@ export class GraphRetentionInsightHttpAdapter extends GraphRetentionInsightQuery
     super();
   }
 
-  async getForGraph(
-    graphId: string,
-    limit = 20,
-  ): Promise<GraphRetentionInsightResponse | null> {
+  async getForGraph(graphId: string, limit = 20): Promise<GraphRetentionInsightResponse | null> {
     if (!this.ingestUrl) {
       return null;
     }
 
     try {
-      const url = new URL("/v1/insights/graph-retention", this.ingestUrl);
-      url.searchParams.set("graph_id", graphId);
-      url.searchParams.set("limit", String(limit));
+      const url = new URL('/v1/insights/graph-retention', this.ingestUrl);
+      url.searchParams.set('graph_id', graphId);
+      url.searchParams.set('limit', String(limit));
 
       const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
       if (!res.ok) {

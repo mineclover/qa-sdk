@@ -17,11 +17,11 @@ import {
   transitionState,
   type CatalogPrefixDefinition,
   type VersionEntry,
-} from "sim-service-catalog";
-import { type Provider } from "@nestjs/common";
-import { type SimServiceCatalogPort } from "../action/action-executor.service.js";
-import { SIM_SERVICE_CATALOG_TOKEN } from "./tokens.js";
-import { SIM_SERVICE_CATALOG_TOKEN as ALERTS_TOKEN } from "../decision/alerts-audit-catalog.controller.js";
+} from 'sim-service-catalog';
+import { type Provider } from '@nestjs/common';
+import { type SimServiceCatalogPort } from '../action/action-executor.service.js';
+import { SIM_SERVICE_CATALOG_TOKEN } from './tokens.js';
+import { SIM_SERVICE_CATALOG_TOKEN as ALERTS_TOKEN } from '../decision/alerts-audit-catalog.controller.js';
 
 /**
  * 시뮬 카탈로그 시드 — 서비스 별 stable/candidate refEntries 초기 상태.
@@ -35,14 +35,14 @@ import { SIM_SERVICE_CATALOG_TOKEN as ALERTS_TOKEN } from "../decision/alerts-au
  */
 function buildInitialFixtures(): Record<string, CatalogPrefixDefinition> {
   const approvalEntries: VersionEntry[] = [
-    { version: "v1", state: "retired" },
-    { version: "v2", state: "retired" },
-    { version: "v3", state: "stable" },
+    { version: 'v1', state: 'retired' },
+    { version: 'v2', state: 'retired' },
+    { version: 'v3', state: 'stable' },
   ];
   return {
-    "sim.svc.approval": {
-      prefix: "sim.svc.approval",
-      versionAxis: { kind: "version", capacity: 16 },
+    'sim.svc.approval': {
+      prefix: 'sim.svc.approval',
+      versionAxis: { kind: 'version', capacity: 16 },
       refEntries: approvalEntries,
     },
   };
@@ -62,20 +62,19 @@ export class InMemorySimServiceCatalog implements SimServiceCatalogPort {
     this.fixtures = initial ?? buildInitialFixtures();
   }
 
-  async getCurrentTopology(prefix: string): ReturnType<
-    SimServiceCatalogPort["getCurrentTopology"]
-  > {
+  async getCurrentTopology(
+    prefix: string,
+  ): ReturnType<SimServiceCatalogPort['getCurrentTopology']> {
     const def = this.fixtures[prefix];
     if (!def) {
       throw new Error(
-        `unknown catalog prefix: ${prefix} (allowed: ${Object.keys(this.fixtures).join(", ")})`,
+        `unknown catalog prefix: ${prefix} (allowed: ${Object.keys(this.fixtures).join(', ')})`,
       );
     }
     const topo = getCurrentTopology(def, { revision: this.revision });
     return {
       stable: { value: topo.stable.value },
-      candidate:
-        topo.candidate === null ? null : { value: topo.candidate.value },
+      candidate: topo.candidate === null ? null : { value: topo.candidate.value },
       retired: topo.retired.map((t) => ({ value: t.value })),
     };
   }
@@ -89,21 +88,16 @@ export class InMemorySimServiceCatalog implements SimServiceCatalogPort {
     const def = this.fixtures[prefix];
     if (!def) {
       throw new Error(
-        `seedCandidate: unknown prefix ${prefix} (allowed: ${Object.keys(this.fixtures).join(", ")})`,
+        `seedCandidate: unknown prefix ${prefix} (allowed: ${Object.keys(this.fixtures).join(', ')})`,
       );
     }
-    const existing = def.refEntries.find((e) => e.state === "candidate");
+    const existing = def.refEntries.find((e) => e.state === 'candidate');
     if (existing) {
-      throw new Error(
-        `seedCandidate: prefix=${prefix} already has candidate ${existing.version}`,
-      );
+      throw new Error(`seedCandidate: prefix=${prefix} already has candidate ${existing.version}`);
     }
     this.fixtures[prefix] = {
       ...def,
-      refEntries: [
-        ...def.refEntries,
-        { version: `v${version}`, state: "candidate" },
-      ],
+      refEntries: [...def.refEntries, { version: `v${version}`, state: 'candidate' }],
     };
   }
 
@@ -116,10 +110,10 @@ export class InMemorySimServiceCatalog implements SimServiceCatalogPort {
     const def = this.fixtures[prefix];
     if (!def) {
       throw new Error(
-        `promoteCandidate: unknown prefix ${prefix} (allowed: ${Object.keys(this.fixtures).join(", ")})`,
+        `promoteCandidate: unknown prefix ${prefix} (allowed: ${Object.keys(this.fixtures).join(', ')})`,
       );
     }
-    const candidate = def.refEntries.find((e) => e.state === "candidate");
+    const candidate = def.refEntries.find((e) => e.state === 'candidate');
     if (!candidate) {
       throw new Error(
         `promoteCandidate: prefix=${prefix} has no candidate (idempotent caller 책임)`,
@@ -128,7 +122,7 @@ export class InMemorySimServiceCatalog implements SimServiceCatalogPort {
     this.revision += 1;
     const result = transitionState(def, {
       from: candidate,
-      to: { version: candidate.version, state: "stable" },
+      to: { version: candidate.version, state: 'stable' },
       revision: this.revision,
     });
     this.fixtures[prefix] = result.catalog;
@@ -138,7 +132,7 @@ export class InMemorySimServiceCatalog implements SimServiceCatalogPort {
   hasCandidate(prefix: string): boolean {
     const def = this.fixtures[prefix];
     if (!def) return false;
-    return def.refEntries.some((e) => e.state === "candidate");
+    return def.refEntries.some((e) => e.state === 'candidate');
   }
 }
 

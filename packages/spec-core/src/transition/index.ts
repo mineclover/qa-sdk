@@ -24,49 +24,49 @@ export type {
   TransitionInstance,
   ValidationIssue,
   ValidationResult,
-} from "spec-transition";
+} from 'spec-transition';
 
-export { EFFECT_KINDS } from "spec-transition";
+export { EFFECT_KINDS } from 'spec-transition';
 
 // ── Schema Validation ────────────────────────────────────
-export { validateTransitionSpec } from "spec-transition";
+export { validateTransitionSpec } from 'spec-transition';
 
 // ── Catalog Validation ───────────────────────────────────
-export { validateWithCatalog } from "spec-transition";
+export { validateWithCatalog } from 'spec-transition';
 
 // ── Registry ─────────────────────────────────────────────
-export { TransitionRegistry } from "spec-transition";
+export { TransitionRegistry } from 'spec-transition';
 
 // ── Match Adapter ────────────────────────────────────────
 export {
   deriveEventKey,
   coordToConstraints,
   transitionMatchToScenarioSteps,
-} from "spec-transition";
+} from 'spec-transition';
 
 // ── State Store ──────────────────────────────────────────
-export type { StateStore } from "spec-transition";
-export { InMemoryStateStore } from "spec-transition";
-export { SqliteStateStore } from "spec-transition";
-export type { AsyncStateStore } from "spec-transition";
+export type { StateStore } from 'spec-transition';
+export { InMemoryStateStore } from 'spec-transition';
+export { SqliteStateStore } from 'spec-transition';
+export type { AsyncStateStore } from 'spec-transition';
 
 // ── Bind Extractor ───────────────────────────────────────
-export { extractBind } from "spec-transition";
-export type { BindResult, BindError } from "spec-transition";
+export { extractBind } from 'spec-transition';
+export type { BindResult, BindError } from 'spec-transition';
 
 // ── Input Validator ──────────────────────────────────────
-export { validateInput } from "spec-transition";
-export type { InputViolation, InputValidationResult } from "spec-transition";
+export { validateInput } from 'spec-transition';
+export type { InputViolation, InputValidationResult } from 'spec-transition';
 
 // ── Output Applier ───────────────────────────────────────
-export { applyOutput } from "spec-transition";
+export { applyOutput } from 'spec-transition';
 
 // ── Engine ───────────────────────────────────────────────
-export { TransitionEngine } from "spec-transition";
-export type { TransitionResult, TransitionEvent } from "spec-transition";
+export { TransitionEngine } from 'spec-transition';
+export type { TransitionResult, TransitionEvent } from 'spec-transition';
 
 // ── Decode Adapter ───────────────────────────────────────
-export { decodeAddressContext } from "spec-transition";
+export { decodeAddressContext } from 'spec-transition';
 
 // ── Demo Specs ───────────────────────────────────────────
 export {
@@ -74,15 +74,25 @@ export {
   USER_LOGIN_SPEC,
   PAYMENT_CAPTURE_SPEC,
   DEMO_TRANSITION_SPECS,
-} from "spec-transition";
+} from 'spec-transition';
 
 // ── DKG Bridge (from dkg) ───────────────────────────────
-export { toTransitionSpecNode, toTransitionSpecNodes, deriveInterSpecEdges, deriveDslSatisfiesEdges } from "dkg";
-export { violationsToObservations } from "dkg";
+export {
+  toTransitionSpecNode,
+  toTransitionSpecNodes,
+  deriveInterSpecEdges,
+  deriveDslSatisfiesEdges,
+} from 'dkg';
+export { violationsToObservations } from 'dkg';
 
 // ── Transition Pipeline (로컬) ──────────────────────────
-export type { TransitionFunctions, TransitionSessionInput, TransitionSessionResult, TransitionFlushResult } from "./transition-pipeline.js";
-export { createTransitionFunctions } from "./transition-pipeline.js";
+export type {
+  TransitionFunctions,
+  TransitionSessionInput,
+  TransitionSessionResult,
+  TransitionFlushResult,
+} from './transition-pipeline.js';
+export { createTransitionFunctions } from './transition-pipeline.js';
 
 // ── Transition Metrics (로컬) ────────────────────────────
-export { aggregateTransitionResults, transitionFlushToMetrics } from "./transition-metrics.js";
+export { aggregateTransitionResults, transitionFlushToMetrics } from './transition-metrics.js';

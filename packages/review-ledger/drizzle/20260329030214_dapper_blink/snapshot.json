@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "f913b88c-757c-45c0-a605-5babdc869d54",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "review_entries",
@@ -91,9 +89,7 @@
       "table": "review_entries"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "review_entries_pk",
       "table": "review_entries",

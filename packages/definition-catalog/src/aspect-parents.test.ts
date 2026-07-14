@@ -15,15 +15,11 @@
  *   5. ASPECT_PARENTS 내 cycle 금지
  */
 
-import { describe, expect, it } from "vitest";
-import {
-  ASPECT_PARENTS,
-  DEF_ASPECT,
-  ROOT_ASPECTS,
-} from "./vocabulary.js";
+import { describe, expect, it } from 'vitest';
+import { ASPECT_PARENTS, DEF_ASPECT, ROOT_ASPECTS } from './vocabulary.js';
 
-describe("ASPECT_PARENTS 완결성 불변식", () => {
-  it("모든 aspect 는 ROOT_ASPECTS 또는 ASPECT_PARENTS 중 정확히 하나에 속함", () => {
+describe('ASPECT_PARENTS 완결성 불변식', () => {
+  it('모든 aspect 는 ROOT_ASPECTS 또는 ASPECT_PARENTS 중 정확히 하나에 속함', () => {
     for (const aspect of DEF_ASPECT.entries) {
       const isRoot = ROOT_ASPECTS.has(aspect);
       const hasParent = aspect in ASPECT_PARENTS;
@@ -43,36 +39,32 @@ describe("ASPECT_PARENTS 완결성 불변식", () => {
     }
   });
 
-  it("ASPECT_PARENTS 의 모든 parent 는 DEF_ASPECT.entries 에 존재", () => {
+  it('ASPECT_PARENTS 의 모든 parent 는 DEF_ASPECT.entries 에 존재', () => {
     const entries = new Set<string>(DEF_ASPECT.entries);
     for (const [child, parent] of Object.entries(ASPECT_PARENTS)) {
       if (!entries.has(parent)) {
-        throw new Error(
-          `"${child}" 의 parent "${parent}" 가 DEF_ASPECT.entries 에 존재하지 않음`,
-        );
+        throw new Error(`"${child}" 의 parent "${parent}" 가 DEF_ASPECT.entries 에 존재하지 않음`);
       }
     }
   });
 
-  it("ROOT_ASPECTS 의 모든 원소는 DEF_ASPECT.entries 에 존재", () => {
+  it('ROOT_ASPECTS 의 모든 원소는 DEF_ASPECT.entries 에 존재', () => {
     const entries = new Set<string>(DEF_ASPECT.entries);
     for (const root of ROOT_ASPECTS) {
       if (!entries.has(root)) {
-        throw new Error(
-          `ROOT_ASPECTS 의 "${root}" 가 DEF_ASPECT.entries 에 존재하지 않음`,
-        );
+        throw new Error(`ROOT_ASPECTS 의 "${root}" 가 DEF_ASPECT.entries 에 존재하지 않음`);
       }
     }
   });
 
-  it("ASPECT_PARENTS 내 cycle 없음", () => {
+  it('ASPECT_PARENTS 내 cycle 없음', () => {
     for (const startChild of Object.keys(ASPECT_PARENTS)) {
       const visited = new Set<string>();
       let current: string | undefined = startChild;
       while (current !== undefined && current in ASPECT_PARENTS) {
         if (visited.has(current)) {
           throw new Error(
-            `"${startChild}" 로부터 시작하는 부모 체인에서 cycle 감지됨 (경유: ${[...visited].join(" → ")})`,
+            `"${startChild}" 로부터 시작하는 부모 체인에서 cycle 감지됨 (경유: ${[...visited].join(' → ')})`,
           );
         }
         visited.add(current);
@@ -81,7 +73,7 @@ describe("ASPECT_PARENTS 완결성 불변식", () => {
     }
   });
 
-  it("|ROOT_ASPECTS| + |ASPECT_PARENTS| == |DEF_ASPECT.entries| (delta 등식)", () => {
+  it('|ROOT_ASPECTS| + |ASPECT_PARENTS| == |DEF_ASPECT.entries| (delta 등식)', () => {
     // aspect-naming-convention.rule.md §2.2 의 검증 등식.
     // 완결성 불변식이 유지되면 자동으로 성립하지만 빠른 요약 정수 체크로 유지한다.
     const rootCount = ROOT_ASPECTS.size;

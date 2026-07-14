@@ -1,8 +1,8 @@
 // @def.doc definition-service
 
-import type { DefinitionServiceDatabase } from "../database.module.js";
-import { prefixRegistry } from "../db/schema.js";
-import { eq, asc, type SQL } from "drizzle-orm";
+import type { DefinitionServiceDatabase } from '../database.module.js';
+import { prefixRegistry } from '../db/schema.js';
+import { eq, asc, type SQL } from 'drizzle-orm';
 
 /** prefix 레지스트리 레코드 */
 export interface PrefixRecord {
@@ -22,7 +22,7 @@ export interface PrefixRecord {
 }
 
 export interface PrefixStore {
-  upsert(record: PrefixRecord): { action: "created" | "updated" | "unchanged" };
+  upsert(record: PrefixRecord): { action: 'created' | 'updated' | 'unchanged' };
   get(prefixId: string): PrefixRecord | null;
   list(filter?: { category?: string }): PrefixRecord[];
   remove(prefixId: string): boolean;
@@ -51,7 +51,7 @@ function rowToRecord(row: PrefixRow): PrefixRecord {
 export class SqlPrefixStore implements PrefixStore {
   constructor(private readonly db: DefinitionServiceDatabase) {}
 
-  upsert(record: PrefixRecord): { action: "created" | "updated" | "unchanged" } {
+  upsert(record: PrefixRecord): { action: 'created' | 'updated' | 'unchanged' } {
     const existing = this.get(record.prefixId);
     const now = new Date().toISOString();
 
@@ -90,7 +90,7 @@ export class SqlPrefixStore implements PrefixStore {
       })
       .run();
 
-    return { action: existing ? "updated" : "created" };
+    return { action: existing ? 'updated' : 'created' };
   }
 
   get(prefixId: string): PrefixRecord | null {

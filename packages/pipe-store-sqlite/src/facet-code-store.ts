@@ -1,11 +1,11 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { eq, like } from "drizzle-orm";
+import { eq, like } from 'drizzle-orm';
 
-import { createDb, type DrizzleDb } from "./db/connection.js";
-import { facetCodeMappings } from "./db/schema.js";
-import type { FacetCodeMapping, FacetCodeRef, FacetCodeStore } from "./facet-code-types.js";
+import { createDb, type DrizzleDb } from './db/connection.js';
+import { facetCodeMappings } from './db/schema.js';
+import type { FacetCodeMapping, FacetCodeRef, FacetCodeStore } from './facet-code-types.js';
 
 type MappingRow = typeof facetCodeMappings.$inferSelect;
 
@@ -14,7 +14,7 @@ export class SqliteFacetCodeStore implements FacetCodeStore {
   private db: DrizzleDb;
 
   constructor(pathOrDb: string | DrizzleDb) {
-    if (typeof pathOrDb === "string") {
+    if (typeof pathOrDb === 'string') {
       const { db } = createDb(pathOrDb);
       this.db = db;
     } else {
@@ -63,7 +63,7 @@ export class SqliteFacetCodeStore implements FacetCodeStore {
     // JSON 파싱 후 정확한 file 매칭 필터
     return rows
       .map(rowToMapping)
-      .filter(m => m.implementations.some(impl => impl.file === file));
+      .filter((m) => m.implementations.some((impl) => impl.file === file));
   }
 
   getBySchema(schemaId: string): FacetCodeMapping[] {
@@ -102,5 +102,5 @@ function rowToMapping(row: MappingRow): FacetCodeMapping {
 }
 
 function escapeLike(value: string): string {
-  return value.replace(/%/g, "\\%").replace(/_/g, "\\_");
+  return value.replace(/%/g, '\\%').replace(/_/g, '\\_');
 }

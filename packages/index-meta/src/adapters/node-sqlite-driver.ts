@@ -8,15 +8,15 @@
  * Node 내장 `node:sqlite`를 사용한다.
  */
 
-import type { SqlDriver, ExecuteResult } from "./sql-store.js";
-import { getDatabaseSync, type DatabaseSyncInstance } from "./database-sync-loader.js";
-import { SQLITE_DIALECT, runTransaction } from "./sqlite-shared.js";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
+import type { SqlDriver, ExecuteResult } from './sql-store.js';
+import { getDatabaseSync, type DatabaseSyncInstance } from './database-sync-loader.js';
+import { SQLITE_DIALECT, runTransaction } from './sqlite-shared.js';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 
-import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * 패키지 루트의 drizzle/ 또는 번들 산출물의 dist/drizzle 경로를 찾는다.
@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 function findMigrationsFolder(): string | null {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (let i = 0; i < 6; i++) {
-    for (const candidate of [join(dir, "drizzle"), join(dir, "dist", "drizzle")]) {
+    for (const candidate of [join(dir, 'drizzle'), join(dir, 'dist', 'drizzle')]) {
       if (existsSync(candidate)) {
         return candidate;
       }
@@ -43,7 +43,7 @@ function requireMigrationsFolder(): string {
   }
 
   throw new Error(
-    "[index-meta] drizzle migrations folder not found. Expected package drizzle/ or dist/drizzle next to the bundle."
+    '[index-meta] drizzle migrations folder not found. Expected package drizzle/ or dist/drizzle next to the bundle.',
   );
 }
 
@@ -59,13 +59,13 @@ export class NodeSqliteDriver implements SqlDriver {
    * @param schema 초기 DDL. 생략 시 drizzle migration으로 index-meta 전체 스키마 적용,
    *               `null` 전달 시 DDL 없이 bare driver 생성.
    */
-  constructor(path: string = ":memory:", schema?: string | null) {
+  constructor(path: string = ':memory:', schema?: string | null) {
     const DatabaseSync = getDatabaseSync();
     this.db = new DatabaseSync(path);
     this.$client = this.db;
-    this.db.exec("PRAGMA journal_mode = WAL");
-    this.db.exec("PRAGMA busy_timeout = 3000");
-    this.db.exec("PRAGMA foreign_keys = ON");
+    this.db.exec('PRAGMA journal_mode = WAL');
+    this.db.exec('PRAGMA busy_timeout = 3000');
+    this.db.exec('PRAGMA foreign_keys = ON');
 
     if (schema === undefined) {
       const drizzleDb = drizzle({ client: this.db });
@@ -96,19 +96,19 @@ export class NodeSqliteDriver implements SqlDriver {
   }
 
   async transaction<T>(fn: (tx: SqlDriver) => Promise<T>): Promise<T> {
-    return runTransaction(s => this.db.exec(s), this, fn);
+    return runTransaction((s) => this.db.exec(s), this, fn);
   }
 
   async batchExecute(sql: string, paramsList: unknown[][]): Promise<void> {
     const statement = this.db.prepare(sql);
-    this.db.exec("BEGIN");
+    this.db.exec('BEGIN');
     try {
       for (const params of paramsList) {
         statement.run(...toSqlParams(params));
       }
-      this.db.exec("COMMIT");
+      this.db.exec('COMMIT');
     } catch (error) {
-      this.db.exec("ROLLBACK");
+      this.db.exec('ROLLBACK');
       throw error;
     }
   }

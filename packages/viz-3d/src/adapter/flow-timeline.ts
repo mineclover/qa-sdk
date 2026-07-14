@@ -50,13 +50,13 @@ export class FlowTimeline {
   add(prefixId: string, valuesStr: string, role: string): void {
     const now = new Date();
     const ts =
-      String(now.getHours()).padStart(2, "0") +
-      ":" +
-      String(now.getMinutes()).padStart(2, "0") +
-      ":" +
-      String(now.getSeconds()).padStart(2, "0") +
-      "." +
-      String(now.getMilliseconds()).padStart(3, "0");
+      String(now.getHours()).padStart(2, '0') +
+      ':' +
+      String(now.getMinutes()).padStart(2, '0') +
+      ':' +
+      String(now.getSeconds()).padStart(2, '0') +
+      '.' +
+      String(now.getMilliseconds()).padStart(3, '0');
     this._entries.push({ prefixId, valuesStr, role, ts });
     if (this._entries.length > this._max) this._entries.shift();
     this.render();
@@ -77,7 +77,7 @@ export class FlowTimeline {
       const vals = d
         ? Object.entries(d.values)
             .map(([k, v]) => `${k}=${v}`)
-            .join(" ")
+            .join(' ')
         : s;
       this.add(p, vals, role);
     }
@@ -100,9 +100,8 @@ export class FlowTimeline {
 
     const html = this._entries
       .map((e) => {
-        const col = this._roleColors[e.role] || "#556";
-        const dimmed =
-          this._roleFilter && this._roleFilter !== e.role ? "ft-fading" : "";
+        const col = this._roleColors[e.role] || '#556';
+        const dimmed = this._roleFilter && this._roleFilter !== e.role ? 'ft-fading' : '';
         return (
           `<div class="ft-entry ${dimmed}">` +
           `<span class="ft-role-dot" style="background:${col}"></span>` +
@@ -115,7 +114,7 @@ export class FlowTimeline {
           `</div>`
         );
       })
-      .join("");
+      .join('');
 
     container.innerHTML = html;
 

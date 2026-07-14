@@ -5,7 +5,7 @@ import type {
   NonLinearPathObservation,
   PathObservation,
   PipeGraph,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 import type {
   AddressContextBinding,
@@ -13,30 +13,30 @@ import type {
   CheckpointLattice,
   CheckpointObservation,
   CheckpointTemplateRegistry,
-} from "./checkpoint-core.js";
+} from './checkpoint-core.js';
 import type {
   CorridorTemplateRegistry,
   DataFlowDefinition,
   FlowCorridor,
-} from "./corridor-core.js";
+} from './corridor-core.js';
 import type {
   BranchDecision,
   BranchDefinition,
   JunctionDefinition,
   JunctionTemplateRegistry,
   RouteDecision,
-} from "./junction-core.js";
-import type { DataLineageLink } from "./lineage-core.js";
+} from './junction-core.js';
+import type { DataLineageLink } from './lineage-core.js';
 import type {
   ControlFlowGraph,
   SemanticTransmission,
   TraversalObservation,
-} from "./runtime-core.js";
+} from './runtime-core.js';
 import type {
   ObservationTopologyTemplateKind,
   ObservationTopologyTemplateRegistry,
   ObservationTopologyTemplateValidationResult,
-} from "./topology-core.js";
+} from './topology-core.js';
 
 export interface EventRecordObservationInput {
   record: EventRecord;
@@ -115,9 +115,7 @@ export interface OperationalOntologyLineageProjector {
 }
 
 export interface OperationalOntologyPathObservationProjector {
-  projectPathObservation(
-    input: PathObservationProjectionInput,
-  ): PathObservationProjectionResult;
+  projectPathObservation(input: PathObservationProjectionInput): PathObservationProjectionResult;
 }
 
 export interface OperationalOntologyRuntimePorts {

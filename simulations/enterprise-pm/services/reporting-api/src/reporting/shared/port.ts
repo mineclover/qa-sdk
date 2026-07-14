@@ -1,7 +1,7 @@
 // @def.boundary sim-reporting-api
 // @def.doc sim-erp-pm-design
 
-import type { Report, ReportCreate, DailyMetric, DailyMetricCreate } from "./types.js";
+import type { Report, ReportCreate, DailyMetric, DailyMetricCreate } from './types.js';
 
 export interface ReportingRepository {
   // Report

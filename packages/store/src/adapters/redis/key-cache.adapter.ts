@@ -1,8 +1,8 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import type { KeyCache, CacheStats } from "@qa-sdk/core";
-import type { Redis } from "ioredis";
+import type { KeyCache, CacheStats } from '@qa-sdk/core';
+import type { Redis } from 'ioredis';
 
 /**
  * Redis KeyCache — L2 네트워크 캐시.
@@ -19,7 +19,7 @@ export class RedisKeyCache<T = unknown> implements KeyCache<T> {
     private readonly redis: Redis,
     opts?: { prefix?: string },
   ) {
-    this.prefix = opts?.prefix ?? "kc:";
+    this.prefix = opts?.prefix ?? 'kc:';
   }
 
   private _key(key: string): string {
@@ -46,7 +46,7 @@ export class RedisKeyCache<T = unknown> implements KeyCache<T> {
   async set(key: string, value: T, ttlMs: number): Promise<void> {
     const json = JSON.stringify(value);
     if (ttlMs > 0) {
-      await this.redis.set(this._key(key), json, "PX", ttlMs);
+      await this.redis.set(this._key(key), json, 'PX', ttlMs);
     } else {
       await this.redis.set(this._key(key), json);
     }
@@ -59,14 +59,14 @@ export class RedisKeyCache<T = unknown> implements KeyCache<T> {
 
   async clear(): Promise<void> {
     const pattern = `${this.prefix}*`;
-    let cursor = "0";
+    let cursor = '0';
     do {
-      const [nextCursor, keys] = await this.redis.scan(cursor, "MATCH", pattern, "COUNT", 100);
+      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       cursor = nextCursor;
       if (keys.length > 0) {
         await this.redis.del(...keys);
       }
-    } while (cursor !== "0");
+    } while (cursor !== '0');
     this.hits = 0;
     this.misses = 0;
   }
@@ -88,13 +88,13 @@ export class RedisKeyCache<T = unknown> implements KeyCache<T> {
   /** prefix 범위 키 수 실시간 조회 */
   async scanSize(): Promise<number> {
     const pattern = `${this.prefix}*`;
-    let cursor = "0";
+    let cursor = '0';
     let count = 0;
     do {
-      const [nextCursor, keys] = await this.redis.scan(cursor, "MATCH", pattern, "COUNT", 100);
+      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       cursor = nextCursor;
       count += keys.length;
-    } while (cursor !== "0");
+    } while (cursor !== '0');
     return count;
   }
 }

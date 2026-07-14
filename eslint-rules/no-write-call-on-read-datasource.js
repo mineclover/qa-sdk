@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * spec 05-error-and-scenarios.md §4 — read DataSource로 import한 식별자에 대해
@@ -20,32 +20,23 @@
  *   "read DataSource binding may not call write method ({{method}}) (spec 05 §4)."
  */
 
-const WRITE_METHODS = new Set([
-  "save",
-  "insert",
-  "update",
-  "delete",
-  "upsert",
-  "remove",
-]);
+const WRITE_METHODS = new Set(['save', 'insert', 'update', 'delete', 'upsert', 'remove']);
 
-const READ_DATASOURCE_MODULE_RE =
-  /^@qa-sdk-sim\/[a-z][a-z0-9-]*-read-datasource$/;
+const READ_DATASOURCE_MODULE_RE = /^@qa-sdk-sim\/[a-z][a-z0-9-]*-read-datasource$/;
 
-const READ_TOKEN_NAME = "READ_DATA_SOURCE";
+const READ_TOKEN_NAME = 'READ_DATA_SOURCE';
 
 module.exports = {
   meta: {
-    type: "problem",
+    type: 'problem',
     docs: {
-      description:
-        "read DataSource로 binding된 식별자에 write 메서드 호출 금지 (CQRS 분리)",
+      description: 'read DataSource로 binding된 식별자에 write 메서드 호출 금지 (CQRS 분리)',
       recommended: true,
     },
     schema: [],
     messages: {
       writeCallOnReadDatasource:
-        "read DataSource binding may not call write method ({{method}}) (spec 05-error-and-scenarios.md §4).",
+        'read DataSource binding may not call write method ({{method}}) (spec 05-error-and-scenarios.md §4).',
     },
   },
   create(context) {
@@ -58,7 +49,7 @@ module.exports = {
     const readBindings = new Set();
 
     function maybeAddBinding(name) {
-      if (typeof name === "string" && name.length > 0) {
+      if (typeof name === 'string' && name.length > 0) {
         readBindings.add(name);
       }
     }
@@ -68,23 +59,23 @@ module.exports = {
      * Identifier인지 검사.
      */
     function isInjectReadToken(decorator) {
-      if (!decorator || decorator.type !== "Decorator") return false;
+      if (!decorator || decorator.type !== 'Decorator') return false;
       const expr = decorator.expression;
-      if (!expr || expr.type !== "CallExpression") return false;
-      if (expr.callee.type !== "Identifier" || expr.callee.name !== "Inject") {
+      if (!expr || expr.type !== 'CallExpression') return false;
+      if (expr.callee.type !== 'Identifier' || expr.callee.name !== 'Inject') {
         return false;
       }
       const arg = expr.arguments?.[0];
-      return arg && arg.type === "Identifier" && arg.name === READ_TOKEN_NAME;
+      return arg && arg.type === 'Identifier' && arg.name === READ_TOKEN_NAME;
     }
 
     /**
      * `module.get(READ_DATA_SOURCE)` 같이 첫 인자가 READ_DATA_SOURCE인 호출.
      */
     function callPassesReadToken(callExpr) {
-      if (!callExpr || callExpr.type !== "CallExpression") return false;
+      if (!callExpr || callExpr.type !== 'CallExpression') return false;
       const arg = callExpr.arguments?.[0];
-      return arg && arg.type === "Identifier" && arg.name === READ_TOKEN_NAME;
+      return arg && arg.type === 'Identifier' && arg.name === READ_TOKEN_NAME;
     }
 
     return {
@@ -92,24 +83,22 @@ module.exports = {
       MethodDefinition(node) {
         if (
           !node.value ||
-          node.value.type !== "FunctionExpression" ||
-          node.kind !== "constructor"
+          node.value.type !== 'FunctionExpression' ||
+          node.kind !== 'constructor'
         ) {
           return;
         }
         for (const param of node.value.params) {
           // TS parameter property: TSParameterProperty
-          const target =
-            param.type === "TSParameterProperty" ? param.parameter : param;
+          const target = param.type === 'TSParameterProperty' ? param.parameter : param;
           const decorators = param.decorators || target.decorators || [];
           if (decorators.some(isInjectReadToken)) {
             // parameter property: parameter.parameter is the Identifier
             // plain decorated param: target.name 또는 target.left.name
             const ident =
-              target.type === "Identifier"
+              target.type === 'Identifier'
                 ? target
-                : target.type === "AssignmentPattern" &&
-                    target.left.type === "Identifier"
+                : target.type === 'AssignmentPattern' && target.left.type === 'Identifier'
                   ? target.left
                   : null;
             if (ident) maybeAddBinding(ident.name);
@@ -120,7 +109,7 @@ module.exports = {
       // 2) Module-level/`const x = module.get(READ_DATA_SOURCE)` 형태
       VariableDeclarator(node) {
         if (!node.init) return;
-        if (node.id.type !== "Identifier") return;
+        if (node.id.type !== 'Identifier') return;
         if (callPassesReadToken(node.init)) {
           maybeAddBinding(node.id.name);
         }
@@ -129,10 +118,10 @@ module.exports = {
       // 3) Plan literal 호환: `@qa-sdk-sim/<svc>-read-datasource` 모듈 import.
       ImportDeclaration(node) {
         const src = node.source && node.source.value;
-        if (typeof src !== "string") return;
+        if (typeof src !== 'string') return;
         if (!READ_DATASOURCE_MODULE_RE.test(src)) return;
         for (const spec of node.specifiers) {
-          if (spec.local && spec.local.type === "Identifier") {
+          if (spec.local && spec.local.type === 'Identifier') {
             maybeAddBinding(spec.local.name);
           }
         }
@@ -141,20 +130,17 @@ module.exports = {
       // 호출 사이트 검사
       CallExpression(node) {
         const callee = node.callee;
-        if (!callee || callee.type !== "MemberExpression") return;
-        if (callee.property.type !== "Identifier") return;
+        if (!callee || callee.type !== 'MemberExpression') return;
+        if (callee.property.type !== 'Identifier') return;
         const method = callee.property.name;
         if (!WRITE_METHODS.has(method)) return;
 
         // readBindings.<method>(...) 직접 호출만 잡는다.
         // (await readDb.save(...) 도 동일 — `callee.object`는 Identifier 그대로.)
-        if (
-          callee.object.type === "Identifier" &&
-          readBindings.has(callee.object.name)
-        ) {
+        if (callee.object.type === 'Identifier' && readBindings.has(callee.object.name)) {
           context.report({
             node,
-            messageId: "writeCallOnReadDatasource",
+            messageId: 'writeCallOnReadDatasource',
             data: { method },
           });
         }
@@ -162,14 +148,14 @@ module.exports = {
         // this.<bindingName>.<method>(...) 형태 — 파라미터 property가 readonly로
         // class field가 된 경우.
         if (
-          callee.object.type === "MemberExpression" &&
-          callee.object.object.type === "ThisExpression" &&
-          callee.object.property.type === "Identifier" &&
+          callee.object.type === 'MemberExpression' &&
+          callee.object.object.type === 'ThisExpression' &&
+          callee.object.property.type === 'Identifier' &&
           readBindings.has(callee.object.property.name)
         ) {
           context.report({
             node,
-            messageId: "writeCallOnReadDatasource",
+            messageId: 'writeCallOnReadDatasource',
             data: { method },
           });
         }

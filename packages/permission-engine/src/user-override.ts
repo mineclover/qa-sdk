@@ -44,7 +44,7 @@ export class UserOverrideStore {
       featureSet = new Set();
       domainMap.set(domain, featureSet);
     }
-    const list = typeof features === "string" ? [features] : features;
+    const list = typeof features === 'string' ? [features] : features;
     for (const f of list) featureSet.add(f);
   }
 
@@ -54,7 +54,7 @@ export class UserOverrideStore {
   undeny(userId: string, domain: string, features: string | readonly string[]): void {
     const featureSet = this._store.get(userId)?.get(domain);
     if (!featureSet) return;
-    const list = typeof features === "string" ? [features] : features;
+    const list = typeof features === 'string' ? [features] : features;
     for (const f of list) featureSet.delete(f);
   }
 
@@ -84,9 +84,7 @@ export class UserOverrideStore {
   domainsWithOverride(userId: string): string[] {
     const domainMap = this._store.get(userId);
     if (!domainMap) return [];
-    return [...domainMap.entries()]
-      .filter(([, set]) => set.size > 0)
-      .map(([domain]) => domain);
+    return [...domainMap.entries()].filter(([, set]) => set.size > 0).map(([domain]) => domain);
   }
 
   /**

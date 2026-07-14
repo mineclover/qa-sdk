@@ -11,14 +11,25 @@
  * CLI index.ts의 loadCatalog()가 --catalog → qa-sdk.config.ts → DEMO_CATALOG 순서로 해석.
  */
 
-import type { Catalog } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
 import {
   parseSerializedAddress,
-  encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities, decomposeAddress, resolveAddress,
-  getPrefixShape, latestPrefixVersion,
-} from "@qa-sdk/core";
-import { resolve, findVersionForEntry, validateRefEntries, getAllSemanticRefs, analyzeImpact } from "dkg";
-import { bootstrapDkg } from "dkg-enrichment";
+  encodePrefixByValue,
+  decodePrefixAsResult,
+  decodeResultToEntities,
+  decomposeAddress,
+  resolveAddress,
+  getPrefixShape,
+  latestPrefixVersion,
+} from '@qa-sdk/core';
+import {
+  resolve,
+  findVersionForEntry,
+  validateRefEntries,
+  getAllSemanticRefs,
+  analyzeImpact,
+} from 'dkg';
+import { bootstrapDkg } from 'dkg-enrichment';
 
 // ── deprecation 경고 ────────────────────────────────
 //
@@ -26,28 +37,26 @@ import { bootstrapDkg } from "dkg-enrichment";
 // QA_SDK_NO_DEPRECATION=1 로 경고 숨김 가능 (스크립트 호환성).
 // console.warn은 stderr로 나가므로 stdout 파이프에 영향 없음.
 function warnDeprecated(legacy: string, replacement: string): void {
-  if (process.env.QA_SDK_NO_DEPRECATION === "1") return;
-  console.warn(
-    `[deprecated] '${legacy}'은 향후 제거 예정. 대체: '${replacement}'`,
-  );
+  if (process.env.QA_SDK_NO_DEPRECATION === '1') return;
+  console.warn(`[deprecated] '${legacy}'은 향후 제거 예정. 대체: '${replacement}'`);
 }
 
 // ── qa encode ───────────────────────────────────────
 
-export function cliEncode(catalog: Catalog, args: {
-  prefix: string;
-  dims: Record<string, string | number>;
-  version?: string;
-  json?: boolean;
-}): void {
-  warnDeprecated(
-    "qa-sdk encode <prefix>",
-    "qa-sdk spec resolve --prefix <id> --values <json>",
-  );
+export function cliEncode(
+  catalog: Catalog,
+  args: {
+    prefix: string;
+    dims: Record<string, string | number>;
+    version?: string;
+    json?: boolean;
+  },
+): void {
+  warnDeprecated('qa-sdk encode <prefix>', 'qa-sdk spec resolve --prefix <id> --values <json>');
   const prefix = catalog.prefixes[args.prefix];
   if (!prefix) {
     console.error(`Unknown prefix: ${args.prefix}`);
-    console.error(`Available: ${Object.keys(catalog.prefixes).join(", ")}`);
+    console.error(`Available: ${Object.keys(catalog.prefixes).join(', ')}`);
     process.exitCode = 1;
     return;
   }
@@ -59,7 +68,13 @@ export function cliEncode(catalog: Catalog, args: {
     const serialized = `${args.prefix}:${version}:${address}`;
 
     if (args.json) {
-      console.log(JSON.stringify({ address: serialized, prefix: args.prefix, version, id: address, dims: args.dims }, null, 2));
+      console.log(
+        JSON.stringify(
+          { address: serialized, prefix: args.prefix, version, id: address, dims: args.dims },
+          null,
+          2,
+        ),
+      );
     } else {
       console.log(serialized);
     }
@@ -71,12 +86,15 @@ export function cliEncode(catalog: Catalog, args: {
 
 // ── qa decode ───────────────────────────────────────
 
-export function cliDecode(catalog: Catalog, args: {
-  address: string;
-  deep?: boolean;
-  json?: boolean;
-}): void {
-  warnDeprecated("qa-sdk decode <addr>", "qa-sdk spec decode --address <addr>");
+export function cliDecode(
+  catalog: Catalog,
+  args: {
+    address: string;
+    deep?: boolean;
+    json?: boolean;
+  },
+): void {
+  warnDeprecated('qa-sdk decode <addr>', 'qa-sdk spec decode --address <addr>');
   let parsed;
   try {
     parsed = parseSerializedAddress(args.address);
@@ -114,12 +132,12 @@ export function cliDecode(catalog: Catalog, args: {
       const prefixDef = catalog.prefixes[prefixId];
       const decomposed = decomposeAddress(catalog, prefixId, version, address);
       for (const [k, dim] of Object.entries(decomposed)) {
-        if ("refDims" in dim && dim.refDims) {
+        if ('refDims' in dim && dim.refDims) {
           // prefixRef — 참조 prefix 주소 + 대표값 표시
           const refPrefix = prefixDef?.dims?.[k];
-          const refPrefixId = refPrefix && "prefixId" in refPrefix ? refPrefix.prefixId : "?";
+          const refPrefixId = refPrefix && 'prefixId' in refPrefix ? refPrefix.prefixId : '?';
           const refEntries = Object.entries(dim.refDims as Record<string, { value: unknown }>);
-          const summary = refEntries.map(([, v]) => v.value).join("/");
+          const summary = refEntries.map(([, v]) => v.value).join('/');
           console.log(`    ${k}: ${refPrefixId}:${dim.refAddress} (${summary})`);
         } else {
           console.log(`    ${k}: ${dim.value}`);
@@ -128,14 +146,14 @@ export function cliDecode(catalog: Catalog, args: {
 
       if (args.deep) {
         const resolved = resolveAddress(catalog, prefixId, version, address);
-        console.log("\n  deep resolve:");
+        console.log('\n  deep resolve:');
         for (const [k, dim] of Object.entries(resolved.dims)) {
-          const ko = dim.ko ? ` (${dim.ko})` : "";
+          const ko = dim.ko ? ` (${dim.ko})` : '';
           console.log(`    ${k}: ${dim.value}${ko}`);
           if (dim.ref) {
             console.log(`      → ${dim.ref.prefix}:${dim.ref.version}:${dim.ref.address}`);
             for (const [rk, rv] of Object.entries(dim.ref.dims)) {
-              console.log(`        ${rk}: ${rv.value}${rv.ko ? ` (${rv.ko})` : ""}`);
+              console.log(`        ${rk}: ${rv.value}${rv.ko ? ` (${rv.ko})` : ''}`);
             }
           }
         }
@@ -149,20 +167,21 @@ export function cliDecode(catalog: Catalog, args: {
 
 // ── qa resolve ──────────────────────────────────────
 
-export function cliResolve(catalog: Catalog, args: {
-  address: string;
-  to?: string;
-  json?: boolean;
-}): void {
+export function cliResolve(
+  catalog: Catalog,
+  args: {
+    address: string;
+    to?: string;
+    json?: boolean;
+  },
+): void {
   warnDeprecated(
-    "qa-sdk resolve <addr>",
-    "qa-sdk spec decode --address <addr> (자동 마이그레이션 옵션 포함)",
+    'qa-sdk resolve <addr>',
+    'qa-sdk spec decode --address <addr> (자동 마이그레이션 옵션 포함)',
   );
   try {
     const result = resolve(catalog, args.address, args.to);
-    const values = Object.fromEntries(
-      Object.entries(result.values).map(([k, v]) => [k, v.value]),
-    );
+    const values = Object.fromEntries(Object.entries(result.values).map(([k, v]) => [k, v.value]));
 
     if (args.json) {
       console.log(JSON.stringify({ ...result, values }, null, 2));
@@ -173,7 +192,7 @@ export function cliResolve(catalog: Catalog, args: {
       if (result.originalVersion) {
         console.log(`  원본 ver: ${result.originalVersion}`);
       }
-      console.log("  values:");
+      console.log('  values:');
       for (const [k, v] of Object.entries(values)) {
         console.log(`    ${k}: ${v}`);
       }
@@ -186,33 +205,37 @@ export function cliResolve(catalog: Catalog, args: {
 
 // ── qa find-version ─────────────────────────────────
 
-export function cliFindVersion(catalog: Catalog, args: {
-  axis: string;
-  entry: string;
-}): void {
-  warnDeprecated(
-    "qa-sdk find-version <axis> <entry>",
-    "qa-sdk dkg axes 또는 qa-sdk prefix find",
-  );
+export function cliFindVersion(
+  catalog: Catalog,
+  args: {
+    axis: string;
+    entry: string;
+  },
+): void {
+  warnDeprecated('qa-sdk find-version <axis> <entry>', 'qa-sdk dkg axes 또는 qa-sdk prefix find');
   const versions = findVersionForEntry(catalog, args.axis, args.entry);
 
   if (versions.length === 0) {
     console.log(`\n  "${args.entry}" not found in axis "${args.axis}"`);
     // 유사 entry 추천
-    const axis = (catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[args.axis];
+    const axis = (
+      catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>
+    )[args.axis];
     if (axis) {
       const allEntries = new Set<string>();
       for (const snap of Object.values(axis.versions)) {
         for (const e of snap.entries) allEntries.add(e);
       }
-      console.log(`  가능한 entries: ${[...allEntries].join(", ")}`);
+      console.log(`  가능한 entries: ${[...allEntries].join(', ')}`);
     }
     return;
   }
 
   console.log(`\n  "${args.entry}" in ${args.axis}:`);
   for (const v of versions) {
-    const snap = (catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[args.axis].versions[v];
+    const snap = (
+      catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>
+    )[args.axis].versions[v];
     const pos = snap.entries.indexOf(args.entry);
     console.log(`    ${v}: position ${pos}`);
   }
@@ -220,16 +243,16 @@ export function cliFindVersion(catalog: Catalog, args: {
 
 // ── qa derive-refs ──────────────────────────────────
 
-export function cliDeriveRefs(catalog: Catalog, _args: {
-  check?: boolean;
-}): void {
-  warnDeprecated(
-    "qa-sdk derive-refs",
-    "qa-sdk dkg overlaps",
-  );
+export function cliDeriveRefs(
+  catalog: Catalog,
+  _args: {
+    check?: boolean;
+  },
+): void {
+  warnDeprecated('qa-sdk derive-refs', 'qa-sdk dkg overlaps');
   const semantics = getAllSemanticRefs();
 
-  console.log("\n══ RefEntries 정합성 검증 ══\n");
+  console.log('\n══ RefEntries 정합성 검증 ══\n');
 
   let allValid = true;
   for (const semantic of semantics) {
@@ -247,7 +270,7 @@ export function cliDeriveRefs(catalog: Catalog, _args: {
   if (allValid) {
     console.log(`  ✅ ${semantics.length}개 refEntries 전부 일치`);
   } else {
-    console.log("\n  qa derive-refs --apply 로 재생성하세요.");
+    console.log('\n  qa derive-refs --apply 로 재생성하세요.');
     process.exitCode = 1;
   }
 }
@@ -255,23 +278,23 @@ export function cliDeriveRefs(catalog: Catalog, _args: {
 // ── qa impact ───────────────────────────────────────
 
 function isGraphPort(v: unknown): v is Parameters<typeof analyzeImpact>[0] {
-  return !!v && typeof v === "object" && "cascadeFromAxis" in v;
+  return !!v && typeof v === 'object' && 'cascadeFromAxis' in v;
 }
 
 /** graph를 직접 받으면 재사용, config를 받으면 bootstrap */
 export function cliImpact(
   catalog: Catalog,
-  graphOrConfig: Parameters<typeof analyzeImpact>[0] | Parameters<typeof bootstrapDkg>[0]["config"],
+  graphOrConfig: Parameters<typeof analyzeImpact>[0] | Parameters<typeof bootstrapDkg>[0]['config'],
   args: { axis?: string; prefix?: string },
 ): void {
-  warnDeprecated("qa-sdk impact --axis <id>", "qa-sdk dkg impact <axis>");
+  warnDeprecated('qa-sdk impact --axis <id>', 'qa-sdk dkg impact <axis>');
   const graph = isGraphPort(graphOrConfig)
     ? graphOrConfig
     : bootstrapDkg({ catalog, config: graphOrConfig });
 
   const input = args.axis
-    ? { type: "entry-added" as const, target: { axis: args.axis } }
-    : { type: "entry-added" as const, target: { prefix: args.prefix } };
+    ? { type: 'entry-added' as const, target: { axis: args.axis } }
+    : { type: 'entry-added' as const, target: { prefix: args.prefix } };
 
   const result = analyzeImpact(graph, input);
 
@@ -281,28 +304,28 @@ export function cliImpact(
   console.log(`  auto-migrate: ${result.autoMigratable}`);
 
   if (result.affectedPrefixes.length > 0) {
-    console.log("\n  영향 prefix:");
+    console.log('\n  영향 prefix:');
     for (const p of result.affectedPrefixes) {
-      console.log(`    ${p.reason === "composes" ? "←" : "←ref─"} ${p.id} (depth=${p.distance})`);
+      console.log(`    ${p.reason === 'composes' ? '←' : '←ref─'} ${p.id} (depth=${p.distance})`);
     }
   }
 
   if (result.affectedDomains.length > 0) {
-    console.log("\n  영향 domain:");
+    console.log('\n  영향 domain:');
     for (const d of result.affectedDomains) {
-      console.log(`    ${d.id}: [${d.affectedPrefixes.join(", ")}]`);
+      console.log(`    ${d.id}: [${d.affectedPrefixes.join(', ')}]`);
     }
   }
 
   if (result.affectedConsumers.length > 0) {
-    console.log("\n  영향 consumer:");
+    console.log('\n  영향 consumer:');
     for (const c of result.affectedConsumers) {
       console.log(`    ${c.id} (via ${c.via})`);
     }
   }
 
   if (result.constraintViolations.length > 0) {
-    console.log("\n  ⚠ constraint 위반:");
+    console.log('\n  ⚠ constraint 위반:');
     for (const v of result.constraintViolations) {
       console.log(`    ${v.constraintId}: ${v.rule}`);
     }
@@ -312,7 +335,7 @@ export function cliImpact(
 // ── qa list-prefixes ────────────────────────────────
 
 export function cliListPrefixes(catalog: Catalog, args: { json?: boolean }): void {
-  warnDeprecated("qa-sdk list-prefixes", "qa-sdk dkg prefixes");
+  warnDeprecated('qa-sdk list-prefixes', 'qa-sdk dkg prefixes');
   const prefixes = Object.entries(catalog.prefixes);
 
   if (args.json) {
@@ -322,7 +345,7 @@ export function cliListPrefixes(catalog: Catalog, args: { json?: boolean }): voi
         id,
         name: p.name,
         dims: p.labels,
-        versions: p.versions.map(v => v.version),
+        versions: p.versions.map((v) => v.version),
         shape: shape.shape,
         capacity: shape.capacity,
       };
@@ -335,18 +358,18 @@ export function cliListPrefixes(catalog: Catalog, args: { json?: boolean }): voi
   for (const [id, p] of prefixes) {
     const latestV = latestPrefixVersion(catalog, id);
     const shape = getPrefixShape(catalog, id, latestV);
-    const dimTypes = p.labels.map(l => {
+    const dimTypes = p.labels.map((l) => {
       const d = p.dims[l];
-      return d.kind === "axis" ? l : d.kind === "prefix_ref" ? `${l}(ref)` : `${l}(tbl)`;
+      return d.kind === 'axis' ? l : d.kind === 'prefix_ref' ? `${l}(ref)` : `${l}(tbl)`;
     });
-    console.log(`  ${id.padEnd(15)} ${dimTypes.join(" × ").padEnd(40)} cap=${shape.capacity}`);
+    console.log(`  ${id.padEnd(15)} ${dimTypes.join(' × ').padEnd(40)} cap=${shape.capacity}`);
   }
 }
 
 // ── qa list-axes ────────────────────────────────────
 
 export function cliListAxes(catalog: Catalog, args: { json?: boolean }): void {
-  warnDeprecated("qa-sdk list-axes", "qa-sdk dkg axes");
+  warnDeprecated('qa-sdk list-axes', 'qa-sdk dkg axes');
   const axes = Object.entries(catalog.axes);
 
   if (args.json) {
@@ -371,6 +394,8 @@ export function cliListAxes(catalog: Catalog, args: { json?: boolean }): void {
     const latest = a.versions[versions[versions.length - 1] as keyof typeof a.versions];
     const entries = latest.entries?.length ?? 0;
     const cap = latest.capacity ?? entries;
-    console.log(`  ${id.padEnd(15)} ${a.name.padEnd(12)} entries=${String(entries).padStart(2)} cap=${String(cap).padStart(3)} headroom=${cap - entries}`);
+    console.log(
+      `  ${id.padEnd(15)} ${a.name.padEnd(12)} entries=${String(entries).padStart(2)} cap=${String(cap).padStart(3)} headroom=${cap - entries}`,
+    );
   }
 }

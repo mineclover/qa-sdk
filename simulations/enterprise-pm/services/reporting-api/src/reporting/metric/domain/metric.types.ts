@@ -1,7 +1,7 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import type { MetricId, MetricKey } from "./metric.ids.js";
+import type { MetricId, MetricKey } from './metric.ids.js';
 
 /** Read-side metric DTO — 시계열 단건 record. */
 export interface DailyMetricReadModel {

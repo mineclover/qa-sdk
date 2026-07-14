@@ -14,8 +14,8 @@
  * 동적 import — sim 서비스 의존을 lazy load.
  */
 
-import type { INestApplication } from "@nestjs/common";
-import type { AccessChecker, AuditRecorder } from "permission-engine";
+import type { INestApplication } from '@nestjs/common';
+import type { AccessChecker, AuditRecorder } from 'permission-engine';
 
 export interface InProcessFixtureUser {
   id: string;
@@ -72,7 +72,7 @@ export interface InProcessHandle {
 
 export interface InProcessOptions {
   jwtSecret: string;
-  dialect: "sqlite";
+  dialect: 'sqlite';
   /** 시나리오 7 짧은 TTL — default 300. */
   jwtTtlSeconds?: number;
 }
@@ -88,24 +88,19 @@ export interface InProcessOptions {
  *   5. audit-browser-api 부팅 (같은 recorder)
  *   6. gateway in-process app (proxyTargets 주입)
  */
-export async function bootstrapInProcess(
-  opts: InProcessOptions,
-): Promise<InProcessHandle> {
+export async function bootstrapInProcess(opts: InProcessOptions): Promise<InProcessHandle> {
   // 1. shared audit fixture
-  const { createInMemorySqliteFixture } = await import(
-    "@qa-sdk/sim-audit-recorder-provider/memory-sqlite-fixture"
-  );
+  const { createInMemorySqliteFixture } =
+    await import('@qa-sdk/sim-audit-recorder-provider/memory-sqlite-fixture');
   const auditFixture = createInMemorySqliteFixture();
-  const { createSimAuditRecorder } = await import(
-    "@qa-sdk/sim-audit-recorder-provider"
-  );
+  const { createSimAuditRecorder } = await import('@qa-sdk/sim-audit-recorder-provider');
   const sharedRecorder = await createSimAuditRecorder({
-    dialect: "sqlite",
+    dialect: 'sqlite',
     db: auditFixture.db,
   });
 
   // 2. auth-api bootstrap + extended seed
-  const authBootstrap = await import("@qa-sdk/sim-auth-api/test-bootstrap");
+  const authBootstrap = await import('@qa-sdk/sim-auth-api/test-bootstrap');
   const authHandle = await authBootstrap.bootstrapTestApi({
     jwtSecret: opts.jwtSecret,
   });
@@ -113,50 +108,48 @@ export async function bootstrapInProcess(
   const extendedFixtures = await buildFixtures(authHandle, baseSeed);
 
   // 3. pm-api bootstrap (overrideAudit)
-  const pmBootstrap = await import("@qa-sdk/sim-pm-api/test-bootstrap");
+  const pmBootstrap = await import('@qa-sdk/sim-pm-api/test-bootstrap');
   const pmHandle = await pmBootstrap.bootstrapTestApi({
     overrideAudit: sharedRecorder,
   });
   const pmGraphStore = pmHandle.app.get(pmBootstrap.PROJECT_AUTHORIZATION_GRAPH_STORE);
 
   // 4. approval-api bootstrap (overrideAudit)
-  const approvalBootstrap = await import(
-    "@qa-sdk/sim-approval-api/test-bootstrap"
-  );
+  const approvalBootstrap = await import('@qa-sdk/sim-approval-api/test-bootstrap');
   const approvalHandle = await approvalBootstrap.bootstrapTestApi({
     overrideAudit: sharedRecorder,
   });
 
   // 5. audit-browser-api bootstrap — shared recorder 직접 주입
-  const auditBrowserBootstrap = await import(
-    "@qa-sdk/sim-audit-browser-api/test-bootstrap"
-  );
+  const auditBrowserBootstrap = await import('@qa-sdk/sim-audit-browser-api/test-bootstrap');
   const auditBrowserHandle = await auditBrowserBootstrap.bootstrapTestAuditBrowserApi({
     recorder: sharedRecorder,
     graphStore: pmGraphStore,
   });
   // audit-browser-api 는 NestJS app 이지만 listen 안 된 상태 — listen 필요
-  await auditBrowserHandle.app.listen(0, "127.0.0.1");
-  const auditPort = (auditBrowserHandle.app.getHttpServer().address() as {
-    port: number;
-  }).port;
+  await auditBrowserHandle.app.listen(0, '127.0.0.1');
+  const auditPort = (
+    auditBrowserHandle.app.getHttpServer().address() as {
+      port: number;
+    }
+  ).port;
 
   // 6. gateway in-process app
-  const { createApp } = await import("@qa-sdk/sim-gateway/app");
+  const { createApp } = await import('@qa-sdk/sim-gateway/app');
   const gatewayApp = createApp({
     authApiUrl: authHandle.baseUrl,
     jwtSecret: opts.jwtSecret,
     jwtTtlSeconds: opts.jwtTtlSeconds ?? 300,
     // auth-api BitmapModule 은 "v1" 사용 — gateway 검증도 동일해야 함.
-    currentBitmapV: "v1",
+    currentBitmapV: 'v1',
     proxyTimeoutMs: 5_000,
     proxyTargets: {
-      "sim-pm-api": pmHandle.baseUrl,
-      "sim-approval-api": approvalHandle.baseUrl,
-      "sim-notification-api": "http://127.0.0.1:1",
-      "sim-reporting-api": "http://127.0.0.1:1",
-      "sim-document-api": "http://127.0.0.1:1",
-      "sim-audit-browser-api": `http://127.0.0.1:${auditPort}`,
+      'sim-pm-api': pmHandle.baseUrl,
+      'sim-approval-api': approvalHandle.baseUrl,
+      'sim-notification-api': 'http://127.0.0.1:1',
+      'sim-reporting-api': 'http://127.0.0.1:1',
+      'sim-document-api': 'http://127.0.0.1:1',
+      'sim-audit-browser-api': `http://127.0.0.1:${auditPort}`,
     },
   });
 
@@ -171,7 +164,7 @@ export async function bootstrapInProcess(
     const { createTestBudgetRequest } = approvalBootstrap;
     const req = await createTestBudgetRequest(approvalHandle, {
       ...args,
-      advanceTo: "in_review",
+      advanceTo: 'in_review',
     });
     return { id: req.id };
   };
@@ -223,19 +216,11 @@ export async function bootstrapInProcess(
  */
 async function buildFixtures(
   authHandle: Awaited<
-    ReturnType<
-      (typeof import("@qa-sdk/sim-auth-api/test-bootstrap"))["bootstrapTestApi"]
-    >
+    ReturnType<(typeof import('@qa-sdk/sim-auth-api/test-bootstrap'))['bootstrapTestApi']>
   >,
-  base: Awaited<
-    ReturnType<
-      (typeof import("@qa-sdk/sim-auth-api/test-bootstrap"))["seedTestData"]
-    >
-  >,
-): Promise<Omit<InProcessFixtures, "seedBudgetRequest" | "delegateProject">> {
-  const { seedExtendedUsers } = await import(
-    "@qa-sdk/sim-auth-api/test-bootstrap"
-  );
+  base: Awaited<ReturnType<(typeof import('@qa-sdk/sim-auth-api/test-bootstrap'))['seedTestData']>>,
+): Promise<Omit<InProcessFixtures, 'seedBudgetRequest' | 'delegateProject'>> {
+  const { seedExtendedUsers } = await import('@qa-sdk/sim-auth-api/test-bootstrap');
   const ext = await seedExtendedUsers(authHandle, base);
 
   return {

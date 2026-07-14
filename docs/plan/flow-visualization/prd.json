@@ -37,9 +37,7 @@
       "priority": 2,
       "passes": true,
       "notes": "SVG 캔버스 없이 순수 HTML 리스트만. 작업량: 소.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -58,9 +56,7 @@
       "priority": 3,
       "passes": true,
       "notes": "46개 prefix만. axes/consumer는 다음 스토리. 그리드 레이아웃 (6열 x N행). 작업량: 중.",
-      "dependsOn": [
-        "US-002"
-      ],
+      "dependsOn": ["US-002"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -79,9 +75,7 @@
       "priority": 4,
       "passes": true,
       "notes": "SVG transform으로 줌/팬. 엣지 수 147개 — <line> 또는 <path>. 작업량: 중.",
-      "dependsOn": [
-        "US-003"
-      ],
+      "dependsOn": ["US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -100,9 +94,7 @@
       "priority": 5,
       "passes": true,
       "notes": "이벤트 도착 시 canvas prefix 노드 pulse는 US-007에서. 여기서는 리스트만. 작업량: 소.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -121,9 +113,7 @@
       "priority": 6,
       "passes": true,
       "notes": "API: /api/diagrams 에서 intent-links 배열의 id 사용. endpoints는 prefix ID 목록. 작업량: 중.",
-      "dependsOn": [
-        "US-003"
-      ],
+      "dependsOn": ["US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -140,10 +130,7 @@
       "priority": 7,
       "passes": true,
       "notes": "US-005(event feed) + US-003(canvas nodes) 의존. CSS @keyframes 또는 SVG animate. 작업량: 소.",
-      "dependsOn": [
-        "US-005",
-        "US-003"
-      ],
+      "dependsOn": ["US-005", "US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -162,9 +149,7 @@
       "priority": 8,
       "passes": true,
       "notes": "SVG arc: d='M... A...' 패턴. 원 중심에서 시작/끝 각도 계산. 작업량: 중.",
-      "dependsOn": [
-        "US-002"
-      ],
+      "dependsOn": ["US-002"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -183,10 +168,7 @@
       "priority": 9,
       "passes": true,
       "notes": "작업량: 소. 명령어 실행 + curl 검증만.",
-      "dependsOn": [
-        "US-007",
-        "US-008"
-      ],
+      "dependsOn": ["US-007", "US-008"],
       "completionNotes": "Completed by agent"
     }
   ],

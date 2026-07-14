@@ -1,8 +1,8 @@
 // @def.doc definition-service
 
-import { Module } from "@nestjs/common";
-import { PrefixesController } from "./prefixes.controller.js";
-import { PrefixesService } from "./prefixes.service.js";
+import { Module } from '@nestjs/common';
+import { PrefixesController } from './prefixes.controller.js';
+import { PrefixesService } from './prefixes.service.js';
 
 @Module({
   controllers: [PrefixesController],

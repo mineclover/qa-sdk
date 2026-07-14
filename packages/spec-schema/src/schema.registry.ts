@@ -1,8 +1,8 @@
 // @def.boundary spec-engine-system
 // @def.doc spec-engine-system
 
-import type { SchemaDef, SchemaFragment, SchemaCategory, SchemaAxis } from "./schema.types.js";
-import { DuplicateRegistrationError, NotFoundError } from "./shared/errors.js";
+import type { SchemaDef, SchemaFragment, SchemaCategory, SchemaAxis } from './schema.types.js';
+import { DuplicateRegistrationError, NotFoundError } from './shared/errors.js';
 
 /**
  * 스키마 + fragment를 등록하고 조회하는 레지스트리.
@@ -18,14 +18,14 @@ export class SchemaRegistry {
 
   registerSchema(schema: SchemaDef): void {
     if (this.schemas.has(schema.id)) {
-      throw new DuplicateRegistrationError("Schema", schema.id);
+      throw new DuplicateRegistrationError('Schema', schema.id);
     }
     this.schemas.set(schema.id, schema);
   }
 
   getSchema(schemaId: string): SchemaDef {
     const schema = this.schemas.get(schemaId);
-    if (!schema) throw new NotFoundError("Schema", schemaId);
+    if (!schema) throw new NotFoundError('Schema', schemaId);
     return schema;
   }
 
@@ -35,7 +35,7 @@ export class SchemaRegistry {
 
   /** category별 스키마 목록 */
   getByCategory(category: SchemaCategory): SchemaDef[] {
-    return [...this.schemas.values()].filter(s => s.category === category);
+    return [...this.schemas.values()].filter((s) => s.category === category);
   }
 
   /** 등록된 모든 스키마 ID */
@@ -51,14 +51,14 @@ export class SchemaRegistry {
 
   registerFragment(fragment: SchemaFragment): void {
     if (this.fragments.has(fragment.id)) {
-      throw new DuplicateRegistrationError("Fragment", fragment.id);
+      throw new DuplicateRegistrationError('Fragment', fragment.id);
     }
     this.fragments.set(fragment.id, fragment);
   }
 
   getFragment(fragmentId: string): SchemaFragment {
     const fragment = this.fragments.get(fragmentId);
-    if (!fragment) throw new NotFoundError("Fragment", fragmentId);
+    if (!fragment) throw new NotFoundError('Fragment', fragmentId);
     return fragment;
   }
 

@@ -1,11 +1,11 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { eq } from "drizzle-orm";
-import type { GraphStore } from "@qa-sdk/core";
-import type { RuntimeGraph } from "@qa-sdk/core";
-import type { DbExecutor } from "../../db/client.js";
-import { runtimeGraphs } from "../../db/schema.js";
+import { eq } from 'drizzle-orm';
+import type { GraphStore } from '@qa-sdk/core';
+import type { RuntimeGraph } from '@qa-sdk/core';
+import type { DbExecutor } from '../../db/client.js';
+import { runtimeGraphs } from '../../db/schema.js';
 
 /** GraphStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleGraphStore implements GraphStore {
@@ -24,16 +24,19 @@ export class DrizzleGraphStore implements GraphStore {
           builtAt: new Date(),
         })
         .where(eq(runtimeGraphs.traceId, traceId))
-        .comment({ adapter: "GraphStore", method: "upsert.update" });
+        .comment({ adapter: 'GraphStore', method: 'upsert.update' });
       return;
     }
 
-    await this.db.insert(runtimeGraphs).values({
-      traceId,
-      graph,
-      nodeCount: graph.nodes.length,
-      edgeCount: graph.edges.length,
-    }).comment({ adapter: "GraphStore", method: "upsert.insert" });
+    await this.db
+      .insert(runtimeGraphs)
+      .values({
+        traceId,
+        graph,
+        nodeCount: graph.nodes.length,
+        edgeCount: graph.edges.length,
+      })
+      .comment({ adapter: 'GraphStore', method: 'upsert.insert' });
   }
 
   async findByTraceId(traceId: string): Promise<RuntimeGraph | null> {
@@ -41,7 +44,7 @@ export class DrizzleGraphStore implements GraphStore {
       .select()
       .from(runtimeGraphs)
       .where(eq(runtimeGraphs.traceId, traceId))
-      .comment({ adapter: "GraphStore", method: "findByTraceId" });
+      .comment({ adapter: 'GraphStore', method: 'findByTraceId' });
     return row?.graph ?? null;
   }
 }

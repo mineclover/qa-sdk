@@ -1,21 +1,18 @@
 // @def.boundary motion-content-system
-import {
-  applyMotionEditorCommand,
-  createMotionEditorState,
-} from "./state.js";
+import { applyMotionEditorCommand, createMotionEditorState } from './state.js';
 import type {
   MotionCompositionDef,
   MotionCompositionDefV2,
   MotionParameterValues,
   ResolvedMotionComposition,
   ResolvedMotionCompositionV2,
-} from "./model.js";
+} from './model.js';
 import type {
   MotionEditorCommand,
   MotionEditorState,
   MotionSetCompositionCommand,
   ResolvedMotionCompositionSchema,
-} from "./editor.js";
+} from './editor.js';
 
 export interface MotionEditorSession<
   TComposition extends ResolvedMotionCompositionSchema = ResolvedMotionComposition,
@@ -25,7 +22,7 @@ export interface MotionEditorSession<
   readonly future: readonly MotionEditorState<TComposition>[];
 }
 
-export type MotionEditorCheckpointStrategy = "ignore" | "append" | "reset";
+export type MotionEditorCheckpointStrategy = 'ignore' | 'append' | 'reset';
 
 export function createMotionEditorSession(
   composition: MotionCompositionDef,
@@ -55,33 +52,34 @@ export function getMotionEditorCheckpointStrategy(
 ): MotionEditorCheckpointStrategy {
   if (
     [
-      "select",
-      "play",
-      "pause",
-      "restart",
-      "set-current-time",
-      "set-loop",
-      "set-playback-rate",
+      'select',
+      'play',
+      'pause',
+      'restart',
+      'set-current-time',
+      'set-loop',
+      'set-playback-rate',
     ].includes(command.type)
   ) {
-    return "ignore";
+    return 'ignore';
   }
-  if (command.type === "set-composition") {
-    return "reset";
+  if (command.type === 'set-composition') {
+    return 'reset';
   }
-  return "append";
+  return 'append';
 }
 
-function checkpointKey(
-  state: MotionEditorState<ResolvedMotionCompositionSchema>,
-): string {
+function checkpointKey(state: MotionEditorState<ResolvedMotionCompositionSchema>): string {
   return JSON.stringify({
     composition: state.composition,
     values: state.values,
   });
 }
 
-type MotionEditorCommandWithoutSetComposition = Exclude<MotionEditorCommand, MotionSetCompositionCommand>;
+type MotionEditorCommandWithoutSetComposition = Exclude<
+  MotionEditorCommand,
+  MotionSetCompositionCommand
+>;
 
 export function previewMotionEditorSessionCommand(
   session: MotionEditorSession<ResolvedMotionCompositionSchema>,
@@ -136,7 +134,7 @@ export function applyMotionEditorSessionCommand(
 ): MotionEditorSession<ResolvedMotionCompositionSchema> {
   const strategy = getMotionEditorCheckpointStrategy(command);
   const nextPresent = previewMotionEditorSessionCommand(session, command);
-  if (strategy === "ignore") {
+  if (strategy === 'ignore') {
     return {
       ...session,
       present: nextPresent,
@@ -147,7 +145,7 @@ export function applyMotionEditorSessionCommand(
     return session;
   }
 
-  if (strategy === "reset") {
+  if (strategy === 'reset') {
     return {
       past: [],
       present: nextPresent,

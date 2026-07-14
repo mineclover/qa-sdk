@@ -38,10 +38,7 @@ export interface Aggregator {
    * packed_key 기반 그룹핑.
    * DB의 `GROUP BY packed_key`에 직접 매핑된다.
    */
-  groupByKey(
-    keys: readonly string[],
-    options?: AggregateOptions,
-  ): Promise<AggregateEntry[]>;
+  groupByKey(keys: readonly string[], options?: AggregateOptions): Promise<AggregateEntry[]>;
 
   /**
    * 축 프로젝션 집계.

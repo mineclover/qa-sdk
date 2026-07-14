@@ -5,13 +5,13 @@ import {
   ProjectReadModelQuery,
   type ProjectDetailReadModel,
   type ProjectDelegationReadModel,
-} from "../../application/queries/project-read-model.query.js";
-import type { ProjectRepositoryPort } from "../../application/ports/project-repository.port.js";
-import type { ProjectEntity } from "../../domain/index.js";
+} from '../../application/queries/project-read-model.query.js';
+import type { ProjectRepositoryPort } from '../../application/ports/project-repository.port.js';
+import type { ProjectEntity } from '../../domain/index.js';
 import type {
   PolicyLifecyclePort,
   DelegationGraphPort,
-} from "../../application/ports/project-policy.port.js";
+} from '../../application/ports/project-policy.port.js';
 
 export class RepositoryProjectReadModel extends ProjectReadModelQuery {
   constructor(

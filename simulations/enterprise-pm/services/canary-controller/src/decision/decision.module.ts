@@ -5,27 +5,21 @@
 //                       PerfWarnFault.applyTo 로 wrap (enabled 시 PASS → WARN 격상,
 //                       FAIL/WARN 보존).
 
-import { Module } from "@nestjs/common";
-import { readFileSync } from "node:fs";
-import { parse as parseYaml } from "yaml";
+import { Module } from '@nestjs/common';
+import { readFileSync } from 'node:fs';
+import { parse as parseYaml } from 'yaml';
 import {
   CategoryVerdictService,
   type VerdictConfig,
   type CategoryVerdicts,
-} from "../verdict/category-verdict.service.js";
-import {
-  SafetyDecisionService,
-  type SafetyConfig,
-} from "./safety-decision.service.js";
-import {
-  ResourceDecisionService,
-  type ResourceConfig,
-} from "./resource-decision.service.js";
-import { DecisionBuilderService } from "./decision-builder.service.js";
-import { PerfWarnFault } from "../fault/perf-warn.js";
-import { FaultModule } from "../fault/fault.module.js";
-import type { ScrapeResult } from "../metrics/metrics-scrape.service.js";
-import { env } from "../config/env.js";
+} from '../verdict/category-verdict.service.js';
+import { SafetyDecisionService, type SafetyConfig } from './safety-decision.service.js';
+import { ResourceDecisionService, type ResourceConfig } from './resource-decision.service.js';
+import { DecisionBuilderService } from './decision-builder.service.js';
+import { PerfWarnFault } from '../fault/perf-warn.js';
+import { FaultModule } from '../fault/fault.module.js';
+import type { ScrapeResult } from '../metrics/metrics-scrape.service.js';
+import { env } from '../config/env.js';
 
 /**
  * spec §8 perf-warn — CategoryVerdictService 결과 perf 필드를 wrap.
@@ -46,9 +40,9 @@ class PerfWarnAwareVerdictService extends CategoryVerdictService {
 }
 
 interface ControllerConfigYaml {
-  perf: VerdictConfig["perf"];
-  decisionQuality: VerdictConfig["decisionQuality"];
-  replicationHealth: VerdictConfig["replicationHealth"];
+  perf: VerdictConfig['perf'];
+  decisionQuality: VerdictConfig['decisionQuality'];
+  replicationHealth: VerdictConfig['replicationHealth'];
   window: { rollingCycles: number; failQuorum: number };
   dwell: { promotionMs: number };
   confidence: { holdThreshold: number };
@@ -56,7 +50,7 @@ interface ControllerConfigYaml {
 }
 
 function loadConfig(): ControllerConfigYaml {
-  const raw = readFileSync(env.SIM_CONTROLLER_CONFIG_PATH, "utf-8");
+  const raw = readFileSync(env.SIM_CONTROLLER_CONFIG_PATH, 'utf-8');
   return parseYaml(raw) as ControllerConfigYaml;
 }
 

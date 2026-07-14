@@ -2,16 +2,16 @@
 // @def.doc qa-sdk-core-system
 
 export const BDD_CONTRACT_KINDS = [
-  "state-transition",
-  "query-projection",
-  "event-reaction",
-  "validation-failure",
-  "dependency-contract",
+  'state-transition',
+  'query-projection',
+  'event-reaction',
+  'validation-failure',
+  'dependency-contract',
 ] as const;
 
 export type BddContractKind = (typeof BDD_CONTRACT_KINDS)[number];
 
-export const BDD_MODES = ["read", "write"] as const;
+export const BDD_MODES = ['read', 'write'] as const;
 
 export type BddMode = (typeof BDD_MODES)[number];
 
@@ -68,7 +68,7 @@ export interface BddContract {
   readonly then: BddThen;
 }
 
-export const BDD_TEST_LEVELS = ["unit", "integration", "e2e"] as const;
+export const BDD_TEST_LEVELS = ['unit', 'integration', 'e2e'] as const;
 
 export type BddTestLevel = (typeof BDD_TEST_LEVELS)[number];
 
@@ -83,17 +83,16 @@ export interface BddTestUnit {
 }
 
 export const BDD_IMPLEMENTATION_UNIT_KINDS = [
-  "guard",
-  "operation",
-  "transition",
-  "emitter",
-  "repository",
-  "projection",
-  "event-handler",
+  'guard',
+  'operation',
+  'transition',
+  'emitter',
+  'repository',
+  'projection',
+  'event-handler',
 ] as const;
 
-export type BddImplementationUnitKind =
-  (typeof BDD_IMPLEMENTATION_UNIT_KINDS)[number];
+export type BddImplementationUnitKind = (typeof BDD_IMPLEMENTATION_UNIT_KINDS)[number];
 
 export interface BddImplementationUnit {
   readonly id: string;

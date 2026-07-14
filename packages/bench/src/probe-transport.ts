@@ -1,11 +1,11 @@
-import type { TransmissionEnvelope, Transport } from "@qa-sdk/sdk";
+import type { TransmissionEnvelope, Transport } from '@qa-sdk/sdk';
 import type {
   AddressContextCoverage,
   DistributionSummary,
   ProbeTransport,
   ProbeTransportOptions,
   TransportProbeSnapshot,
-} from "./types.js";
+} from './types.js';
 
 interface MutableTransportStats {
   envelopesSent: number;
@@ -59,7 +59,7 @@ export function createProbeTransport(
         envelopesSent: stats.envelopesSent,
         recordsSent: stats.recordsSent,
         failedSends: stats.failedSends,
-        ...(typeof stats.bytesSent === "number" ? { bytesSent: stats.bytesSent } : {}),
+        ...(typeof stats.bytesSent === 'number' ? { bytesSent: stats.bytesSent } : {}),
         sendLatencyMs: summarizeDistribution(stats.sendLatencies),
         addressContext: finalizeAddressContextCoverage(stats.addressContext),
       };
@@ -70,7 +70,7 @@ export function createProbeTransport(
 export function summarizeEnvelopes(
   envelopes: readonly TransmissionEnvelope[],
   options: ProbeTransportOptions = {},
-): Omit<TransportProbeSnapshot, "sendLatencyMs" | "failedSends"> & {
+): Omit<TransportProbeSnapshot, 'sendLatencyMs' | 'failedSends'> & {
   addressContext: AddressContextCoverage;
 } {
   const stats = createEmptyStats(options.measureEnvelopeBytes ?? false);
@@ -81,7 +81,7 @@ export function summarizeEnvelopes(
   return {
     envelopesSent: stats.envelopesSent,
     recordsSent: stats.recordsSent,
-    ...(typeof stats.bytesSent === "number" ? { bytesSent: stats.bytesSent } : {}),
+    ...(typeof stats.bytesSent === 'number' ? { bytesSent: stats.bytesSent } : {}),
     addressContext: finalizeAddressContextCoverage(stats.addressContext),
   };
 }
@@ -119,13 +119,10 @@ function createEmptyStats(measureEnvelopeBytes: boolean): MutableTransportStats 
   };
 }
 
-function applyEnvelopeStats(
-  stats: MutableTransportStats,
-  envelope: TransmissionEnvelope,
-): void {
+function applyEnvelopeStats(stats: MutableTransportStats, envelope: TransmissionEnvelope): void {
   stats.envelopesSent += 1;
   stats.recordsSent += envelope.records.length;
-  if (typeof stats.bytesSent === "number") {
+  if (typeof stats.bytesSent === 'number') {
     stats.bytesSent += new TextEncoder().encode(JSON.stringify(envelope)).byteLength;
   }
 
@@ -139,8 +136,7 @@ function applyEnvelopeStats(
     if (prefixes.length === 0) continue;
     stats.addressContext.recordsWithAddressContext += 1;
     for (const prefixId of prefixes) {
-      stats.addressContext.prefixes[prefixId] =
-        (stats.addressContext.prefixes[prefixId] ?? 0) + 1;
+      stats.addressContext.prefixes[prefixId] = (stats.addressContext.prefixes[prefixId] ?? 0) + 1;
     }
   }
 }

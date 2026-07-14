@@ -8,13 +8,13 @@
  * CONVERGENCE_ENABLED=true일 때만 server.ts에서 이 모듈을 동적으로 로딩한다.
  */
 
-import type { Logger } from "pino";
+import type { Logger } from 'pino';
 import type {
   StoreModulePort,
   DemoSnapshotModulePort,
   DkgSqliteStorePort,
   GraphRegistryPort,
-} from "../types/spec-core-ports.js";
+} from '../types/spec-core-ports.js';
 
 export interface GraphProviderConfig {
   /** 주입할 카탈로그 (없으면 registry fetch → DEMO_CATALOG fallback) */
@@ -50,13 +50,19 @@ export async function createGraphProvider(
 ): Promise<GraphProviderResult> {
   // spec-core 동적 import — unknown 모듈을 port 인터페이스로 단언
   const [storeModule, enrichmentModule] = await Promise.all([
-    import("@qa-sdk/spec-core/store") as unknown as StoreModulePort,
-    import("dkg-enrichment"),
+    import('@qa-sdk/spec-core/store') as unknown as StoreModulePort,
+    import('dkg-enrichment'),
   ]);
 
   // demo-snapshot도 동적 import (catalog + config 제공)
-  const demoSnapshot = await import("demo-snapshot") as unknown as Pick<DemoSnapshotModulePort, "DEMO_CATALOG">;
-  const demoDkgConfig = await import("demo-dkg-config") as unknown as Pick<DemoSnapshotModulePort, "DEMO_DKG_CONFIG">;
+  const demoSnapshot = (await import('demo-snapshot')) as unknown as Pick<
+    DemoSnapshotModulePort,
+    'DEMO_CATALOG'
+  >;
+  const demoDkgConfig = (await import('demo-dkg-config')) as unknown as Pick<
+    DemoSnapshotModulePort,
+    'DEMO_DKG_CONFIG'
+  >;
   const demoDkg = {
     DEMO_CATALOG: demoSnapshot.DEMO_CATALOG,
     DEMO_DKG_CONFIG: demoDkgConfig.DEMO_DKG_CONFIG,
@@ -69,20 +75,23 @@ export async function createGraphProvider(
   /** registry-service에서 카탈로그를 fetch. 실패 시 null */
   async function fetchCatalogFromRegistry(): Promise<unknown | null> {
     if (!config.registryUrl) return null;
-    const catalogId = config.catalogId ?? "demo";
+    const catalogId = config.catalogId ?? 'demo';
     try {
       const url = `${config.registryUrl}/catalogs/${catalogId}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
       if (!res.ok) return null;
-      const record = await res.json() as { data?: string };
+      const record = (await res.json()) as { data?: string };
       if (record.data) {
         const parsed = JSON.parse(record.data);
-        config.logger?.info({ catalogId }, "catalog fetched from registry-service");
+        config.logger?.info({ catalogId }, 'catalog fetched from registry-service');
         return parsed;
       }
       return null;
     } catch (err) {
-      config.logger?.warn({ error: err instanceof Error ? err.message : String(err) }, "registry catalog fetch failed — using fallback");
+      config.logger?.warn(
+        { error: err instanceof Error ? err.message : String(err) },
+        'registry catalog fetch failed — using fallback',
+      );
       return null;
     }
   }
@@ -100,31 +109,35 @@ export async function createGraphProvider(
       // SQLite에서 기존 DKG 로드
       const store = new storeModule.DkgSqliteStore(
         config.dkgSqlitePath,
-        config.catalogId ?? "demo",
+        config.catalogId ?? 'demo',
       );
       dkgStore = store;
 
       const loaded = store.loadGraph();
       // 노드가 비어있으면 부트스트랩 후 저장
       if (loaded.getAllNodes().length === 0) {
-        config.logger?.info("DKG store empty, bootstrapping...");
+        config.logger?.info('DKG store empty, bootstrapping...');
         cachedGraph = enrichmentModule.bootstrapDkg({
-          catalog: catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["catalog"],
-          config: demoDkg.DEMO_DKG_CONFIG as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["config"],
+          catalog: catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]['catalog'],
+          config: demoDkg.DEMO_DKG_CONFIG as Parameters<
+            typeof enrichmentModule.bootstrapDkg
+          >[0]['config'],
         }) as unknown as GraphRegistryPort;
-        store.saveGraph(cachedGraph, "bootstrap");
+        store.saveGraph(cachedGraph, 'bootstrap');
       } else {
         cachedGraph = loaded as unknown as GraphRegistryPort;
       }
     } else {
       // 인메모리 부트스트랩
       cachedGraph = enrichmentModule.bootstrapDkg({
-        catalog: catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["catalog"],
-        config: demoDkg.DEMO_DKG_CONFIG as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["config"],
+        catalog: catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]['catalog'],
+        config: demoDkg.DEMO_DKG_CONFIG as Parameters<
+          typeof enrichmentModule.bootstrapDkg
+        >[0]['config'],
       }) as unknown as GraphRegistryPort;
     }
 
-    config.logger?.info("convergence graph provider initialized");
+    config.logger?.info('convergence graph provider initialized');
   }
 
   // registry fetch를 한 번 시도 (비동기 → 프로바이더 생성 시)

@@ -10,12 +10,12 @@ import {
   type OntologyNamespaceRecord,
   type OntologyRegistryStore,
   type OntologyTaxonomyRecord,
-} from "./ontology-registry-store.js";
+} from './ontology-registry-store.js';
 import {
   recordsFromOntologyAllocationPlanWriteSet,
   type OntologyRegistryRecordSet,
   validateOntologyRegistryRows,
-} from "./ontology-registry-validation.js";
+} from './ontology-registry-validation.js';
 
 export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
   private readonly namespaces = new Map<string, OntologyNamespaceRecord>();
@@ -33,7 +33,7 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
 
     if (conflicts.length > 0) {
       throw new OntologyRegistryStoreError({
-        code: "partial-write-rejected",
+        code: 'partial-write-rejected',
         message: `Ontology allocation plan write rejected with ${conflicts.length} conflict(s)`,
         conflicts,
       });
@@ -59,7 +59,7 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
 
   async updateAllocationStatus(
     allocationId: string,
-    status: OntologyAddressAllocationRecord["status"],
+    status: OntologyAddressAllocationRecord['status'],
   ): Promise<OntologyAddressAllocationRecord | null> {
     const existing = this.allocations.get(allocationId);
     if (!existing) {
@@ -125,7 +125,7 @@ export class InMemoryOntologyRegistryStore implements OntologyRegistryStore {
 
   async listActiveAllocations(): Promise<OntologyAddressAllocationRecord[]> {
     return [...this.allocations.values()]
-      .filter((allocation) => allocation.status === "active")
+      .filter((allocation) => allocation.status === 'active')
       .map(cloneAllocation)
       .toSorted((left, right) => left.allocationId.localeCompare(right.allocationId));
   }

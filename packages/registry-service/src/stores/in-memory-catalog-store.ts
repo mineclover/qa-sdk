@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { CatalogRecord, CatalogStore } from "./catalog-store.js";
+import type { CatalogRecord, CatalogStore } from './catalog-store.js';
 
 export class InMemoryCatalogStore implements CatalogStore {
   private readonly _store = new Map<string, CatalogRecord>();

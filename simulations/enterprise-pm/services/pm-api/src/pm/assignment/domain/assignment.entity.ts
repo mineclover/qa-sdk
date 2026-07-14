@@ -1,9 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { toAssignmentId, toManagerId, toProjectId } from "./assignment.ids.js";
-import { AssignmentCancelledException } from "./assignment.exceptions.js";
-import type { AssignmentProps, AssignmentSnapshot } from "./assignment.types.js";
+import { toAssignmentId, toManagerId, toProjectId } from './assignment.ids.js';
+import { AssignmentCancelledException } from './assignment.exceptions.js';
+import type { AssignmentProps, AssignmentSnapshot } from './assignment.types.js';
 
 /**
  * Assignment Aggregate Root.
@@ -26,7 +26,7 @@ export class AssignmentEntity {
       id: toAssignmentId(input.id),
       projectId: toProjectId(input.projectId),
       managerId: toManagerId(input.managerId),
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     });
@@ -45,10 +45,10 @@ export class AssignmentEntity {
 
   /** draft → assigned. cancelled 에서 호출 시 ConflictError. */
   assign(now = new Date()): AssignmentEntity {
-    if (this.props.status === "cancelled") {
+    if (this.props.status === 'cancelled') {
       throw new AssignmentCancelledException();
     }
-    return new AssignmentEntity({ ...this.props, status: "assigned", updatedAt: now });
+    return new AssignmentEntity({ ...this.props, status: 'assigned', updatedAt: now });
   }
 
   toSnapshot(): AssignmentSnapshot {
@@ -66,7 +66,7 @@ export class AssignmentEntity {
     return this.props.id;
   }
 
-  get status(): "draft" | "assigned" | "cancelled" {
+  get status(): 'draft' | 'assigned' | 'cancelled' {
     return this.props.status;
   }
 }

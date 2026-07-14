@@ -34,12 +34,12 @@ export async function fetchGraphRetentionInsight(
   ingestUrl: string,
   args: GraphRetentionInsightArgs = {},
 ): Promise<GraphRetentionInsightResponse> {
-  const url = new URL("/v1/insights/graph-retention", ingestUrl);
+  const url = new URL('/v1/insights/graph-retention', ingestUrl);
   if (args.graphId) {
-    url.searchParams.set("graph_id", args.graphId);
+    url.searchParams.set('graph_id', args.graphId);
   }
   if (args.limit !== undefined) {
-    url.searchParams.set("limit", String(args.limit));
+    url.searchParams.set('limit', String(args.limit));
   }
 
   const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
@@ -51,19 +51,17 @@ export async function fetchGraphRetentionInsight(
   return (await res.json()) as GraphRetentionInsightResponse;
 }
 
-export function summarizeGraphRetentionInsight(
-  result: GraphRetentionInsightResponse,
-): string {
+export function summarizeGraphRetentionInsight(result: GraphRetentionInsightResponse): string {
   const summary = Object.entries(result.summary)
     .map(([eventKey, count]) => `${eventKey}=${count}`)
-    .join(", ");
+    .join(', ');
   const byTrigger = Object.entries(result.byTrigger)
     .map(([trigger, count]) => `${trigger}=${count}`)
-    .join(", ");
+    .join(', ');
 
   return [
     `graph-retention insight total=${result.total}`,
-    summary ? `events: ${summary}` : "events: none",
-    byTrigger ? `triggers: ${byTrigger}` : "triggers: none",
-  ].join(" | ");
+    summary ? `events: ${summary}` : 'events: none',
+    byTrigger ? `triggers: ${byTrigger}` : 'triggers: none',
+  ].join(' | ');
 }

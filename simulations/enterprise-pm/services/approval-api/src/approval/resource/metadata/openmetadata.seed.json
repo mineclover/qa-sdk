@@ -7,15 +7,33 @@
       "owner": "sim-approval-owner"
     },
     "glossary": [
-      { "term": "ResourceRequest", "description": "A request to allocate consultant/equipment/license to a project." },
+      {
+        "term": "ResourceRequest",
+        "description": "A request to allocate consultant/equipment/license to a project."
+      },
       { "term": "ResourceType", "description": "The kind of resource being requested." }
     ],
     "lineage": [
-      { "name": "resource-write-path", "from": "approval.resource_requests", "to": "approval.outbox_events", "via": "transactional-outbox" },
-      { "name": "resource-read-path", "from": "approval.outbox_events", "to": "reporting.resource_read_model", "via": "resource-read-model-sync" }
+      {
+        "name": "resource-write-path",
+        "from": "approval.resource_requests",
+        "to": "approval.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "resource-read-path",
+        "from": "approval.outbox_events",
+        "to": "reporting.resource_read_model",
+        "via": "resource-read-model-sync"
+      }
     ],
     "qualityTests": [
-      { "name": "resource_status_values", "type": "columnValuesToBeInSet", "entity": "approval.resource_requests.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] }
+      {
+        "name": "resource_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "approval.resource_requests.status",
+        "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"]
+      }
     ]
   },
   "cacheKeys": [

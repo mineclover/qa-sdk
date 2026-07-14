@@ -1,9 +1,9 @@
-@import "canvas-viewport/styles.css";
+@import 'canvas-viewport/styles.css';
 
 /* ── SVG Graph Base ───────────────────────────────────── */
 
 .spec-graph {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -40,7 +40,10 @@
 
 .graph-node rect {
   stroke-width: 2;
-  transition: fill 0.25s ease, stroke 0.25s ease, filter 0.25s ease;
+  transition:
+    fill 0.25s ease,
+    stroke 0.25s ease,
+    filter 0.25s ease;
 }
 
 .graph-node text {
@@ -96,13 +99,23 @@
 }
 
 @keyframes nodeActiveFill {
-  0%, 100% { fill: rgba(74, 158, 255, 0.12); }
-  50%       { fill: rgba(74, 158, 255, 0.42); }
+  0%,
+  100% {
+    fill: rgba(74, 158, 255, 0.12);
+  }
+  50% {
+    fill: rgba(74, 158, 255, 0.42);
+  }
 }
 
 @keyframes nodeActiveGlow {
-  0%, 100% { filter: drop-shadow(0 0 3px rgba(74, 158, 255, 0.25)); }
-  50%       { filter: drop-shadow(0 0 12px rgba(74, 158, 255, 0.75)); }
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgba(74, 158, 255, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(74, 158, 255, 0.75));
+  }
 }
 
 /* Matched: brief bright flash → settles at green fill */
@@ -112,8 +125,12 @@
 }
 
 @keyframes nodeMatchedFlash {
-  0%   { fill: rgba(74, 222, 128, 0.75); }
-  100% { fill: rgba(74, 222, 128, 0.2); }
+  0% {
+    fill: rgba(74, 222, 128, 0.75);
+  }
+  100% {
+    fill: rgba(74, 222, 128, 0.2);
+  }
 }
 
 .state-failed rect {
@@ -122,8 +139,12 @@
 }
 
 @keyframes nodeFailedFlash {
-  0%   { fill: rgba(248, 113, 113, 0.7); }
-  100% { fill: rgba(248, 113, 113, 0.2); }
+  0% {
+    fill: rgba(248, 113, 113, 0.7);
+  }
+  100% {
+    fill: rgba(248, 113, 113, 0.2);
+  }
 }
 
 .state-skipped rect {
@@ -140,7 +161,10 @@
 .graph-edge path {
   stroke: var(--text-muted, #6a6a7a);
   stroke-width: 1.5;
-  transition: stroke 0.25s ease, stroke-width 0.25s ease, opacity 0.25s ease;
+  transition:
+    stroke 0.25s ease,
+    stroke-width 0.25s ease,
+    opacity 0.25s ease;
 }
 
 .edge-sequence path {
@@ -171,7 +195,9 @@
 }
 
 @keyframes edgeFlow {
-  to { stroke-dashoffset: -15; }
+  to {
+    stroke-dashoffset: -15;
+  }
 }
 
 /* ── Arrow Marker ─────────────────────────────────────── */

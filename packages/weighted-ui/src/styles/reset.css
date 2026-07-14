@@ -1,6 +1,14 @@
 /* ── weighted-ui: Reset ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 13px; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html {
+  font-size: 13px;
+}
 body {
   font-family: var(--font);
   background: var(--surface-1);

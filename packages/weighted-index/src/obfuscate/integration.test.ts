@@ -1,33 +1,34 @@
 // @def.boundary weighted-index-system
 // @def.doc weighted-index-system
 
-import { describe, it, expect } from "vitest";
-import { WeightedIndex } from "../math/weighted-index.js";
-import { calcBitWidth } from "./bit-width.js";
-import { xorObfuscate } from "./xor.js";
-import { rotateLeft, rotateRight } from "./rotate.js";
-import { compose } from "./compose.js";
-import { toHex, fromHex } from "./hex.js";
-import { toUUID, fromUUID } from "./uuid.js";
+import { describe, it, expect } from 'vitest';
+import { WeightedIndex } from '../math/weighted-index.js';
+import { calcBitWidth } from './bit-width.js';
+import { xorObfuscate } from './xor.js';
+import { rotateLeft, rotateRight } from './rotate.js';
+import { compose } from './compose.js';
+import { toHex, fromHex } from './hex.js';
+import { toUUID, fromUUID } from './uuid.js';
 
-describe("obfuscate + WeightedIndex integration", () => {
+describe('obfuscate + WeightedIndex integration', () => {
   const wi = new WeightedIndex([8, 4, 5, 4]); // size = 640
-  const w = calcBitWidth(wi.size);            // 10
+  const w = calcBitWidth(wi.size); // 10
 
-  it("calcBitWidth(wi.size) fits all valid IDs", () => {
+  it('calcBitWidth(wi.size) fits all valid IDs', () => {
     expect(wi.size - 1).toBeLessThanOrEqual((1 << w) - 1);
   });
 
-  it("obfuscated value may exceed wi.size-1 — valid token, out-of-range ID", () => {
+  it('obfuscated value may exceed wi.size-1 — valid token, out-of-range ID', () => {
     // size=640, bitWidth=10 → tokens can be [0, 1023]; [640, 1023] are valid tokens
-    const key = 0x3FF;
-    const outOfRange = Array.from({ length: wi.size }, (_, id) => xorObfuscate(id, w, key))
-      .filter(obf => obf >= wi.size);
+    const key = 0x3ff;
+    const outOfRange = Array.from({ length: wi.size }, (_, id) => xorObfuscate(id, w, key)).filter(
+      (obf) => obf >= wi.size,
+    );
     expect(outOfRange.length).toBeGreaterThan(0);
   });
 
-  it("no two distinct IDs produce the same obfuscated hex", () => {
-    const key = 0x2B7;
+  it('no two distinct IDs produce the same obfuscated hex', () => {
+    const key = 0x2b7;
     const hexSet = new Set<string>();
     for (let id = 0; id < wi.size; id++) {
       hexSet.add(toHex(xorObfuscate(id, w, key), w));
@@ -35,15 +36,15 @@ describe("obfuscate + WeightedIndex integration", () => {
     expect(hexSet.size).toBe(wi.size);
   });
 
-  it("UUID round-trip for all valid IDs", () => {
+  it('UUID round-trip for all valid IDs', () => {
     for (let id = 0; id < wi.size; id++) {
-      const obf = rotateLeft(xorObfuscate(id, w, 0x1F3), w, 3);
+      const obf = rotateLeft(xorObfuscate(id, w, 0x1f3), w, 3);
       expect(fromUUID(toUUID(obf, w), w)).toBe(obf);
     }
   });
 
-  it("full pipeline: coords → encode → obfuscate → UUID → deobfuscate → decode → coords", () => {
-    const key = 0x2B7;
+  it('full pipeline: coords → encode → obfuscate → UUID → deobfuscate → decode → coords', () => {
+    const key = 0x2b7;
     const amount = 3;
     const enc = compose(
       (id, bw) => xorObfuscate(id, bw, key),
@@ -55,7 +56,10 @@ describe("obfuscate + WeightedIndex integration", () => {
     );
 
     const coords: [number, number, number, number][] = [
-      [1, 1, 1, 1], [8, 4, 5, 4], [3, 2, 4, 1], [5, 3, 2, 3],
+      [1, 1, 1, 1],
+      [8, 4, 5, 4],
+      [3, 2, 4, 1],
+      [5, 3, 2, 3],
     ];
     for (const c of coords) {
       const id = wi.encode(c);

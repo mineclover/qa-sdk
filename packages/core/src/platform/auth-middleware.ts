@@ -13,7 +13,7 @@
  *   app.use("*", createAuthMiddleware({ mode: "bypass" })); // 개발용
  */
 
-export type AuthMode = "cf-access" | "api-key" | "bypass";
+export type AuthMode = 'cf-access' | 'api-key' | 'bypass';
 
 export interface AuthConfig {
   mode: AuthMode;
@@ -47,7 +47,7 @@ interface HonoContextLike {
  * cf-access 모드: Cf-Access-Jwt-Assertion 헤더 검증 (기본 형식 확인만, 전체 JWT 검증은 CF가 수행)
  */
 export function createAuthMiddleware(config: AuthConfig) {
-  const excludePaths = new Set(config.excludePaths ?? ["/health", "/health/live"]);
+  const excludePaths = new Set(config.excludePaths ?? ['/health', '/health/live']);
 
   return async (c: HonoContextLike, next: () => Promise<void>) => {
     // 제외 경로
@@ -55,45 +55,48 @@ export function createAuthMiddleware(config: AuthConfig) {
     if (excludePaths.has(path)) return next();
 
     // bypass 모드
-    if (config.mode === "bypass") {
-      c.set("auth", { identity: "dev", method: "bypass" } satisfies AuthContext);
+    if (config.mode === 'bypass') {
+      c.set('auth', { identity: 'dev', method: 'bypass' } satisfies AuthContext);
       return next();
     }
 
     // api-key 모드
-    if (config.mode === "api-key") {
-      const authHeader = c.req.header("Authorization");
-      if (!authHeader?.startsWith("Bearer ")) {
-        return c.json({ error: "Missing Authorization header" }, 401);
+    if (config.mode === 'api-key') {
+      const authHeader = c.req.header('Authorization');
+      if (!authHeader?.startsWith('Bearer ')) {
+        return c.json({ error: 'Missing Authorization header' }, 401);
       }
       const key = authHeader.slice(7);
       if (!config.keys?.includes(key)) {
-        return c.json({ error: "Invalid API key" }, 403);
+        return c.json({ error: 'Invalid API key' }, 403);
       }
-      c.set("auth", { identity: `key:${key.slice(0, 8)}...`, method: "api-key" } satisfies AuthContext);
+      c.set('auth', {
+        identity: `key:${key.slice(0, 8)}...`,
+        method: 'api-key',
+      } satisfies AuthContext);
       return next();
     }
 
     // cf-access 모드
-    if (config.mode === "cf-access") {
-      const jwt = c.req.header("Cf-Access-Jwt-Assertion");
+    if (config.mode === 'cf-access') {
+      const jwt = c.req.header('Cf-Access-Jwt-Assertion');
       if (!jwt) {
-        return c.json({ error: "Missing Cf-Access-Jwt-Assertion header" }, 401);
+        return c.json({ error: 'Missing Cf-Access-Jwt-Assertion header' }, 401);
       }
       // CF Access가 이미 JWT를 검증. 여기서는 존재 확인 + 기본 파싱만.
       try {
-        const parts = jwt.split(".");
-        if (parts.length !== 3) throw new Error("Invalid JWT format");
+        const parts = jwt.split('.');
+        if (parts.length !== 3) throw new Error('Invalid JWT format');
         const payload = JSON.parse(atob(parts[1]));
-        const identity = payload.email ?? payload.sub ?? "cf-access-user";
-        c.set("auth", { identity, method: "cf-access" } satisfies AuthContext);
+        const identity = payload.email ?? payload.sub ?? 'cf-access-user';
+        c.set('auth', { identity, method: 'cf-access' } satisfies AuthContext);
         return next();
       } catch {
-        return c.json({ error: "Invalid CF Access token" }, 401);
+        return c.json({ error: 'Invalid CF Access token' }, 401);
       }
     }
 
-    return c.json({ error: "Unknown auth mode" }, 500);
+    return c.json({ error: 'Unknown auth mode' }, 500);
   };
 }
 
@@ -105,11 +108,13 @@ export function createAuthMiddleware(config: AuthConfig) {
  * AUTH_CF_TEAM_DOMAIN=myteam.cloudflareaccess.com (cf-access 모드)
  */
 export function authConfigFromEnv(env: Record<string, string | undefined>): AuthConfig {
-  const mode = (env.AUTH_MODE ?? "bypass") as AuthMode;
+  const mode = (env.AUTH_MODE ?? 'bypass') as AuthMode;
   return {
     mode,
     teamDomain: env.AUTH_CF_TEAM_DOMAIN,
-    keys: env.AUTH_API_KEYS?.split(",").map(k => k.trim()).filter(Boolean),
-    excludePaths: env.AUTH_EXCLUDE_PATHS?.split(",").map(p => p.trim()),
+    keys: env.AUTH_API_KEYS?.split(',')
+      .map((k) => k.trim())
+      .filter(Boolean),
+    excludePaths: env.AUTH_EXCLUDE_PATHS?.split(',').map((p) => p.trim()),
   };
 }

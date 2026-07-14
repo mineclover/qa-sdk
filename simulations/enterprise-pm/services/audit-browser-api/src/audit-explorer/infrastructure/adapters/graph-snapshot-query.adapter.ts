@@ -4,8 +4,8 @@
 import type {
   AuthorizationGraphSnapshotRecord,
   AuthorizationGraphStore,
-} from "authorization-ontology";
-import { GraphSnapshotQueryPort } from "../../application/ports/graph-snapshot-query.port.js";
+} from 'authorization-ontology';
+import { GraphSnapshotQueryPort } from '../../application/ports/graph-snapshot-query.port.js';
 
 /**
  * GraphSnapshotQueryPort 의 어댑터.

@@ -17,9 +17,9 @@
  *                                         └─────────────┘
  */
 
-import { WeightedIndex } from "weighted-index";
-import type { FlowInstance, GateSelection } from "./types.js";
-import type { AutoDecisionPrinciple } from "./mental-model.js";
+import { WeightedIndex } from 'weighted-index';
+import type { FlowInstance, GateSelection } from './types.js';
+import type { AutoDecisionPrinciple } from './mental-model.js';
 import {
   COGNITIVE_PHASE,
   CONFIDENCE_BAND,
@@ -33,7 +33,7 @@ import {
   REVERSIBILITY,
   SCOPE_MODE,
   discretizeConfidence,
-} from "./vocabulary.js";
+} from './vocabulary.js';
 
 // ─── 좌표 인덱스 (lazy init) ─────────────────────────────
 
@@ -45,36 +45,41 @@ let _forcingIdx: WeightedIndex | undefined;
 
 function decisionEventIndex(): WeightedIndex {
   return (_decisionEventIdx ??= new WeightedIndex(
-    [FLOW_TYPE.capacity, COGNITIVE_PHASE.capacity, EVIDENCE_KIND.capacity, CONFIDENCE_BAND.capacity],
-    ["flow_type", "cognitive_phase", "evidence_kind", "confidence_band"],
+    [
+      FLOW_TYPE.capacity,
+      COGNITIVE_PHASE.capacity,
+      EVIDENCE_KIND.capacity,
+      CONFIDENCE_BAND.capacity,
+    ],
+    ['flow_type', 'cognitive_phase', 'evidence_kind', 'confidence_band'],
   ));
 }
 
 function decisionPathIndex(): WeightedIndex {
   return (_decisionPathIdx ??= new WeightedIndex(
     [FLOW_TYPE.capacity, DECISION_OUTCOME.capacity, SCOPE_MODE.capacity],
-    ["flow_type", "decision_outcome", "scope_mode"],
+    ['flow_type', 'decision_outcome', 'scope_mode'],
   ));
 }
 
 function escalationIndex(): WeightedIndex {
   return (_escalationIdx ??= new WeightedIndex(
     [FLOW_TYPE.capacity, ESCALATION_TYPE.capacity, COGNITIVE_PHASE.capacity],
-    ["flow_type", "escalation_type", "cognitive_phase"],
+    ['flow_type', 'escalation_type', 'cognitive_phase'],
   ));
 }
 
 function modelApplyIndex(): WeightedIndex {
   return (_modelApplyIdx ??= new WeightedIndex(
     [MENTAL_MODEL_AXIS.capacity, REVERSIBILITY.capacity, MAGNITUDE.capacity],
-    ["mental_model", "reversibility", "magnitude"],
+    ['mental_model', 'reversibility', 'magnitude'],
   ));
 }
 
 function forcingIndex(): WeightedIndex {
   return (_forcingIdx ??= new WeightedIndex(
     [FORCING_QUESTION_AXIS.capacity, EVIDENCE_KIND.capacity, CONFIDENCE_BAND.capacity],
-    ["forcing_question", "evidence_kind", "confidence_band"],
+    ['forcing_question', 'evidence_kind', 'confidence_band'],
   ));
 }
 
@@ -114,7 +119,7 @@ export function encodeDecisionEvent(
   phase: string,
   selection: GateSelection,
 ): ObservedEvent {
-  const primaryEvidence = selection.evidence[0]?.kind ?? "intuition";
+  const primaryEvidence = selection.evidence[0]?.kind ?? 'intuition';
   const band = discretizeConfidence(selection.confidence);
 
   const raw = {
@@ -131,7 +136,12 @@ export function encodeDecisionEvent(
     indexOf(CONFIDENCE_BAND.entries, band),
   ]);
 
-  return { prefix: "decision_event", address, timestamp: selection.timestamp || new Date().toISOString(), raw };
+  return {
+    prefix: 'decision_event',
+    address,
+    timestamp: selection.timestamp || new Date().toISOString(),
+    raw,
+  };
 }
 
 /**
@@ -143,13 +153,14 @@ export function encodeDecisionEvent(
 export function encodeDecisionPath(
   flowType: string,
   instance: FlowInstance,
-  scopeMode: string = "hold",
+  scopeMode: string = 'hold',
 ): ObservedEvent {
-  const outcome = instance.status === "completed"
-    ? "completed"
-    : instance.status === "abandoned"
-    ? "abandoned"
-    : "blocked";
+  const outcome =
+    instance.status === 'completed'
+      ? 'completed'
+      : instance.status === 'abandoned'
+        ? 'abandoned'
+        : 'blocked';
 
   const raw = {
     flow_type: flowType,
@@ -163,7 +174,12 @@ export function encodeDecisionPath(
     indexOf(SCOPE_MODE.entries, scopeMode),
   ]);
 
-  return { prefix: "decision_path", address, timestamp: instance.completedAt || new Date().toISOString(), raw };
+  return {
+    prefix: 'decision_path',
+    address,
+    timestamp: instance.completedAt || new Date().toISOString(),
+    raw,
+  };
 }
 
 /**
@@ -189,7 +205,7 @@ export function encodeEscalation(
     indexOf(COGNITIVE_PHASE.entries, phase),
   ]);
 
-  return { prefix: "escalation_event", address, timestamp: new Date().toISOString(), raw };
+  return { prefix: 'escalation_event', address, timestamp: new Date().toISOString(), raw };
 }
 
 /**
@@ -215,7 +231,7 @@ export function encodeModelApplication(
     indexOf(MAGNITUDE.entries, magnitude),
   ]);
 
-  return { prefix: "model_apply", address, timestamp: new Date().toISOString(), raw };
+  return { prefix: 'model_apply', address, timestamp: new Date().toISOString(), raw };
 }
 
 /**
@@ -243,7 +259,7 @@ export function encodeForcingResponse(
     indexOf(CONFIDENCE_BAND.entries, band),
   ]);
 
-  return { prefix: "forcing_response", address, timestamp: new Date().toISOString(), raw };
+  return { prefix: 'forcing_response', address, timestamp: new Date().toISOString(), raw };
 }
 
 // ─── 디코딩 ──────────────────────────────────────────────
@@ -251,7 +267,7 @@ export function encodeForcingResponse(
 /** prefix별 디코딩 */
 export function decodeObservedEvent(prefix: string, address: number): Record<string, string> {
   switch (prefix) {
-    case "decision_event": {
+    case 'decision_event': {
       const coords = decisionEventIndex().decode(address);
       return {
         flow_type: FLOW_TYPE.entries[coords[0] - 1],
@@ -260,7 +276,7 @@ export function decodeObservedEvent(prefix: string, address: number): Record<str
         confidence_band: CONFIDENCE_BAND.entries[coords[3] - 1],
       };
     }
-    case "decision_path": {
+    case 'decision_path': {
       const coords = decisionPathIndex().decode(address);
       return {
         flow_type: FLOW_TYPE.entries[coords[0] - 1],
@@ -268,7 +284,7 @@ export function decodeObservedEvent(prefix: string, address: number): Record<str
         scope_mode: SCOPE_MODE.entries[coords[2] - 1],
       };
     }
-    case "escalation_event": {
+    case 'escalation_event': {
       const coords = escalationIndex().decode(address);
       return {
         flow_type: FLOW_TYPE.entries[coords[0] - 1],
@@ -276,7 +292,7 @@ export function decodeObservedEvent(prefix: string, address: number): Record<str
         cognitive_phase: COGNITIVE_PHASE.entries[coords[2] - 1],
       };
     }
-    case "model_apply": {
+    case 'model_apply': {
       const coords = modelApplyIndex().decode(address);
       return {
         mental_model: MENTAL_MODEL_AXIS.entries[coords[0] - 1],
@@ -284,7 +300,7 @@ export function decodeObservedEvent(prefix: string, address: number): Record<str
         magnitude: MAGNITUDE.entries[coords[2] - 1],
       };
     }
-    case "forcing_response": {
+    case 'forcing_response': {
       const coords = forcingIndex().decode(address);
       return {
         forcing_question: FORCING_QUESTION_AXIS.entries[coords[0] - 1],
@@ -316,8 +332,9 @@ export function parseAndDecodeAddress(serialized: string): {
   address: number;
   decoded: Record<string, string>;
 } {
-  const parts = serialized.split(":");
-  if (parts.length !== 3) throw new Error(`잘못된 형식: "${serialized}" (expected "prefix:version:address")`);
+  const parts = serialized.split(':');
+  if (parts.length !== 3)
+    throw new Error(`잘못된 형식: "${serialized}" (expected "prefix:version:address")`);
 
   const [prefix, version, addrStr] = parts;
   const address = parseInt(addrStr, 10);

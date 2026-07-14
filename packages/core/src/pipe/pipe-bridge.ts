@@ -5,17 +5,17 @@
  * 브릿지 — 시뮬레이션↔계보, Constraint↔이벤트 연결
  */
 
-import type { SimulationResult } from "./pipe-simulate.js";
-import type { FieldLineage, FieldSet, CompatibilityResult } from "../types/data-schema.js";
-import { resolveStepSchemaId } from "./pipe-schema-id.js";
-import type { ConstraintResult } from "../types/constraint.js";
-import type { PipeSpec, PipeStep, PipeFlow } from "../types/pipe-spec.js";
-import type { LineageChainValidation } from "../data-object/types.js";
-import { BindingRegistry } from "../data-object/registry.js";
-import { validateLineageChain } from "../data-object/validate.js";
-import { checkCompatibility, LineageCollector } from "./data-contract.js";
-import { resolveBindings } from "./pipe-definition-bridge.js";
-import type { PipeBindingInfo } from "./pipe-definition-bridge.js";
+import type { SimulationResult } from './pipe-simulate.js';
+import type { FieldLineage, FieldSet, CompatibilityResult } from '../types/data-schema.js';
+import { resolveStepSchemaId } from './pipe-schema-id.js';
+import type { ConstraintResult } from '../types/constraint.js';
+import type { PipeSpec, PipeStep, PipeFlow } from '../types/pipe-spec.js';
+import type { LineageChainValidation } from '../data-object/types.js';
+import { BindingRegistry } from '../data-object/registry.js';
+import { validateLineageChain } from '../data-object/validate.js';
+import { checkCompatibility, LineageCollector } from './data-contract.js';
+import { resolveBindings } from './pipe-definition-bridge.js';
+import type { PipeBindingInfo } from './pipe-definition-bridge.js';
 
 // ── 시뮬레이션 → 자동 계보 추출 ─────────────────────
 
@@ -28,21 +28,22 @@ export function extractLineageFromSimulation(
   pipes: PipeSpec[],
 ): LineageCollector {
   const collector = new LineageCollector();
-  const pipeMap = new Map(pipes.map(p => [p.pipeId, p]));
+  const pipeMap = new Map(pipes.map((p) => [p.pipeId, p]));
 
   // step 간 produces → consumes 체인 추출
   // 주의: cross-pipe 체인이 생성됨 (시뮬레이션은 실행 순서 기반, 정적은 단일 pipe)
-  let previousProduces: { schemaId: string; fields: Record<string, { type: string }> } | null = null;
+  let previousProduces: { schemaId: string; fields: Record<string, { type: string }> } | null =
+    null;
 
   for (const step of result.steps) {
-    if (step.kind !== "step") continue;
+    if (step.kind !== 'step') continue;
 
     const pipe = pipeMap.get(step.pipeId);
     if (!pipe) continue;
 
     // PipeFlow 트리에서 해당 step의 dataContract 찾기
     const flowStep = findStepByPath(pipe.flow, step.flowPath);
-    if (!flowStep || flowStep.kind !== "step" || !flowStep.dataContract) {
+    if (!flowStep || flowStep.kind !== 'step' || !flowStep.dataContract) {
       // dataContract 없는 step → chain 끊기 (인접하지 않은 step 간 false chain 방지)
       previousProduces = null;
       continue;
@@ -59,7 +60,7 @@ export function extractLineageFromSimulation(
           // lineageHints 명시: sources가 이 출력에 기여
           collector.record({
             target: { schemaId, column: outputField },
-            sources: hint.sources.map(s => ({ schemaId, column: s })),
+            sources: hint.sources.map((s) => ({ schemaId, column: s })),
             transform: hint.transform,
             pipeId: step.pipeId,
             stepPath: step.flowPath,
@@ -76,7 +77,7 @@ export function extractLineageFromSimulation(
           collector.record({
             target: { schemaId, column: field },
             sources: [{ schemaId: previousProduces.schemaId, column: field }],
-            transform: "direct",
+            transform: 'direct',
             pipeId: step.pipeId,
             stepPath: step.flowPath,
           });
@@ -112,18 +113,18 @@ export function validateStepContracts(
   pipes: PipeSpec[],
 ): StepCompatIssue[] {
   const issues: StepCompatIssue[] = [];
-  const pipeMap = new Map(pipes.map(p => [p.pipeId, p]));
+  const pipeMap = new Map(pipes.map((p) => [p.pipeId, p]));
 
   let previousProduces: { stepPath: string; fields: FieldSet } | null = null;
 
   for (const step of result.steps) {
-    if (step.kind !== "step") continue;
+    if (step.kind !== 'step') continue;
 
     const pipe = pipeMap.get(step.pipeId);
     if (!pipe) continue;
 
     const flowStep = findStepByPath(pipe.flow, step.flowPath);
-    if (!flowStep || flowStep.kind !== "step" || !flowStep.dataContract) continue;
+    if (!flowStep || flowStep.kind !== 'step' || !flowStep.dataContract) continue;
 
     const dc = flowStep.dataContract;
 
@@ -149,7 +150,10 @@ export function validateStepContracts(
         stepPath: step.flowPath,
         fields: {
           fields: Object.fromEntries(
-            Object.entries(dc.produces).map(([k, v]) => [k, { type: v.type, required: v.required }]),
+            Object.entries(dc.produces).map(([k, v]) => [
+              k,
+              { type: v.type, required: v.required },
+            ]),
           ),
         },
       };
@@ -187,7 +191,7 @@ export function validateSimulationLineage(
 // ── Constraint → 이벤트 변환 ─────────────────────────
 
 export interface ConstraintEvent {
-  event_key: "constraint_verified";
+  event_key: 'constraint_verified';
   payload: {
     constraintId: string;
     specId: string;
@@ -205,16 +209,16 @@ export interface ConstraintEvent {
 /** ConstraintResult → 이벤트 형식으로 변환 (기존 EventRecord 파이프라인에 주입 가능) */
 export function constraintResultToEvent(result: ConstraintResult): ConstraintEvent {
   return {
-    event_key: "constraint_verified",
+    event_key: 'constraint_verified',
     payload: {
       constraintId: result.constraintId,
       specId: result.specId,
       verdict: result.verdict,
       duration: result.duration,
-      breaking: result.verdict === "fail",
-      subjectRef: result.failureTrace?.subject.ref ?? "",
-      predicateOp: result.failureTrace?.predicate.op ?? "",
-      contextWhen: result.failureTrace?.context.when ?? "",
+      breaking: result.verdict === 'fail',
+      subjectRef: result.failureTrace?.subject.ref ?? '',
+      predicateOp: result.failureTrace?.predicate.op ?? '',
+      contextWhen: result.failureTrace?.context.when ?? '',
       failureHint: result.failureTrace?.hint,
     },
     timestamp: result.executedAt,
@@ -225,7 +229,7 @@ export function constraintResultToEvent(result: ConstraintResult): ConstraintEve
 
 function findStepByPath(flow: PipeFlow, path: string): PipeFlow | null {
   // "flow.steps[0]" → flow의 steps[0]
-  const parts = path.replace(/^flow\.?/, "").split(".");
+  const parts = path.replace(/^flow\.?/, '').split('.');
   let current: unknown = flow;
 
   for (const part of parts) {
@@ -249,10 +253,10 @@ function findStepByPath(flow: PipeFlow, path: string): PipeFlow | null {
 
 function buildPipeBindingGraph(pipes: PipeSpec[]) {
   return {
-    graphId: "__simulation_lineage__",
-    version: "v1",
+    graphId: '__simulation_lineage__',
+    version: 'v1',
     pipes,
     connections: [],
-    entryPipeId: pipes[0]?.pipeId ?? "",
+    entryPipeId: pipes[0]?.pipeId ?? '',
   };
 }

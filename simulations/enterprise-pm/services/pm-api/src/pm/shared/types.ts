@@ -1,9 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc sim-erp-pm-design
 
-export type ProjectStatus = "draft" | "active" | "archived";
-export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
-export type MemberRole = "lead" | "contributor" | "viewer";
+export type ProjectStatus = 'draft' | 'active' | 'archived';
+export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked';
+export type MemberRole = 'lead' | 'contributor' | 'viewer';
 
 export interface Project {
   id: string;

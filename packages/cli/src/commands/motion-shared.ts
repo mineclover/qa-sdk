@@ -1,7 +1,7 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import type { MotionWorkspaceSnapshot } from "motion-workspace";
+import type { MotionWorkspaceSnapshot } from 'motion-workspace';
 
 export interface MotionCompositionSummary {
   readonly id: string;
@@ -22,12 +22,12 @@ export function describeError(error: unknown): string {
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function formatWorkspaceSource(snapshot: MotionWorkspaceSnapshot): string {
   if (!snapshot.source) {
-    return "(none)";
+    return '(none)';
   }
 
   const parts = [
@@ -36,5 +36,5 @@ export function formatWorkspaceSource(snapshot: MotionWorkspaceSnapshot): string
     snapshot.source.path ? `path=${snapshot.source.path}` : null,
   ].filter((value): value is string => value !== null);
 
-  return parts.length > 0 ? parts.join(", ") : "(none)";
+  return parts.length > 0 ? parts.join(', ') : '(none)';
 }

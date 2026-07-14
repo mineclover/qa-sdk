@@ -1,12 +1,12 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { AppError } from "@qa-sdk/core";
+import { AppError } from '@qa-sdk/core';
 import type {
   ServiceComponentLifecycleState,
   ServiceComponentVersionRecord,
   ServiceComponentVersionStore,
-} from "../../stores/service-component-version-store.js";
+} from '../../stores/service-component-version-store.js';
 import type {
   ComponentVersionKind,
   DeploymentBinding,
@@ -14,7 +14,7 @@ import type {
   ServiceExposureSpec,
   ServiceOwnershipSpec,
   ServiceUnitSpec,
-} from "./service.types.js";
+} from './service.types.js';
 
 export type ServiceComponentValue =
   | ServiceUnitSpec
@@ -37,20 +37,19 @@ export interface ServiceComponentRecord<TValue = unknown> {
 }
 
 export function isComponentVersionKind(value: string): value is ComponentVersionKind {
-  return value === "service-unit"
-    || value === "ownership"
-    || value === "exposure"
-    || value === "runtime-address"
-    || value === "deployment-binding";
+  return (
+    value === 'service-unit' ||
+    value === 'ownership' ||
+    value === 'exposure' ||
+    value === 'runtime-address' ||
+    value === 'deployment-binding'
+  );
 }
 
 export class ServiceComponentStore {
   constructor(private readonly store: ServiceComponentVersionStore) {}
 
-  async upsert(
-    catalogId: string,
-    record: ServiceComponentRecord,
-  ): Promise<void> {
+  async upsert(catalogId: string, record: ServiceComponentRecord): Promise<void> {
     this.validateRecord(record);
     await this.store.upsert(toStoreRecord(catalogId, record));
   }
@@ -74,7 +73,7 @@ export class ServiceComponentStore {
   ): Promise<ServiceComponentRecord> {
     const record = await this.get(catalogId, kind, serviceId, version);
     if (!record) {
-      throw new AppError("NOT_FOUND", `Component not found: ${kind}/${serviceId}/${version}`, 404);
+      throw new AppError('NOT_FOUND', `Component not found: ${kind}/${serviceId}/${version}`, 404);
     }
     return record;
   }
@@ -92,20 +91,20 @@ export class ServiceComponentStore {
 
   private validateRecord(record: ServiceComponentRecord): void {
     if (!record.serviceId) {
-      throw new AppError("INVALID_INPUT", "serviceId 필수", 400);
+      throw new AppError('INVALID_INPUT', 'serviceId 필수', 400);
     }
     if (!record.version) {
-      throw new AppError("INVALID_INPUT", "version 필수", 400);
+      throw new AppError('INVALID_INPUT', 'version 필수', 400);
     }
-    if (record.value == null || typeof record.value !== "object") {
-      throw new AppError("INVALID_INPUT", "value 객체 필수", 400);
+    if (record.value == null || typeof record.value !== 'object') {
+      throw new AppError('INVALID_INPUT', 'value 객체 필수', 400);
     }
 
     const value = record.value as unknown as Record<string, unknown>;
-    const embeddedServiceId = value["serviceId"];
-    if (typeof embeddedServiceId === "string" && embeddedServiceId !== record.serviceId) {
+    const embeddedServiceId = value['serviceId'];
+    if (typeof embeddedServiceId === 'string' && embeddedServiceId !== record.serviceId) {
       throw new AppError(
-        "INVALID_INPUT",
+        'INVALID_INPUT',
         `value.serviceId "${embeddedServiceId}" != component serviceId "${record.serviceId}"`,
         400,
       );
@@ -122,7 +121,7 @@ function toStoreRecord(
     kind: record.kind,
     serviceId: record.serviceId,
     version: record.version,
-    state: record.state ?? "draft",
+    state: record.state ?? 'draft',
     valueJson: JSON.stringify(record.value),
     createdAt: record.createdAt ?? new Date().toISOString(),
     updatedAt: record.updatedAt ?? new Date().toISOString(),
@@ -132,11 +131,9 @@ function toStoreRecord(
   };
 }
 
-function parseStoreRecord(
-  record: ServiceComponentVersionRecord,
-): ServiceComponentRecord | null {
+function parseStoreRecord(record: ServiceComponentVersionRecord): ServiceComponentRecord | null {
   const value = JSON.parse(record.valueJson) as unknown;
-  if (!isComponentVersionKind(record.kind) || value == null || typeof value !== "object") {
+  if (!isComponentVersionKind(record.kind) || value == null || typeof value !== 'object') {
     return null;
   }
   return {

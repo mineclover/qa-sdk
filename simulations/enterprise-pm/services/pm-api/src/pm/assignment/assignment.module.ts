@@ -1,35 +1,32 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  PM_DB_INSTANCE,
-  type PmDbInstanceHandle,
-} from "../pm-db.module.js";
+import { PM_DB_INSTANCE, type PmDbInstanceHandle } from '../pm-db.module.js';
 
-import { AssignmentRepositoryPort } from "./application/ports/assignment-repository.port.js";
-import { AssignmentReadModelQuery } from "./application/queries/assignment-read-model.query.js";
-import { AssignmentUseCase } from "./application/use-cases/assignment.use-case.js";
+import { AssignmentRepositoryPort } from './application/ports/assignment-repository.port.js';
+import { AssignmentReadModelQuery } from './application/queries/assignment-read-model.query.js';
+import { AssignmentUseCase } from './application/use-cases/assignment.use-case.js';
 
-import { createAssignmentRepository } from "./infrastructure/persistence/assignment.repository.js";
-import { createAssignmentTransactionPort } from "./infrastructure/transaction/assignment.transaction.js";
-import { createAssignmentOutboxPort } from "./infrastructure/outbox/assignment.outbox.js";
-import { createAssignmentLogger } from "./infrastructure/logging/assignment.logger.js";
-import { RepositoryAssignmentReadModel } from "./infrastructure/read-model/assignment.read-model.js";
+import { createAssignmentRepository } from './infrastructure/persistence/assignment.repository.js';
+import { createAssignmentTransactionPort } from './infrastructure/transaction/assignment.transaction.js';
+import { createAssignmentOutboxPort } from './infrastructure/outbox/assignment.outbox.js';
+import { createAssignmentLogger } from './infrastructure/logging/assignment.logger.js';
+import { RepositoryAssignmentReadModel } from './infrastructure/read-model/assignment.read-model.js';
 
-import { AssignmentController } from "./presentation/http/assignment.controller.js";
-import { AssignmentDetailBff } from "./presentation/bff/assignment-detail.bff.js";
-import { AssignmentDetailController } from "./presentation/bff/assignment-detail.controller.js";
+import { AssignmentController } from './presentation/http/assignment.controller.js';
+import { AssignmentDetailBff } from './presentation/bff/assignment-detail.bff.js';
+import { AssignmentDetailController } from './presentation/bff/assignment-detail.controller.js';
 
-const ASSIGNMENT_TRANSACTION_PORT = Symbol.for("sim-pm-api/assignment/TransactionPort");
-const ASSIGNMENT_OUTBOX_PORT = Symbol.for("sim-pm-api/assignment/OutboxPort");
+const ASSIGNMENT_TRANSACTION_PORT = Symbol.for('sim-pm-api/assignment/TransactionPort');
+const ASSIGNMENT_OUTBOX_PORT = Symbol.for('sim-pm-api/assignment/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: AssignmentRepositoryPort,

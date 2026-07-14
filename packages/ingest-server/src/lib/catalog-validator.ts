@@ -9,7 +9,7 @@
  *
  * 전략: fail-open (검증 실패 → warning + 통과. 이벤트 유실보다 경고가 낫다)
  */
-import type { Logger } from "pino";
+import type { Logger } from 'pino';
 
 /** eventKey 검증 결과 */
 export interface EventKeyValidation {
@@ -47,15 +47,13 @@ export interface CatalogValidatorOptions {
  * event-catalog의 isCoreEvent는 호출 측에서 동적 import 후 주입한다.
  * prefix 검증은 knownPrefixes Set 기반.
  */
-export function createCatalogValidator(
-  options: CatalogValidatorOptions,
-): CatalogValidator {
+export function createCatalogValidator(options: CatalogValidatorOptions): CatalogValidator {
   const { knownPrefixes, isCoreEvent, logger } = options;
 
   if (isCoreEvent) {
-    logger?.info("event-catalog eventKey 검증 활성화");
+    logger?.info('event-catalog eventKey 검증 활성화');
   } else {
-    logger?.info("event-catalog 미제공 — eventKey 검증 비활성화 (모든 이벤트 허용)");
+    logger?.info('event-catalog 미제공 — eventKey 검증 비활성화 (모든 이벤트 허용)');
   }
 
   return {
@@ -72,9 +70,7 @@ export function createCatalogValidator(
       };
     },
 
-    validatePrefixes(
-      addressContext: Record<string, string> | null | undefined,
-    ): PrefixValidation {
+    validatePrefixes(addressContext: Record<string, string> | null | undefined): PrefixValidation {
       if (!addressContext || knownPrefixes.size === 0) {
         return { unknownPrefixes: [] };
       }

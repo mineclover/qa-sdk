@@ -5,11 +5,7 @@
  * @layer 측정 (Measurement)
  */
 
-import type {
-  PatternAnomaly,
-  PatternClassification,
-  PatternStats,
-} from "@qa-sdk/core";
+import type { PatternAnomaly, PatternClassification, PatternStats } from '@qa-sdk/core';
 
 /** 이상 감지 입력: 분류 결과 배열 + 이전 통계 (비교용) */
 export interface AnomalyDetectionInput {
@@ -33,7 +29,7 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
   const spikeMultiplier = input.volumeSpikeMultiplier ?? 3.0;
 
   // 1. unclassified 감지
-  const unclassified = input.current.filter(c => c.pattern === "unclassified");
+  const unclassified = input.current.filter((c) => c.pattern === 'unclassified');
   if (unclassified.length > 0) {
     // 고유 시퀀스별로 그룹
     const seqGroups = new Map<string, number>();
@@ -43,11 +39,11 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
     }
     for (const [_key, count] of seqGroups) {
       anomalies.push({
-        kind: "unclassified",
+        kind: 'unclassified',
         sessionId: `aggregate:${count}`,
         eventSequence: [],
         description: `미분류 패턴 ${count}건 감지. 새 규칙 추가를 검토하세요.`,
-        severity: count >= 10 ? "critical" : count >= 3 ? "warning" : "info",
+        severity: count >= 10 ? 'critical' : count >= 3 ? 'warning' : 'info',
         detectedAt: now,
       });
     }
@@ -68,11 +64,11 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
 
       if (diff >= ratioThreshold) {
         anomalies.push({
-          kind: "ratio_shift",
-          sessionId: "aggregate",
+          kind: 'ratio_shift',
+          sessionId: 'aggregate',
           eventSequence: [],
           description: `${prev.pattern} 비율 급변: ${(prev.percentage * 100).toFixed(1)}% → ${(currentRatio * 100).toFixed(1)}% (변동 ${(diff * 100).toFixed(1)}%)`,
-          severity: diff >= 0.5 ? "critical" : "warning",
+          severity: diff >= 0.5 ? 'critical' : 'warning',
           detectedAt: now,
         });
       }
@@ -81,16 +77,16 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
     // 3. 볼륨 급증 감지
     const _prevTotal = input.previous.reduce((s, p) => s + p.count, 0) || 1;
     for (const [pattern, count] of currentCounts) {
-      const prevStat = input.previous.find(p => p.pattern === pattern);
+      const prevStat = input.previous.find((p) => p.pattern === pattern);
       const prevCount = prevStat?.count ?? 0;
       // 이전 대비 spikeMultiplier 배 이상 증가
       if (prevCount > 0 && count >= prevCount * spikeMultiplier) {
         anomalies.push({
-          kind: "volume_spike",
-          sessionId: "aggregate",
+          kind: 'volume_spike',
+          sessionId: 'aggregate',
           eventSequence: [],
           description: `${pattern} 볼륨 급증: ${prevCount} → ${count} (${(count / prevCount).toFixed(1)}배)`,
-          severity: count / prevCount >= 10 ? "critical" : "warning",
+          severity: count / prevCount >= 10 ? 'critical' : 'warning',
           detectedAt: now,
         });
       }
@@ -101,13 +97,14 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
   for (const c of input.current) {
     if (c.durationMs > 0 && c.eventCount > 5) {
       const avgInterval = c.durationMs / (c.eventCount - 1);
-      if (avgInterval < 100) { // 100ms 미만 평균 간격
+      if (avgInterval < 100) {
+        // 100ms 미만 평균 간격
         anomalies.push({
-          kind: "abnormal_speed",
+          kind: 'abnormal_speed',
           sessionId: c.matchedRuleId,
           eventSequence: [],
           description: `비정상 속도: ${c.eventCount}개 이벤트, 평균 간격 ${avgInterval.toFixed(0)}ms`,
-          severity: avgInterval < 50 ? "critical" : "warning",
+          severity: avgInterval < 50 ? 'critical' : 'warning',
           detectedAt: now,
         });
       }
@@ -118,11 +115,11 @@ export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] 
   for (const c of input.current) {
     if (c.durationMs > 30 * 60 * 1000) {
       anomalies.push({
-        kind: "abnormal_duration",
+        kind: 'abnormal_duration',
         sessionId: c.matchedRuleId,
         eventSequence: [],
         description: `비정상 세션 시간: ${(c.durationMs / 60000).toFixed(1)}분 (${c.eventCount}개 이벤트)`,
-        severity: c.durationMs > 60 * 60 * 1000 ? "critical" : "warning",
+        severity: c.durationMs > 60 * 60 * 1000 ? 'critical' : 'warning',
         detectedAt: now,
       });
     }

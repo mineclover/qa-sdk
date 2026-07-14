@@ -1,15 +1,15 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { PipePort, PipeSpec, PipeStep } from "../types/pipe-spec.js";
-import { collectFlowSteps } from "./pipe-fold.js";
+import type { PipePort, PipeSpec, PipeStep } from '../types/pipe-spec.js';
+import { collectFlowSteps } from './pipe-fold.js';
 
 type ContractFields = Record<string, { type: string; required: boolean }>;
 
 function appendContractPorts(
   ports: PipePort[],
   fields: ContractFields | undefined,
-  direction: PipePort["direction"],
+  direction: PipePort['direction'],
 ): void {
   if (!fields) return;
 
@@ -26,8 +26,8 @@ function appendContractPorts(
 function inferStepPorts(step: PipeStep): PipePort[] {
   const ports: PipePort[] = [];
 
-  appendContractPorts(ports, step.dataContract?.consumes, "in");
-  appendContractPorts(ports, step.dataContract?.produces, "out");
+  appendContractPorts(ports, step.dataContract?.consumes, 'in');
+  appendContractPorts(ports, step.dataContract?.produces, 'out');
 
   return ports;
 }

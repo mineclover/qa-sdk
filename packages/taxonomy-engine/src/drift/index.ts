@@ -1,5 +1,5 @@
-import type { TaxonomyRegistry } from "../registry/index.js";
-import type { Diagnostic } from "../schema/diagnostic.js";
+import type { TaxonomyRegistry } from '../registry/index.js';
+import type { Diagnostic } from '../schema/diagnostic.js';
 
 /**
  * checkContentHashDrift — caller가 이전 codegen 결과의 contentHash와
@@ -13,8 +13,8 @@ export function checkContentHashDrift(
 ): Diagnostic | undefined {
   if (previous === current) return undefined;
   return {
-    severity: "warning",
-    code: "codegen-content-hash-mismatch",
+    severity: 'warning',
+    code: 'codegen-content-hash-mismatch',
     message: `codegen contentHash drift: 이전=${previous} → 현재=${current}`,
     ref,
     meta: { previous, current },
@@ -25,9 +25,7 @@ export function checkContentHashDrift(
  * validateRegistryVersions — registry 내 모든 taxonomy의 imports 검사.
  * 각 import의 요청 version과 등록된 실제 version 비교, 불일치 시 version-drift warning.
  */
-export function validateRegistryVersions(
-  registry: TaxonomyRegistry,
-): Diagnostic[] {
+export function validateRegistryVersions(registry: TaxonomyRegistry): Diagnostic[] {
   const out: Diagnostic[] = [];
   for (const slug of registry.list()) {
     const ir = registry.get(slug);
@@ -38,8 +36,8 @@ export function validateRegistryVersions(
       if (!target) continue; // ref-unresolved-import는 validateRefs에서 처리
       if (target.version !== imp.version) {
         out.push({
-          severity: "warning",
-          code: "version-drift",
+          severity: 'warning',
+          code: 'version-drift',
           message: `${slug}/imports[${i}]: ${imp.taxonomy}@v${imp.version} 요청, registry는 v${target.version}`,
           ref: `${slug}#/imports/${i}`,
           meta: {

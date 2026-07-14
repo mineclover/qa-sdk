@@ -1,11 +1,9 @@
 // @def.boundary persistence-system-root
 // @def.doc test-scenario-store
 
-import type {
-  TestKind, TestScope, TestPhase, TestLifecycle,
-} from "test-types";
+import type { TestKind, TestScope, TestPhase, TestLifecycle } from 'test-types';
 
-export type { TestKind, TestScope, TestLifecycle } from "test-types";
+export type { TestKind, TestScope, TestLifecycle } from 'test-types';
 export type TestPhaseLabel = TestPhase;
 
 export interface TestScenario {

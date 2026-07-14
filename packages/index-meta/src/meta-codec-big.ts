@@ -23,31 +23,27 @@
  * matchRanges(partial): 부분 조건 → [bigint, bigint][] 범위
  */
 
-import {
-  WeightedIndexBig,
-  calcAddressRangesBig,
-  type CoordConstraint,
-} from "weighted-index";
-import type { DecodeMap, EntityId, VersionedValueBig } from "./types.js";
-import { EntryNotFoundError, ValidationError } from "./errors.js";
+import { WeightedIndexBig, calcAddressRangesBig, type CoordConstraint } from 'weighted-index';
+import type { DecodeMap, EntityId, VersionedValueBig } from './types.js';
+import { EntryNotFoundError, ValidationError } from './errors.js';
 
 /**
  * BigInt-aware DecodeMap 검증.
  * validateDecodeMap과 동일하지만 size 필드는 Number 캡 허용.
  */
 function validateDecodeMapBig(map: DecodeMap): void {
-  if (!map.indexId || typeof map.indexId !== "string") {
-    throw new ValidationError("DecodeMap.indexId must be a non-empty string");
+  if (!map.indexId || typeof map.indexId !== 'string') {
+    throw new ValidationError('DecodeMap.indexId must be a non-empty string');
   }
-  if (!map.versionId || typeof map.versionId !== "string") {
-    throw new ValidationError("DecodeMap.versionId must be a non-empty string");
+  if (!map.versionId || typeof map.versionId !== 'string') {
+    throw new ValidationError('DecodeMap.versionId must be a non-empty string');
   }
   if (!Array.isArray(map.dims) || map.dims.length === 0) {
-    throw new ValidationError("DecodeMap.dims must be a non-empty array");
+    throw new ValidationError('DecodeMap.dims must be a non-empty array');
   }
   if (!Array.isArray(map.shape) || map.shape.length !== map.dims.length) {
     throw new ValidationError(
-      `DecodeMap.shape.length (${map.shape?.length ?? 0}) must equal dims.length (${map.dims.length})`
+      `DecodeMap.shape.length (${map.shape?.length ?? 0}) must equal dims.length (${map.dims.length})`,
     );
   }
 
@@ -55,10 +51,10 @@ function validateDecodeMapBig(map: DecodeMap): void {
 
   for (let i = 0; i < map.dims.length; i++) {
     const dim = map.dims[i];
-    if (!dim.dimId || typeof dim.dimId !== "string") {
+    if (!dim.dimId || typeof dim.dimId !== 'string') {
       throw new ValidationError(`DecodeMap.dims[${i}].dimId must be a non-empty string`);
     }
-    if (!dim.snapshotId || typeof dim.snapshotId !== "string") {
+    if (!dim.snapshotId || typeof dim.snapshotId !== 'string') {
       throw new ValidationError(`DecodeMap.dims[${i}].snapshotId must be a non-empty string`);
     }
     if (seenDimIds.has(dim.dimId)) {
@@ -70,7 +66,7 @@ function validateDecodeMapBig(map: DecodeMap): void {
     }
     if (map.shape[i] !== dim.entries.length) {
       throw new ValidationError(
-        `DecodeMap.shape[${i}] (${map.shape[i]}) must equal dims[${i}].entries.length (${dim.entries.length})`
+        `DecodeMap.shape[${i}] (${map.shape[i]}) must equal dims[${i}].entries.length (${dim.entries.length})`,
       );
     }
   }
@@ -116,13 +112,13 @@ export class MetaCodecBig {
       const entityId = entityIds[dim.dimId];
       if (entityId === undefined) {
         throw new ValidationError(
-          `encode "${this._map.indexId}/${this._map.versionId}": missing dim "${dim.dimId}"`
+          `encode "${this._map.indexId}/${this._map.versionId}": missing dim "${dim.dimId}"`,
         );
       }
       const coord = this._encodeMaps[i].get(entityId);
       if (coord === undefined) {
         throw new EntryNotFoundError(
-          `encode "${this._map.indexId}/${this._map.versionId}": entity "${entityId}" not found in dim "${dim.dimId}"`
+          `encode "${this._map.indexId}/${this._map.versionId}": entity "${entityId}" not found in dim "${dim.dimId}"`,
         );
       }
       coords[i] = coord;
@@ -141,7 +137,7 @@ export class MetaCodecBig {
     if (vvb.indexId !== this._map.indexId || vvb.versionId !== this._map.versionId) {
       throw new ValidationError(
         `decode: expected "${this._map.indexId}/${this._map.versionId}", ` +
-        `got "${vvb.indexId}/${vvb.versionId}"`
+          `got "${vvb.indexId}/${vvb.versionId}"`,
       );
     }
     return this.decodeValue(vvb.value);
@@ -170,7 +166,7 @@ export class MetaCodecBig {
       const idx = dim.entries.indexOf(val);
       if (idx === -1) {
         throw new EntryNotFoundError(
-          `matchRanges "${this._map.indexId}/${this._map.versionId}": entity "${val}" not found in dim "${dim.dimId}"`
+          `matchRanges "${this._map.indexId}/${this._map.versionId}": entity "${val}" not found in dim "${dim.dimId}"`,
         );
       }
       return String(idx + 1);
@@ -186,12 +182,24 @@ export class MetaCodecBig {
     return values.map((v) => this.decodeValue(v));
   }
 
-  get indexId(): string { return this._map.indexId; }
-  get versionId(): string { return this._map.versionId; }
-  get size(): bigint { return this._wi.size; }
-  get shape(): readonly bigint[] { return this._wi.shape; }
-  get strides(): readonly bigint[] { return this._wi.strides; }
-  get dimIds(): readonly string[] { return this._dimIds; }
+  get indexId(): string {
+    return this._map.indexId;
+  }
+  get versionId(): string {
+    return this._map.versionId;
+  }
+  get size(): bigint {
+    return this._wi.size;
+  }
+  get shape(): readonly bigint[] {
+    return this._wi.shape;
+  }
+  get strides(): readonly bigint[] {
+    return this._wi.strides;
+  }
+  get dimIds(): readonly string[] {
+    return this._dimIds;
+  }
 
   /** 내부 DecodeMap의 복사본 반환. */
   toDecodeMap(): DecodeMap {

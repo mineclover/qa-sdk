@@ -12,14 +12,9 @@
 /*  범위 검색: 정렬된 배열에서 이진 탐색 (O(log N + K))                  */
 /* ------------------------------------------------------------------ */
 
-import type { AddressIndex } from "./port.js";
-import type {
-  AddressQuery,
-  AddressHit,
-  AddressStats,
-  CrossPrefixQuery,
-} from "./types.js";
-import { parseAddressContext } from "./types.js";
+import type { AddressIndex } from './port.js';
+import type { AddressQuery, AddressHit, AddressStats, CrossPrefixQuery } from './types.js';
+import { parseAddressContext } from './types.js';
 
 /** 정렬된 주소 엔트리 (prefixMap 내부) */
 interface SortedEntry {
@@ -33,10 +28,7 @@ export class InMemoryAddressIndex implements AddressIndex {
   /** prefixId → 주소 정렬 엔트리 배열 */
   private prefixMap = new Map<string, SortedEntry[]>();
   /** recordId → prefix별 주소 */
-  private recordMap = new Map<
-    string,
-    Record<string, { version: string; address: number }>
-  >();
+  private recordMap = new Map<string, Record<string, { version: string; address: number }>>();
   /** recordId → timestamp */
   private timestamps = new Map<string, string>();
 
@@ -255,11 +247,7 @@ function findExact(arr: SortedEntry[], address: number): SortedEntry[] {
 }
 
 /** 범위 검색 — [from, to] inclusive */
-function findRange(
-  arr: SortedEntry[],
-  from: number,
-  to: number,
-): SortedEntry[] {
+function findRange(arr: SortedEntry[], from: number, to: number): SortedEntry[] {
   // from 이상 첫 위치
   let lo = 0;
   let hi = arr.length;

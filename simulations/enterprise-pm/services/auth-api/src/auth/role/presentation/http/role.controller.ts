@@ -1,19 +1,19 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { Body, Controller, Delete, Get, Inject, Param, Post, UseFilters } from "@nestjs/common";
-import { z } from "zod";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { RoleUseCase } from "../../application/use-cases/role.use-case.js";
+import { Body, Controller, Delete, Get, Inject, Param, Post, UseFilters } from '@nestjs/common';
+import { z } from 'zod';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { RoleUseCase } from '../../application/use-cases/role.use-case.js';
 import {
   RoleReadModelQuery,
   type RoleDetailReadModel,
-} from "../../application/queries/role-read-model.query.js";
-import { RoleNotFoundException } from "../../domain/index.js";
+} from '../../application/queries/role-read-model.query.js';
+import { RoleNotFoundException } from '../../domain/index.js';
 
 const createSchema = z.object({
   name: z.string().min(1),
-  scopeType: z.enum(["global", "department", "project"]),
+  scopeType: z.enum(['global', 'department', 'project']),
   defaultMaskHex: z.string().regex(/^[0-9a-fA-F]+$/),
 });
 
@@ -26,7 +26,7 @@ const createSchema = z.object({
  *   - GET    /roles
  *   - DELETE /roles/:id
  */
-@Controller("roles")
+@Controller('roles')
 @UseFilters(DomainExceptionFilter)
 export class RoleController {
   constructor(
@@ -37,7 +37,7 @@ export class RoleController {
   @Post()
   async create(@Body() body: unknown): Promise<RoleDetailReadModel> {
     const parsed = createSchema.parse(body);
-    const id = `role_${parsed.name.replace(/[^a-zA-Z0-9]/g, "_")}`;
+    const id = `role_${parsed.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
     await this.useCase.create({
       id,
       name: parsed.name,
@@ -49,8 +49,8 @@ export class RoleController {
     return detail;
   }
 
-  @Get(":id")
-  async get(@Param("id") id: string): Promise<RoleDetailReadModel> {
+  @Get(':id')
+  async get(@Param('id') id: string): Promise<RoleDetailReadModel> {
     const detail = await this.readModel.findDetail(id);
     if (!detail) throw new RoleNotFoundException(id);
     return detail;
@@ -61,9 +61,9 @@ export class RoleController {
     return this.readModel.list();
   }
 
-  @Delete(":id")
-  async remove(@Param("id") id: string): Promise<{ status: "deleted" }> {
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<{ status: 'deleted' }> {
     await this.useCase.delete({ id });
-    return { status: "deleted" };
+    return { status: 'deleted' };
   }
 }

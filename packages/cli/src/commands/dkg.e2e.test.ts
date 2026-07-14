@@ -1,20 +1,20 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { createServer } from "node:http";
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createServer } from 'node:http';
 
-import { DkgSqliteStore } from "../../../spec-core/src/store/index.js";
+import { DkgSqliteStore } from '../../../spec-core/src/store/index.js';
 
 const originalHome = process.env.HOME;
 const originalAuditIngestUrl = process.env.QA_CLI_AUDIT_INGEST_URL;
 const tempHomes: string[] = [];
-const runHeavySmoke = process.env.QA_SDK_RUN_HEAVY_SMOKE === "1";
+const runHeavySmoke = process.env.QA_SDK_RUN_HEAVY_SMOKE === '1';
 
-describe("dkg CLI E2E", () => {
+describe('dkg CLI E2E', () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     vi.resetModules();
@@ -28,36 +28,40 @@ describe("dkg CLI E2E", () => {
     } else {
       process.env.QA_CLI_AUDIT_INGEST_URL = originalAuditIngestUrl;
     }
-    await Promise.all(tempHomes.splice(0).map((home) => rm(home, { recursive: true, force: true })));
+    await Promise.all(
+      tempHomes.splice(0).map((home) => rm(home, { recursive: true, force: true })),
+    );
   });
 
-  it("dkg decide --type new-axis는 completed FlowInstance와 DecisionNode를 함께 남긴다", async () => {
+  it('dkg decide --type new-axis는 completed FlowInstance와 DecisionNode를 함께 남긴다', async () => {
     const { home, dkgDecide, dkgTrace, loadFlowInstanceMeta } = await loadIsolatedDkgModules();
 
     const decideOutput = await captureConsoleAsync(async () => {
       await dkgDecide({
-        target: "decision_event",
-        type: "new-axis",
-        title: "새 axis 추가",
-        rationale: "decision_event에 새 차원을 확장한다.",
+        target: 'decision_event',
+        type: 'new-axis',
+        title: '새 axis 추가',
+        rationale: 'decision_event에 새 차원을 확장한다.',
         confirmProceed: async () => true,
       });
     });
 
-    expect(decideOutput.stdout).toContain("══ coordinate-design 브릿지 ══");
-    expect(decideOutput.stdout).toContain("✓ 플로우 완료");
+    expect(decideOutput.stdout).toContain('══ coordinate-design 브릿지 ══');
+    expect(decideOutput.stdout).toContain('✓ 플로우 완료');
 
-    const decisionId = extractLabeledValue(decideOutput.stdout, "id");
-    const flowInstanceId = extractLabeledValue(decideOutput.stdout, "flow instance");
-    const store = new DkgSqliteStore(join(home, ".qa-sdk", "state.sqlite"), "demo");
+    const decisionId = extractLabeledValue(decideOutput.stdout, 'id');
+    const flowInstanceId = extractLabeledValue(decideOutput.stdout, 'flow instance');
+    const store = new DkgSqliteStore(join(home, '.qa-sdk', 'state.sqlite'), 'demo');
     const graph = store.loadGraph();
     const decision = graph.getNode(decisionId);
 
-    expect(decision?.kind).toBe("decision");
-    expect(decision && "flowInstanceId" in decision ? decision.flowInstanceId : undefined).toBe(flowInstanceId);
+    expect(decision?.kind).toBe('decision');
+    expect(decision && 'flowInstanceId' in decision ? decision.flowInstanceId : undefined).toBe(
+      flowInstanceId,
+    );
 
     const instance = loadFlowInstanceMeta(store, flowInstanceId);
-    expect(instance?.status).toBe("completed");
+    expect(instance?.status).toBe('completed');
     expect(instance?.context.dkgDecisionId).toBe(decisionId);
     expect(instance?.addressContext).toEqual(
       expect.objectContaining({
@@ -71,59 +75,59 @@ describe("dkg CLI E2E", () => {
     });
 
     expect(traceOutput.stdout).toContain(`flow:      ${flowInstanceId}`);
-    expect(traceOutput.stdout).toContain("── 연결된 FlowInstance 코어 추적 ──");
-    expect(traceOutput.stdout).toContain("flow-schema: coordinate-design");
+    expect(traceOutput.stdout).toContain('── 연결된 FlowInstance 코어 추적 ──');
+    expect(traceOutput.stdout).toContain('flow-schema: coordinate-design');
     expect(traceOutput.stdout).toContain(`dkgDecisionId: ${decisionId}`);
-    expect(traceOutput.stdout).toContain("★ axis-definition = new-axis");
+    expect(traceOutput.stdout).toContain('★ axis-definition = new-axis');
   });
 
-  it("dkg decide --type merge는 코어 gate 경고를 출력한다", async () => {
+  it('dkg decide --type merge는 코어 gate 경고를 출력한다', async () => {
     const { dkgDecide } = await loadIsolatedDkgModules();
 
     const output = await captureConsoleAsync(async () => {
       await dkgDecide({
-        target: "decision_event",
-        type: "merge",
-        title: "prefix merge 검토",
-        rationale: "중복 prefix 정리가 필요하다.",
+        target: 'decision_event',
+        type: 'merge',
+        title: 'prefix merge 검토',
+        rationale: '중복 prefix 정리가 필요하다.',
         confirmProceed: async () => true,
       });
     });
 
-    expect(output.stdout).toContain("══ 코어 gate 영향 경고 ══");
-    expect(output.stdout).toContain("★ merge-split (merge/split 판정) ← merge");
-    expect(output.stdout).toContain("무효화 cascade:");
-    expect(output.stdout).toContain("⚠ 코어 gate 무효화 — 전체 재설계 필요");
+    expect(output.stdout).toContain('══ 코어 gate 영향 경고 ══');
+    expect(output.stdout).toContain('★ merge-split (merge/split 판정) ← merge');
+    expect(output.stdout).toContain('무효화 cascade:');
+    expect(output.stdout).toContain('⚠ 코어 gate 무효화 — 전체 재설계 필요');
   });
 
-  it("dkg decide는 DecisionNode 기록 후 flow bridge를 시도한다", async () => {
+  it('dkg decide는 DecisionNode 기록 후 flow bridge를 시도한다', async () => {
     const { home, dkgDecide } = await loadIsolatedDkgModules();
 
     const decideOutput = await captureConsoleAsync(async () => {
       await dkgDecide({
-        target: "decision_event",
-        type: "new-axis",
-        title: "새 axis 추가",
-        rationale: "bridge 시도 확인",
+        target: 'decision_event',
+        type: 'new-axis',
+        title: '새 axis 추가',
+        rationale: 'bridge 시도 확인',
         confirmProceed: async () => true,
       });
     });
 
     // decision은 항상 기록됨
-    const decisionId = extractLabeledValue(decideOutput.stdout, "id");
-    const store = new DkgSqliteStore(join(home, ".qa-sdk", "state.sqlite"), "demo");
+    const decisionId = extractLabeledValue(decideOutput.stdout, 'id');
+    const store = new DkgSqliteStore(join(home, '.qa-sdk', 'state.sqlite'), 'demo');
     const graph = store.loadGraph();
     const decision = graph.getNode(decisionId);
 
-    expect(decision?.kind).toBe("decision");
+    expect(decision?.kind).toBe('decision');
     // bridge 시도: 성공하면 flowInstanceId 존재, 실패하면 경고 출력
-    const hasFlow = decision && "flowInstanceId" in decision && !!decision.flowInstanceId;
-    const hasBridgeWarning = decideOutput.stdout.includes("브릿지 시작 실패");
+    const hasFlow = decision && 'flowInstanceId' in decision && !!decision.flowInstanceId;
+    const hasBridgeWarning = decideOutput.stdout.includes('브릿지 시작 실패');
     expect(hasFlow || hasBridgeWarning).toBe(true);
   });
 
-  it("dkg audit-events는 로컬 audit log를 남기고 ingest forwarding을 수행한다", async () => {
-    const home = await mkdtemp(join(tmpdir(), "qa-dkg-audit-"));
+  it('dkg audit-events는 로컬 audit log를 남기고 ingest forwarding을 수행한다', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'qa-dkg-audit-'));
     tempHomes.push(home);
     process.env.HOME = home;
     vi.resetModules();
@@ -134,76 +138,76 @@ describe("dkg CLI E2E", () => {
       resolveBody = resolve;
       rejectBody = reject;
     });
-    const timeout = setTimeout(() => rejectBody(new Error("audit forwarding timeout")), 5_000);
+    const timeout = setTimeout(() => rejectBody(new Error('audit forwarding timeout')), 5_000);
     const server = createServer((req, res) => {
       const chunks: Buffer[] = [];
-      req.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
-      req.on("end", () => {
+      req.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+      req.on('end', () => {
         clearTimeout(timeout);
-        res.writeHead(202, { "Content-Type": "application/json" });
+        res.writeHead(202, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
         server.close();
-        resolveBody(Buffer.concat(chunks).toString("utf-8"));
+        resolveBody(Buffer.concat(chunks).toString('utf-8'));
       });
     });
     await new Promise<void>((resolve, reject) => {
-      server.listen(0, "127.0.0.1", () => resolve());
-      server.on("error", reject);
+      server.listen(0, '127.0.0.1', () => resolve());
+      server.on('error', reject);
     });
     const address = server.address();
     expect(address).toBeTruthy();
-    expect(typeof address).not.toBe("string");
+    expect(typeof address).not.toBe('string');
     process.env.QA_CLI_AUDIT_INGEST_URL = `http://127.0.0.1:${(address as { port: number }).port}`;
 
-    const { main } = await import("../index.js");
+    const { main } = await import('../index.js');
     const output = await captureConsoleAsync(async () => {
-      await main(["dkg", "audit-events", "--limit", "1"]);
+      await main(['dkg', 'audit-events', '--limit', '1']);
     });
 
-    expect(output.stdout).toContain("CLI Audit Events");
+    expect(output.stdout).toContain('CLI Audit Events');
 
     const envelope = JSON.parse(await requestBody);
     expect(envelope.records).toHaveLength(1);
-    expect(envelope.records[0].event_key).toBe("cli.command.executed");
+    expect(envelope.records[0].event_key).toBe('cli.command.executed');
     expect(envelope.records[0].payload).toEqual(
       expect.objectContaining({
-        command: "dkg audit-events",
+        command: 'dkg audit-events',
       }),
     );
 
-    const store = new DkgSqliteStore(join(home, ".qa-sdk", "state.sqlite"), "demo");
-    const events = store.listRecentCliAuditEvents(5, { command: "dkg audit-events" });
+    const store = new DkgSqliteStore(join(home, '.qa-sdk', 'state.sqlite'), 'demo');
+    const events = store.listRecentCliAuditEvents(5, { command: 'dkg audit-events' });
     expect(events.length).toBeGreaterThan(0);
-    expect(events[0]?.eventKey).toBe("cli.command.executed");
+    expect(events[0]?.eventKey).toBe('cli.command.executed');
   });
 
   const heavyIt = runHeavySmoke ? it : it.skip;
 
-  heavyIt("dkg self-check full path는 별도 heavy smoke lane에서 실행된다", async () => {
-    const home = await mkdtemp(join(tmpdir(), "qa-dkg-heavy-"));
+  heavyIt('dkg self-check full path는 별도 heavy smoke lane에서 실행된다', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'qa-dkg-heavy-'));
     tempHomes.push(home);
     process.env.HOME = home;
     vi.resetModules();
 
-    const { main } = await import("../index.js");
+    const { main } = await import('../index.js');
     const output = await captureConsoleAsync(async () => {
-      await main(["dkg", "self-check"]);
+      await main(['dkg', 'self-check']);
     });
 
-    expect(output.stdout).toContain("Self-Check");
-    expect(output.stdout).toContain("Phase A: aggregate");
+    expect(output.stdout).toContain('Self-Check');
+    expect(output.stdout).toContain('Phase A: aggregate');
   });
 });
 
 async function loadIsolatedDkgModules() {
-  const home = await mkdtemp(join(tmpdir(), "qa-dkg-e2e-"));
+  const home = await mkdtemp(join(tmpdir(), 'qa-dkg-e2e-'));
   tempHomes.push(home);
   process.env.HOME = home;
   vi.resetModules();
 
   const [{ dkgDecide, dkgTrace }, { loadFlowInstanceMeta }] = await Promise.all([
-    import("./dkg.js"),
-    import("./dkg-decision-flow.js"),
+    import('./dkg.js'),
+    import('./dkg-decision-flow.js'),
   ]);
 
   return {
@@ -217,14 +221,14 @@ async function loadIsolatedDkgModules() {
 function captureConsole(run: () => void) {
   const stdout: string[] = [];
   const stderr: string[] = [];
-  const logSpy = vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
-    stdout.push(args.join(" "));
+  const logSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+    stdout.push(args.join(' '));
   });
-  const warnSpy = vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
-    stderr.push(args.join(" "));
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {
+    stderr.push(args.join(' '));
   });
-  const errorSpy = vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
-    stderr.push(args.join(" "));
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+    stderr.push(args.join(' '));
   });
 
   try {
@@ -236,22 +240,22 @@ function captureConsole(run: () => void) {
   }
 
   return {
-    stdout: stdout.join("\n"),
-    stderr: stderr.join("\n"),
+    stdout: stdout.join('\n'),
+    stderr: stderr.join('\n'),
   };
 }
 
 async function captureConsoleAsync(run: () => Promise<void>) {
   const stdout: string[] = [];
   const stderr: string[] = [];
-  const logSpy = vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
-    stdout.push(args.join(" "));
+  const logSpy = vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
+    stdout.push(args.join(' '));
   });
-  const warnSpy = vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
-    stderr.push(args.join(" "));
+  const warnSpy = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {
+    stderr.push(args.join(' '));
   });
-  const errorSpy = vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
-    stderr.push(args.join(" "));
+  const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+    stderr.push(args.join(' '));
   });
 
   try {
@@ -263,14 +267,14 @@ async function captureConsoleAsync(run: () => Promise<void>) {
   }
 
   return {
-    stdout: stdout.join("\n"),
-    stderr: stderr.join("\n"),
+    stdout: stdout.join('\n'),
+    stderr: stderr.join('\n'),
   };
 }
 
 function extractLabeledValue(output: string, label: string): string {
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = output.match(new RegExp(`^\\s*${escaped}:\\s+(.+)$`, "m"));
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = output.match(new RegExp(`^\\s*${escaped}:\\s+(.+)$`, 'm'));
   expect(match).not.toBeNull();
   return match![1].trim();
 }

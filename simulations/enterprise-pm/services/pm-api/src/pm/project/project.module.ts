@@ -1,50 +1,47 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
-import type { ResourcePolicyRegistry } from "permission-engine";
+} from '@qa-sdk/sim-domain-slice-kit';
+import type { ResourcePolicyRegistry } from 'permission-engine';
 
-import {
-  PM_DB_INSTANCE,
-  type PmDbInstanceHandle,
-} from "../pm-db.module.js";
+import { PM_DB_INSTANCE, type PmDbInstanceHandle } from '../pm-db.module.js';
 import {
   PROJECT_POLICY_REGISTRY,
   PROJECT_DELEGATION_GRAPH,
-} from "../../auth-deps/access-checker.module.js";
-import type { ProjectDelegationGraphStore } from "../../auth-deps/delegation-graph-store.js";
+} from '../../auth-deps/access-checker.module.js';
+import type { ProjectDelegationGraphStore } from '../../auth-deps/delegation-graph-store.js';
 
-import { ProjectRepositoryPort } from "./application/ports/project-repository.port.js";
-import { ProjectReadModelQuery } from "./application/queries/project-read-model.query.js";
-import { ProjectAccessService } from "./application/services/project-access.service.js";
-import { ProjectUseCase } from "./application/use-cases/project.use-case.js";
+import { ProjectRepositoryPort } from './application/ports/project-repository.port.js';
+import { ProjectReadModelQuery } from './application/queries/project-read-model.query.js';
+import { ProjectAccessService } from './application/services/project-access.service.js';
+import { ProjectUseCase } from './application/use-cases/project.use-case.js';
 import type {
   PolicyLifecyclePort,
   DelegationGraphPort,
-} from "./application/ports/project-policy.port.js";
+} from './application/ports/project-policy.port.js';
 
-import { createProjectRepository } from "./infrastructure/persistence/project.repository.js";
-import { createProjectTransactionPort } from "./infrastructure/transaction/project.transaction.js";
-import { createProjectOutboxPort } from "./infrastructure/outbox/project.outbox.js";
-import { createProjectLogger } from "./infrastructure/logging/project.logger.js";
-import { RepositoryProjectReadModel } from "./infrastructure/read-model/project.read-model.js";
+import { createProjectRepository } from './infrastructure/persistence/project.repository.js';
+import { createProjectTransactionPort } from './infrastructure/transaction/project.transaction.js';
+import { createProjectOutboxPort } from './infrastructure/outbox/project.outbox.js';
+import { createProjectLogger } from './infrastructure/logging/project.logger.js';
+import { RepositoryProjectReadModel } from './infrastructure/read-model/project.read-model.js';
 import {
   ResourcePolicyAdapter,
   DelegationGraphAdapter,
-} from "./infrastructure/access/policy-adapter.js";
+} from './infrastructure/access/policy-adapter.js';
 
-import { ProjectController } from "./presentation/http/project.controller.js";
+import { ProjectController } from './presentation/http/project.controller.js';
 
-const PROJECT_TRANSACTION_PORT = Symbol.for("sim-pm-api/project/TransactionPort");
-const PROJECT_OUTBOX_PORT = Symbol.for("sim-pm-api/project/OutboxPort");
-const PROJECT_POLICY_LIFECYCLE_PORT = Symbol.for("sim-pm-api/project/PolicyLifecyclePort");
-const PROJECT_DELEGATION_GRAPH_PORT = Symbol.for("sim-pm-api/project/DelegationGraphPort");
+const PROJECT_TRANSACTION_PORT = Symbol.for('sim-pm-api/project/TransactionPort');
+const PROJECT_OUTBOX_PORT = Symbol.for('sim-pm-api/project/OutboxPort');
+const PROJECT_POLICY_LIFECYCLE_PORT = Symbol.for('sim-pm-api/project/PolicyLifecyclePort');
+const PROJECT_DELEGATION_GRAPH_PORT = Symbol.for('sim-pm-api/project/DelegationGraphPort');
 
 const repositoryProvider: Provider = {
   provide: ProjectRepositoryPort,
@@ -143,11 +140,6 @@ const useCaseProvider: Provider = {
     ProjectAccessService,
   ],
   controllers: [ProjectController],
-  exports: [
-    ProjectRepositoryPort,
-    ProjectReadModelQuery,
-    ProjectUseCase,
-    ProjectAccessService,
-  ],
+  exports: [ProjectRepositoryPort, ProjectReadModelQuery, ProjectUseCase, ProjectAccessService],
 })
 export class ProjectSliceModule {}

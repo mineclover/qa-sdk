@@ -10,9 +10,9 @@
  *   lineage-types.ts      — 스키마 간 계보 유효 타입
  */
 
-import { createHash } from "node:crypto";
-import type { DataObjectBinding } from "@qa-sdk/core";
-import { toPascal, toConstKey } from "./naming.js";
+import { createHash } from 'node:crypto';
+import type { DataObjectBinding } from '@qa-sdk/core';
+import { toPascal, toConstKey } from './naming.js';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -37,9 +37,12 @@ export interface DataObjectCodegenOptions {
 
 function computeBindingsHash(bindings: readonly DataObjectBinding[]): string {
   const parts = bindings
-    .map(b => `${b.schemaId}:${b.prefixId}:${b.prefixVersion}:${Object.keys(b.columnToAxis).toSorted().join(",")}`)
+    .map(
+      (b) =>
+        `${b.schemaId}:${b.prefixId}:${b.prefixVersion}:${Object.keys(b.columnToAxis).toSorted().join(',')}`,
+    )
     .toSorted();
-  return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 12);
+  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 12);
 }
 
 // ── 생성 ───────────────────────────────────────────────
@@ -48,7 +51,7 @@ export function generateDataObjectBindings(
   bindings: readonly DataObjectBinding[],
   options?: DataObjectCodegenOptions,
 ): DataObjectCodegenResult {
-  const prefix = options?.outDir ? `${options.outDir}/` : "";
+  const prefix = options?.outDir ? `${options.outDir}/` : '';
   const sorted = [...bindings].toSorted((a, b) => a.schemaId.localeCompare(b.schemaId));
   const ts = new Date().toISOString();
 
@@ -73,8 +76,8 @@ function generateDataObjectsFile(bindings: readonly DataObjectBinding[], ts: str
   ];
 
   for (const b of bindings) {
-    const constName = toConstKey(b.schemaId) + "_BINDING";
-    const typeName = toPascal(b.schemaId) + "Binding";
+    const constName = toConstKey(b.schemaId) + '_BINDING';
+    const typeName = toPascal(b.schemaId) + 'Binding';
 
     lines.push(`/** ${b.schemaId} → ${b.prefixId}:${b.prefixVersion} 바인딩 */`);
     lines.push(`export const ${constName}: DataObjectBinding = {`);
@@ -83,8 +86,10 @@ function generateDataObjectsFile(bindings: readonly DataObjectBinding[], ts: str
     lines.push(`  prefixId: "${b.prefixId}",`);
     lines.push(`  prefixVersion: "${b.prefixVersion}",`);
     lines.push(`  columnToAxis: {`);
-    for (const [col, mapping] of Object.entries(b.columnToAxis).toSorted((a, b) => a[0].localeCompare(b[0]))) {
-      const seg = mapping.segmentId ? `, segmentId: "${mapping.segmentId}"` : "";
+    for (const [col, mapping] of Object.entries(b.columnToAxis).toSorted((a, b) =>
+      a[0].localeCompare(b[0]),
+    )) {
+      const seg = mapping.segmentId ? `, segmentId: "${mapping.segmentId}"` : '';
       lines.push(`    ${col}: { dimLabel: "${mapping.dimLabel}"${seg} },`);
     }
     lines.push(`  },`);
@@ -93,7 +98,7 @@ function generateDataObjectsFile(bindings: readonly DataObjectBinding[], ts: str
     lines.push(``);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── binding-registry.ts ────────────────────────────────
@@ -106,8 +111,8 @@ function generateRegistryFile(bindings: readonly DataObjectBinding[], ts: string
   ];
 
   // import 생성된 바인딩 상수
-  const imports = bindings.map(b => toConstKey(b.schemaId) + "_BINDING");
-  lines.push(`import { ${imports.join(", ")} } from "./data-objects.js";`);
+  const imports = bindings.map((b) => toConstKey(b.schemaId) + '_BINDING');
+  lines.push(`import { ${imports.join(', ')} } from "./data-objects.js";`);
   lines.push(``);
   lines.push(`/** 모든 바인딩이 등록된 레지스트리 */`);
   lines.push(`export function createBindingRegistry(): BindingRegistry {`);
@@ -119,7 +124,7 @@ function generateRegistryFile(bindings: readonly DataObjectBinding[], ts: string
   lines.push(`}`);
   lines.push(``);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── lineage-types.ts ───────────────────────────────────
@@ -129,10 +134,10 @@ function generateLineageTypesFile(bindings: readonly DataObjectBinding[], ts: st
     `// 자동 생성 — ${ts}`,
     ``,
     `/** 바인딩된 스키마 ID 유니온 */`,
-    `export type BoundSchemaId = ${bindings.map(b => `"${b.schemaId}"`).join(" | ") || "never"};`,
+    `export type BoundSchemaId = ${bindings.map((b) => `"${b.schemaId}"`).join(' | ') || 'never'};`,
     ``,
     `/** 바인딩된 prefix ID 유니온 */`,
-    `export type BoundPrefixId = ${[...new Set(bindings.map(b => b.prefixId))].map(p => `"${p}"`).join(" | ") || "never"};`,
+    `export type BoundPrefixId = ${[...new Set(bindings.map((b) => b.prefixId))].map((p) => `"${p}"`).join(' | ') || 'never'};`,
     ``,
     `/** 스키마 → prefix 매핑 타입 */`,
     `export interface SchemaBindingMap {`,
@@ -146,11 +151,17 @@ function generateLineageTypesFile(bindings: readonly DataObjectBinding[], ts: st
 
   // 컬럼 매핑 타입
   for (const b of bindings) {
-    const typeName = toPascal(b.schemaId) + "Columns";
+    const typeName = toPascal(b.schemaId) + 'Columns';
     lines.push(`/** ${b.schemaId}의 바인딩된 컬럼 */`);
-    lines.push(`export type ${typeName} = ${Object.keys(b.columnToAxis).map(c => `"${c}"`).join(" | ") || "never"};`);
+    lines.push(
+      `export type ${typeName} = ${
+        Object.keys(b.columnToAxis)
+          .map((c) => `"${c}"`)
+          .join(' | ') || 'never'
+      };`,
+    );
     lines.push(``);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }

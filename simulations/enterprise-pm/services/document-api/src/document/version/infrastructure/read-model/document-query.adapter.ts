@@ -4,8 +4,8 @@
 import {
   DocumentQueryPort,
   type DocumentRefSummary,
-} from "../../application/ports/document-query.port.js";
-import { DocumentReadModelQuery } from "../../../document/application/queries/document-read-model.query.js";
+} from '../../application/ports/document-query.port.js';
+import { DocumentReadModelQuery } from '../../../document/application/queries/document-read-model.query.js';
 
 /**
  * Document slice 의 ReadModel 을 DocumentQueryPort 로 어댑팅.

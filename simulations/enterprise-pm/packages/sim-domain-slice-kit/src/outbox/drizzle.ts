@@ -1,9 +1,9 @@
 // @def.boundary sim-domain-slice-kit
 // @def.doc domain-slice-architecture
 
-import { randomUUID } from "node:crypto";
-import type { OutboxPort, OutboxRecord } from "../outbox.port.js";
-import type { TransactionScope } from "../transaction.port.js";
+import { randomUUID } from 'node:crypto';
+import type { OutboxPort, OutboxRecord } from '../outbox.port.js';
+import type { TransactionScope } from '../transaction.port.js';
 
 /**
  * 어떤 객체가 drizzle insert builder 처럼 동작하면 충분하다는 구조 타입.
@@ -47,12 +47,9 @@ export function createDrizzleOutboxPort(opts: DrizzleOutboxPortOptions): OutboxP
     async append(record: OutboxRecord, scope: TransactionScope): Promise<void> {
       // grammar #12 강제 — raw 보간 차단. record.idempotencyKey 는 호출부에서
       // buildIdempotencyKey() 결과여야 한다.
-      if (
-        typeof record.idempotencyKey !== "string" ||
-        record.idempotencyKey.length === 0
-      ) {
+      if (typeof record.idempotencyKey !== 'string' || record.idempotencyKey.length === 0) {
         throw new Error(
-          "OutboxRecord.idempotencyKey is required — use buildIdempotencyKey from sim-identifier-grammar",
+          'OutboxRecord.idempotencyKey is required — use buildIdempotencyKey from sim-identifier-grammar',
         );
       }
       const row = {
@@ -63,13 +60,13 @@ export function createDrizzleOutboxPort(opts: DrizzleOutboxPortOptions): OutboxP
         payload: serialize(record.payload),
         occurred_at: record.occurredAt.getTime(),
         scope_id: scope.id,
-        status: "pending" as const,
+        status: 'pending' as const,
         idempotency_key: record.idempotencyKey,
         retry_count: 0,
       };
       const builder = opts.db.insert(opts.table).values(row);
       // drizzle <=0.30 returns thenable directly; >=1.0 has explicit .execute()
-      if (builder && typeof (builder as { execute?: unknown }).execute === "function") {
+      if (builder && typeof (builder as { execute?: unknown }).execute === 'function') {
         await (builder as { execute: () => Promise<unknown> }).execute();
       } else {
         await (builder as Promise<unknown>);

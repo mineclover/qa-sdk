@@ -1,7 +1,5 @@
 // @def.boundary motion-workspace-spec
-import {
-  MOTION_COMPOSITION_SCHEMA_V1,
-} from "motion-content";
+import { MOTION_COMPOSITION_SCHEMA_V1 } from 'motion-content';
 import type {
   MotionCompositionDef,
   MotionCompositionDefV2,
@@ -10,18 +8,18 @@ import type {
   MotionEditorSelectionV2,
   MotionEditorViewport,
   MotionParameterValues,
-} from "motion-content";
+} from 'motion-content';
 
-export const MOTION_WORKSPACE_SCHEMA_V1 = "qa-sdk.motion-workspace/v1";
-export const MOTION_WORKSPACE_SCHEMA_V2 = "qa-sdk.motion-workspace/v2";
+export const MOTION_WORKSPACE_SCHEMA_V1 = 'qa-sdk.motion-workspace/v1';
+export const MOTION_WORKSPACE_SCHEMA_V2 = 'qa-sdk.motion-workspace/v2';
 export const MOTION_WORKSPACE_PERSISTED_EDITOR_FIELDS_V1 = [
-  "values",
-  "selection",
-  "viewport",
-  "loop",
-  "playbackRate",
+  'values',
+  'selection',
+  'viewport',
+  'loop',
+  'playbackRate',
 ] as const;
-export const MOTION_WORKSPACE_LOCAL_PREFERENCE_KEYS = ["layout", "theme"] as const;
+export const MOTION_WORKSPACE_LOCAL_PREFERENCE_KEYS = ['layout', 'theme'] as const;
 
 export type MotionWorkspacePersistedEditorField =
   (typeof MOTION_WORKSPACE_PERSISTED_EDITOR_FIELDS_V1)[number];
@@ -73,13 +71,9 @@ export const MOTION_WORKSPACE_PERSISTENCE_BOUNDARY_V1 = {
   localPreferenceKeys: MOTION_WORKSPACE_LOCAL_PREFERENCE_KEYS,
 } satisfies MotionWorkspacePersistenceBoundaryV1;
 
-export type MotionWorkspaceDocument =
-  | MotionCompositionDocumentV1
-  | MotionCompositionDocumentV2;
+export type MotionWorkspaceDocument = MotionCompositionDocumentV1 | MotionCompositionDocumentV2;
 
-export type MotionWorkspaceComposition =
-  | MotionCompositionDef
-  | MotionCompositionDefV2;
+export type MotionWorkspaceComposition = MotionCompositionDef | MotionCompositionDefV2;
 
 export type MotionWorkspaceSceneRevisions = Readonly<Record<string, number>>;
 
@@ -112,9 +106,7 @@ export interface MotionWorkspaceSnapshotV2 {
   readonly source?: MotionWorkspaceSourceMetadataV1;
 }
 
-export type MotionWorkspaceSnapshot =
-  | MotionWorkspaceSnapshotV1
-  | MotionWorkspaceSnapshotV2;
+export type MotionWorkspaceSnapshot = MotionWorkspaceSnapshotV1 | MotionWorkspaceSnapshotV2;
 
 export interface MotionWorkspaceDescriptor {
   readonly id: string;

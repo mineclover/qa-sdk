@@ -1,12 +1,12 @@
 // @def.boundary nest-service-bootstrap
 // @def.doc nest-service-bootstrap
 
-import { NestFactory } from "@nestjs/core";
-import type { Type } from "@nestjs/common";
-import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
-import { initTelemetry, otelEnvSchema, type OtelEnv } from "@qa-sdk/otel";
-import { warnPortConflict } from "@qa-sdk/core";
-import { createConsoleServiceLogger, type ServiceLogger } from "./logger.js";
+import { NestFactory } from '@nestjs/core';
+import type { Type } from '@nestjs/common';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { initTelemetry, otelEnvSchema, type OtelEnv } from '@qa-sdk/otel';
+import { warnPortConflict } from '@qa-sdk/core';
+import { createConsoleServiceLogger, type ServiceLogger } from './logger.js';
 
 export interface BootstrapNestServiceOptions {
   rootModule: Type<unknown>;
@@ -46,12 +46,12 @@ export async function bootstrapNestService(
     app.enableCors({ origin: options.corsOrigin });
   }
   if (options.useWebSocketAdapter) {
-    const { WsAdapter } = await import("@nestjs/platform-ws");
+    const { WsAdapter } = await import('@nestjs/platform-ws');
     app.useWebSocketAdapter(new WsAdapter(app));
   }
 
   await options.configureApp?.(app);
-  await app.listen({ port: options.port, host: options.host ?? "0.0.0.0" });
+  await app.listen({ port: options.port, host: options.host ?? '0.0.0.0' });
 
   logger.info(
     {
@@ -72,8 +72,8 @@ export async function bootstrapNestService(
     await shutdownTelemetry();
   };
 
-  process.once("SIGINT", () => void close("SIGINT"));
-  process.once("SIGTERM", () => void close("SIGTERM"));
+  process.once('SIGINT', () => void close('SIGINT'));
+  process.once('SIGTERM', () => void close('SIGTERM'));
 
   return { app, close };
 }

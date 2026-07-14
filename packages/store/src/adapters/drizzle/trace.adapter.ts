@@ -1,10 +1,10 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { asc, eq } from "drizzle-orm";
-import type { TraceStore, TraceUpsert, StoredTrace } from "@qa-sdk/core";
-import type { DbExecutor } from "../../db/client.js";
-import { traces } from "../../db/schema.js";
+import { asc, eq } from 'drizzle-orm';
+import type { TraceStore, TraceUpsert, StoredTrace } from '@qa-sdk/core';
+import type { DbExecutor } from '../../db/client.js';
+import { traces } from '../../db/schema.js';
 
 /** TraceStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleTraceStore implements TraceStore {
@@ -27,7 +27,7 @@ export class DrizzleTraceStore implements TraceStore {
           firstTimestamp: params.firstTimestamp,
           lastTimestamp: params.lastTimestamp,
         })
-        .comment({ adapter: "TraceStore", method: "upsert.insert" });
+        .comment({ adapter: 'TraceStore', method: 'upsert.insert' });
       return;
     }
 
@@ -50,7 +50,7 @@ export class DrizzleTraceStore implements TraceStore {
         updatedAt: new Date(),
       })
       .where(eq(traces.traceId, params.traceId))
-      .comment({ adapter: "TraceStore", method: "upsert.update" });
+      .comment({ adapter: 'TraceStore', method: 'upsert.update' });
   }
 
   async findById(traceId: string): Promise<StoredTrace | null> {
@@ -58,7 +58,7 @@ export class DrizzleTraceStore implements TraceStore {
       .select()
       .from(traces)
       .where(eq(traces.traceId, traceId))
-      .comment({ adapter: "TraceStore", method: "findById" });
+      .comment({ adapter: 'TraceStore', method: 'findById' });
     return row ? toStoredTrace(row) : null;
   }
 
@@ -69,7 +69,7 @@ export class DrizzleTraceStore implements TraceStore {
       .where(eq(traces.reconstructed, false))
       .orderBy(asc(traces.createdAt))
       .limit(limit)
-      .comment({ adapter: "TraceStore", method: "findUnreconstructed" });
+      .comment({ adapter: 'TraceStore', method: 'findUnreconstructed' });
     return rows.map(toStoredTrace);
   }
 
@@ -78,7 +78,7 @@ export class DrizzleTraceStore implements TraceStore {
       .update(traces)
       .set({ reconstructed: true, updatedAt: new Date() })
       .where(eq(traces.traceId, traceId))
-      .comment({ adapter: "TraceStore", method: "markReconstructed" });
+      .comment({ adapter: 'TraceStore', method: 'markReconstructed' });
   }
 }
 

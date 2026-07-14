@@ -1,4 +1,4 @@
-import type { TaxonomyIR } from "../schema/ir.js";
+import type { TaxonomyIR } from '../schema/ir.js';
 
 export class TaxonomyRegistry {
   private map = new Map<string, TaxonomyIR>();

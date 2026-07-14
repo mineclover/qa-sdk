@@ -7,7 +7,7 @@
  * 현재 StateStore 스냅샷을 기준으로 StateCondition[]을 평가한다.
  */
 
-import type { InputCondition, StateCondition } from "./transition.types.js";
+import type { InputCondition, StateCondition } from './transition.types.js';
 
 export interface InputViolation {
   readonly transition: string;
@@ -54,11 +54,11 @@ function evaluateCondition(
 
 /** 사용된 연산자와 기대값 추출 (위반 리포트용) */
 function extractOperator(cond: StateCondition): { operator: string; expected: unknown } {
-  if (cond.exists !== undefined) return { operator: "exists", expected: cond.exists };
-  if (cond.eq !== undefined) return { operator: "eq", expected: cond.eq };
-  if (cond.neq !== undefined) return { operator: "neq", expected: cond.neq };
-  if (cond.in !== undefined) return { operator: "in", expected: cond.in };
-  return { operator: "unknown", expected: undefined };
+  if (cond.exists !== undefined) return { operator: 'exists', expected: cond.exists };
+  if (cond.eq !== undefined) return { operator: 'eq', expected: cond.eq };
+  if (cond.neq !== undefined) return { operator: 'neq', expected: cond.neq };
+  if (cond.in !== undefined) return { operator: 'in', expected: cond.in };
+  return { operator: 'unknown', expected: undefined };
 }
 
 /**

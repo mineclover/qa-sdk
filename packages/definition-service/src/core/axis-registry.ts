@@ -7,13 +7,7 @@
  * fail-open: registry 미응답 시 로컬 캐시(DEFINITION_CATALOG 하드코딩) 사용.
  */
 
-import {
-  DEF_SCOPE,
-  DEF_ASPECT,
-  DEF_DEPTH,
-  DEF_LIFECYCLE,
-  LINK_TYPE,
-} from "definition-catalog";
+import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DEF_LIFECYCLE, LINK_TYPE } from 'definition-catalog';
 
 /** 축 entries 캐시 */
 export interface AxisEntries {
@@ -22,7 +16,7 @@ export interface AxisEntries {
   readonly depths: readonly string[];
   readonly lifecycles: readonly string[];
   readonly linkTypes: readonly string[];
-  readonly source: "registry" | "local";
+  readonly source: 'registry' | 'local';
 }
 
 /** 로컬 폴백 (definition-catalog 패키지의 하드코딩 값) */
@@ -32,7 +26,7 @@ const LOCAL_ENTRIES: AxisEntries = {
   depths: DEF_DEPTH.entries,
   lifecycles: DEF_LIFECYCLE.entries,
   linkTypes: LINK_TYPE.entries,
-  source: "local",
+  source: 'local',
 };
 
 export class AxisRegistry {
@@ -42,7 +36,7 @@ export class AxisRegistry {
 
   constructor(
     private readonly registryUrl: string,
-    private readonly catalogId = "definition",
+    private readonly catalogId = 'definition',
     options?: { cacheTtlMs?: number },
   ) {
     this.cacheTtlMs = options?.cacheTtlMs ?? 60_000;
@@ -63,7 +57,7 @@ export class AxisRegistry {
       const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
       if (!res.ok) throw new Error(`registry ${res.status}`);
 
-      const _axes = await res.json() as Array<{
+      const _axes = (await res.json()) as Array<{
         id: string;
         entryCount: number;
         capacity: number;
@@ -74,7 +68,7 @@ export class AxisRegistry {
       const catalogRes = await fetch(catalogUrl, { signal: AbortSignal.timeout(5_000) });
       if (!catalogRes.ok) throw new Error(`catalog ${catalogRes.status}`);
 
-      const catalog = await catalogRes.json() as { data: string };
+      const catalog = (await catalogRes.json()) as { data: string };
       const parsed = JSON.parse(catalog.data) as {
         axes: Record<string, { versions: Record<string, { entries: string[] }> }>;
       };
@@ -87,12 +81,12 @@ export class AxisRegistry {
       };
 
       this.cache = {
-        scopes: getEntries("def_scope"),
-        aspects: getEntries("def_aspect"),
-        depths: getEntries("def_depth"),
-        lifecycles: getEntries("def_lifecycle"),
-        linkTypes: getEntries("link_type"),
-        source: "registry",
+        scopes: getEntries('def_scope'),
+        aspects: getEntries('def_aspect'),
+        depths: getEntries('def_depth'),
+        lifecycles: getEntries('def_lifecycle'),
+        linkTypes: getEntries('link_type'),
+        source: 'registry',
       };
       this.lastFetchAt = Date.now();
 
@@ -134,16 +128,18 @@ export class AxisRegistry {
   }): string[] {
     const errors: string[] = [];
     if (meta.scope && !this.isValidScope(meta.scope)) {
-      errors.push(`scope '${meta.scope}' is not valid. valid: ${this.cache.scopes.join(", ")}`);
+      errors.push(`scope '${meta.scope}' is not valid. valid: ${this.cache.scopes.join(', ')}`);
     }
     if (meta.aspect && !this.isValidAspect(meta.aspect)) {
-      errors.push(`aspect '${meta.aspect}' is not valid. valid: ${this.cache.aspects.join(", ")}`);
+      errors.push(`aspect '${meta.aspect}' is not valid. valid: ${this.cache.aspects.join(', ')}`);
     }
     if (meta.depth && !this.isValidDepth(meta.depth)) {
-      errors.push(`depth '${meta.depth}' is not valid. valid: ${this.cache.depths.join(", ")}`);
+      errors.push(`depth '${meta.depth}' is not valid. valid: ${this.cache.depths.join(', ')}`);
     }
     if (meta.lifecycle && !this.isValidLifecycle(meta.lifecycle)) {
-      errors.push(`lifecycle '${meta.lifecycle}' is not valid. valid: ${this.cache.lifecycles.join(", ")}`);
+      errors.push(
+        `lifecycle '${meta.lifecycle}' is not valid. valid: ${this.cache.lifecycles.join(', ')}`,
+      );
     }
     return errors;
   }

@@ -168,9 +168,7 @@ export function renderCanonicalReviewView(
           <ul class="record-list">
             ${
               viewModel.latestRecords.length > 0
-                ? viewModel.latestRecords
-                    .map((record) => `<li>${escapeHtml(record)}</li>`)
-                    .join('')
+                ? viewModel.latestRecords.map((record) => `<li>${escapeHtml(record)}</li>`).join('')
                 : '<li>아직 flush된 레코드가 없습니다.</li>'
             }
           </ul>
@@ -192,8 +190,7 @@ export function renderCanonicalReviewView(
   const titleInput = root.querySelector<HTMLInputElement>('#review-changeTitle');
   const ownerInput = root.querySelector<HTMLInputElement>('#review-owner');
   const riskLevelSelect = root.querySelector<HTMLSelectElement>('#review-riskLevel');
-  const rollbackPlanInput =
-    root.querySelector<HTMLTextAreaElement>('#review-rollbackPlan');
+  const rollbackPlanInput = root.querySelector<HTMLTextAreaElement>('#review-rollbackPlan');
 
   refs.changeTitle = titleInput;
   refs.owner = ownerInput;
@@ -201,35 +198,22 @@ export function renderCanonicalReviewView(
   refs.rollbackPlan = rollbackPlanInput;
 
   titleInput?.addEventListener('input', (event) => {
-    actions.updateTextField(
-      'changeTitle',
-      (event.currentTarget as HTMLInputElement).value,
-    );
+    actions.updateTextField('changeTitle', (event.currentTarget as HTMLInputElement).value);
   });
   ownerInput?.addEventListener('input', (event) => {
     actions.updateTextField('owner', (event.currentTarget as HTMLInputElement).value);
   });
   riskLevelSelect?.addEventListener('change', (event) => {
-    actions.updateRiskLevel((event.currentTarget as HTMLSelectElement).value as
-      | ''
-      | 'low'
-      | 'medium'
-      | 'high');
-  });
-  rollbackPlanInput?.addEventListener('input', (event) => {
-    actions.updateTextField(
-      'rollbackPlan',
-      (event.currentTarget as HTMLTextAreaElement).value,
+    actions.updateRiskLevel(
+      (event.currentTarget as HTMLSelectElement).value as '' | 'low' | 'medium' | 'high',
     );
   });
-  root
-    .querySelector<HTMLTextAreaElement>('#review-summary')
-    ?.addEventListener('input', (event) => {
-      actions.updateTextField(
-        'summary',
-        (event.currentTarget as HTMLTextAreaElement).value,
-      );
-    });
+  rollbackPlanInput?.addEventListener('input', (event) => {
+    actions.updateTextField('rollbackPlan', (event.currentTarget as HTMLTextAreaElement).value);
+  });
+  root.querySelector<HTMLTextAreaElement>('#review-summary')?.addEventListener('input', (event) => {
+    actions.updateTextField('summary', (event.currentTarget as HTMLTextAreaElement).value);
+  });
 
   root
     .querySelector<HTMLFormElement>('#canonical-review-form')
@@ -237,25 +221,19 @@ export function renderCanonicalReviewView(
       event.preventDefault();
       void actions.submit();
     });
-  root.querySelector<HTMLButtonElement>('#canonical-sample')?.addEventListener(
-    'click',
-    () => {
-      actions.updateTextField('changeTitle', 'definition graph drift cleanup');
-      actions.updateTextField('owner', 'platform-docs');
-      actions.updateRiskLevel('high');
-      actions.updateTextField(
-        'rollbackPlan',
-        'Revert the latest definition sync batch, restore the previous graph snapshot, and rerun def validate before reopening writes.',
-      );
-      actions.updateTextField('summary', '');
-    },
-  );
-  root.querySelector<HTMLButtonElement>('#canonical-reset')?.addEventListener(
-    'click',
-    () => {
-      void actions.reset();
-    },
-  );
+  root.querySelector<HTMLButtonElement>('#canonical-sample')?.addEventListener('click', () => {
+    actions.updateTextField('changeTitle', 'definition graph drift cleanup');
+    actions.updateTextField('owner', 'platform-docs');
+    actions.updateRiskLevel('high');
+    actions.updateTextField(
+      'rollbackPlan',
+      'Revert the latest definition sync batch, restore the previous graph snapshot, and rerun def validate before reopening writes.',
+    );
+    actions.updateTextField('summary', '');
+  });
+  root.querySelector<HTMLButtonElement>('#canonical-reset')?.addEventListener('click', () => {
+    void actions.reset();
+  });
 
   restoreActiveField(root, activeField);
 }

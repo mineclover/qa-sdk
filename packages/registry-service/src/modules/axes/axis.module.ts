@@ -1,17 +1,13 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Module } from "@nestjs/common";
-import type { SqlDriver } from "index-meta";
-import { DATABASE } from "../../database.module.js";
-import { SqlAxisProfileStore } from "../../stores/sql-axis-profile-store.js";
-import { AxisChangeNotifier } from "./axis.change-notifier.js";
-import { AxisController } from "./axis.controller.js";
-import {
-  AXIS_CHANGE_HANDLER,
-  AXIS_STORE,
-  AxisService,
-} from "./axis.service.js";
+import { Module } from '@nestjs/common';
+import type { SqlDriver } from 'index-meta';
+import { DATABASE } from '../../database.module.js';
+import { SqlAxisProfileStore } from '../../stores/sql-axis-profile-store.js';
+import { AxisChangeNotifier } from './axis.change-notifier.js';
+import { AxisController } from './axis.controller.js';
+import { AXIS_CHANGE_HANDLER, AXIS_STORE, AxisService } from './axis.service.js';
 
 @Module({
   controllers: [AxisController],

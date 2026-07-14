@@ -1,12 +1,12 @@
 // @def.boundary rlsc
-import 'visbug'
-export { mountVisBug } from './mount.js'
-export { createDomRefSymbolResolver } from './coordinate-symbols.js'
+import 'visbug';
+export { mountVisBug } from './mount.js';
+export { createDomRefSymbolResolver } from './coordinate-symbols.js';
 export type {
   CoordinateLocateResult,
   CoordinateLocator,
   DomRefSymbolResolverOptions,
-} from './coordinate-symbols.js'
+} from './coordinate-symbols.js';
 export type {
   DomQuerySpec,
   DomRefCatalog,
@@ -22,4 +22,4 @@ export type {
   ReplayMode,
   ReplayOptions,
   ReplayResult,
-} from './types.js'
+} from './types.js';

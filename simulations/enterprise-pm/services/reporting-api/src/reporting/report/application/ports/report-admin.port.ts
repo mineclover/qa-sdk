@@ -1,12 +1,12 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import type { ReportReadModel } from "../../domain/report.types.js";
+import type { ReportReadModel } from '../../domain/report.types.js';
 import type {
   CreateReportCommand,
   DeleteReportCommand,
   UpdateReportCommand,
-} from "../commands/upsert-report.command.js";
+} from '../commands/upsert-report.command.js';
 
 /**
  * Report admin port — 카탈로그 항목 CRUD.

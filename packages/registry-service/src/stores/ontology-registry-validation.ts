@@ -14,9 +14,9 @@ import type {
   OntologyRegistryRecordKey,
   OntologyRegistrySegmentOverlapConflict,
   OntologyTaxonomyRecord,
-} from "./ontology-registry-store.js";
+} from './ontology-registry-store.js';
 
-const FIXTURE_NOW = "2026-04-14T00:00:00.000Z";
+const FIXTURE_NOW = '2026-04-14T00:00:00.000Z';
 
 export type OntologyRegistryValidationConflict =
   | OntologyRegistryDuplicateKeyConflict
@@ -52,10 +52,10 @@ export function buildOntologyNamespaceRecord(
   overrides: Partial<OntologyNamespaceRecord> = {},
 ): OntologyNamespaceRecord {
   return {
-    ontologyId: "ontology-a",
-    namespace: "qa.runtime",
-    owner: "registry-service",
-    lifecycle: "draft",
+    ontologyId: 'ontology-a',
+    namespace: 'qa.runtime',
+    owner: 'registry-service',
+    lifecycle: 'draft',
     createdAt: FIXTURE_NOW,
     updatedAt: FIXTURE_NOW,
     ...overrides,
@@ -66,13 +66,13 @@ export function buildOntologyAxisRecord(
   overrides: Partial<OntologyAxisRecord> = {},
 ): OntologyAxisRecord {
   const record: OntologyAxisRecord = {
-    ontologyId: "ontology-a",
-    axisId: "region",
-    versionId: "v1",
-    values: ["us", "eu"],
-    valuesHash: "fnv1a32:region",
+    ontologyId: 'ontology-a',
+    axisId: 'region',
+    versionId: 'v1',
+    values: ['us', 'eu'],
+    valuesHash: 'fnv1a32:region',
     capacity: 4,
-    lifecycle: "draft",
+    lifecycle: 'draft',
     ...overrides,
   };
   return { ...record, values: [...record.values] };
@@ -82,14 +82,14 @@ export function buildOntologyTaxonomyRecord(
   overrides: Partial<OntologyTaxonomyRecord> = {},
 ): OntologyTaxonomyRecord {
   const record: OntologyTaxonomyRecord = {
-    ontologyId: "ontology-a",
-    taxonomyId: "runtime-surface",
-    versionId: "v1",
-    appliesTo: ["service"],
-    axisIds: ["region"],
-    identityAxisIds: ["region"],
-    space: "runtime",
-    lifecycle: "draft",
+    ontologyId: 'ontology-a',
+    taxonomyId: 'runtime-surface',
+    versionId: 'v1',
+    appliesTo: ['service'],
+    axisIds: ['region'],
+    identityAxisIds: ['region'],
+    space: 'runtime',
+    lifecycle: 'draft',
     ...overrides,
   };
   return {
@@ -104,16 +104,16 @@ export function buildOntologyAddressAllocationRecord(
   overrides: Partial<OntologyAddressAllocationRecord> = {},
 ): OntologyAddressAllocationRecord {
   return {
-    allocationId: "ontology-a:runtime-surface:v1",
-    ontologyId: "ontology-a",
-    taxonomyId: "runtime-surface",
-    prefix: "qa_runtime_surface",
-    versionId: "v1",
-    addressModel: "product",
+    allocationId: 'ontology-a:runtime-surface:v1',
+    ontologyId: 'ontology-a',
+    taxonomyId: 'runtime-surface',
+    prefix: 'qa_runtime_surface',
+    versionId: 'v1',
+    addressModel: 'product',
     capacity: 16,
     addressOffset: 0,
     addressSize: 16,
-    status: "reserved",
+    status: 'reserved',
     ...overrides,
   };
 }
@@ -122,9 +122,9 @@ export function buildOntologyAddressSegmentRecord(
   overrides: Partial<OntologyAddressSegmentRecord> = {},
 ): OntologyAddressSegmentRecord {
   const record: OntologyAddressSegmentRecord = {
-    allocationId: "ontology-a:runtime-surface:v1",
-    segmentId: "ontology-a:runtime-surface:v1:product",
-    consumes: ["region"],
+    allocationId: 'ontology-a:runtime-surface:v1',
+    segmentId: 'ontology-a:runtime-surface:v1:product',
+    consumes: ['region'],
     addressOffset: 0,
     addressSize: 16,
     ...overrides,
@@ -150,14 +150,8 @@ export function validateOntologyRegistryRows(
   const existing = input.existing ?? {};
   const attempted = input.attempted;
   const axes = [...(existing.axes ?? []), ...(attempted.axes ?? [])];
-  const taxonomies = [
-    ...(existing.taxonomies ?? []),
-    ...(attempted.taxonomies ?? []),
-  ];
-  const allocations = [
-    ...(existing.allocations ?? []),
-    ...(attempted.allocations ?? []),
-  ];
+  const taxonomies = [...(existing.taxonomies ?? []), ...(attempted.taxonomies ?? [])];
+  const allocations = [...(existing.allocations ?? []), ...(attempted.allocations ?? [])];
   const segments = [...(existing.segments ?? []), ...(attempted.segments ?? [])];
 
   return [
@@ -172,26 +166,17 @@ export function validateOntologyTaxonomyAxisReferences(
   input: OntologyTaxonomyAxisReferenceValidationInput,
 ): OntologyRegistryMissingTaxonomyAxisConflict[] {
   const axisKeys = new Set(
-    input.axes.map((axis) =>
-      compoundKey(axis.ontologyId, axis.axisId, axis.versionId),
-    ),
+    input.axes.map((axis) => compoundKey(axis.ontologyId, axis.axisId, axis.versionId)),
   );
   const conflicts: OntologyRegistryMissingTaxonomyAxisConflict[] = [];
 
   for (const taxonomy of input.taxonomies) {
-    for (const axisId of unique([
-      ...taxonomy.axisIds,
-      ...taxonomy.identityAxisIds,
-    ])) {
-      if (
-        axisKeys.has(
-          compoundKey(taxonomy.ontologyId, axisId, taxonomy.versionId),
-        )
-      ) {
+    for (const axisId of unique([...taxonomy.axisIds, ...taxonomy.identityAxisIds])) {
+      if (axisKeys.has(compoundKey(taxonomy.ontologyId, axisId, taxonomy.versionId))) {
         continue;
       }
       conflicts.push({
-        code: "missing-taxonomy-axis",
+        code: 'missing-taxonomy-axis',
         message: `Taxonomy "${taxonomy.taxonomyId}" references missing axis "${axisId}" for ontology "${taxonomy.ontologyId}" version "${taxonomy.versionId}"`,
         ontologyId: taxonomy.ontologyId,
         taxonomyId: taxonomy.taxonomyId,
@@ -219,16 +204,16 @@ export function validateOntologyAddressSegments(
   for (const segment of input.segments) {
     const allocation = allocationsById.get(segment.allocationId);
     if (!allocation) {
-      conflicts.push(invalidSegment(segment, "missing-allocation"));
+      conflicts.push(invalidSegment(segment, 'missing-allocation'));
     }
     if (segment.consumes.length === 0) {
-      conflicts.push(invalidSegment(segment, "empty-consumes"));
+      conflicts.push(invalidSegment(segment, 'empty-consumes'));
     }
     if (segment.addressSize <= 0) {
-      conflicts.push(invalidSegment(segment, "non-positive-size"));
+      conflicts.push(invalidSegment(segment, 'non-positive-size'));
     }
     if (segment.addressOffset < 0) {
-      conflicts.push(invalidSegment(segment, "negative-offset"));
+      conflicts.push(invalidSegment(segment, 'negative-offset'));
     }
 
     if (!allocation || segment.addressSize <= 0 || segment.addressOffset < 0) {
@@ -238,11 +223,8 @@ export function validateOntologyAddressSegments(
     const allocationStart = allocation.addressOffset;
     const allocationEnd = allocation.addressOffset + allocation.addressSize;
     const segmentEnd = segment.addressOffset + segment.addressSize;
-    if (
-      segment.addressOffset < allocationStart ||
-      segmentEnd > allocationEnd
-    ) {
-      conflicts.push(invalidSegment(segment, "outside-allocation-range"));
+    if (segment.addressOffset < allocationStart || segmentEnd > allocationEnd) {
+      conflicts.push(invalidSegment(segment, 'outside-allocation-range'));
       continue;
     }
 
@@ -265,7 +247,7 @@ export function validateOntologyAddressSegments(
       const previousEnd = previous.addressOffset + previous.addressSize;
       if (current.addressOffset < previousEnd) {
         conflicts.push({
-          code: "segment-overlap",
+          code: 'segment-overlap',
           message: `Segment "${current.segmentId}" overlaps segment "${previous.segmentId}" in allocation "${allocationId}"`,
           allocationId,
           segmentId: current.segmentId,
@@ -293,35 +275,35 @@ export function detectOntologyRegistrySameKeyDrift(
 
   return [
     ...detectDriftForKind(
-      "namespace",
+      'namespace',
       existing.namespaces ?? [],
       attempted.namespaces ?? [],
       namespaceDriftKeySpecs,
       namespaceDriftFields,
     ),
     ...detectDriftForKind(
-      "axis",
+      'axis',
       existing.axes ?? [],
       attempted.axes ?? [],
       axisDriftKeySpecs,
       axisDriftFields,
     ),
     ...detectDriftForKind(
-      "taxonomy",
+      'taxonomy',
       existing.taxonomies ?? [],
       attempted.taxonomies ?? [],
       taxonomyDriftKeySpecs,
       taxonomyDriftFields,
     ),
     ...detectDriftForKind(
-      "allocation",
+      'allocation',
       existing.allocations ?? [],
       attempted.allocations ?? [],
       allocationDriftKeySpecs,
       allocationDriftFields,
     ),
     ...detectDriftForKind(
-      "segment",
+      'segment',
       existing.segments ?? [],
       attempted.segments ?? [],
       segmentDriftKeySpecs,
@@ -338,35 +320,35 @@ export function detectOntologyRegistryDuplicateKeys(
 
   return [
     ...detectDuplicatesForKind(
-      "namespace",
+      'namespace',
       existing.namespaces ?? [],
       attempted.namespaces ?? [],
       namespaceDriftKeySpecs,
       namespaceDriftFields,
     ),
     ...detectDuplicatesForKind(
-      "axis",
+      'axis',
       existing.axes ?? [],
       attempted.axes ?? [],
       axisDriftKeySpecs,
       axisDriftFields,
     ),
     ...detectDuplicatesForKind(
-      "taxonomy",
+      'taxonomy',
       existing.taxonomies ?? [],
       attempted.taxonomies ?? [],
       taxonomyDriftKeySpecs,
       taxonomyDriftFields,
     ),
     ...detectDuplicatesForKind(
-      "allocation",
+      'allocation',
       existing.allocations ?? [],
       attempted.allocations ?? [],
       allocationDriftKeySpecs,
       allocationDriftFields,
     ),
     ...detectDuplicatesForKind(
-      "segment",
+      'segment',
       existing.segments ?? [],
       attempted.segments ?? [],
       segmentDriftKeySpecs,
@@ -375,7 +357,7 @@ export function detectOntologyRegistryDuplicateKeys(
   ];
 }
 
-type RecordKindName = OntologyRegistryRecordKey["recordKind"];
+type RecordKindName = OntologyRegistryRecordKey['recordKind'];
 
 interface DriftKeySpec<T extends object> {
   readonly keyOf: (record: T) => string;
@@ -383,45 +365,43 @@ interface DriftKeySpec<T extends object> {
 }
 
 const namespaceDriftFields = [
-  "ontologyId",
-  "namespace",
-  "owner",
-  "lifecycle",
-  "createdAt",
-  "updatedAt",
+  'ontologyId',
+  'namespace',
+  'owner',
+  'lifecycle',
+  'createdAt',
+  'updatedAt',
 ] as const satisfies readonly (keyof OntologyNamespaceRecord)[];
 
-const namespaceDriftKeySpecs: readonly DriftKeySpec<OntologyNamespaceRecord>[] =
-  [
-    {
-      keyOf: (record) => compoundKey(record.ontologyId),
-      conflictKeyOf: (record) => ({
-        recordKind: "namespace",
-        ontologyId: record.ontologyId,
-      }),
-    },
-    {
-      keyOf: (record) => compoundKey(record.namespace),
-      conflictKeyOf: (record) => ({
-        recordKind: "namespace",
-        namespace: record.namespace,
-      }),
-    },
-  ];
+const namespaceDriftKeySpecs: readonly DriftKeySpec<OntologyNamespaceRecord>[] = [
+  {
+    keyOf: (record) => compoundKey(record.ontologyId),
+    conflictKeyOf: (record) => ({
+      recordKind: 'namespace',
+      ontologyId: record.ontologyId,
+    }),
+  },
+  {
+    keyOf: (record) => compoundKey(record.namespace),
+    conflictKeyOf: (record) => ({
+      recordKind: 'namespace',
+      namespace: record.namespace,
+    }),
+  },
+];
 
 const axisDriftFields = [
-  "values",
-  "valuesHash",
-  "capacity",
-  "lifecycle",
+  'values',
+  'valuesHash',
+  'capacity',
+  'lifecycle',
 ] as const satisfies readonly (keyof OntologyAxisRecord)[];
 
 const axisDriftKeySpecs: readonly DriftKeySpec<OntologyAxisRecord>[] = [
   {
-    keyOf: (record) =>
-      compoundKey(record.ontologyId, record.axisId, record.versionId),
+    keyOf: (record) => compoundKey(record.ontologyId, record.axisId, record.versionId),
     conflictKeyOf: (record) => ({
-      recordKind: "axis",
+      recordKind: 'axis',
       ontologyId: record.ontologyId,
       axisId: record.axisId,
       versionId: record.versionId,
@@ -430,19 +410,18 @@ const axisDriftKeySpecs: readonly DriftKeySpec<OntologyAxisRecord>[] = [
 ];
 
 const taxonomyDriftFields = [
-  "appliesTo",
-  "axisIds",
-  "identityAxisIds",
-  "space",
-  "lifecycle",
+  'appliesTo',
+  'axisIds',
+  'identityAxisIds',
+  'space',
+  'lifecycle',
 ] as const satisfies readonly (keyof OntologyTaxonomyRecord)[];
 
 const taxonomyDriftKeySpecs: readonly DriftKeySpec<OntologyTaxonomyRecord>[] = [
   {
-    keyOf: (record) =>
-      compoundKey(record.ontologyId, record.taxonomyId, record.versionId),
+    keyOf: (record) => compoundKey(record.ontologyId, record.taxonomyId, record.versionId),
     conflictKeyOf: (record) => ({
-      recordKind: "taxonomy",
+      recordKind: 'taxonomy',
       ontologyId: record.ontologyId,
       taxonomyId: record.taxonomyId,
       versionId: record.versionId,
@@ -451,64 +430,61 @@ const taxonomyDriftKeySpecs: readonly DriftKeySpec<OntologyTaxonomyRecord>[] = [
 ];
 
 const allocationDriftFields = [
-  "allocationId",
-  "ontologyId",
-  "taxonomyId",
-  "prefix",
-  "versionId",
-  "addressModel",
-  "capacity",
-  "addressOffset",
-  "addressSize",
-  "status",
+  'allocationId',
+  'ontologyId',
+  'taxonomyId',
+  'prefix',
+  'versionId',
+  'addressModel',
+  'capacity',
+  'addressOffset',
+  'addressSize',
+  'status',
 ] as const satisfies readonly (keyof OntologyAddressAllocationRecord)[];
 
-const allocationDriftKeySpecs: readonly DriftKeySpec<OntologyAddressAllocationRecord>[] =
-  [
-    {
-      keyOf: (record) => compoundKey(record.allocationId),
-      conflictKeyOf: (record) => ({
-        recordKind: "allocation",
-        allocationId: record.allocationId,
-      }),
-    },
-    {
-      keyOf: (record) => compoundKey(record.prefix, record.versionId),
-      conflictKeyOf: (record) => ({
-        recordKind: "allocation",
-        prefix: record.prefix,
-        versionId: record.versionId,
-      }),
-    },
-    {
-      keyOf: (record) =>
-        compoundKey(record.ontologyId, record.taxonomyId, record.versionId),
-      conflictKeyOf: (record) => ({
-        recordKind: "allocation",
-        ontologyId: record.ontologyId,
-        taxonomyId: record.taxonomyId,
-        versionId: record.versionId,
-      }),
-    },
-  ];
+const allocationDriftKeySpecs: readonly DriftKeySpec<OntologyAddressAllocationRecord>[] = [
+  {
+    keyOf: (record) => compoundKey(record.allocationId),
+    conflictKeyOf: (record) => ({
+      recordKind: 'allocation',
+      allocationId: record.allocationId,
+    }),
+  },
+  {
+    keyOf: (record) => compoundKey(record.prefix, record.versionId),
+    conflictKeyOf: (record) => ({
+      recordKind: 'allocation',
+      prefix: record.prefix,
+      versionId: record.versionId,
+    }),
+  },
+  {
+    keyOf: (record) => compoundKey(record.ontologyId, record.taxonomyId, record.versionId),
+    conflictKeyOf: (record) => ({
+      recordKind: 'allocation',
+      ontologyId: record.ontologyId,
+      taxonomyId: record.taxonomyId,
+      versionId: record.versionId,
+    }),
+  },
+];
 
 const segmentDriftFields = [
-  "consumes",
-  "addressOffset",
-  "addressSize",
+  'consumes',
+  'addressOffset',
+  'addressSize',
 ] as const satisfies readonly (keyof OntologyAddressSegmentRecord)[];
 
-const segmentDriftKeySpecs: readonly DriftKeySpec<OntologyAddressSegmentRecord>[] =
-  [
-    {
-      keyOf: (record) => compoundKey(record.allocationId, record.segmentId),
-      conflictKeyOf: (record) => ({
-        recordKind: "segment",
-        allocationId: record.allocationId,
-        segmentId: record.segmentId,
-      }),
-    },
-  ];
+const segmentDriftKeySpecs: readonly DriftKeySpec<OntologyAddressSegmentRecord>[] = [
+  {
+    keyOf: (record) => compoundKey(record.allocationId, record.segmentId),
+    conflictKeyOf: (record) => ({
+      recordKind: 'segment',
+      allocationId: record.allocationId,
+      segmentId: record.segmentId,
+    }),
+  },
+];
 
 function detectDriftForKind<T extends object>(
   recordKind: RecordKindName,
@@ -550,21 +526,19 @@ function detectDriftForKind<T extends object>(
       const pairKey = `${objectId(existing)}:${objectId(record)}`;
       if (emittedPairs.has(pairKey)) continue;
 
-      const changedFields = fields.filter(
-        (field) => !sameValue(existing[field], record[field]),
-      );
+      const changedFields = fields.filter((field) => !sameValue(existing[field], record[field]));
       if (changedFields.length === 0) continue;
 
       emittedPairs.add(pairKey);
       conflicts.push({
-        code: "drift",
+        code: 'drift',
         message: `${recordKind} record drift detected for ${formatRecordKey(
           keySpec.conflictKeyOf(record),
         )}`,
         key: keySpec.conflictKeyOf(record),
         fields: changedFields,
-        existing: existing as OntologyRegistryDriftConflict["existing"],
-        attempted: record as OntologyRegistryDriftConflict["attempted"],
+        existing: existing as OntologyRegistryDriftConflict['existing'],
+        attempted: record as OntologyRegistryDriftConflict['attempted'],
       });
     }
   }
@@ -609,9 +583,7 @@ function detectDuplicatesForKind<T extends object>(
         continue;
       }
 
-      const isExactDuplicate = fields.every((field) =>
-        sameValue(existing[field], record[field]),
-      );
+      const isExactDuplicate = fields.every((field) => sameValue(existing[field], record[field]));
       if (!isExactDuplicate) continue;
 
       const pairKey = `${objectId(existing)}:${objectId(record)}`;
@@ -619,7 +591,7 @@ function detectDuplicatesForKind<T extends object>(
 
       emittedPairs.add(pairKey);
       conflicts.push({
-        code: "duplicate-key",
+        code: 'duplicate-key',
         message: `Duplicate ${recordKind} record for ${formatRecordKey(
           keySpec.conflictKeyOf(record),
         )}`,
@@ -633,10 +605,10 @@ function detectDuplicatesForKind<T extends object>(
 
 function invalidSegment(
   segment: OntologyAddressSegmentRecord,
-  reason: OntologyRegistryInvalidSegmentConflict["reason"],
+  reason: OntologyRegistryInvalidSegmentConflict['reason'],
 ): OntologyRegistryInvalidSegmentConflict {
   return {
-    code: "invalid-segment",
+    code: 'invalid-segment',
     message: `Segment "${segment.segmentId}" is invalid: ${reason}`,
     allocationId: segment.allocationId,
     segmentId: segment.segmentId,
@@ -645,7 +617,7 @@ function invalidSegment(
 }
 
 function compoundKey(...parts: readonly string[]): string {
-  return parts.join("\u0000");
+  return parts.join('\u0000');
 }
 
 function unique(values: readonly string[]): string[] {
@@ -655,8 +627,7 @@ function unique(values: readonly string[]): string[] {
 function sameValue(left: unknown, right: unknown): boolean {
   if (Array.isArray(left) && Array.isArray(right)) {
     return (
-      left.length === right.length &&
-      left.every((value, index) => sameValue(value, right[index]))
+      left.length === right.length && left.every((value, index) => sameValue(value, right[index]))
     );
   }
   return Object.is(left, right);
@@ -666,5 +637,5 @@ function formatRecordKey(key: OntologyRegistryRecordKey): string {
   return Object.entries(key)
     .filter(([, value]) => value !== undefined)
     .map(([name, value]) => `${name}=${String(value)}`)
-    .join(", ");
+    .join(', ');
 }

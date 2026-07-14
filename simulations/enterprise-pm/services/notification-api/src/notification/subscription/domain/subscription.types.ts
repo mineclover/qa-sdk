@@ -1,9 +1,9 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import type { SubscriberUserId, EventTypeKey } from "./subscription.ids.js";
+import type { SubscriberUserId, EventTypeKey } from './subscription.ids.js';
 
-export type SubscriptionChannel = "in_app" | "email";
+export type SubscriptionChannel = 'in_app' | 'email';
 
 /** 도메인 entity 의 내부 props (불변, branded ids). */
 export interface SubscriptionProps {

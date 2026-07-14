@@ -10,17 +10,8 @@
  * fail-open: 어떤 실패도 throw하지 않는다.
  */
 
-import type {
-  EventRecord,
-  TransmissionEnvelope,
-} from "@qa-sdk/core";
-import {
-  newLogId,
-  newTransmissionId,
-  newTraceId,
-  newSpanId,
-  now,
-} from "@qa-sdk/core";
+import type { EventRecord, TransmissionEnvelope } from '@qa-sdk/core';
+import { newLogId, newTransmissionId, newTraceId, newSpanId, now } from '@qa-sdk/core';
 
 // ── Config ──────────────────────────────────────────────
 
@@ -71,51 +62,60 @@ export interface ForwarderStats {
 // ── pino level → label ──────────────────────────────────
 
 const PINO_LEVELS: Record<number, string> = {
-  10: "trace",
-  20: "debug",
-  30: "info",
-  40: "warn",
-  50: "error",
-  60: "fatal",
+  10: 'trace',
+  20: 'debug',
+  30: 'info',
+  40: 'warn',
+  50: 'error',
+  60: 'fatal',
 };
 
 // ── 예약 필드 (payload에서 제외) ────────────────────────
 
 const RESERVED_KEYS = new Set([
-  "addressContext", "traceId", "spanId", "parentSpanId",
-  "qaSessionId", "eventKey",
-  "time", "level", "pid", "hostname", "name", "msg", "timestamp",
+  'addressContext',
+  'traceId',
+  'spanId',
+  'parentSpanId',
+  'qaSessionId',
+  'eventKey',
+  'time',
+  'level',
+  'pid',
+  'hostname',
+  'name',
+  'msg',
+  'timestamp',
 ]);
 
 // ── Filter ──────────────────────────────────────────────
 
 function shouldForward(log: Record<string, unknown>): boolean {
   const ctx = log.addressContext;
-  return ctx != null
-    && typeof ctx === "object"
-    && Object.keys(ctx as object).length > 0;
+  return ctx != null && typeof ctx === 'object' && Object.keys(ctx as object).length > 0;
 }
 
 // ── Transform ───────────────────────────────────────────
 
 function toEventRecord(log: Record<string, unknown>): EventRecord {
-  const level = typeof log.level === "number" ? log.level : 30;
-  const levelLabel = (typeof log.level === "string" ? log.level : PINO_LEVELS[level]) ?? "info";
+  const level = typeof log.level === 'number' ? log.level : 30;
+  const levelLabel = (typeof log.level === 'string' ? log.level : PINO_LEVELS[level]) ?? 'info';
 
   // event_key: 명시 > 자동
-  const eventKey = typeof log.eventKey === "string"
-    ? log.eventKey
-    : `svc_log.${levelLabel}`;
+  const eventKey = typeof log.eventKey === 'string' ? log.eventKey : `svc_log.${levelLabel}`;
 
   // timestamp
-  const ts = typeof log.time === "number"
-    ? new Date(log.time).toISOString()
-    : (typeof log.timestamp === "string" ? log.timestamp : now());
+  const ts =
+    typeof log.time === 'number'
+      ? new Date(log.time).toISOString()
+      : typeof log.timestamp === 'string'
+        ? log.timestamp
+        : now();
 
   // payload: 예약 필드 제외
   const payload: Record<string, unknown> = {};
-  if (typeof log.msg === "string") payload.msg = log.msg;
-  if (typeof log.name === "string") payload.service = log.name;
+  if (typeof log.msg === 'string') payload.msg = log.msg;
+  if (typeof log.name === 'string') payload.service = log.name;
   for (const [k, v] of Object.entries(log)) {
     if (!RESERVED_KEYS.has(k)) {
       payload[k] = v;
@@ -125,18 +125,18 @@ function toEventRecord(log: Record<string, unknown>): EventRecord {
   return {
     log_id: newLogId(),
     timestamp: ts,
-    record_kind: "log",
-    trace_id: (typeof log.traceId === "string" ? log.traceId : undefined) ?? newTraceId(),
-    span_id: (typeof log.spanId === "string" ? log.spanId : undefined) ?? newSpanId(),
-    parent_span_id: typeof log.parentSpanId === "string" ? log.parentSpanId : undefined,
+    record_kind: 'log',
+    trace_id: (typeof log.traceId === 'string' ? log.traceId : undefined) ?? newTraceId(),
+    span_id: (typeof log.spanId === 'string' ? log.spanId : undefined) ?? newSpanId(),
+    parent_span_id: typeof log.parentSpanId === 'string' ? log.parentSpanId : undefined,
     event_key: eventKey,
-    event_version: "1",
-    payload_format: "json",
-    payload_encoding: "raw",
+    event_version: '1',
+    payload_format: 'json',
+    payload_encoding: 'raw',
     payload_masking_applied: false,
     payload_masked_fields: [],
     payload,
-    qa_session_id: typeof log.qaSessionId === "string" ? log.qaSessionId : undefined,
+    qa_session_id: typeof log.qaSessionId === 'string' ? log.qaSessionId : undefined,
     address_context: log.addressContext as Record<string, string>,
   };
 }
@@ -151,19 +151,19 @@ function buildEnvelope(
     transmission_id: newTransmissionId(),
     sent_at: now(),
     owner: {
-      owner_type: "agent",
+      owner_type: 'agent',
       owner_id: `svc:${config.serviceName}`,
     },
     source: {
       service_name: config.serviceName,
-      sdk_name: "@qa-sdk/logger",
-      sdk_version: "0.1.0",
+      sdk_name: '@qa-sdk/logger',
+      sdk_version: '0.1.0',
     },
     runtime: {
-      platform: "node",
+      platform: 'node',
     },
     build: {
-      env: config.buildEnv ?? process.env.NODE_ENV ?? "local",
+      env: config.buildEnv ?? process.env.NODE_ENV ?? 'local',
     },
     infra_context: config.infraContext,
     records,
@@ -245,7 +245,7 @@ export class IngestForwarder {
       this.push(record);
     } catch {
       this.stats.dropped++;
-      this.config.onError?.("변환 실패");
+      this.config.onError?.('변환 실패');
     }
   }
 
@@ -278,8 +278,8 @@ export class IngestForwarder {
 
       try {
         const res = await fetch(this.config.endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(envelope),
           signal: controller.signal,
         });

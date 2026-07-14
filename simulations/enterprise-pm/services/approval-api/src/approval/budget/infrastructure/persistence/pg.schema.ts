@@ -1,35 +1,32 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text, integer, doublePrecision, index } from "drizzle-orm/pg-core";
+import { pgSchema, text, integer, doublePrecision, index } from 'drizzle-orm/pg-core';
 
 /**
  * Postgres schema (budget slice).
  *
  * 기존 pg/schema.ts 와 동일한 sim namespace + 테이블 이름.
  */
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 export const budgetRequests = sim.table(
-  "approval_budget_requests",
+  'approval_budget_requests',
   {
-    id: text("id").primaryKey(),
-    projectId: text("project_id").notNull(),
-    projectDepartmentId: text("project_department_id").notNull().default(""),
-    amount: doublePrecision("amount").notNull(),
-    requesterId: text("requester_id").notNull(),
-    status: text("status", {
-      enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    projectDepartmentId: text('project_department_id').notNull().default(''),
+    amount: doublePrecision('amount').notNull(),
+    requesterId: text('requester_id').notNull(),
+    status: text('status', {
+      enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
     }).notNull(),
-    currentStage: integer("current_stage").notNull(),
-    totalStages: integer("total_stages").notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    currentStage: integer('current_stage').notNull(),
+    totalStages: integer('total_stages').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
-  (t) => [
-    index("idx_sim_br_proj").on(t.projectId),
-    index("idx_sim_br_req").on(t.requesterId),
-  ],
+  (t) => [index('idx_sim_br_proj').on(t.projectId), index('idx_sim_br_req').on(t.requesterId)],
 );
 
 export const SIM_APPROVAL_BUDGET_PG_DDL = `

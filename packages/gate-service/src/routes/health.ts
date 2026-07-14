@@ -1,7 +1,7 @@
 // @def.boundary gate-system
 // @def.doc gate-system
 
-import { Hono } from "hono";
+import { Hono } from 'hono';
 
 export interface HealthDeps {
   engineConfigured: boolean;
@@ -12,9 +12,9 @@ export interface HealthDeps {
 export function createHealthRoutes(deps: HealthDeps) {
   const app = new Hono();
 
-  app.get("/health", (c) => {
+  app.get('/health', (c) => {
     return c.json({
-      status: "ok",
+      status: 'ok',
       gate_engine_configured: deps.engineConfigured,
       uptime_seconds: deps.getUptimeSeconds?.() ?? undefined,
       version: deps.version ?? undefined,

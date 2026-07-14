@@ -5,7 +5,7 @@
 export interface DecideBudgetCommand {
   readonly id: string;
   readonly approverId: string;
-  readonly decision: "approved" | "rejected";
+  readonly decision: 'approved' | 'rejected';
   readonly comment?: string;
   readonly traceId?: string;
   readonly correlationId?: string;

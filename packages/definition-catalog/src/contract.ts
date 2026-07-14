@@ -14,20 +14,20 @@
  *   → 그룹 purpose + inputs + outputs + preconditions + steps + ...
  */
 
-import type { DefinitionEntry, DefinitionLink, DefScope } from "./types.js";
-import { findMarkedSections } from "./extract.js";
-import { CONTRACT_MARKERS, type ContractMarkerKind, type ContractMarkerDef } from "./taxonomy.js";
+import type { DefinitionEntry, DefinitionLink, DefScope } from './types.js';
+import { findMarkedSections } from './extract.js';
+import { CONTRACT_MARKERS, type ContractMarkerKind, type ContractMarkerDef } from './taxonomy.js';
 
 // ── evidence 파싱은 contract-evidence.ts에 분리. re-export로 하위 호환. ──
-import { parseEvidenceItems } from "./contract-evidence.js";
-import type { EvidenceItem } from "./contract-evidence.js";
-export type { Reversibility, EvidenceItem } from "./contract-evidence.js";
+import { parseEvidenceItems } from './contract-evidence.js';
+import type { EvidenceItem } from './contract-evidence.js';
+export type { Reversibility, EvidenceItem } from './contract-evidence.js';
 export { parseEvidenceItems };
 
 // ── stats/rendering은 contract-stats.ts에 분리. ──
-import type { ContractStats } from "./contract-stats.js";
-import { computeStats, extractPurpose, renderContract } from "./contract-stats.js";
-export type { ContractStats } from "./contract-stats.js";
+import type { ContractStats } from './contract-stats.js';
+import { computeStats, extractPurpose, renderContract } from './contract-stats.js';
+export type { ContractStats } from './contract-stats.js';
 
 // ─── 타입 ────────────────────────────────────────────────
 
@@ -88,7 +88,7 @@ export interface AssembledContract {
 // ─── 마커 → 슬롯 매핑 ──────────────────────────────────
 
 const MARKER_TO_DEF = new Map<string, ContractMarkerDef>(
-  CONTRACT_MARKERS.map(m => [m.marker, m]),
+  CONTRACT_MARKERS.map((m) => [m.marker, m]),
 );
 
 // ─── 조립 함수 ──────────────────────────────────────────
@@ -104,7 +104,7 @@ const MARKER_TO_DEF = new Map<string, ContractMarkerDef>(
 export function assembleContract(
   groupId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
   getBody: (id: string) => string | undefined,
 ): AssembledContract | null {
   const group = getEntry(groupId);
@@ -115,7 +115,7 @@ export function assembleContract(
   const groupPurpose = groupBody ? extractPurpose(groupBody) : null;
 
   // contains 멤버 수집
-  const containsLinks = getLinks(groupId, "outgoing").filter(l => l.linkType === "contains");
+  const containsLinks = getLinks(groupId, 'outgoing').filter((l) => l.linkType === 'contains');
   const allSections: ContractSection[] = [];
   const memberIds: string[] = [];
 
@@ -163,31 +163,31 @@ export function assembleContract(
   }
 
   // 슬롯별 분류
-  const inputs = allSections.filter(s => s.marker === "inputs");
-  const outputs = allSections.filter(s => s.marker === "outputs");
-  const preconditions = allSections.filter(s => s.marker === "precondition");
-  const postconditions = allSections.filter(s => s.marker === "postcondition");
-  const steps = allSections.filter(s => s.marker === "flow-steps");
-  const decisionPoints = allSections.filter(s => s.marker === "decision-point");
-  const failures = allSections.filter(s => s.marker === "failure");
-  const evidence = allSections.filter(s => s.marker === "evidence");
+  const inputs = allSections.filter((s) => s.marker === 'inputs');
+  const outputs = allSections.filter((s) => s.marker === 'outputs');
+  const preconditions = allSections.filter((s) => s.marker === 'precondition');
+  const postconditions = allSections.filter((s) => s.marker === 'postcondition');
+  const steps = allSections.filter((s) => s.marker === 'flow-steps');
+  const decisionPoints = allSections.filter((s) => s.marker === 'decision-point');
+  const failures = allSections.filter((s) => s.marker === 'failure');
+  const evidence = allSections.filter((s) => s.marker === 'evidence');
 
   // evidence 항목 파싱 (가역성 어노테이션 포함)
-  const parsedEvidence = evidence.flatMap(s => parseEvidenceItems(s.body, s.sourceId));
+  const parsedEvidence = evidence.flatMap((s) => parseEvidenceItems(s.body, s.sourceId));
 
   // 통계 계산
   const stats = computeStats(allSections, decisionPoints.length, parsedEvidence);
 
   // 마커별 Map (렌더링용)
   const slotMap = new Map<ContractMarkerKind, readonly ContractSection[]>([
-    ["inputs", inputs],
-    ["outputs", outputs],
-    ["precondition", preconditions],
-    ["postcondition", postconditions],
-    ["flow-steps", steps],
-    ["decision-point", decisionPoints],
-    ["failure", failures],
-    ["evidence", evidence],
+    ['inputs', inputs],
+    ['outputs', outputs],
+    ['precondition', preconditions],
+    ['postcondition', postconditions],
+    ['flow-steps', steps],
+    ['decision-point', decisionPoints],
+    ['failure', failures],
+    ['evidence', evidence],
   ]);
 
   // 텍스트 렌더링

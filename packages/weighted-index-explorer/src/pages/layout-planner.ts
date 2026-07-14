@@ -6,15 +6,18 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import {
-  charsForMax, planLayout,
-  PACK_FORMAT_LIST, fitLayout,
+  charsForMax,
+  planLayout,
+  PACK_FORMAT_LIST,
+  fitLayout,
   PACK_FORMATS,
-  createAddressConverter, createLayoutProtocol,
+  createAddressConverter,
+  createLayoutProtocol,
   planCapacity,
   type SemanticAddress,
   type CapacityPlanDim,
-} from "weighted-index";
-import { renderHexBar } from "../utils/hex-bar.js";
+} from 'weighted-index';
+import { renderHexBar } from '../utils/hex-bar.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -125,25 +128,38 @@ function renderPlanner(): string {
 // ── Interactivity ───────────────────────────────────────────────────────
 
 function setupPlannerInteractivity(container: HTMLElement): void {
-  const shapeList     = container.querySelector<HTMLElement>("#plan-shape-list");
-  const shapeAddBtn   = container.querySelector<HTMLButtonElement>("#plan-shape-add");
-  const prefixCharsIn = container.querySelector<HTMLInputElement>("#plan-prefix-chars");
-  const verDigitsIn   = container.querySelector<HTMLInputElement>("#plan-ver-digits");
-  const sizeHint      = container.querySelector<HTMLElement>("#plan-size-hint");
-  const verHint       = container.querySelector<HTMLElement>("#plan-ver-hint");
-  const verRangeEl    = container.querySelector<HTMLElement>("#plan-ver-range");
-  const resultEl      = container.querySelector<HTMLElement>("#plan-result");
-  const expansionEl   = container.querySelector<HTMLElement>("#plan-expansion");
+  const shapeList = container.querySelector<HTMLElement>('#plan-shape-list');
+  const shapeAddBtn = container.querySelector<HTMLButtonElement>('#plan-shape-add');
+  const prefixCharsIn = container.querySelector<HTMLInputElement>('#plan-prefix-chars');
+  const verDigitsIn = container.querySelector<HTMLInputElement>('#plan-ver-digits');
+  const sizeHint = container.querySelector<HTMLElement>('#plan-size-hint');
+  const verHint = container.querySelector<HTMLElement>('#plan-ver-hint');
+  const verRangeEl = container.querySelector<HTMLElement>('#plan-ver-range');
+  const resultEl = container.querySelector<HTMLElement>('#plan-result');
+  const expansionEl = container.querySelector<HTMLElement>('#plan-expansion');
 
-  const shardCharsIn  = container.querySelector<HTMLInputElement>("#plan-shard-chars");
-  const shardHintEl   = container.querySelector<HTMLElement>("#plan-shard-hint");
+  const shardCharsIn = container.querySelector<HTMLInputElement>('#plan-shard-chars');
+  const shardHintEl = container.querySelector<HTMLElement>('#plan-shard-hint');
 
-  const configText = container.querySelector<HTMLElement>("#plan-config-text");
-  const configCopy = container.querySelector<HTMLButtonElement>("#plan-config-copy");
+  const configText = container.querySelector<HTMLElement>('#plan-config-text');
+  const configCopy = container.querySelector<HTMLButtonElement>('#plan-config-copy');
 
-  if (!shapeList || !shapeAddBtn || !prefixCharsIn || !verDigitsIn || !resultEl ||
-      !sizeHint || !verHint || !verRangeEl || !expansionEl || !shardCharsIn ||
-      !shardHintEl || !configText || !configCopy) return;
+  if (
+    !shapeList ||
+    !shapeAddBtn ||
+    !prefixCharsIn ||
+    !verDigitsIn ||
+    !resultEl ||
+    !sizeHint ||
+    !verHint ||
+    !verRangeEl ||
+    !expansionEl ||
+    !shardCharsIn ||
+    !shardHintEl ||
+    !configText ||
+    !configCopy
+  )
+    return;
   const shapeListEl = shapeList;
   const shapeAddButton = shapeAddBtn;
   const prefixCharsInput = prefixCharsIn;
@@ -159,17 +175,17 @@ function setupPlannerInteractivity(container: HTMLElement): void {
   const copyButton = configCopy;
 
   const dims: ShapeDim[] = [
-    { name: "resource", size: 8 },
-    { name: "action",   size: 4 },
-    { name: "role",     size: 5 },
-    { name: "env",      size: 4 },
+    { name: 'resource', size: 8 },
+    { name: 'action', size: 4 },
+    { name: 'role', size: 5 },
+    { name: 'env', size: 4 },
   ];
 
   function renderShapeDims(): void {
-    shapeListEl.innerHTML = "";
+    shapeListEl.innerHTML = '';
     dims.forEach((dim, i) => {
-      const row = document.createElement("div");
-      row.className = "plan-dim-row";
+      const row = document.createElement('div');
+      row.className = 'plan-dim-row';
 
       row.innerHTML = `
         <span class="plan-dim-idx">dim${i + 1}</span>
@@ -178,18 +194,20 @@ function setupPlannerInteractivity(container: HTMLElement): void {
         <button class="plan-dim-remove" type="button" title="제거">×</button>
       `;
 
-      const nameInput = row.querySelector<HTMLInputElement>(".plan-dim-name");
-      const sizeInput = row.querySelector<HTMLInputElement>(".plan-dim-size");
-      const removeBtn = row.querySelector<HTMLButtonElement>(".plan-dim-remove");
+      const nameInput = row.querySelector<HTMLInputElement>('.plan-dim-name');
+      const sizeInput = row.querySelector<HTMLInputElement>('.plan-dim-size');
+      const removeBtn = row.querySelector<HTMLButtonElement>('.plan-dim-remove');
 
-      nameInput?.addEventListener("input", () => { dims[i].name = nameInput.value; });
+      nameInput?.addEventListener('input', () => {
+        dims[i].name = nameInput.value;
+      });
 
-      sizeInput?.addEventListener("input", () => {
+      sizeInput?.addEventListener('input', () => {
         dims[i].size = Math.max(1, parseInt(sizeInput.value, 10) || 1);
         update();
       });
 
-      removeBtn?.addEventListener("click", () => {
+      removeBtn?.addEventListener('click', () => {
         if (dims.length <= 1) return;
         dims.splice(i, 1);
         renderShapeDims();
@@ -200,45 +218,47 @@ function setupPlannerInteractivity(container: HTMLElement): void {
     });
   }
 
-  shapeAddButton.addEventListener("click", () => {
+  shapeAddButton.addEventListener('click', () => {
     dims.push({ name: `dim${dims.length + 1}`, size: 2 });
     renderShapeDims();
     update();
   });
 
   function update(): void {
-    const shapeParts = dims.map(d => d.size);
+    const shapeParts = dims.map((d) => d.size);
     const size = shapeParts.length > 0 ? shapeParts.reduce((a, b) => a * b, 1) : 0;
     const prefixChars = Math.max(0, Math.min(16, Number(prefixCharsInput.value) || 0));
-    const verDigits   = Math.max(1, Math.min(16, Number(verDigitsInput.value) || 1));
-    const shardChars  = Math.max(0, Math.min(4, Number(shardCharsInput.value) || 0));
-    const verMax      = parseInt("f".repeat(verDigits), 16);
+    const verDigits = Math.max(1, Math.min(16, Number(verDigitsInput.value) || 1));
+    const shardChars = Math.max(0, Math.min(4, Number(shardCharsInput.value) || 0));
+    const verMax = parseInt('f'.repeat(verDigits), 16);
 
     const leftFields = [
-      { name: "prefix",  chars: prefixChars },
-      { name: "version", chars: verDigits },
+      { name: 'prefix', chars: prefixChars },
+      { name: 'version', chars: verDigits },
     ];
 
-    sizeHintEl.textContent = size > 0
-      ? `size = ${size.toLocaleString()} · shape [${shapeParts.join(", ")}]`
-      : "shape 입력 필요";
+    sizeHintEl.textContent =
+      size > 0
+        ? `size = ${size.toLocaleString()} · shape [${shapeParts.join(', ')}]`
+        : 'shape 입력 필요';
 
-    verHintEl.textContent = `max ${verMax.toLocaleString()} (0x${"f".repeat(verDigits)})`;
+    verHintEl.textContent = `max ${verMax.toLocaleString()} (0x${'f'.repeat(verDigits)})`;
 
     if (shardChars === 0) {
-      shardHint.textContent = "0 = 샤딩 없음";
+      shardHint.textContent = '0 = 샤딩 없음';
     } else {
       const maxShards = 16 ** shardChars;
       shardHint.textContent = `${shardChars}자리 = 최대 ${maxShards} shards (0 ~ ${maxShards - 1})`;
     }
 
     // Config string
-    const shapeStr = dims.map(d => `${d.name}:${d.size}`).join(",");
-    const shardSuffix = shardChars > 0 ? ` shard=${shardChars}` : "";
+    const shapeStr = dims.map((d) => `${d.name}:${d.size}`).join(',');
+    const shardSuffix = shardChars > 0 ? ` shard=${shardChars}` : '';
     const configStr = `shape=${shapeStr} prefix=${prefixChars} ver=${verDigits}${shardSuffix}`;
-    const shardTag = shardChars > 0
-      ? `<span class="pcfg-tag pcfg-ver">shard</span><span class="pcfg-val">${shardChars}</span>`
-      : "";
+    const shardTag =
+      shardChars > 0
+        ? `<span class="pcfg-tag pcfg-ver">shard</span><span class="pcfg-val">${shardChars}</span>`
+        : '';
     config.innerHTML =
       `<span class="pcfg-tag pcfg-shape">shape</span><span class="pcfg-val">${shapeStr}</span>` +
       `<span class="pcfg-tag pcfg-prefix">prefix</span><span class="pcfg-val">${prefixChars}</span>` +
@@ -256,20 +276,20 @@ function setupPlannerInteractivity(container: HTMLElement): void {
 
     const indexMax = size - 1;
     const plan = planLayout({
-      left:  leftFields,
-      right: [{ name: "index", maxValue: indexMax }],
+      left: leftFields,
+      right: [{ name: 'index', maxValue: indexMax }],
     });
 
-    const indexChars = plan.fields.find(f => f.name === "index")?.chars ?? 0;
+    const indexChars = plan.fields.find((f) => f.name === 'index')?.chars ?? 0;
     const totalChars = plan.totalChars + shardChars;
 
     // ── 포맷 비교 테이블 ────────────────────────────────────────
-    const formatRows = PACK_FORMAT_LIST.map(fmt => {
+    const formatRows = PACK_FORMAT_LIST.map((fmt) => {
       const fits = totalChars <= fmt.chars;
-      const gap  = fmt.chars - totalChars;
-      const statusColor = fits ? "var(--xl-green)" : "var(--status-fail, #dc2626)";
-      const statusIcon  = fits ? "✓" : "✗";
-      const statusText  = fits ? `${gap}자리 여유` : `${Math.abs(gap)}자리 부족`;
+      const gap = fmt.chars - totalChars;
+      const statusColor = fits ? 'var(--xl-green)' : 'var(--status-fail, #dc2626)';
+      const statusIcon = fits ? '✓' : '✗';
+      const statusText = fits ? `${gap}자리 여유` : `${Math.abs(gap)}자리 부족`;
       return `
         <tr>
           <td><strong>${fmt.name}</strong></td>
@@ -279,16 +299,16 @@ function setupPlannerInteractivity(container: HTMLElement): void {
           <td style="color:${statusColor};font-weight:600">${statusIcon} ${statusText}</td>
         </tr>
       `;
-    }).join("");
+    }).join('');
 
     // ── 포맷별 최적 shape 추천 (fitLayout 사용) ──────────────────
-    const hasOverflow = PACK_FORMAT_LIST.some(f => totalChars > f.chars);
-    let fitHtml = "";
+    const hasOverflow = PACK_FORMAT_LIST.some((f) => totalChars > f.chars);
+    let fitHtml = '';
     if (hasOverflow) {
-      const fitRows = PACK_FORMAT_LIST.map(fmt => {
+      const fitRows = PACK_FORMAT_LIST.map((fmt) => {
         const result = fitLayout({
           shape: shapeParts,
-          left:  leftFields,
+          left: leftFields,
           capacity: fmt,
         });
         if (!result) {
@@ -309,8 +329,8 @@ function setupPlannerInteractivity(container: HTMLElement): void {
         }
         const fitted = result.shape.map((s, i) => ({ name: dims[i].name, size: s }));
         const usage = (result.utilization * 100).toFixed(1);
-        const fitShapeStr = fitted.map(d => `${d.name}:${d.size}`).join(", ");
-        const fittedJson = JSON.stringify(fitted.map(d => ({ n: d.name, s: d.size })));
+        const fitShapeStr = fitted.map((d) => `${d.name}:${d.size}`).join(', ');
+        const fittedJson = JSON.stringify(fitted.map((d) => ({ n: d.name, s: d.size })));
         return `
           <tr>
             <td><strong>${fmt.name}</strong></td>
@@ -323,7 +343,7 @@ function setupPlannerInteractivity(container: HTMLElement): void {
             <td><button class="plan-fit-apply" type="button" data-fit='${fittedJson}'>적용</button></td>
           </tr>
         `;
-      }).join("");
+      }).join('');
 
       fitHtml = `
         <div class="plan-ver-range-title" style="margin-bottom:6px;margin-top:14px">포맷별 최적 shape 추천</div>
@@ -336,56 +356,88 @@ function setupPlannerInteractivity(container: HTMLElement): void {
 
     // ── 포맷별 hex 레이아웃 시각화 ──────────────────────────────
     const exIndex = 42;
-    const exValues = { prefix: 1, version: 1, index: exIndex, shard: shardChars > 0 ? 0 : undefined };
-    const shardLabel = shardChars > 0 ? `, shard=0` : "";
+    const exValues = {
+      prefix: 1,
+      version: 1,
+      index: exIndex,
+      shard: shardChars > 0 ? 0 : undefined,
+    };
+    const shardLabel = shardChars > 0 ? `, shard=0` : '';
 
     let layoutsHtml = renderHexBar(
-      "Minimum", totalChars, prefixChars, verDigits, indexChars, exValues, undefined, shardChars,
+      'Minimum',
+      totalChars,
+      prefixChars,
+      verDigits,
+      indexChars,
+      exValues,
+      undefined,
+      shardChars,
     );
 
     for (const fmt of PACK_FORMAT_LIST) {
       layoutsHtml += renderHexBar(
-        `${fmt.name} (${fmt.bits}bit)`, fmt.chars,
-        prefixChars, verDigits, indexChars, exValues, fmt, shardChars,
+        `${fmt.name} (${fmt.bits}bit)`,
+        fmt.chars,
+        prefixChars,
+        verDigits,
+        indexChars,
+        exValues,
+        fmt,
+        shardChars,
       );
     }
 
     // ── SemanticAddress 프로토콜 미리보기 — 모든 포맷 ───────────────
-    const exAddr: SemanticAddress = { schema: "perm", version: "v1", index: 42 };
+    const exAddr: SemanticAddress = { schema: 'perm', version: 'v1', index: 42 };
     const conv = createAddressConverter();
 
     // 모든 pack format에 대해 layout protocol 등록 시도
-    const shardingOpts = shardChars > 0
-      ? { sharding: { type: "modulo" as const, chars: shardChars, numShards: 4 } }
-      : {};
+    const shardingOpts =
+      shardChars > 0
+        ? { sharding: { type: 'modulo' as const, chars: shardChars, numShards: 4 } }
+        : {};
     for (const fmt of PACK_FORMAT_LIST) {
       if (totalChars <= fmt.chars) {
         try {
-          conv.register(createLayoutProtocol({
-            format: fmt,
-            schemaChars: prefixChars,
-            versionChars: verDigits,
-            ...shardingOpts,
-            schemas: { perm: 1 },
-            versions: { v1: 1 },
-          }));
-        } catch { /* skip if layout constraints violated */ }
+          conv.register(
+            createLayoutProtocol({
+              format: fmt,
+              schemaChars: prefixChars,
+              versionChars: verDigits,
+              ...shardingOpts,
+              schemas: { perm: 1 },
+              versions: { v1: 1 },
+            }),
+          );
+        } catch {
+          /* skip if layout constraints violated */
+        }
       }
     }
 
-    const protoRows = conv.protocols().map(name => {
-      try {
-        const s = conv.serialize(exAddr, name);
-        const isLayout = name.startsWith("layout:");
-        const fmtName = isLayout ? name.replace("layout:", "") : "";
-        const fmtObj = isLayout ? PACK_FORMAT_LIST.find(f => f.name === fmtName) : undefined;
-        const fitsNote = fmtObj ? ` <span class="obf-param-hint" style="font-size:0.62rem">(${fmtObj.bits}bit)</span>` : "";
-        return `<tr><td><code>${name}</code>${fitsNote}</td><td style="font-family:monospace;font-size:0.72rem;word-break:break-all">${s}</td></tr>`;
-      } catch { return ""; }
-    }).filter(Boolean).join("");
+    const protoRows = conv
+      .protocols()
+      .map((name) => {
+        try {
+          const s = conv.serialize(exAddr, name);
+          const isLayout = name.startsWith('layout:');
+          const fmtName = isLayout ? name.replace('layout:', '') : '';
+          const fmtObj = isLayout ? PACK_FORMAT_LIST.find((f) => f.name === fmtName) : undefined;
+          const fitsNote = fmtObj
+            ? ` <span class="obf-param-hint" style="font-size:0.62rem">(${fmtObj.bits}bit)</span>`
+            : '';
+          return `<tr><td><code>${name}</code>${fitsNote}</td><td style="font-family:monospace;font-size:0.72rem;word-break:break-all">${s}</td></tr>`;
+        } catch {
+          return '';
+        }
+      })
+      .filter(Boolean)
+      .join('');
 
-    const shardNote = shardChars > 0 ? `, shard=42%4=2` : "";
-    const protoHtml = protoRows ? `
+    const shardNote = shardChars > 0 ? `, shard=42%4=2` : '';
+    const protoHtml = protoRows
+      ? `
       <div class="plan-ver-range-title" style="margin-bottom:6px;margin-top:14px">
         SemanticAddress 프로토콜 미리보기 — schema="perm", version="v1", index=42${shardNote}
       </div>
@@ -393,17 +445,21 @@ function setupPlannerInteractivity(container: HTMLElement): void {
         <thead><tr><th>프로토콜</th><th>직렬화 결과</th></tr></thead>
         <tbody>${protoRows}</tbody>
       </table>
-    ` : "";
+    `
+      : '';
 
-    const shardRow = shardChars > 0 ? `
+    const shardRow =
+      shardChars > 0
+        ? `
           <tr>
             <td><strong>shard</strong></td>
             <td>← left</td>
             <td>${shardChars}</td>
-            <td>max 0x${"f".repeat(shardChars)}</td>
+            <td>max 0x${'f'.repeat(shardChars)}</td>
             <td>${shardChars * 4}</td>
           </tr>
-    ` : "";
+    `
+        : '';
 
     result.innerHTML = `
       <table class="nd-table" style="margin-bottom:12px">
@@ -413,14 +469,14 @@ function setupPlannerInteractivity(container: HTMLElement): void {
             <td><strong>prefix</strong></td>
             <td>← left</td>
             <td>${prefixChars}</td>
-            <td>0x${"f".repeat(prefixChars || 1)}</td>
+            <td>0x${'f'.repeat(prefixChars || 1)}</td>
             <td>${prefixChars * 4}</td>
           </tr>
           <tr>
             <td><strong>version</strong></td>
             <td>← left</td>
             <td>${verDigits}</td>
-            <td>${verMax.toLocaleString()} (0x${"f".repeat(verDigits)})</td>
+            <td>${verMax.toLocaleString()} (0x${'f'.repeat(verDigits)})</td>
             <td>${verDigits * 4}</td>
           </tr>
           ${shardRow}
@@ -460,13 +516,13 @@ function setupPlannerInteractivity(container: HTMLElement): void {
     `;
   }
 
-  prefixCharsInput.addEventListener("input", update);
-  verDigitsInput.addEventListener("input", update);
-  shardCharsInput.addEventListener("input", update);
+  prefixCharsInput.addEventListener('input', update);
+  verDigitsInput.addEventListener('input', update);
+  shardCharsInput.addEventListener('input', update);
 
   // 적용 버튼 이벤트 위임
-  result.addEventListener("click", (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".plan-fit-apply");
+  result.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.plan-fit-apply');
     if (!btn?.dataset.fit) return;
     const fitted: { n: string; s: number }[] = JSON.parse(btn.dataset.fit);
     dims.length = 0;
@@ -475,11 +531,13 @@ function setupPlannerInteractivity(container: HTMLElement): void {
     update();
   });
 
-  copyButton.addEventListener("click", () => {
-    const text = config.dataset.raw ?? config.textContent ?? "";
+  copyButton.addEventListener('click', () => {
+    const text = config.dataset.raw ?? config.textContent ?? '';
     navigator.clipboard.writeText(text).then(() => {
-      copyButton.textContent = "Copied!";
-      setTimeout(() => { copyButton.textContent = "Copy"; }, 1200);
+      copyButton.textContent = 'Copied!';
+      setTimeout(() => {
+        copyButton.textContent = 'Copy';
+      }, 1200);
       return undefined;
     });
   });
@@ -565,15 +623,16 @@ interface CapDim {
 }
 
 function setupCapacityPlanInteractivity(container: HTMLElement): void {
-  const dimList      = container.querySelector<HTMLElement>("#cap-dim-list");
-  const dimAddBtn    = container.querySelector<HTMLButtonElement>("#cap-dim-add");
-  const prefixIn     = container.querySelector<HTMLInputElement>("#cap-prefix");
-  const versionIn    = container.querySelector<HTMLInputElement>("#cap-version");
-  const formatSel    = container.querySelector<HTMLSelectElement>("#cap-format");
-  const growthFactIn = container.querySelector<HTMLInputElement>("#cap-growth-factor");
-  const resultEl     = container.querySelector<HTMLElement>("#cap-result");
+  const dimList = container.querySelector<HTMLElement>('#cap-dim-list');
+  const dimAddBtn = container.querySelector<HTMLButtonElement>('#cap-dim-add');
+  const prefixIn = container.querySelector<HTMLInputElement>('#cap-prefix');
+  const versionIn = container.querySelector<HTMLInputElement>('#cap-version');
+  const formatSel = container.querySelector<HTMLSelectElement>('#cap-format');
+  const growthFactIn = container.querySelector<HTMLInputElement>('#cap-growth-factor');
+  const resultEl = container.querySelector<HTMLElement>('#cap-result');
 
-  if (!dimList || !dimAddBtn || !prefixIn || !versionIn || !formatSel || !growthFactIn || !resultEl) return;
+  if (!dimList || !dimAddBtn || !prefixIn || !versionIn || !formatSel || !growthFactIn || !resultEl)
+    return;
   const dimListEl = dimList;
   const dimAddButton = dimAddBtn;
   const prefixInput = prefixIn;
@@ -583,20 +642,20 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
   const capacityResult = resultEl;
 
   const capDims: CapDim[] = [
-    { name: "resource", current: 8, growth: null },
-    { name: "action",   current: 4, growth: null },
-    { name: "role",     current: 5, growth: 3 },
-    { name: "env",      current: 4, growth: null },
+    { name: 'resource', current: 8, growth: null },
+    { name: 'action', current: 4, growth: null },
+    { name: 'role', current: 5, growth: 3 },
+    { name: 'env', current: 4, growth: null },
   ];
 
   function renderCapDims(): void {
-    dimListEl.innerHTML = "";
+    dimListEl.innerHTML = '';
     capDims.forEach((dim, i) => {
-      const row = document.createElement("div");
-      row.className = "plan-dim-row";
-      row.style.gap = "6px";
+      const row = document.createElement('div');
+      row.className = 'plan-dim-row';
+      row.style.gap = '6px';
 
-      const growthVal = dim.growth !== null ? String(dim.growth) : "";
+      const growthVal = dim.growth !== null ? String(dim.growth) : '';
       row.innerHTML = `
         <span class="plan-dim-idx">dim${i + 1}</span>
         <input type="text" class="plan-dim-name addr-dec-input" value="${dim.name}" placeholder="이름" style="width:80px" />
@@ -607,22 +666,24 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
         <button class="plan-dim-remove" type="button" title="제거" style="margin-left:4px">x</button>
       `;
 
-      const nameInput = row.querySelector<HTMLInputElement>(".plan-dim-name");
-      const curInput  = row.querySelector<HTMLInputElement>(".cap-dim-current");
-      const groInput  = row.querySelector<HTMLInputElement>(".cap-dim-growth");
-      const removeBtn = row.querySelector<HTMLButtonElement>(".plan-dim-remove");
+      const nameInput = row.querySelector<HTMLInputElement>('.plan-dim-name');
+      const curInput = row.querySelector<HTMLInputElement>('.cap-dim-current');
+      const groInput = row.querySelector<HTMLInputElement>('.cap-dim-growth');
+      const removeBtn = row.querySelector<HTMLButtonElement>('.plan-dim-remove');
 
-      nameInput?.addEventListener("input", () => { capDims[i].name = nameInput.value; });
-      curInput?.addEventListener("input", () => {
+      nameInput?.addEventListener('input', () => {
+        capDims[i].name = nameInput.value;
+      });
+      curInput?.addEventListener('input', () => {
         capDims[i].current = Math.max(1, parseInt(curInput.value, 10) || 1);
         updateCapacity();
       });
-      groInput?.addEventListener("input", () => {
+      groInput?.addEventListener('input', () => {
         const v = groInput.value.trim();
-        capDims[i].growth = v === "" ? null : Math.max(0, parseInt(v, 10) || 0);
+        capDims[i].growth = v === '' ? null : Math.max(0, parseInt(v, 10) || 0);
         updateCapacity();
       });
-      removeBtn?.addEventListener("click", () => {
+      removeBtn?.addEventListener('click', () => {
         if (capDims.length <= 1) return;
         capDims.splice(i, 1);
         renderCapDims();
@@ -633,7 +694,7 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
     });
   }
 
-  dimAddButton.addEventListener("click", () => {
+  dimAddButton.addEventListener('click', () => {
     capDims.push({ name: `dim${capDims.length + 1}`, current: 2, growth: null });
     renderCapDims();
     updateCapacity();
@@ -654,32 +715,34 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
     const result = planCapacity({
       dims,
       left: [
-        { name: "prefix",  chars: prefixChars },
-        { name: "version", chars: versionChars },
+        { name: 'prefix', chars: prefixChars },
+        { name: 'version', chars: versionChars },
       ],
       capacity: formatName,
     });
 
-    const dimRows = result.dims.map((d) => {
-      const headroomPct = (d.headroom * 100).toFixed(0);
-      const growthRatio = d.current > 0 ? (d.growth / d.current).toFixed(1) : "—";
-      const highGrowth = d.current > 0 && d.growth / d.current > 1.0;
-      return `
+    const dimRows = result.dims
+      .map((d) => {
+        const headroomPct = (d.headroom * 100).toFixed(0);
+        const growthRatio = d.current > 0 ? (d.growth / d.current).toFixed(1) : '—';
+        const highGrowth = d.current > 0 && d.growth / d.current > 1.0;
+        return `
         <tr>
           <td><strong>${d.name}</strong></td>
           <td class="td-num">${d.current}</td>
           <td class="td-num">${d.growth}</td>
-          <td class="td-num" style="${highGrowth ? "color:#c05000;font-weight:600" : ""}">${growthRatio}x</td>
+          <td class="td-num" style="${highGrowth ? 'color:#c05000;font-weight:600' : ''}">${growthRatio}x</td>
           <td class="td-num" style="font-weight:700">${d.recommended}</td>
           <td class="td-num">${d.hexChars}</td>
           <td class="td-num">${headroomPct}%</td>
         </tr>
       `;
-    }).join("");
+      })
+      .join('');
 
     const utilizationPct = (result.utilization * 100).toFixed(1);
-    const fitsColor = result.fits ? "var(--xl-green)" : "var(--status-fail, #dc2626)";
-    const fitsIcon  = result.fits ? "✓" : "✗";
+    const fitsColor = result.fits ? 'var(--xl-green)' : 'var(--status-fail, #dc2626)';
+    const fitsIcon = result.fits ? '✓' : '✗';
     const shardAdvice = result.shardingAdvised
       ? '<span style="color:#c05000;font-weight:600">권장 (고성장 dim 감지)</span>'
       : '<span style="color:var(--text-muted)">불필요</span>';
@@ -702,8 +765,8 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
           ${dimRows}
           <tr style="font-weight:700;border-top:2px solid var(--border-header)">
             <td>shape</td>
-            <td colspan="3"><code>[${dims.map(d => d.current).join(", ")}]</code></td>
-            <td colspan="3"><code>[${result.shape.join(", ")}]</code></td>
+            <td colspan="3"><code>[${dims.map((d) => d.current).join(', ')}]</code></td>
+            <td colspan="3"><code>[${result.shape.join(', ')}]</code></td>
           </tr>
         </tbody>
       </table>
@@ -714,7 +777,7 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
           <tr><th>항목</th><th>값</th></tr>
         </thead>
         <tbody>
-          <tr><td>권장 shape</td><td><code>[${result.shape.join(", ")}]</code></td></tr>
+          <tr><td>권장 shape</td><td><code>[${result.shape.join(', ')}]</code></td></tr>
           <tr><td>product (슬롯 수)</td><td>${result.product.toLocaleString()}</td></tr>
           <tr><td>index 예산 (hex chars)</td><td>${result.indexBudget}</td></tr>
           <tr><td>활용률</td><td>${utilizationPct}%</td></tr>
@@ -725,10 +788,10 @@ function setupCapacityPlanInteractivity(container: HTMLElement): void {
     `;
   }
 
-  prefixInput.addEventListener("input", updateCapacity);
-  versionInput.addEventListener("input", updateCapacity);
-  formatSelect.addEventListener("change", updateCapacity);
-  growthFactorInput.addEventListener("input", updateCapacity);
+  prefixInput.addEventListener('input', updateCapacity);
+  versionInput.addEventListener('input', updateCapacity);
+  formatSelect.addEventListener('change', updateCapacity);
+  growthFactorInput.addEventListener('input', updateCapacity);
 
   renderCapDims();
   updateCapacity();
@@ -825,10 +888,10 @@ function computeShard(s: ShardingStrategy, index: number): number {
 }
 
 function setupShardingInteractivity(container: HTMLElement): void {
-  const indexIn  = container.querySelector<HTMLInputElement>("#shard-index");
-  const numIn    = container.querySelector<HTMLInputElement>("#shard-num");
-  const charsIn  = container.querySelector<HTMLInputElement>("#shard-chars");
-  const resultEl = container.querySelector<HTMLElement>("#shard-result");
+  const indexIn = container.querySelector<HTMLInputElement>('#shard-index');
+  const numIn = container.querySelector<HTMLInputElement>('#shard-num');
+  const charsIn = container.querySelector<HTMLInputElement>('#shard-chars');
+  const resultEl = container.querySelector<HTMLElement>('#shard-result');
   if (!indexIn || !numIn || !charsIn || !resultEl) return;
   const indexInput = indexIn;
   const numInput = numIn;
@@ -840,23 +903,29 @@ function setupShardingInteractivity(container: HTMLElement): void {
     const parts: string[] = [];
     let remaining = s;
     for (const g of groups) {
-      let count = 0, slice = "", i = 0;
+      let count = 0,
+        slice = '',
+        i = 0;
       while (count < g && i < remaining.length) {
-        if (remaining[i] === "<") {
-          const end = remaining.indexOf(">", i);
+        if (remaining[i] === '<') {
+          const end = remaining.indexOf('>', i);
           slice += remaining.slice(i, end + 1);
           i = end + 1;
-        } else { slice += remaining[i]; count++; i++; }
+        } else {
+          slice += remaining[i];
+          count++;
+          i++;
+        }
       }
       parts.push(slice);
       remaining = remaining.slice(i);
     }
-    return parts.join("-");
+    return parts.join('-');
   }
 
   function update(): void {
-    const index    = Math.max(0, parseInt(indexInput.value, 10) || 0);
-    const chars    = Math.max(1, Math.min(4, parseInt(charsInput.value, 10) || 1));
+    const index = Math.max(0, parseInt(indexInput.value, 10) || 0);
+    const chars = Math.max(1, Math.min(4, parseInt(charsInput.value, 10) || 1));
     const capacity = 16 ** chars;
 
     // chars가 바뀌면 numIn의 max를 capacity로 갱신하고 초과된 값은 clamp
@@ -864,19 +933,23 @@ function setupShardingInteractivity(container: HTMLElement): void {
     const numShards = Math.max(1, Math.min(capacity, parseInt(numInput.value, 10) || 4));
 
     const shard = index % numShards;
-    let uuidStr = "—";
+    let uuidStr = '—';
     try {
       const proto = createLayoutProtocol({
         format: PACK_FORMATS.uuid,
-        schemaChars: 4, versionChars: 2,
-        sharding: { type: "modulo", chars, numShards },
-        schemas: { perm: 1 }, versions: { v1: 1 },
+        schemaChars: 4,
+        versionChars: 2,
+        sharding: { type: 'modulo', chars, numShards },
+        schemas: { perm: 1 },
+        versions: { v1: 1 },
       });
-      const raw = proto.serialize({ schema: "perm", version: "v1", index }).replace(/-/g, "");
-      uuidStr = `${raw.slice(0,8)}-${raw.slice(8,12)}-${raw.slice(12,16)}-${raw.slice(16,20)}-${raw.slice(20)}`;
-    } catch { /* skip */ }
+      const raw = proto.serialize({ schema: 'perm', version: 'v1', index }).replace(/-/g, '');
+      uuidStr = `${raw.slice(0, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}-${raw.slice(20)}`;
+    } catch {
+      /* skip */
+    }
 
-    const rawForDisplay = uuidStr.replace(/-/g, "");
+    const rawForDisplay = uuidStr.replace(/-/g, '');
     const shardHex = rawForDisplay.slice(6, 6 + chars);
     const highlighted =
       rawForDisplay.slice(0, 6) +
@@ -888,7 +961,7 @@ function setupShardingInteractivity(container: HTMLElement): void {
         <thead><tr><th>계산</th><th>값</th></tr></thead>
         <tbody>
           <tr><td>shard = index % numShards</td><td><code>${index} % ${numShards} = <strong>${shard}</strong></code></td></tr>
-          <tr><td>shard hex (${chars}자리)</td><td><code>${shard.toString(16).padStart(chars, "0")}</code></td></tr>
+          <tr><td>shard hex (${chars}자리)</td><td><code>${shard.toString(16).padStart(chars, '0')}</code></td></tr>
         </tbody>
       </table>
 
@@ -901,10 +974,10 @@ function setupShardingInteractivity(container: HTMLElement): void {
 
       <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.7rem;margin-bottom:12px">
         <span style="background:var(--cell-bg);border:1px solid var(--border-cell);padding:2px 6px;border-radius:3px">
-          schema <code>${rawForDisplay.slice(0,4)}</code>
+          schema <code>${rawForDisplay.slice(0, 4)}</code>
         </span>
         <span style="background:var(--cell-bg);border:1px solid var(--border-cell);padding:2px 6px;border-radius:3px">
-          version <code>${rawForDisplay.slice(4,6)}</code>
+          version <code>${rawForDisplay.slice(4, 6)}</code>
         </span>
         <span style="background:color-mix(in srgb, var(--xl-green) 15%, transparent);border:1px solid var(--xl-green);padding:2px 6px;border-radius:3px;font-weight:700">
           shard <code>${shardHex}</code>
@@ -927,9 +1000,9 @@ function setupShardingInteractivity(container: HTMLElement): void {
     `;
   }
 
-  indexIn.addEventListener("input", update);
-  numIn.addEventListener("input", update);
-  charsIn.addEventListener("input", update);
+  indexIn.addEventListener('input', update);
+  numIn.addEventListener('input', update);
+  charsIn.addEventListener('input', update);
   update();
 }
 
@@ -948,21 +1021,23 @@ function renderVersionRange(
   const rows: string[] = [];
 
   for (let digits = 1; digits <= maxDigits; digits++) {
-    const rangeMax = parseInt("f".repeat(digits), 16);
-    const rangeMin = digits === 1 ? 0 : parseInt("f".repeat(digits - 1), 16) + 1;
+    const rangeMax = parseInt('f'.repeat(digits), 16);
+    const rangeMin = digits === 1 ? 0 : parseInt('f'.repeat(digits - 1), 16) + 1;
     const totalChars = prefixChars + digits + indexChars;
     const isCurrent = digits === currentDigits;
 
-    const fmtIcons = PACK_FORMAT_LIST.slice(0, 3).map(fmt => {
-      const fits = totalChars <= fmt.chars;
-      return `<span style="color:${fits ? "var(--xl-green)" : "var(--status-fail,#dc2626)"}" title="${fmt.name} (${fmt.chars})">${fits ? "✓" : "✗"}</span>`;
-    }).join(" ");
+    const fmtIcons = PACK_FORMAT_LIST.slice(0, 3)
+      .map((fmt) => {
+        const fits = totalChars <= fmt.chars;
+        return `<span style="color:${fits ? 'var(--xl-green)' : 'var(--status-fail,#dc2626)'}" title="${fmt.name} (${fmt.chars})">${fits ? '✓' : '✗'}</span>`;
+      })
+      .join(' ');
 
     rows.push(`
-      <tr class="${isCurrent ? "plan-ver-current" : ""}">
+      <tr class="${isCurrent ? 'plan-ver-current' : ''}">
         <td>${digits}자리</td>
         <td class="td-num">${rangeMin.toLocaleString()} ~ ${rangeMax.toLocaleString()}</td>
-        <td><code>0x${"f".repeat(digits)}</code></td>
+        <td><code>0x${'f'.repeat(digits)}</code></td>
         <td class="td-num">${totalChars}</td>
         <td>${fmtIcons}</td>
       </tr>
@@ -982,7 +1057,7 @@ function renderVersionRange(
             <th title="64-bit / 96-bit / UUID">64 96 UUID</th>
           </tr>
         </thead>
-        <tbody>${rows.join("")}</tbody>
+        <tbody>${rows.join('')}</tbody>
       </table>
     </div>
   `;
@@ -996,8 +1071,8 @@ function renderExpansionStrategy(
   prefixChars: number,
   shapeSize: number,
 ): void {
-  const verMax    = parseInt("f".repeat(verDigits), 16);
-  const indexMax  = Math.max(0, shapeSize - 1);
+  const verMax = parseInt('f'.repeat(verDigits), 16);
+  const indexMax = Math.max(0, shapeSize - 1);
   const indexChars = indexMax > 0 ? charsForMax(indexMax) : 1;
   const fixedChars = prefixChars + indexChars;
 
@@ -1005,28 +1080,34 @@ function renderExpansionStrategy(
   const unitRows: string[] = [];
 
   for (let n = 1; n <= maxRows; n++) {
-    const stdCap  = Math.pow(16, n);
-    const wgtCap  = stdCap * n;
+    const stdCap = Math.pow(16, n);
+    const wgtCap = stdCap * n;
     const wgtNeed = charsForMax(wgtCap - 1);
     const totalStd = fixedChars + n;
     const totalWgt = fixedChars + wgtNeed;
     const isCurrent = n === verDigits;
     const extraDigits = wgtNeed - n;
 
-    const fmtStd = PACK_FORMAT_LIST.slice(0, 3).map(fmt =>
-      `<span style="color:${totalStd <= fmt.chars ? "var(--xl-green)" : "var(--status-fail,#dc2626)"}">${totalStd <= fmt.chars ? "✓" : "✗"}</span>`
-    ).join(" ");
-    const fmtWgt = PACK_FORMAT_LIST.slice(0, 3).map(fmt =>
-      `<span style="color:${totalWgt <= fmt.chars ? "var(--xl-green)" : "var(--status-fail,#dc2626)"}">${totalWgt <= fmt.chars ? "✓" : "✗"}</span>`
-    ).join(" ");
+    const fmtStd = PACK_FORMAT_LIST.slice(0, 3)
+      .map(
+        (fmt) =>
+          `<span style="color:${totalStd <= fmt.chars ? 'var(--xl-green)' : 'var(--status-fail,#dc2626)'}">${totalStd <= fmt.chars ? '✓' : '✗'}</span>`,
+      )
+      .join(' ');
+    const fmtWgt = PACK_FORMAT_LIST.slice(0, 3)
+      .map(
+        (fmt) =>
+          `<span style="color:${totalWgt <= fmt.chars ? 'var(--xl-green)' : 'var(--status-fail,#dc2626)'}">${totalWgt <= fmt.chars ? '✓' : '✗'}</span>`,
+      )
+      .join(' ');
 
     unitRows.push(`
-      <tr class="${isCurrent ? "plan-ver-current" : ""}">
+      <tr class="${isCurrent ? 'plan-ver-current' : ''}">
         <td>${n}</td>
         <td class="td-num">${(stdCap - 1).toLocaleString()}</td>
         <td class="td-num">${stdCap.toLocaleString()}</td>
         <td class="td-num" style="font-weight:700">${wgtCap.toLocaleString()}</td>
-        <td class="td-num">${wgtNeed}${extraDigits > 0 ? ` <span style="color:var(--xl-green);font-size:0.65rem">(+${extraDigits})</span>` : ""}</td>
+        <td class="td-num">${wgtNeed}${extraDigits > 0 ? ` <span style="color:var(--xl-green);font-size:0.65rem">(+${extraDigits})</span>` : ''}</td>
         <td>${fmtStd}</td>
         <td>${fmtWgt}</td>
       </tr>
@@ -1034,19 +1115,20 @@ function renderExpansionStrategy(
   }
 
   const weightedNeed = verMax * verDigits;
-  const recDigits    = charsForMax(weightedNeed);
-  const recMax       = parseInt("f".repeat(recDigits), 16);
-  const curMax       = verMax;
-  const gainRatio    = recMax / Math.max(curMax, 1);
-  const digitCost    = recDigits - verDigits;
+  const recDigits = charsForMax(weightedNeed);
+  const recMax = parseInt('f'.repeat(recDigits), 16);
+  const curMax = verMax;
+  const gainRatio = recMax / Math.max(curMax, 1);
+  const digitCost = recDigits - verDigits;
 
-  const recTotal     = fixedChars + recDigits;
-  const curTotal     = fixedChars + verDigits;
-  const recFitsUUID  = recTotal <= 32;
+  const recTotal = fixedChars + recDigits;
+  const curTotal = fixedChars + verDigits;
+  const recFitsUUID = recTotal <= 32;
 
   const hasRecommendation = recDigits > verDigits && recFitsUUID;
 
-  const recHtml = hasRecommendation ? `
+  const recHtml = hasRecommendation
+    ? `
     <div class="plan-rec">
       <div class="plan-rec-header">
         <span class="plan-rec-icon">&#9733;</span>
@@ -1063,18 +1145,21 @@ function renderExpansionStrategy(
         </div>
         <div class="plan-rec-row">
           <span class="plan-rec-label">비용</span>
-          <span>+${digitCost}자리 · 총 ${recTotal}chars (UUID ${recFitsUUID ? `여유 ${32 - recTotal}` : "초과"})</span>
+          <span>+${digitCost}자리 · 총 ${recTotal}chars (UUID ${recFitsUUID ? `여유 ${32 - recTotal}` : '초과'})</span>
         </div>
       </div>
     </div>
-  ` : recDigits <= verDigits ? `
+  `
+    : recDigits <= verDigits
+      ? `
     <div class="plan-rec plan-rec-ok">
       <div class="plan-rec-header">
         <span class="plan-rec-icon">&#10003;</span>
         <span>현재 ${verDigits}자리 할당이 적정 (가중 목표 ${weightedNeed.toLocaleString()} ≤ max ${curMax.toLocaleString()})</span>
       </div>
     </div>
-  ` : `
+  `
+      : `
     <div class="plan-rec plan-rec-warn">
       <div class="plan-rec-header">
         <span class="plan-rec-icon">!</span>
@@ -1120,7 +1205,7 @@ function renderExpansionStrategy(
           <th title="64-bit / 96-bit / UUID">가중<br/>64 96 UUID</th>
         </tr>
       </thead>
-      <tbody>${unitRows.join("")}</tbody>
+      <tbody>${unitRows.join('')}</tbody>
     </table>
 
     <div class="plan-ver-range-title" style="margin-bottom:8px">

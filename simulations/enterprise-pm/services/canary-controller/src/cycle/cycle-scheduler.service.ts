@@ -11,25 +11,25 @@
 // Pass 1 write 실패 → Pass 2 SKIP.
 // 다음 사이클은 SIM_CONTROLLER_CYCLE_MS 후.
 
-import { Inject, Injectable, Optional, type OnModuleInit } from "@nestjs/common";
-import { SchedulerRegistry } from "@nestjs/schedule";
-import { AdvisoryLockService } from "../lock/advisory-lock.service.js";
-import { MetricsScrapeService } from "../metrics/metrics-scrape.service.js";
-import { CategoryVerdictService } from "../verdict/category-verdict.service.js";
-import { SafetyDecisionService } from "../decision/safety-decision.service.js";
-import { ResourceDecisionService } from "../decision/resource-decision.service.js";
-import { DecisionBuilderService } from "../decision/decision-builder.service.js";
-import { ActionExecutorService } from "../action/action-executor.service.js";
-import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
-import { HealthyMetricsFault } from "../fault/healthy-metrics.js";
-import { SIM_SERVICE_CATALOG_TOKEN } from "../catalog/tokens.js";
-import { InMemorySimServiceCatalog } from "../catalog/catalog.provider.js";
-import { env } from "../config/env.js";
-import { createLogger } from "../lib/logger.js";
+import { Inject, Injectable, Optional, type OnModuleInit } from '@nestjs/common';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { AdvisoryLockService } from '../lock/advisory-lock.service.js';
+import { MetricsScrapeService } from '../metrics/metrics-scrape.service.js';
+import { CategoryVerdictService } from '../verdict/category-verdict.service.js';
+import { SafetyDecisionService } from '../decision/safety-decision.service.js';
+import { ResourceDecisionService } from '../decision/resource-decision.service.js';
+import { DecisionBuilderService } from '../decision/decision-builder.service.js';
+import { ActionExecutorService } from '../action/action-executor.service.js';
+import { DecisionRingBuffer } from '../decision/decision-ring-buffer.js';
+import { HealthyMetricsFault } from '../fault/healthy-metrics.js';
+import { SIM_SERVICE_CATALOG_TOKEN } from '../catalog/tokens.js';
+import { InMemorySimServiceCatalog } from '../catalog/catalog.provider.js';
+import { env } from '../config/env.js';
+import { createLogger } from '../lib/logger.js';
 
 @Injectable()
 export class CycleSchedulerService implements OnModuleInit {
-  private readonly logger = createLogger("sim-canary-controller:cycle");
+  private readonly logger = createLogger('sim-canary-controller:cycle');
 
   // 사이클 간 영속 상태. spec 01 §5/§6 — 메모리 보유, restart 시 초기화 후 다음 사이클부터 재구축.
   // safety FAIL history는 DecisionRingBuffer SSOT가 보유 (recentSafetyHistory).
@@ -73,18 +73,12 @@ export class CycleSchedulerService implements OnModuleInit {
       void this.healthyMetrics.enable({});
       this.logger.info(
         {},
-        "healthy-metrics fault auto-enabled (SIM_CONTROLLER_HEALTHY_METRICS=true)",
+        'healthy-metrics fault auto-enabled (SIM_CONTROLLER_HEALTHY_METRICS=true)',
       );
     }
-    const handle = setInterval(
-      () => void this.runCycle(),
-      env.SIM_CONTROLLER_CYCLE_MS,
-    );
-    this.registry.addInterval("controller-cycle", handle);
-    this.logger.info(
-      { cycleMs: env.SIM_CONTROLLER_CYCLE_MS },
-      "controller cycle scheduled",
-    );
+    const handle = setInterval(() => void this.runCycle(), env.SIM_CONTROLLER_CYCLE_MS);
+    this.registry.addInterval('controller-cycle', handle);
+    this.logger.info({ cycleMs: env.SIM_CONTROLLER_CYCLE_MS }, 'controller cycle scheduled');
   }
 
   /**
@@ -97,13 +91,12 @@ export class CycleSchedulerService implements OnModuleInit {
       const acquired = await this.lock.tryAcquire();
       const result = await this.scrape.scrape();
       if (!acquired) {
-        this.logger.debug({ cycleAt }, "standby — scrape only, skip write/action");
+        this.logger.debug({ cycleAt }, 'standby — scrape only, skip write/action');
         return;
       }
       const verdicts = this.verdict.evaluate(result);
       const confidence =
-        result.sources.reduce((a, s) => a + s.weight, 0) /
-        Math.max(result.sources.length, 1);
+        result.sources.reduce((a, s) => a + s.weight, 0) / Math.max(result.sources.length, 1);
       const safetyOut = this.safety.decide({
         verdicts,
         confidence,
@@ -125,11 +118,11 @@ export class CycleSchedulerService implements OnModuleInit {
         await this.builder.write(safetyRecord);
         this.ringBuffer.appendSafety(safetyRecord);
       } catch (err) {
-        this.logger.error({ err }, "safety write failed; skipping resource");
+        this.logger.error({ err }, 'safety write failed; skipping resource');
         return;
       }
 
-      if (safetyOut.verdict !== "rollback") {
+      if (safetyOut.verdict !== 'rollback') {
         const resOut = this.resource.decide({
           verdicts,
           currentWeight: this.currentWeight,
@@ -150,7 +143,7 @@ export class CycleSchedulerService implements OnModuleInit {
           await this.builder.write(resourceRecord);
           this.ringBuffer.appendResource(resourceRecord);
         } catch (err) {
-          this.logger.error({ err }, "resource write failed");
+          this.logger.error({ err }, 'resource write failed');
         }
         try {
           // spec 2026-05-02 §6 + Task 1b.10 — pin 활성화 service 는 compose SKIP + alert.
@@ -158,12 +151,9 @@ export class CycleSchedulerService implements OnModuleInit {
             cycleId,
           });
         } catch (err) {
-          this.logger.error(
-            { err },
-            "resource action failed (retry next cycle)",
-          );
+          this.logger.error({ err }, 'resource action failed (retry next cycle)');
         }
-        if (resOut.action.kind === "scale") {
+        if (resOut.action.kind === 'scale') {
           this.current = resOut.action.target;
           this.lastReplicaChangeAt = Date.now();
         }
@@ -172,16 +162,10 @@ export class CycleSchedulerService implements OnModuleInit {
       try {
         await this.action.executeSafety(safetyOut.action);
       } catch (err) {
-        this.logger.error(
-          { err },
-          "safety action failed (retry next cycle)",
-        );
+        this.logger.error({ err }, 'safety action failed (retry next cycle)');
       }
 
-      if (
-        safetyOut.action.kind === "weight-update" &&
-        safetyOut.verdict === "promote"
-      ) {
+      if (safetyOut.action.kind === 'weight-update' && safetyOut.verdict === 'promote') {
         this.currentWeight = safetyOut.action.weight;
         this.lastPromotionAt = Date.now();
         const targetPrefix = `sim.svc.${env.SIM_CONTROLLER_TARGET_SERVICE}`;
@@ -190,31 +174,22 @@ export class CycleSchedulerService implements OnModuleInit {
         // SIM_CONTROLLER_CANDIDATE_VERSION 기반 시드 후 즉시 promote (candidate→stable).
         // 운영에서는 SIM_CONTROLLER_CANDIDATE_VERSION 미설정이라 시드 skip — catalog
         // admin 이 사전 등록한 candidate 만 사용.
-        if (
-          safetyOut.action.weight === 100 &&
-          this.catalogPort !== undefined
-        ) {
+        if (safetyOut.action.weight === 100 && this.catalogPort !== undefined) {
           if (
             !this.catalogPort.hasCandidate(targetPrefix) &&
-            typeof env.SIM_CONTROLLER_CANDIDATE_VERSION === "number"
+            typeof env.SIM_CONTROLLER_CANDIDATE_VERSION === 'number'
           ) {
             try {
-              this.catalogPort.seedCandidate(
-                targetPrefix,
-                env.SIM_CONTROLLER_CANDIDATE_VERSION,
-              );
+              this.catalogPort.seedCandidate(targetPrefix, env.SIM_CONTROLLER_CANDIDATE_VERSION);
               this.logger.info(
                 {
                   prefix: targetPrefix,
                   version: env.SIM_CONTROLLER_CANDIDATE_VERSION,
                 },
-                "catalog candidate seeded (sim mode, on weight=100)",
+                'catalog candidate seeded (sim mode, on weight=100)',
               );
             } catch (err) {
-              this.logger.error(
-                { err, prefix: targetPrefix },
-                "catalog candidate seed failed",
-              );
+              this.logger.error({ err, prefix: targetPrefix }, 'catalog candidate seed failed');
             }
           }
           if (this.catalogPort.hasCandidate(targetPrefix)) {
@@ -222,19 +197,16 @@ export class CycleSchedulerService implements OnModuleInit {
               this.catalogPort.promoteCandidate(targetPrefix);
               this.logger.info(
                 { prefix: targetPrefix },
-                "catalog candidate promoted to stable (weight=100)",
+                'catalog candidate promoted to stable (weight=100)',
               );
             } catch (err) {
-              this.logger.error(
-                { err, prefix: targetPrefix },
-                "catalog promote failed",
-              );
+              this.logger.error({ err, prefix: targetPrefix }, 'catalog promote failed');
             }
           }
         }
       }
     } catch (err) {
-      this.logger.error({ err }, "cycle failed; next cycle continues");
+      this.logger.error({ err }, 'cycle failed; next cycle continues');
     }
   }
 }

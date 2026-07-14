@@ -5,7 +5,7 @@
  * Git 메타데이터 추출 — execa 기반.
  */
 
-import { execaSync } from "execa";
+import { execaSync } from 'execa';
 
 // ── Types ────────────────────────────────────────────
 
@@ -21,13 +21,13 @@ export interface ConventionalCommit {
 /** remote origin URL 또는 디렉토리 이름으로 레포명 추출 */
 export function getRepoName(cwd: string): string {
   try {
-    const { stdout: url } = execaSync("git", ["remote", "get-url", "origin"], { cwd });
+    const { stdout: url } = execaSync('git', ['remote', 'get-url', 'origin'], { cwd });
     const match = url.trim().match(/\/([^/]+?)(\.git)?$/);
     if (match) return match[1];
   } catch {
     // remote 없으면 fallback
   }
-  return cwd.split("/").pop() ?? "unknown";
+  return cwd.split('/').pop() ?? 'unknown';
 }
 
 // ── Semver 태그 ──────────────────────────────────────
@@ -35,12 +35,12 @@ export function getRepoName(cwd: string): string {
 /** semver 형식 git tag 목록 (v prefix 제거) */
 export function listSemverTags(cwd: string): string[] {
   try {
-    const { stdout: raw } = execaSync("git", ["tag", "-l"], { cwd });
+    const { stdout: raw } = execaSync('git', ['tag', '-l'], { cwd });
     return raw
       .trim()
-      .split("\n")
+      .split('\n')
       .filter(Boolean)
-      .map((t) => t.replace(/^v/, ""))
+      .map((t) => t.replace(/^v/, ''))
       .filter((t) => /^\d+\.\d+\.\d+/.test(t))
       .toSorted();
   } catch {
@@ -57,17 +57,17 @@ export function parseConventionalCommits(
   cwd: string,
   opts?: { since?: string; maxCount?: number },
 ): ConventionalCommit[] {
-  const args = ["log", "--format=%H %s"];
+  const args = ['log', '--format=%H %s'];
   if (opts?.since) args.push(`${opts.since}..HEAD`);
-  if (opts?.maxCount) args.push("-n", String(opts.maxCount));
+  if (opts?.maxCount) args.push('-n', String(opts.maxCount));
 
   try {
-    const { stdout: raw } = execaSync("git", args, { cwd });
+    const { stdout: raw } = execaSync('git', args, { cwd });
 
     const commits: ConventionalCommit[] = [];
-    for (const line of raw.trim().split("\n")) {
+    for (const line of raw.trim().split('\n')) {
       if (!line) continue;
-      const spaceIdx = line.indexOf(" ");
+      const spaceIdx = line.indexOf(' ');
       if (spaceIdx < 0) continue;
 
       const hash = line.slice(0, spaceIdx);
@@ -92,7 +92,7 @@ export function parseConventionalCommits(
 // ── Commit Type 집계 ─────────────────────────────────
 
 /** 기본 conventional commit 타입 (항상 포함) */
-const STANDARD_CC_TYPES = ["feat", "fix", "refactor", "docs", "test", "chore"];
+const STANDARD_CC_TYPES = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
 
 /**
  * git log에서 실제 사용된 cc type + 표준 타입 합집합.
@@ -109,9 +109,7 @@ export function collectCommitTypes(cwd: string): string[] {
  * scope(패키지)별 commit type 카운트.
  * 반환: Record<scope, Record<type, count>>
  */
-export function commitCountsByScope(
-  cwd: string,
-): Record<string, Record<string, number>> {
+export function commitCountsByScope(cwd: string): Record<string, Record<string, number>> {
   const commits = parseConventionalCommits(cwd);
   const counts: Record<string, Record<string, number>> = {};
 

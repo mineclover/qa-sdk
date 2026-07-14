@@ -1,6 +1,6 @@
-import type { AssignmentId } from "./assignment.ids.js";
+import type { AssignmentId } from './assignment.ids.js';
 
-export type AssignmentStatus = "draft" | "assigned" | "cancelled";
+export type AssignmentStatus = 'draft' | 'assigned' | 'cancelled';
 
 export interface AssignmentProps {
   readonly id: AssignmentId;
@@ -17,4 +17,3 @@ export interface AssignmentSnapshot {
   readonly createdAt: string;
   readonly updatedAt: string;
 }
-

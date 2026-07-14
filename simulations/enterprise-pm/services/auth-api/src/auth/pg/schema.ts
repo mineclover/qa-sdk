@@ -1,51 +1,63 @@
 // @def.boundary sim-auth-api
 // @def.doc sim-erp-pm-design
 
-import { pgSchema, primaryKey, index, text } from "drizzle-orm/pg-core";
+import { pgSchema, primaryKey, index, text } from 'drizzle-orm/pg-core';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
-export const users = sim.table("auth_users", {
-  id: text("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  displayName: text("display_name").notNull(),
-  departmentId: text("department_id"),
-  primaryRoleId: text("primary_role_id"),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-}, (t) => [index("idx_sim_users_dept").on(t.departmentId)]);
+export const users = sim.table(
+  'auth_users',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(),
+    displayName: text('display_name').notNull(),
+    departmentId: text('department_id'),
+    primaryRoleId: text('primary_role_id'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [index('idx_sim_users_dept').on(t.departmentId)],
+);
 
-export const departments = sim.table("auth_departments", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  parentId: text("parent_id"),
-  managerId: text("manager_id"),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-}, (t) => [index("idx_sim_dept_parent").on(t.parentId)]);
+export const departments = sim.table(
+  'auth_departments',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    parentId: text('parent_id'),
+    managerId: text('manager_id'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [index('idx_sim_dept_parent').on(t.parentId)],
+);
 
-export const roles = sim.table("auth_roles", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  scopeType: text("scope_type", { enum: ["global", "department", "project"] }).notNull(),
-  defaultMaskHex: text("default_mask_hex").notNull(),
-  createdAt: text("created_at").notNull(),
+export const roles = sim.table('auth_roles', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  scopeType: text('scope_type', { enum: ['global', 'department', 'project'] }).notNull(),
+  defaultMaskHex: text('default_mask_hex').notNull(),
+  createdAt: text('created_at').notNull(),
 });
 
-export const roleAssignments = sim.table("auth_role_assignments", {
-  userId: text("user_id").notNull(),
-  roleId: text("role_id").notNull(),
-  scopeType: text("scope_type", { enum: ["global", "department", "project"] }).notNull(),
-  /**
-   * scope_id — PG PRIMARY KEY가 NOT NULL을 강제하므로 sentinel ''을 사용.
-   * 어댑터 ↔ port interface 경계에서 '' ↔ null 매핑(encodeScopeId/decodeScopeId).
-   */
-  scopeId: text("scope_id").notNull().default(""),
-  assignedAt: text("assigned_at").notNull(),
-}, (t) => [
-  primaryKey({ columns: [t.userId, t.roleId, t.scopeType, t.scopeId] }),
-  index("idx_sim_ra_user").on(t.userId),
-]);
+export const roleAssignments = sim.table(
+  'auth_role_assignments',
+  {
+    userId: text('user_id').notNull(),
+    roleId: text('role_id').notNull(),
+    scopeType: text('scope_type', { enum: ['global', 'department', 'project'] }).notNull(),
+    /**
+     * scope_id — PG PRIMARY KEY가 NOT NULL을 강제하므로 sentinel ''을 사용.
+     * 어댑터 ↔ port interface 경계에서 '' ↔ null 매핑(encodeScopeId/decodeScopeId).
+     */
+    scopeId: text('scope_id').notNull().default(''),
+    assignedAt: text('assigned_at').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.roleId, t.scopeType, t.scopeId] }),
+    index('idx_sim_ra_user').on(t.userId),
+  ],
+);
 
 /** PG DDL — drizzle-kit migration 또는 테스트 fixture가 사용. */
 export const SIM_AUTH_PG_DDL = `

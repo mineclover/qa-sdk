@@ -8,11 +8,11 @@
  * DKG 기록과 알림 생성을 연결한다.
  */
 
-import type { RegistryPort } from "./registry-port.js";
-import type { GraphRegistry } from "dkg";
-import type { VersionEventNode, VersionNotification } from "./types.js";
-import { versionEventFromDiff } from "dkg";
-import type { DiffInput } from "dkg";
+import type { RegistryPort } from './registry-port.js';
+import type { GraphRegistry } from 'dkg';
+import type { VersionEventNode, VersionNotification } from './types.js';
+import { versionEventFromDiff } from 'dkg';
+import type { DiffInput } from 'dkg';
 
 export interface SealInput {
   readonly prefix: string;
@@ -38,10 +38,7 @@ export interface ActivateResult {
 /**
  * draft → locked → released (seal).
  */
-export async function seal(
-  registry: RegistryPort,
-  input: SealInput,
-): Promise<void> {
+export async function seal(registry: RegistryPort, input: SealInput): Promise<void> {
   await registry.lockDraft(input.prefix, input.versionId);
   await registry.release(input.prefix, input.versionId);
 }
@@ -106,10 +103,10 @@ function buildNotification(
   const intentLinks = graph.intentLinksFor(input.prefix);
 
   const _hasChanges = input.diff && input.diff.changedLabels.length > 0;
-  const hasCapacityChange = input.diff?.changedLabels.some(c => c.toMax !== c.fromMax) ?? false;
+  const hasCapacityChange = input.diff?.changedLabels.some((c) => c.toMax !== c.fromMax) ?? false;
 
   return {
-    event: "activated",
+    event: 'activated',
     prefix: input.prefix,
     versionId: input.versionId,
     previousVersion,
@@ -118,14 +115,14 @@ function buildNotification(
       migrationRequired: hasCapacityChange,
       changedLabels: input.diff?.changedLabels.length ?? 0,
     },
-    affectedDomains: domains.map(d => d.id),
-    affectedConsumers: consumers.map(c => ({
+    affectedDomains: domains.map((d) => d.id),
+    affectedConsumers: consumers.map((c) => ({
       id: c.id,
-      action: hasCapacityChange ? "migration-required" as const : "no-action" as const,
+      action: hasCapacityChange ? ('migration-required' as const) : ('no-action' as const),
     })),
     constraintViolations: constraints,
     brokenIntentLinks: intentLinks
       .filter((l): l is typeof l & { invariant: string } => l.invariant != null)
-      .map(l => ({ id: l.id, invariant: l.invariant })),
+      .map((l) => ({ id: l.id, invariant: l.invariant })),
   };
 }

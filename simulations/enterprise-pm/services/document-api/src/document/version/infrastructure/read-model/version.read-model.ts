@@ -4,8 +4,8 @@
 import {
   VersionReadModelQuery,
   type VersionDetailReadModel,
-} from "../../application/queries/version-read-model.query.js";
-import type { VersionRepositoryPort } from "../../application/ports/version-repository.port.js";
+} from '../../application/queries/version-read-model.query.js';
+import type { VersionRepositoryPort } from '../../application/ports/version-repository.port.js';
 
 export class RepositoryVersionReadModel extends VersionReadModelQuery {
   constructor(private readonly repository: VersionRepositoryPort) {

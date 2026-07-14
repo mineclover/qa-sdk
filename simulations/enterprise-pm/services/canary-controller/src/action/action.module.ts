@@ -8,30 +8,26 @@
 // provider 를 등록한다. AdminModule 이 ScalePinService / ScaleStore 를 export.
 // CycleModule 이 DecisionRingBuffer 를 export.
 
-import { Module, forwardRef } from "@nestjs/common";
+import { Module, forwardRef } from '@nestjs/common';
 import {
   ActionExecutorService,
   type SimServiceCatalogPort,
   type PortRegistryPort,
-} from "./action-executor.service.js";
-import { env } from "../config/env.js";
-import { AdminModule } from "../admin/admin.module.js";
-import { ScalePinService } from "../admin/scale-pin.service.js";
-import { CycleModule } from "../cycle/cycle.module.js";
-import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
-import { CatalogModule } from "../catalog/catalog.module.js";
+} from './action-executor.service.js';
+import { env } from '../config/env.js';
+import { AdminModule } from '../admin/admin.module.js';
+import { ScalePinService } from '../admin/scale-pin.service.js';
+import { CycleModule } from '../cycle/cycle.module.js';
+import { DecisionRingBuffer } from '../decision/decision-ring-buffer.js';
+import { CatalogModule } from '../catalog/catalog.module.js';
 import {
   SIM_SERVICE_CATALOG_TOKEN,
   PORT_REGISTRY_TOKEN,
   SIM_TARGET_SERVICE_TOKEN,
-} from "../catalog/tokens.js";
+} from '../catalog/tokens.js';
 
 // re-export — 기존 호출부 호환 (catalog/* 모듈에서 import 하던 코드 보존).
-export {
-  SIM_SERVICE_CATALOG_TOKEN,
-  PORT_REGISTRY_TOKEN,
-  SIM_TARGET_SERVICE_TOKEN,
-};
+export { SIM_SERVICE_CATALOG_TOKEN, PORT_REGISTRY_TOKEN, SIM_TARGET_SERVICE_TOKEN };
 
 @Module({
   imports: [CatalogModule, AdminModule, forwardRef(() => CycleModule)],

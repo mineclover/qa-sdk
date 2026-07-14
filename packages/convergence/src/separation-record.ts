@@ -8,10 +8,10 @@
  * @layer 기록 (Recording)
  */
 
-import type { GraphPort } from "spec-schema";
-import type { DecisionNode, ConstraintNode } from "./dkg-types.js";
-import type { AxisOverlap } from "./convergence.types.js";
-import { scaffoldDecision } from "./decision-scaffold.js";
+import type { GraphPort } from 'spec-schema';
+import type { DecisionNode, ConstraintNode } from './dkg-types.js';
+import type { AxisOverlap } from './convergence.types.js';
+import { scaffoldDecision } from './decision-scaffold.js';
 
 export interface SeparationRecord {
   readonly decision: DecisionNode;
@@ -33,7 +33,7 @@ export function recordSeparation(
   },
 ): SeparationRecord {
   const decision = scaffoldDecision({
-    type: "merge",
+    type: 'merge',
     id: input.id,
     date: input.date,
     title: `${overlap.a}와 ${overlap.b} 분리 유지`,
@@ -43,19 +43,17 @@ export function recordSeparation(
       overlapEntries: [...overlap.sharedEntries],
     },
     rationale: input.rationale,
-    additionalAlternatives: [
-      "분리 유지 (현재 선택) — 도메인 경계가 다르므로 독립 관리",
-    ],
+    additionalAlternatives: ['분리 유지 (현재 선택) — 도메인 경계가 다르므로 독립 관리'],
   });
 
   // lifecycle을 active로 유지하되, 실제로는 "분리 유지"를 기록한 것
   const constraint: ConstraintNode = {
-    kind: "constraint",
+    kind: 'constraint',
     id: `CON-SEP-${overlap.a}-${overlap.b}`,
-    rule: `${overlap.a}와 ${overlap.b}는 의도적으로 분리됨. 공유 entries [${overlap.sharedEntries.join(",")}]는 동명이의어.`,
+    rule: `${overlap.a}와 ${overlap.b}는 의도적으로 분리됨. 공유 entries [${overlap.sharedEntries.join(',')}]는 동명이의어.`,
     formal: `REVIEWED_OVERLAP(${overlap.a}, ${overlap.b}) = keep-separate`,
     scope: [overlap.a, overlap.b],
-    lifecycle: "active",
+    lifecycle: 'active',
   };
 
   return { decision, constraint };
@@ -64,16 +62,13 @@ export function recordSeparation(
 /**
  * SeparationRecord를 DKG에 등록한다.
  */
-export function applySeparationRecord(
-  graph: GraphPort,
-  record: SeparationRecord,
-): void {
+export function applySeparationRecord(graph: GraphPort, record: SeparationRecord): void {
   graph.addNode(record.decision);
   graph.addNode(record.constraint);
 
   // Decision → 양쪽 축 justifies
   for (const target of record.constraint.scope) {
-    graph.addEdge("justifies", record.decision.id, target);
-    graph.addEdge("constrains", record.constraint.id, target);
+    graph.addEdge('justifies', record.decision.id, target);
+    graph.addEdge('constrains', record.constraint.id, target);
   }
 }

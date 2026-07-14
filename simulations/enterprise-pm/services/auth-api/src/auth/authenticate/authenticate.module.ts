@@ -1,33 +1,30 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { type DynamicModule, Module, type Provider } from "@nestjs/common";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+import { type DynamicModule, Module, type Provider } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
 
-import { UserSliceModule } from "../user/user.module.js";
-import { RoleSliceModule } from "../role/role.module.js";
-import { RoleAssignmentSliceModule } from "../role-assignment/role-assignment.module.js";
-import { UserReadModelQuery } from "../user/application/queries/user-read-model.query.js";
-import { RoleReadModelQuery } from "../role/application/queries/role-read-model.query.js";
-import { RoleAssignmentReadModelQuery } from "../role-assignment/application/queries/role-assignment-read-model.query.js";
+import { UserSliceModule } from '../user/user.module.js';
+import { RoleSliceModule } from '../role/role.module.js';
+import { RoleAssignmentSliceModule } from '../role-assignment/role-assignment.module.js';
+import { UserReadModelQuery } from '../user/application/queries/user-read-model.query.js';
+import { RoleReadModelQuery } from '../role/application/queries/role-read-model.query.js';
+import { RoleAssignmentReadModelQuery } from '../role-assignment/application/queries/role-assignment-read-model.query.js';
 
-import { AuthenticateUseCase } from "./application/use-cases/authenticate.use-case.js";
-import { UserQueryPort } from "./application/ports/user-query.port.js";
-import { RoleQueryPort } from "./application/ports/role-query.port.js";
-import { RoleAssignmentQueryPort } from "./application/ports/role-assignment-query.port.js";
+import { AuthenticateUseCase } from './application/use-cases/authenticate.use-case.js';
+import { UserQueryPort } from './application/ports/user-query.port.js';
+import { RoleQueryPort } from './application/ports/role-query.port.js';
+import { RoleAssignmentQueryPort } from './application/ports/role-assignment-query.port.js';
 import {
   type CredentialStore,
   NoopCredentialStore,
-} from "./application/ports/credential-store.port.js";
+} from './application/ports/credential-store.port.js';
 
-import { createAuthenticateLogger } from "./infrastructure/logging/authenticate.logger.js";
-import { AuthenticateController } from "./presentation/http/authenticate.controller.js";
+import { createAuthenticateLogger } from './infrastructure/logging/authenticate.logger.js';
+import { AuthenticateController } from './presentation/http/authenticate.controller.js';
 
 /** NestJS DI token — TestCredentialStore 주입용. */
-const CREDENTIAL_STORE = Symbol.for("sim-auth-api/authenticate/CredentialStore");
+const CREDENTIAL_STORE = Symbol.for('sim-auth-api/authenticate/CredentialStore');
 
 export interface AuthenticateSliceModuleOptions {
   /** 기본은 NoopCredentialStore. test-bootstrap에서 TestCredentialStore 주입. */
@@ -39,9 +36,7 @@ class UserReadModelQueryAdapter extends UserQueryPort {
   constructor(private readonly readModel: UserReadModelQuery) {
     super();
   }
-  async findByEmail(
-    email: string,
-  ): ReturnType<UserQueryPort["findByEmail"]> {
+  async findByEmail(email: string): ReturnType<UserQueryPort['findByEmail']> {
     const detail = await this.readModel.findByEmail(email);
     if (!detail) return null;
     return {
@@ -58,7 +53,7 @@ class RoleReadModelQueryAdapter extends RoleQueryPort {
   constructor(private readonly readModel: RoleReadModelQuery) {
     super();
   }
-  async findById(roleId: string): ReturnType<RoleQueryPort["findById"]> {
+  async findById(roleId: string): ReturnType<RoleQueryPort['findById']> {
     const detail = await this.readModel.findDetail(roleId);
     if (!detail) return null;
     return { id: detail.id, name: detail.name };
@@ -69,9 +64,7 @@ class RoleAssignmentReadModelQueryAdapter extends RoleAssignmentQueryPort {
   constructor(private readonly readModel: RoleAssignmentReadModelQuery) {
     super();
   }
-  async listForUser(
-    userId: string,
-  ): ReturnType<RoleAssignmentQueryPort["listForUser"]> {
+  async listForUser(userId: string): ReturnType<RoleAssignmentQueryPort['listForUser']> {
     const list = await this.readModel.listForUser(userId);
     return list.map((a) => ({
       userId: a.userId,
@@ -96,8 +89,7 @@ const roleQueryProvider: Provider = {
 
 const roleAssignmentQueryProvider: Provider = {
   provide: RoleAssignmentQueryPort,
-  useFactory: (rm: RoleAssignmentReadModelQuery) =>
-    new RoleAssignmentReadModelQueryAdapter(rm),
+  useFactory: (rm: RoleAssignmentReadModelQuery) => new RoleAssignmentReadModelQueryAdapter(rm),
   inject: [RoleAssignmentReadModelQuery],
 };
 
@@ -148,24 +140,17 @@ const baseProviders: Provider[] = [
  */
 @Module({
   imports: [UserSliceModule, RoleSliceModule, RoleAssignmentSliceModule],
-  providers: [
-    ...baseProviders,
-    { provide: CREDENTIAL_STORE, useClass: NoopCredentialStore },
-  ],
+  providers: [...baseProviders, { provide: CREDENTIAL_STORE, useClass: NoopCredentialStore }],
   controllers: [AuthenticateController],
   exports: [AuthenticateUseCase],
 })
 export class AuthenticateSliceModule {
   static forRoot(opts: AuthenticateSliceModuleOptions = {}): DynamicModule {
-    const credentialStore: CredentialStore =
-      opts.credentialStore ?? new NoopCredentialStore();
+    const credentialStore: CredentialStore = opts.credentialStore ?? new NoopCredentialStore();
     return {
       module: AuthenticateSliceModule,
       imports: [UserSliceModule, RoleSliceModule, RoleAssignmentSliceModule],
-      providers: [
-        ...baseProviders,
-        { provide: CREDENTIAL_STORE, useValue: credentialStore },
-      ],
+      providers: [...baseProviders, { provide: CREDENTIAL_STORE, useValue: credentialStore }],
       controllers: [AuthenticateController],
       exports: [AuthenticateUseCase],
     };

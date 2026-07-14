@@ -160,27 +160,42 @@ function operationalLaneForProjection(kind: string): OntologyLane {
   return 'snapshot';
 }
 
-function operationalLabelForProjection(projection: NonNullable<OperationalStoreLike['projections']>[number]): string {
+function operationalLabelForProjection(
+  projection: NonNullable<OperationalStoreLike['projections']>[number],
+): string {
   const lane = operationalLaneForProjection(projection.projectionKind);
-  const label = payloadLabel(projection.payloadJson, ['flowId', 'rootCheckpointId', 'canonicalKey', 'traversalId']);
+  const label = payloadLabel(projection.payloadJson, [
+    'flowId',
+    'rootCheckpointId',
+    'canonicalKey',
+    'traversalId',
+  ]);
   if (label) return label;
   if (lane === 'snapshot' && projection.targetScope) return projection.targetScope;
   return projection.projectionId;
 }
 
-function projectionPayloadCount(projection: NonNullable<OperationalStoreLike['projections']>[number], key: string): number {
+function projectionPayloadCount(
+  projection: NonNullable<OperationalStoreLike['projections']>[number],
+  key: string,
+): number {
   if (!isRecord(projection.payloadJson)) return 0;
   const value = projection.payloadJson[key];
   return Array.isArray(value) ? value.length : 0;
 }
 
-function operationalSummaryForProjection(projection: NonNullable<OperationalStoreLike['projections']>[number]): string {
+function operationalSummaryForProjection(
+  projection: NonNullable<OperationalStoreLike['projections']>[number],
+): string {
   const counts = [
     ['corridors', projectionPayloadCount(projection, 'corridors')],
     ['checkpoints', projectionPayloadCount(projection, 'checkpointLattices')],
     ['traversals', projectionPayloadCount(projection, 'traversals')],
   ].filter(([, count]) => Number(count) > 0);
-  const suffix = counts.length > 0 ? ` · ${counts.map(([label, count]) => `${count} ${label}`).join(' · ')}` : '';
+  const suffix =
+    counts.length > 0
+      ? ` · ${counts.map(([label, count]) => `${count} ${label}`).join(' · ')}`
+      : '';
   return `${projection.targetScope ?? 'scope'} · ${projection.builtAt ?? 'unknown'}${suffix}`;
 }
 
@@ -209,7 +224,9 @@ function operationalStatusForObject(
   return object.lifecycle === 'active' ? 'active' : 'unknown';
 }
 
-export function operationalStoreToOntologyView(store: OperationalStoreLike): OntologyGraphViewModel {
+export function operationalStoreToOntologyView(
+  store: OperationalStoreLike,
+): OntologyGraphViewModel {
   const objects = store.objects ?? [];
   const facets = store.facets ?? [];
   const observations = store.observations ?? [];
@@ -243,7 +260,8 @@ export function operationalStoreToOntologyView(store: OperationalStoreLike): Ont
   }
 
   for (const object of objects) {
-    if (!['governance_blueprint', 'governance_run', 'traversal'].includes(object.objectKind)) continue;
+    if (!['governance_blueprint', 'governance_run', 'traversal'].includes(object.objectKind))
+      continue;
     const lane: OntologyLane = object.objectKind === 'traversal' ? 'traversal' : 'governance';
     nodes.set(object.objectId, {
       id: object.objectId,
@@ -264,12 +282,17 @@ export function operationalStoreToOntologyView(store: OperationalStoreLike): Ont
     if (target && !observation.observationKind.includes('governance')) target.status = 'observed';
   }
 
-  const snapshotIds = [...nodes.values()].filter((node) => node.lane === 'snapshot').map((node) => node.id);
+  const snapshotIds = [...nodes.values()]
+    .filter((node) => node.lane === 'snapshot')
+    .map((node) => node.id);
   for (const projection of projections) {
     if (operationalLaneForProjection(projection.projectionKind) === 'snapshot') continue;
-    const existingParent = edges.some((edge) => edge.to === projection.projectionId && nodes.has(edge.from));
+    const existingParent = edges.some(
+      (edge) => edge.to === projection.projectionId && nodes.has(edge.from),
+    );
     if (existingParent) continue;
-    const parent = snapshotIds.find((snapshotId) => projection.projectionId.startsWith(`${snapshotId}:`)) ??
+    const parent =
+      snapshotIds.find((snapshotId) => projection.projectionId.startsWith(`${snapshotId}:`)) ??
       snapshotIds.find((snapshotId) => {
         const snapshot = projections.find((entry) => entry.projectionId === snapshotId);
         return snapshot?.targetScope && snapshot.targetScope === projection.targetScope;
@@ -286,7 +309,9 @@ export function operationalStoreToOntologyView(store: OperationalStoreLike): Ont
 
   for (const object of objects) {
     if (!nodes.has(object.objectId)) continue;
-    const parent = [...projectionTexts.entries()].find(([, text]) => text.includes(object.objectId))?.[0];
+    const parent = [...projectionTexts.entries()].find(([, text]) =>
+      text.includes(object.objectId),
+    )?.[0];
     if (parent) {
       addOperationalEdge(edges, edgeIds, {
         from: parent,
@@ -325,40 +350,52 @@ export function operationalStoreToOntologyView(store: OperationalStoreLike): Ont
   };
 }
 
-function authorizationLaneForNode(node: NonNullable<AuthorizationGraphLike['nodes']>[number]): OntologyLane {
+function authorizationLaneForNode(
+  node: NonNullable<AuthorizationGraphLike['nodes']>[number],
+): OntologyLane {
   const taxonomies = node.coord?.taxonomies ?? {};
   if (node.kind === 'policy') return 'policy';
   if (node.kind === 'decision') return 'decision';
   if (taxonomies['resource_kind'] === 'proxy_route') return 'proxy';
-  if (taxonomies['resource_kind'] === 'domain_resource' || taxonomies['resource_kind'] === 'service') return 'application';
+  if (
+    taxonomies['resource_kind'] === 'domain_resource' ||
+    taxonomies['resource_kind'] === 'service'
+  )
+    return 'application';
   if (node.kind === 'enforcement_point') {
     return taxonomies['enforcement_kind'] === 'service_middleware' ? 'application' : 'proxy';
   }
   return 'neutral';
 }
 
-export function authorizationGraphToOntologyView(graph: AuthorizationGraphLike): OntologyGraphViewModel {
-  const nodes = (graph.nodes ?? []).map((node): OntologyViewNode => ({
-    id: node.nodeId,
-    label: node.coord?.anchor ?? node.nodeId,
-    kind: node.kind,
-    lane: authorizationLaneForNode(node),
-    status: 'active',
-    summary: Object.entries(node.coord?.taxonomies ?? {})
-      .map(([key, value]) => `${key}=${value}`)
-      .join(' · '),
-    raw: node,
-  }));
+export function authorizationGraphToOntologyView(
+  graph: AuthorizationGraphLike,
+): OntologyGraphViewModel {
+  const nodes = (graph.nodes ?? []).map(
+    (node): OntologyViewNode => ({
+      id: node.nodeId,
+      label: node.coord?.anchor ?? node.nodeId,
+      kind: node.kind,
+      lane: authorizationLaneForNode(node),
+      status: 'active',
+      summary: Object.entries(node.coord?.taxonomies ?? {})
+        .map(([key, value]) => `${key}=${value}`)
+        .join(' · '),
+      raw: node,
+    }),
+  );
   const nodeIds = new Set(nodes.map((node) => node.id));
   const edges = (graph.relations ?? [])
     .filter((relation) => nodeIds.has(relation.fromNodeId) && nodeIds.has(relation.toNodeId))
-    .map((relation): OntologyViewEdge => ({
-      id: relation.relationId,
-      from: relation.fromNodeId,
-      to: relation.toNodeId,
-      label: relation.kind,
-      kind: relation.kind,
-    }));
+    .map(
+      (relation): OntologyViewEdge => ({
+        id: relation.relationId,
+        from: relation.fromNodeId,
+        to: relation.toNodeId,
+        label: relation.kind,
+        kind: relation.kind,
+      }),
+    );
 
   return {
     nodes,
@@ -412,7 +449,10 @@ function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;');
 }
 
-export function renderOntologyGraphSvg(graph: PositionedOntologyGraph, options: OntologyRenderOptions = {}): string {
+export function renderOntologyGraphSvg(
+  graph: PositionedOntologyGraph,
+  options: OntologyRenderOptions = {},
+): string {
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
   const edges = graph.edges
     .filter((edge) => byId.has(edge.from) && byId.has(edge.to))
@@ -424,13 +464,15 @@ export function renderOntologyGraphSvg(graph: PositionedOntologyGraph, options: 
     })
     .join('');
   const nodes = graph.nodes
-    .map((node) => `
+    .map(
+      (node) => `
       <g class="ontology-node ${escapeHtml(node.lane)} ${escapeHtml(node.status ?? 'unknown')} ${node.id === options.selectedNodeId ? 'selected' : ''}" data-node-id="${escapeHtml(node.id)}" transform="translate(${node.x - node.width / 2} ${node.y - node.height / 2})">
         <rect width="${node.width}" height="${node.height}" rx="8" />
         <text class="ontology-node-kind" x="10" y="20">${escapeHtml(node.kind)}</text>
         <text class="ontology-node-label" x="10" y="42">${escapeHtml(node.label)}</text>
       </g>
-    `)
+    `,
+    )
     .join('');
   return `<svg class="ontology-graph-svg" viewBox="0 0 ${graph.width} ${graph.height}" role="img" aria-label="Ontology graph">${edges}${nodes}</svg>`;
 }

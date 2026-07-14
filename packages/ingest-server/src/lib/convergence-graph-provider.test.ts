@@ -8,9 +8,9 @@
  * optional peer dep이므로 monorepo 환경에서만 실행 가능.
  */
 
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from 'vitest';
 // spec-core + demo-snapshot 동적 import가 무거워 타임아웃 연장
-import { createGraphProvider, type GraphProviderResult } from "./convergence-graph-provider.js";
+import { createGraphProvider, type GraphProviderResult } from './convergence-graph-provider.js';
 
 let provider: GraphProviderResult | null = null;
 
@@ -19,25 +19,25 @@ afterEach(() => {
   provider = null;
 });
 
-describe("createGraphProvider", { timeout: 30_000 }, () => {
-  it("인메모리 부트스트랩: graph + catalog 반환", async () => {
+describe('createGraphProvider', { timeout: 30_000 }, () => {
+  it('인메모리 부트스트랩: graph + catalog 반환', async () => {
     provider = await createGraphProvider({});
 
     const graph = provider.getGraph() as any;
     const catalog = provider.getCatalog() as any;
 
     // graph는 GraphRegistry — getAllNodes()가 있어야 함
-    expect(typeof graph.getAllNodes).toBe("function");
+    expect(typeof graph.getAllNodes).toBe('function');
     const nodes = graph.getAllNodes();
     expect(nodes.length).toBeGreaterThan(0);
 
     // catalog는 DEMO_CATALOG — id, axes, prefixes 필드
-    expect(catalog.id).toBe("demo");
+    expect(catalog.id).toBe('demo');
     expect(catalog.axes).toBeDefined();
     expect(catalog.prefixes).toBeDefined();
   });
 
-  it("두 번째 호출은 캐시된 인스턴스 반환", async () => {
+  it('두 번째 호출은 캐시된 인스턴스 반환', async () => {
     provider = await createGraphProvider({});
 
     const graph1 = provider.getGraph();
@@ -49,16 +49,16 @@ describe("createGraphProvider", { timeout: 30_000 }, () => {
     expect(catalog1).toBe(catalog2);
   });
 
-  it("인메모리 모드: dkgStore는 undefined", async () => {
+  it('인메모리 모드: dkgStore는 undefined', async () => {
     provider = await createGraphProvider({});
 
     expect(provider.getDkgStore()).toBeFalsy();
   });
 
-  it("SQLite 경로: DkgSqliteStore 생성 + 부트스트랩 저장", async () => {
+  it('SQLite 경로: DkgSqliteStore 생성 + 부트스트랩 저장', async () => {
     provider = await createGraphProvider({
-      dkgSqlitePath: ":memory:",
-      catalogId: "test-provider",
+      dkgSqlitePath: ':memory:',
+      catalogId: 'test-provider',
     });
 
     const graph = provider.getGraph() as any;
@@ -74,10 +74,10 @@ describe("createGraphProvider", { timeout: 30_000 }, () => {
     expect(stats.edges).toBeGreaterThan(0);
   });
 
-  it("SQLite: 기존 데이터가 있으면 load (부트스트랩 안 함)", async () => {
+  it('SQLite: 기존 데이터가 있으면 load (부트스트랩 안 함)', async () => {
     // 1단계: 부트스트랩 + 저장
     const provider1 = await createGraphProvider({
-      dkgSqlitePath: ":memory:",
+      dkgSqlitePath: ':memory:',
     });
     const store1 = provider1.getDkgStore() as any;
     const stats1 = store1.stats();
@@ -88,7 +88,7 @@ describe("createGraphProvider", { timeout: 30_000 }, () => {
     expect(stats1.nodes).toBeGreaterThan(0);
   });
 
-  it("close(): 캐시 초기화", async () => {
+  it('close(): 캐시 초기화', async () => {
     provider = await createGraphProvider({});
 
     // 초기화 후 graph 존재 확인
@@ -105,15 +105,15 @@ describe("createGraphProvider", { timeout: 30_000 }, () => {
     expect(graph2).not.toBe(graph);
   });
 
-  it("bootstrapDkg가 생성하는 노드에 axis + prefix + domain이 포함됨", async () => {
+  it('bootstrapDkg가 생성하는 노드에 axis + prefix + domain이 포함됨', async () => {
     provider = await createGraphProvider({});
 
     const graph = provider.getGraph() as any;
     const nodes = graph.getAllNodes() as Array<{ kind: string; id: string }>;
 
     const kinds = new Set(nodes.map((n: any) => n.kind));
-    expect(kinds.has("axis")).toBe(true);
-    expect(kinds.has("prefix")).toBe(true);
-    expect(kinds.has("domain")).toBe(true);
+    expect(kinds.has('axis')).toBe(true);
+    expect(kinds.has('prefix')).toBe(true);
+    expect(kinds.has('domain')).toBe(true);
   });
 });

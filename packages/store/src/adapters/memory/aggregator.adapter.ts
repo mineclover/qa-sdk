@@ -7,7 +7,7 @@ import {
   type AggregateEntry,
   type AggregateOptions,
   type AxisProjectionEntry,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 /** decode 함수 시그니처 — 외부에서 주입 */
 export type DecodeFn = (key: string) => Record<string, string> | undefined;
@@ -41,14 +41,14 @@ export class InMemoryAggregator implements Aggregator {
     this.items.push({ key, timestamp, payload });
   }
 
-  async groupByKey(
-    keys: readonly string[],
-    options?: AggregateOptions,
-  ): Promise<AggregateEntry[]> {
+  async groupByKey(keys: readonly string[], options?: AggregateOptions): Promise<AggregateEntry[]> {
     const keySet = new Set(keys);
-    const filtered = this.filterByTime(options).filter(item => keySet.has(item.key));
+    const filtered = this.filterByTime(options).filter((item) => keySet.has(item.key));
 
-    const groups = new Map<string, { count: number; lastSeen: string; payload?: Record<string, unknown> }>();
+    const groups = new Map<
+      string,
+      { count: number; lastSeen: string; payload?: Record<string, unknown> }
+    >();
 
     for (const item of filtered) {
       const existing = groups.get(item.key);
@@ -85,11 +85,11 @@ export class InMemoryAggregator implements Aggregator {
     options?: AggregateOptions,
   ): Promise<AxisProjectionEntry[]> {
     if (!this.decodeFn) {
-      throw new Error("projectAxis에는 decode 함수가 필요합니다");
+      throw new Error('projectAxis에는 decode 함수가 필요합니다');
     }
 
     const keySet = new Set(keys);
-    const filtered = this.filterByTime(options).filter(item => keySet.has(item.key));
+    const filtered = this.filterByTime(options).filter((item) => keySet.has(item.key));
 
     // 키 → 축 프로젝션 → 조합별 count
     const projections = new Map<string, { values: Record<string, string>; count: number }>();
@@ -103,10 +103,10 @@ export class InMemoryAggregator implements Aggregator {
       // 지정된 축 값만 추출
       const projected: Record<string, string> = {};
       for (const axis of axes) {
-        projected[axis] = decoded[axis] ?? "";
+        projected[axis] = decoded[axis] ?? '';
       }
 
-      const projKey = axes.map(a => projected[a]).join("|");
+      const projKey = axes.map((a) => projected[a]).join('|');
       const existing = projections.get(projKey);
       if (existing) {
         existing.count++;
@@ -127,7 +127,7 @@ export class InMemoryAggregator implements Aggregator {
   private filterByTime(options?: AggregateOptions): StoredItem[] {
     if (!options?.from && !options?.to) return this.items;
 
-    return this.items.filter(item => {
+    return this.items.filter((item) => {
       if (options.from && compareTimestamps(item.timestamp, options.from) < 0) return false;
       if (options.to && compareTimestamps(item.timestamp, options.to) > 0) return false;
       return true;

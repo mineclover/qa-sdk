@@ -1,16 +1,16 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
+import { z } from 'zod';
 
-export const LABEL_KEYS = ["role", "version", "replica-of"] as const;
+export const LABEL_KEYS = ['role', 'version', 'replica-of'] as const;
 export type LabelKeyName = (typeof LABEL_KEYS)[number];
 
 export interface LabelKey {
-  namespace: "sim";
+  namespace: 'sim';
   key: LabelKeyName;
 }
 
 export const LabelKeySchema = z.object({
-  namespace: z.literal("sim"),
+  namespace: z.literal('sim'),
   key: z.enum(LABEL_KEYS),
 });
 
@@ -27,7 +27,7 @@ export function parseLabelKey(s: string): LabelKey {
   const m = LABEL_KEY_PATTERN.exec(s);
   if (!m) throw new Error(`invalid label key: ${s}`);
   return {
-    namespace: m[1] as "sim",
+    namespace: m[1] as 'sim',
     key: m[2] as LabelKeyName,
   };
 }

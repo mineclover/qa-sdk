@@ -1,20 +1,14 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import { getRequiredServicePort } from "@qa-sdk/core";
-import type { EnvDiscoveryClient } from "./types.js";
-import { configToEnvVars } from "./env-bridge.js";
+import { getRequiredServicePort } from '@qa-sdk/core';
+import type { EnvDiscoveryClient } from './types.js';
+import { configToEnvVars } from './env-bridge.js';
 
 /** 모든 서비스가 기본으로 필요로 하는 core 서비스 */
-const CORE_SERVICE_IDS = new Set(["ingest-server", "registry-service"]);
+const CORE_SERVICE_IDS = new Set(['ingest-server', 'registry-service']);
 
-export type PgDomain =
-  | "auth"
-  | "audit"
-  | "ingest"
-  | "decision"
-  | "definition"
-  | "admin";
+export type PgDomain = 'auth' | 'audit' | 'ingest' | 'decision' | 'definition' | 'admin';
 
 export interface EnvFileOptions {
   serviceId: string;
@@ -35,17 +29,15 @@ interface PgSecrets {
 }
 
 async function readEnvDockerSecrets(envDockerPath: string): Promise<PgSecrets> {
-  const { readFile } = await import("node:fs/promises");
-  const raw = await readFile(envDockerPath, "utf-8");
+  const { readFile } = await import('node:fs/promises');
+  const raw = await readFile(envDockerPath, 'utf-8');
   const lines = raw.split(/\r?\n/).filter(Boolean);
   const vars = Object.fromEntries(
     lines
-      .filter((line) => !line.trim().startsWith("#"))
+      .filter((line) => !line.trim().startsWith('#'))
       .map((line) => {
-        const idx = line.indexOf("=");
-        return idx === -1
-          ? [line, ""]
-          : [line.slice(0, idx).trim(), line.slice(idx + 1).trim()];
+        const idx = line.indexOf('=');
+        return idx === -1 ? [line, ''] : [line.slice(0, idx).trim(), line.slice(idx + 1).trim()];
       }),
   );
   return {
@@ -73,21 +65,21 @@ function buildPgEnvVars(options: {
   };
 
   const userByDomain: Record<PgDomain, string> = {
-    auth: "auth_app",
-    audit: "audit_app",
-    ingest: "ingest_app",
-    decision: "decision_app",
-    definition: "definition_app",
-    admin: "qa_admin",
+    auth: 'auth_app',
+    audit: 'audit_app',
+    ingest: 'ingest_app',
+    decision: 'decision_app',
+    definition: 'definition_app',
+    admin: 'qa_admin',
   };
 
   const databaseByDomain: Record<PgDomain, string> = {
-    auth: "qa_sdk",
-    audit: "qa_sdk",
-    ingest: "qa_sdk",
-    decision: "qa_sdk",
-    definition: "qa_sdk",
-    admin: "postgres",
+    auth: 'qa_sdk',
+    audit: 'qa_sdk',
+    ingest: 'qa_sdk',
+    decision: 'qa_sdk',
+    definition: 'qa_sdk',
+    admin: 'postgres',
   };
 
   const password = passwordByDomain[options.domain];
@@ -97,7 +89,7 @@ function buildPgEnvVars(options: {
 
   const user = userByDomain[options.domain];
   const database = databaseByDomain[options.domain];
-  const port = "5434";
+  const port = '5434';
   const host = options.host;
   const url = `postgresql://${user}:${password}@${host}:${port}/${database}`;
 
@@ -130,7 +122,7 @@ export async function generateEnvFile(
     `# 생성 시각: ${new Date().toISOString()}`,
     `# 수정 금지 — infra-env-kit export로 재생성`,
     ``,
-    `NODE_ENV=${options.env === "prod" ? "production" : "development"}`,
+    `NODE_ENV=${options.env === 'prod' ? 'production' : 'development'}`,
   ];
 
   if (configVars.PORT) {
@@ -141,7 +133,7 @@ export async function generateEnvFile(
   }
 
   const configEntries = Object.entries(configVars)
-    .filter(([key]) => key !== "PORT")
+    .filter(([key]) => key !== 'PORT')
     .toSorted(([left], [right]) => left.localeCompare(right));
 
   if (configEntries.length > 0) {
@@ -153,12 +145,12 @@ export async function generateEnvFile(
 
   if (options.pgDomain) {
     if (!options.envDockerPath) {
-      throw new Error("pgDomain 지정 시 envDockerPath 필수");
+      throw new Error('pgDomain 지정 시 envDockerPath 필수');
     }
     const secrets = await readEnvDockerSecrets(options.envDockerPath);
     const pgEnv = buildPgEnvVars({
       domain: options.pgDomain,
-      host: options.pgHost ?? "localhost",
+      host: options.pgHost ?? 'localhost',
       secrets,
     });
     lines.push(``, `# PG 연결 (도메인: ${options.pgDomain})`);
@@ -204,11 +196,11 @@ export async function generateEnvFile(
     }
   }
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 function toEnvKey(serviceId: string): string {
-  return serviceId.replace(/-/g, "_").toUpperCase() + "_URL";
+  return serviceId.replace(/-/g, '_').toUpperCase() + '_URL';
 }
 
 function extractPort(url: string): string | null {

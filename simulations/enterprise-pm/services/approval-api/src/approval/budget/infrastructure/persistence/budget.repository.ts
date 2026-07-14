@@ -1,16 +1,16 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { BudgetEntity } from "../../domain/index.js";
-import type { BudgetSnapshot } from "../../domain/index.js";
-import { BudgetRepositoryPort } from "../../application/ports/budget-repository.port.js";
-import type { BudgetTransactionScope } from "../../application/ports/budget-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { BudgetEntity } from '../../domain/index.js';
+import type { BudgetSnapshot } from '../../domain/index.js';
+import { BudgetRepositoryPort } from '../../application/ports/budget-repository.port.js';
+import type { BudgetTransactionScope } from '../../application/ports/budget-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface BudgetRow {
   id: string;
@@ -18,7 +18,7 @@ interface BudgetRow {
   projectDepartmentId: string;
   amount: number;
   requesterId: string;
-  status: BudgetSnapshot["status"];
+  status: BudgetSnapshot['status'];
   currentStage: number;
   totalStages: number;
   createdAt: string;
@@ -127,20 +127,18 @@ export class PgBudgetRepository extends BudgetRepositoryPort {
   }
 }
 
-export type BudgetDialect = "sqlite" | "pg";
+export type BudgetDialect = 'sqlite' | 'pg';
 
 export interface BudgetRepositoryFactoryOpts {
   readonly dialect: BudgetDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createBudgetRepository(
-  opts: BudgetRepositoryFactoryOpts,
-): BudgetRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createBudgetRepository(opts: BudgetRepositoryFactoryOpts): BudgetRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteBudgetRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgBudgetRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(

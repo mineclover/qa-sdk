@@ -1,5 +1,5 @@
 :root {
-  font-family: "Aptos", "Noto Sans KR", sans-serif;
+  font-family: 'Aptos', 'Noto Sans KR', sans-serif;
   color: #102131;
   background: #e6edf1;
 }
@@ -25,7 +25,7 @@ code {
   display: block;
   padding: 6px 8px;
   border-radius: 2px;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 0.72rem;
   background: rgba(13, 36, 50, 0.05);
   color: #0d2432;
@@ -49,7 +49,7 @@ code {
 
 .eyebrow {
   margin: 0 0 8px;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -74,7 +74,7 @@ code {
 }
 
 .source-line {
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 0.72rem !important;
   color: #6f8795 !important;
 }
@@ -112,7 +112,7 @@ code {
 }
 
 .score b {
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 2rem;
   line-height: 1;
 }
@@ -133,7 +133,7 @@ code {
 
 .kpis b {
   display: block;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 1.45rem;
   color: #102131;
 }
@@ -159,7 +159,10 @@ code {
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .controls button:hover {
@@ -186,8 +189,7 @@ code {
   border: 1px solid rgba(13, 36, 50, 0.14);
   background:
     linear-gradient(90deg, rgba(13, 36, 50, 0.045) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(13, 36, 50, 0.04) 1px, transparent 1px),
-    rgba(255, 255, 255, 0.58);
+    linear-gradient(0deg, rgba(13, 36, 50, 0.04) 1px, transparent 1px), rgba(255, 255, 255, 0.58);
   background-size: 44px 44px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
@@ -231,24 +233,24 @@ code {
   animation: draw 620ms ease-out both;
 }
 
-.ontology-edge[data-kind="protects"],
+.ontology-edge[data-kind='protects'],
 .edge.policy {
   stroke: rgba(17, 122, 80, 0.52);
 }
 
-.ontology-edge[data-kind="evaluated_by"],
+.ontology-edge[data-kind='evaluated_by'],
 .edge.application {
   stroke: rgba(192, 96, 26, 0.52);
 }
 
-.ontology-edge[data-kind^="decision_"],
+.ontology-edge[data-kind^='decision_'],
 .edge.decision {
   stroke: rgba(41, 128, 185, 0.5);
   stroke-dasharray: 7 6;
 }
 
-.ontology-edge[data-kind="enforced_at"],
-.ontology-edge[data-kind="matches_resource"],
+.ontology-edge[data-kind='enforced_at'],
+.ontology-edge[data-kind='matches_resource'],
 .edge.flow {
   stroke: rgba(30, 58, 95, 0.42);
 }
@@ -301,7 +303,7 @@ code {
 
 .ontology-node-label {
   fill: #12283a;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 11px;
   font-weight: 700;
 }
@@ -317,7 +319,10 @@ code {
   padding: 8px 10px;
   cursor: pointer;
   box-shadow: 0 14px 42px rgba(13, 36, 50, 0.08);
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .node:hover,
@@ -341,7 +346,7 @@ code {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -421,7 +426,7 @@ code {
 .ins-meta dd {
   margin: 0;
   overflow-wrap: anywhere;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   color: #ffffff;
 }
 
@@ -469,7 +474,7 @@ code {
   border-radius: 50%;
   background: #0d2432;
   color: #ffffff;
-  font-family: "SFMono-Regular", Consolas, monospace;
+  font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 0.78rem;
 }
 

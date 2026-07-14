@@ -43,7 +43,7 @@ export interface OrgRoleDef {
 
 export interface OrgRoleValidationError {
   orgRoleId: string;
-  kind: "cycle" | "unknown-parent" | "wildcard-domain";
+  kind: 'cycle' | 'unknown-parent' | 'wildcard-domain';
   message: string;
 }
 
@@ -72,7 +72,7 @@ export class OrgRoleRegistry {
       throw new RangeError(`Duplicate org role: "${def.id}"`);
     }
     for (const { domain } of def.ownAssignments) {
-      if (domain === "*") {
+      if (domain === '*') {
         throw new RangeError(
           `Wildcard domain "*" is not allowed in org role "${def.id}". Use explicit domain IDs.`,
         );
@@ -118,7 +118,7 @@ export class OrgRoleRegistry {
         if (!this._roles.has(parentId)) {
           errors.push({
             orgRoleId: id,
-            kind: "unknown-parent",
+            kind: 'unknown-parent',
             message: `Org role "${id}" references unknown parent "${parentId}"`,
           });
         }
@@ -126,8 +126,8 @@ export class OrgRoleRegistry {
       try {
         this._resolveAssignments(id, new Set());
       } catch (e) {
-        if (e instanceof RangeError && e.message.includes("Circular")) {
-          errors.push({ orgRoleId: id, kind: "cycle", message: e.message });
+        if (e instanceof RangeError && e.message.includes('Circular')) {
+          errors.push({ orgRoleId: id, kind: 'cycle', message: e.message });
         }
       }
     }
@@ -143,14 +143,9 @@ export class OrgRoleRegistry {
   }
 
   /** DFS로 상속 체인을 순회하며 배정 집합을 flatten한다. */
-  private _resolveAssignments(
-    orgRoleId: string,
-    visiting: Set<string>,
-  ): ResolvedAssignments {
+  private _resolveAssignments(orgRoleId: string, visiting: Set<string>): ResolvedAssignments {
     if (visiting.has(orgRoleId)) {
-      throw new RangeError(
-        `Circular inheritance detected for org role "${orgRoleId}"`,
-      );
+      throw new RangeError(`Circular inheritance detected for org role "${orgRoleId}"`);
     }
 
     const node = this._getNode(orgRoleId);
@@ -181,11 +176,7 @@ export class OrgRoleRegistry {
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
-function _mergeInto(
-  target: ResolvedAssignments,
-  domain: string,
-  roles: ReadonlySet<string>,
-): void {
+function _mergeInto(target: ResolvedAssignments, domain: string, roles: ReadonlySet<string>): void {
   let set = target.get(domain);
   if (!set) {
     set = new Set();

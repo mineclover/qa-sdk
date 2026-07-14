@@ -1,20 +1,20 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import { CommentEntity, CommentDocumentNotFoundException } from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type { CreateCommentCommand } from "../commands/create-comment.command.js";
-import type { DeleteCommentCommand } from "../commands/delete-comment.command.js";
-import type { CommentLoggerPort } from "../ports/comment-logger.port.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { CommentEntity, CommentDocumentNotFoundException } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { CreateCommentCommand } from '../commands/create-comment.command.js';
+import type { DeleteCommentCommand } from '../commands/delete-comment.command.js';
+import type { CommentLoggerPort } from '../ports/comment-logger.port.js';
 import type {
   CommentOutboxPort,
   CommentCreatedEventPayload,
   CommentDeletedEventPayload,
-} from "../ports/comment-outbox.port.js";
-import type { CommentRepositoryPort } from "../ports/comment-repository.port.js";
-import type { CommentTransactionPort } from "../ports/comment-transaction.port.js";
-import type { DocumentQueryPort } from "../ports/document-query.port.js";
+} from '../ports/comment-outbox.port.js';
+import type { CommentRepositoryPort } from '../ports/comment-repository.port.js';
+import type { CommentTransactionPort } from '../ports/comment-transaction.port.js';
+import type { DocumentQueryPort } from '../ports/document-query.port.js';
 
 /**
  * Comment use-case.
@@ -33,19 +33,19 @@ export class CommentUseCase {
 
   async create(
     command: CreateCommentCommand,
-  ): Promise<{ readonly id: string; readonly status: "CREATED" }> {
+  ): Promise<{ readonly id: string; readonly status: 'CREATED' }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "comment",
-      useCase: "CommentUseCase.create",
+      domain: 'comment',
+      useCase: 'CommentUseCase.create',
       aggregateId: command.id,
-      commandName: "CreateCommentCommand",
+      commandName: 'CreateCommentCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "comment.create.started");
+    this.logger.info({ ...ctxBase }, 'comment.create.started');
 
     try {
       // Cross-domain query: document 존재 검증.
@@ -54,7 +54,7 @@ export class CommentUseCase {
         throw new CommentDocumentNotFoundException(command.documentId);
       }
 
-      await this.transaction.run("comment.create", async (scope) => {
+      await this.transaction.run('comment.create', async (scope) => {
         const comment = CommentEntity.create({
           id: command.id,
           documentId: command.documentId,
@@ -72,8 +72,8 @@ export class CommentUseCase {
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.comment.created";
-        const idempotencyEventName = "document.comment.created";
+        const eventName = 'document.comment.created';
+        const idempotencyEventName = 'document.comment.created';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -94,23 +94,23 @@ export class CommentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.comment.created",
+          eventName: 'document.comment.created',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "comment.create.success",
+        'comment.create.success',
       );
 
-      return { id: command.id, status: "CREATED" };
+      return { id: command.id, status: 'CREATED' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "comment.create.failure",
+        'comment.create.failure',
       );
       throw error;
     }
@@ -118,30 +118,30 @@ export class CommentUseCase {
 
   async delete(
     command: DeleteCommentCommand,
-  ): Promise<{ readonly id: string; readonly status: "DELETED" }> {
+  ): Promise<{ readonly id: string; readonly status: 'DELETED' }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "comment",
-      useCase: "CommentUseCase.delete",
+      domain: 'comment',
+      useCase: 'CommentUseCase.delete',
       aggregateId: command.id,
-      commandName: "DeleteCommentCommand",
+      commandName: 'DeleteCommentCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "comment.delete.started");
+    this.logger.info({ ...ctxBase }, 'comment.delete.started');
 
     try {
-      await this.transaction.run("comment.delete", async (scope) => {
+      await this.transaction.run('comment.delete', async (scope) => {
         await this.repository.delete(command.id, scope);
         const payload: CommentDeletedEventPayload = {
           id: command.id,
           occurredAt: new Date().toISOString(),
         };
         const occurredAt = new Date();
-        const eventName = "document.comment.deleted";
-        const idempotencyEventName = "document.comment.deleted";
+        const eventName = 'document.comment.deleted';
+        const idempotencyEventName = 'document.comment.deleted';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -162,23 +162,23 @@ export class CommentUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "document.comment.deleted",
+          eventName: 'document.comment.deleted',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "comment.delete.success",
+        'comment.delete.success',
       );
 
-      return { id: command.id, status: "DELETED" };
+      return { id: command.id, status: 'DELETED' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "comment.delete.failure",
+        'comment.delete.failure',
       );
       throw error;
     }

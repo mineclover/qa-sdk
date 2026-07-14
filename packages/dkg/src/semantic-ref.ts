@@ -10,8 +10,8 @@
  * 이것이 DSL DB에서 "문자열이 원본, 정수는 파생"의 핵심 구현.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { encodePrefixByValue, decodePrefix } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
+import { encodePrefixByValue, decodePrefix } from '@qa-sdk/core';
 
 // ═══════════════════════════════════════════════════════════════
 //  타입
@@ -76,7 +76,7 @@ export function deriveRefEntries(
   catalog: Catalog,
   semantic: SemanticRefEntries,
 ): DerivedRefEntries {
-  const details: DerivedRefEntries["details"][number][] = [];
+  const details: DerivedRefEntries['details'][number][] = [];
   const values: number[] = [];
 
   for (const entry of semantic.entries) {
@@ -107,10 +107,10 @@ export function validateRefEntries(
   const derived = deriveRefEntries(catalog, semantic);
 
   const prefix = catalog.prefixes[semantic.prefixId];
-  const vdef = prefix?.versions.find(v => v.version === semantic.version);
+  const vdef = prefix?.versions.find((v) => v.version === semantic.version);
   const currentValues = vdef?.refEntries?.[semantic.dimLabel]?.values ?? [];
 
-  const mismatches: RefValidationResult["mismatches"][number][] = [];
+  const mismatches: RefValidationResult['mismatches'][number][] = [];
 
   for (let i = 0; i < Math.max(currentValues.length, derived.values.length); i++) {
     const current = currentValues[i];
@@ -150,7 +150,7 @@ export function recoverSemanticFromAddresses(
   refVersion: string,
   addresses: readonly number[],
 ): SemanticRefEntry[] {
-  return addresses.map(addr => {
+  return addresses.map((addr) => {
     const decoded = decodePrefix(catalog, refPrefix, refVersion, addr);
     const values: Record<string, string | number> = {};
     for (const [label, dim] of Object.entries(decoded)) {
@@ -170,7 +170,9 @@ export function findVersionForEntry(
   axisId: string,
   entryValue: string,
 ): string[] {
-  const axis = (catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[axisId];
+  const axis = (
+    catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>
+  )[axisId];
   if (!axis) return [];
 
   const found: string[] = [];
@@ -195,12 +197,12 @@ export function findRefAddress(
   meaning: Record<string, string | number>,
 ): { address: number; index: number } | null {
   const prefix = catalog.prefixes[prefixId];
-  const vdef = prefix?.versions.find(v => v.version === version);
+  const vdef = prefix?.versions.find((v) => v.version === version);
   const refEntries = vdef?.refEntries?.[dimLabel];
   if (!refEntries) return null;
 
   const dimRef = prefix.dims[dimLabel];
-  if (dimRef.kind !== "prefix_ref") return null;
+  if (dimRef.kind !== 'prefix_ref') return null;
 
   const targetAddr = encodePrefixByValue(catalog, dimRef.prefixId, refEntries.refVersion, meaning);
 

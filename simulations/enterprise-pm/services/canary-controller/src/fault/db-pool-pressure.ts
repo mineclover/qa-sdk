@@ -6,15 +6,11 @@
 // active/max를 주입한다 — controller resource-headroom.dbPoolUtilization 카테고리 입력으로
 // 즉시 반영된다.
 
-import { z } from "zod";
-import type { Fault } from "./types.js";
+import { z } from 'zod';
+import type { Fault } from './types.js';
 
 export interface DbPoolGaugeStore {
-  setForcedUtilization(
-    service: string,
-    active: number,
-    max: number,
-  ): Promise<void>;
+  setForcedUtilization(service: string, active: number, max: number): Promise<void>;
   clear(service?: string): Promise<void>;
 }
 
@@ -43,7 +39,7 @@ export class DbPoolPressureFault implements Fault {
   }
   // disable에 service 지정 가능 — admin-router가 body로 위임.
   async disable(service?: unknown) {
-    const target = typeof service === "string" ? service : undefined;
+    const target = typeof service === 'string' ? service : undefined;
     await this.gauge.clear(target);
   }
   async reset() {

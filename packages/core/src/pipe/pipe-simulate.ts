@@ -8,10 +8,8 @@
  * 어떤 경로가 실행되는지, 어떤 이벤트가 생산되는지 추적한다.
  */
 
-import type {
-  PipeFlow, PipeSpec, PipeGraph, PipeConnection,
-} from "../types/pipe-spec.js";
-import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
+import type { PipeFlow, PipeSpec, PipeGraph, PipeConnection } from '../types/pipe-spec.js';
+import { normalizeEndpointPipeIds } from './pipe-endpoint.js';
 
 // ── 설정 ─────────────────────────────────────────────
 
@@ -76,7 +74,7 @@ export interface SimulationResult {
   /** 생산된 이벤트 */
   producedEvents: SimEvent[];
   /** 실행 상태 */
-  status: "complete" | "max-steps-reached" | "no-trigger-match";
+  status: 'complete' | 'max-steps-reached' | 'no-trigger-match';
   /** 총 시뮬레이션 시간 (ms) */
   totalTime: number;
   /** 총 실행 스텝 수 */
@@ -93,13 +91,13 @@ export interface SimStep {
   /** 패싯 (step일 때) */
   facet?: string;
   /** 테스트 단계 (PipeStep.testPhase에서 전파) */
-  phase?: import("../types/test-tracking.js").TestPhase;
+  phase?: import('../types/test-tracking.js').TestPhase;
   /** 이벤트 키 (step/emit일 때) */
   eventKey?: string;
   /** 시뮬레이션 시각 */
   timestamp: number;
   /** 실행 상태 */
-  status: "executed" | "skipped" | "filtered" | "timeout";
+  status: 'executed' | 'skipped' | 'filtered' | 'timeout';
 }
 
 // ── 시뮬레이터 ───────────────────────────────────────
@@ -118,7 +116,7 @@ export function simulate(config: SimulationConfig): SimulationResult {
   // filterResolver가 명시적으로 제공되었는지 여부 (dedup 동작 분기에 사용)
   const hasExplicitFilterResolver = config.filterResolver !== undefined;
 
-  const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
+  const pipeMap = new Map(graph.pipes.map((p) => [p.pipeId, p]));
   const steps: SimStep[] = [];
   const pipeTrace: string[] = [];
   const facetTrace: string[] = [];
@@ -134,24 +132,24 @@ export function simulate(config: SimulationConfig): SimulationResult {
 
   while (eventQueue.length > 0) {
     if (steps.length >= maxSteps) {
-      return buildResult("max-steps-reached");
+      return buildResult('max-steps-reached');
     }
 
     const event = eventQueue.shift()!;
 
     // 이 이벤트로 트리거되는 파이프 찾기
-    const triggered = graph.pipes.filter(p => p.trigger.eventKey === event.eventKey);
+    const triggered = graph.pipes.filter((p) => p.trigger.eventKey === event.eventKey);
     if (triggered.length === 0 && steps.length === 0) {
-      return buildResult("no-trigger-match");
+      return buildResult('no-trigger-match');
     }
 
     for (const pipe of triggered) {
-      if (steps.length >= maxSteps) return buildResult("max-steps-reached");
+      if (steps.length >= maxSteps) return buildResult('max-steps-reached');
       pipeTrace.push(pipe.pipeId);
       const ctx: SimContext = { steps, clock, currentPipeId: pipe.pipeId };
 
       // 파이프 내부 흐름 실행
-      walkFlow(pipe.flow, pipe.pipeId, "flow", ctx);
+      walkFlow(pipe.flow, pipe.pipeId, 'flow', ctx);
 
       // produces 이벤트 큐에 추가
       if (pipe.produces) {
@@ -159,7 +157,7 @@ export function simulate(config: SimulationConfig): SimulationResult {
           const produced: SimEvent = { eventKey, timestamp: clock };
           producedEvents.push(produced);
           // 그래프에서 이 이벤트를 트리거로 가진 연결이 있으면 큐에 추가
-          const hasConsumer = graph.pipes.some(p => p.trigger.eventKey === eventKey);
+          const hasConsumer = graph.pipes.some((p) => p.trigger.eventKey === eventKey);
           if (hasConsumer) eventQueue.push(produced);
         }
       }
@@ -169,7 +167,7 @@ export function simulate(config: SimulationConfig): SimulationResult {
     }
   }
 
-  return buildResult("complete");
+  return buildResult('complete');
 
   // ── 내부 함수 ─────────────────────────────
 
@@ -177,12 +175,16 @@ export function simulate(config: SimulationConfig): SimulationResult {
     if (steps.length >= maxSteps) return;
 
     switch (flow.kind) {
-      case "step": {
+      case 'step': {
         const s: SimStep = {
-          pipeId, flowPath: path, kind: "step",
-          facet: flow.facet, phase: flow.testPhase,
+          pipeId,
+          flowPath: path,
+          kind: 'step',
+          facet: flow.facet,
+          phase: flow.testPhase,
           eventKey: flow.eventKey,
-          timestamp: clock, status: "executed",
+          timestamp: clock,
+          status: 'executed',
         };
         steps.push(s);
         facetTrace.push(flow.facet);
@@ -190,58 +192,87 @@ export function simulate(config: SimulationConfig): SimulationResult {
         break;
       }
 
-      case "sequence":
+      case 'sequence':
         for (let i = 0; i < flow.steps.length; i++) {
           walkFlow(flow.steps[i], pipeId, `${path}.steps[${i}]`, ctx);
         }
         break;
 
-      case "branch": {
+      case 'branch': {
         const idx = branchResolver(flow.condition, ctx);
         const chosen = Math.min(idx, flow.paths.length - 1);
-        steps.push({ pipeId, flowPath: path, kind: "branch", timestamp: clock, status: "executed" });
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'branch',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.paths[chosen], pipeId, `${path}.paths[${chosen}]`, ctx);
         break;
       }
 
-      case "optional": {
-        const pass = filterResolver("optional", ctx);
+      case 'optional': {
+        const pass = filterResolver('optional', ctx);
         if (pass) {
           walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         } else {
-          steps.push({ pipeId, flowPath: path, kind: "optional", timestamp: clock, status: "skipped" });
+          steps.push({
+            pipeId,
+            flowPath: path,
+            kind: 'optional',
+            timestamp: clock,
+            status: 'skipped',
+          });
         }
         break;
       }
 
-      case "parallel":
-        steps.push({ pipeId, flowPath: path, kind: "parallel", timestamp: clock, status: "executed" });
+      case 'parallel':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'parallel',
+          timestamp: clock,
+          status: 'executed',
+        });
         for (let i = 0; i < flow.steps.length; i++) {
           walkFlow(flow.steps[i], pipeId, `${path}.steps[${i}]`, ctx);
         }
         break;
 
-      case "race": {
+      case 'race': {
         const winner = raceResolver(flow.steps.length, ctx);
-        steps.push({ pipeId, flowPath: path, kind: "race", timestamp: clock, status: "executed" });
-        walkFlow(flow.steps[Math.min(winner, flow.steps.length - 1)], pipeId, `${path}.steps[${winner}]`, ctx);
+        steps.push({ pipeId, flowPath: path, kind: 'race', timestamp: clock, status: 'executed' });
+        walkFlow(
+          flow.steps[Math.min(winner, flow.steps.length - 1)],
+          pipeId,
+          `${path}.steps[${winner}]`,
+          ctx,
+        );
         break;
       }
 
-      case "await":
-        steps.push({ pipeId, flowPath: path, kind: "await", timestamp: clock, status: "executed" });
+      case 'await':
+        steps.push({ pipeId, flowPath: path, kind: 'await', timestamp: clock, status: 'executed' });
         if (flow.timeout) clock += flow.timeout;
         walkFlow(flow.then, pipeId, `${path}.then`, ctx);
         break;
 
-      case "retry":
-        steps.push({ pipeId, flowPath: path, kind: "retry", timestamp: clock, status: "executed" });
+      case 'retry':
+        steps.push({ pipeId, flowPath: path, kind: 'retry', timestamp: clock, status: 'executed' });
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "fallback": {
-        steps.push({ pipeId, flowPath: path, kind: "fallback", timestamp: clock, status: "executed" });
-        const success = failureResolver("fallback", ctx);
+      case 'fallback': {
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'fallback',
+          timestamp: clock,
+          status: 'executed',
+        });
+        const success = failureResolver('fallback', ctx);
         if (success) {
           walkFlow(flow.try, pipeId, `${path}.try`, ctx);
         } else {
@@ -250,8 +281,8 @@ export function simulate(config: SimulationConfig): SimulationResult {
         break;
       }
 
-      case "loop": {
-        steps.push({ pipeId, flowPath: path, kind: "loop", timestamp: clock, status: "executed" });
+      case 'loop': {
+        steps.push({ pipeId, flowPath: path, kind: 'loop', timestamp: clock, status: 'executed' });
         const loopMax = flow.maxIterations ?? 10;
         for (let iter = 0; iter < loopMax; iter++) {
           if (steps.length >= maxSteps) break;
@@ -263,63 +294,106 @@ export function simulate(config: SimulationConfig): SimulationResult {
         break;
       }
 
-      case "compensate":
-        steps.push({ pipeId, flowPath: path, kind: "compensate", timestamp: clock, status: "executed" });
+      case 'compensate':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'compensate',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.forward, pipeId, `${path}.forward`, ctx);
         break;
 
-      case "transition-scope":
-        steps.push({ pipeId, flowPath: path, kind: "transition-scope", timestamp: clock, status: "executed" });
+      case 'transition-scope':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'transition-scope',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.body, pipeId, `${path}.body`, ctx);
         break;
 
-      case "emit": {
+      case 'emit': {
         const s: SimStep = {
-          pipeId, flowPath: path, kind: "emit",
-          eventKey: flow.eventKey, timestamp: clock, status: "executed",
+          pipeId,
+          flowPath: path,
+          kind: 'emit',
+          eventKey: flow.eventKey,
+          timestamp: clock,
+          status: 'executed',
         };
         steps.push(s);
         producedEvents.push({ eventKey: flow.eventKey, timestamp: clock });
         break;
       }
 
-      case "finally":
+      case 'finally':
         walkFlow(flow.body, pipeId, `${path}.body`, ctx);
         walkFlow(flow.cleanup, pipeId, `${path}.cleanup`, ctx);
         break;
 
-      case "timeout":
-        steps.push({ pipeId, flowPath: path, kind: "timeout", timestamp: clock, status: "executed" });
+      case 'timeout':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'timeout',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.body, pipeId, `${path}.body`, ctx);
         break;
 
-      case "feedback":
-        steps.push({ pipeId, flowPath: path, kind: "feedback", timestamp: clock, status: "executed" });
+      case 'feedback':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'feedback',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.body, pipeId, `${path}.body`, ctx);
         break;
 
-      case "map":
-        steps.push({ pipeId, flowPath: path, kind: "map", timestamp: clock, status: "executed" });
+      case 'map':
+        steps.push({ pipeId, flowPath: path, kind: 'map', timestamp: clock, status: 'executed' });
         walkFlow(flow.itemFlow, pipeId, `${path}.itemFlow`, ctx);
         break;
 
-      case "reduce":
-        steps.push({ pipeId, flowPath: path, kind: "reduce", timestamp: clock, status: "executed" });
+      case 'reduce':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'reduce',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "buffer":
-        steps.push({ pipeId, flowPath: path, kind: "buffer", timestamp: clock, status: "executed" });
+      case 'buffer':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'buffer',
+          timestamp: clock,
+          status: 'executed',
+        });
         if (flow.duration) clock += flow.duration;
         walkFlow(flow.body, pipeId, `${path}.body`, ctx);
         break;
 
-      case "filter": {
+      case 'filter': {
         const pass = filterResolver(flow.condition, ctx);
         // 통과/차단 모두 기록: 통과 시 executed, 차단 시 filtered
         steps.push({
-          pipeId, flowPath: path, kind: "filter", timestamp: clock,
-          status: pass ? "executed" : "filtered",
+          pipeId,
+          flowPath: path,
+          kind: 'filter',
+          timestamp: clock,
+          status: pass ? 'executed' : 'filtered',
         });
         if (pass) {
           walkFlow(flow.step, pipeId, `${path}.step`, ctx);
@@ -327,34 +401,58 @@ export function simulate(config: SimulationConfig): SimulationResult {
         break;
       }
 
-      case "circuit-breaker":
-        steps.push({ pipeId, flowPath: path, kind: "circuit-breaker", timestamp: clock, status: "executed" });
+      case 'circuit-breaker':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'circuit-breaker',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "throttle":
-        steps.push({ pipeId, flowPath: path, kind: "throttle", timestamp: clock, status: "executed" });
+      case 'throttle':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'throttle',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "debounce":
-        steps.push({ pipeId, flowPath: path, kind: "debounce", timestamp: clock, status: "executed" });
+      case 'debounce':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'debounce',
+          timestamp: clock,
+          status: 'executed',
+        });
         clock += flow.wait;
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "split":
-        steps.push({ pipeId, flowPath: path, kind: "split", timestamp: clock, status: "executed" });
+      case 'split':
+        steps.push({ pipeId, flowPath: path, kind: 'split', timestamp: clock, status: 'executed' });
         walkFlow(flow.itemFlow, pipeId, `${path}.itemFlow`, ctx);
         break;
 
-      case "enrich":
-        steps.push({ pipeId, flowPath: path, kind: "enrich", timestamp: clock, status: "executed" });
+      case 'enrich':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'enrich',
+          timestamp: clock,
+          status: 'executed',
+        });
         if (flow.timeout) clock += flow.timeout;
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "tap":
+      case 'tap':
         // observe 에러가 메인 흐름에 전파되지 않도록 격리
         try {
           walkFlow(flow.observe, pipeId, `${path}.observe`, ctx);
@@ -364,17 +462,29 @@ export function simulate(config: SimulationConfig): SimulationResult {
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "resequence":
-        steps.push({ pipeId, flowPath: path, kind: "resequence", timestamp: clock, status: "executed" });
+      case 'resequence':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'resequence',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         break;
 
-      case "window":
-        steps.push({ pipeId, flowPath: path, kind: "window", timestamp: clock, status: "executed" });
+      case 'window':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'window',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.body, pipeId, `${path}.body`, ctx);
         break;
 
-      case "dedup": {
+      case 'dedup': {
         // filterResolver가 명시 제공 시 resolver 기반, 미제공 시 seen-key 추적
         let pass: boolean;
         if (hasExplicitFilterResolver) {
@@ -388,20 +498,32 @@ export function simulate(config: SimulationConfig): SimulationResult {
         if (pass) {
           walkFlow(flow.step, pipeId, `${path}.step`, ctx);
         } else {
-          steps.push({ pipeId, flowPath: path, kind: "dedup", timestamp: clock, status: "filtered" });
+          steps.push({
+            pipeId,
+            flowPath: path,
+            kind: 'dedup',
+            timestamp: clock,
+            status: 'filtered',
+          });
         }
         break;
       }
 
-      case "correlation":
-        steps.push({ pipeId, flowPath: path, kind: "correlation", timestamp: clock, status: "executed" });
+      case 'correlation':
+        steps.push({
+          pipeId,
+          flowPath: path,
+          kind: 'correlation',
+          timestamp: clock,
+          status: 'executed',
+        });
         walkFlow(flow.onMatch, pipeId, `${path}.onMatch`, ctx);
         break;
     }
   }
 
   function followConnections(fromPipeId: string, _event: SimEvent): void {
-    const outgoing = graph.connections.filter(c => {
+    const outgoing = graph.connections.filter((c) => {
       const froms = normalizeEndpointPipeIds(c.from);
       return froms.includes(fromPipeId);
     });
@@ -410,8 +532,8 @@ export function simulate(config: SimulationConfig): SimulationResult {
       const tos = normalizeEndpointPipeIds(conn.to);
 
       switch (conn.kind) {
-        case "next":
-        case "fan-out":
+        case 'next':
+        case 'fan-out':
           for (const to of tos) {
             const pipe = pipeMap.get(to);
             if (pipe) {
@@ -420,9 +542,9 @@ export function simulate(config: SimulationConfig): SimulationResult {
           }
           break;
 
-        case "conditional": {
+        case 'conditional': {
           const ctx: SimContext = { steps, clock, currentPipeId: fromPipeId };
-          const pass = filterResolver(conn.condition ?? "", ctx);
+          const pass = filterResolver(conn.condition ?? '', ctx);
           if (pass) {
             for (const to of tos) {
               const pipe = pipeMap.get(to);
@@ -434,17 +556,17 @@ export function simulate(config: SimulationConfig): SimulationResult {
           break;
         }
 
-        case "event":
+        case 'event':
           // event 연결은 produces → trigger 매칭으로 자동 처리됨
           break;
 
-        case "error":
-        case "compensate":
-        case "feedback":
+        case 'error':
+        case 'compensate':
+        case 'feedback':
           // 시뮬레이션에서는 정상 경로만 (에러/보상/피드백은 별도 시뮬 필요)
           break;
 
-        case "join":
+        case 'join':
           // join은 모든 from이 완료되어야 — 단순 시뮬에서는 바로 실행
           for (const to of tos) {
             const pipe = pipeMap.get(to);
@@ -457,7 +579,7 @@ export function simulate(config: SimulationConfig): SimulationResult {
     }
   }
 
-  function buildResult(status: SimulationResult["status"]): SimulationResult {
+  function buildResult(status: SimulationResult['status']): SimulationResult {
     return {
       steps,
       pipeTrace,
@@ -499,10 +621,7 @@ export interface HappyPathMatch {
 /**
  * 시뮬레이션 결과가 의도된 happy path와 일치하는지 검증한다.
  */
-export function matchHappyPath(
-  result: SimulationResult,
-  spec: HappyPathSpec,
-): HappyPathMatch {
+export function matchHappyPath(result: SimulationResult, spec: HappyPathSpec): HappyPathMatch {
   // 파이프 트레이스 비교
   const pipeMatch = arraysEqual(result.pipeTrace, spec.expectedPipeTrace);
   let divergedAtIndex: number | null = null;

@@ -3,8 +3,8 @@
 
 // programs/gitlab-program.ts — 로컬 K3s에 GitLab CE Omnibus를 띄우는 Pulumi 프로그램
 
-import * as pulumi from "@pulumi/pulumi";
-import * as k8s from "@pulumi/kubernetes";
+import * as pulumi from '@pulumi/pulumi';
+import * as k8s from '@pulumi/kubernetes';
 
 export interface BuildOmnibusConfigInput {
   /** GitLab external_url (예: "http://localhost:8929") */
@@ -34,7 +34,7 @@ export function buildOmnibusConfig(input: BuildOmnibusConfigInput): string {
       "gitlab_rails['initial_root_password'] = ENV['GITLAB_ROOT_PASSWORD'] if ENV['GITLAB_ROOT_PASSWORD']",
     );
   }
-  return lines.join("; ");
+  return lines.join('; ');
 }
 
 export interface GitlabProgramOptions {
@@ -53,12 +53,12 @@ export interface GitlabProgramOptions {
   };
 }
 
-const APP_LABEL = "gitlab";
+const APP_LABEL = 'gitlab';
 const CONTAINER_PORT = 80;
 const COMMON_LABELS = {
   app: APP_LABEL,
-  "managed-by": "pulumi",
-  "qa-sdk-component": "gitlab-ce",
+  'managed-by': 'pulumi',
+  'qa-sdk-component': 'gitlab-ce',
 };
 
 /**
@@ -68,31 +68,31 @@ const COMMON_LABELS = {
 export function createGitlabProgram(
   options?: GitlabProgramOptions,
 ): () => Promise<Record<string, unknown>> {
-  const namespace = options?.namespace ?? "qa-dev";
-  const image = options?.image ?? "gitlab/gitlab-ce:latest";
-  const externalUrl = options?.externalUrl ?? "http://localhost:8929";
+  const namespace = options?.namespace ?? 'qa-dev';
+  const image = options?.image ?? 'gitlab/gitlab-ce:latest';
+  const externalUrl = options?.externalUrl ?? 'http://localhost:8929';
   const rootPassword = options?.rootPassword;
   const resources = {
     requests: {
-      cpu: options?.resources?.requests?.cpu ?? "2",
-      memory: options?.resources?.requests?.memory ?? "4Gi",
+      cpu: options?.resources?.requests?.cpu ?? '2',
+      memory: options?.resources?.requests?.memory ?? '4Gi',
     },
     limits: {
-      cpu: options?.resources?.limits?.cpu ?? "3",
-      memory: options?.resources?.limits?.memory ?? "6Gi",
+      cpu: options?.resources?.limits?.cpu ?? '3',
+      memory: options?.resources?.limits?.memory ?? '6Gi',
     },
   };
 
   return async () => {
     let secret: k8s.core.v1.Secret | undefined;
     if (rootPassword !== undefined) {
-      secret = new k8s.core.v1.Secret("gitlab-root-credentials", {
+      secret = new k8s.core.v1.Secret('gitlab-root-credentials', {
         metadata: {
           namespace,
-          name: "gitlab-root-credentials",
+          name: 'gitlab-root-credentials',
           labels: COMMON_LABELS,
         },
-        type: "Opaque",
+        type: 'Opaque',
         stringData: { password: rootPassword },
       });
     }
@@ -105,7 +105,7 @@ export function createGitlabProgram(
       };
     }> = [
       {
-        name: "GITLAB_OMNIBUS_CONFIG",
+        name: 'GITLAB_OMNIBUS_CONFIG',
         value: buildOmnibusConfig({
           externalUrl,
           nginxListenPort: CONTAINER_PORT,
@@ -116,38 +116,38 @@ export function createGitlabProgram(
 
     if (secret !== undefined) {
       env.push({
-        name: "GITLAB_ROOT_PASSWORD",
+        name: 'GITLAB_ROOT_PASSWORD',
         valueFrom: {
-          secretKeyRef: { name: "gitlab-root-credentials", key: "password" },
+          secretKeyRef: { name: 'gitlab-root-credentials', key: 'password' },
         },
       });
     }
 
-    const deployment = new k8s.apps.v1.Deployment("gitlab", {
-      metadata: { namespace, name: "gitlab", labels: COMMON_LABELS },
+    const deployment = new k8s.apps.v1.Deployment('gitlab', {
+      metadata: { namespace, name: 'gitlab', labels: COMMON_LABELS },
       spec: {
         replicas: 1,
         progressDeadlineSeconds: 1800,
-        strategy: { type: "Recreate" },
+        strategy: { type: 'Recreate' },
         selector: { matchLabels: { app: APP_LABEL } },
         template: {
           metadata: { labels: COMMON_LABELS },
           spec: {
             containers: [
               {
-                name: "gitlab",
+                name: 'gitlab',
                 image,
-                imagePullPolicy: "IfNotPresent",
-                ports: [{ containerPort: CONTAINER_PORT, name: "http" }],
+                imagePullPolicy: 'IfNotPresent',
+                ports: [{ containerPort: CONTAINER_PORT, name: 'http' }],
                 env,
                 resources,
                 volumeMounts: [
-                  { name: "gitlab-config", mountPath: "/etc/gitlab" },
-                  { name: "gitlab-logs", mountPath: "/var/log/gitlab" },
-                  { name: "gitlab-data", mountPath: "/var/opt/gitlab" },
+                  { name: 'gitlab-config', mountPath: '/etc/gitlab' },
+                  { name: 'gitlab-logs', mountPath: '/var/log/gitlab' },
+                  { name: 'gitlab-data', mountPath: '/var/opt/gitlab' },
                 ],
                 readinessProbe: {
-                  httpGet: { path: "/-/readiness", port: CONTAINER_PORT },
+                  httpGet: { path: '/-/readiness', port: CONTAINER_PORT },
                   initialDelaySeconds: 180,
                   periodSeconds: 30,
                   failureThreshold: 20,
@@ -156,21 +156,21 @@ export function createGitlabProgram(
               },
             ],
             volumes: [
-              { name: "gitlab-config", emptyDir: {} },
-              { name: "gitlab-logs", emptyDir: {} },
-              { name: "gitlab-data", emptyDir: {} },
+              { name: 'gitlab-config', emptyDir: {} },
+              { name: 'gitlab-logs', emptyDir: {} },
+              { name: 'gitlab-data', emptyDir: {} },
             ],
           },
         },
       },
     });
 
-    const service = new k8s.core.v1.Service("gitlab-svc", {
-      metadata: { namespace, name: "gitlab-svc", labels: COMMON_LABELS },
+    const service = new k8s.core.v1.Service('gitlab-svc', {
+      metadata: { namespace, name: 'gitlab-svc', labels: COMMON_LABELS },
       spec: {
-        type: "NodePort",
+        type: 'NodePort',
         selector: { app: APP_LABEL },
-        ports: [{ port: CONTAINER_PORT, targetPort: CONTAINER_PORT, name: "http" }],
+        ports: [{ port: CONTAINER_PORT, targetPort: CONTAINER_PORT, name: 'http' }],
       },
     });
 

@@ -18,7 +18,7 @@ export {
   resolveAddress,
   decomposeAddress,
   verifyRoundTrip,
-} from "@qa-sdk/core/catalog";
+} from '@qa-sdk/core/catalog';
 
 export type {
   PrefixStructure,
@@ -30,4 +30,4 @@ export type {
   ResolvedDimValue,
   ResolvedAddress,
   DecomposedDim,
-} from "@qa-sdk/core/catalog";
+} from '@qa-sdk/core/catalog';

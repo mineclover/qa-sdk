@@ -13,10 +13,7 @@
  */
 
 import { pathToFileURL } from 'node:url';
-import {
-  emitCliEvent,
-  setCatalogContext,
-} from './commands/dkg.js';
+import { emitCliEvent, setCatalogContext } from './commands/dkg.js';
 import { loadCatalog } from 'config-loader';
 import type { Catalog } from '@qa-sdk/core';
 import { cliQuality } from './commands/quality.js';
@@ -307,7 +304,10 @@ async function dispatchGitCommand(handlerKey: string, rest: string[]): Promise<v
 }
 
 async function dispatchPrefixCommand(handlerKey: string, rest: string[]): Promise<void> {
-  if (!loadedCatalog) { console.error('카탈로그 로딩 실패'); return; }
+  if (!loadedCatalog) {
+    console.error('카탈로그 로딩 실패');
+    return;
+  }
   await dispatchFromRegistry(createPrefixHandlerRegistry(loadedCatalog), handlerKey, rest);
 }
 
@@ -316,34 +316,156 @@ async function dispatchFacetCommand(handlerKey: string, rest: string[]): Promise
 }
 
 const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
-  { rootSegments: ['scan'], rootName: 'qa-sdk scan', tree: SCAN_GROUP_COMMAND_TREE, dispatch: dispatchScanCommand },
-  { rootSegments: ['git'], rootName: 'qa-sdk git', tree: GIT_GROUP_COMMAND_TREE, dispatch: dispatchGitCommand },
-  { rootSegments: ['prefix'], rootName: 'qa-sdk prefix', tree: PREFIX_GROUP_COMMAND_TREE, dispatch: dispatchPrefixCommand },
-  { rootSegments: ['facet'], rootName: 'qa-sdk facet', tree: FACET_GROUP_COMMAND_TREE, dispatch: dispatchFacetCommand },
-  { rootSegments: ['def'], rootName: 'qa-sdk def', tree: DEF_GROUP_COMMAND_TREE, dispatch: dispatchDefCommand },
-  { rootSegments: ['docs'], rootName: 'qa-sdk docs', tree: DOCS_GROUP_COMMAND_TREE, dispatch: dispatchDocsCommand },
-  { rootSegments: ['tax'], rootName: 'qa-sdk tax', tree: TAXONOMY_GROUP_COMMAND_TREE, dispatch: dispatchTaxonomyCommand },
-  { rootSegments: ['decision'], rootName: 'qa-sdk decision', tree: DECISION_GROUP_COMMAND_TREE, dispatch: dispatchDecisionCommand },
-  { rootSegments: ['service'], rootName: 'qa-sdk service', tree: SERVICE_GROUP_COMMAND_TREE, dispatch: dispatchServiceCommand },
-  { rootSegments: ['dkg'], rootName: 'qa-sdk dkg', tree: DKG_GROUP_COMMAND_TREE, dispatch: dispatchDkgCommand },
-  { rootSegments: [], rootName: 'qa-sdk', tree: QUALITY_GROUP_COMMAND_TREE, dispatch: dispatchQualityCommand },
-  { rootSegments: ['review'], rootName: 'qa-sdk review', tree: REVIEW_GROUP_COMMAND_TREE, dispatch: dispatchReviewCommand },
+  {
+    rootSegments: ['scan'],
+    rootName: 'qa-sdk scan',
+    tree: SCAN_GROUP_COMMAND_TREE,
+    dispatch: dispatchScanCommand,
+  },
+  {
+    rootSegments: ['git'],
+    rootName: 'qa-sdk git',
+    tree: GIT_GROUP_COMMAND_TREE,
+    dispatch: dispatchGitCommand,
+  },
+  {
+    rootSegments: ['prefix'],
+    rootName: 'qa-sdk prefix',
+    tree: PREFIX_GROUP_COMMAND_TREE,
+    dispatch: dispatchPrefixCommand,
+  },
+  {
+    rootSegments: ['facet'],
+    rootName: 'qa-sdk facet',
+    tree: FACET_GROUP_COMMAND_TREE,
+    dispatch: dispatchFacetCommand,
+  },
+  {
+    rootSegments: ['def'],
+    rootName: 'qa-sdk def',
+    tree: DEF_GROUP_COMMAND_TREE,
+    dispatch: dispatchDefCommand,
+  },
+  {
+    rootSegments: ['docs'],
+    rootName: 'qa-sdk docs',
+    tree: DOCS_GROUP_COMMAND_TREE,
+    dispatch: dispatchDocsCommand,
+  },
+  {
+    rootSegments: ['tax'],
+    rootName: 'qa-sdk tax',
+    tree: TAXONOMY_GROUP_COMMAND_TREE,
+    dispatch: dispatchTaxonomyCommand,
+  },
+  {
+    rootSegments: ['decision'],
+    rootName: 'qa-sdk decision',
+    tree: DECISION_GROUP_COMMAND_TREE,
+    dispatch: dispatchDecisionCommand,
+  },
+  {
+    rootSegments: ['service'],
+    rootName: 'qa-sdk service',
+    tree: SERVICE_GROUP_COMMAND_TREE,
+    dispatch: dispatchServiceCommand,
+  },
+  {
+    rootSegments: ['dkg'],
+    rootName: 'qa-sdk dkg',
+    tree: DKG_GROUP_COMMAND_TREE,
+    dispatch: dispatchDkgCommand,
+  },
+  {
+    rootSegments: [],
+    rootName: 'qa-sdk',
+    tree: QUALITY_GROUP_COMMAND_TREE,
+    dispatch: dispatchQualityCommand,
+  },
+  {
+    rootSegments: ['review'],
+    rootName: 'qa-sdk review',
+    tree: REVIEW_GROUP_COMMAND_TREE,
+    dispatch: dispatchReviewCommand,
+  },
 
-  { rootSegments: ['ingest'], rootName: 'qa-sdk ingest', tree: INGEST_GROUP_COMMAND_TREE, dispatch: dispatchIngestCommand },
-  { rootSegments: ['obs'], rootName: 'qa-sdk obs', tree: OBS_GROUP_COMMAND_TREE, dispatch: dispatchObsCommand },
-  { rootSegments: ['gate'], rootName: 'qa-sdk gate', tree: GATE_GROUP_COMMAND_TREE, dispatch: dispatchGateCommand },
-  { rootSegments: ['query'], rootName: 'qa-sdk query', tree: QUERY_GROUP_COMMAND_TREE, dispatch: dispatchQueryCommand },
-  { rootSegments: ['spec'], rootName: 'qa-sdk spec', tree: SPEC_GROUP_COMMAND_TREE, dispatch: dispatchSpecCommand },
-  { rootSegments: ['test'], rootName: 'qa-sdk test', tree: TEST_GROUP_COMMAND_TREE, dispatch: dispatchTestCommand },
-  { rootSegments: ['catalog'], rootName: 'qa-sdk catalog', tree: CATALOG_GROUP_COMMAND_TREE, dispatch: dispatchCatalogCommand },
-  { rootSegments: ['ontology'], rootName: 'qa-sdk ontology', tree: ONTOLOGY_GROUP_COMMAND_TREE, dispatch: dispatchOntologyCommand },
-  { rootSegments: ['motion'], rootName: 'qa-sdk motion', tree: MOTION_GROUP_COMMAND_TREE, dispatch: dispatchMotionCommand },
-  { rootSegments: ['flow'], rootName: 'qa-sdk flow', tree: FLOW_GROUP_COMMAND_TREE, dispatch: dispatchFlowCommand },
-  { rootSegments: ['cache'], rootName: 'qa-sdk cache', tree: CACHE_GROUP_COMMAND_TREE, dispatch: dispatchCacheCommand },
-  { rootSegments: [], rootName: 'qa-sdk', tree: ROOT_GROUP_COMMAND_TREE, dispatch: dispatchRootCommand },
+  {
+    rootSegments: ['ingest'],
+    rootName: 'qa-sdk ingest',
+    tree: INGEST_GROUP_COMMAND_TREE,
+    dispatch: dispatchIngestCommand,
+  },
+  {
+    rootSegments: ['obs'],
+    rootName: 'qa-sdk obs',
+    tree: OBS_GROUP_COMMAND_TREE,
+    dispatch: dispatchObsCommand,
+  },
+  {
+    rootSegments: ['gate'],
+    rootName: 'qa-sdk gate',
+    tree: GATE_GROUP_COMMAND_TREE,
+    dispatch: dispatchGateCommand,
+  },
+  {
+    rootSegments: ['query'],
+    rootName: 'qa-sdk query',
+    tree: QUERY_GROUP_COMMAND_TREE,
+    dispatch: dispatchQueryCommand,
+  },
+  {
+    rootSegments: ['spec'],
+    rootName: 'qa-sdk spec',
+    tree: SPEC_GROUP_COMMAND_TREE,
+    dispatch: dispatchSpecCommand,
+  },
+  {
+    rootSegments: ['test'],
+    rootName: 'qa-sdk test',
+    tree: TEST_GROUP_COMMAND_TREE,
+    dispatch: dispatchTestCommand,
+  },
+  {
+    rootSegments: ['catalog'],
+    rootName: 'qa-sdk catalog',
+    tree: CATALOG_GROUP_COMMAND_TREE,
+    dispatch: dispatchCatalogCommand,
+  },
+  {
+    rootSegments: ['ontology'],
+    rootName: 'qa-sdk ontology',
+    tree: ONTOLOGY_GROUP_COMMAND_TREE,
+    dispatch: dispatchOntologyCommand,
+  },
+  {
+    rootSegments: ['motion'],
+    rootName: 'qa-sdk motion',
+    tree: MOTION_GROUP_COMMAND_TREE,
+    dispatch: dispatchMotionCommand,
+  },
+  {
+    rootSegments: ['flow'],
+    rootName: 'qa-sdk flow',
+    tree: FLOW_GROUP_COMMAND_TREE,
+    dispatch: dispatchFlowCommand,
+  },
+  {
+    rootSegments: ['cache'],
+    rootName: 'qa-sdk cache',
+    tree: CACHE_GROUP_COMMAND_TREE,
+    dispatch: dispatchCacheCommand,
+  },
+  {
+    rootSegments: [],
+    rootName: 'qa-sdk',
+    tree: ROOT_GROUP_COMMAND_TREE,
+    dispatch: dispatchRootCommand,
+  },
 ] as const;
 
-function createHandlerRegistry(dispatch: TreeDispatch): Record<string, (ctx: CommandContext) => Promise<void>> {
+function createHandlerRegistry(
+  dispatch: TreeDispatch,
+): Record<string, (ctx: CommandContext) => Promise<void>> {
   return new Proxy({} as Record<string, (ctx: CommandContext) => Promise<void>>, {
     get(_target, prop) {
       if (typeof prop !== 'string') return undefined;
@@ -496,9 +618,7 @@ function resolveSubcommandInternal(args: string[]): InternalSubcommand {
   }
 
   // 1단어 커맨드 fallback
-  const oneWord = [
-    'quality',
-  ];
+  const oneWord = ['quality'];
   if (oneWord.includes(args[0])) {
     return { name: args[0], rest: args.slice(1) };
   }

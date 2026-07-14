@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import type { SearchHit } from "../lib/searchIndex";
-import { buildSearchIndex, searchHits } from "../lib/searchIndex";
-import { loadTaxonomyIndex, loadTaxonomy } from "../data/loadStaticTaxonomies";
-import { fetchFeedbacks } from "../data/feedbacksApi";
+import { useEffect, useState } from 'react';
+import type { SearchHit } from '../lib/searchIndex';
+import { buildSearchIndex, searchHits } from '../lib/searchIndex';
+import { loadTaxonomyIndex, loadTaxonomy } from '../data/loadStaticTaxonomies';
+import { fetchFeedbacks } from '../data/feedbacksApi';
 
 let cachedHits: SearchHit[] | null = null;
 
@@ -48,22 +48,28 @@ export function SearchResults({
             key={i}
             className="p-2 cursor-pointer hover:bg-gray-50"
             onClick={() => {
-              if (h.kind === "taxonomy") onNavigate({ file: h.file });
-              if (h.kind === "axis") onNavigate({ ref: `${h.taxonomy}:${h.axis}` });
-              if (h.kind === "entry") onNavigate({ ref: `${h.taxonomy}:${h.axis}.${h.entry}` });
-              if (h.kind === "feedback") onNavigate({ ref: h.ref });
+              if (h.kind === 'taxonomy') onNavigate({ file: h.file });
+              if (h.kind === 'axis') onNavigate({ ref: `${h.taxonomy}:${h.axis}` });
+              if (h.kind === 'entry') onNavigate({ ref: `${h.taxonomy}:${h.axis}.${h.entry}` });
+              if (h.kind === 'feedback') onNavigate({ ref: h.ref });
             }}
           >
             <div className="text-xs text-gray-500">{h.kind}</div>
             <div className="font-mono">
-              {h.kind === "taxonomy" && h.name}
-              {h.kind === "axis" && `${h.taxonomy}:${h.axis} (${h.entriesCount})`}
-              {h.kind === "entry" && `${h.taxonomy}:${h.axis}.${h.entry}`}
-              {h.kind === "feedback" && h.ref}
+              {h.kind === 'taxonomy' && h.name}
+              {h.kind === 'axis' && `${h.taxonomy}:${h.axis} (${h.entriesCount})`}
+              {h.kind === 'entry' && `${h.taxonomy}:${h.axis}.${h.entry}`}
+              {h.kind === 'feedback' && h.ref}
             </div>
-            {h.kind === "entry" && h.label && <div className="text-xs text-gray-600">{h.label}</div>}
-            {h.kind === "feedback" && <div className="text-xs text-gray-600 truncate">{h.text}</div>}
-            {h.kind === "taxonomy" && h.description && <div className="text-xs text-gray-600 truncate">{h.description}</div>}
+            {h.kind === 'entry' && h.label && (
+              <div className="text-xs text-gray-600">{h.label}</div>
+            )}
+            {h.kind === 'feedback' && (
+              <div className="text-xs text-gray-600 truncate">{h.text}</div>
+            )}
+            {h.kind === 'taxonomy' && h.description && (
+              <div className="text-xs text-gray-600 truncate">{h.description}</div>
+            )}
           </li>
         ))}
       </ul>

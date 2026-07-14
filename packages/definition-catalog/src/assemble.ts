@@ -10,13 +10,8 @@
  *   → 그룹 purpose + 멤버별 { scope, purpose, overview }
  */
 
-import type {
-  DefinitionEntry,
-  DefinitionLink,
-  DefScope,
-  LinkType,
-} from "./types.js";
-import { extractByLevel, type ExtractLevel } from "./extract.js";
+import type { DefinitionEntry, DefinitionLink, DefScope, LinkType } from './types.js';
+import { extractByLevel, type ExtractLevel } from './extract.js';
 
 /** 멤버 요약 */
 export interface MemberSummary {
@@ -59,8 +54,8 @@ export interface BoundarySummary {
 
 /** 직접 결합 요약 */
 export interface BoundaryCouplingSummary {
-  readonly linkType: Extract<LinkType, "depends_on" | "constrains" | "refines">;
-  readonly direction: "incoming" | "outgoing";
+  readonly linkType: Extract<LinkType, 'depends_on' | 'constrains' | 'refines'>;
+  readonly direction: 'incoming' | 'outgoing';
   readonly doc: BoundarySummary;
 }
 
@@ -77,7 +72,13 @@ export interface AssembledBoundary {
 
 /** scope 표시 순서 (구조적 → 구체적) */
 const SCOPE_ORDER: readonly DefScope[] = [
-  "constraint", "state", "data", "feature", "flow", "interface", "ui",
+  'constraint',
+  'state',
+  'data',
+  'feature',
+  'flow',
+  'interface',
+  'ui',
 ];
 
 function scopeIndex(scope?: DefScope): number {
@@ -86,21 +87,19 @@ function scopeIndex(scope?: DefScope): number {
   return idx === -1 ? 999 : idx;
 }
 
-const DIRECT_BOUNDARY_LINKS = new Set<Extract<LinkType, "depends_on" | "constrains" | "refines">>([
-  "depends_on",
-  "constrains",
-  "refines",
+const DIRECT_BOUNDARY_LINKS = new Set<Extract<LinkType, 'depends_on' | 'constrains' | 'refines'>>([
+  'depends_on',
+  'constrains',
+  'refines',
 ]);
 
-const LINK_ORDER: readonly Extract<LinkType, "depends_on" | "constrains" | "refines">[] = [
-  "constrains",
-  "depends_on",
-  "refines",
+const LINK_ORDER: readonly Extract<LinkType, 'depends_on' | 'constrains' | 'refines'>[] = [
+  'constrains',
+  'depends_on',
+  'refines',
 ];
 
-function linkIndex(
-  linkType: Extract<LinkType, "depends_on" | "constrains" | "refines">,
-): number {
+function linkIndex(linkType: Extract<LinkType, 'depends_on' | 'constrains' | 'refines'>): number {
   const idx = LINK_ORDER.indexOf(linkType);
   return idx === -1 ? 999 : idx;
 }
@@ -112,13 +111,13 @@ function extractSummary(
   aspect: string | undefined,
   depth: string | undefined,
   body: string | undefined,
-  level: ExtractLevel = "overview",
+  level: ExtractLevel = 'overview',
 ): BoundarySummary {
-  const purpose = body ? extractByLevel(body, "purpose").text || null : null;
+  const purpose = body ? extractByLevel(body, 'purpose').text || null : null;
   const overviewSections =
-    body && level !== "purpose"
-      ? extractByLevel(body, "overview").sections
-          .filter((section) => section.marker === "overview")
+    body && level !== 'purpose'
+      ? extractByLevel(body, 'overview')
+          .sections.filter((section) => section.marker === 'overview')
           .map((section) => section.body)
           .filter((section) => section.length > 0)
       : [];
@@ -135,31 +134,31 @@ function extractSummary(
 }
 
 function structuralLine(summary: BoundarySummary): string {
-  if (summary.purpose) return summary.purpose.split("\n")[0]!.trim();
-  if (summary.overview.length > 0) return summary.overview[0]!.split("\n")[0]!.trim();
-  return "(요약 없음)";
+  if (summary.purpose) return summary.purpose.split('\n')[0]!.trim();
+  if (summary.overview.length > 0) return summary.overview[0]!.split('\n')[0]!.trim();
+  return '(요약 없음)';
 }
 
-function isDirectBoundaryLink(
-  link: DefinitionLink,
-): link is DefinitionLink & { linkType: Extract<LinkType, "depends_on" | "constrains" | "refines"> } {
+function isDirectBoundaryLink(link: DefinitionLink): link is DefinitionLink & {
+  linkType: Extract<LinkType, 'depends_on' | 'constrains' | 'refines'>;
+} {
   return DIRECT_BOUNDARY_LINKS.has(
-    link.linkType as Extract<LinkType, "depends_on" | "constrains" | "refines">,
+    link.linkType as Extract<LinkType, 'depends_on' | 'constrains' | 'refines'>,
   );
 }
 
 function collectBoundaryCouplings(
   boundaryId: string,
-  direction: "incoming" | "outgoing",
+  direction: 'incoming' | 'outgoing',
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
   getBody: (id: string) => string | undefined,
   level: ExtractLevel,
 ): BoundaryCouplingSummary[] {
   const summaries: BoundaryCouplingSummary[] = [];
 
   for (const link of getLinks(boundaryId, direction).filter(isDirectBoundaryLink)) {
-    const adjacentId = direction === "outgoing" ? link.targetId : link.sourceId;
+    const adjacentId = direction === 'outgoing' ? link.targetId : link.sourceId;
     const adjacent = getEntry(adjacentId);
     if (!adjacent) continue;
 
@@ -178,10 +177,11 @@ function collectBoundaryCouplings(
     });
   }
 
-  return summaries.toSorted((left, right) =>
-    linkIndex(left.linkType) - linkIndex(right.linkType) ||
-    scopeIndex(left.doc.scope) - scopeIndex(right.doc.scope) ||
-    left.doc.id.localeCompare(right.doc.id),
+  return summaries.toSorted(
+    (left, right) =>
+      linkIndex(left.linkType) - linkIndex(right.linkType) ||
+      scopeIndex(left.doc.scope) - scopeIndex(right.doc.scope) ||
+      left.doc.id.localeCompare(right.doc.id),
   );
 }
 
@@ -197,24 +197,25 @@ function collectBoundaryCouplings(
 export function assembleFeature(
   groupId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
   getBody: (id: string) => string | undefined,
-  level: ExtractLevel = "overview",
+  level: ExtractLevel = 'overview',
 ): AssembledFeature | null {
   const group = getEntry(groupId);
   if (!group) return null;
 
   // 그룹 본문에서 purpose/overview 추출
   const groupBody = getBody(groupId);
-  const groupPurpose = groupBody ? extractByLevel(groupBody, "purpose").text || null : null;
+  const groupPurpose = groupBody ? extractByLevel(groupBody, 'purpose').text || null : null;
   const groupOverviewSections = groupBody
-    ? extractByLevel(groupBody, "overview").sections.filter(s => s.marker === "overview")
+    ? extractByLevel(groupBody, 'overview').sections.filter((s) => s.marker === 'overview')
     : [];
-  const groupOverview = groupOverviewSections.map(s => s.body).filter(b => b.length > 0);
+  const groupOverview = groupOverviewSections.map((s) => s.body).filter((b) => b.length > 0);
 
   // 구조 멤버 수집. Legacy group/module은 contains를, E/C/I/S + L/P Layout/Pack은 refs를 쓴다.
-  const memberLinks = getLinks(groupId, "outgoing")
-    .filter(l => l.linkType === "contains" || l.linkType === "refs");
+  const memberLinks = getLinks(groupId, 'outgoing').filter(
+    (l) => l.linkType === 'contains' || l.linkType === 'refs',
+  );
   const members: MemberSummary[] = [];
 
   for (const link of memberLinks) {
@@ -226,15 +227,15 @@ export function assembleFeature(
     let overview: string[] = [];
 
     if (body) {
-      const purposeResult = extractByLevel(body, "purpose");
+      const purposeResult = extractByLevel(body, 'purpose');
       purpose = purposeResult.text || null;
 
-      if (level !== "purpose") {
-        const overviewResult = extractByLevel(body, "overview");
+      if (level !== 'purpose') {
+        const overviewResult = extractByLevel(body, 'overview');
         overview = overviewResult.sections
-          .filter(s => s.marker === "overview")
-          .map(s => s.body)
-          .filter(b => b.length > 0);
+          .filter((s) => s.marker === 'overview')
+          .map((s) => s.body)
+          .filter((b) => b.length > 0);
       }
     }
 
@@ -253,29 +254,37 @@ export function assembleFeature(
   members.sort((a, b) => scopeIndex(a.scope) - scopeIndex(b.scope));
 
   // concerns
-  const concerns = (group.tags ?? []).filter(t =>
-    ["security", "performance", "accessibility", "observability", "testing", "migration", "deprecation"].includes(t),
+  const concerns = (group.tags ?? []).filter((t) =>
+    [
+      'security',
+      'performance',
+      'accessibility',
+      'observability',
+      'testing',
+      'migration',
+      'deprecation',
+    ].includes(t),
   );
 
   // 텍스트 렌더링
   const lines: string[] = [];
   lines.push(`# ${group.title}`);
   if (groupPurpose) lines.push(`\n${groupPurpose}`);
-  if (concerns.length > 0) lines.push(`\nconcerns: ${concerns.join(", ")}`);
-  lines.push("");
+  if (concerns.length > 0) lines.push(`\nconcerns: ${concerns.join(', ')}`);
+  lines.push('');
 
   for (const m of members) {
     lines.push(`## [${m.scope}] ${m.title}`);
     if (m.purpose) lines.push(m.purpose);
     for (const o of m.overview) lines.push(`  ${o}`);
-    lines.push("");
+    lines.push('');
   }
 
   return {
     group: { id: groupId, title: group.title, purpose: groupPurpose, overview: groupOverview },
     members,
     concerns,
-    text: lines.join("\n"),
+    text: lines.join('\n'),
   };
 }
 
@@ -289,9 +298,9 @@ export function assembleFeature(
 export function assembleBoundary(
   boundaryId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinks: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinks: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
   getBody: (id: string) => string | undefined,
-  level: ExtractLevel = "overview",
+  level: ExtractLevel = 'overview',
 ): AssembledBoundary | null {
   const boundaryEntry = getEntry(boundaryId);
   if (!boundaryEntry) return null;
@@ -306,8 +315,8 @@ export function assembleBoundary(
     level,
   );
 
-  const members = getLinks(boundaryId, "outgoing")
-    .filter((link) => link.linkType === "contains" || link.linkType === "refs")
+  const members = getLinks(boundaryId, 'outgoing')
+    .filter((link) => link.linkType === 'contains' || link.linkType === 'refs')
     .map((link) => getEntry(link.targetId))
     .filter((entry): entry is DefinitionEntry => entry !== undefined)
     .map((entry) =>
@@ -325,7 +334,7 @@ export function assembleBoundary(
 
   const outgoing = collectBoundaryCouplings(
     boundaryId,
-    "outgoing",
+    'outgoing',
     getEntry,
     getLinks,
     getBody,
@@ -334,7 +343,7 @@ export function assembleBoundary(
 
   const incoming = collectBoundaryCouplings(
     boundaryId,
-    "incoming",
+    'incoming',
     getEntry,
     getLinks,
     getBody,
@@ -343,55 +352,49 @@ export function assembleBoundary(
 
   const lines: string[] = [];
   lines.push(`# 바운더리: ${boundary.title}`);
-  lines.push("");
+  lines.push('');
   lines.push(`scope: ${boundary.scope}/${boundary.aspect}  depth: ${boundary.depth}`);
   if (boundary.purpose) {
-    lines.push("");
+    lines.push('');
     lines.push(`## 목적`);
     lines.push(boundary.purpose);
   }
   if (boundary.overview.length > 0) {
-    lines.push("");
+    lines.push('');
     lines.push(`## 개요`);
     for (const overview of boundary.overview) {
-      lines.push(`- ${overview.split("\n")[0]!.trim()}`);
+      lines.push(`- ${overview.split('\n')[0]!.trim()}`);
     }
   }
 
-  lines.push("");
+  lines.push('');
   lines.push(`## 구조`);
   if (members.length === 0) {
     lines.push(`- (contains 멤버 없음)`);
   } else {
     for (const member of members) {
-      lines.push(
-        `- [${member.scope}/${member.aspect}] ${member.id}: ${structuralLine(member)}`,
-      );
+      lines.push(`- [${member.scope}/${member.aspect}] ${member.id}: ${structuralLine(member)}`);
     }
   }
 
-  lines.push("");
+  lines.push('');
   lines.push(`## 직접 결합`);
   lines.push(`### outgoing`);
   if (outgoing.length === 0) {
     lines.push(`- (없음)`);
   } else {
     for (const coupling of outgoing) {
-      lines.push(
-        `- [${coupling.linkType}] ${coupling.doc.id}: ${structuralLine(coupling.doc)}`,
-      );
+      lines.push(`- [${coupling.linkType}] ${coupling.doc.id}: ${structuralLine(coupling.doc)}`);
     }
   }
 
-  lines.push("");
+  lines.push('');
   lines.push(`### incoming`);
   if (incoming.length === 0) {
     lines.push(`- (없음)`);
   } else {
     for (const coupling of incoming) {
-      lines.push(
-        `- [${coupling.linkType}] ${coupling.doc.id}: ${structuralLine(coupling.doc)}`,
-      );
+      lines.push(`- [${coupling.linkType}] ${coupling.doc.id}: ${structuralLine(coupling.doc)}`);
     }
   }
 
@@ -399,6 +402,6 @@ export function assembleBoundary(
     boundary,
     members,
     couplings: { incoming, outgoing },
-    text: lines.join("\n"),
+    text: lines.join('\n'),
   };
 }

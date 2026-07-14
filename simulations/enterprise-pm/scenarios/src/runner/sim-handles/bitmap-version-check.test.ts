@@ -1,17 +1,14 @@
 // @def.boundary sim-scenarios
 
-import { describe, expect, it } from "vitest";
-import {
-  createBitmapVersionCheck,
-  type FetchLike,
-} from "./bitmap-version-check.js";
+import { describe, expect, it } from 'vitest';
+import { createBitmapVersionCheck, type FetchLike } from './bitmap-version-check.js';
 
-describe("bitmap-version-check handle", () => {
-  it("expectedVersion 회복 시 recoveredVia + recoveredAtMs 반환", async () => {
+describe('bitmap-version-check handle', () => {
+  it('expectedVersion 회복 시 recoveredVia + recoveredAtMs 반환', async () => {
     const states = [
-      { version: "v1", recoveredVia: "stale" },
-      { version: "v1", recoveredVia: "stale" },
-      { version: "v2", recoveredVia: "version-check" },
+      { version: 'v1', recoveredVia: 'stale' },
+      { version: 'v1', recoveredVia: 'stale' },
+      { version: 'v2', recoveredVia: 'version-check' },
     ];
     let i = 0;
     const fetchImpl: FetchLike = async () => {
@@ -21,7 +18,7 @@ describe("bitmap-version-check handle", () => {
         ok: true,
         status: 200,
         async text() {
-          return "";
+          return '';
         },
         async json() {
           return body;
@@ -30,7 +27,7 @@ describe("bitmap-version-check handle", () => {
     };
     let nowVal = 0;
     const checker = createBitmapVersionCheck({
-      authApiUrl: "http://auth",
+      authApiUrl: 'http://auth',
       fetchImpl,
       pollIntervalMs: 1,
       sleepImpl: async () => {},
@@ -39,46 +36,46 @@ describe("bitmap-version-check handle", () => {
         return nowVal;
       },
     });
-    const result = await checker("v2", 1_000_000);
-    expect(result.recoveredVia).toBe("version-check");
+    const result = await checker('v2', 1_000_000);
+    expect(result.recoveredVia).toBe('version-check');
     expect(result.recoveredAtMs).toBeGreaterThan(0);
   });
 
-  it("recoveredVia가 ttl이면 그대로 반환", async () => {
+  it('recoveredVia가 ttl이면 그대로 반환', async () => {
     const fetchImpl: FetchLike = async () => ({
       ok: true,
       status: 200,
       async text() {
-        return "";
+        return '';
       },
       async json() {
-        return { version: "v2", recoveredVia: "ttl" };
+        return { version: 'v2', recoveredVia: 'ttl' };
       },
     });
     const checker = createBitmapVersionCheck({
-      authApiUrl: "http://auth",
+      authApiUrl: 'http://auth',
       fetchImpl,
       sleepImpl: async () => {},
       nowImpl: () => 1,
     });
-    const r = await checker("v2", 100);
-    expect(r.recoveredVia).toBe("ttl");
+    const r = await checker('v2', 100);
+    expect(r.recoveredVia).toBe('ttl');
   });
 
-  it("timeout 시 throw", async () => {
+  it('timeout 시 throw', async () => {
     const fetchImpl: FetchLike = async () => ({
       ok: true,
       status: 200,
       async text() {
-        return "";
+        return '';
       },
       async json() {
-        return { version: "v1", recoveredVia: "stale" };
+        return { version: 'v1', recoveredVia: 'stale' };
       },
     });
     let nowVal = 0;
     const checker = createBitmapVersionCheck({
-      authApiUrl: "http://auth",
+      authApiUrl: 'http://auth',
       fetchImpl,
       pollIntervalMs: 1,
       sleepImpl: async () => {},
@@ -87,26 +84,26 @@ describe("bitmap-version-check handle", () => {
         return nowVal;
       },
     });
-    await expect(checker("v2", 200)).rejects.toThrow(/timeout/);
+    await expect(checker('v2', 200)).rejects.toThrow(/timeout/);
   });
 
-  it("non-2xx 응답에 throw", async () => {
+  it('non-2xx 응답에 throw', async () => {
     const fetchImpl: FetchLike = async () => ({
       ok: false,
       status: 500,
       async text() {
-        return "down";
+        return 'down';
       },
       async json() {
         return {};
       },
     });
     const checker = createBitmapVersionCheck({
-      authApiUrl: "http://auth",
+      authApiUrl: 'http://auth',
       fetchImpl,
       sleepImpl: async () => {},
       nowImpl: () => 0,
     });
-    await expect(checker("v2", 1000)).rejects.toThrow(/status=500/);
+    await expect(checker('v2', 1000)).rejects.toThrow(/status=500/);
   });
 });

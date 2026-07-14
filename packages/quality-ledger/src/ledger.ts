@@ -1,14 +1,14 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import { SqliteQualityStore } from "./store.js";
+import { SqliteQualityStore } from './store.js';
 import type {
   BundleVerification,
   GateFailureClass,
   GateDescriptor,
   GateRunEntry,
   GateStatus,
-} from "./types.js";
+} from './types.js';
 
 export class QualityLedger {
   readonly store: SqliteQualityStore;
@@ -22,7 +22,7 @@ export class QualityLedger {
     docVersion: number;
     bundleId?: string | null;
     command: string;
-    outcome: "pass" | "fail";
+    outcome: 'pass' | 'fail';
     exitCode?: number | null;
     notes?: string | null;
     repoRoot?: string | null;
@@ -62,7 +62,9 @@ export class QualityLedger {
     const gateStatuses = this.statusForGates(descriptors);
     const blockingGateStatuses = descriptors
       .map((descriptor) => gateStatuses.get(descriptor.gateDocId))
-      .filter((status): status is GateStatus => status !== undefined && status.status !== "verified");
+      .filter(
+        (status): status is GateStatus => status !== undefined && status.status !== 'verified',
+      );
 
     return {
       bundleId: descriptors[0]?.bundleId ?? null,
@@ -87,7 +89,7 @@ export class QualityLedger {
       return {
         gateDocId: descriptor.gateDocId,
         currentVersion: descriptor.docVersion,
-        status: "unverified",
+        status: 'unverified',
         lastRun: null,
       };
     }
@@ -96,7 +98,7 @@ export class QualityLedger {
       return {
         gateDocId: descriptor.gateDocId,
         currentVersion: descriptor.docVersion,
-        status: "stale",
+        status: 'stale',
         lastRun,
       };
     }
@@ -104,7 +106,7 @@ export class QualityLedger {
     return {
       gateDocId: descriptor.gateDocId,
       currentVersion: descriptor.docVersion,
-      status: lastRun.outcome === "pass" ? "verified" : "failed",
+      status: lastRun.outcome === 'pass' ? 'verified' : 'failed',
       lastRun,
     };
   }

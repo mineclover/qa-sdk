@@ -1,16 +1,38 @@
-import { useMemo, useState } from "react";
-import { computeSyncAction, type DecisionFile, type SyncAction } from "taxonomy-decision-bridge";
-import type { Lifecycle } from "taxonomy-engine";
+import { useMemo, useState } from 'react';
+import { computeSyncAction, type DecisionFile, type SyncAction } from 'taxonomy-decision-bridge';
+import type { Lifecycle } from 'taxonomy-engine';
 
-type Scenario = "no-link" | "lifecycle-match" | "tbd-vs-draft" | "yaml-changed" | "decision-changed" | "missing-file";
+type Scenario =
+  | 'no-link'
+  | 'lifecycle-match'
+  | 'tbd-vs-draft'
+  | 'yaml-changed'
+  | 'decision-changed'
+  | 'missing-file';
 
 const SCENARIOS: { key: Scenario; label: string; desc: string }[] = [
-  { key: "no-link", label: "yaml에 decisionLink 없음", desc: "noop: no-decision-link" },
-  { key: "lifecycle-match", label: "yaml/decision lifecycle 동일", desc: "noop: in-sync (또는 markers-only)" },
-  { key: "tbd-vs-draft", label: "yaml=tbd · decision=draft", desc: "noop: in-sync-tbd-draft (의도적 미시작)" },
-  { key: "yaml-changed", label: "yaml lifecycle 변경됨 (yaml→review)", desc: "pull-decision-lifecycle: decision으로 전파" },
-  { key: "decision-changed", label: "decision lifecycle 변경됨 (decision→review)", desc: "pull-yaml-lifecycle: yaml으로 전파" },
-  { key: "missing-file", label: "decision 파일이 없음", desc: "push-create: skeleton 생성" },
+  { key: 'no-link', label: 'yaml에 decisionLink 없음', desc: 'noop: no-decision-link' },
+  {
+    key: 'lifecycle-match',
+    label: 'yaml/decision lifecycle 동일',
+    desc: 'noop: in-sync (또는 markers-only)',
+  },
+  {
+    key: 'tbd-vs-draft',
+    label: 'yaml=tbd · decision=draft',
+    desc: 'noop: in-sync-tbd-draft (의도적 미시작)',
+  },
+  {
+    key: 'yaml-changed',
+    label: 'yaml lifecycle 변경됨 (yaml→review)',
+    desc: 'pull-decision-lifecycle: decision으로 전파',
+  },
+  {
+    key: 'decision-changed',
+    label: 'decision lifecycle 변경됨 (decision→review)',
+    desc: 'pull-yaml-lifecycle: yaml으로 전파',
+  },
+  { key: 'missing-file', label: 'decision 파일이 없음', desc: 'push-create: skeleton 생성' },
 ];
 
 /**
@@ -18,7 +40,7 @@ const SCENARIOS: { key: Scenario; label: string; desc: string }[] = [
  * yamlEntry는 합성 — 실제 yaml과 무관한 학습/탐색 용도.
  */
 export function SyncPreviewPanel({ file }: { file: DecisionFile }) {
-  const [scenario, setScenario] = useState<Scenario>("lifecycle-match");
+  const [scenario, setScenario] = useState<Scenario>('lifecycle-match');
 
   const action: SyncAction = useMemo(() => {
     return runScenario(scenario, file);
@@ -26,9 +48,7 @@ export function SyncPreviewPanel({ file }: { file: DecisionFile }) {
 
   return (
     <section className="border rounded p-2 bg-white">
-      <h3 className="text-xs font-semibold text-gray-600 mb-1">
-        🔄 sync action 미리보기
-      </h3>
+      <h3 className="text-xs font-semibold text-gray-600 mb-1">🔄 sync action 미리보기</h3>
       <select
         value={scenario}
         onChange={(e) => setScenario(e.target.value as Scenario)}
@@ -55,10 +75,10 @@ export function SyncPreviewPanel({ file }: { file: DecisionFile }) {
 }
 
 function ActionDetails({ action }: { action: SyncAction }) {
-  if (action.kind === "noop") {
+  if (action.kind === 'noop') {
     return <Row label="reason" value={action.reason} />;
   }
-  if (action.kind === "push-create") {
+  if (action.kind === 'push-create') {
     return (
       <>
         <Row label="subject" value={action.subject} />
@@ -67,7 +87,7 @@ function ActionDetails({ action }: { action: SyncAction }) {
       </>
     );
   }
-  if (action.kind === "pull-yaml-lifecycle") {
+  if (action.kind === 'pull-yaml-lifecycle') {
     return (
       <>
         <Row label="newLifecycle" value={action.newLifecycle} />
@@ -75,14 +95,17 @@ function ActionDetails({ action }: { action: SyncAction }) {
       </>
     );
   }
-  if (action.kind === "pull-decision-lifecycle") {
+  if (action.kind === 'pull-decision-lifecycle') {
     return <Row label="newLifecycle" value={action.newLifecycle} />;
   }
-  if (action.kind === "conflict") {
+  if (action.kind === 'conflict') {
     return (
       <>
         <Row label="yaml" value={action.yaml.lifecycle} />
-        <Row label="decision" value={`${action.decision.lifecycle} (ev ${action.decision.evidenceCount})`} />
+        <Row
+          label="decision"
+          value={`${action.decision.lifecycle} (ev ${action.decision.evidenceCount})`}
+        />
       </>
     );
   }
@@ -104,46 +127,41 @@ function runScenario(scenario: Scenario, file: DecisionFile): SyncAction {
   const baseEntry = {
     id: file.meta.id,
     address: 0,
-    lifecycle: "draft" as Lifecycle,
+    lifecycle: 'draft' as Lifecycle,
     decisionLink: `decision:${file.meta.id}`,
   };
 
   switch (scenario) {
-    case "no-link":
-      return computeSyncAction(
-        { ...baseEntry, decisionLink: undefined },
-        file.meta.subject,
-        file,
-      );
-    case "lifecycle-match":
+    case 'no-link':
+      return computeSyncAction({ ...baseEntry, decisionLink: undefined }, file.meta.subject, file);
+    case 'lifecycle-match':
       return computeSyncAction(
         { ...baseEntry, lifecycle: file.meta.lifecycle },
         file.meta.subject,
         file,
       );
-    case "tbd-vs-draft":
+    case 'tbd-vs-draft':
+      return computeSyncAction({ ...baseEntry, lifecycle: 'tbd' }, file.meta.subject, {
+        ...file,
+        meta: { ...file.meta, lifecycle: 'draft' },
+      });
+    case 'yaml-changed':
       return computeSyncAction(
-        { ...baseEntry, lifecycle: "tbd" },
+        { ...baseEntry, lifecycle: 'review' },
         file.meta.subject,
-        { ...file, meta: { ...file.meta, lifecycle: "draft" } },
-      );
-    case "yaml-changed":
-      return computeSyncAction(
-        { ...baseEntry, lifecycle: "review" },
-        file.meta.subject,
-        { ...file, meta: { ...file.meta, lifecycle: "draft" } },
+        { ...file, meta: { ...file.meta, lifecycle: 'draft' } },
         { yamlChanged: true, decisionChanged: false },
       );
-    case "decision-changed":
+    case 'decision-changed':
       return computeSyncAction(
-        { ...baseEntry, lifecycle: "draft" },
+        { ...baseEntry, lifecycle: 'draft' },
         file.meta.subject,
-        { ...file, meta: { ...file.meta, lifecycle: "review" } },
+        { ...file, meta: { ...file.meta, lifecycle: 'review' } },
         { yamlChanged: false, decisionChanged: true },
       );
-    case "missing-file":
+    case 'missing-file':
       return computeSyncAction(
-        { ...baseEntry, placeholderReason: file.markers.purpose ?? "(질문 미정)" },
+        { ...baseEntry, placeholderReason: file.markers.purpose ?? '(질문 미정)' },
         file.meta.subject,
         undefined,
       );

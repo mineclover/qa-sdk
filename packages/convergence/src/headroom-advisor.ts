@@ -5,10 +5,10 @@
  * @layer 추천 (Recommendation)
  */
 
-import { nextPowerOf2 } from "weighted-index";
-import type { GraphPort } from "spec-schema";
-import type { DecisionNode } from "./dkg-types.js";
-import { scaffoldDecision } from "./decision-scaffold.js";
+import { nextPowerOf2 } from 'weighted-index';
+import type { GraphPort } from 'spec-schema';
+import type { DecisionNode } from './dkg-types.js';
+import { scaffoldDecision } from './decision-scaffold.js';
 
 export interface HeadroomIssue {
   readonly axisId: string;
@@ -17,7 +17,7 @@ export interface HeadroomIssue {
   readonly capacity: number;
   readonly headroom: number;
   readonly proposedCapacity: number;
-  readonly severity: "critical" | "warning" | "ok";
+  readonly severity: 'critical' | 'warning' | 'ok';
 
   /** 이 축을 사용하는 prefix 수 — capacity 변경 시 영향 범위 */
   readonly affectedPrefixes: number;
@@ -31,7 +31,7 @@ export interface HeadroomIssue {
    *   "size-only" — stride는 보존, size(bitmask)만 변경
    *   "stride-break" — stride 변경, 전체 re-encode + cascade
    */
-  readonly migrationCost: "free" | "size-only" | "stride-break";
+  readonly migrationCost: 'free' | 'size-only' | 'stride-break';
 }
 
 export interface HeadroomReport {
@@ -71,15 +71,16 @@ export function analyzeHeadroom(
   for (const axis of axisData) {
     const headroom = axis.capacity - axis.entries;
 
-    let severity: HeadroomIssue["severity"];
-    if (headroom <= 0) severity = "critical";
-    else if (headroom <= 1) severity = "warning";
-    else { severity = "ok"; continue; }
+    let severity: HeadroomIssue['severity'];
+    if (headroom <= 0) severity = 'critical';
+    else if (headroom <= 1) severity = 'warning';
+    else {
+      severity = 'ok';
+      continue;
+    }
 
     // 영향 범위
-    const affectedPrefixes = graph
-      ? graph.cascadeFromAxis(axis.id).length
-      : 0;
+    const affectedPrefixes = graph ? graph.cascadeFromAxis(axis.id).length : 0;
 
     // stride-break 판정:
     // capacity 변경 → 이 축이 마지막 차원이 아닌 prefix에서는 stride[i]가 바뀔 수 있음
@@ -89,15 +90,15 @@ export function analyzeHeadroom(
     const sealed = axis.sealed ?? axis.capacity <= axis.entries;
     const strideBreakOnChange = sealed && affectedPrefixes > 0;
 
-    let migrationCost: HeadroomIssue["migrationCost"];
+    let migrationCost: HeadroomIssue['migrationCost'];
     if (!sealed) {
-      migrationCost = "free";
+      migrationCost = 'free';
     } else if (affectedPrefixes === 0) {
-      migrationCost = "free";
+      migrationCost = 'free';
     } else {
       // capacity만 변경이면 stride는 보존될 수 있지만
       // prefix_ref cascade에서는 size 변경이 상위 shape에 영향
-      migrationCost = affectedPrefixes > 1 ? "stride-break" : "size-only";
+      migrationCost = affectedPrefixes > 1 ? 'stride-break' : 'size-only';
     }
 
     // 제안 capacity: 다음 2의 거듭제곱 또는 entries × 2 중 큰 값
@@ -118,28 +119,31 @@ export function analyzeHeadroom(
       migrationCost,
     });
 
-    const costWarning = migrationCost === "stride-break"
-      ? ` ⚠ stride-break: ${affectedPrefixes}개 prefix cascade 영향. 전체 re-encode + bitmask 재생성 필요.`
-      : migrationCost === "size-only"
-        ? ` △ size 변경: bitmask 재생성 필요. stride는 보존.`
-        : ` ✓ sealed 전이므로 자유롭게 변경 가능.`;
+    const costWarning =
+      migrationCost === 'stride-break'
+        ? ` ⚠ stride-break: ${affectedPrefixes}개 prefix cascade 영향. 전체 re-encode + bitmask 재생성 필요.`
+        : migrationCost === 'size-only'
+          ? ` △ size 변경: bitmask 재생성 필요. stride는 보존.`
+          : ` ✓ sealed 전이므로 자유롭게 변경 가능.`;
 
-    decisions.push(scaffoldDecision({
-      type: "capacity",
-      id: `DEC-HEADROOM-${axis.id}`,
-      date,
-      title: `${axis.id} capacity ${axis.capacity}→${proposedCapacity} 확장`,
-      params: {
-        axis: axis.id,
-        currentUsed: axis.entries,
-        currentCapacity: axis.capacity,
-        proposedCapacity,
-      },
-      rationale: (headroom <= 0
-        ? `headroom 없음. 다음 entry 추가 시 즉시 stride-break.`
-        : `headroom ${headroom}개. 추가 여유 확보 권장.`)
-        + costWarning,
-    }));
+    decisions.push(
+      scaffoldDecision({
+        type: 'capacity',
+        id: `DEC-HEADROOM-${axis.id}`,
+        date,
+        title: `${axis.id} capacity ${axis.capacity}→${proposedCapacity} 확장`,
+        params: {
+          axis: axis.id,
+          currentUsed: axis.entries,
+          currentCapacity: axis.capacity,
+          proposedCapacity,
+        },
+        rationale:
+          (headroom <= 0
+            ? `headroom 없음. 다음 entry 추가 시 즉시 stride-break.`
+            : `headroom ${headroom}개. 추가 여유 확보 권장.`) + costWarning,
+      }),
+    );
   }
 
   return { issues, decisions };
@@ -148,19 +152,13 @@ export function analyzeHeadroom(
 /**
  * HeadroomReport의 Decision들을 DKG에 등록한다.
  */
-export function applyHeadroomDecisions(
-  graph: GraphPort,
-  report: HeadroomReport,
-): void {
+export function applyHeadroomDecisions(graph: GraphPort, report: HeadroomReport): void {
   for (const decision of report.decisions) {
     graph.addNode(decision);
     // Decision → Axis justifies 엣지
-    const axisId = report.issues.find(
-      i => decision.id === `DEC-HEADROOM-${i.axisId}`,
-    )?.axisId;
+    const axisId = report.issues.find((i) => decision.id === `DEC-HEADROOM-${i.axisId}`)?.axisId;
     if (axisId) {
-      graph.addEdge("justifies", decision.id, axisId);
+      graph.addEdge('justifies', decision.id, axisId);
     }
   }
 }
-

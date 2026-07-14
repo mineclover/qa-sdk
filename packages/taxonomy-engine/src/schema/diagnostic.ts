@@ -1,4 +1,4 @@
-import type { Severity } from "./ir.js";
+import type { Severity } from './ir.js';
 
 export type DiagnosticCode =
   | `parse-${string}`

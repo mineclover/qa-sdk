@@ -2,8 +2,8 @@
 // @def.doc authorization-ontology-resource-lifecycle
 
 // SQLite 어댑터 (기존 경로)
-export { SqliteResourcePolicyRegistry } from "./sqlite/adapter.js";
-export { resourcePolicies, RESOURCE_POLICIES_DDL } from "./sqlite/schema.js";
+export { SqliteResourcePolicyRegistry } from './sqlite/adapter.js';
+export { resourcePolicies, RESOURCE_POLICIES_DDL } from './sqlite/schema.js';
 
 /**
  * @deprecated Plan 05d 이후 호출자는 `createResourcePolicyRegistry({ dialect: "sqlite", db })`
@@ -20,18 +20,18 @@ export { resourcePolicies, RESOURCE_POLICIES_DDL } from "./sqlite/schema.js";
  * const reg = await createResourcePolicyRegistry({ dialect: "sqlite", db });
  * ```
  */
-export { SqliteResourcePolicyRegistry as DrizzleResourcePolicyRegistry } from "./sqlite/adapter.js";
+export { SqliteResourcePolicyRegistry as DrizzleResourcePolicyRegistry } from './sqlite/adapter.js';
 
 // PG 어댑터 (Plan 05b)
-export { PgResourcePolicyRegistry } from "./pg/adapter.js";
-export { resourcePolicies as resourcePoliciesPg, RESOURCE_POLICIES_PG_DDL } from "./pg/schema.js";
+export { PgResourcePolicyRegistry } from './pg/adapter.js';
+export { resourcePolicies as resourcePoliciesPg, RESOURCE_POLICIES_PG_DDL } from './pg/schema.js';
 
 // Factory + port (Plan 05c)
 export {
   createResourcePolicyRegistry,
   type CreateRegistryOptions,
   type ResourcePolicyDialect,
-} from "./factory.js";
+} from './factory.js';
 
 export {
   DuplicatePolicyError,
@@ -42,7 +42,7 @@ export {
   type ResourcePolicyCreateArgs,
   type ResourcePolicyRegisterArgs,
   type ResourcePolicyDelegateArgs,
-} from "./port.js";
+} from './port.js';
 
 // RLS bit catalog (Plan 15b)
 export {
@@ -54,7 +54,7 @@ export {
   EVENT_READ_BIT,
   RLS_BIT_CATALOG,
   type RlsBitName,
-} from "./pg/rls-bits.js";
+} from './pg/rls-bits.js';
 
 // Plan 15c — RLS-aware 래퍼
-export { RlsAwarePgResourcePolicyRegistry } from "./pg/rls-aware-adapter.js";
+export { RlsAwarePgResourcePolicyRegistry } from './pg/rls-aware-adapter.js';

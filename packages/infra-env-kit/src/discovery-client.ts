@@ -1,13 +1,13 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import type { EnvDiscoveryClient, EnvServiceInfo } from "./types.js";
+import type { EnvDiscoveryClient, EnvServiceInfo } from './types.js';
 
 export function createEnvRegistryDiscoveryClient(
   registryUrl: string,
   catalogId?: string,
 ): EnvDiscoveryClient {
-  const catalog = catalogId ?? "demo";
+  const catalog = catalogId ?? 'demo';
 
   async function fetchJson<T>(path: string): Promise<T> {
     const res = await fetch(`${registryUrl}${path}`, {
@@ -20,7 +20,9 @@ export function createEnvRegistryDiscoveryClient(
   return {
     async resolve(serviceId, env) {
       try {
-        const svc = await fetchJson<EnvServiceInfo>(`/api/services/${serviceId}?catalog=${catalog}`);
+        const svc = await fetchJson<EnvServiceInfo>(
+          `/api/services/${serviceId}?catalog=${catalog}`,
+        );
         if (env && svc.urls?.[env]) {
           svc.url = svc.urls[env];
         } else if (env && svc.urls && !svc.urls[env]) {
@@ -32,7 +34,7 @@ export function createEnvRegistryDiscoveryClient(
       }
     },
     async resolveAll(env) {
-      const envParam = env ? `&env=${env}` : "";
+      const envParam = env ? `&env=${env}` : '';
       return fetchJson<Record<string, string>>(`/api/services/urls?catalog=${catalog}${envParam}`);
     },
     async listServices() {

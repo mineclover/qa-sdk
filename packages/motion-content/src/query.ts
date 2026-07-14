@@ -8,9 +8,9 @@ import type {
   MotionTimeSpan,
   MotionTransitionDef,
   SequenceLayerSlot,
-} from "./model.js";
-import type { MotionTransitionWindow } from "./types.js";
-import { clamp, endMs } from "./utils.js";
+} from './model.js';
+import type { MotionTransitionWindow } from './types.js';
+import { clamp, endMs } from './utils.js';
 
 export function findSequenceById(
   composition: MotionCompositionDef,
@@ -47,18 +47,19 @@ export function findTimeSpanById(
   id: string,
 ): MotionTimeSpan | undefined {
   switch (kind) {
-    case "layer": return findLayerById(composition, id);
-    case "sequence": return findSequenceById(composition, id);
-    case "caption": return findCaptionById(composition, id);
+    case 'layer':
+      return findLayerById(composition, id);
+    case 'sequence':
+      return findSequenceById(composition, id);
+    case 'caption':
+      return findCaptionById(composition, id);
   }
 }
 
 /** Sequence의 layer 슬롯을 반환한다.
  *  layers가 있으면 stagger 패턴 적용 후 반환.
  *  layers가 없으면 layerIds에서 offsetMs 없는 슬롯을 생성 */
-export function getSequenceLayerSlots(
-  sequence: MotionSequenceDef,
-): readonly SequenceLayerSlot[] {
+export function getSequenceLayerSlots(sequence: MotionSequenceDef): readonly SequenceLayerSlot[] {
   if (!sequence.layers || sequence.layers.length === 0) {
     return sequence.layerIds.map((layerId, index) => ({ layerId, zIndex: index }));
   }
@@ -79,9 +80,7 @@ export function resolveLayerStartMs(
   slot: SequenceLayerSlot,
   layer: MotionLayerDef,
 ): number {
-  return slot.offsetMs !== undefined
-    ? sequence.startMs + slot.offsetMs
-    : layer.startMs;
+  return slot.offsetMs !== undefined ? sequence.startMs + slot.offsetMs : layer.startMs;
 }
 
 /** Composition 전체에서 각 layer의 실효 startMs를 빌드한다.

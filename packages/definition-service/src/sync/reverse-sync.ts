@@ -8,9 +8,9 @@
  * 파일의 id + address는 유지, 나머지 필드를 DB 값으로 덮어씀.
  */
 
-import { join } from "node:path";
-import { writeFrontmatterToFile, type DbMetadata } from "definition-catalog";
-import type { DocStore } from "../core/interfaces.js";
+import { join } from 'node:path';
+import { writeFrontmatterToFile, type DbMetadata } from 'definition-catalog';
+import type { DocStore } from '../core/interfaces.js';
 
 export interface ReverseSyncResult {
   total: number;
@@ -71,9 +71,7 @@ export async function syncDbToFiles(
         result.skipped++;
       }
     } catch (err) {
-      result.errors.push(
-        `${doc.docId}: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      result.errors.push(`${doc.docId}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

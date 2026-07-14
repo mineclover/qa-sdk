@@ -8,38 +8,34 @@
 //   (c) enable({dropRate:1.5}) → throw (range 0~1)
 //   (d) shouldDrop(rng) 결정적 — 1.0 항상 true, 0 항상 false
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { PubsubInvalidateDropFault } from "./pubsub-invalidate-drop.js";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { PubsubInvalidateDropFault } from './pubsub-invalidate-drop.js';
 
-describe("PubsubInvalidateDropFault (spec §8)", () => {
+describe('PubsubInvalidateDropFault (spec §8)', () => {
   let fault: PubsubInvalidateDropFault;
   beforeEach(() => {
     fault = new PubsubInvalidateDropFault();
   });
 
-  it("(a) enable + isEnabled + getParams roundtrip", async () => {
+  it('(a) enable + isEnabled + getParams roundtrip', async () => {
     await fault.enable({ dropRate: 0.5 });
     expect(fault.isEnabled()).toBe(true);
     expect(fault.getParams()).toEqual({ dropRate: 0.5 });
   });
 
-  it("(b) disable resets state", async () => {
+  it('(b) disable resets state', async () => {
     await fault.enable({ dropRate: 0.5 });
     await fault.disable();
     expect(fault.isEnabled()).toBe(false);
     expect(fault.getParams()).toBeNull();
   });
 
-  it("(c) rejects out-of-range dropRate", async () => {
-    await expect(fault.enable({ dropRate: 1.5 })).rejects.toThrow(
-      /dropRate must be in \[0, 1\]/,
-    );
-    await expect(fault.enable({ dropRate: -0.1 })).rejects.toThrow(
-      /dropRate must be in \[0, 1\]/,
-    );
+  it('(c) rejects out-of-range dropRate', async () => {
+    await expect(fault.enable({ dropRate: 1.5 })).rejects.toThrow(/dropRate must be in \[0, 1\]/);
+    await expect(fault.enable({ dropRate: -0.1 })).rejects.toThrow(/dropRate must be in \[0, 1\]/);
   });
 
-  it("(d) shouldDrop honors boundaries deterministically", async () => {
+  it('(d) shouldDrop honors boundaries deterministically', async () => {
     // disabled → never drop
     expect(fault.shouldDrop(() => 0.5)).toBe(false);
     await fault.enable({ dropRate: 1.0 });

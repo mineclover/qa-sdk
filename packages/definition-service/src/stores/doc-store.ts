@@ -1,33 +1,18 @@
 // @def.doc definition-service
 
-import type { DefinitionServiceDatabase } from "../database.module.js";
+import type { DefinitionServiceDatabase } from '../database.module.js';
 import type {
   DocRecord,
   DocHistoryRecord,
   CodeReferenceRecord,
   DocIncomingLinkRecord,
   DocOutgoingLinkRecord,
-} from "../core/types.js";
-import type { DocStore, DocMetadataUpdate, DocListFilter } from "../core/interfaces.js";
-import { decideVersion } from "../core/doc-versioner.js";
-import { computeDocumentAddress } from "../core/compute-address.js";
-import {
-  documents,
-  documentLinks,
-  documentHistory,
-  codeReferences,
-} from "../db/schema.js";
-import {
-  eq,
-  and,
-  asc,
-  desc,
-  like,
-  count,
-  inArray,
-  sql,
-  type SQL,
-} from "drizzle-orm";
+} from '../core/types.js';
+import type { DocStore, DocMetadataUpdate, DocListFilter } from '../core/interfaces.js';
+import { decideVersion } from '../core/doc-versioner.js';
+import { computeDocumentAddress } from '../core/compute-address.js';
+import { documents, documentLinks, documentHistory, codeReferences } from '../db/schema.js';
+import { eq, and, asc, desc, like, count, inArray, sql, type SQL } from 'drizzle-orm';
 
 /** Drizzle select 결과 → DocRecord 변환 */
 type DocRow = typeof documents.$inferSelect;
@@ -58,9 +43,7 @@ function rowToDoc(row: DocRow): DocRecord {
     intent: row.intent || undefined,
     context: row.context || undefined,
     caveat: row.caveat || undefined,
-    gate: row.gateJson
-      ? JSON.parse(row.gateJson) as DocRecord["gate"]
-      : undefined,
+    gate: row.gateJson ? (JSON.parse(row.gateJson) as DocRecord['gate']) : undefined,
     syncedAt: row.syncedAt,
     sourcePath: row.sourcePath || undefined,
   };
@@ -95,13 +78,11 @@ function rowToHistory(row: HistoryRow): DocHistoryRecord {
     intent: row.intent || undefined,
     context: row.context || undefined,
     caveat: row.caveat || undefined,
-    gate: row.gateJson
-      ? JSON.parse(row.gateJson) as DocRecord["gate"]
-      : undefined,
+    gate: row.gateJson ? (JSON.parse(row.gateJson) as DocRecord['gate']) : undefined,
     syncedAt: row.syncedAt,
     sourcePath: undefined,
     body: row.body,
-    changeType: row.changeType as DocHistoryRecord["changeType"],
+    changeType: row.changeType as DocHistoryRecord['changeType'],
   };
 }
 
@@ -110,11 +91,7 @@ export class SqlDocStore implements DocStore {
   constructor(private readonly db: DefinitionServiceDatabase) {}
 
   private getSnapshotRow(docId: string): DocRow | undefined {
-    return this.db
-      .select()
-      .from(documents)
-      .where(eq(documents.docId, docId))
-      .get();
+    return this.db.select().from(documents).where(eq(documents.docId, docId)).get();
   }
 
   private backfillLatestSnapshotBody(docId: string, body: string, syncedAt: string): void {
@@ -135,13 +112,13 @@ export class SqlDocStore implements DocStore {
   upsert(
     doc: DocRecord,
     body: string,
-  ): { action: "created" | "updated" | "unchanged"; version: number } {
+  ): { action: 'created' | 'updated' | 'unchanged'; version: number } {
     const existing = this.get(doc.docId);
     const decision = decideVersion(existing, doc);
 
-    if (decision.action === "unchanged") {
+    if (decision.action === 'unchanged') {
       this.backfillLatestSnapshotBody(doc.docId, body, doc.syncedAt);
-      return { action: "unchanged", version: decision.version };
+      return { action: 'unchanged', version: decision.version };
     }
 
     const { version, changeType } = decision;
@@ -249,14 +226,14 @@ export class SqlDocStore implements DocStore {
     this.syncLinks(doc.docId, doc.links);
     this.syncLinkAddresses(doc.docId, values.address ?? undefined);
 
-    const action = changeType === "created" ? "created" as const : "updated" as const;
+    const action = changeType === 'created' ? ('created' as const) : ('updated' as const);
     return { action, version };
   }
 
   updateMetadata(
     docId: string,
     patch: DocMetadataUpdate,
-  ): { action: "updated" | "unchanged"; version: number } | null {
+  ): { action: 'updated' | 'unchanged'; version: number } | null {
     const existing = this.get(docId);
     if (!existing) return null;
 
@@ -286,7 +263,7 @@ export class SqlDocStore implements DocStore {
       JSON.stringify(updated.links) === JSON.stringify(existing.links) &&
       (updated.svc ?? null) === (existing.svc ?? null);
 
-    if (same) return { action: "unchanged", version: existing.version };
+    if (same) return { action: 'unchanged', version: existing.version };
 
     const version = existing.version + 1;
     const computedAddress = computeDocumentAddress(updated.scope, updated.aspect, updated.depth);
@@ -361,14 +338,9 @@ export class SqlDocStore implements DocStore {
     const lastHistory = this.db
       .select()
       .from(documentHistory)
-      .where(
-        and(
-          eq(documentHistory.docId, docId),
-          eq(documentHistory.version, existing.version),
-        ),
-      )
+      .where(and(eq(documentHistory.docId, docId), eq(documentHistory.version, existing.version)))
       .get();
-    const body = lastHistory?.body ?? "";
+    const body = lastHistory?.body ?? '';
 
     this.db
       .insert(documentHistory)
@@ -396,7 +368,7 @@ export class SqlDocStore implements DocStore {
         context: values.context,
         caveat: values.caveat,
         gateJson: values.gateJson,
-        changeType: "metadata_edit",
+        changeType: 'metadata_edit',
         syncedAt: values.syncedAt,
       })
       .run();
@@ -404,7 +376,7 @@ export class SqlDocStore implements DocStore {
     this.syncLinks(docId, updated.links);
     this.syncLinkAddresses(docId, values.address ?? undefined);
 
-    return { action: "updated", version };
+    return { action: 'updated', version };
   }
 
   delete(docId: string): boolean {
@@ -413,25 +385,14 @@ export class SqlDocStore implements DocStore {
 
     this.db
       .delete(documentLinks)
-      .where(
-        sql`${documentLinks.sourceId} = ${docId} OR ${documentLinks.targetId} = ${docId}`,
-      )
+      .where(sql`${documentLinks.sourceId} = ${docId} OR ${documentLinks.targetId} = ${docId}`)
       .run();
 
-    this.db
-      .delete(codeReferences)
-      .where(eq(codeReferences.docId, docId))
-      .run();
+    this.db.delete(codeReferences).where(eq(codeReferences.docId, docId)).run();
 
-    this.db
-      .delete(documentHistory)
-      .where(eq(documentHistory.docId, docId))
-      .run();
+    this.db.delete(documentHistory).where(eq(documentHistory.docId, docId)).run();
 
-    this.db
-      .delete(documents)
-      .where(eq(documents.docId, docId))
-      .run();
+    this.db.delete(documents).where(eq(documents.docId, docId)).run();
 
     return true;
   }
@@ -440,10 +401,7 @@ export class SqlDocStore implements DocStore {
 
   private syncLinks(docId: string, links: { target: string; type: string }[]) {
     const sourceAddress = this.get(docId)?.address ?? null;
-    this.db
-      .delete(documentLinks)
-      .where(eq(documentLinks.sourceId, docId))
-      .run();
+    this.db.delete(documentLinks).where(eq(documentLinks.sourceId, docId)).run();
 
     for (const link of links) {
       const targetAddress = this.get(link.target)?.address ?? null;
@@ -485,13 +443,21 @@ export class SqlDocStore implements DocStore {
       .select({
         target: documentLinks.targetId,
         type: documentLinks.linkType,
-        targetAddress: sql<string | null>`coalesce(${documentLinks.targetAddress}, ${documents.address})`,
+        targetAddress: sql<
+          string | null
+        >`coalesce(${documentLinks.targetAddress}, ${documents.address})`,
       })
       .from(documentLinks)
       .leftJoin(documents, eq(documentLinks.targetId, documents.docId))
       .where(eq(documentLinks.sourceId, docId))
       .all()
-      .map(r => (Object.assign({target:r.target,type:r.type}, sourceAddress?{sourceAddress}:{}, r.targetAddress?{targetAddress:r.targetAddress}:{})));
+      .map((r) =>
+        Object.assign(
+          { target: r.target, type: r.type },
+          sourceAddress ? { sourceAddress } : {},
+          r.targetAddress ? { targetAddress: r.targetAddress } : {},
+        ),
+      );
   }
 
   /** 특정 문서로 들어오는 링크 */
@@ -501,13 +467,21 @@ export class SqlDocStore implements DocStore {
       .select({
         source: documentLinks.sourceId,
         type: documentLinks.linkType,
-        sourceAddress: sql<string | null>`coalesce(${documentLinks.sourceAddress}, ${documents.address})`,
+        sourceAddress: sql<
+          string | null
+        >`coalesce(${documentLinks.sourceAddress}, ${documents.address})`,
       })
       .from(documentLinks)
       .leftJoin(documents, eq(documentLinks.sourceId, documents.docId))
       .where(eq(documentLinks.targetId, docId))
       .all()
-      .map(r => (Object.assign({source:r.source,type:r.type}, r.sourceAddress?{sourceAddress:r.sourceAddress}:{}, targetAddress?{targetAddress}:{})));
+      .map((r) =>
+        Object.assign(
+          { source: r.source, type: r.type },
+          r.sourceAddress ? { sourceAddress: r.sourceAddress } : {},
+          targetAddress ? { targetAddress } : {},
+        ),
+      );
   }
 
   /** contains 링크로 연결된 자식 문서 */
@@ -517,19 +491,11 @@ export class SqlDocStore implements DocStore {
         doc: documents,
       })
       .from(documents)
-      .innerJoin(
-        documentLinks,
-        eq(documentLinks.targetId, documents.docId),
-      )
-      .where(
-        and(
-          eq(documentLinks.sourceId, docId),
-          eq(documentLinks.linkType, "contains"),
-        ),
-      )
+      .innerJoin(documentLinks, eq(documentLinks.targetId, documents.docId))
+      .where(and(eq(documentLinks.sourceId, docId), eq(documentLinks.linkType, 'contains')))
       .orderBy(asc(documents.docId))
       .all();
-    return rows.map(r => rowToDoc(r.doc));
+    return rows.map((r) => rowToDoc(r.doc));
   }
 
   /** contains 링크로 연결된 부모 문서 */
@@ -539,16 +505,8 @@ export class SqlDocStore implements DocStore {
         doc: documents,
       })
       .from(documents)
-      .innerJoin(
-        documentLinks,
-        eq(documentLinks.sourceId, documents.docId),
-      )
-      .where(
-        and(
-          eq(documentLinks.targetId, docId),
-          eq(documentLinks.linkType, "contains"),
-        ),
-      )
+      .innerJoin(documentLinks, eq(documentLinks.sourceId, documents.docId))
+      .where(and(eq(documentLinks.targetId, docId), eq(documentLinks.linkType, 'contains')))
       .limit(1)
       .get();
     return row ? rowToDoc(row.doc) : null;
@@ -573,11 +531,7 @@ export class SqlDocStore implements DocStore {
   }
 
   getByAddress(address: string): DocRecord | null {
-    const row = this.db
-      .select()
-      .from(documents)
-      .where(eq(documents.address, address))
-      .get();
+    const row = this.db.select().from(documents).where(eq(documents.address, address)).get();
     return row ? rowToDoc(row) : null;
   }
 
@@ -598,14 +552,17 @@ export class SqlDocStore implements DocStore {
     this.db.delete(codeReferences).run();
     if (references.length === 0) return 0;
     for (const ref of references) {
-      this.db.insert(codeReferences).values({
-        codePath: ref.codePath,
-        docId: ref.docId,
-        relationType: ref.relationType,
-        sourceKind: ref.sourceKind,
-        symbol: ref.symbol ?? "",
-        line: ref.line ?? null,
-      }).run();
+      this.db
+        .insert(codeReferences)
+        .values({
+          codePath: ref.codePath,
+          docId: ref.docId,
+          relationType: ref.relationType,
+          sourceKind: ref.sourceKind,
+          symbol: ref.symbol ?? '',
+          line: ref.line ?? null,
+        })
+        .run();
     }
     return references.length;
   }
@@ -614,13 +571,17 @@ export class SqlDocStore implements DocStore {
     return this.db
       .select()
       .from(codeReferences)
-      .orderBy(asc(codeReferences.codePath), asc(codeReferences.docId), asc(codeReferences.relationType))
+      .orderBy(
+        asc(codeReferences.codePath),
+        asc(codeReferences.docId),
+        asc(codeReferences.relationType),
+      )
       .all()
       .map((row) => ({
         codePath: row.codePath,
         docId: row.docId,
-        relationType: row.relationType as CodeReferenceRecord["relationType"],
-        sourceKind: row.sourceKind as CodeReferenceRecord["sourceKind"],
+        relationType: row.relationType as CodeReferenceRecord['relationType'],
+        sourceKind: row.sourceKind as CodeReferenceRecord['sourceKind'],
         symbol: row.symbol || undefined,
         line: row.line ?? undefined,
       }));
@@ -636,8 +597,8 @@ export class SqlDocStore implements DocStore {
       .map((row) => ({
         codePath: row.codePath,
         docId: row.docId,
-        relationType: row.relationType as CodeReferenceRecord["relationType"],
-        sourceKind: row.sourceKind as CodeReferenceRecord["sourceKind"],
+        relationType: row.relationType as CodeReferenceRecord['relationType'],
+        sourceKind: row.sourceKind as CodeReferenceRecord['sourceKind'],
         symbol: row.symbol || undefined,
         line: row.line ?? undefined,
       }));
@@ -694,9 +655,12 @@ export class SqlDocStore implements DocStore {
 
   private resolveOrderBy(sort?: string) {
     switch (sort) {
-      case "synced_at": return asc(documents.syncedAt);
-      case "synced_at_desc": return desc(documents.syncedAt);
-      default: return asc(documents.docId);
+      case 'synced_at':
+        return asc(documents.syncedAt);
+      case 'synced_at_desc':
+        return desc(documents.syncedAt);
+      default:
+        return asc(documents.docId);
     }
   }
 
@@ -715,12 +679,7 @@ export class SqlDocStore implements DocStore {
     const row = this.db
       .select()
       .from(documentHistory)
-      .where(
-        and(
-          eq(documentHistory.docId, docId),
-          eq(documentHistory.version, version),
-        ),
-      )
+      .where(and(eq(documentHistory.docId, docId), eq(documentHistory.version, version)))
       .get();
     return row ? rowToHistory(row) : null;
   }

@@ -6,10 +6,7 @@ import {
   type ContextActionFeatureId,
 } from './context-action-contract.js';
 
-const FEATURES: ContextActionFeatureId[] = [
-  'canonical-review',
-  'incident-escalation',
-];
+const FEATURES: ContextActionFeatureId[] = ['canonical-review', 'incident-escalation'];
 
 describe('context-action convention contract', () => {
   it.each(FEATURES)('%s feature가 provider order와 mount contract를 만족한다', (featureId) => {

@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { and, asc, eq, gt, gte, lte, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lte, or, type SQL } from 'drizzle-orm';
 import type {
   RecordStore,
   RecordInsert,
@@ -10,9 +10,9 @@ import type {
   StoredRecord,
   StoredRecordPage,
   TimeRangeParams,
-} from "@qa-sdk/core";
-import type { DbExecutor } from "../../db/client.js";
-import { eventRecords } from "../../db/schema.js";
+} from '@qa-sdk/core';
+import type { DbExecutor } from '../../db/client.js';
+import { eventRecords } from '../../db/schema.js';
 
 /** RecordStore의 Drizzle/PostgreSQL 구현 */
 export class DrizzleRecordStore implements RecordStore {
@@ -20,34 +20,37 @@ export class DrizzleRecordStore implements RecordStore {
 
   async insertBatch(records: RecordInsert[]): Promise<void> {
     if (records.length === 0) return;
-    await this.db.insert(eventRecords).values(
-      records.map((r) => ({
-        logId: r.logId,
-        traceId: r.traceId,
-        spanId: r.spanId,
-        parentSpanId: r.parentSpanId,
-        timestamp: r.timestamp,
-        recordKind: r.recordKind,
-        eventKey: r.eventKey,
-        eventVersion: r.eventVersion,
-        spanName: r.spanName,
-        startTime: r.startTime,
-        endTime: r.endTime,
-        statusCode: r.statusCode,
-        payloadFormat: r.payloadFormat,
-        payloadEncoding: r.payloadEncoding,
-        payloadMaskingApplied: r.payloadMaskingApplied,
-        payloadMaskedFields: r.payloadMaskedFields,
-        payload: r.payload,
-        registryWarning: r.registryWarning,
-        addressContext: r.addressContext,
-        qaSessionId: r.qaSessionId,
-        actorId: r.actorId,
-        userId: r.userId,
-        userAttributes: r.userAttributes,
-      })),
-    ).onConflictDoNothing({ target: eventRecords.logId })
-      .comment({ adapter: "RecordStore", method: "insertBatch" });
+    await this.db
+      .insert(eventRecords)
+      .values(
+        records.map((r) => ({
+          logId: r.logId,
+          traceId: r.traceId,
+          spanId: r.spanId,
+          parentSpanId: r.parentSpanId,
+          timestamp: r.timestamp,
+          recordKind: r.recordKind,
+          eventKey: r.eventKey,
+          eventVersion: r.eventVersion,
+          spanName: r.spanName,
+          startTime: r.startTime,
+          endTime: r.endTime,
+          statusCode: r.statusCode,
+          payloadFormat: r.payloadFormat,
+          payloadEncoding: r.payloadEncoding,
+          payloadMaskingApplied: r.payloadMaskingApplied,
+          payloadMaskedFields: r.payloadMaskedFields,
+          payload: r.payload,
+          registryWarning: r.registryWarning,
+          addressContext: r.addressContext,
+          qaSessionId: r.qaSessionId,
+          actorId: r.actorId,
+          userId: r.userId,
+          userAttributes: r.userAttributes,
+        })),
+      )
+      .onConflictDoNothing({ target: eventRecords.logId })
+      .comment({ adapter: 'RecordStore', method: 'insertBatch' });
   }
 
   async findByTraceId(traceId: string): Promise<StoredRecord[]> {
@@ -56,7 +59,7 @@ export class DrizzleRecordStore implements RecordStore {
       .from(eventRecords)
       .where(eq(eventRecords.traceId, traceId))
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
-      .comment({ adapter: "RecordStore", method: "findByTraceId" });
+      .comment({ adapter: 'RecordStore', method: 'findByTraceId' });
     return rows.map(toStoredRecord);
   }
 
@@ -71,7 +74,7 @@ export class DrizzleRecordStore implements RecordStore {
       .where(buildPaginatedWhere(eq(eventRecords.traceId, traceId), params.cursor))
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
       .limit(limit + 1)
-      .comment({ adapter: "RecordStore", method: "findByTraceIdPaginated" });
+      .comment({ adapter: 'RecordStore', method: 'findByTraceIdPaginated' });
 
     return toStoredRecordPage(rows, limit);
   }
@@ -82,7 +85,7 @@ export class DrizzleRecordStore implements RecordStore {
       .from(eventRecords)
       .where(eq(eventRecords.qaSessionId, sessionId))
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
-      .comment({ adapter: "RecordStore", method: "findBySessionId" });
+      .comment({ adapter: 'RecordStore', method: 'findBySessionId' });
     return rows.map(toStoredRecord);
   }
 
@@ -94,31 +97,21 @@ export class DrizzleRecordStore implements RecordStore {
     const rows = await this.db
       .select()
       .from(eventRecords)
-      .where(
-        buildPaginatedWhere(eq(eventRecords.qaSessionId, sessionId), params.cursor),
-      )
+      .where(buildPaginatedWhere(eq(eventRecords.qaSessionId, sessionId), params.cursor))
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
       .limit(limit + 1)
-      .comment({ adapter: "RecordStore", method: "findBySessionIdPaginated" });
+      .comment({ adapter: 'RecordStore', method: 'findBySessionIdPaginated' });
 
     return toStoredRecordPage(rows, limit);
   }
 
-  async findByTraceAndEventKey(
-    traceId: string,
-    eventKey: string,
-  ): Promise<StoredRecord[]> {
+  async findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]> {
     const rows = await this.db
       .select()
       .from(eventRecords)
-      .where(
-        and(
-          eq(eventRecords.traceId, traceId),
-          eq(eventRecords.eventKey, eventKey),
-        ),
-      )
+      .where(and(eq(eventRecords.traceId, traceId), eq(eventRecords.eventKey, eventKey)))
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
-      .comment({ adapter: "RecordStore", method: "findByTraceAndEventKey" });
+      .comment({ adapter: 'RecordStore', method: 'findByTraceAndEventKey' });
     return rows.map(toStoredRecord);
   }
 
@@ -137,7 +130,7 @@ export class DrizzleRecordStore implements RecordStore {
       .where(where)
       .orderBy(asc(eventRecords.timestamp), asc(eventRecords.logId))
       .limit(limit)
-      .comment({ adapter: "RecordStore", method: "findByTimeRange" });
+      .comment({ adapter: 'RecordStore', method: 'findByTimeRange' });
 
     return rows.map(toStoredRecord);
   }
@@ -155,10 +148,7 @@ function buildPaginatedWhere(
     baseCondition,
     or(
       gt(eventRecords.timestamp, cursor.timestamp),
-      and(
-        eq(eventRecords.timestamp, cursor.timestamp),
-        gt(eventRecords.logId, cursor.logId),
-      ),
+      and(eq(eventRecords.timestamp, cursor.timestamp), gt(eventRecords.logId, cursor.logId)),
     ),
   ) as SQL<unknown>;
 }

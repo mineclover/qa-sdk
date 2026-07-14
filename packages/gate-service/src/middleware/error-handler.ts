@@ -1,11 +1,11 @@
 // @def.boundary gate-system
 // @def.doc gate-system
 
-import type { ErrorHandler } from "hono";
-import type { Logger } from "pino";
-import { IndexMetaError } from "index-meta-workers";
-import { ZodError } from "zod";
-import { AppError, fromIndexMetaError } from "../lib/errors.js";
+import type { ErrorHandler } from 'hono';
+import type { Logger } from 'pino';
+import { IndexMetaError } from 'index-meta-workers';
+import { ZodError } from 'zod';
+import { AppError, fromIndexMetaError } from '../lib/errors.js';
 
 export function createErrorHandler(logger: Logger): ErrorHandler {
   return (err, c) => {
@@ -20,10 +20,10 @@ export function createErrorHandler(logger: Logger): ErrorHandler {
       return c.json(
         {
           error: {
-            code: "INVALID_INPUT",
+            code: 'INVALID_INPUT',
             message: err.errors
-              .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-              .join("; "),
+              .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+              .join('; '),
           },
         },
         400,
@@ -38,10 +38,7 @@ export function createErrorHandler(logger: Logger): ErrorHandler {
       );
     }
 
-    logger.error({ err }, "unhandled error");
-    return c.json(
-      { error: { code: "INTERNAL_ERROR", message: "internal server error" } },
-      500,
-    );
+    logger.error({ err }, 'unhandled error');
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'internal server error' } }, 500);
   };
 }

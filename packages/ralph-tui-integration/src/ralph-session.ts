@@ -1,25 +1,19 @@
 // @def.doc ralph-tui-integration#ralph-session
-import { readFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { readFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 
-import {
-  defineDocumentAdapter,
-  normalizeDocumentEnvelope,
-} from "doc-envelope";
-import { matchesDocumentQuery } from "doc-envelope";
+import { defineDocumentAdapter, normalizeDocumentEnvelope } from 'doc-envelope';
+import { matchesDocumentQuery } from 'doc-envelope';
 import type {
   DocumentAdapter,
   DocumentCollectionQuery,
   DocumentDiagnosticInput,
   DocumentEnvelope,
   DocumentMetadata,
-} from "doc-envelope";
-import {
-  readRalphPrdJsonSummary,
-  type RalphPrdJsonSummary,
-} from "./ralph-prd-json.js";
+} from 'doc-envelope';
+import { readRalphPrdJsonSummary, type RalphPrdJsonSummary } from './ralph-prd-json.js';
 
-export const RALPH_SESSION_ADAPTER_ID = "ralph-session";
+export const RALPH_SESSION_ADAPTER_ID = 'ralph-session';
 
 export interface RalphSessionAdapterOptions {
   readonly rootDir: string;
@@ -27,11 +21,9 @@ export interface RalphSessionAdapterOptions {
   readonly prdJsonPath?: string;
 }
 
-const DEFAULT_SESSION_PATH = ".ralph-tui/session-meta.json";
+const DEFAULT_SESSION_PATH = '.ralph-tui/session-meta.json';
 
-export function createRalphSessionAdapter(
-  options: RalphSessionAdapterOptions,
-): DocumentAdapter {
+export function createRalphSessionAdapter(options: RalphSessionAdapterOptions): DocumentAdapter {
   const rootDir = options.rootDir;
   const sessionPath = options.path ?? DEFAULT_SESSION_PATH;
 
@@ -74,9 +66,9 @@ async function buildRalphSessionEnvelope(
     value = JSON.parse(content);
   } catch (error) {
     diagnostics.push({
-      code: "ralph-session-parse-error",
-      severity: "error",
-      message: error instanceof Error ? error.message : "Failed to parse ralph session metadata.",
+      code: 'ralph-session-parse-error',
+      severity: 'error',
+      message: error instanceof Error ? error.message : 'Failed to parse ralph session metadata.',
       rawSource: {
         path: relativePath,
       },
@@ -90,9 +82,9 @@ async function buildRalphSessionEnvelope(
   const root = isRecord(value) ? value : {};
   if (!isRecord(value)) {
     diagnostics.push({
-      code: "ralph-session-root-not-object",
-      severity: "error",
-      message: "Ralph session metadata root must be an object.",
+      code: 'ralph-session-root-not-object',
+      severity: 'error',
+      message: 'Ralph session metadata root must be an object.',
       rawSource: {
         path: relativePath,
       },
@@ -108,7 +100,7 @@ async function buildRalphSessionEnvelope(
     : null;
   diagnostics.push(...detectSessionDrift(relativePath, root, prdSummary));
 
-  const sessionId = pickString(root.id) ?? "session-meta";
+  const sessionId = pickString(root.id) ?? 'session-meta';
   const metadata: DocumentMetadata = {
     ...root,
     sourcePath: relativePath,
@@ -116,24 +108,26 @@ async function buildRalphSessionEnvelope(
     // 수집 시점에 `metadata.transient: true`를 스탬프한다. `.ralph-tui/` 경로
     // 하드코딩은 ralph-tui-integration 내부에만 존재한다.
     transient: true,
-    ...(prdSummary ? {
-      prdStoryCount: prdSummary.storyCount,
-      prdPassedStoryCount: prdSummary.passedStoryCount,
-      prdAllStoriesPassing: prdSummary.allStoriesPassing,
-    } : {}),
+    ...(prdSummary
+      ? {
+          prdStoryCount: prdSummary.storyCount,
+          prdPassedStoryCount: prdSummary.passedStoryCount,
+          prdAllStoriesPassing: prdSummary.allStoriesPassing,
+        }
+      : {}),
   };
 
   return normalizeDocumentEnvelope({
     adapterId: RALPH_SESSION_ADAPTER_ID,
-    kind: "ralph-session",
+    kind: 'ralph-session',
     stableId: `ralph-session:${sessionId}`,
-    ...(resolvedPrdPath ? { familyId: resolvedPrdPath.replace(/\.json$/, "") } : {}),
+    ...(resolvedPrdPath ? { familyId: resolvedPrdPath.replace(/\.json$/, '') } : {}),
     path: relativePath,
     metadata,
     diagnostics,
     rawSource: {
       path: relativePath,
-      sourceSchema: "ralph-session-meta",
+      sourceSchema: 'ralph-session-meta',
     },
   });
 }
@@ -146,28 +140,55 @@ function detectSessionDrift(
   if (!prdSummary) return [];
   const diagnostics: DocumentDiagnosticInput[] = [];
   const status = pickString(session.status);
-  if (prdSummary.allStoriesPassing && status === "running") {
-    diagnostics.push(toDiagnostic(sourcePath, "/status", "ralph-session-prd-complete-session-running", "warning", "PRD JSON has all stories passing but the ralph session is still running.", {
-      prdPath: prdSummary.path,
-    }));
+  if (prdSummary.allStoriesPassing && status === 'running') {
+    diagnostics.push(
+      toDiagnostic(
+        sourcePath,
+        '/status',
+        'ralph-session-prd-complete-session-running',
+        'warning',
+        'PRD JSON has all stories passing but the ralph session is still running.',
+        {
+          prdPath: prdSummary.path,
+        },
+      ),
+    );
   }
 
   const totalTasks = pickNumber(session.totalTasks);
   if (totalTasks !== undefined && totalTasks !== prdSummary.storyCount) {
-    diagnostics.push(toDiagnostic(sourcePath, "/totalTasks", "ralph-session-total-tasks-drift", "warning", "Ralph session totalTasks disagrees with PRD JSON userStories count.", {
-      prdPath: prdSummary.path,
-      sessionTotalTasks: totalTasks,
-      prdStoryCount: prdSummary.storyCount,
-    }));
+    diagnostics.push(
+      toDiagnostic(
+        sourcePath,
+        '/totalTasks',
+        'ralph-session-total-tasks-drift',
+        'warning',
+        'Ralph session totalTasks disagrees with PRD JSON userStories count.',
+        {
+          prdPath: prdSummary.path,
+          sessionTotalTasks: totalTasks,
+          prdStoryCount: prdSummary.storyCount,
+        },
+      ),
+    );
   }
 
   const tasksCompleted = pickNumber(session.tasksCompleted);
   if (tasksCompleted !== undefined && tasksCompleted !== prdSummary.passedStoryCount) {
-    diagnostics.push(toDiagnostic(sourcePath, "/tasksCompleted", "ralph-session-completed-tasks-drift", "warning", "Ralph session tasksCompleted disagrees with PRD JSON passing story count.", {
-      prdPath: prdSummary.path,
-      sessionTasksCompleted: tasksCompleted,
-      prdPassedStoryCount: prdSummary.passedStoryCount,
-    }));
+    diagnostics.push(
+      toDiagnostic(
+        sourcePath,
+        '/tasksCompleted',
+        'ralph-session-completed-tasks-drift',
+        'warning',
+        'Ralph session tasksCompleted disagrees with PRD JSON passing story count.',
+        {
+          prdPath: prdSummary.path,
+          sessionTasksCompleted: tasksCompleted,
+          prdPassedStoryCount: prdSummary.passedStoryCount,
+        },
+      ),
+    );
   }
 
   return diagnostics;
@@ -177,7 +198,7 @@ function toDiagnostic(
   sourcePath: string,
   pointer: string,
   code: string,
-  severity: "warning" | "error",
+  severity: 'warning' | 'error',
   message: string,
   metadata: DocumentMetadata = {},
 ): DocumentDiagnosticInput {
@@ -198,14 +219,14 @@ function toDiagnostic(
 
 async function safeRead(filePath: string): Promise<string | null> {
   try {
-    return await readFile(filePath, "utf8");
+    return await readFile(filePath, 'utf8');
   } catch {
     return null;
   }
 }
 
 function resolvePath(rootDir: string, path: string): string {
-  return path.startsWith("/") ? path : join(rootDir, path);
+  return path.startsWith('/') ? path : join(rootDir, path);
 }
 
 function toRepoPath(rootDir: string, filePath: string): string {
@@ -213,17 +234,17 @@ function toRepoPath(rootDir: string, filePath: string): string {
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function pickString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function pickNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -22,15 +22,15 @@ import {
   InternalServerErrorException,
   Post,
   UseGuards,
-} from "@nestjs/common";
-import { z } from "zod";
-import { InternalIpGuard } from "sim-internal-network";
-import { ScalePinService } from "./scale-pin.service.js";
+} from '@nestjs/common';
+import { z } from 'zod';
+import { InternalIpGuard } from 'sim-internal-network';
+import { ScalePinService } from './scale-pin.service.js';
 import {
   COMPOSE_EXEC_TOKEN,
   SIM_COMPOSE_PROJECT_TOKEN,
   type ComposeExec,
-} from "./compose-proxy.controller.js";
+} from './compose-proxy.controller.js';
 
 const pinBody = z.object({
   service: z.string().min(1),
@@ -39,13 +39,13 @@ const pinBody = z.object({
 const scaleBody = z.object({
   service: z.string().min(1),
   replicas: z.number().int().min(0),
-  source: z.literal("operator"),
+  source: z.literal('operator'),
 });
 
-const ERR_VALIDATION = "https://qa-sdk.dev/errors/validation";
-const ERR_STORE_FAILURE = "https://qa-sdk.dev/errors/store-failure";
+const ERR_VALIDATION = 'https://qa-sdk.dev/errors/validation';
+const ERR_STORE_FAILURE = 'https://qa-sdk.dev/errors/store-failure';
 
-@Controller("admin")
+@Controller('admin')
 @UseGuards(InternalIpGuard)
 export class AdminScaleController {
   constructor(
@@ -54,24 +54,20 @@ export class AdminScaleController {
     @Inject(SIM_COMPOSE_PROJECT_TOKEN) private readonly project: string,
   ) {}
 
-  @Get("/scale/pin")
+  @Get('/scale/pin')
   list(): { pins: Record<string, number> } {
     return { pins: this.pin.listPins() };
   }
 
-  @Post("/scale/pin")
-  upsert(
-    @Body() raw: unknown,
-  ): { service: string; replicas: number | null } {
+  @Post('/scale/pin')
+  upsert(@Body() raw: unknown): { service: string; replicas: number | null } {
     const parsed = pinBody.safeParse(raw);
     if (!parsed.success) {
       throw new BadRequestException({
         type: ERR_VALIDATION,
-        title: "pin body invalid",
+        title: 'pin body invalid',
         status: 400,
-        detail: parsed.error.issues
-          .map((i) => `${i.path.join(".")}: ${i.message}`)
-          .join("; "),
+        detail: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
       });
     }
     const { service, replicas } = parsed.data;
@@ -86,7 +82,7 @@ export class AdminScaleController {
       if (err instanceof ConflictException) throw err;
       throw new BadRequestException({
         type: ERR_VALIDATION,
-        title: "pin failed",
+        title: 'pin failed',
         status: 400,
         detail: (err as Error).message,
       });
@@ -94,7 +90,7 @@ export class AdminScaleController {
     return { service, replicas };
   }
 
-  @Post("/scale/replicas")
+  @Post('/scale/replicas')
   async scale(
     @Body() raw: unknown,
   ): Promise<{ service: string; prevReplicas: number; newReplicas: number }> {
@@ -102,30 +98,28 @@ export class AdminScaleController {
     if (!parsed.success) {
       throw new BadRequestException({
         type: ERR_VALIDATION,
-        title: "scale body invalid",
+        title: 'scale body invalid',
         status: 400,
-        detail: parsed.error.issues
-          .map((i) => `${i.path.join(".")}: ${i.message}`)
-          .join("; "),
+        detail: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
       });
     }
     const { service, replicas } = parsed.data;
     const prev = await this.probeReplicas(service);
     try {
       await this.exec([
-        "compose",
-        "-p",
+        'compose',
+        '-p',
         this.project,
-        "up",
-        "-d",
-        "--no-recreate",
-        "--scale",
+        'up',
+        '-d',
+        '--no-recreate',
+        '--scale',
         `${service}=${replicas}`,
       ]);
     } catch (err) {
       throw new InternalServerErrorException({
         type: ERR_STORE_FAILURE,
-        title: "compose --scale failed",
+        title: 'compose --scale failed',
         status: 500,
         detail: (err as Error).message,
       });
@@ -141,14 +135,7 @@ export class AdminScaleController {
   private async probeReplicas(service: string): Promise<number> {
     let result: { stdout: string; stderr: string };
     try {
-      result = await this.exec([
-        "compose",
-        "-p",
-        this.project,
-        "ps",
-        "--format",
-        "json",
-      ]);
+      result = await this.exec(['compose', '-p', this.project, 'ps', '--format', 'json']);
     } catch {
       return 0;
     }
@@ -165,7 +152,7 @@ export class AdminScaleController {
       const items = Array.isArray(parsed) ? parsed : [parsed];
       for (const item of items) {
         const obj = item as { Service?: unknown; State?: unknown };
-        if (obj.Service === service && obj.State === "running") count += 1;
+        if (obj.Service === service && obj.State === 'running') count += 1;
       }
     }
     return count;

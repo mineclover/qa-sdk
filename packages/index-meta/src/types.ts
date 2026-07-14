@@ -1,7 +1,7 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { PackFormat, ShardingStrategy, EntityId, VersionedValue } from "weighted-index";
+import type { PackFormat, ShardingStrategy, EntityId, VersionedValue } from 'weighted-index';
 
 /**
  * index-meta — 닫힌 패턴의 1차원 주소를 위한 DB 라이브러리 타입 정의
@@ -54,7 +54,7 @@ import type { PackFormat, ShardingStrategy, EntityId, VersionedValue } from "wei
  * - "number": shape product ≤ 2^53. Number 기반 encode/decode/serialize 가능.
  * - "bigint": shape product > 2^53. Number 기반 연산 차단. 메타데이터만 기록.
  */
-export type NumberType = "number" | "bigint";
+export type NumberType = 'number' | 'bigint';
 
 // ── DimKind ───────────────────────────────────────────────────────────────────
 
@@ -69,15 +69,15 @@ export type NumberType = "number" | "bigint";
  *               versionId는 스키마 정의 관심사가 아님. 데이터 적재 시 값과 함께 전달됨.
  */
 export type DimKind =
-  | { type: "string_enum" }
-  | { type: "number_enum" }
-  | { type: "index_ref"; indexId: string };
+  | { type: 'string_enum' }
+  | { type: 'number_enum' }
+  | { type: 'index_ref'; indexId: string };
 
 export type { EntityId };
 
 // ── Entry 상태 ───────────────────────────────────────────────────────────────
 
-export type EntryStatus = "active" | "inactive";
+export type EntryStatus = 'active' | 'inactive';
 
 export interface EntryFlag {
   status: EntryStatus;

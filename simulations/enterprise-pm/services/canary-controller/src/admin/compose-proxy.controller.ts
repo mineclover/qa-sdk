@@ -6,27 +6,19 @@
 // service 목록 hardcode 금지 — compose 실제 출력에서 동적 수집.
 // Compose v2.20+ 줄별 JSON object, v2.18 이하 단일 array 양쪽 호환.
 
-import {
-  Controller,
-  Get,
-  Inject,
-  InternalServerErrorException,
-  UseGuards,
-} from "@nestjs/common";
-import { InternalIpGuard } from "sim-internal-network";
+import { Controller, Get, Inject, InternalServerErrorException, UseGuards } from '@nestjs/common';
+import { InternalIpGuard } from 'sim-internal-network';
 
 /**
  * docker exec port — 테스트는 mock 주입, production 은 dockerComposeExec 기본 구현.
  * argv 는 `compose`, `-p`, project, `ps`, `--format`, `json` 등 docker subcommand.
  */
-export type ComposeExec = (
-  argv: string[],
-) => Promise<{ stdout: string; stderr: string }>;
+export type ComposeExec = (argv: string[]) => Promise<{ stdout: string; stderr: string }>;
 
-export const COMPOSE_EXEC_TOKEN = Symbol("ComposeExec");
-export const SIM_COMPOSE_PROJECT_TOKEN = Symbol("SIM_COMPOSE_PROJECT");
+export const COMPOSE_EXEC_TOKEN = Symbol('ComposeExec');
+export const SIM_COMPOSE_PROJECT_TOKEN = Symbol('SIM_COMPOSE_PROJECT');
 
-@Controller("admin")
+@Controller('admin')
 @UseGuards(InternalIpGuard)
 export class AdminComposeProxyController {
   constructor(
@@ -34,22 +26,15 @@ export class AdminComposeProxyController {
     @Inject(SIM_COMPOSE_PROJECT_TOKEN) private readonly project: string,
   ) {}
 
-  @Get("/compose/replicas")
+  @Get('/compose/replicas')
   async replicas(): Promise<{ services: Record<string, number> }> {
     let result: { stdout: string; stderr: string };
     try {
-      result = await this.exec([
-        "compose",
-        "-p",
-        this.project,
-        "ps",
-        "--format",
-        "json",
-      ]);
+      result = await this.exec(['compose', '-p', this.project, 'ps', '--format', 'json']);
     } catch (err) {
       throw new InternalServerErrorException({
-        type: "https://qa-sdk.dev/errors/store-failure",
-        title: "compose ps failed",
+        type: 'https://qa-sdk.dev/errors/store-failure',
+        title: 'compose ps failed',
         status: 500,
         detail: (err as Error).message,
       });
@@ -79,7 +64,7 @@ function parseComposePsOutput(stdout: string): Record<string, number> {
     const items = Array.isArray(parsed) ? parsed : [parsed];
     for (const item of items) {
       const obj = item as { Service?: unknown; State?: unknown };
-      if (typeof obj.Service !== "string" || obj.State !== "running") continue;
+      if (typeof obj.Service !== 'string' || obj.State !== 'running') continue;
       services[obj.Service] = (services[obj.Service] ?? 0) + 1;
     }
   }

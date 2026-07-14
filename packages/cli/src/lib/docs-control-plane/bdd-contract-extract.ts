@@ -6,9 +6,9 @@ import {
   type BddContract,
   type BddImplementationUnit,
   type BddTestUnit,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
-export type BddContractDiagnosticSeverity = "error" | "warning";
+export type BddContractDiagnosticSeverity = 'error' | 'warning';
 
 export interface BddContractDiagnostic {
   readonly code: string;
@@ -47,32 +47,36 @@ export function extractBddDocumentMetadata(
   for (const match of markdown.matchAll(BDD_BLOCK_RE)) {
     blockIndex += 1;
     const pointer = `bdd-block:${blockIndex}`;
-    const rawYaml = match[1] ?? "";
+    const rawYaml = match[1] ?? '';
 
     let parsedYaml: unknown;
     try {
       parsedYaml = parseBddYaml(rawYaml);
     } catch (error) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer,
-        code: "bdd-yaml-parse-error",
-        severity: "error",
-        message: error instanceof Error ? error.message : String(error),
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer,
+          code: 'bdd-yaml-parse-error',
+          severity: 'error',
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      );
       continue;
     }
 
     const parsedBlock = bddContractBlockSchema.safeParse(parsedYaml);
     if (!parsedBlock.success) {
       for (const issue of parsedBlock.error.issues) {
-        diagnostics.push(diagnostic({
-          sourcePath,
-          pointer,
-          code: "bdd-schema-error",
-          severity: "error",
-          message: `${issue.path.join(".") || "bdd"}: ${issue.message}`,
-        }));
+        diagnostics.push(
+          diagnostic({
+            sourcePath,
+            pointer,
+            code: 'bdd-schema-error',
+            severity: 'error',
+            message: `${issue.path.join('.') || 'bdd'}: ${issue.message}`,
+          }),
+        );
       }
       continue;
     }
@@ -82,10 +86,12 @@ export function extractBddDocumentMetadata(
     implementationUnits.push(...parsedBlock.data.implementationUnits);
   }
 
-  diagnostics.push(...validateSingleBddDocument({
-    sourcePath,
-    contracts,
-  }));
+  diagnostics.push(
+    ...validateSingleBddDocument({
+      sourcePath,
+      contracts,
+    }),
+  );
 
   return {
     contracts,
@@ -98,8 +104,8 @@ export function extractBddDocumentMetadata(
 function parseBddYaml(yaml: string): Record<string, unknown> {
   const lines = yaml
     .split(/\r?\n/)
-    .map((line) => line.replace(/\r$/, ""))
-    .filter((line) => line.trim().length > 0 && !line.trim().startsWith("#"))
+    .map((line) => line.replace(/\r$/, ''))
+    .filter((line) => line.trim().length > 0 && !line.trim().startsWith('#'))
     .map((line) => ({
       indent: line.length - line.trimStart().length,
       text: line.trim(),
@@ -112,7 +118,7 @@ function parseBddYaml(yaml: string): Record<string, unknown> {
       const line = lines[index]!;
       if (line.indent < indent) break;
       if (line.indent > indent) break;
-      if (line.text.startsWith("- ")) break;
+      if (line.text.startsWith('- ')) break;
 
       const parsed = parseKeyValue(line.text);
       if (!parsed) {
@@ -120,7 +126,7 @@ function parseBddYaml(yaml: string): Record<string, unknown> {
         continue;
       }
       index += 1;
-      if (parsed.value === "") {
+      if (parsed.value === '') {
         result[parsed.key] = parseNested(line.indent);
       } else {
         result[parsed.key] = parseScalarOrInlineArray(parsed.value);
@@ -132,7 +138,7 @@ function parseBddYaml(yaml: string): Record<string, unknown> {
   function parseNested(parentIndent: number): unknown {
     const next = lines[index];
     if (!next || next.indent <= parentIndent) return {};
-    if (next.text.startsWith("- ")) return parseArray(next.indent);
+    if (next.text.startsWith('- ')) return parseArray(next.indent);
     return parseObject(next.indent);
   }
 
@@ -141,7 +147,7 @@ function parseBddYaml(yaml: string): Record<string, unknown> {
     while (index < lines.length) {
       const line = lines[index]!;
       if (line.indent < indent) break;
-      if (line.indent !== indent || !line.text.startsWith("- ")) break;
+      if (line.indent !== indent || !line.text.startsWith('- ')) break;
 
       const rest = line.text.slice(2).trim();
       index += 1;
@@ -152,14 +158,13 @@ function parseBddYaml(yaml: string): Record<string, unknown> {
       }
 
       const item: Record<string, unknown> = {};
-      item[parsed.key] = parsed.value === ""
-        ? parseNested(line.indent)
-        : parseScalarOrInlineArray(parsed.value);
+      item[parsed.key] =
+        parsed.value === '' ? parseNested(line.indent) : parseScalarOrInlineArray(parsed.value);
 
       while (index < lines.length) {
         const next = lines[index]!;
         if (next.indent <= line.indent) break;
-        if (next.indent !== line.indent + 2 || next.text.startsWith("- ")) break;
+        if (next.indent !== line.indent + 2 || next.text.startsWith('- ')) break;
 
         const continuation = parseKeyValue(next.text);
         if (!continuation) {
@@ -167,9 +172,10 @@ function parseBddYaml(yaml: string): Record<string, unknown> {
           continue;
         }
         index += 1;
-        item[continuation.key] = continuation.value === ""
-          ? parseNested(next.indent)
-          : parseScalarOrInlineArray(continuation.value);
+        item[continuation.key] =
+          continuation.value === ''
+            ? parseNested(next.indent)
+            : parseScalarOrInlineArray(continuation.value);
       }
       result.push(item);
     }
@@ -184,25 +190,25 @@ function parseKeyValue(text: string): { key: string; value: string } | null {
   if (!match?.[1]) return null;
   return {
     key: match[1].trim(),
-    value: match[2]?.trim() ?? "",
+    value: match[2]?.trim() ?? '',
   };
 }
 
 function parseScalarOrInlineArray(value: string): unknown {
-  if (value.startsWith("[") && value.endsWith("]")) {
+  if (value.startsWith('[') && value.endsWith(']')) {
     const inner = value.slice(1, -1).trim();
     if (!inner) return [];
-    return inner.split(",").map((item) => parseScalar(item.trim()));
+    return inner.split(',').map((item) => parseScalar(item.trim()));
   }
   return parseScalar(value);
 }
 
 function parseScalar(value: string): unknown {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  if (value === "null") return null;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (value === 'null') return null;
   const numberValue = Number(value);
-  if (!Number.isNaN(numberValue) && value.trim() !== "") return numberValue;
+  if (!Number.isNaN(numberValue) && value.trim() !== '') return numberValue;
   if (
     (value.startsWith('"') && value.endsWith('"')) ||
     (value.startsWith("'") && value.endsWith("'"))
@@ -213,20 +219,25 @@ function parseScalar(value: string): unknown {
 }
 
 export function hasBddMetadata(metadata: BddDocumentMetadata): boolean {
-  return metadata.contracts.length > 0 ||
+  return (
+    metadata.contracts.length > 0 ||
     metadata.testUnits.length > 0 ||
     metadata.implementationUnits.length > 0 ||
-    metadata.diagnostics.length > 0;
+    metadata.diagnostics.length > 0
+  );
 }
 
 export function validateBddDocumentSet(
   documents: readonly BddValidationDocument[],
 ): readonly BddContractDiagnostic[] {
   const diagnostics: BddContractDiagnostic[] = [];
-  const contractById = new Map<string, {
-    readonly contract: BddContract;
-    readonly sourcePath: string;
-  }>();
+  const contractById = new Map<
+    string,
+    {
+      readonly contract: BddContract;
+      readonly sourcePath: string;
+    }
+  >();
   const duplicateIds = new Set<string>();
   const testUnitsByContract = new Map<string, BddTestUnit[]>();
   const implementationUnitsByContract = new Map<string, BddImplementationUnit[]>();
@@ -255,99 +266,116 @@ export function validateBddDocumentSet(
   }
 
   for (const id of duplicateIds) {
-    diagnostics.push(diagnostic({
-      sourcePath: contractById.get(id)?.sourcePath ?? "",
-      pointer: "bdd.contracts",
-      code: "bdd-duplicate-contract-id",
-      severity: "error",
-      message: `Duplicate BDD contract id in validation scope: ${id}`,
-      contractId: id,
-    }));
+    diagnostics.push(
+      diagnostic({
+        sourcePath: contractById.get(id)?.sourcePath ?? '',
+        pointer: 'bdd.contracts',
+        code: 'bdd-duplicate-contract-id',
+        severity: 'error',
+        message: `Duplicate BDD contract id in validation scope: ${id}`,
+        contractId: id,
+      }),
+    );
   }
 
   for (const document of documents) {
     for (const unit of document.bdd.testUnits) {
       if (!contractById.has(unit.contract)) {
-        diagnostics.push(diagnostic({
-          sourcePath: document.sourcePath,
-          pointer: `test_unit:${unit.id}`,
-          code: "bdd-test-unit-contract-missing",
-          severity: "error",
-          message: `test_unit ${unit.id} references unknown BDD contract ${unit.contract}`,
-          contractId: unit.contract,
-        }));
+        diagnostics.push(
+          diagnostic({
+            sourcePath: document.sourcePath,
+            pointer: `test_unit:${unit.id}`,
+            code: 'bdd-test-unit-contract-missing',
+            severity: 'error',
+            message: `test_unit ${unit.id} references unknown BDD contract ${unit.contract}`,
+            contractId: unit.contract,
+          }),
+        );
       }
     }
 
     for (const unit of document.bdd.implementationUnits) {
       const contractEntry = contractById.get(unit.contract);
       if (!contractEntry) {
-        diagnostics.push(diagnostic({
-          sourcePath: document.sourcePath,
-          pointer: `implementation_unit:${unit.id}`,
-          code: "bdd-implementation-unit-contract-missing",
-          severity: "error",
-          message: `implementation_unit ${unit.id} references unknown BDD contract ${unit.contract}`,
-          contractId: unit.contract,
-        }));
+        diagnostics.push(
+          diagnostic({
+            sourcePath: document.sourcePath,
+            pointer: `implementation_unit:${unit.id}`,
+            code: 'bdd-implementation-unit-contract-missing',
+            severity: 'error',
+            message: `implementation_unit ${unit.id} references unknown BDD contract ${unit.contract}`,
+            contractId: unit.contract,
+          }),
+        );
         continue;
       }
 
       if (unit.ownedBy !== contractEntry.contract.ownerSystem) {
-        diagnostics.push(diagnostic({
-          sourcePath: document.sourcePath,
-          pointer: `implementation_unit:${unit.id}`,
-          code: "bdd-cross-owner-implementation-unit",
-          severity: "warning",
-          message: `implementation_unit ${unit.id} is owned by ${unit.ownedBy}, but contract ${contractEntry.contract.id} is owned by ${contractEntry.contract.ownerSystem}. Use a separate contract or escalation if this is intentional.`,
-          contractId: contractEntry.contract.id,
-          metadata: {
-            implementationUnitId: unit.id,
-            ownedBy: unit.ownedBy,
-            ownerSystem: contractEntry.contract.ownerSystem,
-          },
-        }));
+        diagnostics.push(
+          diagnostic({
+            sourcePath: document.sourcePath,
+            pointer: `implementation_unit:${unit.id}`,
+            code: 'bdd-cross-owner-implementation-unit',
+            severity: 'warning',
+            message: `implementation_unit ${unit.id} is owned by ${unit.ownedBy}, but contract ${contractEntry.contract.id} is owned by ${contractEntry.contract.ownerSystem}. Use a separate contract or escalation if this is intentional.`,
+            contractId: contractEntry.contract.id,
+            metadata: {
+              implementationUnitId: unit.id,
+              ownedBy: unit.ownedBy,
+              ownerSystem: contractEntry.contract.ownerSystem,
+            },
+          }),
+        );
       }
     }
   }
 
   const allContracts = [...contractById.values()].map((entry) => entry.contract);
-  const hasFailureScenario = allContracts.some((contract) =>
-    contract.contractKind === "validation-failure" || Boolean(contract.then.error)
+  const hasFailureScenario = allContracts.some(
+    (contract) => contract.contractKind === 'validation-failure' || Boolean(contract.then.error),
   );
 
   for (const { contract, sourcePath } of contractById.values()) {
     if ((testUnitsByContract.get(contract.id)?.length ?? 0) === 0) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: `bdd_contract:${contract.id}`,
-        code: "bdd-contract-missing-test-unit",
-        severity: "warning",
-        message: `BDD contract ${contract.id} has no test_unit evidence.`,
-        contractId: contract.id,
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: `bdd_contract:${contract.id}`,
+          code: 'bdd-contract-missing-test-unit',
+          severity: 'warning',
+          message: `BDD contract ${contract.id} has no test_unit evidence.`,
+          contractId: contract.id,
+        }),
+      );
     }
 
-    if (contract.mode === "write" && (implementationUnitsByContract.get(contract.id)?.length ?? 0) === 0) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: `bdd_contract:${contract.id}`,
-        code: "bdd-write-contract-missing-implementation-unit",
-        severity: "warning",
-        message: `write-mode BDD contract ${contract.id} has no implementation_unit.`,
-        contractId: contract.id,
-      }));
+    if (
+      contract.mode === 'write' &&
+      (implementationUnitsByContract.get(contract.id)?.length ?? 0) === 0
+    ) {
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: `bdd_contract:${contract.id}`,
+          code: 'bdd-write-contract-missing-implementation-unit',
+          severity: 'warning',
+          message: `write-mode BDD contract ${contract.id} has no implementation_unit.`,
+          contractId: contract.id,
+        }),
+      );
     }
 
-    if (contract.mode === "write" && !hasFailureScenario) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: `bdd_contract:${contract.id}`,
-        code: "bdd-write-contract-missing-failure-path",
-        severity: "warning",
-        message: "write-mode contract should include a validation-failure scenario.",
-        contractId: contract.id,
-      }));
+    if (contract.mode === 'write' && !hasFailureScenario) {
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: `bdd_contract:${contract.id}`,
+          code: 'bdd-write-contract-missing-failure-path',
+          severity: 'warning',
+          message: 'write-mode contract should include a validation-failure scenario.',
+          contractId: contract.id,
+        }),
+      );
     }
   }
 
@@ -372,14 +400,16 @@ function validateSingleBddDocument(input: {
   }
 
   for (const id of duplicateIds) {
-    diagnostics.push(diagnostic({
-      sourcePath: input.sourcePath,
-      pointer: "bdd.contracts",
-      code: "bdd-duplicate-contract-id",
-      severity: "error",
-      message: `Duplicate BDD contract id: ${id}`,
-      contractId: id,
-    }));
+    diagnostics.push(
+      diagnostic({
+        sourcePath: input.sourcePath,
+        pointer: 'bdd.contracts',
+        code: 'bdd-duplicate-contract-id',
+        severity: 'error',
+        message: `Duplicate BDD contract id: ${id}`,
+        contractId: id,
+      }),
+    );
   }
 
   diagnostics.push(...detectDeterminismConflicts(input.sourcePath, input.contracts));
@@ -390,10 +420,13 @@ function detectDeterminismConflictsFromDocuments(
   documents: readonly BddValidationDocument[],
 ): BddContractDiagnostic[] {
   const diagnostics: BddContractDiagnostic[] = [];
-  const byKey = new Map<string, {
-    readonly contract: BddContract;
-    readonly sourcePath: string;
-  }>();
+  const byKey = new Map<
+    string,
+    {
+      readonly contract: BddContract;
+      readonly sourcePath: string;
+    }
+  >();
 
   for (const document of documents) {
     for (const contract of document.bdd.contracts) {
@@ -405,19 +438,21 @@ function detectDeterminismConflictsFromDocuments(
       }
 
       if (outcomeSignature(existing.contract) !== outcomeSignature(contract)) {
-        diagnostics.push(diagnostic({
-          sourcePath: document.sourcePath,
-          pointer: `bdd_contract:${contract.id}`,
-          code: "bdd-determinism-conflict",
-          severity: "error",
-          message: `BDD contract ${contract.id} conflicts with ${existing.contract.id} for the same Given/When key.`,
-          contractId: contract.id,
-          metadata: {
-            existingContractId: existing.contract.id,
-            existingSourcePath: existing.sourcePath,
-            key,
-          },
-        }));
+        diagnostics.push(
+          diagnostic({
+            sourcePath: document.sourcePath,
+            pointer: `bdd_contract:${contract.id}`,
+            code: 'bdd-determinism-conflict',
+            severity: 'error',
+            message: `BDD contract ${contract.id} conflicts with ${existing.contract.id} for the same Given/When key.`,
+            contractId: contract.id,
+            metadata: {
+              existingContractId: existing.contract.id,
+              existingSourcePath: existing.sourcePath,
+              key,
+            },
+          }),
+        );
       }
     }
   }
@@ -441,18 +476,20 @@ function detectDeterminismConflicts(
     }
 
     if (outcomeSignature(existing) !== outcomeSignature(contract)) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: `bdd_contract:${contract.id}`,
-        code: "bdd-determinism-conflict",
-        severity: "error",
-        message: `BDD contract ${contract.id} conflicts with ${existing.id} for the same Given/When key.`,
-        contractId: contract.id,
-        metadata: {
-          existingContractId: existing.id,
-          key,
-        },
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: `bdd_contract:${contract.id}`,
+          code: 'bdd-determinism-conflict',
+          severity: 'error',
+          message: `BDD contract ${contract.id} conflicts with ${existing.id} for the same Given/When key.`,
+          contractId: contract.id,
+          metadata: {
+            existingContractId: existing.id,
+            key,
+          },
+        }),
+      );
     }
   }
 
@@ -463,17 +500,17 @@ function deterministicKey(contract: BddContract): string {
   const predicates = [...(contract.given.predicates ?? [])].toSorted();
   return JSON.stringify({
     ownerSystem: contract.ownerSystem,
-    state: contract.given.state ?? "",
-    operation: contract.when.operation ?? "",
-    eventKey: contract.when.eventKey ?? "",
+    state: contract.given.state ?? '',
+    operation: contract.when.operation ?? '',
+    eventKey: contract.when.eventKey ?? '',
     predicates,
   });
 }
 
 function outcomeSignature(contract: BddContract): string {
   return JSON.stringify({
-    state: contract.then.state ?? "",
-    error: contract.then.error?.code ?? "",
+    state: contract.then.state ?? '',
+    error: contract.then.error?.code ?? '',
   });
 }
 

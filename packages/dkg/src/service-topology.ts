@@ -11,13 +11,13 @@
  *   - prefix 변경 시 영향받는 서비스의 승인(approval)이 필요한지 판단한다
  */
 
-import { GraphRegistry } from "./graph-registry.js";
+import { GraphRegistry } from './graph-registry.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
 // ═══════════════════════════════════════════════════════════════
 
-export type OwnershipRole = "owner" | "consumer" | "observer";
+export type OwnershipRole = 'owner' | 'consumer' | 'observer';
 
 export interface ServiceOwnership {
   readonly serviceId: string;
@@ -35,7 +35,7 @@ export interface SharedContract {
   readonly provider: string;
   readonly consumers: readonly string[];
   /** 계약 상태 */
-  readonly status: "active" | "deprecated" | "broken";
+  readonly status: 'active' | 'deprecated' | 'broken';
   /** provider가 보장하는 안정 version */
   readonly stableVersion: string;
   /** 계약 위반 조건 */
@@ -43,7 +43,7 @@ export interface SharedContract {
 }
 
 /** 서비스 배포 계층. layer 자동 추론에 사용. */
-export type ServiceTier = "frontend" | "backend" | "infra" | "system";
+export type ServiceTier = 'frontend' | 'backend' | 'infra' | 'system';
 
 export interface ServiceRegistration {
   readonly serviceId: string;
@@ -51,7 +51,7 @@ export interface ServiceRegistration {
   readonly team?: string;
   /** 서비스 계층. frontend=L0, backend=L1, infra=L2, system=L3 */
   readonly tier?: ServiceTier;
-  readonly status: "active" | "draining" | "deregistered";
+  readonly status: 'active' | 'draining' | 'deregistered';
   readonly ownedPrefixes: readonly string[];
   readonly consumedPrefixes: readonly string[];
   readonly dslBindings: readonly string[];
@@ -85,10 +85,10 @@ export class ServiceTopologyRegistry {
   registerService(reg: ServiceRegistration): void {
     this.services.set(reg.serviceId, reg);
     for (const p of reg.ownedPrefixes) {
-      this.ownerships.push({ serviceId: reg.serviceId, prefixId: p, role: "owner" });
+      this.ownerships.push({ serviceId: reg.serviceId, prefixId: p, role: 'owner' });
     }
     for (const p of reg.consumedPrefixes) {
-      this.ownerships.push({ serviceId: reg.serviceId, prefixId: p, role: "consumer" });
+      this.ownerships.push({ serviceId: reg.serviceId, prefixId: p, role: 'consumer' });
     }
   }
 
@@ -101,34 +101,34 @@ export class ServiceTopologyRegistry {
   }
 
   hasContract(prefixId: string): boolean {
-    return [...this.contracts.values()].some(c => c.prefixId === prefixId);
+    return [...this.contracts.values()].some((c) => c.prefixId === prefixId);
   }
 
   /** prefix의 owner 서비스 */
   getOwner(prefixId: string): string | undefined {
-    return this.ownerships.find(o => o.prefixId === prefixId && o.role === "owner")?.serviceId;
+    return this.ownerships.find((o) => o.prefixId === prefixId && o.role === 'owner')?.serviceId;
   }
 
   /** prefix를 소비하는 서비스 목록 */
   getConsumers(prefixId: string): string[] {
     return this.ownerships
-      .filter(o => o.prefixId === prefixId && o.role === "consumer")
-      .map(o => o.serviceId);
+      .filter((o) => o.prefixId === prefixId && o.role === 'consumer')
+      .map((o) => o.serviceId);
   }
 
   /** 서비스가 소유하는 prefix 목록 */
   getOwnedPrefixes(serviceId: string): string[] {
     return this.ownerships
-      .filter(o => o.serviceId === serviceId && o.role === "owner")
-      .map(o => o.prefixId);
+      .filter((o) => o.serviceId === serviceId && o.role === 'owner')
+      .map((o) => o.prefixId);
   }
 
   /** prefix 변경 시 영향 분석 */
   analyzeBreakingChange(prefixId: string, changeType: string): BreakingChange {
     const consumers = this.getConsumers(prefixId);
     const contractIds = [...this.contracts.values()]
-      .filter(c => c.prefixId === prefixId)
-      .map(c => c.id);
+      .filter((c) => c.prefixId === prefixId)
+      .map((c) => c.id);
 
     return {
       prefixId,
@@ -173,18 +173,20 @@ export class ServiceTopologyRegistry {
 
   /** 전체 토폴로지 리포트 */
   generateReport(allPrefixIds: readonly string[]): TopologyReport {
-    const ownedSet = new Set(this.ownerships.filter(o => o.role === "owner").map(o => o.prefixId));
-    const orphanPrefixes = allPrefixIds.filter(p => !ownedSet.has(p));
+    const ownedSet = new Set(
+      this.ownerships.filter((o) => o.role === 'owner').map((o) => o.prefixId),
+    );
+    const orphanPrefixes = allPrefixIds.filter((p) => !ownedSet.has(p));
 
     const breakingChanges: BreakingChange[] = [];
     for (const contract of this.contracts.values()) {
-      if (contract.status === "broken") {
-        breakingChanges.push(this.analyzeBreakingChange(contract.prefixId, "contract-broken"));
+      if (contract.status === 'broken') {
+        breakingChanges.push(this.analyzeBreakingChange(contract.prefixId, 'contract-broken'));
       }
     }
 
-    const activeServices = [...this.services.values()].filter(s => s.status === "active");
-    const drainingServices = [...this.services.values()].filter(s => s.status === "draining");
+    const activeServices = [...this.services.values()].filter((s) => s.status === 'active');
+    const drainingServices = [...this.services.values()].filter((s) => s.status === 'draining');
 
     return {
       services: [...this.services.values()],
@@ -196,7 +198,7 @@ export class ServiceTopologyRegistry {
         `${drainingServices.length} draining`,
         `${this.contracts.size} contracts`,
         `${orphanPrefixes.length} orphan prefixes`,
-      ].join(", "),
+      ].join(', '),
     };
   }
   // ── 계약 버전 핀 검증 ──────────────────────────────────
@@ -211,7 +213,7 @@ export class ServiceTopologyRegistry {
     const violations: ContractViolation[] = [];
 
     for (const contract of this.contracts.values()) {
-      if (contract.status !== "active") continue;
+      if (contract.status !== 'active') continue;
 
       const usages = versionUsages.get(contract.prefixId);
       if (!usages) continue;
@@ -221,8 +223,8 @@ export class ServiceTopologyRegistry {
         if (compareVersions(u.version, contract.stableVersion) < 0) {
           // 이 session이 어떤 consumer 서비스인지 매칭
           for (const sessionId of u.sessions) {
-            const consumer = contract.consumers.find(c =>
-              sessionId.includes(c) || c.includes(sessionId),
+            const consumer = contract.consumers.find(
+              (c) => sessionId.includes(c) || c.includes(sessionId),
             );
             violations.push({
               contractId: contract.id,
@@ -230,7 +232,8 @@ export class ServiceTopologyRegistry {
               consumer: consumer ?? sessionId,
               usedVersion: u.version,
               stableVersion: contract.stableVersion,
-              severity: compareVersions(u.version, contract.stableVersion) <= -2 ? "critical" : "warning",
+              severity:
+                compareVersions(u.version, contract.stableVersion) <= -2 ? 'critical' : 'warning',
             });
           }
         }
@@ -250,7 +253,7 @@ export class ServiceTopologyRegistry {
     if (!svc) throw new Error(`Service not found: ${serviceId}`);
 
     // 상태 전이
-    const updated: ServiceRegistration = { ...svc, status: "draining" };
+    const updated: ServiceRegistration = { ...svc, status: 'draining' };
     this.services.set(serviceId, updated);
 
     // 이관 대상 분석
@@ -261,13 +264,13 @@ export class ServiceTopologyRegistry {
       const consumers = this.getConsumers(prefixId);
       // 계약이 있는 prefix는 이관 필수
       const contracts = [...this.contracts.values()].filter(
-        c => c.provider === serviceId && c.prefixId === prefixId,
+        (c) => c.provider === serviceId && c.prefixId === prefixId,
       );
 
       transferTargets.push({
         prefixId,
         consumers,
-        contracts: contracts.map(c => c.id),
+        contracts: contracts.map((c) => c.id),
         requiresTransfer: consumers.length > 0 || contracts.length > 0,
         suggestedNewOwner: consumers.length > 0 ? consumers[0] : undefined,
       });
@@ -275,13 +278,14 @@ export class ServiceTopologyRegistry {
 
     return {
       serviceId,
-      status: "draining",
+      status: 'draining',
       ownedPrefixes: owned,
       transferTargets,
-      canDeregister: transferTargets.every(t => !t.requiresTransfer),
-      summary: transferTargets.filter(t => t.requiresTransfer).length > 0
-        ? `${transferTargets.filter(t => t.requiresTransfer).length}개 prefix 이관 필요`
-        : "즉시 해제 가능",
+      canDeregister: transferTargets.every((t) => !t.requiresTransfer),
+      summary:
+        transferTargets.filter((t) => t.requiresTransfer).length > 0
+          ? `${transferTargets.filter((t) => t.requiresTransfer).length}개 prefix 이관 필요`
+          : '즉시 해제 가능',
     };
   }
 
@@ -290,8 +294,8 @@ export class ServiceTopologyRegistry {
    */
   deregisterService(serviceId: string): boolean {
     const svc = this.services.get(serviceId);
-    if (!svc || svc.status !== "draining") return false;
-    this.services.set(serviceId, { ...svc, status: "deregistered" });
+    if (!svc || svc.status !== 'draining') return false;
+    this.services.set(serviceId, { ...svc, status: 'deregistered' });
     return true;
   }
 
@@ -301,7 +305,10 @@ export class ServiceTopologyRegistry {
    * 서비스가 접근하는 테이블 목록.
    * 서비스가 소유/소비하는 prefix의 table_ref dim에서 추론.
    */
-  getTablesForService(serviceId: string, graph: GraphRegistry): Array<{
+  getTablesForService(
+    serviceId: string,
+    graph: GraphRegistry,
+  ): Array<{
     tableId: string;
     via: string;
     role: OwnershipRole;
@@ -309,7 +316,7 @@ export class ServiceTopologyRegistry {
     const result: Array<{ tableId: string; via: string; role: OwnershipRole }> = [];
     const seen = new Set<string>();
 
-    const ownerships = this.ownerships.filter(o => o.serviceId === serviceId);
+    const ownerships = this.ownerships.filter((o) => o.serviceId === serviceId);
     for (const o of ownerships) {
       const tables = graph.getTablesForPrefix(o.prefixId);
       for (const t of tables) {
@@ -328,7 +335,10 @@ export class ServiceTopologyRegistry {
    * 테이블에 접근하는 서비스 목록.
    * 테이블을 참조하는 prefix를 소유/소비하는 서비스에서 추론.
    */
-  getServicesForTable(tableId: string, graph: GraphRegistry): Array<{
+  getServicesForTable(
+    tableId: string,
+    graph: GraphRegistry,
+  ): Array<{
     serviceId: string;
     via: string;
     role: OwnershipRole;
@@ -338,7 +348,7 @@ export class ServiceTopologyRegistry {
     const seen = new Set<string>();
 
     for (const p of prefixes) {
-      const related = this.ownerships.filter(o => o.prefixId === p.prefixId);
+      const related = this.ownerships.filter((o) => o.prefixId === p.prefixId);
       for (const o of related) {
         const key = `${o.serviceId}:${p.prefixId}`;
         if (!seen.has(key)) {
@@ -375,13 +385,13 @@ export class ServiceTopologyRegistry {
       prefixId,
       changeType,
       requestedBy,
-      owner: owner ?? "unknown",
+      owner: owner ?? 'unknown',
       affectedServices: impact.affectedServices,
       affectedTeams: [...affectedTeams],
       contracts: impact.contractIds,
-      approvals: [...affectedTeams].map(team => ({
+      approvals: [...affectedTeams].map((team) => ({
         team,
-        status: "pending" as const,
+        status: 'pending' as const,
       })),
       canProceed: affectedTeams.size === 0,
     };
@@ -398,7 +408,7 @@ export interface ContractViolation {
   readonly consumer: string;
   readonly usedVersion: string;
   readonly stableVersion: string;
-  readonly severity: "warning" | "critical";
+  readonly severity: 'warning' | 'critical';
 }
 
 export interface TransferTarget {
@@ -426,7 +436,7 @@ export interface ApprovalRequest {
   readonly affectedServices: readonly string[];
   readonly affectedTeams: readonly string[];
   readonly contracts: readonly string[];
-  readonly approvals: readonly { team: string; status: "pending" | "approved" | "rejected" }[];
+  readonly approvals: readonly { team: string; status: 'pending' | 'approved' | 'rejected' }[];
   readonly canProceed: boolean;
 }
 
@@ -438,7 +448,7 @@ export interface DependencyEdge {
   readonly from: string;
   readonly to: string;
   readonly via: readonly string[];
-  readonly strength: "strong" | "weak";
+  readonly strength: 'strong' | 'weak';
 }
 
 export interface DependencyGraph {
@@ -469,7 +479,7 @@ export function buildDependencyGraph(topo: ServiceTopologyRegistry): DependencyG
     for (const prefixId of svc.consumedPrefixes) {
       const owner = topo.getOwner(prefixId);
       if (owner && owner !== svc.serviceId) {
-        const existing = edges.find(e => e.from === svc.serviceId && e.to === owner);
+        const existing = edges.find((e) => e.from === svc.serviceId && e.to === owner);
         if (existing) {
           (existing.via as string[]).push(prefixId);
         } else {
@@ -477,7 +487,7 @@ export function buildDependencyGraph(topo: ServiceTopologyRegistry): DependencyG
             from: svc.serviceId,
             to: owner,
             via: [prefixId],
-            strength: topo.hasContract(prefixId) ? "strong" : "weak",
+            strength: topo.hasContract(prefixId) ? 'strong' : 'weak',
           });
         }
         inDegree.set(owner, (inDegree.get(owner) ?? 0) + 1);
@@ -486,23 +496,30 @@ export function buildDependencyGraph(topo: ServiceTopologyRegistry): DependencyG
     }
   }
 
-  const roots = allServices.filter(s => (inDegree.get(s.serviceId) ?? 0) === 0).map(s => s.serviceId);
-  const leaves = allServices.filter(s => (outDegree.get(s.serviceId) ?? 0) === 0).map(s => s.serviceId);
+  const roots = allServices
+    .filter((s) => (inDegree.get(s.serviceId) ?? 0) === 0)
+    .map((s) => s.serviceId);
+  const leaves = allServices
+    .filter((s) => (outDegree.get(s.serviceId) ?? 0) === 0)
+    .map((s) => s.serviceId);
 
   // 순환 감지 (DFS)
-  const cycles = detectCycles(allServices.map(s => s.serviceId), edges);
+  const cycles = detectCycles(
+    allServices.map((s) => s.serviceId),
+    edges,
+  );
 
   // 최대 깊이 (BFS from roots)
   let maxDepth = 0;
   const visited = new Set<string>();
-  const queue: Array<{ id: string; depth: number }> = roots.map(r => ({ id: r, depth: 0 }));
+  const queue: Array<{ id: string; depth: number }> = roots.map((r) => ({ id: r, depth: 0 }));
   while (queue.length > 0) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- loop guard ensures queue is non-empty
     const { id, depth } = queue.shift()!;
     if (visited.has(id)) continue;
     visited.add(id);
     maxDepth = Math.max(maxDepth, depth);
-    for (const e of edges.filter(edge => edge.to === id)) {
+    for (const e of edges.filter((edge) => edge.to === id)) {
       queue.push({ id: e.from, depth: depth + 1 });
     }
   }
@@ -544,7 +561,7 @@ function detectCycles(nodes: string[], edges: DependencyEdge[]): string[][] {
 
 export interface TimelineEvent {
   readonly date: string;
-  readonly type: "decision" | "observation" | "version-event" | "transition";
+  readonly type: 'decision' | 'observation' | 'version-event' | 'transition';
   readonly id: string;
   readonly title: string;
   readonly subjects: readonly string[];
@@ -557,28 +574,28 @@ export function buildTimeline(graph: GraphRegistry): TimelineEvent[] {
   const events: TimelineEvent[] = [];
 
   for (const node of graph.getAllNodes()) {
-    if (node.kind === "decision") {
+    if (node.kind === 'decision') {
       events.push({
         date: node.date,
-        type: "decision",
+        type: 'decision',
         id: node.id,
         title: node.title,
-        subjects: graph.neighbors(node.id, "governs").concat(graph.neighbors(node.id, "justifies")),
+        subjects: graph.neighbors(node.id, 'governs').concat(graph.neighbors(node.id, 'justifies')),
       });
     }
-    if (node.kind === "observation") {
+    if (node.kind === 'observation') {
       events.push({
         date: node.date,
-        type: "observation",
+        type: 'observation',
         id: node.id,
         title: node.finding.slice(0, 60),
         subjects: node.subjects,
       });
     }
-    if (node.kind === "version-event") {
+    if (node.kind === 'version-event') {
       events.push({
         date: node.date,
-        type: "version-event",
+        type: 'version-event',
         id: node.id,
         title: `${node.subjectId}: ${node.fromVersion} → ${node.toVersion}`,
         subjects: [node.subjectId],
@@ -590,8 +607,8 @@ export function buildTimeline(graph: GraphRegistry): TimelineEvent[] {
 }
 
 function compareVersions(a: string, b: string): number {
-  const na = parseInt(a.replace(/\D/g, ""), 10) || 0;
-  const nb = parseInt(b.replace(/\D/g, ""), 10) || 0;
+  const na = parseInt(a.replace(/\D/g, ''), 10) || 0;
+  const nb = parseInt(b.replace(/\D/g, ''), 10) || 0;
   return na - nb;
 }
 
@@ -605,90 +622,122 @@ export function createDemoTopology(): ServiceTopologyRegistry {
 
   // ── 서비스 등록 ──
   topo.registerService({
-    serviceId: "shopping-web", name: "쇼핑 웹", team: "frontend", tier: "frontend",
-    status: "active",
-    ownedPrefixes: ["page_view", "tracking"],
-    consumedPrefixes: ["permission", "endpoint", "flow_point", "service"],
-    dslBindings: ["dsl-checkout", "dsl-observation"],
+    serviceId: 'shopping-web',
+    name: '쇼핑 웹',
+    team: 'frontend',
+    tier: 'frontend',
+    status: 'active',
+    ownedPrefixes: ['page_view', 'tracking'],
+    consumedPrefixes: ['permission', 'endpoint', 'flow_point', 'service'],
+    dslBindings: ['dsl-checkout', 'dsl-observation'],
   });
 
   topo.registerService({
-    serviceId: "shopping-backend", name: "쇼핑 백엔드", team: "backend", tier: "backend",
-    status: "active",
-    ownedPrefixes: ["cart_event", "order_event", "permission", "event"],
-    consumedPrefixes: ["service", "endpoint"],
-    dslBindings: ["dsl-checkout", "dsl-commerce", "dsl-auth"],
+    serviceId: 'shopping-backend',
+    name: '쇼핑 백엔드',
+    team: 'backend',
+    tier: 'backend',
+    status: 'active',
+    ownedPrefixes: ['cart_event', 'order_event', 'permission', 'event'],
+    consumedPrefixes: ['service', 'endpoint'],
+    dslBindings: ['dsl-checkout', 'dsl-commerce', 'dsl-auth'],
   });
 
   topo.registerService({
-    serviceId: "auth", name: "인증 서비스", team: "platform", tier: "backend",
-    status: "active",
-    ownedPrefixes: ["auth_event", "rbac"],
-    consumedPrefixes: ["permission", "service", "endpoint"],
-    dslBindings: ["dsl-auth", "dsl-access-control"],
+    serviceId: 'auth',
+    name: '인증 서비스',
+    team: 'platform',
+    tier: 'backend',
+    status: 'active',
+    ownedPrefixes: ['auth_event', 'rbac'],
+    consumedPrefixes: ['permission', 'service', 'endpoint'],
+    dslBindings: ['dsl-auth', 'dsl-access-control'],
   });
 
   topo.registerService({
-    serviceId: "payment", name: "결제 서비스", team: "backend", tier: "backend",
-    status: "active",
+    serviceId: 'payment',
+    name: '결제 서비스',
+    team: 'backend',
+    tier: 'backend',
+    status: 'active',
     ownedPrefixes: [],
-    consumedPrefixes: ["permission", "order_event", "endpoint", "service"],
-    dslBindings: ["dsl-checkout"],
+    consumedPrefixes: ['permission', 'order_event', 'endpoint', 'service'],
+    dslBindings: ['dsl-checkout'],
   });
 
   topo.registerService({
-    serviceId: "infra-controller", name: "인프라 컨트롤러", team: "devops", tier: "infra",
-    status: "active",
-    ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "engine_event", "schema_event", "service", "endpoint", "pattern_match", "pattern_anomaly"],
+    serviceId: 'infra-controller',
+    name: '인프라 컨트롤러',
+    team: 'devops',
+    tier: 'infra',
+    status: 'active',
+    ownedPrefixes: [
+      'deploy_event',
+      'health_event',
+      'pipeline_point',
+      'data_policy',
+      'engine_event',
+      'schema_event',
+      'service',
+      'endpoint',
+      'pattern_match',
+      'pattern_anomaly',
+    ],
     consumedPrefixes: [],
-    dslBindings: ["dsl-infra", "dsl-pipeline", "dsl-observation"],
+    dslBindings: ['dsl-infra', 'dsl-pipeline', 'dsl-observation'],
   });
 
   topo.registerService({
-    serviceId: "content-service", name: "콘텐츠 서비스", team: "frontend", tier: "frontend",
-    status: "active",
-    ownedPrefixes: ["content", "relational"],
-    consumedPrefixes: ["service", "endpoint"],
-    dslBindings: ["dsl-content", "dsl-access-control"],
+    serviceId: 'content-service',
+    name: '콘텐츠 서비스',
+    team: 'frontend',
+    tier: 'frontend',
+    status: 'active',
+    ownedPrefixes: ['content', 'relational'],
+    consumedPrefixes: ['service', 'endpoint'],
+    dslBindings: ['dsl-content', 'dsl-access-control'],
   });
 
   topo.registerService({
-    serviceId: "gateway", name: "API 게이트웨이", team: "platform", tier: "backend",
-    status: "active",
-    ownedPrefixes: ["flow_point"],
-    consumedPrefixes: ["service", "endpoint", "permission"],
-    dslBindings: ["dsl-observation", "dsl-checkout"],
+    serviceId: 'gateway',
+    name: 'API 게이트웨이',
+    team: 'platform',
+    tier: 'backend',
+    status: 'active',
+    ownedPrefixes: ['flow_point'],
+    consumedPrefixes: ['service', 'endpoint', 'permission'],
+    dslBindings: ['dsl-observation', 'dsl-checkout'],
   });
 
   // ── 공유 계약 ──
   topo.addContract({
-    id: "SC-permission",
-    prefixId: "permission",
-    provider: "shopping-backend",
-    consumers: ["shopping-web", "auth", "payment"],
-    status: "active",
-    stableVersion: "v4",
-    breakingConditions: ["capacity 변경", "role entry 제거"],
+    id: 'SC-permission',
+    prefixId: 'permission',
+    provider: 'shopping-backend',
+    consumers: ['shopping-web', 'auth', 'payment'],
+    status: 'active',
+    stableVersion: 'v4',
+    breakingConditions: ['capacity 변경', 'role entry 제거'],
   });
 
   topo.addContract({
-    id: "SC-endpoint",
-    prefixId: "endpoint",
-    provider: "infra-controller",
-    consumers: ["shopping-web", "shopping-backend", "auth", "payment"],
-    status: "active",
-    stableVersion: "v1",
-    breakingConditions: ["resource_type entry 변경", "svc_ref 구조 변경"],
+    id: 'SC-endpoint',
+    prefixId: 'endpoint',
+    provider: 'infra-controller',
+    consumers: ['shopping-web', 'shopping-backend', 'auth', 'payment'],
+    status: 'active',
+    stableVersion: 'v1',
+    breakingConditions: ['resource_type entry 변경', 'svc_ref 구조 변경'],
   });
 
   topo.addContract({
-    id: "SC-service",
-    prefixId: "service",
-    provider: "infra-controller",
-    consumers: ["shopping-web", "shopping-backend", "auth", "payment"],
-    status: "active",
-    stableVersion: "v1",
-    breakingConditions: ["env/region/svc_name/namespace capacity 변경"],
+    id: 'SC-service',
+    prefixId: 'service',
+    provider: 'infra-controller',
+    consumers: ['shopping-web', 'shopping-backend', 'auth', 'payment'],
+    status: 'active',
+    stableVersion: 'v1',
+    breakingConditions: ['env/region/svc_name/namespace capacity 변경'],
   });
 
   return topo;

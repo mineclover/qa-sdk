@@ -1,12 +1,12 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import pino from "pino";
-import { describe, expect, it, vi } from "vitest";
-import { installWorkerShutdown } from "./worker-shutdown.js";
+import pino from 'pino';
+import { describe, expect, it, vi } from 'vitest';
+import { installWorkerShutdown } from './worker-shutdown.js';
 
 function createLogger() {
-  return pino({ level: "silent" });
+  return pino({ level: 'silent' });
 }
 
 function createDeferred() {
@@ -22,8 +22,8 @@ function createDeferred() {
   };
 }
 
-describe("installWorkerShutdown", () => {
-  it("registers SIGTERM and SIGINT handlers", () => {
+describe('installWorkerShutdown', () => {
+  it('registers SIGTERM and SIGINT handlers', () => {
     const on = vi.fn();
 
     installWorkerShutdown({
@@ -33,11 +33,11 @@ describe("installWorkerShutdown", () => {
     });
 
     expect(on).toHaveBeenCalledTimes(2);
-    expect(on).toHaveBeenNthCalledWith(1, "SIGTERM", expect.any(Function));
-    expect(on).toHaveBeenNthCalledWith(2, "SIGINT", expect.any(Function));
+    expect(on).toHaveBeenNthCalledWith(1, 'SIGTERM', expect.any(Function));
+    expect(on).toHaveBeenNthCalledWith(2, 'SIGINT', expect.any(Function));
   });
 
-  it("waits for close to finish before exiting", async () => {
+  it('waits for close to finish before exiting', async () => {
     const exitCodes: number[] = [];
     const deferred = createDeferred();
     const close = vi.fn(async () => {
@@ -51,7 +51,7 @@ describe("installWorkerShutdown", () => {
       logger: createLogger(),
     });
 
-    const shutdownPromise = shutdown("SIGTERM");
+    const shutdownPromise = shutdown('SIGTERM');
 
     expect(close).toHaveBeenCalledOnce();
     expect(exitCodes).toEqual([]);

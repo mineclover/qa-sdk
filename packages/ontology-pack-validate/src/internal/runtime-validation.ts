@@ -3,12 +3,9 @@ import {
   validateOperationalOntologyPack,
   type OperationalOntologyPack,
   type OperationalOntologyPackValidationIssue,
-} from "operational-ontology/pack";
+} from 'operational-ontology/pack';
 
-import type {
-  OntologyPackValidateIssue,
-  OntologyPackValidateRuntimeSummary,
-} from "./types.js";
+import type { OntologyPackValidateIssue, OntologyPackValidateRuntimeSummary } from './types.js';
 
 export interface OntologyPackRuntimeValidation {
   readonly issues: readonly OntologyPackValidateIssue[];
@@ -22,7 +19,7 @@ export function validateOntologyPackRuntime(
   return {
     issues,
     summary: {
-      valid: issues.every((issue) => issue.level !== "error"),
+      valid: issues.every((issue) => issue.level !== 'error'),
       issueCount: issues.length,
     },
   };

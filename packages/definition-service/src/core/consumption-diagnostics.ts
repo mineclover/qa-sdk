@@ -10,8 +10,8 @@ import {
   diagnoseConsumption,
   type PrefixConsumption,
   type ConsumptionDiagnosis,
-} from "definition-catalog";
-import type { ConsumptionSnapshot } from "./types.js";
+} from 'definition-catalog';
+import type { ConsumptionSnapshot } from './types.js';
 
 /**
  * ConsumptionSnapshot → PrefixConsumption 변환

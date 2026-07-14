@@ -1,21 +1,15 @@
 // @def.doc definition-data-source
 
-import { existsSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
-import Database from "better-sqlite3";
-import type {
-  DefFeedbackRequestSummary,
-  DefSyntheticIncomingLink,
-} from "definition-catalog";
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import Database from 'better-sqlite3';
+import type { DefFeedbackRequestSummary, DefSyntheticIncomingLink } from 'definition-catalog';
 
 function getQaSdkDir(): string {
-  const base = process.env.QA_SDK_HOME
-    ?? process.env.HOME
-    ?? process.env.USERPROFILE
-    ?? homedir()
-    ?? ".";
-  return join(base, ".qa-sdk");
+  const base =
+    process.env.QA_SDK_HOME ?? process.env.HOME ?? process.env.USERPROFILE ?? homedir() ?? '.';
+  return join(base, '.qa-sdk');
 }
 
 type StoredFeedbackRequest = {
@@ -35,7 +29,7 @@ type StoredEvidenceBundle = {
 };
 
 function openReviewLedger(): Database.Database | null {
-  const dbPath = join(getQaSdkDir(), "review-ledger.sqlite");
+  const dbPath = join(getQaSdkDir(), 'review-ledger.sqlite');
   if (!existsSync(dbPath)) return null;
   try {
     return new Database(dbPath, { readonly: true });
@@ -55,9 +49,9 @@ export function getSyntheticIncomingLinksForDoc(
   try {
     return loadRequestsByDocId(db, docId, limit).map((request) => ({
       source: request.id,
-      type: "feedback_request",
+      type: 'feedback_request',
       synthetic: true as const,
-      kind: "feedback_request" as const,
+      kind: 'feedback_request' as const,
       title: request.purpose,
       createdAt: request.createdAt,
       targetModel: request.targetModel,
@@ -116,12 +110,14 @@ function loadRequestsByDocId(
   status: string;
   serviceScope: string | null;
 }> {
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(`
     SELECT id, created_at, purpose, target_model, status, service_scope, evidence_bundle
     FROM feedback_requests
     ORDER BY created_at DESC
     LIMIT ?
-  `).all(limit) as StoredFeedbackRequest[];
+  `)
+    .all(limit) as StoredFeedbackRequest[];
 
   return rows
     .filter((row) => {

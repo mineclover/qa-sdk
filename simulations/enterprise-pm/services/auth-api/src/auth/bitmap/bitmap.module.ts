@@ -1,42 +1,36 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { Module, type DynamicModule, type Provider } from "@nestjs/common";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+import { Module, type DynamicModule, type Provider } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
 
-import { UserSliceModule } from "../user/user.module.js";
-import { RoleSliceModule } from "../role/role.module.js";
-import { RoleAssignmentSliceModule } from "../role-assignment/role-assignment.module.js";
-import { UserReadModelQuery } from "../user/application/queries/user-read-model.query.js";
-import { RoleReadModelQuery } from "../role/application/queries/role-read-model.query.js";
-import { RoleAssignmentReadModelQuery } from "../role-assignment/application/queries/role-assignment-read-model.query.js";
+import { UserSliceModule } from '../user/user.module.js';
+import { RoleSliceModule } from '../role/role.module.js';
+import { RoleAssignmentSliceModule } from '../role-assignment/role-assignment.module.js';
+import { UserReadModelQuery } from '../user/application/queries/user-read-model.query.js';
+import { RoleReadModelQuery } from '../role/application/queries/role-read-model.query.js';
+import { RoleAssignmentReadModelQuery } from '../role-assignment/application/queries/role-assignment-read-model.query.js';
 
-import { BitmapIssueQuery } from "./application/queries/bitmap-issue.query.js";
-import { UserQueryPort } from "./application/ports/user-query.port.js";
-import {
-  RoleQueryPort,
-  type RoleScopeTypeForBitmap,
-} from "./application/ports/role-query.port.js";
-import { RoleAssignmentQueryPort } from "./application/ports/role-assignment-query.port.js";
+import { BitmapIssueQuery } from './application/queries/bitmap-issue.query.js';
+import { UserQueryPort } from './application/ports/user-query.port.js';
+import { RoleQueryPort, type RoleScopeTypeForBitmap } from './application/ports/role-query.port.js';
+import { RoleAssignmentQueryPort } from './application/ports/role-assignment-query.port.js';
 
 import {
   IssuerBitmapReadModel,
   type BitmapIssuerConfig,
-} from "./infrastructure/read-model/bitmap-issue.read-model.js";
-import { createBitmapLogger } from "./infrastructure/logging/bitmap.logger.js";
+} from './infrastructure/read-model/bitmap-issue.read-model.js';
+import { createBitmapLogger } from './infrastructure/logging/bitmap.logger.js';
 
-import { BitmapController } from "./presentation/http/bitmap.controller.js";
+import { BitmapController } from './presentation/http/bitmap.controller.js';
 
-const BITMAP_ISSUER_CONFIG = Symbol.for("sim-auth-api/bitmap/IssuerConfig");
+const BITMAP_ISSUER_CONFIG = Symbol.for('sim-auth-api/bitmap/IssuerConfig');
 
 class UserReadModelQueryAdapter extends UserQueryPort {
   constructor(private readonly readModel: UserReadModelQuery) {
     super();
   }
-  async findById(userId: string): ReturnType<UserQueryPort["findById"]> {
+  async findById(userId: string): ReturnType<UserQueryPort['findById']> {
     const detail = await this.readModel.findDetail(userId);
     if (!detail) return null;
     return { id: detail.id };
@@ -47,7 +41,7 @@ class RoleReadModelQueryAdapter extends RoleQueryPort {
   constructor(private readonly readModel: RoleReadModelQuery) {
     super();
   }
-  async findById(roleId: string): ReturnType<RoleQueryPort["findById"]> {
+  async findById(roleId: string): ReturnType<RoleQueryPort['findById']> {
     const detail = await this.readModel.findDetail(roleId);
     if (!detail) return null;
     return {
@@ -63,9 +57,7 @@ class RoleAssignmentReadModelQueryAdapter extends RoleAssignmentQueryPort {
   constructor(private readonly readModel: RoleAssignmentReadModelQuery) {
     super();
   }
-  async listForUser(
-    userId: string,
-  ): ReturnType<RoleAssignmentQueryPort["listForUser"]> {
+  async listForUser(userId: string): ReturnType<RoleAssignmentQueryPort['listForUser']> {
     const list = await this.readModel.listForUser(userId);
     return list.map((a) => ({
       userId: a.userId,
@@ -90,8 +82,7 @@ const roleQueryProvider: Provider = {
 
 const roleAssignmentQueryProvider: Provider = {
   provide: RoleAssignmentQueryPort,
-  useFactory: (rm: RoleAssignmentReadModelQuery) =>
-    new RoleAssignmentReadModelQueryAdapter(rm),
+  useFactory: (rm: RoleAssignmentReadModelQuery) => new RoleAssignmentReadModelQueryAdapter(rm),
   inject: [RoleAssignmentReadModelQuery],
 };
 
@@ -107,14 +98,8 @@ const issueQueryProvider: Provider = {
     roleAssignmentQuery: RoleAssignmentQueryPort,
     roleQuery: RoleQueryPort,
     config: BitmapIssuerConfig,
-  ) =>
-    new IssuerBitmapReadModel(userQuery, roleAssignmentQuery, roleQuery, config),
-  inject: [
-    UserQueryPort,
-    RoleAssignmentQueryPort,
-    RoleQueryPort,
-    BITMAP_ISSUER_CONFIG,
-  ],
+  ) => new IssuerBitmapReadModel(userQuery, roleAssignmentQuery, roleQuery, config),
+  inject: [UserQueryPort, RoleAssignmentQueryPort, RoleQueryPort, BITMAP_ISSUER_CONFIG],
 };
 
 /**

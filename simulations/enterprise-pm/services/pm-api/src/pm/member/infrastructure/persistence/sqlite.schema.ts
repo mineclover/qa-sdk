@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, primaryKey, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (member slice).
@@ -11,15 +11,12 @@ import { sqliteTable, text, primaryKey, index } from "drizzle-orm/sqlite-core";
  * 어댑터가 service-shared schema 를 직접 import; alias re-export 불필요).
  */
 export const projectMembers = sqliteTable(
-  "project_members",
+  'project_members',
   {
-    projectId: text("project_id").notNull(),
-    userId: text("user_id").notNull(),
-    role: text("role", { enum: ["lead", "contributor", "viewer"] }).notNull(),
-    joinedAt: text("joined_at").notNull(),
+    projectId: text('project_id').notNull(),
+    userId: text('user_id').notNull(),
+    role: text('role', { enum: ['lead', 'contributor', 'viewer'] }).notNull(),
+    joinedAt: text('joined_at').notNull(),
   },
-  (t) => [
-    primaryKey({ columns: [t.projectId, t.userId] }),
-    index("idx_pm_user").on(t.userId),
-  ],
+  (t) => [primaryKey({ columns: [t.projectId, t.userId] }), index('idx_pm_user').on(t.userId)],
 );

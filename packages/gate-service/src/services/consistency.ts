@@ -18,8 +18,8 @@
  * "recompute → 캐시 갱신 → 재조회" 시퀀스로 구현한다.
  */
 
-import type { GateResult, AddressState } from "index-meta-workers";
-import type { GateLookupService } from "../lib/gate-service.js";
+import type { GateResult, AddressState } from 'index-meta-workers';
+import type { GateLookupService } from '../lib/gate-service.js';
 
 export interface ConsistencyServiceDeps {
   gateService: GateLookupService;
@@ -46,11 +46,7 @@ export interface ConsistencyService {
    *
    * engine이 없으면 캐시 결과를 그대로 반환 (drifted=false).
    */
-  verifyGate(
-    prefix: string,
-    versionId: string,
-    address: number,
-  ): Promise<VerifyResult>;
+  verifyGate(prefix: string, versionId: string, address: number): Promise<VerifyResult>;
 
   /**
    * Primary direct lookup — 캐시 우회.
@@ -58,25 +54,15 @@ export interface ConsistencyService {
    * engine이 있으면 recompute → 재조회로 최신 상태를 보장한다.
    * engine이 없으면 캐시 결과를 반환한다 (fail-open).
    */
-  directLookup(
-    prefix: string,
-    versionId: string,
-    address: number,
-  ): Promise<GateResult>;
+  directLookup(prefix: string, versionId: string, address: number): Promise<GateResult>;
 
   /**
    * Primary direct classify — 캐시 우회.
    */
-  directClassify(
-    prefix: string,
-    versionId: string,
-    address: number,
-  ): Promise<AddressState>;
+  directClassify(prefix: string, versionId: string, address: number): Promise<AddressState>;
 }
 
-export function createConsistencyService(
-  deps: ConsistencyServiceDeps,
-): ConsistencyService {
+export function createConsistencyService(deps: ConsistencyServiceDeps): ConsistencyService {
   const { gateService, onError } = deps;
 
   async function recomputeIfPossible(prefix: string, versionId: string): Promise<boolean> {
@@ -93,11 +79,7 @@ export function createConsistencyService(
   }
 
   return {
-    async verifyGate(
-      prefix: string,
-      versionId: string,
-      address: number,
-    ): Promise<VerifyResult> {
+    async verifyGate(prefix: string, versionId: string, address: number): Promise<VerifyResult> {
       const cached = await gateService.checkGate(prefix, versionId, address);
 
       // shouldVerify=false → 캐시 결과 신뢰
@@ -125,11 +107,7 @@ export function createConsistencyService(
       return { cached, verified, drifted };
     },
 
-    async directLookup(
-      prefix: string,
-      versionId: string,
-      address: number,
-    ): Promise<GateResult> {
+    async directLookup(prefix: string, versionId: string, address: number): Promise<GateResult> {
       await recomputeIfPossible(prefix, versionId);
       return gateService.checkGate(prefix, versionId, address);
     },

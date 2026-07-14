@@ -84,10 +84,7 @@ export function createIncidentEscalationSubmissionHandlers(
       });
 
       try {
-        const receipt = await context.persistIncidentEscalation(
-          currentState.draft,
-          result,
-        );
+        const receipt = await context.persistIncidentEscalation(currentState.draft, result);
         const persistedAt = receipt.persistedAt ?? now();
 
         updateIncidentEscalationState(context, (state) => ({
@@ -99,10 +96,7 @@ export function createIncidentEscalationSubmissionHandlers(
         }));
         appendIncidentEscalationActivity(
           context,
-          recordIncidentEscalationSubmissionSucceeded(
-            result.recommendedRoute,
-            persistedAt,
-          ),
+          recordIncidentEscalationSubmissionSucceeded(result.recommendedRoute, persistedAt),
         );
         context.bridge.emitEvent('incident_escalation_submitted', {
           incident_title: currentState.draft.incidentTitle,
@@ -149,10 +143,7 @@ export function createIncidentEscalationSubmissionHandlers(
         submissionError: null,
         lastSubmittedAt: null,
       }));
-      appendIncidentEscalationActivity(
-        context,
-        recordIncidentEscalationDraftReset(),
-      );
+      appendIncidentEscalationActivity(context, recordIncidentEscalationDraftReset());
       context.bridge.emitEvent('incident_escalation_reset');
       await flushIncidentEscalationBridge(context);
     },

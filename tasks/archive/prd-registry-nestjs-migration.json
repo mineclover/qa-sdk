@@ -47,9 +47,7 @@
       "priority": 2,
       "passes": true,
       "notes": "lib/registry-service.ts의 RegistryService 클래스를 NestJS Service가 래핑. Store는 변경하지 않고 @Inject로 주입만.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -71,9 +69,7 @@
       "priority": 3,
       "passes": true,
       "notes": "기존 routes/catalog.ts의 로직을 CatalogService로 이동. ConfigStore는 catalogId + configType 복합 키.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -98,9 +94,7 @@
       "priority": 4,
       "passes": true,
       "notes": "lib/registry-service.ts의 createDraft/activate/release/deprecate 등을 VersionService가 래핑. optional 기능은 기존 dynamic import 패턴 유지.",
-      "dependsOn": [
-        "US-002"
-      ],
+      "dependsOn": ["US-002"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -120,9 +114,7 @@
       "priority": 5,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-003"
-      ],
+      "dependsOn": ["US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -143,9 +135,7 @@
       "priority": 6,
       "passes": true,
       "notes": "",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -164,9 +154,7 @@
       "priority": 7,
       "passes": true,
       "notes": "event-catalog는 static import. @qa-sdk/event-catalog 패키지.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -186,9 +174,7 @@
       "priority": 8,
       "passes": true,
       "notes": "dashboard는 DKG graph 의존 (dynamic import). DEV_DASHBOARD_DKG_PATH 자동 감지 기존 패턴 유지.",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -208,12 +194,7 @@
       "priority": 9,
       "passes": true,
       "notes": "core/ 함수를 호출만 하는 얇은 래퍼. 모든 Store를 주입받아야 하므로 imports에 여러 모듈 필요.",
-      "dependsOn": [
-        "US-003",
-        "US-005",
-        "US-006",
-        "US-007"
-      ],
+      "dependsOn": ["US-003", "US-005", "US-006", "US-007"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -235,11 +216,7 @@
       "priority": 10,
       "passes": true,
       "notes": "definition-service는 3700에서 기동 중이어야 실제 동작. 미기동 시 경고만. getServiceDevUrl은 @qa-sdk/core에서 import.",
-      "dependsOn": [
-        "US-002",
-        "US-004",
-        "US-009"
-      ],
+      "dependsOn": ["US-002", "US-004", "US-009"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -293,9 +270,7 @@
       "priority": 12,
       "passes": true,
       "notes": "각 모듈의 layer: catalog/prefixes/versions/axes → domain, services/events → mediation, seed → operation, workspace → domain, dashboard → experience",
-      "dependsOn": [
-        "US-011"
-      ],
+      "dependsOn": ["US-011"],
       "completionNotes": "Completed by agent"
     }
   ],

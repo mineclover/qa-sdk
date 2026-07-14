@@ -8,13 +8,9 @@
  * 좌표 번호가 아닌 entity 이름 기준이므로, version마다 position이 달라도
  * 동일한 의미 조건을 적용할 수 있다.
  */
-import {
-  positionsToConstraint,
-  type CoordConstraint,
-  type EntityId,
-} from "weighted-index";
-import type { MetaRegistry } from "./meta-registry.js";
-import { EntryNotFoundError, ValidationError } from "./errors.js";
+import { positionsToConstraint, type CoordConstraint, type EntityId } from 'weighted-index';
+import type { MetaRegistry } from './meta-registry.js';
+import { EntryNotFoundError, ValidationError } from './errors.js';
 
 // ── queryAcrossVersions ──────────────────────────────────────────────────────
 
@@ -80,9 +76,7 @@ export function entityVersionSpan(
 ): string[] {
   const indexDef = registry.getIndexDef(indexId);
   if (!indexDef.dims.includes(dimId)) {
-    throw new ValidationError(
-      `entityVersionSpan: dim "${dimId}" not in index "${indexId}"`
-    );
+    throw new ValidationError(`entityVersionSpan: dim "${dimId}" not in index "${indexId}"`);
   }
 
   const versionIds = registry.getVersionIds(indexId);
@@ -190,9 +184,9 @@ export function translateConstraint(
  */
 function _parsePositions(c: string, dimSize: number): number[] {
   const positions: number[] = [];
-  for (const part of c.split(",")) {
+  for (const part of c.split(',')) {
     const trimmed = part.trim();
-    const dash = trimmed.indexOf("-");
+    const dash = trimmed.indexOf('-');
     if (dash === -1) {
       positions.push(Number(trimmed));
     } else {

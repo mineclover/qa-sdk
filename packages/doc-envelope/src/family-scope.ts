@@ -1,6 +1,6 @@
 // @def.doc doc-envelope
 
-import type { DocumentEnvelope } from "./types.js";
+import type { DocumentEnvelope } from './types.js';
 
 export interface DocumentFamilyOnlyScopeOptions {
   readonly target: DocumentEnvelope;
@@ -20,16 +20,16 @@ export interface DocumentFamilyOnlyScope {
 }
 
 const FAMILY_ONLY_ROLE_KINDS = new Set([
-  "spec",
-  "todo",
-  "plan",
-  "rule",
-  "cases",
-  "test",
-  "memo",
-  "knowledge",
-  "prd",
-  "ralph-prd-json",
+  'spec',
+  'todo',
+  'plan',
+  'rule',
+  'cases',
+  'test',
+  'memo',
+  'knowledge',
+  'prd',
+  'ralph-prd-json',
 ]);
 
 export function collectDocumentFamilyOnlyScope(
@@ -40,7 +40,7 @@ export function collectDocumentFamilyOnlyScope(
   const reasonByDocumentKey = new Map<string, string>();
   const target = options.target;
 
-  addFamilyScopedDocument(selected, reasonByDocumentKey, target, "target");
+  addFamilyScopedDocument(selected, reasonByDocumentKey, target, 'target');
 
   if (target.familyId) {
     for (const document of documents) {
@@ -51,29 +51,29 @@ export function collectDocumentFamilyOnlyScope(
         selected,
         reasonByDocumentKey,
         document,
-        isTransientDocument(document) ? "family-only:transient" : "family-only:role",
+        isTransientDocument(document) ? 'family-only:transient' : 'family-only:role',
       );
     }
   }
 
   if (isContainableFamilyRoot(target)) {
     for (const link of target.links) {
-      if (link.type !== "contains") continue;
+      if (link.type !== 'contains') continue;
       const contained = resolveDocumentReference(documents, link.targetId);
       if (!contained) continue;
       if (!isDirectContainedDefinitionNode(contained)) continue;
       if (!isActiveFamilyOnlyDocument(contained, options)) continue;
-      addFamilyScopedDocument(selected, reasonByDocumentKey, contained, "family-only:contains");
+      addFamilyScopedDocument(selected, reasonByDocumentKey, contained, 'family-only:contains');
     }
   }
 
   if (isLayoutFamilyRoot(target)) {
     for (const link of target.links) {
-      if (link.type !== "refs") continue;
+      if (link.type !== 'refs') continue;
       const referenced = resolveDocumentReference(documents, link.targetId);
       if (!referenced) continue;
       if (!isActiveFamilyOnlyDocument(referenced, options)) continue;
-      addFamilyScopedDocument(selected, reasonByDocumentKey, referenced, "family-only:refs");
+      addFamilyScopedDocument(selected, reasonByDocumentKey, referenced, 'family-only:refs');
     }
   }
 
@@ -84,9 +84,9 @@ export function collectDocumentFamilyOnlyScope(
 }
 
 export function isArchivedPrdDocument(document: DocumentEnvelope): boolean {
-  if (document.kind !== "prd" && document.kind !== "ralph-prd-json") return false;
-  if (document.metadata.lifecycle === "archived") return true;
-  return normalizePath(document.path).split("/").includes("archive");
+  if (document.kind !== 'prd' && document.kind !== 'ralph-prd-json') return false;
+  if (document.metadata.lifecycle === 'archived') return true;
+  return normalizePath(document.path).split('/').includes('archive');
 }
 
 /**
@@ -98,36 +98,37 @@ export function isTransientDocument(document: DocumentEnvelope): boolean {
   return document.metadata.transient === true;
 }
 
-function isFamilyOnlyRoleDocument(
-  document: DocumentEnvelope,
-  includeTransient: boolean,
-): boolean {
-  if (document.metadata.type === "knowledge") return true;
+function isFamilyOnlyRoleDocument(document: DocumentEnvelope, includeTransient: boolean): boolean {
+  if (document.metadata.type === 'knowledge') return true;
   if (FAMILY_ONLY_ROLE_KINDS.has(document.kind)) return true;
   return includeTransient && isTransientDocument(document);
 }
 
 function isContainableFamilyRoot(document: DocumentEnvelope): boolean {
-  return document.metadata.tier === "system" ||
-    document.metadata.level === "group" ||
-    document.metadata.level === "module";
+  return (
+    document.metadata.tier === 'system' ||
+    document.metadata.level === 'group' ||
+    document.metadata.level === 'module'
+  );
 }
 
 function isLayoutFamilyRoot(document: DocumentEnvelope): boolean {
-  return document.metadata.tier === "layout";
+  return document.metadata.tier === 'layout';
 }
 
 function isDirectContainedDefinitionNode(document: DocumentEnvelope): boolean {
-  if (typeof document.metadata.defId === "string" && document.metadata.defId.length > 0) {
+  if (typeof document.metadata.defId === 'string' && document.metadata.defId.length > 0) {
     return true;
   }
-  return document.metadata.level === "group" ||
-    document.metadata.level === "module" ||
-    document.metadata.level === "leaf" ||
-    document.metadata.tier === "system" ||
-    document.metadata.tier === "layout" ||
-    document.metadata.tier === "component" ||
-    document.metadata.tier === "entry";
+  return (
+    document.metadata.level === 'group' ||
+    document.metadata.level === 'module' ||
+    document.metadata.level === 'leaf' ||
+    document.metadata.tier === 'system' ||
+    document.metadata.tier === 'layout' ||
+    document.metadata.tier === 'component' ||
+    document.metadata.tier === 'entry'
+  );
 }
 
 function isActiveFamilyOnlyDocument(
@@ -148,7 +149,7 @@ function addFamilyScopedDocument(
 ): void {
   const key = documentKey(document);
   selected.set(key, document);
-  if (!reasonByDocumentKey.has(key) || reason === "target") {
+  if (!reasonByDocumentKey.has(key) || reason === 'target') {
     reasonByDocumentKey.set(key, reason);
   }
 }
@@ -158,9 +159,10 @@ function resolveDocumentReference(
   targetId: string,
 ): DocumentEnvelope | undefined {
   const normalizedTarget = normalizePath(targetId);
-  return documents.find((document) =>
-    documentIdentityValues(document).includes(targetId)
-    || documentIdentityValues(document).includes(normalizedTarget)
+  return documents.find(
+    (document) =>
+      documentIdentityValues(document).includes(targetId) ||
+      documentIdentityValues(document).includes(normalizedTarget),
   );
 }
 
@@ -179,9 +181,11 @@ function documentIdentityValues(document: DocumentEnvelope): readonly string[] {
 }
 
 function compareDocuments(left: DocumentEnvelope, right: DocumentEnvelope): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.stableId.localeCompare(right.stableId);
+  return (
+    left.path.localeCompare(right.path) ||
+    left.kind.localeCompare(right.kind) ||
+    left.stableId.localeCompare(right.stableId)
+  );
 }
 
 function documentKey(document: DocumentEnvelope): string {
@@ -189,11 +193,11 @@ function documentKey(document: DocumentEnvelope): string {
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function unique(values: readonly (string | undefined)[]): readonly string[] {

@@ -1,16 +1,16 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { DepartmentEntity } from "../../domain/index.js";
-import type { DepartmentSnapshot } from "../../domain/index.js";
-import { DepartmentRepositoryPort } from "../../application/ports/department-repository.port.js";
-import type { DepartmentTransactionScope } from "../../application/ports/department-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { DepartmentEntity } from '../../domain/index.js';
+import type { DepartmentSnapshot } from '../../domain/index.js';
+import { DepartmentRepositoryPort } from '../../application/ports/department-repository.port.js';
+import type { DepartmentTransactionScope } from '../../application/ports/department-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface DepartmentRow {
   id: string;
@@ -36,14 +36,26 @@ export class SqliteDepartmentRepository extends DepartmentRepositoryPort {
 
   async save(entity: DepartmentEntity, _scope: DepartmentTransactionScope): Promise<void> {
     const row = toRow(entity.toSnapshot());
-    await this.db.insert(sqliteSchema.departments).values(row).onConflictDoUpdate({
-      target: sqliteSchema.departments.id,
-      set: { name: row.name, parentId: row.parentId, managerId: row.managerId, updatedAt: row.updatedAt },
-    });
+    await this.db
+      .insert(sqliteSchema.departments)
+      .values(row)
+      .onConflictDoUpdate({
+        target: sqliteSchema.departments.id,
+        set: {
+          name: row.name,
+          parentId: row.parentId,
+          managerId: row.managerId,
+          updatedAt: row.updatedAt,
+        },
+      });
   }
 
   async findById(id: string): Promise<DepartmentEntity | null> {
-    const rows = await this.db.select().from(sqliteSchema.departments).where(eq(sqliteSchema.departments.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(sqliteSchema.departments)
+      .where(eq(sqliteSchema.departments.id, id))
+      .limit(1);
     if (rows.length === 0) return null;
     return DepartmentEntity.rehydrate(toSnapshot(rows[0] as DepartmentRow));
   }
@@ -79,14 +91,26 @@ export class PgDepartmentRepository extends DepartmentRepositoryPort {
 
   async save(entity: DepartmentEntity, _scope: DepartmentTransactionScope): Promise<void> {
     const row = toRow(entity.toSnapshot());
-    await this.db.insert(pgSchema.departments).values(row).onConflictDoUpdate({
-      target: pgSchema.departments.id,
-      set: { name: row.name, parentId: row.parentId, managerId: row.managerId, updatedAt: row.updatedAt },
-    });
+    await this.db
+      .insert(pgSchema.departments)
+      .values(row)
+      .onConflictDoUpdate({
+        target: pgSchema.departments.id,
+        set: {
+          name: row.name,
+          parentId: row.parentId,
+          managerId: row.managerId,
+          updatedAt: row.updatedAt,
+        },
+      });
   }
 
   async findById(id: string): Promise<DepartmentEntity | null> {
-    const rows = await this.db.select().from(pgSchema.departments).where(eq(pgSchema.departments.id, id)).limit(1);
+    const rows = await this.db
+      .select()
+      .from(pgSchema.departments)
+      .where(eq(pgSchema.departments.id, id))
+      .limit(1);
     if (rows.length === 0) return null;
     return DepartmentEntity.rehydrate(toSnapshot(rows[0] as DepartmentRow));
   }
@@ -115,19 +139,23 @@ export class PgDepartmentRepository extends DepartmentRepositoryPort {
   }
 }
 
-export type DepartmentDialect = "sqlite" | "pg";
+export type DepartmentDialect = 'sqlite' | 'pg';
 
 export interface DepartmentRepositoryFactoryOpts {
   readonly dialect: DepartmentDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createDepartmentRepository(opts: DepartmentRepositoryFactoryOpts): DepartmentRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createDepartmentRepository(
+  opts: DepartmentRepositoryFactoryOpts,
+): DepartmentRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteDepartmentRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgDepartmentRepository(opts.db as PostgresJsDatabase);
   }
-  throw new Error(`createDepartmentRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  throw new Error(
+    `createDepartmentRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

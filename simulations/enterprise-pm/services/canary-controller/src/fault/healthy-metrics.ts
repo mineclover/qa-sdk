@@ -20,18 +20,14 @@
 // scrape 결과 wrap 은 metrics-scrape.service 가 본 fault 인스턴스를 inject 받아
 // scrape() 끝에서 applyTo() 를 호출하는 wrapper 패턴 (PerfWarnAware 와 동일).
 
-import { Injectable } from "@nestjs/common";
-import {
-  buildDecisionSignal,
-  type SignalCategory,
-  type SignalName,
-} from "sim-identifier-grammar";
-import type { Fault } from "./types.js";
+import { Injectable } from '@nestjs/common';
+import { buildDecisionSignal, type SignalCategory, type SignalName } from 'sim-identifier-grammar';
+import type { Fault } from './types.js';
 import type {
   ScrapeResult,
   SignalSample,
   SourceStatus,
-} from "../metrics/metrics-scrape.service.js";
+} from '../metrics/metrics-scrape.service.js';
 
 /**
  * 카테고리×signal → PASS 합성 값. CategoryVerdictService 의 임계 (perf p95Latency
@@ -39,23 +35,23 @@ import type {
  * spec 01 §2 임계 참조.
  */
 const PASS_VALUES: ReadonlyArray<readonly [SignalCategory, SignalName, number]> = [
-  ["perf", "errorRate", 0.005], // baseline 0.01 × 1.2 = 0.012 미만 → PASS
-  ["perf", "p95LatencyDelta", 0.05], // < 0.2 warn → PASS
-  ["compatibility", "schemaCompatRate", 1.0], // hard rule: < 1.0 → FAIL → 정확히 1.0
-  ["decisionQuality", "denyRateDelta", 0],
-  ["decisionQuality", "avgConfidenceDelta", 0],
-  ["auditSafety", "criticalAnomalyRate", 0], // hard rule: > 0 → FAIL → 0 유지
-  ["replicationHealth", "replicationLagMs", 100], // < 500 warn → PASS
-  ["loadPressure", "RPS", 10], // baseline 100 × 0.8 = 80 미만 → PASS
-  ["loadPressure", "p95LatencyDelta", 0.05],
-  ["resourceHeadroom", "CPU", 30], // baseline 80 × 0.75 = 60 미만 → PASS
-  ["resourceHeadroom", "dbPoolUtilization", 0.4],
-  ["stability", "timeSinceLastReplicaChange", 999_999], // cooldownUp 보다 큼 → PASS
+  ['perf', 'errorRate', 0.005], // baseline 0.01 × 1.2 = 0.012 미만 → PASS
+  ['perf', 'p95LatencyDelta', 0.05], // < 0.2 warn → PASS
+  ['compatibility', 'schemaCompatRate', 1.0], // hard rule: < 1.0 → FAIL → 정확히 1.0
+  ['decisionQuality', 'denyRateDelta', 0],
+  ['decisionQuality', 'avgConfidenceDelta', 0],
+  ['auditSafety', 'criticalAnomalyRate', 0], // hard rule: > 0 → FAIL → 0 유지
+  ['replicationHealth', 'replicationLagMs', 100], // < 500 warn → PASS
+  ['loadPressure', 'RPS', 10], // baseline 100 × 0.8 = 80 미만 → PASS
+  ['loadPressure', 'p95LatencyDelta', 0.05],
+  ['resourceHeadroom', 'CPU', 30], // baseline 80 × 0.75 = 60 미만 → PASS
+  ['resourceHeadroom', 'dbPoolUtilization', 0.4],
+  ['stability', 'timeSinceLastReplicaChange', 999_999], // cooldownUp 보다 큼 → PASS
 ];
 
 @Injectable()
 export class HealthyMetricsFault implements Fault {
-  readonly kind = "healthy-metrics" as const;
+  readonly kind = 'healthy-metrics' as const;
   private enabled = false;
 
   async enable(_params: unknown): Promise<void> {
@@ -97,7 +93,7 @@ export class HealthyMetricsFault implements Fault {
         const id = buildDecisionSignal({ category, signal: signalName });
         // sourceName 은 grammar 매트릭스 SSOT 와 무관 — 본 fault 가 직접 합성한 값임을
         // 표시하기 위해 "healthy-metrics" 라벨 사용.
-        signals[id] = { value, sourceName: "healthy-metrics" };
+        signals[id] = { value, sourceName: 'healthy-metrics' };
       } catch {
         // grammar 가 새 카테고리/신호 추가로 거부될 수 있음 — sim 은 fail-open.
       }

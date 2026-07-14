@@ -10,12 +10,22 @@
  * @layer 집계 (Aggregation)
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { decodePrefixAsResult, parseSerializedAddress, compareTimestamps, decodePrefix } from "@qa-sdk/core";
-import type { UsageData, CollectionHealthReport, OrphanAddress, StaleVersionUsage } from "./convergence.types.js";
+import type { Catalog } from '@qa-sdk/core';
+import {
+  decodePrefixAsResult,
+  parseSerializedAddress,
+  compareTimestamps,
+  decodePrefix,
+} from '@qa-sdk/core';
+import type {
+  UsageData,
+  CollectionHealthReport,
+  OrphanAddress,
+  StaleVersionUsage,
+} from './convergence.types.js';
 
 /** 실행 모드 — 이 데이터가 왜 존재하는가 */
-export type ExecutionMode = "live" | "test" | "synthetic" | "replay";
+export type ExecutionMode = 'live' | 'test' | 'synthetic' | 'replay';
 
 /** 집계 입력: EventRecord에서 추출한 주소 컨텍스트 + 식별자 */
 export interface AddressContextRecord {
@@ -46,13 +56,25 @@ export function aggregateUsageData(
   catalog: Catalog,
   records: readonly AddressContextRecord[],
 ): UsageData {
-  const entryCountMap = new Map<string, { axisId: string; entry: string; count: number; lastSeen: string }>();
-  const addressCountMap = new Map<string, { prefix: string; version: string; address: number; count: number }>();
-  const coOccurrenceMap = new Map<string, {
-    sourcePrefix: string; sourceEntry: string;
-    targetPrefix: string; targetEntry: string;
-    count: number; totalSourceCount: number;
-  }>();
+  const entryCountMap = new Map<
+    string,
+    { axisId: string; entry: string; count: number; lastSeen: string }
+  >();
+  const addressCountMap = new Map<
+    string,
+    { prefix: string; version: string; address: number; count: number }
+  >();
+  const coOccurrenceMap = new Map<
+    string,
+    {
+      sourcePrefix: string;
+      sourceEntry: string;
+      targetPrefix: string;
+      targetEntry: string;
+      count: number;
+      totalSourceCount: number;
+    }
+  >();
   const sourceCounts = new Map<string, number>();
 
   // 식별자 수집
@@ -62,7 +84,10 @@ export function aggregateUsageData(
   const execModeCounts: Record<string, number> = {};
   const execIdCounts: Record<string, number> = {};
   // version별 사용량 — 배포 상태 추적
-  const versionCountMap = new Map<string, { prefix: string; version: string; count: number; lastSeen: string; sessions: Set<string> }>();
+  const versionCountMap = new Map<
+    string,
+    { prefix: string; version: string; count: number; lastSeen: string; sessions: Set<string> }
+  >();
   let totalRecords = 0;
 
   for (const record of records) {
@@ -70,7 +95,7 @@ export function aggregateUsageData(
     if (record.trace_id) traceSet.add(record.trace_id);
     if (record.session_id) sessionSet.add(record.session_id);
     if (record.event_key) eventKeySet.add(record.event_key);
-    const mode = record.execution_mode ?? "live";
+    const mode = record.execution_mode ?? 'live';
     execModeCounts[mode] = (execModeCounts[mode] ?? 0) + 1;
     if (record.execution_id) {
       execIdCounts[record.execution_id] = (execIdCounts[record.execution_id] ?? 0) + 1;
@@ -80,11 +105,16 @@ export function aggregateUsageData(
     if (!ctx || Object.keys(ctx).length === 0) continue;
 
     // 각 prefix의 address 집계
-    const decodedPrefixes: Array<{ prefixId: string; entries: Record<string, string | number> }> = [];
+    const decodedPrefixes: Array<{ prefixId: string; entries: Record<string, string | number> }> =
+      [];
 
     for (const [prefixId, serialized] of Object.entries(ctx)) {
       let parsed;
-      try { parsed = parseSerializedAddress(serialized); } catch { continue; }
+      try {
+        parsed = parseSerializedAddress(serialized);
+      } catch {
+        continue;
+      }
 
       const { version, address } = parsed;
 
@@ -99,12 +129,19 @@ export function aggregateUsageData(
       const vExisting = versionCountMap.get(vKey);
       if (vExisting) {
         vExisting.count++;
-        if (compareTimestamps(record.timestamp, vExisting.lastSeen) > 0) vExisting.lastSeen = record.timestamp;
+        if (compareTimestamps(record.timestamp, vExisting.lastSeen) > 0)
+          vExisting.lastSeen = record.timestamp;
         if (record.session_id) vExisting.sessions.add(record.session_id);
       } else {
         const sessions = new Set<string>();
         if (record.session_id) sessions.add(record.session_id);
-        versionCountMap.set(vKey, { prefix: prefixId, version, count: 1, lastSeen: record.timestamp, sessions });
+        versionCountMap.set(vKey, {
+          prefix: prefixId,
+          version,
+          count: 1,
+          lastSeen: record.timestamp,
+          sessions,
+        });
       }
 
       // decode → EntryUsage (DecodeResult 기반 — kind로 axis/prefix_ref 분기)
@@ -115,12 +152,13 @@ export function aggregateUsageData(
         for (const [label, dim] of Object.entries(result.dims)) {
           entries[label] = dim.value;
           // axis 차원만 entry 집계 (prefix_ref는 정수 주소이므로 entry 개념 없음)
-          if (dim.kind !== "axis") continue;
+          if (dim.kind !== 'axis') continue;
           const entryKey = `${label}:${dim.value}`;
           const ex = entryCountMap.get(entryKey);
           if (ex) {
             ex.count++;
-            if (compareTimestamps(record.timestamp, ex.lastSeen) > 0) ex.lastSeen = record.timestamp;
+            if (compareTimestamps(record.timestamp, ex.lastSeen) > 0)
+              ex.lastSeen = record.timestamp;
           } else {
             entryCountMap.set(entryKey, {
               axisId: label,
@@ -140,27 +178,28 @@ export function aggregateUsageData(
     // CoOccurrence: 같은 레코드에 함께 나타난 prefix 쌍
     for (let i = 0; i < decodedPrefixes.length; i++) {
       const src = decodedPrefixes[i];
-      const srcKey = `${src.prefixId}:${Object.values(src.entries)[0] ?? ""}`;
+      const srcKey = `${src.prefixId}:${Object.values(src.entries)[0] ?? ''}`;
       sourceCounts.set(srcKey, (sourceCounts.get(srcKey) ?? 0) + 1);
 
       for (let j = i + 1; j < decodedPrefixes.length; j++) {
         const tgt = decodedPrefixes[j];
 
         // 각 prefix의 첫 번째 entry를 대표값으로 사용
-        const srcEntry = String(Object.values(src.entries)[0] ?? "");
-        const tgtEntry = String(Object.values(tgt.entries)[0] ?? "");
+        const srcEntry = String(Object.values(src.entries)[0] ?? '');
+        const tgtEntry = String(Object.values(tgt.entries)[0] ?? '');
 
         const coKey = `${src.prefixId}:${srcEntry}→${tgt.prefixId}:${tgtEntry}`;
         const ex = coOccurrenceMap.get(coKey);
         if (ex) ex.count++;
-        else coOccurrenceMap.set(coKey, {
-          sourcePrefix: src.prefixId,
-          sourceEntry: srcEntry,
-          targetPrefix: tgt.prefixId,
-          targetEntry: tgtEntry,
-          count: 1,
-          totalSourceCount: 0, // 나중에 채움
-        });
+        else
+          coOccurrenceMap.set(coKey, {
+            sourcePrefix: src.prefixId,
+            sourceEntry: srcEntry,
+            targetPrefix: tgt.prefixId,
+            targetEntry: tgtEntry,
+            count: 1,
+            totalSourceCount: 0, // 나중에 채움
+          });
       }
     }
   }
@@ -172,11 +211,20 @@ export function aggregateUsageData(
   }
 
   // 결과 정렬
-  const timestamps = records.map(r => r.timestamp).filter(Boolean).toSorted();
+  const timestamps = records
+    .map((r) => r.timestamp)
+    .filter(Boolean)
+    .toSorted();
 
   // versionUsages 정리
   const versionUsages = [...versionCountMap.values()]
-    .map(v => ({ prefix: v.prefix, version: v.version, count: v.count, lastSeen: v.lastSeen, sessions: [...v.sessions] }))
+    .map((v) => ({
+      prefix: v.prefix,
+      version: v.version,
+      count: v.count,
+      lastSeen: v.lastSeen,
+      sessions: [...v.sessions],
+    }))
     .toSorted((a, b) => b.count - a.count);
 
   return {
@@ -185,8 +233,8 @@ export function aggregateUsageData(
     coOccurrences: [...coOccurrenceMap.values()].toSorted((a, b) => b.count - a.count),
     versionUsages,
     collectionPeriod: {
-      from: timestamps[0] ?? "",
-      to: timestamps[timestamps.length - 1] ?? "",
+      from: timestamps[0] ?? '',
+      to: timestamps[timestamps.length - 1] ?? '',
     },
     sourceStats: {
       totalRecords,
@@ -228,11 +276,13 @@ export function analyzeCollectionHealth(
       totalAddresses++;
 
       let parsed;
-      try { parsed = parseSerializedAddress(serialized); } catch {
+      try {
+        parsed = parseSerializedAddress(serialized);
+      } catch {
         const key = `${prefixId}:parse-fail`;
         const ex = orphans.get(key);
         if (ex) (ex as { count: number }).count++;
-        else orphans.set(key, { prefixId, serialized, count: 1, reason: "decode-failed" });
+        else orphans.set(key, { prefixId, serialized, count: 1, reason: 'decode-failed' });
         continue;
       }
 
@@ -244,17 +294,17 @@ export function analyzeCollectionHealth(
         const key = `${prefixId}:unknown`;
         const ex = orphans.get(key);
         if (ex) (ex as { count: number }).count++;
-        else orphans.set(key, { prefixId, serialized, count: 1, reason: "unknown-prefix" });
+        else orphans.set(key, { prefixId, serialized, count: 1, reason: 'unknown-prefix' });
         continue;
       }
 
       // 2. version 존재 확인
-      const versionDef = prefix.versions.find(v => v.version === version);
+      const versionDef = prefix.versions.find((v) => v.version === version);
       if (!versionDef) {
         const key = `${prefixId}:${version}:unknown-ver`;
         const ex = orphans.get(key);
         if (ex) (ex as { count: number }).count++;
-        else orphans.set(key, { prefixId, serialized, count: 1, reason: "unknown-version" });
+        else orphans.set(key, { prefixId, serialized, count: 1, reason: 'unknown-version' });
         continue;
       }
 
@@ -263,7 +313,7 @@ export function analyzeCollectionHealth(
         const key = `${prefixId}:${version}:nan`;
         const ex = orphans.get(key);
         if (ex) (ex as { count: number }).count++;
-        else orphans.set(key, { prefixId, serialized, count: 1, reason: "decode-failed" });
+        else orphans.set(key, { prefixId, serialized, count: 1, reason: 'decode-failed' });
         continue;
       }
 
@@ -273,7 +323,7 @@ export function analyzeCollectionHealth(
         const key = `${prefixId}:${version}:${address}:decode-fail`;
         const ex = orphans.get(key);
         if (ex) (ex as { count: number }).count++;
-        else orphans.set(key, { prefixId, serialized, count: 1, reason: "decode-failed" });
+        else orphans.set(key, { prefixId, serialized, count: 1, reason: 'decode-failed' });
         continue;
       }
 
@@ -283,15 +333,20 @@ export function analyzeCollectionHealth(
       const latestVersion = prefix.versions[prefix.versions.length - 1].version;
       if (version !== latestVersion) {
         const key = `${prefixId}:${version}`;
-        const latestIdx = prefix.versions.findIndex(v => v.version === latestVersion);
-        const usedIdx = prefix.versions.findIndex(v => v.version === version);
+        const latestIdx = prefix.versions.findIndex((v) => v.version === latestVersion);
+        const usedIdx = prefix.versions.findIndex((v) => v.version === version);
         const gap = latestIdx - usedIdx;
 
         const ex = staleMap.get(key);
         if (ex) (ex as { count: number }).count++;
-        else staleMap.set(key, {
-          prefixId, usedVersion: version, latestVersion, count: 1, versionGap: gap,
-        });
+        else
+          staleMap.set(key, {
+            prefixId,
+            usedVersion: version,
+            latestVersion,
+            count: 1,
+            versionGap: gap,
+          });
       }
     }
   }
@@ -302,10 +357,14 @@ export function analyzeCollectionHealth(
 
   const summaryParts: string[] = [];
   if (orphanList.length > 0) {
-    summaryParts.push(`고아 ${orphanList.length}종 (${orphanList.reduce((s, o) => s + o.count, 0)}건)`);
+    summaryParts.push(
+      `고아 ${orphanList.length}종 (${orphanList.reduce((s, o) => s + o.count, 0)}건)`,
+    );
   }
   if (staleList.length > 0) {
-    summaryParts.push(`구버전 ${staleList.length}종 (${staleList.reduce((s, o) => s + o.count, 0)}건)`);
+    summaryParts.push(
+      `구버전 ${staleList.length}종 (${staleList.reduce((s, o) => s + o.count, 0)}건)`,
+    );
   }
 
   return {
@@ -314,8 +373,9 @@ export function analyzeCollectionHealth(
     orphans: orphanList,
     staleVersions: staleList,
     healthRate,
-    summary: summaryParts.length > 0
-      ? `건전성 ${(healthRate * 100).toFixed(1)}% — ${summaryParts.join(", ")}`
-      : `건전성 100% — ${totalAddresses}건 모두 유효`,
+    summary:
+      summaryParts.length > 0
+        ? `건전성 ${(healthRate * 100).toFixed(1)}% — ${summaryParts.join(', ')}`
+        : `건전성 100% — ${totalAddresses}건 모두 유효`,
   };
 }

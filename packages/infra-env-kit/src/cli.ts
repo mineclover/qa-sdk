@@ -2,9 +2,9 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import { resolve } from "node:path";
-import { runSupplyExportCommand } from "./export-command.js";
-import { createEnvRegistryDiscoveryClient } from "./discovery-client.js";
+import { resolve } from 'node:path';
+import { runSupplyExportCommand } from './export-command.js';
+import { createEnvRegistryDiscoveryClient } from './discovery-client.js';
 
 function printHelp(): void {
   console.log(`infra-env
@@ -29,22 +29,21 @@ function readOption(rawArgs: readonly string[], name: string): string | undefine
 async function main() {
   const rawArgs = process.argv.slice(2);
   const command = rawArgs[0];
-  if (!command || command === "--help" || command === "-h") {
+  if (!command || command === '--help' || command === '-h') {
     printHelp();
     return;
   }
 
-  if (command !== "env" && command !== "ts" && command !== "compose") {
+  if (command !== 'env' && command !== 'ts' && command !== 'compose') {
     console.error(`알 수 없는 명령: ${command}`);
     printHelp();
     process.exit(1);
   }
 
-  const registryUrl = readOption(rawArgs, "--registry-url")
-    ?? process.env.REGISTRY_URL
-    ?? "http://localhost:3300";
-  const catalogId = readOption(rawArgs, "--catalog") ?? "demo";
-  const outPath = readOption(rawArgs, "--out");
+  const registryUrl =
+    readOption(rawArgs, '--registry-url') ?? process.env.REGISTRY_URL ?? 'http://localhost:3300';
+  const catalogId = readOption(rawArgs, '--catalog') ?? 'demo';
+  const outPath = readOption(rawArgs, '--out');
   const discovery = createEnvRegistryDiscoveryClient(registryUrl, catalogId);
 
   await runSupplyExportCommand({
@@ -54,12 +53,12 @@ async function main() {
     arg2: rawArgs[2],
     rawArgs,
     exportOut: outPath,
-    defaultConfigDir: resolve(process.cwd(), "packages/infra-engine/config"),
-    defaultEnvDockerPath: resolve(process.cwd(), "packages/infra-engine/.env.docker"),
+    defaultConfigDir: resolve(process.cwd(), 'packages/infra-engine/config'),
+    defaultEnvDockerPath: resolve(process.cwd(), 'packages/infra-engine/.env.docker'),
   });
 }
 
 main().catch((err) => {
-  console.error("에러:", err instanceof Error ? err.message : String(err));
+  console.error('에러:', err instanceof Error ? err.message : String(err));
   process.exit(1);
 });

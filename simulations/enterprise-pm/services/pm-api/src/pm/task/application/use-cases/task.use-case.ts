@@ -1,23 +1,23 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
-import { TaskEntity, TaskNotFoundException } from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
+import { TaskEntity, TaskNotFoundException } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
 import type {
   CreateTaskCommand,
   DeleteTaskCommand,
   UpdateTaskCommand,
-} from "../commands/create-task.command.js";
-import type { TaskLoggerPort } from "../ports/task-logger.port.js";
+} from '../commands/create-task.command.js';
+import type { TaskLoggerPort } from '../ports/task-logger.port.js';
 import type {
   TaskOutboxPort,
   TaskCreatedEventPayload,
   TaskUpdatedEventPayload,
   TaskDeletedEventPayload,
-} from "../ports/task-outbox.port.js";
-import type { TaskRepositoryPort } from "../ports/task-repository.port.js";
-import type { TaskTransactionPort } from "../ports/task-transaction.port.js";
+} from '../ports/task-outbox.port.js';
+import type { TaskRepositoryPort } from '../ports/task-repository.port.js';
+import type { TaskTransactionPort } from '../ports/task-transaction.port.js';
 
 /**
  * Task 슬라이스의 use-case.
@@ -50,17 +50,17 @@ export class TaskUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "task",
-      useCase: "TaskUseCase.create",
+      domain: 'task',
+      useCase: 'TaskUseCase.create',
       aggregateId: command.id,
-      commandName: "CreateTaskCommand",
+      commandName: 'CreateTaskCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "task.create.started");
+    this.logger.info({ ...ctxBase }, 'task.create.started');
 
     try {
-      let snapshotResult: ReturnType<TaskEntity["toSnapshot"]>;
-      await this.transaction.run("task.create", async (scope) => {
+      let snapshotResult: ReturnType<TaskEntity['toSnapshot']>;
+      await this.transaction.run('task.create', async (scope) => {
         const task = TaskEntity.create({
           id: command.id,
           projectId: command.projectId,
@@ -80,7 +80,7 @@ export class TaskUseCase {
           parentTaskId: snapshotResult.parentTaskId,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.task.created";
+        const eventName = 'pm.task.created';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -101,11 +101,11 @@ export class TaskUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "pm.task.created",
+          eventName: 'pm.task.created',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "task.create.success",
+        'task.create.success',
       );
 
       return snapshotResult!;
@@ -113,11 +113,11 @@ export class TaskUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "task.create.failure",
+        'task.create.failure',
       );
       throw error;
     }
@@ -138,17 +138,17 @@ export class TaskUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "task",
-      useCase: "TaskUseCase.update",
+      domain: 'task',
+      useCase: 'TaskUseCase.update',
       aggregateId: command.id,
-      commandName: "UpdateTaskCommand",
+      commandName: 'UpdateTaskCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "task.update.started");
+    this.logger.info({ ...ctxBase }, 'task.update.started');
 
     try {
-      let snapshotResult: ReturnType<TaskEntity["toSnapshot"]>;
-      await this.transaction.run("task.update", async (scope) => {
+      let snapshotResult: ReturnType<TaskEntity['toSnapshot']>;
+      await this.transaction.run('task.update', async (scope) => {
         const cur = await this.repository.findById(command.id);
         if (!cur) throw new TaskNotFoundException(command.id);
         const next = cur.applyPatch(command.patch);
@@ -161,7 +161,7 @@ export class TaskUseCase {
           status: snapshotResult.status,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.task.updated";
+        const eventName = 'pm.task.updated';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -182,11 +182,11 @@ export class TaskUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "pm.task.updated",
+          eventName: 'pm.task.updated',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "task.update.success",
+        'task.update.success',
       );
 
       return snapshotResult!;
@@ -194,11 +194,11 @@ export class TaskUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "task.update.failure",
+        'task.update.failure',
       );
       throw error;
     }
@@ -210,23 +210,23 @@ export class TaskUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "task",
-      useCase: "TaskUseCase.delete",
+      domain: 'task',
+      useCase: 'TaskUseCase.delete',
       aggregateId: command.id,
-      commandName: "DeleteTaskCommand",
+      commandName: 'DeleteTaskCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "task.delete.started");
+    this.logger.info({ ...ctxBase }, 'task.delete.started');
 
     try {
-      await this.transaction.run("task.delete", async (scope) => {
+      await this.transaction.run('task.delete', async (scope) => {
         await this.repository.delete(command.id, scope);
         const occurredAt = new Date();
         const payload: TaskDeletedEventPayload = {
           id: command.id,
           occurredAt: occurredAt.toISOString(),
         };
-        const eventName = "pm.task.deleted";
+        const eventName = 'pm.task.deleted';
         await this.outbox.append(
           {
             aggregateId: command.id,
@@ -247,21 +247,21 @@ export class TaskUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "pm.task.deleted",
+          eventName: 'pm.task.deleted',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "task.delete.success",
+        'task.delete.success',
       );
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "task.delete.failure",
+        'task.delete.failure',
       );
       throw error;
     }

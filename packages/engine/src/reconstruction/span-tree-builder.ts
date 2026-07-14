@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-engine-system
 // @def.doc qa-sdk-engine-system
 
-import type { EventRecord, RuntimeEdge } from "@qa-sdk/core";
+import type { EventRecord, RuntimeEdge } from '@qa-sdk/core';
 
 /**
  * Step 3: span parent-child 관계를 복원하여 parent_child edge를 생성한다.
@@ -37,7 +37,7 @@ export function buildSpanTree(records: EventRecord[]): RuntimeEdge[] {
     edges.push({
       source: parentLogId,
       target: r.log_id,
-      type: "parent_child",
+      type: 'parent_child',
     });
   }
 

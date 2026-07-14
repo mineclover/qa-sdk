@@ -11,12 +11,12 @@
  * 그 db를 본 factory에 넘겨 어댑터를 받는다.
  */
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import type { ResourcePolicyRegistry } from "./port.js";
+import type { ResourcePolicyRegistry } from './port.js';
 
-export type ResourcePolicyDialect = "sqlite" | "pg";
+export type ResourcePolicyDialect = 'sqlite' | 'pg';
 
 export interface CreateRegistryOptions {
   dialect: ResourcePolicyDialect;
@@ -32,13 +32,13 @@ export interface CreateRegistryOptions {
 export async function createResourcePolicyRegistry(
   opts: CreateRegistryOptions,
 ): Promise<ResourcePolicyRegistry> {
-  if (opts.dialect === "sqlite") {
-    const { SqliteResourcePolicyRegistry } = await import("./sqlite/adapter.js");
+  if (opts.dialect === 'sqlite') {
+    const { SqliteResourcePolicyRegistry } = await import('./sqlite/adapter.js');
     return new SqliteResourcePolicyRegistry(opts.db as BetterSQLite3Database);
   }
 
-  if (opts.dialect === "pg") {
-    const { PgResourcePolicyRegistry } = await import("./pg/adapter.js");
+  if (opts.dialect === 'pg') {
+    const { PgResourcePolicyRegistry } = await import('./pg/adapter.js');
     return new PgResourcePolicyRegistry(opts.db as PostgresJsDatabase);
   }
 

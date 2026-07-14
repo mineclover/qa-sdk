@@ -1,26 +1,18 @@
 // @def.boundary sim-reporting-api
 // @def.doc event-taxonomy-marginal-density
 
-import {
-  Module,
-  type DynamicModule,
-  type FactoryProvider,
-  type Provider,
-} from "@nestjs/common";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+import { Module, type DynamicModule, type FactoryProvider, type Provider } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
 
-import { DensityReadModelQuery } from "./application/queries/density-read-model.query.js";
-import { KeyObservationQueryPort } from "./application/ports/key-observation.query.port.js";
-import { PrefixCatalogQueryPort } from "./application/ports/prefix-catalog.query.port.js";
+import { DensityReadModelQuery } from './application/queries/density-read-model.query.js';
+import { KeyObservationQueryPort } from './application/ports/key-observation.query.port.js';
+import { PrefixCatalogQueryPort } from './application/ports/prefix-catalog.query.port.js';
 import {
   MarginalDensityReadModelAdapter,
   type MarginalDensityThresholds,
-} from "./infrastructure/read-model/density.read-model.js";
-import { createDensityLogger } from "./infrastructure/logging/density.logger.js";
-import { DensityController } from "./presentation/http/density.controller.js";
+} from './infrastructure/read-model/density.read-model.js';
+import { createDensityLogger } from './infrastructure/logging/density.logger.js';
+import { DensityController } from './presentation/http/density.controller.js';
 
 /**
  * Density 슬라이스 — read-model 위상 (cross-domain).
@@ -55,16 +47,12 @@ export interface DensitySliceDeps {
 
 export interface DensitySliceModuleOptions {
   /** Cross-domain dependencies — 호출자가 dialect-aware 로 어댑터를 만들어 주입. */
-  useFactory: (
-    ...deps: unknown[]
-  ) => Promise<DensitySliceDeps> | DensitySliceDeps;
+  useFactory: (...deps: unknown[]) => Promise<DensitySliceDeps> | DensitySliceDeps;
   /** factory 가 주입받을 Nest 토큰 목록. */
-  inject?: FactoryProvider["inject"];
+  inject?: FactoryProvider['inject'];
 }
 
-const DENSITY_SLICE_DEPS = Symbol.for(
-  "sim-reporting-api/density/DensitySliceDeps",
-);
+const DENSITY_SLICE_DEPS = Symbol.for('sim-reporting-api/density/DensitySliceDeps');
 
 @Module({})
 export class DensitySliceModule {
@@ -99,13 +87,7 @@ export class DensitySliceModule {
         catalog: PrefixCatalogQueryPort,
         deps: DensitySliceDeps,
         logger: LoggerPort,
-      ) =>
-        new MarginalDensityReadModelAdapter(
-          observations,
-          catalog,
-          deps.thresholds,
-          logger,
-        ),
+      ) => new MarginalDensityReadModelAdapter(observations, catalog, deps.thresholds, logger),
       inject: [
         KeyObservationQueryPort,
         PrefixCatalogQueryPort,
@@ -124,11 +106,7 @@ export class DensitySliceModule {
         readModelProvider,
       ],
       controllers: [DensityController],
-      exports: [
-        DensityReadModelQuery,
-        KeyObservationQueryPort,
-        PrefixCatalogQueryPort,
-      ],
+      exports: [DensityReadModelQuery, KeyObservationQueryPort, PrefixCatalogQueryPort],
     };
   }
 }

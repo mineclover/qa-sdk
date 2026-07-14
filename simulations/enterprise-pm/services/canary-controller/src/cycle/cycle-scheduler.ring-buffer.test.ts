@@ -9,13 +9,13 @@
 // 단언은 class 인스턴스 필드를 관측하지 못하므로 (필드는 prototype 이 아닌 instance 에 있음)
 // red 단계에서 항상 통과한다. 따라서 export 존재 단언으로 대체한다.
 
-import { describe, it, expect } from "vitest";
-import { CycleSchedulerService } from "./cycle-scheduler.service.js";
-import { DecisionRingBuffer } from "../decision/decision-ring-buffer.js";
+import { describe, it, expect } from 'vitest';
+import { CycleSchedulerService } from './cycle-scheduler.service.js';
+import { DecisionRingBuffer } from '../decision/decision-ring-buffer.js';
 
-describe("CycleSchedulerService — ring buffer wiring (spec §5)", () => {
-  it("CycleSchedulerService 와 DecisionRingBuffer 가 wiring 된 상태로 export 됨", () => {
-    expect(typeof CycleSchedulerService).toBe("function");
+describe('CycleSchedulerService — ring buffer wiring (spec §5)', () => {
+  it('CycleSchedulerService 와 DecisionRingBuffer 가 wiring 된 상태로 export 됨', () => {
+    expect(typeof CycleSchedulerService).toBe('function');
     expect(DecisionRingBuffer).toBeDefined();
   });
 });

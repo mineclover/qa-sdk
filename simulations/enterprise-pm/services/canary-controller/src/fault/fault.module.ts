@@ -14,35 +14,20 @@ import {
   Module,
   type OnModuleDestroy,
   type OnApplicationShutdown,
-} from "@nestjs/common";
-import { FaultInjector } from "./fault-injector.js";
-import {
-  AdminFaultController,
-  FAULT_INJECTOR_TOKEN,
-} from "./admin-fault.controller.js";
-import type { Fault, FaultKind } from "./types.js";
-import {
-  SchemaBreakFault,
-  type SchemaBreakStore,
-} from "./schema-break.js";
-import {
-  AuditAnomalyFault,
-  type AuditAnomalyStore,
-} from "./audit-anomaly.js";
-import {
-  ReplicationLagFault,
-  type PgQueryRunner,
-} from "./replication-lag.js";
-import {
-  DbPoolPressureFault,
-  type DbPoolGaugeStore,
-} from "./db-pool-pressure.js";
-import { PubsubInvalidateDropFault } from "./pubsub-invalidate-drop.js";
-import { PerfWarnFault } from "./perf-warn.js";
-import { HealthyMetricsFault } from "./healthy-metrics.js";
-import { createLogger } from "../lib/logger.js";
+} from '@nestjs/common';
+import { FaultInjector } from './fault-injector.js';
+import { AdminFaultController, FAULT_INJECTOR_TOKEN } from './admin-fault.controller.js';
+import type { Fault, FaultKind } from './types.js';
+import { SchemaBreakFault, type SchemaBreakStore } from './schema-break.js';
+import { AuditAnomalyFault, type AuditAnomalyStore } from './audit-anomaly.js';
+import { ReplicationLagFault, type PgQueryRunner } from './replication-lag.js';
+import { DbPoolPressureFault, type DbPoolGaugeStore } from './db-pool-pressure.js';
+import { PubsubInvalidateDropFault } from './pubsub-invalidate-drop.js';
+import { PerfWarnFault } from './perf-warn.js';
+import { HealthyMetricsFault } from './healthy-metrics.js';
+import { createLogger } from '../lib/logger.js';
 
-const logger = createLogger("sim-canary-controller:fault");
+const logger = createLogger('sim-canary-controller:fault');
 
 // ---- Stage 10 in-memory placeholder stores ------------------------------------------------
 // Stage 11 시나리오 runner가 실제 audit-recorder/pg/metrics-collector 어댑터로 대체.
@@ -78,7 +63,7 @@ class NoOpPgQueryRunner implements PgQueryRunner {
   async query(sql: string, params: unknown[]) {
     logger.debug(
       { label: this.label, sql, params },
-      "no-op pg query (Stage 11에서 실제 PG 어댑터로 교체)",
+      'no-op pg query (Stage 11에서 실제 PG 어댑터로 교체)',
     );
   }
 }
@@ -97,13 +82,9 @@ class InMemoryDbPoolGaugeStore implements DbPoolGaugeStore {
 // ---- FaultInjector wiring ------------------------------------------------------------------
 
 @Injectable()
-export class FaultInjectorLifecycle
-  implements OnModuleDestroy, OnApplicationShutdown
-{
+export class FaultInjectorLifecycle implements OnModuleDestroy, OnApplicationShutdown {
   // vitest 환경은 emitDecoratorMetadata 를 무시하므로 @Inject 토큰 명시 (Stage 1a 컨벤션).
-  constructor(
-    @Inject(FaultInjector) private readonly injector: FaultInjector,
-  ) {}
+  constructor(@Inject(FaultInjector) private readonly injector: FaultInjector) {}
   async onModuleDestroy() {
     // controller 라이프사이클 종료 시 누수 방지 — spec 05 §3 시나리오 종료 후 reset.
     await this.injector.resetAll();
@@ -122,26 +103,18 @@ export class FaultInjectorLifecycle
     HealthyMetricsFault,
     {
       provide: FaultInjector,
-      useFactory: (
-        pid: PubsubInvalidateDropFault,
-        pw: PerfWarnFault,
-        hm: HealthyMetricsFault,
-      ) => {
+      useFactory: (pid: PubsubInvalidateDropFault, pw: PerfWarnFault, hm: HealthyMetricsFault) => {
         const registry: Record<FaultKind, Fault> = {
-          "schema-break": new SchemaBreakFault(new InMemorySchemaBreakStore()),
-          "audit-anomaly": new AuditAnomalyFault(
-            new InMemoryAuditAnomalyStore(),
+          'schema-break': new SchemaBreakFault(new InMemorySchemaBreakStore()),
+          'audit-anomaly': new AuditAnomalyFault(new InMemoryAuditAnomalyStore()),
+          'replication-lag': new ReplicationLagFault(
+            new NoOpPgQueryRunner('primary'),
+            new NoOpPgQueryRunner('replica'),
           ),
-          "replication-lag": new ReplicationLagFault(
-            new NoOpPgQueryRunner("primary"),
-            new NoOpPgQueryRunner("replica"),
-          ),
-          "db-pool-pressure": new DbPoolPressureFault(
-            new InMemoryDbPoolGaugeStore(),
-          ),
-          "pubsub-invalidate-drop": pid,
-          "perf-warn": pw,
-          "healthy-metrics": hm,
+          'db-pool-pressure': new DbPoolPressureFault(new InMemoryDbPoolGaugeStore()),
+          'pubsub-invalidate-drop': pid,
+          'perf-warn': pw,
+          'healthy-metrics': hm,
         };
         return new FaultInjector(registry);
       },
@@ -153,11 +126,6 @@ export class FaultInjectorLifecycle
     },
     FaultInjectorLifecycle,
   ],
-  exports: [
-    FaultInjector,
-    PubsubInvalidateDropFault,
-    PerfWarnFault,
-    HealthyMetricsFault,
-  ],
+  exports: [FaultInjector, PubsubInvalidateDropFault, PerfWarnFault, HealthyMetricsFault],
 })
 export class FaultModule {}

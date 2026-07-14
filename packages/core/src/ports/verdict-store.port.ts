@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { VerdictReport } from "../types/verdict.js";
+import type { VerdictReport } from '../types/verdict.js';
 
 /** VerdictReport 저장소 계약 */
 export interface VerdictStore {

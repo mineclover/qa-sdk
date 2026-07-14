@@ -78,9 +78,7 @@ export function transition<S extends string>(
   targetState: S,
   context: Record<string, unknown> = {},
 ): StateMachineInstance<S> {
-  const rule = machine.transitions.find(
-    (t) => t.from === instance.current && t.to === targetState,
-  );
+  const rule = machine.transitions.find((t) => t.from === instance.current && t.to === targetState);
   if (!rule) {
     throw new Error(`전이 불가: ${instance.current} → ${targetState} (${machine.id})`);
   }
@@ -143,26 +141,26 @@ export function computeDistribution<S extends string>(
 // 사전 정의 머신: 문서 lifecycle
 // ═══════════════════════════════════════════════════════════════
 
-export type DocLifecycleState = "draft" | "review" | "approved" | "deprecated" | "archived";
+export type DocLifecycleState = 'draft' | 'review' | 'approved' | 'deprecated' | 'archived';
 
 export const DOC_LIFECYCLE_MACHINE: StateMachineDefinition<DocLifecycleState> = {
-  id: "doc-lifecycle",
-  label: "문서 생명주기",
-  initial: "draft",
+  id: 'doc-lifecycle',
+  label: '문서 생명주기',
+  initial: 'draft',
   states: [
-    { id: "draft", label: "초안" },
-    { id: "review", label: "검토중" },
-    { id: "approved", label: "승인" },
-    { id: "deprecated", label: "폐기예정" },
-    { id: "archived", label: "보관", terminal: true },
+    { id: 'draft', label: '초안' },
+    { id: 'review', label: '검토중' },
+    { id: 'approved', label: '승인' },
+    { id: 'deprecated', label: '폐기예정' },
+    { id: 'archived', label: '보관', terminal: true },
   ],
   transitions: [
-    { from: "draft", to: "review", label: "검토 요청" },
-    { from: "review", to: "approved", label: "승인" },
-    { from: "review", to: "draft", label: "반려" },
-    { from: "approved", to: "deprecated", label: "폐기 예정" },
-    { from: "deprecated", to: "archived", label: "보관" },
-    { from: "deprecated", to: "approved", label: "폐기 철회" },
+    { from: 'draft', to: 'review', label: '검토 요청' },
+    { from: 'review', to: 'approved', label: '승인' },
+    { from: 'review', to: 'draft', label: '반려' },
+    { from: 'approved', to: 'deprecated', label: '폐기 예정' },
+    { from: 'deprecated', to: 'archived', label: '보관' },
+    { from: 'deprecated', to: 'approved', label: '폐기 철회' },
   ],
 };
 
@@ -170,25 +168,30 @@ export const DOC_LIFECYCLE_MACHINE: StateMachineDefinition<DocLifecycleState> = 
 // 사전 정의 머신: 스펙 구현 단계
 // ═══════════════════════════════════════════════════════════════
 
-export type SpecImplState = "designed" | "implementing" | "implemented" | "verified" | "source-referenced";
+export type SpecImplState =
+  | 'designed'
+  | 'implementing'
+  | 'implemented'
+  | 'verified'
+  | 'source-referenced';
 
 export const SPEC_IMPL_MACHINE: StateMachineDefinition<SpecImplState> = {
-  id: "spec-impl",
-  label: "스펙 구현 단계",
-  initial: "designed",
+  id: 'spec-impl',
+  label: '스펙 구현 단계',
+  initial: 'designed',
   states: [
-    { id: "designed", label: "설계 완료 (코드 없음)" },
-    { id: "implementing", label: "구현 중" },
-    { id: "implemented", label: "구현 완료 (코드 존재)" },
-    { id: "verified", label: "검증 완료 (테스트 통과)" },
-    { id: "source-referenced", label: "소스 참조 전환 완료", terminal: true },
+    { id: 'designed', label: '설계 완료 (코드 없음)' },
+    { id: 'implementing', label: '구현 중' },
+    { id: 'implemented', label: '구현 완료 (코드 존재)' },
+    { id: 'verified', label: '검증 완료 (테스트 통과)' },
+    { id: 'source-referenced', label: '소스 참조 전환 완료', terminal: true },
   ],
   transitions: [
-    { from: "designed", to: "implementing", label: "구현 시작" },
-    { from: "implementing", to: "implemented", label: "구현 완료" },
-    { from: "implemented", to: "verified", label: "테스트 통과" },
-    { from: "verified", to: "source-referenced", label: "문서 코드블록 → 소스 참조" },
-    { from: "implementing", to: "designed", label: "설계 변경으로 롤백" },
+    { from: 'designed', to: 'implementing', label: '구현 시작' },
+    { from: 'implementing', to: 'implemented', label: '구현 완료' },
+    { from: 'implemented', to: 'verified', label: '테스트 통과' },
+    { from: 'verified', to: 'source-referenced', label: '문서 코드블록 → 소스 참조' },
+    { from: 'implementing', to: 'designed', label: '설계 변경으로 롤백' },
   ],
 };
 
@@ -196,27 +199,27 @@ export const SPEC_IMPL_MACHINE: StateMachineDefinition<SpecImplState> = {
 // 사전 정의 머신: 컨벤션 준수
 // ═══════════════════════════════════════════════════════════════
 
-export type ConventionState = "unverified" | "partial" | "compliant" | "violated";
+export type ConventionState = 'unverified' | 'partial' | 'compliant' | 'violated';
 
 export const CONVENTION_MACHINE: StateMachineDefinition<ConventionState> = {
-  id: "convention-compliance",
-  label: "컨벤션 준수",
-  initial: "unverified",
+  id: 'convention-compliance',
+  label: '컨벤션 준수',
+  initial: 'unverified',
   states: [
-    { id: "unverified", label: "미검증" },
-    { id: "partial", label: "부분 검증 (일부 증거)" },
-    { id: "compliant", label: "완전 준수 (100% coverage)" },
-    { id: "violated", label: "위반 감지" },
+    { id: 'unverified', label: '미검증' },
+    { id: 'partial', label: '부분 검증 (일부 증거)' },
+    { id: 'compliant', label: '완전 준수 (100% coverage)' },
+    { id: 'violated', label: '위반 감지' },
   ],
   transitions: [
-    { from: "unverified", to: "partial", label: "증거 수집 시작" },
-    { from: "unverified", to: "compliant", label: "전체 검증 통과" },
-    { from: "unverified", to: "violated", label: "위반 감지" },
-    { from: "partial", to: "compliant", label: "전체 검증 통과" },
-    { from: "partial", to: "violated", label: "위반 감지" },
-    { from: "violated", to: "partial", label: "부분 수정" },
-    { from: "violated", to: "compliant", label: "전체 수정 완료" },
-    { from: "compliant", to: "violated", label: "회귀 위반" },
+    { from: 'unverified', to: 'partial', label: '증거 수집 시작' },
+    { from: 'unverified', to: 'compliant', label: '전체 검증 통과' },
+    { from: 'unverified', to: 'violated', label: '위반 감지' },
+    { from: 'partial', to: 'compliant', label: '전체 검증 통과' },
+    { from: 'partial', to: 'violated', label: '위반 감지' },
+    { from: 'violated', to: 'partial', label: '부분 수정' },
+    { from: 'violated', to: 'compliant', label: '전체 수정 완료' },
+    { from: 'compliant', to: 'violated', label: '회귀 위반' },
   ],
 };
 
@@ -224,23 +227,23 @@ export const CONVENTION_MACHINE: StateMachineDefinition<ConventionState> = {
 // 사전 정의 머신: DB 동기화
 // ═══════════════════════════════════════════════════════════════
 
-export type SyncState = "out-of-sync" | "syncing" | "synced" | "drift-detected";
+export type SyncState = 'out-of-sync' | 'syncing' | 'synced' | 'drift-detected';
 
 export const SYNC_MACHINE: StateMachineDefinition<SyncState> = {
-  id: "db-sync",
-  label: "DB 동기화",
-  initial: "out-of-sync",
+  id: 'db-sync',
+  label: 'DB 동기화',
+  initial: 'out-of-sync',
   states: [
-    { id: "out-of-sync", label: "동기화 필요" },
-    { id: "syncing", label: "동기화 중" },
-    { id: "synced", label: "동기화 완료" },
-    { id: "drift-detected", label: "drift 감지" },
+    { id: 'out-of-sync', label: '동기화 필요' },
+    { id: 'syncing', label: '동기화 중' },
+    { id: 'synced', label: '동기화 완료' },
+    { id: 'drift-detected', label: 'drift 감지' },
   ],
   transitions: [
-    { from: "out-of-sync", to: "syncing", label: "동기화 시작" },
-    { from: "syncing", to: "synced", label: "동기화 완료" },
-    { from: "syncing", to: "out-of-sync", label: "동기화 실패" },
-    { from: "synced", to: "drift-detected", label: "파일 변경 감지" },
-    { from: "drift-detected", to: "syncing", label: "재동기화" },
+    { from: 'out-of-sync', to: 'syncing', label: '동기화 시작' },
+    { from: 'syncing', to: 'synced', label: '동기화 완료' },
+    { from: 'syncing', to: 'out-of-sync', label: '동기화 실패' },
+    { from: 'synced', to: 'drift-detected', label: '파일 변경 감지' },
+    { from: 'drift-detected', to: 'syncing', label: '재동기화' },
   ],
 };

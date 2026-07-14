@@ -21,7 +21,7 @@ export {
   findRelatedQualityStatusRegistryRecords,
   appendQualityStatusEvidenceToPromptArtifactExtraction,
   validateProgrammingArtifactOntologyPack,
-} from "./internal/programming-artifact-core.js";
+} from './internal/programming-artifact-core.js';
 
 import {
   ArtifactRegistryPromptArtifactContextProvider,
@@ -35,7 +35,7 @@ import {
   findRelatedQualityStatusRegistryRecords,
   programmingArtifactOntologyPack,
   validateProgrammingArtifactOntologyPack,
-} from "./internal/programming-artifact-core.js";
+} from './internal/programming-artifact-core.js';
 
 export const operationalOntologyProgrammingArtifactPlane = {
   PROGRAMMING_ARTIFACT_KINDS,

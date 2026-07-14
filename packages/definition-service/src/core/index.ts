@@ -15,20 +15,20 @@ export type {
   DocHistoryRecord,
   SliceIntentRecord,
   ConsumptionSnapshot,
-} from "./types.js";
+} from './types.js';
 
 // 인터페이스 (저장소 포트)
-export type { DocStore, IntentStore, ConsumptionStore } from "./interfaces.js";
+export type { DocStore, IntentStore, ConsumptionStore } from './interfaces.js';
 
 // 문서 버전 관리
-export { decideVersion, markersMatch, isMarkerOnlyChange } from "./doc-versioner.js";
-export type { VersionDecision } from "./doc-versioner.js";
+export { decideVersion, markersMatch, isMarkerOnlyChange } from './doc-versioner.js';
+export type { VersionDecision } from './doc-versioner.js';
 
 // 의도 해석
-export { parseDimsParam, resolveMatchingIntents } from "./intent-resolver.js";
+export { parseDimsParam, resolveMatchingIntents } from './intent-resolver.js';
 
 // 소비율 진단
-export { snapshotToConsumption, diagnoseSnapshot, computeRate } from "./consumption-diagnostics.js";
+export { snapshotToConsumption, diagnoseSnapshot, computeRate } from './consumption-diagnostics.js';
 
 // 동기화 엔진
-export { hashBody, extractMarkers, extractBody, buildDocRecord } from "./sync-engine.js";
+export { hashBody, extractMarkers, extractBody, buildDocRecord } from './sync-engine.js';

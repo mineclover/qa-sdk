@@ -1,9 +1,9 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
-import { buildServicePrefix, parseServicePrefix, type ServicePrefix } from "./service-prefix.js";
-import { buildVersionTag, parseVersionTag, type VersionTag } from "./version-tag.js";
+import { z } from 'zod';
+import { buildServicePrefix, parseServicePrefix, type ServicePrefix } from './service-prefix.js';
+import { buildVersionTag, parseVersionTag, type VersionTag } from './version-tag.js';
 
-export const BITMAP_SCOPES = ["user", "role"] as const;
+export const BITMAP_SCOPES = ['user', 'role'] as const;
 export type BitmapScope = (typeof BITMAP_SCOPES)[number];
 
 export interface BitmapCacheKey {
@@ -31,7 +31,7 @@ export const BitmapCacheKeySchema = z.object({
     } catch {
       return false;
     }
-  }, "invalid service prefix"),
+  }, 'invalid service prefix'),
   version: z.custom<VersionTag>((value) => {
     try {
       buildVersionTag(value as VersionTag);
@@ -39,7 +39,7 @@ export const BitmapCacheKeySchema = z.object({
     } catch {
       return false;
     }
-  }, "invalid version tag"),
+  }, 'invalid version tag'),
 });
 
 export function buildBitmapCacheKey(input: BitmapCacheKey): string {
@@ -52,10 +52,16 @@ export function buildBitmapCacheKey(input: BitmapCacheKey): string {
 
 export function parseBitmapCacheKey(s: string): BitmapCacheKey {
   // prefix·version 모두 ':'를 포함하지 않으므로 ':' split → 정확히 5조각.
-  const parts = s.split(":");
-  if (parts.length !== 5 || parts[0] !== "bitmap") throw new Error(`invalid bitmap cache key: ${s}`);
+  const parts = s.split(':');
+  if (parts.length !== 5 || parts[0] !== 'bitmap')
+    throw new Error(`invalid bitmap cache key: ${s}`);
   const [, scope, id, prefixStr, versionStr] = parts;
   if (!BITMAP_SCOPES.includes(scope as BitmapScope)) throw new Error(`invalid scope: ${scope}`);
   if (!/^[A-Za-z0-9_-]+$/.test(id)) throw new Error(`invalid id: ${id}`);
-  return { scope: scope as BitmapScope, id, prefix: parseServicePrefix(prefixStr), version: parseVersionTag(versionStr) };
+  return {
+    scope: scope as BitmapScope,
+    id,
+    prefix: parseServicePrefix(prefixStr),
+    version: parseVersionTag(versionStr),
+  };
 }

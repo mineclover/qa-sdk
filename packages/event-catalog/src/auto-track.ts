@@ -14,10 +14,10 @@
  *   5. emitFn 호출 (QaMonitor.emitWithCoords 또는 QaLogger.log)
  */
 
-import { AddressContextV1Schema } from "@qa-sdk/core/coordinates/address-context-schema";
+import { AddressContextV1Schema } from '@qa-sdk/core/coordinates/address-context-schema';
 
-import { getMapping, resolvePrefixDims } from "./prefix-mapping.js";
-import type { TrackingContextManager } from "./tracking-context.js";
+import { getMapping, resolvePrefixDims } from './prefix-mapping.js';
+import type { TrackingContextManager } from './tracking-context.js';
 
 // ── 카탈로그 최소 타입 (event-catalog는 외부 의존 없음) ──
 
@@ -55,11 +55,20 @@ export interface AutoTrackerConfig {
   /** svc_ref 차원에 주입할 service 주소 값 (refEntries 기반 정수) */
   svcRefResolver?: (prefixId: string) => number | undefined;
   /** 인코딩 함수 */
-  encodePrefixByValue: (catalog: AutoTrackCatalog, prefixId: string, version: string, dims: Record<string, unknown>) => number;
+  encodePrefixByValue: (
+    catalog: AutoTrackCatalog,
+    prefixId: string,
+    version: string,
+    dims: Record<string, unknown>,
+  ) => number;
   /** 최신 버전 조회 함수 */
   latestPrefixVersion: (catalog: AutoTrackCatalog, prefixId: string) => string;
   /** 인코딩된 address_context를 받아 전송하는 함수 */
-  emit: (eventKey: string, addressContext: Record<string, string>, payload: Record<string, unknown>) => void;
+  emit: (
+    eventKey: string,
+    addressContext: Record<string, string>,
+    payload: Record<string, unknown>,
+  ) => void;
 }
 
 export interface AutoTracker {
@@ -75,7 +84,7 @@ function findSvcRefLabel(catalog: AutoTrackCatalog, prefixId: string): string | 
   const dims = catalog.prefixes?.[prefixId]?.dims;
   if (!dims) return undefined;
   for (const [label, d] of Object.entries(dims)) {
-    if (d.kind === "prefix_ref" && d.prefixId === "service") return label;
+    if (d.kind === 'prefix_ref' && d.prefixId === 'service') return label;
   }
   return undefined;
 }
@@ -83,14 +92,16 @@ function findSvcRefLabel(catalog: AutoTrackCatalog, prefixId: string): string | 
 // ── 기본 svcRefResolver ──────────────────────────
 
 /** catalog에서 각 prefix의 refEntries 첫 번째 값을 가져오는 기본 resolver */
-export function createDefaultSvcRefResolver(catalog: AutoTrackCatalog): (prefixId: string) => number | undefined {
+export function createDefaultSvcRefResolver(
+  catalog: AutoTrackCatalog,
+): (prefixId: string) => number | undefined {
   return (prefixId: string) => {
     const p = catalog.prefixes?.[prefixId];
     if (!p) return undefined;
     const lastVer = p.versions?.[p.versions.length - 1];
     if (!lastVer?.refEntries) return undefined;
     // svc_ref, perm_svc, evt_svc, service_ctx 중 첫 번째 매칭
-    for (const key of ["svc_ref", "perm_svc", "evt_svc", "service_ctx"]) {
+    for (const key of ['svc_ref', 'perm_svc', 'evt_svc', 'service_ctx']) {
       if (lastVer.refEntries[key]?.values?.[0] !== undefined) {
         return lastVer.refEntries[key].values[0];
       }
@@ -140,7 +151,7 @@ export function createAutoTracker(config: AutoTrackerConfig): AutoTracker {
       // prod: silent skip + 빈 컨텍스트로 emit (UI 크래시 방지)
       const validation = AddressContextV1Schema.safeParse(addressContext);
       if (!validation.success) {
-        if (typeof process !== "undefined" && process.env?.NODE_ENV !== "production") {
+        if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
           throw new Error(
             `auto-track: addressContext schema 위반 — ${eventKey}: ${validation.error.message}`,
           );

@@ -1,11 +1,14 @@
-import type { TaxonomyIR } from "../schema/ir.js";
-import type { Diagnostic } from "../schema/diagnostic.js";
+import type { TaxonomyIR } from '../schema/ir.js';
+import type { Diagnostic } from '../schema/diagnostic.js';
 
 export type ExpectedTaxonomy = {
   taxonomy: string;
-  axes: Record<string, {
-    entries: Array<{ id: string; address?: number; label?: string }>;
-  }>;
+  axes: Record<
+    string,
+    {
+      entries: Array<{ id: string; address?: number; label?: string }>;
+    }
+  >;
 };
 
 /**
@@ -22,8 +25,8 @@ export function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
 
   if (ir.taxonomy !== expected.taxonomy) {
     out.push({
-      severity: "error",
-      code: "doctor-missing" as const,
+      severity: 'error',
+      code: 'doctor-missing' as const,
       message: `taxonomy 이름 불일치: yaml="${ir.taxonomy}" expected="${expected.taxonomy}"`,
       ref: `${ir.taxonomy}`,
       meta: { yaml: ir.taxonomy, expected: expected.taxonomy },
@@ -35,8 +38,8 @@ export function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
     const actualAxis = ir.axes.get(axisName);
     if (!actualAxis) {
       out.push({
-        severity: "error",
-        code: "doctor-missing" as const,
+        severity: 'error',
+        code: 'doctor-missing' as const,
         message: `expected axis "${axisName}"이(가) yaml에 없음`,
         ref: `${ir.taxonomy}#/axes/${axisName}`,
         meta: { axis: axisName },
@@ -52,8 +55,8 @@ export function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
       const actual = actualIds.get(expEntry.id);
       if (!actual) {
         out.push({
-          severity: "error",
-          code: "doctor-missing" as const,
+          severity: 'error',
+          code: 'doctor-missing' as const,
           message: `axes/${axisName}: expected entry "${expEntry.id}"이(가) yaml에 없음`,
           ref: `${ir.taxonomy}#/axes/${axisName}/entries/${expEntry.id}`,
           meta: { axis: axisName, missing: expEntry.id },
@@ -63,14 +66,14 @@ export function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
 
       if (expEntry.address !== undefined && actual.address !== expEntry.address) {
         out.push({
-          severity: "warning",
-          code: "doctor-drift" as const,
+          severity: 'warning',
+          code: 'doctor-drift' as const,
           message: `axes/${axisName}/entries/${expEntry.id}: address yaml=${actual.address} expected=${expEntry.address}`,
           ref: `${ir.taxonomy}#/axes/${axisName}/entries/${expEntry.id}`,
           meta: {
             axis: axisName,
             entry: expEntry.id,
-            field: "address",
+            field: 'address',
             yaml: actual.address,
             expected: expEntry.address,
           },
@@ -79,14 +82,14 @@ export function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
 
       if (expEntry.label !== undefined && actual.label !== expEntry.label) {
         out.push({
-          severity: "warning",
-          code: "doctor-drift" as const,
-          message: `axes/${axisName}/entries/${expEntry.id}: label yaml="${actual.label ?? ""}" expected="${expEntry.label}"`,
+          severity: 'warning',
+          code: 'doctor-drift' as const,
+          message: `axes/${axisName}/entries/${expEntry.id}: label yaml="${actual.label ?? ''}" expected="${expEntry.label}"`,
           ref: `${ir.taxonomy}#/axes/${axisName}/entries/${expEntry.id}`,
           meta: {
             axis: axisName,
             entry: expEntry.id,
-            field: "label",
+            field: 'label',
             yaml: actual.label,
             expected: expEntry.label,
           },
@@ -98,8 +101,8 @@ export function doctor(ir: TaxonomyIR, expected: ExpectedTaxonomy): Diagnostic[]
     for (const actualEntry of actualAxis.entries) {
       if (!expectedIds.has(actualEntry.id)) {
         out.push({
-          severity: "warning",
-          code: "doctor-unexpected" as const,
+          severity: 'warning',
+          code: 'doctor-unexpected' as const,
           message: `axes/${axisName}: yaml entry "${actualEntry.id}"이(가) expected에 없음`,
           ref: `${ir.taxonomy}#/axes/${axisName}/entries/${actualEntry.id}`,
           meta: { axis: axisName, unexpected: actualEntry.id },

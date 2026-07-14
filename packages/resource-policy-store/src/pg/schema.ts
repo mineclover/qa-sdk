@@ -1,7 +1,7 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-resource-lifecycle
 
-import { index, pgSchema, text, varchar } from "drizzle-orm/pg-core";
+import { index, pgSchema, text, varchar } from 'drizzle-orm/pg-core';
 
 /**
  * auth schema 안의 resource_policies 테이블.
@@ -14,25 +14,25 @@ import { index, pgSchema, text, varchar } from "drizzle-orm/pg-core";
  * RLS 정책: Plan 15b (Phase 3) 로 rp_select/insert/update/delete/admin_bypass 5 정책 배포 완료.
  * FORCE 활성화는 Plan 15e 에서 토글.
  */
-const authSchema = pgSchema("auth");
+const authSchema = pgSchema('auth');
 
 export const resourcePolicies = authSchema.table(
-  "resource_policies",
+  'resource_policies',
   {
-    resourceId: text("resource_id").primaryKey(),
-    resourceType: text("resource_type").notNull(),
-    state: varchar("state", { length: 16 }).notNull(),  // CHECK는 raw DDL에서
-    ownerId: text("owner_id").notNull(),
-    cerbosPolicyRef: text("cerbos_policy_ref"),
-    graphRootId: text("graph_root_id"),
-    registeredAt: text("registered_at"),
-    delegatedAt: text("delegated_at"),
-    updatedAt: text("updated_at").notNull(),
+    resourceId: text('resource_id').primaryKey(),
+    resourceType: text('resource_type').notNull(),
+    state: varchar('state', { length: 16 }).notNull(), // CHECK는 raw DDL에서
+    ownerId: text('owner_id').notNull(),
+    cerbosPolicyRef: text('cerbos_policy_ref'),
+    graphRootId: text('graph_root_id'),
+    registeredAt: text('registered_at'),
+    delegatedAt: text('delegated_at'),
+    updatedAt: text('updated_at').notNull(),
   },
   (t) => [
-    index("idx_rp_owner_pg").on(t.ownerId),
-    index("idx_rp_state_pg").on(t.state),
-    index("idx_rp_type_pg").on(t.resourceType),
+    index('idx_rp_owner_pg').on(t.ownerId),
+    index('idx_rp_state_pg').on(t.state),
+    index('idx_rp_type_pg').on(t.resourceType),
   ],
 );
 

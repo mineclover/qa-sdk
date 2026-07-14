@@ -1,11 +1,11 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { Hono } from "hono";
-import { z } from "zod";
-import type { SessionStore } from "@qa-sdk/core";
-import { badRequest, sessionNotFound } from "../lib/errors.js";
-import type { PatternClassificationPort } from "../lib/pattern-classification-port.js";
+import { Hono } from 'hono';
+import { z } from 'zod';
+import type { SessionStore } from '@qa-sdk/core';
+import { badRequest, sessionNotFound } from '../lib/errors.js';
+import type { PatternClassificationPort } from '../lib/pattern-classification-port.js';
 
 export interface SessionRouteDeps {
   sessionStore: SessionStore;
@@ -25,11 +25,11 @@ const listSessionsQuerySchema = z.object({
 export function createSessionRoutes(deps: SessionRouteDeps) {
   const app = new Hono();
 
-  app.get("/v1/sessions", async (c) => {
+  app.get('/v1/sessions', async (c) => {
     const query = listSessionsQuerySchema.safeParse(
       Object.fromEntries(new URL(c.req.url).searchParams),
     );
-    if (!query.success) throw badRequest("invalid query parameters");
+    if (!query.success) throw badRequest('invalid query parameters');
 
     const { scenarioId, limit } = query.data;
 
@@ -50,22 +50,22 @@ export function createSessionRoutes(deps: SessionRouteDeps) {
     });
   });
 
-  app.post("/v1/sessions", async (c) => {
+  app.post('/v1/sessions', async (c) => {
     const body = await c.req.json().catch(() => ({}));
     const parsed = createSessionBodySchema.safeParse(body);
 
     if (!parsed.success) {
-      throw badRequest("invalid request body");
+      throw badRequest('invalid request body');
     }
 
     const { scenarioId, labels } = parsed.data;
-    const sessionId = `qas_${crypto.randomUUID().replace(/-/g, "")}`;
+    const sessionId = `qas_${crypto.randomUUID().replace(/-/g, '')}`;
 
     await deps.sessionStore.upsert({ sessionId, scenarioId, labels });
 
     const session = await deps.sessionStore.findById(sessionId);
     if (!session) {
-      throw badRequest("failed to retrieve created session");
+      throw badRequest('failed to retrieve created session');
     }
 
     return c.json(
@@ -78,8 +78,8 @@ export function createSessionRoutes(deps: SessionRouteDeps) {
     );
   });
 
-  app.post("/v1/sessions/:sessionId/close", async (c) => {
-    const sessionId = c.req.param("sessionId");
+  app.post('/v1/sessions/:sessionId/close', async (c) => {
+    const sessionId = c.req.param('sessionId');
     const session = await deps.sessionStore.findById(sessionId);
 
     if (!session) {
@@ -93,7 +93,9 @@ export function createSessionRoutes(deps: SessionRouteDeps) {
     if (deps.patternClassifier) {
       try {
         patternResult = await deps.patternClassifier.classifySession(sessionId);
-      } catch { /* 분류 실패는 세션 close를 막지 않음 */ }
+      } catch {
+        /* 분류 실패는 세션 close를 막지 않음 */
+      }
     }
 
     return c.json({

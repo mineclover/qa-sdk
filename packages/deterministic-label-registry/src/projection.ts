@@ -1,14 +1,11 @@
 // @def.doc deterministic-label-projection-determinism
-import {
-  isArchivedPrdDocument,
-  isTransientDocument,
-} from "doc-envelope";
+import { isArchivedPrdDocument, isTransientDocument } from 'doc-envelope';
 import type {
   DocumentEnvelope,
   DocumentMetadata,
   DocumentSource,
   DocumentTask,
-} from "doc-envelope";
+} from 'doc-envelope';
 import {
   buildSemanticCoordinateCandidate,
   type SemanticCoordinateCandidate,
@@ -16,15 +13,15 @@ import {
   type SemanticCoordinateDiagnostic,
   type SemanticPhysicalRefInput,
   type SemanticExistingIdSource,
-} from "./coordinate.js";
-import { detectSemanticCoordinateCandidateCollisions } from "./collision.js";
+} from './coordinate.js';
+import { detectSemanticCoordinateCandidateCollisions } from './collision.js';
 import {
   asString,
   metadataStringArray,
   normalizeCoordinatePart,
   uniqueStrings,
   nestedMetadataString,
-} from "./shared.js";
+} from './shared.js';
 
 /**
  * 문서 투영 system — DocumentEnvelope을 좌표 candidate로 번역.
@@ -40,7 +37,7 @@ export interface SemanticCoordinateCandidateInventoryOptions {
 export interface SemanticCoordinateSkippedDocument {
   readonly stableId: string;
   readonly path: string;
-  readonly reason: "archive" | "transient";
+  readonly reason: 'archive' | 'transient';
   readonly metadata: DocumentMetadata;
 }
 
@@ -113,43 +110,43 @@ export function buildSemanticCoordinateCandidatesFromDocument(
     const defId = asString(document.metadata.defId);
     if (defId) {
       add({
-        kind: "definition-doc",
+        kind: 'definition-doc',
         id: defId,
         subtype,
         version: defaultVersion,
         physicalRefs: documentRefs,
-        metadata: candidateMetadata(document, "def.id"),
+        metadata: candidateMetadata(document, 'def.id'),
       });
     }
     add({
-      kind: "definition-doc",
+      kind: 'definition-doc',
       id: document.stableId,
       subtype,
       version: defaultVersion,
       physicalRefs: documentRefs,
-      metadata: candidateMetadata(document, "stableId"),
+      metadata: candidateMetadata(document, 'stableId'),
     });
     if (document.familyId) {
       add({
-        kind: "definition-doc",
+        kind: 'definition-doc',
         id: document.familyId,
-        subtype: "family",
+        subtype: 'family',
         version: defaultVersion,
         physicalRefs: documentRefs,
-        metadata: candidateMetadata(document, "familyId"),
+        metadata: candidateMetadata(document, 'familyId'),
       });
     }
   }
 
-  if (document.kind === "prd" || document.kind === "ralph-prd-json") {
-    const kind = document.kind === "prd" ? "prd-markdown" : "ralph-prd-json";
+  if (document.kind === 'prd' || document.kind === 'ralph-prd-json') {
+    const kind = document.kind === 'prd' ? 'prd-markdown' : 'ralph-prd-json';
     const pathId = prdDocumentIdFromPath(sourcePath);
     add({
       kind,
       id: document.stableId,
       version: defaultVersion,
       physicalRefs: documentRefs,
-      metadata: candidateMetadata(document, "stableId"),
+      metadata: candidateMetadata(document, 'stableId'),
     });
     if (document.familyId && document.familyId !== document.stableId) {
       add({
@@ -157,7 +154,7 @@ export function buildSemanticCoordinateCandidatesFromDocument(
         id: document.familyId,
         version: defaultVersion,
         physicalRefs: documentRefs,
-        metadata: candidateMetadata(document, "familyId"),
+        metadata: candidateMetadata(document, 'familyId'),
       });
     }
     if (pathId && pathId !== document.stableId && pathId !== document.familyId) {
@@ -166,7 +163,7 @@ export function buildSemanticCoordinateCandidatesFromDocument(
         id: pathId,
         version: defaultVersion,
         physicalRefs: documentRefs,
-        metadata: candidateMetadata(document, "sourcePath"),
+        metadata: candidateMetadata(document, 'sourcePath'),
       });
     }
     for (const task of document.tasks) {
@@ -177,61 +174,65 @@ export function buildSemanticCoordinateCandidatesFromDocument(
   const artifactId = asString(document.metadata.artifactId);
   if (artifactId) {
     add({
-      kind: "artifact",
+      kind: 'artifact',
       id: artifactId,
       subtype: artifactSubtype(document),
       version: defaultVersion,
       physicalRefs: artifactPhysicalRefs(document),
-      metadata: candidateMetadata(document, "artifactId"),
+      metadata: candidateMetadata(document, 'artifactId'),
     });
   } else if (isArtifactLikeDocument(document)) {
     add({
-      kind: "artifact",
+      kind: 'artifact',
       id: document.stableId,
       subtype: artifactSubtype(document),
       version: defaultVersion,
       physicalRefs: artifactPhysicalRefs(document),
-      metadata: candidateMetadata(document, "stableId"),
+      metadata: candidateMetadata(document, 'stableId'),
     });
   }
 
   const packId = documentPackId(document);
   if (packId) {
     add({
-      kind: "ontology-pack",
+      kind: 'ontology-pack',
       id: packId,
       version: defaultVersion,
       physicalRefs: [
         {
-          kind: "pack-id",
+          kind: 'pack-id',
           ref: packId,
-          role: "primary",
+          role: 'primary',
         },
-        ...documentRefs.map((ref) => ({ ...ref, role: "related" as const })),
+        ...documentRefs.map((ref) => ({ ...ref, role: 'related' as const })),
       ],
-      metadata: candidateMetadata(document, "packId"),
+      metadata: candidateMetadata(document, 'packId'),
     });
   }
 
   if (sourcePath) {
-    addSourcePathCandidate(add, document, sourcePath, "sourcePath");
+    addSourcePathCandidate(add, document, sourcePath, 'sourcePath');
   }
   for (const source of document.sources) {
     addDocumentSourceCandidate(add, document, source);
   }
   for (const source of metadataStringArray(document.metadata.contextSources)) {
-    addSourcePathCandidate(add, document, source, "document.source.path", {
-      sourceKind: "context_source",
+    addSourcePathCandidate(add, document, source, 'document.source.path', {
+      sourceKind: 'context_source',
     });
   }
   for (const evidence of document.evidence) {
     add({
-      kind: "evidence",
+      kind: 'evidence',
       id: evidence.id,
-      subtype: asString(evidence.kind) ?? artifactSubtype(document) ?? "evidence",
+      subtype: asString(evidence.kind) ?? artifactSubtype(document) ?? 'evidence',
       version: defaultVersion,
-      physicalRefs: evidencePhysicalRefs(document, evidence.rawSource?.path, evidence.rawSource?.pointer),
-      metadata: candidateMetadata(document, "document.evidence.id", {
+      physicalRefs: evidencePhysicalRefs(
+        document,
+        evidence.rawSource?.path,
+        evidence.rawSource?.pointer,
+      ),
+      metadata: candidateMetadata(document, 'document.evidence.id', {
         evidenceKind: evidence.kind,
       }),
     });
@@ -250,21 +251,19 @@ export function addPrdStoryCandidate(
   task: DocumentTask,
 ): void {
   const sourcePath = task.rawSource?.path ?? document.rawSource.path ?? document.path;
-  const parentId = prdDocumentIdFromPath(sourcePath)
-    ?? document.familyId
-    ?? document.stableId;
+  const parentId = prdDocumentIdFromPath(sourcePath) ?? document.familyId ?? document.stableId;
   add({
-    kind: "prd-story",
+    kind: 'prd-story',
     parentId,
     id: task.id,
     physicalRefs: [
       {
-        kind: document.kind === "ralph-prd-json" ? "ralph-prd-json-path" : "prd-path",
+        kind: document.kind === 'ralph-prd-json' ? 'ralph-prd-json-path' : 'prd-path',
         ref: withPointer(sourcePath, task.rawSource?.pointer),
-        role: "primary",
+        role: 'primary',
       },
     ],
-    metadata: candidateMetadata(document, "prd.storyId", {
+    metadata: candidateMetadata(document, 'prd.storyId', {
       storyId: task.id,
       storyTitle: task.title,
     }),
@@ -279,14 +278,14 @@ export function addSourcePathCandidate(
   extra: DocumentMetadata = {},
 ): void {
   add({
-    kind: "source-file",
+    kind: 'source-file',
     id: path,
     subtype: sourceSubtype(path),
     physicalRefs: [
       {
-        kind: "source-path",
+        kind: 'source-path',
         ref: path,
-        role: "primary",
+        role: 'primary',
       },
     ],
     metadata: candidateMetadata(document, idSource, extra),
@@ -300,26 +299,27 @@ export function addDocumentSourceCandidate(
 ): void {
   const sourceLabelPath = source.label ? pathLikeReference(source.label) : undefined;
   const metadataValue = asString(source.metadata.value);
-  const path = source.path
-    ?? sourceLabelPath
-    ?? (metadataValue ? pathLikeReference(metadataValue) : undefined);
+  const path =
+    source.path ??
+    sourceLabelPath ??
+    (metadataValue ? pathLikeReference(metadataValue) : undefined);
   if (!path) return;
   add({
-    kind: "source-file",
+    kind: 'source-file',
     id: path,
     subtype: sourceSubtype(path),
     physicalRefs: [
       {
-        kind: "source-path",
+        kind: 'source-path',
         ref: path,
-        role: "primary",
+        role: 'primary',
         metadata: {
           sourceId: source.id,
           ...(source.label ? { label: source.label } : {}),
         },
       },
     ],
-    metadata: candidateMetadata(document, "document.source.path", {
+    metadata: candidateMetadata(document, 'document.source.path', {
       sourceId: source.id,
       sourceKind: source.metadata.sourceKind,
     }),
@@ -329,39 +329,39 @@ export function addDocumentSourceCandidate(
 export function documentPhysicalRefs(
   document: DocumentEnvelope,
 ): readonly SemanticPhysicalRefInput[] {
-  if (document.kind === "prd") {
+  if (document.kind === 'prd') {
     return [
       {
-        kind: "prd-path",
+        kind: 'prd-path',
         ref: document.path,
-        role: "primary",
+        role: 'primary',
       },
     ];
   }
-  if (document.kind === "ralph-prd-json") {
+  if (document.kind === 'ralph-prd-json') {
     return [
       {
-        kind: "ralph-prd-json-path",
+        kind: 'ralph-prd-json-path',
         ref: document.path,
-        role: "primary",
+        role: 'primary',
       },
     ];
   }
   if (isDefinitionDocument(document)) {
     return [
       {
-        kind: "definition-path",
+        kind: 'definition-path',
         ref: document.path,
-        role: "primary",
+        role: 'primary',
       },
     ];
   }
 
   return [
     {
-      kind: "source-path",
+      kind: 'source-path',
       ref: document.path,
-      role: "primary",
+      role: 'primary',
     },
   ];
 }
@@ -376,30 +376,30 @@ export function artifactPhysicalRefs(
 
   if (artifactRef) {
     refs.push({
-      kind: "artifact-ref",
+      kind: 'artifact-ref',
       ref: artifactRef,
-      role: outputPath ? "related" : "primary",
+      role: outputPath ? 'related' : 'primary',
     });
   }
   if (outputPath) {
     refs.push({
-      kind: "artifact-output-path",
+      kind: 'artifact-output-path',
       ref: outputPath,
-      role: "primary",
+      role: 'primary',
     });
   }
   if (registryPath) {
     refs.push({
-      kind: "source-path",
+      kind: 'source-path',
       ref: registryPath,
-      role: "source",
+      role: 'source',
     });
   }
   if (refs.length === 0) {
     refs.push({
-      kind: "artifact-ref",
+      kind: 'artifact-ref',
       ref: document.path,
-      role: "primary",
+      role: 'primary',
     });
   }
 
@@ -413,17 +413,17 @@ export function evidencePhysicalRefs(
 ): readonly SemanticPhysicalRefInput[] {
   const refs: SemanticPhysicalRefInput[] = [
     {
-      kind: "evidence-ref",
+      kind: 'evidence-ref',
       ref: withPointer(rawPath ?? document.rawSource.path ?? document.path, pointer),
-      role: "primary",
+      role: 'primary',
     },
   ];
   const outputPath = asString(document.metadata.outputPath);
   if (outputPath) {
     refs.push({
-      kind: "artifact-output-path",
+      kind: 'artifact-output-path',
       ref: outputPath,
-      role: "related",
+      role: 'related',
     });
   }
   return refs;
@@ -433,23 +433,23 @@ export function inactiveDocumentReason(
   document: DocumentEnvelope,
   options: SemanticCoordinateCandidateInventoryOptions,
   exactTargets: ReadonlySet<string>,
-): "archive" | "transient" | undefined {
+): 'archive' | 'transient' | undefined {
   if (isExactTargetDocument(document, exactTargets)) return undefined;
   if (isCandidateArchiveDocument(document) && options.includeArchive !== true) {
-    return "archive";
+    return 'archive';
   }
   if (isTransientDocument(document) && options.includeTransient !== true) {
-    return "transient";
+    return 'transient';
   }
   return undefined;
 }
 
 export function isCandidateArchiveDocument(document: DocumentEnvelope): boolean {
   if (isArchivedPrdDocument(document)) return true;
-  if (document.metadata.lifecycle === "archived") return true;
+  if (document.metadata.lifecycle === 'archived') return true;
   // 경로 기반 휴리스틱은 PRD kind에만 적용 — 비-PRD 문서는 lifecycle 메타데이터로 명시
-  if (document.kind === "prd" || document.kind === "ralph-prd-json") {
-    return normalizeCoordinatePart(document.path)?.split("/").includes("archive") === true;
+  if (document.kind === 'prd' || document.kind === 'ralph-prd-json') {
+    return normalizeCoordinatePart(document.path)?.split('/').includes('archive') === true;
   }
   return false;
 }
@@ -459,8 +459,8 @@ export function isExactTargetDocument(
   exactTargets: ReadonlySet<string>,
 ): boolean {
   if (exactTargets.size === 0) return false;
-  return documentIdentityValues(document).some((value) =>
-    exactTargets.has(value) || exactTargets.has(normalizeCoordinatePart(value) ?? value)
+  return documentIdentityValues(document).some(
+    (value) => exactTargets.has(value) || exactTargets.has(normalizeCoordinatePart(value) ?? value),
   );
 }
 
@@ -475,7 +475,7 @@ export function documentIdentityValues(document: DocumentEnvelope): readonly str
     asString(document.metadata.name),
     asString(document.metadata.sourcePath),
     asString(document.metadata.packId),
-    nestedMetadataString(document.metadata.artifactMetadata, "packId"),
+    nestedMetadataString(document.metadata.artifactMetadata, 'packId'),
     asString(document.metadata.artifactId),
     asString(document.metadata.artifactRef),
     asString(document.metadata.outputPath),
@@ -488,43 +488,55 @@ export function normalizeExactTargets(
   target: string | readonly string[] | null | undefined,
 ): ReadonlySet<string> {
   const values = Array.isArray(target) ? target : target ? [target] : [];
-  return new Set(values.flatMap((value) => {
-    const normalized = normalizeCoordinatePart(value);
-    return normalized && normalized !== value ? [value, normalized] : [value];
-  }));
+  return new Set(
+    values.flatMap((value) => {
+      const normalized = normalizeCoordinatePart(value);
+      return normalized && normalized !== value ? [value, normalized] : [value];
+    }),
+  );
 }
 
 export function isDefinitionDocument(document: DocumentEnvelope): boolean {
-  return document.adapterId === "definition-markdown"
-    || document.rawSource.sourceSchema === "definition-frontmatter"
-    || asString(document.metadata.defId) !== undefined;
+  return (
+    document.adapterId === 'definition-markdown' ||
+    document.rawSource.sourceSchema === 'definition-frontmatter' ||
+    asString(document.metadata.defId) !== undefined
+  );
 }
 
 export function isArtifactLikeDocument(document: DocumentEnvelope): boolean {
-  return document.adapterId === "artifact-evidence"
-    || asString(document.metadata.artifactKind) !== undefined
-    || document.evidence.length > 0;
+  return (
+    document.adapterId === 'artifact-evidence' ||
+    asString(document.metadata.artifactKind) !== undefined ||
+    document.evidence.length > 0
+  );
 }
 
 export function definitionSubtype(document: DocumentEnvelope): string {
-  return asString(document.metadata.documentKind)
-    ?? (isDefinitionRoleKind(document.kind) ? document.kind : "definition");
+  return (
+    asString(document.metadata.documentKind) ??
+    (isDefinitionRoleKind(document.kind) ? document.kind : 'definition')
+  );
 }
 
 export function artifactSubtype(document: DocumentEnvelope): string {
-  return asString(document.metadata.artifactKind)
-    ?? (document.kind && document.kind !== "artifact-evidence-source" ? document.kind : "artifact");
+  return (
+    asString(document.metadata.artifactKind) ??
+    (document.kind && document.kind !== 'artifact-evidence-source' ? document.kind : 'artifact')
+  );
 }
 
 export function documentVersion(document: DocumentEnvelope): string {
-  return asString(document.metadata.version) ?? "v1";
+  return asString(document.metadata.version) ?? 'v1';
 }
 
 export function documentPackId(document: DocumentEnvelope): string | undefined {
-  return asString(document.metadata.packId)
-    ?? asString(document.metadata.ontologyId)
-    ?? nestedMetadataString(document.metadata.artifactMetadata, "packId")
-    ?? nestedMetadataString(document.metadata.artifactMetadata, "ontologyId");
+  return (
+    asString(document.metadata.packId) ??
+    asString(document.metadata.ontologyId) ??
+    nestedMetadataString(document.metadata.artifactMetadata, 'packId') ??
+    nestedMetadataString(document.metadata.artifactMetadata, 'ontologyId')
+  );
 }
 
 export function candidateMetadata(
@@ -549,29 +561,32 @@ export function prdDocumentIdFromPath(path: string | undefined): string | undefi
   if (!normalized) return undefined;
   // PRD 문서 확장자(.md/.json)만 허용 — 미인식 확장자는 undefined로 처리
   if (!/\.(?:md|json)$/i.test(normalized)) return undefined;
-  return normalized.replace(/\.(?:md|json)$/i, "");
+  return normalized.replace(/\.(?:md|json)$/i, '');
 }
 
 export function sourceSubtype(path: string): string {
   const normalized = path.toLowerCase();
-  if (normalized.endsWith(".tsx")) return "typescript-react";
-  if (normalized.endsWith(".ts")) return "typescript";
-  if (normalized.endsWith(".jsx")) return "javascript-react";
-  if (normalized.endsWith(".js") || normalized.endsWith(".mjs") || normalized.endsWith(".cjs")) return "javascript";
-  if (normalized.endsWith(".md") || normalized.endsWith(".mdx")) return "markdown";
-  if (normalized.endsWith(".json")) return "json";
-  if (normalized.endsWith(".yaml") || normalized.endsWith(".yml")) return "yaml";
-  if (normalized.endsWith(".css")) return "css";
-  if (normalized.endsWith(".html")) return "html";
-  return "file";
+  if (normalized.endsWith('.tsx')) return 'typescript-react';
+  if (normalized.endsWith('.ts')) return 'typescript';
+  if (normalized.endsWith('.jsx')) return 'javascript-react';
+  if (normalized.endsWith('.js') || normalized.endsWith('.mjs') || normalized.endsWith('.cjs'))
+    return 'javascript';
+  if (normalized.endsWith('.md') || normalized.endsWith('.mdx')) return 'markdown';
+  if (normalized.endsWith('.json')) return 'json';
+  if (normalized.endsWith('.yaml') || normalized.endsWith('.yml')) return 'yaml';
+  if (normalized.endsWith('.css')) return 'css';
+  if (normalized.endsWith('.html')) return 'html';
+  return 'file';
 }
 
 export function pathLikeReference(value: string): string | undefined {
   const normalized = value.trim();
   if (!normalized) return undefined;
-  const direct = normalized.match(/^(.+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|mdx|mjs|cjs|py|rb|rs|ts|tsx|txt|yaml|yml))(?:[:#].*)?$/);
+  const direct = normalized.match(
+    /^(.+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|mdx|mjs|cjs|py|rb|rs|ts|tsx|txt|yaml|yml))(?:[:#].*)?$/,
+  );
   if (direct?.[1]) return direct[1];
-  if (normalized.includes("/") || normalized.includes("\\")) return normalized;
+  if (normalized.includes('/') || normalized.includes('\\')) return normalized;
   return undefined;
 }
 
@@ -582,14 +597,14 @@ export function withPointer(path: string, pointer: string | undefined): string {
 
 export function isDefinitionRoleKind(kind: string): boolean {
   return [
-    "spec",
-    "todo",
-    "plan",
-    "test",
-    "cases",
-    "memo",
-    "rule",
-    "definition",
-    "knowledge",
+    'spec',
+    'todo',
+    'plan',
+    'test',
+    'cases',
+    'memo',
+    'rule',
+    'definition',
+    'knowledge',
   ].includes(kind);
 }

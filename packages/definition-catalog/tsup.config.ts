@@ -1,11 +1,11 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ["src/index.ts"],
-  format: ["esm", "cjs"],
+  entry: ['src/index.ts'],
+  format: ['esm', 'cjs'],
   dts: {
     compilerOptions: {
-      lib: ["ES2023"],
+      lib: ['ES2023'],
       skipLibCheck: true,
     },
   },
@@ -13,5 +13,5 @@ export default defineConfig({
   clean: true,
   splitting: false,
   treeshake: true,
-  ignoreWatch: ["**/*.test.ts"],
+  ignoreWatch: ['**/*.test.ts'],
 });

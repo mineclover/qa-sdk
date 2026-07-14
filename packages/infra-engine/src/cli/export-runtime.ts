@@ -1,12 +1,12 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import { createDiscoveryClient } from "../discovery/client.js";
-import { createInfraProfileAdapter } from "../adapters/infra-profile.js";
-import { createDefinitionAdapter } from "../adapters/definition.js";
-import { createFleetManager } from "../fleet/manager.js";
-import type { FleetServiceStatus } from "../fleet/manager.js";
-import { PROFILE_DIR, REGISTRY_URL, DEFINITION_URL } from "./context.js";
+import { createDiscoveryClient } from '../discovery/client.js';
+import { createInfraProfileAdapter } from '../adapters/infra-profile.js';
+import { createDefinitionAdapter } from '../adapters/definition.js';
+import { createFleetManager } from '../fleet/manager.js';
+import type { FleetServiceStatus } from '../fleet/manager.js';
+import { PROFILE_DIR, REGISTRY_URL, DEFINITION_URL } from './context.js';
 
 export async function printFleetStatus(env: string): Promise<void> {
   const client = createDiscoveryClient(REGISTRY_URL);
@@ -29,10 +29,10 @@ export async function printFleetStatus(env: string): Promise<void> {
   for (const [tier, services] of [...byTier.entries()].toSorted()) {
     console.log(`  [${tier}]`);
     for (const service of services) {
-      const icon = service.deployed ? "✅" : service.running ? "🟢" : "⬜";
-      const label = service.deployed ? "deployed" : service.running ? "running " : "pending ";
-      const url = service.deployedUrl ?? service.registryUrl ?? "-";
-      const suffix = service.deployedWith ? `  (via ${service.deployedWith})` : "";
+      const icon = service.deployed ? '✅' : service.running ? '🟢' : '⬜';
+      const label = service.deployed ? 'deployed' : service.running ? 'running ' : 'pending ';
+      const url = service.deployedUrl ?? service.registryUrl ?? '-';
+      const suffix = service.deployedWith ? `  (via ${service.deployedWith})` : '';
       console.log(`    ${icon} ${label} ${service.serviceId.padEnd(26)} ${url}${suffix}`);
     }
   }
@@ -46,15 +46,15 @@ export async function printServiceDocs(serviceId?: string): Promise<void> {
     const docs = await defAdapter.getServiceDocs(serviceId);
     const lifecycleSummary = Object.entries(docs.byLifecycle)
       .map(([key, value]) => `${key}: ${value}`)
-      .join(", ");
+      .join(', ');
     const layerSummary = Object.entries(docs.byLayer)
       .map(([key, value]) => `${key}: ${value}`)
-      .join(", ");
+      .join(', ');
 
     console.log(`\n=== ${serviceId} 문서 요약 ===\n`);
     console.log(`  총 ${docs.totalDocs}건`);
-    console.log(`  lifecycle: ${lifecycleSummary || "(없음)"}`);
-    console.log(`  layer:     ${layerSummary || "(없음)"}`);
+    console.log(`  lifecycle: ${lifecycleSummary || '(없음)'}`);
+    console.log(`  layer:     ${layerSummary || '(없음)'}`);
 
     if (docs.docs.length > 0) {
       console.log(`\n  문서 목록:`);
@@ -75,7 +75,7 @@ export async function printServiceDocs(serviceId?: string): Promise<void> {
       const docs = await defAdapter.getServiceDocs(service.serviceId);
       const lifecycleSummary = Object.entries(docs.byLifecycle)
         .map(([key, value]) => `${key}: ${value}`)
-        .join(", ");
+        .join(', ');
       console.log(
         `  ${service.serviceId.padEnd(28)} ${String(docs.totalDocs).padStart(3)}건  ${lifecycleSummary}`,
       );

@@ -21,16 +21,16 @@ export type {
   BatchEncoder,
   AsyncBatchEncoder,
   FlatBatchEncoder,
-} from "./math/types.js";
+} from './math/types.js';
 
-export { WeightedIndex } from "./math/weighted-index.js";
-export { WeightedIndexBig } from "./math/weighted-index-big.js";
+export { WeightedIndex } from './math/weighted-index.js';
+export { WeightedIndexBig } from './math/weighted-index-big.js';
 export {
   calcWeightsBig,
   calcAddressRangesBig,
   mergeRangesBig,
   containsAddressBig,
-} from "./math/calc-big.js";
+} from './math/calc-big.js';
 export {
   calcWeights,
   partialQueryBase,
@@ -46,7 +46,7 @@ export {
   parseConstraintSegments,
   expandRanges,
   type CoordConstraint,
-} from "./math/calc.js";
+} from './math/calc.js';
 export {
   rangesToConstraint,
   constraintContains,
@@ -55,13 +55,22 @@ export {
   patternJoin,
   patternSpecificity,
   coordMatchesPattern,
-} from "./math/pattern-lattice.js";
+} from './math/pattern-lattice.js';
 export {
-  createMask, setBit, clearBit, hasBit,
-  buildMask, hasAnyBit, hasAllBits, popcount,
-  maskAnd, maskOr, masksOverlap,
-  isPowerOf2, nextPowerOf2,
-} from "./math/bitmask.js";
+  createMask,
+  setBit,
+  clearBit,
+  hasBit,
+  buildMask,
+  hasAnyBit,
+  hasAllBits,
+  popcount,
+  maskAnd,
+  maskOr,
+  masksOverlap,
+  isPowerOf2,
+  nextPowerOf2,
+} from './math/bitmask.js';
 export {
   WeightedIndexError,
   ShapeError,
@@ -74,13 +83,8 @@ export {
   PrefixNotFoundError,
   SerializeError,
   MigrateError,
-} from "./math/errors.js";
-export {
-  packAxis,
-  unpackAxis,
-  fromPackedAxis,
-  toPackedAxis,
-} from "./math/binary-axis.js";
+} from './math/errors.js';
+export { packAxis, unpackAxis, fromPackedAxis, toPackedAxis } from './math/binary-axis.js';
 export {
   analyzeLayoutSim,
   clampShape,
@@ -113,7 +117,7 @@ export {
   type LayoutViewModel,
   type LayoutViewMode,
   type DimViewModel,
-} from "./math/layout-fit.js";
+} from './math/layout-fit.js';
 
 // ── vocab ───────────────────────────────────────────────────────────────────
 export {
@@ -122,7 +126,7 @@ export {
   type LabelVersionEntry,
   type EntityId,
   type InferLabelSchema,
-} from "./vocab/label-registry.js";
+} from './vocab/label-registry.js';
 export {
   PrefixCodec,
   type PrefixVersionEntry,
@@ -130,16 +134,9 @@ export {
   type VersionedIndex,
   type PrefixVersionDiff,
   type CoordMigrator,
-} from "./vocab/prefix-registry.js";
-export {
-  createBinder,
-  type PartialBinder,
-} from "./vocab/partial-binder.js";
-export {
-  DisjointUnionIndex,
-  UnionKindError,
-  type UnionVariant,
-} from "./vocab/union-index.js";
+} from './vocab/prefix-registry.js';
+export { createBinder, type PartialBinder } from './vocab/partial-binder.js';
+export { DisjointUnionIndex, UnionKindError, type UnionVariant } from './vocab/union-index.js';
 
 // ── protocol ────────────────────────────────────────────────────────────────
 export {
@@ -154,7 +151,7 @@ export {
   type LayoutFieldSpec,
   type PlannedField,
   type LayoutPlan,
-} from "./protocol/uuid-layout.js";
+} from './protocol/uuid-layout.js';
 export {
   PACK_FORMATS,
   PACK_FORMAT_LIST,
@@ -170,7 +167,7 @@ export {
   type BuiltinFormatName,
   type DefineFormatOptions,
   type HexBoundary,
-} from "./protocol/pack-format.js";
+} from './protocol/pack-format.js';
 export {
   fitShape,
   fitLayout,
@@ -183,7 +180,7 @@ export {
   type FitShapeResult,
   type FitLayoutOptions,
   type FitLayoutResult,
-} from "./protocol/capacity-planner.js";
+} from './protocol/capacity-planner.js';
 export {
   CANONICAL_TEXT_PROTOCOL,
   CANONICAL_BINARY_PREFIX,
@@ -212,7 +209,7 @@ export {
   type AddressProtocolBig,
   type LayoutProtocolOptions,
   type ShardingStrategy,
-} from "./protocol/semantic-address.js";
+} from './protocol/semantic-address.js';
 export {
   bitsForMax,
   createBitFieldLayout,
@@ -230,7 +227,7 @@ export {
   type BitFieldLayout,
   type BitVsHexField,
   type BitVsHexAnalysis,
-} from "./protocol/bit-field-layout.js";
+} from './protocol/bit-field-layout.js';
 
 // ── obfuscate ───────────────────────────────────────────────────────────────
 export {
@@ -250,4 +247,4 @@ export {
   fromNanoId,
   type UUIDField,
   type ObfuscateTransform,
-} from "./obfuscate/index.js";
+} from './obfuscate/index.js';

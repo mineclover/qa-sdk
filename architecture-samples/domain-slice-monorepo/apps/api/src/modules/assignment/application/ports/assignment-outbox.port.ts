@@ -1,4 +1,4 @@
-import type { AssignmentTransactionScope } from "./assignment-transaction.port.js";
+import type { AssignmentTransactionScope } from './assignment-transaction.port.js';
 
 export interface AssignmentCreatedEvent {
   readonly id: string;
@@ -7,5 +7,8 @@ export interface AssignmentCreatedEvent {
 }
 
 export abstract class AssignmentOutboxPort {
-  abstract appendCreated(event: AssignmentCreatedEvent, scope?: AssignmentTransactionScope): Promise<void>;
+  abstract appendCreated(
+    event: AssignmentCreatedEvent,
+    scope?: AssignmentTransactionScope,
+  ): Promise<void>;
 }

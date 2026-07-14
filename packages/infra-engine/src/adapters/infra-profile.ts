@@ -2,10 +2,10 @@
 // @def.doc infra-engine-system
 
 // adapters/infra-profile.ts — 인프라 프로필 JSON 파일 기반 어댑터
-import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
-import { join } from "node:path";
-import type { InfraProfileAdapter } from "./adapter.js";
-import type { DeployHistoryEntry, InfraDeploymentEntry, MonitorTarget } from "../core/types.js";
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
+import { join } from 'node:path';
+import type { InfraProfileAdapter } from './adapter.js';
+import type { DeployHistoryEntry, InfraDeploymentEntry, MonitorTarget } from '../core/types.js';
 
 interface InfraProfileData {
   deployments: Record<string, InfraDeploymentEntry>;
@@ -13,8 +13,8 @@ interface InfraProfileData {
   history: Record<string, DeployHistoryEntry[]>;
 }
 
-const PROFILE_FILE = "infra-profile.json";
-const ROLLBACK_FILE = "infra-profile.rollback.json";
+const PROFILE_FILE = 'infra-profile.json';
+const ROLLBACK_FILE = 'infra-profile.rollback.json';
 
 export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter {
   const profilePath = join(baseDir, PROFILE_FILE);
@@ -22,7 +22,7 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
 
   async function load(): Promise<InfraProfileData> {
     try {
-      const raw = await readFile(profilePath, "utf-8");
+      const raw = await readFile(profilePath, 'utf-8');
       return JSON.parse(raw);
     } catch {
       return { deployments: {}, monitors: [], history: {} };
@@ -31,21 +31,21 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
 
   async function save(data: InfraProfileData): Promise<void> {
     await mkdir(baseDir, { recursive: true });
-    const tmp = profilePath + ".tmp";
+    const tmp = profilePath + '.tmp';
     await writeFile(tmp, JSON.stringify(data, null, 2));
     await rename(tmp, profilePath);
   }
 
   async function saveRollback(data: InfraProfileData): Promise<void> {
     await mkdir(baseDir, { recursive: true });
-    const tmp = rollbackPath + ".tmp";
+    const tmp = rollbackPath + '.tmp';
     await writeFile(tmp, JSON.stringify(data, null, 2));
     await rename(tmp, rollbackPath);
   }
 
   async function loadRollback(): Promise<InfraProfileData> {
     try {
-      const raw = await readFile(rollbackPath, "utf-8");
+      const raw = await readFile(rollbackPath, 'utf-8');
       return JSON.parse(raw);
     } catch {
       return { deployments: {}, monitors: [], history: {} };
@@ -96,7 +96,7 @@ export function createInfraProfileAdapter(baseDir: string): InfraProfileAdapter 
       const data = await load();
       const target = data.monitors.find((m) => m.serviceId === serviceId);
       if (target) {
-        target.lastStatus = status as MonitorTarget["lastStatus"];
+        target.lastStatus = status as MonitorTarget['lastStatus'];
         target.lastChecked = checkedAt;
         await save(data);
       }

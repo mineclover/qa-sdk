@@ -1,8 +1,11 @@
 {
   "name": "@qa-sdk/sim-gateway",
   "version": "0.1.0",
-  "description": "시뮬 — Hono 기반 gateway (JWT bitmap embed + traceparent + 라우팅)",
   "private": true,
+  "description": "시뮬 — Hono 기반 gateway (JWT bitmap embed + traceparent + 라우팅)",
+  "bin": {
+    "sim-gateway": "dist/server.js"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -29,9 +32,6 @@
       "types": "./dist/routing/routing-table.d.ts",
       "import": "./dist/routing/routing-table.js"
     }
-  },
-  "bin": {
-    "sim-gateway": "dist/server.js"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",

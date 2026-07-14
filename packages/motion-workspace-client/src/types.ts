@@ -1,11 +1,11 @@
 // @def.boundary motion-workspace-system
-import type { MotionEditorCommand, MotionSceneDef } from "motion-content";
+import type { MotionEditorCommand, MotionSceneDef } from 'motion-content';
 import type {
   MotionWorkspaceDescriptor,
   MotionWorkspaceSnapshot,
   MotionWorkspaceSnapshotV2,
-} from "motion-workspace";
-export type { MotionWorkspaceConflictErrorShape } from "motion-workspace";
+} from 'motion-workspace';
+export type { MotionWorkspaceConflictErrorShape } from 'motion-workspace';
 
 export interface MotionWorkspaceClientOptions {
   readonly baseUrl: string;
@@ -19,10 +19,7 @@ export interface MotionWorkspaceClientRequestInit {
 }
 
 export interface MotionWorkspaceClientFetch {
-  (
-    input: string,
-    init?: MotionWorkspaceClientRequestInit,
-  ): Promise<MotionWorkspaceClientResponse>;
+  (input: string, init?: MotionWorkspaceClientRequestInit): Promise<MotionWorkspaceClientResponse>;
 }
 
 export interface MotionWorkspaceClientResponse {
@@ -80,7 +77,7 @@ export interface MotionWorkspaceDeleteSceneResponse {
 }
 
 export interface MotionWorkspaceSceneConflictErrorShape {
-  readonly code: "revision_conflict";
+  readonly code: 'revision_conflict';
   readonly message: string;
   readonly sceneId: string;
   readonly expectedRevision?: number;

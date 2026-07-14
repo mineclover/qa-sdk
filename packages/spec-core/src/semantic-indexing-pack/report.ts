@@ -1,17 +1,17 @@
 // @def.boundary spec-engine-system
 // @def.doc coord-semantic-indexing-pack
 
-import { evaluateSemanticIndexingCompatibility } from "./compatibility.js";
-import { sortSemanticIndexingPackSurfaces } from "./sort.js";
+import { evaluateSemanticIndexingCompatibility } from './compatibility.js';
+import { sortSemanticIndexingPackSurfaces } from './sort.js';
 import type {
   SemanticIndexingPackReport,
   SemanticIndexingPackReportInput,
   SemanticIndexingPromotionProposalKind,
   SemanticIndexingPromotionSummary,
-} from "./types.js";
+} from './types.js';
 
 function summarizePromotions(
-  input: SemanticIndexingPackReportInput["promotionProposals"],
+  input: SemanticIndexingPackReportInput['promotionProposals'],
 ): readonly SemanticIndexingPromotionSummary[] {
   const byKind = new Map<
     SemanticIndexingPromotionProposalKind,
@@ -31,7 +31,9 @@ function summarizePromotions(
   }));
 }
 
-export function buildSemanticIndexingPackReport(input: SemanticIndexingPackReportInput): SemanticIndexingPackReport {
+export function buildSemanticIndexingPackReport(
+  input: SemanticIndexingPackReportInput,
+): SemanticIndexingPackReport {
   const changes = input.changes ?? [];
   const compatibility = evaluateSemanticIndexingCompatibility(input.manifest, changes);
   const surfaces = sortSemanticIndexingPackSurfaces(
@@ -56,32 +58,37 @@ export function buildSemanticIndexingPackReport(input: SemanticIndexingPackRepor
   };
 }
 
-export function formatSemanticIndexingPackReportMarkdown(report: SemanticIndexingPackReport): string {
+export function formatSemanticIndexingPackReportMarkdown(
+  report: SemanticIndexingPackReport,
+): string {
   const lines = [
-    "# Semantic Indexing Pack Report",
-    "",
+    '# Semantic Indexing Pack Report',
+    '',
     `- Pack: ${report.packId}@${report.version}`,
     `- Generated: ${report.generatedAt}`,
     `- Verdict: ${report.compatibility.verdict}`,
-    `- Review-only: ${report.reviewOnly ? "yes" : "no"}`,
-    "",
-    "## Reasons",
+    `- Review-only: ${report.reviewOnly ? 'yes' : 'no'}`,
+    '',
+    '## Reasons',
     ...(report.compatibility.reasons.length > 0
       ? report.compatibility.reasons.map((reason) => `- ${reason}`)
-      : ["- none"]),
-    "",
-    "## Surfaces",
-    "| id | kind | role | dirty | lastChangedAt | path |",
-    "|---|---|---|---|---|---|",
-    ...report.surfaces.map((surface) =>
-      `| ${surface.id} | ${surface.kind} | ${surface.role ?? "other"} | ${surface.dirty ? "yes" : "no"} | ${surface.lastChangedAt ?? ""} | ${surface.path ?? ""} |`,
+      : ['- none']),
+    '',
+    '## Surfaces',
+    '| id | kind | role | dirty | lastChangedAt | path |',
+    '|---|---|---|---|---|---|',
+    ...report.surfaces.map(
+      (surface) =>
+        `| ${surface.id} | ${surface.kind} | ${surface.role ?? 'other'} | ${surface.dirty ? 'yes' : 'no'} | ${surface.lastChangedAt ?? ''} | ${surface.path ?? ''} |`,
     ),
-    "",
-    "## Promotion Summary",
+    '',
+    '## Promotion Summary',
     ...(report.promotionSummary.length > 0
-      ? report.promotionSummary.map((summary) => `- ${summary.kind}: ${summary.count} (${summary.terms.join(", ")})`)
-      : ["- none"]),
+      ? report.promotionSummary.map(
+          (summary) => `- ${summary.kind}: ${summary.count} (${summary.terms.join(', ')})`,
+        )
+      : ['- none']),
   ];
 
-  return lines.join("\n");
+  return lines.join('\n');
 }

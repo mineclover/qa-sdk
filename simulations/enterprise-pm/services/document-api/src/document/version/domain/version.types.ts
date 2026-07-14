@@ -1,7 +1,7 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { AuthorId, DocumentId, VersionNumber } from "./version.ids.js";
+import type { AuthorId, DocumentId, VersionNumber } from './version.ids.js';
 
 export interface VersionProps {
   readonly documentId: DocumentId;

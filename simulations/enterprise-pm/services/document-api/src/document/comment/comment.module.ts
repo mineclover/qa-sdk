@@ -1,38 +1,35 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  DOCUMENT_DB_INSTANCE,
-  type DocumentDbInstanceHandle,
-} from "../document-db.module.js";
+import { DOCUMENT_DB_INSTANCE, type DocumentDbInstanceHandle } from '../document-db.module.js';
 
-import { CommentRepositoryPort } from "./application/ports/comment-repository.port.js";
-import { CommentReadModelQuery } from "./application/queries/comment-read-model.query.js";
-import { CommentUseCase } from "./application/use-cases/comment.use-case.js";
-import { DocumentQueryPort } from "./application/ports/document-query.port.js";
+import { CommentRepositoryPort } from './application/ports/comment-repository.port.js';
+import { CommentReadModelQuery } from './application/queries/comment-read-model.query.js';
+import { CommentUseCase } from './application/use-cases/comment.use-case.js';
+import { DocumentQueryPort } from './application/ports/document-query.port.js';
 
-import { createCommentRepository } from "./infrastructure/persistence/comment.repository.js";
-import { createCommentTransactionPort } from "./infrastructure/transaction/comment.transaction.js";
-import { createCommentOutboxPort } from "./infrastructure/outbox/comment.outbox.js";
-import { createCommentLogger } from "./infrastructure/logging/comment.logger.js";
-import { RepositoryCommentReadModel } from "./infrastructure/read-model/comment.read-model.js";
-import { DocumentReadModelDocumentQueryAdapter } from "./infrastructure/read-model/document-query.adapter.js";
+import { createCommentRepository } from './infrastructure/persistence/comment.repository.js';
+import { createCommentTransactionPort } from './infrastructure/transaction/comment.transaction.js';
+import { createCommentOutboxPort } from './infrastructure/outbox/comment.outbox.js';
+import { createCommentLogger } from './infrastructure/logging/comment.logger.js';
+import { RepositoryCommentReadModel } from './infrastructure/read-model/comment.read-model.js';
+import { DocumentReadModelDocumentQueryAdapter } from './infrastructure/read-model/document-query.adapter.js';
 
-import { DocumentReadModelQuery } from "../document/application/queries/document-read-model.query.js";
-import { DocumentSliceModule } from "../document/document.module.js";
+import { DocumentReadModelQuery } from '../document/application/queries/document-read-model.query.js';
+import { DocumentSliceModule } from '../document/document.module.js';
 
-import { CommentController } from "./presentation/http/comment.controller.js";
+import { CommentController } from './presentation/http/comment.controller.js';
 
-const COMMENT_TRANSACTION_PORT = Symbol.for("sim-document-api/comment/TransactionPort");
-const COMMENT_OUTBOX_PORT = Symbol.for("sim-document-api/comment/OutboxPort");
+const COMMENT_TRANSACTION_PORT = Symbol.for('sim-document-api/comment/TransactionPort');
+const COMMENT_OUTBOX_PORT = Symbol.for('sim-document-api/comment/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: CommentRepositoryPort,

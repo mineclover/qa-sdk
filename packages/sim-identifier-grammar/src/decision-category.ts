@@ -1,15 +1,15 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
+import { z } from 'zod';
 
 export const CATEGORIES = {
-  safety: ["perf", "compatibility", "decisionQuality", "auditSafety", "replicationHealth"],
-  resource: ["loadPressure", "resourceHeadroom", "stability"],
+  safety: ['perf', 'compatibility', 'decisionQuality', 'auditSafety', 'replicationHealth'],
+  resource: ['loadPressure', 'resourceHeadroom', 'stability'],
 } as const;
 
 export type DecisionPass = keyof typeof CATEGORIES;
 export type DecisionCategoryName =
-  | (typeof CATEGORIES)["safety"][number]
-  | (typeof CATEGORIES)["resource"][number];
+  | (typeof CATEGORIES)['safety'][number]
+  | (typeof CATEGORIES)['resource'][number];
 
 export interface DecisionCategory {
   pass: DecisionPass;
@@ -18,7 +18,7 @@ export interface DecisionCategory {
 
 export const DecisionCategorySchema = z
   .object({
-    pass: z.enum(["safety", "resource"]),
+    pass: z.enum(['safety', 'resource']),
     name: z.string(),
   })
   .superRefine((v, ctx) => {

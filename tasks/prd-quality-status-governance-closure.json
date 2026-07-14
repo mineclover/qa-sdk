@@ -64,9 +64,7 @@
       "priority": 2,
       "passes": true,
       "notes": "Start with quality export JSON. quality-ledger lookup can be added later if JSON snapshot evidence is insufficient. Registry allocation plan/todo remain adjacent but out of scope.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -98,10 +96,7 @@
       "priority": 3,
       "passes": true,
       "notes": "Keep score adjustment additive and explicit. Missing evidence should degrade confidence, not block extraction. Do not couple prompt quality scoring to registry-service allocation state.",
-      "dependsOn": [
-        "US-001",
-        "US-002"
-      ],
+      "dependsOn": ["US-001", "US-002"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -166,11 +161,7 @@
       "priority": 5,
       "passes": true,
       "notes": "This story should not change non-JSON human-readable output except for optional concise warnings if needed. Governance closure JSON must not imply registry allocation activation.",
-      "dependsOn": [
-        "US-001",
-        "US-002",
-        "US-003"
-      ],
+      "dependsOn": ["US-001", "US-002", "US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -198,13 +189,7 @@
       "priority": 6,
       "passes": true,
       "notes": "This story should be executed last unless earlier stories need immediate doc changes to keep validation green. Explicitly document that registry allocation plan/todo are out of scope for this feature.",
-      "dependsOn": [
-        "US-001",
-        "US-002",
-        "US-003",
-        "US-004",
-        "US-005"
-      ],
+      "dependsOn": ["US-001", "US-002", "US-003", "US-004", "US-005"],
       "completionNotes": "Completed by agent"
     }
   ],

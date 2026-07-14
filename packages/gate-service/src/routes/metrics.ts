@@ -1,7 +1,7 @@
 // @def.boundary gate-system
 // @def.doc gate-system
 
-import { Hono } from "hono";
+import { Hono } from 'hono';
 
 export interface MetricsRouteDeps {
   engineConfigured: boolean;
@@ -21,8 +21,8 @@ function gauge(
     Object.keys(labels).length > 0
       ? `{${Object.entries(labels)
           .map(([k, v]) => `${k}="${v}"`)
-          .join(",")}}`
-      : "";
+          .join(',')}}`
+      : '';
   lines.push(`${name}${labelStr} ${value}`);
   return lines;
 }
@@ -31,37 +31,33 @@ export function createMetricsRoutes(deps: MetricsRouteDeps) {
   const routes = new Hono();
   const getUptimeSeconds = deps.getUptimeSeconds ?? (() => process.uptime());
 
-  routes.get("/metrics", (c) => {
+  routes.get('/metrics', (c) => {
     const lines: string[] = [];
 
     // ── process metrics ──
     lines.push(
       ...gauge(
-        "process_uptime_seconds",
+        'process_uptime_seconds',
         Math.round(getUptimeSeconds()),
-        "Process uptime in seconds",
+        'Process uptime in seconds',
       ),
     );
 
     const mem = process.memoryUsage();
-    lines.push(
-      ...gauge("process_heap_used_bytes", mem.heapUsed, "Process heap used bytes"),
-    );
-    lines.push(
-      ...gauge("process_rss_bytes", mem.rss, "Process resident set size bytes"),
-    );
+    lines.push(...gauge('process_heap_used_bytes', mem.heapUsed, 'Process heap used bytes'));
+    lines.push(...gauge('process_rss_bytes', mem.rss, 'Process resident set size bytes'));
 
     // ── gate engine status ──
     lines.push(
       ...gauge(
-        "gate_engine_configured",
+        'gate_engine_configured',
         deps.engineConfigured ? 1 : 0,
-        "Whether gate engine is configured (1=yes, 0=no)",
+        'Whether gate engine is configured (1=yes, 0=no)',
       ),
     );
 
-    return c.text(lines.join("\n") + "\n", 200, {
-      "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+    return c.text(lines.join('\n') + '\n', 200, {
+      'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
     });
   });
 

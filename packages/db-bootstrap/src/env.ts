@@ -7,11 +7,11 @@
  * pg-migration-design.md §6 (env 변수)와 동기.
  */
 
-import { z } from "zod";
-import type { PgConfig } from "./connection.js";
+import { z } from 'zod';
+import type { PgConfig } from './connection.js';
 
 export const dbEnvSchema = z.object({
-  QA_DB_DIALECT: z.enum(["sqlite", "pg"]).default("sqlite"),
+  QA_DB_DIALECT: z.enum(['sqlite', 'pg']).default('sqlite'),
   // SQLite (선택)
   QA_SQLITE_PATH: z.string().optional(),
   // PG (QA_DB_DIALECT=pg 시 필수 — parseDbEnv에서 검증)
@@ -30,9 +30,9 @@ export const dbEnvSchema = z.object({
 export type DbEnv = z.infer<typeof dbEnvSchema>;
 
 export type ParsedDbEnv =
-  | { dialect: "sqlite"; sqlitePath?: string }
+  | { dialect: 'sqlite'; sqlitePath?: string }
   | {
-      dialect: "pg";
+      dialect: 'pg';
       pgHost: string;
       pgPort: number;
       pgDatabase: string;
@@ -50,24 +50,24 @@ export type ParsedDbEnv =
 export function parseDbEnv(input: Record<string, string | undefined>): ParsedDbEnv {
   const env = dbEnvSchema.parse(input);
 
-  if (env.QA_DB_DIALECT === "sqlite") {
-    return { dialect: "sqlite", sqlitePath: env.QA_SQLITE_PATH };
+  if (env.QA_DB_DIALECT === 'sqlite') {
+    return { dialect: 'sqlite', sqlitePath: env.QA_SQLITE_PATH };
   }
 
   // pg branch — 필수 필드 검증
   const missing: string[] = [];
-  if (!env.QA_PG_HOST) missing.push("QA_PG_HOST");
-  if (!env.QA_PG_PORT) missing.push("QA_PG_PORT");
-  if (!env.QA_PG_DATABASE) missing.push("QA_PG_DATABASE");
-  if (!env.QA_PG_USER) missing.push("QA_PG_USER");
-  if (!env.QA_PG_PASSWORD) missing.push("QA_PG_PASSWORD");
+  if (!env.QA_PG_HOST) missing.push('QA_PG_HOST');
+  if (!env.QA_PG_PORT) missing.push('QA_PG_PORT');
+  if (!env.QA_PG_DATABASE) missing.push('QA_PG_DATABASE');
+  if (!env.QA_PG_USER) missing.push('QA_PG_USER');
+  if (!env.QA_PG_PASSWORD) missing.push('QA_PG_PASSWORD');
 
   if (missing.length > 0) {
-    throw new Error(`PG dialect 활성화됐지만 필수 변수 누락: ${missing.join(", ")}`);
+    throw new Error(`PG dialect 활성화됐지만 필수 변수 누락: ${missing.join(', ')}`);
   }
 
   return {
-    dialect: "pg",
+    dialect: 'pg',
     pgHost: env.QA_PG_HOST!,
     pgPort: env.QA_PG_PORT!,
     pgDatabase: env.QA_PG_DATABASE!,
@@ -88,7 +88,7 @@ export function parseDbEnv(input: Record<string, string | undefined>): ParsedDbE
  * createDualConnection 호출 site에서 SIM_DB_WRITE_URL / SIM_DB_READ_URL을
  * PgConfig로 변환할 때 사용한다. dialect 필드는 호출자가 부여.
  */
-export function parsePgUrl(url: string): Omit<PgConfig, "dialect"> {
+export function parsePgUrl(url: string): Omit<PgConfig, 'dialect'> {
   const u = new URL(url);
   return {
     pgHost: u.hostname,

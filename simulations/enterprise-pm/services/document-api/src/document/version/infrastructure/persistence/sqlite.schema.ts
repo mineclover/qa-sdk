@@ -1,7 +1,7 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (version slice).
@@ -9,13 +9,13 @@ import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
  * 테이블 키: (document_id, version_number) 합성 PK (append-only).
  */
 export const versions = sqliteTable(
-  "doc_versions",
+  'doc_versions',
   {
-    documentId: text("document_id").notNull(),
-    versionNumber: integer("version_number").notNull(),
-    contentRef: text("content_ref").notNull(),
-    authorId: text("author_id").notNull(),
-    createdAt: text("created_at").notNull(),
+    documentId: text('document_id').notNull(),
+    versionNumber: integer('version_number').notNull(),
+    contentRef: text('content_ref').notNull(),
+    authorId: text('author_id').notNull(),
+    createdAt: text('created_at').notNull(),
   },
   (t) => [primaryKey({ columns: [t.documentId, t.versionNumber] })],
 );

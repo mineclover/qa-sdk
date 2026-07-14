@@ -1,26 +1,28 @@
 // @def.boundary sim-auth-api
 // @def.doc sim-erp-pm-design
 
-import { z } from "zod";
-import { getRequiredServicePort } from "@qa-sdk/core";
-import { dbEnvSchema } from "db-bootstrap";
-import type { BitmapIssuerConfig } from "../auth/bitmap/infrastructure/read-model/bitmap-issue.read-model.js";
+import { z } from 'zod';
+import { getRequiredServicePort } from '@qa-sdk/core';
+import { dbEnvSchema } from 'db-bootstrap';
+import type { BitmapIssuerConfig } from '../auth/bitmap/infrastructure/read-model/bitmap-issue.read-model.js';
 
-const DEFAULT_PORT = getRequiredServicePort("sim-auth-api");
+const DEFAULT_PORT = getRequiredServicePort('sim-auth-api');
 
 export const envSchema = dbEnvSchema.extend({
   PORT: z.coerce.number().int().default(DEFAULT_PORT),
-  CORS_ORIGIN: z.string().default("*"),
+  CORS_ORIGIN: z.string().default('*'),
   /** OTel collector endpoint — undefined면 OTEL_ENABLED=false 효과 */
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
-  OTEL_ENABLED: z
-    .preprocess((v) => v ?? "true", z.enum(["true", "false"]).transform((v) => v === "true")),
+  OTEL_ENABLED: z.preprocess(
+    (v) => v ?? 'true',
+    z.enum(['true', 'false']).transform((v) => v === 'true'),
+  ),
   /** ingest-server 엔드포인트 — set되면 IngestForwarder 활성화 */
   QA_INGEST_URL: z.string().optional(),
   /** Redis pub/sub — Plan 12b가 사용. 본 plan에서는 read-only 노출. */
-  SIM_REDIS_URL: z.string().default("redis://localhost:6379"),
+  SIM_REDIS_URL: z.string().default('redis://localhost:6379'),
   /** Bitmap 슬라이스 — VersionedBitmap 서명 secret. */
-  SIM_BITMAP_SECRET: z.string().default("dev-only-bitmap-secret-32-bytes-min!"),
+  SIM_BITMAP_SECRET: z.string().default('dev-only-bitmap-secret-32-bytes-min!'),
   /** Bitmap 슬라이스 — VersionedBitmap TTL (ms). */
   SIM_BITMAP_TTL_MS: z.coerce.number().int().positive().default(3600_000),
 });
@@ -44,7 +46,7 @@ export function buildBitmapIssuerConfig(source: Env = env): BitmapIssuerConfig {
   return {
     secret: new TextEncoder().encode(source.SIM_BITMAP_SECRET),
     ttlMs: source.SIM_BITMAP_TTL_MS,
-    issuer: "sim-auth-api",
-    version: "v1",
+    issuer: 'sim-auth-api',
+    version: 'v1',
   };
 }

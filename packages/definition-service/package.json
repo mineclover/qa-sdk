@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/definition-service",
   "version": "0.1.0",
-  "description": "문서 메타데이터 sync, search, graph를 제공하는 definition 서비스",
   "private": true,
+  "description": "문서 메타데이터 sync, search, graph를 제공하는 definition 서비스",
   "type": "module",
   "scripts": {
     "dev": "tsc --watch --preserveWatchOutput & sleep 2 && node --watch dist/main.js",
@@ -21,8 +21,8 @@
     "@qa-sdk/core": "workspace:*",
     "@qa-sdk/logger": "workspace:*",
     "better-sqlite3": "catalog:",
-    "drizzle-orm": "catalog:",
     "definition-catalog": "workspace:*",
+    "drizzle-orm": "catalog:",
     "graphql": "^16.13.2",
     "mercurius": "^16.8.0",
     "reflect-metadata": "^0.2.2",

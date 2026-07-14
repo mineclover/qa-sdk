@@ -1,6 +1,6 @@
 /** @def.boundary apm-codegen-system */
-import type { SchemaSnapshot, Axis, Composite } from "./types.js";
-import { toPascal, toTsConstKey } from "./naming.js";
+import type { SchemaSnapshot, Axis, Composite } from './types.js';
+import { toPascal, toTsConstKey } from './naming.js';
 
 /**
  * SchemaSnapshot → TypeScript 타입/상수 생성.
@@ -37,7 +37,7 @@ export function generateTypescript(snapshot: SchemaSnapshot): string {
   // ── 코어 타입 ──────────────────────────────────────
   lines.push(...CORE_TYPES);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 function generateSchemaMeta(snapshot: SchemaSnapshot): string[] {
@@ -52,12 +52,12 @@ function generateSchemaMeta(snapshot: SchemaSnapshot): string[] {
     lines.push(`/** Composite prefix 메타데이터 — id, dims, capacity, stride, snapshotSupply */`);
     lines.push(`export const PREFIXES = {`);
     for (const comp of snapshot.composites) {
-      const dimsStr = comp.dims.map((d) => `"${d}"`).join(", ");
+      const dimsStr = comp.dims.map((d) => `"${d}"`).join(', ');
       const capacities = resolveCapacities(comp, axisMap);
       const strides = calcStrides(capacities);
-      const capStr = capacities.join(", ");
-      const strStr = strides.join(", ");
-      const supply = comp.snapshotSupply?.type ?? "implicit";
+      const capStr = capacities.join(', ');
+      const strStr = strides.join(', ');
+      const supply = comp.snapshotSupply?.type ?? 'implicit';
       lines.push(`  ${comp.id}: {`);
       lines.push(`    id: "${comp.id}" as const,`);
       lines.push(`    dims: [${dimsStr}] as const,`);
@@ -119,10 +119,7 @@ function generateAxisConstAndType(axis: Axis): string[] {
   return lines;
 }
 
-function generateCompositeDims(
-  comp: Composite,
-  axisMap: Map<string, Axis>,
-): string[] {
+function generateCompositeDims(comp: Composite, axisMap: Map<string, Axis>): string[] {
   const pascalName = toPascal(comp.id);
   const lines: string[] = [];
 

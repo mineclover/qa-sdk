@@ -18,7 +18,7 @@
  *   reg.register(defineFormat({ name: "cuid", chars: 20, label: "CUID" }));
  */
 
-import { charsForMax } from "./uuid-layout.js";
+import { charsForMax } from './uuid-layout.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  PackFormat — 포맷 정의
@@ -26,13 +26,13 @@ import { charsForMax } from "./uuid-layout.js";
 
 export interface PackFormat {
   /** 고유 식별 이름 */
-  readonly name:   string;
+  readonly name: string;
   /** hex 자릿수 (dash 제외) */
-  readonly chars:  number;
+  readonly chars: number;
   /** 비트 수 (= chars × 4) */
-  readonly bits:   number;
+  readonly bits: number;
   /** 사람이 읽을 수 있는 설명 */
-  readonly label:  string;
+  readonly label: string;
   /**
    * Dash-separated 그룹 크기. 합계가 chars와 일치해야 한다.
    * 예: UUID → [8, 4, 4, 4, 12]
@@ -46,9 +46,9 @@ export interface PackFormat {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface DefineFormatOptions {
-  name:    string;
-  chars:   number;
-  label:   string;
+  name: string;
+  chars: number;
+  label: string;
   groups?: number[];
 }
 
@@ -62,7 +62,7 @@ export interface DefineFormatOptions {
  * defineFormat({ name: "custom", chars: 20, label: "Custom", groups: [4, 4, 4, 4, 4] })
  */
 export function defineFormat(opts: DefineFormatOptions): PackFormat {
-  if (!opts.name) throw new RangeError("PackFormat: name is required");
+  if (!opts.name) throw new RangeError('PackFormat: name is required');
   if (opts.chars <= 0) throw new RangeError(`PackFormat "${opts.name}": chars must be > 0`);
 
   const groups = opts.groups?.length ? Object.freeze([...opts.groups]) : undefined;
@@ -70,19 +70,19 @@ export function defineFormat(opts: DefineFormatOptions): PackFormat {
     const sum = groups.reduce((a, b) => a + b, 0);
     if (sum !== opts.chars) {
       throw new RangeError(
-        `PackFormat "${opts.name}": groups sum (${sum}) ≠ chars (${opts.chars})`
+        `PackFormat "${opts.name}": groups sum (${sum}) ≠ chars (${opts.chars})`,
       );
     }
-    if (groups.some(g => g <= 0)) {
+    if (groups.some((g) => g <= 0)) {
       throw new RangeError(`PackFormat "${opts.name}": each group must be > 0`);
     }
   }
 
   return Object.freeze({
-    name:   opts.name,
-    chars:  opts.chars,
-    bits:   opts.chars * 4,
-    label:  opts.label,
+    name: opts.name,
+    chars: opts.chars,
+    bits: opts.chars * 4,
+    label: opts.label,
     groups,
   });
 }
@@ -92,11 +92,16 @@ export function defineFormat(opts: DefineFormatOptions): PackFormat {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const PACK_FORMATS = {
-  int64:    defineFormat({ name: "int64",    chars: 16, label: "64-bit Integer" }),
-  objectId: defineFormat({ name: "objectId", chars: 24, label: "96-bit ObjectId" }),
-  uuid:     defineFormat({ name: "uuid",     chars: 32, label: "UUID (128-bit)", groups: [8, 4, 4, 4, 12] }),
-  sha1:     defineFormat({ name: "sha1",     chars: 40, label: "160-bit (SHA-1)" }),
-  sha256:   defineFormat({ name: "sha256",   chars: 64, label: "256-bit (SHA-256)" }),
+  int64: defineFormat({ name: 'int64', chars: 16, label: '64-bit Integer' }),
+  objectId: defineFormat({ name: 'objectId', chars: 24, label: '96-bit ObjectId' }),
+  uuid: defineFormat({
+    name: 'uuid',
+    chars: 32,
+    label: 'UUID (128-bit)',
+    groups: [8, 4, 4, 4, 12],
+  }),
+  sha1: defineFormat({ name: 'sha1', chars: 40, label: '160-bit (SHA-1)' }),
+  sha256: defineFormat({ name: 'sha256', chars: 64, label: '256-bit (SHA-256)' }),
 } as const satisfies Record<string, PackFormat>;
 
 export type BuiltinFormatName = keyof typeof PACK_FORMATS;
@@ -163,8 +168,8 @@ export class FormatRegistry {
    *  - `number` → 해당 chars의 익명 포맷 생성
    */
   resolve(ref: PackFormat | string | number): PackFormat {
-    if (typeof ref === "object") return ref;
-    if (typeof ref === "string") return this.require(ref);
+    if (typeof ref === 'object') return ref;
+    if (typeof ref === 'string') return this.require(ref);
     return defineFormat({ name: `${ref * 4}bit`, chars: ref, label: `${ref * 4}-bit` });
   }
 }
@@ -203,7 +208,7 @@ export function formatHex(format: PackFormat, rawHex: string): string {
     parts.push(rawHex.slice(pos, pos + g));
     pos += g;
   }
-  return parts.join("-");
+  return parts.join('-');
 }
 
 /**
@@ -214,7 +219,7 @@ export function formatHex(format: PackFormat, rawHex: string): string {
  * // → "abcd0100000000000000000000000042"
  */
 export function parseHex(formatted: string): string {
-  return formatted.replace(/-/g, "").toLowerCase();
+  return formatted.replace(/-/g, '').toLowerCase();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -223,11 +228,11 @@ export function parseHex(formatted: string): string {
 
 export interface HexBoundary {
   /** 입력값 */
-  value:    number;
+  value: number;
   /** value를 표현하는 데 필요한 hex 자릿수 (= charsForMax(value - 1), 단 value ≤ 1이면 1) */
   hexChars: number;
   /** 현재 자릿수에서의 최댓값 (16^hexChars - 1). 예: 3자리 → 4095 */
-  hexMax:   number;
+  hexMax: number;
   /** 현재 자릿수로 수용 가능한 슬롯 수 (= hexMax + 1). 예: 3자리 → 4096 */
   hexCapacity: number;
   /** 활용률: value / hexCapacity */
@@ -248,16 +253,16 @@ export interface HexBoundary {
  */
 export function hexBoundary(value: number): HexBoundary {
   const v = Math.max(1, Math.floor(value));
-  const hexChars    = charsForMax(v - 1);
-  const hexMax      = Math.pow(16, hexChars) - 1;
+  const hexChars = charsForMax(v - 1);
+  const hexMax = Math.pow(16, hexChars) - 1;
   const hexCapacity = hexMax + 1;
   return {
-    value:       v,
+    value: v,
     hexChars,
     hexMax,
     hexCapacity,
     utilization: v / hexCapacity,
-    nextHexMax:  Math.pow(16, hexChars + 1) - 1,
+    nextHexMax: Math.pow(16, hexChars + 1) - 1,
   };
 }
 
@@ -287,7 +292,7 @@ export function hexFloor(value: number): number {
   const v = Math.max(1, Math.floor(value));
   if (v <= 1) return 1;
   const chars = charsForMax(v - 1);
-  const ceil  = Math.pow(16, chars);
+  const ceil = Math.pow(16, chars);
   if (v === ceil) return v;
   return Math.pow(16, chars - 1);
 }

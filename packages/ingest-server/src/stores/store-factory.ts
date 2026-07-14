@@ -11,16 +11,22 @@
  */
 
 import type {
-  RecordStore, TraceStore, SessionStore, VerdictStore,
-  TransmissionStore, GraphStore, ScenarioSpecStore, DlqStore,
+  RecordStore,
+  TraceStore,
+  SessionStore,
+  VerdictStore,
+  TransmissionStore,
+  GraphStore,
+  ScenarioSpecStore,
+  DlqStore,
   KeyObservationStore,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 /**
  * StoreDriver — Plan 07a 옵션 A에 따라 sqlite 추가. d1은 sqlite의 deprecation alias.
  * 런타임 선택은 `resolveStoreDriver(env)` (config/env.ts)가 수행.
  */
-export type StoreDriver = "memory" | "sqlite" | "pg" | "d1" | "clickhouse";
+export type StoreDriver = 'memory' | 'sqlite' | 'pg' | 'd1' | 'clickhouse';
 
 export interface StoreSet {
   recordStore: RecordStore;
@@ -47,7 +53,7 @@ export async function createMemoryStores(): Promise<StoreSet> {
     InMemoryGraphStore,
     InMemoryScenarioSpecStore,
     InMemoryDlqStore,
-  } = await import("@qa-sdk/store");
+  } = await import('@qa-sdk/store');
 
   return {
     recordStore: new InMemoryRecordStore(),
@@ -62,18 +68,18 @@ export async function createMemoryStores(): Promise<StoreSet> {
 }
 
 /** D1/SQLite stores 생성 — SqlDriver.$client에서 drizzle 인스턴스를 만들어 주입 */
-export async function createD1Stores(driver: import("index-meta").SqlDriver): Promise<StoreSet> {
-  const { createD1Drizzle } = await import("./d1-db-type.js");
+export async function createD1Stores(driver: import('index-meta').SqlDriver): Promise<StoreSet> {
+  const { createD1Drizzle } = await import('./d1-db-type.js');
   const db = createD1Drizzle((driver as unknown as { $client: unknown }).$client);
-  const { D1RecordStore } = await import("./d1-record-store.js");
-  const { D1TraceStore } = await import("./d1-trace-store.js");
-  const { D1SessionStore } = await import("./d1-session-store.js");
-  const { D1VerdictStore } = await import("./d1-verdict-store.js");
-  const { D1KeyObservationStore } = await import("./d1-key-observation-store.js");
-  const { D1GraphStore } = await import("./d1-graph-store.js");
-  const { D1ScenarioSpecStore } = await import("./d1-scenario-spec-store.js");
-  const { D1TransmissionStore } = await import("./d1-transmission-store.js");
-  const { D1DlqStore } = await import("./d1-dlq-store.js");
+  const { D1RecordStore } = await import('./d1-record-store.js');
+  const { D1TraceStore } = await import('./d1-trace-store.js');
+  const { D1SessionStore } = await import('./d1-session-store.js');
+  const { D1VerdictStore } = await import('./d1-verdict-store.js');
+  const { D1KeyObservationStore } = await import('./d1-key-observation-store.js');
+  const { D1GraphStore } = await import('./d1-graph-store.js');
+  const { D1ScenarioSpecStore } = await import('./d1-scenario-spec-store.js');
+  const { D1TransmissionStore } = await import('./d1-transmission-store.js');
+  const { D1DlqStore } = await import('./d1-dlq-store.js');
 
   return {
     recordStore: new D1RecordStore(db),
@@ -100,14 +106,14 @@ export async function createPgStores(
   databaseUrl: string,
   opts?: { schema?: string },
 ): Promise<StoreSet> {
-  const store = await import("@qa-sdk/store");
+  const store = await import('@qa-sdk/store');
   const db = store.createDb(databaseUrl);
 
   // Plan 07b/07c 어댑터 — ingest schema 입주
-  const { createPgIngestStores } = await import("./pg/factory.js");
+  const { createPgIngestStores } = await import('./pg/factory.js');
   const ingestStores = await createPgIngestStores({
     url: databaseUrl,
-    schema: opts?.schema ?? "ingest",
+    schema: opts?.schema ?? 'ingest',
   });
 
   return {
@@ -128,8 +134,10 @@ export async function createPgStores(
 }
 
 /** ClickHouse stores 생성 */
-export async function createClickHouseStores(client: import("./clickhouse-record-store.js").ClickHouseClient): Promise<StoreSet> {
-  const { ClickhouseRecordStore } = await import("./clickhouse-record-store.js");
+export async function createClickHouseStores(
+  client: import('./clickhouse-record-store.js').ClickHouseClient,
+): Promise<StoreSet> {
+  const { ClickhouseRecordStore } = await import('./clickhouse-record-store.js');
   // 부가 stores는 InMemory 사용 (ClickHouse 구현 후순위)
   const {
     InMemoryTraceStore,
@@ -139,7 +147,7 @@ export async function createClickHouseStores(client: import("./clickhouse-record
     InMemoryGraphStore,
     InMemoryScenarioSpecStore,
     InMemoryDlqStore,
-  } = await import("@qa-sdk/store");
+  } = await import('@qa-sdk/store');
 
   return {
     recordStore: new ClickhouseRecordStore(client),
@@ -159,25 +167,26 @@ export async function createStores(opts: {
   databaseUrl?: string;
   /** PG schema (STORE_DRIVER=pg 시 사용). 기본 "ingest". */
   pgSchema?: string;
-  sqliteDriver?: import("index-meta").SqlDriver;
-  clickhouseClient?: import("./clickhouse-record-store.js").ClickHouseClient;
+  sqliteDriver?: import('index-meta').SqlDriver;
+  clickhouseClient?: import('./clickhouse-record-store.js').ClickHouseClient;
 }): Promise<StoreSet> {
   switch (opts.driver) {
-    case "pg": {
-      if (!opts.databaseUrl) throw new Error("STORE_DRIVER=pg requires TRACE_DATABASE_URL");
+    case 'pg': {
+      if (!opts.databaseUrl) throw new Error('STORE_DRIVER=pg requires TRACE_DATABASE_URL');
       return createPgStores(opts.databaseUrl, { schema: opts.pgSchema });
     }
     // Plan 07a 옵션 A: d1과 sqlite 동일 처리 — 단일 SQLite 어댑터로 통합.
-    case "sqlite":
-    case "d1": {
-      if (!opts.sqliteDriver) throw new Error("STORE_DRIVER=sqlite requires SqlDriver instance");
+    case 'sqlite':
+    case 'd1': {
+      if (!opts.sqliteDriver) throw new Error('STORE_DRIVER=sqlite requires SqlDriver instance');
       return createD1Stores(opts.sqliteDriver);
     }
-    case "clickhouse": {
-      if (!opts.clickhouseClient) throw new Error("STORE_DRIVER=clickhouse requires ClickHouseClient instance");
+    case 'clickhouse': {
+      if (!opts.clickhouseClient)
+        throw new Error('STORE_DRIVER=clickhouse requires ClickHouseClient instance');
       return createClickHouseStores(opts.clickhouseClient);
     }
-    case "memory":
+    case 'memory':
     default:
       return createMemoryStores();
   }

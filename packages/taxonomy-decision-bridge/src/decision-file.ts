@@ -1,11 +1,6 @@
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import type { Lifecycle } from "taxonomy-engine";
-import type {
-  CognitivePhase,
-  Evidence,
-  EvidenceKind,
-  GateWeight,
-} from "decision-flow";
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import type { Lifecycle } from 'taxonomy-engine';
+import type { CognitivePhase, Evidence, EvidenceKind, GateWeight } from 'decision-flow';
 
 /**
  * decision-flow의 GateDependency는 named export가 아니므로 동형 type을 자체 정의.
@@ -13,7 +8,7 @@ import type {
  */
 export type GateDependency = {
   readonly gateId: string;
-  readonly kind: "constrains" | "enables" | "invalidates";
+  readonly kind: 'constrains' | 'enables' | 'invalidates';
 };
 
 export type DecisionMeta = {
@@ -32,7 +27,7 @@ export type DecisionMeta = {
  * 변경 없음). 라운드트립은 toMarkdown이 본문에 다시 출력하여 보존.
  */
 export type OptionAnnotation = {
-  kind: "cost" | "benefit" | "risk";
+  kind: 'cost' | 'benefit' | 'risk';
   body: string;
 };
 
@@ -42,14 +37,14 @@ export type DecisionOption = {
   annotations?: readonly OptionAnnotation[];
 };
 
-const VALID_ANNOTATION_KINDS: ReadonlySet<OptionAnnotation["kind"]> = new Set([
-  "cost",
-  "benefit",
-  "risk",
+const VALID_ANNOTATION_KINDS: ReadonlySet<OptionAnnotation['kind']> = new Set([
+  'cost',
+  'benefit',
+  'risk',
 ]);
 
-function isAnnotationKind(s: string): s is OptionAnnotation["kind"] {
-  return VALID_ANNOTATION_KINDS.has(s as OptionAnnotation["kind"]);
+function isAnnotationKind(s: string): s is OptionAnnotation['kind'] {
+  return VALID_ANNOTATION_KINDS.has(s as OptionAnnotation['kind']);
 }
 
 /**
@@ -90,11 +85,11 @@ export type DecisionMarkers = {
  * decision-flow EvidenceKind 5종. 마커의 kind가 이 안에 없으면 evidence에서 제외 (skip).
  */
 const VALID_EVIDENCE_KINDS: ReadonlySet<EvidenceKind> = new Set([
-  "data",
-  "rule",
-  "precedent",
-  "intuition",
-  "external",
+  'data',
+  'rule',
+  'precedent',
+  'intuition',
+  'external',
 ]);
 
 function isEvidenceKind(s: string): s is EvidenceKind {
@@ -102,37 +97,33 @@ function isEvidenceKind(s: string): s is EvidenceKind {
 }
 
 const VALID_PHASES: ReadonlySet<CognitivePhase> = new Set([
-  "perceive",
-  "interpret",
-  "evaluate",
-  "decide",
-  "plan",
-  "execute",
-  "reflect",
+  'perceive',
+  'interpret',
+  'evaluate',
+  'decide',
+  'plan',
+  'execute',
+  'reflect',
 ]);
 
 function isPhase(s: string): s is CognitivePhase {
   return VALID_PHASES.has(s as CognitivePhase);
 }
 
-const VALID_WEIGHTS: ReadonlySet<GateWeight> = new Set([
-  "core",
-  "structural",
-  "tactical",
-]);
+const VALID_WEIGHTS: ReadonlySet<GateWeight> = new Set(['core', 'structural', 'tactical']);
 
 function isWeight(s: string): s is GateWeight {
   return VALID_WEIGHTS.has(s as GateWeight);
 }
 
-const VALID_DEP_KINDS: ReadonlySet<GateDependency["kind"]> = new Set([
-  "constrains",
-  "enables",
-  "invalidates",
+const VALID_DEP_KINDS: ReadonlySet<GateDependency['kind']> = new Set([
+  'constrains',
+  'enables',
+  'invalidates',
 ]);
 
-function isDepKind(s: string): s is GateDependency["kind"] {
-  return VALID_DEP_KINDS.has(s as GateDependency["kind"]);
+function isDepKind(s: string): s is GateDependency['kind'] {
+  return VALID_DEP_KINDS.has(s as GateDependency['kind']);
 }
 
 export type DecisionFile = {
@@ -145,9 +136,9 @@ const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
 
 export function parseDecisionFile(text: string): DecisionFile {
   const m = text.match(FRONTMATTER_RE);
-  if (!m) throw new Error("frontmatter 누락: --- ... --- 블록 필요");
+  if (!m) throw new Error('frontmatter 누락: --- ... --- 블록 필요');
   const fmText = m[1];
-  const body = m[2] ?? "";
+  const body = m[2] ?? '';
 
   const raw = parseYaml(fmText) as Record<string, unknown>;
   const meta = validateMeta(raw);
@@ -186,32 +177,32 @@ export function createDecisionSkeletonText(opts: {
 }
 
 function validateMeta(raw: Record<string, unknown>): DecisionMeta {
-  const id = expectString(raw.id, "id");
-  const subject = expectString(raw.subject, "subject");
+  const id = expectString(raw.id, 'id');
+  const subject = expectString(raw.subject, 'subject');
   const lifecycle = expectLifecycle(raw.lifecycle);
-  const created = expectString(raw.created, "created");
-  const updated = expectString(raw.updated, "updated");
+  const created = expectString(raw.created, 'created');
+  const updated = expectString(raw.updated, 'updated');
   return { id, subject, lifecycle, created, updated };
 }
 
 function expectString(v: unknown, name: string): string {
-  if (typeof v !== "string" || v.length === 0) {
+  if (typeof v !== 'string' || v.length === 0) {
     throw new Error(`frontmatter.${name} 필수 (string)`);
   }
   return v;
 }
 
 const VALID_LIFECYCLES: ReadonlySet<Lifecycle> = new Set([
-  "draft",
-  "review",
-  "approved",
-  "deprecated",
-  "archived",
-  "tbd",
+  'draft',
+  'review',
+  'approved',
+  'deprecated',
+  'archived',
+  'tbd',
 ]);
 
 function expectLifecycle(v: unknown): Lifecycle {
-  if (typeof v !== "string" || !VALID_LIFECYCLES.has(v as Lifecycle)) {
+  if (typeof v !== 'string' || !VALID_LIFECYCLES.has(v as Lifecycle)) {
     throw new Error(`frontmatter.lifecycle 잘못된 값: ${String(v)}`);
   }
   return v as Lifecycle;
@@ -251,7 +242,7 @@ export function extractMarkers(body: string): DecisionMarkers {
   for (const block of blocks) {
     const cleanText = stripAllMarkers(block).trim();
     for (const marker of findMarkers(block)) {
-      if (marker.kind === "gate") {
+      if (marker.kind === 'gate') {
         currentGate = {
           id: marker.gateId,
           options: [],
@@ -261,7 +252,7 @@ export function extractMarkers(body: string): DecisionMarkers {
         result.gates.push(currentGate);
         continue;
       }
-      if (marker.kind === "annotation") {
+      if (marker.kind === 'annotation') {
         pendingAnnotations.push({
           annKind: marker.annKind,
           optionId: marker.optionId,
@@ -271,7 +262,7 @@ export function extractMarkers(body: string): DecisionMarkers {
         continue;
       }
       // schema 전체 마커는 항상 result에
-      if (marker.kind === "purpose" || marker.kind === "context" || marker.kind === "outcome") {
+      if (marker.kind === 'purpose' || marker.kind === 'context' || marker.kind === 'outcome') {
         applyMarker(result, marker, cleanText);
         continue;
       }
@@ -351,40 +342,34 @@ function appendAnnotation(
   });
 }
 
-function applyMarkerToGate(
-  gate: GateMarkers,
-  marker: MarkerToken,
-  text: string,
-): void {
+function applyMarkerToGate(gate: GateMarkers, marker: MarkerToken, text: string): void {
   switch (marker.kind) {
-    case "annotation":
+    case 'annotation':
       // annotation은 2차 패스에서 처리 — 여기선 no-op.
       return;
-    case "option":
+    case 'option':
       gate.options.push({ id: marker.id, body: text });
       return;
-    case "evidence":
+    case 'evidence':
       if (!isEvidenceKind(marker.evKind)) return;
       gate.evidence.push({
         kind: marker.evKind,
         weight: marker.weight,
         content: text,
-        source: "",
+        source: '',
       });
       return;
-    case "phase":
+    case 'phase':
       if (isPhase(marker.value)) gate.phase = marker.value;
       return;
-    case "weight":
+    case 'weight':
       if (isWeight(marker.value)) gate.weight = marker.value;
       return;
-    case "depends_on":
+    case 'depends_on':
       if (!marker.gateId) return;
       {
-        const kind: GateDependency["kind"] =
-          marker.depKind && isDepKind(marker.depKind)
-            ? marker.depKind
-            : "constrains";
+        const kind: GateDependency['kind'] =
+          marker.depKind && isDepKind(marker.depKind) ? marker.depKind : 'constrains';
         gate.dependsOn.push({ gateId: marker.gateId, kind });
       }
       return;
@@ -394,16 +379,16 @@ function applyMarkerToGate(
 }
 
 type MarkerToken =
-  | { kind: "purpose"; raw: string }
-  | { kind: "context"; raw: string }
-  | { kind: "option"; id: string; raw: string }
-  | { kind: "evidence"; evKind: string; weight: number; raw: string }
-  | { kind: "outcome"; raw: string }
-  | { kind: "phase"; value: string; raw: string }
-  | { kind: "weight"; value: string; raw: string }
-  | { kind: "depends_on"; gateId: string; depKind?: string; raw: string }
-  | { kind: "gate"; gateId: string; raw: string }
-  | { kind: "annotation"; annKind: string; optionId: string; raw: string };
+  | { kind: 'purpose'; raw: string }
+  | { kind: 'context'; raw: string }
+  | { kind: 'option'; id: string; raw: string }
+  | { kind: 'evidence'; evKind: string; weight: number; raw: string }
+  | { kind: 'outcome'; raw: string }
+  | { kind: 'phase'; value: string; raw: string }
+  | { kind: 'weight'; value: string; raw: string }
+  | { kind: 'depends_on'; gateId: string; depKind?: string; raw: string }
+  | { kind: 'gate'; gateId: string; raw: string }
+  | { kind: 'annotation'; annKind: string; optionId: string; raw: string };
 
 const MARKER_RE =
   /\^(purpose|context|outcome|option:[a-zA-Z][\w-]*|evidence:[a-zA-Z][\w-]*(?:\s+weight=[\d.]+)?|phase:[a-z]+|weight:[a-z]+|depends_on:[a-zA-Z][\w-]*(?::[a-z]+)?|gate:[a-zA-Z][\w-]*|cost:[a-zA-Z][\w-]*|benefit:[a-zA-Z][\w-]*|risk:[a-zA-Z][\w-]*)/g;
@@ -413,37 +398,37 @@ function findMarkers(block: string): MarkerToken[] {
   for (const m of block.matchAll(MARKER_RE)) {
     const raw = m[0];
     const body = m[1];
-    if (body === "purpose" || body === "context" || body === "outcome") {
+    if (body === 'purpose' || body === 'context' || body === 'outcome') {
       tokens.push({ kind: body, raw } as MarkerToken);
-    } else if (body.startsWith("option:")) {
-      const id = body.slice("option:".length);
-      tokens.push({ kind: "option", id, raw });
-    } else if (body.startsWith("evidence:")) {
-      const rest = body.slice("evidence:".length);
+    } else if (body.startsWith('option:')) {
+      const id = body.slice('option:'.length);
+      tokens.push({ kind: 'option', id, raw });
+    } else if (body.startsWith('evidence:')) {
+      const rest = body.slice('evidence:'.length);
       const [evKind, weightExpr] = rest.split(/\s+/);
-      const weight = weightExpr?.startsWith("weight=")
-        ? Number(weightExpr.slice("weight=".length))
+      const weight = weightExpr?.startsWith('weight=')
+        ? Number(weightExpr.slice('weight='.length))
         : 1;
-      tokens.push({ kind: "evidence", evKind, weight, raw });
-    } else if (body.startsWith("phase:")) {
-      tokens.push({ kind: "phase", value: body.slice("phase:".length), raw });
-    } else if (body.startsWith("weight:")) {
-      tokens.push({ kind: "weight", value: body.slice("weight:".length), raw });
-    } else if (body.startsWith("depends_on:")) {
-      const rest = body.slice("depends_on:".length);
-      const [gateId, depKind] = rest.split(":");
-      tokens.push({ kind: "depends_on", gateId, depKind, raw });
-    } else if (body.startsWith("gate:")) {
-      tokens.push({ kind: "gate", gateId: body.slice("gate:".length), raw });
+      tokens.push({ kind: 'evidence', evKind, weight, raw });
+    } else if (body.startsWith('phase:')) {
+      tokens.push({ kind: 'phase', value: body.slice('phase:'.length), raw });
+    } else if (body.startsWith('weight:')) {
+      tokens.push({ kind: 'weight', value: body.slice('weight:'.length), raw });
+    } else if (body.startsWith('depends_on:')) {
+      const rest = body.slice('depends_on:'.length);
+      const [gateId, depKind] = rest.split(':');
+      tokens.push({ kind: 'depends_on', gateId, depKind, raw });
+    } else if (body.startsWith('gate:')) {
+      tokens.push({ kind: 'gate', gateId: body.slice('gate:'.length), raw });
     } else if (
-      body.startsWith("cost:") ||
-      body.startsWith("benefit:") ||
-      body.startsWith("risk:")
+      body.startsWith('cost:') ||
+      body.startsWith('benefit:') ||
+      body.startsWith('risk:')
     ) {
-      const colon = body.indexOf(":");
+      const colon = body.indexOf(':');
       const annKind = body.slice(0, colon);
       const optionId = body.slice(colon + 1);
-      tokens.push({ kind: "annotation", annKind, optionId, raw });
+      tokens.push({ kind: 'annotation', annKind, optionId, raw });
     }
   }
   return tokens;
@@ -452,57 +437,51 @@ function findMarkers(block: string): MarkerToken[] {
 function stripAllMarkers(block: string): string {
   // 마커 제거 후 줄바꿈은 보존하되, 각 줄의 양 끝 공백과 연속된 가로 공백만 정리한다.
   return block
-    .replace(MARKER_RE, "")
-    .split("\n")
-    .map((line) => line.trim().replace(/[ \t]+/g, " "))
-    .join("\n")
+    .replace(MARKER_RE, '')
+    .split('\n')
+    .map((line) => line.trim().replace(/[ \t]+/g, ' '))
+    .join('\n')
     .trim();
 }
 
-function applyMarker(
-  result: DecisionMarkers,
-  marker: MarkerToken,
-  text: string,
-): void {
+function applyMarker(result: DecisionMarkers, marker: MarkerToken, text: string): void {
   switch (marker.kind) {
-    case "annotation":
-    case "gate":
+    case 'annotation':
+    case 'gate':
       // 별도 처리. 여기선 no-op.
       return;
-    case "purpose":
+    case 'purpose':
       result.purpose = text;
       return;
-    case "context":
+    case 'context':
       result.context = text;
       return;
-    case "outcome":
+    case 'outcome':
       result.outcome = text;
       return;
-    case "option":
+    case 'option':
       result.options.push({ id: marker.id, body: text });
       return;
-    case "evidence":
+    case 'evidence':
       if (!isEvidenceKind(marker.evKind)) return;
       result.evidence.push({
         kind: marker.evKind,
         weight: marker.weight,
         content: text,
-        source: "",
+        source: '',
       });
       return;
-    case "phase":
+    case 'phase':
       if (isPhase(marker.value)) result.phase = marker.value;
       return;
-    case "weight":
+    case 'weight':
       if (isWeight(marker.value)) result.weight = marker.value;
       return;
-    case "depends_on":
+    case 'depends_on':
       if (!marker.gateId) return;
       {
-        const kind: GateDependency["kind"] =
-          marker.depKind && isDepKind(marker.depKind)
-            ? marker.depKind
-            : "constrains";
+        const kind: GateDependency['kind'] =
+          marker.depKind && isDepKind(marker.depKind) ? marker.depKind : 'constrains';
         result.dependsOn.push({ gateId: marker.gateId, kind });
       }
       return;
@@ -513,5 +492,8 @@ function applyMarker(
  * markdown 본문을 빈 줄(또는 heading)으로 분리한 블록 배열.
  */
 function splitIntoBlocks(body: string): string[] {
-  return body.split(/\n\s*\n/).map((b) => b.trim()).filter((b) => b.length > 0);
+  return body
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .filter((b) => b.length > 0);
 }

@@ -2,20 +2,20 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { serve } from "@hono/node-server";
-import { warnPortConflict, installSimpleShutdown } from "@qa-sdk/core";
-import { initTelemetry, otelEnvSchema } from "@qa-sdk/otel";
-import { BitmapCacheService } from "@qa-sdk/sim-bitmap-cache";
-import Redis from "ioredis";
-import { createApp } from "./app.js";
-import { env } from "./config/env.js";
-import { createLogger } from "./lib/logger.js";
-import { InMemoryRoutingStore } from "./routing/routing-table.js";
-import { StickyDecisionTracker } from "./routing/sticky-decision-tracker.js";
-import { parseCidrList } from "./lib/internal-network.js";
-import { bootstrapRouting, type FallbackTargets } from "./lib/routing-bootstrap.js";
+import { serve } from '@hono/node-server';
+import { warnPortConflict, installSimpleShutdown } from '@qa-sdk/core';
+import { initTelemetry, otelEnvSchema } from '@qa-sdk/otel';
+import { BitmapCacheService } from '@qa-sdk/sim-bitmap-cache';
+import Redis from 'ioredis';
+import { createApp } from './app.js';
+import { env } from './config/env.js';
+import { createLogger } from './lib/logger.js';
+import { InMemoryRoutingStore } from './routing/routing-table.js';
+import { StickyDecisionTracker } from './routing/sticky-decision-tracker.js';
+import { parseCidrList } from './lib/internal-network.js';
+import { bootstrapRouting, type FallbackTargets } from './lib/routing-bootstrap.js';
 
-const SERVICE_NAME = "sim-gateway";
+const SERVICE_NAME = 'sim-gateway';
 const logger = createLogger(SERVICE_NAME);
 
 // Plan C 단계 7 — routing store + internal CIDR + controller bootstrap.
@@ -30,13 +30,13 @@ const stickyTracker = new StickyDecisionTracker({
 let canaryTargets: FallbackTargets = {};
 try {
   const parsed = JSON.parse(env.CANARY_TARGETS_JSON);
-  if (parsed && typeof parsed === "object") {
+  if (parsed && typeof parsed === 'object') {
     canaryTargets = parsed as FallbackTargets;
   }
 } catch (err) {
   logger.warn(
     { err, raw: env.CANARY_TARGETS_JSON },
-    "CANARY_TARGETS_JSON parse failed — fallback seed will be empty",
+    'CANARY_TARGETS_JSON parse failed — fallback seed will be empty',
   );
 }
 
@@ -78,12 +78,12 @@ const app = createApp({
   currentBitmapV: env.BITMAP_VERSION, // §2 §6 unified version
   proxyTimeoutMs: env.PROXY_TIMEOUT_MS,
   proxyTargets: {
-    "sim-pm-api": env.PM_API_URL,
-    "sim-approval-api": env.APPROVAL_API_URL,
-    "sim-notification-api": env.NOTIFICATION_API_URL,
-    "sim-reporting-api": env.REPORTING_API_URL,
-    "sim-document-api": env.DOCUMENT_API_URL,
-    "sim-audit-browser-api": env.AUDIT_BROWSER_API_URL,
+    'sim-pm-api': env.PM_API_URL,
+    'sim-approval-api': env.APPROVAL_API_URL,
+    'sim-notification-api': env.NOTIFICATION_API_URL,
+    'sim-reporting-api': env.REPORTING_API_URL,
+    'sim-document-api': env.DOCUMENT_API_URL,
+    'sim-audit-browser-api': env.AUDIT_BROWSER_API_URL,
   },
   routingStore,
   internalCidrs,
@@ -107,11 +107,11 @@ const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
 
 installSimpleShutdown({ server, logger });
 
-process.on("SIGTERM", async () => {
+process.on('SIGTERM', async () => {
   await bitmapCache.stop();
   await otelShutdown();
 });
-process.on("SIGINT", async () => {
+process.on('SIGINT', async () => {
   await bitmapCache.stop();
   await otelShutdown();
 });

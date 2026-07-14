@@ -7,4 +7,4 @@ export {
   resolveLocalOntologyActivationStorePath,
   type LocalOntologyActivationRuntime,
   type LocalOntologyActivationRuntimeOptions,
-} from "./modules/ontology/local-activation-runtime.js";
+} from './modules/ontology/local-activation-runtime.js';

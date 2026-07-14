@@ -12,8 +12,8 @@
  * 각 단계가 독립 사용·관측 가능하며, 최종 결과에 데이터 계보를 포함한다.
  */
 
-import type { ScopeNesting, SimulationGuards } from "./scope-nesting.js";
-import { resolveGuards, buildProviderMap } from "./scope-nesting.js";
+import type { ScopeNesting, SimulationGuards } from './scope-nesting.js';
+import { resolveGuards, buildProviderMap } from './scope-nesting.js';
 
 // ── 타입 ──────────────────────────────────────────────
 
@@ -88,7 +88,7 @@ export function traceContracts(
   snapshot: ProviderSnapshot,
   scopeId: string,
 ): ContractTrace[] {
-  const targetIdx = nesting.scopes.findIndex(s => s.scopeId === scopeId);
+  const targetIdx = nesting.scopes.findIndex((s) => s.scopeId === scopeId);
   if (targetIdx === -1) return [];
 
   const traces: ContractTrace[] = [];
@@ -98,12 +98,12 @@ export function traceContracts(
     if (provider.scopeId !== scopeId) continue;
 
     // 소비자 수집 + 대체 provider 탐지 (단일 순회)
-    const consumers: ContractTrace["consumers"] = [];
+    const consumers: ContractTrace['consumers'] = [];
     let hasAlternative = false;
     for (let i = 0; i < nesting.scopes.length; i++) {
       if (i === targetIdx) continue;
       const scope = nesting.scopes[i];
-      if (!hasAlternative && scope.provides.some(p => p.contractId === contractId)) {
+      if (!hasAlternative && scope.provides.some((p) => p.contractId === contractId)) {
         hasAlternative = true;
       }
       for (const consumed of scope.consumes) {
@@ -147,7 +147,7 @@ export function classifyImpact(
     }
   }
 
-  const affected: DeactivationImpact["affected"] = [];
+  const affected: DeactivationImpact['affected'] = [];
   const unaffected: string[] = [];
 
   for (const scope of nesting.scopes) {

@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "6943954a-b87d-40a2-805e-e05286d69974",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "pipe_graphs",
@@ -413,36 +411,28 @@
       "table": "service_manifests"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "pipe_graphs_pk",
       "table": "pipe_graphs",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "pipe_specs_pk",
       "table": "pipe_specs",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "prefix_versions_pk",
       "table": "prefix_versions",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "service_manifests_pk",
       "table": "service_manifests",

@@ -1,12 +1,12 @@
 // @def.boundary definition-metadata-tier
-import { readFile, writeFile } from "node:fs/promises";
-import { resolve, relative, join } from "node:path";
-import type { DefDataSource, DefDoc } from "definition-catalog";
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve, relative, join } from 'node:path';
+import type { DefDataSource, DefDoc } from 'definition-catalog';
 
 interface DocSignature {
   path: string;
   type?: string;
-  level?: "group" | "module" | "leaf";
+  level?: 'group' | 'module' | 'leaf';
   scope?: string;
   aspect?: string;
   depth?: string;
@@ -18,14 +18,20 @@ interface DocSignature {
   hasStateList: boolean;
   hasSchemaDef: boolean;
   hasEvidenceShape: boolean;
-  childLevels: ("group" | "module" | "leaf")[];
+  childLevels: ('group' | 'module' | 'leaf')[];
 }
 
 export interface ClassificationSuggestion {
-  type: "design" | "knowledge";
-  tier?: "component" | "entry" | "system" | "layout" | "exempt";
-  component_subtype?: "data-shape" | "state-enum" | "evidence-shape" | "data-facet-role" | "validation-rule" | "constant-literal";
-  confidence: "high" | "medium" | "low";
+  type: 'design' | 'knowledge';
+  tier?: 'component' | 'entry' | 'system' | 'layout' | 'exempt';
+  component_subtype?:
+    | 'data-shape'
+    | 'state-enum'
+    | 'evidence-shape'
+    | 'data-facet-role'
+    | 'validation-rule'
+    | 'constant-literal';
+  confidence: 'high' | 'medium' | 'low';
   reason: string;
   warnings?: string[];
   needs_review: boolean;
@@ -36,9 +42,9 @@ export async function classifyTier(
   docId: string,
   entry: DefDoc,
   allEntries: DefDoc[],
-  links: { targetId: string; linkType: string }[]
+  links: { targetId: string; linkType: string }[],
 ): Promise<ClassificationSuggestion> {
-  const relPath = entry.sourcePath || "";
+  const relPath = entry.sourcePath || '';
 
   // Step 0 - Exempt (D-2 Extended)
   const exemptPatterns = [
@@ -47,30 +53,30 @@ export async function classifyTier(
     /^docs\/skills\/.*/,
     /^skills\/.*/,
     /^tasks\/.*/,
-    /^\.claude\/.*/
+    /^\.claude\/.*/,
   ];
-  
-  if (exemptPatterns.some(p => p.test(relPath))) {
+
+  if (exemptPatterns.some((p) => p.test(relPath))) {
     return {
-      type: "knowledge",
-      tier: "exempt",
-      confidence: "high",
-      reason: "STEP0-knowledge-or-exempt",
-      needs_review: false
+      type: 'knowledge',
+      tier: 'exempt',
+      confidence: 'high',
+      reason: 'STEP0-knowledge-or-exempt',
+      needs_review: false,
     };
   }
 
   // Basic structure
-  let docType: "design" | "knowledge" = "design";
-  if (entry.type === "knowledge") docType = "knowledge";
+  let docType: 'design' | 'knowledge' = 'design';
+  if (entry.type === 'knowledge') docType = 'knowledge';
 
-  if (docType === "knowledge") {
+  if (docType === 'knowledge') {
     return {
-      type: "knowledge",
-      tier: "exempt",
-      confidence: "high",
-      reason: "STEP0-knowledge-type",
-      needs_review: false
+      type: 'knowledge',
+      tier: 'exempt',
+      confidence: 'high',
+      reason: 'STEP0-knowledge-type',
+      needs_review: false,
     };
   }
 
@@ -81,98 +87,114 @@ export async function classifyTier(
   let hasEvidenceShape = false;
 
   try {
-    const content = await readFile(resolve(process.cwd(), relPath), "utf8");
+    const content = await readFile(resolve(process.cwd(), relPath), 'utf8');
     // Heuristic parsing
-    if (content.includes("function ") || content.includes("class ") || content.includes("operations:")) {
+    if (
+      content.includes('function ') ||
+      content.includes('class ') ||
+      content.includes('operations:')
+    ) {
       hasOperations = true;
     }
-    if (content.includes("states:") || content.match(/상태 목록/)) {
+    if (content.includes('states:') || content.match(/상태 목록/)) {
       hasStateList = true;
     }
-    if (content.includes("interface ") || content.includes("type ") || content.includes("schema:")) {
+    if (
+      content.includes('interface ') ||
+      content.includes('type ') ||
+      content.includes('schema:')
+    ) {
       hasSchemaDef = true;
     }
-    if (content.match(/Evidence/) || relPath.includes("readiness")) {
+    if (content.match(/Evidence/) || relPath.includes('readiness')) {
       hasEvidenceShape = true;
     }
   } catch (e) {}
 
-  const containsTargets = links.filter(l => l.linkType === "contains").map(l => l.targetId);
-  const childLevels = containsTargets
-    .map(id => allEntries.find(e => e.docId === id)?.level || "leaf");
+  const containsTargets = links.filter((l) => l.linkType === 'contains').map((l) => l.targetId);
+  const childLevels = containsTargets.map(
+    (id) => allEntries.find((e) => e.docId === id)?.level || 'leaf',
+  );
 
   // Step 2 - Layout
-  if (entry.level === "group" || entry.depth === "overview") {
-    if (containsTargets.length >= 2 && childLevels.filter(l => l === "module").length >= 2 && !hasOperations) {
+  if (entry.level === 'group' || entry.depth === 'overview') {
+    if (
+      containsTargets.length >= 2 &&
+      childLevels.filter((l) => l === 'module').length >= 2 &&
+      !hasOperations
+    ) {
       return {
-        type: "design",
-        tier: "layout",
-        confidence: "high",
-        reason: "STEP2-layout-group-with-modules",
-        needs_review: false
+        type: 'design',
+        tier: 'layout',
+        confidence: 'high',
+        reason: 'STEP2-layout-group-with-modules',
+        needs_review: false,
       };
     }
   }
 
   // Step 3 - System
   let systemScore = 0;
-  if (relPath.endsWith("-system.md") || entry.docId.endsWith("-system")) systemScore += 1;
+  if (relPath.endsWith('-system.md') || entry.docId.endsWith('-system')) systemScore += 1;
   if (hasOperations) systemScore += 1;
   if (hasStateList) systemScore += 1;
 
   const warnings: string[] = [];
   if (systemScore >= 2) {
-    if (childLevels.includes("module")) {
-      warnings.push("CON-VIOLATION-system-contains-system");
+    if (childLevels.includes('module')) {
+      warnings.push('CON-VIOLATION-system-contains-system');
     }
     return {
-      type: "design",
-      tier: "system",
-      confidence: "high",
-      reason: "STEP3-R7-3check",
+      type: 'design',
+      tier: 'system',
+      confidence: 'high',
+      reason: 'STEP3-R7-3check',
       warnings: warnings.length > 0 ? warnings : undefined,
-      needs_review: false
+      needs_review: false,
     };
   }
 
   // Step 4 - Component
-  if (hasSchemaDef || hasStateList || hasEvidenceShape || entry.level === "leaf") {
-    let subtype: any = "data-shape";
-    let conf: any = "high";
+  if (hasSchemaDef || hasStateList || hasEvidenceShape || entry.level === 'leaf') {
+    let subtype: any = 'data-shape';
+    let conf: any = 'high';
     if (hasStateList && !hasSchemaDef && !hasOperations) {
-      subtype = "state-enum";
-    } else if (hasEvidenceShape && (entry.docId.includes("evidence") || entry.docId.includes("readiness"))) {
-      subtype = "evidence-shape";
-    } else if (entry.aspect && ["production", "consumption"].includes(entry.aspect)) {
-      subtype = "data-facet-role";
-    } else if (hasSchemaDef && entry.docId.includes("rule")) {
-      subtype = "validation-rule";
-      conf = "medium";
-    } else if (entry.docId.includes("constant")) {
-      subtype = "constant-literal";
-      conf = "medium";
+      subtype = 'state-enum';
+    } else if (
+      hasEvidenceShape &&
+      (entry.docId.includes('evidence') || entry.docId.includes('readiness'))
+    ) {
+      subtype = 'evidence-shape';
+    } else if (entry.aspect && ['production', 'consumption'].includes(entry.aspect)) {
+      subtype = 'data-facet-role';
+    } else if (hasSchemaDef && entry.docId.includes('rule')) {
+      subtype = 'validation-rule';
+      conf = 'medium';
+    } else if (entry.docId.includes('constant')) {
+      subtype = 'constant-literal';
+      conf = 'medium';
     } else if (hasSchemaDef) {
-      subtype = "data-shape";
+      subtype = 'data-shape';
     } else {
-      subtype = "data-shape";
-      conf = "medium";
+      subtype = 'data-shape';
+      conf = 'medium';
     }
 
     return {
-      type: "design",
-      tier: "component",
+      type: 'design',
+      tier: 'component',
       component_subtype: subtype,
       confidence: conf,
-      reason: "STEP4-component-rules",
-      needs_review: conf === "medium"
+      reason: 'STEP4-component-rules',
+      needs_review: conf === 'medium',
     };
   }
 
   return {
-    type: "design",
+    type: 'design',
     tier: undefined,
-    confidence: "low",
-    reason: "STEP6-no-rule-matched",
-    needs_review: true
+    confidence: 'low',
+    reason: 'STEP6-no-rule-matched',
+    needs_review: true,
   };
 }

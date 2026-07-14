@@ -1,6 +1,6 @@
 /** @def.boundary apm-codegen-system */
-export { generateProto, type ProtoGenOptions } from "./proto.js";
-export { generateTypescript } from "./typescript.js";
+export { generateProto, type ProtoGenOptions } from './proto.js';
+export { generateTypescript } from './typescript.js';
 export {
   generateCatalogTypes,
   testMigration,
@@ -8,21 +8,15 @@ export {
   type CatalogCodegenResult,
   type CatalogCodegenOptions,
   type MigrationTestResult,
-} from "./catalog-typescript.js";
-export {
-  toUpperSnake,
-  toPascal,
-  toConstKey,
-  toEnumValue,
-  toTsConstKey,
-} from "./naming.js";
-export type { SchemaSnapshot, Axis, Composite, SnapshotSupply } from "./types.js";
+} from './catalog-typescript.js';
+export { toUpperSnake, toPascal, toConstKey, toEnumValue, toTsConstKey } from './naming.js';
+export type { SchemaSnapshot, Axis, Composite, SnapshotSupply } from './types.js';
 export {
   generateDataObjectBindings,
   type DataObjectCodegenFile,
   type DataObjectCodegenResult,
   type DataObjectCodegenOptions,
-} from "./data-object-typescript.js";
+} from './data-object-typescript.js';
 export {
   generateTrackCode,
   type EventDef,
@@ -33,4 +27,4 @@ export {
   type TrackCodegenFile,
   type TrackCodegenResult,
   type TrackCodegenOptions,
-} from "./event-track-typescript.js";
+} from './event-track-typescript.js';

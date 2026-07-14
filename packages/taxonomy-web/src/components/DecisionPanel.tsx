@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { fetchDecision, type DecisionResponse } from "../data/decisionApi";
-import { LifecycleBadge } from "./LifecycleBadge";
+import { useEffect, useState } from 'react';
+import { fetchDecision, type DecisionResponse } from '../data/decisionApi';
+import { LifecycleBadge } from './LifecycleBadge';
 
 export function DecisionPanel({
   yamlFile,
@@ -17,7 +17,7 @@ export function DecisionPanel({
 
   if (!resp) return <div className="text-xs text-gray-500">decision 로딩 중...</div>;
 
-  if (resp.kind === "external") {
+  if (resp.kind === 'external') {
     return (
       <div className="text-xs text-gray-500">
         외부 link — 자체 표시 안 함 ({resp.reason})
@@ -26,10 +26,12 @@ export function DecisionPanel({
     );
   }
 
-  if (resp.kind === "missing") {
+  if (resp.kind === 'missing') {
     return (
       <div className="text-xs">
-        <div className="text-amber-700">decision 파일 없음 — `qa-sdk decision sync`로 생성 가능</div>
+        <div className="text-amber-700">
+          decision 파일 없음 — `qa-sdk decision sync`로 생성 가능
+        </div>
         <div className="text-gray-500 font-mono mt-1 break-all">{resp.resolvedPath}</div>
       </div>
     );
@@ -88,13 +90,11 @@ export function DecisionPanel({
         </div>
       )}
 
-      <div className="text-gray-400 text-[10px] mt-2">
-        updated {file.meta.updated}
-      </div>
+      <div className="text-gray-400 text-[10px] mt-2">updated {file.meta.updated}</div>
     </div>
   );
 }
 
 function truncate(s: string, n: number): string {
-  return s.length > n ? s.slice(0, n) + "…" : s;
+  return s.length > n ? s.slice(0, n) + '…' : s;
 }

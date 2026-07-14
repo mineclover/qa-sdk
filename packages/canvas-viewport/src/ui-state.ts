@@ -1,18 +1,14 @@
 // @def.boundary canvas-viewport-spec
 // @def.doc canvas-viewport-spec
 
-export type CanvasDisclosureState = "open" | "closed";
+export type CanvasDisclosureState = 'open' | 'closed';
 
-export function toggleCanvasDisclosureState(
-  state: CanvasDisclosureState,
-): CanvasDisclosureState {
-  return state === "open" ? "closed" : "open";
+export function toggleCanvasDisclosureState(state: CanvasDisclosureState): CanvasDisclosureState {
+  return state === 'open' ? 'closed' : 'open';
 }
 
-export function isCanvasDisclosureOpen(
-  state: CanvasDisclosureState,
-): boolean {
-  return state === "open";
+export function isCanvasDisclosureOpen(state: CanvasDisclosureState): boolean {
+  return state === 'open';
 }
 
 export type CanvasPaneFocusState<T extends string> = T | null;

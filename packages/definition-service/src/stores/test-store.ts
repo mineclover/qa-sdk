@@ -1,8 +1,8 @@
 // @def.doc definition-service
 
-import type { DefinitionServiceDatabase } from "../database.module.js";
-import { testRegistry, testResults } from "../db/schema.js";
-import { eq, and, desc, asc, sql, count, isNull } from "drizzle-orm";
+import type { DefinitionServiceDatabase } from '../database.module.js';
+import { testRegistry, testResults } from '../db/schema.js';
+import { eq, and, desc, asc, sql, count, isNull } from 'drizzle-orm';
 
 /** 테스트 등록 레코드 */
 export interface TestRegistration {
@@ -113,18 +113,13 @@ export class SqlTestStore implements TestStore {
 
   unregister(docId: string, testFile: string, suite?: string): boolean {
     // suite가 null인 경우와 값이 있는 경우 모두 처리
-    const suiteCondition = suite != null
-      ? eq(testRegistry.suite, suite)
-      : isNull(testRegistry.suite);
+    const suiteCondition =
+      suite != null ? eq(testRegistry.suite, suite) : isNull(testRegistry.suite);
 
     const result = this.db
       .delete(testRegistry)
       .where(
-        and(
-          eq(testRegistry.docId, docId),
-          eq(testRegistry.testFile, testFile),
-          suiteCondition,
-        ),
+        and(eq(testRegistry.docId, docId), eq(testRegistry.testFile, testFile), suiteCondition),
       )
       .run();
     return result.changes > 0;
@@ -214,15 +209,12 @@ export class SqlTestStore implements TestStore {
       .selectDistinct({ docId: testRegistry.docId })
       .from(testRegistry)
       .all()
-      .map(r => r.docId);
+      .map((r) => r.docId);
   }
 
   /** 전체 등록 건수 */
   countRegistrations(): number {
-    const row = this.db
-      .select({ cnt: count() })
-      .from(testRegistry)
-      .get();
+    const row = this.db.select({ cnt: count() }).from(testRegistry).get();
     return row?.cnt ?? 0;
   }
 }

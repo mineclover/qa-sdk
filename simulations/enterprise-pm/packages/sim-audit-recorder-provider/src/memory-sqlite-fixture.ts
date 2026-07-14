@@ -9,12 +9,12 @@
  * `:memory:` 에 적용. peerDep `better-sqlite3` 요구.
  */
 
-import Database, { type Database as DatabaseType } from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import Database, { type Database as DatabaseType } from 'better-sqlite3';
+import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 // audit-recorder-store 의 SQLite DDL 을 SSOT 로 사용 — 본 fixture 는 re-export만.
-export { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
-import { AUDIT_ENTRIES_DDL as DDL } from "audit-recorder-store";
+export { AUDIT_ENTRIES_DDL } from 'audit-recorder-store';
+import { AUDIT_ENTRIES_DDL as DDL } from 'audit-recorder-store';
 
 export interface InMemorySqliteFixture {
   /** raw better-sqlite3 instance — PRAGMA 등 low-level 조작용. */
@@ -29,9 +29,9 @@ export interface InMemorySqliteFixture {
  * createInMemorySqliteFixture — `:memory:` SQLite + audit-recorder DDL 자동 적용.
  */
 export function createInMemorySqliteFixture(): InMemorySqliteFixture {
-  const sqlite = new Database(":memory:");
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
+  const sqlite = new Database(':memory:');
+  sqlite.pragma('journal_mode = WAL');
+  sqlite.pragma('foreign_keys = ON');
   sqlite.exec(DDL);
   const db = drizzle({ client: sqlite });
   return {

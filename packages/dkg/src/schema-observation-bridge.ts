@@ -10,16 +10,20 @@
  * @layer 기록 (Recording)
  */
 
-import type { ObservationNode, ObservationSuggestion } from "./dkg.types.js";
-import type { ValidationResult } from "spec-schema";
-import type { ValidationErrorDetail } from "spec-schema";
-import { mapValidationToCoordinates, type ValidationCoordinate } from "spec-schema";
+import type { ObservationNode, ObservationSuggestion } from './dkg.types.js';
+import type { ValidationResult } from 'spec-schema';
+import type { ValidationErrorDetail } from 'spec-schema';
+import { mapValidationToCoordinates, type ValidationCoordinate } from 'spec-schema';
 
 // ═══════════════════════════════════════════════════════════════
 
 export interface SchemaObservationResult {
   readonly observations: readonly ObservationNode[];
-  readonly edges: readonly { readonly type: "observes"; readonly from: string; readonly to: string }[];
+  readonly edges: readonly {
+    readonly type: 'observes';
+    readonly from: string;
+    readonly to: string;
+  }[];
   readonly coordinates: readonly ValidationCoordinate[];
   readonly summary: string;
 }
@@ -51,39 +55,39 @@ export function bridgeValidationToObservation(
   // 레이어별 에러 그룹핑
   const byLayer = groupByLayer(result.errors);
   const observations: ObservationNode[] = [];
-  const edges: Array<{ type: "observes"; from: string; to: string }> = [];
+  const edges: Array<{ type: 'observes'; from: string; to: string }> = [];
 
   for (const [layer, errors] of byLayer) {
-    const layerName = ["vocabulary", "structural", "constraint"][layer] ?? "unknown";
+    const layerName = ['vocabulary', 'structural', 'constraint'][layer] ?? 'unknown';
     // 결정적 ID: 스키마 + 레이어로 고유 (멱등 upsert 가능)
     const id = `OBS-SCHEMA-${schemaId}-L${layer}`;
 
     const subjects = [schemaId];
     if (options?.prefixId) subjects.push(options.prefixId);
 
-    const rulesSummary = [...new Set(errors.map(e => e.rule))].join(", ");
+    const rulesSummary = [...new Set(errors.map((e) => e.rule))].join(', ');
     const finding = `${schemaId} L${layer}(${layerName}) 검증 실패 ${errors.length}건: ${rulesSummary}`;
 
     const suggestion: ObservationSuggestion | undefined =
       layer === 2
-        ? { kind: "add-constraint", rule: `${schemaId} 구조 제약 위반 수정 필요 (${rulesSummary})` }
+        ? { kind: 'add-constraint', rule: `${schemaId} 구조 제약 위반 수정 필요 (${rulesSummary})` }
         : undefined;
 
     const obs: ObservationNode = {
-      kind: "observation",
+      kind: 'observation',
       id,
       date,
-      source: "metric",
+      source: 'metric',
       subjects,
       finding,
-      intent: "action-needed",
+      intent: 'action-needed',
       ...(suggestion && { suggestion }),
     };
 
     observations.push(obs);
 
     for (const subject of subjects) {
-      edges.push({ type: "observes", from: id, to: subject });
+      edges.push({ type: 'observes', from: id, to: subject });
     }
   }
 
@@ -94,7 +98,9 @@ export function bridgeValidationToObservation(
 
 // ═══════════════════════════════════════════════════════════════
 
-function groupByLayer(errors: readonly ValidationErrorDetail[]): Map<number, ValidationErrorDetail[]> {
+function groupByLayer(
+  errors: readonly ValidationErrorDetail[],
+): Map<number, ValidationErrorDetail[]> {
   const map = new Map<number, ValidationErrorDetail[]>();
   for (const e of errors) {
     const arr = map.get(e.layer) ?? [];

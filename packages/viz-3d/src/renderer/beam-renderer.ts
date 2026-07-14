@@ -7,7 +7,7 @@
  * pinned(고정) + transient(시간감쇠) 이중 모드.
  * monitor.html의 인라인 bLines 로직을 모듈화.
  */
-import * as THREE from "three";
+import * as THREE from 'three';
 
 export interface BeamRendererOptions {
   maxBeams: number;
@@ -29,7 +29,7 @@ export class ThreeBeamRenderer {
   constructor(private options: BeamRendererOptions) {
     for (let i = 0; i < options.maxBeams; i++) {
       const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3));
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
       const mat = new THREE.LineBasicMaterial({
         color: options.defaultColor,
         transparent: true,
@@ -62,14 +62,20 @@ export class ThreeBeamRenderer {
   /** 모든 pinned beam 해제 */
   clearPinned(): void {
     for (const b of this.lines) {
-      if (b.pinned) { b.pinned = false; b.life = 0; b.mat.opacity = 0; }
+      if (b.pinned) {
+        b.pinned = false;
+        b.life = 0;
+        b.mat.opacity = 0;
+      }
     }
   }
 
   /** 모든 beam 즉시 제거 (pinned + transient) */
   clearAll(): void {
     for (const b of this.lines) {
-      b.pinned = false; b.life = 0; b.mat.opacity = 0;
+      b.pinned = false;
+      b.life = 0;
+      b.mat.opacity = 0;
     }
   }
 
@@ -86,8 +92,12 @@ export class ThreeBeamRenderer {
 
   private setPositions(b: BeamLine, from: THREE.Vector3, to: THREE.Vector3): void {
     const arr = b.geo.attributes.position.array as Float32Array;
-    arr[0] = from.x; arr[1] = from.y; arr[2] = from.z;
-    arr[3] = to.x; arr[4] = to.y; arr[5] = to.z;
+    arr[0] = from.x;
+    arr[1] = from.y;
+    arr[2] = from.z;
+    arr[3] = to.x;
+    arr[4] = to.y;
+    arr[5] = to.z;
     b.geo.attributes.position.needsUpdate = true;
   }
 }

@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/gateway",
   "version": "0.1.0",
-  "description": "인증과 내부 서비스 라우팅을 담당하는 API 게이트웨이",
   "private": true,
+  "description": "인증과 내부 서비스 라우팅을 담당하는 API 게이트웨이",
   "type": "module",
   "scripts": {
     "build": "tsup",

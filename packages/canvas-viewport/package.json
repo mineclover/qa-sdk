@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "description": "Shared viewport and minimap math for QA-SDK canvas experiences",
   "license": "MIT",
+  "files": [
+    "dist",
+    "src/styles.css"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -12,10 +19,6 @@
     },
     "./styles.css": "./src/styles.css"
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist", "src/styles.css"],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

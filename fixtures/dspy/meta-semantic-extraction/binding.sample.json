@@ -3,12 +3,7 @@
   "bindingId": "dspy:meta-semantic-system:ExtractionPort:v1",
   "ownerSystem": "meta-semantic-system",
   "targetPort": "ExtractionPort",
-  "targetKinds": [
-    "testability",
-    "branch-significance",
-    "side-effects",
-    "dependency-importance"
-  ],
+  "targetKinds": ["testability", "branch-significance", "side-effects", "dependency-importance"],
   "mode": "candidate",
   "fallback": {
     "kind": "prompt-template",
@@ -20,10 +15,7 @@
     "evalReport": "eval-report.json",
     "costReport": "cost-report.json"
   },
-  "inputSpecRefs": [
-    "meta-semantic-extraction",
-    "ms-concept-verification-unit"
-  ],
+  "inputSpecRefs": ["meta-semantic-extraction", "ms-concept-verification-unit"],
   "qualityGates": [
     {
       "kind": "eval-benchmark",

@@ -1,4 +1,4 @@
-import type { TransmissionEnvelope } from "@qa-sdk/sdk";
+import type { TransmissionEnvelope } from '@qa-sdk/sdk';
 import type {
   BenchmarkBridge,
   BenchmarkClient,
@@ -7,14 +7,14 @@ import type {
   BenchmarkHarness,
   BenchmarkWorkerSnapshot,
   ProbeTransport,
-} from "./types.js";
-import { summarizeEnvelopes } from "./probe-transport.js";
+} from './types.js';
+import { summarizeEnvelopes } from './probe-transport.js';
 
 export function createInstrumentedHarness(
   client: BenchmarkClient,
   options: {
     probeTransport?: ProbeTransport;
-    bridge?: Pick<BenchmarkBridge, "getDebugEnvelopes">;
+    bridge?: Pick<BenchmarkBridge, 'getDebugEnvelopes'>;
     onReset?: () => void;
     getErrors?: () => BenchmarkErrorSummary | undefined;
   } = {},
@@ -78,7 +78,7 @@ export function createInstrumentedHarness(
                   recordsSent: bridgeDelta.recordsSent,
                   failedSends: 0,
                   sendLatencyMs: { min: 0, avg: 0, p50: 0, p95: 0, p99: 0, max: 0 },
-                  ...(typeof bridgeDelta.bytesSent === "number"
+                  ...(typeof bridgeDelta.bytesSent === 'number'
                     ? { bytesSent: bridgeDelta.bytesSent }
                     : {}),
                   addressContext: bridgeDelta.addressContext,

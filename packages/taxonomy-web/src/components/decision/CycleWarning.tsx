@@ -1,4 +1,4 @@
-import type { GateCycle } from "../../lib/decisionDemo";
+import type { GateCycle } from '../../lib/decisionDemo';
 
 export function CycleWarning({ cycles }: { cycles: GateCycle[] }) {
   if (cycles.length === 0) return null;
@@ -10,7 +10,7 @@ export function CycleWarning({ cycles }: { cycles: GateCycle[] }) {
           <li key={i} className="font-mono text-[11px]">
             {c.nodes.length === 1
               ? `${c.nodes[0]} → ${c.nodes[0]} (self-loop)`
-              : `${c.nodes.join(" → ")} → ${c.nodes[0]}`}
+              : `${c.nodes.join(' → ')} → ${c.nodes[0]}`}
           </li>
         ))}
       </ul>

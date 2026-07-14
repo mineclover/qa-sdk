@@ -26,8 +26,8 @@
  *   동시 get(same key) N개 → loadMask 1회만 실행, Promise 공유
  */
 
-import type { PermissionCodec } from "./permission-codec.js";
-import { PermissionView } from "./permission-codec.js";
+import type { PermissionCodec } from './permission-codec.js';
+import { PermissionView } from './permission-codec.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Types
@@ -138,7 +138,10 @@ export class PermissionViewCache {
    */
   applyGrant(
     key: string,
-    service: string, type: string, resource: string, action: string,
+    service: string,
+    type: string,
+    resource: string,
+    action: string,
   ): boolean {
     const entry = this._cache.get(key);
     if (!entry) return false;
@@ -153,7 +156,10 @@ export class PermissionViewCache {
    */
   applyRevoke(
     key: string,
-    service: string, type: string, resource: string, action: string,
+    service: string,
+    type: string,
+    resource: string,
+    action: string,
   ): boolean {
     const entry = this._cache.get(key);
     if (!entry) return false;
@@ -191,17 +197,14 @@ export class PermissionViewCache {
    * // "admin/teams" 리소스가 삭제됨 → 해당 리소스 권한 가진 뷰 무효화
    * cache.invalidateByDim("resource", "admin/teams");
    */
-  invalidateByDim(
-    dimLabel: "service" | "type" | "resource" | "action",
-    value: string,
-  ): string[] {
-    const dimIndex = ["service", "type", "resource", "action"].indexOf(dimLabel);
+  invalidateByDim(dimLabel: 'service' | 'type' | 'resource' | 'action', value: string): string[] {
+    const dimIndex = ['service', 'type', 'resource', 'action'].indexOf(dimLabel);
     if (dimIndex < 0) return [];
 
     let valueIdx: number;
     try {
-      valueIdx = this._codec["_getLabelIndex"](
-        dimLabel as "service" | "type" | "resource" | "action",
+      valueIdx = this._codec['_getLabelIndex'](
+        dimLabel as 'service' | 'type' | 'resource' | 'action',
         value,
       );
     } catch {
@@ -222,7 +225,9 @@ export class PermissionViewCache {
 
   // ── 통계 ──────────────────────────────────────────────────────────
 
-  get size(): number { return this._cache.size; }
+  get size(): number {
+    return this._cache.size;
+  }
 
   get stats(): CacheStats {
     const total = this._hits + this._misses;

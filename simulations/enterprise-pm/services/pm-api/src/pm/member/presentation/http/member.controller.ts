@@ -11,19 +11,19 @@ import {
   Post,
   Query,
   UseFilters,
-} from "@nestjs/common";
-import { z } from "zod";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { MemberUseCase } from "../../application/use-cases/member.use-case.js";
+} from '@nestjs/common';
+import { z } from 'zod';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { MemberUseCase } from '../../application/use-cases/member.use-case.js';
 import {
   MemberReadModelQuery,
   type MemberDetailReadModel,
-} from "../../application/queries/member-read-model.query.js";
+} from '../../application/queries/member-read-model.query.js';
 
 const addSchema = z.object({
   projectId: z.string().min(1),
   userId: z.string().min(1),
-  role: z.enum(["lead", "contributor", "viewer"]),
+  role: z.enum(['lead', 'contributor', 'viewer']),
 });
 
 /**
@@ -43,7 +43,7 @@ export class MemberController {
     @Inject(MemberReadModelQuery) private readonly readModel: MemberReadModelQuery,
   ) {}
 
-  @Post("members")
+  @Post('members')
   async add(@Body() body: unknown): Promise<MemberDetailReadModel> {
     const parsed = addSchema.parse(body);
     const result = await this.useCase.add({
@@ -54,22 +54,22 @@ export class MemberController {
     return result;
   }
 
-  @Delete("members")
+  @Delete('members')
   async remove(
-    @Query("projectId") projectId: string,
-    @Query("userId") userId: string,
-  ): Promise<{ status: "removed" }> {
+    @Query('projectId') projectId: string,
+    @Query('userId') userId: string,
+  ): Promise<{ status: 'removed' }> {
     await this.useCase.remove({ projectId, userId });
-    return { status: "removed" };
+    return { status: 'removed' };
   }
 
-  @Get("projects/:projectId/members")
-  async listForProject(@Param("projectId") projectId: string): Promise<MemberDetailReadModel[]> {
+  @Get('projects/:projectId/members')
+  async listForProject(@Param('projectId') projectId: string): Promise<MemberDetailReadModel[]> {
     return this.readModel.listForProject(projectId);
   }
 
-  @Get("users/:userId/projects")
-  async listForUser(@Param("userId") userId: string): Promise<MemberDetailReadModel[]> {
+  @Get('users/:userId/projects')
+  async listForUser(@Param('userId') userId: string): Promise<MemberDetailReadModel[]> {
     return this.readModel.listForUser(userId);
   }
 }

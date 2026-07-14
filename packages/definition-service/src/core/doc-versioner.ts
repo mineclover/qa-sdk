@@ -6,13 +6,13 @@
  * HTTP/DB 무관한 순수 로직. DocStore 구현체가 이 함수를 호출한다.
  */
 
-import type { DocRecord, DocHistoryRecord } from "./types.js";
+import type { DocRecord, DocHistoryRecord } from './types.js';
 
 /** 버전 판정 결과 */
 export interface VersionDecision {
-  action: "created" | "updated" | "unchanged";
+  action: 'created' | 'updated' | 'unchanged';
   version: number;
-  changeType: DocHistoryRecord["changeType"];
+  changeType: DocHistoryRecord['changeType'];
 }
 
 /**
@@ -23,12 +23,9 @@ export interface VersionDecision {
  * - body_hash 변경 → updated (버전 +1)
  * - 기존 없음 → created (버전 1)
  */
-export function decideVersion(
-  existing: DocRecord | null,
-  incoming: DocRecord,
-): VersionDecision {
+export function decideVersion(existing: DocRecord | null, incoming: DocRecord): VersionDecision {
   if (!existing) {
-    return { action: "created", version: 1, changeType: "created" };
+    return { action: 'created', version: 1, changeType: 'created' };
   }
 
   // body_hash + 마커 + 파일 유래 메타데이터 동일 → unchanged
@@ -37,16 +34,16 @@ export function decideVersion(
     markersMatch(existing, incoming) &&
     metadataMatch(existing, incoming)
   ) {
-    return { action: "unchanged", version: existing.version, changeType: "updated" };
+    return { action: 'unchanged', version: existing.version, changeType: 'updated' };
   }
 
   // 구조적 변경 없이 마커만 바뀜
   if (isMarkerOnlyChange(existing, incoming)) {
-    return { action: "updated", version: existing.version + 1, changeType: "marker_edit" };
+    return { action: 'updated', version: existing.version + 1, changeType: 'marker_edit' };
   }
 
   // 본문 또는 메타데이터 변경
-  return { action: "updated", version: existing.version + 1, changeType: "updated" };
+  return { action: 'updated', version: existing.version + 1, changeType: 'updated' };
 }
 
 /** 마커 필드(purpose/intent/context/caveat)가 동일한지 */
@@ -64,10 +61,7 @@ export function markersMatch(a: DocRecord, b: DocRecord): boolean {
  * 마커만 변경된 경우를 판별한다.
  */
 export function isMarkerOnlyChange(prev: DocRecord, next: DocRecord): boolean {
-  return (
-    prev.bodyHash === next.bodyHash &&
-    metadataMatch(prev, next)
-  );
+  return prev.bodyHash === next.bodyHash && metadataMatch(prev, next);
 }
 
 function metadataMatch(prev: DocRecord, next: DocRecord): boolean {

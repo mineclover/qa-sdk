@@ -1,22 +1,19 @@
 // @def.boundary motion-workspace-service-spec
-import { mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { createLogger } from "./lib/logger.js";
-import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { eq, and, asc, desc, sql } from "drizzle-orm";
-import type { NodeSQLiteDatabase } from "drizzle-orm/node-sqlite";
-import type { MotionSceneDef } from "motion-content";
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { createLogger } from './lib/logger.js';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
+import { eq, and, asc, desc, sql } from 'drizzle-orm';
+import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite';
+import type { MotionSceneDef } from 'motion-content';
 import {
   migrateMotionWorkspaceSnapshot,
   type MotionWorkspaceDescriptor,
   type MotionWorkspaceSnapshotV2,
-} from "motion-workspace";
-import {
-  motionWorkspaces,
-  motionWorkspaceScenes,
-} from "./db/schema.js";
+} from 'motion-workspace';
+import { motionWorkspaces, motionWorkspaceScenes } from './db/schema.js';
 import {
   createMotionWorkspaceAlreadyExistsError,
   createMotionWorkspaceNotFoundError,
@@ -27,7 +24,7 @@ import {
   type MotionWorkspaceRepositoryCreateInput,
   type MotionWorkspaceRepositoryOptions,
   type MotionWorkspaceRepositorySaveInput,
-} from "./repository.js";
+} from './repository.js';
 
 interface PersistedSceneRow {
   readonly sceneId: string;
@@ -36,12 +33,12 @@ interface PersistedSceneRow {
   readonly sceneJson: string;
 }
 
-const MOTION_COMPOSITION_SCHEMA_V2 = "qa-sdk.motion-composition/v2";
+const MOTION_COMPOSITION_SCHEMA_V2 = 'qa-sdk.motion-composition/v2';
 
 export const DEFAULT_MOTION_WORKSPACE_SQLITE_PATH = resolve(
   process.cwd(),
-  ".qa-sdk",
-  "motion-workspace.sqlite",
+  '.qa-sdk',
+  'motion-workspace.sqlite',
 );
 
 function resolveSqliteRepositoryPath(path?: string): string {
@@ -52,44 +49,43 @@ function resolveSqliteRepositoryPath(path?: string): string {
 }
 
 function ensureSqliteDirectory(path: string): void {
-  if (path === ":memory:") {
+  if (path === ':memory:') {
     return;
   }
   mkdirSync(dirname(path), { recursive: true });
 }
 
 function readChangeCount(result: unknown): number {
-  if (typeof result === "number") {
+  if (typeof result === 'number') {
     return result;
   }
-  if (typeof result === "bigint") {
+  if (typeof result === 'bigint') {
     return Number(result);
   }
-  if (typeof result !== "object" || result === null) {
+  if (typeof result !== 'object' || result === null) {
     return 0;
   }
 
   const changes = (result as { changes?: unknown }).changes;
-  if (typeof changes === "number") {
+  if (typeof changes === 'number') {
     return changes;
   }
-  if (typeof changes === "bigint") {
+  if (typeof changes === 'bigint') {
     return Number(changes);
   }
   return 0;
 }
 
 function isSqliteConstraintError(error: unknown): boolean {
-  return error instanceof Error
-    && /UNIQUE constraint failed/i.test(error.message);
+  return error instanceof Error && /UNIQUE constraint failed/i.test(error.message);
 }
 
 function isSceneDocument(
   workspace: MotionWorkspaceSnapshotV2,
 ): workspace is MotionWorkspaceSnapshotV2 & {
-  readonly document: MotionWorkspaceSnapshotV2["document"] & {
+  readonly document: MotionWorkspaceSnapshotV2['document'] & {
     readonly schemaVersion: typeof MOTION_COMPOSITION_SCHEMA_V2;
-    readonly composition: MotionWorkspaceSnapshotV2["document"] & {
+    readonly composition: MotionWorkspaceSnapshotV2['document'] & {
       readonly scenes: readonly MotionSceneDef[];
     };
   };
@@ -135,9 +131,7 @@ function toWorkspaceMetadataSnapshot(
   };
 }
 
-function toSceneRows(
-  workspace: MotionWorkspaceSnapshotV2,
-): readonly PersistedSceneRow[] {
+function toSceneRows(workspace: MotionWorkspaceSnapshotV2): readonly PersistedSceneRow[] {
   if (!isSceneDocument(workspace)) {
     return [];
   }
@@ -202,18 +196,14 @@ function toPersistedWorkspace(
   });
 }
 
-function normalizeWorkspace(
-  workspace: MotionWorkspaceSnapshotV2,
-): MotionWorkspaceSnapshotV2 {
+function normalizeWorkspace(workspace: MotionWorkspaceSnapshotV2): MotionWorkspaceSnapshotV2 {
   return migrateMotionWorkspaceSnapshot(workspace);
 }
 
-export interface MotionWorkspaceSqliteRepositoryOptions
-  extends MotionWorkspaceRepositoryOptions
-{}
+export interface MotionWorkspaceSqliteRepositoryOptions extends MotionWorkspaceRepositoryOptions {}
 
 export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepository {
-  private readonly logger = createLogger("motion-workspace");
+  private readonly logger = createLogger('motion-workspace');
   /** raw DatabaseSync — PRAGMA, 수동 트랜잭션용 */
   private readonly rawDb: DatabaseSyncInstance;
   /** drizzle query builder 인스턴스 (rawDb와 같은 커넥션) */
@@ -225,17 +215,17 @@ export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepositor
     ensureSqliteDirectory(this.path);
     const DatabaseSync = getDatabaseSync();
     this.rawDb = new DatabaseSync(this.path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
-    this.rawDb.exec("PRAGMA foreign_keys = ON");
+    this.rawDb.exec('PRAGMA journal_mode = WAL');
+    this.rawDb.exec('PRAGMA busy_timeout = 3000');
+    this.rawDb.exec('PRAGMA foreign_keys = ON');
     // drizzle 인스턴스 생성 + 마이그레이션
     try {
       this.db = drizzle({ client: this.rawDb });
       migrate(this.db, {
-        migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
+        migrationsFolder: new URL('../drizzle', import.meta.url).pathname,
       });
     } catch (err) {
-      this.logger.error({ err }, "drizzle 마이그레이션 실패");
+      this.logger.error({ err }, 'drizzle 마이그레이션 실패');
       throw err;
     }
   }
@@ -245,13 +235,13 @@ export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepositor
    * rawDb.exec("BEGIN IMMEDIATE") 후 this.db 쿼리가 트랜잭션 안에서 실행된다.
    */
   private withTransaction<T>(operation: () => T): T {
-    this.rawDb.exec("BEGIN IMMEDIATE");
+    this.rawDb.exec('BEGIN IMMEDIATE');
     try {
       const result = operation();
-      this.rawDb.exec("COMMIT");
+      this.rawDb.exec('COMMIT');
       return result;
     } catch (error) {
-      this.rawDb.exec("ROLLBACK");
+      this.rawDb.exec('ROLLBACK');
       throw error;
     }
   }
@@ -348,9 +338,7 @@ export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepositor
     return rows.map(toWorkspaceDescriptor);
   }
 
-  async create(
-    input: MotionWorkspaceRepositoryCreateInput,
-  ): Promise<MotionWorkspaceSnapshotV2> {
+  async create(input: MotionWorkspaceRepositoryCreateInput): Promise<MotionWorkspaceSnapshotV2> {
     const workspace = normalizeWorkspace(input.workspace);
     const metadataWorkspace = toWorkspaceMetadataSnapshot(workspace);
     const payload = JSON.stringify(metadataWorkspace);
@@ -380,9 +368,7 @@ export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepositor
     return workspace;
   }
 
-  async save(
-    input: MotionWorkspaceRepositorySaveInput,
-  ): Promise<MotionWorkspaceSnapshotV2> {
+  async save(input: MotionWorkspaceRepositorySaveInput): Promise<MotionWorkspaceSnapshotV2> {
     const workspace = normalizeWorkspace(input.workspace);
     const metadataWorkspace = toWorkspaceMetadataSnapshot(workspace);
     const payload = JSON.stringify(metadataWorkspace);
@@ -503,10 +489,7 @@ export class SqliteMotionWorkspaceRepository implements MotionWorkspaceRepositor
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = this.db
-      .delete(motionWorkspaces)
-      .where(eq(motionWorkspaces.id, id))
-      .run();
+    const result = this.db.delete(motionWorkspaces).where(eq(motionWorkspaces.id, id)).run();
 
     return readChangeCount(result) > 0;
   }

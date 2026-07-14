@@ -145,9 +145,18 @@ describe('init --nest-service', () => {
     const main = await readFile(join(pkgDir, 'src/main.ts'), 'utf-8');
     const appModule = await readFile(join(pkgDir, 'src/app.module.ts'), 'utf-8');
     const env = await readFile(join(pkgDir, 'src/config/env.ts'), 'utf-8');
-    const port = await readFile(join(pkgDir, 'src/domains/example/api/project-query.port.ts'), 'utf-8');
-    const service = await readFile(join(pkgDir, 'src/domains/example/application/assign-manager.service.ts'), 'utf-8');
-    const moduleFile = await readFile(join(pkgDir, 'src/domains/example/infrastructure/example.module.ts'), 'utf-8');
+    const port = await readFile(
+      join(pkgDir, 'src/domains/example/api/project-query.port.ts'),
+      'utf-8',
+    );
+    const service = await readFile(
+      join(pkgDir, 'src/domains/example/application/assign-manager.service.ts'),
+      'utf-8',
+    );
+    const moduleFile = await readFile(
+      join(pkgDir, 'src/domains/example/infrastructure/example.module.ts'),
+      'utf-8',
+    );
 
     expect(packageJson.name).toBe('@qa-sdk/sample-service');
     expect(packageJson.dependencies?.['@qa-sdk/nest-service-kit']).toBe('workspace:*');
@@ -175,7 +184,10 @@ describe('init --nest-service', () => {
       nestService: 'services/backend/sample-service',
     });
 
-    const tsconfig = await readFile(join(cwd, 'services/backend/sample-service/tsconfig.json'), 'utf-8');
+    const tsconfig = await readFile(
+      join(cwd, 'services/backend/sample-service/tsconfig.json'),
+      'utf-8',
+    );
     const packageJson = JSON.parse(
       await readFile(join(cwd, 'services/backend/sample-service/package.json'), 'utf-8'),
     ) as { name: string };

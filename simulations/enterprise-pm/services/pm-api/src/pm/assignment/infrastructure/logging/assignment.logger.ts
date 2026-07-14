@@ -5,8 +5,8 @@ import {
   createDefaultLoggerAdapter,
   type LoggerPort,
   type HostLoggerLike,
-} from "@qa-sdk/sim-domain-slice-kit";
-import { createLogger } from "../../../../lib/logger.js";
+} from '@qa-sdk/sim-domain-slice-kit';
+import { createLogger } from '../../../../lib/logger.js';
 
 /**
  * Assignment 슬라이스 LoggerPort 어댑터.
@@ -19,6 +19,6 @@ import { createLogger } from "../../../../lib/logger.js";
  *   로 강제한다.
  */
 export function createAssignmentLogger(): LoggerPort {
-  const host = createLogger("sim-pm-api.assignment") as unknown as HostLoggerLike;
+  const host = createLogger('sim-pm-api.assignment') as unknown as HostLoggerLike;
   return createDefaultLoggerAdapter(host);
 }

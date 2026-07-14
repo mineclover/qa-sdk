@@ -5,18 +5,18 @@ import {
   listAuthorizationGraphIds,
   pruneAllAuthorizationGraphSnapshots,
   pruneAuthorizationGraphSnapshots,
-} from "@qa-sdk/sim-authorization-graph-provider";
+} from '@qa-sdk/sim-authorization-graph-provider';
 import type {
   AuthorizationGraphDiff,
   AuthorizationGraphSnapshotRecord,
   AuthorizationGraphStore,
-} from "authorization-ontology";
-import { diffAuthorizationGraphSnapshots } from "authorization-ontology";
+} from 'authorization-ontology';
+import { diffAuthorizationGraphSnapshots } from 'authorization-ontology';
 import {
   GraphStoreQueryPort,
   type GraphRetentionPruneAllResult,
   type GraphRetentionPruneResult,
-} from "../../application/ports/graph-store-query.port.js";
+} from '../../application/ports/graph-store-query.port.js';
 
 /**
  * GraphStoreQueryPort 의 어댑터.
@@ -46,10 +46,7 @@ export class GraphStoreQueryAdapter extends GraphStoreQueryPort {
     return listAuthorizationGraphIds(this.store);
   }
 
-  async diff(
-    fromSnapshotId: string,
-    toSnapshotId: string,
-  ): Promise<AuthorizationGraphDiff | null> {
+  async diff(fromSnapshotId: string, toSnapshotId: string): Promise<AuthorizationGraphDiff | null> {
     return diffAuthorizationGraphSnapshots(this.store, fromSnapshotId, toSnapshotId);
   }
 

@@ -10,8 +10,8 @@
  * @layer 측정 (Measurement)
  */
 
-import { type Catalog, compareTimestamps } from "@qa-sdk/core";
-import { aggregateUsageData, type AddressContextRecord } from "./usage-aggregator.js";
+import { type Catalog, compareTimestamps } from '@qa-sdk/core';
+import { aggregateUsageData, type AddressContextRecord } from './usage-aggregator.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -42,7 +42,7 @@ export interface Anomaly {
   readonly ratio: number;
   readonly avgRatio: number;
   readonly deviation: number;
-  readonly severity: "warning" | "critical";
+  readonly severity: 'warning' | 'critical';
 }
 
 export interface SlaViolation {
@@ -75,11 +75,21 @@ export interface SlaRule {
 // ═══════════════════════════════════════════════════════════════
 
 const BRANCH_AXES = new Set([
-  "flow_step", "flow_variant", "deploy_action", "health_status",
-  "verdict_result", "constraint_op", "migration_pattern",
-  "mask_mode", "validation_mode", "pipeline_phase",
-  "cart_action", "auth_action", "order_action",
-  "http_method", "resource_type",
+  'flow_step',
+  'flow_variant',
+  'deploy_action',
+  'health_status',
+  'verdict_result',
+  'constraint_op',
+  'migration_pattern',
+  'mask_mode',
+  'validation_mode',
+  'pipeline_phase',
+  'cart_action',
+  'auth_action',
+  'order_action',
+  'http_method',
+  'resource_type',
 ]);
 
 /**
@@ -101,7 +111,7 @@ export function analyzeTemporalTrends(
   // 시간순 정렬
   const sorted = [...records].toSorted((a, b) => compareTimestamps(a.timestamp, b.timestamp));
   if (sorted.length === 0) {
-    return { windows: [], trends: [], anomalies: [], slaViolations: [], summary: "레코드 없음" };
+    return { windows: [], trends: [], anomalies: [], slaViolations: [], summary: '레코드 없음' };
   }
 
   // 윈도우 분할
@@ -192,7 +202,7 @@ export function analyzeTemporalTrends(
         ratio: t.ratio,
         avgRatio: avg,
         deviation,
-        severity: deviation >= 3 ? "critical" : "warning",
+        severity: deviation >= 3 ? 'critical' : 'warning',
       });
     }
   }

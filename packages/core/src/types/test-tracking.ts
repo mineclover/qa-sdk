@@ -5,29 +5,45 @@
 
 /** SSOT: demo-catalog test_phase axis entries */
 export type TestPhase =
-  | "precondition" | "fixture" | "arrange" | "act" | "observe"
-  | "assert-primary" | "assert-side" | "assert-negative"
-  | "snapshot" | "teardown" | "report";
+  | 'precondition'
+  | 'fixture'
+  | 'arrange'
+  | 'act'
+  | 'observe'
+  | 'assert-primary'
+  | 'assert-side'
+  | 'assert-negative'
+  | 'snapshot'
+  | 'teardown'
+  | 'report';
 
 export const TEST_PHASES: readonly TestPhase[] = [
-  "precondition", "fixture", "arrange", "act", "observe",
-  "assert-primary", "assert-side", "assert-negative",
-  "snapshot", "teardown", "report",
+  'precondition',
+  'fixture',
+  'arrange',
+  'act',
+  'observe',
+  'assert-primary',
+  'assert-side',
+  'assert-negative',
+  'snapshot',
+  'teardown',
+  'report',
 ] as const;
 
 // ── TestCase — 좌표가 부여된 테스트 단위 ─────────────
 
 export interface TestCase {
   testId: string;
-  address: string;              // "test:scope:aspect:facet:phase:seq" (phase 없으면 기존 4세그먼트)
+  address: string; // "test:scope:aspect:facet:phase:seq" (phase 없으면 기존 4세그먼트)
   name: string;
   target: TestTarget;
   expected: TestExpectation;
-  contractRef?: string;         // "spec-id#constraint-ref"
+  contractRef?: string; // "spec-id#constraint-ref"
   scope?: string;
   aspect?: string;
   facet?: string;
-  phase?: TestPhase;            // 이 테스트가 검증하는 단계
+  phase?: TestPhase; // 이 테스트가 검증하는 단계
   tags?: string[];
 }
 
@@ -41,7 +57,7 @@ export interface TestTarget {
 }
 
 export interface TestExpectation {
-  type: "pass" | "fail" | "value" | "range" | "contains";
+  type: 'pass' | 'fail' | 'value' | 'range' | 'contains';
   value?: unknown;
 }
 
@@ -53,7 +69,7 @@ export interface TestSuite {
   scope?: string;
   aspect?: string;
   cases: TestCase[];
-  phases?: TestPhase[];         // 이 스위트가 커버하는 단계 집합
+  phases?: TestPhase[]; // 이 스위트가 커버하는 단계 집합
   pipeId?: string;
   schemaId?: string;
 }
@@ -63,7 +79,7 @@ export interface TestSuite {
 export interface TestResult {
   testId: string;
   address: string;
-  status: "pass" | "fail" | "skip" | "error";
+  status: 'pass' | 'fail' | 'skip' | 'error';
   duration: number;
   error?: string;
   executedAt: string;

@@ -461,13 +461,9 @@ function toSmokeCheckSummary(
       toAllocationSmokeCheckSummary(smokeCheck),
     ]),
   );
-  const checkCount = smokeChecks.reduce(
-    (total, smokeCheck) => total + smokeCheck.checks.length,
-    0,
-  );
+  const checkCount = smokeChecks.reduce((total, smokeCheck) => total + smokeCheck.checks.length, 0);
   const passedCheckCount = smokeChecks.reduce(
-    (total, smokeCheck) =>
-      total + smokeCheck.checks.filter((check) => check.passed).length,
+    (total, smokeCheck) => total + smokeCheck.checks.filter((check) => check.passed).length,
     0,
   );
 

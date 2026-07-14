@@ -1,12 +1,12 @@
 {
   "name": "@qa-sdk/ingest-server",
   "version": "0.1.0",
-  "description": "이벤트 수집, 저장, Phase 2 판정 파이프라인 서비스",
   "private": true,
-  "type": "module",
+  "description": "이벤트 수집, 저장, Phase 2 판정 파이프라인 서비스",
   "files": [
     "dist"
   ],
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsup",
@@ -37,6 +37,17 @@
     "ws": "^8.19.0",
     "zod": "^3.25.76"
   },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/ws": "^8.18.1",
+    "drizzle-kit": "catalog:",
+    "postgres": "^3.4.0",
+    "resource-policy-store": "workspace:*",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.76.0"
+  },
   "peerDependencies": {
     "@qa-sdk/convergence": "workspace:*",
     "@qa-sdk/event-catalog": "workspace:*",
@@ -62,16 +73,5 @@
     "postgres": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.10",
-    "@types/ws": "^8.18.1",
-    "drizzle-kit": "catalog:",
-    "postgres": "^3.4.0",
-    "resource-policy-store": "workspace:*",
-    "tsup": "^8.5.1",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "wrangler": "^4.76.0"
   }
 }

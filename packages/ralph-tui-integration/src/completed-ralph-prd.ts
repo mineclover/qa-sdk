@@ -4,7 +4,7 @@ import {
   isActiveCompletedRecordDocument,
   type CompletedRecordState,
   type DocumentEnvelope,
-} from "doc-envelope";
+} from 'doc-envelope';
 
 export interface CompletedRalphPrdDetectionOptions {
   readonly documents: readonly DocumentEnvelope[];
@@ -23,16 +23,16 @@ export function detectCompletedRalphPrdRecords(
   const activeDocuments = options.documents.filter(isActiveCompletedRecordDocument);
   const ralphPrdByFamilyId = new Map(
     activeDocuments
-      .filter((document) =>
-        document.kind === "ralph-prd-json"
-        && storyCompletionOf(document).allStoriesPassing
+      .filter(
+        (document) =>
+          document.kind === 'ralph-prd-json' && storyCompletionOf(document).allStoriesPassing,
       )
       .map((document) => [document.familyId ?? document.stableId, document]),
   );
 
   const records: CompletedRecordState[] = [];
   for (const document of activeDocuments) {
-    if (document.kind !== "prd") continue;
+    if (document.kind !== 'prd') continue;
     const paired = ralphPrdByFamilyId.get(document.familyId ?? document.stableId);
     if (!paired) continue;
     const completion = storyCompletionOf(paired);
@@ -41,14 +41,14 @@ export function detectCompletedRalphPrdRecords(
       kind: document.kind,
       documentId: document.stableId,
       path: document.path,
-      state: "completed-record",
+      state: 'completed-record',
       title: titleOf(document),
       ...lifecycleOf(document),
       storyCount: completion.storyCount,
       passedStoryCount: completion.passedStoryCount,
       pairedDocumentId: paired.stableId,
       pairedPath: paired.path,
-      reason: "paired ralph PRD JSON has all stories passing",
+      reason: 'paired ralph PRD JSON has all stories passing',
     });
   }
 
@@ -61,32 +61,32 @@ function storyCompletionOf(document: DocumentEnvelope): {
   readonly allStoriesPassing: boolean;
 } {
   const storyCount = asNumber(document.metadata.storyCount) ?? document.tasks.length;
-  const passedStoryCount = asNumber(document.metadata.passedStoryCount)
-    ?? document.tasks.filter((task) => task.metadata.passes === true).length;
+  const passedStoryCount =
+    asNumber(document.metadata.passedStoryCount) ??
+    document.tasks.filter((task) => task.metadata.passes === true).length;
   return {
     storyCount,
     passedStoryCount,
-    allStoriesPassing: document.kind === "ralph-prd-json"
-      && storyCount > 0
-      && passedStoryCount === storyCount,
+    allStoriesPassing:
+      document.kind === 'ralph-prd-json' && storyCount > 0 && passedStoryCount === storyCount,
   };
 }
 
 function titleOf(document: DocumentEnvelope): string {
-  for (const key of ["title", "name", "defId"] as const) {
+  for (const key of ['title', 'name', 'defId'] as const) {
     const value = document.metadata[key];
-    if (typeof value === "string" && value.trim().length > 0) return value;
+    if (typeof value === 'string' && value.trim().length > 0) return value;
   }
   return document.stableId;
 }
 
 function lifecycleOf(document: DocumentEnvelope): { readonly lifecycle?: string } {
   const lifecycle = document.metadata.lifecycle;
-  return typeof lifecycle === "string" && lifecycle.trim().length > 0
+  return typeof lifecycle === 'string' && lifecycle.trim().length > 0
     ? { lifecycle: lifecycle.trim() }
     : {};
 }
 
 function asNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }

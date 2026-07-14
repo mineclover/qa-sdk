@@ -10,8 +10,8 @@
  * 흐름: scan → (SchemaSnapshot JSON) → register → (Registry에 기록)
  */
 
-import { stat } from "node:fs/promises";
-import { readSnapshot, readSnapshots } from "snapshot-io";
+import { stat } from 'node:fs/promises';
+import { readSnapshot, readSnapshots } from 'snapshot-io';
 
 export interface RegisterOptions {
   registry: string;
@@ -27,7 +27,7 @@ export async function register(opts: RegisterOptions): Promise<void> {
     : [await readSnapshot(opts.input)];
 
   if (snapshots.length === 0) {
-    console.log("등록할 SchemaSnapshot이 없음");
+    console.log('등록할 SchemaSnapshot이 없음');
     return;
   }
 
@@ -35,12 +35,12 @@ export async function register(opts: RegisterOptions): Promise<void> {
   for (const snapshot of snapshots) {
     console.log(`Registering "${snapshot.id}" → ${opts.registry}`);
 
-    const url = new URL("/schema/import", opts.registry);
+    const url = new URL('/schema/import', opts.registry);
     const body = { snapshot, versionId: opts.versionId };
 
     const res = await fetch(url.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
@@ -49,7 +49,7 @@ export async function register(opts: RegisterOptions): Promise<void> {
       throw new Error(`Registry 오류 (${res.status}): ${errBody}`);
     }
 
-    const result = await res.json() as {
+    const result = (await res.json()) as {
       imported: { axes: number; composites: number; versionId: string };
       analysis: {
         ready: boolean;
@@ -66,13 +66,13 @@ export async function register(opts: RegisterOptions): Promise<void> {
     if (result.analysis.diagnostics.length > 0) {
       console.log(`  diagnostics:`);
       for (const d of result.analysis.diagnostics) {
-        const icon = d.level === "error" ? "E" : d.level === "warn" ? "W" : "I";
+        const icon = d.level === 'error' ? 'E' : d.level === 'warn' ? 'W' : 'I';
         console.log(`    [${icon}] ${d.prefix}: ${d.message}`);
       }
     }
 
     if (result.analysis.releaseOrder.length > 0) {
-      console.log(`  release order: ${result.analysis.releaseOrder.join(" → ")}`);
+      console.log(`  release order: ${result.analysis.releaseOrder.join(' → ')}`);
     }
   }
 }

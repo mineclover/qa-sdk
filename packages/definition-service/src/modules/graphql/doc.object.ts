@@ -7,7 +7,7 @@
  * 모든 @Field()에 type을 명시적으로 지정한다.
  */
 
-import { Field, ObjectType, Int } from "@nestjs/graphql";
+import { Field, ObjectType, Int } from '@nestjs/graphql';
 
 @ObjectType()
 export class DocLink {
@@ -196,10 +196,13 @@ export class Doc {
   @Field(() => Doc, { nullable: true }) parent?: Doc | null;
   @Field(() => [DocLink], { nullable: true }) outgoingLinks?: DocLink[];
   @Field(() => [IncomingLink], { nullable: true }) incomingLinks?: IncomingLink[];
-  @Field(() => [SyntheticIncomingLink], { nullable: true }) syntheticIncomingLinks?: SyntheticIncomingLink[];
-  @Field(() => [FeedbackRequestSummary], { nullable: true }) feedbackRequests?: FeedbackRequestSummary[];
+  @Field(() => [SyntheticIncomingLink], { nullable: true })
+  syntheticIncomingLinks?: SyntheticIncomingLink[];
+  @Field(() => [FeedbackRequestSummary], { nullable: true })
+  feedbackRequests?: FeedbackRequestSummary[];
   @Field(() => BoundaryResultType, { nullable: true }) boundary?: BoundaryResultType | null;
-  @Field(() => BoundaryContextResultType, { nullable: true }) boundaryContext?: BoundaryContextResultType | null;
+  @Field(() => BoundaryContextResultType, { nullable: true })
+  boundaryContext?: BoundaryContextResultType | null;
 }
 
 @ObjectType()
@@ -218,7 +221,8 @@ export class ImpactAnalysisResult {
   @Field(() => String, { nullable: true }) sourceAddress?: string;
   @Field(() => [ImpactedDoc]) impacted!: ImpactedDoc[];
   @Field(() => Int) blastRadius!: number;
-  @Field(() => [FeedbackRequestSummary], { nullable: true }) feedbackTrace?: FeedbackRequestSummary[];
+  @Field(() => [FeedbackRequestSummary], { nullable: true })
+  feedbackTrace?: FeedbackRequestSummary[];
 }
 
 @ObjectType()

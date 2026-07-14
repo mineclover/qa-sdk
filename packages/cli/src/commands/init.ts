@@ -135,21 +135,76 @@ async function initNestService(options: InitOptions): Promise<void> {
   const packageName = inferNestPackageName(options.nestService ?? basename(targetDir));
   const serviceName = options.serviceName ?? inferServiceName(packageName);
   const ownerSystem = options.ownerId ?? `${serviceName}-system`;
-  const tsconfigExtendsPath = toPosixRelativePath(relative(targetDir, resolve(cwd, 'tsconfig.json')));
+  const tsconfigExtendsPath = toPosixRelativePath(
+    relative(targetDir, resolve(cwd, 'tsconfig.json')),
+  );
 
   const files = [
-    { path: resolve(targetDir, 'package.json'), content: generateNestServicePackageJson({ packageName, serviceName, ownerSystem, port: 4400 }) },
-    { path: resolve(targetDir, 'tsconfig.json'), content: generateNestServiceTsconfig(tsconfigExtendsPath) },
+    {
+      path: resolve(targetDir, 'package.json'),
+      content: generateNestServicePackageJson({
+        packageName,
+        serviceName,
+        ownerSystem,
+        port: 4400,
+      }),
+    },
+    {
+      path: resolve(targetDir, 'tsconfig.json'),
+      content: generateNestServiceTsconfig(tsconfigExtendsPath),
+    },
     { path: resolve(targetDir, 'vitest.config.ts'), content: generateNestServiceVitestConfig() },
-    { path: resolve(targetDir, 'README.md'), content: generateNestServiceReadme({ packageName, serviceName, ownerSystem, port: 4400 }) },
-    { path: resolve(targetDir, 'src/config/env.ts'), content: generateNestServiceEnvTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
-    { path: resolve(targetDir, 'src/app.module.ts'), content: generateNestServiceAppModuleTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
-    { path: resolve(targetDir, 'src/main.ts'), content: generateNestServiceMainTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
-    { path: resolve(targetDir, 'src/health/health.controller.ts'), content: generateNestServiceHealthControllerTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
-    { path: resolve(targetDir, 'src/health/health.module.ts'), content: generateNestServiceHealthModuleTs() },
-    { path: resolve(targetDir, 'src/domains/example/api/project-query.port.ts'), content: generateNestServiceExamplePortTs() },
-    { path: resolve(targetDir, 'src/domains/example/application/assign-manager.service.ts'), content: generateNestServiceExampleServiceTs({ packageName, serviceName, ownerSystem, port: 4400 }) },
-    { path: resolve(targetDir, 'src/domains/example/infrastructure/example.module.ts'), content: generateNestServiceExampleModuleTs() },
+    {
+      path: resolve(targetDir, 'README.md'),
+      content: generateNestServiceReadme({ packageName, serviceName, ownerSystem, port: 4400 }),
+    },
+    {
+      path: resolve(targetDir, 'src/config/env.ts'),
+      content: generateNestServiceEnvTs({ packageName, serviceName, ownerSystem, port: 4400 }),
+    },
+    {
+      path: resolve(targetDir, 'src/app.module.ts'),
+      content: generateNestServiceAppModuleTs({
+        packageName,
+        serviceName,
+        ownerSystem,
+        port: 4400,
+      }),
+    },
+    {
+      path: resolve(targetDir, 'src/main.ts'),
+      content: generateNestServiceMainTs({ packageName, serviceName, ownerSystem, port: 4400 }),
+    },
+    {
+      path: resolve(targetDir, 'src/health/health.controller.ts'),
+      content: generateNestServiceHealthControllerTs({
+        packageName,
+        serviceName,
+        ownerSystem,
+        port: 4400,
+      }),
+    },
+    {
+      path: resolve(targetDir, 'src/health/health.module.ts'),
+      content: generateNestServiceHealthModuleTs(),
+    },
+    {
+      path: resolve(targetDir, 'src/domains/example/api/project-query.port.ts'),
+      content: generateNestServiceExamplePortTs(),
+    },
+    {
+      path: resolve(targetDir, 'src/domains/example/application/assign-manager.service.ts'),
+      content: generateNestServiceExampleServiceTs({
+        packageName,
+        serviceName,
+        ownerSystem,
+        port: 4400,
+      }),
+    },
+    {
+      path: resolve(targetDir, 'src/domains/example/infrastructure/example.module.ts'),
+      content: generateNestServiceExampleModuleTs(),
+    },
   ];
 
   for (const file of files) {

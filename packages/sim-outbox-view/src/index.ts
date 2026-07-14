@@ -6,7 +6,7 @@
 //
 // spec: docs/superpowers/specs/2026-05-02-server-side-admin-endpoints-design.md §9.
 
-import { z } from "zod";
+import { z } from 'zod';
 
 export const OutboxInsertResponseSchema = z.object({
   inserted: z.number().int().nonnegative(),

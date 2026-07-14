@@ -2,30 +2,30 @@
 // @def.doc coord-semantic-indexing-pack
 
 export const SEMANTIC_INDEXING_PLANES = [
-  "semantic-source",
-  "taxonomy",
-  "coordinate",
-  "transition",
-  "materialization",
-  "feedback",
+  'semantic-source',
+  'taxonomy',
+  'coordinate',
+  'transition',
+  'materialization',
+  'feedback',
 ] as const;
 
 export type SemanticIndexingPlane = (typeof SEMANTIC_INDEXING_PLANES)[number];
 
 export type SemanticIndexingSurfaceKind =
-  | "doc"
-  | "package"
-  | "source"
-  | "materialized-index"
-  | "visualization";
+  | 'doc'
+  | 'package'
+  | 'source'
+  | 'materialized-index'
+  | 'visualization';
 
 export type SemanticIndexingSurfaceRole =
-  | "public-library"
-  | "browser-edge"
-  | "runtime-service"
-  | "ui-demo"
-  | "visualization"
-  | "other";
+  | 'public-library'
+  | 'browser-edge'
+  | 'runtime-service'
+  | 'ui-demo'
+  | 'visualization'
+  | 'other';
 
 export interface SemanticIndexingSurfaceRef {
   readonly id: string;
@@ -56,33 +56,33 @@ export interface SemanticIndexingPackSnapshot {
 }
 
 export type SemanticIndexingChangeKind =
-  | "doc-update"
-  | "alias-add"
-  | "entry-add"
-  | "axis-add"
-  | "axis-entry-meaning-change"
-  | "prefix-shape-change"
-  | "capacity-change"
-  | "transition-add"
-  | "materialized-index-refresh"
-  | "feedback-proposal"
-  | "version-transition"
-  | "invalid"
-  | "unknown";
+  | 'doc-update'
+  | 'alias-add'
+  | 'entry-add'
+  | 'axis-add'
+  | 'axis-entry-meaning-change'
+  | 'prefix-shape-change'
+  | 'capacity-change'
+  | 'transition-add'
+  | 'materialized-index-refresh'
+  | 'feedback-proposal'
+  | 'version-transition'
+  | 'invalid'
+  | 'unknown';
 
 export interface SemanticIndexingSurfaceChangeInput {
   readonly changeId?: string;
-  readonly surface: Pick<SemanticIndexingSurfaceRef, "id" | "path" | "kind" | "role">;
+  readonly surface: Pick<SemanticIndexingSurfaceRef, 'id' | 'path' | 'kind' | 'role'>;
   readonly plane?: SemanticIndexingPlane;
   readonly changeKind: SemanticIndexingChangeKind;
   readonly evidence?: Record<string, unknown>;
 }
 
 export type SemanticIndexingChangeClassificationReason =
-  | "explicit-plane"
-  | "manifest-ref"
-  | "path-heuristic"
-  | "fallback";
+  | 'explicit-plane'
+  | 'manifest-ref'
+  | 'path-heuristic'
+  | 'fallback';
 
 export interface SemanticIndexingPackChange extends SemanticIndexingSurfaceChangeInput {
   readonly plane: SemanticIndexingPlane;
@@ -90,13 +90,13 @@ export interface SemanticIndexingPackChange extends SemanticIndexingSurfaceChang
 }
 
 export type SemanticIndexingCompatibilityVerdict =
-  | "compatible"
-  | "review-required"
-  | "version-transition-required"
-  | "invalid";
+  | 'compatible'
+  | 'review-required'
+  | 'version-transition-required'
+  | 'invalid';
 
 export interface SemanticIndexingPackValidationIssue {
-  readonly level: "error" | "warning";
+  readonly level: 'error' | 'warning';
   readonly code: string;
   readonly message: string;
   readonly path: string;
@@ -115,10 +115,10 @@ export interface SemanticIndexingCompatibilityReport {
 }
 
 export type SemanticIndexingPromotionProposalKind =
-  | "alias-add"
-  | "entry-add"
-  | "axis-promotion"
-  | "version-transition";
+  | 'alias-add'
+  | 'entry-add'
+  | 'axis-promotion'
+  | 'version-transition';
 
 export interface SemanticIndexingPromotionProposalInput {
   readonly kind: SemanticIndexingPromotionProposalKind;
@@ -166,10 +166,7 @@ export interface SemanticIndexingPackReport {
   readonly promotionProposals: readonly SemanticIndexingPromotionProposal[];
 }
 
-export type SemanticIndexingGroundingIntent =
-  | "rag"
-  | "text-to-sql"
-  | "user-search";
+export type SemanticIndexingGroundingIntent = 'rag' | 'text-to-sql' | 'user-search';
 
 export interface SemanticIndexingGroundingPlannerInput {
   readonly report: SemanticIndexingPackReport;
@@ -181,7 +178,7 @@ export interface SemanticIndexingGroundingPlannerInput {
 export interface SemanticIndexingMaterializedIndexDelegation {
   readonly surfaceId: string;
   readonly ownerPath?: string;
-  readonly action: "delegate-to-owner-package";
+  readonly action: 'delegate-to-owner-package';
 }
 
 export interface SemanticIndexingGroundingPlan {
@@ -195,5 +192,5 @@ export interface SemanticIndexingGroundingPlan {
   readonly allowedPlanes: readonly SemanticIndexingPlane[];
   readonly candidateSurfaces: readonly SemanticIndexingSurfaceRef[];
   readonly materializedIndexDelegations: readonly SemanticIndexingMaterializedIndexDelegation[];
-  readonly fallbackReason?: "version-transition-required" | "invalid-pack";
+  readonly fallbackReason?: 'version-transition-required' | 'invalid-pack';
 }

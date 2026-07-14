@@ -9,11 +9,7 @@
         "tier": "consumer",
         "boundary": "observability-system-root",
         "docRef": "observability-system-root",
-        "internalDeps": [
-          "core",
-          "sdk",
-          "weighted-index"
-        ]
+        "internalDeps": ["core", "sdk", "weighted-index"]
       },
       {
         "id": "archi",
@@ -40,10 +36,7 @@
         "tier": "consumer",
         "boundary": "permission-engine-spec",
         "docRef": "authorization-ontology-nested-audit-tracing",
-        "internalDeps": [
-          "db-bootstrap",
-          "permission-engine"
-        ]
+        "internalDeps": ["db-bootstrap", "permission-engine"]
       },
       {
         "id": "authorization-monitor-web",
@@ -52,9 +45,7 @@
         "tier": "consumer",
         "boundary": "experience-layer-group",
         "docRef": "experience-layer-group",
-        "internalDeps": [
-          "viz-core"
-        ]
+        "internalDeps": ["viz-core"]
       },
       {
         "id": "bench",
@@ -63,13 +54,7 @@
         "tier": "consumer",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "context",
-          "core",
-          "event-catalog",
-          "sdk",
-          "demo-snapshot"
-        ]
+        "internalDeps": ["context", "core", "event-catalog", "sdk", "demo-snapshot"]
       },
       {
         "id": "browser",
@@ -78,12 +63,7 @@
         "tier": "consumer",
         "boundary": "browser-runtime-system",
         "docRef": "none",
-        "internalDeps": [
-          "browser-codec",
-          "core",
-          "event-catalog",
-          "sdk"
-        ]
+        "internalDeps": ["browser-codec", "core", "event-catalog", "sdk"]
       },
       {
         "id": "canvas-viewport",
@@ -149,9 +129,7 @@
         "tier": "consumer",
         "boundary": "apm-codegen-system",
         "docRef": "none",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "config-loader",
@@ -160,9 +138,7 @@
         "tier": "consumer",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "data-object-codegen",
@@ -171,9 +147,7 @@
         "tier": "consumer",
         "boundary": "meta-semantic-system",
         "docRef": "none",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "db-bootstrap",
@@ -182,9 +156,7 @@
         "tier": "consumer",
         "boundary": "db-bootstrap",
         "docRef": "db-bootstrap",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "db-traffic-control",
@@ -202,11 +174,7 @@
         "tier": "consumer",
         "boundary": "persistence-system-root",
         "docRef": "persistence-system-root",
-        "internalDeps": [
-          "core",
-          "decision-flow",
-          "index-meta"
-        ]
+        "internalDeps": ["core", "decision-flow", "index-meta"]
       },
       {
         "id": "decision-service",
@@ -215,11 +183,7 @@
         "tier": "consumer",
         "boundary": "decision-service-spec",
         "docRef": "decision-service-spec",
-        "internalDeps": [
-          "core",
-          "logger",
-          "decision-flow"
-        ]
+        "internalDeps": ["core", "logger", "decision-flow"]
       },
       {
         "id": "decode-service",
@@ -245,9 +209,7 @@
         "tier": "consumer",
         "boundary": "definition-data-source",
         "docRef": "definition-data-source",
-        "internalDeps": [
-          "definition-catalog"
-        ]
+        "internalDeps": ["definition-catalog"]
       },
       {
         "id": "definition-service",
@@ -256,12 +218,7 @@
         "tier": "consumer",
         "boundary": "definition-service-system",
         "docRef": "definition-service",
-        "internalDeps": [
-          "core",
-          "logger",
-          "definition-catalog",
-          "work-domain"
-        ]
+        "internalDeps": ["core", "logger", "definition-catalog", "work-domain"]
       },
       {
         "id": "demo-tests",
@@ -287,10 +244,7 @@
         "tier": "consumer",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "codec",
-          "context"
-        ]
+        "internalDeps": ["codec", "context"]
       },
       {
         "id": "deterministic-label-registry",
@@ -299,9 +253,7 @@
         "tier": "consumer",
         "boundary": "deterministic-label-architecture",
         "docRef": "none",
-        "internalDeps": [
-          "doc-envelope"
-        ]
+        "internalDeps": ["doc-envelope"]
       },
       {
         "id": "docs-explorer",
@@ -310,9 +262,7 @@
         "tier": "consumer",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "definition-catalog"
-        ]
+        "internalDeps": ["definition-catalog"]
       },
       {
         "id": "e2e",
@@ -330,9 +280,7 @@
         "tier": "consumer",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "index-meta"
-        ]
+        "internalDeps": ["index-meta"]
       },
       {
         "id": "gate-service",
@@ -341,13 +289,7 @@
         "tier": "consumer",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "core",
-          "logger",
-          "index-meta",
-          "index-meta-workers",
-          "pino"
-        ]
+        "internalDeps": ["core", "logger", "index-meta", "index-meta-workers", "pino"]
       },
       {
         "id": "gateway",
@@ -365,9 +307,7 @@
         "tier": "consumer",
         "boundary": "index-meta-system",
         "docRef": "index-meta-system",
-        "internalDeps": [
-          "index-meta"
-        ]
+        "internalDeps": ["index-meta"]
       },
       {
         "id": "ingest-server",
@@ -394,12 +334,7 @@
         "tier": "consumer",
         "boundary": "motion-workspace-service-spec",
         "docRef": "none",
-        "internalDeps": [
-          "core",
-          "logger",
-          "index-meta",
-          "motion-workspace"
-        ]
+        "internalDeps": ["core", "logger", "index-meta", "motion-workspace"]
       },
       {
         "id": "nest-service-kit",
@@ -408,10 +343,7 @@
         "tier": "consumer",
         "boundary": "nest-service-kit",
         "docRef": "nest-service-kit",
-        "internalDeps": [
-          "core",
-          "otel"
-        ]
+        "internalDeps": ["core", "otel"]
       },
       {
         "id": "ontology-pack-validate",
@@ -434,9 +366,7 @@
         "tier": "consumer",
         "boundary": "experience-layer-group",
         "docRef": "experience-layer-group",
-        "internalDeps": [
-          "viz-core"
-        ]
+        "internalDeps": ["viz-core"]
       },
       {
         "id": "otel",
@@ -454,10 +384,7 @@
         "tier": "consumer",
         "boundary": "persistence-system-root",
         "docRef": "persistence-system-root",
-        "internalDeps": [
-          "core",
-          "index-meta"
-        ]
+        "internalDeps": ["core", "index-meta"]
       },
       {
         "id": "platform-demo",
@@ -481,11 +408,7 @@
         "tier": "consumer",
         "boundary": "platform-demo-system",
         "docRef": "platform-demo-system",
-        "internalDeps": [
-          "demo-snapshot",
-          "index-meta",
-          "permission-engine"
-        ]
+        "internalDeps": ["demo-snapshot", "index-meta", "permission-engine"]
       },
       {
         "id": "quality-ledger",
@@ -494,9 +417,7 @@
         "tier": "consumer",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": [
-          "index-meta"
-        ]
+        "internalDeps": ["index-meta"]
       },
       {
         "id": "query-service",
@@ -505,13 +426,7 @@
         "tier": "consumer",
         "boundary": "query-api-spec",
         "docRef": "query-api-spec",
-        "internalDeps": [
-          "core",
-          "logger",
-          "index-meta",
-          "index-meta-workers",
-          "pino"
-        ]
+        "internalDeps": ["core", "logger", "index-meta", "index-meta-workers", "pino"]
       },
       {
         "id": "ralph-tui-integration",
@@ -520,9 +435,7 @@
         "tier": "consumer",
         "boundary": "deterministic-label-architecture",
         "docRef": "ralph-tui-integration",
-        "internalDeps": [
-          "doc-envelope"
-        ]
+        "internalDeps": ["doc-envelope"]
       },
       {
         "id": "registry-service",
@@ -553,11 +466,7 @@
         "tier": "consumer",
         "boundary": "experience-layer-group",
         "docRef": "experience-layer-group",
-        "internalDeps": [
-          "canvas-viewport",
-          "git-utils",
-          "weighted-index"
-        ]
+        "internalDeps": ["canvas-viewport", "git-utils", "weighted-index"]
       },
       {
         "id": "resource-policy-store",
@@ -566,11 +475,7 @@
         "tier": "consumer",
         "boundary": "permission-engine-spec",
         "docRef": "authorization-ontology-resource-lifecycle",
-        "internalDeps": [
-          "db-bootstrap",
-          "permission-engine",
-          "weighted-index"
-        ]
+        "internalDeps": ["db-bootstrap", "permission-engine", "weighted-index"]
       },
       {
         "id": "review-ledger",
@@ -579,10 +484,7 @@
         "tier": "consumer",
         "boundary": "system-root",
         "docRef": "none",
-        "internalDeps": [
-          "core",
-          "index-meta"
-        ]
+        "internalDeps": ["core", "index-meta"]
       },
       {
         "id": "rlsc-analysis",
@@ -600,12 +502,7 @@
         "tier": "consumer",
         "boundary": "experience-layer-group",
         "docRef": "experience-layer-group",
-        "internalDeps": [
-          "browser-codec",
-          "core",
-          "event-catalog",
-          "sdk"
-        ]
+        "internalDeps": ["browser-codec", "core", "event-catalog", "sdk"]
       },
       {
         "id": "shop-web",
@@ -623,10 +520,7 @@
         "tier": "consumer",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "index-meta",
-          "core"
-        ]
+        "internalDeps": ["index-meta", "core"]
       },
       {
         "id": "tag-search",
@@ -644,10 +538,7 @@
         "tier": "consumer",
         "boundary": "persistence-system-root",
         "docRef": "persistence-system-root",
-        "internalDeps": [
-          "index-meta",
-          "test-types"
-        ]
+        "internalDeps": ["index-meta", "test-types"]
       },
       {
         "id": "viteplus-sdk-smoke",
@@ -656,12 +547,7 @@
         "tier": "consumer",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "browser-codec",
-          "core",
-          "event-catalog",
-          "sdk"
-        ]
+        "internalDeps": ["browser-codec", "core", "event-catalog", "sdk"]
       },
       {
         "id": "viz-3d",
@@ -670,9 +556,7 @@
         "tier": "consumer",
         "boundary": "viz-system-root",
         "docRef": "viz-system-root",
-        "internalDeps": [
-          "browser-codec"
-        ]
+        "internalDeps": ["browser-codec"]
       },
       {
         "id": "viz-core",
@@ -681,9 +565,7 @@
         "tier": "consumer",
         "boundary": "viz-system-root",
         "docRef": "viz-system-root",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "viz-web",
@@ -692,13 +574,7 @@
         "tier": "consumer",
         "boundary": "viz-system-root",
         "docRef": "viz-system-root",
-        "internalDeps": [
-          "canvas-viewport",
-          "core",
-          "viz-core",
-          "engine",
-          "event-catalog"
-        ]
+        "internalDeps": ["canvas-viewport", "core", "viz-core", "engine", "event-catalog"]
       },
       {
         "id": "weighted-gpu",
@@ -716,11 +592,7 @@
         "tier": "consumer",
         "boundary": "weighted-index-system",
         "docRef": "weighted-index-system",
-        "internalDeps": [
-          "event-catalog",
-          "weighted-index",
-          "weighted-ui"
-        ]
+        "internalDeps": ["event-catalog", "weighted-index", "weighted-ui"]
       },
       {
         "id": "weighted-ui",
@@ -758,10 +630,7 @@
         "tier": "bridge",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": [
-          "core",
-          "weighted-index"
-        ]
+        "internalDeps": ["core", "weighted-index"]
       },
       {
         "id": "codec-proto",
@@ -770,9 +639,7 @@
         "tier": "bridge",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "definition-client",
@@ -781,10 +648,7 @@
         "tier": "bridge",
         "boundary": "definition-service-system",
         "docRef": "none",
-        "internalDeps": [
-          "core",
-          "definition-catalog"
-        ]
+        "internalDeps": ["core", "definition-catalog"]
       },
       {
         "id": "infra-engine",
@@ -809,10 +673,7 @@
         "tier": "bridge",
         "boundary": "motion-workspace-system",
         "docRef": "none",
-        "internalDeps": [
-          "motion-content",
-          "motion-workspace"
-        ]
+        "internalDeps": ["motion-content", "motion-workspace"]
       },
       {
         "id": "package-classifier",
@@ -830,9 +691,7 @@
         "tier": "bridge",
         "boundary": "registry-system",
         "docRef": "registry-system",
-        "internalDeps": [
-          "pino"
-        ]
+        "internalDeps": ["pino"]
       },
       {
         "id": "sdk",
@@ -841,12 +700,7 @@
         "tier": "bridge",
         "boundary": "platform-chain-system",
         "docRef": "none",
-        "internalDeps": [
-          "core",
-          "logger",
-          "codec",
-          "context"
-        ]
+        "internalDeps": ["core", "logger", "codec", "context"]
       },
       {
         "id": "visbug-bridge",
@@ -866,9 +720,7 @@
         "tier": "logic",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "operational-ontology"
-        ]
+        "internalDeps": ["operational-ontology"]
       },
       {
         "id": "context",
@@ -877,9 +729,7 @@
         "tier": "logic",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "convergence",
@@ -888,11 +738,7 @@
         "tier": "logic",
         "boundary": "convergence-layer-group",
         "docRef": "none",
-        "internalDeps": [
-          "core",
-          "spec-schema",
-          "weighted-index"
-        ]
+        "internalDeps": ["core", "spec-schema", "weighted-index"]
       },
       {
         "id": "decision-flow",
@@ -901,9 +747,7 @@
         "tier": "logic",
         "boundary": "df-system",
         "docRef": "none",
-        "internalDeps": [
-          "weighted-index"
-        ]
+        "internalDeps": ["weighted-index"]
       },
       {
         "id": "demo-dkg-config",
@@ -912,9 +756,7 @@
         "tier": "logic",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "decision-flow"
-        ]
+        "internalDeps": ["decision-flow"]
       },
       {
         "id": "dkg-enrichment",
@@ -923,12 +765,7 @@
         "tier": "logic",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "convergence",
-          "core",
-          "decision-flow",
-          "dkg"
-        ]
+        "internalDeps": ["convergence", "core", "decision-flow", "dkg"]
       },
       {
         "id": "engine",
@@ -937,9 +774,7 @@
         "tier": "logic",
         "boundary": "qa-sdk-engine-system",
         "docRef": "qa-sdk-engine-system",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "motion-workspace",
@@ -948,9 +783,7 @@
         "tier": "logic",
         "boundary": "motion-workspace-spec",
         "docRef": "none",
-        "internalDeps": [
-          "motion-content"
-        ]
+        "internalDeps": ["motion-content"]
       },
       {
         "id": "operational-ontology",
@@ -959,9 +792,7 @@
         "tier": "logic",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "permission-engine",
@@ -970,10 +801,7 @@
         "tier": "logic",
         "boundary": "permission-engine-spec",
         "docRef": "permission-engine-spec",
-        "internalDeps": [
-          "weighted-index",
-          "bit-index"
-        ]
+        "internalDeps": ["weighted-index", "bit-index"]
       },
       {
         "id": "sim-decision-view",
@@ -1009,10 +837,7 @@
         "tier": "logic",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "decision-flow",
-          "taxonomy-engine"
-        ]
+        "internalDeps": ["decision-flow", "taxonomy-engine"]
       },
       {
         "id": "taxonomy-engine",
@@ -1030,10 +855,7 @@
         "tier": "logic",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "taxonomy-decision-bridge",
-          "taxonomy-engine"
-        ]
+        "internalDeps": ["taxonomy-decision-bridge", "taxonomy-engine"]
       }
     ],
     "kernel": [
@@ -1044,10 +866,7 @@
         "tier": "kernel",
         "boundary": "platform-chain-system",
         "docRef": "none",
-        "internalDeps": [
-          "core",
-          "weighted-index"
-        ]
+        "internalDeps": ["core", "weighted-index"]
       },
       {
         "id": "dkg",
@@ -1056,13 +875,7 @@
         "tier": "kernel",
         "boundary": "dkg-system-root",
         "docRef": "dkg-system-root",
-        "internalDeps": [
-          "spec-schema",
-          "spec-transition",
-          "core",
-          "weighted-index",
-          "index-meta"
-        ]
+        "internalDeps": ["spec-schema", "spec-transition", "core", "weighted-index", "index-meta"]
       },
       {
         "id": "doc-envelope",
@@ -1080,9 +893,7 @@
         "tier": "kernel",
         "boundary": "index-meta-system",
         "docRef": "index-meta-system",
-        "internalDeps": [
-          "weighted-index"
-        ]
+        "internalDeps": ["weighted-index"]
       },
       {
         "id": "motion-content",
@@ -1109,9 +920,7 @@
         "tier": "kernel",
         "boundary": "sim-service-catalog",
         "docRef": "none",
-        "internalDeps": [
-          "sim-identifier-grammar"
-        ]
+        "internalDeps": ["sim-identifier-grammar"]
       },
       {
         "id": "snapshot-io",
@@ -1120,9 +929,7 @@
         "tier": "kernel",
         "boundary": "apm-codegen-system",
         "docRef": "none",
-        "internalDeps": [
-          "spec-schema"
-        ]
+        "internalDeps": ["spec-schema"]
       },
       {
         "id": "spec-analyzer",
@@ -1131,9 +938,7 @@
         "tier": "kernel",
         "boundary": "spec-engine-system",
         "docRef": "spec-engine-system",
-        "internalDeps": [
-          "definition-catalog"
-        ]
+        "internalDeps": ["definition-catalog"]
       },
       {
         "id": "spec-core",
@@ -1176,9 +981,7 @@
         "tier": "kernel",
         "boundary": "spec-engine-system",
         "docRef": "spec-engine-system",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "work-domain",
@@ -1187,9 +990,7 @@
         "tier": "kernel",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": [
-          "test-types"
-        ]
+        "internalDeps": ["test-types"]
       }
     ],
     "foundation": [
@@ -1209,9 +1010,7 @@
         "tier": "foundation",
         "boundary": "persistence-system-root",
         "docRef": "persistence-system-root",
-        "internalDeps": [
-          "weighted-index"
-        ]
+        "internalDeps": ["weighted-index"]
       },
       {
         "id": "cli-command",
@@ -1229,11 +1028,7 @@
         "tier": "foundation",
         "boundary": "qa-sdk-core-system",
         "docRef": "qa-sdk-core-system",
-        "internalDeps": [
-          "definition-catalog",
-          "pino",
-          "test-types"
-        ]
+        "internalDeps": ["definition-catalog", "pino", "test-types"]
       },
       {
         "id": "definition-catalog",
@@ -1242,10 +1037,7 @@
         "tier": "foundation",
         "boundary": "definition-catalog-spec",
         "docRef": "definition-catalog-spec",
-        "internalDeps": [
-          "test-types",
-          "weighted-index"
-        ]
+        "internalDeps": ["test-types", "weighted-index"]
       },
       {
         "id": "event-catalog",
@@ -1254,9 +1046,7 @@
         "tier": "foundation",
         "boundary": "unknown",
         "docRef": "none",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "git-utils",
@@ -1274,9 +1064,7 @@
         "tier": "foundation",
         "boundary": "shared-utility-group",
         "docRef": "shared-utility-group",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "logger",
@@ -1285,9 +1073,7 @@
         "tier": "foundation",
         "boundary": "observability-system-root",
         "docRef": "observability-system-root",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "pino",
@@ -1305,9 +1091,7 @@
         "tier": "foundation",
         "boundary": "persistence-system-root",
         "docRef": "persistence-system-root",
-        "internalDeps": [
-          "core"
-        ]
+        "internalDeps": ["core"]
       },
       {
         "id": "test-types",

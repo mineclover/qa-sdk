@@ -14,16 +14,16 @@
  * definition-catalog/CLI 의존 없이, 인터페이스를 통해 문서 그래프를 주입받는다.
  */
 
-import type { GateKindId, GateScope } from "./gate-kind.js";
+import type { GateKindId, GateScope } from './gate-kind.js';
 
 // ── Gate FSM + BundleState는 gate-fsm.ts에 분리. re-export로 하위 호환 유지. ──
-import type { GateState, GateEvent, BundleState } from "./gate-fsm.js";
-import { transitionGate, deriveBundleState } from "./gate-fsm.js";
-export type { GateState, GateEvent, BundleState } from "./gate-fsm.js";
+import type { GateState, GateEvent, BundleState } from './gate-fsm.js';
+import { transitionGate, deriveBundleState } from './gate-fsm.js';
+export type { GateState, GateEvent, BundleState } from './gate-fsm.js';
 export { transitionGate, deriveBundleState };
 
 // ── 계약 문서 식별 + GateKind 도출은 contract-to-gates.ts에 분리. ──
-import { isContractDoc, deriveGateKinds, GATE_KIND_SCOPE_MAP } from "./contract-to-gates.js";
+import { isContractDoc, deriveGateKinds, GATE_KIND_SCOPE_MAP } from './contract-to-gates.js';
 export { isContractDoc, deriveGateKinds, GATE_KIND_SCOPE_MAP };
 
 // ─── 문서 그래프 인터페이스 ─────────────────────────────
@@ -36,7 +36,7 @@ export interface DocNode {
   /** 문서 ID (kebab-case) */
   readonly id: string;
   /** 분해 레벨 */
-  readonly level: "group" | "module" | "leaf";
+  readonly level: 'group' | 'module' | 'leaf';
   /** 대분류 */
   readonly scope: string;
   /** 세부 측면 */
@@ -55,7 +55,13 @@ export interface DocNode {
 export interface DocLink {
   readonly sourceId: string;
   readonly targetId: string;
-  readonly linkType: "contains" | "depends_on" | "implements" | "refines" | "constrains" | "traces_to";
+  readonly linkType:
+    | 'contains'
+    | 'depends_on'
+    | 'implements'
+    | 'refines'
+    | 'constrains'
+    | 'traces_to';
 }
 
 /**
@@ -96,7 +102,7 @@ export interface HarnessPlan {
   /** 좌표 anchor 문서 ID */
   readonly anchorId: string;
   /** anchor 레벨 */
-  readonly anchorLevel: DocNode["level"];
+  readonly anchorLevel: DocNode['level'];
   /** 수집된 하위 문서 수 */
   readonly totalDocs: number;
   /** 식별된 계약 문서 수 */
@@ -124,13 +130,10 @@ const SCOPE_COST: Record<GateScope, number> = {
  * 3. 각 계약 문서에서 필요한 GateKind 도출
  * 4. 비용 순 정렬 (static → unit → integration → system)
  */
-export function buildHarnessPlan(
-  anchorId: string,
-  graph: DocGraphPort,
-): HarnessPlan {
+export function buildHarnessPlan(anchorId: string, graph: DocGraphPort): HarnessPlan {
   const anchor = graph.get(anchorId);
   if (!anchor) {
-    return { anchorId, anchorLevel: "leaf", totalDocs: 0, contractDocs: 0, requirements: [] };
+    return { anchorId, anchorLevel: 'leaf', totalDocs: 0, contractDocs: 0, requirements: [] };
   }
 
   // 하위 문서 수집 (재귀적 contains 탐색)
@@ -171,7 +174,7 @@ export function buildHarnessPlan(
       if (seen.has(key)) continue;
       seen.add(key);
 
-      const scope = GATE_KIND_SCOPE_MAP[kind] ?? "unit";
+      const scope = GATE_KIND_SCOPE_MAP[kind] ?? 'unit';
       requirements.push({
         contractDocId: doc.id,
         contractScope: doc.scope,
@@ -222,7 +225,7 @@ export interface HarnessInstance {
 export function createHarnessInstance(plan: HarnessPlan): HarnessInstance {
   const gates: GateInstance[] = plan.requirements.map((req) => ({
     requirement: req,
-    state: "idle" as GateState,
+    state: 'idle' as GateState,
   }));
 
   return {
@@ -244,7 +247,7 @@ export function applyGateEvent(
     return {
       ...g,
       state: newState,
-      lastExitCode: event.type === "exit" ? event.code : g.lastExitCode,
+      lastExitCode: event.type === 'exit' ? event.code : g.lastExitCode,
       lastTransitionAt: new Date().toISOString(),
     };
   });
@@ -260,6 +263,6 @@ export function applyGateEvent(
 export function nextReadyGates(harness: HarnessInstance): number[] {
   return harness.gates
     .map((g, i) => ({ gate: g, index: i }))
-    .filter(({ gate }) => gate.state === "idle" || gate.state === "ready")
+    .filter(({ gate }) => gate.state === 'idle' || gate.state === 'ready')
     .map(({ index }) => index);
 }

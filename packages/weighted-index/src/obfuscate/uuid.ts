@@ -37,15 +37,15 @@
  */
 export function toUUID(id: number, bitWidth: number): string {
   const hexLen = Math.ceil(bitWidth / 4);
-  const idHex  = id.toString(16).padStart(hexLen, "0");
-  const full   = idHex.padEnd(32, "0");
+  const idHex = id.toString(16).padStart(hexLen, '0');
+  const full = idHex.padEnd(32, '0');
   return [
     full.slice(0, 8),
     full.slice(8, 12),
     full.slice(12, 16),
     full.slice(16, 20),
     full.slice(20, 32),
-  ].join("-");
+  ].join('-');
 }
 
 /**
@@ -57,10 +57,10 @@ export function toUUID(id: number, bitWidth: number): string {
  * fromUUID("02a00000-0000-0000-0000-000000000000", 10)  // → 42
  */
 export function fromUUID(uuid: string, bitWidth: number): number {
-  const raw = uuid.replace(/-/g, "");
+  const raw = uuid.replace(/-/g, '');
   if (!/^[0-9a-fA-F]+$/.test(raw)) {
     throw new RangeError(
-      `Invalid UUID string: "${uuid}" (must contain only hex characters and dashes)`
+      `Invalid UUID string: "${uuid}" (must contain only hex characters and dashes)`,
     );
   }
   const hexLen = Math.ceil(bitWidth / 4);
@@ -73,7 +73,7 @@ export function fromUUID(uuid: string, bitWidth: number): number {
  * A single field to embed in a structured UUID.
  */
 export interface UUIDField {
-  value:    number;
+  value: number;
   bitWidth: number;
 }
 
@@ -99,7 +99,7 @@ export interface UUIDField {
 export function toStructuredUUID(fields: UUIDField[]): string {
   const totalBits = fields.reduce((sum, f) => sum + f.bitWidth, 0);
   if (totalBits < 1) {
-    throw new RangeError("toStructuredUUID: totalBits must be ≥ 1");
+    throw new RangeError('toStructuredUUID: totalBits must be ≥ 1');
   }
   // Bit-pack all fields MSB-first
   let packed = 0n;
@@ -107,21 +107,21 @@ export function toStructuredUUID(fields: UUIDField[]): string {
     const maxValue = (1n << BigInt(bitWidth)) - 1n;
     if (value < 0 || BigInt(value) > maxValue) {
       throw new RangeError(
-        `toStructuredUUID: value ${value} exceeds bitWidth ${bitWidth} capacity [0, ${maxValue}]`
+        `toStructuredUUID: value ${value} exceeds bitWidth ${bitWidth} capacity [0, ${maxValue}]`,
       );
     }
     packed = (packed << BigInt(bitWidth)) | BigInt(value);
   }
 
   const hexLen = Math.ceil(totalBits / 4);
-  const hex = packed.toString(16).padStart(hexLen, "0");
+  const hex = packed.toString(16).padStart(hexLen, '0');
 
   // Dash every 4 chars
   const segments: string[] = [];
   for (let i = 0; i < hex.length; i += 4) {
     segments.push(hex.slice(i, i + 4));
   }
-  return segments.join("-");
+  return segments.join('-');
 }
 
 /**
@@ -134,7 +134,7 @@ export function toStructuredUUID(fields: UUIDField[]): string {
  * // → [2, 7, 42]
  */
 export function fromStructuredUUID(token: string, bitWidths: number[]): number[] {
-  const packed = BigInt("0x" + token.replace(/-/g, ""));
+  const packed = BigInt('0x' + token.replace(/-/g, ''));
   // Extract fields right-to-left
   const results: number[] = new Array(bitWidths.length);
   let remaining = packed;

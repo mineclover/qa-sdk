@@ -20,7 +20,7 @@ export interface DecodedDim {
   /** dim label (예: "role", "perm_svc") */
   readonly label: string;
   /** dim 종류 */
-  readonly kind: "axis" | "prefix_ref" | "table_ref";
+  readonly kind: 'axis' | 'prefix_ref' | 'table_ref';
   /** 0-based position within shape */
   readonly position: number;
   /** axis → entry string, prefix_ref → 참조 주소 (정수), table_ref → ref id */
@@ -55,14 +55,14 @@ export function entitiesToDecodeResult(
   version: string,
   address: number,
   entities: Record<string, string | number>,
-  dimKinds?: Record<string, "axis" | "prefix_ref" | "table_ref">,
+  dimKinds?: Record<string, 'axis' | 'prefix_ref' | 'table_ref'>,
 ): DecodeResult {
   const dims: Record<string, DecodedDim> = {};
   let pos = 0;
   for (const [label, value] of Object.entries(entities)) {
     dims[label] = {
       label,
-      kind: dimKinds?.[label] ?? (typeof value === "number" ? "prefix_ref" : "axis"),
+      kind: dimKinds?.[label] ?? (typeof value === 'number' ? 'prefix_ref' : 'axis'),
       position: pos++,
       value,
     };

@@ -4,9 +4,9 @@
 import type {
   OntologyPackKnownPackCandidate,
   OntologyPackScaffoldSymbols,
-} from "../ontology-pack-scaffold-plan.js";
+} from '../ontology-pack-scaffold-plan.js';
 
-export const KNOWN_PACKS_TARGET_PATH = "packages/cli/src/lib/known-ontology-packs.ts";
+export const KNOWN_PACKS_TARGET_PATH = 'packages/cli/src/lib/known-ontology-packs.ts';
 
 export function createKnownPackCandidate(input: {
   readonly packId: string;
@@ -21,7 +21,7 @@ export function createKnownPackCandidate(input: {
     importName: input.symbols.packConstantName,
     moduleSpecifier: input.implementationPackage,
     registryEntry: `"${input.packId}": ${input.symbols.packConstantName}`,
-    registrationMode: "manual",
-    applyMode: "candidate-only",
+    registrationMode: 'manual',
+    applyMode: 'candidate-only',
   };
 }

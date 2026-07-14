@@ -12,8 +12,8 @@ export {
   type AddressStats,
   parseAddressValue,
   parseAddressContext,
-} from "./types.js";
+} from './types.js';
 
-export { type AddressIndex } from "./port.js";
+export { type AddressIndex } from './port.js';
 
-export { InMemoryAddressIndex } from "./memory-store.js";
+export { InMemoryAddressIndex } from './memory-store.js';

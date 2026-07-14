@@ -13,8 +13,8 @@
 //
 // cooldown 비대칭: up 60s / down 180s.
 
-import { Injectable } from "@nestjs/common";
-import type { CategoryVerdicts } from "../verdict/category-verdict.service.js";
+import { Injectable } from '@nestjs/common';
+import type { CategoryVerdicts } from '../verdict/category-verdict.service.js';
 
 export interface ResourceConfig {
   cooldownUpMs: number;
@@ -23,7 +23,7 @@ export interface ResourceConfig {
   minReplicasV2: number;
 }
 
-export type ResourceVerdict = "scale-up" | "scale-down" | "hold" | "rejected";
+export type ResourceVerdict = 'scale-up' | 'scale-down' | 'hold' | 'rejected';
 
 export interface ResourceDecisionInput {
   verdicts: CategoryVerdicts;
@@ -35,11 +35,9 @@ export interface ResourceDecisionInput {
 
 export interface ResourceDecisionOutput {
   verdict: ResourceVerdict;
-  rejectedBy?: "resourceHeadroom" | "stability";
+  rejectedBy?: 'resourceHeadroom' | 'stability';
   alert?: boolean;
-  action:
-    | { kind: "scale"; target: { v1: number; v2: number }; reason: string }
-    | { kind: "noop" };
+  action: { kind: 'scale'; target: { v1: number; v2: number }; reason: string } | { kind: 'noop' };
 }
 
 @Injectable()
@@ -47,62 +45,60 @@ export class ResourceDecisionService {
   constructor(private readonly cfg: ResourceConfig) {}
 
   decide(input: ResourceDecisionInput): ResourceDecisionOutput {
-    const { verdicts: v, currentWeight, current, timeSinceLastChangeMs } =
-      input;
+    const { verdicts: v, currentWeight, current, timeSinceLastChangeMs } = input;
 
-    if (v.stability === "WARN") {
-      return { verdict: "hold", action: { kind: "noop" } };
+    if (v.stability === 'WARN') {
+      return { verdict: 'hold', action: { kind: 'noop' } };
     }
 
-    if (v.loadPressure === "FAIL" && v.resourceHeadroom === "FAIL") {
+    if (v.loadPressure === 'FAIL' && v.resourceHeadroom === 'FAIL') {
       return {
-        verdict: "rejected",
-        rejectedBy: "resourceHeadroom",
+        verdict: 'rejected',
+        rejectedBy: 'resourceHeadroom',
         alert: true,
-        action: { kind: "noop" },
+        action: { kind: 'noop' },
       };
     }
 
-    if (v.loadPressure === "FAIL" && v.resourceHeadroom !== "FAIL") {
-      const inCanary =
-        currentWeight === 5 || currentWeight === 25 || currentWeight === 50;
+    if (v.loadPressure === 'FAIL' && v.resourceHeadroom !== 'FAIL') {
+      const inCanary = currentWeight === 5 || currentWeight === 25 || currentWeight === 50;
       const target = inCanary
         ? { v1: current.v1, v2: current.v2 + 1 }
         : { v1: current.v1 + 1, v2: current.v2 };
       const reason = inCanary
-        ? "canary in progress: scale v2"
+        ? 'canary in progress: scale v2'
         : `weight=${currentWeight}: scale v1`;
       return {
-        verdict: "scale-up",
-        action: { kind: "scale", target, reason },
+        verdict: 'scale-up',
+        action: { kind: 'scale', target, reason },
       };
     }
 
     const totalReplicas = current.v1 + current.v2;
     const minReplicas = this.cfg.minReplicasV1 + this.cfg.minReplicasV2;
     if (
-      v.loadPressure === "PASS" &&
+      v.loadPressure === 'PASS' &&
       totalReplicas > minReplicas &&
       timeSinceLastChangeMs >= this.cfg.cooldownDownMs
     ) {
       const canDecV1 = current.v1 > this.cfg.minReplicasV1;
       const canDecV2 = current.v2 > this.cfg.minReplicasV2;
       if (!canDecV1 && !canDecV2) {
-        return { verdict: "hold", action: { kind: "noop" } };
+        return { verdict: 'hold', action: { kind: 'noop' } };
       }
       const target = canDecV1
         ? { v1: current.v1 - 1, v2: current.v2 }
         : { v1: current.v1, v2: current.v2 - 1 };
       return {
-        verdict: "scale-down",
+        verdict: 'scale-down',
         action: {
-          kind: "scale",
+          kind: 'scale',
           target,
-          reason: "load PASS + cooldown elapsed",
+          reason: 'load PASS + cooldown elapsed',
         },
       };
     }
 
-    return { verdict: "hold", action: { kind: "noop" } };
+    return { verdict: 'hold', action: { kind: 'noop' } };
   }
 }

@@ -1,13 +1,9 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import {
-  toAuthorId,
-  toCommentId,
-  toDocumentId,
-} from "./comment.ids.js";
-import { InvalidCommentBodyException } from "./comment.exceptions.js";
-import type { CommentProps, CommentSnapshot } from "./comment.types.js";
+import { toAuthorId, toCommentId, toDocumentId } from './comment.ids.js';
+import { InvalidCommentBodyException } from './comment.exceptions.js';
+import type { CommentProps, CommentSnapshot } from './comment.types.js';
 
 /**
  * Comment Aggregate Root.

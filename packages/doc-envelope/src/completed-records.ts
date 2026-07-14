@@ -1,18 +1,18 @@
 // @def.doc doc-envelope
 
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
-import { isTransientDocument } from "./family-scope.js";
-import { countMarkdownCheckboxes } from "./todo-lifecycle.js";
-import type { DocumentEnvelope } from "./types.js";
+import { isTransientDocument } from './family-scope.js';
+import { countMarkdownCheckboxes } from './todo-lifecycle.js';
+import type { DocumentEnvelope } from './types.js';
 
 export interface CompletedRecordState {
   readonly source: string;
   readonly kind: string;
   readonly documentId: string;
   readonly path: string;
-  readonly state: "completed-record";
+  readonly state: 'completed-record';
   readonly title: string;
   readonly lifecycle?: string;
   readonly completedCount?: number;
@@ -45,7 +45,7 @@ export async function detectCompletedRecords(
   const activeDocuments = options.documents.filter(isActiveCompletedRecordDocument);
 
   for (const document of activeDocuments) {
-    if (document.kind !== "todo" || !document.path.endsWith(".todo.md")) continue;
+    if (document.kind !== 'todo' || !document.path.endsWith('.todo.md')) continue;
     const content = await readCompletedRecordDocument(options, document);
     if (!content) continue;
     const checkboxState = countMarkdownCheckboxes(content);
@@ -55,12 +55,12 @@ export async function detectCompletedRecords(
       kind: document.kind,
       documentId: document.stableId,
       path: document.path,
-      state: "completed-record",
+      state: 'completed-record',
       title: titleOf(document),
       ...lifecycleOf(document),
       completedCount: checkboxState.completed,
       openCount: checkboxState.open,
-      reason: ".todo.md has completed checkboxes and no open checkboxes",
+      reason: '.todo.md has completed checkboxes and no open checkboxes',
     });
   }
 
@@ -72,16 +72,21 @@ export function deduplicateCompletedRecords(
 ): readonly CompletedRecordState[] {
   return [...records]
     .toSorted(compareCompletedRecords)
-    .filter((item, index, items) => index === items.findIndex((candidate) =>
-      candidate.documentId === item.documentId
-      && candidate.path === item.path
-      && candidate.kind === item.kind
-    ));
+    .filter(
+      (item, index, items) =>
+        index ===
+        items.findIndex(
+          (candidate) =>
+            candidate.documentId === item.documentId &&
+            candidate.path === item.path &&
+            candidate.kind === item.kind,
+        ),
+    );
 }
 
 export function isActiveCompletedRecordDocument(document: DocumentEnvelope): boolean {
-  if (document.metadata.lifecycle === "archived") return false;
-  if (normalizePath(document.path).split("/").includes("archive")) return false;
+  if (document.metadata.lifecycle === 'archived') return false;
+  if (normalizePath(document.path).split('/').includes('archive')) return false;
   if (isTransientDocument(document)) return false;
   return true;
 }
@@ -96,33 +101,35 @@ async function readCompletedRecordDocument(
 
 async function readRepoFile(rootDir: string, path: string): Promise<string | null> {
   try {
-    return await readFile(resolve(rootDir, normalizePath(path)), "utf8");
+    return await readFile(resolve(rootDir, normalizePath(path)), 'utf8');
   } catch {
     return null;
   }
 }
 
 function compareCompletedRecords(left: CompletedRecordState, right: CompletedRecordState): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.documentId.localeCompare(right.documentId);
+  return (
+    left.path.localeCompare(right.path) ||
+    left.kind.localeCompare(right.kind) ||
+    left.documentId.localeCompare(right.documentId)
+  );
 }
 
 function titleOf(document: DocumentEnvelope): string {
-  for (const key of ["title", "name", "defId"] as const) {
+  for (const key of ['title', 'name', 'defId'] as const) {
     const value = document.metadata[key];
-    if (typeof value === "string" && value.trim().length > 0) return value;
+    if (typeof value === 'string' && value.trim().length > 0) return value;
   }
   return document.stableId;
 }
 
 function lifecycleOf(document: DocumentEnvelope): { readonly lifecycle?: string } {
   const lifecycle = document.metadata.lifecycle;
-  return typeof lifecycle === "string" && lifecycle.trim().length > 0
+  return typeof lifecycle === 'string' && lifecycle.trim().length > 0
     ? { lifecycle: lifecycle.trim() }
     : {};
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }

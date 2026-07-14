@@ -1,9 +1,9 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import type { NotificationEntity } from "../../domain/index.js";
-import type { NotificationStatus } from "../../domain/notification.types.js";
-import type { NotificationTransactionScope } from "./notification-transaction.port.js";
+import type { NotificationEntity } from '../../domain/index.js';
+import type { NotificationStatus } from '../../domain/notification.types.js';
+import type { NotificationTransactionScope } from './notification-transaction.port.js';
 
 /**
  * Notification Aggregate 의 영속 추상.

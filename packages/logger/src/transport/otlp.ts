@@ -1,8 +1,8 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import type { TransmissionEnvelope } from "@qa-sdk/core";
-import type { Transport } from "./transport.js";
+import type { TransmissionEnvelope } from '@qa-sdk/core';
+import type { Transport } from './transport.js';
 
 export interface OtlpTransportOptions {
   /** OTLP Collector URL (e.g. http://localhost:4318) */
@@ -26,7 +26,7 @@ export class OtlpTransport implements Transport {
   private readonly timeout_ms: number;
 
   constructor(options: OtlpTransportOptions) {
-    this.collectorUrl = options.collectorUrl.replace(/\/+$/, "");
+    this.collectorUrl = options.collectorUrl.replace(/\/+$/, '');
     this.headers = options.headers ?? {};
     this.timeout_ms = options.timeout_ms ?? 10_000;
   }
@@ -38,9 +38,9 @@ export class OtlpTransport implements Transport {
 
     try {
       const res = await fetch(`${this.collectorUrl}/v1/logs`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...this.headers,
         },
         body: JSON.stringify(otlp),
@@ -77,28 +77,28 @@ function toHexId(id: string, len: number): string {
   for (let i = 0; i < id.length; i++) {
     hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
   }
-  const hex = Math.abs(hash).toString(16).padStart(len, "0");
+  const hex = Math.abs(hash).toString(16).padStart(len, '0');
   return hex.slice(0, len);
 }
 
 /** TransmissionEnvelope → OTLP ExportLogsServiceRequest */
 export function mapToOtlpLogs(envelope: TransmissionEnvelope): Record<string, unknown> {
   const resourceAttrs: OtlpKeyValue[] = [
-    strAttr("service.name", envelope.source.service_name),
-    strAttr("sdk.name", envelope.source.sdk_name),
-    strAttr("sdk.version", envelope.source.sdk_version),
-    strAttr("host.type", envelope.runtime.platform),
-    strAttr("deployment.environment", envelope.build.env),
-    strAttr("qa.owner.type", envelope.owner.owner_type),
-    strAttr("qa.owner.id", envelope.owner.owner_id),
-    strAttr("qa.transmission.id", envelope.transmission_id),
+    strAttr('service.name', envelope.source.service_name),
+    strAttr('sdk.name', envelope.source.sdk_name),
+    strAttr('sdk.version', envelope.source.sdk_version),
+    strAttr('host.type', envelope.runtime.platform),
+    strAttr('deployment.environment', envelope.build.env),
+    strAttr('qa.owner.type', envelope.owner.owner_type),
+    strAttr('qa.owner.id', envelope.owner.owner_id),
+    strAttr('qa.transmission.id', envelope.transmission_id),
   ].filter((a): a is OtlpKeyValue => a !== null);
 
-  const logRecords = envelope.records.map(record => {
+  const logRecords = envelope.records.map((record) => {
     const attrs: OtlpKeyValue[] = [
-      strAttr("event.key", record.event_key),
-      strAttr("event.version", record.event_version),
-      strAttr("record.kind", record.record_kind),
+      strAttr('event.key', record.event_key),
+      strAttr('event.version', record.event_version),
+      strAttr('record.kind', record.record_kind),
     ].filter((a): a is OtlpKeyValue => a !== null);
 
     // address_context → OTLP attributes with qa.address.* prefix
@@ -111,7 +111,7 @@ export function mapToOtlpLogs(envelope: TransmissionEnvelope): Record<string, un
     return {
       timeUnixNano: String(new Date(record.timestamp).getTime() * 1_000_000),
       severityNumber: 9, // INFO
-      severityText: "INFO",
+      severityText: 'INFO',
       body: { stringValue: JSON.stringify(record.payload ?? {}) },
       attributes: attrs,
       traceId: toHexId(record.trace_id, 32),
@@ -120,15 +120,19 @@ export function mapToOtlpLogs(envelope: TransmissionEnvelope): Record<string, un
   });
 
   return {
-    resourceLogs: [{
-      resource: { attributes: resourceAttrs },
-      scopeLogs: [{
-        scope: {
-          name: envelope.source.sdk_name,
-          version: envelope.source.sdk_version,
-        },
-        logRecords,
-      }],
-    }],
+    resourceLogs: [
+      {
+        resource: { attributes: resourceAttrs },
+        scopeLogs: [
+          {
+            scope: {
+              name: envelope.source.sdk_name,
+              version: envelope.source.sdk_version,
+            },
+            logRecords,
+          },
+        ],
+      },
+    ],
   };
 }

@@ -1,8 +1,8 @@
 // @def.boundary sim-canary-controller
 // @def.doc canary-controller-config
 
-import { createLogger as base } from "@qa-sdk/core";
-import type { Logger } from "@qa-sdk/core";
+import { createLogger as base } from '@qa-sdk/core';
+import type { Logger } from '@qa-sdk/core';
 
 /**
  * sim-canary-controller 전용 logger.
@@ -16,4 +16,4 @@ export function createLogger(name: string): Logger {
   return base(name);
 }
 
-export type { Logger } from "@qa-sdk/core";
+export type { Logger } from '@qa-sdk/core';

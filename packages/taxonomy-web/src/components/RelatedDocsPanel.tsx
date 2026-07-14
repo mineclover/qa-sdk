@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
-import { parseRef } from "taxonomy-engine";
-import { fetchRelatedDocs, type RelatedDoc } from "../data/relatedDocsApi";
+import { useEffect, useState } from 'react';
+import { parseRef } from 'taxonomy-engine';
+import { fetchRelatedDocs, type RelatedDoc } from '../data/relatedDocsApi';
 
 export function RelatedDocsPanel({ selectedRef }: { selectedRef: string }) {
   const [docs, setDocs] = useState<RelatedDoc[]>([]);
   const term = (() => {
     try {
       const r = parseRef(selectedRef);
-      if (r.kind === "entry") return r.entry;
-      if (r.kind === "axis") return r.axis;
-      if (r.kind === "relation") return r.relation;
-      if (r.kind === "constraint") return r.constraint;
+      if (r.kind === 'entry') return r.entry;
+      if (r.kind === 'axis') return r.axis;
+      if (r.kind === 'relation') return r.relation;
+      if (r.kind === 'constraint') return r.constraint;
     } catch {
       return null;
     }
@@ -32,7 +32,9 @@ export function RelatedDocsPanel({ selectedRef }: { selectedRef: string }) {
     <ul className="space-y-1 text-xs">
       {docs.map((d, i) => (
         <li key={i}>
-          <div className="font-mono text-gray-600">{d.path}:{d.lineNumber}</div>
+          <div className="font-mono text-gray-600">
+            {d.path}:{d.lineNumber}
+          </div>
           <div className="text-gray-700">{d.snippet}</div>
         </li>
       ))}

@@ -1,17 +1,17 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
 // 헬퍼: 현재 날짜 문자열
 export function getTodayString(): string {
   const d = new Date();
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
 
 export function getTodayCompactString(): string {
-  return getTodayString().replace(/-/g, "");
+  return getTodayString().replace(/-/g, '');
 }
 
 // 재귀적으로 특정 패턴에 맞는 세션 파일 목록 수집
@@ -37,9 +37,9 @@ function findFilesRecursively(dir: string, filter: (filename: string) => boolean
 
 // 오늘 날짜의 세션 파일 시퀀스 최댓값을 찾아 다음 시퀀스 번호 반환
 export function calculateNextSessionSequence(docsRoot: string): string {
-  const sessionsDir = join(docsRoot, "docs", "governance", "sessions");
+  const sessionsDir = join(docsRoot, 'docs', 'governance', 'sessions');
   if (!existsSync(sessionsDir)) {
-    return "001";
+    return '001';
   }
 
   const today = getTodayString(); // YYYY-MM-DD
@@ -60,7 +60,7 @@ export function calculateNextSessionSequence(docsRoot: string): string {
   }
 
   const nextSeq = maxSeq + 1;
-  return String(nextSeq).padStart(3, "0");
+  return String(nextSeq).padStart(3, '0');
 }
 
 export interface GeneratedMetadata {
@@ -77,64 +77,64 @@ export interface GeneratedMetadata {
 export function generateMetadata(
   type: string,
   docsRoot: string,
-  options: { title: string; scope?: string; seq?: string; date?: string }
+  options: { title: string; scope?: string; seq?: string; date?: string },
 ): GeneratedMetadata {
   const date = options.date || getTodayString();
-  const compactDate = date.replace(/-/g, "");
+  const compactDate = date.replace(/-/g, '');
   const title = options.title;
 
-  let id = "";
-  let filename = "";
-  let relativeDir = "";
+  let id = '';
+  let filename = '';
+  let relativeDir = '';
 
   switch (type.toLowerCase()) {
-    case "roadmap":
+    case 'roadmap':
       id = `GOV-ROADMAP-${compactDate}`;
       filename = `roadmap-${date}.md`;
-      relativeDir = join("docs", "governance", "roadmap");
+      relativeDir = join('docs', 'governance', 'roadmap');
       break;
 
-    case "prd":
-      const prdScope = (options.scope || "SCOPE-DSL").toUpperCase();
+    case 'prd':
+      const prdScope = (options.scope || 'SCOPE-DSL').toUpperCase();
       id = `GOV-PRD-${compactDate}-${prdScope}`;
       // 파일명 패턴: {scope}-prd-YYYY-MM-DD.md (소문자 치환)
-      const cleanScope = prdScope.replace(/^SCOPE-/, "").toLowerCase();
+      const cleanScope = prdScope.replace(/^SCOPE-/, '').toLowerCase();
       filename = `${cleanScope}-prd-${date}.md`;
-      relativeDir = join("docs", "governance", "prd");
+      relativeDir = join('docs', 'governance', 'prd');
       break;
 
-    case "progress":
+    case 'progress':
       id = `GOV-PROGRESS-${compactDate}`;
       filename = `progress-${date}.md`;
-      relativeDir = join("docs", "governance", "progress");
+      relativeDir = join('docs', 'governance', 'progress');
       break;
 
-    case "session":
+    case 'session':
       const seq = options.seq || calculateNextSessionSequence(docsRoot);
       id = `GOV-SESSION-${compactDate}-${seq}`;
       filename = `session-${date}-${seq}.md`;
       // 세션 폴더: YYYY/MM/ 세분화 구조 준수
-      const [yyyy, mm] = date.split("-");
-      relativeDir = join("docs", "governance", "sessions", yyyy, mm);
+      const [yyyy, mm] = date.split('-');
+      relativeDir = join('docs', 'governance', 'sessions', yyyy, mm);
       break;
 
-    case "handoff":
+    case 'handoff':
       id = `GOV-HANDOFF-${compactDate}`;
       filename = `handoff-${date}.md`;
-      relativeDir = join("docs", "governance", "handoff");
+      relativeDir = join('docs', 'governance', 'handoff');
       break;
 
-    case "timeline":
-      id = "GOV-TIMELINE";
-      filename = "timeline.md";
-      relativeDir = join("docs", "governance");
+    case 'timeline':
+      id = 'GOV-TIMELINE';
+      filename = 'timeline.md';
+      relativeDir = join('docs', 'governance');
       break;
 
-    case "historyindex":
-    case "history-index":
-      id = "GOV-HISTORY-INDEX";
-      filename = "history-index.md";
-      relativeDir = join("docs", "governance");
+    case 'historyindex':
+    case 'history-index':
+      id = 'GOV-HISTORY-INDEX';
+      filename = 'history-index.md';
+      relativeDir = join('docs', 'governance');
       break;
 
     default:

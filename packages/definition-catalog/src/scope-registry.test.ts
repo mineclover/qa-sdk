@@ -1,31 +1,33 @@
 // @def.doc definition-catalog-spec
 
-import { describe, it, expect } from "vitest";
-import { ScopeRegistry } from "./scope-registry.js";
-import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH } from "./vocabulary.js";
-import { VALID_SCOPE_ASPECTS } from "./taxonomy.js";
+import { describe, it, expect } from 'vitest';
+import { ScopeRegistry } from './scope-registry.js';
+import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH } from './vocabulary.js';
+import { VALID_SCOPE_ASPECTS } from './taxonomy.js';
 
-describe("ScopeRegistry", () => {
-  it("초기화 시 VALID_SCOPE_ASPECTS에서 v1 구성을 파생한다", () => {
+describe('ScopeRegistry', () => {
+  it('초기화 시 VALID_SCOPE_ASPECTS에서 v1 구성을 파생한다', () => {
     const reg = new ScopeRegistry();
 
     for (const scopeId of DEF_SCOPE.entries) {
       const v = reg.getLatestVersion(scopeId as any);
-      expect(v.version).toBe("v1");
-      expect(v.consumes).toEqual([...VALID_SCOPE_ASPECTS[scopeId as keyof typeof VALID_SCOPE_ASPECTS]]);
+      expect(v.version).toBe('v1');
+      expect(v.consumes).toEqual([
+        ...VALID_SCOPE_ASPECTS[scopeId as keyof typeof VALID_SCOPE_ASPECTS],
+      ]);
     }
   });
 
-  it("scope 인덱스가 1-based로 부여된다", () => {
+  it('scope 인덱스가 1-based로 부여된다', () => {
     const reg = new ScopeRegistry();
-    expect(reg.getScopeIndex("ui")).toBe(1);
-    expect(reg.getScopeIndex("feature")).toBe(2);
-    expect(reg.getScopeIndex("interface")).toBe(7);
-    expect(reg.getScopeIndex("meta")).toBe(8);
+    expect(reg.getScopeIndex('ui')).toBe(1);
+    expect(reg.getScopeIndex('feature')).toBe(2);
+    expect(reg.getScopeIndex('interface')).toBe(7);
+    expect(reg.getScopeIndex('meta')).toBe(8);
   });
 
-  describe("경로 모델 인코딩", () => {
-    it("전체 주소 공간이 전곱보다 작다", () => {
+  describe('경로 모델 인코딩', () => {
+    it('전체 주소 공간이 전곱보다 작다', () => {
       const reg = new ScopeRegistry();
       const stats = reg.stats();
 
@@ -33,25 +35,24 @@ describe("ScopeRegistry", () => {
       const expectedTotal = DEF_ASPECT.entries.length * DEF_DEPTH.entries.length;
       expect(stats.totalAddressSpace).toBe(expectedTotal);
       // 전곱: scope.capacity × aspect.capacity × depth.capacity (SSOT 파생)
-      const expectedCrossProduct =
-        DEF_SCOPE.capacity * DEF_ASPECT.capacity * DEF_DEPTH.capacity;
+      const expectedCrossProduct = DEF_SCOPE.capacity * DEF_ASPECT.capacity * DEF_DEPTH.capacity;
       expect(stats.crossProductSpace).toBe(expectedCrossProduct);
       // 효율: 유효 조합 / 전곱 < 10%
       expect(stats.efficiency).toBeLessThan(0.1);
     });
 
-    it("encode → decode 라운드트립", () => {
+    it('encode → decode 라운드트립', () => {
       const reg = new ScopeRegistry();
 
-      const addr = reg.encode("ui", "layout", "specification");
+      const addr = reg.encode('ui', 'layout', 'specification');
       const decoded = reg.decode(addr.globalAddress);
 
-      expect(decoded.scope).toBe("ui");
-      expect(decoded.aspect).toBe("layout");
-      expect(decoded.depth).toBe("specification");
+      expect(decoded.scope).toBe('ui');
+      expect(decoded.aspect).toBe('layout');
+      expect(decoded.depth).toBe('specification');
     });
 
-    it("모든 유효 조합이 인코딩/디코딩된다", () => {
+    it('모든 유효 조합이 인코딩/디코딩된다', () => {
       const reg = new ScopeRegistry();
 
       for (const [scope, aspects] of Object.entries(VALID_SCOPE_ASPECTS)) {
@@ -68,12 +69,12 @@ describe("ScopeRegistry", () => {
       }
     });
 
-    it("scope별 주소 범위가 겹치지 않는다", () => {
+    it('scope별 주소 범위가 겹치지 않는다', () => {
       const reg = new ScopeRegistry();
       const ranges: { scope: string; start: number; end: number }[] = [];
 
       // aspect 0개 scope (예: decision)는 좌표 인코딩 대상이 아니므로 segment 없음 → skip.
-      const SCOPES_WITHOUT_SEGMENTS = new Set(["decision"]);
+      const SCOPES_WITHOUT_SEGMENTS = new Set(['decision']);
       for (const scopeId of DEF_SCOPE.entries) {
         if (SCOPES_WITHOUT_SEGMENTS.has(scopeId)) continue;
         const range = reg.getAddressRange(scopeId as any);
@@ -87,16 +88,16 @@ describe("ScopeRegistry", () => {
       }
     });
 
-    it("무효 scope-aspect 조합은 에러", () => {
+    it('무효 scope-aspect 조합은 에러', () => {
       const reg = new ScopeRegistry();
-      expect(() => reg.encode("ui", "func_def", "overview")).toThrow();
+      expect(() => reg.encode('ui', 'func_def', 'overview')).toThrow();
     });
   });
 
-  describe("직렬화", () => {
-    it("serialize → parse 라운드트립", () => {
+  describe('직렬화', () => {
+    it('serialize → parse 라운드트립', () => {
       const reg = new ScopeRegistry();
-      const addr = reg.encode("data", "domain_data", "overview");
+      const addr = reg.encode('data', 'domain_data', 'overview');
       const serialized = reg.serialize(addr);
 
       expect(serialized).toMatch(/^scope:\d+:v\d+:\d+$/);
@@ -107,32 +108,32 @@ describe("ScopeRegistry", () => {
     });
   });
 
-  describe("버전 관리", () => {
-    it("scope에 새 버전을 추가하면 소비 aspect가 변경된다", () => {
+  describe('버전 관리', () => {
+    it('scope에 새 버전을 추가하면 소비 aspect가 변경된다', () => {
       const reg = new ScopeRegistry();
 
       // flow에 scenario 추가
-      reg.addVersion("flow", {
-        version: "v2",
-        consumes: ["user_scenario", "process_flow", "relation", "scenario"],
-        changelog: "scenario 소비 추가",
+      reg.addVersion('flow', {
+        version: 'v2',
+        consumes: ['user_scenario', 'process_flow', 'relation', 'scenario'],
+        changelog: 'scenario 소비 추가',
       });
 
-      const v2 = reg.getLatestVersion("flow");
-      expect(v2.version).toBe("v2");
-      expect(v2.consumes).toContain("scenario");
+      const v2 = reg.getLatestVersion('flow');
+      expect(v2.version).toBe('v2');
+      expect(v2.consumes).toContain('scenario');
       expect(v2.consumes.length).toBe(4);
     });
 
-    it("버전 추가 후 주소 공간이 확장된다", () => {
+    it('버전 추가 후 주소 공간이 확장된다', () => {
       const reg = new ScopeRegistry();
       const beforeSize = reg.totalAddressSpace();
 
       // flow v1 의 모든 aspect + scenario 추가 (aspect 1개 증가)
       const flowV1 = VALID_SCOPE_ASPECTS.flow;
-      reg.addVersion("flow", {
-        version: "v2",
-        consumes: [...flowV1, "scenario"],
+      reg.addVersion('flow', {
+        version: 'v2',
+        consumes: [...flowV1, 'scenario'],
       });
 
       const afterSize = reg.totalAddressSpace();
@@ -141,29 +142,29 @@ describe("ScopeRegistry", () => {
       expect(afterSize).toBe(beforeSize + delta);
     });
 
-    it("중복 버전은 에러", () => {
+    it('중복 버전은 에러', () => {
       const reg = new ScopeRegistry();
       expect(() =>
-        reg.addVersion("ui", {
-          version: "v1",
-          consumes: ["layout", "component", "interaction"],
+        reg.addVersion('ui', {
+          version: 'v1',
+          consumes: ['layout', 'component', 'interaction'],
         }),
-      ).toThrow("이미 존재");
+      ).toThrow('이미 존재');
     });
 
-    it("pool에 없는 aspect 소비는 에러", () => {
+    it('pool에 없는 aspect 소비는 에러', () => {
       const reg = new ScopeRegistry();
       expect(() =>
-        reg.addVersion("ui", {
-          version: "v2",
-          consumes: ["layout", "nonexistent_aspect" as any],
+        reg.addVersion('ui', {
+          version: 'v2',
+          consumes: ['layout', 'nonexistent_aspect' as any],
         }),
-      ).toThrow("pool에 없음");
+      ).toThrow('pool에 없음');
     });
   });
 
-  describe("N:M 소비 조회", () => {
-    it("현재 v1에서 각 aspect는 1개 scope에서만 소비된다", () => {
+  describe('N:M 소비 조회', () => {
+    it('현재 v1에서 각 aspect는 1개 scope에서만 소비된다', () => {
       const reg = new ScopeRegistry();
 
       for (const aspect of DEF_ASPECT.entries) {
@@ -172,17 +173,17 @@ describe("ScopeRegistry", () => {
       }
     });
 
-    it("N:M 추가 후 같은 aspect가 여러 scope에서 소비된다", () => {
+    it('N:M 추가 후 같은 aspect가 여러 scope에서 소비된다', () => {
       const reg = new ScopeRegistry();
 
-      reg.addVersion("flow", {
-        version: "v2",
-        consumes: ["user_scenario", "process_flow", "relation", "scenario"],
+      reg.addVersion('flow', {
+        version: 'v2',
+        consumes: ['user_scenario', 'process_flow', 'relation', 'scenario'],
       });
 
-      const scopes = reg.getScopesConsuming("scenario");
-      expect(scopes).toContain("feature");
-      expect(scopes).toContain("flow");
+      const scopes = reg.getScopesConsuming('scenario');
+      expect(scopes).toContain('feature');
+      expect(scopes).toContain('flow');
       expect(scopes.length).toBe(2);
     });
   });

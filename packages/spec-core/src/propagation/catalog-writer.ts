@@ -18,7 +18,7 @@ import type {
   PrefixMeta,
   TableSchema,
   ColumnRef,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 export interface WriterOptions {
   /** export 변수명 (기본: "CATALOG") */
@@ -33,24 +33,21 @@ export interface WriterOptions {
  * - tables: 있으면 포함
  * - refEntries: 생략 (derive 단계에서 재계산)
  */
-export function serializeCatalogToTs(
-  catalog: Catalog,
-  options?: WriterOptions,
-): string {
-  const exportName = options?.exportName ?? "CATALOG";
+export function serializeCatalogToTs(catalog: Catalog, options?: WriterOptions): string {
+  const exportName = options?.exportName ?? 'CATALOG';
   const lines: string[] = [];
 
   lines.push(`/**`);
   lines.push(` * 자동 생성된 카탈로그 파일.`);
   lines.push(` * 이 파일을 직접 수정하지 마세요 — catalog-writer가 재생성합니다.`);
-  lines.push(` * Generated: ${new Date().toISOString().split("T")[0]}`);
+  lines.push(` * Generated: ${new Date().toISOString().split('T')[0]}`);
   lines.push(` */`);
   lines.push(``);
   lines.push(`import type { Catalog } from "@qa-sdk/core";`);
   lines.push(``);
   lines.push(`export const ${exportName}: Catalog = ${serializeCatalog(catalog)};`);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 // ── Serialization helpers ──
@@ -85,11 +82,11 @@ function serializeCatalog(catalog: Catalog): string {
   }
 
   parts.push(`}`);
-  return parts.join("\n");
+  return parts.join('\n');
 }
 
 function serializeAxis(axis: VersionedAxis, indent: number): string {
-  const pad = " ".repeat(indent);
+  const pad = ' '.repeat(indent);
   const lines: string[] = [];
   lines.push(`{`);
   lines.push(`${pad}  id: ${JSON.stringify(axis.id)},`);
@@ -100,11 +97,11 @@ function serializeAxis(axis: VersionedAxis, indent: number): string {
   }
   lines.push(`${pad}  },`);
   lines.push(`${pad}}`);
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function serializeAxisVersion(snapshot: AxisVersionSnapshot, indent: number): string {
-  const pad = " ".repeat(indent);
+  const pad = ' '.repeat(indent);
   const parts: string[] = [];
   parts.push(`{`);
   parts.push(`${pad}  entries: ${serializeStringArray(snapshot.entries)},`);
@@ -115,11 +112,11 @@ function serializeAxisVersion(snapshot: AxisVersionSnapshot, indent: number): st
     parts.push(`${pad}  ko: ${serializeRecord(snapshot.ko, indent + 2)},`);
   }
   parts.push(`${pad}}`);
-  return parts.join("\n");
+  return parts.join('\n');
 }
 
 function serializePrefix(prefix: PrefixDef, indent: number): string {
-  const pad = " ".repeat(indent);
+  const pad = ' '.repeat(indent);
   const lines: string[] = [];
   lines.push(`{`);
   lines.push(`${pad}  id: ${JSON.stringify(prefix.id)},`);
@@ -149,33 +146,33 @@ function serializePrefix(prefix: PrefixDef, indent: number): string {
   }
 
   lines.push(`${pad}}`);
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function serializePrefixVersion(pv: PrefixVersionDef, indent: number): string {
-  const pad = " ".repeat(indent);
+  const pad = ' '.repeat(indent);
   const parts: string[] = [];
   parts.push(`{`);
   parts.push(`${pad}  version: ${JSON.stringify(pv.version)},`);
   parts.push(`${pad}  axisVersions: ${serializeRecord(pv.axisVersions, indent + 2)},`);
   // refEntries 생략 — derive 단계에서 재계산
   parts.push(`${pad}}`);
-  return parts.join("\n");
+  return parts.join('\n');
 }
 
 function serializeDimRef(ref: DimRef): string {
   switch (ref.kind) {
-    case "axis":
+    case 'axis':
       return `{ kind: "axis", axisId: ${JSON.stringify(ref.axisId)} }`;
-    case "prefix_ref":
+    case 'prefix_ref':
       return `{ kind: "prefix_ref", prefixId: ${JSON.stringify(ref.prefixId)} }`;
-    case "table_ref":
+    case 'table_ref':
       return `{ kind: "table_ref", table: ${JSON.stringify(ref.table)} }`;
   }
 }
 
 function serializePrefixMeta(meta: PrefixMeta, indent: number): string {
-  const pad = " ".repeat(indent);
+  const pad = ' '.repeat(indent);
   const parts: string[] = [];
   parts.push(`{`);
   if (meta.category !== undefined) {
@@ -195,16 +192,17 @@ function serializePrefixMeta(meta: PrefixMeta, indent: number): string {
   }
   if (meta.source) {
     const srcParts: string[] = [];
-    if (meta.source.module !== undefined) srcParts.push(`module: ${JSON.stringify(meta.source.module)}`);
+    if (meta.source.module !== undefined)
+      srcParts.push(`module: ${JSON.stringify(meta.source.module)}`);
     if (meta.source.file !== undefined) srcParts.push(`file: ${JSON.stringify(meta.source.file)}`);
-    parts.push(`${pad}  source: { ${srcParts.join(", ")} },`);
+    parts.push(`${pad}  source: { ${srcParts.join(', ')} },`);
   }
   parts.push(`${pad}}`);
-  return parts.join("\n");
+  return parts.join('\n');
 }
 
 function serializeTable(table: TableSchema, indent: number): string {
-  const pad = " ".repeat(indent);
+  const pad = ' '.repeat(indent);
   const lines: string[] = [];
   lines.push(`{`);
   lines.push(`${pad}  table: ${JSON.stringify(table.table)},`);
@@ -214,18 +212,18 @@ function serializeTable(table: TableSchema, indent: number): string {
   }
   lines.push(`${pad}  },`);
   lines.push(`${pad}}`);
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function serializeColumnRef(ref: ColumnRef): string {
   switch (ref.kind) {
-    case "scalar":
+    case 'scalar':
       return `{ kind: "scalar", type: ${JSON.stringify(ref.type)} }`;
-    case "prefix_ref":
+    case 'prefix_ref':
       return `{ kind: "prefix_ref", prefixId: ${JSON.stringify(ref.prefixId)} }`;
-    case "table_ref":
+    case 'table_ref':
       return `{ kind: "table_ref", table: ${JSON.stringify(ref.table)} }`;
-    case "axis_ref":
+    case 'axis_ref':
       return `{ kind: "axis_ref", axisId: ${JSON.stringify(ref.axisId)} }`;
   }
 }
@@ -233,18 +231,18 @@ function serializeColumnRef(ref: ColumnRef): string {
 function serializeStringArray(arr: readonly string[]): string {
   if (arr.length === 0) return `[]`;
   // 짧은 배열은 한 줄로
-  const joined = arr.map((s) => JSON.stringify(s)).join(", ");
+  const joined = arr.map((s) => JSON.stringify(s)).join(', ');
   if (joined.length < 80) return `[${joined}]`;
   // 긴 배열은 여러 줄로
-  return `[\n    ${arr.map((s) => JSON.stringify(s)).join(",\n    ")},\n  ]`;
+  return `[\n    ${arr.map((s) => JSON.stringify(s)).join(',\n    ')},\n  ]`;
 }
 
 function serializeRecord(rec: Record<string, string>, indent: number): string {
-  const pad = " ".repeat(indent);
+  const pad = ' '.repeat(indent);
   const entries = Object.entries(rec);
   if (entries.length === 0) return `{}`;
   // 짧은 레코드는 한 줄
-  const oneLine = `{ ${entries.map(([k, v]) => `${safeKey(k)}: ${JSON.stringify(v)}`).join(", ")} }`;
+  const oneLine = `{ ${entries.map(([k, v]) => `${safeKey(k)}: ${JSON.stringify(v)}`).join(', ')} }`;
   if (oneLine.length < 80) return oneLine;
   // 긴 레코드는 여러 줄
   const lines: string[] = [];
@@ -253,7 +251,7 @@ function serializeRecord(rec: Record<string, string>, indent: number): string {
     lines.push(`${pad}  ${safeKey(k)}: ${JSON.stringify(v)},`);
   }
   lines.push(`${pad}}`);
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** 식별자로 사용 가능한 키면 그대로, 아니면 문자열 리터럴로. */

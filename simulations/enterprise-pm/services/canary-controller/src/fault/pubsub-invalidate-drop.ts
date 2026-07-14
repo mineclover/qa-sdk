@@ -10,9 +10,9 @@
 // 추가로 isEnabled/getParams/getTarget/shouldDrop 동기 accessor 를 노출한다 — admin-fault
 // controller body schema 와 controller proxy 양쪽이 동일한 SSOT 인스턴스를 inject 받는다.
 
-import { Injectable } from "@nestjs/common";
-import { z } from "zod";
-import type { Fault } from "./types.js";
+import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
+import type { Fault } from './types.js';
 
 export interface PubsubInvalidateDropParams {
   /** drop 확률 (0..1). 1 = 모두 drop, 0 = 통과. */
@@ -20,22 +20,19 @@ export interface PubsubInvalidateDropParams {
 }
 
 const ParamsSchema = z.object({
-  dropRate: z
-    .number()
-    .min(0, "dropRate must be in [0, 1]")
-    .max(1, "dropRate must be in [0, 1]"),
+  dropRate: z.number().min(0, 'dropRate must be in [0, 1]').max(1, 'dropRate must be in [0, 1]'),
 });
 
 @Injectable()
 export class PubsubInvalidateDropFault implements Fault {
-  readonly kind = "pubsub-invalidate-drop" as const;
+  readonly kind = 'pubsub-invalidate-drop' as const;
   private params: PubsubInvalidateDropParams | null = null;
   private target: string | undefined;
 
   async enable(rawParams: unknown, target?: unknown): Promise<void> {
     const parsed = ParamsSchema.parse(rawParams);
     this.params = { dropRate: parsed.dropRate };
-    this.target = typeof target === "string" ? target : undefined;
+    this.target = typeof target === 'string' ? target : undefined;
   }
 
   async disable(): Promise<void> {

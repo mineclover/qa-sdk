@@ -1,11 +1,11 @@
 // @def.boundary sim-pm-api
 // @def.doc sim-erp-pm-design
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, eq } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { and, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
-import type { PmRepository } from "../shared/port.js";
+import type { PmRepository } from '../shared/port.js';
 import type {
   Project,
   ProjectCreate,
@@ -13,12 +13,9 @@ import type {
   TaskCreate,
   ProjectMember,
   MemberCreate,
-} from "../shared/types.js";
-import {
-  ProjectNotFoundError,
-  TaskNotFoundError,
-} from "../shared/errors.js";
-import { projects, tasks, projectMembers } from "./schema.js";
+} from '../shared/types.js';
+import { ProjectNotFoundError, TaskNotFoundError } from '../shared/errors.js';
+import { projects, tasks, projectMembers } from './schema.js';
 
 export class SqlitePmRepository implements PmRepository {
   constructor(private readonly db: BetterSQLite3Database) {}
@@ -31,7 +28,7 @@ export class SqlitePmRepository implements PmRepository {
       name: args.name,
       ownerId: args.ownerId,
       departmentId: args.departmentId,
-      status: args.status ?? "draft",
+      status: args.status ?? 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -45,7 +42,11 @@ export class SqlitePmRepository implements PmRepository {
   }
 
   async listProjectsByDepartment(departmentId: string): Promise<Project[]> {
-    return this.db.select().from(projects).where(eq(projects.departmentId, departmentId)).all() as Project[];
+    return this.db
+      .select()
+      .from(projects)
+      .where(eq(projects.departmentId, departmentId))
+      .all() as Project[];
   }
 
   async listProjectsByOwner(ownerId: string): Promise<Project[]> {
@@ -64,13 +65,17 @@ export class SqlitePmRepository implements PmRepository {
       status: patch.status ?? cur.status,
       updatedAt: now,
     };
-    this.db.update(projects).set({
-      name: next.name,
-      ownerId: next.ownerId,
-      departmentId: next.departmentId,
-      status: next.status,
-      updatedAt: next.updatedAt,
-    }).where(eq(projects.id, id)).run();
+    this.db
+      .update(projects)
+      .set({
+        name: next.name,
+        ownerId: next.ownerId,
+        departmentId: next.departmentId,
+        status: next.status,
+        updatedAt: next.updatedAt,
+      })
+      .where(eq(projects.id, id))
+      .run();
     return next;
   }
 
@@ -86,21 +91,24 @@ export class SqlitePmRepository implements PmRepository {
       projectId: args.projectId,
       title: args.title,
       assigneeId: args.assigneeId ?? null,
-      status: args.status ?? "todo",
+      status: args.status ?? 'todo',
       parentTaskId: args.parentTaskId ?? null,
       createdAt: now,
       updatedAt: now,
     };
-    this.db.insert(tasks).values({
-      id: task.id,
-      projectId: task.projectId,
-      title: task.title,
-      assigneeId: task.assigneeId,
-      status: task.status,
-      parentTaskId: task.parentTaskId,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-    }).run();
+    this.db
+      .insert(tasks)
+      .values({
+        id: task.id,
+        projectId: task.projectId,
+        title: task.title,
+        assigneeId: task.assigneeId,
+        status: task.status,
+        parentTaskId: task.parentTaskId,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+      })
+      .run();
     return task;
   }
 
@@ -114,7 +122,12 @@ export class SqlitePmRepository implements PmRepository {
   }
 
   async listSubtasks(parentTaskId: string): Promise<Task[]> {
-    return this.db.select().from(tasks).where(eq(tasks.parentTaskId, parentTaskId)).all().map(toTask);
+    return this.db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.parentTaskId, parentTaskId))
+      .all()
+      .map(toTask);
   }
 
   async updateTask(id: string, patch: Partial<TaskCreate>): Promise<Task> {
@@ -130,14 +143,18 @@ export class SqlitePmRepository implements PmRepository {
       parentTaskId: patch.parentTaskId ?? cur.parentTaskId,
       updatedAt: now,
     };
-    this.db.update(tasks).set({
-      projectId: next.projectId,
-      title: next.title,
-      assigneeId: next.assigneeId,
-      status: next.status,
-      parentTaskId: next.parentTaskId,
-      updatedAt: next.updatedAt,
-    }).where(eq(tasks.id, id)).run();
+    this.db
+      .update(tasks)
+      .set({
+        projectId: next.projectId,
+        title: next.title,
+        assigneeId: next.assigneeId,
+        status: next.status,
+        parentTaskId: next.parentTaskId,
+        updatedAt: next.updatedAt,
+      })
+      .where(eq(tasks.id, id))
+      .run();
     return next;
   }
 
@@ -159,17 +176,26 @@ export class SqlitePmRepository implements PmRepository {
   }
 
   async removeMember(projectId: string, userId: string): Promise<void> {
-    this.db.delete(projectMembers).where(
-      and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)),
-    ).run();
+    this.db
+      .delete(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)))
+      .run();
   }
 
   async listMembers(projectId: string): Promise<ProjectMember[]> {
-    return this.db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId)).all() as ProjectMember[];
+    return this.db
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, projectId))
+      .all() as ProjectMember[];
   }
 
   async listProjectsForUser(userId: string): Promise<ProjectMember[]> {
-    return this.db.select().from(projectMembers).where(eq(projectMembers.userId, userId)).all() as ProjectMember[];
+    return this.db
+      .select()
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId))
+      .all() as ProjectMember[];
   }
 }
 

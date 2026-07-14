@@ -10,36 +10,36 @@
  * 사용: qa-sdk sync-obsidian [--vault <name>] [--dry-run]
  */
 
-import { execaSync, type ExecaSyncError } from "execa";
-import { DEMO_CATALOG } from "demo-snapshot";
-import { DEMO_DKG_CONFIG } from "demo-dkg-config";
-import type { Catalog, DimRef, PrefixDef, VersionedAxis } from "@qa-sdk/core";
-import { bootstrapDkg } from "dkg-enrichment";
+import { execaSync, type ExecaSyncError } from 'execa';
+import { DEMO_CATALOG } from 'demo-snapshot';
+import { DEMO_DKG_CONFIG } from 'demo-dkg-config';
+import type { Catalog, DimRef, PrefixDef, VersionedAxis } from '@qa-sdk/core';
+import { bootstrapDkg } from 'dkg-enrichment';
 
 // ── DimRef 헬퍼 ──────────────────────────────────────
 
 function dimRefId(d: DimRef): string {
-  if (d.kind === "axis") return d.axisId;
-  if (d.kind === "prefix_ref") return d.prefixId;
+  if (d.kind === 'axis') return d.axisId;
+  if (d.kind === 'prefix_ref') return d.prefixId;
   return d.table;
 }
 
 function dimRefWikilink(d: DimRef): string {
-  if (d.kind === "table_ref") return `"${d.table}"`;
+  if (d.kind === 'table_ref') return `"${d.table}"`;
   return `"[[${dimRefId(d)}]]"`;
 }
 
 function dimRefMarkdownLink(d: DimRef): string {
-  if (d.kind === "table_ref") return d.table;
+  if (d.kind === 'table_ref') return d.table;
   return `[[${dimRefId(d)}]]`;
 }
 
 function isPrefixRef(d: DimRef, targetId: string): boolean {
-  return d.kind === "prefix_ref" && d.prefixId === targetId;
+  return d.kind === 'prefix_ref' && d.prefixId === targetId;
 }
 
 function isAxisRef(d: DimRef, targetId: string): boolean {
-  return d.kind === "axis" && d.axisId === targetId;
+  return d.kind === 'axis' && d.axisId === targetId;
 }
 
 // ── DKG Config 타입 ──────────────────────────────────
@@ -76,37 +76,41 @@ function getAxis(id: string): VersionedAxis | undefined {
 }
 
 function execaErrorText(err: ExecaSyncError): string {
-  return typeof err.stderr === "string" ? err.stderr.trim() : String(err.stderr ?? "").trim();
+  return typeof err.stderr === 'string' ? err.stderr.trim() : String(err.stderr ?? '').trim();
 }
 
 // ── Signal Role 매핑 ─────────────────────────────────
 
 const SIGNAL_ROLE_MAP: Record<string, string> = {
-  service: "context",
-  tracking: "trigger",
-  endpoint: "channel",
-  flow_point: "state",
-  permission: "guard",
-  pipeline_point: "effect",
-  order_event: "data",
+  service: 'context',
+  tracking: 'trigger',
+  endpoint: 'channel',
+  flow_point: 'state',
+  permission: 'guard',
+  pipeline_point: 'effect',
+  order_event: 'data',
 };
 
 // ── 카테고리 한국어 ──────────────────────────────────
 
 const CATEGORY_KO: Record<string, string> = {
-  entity: "엔티티",
-  event: "이벤트",
-  relation: "관계",
-  state: "상태",
-  policy: "정책",
-  observation: "관측",
+  entity: '엔티티',
+  event: '이벤트',
+  relation: '관계',
+  state: '상태',
+  policy: '정책',
+  observation: '관측',
 };
 
 // ── Obsidian CLI 래퍼 ────────────────────────────────
 
 function obsidianWrite(vault: string, path: string, content: string): void {
   try {
-    execaSync("obsidian", ["create", `vault=${vault}`, `path=${path}`, `content=${content}`, "silent", "overwrite"], { timeout: 10_000 });
+    execaSync(
+      'obsidian',
+      ['create', `vault=${vault}`, `path=${path}`, `content=${content}`, 'silent', 'overwrite'],
+      { timeout: 10_000 },
+    );
   } catch (err: unknown) {
     const e = err as ExecaSyncError;
     console.error(`  ✗ ${path}: ${execaErrorText(e) || e.message}`);
@@ -121,67 +125,61 @@ interface SyncNote {
 }
 
 function buildPrefixNote(id: string, prefix: PrefixDef): SyncNote {
-  const category = prefix.meta?.category ?? "entity";
+  const category = prefix.meta?.category ?? 'entity';
   const signalRole = SIGNAL_ROLE_MAP[id];
   const dims = Object.entries(prefix.dims);
   // domain 찾기
-  const prefixDomains = domains.filter(d => d.prefixes.includes(id));
+  const prefixDomains = domains.filter((d) => d.prefixes.includes(id));
 
   const frontmatter = [
-    "---",
+    '---',
     `title: ${id}`,
     `kind: prefix`,
     `category: ${category}`,
-    ...(prefixDomains.length > 0 ? [`domain: [${prefixDomains.map(d => `"[[${d.id}]]"`).join(", ")}]`] : []),
+    ...(prefixDomains.length > 0
+      ? [`domain: [${prefixDomains.map((d) => `"[[${d.id}]]"`).join(', ')}]`]
+      : []),
     ...(signalRole ? [`signal-role: ${signalRole}`] : []),
-    `dims: [${dims.map(([, d]) => dimRefWikilink(d)).join(", ")}]`,
+    `dims: [${dims.map(([, d]) => dimRefWikilink(d)).join(', ')}]`,
     `versions: ${prefix.versions?.length ?? 1}`,
     `source: DEMO_CATALOG.prefixes.${id}`,
-    "---",
-  ].join("\n");
+    '---',
+  ].join('\n');
 
-  const dimTable = dims.map(([label, d]) =>
-    `| ${label} | ${d.kind} | ${dimRefMarkdownLink(d)} |`
-  ).join("\n");
+  const dimTable = dims
+    .map(([label, d]) => `| ${label} | ${d.kind} | ${dimRefMarkdownLink(d)} |`)
+    .join('\n');
 
   // 이 prefix를 참조하는 다른 prefix 찾기
   const referencedBy = Object.entries(CATALOG.prefixes)
-    .filter(([, p]) => Object.values(p.dims).some(d => isPrefixRef(d, id)))
+    .filter(([, p]) => Object.values(p.dims).some((d) => isPrefixRef(d, id)))
     .map(([refId, p]) => {
       const refLabel = Object.entries(p.dims).find(([, d]) => isPrefixRef(d, id))?.[0];
       return `- [[${refId}]] (${refLabel})`;
     });
 
   // domain 내 위치 (exports/internal)
-  const domainPositions = prefixDomains.map(d => {
-    const pos = d.boundary.exports.includes(id) ? "exports" : "internal";
+  const domainPositions = prefixDomains.map((d) => {
+    const pos = d.boundary.exports.includes(id) ? 'exports' : 'internal';
     return `- [[${d.id}]] (${pos})`;
   });
 
   const body = [
     `# ${id} — ${prefix.name}`,
-    "",
-    prefix.description ?? `${prefix.labels.join(" × ")}을 교차하여 ${CATEGORY_KO[category] ?? category}을 정의한다.`,
-    "",
-    "## 차원",
-    "",
-    "| label | kind | ref |",
-    "|-------|------|-----|",
+    '',
+    prefix.description ??
+      `${prefix.labels.join(' × ')}을 교차하여 ${CATEGORY_KO[category] ?? category}을 정의한다.`,
+    '',
+    '## 차원',
+    '',
+    '| label | kind | ref |',
+    '|-------|------|-----|',
     dimTable,
-    ...(referencedBy.length > 0 ? [
-      "",
-      "## 참조하는 prefix",
-      "",
-      "이 prefix를 prefix_ref로 참조하는 prefix:",
-      ...referencedBy,
-    ] : []),
-    ...(domainPositions.length > 0 ? [
-      "",
-      "## 소속",
-      "",
-      ...domainPositions,
-    ] : []),
-  ].join("\n");
+    ...(referencedBy.length > 0
+      ? ['', '## 참조하는 prefix', '', '이 prefix를 prefix_ref로 참조하는 prefix:', ...referencedBy]
+      : []),
+    ...(domainPositions.length > 0 ? ['', '## 소속', '', ...domainPositions] : []),
+  ].join('\n');
 
   return { path: `prefix/${id}.md`, content: `${frontmatter}\n\n${body}` };
 }
@@ -195,14 +193,14 @@ function buildAxisNote(id: string, axis: VersionedAxis): SyncNote {
 
   // 이 axis를 사용하는 prefix 찾기
   const usedBy = Object.entries(CATALOG.prefixes)
-    .filter(([, p]) => Object.values(p.dims).some(d => isAxisRef(d, id)))
+    .filter(([, p]) => Object.values(p.dims).some((d) => isAxisRef(d, id)))
     .map(([prefixId, p]) => {
       const label = Object.entries(p.dims).find(([, d]) => isAxisRef(d, id))?.[0];
       return `- [[${prefixId}]] (${label})`;
     });
 
   const frontmatter = [
-    "---",
+    '---',
     `title: ${id}`,
     `kind: axis`,
     `name: ${axis.name}`,
@@ -210,123 +208,120 @@ function buildAxisNote(id: string, axis: VersionedAxis): SyncNote {
     `capacity: ${capacity}`,
     `versions: ${versions.length}`,
     `source: DEMO_CATALOG.axes.${id}`,
-    "---",
-  ].join("\n");
+    '---',
+  ].join('\n');
 
-  const entryList = entries.length <= 20
-    ? entries.map((e, i) => `| ${i + 1} | ${e} |`).join("\n")
-    : [...entries.slice(0, 15).map((e, i) => `| ${i + 1} | ${e} |`), `| ... | (${entries.length - 15}개 생략) |`].join("\n");
+  const entryList =
+    entries.length <= 20
+      ? entries.map((e, i) => `| ${i + 1} | ${e} |`).join('\n')
+      : [
+          ...entries.slice(0, 15).map((e, i) => `| ${i + 1} | ${e} |`),
+          `| ... | (${entries.length - 15}개 생략) |`,
+        ].join('\n');
 
   const body = [
     `# ${id} — ${axis.name}`,
-    "",
+    '',
     `entries ${entries.length} / capacity ${capacity} (headroom ${capacity - entries.length})`,
-    "",
-    "## entries",
-    "",
-    "| position | entry |",
-    "|----------|-------|",
+    '',
+    '## entries',
+    '',
+    '| position | entry |',
+    '|----------|-------|',
     entryList,
-    ...(usedBy.length > 0 ? [
-      "",
-      "## 사용하는 prefix",
-      "",
-      ...usedBy,
-    ] : []),
-  ].join("\n");
+    ...(usedBy.length > 0 ? ['', '## 사용하는 prefix', '', ...usedBy] : []),
+  ].join('\n');
 
   return { path: `axis/${id}.md`, content: `${frontmatter}\n\n${body}` };
 }
 
 function buildDslNote(bundle: DkgDslBundle): SyncNote {
-  const memberLinks = bundle.memberPrefixes.map(p => `"[[${p}]]"`).join(", ");
+  const memberLinks = bundle.memberPrefixes.map((p) => `"[[${p}]]"`).join(', ');
   const invariants = bundle.invariants;
 
   const frontmatter = [
-    "---",
+    '---',
     `title: ${bundle.id}`,
     `kind: dsl`,
     `name: ${bundle.name}`,
     `members: [${memberLinks}]`,
     `service-binding: "[[${bundle.serviceBindingPrefix}]]"`,
-    `fixed-dims: [${bundle.fixedDims.map(d => `"[[${d}]]"`).join(", ")}]`,
+    `fixed-dims: [${bundle.fixedDims.map((d) => `"[[${d}]]"`).join(', ')}]`,
     `source: DEMO_DKG_CONFIG.dslBundles.${bundle.id}`,
-    "---",
-  ].join("\n");
+    '---',
+  ].join('\n');
 
-  const memberTable = bundle.memberPrefixes.map(p => {
-    const prefix = getPrefix(p);
-    const cat = prefix?.meta?.category ?? "?";
-    return `| [[${p}]] | ${cat} | ${prefix?.name ?? p} |`;
-  }).join("\n");
+  const memberTable = bundle.memberPrefixes
+    .map((p) => {
+      const prefix = getPrefix(p);
+      const cat = prefix?.meta?.category ?? '?';
+      return `| [[${p}]] | ${cat} | ${prefix?.name ?? p} |`;
+    })
+    .join('\n');
 
   const body = [
     `# ${bundle.id} — ${bundle.name}`,
-    "",
+    '',
     bundle.description,
-    "",
-    "## 구성 prefix",
-    "",
-    "| prefix | category | 설명 |",
-    "|--------|----------|------|",
+    '',
+    '## 구성 prefix',
+    '',
+    '| prefix | category | 설명 |',
+    '|--------|----------|------|',
     memberTable,
-    "",
+    '',
     `## service binding`,
-    "",
-    `[[${bundle.serviceBindingPrefix}]]의 고정 차원 (${bundle.fixedDims.join(", ")})으로 서비스 컨텍스트를 바인딩.`,
-    ...(invariants && invariants.length > 0 ? [
-      "",
-      "## invariants",
-      "",
-      ...invariants.map(inv => `- ${inv}`),
-    ] : []),
-  ].join("\n");
+    '',
+    `[[${bundle.serviceBindingPrefix}]]의 고정 차원 (${bundle.fixedDims.join(', ')})으로 서비스 컨텍스트를 바인딩.`,
+    ...(invariants && invariants.length > 0
+      ? ['', '## invariants', '', ...invariants.map((inv) => `- ${inv}`)]
+      : []),
+  ].join('\n');
 
   return { path: `dsl/${bundle.id}.md`, content: `${frontmatter}\n\n${body}` };
 }
 
 function buildDomainNote(domain: DkgDomain): SyncNote {
-  const prefixLinks = domain.prefixes.map((p: string) => `"[[${p}]]"`).join(", ");
-  const exportLinks = domain.boundary.exports.map((p: string) => `"[[${p}]]"`).join(", ");
-  const internalLinks = domain.boundary.internal.map((p: string) => `"[[${p}]]"`).join(", ");
+  const prefixLinks = domain.prefixes.map((p: string) => `"[[${p}]]"`).join(', ');
+  const exportLinks = domain.boundary.exports.map((p: string) => `"[[${p}]]"`).join(', ');
+  const internalLinks = domain.boundary.internal.map((p: string) => `"[[${p}]]"`).join(', ');
 
   const frontmatter = [
-    "---",
+    '---',
     `title: ${domain.id}`,
     `kind: domain`,
     `prefixes: [${prefixLinks}]`,
-    ...(domain.sharedAxes.length > 0 ? [`shared-axes: [${domain.sharedAxes.map((a: string) => `"[[${a}]]"`).join(", ")}]`] : []),
+    ...(domain.sharedAxes.length > 0
+      ? [`shared-axes: [${domain.sharedAxes.map((a: string) => `"[[${a}]]"`).join(', ')}]`]
+      : []),
     `exports: [${exportLinks}]`,
     ...(domain.boundary.internal.length > 0 ? [`internal: [${internalLinks}]`] : []),
     `source: DEMO_DKG_CONFIG.domains.${domain.id}`,
-    "---",
-  ].join("\n");
+    '---',
+  ].join('\n');
 
-  const prefixTable = domain.prefixes.map((p: string) => {
-    const prefix = getPrefix(p);
-    if (!prefix) return `| [[${p}]] | ? | - |`;
-    const cat = prefix.meta?.category ?? "entity";
-    const pos = domain.boundary.exports.includes(p) ? "exports" : "internal";
-    return `| [[${p}]] | ${cat} | ${pos} |`;
-  }).join("\n");
+  const prefixTable = domain.prefixes
+    .map((p: string) => {
+      const prefix = getPrefix(p);
+      if (!prefix) return `| [[${p}]] | ? | - |`;
+      const cat = prefix.meta?.category ?? 'entity';
+      const pos = domain.boundary.exports.includes(p) ? 'exports' : 'internal';
+      return `| [[${p}]] | ${cat} | ${pos} |`;
+    })
+    .join('\n');
 
   const body = [
     `# ${domain.id} — ${domain.name}`,
-    "",
+    '',
     domain.rationale,
-    "",
-    "## 구조",
-    "",
-    "| prefix | category | boundary |",
-    "|--------|----------|----------|",
+    '',
+    '## 구조',
+    '',
+    '| prefix | category | boundary |',
+    '|--------|----------|----------|',
     prefixTable,
-    ...(domain.sharedAxes.length > 0 ? [
-      "",
-      `## 공유 축`,
-      "",
-      domain.sharedAxes.join(", "),
-    ] : []),
-  ].join("\n");
+    ...(domain.sharedAxes.length > 0 ? ['', `## 공유 축`, '', domain.sharedAxes.join(', ')] : []),
+  ].join('\n');
 
   return { path: `domain/${domain.id}.md`, content: `${frontmatter}\n\n${body}` };
 }
@@ -334,7 +329,7 @@ function buildDomainNote(domain: DkgDomain): SyncNote {
 function buildLayerNotes(): SyncNote[] {
   return [
     {
-      path: "layer/indexing-layer.md",
+      path: 'layer/indexing-layer.md',
       content: `---
 title: Indexing Layer
 kind: layer
@@ -367,7 +362,7 @@ source: qa-sdk/docs/specs/spec-engine/README.md
 - [[identity]] — 차원 압축이 시스템의 핵심 능력`,
     },
     {
-      path: "layer/spec-engine-layer.md",
+      path: 'layer/spec-engine-layer.md',
       content: `---
 title: Spec Engine Layer
 kind: layer
@@ -391,7 +386,7 @@ source: qa-sdk/docs/specs/spec-engine/README.md
 - [[dkg-layer]] — 이 레이어를 소비`,
     },
     {
-      path: "layer/dkg-layer.md",
+      path: 'layer/dkg-layer.md',
       content: `---
 title: Design Knowledge Graph
 kind: layer
@@ -425,7 +420,7 @@ source: qa-sdk/docs/specs/spec-engine/design-knowledge-graph.md
 - [[convergence-layer]] — DKG + 관측 데이터로 수렴 기회 발견`,
     },
     {
-      path: "layer/convergence-layer.md",
+      path: 'layer/convergence-layer.md',
       content: `---
 title: Convergence Layer
 kind: layer
@@ -455,7 +450,7 @@ source: qa-sdk/docs/specs/spec-engine/convergence-layer.md
 function buildArchitectureNotes(): SyncNote[] {
   return [
     {
-      path: "arch/observation-loop.md",
+      path: 'arch/observation-loop.md',
       content: `---
 title: Observation Loop
 kind: architecture
@@ -505,7 +500,7 @@ ingest-server Phase 2 완료
 - [[msa-topology]] — 서비스 간 연결`,
     },
     {
-      path: "arch/msa-topology.md",
+      path: 'arch/msa-topology.md',
       content: `---
 title: MSA 서비스 토폴로지
 kind: architecture
@@ -545,7 +540,7 @@ Client → ingest-server (Phase 1) → Redis Queue → worker (Phase 2)
 - [[identity]] — 서비스 분할도 좌표계의 설계 결정`,
     },
     {
-      path: "arch/catalog-registry.md",
+      path: 'arch/catalog-registry.md',
       content: `---
 title: CatalogRegistry
 kind: architecture
@@ -580,7 +575,7 @@ source: packages/core/src/catalog/catalog-registry.ts
 function buildConceptNotes(): SyncNote[] {
   return [
     {
-      path: "concepts/coordinate-axis.md",
+      path: 'concepts/coordinate-axis.md',
       content: `---
 title: 좌표 축 정의
 kind: concept
@@ -609,7 +604,7 @@ related: ["[[finite-state]]", "[[observability]]", "[[identity]]"]
 - [[observability]] — 축이 정의되면 관측이 가능해진다`,
     },
     {
-      path: "concepts/finite-state.md",
+      path: 'concepts/finite-state.md',
       content: `---
 title: 유한 상태 정의
 kind: concept
@@ -638,7 +633,7 @@ related: ["[[coordinate-axis]]", "[[observability]]", "[[identity]]"]
 - [[observability]] — 유한 상태는 관측 가능한 상태`,
     },
     {
-      path: "concepts/observability.md",
+      path: 'concepts/observability.md',
       content: `---
 title: 서비스의 관측성 부여
 kind: concept
@@ -684,12 +679,10 @@ related: ["[[coordinate-axis]]", "[[finite-state]]", "[[signal-model]]", "[[iden
 
 function buildSignalNote(): SyncNote {
   const roles = Object.entries(SIGNAL_ROLE_MAP);
-  const roleTable = roles
-    .map(([prefix, role]) => `| ${role} | [[${prefix}]] |`)
-    .join("\n");
+  const roleTable = roles.map(([prefix, role]) => `| ${role} | [[${prefix}]] |`).join('\n');
 
   return {
-    path: "signal-model.md",
+    path: 'signal-model.md',
     content: `---
 title: Signal Model
 kind: signal
@@ -719,7 +712,7 @@ requires 관계로 의존 표현. 예: trigger는 context를 require.
 
 function buildIdentityNote(): SyncNote {
   return {
-    path: "identity.md",
+    path: 'identity.md',
     content: `---
 title: 시스템 정체성
 kind: identity
@@ -765,34 +758,39 @@ enum, 이벤트 유형, 권한 유형 같은 고정 조합을 전문으로 다�
 function buildIndexNote(prefixes: string[], domainIds: string[], axes: string[]): SyncNote {
   const byCategory = new Map<string, string[]>();
   for (const id of prefixes) {
-    const cat = getPrefix(id)?.meta?.category ?? "entity";
+    const cat = getPrefix(id)?.meta?.category ?? 'entity';
     if (!byCategory.has(cat)) byCategory.set(cat, []);
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .has() 직후 .get()
     byCategory.get(cat)!.push(id);
   }
 
-  const categoryOrder = ["entity", "policy", "relation", "event", "observation"];
+  const categoryOrder = ['entity', 'policy', 'relation', 'event', 'observation'];
   const prefixSections = categoryOrder
-    .filter(c => byCategory.has(c))
-    .map(cat => {
+    .filter((c) => byCategory.has(c))
+    .map((cat) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- .filter(has) → .get() 존재 보장
       const items = byCategory.get(cat)!;
-      const links = items.map(id => {
-        const p = getPrefix(id);
-        if (!p) return `- [[${id}]]`;
-        return `- [[${id}]] — ${p.name} (${p.labels.join(" × ")})`;
-      }).join("\n");
+      const links = items
+        .map((id) => {
+          const p = getPrefix(id);
+          if (!p) return `- [[${id}]]`;
+          return `- [[${id}]] — ${p.name} (${p.labels.join(' × ')})`;
+        })
+        .join('\n');
       return `### ${cat}\n${links}`;
-    }).join("\n\n");
+    })
+    .join('\n\n');
 
-  const domainLinks = domainIds.map(id => {
-    const d = domains.find(dd => dd.id === id);
-    const prefixNames = d?.prefixes?.join(", ") ?? "";
-    return `- [[${id}]] — ${d?.name ?? id} (${prefixNames})`;
-  }).join("\n");
+  const domainLinks = domainIds
+    .map((id) => {
+      const d = domains.find((dd) => dd.id === id);
+      const prefixNames = d?.prefixes?.join(', ') ?? '';
+      return `- [[${id}]] — ${d?.name ?? id} (${prefixNames})`;
+    })
+    .join('\n');
 
   return {
-    path: "_index.md",
+    path: '_index.md',
     content: `---
 title: qa-sdk 좌표 시스템
 kind: index
@@ -811,11 +809,13 @@ source: DEMO_CATALOG + DEMO_DKG_CONFIG
 
 1차원 축. prefix의 차원이 되는 기본 단위.
 
-${axes.map(id => {
-      const a = getAxis(id);
-      if (!a) return `- [[${id}]]`;
-      return `- [[${id}]] — ${a.name}`;
-    }).join("\n")}
+${axes
+  .map((id) => {
+    const a = getAxis(id);
+    if (!a) return `- [[${id}]]`;
+    return `- [[${id}]] — ${a.name}`;
+  })
+  .join('\n')}
 
 ## Prefix (${prefixes.length})
 
@@ -827,7 +827,7 @@ ${prefixSections}
 
 prefix를 서비스 단위로 묶은 운용 번들. domain이 구조적 바운더리라면, DSL은 기능적 묶음.
 
-${dslBundles.map(b => `- [[${b.id}]] — ${b.name} (${b.memberPrefixes.join(", ")})`).join("\n")}
+${dslBundles.map((b) => `- [[${b.id}]] — ${b.name} (${b.memberPrefixes.join(', ')})`).join('\n')}
 
 ## Domain (${domains.length})
 
@@ -876,12 +876,12 @@ export function syncObsidian(options: SyncObsidianOptions): void {
   const { vault, dryRun } = options;
 
   console.log(`\n📦 DEMO_CATALOG → Obsidian 볼트 "${vault}" 동기화`);
-  console.log(`   mode: ${dryRun ? "dry-run (미리보기)" : "write"}\n`);
+  console.log(`   mode: ${dryRun ? 'dry-run (미리보기)' : 'write'}\n`);
 
   // DKG 부트스트랩 (검증용)
   const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
-  const axisCount = graph.getNodesByKind("axis").length;
-  const prefixCount = graph.getNodesByKind("prefix").length;
+  const axisCount = graph.getNodesByKind('axis').length;
+  const prefixCount = graph.getNodesByKind('prefix').length;
   console.log(`   DKG: ${axisCount} axes, ${prefixCount} prefixes\n`);
 
   // 노트 수집
@@ -933,7 +933,7 @@ export function syncObsidian(options: SyncObsidianOptions): void {
 
   // 출력
   if (dryRun) {
-    console.log("── 생성할 노트 목록 ──\n");
+    console.log('── 생성할 노트 목록 ──\n');
     for (const note of notes) {
       console.log(`  ${note.path}`);
     }

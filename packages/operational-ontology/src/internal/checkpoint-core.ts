@@ -1,21 +1,19 @@
-import type {
-  SemanticTransmission,
-} from "./runtime-core.js";
-import type { FlowCorridor } from "./corridor-core.js";
-import type { RouteDecision } from "./junction-core.js";
+import type { SemanticTransmission } from './runtime-core.js';
+import type { FlowCorridor } from './corridor-core.js';
+import type { RouteDecision } from './junction-core.js';
 
 export const CHECKPOINT_TEMPLATE_KINDS = [
-  "root",
-  "payload_field",
-  "address_binding",
-  "route_decision",
+  'root',
+  'payload_field',
+  'address_binding',
+  'route_decision',
 ] as const;
 
 export type CheckpointTemplateKind = (typeof CHECKPOINT_TEMPLATE_KINDS)[number];
 
 export interface CheckpointTemplate {
   kind: CheckpointTemplateKind;
-  relationToParent?: CheckpointLink["relation"];
+  relationToParent?: CheckpointLink['relation'];
   description: string;
   requireObservedFields?: boolean;
   requireObservedPrefixIds?: boolean;
@@ -29,28 +27,28 @@ export interface CheckpointTemplateRegistry {
 
 export const DEFAULT_CHECKPOINT_TEMPLATES = {
   root: {
-    kind: "root",
-    description: "Corridor root checkpoint for a single observed record",
+    kind: 'root',
+    description: 'Corridor root checkpoint for a single observed record',
     requireObservedNodeHit: true,
   },
   payload_field: {
-    kind: "payload_field",
-    relationToParent: "contains",
-    description: "Checkpoint for an observed top-level payload field",
+    kind: 'payload_field',
+    relationToParent: 'contains',
+    description: 'Checkpoint for an observed top-level payload field',
     requireObservedFields: true,
     requireObservedNodeHit: true,
   },
   address_binding: {
-    kind: "address_binding",
-    relationToParent: "contains",
-    description: "Checkpoint for an observed address_context binding",
+    kind: 'address_binding',
+    relationToParent: 'contains',
+    description: 'Checkpoint for an observed address_context binding',
     requireObservedPrefixIds: true,
     requireObservedNodeHit: true,
   },
   route_decision: {
-    kind: "route_decision",
-    relationToParent: "decides",
-    description: "Checkpoint for a route decision attached during snapshot synthesis",
+    kind: 'route_decision',
+    relationToParent: 'decides',
+    description: 'Checkpoint for a route decision attached during snapshot synthesis',
     requireObservedNodeHit: true,
   },
 } as const satisfies Record<CheckpointTemplateKind, CheckpointTemplate>;
@@ -81,7 +79,7 @@ export interface CheckpointDefinition {
 export interface CheckpointLink {
   fromCheckpointId: string;
   toCheckpointId: string;
-  relation: "contains" | "observes" | "decides";
+  relation: 'contains' | 'observes' | 'decides';
 }
 
 export interface CheckpointObservation {
@@ -225,14 +223,11 @@ export function createCheckpointLinkFromTemplate(
   return {
     fromCheckpointId: input.parentCheckpointId,
     toCheckpointId: input.childCheckpointId,
-    relation: template.relationToParent ?? "contains",
+    relation: template.relationToParent ?? 'contains',
   };
 }
 
-function dedupeByKey<T>(
-  values: readonly T[],
-  getKey: (value: T) => string,
-): T[] {
+function dedupeByKey<T>(values: readonly T[], getKey: (value: T) => string): T[] {
   const map = new Map<string, T>();
   for (const value of values) {
     map.set(getKey(value), value);
@@ -265,7 +260,7 @@ export function augmentCheckpointLatticeWithRouteDecisions(
       definitions.push(
         createCheckpointDefinitionFromTemplate(checkpointTemplateRegistry, {
           checkpointId,
-          templateKind: "route_decision",
+          templateKind: 'route_decision',
           nodeId: junctionKey,
           observedPrefixIds: [],
           observedFields: [],
@@ -277,7 +272,7 @@ export function augmentCheckpointLatticeWithRouteDecisions(
       observations.push(
         createCheckpointObservationFromTemplate(checkpointTemplateRegistry, {
           checkpointId,
-          templateKind: "route_decision",
+          templateKind: 'route_decision',
           nodeId: junctionKey,
           recordId: rootObservation.recordId,
           traceId: rootObservation.traceId,
@@ -309,7 +304,7 @@ export function augmentCheckpointLatticeWithRouteDecisions(
         createCheckpointLinkFromTemplate(checkpointTemplateRegistry, {
           parentCheckpointId: lattice.rootCheckpointId,
           childCheckpointId: checkpointId,
-          childTemplateKind: "route_decision",
+          childTemplateKind: 'route_decision',
         }),
       );
     }

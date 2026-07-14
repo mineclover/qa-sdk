@@ -7,9 +7,15 @@
  * 순수 함수: 노드 + 엣지를 구성하여 반환한다. 그래프 변경은 호출자가 수행.
  */
 
-import type { GraphRegistry } from "../graph-registry.js";
-import type { DecisionNode, DecisionType, ObservationNode, ObservationSuggestion, DecisionScaffoldParams } from "../dkg.types.js";
-import { scaffoldDecision } from "./decision-scaffold.js";
+import type { GraphRegistry } from '../graph-registry.js';
+import type {
+  DecisionNode,
+  DecisionType,
+  ObservationNode,
+  ObservationSuggestion,
+  DecisionScaffoldParams,
+} from '../dkg.types.js';
+import { scaffoldDecision } from './decision-scaffold.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -25,10 +31,10 @@ export interface RecordDecisionInput {
 }
 
 export interface RecordDecisionResult {
-  readonly verdict: "ok" | "blocked";
+  readonly verdict: 'ok' | 'blocked';
   readonly reason?: string;
   readonly decision: DecisionNode | null;
-  readonly edges: readonly { type: "governs"; from: string; to: string }[];
+  readonly edges: readonly { type: 'governs'; from: string; to: string }[];
   readonly summary: string;
 }
 
@@ -40,10 +46,10 @@ export interface RecordObservationInput {
 }
 
 export interface RecordObservationResult {
-  readonly verdict: "ok" | "blocked";
+  readonly verdict: 'ok' | 'blocked';
   readonly reason?: string;
   readonly observation: ObservationNode | null;
-  readonly edges: readonly { type: "observes"; from: string; to: string }[];
+  readonly edges: readonly { type: 'observes'; from: string; to: string }[];
   readonly summary: string;
 }
 
@@ -52,7 +58,12 @@ export interface RecordObservationResult {
 // ═══════════════════════════════════════════════════════════════
 
 const VALID_TYPES: readonly DecisionType[] = [
-  "capacity", "new-axis", "new-prefix", "dim-add", "merge", "deprecate",
+  'capacity',
+  'new-axis',
+  'new-prefix',
+  'dim-add',
+  'merge',
+  'deprecate',
 ];
 
 export function recordDecision(
@@ -62,7 +73,7 @@ export function recordDecision(
   // 대상 존재 확인
   if (!graph.hasNode(input.targetId)) {
     return {
-      verdict: "blocked",
+      verdict: 'blocked',
       reason: `대상 노드 없음: ${input.targetId}`,
       decision: null,
       edges: [],
@@ -72,11 +83,11 @@ export function recordDecision(
 
   if (!VALID_TYPES.includes(input.type)) {
     return {
-      verdict: "blocked",
+      verdict: 'blocked',
       reason: `유효하지 않은 type: ${input.type}`,
       decision: null,
       edges: [],
-      summary: `유효하지 않은 type: ${input.type} (가능: ${VALID_TYPES.join(", ")})`,
+      summary: `유효하지 않은 type: ${input.type} (가능: ${VALID_TYPES.join(', ')})`,
     };
   }
 
@@ -94,21 +105,27 @@ export function recordDecision(
   });
 
   return {
-    verdict: "ok",
+    verdict: 'ok',
     decision,
-    edges: [{ type: "governs", from: decision.id, to: input.targetId }],
+    edges: [{ type: 'governs', from: decision.id, to: input.targetId }],
     summary: `${decision.id}: ${decision.title}`,
   };
 }
 
 function buildParams(type: DecisionType, target: string): DecisionScaffoldParams {
   switch (type) {
-    case "capacity": return { axis: target, currentUsed: 0, currentCapacity: 0, proposedCapacity: 0 };
-    case "new-axis": return { axisId: target, entries: [], capacity: 32 };
-    case "new-prefix": return { prefixId: target, dims: [] };
-    case "dim-add": return { prefix: target, newDim: "" };
-    case "merge": return { targets: [target], into: target };
-    case "deprecate": return { target };
+    case 'capacity':
+      return { axis: target, currentUsed: 0, currentCapacity: 0, proposedCapacity: 0 };
+    case 'new-axis':
+      return { axisId: target, entries: [], capacity: 32 };
+    case 'new-prefix':
+      return { prefixId: target, dims: [] };
+    case 'dim-add':
+      return { prefix: target, newDim: '' };
+    case 'merge':
+      return { targets: [target], into: target };
+    case 'deprecate':
+      return { target };
   }
 }
 
@@ -123,7 +140,7 @@ export function recordObservation(
   // 대상 존재 확인
   if (!graph.hasNode(input.targetId)) {
     return {
-      verdict: "blocked",
+      verdict: 'blocked',
       reason: `대상 노드 없음: ${input.targetId}`,
       observation: null,
       edges: [],
@@ -135,19 +152,19 @@ export function recordObservation(
   const id = `OBS-MANUAL-${input.targetId}-${Date.now().toString(36)}`;
 
   const observation: ObservationNode = {
-    kind: "observation",
+    kind: 'observation',
     id,
     date,
-    source: "manual",
+    source: 'manual',
     subjects: [input.targetId],
     finding: input.finding,
     suggestion: input.suggestion,
   };
 
   return {
-    verdict: "ok",
+    verdict: 'ok',
     observation,
-    edges: [{ type: "observes", from: observation.id, to: input.targetId }],
+    edges: [{ type: 'observes', from: observation.id, to: input.targetId }],
     summary: `${observation.id}: ${observation.finding}`,
   };
 }

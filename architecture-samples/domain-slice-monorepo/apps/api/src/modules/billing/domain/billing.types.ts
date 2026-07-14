@@ -1,6 +1,6 @@
-import type { BillingId } from "./billing.ids.js";
+import type { BillingId } from './billing.ids.js';
 
-export type BillingStatus = "created";
+export type BillingStatus = 'created';
 
 export interface BillingProps {
   readonly id: BillingId;

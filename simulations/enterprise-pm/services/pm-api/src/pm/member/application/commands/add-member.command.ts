@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { MemberRole } from "../../domain/index.js";
+import type { MemberRole } from '../../domain/index.js';
 
 /** 새 member 추가 명령. */
 export interface AddMemberCommand {

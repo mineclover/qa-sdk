@@ -1,13 +1,13 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
-    conditions: ["source"],
+    conditions: ['source'],
   },
   test: {
-    environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
-    exclude: ["dist/**"],
+    environment: 'node',
+    include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+    exclude: ['dist/**'],
     passWithNoTests: true,
     // Plan 07b/07c/07d PG 테스트가 동일 ingest schema 테이블을 공유하므로
     // 파일 단위 병렬 실행 비활성화. drizzle pgSchema("ingest")가 schema 이름을

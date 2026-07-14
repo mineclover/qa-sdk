@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { DepartmentId, ManagerId } from "./department.ids.js";
+import type { DepartmentId, ManagerId } from './department.ids.js';
 
 export interface DepartmentProps {
   readonly id: DepartmentId;

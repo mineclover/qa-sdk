@@ -4,9 +4,9 @@
 // internal IP guard 는 호출자(app.ts) 에서 internalIpMiddleware 로 부착한다.
 // 본 모듈은 query parsing + tracker 호출 + RFC 7807 응답 만 담당.
 
-import type { Handler } from "hono";
-import { z } from "zod";
-import type { StickyDecisionTracker } from "../routing/sticky-decision-tracker.js";
+import type { Handler } from 'hono';
+import { z } from 'zod';
+import type { StickyDecisionTracker } from '../routing/sticky-decision-tracker.js';
 
 const QuerySchema = z.object({
   windowMinutes: z.coerce.number().int().positive().optional(),
@@ -37,21 +37,19 @@ export interface StickyConsistencyHandlerOptions {
  * - 미지정 → 전체 buffer ratio
  * - zod 검증 실패 (음수, 비정수 등) → 400 RFC 7807
  */
-export function createStickyConsistencyHandler(
-  opts: StickyConsistencyHandlerOptions,
-): Handler {
+export function createStickyConsistencyHandler(opts: StickyConsistencyHandlerOptions): Handler {
   const now = opts.now ?? (() => new Date());
   return (c) => {
     const parsed = QuerySchema.safeParse({
-      windowMinutes: c.req.query("windowMinutes"),
+      windowMinutes: c.req.query('windowMinutes'),
     });
     if (!parsed.success) {
       return c.json(
         {
-          type: "https://qa-sdk.dev/errors/validation",
-          title: "invalid query",
+          type: 'https://qa-sdk.dev/errors/validation',
+          title: 'invalid query',
           status: 400,
-          detail: parsed.error.issues.map((i) => i.message).join("; "),
+          detail: parsed.error.issues.map((i) => i.message).join('; '),
         },
         400,
       );

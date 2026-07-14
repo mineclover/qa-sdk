@@ -8,10 +8,10 @@
  * 새 패턴: 템플릿 구조 정의 → createSandbox() → 즉시 사용 가능한 repo
  */
 
-import { execFileSync } from "node:child_process";
-import { mkdtemp, mkdir, writeFile, rm, readdir, copyFile, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, dirname, relative } from "node:path";
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, mkdir, writeFile, rm, readdir, copyFile, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, dirname, relative } from 'node:path';
 
 // ── 타입 ──────────────────────────────────────────────
 
@@ -54,22 +54,22 @@ export interface Sandbox {
 // ── 팩토리 ────────────────────────────────────────────
 
 const GIT_ENV = {
-  GIT_AUTHOR_DATE: "2026-04-05T00:00:00Z",
-  GIT_COMMITTER_DATE: "2026-04-05T00:00:00Z",
-  GIT_AUTHOR_NAME: "Test",
-  GIT_AUTHOR_EMAIL: "t@t.com",
-  GIT_COMMITTER_NAME: "Test",
-  GIT_COMMITTER_EMAIL: "t@t.com",
+  GIT_AUTHOR_DATE: '2026-04-05T00:00:00Z',
+  GIT_COMMITTER_DATE: '2026-04-05T00:00:00Z',
+  GIT_AUTHOR_NAME: 'Test',
+  GIT_AUTHOR_EMAIL: 't@t.com',
+  GIT_COMMITTER_NAME: 'Test',
+  GIT_COMMITTER_EMAIL: 't@t.com',
 };
 
 export async function createSandbox(options: SandboxOptions): Promise<Sandbox> {
-  const branch = options.branch ?? "main";
+  const branch = options.branch ?? 'main';
   const root = await mkdtemp(join(tmpdir(), `qa-sandbox-${options.name}-`));
 
   const git = (cwd: string, args: string[]): string =>
-    execFileSync("git", args, {
+    execFileSync('git', args, {
       cwd,
-      encoding: "utf-8",
+      encoding: 'utf-8',
       env: { ...process.env, ...GIT_ENV },
     }).trim();
 
@@ -77,21 +77,21 @@ export async function createSandbox(options: SandboxOptions): Promise<Sandbox> {
   let workDir: string;
 
   if (options.withRemote) {
-    remoteDir = join(root, "remote.git");
-    workDir = join(root, "work");
-    git(root, ["init", "--bare", `--initial-branch=${branch}`, remoteDir]);
-    git(root, ["clone", remoteDir, workDir]);
+    remoteDir = join(root, 'remote.git');
+    workDir = join(root, 'work');
+    git(root, ['init', '--bare', `--initial-branch=${branch}`, remoteDir]);
+    git(root, ['clone', remoteDir, workDir]);
   } else {
-    workDir = join(root, "repo");
-    git(root, ["init", `--initial-branch=${branch}`, workDir]);
+    workDir = join(root, 'repo');
+    git(root, ['init', `--initial-branch=${branch}`, workDir]);
   }
 
-  git(workDir, ["config", "user.name", "Test"]);
-  git(workDir, ["config", "user.email", "t@t.com"]);
+  git(workDir, ['config', 'user.name', 'Test']);
+  git(workDir, ['config', 'user.email', 't@t.com']);
 
   // .gitignore
   if (options.gitignore) {
-    await writeFileWithDir(join(workDir, ".gitignore"), options.gitignore);
+    await writeFileWithDir(join(workDir, '.gitignore'), options.gitignore);
   }
 
   // 초기 파일 생성
@@ -99,11 +99,11 @@ export async function createSandbox(options: SandboxOptions): Promise<Sandbox> {
     await writeFileWithDir(join(workDir, path), content);
   }
 
-  git(workDir, ["add", "."]);
-  git(workDir, ["commit", "-m", "chore: seed"]);
+  git(workDir, ['add', '.']);
+  git(workDir, ['commit', '-m', 'chore: seed']);
 
   if (remoteDir) {
-    git(workDir, ["push", "origin", branch]);
+    git(workDir, ['push', 'origin', branch]);
   }
 
   // ── Sandbox API ───────────────────────────────────
@@ -114,13 +114,17 @@ export async function createSandbox(options: SandboxOptions): Promise<Sandbox> {
     root,
 
     commitFile(path: string, content: string, message: string) {
-      execFileSync("bash", ["-c", `mkdir -p "$(dirname "${join(workDir, path)}")" && cat > "${join(workDir, path)}"`], {
-        input: content,
-        cwd: workDir,
-        env: { ...process.env, ...GIT_ENV },
-      });
-      git(workDir, ["add", path]);
-      git(workDir, ["commit", "-m", message]);
+      execFileSync(
+        'bash',
+        ['-c', `mkdir -p "$(dirname "${join(workDir, path)}")" && cat > "${join(workDir, path)}"`],
+        {
+          input: content,
+          cwd: workDir,
+          env: { ...process.env, ...GIT_ENV },
+        },
+      );
+      git(workDir, ['add', path]);
+      git(workDir, ['commit', '-m', message]);
     },
 
     async writeFile(path: string, content: string) {
@@ -129,19 +133,17 @@ export async function createSandbox(options: SandboxOptions): Promise<Sandbox> {
 
     createBranch(name: string, base?: string) {
       const baseRef = base ?? (remoteDir ? `origin/${branch}` : branch);
-      git(workDir, ["checkout", "-b", name, baseRef]);
+      git(workDir, ['checkout', '-b', name, baseRef]);
     },
 
     push(branchName?: string) {
-      if (!remoteDir) throw new Error("withRemote=false — push 불가");
-      const args = branchName
-        ? ["push", "-u", "origin", branchName]
-        : ["push"];
+      if (!remoteDir) throw new Error('withRemote=false — push 불가');
+      const args = branchName ? ['push', '-u', 'origin', branchName] : ['push'];
       git(workDir, args);
     },
 
     checkout(ref: string) {
-      git(workDir, ["checkout", ref]);
+      git(workDir, ['checkout', ref]);
     },
 
     git(args: string[]) {
@@ -160,29 +162,29 @@ export async function createSandbox(options: SandboxOptions): Promise<Sandbox> {
 
 /** 모노레포 최소 구조 */
 export const MONOREPO_FILES: Record<string, string> = {
-  "package.json": '{ "name": "test-monorepo", "private": true }\n',
-  "tsconfig.json": '{ "compilerOptions": { "target": "ES2023" } }\n',
-  ".gitignore": "node_modules/\ndist/\n*.tsbuildinfo\n",
-  "packages/api/src/index.ts": 'export function hello() { return "hello"; }\n',
-  "packages/api/src/handler.ts": 'export function handle(req: any) { return req; }\n',
-  "packages/api/package.json": '{ "name": "@test/api" }\n',
-  "packages/web/src/app.ts": 'export function App() { return "app"; }\n',
-  "packages/web/package.json": '{ "name": "@test/web" }\n',
-  "docs/README.md": "# Test Monorepo\n",
+  'package.json': '{ "name": "test-monorepo", "private": true }\n',
+  'tsconfig.json': '{ "compilerOptions": { "target": "ES2023" } }\n',
+  '.gitignore': 'node_modules/\ndist/\n*.tsbuildinfo\n',
+  'packages/api/src/index.ts': 'export function hello() { return "hello"; }\n',
+  'packages/api/src/handler.ts': 'export function handle(req: any) { return req; }\n',
+  'packages/api/package.json': '{ "name": "@test/api" }\n',
+  'packages/web/src/app.ts': 'export function App() { return "app"; }\n',
+  'packages/web/package.json': '{ "name": "@test/web" }\n',
+  'docs/README.md': '# Test Monorepo\n',
 };
 
 /** 단일 패키지 구조 */
 export const SINGLE_PKG_FILES: Record<string, string> = {
-  "package.json": '{ "name": "test-pkg" }\n',
-  "tsconfig.json": '{ "compilerOptions": { "target": "ES2023" } }\n',
-  ".gitignore": "node_modules/\ndist/\n",
-  "src/index.ts": 'export const VERSION = "1.0.0";\n',
-  "src/utils.ts": 'export function add(a: number, b: number) { return a + b; }\n',
+  'package.json': '{ "name": "test-pkg" }\n',
+  'tsconfig.json': '{ "compilerOptions": { "target": "ES2023" } }\n',
+  '.gitignore': 'node_modules/\ndist/\n',
+  'src/index.ts': 'export const VERSION = "1.0.0";\n',
+  'src/utils.ts': 'export function add(a: number, b: number) { return a + b; }\n',
 };
 
 // ── 헬퍼 ──────────────────────────────────────────────
 
 async function writeFileWithDir(fullPath: string, content: string): Promise<void> {
   await mkdir(dirname(fullPath), { recursive: true });
-  await writeFile(fullPath, content, "utf-8");
+  await writeFile(fullPath, content, 'utf-8');
 }

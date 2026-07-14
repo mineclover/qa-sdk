@@ -1,13 +1,13 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import type { CompletedRecordState, DocumentDiagnostic, DocumentEnvelope } from "doc-envelope";
+import type { CompletedRecordState, DocumentDiagnostic, DocumentEnvelope } from 'doc-envelope';
 
 export type CompletedRecordCleanupAction =
-  | "keep-as-evidence"
-  | "archive-review"
-  | "memo-conversion-review"
-  | "promote-spec-review";
+  | 'keep-as-evidence'
+  | 'archive-review'
+  | 'memo-conversion-review'
+  | 'promote-spec-review';
 
 export interface CompletedRecordCleanupDocumentSummary {
   readonly stableId: string;
@@ -46,10 +46,10 @@ export interface BuildCompletedRecordCleanupReviewOptions {
 }
 
 const CLEANUP_ACTIONS = [
-  "keep-as-evidence",
-  "archive-review",
-  "memo-conversion-review",
-  "promote-spec-review",
+  'keep-as-evidence',
+  'archive-review',
+  'memo-conversion-review',
+  'promote-spec-review',
 ] as const satisfies readonly CompletedRecordCleanupAction[];
 
 export function buildCompletedRecordCleanupReview(
@@ -59,12 +59,17 @@ export function buildCompletedRecordCleanupReview(
   const candidates = options.completedRecords.map((record) => {
     const primaryDocument = findRecordDocument(record, options.documents);
     const pairedDocument = findPairedDocument(record, options.documents);
-    const relatedDocuments = relatedDocumentsForRecord(record, primaryDocument, pairedDocument, options.documents);
+    const relatedDocuments = relatedDocumentsForRecord(
+      record,
+      primaryDocument,
+      pairedDocument,
+      options.documents,
+    );
 
     if (!primaryDocument) {
       diagnostics.push({
-        code: "completed-record-review-primary-document-missing",
-        severity: "warning",
+        code: 'completed-record-review-primary-document-missing',
+        severity: 'warning',
         message: `Completed record ${record.path} is no longer present in the scoped cleanup review.`,
         rawSource: {
           path: record.path,
@@ -73,7 +78,7 @@ export function buildCompletedRecordCleanupReview(
         metadata: {
           documentId: record.documentId,
           kind: record.kind,
-          source: "completed-record-review",
+          source: 'completed-record-review',
         },
       });
     }
@@ -90,7 +95,10 @@ export function buildCompletedRecordCleanupReview(
         documents: relatedDocuments.length,
         sources: relatedDocuments.reduce((count, document) => count + document.sources.length, 0),
         evidence: relatedDocuments.reduce((count, document) => count + document.evidence.length, 0),
-        diagnostics: relatedDocuments.reduce((count, document) => count + document.diagnostics.length, 0),
+        diagnostics: relatedDocuments.reduce(
+          (count, document) => count + document.diagnostics.length,
+          0,
+        ),
       },
     } satisfies CompletedRecordCleanupCandidate;
   });
@@ -105,36 +113,44 @@ function recommendationForRecord(
   record: CompletedRecordState,
   primaryDocument: DocumentEnvelope | undefined,
   relatedDocuments: readonly DocumentEnvelope[],
-): CompletedRecordCleanupCandidate["recommendation"] {
-  if (record.kind === "prd") {
+): CompletedRecordCleanupCandidate['recommendation'] {
+  if (record.kind === 'prd') {
     return {
-      action: "keep-as-evidence",
-      reason: "Completed PRD markdown remains execution evidence unless an operator explicitly chooses archive or memo conversion.",
+      action: 'keep-as-evidence',
+      reason:
+        'Completed PRD markdown remains execution evidence unless an operator explicitly chooses archive or memo conversion.',
     };
   }
 
   if (
-    record.kind === "todo" &&
-    relatedDocuments.some((document) =>
-      document.kind === "spec" || document.kind === "rule" || document.kind === "cases" || document.kind === "test"
+    record.kind === 'todo' &&
+    relatedDocuments.some(
+      (document) =>
+        document.kind === 'spec' ||
+        document.kind === 'rule' ||
+        document.kind === 'cases' ||
+        document.kind === 'test',
     )
   ) {
     return {
-      action: "promote-spec-review",
-      reason: "Completed TODO already has same-family authority documents; review spec assimilation before pruning or archive decisions.",
+      action: 'promote-spec-review',
+      reason:
+        'Completed TODO already has same-family authority documents; review spec assimilation before pruning or archive decisions.',
     };
   }
 
-  if (primaryDocument?.metadata.type === "knowledge" || primaryDocument?.kind === "memo") {
+  if (primaryDocument?.metadata.type === 'knowledge' || primaryDocument?.kind === 'memo') {
     return {
-      action: "keep-as-evidence",
-      reason: "Knowledge-oriented completed records usually preserve rationale; keep them as evidence unless a stronger archive policy exists.",
+      action: 'keep-as-evidence',
+      reason:
+        'Knowledge-oriented completed records usually preserve rationale; keep them as evidence unless a stronger archive policy exists.',
     };
   }
 
   return {
-    action: "memo-conversion-review",
-    reason: "Completed record has no stronger same-family authority signal; review memo conversion before cleanup.",
+    action: 'memo-conversion-review',
+    reason:
+      'Completed record has no stronger same-family authority signal; review memo conversion before cleanup.',
   };
 }
 
@@ -142,9 +158,8 @@ function findRecordDocument(
   record: CompletedRecordState,
   documents: readonly DocumentEnvelope[],
 ): DocumentEnvelope | undefined {
-  return documents.find((document) =>
-    document.path === record.path
-    || document.stableId === record.documentId
+  return documents.find(
+    (document) => document.path === record.path || document.stableId === record.documentId,
   );
 }
 
@@ -190,16 +205,15 @@ function relatedDocumentsForRecord(
     }
   }
 
-  return [...related.values()].toSorted((left, right) =>
-    left.path.localeCompare(right.path)
-      || left.kind.localeCompare(right.kind)
-      || left.stableId.localeCompare(right.stableId)
+  return [...related.values()].toSorted(
+    (left, right) =>
+      left.path.localeCompare(right.path) ||
+      left.kind.localeCompare(right.kind) ||
+      left.stableId.localeCompare(right.stableId),
   );
 }
 
-function summarizeDocument(
-  document: DocumentEnvelope,
-): CompletedRecordCleanupDocumentSummary {
+function summarizeDocument(document: DocumentEnvelope): CompletedRecordCleanupDocumentSummary {
   return {
     stableId: document.stableId,
     kind: document.kind,
@@ -209,9 +223,9 @@ function summarizeDocument(
 }
 
 function titleOf(document: DocumentEnvelope): string {
-  for (const key of ["title", "name", "defId"] as const) {
+  for (const key of ['title', 'name', 'defId'] as const) {
     const value = document.metadata[key];
-    if (typeof value === "string" && value.trim().length > 0) return value;
+    if (typeof value === 'string' && value.trim().length > 0) return value;
   }
   return document.stableId;
 }

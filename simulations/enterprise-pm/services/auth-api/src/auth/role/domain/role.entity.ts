@@ -1,9 +1,9 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { toRoleId } from "./role.ids.js";
-import { InvalidRoleInputException } from "./role.exceptions.js";
-import type { RoleProps, RoleScopeType, RoleSnapshot } from "./role.types.js";
+import { toRoleId } from './role.ids.js';
+import { InvalidRoleInputException } from './role.exceptions.js';
+import type { RoleProps, RoleScopeType, RoleSnapshot } from './role.types.js';
 
 const HEX_PATTERN = /^[0-9a-fA-F]+$/;
 
@@ -27,7 +27,7 @@ export class RoleEntity {
     readonly now?: Date;
   }): RoleEntity {
     if (input.name.trim().length === 0) {
-      throw new InvalidRoleInputException("Role name must not be empty.");
+      throw new InvalidRoleInputException('Role name must not be empty.');
     }
     if (!HEX_PATTERN.test(input.defaultMaskHex)) {
       throw new InvalidRoleInputException(`defaultMaskHex must be hex: ${input.defaultMaskHex}`);

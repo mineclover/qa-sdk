@@ -1,10 +1,8 @@
-import type { MarkerStats } from "../../lib/decisionDemo";
+import type { MarkerStats } from '../../lib/decisionDemo';
 
 export function MarkerStatsPanel({ stats }: { stats: MarkerStats }) {
   const maxKind = Math.max(1, ...Object.values(stats.evidenceByKind));
-  const sortedKinds = Object.entries(stats.evidenceByKind).sort(
-    (a, b) => b[1] - a[1],
-  );
+  const sortedKinds = Object.entries(stats.evidenceByKind).sort((a, b) => b[1] - a[1]);
 
   return (
     <section className="border rounded p-2 bg-white">
@@ -13,19 +11,17 @@ export function MarkerStatsPanel({ stats }: { stats: MarkerStats }) {
         <Row label="gates" value={stats.gateCount} />
         <Row label="options" value={stats.totalOptions} />
         <Row label="evidence" value={stats.totalEvidence} />
-        <Row label="outcome" value={stats.hasOutcome ? "있음" : "없음"} />
+        <Row label="outcome" value={stats.hasOutcome ? '있음' : '없음'} />
       </div>
       {stats.phasesUsed.length > 0 && (
         <div className="mt-1.5 text-xs">
           <div className="text-gray-500 text-[10px] uppercase tracking-wide">phases</div>
-          <div className="font-mono text-gray-700">{stats.phasesUsed.join(" · ")}</div>
+          <div className="font-mono text-gray-700">{stats.phasesUsed.join(' · ')}</div>
         </div>
       )}
       {sortedKinds.length > 0 && (
         <div className="mt-1.5">
-          <div className="text-gray-500 text-[10px] uppercase tracking-wide">
-            evidence by kind
-          </div>
+          <div className="text-gray-500 text-[10px] uppercase tracking-wide">evidence by kind</div>
           <div className="space-y-0.5 mt-0.5">
             {sortedKinds.map(([kind, n]) => (
               <div key={kind} className="flex items-center gap-2 text-xs">

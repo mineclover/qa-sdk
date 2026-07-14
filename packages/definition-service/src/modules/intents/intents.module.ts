@@ -1,8 +1,8 @@
 // @def.doc definition-service
 
-import { Module } from "@nestjs/common";
-import { IntentsController } from "./intents.controller.js";
-import { IntentsService } from "./intents.service.js";
+import { Module } from '@nestjs/common';
+import { IntentsController } from './intents.controller.js';
+import { IntentsService } from './intents.service.js';
 
 @Module({
   controllers: [IntentsController],

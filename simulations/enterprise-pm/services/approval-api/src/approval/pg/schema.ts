@@ -9,20 +9,20 @@ import {
   integer,
   bigint,
   doublePrecision,
-} from "drizzle-orm/pg-core";
+} from 'drizzle-orm/pg-core';
 
 import {
   SIM_OUTBOX_CONSUMER_LOG_PG_DDL,
   SIM_OUTBOX_CONSUMER_LOG_PG_RESET_DDL,
-} from "../shared/outbox/outbox-consumer-log.schema.js";
+} from '../shared/outbox/outbox-consumer-log.schema.js';
 
 export {
   outboxConsumerLog,
   SIM_OUTBOX_CONSUMER_LOG_PG_DDL,
   SIM_OUTBOX_CONSUMER_LOG_PG_RESET_DDL,
-} from "../shared/outbox/outbox-consumer-log.schema.js";
+} from '../shared/outbox/outbox-consumer-log.schema.js';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 /**
  * Phase 2 — approval-api 의 모든 슬라이스 (budget/expense/resource/timeoff) 가
@@ -33,91 +33,96 @@ const sim = pgSchema("sim");
  * event_version / occurred_at 은 Postgres BIGINT (drizzle bigint mode "number").
  */
 export const approvalOutboxEvents = sim.table(
-  "approval_outbox_events",
+  'approval_outbox_events',
   {
-    id: text("id").primaryKey(),
-    aggregate_id: text("aggregate_id").notNull(),
-    event_name: text("event_name").notNull(),
-    event_version: bigint("event_version", { mode: "number" }).notNull(),
-    payload: text("payload").notNull(),
-    occurred_at: bigint("occurred_at", { mode: "number" }).notNull(),
-    scope_id: text("scope_id").notNull(),
+    id: text('id').primaryKey(),
+    aggregate_id: text('aggregate_id').notNull(),
+    event_name: text('event_name').notNull(),
+    event_version: bigint('event_version', { mode: 'number' }).notNull(),
+    payload: text('payload').notNull(),
+    occurred_at: bigint('occurred_at', { mode: 'number' }).notNull(),
+    scope_id: text('scope_id').notNull(),
     // spec 04 §2.1/§2.3 — status enum 확장 + dispatcher 필드 4종
-    status: text("status", { enum: ["pending", "dispatched", "failed", "dlq"] })
+    status: text('status', { enum: ['pending', 'dispatched', 'failed', 'dlq'] })
       .notNull()
-      .default("pending"),
-    idempotency_key: text("idempotency_key").notNull(),
-    dispatched_at: bigint("dispatched_at", { mode: "number" }),
-    retry_count: integer("retry_count").notNull().default(0),
-    next_attempt_at: bigint("next_attempt_at", { mode: "number" }),
+      .default('pending'),
+    idempotency_key: text('idempotency_key').notNull(),
+    dispatched_at: bigint('dispatched_at', { mode: 'number' }),
+    retry_count: integer('retry_count').notNull().default(0),
+    next_attempt_at: bigint('next_attempt_at', { mode: 'number' }),
   },
-  (t) => [index("idx_sim_approval_outbox_status").on(t.status, t.occurred_at)],
+  (t) => [index('idx_sim_approval_outbox_status').on(t.status, t.occurred_at)],
 );
 
-export const budgetRequests = sim.table("approval_budget_requests", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id").notNull(),
-  projectDepartmentId: text("project_department_id").notNull().default(""),
-  amount: doublePrecision("amount").notNull(),
-  requesterId: text("requester_id").notNull(),
-  status: text("status", {
-    enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
-  }).notNull(),
-  currentStage: integer("current_stage").notNull(),
-  totalStages: integer("total_stages").notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-}, (t) => [
-  index("idx_sim_br_proj").on(t.projectId),
-  index("idx_sim_br_req").on(t.requesterId),
-]);
+export const budgetRequests = sim.table(
+  'approval_budget_requests',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    projectDepartmentId: text('project_department_id').notNull().default(''),
+    amount: doublePrecision('amount').notNull(),
+    requesterId: text('requester_id').notNull(),
+    status: text('status', {
+      enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
+    }).notNull(),
+    currentStage: integer('current_stage').notNull(),
+    totalStages: integer('total_stages').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [index('idx_sim_br_proj').on(t.projectId), index('idx_sim_br_req').on(t.requesterId)],
+);
 
-export const approvalSteps = sim.table("approval_steps", {
-  requestId: text("request_id").notNull(),
-  stageNumber: integer("stage_number").notNull(),
-  approverId: text("approver_id"),
-  decision: text("decision", { enum: ["approved", "rejected", "pending"] }).notNull(),
-  comment: text("comment"),
-  decidedAt: text("decided_at"),
-}, (t) => [primaryKey({ columns: [t.requestId, t.stageNumber] })]);
+export const approvalSteps = sim.table(
+  'approval_steps',
+  {
+    requestId: text('request_id').notNull(),
+    stageNumber: integer('stage_number').notNull(),
+    approverId: text('approver_id'),
+    decision: text('decision', { enum: ['approved', 'rejected', 'pending'] }).notNull(),
+    comment: text('comment'),
+    decidedAt: text('decided_at'),
+  },
+  (t) => [primaryKey({ columns: [t.requestId, t.stageNumber] })],
+);
 
-export const resourceRequests = sim.table("approval_resource_requests", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id").notNull(),
-  requesterId: text("requester_id").notNull(),
-  resourceType: text("resource_type").notNull(),
-  description: text("description").notNull(),
-  status: text("status", {
-    enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+export const resourceRequests = sim.table('approval_resource_requests', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull(),
+  requesterId: text('requester_id').notNull(),
+  resourceType: text('resource_type').notNull(),
+  description: text('description').notNull(),
+  status: text('status', {
+    enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
   }).notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
-export const timeOffRequests = sim.table("approval_time_off_requests", {
-  id: text("id").primaryKey(),
-  requesterId: text("requester_id").notNull(),
-  startDate: text("start_date").notNull(),
-  endDate: text("end_date").notNull(),
-  reason: text("reason").notNull(),
-  status: text("status", {
-    enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+export const timeOffRequests = sim.table('approval_time_off_requests', {
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  reason: text('reason').notNull(),
+  status: text('status', {
+    enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
   }).notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
-export const expenseReports = sim.table("approval_expense_reports", {
-  id: text("id").primaryKey(),
-  requesterId: text("requester_id").notNull(),
-  amount: doublePrecision("amount").notNull(),
-  category: text("category").notNull(),
-  description: text("description").notNull(),
-  status: text("status", {
-    enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+export const expenseReports = sim.table('approval_expense_reports', {
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull(),
+  amount: doublePrecision('amount').notNull(),
+  category: text('category').notNull(),
+  description: text('description').notNull(),
+  status: text('status', {
+    enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
   }).notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
 export const SIM_APPROVAL_PG_DDL = `

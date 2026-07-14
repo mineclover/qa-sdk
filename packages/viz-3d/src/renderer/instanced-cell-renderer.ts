@@ -6,7 +6,7 @@
  *
  * monitor.html의 anim() 내부 glow 루프를 모듈화.
  */
-import * as THREE from "three";
+import * as THREE from 'three';
 
 export interface InstancedGridState {
   iMesh: THREE.InstancedMesh;

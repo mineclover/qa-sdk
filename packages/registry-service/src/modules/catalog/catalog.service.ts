@@ -1,14 +1,14 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable, Optional } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
-import type { CatalogRecord, CatalogStore } from "../../stores/catalog-store.js";
-import type { ConfigStore } from "../../stores/config-store.js";
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
+import type { CatalogRecord, CatalogStore } from '../../stores/catalog-store.js';
+import type { ConfigStore } from '../../stores/config-store.js';
 
-export const CATALOG_STORE = "CATALOG_STORE";
-export const CONFIG_STORE = "CONFIG_STORE";
-export const CATALOG_CHANGE_HANDLER = "CATALOG_CHANGE_HANDLER";
+export const CATALOG_STORE = 'CATALOG_STORE';
+export const CONFIG_STORE = 'CONFIG_STORE';
+export const CATALOG_CHANGE_HANDLER = 'CATALOG_CHANGE_HANDLER';
 
 type CatalogPayload = {
   id?: string | null;
@@ -33,7 +33,9 @@ export class CatalogService {
   constructor(
     @Inject(CATALOG_STORE) private readonly catalogStore: CatalogStore,
     @Optional() @Inject(CONFIG_STORE) private readonly configStore?: ConfigStore,
-    @Optional() @Inject(CATALOG_CHANGE_HANDLER) private readonly changeHandler?: CatalogChangeHandler,
+    @Optional()
+    @Inject(CATALOG_CHANGE_HANDLER)
+    private readonly changeHandler?: CatalogChangeHandler,
   ) {}
 
   static fromStores(deps: {
@@ -45,21 +47,19 @@ export class CatalogService {
     return new CatalogService(
       deps.catalogStore,
       deps.configStore,
-      handler
-        ? { catalogChanged: (catalogId: string) => handler(catalogId) }
-        : undefined,
+      handler ? { catalogChanged: (catalogId: string) => handler(catalogId) } : undefined,
     );
   }
 
   async register(input: unknown) {
     const body = this.asCatalogPayload(input);
     if (!body.id || !body.name || !body.data) {
-      throw new AppError("INVALID_INPUT", "id, name, data 필수", 400);
+      throw new AppError('INVALID_INPUT', 'id, name, data 필수', 400);
     }
 
     const existing = await this.catalogStore.get(body.id);
     if (existing) {
-      throw new AppError("CONFLICT", `Catalog '${body.id}' already exists`, 409);
+      throw new AppError('CONFLICT', `Catalog '${body.id}' already exists`, 409);
     }
 
     const now = new Date().toISOString();
@@ -95,11 +95,7 @@ export class CatalogService {
     const existing = await this.requireCatalog(id);
     const body = this.asCatalogPayload(input);
 
-    await this.catalogStore.update(
-      id,
-      body.name ?? existing.name,
-      body.data ?? existing.data,
-    );
+    await this.catalogStore.update(id, body.name ?? existing.name, body.data ?? existing.data);
 
     const updated = await this.requireCatalog(id);
     await this.notifyCatalogChanged(id);
@@ -124,42 +120,24 @@ export class CatalogService {
         dims: Array.isArray(prefix.labels) ? prefix.labels.length : 0,
       }));
     } catch {
-      throw new AppError("INTERNAL_ERROR", "카탈로그 데이터 파싱 실패", 500);
+      throw new AppError('INTERNAL_ERROR', '카탈로그 데이터 파싱 실패', 500);
     }
   }
 
   async getConfig(id: string) {
-    return this.getConfigByType(
-      id,
-      "dkg-config",
-      `DkgConfig for catalog '${id}' not found`,
-    );
+    return this.getConfigByType(id, 'dkg-config', `DkgConfig for catalog '${id}' not found`);
   }
 
   async setConfig(id: string, input: unknown) {
-    return this.setConfigByType(
-      id,
-      "dkg-config",
-      input,
-      "data (DkgConfig JSON) 필수",
-    );
+    return this.setConfigByType(id, 'dkg-config', input, 'data (DkgConfig JSON) 필수');
   }
 
   async getPatternRules(id: string) {
-    return this.getConfigByType(
-      id,
-      "pattern-rules",
-      `PatternRules for catalog '${id}' not found`,
-    );
+    return this.getConfigByType(id, 'pattern-rules', `PatternRules for catalog '${id}' not found`);
   }
 
   async setPatternRules(id: string, input: unknown) {
-    return this.setConfigByType(
-      id,
-      "pattern-rules",
-      input,
-      "data (PatternRules JSON) 필수",
-    );
+    return this.setConfigByType(id, 'pattern-rules', input, 'data (PatternRules JSON) 필수');
   }
 
   async listConfigs(id: string) {
@@ -175,7 +153,7 @@ export class CatalogService {
     const configStore = this.requireConfigStore();
     const record = await configStore.get(id, configType);
     if (!record) {
-      throw new AppError("NOT_FOUND", notFoundMessage, 404);
+      throw new AppError('NOT_FOUND', notFoundMessage, 404);
     }
 
     return {
@@ -195,7 +173,7 @@ export class CatalogService {
     const configStore = this.requireConfigStore();
     const body = this.asConfigPayload(input);
     if (!body.data) {
-      throw new AppError("INVALID_INPUT", missingDataMessage, 400);
+      throw new AppError('INVALID_INPUT', missingDataMessage, 400);
     }
 
     await configStore.set(id, configType, body.data);
@@ -208,7 +186,7 @@ export class CatalogService {
   private async requireCatalog(id: string): Promise<CatalogRecord> {
     const record = await this.catalogStore.get(id);
     if (!record) {
-      throw new AppError("NOT_FOUND", `Catalog '${id}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Catalog '${id}' not found`, 404);
     }
 
     return record;
@@ -216,7 +194,7 @@ export class CatalogService {
 
   private requireConfigStore(): ConfigStore {
     if (!this.configStore) {
-      throw new AppError("SERVICE_UNAVAILABLE", "configStore not available", 503);
+      throw new AppError('SERVICE_UNAVAILABLE', 'configStore not available', 503);
     }
 
     return this.configStore;
@@ -235,7 +213,7 @@ export class CatalogService {
   }
 
   private asRecord(input: unknown): Record<string, unknown> {
-    if (!input || typeof input !== "object") {
+    if (!input || typeof input !== 'object') {
       return {};
     }
 

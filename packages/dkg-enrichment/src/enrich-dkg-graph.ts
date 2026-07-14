@@ -2,8 +2,8 @@
  * DKG bootstrap enrichment — flow schema, headroom, overlap 분석 (logic tier).
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { analyzeGateStructure, identifyCoreGates, type FlowSchema } from "decision-flow";
+import type { Catalog } from '@qa-sdk/core';
+import { analyzeGateStructure, identifyCoreGates, type FlowSchema } from 'decision-flow';
 import {
   analyzeHeadroom,
   applyHeadroomDecisions,
@@ -11,30 +11,29 @@ import {
   comparePrefixes,
   recordSeparation,
   applySeparationRecord,
-} from "@qa-sdk/convergence";
-import type { GraphRegistry } from "dkg";
-import { attachFlowSchemaEdges } from "dkg";
-import type { BootstrapDkgOptions } from "dkg";
-import type { DecisionNode, DomainNode, FlowSchemaNode } from "dkg";
+} from '@qa-sdk/convergence';
+import type { GraphRegistry } from 'dkg';
+import { attachFlowSchemaEdges } from 'dkg';
+import type { BootstrapDkgOptions } from 'dkg';
+import type { DecisionNode, DomainNode, FlowSchemaNode } from 'dkg';
 
-export function enrichDkgGraph(
-  graph: GraphRegistry,
-  options: BootstrapDkgOptions,
-): void {
+export function enrichDkgGraph(graph: GraphRegistry, options: BootstrapDkgOptions): void {
   const catalog = options.catalog;
   const config = options.config;
-  const date = options.date ?? "2026-03-20";
+  const date = options.date ?? '2026-03-20';
   const domains = config.domains;
 
   const flowSchemas = config.flowSchemas ?? [];
-  const flowSchemaMap = new Map(flowSchemas.map((entry) => [entry.schema.id, entry.schema as FlowSchema]));
+  const flowSchemaMap = new Map(
+    flowSchemas.map((entry) => [entry.schema.id, entry.schema as FlowSchema]),
+  );
   const flowSchemaTotalPaths = new Map<string, number>();
 
   for (const entry of flowSchemas) {
     const schema = entry.schema as FlowSchema;
     const gateProfiles = analyzeGateStructure(schema);
     const node: FlowSchemaNode = {
-      kind: "flow-schema",
+      kind: 'flow-schema',
       id: schema.id,
       name: schema.name,
       version: schema.version,
@@ -42,9 +41,14 @@ export function enrichDkgGraph(
         id: gate.id,
         name: gate.name,
         phase: gate.phase,
-        weight: gate.weight ?? "tactical",
+        weight: gate.weight ?? 'tactical',
       })),
-      totalPaths: resolveFlowSchemaTotalPaths(schema.id, flowSchemaMap, flowSchemaTotalPaths, new Set()),
+      totalPaths: resolveFlowSchemaTotalPaths(
+        schema.id,
+        flowSchemaMap,
+        flowSchemaTotalPaths,
+        new Set(),
+      ),
       coreGateIds: identifyCoreGates(gateProfiles).map((profile) => profile.gateId),
     };
     graph.addNode(node);
@@ -92,7 +96,7 @@ export function enrichDkgGraph(
 
   const overlaps = scanAxisOverlaps(graph, entriesMap);
   for (const overlap of overlaps) {
-    if (overlap.recommendation === "merge" && overlap.overlapRatio >= 0.9) {
+    if (overlap.recommendation === 'merge' && overlap.overlapRatio >= 0.9) {
       const record = recordSeparation(overlap, {
         id: `DEC-SEP-${overlap.a}-${overlap.b}`,
         date,
@@ -100,20 +104,21 @@ export function enrichDkgGraph(
       });
       applySeparationRecord(graph, record);
     }
-    const pairKey = [overlap.a, overlap.b].toSorted().join(":");
-    if (pairKey === "migration_pattern:verdict_result") {
+    const pairKey = [overlap.a, overlap.b].toSorted().join(':');
+    if (pairKey === 'migration_pattern:verdict_result') {
       const dec: DecisionNode = {
-        kind: "decision",
-        id: "DEC-SEP-verdict-migration",
+        kind: 'decision',
+        id: 'DEC-SEP-verdict-migration',
         date,
         title: "verdict_result와 migration_pattern의 'unknown' 공유 수용",
-        context: `두 축이 '${overlap.sharedEntries.join(",")}' entry를 공유 (${(overlap.overlapRatio * 100).toFixed(0)}%)`,
-        rationale: "'unknown'은 범용 예약어로 두 축에서 독립적으로 사용됨. verdict의 unknown은 '판정 불가', migration의 unknown은 '패턴 미식별'. 의미가 다르므로 분리 유지.",
-        lifecycle: "active",
+        context: `두 축이 '${overlap.sharedEntries.join(',')}' entry를 공유 (${(overlap.overlapRatio * 100).toFixed(0)}%)`,
+        rationale:
+          "'unknown'은 범용 예약어로 두 축에서 독립적으로 사용됨. verdict의 unknown은 '판정 불가', migration의 unknown은 '패턴 미식별'. 의미가 다르므로 분리 유지.",
+        lifecycle: 'active',
       };
       graph.addNode(dec);
-      graph.addEdge("justifies", dec.id, "verdict_result");
-      graph.addEdge("justifies", dec.id, "migration_pattern");
+      graph.addEdge('justifies', dec.id, 'verdict_result');
+      graph.addEdge('justifies', dec.id, 'migration_pattern');
     }
   }
 
@@ -121,27 +126,27 @@ export function enrichDkgGraph(
   for (const pair of config.reviewPairs ?? []) {
     if (prefixIds.includes(pair.a) && prefixIds.includes(pair.b)) {
       const sim = comparePrefixes(graph, pair.a, pair.b);
-      if (sim.recommendation === "review") {
+      if (sim.recommendation === 'review') {
         const dec: DecisionNode = {
-          kind: "decision",
+          kind: 'decision',
           id: `DEC-SEP-${pair.a}-${pair.b}`,
           date,
           title: `${pair.a}과 ${pair.b} 분리 유지`,
-          context: `구조 유사도 ${(sim.structuralSimilarity * 100).toFixed(0)}%: ${sim.sharedAxes.join(",")} 축 공유`,
+          context: `구조 유사도 ${(sim.structuralSimilarity * 100).toFixed(0)}%: ${sim.sharedAxes.join(',')} 축 공유`,
           rationale: pair.reason,
-          lifecycle: "active",
+          lifecycle: 'active',
         };
         graph.addNode(dec);
-        graph.addEdge("justifies", dec.id, pair.a);
-        graph.addEdge("justifies", dec.id, pair.b);
+        graph.addEdge('justifies', dec.id, pair.a);
+        graph.addEdge('justifies', dec.id, pair.b);
       }
     }
   }
 }
 
 function getUsedBy(graph: GraphRegistry, axisId: string): string {
-  const prefixes = graph.reverseNeighbors(axisId, "composes");
-  return prefixes.join(",") || "미사용";
+  const prefixes = graph.reverseNeighbors(axisId, 'composes');
+  return prefixes.join(',') || '미사용';
 }
 
 function dedupeIds(ids: readonly string[]): string[] {
@@ -161,7 +166,7 @@ function deriveAxisIdsFromObservedPrefixes(
 
     for (const label of prefix.labels) {
       const dim = prefix.dims[label];
-      if (dim?.kind === "axis") {
+      if (dim?.kind === 'axis') {
         axisIds.add(dim.axisId);
       }
     }

@@ -11,11 +11,8 @@
 //
 // weight sequence는 단방향 (5 → 25 → 50 → 100). 100 도달 시 promote 유지(catalog 승격은 02-canary-topology 별도).
 
-import { Injectable } from "@nestjs/common";
-import type {
-  CategoryVerdicts,
-  Verdict,
-} from "../verdict/category-verdict.service.js";
+import { Injectable } from '@nestjs/common';
+import type { CategoryVerdicts, Verdict } from '../verdict/category-verdict.service.js';
 
 export interface SafetyConfig {
   weightSequence: number[];
@@ -25,11 +22,11 @@ export interface SafetyConfig {
   failQuorum: number;
 }
 
-export type SafetyVerdict = "promote" | "hold" | "rollback";
+export type SafetyVerdict = 'promote' | 'hold' | 'rollback';
 export type WeightStep = 0 | 5 | 25 | 50 | 100;
 export type TriggerCategory = keyof Pick<
   CategoryVerdicts,
-  "perf" | "compatibility" | "decisionQuality" | "auditSafety" | "replicationHealth"
+  'perf' | 'compatibility' | 'decisionQuality' | 'auditSafety' | 'replicationHealth'
 >;
 
 export interface SafetyDecisionInput {
@@ -45,28 +42,26 @@ export interface SafetyDecisionOutput {
   verdict: SafetyVerdict;
   triggerCategory?: TriggerCategory;
   triggerSignals: string[];
-  action:
-    | { kind: "weight-update"; weight: WeightStep; revision: number }
-    | { kind: "noop" };
+  action: { kind: 'weight-update'; weight: WeightStep; revision: number } | { kind: 'noop' };
 }
 
 let revisionCounter = 0;
 const nextRevision = () => ++revisionCounter;
 
 const SAFETY_CATS = [
-  "perf",
-  "compatibility",
-  "decisionQuality",
-  "auditSafety",
-  "replicationHealth",
+  'perf',
+  'compatibility',
+  'decisionQuality',
+  'auditSafety',
+  'replicationHealth',
 ] as const;
 
 const FAIL_CATS = [
-  "perf",
-  "decisionQuality",
-  "replicationHealth",
-  "loadPressure",
-  "resourceHeadroom",
+  'perf',
+  'decisionQuality',
+  'replicationHealth',
+  'loadPressure',
+  'resourceHeadroom',
 ] as const;
 
 @Injectable()
@@ -74,13 +69,7 @@ export class SafetyDecisionService {
   constructor(private readonly cfg: SafetyConfig) {}
 
   decide(input: SafetyDecisionInput): SafetyDecisionOutput {
-    const {
-      verdicts: v,
-      confidence,
-      currentWeight,
-      history,
-      timeSincePromotionMs,
-    } = input;
+    const { verdicts: v, confidence, currentWeight, history, timeSincePromotionMs } = input;
     // revision 은 weight-update action 이 발생한 사이클에서만 단조 증가. hold/noop
     // 사이클은 revision 을 소비하지 않아 promote 시퀀스 1,2,3,4 가 hold 빈도와
     // 무관하게 보존된다 (시나리오 9 §3.1 압축 예시 deepEqual 가 monotonic 1..N 가정).
@@ -88,11 +77,11 @@ export class SafetyDecisionService {
     // 1) Hard rollback first — spec 01 §3
     if (v.hardFail.length > 0) {
       return {
-        verdict: "rollback",
+        verdict: 'rollback',
         triggerCategory: v.hardFail[0] as TriggerCategory,
         triggerSignals: v.triggerSignals,
         action: {
-          kind: "weight-update",
+          kind: 'weight-update',
           weight: 0,
           revision: nextRevision(),
         },
@@ -100,25 +89,24 @@ export class SafetyDecisionService {
     }
 
     // 2) Soft rollback — windowCycles 중 failQuorum 이상 FAIL (현재 사이클 포함).
-    const anyFailNow = FAIL_CATS.some((k) => v[k] === "FAIL");
+    const anyFailNow = FAIL_CATS.some((k) => v[k] === 'FAIL');
     const windowFails =
-      history.slice(-this.cfg.windowCycles).filter(Boolean).length +
-      (anyFailNow ? 1 : 0);
+      history.slice(-this.cfg.windowCycles).filter(Boolean).length + (anyFailNow ? 1 : 0);
     if (windowFails >= this.cfg.failQuorum) {
       const tc: TriggerCategory | undefined =
-        v.perf === "FAIL"
-          ? "perf"
-          : v.decisionQuality === "FAIL"
-            ? "decisionQuality"
-            : v.replicationHealth === "FAIL"
-              ? "replicationHealth"
+        v.perf === 'FAIL'
+          ? 'perf'
+          : v.decisionQuality === 'FAIL'
+            ? 'decisionQuality'
+            : v.replicationHealth === 'FAIL'
+              ? 'replicationHealth'
               : undefined;
       return {
-        verdict: "rollback",
+        verdict: 'rollback',
         triggerCategory: tc,
         triggerSignals: v.triggerSignals,
         action: {
-          kind: "weight-update",
+          kind: 'weight-update',
           weight: 0,
           revision: nextRevision(),
         },
@@ -127,29 +115,25 @@ export class SafetyDecisionService {
 
     // 3) Hold — confidence 미달 OR any WARN.
     const anyWarn = (SAFETY_CATS as readonly TriggerCategory[]).some(
-      (k) => (v[k] as Verdict) === "WARN",
+      (k) => (v[k] as Verdict) === 'WARN',
     );
     if (confidence < this.cfg.confidenceHold || anyWarn) {
       return {
-        verdict: "hold",
+        verdict: 'hold',
         triggerSignals: v.triggerSignals,
-        action: { kind: "noop" },
+        action: { kind: 'noop' },
       };
     }
 
     // 4) Promote — 모두 PASS + dwellTime.
     const allPass = (SAFETY_CATS as readonly TriggerCategory[]).every(
-      (k) => (v[k] as Verdict) === "PASS",
+      (k) => (v[k] as Verdict) === 'PASS',
     );
     if (allPass && timeSincePromotionMs >= this.cfg.dwellMs) {
       const seq = this.cfg.weightSequence;
       const idx = seq.indexOf(currentWeight);
       const next = (
-        idx === -1
-          ? seq[0]
-          : idx === seq.length - 1
-            ? seq[idx]
-            : seq[idx + 1]
+        idx === -1 ? seq[0] : idx === seq.length - 1 ? seq[idx] : seq[idx + 1]
       ) as WeightStep;
       // 시퀀스 끝 도달 (weight=100 currentWeight=100 next=100) — 더 이상 promote 할
       // 단계가 없으므로 verdict=hold + action=noop (terminal, 시스템 stabilized).
@@ -157,16 +141,16 @@ export class SafetyDecisionService {
       // 포함하고 후속 사이클은 자동 제외된다. revision 도 증가하지 않음.
       if (next === currentWeight) {
         return {
-          verdict: "hold",
+          verdict: 'hold',
           triggerSignals: [],
-          action: { kind: "noop" },
+          action: { kind: 'noop' },
         };
       }
       return {
-        verdict: "promote",
+        verdict: 'promote',
         triggerSignals: [],
         action: {
-          kind: "weight-update",
+          kind: 'weight-update',
           weight: next,
           revision: nextRevision(),
         },
@@ -174,9 +158,9 @@ export class SafetyDecisionService {
     }
 
     return {
-      verdict: "hold",
+      verdict: 'hold',
       triggerSignals: v.triggerSignals,
-      action: { kind: "noop" },
+      action: { kind: 'noop' },
     };
   }
 }

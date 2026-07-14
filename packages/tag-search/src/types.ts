@@ -6,11 +6,11 @@
 
 /** 태그를 부착할 수 있는 대상 종류 */
 export type TagTarget =
-  | "record"   // EventRecord.log_id
-  | "trace"    // trace_id
-  | "session"  // qa_session_id
-  | "prefix"   // prefix id (카탈로그 메타 태깅)
-  | "service"; // service name
+  | 'record' // EventRecord.log_id
+  | 'trace' // trace_id
+  | 'session' // qa_session_id
+  | 'prefix' // prefix id (카탈로그 메타 태깅)
+  | 'service'; // service name
 
 /** 하나의 태그 부착 */
 export interface TagAttachment {
@@ -29,7 +29,7 @@ export interface TagQuery {
   /** 검색할 태그 목록 */
   tags: string[];
   /** AND: 모든 태그 포함, OR: 하나라도 포함 (기본 OR) */
-  operator?: "AND" | "OR";
+  operator?: 'AND' | 'OR';
   /** 대상 종류 필터 */
   targetKind?: TagTarget;
   /** 시간 범위 필터 (createdAt 기준) */
@@ -58,5 +58,5 @@ export interface TagSummary {
 
 /** 태그 정규화: 소문자 + 트림 + 연속 공백 제거 */
 export function normalizeTag(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, "-");
+  return raw.trim().toLowerCase().replace(/\s+/g, '-');
 }

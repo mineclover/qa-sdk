@@ -1,29 +1,26 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc domain-slice-architecture
 
-import { Global, Module, type Provider } from "@nestjs/common";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
-import { createSimAuditRecorder } from "@qa-sdk/sim-audit-recorder-provider";
-import { AUDIT_ENTRIES_DDL } from "audit-recorder-store";
-import { createConnection } from "db-bootstrap";
-import type { AuditRecorder } from "permission-engine";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { AuthorizationGraphStore } from "authorization-ontology";
+import { Global, Module, type Provider } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
+import { createSimAuditRecorder } from '@qa-sdk/sim-audit-recorder-provider';
+import { AUDIT_ENTRIES_DDL } from 'audit-recorder-store';
+import { createConnection } from 'db-bootstrap';
+import type { AuditRecorder } from 'permission-engine';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { AuthorizationGraphStore } from 'authorization-ontology';
 
-import { env } from "../config/env.js";
-import { AuditRecorderQueryPort } from "./application/ports/audit-recorder-query.port.js";
-import { GraphSnapshotQueryPort } from "./application/ports/graph-snapshot-query.port.js";
-import { GraphRetentionInsightQueryPort } from "./application/ports/graph-retention-insight.port.js";
-import { AuditRecorderQueryAdapter } from "./infrastructure/adapters/audit-recorder-query.adapter.js";
-import { GraphSnapshotQueryAdapter } from "./infrastructure/adapters/graph-snapshot-query.adapter.js";
-import { GraphRetentionInsightHttpAdapter } from "./infrastructure/adapters/graph-retention-insight.adapter.js";
-import { createAuditExplorerLogger } from "./infrastructure/logging/audit-explorer.logger.js";
-import { AuditTraceBff } from "./presentation/bff/audit-trace.bff.js";
-import { AuditTraceController } from "./presentation/bff/audit-trace.controller.js";
-import { AUTHORIZATION_GRAPH_STORE } from "../graph-explorer/graph-explorer.module.js";
+import { env } from '../config/env.js';
+import { AuditRecorderQueryPort } from './application/ports/audit-recorder-query.port.js';
+import { GraphSnapshotQueryPort } from './application/ports/graph-snapshot-query.port.js';
+import { GraphRetentionInsightQueryPort } from './application/ports/graph-retention-insight.port.js';
+import { AuditRecorderQueryAdapter } from './infrastructure/adapters/audit-recorder-query.adapter.js';
+import { GraphSnapshotQueryAdapter } from './infrastructure/adapters/graph-snapshot-query.adapter.js';
+import { GraphRetentionInsightHttpAdapter } from './infrastructure/adapters/graph-retention-insight.adapter.js';
+import { createAuditExplorerLogger } from './infrastructure/logging/audit-explorer.logger.js';
+import { AuditTraceBff } from './presentation/bff/audit-trace.bff.js';
+import { AuditTraceController } from './presentation/bff/audit-trace.controller.js';
+import { AUTHORIZATION_GRAPH_STORE } from '../graph-explorer/graph-explorer.module.js';
 
 /**
  * 외부 인스턴스 토큰 — test-bootstrap 가 같은 토큰으로 useValue 주입.
@@ -31,40 +28,40 @@ import { AUTHORIZATION_GRAPH_STORE } from "../graph-explorer/graph-explorer.modu
  * BFF 슬라이스는 자기 aggregate 가 없으므로 audit-recorder 인스턴스를 외부에서
  * 주입받아 cross-domain query 어댑터에 위임한다.
  */
-export const AUDIT_RECORDER = Symbol.for(
-  "sim-audit-browser-api/audit-explorer/AuditRecorder",
-);
+export const AUDIT_RECORDER = Symbol.for('sim-audit-browser-api/audit-explorer/AuditRecorder');
 
 /**
  * 외부 ingest URL 토큰 — graph retention insight HTTP 어댑터에 주입.
  * 미설정 시 어댑터가 fail-open (null 반환).
  */
 export const GRAPH_RETENTION_INSIGHT_ENDPOINT = Symbol.for(
-  "sim-audit-browser-api/audit-explorer/GraphRetentionInsightEndpoint",
+  'sim-audit-browser-api/audit-explorer/GraphRetentionInsightEndpoint',
 );
 
 const auditRecorderProvider: Provider = {
   provide: AUDIT_RECORDER,
   useFactory: async (): Promise<AuditRecorder> => {
     const connection = await createConnection(
-      env.QA_DB_DIALECT === "sqlite"
-        ? { dialect: "sqlite", sqlitePath: env.QA_SQLITE_PATH }
+      env.QA_DB_DIALECT === 'sqlite'
+        ? { dialect: 'sqlite', sqlitePath: env.QA_SQLITE_PATH }
         : {
-            dialect: "pg",
+            dialect: 'pg',
             pgHost: env.QA_PG_HOST!,
             pgPort: env.QA_PG_PORT!,
             pgDatabase: env.QA_PG_DATABASE!,
             pgUser: env.QA_PG_USER!,
             pgPassword: env.QA_PG_PASSWORD!,
-            pgSchema: env.QA_PG_SCHEMA ?? "sim",
+            pgSchema: env.QA_PG_SCHEMA ?? 'sim',
           },
     );
     // SQLite 경로는 DDL 자동 적용 (in-memory 부팅 대비).
-    if (connection.dialect === "sqlite") {
-      const raw = (connection.db as BetterSQLite3Database as unknown as {
-        $client: { exec: (sql: string) => void };
-      }).$client;
-      if (raw && typeof raw.exec === "function") {
+    if (connection.dialect === 'sqlite') {
+      const raw = (
+        connection.db as BetterSQLite3Database as unknown as {
+          $client: { exec: (sql: string) => void };
+        }
+      ).$client;
+      if (raw && typeof raw.exec === 'function') {
         raw.exec(AUDIT_ENTRIES_DDL);
       }
     }

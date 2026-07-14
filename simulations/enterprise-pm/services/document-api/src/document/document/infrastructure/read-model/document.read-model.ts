@@ -4,8 +4,8 @@
 import {
   DocumentReadModelQuery,
   type DocumentDetailReadModel,
-} from "../../application/queries/document-read-model.query.js";
-import type { DocumentRepositoryPort } from "../../application/ports/document-repository.port.js";
+} from '../../application/queries/document-read-model.query.js';
+import type { DocumentRepositoryPort } from '../../application/ports/document-repository.port.js';
 
 /**
  * Repository 위에 얇게 얹은 Read Model.

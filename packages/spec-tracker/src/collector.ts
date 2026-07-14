@@ -11,7 +11,7 @@ import type {
   ContractMarkerKind,
   EvidenceSource,
   EvidenceStatus,
-} from "./types.js";
+} from './types.js';
 
 export interface RecordInput {
   readonly specId: string;
@@ -32,7 +32,7 @@ export class SpecCollector {
       specId: input.specId,
       status: input.status,
       marker: input.marker,
-      source: input.source ?? "test",
+      source: input.source ?? 'test',
       testFile: input.testFile,
       testName: input.testName,
       duration: input.duration,

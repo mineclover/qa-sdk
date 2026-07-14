@@ -1,75 +1,105 @@
 // @def.boundary platform-demo-system
 // @def.doc platform-demo-system
 
-import { Hono } from "hono";
-import { cors } from "hono/cors";
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import {
   registry,
-  permCodec, evtCodec, permCodecV2, evtCodecV2,
-  permCodecV3, evtCodecV3, permCodecV4, evtCodecV4,
-  ENV_KO, REGION_KO, SVC_NAME_KO, NS_KO, ROLE_KO, EVT_KO,
-  ENVS, REGIONS, SVCS, NSS, INITIATORS,
-  PERM_SVC_VALUES, EVT_SVC_VALUES,
-} from "./registry.js";
+  permCodec,
+  evtCodec,
+  permCodecV2,
+  evtCodecV2,
+  permCodecV3,
+  evtCodecV3,
+  permCodecV4,
+  evtCodecV4,
+  ENV_KO,
+  REGION_KO,
+  SVC_NAME_KO,
+  NS_KO,
+  ROLE_KO,
+  EVT_KO,
+  ENVS,
+  REGIONS,
+  SVCS,
+  NSS,
+  INITIATORS,
+  PERM_SVC_VALUES,
+  EVT_SVC_VALUES,
+} from './registry.js';
 import {
-  demoEncodeSvc, demoDecodeSvc, DEMO_ENVS, DEMO_REGIONS, DEMO_SVCS, DEMO_NSS,
-  demoRolesFor, demoRoleStride, demoEventsFor, demoEvtStride,
-  DEMO_FEATURES_V1, DEMO_FEATURES_V4, demoFeatures,
+  demoEncodeSvc,
+  demoDecodeSvc,
+  DEMO_ENVS,
+  DEMO_REGIONS,
+  DEMO_SVCS,
+  DEMO_NSS,
+  demoRolesFor,
+  demoRoleStride,
+  demoEventsFor,
+  demoEvtStride,
+  DEMO_FEATURES_V1,
+  DEMO_FEATURES_V4,
+  demoFeatures,
   demoRolePos,
   DEMO_ROLES_V4,
-  type DemoVer, type DemoFeatureDef,
-} from "demo-snapshot";
-import { PermissionSet, type DimDef } from "permission-engine";
-import { snapshotCapacity } from "index-meta/workers";
+  type DemoVer,
+  type DemoFeatureDef,
+} from 'demo-snapshot';
+import { PermissionSet, type DimDef } from 'permission-engine';
+import { snapshotCapacity } from 'index-meta/workers';
 import {
   demoDashboardFlowMap,
   demoDashboardMetrics,
   demoDashboardOverview,
   demoDashboardSchema,
   demoDashboardTimeline,
-} from "./demo-dashboard-read-model.js";
+} from './demo-dashboard-read-model.js';
 
 // ── Version helpers ─────────────────────────────────────────────────────────
 
 type Ver = DemoVer;
 
-const VALID_VERS = new Set<Ver>(["v1", "v2", "v3", "v4"]);
+const VALID_VERS = new Set<Ver>(['v1', 'v2', 'v3', 'v4']);
 function parseVer(raw: string | undefined): Ver {
-  return VALID_VERS.has(raw as Ver) ? (raw as Ver) : "v2";
+  return VALID_VERS.has(raw as Ver) ? (raw as Ver) : 'v2';
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-type SvcDimKey = "env" | "region" | "svc_name" | "namespace";
+type SvcDimKey = 'env' | 'region' | 'svc_name' | 'namespace';
 
-const ALL_SVC_DIMS: SvcDimKey[] = ["env", "region", "svc_name", "namespace"];
+const ALL_SVC_DIMS: SvcDimKey[] = ['env', 'region', 'svc_name', 'namespace'];
 
 const DIM_ENTRIES: Record<SvcDimKey, readonly string[]> = {
-  env:       ENVS,
-  region:    REGIONS,
-  svc_name:  SVCS,
+  env: ENVS,
+  region: REGIONS,
+  svc_name: SVCS,
   namespace: NSS,
 };
 
 const DIM_KO_FNS: Record<SvcDimKey, (v: string) => string> = {
-  env:       (v) => ENV_KO[v] ?? v,
-  region:    (v) => REGION_KO[v] ?? v,
-  svc_name:  (v) => SVC_NAME_KO[v] ?? v,
+  env: (v) => ENV_KO[v] ?? v,
+  region: (v) => REGION_KO[v] ?? v,
+  svc_name: (v) => SVC_NAME_KO[v] ?? v,
   namespace: (v) => NS_KO[v] ?? v,
 };
 
-function computeSvcValue(
-  envIdx: number, regionIdx: number, svcIdx: number, nsIdx: number
-): number {
+function computeSvcValue(envIdx: number, regionIdx: number, svcIdx: number, nsIdx: number): number {
   return demoEncodeSvc([envIdx, regionIdx, svcIdx, nsIdx]);
 }
 
-function decodeSvcValue(value: number): { env: string; region: string; svc_name: string; namespace: string } {
+function decodeSvcValue(value: number): {
+  env: string;
+  region: string;
+  svc_name: string;
+  namespace: string;
+} {
   const coords = demoDecodeSvc(value);
   return {
-    env:       DEMO_ENVS[coords[0] - 1],
-    region:    DEMO_REGIONS[coords[1] - 1],
-    svc_name:  DEMO_SVCS[coords[2] - 1],
+    env: DEMO_ENVS[coords[0] - 1],
+    region: DEMO_REGIONS[coords[1] - 1],
+    svc_name: DEMO_SVCS[coords[2] - 1],
     namespace: DEMO_NSS[coords[3] - 1],
   };
 }
@@ -80,17 +110,35 @@ const FEATURE_DEFS_V1 = DEMO_FEATURES_V1;
 
 // ── Version-aware helpers ─────────────────────────────────────────────────
 
-function getRoles(ver: Ver)      { return demoRolesFor(ver); }
-function getRoleList(ver: Ver)   { return [...demoRolesFor(ver)]; }
-function getRolePos(ver: Ver)    { return demoRolePos(ver); }
-function getRoleStride(ver: Ver) { return demoRoleStride(ver); }
-function getEvents(ver: Ver)     { return demoEventsFor(ver); }
-function getEvtStride(ver: Ver)  { return demoEvtStride(ver); }
-function getFeatureDefs(ver: Ver): readonly DemoFeatureDef[] { return demoFeatures(ver); }
+function getRoles(ver: Ver) {
+  return demoRolesFor(ver);
+}
+function getRoleList(ver: Ver) {
+  return [...demoRolesFor(ver)];
+}
+function getRolePos(ver: Ver) {
+  return demoRolePos(ver);
+}
+function getRoleStride(ver: Ver) {
+  return demoRoleStride(ver);
+}
+function getEvents(ver: Ver) {
+  return demoEventsFor(ver);
+}
+function getEvtStride(ver: Ver) {
+  return demoEvtStride(ver);
+}
+function getFeatureDefs(ver: Ver): readonly DemoFeatureDef[] {
+  return demoFeatures(ver);
+}
 const PERM_CODECS = { v1: permCodec, v2: permCodecV2, v3: permCodecV3, v4: permCodecV4 } as const;
 const EVT_CODECS = { v1: evtCodec, v2: evtCodecV2, v3: evtCodecV3, v4: evtCodecV4 } as const;
-function getPermCodec(ver: Ver)  { return PERM_CODECS[ver]; }
-function getEvtCodec(ver: Ver)   { return EVT_CODECS[ver]; }
+function getPermCodec(ver: Ver) {
+  return PERM_CODECS[ver];
+}
+function getEvtCodec(ver: Ver) {
+  return EVT_CODECS[ver];
+}
 
 // ── D1 grants ───────────────────────────────────────────────────────────
 
@@ -101,7 +149,8 @@ const ALL_FEATURE_DEFS = DEMO_FEATURES_V4; // v4가 상위 집합
 const FEATURE_IDS = new Set(ALL_FEATURE_DEFS.map((f) => f.id));
 
 async function loadGrants(db: D1Database): Promise<GrantMap> {
-  const { results } = await db.prepare("SELECT feature_id, role FROM grants")
+  const { results } = await db
+    .prepare('SELECT feature_id, role FROM grants')
     .all<{ feature_id: string; role: string }>();
   const map: GrantMap = new Map();
   for (const f of ALL_FEATURE_DEFS) map.set(f.id, new Set());
@@ -110,7 +159,7 @@ async function loadGrants(db: D1Database): Promise<GrantMap> {
 }
 
 function isGrantedVer(ver: Ver, grants: GrantMap, featureId: string, role: string): boolean {
-  if (ver === "v1") {
+  if (ver === 'v1') {
     const def = FEATURE_DEFS_V1.find((f) => f.id === featureId);
     return def ? def.grantedRoles.includes(role) : false;
   }
@@ -118,7 +167,7 @@ function isGrantedVer(ver: Ver, grants: GrantMap, featureId: string, role: strin
 }
 
 function getGrantedRolesVer(ver: Ver, grants: GrantMap, featureId: string): string[] {
-  if (ver === "v1") {
+  if (ver === 'v1') {
     const def = FEATURE_DEFS_V1.find((f) => f.id === featureId);
     return def ? [...def.grantedRoles] : [];
   }
@@ -133,37 +182,40 @@ function getGrantedRolesKoVer(ver: Ver, grants: GrantMap, featureId: string): st
 
 const app = new Hono<{ Bindings: { DB: D1Database } }>();
 
-app.use("*", cors({
-  origin: "*",
-  allowHeaders: ["Content-Type"],
-  allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
-}));
+app.use(
+  '*',
+  cors({
+    origin: '*',
+    allowHeaders: ['Content-Type'],
+    allowMethods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+  }),
+);
 
 // GET /health, /api/health
-app.get("/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
-app.get("/api/health", (c) => c.json({ ok: true, service: "platform-demo-api" }));
+app.get('/health', (c) => c.json({ ok: true, service: 'platform-demo-api' }));
+app.get('/api/health', (c) => c.json({ ok: true, service: 'platform-demo-api' }));
 
 // ── Dashboard demo read-model routes ───────────────────────────────────────
 
-app.get("/api/dashboard/overview", (c) => c.json(demoDashboardOverview));
-app.get("/api/dashboard/flow-map", (c) => c.json(demoDashboardFlowMap));
-app.get("/api/dashboard/metrics", (c) => c.json(demoDashboardMetrics));
-app.get("/api/dashboard/timeline", (c) => c.json(demoDashboardTimeline));
-app.get("/api/dashboard/schema", (c) => c.json(demoDashboardSchema));
-app.post("/api/dashboard/refresh", (c) => c.json({ collected: false, changes: [] }));
+app.get('/api/dashboard/overview', (c) => c.json(demoDashboardOverview));
+app.get('/api/dashboard/flow-map', (c) => c.json(demoDashboardFlowMap));
+app.get('/api/dashboard/metrics', (c) => c.json(demoDashboardMetrics));
+app.get('/api/dashboard/timeline', (c) => c.json(demoDashboardTimeline));
+app.get('/api/dashboard/schema', (c) => c.json(demoDashboardSchema));
+app.post('/api/dashboard/refresh', (c) => c.json({ collected: false, changes: [] }));
 
 // ── Prefix meta route ─────────────────────────────────────────────────────
 
-app.get("/api/prefix-meta", (c) => {
+app.get('/api/prefix-meta', (c) => {
   try {
     const dimIds = registry.dimIds;
     const indexIds = registry.indexIds;
 
     // dims (leaf prefixes)
-    const dims = dimIds.map(dimId => {
+    const dims = dimIds.map((dimId) => {
       const def = registry.getDimDef(dimId);
       const snapIds = registry.getSnapshotIds(dimId);
-      const snapshots = snapIds.map(snapId => {
+      const snapshots = snapIds.map((snapId) => {
         const snap = registry.getDimSnapshot(dimId, snapId);
         return {
           snapshotId: snapId,
@@ -172,16 +224,16 @@ app.get("/api/prefix-meta", (c) => {
           headroom: snapshotCapacity(snap) - snap.entries.length,
         };
       });
-      return { id: dimId, type: "dim" as const, kind: def.kind, snapshots };
+      return { id: dimId, type: 'dim' as const, kind: def.kind, snapshots };
     });
 
     // indices (composite prefixes)
-    const indices = indexIds.map(indexId => {
+    const indices = indexIds.map((indexId) => {
       const def = registry.getIndexDef(indexId);
       const verIds = registry.getVersionIds(indexId);
-      const versions = verIds.map(verId => {
+      const versions = verIds.map((verId) => {
         const iv = registry.getIndexVersion(indexId, verId);
-        const shape = def.dims.map(dimId => {
+        const shape = def.dims.map((dimId) => {
           const snapId = iv.snapshots[dimId];
           const snap = registry.getDimSnapshot(dimId, snapId);
           return {
@@ -198,33 +250,33 @@ app.get("/api/prefix-meta", (c) => {
           dims: shape,
           totalCapacity,
           totalEntries,
-          utilization: +(totalEntries / totalCapacity * 100).toFixed(1),
+          utilization: +((totalEntries / totalCapacity) * 100).toFixed(1),
         };
       });
-      return { id: indexId, type: "index" as const, dims: [...def.dims], versions };
+      return { id: indexId, type: 'index' as const, dims: [...def.dims], versions };
     });
 
     return c.json({ dims, indices });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
 // ── Service routes ─────────────────────────────────────────────────────────
 
-app.get("/api/service/cells", (c) => {
+app.get('/api/service/cells', (c) => {
   try {
-    const xDim = c.req.query("xDim") as SvcDimKey | undefined;
-    const yDim = c.req.query("yDim") as SvcDimKey | undefined;
+    const xDim = c.req.query('xDim') as SvcDimKey | undefined;
+    const yDim = c.req.query('yDim') as SvcDimKey | undefined;
 
     if (!xDim || !ALL_SVC_DIMS.includes(xDim)) {
-      return c.json({ error: "Invalid or missing xDim" }, 400);
+      return c.json({ error: 'Invalid or missing xDim' }, 400);
     }
     if (!yDim || !ALL_SVC_DIMS.includes(yDim)) {
-      return c.json({ error: "Invalid or missing yDim" }, 400);
+      return c.json({ error: 'Invalid or missing yDim' }, 400);
     }
     if (xDim === yDim) {
-      return c.json({ error: "xDim and yDim must be different" }, 400);
+      return c.json({ error: 'xDim and yDim must be different' }, 400);
     }
 
     const fixedDims = ALL_SVC_DIMS.filter((d) => d !== xDim && d !== yDim);
@@ -235,7 +287,10 @@ app.get("/api/service/cells", (c) => {
       if (raw !== undefined) {
         const pos = parseInt(raw, 10);
         if (isNaN(pos) || pos < 1 || pos > DIM_ENTRIES[dim].length) {
-          return c.json({ error: `fix_${dim} must be between 1 and ${DIM_ENTRIES[dim].length}, got: ${raw}` }, 400);
+          return c.json(
+            { error: `fix_${dim} must be between 1 and ${DIM_ENTRIES[dim].length}, got: ${raw}` },
+            400,
+          );
         }
         fixed[dim] = pos;
       }
@@ -260,42 +315,50 @@ app.get("/api/service/cells", (c) => {
         const indices: Record<SvcDimKey, number> = { ...fixed };
         indices[xDim] = xi + 1;
         indices[yDim] = yi + 1;
-        const value = computeSvcValue(indices.env, indices.region, indices.svc_name, indices.namespace);
+        const value = computeSvcValue(
+          indices.env,
+          indices.region,
+          indices.svc_name,
+          indices.namespace,
+        );
         cells.push({ xPos: xi + 1, yPos: yi + 1, value });
       }
     }
 
     return c.json({ xDim, yDim, xLabels, yLabels, fixed: fixedInfo, cells });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.get("/api/service/decode/:value", (c) => {
+app.get('/api/service/decode/:value', (c) => {
   try {
-    const raw = c.req.param("value");
+    const raw = c.req.param('value');
     const value = parseInt(raw, 10);
-    if (isNaN(value)) return c.json({ error: "Invalid value" }, 400);
+    if (isNaN(value)) return c.json({ error: 'Invalid value' }, 400);
 
     const { env, region, svc_name, namespace } = decodeSvcValue(value);
 
     return c.json({
-      env, region, svc_name, namespace,
-      envKo:       ENV_KO[env]       ?? env,
-      regionKo:    REGION_KO[region] ?? region,
-      svcNameKo:   SVC_NAME_KO[svc_name] ?? svc_name,
-      namespaceKo: NS_KO[namespace]  ?? namespace,
+      env,
+      region,
+      svc_name,
+      namespace,
+      envKo: ENV_KO[env] ?? env,
+      regionKo: REGION_KO[region] ?? region,
+      svcNameKo: SVC_NAME_KO[svc_name] ?? svc_name,
+      namespaceKo: NS_KO[namespace] ?? namespace,
     });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 400);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 400);
   }
 });
 
 // ── Permission routes ──────────────────────────────────────────────────────
 
-app.get("/api/permission/cells", (c) => {
+app.get('/api/permission/cells', (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
+    const ver = parseVer(c.req.query('ver'));
     const roles = getRoles(ver);
     const roleStride = getRoleStride(ver);
     const prefix = `permission:${ver}`;
@@ -304,14 +367,19 @@ app.get("/api/permission/cells", (c) => {
     const svcLabels = PERM_SVC_VALUES.map((svcValue, si) => {
       const { env, region, svc_name, namespace } = decodeSvcValue(svcValue);
       return {
-        pos: si + 1, svcValue,
+        pos: si + 1,
+        svcValue,
         svcName: SVC_NAME_KO[svc_name] ?? svc_name,
-        env, region, namespace,
+        env,
+        region,
+        namespace,
       };
     });
 
     const roleLabels = [...roles].map((role, ri) => ({
-      pos: ri + 1, id: role, ko: ROLE_KO[role] ?? role,
+      pos: ri + 1,
+      id: role,
+      ko: ROLE_KO[role] ?? role,
     }));
 
     const cells: Array<{ svcPos: number; rolePos: number; value: number }> = [];
@@ -323,40 +391,43 @@ app.get("/api/permission/cells", (c) => {
 
     return c.json({ ver, roleStride, prefix, maxValue, svcLabels, roleLabels, cells });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.get("/api/permission/decode/:value", (c) => {
+app.get('/api/permission/decode/:value', (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
-    const raw = c.req.param("value");
+    const ver = parseVer(c.req.query('ver'));
+    const raw = c.req.param('value');
     const permValue = parseInt(raw, 10);
-    if (isNaN(permValue)) return c.json({ error: "Invalid value" }, 400);
+    if (isNaN(permValue)) return c.json({ error: 'Invalid value' }, 400);
 
     const codec = getPermCodec(ver);
     const decoded = codec.decodeValue(permValue);
-    const permSvc = Number(decoded["perm_svc"]);
-    const role = String(decoded["role"]);
+    const permSvc = Number(decoded['perm_svc']);
+    const role = String(decoded['role']);
     const svc = decodeSvcValue(permSvc);
 
     return c.json({
-      permValue, perm_svc: permSvc, role, svc,
+      permValue,
+      perm_svc: permSvc,
+      role,
+      svc,
       address: `permission:${ver}:${permValue}`,
     });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 400);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 400);
   }
 });
 
 // ── Event routes ───────────────────────────────────────────────────────────
 
-app.get("/api/event/cells", (c) => {
+app.get('/api/event/cells', (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
-    const initiator = c.req.query("initiator") ?? "web";
-    if (!INITIATORS.includes(initiator as typeof INITIATORS[number])) {
-      return c.json({ error: "Invalid initiator" }, 400);
+    const ver = parseVer(c.req.query('ver'));
+    const initiator = c.req.query('initiator') ?? 'web';
+    if (!INITIATORS.includes(initiator as (typeof INITIATORS)[number])) {
+      return c.json({ error: 'Invalid initiator' }, 400);
     }
 
     const initiatorPos = (INITIATORS as readonly string[]).indexOf(initiator) + 1;
@@ -371,7 +442,9 @@ app.get("/api/event/cells", (c) => {
     });
 
     const eventLabels = [...events].map((evt, ei) => ({
-      pos: ei + 1, id: evt, ko: EVT_KO[evt] ?? evt,
+      pos: ei + 1,
+      id: evt,
+      ko: EVT_KO[evt] ?? evt,
     }));
 
     const cells: Array<{ svcPos: number; evtPos: number; value: number }> = [];
@@ -384,71 +457,81 @@ app.get("/api/event/cells", (c) => {
 
     return c.json({ ver, svcStride, prefix, maxValue, initiator, svcLabels, eventLabels, cells });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.get("/api/event/decode/:value", (c) => {
+app.get('/api/event/decode/:value', (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
-    const raw = c.req.param("value");
+    const ver = parseVer(c.req.query('ver'));
+    const raw = c.req.param('value');
     const evtValue = parseInt(raw, 10);
-    if (isNaN(evtValue)) return c.json({ error: "Invalid value" }, 400);
+    if (isNaN(evtValue)) return c.json({ error: 'Invalid value' }, 400);
 
     const codec = getEvtCodec(ver);
     const decoded = codec.decodeValue(evtValue);
-    const eventSvc = Number(decoded["event_svc"]);
-    const eventName = String(decoded["event_name"]);
-    const initiator = String(decoded["initiator"]);
+    const eventSvc = Number(decoded['event_svc']);
+    const eventName = String(decoded['event_name']);
+    const initiator = String(decoded['initiator']);
     const svc = decodeSvcValue(eventSvc);
 
     return c.json({
-      evtValue, event_svc: eventSvc, event_name: eventName, initiator, svc,
+      evtValue,
+      event_svc: eventSvc,
+      event_name: eventName,
+      initiator,
+      svc,
       address: `event:${ver}:${evtValue}`,
     });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 400);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 400);
   }
 });
 
 // ── Scenario / Features routes ─────────────────────────────────────────────
 
-app.get("/api/features", async (c) => {
+app.get('/api/features', async (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
+    const ver = parseVer(c.req.query('ver'));
     const featureDefs = getFeatureDefs(ver);
     const roleList = getRoleList(ver);
     const grants = await loadGrants(c.env.DB);
 
     const features = featureDefs.map((f) => ({
-      id: f.id, name: f.name,
-      grantedRoles:   getGrantedRolesVer(ver, grants, f.id),
+      id: f.id,
+      name: f.name,
+      grantedRoles: getGrantedRolesVer(ver, grants, f.id),
       grantedRolesKo: getGrantedRolesKoVer(ver, grants, f.id),
     }));
 
     const roles = [...roleList].map((r) => ({ id: r, ko: ROLE_KO[r] ?? r }));
 
     const matrix: boolean[][] = featureDefs.map((f) =>
-      [...roleList].map((r) => isGrantedVer(ver, grants, f.id, r))
+      [...roleList].map((r) => isGrantedVer(ver, grants, f.id, r)),
     );
 
     return c.json({ features, roles, matrix });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.get("/api/scenario", async (c) => {
+app.get('/api/scenario', async (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
-    const roleParam = c.req.query("role") ?? "viewer";
+    const ver = parseVer(c.req.query('ver'));
+    const roleParam = c.req.query('role') ?? 'viewer';
     const rolePos_ = getRolePos(ver);
     const featureDefs = getFeatureDefs(ver);
     const roleStride = getRoleStride(ver);
     const codec = getEvtCodec(ver);
 
     if (!(roleParam in rolePos_)) {
-      return c.json({ error: `Invalid role: ${roleParam}. Must be one of: ${[...getRoleList(ver)].join(", ")}` }, 400);
+      return c.json(
+        {
+          error: `Invalid role: ${roleParam}. Must be one of: ${[...getRoleList(ver)].join(', ')}`,
+        },
+        400,
+      );
     }
     const role = roleParam;
     const roleKo = ROLE_KO[role] ?? role;
@@ -457,7 +540,7 @@ app.get("/api/scenario", async (c) => {
     const grants = await loadGrants(c.env.DB);
 
     // 시나리오 메인 서비스: payment (permSvcPos는 SSOT에서 참조)
-    const mainSvcPos = featureDefs.find(f => f.svcName === "payment")?.permSvcPos ?? 7;
+    const mainSvcPos = featureDefs.find((f) => f.svcName === 'payment')?.permSvcPos ?? 7;
     const mainPermValue = (mainSvcPos - 1) * roleStride + (rolePos - 1);
     const mainPermAddr = `permission:${ver}:${mainPermValue}`;
 
@@ -465,12 +548,14 @@ app.get("/api/scenario", async (c) => {
       const permValue = (f.permSvcPos - 1) * roleStride + (rolePos - 1);
       const hasAccess = isGrantedVer(ver, grants, f.id, role);
       return {
-        id: f.id, name: f.name, svcName: f.svcName,
+        id: f.id,
+        name: f.name,
+        svcName: f.svcName,
         svcAddr: `service:v1:${f.svcValue}`,
         hasAccess,
         permAddr: `permission:${ver}:${permValue}`,
         permValue,
-        grantedRoles:   getGrantedRolesVer(ver, grants, f.id),
+        grantedRoles: getGrantedRolesVer(ver, grants, f.id),
         grantedRolesKo: getGrantedRolesKoVer(ver, grants, f.id),
       };
     });
@@ -480,40 +565,49 @@ app.get("/api/scenario", async (c) => {
       const hasAccess = isGrantedVer(ver, grants, f.id, role);
       const permAddr = `permission:${ver}:${permValue}`;
 
-      const grantedAddrs = getGrantedRolesVer(ver, grants, f.id)
-        .map((r) => `permission:${ver}:${(f.permSvcPos - 1) * roleStride + ((rolePos_[r] ?? 1) - 1)}`);
+      const grantedAddrs = getGrantedRolesVer(ver, grants, f.id).map(
+        (r) => `permission:${ver}:${(f.permSvcPos - 1) * roleStride + ((rolePos_[r] ?? 1) - 1)}`,
+      );
 
-      const deniedReason = hasAccess
-        ? `부여됨`
-        : `미부여 — 허용: [${grantedAddrs.join(", ")}]`;
+      const deniedReason = hasAccess ? `부여됨` : `미부여 — 허용: [${grantedAddrs.join(', ')}]`;
 
       const svcDecoded = decodeSvcValue(f.svcValue);
       const svcNameKo = SVC_NAME_KO[svcDecoded.svc_name] ?? svcDecoded.svc_name;
 
       const permStep = {
-        addr: permAddr, value: permValue,
-        status: (hasAccess ? "ok" : "denied") as "ok" | "denied",
-        svcName: f.svcName, svcNameKo,
-        roleName: role, roleNameKo: roleKo,
-        grantedAddrs, deniedReason,
+        addr: permAddr,
+        value: permValue,
+        status: (hasAccess ? 'ok' : 'denied') as 'ok' | 'denied',
+        svcName: f.svcName,
+        svcNameKo,
+        roleName: role,
+        roleNameKo: roleKo,
+        grantedAddrs,
+        deniedReason,
       };
 
       let eventStep: {
-        addr: string; value: number; status: "ok" | "denied";
-        svcName: string; svcNameKo: string; eventName: string; eventNameKo: string; initiator: string;
+        addr: string;
+        value: number;
+        status: 'ok' | 'denied';
+        svcName: string;
+        svcNameKo: string;
+        eventName: string;
+        eventNameKo: string;
+        initiator: string;
       } | null = null;
 
       const evtValue = hasAccess ? f.successEventValue : f.failEventValue;
       if (evtValue !== null) {
         const evtRaw = codec.decodeValue(evtValue);
-        const evtSvcValue = Number(evtRaw["event_svc"]);
-        const evtName = String(evtRaw["event_name"]);
-        const evtInit = String(evtRaw["initiator"]);
+        const evtSvcValue = Number(evtRaw['event_svc']);
+        const evtName = String(evtRaw['event_name']);
+        const evtInit = String(evtRaw['initiator']);
         const evtSvcDecoded = decodeSvcValue(evtSvcValue);
         eventStep = {
           addr: `event:${ver}:${evtValue}`,
           value: evtValue,
-          status: hasAccess ? "ok" : "denied",
+          status: hasAccess ? 'ok' : 'denied',
           svcName: evtSvcDecoded.svc_name,
           svcNameKo: SVC_NAME_KO[evtSvcDecoded.svc_name] ?? evtSvcDecoded.svc_name,
           eventName: evtName,
@@ -533,19 +627,20 @@ app.get("/api/scenario", async (c) => {
     });
 
     return c.json({
-      role, roleKo,
-      user: { name: "홍길동", role, roleKo, mainPermAddr, mainPermValue },
+      role,
+      roleKo,
+      user: { name: '홍길동', role, roleKo, mainPermAddr, mainPermValue },
       features,
       simulation,
     });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.get("/api/grant-table", async (c) => {
+app.get('/api/grant-table', async (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
+    const ver = parseVer(c.req.query('ver'));
     const featureDefs = getFeatureDefs(ver);
     const roleList = getRoleList(ver);
     const rolePos_ = getRolePos(ver);
@@ -561,70 +656,71 @@ app.get("/api/grant-table", async (c) => {
         const granted = isGrantedVer(ver, grants, f.id, role);
 
         // eslint-disable-next-line typescript/no-non-null-assertion -- permSvcPos는 1-based 유효 인덱스
-        const svcValue  = PERM_SVC_VALUES[f.permSvcPos - 1]!;
-        const svcInfo   = decodeSvcValue(svcValue);
+        const svcValue = PERM_SVC_VALUES[f.permSvcPos - 1]!;
+        const svcInfo = decodeSvcValue(svcValue);
 
         const evtValue = granted ? f.successEventValue : f.failEventValue;
         let eventAddr: string | null = null;
         let eventValue: number | null = null;
         let eventNameKo: string | null = null;
-        const eventType: "success" | "fail" | "none" = evtValue !== null ? (granted ? "success" : "fail") : "none";
+        const eventType: 'success' | 'fail' | 'none' =
+          evtValue !== null ? (granted ? 'success' : 'fail') : 'none';
 
         if (evtValue !== null) {
-          const evtRaw  = codec.decodeValue(evtValue);
-          eventAddr     = `event:${ver}:${evtValue}`;
-          eventValue    = evtValue;
-          eventNameKo   = EVT_KO[String(evtRaw["event_name"])] ?? String(evtRaw["event_name"]);
+          const evtRaw = codec.decodeValue(evtValue);
+          eventAddr = `event:${ver}:${evtValue}`;
+          eventValue = evtValue;
+          eventNameKo = EVT_KO[String(evtRaw['event_name'])] ?? String(evtRaw['event_name']);
         }
 
         return {
-          featureId:    f.id,
-          featureName:  f.name,
-          permAddr:     `permission:${ver}:${permValue}`,
+          featureId: f.id,
+          featureName: f.name,
+          permAddr: `permission:${ver}:${permValue}`,
           permValue,
           svcValue,
-          svcNameKo:    SVC_NAME_KO[svcInfo.svc_name] ?? svcInfo.svc_name,
-          env:          svcInfo.env,
-          envKo:        ENV_KO[svcInfo.env]      ?? svcInfo.env,
-          region:       svcInfo.region,
-          regionKo:     REGION_KO[svcInfo.region] ?? svcInfo.region,
-          namespace:    svcInfo.namespace,
-          namespaceKo:  NS_KO[svcInfo.namespace] ?? svcInfo.namespace,
+          svcNameKo: SVC_NAME_KO[svcInfo.svc_name] ?? svcInfo.svc_name,
+          env: svcInfo.env,
+          envKo: ENV_KO[svcInfo.env] ?? svcInfo.env,
+          region: svcInfo.region,
+          regionKo: REGION_KO[svcInfo.region] ?? svcInfo.region,
+          namespace: svcInfo.namespace,
+          namespaceKo: NS_KO[svcInfo.namespace] ?? svcInfo.namespace,
           role,
-          roleKo:          ROLE_KO[role] ?? role,
+          roleKo: ROLE_KO[role] ?? role,
           granted,
-          grantedRoles:    getGrantedRolesVer(ver, grants, f.id),
-          grantedRolesKo:  getGrantedRolesKoVer(ver, grants, f.id),
+          grantedRoles: getGrantedRolesVer(ver, grants, f.id),
+          grantedRolesKo: getGrantedRolesKoVer(ver, grants, f.id),
           eventAddr,
           eventValue,
           eventNameKo,
           eventType,
         };
-      })
+      }),
     );
 
     return c.json({ rows });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
 // ── Permission mask route ──────────────────────────────────────────────────
 
-app.get("/api/permission/mask", async (c) => {
+app.get('/api/permission/mask', async (c) => {
   try {
-    const ver = parseVer(c.req.query("ver"));
-    const role = c.req.query("role");
+    const ver = parseVer(c.req.query('ver'));
+    const role = c.req.query('role');
     if (!role || !(getRoleList(ver) as readonly string[]).includes(role)) {
-      return c.json({ error: `Invalid role. Must be one of: ${getRoleList(ver).join(", ")}` }, 400);
+      return c.json({ error: `Invalid role. Must be one of: ${getRoleList(ver).join(', ')}` }, 400);
     }
 
     const featureDefs = getFeatureDefs(ver);
     const dbGrants = await loadGrants(c.env.DB);
 
     // PermissionSet: [features × 1 role] — role-flat mask 생성
-    const featuresDim: DimDef = { name: "features", ids: featureDefs.map(f => f.id) };
-    const rolesDim: DimDef = { name: "roles", ids: [role] };
+    const featuresDim: DimDef = { name: 'features', ids: featureDefs.map((f) => f.id) };
+    const rolesDim: DimDef = { name: 'roles', ids: [role] };
     const ps = new PermissionSet({ features: featuresDim, roles: rolesDim });
 
     // DB grants → PermissionSet에 반영
@@ -639,12 +735,12 @@ app.get("/api/permission/mask", async (c) => {
     const maskBytesArr = ps.toBytes();
 
     // feature별 비트 + 메타데이터
-    const features = featureDefs.map(f => ({
+    const features = featureDefs.map((f) => ({
       id: f.id,
       name: f.name,
       granted: ps.has(f.id, role),
     }));
-    const bits = features.map(f => f.granted ? 1 : 0);
+    const bits = features.map((f) => (f.granted ? 1 : 0));
 
     return c.json({
       role,
@@ -654,35 +750,42 @@ app.get("/api/permission/mask", async (c) => {
       features,
       grantCount: ps.grantCount,
       totalSlots: ps.size,
-      density: +(ps.grantCount / ps.size * 100).toFixed(1),
+      density: +((ps.grantCount / ps.size) * 100).toFixed(1),
       maskBase64: snapshot.mask,
       maskBytes: maskBytesArr.length,
     });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
 // ── Grant management routes (v2 only) ────────────────────────────────────
 
-app.patch("/api/grants", async (c) => {
+app.patch('/api/grants', async (c) => {
   try {
     const body = await c.req.json<{ featureId: string; role: string; granted: boolean }>();
     const { featureId, role, granted } = body;
-    if (!FEATURE_IDS.has(featureId)) return c.json({ error: "Unknown featureId" }, 400);
-    if (!(DEMO_ROLES_V4 as readonly string[]).includes(role)) return c.json({ error: "Unknown role" }, 400);
+    if (!FEATURE_IDS.has(featureId)) return c.json({ error: 'Unknown featureId' }, 400);
+    if (!(DEMO_ROLES_V4 as readonly string[]).includes(role))
+      return c.json({ error: 'Unknown role' }, 400);
 
     const db = c.env.DB;
     if (granted) {
-      await db.prepare("INSERT OR IGNORE INTO grants (feature_id, role) VALUES (?, ?)")
-        .bind(featureId, role).run();
+      await db
+        .prepare('INSERT OR IGNORE INTO grants (feature_id, role) VALUES (?, ?)')
+        .bind(featureId, role)
+        .run();
     } else {
-      await db.prepare("DELETE FROM grants WHERE feature_id = ? AND role = ?")
-        .bind(featureId, role).run();
+      await db
+        .prepare('DELETE FROM grants WHERE feature_id = ? AND role = ?')
+        .bind(featureId, role)
+        .run();
     }
 
-    const rows = await db.prepare("SELECT role FROM grants WHERE feature_id = ?")
-      .bind(featureId).all<{ role: string }>();
+    const rows = await db
+      .prepare('SELECT role FROM grants WHERE feature_id = ?')
+      .bind(featureId)
+      .all<{ role: string }>();
     const grantedRoles = rows.results.map((r) => r.role);
 
     return c.json({
@@ -691,11 +794,11 @@ app.patch("/api/grants", async (c) => {
       grantedRolesKo: grantedRoles.map((r) => ROLE_KO[r] ?? r),
     });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.patch("/api/grants/batch", async (c) => {
+app.patch('/api/grants/batch', async (c) => {
   try {
     const body = await c.req.json<{ changes: unknown }>();
 
@@ -706,36 +809,48 @@ app.patch("/api/grants/batch", async (c) => {
     const errors: string[] = [];
     for (let i = 0; i < body.changes.length; i++) {
       const change = body.changes[i] as Record<string, unknown> | null | undefined;
-      if (!change || typeof change !== "object") {
+      if (!change || typeof change !== 'object') {
         errors.push(`changes[${i}]: must be an object`);
         continue;
       }
-      if (typeof change.featureId !== "string" || !change.featureId) {
+      if (typeof change.featureId !== 'string' || !change.featureId) {
         errors.push(`changes[${i}]: missing or invalid 'featureId'`);
       } else if (!FEATURE_IDS.has(change.featureId)) {
         errors.push(`changes[${i}]: unknown featureId '${change.featureId}'`);
       }
-      if (typeof change.role !== "string" || !change.role) {
+      if (typeof change.role !== 'string' || !change.role) {
         errors.push(`changes[${i}]: missing or invalid 'role'`);
       } else if (!(DEMO_ROLES_V4 as readonly string[]).includes(change.role)) {
         errors.push(`changes[${i}]: unknown role '${change.role}'`);
       }
-      if (typeof change.granted !== "boolean") {
+      if (typeof change.granted !== 'boolean') {
         errors.push(`changes[${i}]: missing or invalid 'granted' (must be boolean)`);
       }
     }
 
     if (errors.length > 0) {
-      return c.json({ error: "Invalid input", details: errors }, 400);
+      return c.json({ error: 'Invalid input', details: errors }, 400);
     }
 
     const db = c.env.DB;
     const stmts: D1PreparedStatement[] = [];
-    for (const change of body.changes as Array<{ featureId: string; role: string; granted: boolean }>) {
+    for (const change of body.changes as Array<{
+      featureId: string;
+      role: string;
+      granted: boolean;
+    }>) {
       if (change.granted) {
-        stmts.push(db.prepare("INSERT OR IGNORE INTO grants (feature_id, role) VALUES (?, ?)").bind(change.featureId, change.role));
+        stmts.push(
+          db
+            .prepare('INSERT OR IGNORE INTO grants (feature_id, role) VALUES (?, ?)')
+            .bind(change.featureId, change.role),
+        );
       } else {
-        stmts.push(db.prepare("DELETE FROM grants WHERE feature_id = ? AND role = ?").bind(change.featureId, change.role));
+        stmts.push(
+          db
+            .prepare('DELETE FROM grants WHERE feature_id = ? AND role = ?')
+            .bind(change.featureId, change.role),
+        );
       }
     }
     if (stmts.length > 0) await db.batch(stmts);
@@ -747,18 +862,18 @@ app.patch("/api/grants/batch", async (c) => {
     }
     return c.json({ grants: result });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.post("/api/grants/reset", async (c) => {
+app.post('/api/grants/reset', async (c) => {
   const db = c.env.DB;
-  await db.prepare("DELETE FROM grants").run();
+  await db.prepare('DELETE FROM grants').run();
   // v4 기준으로 reset (상위 집합)
   const stmts = ALL_FEATURE_DEFS.flatMap((f) =>
     [...f.grantedRoles].map((r) =>
-      db.prepare("INSERT INTO grants (feature_id, role) VALUES (?, ?)").bind(f.id, r)
-    )
+      db.prepare('INSERT INTO grants (feature_id, role) VALUES (?, ?)').bind(f.id, r),
+    ),
   );
   await db.batch(stmts);
   return c.json({ ok: true });
@@ -794,49 +909,58 @@ function logRowToJson(row: LogRow) {
   };
 }
 
-const VALID_LEVELS = new Set(["DEBUG", "INFO", "WARN", "ERROR"]);
+const VALID_LEVELS = new Set(['DEBUG', 'INFO', 'WARN', 'ERROR']);
 
-app.get("/api/logs", async (c) => {
+app.get('/api/logs', async (c) => {
   try {
     const db = c.env.DB;
 
-    const levelParam = c.req.query("level");
-    const svcMin = c.req.query("svc_addr_min");
-    const svcMax = c.req.query("svc_addr_max");
-    const limitRaw = c.req.query("limit");
-    const offsetRaw = c.req.query("offset");
+    const levelParam = c.req.query('level');
+    const svcMin = c.req.query('svc_addr_min');
+    const svcMax = c.req.query('svc_addr_max');
+    const limitRaw = c.req.query('limit');
+    const offsetRaw = c.req.query('offset');
 
-    const limit = Math.min(Math.max(parseInt(limitRaw ?? "100", 10) || 100, 1), 500);
-    const offset = Math.max(parseInt(offsetRaw ?? "0", 10) || 0, 0);
+    const limit = Math.min(Math.max(parseInt(limitRaw ?? '100', 10) || 100, 1), 500);
+    const offset = Math.max(parseInt(offsetRaw ?? '0', 10) || 0, 0);
 
     const conditions: string[] = [];
     const binds: (string | number)[] = [];
 
     if (levelParam) {
-      const levels = levelParam.split(",").filter((l) => VALID_LEVELS.has(l));
+      const levels = levelParam.split(',').filter((l) => VALID_LEVELS.has(l));
       if (levels.length > 0) {
-        conditions.push(`level IN (${levels.map(() => "?").join(",")})`);
+        conditions.push(`level IN (${levels.map(() => '?').join(',')})`);
         binds.push(...levels);
       }
     }
     if (svcMin !== undefined) {
       const v = parseInt(svcMin, 10);
-      if (!isNaN(v)) { conditions.push("svc_addr >= ?"); binds.push(v); }
+      if (!isNaN(v)) {
+        conditions.push('svc_addr >= ?');
+        binds.push(v);
+      }
     }
     if (svcMax !== undefined) {
       const v = parseInt(svcMax, 10);
-      if (!isNaN(v)) { conditions.push("svc_addr <= ?"); binds.push(v); }
+      if (!isNaN(v)) {
+        conditions.push('svc_addr <= ?');
+        binds.push(v);
+      }
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countResult = await db.prepare(`SELECT COUNT(*) as cnt FROM logs ${where}`)
-      .bind(...binds).first<{ cnt: number }>();
+    const countResult = await db
+      .prepare(`SELECT COUNT(*) as cnt FROM logs ${where}`)
+      .bind(...binds)
+      .first<{ cnt: number }>();
     const total = countResult?.cnt ?? 0;
 
-    const rows = await db.prepare(
-      `SELECT * FROM logs ${where} ORDER BY ts DESC LIMIT ? OFFSET ?`
-    ).bind(...binds, limit, offset).all<LogRow>();
+    const rows = await db
+      .prepare(`SELECT * FROM logs ${where} ORDER BY ts DESC LIMIT ? OFFSET ?`)
+      .bind(...binds, limit, offset)
+      .all<LogRow>();
 
     return c.json({
       results: rows.results.map(logRowToJson),
@@ -845,77 +969,184 @@ app.get("/api/logs", async (c) => {
       offset,
     });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.post("/api/logs", async (c) => {
+app.post('/api/logs', async (c) => {
   try {
     const db = c.env.DB;
     const body = await c.req.json<{
-      ts?: string; level: string; svcAddr: number;
-      permAddr?: number | null; evtAddr?: number | null;
-      action: string; message: string; latencyMs?: number; userId: string;
+      ts?: string;
+      level: string;
+      svcAddr: number;
+      permAddr?: number | null;
+      evtAddr?: number | null;
+      action: string;
+      message: string;
+      latencyMs?: number;
+      userId: string;
     }>();
 
-    if (!VALID_LEVELS.has(body.level)) return c.json({ error: "Invalid level" }, 400);
-    if (typeof body.svcAddr !== "number") return c.json({ error: "svcAddr required" }, 400);
-    if (!body.action || !body.message) return c.json({ error: "action and message required" }, 400);
-    if (!body.userId) return c.json({ error: "userId required" }, 400);
+    if (!VALID_LEVELS.has(body.level)) return c.json({ error: 'Invalid level' }, 400);
+    if (typeof body.svcAddr !== 'number') return c.json({ error: 'svcAddr required' }, 400);
+    if (!body.action || !body.message) return c.json({ error: 'action and message required' }, 400);
+    if (!body.userId) return c.json({ error: 'userId required' }, 400);
 
     const ts = body.ts ?? new Date().toISOString();
     const latencyMs = body.latencyMs ?? 0;
 
-    const result = await db.prepare(
-      `INSERT INTO logs (ts, level, svc_addr, perm_addr, evt_addr, action, message, latency_ms, user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(
-      ts, body.level, body.svcAddr,
-      body.permAddr ?? null, body.evtAddr ?? null,
-      body.action, body.message, latencyMs, body.userId,
-    ).run();
+    const result = await db
+      .prepare(
+        `INSERT INTO logs (ts, level, svc_addr, perm_addr, evt_addr, action, message, latency_ms, user_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        ts,
+        body.level,
+        body.svcAddr,
+        body.permAddr ?? null,
+        body.evtAddr ?? null,
+        body.action,
+        body.message,
+        latencyMs,
+        body.userId,
+      )
+      .run();
 
     const id = result.meta?.last_row_id;
     return c.json({ ok: true, id });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 
-app.post("/api/logs/seed", async (c) => {
+app.post('/api/logs/seed', async (c) => {
   try {
     const db = c.env.DB;
-    const ver = parseVer(c.req.query("ver"));
-    const clear = c.req.query("clear") === "true";
+    const ver = parseVer(c.req.query('ver'));
+    const clear = c.req.query('clear') === 'true';
 
     const roleStr = demoRoleStride(ver);
-    const evtStr  = demoEvtStride(ver);
-    const baseTs  = Date.now() - 30_000;
+    const evtStr = demoEvtStride(ver);
+    const baseTs = Date.now() - 30_000;
 
-    const samples: Omit<LogRow, "id">[] = [
-      { ts: new Date(baseTs).toISOString(),          level: "INFO",  svc_addr: 40, perm_addr: (1-1)*roleStr+(2-1), evt_addr: null,                                action: "page.view",         message: "메인 페이지 조회",                           latency_ms: 42,    user_id: "u-1001"    },
-      { ts: new Date(baseTs+1200).toISOString(),     level: "INFO",  svc_addr: 46, perm_addr: (4-1)*roleStr+(1-1), evt_addr: (4-1)*evtStr+(3-1)*2+(1-1),           action: "payment.initiate",  message: "결제 요청 시작 — KRW 45,000",                 latency_ms: 187,   user_id: "u-1001"    },
-      { ts: new Date(baseTs+2800).toISOString(),     level: "DEBUG", svc_addr: 44, perm_addr: null,                evt_addr: null,                                action: "token.validate",    message: "JWT 토큰 검증 완료",                          latency_ms: 3,     user_id: "u-1001"    },
-      { ts: new Date(baseTs+4500).toISOString(),     level: "WARN",  svc_addr: 48, perm_addr: null,                evt_addr: (5-1)*evtStr+(1-1)*2+(1-1),           action: "rate.limit",        message: "Rate limit 임계값 80% 도달 — IP 203.0.113.42", latency_ms: 1,     user_id: "system"    },
-      { ts: new Date(baseTs+5100).toISOString(),     level: "ERROR", svc_addr: 46, perm_addr: (4-1)*roleStr+(2-1), evt_addr: (4-1)*evtStr+(4-1)*2+(1-1),           action: "payment.refund.fail", message: "환불 처리 실패 — PG 응답 타임아웃 (30s)",     latency_ms: 30012, user_id: "u-2045"    },
-      { ts: new Date(baseTs+7200).toISOString(),     level: "INFO",  svc_addr: 53, perm_addr: (2-1)*roleStr+(3-1), evt_addr: null,                                action: "catalog.sync",      message: "상품 카탈로그 동기화 완료 — 2,340건",          latency_ms: 892,   user_id: "u-batch"   },
-      { ts: new Date(baseTs+9800).toISOString(),     level: "INFO",  svc_addr: 20, perm_addr: (1-1)*roleStr+(2-1), evt_addr: (1-1)*evtStr+(2-1)*2+(2-1),           action: "deploy.canary",     message: "카나리 배포 진행 중 — v2.4.1-rc3",             latency_ms: 0,     user_id: "u-3001"   },
-      { ts: new Date(baseTs+11500).toISOString(),    level: "WARN",  svc_addr: 45, perm_addr: (3-1)*roleStr+(1-1), evt_addr: null,                                action: "auth.brute",        message: "로그인 실패 연속 5회 — 계정 잠금 경고",        latency_ms: 8,     user_id: "u-unknown" },
+    const samples: Omit<LogRow, 'id'>[] = [
+      {
+        ts: new Date(baseTs).toISOString(),
+        level: 'INFO',
+        svc_addr: 40,
+        perm_addr: (1 - 1) * roleStr + (2 - 1),
+        evt_addr: null,
+        action: 'page.view',
+        message: '메인 페이지 조회',
+        latency_ms: 42,
+        user_id: 'u-1001',
+      },
+      {
+        ts: new Date(baseTs + 1200).toISOString(),
+        level: 'INFO',
+        svc_addr: 46,
+        perm_addr: (4 - 1) * roleStr + (1 - 1),
+        evt_addr: (4 - 1) * evtStr + (3 - 1) * 2 + (1 - 1),
+        action: 'payment.initiate',
+        message: '결제 요청 시작 — KRW 45,000',
+        latency_ms: 187,
+        user_id: 'u-1001',
+      },
+      {
+        ts: new Date(baseTs + 2800).toISOString(),
+        level: 'DEBUG',
+        svc_addr: 44,
+        perm_addr: null,
+        evt_addr: null,
+        action: 'token.validate',
+        message: 'JWT 토큰 검증 완료',
+        latency_ms: 3,
+        user_id: 'u-1001',
+      },
+      {
+        ts: new Date(baseTs + 4500).toISOString(),
+        level: 'WARN',
+        svc_addr: 48,
+        perm_addr: null,
+        evt_addr: (5 - 1) * evtStr + (1 - 1) * 2 + (1 - 1),
+        action: 'rate.limit',
+        message: 'Rate limit 임계값 80% 도달 — IP 203.0.113.42',
+        latency_ms: 1,
+        user_id: 'system',
+      },
+      {
+        ts: new Date(baseTs + 5100).toISOString(),
+        level: 'ERROR',
+        svc_addr: 46,
+        perm_addr: (4 - 1) * roleStr + (2 - 1),
+        evt_addr: (4 - 1) * evtStr + (4 - 1) * 2 + (1 - 1),
+        action: 'payment.refund.fail',
+        message: '환불 처리 실패 — PG 응답 타임아웃 (30s)',
+        latency_ms: 30012,
+        user_id: 'u-2045',
+      },
+      {
+        ts: new Date(baseTs + 7200).toISOString(),
+        level: 'INFO',
+        svc_addr: 53,
+        perm_addr: (2 - 1) * roleStr + (3 - 1),
+        evt_addr: null,
+        action: 'catalog.sync',
+        message: '상품 카탈로그 동기화 완료 — 2,340건',
+        latency_ms: 892,
+        user_id: 'u-batch',
+      },
+      {
+        ts: new Date(baseTs + 9800).toISOString(),
+        level: 'INFO',
+        svc_addr: 20,
+        perm_addr: (1 - 1) * roleStr + (2 - 1),
+        evt_addr: (1 - 1) * evtStr + (2 - 1) * 2 + (2 - 1),
+        action: 'deploy.canary',
+        message: '카나리 배포 진행 중 — v2.4.1-rc3',
+        latency_ms: 0,
+        user_id: 'u-3001',
+      },
+      {
+        ts: new Date(baseTs + 11500).toISOString(),
+        level: 'WARN',
+        svc_addr: 45,
+        perm_addr: (3 - 1) * roleStr + (1 - 1),
+        evt_addr: null,
+        action: 'auth.brute',
+        message: '로그인 실패 연속 5회 — 계정 잠금 경고',
+        latency_ms: 8,
+        user_id: 'u-unknown',
+      },
     ];
 
-    if (clear) await db.prepare("DELETE FROM logs").run();
+    if (clear) await db.prepare('DELETE FROM logs').run();
 
     const stmts = samples.map((s) =>
-      db.prepare(
-        `INSERT INTO logs (ts, level, svc_addr, perm_addr, evt_addr, action, message, latency_ms, user_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(s.ts, s.level, s.svc_addr, s.perm_addr, s.evt_addr, s.action, s.message, s.latency_ms, s.user_id)
+      db
+        .prepare(
+          `INSERT INTO logs (ts, level, svc_addr, perm_addr, evt_addr, action, message, latency_ms, user_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .bind(
+          s.ts,
+          s.level,
+          s.svc_addr,
+          s.perm_addr,
+          s.evt_addr,
+          s.action,
+          s.message,
+          s.latency_ms,
+          s.user_id,
+        ),
     );
     await db.batch(stmts);
 
     return c.json({ ok: true, inserted: samples.length });
   } catch (e) {
-    return c.json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
   }
 });
 

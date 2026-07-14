@@ -11,7 +11,7 @@
  * 차원 분해·합성 시 mixed-radix 구조에 의해 정합성이 보장된다.
  */
 
-import type { Catalog, DimRef, PrefixDef } from "./catalog.types.js";
+import type { Catalog, DimRef, PrefixDef } from './catalog.types.js';
 
 // ── 반환 타입 ────────────────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ export interface PrefixStructure {
   readonly name: string;
   readonly description?: string;
   readonly labels: readonly string[];
-  readonly dims: PrefixDef["dims"];
+  readonly dims: PrefixDef['dims'];
   readonly versions: readonly string[];
 }
 
@@ -38,7 +38,7 @@ export interface PrefixEntries {
 /** 축별 entries/capacity/headroom + stride 정보 */
 export interface DimCapacityInfo {
   readonly label: string;
-  readonly kind: "axis" | "prefix_ref" | "table_ref";
+  readonly kind: 'axis' | 'prefix_ref' | 'table_ref';
   readonly axisId?: string;
   /** 실제 entry 수. prefix_ref에서 refEntries 미정의 시 undefined */
   readonly entries: number | undefined;
@@ -100,26 +100,29 @@ function resolveAxisCap(catalog: Catalog, axisId: string, version: string): numb
 }
 
 /** table_ref가 아닌 차원(고정 차원)의 labels만 반환 */
-function getFixedLabels(prefix: { labels: readonly string[]; dims: Record<string, DimRef> }): string[] {
-  return prefix.labels.filter(l => prefix.dims[l].kind !== "table_ref");
+function getFixedLabels(prefix: {
+  labels: readonly string[];
+  dims: Record<string, DimRef>;
+}): string[] {
+  return prefix.labels.filter((l) => prefix.dims[l].kind !== 'table_ref');
 }
 
 function resolvePrefixCapacity(catalog: Catalog, prefixId: string, version: string): number {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   let capacity = 1;
   for (const label of getFixedLabels(prefix)) {
     const dim = prefix.dims[label];
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       capacity *= resolveAxisCap(catalog, dim.axisId, vdef.axisVersions[label]);
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       capacity *= ref
         ? ref.values.length
-        : resolvePrefixCapacity(catalog, dim.prefixId, vdef.axisVersions[label] ?? "v1");
+        : resolvePrefixCapacity(catalog, dim.prefixId, vdef.axisVersions[label] ?? 'v1');
     }
   }
   return capacity;
@@ -130,7 +133,7 @@ function resolvePrefixCapacity(catalog: Catalog, prefixId: string, version: stri
 /** prefix의 최신 버전 키를 동적으로 조회. 하드코딩 금지 — 이 함수가 SSOT. */
 export function latestPrefixVersion(catalog: Catalog, prefixId: string): string {
   const prefix = catalog.prefixes[prefixId];
-  if (!prefix?.versions?.length) return "v1";
+  if (!prefix?.versions?.length) return 'v1';
   return prefix.versions[prefix.versions.length - 1].version;
 }
 
@@ -144,7 +147,7 @@ export function getPrefixStructure(catalog: Catalog, prefixId: string): PrefixSt
     description: prefix.description,
     labels: prefix.labels,
     dims: prefix.dims,
-    versions: prefix.versions.map(v => v.version),
+    versions: prefix.versions.map((v) => v.version),
   };
 }
 
@@ -152,7 +155,7 @@ export function getPrefixStructure(catalog: Catalog, prefixId: string): PrefixSt
 export function getPrefixShape(catalog: Catalog, prefixId: string, version: string): PrefixShape {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   const shape: number[] = [];
@@ -161,13 +164,13 @@ export function getPrefixShape(catalog: Catalog, prefixId: string, version: stri
   for (const label of getFixedLabels(prefix)) {
     const dim = prefix.dims[label];
     let cap: number;
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       cap = resolveAxisCap(catalog, dim.axisId, vdef.axisVersions[label]);
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       cap = ref
         ? ref.values.length
-        : resolvePrefixCapacity(catalog, dim.prefixId, vdef.axisVersions[label] ?? "v1");
+        : resolvePrefixCapacity(catalog, dim.prefixId, vdef.axisVersions[label] ?? 'v1');
     } else {
       continue; // table_ref: skip
     }
@@ -183,10 +186,14 @@ export function getPrefixShape(catalog: Catalog, prefixId: string, version: stri
 }
 
 /** entries 포함 전체 — version별 entries + ko. table_ref 차원은 테이블명만 반환. */
-export function getPrefixEntries(catalog: Catalog, prefixId: string, version: string): PrefixEntries {
+export function getPrefixEntries(
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
+): PrefixEntries {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   const entries: Record<string, readonly (string | number)[]> = {};
@@ -194,12 +201,12 @@ export function getPrefixEntries(catalog: Catalog, prefixId: string, version: st
 
   for (const label of prefix.labels) {
     const dim = prefix.dims[label];
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snap = axis.versions[vdef.axisVersions[label]];
       entries[label] = snap.entries;
       if (snap.ko) ko[label] = snap.ko;
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       if (ref) entries[label] = ref.values;
     }
@@ -210,11 +217,15 @@ export function getPrefixEntries(catalog: Catalog, prefixId: string, version: st
 }
 
 /** prefix의 축별 프로파일 — entries/capacity/headroom/stride를 한눈에 조회. */
-export function getPrefixProfile(catalog: Catalog, prefixId: string, version?: string): PrefixDimProfile {
+export function getPrefixProfile(
+  catalog: Catalog,
+  prefixId: string,
+  version?: string,
+): PrefixDimProfile {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
   const ver = version ?? latestPrefixVersion(catalog, prefixId);
-  const vdef = prefix.versions.find(v => v.version === ver);
+  const vdef = prefix.versions.find((v) => v.version === ver);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${ver}`);
 
   const fixedLabels = getFixedLabels(prefix);
@@ -232,13 +243,13 @@ export function getPrefixProfile(catalog: Catalog, prefixId: string, version?: s
     let entries: number | undefined;
     let axisId: string | undefined;
 
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       axisId = dim.axisId;
       const axis = catalog.axes[dim.axisId];
       const axisVer = vdef.axisVersions[label];
       const snap = axis.versions[axisVer];
       entries = snap.entries.length;
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       entries = ref ? ref.values.length : undefined;
     } else {
@@ -287,10 +298,17 @@ function getShapeAndStrides(catalog: Catalog, prefixId: string, version: string)
   return { shape, strides: calcWeights(shape) };
 }
 
-function validateAddress(catalog: Catalog, prefixId: string, version: string, address: number): void {
+function validateAddress(
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
+  address: number,
+): void {
   const { capacity } = getPrefixShape(catalog, prefixId, version);
   if (!Number.isInteger(address) || address < 0 || address >= capacity) {
-    throw new Error(`address for ${prefixId}@${version} must be in [0, ${capacity - 1}], got ${address}`);
+    throw new Error(
+      `address for ${prefixId}@${version} must be in [0, ${capacity - 1}], got ${address}`,
+    );
   }
 }
 
@@ -307,7 +325,9 @@ function validatePositions(
     const pos = positions[label];
     const max = shape[i] - 1;
     if (!Number.isInteger(pos) || pos < 0 || pos > max) {
-      throw new Error(`position for ${prefixId}@${version}.${label} must be in [0, ${max}], got ${pos}`);
+      throw new Error(
+        `position for ${prefixId}@${version}.${label} must be in [0, ${max}], got ${pos}`,
+      );
     }
   }
 }
@@ -321,7 +341,9 @@ function validatePositions(
  * @returns 1D 주소 (예: 3)
  */
 export function encodePrefix(
-  catalog: Catalog, prefixId: string, version: string,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
   positions: Record<string, number>,
 ): number {
   const prefix = catalog.prefixes[prefixId];
@@ -354,12 +376,14 @@ export interface DecodedPosition {
  * prefix_ref 차원: value = refEntries.values[position] (참조된 prefix의 1D 주소)
  */
 export function decodePrefix(
-  catalog: Catalog, prefixId: string, version: string,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
   address: number,
 ): Record<string, DecodedPosition> {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
   validateAddress(catalog, prefixId, version, address);
   const fixedLabels = getFixedLabels(prefix);
@@ -375,11 +399,11 @@ export function decodePrefix(
 
     const dim = prefix.dims[label];
     let value: string | number;
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snap = axis.versions[vdef.axisVersions[label]];
       value = pos < snap.entries.length ? snap.entries[pos] : `(reserved:${pos})`;
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       value = ref ? ref.values[pos] : pos;
     } else {
@@ -397,12 +421,15 @@ export function decodePrefix(
  * @param labels - 추출할 차원 label 목록 (getFixedLabels 범위 내)
  */
 export function decodePrefixPartial(
-  catalog: Catalog, prefixId: string, version: string,
-  address: number, labels: string[],
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
+  address: number,
+  labels: string[],
 ): Record<string, DecodedPosition> {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
   validateAddress(catalog, prefixId, version, address);
   const fixedLabels = getFixedLabels(prefix);
@@ -421,11 +448,11 @@ export function decodePrefixPartial(
 
     const dim = prefix.dims[label];
     let value: string | number;
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snap = axis.versions[vdef.axisVersions[label]];
       value = pos < snap.entries.length ? snap.entries[pos] : `(reserved:${pos})`;
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       value = ref ? ref.values[pos] : pos;
     } else {
@@ -473,12 +500,14 @@ export interface ResolvedAddress {
  * ```
  */
 export function resolveAddress(
-  catalog: Catalog, prefixId: string, version: string,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
   address: number,
 ): ResolvedAddress {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   const decoded = decodePrefix(catalog, prefixId, version, address);
@@ -488,15 +517,15 @@ export function resolveAddress(
     const { position, value } = decoded[label];
     const dim = prefix.dims[label];
 
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snap = axis.versions[vdef.axisVersions[label]];
-      const ko = snap.ko && typeof value === "string" ? snap.ko[value] : undefined;
+      const ko = snap.ko && typeof value === 'string' ? snap.ko[value] : undefined;
       dims[label] = { label, position, value, ko };
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       const refAddr = ref ? ref.values[position] : position;
-      const refVersion = ref?.refVersion ?? "v1";
+      const refVersion = ref?.refVersion ?? 'v1';
       const resolved = resolveAddress(catalog, dim.prefixId, refVersion, refAddr as number);
       dims[label] = { label, position, value: refAddr, ref: resolved };
     }
@@ -520,12 +549,14 @@ export function resolveAddress(
  * ```
  */
 export function encodePrefixByValue(
-  catalog: Catalog, prefixId: string, version: string,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
   values: Record<string, string | number>,
 ): number {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   const positions: Record<string, number> = {};
@@ -534,13 +565,16 @@ export function encodePrefixByValue(
     if (val === undefined) throw new Error(`Missing value for dim: ${label}`);
     const dim = prefix.dims[label];
 
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
       const snap = axis.versions[vdef.axisVersions[label]];
       const idx = snap.entries.indexOf(val as string);
-      if (idx < 0) throw new Error(`Unknown entry "${val}" for axis ${dim.axisId}@${vdef.axisVersions[label]}`);
+      if (idx < 0)
+        throw new Error(
+          `Unknown entry "${val}" for axis ${dim.axisId}@${vdef.axisVersions[label]}`,
+        );
       positions[label] = idx;
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const ref = vdef.refEntries?.[label];
       if (!ref) throw new Error(`No refEntries for prefix_ref dim: ${label}`);
       const idx = ref.values.indexOf(val as number);
@@ -571,12 +605,14 @@ export interface DecomposedDim {
 }
 
 export function decomposeAddress(
-  catalog: Catalog, prefixId: string, version: string,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
   address: number,
 ): Record<string, DecomposedDim> {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const vdef = prefix.versions.find(v => v.version === version);
+  const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   const decoded = decodePrefix(catalog, prefixId, version, address);
@@ -586,11 +622,11 @@ export function decomposeAddress(
     const { position, value } = decoded[label];
     const dim = prefix.dims[label];
 
-    if (dim.kind === "axis") {
+    if (dim.kind === 'axis') {
       result[label] = { position, value };
-    } else if (dim.kind === "prefix_ref") {
+    } else if (dim.kind === 'prefix_ref') {
       const refAddr = value as number;
-      const refVersion = vdef.refEntries?.[label]?.refVersion ?? "v1";
+      const refVersion = vdef.refEntries?.[label]?.refVersion ?? 'v1';
       const refDims = decodePrefix(catalog, dim.prefixId, refVersion, refAddr);
       result[label] = { position, value: refAddr, refAddress: refAddr, refDims };
     }
@@ -600,13 +636,16 @@ export function decomposeAddress(
 
 // ── 통일 DecodeResult 변환 ────────────────────────────────────────────────────
 
-import type { DecodeResult, DecodedDim } from "./decode-result.js";
+import type { DecodeResult, DecodedDim } from './decode-result.js';
 
 /**
  * decodePrefix (L1) 결과를 통일 DecodeResult로 변환.
  */
 export function decodePrefixAsResult(
-  catalog: Catalog, prefixId: string, version: string, address: number,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
+  address: number,
 ): DecodeResult {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
@@ -617,7 +656,7 @@ export function decodePrefixAsResult(
     const dim = prefix.dims[label];
     dims[label] = {
       label,
-      kind: dim.kind === "axis" ? "axis" : dim.kind === "prefix_ref" ? "prefix_ref" : "table_ref",
+      kind: dim.kind === 'axis' ? 'axis' : dim.kind === 'prefix_ref' ? 'prefix_ref' : 'table_ref',
       position: d.position,
       value: d.value,
     };
@@ -630,7 +669,10 @@ export function decodePrefixAsResult(
  * ko + ref 재귀 포함.
  */
 export function resolveAddressAsResult(
-  catalog: Catalog, prefixId: string, version: string, address: number,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
+  address: number,
 ): DecodeResult {
   const resolved = resolveAddress(catalog, prefixId, version, address);
   return resolvedToResult(resolved);
@@ -641,7 +683,7 @@ function resolvedToResult(resolved: ResolvedAddress): DecodeResult {
   for (const [label, d] of Object.entries(resolved.dims)) {
     dims[label] = {
       label,
-      kind: d.ref ? "prefix_ref" : "axis",
+      kind: d.ref ? 'prefix_ref' : 'axis',
       position: d.position,
       value: d.value,
       ko: d.ko,
@@ -655,7 +697,10 @@ function resolvedToResult(resolved: ResolvedAddress): DecodeResult {
  * decomposeAddress (L3) 결과를 통일 DecodeResult로 변환.
  */
 export function decomposeAddressAsResult(
-  catalog: Catalog, prefixId: string, version: string, address: number,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
+  address: number,
 ): DecodeResult {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
@@ -666,25 +711,25 @@ export function decomposeAddressAsResult(
     const dim = prefix.dims[label];
     const dimObj: DecodedDim = {
       label,
-      kind: dim.kind === "axis" ? "axis" : dim.kind === "prefix_ref" ? "prefix_ref" : "table_ref",
+      kind: dim.kind === 'axis' ? 'axis' : dim.kind === 'prefix_ref' ? 'prefix_ref' : 'table_ref',
       position: d.position,
       value: d.value,
     };
-    if (d.refDims && dim.kind === "prefix_ref") {
+    if (d.refDims && dim.kind === 'prefix_ref') {
       const refDims: Record<string, DecodedDim> = {};
       const refPrefix = catalog.prefixes[dim.prefixId];
       for (const [rl, rd] of Object.entries(d.refDims)) {
         const refDim = refPrefix?.dims[rl];
         refDims[rl] = {
           label: rl,
-          kind: refDim?.kind === "prefix_ref" ? "prefix_ref" : "axis",
+          kind: refDim?.kind === 'prefix_ref' ? 'prefix_ref' : 'axis',
           position: rd.position,
           value: rd.value,
         };
       }
       (dimObj as unknown as { ref: DecodeResult }).ref = {
         prefix: dim.prefixId,
-        version: "v1",
+        version: 'v1',
         address: d.refAddress ?? (d.value as number),
         dims: refDims,
       };
@@ -701,7 +746,9 @@ export function decomposeAddressAsResult(
  * 모든 유효 주소에 대해 encode(decode(addr)) === addr 보장.
  */
 export function verifyRoundTrip(
-  catalog: Catalog, prefixId: string, version: string,
+  catalog: Catalog,
+  prefixId: string,
+  version: string,
 ): { valid: boolean; capacity: number; errors: string[] } {
   const { capacity } = getPrefixShape(catalog, prefixId, version);
   const errors: string[] = [];

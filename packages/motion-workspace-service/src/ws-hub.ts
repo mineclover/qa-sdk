@@ -6,7 +6,7 @@ import type {
   WorkspaceSceneLockMessage,
   WorkspaceSceneUnlockMessage,
   WorkspaceSceneUnlockReason,
-} from "./ws-protocol.js";
+} from './ws-protocol.js';
 
 export interface WorkspaceWsPeerSocket {
   send(message: string): void;
@@ -51,7 +51,7 @@ export interface WorkspaceWsHub {
   updatePresence(input: {
     readonly connectionId: string;
     readonly activeSceneId?: string;
-    readonly cursor?: WorkspacePresenceInfo["cursor"];
+    readonly cursor?: WorkspacePresenceInfo['cursor'];
   }): WorkspacePresenceMessage | null;
   clearPresence(connectionId: string): WorkspacePresenceMessage | null;
   lockScene(input: {
@@ -83,33 +83,20 @@ function toPresenceInfo(entry: WorkspacePresenceState): WorkspacePresenceInfo {
   };
 }
 
-export function createWorkspaceWsHub(
-  options: WorkspaceWsHubOptions = {},
-): WorkspaceWsHub {
+export function createWorkspaceWsHub(options: WorkspaceWsHubOptions = {}): WorkspaceWsHub {
   const connections = new Map<string, WorkspaceWsConnection>();
   const workspaceMembership = new Map<string, Set<string>>();
   const presence = new Map<string, Map<string, WorkspacePresenceState>>();
-  const sceneLocks = new Map<
-    string,
-    Map<string, Map<string, WorkspaceSceneLockState>>
-  >();
-  const heartbeatTimeoutMs = options.heartbeatTimeoutMs ??
-    DEFAULT_SCENE_LOCK_HEARTBEAT_TIMEOUT_MS;
+  const sceneLocks = new Map<string, Map<string, Map<string, WorkspaceSceneLockState>>>();
+  const heartbeatTimeoutMs = options.heartbeatTimeoutMs ?? DEFAULT_SCENE_LOCK_HEARTBEAT_TIMEOUT_MS;
   const getNow = options.getNow ?? Date.now;
   let nextConnectionSequence = 0;
 
-  function getSceneLockUsers(
-    workspaceId: string,
-    sceneId: string,
-  ): string[] {
+  function getSceneLockUsers(workspaceId: string, sceneId: string): string[] {
     return sortUsers(sceneLocks.get(workspaceId)?.get(sceneId)?.keys() ?? []);
   }
 
-  function deleteSceneLock(
-    workspaceId: string,
-    sceneId: string,
-    userId: string,
-  ): void {
+  function deleteSceneLock(workspaceId: string, sceneId: string, userId: string): void {
     const workspaceSceneLocks = sceneLocks.get(workspaceId);
     const sceneUsers = workspaceSceneLocks?.get(sceneId);
     if (!sceneUsers) {
@@ -125,10 +112,7 @@ export function createWorkspaceWsHub(
     }
   }
 
-  function deletePresence(
-    workspaceId: string,
-    userId: string,
-  ): void {
+  function deletePresence(workspaceId: string, userId: string): void {
     const workspacePresence = presence.get(workspaceId);
     if (!workspacePresence) {
       return;
@@ -166,7 +150,7 @@ export function createWorkspaceWsHub(
 
     deleteSceneLock(connection.workspaceId, sceneId, connection.userId);
     return {
-      type: "scene:unlock",
+      type: 'scene:unlock',
       workspaceId: connection.workspaceId,
       sceneId,
       userId: connection.userId,
@@ -194,7 +178,7 @@ export function createWorkspaceWsHub(
 
     deletePresence(connection.workspaceId, connection.userId);
     return {
-      type: "presence",
+      type: 'presence',
       workspaceId: connection.workspaceId,
       userId: connection.userId,
     };
@@ -208,7 +192,7 @@ export function createWorkspaceWsHub(
 
     const releasedLocks: WorkspaceSceneUnlockMessage[] = [];
     for (const sceneId of Array.from(connection.lockedScenes)) {
-      const unlockMessage = releaseSceneLock(connectionId, sceneId, "disconnect");
+      const unlockMessage = releaseSceneLock(connectionId, sceneId, 'disconnect');
       if (unlockMessage) {
         releasedLocks.push(unlockMessage);
       }
@@ -317,8 +301,8 @@ export function createWorkspaceWsHub(
         presence.set(connection.workspaceId, workspacePresence);
       }
 
-      const connectionIds = workspacePresence.get(connection.userId)?.connectionIds ??
-        new Set<string>();
+      const connectionIds =
+        workspacePresence.get(connection.userId)?.connectionIds ?? new Set<string>();
       connectionIds.add(connectionId);
       workspacePresence.set(connection.userId, {
         workspaceId: connection.workspaceId,
@@ -329,7 +313,7 @@ export function createWorkspaceWsHub(
       });
 
       return {
-        type: "presence",
+        type: 'presence',
         workspaceId: connection.workspaceId,
         userId: connection.userId,
         ...(activeSceneId ? { activeSceneId } : {}),
@@ -359,12 +343,12 @@ export function createWorkspaceWsHub(
 
           deleteSceneLock(workspaceId, sceneId, userId);
           expiredLocks.push({
-            type: "scene:unlock",
+            type: 'scene:unlock',
             workspaceId,
             sceneId,
             userId,
             holders: getSceneLockUsers(workspaceId, sceneId),
-            reason: "timeout",
+            reason: 'timeout',
           });
         }
       }
@@ -410,7 +394,7 @@ export function createWorkspaceWsHub(
 
       const holders = getSceneLockUsers(connection.workspaceId, sceneId);
       return {
-        type: "scene:lock",
+        type: 'scene:lock',
         workspaceId: connection.workspaceId,
         sceneId,
         userId: connection.userId,
@@ -419,7 +403,7 @@ export function createWorkspaceWsHub(
       };
     },
 
-    unlockScene({ connectionId, sceneId, reason = "explicit" }) {
+    unlockScene({ connectionId, sceneId, reason = 'explicit' }) {
       return releaseSceneLock(connectionId, sceneId, reason);
     },
 

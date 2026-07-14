@@ -1,26 +1,26 @@
 // @def.doc definition-catalog-spec
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { MemoryDefinitionRegistry } from "./registry.js";
-import type { DefinitionEntryInput, DefScope } from "./types.js";
-import { DEF_SCOPE } from "./vocabulary.js";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { MemoryDefinitionRegistry } from './registry.js';
+import type { DefinitionEntryInput, DefScope } from './types.js';
+import { DEF_SCOPE } from './vocabulary.js';
 
 function makeEntry(overrides: Partial<DefinitionEntryInput> = {}): DefinitionEntryInput {
   const now = new Date().toISOString();
   return {
     id: `doc-${Math.random().toString(36).slice(2, 8)}`,
-    title: "테스트 문서",
-    scope: "ui",
-    aspect: "component",
-    depth: "specification",
-    lifecycle: "draft",
+    title: '테스트 문서',
+    scope: 'ui',
+    aspect: 'component',
+    depth: 'specification',
+    lifecycle: 'draft',
     createdAt: now,
     updatedAt: now,
     ...overrides,
   };
 }
 
-describe("MemoryDefinitionRegistry", () => {
+describe('MemoryDefinitionRegistry', () => {
   let registry: MemoryDefinitionRegistry;
 
   beforeEach(() => {
@@ -29,240 +29,306 @@ describe("MemoryDefinitionRegistry", () => {
 
   // ─── CRUD ──────────────────────────────────────────────
 
-  describe("register", () => {
-    it("문서를 등록하고 좌표를 자동 계산한다", () => {
-      const entry = registry.register(makeEntry({ id: "doc-1" }));
+  describe('register', () => {
+    it('문서를 등록하고 좌표를 자동 계산한다', () => {
+      const entry = registry.register(makeEntry({ id: 'doc-1' }));
       expect(entry.address).toBeDefined();
       expect(entry.serialized).toMatch(/^def_document:v1:\d+$/);
     });
 
-    it("명시된 v2 address가 있으면 그 값을 보존한다", () => {
-      const entry = registry.register(makeEntry({
-        id: "doc-v2",
-        address: 123456,
-        serialized: "def_document:v2:123456",
-      }));
+    it('명시된 v2 address가 있으면 그 값을 보존한다', () => {
+      const entry = registry.register(
+        makeEntry({
+          id: 'doc-v2',
+          address: 123456,
+          serialized: 'def_document:v2:123456',
+        }),
+      );
       expect(entry.address).toBe(123456);
-      expect(entry.serialized).toBe("def_document:v2:123456");
+      expect(entry.serialized).toBe('def_document:v2:123456');
     });
 
-    it("중복 ID 등록 시 에러", () => {
-      registry.register(makeEntry({ id: "dup" }));
-      expect(() => registry.register(makeEntry({ id: "dup" }))).toThrow("이미 등록된 ID");
+    it('중복 ID 등록 시 에러', () => {
+      registry.register(makeEntry({ id: 'dup' }));
+      expect(() => registry.register(makeEntry({ id: 'dup' }))).toThrow('이미 등록된 ID');
     });
 
-    it("무효한 scope-aspect 조합 시 에러", () => {
-      expect(() => registry.register(makeEntry({
-        scope: "ui",
-        aspect: "domain_data" as any,
-      }))).toThrow();
+    it('무효한 scope-aspect 조합 시 에러', () => {
+      expect(() =>
+        registry.register(
+          makeEntry({
+            scope: 'ui',
+            aspect: 'domain_data' as any,
+          }),
+        ),
+      ).toThrow();
     });
   });
 
-  describe("get", () => {
-    it("등록된 문서를 반환한다", () => {
-      registry.register(makeEntry({ id: "doc-1", title: "컴포넌트 스펙" }));
-      const got = registry.get("doc-1");
+  describe('get', () => {
+    it('등록된 문서를 반환한다', () => {
+      registry.register(makeEntry({ id: 'doc-1', title: '컴포넌트 스펙' }));
+      const got = registry.get('doc-1');
       expect(got).toBeDefined();
-      expect(got!.title).toBe("컴포넌트 스펙");
+      expect(got!.title).toBe('컴포넌트 스펙');
     });
 
-    it("미등록 ID는 undefined", () => {
-      expect(registry.get("nonexistent")).toBeUndefined();
+    it('미등록 ID는 undefined', () => {
+      expect(registry.get('nonexistent')).toBeUndefined();
     });
   });
 
-  describe("update", () => {
-    it("title을 수정할 수 있다", () => {
-      registry.register(makeEntry({ id: "doc-1", title: "v1" }));
-      const updated = registry.update("doc-1", { title: "v2" });
-      expect(updated.title).toBe("v2");
+  describe('update', () => {
+    it('title을 수정할 수 있다', () => {
+      registry.register(makeEntry({ id: 'doc-1', title: 'v1' }));
+      const updated = registry.update('doc-1', { title: 'v2' });
+      expect(updated.title).toBe('v2');
     });
 
-    it("lifecycle 변경 시 좌표는 불변이다 (주소 안정성)", () => {
-      const entry = registry.register(makeEntry({ id: "doc-1", lifecycle: "draft" }));
-      const updated = registry.update("doc-1", { lifecycle: "approved" });
+    it('lifecycle 변경 시 좌표는 불변이다 (주소 안정성)', () => {
+      const entry = registry.register(makeEntry({ id: 'doc-1', lifecycle: 'draft' }));
+      const updated = registry.update('doc-1', { lifecycle: 'approved' });
       expect(updated.address).toBe(entry.address);
       expect(updated.serialized).toBe(entry.serialized);
-      expect(updated.lifecycle).toBe("approved");
+      expect(updated.lifecycle).toBe('approved');
     });
 
-    it("depth 변경 시 좌표가 재계산된다", () => {
-      const entry = registry.register(makeEntry({ id: "doc-2", depth: "overview" }));
-      const updated = registry.update("doc-2", { depth: "specification" });
+    it('depth 변경 시 좌표가 재계산된다', () => {
+      const entry = registry.register(makeEntry({ id: 'doc-2', depth: 'overview' }));
+      const updated = registry.update('doc-2', { depth: 'specification' });
       expect(updated.address).not.toBe(entry.address);
-      expect(updated.depth).toBe("specification");
+      expect(updated.depth).toBe('specification');
     });
 
-    it("명시된 v2 address 문서는 depth 변경 시에도 주소를 유지한다", () => {
-      registry.register(makeEntry({
-        id: "doc-v2-stable",
-        depth: "overview",
-        address: 222222,
-        serialized: "def_document:v2:222222",
-      }));
-      const updated = registry.update("doc-v2-stable", { depth: "specification" });
+    it('명시된 v2 address 문서는 depth 변경 시에도 주소를 유지한다', () => {
+      registry.register(
+        makeEntry({
+          id: 'doc-v2-stable',
+          depth: 'overview',
+          address: 222222,
+          serialized: 'def_document:v2:222222',
+        }),
+      );
+      const updated = registry.update('doc-v2-stable', { depth: 'specification' });
       expect(updated.address).toBe(222222);
-      expect(updated.serialized).toBe("def_document:v2:222222");
+      expect(updated.serialized).toBe('def_document:v2:222222');
     });
 
-    it("미등록 ID 수정 시 에러", () => {
-      expect(() => registry.update("nonexistent", { title: "x" })).toThrow("등록되지 않은 ID");
+    it('미등록 ID 수정 시 에러', () => {
+      expect(() => registry.update('nonexistent', { title: 'x' })).toThrow('등록되지 않은 ID');
     });
   });
 
-  describe("remove", () => {
-    it("등록된 문서를 삭제한다", () => {
-      registry.register(makeEntry({ id: "doc-1" }));
-      expect(registry.remove("doc-1")).toBe(true);
-      expect(registry.get("doc-1")).toBeUndefined();
+  describe('remove', () => {
+    it('등록된 문서를 삭제한다', () => {
+      registry.register(makeEntry({ id: 'doc-1' }));
+      expect(registry.remove('doc-1')).toBe(true);
+      expect(registry.get('doc-1')).toBeUndefined();
     });
 
-    it("미등록 ID 삭제는 false", () => {
-      expect(registry.remove("nonexistent")).toBe(false);
+    it('미등록 ID 삭제는 false', () => {
+      expect(registry.remove('nonexistent')).toBe(false);
     });
 
-    it("삭제 시 관련 관계도 제거된다", () => {
-      registry.register(makeEntry({ id: "a", scope: "ui", aspect: "layout" }));
-      registry.register(makeEntry({ id: "b", scope: "ui", aspect: "component" }));
-      registry.link("a", "b", "depends_on");
-      expect(registry.getLinks("a").length).toBe(1);
+    it('삭제 시 관련 관계도 제거된다', () => {
+      registry.register(makeEntry({ id: 'a', scope: 'ui', aspect: 'layout' }));
+      registry.register(makeEntry({ id: 'b', scope: 'ui', aspect: 'component' }));
+      registry.link('a', 'b', 'depends_on');
+      expect(registry.getLinks('a').length).toBe(1);
 
-      registry.remove("a");
-      expect(registry.getLinks("b").length).toBe(0);
+      registry.remove('a');
+      expect(registry.getLinks('b').length).toBe(0);
     });
   });
 
   // ─── 관계 ──────────────────────────────────────────────
 
-  describe("link / unlink", () => {
-    it("관계를 등록하고 좌표를 계산한다", () => {
-      registry.register(makeEntry({ id: "a", scope: "feature", aspect: "func_def" }));
-      registry.register(makeEntry({ id: "b", scope: "feature", aspect: "scenario" }));
-      const link = registry.link("a", "b", "refines");
+  describe('link / unlink', () => {
+    it('관계를 등록하고 좌표를 계산한다', () => {
+      registry.register(makeEntry({ id: 'a', scope: 'feature', aspect: 'func_def' }));
+      registry.register(makeEntry({ id: 'b', scope: 'feature', aspect: 'scenario' }));
+      const link = registry.link('a', 'b', 'refines');
       expect(link.address).toBeDefined();
-      expect(link.linkType).toBe("refines");
+      expect(link.linkType).toBe('refines');
     });
 
-    it("관계를 삭제할 수 있다", () => {
-      registry.register(makeEntry({ id: "a", scope: "ui", aspect: "layout" }));
-      registry.register(makeEntry({ id: "b", scope: "ui", aspect: "component" }));
-      registry.link("a", "b", "constrains");
-      expect(registry.unlink("a", "b", "constrains")).toBe(true);
-      expect(registry.getLinks("a").length).toBe(0);
+    it('관계를 삭제할 수 있다', () => {
+      registry.register(makeEntry({ id: 'a', scope: 'ui', aspect: 'layout' }));
+      registry.register(makeEntry({ id: 'b', scope: 'ui', aspect: 'component' }));
+      registry.link('a', 'b', 'constrains');
+      expect(registry.unlink('a', 'b', 'constrains')).toBe(true);
+      expect(registry.getLinks('a').length).toBe(0);
     });
 
-    it("미등록 문서 간 관계 등록 시 에러", () => {
-      registry.register(makeEntry({ id: "a" }));
-      expect(() => registry.link("a", "nonexistent", "depends_on")).toThrow("도착 문서 미등록");
+    it('미등록 문서 간 관계 등록 시 에러', () => {
+      registry.register(makeEntry({ id: 'a' }));
+      expect(() => registry.link('a', 'nonexistent', 'depends_on')).toThrow('도착 문서 미등록');
     });
   });
 
-  describe("getLinks", () => {
+  describe('getLinks', () => {
     beforeEach(() => {
-      registry.register(makeEntry({ id: "a", scope: "flow", aspect: "process_flow" }));
-      registry.register(makeEntry({ id: "b", scope: "flow", aspect: "user_scenario" }));
-      registry.register(makeEntry({ id: "c", scope: "flow", aspect: "relation" }));
-      registry.link("a", "b", "depends_on");
-      registry.link("c", "a", "refines");
+      registry.register(makeEntry({ id: 'a', scope: 'flow', aspect: 'process_flow' }));
+      registry.register(makeEntry({ id: 'b', scope: 'flow', aspect: 'user_scenario' }));
+      registry.register(makeEntry({ id: 'c', scope: 'flow', aspect: 'relation' }));
+      registry.link('a', 'b', 'depends_on');
+      registry.link('c', 'a', 'refines');
     });
 
-    it("outgoing만 조회", () => {
-      const out = registry.getLinks("a", "outgoing");
+    it('outgoing만 조회', () => {
+      const out = registry.getLinks('a', 'outgoing');
       expect(out.length).toBe(1);
-      expect(out[0].targetId).toBe("b");
+      expect(out[0].targetId).toBe('b');
     });
 
-    it("incoming만 조회", () => {
-      const inc = registry.getLinks("a", "incoming");
+    it('incoming만 조회', () => {
+      const inc = registry.getLinks('a', 'incoming');
       expect(inc.length).toBe(1);
-      expect(inc[0].sourceId).toBe("c");
+      expect(inc[0].sourceId).toBe('c');
     });
 
-    it("both(기본값)로 전체 조회", () => {
-      const all = registry.getLinks("a");
+    it('both(기본값)로 전체 조회', () => {
+      const all = registry.getLinks('a');
       expect(all.length).toBe(2);
     });
   });
 
-  describe("getLineage", () => {
-    it("supersedes/evolves_from 연결을 revision 순으로 반환한다", () => {
-      registry.register(makeEntry({ id: "api-v1", revision: 1, version: "v1", updatedAt: "2026-03-01T00:00:00Z" }));
-      registry.register(makeEntry({ id: "api-v2", revision: 2, version: "v2", updatedAt: "2026-03-02T00:00:00Z" }));
-      registry.register(makeEntry({ id: "api-v3", revision: 3, version: "v3", updatedAt: "2026-03-03T00:00:00Z" }));
+  describe('getLineage', () => {
+    it('supersedes/evolves_from 연결을 revision 순으로 반환한다', () => {
+      registry.register(
+        makeEntry({ id: 'api-v1', revision: 1, version: 'v1', updatedAt: '2026-03-01T00:00:00Z' }),
+      );
+      registry.register(
+        makeEntry({ id: 'api-v2', revision: 2, version: 'v2', updatedAt: '2026-03-02T00:00:00Z' }),
+      );
+      registry.register(
+        makeEntry({ id: 'api-v3', revision: 3, version: 'v3', updatedAt: '2026-03-03T00:00:00Z' }),
+      );
 
-      registry.link("api-v2", "api-v1", "supersedes");
-      registry.link("api-v3", "api-v2", "evolves_from");
+      registry.link('api-v2', 'api-v1', 'supersedes');
+      registry.link('api-v3', 'api-v2', 'evolves_from');
 
-      const lineage = registry.getLineage("api-v2");
-      expect(lineage.map((entry) => entry.id)).toEqual(["api-v1", "api-v2", "api-v3"]);
+      const lineage = registry.getLineage('api-v2');
+      expect(lineage.map((entry) => entry.id)).toEqual(['api-v1', 'api-v2', 'api-v3']);
     });
   });
 
   // ─── 질의 ──────────────────────────────────────────────
 
-  describe("findByScope", () => {
-    it("scope로 필터링한다", () => {
-      registry.register(makeEntry({ id: "a", scope: "ui", aspect: "layout" }));
-      registry.register(makeEntry({ id: "b", scope: "ui", aspect: "component" }));
-      registry.register(makeEntry({ id: "c", scope: "data", aspect: "domain_data" }));
-      expect(registry.findByScope("ui").length).toBe(2);
-      expect(registry.findByScope("data").length).toBe(1);
+  describe('findByScope', () => {
+    it('scope로 필터링한다', () => {
+      registry.register(makeEntry({ id: 'a', scope: 'ui', aspect: 'layout' }));
+      registry.register(makeEntry({ id: 'b', scope: 'ui', aspect: 'component' }));
+      registry.register(makeEntry({ id: 'c', scope: 'data', aspect: 'domain_data' }));
+      expect(registry.findByScope('ui').length).toBe(2);
+      expect(registry.findByScope('data').length).toBe(1);
     });
   });
 
-  describe("findByAddress", () => {
-    it("좌표 주소로 문서를 찾는다", () => {
-      const entry = registry.register(makeEntry({ id: "addr-test" }));
+  describe('findByAddress', () => {
+    it('좌표 주소로 문서를 찾는다', () => {
+      const entry = registry.register(makeEntry({ id: 'addr-test' }));
       const found = registry.findByAddress(entry.address!);
       expect(found.length).toBe(1);
-      expect(found[0].id).toBe("addr-test");
+      expect(found[0].id).toBe('addr-test');
     });
 
-    it("존재하지 않는 주소는 빈 배열", () => {
+    it('존재하지 않는 주소는 빈 배열', () => {
       expect(registry.findByAddress(999999)).toEqual([]);
     });
   });
 
-  describe("query", () => {
+  describe('query', () => {
     beforeEach(() => {
-      registry.register(makeEntry({ id: "a", scope: "ui", aspect: "layout", depth: "overview", lifecycle: "draft" }));
-      registry.register(makeEntry({ id: "b", scope: "ui", aspect: "component", depth: "specification", lifecycle: "approved" }));
-      registry.register(makeEntry({ id: "c", scope: "data", aspect: "domain_data", depth: "specification", lifecycle: "draft" }));
+      registry.register(
+        makeEntry({
+          id: 'a',
+          scope: 'ui',
+          aspect: 'layout',
+          depth: 'overview',
+          lifecycle: 'draft',
+        }),
+      );
+      registry.register(
+        makeEntry({
+          id: 'b',
+          scope: 'ui',
+          aspect: 'component',
+          depth: 'specification',
+          lifecycle: 'approved',
+        }),
+      );
+      registry.register(
+        makeEntry({
+          id: 'c',
+          scope: 'data',
+          aspect: 'domain_data',
+          depth: 'specification',
+          lifecycle: 'draft',
+        }),
+      );
     });
 
-    it("단일 조건 필터", () => {
-      expect(registry.query({ scope: "ui" }).length).toBe(2);
-      expect(registry.query({ lifecycle: "draft" }).length).toBe(2);
-      expect(registry.query({ depth: "specification" }).length).toBe(2);
+    it('단일 조건 필터', () => {
+      expect(registry.query({ scope: 'ui' }).length).toBe(2);
+      expect(registry.query({ lifecycle: 'draft' }).length).toBe(2);
+      expect(registry.query({ depth: 'specification' }).length).toBe(2);
     });
 
-    it("복합 조건 필터", () => {
-      const result = registry.query({ scope: "ui", lifecycle: "approved" });
+    it('복합 조건 필터', () => {
+      const result = registry.query({ scope: 'ui', lifecycle: 'approved' });
       expect(result.length).toBe(1);
-      expect(result[0].id).toBe("b");
+      expect(result[0].id).toBe('b');
     });
 
-    it("태그 필터", () => {
-      registry.register(makeEntry({ id: "d", scope: "state", aspect: "app_state", tags: ["auth", "session"] }));
-      registry.register(makeEntry({ id: "e", scope: "state", aspect: "domain_state", tags: ["auth"] }));
-      expect(registry.query({ tags: ["auth"] }).length).toBe(2);
-      expect(registry.query({ tags: ["auth", "session"] }).length).toBe(1);
+    it('태그 필터', () => {
+      registry.register(
+        makeEntry({ id: 'd', scope: 'state', aspect: 'app_state', tags: ['auth', 'session'] }),
+      );
+      registry.register(
+        makeEntry({ id: 'e', scope: 'state', aspect: 'domain_state', tags: ['auth'] }),
+      );
+      expect(registry.query({ tags: ['auth'] }).length).toBe(2);
+      expect(registry.query({ tags: ['auth', 'session'] }).length).toBe(1);
     });
 
-    it("빈 필터는 전체 반환", () => {
+    it('빈 필터는 전체 반환', () => {
       expect(registry.query({}).length).toBe(3);
     });
   });
 
   // ─── 통계 ──────────────────────────────────────────────
 
-  describe("stats", () => {
-    it("등록된 문서와 관계 수를 반환한다", () => {
-      registry.register(makeEntry({ id: "a", scope: "ui", aspect: "layout", lifecycle: "draft", depth: "overview" }));
-      registry.register(makeEntry({ id: "b", scope: "ui", aspect: "component", lifecycle: "approved", depth: "specification" }));
-      registry.register(makeEntry({ id: "c", scope: "data", aspect: "domain_data", lifecycle: "draft", depth: "overview" }));
-      registry.link("a", "b", "depends_on");
+  describe('stats', () => {
+    it('등록된 문서와 관계 수를 반환한다', () => {
+      registry.register(
+        makeEntry({
+          id: 'a',
+          scope: 'ui',
+          aspect: 'layout',
+          lifecycle: 'draft',
+          depth: 'overview',
+        }),
+      );
+      registry.register(
+        makeEntry({
+          id: 'b',
+          scope: 'ui',
+          aspect: 'component',
+          lifecycle: 'approved',
+          depth: 'specification',
+        }),
+      );
+      registry.register(
+        makeEntry({
+          id: 'c',
+          scope: 'data',
+          aspect: 'domain_data',
+          lifecycle: 'draft',
+          depth: 'overview',
+        }),
+      );
+      registry.link('a', 'b', 'depends_on');
 
       const s = registry.stats();
       expect(s.totalEntries).toBe(3);
@@ -275,7 +341,7 @@ describe("MemoryDefinitionRegistry", () => {
       expect(s.byDepth.specification).toBe(1);
     });
 
-    it("빈 레지스트리의 통계", () => {
+    it('빈 레지스트리의 통계', () => {
       const s = registry.stats();
       expect(s.totalEntries).toBe(0);
       expect(s.totalLinks).toBe(0);

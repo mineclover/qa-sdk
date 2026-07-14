@@ -22,10 +22,10 @@ import type {
   DefSyntheticIncomingLink,
   DefValidateOptions,
   DefValidationResult,
-} from "definition-catalog";
+} from 'definition-catalog';
 
 export class ServerDataSource implements DefDataSource {
-  readonly mode = "server" as const;
+  readonly mode = 'server' as const;
 
   constructor(
     private readonly baseUrl: string,
@@ -36,7 +36,7 @@ export class ServerDataSource implements DefDataSource {
     try {
       return await this.fetchJson(`/docs/${docId}`);
     } catch (e) {
-      if (e instanceof Error && e.message.includes("404")) return null;
+      if (e instanceof Error && e.message.includes('404')) return null;
       throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
     }
   }
@@ -45,7 +45,7 @@ export class ServerDataSource implements DefDataSource {
     try {
       return await this.fetchJson(`/docs/by-address/${encodeURIComponent(address)}`);
     } catch (e) {
-      if (e instanceof Error && e.message.includes("404")) return null;
+      if (e instanceof Error && e.message.includes('404')) return null;
       throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
     }
   }
@@ -54,7 +54,7 @@ export class ServerDataSource implements DefDataSource {
     try {
       return await this.fetchJson(`/docs/${docId}/body`);
     } catch (e) {
-      if (e instanceof Error && e.message.includes("404")) return null;
+      if (e instanceof Error && e.message.includes('404')) return null;
       throw new Error(`서버 연결 실패 (${this.baseUrl}): ${(e as Error).message}`, { cause: e });
     }
   }
@@ -72,7 +72,7 @@ export class ServerDataSource implements DefDataSource {
       }
     }
     const qs = params.toString();
-    const result = await this.fetchJson<{ docs: DefDoc[] }>(`/docs${qs ? `?${qs}` : ""}`);
+    const result = await this.fetchJson<{ docs: DefDoc[] }>(`/docs${qs ? `?${qs}` : ''}`);
     return result.docs;
   }
 
@@ -87,56 +87,69 @@ export class ServerDataSource implements DefDataSource {
   }
 
   async getIncomingLinks(docId: string): Promise<DefIncomingLink[]> {
-    const result = await this.fetchJson<{ links: DefIncomingLink[] }>(`/docs/${docId}/incoming-links`);
+    const result = await this.fetchJson<{ links: DefIncomingLink[] }>(
+      `/docs/${docId}/incoming-links`,
+    );
     return result.links;
   }
 
   async getSyntheticIncomingLinks(docId: string): Promise<DefSyntheticIncomingLink[]> {
-    const result = await this.fetchJson<{ links: DefSyntheticIncomingLink[] }>(`/docs/${docId}/synthetic-incoming-links`);
+    const result = await this.fetchJson<{ links: DefSyntheticIncomingLink[] }>(
+      `/docs/${docId}/synthetic-incoming-links`,
+    );
     return result.links;
   }
 
   async getOutgoingLinks(docId: string): Promise<DefOutgoingLink[]> {
-    const result = await this.fetchJson<{ links: DefOutgoingLink[] }>(`/docs/${docId}/outgoing-links`);
+    const result = await this.fetchJson<{ links: DefOutgoingLink[] }>(
+      `/docs/${docId}/outgoing-links`,
+    );
     return result.links;
   }
 
-  async getFeedbackRequestsByDocId(docId: string, limit = 10): Promise<DefFeedbackRequestSummary[]> {
-    const result = await this.fetchJson<{ items: DefFeedbackRequestSummary[] }>(`/docs/${docId}/feedback-requests?limit=${limit}`);
+  async getFeedbackRequestsByDocId(
+    docId: string,
+    limit = 10,
+  ): Promise<DefFeedbackRequestSummary[]> {
+    const result = await this.fetchJson<{ items: DefFeedbackRequestSummary[] }>(
+      `/docs/${docId}/feedback-requests?limit=${limit}`,
+    );
     return result.items;
   }
 
   async getBoundary(
     docId: string,
-    level: "purpose" | "overview" = "overview",
+    level: 'purpose' | 'overview' = 'overview',
   ): Promise<DefBoundaryResult | null> {
     return this.fetchJson<DefBoundaryResult>(`/docs/${docId}/boundary?level=${level}`);
   }
 
   async getBoundaryContext(
     docId: string,
-    level: "purpose" | "overview" = "overview",
-    mode: "direct" | "transitive" = "transitive",
+    level: 'purpose' | 'overview' = 'overview',
+    mode: 'direct' | 'transitive' = 'transitive',
   ): Promise<DefBoundaryContextResult | null> {
-    return this.fetchJson<DefBoundaryContextResult>(`/graph/${docId}/boundary-context?level=${level}&mode=${mode}`);
+    return this.fetchJson<DefBoundaryContextResult>(
+      `/graph/${docId}/boundary-context?level=${level}&mode=${mode}`,
+    );
   }
 
   async validate(_options?: DefValidateOptions): Promise<DefValidationResult> {
     // 서버는 코드 정적 스캔 불가 — _options.includeCoordStorageCheck는 무시한다.
-    return this.fetchJson("/graph/validate", "POST");
+    return this.fetchJson('/graph/validate', 'POST');
   }
 
   /** 서버 접근 가능 여부 */
   async ping(): Promise<boolean> {
     try {
-      await this.fetchJson("/health");
+      await this.fetchJson('/health');
       return true;
     } catch {
       return false;
     }
   }
 
-  private async fetchJson<T>(path: string, method = "GET"): Promise<T> {
+  private async fetchJson<T>(path: string, method = 'GET'): Promise<T> {
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
       signal: AbortSignal.timeout(this.timeoutMs),

@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { Hono } from "hono";
+import { Hono } from 'hono';
 import {
   type GraphStore,
   type TaskPayload,
@@ -18,26 +18,23 @@ import {
   type VerdictStore,
   type DlqStore,
   type KeyObservationStore,
-} from "@qa-sdk/core";
-import type { ValidationResult } from "@qa-sdk/registry-client";
-import type { RecordStreamBroker } from "../lib/record-stream-broker.js";
-import {
-  createNoopDebugStore,
-  type DebugStore,
-} from "../lib/debug-store.js";
-import type { Logger } from "pino";
-import { badRequest } from "../lib/errors.js";
-import { enrichAddressContext, checkAddressHealth } from "../lib/enrich-address-context.js";
+} from '@qa-sdk/core';
+import type { ValidationResult } from '@qa-sdk/registry-client';
+import type { RecordStreamBroker } from '../lib/record-stream-broker.js';
+import { createNoopDebugStore, type DebugStore } from '../lib/debug-store.js';
+import type { Logger } from 'pino';
+import { badRequest } from '../lib/errors.js';
+import { enrichAddressContext, checkAddressHealth } from '../lib/enrich-address-context.js';
 import {
   buildReconstructionTask,
   PHASE_TWO_TASK_QUEUE_OPTIONS,
   processPendingPhaseTwo,
   type ConvergencePipelinePort,
-} from "../lib/phase-two-worker.js";
-import type { CatalogValidator } from "../lib/catalog-validator.js";
-import { extractKeyObservations } from "../lib/extract-key-observations.js";
+} from '../lib/phase-two-worker.js';
+import type { CatalogValidator } from '../lib/catalog-validator.js';
+import { extractKeyObservations } from '../lib/extract-key-observations.js';
 
-export type RegistryValidationMode = "strict" | "warn" | "off";
+export type RegistryValidationMode = 'strict' | 'warn' | 'off';
 
 export interface RegistryEventValidator {
   validateEvent(
@@ -71,15 +68,15 @@ export interface IngestDeps {
   /** 카탈로그 기반 event/prefix 검증 (fail-open) */
   catalogValidator?: CatalogValidator;
   /** InsightsStore — 수집된 데이터를 인사이트 저장소에 전달 (app-hub 모드) */
-  insightsStore?: import("../ports/insights-store.port.js").InsightsStore;
+  insightsStore?: import('../ports/insights-store.port.js').InsightsStore;
   /** Key Observation — packed_key 관측 영속 기록 (fail-open) */
   keyObservationStore?: KeyObservationStore;
 }
 
 export interface TracePersistenceStores {
-  recordStore: Pick<RecordStore, "insertBatch">;
-  traceStore: Pick<TraceStore, "upsert">;
-  sessionStore: Pick<SessionStore, "upsert">;
+  recordStore: Pick<RecordStore, 'insertBatch'>;
+  traceStore: Pick<TraceStore, 'upsert'>;
+  sessionStore: Pick<SessionStore, 'upsert'>;
 }
 
 export type TraceTransactionRunner = <T>(
@@ -87,23 +84,35 @@ export type TraceTransactionRunner = <T>(
 ) => Promise<T>;
 
 /** Content-Type 기반 디시리얼라이즈. JSON/Protobuf/MessagePack 지원. */
-async function deserializeEnvelope(c: { req: { header(name: string): string | undefined; json(): Promise<unknown>; arrayBuffer(): Promise<ArrayBuffer> } }): Promise<TransmissionEnvelope> {
-  const ct = c.req.header("content-type") ?? "application/json";
+async function deserializeEnvelope(c: {
+  req: {
+    header(name: string): string | undefined;
+    json(): Promise<unknown>;
+    arrayBuffer(): Promise<ArrayBuffer>;
+  };
+}): Promise<TransmissionEnvelope> {
+  const ct = c.req.header('content-type') ?? 'application/json';
 
-  if (ct.includes("application/x-protobuf") || ct.includes("application/protobuf")) {
+  if (ct.includes('application/x-protobuf') || ct.includes('application/protobuf')) {
     const buf = await c.req.arrayBuffer();
     const bytes = new Uint8Array(buf);
 
     // QAPB 프레이밍 감지 (magic: 0x51 0x41 0x50 0x42)
-    if (bytes.length >= 8 && bytes[0] === 0x51 && bytes[1] === 0x41 && bytes[2] === 0x50 && bytes[3] === 0x42) {
-      const { fromProtoEnvelope } = await import("../lib/proto-codec.js");
+    if (
+      bytes.length >= 8 &&
+      bytes[0] === 0x51 &&
+      bytes[1] === 0x41 &&
+      bytes[2] === 0x50 &&
+      bytes[3] === 0x42
+    ) {
+      const { fromProtoEnvelope } = await import('../lib/proto-codec.js');
       const raw = fromProtoEnvelope(bytes);
       return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
     }
 
     // 진짜 Protobuf 바이너리 (codec-proto)
     try {
-      const { decodeEnvelope } = await import("@qa-sdk/codec-proto");
+      const { decodeEnvelope } = await import('@qa-sdk/codec-proto');
       return decodeEnvelope(bytes);
     } catch {
       // codec-proto 미설치 시 fallback → JSON 시도
@@ -112,8 +121,8 @@ async function deserializeEnvelope(c: { req: { header(name: string): string | un
     }
   }
 
-  if (ct.includes("application/msgpack") || ct.includes("application/x-msgpack")) {
-    const { decode } = await import("@msgpack/msgpack");
+  if (ct.includes('application/msgpack') || ct.includes('application/x-msgpack')) {
+    const { decode } = await import('@msgpack/msgpack');
     const buf = await c.req.arrayBuffer();
     const raw = decode(new Uint8Array(buf));
     return transmissionEnvelopeSchema.parse(raw) as TransmissionEnvelope;
@@ -127,15 +136,15 @@ async function deserializeEnvelope(c: { req: { header(name: string): string | un
 export function createIngestRoutes(deps: IngestDeps) {
   const app = new Hono();
 
-  app.post("/v1/ingest", async (c) => {
+  app.post('/v1/ingest', async (c) => {
     try {
       const envelope = await deserializeEnvelope(c);
       await processEnvelope(envelope, deps);
-      deps.metricsCollector?.inc("ingest_requests_total", { status: "202" });
-      deps.metricsCollector?.inc("ingest_records_total", {}, envelope.records.length);
+      deps.metricsCollector?.inc('ingest_requests_total', { status: '202' });
+      deps.metricsCollector?.inc('ingest_records_total', {}, envelope.records.length);
       return c.json({ accepted: true, record_count: envelope.records.length }, 202);
     } catch (err) {
-      deps.metricsCollector?.inc("ingest_requests_total", { status: "500" });
+      deps.metricsCollector?.inc('ingest_requests_total', { status: '500' });
       throw err;
     }
   });
@@ -143,10 +152,7 @@ export function createIngestRoutes(deps: IngestDeps) {
   return app;
 }
 
-async function processEnvelope(
-  envelope: TransmissionEnvelope,
-  deps: IngestDeps,
-) {
+async function processEnvelope(envelope: TransmissionEnvelope, deps: IngestDeps) {
   // Phase 1: 저장 (응답 경로)
   const persistedTraceIds = await storeEnvelope(envelope, deps);
 
@@ -154,7 +160,7 @@ async function processEnvelope(
   if (deps.insightsStore) {
     try {
       await deps.insightsStore.collect({
-        records: envelope.records.map(r => ({
+        records: envelope.records.map((r) => ({
           logId: r.log_id,
           timestamp: r.timestamp,
           traceId: r.trace_id,
@@ -170,21 +176,24 @@ async function processEnvelope(
         traces: (() => {
           // traceId별 record 수를 O(N)으로 집계 (filter 반복 O(N*M) 방지)
           const counts = new Map<string, number>();
-          for (const r of envelope.records) counts.set(r.trace_id, (counts.get(r.trace_id) ?? 0) + 1);
-          return persistedTraceIds.map(traceId => ({
+          for (const r of envelope.records)
+            counts.set(r.trace_id, (counts.get(r.trace_id) ?? 0) + 1);
+          return persistedTraceIds.map((traceId) => ({
             traceId,
             serviceName: envelope.source.service_name,
             recordCount: counts.get(traceId) ?? 0,
           }));
         })(),
-        sessions: [...new Set(envelope.records.map(r => r.qa_session_id).filter(Boolean))].map(sid => ({
-          sessionId: sid!,
-          startedAt: envelope.sent_at,
-        })),
+        sessions: [...new Set(envelope.records.map((r) => r.qa_session_id).filter(Boolean))].map(
+          (sid) => ({
+            sessionId: sid!,
+            startedAt: envelope.sent_at,
+          }),
+        ),
       });
     } catch (err) {
       // fail-open: insights 전달 실패가 ingest를 차단하지 않음
-      deps.logger?.warn({ err }, "insights collect failed — skipped");
+      deps.logger?.warn({ err }, 'insights collect failed — skipped');
     }
   }
 
@@ -197,10 +206,7 @@ async function processEnvelope(
 }
 
 /** Phase 1: transmission 메타 + trace/session/record 저장 + SSE 발행 */
-async function storeEnvelope(
-  envelope: TransmissionEnvelope,
-  deps: IngestDeps,
-): Promise<string[]> {
+async function storeEnvelope(envelope: TransmissionEnvelope, deps: IngestDeps): Promise<string[]> {
   // address context 머지: infra_context(base) ← record.address_context(override)
   enrichAddressContext(envelope, envelope.records);
 
@@ -208,10 +214,13 @@ async function storeEnvelope(
   if (deps.knownPrefixes && deps.latestVersions) {
     const health = checkAddressHealth(envelope.records, deps.knownPrefixes, deps.latestVersions);
     if (health.orphanPrefixes.length > 0) {
-      deps.logger?.warn({ orphans: health.orphanPrefixes, healthRate: health.healthRate }, "address_context orphan prefixes detected");
+      deps.logger?.warn(
+        { orphans: health.orphanPrefixes, healthRate: health.healthRate },
+        'address_context orphan prefixes detected',
+      );
     }
     if (health.staleVersions.length > 0) {
-      deps.logger?.warn({ stale: health.staleVersions }, "address_context stale versions detected");
+      deps.logger?.warn({ stale: health.staleVersions }, 'address_context stale versions detected');
     }
   }
 
@@ -249,11 +258,7 @@ async function storeEnvelope(
     const last = new Date(Math.max(...timestamps.map((d) => d.getTime())));
 
     const sessionIds = Array.from(
-      new Set(
-        records.flatMap((record) =>
-          record.qa_session_id ? [record.qa_session_id] : [],
-        ),
-      ),
+      new Set(records.flatMap((record) => (record.qa_session_id ? [record.qa_session_id] : []))),
     );
     const sessionId = sessionIds[0];
 
@@ -325,7 +330,7 @@ async function storeEnvelope(
               logId: record.logId,
               traceId,
             },
-            "failed to append record to debug store",
+            'failed to append record to debug store',
           );
         });
       }
@@ -348,7 +353,7 @@ async function storeEnvelope(
             await deps.keyObservationStore.observeBatch(observations);
           }
         } catch (err) {
-          deps.logger?.warn({ err }, "key observation failed — fail-open");
+          deps.logger?.warn({ err }, 'key observation failed — fail-open');
         }
       }
 
@@ -359,7 +364,7 @@ async function storeEnvelope(
           err: error,
           traceId,
         },
-        "failed to store trace",
+        'failed to store trace',
       );
     }
   }
@@ -384,9 +389,7 @@ async function persistTrace(
   deps: IngestDeps,
 ) {
   const stores =
-    deps.withTraceTransaction === undefined
-      ? getTracePersistenceStores(deps)
-      : undefined;
+    deps.withTraceTransaction === undefined ? getTracePersistenceStores(deps) : undefined;
 
   const persist = async (transactionStores: TracePersistenceStores) => {
     for (const sessionId of trace.sessionIds) {
@@ -426,18 +429,15 @@ async function validateEnvelopeRecords(
   envelope: TransmissionEnvelope,
   deps: IngestDeps,
 ): Promise<Map<string, string>> {
-  const mode = deps.registryValidationMode ?? "warn";
+  const mode = deps.registryValidationMode ?? 'warn';
   const validator = deps.registryValidator;
 
-  if (mode === "off" || validator === undefined) {
+  if (mode === 'off' || validator === undefined) {
     return new Map();
   }
 
   const serviceName = envelope.source.service_name;
-  const uniqueEventKeys = new Map<
-    string,
-    { eventKey: string; eventVersion: string }
-  >();
+  const uniqueEventKeys = new Map<string, { eventKey: string; eventVersion: string }>();
 
   for (const record of envelope.records) {
     const eventIdentity = getEventIdentity(record.event_key, record.event_version);
@@ -467,9 +467,7 @@ async function validateEnvelopeRecords(
   );
 
   const invalidRecords = envelope.records.flatMap((record) => {
-    const result = validationResults.get(
-      getEventIdentity(record.event_key, record.event_version),
-    );
+    const result = validationResults.get(getEventIdentity(record.event_key, record.event_version));
 
     if (!result || result.valid) {
       return [];
@@ -480,7 +478,7 @@ async function validateEnvelopeRecords(
         eventKey: record.event_key,
         eventVersion: record.event_version,
         logId: record.log_id,
-        reason: result.reason ?? "event not found in registry",
+        reason: result.reason ?? 'event not found in registry',
       },
     ];
   });
@@ -489,11 +487,11 @@ async function validateEnvelopeRecords(
     return new Map();
   }
 
-  if (mode === "strict") {
+  if (mode === 'strict') {
     throw badRequest(
       `registry validation failed for ${invalidRecords
         .map((record) => formatInvalidRegistryEvent(record))
-        .join(", ")}`,
+        .join(', ')}`,
     );
   }
 
@@ -507,12 +505,10 @@ async function validateEnvelopeRecords(
       })),
       serviceName,
     },
-    "ingest payload contains unregistered events",
+    'ingest payload contains unregistered events',
   );
 
-  return new Map(
-    invalidRecords.map((record) => [record.logId, record.reason] as const),
-  );
+  return new Map(invalidRecords.map((record) => [record.logId, record.reason] as const));
 }
 
 async function validateRegistryEvent(
@@ -525,11 +521,7 @@ async function validateRegistryEvent(
   deps: IngestDeps,
 ): Promise<ValidationResult> {
   try {
-    return await validator.validateEvent(
-      event.serviceName,
-      event.eventKey,
-      event.eventVersion,
-    );
+    return await validator.validateEvent(event.serviceName, event.eventKey, event.eventVersion);
   } catch (error) {
     deps.logger?.warn(
       {
@@ -538,7 +530,7 @@ async function validateRegistryEvent(
         eventVersion: event.eventVersion,
         serviceName: event.serviceName,
       },
-      "registry validation unavailable, failing open",
+      'registry validation unavailable, failing open',
     );
     return { valid: true };
   }
@@ -568,15 +560,9 @@ function resolveDebugStore(deps: IngestDeps): DebugStore {
   return deps.debugStore ?? createNoopDebugStore();
 }
 
-async function enqueuePhaseTwoTasks(
-  traceIds: string[],
-  taskQueue: TaskQueue<TaskPayload>,
-) {
+async function enqueuePhaseTwoTasks(traceIds: string[], taskQueue: TaskQueue<TaskPayload>) {
   for (const traceId of traceIds) {
-    await taskQueue.enqueue(
-      buildReconstructionTask(traceId),
-      PHASE_TWO_TASK_QUEUE_OPTIONS,
-    );
+    await taskQueue.enqueue(buildReconstructionTask(traceId), PHASE_TWO_TASK_QUEUE_OPTIONS);
   }
 }
 
@@ -613,7 +599,7 @@ function validateWithCatalog(
           serviceName: envelope.source.service_name,
           recordCount: envelope.records.length,
         },
-        "카탈로그에 미등록된 eventKey 감지 (fail-open)",
+        '카탈로그에 미등록된 eventKey 감지 (fail-open)',
       );
     }
 
@@ -632,14 +618,11 @@ function validateWithCatalog(
           unknownPrefixes: [...allUnknownPrefixes],
           serviceName: envelope.source.service_name,
         },
-        "카탈로그에 미등록된 prefix 감지 (fail-open)",
+        '카탈로그에 미등록된 prefix 감지 (fail-open)',
       );
     }
   } catch (error) {
     // 검증 자체의 실패도 fail-open
-    logger?.warn(
-      { err: error },
-      "카탈로그 검증 실패 — fail-open 통과",
-    );
+    logger?.warn({ err: error }, '카탈로그 검증 실패 — fail-open 통과');
   }
 }

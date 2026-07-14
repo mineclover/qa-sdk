@@ -1,16 +1,16 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { DocumentEntity } from "../../domain/index.js";
-import type { DocumentSnapshot } from "../../domain/index.js";
-import { DocumentRepositoryPort } from "../../application/ports/document-repository.port.js";
-import type { DocumentTransactionScope } from "../../application/ports/document-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { DocumentEntity } from '../../domain/index.js';
+import type { DocumentSnapshot } from '../../domain/index.js';
+import { DocumentRepositoryPort } from '../../application/ports/document-repository.port.js';
+import type { DocumentTransactionScope } from '../../application/ports/document-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface DocumentRow {
   id: string;
@@ -136,7 +136,7 @@ export class PgDocumentRepository extends DocumentRepositoryPort {
   }
 }
 
-export type DocumentDialect = "sqlite" | "pg";
+export type DocumentDialect = 'sqlite' | 'pg';
 
 export interface DocumentRepositoryFactoryOpts {
   readonly dialect: DocumentDialect;
@@ -146,10 +146,10 @@ export interface DocumentRepositoryFactoryOpts {
 export function createDocumentSliceRepository(
   opts: DocumentRepositoryFactoryOpts,
 ): DocumentRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteDocumentRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgDocumentRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(

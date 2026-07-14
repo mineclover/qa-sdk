@@ -1,7 +1,7 @@
 // @def.boundary sim-domain-slice-kit
 // @def.doc domain-slice-architecture
 
-import type { TransactionScope } from "./transaction.port.js";
+import type { TransactionScope } from './transaction.port.js';
 
 /**
  * 도메인 이벤트의 outbox 레코드 표준 shape.

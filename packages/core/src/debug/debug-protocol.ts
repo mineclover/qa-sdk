@@ -31,7 +31,7 @@ export interface DebugEventRecord {
   spanId: string;
   parentSpanId?: string;
   timestampMs: number;
-  recordKind: "log" | "span" | "metric";
+  recordKind: 'log' | 'span' | 'metric';
   eventKey: string;
   eventVersion: string;
   /** 인코딩된 좌표 { prefix: "prefix:ver:addr" } */
@@ -65,12 +65,12 @@ export interface StreamFilter {
 }
 
 export type DebugCommand =
-  | { type: "subscribe"; filter: StreamFilter }
-  | { type: "unsubscribe" }
-  | { type: "get-active-traces" }
-  | { type: "resolve-address"; prefix: string; version: string; address: number; deep?: boolean }
-  | { type: "set-filter"; filter: StreamFilter }
-  | { type: "ping"; timestampMs: number };
+  | { type: 'subscribe'; filter: StreamFilter }
+  | { type: 'unsubscribe' }
+  | { type: 'get-active-traces' }
+  | { type: 'resolve-address'; prefix: string; version: string; address: number; deep?: boolean }
+  | { type: 'set-filter'; filter: StreamFilter }
+  | { type: 'ping'; timestampMs: number };
 
 // ── 디버그 응답 (서버 → 클라이언트) ───────────────────
 
@@ -85,7 +85,7 @@ export interface TraceInfo {
 
 export interface ResolvedDim {
   label: string;
-  kind: "axis" | "prefix_ref" | "table_ref";
+  kind: 'axis' | 'prefix_ref' | 'table_ref';
   position: number;
   value: string;
   ko?: string;
@@ -93,11 +93,17 @@ export interface ResolvedDim {
 }
 
 export type DebugResponse =
-  | { type: "subscribe-ack"; subscriptionId: string; filter: StreamFilter }
-  | { type: "active-traces"; traces: TraceInfo[] }
-  | { type: "resolved-address"; prefix: string; version: string; address: number; dims: Record<string, ResolvedDim> }
-  | { type: "error"; code: string; message: string }
-  | { type: "pong"; timestampMs: number; serverTimestampMs: number };
+  | { type: 'subscribe-ack'; subscriptionId: string; filter: StreamFilter }
+  | { type: 'active-traces'; traces: TraceInfo[] }
+  | {
+      type: 'resolved-address';
+      prefix: string;
+      version: string;
+      address: number;
+      dims: Record<string, ResolvedDim>;
+    }
+  | { type: 'error'; code: string; message: string }
+  | { type: 'pong'; timestampMs: number; serverTimestampMs: number };
 
 // ── 프레임 인코딩/디코딩 ──────────────────────────────
 
@@ -116,8 +122,11 @@ export function encodeFrame(tag: number, payload: unknown, encode: MsgpackEncode
 }
 
 /** 바이너리 프레임 파싱: tag + payload */
-export function decodeFrame(frame: Uint8Array, decode: MsgpackDecode): { tag: number; payload: unknown } {
-  if (frame.length < 2) throw new Error("Debug frame too short");
+export function decodeFrame(
+  frame: Uint8Array,
+  decode: MsgpackDecode,
+): { tag: number; payload: unknown } {
+  if (frame.length < 2) throw new Error('Debug frame too short');
   const tag = frame[0];
   const payload = decode(frame.subarray(1));
   return { tag, payload };

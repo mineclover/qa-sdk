@@ -1,22 +1,22 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
 
-import { BudgetEntity } from "../../domain/index.js";
-import { BudgetNotFoundException } from "../../domain/budget.exceptions.js";
-import { toGrammarSafeAggregateId } from "../../../shared/outbox/idempotency-key-source.js";
-import type { CreateBudgetCommand } from "../commands/create-budget.command.js";
-import type { DecideBudgetCommand } from "../commands/decide-budget.command.js";
-import type { BudgetLoggerPort } from "../ports/budget-logger.port.js";
+import { BudgetEntity } from '../../domain/index.js';
+import { BudgetNotFoundException } from '../../domain/budget.exceptions.js';
+import { toGrammarSafeAggregateId } from '../../../shared/outbox/idempotency-key-source.js';
+import type { CreateBudgetCommand } from '../commands/create-budget.command.js';
+import type { DecideBudgetCommand } from '../commands/decide-budget.command.js';
+import type { BudgetLoggerPort } from '../ports/budget-logger.port.js';
 import type {
   BudgetCreatedEventPayload,
   BudgetDecidedEventPayload,
   BudgetOutboxPort,
-} from "../ports/budget-outbox.port.js";
-import type { BudgetRepositoryPort } from "../ports/budget-repository.port.js";
-import type { BudgetTransactionPort } from "../ports/budget-transaction.port.js";
-import type { BudgetPolicyLifecyclePort } from "../ports/access-check.port.js";
+} from '../ports/budget-outbox.port.js';
+import type { BudgetRepositoryPort } from '../ports/budget-repository.port.js';
+import type { BudgetTransactionPort } from '../ports/budget-transaction.port.js';
+import type { BudgetPolicyLifecyclePort } from '../ports/access-check.port.js';
 
 /**
  * Budget 슬라이스의 use-case.
@@ -38,19 +38,21 @@ export class BudgetUseCase {
     private readonly policyLifecycle?: BudgetPolicyLifecyclePort,
   ) {}
 
-  async create(command: CreateBudgetCommand): Promise<{ readonly id: string; readonly status: string; readonly totalStages: number }> {
+  async create(
+    command: CreateBudgetCommand,
+  ): Promise<{ readonly id: string; readonly status: string; readonly totalStages: number }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "budget",
-      useCase: "BudgetUseCase.create",
+      domain: 'budget',
+      useCase: 'BudgetUseCase.create',
       aggregateId: command.id,
-      commandName: "CreateBudgetCommand",
+      commandName: 'CreateBudgetCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "budget.create.started");
+    this.logger.info({ ...ctxBase }, 'budget.create.started');
 
     try {
       const entity = BudgetEntity.create({
@@ -61,10 +63,10 @@ export class BudgetUseCase {
         requesterId: command.requesterId,
       });
 
-      await this.transaction.run("budget.create", async (scope) => {
+      await this.transaction.run('budget.create', async (scope) => {
         await this.repository.save(entity, scope);
         const occurredAt = new Date();
-        const eventName = "approval.budget.submitted";
+        const eventName = 'approval.budget.submitted';
         const payload: BudgetCreatedEventPayload = {
           id: entity.id,
           projectId: command.projectId,
@@ -103,10 +105,10 @@ export class BudgetUseCase {
             {
               ...ctxBase,
               aggregateId: entity.id,
-              outcome: "failure",
-              errorCode: err instanceof Error ? err.name : "POLICY_LIFECYCLE_FAILED",
+              outcome: 'failure',
+              errorCode: err instanceof Error ? err.name : 'POLICY_LIFECYCLE_FAILED',
             },
-            "budget.create.policy_lifecycle_failed",
+            'budget.create.policy_lifecycle_failed',
           );
         }
       }
@@ -114,11 +116,11 @@ export class BudgetUseCase {
       this.logger.info(
         {
           ...ctxBase,
-          eventName: "approval.budget.submitted",
+          eventName: 'approval.budget.submitted',
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "budget.create.success",
+        'budget.create.success',
       );
 
       return { id: entity.id, status: entity.status, totalStages: entity.totalStages };
@@ -126,58 +128,66 @@ export class BudgetUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "budget.create.failure",
+        'budget.create.failure',
       );
       throw error;
     }
   }
 
-  async submit(id: string, traceId?: string, correlationId?: string): Promise<{ readonly id: string; readonly status: string }> {
+  async submit(
+    id: string,
+    traceId?: string,
+    correlationId?: string,
+  ): Promise<{ readonly id: string; readonly status: string }> {
     return this.transition({
       id,
-      action: "submit",
+      action: 'submit',
       traceId,
       correlationId,
       apply: (entity) => entity.submit(),
     });
   }
 
-  async startReview(id: string, traceId?: string, correlationId?: string): Promise<{ readonly id: string; readonly status: string }> {
+  async startReview(
+    id: string,
+    traceId?: string,
+    correlationId?: string,
+  ): Promise<{ readonly id: string; readonly status: string }> {
     return this.transition({
       id,
-      action: "start-review",
+      action: 'start-review',
       traceId,
       correlationId,
       apply: (entity) => entity.startReview(),
     });
   }
 
-  async decide(command: DecideBudgetCommand): Promise<{ readonly id: string; readonly status: string; readonly currentStage: number }> {
+  async decide(
+    command: DecideBudgetCommand,
+  ): Promise<{ readonly id: string; readonly status: string; readonly currentStage: number }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "budget",
-      useCase: "BudgetUseCase.decide",
+      domain: 'budget',
+      useCase: 'BudgetUseCase.decide',
       aggregateId: command.id,
-      commandName: "DecideBudgetCommand",
+      commandName: 'DecideBudgetCommand',
     } as const;
 
     // grammar #12 — verb 는 decision 결과(approved|rejected)로 정확화.
-    const eventName: "approval.budget.approved" | "approval.budget.rejected" =
-      command.decision === "approved"
-        ? "approval.budget.approved"
-        : "approval.budget.rejected";
+    const eventName: 'approval.budget.approved' | 'approval.budget.rejected' =
+      command.decision === 'approved' ? 'approval.budget.approved' : 'approval.budget.rejected';
 
     this.logger.info({ ...ctxBase }, `budget.decide.started.${command.decision}`);
 
     try {
-      const result = await this.transaction.run("budget.decide", async (scope) => {
+      const result = await this.transaction.run('budget.decide', async (scope) => {
         const entity = await this.repository.findById(command.id);
         if (!entity) throw new BudgetNotFoundException(command.id);
         const stageBefore = entity.currentStage;
@@ -215,9 +225,9 @@ export class BudgetUseCase {
           ...ctxBase,
           eventName,
           eventVersion: 1,
-          outcome: "success",
+          outcome: 'success',
         },
-        "budget.decide.success",
+        'budget.decide.success',
       );
 
       return result;
@@ -225,11 +235,11 @@ export class BudgetUseCase {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "budget.decide.failure",
+        'budget.decide.failure',
       );
       throw error;
     }
@@ -247,7 +257,7 @@ export class BudgetUseCase {
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "budget",
+      domain: 'budget',
       useCase: `BudgetUseCase.${args.action}`,
       aggregateId: args.id,
       commandName: `${args.action}-budget`,
@@ -264,14 +274,14 @@ export class BudgetUseCase {
         return { id: next.id, status: next.status };
       });
 
-      this.logger.info({ ...ctxBase, outcome: "success" }, `budget.${args.action}.success`);
+      this.logger.info({ ...ctxBase, outcome: 'success' }, `budget.${args.action}.success`);
       return result;
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
         `budget.${args.action}.failure`,

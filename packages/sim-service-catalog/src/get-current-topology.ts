@@ -1,10 +1,6 @@
 // @def.boundary sim-service-catalog
-import {
-  parseServicePrefix,
-  parseVersionTag,
-  type VersionTag,
-} from "sim-identifier-grammar";
-import type { CatalogPrefixDefinition, Topology } from "./types.js";
+import { parseServicePrefix, parseVersionTag, type VersionTag } from 'sim-identifier-grammar';
+import type { CatalogPrefixDefinition, Topology } from './types.js';
 
 export interface TopologyOptions {
   /** 호출 측(controller/gateway 부팅)이 관리하는 catalog revision. */
@@ -33,9 +29,9 @@ export function getCurrentTopology(
   for (const entry of catalog.refEntries) {
     const parsed = parseVersionTag(entry.version);
     // entry.state를 캐스팅한 VersionTag 객체로 정규화 (image tag/header 합성에 그대로 투입 가능)
-    const tag: VersionTag = { axis: "version", value: parsed.value, state: entry.state };
-    if (entry.state === "stable") stables.push(tag);
-    else if (entry.state === "candidate") candidates.push(tag);
+    const tag: VersionTag = { axis: 'version', value: parsed.value, state: entry.state };
+    if (entry.state === 'stable') stables.push(tag);
+    else if (entry.state === 'candidate') candidates.push(tag);
     else retireds.push(tag);
   }
 

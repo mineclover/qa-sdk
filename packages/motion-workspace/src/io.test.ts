@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 import {
   createPromoGridComposition,
   MOTION_COMPOSITION_SCHEMA_V1,
   migrateCompositionV1toV2,
   parseMotionComposition,
-} from "motion-content";
-import * as workspaceEntry from "./index.js";
+} from 'motion-content';
+import * as workspaceEntry from './index.js';
 import {
   MotionWorkspaceParseError,
   createMotionWorkspaceSnapshot,
@@ -15,25 +15,22 @@ import {
   parseMotionWorkspaceSnapshot,
   serializeMotionWorkspaceSnapshot,
   validateMotionWorkspaceSnapshot,
-} from "./io.js";
-import {
-  MOTION_WORKSPACE_SCHEMA_V1,
-  MOTION_WORKSPACE_SCHEMA_V2,
-} from "./types.js";
+} from './io.js';
+import { MOTION_WORKSPACE_SCHEMA_V1, MOTION_WORKSPACE_SCHEMA_V2 } from './types.js';
 
-describe("motion workspace io", () => {
-  it("serializes and parses v2 workspace snapshots without changing persisted fields", () => {
+describe('motion workspace io', () => {
+  it('serializes and parses v2 workspace snapshots without changing persisted fields', () => {
     const snapshot = createMotionWorkspaceSnapshot({
-      composition: migrateCompositionV1toV2(createPromoGridComposition("lift")),
+      composition: migrateCompositionV1toV2(createPromoGridComposition('lift')),
       values: {
-        headline: "Workspace headline",
+        headline: 'Workspace headline',
       },
       source: {
-        presetId: "promo-grid",
-        storageKey: "workspace:demo",
-        path: "/tmp/promo-grid.json",
+        presetId: 'promo-grid',
+        storageKey: 'workspace:demo',
+        path: '/tmp/promo-grid.json',
       },
-      savedAt: "2026-03-27T00:00:00.000Z",
+      savedAt: '2026-03-27T00:00:00.000Z',
     });
 
     const serialized = serializeMotionWorkspaceSnapshot(snapshot);
@@ -52,13 +49,13 @@ describe("motion workspace io", () => {
     });
   });
 
-  it("rejects schemaVersion mismatches with a concrete workspace error", () => {
+  it('rejects schemaVersion mismatches with a concrete workspace error', () => {
     const invalidJson = JSON.stringify({
       ...createMotionWorkspaceSnapshot({
-        composition: createPromoGridComposition("crossfade"),
-        savedAt: "2026-03-27T00:00:00.000Z",
+        composition: createPromoGridComposition('crossfade'),
+        savedAt: '2026-03-27T00:00:00.000Z',
       }),
-      schemaVersion: "qa-sdk.motion-workspace/v0",
+      schemaVersion: 'qa-sdk.motion-workspace/v0',
     });
 
     expect(() => parseMotionWorkspaceSnapshot(invalidJson)).toThrowError(MotionWorkspaceParseError);
@@ -67,7 +64,7 @@ describe("motion workspace io", () => {
     );
   });
 
-  it("reports missing required v1 workspace and embedded document fields", () => {
+  it('reports missing required v1 workspace and embedded document fields', () => {
     const issues = validateMotionWorkspaceSnapshot({
       schemaVersion: MOTION_WORKSPACE_SCHEMA_V1,
       document: {
@@ -83,43 +80,43 @@ describe("motion workspace io", () => {
       revision: 0,
     });
 
-    expect(issues).toContain("$.document.composition: 필수 object 필드가 없습니다.");
-    expect(issues).toContain("$.editor.values: 필수 object 필드가 없습니다.");
-    expect(issues).toContain("$.editor.selection: 필수 object 또는 null 필드가 없습니다.");
-    expect(issues).toContain("$.editor.viewport.visibleDurationMs: 필수 number 필드가 없습니다.");
-    expect(issues).toContain("$.editor.playbackRate: 필수 number 필드가 없습니다.");
-    expect(issues).toContain("$.savedAt: 필수 string 필드가 없습니다.");
+    expect(issues).toContain('$.document.composition: 필수 object 필드가 없습니다.');
+    expect(issues).toContain('$.editor.values: 필수 object 필드가 없습니다.');
+    expect(issues).toContain('$.editor.selection: 필수 object 또는 null 필드가 없습니다.');
+    expect(issues).toContain('$.editor.viewport.visibleDurationMs: 필수 number 필드가 없습니다.');
+    expect(issues).toContain('$.editor.playbackRate: 필수 number 필드가 없습니다.');
+    expect(issues).toContain('$.savedAt: 필수 string 필드가 없습니다.');
   });
 
-  it("validates v2 scene revisions against the embedded scene list", () => {
-    const composition = migrateCompositionV1toV2(createPromoGridComposition("crossfade"));
+  it('validates v2 scene revisions against the embedded scene list', () => {
+    const composition = migrateCompositionV1toV2(createPromoGridComposition('crossfade'));
 
     const issues = validateMotionWorkspaceSnapshot({
       schemaVersion: MOTION_WORKSPACE_SCHEMA_V2,
       document: {
-        schemaVersion: "qa-sdk.motion-composition/v2",
+        schemaVersion: 'qa-sdk.motion-composition/v2',
         composition,
       },
       editor: createMotionWorkspaceSnapshot({ composition }).editor,
       globalRevision: 1,
       sceneRevisions: {},
-      savedAt: "2026-03-27T00:00:00.000Z",
+      savedAt: '2026-03-27T00:00:00.000Z',
     });
 
-    expect(issues).toContain("$.sceneRevisions.main: 필수 number 필드가 없습니다.");
+    expect(issues).toContain('$.sceneRevisions.main: 필수 number 필드가 없습니다.');
   });
 
-  it("keeps composition and workspace parsers on separate entrypoints", () => {
-    expect(typeof parseMotionComposition).toBe("function");
-    expect(typeof workspaceEntry.parseMotionWorkspaceSnapshot).toBe("function");
-    expect("parseMotionComposition" in workspaceEntry).toBe(false);
-    expect("parseMotionWorkspaceOrComposition" in workspaceEntry).toBe(false);
+  it('keeps composition and workspace parsers on separate entrypoints', () => {
+    expect(typeof parseMotionComposition).toBe('function');
+    expect(typeof workspaceEntry.parseMotionWorkspaceSnapshot).toBe('function');
+    expect('parseMotionComposition' in workspaceEntry).toBe(false);
+    expect('parseMotionWorkspaceOrComposition' in workspaceEntry).toBe(false);
   });
 
-  it("accepts v2 scene selections in persisted workspace snapshots", () => {
+  it('accepts v2 scene selections in persisted workspace snapshots', () => {
     const snapshot = createMotionWorkspaceSnapshot({
-      composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
-      savedAt: "2026-03-27T00:00:00.000Z",
+      composition: migrateCompositionV1toV2(createPromoGridComposition('crossfade')),
+      savedAt: '2026-03-27T00:00:00.000Z',
     });
 
     const persisted = {
@@ -127,9 +124,9 @@ describe("motion workspace io", () => {
       editor: {
         ...snapshot.editor,
         selection: {
-          kind: "scene-layer",
-          sceneId: "main",
-          targetId: "headline",
+          kind: 'scene-layer',
+          sceneId: 'main',
+          targetId: 'headline',
         } as const,
       },
     };
@@ -141,10 +138,10 @@ describe("motion workspace io", () => {
     expect(validateMotionWorkspaceSnapshot(parsed)).toEqual([]);
   });
 
-  it("still parses and narrows legacy v1 workspace snapshots", () => {
+  it('still parses and narrows legacy v1 workspace snapshots', () => {
     const snapshot = createMotionWorkspaceSnapshotV1({
-      composition: createPromoGridComposition("lift"),
-      savedAt: "2026-03-27T00:00:00.000Z",
+      composition: createPromoGridComposition('lift'),
+      savedAt: '2026-03-27T00:00:00.000Z',
     });
 
     const parsed = parseMotionWorkspaceSnapshot(serializeMotionWorkspaceSnapshot(snapshot));

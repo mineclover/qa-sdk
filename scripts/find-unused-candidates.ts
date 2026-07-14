@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync } from 'node:child_process';
 
 /**
  * Compatibility shim for the old unused-package scan.
@@ -7,9 +7,13 @@ import { execFileSync } from "node:child_process";
  * dead weight, and entrypoint dispositions do not drift across scripts.
  */
 
-const output = execFileSync("corepack", ["pnpm", "exec", "tsx", "scripts/analyze-package-usage.ts", ...process.argv.slice(2)], {
-  encoding: "utf8",
-  stdio: ["ignore", "pipe", "inherit"],
-});
+const output = execFileSync(
+  'corepack',
+  ['pnpm', 'exec', 'tsx', 'scripts/analyze-package-usage.ts', ...process.argv.slice(2)],
+  {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'inherit'],
+  },
+);
 
 process.stdout.write(output);

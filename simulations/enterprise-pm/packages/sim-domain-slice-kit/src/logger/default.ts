@@ -1,7 +1,7 @@
 // @def.boundary sim-domain-slice-kit
 // @def.doc domain-slice-architecture
 
-import type { LoggerPort, SliceLogContext } from "../logger.port.js";
+import type { LoggerPort, SliceLogContext } from '../logger.port.js';
 
 /**
  * 본 어댑터가 의존하는 호스트 logger 의 최소 구조 (pino 호환).

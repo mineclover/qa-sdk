@@ -6,13 +6,13 @@ export {
   InMemoryAuditRecorder,
   ParentNotFoundError,
   type AuditRecorder,
-} from "./recorder.js";
+} from './recorder.js';
 
 export {
   OtelAuditRecorder,
   type OtelRecordCheckArgs,
   type OtelRecordExecutionArgs,
-} from "./otel-wrapper.js";
+} from './otel-wrapper.js';
 
 export {
   type AuditEntry,
@@ -23,4 +23,4 @@ export {
   type ExecutionEntry,
   type RecordCheckArgs,
   type RecordExecutionArgs,
-} from "./types.js";
+} from './types.js';

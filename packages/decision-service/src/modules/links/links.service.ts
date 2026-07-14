@@ -1,16 +1,16 @@
 // @def.boundary decision-service-spec
 // @def.doc decision-service-spec
 
-import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq } from "drizzle-orm";
-import { DATABASE, type DecisionServiceDatabase } from "../../database.module.js";
-import { flowLinks, type FlowLinkRow } from "../../db/schema.js";
-import { createLogger } from "../../lib/logger.js";
-import { env } from "../../config/env.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { and, asc, desc, eq } from 'drizzle-orm';
+import { DATABASE, type DecisionServiceDatabase } from '../../database.module.js';
+import { flowLinks, type FlowLinkRow } from '../../db/schema.js';
+import { createLogger } from '../../lib/logger.js';
+import { env } from '../../config/env.js';
 
-const logger = createLogger("decision-service");
+const logger = createLogger('decision-service');
 
-export type FlowLinkType = "created" | "modified" | "deprecated" | "approved";
+export type FlowLinkType = 'created' | 'modified' | 'deprecated' | 'approved';
 
 export interface FlowLinkRecord {
   id: number;
@@ -39,14 +39,10 @@ export class LinksService {
     // definition-service에서 문서 존재 확인 (fail-open)
     const docExists = await this.checkDocExists(docId);
     if (!docExists) {
-      logger.warn({ docId, instanceId }, "문서 미확인 — 연결은 생성 (fail-open)");
+      logger.warn({ docId, instanceId }, '문서 미확인 — 연결은 생성 (fail-open)');
     }
 
-    this.db
-      .insert(flowLinks)
-      .values({ instanceId, docId, linkType })
-      .onConflictDoNothing()
-      .run();
+    this.db.insert(flowLinks).values({ instanceId, docId, linkType }).onConflictDoNothing().run();
 
     const row = this.db
       .select()
@@ -61,7 +57,7 @@ export class LinksService {
       .get();
 
     if (!row) {
-      throw new Error("flow_links insert/select 결과를 찾지 못했습니다");
+      throw new Error('flow_links insert/select 결과를 찾지 못했습니다');
     }
 
     return rowToLink(row);

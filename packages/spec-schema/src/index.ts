@@ -11,16 +11,16 @@
  */
 
 // ── Shared (GraphPort, Errors, Result) ─────────────
-export type { GraphPort, GraphNodeLike, GraphEdgeLike, PrefixLike } from "./shared/graph-port.js";
+export type { GraphPort, GraphNodeLike, GraphEdgeLike, PrefixLike } from './shared/graph-port.js';
 export {
   SpecError,
   DuplicateRegistrationError,
   NotFoundError,
   ValidationError,
-} from "./shared/errors.js";
-export type { ValidationErrorDetail } from "./shared/errors.js";
-export { ok, err } from "./shared/result.js";
-export type { Result } from "./shared/result.js";
+} from './shared/errors.js';
+export type { ValidationErrorDetail } from './shared/errors.js';
+export { ok, err } from './shared/result.js';
+export type { Result } from './shared/result.js';
 
 // ── Schema Types ───────────────────────────────────
 export type {
@@ -30,26 +30,21 @@ export type {
   SchemaDef,
   SchemaFragment,
   SchemaConstraint,
-} from "./schema.types.js";
+} from './schema.types.js';
 
 // ── Snapshot Types ─────────────────────────────────
-export type {
-  SchemaSnapshot,
-  Axis,
-  Composite,
-  SnapshotSupply,
-} from "./snapshot-types.js";
+export type { SchemaSnapshot, Axis, Composite, SnapshotSupply } from './snapshot-types.js';
 
 // ── Registry ───────────────────────────────────────
-export { SchemaRegistry } from "./schema.registry.js";
+export { SchemaRegistry } from './schema.registry.js';
 
 // ── Validator ──────────────────────────────────────
-export { SchemaValidator } from "./schema.validator.js";
-export type { ValidationResult } from "./schema.validator.js";
+export { SchemaValidator } from './schema.validator.js';
+export type { ValidationResult } from './schema.validator.js';
 
 // ── Category Rules ─────────────────────────────────
-export { CATEGORY_RULES, validatePrefixCategory, validateAllCategories } from "./category-rules.js";
-export type { CategoryRule, CategoryValidationResult } from "./category-rules.js";
+export { CATEGORY_RULES, validatePrefixCategory, validateAllCategories } from './category-rules.js';
+export type { CategoryRule, CategoryValidationResult } from './category-rules.js';
 
 // ── Presets ────────────────────────────────────────
 export {
@@ -66,7 +61,7 @@ export {
   FRAGMENT_HAS_TARGET,
   FRAGMENT_HAS_OUTCOME,
   FRAGMENT_IDENTIFIED,
-} from "./presets.js";
+} from './presets.js';
 
 // ── Validation Codec ───────────────────────────────
 export {
@@ -74,5 +69,5 @@ export {
   mapValidationToCoordinates,
   decodeCoordinate,
   AXIS_ENTRIES,
-} from "./schema-validation-codec.js";
-export type { ValidationCoordinate } from "./schema-validation-codec.js";
+} from './schema-validation-codec.js';
+export type { ValidationCoordinate } from './schema-validation-codec.js';

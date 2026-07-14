@@ -13,7 +13,7 @@ export interface Report {
 
 export interface DailyMetric {
   id: string;
-  metricKey: string;       // "marginal_density.sim.budget"
+  metricKey: string; // "marginal_density.sim.budget"
   /** ISO date — yyyy-mm-dd */
   date: string;
   value: number;

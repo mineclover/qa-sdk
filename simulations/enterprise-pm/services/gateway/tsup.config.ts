@@ -1,7 +1,7 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { defineConfig } from "tsup";
+import { defineConfig } from 'tsup';
 
 /**
  * sim-gateway — 6 entry 산출:
@@ -18,19 +18,19 @@ import { defineConfig } from "tsup";
  */
 export default defineConfig({
   entry: [
-    "src/server.ts",
-    "src/app.ts",
-    "src/lib/jwt.ts",
-    "src/lib/bitmap-claim.ts",
-    "src/test-bootstrap.ts",
-    "src/routing/routing-table.ts",
+    'src/server.ts',
+    'src/app.ts',
+    'src/lib/jwt.ts',
+    'src/lib/bitmap-claim.ts',
+    'src/test-bootstrap.ts',
+    'src/routing/routing-table.ts',
   ],
-  format: ["esm"],
+  format: ['esm'],
   dts: true,
   sourcemap: true,
   clean: true,
-  target: "es2023",
-  platform: "node",
+  target: 'es2023',
+  platform: 'node',
   splitting: false,
   shims: true,
 });

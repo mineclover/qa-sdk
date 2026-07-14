@@ -1,30 +1,30 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { TaskPayload } from "@qa-sdk/core";
-import { InMemoryTaskQueue } from "./in-memory-task-queue.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TaskPayload } from '@qa-sdk/core';
+import { InMemoryTaskQueue } from './in-memory-task-queue.js';
 
 function buildTask(overrides: Partial<TaskPayload> = {}): TaskPayload {
   return {
-    traceId: "trace_1",
-    phase: "reconstruction",
-    enqueuedAt: "2026-03-18T00:00:00.000Z",
+    traceId: 'trace_1',
+    phase: 'reconstruction',
+    enqueuedAt: '2026-03-18T00:00:00.000Z',
     ...overrides,
   };
 }
 
-describe("InMemoryTaskQueue", () => {
+describe('InMemoryTaskQueue', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-03-18T00:00:00.000Z"));
+    vi.setSystemTime(new Date('2026-03-18T00:00:00.000Z'));
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("round-trips tasks from enqueue to process", async () => {
+  it('round-trips tasks from enqueue to process', async () => {
     const queue = new InMemoryTaskQueue<TaskPayload>();
     const handled: TaskPayload[] = [];
 
@@ -39,7 +39,7 @@ describe("InMemoryTaskQueue", () => {
     expect(handled).toEqual([buildTask()]);
   });
 
-  it("retries failed tasks using enqueue options", async () => {
+  it('retries failed tasks using enqueue options', async () => {
     const queue = new InMemoryTaskQueue<TaskPayload>();
     let attempts = 0;
 
@@ -47,7 +47,7 @@ describe("InMemoryTaskQueue", () => {
       attempts += 1;
 
       if (attempts === 1) {
-        throw new Error("temporary failure");
+        throw new Error('temporary failure');
       }
     });
 
@@ -62,12 +62,12 @@ describe("InMemoryTaskQueue", () => {
     expect(attempts).toBe(2);
   });
 
-  it("rejects enqueue after close", async () => {
+  it('rejects enqueue after close', async () => {
     const queue = new InMemoryTaskQueue<TaskPayload>();
 
     await queue.process(async () => {});
     await queue.close();
 
-    await expect(queue.enqueue(buildTask())).rejects.toThrow("TaskQueue is closed");
+    await expect(queue.enqueue(buildTask())).rejects.toThrow('TaskQueue is closed');
   });
 });

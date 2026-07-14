@@ -177,9 +177,7 @@ export function renderIncidentEscalationView(
           <ul class="record-list">
             ${
               viewModel.latestRecords.length > 0
-                ? viewModel.latestRecords
-                    .map((record) => `<li>${escapeHtml(record)}</li>`)
-                    .join('')
+                ? viewModel.latestRecords.map((record) => `<li>${escapeHtml(record)}</li>`).join('')
                 : '<li>아직 flush된 레코드가 없습니다.</li>'
             }
           </ul>
@@ -201,10 +199,8 @@ export function renderIncidentEscalationView(
   const titleInput = root.querySelector<HTMLInputElement>('#incident-incidentTitle');
   const serviceNameInput = root.querySelector<HTMLInputElement>('#incident-serviceName');
   const severitySelect = root.querySelector<HTMLSelectElement>('#incident-severity');
-  const customerImpactInput =
-    root.querySelector<HTMLTextAreaElement>('#incident-customerImpact');
-  const mitigationPlanInput =
-    root.querySelector<HTMLTextAreaElement>('#incident-mitigationPlan');
+  const customerImpactInput = root.querySelector<HTMLTextAreaElement>('#incident-customerImpact');
+  const mitigationPlanInput = root.querySelector<HTMLTextAreaElement>('#incident-mitigationPlan');
 
   refs.incidentTitle = titleInput;
   refs.serviceName = serviceNameInput;
@@ -213,35 +209,21 @@ export function renderIncidentEscalationView(
   refs.mitigationPlan = mitigationPlanInput;
 
   titleInput?.addEventListener('input', (event) => {
-    actions.updateTextField(
-      'incidentTitle',
-      (event.currentTarget as HTMLInputElement).value,
-    );
+    actions.updateTextField('incidentTitle', (event.currentTarget as HTMLInputElement).value);
   });
   serviceNameInput?.addEventListener('input', (event) => {
-    actions.updateTextField(
-      'serviceName',
-      (event.currentTarget as HTMLInputElement).value,
-    );
+    actions.updateTextField('serviceName', (event.currentTarget as HTMLInputElement).value);
   });
   severitySelect?.addEventListener('change', (event) => {
-    actions.updateSeverity((event.currentTarget as HTMLSelectElement).value as
-      | ''
-      | 'sev2'
-      | 'sev1'
-      | 'sev0');
+    actions.updateSeverity(
+      (event.currentTarget as HTMLSelectElement).value as '' | 'sev2' | 'sev1' | 'sev0',
+    );
   });
   customerImpactInput?.addEventListener('input', (event) => {
-    actions.updateTextField(
-      'customerImpact',
-      (event.currentTarget as HTMLTextAreaElement).value,
-    );
+    actions.updateTextField('customerImpact', (event.currentTarget as HTMLTextAreaElement).value);
   });
   mitigationPlanInput?.addEventListener('input', (event) => {
-    actions.updateTextField(
-      'mitigationPlan',
-      (event.currentTarget as HTMLTextAreaElement).value,
-    );
+    actions.updateTextField('mitigationPlan', (event.currentTarget as HTMLTextAreaElement).value);
   });
   root
     .querySelector<HTMLTextAreaElement>('#incident-stakeholderNote')
@@ -258,32 +240,26 @@ export function renderIncidentEscalationView(
       event.preventDefault();
       void actions.submit();
     });
-  root.querySelector<HTMLButtonElement>('#incident-sample')?.addEventListener(
-    'click',
-    () => {
-      actions.updateTextField('incidentTitle', 'view boundary writes persistence directly');
-      actions.updateTextField('serviceName', 'features/review/views/ReviewView.ts');
-      actions.updateSeverity('sev0');
-      actions.updateTextField(
-        'customerImpact',
-        '전체 context-action contract가 흐려집니다. view가 persistence write와 logging side effect를 직접 수행하면 handlers/actions boundary가 증명되지 않습니다.',
-      );
-      actions.updateTextField(
-        'mitigationPlan',
-        'Move persistence and logging into handlers, keep view as input/render only, and add context-action-contract test coverage for the boundary.',
-      );
-      actions.updateTextField(
-        'stakeholderNote',
-        'Blocking review feedback: this should not merge until the code boundary matches context-action-convention.',
-      );
-    },
-  );
-  root.querySelector<HTMLButtonElement>('#incident-reset')?.addEventListener(
-    'click',
-    () => {
-      void actions.reset();
-    },
-  );
+  root.querySelector<HTMLButtonElement>('#incident-sample')?.addEventListener('click', () => {
+    actions.updateTextField('incidentTitle', 'view boundary writes persistence directly');
+    actions.updateTextField('serviceName', 'features/review/views/ReviewView.ts');
+    actions.updateSeverity('sev0');
+    actions.updateTextField(
+      'customerImpact',
+      '전체 context-action contract가 흐려집니다. view가 persistence write와 logging side effect를 직접 수행하면 handlers/actions boundary가 증명되지 않습니다.',
+    );
+    actions.updateTextField(
+      'mitigationPlan',
+      'Move persistence and logging into handlers, keep view as input/render only, and add context-action-contract test coverage for the boundary.',
+    );
+    actions.updateTextField(
+      'stakeholderNote',
+      'Blocking review feedback: this should not merge until the code boundary matches context-action-convention.',
+    );
+  });
+  root.querySelector<HTMLButtonElement>('#incident-reset')?.addEventListener('click', () => {
+    void actions.reset();
+  });
 
   restoreActiveField(root, activeField);
 }

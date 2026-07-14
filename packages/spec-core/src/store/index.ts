@@ -6,4 +6,4 @@
  * Re-export from dkg/store.
  */
 
-export * from "dkg/store";
+export * from 'dkg/store';

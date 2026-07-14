@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import type { DlqInsert, DlqStore, StoredDlqItem } from "@qa-sdk/core";
+import type { DlqInsert, DlqStore, StoredDlqItem } from '@qa-sdk/core';
 
 /** DlqStore의 in-memory 구현 */
 export class InMemoryDlqStore implements DlqStore {

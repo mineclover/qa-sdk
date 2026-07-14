@@ -1,7 +1,7 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { SubscriptionUserQueryPort } from "../../application/ports/user-query.port.js";
+import { SubscriptionUserQueryPort } from '../../application/ports/user-query.port.js';
 
 /** 테스트 주입용 fetch 추상 (전역 fetch 와 호환). */
 export type FetchLike = (
@@ -35,12 +35,12 @@ export class HttpSubscriptionUserQuery extends SubscriptionUserQueryPort {
 
   constructor(opts: HttpSubscriptionUserQueryOptions) {
     super();
-    this.baseUrl = opts.authApiBaseUrl.replace(/\/+$/, "");
+    this.baseUrl = opts.authApiBaseUrl.replace(/\/+$/, '');
     this.timeoutMs = opts.timeoutMs ?? 5_000;
     this.fetchImpl = opts.fetchImpl ?? ((globalThis as { fetch?: FetchLike }).fetch as FetchLike);
     if (!this.fetchImpl) {
       throw new Error(
-        "HttpSubscriptionUserQuery: global fetch unavailable — pass fetchImpl explicitly",
+        'HttpSubscriptionUserQuery: global fetch unavailable — pass fetchImpl explicitly',
       );
     }
   }

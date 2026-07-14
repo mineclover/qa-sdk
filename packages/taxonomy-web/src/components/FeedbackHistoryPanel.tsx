@@ -1,5 +1,5 @@
-import type { Feedback } from "../types/feedback";
-import { FeedbackList } from "./FeedbackList";
+import type { Feedback } from '../types/feedback';
+import { FeedbackList } from './FeedbackList';
 
 export function FeedbackHistoryPanel({
   selectedRef,
@@ -9,8 +9,8 @@ export function FeedbackHistoryPanel({
   feedbacks: Feedback[];
 }) {
   const all = feedbacks.filter((f) => f.ref === selectedRef);
-  const open = all.filter((f) => f.status === "open");
-  const closed = all.filter((f) => f.status !== "open");
+  const open = all.filter((f) => f.status === 'open');
+  const closed = all.filter((f) => f.status !== 'open');
 
   return (
     <div className="space-y-3">

@@ -13,11 +13,11 @@ import type {
   MotionTargetDef,
   SceneLayerPlacement,
   MotionTransitionDef,
-} from "./model.js";
-import { CONTENT_TYPE_AXIS, CONTENT_TYPE_IDS } from "./content-types.js";
+} from './model.js';
+import { CONTENT_TYPE_AXIS, CONTENT_TYPE_IDS } from './content-types.js';
 
-export const MOTION_COMPOSITION_SCHEMA_V1 = "qa-sdk.motion-composition/v1";
-export const MOTION_COMPOSITION_SCHEMA_V2 = "qa-sdk.motion-composition/v2";
+export const MOTION_COMPOSITION_SCHEMA_V1 = 'qa-sdk.motion-composition/v1';
+export const MOTION_COMPOSITION_SCHEMA_V2 = 'qa-sdk.motion-composition/v2';
 
 export interface MotionCompositionDocumentV1 {
   readonly schemaVersion: typeof MOTION_COMPOSITION_SCHEMA_V1;
@@ -29,24 +29,24 @@ export interface MotionCompositionDocumentV2 {
   readonly composition: MotionCompositionDefV2;
 }
 
-const MOTION_PARAMETER_TYPES = ["text", "color", "number", "select"] as const;
-const MOTION_CUE_KINDS = ["fade", "slide-up", "slide-left", "slide-right", "scale-pop"] as const;
-const MOTION_TRANSITION_STYLES = ["crossfade", "flash", "lift"] as const;
-const MOTION_CAPTION_TONES = ["neutral", "accent", "warning"] as const;
-const MOTION_ASSET_TYPES = ["text", "style"] as const;
-const MOTION_STYLE_ASSET_PROPERTIES = ["background", "color", "borderColor"] as const;
-const MOTION_STAGE_TARGET_KINDS = ["stage-node"] as const;
+const MOTION_PARAMETER_TYPES = ['text', 'color', 'number', 'select'] as const;
+const MOTION_CUE_KINDS = ['fade', 'slide-up', 'slide-left', 'slide-right', 'scale-pop'] as const;
+const MOTION_TRANSITION_STYLES = ['crossfade', 'flash', 'lift'] as const;
+const MOTION_CAPTION_TONES = ['neutral', 'accent', 'warning'] as const;
+const MOTION_ASSET_TYPES = ['text', 'style'] as const;
+const MOTION_STYLE_ASSET_PROPERTIES = ['background', 'color', 'borderColor'] as const;
+const MOTION_STAGE_TARGET_KINDS = ['stage-node'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object" && !Array.isArray(value);
+  return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isString(value: unknown): value is string {
-  return typeof value === "string";
+  return typeof value === 'string';
 }
 
 function isNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 function hasOwn(record: Record<string, unknown>, key: string): boolean {
@@ -54,9 +54,9 @@ function hasOwn(record: Record<string, unknown>, key: string): boolean {
 }
 
 function describeValue(value: unknown): string {
-  if (value === undefined) return "undefined";
-  if (value === null) return "null";
-  if (Array.isArray(value)) return "array";
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'array';
   return typeof value;
 }
 
@@ -78,7 +78,9 @@ function pushEnumIssue(
   expected: readonly string[],
   actual: unknown,
 ): void {
-  issues.push(`${path}: ${expected.join(" | ")} 중 하나여야 하지만 ${JSON.stringify(actual)}입니다.`);
+  issues.push(
+    `${path}: ${expected.join(' | ')} 중 하나여야 하지만 ${JSON.stringify(actual)}입니다.`,
+  );
 }
 
 function requireRecord(
@@ -87,33 +89,43 @@ function requireRecord(
   issues: string[],
 ): value is Record<string, unknown> {
   if (!isRecord(value)) {
-    pushTypeIssue(issues, path, "object", value);
+    pushTypeIssue(issues, path, 'object', value);
     return false;
   }
   return true;
 }
 
-function requireString(record: Record<string, unknown>, key: string, path: string, issues: string[]): string | null {
+function requireString(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  issues: string[],
+): string | null {
   if (!hasOwn(record, key)) {
-    pushMissingIssue(issues, formatPath(path, key), "string");
+    pushMissingIssue(issues, formatPath(path, key), 'string');
     return null;
   }
   const value = record[key];
   if (!isString(value)) {
-    pushTypeIssue(issues, formatPath(path, key), "string", value);
+    pushTypeIssue(issues, formatPath(path, key), 'string', value);
     return null;
   }
   return value;
 }
 
-function requireNumber(record: Record<string, unknown>, key: string, path: string, issues: string[]): number | null {
+function requireNumber(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  issues: string[],
+): number | null {
   if (!hasOwn(record, key)) {
-    pushMissingIssue(issues, formatPath(path, key), "number");
+    pushMissingIssue(issues, formatPath(path, key), 'number');
     return null;
   }
   const value = record[key];
   if (!isNumber(value)) {
-    pushTypeIssue(issues, formatPath(path, key), "number", value);
+    pushTypeIssue(issues, formatPath(path, key), 'number', value);
     return null;
   }
   return value;
@@ -142,28 +154,38 @@ function requireArray(
   issues: string[],
 ): readonly unknown[] | null {
   if (!hasOwn(record, key)) {
-    pushMissingIssue(issues, formatPath(path, key), "array");
+    pushMissingIssue(issues, formatPath(path, key), 'array');
     return null;
   }
   const value = record[key];
   if (!Array.isArray(value)) {
-    pushTypeIssue(issues, formatPath(path, key), "array", value);
+    pushTypeIssue(issues, formatPath(path, key), 'array', value);
     return null;
   }
   return value;
 }
 
-function optionalNumber(record: Record<string, unknown>, key: string, path: string, issues: string[]): void {
+function optionalNumber(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  issues: string[],
+): void {
   if (!hasOwn(record, key) || record[key] === undefined) return;
   if (!isNumber(record[key])) {
-    pushTypeIssue(issues, formatPath(path, key), "number", record[key]);
+    pushTypeIssue(issues, formatPath(path, key), 'number', record[key]);
   }
 }
 
-function optionalString(record: Record<string, unknown>, key: string, path: string, issues: string[]): void {
+function optionalString(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  issues: string[],
+): void {
   if (!hasOwn(record, key) || record[key] === undefined) return;
   if (!isString(record[key])) {
-    pushTypeIssue(issues, formatPath(path, key), "string", record[key]);
+    pushTypeIssue(issues, formatPath(path, key), 'string', record[key]);
   }
 }
 
@@ -176,7 +198,7 @@ function optionalEnum<T extends string>(
 ): void {
   if (!hasOwn(record, key) || record[key] === undefined) return;
   if (!isString(record[key])) {
-    pushTypeIssue(issues, formatPath(path, key), "string", record[key]);
+    pushTypeIssue(issues, formatPath(path, key), 'string', record[key]);
     return;
   }
   if (!expected.includes(record[key] as T)) {
@@ -184,33 +206,38 @@ function optionalEnum<T extends string>(
   }
 }
 
-function optionalStringArray(record: Record<string, unknown>, key: string, path: string, issues: string[]): void {
+function optionalStringArray(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+  issues: string[],
+): void {
   if (!hasOwn(record, key) || record[key] === undefined) return;
   const value = record[key];
   if (!Array.isArray(value)) {
-    pushTypeIssue(issues, formatPath(path, key), "array", value);
+    pushTypeIssue(issues, formatPath(path, key), 'array', value);
     return;
   }
   value.forEach((entry, index) => {
     if (!isString(entry)) {
-      pushTypeIssue(issues, `${formatPath(path, key)}[${index}]`, "string", entry);
+      pushTypeIssue(issues, `${formatPath(path, key)}[${index}]`, 'string', entry);
     }
   });
 }
 
 function validateInlineCue(value: Record<string, unknown>, path: string, issues: string[]): void {
-  requireEnum(value, "kind", path, issues, MOTION_CUE_KINDS);
-  requireNumber(value, "durationMs", path, issues);
-  optionalString(value, "ease", path, issues);
-  optionalNumber(value, "amount", path, issues);
-  optionalNumber(value, "opacity", path, issues);
-  optionalNumber(value, "overlapMs", path, issues);
+  requireEnum(value, 'kind', path, issues, MOTION_CUE_KINDS);
+  requireNumber(value, 'durationMs', path, issues);
+  optionalString(value, 'ease', path, issues);
+  optionalNumber(value, 'amount', path, issues);
+  optionalNumber(value, 'opacity', path, issues);
+  optionalNumber(value, 'overlapMs', path, issues);
 }
 
 function validateCuePreset(value: unknown, path: string, issues: string[]): boolean {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "label", path, issues);
+  requireString(value, 'id', path, issues);
+  requireString(value, 'label', path, issues);
   validateInlineCue(value, path, issues);
   return true;
 }
@@ -218,7 +245,7 @@ function validateCuePreset(value: unknown, path: string, issues: string[]): bool
 /** CueRef 검증 — { preset: string } 또는 인라인 MotionCueDef */
 function validateCueRef(value: unknown, path: string, issues: string[]): boolean {
   if (!requireRecord(value, path, issues)) return false;
-  if (hasOwn(value, "preset") && isString(value.preset)) {
+  if (hasOwn(value, 'preset') && isString(value.preset)) {
     // preset 참조 — 참조 무결성은 composition 레벨에서 검증
     return true;
   }
@@ -232,48 +259,52 @@ function validateStageTarget(
   issues: string[],
 ): value is MotionStageTargetV1 {
   if (!requireRecord(value, path, issues)) return false;
-  requireEnum(value, "kind", path, issues, MOTION_STAGE_TARGET_KINDS);
-  requireString(value, "nodeId", path, issues);
+  requireEnum(value, 'kind', path, issues, MOTION_STAGE_TARGET_KINDS);
+  requireString(value, 'nodeId', path, issues);
   return true;
 }
 
-function validateParameter(value: unknown, path: string, issues: string[]): value is MotionParameterDef {
+function validateParameter(
+  value: unknown,
+  path: string,
+  issues: string[],
+): value is MotionParameterDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "label", path, issues);
-  const type = requireEnum(value, "type", path, issues, MOTION_PARAMETER_TYPES);
-  if (!hasOwn(value, "defaultValue")) {
-    pushMissingIssue(issues, formatPath(path, "defaultValue"), "string 또는 number");
+  requireString(value, 'id', path, issues);
+  requireString(value, 'label', path, issues);
+  const type = requireEnum(value, 'type', path, issues, MOTION_PARAMETER_TYPES);
+  if (!hasOwn(value, 'defaultValue')) {
+    pushMissingIssue(issues, formatPath(path, 'defaultValue'), 'string 또는 number');
   } else {
     const defaultValue = value.defaultValue;
     if (!isString(defaultValue) && !isNumber(defaultValue)) {
-      pushTypeIssue(issues, formatPath(path, "defaultValue"), "string 또는 number", defaultValue);
+      pushTypeIssue(issues, formatPath(path, 'defaultValue'), 'string 또는 number', defaultValue);
     }
-    if (type === "number" && !isNumber(defaultValue)) {
-      pushTypeIssue(issues, formatPath(path, "defaultValue"), "number", defaultValue);
+    if (type === 'number' && !isNumber(defaultValue)) {
+      pushTypeIssue(issues, formatPath(path, 'defaultValue'), 'number', defaultValue);
     }
-    if ((type === "text" || type === "color" || type === "select") && !isString(defaultValue)) {
-      pushTypeIssue(issues, formatPath(path, "defaultValue"), "string", defaultValue);
+    if ((type === 'text' || type === 'color' || type === 'select') && !isString(defaultValue)) {
+      pushTypeIssue(issues, formatPath(path, 'defaultValue'), 'string', defaultValue);
     }
   }
 
-  optionalNumber(value, "min", path, issues);
-  optionalNumber(value, "max", path, issues);
-  optionalNumber(value, "step", path, issues);
+  optionalNumber(value, 'min', path, issues);
+  optionalNumber(value, 'max', path, issues);
+  optionalNumber(value, 'step', path, issues);
 
-  if (hasOwn(value, "options") && value.options !== undefined) {
+  if (hasOwn(value, 'options') && value.options !== undefined) {
     if (!Array.isArray(value.options)) {
-      pushTypeIssue(issues, formatPath(path, "options"), "array", value.options);
+      pushTypeIssue(issues, formatPath(path, 'options'), 'array', value.options);
     } else {
       value.options.forEach((entry, index) => {
-        const optionPath = `${formatPath(path, "options")}[${index}]`;
+        const optionPath = `${formatPath(path, 'options')}[${index}]`;
         if (!requireRecord(entry, optionPath, issues)) return;
-        requireString(entry, "value", optionPath, issues);
-        requireString(entry, "label", optionPath, issues);
+        requireString(entry, 'value', optionPath, issues);
+        requireString(entry, 'label', optionPath, issues);
       });
     }
-  } else if (type === "select") {
-    pushMissingIssue(issues, formatPath(path, "options"), "array");
+  } else if (type === 'select') {
+    pushMissingIssue(issues, formatPath(path, 'options'), 'array');
   }
 
   return true;
@@ -281,16 +312,16 @@ function validateParameter(value: unknown, path: string, issues: string[]): valu
 
 function validateAsset(value: unknown, path: string, issues: string[]): value is MotionAssetDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  const type = requireEnum(value, "type", path, issues, MOTION_ASSET_TYPES);
-  if (!hasOwn(value, "target")) {
-    pushMissingIssue(issues, formatPath(path, "target"), "object");
+  requireString(value, 'id', path, issues);
+  const type = requireEnum(value, 'type', path, issues, MOTION_ASSET_TYPES);
+  if (!hasOwn(value, 'target')) {
+    pushMissingIssue(issues, formatPath(path, 'target'), 'object');
   } else {
-    validateStageTarget(value.target, formatPath(path, "target"), issues);
+    validateStageTarget(value.target, formatPath(path, 'target'), issues);
   }
-  requireString(value, "template", path, issues);
-  if (type === "style") {
-    requireEnum(value, "property", path, issues, MOTION_STYLE_ASSET_PROPERTIES);
+  requireString(value, 'template', path, issues);
+  if (type === 'style') {
+    requireEnum(value, 'property', path, issues, MOTION_STYLE_ASSET_PROPERTIES);
   }
   return true;
 }
@@ -298,7 +329,7 @@ function validateAsset(value: unknown, path: string, issues: string[]): value is
 /** 축 기반 콘텐츠 타입 검증 — CONTENT_TYPE_AXIS에서 파생 */
 function validateLayerContent(value: unknown, path: string, issues: string[]): void {
   if (!requireRecord(value, path, issues)) return;
-  const type = requireEnum(value, "type", path, issues, CONTENT_TYPE_IDS);
+  const type = requireEnum(value, 'type', path, issues, CONTENT_TYPE_IDS);
   if (!type) return;
 
   const entry = CONTENT_TYPE_AXIS.find((e) => e.id === type);
@@ -306,16 +337,16 @@ function validateLayerContent(value: unknown, path: string, issues: string[]): v
 
   for (const prop of entry.properties) {
     if (prop.required) {
-      if (prop.type === "string") requireString(value, prop.key, path, issues);
-      else if (prop.type === "number") requireNumber(value, prop.key, path, issues);
+      if (prop.type === 'string') requireString(value, prop.key, path, issues);
+      else if (prop.type === 'number') requireNumber(value, prop.key, path, issues);
     } else {
-      if (prop.type === "string") {
+      if (prop.type === 'string') {
         if (prop.options) {
           optionalEnum(value, prop.key, path, issues, prop.options);
         } else {
           optionalString(value, prop.key, path, issues);
         }
-      } else if (prop.type === "number") {
+      } else if (prop.type === 'number') {
         optionalNumber(value, prop.key, path, issues);
       }
       // boolean은 optional이면 별도 검증 생략 (JSON boolean은 자명)
@@ -325,116 +356,133 @@ function validateLayerContent(value: unknown, path: string, issues: string[]): v
 
 function validateLayer(value: unknown, path: string, issues: string[]): value is MotionLayerDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "label", path, issues);
-  if (!hasOwn(value, "target")) {
-    pushMissingIssue(issues, formatPath(path, "target"), "object");
+  requireString(value, 'id', path, issues);
+  requireString(value, 'label', path, issues);
+  if (!hasOwn(value, 'target')) {
+    pushMissingIssue(issues, formatPath(path, 'target'), 'object');
   } else {
-    validateStageTarget(value.target, formatPath(path, "target"), issues);
+    validateStageTarget(value.target, formatPath(path, 'target'), issues);
   }
-  requireNumber(value, "startMs", path, issues);
-  requireNumber(value, "durationMs", path, issues);
+  requireNumber(value, 'startMs', path, issues);
+  requireNumber(value, 'durationMs', path, issues);
 
-  if (hasOwn(value, "content") && value.content !== undefined) {
-    validateLayerContent(value.content, formatPath(path, "content"), issues);
+  if (hasOwn(value, 'content') && value.content !== undefined) {
+    validateLayerContent(value.content, formatPath(path, 'content'), issues);
   }
 
-  if (!hasOwn(value, "enter")) {
-    pushMissingIssue(issues, formatPath(path, "enter"), "object");
+  if (!hasOwn(value, 'enter')) {
+    pushMissingIssue(issues, formatPath(path, 'enter'), 'object');
   } else {
-    validateCueRef(value.enter, formatPath(path, "enter"), issues);
+    validateCueRef(value.enter, formatPath(path, 'enter'), issues);
   }
 
-  if (hasOwn(value, "exit") && value.exit !== undefined) {
-    validateCueRef(value.exit, formatPath(path, "exit"), issues);
+  if (hasOwn(value, 'exit') && value.exit !== undefined) {
+    validateCueRef(value.exit, formatPath(path, 'exit'), issues);
   }
 
   return true;
 }
 
-const SEQUENCE_LAYER_SLOT_ROLES = ["background", "content", "overlay", "accent"] as const;
+const SEQUENCE_LAYER_SLOT_ROLES = ['background', 'content', 'overlay', 'accent'] as const;
 
 function validateSequenceLayerSlot(value: unknown, path: string, issues: string[]): boolean {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "layerId", path, issues);
-  optionalNumber(value, "offsetMs", path, issues);
-  optionalNumber(value, "zIndex", path, issues);
-  optionalEnum(value, "role", path, issues, SEQUENCE_LAYER_SLOT_ROLES);
+  requireString(value, 'layerId', path, issues);
+  optionalNumber(value, 'offsetMs', path, issues);
+  optionalNumber(value, 'zIndex', path, issues);
+  optionalEnum(value, 'role', path, issues, SEQUENCE_LAYER_SLOT_ROLES);
   return true;
 }
 
-function validateSequence(value: unknown, path: string, issues: string[]): value is MotionSequenceDef {
+function validateSequence(
+  value: unknown,
+  path: string,
+  issues: string[],
+): value is MotionSequenceDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "title", path, issues);
-  requireNumber(value, "startMs", path, issues);
-  requireNumber(value, "durationMs", path, issues);
+  requireString(value, 'id', path, issues);
+  requireString(value, 'title', path, issues);
+  requireNumber(value, 'startMs', path, issues);
+  requireNumber(value, 'durationMs', path, issues);
 
   // layers (슬롯 기반) 또는 layerIds (단순 참조) 중 하나 이상 필수
-  const hasLayers = hasOwn(value, "layers") && Array.isArray(value.layers);
-  const hasLayerIds = hasOwn(value, "layerIds") && Array.isArray(value.layerIds);
+  const hasLayers = hasOwn(value, 'layers') && Array.isArray(value.layers);
+  const hasLayerIds = hasOwn(value, 'layerIds') && Array.isArray(value.layerIds);
 
   if (hasLayers) {
     (value.layers as readonly unknown[]).forEach((entry, index) => {
-      validateSequenceLayerSlot(entry, `${formatPath(path, "layers")}[${index}]`, issues);
+      validateSequenceLayerSlot(entry, `${formatPath(path, 'layers')}[${index}]`, issues);
     });
   }
 
   if (hasLayerIds) {
     (value.layerIds as readonly unknown[]).forEach((entry, index) => {
       if (!isString(entry)) {
-        pushTypeIssue(issues, `${formatPath(path, "layerIds")}[${index}]`, "string", entry);
+        pushTypeIssue(issues, `${formatPath(path, 'layerIds')}[${index}]`, 'string', entry);
       }
     });
   }
 
   if (!hasLayers && !hasLayerIds) {
-    pushMissingIssue(issues, formatPath(path, "layerIds"), "array");
+    pushMissingIssue(issues, formatPath(path, 'layerIds'), 'array');
   }
 
   // stagger (선택)
-  if (hasOwn(value, "stagger") && value.stagger !== undefined) {
-    const staggerPath = formatPath(path, "stagger");
+  if (hasOwn(value, 'stagger') && value.stagger !== undefined) {
+    const staggerPath = formatPath(path, 'stagger');
     if (requireRecord(value.stagger, staggerPath, issues)) {
-      requireNumber(value.stagger, "startOffsetMs", staggerPath, issues);
-      requireNumber(value.stagger, "intervalMs", staggerPath, issues);
+      requireNumber(value.stagger, 'startOffsetMs', staggerPath, issues);
+      requireNumber(value.stagger, 'intervalMs', staggerPath, issues);
     }
   }
 
-  optionalStringArray(value, "captionIds", path, issues);
+  optionalStringArray(value, 'captionIds', path, issues);
   return true;
 }
 
-function validateCaption(value: unknown, path: string, issues: string[]): value is MotionCaptionCue {
+function validateCaption(
+  value: unknown,
+  path: string,
+  issues: string[],
+): value is MotionCaptionCue {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "text", path, issues);
-  requireNumber(value, "startMs", path, issues);
-  requireNumber(value, "durationMs", path, issues);
-  optionalEnum(value, "tone", path, issues, MOTION_CAPTION_TONES);
+  requireString(value, 'id', path, issues);
+  requireString(value, 'text', path, issues);
+  requireNumber(value, 'startMs', path, issues);
+  requireNumber(value, 'durationMs', path, issues);
+  optionalEnum(value, 'tone', path, issues, MOTION_CAPTION_TONES);
   return true;
 }
 
-function validateTransitionParams(value: Record<string, unknown>, style: string, path: string, issues: string[]): void {
-  if (style === "crossfade") {
-    optionalNumber(value, "brightness", path, issues);
-  } else if (style === "flash") {
-    optionalString(value, "glowColor", path, issues);
-    optionalNumber(value, "glowSize", path, issues);
-  } else if (style === "lift") {
-    optionalNumber(value, "liftY", path, issues);
+function validateTransitionParams(
+  value: Record<string, unknown>,
+  style: string,
+  path: string,
+  issues: string[],
+): void {
+  if (style === 'crossfade') {
+    optionalNumber(value, 'brightness', path, issues);
+  } else if (style === 'flash') {
+    optionalString(value, 'glowColor', path, issues);
+    optionalNumber(value, 'glowSize', path, issues);
+  } else if (style === 'lift') {
+    optionalNumber(value, 'liftY', path, issues);
   }
 }
 
-function validateTransition(value: unknown, path: string, issues: string[]): value is MotionTransitionDef {
+function validateTransition(
+  value: unknown,
+  path: string,
+  issues: string[],
+): value is MotionTransitionDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "fromSequenceId", path, issues);
-  requireString(value, "toSequenceId", path, issues);
-  const style = requireEnum(value, "style", path, issues, MOTION_TRANSITION_STYLES);
-  requireNumber(value, "durationMs", path, issues);
-  if (style && hasOwn(value, "params") && value.params !== undefined) {
-    const paramsPath = formatPath(path, "params");
+  requireString(value, 'id', path, issues);
+  requireString(value, 'fromSequenceId', path, issues);
+  requireString(value, 'toSequenceId', path, issues);
+  const style = requireEnum(value, 'style', path, issues, MOTION_TRANSITION_STYLES);
+  requireNumber(value, 'durationMs', path, issues);
+  if (style && hasOwn(value, 'params') && value.params !== undefined) {
+    const paramsPath = formatPath(path, 'params');
     if (requireRecord(value.params, paramsPath, issues)) {
       validateTransitionParams(value.params, style, paramsPath, issues);
     }
@@ -447,20 +495,20 @@ function validateSharedCompositionFields(
   path: string,
   issues: string[],
 ): void {
-  requireString(value, "id", path, issues);
-  requireString(value, "title", path, issues);
-  requireString(value, "description", path, issues);
-  requireNumber(value, "durationMs", path, issues);
+  requireString(value, 'id', path, issues);
+  requireString(value, 'title', path, issues);
+  requireString(value, 'description', path, issues);
+  requireNumber(value, 'durationMs', path, issues);
 
-  const parameters = requireArray(value, "parameters", path, issues);
+  const parameters = requireArray(value, 'parameters', path, issues);
   parameters?.forEach((entry, index) => {
     validateParameter(entry, `${path}.parameters[${index}]`, issues);
   });
 
   // cuePresets (선택)
-  if (hasOwn(value, "cuePresets") && value.cuePresets !== undefined) {
+  if (hasOwn(value, 'cuePresets') && value.cuePresets !== undefined) {
     if (!Array.isArray(value.cuePresets)) {
-      pushTypeIssue(issues, formatPath(path, "cuePresets"), "array", value.cuePresets);
+      pushTypeIssue(issues, formatPath(path, 'cuePresets'), 'array', value.cuePresets);
     } else {
       (value.cuePresets as readonly unknown[]).forEach((entry, index) => {
         validateCuePreset(entry, `${path}.cuePresets[${index}]`, issues);
@@ -468,22 +516,26 @@ function validateSharedCompositionFields(
     }
   }
 
-  const assets = requireArray(value, "assets", path, issues);
+  const assets = requireArray(value, 'assets', path, issues);
   assets?.forEach((entry, index) => {
     validateAsset(entry, `${path}.assets[${index}]`, issues);
   });
 }
 
-function validateMotionTarget(value: unknown, path: string, issues: string[]): value is MotionTargetDef {
+function validateMotionTarget(
+  value: unknown,
+  path: string,
+  issues: string[],
+): value is MotionTargetDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  if (!hasOwn(value, "target")) {
-    pushMissingIssue(issues, formatPath(path, "target"), "object");
+  requireString(value, 'id', path, issues);
+  if (!hasOwn(value, 'target')) {
+    pushMissingIssue(issues, formatPath(path, 'target'), 'object');
   } else {
-    validateStageTarget(value.target, formatPath(path, "target"), issues);
+    validateStageTarget(value.target, formatPath(path, 'target'), issues);
   }
-  if (hasOwn(value, "content") && value.content !== undefined) {
-    validateLayerContent(value.content, formatPath(path, "content"), issues);
+  if (hasOwn(value, 'content') && value.content !== undefined) {
+    validateLayerContent(value.content, formatPath(path, 'content'), issues);
   }
   return true;
 }
@@ -494,18 +546,18 @@ function validateSceneLayerPlacement(
   issues: string[],
 ): value is SceneLayerPlacement {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "targetId", path, issues);
-  requireNumber(value, "startMs", path, issues);
-  requireNumber(value, "durationMs", path, issues);
+  requireString(value, 'targetId', path, issues);
+  requireNumber(value, 'startMs', path, issues);
+  requireNumber(value, 'durationMs', path, issues);
 
-  if (!hasOwn(value, "enter")) {
-    pushMissingIssue(issues, formatPath(path, "enter"), "object");
+  if (!hasOwn(value, 'enter')) {
+    pushMissingIssue(issues, formatPath(path, 'enter'), 'object');
   } else {
-    validateCueRef(value.enter, formatPath(path, "enter"), issues);
+    validateCueRef(value.enter, formatPath(path, 'enter'), issues);
   }
 
-  if (hasOwn(value, "exit") && value.exit !== undefined) {
-    validateCueRef(value.exit, formatPath(path, "exit"), issues);
+  if (hasOwn(value, 'exit') && value.exit !== undefined) {
+    validateCueRef(value.exit, formatPath(path, 'exit'), issues);
   }
 
   return true;
@@ -513,10 +565,10 @@ function validateSceneLayerPlacement(
 
 function validateSceneSequenceTargetSlot(value: unknown, path: string, issues: string[]): boolean {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "targetId", path, issues);
-  optionalNumber(value, "offsetMs", path, issues);
-  optionalNumber(value, "zIndex", path, issues);
-  optionalEnum(value, "role", path, issues, SEQUENCE_LAYER_SLOT_ROLES);
+  requireString(value, 'targetId', path, issues);
+  optionalNumber(value, 'offsetMs', path, issues);
+  optionalNumber(value, 'zIndex', path, issues);
+  optionalEnum(value, 'role', path, issues, SEQUENCE_LAYER_SLOT_ROLES);
   return true;
 }
 
@@ -526,58 +578,58 @@ function validateSceneSequence(
   issues: string[],
 ): value is MotionSceneSequenceDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "title", path, issues);
-  requireNumber(value, "startMs", path, issues);
-  requireNumber(value, "durationMs", path, issues);
+  requireString(value, 'id', path, issues);
+  requireString(value, 'title', path, issues);
+  requireNumber(value, 'startMs', path, issues);
+  requireNumber(value, 'durationMs', path, issues);
 
-  const targetIds = requireArray(value, "targetIds", path, issues);
+  const targetIds = requireArray(value, 'targetIds', path, issues);
   targetIds?.forEach((entry, index) => {
     if (!isString(entry)) {
-      pushTypeIssue(issues, `${formatPath(path, "targetIds")}[${index}]`, "string", entry);
+      pushTypeIssue(issues, `${formatPath(path, 'targetIds')}[${index}]`, 'string', entry);
     }
   });
 
-  if (hasOwn(value, "layers") && value.layers !== undefined) {
+  if (hasOwn(value, 'layers') && value.layers !== undefined) {
     if (!Array.isArray(value.layers)) {
-      pushTypeIssue(issues, formatPath(path, "layers"), "array", value.layers);
+      pushTypeIssue(issues, formatPath(path, 'layers'), 'array', value.layers);
     } else {
       value.layers.forEach((entry, index) => {
-        validateSceneSequenceTargetSlot(entry, `${formatPath(path, "layers")}[${index}]`, issues);
+        validateSceneSequenceTargetSlot(entry, `${formatPath(path, 'layers')}[${index}]`, issues);
       });
     }
   }
 
-  if (hasOwn(value, "stagger") && value.stagger !== undefined) {
-    const staggerPath = formatPath(path, "stagger");
+  if (hasOwn(value, 'stagger') && value.stagger !== undefined) {
+    const staggerPath = formatPath(path, 'stagger');
     if (requireRecord(value.stagger, staggerPath, issues)) {
-      requireNumber(value.stagger, "startOffsetMs", staggerPath, issues);
-      requireNumber(value.stagger, "intervalMs", staggerPath, issues);
+      requireNumber(value.stagger, 'startOffsetMs', staggerPath, issues);
+      requireNumber(value.stagger, 'intervalMs', staggerPath, issues);
     }
   }
 
-  optionalStringArray(value, "captionIds", path, issues);
+  optionalStringArray(value, 'captionIds', path, issues);
   return true;
 }
 
 function validateScene(value: unknown, path: string, issues: string[]): value is MotionSceneDef {
   if (!requireRecord(value, path, issues)) return false;
-  requireString(value, "id", path, issues);
-  requireString(value, "title", path, issues);
-  requireNumber(value, "startMs", path, issues);
-  requireNumber(value, "durationMs", path, issues);
+  requireString(value, 'id', path, issues);
+  requireString(value, 'title', path, issues);
+  requireNumber(value, 'startMs', path, issues);
+  requireNumber(value, 'durationMs', path, issues);
 
-  const layers = requireArray(value, "layers", path, issues);
+  const layers = requireArray(value, 'layers', path, issues);
   layers?.forEach((entry, index) => {
     validateSceneLayerPlacement(entry, `${path}.layers[${index}]`, issues);
   });
 
-  const sequences = requireArray(value, "sequences", path, issues);
+  const sequences = requireArray(value, 'sequences', path, issues);
   sequences?.forEach((entry, index) => {
     validateSceneSequence(entry, `${path}.sequences[${index}]`, issues);
   });
 
-  const captions = requireArray(value, "captions", path, issues);
+  const captions = requireArray(value, 'captions', path, issues);
   captions?.forEach((entry, index) => {
     validateCaption(entry, `${path}.captions[${index}]`, issues);
   });
@@ -590,22 +642,22 @@ function validateMotionCompositionAtPath(value: unknown, path: string, issues: s
 
   validateSharedCompositionFields(value, path, issues);
 
-  const layers = requireArray(value, "layers", path, issues);
+  const layers = requireArray(value, 'layers', path, issues);
   layers?.forEach((entry, index) => {
     validateLayer(entry, `${path}.layers[${index}]`, issues);
   });
 
-  const sequences = requireArray(value, "sequences", path, issues);
+  const sequences = requireArray(value, 'sequences', path, issues);
   sequences?.forEach((entry, index) => {
     validateSequence(entry, `${path}.sequences[${index}]`, issues);
   });
 
-  const captions = requireArray(value, "captions", path, issues);
+  const captions = requireArray(value, 'captions', path, issues);
   captions?.forEach((entry, index) => {
     validateCaption(entry, `${path}.captions[${index}]`, issues);
   });
 
-  const transitions = requireArray(value, "transitions", path, issues);
+  const transitions = requireArray(value, 'transitions', path, issues);
   transitions?.forEach((entry, index) => {
     validateTransition(entry, `${path}.transitions[${index}]`, issues);
   });
@@ -614,15 +666,9 @@ function validateMotionCompositionAtPath(value: unknown, path: string, issues: s
   if (issues.length > 0) return;
 
   const comp = value as Record<string, unknown>;
-  const validLayerIds = new Set(
-    (comp.layers as readonly { id: string }[]).map((l) => l.id),
-  );
-  const sequenceIds = new Set(
-    (comp.sequences as readonly { id: string }[]).map((s) => s.id),
-  );
-  const captionIds = new Set(
-    (comp.captions as readonly { id: string }[]).map((c) => c.id),
-  );
+  const validLayerIds = new Set((comp.layers as readonly { id: string }[]).map((l) => l.id));
+  const sequenceIds = new Set((comp.sequences as readonly { id: string }[]).map((s) => s.id));
+  const captionIds = new Set((comp.captions as readonly { id: string }[]).map((c) => c.id));
   const cuePresetIds = new Set(
     Array.isArray(comp.cuePresets)
       ? (comp.cuePresets as readonly { id: string }[]).map((p) => p.id)
@@ -633,10 +679,14 @@ function validateMotionCompositionAtPath(value: unknown, path: string, issues: s
   type LayerLike = { id: string; enter: { preset?: string }; exit?: { preset?: string } };
   for (const [index, layer] of (comp.layers as readonly LayerLike[]).entries()) {
     if (layer.enter?.preset && !cuePresetIds.has(layer.enter.preset)) {
-      issues.push(`${path}.layers[${index}].enter.preset: 존재하지 않는 cuePreset "${layer.enter.preset}"를 참조합니다.`);
+      issues.push(
+        `${path}.layers[${index}].enter.preset: 존재하지 않는 cuePreset "${layer.enter.preset}"를 참조합니다.`,
+      );
     }
     if (layer.exit?.preset && !cuePresetIds.has(layer.exit.preset)) {
-      issues.push(`${path}.layers[${index}].exit.preset: 존재하지 않는 cuePreset "${layer.exit.preset}"를 참조합니다.`);
+      issues.push(
+        `${path}.layers[${index}].exit.preset: 존재하지 않는 cuePreset "${layer.exit.preset}"를 참조합니다.`,
+      );
     }
   }
 
@@ -679,20 +729,20 @@ function validateMotionCompositionAtPath(value: unknown, path: string, issues: s
     }
   });
 
-  (comp.transitions as readonly { id: string; fromSequenceId: string; toSequenceId: string }[]).forEach(
-    (tr, index) => {
-      if (!sequenceIds.has(tr.fromSequenceId)) {
-        issues.push(
-          `${path}.transitions[${index}].fromSequenceId: 존재하지 않는 sequence "${tr.fromSequenceId}"를 참조합니다.`,
-        );
-      }
-      if (!sequenceIds.has(tr.toSequenceId)) {
-        issues.push(
-          `${path}.transitions[${index}].toSequenceId: 존재하지 않는 sequence "${tr.toSequenceId}"를 참조합니다.`,
-        );
-      }
-    },
-  );
+  (
+    comp.transitions as readonly { id: string; fromSequenceId: string; toSequenceId: string }[]
+  ).forEach((tr, index) => {
+    if (!sequenceIds.has(tr.fromSequenceId)) {
+      issues.push(
+        `${path}.transitions[${index}].fromSequenceId: 존재하지 않는 sequence "${tr.fromSequenceId}"를 참조합니다.`,
+      );
+    }
+    if (!sequenceIds.has(tr.toSequenceId)) {
+      issues.push(
+        `${path}.transitions[${index}].toSequenceId: 존재하지 않는 sequence "${tr.toSequenceId}"를 참조합니다.`,
+      );
+    }
+  });
 }
 
 function validateMotionCompositionV2AtPath(value: unknown, path: string, issues: string[]): void {
@@ -700,12 +750,12 @@ function validateMotionCompositionV2AtPath(value: unknown, path: string, issues:
 
   validateSharedCompositionFields(value, path, issues);
 
-  const targets = requireArray(value, "targets", path, issues);
+  const targets = requireArray(value, 'targets', path, issues);
   targets?.forEach((entry, index) => {
     validateMotionTarget(entry, `${path}.targets[${index}]`, issues);
   });
 
-  const scenes = requireArray(value, "scenes", path, issues);
+  const scenes = requireArray(value, 'scenes', path, issues);
   scenes?.forEach((entry, index) => {
     validateScene(entry, `${path}.scenes[${index}]`, issues);
   });
@@ -713,9 +763,7 @@ function validateMotionCompositionV2AtPath(value: unknown, path: string, issues:
   if (issues.length > 0) return;
 
   const comp = value as Record<string, unknown>;
-  const targetIds = new Set(
-    (comp.targets as readonly { id: string }[]).map((target) => target.id),
-  );
+  const targetIds = new Set((comp.targets as readonly { id: string }[]).map((target) => target.id));
   const cuePresetIds = new Set(
     Array.isArray(comp.cuePresets)
       ? (comp.cuePresets as readonly { id: string }[]).map((preset) => preset.id)
@@ -782,13 +830,13 @@ function validateMotionCompositionV2AtPath(value: unknown, path: string, issues:
 
 export function validateMotionComposition(value: unknown): string[] {
   const issues: string[] = [];
-  validateMotionCompositionAtPath(value, "$", issues);
+  validateMotionCompositionAtPath(value, '$', issues);
   return issues;
 }
 
 export function validateMotionCompositionV2(value: unknown): string[] {
   const issues: string[] = [];
-  validateMotionCompositionV2AtPath(value, "$", issues);
+  validateMotionCompositionV2AtPath(value, '$', issues);
   return issues;
 }
 
@@ -812,22 +860,22 @@ export function createMotionCompositionDocumentV2(
 
 export function validateMotionCompositionDocument(value: unknown): string[] {
   const issues: string[] = [];
-  if (!requireRecord(value, "$", issues)) return issues;
+  if (!requireRecord(value, '$', issues)) return issues;
 
-  if (!hasOwn(value, "schemaVersion")) {
-    pushMissingIssue(issues, "$.schemaVersion", "string");
+  if (!hasOwn(value, 'schemaVersion')) {
+    pushMissingIssue(issues, '$.schemaVersion', 'string');
   } else if (!isString(value.schemaVersion)) {
-    pushTypeIssue(issues, "$.schemaVersion", "string", value.schemaVersion);
+    pushTypeIssue(issues, '$.schemaVersion', 'string', value.schemaVersion);
   } else if (value.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V1) {
     issues.push(
       `$.schemaVersion: ${MOTION_COMPOSITION_SCHEMA_V1}여야 하지만 ${JSON.stringify(value.schemaVersion)}입니다.`,
     );
   }
 
-  if (!hasOwn(value, "composition")) {
-    pushMissingIssue(issues, "$.composition", "object");
+  if (!hasOwn(value, 'composition')) {
+    pushMissingIssue(issues, '$.composition', 'object');
   } else {
-    validateMotionCompositionAtPath(value.composition, "$.composition", issues);
+    validateMotionCompositionAtPath(value.composition, '$.composition', issues);
   }
 
   return issues;
@@ -835,22 +883,22 @@ export function validateMotionCompositionDocument(value: unknown): string[] {
 
 export function validateMotionCompositionDocumentV2(value: unknown): string[] {
   const issues: string[] = [];
-  if (!requireRecord(value, "$", issues)) return issues;
+  if (!requireRecord(value, '$', issues)) return issues;
 
-  if (!hasOwn(value, "schemaVersion")) {
-    pushMissingIssue(issues, "$.schemaVersion", "string");
+  if (!hasOwn(value, 'schemaVersion')) {
+    pushMissingIssue(issues, '$.schemaVersion', 'string');
   } else if (!isString(value.schemaVersion)) {
-    pushTypeIssue(issues, "$.schemaVersion", "string", value.schemaVersion);
+    pushTypeIssue(issues, '$.schemaVersion', 'string', value.schemaVersion);
   } else if (value.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2) {
     issues.push(
       `$.schemaVersion: ${MOTION_COMPOSITION_SCHEMA_V2}여야 하지만 ${JSON.stringify(value.schemaVersion)}입니다.`,
     );
   }
 
-  if (!hasOwn(value, "composition")) {
-    pushMissingIssue(issues, "$.composition", "object");
+  if (!hasOwn(value, 'composition')) {
+    pushMissingIssue(issues, '$.composition', 'object');
   } else {
-    validateMotionCompositionV2AtPath(value.composition, "$.composition", issues);
+    validateMotionCompositionV2AtPath(value.composition, '$.composition', issues);
   }
 
   return issues;
@@ -864,11 +912,15 @@ export function isMotionCompositionDefV2(value: unknown): value is MotionComposi
   return validateMotionCompositionV2(value).length === 0;
 }
 
-export function isMotionCompositionDocumentV1(value: unknown): value is MotionCompositionDocumentV1 {
+export function isMotionCompositionDocumentV1(
+  value: unknown,
+): value is MotionCompositionDocumentV1 {
   return validateMotionCompositionDocument(value).length === 0;
 }
 
-export function isMotionCompositionDocumentV2(value: unknown): value is MotionCompositionDocumentV2 {
+export function isMotionCompositionDocumentV2(
+  value: unknown,
+): value is MotionCompositionDocumentV2 {
   return validateMotionCompositionDocumentV2(value).length === 0;
 }
 
@@ -879,32 +931,24 @@ export class MotionCompositionParseError extends Error {
     super(
       issues.length === 1
         ? issues[0]
-        : `MotionComposition JSON 검증 실패\n- ${issues.join("\n- ")}`,
+        : `MotionComposition JSON 검증 실패\n- ${issues.join('\n- ')}`,
     );
-    this.name = "MotionCompositionParseError";
+    this.name = 'MotionCompositionParseError';
     this.issues = issues;
   }
 }
 
-export function serializeMotionComposition(
-  composition: MotionCompositionDef,
-): string {
+export function serializeMotionComposition(composition: MotionCompositionDef): string {
   return JSON.stringify(createMotionCompositionDocument(composition), null, 2);
 }
 
-export function serializeMotionCompositionV2(
-  composition: MotionCompositionDefV2,
-): string {
+export function serializeMotionCompositionV2(composition: MotionCompositionDefV2): string {
   return JSON.stringify(createMotionCompositionDocumentV2(composition), null, 2);
 }
 
 /** layers 슬롯 기준으로 layerIds 파생 + 상대좌표 layer.startMs 동기화 */
-function normalizeFromSlots(
-  composition: MotionCompositionDef,
-): MotionCompositionDef {
-  const hasSlots = composition.sequences.some(
-    (seq) => seq.layers && seq.layers.length > 0,
-  );
+function normalizeFromSlots(composition: MotionCompositionDef): MotionCompositionDef {
+  const hasSlots = composition.sequences.some((seq) => seq.layers && seq.layers.length > 0);
   if (!hasSlots) return composition;
 
   // 1. layerIds 파생
@@ -934,9 +978,7 @@ function normalizeFromSlots(
   return { ...composition, sequences, layers };
 }
 
-export function parseMotionComposition(
-  json: string,
-): MotionCompositionDef {
+export function parseMotionComposition(json: string): MotionCompositionDef {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json) as unknown;
@@ -951,9 +993,7 @@ export function parseMotionComposition(
   return normalizeFromSlots((parsed as MotionCompositionDocumentV1).composition);
 }
 
-export function parseMotionCompositionV2(
-  json: string,
-): MotionCompositionDefV2 {
+export function parseMotionCompositionV2(json: string): MotionCompositionDefV2 {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json) as unknown;

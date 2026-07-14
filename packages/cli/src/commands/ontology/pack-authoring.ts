@@ -5,23 +5,22 @@ import {
   createOntologyPackScaffoldPlanFromCliArgs,
   hasOntologyPackScaffoldErrors,
   type OntologyPackScaffoldPlan,
-} from "../../lib/ontology-pack-scaffold-plan.js";
+} from '../../lib/ontology-pack-scaffold-plan.js';
 import {
   writeOntologyPackScaffoldPlan,
   type OntologyPackScaffoldWriteSummary,
-} from "../../lib/ontology-pack-scaffold-write.js";
+} from '../../lib/ontology-pack-scaffold-write.js';
 import {
   validateOntologyPackFromRef,
   type OntologyPackValidateResult,
-} from "ontology-pack-validate";
-import { readDocsFamilyFromDefinitionMarkdown } from "../../lib/ontology-pack-docs-reader.js";
-import { parseFlags, printJson } from "./support.js";
+} from 'ontology-pack-validate';
+import { readDocsFamilyFromDefinitionMarkdown } from '../../lib/ontology-pack-docs-reader.js';
+import { parseFlags, printJson } from './support.js';
 
 const PACK_SCAFFOLD_USAGE =
-  "Usage: qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]";
+  'Usage: qa-sdk ontology pack scaffold <pack-id> [--implementation-package <name>] [--package-root <path>] [--docs-dir <path>] [--test <path>] [--include-docs <rule,cases,test|all>] [--dry-run] [--write] [--json]';
 
-const PACK_VALIDATE_USAGE =
-  "Usage: qa-sdk ontology pack validate <pack-ref> [--json]";
+const PACK_VALIDATE_USAGE = 'Usage: qa-sdk ontology pack validate <pack-ref> [--json]';
 
 export async function cmdPackScaffold(rest: string[]): Promise<void> {
   if (isHelpRequested(rest)) {
@@ -30,9 +29,8 @@ export async function cmdPackScaffold(rest: string[]): Promise<void> {
   }
 
   const plan = createOntologyPackScaffoldPlanFromCliArgs(rest);
-  const writeSummary = plan.mode === "write"
-    ? await writeOntologyPackScaffoldPlan(plan)
-    : undefined;
+  const writeSummary =
+    plan.mode === 'write' ? await writeOntologyPackScaffoldPlan(plan) : undefined;
   if (plan.cli.json) {
     printJson(toPackScaffoldJsonOutput(plan, writeSummary));
   } else {
@@ -62,7 +60,7 @@ export async function cmdPackValidate(rest: string[]): Promise<void> {
     packRef,
     readDocsFamily: readDocsFamilyFromDefinitionMarkdown,
   });
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson(result);
   } else {
     printPackValidateSummary(result);
@@ -73,7 +71,7 @@ export async function cmdPackValidate(rest: string[]): Promise<void> {
 }
 
 function isHelpRequested(rest: readonly string[]): boolean {
-  return rest.includes("--help") || rest.includes("-h");
+  return rest.includes('--help') || rest.includes('-h');
 }
 
 function printPackAuthoringContract(): void {
@@ -81,19 +79,19 @@ function printPackAuthoringContract(): void {
     [
       PACK_SCAFFOLD_USAGE,
       PACK_VALIDATE_USAGE,
-      "",
-      "Pack authoring contract:",
-      "- OperationalOntologyPack is the canonical pack contract.",
-      "- Scaffold is dry-run by default; file writes require explicit --write.",
-      "- Write mode creates parent directories and refuses to overwrite existing files.",
-      "- Scaffold preserves architecture-neutral identity/data/system separation; ECS can be modeled but is not required.",
-      "- Required definition docs are spec/todo/plan; optional rule/cases/test docs require --include-docs.",
-      "- Source-map candidates report generated implementation/test paths with def find-by-file guidance; no source comments are added by default.",
-      "- Known-pack registration is reported as a candidate and is not applied automatically.",
-      "- Validate resolves known pack ids through the known-pack resolver.",
-      "- Validate file refs support .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack.",
-      "- Registry activation is out of scope for scaffold; use qa-sdk ontology registry activate-pack separately.",
-    ].join("\n"),
+      '',
+      'Pack authoring contract:',
+      '- OperationalOntologyPack is the canonical pack contract.',
+      '- Scaffold is dry-run by default; file writes require explicit --write.',
+      '- Write mode creates parent directories and refuses to overwrite existing files.',
+      '- Scaffold preserves architecture-neutral identity/data/system separation; ECS can be modeled but is not required.',
+      '- Required definition docs are spec/todo/plan; optional rule/cases/test docs require --include-docs.',
+      '- Source-map candidates report generated implementation/test paths with def find-by-file guidance; no source comments are added by default.',
+      '- Known-pack registration is reported as a candidate and is not applied automatically.',
+      '- Validate resolves known pack ids through the known-pack resolver.',
+      '- Validate file refs support .json pack objects or built .js/.mjs/.cjs modules exporting default or named pack.',
+      '- Registry activation is out of scope for scaffold; use qa-sdk ontology registry activate-pack separately.',
+    ].join('\n'),
   );
 }
 
@@ -105,12 +103,12 @@ function printPackScaffoldPlanSummary(
   if (diagnostics.length > 0) {
     console.error(`diagnostics: ${diagnostics.length}`);
     for (const diagnostic of diagnostics) {
-      const path = diagnostic.path ? ` ${diagnostic.path}` : "";
+      const path = diagnostic.path ? ` ${diagnostic.path}` : '';
       console.error(`  - ${diagnostic.severity} ${diagnostic.code}:${path} ${diagnostic.message}`);
     }
   }
 
-  console.log(`pack: ${plan.identity.packId || "(missing)"}`);
+  console.log(`pack: ${plan.identity.packId || '(missing)'}`);
   console.log(`mode: ${plan.mode}`);
   console.log(`implementation package: ${plan.identity.package.implementationPackage}`);
   console.log(`package root: ${plan.identity.package.packageRoot}`);
@@ -129,7 +127,7 @@ function printPackScaffoldPlanSummary(
   console.log(`docs family: ${plan.docs.familyId}`);
   console.log(`definition doc files: ${plan.definitionDocFiles.length}`);
   for (const file of plan.definitionDocFiles) {
-    const required = file.required ? "required" : "optional";
+    const required = file.required ? 'required' : 'optional';
     console.log(`  - ${file.path} (${required})`);
   }
   console.log(`source-map candidates: ${plan.sourceMapCandidates.length}`);
@@ -144,12 +142,12 @@ function printPackScaffoldPlanSummary(
       `  - ${candidate.docPath} (${candidate.targetKind}; ${candidate.candidateKind}; ${candidate.applyMode})`,
     );
   }
-  console.log("def find-by-file guidance:");
+  console.log('def find-by-file guidance:');
   console.log(`  ${plan.sourceMapGuidance.summary}`);
   for (const command of plan.sourceMapGuidance.findByFileCommands) {
     console.log(`  - ${command}`);
   }
-  console.log("docs graph guidance:");
+  console.log('docs graph guidance:');
   for (const command of plan.sourceMapGuidance.docsGraphCommands) {
     console.log(`  - ${command}`);
   }
@@ -164,13 +162,13 @@ function printPackScaffoldPlanSummary(
     console.log(`write status: ${writeSummary.status}`);
     console.log(`files written: ${writeSummary.writtenCount}`);
     if (writeSummary.blockedFiles.length > 0) {
-      console.log("blocked existing files:");
+      console.log('blocked existing files:');
       for (const file of writeSummary.blockedFiles) {
         console.log(`  - ${file.path}`);
       }
     }
   } else {
-    console.log("files written: 0");
+    console.log('files written: 0');
   }
 }
 
@@ -186,15 +184,13 @@ function toPackScaffoldJsonOutput(
       writesApplied: writeSummary.writesApplied,
     },
     writeSummary,
-    diagnostics: writeSummary.diagnostics.length > 0
-      ? writeSummary.diagnostics
-      : plan.diagnostics,
+    diagnostics: writeSummary.diagnostics.length > 0 ? writeSummary.diagnostics : plan.diagnostics,
   };
 }
 
 function printPackValidateSummary(result: OntologyPackValidateResult): void {
-  console.log(`pack: ${result.packId ?? "(unresolved)"}`);
-  console.log(`valid: ${result.valid ? "yes" : "no"}`);
+  console.log(`pack: ${result.packId ?? '(unresolved)'}`);
+  console.log(`valid: ${result.valid ? 'yes' : 'no'}`);
   console.log(`resolution: ${result.resolution.kind}`);
   if (result.resolution.filePath) {
     console.log(`file: ${result.resolution.filePath}`);
@@ -231,10 +227,8 @@ function printPackValidateSummary(result: OntologyPackValidateResult): void {
   );
 
   if (result.issues.length === 0) return;
-  console.log("issues:");
+  console.log('issues:');
   for (const issue of result.issues) {
-    console.log(
-      `  - ${issue.level} ${issue.source} ${issue.code} ${issue.path}: ${issue.message}`,
-    );
+    console.log(`  - ${issue.level} ${issue.source} ${issue.code} ${issue.path}: ${issue.message}`);
   }
 }

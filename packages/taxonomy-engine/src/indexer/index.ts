@@ -1,4 +1,4 @@
-import type { AxisIR, EntryIR, Coordinate } from "../schema/ir.js";
+import type { AxisIR, EntryIR, Coordinate } from '../schema/ir.js';
 
 export type IndexedAxis = {
   axis: AxisIR;

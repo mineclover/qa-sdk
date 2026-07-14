@@ -34,7 +34,7 @@ export type {
   DocumentTask,
   DocumentTaskInput,
   RawSourcePointerInput,
-} from "./types.js";
+} from './types.js';
 
 // ─── Normalization ──────────────────────────────────────
 export {
@@ -42,34 +42,28 @@ export {
   defineDocumentAdapter,
   normalizeDocumentEnvelope,
   normalizeRawSourcePointer,
-} from "./normalize.js";
+} from './normalize.js';
 
 // ─── Query ──────────────────────────────────────────────
-export { matchesDocumentQuery } from "./query.js";
+export { matchesDocumentQuery } from './query.js';
 
 // ─── Family scope utilities ─────────────────────────────
 export {
   collectDocumentFamilyOnlyScope,
   isArchivedPrdDocument,
   isTransientDocument,
-} from "./family-scope.js";
+} from './family-scope.js';
 
-export type {
-  DocumentFamilyOnlyScope,
-  DocumentFamilyOnlyScopeOptions,
-} from "./family-scope.js";
+export type { DocumentFamilyOnlyScope, DocumentFamilyOnlyScopeOptions } from './family-scope.js';
 
 // ─── Completed record detection ─────────────────────────
 export {
   deduplicateCompletedRecords,
   detectCompletedRecords,
   isActiveCompletedRecordDocument,
-} from "./completed-records.js";
+} from './completed-records.js';
 
-export type {
-  CompletedRecordDetectionOptions,
-  CompletedRecordState,
-} from "./completed-records.js";
+export type { CompletedRecordDetectionOptions, CompletedRecordState } from './completed-records.js';
 
 // ─── TODO lifecycle parsing ─────────────────────────────
 export {
@@ -77,10 +71,10 @@ export {
   classifyTodoHeading,
   countMarkdownCheckboxes,
   parseTodoFollowUps,
-} from "./todo-lifecycle.js";
+} from './todo-lifecycle.js';
 
 export type {
   TodoFollowUpCategory,
   TodoHeadingCategory,
   TodoLifecycleFollowUp,
-} from "./todo-lifecycle.js";
+} from './todo-lifecycle.js';

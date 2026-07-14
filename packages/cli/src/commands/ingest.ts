@@ -24,7 +24,7 @@ import {
   getCurrentMode,
   getServiceUrl,
   loadProfile,
-} from "../lib/service-profile.js";
+} from '../lib/service-profile.js';
 
 type JsonMap = Record<string, unknown>;
 
@@ -33,63 +33,63 @@ function errorMessage(err: unknown): string {
 }
 
 function asRecord(value: unknown): JsonMap {
-  return value && typeof value === "object" ? value as JsonMap : {};
+  return value && typeof value === 'object' ? (value as JsonMap) : {};
 }
 
 function asRecordArray(value: unknown): JsonMap[] {
   return Array.isArray(value)
-    ? value.filter((item): item is JsonMap => !!item && typeof item === "object")
+    ? value.filter((item): item is JsonMap => !!item && typeof item === 'object')
     : [];
 }
 
 function getRegistryUrl(args: string[]): string {
-  const idx = args.indexOf("--registry");
+  const idx = args.indexOf('--registry');
   const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
-  return getServiceUrl("registry-service", override);
+  return getServiceUrl('registry-service', override);
 }
 
 async function getIngestUrl(args: string[]): Promise<string> {
-  const idx = args.indexOf("--ingest");
+  const idx = args.indexOf('--ingest');
   const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
-  return getServiceUrl("ingest-server", override);
+  return getServiceUrl('ingest-server', override);
 }
 
-type IngestEnvPreset = "local" | "dev" | "staging" | "prod";
+type IngestEnvPreset = 'local' | 'dev' | 'staging' | 'prod';
 
 const ENV_PRESETS = {
   local: {
-    ingest: PROFILE_PRESETS.local.services["ingest-server"],
-    registry: PROFILE_PRESETS.local.services["registry-service"],
+    ingest: PROFILE_PRESETS.local.services['ingest-server'],
+    registry: PROFILE_PRESETS.local.services['registry-service'],
   },
   dev: {
-    ingest: PROFILE_PRESETS.local.services["ingest-server"],
-    registry: PROFILE_PRESETS.local.services["registry-service"],
+    ingest: PROFILE_PRESETS.local.services['ingest-server'],
+    registry: PROFILE_PRESETS.local.services['registry-service'],
   },
   staging: {
-    ingest: PROFILE_PRESETS.staging.services["ingest-server"],
-    registry: PROFILE_PRESETS.staging.services["registry-service"],
+    ingest: PROFILE_PRESETS.staging.services['ingest-server'],
+    registry: PROFILE_PRESETS.staging.services['registry-service'],
   },
   prod: {
-    ingest: PROFILE_PRESETS.prod.services["ingest-server"],
-    registry: PROFILE_PRESETS.prod.services["registry-service"],
+    ingest: PROFILE_PRESETS.prod.services['ingest-server'],
+    registry: PROFILE_PRESETS.prod.services['registry-service'],
   },
 } satisfies Record<IngestEnvPreset, { ingest: string; registry: string }>;
 
 function getEnvPreset(args: string[]): IngestEnvPreset {
-  const idx = args.indexOf("--env");
+  const idx = args.indexOf('--env');
   const override = idx !== -1 && args[idx + 1] ? args[idx + 1] : undefined;
   const raw = override ?? process.env.QA_ENV ?? getCurrentMode();
   switch (raw) {
-    case "prod":
-    case "production":
-      return "prod";
-    case "staging":
-    case "stage":
-      return "staging";
-    case "dev":
-      return "dev";
+    case 'prod':
+    case 'production':
+      return 'prod';
+    case 'staging':
+    case 'stage':
+      return 'staging';
+    case 'dev':
+      return 'dev';
     default:
-      return "local";
+      return 'local';
   }
 }
 
@@ -102,11 +102,13 @@ export async function ingestServices(args: string[]): Promise<void> {
   console.log(`  registry: ${registryUrl}`);
 
   try {
-    const resp = await fetch(`${registryUrl}/api/services/urls`, { signal: AbortSignal.timeout(3_000) });
+    const resp = await fetch(`${registryUrl}/api/services/urls`, {
+      signal: AbortSignal.timeout(3_000),
+    });
     if (resp.ok) {
-      const urls = await resp.json() as Record<string, string>;
+      const urls = (await resp.json()) as Record<string, string>;
       if (Object.keys(urls).length === 0) {
-        console.log("  (등록된 서비스 URL 없음 — PUT /api/services로 등록)");
+        console.log('  (등록된 서비스 URL 없음 — PUT /api/services로 등록)');
       } else {
         for (const [svc, url] of Object.entries(urls)) {
           console.log(`  ${svc.padEnd(22)} ${url}`);
@@ -127,7 +129,7 @@ export async function ingestServices(args: string[]): Promise<void> {
 async function fetchJson<T = unknown>(url: string, init?: RequestInit): Promise<T> {
   const resp = await fetch(url, { signal: AbortSignal.timeout(5_000), ...init });
   if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
+    const text = await resp.text().catch(() => '');
     throw new Error(`${resp.status} ${resp.statusText}: ${text.slice(0, 200)}`);
   }
   return resp.json() as Promise<T>;
@@ -144,9 +146,12 @@ export async function ingestHealth(args: string[]): Promise<void> {
   try {
     const data = asRecord(await fetchJson(`${url}/health`));
     const db = asRecord(data.db);
-    console.log(`  status: ${String(data.status ?? "ok")}`);
+    console.log(`  status: ${String(data.status ?? 'ok')}`);
     if (data.uptime) console.log(`  uptime: ${String(data.uptime)}s`);
-    if (data.db) console.log(`  db: ${db.connected ? "connected" : "disconnected"} (${String(db.latencyMs ?? "?")}ms)`);
+    if (data.db)
+      console.log(
+        `  db: ${db.connected ? 'connected' : 'disconnected'} (${String(db.latencyMs ?? '?')}ms)`,
+      );
     if (data.version) console.log(`  version: ${String(data.version)}`);
   } catch (err: unknown) {
     console.error(`  ❌ 연결 실패: ${errorMessage(err)}`);
@@ -158,15 +163,15 @@ export async function ingestHealth(args: string[]): Promise<void> {
 
 export async function ingestSend(args: string[]): Promise<void> {
   const url = await getIngestUrl(args);
-  const eventKey = args.find(a => !a.startsWith("--")) ?? "test.ping";
+  const eventKey = args.find((a) => !a.startsWith('--')) ?? 'test.ping';
 
   // --dim key=value 파싱
   const dims: Record<string, Record<string, string>> = {};
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--dim" && args[i + 1]) {
-      const [key, val] = args[i + 1].split("=");
+    if (args[i] === '--dim' && args[i + 1]) {
+      const [key, val] = args[i + 1].split('=');
       if (key && val) {
-        const [prefix, dim] = key.includes(".") ? key.split(".") : ["tracking", key];
+        const [prefix, dim] = key.includes('.') ? key.split('.') : ['tracking', key];
         if (!dims[prefix]) dims[prefix] = {};
         dims[prefix][dim] = val;
       }
@@ -180,25 +185,27 @@ export async function ingestSend(args: string[]): Promise<void> {
   const envelope = {
     transmission_id: `tx_cli_${Date.now().toString(36)}`,
     sent_at: new Date().toISOString(),
-    owner: { owner_type: "agent", owner_id: "cli-test" },
-    source: { service_name: "cli", sdk_name: "@qa-sdk/cli", sdk_version: "0.1.0" },
-    runtime: { platform: "node" },
-    build: { env: "dev" },
-    records: [{
-      log_id: `log_cli_${Date.now().toString(36)}`,
-      timestamp: new Date().toISOString(),
-      trace_id: traceId,
-      span_id: `spn_cli_${Date.now().toString(36)}`,
-      record_kind: "log",
-      event_key: eventKey,
-      event_version: "001",
-      payload_format: "json",
-      payload_encoding: "raw",
-      payload_masking_applied: false,
-      payload_masked_fields: [],
-      payload: { source: "cli", dims },
-      qa_session_id: sessionId,
-    }],
+    owner: { owner_type: 'agent', owner_id: 'cli-test' },
+    source: { service_name: 'cli', sdk_name: '@qa-sdk/cli', sdk_version: '0.1.0' },
+    runtime: { platform: 'node' },
+    build: { env: 'dev' },
+    records: [
+      {
+        log_id: `log_cli_${Date.now().toString(36)}`,
+        timestamp: new Date().toISOString(),
+        trace_id: traceId,
+        span_id: `spn_cli_${Date.now().toString(36)}`,
+        record_kind: 'log',
+        event_key: eventKey,
+        event_version: '001',
+        payload_format: 'json',
+        payload_encoding: 'raw',
+        payload_masking_applied: false,
+        payload_masked_fields: [],
+        payload: { source: 'cli', dims },
+        qa_session_id: sessionId,
+      },
+    ],
   };
 
   console.log(`\n══ Send Test Event ══`);
@@ -210,14 +217,17 @@ export async function ingestSend(args: string[]): Promise<void> {
   }
 
   try {
-    const data = asRecord(await fetchJson(`${url}/v1/ingest`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(envelope),
-    }));
+    const data = asRecord(
+      await fetchJson(`${url}/v1/ingest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(envelope),
+      }),
+    );
     console.log(`  ✅ 전송 성공`);
     if (data.transmission_id) console.log(`  transmission: ${String(data.transmission_id)}`);
-    if (Array.isArray(data.trace_ids)) console.log(`  traces: ${data.trace_ids.map(String).join(", ")}`);
+    if (Array.isArray(data.trace_ids))
+      console.log(`  traces: ${data.trace_ids.map(String).join(', ')}`);
   } catch (err: unknown) {
     console.error(`  ❌ 전송 실패: ${errorMessage(err)}`);
   }
@@ -227,7 +237,7 @@ export async function ingestSend(args: string[]): Promise<void> {
 
 export async function ingestRecent(args: string[]): Promise<void> {
   const url = await getIngestUrl(args);
-  const limit = parseInt(args.find(a => /^\d+$/.test(a)) ?? "10");
+  const limit = parseInt(args.find((a) => /^\d+$/.test(a)) ?? '10');
 
   console.log(`\n══ Recent Traces ══`);
 
@@ -236,14 +246,14 @@ export async function ingestRecent(args: string[]): Promise<void> {
     const traces = asRecordArray(data.items ?? data.sessions ?? data.data ?? data);
 
     if (traces.length === 0) {
-      console.log("  (수집된 세션 없음)");
+      console.log('  (수집된 세션 없음)');
       return;
     }
 
     for (const t of traces.slice(0, limit)) {
-      const id = String(t.sessionId ?? t.session_id ?? t.traceId ?? t.trace_id ?? "?");
-      const scenario = String(t.scenarioId ?? t.scenario_id ?? "-");
-      const ts = String(t.createdAt ?? t.created_at ?? t.firstTimestamp ?? "");
+      const id = String(t.sessionId ?? t.session_id ?? t.traceId ?? t.trace_id ?? '?');
+      const scenario = String(t.scenarioId ?? t.scenario_id ?? '-');
+      const ts = String(t.createdAt ?? t.created_at ?? t.firstTimestamp ?? '');
       console.log(`  ${id.slice(0, 25).padEnd(27)} scenario=${scenario.padEnd(20)} ${ts}`);
     }
     console.log(`  (${traces.length}건 조회)`);
@@ -256,10 +266,10 @@ export async function ingestRecent(args: string[]): Promise<void> {
 
 export async function ingestTrace(args: string[]): Promise<void> {
   const url = await getIngestUrl(args);
-  const traceId = args.find(a => !a.startsWith("--"));
+  const traceId = args.find((a) => !a.startsWith('--'));
 
   if (!traceId) {
-    console.error("Usage: qa-sdk ingest trace <traceId> [--ingest url]");
+    console.error('Usage: qa-sdk ingest trace <traceId> [--ingest url]');
     return;
   }
 
@@ -267,10 +277,10 @@ export async function ingestTrace(args: string[]): Promise<void> {
 
   try {
     const trace = asRecord(await fetchJson(`${url}/v1/traces/${traceId}`));
-    console.log(`  session: ${String(trace.sessionId ?? trace.session_id ?? "-")}`);
-    console.log(`  records: ${String(trace.recordCount ?? trace.record_count ?? "?")}`);
-    console.log(`  first: ${String(trace.firstTimestamp ?? "-")}`);
-    console.log(`  last: ${String(trace.lastTimestamp ?? "-")}`);
+    console.log(`  session: ${String(trace.sessionId ?? trace.session_id ?? '-')}`);
+    console.log(`  records: ${String(trace.recordCount ?? trace.record_count ?? '?')}`);
+    console.log(`  first: ${String(trace.firstTimestamp ?? '-')}`);
+    console.log(`  last: ${String(trace.lastTimestamp ?? '-')}`);
 
     // records
     try {
@@ -279,15 +289,17 @@ export async function ingestTrace(args: string[]): Promise<void> {
       if (recs.length > 0) {
         console.log(`\n  ── Records (${recs.length}) ──`);
         for (const r of recs.slice(0, 20)) {
-          const key = String(r.eventKey ?? r.event_key ?? "?");
-          const ts = String(r.timestamp ?? "");
+          const key = String(r.eventKey ?? r.event_key ?? '?');
+          const ts = String(r.timestamp ?? '');
           const addr = asRecord(r.addressContext ?? r.address_context);
-          const addrKeys = Object.keys(addr).length > 0 ? Object.keys(addr).join(",") : "-";
+          const addrKeys = Object.keys(addr).length > 0 ? Object.keys(addr).join(',') : '-';
           console.log(`    ${key.padEnd(25)} ${addrKeys.padEnd(30)} ${ts}`);
         }
         if (recs.length > 20) console.log(`    ... 외 ${recs.length - 20}건`);
       }
-    } catch { /* records 조회 실패 무시 */ }
+    } catch {
+      /* records 조회 실패 무시 */
+    }
 
     // verdicts
     try {
@@ -296,12 +308,14 @@ export async function ingestTrace(args: string[]): Promise<void> {
       if (vlist.length > 0) {
         console.log(`\n  ── Verdicts (${vlist.length}) ──`);
         for (const v of vlist) {
-          const scenario = String(v.scenarioId ?? v.scenario_id ?? "?");
-          const verdict = String(v.overallVerdict ?? v.overall_verdict ?? "?");
+          const scenario = String(v.scenarioId ?? v.scenario_id ?? '?');
+          const verdict = String(v.overallVerdict ?? v.overall_verdict ?? '?');
           console.log(`    ${scenario.padEnd(25)} ${verdict}`);
         }
       }
-    } catch { /* verdicts 조회 실패 무시 */ }
+    } catch {
+      /* verdicts 조회 실패 무시 */
+    }
   } catch (err: unknown) {
     console.error(`  ❌ 조회 실패: ${errorMessage(err)}`);
   }
@@ -326,7 +340,7 @@ export async function ingestTrace(args: string[]): Promise<void> {
  *   qa-sdk ingest mode --set insightsDriver=app-hub
  */
 /** `ingest mode` → `service mode`로 위임 (하위 호환) */
-export { serviceMode as ingestMode } from "./service.js";
+export { serviceMode as ingestMode } from './service.js';
 
 // ── insights ───────────────────────────────────────
 
@@ -361,8 +375,8 @@ export async function ingestInsights(args: string[]): Promise<void> {
     if (svcPrefixes.length > 0) {
       console.log(`\n  ── 서비스별 Prefix 사용 ──`);
       for (const sp of svcPrefixes) {
-        const svc = String(sp.service ?? "?");
-        const prefixes = Array.isArray(sp.activePrefixes) ? sp.activePrefixes.join(", ") : "-";
+        const svc = String(sp.service ?? '?');
+        const prefixes = Array.isArray(sp.activePrefixes) ? sp.activePrefixes.join(', ') : '-';
         const total = Number(sp.totalEvents ?? 0);
         console.log(`  ${svc.padEnd(22)} [${total}건] ${prefixes}`);
       }
@@ -378,14 +392,16 @@ export async function ingestInsights(args: string[]): Promise<void> {
     if (pairs.length > 0) {
       console.log(`\n  ── Prefix 공출현 (상위 10) ──`);
       for (const p of pairs.slice(0, 10)) {
-        console.log(`  ${String(p.prefixA).padEnd(18)} ↔ ${String(p.prefixB).padEnd(18)} Jaccard=${String(p.jaccard)}`);
+        console.log(
+          `  ${String(p.prefixA).padEnd(18)} ↔ ${String(p.prefixB).padEnd(18)} Jaccard=${String(p.jaccard)}`,
+        );
       }
     }
     const suggestions = asRecordArray(corr.suggestions);
     if (suggestions.length > 0) {
       console.log(`\n  ── IntentLink 자동 제안 ──`);
       for (const s of suggestions) {
-        const endpoints = Array.isArray(s.endpoints) ? s.endpoints.join(", ") : "-";
+        const endpoints = Array.isArray(s.endpoints) ? s.endpoints.join(', ') : '-';
         console.log(`  ${String(s.id)}: [${endpoints}] (avgJaccard=${String(s.avgJaccard)})`);
       }
     }
@@ -405,7 +421,7 @@ export async function ingestStatus(args: string[]): Promise<void> {
   // health
   try {
     const health = asRecord(await fetchJson(`${url}/health`));
-    console.log(`  server: ${String(health.status ?? "ok")}`);
+    console.log(`  server: ${String(health.status ?? 'ok')}`);
   } catch {
     console.error(`  server: ❌ 연결 불가`);
     return;
@@ -424,7 +440,7 @@ export async function ingestStatus(args: string[]): Promise<void> {
   try {
     const sessions = asRecord(await fetchJson(`${url}/v1/sessions?limit=1`));
     const list = sessions.sessions ?? sessions.data ?? sessions;
-    console.log(`  sessions: ${Array.isArray(list) ? "활성" : "조회 불가"}`);
+    console.log(`  sessions: ${Array.isArray(list) ? '활성' : '조회 불가'}`);
   } catch {
     console.log(`  sessions: 조회 불가`);
   }

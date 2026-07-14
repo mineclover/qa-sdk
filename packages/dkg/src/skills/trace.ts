@@ -8,9 +8,9 @@
  * 의도 링크, 서비스 토폴로지, cascade를 한 번에 추적한다.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort, GraphNodeLike } from "spec-schema";
-import type { ServiceTopologyRegistry } from "../service-topology.js";
+import type { Catalog } from '@qa-sdk/core';
+import type { GraphPort, GraphNodeLike } from 'spec-schema';
+import type { ServiceTopologyRegistry } from '../service-topology.js';
 import type {
   DkgNodeKind,
   DkgNode,
@@ -18,7 +18,7 @@ import type {
   ObservationNode,
   ConstraintNode,
   ObservationSuggestion,
-} from "../dkg.types.js";
+} from '../dkg.types.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -56,7 +56,7 @@ export interface TraceResult {
   readonly id: string;
   readonly kind: DkgNodeKind;
   readonly name: string;
-  readonly details: Partial<Omit<DkgNode, "id" | "kind" | "name">>;
+  readonly details: Partial<Omit<DkgNode, 'id' | 'kind' | 'name'>>;
 
   /** 구성 축/참조 (prefix 기준) */
   readonly composition: readonly CompositionEntry[];
@@ -122,13 +122,13 @@ export function traceNode(
 
   // ── composition (prefix: composes edges) ──
   const composition: CompositionEntry[] = [];
-  if (node.kind === "prefix") {
-    for (const edge of graph.edgesFrom(nodeId, "composes")) {
+  if (node.kind === 'prefix') {
+    for (const edge of graph.edgesFrom(nodeId, 'composes')) {
       const target = graph.getNode(edge.to);
       const entry: CompositionEntry = {
         label: (edge.meta?.label as string) ?? edge.to,
         targetId: edge.to,
-        dimKind: (edge.meta?.dimKind as string) ?? "unknown",
+        dimKind: (edge.meta?.dimKind as string) ?? 'unknown',
         targetName: extractName(target),
         ...getAxisEntries(catalog, edge.to, edge.meta?.dimKind as string),
       };
@@ -137,7 +137,7 @@ export function traceNode(
   }
 
   // ── references ──
-  const references = graph.edgesFrom(nodeId, "references").map(e => e.to);
+  const references = graph.edgesFrom(nodeId, 'references').map((e) => e.to);
 
   // ── membership (contains 역방향 + flow-schema contains 정방향) ──
   const membership: { id: string; kind: string; name: string }[] = [];
@@ -150,32 +150,32 @@ export function traceNode(
     membership.push({ id: member.id, kind: member.kind, name: extractName(member) });
   };
 
-  for (const edge of graph.edgesTo(nodeId, "contains")) {
+  for (const edge of graph.edgesTo(nodeId, 'contains')) {
     pushMembership(edge.from);
   }
-  if (node.kind === "flow-schema") {
-    for (const edge of graph.edgesFrom(nodeId, "contains")) {
+  if (node.kind === 'flow-schema') {
+    for (const edge of graph.edgesFrom(nodeId, 'contains')) {
       pushMembership(edge.to);
     }
   }
 
   // ── constraints (constrains 역방향) ──
   const constraints: { id: string; rule: string }[] = [];
-  for (const edge of graph.edgesTo(nodeId, "constrains")) {
+  for (const edge of graph.edgesTo(nodeId, 'constrains')) {
     const c = graph.getNode(edge.from) as ConstraintNode | undefined;
-    if (c?.kind === "constraint") constraints.push({ id: c.id, rule: c.rule });
+    if (c?.kind === 'constraint') constraints.push({ id: c.id, rule: c.rule });
   }
 
   // ── causal chain: observation → prompts → decision ──
   const causalChain: CausalLink[] = [];
-  for (const edge of graph.edgesTo(nodeId, "observes")) {
+  for (const edge of graph.edgesTo(nodeId, 'observes')) {
     const obs = graph.getNode(edge.from) as ObservationNode | undefined;
-    if (!obs || obs.kind !== "observation") continue;
+    if (!obs || obs.kind !== 'observation') continue;
 
-    const decisions: CausalLink["decisions"][number][] = [];
-    for (const decId of graph.neighbors(obs.id, "prompts")) {
+    const decisions: CausalLink['decisions'][number][] = [];
+    for (const decId of graph.neighbors(obs.id, 'prompts')) {
       const dec = graph.getNode(decId) as DecisionNode | undefined;
-      if (dec?.kind === "decision") {
+      if (dec?.kind === 'decision') {
         decisions.push({
           id: dec.id,
           title: dec.title,
@@ -194,11 +194,11 @@ export function traceNode(
   // ── direct decisions (governs/justifies 역방향) ──
   const directDecisions: DirectDecision[] = [];
   const seenDec = new Set<string>();
-  for (const edgeType of ["governs", "justifies"] as const) {
+  for (const edgeType of ['governs', 'justifies'] as const) {
     for (const edge of graph.edgesTo(nodeId, edgeType)) {
       if (seenDec.has(edge.from)) continue;
       const dec = graph.getNode(edge.from) as DecisionNode | undefined;
-      if (dec?.kind === "decision") {
+      if (dec?.kind === 'decision') {
         seenDec.add(dec.id);
         directDecisions.push({
           id: dec.id,
@@ -218,14 +218,14 @@ export function traceNode(
   // ── consumes (정방향 + 역방향) ──
   const consumes: { id: string; kind: string; name: string }[] = [];
   // 정방향: 이 노드가 소비하는 대상
-  for (const edge of graph.edgesFrom(nodeId, "consumes")) {
+  for (const edge of graph.edgesFrom(nodeId, 'consumes')) {
     const target = graph.getNode(edge.to);
     if (target) {
       consumes.push({ id: target.id, kind: target.kind, name: extractName(target) });
     }
   }
   // 역방향: 이 노드를 소비하는 주체 (axis → transition-spec 등)
-  for (const edge of graph.edgesTo(nodeId, "consumes")) {
+  for (const edge of graph.edgesTo(nodeId, 'consumes')) {
     const source = graph.getNode(edge.from);
     if (source) {
       consumes.push({ id: source.id, kind: source.kind, name: extractName(source) });
@@ -233,8 +233,8 @@ export function traceNode(
   }
 
   // ── topology ──
-  let topology: TraceResult["topology"] = null;
-  if (node.kind === "prefix" && topo) {
+  let topology: TraceResult['topology'] = null;
+  if (node.kind === 'prefix' && topo) {
     topology = {
       owner: topo.getOwner(nodeId) ?? null,
       consumers: topo.getConsumers(nodeId),
@@ -242,19 +242,19 @@ export function traceNode(
   }
 
   // ── cascade ──
-  let cascade: TraceResult["cascade"] = null;
-  if (node.kind === "prefix") {
+  let cascade: TraceResult['cascade'] = null;
+  if (node.kind === 'prefix') {
     const c = graph.cascadeFromPrefix(nodeId);
     cascade = {
-      domains: c.domains.map(d => d.id),
-      consumers: c.consumers.map(cn => cn.id),
+      domains: c.domains.map((d) => d.id),
+      consumers: c.consumers.map((cn) => cn.id),
     };
-  } else if (node.kind === "axis") {
+  } else if (node.kind === 'axis') {
     const affected = graph.cascadeFromAxis(nodeId);
     cascade = {
       domains: [],
       consumers: [],
-      affectedPrefixes: affected.map(a => a.id),
+      affectedPrefixes: affected.map((a) => a.id),
     };
   }
 
@@ -264,9 +264,9 @@ export function traceNode(
   // ── applicable skills ──
   // 1) specialization에 이 nodeId가 명시된 skill (전문 skill)
   // 2) targetKinds만 일치하고 specialization 없는 skill (범용 skill)
-  const applicableSkills: TraceResult["applicableSkills"][number][] = [];
-  for (const sn of graph.getNodesByKind("skill")) {
-    const skill = sn as import("../dkg.types.js").SkillNode;
+  const applicableSkills: TraceResult['applicableSkills'][number][] = [];
+  for (const sn of graph.getNodesByKind('skill')) {
+    const skill = sn as import('../dkg.types.js').SkillNode;
     const spec = skill.specialization;
 
     // 전문 skill: specialization.prefixes/domains/dslBundles/intentLinks에 이 nodeId가 포함
@@ -279,14 +279,26 @@ export function traceNode(
         ...(spec.constraints ?? []),
       ];
       if (mentioned.includes(nodeId)) {
-        applicableSkills.push({ id: skill.id, name: skill.name, category: skill.category, description: skill.description, specialized: true });
+        applicableSkills.push({
+          id: skill.id,
+          name: skill.name,
+          category: skill.category,
+          description: skill.description,
+          specialized: true,
+        });
         continue;
       }
     }
 
     // 범용 skill: specialization 없고 targetKinds 일치
     if (!spec && (skill.targetKinds.length === 0 || skill.targetKinds.includes(node.kind))) {
-      applicableSkills.push({ id: skill.id, name: skill.name, category: skill.category, description: skill.description, specialized: false });
+      applicableSkills.push({
+        id: skill.id,
+        name: skill.name,
+        category: skill.category,
+        description: skill.description,
+        specialized: false,
+      });
     }
   }
 
@@ -315,16 +327,16 @@ export function traceNode(
 // ═══════════════════════════════════════════════════════════════
 
 function extractName(node: GraphNodeLike | undefined): string {
-  if (!node) return "";
-  const record = node as GraphNodeLike & Partial<Record<"name" | "title" | "finding", unknown>>;
-  if (typeof record.name === "string") return record.name;
-  if (typeof record.title === "string") return record.title;
-  if (typeof record.finding === "string") return record.finding.slice(0, 50);
+  if (!node) return '';
+  const record = node as GraphNodeLike & Partial<Record<'name' | 'title' | 'finding', unknown>>;
+  if (typeof record.name === 'string') return record.name;
+  if (typeof record.title === 'string') return record.title;
+  if (typeof record.finding === 'string') return record.finding.slice(0, 50);
   return node.id;
 }
 
 function extractDetails(node: GraphNodeLike): Record<string, unknown> {
-  const skip = new Set(["kind", "id", "name"]);
+  const skip = new Set(['kind', 'id', 'name']);
   const details: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node)) {
     if (!skip.has(key)) details[key] = value;
@@ -337,7 +349,7 @@ function getAxisEntries(
   targetId: string,
   dimKind?: string,
 ): { entries?: readonly string[]; capacity?: number } {
-  if (dimKind !== "axis") return {};
+  if (dimKind !== 'axis') return {};
   const axis = catalog.axes[targetId];
   if (!axis) return {};
   const versions = Object.keys(axis.versions);

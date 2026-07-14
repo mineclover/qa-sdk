@@ -7,7 +7,7 @@ export interface CreateTaskCommand {
   readonly projectId: string;
   readonly title: string;
   readonly assigneeId?: string;
-  readonly status?: "todo" | "in_progress" | "done" | "blocked";
+  readonly status?: 'todo' | 'in_progress' | 'done' | 'blocked';
   readonly parentTaskId?: string;
   readonly traceId?: string;
   readonly correlationId?: string;
@@ -20,7 +20,7 @@ export interface UpdateTaskCommand {
     readonly projectId?: string;
     readonly title?: string;
     readonly assigneeId?: string | null;
-    readonly status?: "todo" | "in_progress" | "done" | "blocked";
+    readonly status?: 'todo' | 'in_progress' | 'done' | 'blocked';
     readonly parentTaskId?: string | null;
   };
   readonly traceId?: string;

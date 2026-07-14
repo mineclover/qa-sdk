@@ -17,7 +17,7 @@ export {
   type ResourcePolicy,
   type ResourcePolicyRegistry,
   type ResourcePolicyState,
-} from "./resource-policy/index.js";
+} from './resource-policy/index.js';
 
 export {
   issueBitmap,
@@ -27,7 +27,7 @@ export {
   type VerifyFailureReason,
   type VerifyResult,
   type VersionedBitmap,
-} from "./versioned-bitmap/index.js";
+} from './versioned-bitmap/index.js';
 
 export {
   EntryNotFoundError,
@@ -45,7 +45,7 @@ export {
   type OtelRecordExecutionArgs,
   type RecordCheckArgs,
   type RecordExecutionArgs,
-} from "./audit/index.js";
+} from './audit/index.js';
 
 export {
   AccessChecker,
@@ -57,24 +57,18 @@ export {
   type InstancePolicyEvaluation,
   type InstancePolicyEvaluator,
   type InstancePolicyResolver,
-} from "./access-checker/index.js";
+} from './access-checker/index.js';
 
 export {
   PermissionSet,
   type DimDef,
   type PermissionSetOptions,
   type PermissionSetSnapshot,
-} from "./permission-set.js";
+} from './permission-set.js';
 
-export {
-  ScopedEngine,
-  type ScopedEngineSnapshot,
-} from "./scoped-engine.js";
+export { ScopedEngine, type ScopedEngineSnapshot } from './scoped-engine.js';
 
-export {
-  migratePermissions,
-  type CoordMapper,
-} from "./migration.js";
+export { migratePermissions, type CoordMapper } from './migration.js';
 
 export {
   validateResource,
@@ -88,7 +82,7 @@ export {
   type ValidateOptions,
   type ParsedResource,
   type ResourcePattern,
-} from "./resource.js";
+} from './resource.js';
 
 export {
   formatServiceRef,
@@ -100,7 +94,7 @@ export {
   type ServiceRef,
   type ServiceRefFormatOptions,
   type ServiceContext,
-} from "./service-ref.js";
+} from './service-ref.js';
 
 export {
   formatPermCode,
@@ -108,7 +102,7 @@ export {
   createPermCodeFactory,
   type PermissionCode,
   type PermCodeFactory,
-} from "./permission-code.js";
+} from './permission-code.js';
 
 export {
   PermissionCodec,
@@ -116,13 +110,13 @@ export {
   type CodecDims,
   type DecodedPerm,
   type CodecSnapshot,
-} from "./permission-codec.js";
+} from './permission-codec.js';
 
 export {
   PermissionViewCache,
   type ViewCacheOptions,
   type CacheStats,
-} from "./permission-view-cache.js";
+} from './permission-view-cache.js';
 
 export {
   TernaryMask,
@@ -131,20 +125,20 @@ export {
   UNSET,
   type TriState,
   type DefaultPolicy,
-} from "./ternary-mask.js";
+} from './ternary-mask.js';
 
 export {
   RoleRegistry,
   type DomainRoleDef,
   type RoleRegistryValidationError,
-} from "./role-registry.js";
+} from './role-registry.js';
 
 export {
   OrgRoleRegistry,
   type DomainAssignment,
   type OrgRoleDef,
   type OrgRoleValidationError,
-} from "./org-role-registry.js";
+} from './org-role-registry.js';
 
 export {
   RoleResolver,
@@ -152,12 +146,9 @@ export {
   type DirectAssignment,
   type DomainMaskResult,
   type ExplainEntry,
-} from "./role-resolver.js";
+} from './role-resolver.js';
 
-export {
-  UserOverrideStore,
-  type UserOverrideSnapshot,
-} from "./user-override.js";
+export { UserOverrideStore, type UserOverrideSnapshot } from './user-override.js';
 
 export {
   UserPermissionEngine,
@@ -165,12 +156,12 @@ export {
   type AuditResult,
   type GrantSource,
   type DenialReason,
-} from "./user-permission-engine.js";
+} from './user-permission-engine.js';
 
 export {
   type PermissionVersionStore,
   InMemoryPermissionVersionStore,
-} from "./permission-version.js";
+} from './permission-version.js';
 
 export {
   type AuthProvider,
@@ -179,13 +170,13 @@ export {
   NoopAuthProvider,
   type ZitadelProviderOptions,
   type KeycloakProviderOptions,
-} from "./auth-provider.js";
+} from './auth-provider.js';
 
 export {
   PermissionChangeNotifier,
   type NotifyOptions,
   type NotifyResult,
-} from "./permission-change-notifier.js";
+} from './permission-change-notifier.js';
 
 export {
   TokenEnrichmentHandler,
@@ -193,17 +184,14 @@ export {
   base64ToUint8,
   type PermissionClaims,
   type ContextLoader,
-} from "./token-enrichment.js";
+} from './token-enrichment.js';
 
 export {
   PermissionMiddleware,
   type MiddlewareErrorKind,
   type MiddlewareError,
   type CheckResult,
-} from "./permission-middleware.js";
+} from './permission-middleware.js';
 
 // re-export from weighted-index (partial-binder는 weighted-index에 위치)
-export {
-  createBinder,
-  type PartialBinder,
-} from "weighted-index";
+export { createBinder, type PartialBinder } from 'weighted-index';

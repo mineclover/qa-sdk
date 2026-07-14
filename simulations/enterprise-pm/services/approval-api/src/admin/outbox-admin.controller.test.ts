@@ -4,25 +4,22 @@
 // Stage 4 §4.3 — OutboxAdminController + InternalIpGuard 컨트롤러 테스트.
 // insert 200 / dispatch 200 / 400 RFC 7807 / 외부 IP 404 silent — 4 케이스.
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { Test } from "@nestjs/testing";
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from "@nestjs/platform-fastify";
-import { OutboxAdminController } from "./outbox-admin.controller.js";
-import { OutboxAdminInsertService } from "./outbox-admin-insert.service.js";
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { Test } from '@nestjs/testing';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { OutboxAdminController } from './outbox-admin.controller.js';
+import { OutboxAdminInsertService } from './outbox-admin-insert.service.js';
 import {
   OutboxAdminDispatchService,
   type OutboxAdminDispatcher,
-} from "./outbox-admin-dispatch.service.js";
-import { OutboxAdminStateQueryService } from "./outbox-admin-state-query.service.js";
+} from './outbox-admin-dispatch.service.js';
+import { OutboxAdminStateQueryService } from './outbox-admin-state-query.service.js';
 import {
   OUTBOX_ADMIN_REPO,
   OUTBOX_DISPATCHER_FACTORY,
   type OutboxAdminRepo,
   type OutboxAdminRepoTx,
-} from "./outbox-admin.tokens.js";
+} from './outbox-admin.tokens.js';
 
 const repoStub: OutboxAdminRepo = {
   async transaction<T>(cb: (tx: OutboxAdminRepoTx) => Promise<T>): Promise<T> {
@@ -45,9 +42,9 @@ const factoryStub = (consumerName: string): OutboxAdminDispatcher => {
   };
 };
 
-const internal = { "x-forwarded-for": "127.0.0.1" };
+const internal = { 'x-forwarded-for': '127.0.0.1' };
 
-describe("OutboxAdminController", () => {
+describe('OutboxAdminController', () => {
   let app: NestFastifyApplication;
 
   beforeAll(async () => {
@@ -66,9 +63,7 @@ describe("OutboxAdminController", () => {
         },
       ],
     }).compile();
-    app = moduleRef.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
+    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });
@@ -77,16 +72,16 @@ describe("OutboxAdminController", () => {
     await app.close();
   });
 
-  it("POST /admin/outbox/insert — 200 + spec §9 shape", async () => {
+  it('POST /admin/outbox/insert — 200 + spec §9 shape', async () => {
     const res = await app.inject({
-      method: "POST",
-      url: "/admin/outbox/insert",
+      method: 'POST',
+      url: '/admin/outbox/insert',
       headers: internal,
       payload: {
         events: [
           {
-            aggregateId: "proj-001",
-            eventName: "approval.budget.submitted",
+            aggregateId: 'proj-001',
+            eventName: 'approval.budget.submitted',
             payload: { amount: 1000 },
             occurredAt: 1714250400000,
           },
@@ -100,10 +95,10 @@ describe("OutboxAdminController", () => {
     expect(body.ids).toHaveLength(1);
   });
 
-  it("POST /admin/outbox/dispatch — 200 + spec §9 shape", async () => {
+  it('POST /admin/outbox/dispatch — 200 + spec §9 shape', async () => {
     const res = await app.inject({
-      method: "POST",
-      url: "/admin/outbox/dispatch",
+      method: 'POST',
+      url: '/admin/outbox/dispatch',
       headers: internal,
       payload: { replicaCount: 3, timeoutMs: 100 },
     });
@@ -112,49 +107,49 @@ describe("OutboxAdminController", () => {
     expect(b.byReplica).toHaveLength(3);
     expect(b.totalDispatched).toBe(3);
     expect(b.duplicates).toBe(0);
-    expect(typeof b.durationMs).toBe("number");
+    expect(typeof b.durationMs).toBe('number');
   });
 
-  it("잘못된 body → 400 RFC 7807", async () => {
+  it('잘못된 body → 400 RFC 7807', async () => {
     const res = await app.inject({
-      method: "POST",
-      url: "/admin/outbox/insert",
+      method: 'POST',
+      url: '/admin/outbox/insert',
       headers: internal,
-      payload: { events: "not-an-array" },
+      payload: { events: 'not-an-array' },
     });
     expect(res.statusCode).toBe(400);
     const body = res.json();
     expect(body.type).toMatch(/qa-sdk\.dev\/errors\/validation/);
   });
 
-  it("외부 IP → 404 silent (InternalIpGuard)", async () => {
+  it('외부 IP → 404 silent (InternalIpGuard)', async () => {
     const res = await app.inject({
-      method: "POST",
-      url: "/admin/outbox/insert",
-      headers: { "x-forwarded-for": "8.8.8.8" },
+      method: 'POST',
+      url: '/admin/outbox/insert',
+      headers: { 'x-forwarded-for': '8.8.8.8' },
       payload: { events: [] },
     });
     expect(res.statusCode).toBe(404);
   });
 
-  it("GET /admin/outbox/dispatch?ids=id1,id2 — 200 + sim-handle shape", async () => {
+  it('GET /admin/outbox/dispatch?ids=id1,id2 — 200 + sim-handle shape', async () => {
     const res = await app.inject({
-      method: "GET",
-      url: "/admin/outbox/dispatch?ids=id1,id2",
+      method: 'GET',
+      url: '/admin/outbox/dispatch?ids=id1,id2',
       headers: internal,
     });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body).toHaveProperty("publishedAt");
-    expect(body).toHaveProperty("dispatcherIds");
+    expect(body).toHaveProperty('publishedAt');
+    expect(body).toHaveProperty('dispatcherIds');
     expect(Array.isArray(body.publishedAt)).toBe(true);
     expect(Array.isArray(body.dispatcherIds)).toBe(true);
   });
 
-  it("GET /admin/outbox/dispatch — ids 누락 시 400", async () => {
+  it('GET /admin/outbox/dispatch — ids 누락 시 400', async () => {
     const res = await app.inject({
-      method: "GET",
-      url: "/admin/outbox/dispatch",
+      method: 'GET',
+      url: '/admin/outbox/dispatch',
       headers: internal,
     });
     expect(res.statusCode).toBe(400);

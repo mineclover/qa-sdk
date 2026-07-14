@@ -15,12 +15,12 @@ import type {
   ReusableReference,
   ReusableReferenceInput,
   RequestContract,
-} from "./types.js";
+} from './types.js';
 
 const EMPTY_METADATA: ContractMetadata = Object.freeze({});
 
 function trimValue(value: string | null | undefined): string {
-  return value?.trim() ?? "";
+  return value?.trim() ?? '';
 }
 
 function normalizeStringList(values: readonly string[] | null | undefined): readonly string[] {
@@ -56,9 +56,7 @@ function normalizeReference(input: ReusableReferenceInput): ReusableReference {
 function normalizeReferenceList(
   inputs: readonly ReusableReferenceInput[] | null | undefined,
 ): readonly ReusableReference[] {
-  return (inputs ?? [])
-    .map(normalizeReference)
-    .filter((reference) => reference.id.length > 0);
+  return (inputs ?? []).map(normalizeReference).filter((reference) => reference.id.length > 0);
 }
 
 function normalizeReferences(
@@ -145,9 +143,7 @@ function normalizeConstraintSignal(input: ConstraintSignalInput): ConstraintSign
   };
 }
 
-export function normalizeObservationContract(
-  input: ObservationContractInput,
-): ObservationContract {
+export function normalizeObservationContract(input: ObservationContractInput): ObservationContract {
   return {
     id: input.id.trim(),
     completed: input.completed ?? false,

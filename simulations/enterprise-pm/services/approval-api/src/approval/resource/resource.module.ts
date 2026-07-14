@@ -1,35 +1,32 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { Module, type Provider } from "@nestjs/common";
+import { Module, type Provider } from '@nestjs/common';
 import {
   SLICE_LOGGER_PORT,
   type LoggerPort,
   type TransactionPort,
   type OutboxPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
-import {
-  APPROVAL_DB_INSTANCE,
-  type ApprovalDbInstanceHandle,
-} from "../approval-db.module.js";
+import { APPROVAL_DB_INSTANCE, type ApprovalDbInstanceHandle } from '../approval-db.module.js';
 
-import { ResourceRepositoryPort } from "./application/ports/resource-repository.port.js";
-import { ResourceReadModelQuery } from "./application/queries/resource-read-model.query.js";
-import { ResourceUseCase } from "./application/use-cases/resource.use-case.js";
+import { ResourceRepositoryPort } from './application/ports/resource-repository.port.js';
+import { ResourceReadModelQuery } from './application/queries/resource-read-model.query.js';
+import { ResourceUseCase } from './application/use-cases/resource.use-case.js';
 
-import { createResourceRepository } from "./infrastructure/persistence/resource.repository.js";
-import { createResourceTransactionPort } from "./infrastructure/transaction/resource.transaction.js";
-import { createResourceOutboxPort } from "./infrastructure/outbox/resource.outbox.js";
-import { createResourceLogger } from "./infrastructure/logging/resource.logger.js";
-import { RepositoryResourceReadModel } from "./infrastructure/read-model/resource.read-model.js";
+import { createResourceRepository } from './infrastructure/persistence/resource.repository.js';
+import { createResourceTransactionPort } from './infrastructure/transaction/resource.transaction.js';
+import { createResourceOutboxPort } from './infrastructure/outbox/resource.outbox.js';
+import { createResourceLogger } from './infrastructure/logging/resource.logger.js';
+import { RepositoryResourceReadModel } from './infrastructure/read-model/resource.read-model.js';
 
-import { ResourceController } from "./presentation/http/resource.controller.js";
-import { ResourceDetailBff } from "./presentation/bff/resource-detail.bff.js";
-import { ResourceDetailController } from "./presentation/bff/resource-detail.controller.js";
+import { ResourceController } from './presentation/http/resource.controller.js';
+import { ResourceDetailBff } from './presentation/bff/resource-detail.bff.js';
+import { ResourceDetailController } from './presentation/bff/resource-detail.controller.js';
 
-const RESOURCE_TRANSACTION_PORT = Symbol.for("sim-approval-api/resource/TransactionPort");
-const RESOURCE_OUTBOX_PORT = Symbol.for("sim-approval-api/resource/OutboxPort");
+const RESOURCE_TRANSACTION_PORT = Symbol.for('sim-approval-api/resource/TransactionPort');
+const RESOURCE_OUTBOX_PORT = Symbol.for('sim-approval-api/resource/OutboxPort');
 
 const repositoryProvider: Provider = {
   provide: ResourceRepositoryPort,
@@ -81,8 +78,7 @@ const useCaseProvider: Provider = {
 
 const detailBffProvider: Provider = {
   provide: ResourceDetailBff,
-  useFactory: (rm: ResourceReadModelQuery, logger: LoggerPort) =>
-    new ResourceDetailBff(rm, logger),
+  useFactory: (rm: ResourceReadModelQuery, logger: LoggerPort) => new ResourceDetailBff(rm, logger),
   inject: [ResourceReadModelQuery, SLICE_LOGGER_PORT],
 };
 
@@ -103,11 +99,6 @@ const detailBffProvider: Provider = {
     detailBffProvider,
   ],
   controllers: [ResourceController, ResourceDetailController],
-  exports: [
-    ResourceRepositoryPort,
-    ResourceReadModelQuery,
-    ResourceUseCase,
-    ResourceDetailBff,
-  ],
+  exports: [ResourceRepositoryPort, ResourceReadModelQuery, ResourceUseCase, ResourceDetailBff],
 })
 export class ResourceSliceModule {}

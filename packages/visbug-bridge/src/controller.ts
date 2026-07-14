@@ -8,17 +8,17 @@ import type {
   ReplayResult,
   DomRefCatalog,
   DomQuerySpec,
-} from './types.js'
+} from './types.js';
 
 interface VisBugHost {
-  getHistory(opts?: GetHistoryOptions): ReadonlyArray<EditLogEntry | MergedEditLogEntry>
-  clearHistory(): void
-  replay(entry: EditLogEntry | MergedEditLogEntry, opts?: ReplayOptions): ReplayResult
-  editLogStream(): AsyncIterable<EditLogEntry>
-  buildTargetRef(element: Element): DomRefCatalog
-  resolveTargetRef(catalog: DomRefCatalog): Element | null
-  queryTargets(spec: DomQuerySpec): ReadonlyArray<Element>
-  getTargetRefByLabelId(labelId: string | number): DomRefCatalog | null
+  getHistory(opts?: GetHistoryOptions): ReadonlyArray<EditLogEntry | MergedEditLogEntry>;
+  clearHistory(): void;
+  replay(entry: EditLogEntry | MergedEditLogEntry, opts?: ReplayOptions): ReplayResult;
+  editLogStream(): AsyncIterable<EditLogEntry>;
+  buildTargetRef(element: Element): DomRefCatalog;
+  resolveTargetRef(catalog: DomRefCatalog): Element | null;
+  queryTargets(spec: DomQuerySpec): ReadonlyArray<Element>;
+  getTargetRefByLabelId(labelId: string | number): DomRefCatalog | null;
 }
 
 export function createController(host: VisBugHost, detach: () => void): VisBugController {
@@ -32,7 +32,7 @@ export function createController(host: VisBugHost, detach: () => void): VisBugCo
     getTargetRefByLabelId: (labelId) => host.getTargetRefByLabelId(labelId),
     unmount: () => detach(),
     get entries() {
-      return host.editLogStream()
+      return host.editLogStream();
     },
-  }
+  };
 }

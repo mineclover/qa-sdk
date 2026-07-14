@@ -63,7 +63,7 @@ export function calcWeights(shape: readonly number[]): number[] {
  * partialQueryBase([80,20,4,1], [null, null, 4, 1]) // → 12
  */
 export function partialQueryBase(
-  weights:     readonly number[],
+  weights: readonly number[],
   fixedCoords: ReadonlyArray<number | null>,
 ): number {
   return fixedCoords.reduce<number>((acc, x, i) => {
@@ -93,7 +93,7 @@ export function partialDecode(
 ): Record<number, number> {
   const result: Record<number, number> = {};
   for (const i of dimIndices) {
-    result[i] = Math.floor(address / strides[i]) % shape[i] + 1;
+    result[i] = (Math.floor(address / strides[i]) % shape[i]) + 1;
   }
   return result;
 }
@@ -136,7 +136,7 @@ export function intersectRanges(
   for (const [af, at] of a) {
     for (const [bf, bt] of b) {
       const from = Math.max(af, bf);
-      const to   = Math.min(at, bt);
+      const to = Math.min(at, bt);
       if (from <= to) result.push([from, to]);
     }
   }
@@ -187,16 +187,14 @@ export function complementRanges(
 /**
  * 정렬된 range 배열에서 address가 포함되어 있는지 O(log n)으로 검사한다.
  */
-export function containsAddress(
-  address: number,
-  ranges: readonly [number, number][],
-): boolean {
+export function containsAddress(address: number, ranges: readonly [number, number][]): boolean {
   if (ranges.length === 0) return false;
-  let lo = 0, hi = ranges.length - 1;
+  let lo = 0,
+    hi = ranges.length - 1;
   while (lo <= hi) {
     const mid = (lo + hi) >>> 1;
     const [from, to] = ranges[mid];
-    if (address < from)    hi = mid - 1;
+    if (address < from) hi = mid - 1;
     else if (address > to) lo = mid + 1;
     else return true;
   }
@@ -211,11 +209,11 @@ export function containsAddress(
  * positionsToConstraint([1,2,5,6]) → "1-2,5-6"
  */
 export function positionsToConstraint(positions: readonly number[]): string {
-  if (positions.length === 0) return "";
+  if (positions.length === 0) return '';
   const sorted = [...positions].toSorted((a, b) => a - b);
   const segments: string[] = [];
   let from = sorted[0];
-  let to   = sorted[0];
+  let to = sorted[0];
 
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i] === to + 1) {
@@ -226,7 +224,7 @@ export function positionsToConstraint(positions: readonly number[]): string {
     }
   }
   segments.push(from === to ? String(from) : `${from}-${to}`);
-  return segments.join(",");
+  return segments.join(',');
 }
 
 /**
@@ -282,9 +280,9 @@ export function parseConstraintSegments(
   dimSize: number,
 ): { from: number; to: number }[] {
   if (c === null) return [{ from: 1, to: dimSize }];
-  return c.split(",").map((raw) => {
+  return c.split(',').map((raw) => {
     const part = raw.trim();
-    const dash = part.indexOf("-");
+    const dash = part.indexOf('-');
     let from: number;
     let to: number;
     if (dash === -1) {
@@ -296,17 +294,15 @@ export function parseConstraintSegments(
     }
     if (!Number.isInteger(from) || !Number.isInteger(to)) {
       throw new RangeError(
-        `Invalid constraint "${part}": from and to must be valid integers (got from=${from}, to=${to})`
+        `Invalid constraint "${part}": from and to must be valid integers (got from=${from}, to=${to})`,
       );
     }
     if (from > to) {
-      throw new RangeError(
-        `Invalid constraint "${part}": from (${from}) must be <= to (${to})`
-      );
+      throw new RangeError(`Invalid constraint "${part}": from (${from}) must be <= to (${to})`);
     }
     if (from < 1 || to > dimSize) {
       throw new RangeError(
-        `Constraint "${part}" out of bounds: [${from}, ${to}] must be within [1, ${dimSize}]`
+        `Constraint "${part}" out of bounds: [${from}, ${to}] must be within [1, ${dimSize}]`,
       );
     }
     return { from, to };
@@ -314,23 +310,21 @@ export function parseConstraintSegments(
 }
 
 function _calcRanges(
-  shape:       readonly number[],
+  shape: readonly number[],
   constraints: ReadonlyArray<CoordConstraint>,
-  weights:     readonly number[],
-  dimIndex:    number,
-  baseAddr:    number,
+  weights: readonly number[],
+  dimIndex: number,
+  baseAddr: number,
 ): [number, number][] {
   if (dimIndex === shape.length) {
     return [[baseAddr, baseAddr]];
   }
 
-  const weight   = weights[dimIndex];
+  const weight = weights[dimIndex];
   const segments = parseConstraintSegments(constraints[dimIndex], shape[dimIndex]);
 
   // 최적화: 이후 모든 차원이 와일드카드이면 연속 블록으로 처리
-  const allRemainingWild = constraints
-    .slice(dimIndex + 1)
-    .every((c) => c === null);
+  const allRemainingWild = constraints.slice(dimIndex + 1).every((c) => c === null);
 
   if (allRemainingWild) {
     const raw: [number, number][] = segments.map(({ from, to }) => [
@@ -345,7 +339,9 @@ function _calcRanges(
   for (const { from, to } of segments) {
     for (let coord = from; coord <= to; coord++) {
       const sub = _calcRanges(
-        shape, constraints, weights,
+        shape,
+        constraints,
+        weights,
         dimIndex + 1,
         baseAddr + (coord - 1) * weight,
       );
@@ -373,17 +369,17 @@ function _calcRanges(
  * // → "12 + (resource−1)×80 + (action−1)×20"
  */
 export function describeRangeFormula(
-  weights:     readonly number[],
+  weights: readonly number[],
   fixedCoords: ReadonlyArray<number | null>,
-  labels:      readonly string[],
+  labels: readonly string[],
 ): string {
   const base = partialQueryBase(weights, fixedCoords);
   const freeTerms = fixedCoords
-    .map((x, i) => x === null ? `(${labels[i]}−1)×${weights[i]}` : null)
+    .map((x, i) => (x === null ? `(${labels[i]}−1)×${weights[i]}` : null))
     .filter((t): t is string => t !== null);
 
   if (freeTerms.length === 0) return String(base);
-  const freeStr = freeTerms.join(" + ");
+  const freeStr = freeTerms.join(' + ');
   return base === 0 ? freeStr : `${base} + ${freeStr}`;
 }
 

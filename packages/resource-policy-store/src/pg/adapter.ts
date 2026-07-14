@@ -8,8 +8,8 @@
  * permission-engine의 순수 FSM 함수를 그대로 재사용 — dialect 차이는 driver type만.
  */
 
-import { eq } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 import {
   DuplicatePolicyError,
@@ -23,9 +23,9 @@ import {
   type ResourcePolicyRegisterArgs,
   type ResourcePolicyRegistry,
   type ResourcePolicyState,
-} from "permission-engine";
+} from 'permission-engine';
 
-import { resourcePolicies } from "./schema.js";
+import { resourcePolicies } from './schema.js';
 
 type Row = typeof resourcePolicies.$inferSelect;
 
@@ -62,7 +62,8 @@ export class PgResourcePolicyRegistry implements ResourcePolicyRegistry {
 
   async resolve(resourceId: string): Promise<ResourcePolicy | null> {
     const rows = await this.db
-      .select().from(resourcePolicies)
+      .select()
+      .from(resourcePolicies)
       .where(eq(resourcePolicies.resourceId, resourceId))
       .limit(1);
     return rows.length === 0 ? null : toPolicy(rows[0]);
@@ -76,47 +77,44 @@ export class PgResourcePolicyRegistry implements ResourcePolicyRegistry {
     return policy;
   }
 
-  async register(
-    resourceId: string,
-    args: ResourcePolicyRegisterArgs,
-  ): Promise<ResourcePolicy> {
+  async register(resourceId: string, args: ResourcePolicyRegisterArgs): Promise<ResourcePolicy> {
     const cur = await this.resolve(resourceId);
     if (!cur) throw new PolicyNotFoundError(resourceId);
     const next = registerResourcePolicy(cur, args);
-    await this.db.update(resourcePolicies)
+    await this.db
+      .update(resourcePolicies)
       .set(toRow(next))
       .where(eq(resourcePolicies.resourceId, resourceId));
     return next;
   }
 
-  async delegate(
-    resourceId: string,
-    args: ResourcePolicyDelegateArgs,
-  ): Promise<ResourcePolicy> {
+  async delegate(resourceId: string, args: ResourcePolicyDelegateArgs): Promise<ResourcePolicy> {
     const cur = await this.resolve(resourceId);
     if (!cur) throw new PolicyNotFoundError(resourceId);
     const next = delegateResourcePolicy(cur, args);
-    await this.db.update(resourcePolicies)
+    await this.db
+      .update(resourcePolicies)
       .set(toRow(next))
       .where(eq(resourcePolicies.resourceId, resourceId));
     return next;
   }
 
   async remove(resourceId: string): Promise<void> {
-    await this.db.delete(resourcePolicies)
-      .where(eq(resourcePolicies.resourceId, resourceId));
+    await this.db.delete(resourcePolicies).where(eq(resourcePolicies.resourceId, resourceId));
   }
 
   async listByOwner(ownerId: string): Promise<ResourcePolicy[]> {
     const rows = await this.db
-      .select().from(resourcePolicies)
+      .select()
+      .from(resourcePolicies)
       .where(eq(resourcePolicies.ownerId, ownerId));
     return rows.map(toPolicy);
   }
 
   async listByState(state: ResourcePolicyState): Promise<ResourcePolicy[]> {
     const rows = await this.db
-      .select().from(resourcePolicies)
+      .select()
+      .from(resourcePolicies)
       .where(eq(resourcePolicies.state, state));
     return rows.map(toPolicy);
   }

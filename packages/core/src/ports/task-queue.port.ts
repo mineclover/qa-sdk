@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-export type TaskPhase = "reconstruction" | "verdict";
+export type TaskPhase = 'reconstruction' | 'verdict';
 
 export interface TaskPayload {
   traceId: string;

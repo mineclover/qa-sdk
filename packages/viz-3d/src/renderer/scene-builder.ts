@@ -10,14 +10,14 @@
  * 사용자는 이 모듈만 import하면 전체 3D 뷰가 구성됨.
  */
 
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import type { VizConfig, CellGridDef } from "../core/types.js";
-import { DEFAULT_THEME } from "../core/types.js";
-import { CATEGORY_COLORS, LAYER_COLORS, PALETTE } from "../core/color-tokens.js";
-import { buildGridPositions, type GridPositions } from "../core/grid-builder.js";
-import { ViewEngine } from "../view/view-engine.js";
-import { CellStateManager, BeamPool } from "../effects/activation.js";
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import type { VizConfig, CellGridDef } from '../core/types.js';
+import { DEFAULT_THEME } from '../core/types.js';
+import { CATEGORY_COLORS, LAYER_COLORS, PALETTE } from '../core/color-tokens.js';
+import { buildGridPositions, type GridPositions } from '../core/grid-builder.js';
+import { ViewEngine } from '../view/view-engine.js';
+import { CellStateManager, BeamPool } from '../effects/activation.js';
 
 // ═══════════════════════════════════════════════════
 //  Types
@@ -110,11 +110,38 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
 
   // Axis guides
   const axLen = 30;
-  const axMat = new THREE.LineBasicMaterial({ color: PALETTE.bgAxis.hex, transparent: true, opacity: 0.3 });
-  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-axLen, -14, 0), new THREE.Vector3(axLen, -14, 0)]), axMat));
-  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -14, -axLen), new THREE.Vector3(0, -14, axLen)]), axMat.clone()));
-  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -14, 0), new THREE.Vector3(0, 14, 0)]),
-    new THREE.LineBasicMaterial({ color: PALETTE.bgAxis.hex, transparent: true, opacity: 0.15 })));
+  const axMat = new THREE.LineBasicMaterial({
+    color: PALETTE.bgAxis.hex,
+    transparent: true,
+    opacity: 0.3,
+  });
+  scene.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-axLen, -14, 0),
+        new THREE.Vector3(axLen, -14, 0),
+      ]),
+      axMat,
+    ),
+  );
+  scene.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, -14, -axLen),
+        new THREE.Vector3(0, -14, axLen),
+      ]),
+      axMat.clone(),
+    ),
+  );
+  scene.add(
+    new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, -14, 0),
+        new THREE.Vector3(0, 14, 0),
+      ]),
+      new THREE.LineBasicMaterial({ color: PALETTE.bgAxis.hex, transparent: true, opacity: 0.15 }),
+    ),
+  );
 
   // Ambient particles
   const ptCount = config.particleCount ?? 200;
@@ -125,10 +152,18 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
     ptPos[i * 3 + 1] = (Math.random() - 0.5) * 40;
     ptPos[i * 3 + 2] = (Math.random() - 0.5) * 70;
   }
-  ptGeo.setAttribute("position", new THREE.BufferAttribute(ptPos, 3));
-  scene.add(new THREE.Points(ptGeo, new THREE.PointsMaterial({
-    color: PALETTE.bgAxis.hex, size: 0.1, transparent: true, opacity: 0.5,
-  })));
+  ptGeo.setAttribute('position', new THREE.BufferAttribute(ptPos, 3));
+  scene.add(
+    new THREE.Points(
+      ptGeo,
+      new THREE.PointsMaterial({
+        color: PALETTE.bgAxis.hex,
+        size: 0.1,
+        transparent: true,
+        opacity: 0.5,
+      }),
+    ),
+  );
 
   // Grid positions
   const gridPositions = buildGridPositions(config.grids, layerHeights, cellSize, cellGap);
@@ -147,7 +182,7 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
 
   for (const gridLayout of gridPositions.grids) {
     // eslint-disable-next-line typescript/no-non-null-assertion -- gridLayout.id는 config.grids에서 유래
-    const def = config.grids.find(g => g.id === gridLayout.id)!;
+    const def = config.grids.find((g) => g.id === gridLayout.id)!;
     const catDef = CATEGORY_COLORS[def.category] ?? CATEGORY_COLORS.entity;
     const pos = gridPositions.viewPositions.layer[def.id];
 
@@ -162,7 +197,10 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
     const pw = gridLayout.width + 0.4;
     const pd = gridLayout.depth + 0.4;
     const plateMat = new THREE.MeshBasicMaterial({
-      color: catDef.main.hex, transparent: true, opacity: 0.02, side: THREE.DoubleSide,
+      color: catDef.main.hex,
+      transparent: true,
+      opacity: 0.02,
+      side: THREE.DoubleSide,
     });
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(pw, pd), plateMat);
     plate.rotation.x = -Math.PI / 2;
@@ -171,7 +209,9 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
 
     // Label
     const labelTex = createTextTexture(def.id, 13, catDef.main.css);
-    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex, transparent: true, opacity: 0.6 }));
+    const label = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: labelTex, transparent: true, opacity: 0.6 }),
+    );
     label.scale.set(4, 0.7, 1);
     label.position.set(0, 0.7, -(pd / 2 + 0.4));
     group.add(label);
@@ -180,29 +220,42 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
     for (const cell of gridLayout.cells) {
       const geo = new THREE.BoxGeometry(cellSize, 0.25, cellSize);
       const mat = new THREE.MeshStandardMaterial({
-        color: catDef.main.hex, emissive: 0x000000,
-        metalness: 0.35, roughness: 0.5, transparent: true, opacity: theme.cellOpacity,
+        color: catDef.main.hex,
+        emissive: 0x000000,
+        metalness: 0.35,
+        roughness: 0.5,
+        transparent: true,
+        opacity: theme.cellOpacity,
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(cell.localX, 0, cell.localZ);
       group.add(mesh);
 
-      const edgeMat = new THREE.LineBasicMaterial({ color: catDef.main.hex, transparent: true, opacity: 0.3 });
+      const edgeMat = new THREE.LineBasicMaterial({
+        color: catDef.main.hex,
+        transparent: true,
+        opacity: 0.3,
+      });
       const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat);
       wire.position.copy(mesh.position);
       group.add(wire);
 
       // Entry label
-      const short = cell.entry.length > 9 ? cell.entry.slice(0, 8) + "…" : cell.entry;
-      const eTex = createTextTexture(short, 10, "#778");
-      const eSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: eTex, transparent: true, opacity: 0.5 }));
+      const short = cell.entry.length > 9 ? cell.entry.slice(0, 8) + '…' : cell.entry;
+      const eTex = createTextTexture(short, 10, '#778');
+      const eSprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: eTex, transparent: true, opacity: 0.5 }),
+      );
       eSprite.scale.set(1.1, 0.22, 1);
       eSprite.position.set(cell.localX, -0.3, cell.localZ + 0.4);
       group.add(eSprite);
 
       cellMeshes.set(cell.key, {
-        mesh, material: mat, edgeMaterial: edgeMat,
-        group, gridDef: def,
+        mesh,
+        material: mat,
+        edgeMaterial: edgeMat,
+        group,
+        gridDef: def,
         catColor: { c: catDef.main.hex, e: catDef.emissive.hex },
       });
     }
@@ -211,9 +264,11 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
   // Layer labels
   for (let i = 0; i < layerHeights.length; i++) {
     const lc = LAYER_COLORS[i] ?? LAYER_COLORS[0];
-    const names = ["L0 UI", "L1 Business", "L2 Infra", "L3 Data"];
+    const names = ['L0 UI', 'L1 Business', 'L2 Infra', 'L3 Data'];
     const ltex = createTextTexture(names[i] ?? `L${i}`, 13, lc.css);
-    const lbl = new THREE.Sprite(new THREE.SpriteMaterial({ map: ltex, transparent: true, opacity: 0.2 }));
+    const lbl = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: ltex, transparent: true, opacity: 0.2 }),
+    );
     lbl.scale.set(5, 1, 1);
     lbl.position.set(-28, layerHeights[i], 0);
     scene.add(lbl);
@@ -222,22 +277,35 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
   // Beam lines
   for (let i = 0; i < (config.maxBeams ?? 50); i++) {
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3));
-    const mat = new THREE.LineBasicMaterial({ color: PALETTE.mint.hex, transparent: true, opacity: 0 });
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+    const mat = new THREE.LineBasicMaterial({
+      color: PALETTE.mint.hex,
+      transparent: true,
+      opacity: 0,
+    });
     scene.add(new THREE.Line(geo, mat));
   }
 
   // Resize handler
-  window.addEventListener("resize", () => {
+  window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
   return {
-    renderer, scene, camera, controls,
-    cellMeshes, gridGroups, viewEngine, cellStates, beamPool,
-    gridPositions, gridFloor, gridFloorSub: gridFloorSub,
+    renderer,
+    scene,
+    camera,
+    controls,
+    cellMeshes,
+    gridGroups,
+    viewEngine,
+    cellStates,
+    beamPool,
+    gridPositions,
+    gridFloor,
+    gridFloorSub: gridFloorSub,
   };
 }
 
@@ -245,7 +313,13 @@ export function createScene(canvas: HTMLCanvasElement, config: VizConfig): Scene
 //  Update Loop
 // ═══════════════════════════════════════════════════
 
-export function updateScene(state: SceneState, dt: number, time: number, settings: DisplaySettings, activeSet: ReadonlySet<string>): void {
+export function updateScene(
+  state: SceneState,
+  dt: number,
+  time: number,
+  settings: DisplaySettings,
+  activeSet: ReadonlySet<string>,
+): void {
   // View engine lerp
   state.viewEngine.update(dt);
   for (const [id, group] of state.gridGroups) {
@@ -282,13 +356,14 @@ export function updateScene(state: SceneState, dt: number, time: number, setting
 // ═══════════════════════════════════════════════════
 
 function createTextTexture(text: string, fontSize: number, color: string): THREE.CanvasTexture {
-  const c = document.createElement("canvas");
-  c.width = 256; c.height = 48;
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 48;
   // eslint-disable-next-line typescript/no-non-null-assertion -- canvas 2d 컨텍스트 보장
-  const ctx = c.getContext("2d")!;
+  const ctx = c.getContext('2d')!;
   ctx.fillStyle = color;
   ctx.font = `500 ${fontSize}px IBM Plex Mono, monospace`;
-  ctx.textAlign = "center";
+  ctx.textAlign = 'center';
   ctx.fillText(text, 128, 32);
   const tex = new THREE.CanvasTexture(c);
   tex.minFilter = THREE.LinearFilter;
@@ -313,7 +388,7 @@ export function pickCell(state: SceneState, mouseX: number, mouseY: number): str
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(mouse, state.camera);
 
-  const meshes = [...state.cellMeshes.values()].map(cm => cm.mesh);
+  const meshes = [...state.cellMeshes.values()].map((cm) => cm.mesh);
   const hits = raycaster.intersectObjects(meshes);
   if (hits.length === 0) return null;
 

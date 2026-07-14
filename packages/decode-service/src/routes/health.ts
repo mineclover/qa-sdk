@@ -1,13 +1,13 @@
 // @def.boundary decode-service-system
 // @def.doc decode-service-system
 
-import { Hono } from "hono";
-import type { KeyCache } from "@qa-sdk/core";
-import type { DecoderPool } from "../lib/decoder-pool.js";
+import { Hono } from 'hono';
+import type { KeyCache } from '@qa-sdk/core';
+import type { DecoderPool } from '../lib/decoder-pool.js';
 
 export interface DecodeCacheHealth {
-  driver: "memory" | "redis";
-  status: "disabled" | "connected" | "disconnected";
+  driver: 'memory' | 'redis';
+  status: 'disabled' | 'connected' | 'disconnected';
 }
 
 export interface HealthDeps {
@@ -21,17 +21,17 @@ export interface HealthDeps {
 export function createHealthRoutes(deps: HealthDeps) {
   const app = new Hono();
 
-  app.get("/health", (c) => {
+  app.get('/health', (c) => {
     return c.json({
-      status: "ok",
+      status: 'ok',
       decoders_loaded: deps.pool.size,
       uptime_seconds: deps.getUptimeSeconds?.() ?? undefined,
       version: deps.version ?? undefined,
-      cache: deps.cacheHealth ?? (
-        deps.decodeCache
-          ? { driver: "redis", status: "connected" }
-          : { driver: "memory", status: "disabled" }
-      ),
+      cache:
+        deps.cacheHealth ??
+        (deps.decodeCache
+          ? { driver: 'redis', status: 'connected' }
+          : { driver: 'memory', status: 'disabled' }),
     });
   });
 

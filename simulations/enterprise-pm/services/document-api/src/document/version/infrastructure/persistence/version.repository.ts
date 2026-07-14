@@ -1,16 +1,16 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { and, asc, desc, eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { and, asc, desc, eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { VersionEntity } from "../../domain/index.js";
-import type { VersionSnapshot } from "../../domain/index.js";
-import { VersionRepositoryPort } from "../../application/ports/version-repository.port.js";
-import type { VersionTransactionScope } from "../../application/ports/version-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { VersionEntity } from '../../domain/index.js';
+import type { VersionSnapshot } from '../../domain/index.js';
+import { VersionRepositoryPort } from '../../application/ports/version-repository.port.js';
+import type { VersionTransactionScope } from '../../application/ports/version-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface VersionRow {
   documentId: string;
@@ -130,20 +130,18 @@ export class PgVersionRepository extends VersionRepositoryPort {
   }
 }
 
-export type VersionDialect = "sqlite" | "pg";
+export type VersionDialect = 'sqlite' | 'pg';
 
 export interface VersionRepositoryFactoryOpts {
   readonly dialect: VersionDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createVersionRepository(
-  opts: VersionRepositoryFactoryOpts,
-): VersionRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createVersionRepository(opts: VersionRepositoryFactoryOpts): VersionRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteVersionRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgVersionRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(

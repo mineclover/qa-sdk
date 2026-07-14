@@ -1,16 +1,16 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { AssignmentEntity } from "../../domain/index.js";
-import type { AssignmentSnapshot } from "../../domain/index.js";
-import { AssignmentRepositoryPort } from "../../application/ports/assignment-repository.port.js";
-import type { AssignmentTransactionScope } from "../../application/ports/assignment-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { AssignmentEntity } from '../../domain/index.js';
+import type { AssignmentSnapshot } from '../../domain/index.js';
+import { AssignmentRepositoryPort } from '../../application/ports/assignment-repository.port.js';
+import type { AssignmentTransactionScope } from '../../application/ports/assignment-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 /**
  * Drizzle assignments table 의 row shape — sqlite/pg 양쪽 모두 동일 컬럼.
@@ -22,7 +22,7 @@ interface AssignmentRow {
   id: string;
   projectId: string;
   managerId: string;
-  status: "draft" | "assigned" | "cancelled";
+  status: 'draft' | 'assigned' | 'cancelled';
   createdAt: string;
   updatedAt: string;
 }
@@ -122,7 +122,7 @@ export class PgAssignmentRepository extends AssignmentRepositoryPort {
   }
 }
 
-export type AssignmentDialect = "sqlite" | "pg";
+export type AssignmentDialect = 'sqlite' | 'pg';
 
 export interface AssignmentRepositoryFactoryOpts {
   readonly dialect: AssignmentDialect;
@@ -133,11 +133,13 @@ export interface AssignmentRepositoryFactoryOpts {
 export function createAssignmentRepository(
   opts: AssignmentRepositoryFactoryOpts,
 ): AssignmentRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteAssignmentRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgAssignmentRepository(opts.db as PostgresJsDatabase);
   }
-  throw new Error(`createAssignmentRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  throw new Error(
+    `createAssignmentRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

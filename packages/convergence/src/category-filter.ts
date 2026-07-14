@@ -8,8 +8,8 @@
  * @layer 필터 (Filtering)
  */
 
-import type { GraphPort } from "spec-schema";
-import type { UsageData } from "./convergence.types.js";
+import type { GraphPort } from 'spec-schema';
+import type { UsageData } from './convergence.types.js';
 
 /**
  * UsageData를 특정 category의 prefix만 포함하도록 필터링.
@@ -19,17 +19,15 @@ export function filterUsageByCategory(
   graph: GraphPort,
   category: string,
 ): UsageData {
-  const prefixIds = new Set(
-    graph.getPrefixesByCategory(category).map(p => p.id),
-  );
+  const prefixIds = new Set(graph.getPrefixesByCategory(category).map((p) => p.id));
 
   return {
     entryUsages: usage.entryUsages, // entry는 prefix 무관하게 집계됨
-    addressUsages: usage.addressUsages.filter(a => prefixIds.has(a.prefix)),
+    addressUsages: usage.addressUsages.filter((a) => prefixIds.has(a.prefix)),
     coOccurrences: usage.coOccurrences.filter(
-      c => prefixIds.has(c.sourcePrefix) || prefixIds.has(c.targetPrefix),
+      (c) => prefixIds.has(c.sourcePrefix) || prefixIds.has(c.targetPrefix),
     ),
-    versionUsages: usage.versionUsages.filter(v => prefixIds.has(v.prefix)),
+    versionUsages: usage.versionUsages.filter((v) => prefixIds.has(v.prefix)),
     collectionPeriod: usage.collectionPeriod,
     sourceStats: usage.sourceStats,
   };
@@ -46,15 +44,15 @@ export function groupUsageByCategory(
   const result: Record<string, UsageData> = {};
 
   for (const [category, prefixes] of Object.entries(groups)) {
-    const prefixIds = new Set(prefixes.map(p => p.id));
+    const prefixIds = new Set(prefixes.map((p) => p.id));
 
     result[category] = {
       entryUsages: usage.entryUsages,
-      addressUsages: usage.addressUsages.filter(a => prefixIds.has(a.prefix)),
+      addressUsages: usage.addressUsages.filter((a) => prefixIds.has(a.prefix)),
       coOccurrences: usage.coOccurrences.filter(
-        c => prefixIds.has(c.sourcePrefix) || prefixIds.has(c.targetPrefix),
+        (c) => prefixIds.has(c.sourcePrefix) || prefixIds.has(c.targetPrefix),
       ),
-      versionUsages: usage.versionUsages.filter(v => prefixIds.has(v.prefix)),
+      versionUsages: usage.versionUsages.filter((v) => prefixIds.has(v.prefix)),
       collectionPeriod: usage.collectionPeriod,
       sourceStats: usage.sourceStats,
     };
@@ -82,8 +80,8 @@ export function summarizeByCategory(
   return Object.entries(grouped)
     .map(([category, catUsage]) => ({
       category,
-      prefixCount: new Set(catUsage.addressUsages.map(a => a.prefix)).size,
-      prefixIds: [...new Set(catUsage.addressUsages.map(a => a.prefix))],
+      prefixCount: new Set(catUsage.addressUsages.map((a) => a.prefix)).size,
+      prefixIds: [...new Set(catUsage.addressUsages.map((a) => a.prefix))],
       addressCount: catUsage.addressUsages.length,
       totalHits: catUsage.addressUsages.reduce((s, a) => s + a.count, 0),
       versionCount: catUsage.versionUsages.length,

@@ -1,12 +1,12 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import type { EnvDiscoveryClient } from "./types.js";
-import { generateEnvFile, type EnvFileOptions, type PgDomain } from "./env-file.js";
-import { generateTypescriptModule } from "./typescript-module.js";
-import { generateDockerComposeOverride } from "./docker-compose.js";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import type { EnvDiscoveryClient } from './types.js';
+import { generateEnvFile, type EnvFileOptions, type PgDomain } from './env-file.js';
+import { generateTypescriptModule } from './typescript-module.js';
+import { generateDockerComposeOverride } from './docker-compose.js';
 
 export interface ExportFileResult {
   outPath: string;
@@ -35,7 +35,7 @@ export async function loadServiceConfig(
 ): Promise<Record<string, unknown> | undefined> {
   if (!configPath) return undefined;
   try {
-    const raw = JSON.parse(await readFile(configPath, "utf-8"));
+    const raw = JSON.parse(await readFile(configPath, 'utf-8'));
     return raw.services?.[serviceId] as Record<string, unknown> | undefined;
   } catch {
     return undefined;
@@ -49,7 +49,7 @@ export async function writeEnvExport(
   const serviceConfig = await loadServiceConfig(options.configPath, options.serviceId);
   const content = await generateEnvFile(discovery, options, serviceConfig);
   const outPath = options.outPath ?? `.env.${options.serviceId}.${options.env}`;
-  await mkdir(resolve(outPath, ".."), { recursive: true });
+  await mkdir(resolve(outPath, '..'), { recursive: true });
   await writeFile(outPath, content);
   return { outPath, content };
 }
@@ -60,7 +60,7 @@ export async function writeTypescriptExport(
 ): Promise<ExportFileResult> {
   const content = await generateTypescriptModule(discovery, options.env);
   const outPath = options.outPath ?? `generated/service-connections.${options.env}.ts`;
-  await mkdir(resolve(outPath, ".."), { recursive: true });
+  await mkdir(resolve(outPath, '..'), { recursive: true });
   await writeFile(outPath, content);
   return { outPath, content };
 }
@@ -71,7 +71,7 @@ export async function writeDockerComposeExport(
 ): Promise<ExportFileResult> {
   const content = await generateDockerComposeOverride(discovery, options.env);
   const outPath = options.outPath ?? `generated/docker-compose.override.${options.env}.yml`;
-  await mkdir(resolve(outPath, ".."), { recursive: true });
+  await mkdir(resolve(outPath, '..'), { recursive: true });
   await writeFile(outPath, content);
   return { outPath, content };
 }

@@ -1,9 +1,9 @@
 // @def.boundary viz-system-root
 // @def.doc viz-system-root
 
-import type { SpecGraph, StoredRecord } from "@qa-sdk/core";
-import type { GraphRenderer } from "./renderer";
-import type { NodeState } from "./style";
+import type { SpecGraph, StoredRecord } from '@qa-sdk/core';
+import type { GraphRenderer } from './renderer';
+import type { NodeState } from './style';
 
 export interface GraphUpdater {
   processRecord(record: StoredRecord): void;
@@ -15,15 +15,12 @@ export interface GraphUpdater {
  * Creates an updater that processes incoming StoredRecords against a SpecGraph
  * and updates the graph renderer accordingly.
  */
-export function createUpdater(
-  specGraph: SpecGraph,
-  renderer: GraphRenderer,
-): GraphUpdater {
+export function createUpdater(specGraph: SpecGraph, renderer: GraphRenderer): GraphUpdater {
   const progress = new Map<string, NodeState>();
   let matchIndex = 0;
 
   for (const node of specGraph.nodes) {
-    progress.set(node.step_id, "pending");
+    progress.set(node.step_id, 'pending');
   }
 
   function findMatchingNodeFromIndex(eventKey: string): number {
@@ -48,10 +45,10 @@ export function createUpdater(
     for (let i = from; i < to; i++) {
       const node = specGraph.nodes[i];
       const currentState = progress.get(node.step_id);
-      if (currentState === "pending") {
+      if (currentState === 'pending') {
         if (!node.required) {
-          progress.set(node.step_id, "skipped");
-          renderer.updateNodeState(node.step_id, "skipped");
+          progress.set(node.step_id, 'skipped');
+          renderer.updateNodeState(node.step_id, 'skipped');
         }
       }
     }
@@ -74,15 +71,15 @@ export function createUpdater(
         const node = specGraph.nodes[idx];
         markSkippedBetween(matchIndex, idx);
 
-        progress.set(node.step_id, "matched");
-        renderer.updateNodeState(node.step_id, "matched");
+        progress.set(node.step_id, 'matched');
+        renderer.updateNodeState(node.step_id, 'matched');
         highlightEdgesTo(node.step_id);
 
         const nextIdx = idx + 1;
         if (nextIdx < specGraph.nodes.length) {
           const nextNode = specGraph.nodes[nextIdx];
-          if (progress.get(nextNode.step_id) === "pending") {
-            renderer.updateNodeState(nextNode.step_id, "active");
+          if (progress.get(nextNode.step_id) === 'pending') {
+            renderer.updateNodeState(nextNode.step_id, 'active');
           }
         }
 
@@ -92,9 +89,10 @@ export function createUpdater(
         if (anyStepId) {
           renderer.addEventToStack(anyStepId, {
             event_key: eventKey,
-            timestamp: record.timestamp instanceof Date
-              ? record.timestamp.toISOString()
-              : String(record.timestamp),
+            timestamp:
+              record.timestamp instanceof Date
+                ? record.timestamp.toISOString()
+                : String(record.timestamp),
           });
         }
       }
@@ -108,8 +106,8 @@ export function createUpdater(
       matchIndex = 0;
       progress.clear();
       for (const node of specGraph.nodes) {
-        progress.set(node.step_id, "pending");
-        renderer.updateNodeState(node.step_id, "pending");
+        progress.set(node.step_id, 'pending');
+        renderer.updateNodeState(node.step_id, 'pending');
       }
     },
   };

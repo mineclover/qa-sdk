@@ -15,8 +15,8 @@
  * 총 크기: 4 + dimCount × 4 + dimCount × 8 + 4 = 8 + dimCount × 12 bytes
  */
 
-import { WeightedIndex } from "./weighted-index.js";
-import { BufferError } from "./errors.js";
+import { WeightedIndex } from './weighted-index.js';
+import { BufferError } from './errors.js';
 
 /** 고정 헤더 + 꼬리 크기 (dimCount 4바이트 + totalSize 4바이트) */
 const FIXED_BYTES = 8;
@@ -34,18 +34,13 @@ const _MIN_BUFFER_SIZE = FIXED_BYTES + PER_DIM_BYTES;
  * @param strides 각 차원의 스트라이드
  * @returns       packed ArrayBuffer
  */
-export function packAxis(
-  shape: readonly number[],
-  strides: readonly number[],
-): ArrayBuffer {
+export function packAxis(shape: readonly number[], strides: readonly number[]): ArrayBuffer {
   const d = shape.length;
   if (d === 0) {
-    throw new BufferError("shape must have at least 1 dimension");
+    throw new BufferError('shape must have at least 1 dimension');
   }
   if (strides.length !== d) {
-    throw new BufferError(
-      `strides length (${strides.length}) must match shape length (${d})`,
-    );
+    throw new BufferError(`strides length (${strides.length}) must match shape length (${d})`);
   }
 
   const byteLen = FIXED_BYTES + d * PER_DIM_BYTES;
@@ -84,9 +79,11 @@ export function packAxis(
  * @param buffer  packAxis()로 생성된 ArrayBuffer
  * @returns       { shape, strides, size }
  */
-export function unpackAxis(
-  buffer: ArrayBuffer,
-): { shape: number[]; strides: number[]; size: number } {
+export function unpackAxis(buffer: ArrayBuffer): {
+  shape: number[];
+  strides: number[];
+  size: number;
+} {
   if (buffer.byteLength < FIXED_BYTES) {
     throw new BufferError(
       `Buffer too small: expected at least ${FIXED_BYTES} bytes, got ${buffer.byteLength}`,
@@ -101,7 +98,7 @@ export function unpackAxis(
   offset += 4;
 
   if (d === 0) {
-    throw new BufferError("dimCount must be at least 1");
+    throw new BufferError('dimCount must be at least 1');
   }
 
   const expectedLen = FIXED_BYTES + d * PER_DIM_BYTES;

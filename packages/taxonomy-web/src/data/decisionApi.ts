@@ -1,9 +1,9 @@
-import type { DecisionFile } from "taxonomy-decision-bridge";
+import type { DecisionFile } from 'taxonomy-decision-bridge';
 
 export type DecisionResponse =
-  | { kind: "found"; file: DecisionFile }
-  | { kind: "missing"; resolvedPath: string }
-  | { kind: "external"; reason: string };
+  | { kind: 'found'; file: DecisionFile }
+  | { kind: 'missing'; resolvedPath: string }
+  | { kind: 'external'; reason: string };
 
 export async function fetchDecision(
   yamlFile: string,

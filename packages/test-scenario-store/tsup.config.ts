@@ -1,9 +1,9 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ["src/index.ts"],
-  format: ["esm", "cjs"],
+  entry: ['src/index.ts'],
+  format: ['esm', 'cjs'],
   dts: true,
   clean: true,
-  onSuccess: "mkdir -p dist/drizzle && cp -r drizzle/. dist/drizzle/ 2>/dev/null || true",
+  onSuccess: 'mkdir -p dist/drizzle && cp -r drizzle/. dist/drizzle/ 2>/dev/null || true',
 });

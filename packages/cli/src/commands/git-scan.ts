@@ -28,16 +28,11 @@
  *   pkg_class    pkg × tier × runtime → 패키지 분류 주소
  */
 
-import { writeFile, mkdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import type { SchemaSnapshot, Axis, Composite } from "codegen-core";
-import { scanAndClassify } from "package-classifier";
-import {
-  getRepoName,
-  listSemverTags,
-  collectCommitTypes,
-  commitCountsByScope,
-} from "git-utils";
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import type { SchemaSnapshot, Axis, Composite } from 'codegen-core';
+import { scanAndClassify } from 'package-classifier';
+import { getRepoName, listSemverTags, collectCommitTypes, commitCountsByScope } from 'git-utils';
 
 // ── Options ──────────────────────────────────────────
 
@@ -68,56 +63,54 @@ export async function gitScan(opts: GitScanOptions): Promise<void> {
   // 1. 패키지 스캔 + 분류
   const packages = await scanAndClassify(root);
   if (packages.length === 0) {
-    throw new Error("패키지를 찾을 수 없음 — packages/ 디렉토리 확인");
+    throw new Error('패키지를 찾을 수 없음 — packages/ 디렉토리 확인');
   }
   console.log(`  packages: ${packages.length}`);
 
   // 2. 버전 수집 (git tag + package.json)
   const tags = listSemverTags(root);
-  const versions = [
-    ...new Set([...tags, ...packages.map((p) => p.version)]),
-  ].toSorted();
-  console.log(`  versions: ${versions.length} (${versions.join(", ")})`);
+  const versions = [...new Set([...tags, ...packages.map((p) => p.version)])].toSorted();
+  console.log(`  versions: ${versions.length} (${versions.join(', ')})`);
 
   // 3. 커밋 타입 수집
   const ccTypes = collectCommitTypes(root);
-  console.log(`  cc_types: ${ccTypes.length} (${ccTypes.join(", ")})`);
+  console.log(`  cc_types: ${ccTypes.length} (${ccTypes.join(', ')})`);
 
   // 4. 분류값 수집
   const tiers = [...new Set(packages.map((p) => p.tier))].toSorted();
   const runtimes = [...new Set(packages.map((p) => p.runtime))].toSorted();
-  const scopes: string[] = ["public", "private"];
+  const scopes: string[] = ['public', 'private'];
 
   // 5. 축 구성
   const axes: Axis[] = [
     {
-      id: "pkg",
+      id: 'pkg',
       entries: packages.map((p) => p.displayName),
       capacity: capacityFor(packages.length),
     },
     {
-      id: "semver",
+      id: 'semver',
       entries: versions,
       // semver는 빈번히 증가 → 넉넉한 headroom
       capacity: Math.max(16, capacityFor(versions.length, 8)),
     },
     {
-      id: "cc_type",
+      id: 'cc_type',
       entries: ccTypes,
       capacity: capacityFor(ccTypes.length),
     },
     {
-      id: "tier",
+      id: 'tier',
       entries: tiers,
       capacity: capacityFor(tiers.length),
     },
     {
-      id: "runtime",
+      id: 'runtime',
       entries: runtimes,
       capacity: capacityFor(runtimes.length),
     },
     {
-      id: "scope",
+      id: 'scope',
       entries: scopes,
       capacity: 2,
     },
@@ -126,10 +119,10 @@ export async function gitScan(opts: GitScanOptions): Promise<void> {
   // 6. 복합 인덱스 — 축 배치 순서는 stride 안정성 기준
   //    (변경 빈도 높은 축 → 앞, 낮은 축 → 뒤)
   const composites: Composite[] = [
-    { id: "pkg_version", dims: ["pkg", "semver"], owner: repoName },
-    { id: "change_map", dims: ["pkg", "semver", "cc_type"], owner: repoName },
-    { id: "commit_addr", dims: ["cc_type", "pkg"], owner: repoName },
-    { id: "pkg_class", dims: ["pkg", "tier", "runtime"], owner: repoName },
+    { id: 'pkg_version', dims: ['pkg', 'semver'], owner: repoName },
+    { id: 'change_map', dims: ['pkg', 'semver', 'cc_type'], owner: repoName },
+    { id: 'commit_addr', dims: ['cc_type', 'pkg'], owner: repoName },
+    { id: 'pkg_class', dims: ['pkg', 'tier', 'runtime'], owner: repoName },
   ];
 
   // 7. SchemaSnapshot 출력
@@ -141,7 +134,7 @@ export async function gitScan(opts: GitScanOptions): Promise<void> {
 
   await mkdir(opts.output, { recursive: true });
   const outPath = join(opts.output, `${snapshot.id}.json`);
-  await writeFile(outPath, JSON.stringify(snapshot, null, 2), "utf-8");
+  await writeFile(outPath, JSON.stringify(snapshot, null, 2), 'utf-8');
   console.log(`\nSchema → ${outPath}`);
 
   // 8. 부가 메타데이터 (deps, commit counts) — 별도 파일
@@ -160,6 +153,6 @@ export async function gitScan(opts: GitScanOptions): Promise<void> {
   };
 
   const metaPath = join(opts.output, `${snapshot.id}.meta.json`);
-  await writeFile(metaPath, JSON.stringify(meta, null, 2), "utf-8");
+  await writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
   console.log(`Meta  → ${metaPath}`);
 }

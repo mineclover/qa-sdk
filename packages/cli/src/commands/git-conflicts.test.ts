@@ -62,18 +62,11 @@ describe('gitConflicts', { timeout: 60_000 }, () => {
 
     expect(report.analysis.hotspots).toContainEqual({
       path: 'packages/api/schema.sql',
-      branches: [
-        'feature/local',
-        'origin/feature/alpha',
-        'origin/feature/beta',
-      ],
+      branches: ['feature/local', 'origin/feature/alpha', 'origin/feature/beta'],
     });
     expect(report.analysis.hotspots).toContainEqual({
       path: 'packages/cli/src/index.ts',
-      branches: [
-        'feature/local',
-        'worktree:feature/local-docs',
-      ],
+      branches: ['feature/local', 'worktree:feature/local-docs'],
     });
 
     expect(report.currentScopes).toEqual(['packages/api', 'packages/cli']);
@@ -108,9 +101,7 @@ describe('gitConflicts', { timeout: 60_000 }, () => {
 
     expect(report.analysis.workspace).toBeDefined();
     expect(report.analysis.workspace?.relativePath).toBe('packages/cli');
-    expect(report.analysis.workspace?.paths).toEqual([
-      'packages/cli/src/live.ts',
-    ]);
+    expect(report.analysis.workspace?.paths).toEqual(['packages/cli/src/live.ts']);
   });
 });
 
@@ -169,7 +160,14 @@ async function createConflictFixture(): Promise<{
   git(worktreeDir, ['add', 'packages/api/schema.sql', 'packages/cli/src/index.ts']);
   git(worktreeDir, ['commit', '-m', 'feat(cli): local conflict candidate']);
 
-  git(worktreeDir, ['worktree', 'add', '-b', 'feature/local-docs', linkedWorktreeDir, 'origin/main']);
+  git(worktreeDir, [
+    'worktree',
+    'add',
+    '-b',
+    'feature/local-docs',
+    linkedWorktreeDir,
+    'origin/main',
+  ]);
   configureGitIdentity(linkedWorktreeDir);
   await writeRepoFile(linkedWorktreeDir, 'packages/cli/src/index.ts', 'cli local docs\n');
   await writeRepoFile(linkedWorktreeDir, 'docs/guide.md', 'guide local docs\n');
@@ -187,11 +185,7 @@ function configureGitIdentity(cwd: string): void {
   git(cwd, ['config', 'user.email', 'qa-sdk@example.com']);
 }
 
-async function writeRepoFile(
-  root: string,
-  relativePath: string,
-  content: string,
-): Promise<void> {
+async function writeRepoFile(root: string, relativePath: string, content: string): Promise<void> {
   const filePath = join(root, relativePath);
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, content, 'utf-8');

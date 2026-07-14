@@ -21,8 +21,8 @@
  * (prefix, position) 으로 수렴한다.
  */
 
-import type { EntryMetadataStore } from "./entry-metadata-store.js";
-import { CoalescingCache } from "./coalescing-cache.js";
+import type { EntryMetadataStore } from './entry-metadata-store.js';
+import { CoalescingCache } from './coalescing-cache.js';
 
 // ── 옵션 ────────────────────────────────────────────────────
 
@@ -63,17 +63,15 @@ export class MetadataCache {
 
   /** 단일 메타데이터 조회. 캐시 우선. */
   async get(prefix: string, position: number, key: string): Promise<unknown | null> {
-    return this._single.get(
-      this._singleKey(prefix, position, key),
-      () => this._store.get(prefix, position, key),
+    return this._single.get(this._singleKey(prefix, position, key), () =>
+      this._store.get(prefix, position, key),
     );
   }
 
   /** position의 모든 메타데이터 조회. 캐시 우선. */
   async getAll(prefix: string, position: number): Promise<Record<string, unknown>> {
-    return this._all.get(
-      this._allKey(prefix, position),
-      () => this._store.getAll(prefix, position),
+    return this._all.get(this._allKey(prefix, position), () =>
+      this._store.getAll(prefix, position),
     );
   }
 
@@ -84,7 +82,10 @@ export class MetadataCache {
   }
 
   /** prefix의 특정 key를 가진 모든 position 조회. (캐시 미적용 — 범위 쿼리) */
-  async findByKey(prefix: string, key: string): Promise<Array<{ position: number; value: unknown }>> {
+  async findByKey(
+    prefix: string,
+    key: string,
+  ): Promise<Array<{ position: number; value: unknown }>> {
     return this._store.findByKey(prefix, key);
   }
 

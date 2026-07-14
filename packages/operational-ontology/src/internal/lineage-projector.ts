@@ -1,9 +1,9 @@
-import type { PipeGraph } from "@qa-sdk/core";
+import type { PipeGraph } from '@qa-sdk/core';
 
-import type { DataLineageLink, LineageTransformKind } from "./lineage-core.js";
-import { createDataLineageId } from "./lineage-core.js";
-import type { DataFlowField } from "./corridor-core.js";
-import type { LineageProjectionInput } from "./projector-types.js";
+import type { DataLineageLink, LineageTransformKind } from './lineage-core.js';
+import { createDataLineageId } from './lineage-core.js';
+import type { DataFlowField } from './corridor-core.js';
+import type { LineageProjectionInput } from './projector-types.js';
 import {
   buildSchemaColumnIndex,
   createFieldFacetRef,
@@ -11,7 +11,7 @@ import {
   mapFacetRoleToInformationFacetKind,
   parseSchemaColumnNodeId,
   resolveSingleSchemaId,
-} from "./projector-shared.js";
+} from './projector-shared.js';
 
 export function normalizeContractFields(
   fields: Record<string, { type: string; required: boolean; source?: string }> | undefined,
@@ -26,10 +26,8 @@ export function normalizeContractFields(
   }));
 }
 
-export function inferLineageLinksFromPipe(
-  pipe: PipeGraph["pipes"][number],
-): DataLineageLink[] {
-  if (pipe.flow.kind !== "step" || !pipe.flow.dataContract) {
+export function inferLineageLinksFromPipe(pipe: PipeGraph['pipes'][number]): DataLineageLink[] {
+  if (pipe.flow.kind !== 'step' || !pipe.flow.dataContract) {
     return [];
   }
 
@@ -52,11 +50,11 @@ export function inferLineageLinksFromPipe(
       return [];
     }
 
-    const target = createFieldFacetRef(pipe.pipeId, "produces", targetField, "production");
+    const target = createFieldFacetRef(pipe.pipeId, 'produces', targetField, 'production');
     const sources = sourceFields.map((sourceField: string) =>
-      createFieldFacetRef(pipe.pipeId, "consumes", sourceField, "consumption"),
+      createFieldFacetRef(pipe.pipeId, 'consumes', sourceField, 'consumption'),
     );
-    const transform = (hint?.transform ?? "direct") as LineageTransformKind;
+    const transform = (hint?.transform ?? 'direct') as LineageTransformKind;
 
     return [
       {
@@ -68,7 +66,7 @@ export function inferLineageLinksFromPipe(
         target,
         sources,
         transform,
-        expression: hint ? `${targetField} <= ${sourceFields.join(",")}` : undefined,
+        expression: hint ? `${targetField} <= ${sourceFields.join(',')}` : undefined,
         transmissionRef: pipe.pipeId,
       },
     ];
@@ -81,13 +79,11 @@ export function projectLineageToOperationalOntology(
   const schemaColumnIndex = buildSchemaColumnIndex(input.schemas);
 
   return (input.lineages ?? []).map((lineage) => {
-    const targetMeta = schemaColumnIndex.get(
-      `${lineage.target.schemaId}:${lineage.target.column}`,
-    );
+    const targetMeta = schemaColumnIndex.get(`${lineage.target.schemaId}:${lineage.target.column}`);
     const target = createSchemaColumnFacetRef(
       lineage.target.schemaId,
       lineage.target.column,
-      mapFacetRoleToInformationFacetKind(targetMeta?.facetRole, "production"),
+      mapFacetRoleToInformationFacetKind(targetMeta?.facetRole, 'production'),
     );
     const sources = lineage.sources.map((source) =>
       createSchemaColumnFacetRef(
@@ -95,7 +91,7 @@ export function projectLineageToOperationalOntology(
         source.column,
         mapFacetRoleToInformationFacetKind(
           schemaColumnIndex.get(`${source.schemaId}:${source.column}`)?.facetRole,
-          "consumption",
+          'consumption',
         ),
       ),
     );

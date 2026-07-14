@@ -60,9 +60,7 @@
       "purpose": "idempotency",
       "version": "v1",
       "prefix": "role-assignment-idempotency",
-      "segments": [
-        { "name": "idempotencyKey", "pii": false }
-      ],
+      "segments": [{ "name": "idempotencyKey", "pii": false }],
       "ttl": "short"
     }
   ]

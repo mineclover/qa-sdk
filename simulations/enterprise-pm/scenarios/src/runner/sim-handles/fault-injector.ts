@@ -66,9 +66,7 @@ export interface FaultInjectorView {
  * enable: body { enabled: true, params }
  * disable: body { enabled: false }
  */
-export function createFaultInjector(
-  args: FaultInjectorFactoryArgs,
-): FaultInjectorView {
+export function createFaultInjector(args: FaultInjectorFactoryArgs): FaultInjectorView {
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -76,7 +74,7 @@ export function createFaultInjector(
         ...(init ?? {}),
         signal: AbortSignal.timeout(args.timeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
-  const base = args.controllerUrl.replace(/\/$/, "");
+  const base = args.controllerUrl.replace(/\/$/, '');
 
   async function toggle(
     kind: string,
@@ -84,15 +82,13 @@ export function createFaultInjector(
   ): Promise<void> {
     const url = `${base}/admin/fault/${kind}`;
     const res = await fetchImpl(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(
-        `fault-injector POST ${url} failed: status=${res.status} body=${body}`,
-      );
+      throw new Error(`fault-injector POST ${url} failed: status=${res.status} body=${body}`);
     }
   }
 
@@ -110,12 +106,12 @@ export function createFaultInjector(
   }
 
   return {
-    schemaBreak: { on: () => on("schema-break") },
-    auditAnomaly: { on: () => on("audit-anomaly") },
-    dbPool: { tighten: (pool) => on("db-pool-pressure", { pool }) },
-    replicationLag: { inject: (lagMs) => on("replication-lag", { lagMs }) },
-    perfWarn: { on: () => on("perf-warn") },
-    pubsubInvalidate: { drop: () => on("pubsub-invalidate-drop") },
-    healthyMetrics: { on: () => on("healthy-metrics") },
+    schemaBreak: { on: () => on('schema-break') },
+    auditAnomaly: { on: () => on('audit-anomaly') },
+    dbPool: { tighten: (pool) => on('db-pool-pressure', { pool }) },
+    replicationLag: { inject: (lagMs) => on('replication-lag', { lagMs }) },
+    perfWarn: { on: () => on('perf-warn') },
+    pubsubInvalidate: { drop: () => on('pubsub-invalidate-drop') },
+    healthyMetrics: { on: () => on('healthy-metrics') },
   };
 }

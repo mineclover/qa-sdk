@@ -13,23 +13,29 @@
  * @layer 인코딩 (Encoding)
  */
 
-import type { ValidationErrorDetail } from "./shared/errors.js";
+import type { ValidationErrorDetail } from './shared/errors.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  축 어휘 — DEMO_CATALOG.axes와 동기화
 // ═══════════════════════════════════════════════════════════════
 
 /** validation_layer 축 entries (L0/L1/L2) */
-const VALIDATION_LAYERS = ["vocabulary", "structural", "constraint"] as const;
+const VALIDATION_LAYERS = ['vocabulary', 'structural', 'constraint'] as const;
 
 /** constraint_rule 축 entries */
 const CONSTRAINT_RULES = [
-  "required", "maxCount", "minCount", "requiredIf",
-  "exclusive", "type", "multi", "unknownAxis",
+  'required',
+  'maxCount',
+  'minCount',
+  'requiredIf',
+  'exclusive',
+  'type',
+  'multi',
+  'unknownAxis',
 ] as const;
 
 /** verdict_result 축 entries (기존 축 재사용) */
-const VERDICT_RESULTS = ["pass", "fail", "warn", "degraded", "unknown"] as const;
+const VERDICT_RESULTS = ['pass', 'fail', 'warn', 'degraded', 'unknown'] as const;
 
 // ═══════════════════════════════════════════════════════════════
 //  좌표 타입
@@ -59,13 +65,13 @@ function _layerToEntry(layer: 0 | 1 | 2): string {
 /** rule 문자열 → constraint_rule 축 인덱스 (0-based) */
 function ruleToIndex(rule: string): number {
   const idx = (CONSTRAINT_RULES as readonly string[]).indexOf(rule);
-  return idx >= 0 ? idx : (CONSTRAINT_RULES as readonly string[]).indexOf("unknownAxis");
+  return idx >= 0 ? idx : (CONSTRAINT_RULES as readonly string[]).indexOf('unknownAxis');
 }
 
 /** verdict 문자열 → verdict_result 축 인덱스 */
 function verdictToIndex(verdict: string): number {
   const idx = (VERDICT_RESULTS as readonly string[]).indexOf(verdict);
-  return idx >= 0 ? idx : (VERDICT_RESULTS as readonly string[]).indexOf("unknown");
+  return idx >= 0 ? idx : (VERDICT_RESULTS as readonly string[]).indexOf('unknown');
 }
 
 /**
@@ -79,7 +85,7 @@ export function mapErrorToCoordinate(
     schemaRef: options?.schemaRef ?? 0,
     validationLayer: error.layer,
     constraintRule: ruleToIndex(error.rule),
-    verdictResult: verdictToIndex("fail"),
+    verdictResult: verdictToIndex('fail'),
   };
 }
 
@@ -92,15 +98,17 @@ export function mapValidationToCoordinates(
   options?: { schemaRef?: number },
 ): ValidationCoordinate[] {
   if (errors.length === 0) {
-    return [{
-      schemaRef: options?.schemaRef ?? 0,
-      validationLayer: 0,
-      constraintRule: 0,
-      verdictResult: verdictToIndex("pass"),
-    }];
+    return [
+      {
+        schemaRef: options?.schemaRef ?? 0,
+        validationLayer: 0,
+        constraintRule: 0,
+        verdictResult: verdictToIndex('pass'),
+      },
+    ];
   }
 
-  return errors.map(e => mapErrorToCoordinate(e, options));
+  return errors.map((e) => mapErrorToCoordinate(e, options));
 }
 
 /**
@@ -112,9 +120,9 @@ export function decodeCoordinate(coord: ValidationCoordinate): {
   verdict: string;
 } {
   return {
-    layer: VALIDATION_LAYERS[coord.validationLayer] ?? "unknown",
-    rule: CONSTRAINT_RULES[coord.constraintRule] ?? "unknown",
-    verdict: VERDICT_RESULTS[coord.verdictResult] ?? "unknown",
+    layer: VALIDATION_LAYERS[coord.validationLayer] ?? 'unknown',
+    rule: CONSTRAINT_RULES[coord.constraintRule] ?? 'unknown',
+    verdict: VERDICT_RESULTS[coord.verdictResult] ?? 'unknown',
   };
 }
 

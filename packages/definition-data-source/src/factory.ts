@@ -10,25 +10,22 @@
  * 4. 자동: DB 파일 존재 시 local, 아니면 server ping → 성공 시 server, 실패 시 scan
  */
 
-import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import type { DefDataSource } from "definition-catalog";
-import { LocalDataSource } from "./local-data-source.js";
-import { ScanDataSource } from "./scan-data-source.js";
-import { ServerDataSource } from "./server-data-source.js";
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import type { DefDataSource } from 'definition-catalog';
+import { LocalDataSource } from './local-data-source.js';
+import { ScanDataSource } from './scan-data-source.js';
+import { ServerDataSource } from './server-data-source.js';
 
 /** 기본 DB 경로 후보 */
-const DB_PATHS = [
-  "data/definition-service.sqlite",
-  "../data/definition-service.sqlite",
-];
+const DB_PATHS = ['data/definition-service.sqlite', '../data/definition-service.sqlite'];
 
 /** 기본 서버 URL */
-const DEFAULT_SERVER_URL = "http://localhost:3700";
+const DEFAULT_SERVER_URL = 'http://localhost:3700';
 
 export interface DataSourceOptions {
   /** 강제 모드 */
-  mode?: "local" | "server" | "scan";
+  mode?: 'local' | 'server' | 'scan';
   /** DB 파일 경로 (local 모드) */
   dbPath?: string;
   /** 서버 URL (server 모드) */
@@ -55,7 +52,7 @@ function findWorkspaceRoot(startDir: string): string {
   let current = resolve(startDir);
 
   while (true) {
-    if (existsSync(join(current, "pnpm-workspace.yaml")) && existsSync(join(current, "docs"))) {
+    if (existsSync(join(current, 'pnpm-workspace.yaml')) && existsSync(join(current, 'docs'))) {
       return current;
     }
     const parent = dirname(current);
@@ -72,23 +69,28 @@ function findWorkspaceRoot(startDir: string): string {
 export async function createDataSource(options: DataSourceOptions = {}): Promise<DefDataSource> {
   const cwd = options.rootDir ?? findWorkspaceRoot(process.cwd());
   const serverUrl = options.serverUrl ?? process.env.DEF_SERVICE_URL ?? DEFAULT_SERVER_URL;
-  const docsDir = options.docsDir ?? "docs";
+  const docsDir = options.docsDir ?? 'docs';
   const docsPath = join(cwd, docsDir);
 
   // 명시적 모드
-  if (options.mode === "server") {
+  if (options.mode === 'server') {
     const server = new ServerDataSource(serverUrl);
-    if (!await server.ping()) {
-      throw new Error(`definition-service (${serverUrl}) 연결 실패. 서비스가 기동 중인지 확인하세요.`);
+    if (!(await server.ping())) {
+      throw new Error(
+        `definition-service (${serverUrl}) 연결 실패. 서비스가 기동 중인지 확인하세요.`,
+      );
     }
     return server;
   }
-  if (options.mode === "local") {
+  if (options.mode === 'local') {
     const dbPath = options.dbPath ?? findDbPath(cwd);
-    if (!dbPath) throw new Error("DB 파일을 찾을 수 없습니다. DEF_DB_PATH를 설정하거나 POST /sync를 실행하세요.");
+    if (!dbPath)
+      throw new Error(
+        'DB 파일을 찾을 수 없습니다. DEF_DB_PATH를 설정하거나 POST /sync를 실행하세요.',
+      );
     return new LocalDataSource(dbPath, cwd);
   }
-  if (options.mode === "scan") {
+  if (options.mode === 'scan') {
     if (!existsSync(docsPath)) {
       throw new Error(`scan 모드 실패: 문서 디렉토리가 없습니다 (${docsPath}).`);
     }
@@ -108,14 +110,16 @@ export async function createDataSource(options: DataSourceOptions = {}): Promise
   }
 
   if (existsSync(docsPath)) {
-    console.warn(`[scan] definition DB와 service가 모두 없어 read-only scan fallback을 사용합니다 (${docsPath}).`);
+    console.warn(
+      `[scan] definition DB와 service가 모두 없어 read-only scan fallback을 사용합니다 (${docsPath}).`,
+    );
     return ScanDataSource.create(cwd, docsDir);
   }
 
   throw new Error(
-    "데이터 소스를 찾을 수 없습니다.\n" +
-    "  - DB 파일: data/definition-service.sqlite (POST /sync로 생성)\n" +
-    "  - 서버: definition-service가 :3700에서 응답하지 않음\n" +
-    `  - 문서 디렉토리: ${docsPath} 없음`,
+    '데이터 소스를 찾을 수 없습니다.\n' +
+      '  - DB 파일: data/definition-service.sqlite (POST /sync로 생성)\n' +
+      '  - 서버: definition-service가 :3700에서 응답하지 않음\n' +
+      `  - 문서 디렉토리: ${docsPath} 없음`,
   );
 }

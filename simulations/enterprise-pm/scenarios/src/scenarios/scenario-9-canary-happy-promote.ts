@@ -5,30 +5,30 @@
 // 단언: weight 5→25→50→100 단조 증가, sticky 일관성 100%, catalog v3 retired·v4 stable 전이 1회.
 // spec 05 §3.1 (a) 압축 예시 — `safety.filter(d => d.verdict === "promote").map(d => d.action)` deepEqual.
 
-import { equal, deepEqual, ok } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
+import { equal, deepEqual, ok } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
 import {
   getAuditFetcher,
   waitForCycles,
   type SafetyDecisionRecordView,
-} from "../lib/audit-fetcher.js";
+} from '../lib/audit-fetcher.js';
 import {
   assertSafetyVerdict,
   assertSingleDecisionPerCyclePass,
-} from "../lib/assertions/decision-assertions.js";
+} from '../lib/assertions/decision-assertions.js';
 
 interface S9Ctx {
   initialCatalog: { v3: string; v4: string };
 }
 
 export const scenario9CanaryHappyPromote: Scenario<S9Ctx> = {
-  name: "scenario-9-canary-happy-promote",
-  description: "v2 호환 + 자연 트래픽 → 5→25→50→100 단조 promote + catalog 전이",
+  name: 'scenario-9-canary-happy-promote',
+  description: 'v2 호환 + 자연 트래픽 → 5→25→50→100 단조 promote + catalog 전이',
   validates: [
-    "Pass 1 promote sequence (5→25→50→100)",
-    "spec 01 §3 dwellTime 준수",
-    "spec 02 catalog 상태 전이 (v3 retired, v4 stable)",
-    "spec 02 sticky session 일관성",
+    'Pass 1 promote sequence (5→25→50→100)',
+    'spec 01 §3 dwellTime 준수',
+    'spec 02 catalog 상태 전이 (v3 retired, v4 stable)',
+    'spec 02 sticky session 일관성',
   ],
 
   async setup() {
@@ -39,10 +39,10 @@ export const scenario9CanaryHappyPromote: Scenario<S9Ctx> = {
         };
       }
     ).__simCatalogStore;
-    if (!cs) throw new Error("__simCatalogStore not bound");
+    if (!cs) throw new Error('__simCatalogStore not bound');
     const initialCatalog = await cs.getStates();
-    equal(initialCatalog.v3, "stable", "v3 must start as stable");
-    equal(initialCatalog.v4, "undeployed", "v4 must start as undeployed");
+    equal(initialCatalog.v3, 'stable', 'v3 must start as stable');
+    equal(initialCatalog.v4, 'undeployed', 'v4 must start as undeployed');
     return { initialCatalog };
   },
 
@@ -53,9 +53,7 @@ export const scenario9CanaryHappyPromote: Scenario<S9Ctx> = {
       data: { cycleIds },
       traceIds: [],
       stepCount: cycleIds.length,
-      operatorHints: [
-        `pnpm sim:audit query --cycle-id ${cycleIds.at(-1) ?? ""}`,
-      ],
+      operatorHints: [`pnpm sim:audit query --cycle-id ${cycleIds.at(-1) ?? ''}`],
     };
   },
 
@@ -66,31 +64,29 @@ export const scenario9CanaryHappyPromote: Scenario<S9Ctx> = {
     const decisions = await audit.queryDecisions({ cycleIds });
     assertSingleDecisionPerCyclePass(decisions);
 
-    const safety = decisions.filter(
-      (d): d is SafetyDecisionRecordView => d.pass === "safety",
-    );
+    const safety = decisions.filter((d): d is SafetyDecisionRecordView => d.pass === 'safety');
 
     // spec 05 §3.1 압축 예시 — promote action 시퀀스 deepEqual.
     deepEqual(
-      safety.filter((d) => d.verdict === "promote").map((d) => d.action),
+      safety.filter((d) => d.verdict === 'promote').map((d) => d.action),
       [
-        { kind: "weight-update", weight: 5, revision: 1 },
-        { kind: "weight-update", weight: 25, revision: 2 },
-        { kind: "weight-update", weight: 50, revision: 3 },
-        { kind: "weight-update", weight: 100, revision: 4 },
+        { kind: 'weight-update', weight: 5, revision: 1 },
+        { kind: 'weight-update', weight: 25, revision: 2 },
+        { kind: 'weight-update', weight: 50, revision: 3 },
+        { kind: 'weight-update', weight: 100, revision: 4 },
       ],
-      "promote weight sequence 5→25→50→100 with monotonic revision",
+      'promote weight sequence 5→25→50→100 with monotonic revision',
     );
 
-    for (const d of safety.filter((d) => d.verdict === "promote")) {
+    for (const d of safety.filter((d) => d.verdict === 'promote')) {
       assertSafetyVerdict(d, {
-        verdict: "promote",
+        verdict: 'promote',
         categoryVerdicts: {
-          perf: "PASS",
-          compatibility: "PASS",
-          decisionQuality: "PASS",
-          auditSafety: "PASS",
-          replicationHealth: "PASS",
+          perf: 'PASS',
+          compatibility: 'PASS',
+          decisionQuality: 'PASS',
+          auditSafety: 'PASS',
+          replicationHealth: 'PASS',
         },
         minConfidence: 0.6,
       });
@@ -105,8 +101,8 @@ export const scenario9CanaryHappyPromote: Scenario<S9Ctx> = {
       }
     ).__simCatalogStore;
     const catalog = await cs.getStates();
-    equal(catalog.v3, "retired", "v3 must transition to retired");
-    equal(catalog.v4, "stable", "v4 must transition to stable");
+    equal(catalog.v3, 'retired', 'v3 must transition to retired');
+    equal(catalog.v4, 'stable', 'v4 must transition to stable');
 
     // sticky 일관성 — Plan D gateway routing user→version sticky 보장.
     const stickyMetrics = (

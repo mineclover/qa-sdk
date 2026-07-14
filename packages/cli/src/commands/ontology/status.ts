@@ -7,31 +7,22 @@ import {
   listOperationalOntologySnapshotProjections,
   loadLatestOperationalOntologySnapshotViewByScope,
   loadOperationalOntologySnapshotView,
-} from "operational-ontology/persistence";
+} from 'operational-ontology/persistence';
 
-import {
-  getStorePath,
-  loadStore,
-  parseFlags,
-  printJson,
-  printTable,
-} from "./support.js";
+import { getStorePath, loadStore, parseFlags, printJson, printTable } from './support.js';
 
 export async function cmdSnapshotList(rest: string[]): Promise<void> {
   const { flags } = parseFlags(rest);
   const store = await loadStore(getStorePath(flags));
-  const projections = await listOperationalOntologySnapshotProjections(
-    store,
-    flags["scope"],
-  );
+  const projections = await listOperationalOntologySnapshotProjections(store, flags['scope']);
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson(projections);
     return;
   }
 
   if (projections.length === 0) {
-    console.log("Snapshot 없음");
+    console.log('Snapshot 없음');
     return;
   }
 
@@ -42,11 +33,11 @@ export async function cmdSnapshotList(rest: string[]): Promise<void> {
 
 export async function cmdStatus(rest: string[]): Promise<void> {
   const { flags } = parseFlags(rest);
-  const scope = flags["scope"];
-  const snapshotId = flags["snapshot"];
+  const scope = flags['scope'];
+  const snapshotId = flags['snapshot'];
   if (!scope && !snapshotId) {
     console.error(
-      "Usage: qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]",
+      'Usage: qa-sdk ontology status [--scope <scope> | --snapshot <id>] [--store <file>] [--json] [--table]',
     );
     return;
   }
@@ -93,28 +84,28 @@ export async function cmdStatus(rest: string[]): Promise<void> {
       : null,
   };
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson(status);
     return;
   }
 
-  if (flags["table"] === "true") {
+  if (flags['table'] === 'true') {
     printTable(
       [
-        "scope",
-        "snapshot",
-        "builtAt",
-        "snapshots",
-        "topology",
-        "corridors",
-        "flows",
-        "checkpoints",
-        "junctions",
-        "routes",
-        "traversals",
+        'scope',
+        'snapshot',
+        'builtAt',
+        'snapshots',
+        'topology',
+        'corridors',
+        'flows',
+        'checkpoints',
+        'junctions',
+        'routes',
+        'traversals',
       ],
       [
-        status.scope ?? "-",
+        status.scope ?? '-',
         status.snapshotId,
         status.builtAt,
         String(status.snapshotCount),
@@ -129,9 +120,9 @@ export async function cmdStatus(rest: string[]): Promise<void> {
     );
 
     if (status.latestDiff) {
-      console.log("");
+      console.log('');
       printTable(
-        ["diff_from", "diff_to", "added", "removed", "changed", "unchanged"],
+        ['diff_from', 'diff_to', 'added', 'removed', 'changed', 'unchanged'],
         [
           status.latestDiff.fromSnapshotId,
           status.latestDiff.toSnapshotId,
@@ -170,7 +161,7 @@ export async function cmdSnapshotShow(rest: string[]): Promise<void> {
   const { positional, flags } = parseFlags(rest);
   const snapshotId = positional[0];
   if (!snapshotId) {
-    console.error("Usage: qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]");
+    console.error('Usage: qa-sdk ontology snapshot show <snapshot-id> [--store <file>] [--json]');
     return;
   }
 
@@ -182,7 +173,7 @@ export async function cmdSnapshotShow(rest: string[]): Promise<void> {
     return;
   }
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson(view);
     return;
   }
@@ -200,24 +191,20 @@ export async function cmdSnapshotDiff(rest: string[]): Promise<void> {
   const toSnapshotId = positional[1];
   if (!fromSnapshotId || !toSnapshotId) {
     console.error(
-      "Usage: qa-sdk ontology snapshot diff <from-snapshot-id> <to-snapshot-id> [--store <file>] [--json]",
+      'Usage: qa-sdk ontology snapshot diff <from-snapshot-id> <to-snapshot-id> [--store <file>] [--json]',
     );
     return;
   }
 
   const store = await loadStore(getStorePath(flags));
-  const diff = await diffOperationalOntologySnapshots(
-    store,
-    fromSnapshotId,
-    toSnapshotId,
-  );
+  const diff = await diffOperationalOntologySnapshots(store, fromSnapshotId, toSnapshotId);
   if (!diff) {
     console.error(`Snapshot diff 실패: ${fromSnapshotId} -> ${toSnapshotId}`);
     process.exitCode = 1;
     return;
   }
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson(diff);
     return;
   }
@@ -233,10 +220,10 @@ export async function cmdSnapshotDiff(rest: string[]): Promise<void> {
 
 export async function cmdSnapshotDiffLatest(rest: string[]): Promise<void> {
   const { flags } = parseFlags(rest);
-  const scope = flags["scope"];
+  const scope = flags['scope'];
   if (!scope) {
     console.error(
-      "Usage: qa-sdk ontology snapshot diff-latest --scope <scope> [--store <file>] [--json]",
+      'Usage: qa-sdk ontology snapshot diff-latest --scope <scope> [--store <file>] [--json]',
     );
     return;
   }
@@ -249,15 +236,13 @@ export async function cmdSnapshotDiffLatest(rest: string[]): Promise<void> {
     return;
   }
 
-  if (flags["json"] === "true") {
+  if (flags['json'] === 'true') {
     printJson(diff);
     return;
   }
 
   console.log(`Snapshot diff-latest: ${scope}`);
-  console.log(
-    `  ${diff.fromSnapshotId} -> ${diff.toSnapshotId}`,
-  );
+  console.log(`  ${diff.fromSnapshotId} -> ${diff.toSnapshotId}`);
   console.log(
     `  added=${diff.summary.added} removed=${diff.summary.removed} changed=${diff.summary.changed} unchanged=${diff.summary.unchanged}`,
   );

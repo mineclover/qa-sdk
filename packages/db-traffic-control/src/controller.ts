@@ -9,13 +9,13 @@ import type {
   TrafficControllerSnapshot,
   TrafficMetricsCollector,
   Verdict,
-} from "./types.js";
-import { matchBudget } from "./budget.js";
-import { ConcurrencyLimiter, GLOBAL_CONCURRENCY_KEY } from "./concurrency-limiter.js";
-import { RateLimiter } from "./rate-limiter.js";
+} from './types.js';
+import { matchBudget } from './budget.js';
+import { ConcurrencyLimiter, GLOBAL_CONCURRENCY_KEY } from './concurrency-limiter.js';
+import { RateLimiter } from './rate-limiter.js';
 
 const ALLOW_DECISION: QueryDecision = {
-  verdict: "allow",
+  verdict: 'allow',
   budgetId: null,
   budgetName: null,
   enforced: false,
@@ -77,7 +77,7 @@ export class TrafficController {
     if (budget.limits.maxQps !== undefined) {
       const allowed = this.rate.tryConsume(budget.id);
       if (!allowed) {
-        const decision = this.buildDecision(budget, "throttled", "QPS 초과", 0);
+        const decision = this.buildDecision(budget, 'throttled', 'QPS 초과', 0);
         return { decision, release: () => {} };
       }
     }
@@ -91,7 +91,7 @@ export class TrafficController {
       if (!budgetRelease) {
         globalRelease(); // 전역 슬롯 반환
         const waitedMs = Date.now() - startWait;
-        const decision = this.buildDecision(budget, "rejected", "동시성 초과", waitedMs);
+        const decision = this.buildDecision(budget, 'rejected', '동시성 초과', waitedMs);
         return { decision, release: () => {} };
       }
 
@@ -100,13 +100,13 @@ export class TrafficController {
         globalRelease();
       };
       const waitedMs = Date.now() - startWait;
-      const decision = this.buildDecision(budget, "allow", undefined, waitedMs);
+      const decision = this.buildDecision(budget, 'allow', undefined, waitedMs);
       return { decision, release };
     }
 
     // 제한 없는 budget (매칭만)
     const globalRelease = this.tryGlobalAcquire();
-    const decision = this.buildDecision(budget, "allow", undefined, 0);
+    const decision = this.buildDecision(budget, 'allow', undefined, 0);
     return { decision, release: globalRelease };
   }
 
@@ -114,11 +114,7 @@ export class TrafficController {
    * 쿼리 실행 후 호출. 메트릭 기록.
    * release()는 별도로 호출되어야 함 (beforeQuery 반환값).
    */
-  afterQuery(
-    attrs: QueryAttributes,
-    decision: QueryDecision,
-    durationMs: number,
-  ): void {
+  afterQuery(attrs: QueryAttributes, decision: QueryDecision, durationMs: number): void {
     if (!this.collector) return;
 
     const event: QueryMetricEvent = {
@@ -155,7 +151,7 @@ export class TrafficController {
   }
 
   /** Budget 모드 전환 (warn ↔ enforce) */
-  setBudgetMode(budgetId: string, mode: "warn" | "enforce"): void {
+  setBudgetMode(budgetId: string, mode: 'warn' | 'enforce'): void {
     const budget = this.budgets.find((b) => b.id === budgetId);
     if (!budget) return;
     // BudgetDef는 readonly이므로 교체
@@ -212,7 +208,7 @@ export class TrafficController {
       budgetId: budget.id,
       budgetName: budget.name,
       reason,
-      enforced: verdict !== "allow" && budget.mode === "enforce",
+      enforced: verdict !== 'allow' && budget.mode === 'enforce',
       waitedMs,
     };
   }

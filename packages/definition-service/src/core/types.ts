@@ -4,7 +4,7 @@
  * 도메인 타입 — HTTP/DB 무관한 순수 데이터 구조
  */
 
-import type { QualityGateSpec } from "work-domain";
+import type { QualityGateSpec } from 'work-domain';
 
 /** 문서 메타데이터 레코드 (최신 버전) */
 export interface DocRecord {
@@ -48,14 +48,14 @@ export interface DocRecord {
 /** 문서 이력 레코드 (body 포함) */
 export interface DocHistoryRecord extends DocRecord {
   body: string;
-  changeType: "created" | "updated" | "marker_edit" | "metadata_edit";
+  changeType: 'created' | 'updated' | 'marker_edit' | 'metadata_edit';
 }
 
 export interface CodeReferenceRecord {
   codePath: string;
   docId: string;
-  relationType: "boundary" | "doc";
-  sourceKind: "code_comment" | "doc_frontmatter";
+  relationType: 'boundary' | 'doc';
+  sourceKind: 'code_comment' | 'doc_frontmatter';
   symbol?: string;
   line?: number;
 }

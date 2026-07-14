@@ -1,19 +1,29 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, UseFilters } from "@nestjs/common";
-import { z } from "zod";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { SubscriptionUseCase } from "../../application/use-cases/subscription.use-case.js";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+  UseFilters,
+} from '@nestjs/common';
+import { z } from 'zod';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { SubscriptionUseCase } from '../../application/use-cases/subscription.use-case.js';
 import {
   SubscriptionReadModelQuery,
   type SubscriptionDetailReadModel,
-} from "../../application/queries/subscription-read-model.query.js";
+} from '../../application/queries/subscription-read-model.query.js';
 
 const createSchema = z.object({
   userId: z.string().min(1),
   eventType: z.string().min(1),
-  channel: z.enum(["in_app", "email"]),
+  channel: z.enum(['in_app', 'email']),
   isActive: z.boolean().optional(),
 });
 
@@ -29,32 +39,29 @@ export class SubscriptionController {
     @Inject(SubscriptionReadModelQuery) private readonly readModel: SubscriptionReadModelQuery,
   ) {}
 
-  @Post("subscriptions")
+  @Post('subscriptions')
   async create(@Body() body: unknown) {
     return this.useCase.create(createSchema.parse(body));
   }
 
-  @Get("users/:userId/subscriptions")
-  async listForUser(@Param("userId") userId: string): Promise<SubscriptionDetailReadModel[]> {
+  @Get('users/:userId/subscriptions')
+  async listForUser(@Param('userId') userId: string): Promise<SubscriptionDetailReadModel[]> {
     return this.readModel.listForUser(userId);
   }
 
-  @Put("subscriptions/:userId/:eventType/active")
+  @Put('subscriptions/:userId/:eventType/active')
   async setActive(
-    @Param("userId") userId: string,
-    @Param("eventType") eventType: string,
+    @Param('userId') userId: string,
+    @Param('eventType') eventType: string,
     @Body() body: unknown,
   ) {
     const { isActive } = activeSchema.parse(body);
     return this.useCase.setActive({ userId, eventType, isActive });
   }
 
-  @Delete("subscriptions/:userId/:eventType")
-  async remove(
-    @Param("userId") userId: string,
-    @Param("eventType") eventType: string,
-  ) {
+  @Delete('subscriptions/:userId/:eventType')
+  async remove(@Param('userId') userId: string, @Param('eventType') eventType: string) {
     await this.useCase.delete({ userId, eventType });
-    return { status: "deleted" };
+    return { status: 'deleted' };
   }
 }

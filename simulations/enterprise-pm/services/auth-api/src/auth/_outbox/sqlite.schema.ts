@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite — auth 도메인의 ONE shared outbox table.
@@ -11,20 +11,20 @@ import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
  * Phase 1 caveat 5: snake_case 컬럼명 + 단일 outbox 테이블.
  */
 export const authOutboxEvents = sqliteTable(
-  "auth_outbox_events",
+  'auth_outbox_events',
   {
-    id: text("id").primaryKey(),
-    aggregate_id: text("aggregate_id").notNull(),
-    event_name: text("event_name").notNull(),
-    event_version: integer("event_version").notNull(),
-    payload: text("payload").notNull(),
-    occurred_at: integer("occurred_at").notNull(),
-    scope_id: text("scope_id").notNull(),
-    status: text("status", { enum: ["pending", "published", "failed"] })
+    id: text('id').primaryKey(),
+    aggregate_id: text('aggregate_id').notNull(),
+    event_name: text('event_name').notNull(),
+    event_version: integer('event_version').notNull(),
+    payload: text('payload').notNull(),
+    occurred_at: integer('occurred_at').notNull(),
+    scope_id: text('scope_id').notNull(),
+    status: text('status', { enum: ['pending', 'published', 'failed'] })
       .notNull()
-      .default("pending"),
+      .default('pending'),
   },
-  (t) => [index("idx_auth_outbox_status").on(t.status, t.occurred_at)],
+  (t) => [index('idx_auth_outbox_status').on(t.status, t.occurred_at)],
 );
 
 export const SIM_AUTH_OUTBOX_SQLITE_DDL = `

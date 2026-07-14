@@ -434,7 +434,10 @@ h3 {
   border-radius: var(--radius-small);
   padding: 9px 10px;
   outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .field input:focus,

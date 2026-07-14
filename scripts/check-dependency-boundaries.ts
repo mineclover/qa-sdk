@@ -1,26 +1,29 @@
-import { scanAndClassify, type ClassifiedPackage } from "../packages/package-classifier/src/pkg-classifier.js";
-import { resolve } from "node:path";
+import {
+  scanAndClassify,
+  type ClassifiedPackage,
+} from '../packages/package-classifier/src/pkg-classifier.js';
+import { resolve } from 'node:path';
 
 const TIER_ORDER: Record<string, number> = {
-  "consumer": 5,
-  "bridge": 4,
-  "logic": 3,
-  "kernel": 2,
-  "foundation": 1,
+  consumer: 5,
+  bridge: 4,
+  logic: 3,
+  kernel: 2,
+  foundation: 1,
 };
 
 async function main() {
-  const isJson = process.argv.includes("--json");
+  const isJson = process.argv.includes('--json');
   const root = resolve(process.cwd());
   const pkgs = await scanAndClassify(root);
-  const pkgMap = new Map<string, ClassifiedPackage>(pkgs.map(p => [p.displayName, p]));
+  const pkgMap = new Map<string, ClassifiedPackage>(pkgs.map((p) => [p.displayName, p]));
 
   let violations = 0;
   const results: any[] = [];
 
   for (const pkg of pkgs) {
     const currentTierRank = TIER_ORDER[pkg.tier] || 0;
-    
+
     for (const depName of pkg.deps) {
       const dep = pkgMap.get(depName);
       if (!dep) continue;
@@ -29,14 +32,16 @@ async function main() {
 
       if (depTierRank > currentTierRank) {
         if (!isJson) {
-          console.error(`❌ [Tier Violation] "${pkg.displayName}" (${pkg.tier}) cannot depend on "${dep.displayName}" (${dep.tier})`);
+          console.error(
+            `❌ [Tier Violation] "${pkg.displayName}" (${pkg.tier}) cannot depend on "${dep.displayName}" (${dep.tier})`,
+          );
         }
         results.push({
-          type: "tier-violation",
+          type: 'tier-violation',
           package: pkg.displayName,
           tier: pkg.tier,
           dependency: dep.displayName,
-          depTier: dep.tier
+          depTier: dep.tier,
         });
         violations++;
       }
@@ -52,11 +57,11 @@ async function main() {
     console.error(`\nTotal ${violations} tier violations found.`);
     process.exit(1);
   } else {
-    console.log("✅ No tier violations found.");
+    console.log('✅ No tier violations found.');
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

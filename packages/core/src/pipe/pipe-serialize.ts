@@ -7,8 +7,8 @@
  * JSON 기반. 역직렬화 시 validatePipeSpec/validatePipeGraph로 검증.
  */
 
-import type { PipeSpec, PipeGraph } from "../types/pipe-spec.js";
-import { validatePipeSpec, validatePipeGraph } from "./pipe-validate.js";
+import type { PipeSpec, PipeGraph } from '../types/pipe-spec.js';
+import { validatePipeSpec, validatePipeGraph } from './pipe-validate.js';
 
 /** PipeSpec → JSON 문자열 */
 export function serializePipeSpec(spec: PipeSpec): string {
@@ -30,13 +30,13 @@ export function deserializePipeSpec(json: string): PipeSpec {
     ports: parsed.ports,
   };
   if (!normalized.pipeId || !normalized.flow) {
-    throw new Error("유효하지 않은 PipeSpec: pipeId 또는 flow 누락");
+    throw new Error('유효하지 않은 PipeSpec: pipeId 또는 flow 누락');
   }
   const issues = validatePipeSpec(normalized);
-  const errors = issues.filter(i => i.severity === "error");
+  const errors = issues.filter((i) => i.severity === 'error');
   if (errors.length > 0) {
     throw new Error(
-      `PipeSpec 검증 실패 (${errors.length}건):\n${errors.map(e => `  ${e.path}: ${e.message}`).join("\n")}`,
+      `PipeSpec 검증 실패 (${errors.length}건):\n${errors.map((e) => `  ${e.path}: ${e.message}`).join('\n')}`,
     );
   }
   return normalized;
@@ -62,13 +62,13 @@ export function deserializePipeGraph(json: string): PipeGraph {
     connections: parsed.connections,
   };
   if (!normalized.graphId || !normalized.pipes || !normalized.entryPipeId) {
-    throw new Error("유효하지 않은 PipeGraph: graphId, pipes, 또는 entryPipeId 누락");
+    throw new Error('유효하지 않은 PipeGraph: graphId, pipes, 또는 entryPipeId 누락');
   }
   const issues = validatePipeGraph(normalized);
-  const errors = issues.filter(i => i.severity === "error");
+  const errors = issues.filter((i) => i.severity === 'error');
   if (errors.length > 0) {
     throw new Error(
-      `PipeGraph 검증 실패 (${errors.length}건):\n${errors.map(e => `  ${e.path}: ${e.message}`).join("\n")}`,
+      `PipeGraph 검증 실패 (${errors.length}건):\n${errors.map((e) => `  ${e.path}: ${e.message}`).join('\n')}`,
     );
   }
   return normalized;

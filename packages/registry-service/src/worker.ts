@@ -9,12 +9,14 @@
 export default {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname === "/health") {
-      return Response.json({ ok: true, service: "registry-service", runtime: "worker-shim" });
+    if (url.pathname === '/health') {
+      return Response.json({ ok: true, service: 'registry-service', runtime: 'worker-shim' });
     }
 
     return Response.json(
-      { error: "registry-service Cloudflare Worker runtime is no longer supported in this package" },
+      {
+        error: 'registry-service Cloudflare Worker runtime is no longer supported in this package',
+      },
       { status: 501 },
     );
   },

@@ -15,28 +15,22 @@
 //  Effect Kind — 정규 vocabulary (자유 문자열 금지)
 // ═══════════════════════════════════════════════════════════════
 
-export type EffectKind =
-  | "create"
-  | "update"
-  | "move"
-  | "consume"
-  | "open"
-  | "close";
+export type EffectKind = 'create' | 'update' | 'move' | 'consume' | 'open' | 'close';
 
 export const EFFECT_KINDS: readonly EffectKind[] = [
-  "create",
-  "update",
-  "move",
-  "consume",
-  "open",
-  "close",
+  'create',
+  'update',
+  'move',
+  'consume',
+  'open',
+  'close',
 ] as const;
 
 // ═══════════════════════════════════════════════════════════════
 //  Match — 좌표 패턴 매칭
 // ═══════════════════════════════════════════════════════════════
 
-export type MatchMode = "single" | "ordered" | "unordered" | "windowed";
+export type MatchMode = 'single' | 'ordered' | 'unordered' | 'windowed';
 
 /** 좌표 패턴. DEMO_CATALOG의 축 이름 → 값 매핑 */
 export interface CoordinatePattern {

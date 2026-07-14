@@ -10,11 +10,11 @@
  * 금지: position 순서 변경 (moved), 완전 삭제 (removed).
  */
 
-import type { EntityId } from "./types.js";
+import type { EntityId } from './types.js';
 
 // ── 타입 ──────────────────────────────────────────────────
 
-export type MigrationChangeType = "modified" | "deactivated";
+export type MigrationChangeType = 'modified' | 'deactivated';
 
 export interface MigrationMapping {
   readonly fromVersionId: string;

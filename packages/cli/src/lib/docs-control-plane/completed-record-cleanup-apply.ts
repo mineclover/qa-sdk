@@ -1,28 +1,33 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { access, mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { constants as fsConstants } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { access, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
-import { extractFrontmatter, parseDocument, writeFrontmatterToFile, type DbMetadata } from "definition-catalog";
-import type { CompletedRecordState, DocumentEnvelope } from "doc-envelope";
+import {
+  extractFrontmatter,
+  parseDocument,
+  writeFrontmatterToFile,
+  type DbMetadata,
+} from 'definition-catalog';
+import type { CompletedRecordState, DocumentEnvelope } from 'doc-envelope';
 
 import {
   buildCompletedRecordCleanupPlan,
   type CompletedRecordCleanupPlan,
   type CompletedRecordCleanupPlanAction,
-} from "./completed-record-cleanup-plan.js";
+} from './completed-record-cleanup-plan.js';
 
 export interface CompletedRecordCleanupApplyResult {
   readonly action: CompletedRecordCleanupPlanAction;
   readonly target: string;
-  readonly targetValidatedAs: "record-path" | "document-id" | "paired-path";
+  readonly targetValidatedAs: 'record-path' | 'document-id' | 'paired-path';
   readonly record: CompletedRecordState;
   readonly moved: readonly {
     readonly from: string;
     readonly to: string;
-    readonly kind: "record" | "paired";
+    readonly kind: 'record' | 'paired';
   }[];
   readonly updated: readonly string[];
   readonly preservedEvidencePaths: readonly string[];
@@ -49,13 +54,15 @@ interface CleanupRenderSource {
 export async function applyCompletedRecordCleanup(
   options: ApplyCompletedRecordCleanupOptions,
 ): Promise<CompletedRecordCleanupApplyResult | null> {
-  const plan = options.plan ?? buildCompletedRecordCleanupPlan({
-    documents: options.documents,
-    completedRecords: options.completedRecords,
-    target: options.target,
-    action: options.action,
-    dryRunDefaulted: false,
-  });
+  const plan =
+    options.plan ??
+    buildCompletedRecordCleanupPlan({
+      documents: options.documents,
+      completedRecords: options.completedRecords,
+      target: options.target,
+      action: options.action,
+      dryRunDefaulted: false,
+    });
   if (!plan) return null;
 
   const moves = plannedMoves(plan);
@@ -75,7 +82,7 @@ export async function applyCompletedRecordCleanup(
     await assertPathExists(options.rootDir, update);
   }
 
-  if (options.action === "promote-spec" && plan.assimilationTargetPath) {
+  if (options.action === 'promote-spec' && plan.assimilationTargetPath) {
     await assimilateCompletedTodoIntoSpec(
       options.rootDir,
       plan.record.path,
@@ -94,21 +101,16 @@ export async function applyCompletedRecordCleanup(
     await applyFrontmatterPatchIfPresent(options.rootDir, move.to, plan);
   }
   if (recordTargetPath && renderSource && requiresRecordBodyRewrite(plan)) {
-    await writeCleanupRecordTargetBody(
-      options.rootDir,
-      recordTargetPath,
-      plan,
-      renderSource,
-    );
+    await writeCleanupRecordTargetBody(options.rootDir, recordTargetPath, plan, renderSource);
     await applyFrontmatterPatchIfPresent(options.rootDir, recordTargetPath, plan);
   } else if (recordTargetPath && !recordMoveExists(safeMoves)) {
     await applyFrontmatterPatchIfPresent(options.rootDir, recordTargetPath, plan);
   }
   if (
-    plan.action === "rewrite"
-    && plan.assimilationTargetPath
-    && plan.assimilationTargetPath !== recordTargetPath
-    && renderSource
+    plan.action === 'rewrite' &&
+    plan.assimilationTargetPath &&
+    plan.assimilationTargetPath !== recordTargetPath &&
+    renderSource
   ) {
     await rewriteAssimilationTargetBody(
       options.rootDir,
@@ -144,7 +146,7 @@ async function assertPathAbsent(rootDir: string, path: string): Promise<void> {
     await access(fullPath, fsConstants.F_OK);
     throw new Error(`cleanup output path already exists: ${path}`);
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith("cleanup output path already exists:")) {
+    if (error instanceof Error && error.message.startsWith('cleanup output path already exists:')) {
       throw error;
     }
   }
@@ -152,76 +154,84 @@ async function assertPathAbsent(rootDir: string, path: string): Promise<void> {
 
 function plannedMoves(
   plan: CompletedRecordCleanupPlan,
-): readonly { readonly from: string; readonly to: string; readonly kind: "record" | "paired" }[] | null {
+):
+  | readonly { readonly from: string; readonly to: string; readonly kind: 'record' | 'paired' }[]
+  | null {
   const record = plan.record;
   const action = plan.action;
-  if (action === "archive") {
+  if (action === 'archive') {
     return [
       {
         from: record.path,
         to: plan.proposedOutputPath,
-        kind: "record",
+        kind: 'record',
       },
       ...(record.pairedPath
-        ? [{
-          from: record.pairedPath,
-          to: plan.secondaryOutputPath ?? archiveOutputPath(record.pairedPath),
-          kind: "paired" as const,
-        }]
+        ? [
+            {
+              from: record.pairedPath,
+              to: plan.secondaryOutputPath ?? archiveOutputPath(record.pairedPath),
+              kind: 'paired' as const,
+            },
+          ]
         : []),
     ];
   }
 
-  if (action === "memo-conversion" && record.kind === "todo" && !record.pairedPath) {
+  if (action === 'memo-conversion' && record.kind === 'todo' && !record.pairedPath) {
     return [
       {
         from: record.path,
         to: plan.proposedOutputPath,
-        kind: "record",
+        kind: 'record',
       },
     ];
   }
 
-  if (action === "memo-conversion" && record.kind === "prd" && record.pairedPath) {
+  if (action === 'memo-conversion' && record.kind === 'prd' && record.pairedPath) {
     return [
       {
         from: record.path,
         to: plan.proposedOutputPath,
-        kind: "record",
+        kind: 'record',
       },
       {
         from: record.pairedPath,
         to: plan.secondaryOutputPath ?? archiveOutputPath(record.pairedPath),
-        kind: "paired",
+        kind: 'paired',
       },
     ];
   }
 
-  if (action === "promote-spec" && record.kind === "todo" && !record.pairedPath) {
+  if (action === 'promote-spec' && record.kind === 'todo' && !record.pairedPath) {
     return [
       {
         from: record.path,
         to: plan.secondaryOutputPath ?? archiveOutputPath(record.path),
-        kind: "record",
+        kind: 'record',
       },
     ];
   }
 
-  if (action === "rewrite") {
+  if (action === 'rewrite') {
     return [
       ...(plan.proposedOutputPath !== record.path
-        ? [{
-          from: record.path,
-          to: plan.proposedOutputPath,
-          kind: "record" as const,
-        }]
+        ? [
+            {
+              from: record.path,
+              to: plan.proposedOutputPath,
+              kind: 'record' as const,
+            },
+          ]
         : []),
       ...(record.pairedPath && plan.secondaryOutputPath
-        ? [{
-          from: record.pairedPath,
-          to: plan.secondaryOutputPath,
-          kind: "paired" as const,
-        }]
+        ? [
+            {
+              from: record.pairedPath,
+              to: plan.secondaryOutputPath,
+              kind: 'paired' as const,
+            },
+          ]
         : []),
     ];
   }
@@ -230,10 +240,15 @@ function plannedMoves(
 }
 
 function plannedUpdates(
-  plan: ReturnType<typeof buildCompletedRecordCleanupPlan> extends infer T ? T extends null ? never : T : never,
+  plan: ReturnType<typeof buildCompletedRecordCleanupPlan> extends infer T
+    ? T extends null
+      ? never
+      : T
+    : never,
 ): readonly string[] {
-  return plan.assimilationTargetPath
-    && (plan.action === "promote-spec" || (plan.action === "rewrite" && plan.assimilationTargetPath !== recordResultPath(plan)))
+  return plan.assimilationTargetPath &&
+    (plan.action === 'promote-spec' ||
+      (plan.action === 'rewrite' && plan.assimilationTargetPath !== recordResultPath(plan)))
     ? [plan.assimilationTargetPath]
     : [];
 }
@@ -247,8 +262,8 @@ async function assimilateCompletedTodoIntoSpec(
   const todoFullPath = resolve(rootDir, normalizePath(todoPath));
   const specFullPath = resolve(rootDir, normalizePath(specPath));
   const [todoContent, specContent] = await Promise.all([
-    readFile(todoFullPath, "utf8"),
-    readFile(specFullPath, "utf8"),
+    readFile(todoFullPath, 'utf8'),
+    readFile(specFullPath, 'utf8'),
   ]);
 
   const completedItems = extractCompletedTodoItems(todoContent);
@@ -267,27 +282,29 @@ async function assimilateCompletedTodoIntoSpec(
   const assimilationBlock = [
     plan.bodyTemplate
       ? renderCleanupBodyTemplate(plan.bodyTemplate, {
-        plan,
-        sourcePath: todoPath,
-        sourceBody: trimmedBody(todoContent),
-        completedItems,
-      })
+          plan,
+          sourcePath: todoPath,
+          sourceBody: trimmedBody(todoContent),
+          completedItems,
+        })
       : [
-        "",
-        "## Todo Assimilation",
-        "",
-        `Assimilated from \`${todoPath}\`.`,
-        "",
-        "Completed execution slice:",
-        ...completedItems.map((item) => `- ${item}`),
-        ...(plan.candidate.recommendation.reason ? ["", `Cleanup recommendation: ${plan.candidate.recommendation.reason}`] : []),
-        ...(plan.appendMarkdown ? ["", plan.appendMarkdown] : []),
-        "",
-      ].join("\n"),
-  ].join("");
+          '',
+          '## Todo Assimilation',
+          '',
+          `Assimilated from \`${todoPath}\`.`,
+          '',
+          'Completed execution slice:',
+          ...completedItems.map((item) => `- ${item}`),
+          ...(plan.candidate.recommendation.reason
+            ? ['', `Cleanup recommendation: ${plan.candidate.recommendation.reason}`]
+            : []),
+          ...(plan.appendMarkdown ? ['', plan.appendMarkdown] : []),
+          '',
+        ].join('\n'),
+  ].join('');
 
   const nextContent = `---\n${specFrontmatter.yaml}\n---\n${trimmedBody(specFrontmatter.body)}${assimilationBlock}`;
-  await writeFile(specFullPath, nextContent, "utf8");
+  await writeFile(specFullPath, nextContent, 'utf8');
 }
 
 async function appendCleanupMemoBody(
@@ -309,26 +326,28 @@ async function writeCleanupRecordTargetBody(
   const memoBody = [
     plan.bodyTemplate
       ? renderCleanupBodyTemplate(plan.bodyTemplate, {
-        plan,
-        sourcePath: source.labelPath,
-        sourceBody: source.body,
-        completedItems: source.completedItems,
-      })
+          plan,
+          sourcePath: source.labelPath,
+          sourceBody: source.body,
+          completedItems: source.completedItems,
+        })
       : [
-        source.body,
-        "",
-        "## Cleanup Memo Conversion",
-        "",
-        `Converted from \`${source.labelPath}\`.`,
-        ...(plan.candidate.recommendation.reason ? ["", `Cleanup recommendation: ${plan.candidate.recommendation.reason}`] : []),
-        ...(plan.appendMarkdown ? ["", plan.appendMarkdown] : []),
-        "",
-      ].join("\n"),
-  ].join("");
+          source.body,
+          '',
+          '## Cleanup Memo Conversion',
+          '',
+          `Converted from \`${source.labelPath}\`.`,
+          ...(plan.candidate.recommendation.reason
+            ? ['', `Cleanup recommendation: ${plan.candidate.recommendation.reason}`]
+            : []),
+          ...(plan.appendMarkdown ? ['', plan.appendMarkdown] : []),
+          '',
+        ].join('\n'),
+  ].join('');
   const nextContent = source.frontmatter
     ? `---\n${source.frontmatter.yaml}\n---\n${memoBody}`
     : memoBody;
-  await writeFile(resolve(rootDir, normalizePath(targetPath)), nextContent, "utf8");
+  await writeFile(resolve(rootDir, normalizePath(targetPath)), nextContent, 'utf8');
 }
 
 async function rewriteAssimilationTargetBody(
@@ -338,36 +357,42 @@ async function rewriteAssimilationTargetBody(
   source: CleanupRenderSource,
 ): Promise<void> {
   const targetFullPath = resolve(rootDir, normalizePath(targetPath));
-  const targetContent = await readFile(targetFullPath, "utf8");
+  const targetContent = await readFile(targetFullPath, 'utf8');
   const targetFrontmatter = extractFrontmatter(targetContent);
   const targetBody = trimmedBody(targetFrontmatter ? targetFrontmatter.body : targetContent);
   const assimilationBlock = [
     plan.bodyTemplate
       ? renderCleanupBodyTemplate(plan.bodyTemplate, {
-        plan,
-        sourcePath: source.labelPath,
-        sourceBody: source.body,
-        completedItems: source.completedItems,
-      })
+          plan,
+          sourcePath: source.labelPath,
+          sourceBody: source.body,
+          completedItems: source.completedItems,
+        })
       : [
-        "## Cleanup Rewrite Assimilation",
-        "",
-        `Rewritten from \`${source.labelPath}\`.`,
-        "",
-        source.body,
-        ...(source.completedItems.length > 0
-          ? ["", "Completed execution slice:", ...source.completedItems.map((item) => `- ${item}`)]
-          : []),
-        ...(plan.candidate.recommendation.reason ? ["", `Cleanup recommendation: ${plan.candidate.recommendation.reason}`] : []),
-        ...(plan.appendMarkdown ? ["", plan.appendMarkdown] : []),
-        "",
-      ].join("\n"),
-  ].join("");
+          '## Cleanup Rewrite Assimilation',
+          '',
+          `Rewritten from \`${source.labelPath}\`.`,
+          '',
+          source.body,
+          ...(source.completedItems.length > 0
+            ? [
+                '',
+                'Completed execution slice:',
+                ...source.completedItems.map((item) => `- ${item}`),
+              ]
+            : []),
+          ...(plan.candidate.recommendation.reason
+            ? ['', `Cleanup recommendation: ${plan.candidate.recommendation.reason}`]
+            : []),
+          ...(plan.appendMarkdown ? ['', plan.appendMarkdown] : []),
+          '',
+        ].join('\n'),
+  ].join('');
   const nextBody = targetBody ? `${targetBody}\n\n${assimilationBlock}` : assimilationBlock;
   const nextContent = targetFrontmatter
     ? `---\n${targetFrontmatter.yaml}\n---\n${nextBody}`
     : nextBody;
-  await writeFile(targetFullPath, nextContent, "utf8");
+  await writeFile(targetFullPath, nextContent, 'utf8');
 }
 
 function renderCleanupBodyTemplate(
@@ -380,8 +405,9 @@ function renderCleanupBodyTemplate(
   },
 ): string {
   const values = cleanupApplyTemplateValues(input);
-  return template.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_match, key: string) =>
-    values[key] ?? `{{${key}}}`
+  return template.replace(
+    /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g,
+    (_match, key: string) => values[key] ?? `{{${key}}}`,
   );
 }
 
@@ -393,19 +419,19 @@ function cleanupApplyTemplateValues(input: {
 }): Readonly<Record<string, string>> {
   const { plan, sourcePath, sourceBody } = input;
   return {
-    "record.path": plan.record.path,
-    "record.documentId": plan.record.documentId,
-    "record.kind": plan.record.kind,
-    "record.title": plan.record.title,
-    "source.path": sourcePath,
-    "source.body": sourceBody,
-    "completedItemsMarkdown": (input.completedItems ?? []).map((item) => `- ${item}`).join("\n"),
-    "cleanupRecommendation": plan.candidate.recommendation.reason,
-    "appendMarkdown": plan.appendMarkdown ?? "",
-    "plan.action": plan.action,
-    "plan.outputPath": plan.proposedOutputPath,
-    "plan.secondaryOutputPath": plan.secondaryOutputPath ?? "",
-    "plan.assimilationTargetPath": plan.assimilationTargetPath ?? "",
+    'record.path': plan.record.path,
+    'record.documentId': plan.record.documentId,
+    'record.kind': plan.record.kind,
+    'record.title': plan.record.title,
+    'source.path': sourcePath,
+    'source.body': sourceBody,
+    completedItemsMarkdown: (input.completedItems ?? []).map((item) => `- ${item}`).join('\n'),
+    cleanupRecommendation: plan.candidate.recommendation.reason,
+    appendMarkdown: plan.appendMarkdown ?? '',
+    'plan.action': plan.action,
+    'plan.outputPath': plan.proposedOutputPath,
+    'plan.secondaryOutputPath': plan.secondaryOutputPath ?? '',
+    'plan.assimilationTargetPath': plan.assimilationTargetPath ?? '',
   };
 }
 
@@ -417,49 +443,59 @@ function extractCompletedTodoItems(content: string): readonly string[] {
 }
 
 function trimmedBody(value: string): string {
-  return value.replace(/\s+$/u, "");
+  return value.replace(/\s+$/u, '');
 }
 
 function archiveOutputPath(path: string): string {
   const normalizedPath = normalizePath(path);
-  if (normalizedPath.startsWith("tasks/")) {
-    return normalizePath(`tasks/archive/${normalizedPath.slice("tasks/".length)}`);
+  if (normalizedPath.startsWith('tasks/')) {
+    return normalizePath(`tasks/archive/${normalizedPath.slice('tasks/'.length)}`);
   }
-  return normalizePath(`${dirname(normalizedPath)}/archive/${normalizedPath.split("/").pop() ?? normalizedPath}`);
+  return normalizePath(
+    `${dirname(normalizedPath)}/archive/${normalizedPath.split('/').pop() ?? normalizedPath}`,
+  );
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
-function requiresCleanupRenderSource(
-  plan: CompletedRecordCleanupPlan,
-): boolean {
-  return requiresRecordBodyRewrite(plan) || (plan.action === "rewrite" && Boolean(plan.assimilationTargetPath));
+function requiresCleanupRenderSource(plan: CompletedRecordCleanupPlan): boolean {
+  return (
+    requiresRecordBodyRewrite(plan) ||
+    (plan.action === 'rewrite' && Boolean(plan.assimilationTargetPath))
+  );
 }
 
 function shouldArchiveLifecycle(
   action: CompletedRecordCleanupPlanAction,
-  kind: "record" | "paired",
+  kind: 'record' | 'paired',
 ): boolean {
-  return action === "archive" || (action === "promote-spec" && kind === "record");
+  return action === 'archive' || (action === 'promote-spec' && kind === 'record');
 }
 
 function recordResultPath(plan: CompletedRecordCleanupPlan): string | null {
-  if (plan.action === "archive") return null;
-  if (plan.action === "memo-conversion") return plan.proposedOutputPath;
-  if (plan.action === "rewrite") return plan.proposedOutputPath;
+  if (plan.action === 'archive') return null;
+  if (plan.action === 'memo-conversion') return plan.proposedOutputPath;
+  if (plan.action === 'rewrite') return plan.proposedOutputPath;
   return null;
 }
 
 function requiresRecordBodyRewrite(plan: CompletedRecordCleanupPlan): boolean {
-  return Boolean(plan.bodyTemplate || plan.appendMarkdown) && (plan.action === "memo-conversion" || plan.action === "rewrite");
+  return (
+    Boolean(plan.bodyTemplate || plan.appendMarkdown) &&
+    (plan.action === 'memo-conversion' || plan.action === 'rewrite')
+  );
 }
 
 function recordMoveExists(
-  moves: readonly { readonly from: string; readonly to: string; readonly kind: "record" | "paired" }[],
+  moves: readonly {
+    readonly from: string;
+    readonly to: string;
+    readonly kind: 'record' | 'paired';
+  }[],
 ): boolean {
-  return moves.some((move) => move.kind === "record");
+  return moves.some((move) => move.kind === 'record');
 }
 
 async function loadCleanupRenderSource(
@@ -468,7 +504,7 @@ async function loadCleanupRenderSource(
   labelPath: string,
 ): Promise<CleanupRenderSource> {
   const fullPath = resolve(rootDir, normalizePath(path));
-  const content = await readFile(fullPath, "utf8");
+  const content = await readFile(fullPath, 'utf8');
   const frontmatter = extractFrontmatter(content);
   return {
     labelPath,
@@ -479,12 +515,9 @@ async function loadCleanupRenderSource(
   };
 }
 
-async function archiveFrontmatterIfPresent(
-  rootDir: string,
-  path: string,
-): Promise<void> {
+async function archiveFrontmatterIfPresent(rootDir: string, path: string): Promise<void> {
   const fullPath = resolve(rootDir, normalizePath(path));
-  const content = await readFile(fullPath, "utf8");
+  const content = await readFile(fullPath, 'utf8');
   const frontmatter = extractFrontmatter(content);
   if (!frontmatter) return;
 
@@ -493,13 +526,15 @@ async function archiveFrontmatterIfPresent(
     ...(parsed.def.version ? { version: parsed.def.version } : {}),
     ...(parsed.def.revision !== undefined ? { revision: parsed.def.revision } : {}),
     ...(parsed.def.level ? { level: parsed.def.level } : {}),
-    scope: parsed.def.scope ?? "flow",
-    aspect: parsed.def.aspect ?? "process_flow",
-    depth: parsed.def.depth ?? "specification",
-    lifecycle: "archived",
+    scope: parsed.def.scope ?? 'flow',
+    aspect: parsed.def.aspect ?? 'process_flow',
+    depth: parsed.def.depth ?? 'specification',
+    lifecycle: 'archived',
     ...(parsed.def.layer ? { layer: parsed.def.layer } : {}),
     ...(parsed.def.tags ? { tags: parsed.def.tags } : {}),
-    ...(parsed.def.links ? { links: parsed.def.links.map((link) => ({ target: link.target, type: link.type })) } : {}),
+    ...(parsed.def.links
+      ? { links: parsed.def.links.map((link) => ({ target: link.target, type: link.type })) }
+      : {}),
     ...(parsed.def.svc ? { svc: parsed.def.svc } : {}),
     ...(parsed.def.address ? { address: parsed.def.address } : {}),
   };
@@ -514,7 +549,7 @@ async function applyFrontmatterPatchIfPresent(
 ): Promise<void> {
   if (!plan.frontmatterPatch) return;
   const fullPath = resolve(rootDir, normalizePath(path));
-  const content = await readFile(fullPath, "utf8");
+  const content = await readFile(fullPath, 'utf8');
   const frontmatter = extractFrontmatter(content);
   if (!frontmatter) return;
 
@@ -522,19 +557,40 @@ async function applyFrontmatterPatchIfPresent(
   const metadata: DbMetadata = {
     ...(parsed.def.version ? { version: parsed.def.version } : {}),
     ...(parsed.def.revision !== undefined ? { revision: parsed.def.revision } : {}),
-    ...(plan.frontmatterPatch.level ? { level: plan.frontmatterPatch.level } : parsed.def.level ? { level: parsed.def.level } : {}),
-    scope: plan.frontmatterPatch.scope ?? parsed.def.scope ?? "flow",
-    aspect: plan.frontmatterPatch.aspect ?? parsed.def.aspect ?? "process_flow",
-    depth: plan.frontmatterPatch.depth ?? parsed.def.depth ?? "specification",
+    ...(plan.frontmatterPatch.level
+      ? { level: plan.frontmatterPatch.level }
+      : parsed.def.level
+        ? { level: parsed.def.level }
+        : {}),
+    scope: plan.frontmatterPatch.scope ?? parsed.def.scope ?? 'flow',
+    aspect: plan.frontmatterPatch.aspect ?? parsed.def.aspect ?? 'process_flow',
+    depth: plan.frontmatterPatch.depth ?? parsed.def.depth ?? 'specification',
     lifecycle: plan.frontmatterPatch.lifecycle ?? parsed.def.lifecycle,
-    ...(plan.frontmatterPatch.layer ? { layer: plan.frontmatterPatch.layer } : parsed.def.layer ? { layer: parsed.def.layer } : {}),
-    ...(plan.frontmatterPatch.tags ? { tags: plan.frontmatterPatch.tags } : parsed.def.tags ? { tags: parsed.def.tags } : {}),
+    ...(plan.frontmatterPatch.layer
+      ? { layer: plan.frontmatterPatch.layer }
+      : parsed.def.layer
+        ? { layer: parsed.def.layer }
+        : {}),
+    ...(plan.frontmatterPatch.tags
+      ? { tags: plan.frontmatterPatch.tags }
+      : parsed.def.tags
+        ? { tags: parsed.def.tags }
+        : {}),
     ...(plan.frontmatterPatch.links
-      ? { links: plan.frontmatterPatch.links.map((link) => ({ target: link.target, type: link.type })) }
+      ? {
+          links: plan.frontmatterPatch.links.map((link) => ({
+            target: link.target,
+            type: link.type,
+          })),
+        }
       : parsed.def.links
-      ? { links: parsed.def.links.map((link) => ({ target: link.target, type: link.type })) }
-      : {}),
-    ...(plan.frontmatterPatch.svc ? { svc: plan.frontmatterPatch.svc } : parsed.def.svc ? { svc: parsed.def.svc } : {}),
+        ? { links: parsed.def.links.map((link) => ({ target: link.target, type: link.type })) }
+        : {}),
+    ...(plan.frontmatterPatch.svc
+      ? { svc: plan.frontmatterPatch.svc }
+      : parsed.def.svc
+        ? { svc: parsed.def.svc }
+        : {}),
     ...(parsed.def.address ? { address: parsed.def.address } : {}),
   };
 

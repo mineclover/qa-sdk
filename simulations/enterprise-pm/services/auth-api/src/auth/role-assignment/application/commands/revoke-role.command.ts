@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { AssignmentScopeType } from "../../domain/index.js";
+import type { AssignmentScopeType } from '../../domain/index.js';
 
 export interface RevokeRoleCommand {
   readonly userId: string;

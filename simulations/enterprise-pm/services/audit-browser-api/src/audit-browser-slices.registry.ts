@@ -13,8 +13,8 @@
 //   따라서 본 registry 도 src/ top-level 에 둔다 (자연스러운 위치 규칙).
 // - 두 슬라이스 모두 BFF 슬라이스로 재포지셔닝 예정.
 
-import { AuditExplorerSliceModule } from "./audit-explorer/audit-explorer.module.js";
-import { GraphExplorerSliceModule } from "./graph-explorer/graph-explorer.module.js";
+import { AuditExplorerSliceModule } from './audit-explorer/audit-explorer.module.js';
+import { GraphExplorerSliceModule } from './graph-explorer/graph-explorer.module.js';
 
 /**
  * audit-browser 도메인의 슬라이스 모듈 목록. Phase 2 에이전트가 자기 슬라이스의

@@ -1,36 +1,42 @@
-import { describe, it, expect } from "vitest";
-import { diff } from "../../src/diff/index.js";
-import { parse } from "../../src/parser/index.js";
+import { describe, it, expect } from 'vitest';
+import { diff } from '../../src/diff/index.js';
+import { parse } from '../../src/parser/index.js';
 
 function parseOrThrow(y: string) {
   const r = parse(y);
-  if ("error" in r) throw new Error("parse failed");
+  if ('error' in r) throw new Error('parse failed');
   return r.ir;
 }
 
-describe("diff", () => {
-  it("같은 yaml → same=true", () => {
+describe('diff', () => {
+  it('같은 yaml → same=true', () => {
     const y = `taxonomy: t\nversion: 1\naxes:\n  s:\n    entries: [a, b]\n`;
     expect(diff(parseOrThrow(y), parseOrThrow(y)).same).toBe(true);
   });
 
-  it("entry 추가 검출", () => {
+  it('entry 추가 검출', () => {
     const a = parseOrThrow(`taxonomy: t\nversion: 1\naxes:\n  s:\n    entries: [a, b]\n`);
     const b = parseOrThrow(`taxonomy: t\nversion: 1\naxes:\n  s:\n    entries: [a, b, c]\n`);
     const r = diff(a, b);
     expect(r.same).toBe(false);
-    expect(r.changes.some((c) => c.kind === "entry-added" && (c as any).id === "c")).toBe(true);
+    expect(r.changes.some((c) => c.kind === 'entry-added' && (c as any).id === 'c')).toBe(true);
   });
 
-  it("entry 제거 + address 변경 검출", () => {
-    const a = parseOrThrow(`taxonomy: t\nversion: 1\naxes:\n  s:\n    entries:\n      - { id: a, address: 0 }\n      - { id: b, address: 1 }\n`);
-    const b = parseOrThrow(`taxonomy: t\nversion: 1\naxes:\n  s:\n    entries:\n      - { id: a, address: 5 }\n`);
+  it('entry 제거 + address 변경 검출', () => {
+    const a = parseOrThrow(
+      `taxonomy: t\nversion: 1\naxes:\n  s:\n    entries:\n      - { id: a, address: 0 }\n      - { id: b, address: 1 }\n`,
+    );
+    const b = parseOrThrow(
+      `taxonomy: t\nversion: 1\naxes:\n  s:\n    entries:\n      - { id: a, address: 5 }\n`,
+    );
     const r = diff(a, b);
-    expect(r.changes.some((c) => c.kind === "entry-removed" && (c as any).id === "b")).toBe(true);
-    expect(r.changes.some((c) => c.kind === "entry-address-changed" && (c as any).id === "a")).toBe(true);
+    expect(r.changes.some((c) => c.kind === 'entry-removed' && (c as any).id === 'b')).toBe(true);
+    expect(r.changes.some((c) => c.kind === 'entry-address-changed' && (c as any).id === 'a')).toBe(
+      true,
+    );
   });
 
-  it("axis/relation/constraint 추가 검출", () => {
+  it('axis/relation/constraint 추가 검출', () => {
     const a = parseOrThrow(`taxonomy: t\nversion: 1\naxes:\n  s:\n    entries: [a]\n`);
     const b = parseOrThrow(`
 taxonomy: t
@@ -58,12 +64,18 @@ constraints:
     severity: error
 `);
     const r = diff(a, b);
-    expect(r.changes.some((c) => c.kind === "axis-added" && (c as any).axis === "new-axis")).toBe(true);
-    expect(r.changes.some((c) => c.kind === "relation-added" && (c as any).name === "r")).toBe(true);
-    expect(r.changes.some((c) => c.kind === "constraint-added" && (c as any).id === "cap")).toBe(true);
+    expect(r.changes.some((c) => c.kind === 'axis-added' && (c as any).axis === 'new-axis')).toBe(
+      true,
+    );
+    expect(r.changes.some((c) => c.kind === 'relation-added' && (c as any).name === 'r')).toBe(
+      true,
+    );
+    expect(r.changes.some((c) => c.kind === 'constraint-added' && (c as any).id === 'cap')).toBe(
+      true,
+    );
   });
 
-  it("rule-level: rule 추가 검출", () => {
+  it('rule-level: rule 추가 검출', () => {
     const a = parseOrThrow(`
 taxonomy: t
 version: 1
@@ -94,12 +106,12 @@ relations:
       - { upper: b, lower: a }
 `);
     const r = diff(a, b);
-    const added = r.changes.filter((c) => c.kind === "relation-rule-added");
+    const added = r.changes.filter((c) => c.kind === 'relation-rule-added');
     expect(added.length).toBe(1);
-    expect((added[0] as any).rule).toEqual({ upper: "b", lower: "a" });
+    expect((added[0] as any).rule).toEqual({ upper: 'b', lower: 'a' });
   });
 
-  it("rule-level: rule 제거 검출", () => {
+  it('rule-level: rule 제거 검출', () => {
     const a = parseOrThrow(`
 taxonomy: t
 version: 1
@@ -130,12 +142,12 @@ relations:
       - { upper: a, lower: b }
 `);
     const r = diff(a, b);
-    const removed = r.changes.filter((c) => c.kind === "relation-rule-removed");
+    const removed = r.changes.filter((c) => c.kind === 'relation-rule-removed');
     expect(removed.length).toBe(1);
-    expect((removed[0] as any).rule).toEqual({ upper: "a", lower: "c" });
+    expect((removed[0] as any).rule).toEqual({ upper: 'a', lower: 'c' });
   });
 
-  it("rule-level: 같은 rule을 다른 순서로 두면 변경 없음 (stable key)", () => {
+  it('rule-level: 같은 rule을 다른 순서로 두면 변경 없음 (stable key)', () => {
     const a = parseOrThrow(`
 taxonomy: t
 version: 1
@@ -167,7 +179,7 @@ relations:
       - { upper: a, lower: b }
 `);
     const r = diff(a, b);
-    const ruleChanges = r.changes.filter((c) => c.kind.startsWith("relation-rule"));
+    const ruleChanges = r.changes.filter((c) => c.kind.startsWith('relation-rule'));
     expect(ruleChanges).toEqual([]);
   });
 });

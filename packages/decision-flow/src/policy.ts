@@ -6,12 +6,7 @@
  * 조건이 충족되면 해당 gate의 분기를 자동으로 선택한다.
  */
 
-import type {
-  Condition,
-  FlowPolicy,
-  GateSelection,
-  PolicyAction,
-} from "./types.js";
+import type { Condition, FlowPolicy, GateSelection, PolicyAction } from './types.js';
 
 // ─── 조건 평가 ───────────────────────────────────────────
 
@@ -22,28 +17,25 @@ import type {
  * - "context.hours" → context 객체의 hours 필드
  * - "gate.risk.branch" → risk gate에서 선택된 branch ID
  */
-export function evaluateCondition(
-  condition: Condition,
-  context: Record<string, unknown>,
-): boolean {
+export function evaluateCondition(condition: Condition, context: Record<string, unknown>): boolean {
   const fieldValue = resolvePath(context, condition.field);
 
   switch (condition.op) {
-    case "eq":
+    case 'eq':
       return fieldValue === condition.value;
-    case "neq":
+    case 'neq':
       return fieldValue !== condition.value;
-    case "in":
+    case 'in':
       return Array.isArray(condition.value) && condition.value.includes(fieldValue);
-    case "gt":
-      return typeof fieldValue === "number" && fieldValue > (condition.value as number);
-    case "lt":
-      return typeof fieldValue === "number" && fieldValue < (condition.value as number);
-    case "gte":
-      return typeof fieldValue === "number" && fieldValue >= (condition.value as number);
-    case "lte":
-      return typeof fieldValue === "number" && fieldValue <= (condition.value as number);
-    case "exists":
+    case 'gt':
+      return typeof fieldValue === 'number' && fieldValue > (condition.value as number);
+    case 'lt':
+      return typeof fieldValue === 'number' && fieldValue < (condition.value as number);
+    case 'gte':
+      return typeof fieldValue === 'number' && fieldValue >= (condition.value as number);
+    case 'lte':
+      return typeof fieldValue === 'number' && fieldValue <= (condition.value as number);
+    case 'exists':
       return fieldValue !== undefined && fieldValue !== null;
     default:
       return false;
@@ -93,9 +85,7 @@ export function findApplicablePolicies(
  * 2. 동일 priority에 다른 branch → null (충돌, 수동 결정 필요)
  * 3. 동일 priority에 같은 branch → 해당 branch 선택
  */
-export function resolvePolicyConflicts(
-  actions: readonly PolicyAction[],
-): PolicyAction | null {
+export function resolvePolicyConflicts(actions: readonly PolicyAction[]): PolicyAction | null {
   if (actions.length === 0) return null;
   if (actions.length === 1) return actions[0];
 
@@ -129,12 +119,12 @@ export function tryAutoSelect(
 
 /** dot-notation 경로 해석 */
 function resolvePath(obj: Record<string, unknown>, path: string): unknown {
-  const parts = path.split(".");
+  const parts = path.split('.');
   let current: unknown = obj;
 
   for (const part of parts) {
     if (current === null || current === undefined) return undefined;
-    if (typeof current !== "object") return undefined;
+    if (typeof current !== 'object') return undefined;
     current = (current as Record<string, unknown>)[part];
   }
 

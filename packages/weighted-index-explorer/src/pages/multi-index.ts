@@ -12,8 +12,8 @@ import {
   createAddressConverter,
   createLayoutProtocol,
   type PackFormat,
-} from "weighted-index";
-import { renderHexBar } from "../utils/hex-bar.js";
+} from 'weighted-index';
+import { renderHexBar } from '../utils/hex-bar.js';
 
 // ── 데이터 모델 ──────────────────────────────────────────────────────────────
 
@@ -28,32 +28,62 @@ interface IndexDef {
 
 const INDICES: IndexDef[] = [
   {
-    id: "perm",
-    label: "권한",
-    desc: "역할 × 액션 × 리소스 — RBAC 권한 조합",
+    id: 'perm',
+    label: '권한',
+    desc: '역할 × 액션 × 리소스 — RBAC 권한 조합',
     schemaNum: 1,
     dims: [
-      { id: "role", label: "역할", entries: ["admin", "editor", "viewer", "guest"] },
-      { id: "action", label: "액션", entries: ["read", "write", "delete"] },
-      { id: "resource", label: "리소스", entries: ["articles", "comments", "users"] },
+      { id: 'role', label: '역할', entries: ['admin', 'editor', 'viewer', 'guest'] },
+      { id: 'action', label: '액션', entries: ['read', 'write', 'delete'] },
+      { id: 'resource', label: '리소스', entries: ['articles', 'comments', 'users'] },
     ],
     versions: [
-      { id: "v1", versionNum: 1, dimSnapshots: [["admin", "editor", "viewer"], ["read", "write", "delete"], ["articles", "comments", "users"]] },
-      { id: "v2", versionNum: 2, dimSnapshots: [["admin", "editor", "viewer", "guest"], ["read", "write", "delete"], ["articles", "comments", "users"]] },
+      {
+        id: 'v1',
+        versionNum: 1,
+        dimSnapshots: [
+          ['admin', 'editor', 'viewer'],
+          ['read', 'write', 'delete'],
+          ['articles', 'comments', 'users'],
+        ],
+      },
+      {
+        id: 'v2',
+        versionNum: 2,
+        dimSnapshots: [
+          ['admin', 'editor', 'viewer', 'guest'],
+          ['read', 'write', 'delete'],
+          ['articles', 'comments', 'users'],
+        ],
+      },
     ],
   },
   {
-    id: "content",
-    label: "콘텐츠",
-    desc: "카테고리 × 언어 — 콘텐츠 분류 체계",
+    id: 'content',
+    label: '콘텐츠',
+    desc: '카테고리 × 언어 — 콘텐츠 분류 체계',
     schemaNum: 2,
     dims: [
-      { id: "category", label: "카테고리", entries: ["tech", "art", "science"] },
-      { id: "lang", label: "언어", entries: ["ko", "en"] },
+      { id: 'category', label: '카테고리', entries: ['tech', 'art', 'science'] },
+      { id: 'lang', label: '언어', entries: ['ko', 'en'] },
     ],
     versions: [
-      { id: "v1", versionNum: 1, dimSnapshots: [["tech", "art"], ["ko", "en"]] },
-      { id: "v2", versionNum: 2, dimSnapshots: [["tech", "art", "science"], ["ko", "en"]] },
+      {
+        id: 'v1',
+        versionNum: 1,
+        dimSnapshots: [
+          ['tech', 'art'],
+          ['ko', 'en'],
+        ],
+      },
+      {
+        id: 'v2',
+        versionNum: 2,
+        dimSnapshots: [
+          ['tech', 'art', 'science'],
+          ['ko', 'en'],
+        ],
+      },
     ],
   },
 ];
@@ -71,18 +101,23 @@ for (const idx of INDICES) {
 }
 
 const converter = createAddressConverter();
-converter.register(createLayoutProtocol({
-  format: FORMAT,
-  schemaChars: SCHEMA_CHARS,
-  versionChars: VERSION_CHARS,
-  schemas: SCHEMAS,
-  versions: VERSIONS,
-}));
+converter.register(
+  createLayoutProtocol({
+    format: FORMAT,
+    schemaChars: SCHEMA_CHARS,
+    versionChars: VERSION_CHARS,
+    schemas: SCHEMAS,
+    versions: VERSIONS,
+  }),
+);
 
 // 인덱스별 WeightedIndex 캐시
 function getWI(idx: IndexDef, versionIdx: number): WeightedIndex {
   const shape = idx.versions[versionIdx].dimSnapshots.map((e) => e.length);
-  return new WeightedIndex(shape, idx.dims.map((d) => d.id));
+  return new WeightedIndex(
+    shape,
+    idx.dims.map((d) => d.id),
+  );
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────
@@ -115,7 +150,7 @@ function renderIntro(): string {
       </div>
       <div>
         <span class="xlf-label">등록된 인덱스</span>
-        <span class="xlf-expr">${INDICES.map((i) => `${i.id}(${i.schemaNum})`).join(", ")}</span>
+        <span class="xlf-expr">${INDICES.map((i) => `${i.id}(${i.schemaNum})`).join(', ')}</span>
       </div>
     </div>`;
 }
@@ -124,15 +159,20 @@ function renderIntro(): string {
 
 function renderRegistryOverview(): string {
   const cards = INDICES.map((idx) => {
-    const dimsHtml = idx.dims.map((d) =>
-      `<tr><td style="font-weight:600">${d.label}</td><td>${d.entries.join(", ")}</td><td class="td-num">${d.entries.length}</td></tr>`
-    ).join("");
+    const dimsHtml = idx.dims
+      .map(
+        (d) =>
+          `<tr><td style="font-weight:600">${d.label}</td><td>${d.entries.join(', ')}</td><td class="td-num">${d.entries.length}</td></tr>`,
+      )
+      .join('');
 
-    const versHtml = idx.versions.map((v) => {
-      const shape = v.dimSnapshots.map((e) => e.length);
-      const size = shape.reduce((a, b) => a * b, 1);
-      return `<tr><td><code>${v.id}</code></td><td>[${shape.join(", ")}]</td><td class="td-num">${size}</td></tr>`;
-    }).join("");
+    const versHtml = idx.versions
+      .map((v) => {
+        const shape = v.dimSnapshots.map((e) => e.length);
+        const size = shape.reduce((a, b) => a * b, 1);
+        return `<tr><td><code>${v.id}</code></td><td>[${shape.join(', ')}]</td><td class="td-num">${size}</td></tr>`;
+      })
+      .join('');
 
     return `
       <div class="concept-block">
@@ -153,7 +193,7 @@ function renderRegistryOverview(): string {
           </table>
         </div>
       </div>`;
-  }).join("");
+  }).join('');
 
   return `
     <div class="concept-dim-sep"></div>
@@ -166,9 +206,9 @@ function renderRegistryOverview(): string {
 // ── 3. UUID PK 생성 데모 ─────────────────────────────────────────────────────
 
 function renderUUIDDemo(): string {
-  const indexOptions = INDICES.map((idx) =>
-    `<option value="${idx.id}">${idx.label} (${idx.id})</option>`
-  ).join("");
+  const indexOptions = INDICES.map(
+    (idx) => `<option value="${idx.id}">${idx.label} (${idx.id})</option>`,
+  ).join('');
 
   return `
     <div class="concept-dim-sep"></div>
@@ -198,7 +238,8 @@ function renderCrossRouting(): string {
     const coords = v.dimSnapshots.map(() => 1);
     const value = wi.encodeUnsafe(coords);
     const uuid = converter.serialize(
-      { schema: idx.id, version: v.id, index: value }, "layout:uuid"
+      { schema: idx.id, version: v.id, index: value },
+      'layout:uuid',
     );
     return { idx, uuid };
   });
@@ -218,9 +259,12 @@ function renderCrossRouting(): string {
           <button id="mi-route-btn" class="plan-add-btn">분석</button>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-          ${examples.map((e) =>
-            `<button class="mi-example-btn plan-add-btn" data-uuid="${e.uuid}" style="font-size:0.75em">${e.idx.label} 예시</button>`
-          ).join("")}
+          ${examples
+            .map(
+              (e) =>
+                `<button class="mi-example-btn plan-add-btn" data-uuid="${e.uuid}" style="font-size:0.75em">${e.idx.label} 예시</button>`,
+            )
+            .join('')}
         </div>
         <div id="mi-route-result"></div>
       </div>
@@ -230,9 +274,10 @@ function renderCrossRouting(): string {
 // ── 5. DecodeMap 번들 ────────────────────────────────────────────────────────
 
 function renderDecodeMapSection(): string {
-  const tabs = INDICES.map((idx, i) =>
-    `<button class="mi-dm-tab plan-add-btn${i === 0 ? " active" : ""}" data-idx="${idx.id}">${idx.label}</button>`
-  ).join("");
+  const tabs = INDICES.map(
+    (idx, i) =>
+      `<button class="mi-dm-tab plan-add-btn${i === 0 ? ' active' : ''}" data-idx="${idx.id}">${idx.label}</button>`,
+  ).join('');
 
   return `
     <div class="concept-dim-sep"></div>
@@ -256,19 +301,22 @@ function buildDecodeMapHtml(idx: IndexDef, vIdx: number): string {
   const size = shape.reduce((a, b) => a * b, 1);
   const weights = calcWeights(shape);
 
-  const dimsRows = idx.dims.map((d, i) =>
-    `<tr>
+  const dimsRows = idx.dims
+    .map(
+      (d, i) =>
+        `<tr>
       <td style="font-weight:600">${d.id}</td>
-      <td>${v.dimSnapshots[i].map((e) => `<code>${e}</code>`).join(", ")}</td>
+      <td>${v.dimSnapshots[i].map((e) => `<code>${e}</code>`).join(', ')}</td>
       <td class="td-num">${shape[i]}</td>
       <td class="td-num">${weights[i]}</td>
-    </tr>`
-  ).join("");
+    </tr>`,
+    )
+    .join('');
 
   return `
     <div style="margin-bottom:8px">
       <span style="font-weight:600">${idx.id}:${v.id}</span>
-      <span style="color:var(--text-muted);margin-left:8px">shape [${shape.join(", ")}] · size ${size}</span>
+      <span style="color:var(--text-muted);margin-left:8px">shape [${shape.join(', ')}] · size ${size}</span>
     </div>
     <table class="nd-table" style="margin-bottom:12px">
       <thead><tr><th>dim</th><th>entries</th><th>size</th><th>weight</th></tr></thead>
@@ -280,10 +328,17 @@ function buildDecodeMapHtml(idx: IndexDef, vIdx: number): string {
     </div>
     <details style="margin-top:4px">
       <summary style="cursor:pointer;color:var(--xl-blue);font-size:0.85em">JSON 번들 보기</summary>
-      <pre class="concept-code" style="font-size:0.75em;max-height:200px;overflow:auto">${JSON.stringify({
-        indexId: idx.id, versionId: v.id, shape, size,
-        dims: idx.dims.map((d, i) => ({ dimId: d.id, entries: v.dimSnapshots[i] })),
-      }, null, 2)}</pre>
+      <pre class="concept-code" style="font-size:0.75em;max-height:200px;overflow:auto">${JSON.stringify(
+        {
+          indexId: idx.id,
+          versionId: v.id,
+          shape,
+          size,
+          dims: idx.dims.map((d, i) => ({ dimId: d.id, entries: v.dimSnapshots[i] })),
+        },
+        null,
+        2,
+      )}</pre>
     </details>`;
 }
 
@@ -296,24 +351,26 @@ function setupInteractivity(container: HTMLElement): void {
 }
 
 function setupUUIDDemo(container: HTMLElement): void {
-  const indexSel = container.querySelector<HTMLSelectElement>("#mi-index-sel");
-  const versionSel = container.querySelector<HTMLSelectElement>("#mi-version-sel");
-  const dimContainer = container.querySelector<HTMLDivElement>("#mi-dim-selectors");
-  const resultDiv = container.querySelector<HTMLDivElement>("#mi-uuid-result");
+  const indexSel = container.querySelector<HTMLSelectElement>('#mi-index-sel');
+  const versionSel = container.querySelector<HTMLSelectElement>('#mi-version-sel');
+  const dimContainer = container.querySelector<HTMLDivElement>('#mi-dim-selectors');
+  const resultDiv = container.querySelector<HTMLDivElement>('#mi-uuid-result');
   if (!indexSel || !versionSel || !dimContainer || !resultDiv) return;
   const indexSelect = indexSel;
   const versionSelect = versionSel;
   const dimSelectContainer = dimContainer;
   const uuidResult = resultDiv;
 
-  function getIdx(): IndexDef | undefined { return INDICES.find((i) => i.id === indexSelect.value); }
+  function getIdx(): IndexDef | undefined {
+    return INDICES.find((i) => i.id === indexSelect.value);
+  }
 
   function updateVersions(): void {
     const idx = getIdx();
     if (!idx) return;
-    versionSelect.innerHTML = idx.versions.map((v) =>
-      `<option value="${v.id}">${v.id}</option>`
-    ).join("");
+    versionSelect.innerHTML = idx.versions
+      .map((v) => `<option value="${v.id}">${v.id}</option>`)
+      .join('');
     updateDimSelectors();
   }
 
@@ -322,28 +379,35 @@ function setupUUIDDemo(container: HTMLElement): void {
     if (!idx) return;
     const vIdx = idx.versions.findIndex((v) => v.id === versionSelect.value);
     const snap = idx.versions[Math.max(0, vIdx)].dimSnapshots;
-    dimSelectContainer.innerHTML = idx.dims.map((d, i) => `
+    dimSelectContainer.innerHTML = idx.dims
+      .map(
+        (d, i) => `
       <div>
         <label style="font-weight:500;font-size:0.85em">${d.label}:</label>
         <select class="recalc-sel mi-dim-val" data-dim="${i}">
-          ${snap[i].map((e) => `<option value="${e}">${e}</option>`).join("")}
+          ${snap[i].map((e) => `<option value="${e}">${e}</option>`).join('')}
         </select>
       </div>
-    `).join("");
-    dimSelectContainer.querySelectorAll(".mi-dim-val").forEach((sel) =>
-      sel.addEventListener("change", recalc)
-    );
+    `,
+      )
+      .join('');
+    dimSelectContainer
+      .querySelectorAll('.mi-dim-val')
+      .forEach((sel) => sel.addEventListener('change', recalc));
     recalc();
   }
 
   function recalc(): void {
     const idx = getIdx();
     if (!idx) return;
-    const vIdx = Math.max(0, idx.versions.findIndex((v) => v.id === versionSelect.value));
+    const vIdx = Math.max(
+      0,
+      idx.versions.findIndex((v) => v.id === versionSelect.value),
+    );
     const v = idx.versions[vIdx];
     const wi = getWI(idx, vIdx);
 
-    const dimSels = dimSelectContainer.querySelectorAll<HTMLSelectElement>(".mi-dim-val");
+    const dimSels = dimSelectContainer.querySelectorAll<HTMLSelectElement>('.mi-dim-val');
     const coords = Array.from(dimSels).map((sel, i) => {
       const entries = v.dimSnapshots[i];
       return entries.indexOf(sel.value) + 1;
@@ -351,7 +415,7 @@ function setupUUIDDemo(container: HTMLElement): void {
 
     const value = wi.encodeUnsafe(coords);
     const addr = { schema: idx.id, version: v.id, index: value };
-    const uuid = converter.serialize(addr, "layout:uuid");
+    const uuid = converter.serialize(addr, 'layout:uuid');
     const colon = `${idx.id}:${v.id}:${value}`;
 
     const hexBar = renderHexBar(
@@ -378,15 +442,15 @@ function setupUUIDDemo(container: HTMLElement): void {
       ${hexBar}`;
   }
 
-  indexSelect.addEventListener("change", updateVersions);
-  versionSelect.addEventListener("change", updateDimSelectors);
+  indexSelect.addEventListener('change', updateVersions);
+  versionSelect.addEventListener('change', updateDimSelectors);
   updateVersions();
 }
 
 function setupRouting(container: HTMLElement): void {
-  const input = container.querySelector<HTMLInputElement>("#mi-route-input");
-  const btn = container.querySelector<HTMLButtonElement>("#mi-route-btn");
-  const resultDiv = container.querySelector<HTMLDivElement>("#mi-route-result");
+  const input = container.querySelector<HTMLInputElement>('#mi-route-input');
+  const btn = container.querySelector<HTMLButtonElement>('#mi-route-btn');
+  const resultDiv = container.querySelector<HTMLDivElement>('#mi-route-result');
   if (!input || !btn || !resultDiv) return;
   const routeInput = input;
   const routeButton = btn;
@@ -394,7 +458,10 @@ function setupRouting(container: HTMLElement): void {
 
   function analyze(): void {
     const raw = routeInput.value.trim();
-    if (!raw) { routeResult.innerHTML = ""; return; }
+    if (!raw) {
+      routeResult.innerHTML = '';
+      return;
+    }
 
     try {
       const addr = converter.parse(raw);
@@ -414,9 +481,12 @@ function setupRouting(container: HTMLElement): void {
       const wi = getWI(idx, vIdx);
       const coords = wi.decode(addr.index);
 
-      const entityRows = idx.dims.map((d, i) =>
-        `<tr><td style="font-weight:600">${d.label}</td><td><code>${v.dimSnapshots[i][coords[i] - 1]}</code></td><td class="td-num">coord ${coords[i]}</td></tr>`
-      ).join("");
+      const entityRows = idx.dims
+        .map(
+          (d, i) =>
+            `<tr><td style="font-weight:600">${d.label}</td><td><code>${v.dimSnapshots[i][coords[i] - 1]}</code></td><td class="td-num">coord ${coords[i]}</td></tr>`,
+        )
+        .join('');
 
       const hexBar = renderHexBar(
         `${idx.id}:${v.id}:${addr.index}`,
@@ -444,11 +514,13 @@ function setupRouting(container: HTMLElement): void {
     }
   }
 
-  routeButton.addEventListener("click", analyze);
-  routeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") analyze(); });
-  container.querySelectorAll(".mi-example-btn").forEach((el) => {
-    el.addEventListener("click", () => {
-      routeInput.value = (el as HTMLElement).dataset.uuid ?? "";
+  routeButton.addEventListener('click', analyze);
+  routeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') analyze();
+  });
+  container.querySelectorAll('.mi-example-btn').forEach((el) => {
+    el.addEventListener('click', () => {
+      routeInput.value = (el as HTMLElement).dataset.uuid ?? '';
       analyze();
     });
   });
@@ -458,21 +530,23 @@ function setupRouting(container: HTMLElement): void {
 }
 
 function setupDecodeMapTabs(container: HTMLElement): void {
-  const body = container.querySelector<HTMLDivElement>("#mi-dm-body");
+  const body = container.querySelector<HTMLDivElement>('#mi-dm-body');
   if (!body) return;
   const bodyEl = body;
-  const tabs = container.querySelectorAll<HTMLButtonElement>(".mi-dm-tab");
+  const tabs = container.querySelectorAll<HTMLButtonElement>('.mi-dm-tab');
 
   function showIdx(idxId: string): void {
     const idx = INDICES.find((i) => i.id === idxId);
     if (!idx) return;
     bodyEl.innerHTML = buildDecodeMapHtml(idx, 0);
-    tabs.forEach((t) => t.classList.toggle("active", t.dataset.idx === idxId));
+    tabs.forEach((t) => t.classList.toggle('active', t.dataset.idx === idxId));
   }
 
-  tabs.forEach((t) => t.addEventListener("click", () => {
-    const idxId = t.dataset.idx;
-    if (idxId) showIdx(idxId);
-  }));
+  tabs.forEach((t) =>
+    t.addEventListener('click', () => {
+      const idxId = t.dataset.idx;
+      if (idxId) showIdx(idxId);
+    }),
+  );
   showIdx(INDICES[0].id);
 }

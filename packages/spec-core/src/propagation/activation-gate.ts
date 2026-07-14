@@ -7,13 +7,13 @@
  * registry-service가 이 순수 함수를 소비하여 활성화 게이트를 구현한다.
  */
 
-import type { GraphPort, GraphNodeLike } from "spec-schema";
-import { checkConstraints } from "dkg";
-import { validatePrefixCategory } from "spec-schema";
+import type { GraphPort, GraphNodeLike } from 'spec-schema';
+import { checkConstraints } from 'dkg';
+import { validatePrefixCategory } from 'spec-schema';
 
 export interface ActivationDiagnostic {
-  readonly level: "error" | "warning" | "info";
-  readonly source: "constraint" | "domain-health" | "observation" | "schema";
+  readonly level: 'error' | 'warning' | 'info';
+  readonly source: 'constraint' | 'domain-health' | 'observation' | 'schema';
   readonly id: string;
   readonly message: string;
 }
@@ -25,7 +25,7 @@ export interface ActivationGateResult {
 }
 
 interface ObservationLike {
-  readonly kind: "observation";
+  readonly kind: 'observation';
   readonly id: string;
   readonly finding: string;
   readonly source?: string;
@@ -34,9 +34,11 @@ interface ObservationLike {
   readonly resolution?: unknown;
 }
 
-function isObservationLike(node: GraphNodeLike | undefined): node is GraphNodeLike & ObservationLike {
+function isObservationLike(
+  node: GraphNodeLike | undefined,
+): node is GraphNodeLike & ObservationLike {
   const record = node as (GraphNodeLike & Record<string, unknown>) | undefined;
-  return node?.kind === "observation" && typeof record?.finding === "string";
+  return node?.kind === 'observation' && typeof record?.finding === 'string';
 }
 
 /**
@@ -49,55 +51,55 @@ function isObservationLike(node: GraphNodeLike | undefined): node is GraphNodeLi
 export function checkActivationReadiness(
   graph: GraphPort,
   prefixId: string,
-  options?: { mode?: "strict" | "warn"; schemaCheck?: boolean },
+  options?: { mode?: 'strict' | 'warn'; schemaCheck?: boolean },
 ): ActivationGateResult {
-  const mode = options?.mode ?? "warn";
+  const mode = options?.mode ?? 'warn';
   const diagnostics: ActivationDiagnostic[] = [];
 
   // 1. Constraint check for this prefix
   const constraintResult = checkConstraints(graph, prefixId);
   for (const v of constraintResult.violations) {
     diagnostics.push({
-      level: v.severity ?? "warning",
-      source: "constraint",
+      level: v.severity ?? 'warning',
+      source: 'constraint',
       id: v.constraintId,
       message: `Constraint violated: ${v.rule}`,
     });
   }
 
   // 2. Check unresolved critical observations on this prefix
-  const obsEdges = graph.edgesTo(prefixId, "observes");
+  const obsEdges = graph.edgesTo(prefixId, 'observes');
   for (const edge of obsEdges) {
     const obs = graph.getNode(edge.from);
     if (!isObservationLike(obs)) continue;
     if (obs.resolution) continue; // already resolved
 
     // Only report action-needed observations
-    const intent: string = obs.intent
-      ?? (obs.source === "metric" ? "action-needed"
-        : (obs.suggestion ? "action-needed" : "monitoring"));
-    if (intent !== "action-needed") continue;
+    const intent: string =
+      obs.intent ??
+      (obs.source === 'metric' ? 'action-needed' : obs.suggestion ? 'action-needed' : 'monitoring');
+    if (intent !== 'action-needed') continue;
 
     diagnostics.push({
-      level: "warning",
-      source: "observation",
+      level: 'warning',
+      source: 'observation',
       id: obs.id,
       message: `Unresolved observation: ${obs.finding}`,
     });
   }
 
   // 3. Find which domain this prefix belongs to, check domain health
-  const domainEdges = graph.edgesTo(prefixId, "contains");
+  const domainEdges = graph.edgesTo(prefixId, 'contains');
   for (const edge of domainEdges) {
     const domain = graph.getNode(edge.from);
-    if (!domain || domain.kind !== "domain") continue;
+    if (!domain || domain.kind !== 'domain') continue;
 
     // Check constraints on the domain itself
     const domainConstraints = checkConstraints(graph, domain.id);
     for (const v of domainConstraints.violations) {
       diagnostics.push({
-        level: "warning",
-        source: "domain-health",
+        level: 'warning',
+        source: 'domain-health',
         id: v.constraintId,
         message: `Domain ${domain.id} constraint violated: ${v.rule}`,
       });
@@ -111,8 +113,8 @@ export function checkActivationReadiness(
       if (!schemaResult.valid) {
         for (const err of schemaResult.errors) {
           diagnostics.push({
-            level: "warning",
-            source: "schema",
+            level: 'warning',
+            source: 'schema',
             id: `schema-${prefixId}`,
             message: `Schema category violation: ${err}`,
           });
@@ -124,10 +126,10 @@ export function checkActivationReadiness(
   }
 
   const constraintViolations = diagnostics.filter(
-    d => d.source === "constraint" && d.level === "error",
+    (d) => d.source === 'constraint' && d.level === 'error',
   ).length;
 
-  const allowed = mode === "warn" || constraintViolations === 0;
+  const allowed = mode === 'warn' || constraintViolations === 0;
 
   return { allowed, diagnostics, constraintViolations };
 }

@@ -8,7 +8,7 @@
  * Use-case 는 `NotificationLoggerPort` 타입에 의존하고, infrastructure 가
  * 구현체를 주입한다. validator 는 use-case 파일에서 "LoggerPort" 토큰을 검출.
  */
-import type { LoggerPort, SliceLogContext } from "@qa-sdk/sim-domain-slice-kit";
+import type { LoggerPort, SliceLogContext } from '@qa-sdk/sim-domain-slice-kit';
 
 export type NotificationLoggerPort = LoggerPort;
 export type NotificationLogContext = SliceLogContext;

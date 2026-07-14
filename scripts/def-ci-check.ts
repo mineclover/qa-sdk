@@ -9,14 +9,11 @@
  * 3. 종료 코드: 에러 있으면 1, 경고만이면 0
  */
 
-import Database from "better-sqlite3";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import Database from 'better-sqlite3';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const DB_PATHS = [
-  "data/definition-service.sqlite",
-  "../data/definition-service.sqlite",
-];
+const DB_PATHS = ['data/definition-service.sqlite', '../data/definition-service.sqlite'];
 
 const CHANGE_THRESHOLD = 3;
 
@@ -25,7 +22,7 @@ function findDb(): string {
     const abs = resolve(process.cwd(), p);
     if (existsSync(abs)) return abs;
   }
-  console.error("DB 파일 없음. POST /sync를 먼저 실행하세요.");
+  console.error('DB 파일 없음. POST /sync를 먼저 실행하세요.');
   process.exit(1);
 }
 
@@ -35,7 +32,7 @@ function main() {
   const changedDocs: string[] = [];
   let i = 0;
   while (i < args.length) {
-    if (args[i] === "--changed" && args[i + 1]) {
+    if (args[i] === '--changed' && args[i + 1]) {
       changedDocs.push(args[i + 1]);
       i += 2;
     } else {
@@ -48,12 +45,16 @@ function main() {
   let warnings = 0;
 
   // 1. validate
-  const allDocs = db.prepare("SELECT doc_id, lifecycle FROM documents WHERE lifecycle = 'approved'").all() as { doc_id: string; lifecycle: string }[];
-  const allIds = new Set(allDocs.map(d => d.doc_id));
+  const allDocs = db
+    .prepare("SELECT doc_id, lifecycle FROM documents WHERE lifecycle = 'approved'")
+    .all() as { doc_id: string; lifecycle: string }[];
+  const allIds = new Set(allDocs.map((d) => d.doc_id));
   const referenced = new Set<string>();
 
   for (const doc of allDocs) {
-    const outgoing = db.prepare("SELECT target_id, link_type FROM document_links WHERE source_id = ?").all(doc.doc_id) as { target_id: string; link_type: string }[];
+    const outgoing = db
+      .prepare('SELECT target_id, link_type FROM document_links WHERE source_id = ?')
+      .all(doc.doc_id) as { target_id: string; link_type: string }[];
     for (const link of outgoing) {
       referenced.add(link.target_id);
       if (!allIds.has(link.target_id)) {
@@ -61,14 +62,23 @@ function main() {
         hasError = true;
       }
     }
-    const incoming = db.prepare("SELECT source_id FROM document_links WHERE target_id = ?").all(doc.doc_id) as { source_id: string }[];
+    const incoming = db
+      .prepare('SELECT source_id FROM document_links WHERE target_id = ?')
+      .all(doc.doc_id) as { source_id: string }[];
     if (incoming.length > 0) referenced.add(doc.doc_id);
   }
 
   // 고아 문서
   for (const doc of allDocs) {
     if (!referenced.has(doc.doc_id)) {
-      const hasContains = (db.prepare("SELECT COUNT(*) as cnt FROM document_links WHERE source_id = ? AND link_type = 'contains'").get(doc.doc_id) as { cnt: number }).cnt > 0;
+      const hasContains =
+        (
+          db
+            .prepare(
+              "SELECT COUNT(*) as cnt FROM document_links WHERE source_id = ? AND link_type = 'contains'",
+            )
+            .get(doc.doc_id) as { cnt: number }
+        ).cnt > 0;
       if (!hasContains) {
         console.warn(`⚠ 고아: ${doc.doc_id}`);
         warnings++;
@@ -78,8 +88,16 @@ function main() {
 
   // 2. 변경 대상 체크
   for (const docId of changedDocs) {
-    const deps = db.prepare("SELECT source_id, link_type FROM document_links WHERE target_id = ? AND link_type IN ('depends_on', 'implements')").all(docId) as { source_id: string; link_type: string }[];
-    const constraints = db.prepare("SELECT source_id FROM document_links WHERE target_id = ? AND link_type = 'constrains'").all(docId) as { source_id: string }[];
+    const deps = db
+      .prepare(
+        "SELECT source_id, link_type FROM document_links WHERE target_id = ? AND link_type IN ('depends_on', 'implements')",
+      )
+      .all(docId) as { source_id: string; link_type: string }[];
+    const constraints = db
+      .prepare(
+        "SELECT source_id FROM document_links WHERE target_id = ? AND link_type = 'constrains'",
+      )
+      .all(docId) as { source_id: string }[];
 
     if (deps.length >= CHANGE_THRESHOLD) {
       console.warn(`⚠ ${docId}: 의존자 ${deps.length}건 — 대규모 변경. 의사결정 기록 필요`);
@@ -89,7 +107,12 @@ function main() {
 
     if (constraints.length > 0) {
       for (const c of constraints) {
-        const purpose = (db.prepare("SELECT purpose FROM documents WHERE doc_id = ?").get(c.source_id) as { purpose: string } | undefined)?.purpose ?? "";
+        const purpose =
+          (
+            db.prepare('SELECT purpose FROM documents WHERE doc_id = ?').get(c.source_id) as
+              | { purpose: string }
+              | undefined
+          )?.purpose ?? '';
         console.warn(`⚠ ${docId}: 제약 ${c.source_id} — ${purpose.slice(0, 80)}`);
       }
       warnings++;

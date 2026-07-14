@@ -1,6 +1,6 @@
 // @def.boundary db-traffic-control-spec
 // @def.doc db-traffic-control-spec
-import type { QueryMetricEvent, TrafficMetricsCollector, Verdict } from "./types.js";
+import type { QueryMetricEvent, TrafficMetricsCollector, Verdict } from './types.js';
 
 /** fingerprint별 집계 결과 */
 export interface FingerprintAggregation {
@@ -80,7 +80,7 @@ export class InMemoryMetricsCollector implements TrafficMetricsCollector {
   aggregateByBudget(): readonly BudgetAggregation[] {
     const groups = new Map<string, QueryMetricEvent[]>();
     for (const event of this.events) {
-      const key = event.budgetId ?? "__unmatched__";
+      const key = event.budgetId ?? '__unmatched__';
       const list = groups.get(key) ?? [];
       list.push(event);
       groups.set(key, list);
@@ -95,8 +95,8 @@ export class InMemoryMetricsCollector implements TrafficMetricsCollector {
       let totalWaited = 0;
 
       for (const e of events) {
-        if (e.verdict === "allow") allowed += 1;
-        else if (e.verdict === "throttled") throttled += 1;
+        if (e.verdict === 'allow') allowed += 1;
+        else if (e.verdict === 'throttled') throttled += 1;
         else rejected += 1;
         totalDuration += e.durationMs;
         totalWaited += e.waitedMs;

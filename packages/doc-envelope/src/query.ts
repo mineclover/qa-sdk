@@ -1,9 +1,6 @@
 // @def.doc doc-envelope
 
-import type {
-  DocumentCollectionQuery,
-  DocumentEnvelope,
-} from "./types.js";
+import type { DocumentCollectionQuery, DocumentEnvelope } from './types.js';
 
 export function matchesDocumentQuery(
   envelope: DocumentEnvelope,
@@ -31,5 +28,5 @@ export function matchesDocumentQuery(
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }

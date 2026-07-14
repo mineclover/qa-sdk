@@ -1,21 +1,23 @@
-import { describe, it } from "vitest";
-import * as fc from "fast-check";
-import * as G from "../src/index.js";
+import { describe, it } from 'vitest';
+import * as fc from 'fast-check';
+import * as G from '../src/index.js';
 
 // 각 builder와 parser 쌍이 build → parse → equal 라운드트립을 만족하는지
 // 한 곳에서 메타 테스트한다. 식별자별 단위 테스트는 src/<name>.test.ts에 있다.
 
-describe("identifier grammar roundtrip (meta)", () => {
-  it("service prefix #1", () => {
+describe('identifier grammar roundtrip (meta)', () => {
+  it('service prefix #1', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom("svc", "slice", "evt", "cache"),
+        fc.constantFrom('svc', 'slice', 'evt', 'cache'),
         fc.stringMatching(/^[a-z][a-z0-9-]{0,30}$/),
         (category, name) => {
-          const o = { namespace: "sim", category, name } as const;
+          const o = { namespace: 'sim', category, name } as const;
           if (G.parseServicePrefix(G.buildServicePrefix(o as any)) === o) return true;
-          return JSON.stringify(G.parseServicePrefix(G.buildServicePrefix(o as any))) ===
-            JSON.stringify(o);
+          return (
+            JSON.stringify(G.parseServicePrefix(G.buildServicePrefix(o as any))) ===
+            JSON.stringify(o)
+          );
         },
       ),
       { numRuns: 100 },

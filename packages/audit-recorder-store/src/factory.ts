@@ -10,9 +10,9 @@
  * pg-migration-design.md §2 factory 패턴 준용.
  */
 
-import type { AuditRecorder } from "permission-engine";
+import type { AuditRecorder } from 'permission-engine';
 
-export type AuditRecorderDialect = "sqlite" | "pg";
+export type AuditRecorderDialect = 'sqlite' | 'pg';
 
 export interface CreateAuditRecorderArgs {
   dialect: AuditRecorderDialect;
@@ -20,16 +20,14 @@ export interface CreateAuditRecorderArgs {
   db: unknown;
 }
 
-export async function createAuditRecorder(
-  args: CreateAuditRecorderArgs,
-): Promise<AuditRecorder> {
-  if (args.dialect === "sqlite") {
-    const { SqliteAuditRecorder } = await import("./sqlite/adapter.js");
+export async function createAuditRecorder(args: CreateAuditRecorderArgs): Promise<AuditRecorder> {
+  if (args.dialect === 'sqlite') {
+    const { SqliteAuditRecorder } = await import('./sqlite/adapter.js');
     // BetterSQLite3Database 타입은 caller 책임 — factory는 unknown으로 받고 어댑터에 위임
     return new SqliteAuditRecorder(args.db as never);
   }
-  if (args.dialect === "pg") {
-    const { PgAuditRecorder } = await import("./pg/adapter.js");
+  if (args.dialect === 'pg') {
+    const { PgAuditRecorder } = await import('./pg/adapter.js');
     return new PgAuditRecorder(args.db as never);
   }
   throw new Error(`Unsupported dialect: ${(args as { dialect: string }).dialect}`);

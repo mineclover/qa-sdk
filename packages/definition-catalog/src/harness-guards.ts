@@ -11,7 +11,7 @@ import type {
   MachineDependency,
   HarnessRegistry,
   CompositeInstance,
-} from "./harness-state-model.js";
+} from './harness-state-model.js';
 
 /**
  * guard 의존성 검증.
@@ -26,7 +26,7 @@ export function checkGuards(
   const violations: string[] = [];
 
   for (const dep of registry.dependencies) {
-    if (dep.kind !== "guard") continue;
+    if (dep.kind !== 'guard') continue;
     if (dep.targetMachine !== machineId) continue;
     if (dep.targetState !== targetState) continue;
 
@@ -53,8 +53,6 @@ export function collectCascades(
 ): readonly MachineDependency[] {
   return registry.dependencies.filter(
     (dep) =>
-      dep.kind === "cascade" &&
-      dep.sourceMachine === machineId &&
-      dep.sourceState === targetState,
+      dep.kind === 'cascade' && dep.sourceMachine === machineId && dep.sourceState === targetState,
   );
 }

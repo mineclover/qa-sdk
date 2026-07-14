@@ -13,21 +13,21 @@
 // 구조와 동기. SSOT는 controller `src/decision/decision-builder.service.ts` —
 // drift 시 `pnpm --filter @qa-sdk/sim-canary-controller test` red.
 
-export type SafetyVerdict = "promote" | "hold" | "rollback";
-export type ResourceVerdict = "scale-up" | "scale-down" | "hold" | "rejected";
-export type CategoryVerdictValue = "PASS" | "WARN" | "FAIL";
+export type SafetyVerdict = 'promote' | 'hold' | 'rollback';
+export type ResourceVerdict = 'scale-up' | 'scale-down' | 'hold' | 'rejected';
+export type CategoryVerdictValue = 'PASS' | 'WARN' | 'FAIL';
 
 export type SafetyTriggerCategory =
-  | "perf"
-  | "compatibility"
-  | "decisionQuality"
-  | "auditSafety"
-  | "replicationHealth";
+  | 'perf'
+  | 'compatibility'
+  | 'decisionQuality'
+  | 'auditSafety'
+  | 'replicationHealth';
 
-export type ResourceRejectedBy = "resourceHeadroom" | "stability";
+export type ResourceRejectedBy = 'resourceHeadroom' | 'stability';
 
 export interface DecisionEvidence {
-  kind: "data" | "rule" | "external" | "precedent" | "intuition";
+  kind: 'data' | 'rule' | 'external' | 'precedent' | 'intuition';
   source: string;
   content: unknown;
   weight: number;
@@ -37,7 +37,7 @@ export interface SafetyDecisionRecordView {
   decisionId: string;
   cycleId: string;
   cycleAt: string;
-  pass: "safety";
+  pass: 'safety';
   verdict: SafetyVerdict;
   categoryVerdicts: {
     perf: CategoryVerdictValue;
@@ -51,15 +51,15 @@ export interface SafetyDecisionRecordView {
   evidence: DecisionEvidence[];
   confidence: number;
   action?:
-    | { kind: "weight-update"; weight: 0 | 5 | 25 | 50 | 100; revision: number }
-    | { kind: "noop" };
+    | { kind: 'weight-update'; weight: 0 | 5 | 25 | 50 | 100; revision: number }
+    | { kind: 'noop' };
 }
 
 export interface ResourceDecisionRecordView {
   decisionId: string;
   cycleId: string;
   cycleAt: string;
-  pass: "resource";
+  pass: 'resource';
   verdict: ResourceVerdict;
   categoryVerdicts: {
     loadPressure: CategoryVerdictValue;
@@ -72,11 +72,11 @@ export interface ResourceDecisionRecordView {
   confidence: number;
   action?:
     | {
-        kind: "scale";
+        kind: 'scale';
         target: { v1: number; v2: number };
         reason: string;
       }
-    | { kind: "noop" };
+    | { kind: 'noop' };
 }
 
 export type AnyDecision = SafetyDecisionRecordView | ResourceDecisionRecordView;
@@ -84,22 +84,16 @@ export type AnyDecision = SafetyDecisionRecordView | ResourceDecisionRecordView;
 export interface AuditFetcher {
   queryDecisions(filter: { cycleIds: readonly string[] }): Promise<AnyDecision[]>;
   queryFirstDecision(filter: {
-    pass: "safety" | "resource";
+    pass: 'safety' | 'resource';
     cycleIds?: readonly string[];
   }): Promise<AnyDecision | null>;
-  countAlerts(filter: {
-    cycleIds: readonly string[];
-    kind: string;
-  }): Promise<number>;
+  countAlerts(filter: { cycleIds: readonly string[]; kind: string }): Promise<number>;
 }
 
 export function getAuditFetcher(): AuditFetcher {
-  const h = (globalThis as unknown as { __simAuditFetcher?: AuditFetcher })
-    .__simAuditFetcher;
+  const h = (globalThis as unknown as { __simAuditFetcher?: AuditFetcher }).__simAuditFetcher;
   if (!h) {
-    throw new Error(
-      "__simAuditFetcher not bound — controller bootstrap required",
-    );
+    throw new Error('__simAuditFetcher not bound — controller bootstrap required');
   }
   return h;
 }
@@ -110,13 +104,12 @@ export function getAuditFetcher(): AuditFetcher {
  * waitForCycles는 in-process 부트스트랩이 노출하는 비동기 신호 wrapper다.
  * 사이클 N개가 audit-recorder에 적재될 때까지 대기 후 cycleId 배열을 반환한다.
  */
-export async function waitForCycles(
-  n: number,
-  timeoutMs = 60_000,
-): Promise<string[]> {
-  const h = (globalThis as unknown as {
-    __simWaitForCycles?: (n: number, timeoutMs: number) => Promise<string[]>;
-  }).__simWaitForCycles;
-  if (!h) throw new Error("__simWaitForCycles not bound");
+export async function waitForCycles(n: number, timeoutMs = 60_000): Promise<string[]> {
+  const h = (
+    globalThis as unknown as {
+      __simWaitForCycles?: (n: number, timeoutMs: number) => Promise<string[]>;
+    }
+  ).__simWaitForCycles;
+  if (!h) throw new Error('__simWaitForCycles not bound');
   return h(n, timeoutMs);
 }

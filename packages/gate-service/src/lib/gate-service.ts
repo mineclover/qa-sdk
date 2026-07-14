@@ -11,7 +11,7 @@ import {
   type AddressStateStore,
   type GateEngine,
   type GateResult,
-} from "index-meta-workers";
+} from 'index-meta-workers';
 
 export interface GateServiceDeps {
   addressStateStore?: AddressStateStore;
@@ -38,7 +38,7 @@ export type GateFilterMode = Parameters<typeof applyGateFilterRanges>[2];
 const ACTIVE_GATE_RESULT: GateResult = {
   encode: true,
   decode: true,
-  state: "active",
+  state: 'active',
   shouldVerify: false,
 };
 
@@ -51,18 +51,11 @@ export class GateService implements GateLookupService {
     this.engine = deps.gateEngine;
   }
 
-  async getStateRanges(
-    prefix: string,
-    versionId: string,
-  ): Promise<AddressStateCacheRecord | null> {
+  async getStateRanges(prefix: string, versionId: string): Promise<AddressStateCacheRecord | null> {
     return this.addressStateStore.get(prefix, versionId);
   }
 
-  async checkGate(
-    prefix: string,
-    versionId: string,
-    address: number,
-  ): Promise<GateResult> {
+  async checkGate(prefix: string, versionId: string, address: number): Promise<GateResult> {
     const record = await this.getStateRanges(prefix, versionId);
     if (!record) return ACTIVE_GATE_RESULT;
 
@@ -74,13 +67,9 @@ export class GateService implements GateLookupService {
     );
   }
 
-  async classifyAddress(
-    prefix: string,
-    versionId: string,
-    address: number,
-  ): Promise<AddressState> {
+  async classifyAddress(prefix: string, versionId: string, address: number): Promise<AddressState> {
     const record = await this.getStateRanges(prefix, versionId);
-    if (!record) return "active";
+    if (!record) return 'active';
 
     return resolveAddressState(
       address,
@@ -113,7 +102,7 @@ export class GateService implements GateLookupService {
 
 export function createGateService(deps: GateServiceDeps = {}): GateService {
   if (deps.gateEngine && !deps.addressStateStore) {
-    throw new Error("addressStateStore is required when gateEngine is provided");
+    throw new Error('addressStateStore is required when gateEngine is provided');
   }
 
   return new GateService({

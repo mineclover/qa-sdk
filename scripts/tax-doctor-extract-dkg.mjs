@@ -1,34 +1,20 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { extractDkgExpected } from "../packages/taxonomy-engine/dist/index.js";
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { extractDkgExpected } from '../packages/taxonomy-engine/dist/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const NODE_SPEC = join(
-  __dirname,
-  "..",
-  "docs",
-  "specs",
-  "dkg-system",
-  "dkg-node-types.spec.md",
-);
-const EDGE_SPEC = join(
-  __dirname,
-  "..",
-  "docs",
-  "specs",
-  "dkg-system",
-  "dkg-edge-types.spec.md",
-);
+const NODE_SPEC = join(__dirname, '..', 'docs', 'specs', 'dkg-system', 'dkg-node-types.spec.md');
+const EDGE_SPEC = join(__dirname, '..', 'docs', 'specs', 'dkg-system', 'dkg-edge-types.spec.md');
 const OUT = join(
   __dirname,
-  "..",
-  "packages",
-  "taxonomy-engine",
-  "__tests__",
-  "fixtures",
-  "expected-dkg-schema.json",
+  '..',
+  'packages',
+  'taxonomy-engine',
+  '__tests__',
+  'fixtures',
+  'expected-dkg-schema.json',
 );
 
 /**
@@ -46,27 +32,27 @@ function preserveAddresses(extractedEntries, existingEntries) {
   });
 }
 
-const nodeMd = readFileSync(NODE_SPEC, "utf8");
-const edgeMd = readFileSync(EDGE_SPEC, "utf8");
+const nodeMd = readFileSync(NODE_SPEC, 'utf8');
+const edgeMd = readFileSync(EDGE_SPEC, 'utf8');
 const extracted = extractDkgExpected(nodeMd, edgeMd);
 
 // 기존 fixture에서 node-tier/edge-group 등 자동 추출 불가 axes + address 보존
-const existing = JSON.parse(readFileSync(OUT, "utf8"));
+const existing = JSON.parse(readFileSync(OUT, 'utf8'));
 const mergedNodeEntries = preserveAddresses(
-  extracted.axes["node-kind"].entries,
-  existing.axes["node-kind"].entries,
+  extracted.axes['node-kind'].entries,
+  existing.axes['node-kind'].entries,
 );
 const mergedEdgeEntries = preserveAddresses(
-  extracted.axes["edge-kind"].entries,
-  existing.axes["edge-kind"].entries,
+  extracted.axes['edge-kind'].entries,
+  existing.axes['edge-kind'].entries,
 );
 
 const merged = {
   ...existing,
   axes: {
     ...existing.axes,
-    "node-kind": { entries: mergedNodeEntries },
-    "edge-kind": { entries: mergedEdgeEntries },
+    'node-kind': { entries: mergedNodeEntries },
+    'edge-kind': { entries: mergedEdgeEntries },
   },
 };
 
@@ -74,11 +60,9 @@ const merged = {
 const json = JSON.stringify(merged, null, 2).replace(
   /\{\n\s+"id": "([^"]+)"(,\n\s+"address": (\d+))?\n\s+\}/g,
   (_, id, _addrLine, addr) =>
-    addr !== undefined
-      ? `{ "id": "${id}", "address": ${addr} }`
-      : `{ "id": "${id}" }`,
+    addr !== undefined ? `{ "id": "${id}", "address": ${addr} }` : `{ "id": "${id}" }`,
 );
-writeFileSync(OUT, json + "\n");
+writeFileSync(OUT, json + '\n');
 console.log(
   `✔ ${OUT} 갱신됨 (node-kind: ${mergedNodeEntries.length}, edge-kind: ${mergedEdgeEntries.length})`,
 );

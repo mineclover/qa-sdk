@@ -8,8 +8,8 @@
  * 위반은 항상 action-needed intent.
  */
 
-import type { ObservationNode } from "./dkg.types.js";
-import type { InputViolation } from "spec-transition";
+import type { ObservationNode } from './dkg.types.js';
+import type { InputViolation } from 'spec-transition';
 
 /**
  * InputViolation[] → ObservationNode[] 변환.
@@ -18,12 +18,12 @@ import type { InputViolation } from "spec-transition";
  */
 export function violationsToObservations(
   violations: readonly InputViolation[],
-  options?: { date?: string; source?: "runtime" | "review" | "metric" | "manual" },
+  options?: { date?: string; source?: 'runtime' | 'review' | 'metric' | 'manual' },
 ): ObservationNode[] {
   if (violations.length === 0) return [];
 
   const date = options?.date ?? new Date().toISOString().slice(0, 10);
-  const source = options?.source ?? "runtime";
+  const source = options?.source ?? 'runtime';
 
   // transition별 그룹핑
   const byTransition = new Map<string, InputViolation[]>();
@@ -36,17 +36,17 @@ export function violationsToObservations(
   const observations: ObservationNode[] = [];
 
   for (const [transition, transViolations] of byTransition) {
-    const tspecId = `TSPEC-${transition.replace(/\./g, "-")}`;
-    const violatedAxes = [...new Set(transViolations.map(v => v.axis))];
+    const tspecId = `TSPEC-${transition.replace(/\./g, '-')}`;
+    const violatedAxes = [...new Set(transViolations.map((v) => v.axis))];
 
     observations.push({
-      kind: "observation",
-      id: `OBS-TRANSITION-${transition.replace(/\./g, "-")}-${date}`,
+      kind: 'observation',
+      id: `OBS-TRANSITION-${transition.replace(/\./g, '-')}-${date}`,
       date,
       source,
       subjects: [tspecId, ...violatedAxes],
-      finding: `${transition}: input 위반 ${transViolations.length}건 — ${violatedAxes.join(", ")} 축 조건 불충족`,
-      intent: "action-needed",
+      finding: `${transition}: input 위반 ${transViolations.length}건 — ${violatedAxes.join(', ')} 축 조건 불충족`,
+      intent: 'action-needed',
     });
   }
 

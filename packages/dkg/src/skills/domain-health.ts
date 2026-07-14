@@ -7,16 +7,16 @@
  * prefix 간 version 정합성 + constraint 위반 + coverage 요약.
  */
 
-import type { GraphPort } from "spec-schema";
-import type { DomainNode, PrefixNode } from "../dkg.types.js";
-import { checkAllConstraints, type ConstraintCheckResult } from "./constraint-check.js";
+import type { GraphPort } from 'spec-schema';
+import type { DomainNode, PrefixNode } from '../dkg.types.js';
+import { checkAllConstraints, type ConstraintCheckResult } from './constraint-check.js';
 
 export interface DomainHealthResult {
   readonly domainId: string;
   readonly domainName: string;
   readonly prefixes: readonly PrefixHealthSummary[];
   readonly constraintResults: readonly ConstraintCheckResult[];
-  readonly overallHealth: "healthy" | "warning" | "critical";
+  readonly overallHealth: 'healthy' | 'warning' | 'critical';
   readonly issues: readonly string[];
 }
 
@@ -30,18 +30,15 @@ export interface PrefixHealthSummary {
 /**
  * 특정 domain의 건강 상태를 진단한다.
  */
-export function checkDomainHealth(
-  graph: GraphPort,
-  domainId: string,
-): DomainHealthResult {
+export function checkDomainHealth(graph: GraphPort, domainId: string): DomainHealthResult {
   const domainNode = graph.getNode(domainId);
-  if (!domainNode || domainNode.kind !== "domain") {
+  if (!domainNode || domainNode.kind !== 'domain') {
     return {
       domainId,
-      domainName: "unknown",
+      domainName: 'unknown',
       prefixes: [],
       constraintResults: [],
-      overallHealth: "critical",
+      overallHealth: 'critical',
       issues: [`Domain "${domainId}" not found`],
     };
   }
@@ -50,12 +47,12 @@ export function checkDomainHealth(
   const issues: string[] = [];
 
   // domain에 포함된 prefix 정보
-  const prefixIds = graph.neighbors(domainId, "contains");
-  const prefixes: PrefixHealthSummary[] = prefixIds.map(pid => {
+  const prefixIds = graph.neighbors(domainId, 'contains');
+  const prefixes: PrefixHealthSummary[] = prefixIds.map((pid) => {
     const node = graph.getNode(pid) as PrefixNode | undefined;
     return {
       id: pid,
-      category: node?.category ?? "unknown",
+      category: node?.category ?? 'unknown',
       versionCount: 0, // catalog에서 가져와야 하지만 graph만으로 추정
       dimCount: node?.dimLabels.length ?? 0,
     };
@@ -82,19 +79,21 @@ export function checkDomainHealth(
 
   // constraint 검사 — 모든 prefix에 대해
   const constraintResults = checkAllConstraints(graph, prefixIds);
-  const violations = constraintResults.flatMap(r => r.violations);
+  const violations = constraintResults.flatMap((r) => r.violations);
   if (violations.length > 0) {
-    issues.push(`${violations.length} constraint violation(s): ${violations.map(v => v.constraintId).join(", ")}`);
+    issues.push(
+      `${violations.length} constraint violation(s): ${violations.map((v) => v.constraintId).join(', ')}`,
+    );
   }
 
   // 건강 판정
-  let overallHealth: DomainHealthResult["overallHealth"];
-  if (violations.length > 0 || issues.some(i => i.includes("not found"))) {
-    overallHealth = "critical";
+  let overallHealth: DomainHealthResult['overallHealth'];
+  if (violations.length > 0 || issues.some((i) => i.includes('not found'))) {
+    overallHealth = 'critical';
   } else if (issues.length > 0) {
-    overallHealth = "warning";
+    overallHealth = 'warning';
   } else {
-    overallHealth = "healthy";
+    overallHealth = 'healthy';
   }
 
   return {
@@ -110,9 +109,7 @@ export function checkDomainHealth(
 /**
  * 모든 domain의 건강 상태를 진단한다.
  */
-export function checkAllDomainsHealth(
-  graph: GraphPort,
-): DomainHealthResult[] {
-  const domains = graph.getNodesByKind("domain");
-  return domains.map(d => checkDomainHealth(graph, d.id));
+export function checkAllDomainsHealth(graph: GraphPort): DomainHealthResult[] {
+  const domains = graph.getNodesByKind('domain');
+  return domains.map((d) => checkDomainHealth(graph, d.id));
 }

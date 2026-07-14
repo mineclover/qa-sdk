@@ -55,11 +55,6 @@ export interface VerifyArgs {
   previousSecrets?: readonly Uint8Array[];
 }
 
-export type VerifyResult =
-  | { ok: true }
-  | { ok: false; reason: VerifyFailureReason };
+export type VerifyResult = { ok: true } | { ok: false; reason: VerifyFailureReason };
 
-export type VerifyFailureReason =
-  | "signature_mismatch"
-  | "expired"
-  | "invalid_format";
+export type VerifyFailureReason = 'signature_mismatch' | 'expired' | 'invalid_format';

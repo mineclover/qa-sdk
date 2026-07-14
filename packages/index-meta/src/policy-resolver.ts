@@ -7,12 +7,8 @@
  * Pattern Lattice(weighted-index/calc.ts) 위에서 동작한다.
  * 여러 규칙이 겹치는 좌표에 대해 ConflictStrategy로 최종 값을 결정한다.
  */
-import type { CoordConstraint } from "weighted-index";
-import {
-  coordMatchesPattern,
-  patternSpecificity,
-  patternMeet,
-} from "weighted-index";
+import type { CoordConstraint } from 'weighted-index';
+import { coordMatchesPattern, patternSpecificity, patternMeet } from 'weighted-index';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,11 +34,7 @@ export interface PatternRule<T> {
  * - 'collect':       매칭되는 모든 값 수집 (배열 반환)
  * - 'first-match':   입력 순서 기준 첫 매칭
  */
-export type ConflictStrategy =
-  | "most-specific"
-  | "priority"
-  | "collect"
-  | "first-match";
+export type ConflictStrategy = 'most-specific' | 'priority' | 'collect' | 'first-match';
 
 /**
  * resolvePolicy의 반환값.
@@ -80,13 +72,9 @@ export function matchRules<T>(
   rules: readonly PatternRule<T>[],
   shape: readonly number[],
 ): PatternRule<T>[] {
-  const matched = rules.filter((r) =>
-    coordMatchesPattern(coord, r.pattern, shape),
-  );
+  const matched = rules.filter((r) => coordMatchesPattern(coord, r.pattern, shape));
   return matched.toSorted(
-    (a, b) =>
-      patternSpecificity(b.pattern, shape) -
-      patternSpecificity(a.pattern, shape),
+    (a, b) => patternSpecificity(b.pattern, shape) - patternSpecificity(a.pattern, shape),
   );
 }
 
@@ -104,17 +92,15 @@ export function resolvePolicy<T>(
   if (matched.length === 0) return null;
 
   switch (strategy) {
-    case "most-specific":
+    case 'most-specific':
       return {
         value: matched[0].value,
         matchedRules: matched,
         strategy,
       };
 
-    case "priority": {
-      const sorted = [...matched].toSorted(
-        (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
-      );
+    case 'priority': {
+      const sorted = [...matched].toSorted((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
       return {
         value: sorted[0].value,
         matchedRules: sorted,
@@ -122,19 +108,17 @@ export function resolvePolicy<T>(
       };
     }
 
-    case "collect":
+    case 'collect':
       return {
         value: matched.map((r) => r.value),
         matchedRules: matched,
         strategy,
       };
 
-    case "first-match": {
+    case 'first-match': {
       // 원래 입력 순서에서 첫 번째 매칭을 찾는다
       // eslint-disable-next-line typescript/no-non-null-assertion -- matched.length > 0이므로 find는 반드시 매칭됨
-      const first = rules.find((r) =>
-        coordMatchesPattern(coord, r.pattern, shape),
-      )!;
+      const first = rules.find((r) => coordMatchesPattern(coord, r.pattern, shape))!;
       return {
         value: first.value,
         matchedRules: matched,

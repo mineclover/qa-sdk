@@ -1,22 +1,19 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type {
-  PayloadFormat,
-  PayloadEncoding,
-} from "./payload.js";
+import type { PayloadFormat, PayloadEncoding } from './payload.js';
 
 // ── Record Kind ─────────────────────────────────────────
 
-export type RecordKind = "log" | "span" | "metric";
+export type RecordKind = 'log' | 'span' | 'metric';
 
 // ── Metric Type ──────────────────────────────────────
 
-export type MetricType = "counter" | "gauge" | "histogram" | "summary";
+export type MetricType = 'counter' | 'gauge' | 'histogram' | 'summary';
 
 // ── Status Code (for spans) ─────────────────────────────
 
-export type SpanStatusCode = "ok" | "error" | "unset";
+export type SpanStatusCode = 'ok' | 'error' | 'unset';
 
 // ── Event Record ────────────────────────────────────────
 

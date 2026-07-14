@@ -10,7 +10,7 @@
  *   - GET /audit/entry/:spanId            — 단일 entry
  */
 
-import type { AuditEntry } from "permission-engine";
+import type { AuditEntry } from 'permission-engine';
 
 export interface AuditTraceResponse {
   rootSpanId: string;
@@ -96,9 +96,7 @@ export async function fetchAuditTrace(
     }),
   );
   if (!res.ok) {
-    throw new Error(
-      `fetchAuditTrace ${rootSpanId}: status=${res.status} body=${await res.text()}`,
-    );
+    throw new Error(`fetchAuditTrace ${rootSpanId}: status=${res.status} body=${await res.text()}`);
   }
   return (await res.json()) as AuditTraceResponse;
 }
@@ -132,9 +130,7 @@ export async function fetchAuditEntry(
     }),
   );
   if (!res.ok) {
-    throw new Error(
-      `fetchAuditEntry ${spanId}: status=${res.status} body=${await res.text()}`,
-    );
+    throw new Error(`fetchAuditEntry ${spanId}: status=${res.status} body=${await res.text()}`);
   }
   return (await res.json()) as AuditEntry;
 }
@@ -203,7 +199,7 @@ export async function fetchGraphSnapshotPrune(
 ): Promise<GraphSnapshotPruneResponse> {
   const res = await gatewayFetch(
     new Request(`http://sim/audit/graphs/${graphId}/prune/${keepLatest}`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: { Authorization: `Bearer ${authToken}` },
     }),
   );

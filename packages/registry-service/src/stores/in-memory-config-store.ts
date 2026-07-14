@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { ConfigRecord, ConfigStore } from "./config-store.js";
+import type { ConfigRecord, ConfigStore } from './config-store.js';
 
 export class InMemoryConfigStore implements ConfigStore {
   private readonly store = new Map<string, ConfigRecord>();
@@ -24,7 +24,7 @@ export class InMemoryConfigStore implements ConfigStore {
   }
 
   async list(catalogId: string): Promise<ConfigRecord[]> {
-    return [...this.store.values()].filter(r => r.catalogId === catalogId);
+    return [...this.store.values()].filter((r) => r.catalogId === catalogId);
   }
 
   async delete(catalogId: string, configType: string): Promise<void> {

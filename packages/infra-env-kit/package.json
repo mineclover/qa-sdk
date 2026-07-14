@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "description": "infra-engine 환경 공급 유틸리티 — env bridge, .env export, service connection codegen",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "infra-env": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,10 +24,6 @@
       "require": "./dist/cli.cjs"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

@@ -6,4 +6,4 @@
  *
  * 실제 Drizzle 스키마 정의는 src/db/schema.ts가 SSOT다.
  */
-export { policyRules } from "../db/schema.js";
+export { policyRules } from '../db/schema.js';

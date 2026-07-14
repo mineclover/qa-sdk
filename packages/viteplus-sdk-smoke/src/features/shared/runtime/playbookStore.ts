@@ -7,9 +7,7 @@ export interface PlaybookStore<TState> {
   subscribe(listener: Listener): () => void;
 }
 
-export function createPlaybookStore<TState>(
-  initialState: TState,
-): PlaybookStore<TState> {
+export function createPlaybookStore<TState>(initialState: TState): PlaybookStore<TState> {
   let state = initialState;
   const listeners = new Set<Listener>();
 

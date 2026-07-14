@@ -1,11 +1,11 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { desc, eq } from "drizzle-orm";
-import type { ScenarioSpecStore } from "@qa-sdk/core";
-import type { ScenarioSpec } from "@qa-sdk/core";
-import { scenarioSpecs } from "../db/schema.js";
-import type { D1Db } from "./d1-db-type.js";
+import { desc, eq } from 'drizzle-orm';
+import type { ScenarioSpecStore } from '@qa-sdk/core';
+import type { ScenarioSpec } from '@qa-sdk/core';
+import { scenarioSpecs } from '../db/schema.js';
+import type { D1Db } from './d1-db-type.js';
 
 export class D1ScenarioSpecStore implements ScenarioSpecStore {
   constructor(private readonly db: D1Db) {}
@@ -54,7 +54,7 @@ export class D1ScenarioSpecStore implements ScenarioSpecStore {
       .from(scenarioSpecs)
       .orderBy(desc(scenarioSpecs.updatedAt))
       .limit(limit);
-    return rows.map(r => JSON.parse(r.spec) as ScenarioSpec);
+    return rows.map((r) => JSON.parse(r.spec) as ScenarioSpec);
   }
 
   async findByDomain(domain: string, limit = 100): Promise<ScenarioSpec[]> {
@@ -64,7 +64,7 @@ export class D1ScenarioSpecStore implements ScenarioSpecStore {
       .where(eq(scenarioSpecs.domain, domain))
       .orderBy(desc(scenarioSpecs.updatedAt))
       .limit(limit);
-    return rows.map(r => JSON.parse(r.spec) as ScenarioSpec);
+    return rows.map((r) => JSON.parse(r.spec) as ScenarioSpec);
   }
 
   async remove(scenarioId: string): Promise<boolean> {

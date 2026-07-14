@@ -1,21 +1,21 @@
 // @def.boundary sim-approval-api
 // @def.doc sim-erp-pm-design
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { PgApprovalRepository } from "./adapter.js";
-import { SIM_APPROVAL_PG_RESET_DDL } from "./schema.js";
+import { PgApprovalRepository } from './adapter.js';
+import { SIM_APPROVAL_PG_RESET_DDL } from './schema.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
-describe.skipIf(!PG_AVAILABLE)("PgApprovalRepository — PG-specific", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('PgApprovalRepository — PG-specific', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
 
   let sql: ReturnType<typeof postgres>;
   let repo: PgApprovalRepository;
@@ -46,18 +46,26 @@ describe.skipIf(!PG_AVAILABLE)("PgApprovalRepository — PG-specific", () => {
     }
   });
 
-  it("createBudgetRequest amount-based stage", async () => {
-    const br = await repo.createBudgetRequest({ projectId: "p", amount: 5_000_000, requesterId: "u" });
+  it('createBudgetRequest amount-based stage', async () => {
+    const br = await repo.createBudgetRequest({
+      projectId: 'p',
+      amount: 5_000_000,
+      requesterId: 'u',
+    });
     expect(br.totalStages).toBe(2);
     const steps = await repo.listSteps(br.id);
     expect(steps.length).toBe(2);
   });
 
-  it("recordDecision flow — step 갱신 후 listSteps 반영", async () => {
-    const br = await repo.createBudgetRequest({ projectId: "p", amount: 500_000, requesterId: "u" });
-    await repo.recordDecision(br.id, 1, "mgr-1", "approved", "ok");
+  it('recordDecision flow — step 갱신 후 listSteps 반영', async () => {
+    const br = await repo.createBudgetRequest({
+      projectId: 'p',
+      amount: 500_000,
+      requesterId: 'u',
+    });
+    await repo.recordDecision(br.id, 1, 'mgr-1', 'approved', 'ok');
     const steps = await repo.listSteps(br.id);
-    expect(steps[0].approverId).toBe("mgr-1");
-    expect(steps[0].decision).toBe("approved");
+    expect(steps[0].approverId).toBe('mgr-1');
+    expect(steps[0].decision).toBe('approved');
   });
 });

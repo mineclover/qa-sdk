@@ -22,12 +22,12 @@ export {
   type CorridorContract,
   type CorridorLink,
   type CorridorTemplateValidationResult,
-} from "./internal/corridor-core.js";
+} from './internal/corridor-core.js';
 
 import {
   defaultCorridorTemplateRegistry,
   validateCorridorAgainstTemplate,
-} from "./internal/corridor-core.js";
+} from './internal/corridor-core.js';
 
 export const operationalOntologyCorridorPlane = {
   defaultCorridorTemplateRegistry,

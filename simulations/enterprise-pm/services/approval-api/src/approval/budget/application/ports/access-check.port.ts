@@ -10,12 +10,12 @@
  *   을 직접 import 하지 않는다 (domain-slice-kit 컨벤션 — cross-domain 은 query port).
  */
 export type BudgetApiId =
-  | "budget.create"
-  | "budget.read"
-  | "budget.submit"
-  | "budget.start-review"
-  | "budget.approve"
-  | "budget.reject";
+  | 'budget.create'
+  | 'budget.read'
+  | 'budget.submit'
+  | 'budget.start-review'
+  | 'budget.approve'
+  | 'budget.reject';
 
 export interface BudgetUserContext {
   readonly userId: string;

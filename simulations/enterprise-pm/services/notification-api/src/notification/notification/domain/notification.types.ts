@@ -1,10 +1,10 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import type { NotificationId, RecipientUserId } from "./notification.ids.js";
+import type { NotificationId, RecipientUserId } from './notification.ids.js';
 
 /** 상태 머신 — notification 라이프사이클의 유한 상태. */
-export type NotificationStatus = "pending" | "sent" | "read" | "failed";
+export type NotificationStatus = 'pending' | 'sent' | 'read' | 'failed';
 
 /** 도메인 entity 의 내부 props (불변, branded ids). */
 export interface NotificationProps {

@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "description": "품질 게이트 실행 결과 원장 — SQLite 기반 gate 검증 상태 추적",
   "license": "MIT",
+  "files": [
+    "dist",
+    "drizzle"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -11,10 +18,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist", "drizzle"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

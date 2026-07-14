@@ -1,19 +1,16 @@
 // @def.boundary sim-bitmap-cache
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import type { Redis } from "ioredis";
+import type { Redis } from 'ioredis';
 import {
   BitmapLruCache,
   DEFAULT_BITMAP_TTL_MS,
   type BitmapCacheEntry,
   type BitmapLruCacheOptions,
-} from "./lru-cache.js";
-import { recordBitmapCacheLookup } from "./metrics.js";
-import { BitmapInvalidationPublisher } from "./publisher.js";
-import {
-  BitmapInvalidationSubscriber,
-  type SubscriberLogger,
-} from "./subscriber.js";
+} from './lru-cache.js';
+import { recordBitmapCacheLookup } from './metrics.js';
+import { BitmapInvalidationPublisher } from './publisher.js';
+import { BitmapInvalidationSubscriber, type SubscriberLogger } from './subscriber.js';
 
 /** spec 04 §3.2 — catalog 콜라보레이터. latestPrefixVersion 단일 진실. */
 export interface BitmapCacheCatalog {
@@ -88,25 +85,21 @@ export class BitmapCacheService {
   /** spec 04 §3.2 — 3단계 검증 흐름. */
   async getBitmap(key: string): Promise<Uint8Array> {
     if (!this.catalog || !this.authApi) {
-      throw new Error(
-        "BitmapCacheService.getBitmap requires { catalog, authApi } 주입",
-      );
+      throw new Error('BitmapCacheService.getBitmap requires { catalog, authApi } 주입');
     }
     const cached = this.cache.getEntry(key);
 
     // (1) hit + valid TTL + version-check OK → 즉시 반환
     if (cached && Date.now() - cached.issuedAt < cached.ttlMs) {
-      const currentVersion = await this.catalog.getLatestPrefixVersion(
-        cached.prefix,
-      );
+      const currentVersion = await this.catalog.getLatestPrefixVersion(cached.prefix);
       if (currentVersion === cached.prefixVersion) {
-        recordBitmapCacheLookup("hit");
+        recordBitmapCacheLookup('hit');
         return cached.mask;
       }
       // version mismatch → fallthrough (회복 경로)
-      recordBitmapCacheLookup("version_mismatch");
+      recordBitmapCacheLookup('version_mismatch');
     } else {
-      recordBitmapCacheLookup("miss");
+      recordBitmapCacheLookup('miss');
     }
 
     // (2) miss / TTL 만료 / version mismatch → auth-api 에서 refresh

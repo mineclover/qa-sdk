@@ -52,9 +52,7 @@
       "priority": 2,
       "passes": true,
       "notes": "This story is the key bridge from programming-artifact quality-status records to the existing quality-gates-system topology.",
-      "dependsOn": [
-        "US-001"
-      ],
+      "dependsOn": ["US-001"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -106,10 +104,7 @@
       "priority": 4,
       "passes": true,
       "notes": "Snapshot remains authoritative. Ledger fallback is additive and explicit.",
-      "dependsOn": [
-        "US-002",
-        "US-003"
-      ],
+      "dependsOn": ["US-002", "US-003"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -134,9 +129,7 @@
       "priority": 5,
       "passes": true,
       "notes": "Keep JSON additive and backward compatible. Do not add new governanceClosure statuses.",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -164,9 +157,7 @@
       "priority": 6,
       "passes": true,
       "notes": "Freshness SLA is opt-in only. Distinguish docVersion stale from generatedAt freshness stale in messages and docs.",
-      "dependsOn": [
-        "US-004"
-      ],
+      "dependsOn": ["US-004"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -190,10 +181,7 @@
       "priority": 7,
       "passes": true,
       "notes": "Use the existing PromptArtifactQualityStatusEvidence path. Avoid new prompt quality dimensions.",
-      "dependsOn": [
-        "US-005",
-        "US-006"
-      ],
+      "dependsOn": ["US-005", "US-006"],
       "completionNotes": "Completed by agent"
     },
     {
@@ -220,15 +208,7 @@
       "priority": 8,
       "passes": true,
       "notes": "Execute after implementation stories unless a prior story needs immediate spec updates to keep validation green.",
-      "dependsOn": [
-        "US-001",
-        "US-002",
-        "US-003",
-        "US-004",
-        "US-005",
-        "US-006",
-        "US-007"
-      ],
+      "dependsOn": ["US-001", "US-002", "US-003", "US-004", "US-005", "US-006", "US-007"],
       "completionNotes": "Completed by agent"
     }
   ],

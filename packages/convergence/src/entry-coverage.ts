@@ -10,8 +10,8 @@
  * @layer 측정 (Measurement)
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { EntryUsage, AddressUsage } from "./convergence.types.js";
+import type { Catalog } from '@qa-sdk/core';
+import type { EntryUsage, AddressUsage } from './convergence.types.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Error-path entries — 건강한 시스템에서 관측되지 않는 것이 정상
@@ -19,12 +19,12 @@ import type { EntryUsage, AddressUsage } from "./convergence.types.js";
 
 /** 오류/장애 시에만 발생하는 entry. coverage 분모에서 제외. */
 export const ERROR_PATH_ENTRIES: Readonly<Record<string, readonly string[]>> = {
-  build_result: ["failure", "type-error"],
-  test_result: ["failed", "error", "skipped", "timeout"],
-  health_status: ["unhealthy", "maintenance"],
-  verdict_result: ["fail", "degraded", "unknown"],
-  flow_step: ["failure", "timeout"],
-  anomaly_severity: ["critical"],
+  build_result: ['failure', 'type-error'],
+  test_result: ['failed', 'error', 'skipped', 'timeout'],
+  health_status: ['unhealthy', 'maintenance'],
+  verdict_result: ['fail', 'degraded', 'unknown'],
+  flow_step: ['failure', 'timeout'],
+  anomaly_severity: ['critical'],
 };
 
 function isErrorPath(axisId: string, entry: string): boolean {
@@ -38,7 +38,7 @@ function isErrorPath(axisId: string, entry: string): boolean {
 export interface EntryState {
   readonly axisId: string;
   readonly entry: string;
-  readonly status: "observed" | "dormant" | "phantom";
+  readonly status: 'observed' | 'dormant' | 'phantom';
   /** observed일 때: 관측 횟수 */
   readonly count: number;
   /** observed일 때: 마지막 관측 시각 */
@@ -124,7 +124,7 @@ export function analyzeEntryCoverage(
 
     for (const label of prefix.labels) {
       const dimRef = prefix.dims[label];
-      if (dimRef.kind !== "axis") continue; // prefix_ref, table_ref는 건너뜀
+      if (dimRef.kind !== 'axis') continue; // prefix_ref, table_ref는 건너뜀
 
       const axisId = dimRef.axisId;
       const axis = catalog.axes[axisId];
@@ -146,7 +146,7 @@ export function analyzeEntryCoverage(
         entries.push({
           axisId: label,
           entry,
-          status: isObserved ? "observed" : "dormant",
+          status: isObserved ? 'observed' : 'dormant',
           count: usage?.count ?? 0,
           lastSeen: usage?.lastSeen,
           usedByPrefixes: isObserved ? [prefixId] : [],
@@ -154,8 +154,8 @@ export function analyzeEntryCoverage(
       }
 
       const defined = entries.length;
-      const observed = entries.filter(e => e.status === "observed").length;
-      const dormant = entries.filter(e => e.status === "dormant").length;
+      const observed = entries.filter((e) => e.status === 'observed').length;
+      const dormant = entries.filter((e) => e.status === 'dormant').length;
 
       dims[label] = { axisId, defined, observed, dormant, phantom: 0, entries };
       totalDefined += defined;
@@ -164,12 +164,12 @@ export function analyzeEntryCoverage(
     }
 
     const coverageRate = totalDefined > 0 ? totalObserved / totalDefined : 1;
-    const dormantDims = Object.values(dims).filter(d => d.dormant > 0);
+    const dormantDims = Object.values(dims).filter((d) => d.dormant > 0);
     const summaryParts: string[] = [];
     if (dormantDims.length > 0) {
       for (const d of dormantDims) {
-        const dormantEntries = d.entries.filter(e => e.status === "dormant").map(e => e.entry);
-        summaryParts.push(`${d.axisId}: [${dormantEntries.join(",")}] 미관측`);
+        const dormantEntries = d.entries.filter((e) => e.status === 'dormant').map((e) => e.entry);
+        summaryParts.push(`${d.axisId}: [${dormantEntries.join(',')}] 미관측`);
       }
     }
 
@@ -177,9 +177,10 @@ export function analyzeEntryCoverage(
       prefixId,
       dims,
       coverageRate,
-      summary: summaryParts.length > 0
-        ? `커버리지 ${(coverageRate * 100).toFixed(0)}% — ${summaryParts.join("; ")}`
-        : `커버리지 100%`,
+      summary:
+        summaryParts.length > 0
+          ? `커버리지 ${(coverageRate * 100).toFixed(0)}% — ${summaryParts.join('; ')}`
+          : `커버리지 100%`,
     });
   }
 
@@ -194,11 +195,15 @@ export function analyzeEntryCoverage(
   }
 
   for (const u of entryUsages) {
-    if (!definedEntryKeys.has(u.entry) && !u.entry.startsWith("(reserved:") && isNaN(Number(u.entry))) {
+    if (
+      !definedEntryKeys.has(u.entry) &&
+      !u.entry.startsWith('(reserved:') &&
+      isNaN(Number(u.entry))
+    ) {
       allEntries.push({
         axisId: u.axisId,
         entry: u.entry,
-        status: "phantom",
+        status: 'phantom',
         count: u.count,
         lastSeen: u.lastSeen,
         usedByPrefixes: [],
@@ -208,15 +213,15 @@ export function analyzeEntryCoverage(
 
   // 중복 제거
   const uniqueEntries = deduplicateEntries(allEntries);
-  const totalDefined = uniqueEntries.filter(e => e.status !== "phantom").length;
-  const totalObserved = uniqueEntries.filter(e => e.status === "observed").length;
-  const dormantCount = uniqueEntries.filter(e => e.status === "dormant").length;
-  const phantomCount = uniqueEntries.filter(e => e.status === "phantom").length;
+  const totalDefined = uniqueEntries.filter((e) => e.status !== 'phantom').length;
+  const totalObserved = uniqueEntries.filter((e) => e.status === 'observed').length;
+  const dormantCount = uniqueEntries.filter((e) => e.status === 'dormant').length;
+  const phantomCount = uniqueEntries.filter((e) => e.status === 'phantom').length;
   const overallCoverageRate = totalDefined > 0 ? totalObserved / totalDefined : 1;
 
   // error-path: dormant이면서 error-path에 해당하는 entry
   const errorPathCount = uniqueEntries.filter(
-    e => e.status === "dormant" && isErrorPath(e.axisId, e.entry),
+    (e) => e.status === 'dormant' && isErrorPath(e.axisId, e.entry),
   ).length;
 
   // 실질 커버리지: error-path 제외

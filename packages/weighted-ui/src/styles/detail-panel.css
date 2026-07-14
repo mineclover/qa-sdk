@@ -20,11 +20,20 @@
   text-align: center;
   padding: 32px;
 }
-.sp-arrow { font-size: 1.4rem; }
-.sp-placeholder p { font-size: 0.75rem; line-height: 1.7; }
+.sp-arrow {
+  font-size: 1.4rem;
+}
+.sp-placeholder p {
+  font-size: 0.75rem;
+  line-height: 1.7;
+}
 
-.sp-content.hidden { display: none !important; }
-.sp-placeholder.hidden { display: none !important; }
+.sp-content.hidden {
+  display: none !important;
+}
+.sp-placeholder.hidden {
+  display: none !important;
+}
 
 /* Section header */
 .sp-section {
@@ -43,7 +52,9 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-.sp-sec-body { padding: 10px 12px; }
+.sp-sec-body {
+  padding: 10px 12px;
+}
 
 /* Detail info rows */
 .detail-row {
@@ -54,7 +65,9 @@
   font-size: 0.75rem;
   border-bottom: 1px solid var(--border-cell);
 }
-.detail-row:last-child { border-bottom: none; }
+.detail-row:last-child {
+  border-bottom: none;
+}
 .detail-label {
   font-size: 0.65rem;
   font-weight: 700;

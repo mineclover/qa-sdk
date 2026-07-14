@@ -9,20 +9,20 @@
 
 // ── 관측 루프 의도 ────────────────────────────────────────
 
-export type ObservationIntent = "action-needed" | "monitoring" | "completed";
+export type ObservationIntent = 'action-needed' | 'monitoring' | 'completed';
 
 export type ObservationSuggestion =
-  | { readonly kind: "merge"; readonly targets: readonly string[]; readonly into: string }
-  | { readonly kind: "split"; readonly target: string; readonly into: readonly string[] }
-  | { readonly kind: "deprecate"; readonly target: string; readonly reason: string }
-  | { readonly kind: "add-entry"; readonly axis: string; readonly entry: string }
-  | { readonly kind: "add-constraint"; readonly rule: string }
-  | { readonly kind: "revise-decision"; readonly decisionId: string; readonly reason: string };
+  | { readonly kind: 'merge'; readonly targets: readonly string[]; readonly into: string }
+  | { readonly kind: 'split'; readonly target: string; readonly into: readonly string[] }
+  | { readonly kind: 'deprecate'; readonly target: string; readonly reason: string }
+  | { readonly kind: 'add-entry'; readonly axis: string; readonly entry: string }
+  | { readonly kind: 'add-constraint'; readonly rule: string }
+  | { readonly kind: 'revise-decision'; readonly decisionId: string; readonly reason: string };
 
 // ── 노드 타입 ─────────────────────────────────────────────
 
 export interface DecisionNode {
-  readonly kind: "decision";
+  readonly kind: 'decision';
   readonly id: string;
   readonly date: string;
   readonly title: string;
@@ -32,52 +32,52 @@ export interface DecisionNode {
   readonly metadata?: Readonly<Record<string, unknown>>;
   readonly alternatives?: readonly string[];
   readonly reversalConditions?: readonly string[];
-  readonly lifecycle: "active" | "superseded" | "reversed";
+  readonly lifecycle: 'active' | 'superseded' | 'reversed';
 }
 
 export interface ObservationNode {
-  readonly kind: "observation";
+  readonly kind: 'observation';
   readonly id: string;
   readonly date: string;
-  readonly source: "runtime" | "review" | "metric" | "manual";
+  readonly source: 'runtime' | 'review' | 'metric' | 'manual';
   readonly subjects: readonly string[];
   readonly finding: string;
   readonly suggestion?: ObservationSuggestion;
   readonly intent?: ObservationIntent;
   readonly resolution?: {
     readonly decisionId: string;
-    readonly outcome: "accepted" | "deferred" | "rejected";
+    readonly outcome: 'accepted' | 'deferred' | 'rejected';
     readonly note?: string;
   };
 }
 
 export interface ConstraintNode {
-  readonly kind: "constraint";
+  readonly kind: 'constraint';
   readonly id: string;
   readonly rule: string;
   readonly formal?: string;
   readonly scope: readonly string[];
-  readonly lifecycle: "active" | "suspended" | "retired";
+  readonly lifecycle: 'active' | 'suspended' | 'retired';
 }
 
 export interface PrefixNode {
-  readonly kind: "prefix";
+  readonly kind: 'prefix';
   readonly id: string;
   readonly name: string;
   readonly dimLabels: readonly string[];
-  readonly category?: "entity" | "event" | "relation" | "state" | "policy" | "observation";
-  readonly lifecycle?: "draft" | "active" | "deprecated" | "archived";
+  readonly category?: 'entity' | 'event' | 'relation' | 'state' | 'policy' | 'observation';
+  readonly lifecycle?: 'draft' | 'active' | 'deprecated' | 'archived';
 }
 
 // ── Decision Scaffold 타입 ────────────────────────────────
 
 export type DecisionType =
-  | "capacity"
-  | "new-axis"
-  | "new-prefix"
-  | "dim-add"
-  | "merge"
-  | "deprecate";
+  | 'capacity'
+  | 'new-axis'
+  | 'new-prefix'
+  | 'dim-add'
+  | 'merge'
+  | 'deprecate';
 
 export interface CapacityParams {
   readonly axis: string;

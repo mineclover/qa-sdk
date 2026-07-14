@@ -13,17 +13,17 @@
  *   stores          — d1DatabaseId → IndexMetaStore    (각 D1 인스턴스)
  */
 
-import type { PrefixRegistry } from "./prefix-registry.js";
-import type { PrefixRouter } from "./prefix-router.js";
-import type { IndexMetaStore, EntryRecord } from "./index-meta-store.js";
-import { ValidationError } from "./errors.js";
+import type { PrefixRegistry } from './prefix-registry.js';
+import type { PrefixRouter } from './prefix-router.js';
+import type { IndexMetaStore, EntryRecord } from './index-meta-store.js';
+import { ValidationError } from './errors.js';
 
 export class DistributedStoreClient {
   constructor(
     private readonly registry: PrefixRegistry,
     private readonly router: PrefixRouter,
     /** d1DatabaseId → IndexMetaStore 인스턴스 맵 */
-    private readonly stores: ReadonlyMap<string, IndexMetaStore>
+    private readonly stores: ReadonlyMap<string, IndexMetaStore>,
   ) {}
 
   // ── 라우팅 ───────────────────────────────────────────────
@@ -32,13 +32,13 @@ export class DistributedStoreClient {
     const dbId = await this.router.getDatabase(prefix);
     if (!dbId) {
       throw new ValidationError(
-        `DistributedStoreClient: no D1 database routed for prefix "${prefix}"`
+        `DistributedStoreClient: no D1 database routed for prefix "${prefix}"`,
       );
     }
     const store = this.stores.get(dbId);
     if (!store) {
       throw new ValidationError(
-        `DistributedStoreClient: D1 database "${dbId}" not registered in stores`
+        `DistributedStoreClient: D1 database "${dbId}" not registered in stores`,
       );
     }
     return store;
@@ -61,17 +61,13 @@ export class DistributedStoreClient {
     prefix: string,
     versionId: string,
     from: number,
-    to: number
+    to: number,
   ): Promise<EntryRecord[]> {
     const store = await this._store(prefix);
     return store.getEntriesInRange(prefix, versionId, from, to);
   }
 
-  async getEntry(
-    prefix: string,
-    versionId: string,
-    position: number
-  ): Promise<EntryRecord | null> {
+  async getEntry(prefix: string, versionId: string, position: number): Promise<EntryRecord | null> {
     const store = await this._store(prefix);
     return store.getEntry(prefix, versionId, position);
   }

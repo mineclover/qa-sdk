@@ -1,11 +1,11 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: "node",
-    include: ["src/**/*.test.ts"],
-    exclude: ["dist/**"],
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    exclude: ['dist/**'],
     passWithNoTests: true,
-    setupFiles: ["./test-setup.ts"],
+    setupFiles: ['./test-setup.ts'],
   },
 });

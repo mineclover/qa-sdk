@@ -19,13 +19,13 @@
  */
 export function parseYaml(yaml: string): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const lines = yaml.split("\n");
+  const lines = yaml.split('\n');
 
-  let currentKey = "";
+  let currentKey = '';
   let currentObj: Record<string, unknown> = result;
   let inArray = false;
-  let arrayIndent = 0;   // indent level where array items (- ) appear
-  let arrayKey = "";
+  let arrayIndent = 0; // indent level where array items (- ) appear
+  let arrayKey = '';
   let arrayOwner: Record<string, unknown> = result;
   let arrayItems: Record<string, string>[] = [];
   let currentArrayItem: Record<string, string> = {};
@@ -41,16 +41,16 @@ export function parseYaml(yaml: string): Record<string, unknown> {
   }
 
   for (const rawLine of lines) {
-    const line = rawLine.replace(/\r$/, "");
+    const line = rawLine.replace(/\r$/, '');
 
     // 빈 줄, 주석 무시
-    if (line.trim() === "" || line.trim().startsWith("#")) continue;
+    if (line.trim() === '' || line.trim().startsWith('#')) continue;
 
     const indent = line.length - line.trimStart().length;
     const trimmed = line.trim();
 
     // 배열 항목 처리 (- key: value) — arrayIndent 수준
-    if (inArray && indent === arrayIndent && trimmed.startsWith("- ")) {
+    if (inArray && indent === arrayIndent && trimmed.startsWith('- ')) {
       if (Object.keys(currentArrayItem).length > 0) {
         arrayItems.push(currentArrayItem);
       }
@@ -63,7 +63,7 @@ export function parseYaml(yaml: string): Record<string, unknown> {
     }
 
     // 배열 항목 연속 키 (arrayIndent + 2 이상)
-    if (inArray && indent > arrayIndent && !trimmed.startsWith("- ")) {
+    if (inArray && indent > arrayIndent && !trimmed.startsWith('- ')) {
       const kvMatch = trimmed.match(/^(\S[^:]*?):\s*(.*)$/);
       if (kvMatch && kvMatch[2].trim().length > 0) {
         currentArrayItem[kvMatch[1].trim()] = kvMatch[2].trim();
@@ -72,7 +72,10 @@ export function parseYaml(yaml: string): Record<string, unknown> {
     }
 
     // 배열 끝 감지 (indent가 arrayIndent보다 작거나 같지만 다른 구조)
-    if (inArray && (indent < arrayIndent || (indent === arrayIndent && !trimmed.startsWith("- ")))) {
+    if (
+      inArray &&
+      (indent < arrayIndent || (indent === arrayIndent && !trimmed.startsWith('- ')))
+    ) {
       flushArray();
     }
 
@@ -89,7 +92,7 @@ export function parseYaml(yaml: string): Record<string, unknown> {
       const kvMatch = trimmed.match(/^(\w+):\s*(.+)$/);
       if (kvMatch) {
         result[kvMatch[1]] = parseScalar(kvMatch[2]);
-        currentKey = "";
+        currentKey = '';
         currentObj = result;
         continue;
       }
@@ -97,7 +100,7 @@ export function parseYaml(yaml: string): Record<string, unknown> {
 
     // 최상위 배열 항목 (indent 2, 최상위 키 직속 — currentObj가 nested object)
     // 최상위 키 바로 아래에 - 로 시작하면 최상위 키가 배열임
-    if (indent === 2 && currentKey && trimmed.startsWith("- ") && !inArray) {
+    if (indent === 2 && currentKey && trimmed.startsWith('- ') && !inArray) {
       // currentObj(nested object)를 배열로 교체
       inArray = true;
       arrayIndent = 2;
@@ -131,12 +134,12 @@ export function parseYaml(yaml: string): Record<string, unknown> {
       const kvMatch = trimmed.match(/^(\w+):\s*(.+)$/);
       if (kvMatch) {
         const value = kvMatch[2].trim();
-        if (value.startsWith("[") && value.endsWith("]")) {
+        if (value.startsWith('[') && value.endsWith(']')) {
           currentObj[kvMatch[1]] = value
             .slice(1, -1)
-            .split(",")
-            .map(s => s.trim())
-            .filter(s => s.length > 0);
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0);
         } else {
           currentObj[kvMatch[1]] = parseScalar(value);
         }
@@ -155,12 +158,14 @@ export function parseYaml(yaml: string): Record<string, unknown> {
 
 /** 스칼라 값 타입 변환: true/false → boolean, 숫자 → number, 따옴표 제거 */
 export function parseScalar(value: string): string | number | boolean {
-  if (value === "true") return true;
-  if (value === "false") return false;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
   const num = Number(value);
-  if (!isNaN(num) && value.trim() !== "") return num;
-  if ((value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))) {
+  if (!isNaN(num) && value.trim() !== '') return num;
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
     return value.slice(1, -1);
   }
   return value;

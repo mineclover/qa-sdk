@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "c4106b2b-790e-492e-99a0-d28f39eef072",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "flow_instances",
@@ -289,27 +287,21 @@
       "table": "flow_schemas"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "flow_instances_pk",
       "table": "flow_instances",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "flow_links_pk",
       "table": "flow_links",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "schema_id"
-      ],
+      "columns": ["schema_id"],
       "nameExplicit": false,
       "name": "flow_schemas_pk",
       "table": "flow_schemas",

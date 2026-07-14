@@ -9,8 +9,8 @@
  * StepDataContract에서 facet 후보를 파생.
  */
 
-import { readFileSync, existsSync, readdirSync, lstatSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { readFileSync, existsSync, readdirSync, lstatSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 
 // ── 타입 ──────────────────────────────────────────
 
@@ -25,7 +25,7 @@ export interface TestTokens {
 
 // ── spec에서 파생 ───────────────────────────────────
 
-const SPEC_ROOT = "docs/specs";
+const SPEC_ROOT = 'docs/specs';
 
 /**
  * spec id에서 테스트 토큰을 파생한다.
@@ -34,11 +34,11 @@ const SPEC_ROOT = "docs/specs";
  * 2. ^defines 섹션에서 함수명 추출 (테이블의 backtick 코드)
  * 3. module명 파생 (id에서 공통 접두사 제거)
  */
-export function deriveTestTokens(specId: string, rootDir = "."): TestTokens | null {
+export function deriveTestTokens(specId: string, rootDir = '.'): TestTokens | null {
   const specFile = findSpecFile(specId, rootDir);
   if (!specFile) return null;
 
-  const content = readFileSync(specFile, "utf8");
+  const content = readFileSync(specFile, 'utf8');
   const functions = extractFunctionsFromDefines(content);
   const module = deriveModuleName(specId);
 
@@ -93,5 +93,5 @@ function extractFunctionsFromDefines(content: string): string[] {
 
 /** spec id에서 모듈명 파생 — meta-semantic- 접두사 제거 */
 function deriveModuleName(specId: string): string {
-  return specId.replace(/^meta-semantic-/, "");
+  return specId.replace(/^meta-semantic-/, '');
 }

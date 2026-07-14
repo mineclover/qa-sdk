@@ -28,11 +28,15 @@
  *     → event product:     140→180 (stride 변경: [14,2,1]→[18,2,1])
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { InMemoryPrefixRegistry, InMemoryVersionLifecycleStore } from "index-meta";
-import type { Hono } from "hono";
-import { createApp, InMemoryPrefixOwnerStore, InMemoryDraftLockStore } from "@qa-sdk/registry-service";
-import pino from "pino";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { InMemoryPrefixRegistry, InMemoryVersionLifecycleStore } from 'index-meta';
+import type { Hono } from 'hono';
+import {
+  createApp,
+  InMemoryPrefixOwnerStore,
+  InMemoryDraftLockStore,
+} from '@qa-sdk/registry-service';
+import pino from 'pino';
 
 // ── 데모 상수 ──────────────────────────────────────────────
 
@@ -51,11 +55,11 @@ const DEMO = {
   initiator: 2,
 
   // composite products
-  service_product: 100,      // 5×2×5×2
-  perm_v1_product: 50,       // 10×5
-  perm_v2_product: 60,       // 10×6
-  event_v1_product: 140,     // 10×7×2
-  event_v2_product: 180,     // 10×9×2
+  service_product: 100, // 5×2×5×2
+  perm_v1_product: 50, // 10×5
+  perm_v2_product: 60, // 10×6
+  event_v1_product: 140, // 10×7×2
+  event_v2_product: 180, // 10×9×2
 } as const;
 
 // ── helpers ─────────────────────────────────────────────────
@@ -65,7 +69,7 @@ function buildApp() {
   const versionStore = new InMemoryVersionLifecycleStore();
   const ownerStore = new InMemoryPrefixOwnerStore();
   const lockStore = new InMemoryDraftLockStore();
-  const logger = pino({ level: "silent" });
+  const logger = pino({ level: 'silent' });
   const app = createApp({ prefixRegistry, versionStore, ownerStore, lockStore, logger });
   return { app, prefixRegistry, versionStore, ownerStore, lockStore };
 }
@@ -76,14 +80,19 @@ async function json(res: Response) {
 
 async function post(app: Hono, path: string, body?: object) {
   return app.request(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 }
 
-async function registerPrefix(app: Hono, prefix: string, owner: string, kind: "leaf" | "composite") {
-  const res = await post(app, "/prefixes", { prefix, owner, kind, numberType: "number" });
+async function registerPrefix(
+  app: Hono,
+  prefix: string,
+  owner: string,
+  kind: 'leaf' | 'composite',
+) {
+  const res = await post(app, '/prefixes', { prefix, owner, kind, numberType: 'number' });
   expect(res.status).toBe(201);
 }
 
@@ -107,7 +116,7 @@ async function createDraft(
 // §1. 쇼핑 플랫폼 prefix 등록 + DAG 구성
 // ══════════════════════════════════════════════════════════════
 
-describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
+describe.skip('Registry Service — 쇼핑 플랫폼 데모', () => {
   let app: Hono;
 
   async function setupV1() {
@@ -115,121 +124,121 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
     app = built.app;
 
     // 1. Leaf prefix 등록
-    await registerPrefix(app, "env", "infra", "leaf");
-    await registerPrefix(app, "region", "infra", "leaf");
-    await registerPrefix(app, "svc_name", "infra", "leaf");
-    await registerPrefix(app, "namespace", "infra", "leaf");
-    await registerPrefix(app, "perm_svc", "auth", "leaf");
-    await registerPrefix(app, "role", "auth", "leaf");
-    await registerPrefix(app, "event_svc", "tracking", "leaf");
-    await registerPrefix(app, "event_name", "tracking", "leaf");
-    await registerPrefix(app, "initiator", "tracking", "leaf");
+    await registerPrefix(app, 'env', 'infra', 'leaf');
+    await registerPrefix(app, 'region', 'infra', 'leaf');
+    await registerPrefix(app, 'svc_name', 'infra', 'leaf');
+    await registerPrefix(app, 'namespace', 'infra', 'leaf');
+    await registerPrefix(app, 'perm_svc', 'auth', 'leaf');
+    await registerPrefix(app, 'role', 'auth', 'leaf');
+    await registerPrefix(app, 'event_svc', 'tracking', 'leaf');
+    await registerPrefix(app, 'event_name', 'tracking', 'leaf');
+    await registerPrefix(app, 'initiator', 'tracking', 'leaf');
 
     // 2. Composite prefix 등록
-    await registerPrefix(app, "service", "infra", "composite");
-    await registerPrefix(app, "permission", "auth", "composite");
-    await registerPrefix(app, "event", "tracking", "composite");
+    await registerPrefix(app, 'service', 'infra', 'composite');
+    await registerPrefix(app, 'permission', 'auth', 'composite');
+    await registerPrefix(app, 'event', 'tracking', 'composite');
 
     // 3. Leaf draft v1
-    await createDraft(app, "env", "v1", DEMO.env);
-    await createDraft(app, "region", "v1", DEMO.region);
-    await createDraft(app, "svc_name", "v1", DEMO.svc_name);
-    await createDraft(app, "namespace", "v1", DEMO.namespace);
-    await createDraft(app, "perm_svc", "v1", DEMO.perm_svc);
-    await createDraft(app, "role", "v1", DEMO.role_v1);
-    await createDraft(app, "event_svc", "v1", DEMO.event_svc);
-    await createDraft(app, "event_name", "v1", DEMO.event_name_v1);
-    await createDraft(app, "initiator", "v1", DEMO.initiator);
+    await createDraft(app, 'env', 'v1', DEMO.env);
+    await createDraft(app, 'region', 'v1', DEMO.region);
+    await createDraft(app, 'svc_name', 'v1', DEMO.svc_name);
+    await createDraft(app, 'namespace', 'v1', DEMO.namespace);
+    await createDraft(app, 'perm_svc', 'v1', DEMO.perm_svc);
+    await createDraft(app, 'role', 'v1', DEMO.role_v1);
+    await createDraft(app, 'event_svc', 'v1', DEMO.event_svc);
+    await createDraft(app, 'event_name', 'v1', DEMO.event_name_v1);
+    await createDraft(app, 'initiator', 'v1', DEMO.initiator);
 
     // 4. Composite draft v1
-    const svcRes = await createDraft(app, "service", "v1", 0, [
-      { prefix: "env", versionId: "v1" },
-      { prefix: "region", versionId: "v1" },
-      { prefix: "svc_name", versionId: "v1" },
-      { prefix: "namespace", versionId: "v1" },
+    const svcRes = await createDraft(app, 'service', 'v1', 0, [
+      { prefix: 'env', versionId: 'v1' },
+      { prefix: 'region', versionId: 'v1' },
+      { prefix: 'svc_name', versionId: 'v1' },
+      { prefix: 'namespace', versionId: 'v1' },
     ]);
     expect(svcRes.status).toBe(201);
 
-    const permRes = await createDraft(app, "permission", "v1", 0, [
-      { prefix: "perm_svc", versionId: "v1" },
-      { prefix: "role", versionId: "v1" },
+    const permRes = await createDraft(app, 'permission', 'v1', 0, [
+      { prefix: 'perm_svc', versionId: 'v1' },
+      { prefix: 'role', versionId: 'v1' },
     ]);
     expect(permRes.status).toBe(201);
 
-    const evtRes = await createDraft(app, "event", "v1", 0, [
-      { prefix: "event_svc", versionId: "v1" },
-      { prefix: "event_name", versionId: "v1" },
-      { prefix: "initiator", versionId: "v1" },
+    const evtRes = await createDraft(app, 'event', 'v1', 0, [
+      { prefix: 'event_svc', versionId: 'v1' },
+      { prefix: 'event_name', versionId: 'v1' },
+      { prefix: 'initiator', versionId: 'v1' },
     ]);
     expect(evtRes.status).toBe(201);
 
     return built;
   }
 
-  it("v1 composite capacities 검증", async () => {
+  it('v1 composite capacities 검증', async () => {
     await setupV1();
 
     // service: 5×2×5×2 = 100
-    const svc = await json(await app.request("/prefixes/service/versions/v1"));
+    const svc = await json(await app.request('/prefixes/service/versions/v1'));
     expect(svc.capacity).toBe(DEMO.service_product);
     expect(svc.shape).toEqual([5, 2, 5, 2]);
     expect(svc.stride).toEqual([20, 10, 2, 1]);
     expect(svc.product).toBe(100);
 
     // permission: 10×5 = 50
-    const perm = await json(await app.request("/prefixes/permission/versions/v1"));
+    const perm = await json(await app.request('/prefixes/permission/versions/v1'));
     expect(perm.capacity).toBe(DEMO.perm_v1_product);
     expect(perm.shape).toEqual([10, 5]);
     expect(perm.stride).toEqual([5, 1]);
 
     // event: 10×7×2 = 140
-    const evt = await json(await app.request("/prefixes/event/versions/v1"));
+    const evt = await json(await app.request('/prefixes/event/versions/v1'));
     expect(evt.capacity).toBe(DEMO.event_v1_product);
     expect(evt.shape).toEqual([10, 7, 2]);
     expect(evt.stride).toEqual([14, 2, 1]);
   });
 
-  it("DAG: service composite의 deps", async () => {
+  it('DAG: service composite의 deps', async () => {
     await setupV1();
 
-    const deps = await json(await app.request("/dag/service/v1/deps"));
+    const deps = await json(await app.request('/dag/service/v1/deps'));
     expect(deps.length).toBeGreaterThanOrEqual(1);
     // 구조 검증: 각 dep에 prefix 필드 존재
-    for (const d of deps) expect(typeof (d as { prefix: string }).prefix).toBe("string");
+    for (const d of deps) expect(typeof (d as { prefix: string }).prefix).toBe('string');
   });
 
-  it("DAG: role을 참조하는 composite 역추적", async () => {
+  it('DAG: role을 참조하는 composite 역추적', async () => {
     await setupV1();
 
-    const refs = await json(await app.request("/dag/role/v1/reverse-refs"));
+    const refs = await json(await app.request('/dag/role/v1/reverse-refs'));
     expect(refs).toHaveLength(1);
-    expect(refs[0].prefix).toBe("permission");
+    expect(refs[0].prefix).toBe('permission');
   });
 
-  it("DAG: event_name을 참조하는 composite 역추적", async () => {
+  it('DAG: event_name을 참조하는 composite 역추적', async () => {
     await setupV1();
 
-    const refs = await json(await app.request("/dag/event_name/v1/reverse-refs"));
+    const refs = await json(await app.request('/dag/event_name/v1/reverse-refs'));
     expect(refs).toHaveLength(1);
-    expect(refs[0].prefix).toBe("event");
+    expect(refs[0].prefix).toBe('event');
   });
 
   // ══════════════════════════════════════════════════════════
   // §2. v1→v2 시뮬레이션: role(5→6), event_name(7→9)
   // ══════════════════════════════════════════════════════════
 
-  it("simulate: role 5→6 → permission stride 변경 감지", async () => {
+  it('simulate: role 5→6 → permission stride 변경 감지', async () => {
     await setupV1();
 
-    const res = await post(app, "/workspace/simulate", {
+    const res = await post(app, '/workspace/simulate', {
       changes: { role: { capacity: 6 } },
     });
     const body = await json(res);
 
     expect(body.impact).toHaveLength(1);
     const permImpact = body.impact[0];
-    expect(permImpact.prefix).toBe("permission");
-    expect(permImpact.owner).toBe("auth");
+    expect(permImpact.prefix).toBe('permission');
+    expect(permImpact.owner).toBe('auth');
     expect(permImpact.currentShape).toEqual([10, 5]);
     expect(permImpact.newShape).toEqual([10, 6]);
     expect(permImpact.currentStride).toEqual([5, 1]);
@@ -241,18 +250,18 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
     expect(body.ready).toBe(true);
   });
 
-  it("simulate: event_name 7→9 → event stride 변경 감지", async () => {
+  it('simulate: event_name 7→9 → event stride 변경 감지', async () => {
     await setupV1();
 
-    const res = await post(app, "/workspace/simulate", {
+    const res = await post(app, '/workspace/simulate', {
       changes: { event_name: { capacity: 9 } },
     });
     const body = await json(res);
 
     expect(body.impact).toHaveLength(1);
     const evtImpact = body.impact[0];
-    expect(evtImpact.prefix).toBe("event");
-    expect(evtImpact.owner).toBe("tracking");
+    expect(evtImpact.prefix).toBe('event');
+    expect(evtImpact.owner).toBe('tracking');
     expect(evtImpact.currentShape).toEqual([10, 7, 2]);
     expect(evtImpact.newShape).toEqual([10, 9, 2]);
     expect(evtImpact.currentStride).toEqual([14, 2, 1]);
@@ -261,10 +270,10 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
     expect(evtImpact.newProduct).toBe(180);
   });
 
-  it("simulate: 동시 변경 (role + event_name) → 양쪽 impact", async () => {
+  it('simulate: 동시 변경 (role + event_name) → 양쪽 impact', async () => {
     await setupV1();
 
-    const res = await post(app, "/workspace/simulate", {
+    const res = await post(app, '/workspace/simulate', {
       changes: {
         role: { capacity: 6 },
         event_name: { capacity: 9 },
@@ -274,21 +283,21 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
 
     expect(body.impact).toHaveLength(2);
     const prefixes = body.impact.map((i: any) => i.prefix).toSorted();
-    expect(prefixes).toEqual(["event", "permission"]);
+    expect(prefixes).toEqual(['event', 'permission']);
     expect(body.ready).toBe(true);
   });
 
-  it("simulate: env 변경 → service만 영향 (permission/event는 무관)", async () => {
+  it('simulate: env 변경 → service만 영향 (permission/event는 무관)', async () => {
     await setupV1();
 
     // env capacity 5→8 → service shape 변경, permission/event는 perm_svc/event_svc가 leaf이므로 무관
-    const res = await post(app, "/workspace/simulate", {
+    const res = await post(app, '/workspace/simulate', {
       changes: { env: { capacity: 8 } },
     });
     const body = await json(res);
 
     expect(body.impact).toHaveLength(1);
-    expect(body.impact[0].prefix).toBe("service");
+    expect(body.impact[0].prefix).toBe('service');
     expect(body.impact[0].newShape).toEqual([8, 2, 5, 2]);
     expect(body.impact[0].newProduct).toBe(160);
   });
@@ -297,10 +306,10 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
   // §3. Analyze (Readiness Gate) + Release Order
   // ══════════════════════════════════════════════════════════
 
-  it("analyze: v1 전체 draft 정합성 + 위상정렬 순서", async () => {
+  it('analyze: v1 전체 draft 정합성 + 위상정렬 순서', async () => {
     await setupV1();
 
-    const res = await post(app, "/workspace/analyze");
+    const res = await post(app, '/workspace/analyze');
     const body = await json(res);
 
     expect(body.ready).toBe(true);
@@ -308,7 +317,7 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
 
     // 위상정렬 불변조건: composite prefix의 dim 참조 대상이 composite보다 앞에 와야 함
     const order = body.releaseOrder as string[];
-    const compositePrefixes = ["service", "permission", "event"];
+    const compositePrefixes = ['service', 'permission', 'event'];
 
     for (const comp of compositePrefixes) {
       const compIdx = order.indexOf(comp);
@@ -327,32 +336,41 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
   // §4. 전체 워크플로우: lock → release → activate → resolve
   // ══════════════════════════════════════════════════════════
 
-  it("E2E: v1 lock-all → release-all → activate → resolve/active", async () => {
+  it('E2E: v1 lock-all → release-all → activate → resolve/active', async () => {
     await setupV1();
 
     // lock-all
-    const lockRes = await post(app, "/workspace/lock-all");
+    const lockRes = await post(app, '/workspace/lock-all');
     const lockBody = await json(lockRes);
     expect(lockBody.locked).toHaveLength(12);
 
     // locked 상태에서 capacity 변경 시도 → 거부
-    const patchRes = await app.request("/prefixes/role/versions/v1", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+    const patchRes = await app.request('/prefixes/role/versions/v1', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ capacity: 99 }),
     });
     expect(patchRes.status).toBe(409);
 
     // release-all (위상정렬 순서로 자동 처리)
-    const releaseRes = await post(app, "/workspace/release-all");
+    const releaseRes = await post(app, '/workspace/release-all');
     const releaseBody = await json(releaseRes);
     expect(releaseBody.released).toHaveLength(12);
 
     // activate all
     const allPrefixes = [
-      "env", "region", "svc_name", "namespace",
-      "perm_svc", "role", "event_svc", "event_name", "initiator",
-      "service", "permission", "event",
+      'env',
+      'region',
+      'svc_name',
+      'namespace',
+      'perm_svc',
+      'role',
+      'event_svc',
+      'event_name',
+      'initiator',
+      'service',
+      'permission',
+      'event',
     ];
     for (const p of allPrefixes) {
       const activateRes = await post(app, `/prefixes/${p}/versions/v1/activate`);
@@ -360,44 +378,53 @@ describe.skip("Registry Service — 쇼핑 플랫폼 데모", () => {
     }
 
     // resolve/active → 전체 active 버전 조회
-    const resolveRes = await json(await app.request("/resolve/active"));
+    const resolveRes = await json(await app.request('/resolve/active'));
     expect(Object.keys(resolveRes)).toHaveLength(12);
 
     // service composite 검증
-    expect(resolveRes.service.versionId).toBe("v1");
+    expect(resolveRes.service.versionId).toBe('v1');
     expect(resolveRes.service.capacity).toBe(100);
     expect(resolveRes.service.shape).toEqual([5, 2, 5, 2]);
     expect(resolveRes.service.stride).toEqual([20, 10, 2, 1]);
 
     // permission composite 검증
-    expect(resolveRes.permission.versionId).toBe("v1");
+    expect(resolveRes.permission.versionId).toBe('v1');
     expect(resolveRes.permission.capacity).toBe(50);
     expect(resolveRes.permission.shape).toEqual([10, 5]);
     expect(resolveRes.permission.stride).toEqual([5, 1]);
 
     // event composite 검증
-    expect(resolveRes.event.versionId).toBe("v1");
+    expect(resolveRes.event.versionId).toBe('v1');
     expect(resolveRes.event.capacity).toBe(140);
     expect(resolveRes.event.shape).toEqual([10, 7, 2]);
     expect(resolveRes.event.stride).toEqual([14, 2, 1]);
   });
 
-  it("manifest: 배포 아티팩트에 shape/stride 포함", async () => {
+  it('manifest: 배포 아티팩트에 shape/stride 포함', async () => {
     await setupV1();
 
     // release + activate all
-    await post(app, "/workspace/lock-all");
-    await post(app, "/workspace/release-all");
+    await post(app, '/workspace/lock-all');
+    await post(app, '/workspace/release-all');
     const allPrefixes = [
-      "env", "region", "svc_name", "namespace",
-      "perm_svc", "role", "event_svc", "event_name", "initiator",
-      "service", "permission", "event",
+      'env',
+      'region',
+      'svc_name',
+      'namespace',
+      'perm_svc',
+      'role',
+      'event_svc',
+      'event_name',
+      'initiator',
+      'service',
+      'permission',
+      'event',
     ];
     for (const p of allPrefixes) {
       await post(app, `/prefixes/${p}/versions/v1/activate`);
     }
 
-    const manifest = await json(await app.request("/resolve/manifest"));
+    const manifest = await json(await app.request('/resolve/manifest'));
     expect(manifest.generatedAt).toBeDefined();
     expect(manifest.versions.service.stride).toEqual([20, 10, 2, 1]);
     expect(manifest.versions.permission.stride).toEqual([5, 1]);

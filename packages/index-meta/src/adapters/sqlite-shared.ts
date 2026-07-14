@@ -6,11 +6,11 @@
  *
  * NodeSqliteDriver와 BetterSqliteDriver가 공유한다.
  */
-import type { SqlDriver, SqlDialect } from "./sql-store.js";
+import type { SqlDriver, SqlDialect } from './sql-store.js';
 
 /** SQLite 공통 dialect 정의 */
 export const SQLITE_DIALECT: SqlDialect = {
-  name: "sqlite",
+  name: 'sqlite',
   supportsTransaction: true,
   supportsReturning: true,
   supportsJsonType: false,
@@ -29,13 +29,13 @@ export async function runTransaction<T>(
   self: SqlDriver,
   fn: (tx: SqlDriver) => Promise<T>,
 ): Promise<T> {
-  exec("BEGIN");
+  exec('BEGIN');
   try {
     const result = await fn(self);
-    exec("COMMIT");
+    exec('COMMIT');
     return result;
   } catch (err) {
-    exec("ROLLBACK");
+    exec('ROLLBACK');
     throw err;
   }
 }

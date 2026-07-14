@@ -1,6 +1,6 @@
-import type { Plugin } from "vite";
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
-import { join, relative } from "node:path";
+import type { Plugin } from 'vite';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { join, relative } from 'node:path';
 
 type RelatedDoc = {
   path: string;
@@ -8,10 +8,7 @@ type RelatedDoc = {
   snippet: string;
 };
 
-const SEARCH_PATHS_DEFAULT = [
-  "docs/proposals/taxonomy-engine",
-  "docs/proposals/taxonomy-web",
-];
+const SEARCH_PATHS_DEFAULT = ['docs/proposals/taxonomy-engine', 'docs/proposals/taxonomy-web'];
 
 export function searchRelatedDocs(opts: {
   repoRoot: string;
@@ -35,7 +32,7 @@ export function searchRelatedDocs(opts: {
 }
 
 function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function walkMd(
@@ -54,8 +51,8 @@ function walkMd(
     if (s.isDirectory()) {
       walkMd(p, repoRoot, regex, out, max);
     } else if (s.isFile() && /\.(md|mdx)$/.test(name)) {
-      const text = readFileSync(p, "utf8");
-      const lines = text.split("\n");
+      const text = readFileSync(p, 'utf8');
+      const lines = text.split('\n');
       for (let i = 0; i < lines.length; i++) {
         if (regex.test(lines[i])) {
           out.push({
@@ -72,22 +69,22 @@ function walkMd(
 
 export function relatedDocsApiPlugin(repoRoot: string): Plugin {
   return {
-    name: "taxonomy-web:related-docs-api",
+    name: 'taxonomy-web:related-docs-api',
     configureServer(server) {
-      server.middlewares.use("/api/related-docs", (req, res, next) => {
-        if (req.method !== "GET") {
+      server.middlewares.use('/api/related-docs', (req, res, next) => {
+        if (req.method !== 'GET') {
           next();
           return;
         }
-        const url = new URL(req.url ?? "/", "http://localhost");
-        const term = url.searchParams.get("term");
+        const url = new URL(req.url ?? '/', 'http://localhost');
+        const term = url.searchParams.get('term');
         if (!term) {
           res.statusCode = 400;
-          res.end("term query required");
+          res.end('term query required');
           return;
         }
         const matches = searchRelatedDocs({ repoRoot, term });
-        res.setHeader("Content-Type", "application/json");
+        res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(matches));
       });
     },

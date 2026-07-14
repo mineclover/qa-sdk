@@ -6,9 +6,9 @@ import type {
   QualityLedgerAdapterOptions,
   QualityLedgerRunInput,
   ValidationReport,
-} from "./types.js";
+} from './types.js';
 
-const DEFAULT_TIME = "1970-01-01T00:00:00.000Z";
+const DEFAULT_TIME = '1970-01-01T00:00:00.000Z';
 
 export function toQualityLedgerRunInputs(
   report: ValidationReport,
@@ -20,18 +20,18 @@ export function toQualityLedgerRunInputs(
   const warnAsPass = options.warnAsPass ?? true;
 
   return report.checkedGates.map((gate) => {
-    const blocking = gate.result === "fail" || (gate.result === "warn" && !warnAsPass);
+    const blocking = gate.result === 'fail' || (gate.result === 'warn' && !warnAsPass);
     return {
       gateDocId: `${bundleId}/${gate.id}`,
       docVersion,
       bundleId,
       command,
-      outcome: blocking ? "fail" : "pass",
+      outcome: blocking ? 'fail' : 'pass',
       exitCode: blocking ? 1 : 0,
       notes: `risk=${gate.risk}; severity=${gate.severity}; result=${gate.result}; evidence=${gate.evidence}`,
       successPattern: gate.id,
       successPatternMatched: !blocking,
-      ...(blocking ? { failureClass: "static-check-failure" as const } : {}),
+      ...(blocking ? { failureClass: 'static-check-failure' as const } : {}),
     };
   });
 }
@@ -44,7 +44,7 @@ export function toBenchReportInput(
   const completedAt = options.completedAt ?? startedAt;
 
   return {
-    title: "Data Structure Profile Measurement",
+    title: 'Data Structure Profile Measurement',
     metadata: {
       profile: report.profile,
       rowMultiplier: report.estimates.rowMultiplier,

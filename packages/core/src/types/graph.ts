@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { EntryCondition, StepConstraint, StepKind } from "./scenario.js";
+import type { EntryCondition, StepConstraint, StepKind } from './scenario.js';
 
 // ── Spec Graph (Expected Behavior Graph) ────────────────
 
@@ -19,14 +19,14 @@ export interface SpecNode {
   event_key: string;
   event_version?: string;
   source?: string;
-  record_kind?: "log" | "span";
+  record_kind?: 'log' | 'span';
   required: boolean;
   kind: StepKind;
   constraints?: StepConstraint[];
   timeout_ms?: number;
 }
 
-export type SpecEdgeType = "sequence" | "branch" | "optional";
+export type SpecEdgeType = 'sequence' | 'branch' | 'optional';
 
 export interface SpecEdge {
   source: string;
@@ -47,7 +47,7 @@ export interface RuntimeNode {
   id: string;
   log_id: string;
   timestamp: string;
-  record_kind: "log" | "span";
+  record_kind: 'log' | 'span';
   event_key: string;
   event_version: string;
   service_name?: string;
@@ -60,7 +60,7 @@ export interface RuntimeNode {
   payload_masked_fields: string[];
 }
 
-export type RuntimeEdgeType = "temporal" | "parent_child" | "causal";
+export type RuntimeEdgeType = 'temporal' | 'parent_child' | 'causal';
 
 export interface RuntimeEdge {
   source: string;

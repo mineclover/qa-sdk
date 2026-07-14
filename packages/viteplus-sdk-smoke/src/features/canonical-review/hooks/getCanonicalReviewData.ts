@@ -14,14 +14,12 @@ export interface CanonicalReviewViewModel {
   statusTone: 'neutral' | 'critical' | 'positive' | 'accent';
   statusSummary: string;
   validationMessages: Partial<Record<CanonicalReviewField, string>>;
-  result:
-    | {
-        routeLabel: string;
-        scoreLabel: string;
-        summary: string;
-        rationale: string[];
-      }
-    | null;
+  result: {
+    routeLabel: string;
+    scoreLabel: string;
+    summary: string;
+    rationale: string[];
+  } | null;
   activity: PresentedCanonicalReviewActivity[];
   sessionId: string;
   traceId: string;
@@ -34,9 +32,7 @@ export interface CanonicalReviewViewModel {
   lastSubmittedAt: string | null;
 }
 
-export function getCanonicalReviewData(
-  context: CanonicalReviewContext,
-): CanonicalReviewViewModel {
+export function getCanonicalReviewData(context: CanonicalReviewContext): CanonicalReviewViewModel {
   const state = context.store.getState();
   const validationMessages = Object.fromEntries(
     state.validationIssues.map((issue) => [issue.field, issue.message]),
@@ -59,9 +55,7 @@ export function getCanonicalReviewData(
           rationale: state.result.rationale,
         }
       : null,
-    activity: state.activity.map((activity) =>
-      presentCanonicalReviewActivity(activity),
-    ),
+    activity: state.activity.map((activity) => presentCanonicalReviewActivity(activity)),
     sessionId: state.sessionId,
     traceId: state.traceId,
     envelopeCount: envelopes.length,

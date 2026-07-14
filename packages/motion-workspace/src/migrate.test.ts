@@ -1,29 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 import {
   assembleComposition,
   createPromoGridComposition,
   migrateCompositionV1toV2,
-} from "motion-content";
-import * as workspaceEntry from "./index.js";
-import {
-  createMotionWorkspaceSnapshot,
-  createMotionWorkspaceSnapshotV1,
-} from "./io.js";
+} from 'motion-content';
+import * as workspaceEntry from './index.js';
+import { createMotionWorkspaceSnapshot, createMotionWorkspaceSnapshotV1 } from './io.js';
 import {
   MotionWorkspaceMigrationError,
   migrateMotionWorkspace,
   migrateMotionWorkspaceSnapshot,
-} from "./migrate.js";
-import {
-  MOTION_WORKSPACE_SCHEMA_V1,
-  MOTION_WORKSPACE_SCHEMA_V2,
-} from "./types.js";
+} from './migrate.js';
+import { MOTION_WORKSPACE_SCHEMA_V1, MOTION_WORKSPACE_SCHEMA_V2 } from './types.js';
 
-describe("motion workspace migration", () => {
-  it("passes through current v2 snapshots and reports migration metadata", () => {
+describe('motion workspace migration', () => {
+  it('passes through current v2 snapshots and reports migration metadata', () => {
     const snapshot = createMotionWorkspaceSnapshot({
-      composition: migrateCompositionV1toV2(createPromoGridComposition("lift")),
-      savedAt: "2026-03-27T00:00:00.000Z",
+      composition: migrateCompositionV1toV2(createPromoGridComposition('lift')),
+      savedAt: '2026-03-27T00:00:00.000Z',
     });
 
     const result = migrateMotionWorkspace(JSON.stringify(snapshot));
@@ -37,11 +31,11 @@ describe("motion workspace migration", () => {
     expect(migrateMotionWorkspaceSnapshot(snapshot)).toEqual(snapshot);
   });
 
-  it("migrates v1 snapshots into v2 scene revision envelopes", () => {
+  it('migrates v1 snapshots into v2 scene revision envelopes', () => {
     const snapshot = {
       ...createMotionWorkspaceSnapshotV1({
-        composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
-        savedAt: "2026-03-27T00:00:00.000Z",
+        composition: migrateCompositionV1toV2(createPromoGridComposition('crossfade')),
+        savedAt: '2026-03-27T00:00:00.000Z',
       }),
       revision: 7,
     };
@@ -62,22 +56,22 @@ describe("motion workspace migration", () => {
     });
   });
 
-  it("migrates legacy v1 workspace compositions into a single main scene", () => {
-    const original = createPromoGridComposition("flash");
+  it('migrates legacy v1 workspace compositions into a single main scene', () => {
+    const original = createPromoGridComposition('flash');
     const snapshot = {
       ...createMotionWorkspaceSnapshotV1({
         composition: original,
-        savedAt: "2026-03-27T00:00:00.000Z",
+        savedAt: '2026-03-27T00:00:00.000Z',
       }),
       revision: 3,
       editor: {
         ...createMotionWorkspaceSnapshotV1({
           composition: original,
-          savedAt: "2026-03-27T00:00:00.000Z",
+          savedAt: '2026-03-27T00:00:00.000Z',
         }).editor,
         selection: {
-          kind: "layer",
-          id: "headline",
+          kind: 'layer',
+          id: 'headline',
         } as const,
       },
     };
@@ -95,12 +89,12 @@ describe("motion workspace migration", () => {
           main: 3,
         },
         document: {
-          schemaVersion: "qa-sdk.motion-composition/v2",
+          schemaVersion: 'qa-sdk.motion-composition/v2',
           composition: {
             scenes: [
               {
-                id: "main",
-                title: "Main",
+                id: 'main',
+                title: 'Main',
                 durationMs: original.durationMs,
               },
             ],
@@ -108,77 +102,77 @@ describe("motion workspace migration", () => {
         },
         editor: {
           selection: {
-            kind: "scene-layer",
-            sceneId: "main",
-            targetId: "headline",
+            kind: 'scene-layer',
+            sceneId: 'main',
+            targetId: 'headline',
           },
         },
       },
     });
   });
 
-  it("roundtrips migrated legacy workspaces back to the original v1 assembly", () => {
-    const original = createPromoGridComposition("lift");
+  it('roundtrips migrated legacy workspaces back to the original v1 assembly', () => {
+    const original = createPromoGridComposition('lift');
     const snapshot = createMotionWorkspaceSnapshotV1({
       composition: original,
-      savedAt: "2026-03-27T00:00:00.000Z",
+      savedAt: '2026-03-27T00:00:00.000Z',
     });
 
     const migrated = migrateMotionWorkspaceSnapshot(snapshot);
 
-    expect(migrated.document.schemaVersion).toBe("qa-sdk.motion-composition/v2");
+    expect(migrated.document.schemaVersion).toBe('qa-sdk.motion-composition/v2');
     expect(assembleComposition(migrated.document.composition)).toEqual(original);
   });
 
-  it("throws a typed revision conflict error when expectedRevision does not match", () => {
+  it('throws a typed revision conflict error when expectedRevision does not match', () => {
     const snapshot = {
       ...createMotionWorkspaceSnapshot({
-        composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
-        savedAt: "2026-03-27T00:00:00.000Z",
+        composition: migrateCompositionV1toV2(createPromoGridComposition('crossfade')),
+        savedAt: '2026-03-27T00:00:00.000Z',
       }),
       globalRevision: 7,
     };
 
     try {
       migrateMotionWorkspace(snapshot, { expectedRevision: 6 });
-      throw new Error("expected migration to fail");
+      throw new Error('expected migration to fail');
     } catch (error) {
       expect(error).toBeInstanceOf(MotionWorkspaceMigrationError);
       const migrationError = error as MotionWorkspaceMigrationError;
       expect(migrationError.shape).toEqual({
-        code: "revision_conflict",
-        message: "workspace revision이 충돌했습니다. expectedRevision=6, actualRevision=7.",
+        code: 'revision_conflict',
+        message: 'workspace revision이 충돌했습니다. expectedRevision=6, actualRevision=7.',
         expectedRevision: 6,
         actualRevision: 7,
       });
     }
   });
 
-  it("throws a typed unknown schemaVersion error for unsupported inputs", () => {
+  it('throws a typed unknown schemaVersion error for unsupported inputs', () => {
     const unsupported = JSON.stringify({
       ...createMotionWorkspaceSnapshot({
-        composition: migrateCompositionV1toV2(createPromoGridComposition("crossfade")),
-        savedAt: "2026-03-27T00:00:00.000Z",
+        composition: migrateCompositionV1toV2(createPromoGridComposition('crossfade')),
+        savedAt: '2026-03-27T00:00:00.000Z',
       }),
-      schemaVersion: "qa-sdk.motion-workspace/v99",
+      schemaVersion: 'qa-sdk.motion-workspace/v99',
     });
 
     try {
       migrateMotionWorkspace(unsupported);
-      throw new Error("expected migration to fail");
+      throw new Error('expected migration to fail');
     } catch (error) {
       expect(error).toBeInstanceOf(MotionWorkspaceMigrationError);
       const migrationError = error as MotionWorkspaceMigrationError;
       expect(migrationError.shape).toEqual({
-        code: "unknown_schema_version",
-        message: "지원되지 않는 workspace schemaVersion입니다: \"qa-sdk.motion-workspace/v99\".",
-        schemaVersion: "qa-sdk.motion-workspace/v99",
+        code: 'unknown_schema_version',
+        message: '지원되지 않는 workspace schemaVersion입니다: "qa-sdk.motion-workspace/v99".',
+        schemaVersion: 'qa-sdk.motion-workspace/v99',
       });
     }
   });
 
-  it("exports migration helpers from the public entrypoint", () => {
-    expect(typeof workspaceEntry.migrateMotionWorkspace).toBe("function");
-    expect(typeof workspaceEntry.migrateMotionWorkspaceSnapshot).toBe("function");
+  it('exports migration helpers from the public entrypoint', () => {
+    expect(typeof workspaceEntry.migrateMotionWorkspace).toBe('function');
+    expect(typeof workspaceEntry.migrateMotionWorkspaceSnapshot).toBe('function');
   });
 });

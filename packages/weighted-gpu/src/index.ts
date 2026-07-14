@@ -15,9 +15,9 @@
  * ```
  */
 
-import encodeShaderCode from "./shaders/encode.wgsl?raw";
-import decodeShaderCode from "./shaders/decode.wgsl?raw";
-import reduceShaderCode from "./shaders/reduce.wgsl?raw";
+import encodeShaderCode from './shaders/encode.wgsl?raw';
+import decodeShaderCode from './shaders/decode.wgsl?raw';
+import reduceShaderCode from './shaders/reduce.wgsl?raw';
 
 export class GPUEncoder {
   private device: GPUDevice;
@@ -58,7 +58,7 @@ export class GPUEncoder {
    * GPU 미지원 시 null 반환.
    */
   static async create(shape: readonly number[]): Promise<GPUEncoder | null> {
-    if (typeof navigator === "undefined" || !navigator.gpu) return null;
+    if (typeof navigator === 'undefined' || !navigator.gpu) return null;
 
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) return null;
@@ -66,26 +66,26 @@ export class GPUEncoder {
     const device = await adapter.requestDevice();
 
     const encodePipeline = device.createComputePipeline({
-      layout: "auto",
+      layout: 'auto',
       compute: {
         module: device.createShaderModule({ code: encodeShaderCode }),
-        entryPoint: "main",
+        entryPoint: 'main',
       },
     });
 
     const decodePipeline = device.createComputePipeline({
-      layout: "auto",
+      layout: 'auto',
       compute: {
         module: device.createShaderModule({ code: decodeShaderCode }),
-        entryPoint: "main",
+        entryPoint: 'main',
       },
     });
 
     const reducePipeline = device.createComputePipeline({
-      layout: "auto",
+      layout: 'auto',
       compute: {
         module: device.createShaderModule({ code: reduceShaderCode }),
-        entryPoint: "main",
+        entryPoint: 'main',
       },
     });
 
@@ -94,7 +94,7 @@ export class GPUEncoder {
 
   /** GPU 사용 가능 여부. */
   static async isAvailable(): Promise<boolean> {
-    if (typeof navigator === "undefined" || !navigator.gpu) return false;
+    if (typeof navigator === 'undefined' || !navigator.gpu) return false;
     const adapter = await navigator.gpu.requestAdapter();
     return adapter !== null;
   }

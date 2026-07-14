@@ -14,7 +14,7 @@
  * Node.js에서는 GPU 미지원으로 CPU 결과만 출력합니다.
  */
 
-import { GPUEncoder } from "./index.js";
+import { GPUEncoder } from './index.js';
 
 // ── CPU 기준 구현 (JS pure) ────────────────────────────────────────
 
@@ -95,7 +95,11 @@ function bench(label: string, fn: () => void, iterations: number): BenchResult {
   return { label, batchSize: 0, opsPerSec, avgMs };
 }
 
-async function benchAsync(label: string, fn: () => Promise<unknown>, iterations: number): Promise<BenchResult> {
+async function benchAsync(
+  label: string,
+  fn: () => Promise<unknown>,
+  iterations: number,
+): Promise<BenchResult> {
   // 워밍업
   for (let i = 0; i < Math.min(3, iterations); i++) await fn();
 
@@ -114,7 +118,7 @@ async function benchAsync(label: string, fn: () => Promise<unknown>, iterations:
 export async function runBenchmark(): Promise<BenchResult[]> {
   const results: BenchResult[] = [];
 
-  console.log("=== G-6: GPU vs CPU 벤치마크 ===\n");
+  console.log('=== G-6: GPU vs CPU 벤치마크 ===\n');
 
   // 4D shape
   const shape = [10, 7, 5, 2];
@@ -123,7 +127,7 @@ export async function runBenchmark(): Promise<BenchResult[]> {
 
   // GPU 초기화 시도
   const gpu = await GPUEncoder.create(shape);
-  console.log(`GPU: ${gpu ? "WebGPU 사용 가능" : "미지원 (CPU만 측정)"}\n`);
+  console.log(`GPU: ${gpu ? 'WebGPU 사용 가능' : '미지원 (CPU만 측정)'}\n`);
 
   for (const n of batches) {
     const coords = generateCoords(n, 4, shape);
@@ -183,16 +187,16 @@ export async function runBenchmark(): Promise<BenchResult[]> {
       console.log(`  GPU/CPU: ${(cpuRed.avgMs / gpuRed.avgMs).toFixed(2)}×`);
     }
 
-    console.log("");
+    console.log('');
   }
 
   if (gpu) gpu.destroy();
 
-  console.log("=== 완료 ===");
+  console.log('=== 완료 ===');
   return results;
 }
 
 // 브라우저에서 직접 실행 시
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   void runBenchmark();
 }

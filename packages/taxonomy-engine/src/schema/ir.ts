@@ -1,21 +1,10 @@
-export type Severity = "error" | "warning" | "info";
+export type Severity = 'error' | 'warning' | 'info';
 
-export type RelationKind =
-  | "contains"
-  | "parent-of"
-  | "depends-on"
-  | "binds"
-  | "projects-to";
+export type RelationKind = 'contains' | 'parent-of' | 'depends-on' | 'binds' | 'projects-to';
 
-export type ConstraintKind = "capacity" | "structural" | "ref" | "custom";
+export type ConstraintKind = 'capacity' | 'structural' | 'ref' | 'custom';
 
-export type Lifecycle =
-  | "draft"
-  | "review"
-  | "approved"
-  | "deprecated"
-  | "archived"
-  | "tbd";
+export type Lifecycle = 'draft' | 'review' | 'approved' | 'deprecated' | 'archived' | 'tbd';
 
 export type EntryIR = {
   id: string;

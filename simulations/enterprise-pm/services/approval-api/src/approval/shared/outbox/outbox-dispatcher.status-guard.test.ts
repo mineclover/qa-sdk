@@ -8,23 +8,23 @@
  * ROW_COUNT=1 이 되고 나머지는 0 (자기 시도가 자연스럽게 no-op). 가드가 없으면
  * 두 UPDATE 모두 ROW_COUNT=1 이 되어 같은 이벤트가 두 번 처리될 위험.
  */
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildIdempotencyKey } from "sim-identifier-grammar";
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
 
 import {
   SIM_APPROVAL_PG_RESET_DDL,
   SIM_OUTBOX_CONSUMER_LOG_PG_RESET_DDL,
-} from "../../pg/schema.js";
+} from '../../pg/schema.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
-describe.skipIf(!PG_AVAILABLE)("outbox status 전이 동시성 가드", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('outbox status 전이 동시성 가드', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
 
   const cfg = () => ({
     host: PG_HOST,
@@ -47,8 +47,8 @@ describe.skipIf(!PG_AVAILABLE)("outbox status 전이 동시성 가드", () => {
 
     const occurredAt = 1_714_250_400_000;
     const idempotencyKey = buildIdempotencyKey({
-      aggregateId: "br-001",
-      eventName: "approval.budget.submitted",
+      aggregateId: 'br-001',
+      eventName: 'approval.budget.submitted',
       occurredAt,
     });
     await setup`
@@ -72,7 +72,7 @@ describe.skipIf(!PG_AVAILABLE)("outbox status 전이 동시성 가드", () => {
     }
   });
 
-  it("동시 두 트랜잭션 UPDATE 시도 → 정확히 1 ROW_COUNT 만 1, 나머지 0", async () => {
+  it('동시 두 트랜잭션 UPDATE 시도 → 정확히 1 ROW_COUNT 만 1, 나머지 0', async () => {
     const [r1, r2] = await Promise.all([
       sqlA.begin(async (tx) => {
         const r = await tx`
@@ -93,7 +93,7 @@ describe.skipIf(!PG_AVAILABLE)("outbox status 전이 동시성 가드", () => {
 
     const final = await setup<{ status: string }[]>`
       SELECT status FROM sim.approval_outbox_events WHERE id = 'evt-1'`;
-    expect(final[0].status).toBe("dispatched");
+    expect(final[0].status).toBe('dispatched');
   });
 
   it("status='pending' 가드 누락 시 두 트랜잭션 모두 ROW_COUNT=1 (가드 필요성 음성 통제)", async () => {

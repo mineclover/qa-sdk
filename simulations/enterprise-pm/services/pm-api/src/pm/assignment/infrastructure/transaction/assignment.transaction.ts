@@ -12,8 +12,8 @@ export {
   createAssignmentTransactionPort,
   createAssignmentSqliteTransactionPort,
   createAssignmentPgTransactionPort,
-} from "./assignment.drizzle-transaction.js";
+} from './assignment.drizzle-transaction.js';
 export type {
   AssignmentDialect,
   AssignmentTransactionFactoryOpts,
-} from "./assignment.drizzle-transaction.js";
+} from './assignment.drizzle-transaction.js';

@@ -1,12 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { TraceContext } from "@qa-sdk/logger";
+import { describe, expect, it } from 'vitest';
+import { TraceContext } from '@qa-sdk/logger';
 
-describe("TraceContext", () => {
-  it("auto-generates a trace id, preserves qa_session_id, and manages the span stack", () => {
-    const context = new TraceContext({ qa_session_id: "qas_session_1" });
+describe('TraceContext', () => {
+  it('auto-generates a trace id, preserves qa_session_id, and manages the span stack', () => {
+    const context = new TraceContext({ qa_session_id: 'qas_session_1' });
 
     expect(context.trace_id).toMatch(/^trc_/);
-    expect(context.qa_session_id).toBe("qas_session_1");
+    expect(context.qa_session_id).toBe('qas_session_1');
     expect(context.depth).toBe(0);
 
     const rootSpanId = context.currentSpanId;

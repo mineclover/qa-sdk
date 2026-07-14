@@ -4,9 +4,9 @@ import type {
   DpmReadinessReport,
   ProfileDiagnostic,
   SensitivePath,
-} from "./types.js";
+} from './types.js';
 
-const MISSING_DPM_MESSAGE = "Sensitive paths exist but no DPM policy reference is declared.";
+const MISSING_DPM_MESSAGE = 'Sensitive paths exist but no DPM policy reference is declared.';
 
 export function assessDpmReadiness(profile: DataStructureProfile): DpmReadinessReport {
   const required = profile.privacy?.required ?? false;
@@ -16,15 +16,15 @@ export function assessDpmReadiness(profile: DataStructureProfile): DpmReadinessR
 
   if (sensitivePaths.length > 0 && !policyRef) {
     diagnostics.push({
-      code: "dsp-privacy-dpm-ref-missing",
-      severity: required ? "error" : "warning",
-      target: "privacy.dpm_policy_ref",
+      code: 'dsp-privacy-dpm-ref-missing',
+      severity: required ? 'error' : 'warning',
+      target: 'privacy.dpm_policy_ref',
       message: MISSING_DPM_MESSAGE,
     });
   }
 
   return {
-    kind: "data-structure-profile.dpm-readiness.v1",
+    kind: 'data-structure-profile.dpm-readiness.v1',
     profile: profile.profile,
     required,
     policyRef,
@@ -35,13 +35,13 @@ export function assessDpmReadiness(profile: DataStructureProfile): DpmReadinessR
 
 function normalizeSensitivePaths(paths: Array<string | SensitivePath>): SensitivePath[] {
   return paths.map((entry) => {
-    if (typeof entry === "string") {
-      return { path: entry, role: "sensitive" };
+    if (typeof entry === 'string') {
+      return { path: entry, role: 'sensitive' };
     }
     return { path: entry.path, role: entry.role };
   });
 }
 
 export function dpmGateSeverity(profile: DataStructureProfile): DiagnosticSeverity {
-  return profile.privacy?.required ? "error" : "warning";
+  return profile.privacy?.required ? 'error' : 'warning';
 }

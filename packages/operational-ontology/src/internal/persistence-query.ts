@@ -1,14 +1,11 @@
-import type {
-  CheckpointLattice,
-  CheckpointObservation,
-} from "./checkpoint-core.js";
-import type { FlowCorridor } from "./corridor-core.js";
-import type { JunctionDefinition, RouteDecision } from "./junction-core.js";
-import type { OperationalOntologyProjectionRecord } from "./persistence-core.js";
+import type { CheckpointLattice, CheckpointObservation } from './checkpoint-core.js';
+import type { FlowCorridor } from './corridor-core.js';
+import type { JunctionDefinition, RouteDecision } from './junction-core.js';
+import type { OperationalOntologyProjectionRecord } from './persistence-core.js';
 import type {
   OperationalOntologyObjectBundle,
   OperationalOntologyStore,
-} from "./persistence-memory.js";
+} from './persistence-memory.js';
 import {
   loadOperationalOntologySnapshot,
   OPERATIONAL_ONTOLOGY_CHECKPOINT_LATTICE_PROJECTION_KIND,
@@ -17,9 +14,9 @@ import {
   OPERATIONAL_ONTOLOGY_JUNCTION_PROJECTION_KIND,
   OPERATIONAL_ONTOLOGY_ROUTE_DECISION_PROJECTION_KIND,
   OPERATIONAL_ONTOLOGY_SNAPSHOT_PROJECTION_KIND,
-} from "./persistence-snapshot.js";
-import type { OperationalOntologySnapshot } from "./projector-types.js";
-import { createTraversalCanonicalKey, type ControlFlowGraph } from "./runtime-core.js";
+} from './persistence-snapshot.js';
+import type { OperationalOntologySnapshot } from './projector-types.js';
+import { createTraversalCanonicalKey, type ControlFlowGraph } from './runtime-core.js';
 
 export interface OperationalOntologySnapshotView {
   snapshotProjection: OperationalOntologyProjectionRecord;
@@ -52,7 +49,7 @@ export interface OperationalOntologyJunctionView {
 }
 
 async function findProjectionById(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   projectionId: string,
 ): Promise<OperationalOntologyProjectionRecord | null> {
   const projections = await store.listProjections({
@@ -63,7 +60,7 @@ async function findProjectionById(
 }
 
 async function listSubProjections(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
   projectionKind: string,
 ): Promise<OperationalOntologyProjectionRecord[]> {
@@ -73,7 +70,7 @@ async function listSubProjections(
 }
 
 export async function listOperationalOntologySnapshotProjections(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   targetScope?: string,
 ): Promise<OperationalOntologyProjectionRecord[]> {
   return store.listProjections({
@@ -83,7 +80,7 @@ export async function listOperationalOntologySnapshotProjections(
 }
 
 export async function loadOperationalOntologyCorridors(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
 ): Promise<FlowCorridor[]> {
   const corridorProjections = await listSubProjections(
@@ -98,7 +95,7 @@ export async function loadOperationalOntologyCorridors(
 }
 
 export async function loadOperationalOntologyControlFlows(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
 ): Promise<ControlFlowGraph[]> {
   const controlFlowProjections = await listSubProjections(
@@ -113,7 +110,7 @@ export async function loadOperationalOntologyControlFlows(
 }
 
 export async function loadOperationalOntologyCheckpointLattices(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
 ): Promise<CheckpointLattice[]> {
   const checkpointLatticeProjections = await listSubProjections(
@@ -128,21 +125,16 @@ export async function loadOperationalOntologyCheckpointLattices(
 }
 
 export async function loadOperationalOntologyCheckpointLattice(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
   rootCheckpointId: string,
 ): Promise<CheckpointLattice | null> {
-  const lattices = await loadOperationalOntologyCheckpointLattices(
-    store,
-    snapshotProjectionId,
-  );
-  return (
-    lattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ?? null
-  );
+  const lattices = await loadOperationalOntologyCheckpointLattices(store, snapshotProjectionId);
+  return lattices.find((lattice) => lattice.rootCheckpointId === rootCheckpointId) ?? null;
 }
 
 export async function loadOperationalOntologyJunctions(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
 ): Promise<JunctionDefinition[]> {
   const junctionProjections = await listSubProjections(
@@ -157,7 +149,7 @@ export async function loadOperationalOntologyJunctions(
 }
 
 export async function loadOperationalOntologyJunction(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
   junctionId: string,
 ): Promise<JunctionDefinition | null> {
@@ -166,7 +158,7 @@ export async function loadOperationalOntologyJunction(
 }
 
 export async function loadOperationalOntologyRouteDecisions(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
 ): Promise<RouteDecision[]> {
   const routeDecisionProjections = await listSubProjections(
@@ -181,19 +173,16 @@ export async function loadOperationalOntologyRouteDecisions(
 }
 
 export async function loadOperationalOntologyRouteDecision(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
   branchNodeId: string,
 ): Promise<RouteDecision | null> {
-  const routeDecisions = await loadOperationalOntologyRouteDecisions(
-    store,
-    snapshotProjectionId,
-  );
+  const routeDecisions = await loadOperationalOntologyRouteDecisions(store, snapshotProjectionId);
   return routeDecisions.find((route) => route.branchNodeId === branchNodeId) ?? null;
 }
 
 export async function loadOperationalOntologyTraversalBundles(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   snapshotProjectionId: string,
 ): Promise<OperationalOntologyObjectBundle[]> {
   const snapshot = await loadOperationalOntologySnapshot(store, snapshotProjectionId);
@@ -216,24 +205,16 @@ export async function loadOperationalOntologyTraversalBundles(
 }
 
 export async function loadOperationalOntologyTraversalBundle(
-  store: Pick<OperationalOntologyStore, "listProjections" | "getObjectBundle">,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   snapshotProjectionId: string,
   traversalKey: string,
 ): Promise<OperationalOntologyObjectBundle | null> {
-  const bundles = await loadOperationalOntologyTraversalBundles(
-    store,
-    snapshotProjectionId,
-  );
-  return (
-    bundles.find((bundle) => bundle.object.canonicalKey === traversalKey) ?? null
-  );
+  const bundles = await loadOperationalOntologyTraversalBundles(store, snapshotProjectionId);
+  return bundles.find((bundle) => bundle.object.canonicalKey === traversalKey) ?? null;
 }
 
 export async function loadOperationalOntologySnapshotView(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   snapshotProjectionId: string,
 ): Promise<OperationalOntologySnapshotView | null> {
   const snapshotProjection = await findProjectionById(store, snapshotProjectionId);
@@ -246,21 +227,15 @@ export async function loadOperationalOntologySnapshotView(
     return null;
   }
 
-  const [
-    corridors,
-    controlFlows,
-    checkpointLattices,
-    junctions,
-    routeDecisions,
-    traversalBundles,
-  ] = await Promise.all([
-    loadOperationalOntologyCorridors(store, snapshotProjectionId),
-    loadOperationalOntologyControlFlows(store, snapshotProjectionId),
-    loadOperationalOntologyCheckpointLattices(store, snapshotProjectionId),
-    loadOperationalOntologyJunctions(store, snapshotProjectionId),
-    loadOperationalOntologyRouteDecisions(store, snapshotProjectionId),
-    loadOperationalOntologyTraversalBundles(store, snapshotProjectionId),
-  ]);
+  const [corridors, controlFlows, checkpointLattices, junctions, routeDecisions, traversalBundles] =
+    await Promise.all([
+      loadOperationalOntologyCorridors(store, snapshotProjectionId),
+      loadOperationalOntologyControlFlows(store, snapshotProjectionId),
+      loadOperationalOntologyCheckpointLattices(store, snapshotProjectionId),
+      loadOperationalOntologyJunctions(store, snapshotProjectionId),
+      loadOperationalOntologyRouteDecisions(store, snapshotProjectionId),
+      loadOperationalOntologyTraversalBundles(store, snapshotProjectionId),
+    ]);
 
   return {
     snapshotProjection,
@@ -275,10 +250,7 @@ export async function loadOperationalOntologySnapshotView(
 }
 
 export async function loadOperationalOntologyCorridorView(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   snapshotProjectionId: string,
   corridorId: string,
 ): Promise<OperationalOntologyCorridorView | null> {
@@ -287,8 +259,7 @@ export async function loadOperationalOntologyCorridorView(
     return null;
   }
 
-  const corridor =
-    view.corridors.find((candidate) => candidate.flowId === corridorId) ?? null;
+  const corridor = view.corridors.find((candidate) => candidate.flowId === corridorId) ?? null;
   if (!corridor) {
     return null;
   }
@@ -297,8 +268,7 @@ export async function loadOperationalOntologyCorridorView(
     (lattice) => lattice.corridorId === corridorId,
   );
   const checkpoints = checkpointLattices.flatMap((lattice) => lattice.observations);
-  const controlFlow =
-    view.controlFlows.find((graph) => graph.graphId === corridorId) ?? null;
+  const controlFlow = view.controlFlows.find((graph) => graph.graphId === corridorId) ?? null;
   const routeDecisions = view.routeDecisions.filter(
     (decision) => decision.corridorId === corridorId,
   );
@@ -318,9 +288,7 @@ export async function loadOperationalOntologyCorridorView(
   );
   const traversalBundles =
     traversalKeys.size > 0
-      ? view.traversalBundles.filter((bundle) =>
-          traversalKeys.has(bundle.object.canonicalKey),
-        )
+      ? view.traversalBundles.filter((bundle) => traversalKeys.has(bundle.object.canonicalKey))
       : [];
 
   return {
@@ -336,10 +304,7 @@ export async function loadOperationalOntologyCorridorView(
 }
 
 export async function loadOperationalOntologyJunctionView(
-  store: Pick<
-    OperationalOntologyStore,
-    "listProjections" | "getObjectBundle"
-  >,
+  store: Pick<OperationalOntologyStore, 'listProjections' | 'getObjectBundle'>,
   snapshotProjectionId: string,
   junctionId: string,
 ): Promise<OperationalOntologyJunctionView | null> {
@@ -374,8 +339,7 @@ export async function loadOperationalOntologyJunctionView(
   const corridors = view.corridors.filter((corridor) => corridorIds.has(corridor.flowId));
   const controlFlows = view.controlFlows.filter(
     (graph) =>
-      corridorIds.has(graph.graphId) ||
-      graph.nodes.some((node) => node.nodeId === junctionId),
+      corridorIds.has(graph.graphId) || graph.nodes.some((node) => node.nodeId === junctionId),
   );
 
   return {

@@ -8,26 +8,31 @@
  * NodeSqliteDriver 기본 마이그레이션 또는 동등한 스키마가 적용된 DB가 필요하다.
  */
 
-import { ValidationError } from "../errors.js";
-import type { PrefixRegistry, PrefixRegistryRecord, DimRef, ResolvedAddress } from "../prefix-registry.js";
-import type { SqlDriver } from "./sql-store.js";
+import { ValidationError } from '../errors.js';
+import type {
+  PrefixRegistry,
+  PrefixRegistryRecord,
+  DimRef,
+  ResolvedAddress,
+} from '../prefix-registry.js';
+import type { SqlDriver } from './sql-store.js';
 
 // ── DB row 타입 ───────────────────────────────────────────
 
 interface PrefixRegistryRow extends Record<string, unknown> {
-  prefix:        string;
-  version_id:    string;
-  capacity:      number;
+  prefix: string;
+  version_id: string;
+  capacity: number;
   registered_at: string;
 }
 
 interface PrefixRefRow extends Record<string, unknown> {
-  parent_prefix:     string;
+  parent_prefix: string;
   parent_version_id: string;
-  dim_order:         number;
-  ref_prefix:        string;
-  ref_version_id:    string;
-  ref_capacity:      number;
+  dim_order: number;
+  ref_prefix: string;
+  ref_version_id: string;
+  ref_capacity: number;
 }
 
 // ── SqlPrefixRegistry ─────────────────────────────────────
@@ -38,11 +43,11 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   async register(record: PrefixRegistryRecord): Promise<void> {
     const existing = await this.driver.queryOne<{ prefix: string }>(
       `SELECT prefix FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
-      [record.prefix, record.versionId]
+      [record.prefix, record.versionId],
     );
     if (existing) {
       throw new ValidationError(
-        `PrefixRegistry: "${record.prefix}/${record.versionId}" already registered`
+        `PrefixRegistry: "${record.prefix}/${record.versionId}" already registered`,
       );
     }
 
@@ -50,7 +55,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
     await this.driver.transaction(async (tx) => {
       await tx.execute(
         `INSERT INTO prefix_registry (prefix, version_id, capacity, registered_at) VALUES (?, ?, ?, ?)`,
-        [record.prefix, record.versionId, record.capacity, now]
+        [record.prefix, record.versionId, record.capacity, now],
       );
 
       if (record.refs && record.refs.length > 0) {
@@ -59,7 +64,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
           await tx.execute(
             `INSERT INTO prefix_ref (parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ref_capacity)
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [record.prefix, record.versionId, i, ref.prefix, ref.versionId, ref.capacity]
+            [record.prefix, record.versionId, i, ref.prefix, ref.versionId, ref.capacity],
           );
         }
       }
@@ -74,31 +79,29 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   ): Promise<void> {
     const existing = await this.driver.queryOne<{ prefix: string }>(
       `SELECT prefix FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     if (!existing) {
-      throw new ValidationError(
-        `PrefixRegistry: "${prefix}/${versionId}" not registered`
-      );
+      throw new ValidationError(`PrefixRegistry: "${prefix}/${versionId}" not registered`);
     }
 
     await this.driver.transaction(async (tx) => {
       await tx.execute(
         `UPDATE prefix_registry SET capacity = ? WHERE prefix = ? AND version_id = ?`,
-        [capacity, prefix, versionId]
+        [capacity, prefix, versionId],
       );
 
       if (refs) {
         await tx.execute(
           `DELETE FROM prefix_ref WHERE parent_prefix = ? AND parent_version_id = ?`,
-          [prefix, versionId]
+          [prefix, versionId],
         );
         for (let i = 0; i < refs.length; i++) {
           const ref = refs[i];
           await tx.execute(
             `INSERT INTO prefix_ref (parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ref_capacity)
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [prefix, versionId, i, ref.prefix, ref.versionId, ref.capacity]
+            [prefix, versionId, i, ref.prefix, ref.versionId, ref.capacity],
           );
         }
       }
@@ -108,7 +111,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   async getCapacity(prefix: string, versionId: string): Promise<number | null> {
     const row = await this.driver.queryOne<{ capacity: number }>(
       `SELECT capacity FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     return row?.capacity ?? null;
   }
@@ -116,7 +119,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   async getRecord(prefix: string, versionId: string): Promise<PrefixRegistryRecord | null> {
     const row = await this.driver.queryOne<PrefixRegistryRow>(
       `SELECT prefix, version_id, capacity, registered_at FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     if (!row) return null;
 
@@ -127,14 +130,14 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   async listVersions(prefix: string): Promise<PrefixRegistryRecord[]> {
     const rows = await this.driver.query<PrefixRegistryRow>(
       `SELECT prefix, version_id, capacity, registered_at FROM prefix_registry WHERE prefix = ? ORDER BY registered_at ASC`,
-      [prefix]
+      [prefix],
     );
     // All rows share the same prefix — fetch refs with a single prefix filter
     const allRefRows = await this.driver.query<PrefixRefRow>(
       `SELECT parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ref_capacity
        FROM prefix_ref WHERE parent_prefix = ?
        ORDER BY parent_version_id ASC, dim_order ASC`,
-      [prefix]
+      [prefix],
     );
     return this._mergeRefs(rows, allRefRows);
   }
@@ -142,11 +145,11 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   async listAll(): Promise<PrefixRegistryRecord[]> {
     const [rows, allRefRows] = await Promise.all([
       this.driver.query<PrefixRegistryRow>(
-        `SELECT prefix, version_id, capacity, registered_at FROM prefix_registry ORDER BY registered_at ASC`
+        `SELECT prefix, version_id, capacity, registered_at FROM prefix_registry ORDER BY registered_at ASC`,
       ),
       this.driver.query<PrefixRefRow>(
         `SELECT parent_prefix, parent_version_id, dim_order, ref_prefix, ref_version_id, ref_capacity
-         FROM prefix_ref ORDER BY parent_prefix ASC, parent_version_id ASC, dim_order ASC`
+         FROM prefix_ref ORDER BY parent_prefix ASC, parent_version_id ASC, dim_order ASC`,
       ),
     ]);
     return this._mergeRefs(rows, allRefRows);
@@ -176,12 +179,15 @@ export class SqlPrefixRegistry implements PrefixRegistry {
     return result;
   }
 
-  async getReverseRefs(prefix: string, versionId: string): Promise<readonly PrefixRegistryRecord[]> {
+  async getReverseRefs(
+    prefix: string,
+    versionId: string,
+  ): Promise<readonly PrefixRegistryRecord[]> {
     // Find all composite prefixes that have this prefix:versionId as a dim
     const refRows = await this.driver.query<{ parent_prefix: string; parent_version_id: string }>(
       `SELECT DISTINCT parent_prefix, parent_version_id FROM prefix_ref
        WHERE ref_prefix = ? AND ref_version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
 
     const records: PrefixRegistryRecord[] = [];
@@ -195,7 +201,7 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   async getShape(prefix: string, versionId: string): Promise<number[] | null> {
     const row = await this.driver.queryOne<{ capacity: number }>(
       `SELECT capacity FROM prefix_registry WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     if (!row) return null;
 
@@ -204,12 +210,12 @@ export class SqlPrefixRegistry implements PrefixRegistry {
   }
 
   async resolveAddress(serialized: string): Promise<ResolvedAddress | null> {
-    const last = serialized.lastIndexOf(":");
+    const last = serialized.lastIndexOf(':');
     if (last === -1) return null;
     const indexStr = serialized.slice(last + 1);
     const rest = serialized.slice(0, last);
 
-    const second = rest.lastIndexOf(":");
+    const second = rest.lastIndexOf(':');
     if (second === -1) return null;
     const prefix = rest.slice(0, second);
     const versionId = rest.slice(second + 1);
@@ -220,9 +226,10 @@ export class SqlPrefixRegistry implements PrefixRegistry {
     const record = await this.getRecord(prefix, versionId);
     if (!record) return null;
 
-    const shape = record.refs && record.refs.length > 0
-      ? record.refs.map((r) => r.capacity)
-      : [record.capacity];
+    const shape =
+      record.refs && record.refs.length > 0
+        ? record.refs.map((r) => r.capacity)
+        : [record.capacity];
 
     return {
       prefix,
@@ -242,12 +249,12 @@ export class SqlPrefixRegistry implements PrefixRegistry {
       `SELECT ref_prefix, ref_version_id, ref_capacity FROM prefix_ref
        WHERE parent_prefix = ? AND parent_version_id = ?
        ORDER BY dim_order ASC`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     return rows.map((r) => ({
-      prefix:    r.ref_prefix,
+      prefix: r.ref_prefix,
       versionId: r.ref_version_id,
-      capacity:  r.ref_capacity,
+      capacity: r.ref_capacity,
     }));
   }
 
@@ -262,9 +269,9 @@ export class SqlPrefixRegistry implements PrefixRegistry {
       const list = refMap.get(key);
       if (list) {
         list.push({
-          prefix:    ref.ref_prefix,
+          prefix: ref.ref_prefix,
           versionId: ref.ref_version_id,
-          capacity:  ref.ref_capacity,
+          capacity: ref.ref_capacity,
         });
       }
     }
@@ -280,9 +287,9 @@ export class SqlPrefixRegistry implements PrefixRegistry {
 
 function toRecord(row: PrefixRegistryRow, refs: DimRef[]): PrefixRegistryRecord {
   return {
-    prefix:    row.prefix,
+    prefix: row.prefix,
     versionId: row.version_id,
-    capacity:  row.capacity,
+    capacity: row.capacity,
     ...(refs.length > 0 ? { refs } : {}),
   };
 }

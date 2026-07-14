@@ -1,10 +1,10 @@
-import { authorizationOntologyPack } from "authorization-ontology";
-import type { OperationalOntologyPack } from "operational-ontology/pack";
-import { programmingArtifactOntologyPack } from "operational-ontology/programming-artifacts";
+import { authorizationOntologyPack } from 'authorization-ontology';
+import type { OperationalOntologyPack } from 'operational-ontology/pack';
+import { programmingArtifactOntologyPack } from 'operational-ontology/programming-artifacts';
 
 const KNOWN_ONTOLOGY_PACKS = {
-  "programming-artifact-ontology": programmingArtifactOntologyPack,
-  "authorization-ontology": authorizationOntologyPack,
+  'programming-artifact-ontology': programmingArtifactOntologyPack,
+  'authorization-ontology': authorizationOntologyPack,
 } as const satisfies Record<string, OperationalOntologyPack>;
 
 export type KnownOntologyPackId = keyof typeof KNOWN_ONTOLOGY_PACKS;
@@ -25,7 +25,7 @@ export interface UnknownOntologyPackResolution {
 }
 
 export interface UnknownOntologyPackError {
-  readonly code: "unknown-ontology-pack";
+  readonly code: 'unknown-ontology-pack';
   readonly message: string;
   readonly packId: string;
   readonly supportedPackIds: readonly KnownOntologyPackId[];
@@ -51,8 +51,8 @@ export function resolveKnownOntologyPack(packId: string): ResolveKnownOntologyPa
   return {
     ok: false,
     error: {
-      code: "unknown-ontology-pack",
-      message: `Unknown ontology pack id "${packId}". Supported pack ids: ${KNOWN_ONTOLOGY_PACK_IDS.join(", ")}`,
+      code: 'unknown-ontology-pack',
+      message: `Unknown ontology pack id "${packId}". Supported pack ids: ${KNOWN_ONTOLOGY_PACK_IDS.join(', ')}`,
       packId,
       supportedPackIds: KNOWN_ONTOLOGY_PACK_IDS,
     },

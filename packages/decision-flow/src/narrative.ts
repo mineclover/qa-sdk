@@ -23,8 +23,8 @@ import type {
   NarrativeDestination,
   NarrativeOutcome,
   NarrativeReflection,
-} from "./types.js";
-import { decodePath } from "./coordinate.js";
+} from './types.js';
+import { decodePath } from './coordinate.js';
 
 let narrativeCounter = 0;
 
@@ -51,7 +51,7 @@ export interface BuildNarrativeInput {
 export function buildNarrative(input: BuildNarrativeInput): DecisionNarrative {
   const { instance, schema, context, outcome, reflection } = input;
 
-  if (instance.selections.length === 0 && instance.status !== "active") {
+  if (instance.selections.length === 0 && instance.status !== 'active') {
     throw new Error(`인스턴스 "${instance.id}"에 선택 이력이 없다 (status: ${instance.status})`);
   }
 
@@ -61,16 +61,17 @@ export function buildNarrative(input: BuildNarrativeInput): DecisionNarrative {
   // 여정: 각 selection → NarrativeStep
   const journey: NarrativeStep[] = instance.selections.map((sel) => {
     const gate = gateMap.get(sel.gateId);
-    const isCore = gate?.weight === "core";
+    const isCore = gate?.weight === 'core';
     const evidenceKinds = [...new Set(sel.evidence.map((e) => e.kind))];
 
     // 근거에서 한 줄 요약 추출 (weight 내림차순)
-    const reason = sel.evidence.length > 0
-      ? [...sel.evidence]
-          .toSorted((a, b) => b.weight - a.weight)
-          .map((e) => e.content)
-          .join("; ")
-      : "근거 없음";
+    const reason =
+      sel.evidence.length > 0
+        ? [...sel.evidence]
+            .toSorted((a, b) => b.weight - a.weight)
+            .map((e) => e.content)
+            .join('; ')
+        : '근거 없음';
 
     return {
       gateId: sel.gateId,
@@ -138,11 +139,12 @@ export function extractPivotPoints(narrative: DecisionNarrative): readonly Narra
  */
 export function summarizeNarrative(narrative: DecisionNarrative): string {
   const pivots = extractPivotPoints(narrative);
-  const pivotSummary = pivots.length > 0
-    ? pivots.map((p) => `${p.gateName}=${p.choice}`).join(", ")
-    : Object.entries(narrative.destination.selections)
-        .map(([k, v]) => `${k}=${v}`)
-        .join(", ");
+  const pivotSummary =
+    pivots.length > 0
+      ? pivots.map((p) => `${p.gateName}=${p.choice}`).join(', ')
+      : Object.entries(narrative.destination.selections)
+          .map(([k, v]) => `${k}=${v}`)
+          .join(', ');
 
   return `${narrative.context.trigger} → [${pivotSummary}] → ${narrative.outcome.artifactType}:${narrative.outcome.artifactRef}`;
 }
@@ -206,14 +208,14 @@ export function evaluateDecision(
   let verdict: DecisionVerdict;
   let reason: string;
   if (allMet) {
-    verdict = "success";
+    verdict = 'success';
     reason = `${criteriaResults.length}개 기준 전부 충족`;
   } else if (noneMet) {
-    verdict = "failure";
+    verdict = 'failure';
     reason = `${criteriaResults.length}개 기준 전부 미충족`;
   } else {
     const metCount = criteriaResults.filter((r) => r.met).length;
-    verdict = "deferred";
+    verdict = 'deferred';
     reason = `${criteriaResults.length}개 기준 중 ${metCount}개 충족 — 추가 검증 필요`;
   }
 
@@ -240,19 +242,21 @@ export function summarizeDecisionOutcome(narrative: DecisionNarrative): string {
   // 결정 경로
   const pivots = extractPivotPoints(narrative);
   if (pivots.length > 0) {
-    parts.push(`[결정] ${pivots.map((p) => `${p.gateName}=${p.choice}`).join(", ")}`);
+    parts.push(`[결정] ${pivots.map((p) => `${p.gateName}=${p.choice}`).join(', ')}`);
   }
 
   // 결론
   if (narrative.verdict) {
     const v = narrative.verdict;
     const metCount = v.criteriaResults.filter((r) => r.met).length;
-    parts.push(`[결론] ${v.verdict} (${metCount}/${v.criteriaResults.length} 기준 충족) — ${v.reason}`);
+    parts.push(
+      `[결론] ${v.verdict} (${metCount}/${v.criteriaResults.length} 기준 충족) — ${v.reason}`,
+    );
   } else {
-    parts.push("[결론] 아직 판정 전");
+    parts.push('[결론] 아직 판정 전');
   }
 
-  return parts.join("\n");
+  return parts.join('\n');
 }
 
 /** 두 서사의 분기점 */

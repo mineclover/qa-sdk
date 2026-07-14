@@ -1,7 +1,7 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import { trace, type Tracer } from "@opentelemetry/api";
+import { trace, type Tracer } from '@opentelemetry/api';
 
 /**
  * 이름으로 OTel Tracer를 얻는다.

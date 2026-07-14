@@ -10,17 +10,17 @@
 
 /** spec §8 — FAULT_KINDS const tuple. 신규 항목 추가는 본 배열 + FaultModule 매핑만. */
 export const FAULT_KINDS = [
-  "schema-break", // 시나리오 #10
-  "audit-anomaly", // 시나리오 #11
-  "replication-lag", // 시나리오 #14
-  "db-pool-pressure", // 시나리오 #13
-  "pubsub-invalidate-drop", // 시나리오 #16 (bitmap-cache-version-fallback)
-  "perf-warn", // 시나리오 #17 (pass-priority-canary-blocks-scale)
+  'schema-break', // 시나리오 #10
+  'audit-anomaly', // 시나리오 #11
+  'replication-lag', // 시나리오 #14
+  'db-pool-pressure', // 시나리오 #13
+  'pubsub-invalidate-drop', // 시나리오 #16 (bitmap-cache-version-fallback)
+  'perf-warn', // 시나리오 #17 (pass-priority-canary-blocks-scale)
   // sim 전용 — 시나리오 9 happy-path 진입점. 외부 metrics 출처가 미연결/오류 응답인 시뮬
   // 환경에서 controller 가 자연스럽게 promote 시퀀스를 진행하도록 PASS 신호 + full 가중치
   // 를 합성한다. spec §8 fault 리스트의 의도와 동일 (fault = controller 입력 기록 변경)
   // 하므로 동일 admin endpoint (/admin/fault/:kind) 로 토글 가능.
-  "healthy-metrics",
+  'healthy-metrics',
 ] as const;
 
 export type FaultKind = (typeof FAULT_KINDS)[number];

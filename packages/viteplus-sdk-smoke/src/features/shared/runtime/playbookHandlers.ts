@@ -15,21 +15,14 @@ export function appendPlaybookActivity<
   TActivity,
   TField extends string,
   TState extends { activity: TActivity[] },
->(
-  context: PlaybookContextWithActivity<TState, TField>,
-  activity: TActivity,
-  limit = 8,
-): void {
+>(context: PlaybookContextWithActivity<TState, TField>, activity: TActivity, limit = 8): void {
   context.store.update((state) => ({
     ...state,
     activity: [activity, ...state.activity].slice(0, limit),
   }));
 }
 
-export function focusPlaybookField<
-  TState,
-  TField extends string,
->(
+export function focusPlaybookField<TState, TField extends string>(
   context: PlaybookContextWithActivity<TState, TField>,
   field: TField,
 ): void {
@@ -39,9 +32,7 @@ export function focusPlaybookField<
 export async function flushPlaybookBridge<
   TField extends string,
   TState extends { debugRevision: number },
->(
-  context: PlaybookContextWithActivity<TState, TField>,
-): Promise<void> {
+>(context: PlaybookContextWithActivity<TState, TField>): Promise<void> {
   await context.bridge.flush();
   context.store.update((state) => ({
     ...state,

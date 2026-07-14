@@ -31,7 +31,7 @@ export interface ReviewEntry {
 // ── 상태 조회 ─────────────────────────────────────────
 
 /** 파일 리뷰 상태 3-state */
-export type ReviewStatus = "reviewed" | "stale" | "unreviewed";
+export type ReviewStatus = 'reviewed' | 'stale' | 'unreviewed';
 
 /** 파일별 리뷰 상태 */
 export interface FileReviewStatus {
@@ -71,7 +71,7 @@ export interface MarkResult {
 // ── Feedback Request ───────────────────────────────────
 
 /** AI 피드백 요청 상태 */
-export type FeedbackRequestStatus = "open" | "resolved" | "cancelled";
+export type FeedbackRequestStatus = 'open' | 'resolved' | 'cancelled';
 
 /** 파일과 연결된 definition 문서 후보 */
 export interface FeedbackRelatedDoc {
@@ -79,7 +79,7 @@ export interface FeedbackRelatedDoc {
   scope: string;
   aspect: string;
   depth: string;
-  reason: "service-scope" | "file-hint";
+  reason: 'service-scope' | 'file-hint';
   purpose?: string;
 }
 

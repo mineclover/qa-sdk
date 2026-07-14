@@ -36,15 +36,10 @@
  * decodeToUnsafe(index, out)   : 검사 없는 버퍼 기록.
  */
 
-import type { Coord } from "./types.js";
-import {
-  BufferError,
-  CoordError,
-  IndexRangeError,
-  ShapeError,
-} from "./errors.js";
-import { assertNonEmptyArray, assertPositiveInt } from "./validators.js";
-import { calcWeights } from "./calc.js";
+import type { Coord } from './types.js';
+import { BufferError, CoordError, IndexRangeError, ShapeError } from './errors.js';
+import { assertNonEmptyArray, assertPositiveInt } from './validators.js';
+import { calcWeights } from './calc.js';
 
 export class WeightedIndex {
   readonly shape: readonly number[];
@@ -74,13 +69,13 @@ export class WeightedIndex {
   private readonly shapeBuf: Float64Array;
 
   constructor(shape: number[], labels?: string[]) {
-    assertNonEmptyArray(shape, "shape");
+    assertNonEmptyArray(shape, 'shape');
     for (let i = 0; i < shape.length; i++) {
       assertPositiveInt(shape[i], `shape[${i}]`);
     }
     if (labels !== undefined && labels.length !== shape.length) {
       throw new ShapeError(
-        `labels length (${labels.length}) must match shape length (${shape.length})`
+        `labels length (${labels.length}) must match shape length (${shape.length})`,
       );
     }
 
@@ -93,7 +88,7 @@ export class WeightedIndex {
       if (stridesArr[i] > Number.MAX_SAFE_INTEGER) {
         throw new ShapeError(
           `Shape product at dimension ${i} (${stridesArr[i]}) exceeds Number.MAX_SAFE_INTEGER. ` +
-          `Reduce shape values or the number of dimensions.`
+            `Reduce shape values or the number of dimensions.`,
         );
       }
     }
@@ -104,7 +99,7 @@ export class WeightedIndex {
     const size = stridesArr[0] * shape[0];
     if (size > Number.MAX_SAFE_INTEGER) {
       throw new ShapeError(
-        `Total combinations (${size}) exceeds Number.MAX_SAFE_INTEGER. Reduce shape values.`
+        `Total combinations (${size}) exceeds Number.MAX_SAFE_INTEGER. Reduce shape values.`,
       );
     }
     this.size = size;
@@ -148,7 +143,7 @@ export class WeightedIndex {
       if (i < 0) {
         throw new CoordError(`Unknown label "${label}" in extractDims`);
       }
-      result[label] = Math.floor(address / this.strides[i]) % this.shape[i] + 1;
+      result[label] = (Math.floor(address / this.strides[i]) % this.shape[i]) + 1;
     }
     return result;
   }
@@ -206,7 +201,7 @@ export class WeightedIndex {
   decodeTo(index: number, out: number[]): void {
     if (out.length < this.shape.length) {
       throw new BufferError(
-        `out buffer length (${out.length}) must be >= shape length (${this.shape.length})`
+        `out buffer length (${out.length}) must be >= shape length (${this.shape.length})`,
       );
     }
     this._validateIndex(index);
@@ -222,10 +217,8 @@ export class WeightedIndex {
 
   /** 배치 정변환: 좌표 배열 → Uint32Array. 경계 검사 포함. */
   encodeBatch(coords: readonly Coord[]): Uint32Array {
-    if (this.size > 0xFFFF_FFFF) {
-      throw new IndexRangeError(
-        `size (${this.size}) exceeds Uint32Array range (4294967295)`
-      );
+    if (this.size > 0xffff_ffff) {
+      throw new IndexRangeError(`size (${this.size}) exceeds Uint32Array range (4294967295)`);
     }
     const n = coords.length;
     const out = new Uint32Array(n);
@@ -276,7 +269,7 @@ export class WeightedIndex {
     const d = this.shape.length;
     if (coordsBuf.length !== itemCount * d) {
       throw new BufferError(
-        `coordsBuf length (${coordsBuf.length}) must equal itemCount * dims (${itemCount} * ${d} = ${itemCount * d})`
+        `coordsBuf length (${coordsBuf.length}) must equal itemCount * dims (${itemCount} * ${d} = ${itemCount * d})`,
       );
     }
     const w = this._weightsBuf;
@@ -296,7 +289,7 @@ export class WeightedIndex {
   decodeBatchFlat(addrsBuf: Float64Array, itemCount: number): Float64Array {
     if (addrsBuf.length !== itemCount) {
       throw new BufferError(
-        `addrsBuf length (${addrsBuf.length}) must equal itemCount (${itemCount})`
+        `addrsBuf length (${addrsBuf.length}) must equal itemCount (${itemCount})`,
       );
     }
     const d = this.shape.length;
@@ -341,14 +334,14 @@ export class WeightedIndex {
   private _validateCoords(coords: number[]): void {
     if (coords.length !== this.shape.length) {
       throw new CoordError(
-        `coords length (${coords.length}) must match shape length (${this.shape.length})`
+        `coords length (${coords.length}) must match shape length (${this.shape.length})`,
       );
     }
     for (let i = 0; i < this.shape.length; i++) {
       const x = coords[i];
       if (!Number.isInteger(x) || x < 1 || x > this.shape[i]) {
         throw new CoordError(
-          `coords[${i}] (label: "${this.labels[i]}") must be in [1, ${this.shape[i]}], got ${x}`
+          `coords[${i}] (label: "${this.labels[i]}") must be in [1, ${this.shape[i]}], got ${x}`,
         );
       }
     }
@@ -356,9 +349,7 @@ export class WeightedIndex {
 
   private _validateIndex(index: number): void {
     if (!Number.isInteger(index) || index < 0 || index >= this.size) {
-      throw new IndexRangeError(
-        `index must be in [0, ${this.size - 1}], got ${index}`
-      );
+      throw new IndexRangeError(`index must be in [0, ${this.size - 1}], got ${index}`);
     }
   }
 }

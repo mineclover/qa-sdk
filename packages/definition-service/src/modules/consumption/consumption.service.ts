@@ -1,11 +1,11 @@
 // @def.doc definition-service
 
-import { Injectable, Inject } from "@nestjs/common";
-import { DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
-import { SqlConsumptionStore } from "../../stores/consumption-store.js";
-import type { ConsumptionStore } from "../../core/interfaces.js";
-import type { ConsumptionSnapshot } from "../../core/types.js";
-import { computeRate } from "../../core/consumption-diagnostics.js";
+import { Injectable, Inject } from '@nestjs/common';
+import { DRIZZLE_DB, type DefinitionServiceDatabase } from '../../database.module.js';
+import { SqlConsumptionStore } from '../../stores/consumption-store.js';
+import type { ConsumptionStore } from '../../core/interfaces.js';
+import type { ConsumptionSnapshot } from '../../core/types.js';
+import { computeRate } from '../../core/consumption-diagnostics.js';
 
 @Injectable()
 export class ConsumptionService {
@@ -15,12 +15,15 @@ export class ConsumptionService {
     this.store = new SqlConsumptionStore(db);
   }
 
-  record(prefixId: string, data: {
-    prefixVersion: string;
-    totalSpace: number;
-    observedAddresses: number;
-    dimStats: Record<string, unknown>;
-  }): { id: number; consumptionRate: number } {
+  record(
+    prefixId: string,
+    data: {
+      prefixVersion: string;
+      totalSpace: number;
+      observedAddresses: number;
+      dimStats: Record<string, unknown>;
+    },
+  ): { id: number; consumptionRate: number } {
     const consumptionRate = computeRate(data.totalSpace, data.observedAddresses);
     const id = this.store.record({
       prefixId,

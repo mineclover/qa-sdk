@@ -1,27 +1,27 @@
 // @def.boundary weighted-index-system
 // @def.doc weighted-index-system
 
-import { type CellData, type DimKey, type VersionDef } from "../data.js";
-import { coordChip, dimBadge, permVersionSpan } from "../utils/badge.js";
-import { encodeRowsHtml, decodeRowsHtml } from "../utils/encode-html.js";
+import { type CellData, type DimKey, type VersionDef } from '../data.js';
+import { coordChip, dimBadge, permVersionSpan } from '../utils/badge.js';
+import { encodeRowsHtml, decodeRowsHtml } from '../utils/encode-html.js';
 
 // ── Side panel: full 4D encode / decode steps ─────────────────────────────
 
 export function renderDetail(
   container: HTMLElement,
-  cell:      CellData,
-  xDim:      DimKey,
-  yDim:      DimKey,
-  vDef:      VersionDef,
+  cell: CellData,
+  xDim: DimKey,
+  yDim: DimKey,
+  vDef: VersionDef,
 ): void {
   const [r, a, ro, e] = cell.coords4;
-  const id   = cell.id4;
+  const id = cell.id4;
   const dims = vDef.dims;
 
-  const rLabel  = String(dims.resource.values[r  - 1]);
-  const aLabel  = String(dims.action.values[a    - 1]);
-  const roLabel = String(dims.role.values[ro     - 1]);
-  const eLabel  = String(dims.env.values[e       - 1]);
+  const rLabel = String(dims.resource.values[r - 1]);
+  const aLabel = String(dims.action.values[a - 1]);
+  const roLabel = String(dims.role.values[ro - 1]);
+  const eLabel = String(dims.env.values[e - 1]);
 
   // ── 1. 좌표 ──────────────────────────────────────────────────────────
 
@@ -30,10 +30,10 @@ export function renderDetail(
       <div class="sp-sec-header">선택된 4D 좌표</div>
       <div class="sp-sec-body">
         <div class="coord-row">
-          ${coordChip("resource", rLabel,  r,  dims.resource.koLabel(rLabel), dims.resource.label, vDef.newDimValues.resource?.has(rLabel)  ?? false)}
-          ${coordChip("action",   aLabel,  a,  dims.action.koLabel(aLabel),   dims.action.label,   vDef.newDimValues.action?.has(aLabel)    ?? false)}
-          ${coordChip("role",     roLabel, ro, dims.role.koLabel(roLabel),     dims.role.label,     vDef.newDimValues.role?.has(roLabel)     ?? false)}
-          ${coordChip("env",      eLabel,  e,  dims.env.koLabel(eLabel),       dims.env.label,      vDef.newDimValues.env?.has(eLabel)       ?? false)}
+          ${coordChip('resource', rLabel, r, dims.resource.koLabel(rLabel), dims.resource.label, vDef.newDimValues.resource?.has(rLabel) ?? false)}
+          ${coordChip('action', aLabel, a, dims.action.koLabel(aLabel), dims.action.label, vDef.newDimValues.action?.has(aLabel) ?? false)}
+          ${coordChip('role', roLabel, ro, dims.role.koLabel(roLabel), dims.role.label, vDef.newDimValues.role?.has(roLabel) ?? false)}
+          ${coordChip('env', eLabel, e, dims.env.koLabel(eLabel), dims.env.label, vDef.newDimValues.env?.has(eLabel) ?? false)}
         </div>
       </div>
     </div>
@@ -68,8 +68,8 @@ export function renderDetail(
           <tr>
             <td class="ftbl-step">결과</td>
             <td class="ftbl-result">
-              ${dimBadge("resource", rLabel)} ${dimBadge("action", aLabel)}<br/>
-              ${dimBadge("role", roLabel)} ${dimBadge("env", eLabel)}
+              ${dimBadge('resource', rLabel)} ${dimBadge('action', aLabel)}<br/>
+              ${dimBadge('role', roLabel)} ${dimBadge('env', eLabel)}
             </td>
           </tr>
         </table>
@@ -84,13 +84,13 @@ export function renderDetail(
       <div class="sp-sec-header">권한 의미</div>
       <div class="sp-sec-body">
         <div class="perm-desc">
-          ${dimBadge("role", roLabel)}
+          ${dimBadge('role', roLabel)}
           <span class="perm-sep">가</span>
-          ${dimBadge("env", eLabel)}
+          ${dimBadge('env', eLabel)}
           <span class="perm-sep">환경의</span>
-          ${dimBadge("resource", rLabel)}
+          ${dimBadge('resource', rLabel)}
           <span class="perm-sep">에 대해</span>
-          ${dimBadge("action", aLabel)}
+          ${dimBadge('action', aLabel)}
           <span class="perm-sep">작업 수행</span>
         </div>
         <div class="perm-id-note">

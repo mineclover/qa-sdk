@@ -1,23 +1,23 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text, primaryKey, index } from "drizzle-orm/pg-core";
+import { pgSchema, text, primaryKey, index } from 'drizzle-orm/pg-core';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
 export const roleAssignments = sim.table(
-  "auth_role_assignments",
+  'auth_role_assignments',
   {
-    userId: text("user_id").notNull(),
-    roleId: text("role_id").notNull(),
-    scopeType: text("scope_type", { enum: ["global", "department", "project"] }).notNull(),
+    userId: text('user_id').notNull(),
+    roleId: text('role_id').notNull(),
+    scopeType: text('scope_type', { enum: ['global', 'department', 'project'] }).notNull(),
     /** PG PRIMARY KEY 가 NOT NULL 강제 — sentinel '' 사용. */
-    scopeId: text("scope_id").notNull().default(""),
-    assignedAt: text("assigned_at").notNull(),
+    scopeId: text('scope_id').notNull().default(''),
+    assignedAt: text('assigned_at').notNull(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.roleId, t.scopeType, t.scopeId] }),
-    index("idx_sim_ra_user").on(t.userId),
+    index('idx_sim_ra_user').on(t.userId),
   ],
 );
 

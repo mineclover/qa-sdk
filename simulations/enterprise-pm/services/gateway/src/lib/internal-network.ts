@@ -10,7 +10,7 @@ export interface Cidr {
 }
 
 function ipToInt(ip: string): number | null {
-  const parts = ip.split(".");
+  const parts = ip.split('.');
   if (parts.length !== 4) return null;
   let v = 0;
   for (const p of parts) {
@@ -26,7 +26,7 @@ export function parseCidrList(input: string): Cidr[] {
   const trimmed = input.trim();
   if (trimmed.length === 0) return [];
   const out: Cidr[] = [];
-  for (const item of trimmed.split(",")) {
+  for (const item of trimmed.split(',')) {
     const cidr = item.trim();
     const m = cidr.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\/(\d{1,2})$/);
     if (!m) throw new Error(`invalid CIDR: ${cidr}`);
@@ -44,7 +44,7 @@ export function isInternalIp(ip: string, cidrs: Cidr[]): boolean {
   const v = ipToInt(ip);
   if (v === null) return false;
   for (const c of cidrs) {
-    if (((v & c.mask) >>> 0) === c.base) return true;
+    if ((v & c.mask) >>> 0 === c.base) return true;
   }
   return false;
 }

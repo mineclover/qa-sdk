@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "0e3e4d0e-d3f6-42b9-8625-9538408cd76f",
-  "prevIds": [
-    "54d8a6cd-908d-460c-8b29-a5218e6b63bb"
-  ],
+  "prevIds": ["54d8a6cd-908d-460c-8b29-a5218e6b63bb"],
   "ddl": [
     {
       "name": "axis_profile",
@@ -979,135 +977,91 @@
       "table": "service_endpoint"
     },
     {
-      "columns": [
-        "id",
-        "catalog_id"
-      ],
+      "columns": ["id", "catalog_id"],
       "nameExplicit": false,
       "name": "axis_profile_pk",
       "entityType": "pks",
       "table": "axis_profile"
     },
     {
-      "columns": [
-        "catalog_id",
-        "config_type"
-      ],
+      "columns": ["catalog_id", "config_type"],
       "nameExplicit": false,
       "name": "config_pk",
       "entityType": "pks",
       "table": "config"
     },
     {
-      "columns": [
-        "prefix",
-        "version_id"
-      ],
+      "columns": ["prefix", "version_id"],
       "nameExplicit": false,
       "name": "draft_lock_pk",
       "entityType": "pks",
       "table": "draft_lock"
     },
     {
-      "columns": [
-        "catalog_id",
-        "service_id",
-        "event_key",
-        "event_version"
-      ],
+      "columns": ["catalog_id", "service_id", "event_key", "event_version"],
       "nameExplicit": false,
       "name": "event_schema_pk",
       "entityType": "pks",
       "table": "event_schema"
     },
     {
-      "columns": [
-        "allocation_id",
-        "segment_id"
-      ],
+      "columns": ["allocation_id", "segment_id"],
       "nameExplicit": false,
       "name": "ontology_address_segment_pk",
       "entityType": "pks",
       "table": "ontology_address_segment"
     },
     {
-      "columns": [
-        "ontology_id",
-        "axis_id",
-        "version_id"
-      ],
+      "columns": ["ontology_id", "axis_id", "version_id"],
       "nameExplicit": false,
       "name": "ontology_axis_pk",
       "entityType": "pks",
       "table": "ontology_axis"
     },
     {
-      "columns": [
-        "ontology_id",
-        "taxonomy_id",
-        "version_id"
-      ],
+      "columns": ["ontology_id", "taxonomy_id", "version_id"],
       "nameExplicit": false,
       "name": "ontology_taxonomy_pk",
       "entityType": "pks",
       "table": "ontology_taxonomy"
     },
     {
-      "columns": [
-        "catalog_id",
-        "kind",
-        "service_id",
-        "version"
-      ],
+      "columns": ["catalog_id", "kind", "service_id", "version"],
       "nameExplicit": false,
       "name": "service_component_version_pk",
       "entityType": "pks",
       "table": "service_component_version"
     },
     {
-      "columns": [
-        "catalog_id",
-        "namespace",
-        "svc_name",
-        "env",
-        "region"
-      ],
+      "columns": ["catalog_id", "namespace", "svc_name", "env", "region"],
       "nameExplicit": false,
       "name": "service_endpoint_pk",
       "entityType": "pks",
       "table": "service_endpoint"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "catalogs_pk",
       "table": "catalogs",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "allocation_id"
-      ],
+      "columns": ["allocation_id"],
       "nameExplicit": false,
       "name": "ontology_address_allocation_pk",
       "table": "ontology_address_allocation",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "ontology_id"
-      ],
+      "columns": ["ontology_id"],
       "nameExplicit": false,
       "name": "ontology_namespace_pk",
       "table": "ontology_namespace",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "prefix"
-      ],
+      "columns": ["prefix"],
       "nameExplicit": false,
       "name": "prefix_pk",
       "table": "prefix",

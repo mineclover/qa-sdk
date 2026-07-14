@@ -1,7 +1,7 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { AddressRangeCache, RangeCacheRecord } from "../address-range-cache.js";
+import type { AddressRangeCache, RangeCacheRecord } from '../address-range-cache.js';
 
 export class InMemoryAddressRangeCache implements AddressRangeCache {
   private readonly _store = new Map<string, RangeCacheRecord>();

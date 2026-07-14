@@ -12,7 +12,7 @@
  * 3. DefinitionEntry → address_context (문서 좌표 → 수집 파이프라인)
  */
 
-import type { DefScope, DefLifecycle, DefinitionEntry } from "./types.js";
+import type { DefScope, DefLifecycle, DefinitionEntry } from './types.js';
 
 // ─── artifactType → DefScope 매핑 ────────────────────────
 
@@ -24,50 +24,50 @@ import type { DefScope, DefLifecycle, DefinitionEntry } from "./types.js";
  */
 const ARTIFACT_SCOPE_MAP: Record<string, DefScope> = {
   // ui
-  "layout": "ui",
-  "component": "ui",
-  "page": "ui",
-  "screen": "ui",
-  "widget": "ui",
+  layout: 'ui',
+  component: 'ui',
+  page: 'ui',
+  screen: 'ui',
+  widget: 'ui',
 
   // feature
-  "module": "feature",
-  "package": "feature",
-  "service": "feature",
+  module: 'feature',
+  package: 'feature',
+  service: 'feature',
 
   // flow
-  "plan": "flow",
-  "flow": "flow",
-  "pipeline": "flow",
-  "workflow": "flow",
-  "scenario": "flow",
+  plan: 'flow',
+  flow: 'flow',
+  pipeline: 'flow',
+  workflow: 'flow',
+  scenario: 'flow',
 
   // state
-  "state": "state",
-  "model": "state",
-  "entity": "state",
+  state: 'state',
+  model: 'state',
+  entity: 'state',
 
   // constraint
-  "config": "constraint",
-  "config-change": "constraint",
-  "policy": "constraint",
-  "rule": "constraint",
+  config: 'constraint',
+  'config-change': 'constraint',
+  policy: 'constraint',
+  rule: 'constraint',
 
   // data
-  "schema": "data",
-  "axis": "data",
-  "prefix": "data",
-  "table": "data",
-  "migration": "data",
+  schema: 'data',
+  axis: 'data',
+  prefix: 'data',
+  table: 'data',
+  migration: 'data',
 
   // interface
-  "api": "interface",
-  "endpoint": "interface",
-  "cli": "interface",
-  "command": "interface",
-  "event-schema": "interface",
-  "message": "interface",
-  "contract": "interface",
+  api: 'interface',
+  endpoint: 'interface',
+  cli: 'interface',
+  command: 'interface',
+  'event-schema': 'interface',
+  message: 'interface',
+  contract: 'interface',
 };
 
 /**
@@ -82,7 +82,7 @@ export function suggestScopeFromArtifact(artifactType: string): DefScope | undef
 // ─── DecisionVerdict → DefLifecycle 매핑 ─────────────────
 
 /** decision-flow DecisionVerdict 타입 (의존 없이 자체 정의) */
-type DecisionVerdict = "success" | "failure" | "deferred" | "superseded";
+type DecisionVerdict = 'success' | 'failure' | 'deferred' | 'superseded';
 
 /**
  * 결정 판정(verdict)에서 문서 생명주기를 제안한다.
@@ -94,10 +94,14 @@ type DecisionVerdict = "success" | "failure" | "deferred" | "superseded";
  */
 export function suggestLifecycleFromVerdict(verdict: DecisionVerdict): DefLifecycle {
   switch (verdict) {
-    case "success": return "approved";
-    case "failure": return "deprecated";
-    case "deferred": return "draft";
-    case "superseded": return "archived";
+    case 'success':
+      return 'approved';
+    case 'failure':
+      return 'deprecated';
+    case 'deferred':
+      return 'draft';
+    case 'superseded':
+      return 'archived';
   }
 }
 

@@ -1,12 +1,7 @@
 // @def.boundary sim-scenarios
 // @def.doc sim-erp-pm-design
 
-import type {
-  Scenario,
-  ScenarioActResult,
-  ScenarioEnv,
-  ScenarioResult,
-} from "./types.js";
+import type { Scenario, ScenarioActResult, ScenarioEnv, ScenarioResult } from './types.js';
 
 /**
  * runScenario — Scenario 4 phase를 일관된 에러 격리로 실행.
@@ -30,28 +25,28 @@ export async function runScenario<TCtx>(
     traceIds: [] as string[],
     stepCount: 0,
   };
-  let errPhase: "setup" | "act" | "assert" | "teardown" | null = null;
+  let errPhase: 'setup' | 'act' | 'assert' | 'teardown' | null = null;
   let err: Error | null = null;
 
   try {
     try {
       ctx = await scenario.setup(env);
     } catch (e) {
-      errPhase = "setup";
+      errPhase = 'setup';
       err = e as Error;
       throw e;
     }
     try {
       actResult = await scenario.act(ctx as TCtx);
     } catch (e) {
-      errPhase = "act";
+      errPhase = 'act';
       err = e as Error;
       throw e;
     }
     try {
       await scenario.assert(ctx as TCtx, actResult);
     } catch (e) {
-      errPhase = "assert";
+      errPhase = 'assert';
       err = e as Error;
       throw e;
     }
@@ -63,7 +58,7 @@ export async function runScenario<TCtx>(
         await scenario.teardown(ctx);
       } catch (e) {
         if (errPhase === null) {
-          errPhase = "teardown";
+          errPhase = 'teardown';
           err = e as Error;
         }
         // assert/act 에러가 이미 있으면 teardown 에러는 로깅 대상이지만 본 runner는 첫 에러를 보고.
@@ -75,7 +70,7 @@ export async function runScenario<TCtx>(
   if (err) {
     return {
       name: scenario.name,
-      status: "failed",
+      status: 'failed',
       durationMs,
       stepCount: actResult.stepCount,
       traceIds: actResult.traceIds,
@@ -83,13 +78,13 @@ export async function runScenario<TCtx>(
       error: {
         message: err.message,
         stack: err.stack,
-        phase: errPhase as "setup" | "act" | "assert" | "teardown",
+        phase: errPhase as 'setup' | 'act' | 'assert' | 'teardown',
       },
     };
   }
   return {
     name: scenario.name,
-    status: "passed",
+    status: 'passed',
     durationMs,
     stepCount: actResult.stepCount,
     traceIds: actResult.traceIds,

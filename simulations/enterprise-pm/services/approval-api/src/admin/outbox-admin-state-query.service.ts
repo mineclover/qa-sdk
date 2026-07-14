@@ -7,9 +7,9 @@
 // 반환 shape: `{ publishedAt: [[id, epochMs]...], dispatcherIds: [[id, scope_id]...] }`
 // scope_id 가 dispatcher 식별자 — outbox-dispatcher 가 claim 시 갱신.
 
-import { Inject, Injectable } from "@nestjs/common";
-import type { Sql } from "postgres";
-import { OUTBOX_INSERT_CLIENT } from "./outbox-admin.tokens.js";
+import { Inject, Injectable } from '@nestjs/common';
+import type { Sql } from 'postgres';
+import { OUTBOX_INSERT_CLIENT } from './outbox-admin.tokens.js';
 
 interface OutboxStateRow {
   id: string;
@@ -21,9 +21,7 @@ interface OutboxStateRow {
 
 @Injectable()
 export class OutboxAdminStateQueryService {
-  constructor(
-    @Inject(OUTBOX_INSERT_CLIENT) private readonly sql: Sql,
-  ) {}
+  constructor(@Inject(OUTBOX_INSERT_CLIENT) private readonly sql: Sql) {}
 
   async queryState(ids: readonly string[]): Promise<{
     publishedAt: Array<[string, number]>;
@@ -39,9 +37,9 @@ export class OutboxAdminStateQueryService {
     const dispatcherIds: Array<[string, string]> = [];
     for (const r of rows) {
       const ms =
-        typeof r.dispatched_at === "number"
+        typeof r.dispatched_at === 'number'
           ? r.dispatched_at
-          : typeof r.dispatched_at === "string"
+          : typeof r.dispatched_at === 'string'
             ? Number(r.dispatched_at)
             : null;
       if (ms !== null && Number.isFinite(ms)) {

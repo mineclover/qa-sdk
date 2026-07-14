@@ -1,10 +1,10 @@
 // @def.boundary sim-scenarios
 
-import { describe, expect, it } from "vitest";
-import { createOutboxClient, type FetchLike } from "./outbox-client.js";
+import { describe, expect, it } from 'vitest';
+import { createOutboxClient, type FetchLike } from './outbox-client.js';
 
-describe("outbox-client handle", () => {
-  it("insertEvents가 count를 POST하고 ids+insertedAtMs를 반환", async () => {
+describe('outbox-client handle', () => {
+  it('insertEvents가 count를 POST하고 ids+insertedAtMs를 반환', async () => {
     const calls: Array<{ url: string; body?: string }> = [];
     const fetchImpl: FetchLike = async (url, init) => {
       calls.push({ url, body: init?.body });
@@ -12,23 +12,23 @@ describe("outbox-client handle", () => {
         ok: true,
         status: 200,
         async text() {
-          return "";
+          return '';
         },
         async json() {
           return {
-            ids: ["e1", "e2", "e3"],
+            ids: ['e1', 'e2', 'e3'],
             insertedAtMs: 1_700_000_000_000,
           };
         },
       };
     };
     const c = createOutboxClient({
-      approvalApiUrl: "http://approval/",
+      approvalApiUrl: 'http://approval/',
       fetchImpl,
     });
     const ids = await c.insertEvents(3);
-    expect(ids).toEqual(["e1", "e2", "e3"]);
-    expect(calls[0].url).toBe("http://approval/admin/outbox/insert");
+    expect(ids).toEqual(['e1', 'e2', 'e3']);
+    expect(calls[0].url).toBe('http://approval/admin/outbox/insert');
     // Stage 4 endpoint contract: POST body { events: [...] } (array of grammar-compliant events).
     const parsed = JSON.parse(calls[0].body!) as {
       events: Array<{
@@ -41,20 +41,20 @@ describe("outbox-client handle", () => {
     expect(Array.isArray(parsed.events)).toBe(true);
     expect(parsed.events).toHaveLength(3);
     for (const ev of parsed.events) {
-      expect(ev.eventName).toBe("approval.budget.submitted");
-      expect(typeof ev.aggregateId).toBe("string");
-      expect(typeof ev.occurredAt).toBe("number");
+      expect(ev.eventName).toBe('approval.budget.submitted');
+      expect(typeof ev.aggregateId).toBe('string');
+      expect(typeof ev.occurredAt).toBe('number');
     }
   });
 
-  it("insertEvents count invalid → throw", async () => {
+  it('insertEvents count invalid → throw', async () => {
     const c = createOutboxClient({
-      approvalApiUrl: "http://x",
+      approvalApiUrl: 'http://x',
       fetchImpl: (async () => ({
         ok: true,
         status: 200,
         async text() {
-          return "";
+          return '';
         },
         async json() {
           return {};
@@ -65,36 +65,36 @@ describe("outbox-client handle", () => {
     await expect(c.insertEvents(-1)).rejects.toThrow(/positive integer/);
   });
 
-  it("waitForDispatch polling 후 모든 id의 publishedAt+dispatcherIds 반환", async () => {
+  it('waitForDispatch polling 후 모든 id의 publishedAt+dispatcherIds 반환', async () => {
     const responses = [
       { publishedAt: [], dispatcherIds: [] },
       {
-        publishedAt: [["e1", 1000]],
-        dispatcherIds: [["e1", "d1"]],
+        publishedAt: [['e1', 1000]],
+        dispatcherIds: [['e1', 'd1']],
       },
       {
         publishedAt: [
-          ["e1", 1000],
-          ["e2", 1010],
+          ['e1', 1000],
+          ['e2', 1010],
         ],
         dispatcherIds: [
-          ["e1", "d1"],
-          ["e2", "d2"],
+          ['e1', 'd1'],
+          ['e2', 'd2'],
         ],
       },
     ];
     let i = 0;
     const fetchImpl: FetchLike = async (url) => {
       // first POST insert
-      if (url.includes("/insert")) {
+      if (url.includes('/insert')) {
         return {
           ok: true,
           status: 200,
           async text() {
-            return "";
+            return '';
           },
           async json() {
-            return { ids: ["e1", "e2"], insertedAtMs: 900 };
+            return { ids: ['e1', 'e2'], insertedAtMs: 900 };
           },
         };
       }
@@ -104,7 +104,7 @@ describe("outbox-client handle", () => {
         ok: true,
         status: 200,
         async text() {
-          return "";
+          return '';
         },
         async json() {
           return body;
@@ -113,7 +113,7 @@ describe("outbox-client handle", () => {
     };
     let nowVal = 0;
     const c = createOutboxClient({
-      approvalApiUrl: "http://x",
+      approvalApiUrl: 'http://x',
       fetchImpl,
       pollIntervalMs: 1,
       sleepImpl: async () => {},
@@ -129,17 +129,17 @@ describe("outbox-client handle", () => {
     expect(r.insertedAtMs).toBe(900);
   });
 
-  it("waitForDispatch timeout 시 throw", async () => {
+  it('waitForDispatch timeout 시 throw', async () => {
     const fetchImpl: FetchLike = async (url) => {
-      if (url.includes("/insert")) {
+      if (url.includes('/insert')) {
         return {
           ok: true,
           status: 200,
           async text() {
-            return "";
+            return '';
           },
           async json() {
-            return { ids: ["a"], insertedAtMs: 0 };
+            return { ids: ['a'], insertedAtMs: 0 };
           },
         };
       }
@@ -147,7 +147,7 @@ describe("outbox-client handle", () => {
         ok: true,
         status: 200,
         async text() {
-          return "";
+          return '';
         },
         async json() {
           return { publishedAt: [], dispatcherIds: [] };
@@ -156,7 +156,7 @@ describe("outbox-client handle", () => {
     };
     let nowVal = 0;
     const c = createOutboxClient({
-      approvalApiUrl: "http://x",
+      approvalApiUrl: 'http://x',
       fetchImpl,
       pollIntervalMs: 1,
       sleepImpl: async () => {},
@@ -166,8 +166,6 @@ describe("outbox-client handle", () => {
       },
     });
     await c.insertEvents(1);
-    await expect(c.waitForDispatch(["a"], 200)).rejects.toThrow(
-      /timeout/,
-    );
+    await expect(c.waitForDispatch(['a'], 200)).rejects.toThrow(/timeout/);
   });
 });

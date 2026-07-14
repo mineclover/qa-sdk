@@ -1,8 +1,8 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { TransmissionEnvelope, EventRecord } from "@qa-sdk/core";
-import { parseSerializedAddress } from "@qa-sdk/core";
+import type { TransmissionEnvelope, EventRecord } from '@qa-sdk/core';
+import { parseSerializedAddress } from '@qa-sdk/core';
 
 /**
  * envelope.infra_context를 각 record의 address_context에 머지한다.
@@ -72,7 +72,11 @@ export function checkAddressHealth(
       }
 
       let parsed;
-      try { parsed = parseSerializedAddress(serialized); } catch { continue; }
+      try {
+        parsed = parseSerializedAddress(serialized);
+      } catch {
+        continue;
+      }
 
       const version = parsed.version;
       validAddresses++;

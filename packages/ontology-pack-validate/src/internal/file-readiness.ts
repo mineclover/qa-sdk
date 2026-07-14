@@ -1,25 +1,25 @@
 // @def.boundary deterministic-label-architecture
-import { stat } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
+import { stat } from 'node:fs/promises';
+import { isAbsolute, relative, resolve } from 'node:path';
 
-import { parseCodeReferenceTarget } from "definition-catalog";
-import type { OperationalOntologyPack } from "operational-ontology/pack";
+import { parseCodeReferenceTarget } from 'definition-catalog';
+import type { OperationalOntologyPack } from 'operational-ontology/pack';
 
 import type {
   OntologyPackValidateFileReadiness,
   OntologyPackValidateFileRef,
   OntologyPackValidateIssue,
-} from "./types.js";
+} from './types.js';
 
 type RecordLike = Record<string, unknown>;
-type FileReadinessKind = OntologyPackValidateFileRef["kind"];
+type FileReadinessKind = OntologyPackValidateFileRef['kind'];
 
 interface FileRefSummaryInput {
   readonly kind: FileReadinessKind;
   readonly ref: string;
   readonly path: string;
   readonly rootDir: string;
-  readonly source: "blueprint" | "scaffold-metadata";
+  readonly source: 'blueprint' | 'scaffold-metadata';
   readonly surfaceKind?: string;
   readonly blueprintId?: string;
 }
@@ -39,8 +39,8 @@ export async function collectFileReadiness(input: {
   return {
     fileRefs,
     issues: fileReadinessIssues(fileRefs),
-    implementationFiles: summarizeFileReadiness(fileRefs, "implementation"),
-    testFiles: summarizeFileReadiness(fileRefs, "test"),
+    implementationFiles: summarizeFileReadiness(fileRefs, 'implementation'),
+    testFiles: summarizeFileReadiness(fileRefs, 'test'),
   };
 }
 
@@ -49,8 +49,8 @@ export function emptyFileReadiness(): OntologyPackFileReadiness {
   return {
     fileRefs,
     issues: [],
-    implementationFiles: summarizeFileReadiness(fileRefs, "implementation"),
-    testFiles: summarizeFileReadiness(fileRefs, "test"),
+    implementationFiles: summarizeFileReadiness(fileRefs, 'implementation'),
+    testFiles: summarizeFileReadiness(fileRefs, 'test'),
   };
 }
 
@@ -63,29 +63,33 @@ export async function collectStaticFileRefs(
     for (const ref of blueprint.implementationBinding?.implementationRefs ?? []) {
       const path = staticFilePathFromRef(ref.ref);
       if (!path) continue;
-      refs.push(await fileRefSummary({
-        kind: "implementation",
-        ref: ref.ref,
-        path,
-        rootDir,
-        source: "blueprint",
-        surfaceKind: ref.kind,
-        blueprintId: blueprint.blueprintId,
-      }));
+      refs.push(
+        await fileRefSummary({
+          kind: 'implementation',
+          ref: ref.ref,
+          path,
+          rootDir,
+          source: 'blueprint',
+          surfaceKind: ref.kind,
+          blueprintId: blueprint.blueprintId,
+        }),
+      );
     }
 
     for (const ref of blueprint.verificationBinding?.verificationRefs ?? []) {
       const path = staticFilePathFromRef(ref.ref);
       if (!path) continue;
-      refs.push(await fileRefSummary({
-        kind: "test",
-        ref: ref.ref,
-        path,
-        rootDir,
-        source: "blueprint",
-        surfaceKind: ref.kind,
-        blueprintId: blueprint.blueprintId,
-      }));
+      refs.push(
+        await fileRefSummary({
+          kind: 'test',
+          ref: ref.ref,
+          path,
+          rootDir,
+          source: 'blueprint',
+          surfaceKind: ref.kind,
+          blueprintId: blueprint.blueprintId,
+        }),
+      );
     }
   }
 
@@ -101,7 +105,25 @@ export function fileReadinessIssues(
 ): readonly OntologyPackValidateIssue[] {
   return refs
     .filter((ref) => !ref.exists)
-    .map((ref) => (Object.assign({level:`error` as const,source:`file` as const,path:`readiness.${ref.kind}Files.${ref.path}`,code:`${ref.kind}-file-missing`,message:`Referenced ${ref.kind} file "${ref.path}" does not exist.`}, ref.blueprintId?{blueprintId:ref.blueprintId}:{}, {details:{ref:ref.ref,source:ref.source,...ref.surfaceKind?{surfaceKind:ref.surfaceKind}:{}}})));
+    .map((ref) =>
+      Object.assign(
+        {
+          level: `error` as const,
+          source: `file` as const,
+          path: `readiness.${ref.kind}Files.${ref.path}`,
+          code: `${ref.kind}-file-missing`,
+          message: `Referenced ${ref.kind} file "${ref.path}" does not exist.`,
+        },
+        ref.blueprintId ? { blueprintId: ref.blueprintId } : {},
+        {
+          details: {
+            ref: ref.ref,
+            source: ref.source,
+            ...(ref.surfaceKind ? { surfaceKind: ref.surfaceKind } : {}),
+          },
+        },
+      ),
+    );
 }
 
 export function summarizeFileReadiness(
@@ -111,16 +133,14 @@ export function summarizeFileReadiness(
   const checked = refs.filter((ref) => ref.kind === kind);
   const missing = checked.filter((ref) => !ref.exists);
   return {
-    status: checked.length === 0 ? "skipped" : missing.length === 0 ? "ready" : "missing",
+    status: checked.length === 0 ? 'skipped' : missing.length === 0 ? 'ready' : 'missing',
     checked,
     missing,
   };
 }
 
 async function fileRefSummary(input: FileRefSummaryInput): Promise<OntologyPackValidateFileRef> {
-  const absolutePath = isAbsolute(input.path)
-    ? input.path
-    : resolve(input.rootDir, input.path);
+  const absolutePath = isAbsolute(input.path) ? input.path : resolve(input.rootDir, input.path);
   const exists = await fileExists(absolutePath);
   return {
     kind: input.kind,
@@ -136,41 +156,41 @@ async function fileRefSummary(input: FileRefSummaryInput): Promise<OntologyPackV
 
 function scaffoldMetadataFileRefs(
   pack: OperationalOntologyPack,
-): Array<Omit<FileRefSummaryInput, "rootDir">> {
+): Array<Omit<FileRefSummaryInput, 'rootDir'>> {
   const metadata = isRecord(pack.metadata) ? pack.metadata : {};
-  const scaffold = isRecord(metadata["scaffold"]) ? metadata["scaffold"] as RecordLike : metadata;
-  const refs: Array<Omit<FileRefSummaryInput, "rootDir">> = [];
+  const scaffold = isRecord(metadata['scaffold']) ? (metadata['scaffold'] as RecordLike) : metadata;
+  const refs: Array<Omit<FileRefSummaryInput, 'rootDir'>> = [];
 
-  const candidates = Array.isArray(scaffold["sourceMapCandidates"])
-    ? scaffold["sourceMapCandidates"]
+  const candidates = Array.isArray(scaffold['sourceMapCandidates'])
+    ? scaffold['sourceMapCandidates']
     : [];
   for (const candidate of candidates) {
-    if (!isRecord(candidate) || typeof candidate["sourcePath"] !== "string") continue;
-    const sourceRole = typeof candidate["sourceRole"] === "string" ? candidate["sourceRole"] : "";
-    const kind = sourceRole === "test" ? "test" : "implementation";
-    const path = staticFilePathFromRef(candidate["sourcePath"]);
+    if (!isRecord(candidate) || typeof candidate['sourcePath'] !== 'string') continue;
+    const sourceRole = typeof candidate['sourceRole'] === 'string' ? candidate['sourceRole'] : '';
+    const kind = sourceRole === 'test' ? 'test' : 'implementation';
+    const path = staticFilePathFromRef(candidate['sourcePath']);
     if (!path) continue;
     refs.push({
       kind,
-      ref: candidate["sourcePath"],
+      ref: candidate['sourcePath'],
       path,
-      source: "scaffold-metadata",
+      source: 'scaffold-metadata',
       surfaceKind: sourceRole || undefined,
     });
   }
 
-  const files = Array.isArray(scaffold["files"]) ? scaffold["files"] : [];
+  const files = Array.isArray(scaffold['files']) ? scaffold['files'] : [];
   for (const file of files) {
-    if (!isRecord(file) || typeof file["path"] !== "string") continue;
-    const role = typeof file["role"] === "string" ? file["role"] : "";
-    const kind = /test|verification/.test(role) ? "test" : "implementation";
-    const path = staticFilePathFromRef(file["path"]);
+    if (!isRecord(file) || typeof file['path'] !== 'string') continue;
+    const role = typeof file['role'] === 'string' ? file['role'] : '';
+    const kind = /test|verification/.test(role) ? 'test' : 'implementation';
+    const path = staticFilePathFromRef(file['path']);
     if (!path) continue;
     refs.push({
       kind,
-      ref: file["path"],
+      ref: file['path'],
       path,
-      source: "scaffold-metadata",
+      source: 'scaffold-metadata',
       surfaceKind: role || undefined,
     });
   }
@@ -179,13 +199,13 @@ function scaffoldMetadataFileRefs(
 }
 
 function staticFilePathFromRef(ref: string): string | null {
-  const parsed = parseCodeReferenceTarget(ref.replaceAll("\\", "/"));
+  const parsed = parseCodeReferenceTarget(ref.replaceAll('\\', '/'));
   if (!parsed) return null;
   return parsed.codePath;
 }
 
 function isRecord(value: unknown): value is RecordLike {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 async function fileExists(path: string): Promise<boolean> {
@@ -202,23 +222,24 @@ function uniqueFileRefs(
   const seen = new Set<string>();
   const unique: OntologyPackValidateFileRef[] = [];
   for (const ref of refs) {
-    const key = `${ref.kind}:${ref.path}:${ref.blueprintId ?? ""}:${ref.source}`;
+    const key = `${ref.kind}:${ref.path}:${ref.blueprintId ?? ''}:${ref.source}`;
     if (seen.has(key)) continue;
     seen.add(key);
     unique.push(ref);
   }
-  return unique.toSorted((left, right) =>
-    left.kind.localeCompare(right.kind)
-    || left.path.localeCompare(right.path)
-    || (left.blueprintId ?? "").localeCompare(right.blueprintId ?? "")
+  return unique.toSorted(
+    (left, right) =>
+      left.kind.localeCompare(right.kind) ||
+      left.path.localeCompare(right.path) ||
+      (left.blueprintId ?? '').localeCompare(right.blueprintId ?? ''),
   );
 }
 
 function toDisplayPath(rootDir: string, path: string): string {
-  if (!isAbsolute(path)) return path.replaceAll("\\", "/").replace(/^\.\//, "");
-  const relativePath = relative(rootDir, path).replaceAll("\\", "/");
-  if (relativePath && !relativePath.startsWith("../") && relativePath !== "..") {
+  if (!isAbsolute(path)) return path.replaceAll('\\', '/').replace(/^\.\//, '');
+  const relativePath = relative(rootDir, path).replaceAll('\\', '/');
+  if (relativePath && !relativePath.startsWith('../') && relativePath !== '..') {
     return relativePath;
   }
-  return path.replaceAll("\\", "/");
+  return path.replaceAll('\\', '/');
 }

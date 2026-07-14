@@ -9,20 +9,20 @@
  *   pnpm --filter @qa-sdk/viz-3d prebuild
  */
 
-import { writeFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { writeFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // demo-snapshot에서 DEMO_CATALOG 로드
-import { DEMO_CATALOG } from "demo-snapshot";
+import { DEMO_CATALOG } from 'demo-snapshot';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUTPUT_PATH = resolve(__dirname, "../../browser-codec/src/demo-catalog-browser.ts");
+const OUTPUT_PATH = resolve(__dirname, '../../browser-codec/src/demo-catalog-browser.ts');
 
 // ── 변환 로직 (core/catalog/browser-flatten.ts와 동일) ──────
 
 interface BrowserDimDef {
-  readonly kind: "axis" | "prefix_ref";
+  readonly kind: 'axis' | 'prefix_ref';
   readonly entries?: readonly string[];
   readonly capacity?: number;
   readonly values?: readonly number[];
@@ -47,24 +47,24 @@ function flattenForBrowser(): BrowserCatalog {
     const labels: string[] = [];
 
     for (const [label, dimRef] of Object.entries(prefix.dims)) {
-      if (dimRef.kind === "axis") {
+      if (dimRef.kind === 'axis') {
         const axis = DEMO_CATALOG.axes[dimRef.axisId];
         if (!axis) continue;
-        const axisVersion = latestVersion.axisVersions[label]
-          ?? latestVersion.axisVersions[dimRef.axisId];
+        const axisVersion =
+          latestVersion.axisVersions[label] ?? latestVersion.axisVersions[dimRef.axisId];
         if (!axisVersion) continue;
         const snapshot = axis.versions[axisVersion];
         if (!snapshot) continue;
         dims[label] = {
-          kind: "axis",
+          kind: 'axis',
           entries: snapshot.entries,
           capacity: snapshot.capacity ?? snapshot.entries.length,
         };
         labels.push(label);
-      } else if (dimRef.kind === "prefix_ref") {
+      } else if (dimRef.kind === 'prefix_ref') {
         const refEntries = latestVersion.refEntries?.[label];
         if (refEntries) {
-          dims[label] = { kind: "prefix_ref", values: refEntries.values };
+          dims[label] = { kind: 'prefix_ref', values: refEntries.values };
           labels.push(label);
         }
       }
@@ -109,7 +109,7 @@ for (const [prefixId, def] of Object.entries(catalog)) {
 lines.push(`};`);
 lines.push(``);
 
-writeFileSync(OUTPUT_PATH, lines.join("\n"), "utf-8");
+writeFileSync(OUTPUT_PATH, lines.join('\n'), 'utf-8');
 
 const count = Object.keys(catalog).length;
 console.log(`✓ BROWSER_CATALOG 생성 완료: ${count}개 prefix → ${OUTPUT_PATH}`);

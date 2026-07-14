@@ -9,7 +9,7 @@ export interface SessionListEntry {
 }
 
 export interface SessionList {
-  addOrUpdate(entry: Omit<SessionListEntry, "recordCount">): void;
+  addOrUpdate(entry: Omit<SessionListEntry, 'recordCount'>): void;
   incrementRecordCount(sessionId: string): void;
   setRecordCount(sessionId: string, count: number): void;
   setSelected(sessionId: string): void;
@@ -21,15 +21,15 @@ export function createSessionList(container: HTMLElement): SessionList {
   let onSelectHandler: ((sessionId: string) => void) | null = null;
   let selectedSessionId: string | null = null;
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "session-list";
+  const wrapper = document.createElement('div');
+  wrapper.className = 'session-list';
 
-  const label = document.createElement("label");
-  label.textContent = "Sessions";
-  label.className = "panel-label";
+  const label = document.createElement('label');
+  label.textContent = 'Sessions';
+  label.className = 'panel-label';
 
-  const list = document.createElement("ul");
-  list.className = "session-list-items";
+  const list = document.createElement('ul');
+  list.className = 'session-list-items';
 
   wrapper.appendChild(label);
   wrapper.appendChild(list);
@@ -40,36 +40,36 @@ export function createSessionList(container: HTMLElement): SessionList {
 
   function formatTime(iso: string): string {
     return new Date(iso).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
     });
   }
 
   function renderItem(entry: SessionListEntry): HTMLLIElement {
-    const li = document.createElement("li");
-    li.className = "session-item";
-    li.dataset["sessionId"] = entry.sessionId;
+    const li = document.createElement('li');
+    li.className = 'session-item';
+    li.dataset['sessionId'] = entry.sessionId;
 
     if (entry.sessionId === selectedSessionId) {
-      li.classList.add("selected");
+      li.classList.add('selected');
     }
 
     const shortId = entry.sessionId.slice(-8);
-    const statusDot = document.createElement("span");
-    statusDot.className = `session-dot ${entry.closedAt ? "closed" : "active"}`;
+    const statusDot = document.createElement('span');
+    statusDot.className = `session-dot ${entry.closedAt ? 'closed' : 'active'}`;
 
-    const idSpan = document.createElement("span");
-    idSpan.className = "session-item-id";
+    const idSpan = document.createElement('span');
+    idSpan.className = 'session-item-id';
     idSpan.textContent = `…${shortId}`;
     idSpan.title = entry.sessionId;
 
-    const timeSpan = document.createElement("span");
-    timeSpan.className = "session-item-time";
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'session-item-time';
     timeSpan.textContent = formatTime(entry.startedAt);
 
-    const countSpan = document.createElement("span");
-    countSpan.className = "session-item-count";
+    const countSpan = document.createElement('span');
+    countSpan.className = 'session-item-count';
     countSpan.textContent = `${entry.recordCount}`;
 
     li.appendChild(statusDot);
@@ -77,7 +77,7 @@ export function createSessionList(container: HTMLElement): SessionList {
     li.appendChild(timeSpan);
     li.appendChild(countSpan);
 
-    li.addEventListener("click", () => {
+    li.addEventListener('click', () => {
       onSelectHandler?.(entry.sessionId);
     });
 
@@ -115,7 +115,7 @@ export function createSessionList(container: HTMLElement): SessionList {
       entries.set(sessionId, entry);
       const li = itemEls.get(sessionId);
       if (li) {
-        const countSpan = li.querySelector<HTMLSpanElement>(".session-item-count");
+        const countSpan = li.querySelector<HTMLSpanElement>('.session-item-count');
         if (countSpan) countSpan.textContent = String(entry.recordCount);
       }
     },
@@ -127,19 +127,19 @@ export function createSessionList(container: HTMLElement): SessionList {
       entries.set(sessionId, entry);
       const li = itemEls.get(sessionId);
       if (li) {
-        const countSpan = li.querySelector<HTMLSpanElement>(".session-item-count");
+        const countSpan = li.querySelector<HTMLSpanElement>('.session-item-count');
         if (countSpan) countSpan.textContent = String(count);
       }
     },
 
     setSelected(sessionId) {
       const prevEl = selectedSessionId ? itemEls.get(selectedSessionId) : null;
-      if (prevEl) prevEl.classList.remove("selected");
+      if (prevEl) prevEl.classList.remove('selected');
 
       selectedSessionId = sessionId;
 
       const nextEl = itemEls.get(sessionId);
-      if (nextEl) nextEl.classList.add("selected");
+      if (nextEl) nextEl.classList.add('selected');
     },
 
     onSelect(handler) {
@@ -150,7 +150,7 @@ export function createSessionList(container: HTMLElement): SessionList {
       entries.clear();
       itemEls.clear();
       selectedSessionId = null;
-      list.innerHTML = "";
+      list.innerHTML = '';
     },
   };
 }

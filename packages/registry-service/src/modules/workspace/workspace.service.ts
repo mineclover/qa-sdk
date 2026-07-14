@@ -1,17 +1,15 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
-import { REGISTRY_SERVICE } from "../../registry-core.module.js";
-import { RegistryService } from "../../lib/registry-service.js";
-import { analyze, simulate } from "../../lib/draft-workspace.js";
-import { simulateSchema } from "../../schemas/workspace.js";
+import { Inject, Injectable } from '@nestjs/common';
+import { REGISTRY_SERVICE } from '../../registry-core.module.js';
+import { RegistryService } from '../../lib/registry-service.js';
+import { analyze, simulate } from '../../lib/draft-workspace.js';
+import { simulateSchema } from '../../schemas/workspace.js';
 
 @Injectable()
 export class WorkspaceService {
-  constructor(
-    @Inject(REGISTRY_SERVICE) private readonly registry: RegistryService,
-  ) {}
+  constructor(@Inject(REGISTRY_SERVICE) private readonly registry: RegistryService) {}
 
   listDrafts() {
     return this.registry.getAllDrafts();

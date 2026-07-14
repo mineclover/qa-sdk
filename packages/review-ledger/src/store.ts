@@ -6,15 +6,15 @@
  * 어펜드 전용 원장: insert만. 현재 상태는 파일별 최신 레코드로 파생.
  */
 
-import { createLogger } from "@qa-sdk/core";
-import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
+import { createLogger } from '@qa-sdk/core';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
 
-const logger = createLogger("review-ledger");
-import { eq, and, desc, max, count, inArray } from "drizzle-orm";
-import { reviewEntries, feedbackRequests } from "./db/schema.js";
-import type { FeedbackRequest, FeedbackRequestStatus, ReviewEntry } from "./types.js";
+const logger = createLogger('review-ledger');
+import { eq, and, desc, max, count, inArray } from 'drizzle-orm';
+import { reviewEntries, feedbackRequests } from './db/schema.js';
+import type { FeedbackRequest, FeedbackRequestStatus, ReviewEntry } from './types.js';
 
 type DrizzleDb = ReturnType<typeof drizzle>;
 
@@ -22,25 +22,25 @@ export class SqliteReviewStore {
   private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
 
-  constructor(path: string = ":memory:") {
+  constructor(path: string = ':memory:') {
     const DatabaseSync = getDatabaseSync();
     this.rawDb = new DatabaseSync(path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
+    this.rawDb.exec('PRAGMA journal_mode = WAL');
+    this.rawDb.exec('PRAGMA busy_timeout = 3000');
 
     this.db = drizzle({ client: this.rawDb });
     try {
       migrate(this.db, {
-        migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
+        migrationsFolder: new URL('../drizzle', import.meta.url).pathname,
       });
     } catch (err) {
-      logger.error({ err }, "drizzle 마이그레이션 실패");
+      logger.error({ err }, 'drizzle 마이그레이션 실패');
       throw err;
     }
   }
 
   /** 리뷰 엔트리 추가. 같은 file+commit 조합이면 건너뜀(UNIQUE 제약). 반환: 삽입 여부 */
-  insert(entry: Omit<ReviewEntry, "id">): boolean {
+  insert(entry: Omit<ReviewEntry, 'id'>): boolean {
     try {
       this.db
         .insert(reviewEntries)
@@ -57,7 +57,7 @@ export class SqliteReviewStore {
       return true;
     } catch (e: unknown) {
       // UNIQUE 제약 위반 → 이미 같은 커밋으로 기록됨
-      if (e instanceof Error && e.message.includes("UNIQUE")) return false;
+      if (e instanceof Error && e.message.includes('UNIQUE')) return false;
       throw e;
     }
   }
@@ -81,12 +81,12 @@ export class SqliteReviewStore {
     // 서브쿼리: 파일별 max(id)
     const latestSub = this.db
       .select({
-        maxId: max(reviewEntries.id).as("max_id"),
+        maxId: max(reviewEntries.id).as('max_id'),
       })
       .from(reviewEntries)
       .where(inArray(reviewEntries.filePath, filePaths))
       .groupBy(reviewEntries.filePath)
-      .as("latest");
+      .as('latest');
 
     const rows = this.db
       .select({
@@ -115,12 +115,12 @@ export class SqliteReviewStore {
     // 서브쿼리: scope 내 파일별 max(id)
     const latestSub = this.db
       .select({
-        maxId: max(reviewEntries.id).as("max_id"),
+        maxId: max(reviewEntries.id).as('max_id'),
       })
       .from(reviewEntries)
       .where(eq(reviewEntries.serviceScope, scope))
       .groupBy(reviewEntries.filePath)
-      .as("latest");
+      .as('latest');
 
     const rows = this.db
       .select({
@@ -146,11 +146,11 @@ export class SqliteReviewStore {
     // 서브쿼리: 전체 파일별 max(id)
     const latestSub = this.db
       .select({
-        maxId: max(reviewEntries.id).as("max_id"),
+        maxId: max(reviewEntries.id).as('max_id'),
       })
       .from(reviewEntries)
       .groupBy(reviewEntries.filePath)
-      .as("latest");
+      .as('latest');
 
     const rows = this.db
       .select({
@@ -195,10 +195,7 @@ export class SqliteReviewStore {
 
   /** 전체 엔트리 수 */
   count(): number {
-    const row = this.db
-      .select({ cnt: count() })
-      .from(reviewEntries)
-      .get();
+    const row = this.db.select({ cnt: count() }).from(reviewEntries).get();
     return row?.cnt ?? 0;
   }
 
@@ -284,11 +281,9 @@ export class SqliteReviewStore {
     };
   }
 
-  private toFeedbackRequest(
-    row: typeof feedbackRequests.$inferSelect,
-  ): FeedbackRequest {
-    const parsed = JSON.parse(row.evidenceBundle) as FeedbackRequest["evidenceBundle"];
-    const normalizedBundle: FeedbackRequest["evidenceBundle"] = {
+  private toFeedbackRequest(row: typeof feedbackRequests.$inferSelect): FeedbackRequest {
+    const parsed = JSON.parse(row.evidenceBundle) as FeedbackRequest['evidenceBundle'];
+    const normalizedBundle: FeedbackRequest['evidenceBundle'] = {
       ...parsed,
       items: parsed.items.map((item) => ({
         ...item,

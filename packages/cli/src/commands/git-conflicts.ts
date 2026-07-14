@@ -27,18 +27,14 @@ export interface GitConflictsOptions {
   intervalMs?: number;
 }
 
-export async function gitConflicts(
-  options: GitConflictsOptions,
-): Promise<GitConflictReport> {
+export async function gitConflicts(options: GitConflictsOptions): Promise<GitConflictReport> {
   const report = await buildGitConflictReport(options);
   await persistGitConflictReport(report, options.output);
   printGitConflictReport(report, options);
   return report;
 }
 
-export async function watchGitConflicts(
-  options: GitConflictsOptions,
-): Promise<void> {
+export async function watchGitConflicts(options: GitConflictsOptions): Promise<void> {
   const intervalMs = Math.max(options.intervalMs ?? 5000, 500);
   let stopped = false;
   const stop = () => {
@@ -89,9 +85,7 @@ export async function buildGitConflictReport(
   });
   const comparedTargets = [...analysis.branches, ...analysis.worktrees];
   const workspaceScopes = await listWorkspaceScopes(root);
-  const currentScopes = uniqueSorted(
-    analysis.current.paths.map((path) => scopeFromPath(path)),
-  );
+  const currentScopes = uniqueSorted(analysis.current.paths.map((path) => scopeFromPath(path)));
   const occupiedScopes = uniqueSorted(
     comparedTargets.flatMap((branch) => branch.paths.map((path) => scopeFromPath(path))),
   );
@@ -156,10 +150,7 @@ function uniqueSorted(values: readonly string[]): string[] {
   return [...new Set(values)].toSorted((left, right) => left.localeCompare(right));
 }
 
-function printGitConflictReport(
-  report: GitConflictReport,
-  options: GitConflictsOptions,
-): void {
+function printGitConflictReport(report: GitConflictReport, options: GitConflictsOptions): void {
   if (options.json) {
     console.log(JSON.stringify(report, null, 2));
     return;
@@ -175,7 +166,9 @@ function printGitConflictReport(
 
   console.log('Git 충돌 분석');
   console.log(`  repo: ${report.analysis.repoPath}`);
-  console.log(`  remote: ${report.analysis.remoteName} (${report.analysis.fetched ? 'fetched' : 'cached'})`);
+  console.log(
+    `  remote: ${report.analysis.remoteName} (${report.analysis.fetched ? 'fetched' : 'cached'})`,
+  );
   console.log(`  base: ${report.analysis.baseRef} (${shortOid(report.analysis.baseHeadOid)})`);
   console.log(
     `  current: ${report.analysis.current.branchName} (${shortOid(report.analysis.current.headOid)})`,
@@ -195,9 +188,7 @@ function printGitConflictReport(
   printWorkspaceSummary('실행 위치 변경', report.analysis.workspace, limit);
 
   console.log('');
-  console.log(
-    `잠재 충돌 브랜치: ${overlappingBranches.length}/${report.analysis.branches.length}`,
-  );
+  console.log(`잠재 충돌 브랜치: ${overlappingBranches.length}/${report.analysis.branches.length}`);
   if (overlappingBranches.length === 0) {
     console.log('  중첩 변경 없음');
   } else {
@@ -283,7 +274,9 @@ function printWatchSummary(
     console.log(`  output: ${resolve(options.output)}`);
   }
   if (options.json && !options.output) {
-    console.log('  note: watch 모드에서는 stdout에 요약만 출력합니다. 전체 JSON은 --output 사용을 권장합니다.');
+    console.log(
+      '  note: watch 모드에서는 stdout에 요약만 출력합니다. 전체 JSON은 --output 사용을 권장합니다.',
+    );
   }
 }
 
@@ -309,10 +302,7 @@ function printWorkspaceSummary(
   });
 }
 
-async function persistGitConflictReport(
-  report: GitConflictReport,
-  output?: string,
-): Promise<void> {
+async function persistGitConflictReport(report: GitConflictReport, output?: string): Promise<void> {
   if (!output) return;
 
   const outputPath = resolve(output);

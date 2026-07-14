@@ -1,15 +1,15 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { getTableName } from "drizzle-orm";
-import type { SqlDriver } from "index-meta";
+import { getTableName } from 'drizzle-orm';
+import type { SqlDriver } from 'index-meta';
 import {
   ontologyAddressAllocation,
   ontologyAddressSegment,
   ontologyAxis,
   ontologyNamespace,
   ontologyTaxonomy,
-} from "../db/schema.js";
+} from '../db/schema.js';
 import {
   OntologyRegistryStoreError,
   type OntologyAddressAllocationRecord,
@@ -20,13 +20,13 @@ import {
   type OntologyRegistryDuplicateKeyConflict,
   type OntologyRegistryStore,
   type OntologyTaxonomyRecord,
-} from "./ontology-registry-store.js";
+} from './ontology-registry-store.js';
 import {
   recordsFromOntologyAllocationPlanWriteSet,
   validateOntologyRegistryRows,
   type OntologyRegistryRecordSet,
   type OntologyRegistryValidationConflict,
-} from "./ontology-registry-validation.js";
+} from './ontology-registry-validation.js';
 
 const TABLES = {
   namespace: getTableName(ontologyNamespace),
@@ -86,7 +86,7 @@ export class SqlOntologyRegistryStore implements OntologyRegistryStore {
 
   async updateAllocationStatus(
     allocationId: string,
-    status: OntologyAddressAllocationRecord["status"],
+    status: OntologyAddressAllocationRecord['status'],
   ): Promise<OntologyAddressAllocationRecord | null> {
     const existing = await this.getAllocation(allocationId);
     if (!existing) {
@@ -138,10 +138,7 @@ export class SqlOntologyRegistryStore implements OntologyRegistryStore {
     return row ? toAxisRecord(row) : null;
   }
 
-  async listTaxonomies(
-    ontologyId: string,
-    versionId: string,
-  ): Promise<OntologyTaxonomyRecord[]> {
+  async listTaxonomies(ontologyId: string, versionId: string): Promise<OntologyTaxonomyRecord[]> {
     const rows = await this.driver.query<TaxonomyRow>(
       `SELECT ontology_id, taxonomy_id, version_id, applies_to_json,
               axis_ids_json, identity_axis_ids_json, space, lifecycle
@@ -183,9 +180,7 @@ export class SqlOntologyRegistryStore implements OntologyRegistryStore {
     return rows.map(toAllocationRecord);
   }
 
-  async getAllocation(
-    allocationId: string,
-  ): Promise<OntologyAddressAllocationRecord | null> {
+  async getAllocation(allocationId: string): Promise<OntologyAddressAllocationRecord | null> {
     const row = await this.driver.queryOne<AllocationRow>(
       `SELECT allocation_id, ontology_id, taxonomy_id, prefix, version_id,
               address_model, capacity, address_offset, address_size, status
@@ -227,7 +222,7 @@ export class SqlOntologyRegistryStore implements OntologyRegistryStore {
        FROM ${TABLES.allocation}
        WHERE status = ?
        ORDER BY allocation_id`,
-      ["active"],
+      ['active'],
     );
     return rows.map(toAllocationRecord);
   }
@@ -338,10 +333,7 @@ interface SegmentRow extends Record<string, unknown> {
   address_size: number;
 }
 
-async function insertNamespace(
-  driver: SqlDriver,
-  record: OntologyNamespaceRecord,
-): Promise<void> {
+async function insertNamespace(driver: SqlDriver, record: OntologyNamespaceRecord): Promise<void> {
   await driver.execute(
     `INSERT INTO ${TABLES.namespace}
        (ontology_id, namespace, owner, lifecycle, created_at, updated_at)
@@ -374,10 +366,7 @@ async function insertAxis(driver: SqlDriver, record: OntologyAxisRecord): Promis
   );
 }
 
-async function insertTaxonomy(
-  driver: SqlDriver,
-  record: OntologyTaxonomyRecord,
-): Promise<void> {
+async function insertTaxonomy(driver: SqlDriver, record: OntologyTaxonomyRecord): Promise<void> {
   await driver.execute(
     `INSERT INTO ${TABLES.taxonomy}
        (ontology_id, taxonomy_id, version_id, applies_to_json,
@@ -443,7 +432,7 @@ function toNamespaceRecord(row: NamespaceRow): OntologyNamespaceRecord {
     ontologyId: row.ontology_id,
     namespace: row.namespace,
     owner: row.owner ?? undefined,
-    lifecycle: row.lifecycle as OntologyNamespaceRecord["lifecycle"],
+    lifecycle: row.lifecycle as OntologyNamespaceRecord['lifecycle'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -454,10 +443,10 @@ function toAxisRecord(row: AxisRow): OntologyAxisRecord {
     ontologyId: row.ontology_id,
     axisId: row.axis_id,
     versionId: row.version_id,
-    values: parseStringArray(row.values_json, "values_json"),
+    values: parseStringArray(row.values_json, 'values_json'),
     valuesHash: row.values_hash,
     capacity: Number(row.capacity),
-    lifecycle: row.lifecycle as OntologyAxisRecord["lifecycle"],
+    lifecycle: row.lifecycle as OntologyAxisRecord['lifecycle'],
   };
 }
 
@@ -466,14 +455,11 @@ function toTaxonomyRecord(row: TaxonomyRow): OntologyTaxonomyRecord {
     ontologyId: row.ontology_id,
     taxonomyId: row.taxonomy_id,
     versionId: row.version_id,
-    appliesTo: parseStringArray(row.applies_to_json, "applies_to_json"),
-    axisIds: parseStringArray(row.axis_ids_json, "axis_ids_json"),
-    identityAxisIds: parseStringArray(
-      row.identity_axis_ids_json,
-      "identity_axis_ids_json",
-    ),
+    appliesTo: parseStringArray(row.applies_to_json, 'applies_to_json'),
+    axisIds: parseStringArray(row.axis_ids_json, 'axis_ids_json'),
+    identityAxisIds: parseStringArray(row.identity_axis_ids_json, 'identity_axis_ids_json'),
     space: row.space ?? undefined,
-    lifecycle: row.lifecycle as OntologyTaxonomyRecord["lifecycle"],
+    lifecycle: row.lifecycle as OntologyTaxonomyRecord['lifecycle'],
   };
 }
 
@@ -484,11 +470,11 @@ function toAllocationRecord(row: AllocationRow): OntologyAddressAllocationRecord
     taxonomyId: row.taxonomy_id,
     prefix: row.prefix,
     versionId: row.version_id,
-    addressModel: row.address_model as OntologyAddressAllocationRecord["addressModel"],
+    addressModel: row.address_model as OntologyAddressAllocationRecord['addressModel'],
     capacity: Number(row.capacity),
     addressOffset: Number(row.address_offset),
     addressSize: Number(row.address_size),
-    status: row.status as OntologyAddressAllocationRecord["status"],
+    status: row.status as OntologyAddressAllocationRecord['status'],
   };
 }
 
@@ -496,7 +482,7 @@ function toSegmentRecord(row: SegmentRow): OntologyAddressSegmentRecord {
   return {
     allocationId: row.allocation_id,
     segmentId: row.segment_id,
-    consumes: parseStringArray(row.consumes_json, "consumes_json"),
+    consumes: parseStringArray(row.consumes_json, 'consumes_json'),
     addressOffset: Number(row.address_offset),
     addressSize: Number(row.address_size),
   };
@@ -508,10 +494,7 @@ function serializeStringArray(values: readonly string[]): string {
 
 function parseStringArray(raw: string, columnName: string): string[] {
   const parsed = JSON.parse(raw) as unknown;
-  if (
-    !Array.isArray(parsed) ||
-    parsed.some((value) => typeof value !== "string")
-  ) {
+  if (!Array.isArray(parsed) || parsed.some((value) => typeof value !== 'string')) {
     throw new Error(`Invalid ontology registry ${columnName}: expected string array JSON`);
   }
   return [...parsed];
@@ -521,7 +504,7 @@ function partialWriteRejected(
   conflicts: readonly OntologyRegistryValidationConflict[],
 ): OntologyRegistryStoreError {
   return new OntologyRegistryStoreError({
-    code: "partial-write-rejected",
+    code: 'partial-write-rejected',
     message: `Ontology allocation plan write rejected with ${conflicts.length} conflict(s)`,
     conflicts,
   });
@@ -530,9 +513,9 @@ function partialWriteRejected(
 function isSqliteUniqueConstraintError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return (
-    message.includes("UNIQUE constraint failed") ||
-    message.includes("SQLITE_CONSTRAINT_UNIQUE") ||
-    message.includes("SQLITE_CONSTRAINT_PRIMARYKEY")
+    message.includes('UNIQUE constraint failed') ||
+    message.includes('SQLITE_CONSTRAINT_UNIQUE') ||
+    message.includes('SQLITE_CONSTRAINT_PRIMARYKEY')
   );
 }
 
@@ -548,10 +531,10 @@ function fallbackDuplicateKeyConflict(
 
   if (message.includes(TABLES.axis) && axis) {
     return {
-      code: "duplicate-key",
+      code: 'duplicate-key',
       message: `Duplicate axis record for ontologyId=${axis.ontologyId}, axisId=${axis.axisId}, versionId=${axis.versionId}`,
       key: {
-        recordKind: "axis",
+        recordKind: 'axis',
         ontologyId: axis.ontologyId,
         axisId: axis.axisId,
         versionId: axis.versionId,
@@ -561,10 +544,10 @@ function fallbackDuplicateKeyConflict(
 
   if (message.includes(TABLES.taxonomy) && taxonomy) {
     return {
-      code: "duplicate-key",
+      code: 'duplicate-key',
       message: `Duplicate taxonomy record for ontologyId=${taxonomy.ontologyId}, taxonomyId=${taxonomy.taxonomyId}, versionId=${taxonomy.versionId}`,
       key: {
-        recordKind: "taxonomy",
+        recordKind: 'taxonomy',
         ontologyId: taxonomy.ontologyId,
         taxonomyId: taxonomy.taxonomyId,
         versionId: taxonomy.versionId,
@@ -573,23 +556,23 @@ function fallbackDuplicateKeyConflict(
   }
 
   if (message.includes(TABLES.allocation) && allocation) {
-    if (message.includes("prefix")) {
+    if (message.includes('prefix')) {
       return {
-        code: "duplicate-key",
+        code: 'duplicate-key',
         message: `Duplicate allocation record for prefix=${allocation.prefix}, versionId=${allocation.versionId}`,
         key: {
-          recordKind: "allocation",
+          recordKind: 'allocation',
           prefix: allocation.prefix,
           versionId: allocation.versionId,
         },
       };
     }
-    if (message.includes("ontology_id") || message.includes("taxonomy_id")) {
+    if (message.includes('ontology_id') || message.includes('taxonomy_id')) {
       return {
-        code: "duplicate-key",
+        code: 'duplicate-key',
         message: `Duplicate allocation record for ontologyId=${allocation.ontologyId}, taxonomyId=${allocation.taxonomyId}, versionId=${allocation.versionId}`,
         key: {
-          recordKind: "allocation",
+          recordKind: 'allocation',
           ontologyId: allocation.ontologyId,
           taxonomyId: allocation.taxonomyId,
           versionId: allocation.versionId,
@@ -597,10 +580,10 @@ function fallbackDuplicateKeyConflict(
       };
     }
     return {
-      code: "duplicate-key",
+      code: 'duplicate-key',
       message: `Duplicate allocation record for allocationId=${allocation.allocationId}`,
       key: {
-        recordKind: "allocation",
+        recordKind: 'allocation',
         allocationId: allocation.allocationId,
       },
     };
@@ -608,10 +591,10 @@ function fallbackDuplicateKeyConflict(
 
   if (message.includes(TABLES.segment) && segment) {
     return {
-      code: "duplicate-key",
+      code: 'duplicate-key',
       message: `Duplicate segment record for allocationId=${segment.allocationId}, segmentId=${segment.segmentId}`,
       key: {
-        recordKind: "segment",
+        recordKind: 'segment',
         allocationId: segment.allocationId,
         segmentId: segment.segmentId,
       },
@@ -619,32 +602,32 @@ function fallbackDuplicateKeyConflict(
   }
 
   if (message.includes(TABLES.namespace)) {
-    if (message.includes("ontology_id")) {
+    if (message.includes('ontology_id')) {
       return {
-        code: "duplicate-key",
+        code: 'duplicate-key',
         message: `Duplicate namespace record for ontologyId=${writeSet.namespace.ontologyId}`,
         key: {
-          recordKind: "namespace",
+          recordKind: 'namespace',
           ontologyId: writeSet.namespace.ontologyId,
         },
       };
     }
 
     return {
-      code: "duplicate-key",
+      code: 'duplicate-key',
       message: `Duplicate namespace record for namespace=${writeSet.namespace.namespace}`,
       key: {
-        recordKind: "namespace",
+        recordKind: 'namespace',
         namespace: writeSet.namespace.namespace,
       },
     };
   }
 
   return {
-    code: "duplicate-key",
+    code: 'duplicate-key',
     message: `Duplicate namespace record for ontologyId=${writeSet.namespace.ontologyId}`,
     key: {
-      recordKind: "namespace",
+      recordKind: 'namespace',
       ontologyId: writeSet.namespace.ontologyId,
     },
   };

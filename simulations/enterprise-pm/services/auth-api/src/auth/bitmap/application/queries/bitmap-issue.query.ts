@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { BitmapIssueResult } from "../../domain/index.js";
+import type { BitmapIssueResult } from '../../domain/index.js';
 
 /**
  * 사용자 권한 비트맵 발급 쿼리.

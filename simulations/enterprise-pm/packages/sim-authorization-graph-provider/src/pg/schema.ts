@@ -1,26 +1,26 @@
 // @def.boundary sim-authorization-graph-provider
 // @def.doc authorization-graph-store
 
-import { index, pgSchema, text } from "drizzle-orm/pg-core";
+import { index, pgSchema, text } from 'drizzle-orm/pg-core';
 
-const simSchema = pgSchema("sim");
+const simSchema = pgSchema('sim');
 
 export const authorizationGraphSnapshots = simSchema.table(
-  "authorization_graph_snapshots",
+  'authorization_graph_snapshots',
   {
-    snapshotId: text("snapshot_id").primaryKey(),
-    graphId: text("graph_id").notNull(),
-    graphJson: text("graph_json").notNull(),
-    createdAt: text("created_at").notNull(),
-    sourceRef: text("source_ref"),
-    tagsJson: text("tags_json"),
-    labelsJson: text("labels_json"),
-    metadataJson: text("metadata_json"),
-    auditReportJson: text("audit_report_json"),
+    snapshotId: text('snapshot_id').primaryKey(),
+    graphId: text('graph_id').notNull(),
+    graphJson: text('graph_json').notNull(),
+    createdAt: text('created_at').notNull(),
+    sourceRef: text('source_ref'),
+    tagsJson: text('tags_json'),
+    labelsJson: text('labels_json'),
+    metadataJson: text('metadata_json'),
+    auditReportJson: text('audit_report_json'),
   },
   (table) => [
-    index("idx_sim_authz_graph_snapshots_graph_id").on(table.graphId),
-    index("idx_sim_authz_graph_snapshots_created_at").on(table.createdAt),
+    index('idx_sim_authz_graph_snapshots_graph_id').on(table.graphId),
+    index('idx_sim_authz_graph_snapshots_created_at').on(table.createdAt),
   ],
 );
 

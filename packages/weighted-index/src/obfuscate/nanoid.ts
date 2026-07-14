@@ -24,7 +24,7 @@
  * Use toUUID when the output must conform to UUID shape.
  */
 
-const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 /**
  * Encode an integer as a compact base64url string.
@@ -37,10 +37,10 @@ const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
  */
 export function toNanoId(id: number, bitWidth: number): string {
   const len = Math.ceil(bitWidth / 6);
-  let result = "";
+  let result = '';
   let n = id;
   for (let i = 0; i < len; i++) {
-    result = ALPHABET[n & 0x3F] + result;
+    result = ALPHABET[n & 0x3f] + result;
     n >>>= 6;
   }
   return result;
@@ -57,7 +57,7 @@ export function fromNanoId(token: string, bitWidth: number): number {
   const len = Math.ceil(bitWidth / 6);
   if (token.length !== len) {
     throw new RangeError(
-      `fromNanoId: expected ${len} chars for bitWidth ${bitWidth}, got ${token.length}`
+      `fromNanoId: expected ${len} chars for bitWidth ${bitWidth}, got ${token.length}`,
     );
   }
   let result = 0;

@@ -34,20 +34,20 @@ export {
   createInformationFacetKey,
   createInformationFacetRef,
   createSemanticTransmissionId,
-} from "./internal/runtime-core.js";
+} from './internal/runtime-core.js';
 
 export {
   type BranchDefinition,
   type JunctionDefinition,
   type BranchDecision,
   type RouteDecision,
-} from "./internal/junction-core.js";
+} from './internal/junction-core.js';
 
 export {
   type CheckpointDefinition,
   type CheckpointObservation,
   type CheckpointLink,
   type CheckpointLattice,
-} from "./internal/checkpoint-core.js";
+} from './internal/checkpoint-core.js';
 
-export { type OperationalOntologySnapshot } from "./internal/projector-core.js";
+export { type OperationalOntologySnapshot } from './internal/projector-core.js';

@@ -13,7 +13,7 @@
 
 export interface ContractRef {
   contractId: string;
-  type: "state" | "logging" | "persist" | "adapter" | "custom";
+  type: 'state' | 'logging' | 'persist' | 'adapter' | 'custom';
   shape?: string;
   /** provides에서: 상위 provider를 의도적으로 재정의 */
   override?: boolean;
@@ -46,14 +46,14 @@ export interface SimulationGuards {
   /** GateEngine 4-state: active만 true */
   isEncodable?: (prefixId: string) => boolean;
   /** GateState 9종 최종 판정 */
-  gateResult?: (gateId: string) => "pass" | "fail" | "review";
+  gateResult?: (gateId: string) => 'pass' | 'fail' | 'review';
   harnessState?: (machineId: string) => string;
 }
 
 const DEFAULT_GUARDS: Required<SimulationGuards> = {
   isEncodable: () => true,
-  gateResult: () => "pass",
-  harnessState: () => "active",
+  gateResult: () => 'pass',
+  harnessState: () => 'active',
 };
 
 export function resolveGuards(guards?: SimulationGuards): Required<SimulationGuards> {
@@ -67,7 +67,7 @@ export function resolveGuards(guards?: SimulationGuards): Required<SimulationGua
 
 // ── 검증 결과 ─────────────────────────────────────────
 
-export type NestingIssueSeverity = "error" | "warning";
+export type NestingIssueSeverity = 'error' | 'warning';
 
 export interface NestingIssue {
   severity: NestingIssueSeverity;
@@ -78,14 +78,14 @@ export interface NestingIssue {
 }
 
 export type NestingIssueCode =
-  | "missing-provider"
-  | "duplicate-provider"
-  | "unused-contract"
-  | "self-consume"
-  | "empty-scope"
-  | "guard-inactive"
-  | "optional-missing"
-  | "override-no-parent";
+  | 'missing-provider'
+  | 'duplicate-provider'
+  | 'unused-contract'
+  | 'self-consume'
+  | 'empty-scope'
+  | 'guard-inactive'
+  | 'optional-missing'
+  | 'override-no-parent';
 
 export interface NestingValidation {
   valid: boolean;
@@ -102,7 +102,10 @@ export interface DescentPath {
 
 // ── providerMap 공통 구축 ─────────────────────────────
 
-export interface ProviderEntry { scopeId: string; depth: number }
+export interface ProviderEntry {
+  scopeId: string;
+  depth: number;
+}
 
 /**
  * 스코프 목록에서 contractId → provider 맵을 구축한다.
@@ -120,10 +123,10 @@ export function buildProviderMap(
 
     if (issues && scope.provides.length === 0 && scope.consumes.length === 0) {
       issues.push({
-        severity: "warning",
+        severity: 'warning',
         scopeId: scope.scopeId,
-        contractId: "",
-        code: "empty-scope",
+        contractId: '',
+        code: 'empty-scope',
         message: `스코프 "${scope.scopeId}"가 계약을 제공하지도 소비하지도 않음`,
       });
     }
@@ -132,10 +135,10 @@ export function buildProviderMap(
       if (!isEncodable(contract.contractId)) {
         if (issues) {
           issues.push({
-            severity: "warning",
+            severity: 'warning',
             scopeId: scope.scopeId,
             contractId: contract.contractId,
-            code: "guard-inactive",
+            code: 'guard-inactive',
             message: `스코프 "${scope.scopeId}"의 계약 "${contract.contractId}"이 gate에 의해 비활성 (encode 불가)`,
           });
         }
@@ -148,20 +151,20 @@ export function buildProviderMap(
           providerMap.set(contract.contractId, { scopeId: scope.scopeId, depth: i });
         } else if (issues) {
           issues.push({
-            severity: "warning",
+            severity: 'warning',
             scopeId: scope.scopeId,
             contractId: contract.contractId,
-            code: "duplicate-provider",
+            code: 'duplicate-provider',
             message: `계약 "${contract.contractId}"이 "${existing.scopeId}"(depth ${existing.depth})와 "${scope.scopeId}"(depth ${i}) 양쪽에서 제공됨`,
           });
         }
       } else {
         if (issues && contract.override) {
           issues.push({
-            severity: "warning",
+            severity: 'warning',
             scopeId: scope.scopeId,
             contractId: contract.contractId,
-            code: "override-no-parent",
+            code: 'override-no-parent',
             message: `스코프 "${scope.scopeId}"가 "${contract.contractId}" override를 선언했지만 상위에 대체 대상 없음`,
           });
         }
@@ -198,15 +201,15 @@ export function validateScopeNesting(
   // consumer 검증 — 조상에 provider 있는지
   for (let i = 0; i < scopes.length; i++) {
     const scope = scopes[i];
-    const ownProvides = new Set(scope.provides.map(c => c.contractId));
+    const ownProvides = new Set(scope.provides.map((c) => c.contractId));
 
     for (const contract of scope.consumes) {
       if (ownProvides.has(contract.contractId)) {
         issues.push({
-          severity: "error",
+          severity: 'error',
           scopeId: scope.scopeId,
           contractId: contract.contractId,
-          code: "self-consume",
+          code: 'self-consume',
           message: `스코프 "${scope.scopeId}"가 자기가 제공한 계약 "${contract.contractId}"을 소비`,
         });
         continue;
@@ -218,36 +221,36 @@ export function validateScopeNesting(
       if (!provider) {
         if (isOptional) {
           issues.push({
-            severity: "warning",
+            severity: 'warning',
             scopeId: scope.scopeId,
             contractId: contract.contractId,
-            code: "optional-missing",
+            code: 'optional-missing',
             message: `스코프 "${scope.scopeId}"의 선택적 계약 "${contract.contractId}"의 제공자가 없음 (fallback 동작)`,
           });
         } else {
           issues.push({
-            severity: "error",
+            severity: 'error',
             scopeId: scope.scopeId,
             contractId: contract.contractId,
-            code: "missing-provider",
+            code: 'missing-provider',
             message: `스코프 "${scope.scopeId}"가 소비하는 계약 "${contract.contractId}"의 제공자가 없음`,
           });
         }
       } else if (provider.depth >= i) {
         if (isOptional) {
           issues.push({
-            severity: "warning",
+            severity: 'warning',
             scopeId: scope.scopeId,
             contractId: contract.contractId,
-            code: "optional-missing",
+            code: 'optional-missing',
             message: `스코프 "${scope.scopeId}"의 선택적 계약 "${contract.contractId}"의 제공자 "${provider.scopeId}"가 상위가 아님 (fallback 동작)`,
           });
         } else {
           issues.push({
-            severity: "error",
+            severity: 'error',
             scopeId: scope.scopeId,
             contractId: contract.contractId,
-            code: "missing-provider",
+            code: 'missing-provider',
             message: `스코프 "${scope.scopeId}"(depth ${i})가 소비하는 계약 "${contract.contractId}"의 제공자 "${provider.scopeId}"(depth ${provider.depth})가 상위가 아님`,
           });
         }
@@ -264,10 +267,10 @@ export function validateScopeNesting(
     const consumers = consumerMap.get(contractId);
     if (!consumers || consumers.length === 0) {
       issues.push({
-        severity: "warning",
+        severity: 'warning',
         scopeId: provider.scopeId,
         contractId,
-        code: "unused-contract",
+        code: 'unused-contract',
         message: `스코프 "${provider.scopeId}"가 제공하는 계약 "${contractId}"을 하위에서 소비하지 않음`,
       });
     }
@@ -285,7 +288,7 @@ export function validateScopeNesting(
   }
 
   return {
-    valid: !issues.some(i => i.severity === "error"),
+    valid: !issues.some((i) => i.severity === 'error'),
     issues,
     descentPaths,
   };
@@ -311,7 +314,7 @@ export function resolveContracts(
   guards?: SimulationGuards,
 ): ResolvedContract[] {
   const { scopes } = nesting;
-  const scopeIndex = scopes.findIndex(s => s.scopeId === scopeId);
+  const scopeIndex = scopes.findIndex((s) => s.scopeId === scopeId);
   if (scopeIndex < 0) return [];
 
   const g = resolveGuards(guards);
@@ -326,7 +329,7 @@ export function resolveContracts(
     let overridden = false;
     if (validProvider) {
       for (let i = 0; i < validProvider.depth; i++) {
-        if (scopes[i].provides.some(c => c.contractId === contract.contractId)) {
+        if (scopes[i].provides.some((c) => c.contractId === contract.contractId)) {
           overridden = true;
           break;
         }
@@ -358,10 +361,12 @@ export function checkSwapSafety(
     ...nesting,
     scopes: [...nesting.scopes],
   };
-  [swapped.scopes[indexA], swapped.scopes[indexB]] =
-    [swapped.scopes[indexB], swapped.scopes[indexA]];
+  [swapped.scopes[indexA], swapped.scopes[indexB]] = [
+    swapped.scopes[indexB],
+    swapped.scopes[indexA],
+  ];
 
   const result = validateScopeNesting(swapped);
-  const errors = result.issues.filter(i => i.severity === "error");
+  const errors = result.issues.filter((i) => i.severity === 'error');
   return errors.length > 0 ? errors : null;
 }

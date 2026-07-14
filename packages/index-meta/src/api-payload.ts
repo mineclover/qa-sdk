@@ -1,10 +1,10 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { PrefixRegistry } from "./prefix-registry.js";
-import type { IndexMetaStore } from "./index-meta-store.js";
-import type { CrossVersionEntrySync } from "./cross-version-entry-sync.js";
-import { ValidationError } from "./errors.js";
+import type { PrefixRegistry } from './prefix-registry.js';
+import type { IndexMetaStore } from './index-meta-store.js';
+import type { CrossVersionEntrySync } from './cross-version-entry-sync.js';
+import { ValidationError } from './errors.js';
 
 // ── API 전송 포맷 ─────────────────────────────────────────
 
@@ -43,12 +43,10 @@ export interface EntryBatchPayload {
  * - entries의 각 key는 [1, capacity] 범위의 정수 문자열
  * - 중복 position 없음 (Record이므로 자동 보장)
  */
-export function validateEntryBatchPayload(
-  payload: EntryBatchPayload
-): void {
+export function validateEntryBatchPayload(payload: EntryBatchPayload): void {
   if (!Number.isInteger(payload.capacity) || payload.capacity < 1) {
     throw new ValidationError(
-      `EntryBatchPayload: capacity must be a positive integer (got ${payload.capacity})`
+      `EntryBatchPayload: capacity must be a positive integer (got ${payload.capacity})`,
     );
   }
 
@@ -56,12 +54,12 @@ export function validateEntryBatchPayload(
     const pos = Number(posStr);
     if (!Number.isInteger(pos) || pos < 1 || pos > payload.capacity) {
       throw new ValidationError(
-        `EntryBatchPayload: position "${posStr}" is out of range [1, ${payload.capacity}]`
+        `EntryBatchPayload: position "${posStr}" is out of range [1, ${payload.capacity}]`,
       );
     }
-    if (typeof value !== "string" || value.length === 0) {
+    if (typeof value !== 'string' || value.length === 0) {
       throw new ValidationError(
-        `EntryBatchPayload: value at position ${pos} must be a non-empty string`
+        `EntryBatchPayload: value at position ${pos} must be a non-empty string`,
       );
     }
   }
@@ -96,7 +94,7 @@ export async function applyEntryBatch(
   } else if (existing !== payload.capacity) {
     throw new ValidationError(
       `applyEntryBatch: capacity mismatch for "${prefix}/${versionId}" — ` +
-      `registry has ${existing}, payload has ${payload.capacity}`
+        `registry has ${existing}, payload has ${payload.capacity}`,
     );
   }
 
@@ -104,7 +102,10 @@ export async function applyEntryBatch(
   const sv = await store.getSchemaVersion(prefix, versionId);
   if (!sv) {
     await store.insertSchemaVersion({
-      prefix, versionId, capacity: payload.capacity, createdAt: ts,
+      prefix,
+      versionId,
+      capacity: payload.capacity,
+      createdAt: ts,
     });
   }
 

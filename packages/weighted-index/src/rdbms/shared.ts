@@ -8,25 +8,18 @@
  * 실제 코드 의존 없음 — devDep (better-sqlite3, drizzle-orm).
  */
 
-import Database from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import Database from 'better-sqlite3';
+import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
-import { WeightedIndex } from "../math/weighted-index.js";
+import { WeightedIndex } from '../math/weighted-index.js';
 
-export const roleLabels = ["admin", "editor", "viewer"] as const;
-export const actionLabels = ["read", "write", "delete"] as const;
-export const resourceLabels = ["doc", "image", "config"] as const;
+export const roleLabels = ['admin', 'editor', 'viewer'] as const;
+export const actionLabels = ['read', 'write', 'delete'] as const;
+export const resourceLabels = ['doc', 'image', 'config'] as const;
 
-export const shape = [
-  roleLabels.length,
-  actionLabels.length,
-  resourceLabels.length,
-] as const;
+export const shape = [roleLabels.length, actionLabels.length, resourceLabels.length] as const;
 
-export const WI = new WeightedIndex(
-  [...shape],
-  ["role", "action", "resource"],
-);
+export const WI = new WeightedIndex([...shape], ['role', 'action', 'resource']);
 
 /** mixed-radix weights: [shape[1]*shape[2], shape[2], 1] = [9, 3, 1] */
 export const W = [shape[1] * shape[2], shape[2], 1] as const;
@@ -35,7 +28,7 @@ export function freshDb(): {
   raw: Database.Database;
   db: BetterSQLite3Database;
 } {
-  const raw = new Database(":memory:");
+  const raw = new Database(':memory:');
   const db = drizzle({ client: raw });
   return { raw, db };
 }

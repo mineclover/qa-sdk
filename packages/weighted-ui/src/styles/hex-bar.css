@@ -33,8 +33,12 @@
   font-weight: 600;
   font-size: 0.65rem;
 }
-.hex-status-ok  { color: var(--ui-primary, #217346); }
-.hex-status-fail { color: var(--status-fail, #dc2626); }
+.hex-status-ok {
+  color: var(--ui-primary, #217346);
+}
+.hex-status-fail {
+  color: var(--status-fail, #dc2626);
+}
 
 /* ── Hex cell bar ── */
 .hex-bar {
@@ -57,12 +61,34 @@
   color: var(--text-cell);
   transition: background 0.12s;
 }
-.hex-cell-sep { margin-left: 3px; }
-.hex-cell-prefix  { background: #dce6f1; color: #1f497d; border-color: #b4c7dc; }
-.hex-cell-version { background: #fff2cc; color: #7f6000; border-color: #f0d88c; }
-.hex-cell-shard   { background: #f0e8ff; color: #6b21a8; border-color: #c4b5fd; }
-.hex-cell-index   { background: var(--ui-primary-light, #e8f5ee); color: var(--ui-primary-dark, #185c38); border-color: #b8d8c4; }
-.hex-cell-gap     { background: #f7f7f7; color: #ccc; border-color: #e8e8e8; }
+.hex-cell-sep {
+  margin-left: 3px;
+}
+.hex-cell-prefix {
+  background: #dce6f1;
+  color: #1f497d;
+  border-color: #b4c7dc;
+}
+.hex-cell-version {
+  background: #fff2cc;
+  color: #7f6000;
+  border-color: #f0d88c;
+}
+.hex-cell-shard {
+  background: #f0e8ff;
+  color: #6b21a8;
+  border-color: #c4b5fd;
+}
+.hex-cell-index {
+  background: var(--ui-primary-light, #e8f5ee);
+  color: var(--ui-primary-dark, #185c38);
+  border-color: #b8d8c4;
+}
+.hex-cell-gap {
+  background: #f7f7f7;
+  color: #ccc;
+  border-color: #e8e8e8;
+}
 
 /* ── Field labels below the bar ── */
 .hex-labels {
@@ -81,11 +107,26 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.hex-label-prefix  { border-color: #1f497d; color: #1f497d; }
-.hex-label-version { border-color: #7f6000; color: #7f6000; }
-.hex-label-shard   { border-color: #6b21a8; color: #6b21a8; }
-.hex-label-index   { border-color: var(--ui-primary, #217346); color: var(--ui-primary-dark, #185c38); }
-.hex-label-gap     { border-color: #ddd; color: #bbb; }
+.hex-label-prefix {
+  border-color: #1f497d;
+  color: #1f497d;
+}
+.hex-label-version {
+  border-color: #7f6000;
+  color: #7f6000;
+}
+.hex-label-shard {
+  border-color: #6b21a8;
+  color: #6b21a8;
+}
+.hex-label-index {
+  border-color: var(--ui-primary, #217346);
+  color: var(--ui-primary-dark, #185c38);
+}
+.hex-label-gap {
+  border-color: #ddd;
+  color: #bbb;
+}
 
 /* ── Formatted string display ── */
 .hex-layout-uuid-str {

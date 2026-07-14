@@ -1,7 +1,7 @@
 // @def.boundary decode-service-system
 // @def.doc decode-service-system
 
-import { z } from "zod";
+import { z } from 'zod';
 
 /** POST /decode 요청 */
 export const decodeRequestSchema = z.object({
@@ -14,7 +14,10 @@ export const decodeRequestSchema = z.object({
 export const decodeBatchRequestSchema = z.object({
   prefix: z.string(),
   version: z.string(),
-  inputs: z.array(z.union([z.number(), z.string()])).min(1).max(10_000),
+  inputs: z
+    .array(z.union([z.number(), z.string()]))
+    .min(1)
+    .max(10_000),
 });
 
 /** POST /decode/deep 요청 */

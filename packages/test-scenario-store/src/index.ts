@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc test-scenario-store
 
-export { SqliteTestScenarioStore } from "./store.js";
+export { SqliteTestScenarioStore } from './store.js';
 export type {
   TestKind,
   TestScope,
@@ -10,4 +10,4 @@ export type {
   TestScenario,
   TestScenarioRun,
   CreateTestScenarioInput,
-} from "./types.js";
+} from './types.js';

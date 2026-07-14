@@ -14,14 +14,14 @@
  *   - 40+ : 후속 도메인 예약
  */
 
-export const RP_READ_BIT    = 10;
-export const RP_WRITE_BIT   = 11;
-export const RP_DELETE_BIT  = 12;
+export const RP_READ_BIT = 10;
+export const RP_WRITE_BIT = 11;
+export const RP_DELETE_BIT = 12;
 
 export const AUDIT_READ_BIT = 20;
 
 export const INGEST_READ_BIT = 30;
-export const EVENT_READ_BIT  = 31;
+export const EVENT_READ_BIT = 31;
 
 /** 테스트·문서에서 전체 목록을 순회해야 할 때 사용. */
 export const RLS_BIT_CATALOG = Object.freeze({

@@ -1,9 +1,9 @@
 /** @def.boundary browser-runtime-system */
-import type { BrowserCatalog } from "@qa-sdk/browser-codec";
-import type { ServiceBootConfig, TransmissionOwner } from "@qa-sdk/core";
+import type { BrowserCatalog } from '@qa-sdk/browser-codec';
+import type { ServiceBootConfig, TransmissionOwner } from '@qa-sdk/core';
 
 /** QaMonitor의 생명주기 상태 */
-export type MonitorStatus = "active" | "stopped";
+export type MonitorStatus = 'active' | 'stopped';
 
 export interface QaMonitorConfig {
   /** ingest-server URL (e.g. "http://localhost:3200") */

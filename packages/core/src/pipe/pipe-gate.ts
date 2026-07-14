@@ -8,29 +8,39 @@
  * 분류 태그이며, 결과 합성은 하지 않는다.
  */
 
-import type { PipeSpec, PipeGraph, PipeFlow } from "../types/pipe-spec.js";
-import type { PipeConcern, PipeRole, PipeConcernMap, PipeImpactAnalysis } from "./pipe-interpret.js";
-import { extractPipeConcerns, propagatePipeConcerns, analyzePipeImpact, classifyPipeRole } from "./pipe-interpret.js";
-import { countGraphPaths } from "./pipe-path.js";
-import { analyzePipeComplexity } from "./pipe-analyze.js";
-import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
+import type { PipeSpec, PipeGraph, PipeFlow } from '../types/pipe-spec.js';
+import type {
+  PipeConcern,
+  PipeRole,
+  PipeConcernMap,
+  PipeImpactAnalysis,
+} from './pipe-interpret.js';
+import {
+  extractPipeConcerns,
+  propagatePipeConcerns,
+  analyzePipeImpact,
+  classifyPipeRole,
+} from './pipe-interpret.js';
+import { countGraphPaths } from './pipe-path.js';
+import { analyzePipeComplexity } from './pipe-analyze.js';
+import { normalizeEndpointPipeIds } from './pipe-endpoint.js';
 
 // ── 타입 정의 ─────────────────────────────────────────
 
 /** 게이트 평가 레벨 (분류 태그) */
-export type GateLevel = "pipe" | "facet" | "scenario" | "graph";
+export type GateLevel = 'pipe' | 'facet' | 'scenario' | 'graph';
 
 /** 게이트 기준 */
 export type GateCriterion =
-  | { type: "concern-present"; values: PipeConcern[] }
-  | { type: "concern-absent"; values: PipeConcern[] }
-  | { type: "role-is"; value: PipeRole }
-  | { type: "blast-radius-max"; value: number }
-  | { type: "path-coverage-min"; value: number }
-  | { type: "no-isolated-pipes" }
-  | { type: "max-complexity"; value: number }
-  | { type: "all-pipes-have-concerns" }
-  | { type: "no-unhandled-resilience" };
+  | { type: 'concern-present'; values: PipeConcern[] }
+  | { type: 'concern-absent'; values: PipeConcern[] }
+  | { type: 'role-is'; value: PipeRole }
+  | { type: 'blast-radius-max'; value: number }
+  | { type: 'path-coverage-min'; value: number }
+  | { type: 'no-isolated-pipes' }
+  | { type: 'max-complexity'; value: number }
+  | { type: 'all-pipes-have-concerns' }
+  | { type: 'no-unhandled-resilience' };
 
 /** 게이트 스펙 */
 export interface PipeGateSpec {
@@ -56,7 +66,7 @@ export interface CriterionResult {
 }
 
 /** 게이트 판정 */
-export type GateVerdict = "pass" | "fail" | "review";
+export type GateVerdict = 'pass' | 'fail' | 'review';
 
 /** 하위 게이트 이슈 (review 판정 근거) */
 export interface SubGateIssue {
@@ -106,28 +116,39 @@ export function evaluateGate(
   executedPathCount?: number,
 ): GateResult {
   const results: CriterionResult[] = [];
-  const metrics: GateResult["metrics"] = {};
+  const metrics: GateResult['metrics'] = {};
 
   // 미리 계산 (필요할 때만)
   let _concernMap: PipeConcernMap | undefined;
-  const getConcernMap = () => _concernMap ??= propagatePipeConcerns(graph);
+  const getConcernMap = () => (_concernMap ??= propagatePipeConcerns(graph));
 
   let _impact: PipeImpactAnalysis | undefined;
-  const getImpact = () => _impact ??= analyzePipeImpact(graph, spec.target);
+  const getImpact = () => (_impact ??= analyzePipeImpact(graph, spec.target));
 
-  const targetPipe = graph.pipes.find(p => p.pipeId === spec.target);
+  const targetPipe = graph.pipes.find((p) => p.pipeId === spec.target);
 
   for (const criterion of spec.criteria) {
-    results.push(evaluateCriterion(criterion, graph, targetPipe, getConcernMap, getImpact, executedPipeIds, executedPathCount, metrics));
+    results.push(
+      evaluateCriterion(
+        criterion,
+        graph,
+        targetPipe,
+        getConcernMap,
+        getImpact,
+        executedPipeIds,
+        executedPathCount,
+        metrics,
+      ),
+    );
   }
 
-  const pass = results.every(r => r.pass);
+  const pass = results.every((r) => r.pass);
   return {
     gateId: spec.id,
     level: spec.level,
     target: spec.target,
     pass,
-    verdict: pass ? "pass" : "fail",
+    verdict: pass ? 'pass' : 'fail',
     results,
     subIssues: [],
     metrics,
@@ -143,70 +164,80 @@ function evaluateCriterion(
   getImpact: () => PipeImpactAnalysis,
   executedPipeIds: Set<string> | undefined,
   executedPathCount: number | undefined,
-  metrics: GateResult["metrics"],
+  metrics: GateResult['metrics'],
 ): CriterionResult {
   switch (criterion.type) {
-    case "concern-present": {
+    case 'concern-present': {
       if (!targetPipe) {
         // graph 레벨: 그래프 전체에서 해당 concern이 존재하는지
         const map = getConcernMap();
         const allConcerns = new Set<PipeConcern>();
-        for (const [, entry] of map) entry.all.forEach(c => allConcerns.add(c));
-        const missing = criterion.values.filter(c => !allConcerns.has(c));
+        for (const [, entry] of map) entry.all.forEach((c) => allConcerns.add(c));
+        const missing = criterion.values.filter((c) => !allConcerns.has(c));
         metrics.concernCount = allConcerns.size;
         return {
-          criterion, pass: missing.length === 0,
-          message: missing.length === 0 ? "모든 관심사 존재" : `미존재: ${missing.join(", ")}`,
+          criterion,
+          pass: missing.length === 0,
+          message: missing.length === 0 ? '모든 관심사 존재' : `미존재: ${missing.join(', ')}`,
           actual: [...allConcerns],
         };
       }
       const concerns = extractPipeConcerns(targetPipe);
-      const missing = criterion.values.filter(c => !concerns.includes(c));
+      const missing = criterion.values.filter((c) => !concerns.includes(c));
       return {
-        criterion, pass: missing.length === 0,
-        message: missing.length === 0 ? "모든 관심사 존재" : `미존재: ${missing.join(", ")}`,
+        criterion,
+        pass: missing.length === 0,
+        message: missing.length === 0 ? '모든 관심사 존재' : `미존재: ${missing.join(', ')}`,
         actual: concerns,
       };
     }
 
-    case "concern-absent": {
-      if (!targetPipe) return { criterion, pass: true, message: "graph 레벨 — 스킵" };
+    case 'concern-absent': {
+      if (!targetPipe) return { criterion, pass: true, message: 'graph 레벨 — 스킵' };
       const concerns = extractPipeConcerns(targetPipe);
-      const present = criterion.values.filter(c => concerns.includes(c));
+      const present = criterion.values.filter((c) => concerns.includes(c));
       return {
-        criterion, pass: present.length === 0,
-        message: present.length === 0 ? "금지 관심사 없음" : `존재하면 안 됨: ${present.join(", ")}`,
+        criterion,
+        pass: present.length === 0,
+        message:
+          present.length === 0 ? '금지 관심사 없음' : `존재하면 안 됨: ${present.join(', ')}`,
         actual: concerns,
       };
     }
 
-    case "role-is": {
+    case 'role-is': {
       if (!targetPipe) return { criterion, pass: false, message: `파이프 미발견` };
       const role = classifyPipeRole(targetPipe);
       return {
-        criterion, pass: role === criterion.value,
-        message: role === criterion.value ? `역할 일치: ${role}` : `기대: ${criterion.value}, 실제: ${role}`,
+        criterion,
+        pass: role === criterion.value,
+        message:
+          role === criterion.value
+            ? `역할 일치: ${role}`
+            : `기대: ${criterion.value}, 실제: ${role}`,
         actual: role,
       };
     }
 
-    case "blast-radius-max": {
+    case 'blast-radius-max': {
       const impact = getImpact();
       metrics.blastRadius = impact.blastRadius;
       return {
-        criterion, pass: impact.blastRadius <= criterion.value,
+        criterion,
+        pass: impact.blastRadius <= criterion.value,
         message: `blastRadius=${impact.blastRadius} (최대: ${criterion.value})`,
         actual: impact.blastRadius,
       };
     }
 
-    case "path-coverage-min": {
+    case 'path-coverage-min': {
       if (executedPathCount == null) {
         // 경로 커버리지는 실제 실행 경로 수가 필수. 근사치 사용 안 함
         metrics.pathCoverage = undefined;
         return {
-          criterion, pass: false,
-          message: "executedPathCount 미제공 — 경로 커버리지 계산 불가",
+          criterion,
+          pass: false,
+          message: 'executedPathCount 미제공 — 경로 커버리지 계산 불가',
           actual: undefined,
         };
       }
@@ -214,71 +245,82 @@ function evaluateCriterion(
       const coverage = totalPaths > 0 ? executedPathCount / totalPaths : 0;
       metrics.pathCoverage = coverage;
       return {
-        criterion, pass: coverage >= criterion.value,
+        criterion,
+        pass: coverage >= criterion.value,
         message: `pathCoverage=${(coverage * 100).toFixed(0)}% (최소: ${(criterion.value * 100).toFixed(0)}%)`,
         actual: coverage,
       };
     }
 
-    case "no-isolated-pipes": {
+    case 'no-isolated-pipes': {
       const connected = new Set<string>();
       for (const conn of graph.connections) {
         const froms = normalizeEndpointPipeIds(conn.from);
         const tos = normalizeEndpointPipeIds(conn.to);
-        froms.forEach(f => connected.add(f));
-        tos.forEach(t => connected.add(t));
+        froms.forEach((f) => connected.add(f));
+        tos.forEach((t) => connected.add(t));
       }
-      const isolated = graph.pipes.filter(p => !connected.has(p.pipeId)).map(p => p.pipeId);
+      const isolated = graph.pipes.filter((p) => !connected.has(p.pipeId)).map((p) => p.pipeId);
       // 단일 파이프 그래프는 고립이 아님
       if (graph.pipes.length === 1) {
-        return { criterion, pass: true, message: "단일 파이프 그래프", actual: [] };
+        return { criterion, pass: true, message: '단일 파이프 그래프', actual: [] };
       }
       metrics.isolatedPipes = isolated;
       return {
-        criterion, pass: isolated.length === 0,
-        message: isolated.length === 0 ? "고립 파이프 없음" : `고립: ${isolated.join(", ")}`,
+        criterion,
+        pass: isolated.length === 0,
+        message: isolated.length === 0 ? '고립 파이프 없음' : `고립: ${isolated.join(', ')}`,
         actual: isolated,
       };
     }
 
-    case "max-complexity": {
+    case 'max-complexity': {
       const complexity = analyzePipeComplexity(graph);
       metrics.complexity = complexity.totalPaths;
       return {
-        criterion, pass: complexity.totalPaths <= criterion.value,
+        criterion,
+        pass: complexity.totalPaths <= criterion.value,
         message: `totalPaths=${complexity.totalPaths} (최대: ${criterion.value})`,
         actual: complexity.totalPaths,
       };
     }
 
-    case "all-pipes-have-concerns": {
+    case 'all-pipes-have-concerns': {
       const map = getConcernMap();
-      const noConcern = graph.pipes.filter(p => {
-        const entry = map.get(p.pipeId);
-        return !entry || entry.all.length === 0;
-      }).map(p => p.pipeId);
+      const noConcern = graph.pipes
+        .filter((p) => {
+          const entry = map.get(p.pipeId);
+          return !entry || entry.all.length === 0;
+        })
+        .map((p) => p.pipeId);
       return {
-        criterion, pass: noConcern.length === 0,
-        message: noConcern.length === 0 ? "모든 파이프에 관심사 있음" : `관심사 없음: ${noConcern.join(", ")}`,
+        criterion,
+        pass: noConcern.length === 0,
+        message:
+          noConcern.length === 0
+            ? '모든 파이프에 관심사 있음'
+            : `관심사 없음: ${noConcern.join(', ')}`,
         actual: noConcern,
       };
     }
 
-    case "no-unhandled-resilience": {
+    case 'no-unhandled-resilience': {
       // resilience 관심사가 있는 파이프는 retry/circuit-breaker/fallback이 있어야 함
       const map = getConcernMap();
       const unhandled: string[] = [];
       for (const pipe of graph.pipes) {
         const entry = map.get(pipe.pipeId);
-        if (!entry?.all.includes("resilience")) continue;
+        if (!entry?.all.includes('resilience')) continue;
         // 직접 resilience가 있으면 이미 처리됨 (retry/fallback/circuit-breaker 보유)
-        if (entry.direct.includes("resilience")) continue;
+        if (entry.direct.includes('resilience')) continue;
         // 상속된 resilience만 있고 자체 내결함 패턴 없음 → 미처리
         unhandled.push(pipe.pipeId);
       }
       return {
-        criterion, pass: unhandled.length === 0,
-        message: unhandled.length === 0 ? "모든 resilience 처리됨" : `미처리: ${unhandled.join(", ")}`,
+        criterion,
+        pass: unhandled.length === 0,
+        message:
+          unhandled.length === 0 ? '모든 resilience 처리됨' : `미처리: ${unhandled.join(', ')}`,
         actual: unhandled,
       };
     }
@@ -308,7 +350,9 @@ export function evaluateGates(
   executedPipeIds?: Set<string>,
   executedPathCount?: number,
 ): GateResult[] {
-  const results = specs.map(spec => evaluateGate(spec, graph, executedPipeIds, executedPathCount));
+  const results = specs.map((spec) =>
+    evaluateGate(spec, graph, executedPipeIds, executedPathCount),
+  );
 
   // 하위 레벨 실패 수집
   const failedByLevel = new Map<GateLevel, SubGateIssue[]>();
@@ -318,7 +362,7 @@ export function evaluateGates(
       issues.push({
         gateId: r.gateId,
         level: r.level,
-        failedCriteria: r.results.filter(c => !c.pass).map(c => c.message),
+        failedCriteria: r.results.filter((c) => !c.pass).map((c) => c.message),
       });
       failedByLevel.set(r.level, issues);
     }
@@ -338,7 +382,7 @@ export function evaluateGates(
     }
 
     if (subIssues.length > 0) {
-      r.verdict = "review";
+      r.verdict = 'review';
       (r.subIssues as SubGateIssue[]) = subIssues;
     }
   }
@@ -348,10 +392,10 @@ export function evaluateGates(
 
 /** 전체 게이트 통과 여부 (AND) */
 export function allGatesPass(results: GateResult[]): boolean {
-  return results.every(r => r.pass);
+  return results.every((r) => r.pass);
 }
 
 /** review 필요 여부 — pass인데 하위 이슈 있음 */
 export function hasReviewItems(results: GateResult[]): boolean {
-  return results.some(r => r.verdict === "review");
+  return results.some((r) => r.verdict === 'review');
 }

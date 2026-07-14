@@ -15,45 +15,45 @@
 // ── 승계: DEMO_CATALOG + spec-engine (4종) ──────────────────
 
 export interface AxisNode {
-  readonly kind: "axis";
+  readonly kind: 'axis';
   readonly id: string;
   readonly name: string;
   readonly currentVersions: readonly string[];
 }
 
-export type PrefixLifecycle = "draft" | "active" | "deprecated" | "archived";
+export type PrefixLifecycle = 'draft' | 'active' | 'deprecated' | 'archived';
 
 export interface PrefixNode {
-  readonly kind: "prefix";
+  readonly kind: 'prefix';
   readonly id: string;
   readonly name: string;
   readonly dimLabels: readonly string[];
   /** schema category — entity/event/relation/state/policy/observation */
-  readonly category?: "entity" | "event" | "relation" | "state" | "policy" | "observation";
+  readonly category?: 'entity' | 'event' | 'relation' | 'state' | 'policy' | 'observation';
   /** lifecycle — draft→active→deprecated→archived */
   readonly lifecycle?: PrefixLifecycle;
 }
 
 export interface SpecNode {
-  readonly kind: "spec";
+  readonly kind: 'spec';
   readonly id: string;
-  readonly type: "req" | "feat" | "uc" | "evt" | "ls" | "adr";
+  readonly type: 'req' | 'feat' | 'uc' | 'evt' | 'ls' | 'adr';
   readonly title: string;
-  readonly lifecycle: "draft" | "active" | "deprecated";
+  readonly lifecycle: 'draft' | 'active' | 'deprecated';
   readonly governs?: readonly string[];
 }
 
 export interface SchemaNode {
-  readonly kind: "schema";
+  readonly kind: 'schema';
   readonly id: string;
-  readonly category: "entity" | "event" | "relation" | "state" | "policy" | "observation";
+  readonly category: 'entity' | 'event' | 'relation' | 'state' | 'policy' | 'observation';
   readonly version: string;
 }
 
 // ── DKG 고유: 설계 + 운영 (4종) ────────────────────────────
 
 export interface DecisionNode {
-  readonly kind: "decision";
+  readonly kind: 'decision';
   readonly id: string;
   readonly date: string;
   readonly title: string;
@@ -65,14 +65,14 @@ export interface DecisionNode {
   readonly metadata?: Readonly<Record<string, unknown>>;
   readonly alternatives?: readonly string[];
   readonly reversalConditions?: readonly string[];
-  readonly lifecycle: "active" | "superseded" | "reversed";
+  readonly lifecycle: 'active' | 'superseded' | 'reversed';
 }
 
 export interface VersionEventNode {
-  readonly kind: "version-event";
+  readonly kind: 'version-event';
   readonly id: string;
   readonly subjectId: string;
-  readonly subjectKind: "axis" | "prefix";
+  readonly subjectKind: 'axis' | 'prefix';
   readonly fromVersion: string;
   readonly toVersion: string;
   readonly date: string;
@@ -84,21 +84,21 @@ export interface VersionEventNode {
 
 export interface VersionChange {
   readonly kind:
-    | "entry-added"
-    | "entry-deactivated"
-    | "capacity-changed"
-    | "dim-added"
-    | "ref-changed";
+    | 'entry-added'
+    | 'entry-deactivated'
+    | 'capacity-changed'
+    | 'dim-added'
+    | 'ref-changed';
   readonly detail: string;
 }
 
 export interface ConstraintNode {
-  readonly kind: "constraint";
+  readonly kind: 'constraint';
   readonly id: string;
   readonly rule: string;
   readonly formal?: string;
   readonly scope: readonly string[];
-  readonly lifecycle: "active" | "suspended" | "retired";
+  readonly lifecycle: 'active' | 'suspended' | 'retired';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -146,13 +146,13 @@ export interface ConstraintNode {
  *   source=manual/review + suggestion 있음 → action-needed
  *   source=manual/review + suggestion 없음 → monitoring
  */
-export type ObservationIntent = "action-needed" | "monitoring" | "completed";
+export type ObservationIntent = 'action-needed' | 'monitoring' | 'completed';
 
 export interface ObservationNode {
-  readonly kind: "observation";
+  readonly kind: 'observation';
   readonly id: string;
   readonly date: string;
-  readonly source: "runtime" | "review" | "metric" | "manual";
+  readonly source: 'runtime' | 'review' | 'metric' | 'manual';
   readonly subjects: readonly string[];
   readonly finding: string;
   readonly suggestion?: ObservationSuggestion;
@@ -162,23 +162,23 @@ export interface ObservationNode {
   readonly metadata?: Readonly<Record<string, unknown>>;
   readonly resolution?: {
     readonly decisionId: string;
-    readonly outcome: "accepted" | "deferred" | "rejected";
+    readonly outcome: 'accepted' | 'deferred' | 'rejected';
     readonly note?: string;
   };
 }
 
 export type ObservationSuggestion =
-  | { readonly kind: "merge"; readonly targets: readonly string[]; readonly into: string }
-  | { readonly kind: "split"; readonly target: string; readonly into: readonly string[] }
-  | { readonly kind: "deprecate"; readonly target: string; readonly reason: string }
-  | { readonly kind: "add-entry"; readonly axis: string; readonly entry: string }
-  | { readonly kind: "add-constraint"; readonly rule: string }
-  | { readonly kind: "revise-decision"; readonly decisionId: string; readonly reason: string };
+  | { readonly kind: 'merge'; readonly targets: readonly string[]; readonly into: string }
+  | { readonly kind: 'split'; readonly target: string; readonly into: readonly string[] }
+  | { readonly kind: 'deprecate'; readonly target: string; readonly reason: string }
+  | { readonly kind: 'add-entry'; readonly axis: string; readonly entry: string }
+  | { readonly kind: 'add-constraint'; readonly rule: string }
+  | { readonly kind: 'revise-decision'; readonly decisionId: string; readonly reason: string };
 
 // ── DKG 고유: 외부/구조 (3종) ──────────────────────────────
 
 export interface DomainNode {
-  readonly kind: "domain";
+  readonly kind: 'domain';
   readonly id: string;
   readonly name: string;
   readonly prefixes: readonly string[];
@@ -191,15 +191,15 @@ export interface DomainNode {
 }
 
 export interface ConsumerNode {
-  readonly kind: "consumer";
+  readonly kind: 'consumer';
   readonly id: string;
-  readonly type: "service" | "client" | "tool" | "external";
+  readonly type: 'service' | 'client' | 'tool' | 'external';
   readonly intendedPrefixes: readonly string[];
   readonly rationale?: string;
 }
 
 export interface IntentLinkNode {
-  readonly kind: "intent-link";
+  readonly kind: 'intent-link';
   readonly id: string;
   readonly endpoints: readonly string[];
   readonly via: string;
@@ -207,10 +207,10 @@ export interface IntentLinkNode {
   readonly invariant?: string;
 }
 
-export type DslLifecycle = "draft" | "active" | "deprecated";
+export type DslLifecycle = 'draft' | 'active' | 'deprecated';
 
 export interface DslBundleNode {
-  readonly kind: "dsl-bundle";
+  readonly kind: 'dsl-bundle';
   readonly id: string;
   readonly name: string;
   readonly description: string;
@@ -224,7 +224,7 @@ export interface DslBundleNode {
 
 // ── Skill 노드 ──────────────────────────────────────────────
 
-export type SkillCategory = "read" | "write" | "analysis" | "chain";
+export type SkillCategory = 'read' | 'write' | 'analysis' | 'chain';
 
 /** Skill이 전문화되는 시나리오 컨텍스트 */
 export interface SkillSpecialization {
@@ -253,7 +253,7 @@ export interface SkillSpecialization {
 }
 
 export interface SkillNode {
-  readonly kind: "skill";
+  readonly kind: 'skill';
   readonly id: string;
   readonly name: string;
   readonly description: string;
@@ -273,14 +273,14 @@ export interface SkillNode {
 // ── Transition Spec 노드 ─────────────────────────────────
 
 export interface TransitionSpecNode {
-  readonly kind: "transition-spec";
+  readonly kind: 'transition-spec';
   readonly id: string;
   /** 전이 이름. 형식: <domain>.<entity>.<operation> */
   readonly transition: string;
   readonly version: string;
-  readonly matchMode: "single" | "ordered" | "unordered" | "windowed";
+  readonly matchMode: 'single' | 'ordered' | 'unordered' | 'windowed';
   readonly coordinateCount: number;
-  readonly effectKind: "create" | "update" | "move" | "consume" | "open" | "close";
+  readonly effectKind: 'create' | 'update' | 'move' | 'consume' | 'open' | 'close';
   /** 모든 참조 축 (matchAxes ∪ inputAxes ∪ outputAxes) */
   readonly slotRefs: readonly string[];
   /** 이벤트 매칭에 사용하는 축 (match.coordinates 차원) */
@@ -294,7 +294,7 @@ export interface TransitionSpecNode {
 // ── 테이블 노드 ──────────────────────────────────────────
 
 export interface TableNode {
-  readonly kind: "table";
+  readonly kind: 'table';
   readonly id: string;
   readonly name: string;
   /** 컬럼 이름 목록 */
@@ -304,15 +304,15 @@ export interface TableNode {
 // ── FlowSchema 노드 ──────────────────────────────────────
 
 export type FlowSchemaGatePhase =
-  | "perceive"
-  | "interpret"
-  | "evaluate"
-  | "decide"
-  | "plan"
-  | "execute"
-  | "reflect";
+  | 'perceive'
+  | 'interpret'
+  | 'evaluate'
+  | 'decide'
+  | 'plan'
+  | 'execute'
+  | 'reflect';
 
-export type FlowSchemaGateWeight = "core" | "structural" | "tactical";
+export type FlowSchemaGateWeight = 'core' | 'structural' | 'tactical';
 
 export interface FlowSchemaGateSummary {
   readonly id: string;
@@ -322,7 +322,7 @@ export interface FlowSchemaGateSummary {
 }
 
 export interface FlowSchemaNode {
-  readonly kind: "flow-schema";
+  readonly kind: 'flow-schema';
   readonly id: string;
   readonly name: string;
   readonly version: string;
@@ -351,7 +351,7 @@ export type DkgNode =
   | TableNode
   | FlowSchemaNode;
 
-export type DkgNodeKind = DkgNode["kind"];
+export type DkgNodeKind = DkgNode['kind'];
 
 /**
  * kind → node details (id/kind/name 제외) 맵.
@@ -365,7 +365,7 @@ export type DkgNodeKind = DkgNode["kind"];
  * ```
  */
 export type DkgNodeDetailsMap = {
-  [K in DkgNode["kind"]]: Omit<Extract<DkgNode, { kind: K }>, "id" | "kind" | "name">;
+  [K in DkgNode['kind']]: Omit<Extract<DkgNode, { kind: K }>, 'id' | 'kind' | 'name'>;
 };
 
 /** 특정 kind의 details 타입 */
@@ -377,28 +377,28 @@ export type DkgNodeDetails<K extends DkgNodeKind> = DkgNodeDetailsMap[K];
 
 export type DkgEdgeType =
   // spec-engine 승계 (5종)
-  | "satisfies"
-  | "implements"
-  | "tests"
-  | "traces-to"
-  | "depends-on"
+  | 'satisfies'
+  | 'implements'
+  | 'tests'
+  | 'traces-to'
+  | 'depends-on'
   // 설계 순방향 (5종)
-  | "composes"
-  | "references"
-  | "governs"
-  | "justifies"
-  | "constrains"
+  | 'composes'
+  | 'references'
+  | 'governs'
+  | 'justifies'
+  | 'constrains'
   // 도메인/소비/연결 (4종)
-  | "contains"
-  | "bridges"
-  | "consumes"
-  | "binds"
+  | 'contains'
+  | 'bridges'
+  | 'consumes'
+  | 'binds'
   // 운영 역방향 (2종)
-  | "observes"
-  | "prompts"
+  | 'observes'
+  | 'prompts'
   // 진화 추적 (2종)
-  | "evolves-from"
-  | "supersedes";
+  | 'evolves-from'
+  | 'supersedes';
 
 export interface DkgEdge {
   readonly type: DkgEdgeType;
@@ -413,13 +413,13 @@ export interface DkgEdge {
 
 export interface ImpactAnalysisInput {
   readonly type:
-    | "entry-added"
-    | "entry-deactivated"
-    | "capacity-changed"
-    | "dim-added"
-    | "ref-changed"
-    | "version-bump"
-    | "new-prefix";
+    | 'entry-added'
+    | 'entry-deactivated'
+    | 'capacity-changed'
+    | 'dim-added'
+    | 'ref-changed'
+    | 'version-bump'
+    | 'new-prefix';
   readonly target: {
     readonly axis?: string;
     readonly prefix?: string;
@@ -443,7 +443,7 @@ export interface ImpactAnalysisResult {
 
 export interface AffectedPrefix {
   readonly id: string;
-  readonly reason: "composes" | "references";
+  readonly reason: 'composes' | 'references';
   readonly distance: number;
 }
 
@@ -461,7 +461,7 @@ export interface ConstraintViolation {
   readonly constraintId: string;
   readonly rule: string;
   /** 실제 검사 시 severity 판정. analyze-impact처럼 잠재적 위반 목록에는 미설정. */
-  readonly severity?: "error" | "warning";
+  readonly severity?: 'error' | 'warning';
 }
 
 export interface BrokenIntentLink {
@@ -474,12 +474,12 @@ export interface BrokenIntentLink {
 // ═══════════════════════════════════════════════════════════════
 
 export type DecisionType =
-  | "capacity"
-  | "new-axis"
-  | "new-prefix"
-  | "dim-add"
-  | "merge"
-  | "deprecate";
+  | 'capacity'
+  | 'new-axis'
+  | 'new-prefix'
+  | 'dim-add'
+  | 'merge'
+  | 'deprecate';
 
 export interface CapacityParams {
   readonly axis: string;
@@ -530,12 +530,12 @@ export type DecisionScaffoldParams =
 // ═══════════════════════════════════════════════════════════════
 
 export type MigratorPattern =
-  | "identity"
-  | "append-dim"
-  | "remove-dim"
-  | "reorder"
-  | "composite"
-  | "unknown";
+  | 'identity'
+  | 'append-dim'
+  | 'remove-dim'
+  | 'reorder'
+  | 'composite'
+  | 'unknown';
 
 export interface InferredMigrator {
   readonly pattern: MigratorPattern;

@@ -25,9 +25,7 @@ export interface GraphRetentionGraphResponse {
   keptSnapshotIds: string[];
 }
 
-export type GraphRetentionResponse =
-  | GraphRetentionSweepResponse
-  | GraphRetentionGraphResponse;
+export type GraphRetentionResponse = GraphRetentionSweepResponse | GraphRetentionGraphResponse;
 
 export interface GraphRetentionArgs {
   keepLatest: number;
@@ -41,28 +39,26 @@ export async function fetchGraphRetention(
   const path = args.graphId
     ? `/audit/graphs/${args.graphId}/prune/${args.keepLatest}`
     : `/audit/graphs/prune/${args.keepLatest}`;
-  const res = await fetch(new URL(path, auditUrl), { method: "DELETE" });
+  const res = await fetch(new URL(path, auditUrl), { method: 'DELETE' });
   if (!res.ok) {
-    throw new Error(
-      `fetchGraphRetention ${path}: status=${res.status} body=${await res.text()}`,
-    );
+    throw new Error(`fetchGraphRetention ${path}: status=${res.status} body=${await res.text()}`);
   }
   return (await res.json()) as GraphRetentionResponse;
 }
 
 export function summarizeGraphRetention(result: GraphRetentionResponse): string {
-  if ("graphCount" in result) {
+  if ('graphCount' in result) {
     return [
       `graph-retention sweep keepLatest=${result.keepLatest}`,
       `graphs=${result.graphCount}`,
       `snapshots ${result.beforeCount} -> ${result.afterCount}`,
       `deleted=${result.deletedSnapshotIds.length}`,
-    ].join(" | ");
+    ].join(' | ');
   }
 
   return [
     `graph-retention graph=${result.graphId}`,
     `snapshots ${result.beforeCount} -> ${result.afterCount}`,
     `deleted=${result.deletedSnapshotIds.length}`,
-  ].join(" | ");
+  ].join(' | ');
 }

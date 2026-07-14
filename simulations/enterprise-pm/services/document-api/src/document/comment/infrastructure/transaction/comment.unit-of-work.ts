@@ -1,12 +1,12 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { CommentRepositoryPort } from "../../application/ports/comment-repository.port.js";
-import type { CommentOutboxPort } from "../../application/ports/comment-outbox.port.js";
+import type { CommentRepositoryPort } from '../../application/ports/comment-repository.port.js';
+import type { CommentOutboxPort } from '../../application/ports/comment-outbox.port.js';
 import type {
   CommentTransactionPort,
   CommentTransactionScope,
-} from "../../application/ports/comment-transaction.port.js";
+} from '../../application/ports/comment-transaction.port.js';
 
 export class CommentUnitOfWork {
   constructor(

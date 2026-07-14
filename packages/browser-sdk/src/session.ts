@@ -1,8 +1,8 @@
 /** @def.boundary browser-lifecycle-system */
-import { newQaSessionId, newTraceId } from "@qa-sdk/core";
-import type { MonitorSession } from "./types.js";
+import { newQaSessionId, newTraceId } from '@qa-sdk/core';
+import type { MonitorSession } from './types.js';
 
-const DEFAULT_KEY = "qa_monitor";
+const DEFAULT_KEY = 'qa_monitor';
 
 /**
  * sessionStorage에서 기존 세션을 복원하거나 새로 생성한다.

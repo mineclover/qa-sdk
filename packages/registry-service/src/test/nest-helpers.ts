@@ -1,11 +1,11 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import "reflect-metadata";
-import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
-import { WsAdapter } from "@nestjs/platform-ws";
-import { Test } from "@nestjs/testing";
-import type { ModuleMetadata } from "@nestjs/common";
+import 'reflect-metadata';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { WsAdapter } from '@nestjs/platform-ws';
+import { Test } from '@nestjs/testing';
+import type { ModuleMetadata } from '@nestjs/common';
 
 export interface CompatResponse {
   readonly status: number;
@@ -18,7 +18,7 @@ export interface CompatApp {
   request(
     url: string,
     init?: {
-      method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+      method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
       headers?: Record<string, string>;
       body?: string;
     },
@@ -39,13 +39,13 @@ export async function createNestTestApp(metadata: ModuleMetadata): Promise<NestF
 
 export async function request(
   app: NestFastifyApplication,
-  method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   url: string,
   body?: unknown,
 ) {
   const server = app.getHttpAdapter().getInstance() as {
     inject(options: {
-      method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+      method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
       url: string;
       headers?: Record<string, string>;
       payload?: string;
@@ -62,8 +62,8 @@ export async function request(
     ...(body === undefined
       ? {}
       : {
-          headers: { "content-type": "application/json" },
-          payload: typeof body === "string" ? body : JSON.stringify(body),
+          headers: { 'content-type': 'application/json' },
+          payload: typeof body === 'string' ? body : JSON.stringify(body),
         }),
   });
 }
@@ -77,7 +77,7 @@ export function wrapNestApp(app: NestFastifyApplication): CompatApp {
     async request(url, init = {}) {
       const response = await request(
         app,
-        init.method ?? "GET",
+        init.method ?? 'GET',
         url,
         init.body === undefined ? undefined : init.body,
       );

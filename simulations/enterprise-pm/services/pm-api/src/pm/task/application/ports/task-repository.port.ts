@@ -1,8 +1,8 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { TaskEntity } from "../../domain/index.js";
-import type { TaskTransactionScope } from "./task-transaction.port.js";
+import type { TaskEntity } from '../../domain/index.js';
+import type { TaskTransactionScope } from './task-transaction.port.js';
 
 /**
  * Task Aggregate 의 영속 추상.

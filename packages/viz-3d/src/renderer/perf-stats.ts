@@ -29,20 +29,28 @@ export class PerfMonitor {
     const elapsed = now - this.lastTime;
 
     if (elapsed >= 1000) {
-      this._fps = Math.round(this.frames * 1000 / elapsed);
-      this._frameTime = Math.round(elapsed / this.frames * 100) / 100;
+      this._fps = Math.round((this.frames * 1000) / elapsed);
+      this._frameTime = Math.round((elapsed / this.frames) * 100) / 100;
       this.frames = 0;
       this.lastTime = now;
     }
   }
 
-  get fps(): number { return this._fps; }
-  get frameTime(): number { return this._frameTime; }
+  get fps(): number {
+    return this._fps;
+  }
+  get frameTime(): number {
+    return this._frameTime;
+  }
 
   /** Three.js renderer.info에서 통계 추출 */
-  getStats(rendererInfo: {
-    render: { calls: number; triangles: number; points: number; lines: number };
-  }, cellCount: number, activeCount: number): FrameStats {
+  getStats(
+    rendererInfo: {
+      render: { calls: number; triangles: number; points: number; lines: number };
+    },
+    cellCount: number,
+    activeCount: number,
+  ): FrameStats {
     return {
       fps: this._fps,
       frameTime: this._frameTime,

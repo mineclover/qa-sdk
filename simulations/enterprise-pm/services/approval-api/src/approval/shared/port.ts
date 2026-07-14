@@ -13,7 +13,7 @@ import type {
   ExpenseReportCreate,
   RequestStatus,
   StepDecision,
-} from "./types.js";
+} from './types.js';
 
 export interface ApprovalRepository {
   // BudgetRequest
@@ -21,7 +21,11 @@ export interface ApprovalRepository {
   findBudgetRequest(id: string): Promise<BudgetRequest | null>;
   listBudgetRequestsByProject(projectId: string): Promise<BudgetRequest[]>;
   listBudgetRequestsByRequester(requesterId: string): Promise<BudgetRequest[]>;
-  updateBudgetRequestState(id: string, status: RequestStatus, currentStage: number): Promise<BudgetRequest>;
+  updateBudgetRequestState(
+    id: string,
+    status: RequestStatus,
+    currentStage: number,
+  ): Promise<BudgetRequest>;
 
   // ApprovalStep
   createApprovalSteps(requestId: string, totalStages: number): Promise<ApprovalStep[]>;

@@ -18,28 +18,26 @@
  *    hasBit(base64Decode(token.perms[domain]), featureIndex) → O(1)
  */
 
-import { hasBit } from "weighted-index";
-import { type PermissionVersionStore } from "./permission-version.js";
-import { type RoleRegistry } from "./role-registry.js";
-import { type PermissionClaims, computeSchemaHash, base64ToUint8 } from "./token-enrichment.js";
+import { hasBit } from 'weighted-index';
+import { type PermissionVersionStore } from './permission-version.js';
+import { type RoleRegistry } from './role-registry.js';
+import { type PermissionClaims, computeSchemaHash, base64ToUint8 } from './token-enrichment.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type MiddlewareErrorKind =
-  | "VERSION_MISMATCH"   // 권한 변경됨 → 토큰 재발급 필요
-  | "SCHEMA_MISMATCH"    // feature 정의 변경됨 → 재발급 필요
-  | "NO_DOMAIN_CLAIM"    // 토큰에 해당 도메인 없음
-  | "FEATURE_NOT_FOUND"  // 알 수 없는 feature ID
-  | "PERMISSION_DENIED"; // claim은 있으나 해당 feature bit가 꺼져 있음
+  | 'VERSION_MISMATCH' // 권한 변경됨 → 토큰 재발급 필요
+  | 'SCHEMA_MISMATCH' // feature 정의 변경됨 → 재발급 필요
+  | 'NO_DOMAIN_CLAIM' // 토큰에 해당 도메인 없음
+  | 'FEATURE_NOT_FOUND' // 알 수 없는 feature ID
+  | 'PERMISSION_DENIED'; // claim은 있으나 해당 feature bit가 꺼져 있음
 
 export interface MiddlewareError {
   kind: MiddlewareErrorKind;
   message: string;
 }
 
-export type CheckResult =
-  | { ok: true }
-  | { ok: false; error: MiddlewareError };
+export type CheckResult = { ok: true } | { ok: false; error: MiddlewareError };
 
 // ── PermissionMiddleware ──────────────────────────────────────────────────────
 
@@ -76,21 +74,15 @@ export class PermissionMiddleware {
    * 버전 / 스키마 유효성만 검사한다 (권한 체크 없음).
    * 미들웨어 진입 시 1회 수행하고 이후 checkFromClaims()로 체크.
    */
-  async validate(
-    claims: PermissionClaims & { sub: string },
-  ): Promise<MiddlewareError | null> {
-    return this._checkSchema(claims) ?? await this._checkVersion(claims);
+  async validate(claims: PermissionClaims & { sub: string }): Promise<MiddlewareError | null> {
+    return this._checkSchema(claims) ?? (await this._checkVersion(claims));
   }
 
   /**
    * validate() 통과 후 권한을 반복 체크할 때 사용. O(1), DB 없음.
    * validate()를 먼저 호출했음을 전제한다.
    */
-  checkFromClaims(
-    claims: PermissionClaims,
-    domain: string,
-    feature: string,
-  ): CheckResult {
+  checkFromClaims(claims: PermissionClaims, domain: string, feature: string): CheckResult {
     return this._checkPermission(claims, domain, feature);
   }
 
@@ -101,7 +93,7 @@ export class PermissionMiddleware {
     const currentHash = computeSchemaHash(this.roleRegistry);
     if (claims.perms_schema !== currentHash) {
       return {
-        kind: "SCHEMA_MISMATCH",
+        kind: 'SCHEMA_MISMATCH',
         message: `Permission schema changed. Token schema: ${claims.perms_schema}, current: ${currentHash}. Please re-authenticate.`,
       };
     }
@@ -114,33 +106,43 @@ export class PermissionMiddleware {
     const currentVersion = await this.versionStore.getVersion(claims.sub);
     if (claims.perms_v < currentVersion) {
       return {
-        kind: "VERSION_MISMATCH",
+        kind: 'VERSION_MISMATCH',
         message: `Permission version mismatch for user ${claims.sub}. Token: ${claims.perms_v}, current: ${currentVersion}. Please refresh token.`,
       };
     }
     return null;
   }
 
-  private _checkPermission(
-    claims: PermissionClaims,
-    domain: string,
-    feature: string,
-  ): CheckResult {
+  private _checkPermission(claims: PermissionClaims, domain: string, feature: string): CheckResult {
     const b64 = claims.perms[domain];
     if (!b64) {
-      return { ok: false, error: { kind: "NO_DOMAIN_CLAIM", message: `No permission claim for domain "${domain}"` } };
+      return {
+        ok: false,
+        error: { kind: 'NO_DOMAIN_CLAIM', message: `No permission claim for domain "${domain}"` },
+      };
     }
 
     const featureIds = this.roleRegistry.domainFeatureIds(domain);
     const idx = featureIds.indexOf(feature);
     if (idx === -1) {
-      return { ok: false, error: { kind: "FEATURE_NOT_FOUND", message: `Unknown feature "${feature}" in domain "${domain}"` } };
+      return {
+        ok: false,
+        error: {
+          kind: 'FEATURE_NOT_FOUND',
+          message: `Unknown feature "${feature}" in domain "${domain}"`,
+        },
+      };
     }
 
     const mask = base64ToUint8(b64);
-    return hasBit(mask, idx) ? { ok: true } : {
-      ok: false,
-      error: { kind: "PERMISSION_DENIED", message: `Permission denied: "${feature}" in domain "${domain}"` },
-    };
+    return hasBit(mask, idx)
+      ? { ok: true }
+      : {
+          ok: false,
+          error: {
+            kind: 'PERMISSION_DENIED',
+            message: `Permission denied: "${feature}" in domain "${domain}"`,
+          },
+        };
   }
 }

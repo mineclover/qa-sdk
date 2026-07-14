@@ -5,8 +5,8 @@
  * StaticCatalogProvider — 단일 Catalog를 래핑하는 간단한 구현.
  */
 
-import type { Catalog } from "./catalog.types.js";
-import type { CatalogProvider, CatalogInfo } from "./catalog-provider.js";
+import type { Catalog } from './catalog.types.js';
+import type { CatalogProvider, CatalogInfo } from './catalog-provider.js';
 
 export class StaticCatalogProvider implements CatalogProvider {
   private readonly catalog: Catalog;
@@ -23,10 +23,12 @@ export class StaticCatalogProvider implements CatalogProvider {
   }
 
   listCatalogs(): readonly CatalogInfo[] {
-    return [{
-      id: this.catalog.id,
-      name: this.catalog.name,
-      prefixCount: Object.keys(this.catalog.prefixes).length,
-    }];
+    return [
+      {
+        id: this.catalog.id,
+        name: this.catalog.name,
+        prefixCount: Object.keys(this.catalog.prefixes).length,
+      },
+    ];
   }
 }

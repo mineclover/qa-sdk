@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc 02-canary-topology
 
-import { env } from "../config/env.js";
+import { env } from '../config/env.js';
 
 /**
  * 컨테이너 자기 정체성.
@@ -23,8 +23,6 @@ export interface ServiceVersionStamp {
  *
  * spec 02 §4.1 인용: stamp는 필수 — 누락되면 ingest 측 stamp gate에서 차단된다.
  */
-export function withServiceVersion<T extends object>(
-  payload: T,
-): T & ServiceVersionStamp {
+export function withServiceVersion<T extends object>(payload: T): T & ServiceVersionStamp {
   return { ...payload, serviceVersion: SERVICE_VERSION };
 }

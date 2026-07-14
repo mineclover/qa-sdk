@@ -10,26 +10,19 @@
 // 각 handle은 HTTP fetch 기반(env-driven URL). 단위 테스트는 fetchImpl 주입으로
 // 격리한다.
 
-import { createAuditFetcher } from "./audit-fetcher.js";
-import { createWaitForCycles } from "./wait-for-cycles.js";
-import { createCatalogStore } from "./catalog-store.js";
-import { createFaultInjector } from "./fault-injector.js";
-import {
-  createComposeHandle,
-  type ExecLike,
-} from "./compose-handle.js";
-import { createBurstLoad } from "./burst-load.js";
-import { createBffRead } from "./bff-read.js";
-import { createOutboxClient } from "./outbox-client.js";
-import { createBitmapMetrics } from "./bitmap-metrics.js";
-import { createBitmapVersionMutator } from "./bitmap-version-mutator.js";
-import { createBitmapVersionCheck } from "./bitmap-version-check.js";
-import { createGatewayStickyConsistency } from "./gateway-sticky-consistency.js";
-import {
-  createSimGatewayFetch,
-  createSimHandle,
-  type SimHandle,
-} from "./sim-handle.js";
+import { createAuditFetcher } from './audit-fetcher.js';
+import { createWaitForCycles } from './wait-for-cycles.js';
+import { createCatalogStore } from './catalog-store.js';
+import { createFaultInjector } from './fault-injector.js';
+import { createComposeHandle, type ExecLike } from './compose-handle.js';
+import { createBurstLoad } from './burst-load.js';
+import { createBffRead } from './bff-read.js';
+import { createOutboxClient } from './outbox-client.js';
+import { createBitmapMetrics } from './bitmap-metrics.js';
+import { createBitmapVersionMutator } from './bitmap-version-mutator.js';
+import { createBitmapVersionCheck } from './bitmap-version-check.js';
+import { createGatewayStickyConsistency } from './gateway-sticky-consistency.js';
+import { createSimGatewayFetch, createSimHandle, type SimHandle } from './sim-handle.js';
 
 export interface SimHandlesUrls {
   /** audit-recorder query API base URL. 시나리오 9~17 audit-fetcher/wait-for-cycles. */
@@ -60,21 +53,21 @@ export interface SimHandlesOptions {
 export interface WireSimHandlesArgs extends SimHandlesUrls, SimHandlesOptions {}
 
 const HANDLE_KEYS = [
-  "__simAuditFetcher",
-  "__simWaitForCycles",
-  "__simCatalogStore",
-  "__simFaultInjector",
-  "__simComposeHandle",
-  "__simBurstLoad",
-  "__simBffRead",
-  "__simOutboxClient",
-  "__simBitmapMetrics",
-  "__simBitmapVersionMutator",
-  "__simBitmapVersionCheck",
-  "__simGatewayStickyConsistency",
+  '__simAuditFetcher',
+  '__simWaitForCycles',
+  '__simCatalogStore',
+  '__simFaultInjector',
+  '__simComposeHandle',
+  '__simBurstLoad',
+  '__simBffRead',
+  '__simOutboxClient',
+  '__simBitmapMetrics',
+  '__simBitmapVersionMutator',
+  '__simBitmapVersionCheck',
+  '__simGatewayStickyConsistency',
   // 시나리오 1~8 — HTTP 모드 진입점.
-  "__simHandle",
-  "__simGatewayFetch",
+  '__simHandle',
+  '__simGatewayFetch',
 ] as const;
 
 type HandleKey = (typeof HANDLE_KEYS)[number];
@@ -91,8 +84,7 @@ type HandleKey = (typeof HANDLE_KEYS)[number];
  */
 export function wireSimHandles(args: WireSimHandlesArgs): void {
   const t = args.timeoutMs;
-  const burstUrl =
-    args.burstLoadTargetUrl ?? `${args.gatewayUrl.replace(/\/$/, "")}/healthz`;
+  const burstUrl = args.burstLoadTargetUrl ?? `${args.gatewayUrl.replace(/\/$/, '')}/healthz`;
 
   const simHandle: SimHandle = createSimHandle({
     gatewayUrl: args.gatewayUrl,
@@ -188,4 +180,4 @@ export {
   createSimHandle,
   createSimGatewayFetch,
 };
-export type { SimHandle, SimHandleFixtures } from "./sim-handle.js";
+export type { SimHandle, SimHandleFixtures } from './sim-handle.js';

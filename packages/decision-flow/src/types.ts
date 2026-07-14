@@ -13,30 +13,30 @@
  * "계획한다"도 하나의 인지 단계(plan)이다.
  */
 export type CognitivePhase =
-  | "perceive"   // 인지: 정보 수집, 관찰
-  | "interpret"  // 해석: 정보의 의미 파악
-  | "evaluate"   // 평가: 선택지 비교 분석
-  | "decide"     // 결정: 분기 선택
-  | "plan"       // 계획: 실행 방법 구체화
-  | "execute"    // 실행: 선택 이행
-  | "reflect";   // 성찰: 결과 회고
+  | 'perceive' // 인지: 정보 수집, 관찰
+  | 'interpret' // 해석: 정보의 의미 파악
+  | 'evaluate' // 평가: 선택지 비교 분석
+  | 'decide' // 결정: 분기 선택
+  | 'plan' // 계획: 실행 방법 구체화
+  | 'execute' // 실행: 선택 이행
+  | 'reflect'; // 성찰: 결과 회고
 
 // ─── 근거 체계 ───────────────────────────────────────────
 
 /** 근거 유형 */
 export type EvidenceKind =
-  | "data"       // 정량적 데이터
-  | "rule"       // 규칙/정책 기반
-  | "precedent"  // 선례 기반
-  | "intuition"  // 직관/경험
-  | "external";  // 외부 입력
+  | 'data' // 정량적 데이터
+  | 'rule' // 규칙/정책 기반
+  | 'precedent' // 선례 기반
+  | 'intuition' // 직관/경험
+  | 'external'; // 외부 입력
 
 /** 분기 선택의 근거 */
 export interface Evidence {
   readonly kind: EvidenceKind;
-  readonly source: string;                    // 근거 출처
-  readonly content: string;                   // 근거 내용
-  readonly weight: number;                    // 0-1, 의사결정에 미친 영향도
+  readonly source: string; // 근거 출처
+  readonly content: string; // 근거 내용
+  readonly weight: number; // 0-1, 의사결정에 미친 영향도
   readonly metadata?: Record<string, unknown>;
 }
 
@@ -44,8 +44,8 @@ export interface Evidence {
 
 /** 정책/분기 평가용 조건 */
 export interface Condition {
-  readonly field: string;   // "gate.risk.branch" 또는 "context.hours"
-  readonly op: "eq" | "neq" | "in" | "gt" | "lt" | "gte" | "lte" | "exists";
+  readonly field: string; // "gate.risk.branch" 또는 "context.hours"
+  readonly op: 'eq' | 'neq' | 'in' | 'gt' | 'lt' | 'gte' | 'lte' | 'exists';
   readonly value: unknown;
 }
 
@@ -78,7 +78,7 @@ export interface BranchSchema {
  * tactical: 국소적 영향. 독립적으로 되돌릴 수 있다.
  *           예: test-strategy, observability-level
  */
-export type GateWeight = "core" | "structural" | "tactical";
+export type GateWeight = 'core' | 'structural' | 'tactical';
 
 /**
  * gate 간 인과 의존.
@@ -89,9 +89,9 @@ export interface GateDependency {
   readonly gateId: string;
   /** 의존 성격 */
   readonly kind:
-    | "constrains"   // 이 gate가 대상 gate의 선택 범위를 제약
-    | "enables"      // 이 gate의 특정 branch가 대상 gate를 활성화
-    | "invalidates"; // 이 gate를 변경하면 대상 gate를 무효화
+    | 'constrains' // 이 gate가 대상 gate의 선택 범위를 제약
+    | 'enables' // 이 gate의 특정 branch가 대상 gate를 활성화
+    | 'invalidates'; // 이 gate를 변경하면 대상 gate를 무효화
 }
 
 /** 분기점(Gate) = 하나의 의사결정 지점 */
@@ -173,7 +173,7 @@ export interface DecisionUnit {
 }
 
 /** 의사결정 판정 — 결정 완료 후 성공/실패/보류를 기록 */
-export type DecisionVerdict = "success" | "failure" | "deferred" | "superseded";
+export type DecisionVerdict = 'success' | 'failure' | 'deferred' | 'superseded';
 
 /** 의사결정 판정 기록 */
 export interface DecisionVerdictRecord {
@@ -191,20 +191,20 @@ export interface DecisionVerdictRecord {
 
 /** 플로우 실행 상태 */
 export type FlowStatus =
-  | "pending"     // 시작 전
-  | "active"      // 진행 중
-  | "completed"   // 정상 완료
-  | "abandoned"   // 포기
-  | "blocked";    // 외부 요인으로 차단
+  | 'pending' // 시작 전
+  | 'active' // 진행 중
+  | 'completed' // 정상 완료
+  | 'abandoned' // 포기
+  | 'blocked'; // 외부 요인으로 차단
 
 /** 한 gate에서의 실제 선택 */
 export interface GateSelection {
   readonly gateId: string;
   readonly branchId: string;
   readonly evidence: readonly Evidence[];
-  readonly confidence: number;          // 0-1
-  readonly timestamp: string;           // ISO-8601
-  readonly durationMs: number;          // 이 gate에서 결정까지 걸린 시간
+  readonly confidence: number; // 0-1
+  readonly timestamp: string; // ISO-8601
+  readonly durationMs: number; // 이 gate에서 결정까지 걸린 시간
   /** subFlow gate인 경우, 하위 플로우 인스턴스 ID */
   readonly subFlowInstanceId?: string;
   /** 이 선택의 원인이 된 이전 gate 선택 (인과 추적) */
@@ -259,7 +259,7 @@ export interface FlowPolicy {
   readonly id: string;
   readonly name: string;
   readonly flowId: string;
-  readonly priority: number;             // 높을수록 우선
+  readonly priority: number; // 높을수록 우선
   readonly conditions: readonly Condition[];
   readonly action: PolicyAction;
   readonly rationale: string;
@@ -273,9 +273,9 @@ export interface FlowPolicy {
  */
 export interface FlowCoordinateSpace {
   readonly flowId: string;
-  readonly shape: readonly number[];      // 각 gate의 분기 수 (capacity)
-  readonly labels: readonly string[];     // gate IDs
-  readonly totalPaths: number;            // shape 곱 = 전체 경로 수
+  readonly shape: readonly number[]; // 각 gate의 분기 수 (capacity)
+  readonly labels: readonly string[]; // gate IDs
+  readonly totalPaths: number; // shape 곱 = 전체 경로 수
   /** subFlow를 참조하는 gate 인덱스 → subFlowId 매핑 */
   readonly subFlowRefs: ReadonlyMap<number, string>;
 }
@@ -433,7 +433,7 @@ export interface TestPlan {
 /** 테스트 대상 */
 export interface TestTarget {
   /** 대상 유형 (file/module/api/flow) */
-  readonly type: "file" | "module" | "api" | "flow";
+  readonly type: 'file' | 'module' | 'api' | 'flow';
   /** 대상 참조 (파일 경로, 모듈 이름 등) */
   readonly ref: string;
   /** 테스트 설명 */

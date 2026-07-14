@@ -11,17 +11,8 @@
  *   - registered SQL 비교: PG `= TRUE` (D1 `= 1`)
  */
 
-import {
-  and,
-  asc,
-  count as countFn,
-  desc,
-  eq,
-  lt,
-  sql,
-  sum,
-} from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { and, asc, count as countFn, desc, eq, lt, sql, sum } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type {
   KeyObservation,
   KeyObservationEntry,
@@ -29,18 +20,11 @@ import type {
   KeyObservationSummary,
   PayloadSummary,
   PrefixObservationSummary,
-} from "@qa-sdk/core";
-import { parsePackedAddress } from "@qa-sdk/core/coordinates/address-context-schema";
+} from '@qa-sdk/core';
+import { parsePackedAddress } from '@qa-sdk/core/coordinates/address-context-schema';
 
-import {
-  EMPTY_PAYLOAD_SUMMARY,
-  mergePayloadSummary,
-} from "../shared/payload-summary.js";
-import {
-  keyObservationPrefixes,
-  keyObservations,
-  type KeyObservationPgRow,
-} from "./schema.js";
+import { EMPTY_PAYLOAD_SUMMARY, mergePayloadSummary } from '../shared/payload-summary.js';
+import { keyObservationPrefixes, keyObservations, type KeyObservationPgRow } from './schema.js';
 
 export class PgKeyObservationStore implements KeyObservationStore {
   constructor(private readonly db: PostgresJsDatabase) {}
@@ -74,8 +58,7 @@ export class PgKeyObservationStore implements KeyObservationStore {
         );
 
       const prevSummary =
-        (existing?.payloadSummary as PayloadSummary | undefined) ??
-        EMPTY_PAYLOAD_SUMMARY;
+        (existing?.payloadSummary as PayloadSummary | undefined) ?? EMPTY_PAYLOAD_SUMMARY;
       const merged = mergePayloadSummary(prevSummary, entry);
 
       await this.db
@@ -92,11 +75,7 @@ export class PgKeyObservationStore implements KeyObservationStore {
           payloadSummary: merged,
         })
         .onConflictDoUpdate({
-          target: [
-            keyObservations.prefixId,
-            keyObservations.version,
-            keyObservations.address,
-          ],
+          target: [keyObservations.prefixId, keyObservations.version, keyObservations.address],
           set: {
             count: sql`${keyObservations.count} + 1`,
             lastSeen: entry.timestamp,
@@ -122,10 +101,7 @@ export class PgKeyObservationStore implements KeyObservationStore {
           lastSeen: entry.timestamp,
         })
         .onConflictDoUpdate({
-          target: [
-            keyObservationPrefixes.prefixId,
-            keyObservationPrefixes.version,
-          ],
+          target: [keyObservationPrefixes.prefixId, keyObservationPrefixes.version],
           set: {
             distinctKeys: sql`CASE
               WHEN NOT EXISTS (
@@ -147,12 +123,10 @@ export class PgKeyObservationStore implements KeyObservationStore {
 
   async findByPrefix(
     prefixId: string,
-    opts?: { limit?: number; orderBy?: "count" | "last_seen" },
+    opts?: { limit?: number; orderBy?: 'count' | 'last_seen' },
   ): Promise<KeyObservation[]> {
     const orderCol =
-      opts?.orderBy === "last_seen"
-        ? desc(keyObservations.lastSeen)
-        : desc(keyObservations.count);
+      opts?.orderBy === 'last_seen' ? desc(keyObservations.lastSeen) : desc(keyObservations.count);
 
     const rows = await this.db
       .select()
@@ -207,9 +181,7 @@ export class PgKeyObservationStore implements KeyObservationStore {
     return rows.map(toKeyObservation);
   }
 
-  async findUnregistered(opts?: {
-    limit?: number;
-  }): Promise<KeyObservation[]> {
+  async findUnregistered(opts?: { limit?: number }): Promise<KeyObservation[]> {
     const rows = await this.db
       .select()
       .from(keyObservations)
@@ -220,9 +192,7 @@ export class PgKeyObservationStore implements KeyObservationStore {
     return rows.map(toKeyObservation);
   }
 
-  async prefixSummary(
-    prefixId?: string,
-  ): Promise<PrefixObservationSummary[]> {
+  async prefixSummary(prefixId?: string): Promise<PrefixObservationSummary[]> {
     const rows = prefixId
       ? await this.db
           .select()
@@ -251,7 +221,6 @@ function toKeyObservation(row: KeyObservationPgRow): KeyObservation {
     count: row.count,
     firstSeen: row.firstSeen,
     lastSeen: row.lastSeen,
-    payloadSummary:
-      (row.payloadSummary as PayloadSummary) ?? EMPTY_PAYLOAD_SUMMARY,
+    payloadSummary: (row.payloadSummary as PayloadSummary) ?? EMPTY_PAYLOAD_SUMMARY,
   };
 }

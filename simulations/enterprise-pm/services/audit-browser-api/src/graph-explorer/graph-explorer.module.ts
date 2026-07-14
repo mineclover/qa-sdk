@@ -1,46 +1,43 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc domain-slice-architecture
 
-import { Global, Module, type Provider } from "@nestjs/common";
-import {
-  SLICE_LOGGER_PORT,
-  type LoggerPort,
-} from "@qa-sdk/sim-domain-slice-kit";
-import { createSimAuthorizationGraphStore } from "@qa-sdk/sim-authorization-graph-provider";
-import { createConnection } from "db-bootstrap";
-import type { AuthorizationGraphStore } from "authorization-ontology";
+import { Global, Module, type Provider } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
+import { createSimAuthorizationGraphStore } from '@qa-sdk/sim-authorization-graph-provider';
+import { createConnection } from 'db-bootstrap';
+import type { AuthorizationGraphStore } from 'authorization-ontology';
 
-import { env } from "../config/env.js";
-import { GraphStoreQueryPort } from "./application/ports/graph-store-query.port.js";
-import { GraphStoreQueryAdapter } from "./infrastructure/adapters/graph-store-query.adapter.js";
-import { createGraphExplorerLogger } from "./infrastructure/logging/graph-explorer.logger.js";
+import { env } from '../config/env.js';
+import { GraphStoreQueryPort } from './application/ports/graph-store-query.port.js';
+import { GraphStoreQueryAdapter } from './infrastructure/adapters/graph-store-query.adapter.js';
+import { createGraphExplorerLogger } from './infrastructure/logging/graph-explorer.logger.js';
 import {
   GRAPH_RETENTION_HOUSEKEEPING_OPTIONS,
   GraphRetentionHousekeepingService,
   type GraphRetentionHousekeepingOptions,
-} from "./infrastructure/housekeeping/graph-retention-housekeeping.service.js";
-import { GraphCatalogBff } from "./presentation/bff/graph-catalog.bff.js";
-import { GraphCatalogController } from "./presentation/bff/graph-catalog.controller.js";
+} from './infrastructure/housekeeping/graph-retention-housekeeping.service.js';
+import { GraphCatalogBff } from './presentation/bff/graph-catalog.bff.js';
+import { GraphCatalogController } from './presentation/bff/graph-catalog.controller.js';
 
 /** 외부 인스턴스 토큰 — test-bootstrap 가 같은 토큰으로 useValue 주입. */
 export const AUTHORIZATION_GRAPH_STORE = Symbol.for(
-  "sim-audit-browser-api/graph-explorer/AuthorizationGraphStore",
+  'sim-audit-browser-api/graph-explorer/AuthorizationGraphStore',
 );
 
 const authorizationGraphStoreProvider: Provider = {
   provide: AUTHORIZATION_GRAPH_STORE,
   useFactory: async (): Promise<AuthorizationGraphStore> => {
     const connection = await createConnection(
-      env.QA_DB_DIALECT === "sqlite"
-        ? { dialect: "sqlite", sqlitePath: env.QA_SQLITE_PATH }
+      env.QA_DB_DIALECT === 'sqlite'
+        ? { dialect: 'sqlite', sqlitePath: env.QA_SQLITE_PATH }
         : {
-            dialect: "pg",
+            dialect: 'pg',
             pgHost: env.QA_PG_HOST!,
             pgPort: env.QA_PG_PORT!,
             pgDatabase: env.QA_PG_DATABASE!,
             pgUser: env.QA_PG_USER!,
             pgPassword: env.QA_PG_PASSWORD!,
-            pgSchema: env.QA_PG_SCHEMA ?? "sim",
+            pgSchema: env.QA_PG_SCHEMA ?? 'sim',
           },
     );
     return createSimAuthorizationGraphStore({ dialect: connection.dialect, db: connection.db });

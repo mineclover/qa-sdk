@@ -12,7 +12,10 @@ export interface SubscriptionDetailReadModel {
 
 /** Read 전용 추상 (CQRS). */
 export abstract class SubscriptionReadModelQuery {
-  abstract findDetail(userId: string, eventType: string): Promise<SubscriptionDetailReadModel | null>;
+  abstract findDetail(
+    userId: string,
+    eventType: string,
+  ): Promise<SubscriptionDetailReadModel | null>;
   abstract listForUser(userId: string): Promise<SubscriptionDetailReadModel[]>;
   abstract listSubscribersByEventType(eventType: string): Promise<SubscriptionDetailReadModel[]>;
 }

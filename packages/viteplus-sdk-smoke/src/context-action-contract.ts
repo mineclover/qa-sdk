@@ -6,9 +6,7 @@ import {
   type ScopeNesting,
 } from '@qa-sdk/core';
 
-export type ContextActionFeatureId =
-  | 'canonical-review'
-  | 'incident-escalation';
+export type ContextActionFeatureId = 'canonical-review' | 'incident-escalation';
 
 export type ContextActionBoundaryId =
   | 'page-root'
@@ -109,9 +107,7 @@ export function validateContextActionFeature(
       },
       'log-event': {
         scopeId: 'handlers',
-        scopeContracts: [
-          { contractId: 'logging-session', required: false },
-        ],
+        scopeContracts: [{ contractId: 'logging-session', required: false }],
       },
       'render-view': {
         scopeId: 'view',

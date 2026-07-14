@@ -11,21 +11,17 @@
  * Returns HTML strings for use inside a <table class="formula-tbl"> wrapper.
  */
 
-import { subscript } from "weighted-ui";
+import { subscript } from 'weighted-ui';
 
 // ── Encode steps ──────────────────────────────────────────────────────────
 
 /**
  * Returns 4 <tr> rows: formula → substitution → calculation → result
  */
-export function encodeRowsHtml(
-  coords:  number[],
-  weights: number[],
-  id:      number,
-): string {
-  const fmtFml = coords.map((_, i) => `(x${subscript(i + 1)}−1)×${weights[i]}`).join(" + ");
-  const fmtSub = coords.map((x, i) => `(${x}−1)×${weights[i]}`).join(" + ");
-  const fmtCal = coords.map((x, i) => String((x - 1) * weights[i])).join(" + ");
+export function encodeRowsHtml(coords: number[], weights: number[], id: number): string {
+  const fmtFml = coords.map((_, i) => `(x${subscript(i + 1)}−1)×${weights[i]}`).join(' + ');
+  const fmtSub = coords.map((x, i) => `(${x}−1)×${weights[i]}`).join(' + ');
+  const fmtCal = coords.map((x, i) => String((x - 1) * weights[i])).join(' + ');
 
   return `
     <tr>
@@ -53,14 +49,17 @@ export function encodeRowsHtml(
  * Returns <tr> rows: formula → per-dimension computation
  */
 export function decodeRowsHtml(
-  id:      number,
+  id: number,
   weights: number[],
-  shape:   readonly number[],
+  shape: readonly number[],
   decoded: number[],
 ): string {
-  const perDim = decoded.map((xi, i) =>
-    `x${subscript(i + 1)} = ⌊${id}/${weights[i]}⌋ mod ${shape[i]} + 1 = <strong>${xi}</strong>`
-  ).join("<br/>");
+  const perDim = decoded
+    .map(
+      (xi, i) =>
+        `x${subscript(i + 1)} = ⌊${id}/${weights[i]}⌋ mod ${shape[i]} + 1 = <strong>${xi}</strong>`,
+    )
+    .join('<br/>');
 
   return `
     <tr>
@@ -79,4 +78,3 @@ export function decodeRowsHtml(
 export function bitCheckHtml(id: number): string {
   return `<code class="lib-code">bitmask[${id} &gt;&gt; 3] &amp; (1 &lt;&lt; (${id} &amp; 7))</code>`;
 }
-

@@ -1,7 +1,7 @@
-import type { Tree } from "@angular-devkit/schematics";
-import ts from "typescript";
+import type { Tree } from '@angular-devkit/schematics';
+import ts from 'typescript';
 
-import { classify, dasherize } from "./strings.js";
+import { classify, dasherize } from './strings.js';
 
 export interface WireModuleOptions {
   parentModule: string;
@@ -16,7 +16,7 @@ export function wireDomainModule(host: Tree, options: WireModuleOptions): void {
     throw new Error(`Parent module not found: ${parentModulePath}`);
   }
 
-  const sourceText = buffer.toString("utf-8");
+  const sourceText = buffer.toString('utf-8');
   const moduleClassName = `${classify(options.name)}Module`;
   const importPath = relativeImport(parentModulePath, options.generatedModulePath);
   const importStatement = `import { ${moduleClassName} } from "${importPath}";\n`;
@@ -38,7 +38,7 @@ export function wireDomainModule(host: Tree, options: WireModuleOptions): void {
     throw new Error(`No @Module decorator found in ${parentModulePath}`);
   }
 
-  const importsProperty = findObjectArrayProperty(moduleDecorator, "imports");
+  const importsProperty = findObjectArrayProperty(moduleDecorator, 'imports');
   if (!importsProperty) {
     throw new Error(`No imports array found in @Module decorator: ${parentModulePath}`);
   }
@@ -67,12 +67,14 @@ function findNestModuleDecorator(sourceFile: ts.SourceFile): ts.Decorator | unde
       return;
     }
 
-    const decorators = ts.canHaveDecorators(node) ? ts.getDecorators(node) ?? [] : [];
+    const decorators = ts.canHaveDecorators(node) ? (ts.getDecorators(node) ?? []) : [];
     found = decorators.find((decorator) => {
       const expression = decorator.expression;
-      return ts.isCallExpression(expression)
-        && ts.isIdentifier(expression.expression)
-        && expression.expression.text === "Module";
+      return (
+        ts.isCallExpression(expression) &&
+        ts.isIdentifier(expression.expression) &&
+        expression.expression.text === 'Module'
+      );
     });
   };
 
@@ -126,21 +128,21 @@ function insertIntoArray(
 }
 
 function relativeImport(fromFile: string, toFile: string): string {
-  const fromParts = normalizePath(fromFile).split("/").slice(0, -1);
-  const toParts = normalizePath(toFile).replace(/\.ts$/, "").split("/");
+  const fromParts = normalizePath(fromFile).split('/').slice(0, -1);
+  const toParts = normalizePath(toFile).replace(/\.ts$/, '').split('/');
 
   while (fromParts.length > 0 && toParts.length > 0 && fromParts[0] === toParts[0]) {
     fromParts.shift();
     toParts.shift();
   }
 
-  const up = fromParts.map(() => "..");
-  const path = [...up, ...toParts].join("/");
-  return path.startsWith(".") ? path : `./${path}`;
+  const up = fromParts.map(() => '..');
+  const path = [...up, ...toParts].join('/');
+  return path.startsWith('.') ? path : `./${path}`;
 }
 
 export function normalizePath(path: string): string {
-  return path.replace(/\\/g, "/").replace(/^\.\/+/, "");
+  return path.replace(/\\/g, '/').replace(/^\.\/+/, '');
 }
 
 export function domainFolderFor(parentModule: string, name: string): string {
@@ -148,17 +150,17 @@ export function domainFolderFor(parentModule: string, name: string): string {
 }
 
 export function parentFolderFor(parentModule: string): string {
-  const parentDir = normalizePath(parentModule).split("/").slice(0, -1).join("/");
+  const parentDir = normalizePath(parentModule).split('/').slice(0, -1).join('/');
   return parentDir;
 }
 
 function domainRootFor(parentModule: string): string {
   const parentDir = parentFolderFor(parentModule);
-  if (parentDir.endsWith("/modules") || parentDir.includes("/modules/")) {
+  if (parentDir.endsWith('/modules') || parentDir.includes('/modules/')) {
     return parentDir;
   }
-  if (parentDir === "src") {
-    return "src/modules";
+  if (parentDir === 'src') {
+    return 'src/modules';
   }
   return `${parentDir}/modules`;
 }

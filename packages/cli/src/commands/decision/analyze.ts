@@ -1,23 +1,23 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import {
   analyzeGateStructure,
   identifyCoreGates,
   validateFlowSchema,
   type FlowSchema,
   type GateProfile,
-} from "decision-flow";
-import { parse as parseYaml } from "taxonomy-engine";
+} from 'decision-flow';
+import { parse as parseYaml } from 'taxonomy-engine';
 import {
   extractEvidence,
   parseDecisionFile,
   resolveDecisionLink,
   toFlowSchema,
   type DecisionFile,
-} from "taxonomy-decision-bridge";
+} from 'taxonomy-decision-bridge';
 
-const TAX_DIR = "docs/taxonomies";
-const DECISIONS_DIR = "docs/decisions";
+const TAX_DIR = 'docs/taxonomies';
+const DECISIONS_DIR = 'docs/decisions';
 
 type AnalyzeArgs = {
   json: boolean;
@@ -37,7 +37,7 @@ type AnalyzeReport = {
 
 export async function decisionAnalyzeCmd(args: string[]): Promise<void> {
   const parsed = parseAnalyzeArgs(args);
-  if ("error" in parsed) {
+  if ('error' in parsed) {
     console.error(parsed.error);
     process.exit(1);
     return;
@@ -48,7 +48,7 @@ export async function decisionAnalyzeCmd(args: string[]): Promise<void> {
   let yamlFiles: string[];
   try {
     yamlFiles = readdirSync(join(cwd, TAX_DIR))
-      .filter((f) => f.endsWith(".yaml"))
+      .filter((f) => f.endsWith('.yaml'))
       .map((f) => join(TAX_DIR, f));
   } catch (e) {
     console.error(`docs/taxonomies/ 읽기 실패: ${(e as Error).message}`);
@@ -57,9 +57,9 @@ export async function decisionAnalyzeCmd(args: string[]): Promise<void> {
   }
 
   for (const yamlFile of yamlFiles) {
-    const text = readFileSync(join(cwd, yamlFile), "utf8");
+    const text = readFileSync(join(cwd, yamlFile), 'utf8');
     const r = parseYaml(text);
-    if ("error" in r) continue;
+    if ('error' in r) continue;
     for (const [axisName, axis] of r.ir.axes) {
       for (const entry of axis.entries) {
         if (!entry.decisionLink) continue;
@@ -70,14 +70,14 @@ export async function decisionAnalyzeCmd(args: string[]): Promise<void> {
           yamlAbsDir: dirname(join(cwd, yamlFile)),
           decisionsDir: join(cwd, DECISIONS_DIR),
         });
-        if (resolved.kind === "external" || resolved.kind === "unsupported") {
+        if (resolved.kind === 'external' || resolved.kind === 'unsupported') {
           continue;
         }
         const decisionPath = resolved.absPath;
         if (!existsSync(decisionPath)) continue;
         let decisionFile: DecisionFile;
         try {
-          decisionFile = parseDecisionFile(readFileSync(decisionPath, "utf8"));
+          decisionFile = parseDecisionFile(readFileSync(decisionPath, 'utf8'));
         } catch {
           continue;
         }
@@ -110,8 +110,8 @@ export async function decisionAnalyzeCmd(args: string[]): Promise<void> {
 function parseAnalyzeArgs(args: string[]): AnalyzeArgs | { error: string } {
   const opts: AnalyzeArgs = { json: false };
   for (const a of args) {
-    if (a === "--json") opts.json = true;
-    else if (!a.startsWith("--")) opts.refFilter = a;
+    if (a === '--json') opts.json = true;
+    else if (!a.startsWith('--')) opts.refFilter = a;
     else return { error: `알 수 없는 옵션: ${a}` };
   }
   return opts;
@@ -123,7 +123,7 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
     return;
   }
   if (reports.length === 0) {
-    console.log("✔ 분석 대상 decision 없음");
+    console.log('✔ 분석 대상 decision 없음');
     return;
   }
   for (const r of reports) {
@@ -145,7 +145,7 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
 
     console.log(
       `  gates:         ${gates.length}` +
-        (isMulti ? ` (${gates.map((g) => g.id).join(", ")})` : ""),
+        (isMulti ? ` (${gates.map((g) => g.id).join(', ')})` : ''),
     );
 
     if (isMulti) {
@@ -155,9 +155,9 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
         const profile = r.profiles.find((p) => p.gateId === g.id);
         const transitiveImpact = profile?.transitiveImpact ?? 0;
         console.log(
-          `    [${g.id}] phase=${g.phase} weight=${g.weight ?? "tactical"}` +
+          `    [${g.id}] phase=${g.phase} weight=${g.weight ?? 'tactical'}` +
             ` branches=${branchCount}` +
-            (reqEv.length ? ` evidence=[${reqEv.join(",")}]` : ""),
+            (reqEv.length ? ` evidence=[${reqEv.join(',')}]` : ''),
         );
         if (profile) {
           console.log(
@@ -170,12 +170,12 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
       const branchCount = g.branches?.length ?? 0;
       console.log(
         `  branches:      ${branchCount}` +
-          (branchCount ? ` (${g.branches!.map((b) => b.id).join(", ")})` : ""),
+          (branchCount ? ` (${g.branches!.map((b) => b.id).join(', ')})` : ''),
       );
       const reqEv = g.requiredEvidence ?? [];
       console.log(
         `  evidence:      ${r.evidenceCount}` +
-          (reqEv.length ? ` (kinds: ${reqEv.join(", ")})` : ""),
+          (reqEv.length ? ` (kinds: ${reqEv.join(', ')})` : ''),
       );
       const profile = r.profiles[0];
       if (profile) {
@@ -188,7 +188,7 @@ function outputReport(reports: AnalyzeReport[], opts: AnalyzeArgs): void {
 
     console.log(
       `  core gates:    ${r.coreGateIds.length}/${r.profiles.length}` +
-        (r.coreGateIds.length ? ` (${r.coreGateIds.join(", ")})` : ""),
+        (r.coreGateIds.length ? ` (${r.coreGateIds.join(', ')})` : ''),
     );
     if (!r.validation.valid) {
       console.log(`  schema issues: ${r.validation.issues.length}`);

@@ -1,20 +1,20 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createDrizzleOutboxPort,
   type OutboxPort,
   type OutboxRecord,
-} from "@qa-sdk/sim-domain-slice-kit";
-import type { TransactionScope } from "@qa-sdk/sim-domain-slice-kit";
-import { buildSchemaHash } from "sim-identifier-grammar";
-import { approvalOutboxEvents as sqliteApprovalOutbox } from "../../../sqlite/schema.js";
-import { approvalOutboxEvents as pgApprovalOutbox } from "../../../pg/schema.js";
-import { withServiceVersion } from "../../../../lib/service-version.js";
+} from '@qa-sdk/sim-domain-slice-kit';
+import type { TransactionScope } from '@qa-sdk/sim-domain-slice-kit';
+import { buildSchemaHash } from 'sim-identifier-grammar';
+import { approvalOutboxEvents as sqliteApprovalOutbox } from '../../../sqlite/schema.js';
+import { approvalOutboxEvents as pgApprovalOutbox } from '../../../pg/schema.js';
+import { withServiceVersion } from '../../../../lib/service-version.js';
 
-export type ResourceDialect = "sqlite" | "pg";
+export type ResourceDialect = 'sqlite' | 'pg';
 
 export interface ResourceOutboxFactoryOpts {
   readonly dialect: ResourceDialect;
@@ -24,18 +24,18 @@ export interface ResourceOutboxFactoryOpts {
 // 단계 8(Plan C): build-time schemaHash. spec 02 §4.2.
 // EventName 계약: { domain, aggregate, verbPast } — sim-identifier-grammar/event-name.ts SSOT.
 const RESOURCE_EVENT_NAME = {
-  domain: "approval",
-  aggregate: "resource",
-  verbPast: "submitted",
+  domain: 'approval',
+  aggregate: 'resource',
+  verbPast: 'submitted',
 } as const;
 const RESOURCE_PAYLOAD_SHAPE = {
-  id: "string",
-  requesterId: "string",
-  resourceType: "string",
-  status: "string",
-  currentStage: "number",
-  totalStages: "number",
-  occurredAt: "string",
+  id: 'string',
+  requesterId: 'string',
+  resourceType: 'string',
+  status: 'string',
+  currentStage: 'number',
+  totalStages: 'number',
+  occurredAt: 'string',
 } as const;
 export const RESOURCE_SCHEMA_HASH: string = buildSchemaHash({
   eventName: RESOURCE_EVENT_NAME,
@@ -44,7 +44,7 @@ export const RESOURCE_SCHEMA_HASH: string = buildSchemaHash({
 
 function withResourceStamps(record: OutboxRecord): OutboxRecord {
   const stamped =
-    typeof record.payload === "object" && record.payload !== null
+    typeof record.payload === 'object' && record.payload !== null
       ? withServiceVersion({
           ...(record.payload as Record<string, unknown>),
           schemaHash: RESOURCE_SCHEMA_HASH,
@@ -64,10 +64,8 @@ function wrap(port: OutboxPort): OutboxPort {
   };
 }
 
-export function createResourceOutboxPort(
-  opts: ResourceOutboxFactoryOpts,
-): OutboxPort {
-  if (opts.dialect === "sqlite") {
+export function createResourceOutboxPort(opts: ResourceOutboxFactoryOpts): OutboxPort {
+  if (opts.dialect === 'sqlite') {
     return wrap(
       createDrizzleOutboxPort({
         db: opts.db as never,
@@ -75,7 +73,7 @@ export function createResourceOutboxPort(
       }),
     );
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return wrap(
       createDrizzleOutboxPort({
         db: opts.db as never,
@@ -83,7 +81,5 @@ export function createResourceOutboxPort(
       }),
     );
   }
-  throw new Error(
-    `createResourceOutboxPort: dialect=${(opts as { dialect: string }).dialect}`,
-  );
+  throw new Error(`createResourceOutboxPort: dialect=${(opts as { dialect: string }).dialect}`);
 }

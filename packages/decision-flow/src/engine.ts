@@ -6,10 +6,10 @@
  * 완료 시 전체 경로를 좌표(1D 정수)로 인코딩한다.
  */
 
-import { encodeSelections } from "./coordinate.js";
-import { buildFlowCompletionContext } from "./ingest-adapter.js";
-import type { InstanceStore } from "./instance-store.js";
-import { tryAutoSelect } from "./policy.js";
+import { encodeSelections } from './coordinate.js';
+import { buildFlowCompletionContext } from './ingest-adapter.js';
+import type { InstanceStore } from './instance-store.js';
+import { tryAutoSelect } from './policy.js';
 import type {
   Evidence,
   FlowInstance,
@@ -18,7 +18,7 @@ import type {
   FlowStatus,
   GateSchema,
   GateSelection,
-} from "./types.js";
+} from './types.js';
 
 // ─── ID 생성 ─────────────────────────────────────────────
 
@@ -112,10 +112,7 @@ export class FlowEngine {
    * @param schemaId - 실행할 플로우 스키마 ID
    * @param context - 의사결정에 사용될 컨텍스트 데이터
    */
-  startFlow(
-    schemaId: string,
-    context: Record<string, unknown> = {},
-  ): FlowInstance {
+  startFlow(schemaId: string, context: Record<string, unknown> = {}): FlowInstance {
     const schema = this.schemas.get(schemaId);
     if (!schema) {
       throw new Error(`등록되지 않은 스키마: "${schemaId}"`);
@@ -125,7 +122,7 @@ export class FlowEngine {
       id: generateInstanceId(schemaId),
       schemaId,
       schemaVersion: schema.version,
-      status: "active",
+      status: 'active',
       context: { ...context },
       selections: [],
       startedAt: new Date().toISOString(),
@@ -133,7 +130,7 @@ export class FlowEngine {
 
     this.instances.set(instance.id, instance);
     const immutable = toImmutable(instance);
-    this.emit("onFlowStarted", immutable);
+    this.emit('onFlowStarted', immutable);
     return immutable;
   }
 
@@ -183,7 +180,7 @@ export class FlowEngine {
     const instance = this.getInstanceOrThrow(instanceId);
     const schema = this.getSchemaOrThrow(instance.schemaId);
 
-    if (instance.status !== "active") return null;
+    if (instance.status !== 'active') return null;
 
     // 직전 선택에 nextGateId가 있으면 그것을 따라감
     if (instance.selections.length > 0) {
@@ -218,22 +215,20 @@ export class FlowEngine {
     options: { confidence?: number; subFlowInstanceId?: string; durationMs?: number } = {},
   ): FlowInstance {
     const instance = this.getInstanceOrThrow(instanceId);
-    if (instance.status !== "active") {
+    if (instance.status !== 'active') {
       throw new Error(`플로우가 active 상태가 아니다: "${instance.status}"`);
     }
 
     const currentGate = this.getCurrentGate(instanceId);
     if (!currentGate) {
-      throw new Error("더 이상 선택할 gate가 없다");
+      throw new Error('더 이상 선택할 gate가 없다');
     }
 
     // branch 유효성 검증 (일반 gate만)
     if (currentGate.branches) {
       const validBranch = currentGate.branches.find((b) => b.id === branchId);
       if (!validBranch) {
-        throw new Error(
-          `gate "${currentGate.id}"에서 유효하지 않은 branch: "${branchId}"`,
-        );
+        throw new Error(`gate "${currentGate.id}"에서 유효하지 않은 branch: "${branchId}"`);
       }
     }
 
@@ -248,7 +243,7 @@ export class FlowEngine {
     };
 
     instance.selections.push(selection);
-    this.emit("onGateSelected", toImmutable(instance), selection, currentGate);
+    this.emit('onGateSelected', toImmutable(instance), selection, currentGate);
 
     // 모든 gate 완료 확인
     const schema = this.getSchemaOrThrow(instance.schemaId);
@@ -271,25 +266,25 @@ export class FlowEngine {
     if (!currentGate) return null;
 
     const policies = this.policies.get(instance.schemaId) ?? [];
-    const action = tryAutoSelect(
-      policies,
-      currentGate.id,
-      instance.context,
-      instance.selections,
-    );
+    const action = tryAutoSelect(policies, currentGate.id, instance.context, instance.selections);
 
     if (!action) return null;
 
-    this.emit("onAutoSelected", toImmutable(instance), currentGate, action);
+    this.emit('onAutoSelected', toImmutable(instance), currentGate, action);
 
-    return this.selectBranch(instanceId, action.branchId, [
-      {
-        kind: "rule",
-        source: "policy-engine",
-        content: `정책 자동 선택: ${action.branchId}`,
-        weight: 1.0,
-      },
-    ], { confidence: action.confidence });
+    return this.selectBranch(
+      instanceId,
+      action.branchId,
+      [
+        {
+          kind: 'rule',
+          source: 'policy-engine',
+          content: `정책 자동 선택: ${action.branchId}`,
+          weight: 1.0,
+        },
+      ],
+      { confidence: action.confidence },
+    );
   }
 
   /**
@@ -298,7 +293,7 @@ export class FlowEngine {
    */
   autoAdvance(instanceId: string): FlowInstance {
     let result = this.autoSelect(instanceId);
-    while (result && result.status === "active") {
+    while (result && result.status === 'active') {
       const next = this.autoSelect(instanceId);
       if (!next) break;
       result = next;
@@ -315,7 +310,7 @@ export class FlowEngine {
    */
   completeFlow(instanceId: string, outcome?: string): FlowInstance {
     const instance = this.getInstanceOrThrow(instanceId);
-    if (instance.status !== "active") {
+    if (instance.status !== 'active') {
       throw new Error(`플로우가 active 상태가 아니다: "${instance.status}"`);
     }
     const schema = this.getSchemaOrThrow(instance.schemaId);
@@ -327,7 +322,7 @@ export class FlowEngine {
   /** 플로우를 포기한다. */
   abandonFlow(instanceId: string, reason?: string): FlowInstance {
     const instance = this.getInstanceOrThrow(instanceId);
-    instance.status = "abandoned";
+    instance.status = 'abandoned';
     instance.completedAt = new Date().toISOString();
     if (reason) {
       instance.context = { ...instance.context, abandonReason: reason };
@@ -338,10 +333,7 @@ export class FlowEngine {
   // ── 조회 ──────────────────────────────────────────────
 
   /** 플로우 인스턴스 목록 (필터 가능) */
-  listInstances(filter?: {
-    schemaId?: string;
-    status?: FlowStatus;
-  }): FlowInstance[] {
+  listInstances(filter?: { schemaId?: string; status?: FlowStatus }): FlowInstance[] {
     let results = [...this.instances.values()];
     if (filter?.schemaId) {
       results = results.filter((i) => i.schemaId === filter.schemaId);
@@ -366,11 +358,8 @@ export class FlowEngine {
     return schema;
   }
 
-  private completeFlowInternal(
-    instance: MutableFlowInstance,
-    schema: FlowSchema,
-  ): void {
-    instance.status = "completed";
+  private completeFlowInternal(instance: MutableFlowInstance, schema: FlowSchema): void {
+    instance.status = 'completed';
     instance.completedAt = new Date().toISOString();
 
     // 좌표 인코딩 시도 (모든 gate에 선택이 있어야 가능)
@@ -382,10 +371,7 @@ export class FlowEngine {
         // subFlow가 없는 단순 플로우만 자동 인코딩
         const hasSubFlow = schema.gates.some((g) => g.subFlowId);
         if (!hasSubFlow) {
-          instance.coordinateAddress = encodeSelections(
-            schema,
-            instance.selections,
-          );
+          instance.coordinateAddress = encodeSelections(schema, instance.selections);
         }
       } catch {
         // 인코딩 실패 시 좌표 없이 완료 (비정상 경로 등)
@@ -393,11 +379,12 @@ export class FlowEngine {
     }
 
     try {
-      const scopeMode = typeof instance.context.scopeMode === "string"
-        ? instance.context.scopeMode
-        : typeof instance.context.scope_mode === "string"
-        ? instance.context.scope_mode
-        : undefined;
+      const scopeMode =
+        typeof instance.context.scopeMode === 'string'
+          ? instance.context.scopeMode
+          : typeof instance.context.scope_mode === 'string'
+            ? instance.context.scope_mode
+            : undefined;
       instance.addressContext = buildFlowCompletionContext(
         schema,
         toImmutable(instance),
@@ -409,7 +396,7 @@ export class FlowEngine {
 
     const completed = toImmutable(instance);
     this.instanceStore?.save(completed);
-    this.emit("onFlowCompleted", completed);
+    this.emit('onFlowCompleted', completed);
   }
 }
 
@@ -430,7 +417,11 @@ export interface FlowEngineListener {
   /** gate에서 분기 선택 (수동 또는 자동) */
   onGateSelected?(instance: FlowInstance, selection: GateSelection, gate: GateSchema): void;
   /** 정책 기반 자동 선택 시도 (selectBranch 호출 전) */
-  onAutoSelected?(instance: FlowInstance, gate: GateSchema, action: { branchId: string; confidence: number }): void;
+  onAutoSelected?(
+    instance: FlowInstance,
+    gate: GateSchema,
+    action: { branchId: string; confidence: number },
+  ): void;
   /** 플로우 완료 */
   onFlowCompleted?(instance: FlowInstance): void;
 }

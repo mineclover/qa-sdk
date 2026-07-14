@@ -1,12 +1,12 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { StepConstraint } from "./scenario.js";
-import type { PathObservation } from "./path-observation.js";
+import type { StepConstraint } from './scenario.js';
+import type { PathObservation } from './path-observation.js';
 
 // ── Verdict ─────────────────────────────────────────────
 
-export type Verdict = "pass" | "fail" | "warn" | "degraded" | "unknown" | "skipped";
+export type Verdict = 'pass' | 'fail' | 'warn' | 'degraded' | 'unknown' | 'skipped';
 
 export interface ConstraintResult {
   constraint: StepConstraint;

@@ -8,19 +8,19 @@
  * sql/schema.sql이 먼저 적용된 DB가 필요하다.
  */
 
-import type { AddressRangeCache, RangeCacheRecord } from "../address-range-cache.js";
-import type { CoordConstraint } from "weighted-index";
-import type { SqlDriver } from "./sql-store.js";
+import type { AddressRangeCache, RangeCacheRecord } from '../address-range-cache.js';
+import type { CoordConstraint } from 'weighted-index';
+import type { SqlDriver } from './sql-store.js';
 
 // ── DB row 타입 ───────────────────────────────────────────
 
 interface RangeCacheRow extends Record<string, unknown> {
-  prefix:           string;
-  version_id:       string;
-  label:            string;
-  ranges_json:      string;
+  prefix: string;
+  version_id: string;
+  label: string;
+  ranges_json: string;
   constraints_json: string | null;
-  computed_at:      string;
+  computed_at: string;
 }
 
 // ── SqlAddressRangeCache ──────────────────────────────────
@@ -44,7 +44,7 @@ export class SqlAddressRangeCache implements AddressRangeCache {
         JSON.stringify(record.ranges),
         record.constraints ? JSON.stringify(record.constraints) : null,
         record.computedAt,
-      ]
+      ],
     );
   }
 
@@ -52,7 +52,7 @@ export class SqlAddressRangeCache implements AddressRangeCache {
     const row = await this.driver.queryOne<RangeCacheRow>(
       `SELECT prefix, version_id, label, ranges_json, constraints_json, computed_at
        FROM address_range_cache WHERE prefix = ? AND version_id = ? AND label = ?`,
-      [prefix, versionId, label]
+      [prefix, versionId, label],
     );
     return row ? toRecord(row) : null;
   }
@@ -61,7 +61,7 @@ export class SqlAddressRangeCache implements AddressRangeCache {
     const rows = await this.driver.query<RangeCacheRow>(
       `SELECT prefix, version_id, label, ranges_json, constraints_json, computed_at
        FROM address_range_cache WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     return rows.map(toRecord);
   }
@@ -69,14 +69,14 @@ export class SqlAddressRangeCache implements AddressRangeCache {
   async delete(prefix: string, versionId: string, label: string): Promise<void> {
     await this.driver.execute(
       `DELETE FROM address_range_cache WHERE prefix = ? AND version_id = ? AND label = ?`,
-      [prefix, versionId, label]
+      [prefix, versionId, label],
     );
   }
 
   async deleteAll(prefix: string, versionId: string): Promise<void> {
     await this.driver.execute(
       `DELETE FROM address_range_cache WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
   }
 }
@@ -85,13 +85,13 @@ export class SqlAddressRangeCache implements AddressRangeCache {
 
 function toRecord(row: RangeCacheRow): RangeCacheRecord {
   return {
-    prefix:      row.prefix,
-    versionId:   row.version_id,
-    label:       row.label,
-    ranges:      JSON.parse(row.ranges_json) as [number, number][],
+    prefix: row.prefix,
+    versionId: row.version_id,
+    label: row.label,
+    ranges: JSON.parse(row.ranges_json) as [number, number][],
     constraints: row.constraints_json
-      ? JSON.parse(row.constraints_json) as CoordConstraint[]
+      ? (JSON.parse(row.constraints_json) as CoordConstraint[])
       : undefined,
-    computedAt:  row.computed_at,
+    computedAt: row.computed_at,
   };
 }

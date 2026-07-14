@@ -16,14 +16,14 @@ export class ReportDomainException extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "ReportDomainException";
+    this.name = 'ReportDomainException';
   }
 }
 
 /** Report read model 이 존재하지 않는 경우 (HTTP 404 매핑). */
 export class ReportNotFoundException extends ReportDomainException {
   constructor(public readonly id: string) {
-    super("REPORT_NOT_FOUND", `Report not found: ${id}`);
-    this.name = "NotFoundError";
+    super('REPORT_NOT_FOUND', `Report not found: ${id}`);
+    this.name = 'NotFoundError';
   }
 }

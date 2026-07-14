@@ -1,9 +1,13 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { toNotificationId, toRecipientUserId } from "./notification.ids.js";
-import { NotificationTerminalStateException } from "./notification.exceptions.js";
-import type { NotificationProps, NotificationSnapshot, NotificationStatus } from "./notification.types.js";
+import { toNotificationId, toRecipientUserId } from './notification.ids.js';
+import { NotificationTerminalStateException } from './notification.exceptions.js';
+import type {
+  NotificationProps,
+  NotificationSnapshot,
+  NotificationStatus,
+} from './notification.types.js';
 
 /**
  * Notification Aggregate Root.
@@ -30,7 +34,7 @@ export class NotificationEntity {
       type: input.type,
       title: input.title,
       body: input.body,
-      status: "pending",
+      status: 'pending',
       createdAt: now,
       sentAt: null,
       readAt: null,
@@ -53,26 +57,26 @@ export class NotificationEntity {
 
   /** pending → sent. terminal 상태에서는 ConflictError. */
   markSent(now = new Date()): NotificationEntity {
-    this.assertNotTerminal("markSent");
-    return new NotificationEntity({ ...this.props, status: "sent", sentAt: now });
+    this.assertNotTerminal('markSent');
+    return new NotificationEntity({ ...this.props, status: 'sent', sentAt: now });
   }
 
   /** sent/pending → read. terminal 상태에서는 ConflictError. */
   markRead(now = new Date()): NotificationEntity {
-    this.assertNotTerminal("markRead");
-    return new NotificationEntity({ ...this.props, status: "read", readAt: now });
+    this.assertNotTerminal('markRead');
+    return new NotificationEntity({ ...this.props, status: 'read', readAt: now });
   }
 
   /** pending/sent → failed. read 에서는 ConflictError (이미 성공 종료). */
   markFailed(): NotificationEntity {
-    if (this.props.status === "read") {
-      throw new NotificationTerminalStateException(this.props.status, "markFailed");
+    if (this.props.status === 'read') {
+      throw new NotificationTerminalStateException(this.props.status, 'markFailed');
     }
-    return new NotificationEntity({ ...this.props, status: "failed" });
+    return new NotificationEntity({ ...this.props, status: 'failed' });
   }
 
   private assertNotTerminal(transition: string): void {
-    if (this.props.status === "read" || this.props.status === "failed") {
+    if (this.props.status === 'read' || this.props.status === 'failed') {
       throw new NotificationTerminalStateException(this.props.status, transition);
     }
   }

@@ -27,31 +27,33 @@
  *   perms.toBase64();                     // JWT/DB 저장용
  */
 
-import { BitIndex } from "./bit-index.js";
+import { BitIndex } from './bit-index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Base64 직렬화 (환경 독립 — btoa/atob 불필요)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 /** Uint8Array → Base64 문자열. */
 export function uint8ToBase64(arr: Uint8Array): string {
-  let out = "";
+  let out = '';
   for (let i = 0; i < arr.length; i += 3) {
-    const b0 = arr[i], b1 = arr[i + 1] ?? 0, b2 = arr[i + 2] ?? 0;
+    const b0 = arr[i],
+      b1 = arr[i + 1] ?? 0,
+      b2 = arr[i + 2] ?? 0;
     out += B64[b0 >> 2];
     out += B64[((b0 & 3) << 4) | (b1 >> 4)];
-    out += i + 1 < arr.length ? B64[((b1 & 0xF) << 2) | (b2 >> 6)] : "=";
-    out += i + 2 < arr.length ? B64[b2 & 0x3F] : "=";
+    out += i + 1 < arr.length ? B64[((b1 & 0xf) << 2) | (b2 >> 6)] : '=';
+    out += i + 2 < arr.length ? B64[b2 & 0x3f] : '=';
   }
   return out;
 }
 
 /** Base64 문자열 → Uint8Array. */
 export function base64ToUint8(b64: string): Uint8Array {
-  const clean = b64.replace(/=+$/, "");
-  const bytes = new Uint8Array(Math.floor(clean.length * 3 / 4));
+  const clean = b64.replace(/=+$/, '');
+  const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
   let j = 0;
   for (let i = 0; i < clean.length; i += 4) {
     const a = B64.indexOf(clean[i]);
@@ -59,7 +61,7 @@ export function base64ToUint8(b64: string): Uint8Array {
     const c = B64.indexOf(clean[i + 2]);
     const d = B64.indexOf(clean[i + 3]);
     bytes[j++] = (a << 2) | (b >> 4);
-    if (c >= 0) bytes[j++] = ((b & 0xF) << 4) | (c >> 2);
+    if (c >= 0) bytes[j++] = ((b & 0xf) << 4) | (c >> 2);
     if (d >= 0) bytes[j++] = ((c & 3) << 6) | d;
   }
   return bytes.slice(0, j);
@@ -81,10 +83,14 @@ export class BitMaskSet {
   // ── 기본 정보 ──────────────────────────────────────────────────────────
 
   /** 현재 부여된 수. */
-  get size(): number { return this._set.size; }
+  get size(): number {
+    return this._set.size;
+  }
 
   /** 내부 Set (읽기 전용 순회용). */
-  get entries(): ReadonlySet<number> { return this._set; }
+  get entries(): ReadonlySet<number> {
+    return this._set;
+  }
 
   // ── 단일 조작 ──────────────────────────────────────────────────────────
 
@@ -230,10 +236,10 @@ export class BitMaskSet {
     const buf = new Uint8Array(sorted.length * 4);
     for (let i = 0; i < sorted.length; i++) {
       const v = sorted[i];
-      buf[i * 4]     = (v >>> 24) & 0xFF;
-      buf[i * 4 + 1] = (v >>> 16) & 0xFF;
-      buf[i * 4 + 2] = (v >>> 8) & 0xFF;
-      buf[i * 4 + 3] = v & 0xFF;
+      buf[i * 4] = (v >>> 24) & 0xff;
+      buf[i * 4 + 1] = (v >>> 16) & 0xff;
+      buf[i * 4 + 2] = (v >>> 8) & 0xff;
+      buf[i * 4 + 3] = v & 0xff;
     }
     return buf;
   }
@@ -245,9 +251,9 @@ export class BitMaskSet {
     for (let i = 0; i < count; i++) {
       packed.push(
         (bytes[i * 4] << 24) |
-        (bytes[i * 4 + 1] << 16) |
-        (bytes[i * 4 + 2] << 8) |
-        bytes[i * 4 + 3]
+          (bytes[i * 4 + 1] << 16) |
+          (bytes[i * 4 + 2] << 8) |
+          bytes[i * 4 + 3],
       );
     }
     return new BitMaskSet(index, packed);

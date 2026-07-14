@@ -1,16 +1,9 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import {
-  toAssigneeId,
-  toTaskId,
-  toTaskProjectId,
-} from "./task.ids.js";
-import {
-  InvalidTaskTitleException,
-  TaskTransitionDoneException,
-} from "./task.exceptions.js";
-import type { TaskProps, TaskSnapshot, TaskStatus } from "./task.types.js";
+import { toAssigneeId, toTaskId, toTaskProjectId } from './task.ids.js';
+import { InvalidTaskTitleException, TaskTransitionDoneException } from './task.exceptions.js';
+import type { TaskProps, TaskSnapshot, TaskStatus } from './task.types.js';
 
 /**
  * Task Aggregate Root.
@@ -43,7 +36,7 @@ export class TaskEntity {
         input.assigneeId !== undefined && input.assigneeId !== null
           ? toAssigneeId(input.assigneeId)
           : null,
-      status: input.status ?? "todo",
+      status: input.status ?? 'todo',
       parentTaskId:
         input.parentTaskId !== undefined && input.parentTaskId !== null
           ? toTaskId(input.parentTaskId)
@@ -70,24 +63,27 @@ export class TaskEntity {
    * 상태 전이. done 상태에서 다른 상태로 전이하면 ConflictError.
    */
   transition(next: TaskStatus, now = new Date()): TaskEntity {
-    if (this.props.status === "done" && next !== "done") {
+    if (this.props.status === 'done' && next !== 'done') {
       throw new TaskTransitionDoneException();
     }
     return new TaskEntity({ ...this.props, status: next, updatedAt: now });
   }
 
   /** patch 적용. title 비어있으면 예외. */
-  applyPatch(patch: {
-    readonly title?: string;
-    readonly assigneeId?: string | null;
-    readonly status?: TaskStatus;
-    readonly parentTaskId?: string | null;
-    readonly projectId?: string;
-  }, now = new Date()): TaskEntity {
+  applyPatch(
+    patch: {
+      readonly title?: string;
+      readonly assigneeId?: string | null;
+      readonly status?: TaskStatus;
+      readonly parentTaskId?: string | null;
+      readonly projectId?: string;
+    },
+    now = new Date(),
+  ): TaskEntity {
     if (patch.title !== undefined && patch.title.trim().length === 0) {
       throw new InvalidTaskTitleException();
     }
-    if (patch.status && this.props.status === "done" && patch.status !== "done") {
+    if (patch.status && this.props.status === 'done' && patch.status !== 'done') {
       throw new TaskTransitionDoneException();
     }
     const nextProps: TaskProps = {
@@ -106,7 +102,8 @@ export class TaskEntity {
           : patch.parentTaskId === null
             ? null
             : toTaskId(patch.parentTaskId),
-      projectId: patch.projectId !== undefined ? toTaskProjectId(patch.projectId) : this.props.projectId,
+      projectId:
+        patch.projectId !== undefined ? toTaskProjectId(patch.projectId) : this.props.projectId,
       updatedAt: now,
     };
     return new TaskEntity(nextProps);

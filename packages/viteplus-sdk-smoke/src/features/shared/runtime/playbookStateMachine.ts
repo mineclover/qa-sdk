@@ -1,10 +1,4 @@
-export type PlaybookStatus =
-  | 'idle'
-  | 'editing'
-  | 'invalid'
-  | 'submitting'
-  | 'success'
-  | 'error';
+export type PlaybookStatus = 'idle' | 'editing' | 'invalid' | 'submitting' | 'success' | 'error';
 
 export type PlaybookEvent =
   | 'DRAFT_CHANGED'

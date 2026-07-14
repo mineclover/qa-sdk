@@ -17,19 +17,19 @@
  * GateAwareEntryFlagStore:        flexible 모드 setFlag() 후 자동 재계산
  */
 
-import type { PrefixRegistry } from "./prefix-registry.js";
-import type { IndexMetaStore } from "./index-meta-store.js";
-import type { EntryFlagStore, EntryFlagRecord } from "./entry-flag-store.js";
+import type { PrefixRegistry } from './prefix-registry.js';
+import type { IndexMetaStore } from './index-meta-store.js';
+import type { EntryFlagStore, EntryFlagRecord } from './entry-flag-store.js';
 import type {
   VersionLifecycleStore,
   VersionRecord,
   VersionStatus,
   DeactivationMode,
-} from "./version-lifecycle.js";
-import type { AddressStateStore } from "./invalid-range-store.js";
-import type { AddressRangeCache } from "./address-range-cache.js";
-import type { DimStateSpec } from "./invalid-ranges.js";
-import { computeStateRanges, positionsToConstraint } from "./invalid-ranges.js";
+} from './version-lifecycle.js';
+import type { AddressStateStore } from './invalid-range-store.js';
+import type { AddressRangeCache } from './address-range-cache.js';
+import type { DimStateSpec } from './invalid-ranges.js';
+import { computeStateRanges, positionsToConstraint } from './invalid-ranges.js';
 
 // ── 의존성 번들 ─────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ export class GateEngine {
         // refEntries 미정의 — 전체 공간이 열려 있음.
         // 참조 prefix의 실제 entries만 유효하고, 나머지는 reserved.
         const refEntries = await this._deps.metaStore.getEntries(ref.prefix, ref.versionId);
-        const filledPositions = new Set(refEntries.map(e => e.position));
+        const filledPositions = new Set(refEntries.map((e) => e.position));
         const reservedPositions: number[] = [];
         for (let pos = 1; pos <= ref.capacity; pos++) {
           if (!filledPositions.has(pos)) {
@@ -97,7 +97,7 @@ export class GateEngine {
           if (coords) {
             specs.push({
               dimIndex: i,
-              state: "reserved",
+              state: 'reserved',
               coords,
               reason: `prefix_ref(${ref.prefix}:${ref.versionId}) refEntries 미정의 — 미사용 position reserved (CON-006)`,
             });
@@ -161,7 +161,7 @@ export class GateEngine {
    */
   async recomputeOnFlagChange(prefix: string, versionId: string): Promise<void> {
     const ver = await this._deps.versionLifecycleStore.getVersion(prefix, versionId);
-    if (!ver || ver.deactivationMode !== "flexible") return;
+    if (!ver || ver.deactivationMode !== 'flexible') return;
 
     await this.cascadeRecompute(prefix, versionId);
   }
@@ -194,7 +194,7 @@ export class GateEngine {
     if (inactivePositions.length > 0) {
       const coords = positionsToConstraint(inactivePositions);
       if (coords) {
-        specs.push({ dimIndex, state: "inactive", coords });
+        specs.push({ dimIndex, state: 'inactive', coords });
       }
     }
 
@@ -208,7 +208,7 @@ export class GateEngine {
     if (openPositions.length > 0) {
       const coords = positionsToConstraint(openPositions);
       if (coords) {
-        specs.push({ dimIndex, state: "open", coords });
+        specs.push({ dimIndex, state: 'open', coords });
       }
     }
 
@@ -281,7 +281,11 @@ export class GateAwareEntryFlagStore implements EntryFlagStore {
     await this._engine.recomputeOnFlagChange(record.prefix, record.versionId);
   }
 
-  async getFlag(prefix: string, versionId: string, position: number): Promise<EntryFlagRecord | null> {
+  async getFlag(
+    prefix: string,
+    versionId: string,
+    position: number,
+  ): Promise<EntryFlagRecord | null> {
     return this._inner.getFlag(prefix, versionId, position);
   }
 

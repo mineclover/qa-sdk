@@ -3,19 +3,13 @@
 
 // ── Payload Format ──────────────────────────────────────
 
-export type PayloadFormat =
-  | "json"
-  | "rpc"
-  | "protobuf"
-  | "text"
-  | "binary"
-  | "stream";
+export type PayloadFormat = 'json' | 'rpc' | 'protobuf' | 'text' | 'binary' | 'stream';
 
-export type PayloadEncoding = "raw" | "base64" | "gzip+base64" | "protobuf";
+export type PayloadEncoding = 'raw' | 'base64' | 'gzip+base64' | 'protobuf';
 
 // ── Masking ─────────────────────────────────────────────
 
-export type MaskingMode = "raw" | "mask" | "drop" | "hash";
+export type MaskingMode = 'raw' | 'mask' | 'drop' | 'hash';
 
 export interface MaskedFieldMarker {
   _masked: true;

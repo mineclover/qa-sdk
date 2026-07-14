@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from '@nestjs/common';
 import {
   allCoreEvents,
   coreEventsByCategory,
@@ -14,13 +14,13 @@ import {
   isV1MinimalEvent,
   payloadGuides,
   v1MinimalSet,
-} from "@qa-sdk/event-catalog";
-import type { Channel, DimSource } from "@qa-sdk/event-catalog";
-import { AppError } from "@qa-sdk/core";
-import type { ConfigStore } from "../../stores/config-store.js";
-import { CONFIG_STORE } from "../catalog/catalog.service.js";
-import type { EventSchemaStore } from "../../stores/event-schema-store.js";
-import { EVENT_SCHEMA_STORE } from "./event-schema.service.js";
+} from '@qa-sdk/event-catalog';
+import type { Channel, DimSource } from '@qa-sdk/event-catalog';
+import { AppError } from '@qa-sdk/core';
+import type { ConfigStore } from '../../stores/config-store.js';
+import { CONFIG_STORE } from '../catalog/catalog.service.js';
+import type { EventSchemaStore } from '../../stores/event-schema-store.js';
+import { EVENT_SCHEMA_STORE } from './event-schema.service.js';
 
 type EventCatalogFilters = {
   category?: string;
@@ -36,8 +36,8 @@ type ServiceEventAdoptionRecord = {
 
 @Injectable()
 export class EventCatalogService {
-  private static readonly ADOPTION_CONFIG_TYPE = "event-adoption";
-  private static readonly SERVICES_CONFIG_TYPE = "services";
+  private static readonly ADOPTION_CONFIG_TYPE = 'event-adoption';
+  private static readonly SERVICES_CONFIG_TYPE = 'services';
 
   constructor(
     @Inject(CONFIG_STORE) private readonly configStore: ConfigStore,
@@ -92,7 +92,7 @@ export class EventCatalogService {
     const prefixMapping = getMapping(key);
 
     if (!event && !prefixMapping) {
-      throw new AppError("NOT_FOUND", `Event '${key}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Event '${key}' not found`, 404);
     }
 
     return {
@@ -108,9 +108,9 @@ export class EventCatalogService {
                 label,
                 source: source.kind,
                 value:
-                  source.kind === "fixed"
+                  source.kind === 'fixed'
                     ? source.value
-                    : source.kind === "context"
+                    : source.kind === 'context'
                       ? `ctx.${source.contextKey}`
                       : `payload.${source.payloadKey}`,
               })),
@@ -144,7 +144,7 @@ export class EventCatalogService {
   getPack(packId: string) {
     const pack = getPack(packId);
     if (!pack) {
-      throw new AppError("NOT_FOUND", `Pack '${packId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Pack '${packId}' not found`, 404);
     }
     return {
       packId: pack.packId,
@@ -162,14 +162,16 @@ export class EventCatalogService {
 
   async listAdoptions(catalogId: string) {
     const parsed = await this.readRawAdoptions(catalogId);
-    return parsed.map((item) => this.normalizeAdoptionRecord(item)).toSorted((a, b) => a.serviceId.localeCompare(b.serviceId));
+    return parsed
+      .map((item) => this.normalizeAdoptionRecord(item))
+      .toSorted((a, b) => a.serviceId.localeCompare(b.serviceId));
   }
 
   async getServiceAdoption(catalogId: string, serviceId: string) {
     const adoptions = await this.listAdoptions(catalogId);
     const found = adoptions.find((item) => item.serviceId === serviceId);
     if (!found) {
-      throw new AppError("NOT_FOUND", `Service adoption '${serviceId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Service adoption '${serviceId}' not found`, 404);
     }
     return found;
   }
@@ -192,11 +194,15 @@ export class EventCatalogService {
     }
 
     next.sort((a, b) => a.serviceId.localeCompare(b.serviceId));
-    await this.configStore.set(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE, JSON.stringify(next));
+    await this.configStore.set(
+      catalogId,
+      EventCatalogService.ADOPTION_CONFIG_TYPE,
+      JSON.stringify(next),
+    );
     return {
       ok: true,
       serviceId,
-      action: index >= 0 ? "updated" : "created",
+      action: index >= 0 ? 'updated' : 'created',
     };
   }
 
@@ -204,9 +210,13 @@ export class EventCatalogService {
     const adoptions = await this.listAdoptions(catalogId);
     const next = adoptions.filter((item) => item.serviceId !== serviceId);
     if (next.length === adoptions.length) {
-      throw new AppError("NOT_FOUND", `Service adoption '${serviceId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Service adoption '${serviceId}' not found`, 404);
     }
-    await this.configStore.set(catalogId, EventCatalogService.ADOPTION_CONFIG_TYPE, JSON.stringify(next));
+    await this.configStore.set(
+      catalogId,
+      EventCatalogService.ADOPTION_CONFIG_TYPE,
+      JSON.stringify(next),
+    );
     return {
       ok: true,
       serviceId,
@@ -229,14 +239,19 @@ export class EventCatalogService {
     const prefixUsage = new Set<string>();
     let recordsWithoutPackMetadata = 0;
     for (const record of materialized) {
-      const prefixes = extractPrefixedList(record.description, "prefix:");
+      const prefixes = extractPrefixedList(record.description, 'prefix:');
       prefixes.forEach((prefixId) => prefixUsage.add(prefixId));
-      if (!record.description?.includes("packs:")) recordsWithoutPackMetadata++;
+      if (!record.description?.includes('packs:')) recordsWithoutPackMetadata++;
     }
 
-    const prefixesWithoutOwnership = [...prefixUsage].filter((prefixId) => !ownershipSet.has(prefixId)).toSorted((a, b) => a.localeCompare(b));
+    const prefixesWithoutOwnership = [...prefixUsage]
+      .filter((prefixId) => !ownershipSet.has(prefixId))
+      .toSorted((a, b) => a.localeCompare(b));
     const packRefs = normalizePackRefs(adoption?.eventPacks);
-    const missingPackIds = packRefs.map((ref) => ref.packId).filter((packId) => !getPack(packId)).toSorted((a, b) => a.localeCompare(b));
+    const missingPackIds = packRefs
+      .map((ref) => ref.packId)
+      .filter((packId) => !getPack(packId))
+      .toSorted((a, b) => a.localeCompare(b));
     const adoptedPrefixSet = new Set<string>();
     for (const ref of packRefs) {
       const pack = getPack(ref.packId);
@@ -270,7 +285,9 @@ export class EventCatalogService {
       },
       materialized: {
         count: materialized.length,
-        eventKeys: materialized.map((record) => record.eventKey).toSorted((a, b) => a.localeCompare(b)),
+        eventKeys: materialized
+          .map((record) => record.eventKey)
+          .toSorted((a, b) => a.localeCompare(b)),
         records: materialized.map((record) => ({
           eventKey: record.eventKey,
           eventVersion: record.eventVersion,
@@ -290,25 +307,45 @@ export class EventCatalogService {
 
   async checkServiceTaxonomy(catalogId: string, serviceId: string) {
     const taxonomy = await this.getServiceTaxonomy(catalogId, serviceId);
-    const issues: Array<{ severity: "warning"; code: string; detail?: unknown }> = [];
+    const issues: Array<{ severity: 'warning'; code: string; detail?: unknown }> = [];
 
     if (taxonomy.drift.adoptionMissing) {
-      issues.push({ severity: "warning", code: "adoption-missing" });
+      issues.push({ severity: 'warning', code: 'adoption-missing' });
     }
     if (taxonomy.drift.missingPackIds.length > 0) {
-      issues.push({ severity: "warning", code: "missing-pack-ids", detail: taxonomy.drift.missingPackIds });
+      issues.push({
+        severity: 'warning',
+        code: 'missing-pack-ids',
+        detail: taxonomy.drift.missingPackIds,
+      });
     }
     if (taxonomy.drift.adoptedPrefixesWithoutOwnership.length > 0) {
-      issues.push({ severity: "warning", code: "adopted-prefixes-without-ownership", detail: taxonomy.drift.adoptedPrefixesWithoutOwnership });
+      issues.push({
+        severity: 'warning',
+        code: 'adopted-prefixes-without-ownership',
+        detail: taxonomy.drift.adoptedPrefixesWithoutOwnership,
+      });
     }
     if (taxonomy.drift.stalePackVersions.length > 0) {
-      issues.push({ severity: "warning", code: "stale-pack-versions", detail: taxonomy.drift.stalePackVersions });
+      issues.push({
+        severity: 'warning',
+        code: 'stale-pack-versions',
+        detail: taxonomy.drift.stalePackVersions,
+      });
     }
     if (taxonomy.drift.recordsWithoutPackMetadata > 0) {
-      issues.push({ severity: "warning", code: "records-without-pack-metadata", detail: taxonomy.drift.recordsWithoutPackMetadata });
+      issues.push({
+        severity: 'warning',
+        code: 'records-without-pack-metadata',
+        detail: taxonomy.drift.recordsWithoutPackMetadata,
+      });
     }
     if (taxonomy.drift.prefixesWithoutOwnership.length > 0) {
-      issues.push({ severity: "warning", code: "prefixes-without-ownership", detail: taxonomy.drift.prefixesWithoutOwnership });
+      issues.push({
+        severity: 'warning',
+        code: 'prefixes-without-ownership',
+        detail: taxonomy.drift.prefixesWithoutOwnership,
+      });
     }
 
     return {
@@ -322,7 +359,7 @@ export class EventCatalogService {
   async assertServiceTaxonomy(catalogId: string, serviceId: string) {
     const result = await this.checkServiceTaxonomy(catalogId, serviceId);
     if (!result.ok) {
-      throw new AppError("CONFLICT", `Service taxonomy '${serviceId}' has drift issues`, 409, {
+      throw new AppError('CONFLICT', `Service taxonomy '${serviceId}' has drift issues`, 409, {
         serviceId,
         issueCount: result.issueCount,
         issues: result.issues,
@@ -343,14 +380,20 @@ export class EventCatalogService {
     ]);
     const activePackOwners = new Set(
       getAllPacks()
-        .filter((pack) => pack.status === "active")
+        .filter((pack) => pack.status === 'active')
         .map((pack) => pack.owner),
     );
-    const serviceIds = [...new Set([
-      ...adoptions.map((item) => item.serviceId),
-      ...services.filter((item) => activePackOwners.has(item.serviceId)).map((item) => item.serviceId),
-    ])].toSorted((a, b) => a.localeCompare(b));
-    const results = await Promise.all(serviceIds.map((serviceId) => this.checkServiceTaxonomy(catalogId, serviceId)));
+    const serviceIds = [
+      ...new Set([
+        ...adoptions.map((item) => item.serviceId),
+        ...services
+          .filter((item) => activePackOwners.has(item.serviceId))
+          .map((item) => item.serviceId),
+      ]),
+    ].toSorted((a, b) => a.localeCompare(b));
+    const results = await Promise.all(
+      serviceIds.map((serviceId) => this.checkServiceTaxonomy(catalogId, serviceId)),
+    );
     const failing = results.filter((result) => !result.ok);
     return {
       catalogId,
@@ -364,7 +407,7 @@ export class EventCatalogService {
   async assertCatalogTaxonomy(catalogId: string) {
     const result = await this.checkCatalogTaxonomy(catalogId);
     if (!result.ok) {
-      throw new AppError("CONFLICT", `Catalog taxonomy '${catalogId}' has drift issues`, 409, {
+      throw new AppError('CONFLICT', `Catalog taxonomy '${catalogId}' has drift issues`, 409, {
         catalogId,
         serviceCount: result.serviceCount,
         failingServiceCount: result.failingServiceCount,
@@ -374,7 +417,9 @@ export class EventCatalogService {
     return result;
   }
 
-  private async listServices(catalogId: string): Promise<Array<{ serviceId: string; ownedPrefixes?: string[]; consumedPrefixes?: string[] }>> {
+  private async listServices(
+    catalogId: string,
+  ): Promise<Array<{ serviceId: string; ownedPrefixes?: string[]; consumedPrefixes?: string[] }>> {
     const record = await this.configStore.get(catalogId, EventCatalogService.SERVICES_CONFIG_TYPE);
     if (!record) return [];
     const parsed = JSON.parse(record.data);
@@ -390,9 +435,9 @@ export class EventCatalogService {
 
   private normalizeAdoptionRecord(input: unknown): ServiceEventAdoptionRecord {
     const body = this.asRecord(input);
-    const serviceId = typeof body.serviceId === "string" ? body.serviceId : "";
+    const serviceId = typeof body.serviceId === 'string' ? body.serviceId : '';
     if (!serviceId) {
-      throw new AppError("INVALID_INPUT", "serviceId 필수", 400);
+      throw new AppError('INVALID_INPUT', 'serviceId 필수', 400);
     }
 
     const packRefs = this.normalizePackRefs(body.eventPacks);
@@ -408,27 +453,32 @@ export class EventCatalogService {
   private normalizePackRefs(input: unknown): EventPackRef[] {
     if (!Array.isArray(input)) return [];
     return input.map((entry) => {
-      if (typeof entry === "string") {
-        throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);
+      if (typeof entry === 'string') {
+        throw new AppError('INVALID_INPUT', 'eventPacks는 { packId, version? }[] 이어야 함', 400);
       }
-      if (!entry || typeof entry !== "object" || typeof (entry as { packId?: unknown }).packId !== "string") {
-        throw new AppError("INVALID_INPUT", "eventPacks는 { packId, version? }[] 이어야 함", 400);
+      if (
+        !entry ||
+        typeof entry !== 'object' ||
+        typeof (entry as { packId?: unknown }).packId !== 'string'
+      ) {
+        throw new AppError('INVALID_INPUT', 'eventPacks는 { packId, version? }[] 이어야 함', 400);
       }
       const packId = (entry as { packId: string }).packId;
-      const version = typeof (entry as { version?: unknown }).version === "string"
-        ? (entry as { version: string }).version
-        : getPack(packId)?.version;
+      const version =
+        typeof (entry as { version?: unknown }).version === 'string'
+          ? (entry as { version: string }).version
+          : getPack(packId)?.version;
       return { packId, ...(version ? { version } : {}) };
     });
   }
 
   private normalizeStringList(input: unknown): string[] {
     if (!Array.isArray(input)) return [];
-    return input.filter((item): item is string => typeof item === "string");
+    return input.filter((item): item is string => typeof item === 'string');
   }
 
   private asRecord(input: unknown): Record<string, unknown> {
-    if (!input || typeof input !== "object") {
+    if (!input || typeof input !== 'object') {
       return {};
     }
     return input as Record<string, unknown>;
@@ -447,7 +497,7 @@ export class EventCatalogService {
   }
 
   private isChannel(value: string): value is Channel {
-    return ["browser", "mobile", "backend", "sdk", "agent", "common", "qa"].includes(value);
+    return ['browser', 'mobile', 'backend', 'sdk', 'agent', 'common', 'qa'].includes(value);
   }
 }
 
@@ -456,10 +506,10 @@ function extractPrefixedList(description: string | undefined, marker: string): s
   const start = description.indexOf(marker);
   if (start < 0) return [];
   const rest = description.slice(start + marker.length).trim();
-  const untilPipe = rest.split("|")[0]?.trim() ?? "";
+  const untilPipe = rest.split('|')[0]?.trim() ?? '';
   if (!untilPipe) return [];
   return untilPipe
-    .split(",")
+    .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
 }
@@ -468,6 +518,8 @@ function normalizePackRefs(
   eventPacks: readonly ({ packId: string; version?: string } | string)[] | undefined,
 ): Array<{ packId: string; version?: string }> {
   return (eventPacks ?? []).map((entry) =>
-    typeof entry === "string" ? { packId: entry, version: getPack(entry)?.version } : { packId: entry.packId, version: entry.version ?? getPack(entry.packId)?.version },
+    typeof entry === 'string'
+      ? { packId: entry, version: getPack(entry)?.version }
+      : { packId: entry.packId, version: entry.version ?? getPack(entry.packId)?.version },
   );
 }

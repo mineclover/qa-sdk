@@ -14,10 +14,10 @@
  *   index.ts           — barrel export
  */
 
-import { createHash } from "node:crypto";
-import type { Catalog, DkgConfig } from "@qa-sdk/core";
-import { latestPrefixVersion, encodePrefix, decodePrefix } from "@qa-sdk/core";
-import { toPascal, toTsConstKey } from "./naming.js";
+import { createHash } from 'node:crypto';
+import type { Catalog, DkgConfig } from '@qa-sdk/core';
+import { latestPrefixVersion, encodePrefix, decodePrefix } from '@qa-sdk/core';
+import { toPascal, toTsConstKey } from './naming.js';
 
 // ── Types ──────────────────────────────────────────────
 
@@ -43,17 +43,23 @@ export interface CatalogCodegenOptions {
 function computeCatalogHash(catalog: Catalog): string {
   // axes entries + capacity, prefix labels + dims 구조를 해시
   const parts: string[] = [catalog.id];
-  for (const [id, axis] of Object.entries(catalog.axes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [id, axis] of Object.entries(catalog.axes).toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  )) {
     const vkeys = Object.keys(axis.versions).toSorted();
     for (const vk of vkeys) {
       const snap = axis.versions[vk];
-      parts.push(`${id}:${vk}:[${snap.entries.join(",")}]:${snap.capacity ?? snap.entries.length}`);
+      parts.push(`${id}:${vk}:[${snap.entries.join(',')}]:${snap.capacity ?? snap.entries.length}`);
     }
   }
-  for (const [id, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
-    parts.push(`${id}:${prefix.labels.join(",")}:${prefix.versions.map(v => v.version).join(",")}`);
+  for (const [id, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  )) {
+    parts.push(
+      `${id}:${prefix.labels.join(',')}:${prefix.versions.map((v) => v.version).join(',')}`,
+    );
   }
-  return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 12);
+  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 12);
 }
 
 /** prefix별 version 맵 구성 */
@@ -72,7 +78,7 @@ function header(catalogId: string, contentHash: string, timestamp: string): stri
     `// Generated from Catalog "${catalogId}" (hash: ${contentHash}) at ${timestamp.slice(0, 19)}`,
     `// !! 자동 생성 파일 — 직접 수정 금지 !!`,
     ``,
-  ].join("\n");
+  ].join('\n');
 }
 
 // ── Main ───────────────────────────────────────────────
@@ -87,24 +93,32 @@ export function generateCatalogTypes(
   const ts = new Date().toISOString(); // 전 파일 동일 timestamp
   const files: CatalogCodegenFile[] = [];
 
-  files.push({ path: "prefix-ids.ts", content: genPrefixIds(catalog, contentHash, prefixVersions, ts) });
-  files.push({ path: "axes.ts", content: genAxes(catalog, contentHash, ts) });
-  files.push({ path: "dims.ts", content: genDims(catalog, contentHash, ts) });
-  files.push({ path: "sdk-factory.ts", content: genSdkFactory(catalog, contentHash, ts) });
-  files.push({ path: "context-types.ts", content: genContextTypes(catalog, contentHash, ts) });
+  files.push({
+    path: 'prefix-ids.ts',
+    content: genPrefixIds(catalog, contentHash, prefixVersions, ts),
+  });
+  files.push({ path: 'axes.ts', content: genAxes(catalog, contentHash, ts) });
+  files.push({ path: 'dims.ts', content: genDims(catalog, contentHash, ts) });
+  files.push({ path: 'sdk-factory.ts', content: genSdkFactory(catalog, contentHash, ts) });
+  files.push({ path: 'context-types.ts', content: genContextTypes(catalog, contentHash, ts) });
 
   if (dkgConfig) {
-    files.push({ path: "dsl.ts", content: genDsl(catalog, dkgConfig, contentHash, ts) });
+    files.push({ path: 'dsl.ts', content: genDsl(catalog, dkgConfig, contentHash, ts) });
   }
 
-  files.push({ path: "index.ts", content: genBarrel(catalog, !!dkgConfig, contentHash, ts) });
+  files.push({ path: 'index.ts', content: genBarrel(catalog, !!dkgConfig, contentHash, ts) });
 
   return { files, contentHash };
 }
 
 // ── prefix-ids.ts ──────────────────────────────────────
 
-function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Record<string, string>, ts: string): string {
+function genPrefixIds(
+  catalog: Catalog,
+  contentHash: string,
+  prefixVersions: Record<string, string>,
+  ts: string,
+): string {
   const prefixIds = Object.keys(catalog.prefixes).toSorted();
   const axisIds = Object.keys(catalog.axes).toSorted();
   const tableIds = Object.keys(catalog.tables ?? {}).toSorted();
@@ -115,22 +129,24 @@ function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Rec
   lines.push(`/** Catalog prefix 이름 리터럴 유니온 (${prefixIds.length}개) */`);
   lines.push(`export type PrefixId =`);
   for (let i = 0; i < prefixIds.length; i++) {
-    const sep = i < prefixIds.length - 1 ? "" : ";";
+    const sep = i < prefixIds.length - 1 ? '' : ';';
     lines.push(`  | "${prefixIds[i]}"${sep}`);
   }
   lines.push(``);
-  lines.push(`export const PREFIX_IDS = [${prefixIds.map(id => `"${id}"`).join(", ")}] as const;`);
+  lines.push(
+    `export const PREFIX_IDS = [${prefixIds.map((id) => `"${id}"`).join(', ')}] as const;`,
+  );
   lines.push(``);
 
   // AxisId
   lines.push(`/** Catalog axis 이름 리터럴 유니온 (${axisIds.length}개) */`);
   lines.push(`export type AxisId =`);
   for (let i = 0; i < axisIds.length; i++) {
-    const sep = i < axisIds.length - 1 ? "" : ";";
+    const sep = i < axisIds.length - 1 ? '' : ';';
     lines.push(`  | "${axisIds[i]}"${sep}`);
   }
   lines.push(``);
-  lines.push(`export const AXIS_IDS = [${axisIds.map(id => `"${id}"`).join(", ")}] as const;`);
+  lines.push(`export const AXIS_IDS = [${axisIds.map((id) => `"${id}"`).join(', ')}] as const;`);
 
   // TableId (있으면)
   if (tableIds.length > 0) {
@@ -138,11 +154,13 @@ function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Rec
     lines.push(`/** Catalog table 이름 리터럴 유니온 (${tableIds.length}개) */`);
     lines.push(`export type TableId =`);
     for (let i = 0; i < tableIds.length; i++) {
-      const sep = i < tableIds.length - 1 ? "" : ";";
+      const sep = i < tableIds.length - 1 ? '' : ';';
       lines.push(`  | "${tableIds[i]}"${sep}`);
     }
     lines.push(``);
-    lines.push(`export const TABLE_IDS = [${tableIds.map(id => `"${id}"`).join(", ")}] as const;`);
+    lines.push(
+      `export const TABLE_IDS = [${tableIds.map((id) => `"${id}"`).join(', ')}] as const;`,
+    );
   }
 
   // VERSION_META — 빌드 시점 version 정보
@@ -157,7 +175,9 @@ function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Rec
   lines.push(`  generatedAt: "${ts}" as const,`);
   lines.push(`  /** prefix별 version (생성 시점 기준) */`);
   lines.push(`  prefixVersions: {`);
-  for (const [prefixId, version] of Object.entries(prefixVersions).toSorted((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [prefixId, version] of Object.entries(prefixVersions).toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  )) {
     lines.push(`    "${prefixId}": "${version}",`);
   }
   lines.push(`  } as const,`);
@@ -167,7 +187,7 @@ function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Rec
   lines.push(`export const GENERATION = "${catalog.id}:${contentHash}" as const;`);
 
   lines.push(``);
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── axes.ts ────────────────────────────────────────────
@@ -175,7 +195,9 @@ function genPrefixIds(catalog: Catalog, contentHash: string, prefixVersions: Rec
 function genAxes(catalog: Catalog, contentHash: string, ts: string): string {
   const lines = [header(catalog.id, contentHash, ts)];
 
-  for (const [axisId, axis] of Object.entries(catalog.axes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [axisId, axis] of Object.entries(catalog.axes).toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  )) {
     const versionKeys = Object.keys(axis.versions);
     const latestKey = versionKeys[versionKeys.length - 1];
     const latest = axis.versions[latestKey];
@@ -186,7 +208,9 @@ function genAxes(catalog: Catalog, contentHash: string, ts: string): string {
     const entries = latest.entries ?? [];
     const capacity = latest.capacity ?? entries.length;
 
-    lines.push(`/** ${axisId} — ${axis.name} (entries: ${entries.length}, capacity: ${capacity}) */`);
+    lines.push(
+      `/** ${axisId} — ${axis.name} (entries: ${entries.length}, capacity: ${capacity}) */`,
+    );
     lines.push(`export const ${constName} = {`);
     for (const entry of entries) {
       lines.push(`  ${toTsConstKey(entry)}: "${entry}",`);
@@ -201,7 +225,7 @@ function genAxes(catalog: Catalog, contentHash: string, ts: string): string {
     lines.push(``);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── dims.ts ────────────────────────────────────────────
@@ -212,7 +236,9 @@ function genDims(catalog: Catalog, contentHash: string, ts: string): string {
   lines.push(`import type * as Axes from "./axes.js";`);
   lines.push(``);
 
-  const prefixEntries = Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]));
+  const prefixEntries = Object.entries(catalog.prefixes).toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  );
   const dimInterfaces: string[] = [];
 
   for (const [prefixId, prefix] of prefixEntries) {
@@ -227,7 +253,7 @@ function genDims(catalog: Catalog, contentHash: string, ts: string): string {
       const dim = prefix.dims[label];
       if (!dim) continue;
 
-      if (dim.kind === "axis") {
+      if (dim.kind === 'axis') {
         const axisId = dim.axisId;
         const axis = catalog.axes[axisId];
         const versionKeys = Object.keys(axis?.versions ?? {});
@@ -240,10 +266,10 @@ function genDims(catalog: Catalog, contentHash: string, ts: string): string {
         } else {
           lines.push(`  ${label}: string;`);
         }
-      } else if (dim.kind === "prefix_ref") {
+      } else if (dim.kind === 'prefix_ref') {
         lines.push(`  /** prefix_ref → ${dim.prefixId} */`);
         lines.push(`  ${label}: number;`);
-      } else if (dim.kind === "table_ref") {
+      } else if (dim.kind === 'table_ref') {
         lines.push(`  /** table_ref → ${dim.table} */`);
         lines.push(`  ${label}: number;`);
       }
@@ -262,7 +288,7 @@ function genDims(catalog: Catalog, contentHash: string, ts: string): string {
   lines.push(`}`);
   lines.push(``);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── dsl.ts ─────────────────────────────────────────────
@@ -272,15 +298,15 @@ function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string, ts
 
   // DSL bundles
   for (const dsl of dkgConfig.dslBundles) {
-    const constName = dsl.id.toUpperCase().replace(/-/g, "_");
-    lines.push(`/** ${dsl.name} — ${dsl.description ?? ""} */`);
+    const constName = dsl.id.toUpperCase().replace(/-/g, '_');
+    lines.push(`/** ${dsl.name} — ${dsl.description ?? ''} */`);
     lines.push(`export const ${constName} = {`);
     lines.push(`  id: "${dsl.id}" as const,`);
-    lines.push(`  members: [${dsl.memberPrefixes.map(m => `"${m}"`).join(", ")}] as const,`);
+    lines.push(`  members: [${dsl.memberPrefixes.map((m) => `"${m}"`).join(', ')}] as const,`);
     if (dsl.serviceBindingPrefix) {
       lines.push(`  serviceBindingPrefix: "${dsl.serviceBindingPrefix}" as const,`);
     }
-    lines.push(`  fixedDims: [${dsl.fixedDims.map(d => `"${d}"`).join(", ")}] as const,`);
+    lines.push(`  fixedDims: [${dsl.fixedDims.map((d) => `"${d}"`).join(', ')}] as const,`);
     if (dsl.invariants && dsl.invariants.length > 0) {
       lines.push(`  invariants: [`);
       for (const inv of dsl.invariants) {
@@ -293,24 +319,24 @@ function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string, ts
   }
 
   // DslId union
-  const dslIds = dkgConfig.dslBundles.map(d => d.id);
+  const dslIds = dkgConfig.dslBundles.map((d) => d.id);
   lines.push(`/** DSL bundle ID 리터럴 유니온 (${dslIds.length}개) */`);
   lines.push(`export type DslId =`);
   for (let i = 0; i < dslIds.length; i++) {
-    const sep = i < dslIds.length - 1 ? "" : ";";
+    const sep = i < dslIds.length - 1 ? '' : ';';
     lines.push(`  | "${dslIds[i]}"${sep}`);
   }
   lines.push(``);
-  lines.push(`export const DSL_IDS = [${dslIds.map(id => `"${id}"`).join(", ")}] as const;`);
+  lines.push(`export const DSL_IDS = [${dslIds.map((id) => `"${id}"`).join(', ')}] as const;`);
 
   // Constraint IDs
   if (dkgConfig.constraints.length > 0) {
     lines.push(``);
-    const conIds = dkgConfig.constraints.map(c => c.id);
+    const conIds = dkgConfig.constraints.map((c) => c.id);
     lines.push(`/** Constraint ID 리터럴 유니온 */`);
     lines.push(`export type ConstraintId =`);
     for (let i = 0; i < conIds.length; i++) {
-      const sep = i < conIds.length - 1 ? "" : ";";
+      const sep = i < conIds.length - 1 ? '' : ';';
       lines.push(`  | "${conIds[i]}"${sep}`);
     }
     lines.push(``);
@@ -318,18 +344,18 @@ function genDsl(_catalog: Catalog, dkgConfig: DkgConfig, contentHash: string, ts
 
   // Domain IDs
   if (dkgConfig.domains.length > 0) {
-    const domIds = dkgConfig.domains.map(d => d.id);
+    const domIds = dkgConfig.domains.map((d) => d.id);
     lines.push(`/** Domain ID 리터럴 유니온 */`);
     lines.push(`export type DomainId =`);
     for (let i = 0; i < domIds.length; i++) {
-      const sep = i < domIds.length - 1 ? "" : ";";
+      const sep = i < domIds.length - 1 ? '' : ';';
       lines.push(`  | "${domIds[i]}"${sep}`);
     }
     lines.push(``);
   }
 
   lines.push(``);
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── sdk-factory.ts ─────────────────────────────────────
@@ -348,7 +374,7 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
   const usedAxes = new Set<string>();
   for (const prefix of Object.values(catalog.prefixes)) {
     for (const dim of Object.values(prefix.dims)) {
-      if (dim.kind === "axis") usedAxes.add(dim.axisId);
+      if (dim.kind === 'axis') usedAxes.add(dim.axisId);
     }
   }
 
@@ -364,7 +390,7 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
     const capacity = latest.capacity ?? entries.length;
 
     lines.push(`    ${axisId}: {`);
-    lines.push(`      entries: [${entries.map(e => `"${e}"`).join(", ")}],`);
+    lines.push(`      entries: [${entries.map((e) => `"${e}"`).join(', ')}],`);
     if (capacity > entries.length) {
       lines.push(`      capacity: ${capacity},`);
     }
@@ -375,11 +401,13 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
   lines.push(`  prefixes: {`);
 
   // prefix — axis dims만 포함
-  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
-    const axisDims = prefix.labels.filter(l => prefix.dims[l]?.kind === "axis");
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  )) {
+    const axisDims = prefix.labels.filter((l) => prefix.dims[l]?.kind === 'axis');
     if (axisDims.length === 0) continue;
 
-    lines.push(`    ${prefixId}: { dims: [${axisDims.map(d => `"${d}"`).join(", ")}] },`);
+    lines.push(`    ${prefixId}: { dims: [${axisDims.map((d) => `"${d}"`).join(', ')}] },`);
   }
 
   lines.push(`  },`);
@@ -392,15 +420,17 @@ function genSdkFactory(catalog: Catalog, contentHash: string, ts: string): strin
   // SNAPSHOT_SUPPLY — prefix별 스냅샷 전략
   lines.push(`/** prefix별 snapshot supply 전략 */`);
   lines.push(`export const SNAPSHOT_SUPPLY = {`);
-  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) => a[0].localeCompare(b[0]))) {
-    const hasPrefixRef = Object.values(prefix.dims).some(d => d.kind === "prefix_ref");
-    const strategy = hasPrefixRef ? "envelope" : "implicit";
+  for (const [prefixId, prefix] of Object.entries(catalog.prefixes).toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  )) {
+    const hasPrefixRef = Object.values(prefix.dims).some((d) => d.kind === 'prefix_ref');
+    const strategy = hasPrefixRef ? 'envelope' : 'implicit';
     lines.push(`  "${prefixId}": "${strategy}" as const,`);
   }
   lines.push(`} as const;`);
   lines.push(``);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── context-types.ts ───────────────────────────────────
@@ -417,12 +447,12 @@ function genContextTypes(catalog: Catalog, contentHash: string, ts: string): str
   lines.push(``);
 
   // service prefix의 axis entries로 ServiceBootConfig narrowing
-  const serviceDef = catalog.prefixes["service"];
+  const serviceDef = catalog.prefixes['service'];
   if (serviceDef) {
-    const envAxis = serviceDef.dims["env"];
-    const regionAxis = serviceDef.dims["region"];
-    const svcNameAxis = serviceDef.dims["svc_name"];
-    const nsAxis = serviceDef.dims["namespace"];
+    const envAxis = serviceDef.dims['env'];
+    const regionAxis = serviceDef.dims['region'];
+    const svcNameAxis = serviceDef.dims['svc_name'];
+    const nsAxis = serviceDef.dims['namespace'];
 
     const getEntries = (axisId: string): readonly string[] => {
       const axis = catalog.axes[axisId];
@@ -432,33 +462,35 @@ function genContextTypes(catalog: Catalog, contentHash: string, ts: string): str
       return latest?.entries ?? [];
     };
 
-    const envEntries = envAxis?.kind === "axis" ? getEntries(envAxis.axisId) : [];
-    const regionEntries = regionAxis?.kind === "axis" ? getEntries(regionAxis.axisId) : [];
-    const svcEntries = svcNameAxis?.kind === "axis" ? getEntries(svcNameAxis.axisId) : [];
-    const nsEntries = nsAxis?.kind === "axis" ? getEntries(nsAxis.axisId) : [];
+    const envEntries = envAxis?.kind === 'axis' ? getEntries(envAxis.axisId) : [];
+    const regionEntries = regionAxis?.kind === 'axis' ? getEntries(regionAxis.axisId) : [];
+    const svcEntries = svcNameAxis?.kind === 'axis' ? getEntries(svcNameAxis.axisId) : [];
+    const nsEntries = nsAxis?.kind === 'axis' ? getEntries(nsAxis.axisId) : [];
 
     lines.push(`/**`);
     lines.push(` * Catalog "${catalog.id}" 기반 ServiceBootConfig.`);
     lines.push(` * env/region/name/namespace가 실제 축 엔트리로 제한되어 컴파일 타임 검증 가능.`);
     lines.push(` */`);
-    lines.push(`export interface TypedServiceBootConfig extends Omit<ServiceBootConfig, "env" | "region" | "name" | "namespace"> {`);
+    lines.push(
+      `export interface TypedServiceBootConfig extends Omit<ServiceBootConfig, "env" | "region" | "name" | "namespace"> {`,
+    );
     if (envEntries.length > 0) {
-      lines.push(`  readonly env: ${envEntries.map(e => `"${e}"`).join(" | ")};`);
+      lines.push(`  readonly env: ${envEntries.map((e) => `"${e}"`).join(' | ')};`);
     } else {
       lines.push(`  readonly env: string;`);
     }
     if (regionEntries.length > 0) {
-      lines.push(`  readonly region: ${regionEntries.map(e => `"${e}"`).join(" | ")};`);
+      lines.push(`  readonly region: ${regionEntries.map((e) => `"${e}"`).join(' | ')};`);
     } else {
       lines.push(`  readonly region: string;`);
     }
     if (svcEntries.length > 0) {
-      lines.push(`  readonly name: ${svcEntries.map(e => `"${e}"`).join(" | ")};`);
+      lines.push(`  readonly name: ${svcEntries.map((e) => `"${e}"`).join(' | ')};`);
     } else {
       lines.push(`  readonly name: string;`);
     }
     if (nsEntries.length > 0) {
-      lines.push(`  readonly namespace: ${nsEntries.map(e => `"${e}"`).join(" | ")};`);
+      lines.push(`  readonly namespace: ${nsEntries.map((e) => `"${e}"`).join(' | ')};`);
     } else {
       lines.push(`  readonly namespace: string;`);
     }
@@ -466,7 +498,7 @@ function genContextTypes(catalog: Catalog, contentHash: string, ts: string): str
     lines.push(``);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // ── Migration Test ─────────────────────────────────────
@@ -496,8 +528,8 @@ export function testMigration(
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
 
-  const fromDef = prefix.versions.find(v => v.version === fromVersion);
-  const toDef = prefix.versions.find(v => v.version === toVersion);
+  const fromDef = prefix.versions.find((v) => v.version === fromVersion);
+  const toDef = prefix.versions.find((v) => v.version === toVersion);
   if (!fromDef) throw new Error(`Version ${fromVersion} not found for ${prefixId}`);
   if (!toDef) throw new Error(`Version ${toVersion} not found for ${prefixId}`);
 
@@ -505,8 +537,11 @@ export function testMigration(
   const fromShape: number[] = [];
   for (const label of prefix.labels) {
     const dim = prefix.dims[label];
-    if (!dim) { fromShape.push(1); continue; }
-    if (dim.kind === "axis") {
+    if (!dim) {
+      fromShape.push(1);
+      continue;
+    }
+    if (dim.kind === 'axis') {
       const axisVer = fromDef.axisVersions[label];
       const axis = catalog.axes[dim.axisId];
       const snap = axis?.versions[axisVer];
@@ -548,13 +583,21 @@ export function testMigration(
       }
 
       if (match) passed++;
-      else errors.push({ coord: values, error: "value mismatch after re-encode" });
+      else errors.push({ coord: values, error: 'value mismatch after re-encode' });
     } catch (e) {
       errors.push({ coord: { address }, error: (e as Error).message });
     }
   }
 
-  return { prefixId, fromVersion, toVersion, totalCoords: sampleCount, passed, failed: errors.length, errors };
+  return {
+    prefixId,
+    fromVersion,
+    toVersion,
+    totalCoords: sampleCount,
+    passed,
+    failed: errors.length,
+    errors,
+  };
 }
 
 // ── index.ts (barrel) ──────────────────────────────────
@@ -573,5 +616,5 @@ function genBarrel(_catalog: Catalog, hasDkg: boolean, contentHash: string, ts: 
   }
 
   lines.push(``);
-  return lines.join("\n");
+  return lines.join('\n');
 }

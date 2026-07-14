@@ -8,7 +8,7 @@
  * counter: 합산, gauge: last-value, histogram: 버킷 머지, summary: 원본 보존.
  */
 
-export type MetricWindowType = "1m" | "1h" | "1d";
+export type MetricWindowType = '1m' | '1h' | '1d';
 
 export interface MetricRollupInsert {
   metricName: string;
@@ -25,7 +25,7 @@ export interface MetricRollupInsert {
   aggMax?: number;
   aggAvg?: number;
   aggLast?: number;
-  aggBuckets?: Record<string, number>;   // histogram bucket counts
+  aggBuckets?: Record<string, number>; // histogram bucket counts
   aggQuantiles?: Record<string, number>; // summary quantile values
 }
 

@@ -12,30 +12,28 @@
 // severity 확장 여지: 현재 spec §8 은 "warn" 만 정의. 향후 "fail" 추가 가능성은 ParamsSchema
 // 확장으로 열려 있지만 현재는 enum literal "warn" 만 허용.
 
-import { Injectable } from "@nestjs/common";
-import type { Fault } from "./types.js";
-import type { Verdict } from "../verdict/category-verdict.service.js";
+import { Injectable } from '@nestjs/common';
+import type { Fault } from './types.js';
+import type { Verdict } from '../verdict/category-verdict.service.js';
 
 export interface PerfWarnParams {
-  severity: "warn";
+  severity: 'warn';
 }
 
 @Injectable()
 export class PerfWarnFault implements Fault {
-  readonly kind = "perf-warn" as const;
+  readonly kind = 'perf-warn' as const;
   private params: PerfWarnParams | null = null;
   private target: string | undefined;
 
   async enable(rawParams: unknown, target?: unknown): Promise<void> {
     // 현재 spec §8 은 severity="warn" 만 허용 (확장 여지는 향후 reserved).
     const obj = (rawParams ?? {}) as { severity?: unknown };
-    if (obj.severity !== "warn") {
-      throw new Error(
-        `severity must be "warn" (spec §8), got ${JSON.stringify(obj.severity)}`,
-      );
+    if (obj.severity !== 'warn') {
+      throw new Error(`severity must be "warn" (spec §8), got ${JSON.stringify(obj.severity)}`);
     }
-    this.params = { severity: "warn" };
-    this.target = typeof target === "string" ? target : undefined;
+    this.params = { severity: 'warn' };
+    this.target = typeof target === 'string' ? target : undefined;
   }
 
   async disable(): Promise<void> {
@@ -68,7 +66,7 @@ export class PerfWarnFault implements Fault {
    */
   applyTo(perfVerdict: Verdict): Verdict {
     if (this.params === null) return perfVerdict;
-    if (perfVerdict === "FAIL") return "FAIL";
-    return "WARN";
+    if (perfVerdict === 'FAIL') return 'FAIL';
+    return 'WARN';
   }
 }

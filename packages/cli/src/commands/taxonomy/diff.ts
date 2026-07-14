@@ -1,28 +1,46 @@
-import { readFileSync } from "node:fs";
-import { parse, validate, diff } from "taxonomy-engine";
-import type { Diagnostic, DiffEntry } from "taxonomy-engine";
-import { loadRegistryDir, extractRegistryDir, filterRegistryArgs } from "./shared.js";
+import { readFileSync } from 'node:fs';
+import { parse, validate, diff } from 'taxonomy-engine';
+import type { Diagnostic, DiffEntry } from 'taxonomy-engine';
+import { loadRegistryDir, extractRegistryDir, filterRegistryArgs } from './shared.js';
 
 export function formatChange(c: DiffEntry): string {
   switch (c.kind) {
-    case "axis-added": return `+ axis ${c.axis}`;
-    case "axis-removed": return `- axis ${c.axis}`;
-    case "axis-lifecycle-changed": return `~ axis ${c.axis} lifecycle ${c.from ?? "(none)"} → ${c.to ?? "(none)"}`;
-    case "entry-added": return `+ ${c.axis}.${c.id} (address=${c.address})`;
-    case "entry-removed": return `- ${c.axis}.${c.id} (address=${c.address})`;
-    case "entry-address-changed": return `~ ${c.axis}.${c.id} address ${c.from} → ${c.to}`;
-    case "entry-label-changed": return `~ ${c.axis}.${c.id} label "${c.from ?? ""}" → "${c.to ?? ""}"`;
-    case "entry-lifecycle-changed": return `~ ${c.axis}.${c.id} lifecycle ${c.from ?? "(none)"} → ${c.to ?? "(none)"}`;
-    case "entry-placeholder-reason-changed": return `~ ${c.axis}.${c.id} placeholderReason changed`;
-    case "entry-decision-link-changed": return `~ ${c.axis}.${c.id} decisionLink "${c.from ?? ""}" → "${c.to ?? ""}"`;
-    case "capacity-changed": return `~ ${c.axis} capacity ${c.from} → ${c.to}`;
-    case "relation-added": return `+ relation ${c.name}`;
-    case "relation-removed": return `- relation ${c.name}`;
-    case "relation-rules-count-changed": return `~ relation ${c.name} rules ${c.from} → ${c.to}`;
-    case "relation-rule-added": return `+ ${c.relation} rule { ${formatRule(c.rule)} }`;
-    case "relation-rule-removed": return `- ${c.relation} rule { ${formatRule(c.rule)} }`;
-    case "constraint-added": return `+ constraint ${c.id}`;
-    case "constraint-removed": return `- constraint ${c.id}`;
+    case 'axis-added':
+      return `+ axis ${c.axis}`;
+    case 'axis-removed':
+      return `- axis ${c.axis}`;
+    case 'axis-lifecycle-changed':
+      return `~ axis ${c.axis} lifecycle ${c.from ?? '(none)'} → ${c.to ?? '(none)'}`;
+    case 'entry-added':
+      return `+ ${c.axis}.${c.id} (address=${c.address})`;
+    case 'entry-removed':
+      return `- ${c.axis}.${c.id} (address=${c.address})`;
+    case 'entry-address-changed':
+      return `~ ${c.axis}.${c.id} address ${c.from} → ${c.to}`;
+    case 'entry-label-changed':
+      return `~ ${c.axis}.${c.id} label "${c.from ?? ''}" → "${c.to ?? ''}"`;
+    case 'entry-lifecycle-changed':
+      return `~ ${c.axis}.${c.id} lifecycle ${c.from ?? '(none)'} → ${c.to ?? '(none)'}`;
+    case 'entry-placeholder-reason-changed':
+      return `~ ${c.axis}.${c.id} placeholderReason changed`;
+    case 'entry-decision-link-changed':
+      return `~ ${c.axis}.${c.id} decisionLink "${c.from ?? ''}" → "${c.to ?? ''}"`;
+    case 'capacity-changed':
+      return `~ ${c.axis} capacity ${c.from} → ${c.to}`;
+    case 'relation-added':
+      return `+ relation ${c.name}`;
+    case 'relation-removed':
+      return `- relation ${c.name}`;
+    case 'relation-rules-count-changed':
+      return `~ relation ${c.name} rules ${c.from} → ${c.to}`;
+    case 'relation-rule-added':
+      return `+ ${c.relation} rule { ${formatRule(c.rule)} }`;
+    case 'relation-rule-removed':
+      return `- ${c.relation} rule { ${formatRule(c.rule)} }`;
+    case 'constraint-added':
+      return `+ constraint ${c.id}`;
+    case 'constraint-removed':
+      return `- constraint ${c.id}`;
   }
 }
 
@@ -30,17 +48,19 @@ export function formatRule(rule: Record<string, string>): string {
   return Object.entries(rule)
     .sort(([ka], [kb]) => ka.localeCompare(kb))
     .map(([k, v]) => `${k}: ${v}`)
-    .join(", ");
+    .join(', ');
 }
 
 export function diffCmd(args: string[]): void {
-  const json = args.includes("--json");
-  const semver = args.includes("--semver");
+  const json = args.includes('--json');
+  const semver = args.includes('--semver');
   const registryDir = extractRegistryDir(args);
   const filteredArgs = filterRegistryArgs(args);
-  const positional = filteredArgs.filter((a) => !a.startsWith("--"));
+  const positional = filteredArgs.filter((a) => !a.startsWith('--'));
   if (positional.length < 2) {
-    console.error("사용법: qa-sdk tax diff <a.yaml> <b.yaml> [--registry <dir>] [--semver] [--json]");
+    console.error(
+      '사용법: qa-sdk tax diff <a.yaml> <b.yaml> [--registry <dir>] [--semver] [--json]',
+    );
     process.exit(1);
     return;
   }
@@ -48,8 +68,8 @@ export function diffCmd(args: string[]): void {
 
   let textA: string, textB: string;
   try {
-    textA = readFileSync(fileA, "utf8");
-    textB = readFileSync(fileB, "utf8");
+    textA = readFileSync(fileA, 'utf8');
+    textB = readFileSync(fileB, 'utf8');
   } catch (e) {
     console.error(`파일 읽기 실패: ${(e as Error).message}`);
     process.exit(1);
@@ -58,12 +78,12 @@ export function diffCmd(args: string[]): void {
 
   const ra = parse(textA);
   const rb = parse(textB);
-  if ("error" in ra) {
+  if ('error' in ra) {
     console.error(`a parse 실패: ${ra.error.message}`);
     process.exit(1);
     return;
   }
-  if ("error" in rb) {
+  if ('error' in rb) {
     console.error(`b parse 실패: ${rb.error.message}`);
     process.exit(1);
     return;
@@ -89,7 +109,7 @@ export function diffCmd(args: string[]): void {
   }
 
   if (result.same) {
-    console.log("✔ 두 yaml 동일");
+    console.log('✔ 두 yaml 동일');
   } else {
     console.log(`${result.changes.length} 변경 발견:\n`);
     for (const c of result.changes) {
@@ -100,8 +120,8 @@ export function diffCmd(args: string[]): void {
   // semver 게이트
   if (semver) {
     console.log(`\nbreakingLevel: ${result.breakingLevel}`);
-    if (result.breakingLevel === "major") {
-      console.log("✖ major 변경 감지 — --semver 게이트 차단");
+    if (result.breakingLevel === 'major') {
+      console.log('✖ major 변경 감지 — --semver 게이트 차단');
       process.exit(1);
       return;
     }
@@ -109,12 +129,14 @@ export function diffCmd(args: string[]): void {
 
   // --registry 검증 진단 정보 출력
   if (validateInfo) {
-    const aErrs = validateInfo.a.filter((d) => d.severity === "error").length;
-    const bErrs = validateInfo.b.filter((d) => d.severity === "error").length;
-    const aWarns = validateInfo.a.filter((d) => d.severity === "warning").length;
-    const bWarns = validateInfo.b.filter((d) => d.severity === "warning").length;
+    const aErrs = validateInfo.a.filter((d) => d.severity === 'error').length;
+    const bErrs = validateInfo.b.filter((d) => d.severity === 'error').length;
+    const aWarns = validateInfo.a.filter((d) => d.severity === 'warning').length;
+    const bWarns = validateInfo.b.filter((d) => d.severity === 'warning').length;
     if (aErrs > 0 || bErrs > 0) {
-      console.log(`\n[--registry 검증] a errors=${aErrs} warnings=${aWarns}, b errors=${bErrs} warnings=${bWarns}`);
+      console.log(
+        `\n[--registry 검증] a errors=${aErrs} warnings=${aWarns}, b errors=${bErrs} warnings=${bWarns}`,
+      );
     } else {
       console.log(`\n[--registry 검증] a warnings=${aWarns}, b warnings=${bWarns} (errors=0)`);
     }

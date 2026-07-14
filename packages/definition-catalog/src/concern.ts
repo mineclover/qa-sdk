@@ -35,91 +35,89 @@ import type {
   DefinitionEntry,
   DefinitionLink,
   LinkType,
-} from "./types.js";
+} from './types.js';
 
 // ─── Concern 정의 레지스트리 ─────────────────────────────
 
 export const CONCERN_DEFS: readonly ConcernDef[] = [
   {
-    id: "security",
-    name: "보안",
-    description: "인증, 인가, 암호화, 감사",
+    id: 'security',
+    name: '보안',
+    description: '인증, 인가, 암호화, 감사',
     propagation: [
-      { linkType: "refines", direction: "downstream" },
-      { linkType: "implements", direction: "downstream" },
-      { linkType: "depends_on", direction: "upstream" },
-      { linkType: "constrains", direction: "downstream" },
-      { linkType: "contains", direction: "downstream" },
+      { linkType: 'refines', direction: 'downstream' },
+      { linkType: 'implements', direction: 'downstream' },
+      { linkType: 'depends_on', direction: 'upstream' },
+      { linkType: 'constrains', direction: 'downstream' },
+      { linkType: 'contains', direction: 'downstream' },
     ],
   },
   {
-    id: "performance",
-    name: "성능",
-    description: "지연, 처리량, 최적화",
+    id: 'performance',
+    name: '성능',
+    description: '지연, 처리량, 최적화',
     propagation: [
-      { linkType: "refines", direction: "downstream" },
-      { linkType: "implements", direction: "downstream" },
-      { linkType: "depends_on", direction: "upstream" },
-      { linkType: "contains", direction: "downstream" },
+      { linkType: 'refines', direction: 'downstream' },
+      { linkType: 'implements', direction: 'downstream' },
+      { linkType: 'depends_on', direction: 'upstream' },
+      { linkType: 'contains', direction: 'downstream' },
     ],
   },
   {
-    id: "accessibility",
-    name: "접근성",
-    description: "a11y, WCAG, 스크린리더",
+    id: 'accessibility',
+    name: '접근성',
+    description: 'a11y, WCAG, 스크린리더',
     propagation: [
-      { linkType: "refines", direction: "downstream" },
-      { linkType: "implements", direction: "downstream" },
-      { linkType: "constrains", direction: "downstream" },
-      { linkType: "contains", direction: "downstream" },
+      { linkType: 'refines', direction: 'downstream' },
+      { linkType: 'implements', direction: 'downstream' },
+      { linkType: 'constrains', direction: 'downstream' },
+      { linkType: 'contains', direction: 'downstream' },
     ],
   },
   {
-    id: "observability",
-    name: "관측성",
-    description: "로깅, 메트릭, 트레이싱",
+    id: 'observability',
+    name: '관측성',
+    description: '로깅, 메트릭, 트레이싱',
     propagation: [
-      { linkType: "refines", direction: "downstream" },
-      { linkType: "implements", direction: "downstream" },
-      { linkType: "contains", direction: "downstream" },
+      { linkType: 'refines', direction: 'downstream' },
+      { linkType: 'implements', direction: 'downstream' },
+      { linkType: 'contains', direction: 'downstream' },
     ],
   },
   {
-    id: "testing",
-    name: "테스트",
-    description: "검증 전략, 커버리지",
+    id: 'testing',
+    name: '테스트',
+    description: '검증 전략, 커버리지',
     propagation: [
-      { linkType: "refines", direction: "downstream" },
-      { linkType: "implements", direction: "downstream" },
-      { linkType: "contains", direction: "downstream" },
+      { linkType: 'refines', direction: 'downstream' },
+      { linkType: 'implements', direction: 'downstream' },
+      { linkType: 'contains', direction: 'downstream' },
     ],
   },
   {
-    id: "migration",
-    name: "마이그레이션",
-    description: "스키마 변경, 데이터 이전",
+    id: 'migration',
+    name: '마이그레이션',
+    description: '스키마 변경, 데이터 이전',
     propagation: [
-      { linkType: "depends_on", direction: "upstream" },
-      { linkType: "refines", direction: "downstream" },
-      { linkType: "contains", direction: "downstream" },
+      { linkType: 'depends_on', direction: 'upstream' },
+      { linkType: 'refines', direction: 'downstream' },
+      { linkType: 'contains', direction: 'downstream' },
     ],
   },
   {
-    id: "deprecation",
-    name: "폐기",
-    description: "대체 계획, 이전 가이드",
+    id: 'deprecation',
+    name: '폐기',
+    description: '대체 계획, 이전 가이드',
     propagation: [
-      { linkType: "refines", direction: "downstream" },
-      { linkType: "implements", direction: "downstream" },
-      { linkType: "depends_on", direction: "upstream" },
-      { linkType: "contains", direction: "downstream" },
+      { linkType: 'refines', direction: 'downstream' },
+      { linkType: 'implements', direction: 'downstream' },
+      { linkType: 'depends_on', direction: 'upstream' },
+      { linkType: 'contains', direction: 'downstream' },
     ],
   },
 ];
 
-const CONCERN_MAP = new Map<ConcernTag, ConcernDef>(
-  CONCERN_DEFS.map(d => [d.id, d]),
-);
+const CONCERN_MAP = new Map<ConcernTag, ConcernDef>(CONCERN_DEFS.map((d) => [d.id, d]));
 
 export function getConcernDef(id: ConcernTag): ConcernDef | undefined {
   return CONCERN_MAP.get(id);
@@ -130,7 +128,7 @@ export function getConcernDef(id: ConcernTag): ConcernDef | undefined {
 /** 문서의 tags에서 ConcernTag만 추출 */
 export function extractDirectConcerns(entry: DefinitionEntry): readonly ConcernTag[] {
   if (!entry.tags) return [];
-  return entry.tags.filter(t => CONCERN_MAP.has(t as ConcernTag)) as ConcernTag[];
+  return entry.tags.filter((t) => CONCERN_MAP.has(t as ConcernTag)) as ConcernTag[];
 }
 
 /**
@@ -149,29 +147,23 @@ export function extractDirectConcerns(entry: DefinitionEntry): readonly ConcernT
 function findConcernSources(
   targetId: string,
   linkType: LinkType,
-  direction: "downstream" | "upstream",
+  direction: 'downstream' | 'upstream',
   outgoing: readonly DefinitionLink[],
   incoming: readonly DefinitionLink[],
 ): readonly string[] {
-  if (linkType === "constrains" && direction === "downstream") {
+  if (linkType === 'constrains' && direction === 'downstream') {
     // constrains: source(제약자)가 target(피제약자)에게 concern을 준다
-    return incoming
-      .filter(l => l.linkType === "constrains")
-      .map(l => l.sourceId);
+    return incoming.filter((l) => l.linkType === 'constrains').map((l) => l.sourceId);
   }
 
-  if (linkType === "contains" && direction === "downstream") {
+  if (linkType === 'contains' && direction === 'downstream') {
     // contains: source(그룹)가 target(멤버)에게 concern을 준다
     // 멤버 입장에서 incoming contains의 source(=그룹)가 concern 출처
-    return incoming
-      .filter(l => l.linkType === "contains")
-      .map(l => l.sourceId);
+    return incoming.filter((l) => l.linkType === 'contains').map((l) => l.sourceId);
   }
 
   // 나머지: outgoing link의 target이 concern 출처
-  return outgoing
-    .filter(l => l.linkType === linkType)
-    .map(l => l.targetId);
+  return outgoing.filter((l) => l.linkType === linkType).map((l) => l.targetId);
 }
 
 /**
@@ -182,7 +174,7 @@ function findConcernSources(
 export function computeEffectiveConcerns(
   targetId: string,
   getEntry: (id: string) => DefinitionEntry | undefined,
-  getLinksForDoc: (id: string, direction: "outgoing" | "incoming") => readonly DefinitionLink[],
+  getLinksForDoc: (id: string, direction: 'outgoing' | 'incoming') => readonly DefinitionLink[],
 ): EffectiveConcerns {
   const target = getEntry(targetId);
   if (!target) {
@@ -199,11 +191,17 @@ export function computeEffectiveConcerns(
     const visited = new Set<string>([targetId]);
 
     // 초기 이웃 탐색
-    const outgoing = getLinksForDoc(targetId, "outgoing");
-    const incoming = getLinksForDoc(targetId, "incoming");
+    const outgoing = getLinksForDoc(targetId, 'outgoing');
+    const incoming = getLinksForDoc(targetId, 'incoming');
 
     for (const rule of concernDef.propagation) {
-      const sources = findConcernSources(targetId, rule.linkType, rule.direction, outgoing, incoming);
+      const sources = findConcernSources(
+        targetId,
+        rule.linkType,
+        rule.direction,
+        outgoing,
+        incoming,
+      );
       for (const srcId of sources) {
         if (!visited.has(srcId)) {
           queue.push({ docId: srcId, path: [targetId, srcId], viaLinkType: rule.linkType });
@@ -237,11 +235,17 @@ export function computeEffectiveConcerns(
       }
 
       // 전이적 탐색: 이 문서에서 더 위로 올라갈 수 있는가?
-      const nextOutgoing = getLinksForDoc(docId, "outgoing");
-      const nextIncoming = getLinksForDoc(docId, "incoming");
+      const nextOutgoing = getLinksForDoc(docId, 'outgoing');
+      const nextIncoming = getLinksForDoc(docId, 'incoming');
 
       for (const rule of concernDef.propagation) {
-        const nextSources = findConcernSources(docId, rule.linkType, rule.direction, nextOutgoing, nextIncoming);
+        const nextSources = findConcernSources(
+          docId,
+          rule.linkType,
+          rule.direction,
+          nextOutgoing,
+          nextIncoming,
+        );
         for (const srcId of nextSources) {
           if (!visited.has(srcId)) {
             queue.push({ docId: srcId, path: [...path, srcId], viaLinkType: rule.linkType });
@@ -251,15 +255,15 @@ export function computeEffectiveConcerns(
     }
   }
 
-  const allConcerns = [...new Set([...direct, ...inherited.map(i => i.concern)])];
+  const allConcerns = [...new Set([...direct, ...inherited.map((i) => i.concern)])];
   return { direct, inherited, all: allConcerns };
 }
 
 export function selectConcernContext(
   concerns: EffectiveConcerns,
-  mode: "direct" | "transitive",
+  mode: 'direct' | 'transitive',
 ): EffectiveConcerns {
-  if (mode === "transitive") {
+  if (mode === 'transitive') {
     return concerns;
   }
 

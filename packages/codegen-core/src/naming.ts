@@ -12,14 +12,14 @@ export function toUpperSnake(s: string): string {
 /** snake_case → PascalCase */
 export function toPascal(s: string): string {
   return s
-    .split("_")
+    .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join("");
+    .join('');
 }
 
 /** snake_case → SCREAMING_SNAKE (for TS const object keys) */
 export function toConstKey(s: string): string {
-  return s.toUpperCase().replace(/-/g, "_");
+  return s.toUpperCase().replace(/-/g, '_');
 }
 
 /**
@@ -28,7 +28,7 @@ export function toConstKey(s: string): string {
  */
 export function toEnumValue(axisId: string, entry: string): string {
   const prefix = toUpperSnake(axisId);
-  const value = entry.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  const value = entry.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   return `${prefix}_${value}`;
 }
 
@@ -37,5 +37,5 @@ export function toEnumValue(axisId: string, entry: string): string {
  * "prod-east" → "PROD_EAST"
  */
 export function toTsConstKey(entry: string): string {
-  return entry.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  return entry.toUpperCase().replace(/[^A-Z0-9]/g, '_');
 }

@@ -1,11 +1,11 @@
 // @def.boundary sim-service-catalog
-import { parseServicePrefix, parseVersionTag } from "sim-identifier-grammar";
+import { parseServicePrefix, parseVersionTag } from 'sim-identifier-grammar';
 import type {
   CatalogPrefixDefinition,
   ServiceState,
   TransitionLog,
   VersionEntry,
-} from "./types.js";
+} from './types.js';
 
 /**
  * spec 02 §2.3: 허용 전이는 candidate → {stable, retired} 두 가지.
@@ -14,8 +14,8 @@ import type {
  * 그 외(retired→*, stable→candidate)는 모두 illegal.
  */
 const ALLOWED_TRANSITIONS: ReadonlyArray<readonly [ServiceState, ServiceState]> = [
-  ["candidate", "stable"],
-  ["candidate", "retired"],
+  ['candidate', 'stable'],
+  ['candidate', 'retired'],
 ];
 
 export interface TransitionInput {
@@ -62,16 +62,16 @@ export function transitionState(
   const next: VersionEntry[] = catalog.refEntries.map((e) => ({ ...e }));
   next[fromIdx] = { version: input.to.version, state: input.to.state };
 
-  if (input.from.state === "candidate" && input.to.state === "stable") {
+  if (input.from.state === 'candidate' && input.to.state === 'stable') {
     for (let i = 0; i < next.length; i++) {
       if (i === fromIdx) continue;
-      if (next[i].state === "stable") next[i] = { ...next[i], state: "retired" };
+      if (next[i].state === 'stable') next[i] = { ...next[i], state: 'retired' };
     }
   }
 
   // invariant: stable=1, candidate≤1
-  const stableCount = next.filter((e) => e.state === "stable").length;
-  const candidateCount = next.filter((e) => e.state === "candidate").length;
+  const stableCount = next.filter((e) => e.state === 'stable').length;
+  const candidateCount = next.filter((e) => e.state === 'candidate').length;
   if (stableCount !== 1) {
     throw new Error(`transitionState: invariant 위반 — stable count=${stableCount}`);
   }

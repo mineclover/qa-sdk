@@ -35,10 +35,10 @@
  */
 
 /** 추출 수준 (표준 마커 기반) */
-export type ExtractLevel = "purpose" | "overview" | "full";
+export type ExtractLevel = 'purpose' | 'overview' | 'full';
 
 /** 표준 마커 유형 */
-export type StandardMarker = "purpose" | "overview";
+export type StandardMarker = 'purpose' | 'overview';
 
 /**
  * 마커 유형.
@@ -80,7 +80,7 @@ function headingLevel(line: string): number {
 
 function isFenceToggle(line: string): boolean {
   const trimmed = line.trimStart();
-  return trimmed.startsWith("```") || trimmed.startsWith("~~~");
+  return trimmed.startsWith('```') || trimmed.startsWith('~~~');
 }
 
 /**
@@ -90,7 +90,7 @@ function isFenceToggle(line: string): boolean {
  * 다음 동급/상위 헤더가 나올 때까지 수집한다.
  */
 export function findMarkedSections(body: string): readonly MarkedSection[] {
-  const lines = body.split("\n");
+  const lines = body.split('\n');
   const result: MarkedSection[] = [];
   let inFence = false;
 
@@ -105,12 +105,12 @@ export function findMarkedSections(body: string): readonly MarkedSection[] {
     if (!match) continue;
 
     const marker = match[1] as Marker;
-    const header = lines[i].replace(MARKER_REGEX, "").trimEnd();
+    const header = lines[i].replace(MARKER_REGEX, '').trimEnd();
     const level = headingLevel(header);
 
     // 헤더가 아닌 줄에 마커가 붙은 경우 (레거시 호환: 줄 자체를 본문으로)
     if (level === 0) {
-      result.push({ header: "", marker, level: 0, body: header, line: i });
+      result.push({ header: '', marker, level: 0, body: header, line: i });
       continue;
     }
 
@@ -130,10 +130,10 @@ export function findMarkedSections(body: string): readonly MarkedSection[] {
     }
 
     // 앞뒤 빈 줄 제거
-    while (bodyLines.length > 0 && bodyLines[0].trim() === "") bodyLines.shift();
-    while (bodyLines.length > 0 && bodyLines[bodyLines.length - 1].trim() === "") bodyLines.pop();
+    while (bodyLines.length > 0 && bodyLines[0].trim() === '') bodyLines.shift();
+    while (bodyLines.length > 0 && bodyLines[bodyLines.length - 1].trim() === '') bodyLines.pop();
 
-    result.push({ header, marker, level, body: bodyLines.join("\n"), line: i });
+    result.push({ header, marker, level, body: bodyLines.join('\n'), line: i });
   }
 
   return result;
@@ -143,13 +143,13 @@ export function findMarkedSections(body: string): readonly MarkedSection[] {
  * 하위 호환: 줄 단위 마커도 찾는다.
  */
 export function findMarkers(body: string): readonly MarkedLine[] {
-  const lines = body.split("\n");
+  const lines = body.split('\n');
   const result: MarkedLine[] = [];
   for (let i = 0; i < lines.length; i++) {
     const match = lines[i].match(MARKER_REGEX);
     if (match) {
       result.push({
-        text: lines[i].replace(MARKER_REGEX, "").trimEnd(),
+        text: lines[i].replace(MARKER_REGEX, '').trimEnd(),
         marker: match[1] as Marker,
         line: i,
       });
@@ -179,8 +179,8 @@ export interface ExtractResult {
 export function extractByLevel(body: string, level: ExtractLevel): ExtractResult {
   const allSections = findMarkedSections(body);
 
-  if (level === "full") {
-    const cleaned = body.replace(/\s*\^([a-z][a-z0-9-]*)\s*$/gm, "");
+  if (level === 'full') {
+    const cleaned = body.replace(/\s*\^([a-z][a-z0-9-]*)\s*$/gm, '');
     return {
       level,
       sections: allSections,
@@ -190,13 +190,13 @@ export function extractByLevel(body: string, level: ExtractLevel): ExtractResult
   }
 
   const allowedMarkers: readonly Marker[] =
-    level === "purpose" ? ["purpose"] : ["purpose", "overview"];
+    level === 'purpose' ? ['purpose'] : ['purpose', 'overview'];
 
-  const filtered = allSections.filter(s =>
+  const filtered = allSections.filter((s) =>
     (allowedMarkers as readonly string[]).includes(s.marker),
   );
 
-  const text = filtered.map(s => s.body).join("\n\n");
+  const text = filtered.map((s) => s.body).join('\n\n');
 
   return {
     level,
@@ -216,11 +216,11 @@ export function extractByLevel(body: string, level: ExtractLevel): ExtractResult
  */
 export function extractByMarker(body: string, ...markers: string[]): ExtractResult {
   const allSections = findMarkedSections(body);
-  const filtered = allSections.filter(s => markers.includes(s.marker));
-  const text = filtered.map(s => s.body).join("\n\n");
+  const filtered = allSections.filter((s) => markers.includes(s.marker));
+  const text = filtered.map((s) => s.body).join('\n\n');
 
   return {
-    level: "full",
+    level: 'full',
     sections: filtered,
     text,
     noMarkers: allSections.length === 0,
@@ -250,8 +250,8 @@ export function summarizeDocument(
   body: string,
 ): DocumentSummary {
   const sections = findMarkedSections(body);
-  const purposeSections = sections.filter(s => s.marker === "purpose");
-  const overviewSections = sections.filter(s => s.marker === "overview");
+  const purposeSections = sections.filter((s) => s.marker === 'purpose');
+  const overviewSections = sections.filter((s) => s.marker === 'overview');
 
   return {
     id,
@@ -259,7 +259,7 @@ export function summarizeDocument(
     aspect,
     depth,
     title,
-    purpose: purposeSections.length > 0 ? purposeSections.map(s => s.body).join("\n\n") : null,
-    overview: overviewSections.map(s => s.body),
+    purpose: purposeSections.length > 0 ? purposeSections.map((s) => s.body).join('\n\n') : null,
+    overview: overviewSections.map((s) => s.body),
   };
 }

@@ -27,10 +27,10 @@
 export type EventTier = 0 | 1 | 2 | 3;
 
 export const TIER_NAMES: Record<EventTier, string> = {
-  0: "이벤트 발생",
-  1: "이벤트 처리",
-  2: "이벤트 소비/생산",
-  3: "데이터 도달",
+  0: '이벤트 발생',
+  1: '이벤트 처리',
+  2: '이벤트 소비/생산',
+  3: '데이터 도달',
 };
 
 export interface ServiceContainer {
@@ -53,13 +53,13 @@ export interface ServiceTierEntry {
 export interface DataEntry {
   readonly table: string;
   readonly column: string;
-  readonly refKind: "scalar" | "axis_ref" | "table_ref" | "prefix_ref";
+  readonly refKind: 'scalar' | 'axis_ref' | 'table_ref' | 'prefix_ref';
 }
 
 /** 축 필터 — 특정 축의 값을 숨기거나 표시 */
 export interface AxisFilter {
   readonly axisId: string;
-  readonly mode: "show" | "hide";
+  readonly mode: 'show' | 'hide';
   readonly values: readonly string[];
 }
 
@@ -129,7 +129,7 @@ export function buildServiceContainers(
   prefixInfos: ReadonlyMap<string, PrefixInfo>,
   tableColumns?: Record<string, readonly DataEntry[]>,
 ): ServiceContainer[] {
-  return services.map(svc => {
+  return services.map((svc) => {
     const allPrefixes = [...new Set([...svc.ownedPrefixes, ...svc.consumedPrefixes])];
     const tiers: Record<EventTier, ServiceTierEntry[]> = { 0: [], 1: [], 2: [], 3: [] };
 
@@ -180,13 +180,13 @@ export function applyFilters(
   axisId: string,
   filters: readonly AxisFilter[],
 ): string[] {
-  const filter = filters.find(f => f.axisId === axisId);
+  const filter = filters.find((f) => f.axisId === axisId);
   if (!filter) return [...entries];
 
-  if (filter.mode === "show") {
-    return entries.filter(e => filter.values.includes(e));
+  if (filter.mode === 'show') {
+    return entries.filter((e) => filter.values.includes(e));
   } else {
-    return entries.filter(e => !filter.values.includes(e));
+    return entries.filter((e) => !filter.values.includes(e));
   }
 }
 
@@ -239,14 +239,19 @@ export function computeScopeLayouts(
   const tierGap = options?.tierGap ?? 3;
 
   return containers.map((c, i) => {
-    const totalTiers = Object.values(c.tiers).filter(t => t.length > 0).length + (c.dataEntries.length > 0 ? 1 : 0);
+    const totalTiers =
+      Object.values(c.tiers).filter((t) => t.length > 0).length +
+      (c.dataEntries.length > 0 ? 1 : 0);
     const height = totalTiers * tierGap;
-    const maxEntries = Math.max(1, ...Object.values(c.tiers).flatMap(t => t.map(e => e.entries.length)));
+    const maxEntries = Math.max(
+      1,
+      ...Object.values(c.tiers).flatMap((t) => t.map((e) => e.entries.length)),
+    );
     const width = Math.max(4, Math.ceil(Math.sqrt(maxEntries)) * 1.5);
 
     return {
       serviceId: c.serviceId,
-      position: { x: i * gap - (containers.length - 1) * gap / 2, y: 0, z: 0 },
+      position: { x: i * gap - ((containers.length - 1) * gap) / 2, y: 0, z: 0 },
       size: { width, height, depth: width },
       tierOffsets: { 0: tierGap * 1.5, 1: tierGap * 0.5, 2: -tierGap * 0.5, 3: -tierGap * 1.5 },
     };
@@ -259,41 +264,53 @@ export function computeScopeLayouts(
 
 export const DEMO_SERVICES: ServiceDef[] = [
   {
-    id: "shopping-web", name: "쇼핑 웹",
-    ownedPrefixes: ["page_view", "tracking"],
-    consumedPrefixes: ["endpoint", "flow_point", "permission", "service"],
-    tables: ["members"],
+    id: 'shopping-web',
+    name: '쇼핑 웹',
+    ownedPrefixes: ['page_view', 'tracking'],
+    consumedPrefixes: ['endpoint', 'flow_point', 'permission', 'service'],
+    tables: ['members'],
   },
   {
-    id: "shopping-backend", name: "쇼핑 백엔드",
-    ownedPrefixes: ["cart_event", "order_event", "permission", "event"],
-    consumedPrefixes: ["endpoint", "service"],
-    tables: ["orders", "items", "carts", "cart_items"],
+    id: 'shopping-backend',
+    name: '쇼핑 백엔드',
+    ownedPrefixes: ['cart_event', 'order_event', 'permission', 'event'],
+    consumedPrefixes: ['endpoint', 'service'],
+    tables: ['orders', 'items', 'carts', 'cart_items'],
   },
   {
-    id: "auth", name: "인증",
-    ownedPrefixes: ["auth_event"],
-    consumedPrefixes: ["permission", "endpoint", "service"],
-    tables: ["members"],
+    id: 'auth',
+    name: '인증',
+    ownedPrefixes: ['auth_event'],
+    consumedPrefixes: ['permission', 'endpoint', 'service'],
+    tables: ['members'],
   },
   {
-    id: "payment", name: "결제",
+    id: 'payment',
+    name: '결제',
     ownedPrefixes: [],
-    consumedPrefixes: ["endpoint", "flow_point", "permission", "order_event", "service"],
-    tables: ["orders"],
+    consumedPrefixes: ['endpoint', 'flow_point', 'permission', 'order_event', 'service'],
+    tables: ['orders'],
   },
   {
-    id: "infra", name: "인프라",
-    ownedPrefixes: ["deploy_event", "health_event", "pipeline_point", "data_policy", "service", "endpoint"],
+    id: 'infra',
+    name: '인프라',
+    ownedPrefixes: [
+      'deploy_event',
+      'health_event',
+      'pipeline_point',
+      'data_policy',
+      'service',
+      'endpoint',
+    ],
     consumedPrefixes: [],
-    tables: ["orgs"],
+    tables: ['orgs'],
   },
 ];
 
 /** env 축 필터 프리셋 */
 export const ENV_FILTERS = {
-  prodOnly: { axisId: "env", mode: "show" as const, values: ["prod"] },
-  devOnly: { axisId: "env", mode: "show" as const, values: ["dev"] },
-  hideTest: { axisId: "env", mode: "hide" as const, values: ["test", "local"] },
-  all: { axisId: "env", mode: "show" as const, values: ["dev", "stage", "prod", "test", "local"] },
+  prodOnly: { axisId: 'env', mode: 'show' as const, values: ['prod'] },
+  devOnly: { axisId: 'env', mode: 'show' as const, values: ['dev'] },
+  hideTest: { axisId: 'env', mode: 'hide' as const, values: ['test', 'local'] },
+  all: { axisId: 'env', mode: 'show' as const, values: ['dev', 'stage', 'prod', 'test', 'local'] },
 };

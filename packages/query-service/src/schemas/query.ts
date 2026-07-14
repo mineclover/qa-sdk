@@ -1,26 +1,23 @@
 // @def.boundary query-api-spec
 // @def.doc query-api-spec
 
-import { z } from "zod";
-import { coordConstraintSchema } from "./policy-rule.js";
+import { z } from 'zod';
+import { coordConstraintSchema } from './policy-rule.js';
 
 export const conflictStrategySchema = z.enum([
-  "most-specific",
-  "priority",
-  "collect",
-  "first-match",
+  'most-specific',
+  'priority',
+  'collect',
+  'first-match',
 ]);
 
-const entityIdSchema = z.union([
-  z.string().min(1),
-  z.number().finite(),
-]);
+const entityIdSchema = z.union([z.string().min(1), z.number().finite()]);
 
 const entityConstraintSchema = entityIdSchema.or(z.null());
 const coordSchema = z.array(z.number().int().positive()).min(1);
 const shapeSchema = z.array(z.number().int().positive()).min(1);
 const rulePatternSchema = z.array(coordConstraintSchema).min(1);
-const gateModeSchema = z.enum(["encodable", "decodable", "active"]);
+const gateModeSchema = z.enum(['encodable', 'decodable', 'active']);
 
 export const resolvePolicyRuleSchema = z.object({
   id: z.string().min(1),
@@ -29,33 +26,35 @@ export const resolvePolicyRuleSchema = z.object({
   priority: z.number().int().optional(),
 });
 
-export const resolvePolicyRequestSchema = z.object({
-  indexId: z.string().min(1).optional(),
-  versionId: z.string().min(1).optional(),
-  coord: coordSchema,
-  rules: z.array(resolvePolicyRuleSchema),
-  shape: shapeSchema,
-  strategy: conflictStrategySchema.optional(),
-  withGate: z.boolean().default(false),
-}).superRefine((value, ctx) => {
-  if (value.withGate && (!value.indexId || !value.versionId)) {
-    if (!value.indexId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["indexId"],
-        message: "indexId is required when withGate=true",
-      });
-    }
+export const resolvePolicyRequestSchema = z
+  .object({
+    indexId: z.string().min(1).optional(),
+    versionId: z.string().min(1).optional(),
+    coord: coordSchema,
+    rules: z.array(resolvePolicyRuleSchema),
+    shape: shapeSchema,
+    strategy: conflictStrategySchema.optional(),
+    withGate: z.boolean().default(false),
+  })
+  .superRefine((value, ctx) => {
+    if (value.withGate && (!value.indexId || !value.versionId)) {
+      if (!value.indexId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['indexId'],
+          message: 'indexId is required when withGate=true',
+        });
+      }
 
-    if (!value.versionId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["versionId"],
-        message: "versionId is required when withGate=true",
-      });
+      if (!value.versionId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['versionId'],
+          message: 'versionId is required when withGate=true',
+        });
+      }
     }
-  }
-});
+  });
 
 export const matchRangesRequestSchema = z.object({
   indexId: z.string().min(1),

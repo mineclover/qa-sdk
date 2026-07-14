@@ -1,17 +1,17 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseFilters } from "@nestjs/common";
-import { z } from "zod";
-import { randomUUID } from "node:crypto";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { NotificationUseCase } from "../../application/use-cases/notification.use-case.js";
+import { Body, Controller, Get, Inject, Param, Post, Put, Query, UseFilters } from '@nestjs/common';
+import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { NotificationUseCase } from '../../application/use-cases/notification.use-case.js';
 import {
   NotificationReadModelQuery,
   type NotificationDetailReadModel,
   type NotificationListItemReadModel,
-} from "../../application/queries/notification-read-model.query.js";
-import { NotificationNotFoundException } from "../../domain/notification.exceptions.js";
+} from '../../application/queries/notification-read-model.query.js';
+import { NotificationNotFoundException } from '../../domain/notification.exceptions.js';
 
 const createSchema = z.object({
   recipientUserId: z.string().min(1),
@@ -42,7 +42,7 @@ export class NotificationController {
     @Inject(NotificationReadModelQuery) private readonly readModel: NotificationReadModelQuery,
   ) {}
 
-  @Post("notifications")
+  @Post('notifications')
   async create(@Body() body: unknown): Promise<NotificationCreatedResponse> {
     const parsed = createSchema.parse(body);
     const id = parsed.idempotencyKey ?? randomUUID();
@@ -56,8 +56,8 @@ export class NotificationController {
     return { id: result.id, status: result.status };
   }
 
-  @Get("notifications/:id")
-  async get(@Param("id") id: string): Promise<NotificationDetailReadModel> {
+  @Get('notifications/:id')
+  async get(@Param('id') id: string): Promise<NotificationDetailReadModel> {
     const detail = await this.readModel.findDetail(id);
     if (!detail) {
       throw new NotificationNotFoundException(id);
@@ -65,28 +65,28 @@ export class NotificationController {
     return detail;
   }
 
-  @Get("users/:userId/notifications")
+  @Get('users/:userId/notifications')
   async listForUser(
-    @Param("userId") userId: string,
-    @Query("status") status?: string,
+    @Param('userId') userId: string,
+    @Query('status') status?: string,
   ): Promise<NotificationListItemReadModel[]> {
     return this.readModel.listForUser(userId, status);
   }
 
-  @Put("notifications/:id/sent")
-  async markSent(@Param("id") id: string): Promise<NotificationCreatedResponse> {
+  @Put('notifications/:id/sent')
+  async markSent(@Param('id') id: string): Promise<NotificationCreatedResponse> {
     const result = await this.useCase.markSent({ id });
     return { id: result.id, status: result.status };
   }
 
-  @Put("notifications/:id/read")
-  async markRead(@Param("id") id: string): Promise<NotificationCreatedResponse> {
+  @Put('notifications/:id/read')
+  async markRead(@Param('id') id: string): Promise<NotificationCreatedResponse> {
     const result = await this.useCase.markRead({ id });
     return { id: result.id, status: result.status };
   }
 
-  @Put("notifications/:id/failed")
-  async markFailed(@Param("id") id: string): Promise<NotificationCreatedResponse> {
+  @Put('notifications/:id/failed')
+  async markFailed(@Param('id') id: string): Promise<NotificationCreatedResponse> {
     const result = await this.useCase.markFailed({ id });
     return { id: result.id, status: result.status };
   }

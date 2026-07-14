@@ -1,8 +1,8 @@
 // @def.boundary sim-approval-api
 // @def.doc sim-erp-pm-design
 
-import { InvalidTransitionError } from "./errors.js";
-import type { RequestStatus } from "./types.js";
+import { InvalidTransitionError } from './errors.js';
+import type { RequestStatus } from './types.js';
 
 /** state machine 입력에 필요한 최소 형태. */
 export interface BudgetRequestDraft {
@@ -27,10 +27,10 @@ export function determineStages(amount: number): number {
 }
 
 const TRANSITIONS: Record<RequestStatus, Record<string, RequestStatus>> = {
-  draft: { submit: "submitted" },
-  submitted: { review: "in_review", cancel: "draft" },
-  in_review: { approve: "approved", reject: "rejected", request_revision: "revision_requested" },
-  revision_requested: { submit: "submitted", cancel: "draft" },
+  draft: { submit: 'submitted' },
+  submitted: { review: 'in_review', cancel: 'draft' },
+  in_review: { approve: 'approved', reject: 'rejected', request_revision: 'revision_requested' },
+  revision_requested: { submit: 'submitted', cancel: 'draft' },
   approved: {},
   rejected: {},
 };
@@ -53,13 +53,13 @@ export function transitionRequest(cur: BudgetRequestDraft, action: string): Budg
  */
 export function applyDecision(
   cur: BudgetRequestDraft,
-  decision: "approved" | "rejected",
+  decision: 'approved' | 'rejected',
 ): BudgetRequestDraft {
-  if (decision === "rejected") {
-    return { ...cur, status: "rejected" };
+  if (decision === 'rejected') {
+    return { ...cur, status: 'rejected' };
   }
   if (cur.currentStage >= cur.totalStages) {
-    return { ...cur, status: "approved" };
+    return { ...cur, status: 'approved' };
   }
   return { ...cur, currentStage: cur.currentStage + 1 };
 }

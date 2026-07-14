@@ -1,7 +1,7 @@
 // @def.boundary sim-reporting-api
 // @def.doc event-taxonomy-marginal-density
 
-import type { DisjointUnionIndex } from "weighted-index";
+import type { DisjointUnionIndex } from 'weighted-index';
 
 /** Prefix axis 메타데이터 — labels.length == shape[axis_i]. */
 export interface PrefixAxisDescriptor {

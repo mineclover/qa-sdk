@@ -9,43 +9,43 @@
 //
 // CI gate에 통합 전이라 silent skip — `pnpm lint` 미정의이면 본 config는 활성화되지 않는다.
 
-import tsParser from "@typescript-eslint/parser";
-import noWriteDataSourceInBff from "./eslint-rules/no-write-datasource-in-bff.js";
-import noWriteCallOnReadDatasource from "./eslint-rules/no-write-call-on-read-datasource.js";
+import tsParser from '@typescript-eslint/parser';
+import noWriteDataSourceInBff from './eslint-rules/no-write-datasource-in-bff.js';
+import noWriteCallOnReadDatasource from './eslint-rules/no-write-call-on-read-datasource.js';
 
 const sliceWritePolicy = {
   plugins: {
-    "qa-sdk-sim": {
+    'qa-sdk-sim': {
       rules: {
-        "no-write-datasource-in-bff": noWriteDataSourceInBff,
-        "no-write-call-on-read-datasource": noWriteCallOnReadDatasource,
+        'no-write-datasource-in-bff': noWriteDataSourceInBff,
+        'no-write-call-on-read-datasource': noWriteCallOnReadDatasource,
       },
     },
   },
   files: [
-    "simulations/enterprise-pm/services/**/presentation/bff/**/*.ts",
-    "simulations/enterprise-pm/services/reporting-api/**/*.ts",
+    'simulations/enterprise-pm/services/**/presentation/bff/**/*.ts',
+    'simulations/enterprise-pm/services/reporting-api/**/*.ts',
   ],
   languageOptions: {
     parser: tsParser,
-    parserOptions: { ecmaVersion: "latest", sourceType: "module" },
+    parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
   },
   rules: {
-    "qa-sdk-sim/no-write-datasource-in-bff": "error",
-    "qa-sdk-sim/no-write-call-on-read-datasource": "error",
+    'qa-sdk-sim/no-write-datasource-in-bff': 'error',
+    'qa-sdk-sim/no-write-call-on-read-datasource': 'error',
   },
 };
 
 // 본 config의 매칭 외 파일들은 ignore — 그 외 패키지/스크립트는 본 lint scope 외.
 const ignoreOthers = {
   ignores: [
-    "**/node_modules/**",
-    "**/dist/**",
-    "**/.worktrees/**",
-    "**/*.js",
-    "**/*.mjs",
-    "**/*.cjs",
-    "**/*.d.ts",
+    '**/node_modules/**',
+    '**/dist/**',
+    '**/.worktrees/**',
+    '**/*.js',
+    '**/*.mjs',
+    '**/*.cjs',
+    '**/*.d.ts',
   ],
 };
 

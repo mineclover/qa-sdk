@@ -14,14 +14,9 @@
  * 7. 서버 측 decode 결과와 일치 확인
  */
 
-import { describe, it, expect } from "vitest";
-import {
-  MetaRegistry,
-  MetaResolver,
-  PrefixDecoder,
-  type PrefixDecoderConfig,
-} from "index-meta";
-import { AXIS } from "demo-snapshot";
+import { describe, it, expect } from 'vitest';
+import { MetaRegistry, MetaResolver, PrefixDecoder, type PrefixDecoderConfig } from 'index-meta';
+import { AXIS } from 'demo-snapshot';
 
 // ── 픽스처: 2-level cross-index ──────────────────────────────────────────────
 //
@@ -32,25 +27,25 @@ const createFixture = () => {
   const registry = new MetaRegistry({
     dims: {
       env: {
-        kind: { type: "string_enum" },
+        kind: { type: 'string_enum' },
         snapshots: {
-          v1: { entries: ["prod", "staging"] },
+          v1: { entries: ['prod', 'staging'] },
         },
       },
       region: {
-        kind: { type: "string_enum" },
+        kind: { type: 'string_enum' },
         snapshots: {
-          v1: { entries: ["asia", "eu", "us"] },
+          v1: { entries: ['asia', 'eu', 'us'] },
         },
       },
       perm_svc: {
-        kind: { type: "index_ref", indexId: "service" },
+        kind: { type: 'index_ref', indexId: 'service' },
         snapshots: {
           v1: { entries: [0, 1, 2, 3, 4, 5] },
         },
       },
       role: {
-        kind: { type: "string_enum" },
+        kind: { type: 'string_enum' },
         snapshots: {
           v1: { entries: [...AXIS.role.entries] },
         },
@@ -58,15 +53,15 @@ const createFixture = () => {
     },
     indices: {
       service: {
-        dims: ["env", "region"],
+        dims: ['env', 'region'],
         versions: {
-          v1: { snapshots: { env: "v1", region: "v1" } },
+          v1: { snapshots: { env: 'v1', region: 'v1' } },
         },
       },
       permission: {
-        dims: ["perm_svc", "role"],
+        dims: ['perm_svc', 'role'],
         versions: {
-          v1: { snapshots: { perm_svc: "v1", role: "v1" } },
+          v1: { snapshots: { perm_svc: 'v1', role: 'v1' } },
         },
       },
     },
@@ -77,17 +72,17 @@ const createFixture = () => {
 
 // ── E2E: 전체 파이프라인 ────────────────────────────────────────────────────
 
-describe("decode distribution E2E", () => {
-  it("서버 번들 → JSON 전송 → PrefixDecoder 생성 → decode 일치", () => {
+describe('decode distribution E2E', () => {
+  it('서버 번들 → JSON 전송 → PrefixDecoder 생성 → decode 일치', () => {
     // 1. 서버 측: MetaRegistry + MetaResolver
     const registry = createFixture();
     const resolver = new MetaResolver(registry);
 
     // 2. 번들 생성
-    const bundle = resolver.getDecodeMapBundle("permission", "v1");
-    expect(bundle.map.indexId).toBe("permission");
+    const bundle = resolver.getDecodeMapBundle('permission', 'v1');
+    expect(bundle.map.indexId).toBe('permission');
     expect(bundle.refs).toBeDefined();
-    expect(bundle.refs!["service"]).toBeDefined();
+    expect(bundle.refs!['service']).toBeDefined();
 
     // 3. JSON 직렬화 → 역직렬화 (네트워크 전송 시뮬)
     const json = JSON.stringify(bundle);
@@ -95,12 +90,12 @@ describe("decode distribution E2E", () => {
 
     // 4. PrefixDecoder 생성
     const decoder = new PrefixDecoder(received);
-    expect(decoder.indexId).toBe("permission");
+    expect(decoder.indexId).toBe('permission');
     expect(decoder.size).toBe(18);
 
     // 5. 서버 측 코덱으로 참조 decode
-    const serverPermCodec = registry.createCodec("permission", "v1");
-    const serverSvcCodec = registry.createCodec("service", "v1");
+    const serverPermCodec = registry.createCodec('permission', 'v1');
+    const serverSvcCodec = registry.createCodec('service', 'v1');
 
     // 6. 모든 주소에 대해 서버 vs 클라이언트 일치 확인
     for (let value = 0; value < 18; value++) {
@@ -132,12 +127,12 @@ describe("decode distribution E2E", () => {
     }
   });
 
-  it("refs 없는 index의 번들 생성/사용", () => {
+  it('refs 없는 index의 번들 생성/사용', () => {
     const registry = createFixture();
     const resolver = new MetaResolver(registry);
 
     // service는 index_ref dim이 없으므로 refs 미포함
-    const bundle = resolver.getDecodeMapBundle("service", "v1");
+    const bundle = resolver.getDecodeMapBundle('service', 'v1');
     expect(bundle.refs).toBeUndefined();
 
     // JSON round-trip
@@ -145,18 +140,18 @@ describe("decode distribution E2E", () => {
     const decoder = new PrefixDecoder(received);
 
     expect(decoder.size).toBe(6);
-    expect(decoder.decode(0)).toEqual({ env: "prod", region: "asia" });
-    expect(decoder.decode(5)).toEqual({ env: "staging", region: "us" });
+    expect(decoder.decode(0)).toEqual({ env: 'prod', region: 'asia' });
+    expect(decoder.decode(5)).toEqual({ env: 'staging', region: 'us' });
   });
 
-  it("encode → serialize → decode round-trip", () => {
+  it('encode → serialize → decode round-trip', () => {
     const registry = createFixture();
     const resolver = new MetaResolver(registry);
-    const bundle = resolver.getDecodeMapBundle("permission", "v1");
+    const bundle = resolver.getDecodeMapBundle('permission', 'v1');
     const decoder = new PrefixDecoder(JSON.parse(JSON.stringify(bundle)));
 
     // encode
-    const entities = { perm_svc: 3, role: "editor" };
+    const entities = { perm_svc: 3, role: 'editor' };
     const vv = decoder.encode(entities);
 
     // serialize (colon)
@@ -168,41 +163,37 @@ describe("decode distribution E2E", () => {
     expect(decoded).toEqual(entities);
   });
 
-  it("decodeBatch: 혼합 입력 배열", () => {
+  it('decodeBatch: 혼합 입력 배열', () => {
     const registry = createFixture();
     const resolver = new MetaResolver(registry);
-    const bundle = resolver.getDecodeMapBundle("permission", "v1");
+    const bundle = resolver.getDecodeMapBundle('permission', 'v1');
     const decoder = new PrefixDecoder(JSON.parse(JSON.stringify(bundle)));
 
-    const results = decoder.decodeBatch([
-      0,
-      "permission:v1:5",
-      "wi://permission/v1/17",
-    ]);
+    const results = decoder.decodeBatch([0, 'permission:v1:5', 'wi://permission/v1/17']);
 
     expect(results).toHaveLength(3);
-    expect(results[0]).toEqual({ perm_svc: 0, role: "admin" });
-    expect(results[1]).toEqual({ perm_svc: 1, role: "viewer" });
-    expect(results[2]).toEqual({ perm_svc: 5, role: "viewer" });
+    expect(results[0]).toEqual({ perm_svc: 0, role: 'admin' });
+    expect(results[1]).toEqual({ perm_svc: 1, role: 'viewer' });
+    expect(results[2]).toEqual({ perm_svc: 5, role: 'viewer' });
   });
 
-  it("resolveRef: decodeDeep과 동일 결과", () => {
+  it('resolveRef: decodeDeep과 동일 결과', () => {
     const registry = createFixture();
     const resolver = new MetaResolver(registry);
-    const bundle = resolver.getDecodeMapBundle("permission", "v1");
+    const bundle = resolver.getDecodeMapBundle('permission', 'v1');
     const decoder = new PrefixDecoder(JSON.parse(JSON.stringify(bundle)));
 
     for (let value = 0; value < decoder.size; value++) {
       const deep = decoder.decodeDeep(value);
-      const ref = decoder.resolveRef(value, "perm_svc");
+      const ref = decoder.resolveRef(value, 'perm_svc');
       expect(ref).toEqual(deep.refs.perm_svc);
     }
   });
 
-  it("matchRanges: cross-index 조건 검증", () => {
+  it('matchRanges: cross-index 조건 검증', () => {
     const registry = createFixture();
     const resolver = new MetaResolver(registry);
-    const bundle = resolver.getDecodeMapBundle("permission", "v1");
+    const bundle = resolver.getDecodeMapBundle('permission', 'v1');
     const decoder = new PrefixDecoder(JSON.parse(JSON.stringify(bundle)));
 
     // perm_svc=0 (service: env=prod, region=asia) → value range

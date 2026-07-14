@@ -1,10 +1,10 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { DepartmentId, ProjectId, ProjectOwnerId } from "./project.ids.js";
+import type { DepartmentId, ProjectId, ProjectOwnerId } from './project.ids.js';
 
 /** 라이프사이클 상태 머신: draft → active → archived. */
-export type ProjectStatus = "draft" | "active" | "archived";
+export type ProjectStatus = 'draft' | 'active' | 'archived';
 
 export interface ProjectProps {
   readonly id: ProjectId;

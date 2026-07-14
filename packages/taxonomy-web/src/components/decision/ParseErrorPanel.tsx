@@ -1,4 +1,4 @@
-import { classifyParseError } from "../../lib/decisionDemo";
+import { classifyParseError } from '../../lib/decisionDemo';
 
 export function ParseErrorPanel({ message }: { message: string }) {
   const classified = classifyParseError(message);

@@ -20,12 +20,12 @@ export {
   validateRelationCategorySchema,
   validateTraversalSchema,
   validateOperationalOntologySchema,
-} from "./internal/schema-core.js";
+} from './internal/schema-core.js';
 
 export {
   type InMemoryOperationalOntologySchemaRegistryOptions,
   InMemoryOperationalOntologySchemaRegistry,
-} from "./internal/schema-memory.js";
+} from './internal/schema-memory.js';
 
 export {
   type OntologyAddressModel,
@@ -42,7 +42,7 @@ export {
   type OntologyAddressAllocationPlan,
   allocateOntologyAddressSpace,
   validateOntologyAddressAllocationPlan,
-} from "./internal/ontology-allocation-core.js";
+} from './internal/ontology-allocation-core.js';
 
 import {
   validateAxisSchema,
@@ -50,11 +50,11 @@ import {
   validateRelationCategorySchema,
   validateTraversalSchema,
   validateOperationalOntologySchema,
-} from "./internal/schema-core.js";
+} from './internal/schema-core.js';
 import {
   allocateOntologyAddressSpace,
   validateOntologyAddressAllocationPlan,
-} from "./internal/ontology-allocation-core.js";
+} from './internal/ontology-allocation-core.js';
 
 export const operationalOntologySchemaPlane = {
   validateAxisSchema,

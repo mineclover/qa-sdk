@@ -57,9 +57,7 @@ export class StickyDecisionTracker {
 
   private filter(w?: Window): StickyDecision[] {
     if (!w || (!w.from && !w.to)) return [...this.buffer];
-    return this.buffer.filter(
-      (d) => (!w.from || d.at >= w.from) && (!w.to || d.at <= w.to),
-    );
+    return this.buffer.filter((d) => (!w.from || d.at >= w.from) && (!w.to || d.at <= w.to));
   }
 
   private groupBy(sample: StickyDecision[]): Map<string, Set<string>> {
@@ -95,10 +93,7 @@ export class StickyDecisionTracker {
     const total = seen.size;
     const inconsistent = [...seen.values()].filter((v) => v.size > 1).length;
     const ratio = total === 0 ? 1 : 1 - inconsistent / total;
-    const from =
-      w?.from?.toISOString() ??
-      sample[0]?.at.toISOString() ??
-      new Date(0).toISOString();
+    const from = w?.from?.toISOString() ?? sample[0]?.at.toISOString() ?? new Date(0).toISOString();
     const to =
       w?.to?.toISOString() ??
       sample[sample.length - 1]?.at.toISOString() ??

@@ -1,14 +1,14 @@
 // @def.boundary sim-scenarios
 
-import { describe, expect, it } from "vitest";
-import { createWaitForCycles, type FetchLike } from "./wait-for-cycles.js";
+import { describe, expect, it } from 'vitest';
+import { createWaitForCycles, type FetchLike } from './wait-for-cycles.js';
 
-describe("wait-for-cycles handle", () => {
-  it("polling으로 N 사이클 누적 후 cycleIds 반환", async () => {
+describe('wait-for-cycles handle', () => {
+  it('polling으로 N 사이클 누적 후 cycleIds 반환', async () => {
     const states = [
-      { cycleIds: ["c1"] },
-      { cycleIds: ["c1", "c2"] },
-      { cycleIds: ["c1", "c2", "c3"] },
+      { cycleIds: ['c1'] },
+      { cycleIds: ['c1', 'c2'] },
+      { cycleIds: ['c1', 'c2', 'c3'] },
     ];
     let i = 0;
     const fetchImpl: FetchLike = async () => {
@@ -28,7 +28,7 @@ describe("wait-for-cycles handle", () => {
     let nowVal = 0;
     const sleeps: number[] = [];
     const wait = createWaitForCycles({
-      controllerUrl: "http://x",
+      controllerUrl: 'http://x',
       pollIntervalMs: 10,
       fetchImpl,
       nowImpl: () => {
@@ -40,11 +40,11 @@ describe("wait-for-cycles handle", () => {
       },
     });
     const result = await wait(3, 1_000_000);
-    expect(result).toEqual(["c1", "c2", "c3"]);
+    expect(result).toEqual(['c1', 'c2', 'c3']);
     expect(sleeps.length).toBeGreaterThan(0);
   });
 
-  it("timeout 도달 시 throw", async () => {
+  it('timeout 도달 시 throw', async () => {
     const fetchImpl: FetchLike = async () => ({
       ok: true,
       status: 200,
@@ -57,7 +57,7 @@ describe("wait-for-cycles handle", () => {
     });
     let nowVal = 0;
     const wait = createWaitForCycles({
-      controllerUrl: "http://x",
+      controllerUrl: 'http://x',
       pollIntervalMs: 10,
       fetchImpl,
       nowImpl: () => {
@@ -69,14 +69,14 @@ describe("wait-for-cycles handle", () => {
     await expect(wait(3, 200)).rejects.toThrow(/timeout/);
   });
 
-  it("n이 양의 정수가 아니면 throw", async () => {
+  it('n이 양의 정수가 아니면 throw', async () => {
     const wait = createWaitForCycles({
-      controllerUrl: "http://x",
+      controllerUrl: 'http://x',
       fetchImpl: (async () => ({
         ok: true,
         status: 200,
         async text() {
-          return "";
+          return '';
         },
         async json() {
           return { cycleIds: [] };
@@ -87,19 +87,19 @@ describe("wait-for-cycles handle", () => {
     await expect(wait(-1, 1000)).rejects.toThrow(/positive integer/);
   });
 
-  it("non-2xx 응답에 throw", async () => {
+  it('non-2xx 응답에 throw', async () => {
     const fetchImpl: FetchLike = async () => ({
       ok: false,
       status: 503,
       async text() {
-        return "down";
+        return 'down';
       },
       async json() {
         return {};
       },
     });
     const wait = createWaitForCycles({
-      controllerUrl: "http://x",
+      controllerUrl: 'http://x',
       fetchImpl,
       sleepImpl: async () => {},
       nowImpl: () => 0,

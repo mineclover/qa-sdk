@@ -25,8 +25,8 @@
  * @layer 추천 (Recommendation)
  */
 
-import { isPowerOf2, nextPowerOf2 } from "weighted-index";
-import type { GraphPort } from "spec-schema";
+import { isPowerOf2, nextPowerOf2 } from 'weighted-index';
+import type { GraphPort } from 'spec-schema';
 
 export interface CapacityRecommendation {
   readonly axisId: string;
@@ -34,7 +34,7 @@ export interface CapacityRecommendation {
   readonly currentCapacity: number;
   readonly recommendedCapacity: number;
   readonly headroomAfter: number;
-  readonly headroomRatio: number;     // headroom / capacity
+  readonly headroomRatio: number; // headroom / capacity
   readonly changed: boolean;
   readonly reason: string;
 }
@@ -159,16 +159,15 @@ export function optimizeWithImpact(
   const base = optimizeCapacities(axisData);
 
   const impactDetails = base.recommendations
-    .filter(r => r.changed)
-    .map(r => {
+    .filter((r) => r.changed)
+    .map((r) => {
       const cascade = graph.cascadeFromAxis(r.axisId);
       return {
         axisId: r.axisId,
         affectedPrefixes: cascade.length,
-        cascadeDepth: cascade.length > 0 ? Math.max(...cascade.map(c => c.distance)) : 0,
+        cascadeDepth: cascade.length > 0 ? Math.max(...cascade.map((c) => c.distance)) : 0,
       };
     });
 
   return { ...base, impactDetails };
 }
-

@@ -29,7 +29,7 @@ export interface DocRecord {
 
 export interface DocHistoryRecord extends DocRecord {
   body: string;
-  changeType: "created" | "updated" | "marker_edit";
+  changeType: 'created' | 'updated' | 'marker_edit';
 }
 
 export interface DocListResponse {
@@ -96,12 +96,15 @@ export interface ConsumptionRecordInput {
   prefixVersion: string;
   totalSpace: number;
   observedAddresses: number;
-  dimStats: Record<string, {
-    axisId: string;
-    totalEntries: number;
-    observedEntries: number;
-    rate: number;
-  }>;
+  dimStats: Record<
+    string,
+    {
+      axisId: string;
+      totalEntries: number;
+      observedEntries: number;
+      rate: number;
+    }
+  >;
 }
 
 // ─── 그래프 ─────────────────────────────────────────────

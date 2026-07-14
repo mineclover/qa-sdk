@@ -7,9 +7,9 @@ export interface MotionTimeSpan {
 }
 
 /** 타임라인 아이템의 종류 (transition 제외 — 별도 처리) */
-export type MotionItemKind = "layer" | "sequence" | "caption";
+export type MotionItemKind = 'layer' | 'sequence' | 'caption';
 
-export type MotionParameterType = "text" | "color" | "number" | "select";
+export type MotionParameterType = 'text' | 'color' | 'number' | 'select';
 
 export interface MotionParameterDef {
   readonly id: string;
@@ -24,15 +24,10 @@ export interface MotionParameterDef {
 
 export interface MotionCaptionCue extends MotionTimeSpan {
   readonly text: string;
-  readonly tone?: "neutral" | "accent" | "warning";
+  readonly tone?: 'neutral' | 'accent' | 'warning';
 }
 
-export type MotionCueKind =
-  | "fade"
-  | "slide-up"
-  | "slide-left"
-  | "slide-right"
-  | "scale-pop";
+export type MotionCueKind = 'fade' | 'slide-up' | 'slide-left' | 'slide-right' | 'scale-pop';
 
 export interface MotionCueDef {
   readonly kind: MotionCueKind;
@@ -50,42 +45,38 @@ export interface MotionCuePreset extends MotionCueDef {
 }
 
 /** Cue 참조 — preset id 또는 인라인 정의 */
-export type MotionCueRef =
-  | MotionCueDef
-  | { readonly preset: string };
+export type MotionCueRef = MotionCueDef | { readonly preset: string };
 
 /** CueRef가 preset 참조인지 판별한다 */
 export function isCuePresetRef(ref: MotionCueRef): ref is { readonly preset: string } {
-  return "preset" in ref && !("kind" in ref);
+  return 'preset' in ref && !('kind' in ref);
 }
 
 export interface MotionStageTargetV1 {
-  readonly kind: "stage-node";
+  readonly kind: 'stage-node';
   readonly nodeId: string;
 }
 
-export function createMotionStageNodeTarget(
-  nodeId: string,
-): MotionStageTargetV1 {
-  return { kind: "stage-node", nodeId };
+export function createMotionStageNodeTarget(nodeId: string): MotionStageTargetV1 {
+  return { kind: 'stage-node', nodeId };
 }
 
 /** Layer가 감싸는 콘텐츠의 종류 */
-export type MotionLayerContentType = "dom" | "image" | "video" | "svg" | "canvas";
+export type MotionLayerContentType = 'dom' | 'image' | 'video' | 'svg' | 'canvas';
 
 export interface MotionDomContent {
-  readonly type: "dom";
+  readonly type: 'dom';
 }
 
 export interface MotionImageContent {
-  readonly type: "image";
+  readonly type: 'image';
   readonly src: string;
   readonly alt?: string;
-  readonly objectFit?: "cover" | "contain" | "fill" | "none";
+  readonly objectFit?: 'cover' | 'contain' | 'fill' | 'none';
 }
 
 export interface MotionVideoContent {
-  readonly type: "video";
+  readonly type: 'video';
   readonly src: string;
   readonly poster?: string;
   readonly muted?: boolean;
@@ -93,12 +84,12 @@ export interface MotionVideoContent {
 }
 
 export interface MotionSvgContent {
-  readonly type: "svg";
+  readonly type: 'svg';
   readonly viewBox?: string;
 }
 
 export interface MotionCanvasContent {
-  readonly type: "canvas";
+  readonly type: 'canvas';
   readonly width?: number;
   readonly height?: number;
 }
@@ -140,10 +131,10 @@ export interface SequenceLayerSlot {
   /** 시각적 쌓기 순서. 높을수록 위. 기본 = 배열 인덱스 */
   readonly zIndex?: number;
   /** 의미적 역할 */
-  readonly role?: "background" | "content" | "overlay" | "accent";
+  readonly role?: 'background' | 'content' | 'overlay' | 'accent';
 }
 
-export type SequenceLayerSlotRole = SequenceLayerSlot["role"];
+export type SequenceLayerSlotRole = SequenceLayerSlot['role'];
 
 /** Stagger 패턴 — slot 배열 순서대로 일정 간격으로 offsetMs를 자동 파생 */
 export interface SequenceStaggerPattern {
@@ -203,7 +194,7 @@ export interface MotionSceneDef extends MotionTimeSpan {
   readonly captions: readonly MotionCaptionCue[];
 }
 
-export type MotionTransitionStyle = "crossfade" | "flash" | "lift";
+export type MotionTransitionStyle = 'crossfade' | 'flash' | 'lift';
 
 export interface CrossfadeParams {
   /** brightness 최저값 (기본 0.86) */
@@ -236,16 +227,16 @@ export interface MotionTransitionDef {
 
 export interface MotionTextAsset {
   readonly id: string;
-  readonly type: "text";
+  readonly type: 'text';
   readonly target: MotionStageTargetV1;
   readonly template: string;
 }
 
 export interface MotionStyleAsset {
   readonly id: string;
-  readonly type: "style";
+  readonly type: 'style';
   readonly target: MotionStageTargetV1;
-  readonly property: "background" | "color" | "borderColor";
+  readonly property: 'background' | 'color' | 'borderColor';
   readonly template: string;
 }
 
@@ -332,9 +323,6 @@ export function resolveCue(
   return cue;
 }
 
-export function applyMotionTemplate(
-  template: string,
-  values: MotionParameterValues,
-): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => String(values[key] ?? ""));
+export function applyMotionTemplate(template: string, values: MotionParameterValues): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => String(values[key] ?? ''));
 }

@@ -67,10 +67,7 @@
       "id": "TS-005",
       "title": "Tier 1 — Demo Specs 3종",
       "description": "cart.checkout, user.login, payment.capture 전이 정의.",
-      "acceptanceCriteria": [
-        "3개 spec 정의 + 축 매핑",
-        "pnpm --filter spec-core test passes"
-      ],
+      "acceptanceCriteria": ["3개 spec 정의 + 축 매핑", "pnpm --filter spec-core test passes"],
       "priority": 2,
       "dependsOn": ["TS-001", "TS-002"],
       "passes": true,

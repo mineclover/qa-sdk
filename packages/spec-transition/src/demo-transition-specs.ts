@@ -14,7 +14,7 @@
  *   version_lifecycle — 버전 단계 (draft → locked → released)
  */
 
-import type { TransitionSpec } from "./transition.types.js";
+import type { TransitionSpec } from './transition.types.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  1. cart.checkout — 장바구니 결제
@@ -24,35 +24,35 @@ import type { TransitionSpec } from "./transition.types.js";
 // ═══════════════════════════════════════════════════════════════
 
 export const CART_CHECKOUT_SPEC: TransitionSpec = {
-  transition: "cart.checkout",
-  version: "v1",
+  transition: 'cart.checkout',
+  version: 'v1',
   match: {
-    mode: "ordered",
+    mode: 'ordered',
     coordinates: [
-      { trackAction: "submit", page: "checkout", userType: "member" },
-      { flow_name: "checkout", flow_step: "entry", flow_variant: "default" },
-      { flow_name: "checkout", flow_step: "processing", flow_variant: "default" },
-      { order_action: "create" },
+      { trackAction: 'submit', page: 'checkout', userType: 'member' },
+      { flow_name: 'checkout', flow_step: 'entry', flow_variant: 'default' },
+      { flow_name: 'checkout', flow_step: 'processing', flow_variant: 'default' },
+      { order_action: 'create' },
     ],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[3].order_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[3].order_id',
   },
   input: {
     all: [
-      { axis: "lifecycle_state", exists: false },
-      { axis: "flow_step", eq: "entry" },
+      { axis: 'lifecycle_state', exists: false },
+      { axis: 'flow_step', eq: 'entry' },
     ],
   },
   output: {
     set: [
-      { axis: "lifecycle_state", value: "active" },
-      { axis: "flow_step", value: "processing" },
-      { axis: "resource_location", value: "origin" },
+      { axis: 'lifecycle_state', value: 'active' },
+      { axis: 'flow_step', value: 'processing' },
+      { axis: 'resource_location', value: 'origin' },
     ],
   },
-  effect: { kind: "create" },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -63,32 +63,30 @@ export const CART_CHECKOUT_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const USER_LOGIN_SPEC: TransitionSpec = {
-  transition: "user.login",
-  version: "v1",
+  transition: 'user.login',
+  version: 'v1',
   match: {
-    mode: "ordered",
+    mode: 'ordered',
     coordinates: [
-      { resource_type: "api", http_method: "POST", api_version: "v1" },
-      { auth_action: "login" },
-      { flow_name: "login", flow_step: "success", flow_variant: "default" },
+      { resource_type: 'api', http_method: 'POST', api_version: 'v1' },
+      { auth_action: 'login' },
+      { flow_name: 'login', flow_step: 'success', flow_variant: 'default' },
     ],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[1].actor_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[1].actor_id',
   },
   input: {
-    all: [
-      { axis: "lifecycle_state", neq: "archived" },
-    ],
+    all: [{ axis: 'lifecycle_state', neq: 'archived' }],
   },
   output: {
     set: [
-      { axis: "lifecycle_state", value: "active" },
-      { axis: "flow_step", value: "success" },
+      { axis: 'lifecycle_state', value: 'active' },
+      { axis: 'flow_step', value: 'success' },
     ],
   },
-  effect: { kind: "open" },
+  effect: { kind: 'open' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -99,32 +97,30 @@ export const USER_LOGIN_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const PAYMENT_CAPTURE_SPEC: TransitionSpec = {
-  transition: "payment.capture",
-  version: "v1",
+  transition: 'payment.capture',
+  version: 'v1',
   match: {
-    mode: "ordered",
+    mode: 'ordered',
     coordinates: [
-      { flow_name: "checkout", flow_step: "payment", flow_variant: "default" },
-      { order_action: "complete" },
-      { flow_name: "checkout", flow_step: "complete", flow_variant: "default" },
+      { flow_name: 'checkout', flow_step: 'payment', flow_variant: 'default' },
+      { order_action: 'complete' },
+      { flow_name: 'checkout', flow_step: 'complete', flow_variant: 'default' },
     ],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[1].order_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[1].order_id',
   },
   input: {
     all: [
-      { axis: "lifecycle_state", eq: "active" },
-      { axis: "flow_step", eq: "payment" },
+      { axis: 'lifecycle_state', eq: 'active' },
+      { axis: 'flow_step', eq: 'payment' },
     ],
   },
   output: {
-    set: [
-      { axis: "flow_step", value: "complete" },
-    ],
+    set: [{ axis: 'flow_step', value: 'complete' }],
   },
-  effect: { kind: "close" },
+  effect: { kind: 'close' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -134,31 +130,26 @@ export const PAYMENT_CAPTURE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const DEPLOY_ROLLOUT_SPEC: TransitionSpec = {
-  transition: "deploy.rollout",
-  version: "v1",
+  transition: 'deploy.rollout',
+  version: 'v1',
   match: {
-    mode: "ordered",
-    coordinates: [
-      { deploy_action: "deploy" },
-      { health_status: "healthy" },
-    ],
+    mode: 'ordered',
+    coordinates: [{ deploy_action: 'deploy' }, { health_status: 'healthy' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].service_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].service_id',
   },
   input: {
-    all: [
-      { axis: "lifecycle_state", eq: "active" },
-    ],
+    all: [{ axis: 'lifecycle_state', eq: 'active' }],
   },
   output: {
     set: [
-      { axis: "health_status", value: "healthy" },
-      { axis: "version_lifecycle", value: "released" },
+      { axis: 'health_status', value: 'healthy' },
+      { axis: 'version_lifecycle', value: 'released' },
     ],
   },
-  effect: { kind: "update" },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -168,30 +159,23 @@ export const DEPLOY_ROLLOUT_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const DEPLOY_DEGRADED_SPEC: TransitionSpec = {
-  transition: "deploy.degraded",
-  version: "v1",
+  transition: 'deploy.degraded',
+  version: 'v1',
   match: {
-    mode: "ordered",
-    coordinates: [
-      { deploy_action: "deploy" },
-      { health_status: "degraded" },
-    ],
+    mode: 'ordered',
+    coordinates: [{ deploy_action: 'deploy' }, { health_status: 'degraded' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].service_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].service_id',
   },
   input: {
-    all: [
-      { axis: "lifecycle_state", eq: "active" },
-    ],
+    all: [{ axis: 'lifecycle_state', eq: 'active' }],
   },
   output: {
-    set: [
-      { axis: "health_status", value: "degraded" },
-    ],
+    set: [{ axis: 'health_status', value: 'degraded' }],
   },
-  effect: { kind: "update" },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -201,32 +185,30 @@ export const DEPLOY_DEGRADED_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const PIPELINE_INGEST_SPEC: TransitionSpec = {
-  transition: "pipeline.ingest",
-  version: "v1",
+  transition: 'pipeline.ingest',
+  version: 'v1',
   match: {
-    mode: "ordered",
+    mode: 'ordered',
     coordinates: [
-      { pipeline_phase: "ingest" },
-      { pipeline_phase: "reconstruct" },
-      { pipeline_phase: "verdict" },
+      { pipeline_phase: 'ingest' },
+      { pipeline_phase: 'reconstruct' },
+      { pipeline_phase: 'verdict' },
     ],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].trace_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].trace_id',
   },
   input: {
-    all: [
-      { axis: "lifecycle_state", exists: false },
-    ],
+    all: [{ axis: 'lifecycle_state', exists: false }],
   },
   output: {
     set: [
-      { axis: "lifecycle_state", value: "active" },
-      { axis: "flow_step", value: "complete" },
+      { axis: 'lifecycle_state', value: 'active' },
+      { axis: 'flow_step', value: 'complete' },
     ],
   },
-  effect: { kind: "create" },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -236,31 +218,26 @@ export const PIPELINE_INGEST_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const BUILD_SUCCESS_SPEC: TransitionSpec = {
-  transition: "build.success",
-  version: "v1",
+  transition: 'build.success',
+  version: 'v1',
   match: {
-    mode: "ordered",
-    coordinates: [
-      { build_result: "success" },
-      { test_result: "passed" },
-    ],
+    mode: 'ordered',
+    coordinates: [{ build_result: 'success' }, { test_result: 'passed' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].package_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].package_id',
   },
   input: {
-    all: [
-      { axis: "lifecycle_state", exists: false },
-    ],
+    all: [{ axis: 'lifecycle_state', exists: false }],
   },
   output: {
     set: [
-      { axis: "lifecycle_state", value: "active" },
-      { axis: "version_lifecycle", value: "locked" },
+      { axis: 'lifecycle_state', value: 'active' },
+      { axis: 'version_lifecycle', value: 'locked' },
     ],
   },
-  effect: { kind: "create" },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -270,29 +247,23 @@ export const BUILD_SUCCESS_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const PERMISSION_GRANT_SPEC: TransitionSpec = {
-  transition: "permission.grant",
-  version: "v1",
+  transition: 'permission.grant',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [
-      { role: "admin", action: "write" },
-    ],
+    mode: 'single',
+    coordinates: [{ role: 'admin', action: 'write' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].user_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].user_id',
   },
   input: {
-    all: [
-      { axis: "lifecycle_state", eq: "active" },
-    ],
+    all: [{ axis: 'lifecycle_state', eq: 'active' }],
   },
   output: {
-    set: [
-      { axis: "flow_step", value: "complete" },
-    ],
+    set: [{ axis: 'flow_step', value: 'complete' }],
   },
-  effect: { kind: "update" },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -302,30 +273,23 @@ export const PERMISSION_GRANT_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const PATTERN_ANOMALY_SPEC: TransitionSpec = {
-  transition: "pattern.anomaly",
-  version: "v1",
+  transition: 'pattern.anomaly',
+  version: 'v1',
   match: {
-    mode: "ordered",
-    coordinates: [
-      { behavior_pattern: "unclassified" },
-      { anomaly_kind: "ratio_shift" },
-    ],
+    mode: 'ordered',
+    coordinates: [{ behavior_pattern: 'unclassified' }, { anomaly_kind: 'ratio_shift' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].session_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].session_id',
   },
   input: {
-    all: [
-      { axis: "lifecycle_state", exists: false },
-    ],
+    all: [{ axis: 'lifecycle_state', exists: false }],
   },
   output: {
-    set: [
-      { axis: "lifecycle_state", value: "active" },
-    ],
+    set: [{ axis: 'lifecycle_state', value: 'active' }],
   },
-  effect: { kind: "open" },
+  effect: { kind: 'open' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -333,19 +297,19 @@ export const PATTERN_ANOMALY_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const CART_ADD_SPEC: TransitionSpec = {
-  transition: "cart.add",
-  version: "v1",
+  transition: 'cart.add',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ cart_action: "add", trackAction: "add_to_cart" }],
+    mode: 'single',
+    coordinates: [{ cart_action: 'add', trackAction: 'add_to_cart' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].item_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].item_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "processing" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'processing' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -353,19 +317,19 @@ export const CART_ADD_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const CONTENT_PUBLISH_SPEC: TransitionSpec = {
-  transition: "content.publish",
-  version: "v1",
+  transition: 'content.publish',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ status: "published", category: "tech", locale: "ko" }],
+    mode: 'single',
+    coordinates: [{ status: 'published', category: 'tech', locale: 'ko' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].content_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].content_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "draft" }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'draft' }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -373,19 +337,19 @@ export const CONTENT_PUBLISH_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const RBAC_ASSIGN_SPEC: TransitionSpec = {
-  transition: "rbac.assign",
-  version: "v1",
+  transition: 'rbac.assign',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ rbac_role: "editor", resource: "dashboard" }],
+    mode: 'single',
+    coordinates: [{ rbac_role: 'editor', resource: 'dashboard' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].user_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].user_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -393,19 +357,19 @@ export const RBAC_ASSIGN_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const DKG_OPERATE_SPEC: TransitionSpec = {
-  transition: "dkg.operate",
-  version: "v1",
+  transition: 'dkg.operate',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ dkg_op: "observe", dkg_target_kind: "prefix" }],
+    mode: 'single',
+    coordinates: [{ dkg_op: 'observe', dkg_target_kind: 'prefix' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].target_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].target_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "create" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -413,19 +377,19 @@ export const DKG_OPERATE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const DKG_DECIDE_SPEC: TransitionSpec = {
-  transition: "dkg.decide",
-  version: "v1",
+  transition: 'dkg.decide',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ decision_type: "capacity", node_source: "manual", dkg_target_kind: "axis" }],
+    mode: 'single',
+    coordinates: [{ decision_type: 'capacity', node_source: 'manual', dkg_target_kind: 'axis' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].decision_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].decision_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "create" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -433,19 +397,21 @@ export const DKG_DECIDE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const DKG_OBSERVE_SPEC: TransitionSpec = {
-  transition: "dkg.observe",
-  version: "v1",
+  transition: 'dkg.observe',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ obs_source: "metric", observation_intent: "action_needed", dkg_target_kind: "prefix" }],
+    mode: 'single',
+    coordinates: [
+      { obs_source: 'metric', observation_intent: 'action_needed', dkg_target_kind: 'prefix' },
+    ],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].observation_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].observation_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "open" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'open' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -453,19 +419,19 @@ export const DKG_OBSERVE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const CLI_EXECUTE_SPEC: TransitionSpec = {
-  transition: "cli.execute",
-  version: "v1",
+  transition: 'cli.execute',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ cli_intent: "query", cli_domain: "dkg-graph", cli_subject: "prefix" }],
+    mode: 'single',
+    coordinates: [{ cli_intent: 'query', cli_domain: 'dkg-graph', cli_subject: 'prefix' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].command_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].command_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "consume" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'consume' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -473,22 +439,22 @@ export const CLI_EXECUTE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const SCHEMA_VALIDATE_SPEC: TransitionSpec = {
-  transition: "schema.validate",
-  version: "v1",
+  transition: 'schema.validate',
+  version: 'v1',
   match: {
-    mode: "ordered",
+    mode: 'ordered',
     coordinates: [
-      { constraint_rule: "required", validation_layer: "structural" },
-      { verdict_result: "pass" },
+      { constraint_rule: 'required', validation_layer: 'structural' },
+      { verdict_result: 'pass' },
     ],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].schema_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].schema_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "create" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -496,19 +462,19 @@ export const SCHEMA_VALIDATE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const PATTERN_CLASSIFY_SPEC: TransitionSpec = {
-  transition: "pattern.classify",
-  version: "v1",
+  transition: 'pattern.classify',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ identification_mode: "identified", pattern_confidence: "high" }],
+    mode: 'single',
+    coordinates: [{ identification_mode: 'identified', pattern_confidence: 'high' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].session_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].session_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "create" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -516,19 +482,19 @@ export const PATTERN_CLASSIFY_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const DATA_MASK_SPEC: TransitionSpec = {
-  transition: "data.mask",
-  version: "v1",
+  transition: 'data.mask',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ mask_mode: "mask", validation_mode: "strict" }],
+    mode: 'single',
+    coordinates: [{ mask_mode: 'mask', validation_mode: 'strict' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].record_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].record_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -536,19 +502,19 @@ export const DATA_MASK_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const EVENT_EMIT_SPEC: TransitionSpec = {
-  transition: "event.emit",
-  version: "v1",
+  transition: 'event.emit',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ event_name: "order.created", initiator: "web" }],
+    mode: 'single',
+    coordinates: [{ event_name: 'order.created', initiator: 'web' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].event_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].event_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "processing" }] },
-  effect: { kind: "create" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'processing' }] },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -556,19 +522,19 @@ export const EVENT_EMIT_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const RELATIONAL_BIND_SPEC: TransitionSpec = {
-  transition: "relational.bind",
-  version: "v1",
+  transition: 'relational.bind',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ subjectKind: "user", predicate: "has", objectKind: "role" }],
+    mode: 'single',
+    coordinates: [{ subjectKind: 'user', predicate: 'has', objectKind: 'role' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].relation_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].relation_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "create" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -576,19 +542,19 @@ export const RELATIONAL_BIND_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const SKILL_EXECUTE_SPEC: TransitionSpec = {
-  transition: "skill.execute",
-  version: "v1",
+  transition: 'skill.execute',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ skill_category: "analysis", skill_outcome: "ok" }],
+    mode: 'single',
+    coordinates: [{ skill_category: 'analysis', skill_outcome: 'ok' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].skill_run_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].skill_run_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "close" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'close' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -596,19 +562,19 @@ export const SKILL_EXECUTE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const ENGINE_EVALUATE_SPEC: TransitionSpec = {
-  transition: "engine.evaluate",
-  version: "v1",
+  transition: 'engine.evaluate',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ constraint_op: "eq", verdict_result: "pass" }],
+    mode: 'single',
+    coordinates: [{ constraint_op: 'eq', verdict_result: 'pass' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].evaluation_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].evaluation_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "close" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'close' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -616,22 +582,22 @@ export const ENGINE_EVALUATE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const BUILD_PACKAGE_SPEC: TransitionSpec = {
-  transition: "build.package",
-  version: "v1",
+  transition: 'build.package',
+  version: 'v1',
   match: {
-    mode: "ordered",
+    mode: 'ordered',
     coordinates: [
-      { qa_pkg: "spec-core", qa_module: "dkg", build_result: "success" },
-      { qa_pkg: "spec-core", qa_module: "dkg", test_result: "passed" },
+      { qa_pkg: 'spec-core', qa_module: 'dkg', build_result: 'success' },
+      { qa_pkg: 'spec-core', qa_module: 'dkg', test_result: 'passed' },
     ],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].build_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].build_id',
   },
-  input: { all: [{ axis: "lifecycle_state", exists: false }] },
-  output: { set: [{ axis: "lifecycle_state", value: "active" }] },
-  effect: { kind: "create" },
+  input: { all: [{ axis: 'lifecycle_state', exists: false }] },
+  output: { set: [{ axis: 'lifecycle_state', value: 'active' }] },
+  effect: { kind: 'create' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -639,19 +605,19 @@ export const BUILD_PACKAGE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const CONTRACT_CHECK_SPEC: TransitionSpec = {
-  transition: "contract.check",
-  version: "v1",
+  transition: 'contract.check',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ api_surface: "encode-decode", test_result: "passed" }],
+    mode: 'single',
+    coordinates: [{ api_surface: 'encode-decode', test_result: 'passed' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].contract_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].contract_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "close" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'close' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -659,19 +625,19 @@ export const CONTRACT_CHECK_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const PATTERN_SEVERITY_SPEC: TransitionSpec = {
-  transition: "pattern.severity",
-  version: "v1",
+  transition: 'pattern.severity',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ anomaly_kind: "volume_spike", anomaly_severity: "critical" }],
+    mode: 'single',
+    coordinates: [{ anomaly_kind: 'volume_spike', anomaly_severity: 'critical' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].anomaly_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].anomaly_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "health_status", value: "unhealthy" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'health_status', value: 'unhealthy' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -679,19 +645,19 @@ export const PATTERN_SEVERITY_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const SCHEMA_MIGRATE_SPEC: TransitionSpec = {
-  transition: "schema.migrate",
-  version: "v1",
+  transition: 'schema.migrate',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ migration_pattern: "append_dim", spec_type: "adr" }],
+    mode: 'single',
+    coordinates: [{ migration_pattern: 'append_dim', spec_type: 'adr' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].migration_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].migration_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "version_lifecycle", value: "released" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'version_lifecycle', value: 'released' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -699,19 +665,19 @@ export const SCHEMA_MIGRATE_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const METRIC_RECORD_SPEC: TransitionSpec = {
-  transition: "metric.record",
-  version: "v1",
+  transition: 'metric.record',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ metric_type: "counter", record_type: "metric" }],
+    mode: 'single',
+    coordinates: [{ metric_type: 'counter', record_type: 'metric' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].metric_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].metric_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "consume" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'consume' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -719,19 +685,19 @@ export const METRIC_RECORD_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const EDGE_ACTIVITY_SPEC: TransitionSpec = {
-  transition: "edge.activity",
-  version: "v1",
+  transition: 'edge.activity',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ edge_type: "consumes", dkg_target_kind: "prefix" }],
+    mode: 'single',
+    coordinates: [{ edge_type: 'consumes', dkg_target_kind: 'prefix' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].edge_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].edge_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "processing" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'processing' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -739,19 +705,19 @@ export const EDGE_ACTIVITY_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const GATE_CHECK_SPEC: TransitionSpec = {
-  transition: "gate.check",
-  version: "v1",
+  transition: 'gate.check',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ address_state: "active" }],
+    mode: 'single',
+    coordinates: [{ address_state: 'active' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].address_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].address_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "consume" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'consume' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -759,19 +725,19 @@ export const GATE_CHECK_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const EVENT_CLASSIFY_SPEC: TransitionSpec = {
-  transition: "event.classify",
-  version: "v1",
+  transition: 'event.classify',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ event_category: "user_action", event_lifecycle_stage: "completion" }],
+    mode: 'single',
+    coordinates: [{ event_category: 'user_action', event_lifecycle_stage: 'completion' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].event_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].event_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "complete" }] },
-  effect: { kind: "update" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'complete' }] },
+  effect: { kind: 'update' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -779,43 +745,52 @@ export const EVENT_CLASSIFY_SPEC: TransitionSpec = {
 // ═══════════════════════════════════════════════════════════════
 
 export const EXECUTION_REPLAY_SPEC: TransitionSpec = {
-  transition: "execution.replay",
-  version: "v1",
+  transition: 'execution.replay',
+  version: 'v1',
   match: {
-    mode: "single",
-    coordinates: [{ execution_mode: "replay" }],
+    mode: 'single',
+    coordinates: [{ execution_mode: 'replay' }],
   },
   bind: {
-    context_id: "$.events[0].context_id",
-    resource_id: "$.events[0].execution_id",
+    context_id: '$.events[0].context_id',
+    resource_id: '$.events[0].execution_id',
   },
-  input: { all: [{ axis: "lifecycle_state", eq: "active" }] },
-  output: { set: [{ axis: "flow_step", value: "processing" }] },
-  effect: { kind: "consume" },
+  input: { all: [{ axis: 'lifecycle_state', eq: 'active' }] },
+  output: { set: [{ axis: 'flow_step', value: 'processing' }] },
+  effect: { kind: 'consume' },
 };
 
 /** DEMO_CATALOG 기반 TransitionSpec 전체 */
 export const DEMO_TRANSITION_SPECS: readonly TransitionSpec[] = [
   // shop-web (3)
-  CART_CHECKOUT_SPEC, USER_LOGIN_SPEC, PAYMENT_CAPTURE_SPEC,
+  CART_CHECKOUT_SPEC,
+  USER_LOGIN_SPEC,
+  PAYMENT_CAPTURE_SPEC,
   // infra (3)
-  DEPLOY_ROLLOUT_SPEC, DEPLOY_DEGRADED_SPEC, PIPELINE_INGEST_SPEC,
+  DEPLOY_ROLLOUT_SPEC,
+  DEPLOY_DEGRADED_SPEC,
+  PIPELINE_INGEST_SPEC,
   // dev (1)
   BUILD_SUCCESS_SPEC,
   // 관측 (2)
-  PERMISSION_GRANT_SPEC, PATTERN_ANOMALY_SPEC,
+  PERMISSION_GRANT_SPEC,
+  PATTERN_ANOMALY_SPEC,
   // commerce (2)
-  CART_ADD_SPEC, EVENT_EMIT_SPEC,
+  CART_ADD_SPEC,
+  EVENT_EMIT_SPEC,
   // content (1)
   CONTENT_PUBLISH_SPEC,
   // auth (1)
   RBAC_ASSIGN_SPEC,
   // dkg (3)
-  DKG_OPERATE_SPEC, DKG_DECIDE_SPEC, DKG_OBSERVE_SPEC,
+  DKG_OPERATE_SPEC,
+  DKG_DECIDE_SPEC,
+  DKG_OBSERVE_SPEC,
   // cli (1)
   CLI_EXECUTE_SPEC,
   // pipeline (2)
-  SCHEMA_VALIDATE_SPEC, DATA_MASK_SPEC,
+  SCHEMA_VALIDATE_SPEC,
+  DATA_MASK_SPEC,
   // pattern (1)
   PATTERN_CLASSIFY_SPEC,
   // relational (1)
@@ -823,7 +798,9 @@ export const DEMO_TRANSITION_SPECS: readonly TransitionSpec[] = [
   // skill (1)
   SKILL_EXECUTE_SPEC,
   // engine/schema (3)
-  ENGINE_EVALUATE_SPEC, SCHEMA_MIGRATE_SPEC, CONTRACT_CHECK_SPEC,
+  ENGINE_EVALUATE_SPEC,
+  SCHEMA_MIGRATE_SPEC,
+  CONTRACT_CHECK_SPEC,
   // build (1)
   BUILD_PACKAGE_SPEC,
   // pattern (1)
@@ -831,7 +808,9 @@ export const DEMO_TRANSITION_SPECS: readonly TransitionSpec[] = [
   // metric/record (1)
   METRIC_RECORD_SPEC,
   // dkg extended (2)
-  EDGE_ACTIVITY_SPEC, GATE_CHECK_SPEC,
+  EDGE_ACTIVITY_SPEC,
+  GATE_CHECK_SPEC,
   // event/execution (2)
-  EVENT_CLASSIFY_SPEC, EXECUTION_REPLAY_SPEC,
+  EVENT_CLASSIFY_SPEC,
+  EXECUTION_REPLAY_SPEC,
 ] as const;

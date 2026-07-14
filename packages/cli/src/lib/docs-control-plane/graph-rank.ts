@@ -6,31 +6,26 @@ import {
   TRAVERSAL_AXIS_PRIORITY,
   type DocumentGraphFamilyRoleType,
   type TraversalAxis,
-} from "./graph-types.js";
-import type { DocumentGraphTraversalResult } from "./graph-traverse.js";
-import type { DocumentMetadata } from "doc-envelope";
+} from './graph-types.js';
+import type { DocumentGraphTraversalResult } from './graph-traverse.js';
+import type { DocumentMetadata } from 'doc-envelope';
 
-export const DOCUMENT_GRAPH_RANK_ALGORITHM = "docs-graph-rule-rank-v1";
+export const DOCUMENT_GRAPH_RANK_ALGORITHM = 'docs-graph-rule-rank-v1';
 
 export const DOCUMENT_GRAPH_RANK_FACTORS = [
-  "target",
-  "distance",
-  "axis",
-  "node-kind",
-  "role",
-  "archive-state",
-  "diagnostics",
-  "follow-up-category",
+  'target',
+  'distance',
+  'axis',
+  'node-kind',
+  'role',
+  'archive-state',
+  'diagnostics',
+  'follow-up-category',
 ] as const;
 
-export type DocumentGraphRankFactorName =
-  (typeof DOCUMENT_GRAPH_RANK_FACTORS)[number];
+export type DocumentGraphRankFactorName = (typeof DOCUMENT_GRAPH_RANK_FACTORS)[number];
 
-export type DocumentGraphRankStrength =
-  | "strong"
-  | "medium"
-  | "weak"
-  | "penalized";
+export type DocumentGraphRankStrength = 'strong' | 'medium' | 'weak' | 'penalized';
 
 export interface DocumentGraphRankFactor {
   readonly factor: DocumentGraphRankFactorName;
@@ -41,7 +36,7 @@ export interface DocumentGraphRankFactor {
 
 export interface DocumentGraphRankedNode {
   readonly nodeId: string;
-  readonly kind: DocumentGraphTraversalResult["nodes"][number]["kind"];
+  readonly kind: DocumentGraphTraversalResult['nodes'][number]['kind'];
   readonly rank: number;
   readonly score: number;
   readonly strength: DocumentGraphRankStrength;
@@ -58,7 +53,7 @@ export interface DocumentGraphRankingResult {
   readonly counts: Readonly<Record<DocumentGraphRankStrength, number>>;
 }
 
-type TraversalNode = DocumentGraphTraversalResult["nodes"][number];
+type TraversalNode = DocumentGraphTraversalResult['nodes'][number];
 
 interface ScoredNode {
   readonly node: TraversalNode;
@@ -93,21 +88,21 @@ const NODE_KIND_RANK_SCORE = {
   cases: 7,
   memo: 5,
   prd: 6,
-  "ralph-prd-json": 6,
-  "ralph-session": -2,
+  'ralph-prd-json': 6,
+  'ralph-session': -2,
   source: 8,
   evidence: 9,
   section: -4,
   document: 0,
   task: 1,
   context: -16,
-} as const satisfies Readonly<Record<TraversalNode["kind"], number>>;
+} as const satisfies Readonly<Record<TraversalNode['kind'], number>>;
 
 const FOLLOW_UP_CATEGORY_SCORE = {
   actionable: 18,
   uncategorized: 3,
   deferred: -6,
-  "parking-lot": -12,
+  'parking-lot': -12,
   completed: -14,
 } as const;
 
@@ -126,9 +121,7 @@ export function rankDocumentGraphTraversal(
     })
     .toSorted(compareScoredNodes);
 
-  const rankedNodes = scored.map((item, index) =>
-    toRankedNode(item, index + 1)
-  );
+  const rankedNodes = scored.map((item, index) => toRankedNode(item, index + 1));
 
   return {
     algorithm: DOCUMENT_GRAPH_RANK_ALGORITHM,
@@ -137,9 +130,7 @@ export function rankDocumentGraphTraversal(
   };
 }
 
-function buildRankingContext(
-  traversal: DocumentGraphTraversalResult,
-): RankingContext {
+function buildRankingContext(traversal: DocumentGraphTraversalResult): RankingContext {
   const targetNodeIds = new Set<string>();
   if (traversal.targetNodeId) targetNodeIds.add(traversal.targetNodeId);
   for (const node of traversal.targetResolution.nodes) {
@@ -178,15 +169,12 @@ function rankFactorsForNode(
   ];
 }
 
-function targetFactor(
-  node: TraversalNode,
-  context: RankingContext,
-): DocumentGraphRankFactor {
+function targetFactor(node: TraversalNode, context: RankingContext): DocumentGraphRankFactor {
   const isTarget = context.targetNodeIds.has(node.id) || node.depth === 0;
   return {
-    factor: "target",
+    factor: 'target',
     score: isTarget ? 80 : 0,
-    reason: isTarget ? "target node" : "not target node",
+    reason: isTarget ? 'target node' : 'not target node',
     metadata: {
       nodeId: node.id,
       target: isTarget,
@@ -197,7 +185,7 @@ function targetFactor(
 function distanceFactor(node: TraversalNode): DocumentGraphRankFactor {
   const score = node.depth === 0 ? 30 : Math.max(0, 24 - node.depth * 6);
   return {
-    factor: "distance",
+    factor: 'distance',
     score,
     reason: `path distance ${node.depth}`,
     metadata: {
@@ -211,9 +199,9 @@ function axisFactor(node: TraversalNode): DocumentGraphRankFactor {
   const axes = pathAxes(node);
   if (axes.length === 0) {
     return {
-      factor: "axis",
+      factor: 'axis',
       score: 0,
-      reason: "target or synthetic node has no traversal axis",
+      reason: 'target or synthetic node has no traversal axis',
       metadata: {
         axes: [],
       },
@@ -224,13 +212,14 @@ function axisFactor(node: TraversalNode): DocumentGraphRankFactor {
     axis,
     score: AXIS_RANK_SCORE[axis],
   }));
-  const best = axisScores.toSorted((left, right) =>
-    right.score - left.score ||
-    TRAVERSAL_AXIS_PRIORITY[left.axis] - TRAVERSAL_AXIS_PRIORITY[right.axis]
+  const best = axisScores.toSorted(
+    (left, right) =>
+      right.score - left.score ||
+      TRAVERSAL_AXIS_PRIORITY[left.axis] - TRAVERSAL_AXIS_PRIORITY[right.axis],
   )[0]!;
 
   return {
-    factor: "axis",
+    factor: 'axis',
     score: best.score,
     reason: `strongest path axis ${best.axis}`,
     metadata: {
@@ -243,7 +232,7 @@ function axisFactor(node: TraversalNode): DocumentGraphRankFactor {
 
 function nodeKindFactor(node: TraversalNode): DocumentGraphRankFactor {
   return {
-    factor: "node-kind",
+    factor: 'node-kind',
     score: NODE_KIND_RANK_SCORE[node.kind],
     reason: `node kind ${node.kind}`,
     metadata: {
@@ -254,33 +243,31 @@ function nodeKindFactor(node: TraversalNode): DocumentGraphRankFactor {
   };
 }
 
-function roleFactor(
-  node: TraversalNode,
-  context: RankingContext,
-): DocumentGraphRankFactor {
+function roleFactor(node: TraversalNode, context: RankingContext): DocumentGraphRankFactor {
   const roleType = roleTypeForNode(node);
   const sameFamily = Boolean(node.familyId && context.targetFamilyIds.has(node.familyId));
-  const hasRoleAxis = pathAxes(node).includes("role");
-  const score = roleType && sameFamily
-    ? 34
-    : roleType && hasRoleAxis
-    ? 22
-    : roleType
-    ? 10
-    : hasRoleAxis
-    ? 8
-    : 0;
+  const hasRoleAxis = pathAxes(node).includes('role');
+  const score =
+    roleType && sameFamily
+      ? 34
+      : roleType && hasRoleAxis
+        ? 22
+        : roleType
+          ? 10
+          : hasRoleAxis
+            ? 8
+            : 0;
 
   return {
-    factor: "role",
+    factor: 'role',
     score,
     reason: roleType
       ? sameFamily
         ? `same-family ${roleType} role`
         : `${roleType} role`
       : hasRoleAxis
-      ? "role-axis traversal"
-      : "no role metadata",
+        ? 'role-axis traversal'
+        : 'no role metadata',
     metadata: {
       roleType,
       sameFamily,
@@ -291,19 +278,18 @@ function roleFactor(
 
 function archiveStateFactor(node: TraversalNode): DocumentGraphRankFactor {
   const archiveState = archiveStateForNode(node);
-  const score = archiveState === "archived"
-    ? -45
-    : archiveState === "historical"
-    ? -30
-    : archiveState === "deprecated"
-    ? -18
-    : 0;
+  const score =
+    archiveState === 'archived'
+      ? -45
+      : archiveState === 'historical'
+        ? -30
+        : archiveState === 'deprecated'
+          ? -18
+          : 0;
   return {
-    factor: "archive-state",
+    factor: 'archive-state',
     score,
-    reason: archiveState === "active"
-      ? "active document"
-      : `${archiveState} document`,
+    reason: archiveState === 'active' ? 'active document' : `${archiveState} document`,
     metadata: {
       archiveState,
       lifecycle: asString(node.metadata.lifecycle),
@@ -317,9 +303,9 @@ function diagnosticsFactor(node: TraversalNode): DocumentGraphRankFactor {
   const score = -(counts.error * 18 + counts.warning * 8 + counts.info * 2);
   const total = counts.error + counts.warning + counts.info;
   return {
-    factor: "diagnostics",
+    factor: 'diagnostics',
     score,
-    reason: total > 0 ? "diagnostic metadata present" : "no diagnostic metadata",
+    reason: total > 0 ? 'diagnostic metadata present' : 'no diagnostic metadata',
     metadata: counts,
   };
 }
@@ -329,9 +315,9 @@ function followUpCategoryFactor(node: TraversalNode): DocumentGraphRankFactor {
   const category = categories[0];
   const score = category ? followUpCategoryScore(category) : 0;
   return {
-    factor: "follow-up-category",
+    factor: 'follow-up-category',
     score,
-    reason: category ? `follow-up category ${category}` : "no follow-up category metadata",
+    reason: category ? `follow-up category ${category}` : 'no follow-up category metadata',
     metadata: {
       category,
       categories,
@@ -346,10 +332,7 @@ function followUpCategoryScore(category: string): number {
   return 0;
 }
 
-function toRankedNode(
-  item: ScoredNode,
-  rank: number,
-): DocumentGraphRankedNode {
+function toRankedNode(item: ScoredNode, rank: number): DocumentGraphRankedNode {
   const strength = strengthForScore(item.score);
   return {
     nodeId: item.node.id,
@@ -368,10 +351,10 @@ function toRankedNode(
 }
 
 function strengthForScore(score: number): DocumentGraphRankStrength {
-  if (score >= 80) return "strong";
-  if (score >= 45) return "medium";
-  if (score >= 15) return "weak";
-  return "penalized";
+  if (score >= 80) return 'strong';
+  if (score >= 45) return 'medium';
+  if (score >= 15) return 'weak';
+  return 'penalized';
 }
 
 function countStrengths(
@@ -390,12 +373,14 @@ function countStrengths(
 }
 
 function compareScoredNodes(left: ScoredNode, right: ScoredNode): number {
-  return right.score - left.score
-    || left.node.depth - right.node.depth
-    || bestAxisPriority(left.node) - bestAxisPriority(right.node)
-    || (left.node.stableId ?? "").localeCompare(right.node.stableId ?? "")
-    || (left.node.path ?? "").localeCompare(right.node.path ?? "")
-    || left.node.id.localeCompare(right.node.id);
+  return (
+    right.score - left.score ||
+    left.node.depth - right.node.depth ||
+    bestAxisPriority(left.node) - bestAxisPriority(right.node) ||
+    (left.node.stableId ?? '').localeCompare(right.node.stableId ?? '') ||
+    (left.node.path ?? '').localeCompare(right.node.path ?? '') ||
+    left.node.id.localeCompare(right.node.id)
+  );
 }
 
 function bestAxisPriority(node: TraversalNode): number {
@@ -408,16 +393,15 @@ function pathAxes(node: TraversalNode): readonly TraversalAxis[] {
   return node.pathFromTarget.steps.map((step) => step.axis);
 }
 
-function roleTypeForNode(
-  node: TraversalNode,
-): DocumentGraphFamilyRoleType | undefined {
-  if (node.kind !== "spec" && isFamilyRoleType(node.kind)) return node.kind;
+function roleTypeForNode(node: TraversalNode): DocumentGraphFamilyRoleType | undefined {
+  if (node.kind !== 'spec' && isFamilyRoleType(node.kind)) return node.kind;
 
   const documentKind = asString(node.metadata.documentKind);
-  if (documentKind && documentKind !== "spec" && isFamilyRoleType(documentKind)) return documentKind;
+  if (documentKind && documentKind !== 'spec' && isFamilyRoleType(documentKind))
+    return documentKind;
 
   const pathRole = roleTypeFromPath(node.path);
-  if (pathRole && pathRole !== "spec") return pathRole;
+  if (pathRole && pathRole !== 'spec') return pathRole;
 
   if (isFamilyRoleType(node.kind)) return node.kind;
   if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
@@ -436,26 +420,28 @@ function isFamilyRoleType(value: string): value is DocumentGraphFamilyRoleType {
 
 function archiveStateForNode(
   node: TraversalNode,
-): "active" | "archived" | "historical" | "deprecated" {
+): 'active' | 'archived' | 'historical' | 'deprecated' {
   const lifecycle = asString(node.metadata.lifecycle)?.toLowerCase();
-  if (lifecycle === "archived") return "archived";
-  if (lifecycle === "historical") return "historical";
-  if (lifecycle === "deprecated") return "deprecated";
+  if (lifecycle === 'archived') return 'archived';
+  if (lifecycle === 'historical') return 'historical';
+  if (lifecycle === 'deprecated') return 'deprecated';
 
   const status = asString(node.metadata.status)?.toLowerCase();
-  if (status === "archived") return "archived";
-  if (status === "historical") return "historical";
-  if (status === "deprecated") return "deprecated";
+  if (status === 'archived') return 'archived';
+  if (status === 'historical') return 'historical';
+  if (status === 'deprecated') return 'deprecated';
 
-  const path = normalizePath(node.path ?? asString(node.metadata.sourcePath) ?? "");
-  if (path.split("/").includes("archive")) return "archived";
-  if (path.split("/").includes("historical")) return "historical";
-  return "active";
+  const path = normalizePath(node.path ?? asString(node.metadata.sourcePath) ?? '');
+  if (path.split('/').includes('archive')) return 'archived';
+  if (path.split('/').includes('historical')) return 'historical';
+  return 'active';
 }
 
-function diagnosticCountsForNode(
-  node: TraversalNode,
-): { readonly error: number; readonly warning: number; readonly info: number } {
+function diagnosticCountsForNode(node: TraversalNode): {
+  readonly error: number;
+  readonly warning: number;
+  readonly info: number;
+} {
   const explicit = diagnosticSeverityCounts(node.metadata.diagnosticSeverityCounts);
   if (explicit) return explicit;
 
@@ -472,15 +458,16 @@ function diagnosticCountsForNode(
   };
   for (const severity of severities) {
     const normalized = severity.toLowerCase();
-    if (normalized === "error") counts.error += 1;
-    else if (normalized === "warning" || normalized === "warn") counts.warning += 1;
+    if (normalized === 'error') counts.error += 1;
+    else if (normalized === 'warning' || normalized === 'warn') counts.warning += 1;
     else counts.info += 1;
   }
 
   if (severities.length === 0) {
-    const diagnosticCount = asNumber(node.metadata.diagnosticCount)
-      ?? asNumber(node.metadata.diagnosticsCount)
-      ?? asNumber(node.metadata.validationIssueCount);
+    const diagnosticCount =
+      asNumber(node.metadata.diagnosticCount) ??
+      asNumber(node.metadata.diagnosticsCount) ??
+      asNumber(node.metadata.validationIssueCount);
     if (diagnosticCount && diagnosticCount > 0) {
       counts.warning = diagnosticCount;
     }
@@ -503,7 +490,7 @@ function diagnosticSeverityCounts(
 function diagnosticSeveritiesFromList(value: unknown): readonly string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
-    if (typeof item === "string") return [item];
+    if (typeof item === 'string') return [item];
     if (!isRecord(item)) return [];
     const severity = asString(item.severity);
     return severity ? [severity] : [];
@@ -513,15 +500,15 @@ function diagnosticSeveritiesFromList(value: unknown): readonly string[] {
 function followUpCategoriesForNode(node: TraversalNode): readonly string[] {
   const categories: string[] = [];
   for (const key of [
-    "followUpCategory",
-    "nextFollowUpCategory",
-    "todoCategory",
-    "category",
+    'followUpCategory',
+    'nextFollowUpCategory',
+    'todoCategory',
+    'category',
   ] as const) {
     const value = asString(node.metadata[key]);
     if (value) categories.push(value);
   }
-  for (const key of ["followUpCategories", "todoCategories"] as const) {
+  for (const key of ['followUpCategories', 'todoCategories'] as const) {
     const value = node.metadata[key];
     if (!Array.isArray(value)) continue;
     for (const item of value) {
@@ -537,17 +524,17 @@ function formatSignedScore(score: number): string {
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function asNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

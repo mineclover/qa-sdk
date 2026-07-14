@@ -10,7 +10,7 @@
  * @layer 측정 (Measurement)
  */
 
-import type { PatternRule } from "@qa-sdk/core";
+import type { PatternRule } from '@qa-sdk/core';
 
 // ── 시스템 공통 규칙 (도메인 무관) ────────────────────
 
@@ -20,53 +20,53 @@ import type { PatternRule } from "@qa-sdk/core";
  */
 export const SYSTEM_PATTERN_RULES: readonly PatternRule[] = [
   {
-    id: "rule-bot-crawl",
-    identificationMode: "any",
-    behaviorPattern: "bot_crawl",
-    defaultConfidence: "high",
+    id: 'rule-bot-crawl',
+    identificationMode: 'any',
+    behaviorPattern: 'bot_crawl',
+    defaultConfidence: 'high',
     priority: 100,
-    description: "비정상 속도 탐색 (200ms 이내 이벤트 간격)",
+    description: '비정상 속도 탐색 (200ms 이내 이벤트 간격)',
     match: {
-      eventKeyPatterns: ["page\\..*"],
+      eventKeyPatterns: ['page\\..*'],
       minEvents: 10,
       minIntervalMs: 200,
     },
   },
   {
-    id: "rule-health-check",
-    identificationMode: "service",
-    behaviorPattern: "health_check",
-    defaultConfidence: "exact",
+    id: 'rule-health-check',
+    identificationMode: 'service',
+    behaviorPattern: 'health_check',
+    defaultConfidence: 'exact',
     priority: 90,
-    description: "서비스 헬스체크 호출",
+    description: '서비스 헬스체크 호출',
     match: {
-      eventKeyPatterns: ["health\\..*", "api\\.health"],
-      actorCondition: "any",
+      eventKeyPatterns: ['health\\..*', 'api\\.health'],
+      actorCondition: 'any',
     },
   },
   {
-    id: "rule-api-integration",
-    identificationMode: "service",
-    behaviorPattern: "api_integration",
-    defaultConfidence: "exact",
+    id: 'rule-api-integration',
+    identificationMode: 'service',
+    behaviorPattern: 'api_integration',
+    defaultConfidence: 'exact',
     priority: 80,
-    description: "서비스 간 API 호출",
+    description: '서비스 간 API 호출',
     match: {
-      eventKeyPatterns: ["api\\..*"],
-      actorCondition: "any",
+      eventKeyPatterns: ['api\\..*'],
+      actorCondition: 'any',
     },
   },
   {
-    id: "rule-error-recovery",
-    identificationMode: "any",
-    behaviorPattern: "error_recovery",
-    defaultConfidence: "high",
+    id: 'rule-error-recovery',
+    identificationMode: 'any',
+    behaviorPattern: 'error_recovery',
+    defaultConfidence: 'high',
     priority: 40,
-    description: "에러 발생 후 재시도 성공",
+    description: '에러 발생 후 재시도 성공',
     match: {
-      requiredKeys: ["*.error", "*.fail*"],
-      requiredSequence: ["*.error", "*.success"],
-      actorCondition: "has_actor",
+      requiredKeys: ['*.error', '*.fail*'],
+      requiredSequence: ['*.error', '*.success'],
+      actorCondition: 'has_actor',
     },
   },
 ];
@@ -79,79 +79,79 @@ export const SYSTEM_PATTERN_RULES: readonly PatternRule[] = [
  */
 export const SHOPPING_PATTERN_RULES: readonly PatternRule[] = [
   {
-    id: "rule-identified-purchase",
-    identificationMode: "any",
-    behaviorPattern: "purchase_complete",
-    defaultConfidence: "exact",
+    id: 'rule-identified-purchase',
+    identificationMode: 'any',
+    behaviorPattern: 'purchase_complete',
+    defaultConfidence: 'exact',
     priority: 50,
-    description: "로그인 후 구매 완료",
+    description: '로그인 후 구매 완료',
     match: {
-      requiredKeys: ["auth.*", "order.*"],
-      requiredSequence: ["auth.*", "cart.*", "checkout.*", "payment.*"],
-      actorCondition: "has_actor",
+      requiredKeys: ['auth.*', 'order.*'],
+      requiredSequence: ['auth.*', 'cart.*', 'checkout.*', 'payment.*'],
+      actorCondition: 'has_actor',
     },
   },
   {
-    id: "rule-checkout-fail",
-    identificationMode: "any",
-    behaviorPattern: "checkout_fail",
-    defaultConfidence: "high",
+    id: 'rule-checkout-fail',
+    identificationMode: 'any',
+    behaviorPattern: 'checkout_fail',
+    defaultConfidence: 'high',
     priority: 45,
-    description: "결제 시도 후 실패 (payment.success 없음)",
+    description: '결제 시도 후 실패 (payment.success 없음)',
     match: {
-      requiredKeys: ["checkout.*"],
-      excludedKeys: ["payment.success", "order.complete"],
-      actorCondition: "has_actor",
+      requiredKeys: ['checkout.*'],
+      excludedKeys: ['payment.success', 'order.complete'],
+      actorCondition: 'has_actor',
     },
   },
   {
-    id: "rule-cart-abandon",
-    identificationMode: "any",
-    behaviorPattern: "cart_abandon",
-    defaultConfidence: "high",
+    id: 'rule-cart-abandon',
+    identificationMode: 'any',
+    behaviorPattern: 'cart_abandon',
+    defaultConfidence: 'high',
     priority: 35,
-    description: "장바구니 담기 후 결제 미진행",
+    description: '장바구니 담기 후 결제 미진행',
     match: {
-      requiredKeys: ["cart.*"],
-      excludedKeys: ["checkout.*", "payment.*", "order.*"],
+      requiredKeys: ['cart.*'],
+      excludedKeys: ['checkout.*', 'payment.*', 'order.*'],
     },
   },
   {
-    id: "rule-identified-browse",
-    identificationMode: "any",
-    behaviorPattern: "browse_only",
-    defaultConfidence: "medium",
+    id: 'rule-identified-browse',
+    identificationMode: 'any',
+    behaviorPattern: 'browse_only',
+    defaultConfidence: 'medium',
     priority: 20,
-    description: "로그인 후 탐색만 (장바구니/결제 없음)",
+    description: '로그인 후 탐색만 (장바구니/결제 없음)',
     match: {
-      requiredKeys: ["auth.*"],
-      excludedKeys: ["cart.*", "checkout.*", "payment.*", "order.*"],
-      actorCondition: "has_actor",
+      requiredKeys: ['auth.*'],
+      excludedKeys: ['cart.*', 'checkout.*', 'payment.*', 'order.*'],
+      actorCondition: 'has_actor',
       minEvents: 2,
     },
   },
   {
-    id: "rule-anonymous-cart",
-    identificationMode: "anonymous",
-    behaviorPattern: "anonymous_cart",
-    defaultConfidence: "high",
+    id: 'rule-anonymous-cart',
+    identificationMode: 'anonymous',
+    behaviorPattern: 'anonymous_cart',
+    defaultConfidence: 'high',
     priority: 15,
-    description: "비로그인 장바구니 사용",
+    description: '비로그인 장바구니 사용',
     match: {
-      requiredKeys: ["cart.*"],
-      actorCondition: "no_actor",
+      requiredKeys: ['cart.*'],
+      actorCondition: 'no_actor',
     },
   },
   {
-    id: "rule-anonymous-browse",
-    identificationMode: "anonymous",
-    behaviorPattern: "anonymous_browse",
-    defaultConfidence: "medium",
+    id: 'rule-anonymous-browse',
+    identificationMode: 'anonymous',
+    behaviorPattern: 'anonymous_browse',
+    defaultConfidence: 'medium',
     priority: 10,
-    description: "비로그인 탐색",
+    description: '비로그인 탐색',
     match: {
-      eventKeyPatterns: ["page\\..*"],
-      actorCondition: "no_actor",
+      eventKeyPatterns: ['page\\..*'],
+      actorCondition: 'no_actor',
       minEvents: 1,
     },
   },
@@ -179,7 +179,9 @@ export const DEMO_PATTERN_RULES: readonly PatternRule[] = [
  * const myRules = combinePatternRules(LOGISTICS_RULES);
  * // → SYSTEM_PATTERN_RULES + LOGISTICS_RULES, priority 정렬
  */
-export function combinePatternRules(...domainRules: readonly (readonly PatternRule[])[]): readonly PatternRule[] {
+export function combinePatternRules(
+  ...domainRules: readonly (readonly PatternRule[])[]
+): readonly PatternRule[] {
   const all = [...SYSTEM_PATTERN_RULES];
   for (const rules of domainRules) {
     all.push(...rules);

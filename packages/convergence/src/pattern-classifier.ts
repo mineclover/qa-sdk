@@ -14,7 +14,7 @@ import type {
   BehaviorPattern,
   IdentificationMode,
   PatternConfidence,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
 /** 분류 엔진 입력: 세션의 이벤트 목록 */
 export interface ClassifierInput {
@@ -44,14 +44,12 @@ export function classifyPattern(
 ): PatternClassification {
   const { events } = input;
   if (events.length === 0) {
-    return makeResult("unclassified", detectIdMode(input), "unknown", "rule-empty", 0, 0);
+    return makeResult('unclassified', detectIdMode(input), 'unknown', 'rule-empty', 0, 0);
   }
 
-  const eventKeys = events.map(e => e.event_key);
-  const timestamps = events.map(e => new Date(e.timestamp).getTime()).filter(t => !isNaN(t));
-  const durationMs = timestamps.length >= 2
-    ? Math.max(...timestamps) - Math.min(...timestamps)
-    : 0;
+  const eventKeys = events.map((e) => e.event_key);
+  const timestamps = events.map((e) => new Date(e.timestamp).getTime()).filter((t) => !isNaN(t));
+  const durationMs = timestamps.length >= 2 ? Math.max(...timestamps) - Math.min(...timestamps) : 0;
 
   const idMode = detectIdMode(input);
 
@@ -60,7 +58,7 @@ export function classifyPattern(
 
   for (const rule of sorted) {
     // identification_mode 조건 확인
-    if (rule.identificationMode !== "any" && rule.identificationMode !== idMode) continue;
+    if (rule.identificationMode !== 'any' && rule.identificationMode !== idMode) continue;
 
     const match = evaluateMatch(rule.match, eventKeys, events, durationMs);
     if (match) {
@@ -75,29 +73,32 @@ export function classifyPattern(
     }
   }
 
-  return makeResult("unclassified", idMode, "unknown", "rule-none", events.length, durationMs);
+  return makeResult('unclassified', idMode, 'unknown', 'rule-none', events.length, durationMs);
 }
 
 /** identification_mode 자동 판별 */
 function detectIdMode(input: ClassifierInput): IdentificationMode {
   // 서비스 간 호출
-  if (input.platform === "node" && (input.ownerType === "workspace" || input.ownerType === "tenant")) {
-    return "service";
+  if (
+    input.platform === 'node' &&
+    (input.ownerType === 'workspace' || input.ownerType === 'tenant')
+  ) {
+    return 'service';
   }
 
   const first = input.events[0];
-  if (!first) return "anonymous";
+  if (!first) return 'anonymous';
 
-  if (!first.actor_id || first.actor_id === "anonymous" || first.actor_id === "") {
-    return "anonymous";
+  if (!first.actor_id || first.actor_id === 'anonymous' || first.actor_id === '') {
+    return 'anonymous';
   }
-  if (first.user_id) return "identified";
-  return "pseudonymized";
+  if (first.user_id) return 'identified';
+  return 'pseudonymized';
 }
 
 /** 매칭 조건 평가 */
 function evaluateMatch(
-  cond: PatternRule["match"],
+  cond: PatternRule['match'],
   eventKeys: readonly string[],
   events: readonly ClassifierEvent[],
   durationMs: number,
@@ -112,14 +113,14 @@ function evaluateMatch(
   // 필수 키 포함
   if (cond.requiredKeys) {
     for (const key of cond.requiredKeys) {
-      if (!eventKeys.some(k => matchKey(k, key))) return false;
+      if (!eventKeys.some((k) => matchKey(k, key))) return false;
     }
   }
 
   // 제외 키
   if (cond.excludedKeys) {
     for (const key of cond.excludedKeys) {
-      if (eventKeys.some(k => matchKey(k, key))) return false;
+      if (eventKeys.some((k) => matchKey(k, key))) return false;
     }
   }
 
@@ -131,23 +132,21 @@ function evaluateMatch(
   // event_key 패턴 (하나라도 매칭)
   if (cond.eventKeyPatterns && cond.eventKeyPatterns.length > 0) {
     const patterns = cond.eventKeyPatterns;
-    const hasMatch = eventKeys.some(k =>
-      patterns.some(p => new RegExp(p).test(k)),
-    );
+    const hasMatch = eventKeys.some((k) => patterns.some((p) => new RegExp(p).test(k)));
     if (!hasMatch) return false;
   }
 
   // actor 조건
-  if (cond.actorCondition === "has_actor") {
-    if (!events[0]?.actor_id || events[0].actor_id === "anonymous") return false;
+  if (cond.actorCondition === 'has_actor') {
+    if (!events[0]?.actor_id || events[0].actor_id === 'anonymous') return false;
   }
-  if (cond.actorCondition === "no_actor") {
-    if (events[0]?.actor_id && events[0].actor_id !== "anonymous") return false;
+  if (cond.actorCondition === 'no_actor') {
+    if (events[0]?.actor_id && events[0].actor_id !== 'anonymous') return false;
   }
 
   // 최소 이벤트 간격 (봇 감지)
   if (cond.minIntervalMs !== undefined && events.length >= 2) {
-    const timestamps = events.map(e => new Date(e.timestamp).getTime()).filter(t => !isNaN(t));
+    const timestamps = events.map((e) => new Date(e.timestamp).getTime()).filter((t) => !isNaN(t));
     if (timestamps.length >= 2) {
       timestamps.sort((a, b) => a - b);
       let minGap = Infinity;
@@ -164,8 +163,8 @@ function evaluateMatch(
 /** event_key 매칭 (glob-like: * = any) */
 function matchKey(actual: string, pattern: string): boolean {
   if (pattern === actual) return true;
-  if (pattern.includes("*")) {
-    const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
+  if (pattern.includes('*')) {
+    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
     return regex.test(actual);
   }
   return actual.startsWith(pattern);

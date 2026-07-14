@@ -44,7 +44,7 @@
  * [BF-6] 밀도 분석 정합성: analyzeBitVsHex 결과가 실제 pack 결과와 일치
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
 import {
   WeightedIndex,
   WeightedIndexBig,
@@ -63,52 +63,46 @@ import {
   packUUID,
   unpackUUID,
   type BitFieldLayout,
-} from "weighted-index";
+} from 'weighted-index';
 
 // ── 공통 픽스처 ──────────────────────────────────────────────────────────────
 
 /** SaaS 권한 모델: role(5) × action(8) × resource(20) = 800 */
 const PERM_SHAPE = [5, 8, 20];
-const PERM_LABELS = ["role", "action", "resource"];
+const PERM_LABELS = ['role', 'action', 'resource'];
 
 /** 메타 필드 정의: prefix(max 15) + version(max 7) + shard(max 3) */
 const META_SPECS = [
-  { name: "prefix",  maxValue: 15 },   // 4 bits
-  { name: "version", maxValue: 7 },    // 3 bits
-  { name: "shard",   maxValue: 3 },    // 2 bits
+  { name: 'prefix', maxValue: 15 }, // 4 bits
+  { name: 'version', maxValue: 7 }, // 3 bits
+  { name: 'shard', maxValue: 3 }, // 2 bits
 ] as const;
 
 function createPermLayout(wi: WeightedIndex | { size: number | bigint }): BitFieldLayout {
-  const size = typeof wi.size === "bigint" ? Number(wi.size) : wi.size;
-  return createBitFieldLayout([
-    ...META_SPECS,
-    { name: "index", maxValue: size - 1 },
-  ]);
+  const size = typeof wi.size === 'bigint' ? Number(wi.size) : wi.size;
+  return createBitFieldLayout([...META_SPECS, { name: 'index', maxValue: size - 1 }]);
 }
 
 function createPermLayoutBig(): BitFieldLayout {
   // BigInt 용 큰 shape: 10^7 × 10^6 × 10^4 = 10^17 > 2^53
-  return createBitFieldLayout([
-    ...META_SPECS,
-    { name: "index", maxValue: 0, bits: 64 },
-  ]);
+  return createBitFieldLayout([...META_SPECS, { name: 'index', maxValue: 0, bits: 64 }]);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
 //  [BF-1] Number 경로: 3-format 라운드트립
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BF-1] Number 경로 — coords → encode → bitPack → 3-format roundtrip → decode", () => {
+describe('[BF-1] Number 경로 — coords → encode → bitPack → 3-format roundtrip → decode', () => {
   const wi = new WeightedIndex(PERM_SHAPE, PERM_LABELS);
   const layout = createPermLayout(wi);
 
   // 대표 좌표: 경계값 + 중간값
   const testCoords: number[][] = [
-    [1, 1, 1],                // 최소
-    [5, 8, 20],               // 최대
-    [3, 4, 10],               // 중간
-    [1, 8, 20],               // 첫 차원 최소 + 나머지 최대
-    [5, 1, 1],                // 첫 차원 최대 + 나머지 최소
+    [1, 1, 1], // 최소
+    [5, 8, 20], // 최대
+    [3, 4, 10], // 중간
+    [1, 8, 20], // 첫 차원 최소 + 나머지 최대
+    [5, 1, 1], // 첫 차원 최대 + 나머지 최소
   ];
 
   const metaValues = { prefix: 10, version: 5, shard: 2 };
@@ -146,7 +140,7 @@ describe("[BF-1] Number 경로 — coords → encode → bitPack → 3-format ro
     });
   }
 
-  it("3-format 교차: bigint → hex → bytes → bigint 동일 값", () => {
+  it('3-format 교차: bigint → hex → bytes → bigint 동일 값', () => {
     const coords = [3, 5, 12];
     const index = wi.encode(coords);
     const values = { ...metaValues, index };
@@ -171,13 +165,13 @@ describe("[BF-1] Number 경로 — coords → encode → bitPack → 3-format ro
 //  [BF-2] BigInt 경로: MAX_SAFE_INTEGER 초과 인덱스
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BF-2] BigInt 경로 — encodeBig → bitPack → 3-format roundtrip → decodeBig", () => {
+describe('[BF-2] BigInt 경로 — encodeBig → bitPack → 3-format roundtrip → decodeBig', () => {
   // shape product > 2^53: 10^7 × 10^6 × 10^4 = 10^17 > 9 × 10^15
   const shape = [10_000_000n, 1_000_000n, 10_000n];
-  const wiBig = new WeightedIndexBig(shape, ["role", "action", "resource"]);
+  const wiBig = new WeightedIndexBig(shape, ['role', 'action', 'resource']);
   const layout = createPermLayoutBig();
 
-  it("size > MAX_SAFE_INTEGER", () => {
+  it('size > MAX_SAFE_INTEGER', () => {
     expect(wiBig.size).toBeGreaterThan(BigInt(Number.MAX_SAFE_INTEGER));
   });
 
@@ -220,7 +214,7 @@ describe("[BF-2] BigInt 경로 — encodeBig → bitPack → 3-format roundtrip 
     });
   }
 
-  it("3-format 교차: bigint → hex → bytes → bigint 동일 값", () => {
+  it('3-format 교차: bigint → hex → bytes → bigint 동일 값', () => {
     const index = wiBig.encode([7777n, 3333n, 1111n]);
     const values = { ...metaValues, index };
 
@@ -237,7 +231,7 @@ describe("[BF-2] BigInt 경로 — encodeBig → bitPack → 3-format roundtrip 
 //  [BF-3] Number ↔ BigInt 교차 동등성
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BF-3] Number ↔ BigInt 교차 — 동일 좌표에서 bitPack 결과 동등", () => {
+describe('[BF-3] Number ↔ BigInt 교차 — 동일 좌표에서 bitPack 결과 동등', () => {
   const shape = [5, 8, 20];
   const shapeBig = shape.map(BigInt);
   const wi = new WeightedIndex(shape);
@@ -245,12 +239,12 @@ describe("[BF-3] Number ↔ BigInt 교차 — 동일 좌표에서 bitPack 결과
 
   // 두 경로 모두 같은 bit-field layout 사용
   const layout = createBitFieldLayout([
-    { name: "prefix",  maxValue: 15 },
-    { name: "version", maxValue: 7 },
-    { name: "index",   maxValue: wi.size - 1 },
+    { name: 'prefix', maxValue: 15 },
+    { name: 'version', maxValue: 7 },
+    { name: 'index', maxValue: wi.size - 1 },
   ]);
 
-  it("모든 주소에 대해 Number encode → bitPack === BigInt encode → bitPack", () => {
+  it('모든 주소에 대해 Number encode → bitPack === BigInt encode → bitPack', () => {
     const prefix = 12;
     const version = 5;
 
@@ -268,7 +262,7 @@ describe("[BF-3] Number ↔ BigInt 교차 — 동일 좌표에서 bitPack 결과
     }
   });
 
-  it("교차 decode: Number pack → BigInt unpack → BigInt decode → Number coords", () => {
+  it('교차 decode: Number pack → BigInt unpack → BigInt decode → Number coords', () => {
     const coords = [3, 5, 12];
     const index = wi.encode(coords);
 
@@ -285,24 +279,27 @@ describe("[BF-3] Number ↔ BigInt 교차 — 동일 좌표에서 bitPack 결과
 //  [BF-4] hex-pack (uuid-layout) vs bit-pack 동등성
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BF-4] uuid-layout (hex) vs bit-field-layout — 동일 필드 값 보존", () => {
+describe('[BF-4] uuid-layout (hex) vs bit-field-layout — 동일 필드 값 보존', () => {
   // uuid-layout: hex-char 경계 (각 필드 = N hex chars)
   const uuidLayout = createUUIDLayout({
-    left:  [{ name: "prefix", chars: 1 }, { name: "version", chars: 1 }],
-    right: [{ name: "index", chars: 6 }],
+    left: [
+      { name: 'prefix', chars: 1 },
+      { name: 'version', chars: 1 },
+    ],
+    right: [{ name: 'index', chars: 6 }],
   });
 
   // bit-field-layout: bit 경계 (prefix=4b, version=4b, index=24b)
   // uuid-layout의 hex chars를 bits로 변환하여 동일 필드 폭 보장
   const bitLayout = createBitFieldLayout([
-    { name: "prefix",  maxValue: 15 },    // 4 bits = 1 hex char
-    { name: "version", maxValue: 15 },    // 4 bits = 1 hex char
-    { name: "index",   maxValue: 0, bits: 24 },  // 24 bits = 6 hex chars
+    { name: 'prefix', maxValue: 15 }, // 4 bits = 1 hex char
+    { name: 'version', maxValue: 15 }, // 4 bits = 1 hex char
+    { name: 'index', maxValue: 0, bits: 24 }, // 24 bits = 6 hex chars
   ]);
 
   const testCases = [
     { prefix: 0, version: 0, index: 0 },
-    { prefix: 15, version: 15, index: 16777215 },  // 모든 필드 max
+    { prefix: 15, version: 15, index: 16777215 }, // 모든 필드 max
     { prefix: 10, version: 5, index: 42 },
     { prefix: 1, version: 1, index: 1000000 },
   ];
@@ -329,16 +326,16 @@ describe("[BF-4] uuid-layout (hex) vs bit-field-layout — 동일 필드 값 보
 //  [BF-5] 실사용: 권한 시스템 E2E (저장 → 복원 파이프라인)
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BF-5] 권한 시스템 E2E — encode → bitPack → 저장(bytes) → 복원 → decode", () => {
+describe('[BF-5] 권한 시스템 E2E — encode → bitPack → 저장(bytes) → 복원 → decode', () => {
   // 실제 권한 차원: namespace(3) × service(10) × type(4) × resource(50) × action(8)
   const shape = [3, 10, 4, 50, 8];
-  const labels = ["namespace", "service", "type", "resource", "action"];
+  const labels = ['namespace', 'service', 'type', 'resource', 'action'];
   const wi = new WeightedIndex(shape, labels);
 
   const layout = createBitFieldLayout([
-    { name: "schemaId",  maxValue: 255 },   // 8 bits
-    { name: "versionId", maxValue: 15 },    // 4 bits
-    { name: "index",     maxValue: wi.size - 1 },
+    { name: 'schemaId', maxValue: 255 }, // 8 bits
+    { name: 'versionId', maxValue: 15 }, // 4 bits
+    { name: 'index', maxValue: wi.size - 1 },
   ]);
 
   // 시뮬레이션: "서비스 A의 admin이 /users 리소스에 GET 요청"
@@ -348,9 +345,9 @@ describe("[BF-5] 권한 시스템 E2E — encode → bitPack → 저장(bytes) �
     coords: { namespace: 1, service: 5, type: 2, resource: 30, action: 4 },
   };
 
-  it("단계별 파이프라인 검증", () => {
+  it('단계별 파이프라인 검증', () => {
     // 1. 좌표 → 1D 인덱스
-    const coordArr = labels.map(l => scenario.coords[l as keyof typeof scenario.coords]);
+    const coordArr = labels.map((l) => scenario.coords[l as keyof typeof scenario.coords]);
     const index = wi.encode(coordArr);
     expect(index).toBeGreaterThanOrEqual(0);
     expect(index).toBeLessThan(wi.size);
@@ -361,7 +358,7 @@ describe("[BF-5] 권한 시스템 E2E — encode → bitPack → 저장(bytes) �
       versionId: scenario.versionId,
       index,
     });
-    expect(typeof packed).toBe("bigint");
+    expect(typeof packed).toBe('bigint');
 
     // 3. bigint → bytes (DB/네트워크 저장)
     const stored = bigintToBytes(packed, layout.totalBytes);
@@ -385,9 +382,9 @@ describe("[BF-5] 권한 시스템 E2E — encode → bitPack → 저장(bytes) �
     expect(record).toEqual(scenario.coords);
   });
 
-  it("100개 랜덤 좌표 파이프라인 라운드트립", () => {
+  it('100개 랜덤 좌표 파이프라인 라운드트립', () => {
     for (let i = 0; i < 100; i++) {
-      const coords = shape.map(s => Math.floor(Math.random() * s) + 1);
+      const coords = shape.map((s) => Math.floor(Math.random() * s) + 1);
       const index = wi.encode(coords);
 
       const bytes = bitPackToBytes(layout, { schemaId: 42, versionId: 3, index });
@@ -398,8 +395,8 @@ describe("[BF-5] 권한 시스템 E2E — encode → bitPack → 저장(bytes) �
     }
   });
 
-  it("hex 경로 라운드트립", () => {
-    const coordArr = labels.map(l => scenario.coords[l as keyof typeof scenario.coords]);
+  it('hex 경로 라운드트립', () => {
+    const coordArr = labels.map((l) => scenario.coords[l as keyof typeof scenario.coords]);
     const index = wi.encode(coordArr);
 
     const hex = bitPackToHex(layout, {
@@ -419,13 +416,13 @@ describe("[BF-5] 권한 시스템 E2E — encode → bitPack → 저장(bytes) �
 //  [BF-6] analyzeBitVsHex 정합성 — 분석 결과가 실제 팩 결과와 일치
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe("[BF-6] analyzeBitVsHex — 분석 결과와 실제 패킹의 정합성", () => {
-  it("totalBitWidth === createBitFieldLayout.totalBits", () => {
+describe('[BF-6] analyzeBitVsHex — 분석 결과와 실제 패킹의 정합성', () => {
+  it('totalBitWidth === createBitFieldLayout.totalBits', () => {
     const specs = [
-      { name: "prefix",  maxValue: 15 },
-      { name: "version", maxValue: 7 },
-      { name: "shard",   maxValue: 3 },
-      { name: "index",   maxValue: 99999 },
+      { name: 'prefix', maxValue: 15 },
+      { name: 'version', maxValue: 7 },
+      { name: 'shard', maxValue: 3 },
+      { name: 'index', maxValue: 99999 },
     ];
 
     const analysis = analyzeBitVsHex(specs);
@@ -434,11 +431,11 @@ describe("[BF-6] analyzeBitVsHex — 분석 결과와 실제 패킹의 정합성
     expect(analysis.totalBitWidth).toBe(layout.totalBits);
   });
 
-  it("각 필드의 bitWidth === layout.fields[i].bits", () => {
+  it('각 필드의 bitWidth === layout.fields[i].bits', () => {
     const specs = [
-      { name: "a", maxValue: 100 },
-      { name: "b", maxValue: 7 },
-      { name: "c", maxValue: 1000 },
+      { name: 'a', maxValue: 100 },
+      { name: 'b', maxValue: 7 },
+      { name: 'c', maxValue: 1000 },
     ];
 
     const analysis = analyzeBitVsHex(specs);
@@ -449,12 +446,12 @@ describe("[BF-6] analyzeBitVsHex — 분석 결과와 실제 패킹의 정합성
     }
   });
 
-  it("savedBits만큼 실제 용량 증가 확인", () => {
+  it('savedBits만큼 실제 용량 증가 확인', () => {
     // version(max 5): bit=3, hex=4 → 1 bit 절약
     // shard(max 3): bit=2, hex=4 → 2 bits 절약
     const metaSpecs = [
-      { name: "version", maxValue: 5 },
-      { name: "shard",   maxValue: 3 },
+      { name: 'version', maxValue: 5 },
+      { name: 'shard', maxValue: 3 },
     ];
     const analysis = analyzeBitVsHex(metaSpecs);
     expect(analysis.savedBits).toBe(3); // 1 + 2
@@ -464,20 +461,20 @@ describe("[BF-6] analyzeBitVsHex — 분석 결과와 실제 패킹의 정합성
 
     // 동일 컨테이너(16 bits)에서 index 필드 용량 비교
     const containerBits = 16;
-    const bitIndexBits = containerBits - analysis.totalBitWidth;  // 16 - 5 = 11
-    const hexIndexBits = containerBits - analysis.totalHexWidth;  // 16 - 8 = 8
+    const bitIndexBits = containerBits - analysis.totalBitWidth; // 16 - 5 = 11
+    const hexIndexBits = containerBits - analysis.totalHexWidth; // 16 - 8 = 8
 
-    const bitCapacity = 2 ** bitIndexBits;   // 2^11 = 2048
-    const hexCapacity = 2 ** hexIndexBits;   // 2^8  = 256
+    const bitCapacity = 2 ** bitIndexBits; // 2^11 = 2048
+    const hexCapacity = 2 ** hexIndexBits; // 2^8  = 256
 
     // 절약된 비트로 인한 용량 배수 = 2^savedBits
     expect(bitCapacity / hexCapacity).toBe(analysis.capacityMultiplier);
   });
 
-  it("bits 오버라이드 포함 분석", () => {
+  it('bits 오버라이드 포함 분석', () => {
     const specs = [
-      { name: "prefix",  maxValue: 15 },
-      { name: "index",   maxValue: 0, bits: 60 },
+      { name: 'prefix', maxValue: 15 },
+      { name: 'index', maxValue: 0, bits: 60 },
     ];
     const analysis = analyzeBitVsHex(specs);
     const layout = createBitFieldLayout(specs);

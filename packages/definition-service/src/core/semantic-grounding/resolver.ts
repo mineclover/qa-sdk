@@ -1,13 +1,13 @@
 // @def.doc definition-service
 
-import { normalizeSemanticText, tokenizeSemanticText } from "./normalize.js";
+import { normalizeSemanticText, tokenizeSemanticText } from './normalize.js';
 import type {
   SemanticCandidate,
   SemanticEvidence,
   SemanticResolution,
   SemanticResolveOptions,
   SemanticTermWithAliases,
-} from "./types.js";
+} from './types.js';
 
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.8;
 const DEFAULT_LIMIT = 10;
@@ -54,14 +54,14 @@ function scoreTerm(
         left.aliasId.localeCompare(right.aliasId),
     )[0];
   if (exactAlias) {
-    return candidate(term, exactAlias.confidence, "alias", [
-      { kind: "alias", ref: exactAlias.alias, weight: exactAlias.confidence },
+    return candidate(term, exactAlias.confidence, 'alias', [
+      { kind: 'alias', ref: exactAlias.alias, weight: exactAlias.confidence },
     ]);
   }
 
   if (term.normalizedLabel === normalizedQuery) {
-    return candidate(term, 1, "canonical-label", [
-      { kind: "canonical-label", ref: term.canonicalLabel, weight: 1 },
+    return candidate(term, 1, 'canonical-label', [
+      { kind: 'canonical-label', ref: term.canonicalLabel, weight: 1 },
     ]);
   }
 
@@ -75,9 +75,9 @@ function scoreTerm(
     return candidate(
       term,
       confidence,
-      "token-overlap",
+      'token-overlap',
       overlap.map((token) => ({
-        kind: "token-overlap",
+        kind: 'token-overlap',
         ref: token,
         weight: confidence,
       })),
@@ -90,7 +90,7 @@ function scoreTerm(
 function candidate(
   term: SemanticTermWithAliases,
   confidence: number,
-  matchedBy: SemanticCandidate["matchedBy"],
+  matchedBy: SemanticCandidate['matchedBy'],
   evidence: readonly SemanticEvidence[],
 ): SemanticCandidate {
   return {

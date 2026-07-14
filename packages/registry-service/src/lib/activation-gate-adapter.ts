@@ -18,16 +18,20 @@ export interface ActivationGateAdapterResult {
 }
 
 export interface ActivationGateDiagnostic {
-  readonly level: "error" | "warning" | "info";
+  readonly level: 'error' | 'warning' | 'info';
   readonly source: string;
   readonly id: string;
   readonly message: string;
 }
 
 export interface ActivationGateConfig<G = unknown> {
-  mode: "strict" | "warn";
+  mode: 'strict' | 'warn';
   graphProvider: () => G;
-  checkFn: (graph: G, prefixId: string, options?: { mode?: "strict" | "warn"; schemaCheck?: boolean }) => {
+  checkFn: (
+    graph: G,
+    prefixId: string,
+    options?: { mode?: 'strict' | 'warn'; schemaCheck?: boolean },
+  ) => {
     allowed: boolean;
     diagnostics: readonly ActivationGateDiagnostic[];
   };
@@ -52,12 +56,14 @@ export function createActivationGate<G>(config: ActivationGateConfig<G>): Activa
         // Gate failure → fail open (allow, with warning)
         return {
           allowed: true,
-          diagnostics: [{
-            level: "warning",
-            source: "gate-error",
-            id: "GATE_ERROR",
-            message: `Activation gate check failed: ${error instanceof Error ? error.message : String(error)}`,
-          }],
+          diagnostics: [
+            {
+              level: 'warning',
+              source: 'gate-error',
+              id: 'GATE_ERROR',
+              message: `Activation gate check failed: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
         };
       }
     },

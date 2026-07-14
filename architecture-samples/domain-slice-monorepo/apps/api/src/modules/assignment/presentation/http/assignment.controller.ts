@@ -1,5 +1,5 @@
-import type { CreateAssignmentCommand } from "../../application/commands/create-assignment.command.js";
-import type { AssignmentUseCase } from "../../application/use-cases/assignment.use-case.js";
+import type { CreateAssignmentCommand } from '../../application/commands/create-assignment.command.js';
+import type { AssignmentUseCase } from '../../application/use-cases/assignment.use-case.js';
 
 export class AssignmentController {
   constructor(private readonly useCase: AssignmentUseCase) {}
@@ -9,4 +9,3 @@ export class AssignmentController {
     return { ok: true };
   }
 }
-

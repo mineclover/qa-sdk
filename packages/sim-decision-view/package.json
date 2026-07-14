@@ -2,7 +2,13 @@
   "name": "sim-decision-view",
   "version": "0.1.0",
   "description": "controller 결정 객체 view DTO SSOT — producer/consumer drift 차단",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -10,10 +16,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

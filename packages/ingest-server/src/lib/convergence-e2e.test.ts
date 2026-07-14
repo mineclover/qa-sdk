@@ -10,31 +10,35 @@
  * 실제 spec-core를 import하지 않고, pipeline의 통합 흐름을 검증.
  */
 
-import { describe, it, expect, vi } from "vitest";
-import { ConvergencePipelineRunner, type ConvergenceFunctions, type DkgStorePort } from "./convergence-pipeline.js";
+import { describe, it, expect, vi } from 'vitest';
+import {
+  ConvergencePipelineRunner,
+  type ConvergenceFunctions,
+  type DkgStorePort,
+} from './convergence-pipeline.js';
 
-describe("관측 루프 E2E", () => {
+describe('관측 루프 E2E', () => {
   // ── 전체 파이프라인 흐름 검증 ────────────────────────
 
-  it("Phase 2 → convergence → DKG store 저장까지 전체 경로", async () => {
+  it('Phase 2 → convergence → DKG store 저장까지 전체 경로', async () => {
     // 1. Mock record store: traceId별 address_context 포함 레코드 반환
     const recordStore = {
       findByTraceId: vi.fn().mockImplementation((traceId: string) => {
         return Promise.resolve([
           {
             id: `rec-${traceId}-1`,
-            addressContext: { cart_event: `cart_event:v1:${traceId === "t1" ? 3 : 7}` },
-            createdAt: "2026-03-21T10:00:00Z",
-            sessionId: "sess-1",
+            addressContext: { cart_event: `cart_event:v1:${traceId === 't1' ? 3 : 7}` },
+            createdAt: '2026-03-21T10:00:00Z',
+            sessionId: 'sess-1',
           },
           {
             id: `rec-${traceId}-2`,
             addressContext: {
-              auth_event: "auth_event:v1:1",
-              deploy_event: "deploy_event:v1:0",
+              auth_event: 'auth_event:v1:1',
+              deploy_event: 'deploy_event:v1:0',
             },
-            createdAt: "2026-03-21T10:00:01Z",
-            sessionId: "sess-1",
+            createdAt: '2026-03-21T10:00:01Z',
+            sessionId: 'sess-1',
           },
         ]);
       }),
@@ -42,47 +46,80 @@ describe("관측 루프 E2E", () => {
 
     // 2. Mock convergence functions (spec-core 대역)
     const mockUsageData = {
-      collectionPeriod: { from: "2026-03-21", to: "2026-03-21" },
+      collectionPeriod: { from: '2026-03-21', to: '2026-03-21' },
       entryUsages: [
-        { prefix: "cart_event", entry: "add_to_cart", count: 2 },
-        { prefix: "auth_event", entry: "login", count: 2 },
+        { prefix: 'cart_event', entry: 'add_to_cart', count: 2 },
+        { prefix: 'auth_event', entry: 'login', count: 2 },
       ],
       addressUsages: [
-        { prefix: "cart_event", address: 3, count: 1 },
-        { prefix: "cart_event", address: 7, count: 1 },
+        { prefix: 'cart_event', address: 3, count: 1 },
+        { prefix: 'cart_event', address: 7, count: 1 },
       ],
-      coOccurrences: [
-        { a: "cart_event", b: "auth_event", count: 2, coRate: 1.0 },
-      ],
+      coOccurrences: [{ a: 'cart_event', b: 'auth_event', count: 2, coRate: 1.0 }],
       versionUsages: [
-        { prefix: "cart_event", version: "v1", count: 2, lastSeen: "2026-03-21", sessions: ["sess-1"] },
-        { prefix: "auth_event", version: "v1", count: 2, lastSeen: "2026-03-21", sessions: ["sess-1"] },
+        {
+          prefix: 'cart_event',
+          version: 'v1',
+          count: 2,
+          lastSeen: '2026-03-21',
+          sessions: ['sess-1'],
+        },
+        {
+          prefix: 'auth_event',
+          version: 'v1',
+          count: 2,
+          lastSeen: '2026-03-21',
+          sessions: ['sess-1'],
+        },
       ],
       sourceStats: { totalRecords: 4 },
     };
 
     const mockMetrics = [
-      { id: "metric:headroom:status", name: "축 여유 공간", value: 0, status: "critical", detail: "status: headroom=0", target: "status", measuredAt: "2026-03-21" },
-      { id: "metric:coverage:cart_event", name: "entry 관측 커버리지", value: 25, status: "warning", detail: "25%", target: "cart_event", measuredAt: "2026-03-21" },
-      { id: "metric:overlap:role:rbac_role", name: "축 중복", value: 85, status: "ok", target: "role:rbac_role", measuredAt: "2026-03-21" },
+      {
+        id: 'metric:headroom:status',
+        name: '축 여유 공간',
+        value: 0,
+        status: 'critical',
+        detail: 'status: headroom=0',
+        target: 'status',
+        measuredAt: '2026-03-21',
+      },
+      {
+        id: 'metric:coverage:cart_event',
+        name: 'entry 관측 커버리지',
+        value: 25,
+        status: 'warning',
+        detail: '25%',
+        target: 'cart_event',
+        measuredAt: '2026-03-21',
+      },
+      {
+        id: 'metric:overlap:role:rbac_role',
+        name: '축 중복',
+        value: 85,
+        status: 'ok',
+        target: 'role:rbac_role',
+        measuredAt: '2026-03-21',
+      },
     ];
 
     const mockObservations = [
       {
-        kind: "observation",
-        id: "OBS-METRIC-headroom-status-1",
-        date: "2026-03-21",
-        source: "metric",
-        subjects: ["status"],
-        finding: "[critical] 축 여유 공간: status: headroom=0",
+        kind: 'observation',
+        id: 'OBS-METRIC-headroom-status-1',
+        date: '2026-03-21',
+        source: 'metric',
+        subjects: ['status'],
+        finding: '[critical] 축 여유 공간: status: headroom=0',
       },
       {
-        kind: "observation",
-        id: "OBS-METRIC-coverage-cart_event-2",
-        date: "2026-03-21",
-        source: "metric",
-        subjects: ["cart_event"],
-        finding: "[warning] entry 관측 커버리지: 25%",
+        kind: 'observation',
+        id: 'OBS-METRIC-coverage-cart_event-2',
+        date: '2026-03-21',
+        source: 'metric',
+        subjects: ['cart_event'],
+        finding: '[warning] entry 관측 커버리지: 25%',
       },
     ];
 
@@ -106,7 +143,7 @@ describe("관측 루프 E2E", () => {
         recordStore,
         convergenceFns,
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
-        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
+        catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }),
         dkgStore,
       },
       {
@@ -117,7 +154,7 @@ describe("관측 루프 E2E", () => {
 
     try {
       // 5. Phase 2 완료 시뮬레이션: traceId 2개 알림
-      pipeline.notifyCompletion(["t1", "t2"]);
+      pipeline.notifyCompletion(['t1', 't2']);
       expect(pipeline.pendingCount).toBe(2);
 
       // 6. 명시적 flush
@@ -128,8 +165,8 @@ describe("관측 루프 E2E", () => {
 
       // recordStore에서 2개 trace의 레코드 조회
       expect(recordStore.findByTraceId).toHaveBeenCalledTimes(2);
-      expect(recordStore.findByTraceId).toHaveBeenCalledWith("t1");
-      expect(recordStore.findByTraceId).toHaveBeenCalledWith("t2");
+      expect(recordStore.findByTraceId).toHaveBeenCalledWith('t1');
+      expect(recordStore.findByTraceId).toHaveBeenCalledWith('t2');
 
       // aggregateUsageData: 4개 레코드 (trace당 2개) 전달
       expect(convergenceFns.aggregateUsageData).toHaveBeenCalledTimes(1);
@@ -166,11 +203,14 @@ describe("관측 루프 E2E", () => {
 
   // ── Phase 2 worker 연동 시뮬레이션 ──────────────────
 
-  it("processPendingPhaseTwo → convergencePipeline.notifyCompletion 연동", async () => {
+  it('processPendingPhaseTwo → convergencePipeline.notifyCompletion 연동', async () => {
     const convergenceFns: ConvergenceFunctions = {
       aggregateUsageData: vi.fn().mockReturnValue({
-        collectionPeriod: { from: "2026-03-21", to: "2026-03-21" },
-        entryUsages: [], addressUsages: [], coOccurrences: [], versionUsages: [],
+        collectionPeriod: { from: '2026-03-21', to: '2026-03-21' },
+        entryUsages: [],
+        addressUsages: [],
+        coOccurrences: [],
+        versionUsages: [],
       }),
       collectMetrics: vi.fn().mockReturnValue([]),
       metricsToObservations: vi.fn().mockReturnValue([]),
@@ -179,13 +219,15 @@ describe("관측 루프 E2E", () => {
     const pipeline = new ConvergencePipelineRunner(
       {
         recordStore: {
-          findByTraceId: vi.fn().mockResolvedValue([
-            { id: "r1", addressContext: { x: "x:v1:0" }, createdAt: "2026-03-21T00:00:00Z" },
-          ]),
+          findByTraceId: vi
+            .fn()
+            .mockResolvedValue([
+              { id: 'r1', addressContext: { x: 'x:v1:0' }, createdAt: '2026-03-21T00:00:00Z' },
+            ]),
         } as any,
         convergenceFns,
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
-        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
+        catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },
     );
@@ -195,7 +237,7 @@ describe("관측 루프 E2E", () => {
       const port = { notifyCompletion: (ids: readonly string[]) => pipeline.notifyCompletion(ids) };
 
       // Phase 2 worker가 호출하는 것과 동일
-      port.notifyCompletion(["trace-abc", "trace-def", "trace-ghi"]);
+      port.notifyCompletion(['trace-abc', 'trace-def', 'trace-ghi']);
       expect(pipeline.pendingCount).toBe(3);
 
       const result = await pipeline.flush();
@@ -209,22 +251,26 @@ describe("관측 루프 E2E", () => {
 
   // ── 에러 격리 시나리오 ─────────────────────────────
 
-  it("일부 trace 레코드 조회 실패해도 나머지는 정상 처리", async () => {
+  it('일부 trace 레코드 조회 실패해도 나머지는 정상 처리', async () => {
     const recordStore = {
-      findByTraceId: vi.fn()
+      findByTraceId: vi
+        .fn()
         .mockResolvedValueOnce([
-          { id: "r1", addressContext: { a: "a:v1:0" }, createdAt: "2026-03-21T00:00:00Z" },
+          { id: 'r1', addressContext: { a: 'a:v1:0' }, createdAt: '2026-03-21T00:00:00Z' },
         ])
-        .mockRejectedValueOnce(new Error("DB timeout")) // t2 실패
+        .mockRejectedValueOnce(new Error('DB timeout')) // t2 실패
         .mockResolvedValueOnce([
-          { id: "r3", addressContext: { b: "b:v1:1" }, createdAt: "2026-03-21T00:00:00Z" },
+          { id: 'r3', addressContext: { b: 'b:v1:1' }, createdAt: '2026-03-21T00:00:00Z' },
         ]),
     } as any;
 
     const convergenceFns: ConvergenceFunctions = {
       aggregateUsageData: vi.fn().mockReturnValue({
-        collectionPeriod: { from: "2026-03-21", to: "2026-03-21" },
-        entryUsages: [], addressUsages: [], coOccurrences: [], versionUsages: [],
+        collectionPeriod: { from: '2026-03-21', to: '2026-03-21' },
+        entryUsages: [],
+        addressUsages: [],
+        coOccurrences: [],
+        versionUsages: [],
       }),
       collectMetrics: vi.fn().mockReturnValue([]),
       metricsToObservations: vi.fn().mockReturnValue([]),
@@ -235,13 +281,13 @@ describe("관측 루프 E2E", () => {
         recordStore,
         convergenceFns,
         graphProvider: () => ({ getAllNodes: () => [], getNodesByKind: () => [] }) as any,
-        catalogProvider: () => ({ id: "test", name: "test", axes: {}, prefixes: {} }),
+        catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }),
       },
       { recordThreshold: 999, flushIntervalMs: 999_999 },
     );
 
     try {
-      pipeline.notifyCompletion(["t1", "t2", "t3"]);
+      pipeline.notifyCompletion(['t1', 't2', 't3']);
       const result = await pipeline.flush();
 
       // t2 실패해도 t1, t3는 수집됨 → 2건
@@ -256,7 +302,7 @@ describe("관측 루프 E2E", () => {
 
   // ── activation gate + convergence 연동 시나리오 ────
 
-  it("convergence observation이 activation gate diagnostics에 반영되는 시나리오", () => {
+  it('convergence observation이 activation gate diagnostics에 반영되는 시나리오', () => {
     // 이 테스트는 activation-gate가 observation을 감지하는 것을 검증
     // (실제로는 spec-core의 checkActivationReadiness가 수행)
 
@@ -265,10 +311,10 @@ describe("관측 루프 E2E", () => {
       allowed: true,
       diagnostics: [
         {
-          level: "warning" as const,
-          source: "observation",
-          id: "OBS-METRIC-headroom-status-1",
-          message: "Unresolved observation: [critical] 축 여유 공간: status: headroom=0",
+          level: 'warning' as const,
+          source: 'observation',
+          id: 'OBS-METRIC-headroom-status-1',
+          message: 'Unresolved observation: [critical] 축 여유 공간: status: headroom=0',
         },
       ],
     };
@@ -276,6 +322,6 @@ describe("관측 루프 E2E", () => {
     // gate가 convergence pipeline이 생성한 observation을 감지
     expect(mockGateResult.allowed).toBe(true);
     expect(mockGateResult.diagnostics).toHaveLength(1);
-    expect(mockGateResult.diagnostics[0].id).toContain("OBS-METRIC");
+    expect(mockGateResult.diagnostics[0].id).toContain('OBS-METRIC');
   });
 });

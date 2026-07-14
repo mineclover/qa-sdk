@@ -19,8 +19,8 @@
  * 단일 스레드 전용 (Node.js 기본). 멀티스레드 환경에서는 외부 동기화 필요.
  */
 
-import type { FlowEngineListener } from "./engine.js";
-import type { FlowInstance, GateSchema, GateSelection } from "./types.js";
+import type { FlowEngineListener } from './engine.js';
+import type { FlowInstance, GateSchema, GateSelection } from './types.js';
 
 // ─── 메트릭 타입 ─────────────────────────────────────────
 
@@ -44,7 +44,7 @@ export interface SchemaMetrics {
 }
 
 /** 알림 심각도 */
-export type AlertSeverity = "info" | "warning" | "critical";
+export type AlertSeverity = 'info' | 'warning' | 'critical';
 
 /** 모니터가 발행하는 알림 */
 export interface DecisionAlert {
@@ -79,7 +79,7 @@ export interface MonitorConfig {
 export class DecisionMonitor implements FlowEngineListener {
   private readonly metrics = new Map<string, SchemaMetrics>();
   private readonly alerts: DecisionAlert[] = [];
-  private readonly config: Required<Pick<MonitorConfig, "lowConfidenceThreshold">>;
+  private readonly config: Required<Pick<MonitorConfig, 'lowConfidenceThreshold'>>;
   private readonly onAlert?: AlertHandler;
 
   constructor(config: MonitorConfig = {}) {
@@ -102,7 +102,7 @@ export class DecisionMonitor implements FlowEngineListener {
     m.confidenceSum += selection.confidence;
 
     // 코어 gate 분포 추적
-    if (gate.weight === "core") {
+    if (gate.weight === 'core') {
       let gateDist = m.coreDistribution.get(gate.id);
       if (!gateDist) {
         gateDist = new Map();
@@ -114,8 +114,8 @@ export class DecisionMonitor implements FlowEngineListener {
     // 알림: 낮은 confidence
     if (selection.confidence < this.config.lowConfidenceThreshold) {
       this.raiseAlert({
-        severity: "warning",
-        type: "low-confidence",
+        severity: 'warning',
+        type: 'low-confidence',
         message: `gate "${gate.id}"에서 confidence ${selection.confidence.toFixed(2)}로 결정 — 임계값 ${this.config.lowConfidenceThreshold} 미만`,
         schemaId: instance.schemaId,
         instanceId: instance.id,
@@ -125,15 +125,15 @@ export class DecisionMonitor implements FlowEngineListener {
     }
 
     // 알림: 코어 gate에서 소수 경로 선택 (기존 분포의 10% 미만 경로)
-    if (gate.weight === "core") {
+    if (gate.weight === 'core') {
       const gateDist = m.coreDistribution.get(gate.id);
       if (gateDist) {
         const total = [...gateDist.values()].reduce((s, c) => s + c, 0);
         const thisCount = gateDist.get(selection.branchId) ?? 0;
         if (total > 5 && thisCount <= 1) {
           this.raiseAlert({
-            severity: "info",
-            type: "rare-core-path",
+            severity: 'info',
+            type: 'rare-core-path',
             message: `코어 gate "${gate.id}"에서 드문 경로 "${selection.branchId}" 선택 (${total}건 중 ${thisCount}건)`,
             schemaId: instance.schemaId,
             instanceId: instance.id,
@@ -166,13 +166,16 @@ export class DecisionMonitor implements FlowEngineListener {
       // 알림: 새 영역 도달
       if (isNew && m.totalCompleted > 3) {
         this.raiseAlert({
-          severity: "info",
-          type: "new-territory",
+          severity: 'info',
+          type: 'new-territory',
           message: `결정 공간의 새 영역에 도달: address ${instance.coordinateAddress} (스키마 "${instance.schemaId}")`,
           schemaId: instance.schemaId,
           instanceId: instance.id,
           timestamp: instance.completedAt ?? new Date().toISOString(),
-          data: { address: instance.coordinateAddress, totalUniqueAddresses: m.reachedAddresses.size },
+          data: {
+            address: instance.coordinateAddress,
+            totalUniqueAddresses: m.reachedAddresses.size,
+          },
         });
       }
     }

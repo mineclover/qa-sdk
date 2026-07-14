@@ -6,8 +6,8 @@
 // pin 활성화 service 는 controller scale 결정 (Task 1b.10) 에서 SKIP + alert 발행.
 // 같은 service 재 pin 은 409 ConflictException — admin/scale/pin POST 가 RFC 7807 변환.
 
-import { ConflictException, Injectable } from "@nestjs/common";
-import { ScaleStore } from "./scale-store.js";
+import { ConflictException, Injectable } from '@nestjs/common';
+import { ScaleStore } from './scale-store.js';
 
 @Injectable()
 export class ScalePinService {
@@ -24,8 +24,8 @@ export class ScalePinService {
     }
     if (this.store.has(service)) {
       throw new ConflictException({
-        type: "https://qa-sdk.dev/errors/conflict",
-        title: "service already pinned",
+        type: 'https://qa-sdk.dev/errors/conflict',
+        title: 'service already pinned',
         status: 409,
         detail: `service=${service} replicas=${this.store.get(service)}`,
       });

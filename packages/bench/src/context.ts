@@ -1,5 +1,5 @@
-import { createQaContext, type QaContext } from "@qa-sdk/context";
-import type { Catalog, PrefixIds, ServiceBootConfig } from "@qa-sdk/core";
+import { createQaContext, type QaContext } from '@qa-sdk/context';
+import type { Catalog, PrefixIds, ServiceBootConfig } from '@qa-sdk/core';
 
 export interface BenchmarkQaContext<C extends Catalog = Catalog> {
   readonly qa: QaContext<PrefixIds<C>>;

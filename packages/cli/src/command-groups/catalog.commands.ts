@@ -8,26 +8,39 @@ import {
   type CommandDescriptor,
   type CommandUsageSpec,
   type RestCommandHandler,
-} from "../command-spec.js";
-import { getCatalogRegistry } from "../commands/dkg.js";
+} from '../command-spec.js';
+import { getCatalogRegistry } from '../commands/dkg.js';
 
 export const CATALOG_COMMAND_DESCRIPTORS = [
-  { id: "catalog.list", path: ["list"], usage: "qa-sdk catalog list                등록된 카탈로그 목록", handlerKey: "catalog.list" },
-  { id: "catalog.info", path: ["info"], usage: "qa-sdk catalog info <id>           카탈로그 상세 정보", handlerKey: "catalog.info" },
+  {
+    id: 'catalog.list',
+    path: ['list'],
+    usage: 'qa-sdk catalog list                등록된 카탈로그 목록',
+    handlerKey: 'catalog.list',
+  },
+  {
+    id: 'catalog.info',
+    path: ['info'],
+    usage: 'qa-sdk catalog info <id>           카탈로그 상세 정보',
+    handlerKey: 'catalog.info',
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
-export const CATALOG_COMMAND_TREE =
-  descriptorsToTree(CATALOG_COMMAND_DESCRIPTORS) as readonly CliCommandNode[];
+export const CATALOG_COMMAND_TREE = descriptorsToTree(
+  CATALOG_COMMAND_DESCRIPTORS,
+) as readonly CliCommandNode[];
 
-export const CATALOG_COMMAND_SPECS =
-  collectCommandUsageSpecs(["catalog"], CATALOG_COMMAND_TREE) as readonly CommandUsageSpec<string>[];
+export const CATALOG_COMMAND_SPECS = collectCommandUsageSpecs(
+  ['catalog'],
+  CATALOG_COMMAND_TREE,
+) as readonly CommandUsageSpec<string>[];
 
 export const CATALOG_HANDLER_REGISTRY = {
-  "catalog.list": () => {
+  'catalog.list': () => {
     const reg = getCatalogRegistry();
     const catalogs = reg.listCatalogs();
     if (catalogs.length === 0) {
-      console.log("  등록된 카탈로그 없음");
+      console.log('  등록된 카탈로그 없음');
     } else {
       console.log(`\n══ Catalogs (${catalogs.length}) ══\n`);
       for (const c of catalogs) {
@@ -35,10 +48,10 @@ export const CATALOG_HANDLER_REGISTRY = {
       }
     }
   },
-  "catalog.info": (rest: string[]) => {
+  'catalog.info': (rest: string[]) => {
     const infoId = rest[0];
     if (!infoId) {
-      console.error("Usage: qa-sdk catalog info <id>");
+      console.error('Usage: qa-sdk catalog info <id>');
       return;
     }
     const reg = getCatalogRegistry();
@@ -47,7 +60,7 @@ export const CATALOG_HANDLER_REGISTRY = {
         `카탈로그 '${infoId}' 없음. 사용 가능: ${reg
           .listCatalogs()
           .map((c) => c.id)
-          .join(", ")}`,
+          .join(', ')}`,
       );
       process.exitCode = 1;
       return;

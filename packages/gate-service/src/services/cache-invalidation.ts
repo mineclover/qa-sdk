@@ -12,8 +12,8 @@
  * fail-open: 브로드캐스트 실패가 recompute 자체를 차단하지 않는다.
  */
 
-import type { EventBus, RecomputeCompleteEvent } from "../ports/event-bus.port.js";
-import type { GateLookupService } from "../lib/gate-service.js";
+import type { EventBus, RecomputeCompleteEvent } from '../ports/event-bus.port.js';
+import type { GateLookupService } from '../lib/gate-service.js';
 
 /** 외부 서비스 통지 대상 */
 export interface BroadcastTarget {
@@ -41,9 +41,7 @@ export interface CacheInvalidationService {
   close(): void;
 }
 
-export function createCacheInvalidation(
-  deps: CacheInvalidationDeps,
-): CacheInvalidationService {
+export function createCacheInvalidation(deps: CacheInvalidationDeps): CacheInvalidationService {
   const { eventBus, gateService, onError } = deps;
   const targets = deps.targets ?? [];
   const fetchFn = deps.fetch ?? globalThis.fetch;
@@ -54,11 +52,11 @@ export function createCacheInvalidation(
 
   // ── flag-change → recompute 트리거 ───────────────────
   unsubscribes.push(
-    eventBus.subscribe("flag-change", async (event) => {
+    eventBus.subscribe('flag-change', async (event) => {
       try {
         await gateService.cascadeRecompute(event.prefix, event.versionId);
         eventBus.publish({
-          type: "recompute-complete",
+          type: 'recompute-complete',
           prefix: event.prefix,
           versionId: event.versionId,
           triggeredBy: `flag-change:${event.position}`,
@@ -73,14 +71,14 @@ export function createCacheInvalidation(
 
   // ── release → recompute 트리거 ───────────────────────
   unsubscribes.push(
-    eventBus.subscribe("release", async (event) => {
+    eventBus.subscribe('release', async (event) => {
       try {
         await gateService.cascadeRecompute(event.prefix, event.versionId);
         eventBus.publish({
-          type: "recompute-complete",
+          type: 'recompute-complete',
           prefix: event.prefix,
           versionId: event.versionId,
-          triggeredBy: "release",
+          triggeredBy: 'release',
           timestamp: new Date().toISOString(),
         });
       } catch (err) {
@@ -91,7 +89,7 @@ export function createCacheInvalidation(
 
   // ── recompute-complete → 외부 서비스 broadcast ───────
   unsubscribes.push(
-    eventBus.subscribe("recompute-complete", async (event) => {
+    eventBus.subscribe('recompute-complete', async (event) => {
       if (targets.length === 0) return;
 
       pendingBroadcasts++;
@@ -138,8 +136,8 @@ async function broadcastToTargets(
   const results = await Promise.allSettled(
     targets.map(async (target) => {
       const res = await fetchFn(target.endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: payload,
         signal: AbortSignal.timeout(5_000),
       });
@@ -150,8 +148,8 @@ async function broadcastToTargets(
   );
 
   for (const result of results) {
-    if (result.status === "rejected") {
-      onError?.(result.reason, "broadcast");
+    if (result.status === 'rejected') {
+      onError?.(result.reason, 'broadcast');
     }
   }
 }

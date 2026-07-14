@@ -17,7 +17,7 @@
  *   planCapacity({ dims, left, capacity: "uuid" });
  */
 
-import { charsForMax, planLayout, type LayoutFieldSpec, type LayoutPlan } from "./uuid-layout.js";
+import { charsForMax, planLayout, type LayoutFieldSpec, type LayoutPlan } from './uuid-layout.js';
 import {
   defineFormat,
   hexBoundary,
@@ -25,7 +25,7 @@ import {
   type BuiltinFormatName,
   type HexBoundary,
   type PackFormat,
-} from "./pack-format.js";
+} from './pack-format.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  fitShape — proportional downscale to fit max product
@@ -83,7 +83,7 @@ export function fitShape(opts: FitShapeOptions): FitShapeResult | null {
 
   const result = shape.map((s, i) => Math.max(minArr[i], s));
 
-  const fixedProduct = result.reduce((a, s, i) => fixed?.has(i) ? a * s : a, 1);
+  const fixedProduct = result.reduce((a, s, i) => (fixed?.has(i) ? a * s : a), 1);
   const freeMaxProduct = Math.floor(maxProduct / fixedProduct);
   if (freeMaxProduct < 1) return null;
 
@@ -128,16 +128,16 @@ export function fitShape(opts: FitShapeOptions): FitShapeResult | null {
 
   product = result.reduce((a, s) => a * s, 1);
   return {
-    shape:       result,
+    shape: result,
     product,
     utilization: product / maxProduct,
-    boundaries:  result.map(hexBoundary),
+    boundaries: result.map(hexBoundary),
   };
 }
 
 function resolveMin(min: number | readonly number[] | undefined, n: number): number[] {
   if (min == null) return new Array(n).fill(1);
-  if (typeof min === "number") return new Array(n).fill(Math.max(1, min));
+  if (typeof min === 'number') return new Array(n).fill(Math.max(1, min));
   return Array.from({ length: n }, (_, i) => Math.max(1, min[i] ?? 1));
 }
 
@@ -173,8 +173,8 @@ export interface FitLayoutResult extends FitShapeResult {
 }
 
 function resolveBuiltinCapacity(cap: PackFormat | number | string): PackFormat {
-  if (typeof cap === "object") return cap;
-  if (typeof cap === "number") {
+  if (typeof cap === 'object') return cap;
+  if (typeof cap === 'number') {
     return defineFormat({ name: `${cap * 4}bit`, chars: cap, label: `${cap * 4}-bit` });
   }
   const fmt = (PACK_FORMATS as Record<string, PackFormat>)[cap];
@@ -219,10 +219,10 @@ export function fitLayout(opts: FitLayoutOptions): FitLayoutResult | null {
   const maxProduct = Math.pow(16, indexBudget);
 
   const fit = fitShape({
-    shape:      opts.shape,
+    shape: opts.shape,
     maxProduct,
-    min:        opts.min,
-    fixed:      opts.fixed,
+    min: opts.min,
+    fixed: opts.fixed,
   });
 
   if (!fit) {
@@ -230,15 +230,15 @@ export function fitLayout(opts: FitLayoutOptions): FitLayoutResult | null {
     if (product > maxProduct) return null;
 
     const plan = planLayout({
-      left:  opts.left,
-      right: [{ name: "index", maxValue: product - 1 }],
+      left: opts.left,
+      right: [{ name: 'index', maxValue: product - 1 }],
     });
 
     return {
-      shape:       [...opts.shape],
+      shape: [...opts.shape],
       product,
       utilization: product / maxProduct,
-      boundaries:  opts.shape.map(hexBoundary),
+      boundaries: opts.shape.map(hexBoundary),
       plan,
       format,
       indexBudget,
@@ -246,8 +246,8 @@ export function fitLayout(opts: FitLayoutOptions): FitLayoutResult | null {
   }
 
   const plan = planLayout({
-    left:  opts.left,
-    right: [{ name: "index", maxValue: fit.product - 1 }],
+    left: opts.left,
+    right: [{ name: 'index', maxValue: fit.product - 1 }],
   });
 
   return { ...fit, plan, format, indexBudget };
@@ -372,10 +372,8 @@ export function planCapacity(opts: PlanCapacityOptions): CapacityPlanResult {
   const format = resolveBuiltinCapacity(opts.capacity);
   const shardChars = opts.shardChars ?? 0;
 
-  const leftChars = opts.left.reduce(
-    (s, f) => s + (f.chars ?? charsForMax(f.maxValue ?? 0)),
-    0
-  ) + shardChars;
+  const leftChars =
+    opts.left.reduce((s, f) => s + (f.chars ?? charsForMax(f.maxValue ?? 0)), 0) + shardChars;
 
   const indexBudget = format.chars - leftChars;
   const maxProduct = indexBudget > 0 ? Math.pow(16, indexBudget) : 0;
@@ -423,14 +421,12 @@ export function planCapacity(opts: PlanCapacityOptions): CapacityPlanResult {
   });
 
   // 4. 샤딩 권장: growth/current > 1.0인 dim이 있으면
-  const shardingAdvised = opts.dims.some((d, i) =>
-    d.current > 0 && growths[i] / d.current > 1.0
-  );
+  const shardingAdvised = opts.dims.some((d, i) => d.current > 0 && growths[i] / d.current > 1.0);
 
   // 5. 레이아웃 계획
   const plan = planLayout({
     left: opts.left,
-    right: [{ name: "index", maxValue: Math.max(0, product - 1) }],
+    right: [{ name: 'index', maxValue: Math.max(0, product - 1) }],
   });
 
   return {

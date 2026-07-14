@@ -10,7 +10,13 @@
  * 합산은 전곱의 상위 집합 — 전곱은 세그먼트 1개인 합산
  */
 
-import type { PathSegment, EventTransition, BranchRoute, PrefixDef, Catalog } from "./catalog.types.js";
+import type {
+  PathSegment,
+  EventTransition,
+  BranchRoute,
+  PrefixDef,
+  Catalog,
+} from './catalog.types.js';
 
 // ── 세그먼트 생성 ────────────────────────────────────
 
@@ -28,8 +34,8 @@ export function createSegment(
   if (consumes.length !== shape.length) {
     throw new Error(`consumes(${consumes.length})과 shape(${shape.length}) 길이 불일치`);
   }
-  if (shape.some(s => s <= 0)) {
-    throw new Error("shape의 모든 값은 1 이상이어야 함");
+  if (shape.some((s) => s <= 0)) {
+    throw new Error('shape의 모든 값은 1 이상이어야 함');
   }
 
   const size = shape.reduce((a, b) => a * b, 1);
@@ -46,9 +52,11 @@ export function createSegment(
 }
 
 /** 세그먼트 배열의 offset을 자동 연접 */
-export function chainSegments(segments: Omit<PathSegment, "addressOffset" | "size">[]): PathSegment[] {
+export function chainSegments(
+  segments: Omit<PathSegment, 'addressOffset' | 'size'>[],
+): PathSegment[] {
   let offset = 0;
-  return segments.map(seg => {
+  return segments.map((seg) => {
     const size = seg.shape.reduce((a, b) => a * b, 1);
     const result: PathSegment = {
       ...seg,
@@ -110,7 +118,9 @@ export function decodeBySegment(
 ): DecodedPath {
   const seg = findSegmentByAddress(segments, globalAddress);
   if (!seg) {
-    throw new Error(`주소 ${globalAddress}가 어떤 세그먼트에도 속하지 않음 (totalSize: ${totalSize(segments)})`);
+    throw new Error(
+      `주소 ${globalAddress}가 어떤 세그먼트에도 속하지 않음 (totalSize: ${totalSize(segments)})`,
+    );
   }
 
   const localAddress = globalAddress - seg.addressOffset;
@@ -190,13 +200,13 @@ export function productToSegment(
   dims: Record<string, { entries: readonly string[] }>,
   labels: readonly string[],
 ): PathSegment {
-  const shape = labels.map(label => {
+  const shape = labels.map((label) => {
     const dim = dims[label];
     if (!dim) throw new Error(`dim "${label}" 없음`);
     return dim.entries.length;
   });
 
-  return createSegment("product", labels, shape, 0);
+  return createSegment('product', labels, shape, 0);
 }
 
 // ── 검증 ─────────────────────────────────────────────
@@ -261,11 +271,11 @@ export function validatePrefixSegments(
   // version별 axis capacity 맵 구축 (catalog 제공 시)
   const capacityMap = new Map<string, number>();
   if (catalog && version) {
-    const vdef = prefix.versions.find(v => v.version === version);
+    const vdef = prefix.versions.find((v) => v.version === version);
     if (vdef) {
       for (const label of Object.keys(prefix.dims)) {
         const dim = prefix.dims[label];
-        if (dim.kind === "axis") {
+        if (dim.kind === 'axis') {
           const axisVer = vdef.axisVersions[label];
           const axis = catalog.axes[dim.axisId];
           if (axis && axisVer) {
@@ -340,9 +350,9 @@ export function validateManifestSegments(
 
   for (const [prefixId, version] of Object.entries(manifestPrefixes)) {
     const prefix = catalog.prefixes[prefixId];
-    if (!prefix || prefix.addressModel !== "sum") continue;
+    if (!prefix || prefix.addressModel !== 'sum') continue;
 
-    const vdef = prefix.versions.find(v => v.version === version);
+    const vdef = prefix.versions.find((v) => v.version === version);
     if (!vdef) {
       errors.push(`prefix "${prefixId}:${version}" — 버전 미존재`);
       continue;
@@ -398,7 +408,10 @@ function matchRoute(route: BranchRoute, values: Record<string, number>): boolean
   return false;
 }
 
-function findSegmentByAddress(segments: readonly PathSegment[], address: number): PathSegment | undefined {
+function findSegmentByAddress(
+  segments: readonly PathSegment[],
+  address: number,
+): PathSegment | undefined {
   for (const seg of segments) {
     if (address >= seg.addressOffset && address < seg.addressOffset + seg.size) {
       // 하위 세그먼트가 있으면 더 정확한 매칭 시도

@@ -12,7 +12,7 @@
  * 자체 timestamp이므로 JWT issue 시 동기화 (jose가 iat/exp를 자동 설정).
  */
 
-import type { VersionedBitmap } from "permission-engine";
+import type { VersionedBitmap } from 'permission-engine';
 
 export interface BitmapClaim {
   bitmap_prefix: string;
@@ -27,7 +27,7 @@ export function bitmapToClaim(bm: VersionedBitmap): BitmapClaim {
   return {
     bitmap_prefix: bm.prefix,
     bitmap_v: bm.v,
-    bitmap_mask: Buffer.from(bm.mask).toString("base64"),
+    bitmap_mask: Buffer.from(bm.mask).toString('base64'),
     bitmap_issuer: bm.issuer,
     bitmap_signature: bm.signature,
   };
@@ -43,15 +43,15 @@ export function claimToBitmap(
   expiresAt: string,
 ): VersionedBitmap {
   const required: Array<keyof BitmapClaim> = [
-    "bitmap_prefix",
-    "bitmap_v",
-    "bitmap_mask",
-    "bitmap_issuer",
-    "bitmap_signature",
+    'bitmap_prefix',
+    'bitmap_v',
+    'bitmap_mask',
+    'bitmap_issuer',
+    'bitmap_signature',
   ];
   for (const key of required) {
     const v = claim[key];
-    if (typeof v !== "string" || v === "") {
+    if (typeof v !== 'string' || v === '') {
       throw new Error(`bitmap claim required field missing: ${key}`);
     }
   }
@@ -60,10 +60,10 @@ export function claimToBitmap(
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(maskB64)) {
     throw new Error(`invalid base64 in bitmap_mask`);
   }
-  const buf = Buffer.from(maskB64, "base64");
+  const buf = Buffer.from(maskB64, 'base64');
   // re-encode 후 비교해서 decode-encode 왕복이 동일한지 검증 (padding 차이 허용).
-  const norm = (s: string): string => s.replace(/=+$/, "");
-  if (norm(buf.toString("base64")) !== norm(maskB64)) {
+  const norm = (s: string): string => s.replace(/=+$/, '');
+  if (norm(buf.toString('base64')) !== norm(maskB64)) {
     throw new Error(`invalid base64 in bitmap_mask`);
   }
   const mask = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);

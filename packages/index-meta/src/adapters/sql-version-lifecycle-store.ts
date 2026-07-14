@@ -13,8 +13,8 @@ import type {
   VersionLifecycleStore,
   VersionRecord,
   VersionStatus,
-} from "../version-lifecycle.js";
-import type { SqlDriver } from "./sql-store.js";
+} from '../version-lifecycle.js';
+import type { SqlDriver } from './sql-store.js';
 
 interface VersionLifecycleRow extends Record<string, unknown> {
   prefix: string;
@@ -46,7 +46,7 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
     const record: VersionRecord = {
       prefix,
       versionId,
-      status: "draft",
+      status: 'draft',
       baseVersionId,
       capacity,
       deactivationMode: mode,
@@ -75,22 +75,26 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
 
   async release(prefix: string, versionId: string): Promise<void> {
     const record = await this.mustGet(prefix, versionId);
-    if (record.status !== "draft") {
-      throw new Error(`Cannot release: version ${versionId} is "${record.status}", expected "draft"`);
+    if (record.status !== 'draft') {
+      throw new Error(
+        `Cannot release: version ${versionId} is "${record.status}", expected "draft"`,
+      );
     }
 
     await this.driver.execute(
       `UPDATE version_lifecycle
        SET status = ?, released_at = ?
        WHERE prefix = ? AND version_id = ?`,
-      ["released", new Date().toISOString(), prefix, versionId],
+      ['released', new Date().toISOString(), prefix, versionId],
     );
   }
 
   async activate(prefix: string, versionId: string): Promise<void> {
     const record = await this.mustGet(prefix, versionId);
-    if (record.status !== "released") {
-      throw new Error(`Cannot activate: version ${versionId} is "${record.status}", expected "released"`);
+    if (record.status !== 'released') {
+      throw new Error(
+        `Cannot activate: version ${versionId} is "${record.status}", expected "released"`,
+      );
     }
 
     await this.driver.transaction(async (tx) => {
@@ -98,28 +102,28 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
         `UPDATE version_lifecycle
          SET status = ?
          WHERE prefix = ? AND status = ?`,
-        ["released", prefix, "active"],
+        ['released', prefix, 'active'],
       );
       await tx.execute(
         `UPDATE version_lifecycle
          SET status = ?
          WHERE prefix = ? AND version_id = ?`,
-        ["active", prefix, versionId],
+        ['active', prefix, versionId],
       );
     });
   }
 
   async deprecate(prefix: string, versionId: string): Promise<void> {
     const record = await this.mustGet(prefix, versionId);
-    if (record.status === "draft") {
-      throw new Error("Cannot deprecate a draft version");
+    if (record.status === 'draft') {
+      throw new Error('Cannot deprecate a draft version');
     }
 
     await this.driver.execute(
       `UPDATE version_lifecycle
        SET status = ?
        WHERE prefix = ? AND version_id = ?`,
-      ["deprecated", prefix, versionId],
+      ['deprecated', prefix, versionId],
     );
   }
 
@@ -130,7 +134,7 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
        WHERE prefix = ? AND status = ?
        ORDER BY created_at ASC
        LIMIT 1`,
-      [prefix, "active"],
+      [prefix, 'active'],
     );
     return row ? toRecord(row) : null;
   }
@@ -174,10 +178,10 @@ export class SqlVersionLifecycleStore implements VersionLifecycleStore {
       return deactivationMode;
     }
     if (!baseVersionId) {
-      return "strict";
+      return 'strict';
     }
     const base = await this.getVersion(prefix, baseVersionId);
-    return base?.deactivationMode ?? "strict";
+    return base?.deactivationMode ?? 'strict';
   }
 
   private async mustGet(prefix: string, versionId: string): Promise<VersionRecord> {

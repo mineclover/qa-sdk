@@ -1,15 +1,26 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query, UseFilters } from "@nestjs/common";
-import { z } from "zod";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { UserUseCase } from "../../application/use-cases/user.use-case.js";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseFilters,
+} from '@nestjs/common';
+import { z } from 'zod';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { UserUseCase } from '../../application/use-cases/user.use-case.js';
 import {
   UserReadModelQuery,
   type UserDetailReadModel,
-} from "../../application/queries/user-read-model.query.js";
-import { UserDomainException, UserNotFoundException } from "../../domain/index.js";
+} from '../../application/queries/user-read-model.query.js';
+import { UserDomainException, UserNotFoundException } from '../../domain/index.js';
 
 const createSchema = z.object({
   email: z.string().email(),
@@ -22,7 +33,7 @@ const updateSchema = createSchema.partial();
 
 interface UserCommandAccepted {
   readonly userId: string;
-  readonly status: "ACTIVE" | "DELETED";
+  readonly status: 'ACTIVE' | 'DELETED';
 }
 
 /**
@@ -35,7 +46,7 @@ interface UserCommandAccepted {
  *   - PUT    /users/:id
  *   - DELETE /users/:id
  */
-@Controller("users")
+@Controller('users')
 @UseFilters(DomainExceptionFilter)
 export class UserController {
   constructor(
@@ -59,34 +70,34 @@ export class UserController {
     return detail;
   }
 
-  @Get(":id")
-  async get(@Param("id") id: string): Promise<UserDetailReadModel> {
+  @Get(':id')
+  async get(@Param('id') id: string): Promise<UserDetailReadModel> {
     const detail = await this.readModel.findDetail(id);
     if (!detail) throw new UserNotFoundException(id);
     return detail;
   }
 
   @Get()
-  async list(@Query("departmentId") deptId?: string): Promise<UserDetailReadModel[]> {
+  async list(@Query('departmentId') deptId?: string): Promise<UserDetailReadModel[]> {
     if (!deptId) {
-      const err = new UserDomainException("MISSING_DEPARTMENT_ID", "departmentId query required");
-      err.name = "ValidationError";
+      const err = new UserDomainException('MISSING_DEPARTMENT_ID', 'departmentId query required');
+      err.name = 'ValidationError';
       throw err;
     }
     return this.readModel.listByDepartment(deptId);
   }
 
-  @Put(":id")
-  async update(@Param("id") id: string, @Body() body: unknown): Promise<UserCommandAccepted> {
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() body: unknown): Promise<UserCommandAccepted> {
     const patch = updateSchema.parse(body);
     await this.useCase.update({ id, patch });
-    return { userId: id, status: "ACTIVE" };
+    return { userId: id, status: 'ACTIVE' };
   }
 
-  @Delete(":id")
-  async remove(@Param("id") id: string): Promise<{ status: "deleted" }> {
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<{ status: 'deleted' }> {
     await this.useCase.delete({ id });
-    return { status: "deleted" };
+    return { status: 'deleted' };
   }
 }
 
@@ -97,5 +108,5 @@ export class UserController {
  * 만든다.
  */
 function deriveUserId(email: string): string {
-  return `usr_${email.replace(/[^a-zA-Z0-9]/g, "_")}`;
+  return `usr_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
 }

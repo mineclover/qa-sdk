@@ -1,11 +1,11 @@
 // @def.doc definition-service
 
-import { collectCodeReferences, parseDocument, scanAndBuild } from "definition-catalog";
-import { readFileSync } from "node:fs";
-import { join, relative } from "node:path";
-import type { DocStore } from "../core/interfaces.js";
-import type { DocRecord } from "../core/types.js";
-import { extractBody, buildDocRecord } from "../core/sync-engine.js";
+import { collectCodeReferences, parseDocument, scanAndBuild } from 'definition-catalog';
+import { readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import type { DocStore } from '../core/interfaces.js';
+import type { DocRecord } from '../core/types.js';
+import { extractBody, buildDocRecord } from '../core/sync-engine.js';
 
 const EXISTING_DOC_PAGE_SIZE = 1000;
 
@@ -30,7 +30,14 @@ export async function syncDocsToDb(
   rootDir: string,
   docStore: DocStore,
 ): Promise<SyncResult> {
-  const result: SyncResult = { synced: 0, unchanged: 0, created: 0, deleted: 0, codeReferences: 0, errors: [] };
+  const result: SyncResult = {
+    synced: 0,
+    unchanged: 0,
+    created: 0,
+    deleted: 0,
+    codeReferences: 0,
+    errors: [],
+  };
 
   let scanResult;
   try {
@@ -62,7 +69,7 @@ export async function syncDocsToDb(
       const absPath = join(rootDir, sourcePath);
       let content: string;
       try {
-        content = readFileSync(absPath, "utf-8");
+        content = readFileSync(absPath, 'utf-8');
       } catch {
         result.errors.push(`파일 읽기 실패: ${absPath}`);
         continue;
@@ -78,16 +85,14 @@ export async function syncDocsToDb(
       const doc = buildDocRecord(entry, body, links, relative(rootDir, absPath));
       const { action } = docStore.upsert(doc, body);
 
-      if (action === "unchanged") {
+      if (action === 'unchanged') {
         result.unchanged++;
-      } else if (action === "created") {
+      } else if (action === 'created') {
         result.created++;
       }
       result.synced++;
     } catch (err) {
-      result.errors.push(
-        `${entry.id}: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      result.errors.push(`${entry.id}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -106,10 +111,12 @@ export async function syncDocsToDb(
   }
 
   try {
-    const codeReferences = collectCodeReferences(rootDir, { docsDir, codeDirs: ["packages"] });
+    const codeReferences = collectCodeReferences(rootDir, { docsDir, codeDirs: ['packages'] });
     result.codeReferences = docStore.replaceCodeReferences(codeReferences);
   } catch (err) {
-    result.errors.push(`code reference scan 실패: ${err instanceof Error ? err.message : String(err)}`);
+    result.errors.push(
+      `code reference scan 실패: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 
   return result;

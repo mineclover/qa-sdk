@@ -1,11 +1,11 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-declare module "definition-data-source" {
-  import type { DefDataSource } from "definition-catalog";
+declare module 'definition-data-source' {
+  import type { DefDataSource } from 'definition-catalog';
 
   export interface DataSourceOptions {
-    mode?: "local" | "server" | "scan";
+    mode?: 'local' | 'server' | 'scan';
     dbPath?: string;
     serverUrl?: string;
     rootDir?: string;

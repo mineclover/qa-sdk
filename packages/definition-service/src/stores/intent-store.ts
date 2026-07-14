@@ -1,10 +1,10 @@
 // @def.doc definition-service
 
-import type { DefinitionServiceDatabase } from "../database.module.js";
-import type { SliceIntentRecord } from "../core/types.js";
-import type { IntentStore } from "../core/interfaces.js";
-import { sliceIntents } from "../db/schema.js";
-import { eq, asc, sql } from "drizzle-orm";
+import type { DefinitionServiceDatabase } from '../database.module.js';
+import type { SliceIntentRecord } from '../core/types.js';
+import type { IntentStore } from '../core/interfaces.js';
+import { sliceIntents } from '../db/schema.js';
+import { eq, asc, sql } from 'drizzle-orm';
 
 /** Drizzle select 결과 → SliceIntentRecord 변환 */
 type IntentRow = typeof sliceIntents.$inferSelect;
@@ -50,16 +50,16 @@ export class SqlIntentStore implements IntentStore {
     return Number(result.lastInsertRowid);
   }
 
-  update(
-    id: number,
-    patch: { intent?: string; observationGoal?: string; owner?: string },
-  ): void {
+  update(id: number, patch: { intent?: string; observationGoal?: string; owner?: string }): void {
     // COALESCE 로직: 제공된 값만 업데이트, 나머지는 기존 값 유지
     this.db
       .update(sliceIntents)
       .set({
         intent: patch.intent !== undefined ? patch.intent : sql`${sliceIntents.intent}`,
-        observationGoal: patch.observationGoal !== undefined ? patch.observationGoal : sql`${sliceIntents.observationGoal}`,
+        observationGoal:
+          patch.observationGoal !== undefined
+            ? patch.observationGoal
+            : sql`${sliceIntents.observationGoal}`,
         owner: patch.owner !== undefined ? patch.owner : sql`${sliceIntents.owner}`,
         version: sql`${sliceIntents.version} + 1`,
         updatedAt: sql`datetime('now')`,
@@ -69,10 +69,7 @@ export class SqlIntentStore implements IntentStore {
   }
 
   remove(id: number): boolean {
-    const result = this.db
-      .delete(sliceIntents)
-      .where(eq(sliceIntents.id, id))
-      .run();
+    const result = this.db.delete(sliceIntents).where(eq(sliceIntents.id, id)).run();
     return result.changes > 0;
   }
 

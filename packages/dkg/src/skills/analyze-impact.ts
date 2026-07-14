@@ -7,7 +7,7 @@
  * weighted-index diff → DKG 그래프 순회 → 최종 영향 범위.
  */
 
-import type { GraphPort } from "spec-schema";
+import type { GraphPort } from 'spec-schema';
 import type {
   ImpactAnalysisInput,
   ImpactAnalysisResult,
@@ -16,12 +16,9 @@ import type {
   AffectedConsumer,
   ConstraintViolation,
   BrokenIntentLink,
-} from "../dkg.types.js";
+} from '../dkg.types.js';
 
-export function analyzeImpact(
-  graph: GraphPort,
-  input: ImpactAnalysisInput,
-): ImpactAnalysisResult {
+export function analyzeImpact(graph: GraphPort, input: ImpactAnalysisInput): ImpactAnalysisResult {
   const affectedPrefixes: AffectedPrefix[] = [];
   const allAffectedPrefixIds: string[] = [];
 
@@ -37,7 +34,7 @@ export function analyzeImpact(
   // prefix 직접 변경
   if (input.target.prefix && !allAffectedPrefixIds.includes(input.target.prefix)) {
     allAffectedPrefixIds.push(input.target.prefix);
-    affectedPrefixes.push({ id: input.target.prefix, reason: "composes", distance: 0 });
+    affectedPrefixes.push({ id: input.target.prefix, reason: 'composes', distance: 0 });
   }
 
   // 2. 영향받는 prefix → domain + consumer cascade
@@ -89,13 +86,11 @@ export function analyzeImpact(
   }
 
   // 5. stride-break / migration 판정
-  const strideBreak = input.type === "capacity-changed"
-    || input.type === "dim-added"
-    || input.type === "ref-changed";
+  const strideBreak =
+    input.type === 'capacity-changed' || input.type === 'dim-added' || input.type === 'ref-changed';
 
   const migrationRequired = strideBreak;
-  const autoMigratable = input.type === "capacity-changed"
-    || input.type === "entry-added";
+  const autoMigratable = input.type === 'capacity-changed' || input.type === 'entry-added';
 
   return {
     strideBreak,

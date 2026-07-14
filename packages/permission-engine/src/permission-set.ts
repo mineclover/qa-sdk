@@ -26,7 +26,7 @@ import {
   calcAddressRanges,
   expandRanges,
   type CoordConstraint,
-} from "weighted-index";
+} from 'weighted-index';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,11 +65,11 @@ export class PermissionSet {
   private readonly _featureIds: readonly string[];
   private readonly _roleIds: readonly string[];
   private readonly _featureMap: ReadonlyMap<string, number>; // id → 1-based
-  private readonly _roleMap: ReadonlyMap<string, number>;    // id → 1-based
+  private readonly _roleMap: ReadonlyMap<string, number>; // id → 1-based
 
   constructor(opts: PermissionSetOptions) {
-    if (opts.features.ids.length === 0) throw new RangeError("features must not be empty");
-    if (opts.roles.ids.length === 0) throw new RangeError("roles must not be empty");
+    if (opts.features.ids.length === 0) throw new RangeError('features must not be empty');
+    if (opts.roles.ids.length === 0) throw new RangeError('roles must not be empty');
 
     this._featureIds = opts.features.ids;
     this._roleIds = opts.roles.ids;
@@ -93,13 +93,21 @@ export class PermissionSet {
   // ── 기본 정보 ──────────────────────────────────────────────────────────────
 
   /** 전체 슬롯 수 (features × roles). */
-  get size(): number { return this.index.size; }
+  get size(): number {
+    return this.index.size;
+  }
 
   /** 현재 부여된 권한 수. */
-  get grantCount(): number { return popcount(this.mask); }
+  get grantCount(): number {
+    return popcount(this.mask);
+  }
 
-  get features(): readonly string[] { return this._featureIds; }
-  get roles(): readonly string[] { return this._roleIds; }
+  get features(): readonly string[] {
+    return this._featureIds;
+  }
+  get roles(): readonly string[] {
+    return this._roleIds;
+  }
 
   // ── 단일 조작 ──────────────────────────────────────────────────────────────
 
@@ -152,7 +160,7 @@ export class PermissionSet {
 
   /** 전체 부여. */
   grantAll(): void {
-    this.mask.fill(0xFF);
+    this.mask.fill(0xff);
     // 마지막 바이트의 여분 비트 클리어
     const rem = this.index.size % 8;
     if (rem > 0) {
@@ -182,7 +190,7 @@ export class PermissionSet {
 
   /** 주어진 역할 중 하나라도 이 기능에 접근 가능한지. */
   hasAnyRole(feature: string, roles: readonly string[]): boolean {
-    const addrs = roles.map(r => this._addr(feature, r));
+    const addrs = roles.map((r) => this._addr(feature, r));
     return hasAnyBit(this.mask, addrs);
   }
 
@@ -200,7 +208,7 @@ export class PermissionSet {
    * 범위에 해당하는 주소 중 부여된 것만 반환.
    */
   queryGranted(constraints: [CoordConstraint, CoordConstraint]): number[] {
-    return this.queryRange(constraints).filter(addr => hasBit(this.mask, addr));
+    return this.queryRange(constraints).filter((addr) => hasBit(this.mask, addr));
   }
 
   // ── 마스크 대수 ─────────────────────────────────────────────────────────────
@@ -209,8 +217,8 @@ export class PermissionSet {
   intersect(other: PermissionSet): PermissionSet {
     this._assertCompatible(other);
     return new PermissionSet({
-      features: { name: "features", ids: this._featureIds },
-      roles: { name: "roles", ids: this._roleIds },
+      features: { name: 'features', ids: this._featureIds },
+      roles: { name: 'roles', ids: this._roleIds },
       mask: maskAnd(this.mask, other.mask),
     });
   }
@@ -219,8 +227,8 @@ export class PermissionSet {
   union(other: PermissionSet): PermissionSet {
     this._assertCompatible(other);
     return new PermissionSet({
-      features: { name: "features", ids: this._featureIds },
-      roles: { name: "roles", ids: this._roleIds },
+      features: { name: 'features', ids: this._featureIds },
+      roles: { name: 'roles', ids: this._roleIds },
       mask: maskOr(this.mask, other.mask),
     });
   }
@@ -230,18 +238,12 @@ export class PermissionSet {
   /** boolean[][] 매트릭스 반환. matrix[featureIdx][roleIdx]. */
   toMatrix(): boolean[][] {
     return this._featureIds.map((_f, fi) =>
-      this._roleIds.map((_r, ri) =>
-        hasBit(this.mask, this.index.encode([fi + 1, ri + 1]))
-      )
+      this._roleIds.map((_r, ri) => hasBit(this.mask, this.index.encode([fi + 1, ri + 1]))),
     );
   }
 
   /** 매트릭스에서 복원. */
-  static fromMatrix(
-    features: DimDef,
-    roles: DimDef,
-    matrix: boolean[][],
-  ): PermissionSet {
+  static fromMatrix(features: DimDef, roles: DimDef, matrix: boolean[][]): PermissionSet {
     const ps = new PermissionSet({ features, roles });
     for (let fi = 0; fi < features.ids.length; fi++) {
       for (let ri = 0; ri < roles.ids.length; ri++) {
@@ -267,8 +269,8 @@ export class PermissionSet {
   /** 스냅샷에서 복원. */
   static fromSnapshot(snap: PermissionSetSnapshot): PermissionSet {
     return new PermissionSet({
-      features: { name: "features", ids: snap.features },
-      roles: { name: "roles", ids: snap.roles },
+      features: { name: 'features', ids: snap.features },
+      roles: { name: 'roles', ids: snap.roles },
       mask: _base64ToUint8(snap.mask),
     });
   }
@@ -287,8 +289,8 @@ export class PermissionSet {
 
   clone(): PermissionSet {
     return new PermissionSet({
-      features: { name: "features", ids: this._featureIds },
-      roles: { name: "roles", ids: this._roleIds },
+      features: { name: 'features', ids: this._featureIds },
+      roles: { name: 'roles', ids: this._roleIds },
       mask: new Uint8Array(this.mask),
     });
   }
@@ -306,7 +308,7 @@ export class PermissionSet {
   private _assertCompatible(other: PermissionSet): void {
     if (this.mask.length !== other.mask.length) {
       throw new RangeError(
-        `Incompatible PermissionSet: mask length ${this.mask.length} vs ${other.mask.length}`
+        `Incompatible PermissionSet: mask length ${this.mask.length} vs ${other.mask.length}`,
       );
     }
   }
@@ -325,23 +327,25 @@ function _buildIdMap(ids: readonly string[]): Map<string, number> {
 
 // ── Base64 (환경 독립) ───────────────────────────────────────────────────────
 
-const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 function _uint8ToBase64(arr: Uint8Array): string {
-  let out = "";
+  let out = '';
   for (let i = 0; i < arr.length; i += 3) {
-    const b0 = arr[i], b1 = arr[i + 1] ?? 0, b2 = arr[i + 2] ?? 0;
+    const b0 = arr[i],
+      b1 = arr[i + 1] ?? 0,
+      b2 = arr[i + 2] ?? 0;
     out += B64[b0 >> 2];
     out += B64[((b0 & 3) << 4) | (b1 >> 4)];
-    out += i + 1 < arr.length ? B64[((b1 & 0xF) << 2) | (b2 >> 6)] : "=";
-    out += i + 2 < arr.length ? B64[b2 & 0x3F] : "=";
+    out += i + 1 < arr.length ? B64[((b1 & 0xf) << 2) | (b2 >> 6)] : '=';
+    out += i + 2 < arr.length ? B64[b2 & 0x3f] : '=';
   }
   return out;
 }
 
 function _base64ToUint8(b64: string): Uint8Array {
-  const clean = b64.replace(/=+$/, "");
-  const bytes = new Uint8Array(Math.floor(clean.length * 3 / 4));
+  const clean = b64.replace(/=+$/, '');
+  const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
   let j = 0;
   for (let i = 0; i < clean.length; i += 4) {
     const a = B64.indexOf(clean[i]);
@@ -349,7 +353,7 @@ function _base64ToUint8(b64: string): Uint8Array {
     const c = B64.indexOf(clean[i + 2]);
     const d = B64.indexOf(clean[i + 3]);
     bytes[j++] = (a << 2) | (b >> 4);
-    if (c >= 0) bytes[j++] = ((b & 0xF) << 4) | (c >> 2);
+    if (c >= 0) bytes[j++] = ((b & 0xf) << 4) | (c >> 2);
     if (d >= 0) bytes[j++] = ((c & 3) << 6) | d;
   }
   return bytes.slice(0, j);

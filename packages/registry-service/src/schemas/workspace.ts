@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { z } from "zod";
+import { z } from 'zod';
 
 export const simulateSchema = z.object({
   changes: z.record(

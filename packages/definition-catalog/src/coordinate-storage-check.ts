@@ -10,8 +10,8 @@
  * AST 미사용 — code-references.ts와 동일한 가벼운 분석 수준.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 
 const TABLE_DECL_RE = /\b(sqliteTable|pgTable|mysqlTable)\s*\(\s*"([^"]+)"\s*,\s*\{/g;
 const COLUMN_RE = /^\s*([a-zA-Z_][\w$]*)\s*:\s*\w+\s*\(/gm;
@@ -19,16 +19,23 @@ const COMPOSITE_PK_RE = /primaryKey\s*\(\s*\{\s*columns:\s*\[([^\]]+)\]/;
 const UNIQUE_RE = /uniqueIndex\s*\(\s*"[^"]*"\s*\)\s*\.\s*on\s*\(([^)]+)\)/g;
 const EXEMPT_RE = /\/\/\s*@def\.coord-storage-exempt:\s*(.*)$/;
 
-const PREFIX_COL_NAMES = new Set(["prefixId", "prefix_id", "prefix"]);
-const VERSION_COL_NAMES = new Set(["version", "ver"]);
-const ADDR_COL_NAMES = new Set(["address", "addr"]);
-const PACKED_COL_NAMES = new Set(["packedKey", "packed_key", "packedAddress", "packed_address"]);
+const PREFIX_COL_NAMES = new Set(['prefixId', 'prefix_id', 'prefix']);
+const VERSION_COL_NAMES = new Set(['version', 'ver']);
+const ADDR_COL_NAMES = new Set(['address', 'addr']);
+const PACKED_COL_NAMES = new Set(['packedKey', 'packed_key', 'packedAddress', 'packed_address']);
 
 const IGNORED_DIRS = new Set([
-  "node_modules", "dist", ".git", ".next", ".turbo", "coverage", "synced", "__mocks__",
+  'node_modules',
+  'dist',
+  '.git',
+  '.next',
+  '.turbo',
+  'coverage',
+  'synced',
+  '__mocks__',
 ]);
 
-export type DrizzleDialect = "sqlite" | "pg" | "mysql";
+export type DrizzleDialect = 'sqlite' | 'pg' | 'mysql';
 
 export interface ScannedTable {
   filePath: string;
@@ -45,9 +52,9 @@ export interface ScannedTable {
 }
 
 export type CoordStorageViolationKind =
-  | "missing-version"
-  | "missing-composite-pk"
-  | "missing-prefix";
+  | 'missing-version'
+  | 'missing-composite-pk'
+  | 'missing-prefix';
 
 export interface CoordStorageViolation {
   filePath: string;
@@ -58,26 +65,29 @@ export interface CoordStorageViolation {
 }
 
 function dialectFromKeyword(kw: string): DrizzleDialect {
-  if (kw === "pgTable") return "pg";
-  if (kw === "mysqlTable") return "mysql";
-  return "sqlite";
+  if (kw === 'pgTable') return 'pg';
+  if (kw === 'mysqlTable') return 'mysql';
+  return 'sqlite';
 }
 
 /**
  * 테이블 선언 직전 줄에 @def.coord-storage-exempt 주석이 있는지 검사.
  * 줄 번호 기준 1줄 위까지만 본다 (블록 위 주석은 별도 처리 안 함).
  */
-function findExemptAt(lines: string[], declLineIdx: number): { isExempt: boolean; reason?: string } {
+function findExemptAt(
+  lines: string[],
+  declLineIdx: number,
+): { isExempt: boolean; reason?: string } {
   // 직전 줄부터 거슬러 올라가며 빈 줄·import문은 건너뛰지 않고, 정확히 인접한 주석만 봄
   for (let i = declLineIdx - 1; i >= 0; i--) {
     const line = lines[i].trim();
-    if (line === "") continue;
-    if (!line.startsWith("//")) break;  // 주석 블록 끝
+    if (line === '') continue;
+    if (!line.startsWith('//')) break; // 주석 블록 끝
     const m = EXEMPT_RE.exec(line);
-    if (m && m[1].trim() !== "") {
+    if (m && m[1].trim() !== '') {
       return { isExempt: true, reason: m[1].trim() };
     }
-    break;  // 다른 주석이면 스킵
+    break; // 다른 주석이면 스킵
   }
   return { isExempt: false };
 }
@@ -110,8 +120,8 @@ export function parseDrizzleTables(filePath: string, source: string): ScannedTab
     let i = m.index + m[0].length;
     while (i < source.length && depth > 0) {
       const ch = source[i];
-      if (ch === "{") depth++;
-      else if (ch === "}") depth--;
+      if (ch === '{') depth++;
+      else if (ch === '}') depth--;
       i++;
     }
     const colObjEnd = i;
@@ -152,7 +162,7 @@ export function parseDrizzleTables(filePath: string, source: string): ScannedTab
     UNIQUE_RE.lastIndex = 0;
     let um: RegExpExecArray | null;
     while ((um = UNIQUE_RE.exec(fullDecl)) !== null) {
-      const cols = um[1].split(",").map((c) => c.trim().replace(/^[a-zA-Z_][\w$]*\./, ""));
+      const cols = um[1].split(',').map((c) => c.trim().replace(/^[a-zA-Z_][\w$]*\./, ''));
       const hasPrefix = cols.some((c) => PREFIX_COL_NAMES.has(c));
       const hasVersion = cols.some((c) => VERSION_COL_NAMES.has(c));
       const hasAddr = cols.some((c) => ADDR_COL_NAMES.has(c) || PACKED_COL_NAMES.has(c));
@@ -206,7 +216,7 @@ export function checkCoordinateStorage(tables: readonly ScannedTable[]): CoordSt
         filePath: t.filePath,
         tableName: t.name,
         lineNumber: t.lineNumber,
-        kind: "missing-version",
+        kind: 'missing-version',
         message: `테이블 '${t.name}'은 좌표 저장 후보이나 'version' 컬럼이 없음 — coordinate-storage.rule §1.1`,
       });
       continue;
@@ -228,7 +238,7 @@ export function checkCoordinateStorage(tables: readonly ScannedTable[]): CoordSt
         filePath: t.filePath,
         tableName: t.name,
         lineNumber: t.lineNumber,
-        kind: "missing-composite-pk",
+        kind: 'missing-composite-pk',
         message: `테이블 '${t.name}'은 좌표 저장이지만 PK/UNIQUE에 (prefix_id, version, address|packed_key) 미포함 — coordinate-storage.rule §2.1`,
       });
     }
@@ -246,12 +256,20 @@ function* walkTsFiles(rootDir: string): Generator<string> {
   while (stack.length > 0) {
     const dir = stack.pop()!;
     let entries: string[];
-    try { entries = readdirSync(dir); } catch { continue; }
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      continue;
+    }
     for (const name of entries) {
       if (IGNORED_DIRS.has(name)) continue;
       const p = join(dir, name);
       let st;
-      try { st = statSync(p); } catch { continue; }
+      try {
+        st = statSync(p);
+      } catch {
+        continue;
+      }
       if (st.isDirectory()) stack.push(p);
       else if (/\.(ts|mts|cts)$/.test(name) && !/\.(test|spec)\.[cm]?[jt]s$/.test(name)) {
         yield p;
@@ -271,15 +289,23 @@ export interface CoordStorageScanOptions {
  */
 export function scanCoordinateStorage(opts: CoordStorageScanOptions = {}): CoordStorageViolation[] {
   const repoRoot = opts.repoRoot ?? process.cwd();
-  const rootDirs = opts.rootDirs ?? [join(repoRoot, "packages")];
+  const rootDirs = opts.rootDirs ?? [join(repoRoot, 'packages')];
   const allViolations: CoordStorageViolation[] = [];
 
   for (const root of rootDirs) {
     for (const file of walkTsFiles(root)) {
       let source: string;
-      try { source = readFileSync(file, "utf8"); } catch { continue; }
+      try {
+        source = readFileSync(file, 'utf8');
+      } catch {
+        continue;
+      }
       // 빠른 스킵: drizzle-orm을 import 안 하면 패스
-      if (!source.includes("sqliteTable") && !source.includes("pgTable") && !source.includes("mysqlTable")) {
+      if (
+        !source.includes('sqliteTable') &&
+        !source.includes('pgTable') &&
+        !source.includes('mysqlTable')
+      ) {
         continue;
       }
       const relPath = relative(repoRoot, file);

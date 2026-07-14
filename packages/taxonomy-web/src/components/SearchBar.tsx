@@ -1,8 +1,12 @@
-import { useState } from "react";
-import { SearchResults } from "./SearchResults";
+import { useState } from 'react';
+import { SearchResults } from './SearchResults';
 
-export function SearchBar({ onNavigate }: { onNavigate: (target: { file?: string; ref?: string }) => void }) {
-  const [query, setQuery] = useState("");
+export function SearchBar({
+  onNavigate,
+}: {
+  onNavigate: (target: { file?: string; ref?: string }) => void;
+}) {
+  const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
   return (
@@ -24,7 +28,7 @@ export function SearchBar({ onNavigate }: { onNavigate: (target: { file?: string
           onNavigate={(t) => {
             onNavigate(t);
             setOpen(false);
-            setQuery("");
+            setQuery('');
           }}
         />
       )}

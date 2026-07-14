@@ -5,37 +5,32 @@
  * service-explorer — 탐색 skill 테스트.
  */
 
-import { describe, it, expect } from "vitest";
-import { DEMO_CATALOG } from "demo-snapshot";
-import { DEMO_DKG_CONFIG } from "demo-dkg-config";
-import { bootstrapDkg } from "dkg-enrichment";
-import { createDemoTopology } from "../service-topology.js";
-import {
-  exploreService,
-  explorePrefix,
-  exploreDsl,
-  systemOverview,
-} from "./service-explorer.js";
+import { describe, it, expect } from 'vitest';
+import { DEMO_CATALOG } from 'demo-snapshot';
+import { DEMO_DKG_CONFIG } from 'demo-dkg-config';
+import { bootstrapDkg } from 'dkg-enrichment';
+import { createDemoTopology } from '../service-topology.js';
+import { exploreService, explorePrefix, exploreDsl, systemOverview } from './service-explorer.js';
 
 const graph = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
 const topo = createDemoTopology();
 
-describe("exploreService", () => {
-  it("returns null for unknown service", () => {
-    expect(exploreService(graph, topo, DEMO_CATALOG, "nonexistent")).toBeNull();
+describe('exploreService', () => {
+  it('returns null for unknown service', () => {
+    expect(exploreService(graph, topo, DEMO_CATALOG, 'nonexistent')).toBeNull();
   });
 
-  it("returns profile for shopping-backend", () => {
-    const profile = exploreService(graph, topo, DEMO_CATALOG, "shopping-backend");
+  it('returns profile for shopping-backend', () => {
+    const profile = exploreService(graph, topo, DEMO_CATALOG, 'shopping-backend');
     expect(profile).not.toBeNull();
-    expect(profile!.serviceId).toBe("shopping-backend");
-    expect(profile!.name).toBe("쇼핑 백엔드");
-    expect(profile!.team).toBe("backend");
-    expect(profile!.status).toBe("active");
+    expect(profile!.serviceId).toBe('shopping-backend');
+    expect(profile!.name).toBe('쇼핑 백엔드');
+    expect(profile!.team).toBe('backend');
+    expect(profile!.status).toBe('active');
 
     // owned prefixes
     expect(profile!.ownedPrefixes.length).toBeGreaterThan(0);
-    const permOwned = profile!.ownedPrefixes.find(p => p.id === "permission");
+    const permOwned = profile!.ownedPrefixes.find((p) => p.id === 'permission');
     expect(permOwned).toBeDefined();
     expect(permOwned!.dimCount).toBeGreaterThan(0);
 
@@ -43,17 +38,17 @@ describe("exploreService", () => {
     expect(profile!.consumedPrefixes.length).toBeGreaterThan(0);
 
     // contracts (provider of SC-permission)
-    expect(profile!.contracts.some(c => c.id === "SC-permission")).toBe(true);
+    expect(profile!.contracts.some((c) => c.id === 'SC-permission')).toBe(true);
 
     // DSL bindings
-    expect(profile!.dslBindings).toContain("dsl-checkout");
+    expect(profile!.dslBindings).toContain('dsl-checkout');
 
     // dependencies
     expect(profile!.dependencies.length).toBeGreaterThan(0);
   });
 
-  it("returns profile for infra-controller with many owned prefixes", () => {
-    const profile = exploreService(graph, topo, DEMO_CATALOG, "infra-controller");
+  it('returns profile for infra-controller with many owned prefixes', () => {
+    const profile = exploreService(graph, topo, DEMO_CATALOG, 'infra-controller');
     expect(profile).not.toBeNull();
     expect(profile!.ownedPrefixes.length).toBeGreaterThanOrEqual(5);
     // infra-controller has no consumed prefixes
@@ -61,20 +56,20 @@ describe("exploreService", () => {
   });
 });
 
-describe("explorePrefix", () => {
-  it("returns null for unknown prefix", () => {
-    expect(explorePrefix(graph, topo, DEMO_CATALOG, "nonexistent")).toBeNull();
+describe('explorePrefix', () => {
+  it('returns null for unknown prefix', () => {
+    expect(explorePrefix(graph, topo, DEMO_CATALOG, 'nonexistent')).toBeNull();
   });
 
-  it("returns profile for permission prefix", () => {
-    const profile = explorePrefix(graph, topo, DEMO_CATALOG, "permission");
+  it('returns profile for permission prefix', () => {
+    const profile = explorePrefix(graph, topo, DEMO_CATALOG, 'permission');
     expect(profile).not.toBeNull();
-    expect(profile!.id).toBe("permission");
+    expect(profile!.id).toBe('permission');
     expect(profile!.name).toBeTruthy();
 
     // dimensions
     expect(profile!.dimensions.length).toBeGreaterThan(0);
-    const axisDims = profile!.dimensions.filter(d => d.kind === "axis");
+    const axisDims = profile!.dimensions.filter((d) => d.kind === 'axis');
     expect(axisDims.length).toBeGreaterThan(0);
 
     // headroom — at least one axis dimension
@@ -84,7 +79,7 @@ describe("explorePrefix", () => {
     }
 
     // owner
-    expect(profile!.owner).toBe("shopping-backend");
+    expect(profile!.owner).toBe('shopping-backend');
 
     // consumers
     expect(profile!.consumers.length).toBeGreaterThan(0);
@@ -93,47 +88,47 @@ describe("explorePrefix", () => {
     expect(profile!.domains.length).toBeGreaterThan(0);
   });
 
-  it("returns profile for deploy_event with intent-links", () => {
-    const profile = explorePrefix(graph, topo, DEMO_CATALOG, "deploy_event");
+  it('returns profile for deploy_event with intent-links', () => {
+    const profile = explorePrefix(graph, topo, DEMO_CATALOG, 'deploy_event');
     expect(profile).not.toBeNull();
     // deploy_event is in IL-infra-impact intent link
-    expect(profile!.intentLinks.some(l => l.id === "IL-infra-impact")).toBe(true);
+    expect(profile!.intentLinks.some((l) => l.id === 'IL-infra-impact')).toBe(true);
   });
 });
 
-describe("exploreDsl", () => {
-  it("returns null for unknown DSL", () => {
-    expect(exploreDsl(graph, DEMO_CATALOG, "nonexistent")).toBeNull();
+describe('exploreDsl', () => {
+  it('returns null for unknown DSL', () => {
+    expect(exploreDsl(graph, DEMO_CATALOG, 'nonexistent')).toBeNull();
   });
 
-  it("returns profile for dsl-observation", () => {
-    const profile = exploreDsl(graph, DEMO_CATALOG, "dsl-observation");
+  it('returns profile for dsl-observation', () => {
+    const profile = exploreDsl(graph, DEMO_CATALOG, 'dsl-observation');
     expect(profile).not.toBeNull();
-    expect(profile!.id).toBe("dsl-observation");
-    expect(profile!.name).toBe("관측 DSL");
+    expect(profile!.id).toBe('dsl-observation');
+    expect(profile!.name).toBe('관측 DSL');
 
     // members
     expect(profile!.members.length).toBeGreaterThan(0);
-    expect(profile!.members.some(m => m.prefixId === "page_view")).toBe(true);
+    expect(profile!.members.some((m) => m.prefixId === 'page_view')).toBe(true);
 
     // service binding
-    expect(profile!.serviceBinding.prefixId).toBe("service");
-    expect(profile!.serviceBinding.fixedDims).toContain("env");
+    expect(profile!.serviceBinding.prefixId).toBe('service');
+    expect(profile!.serviceBinding.fixedDims).toContain('env');
 
     // invariants
     expect(profile!.invariants.length).toBeGreaterThan(0);
   });
 
-  it("returns version skew analysis for dsl-checkout", () => {
-    const profile = exploreDsl(graph, DEMO_CATALOG, "dsl-checkout");
+  it('returns version skew analysis for dsl-checkout', () => {
+    const profile = exploreDsl(graph, DEMO_CATALOG, 'dsl-checkout');
     expect(profile).not.toBeNull();
     expect(profile!.versionSkew).toBeDefined();
-    expect(["ok", "minor", "major"]).toContain(profile!.versionSkew.severity);
+    expect(['ok', 'minor', 'major']).toContain(profile!.versionSkew.severity);
   });
 });
 
-describe("systemOverview", () => {
-  it("returns comprehensive overview", () => {
+describe('systemOverview', () => {
+  it('returns comprehensive overview', () => {
     const overview = systemOverview(graph, topo, DEMO_CATALOG);
 
     // services

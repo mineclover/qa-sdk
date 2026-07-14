@@ -7,15 +7,25 @@
  * MergeTree 기반 append-only 저장.
  * batch insert 최적화 (단일 INSERT ... VALUES).
  */
-import type { RecordStore, RecordInsert, StoredRecord, RecordPaginationParams, StoredRecordPage, TimeRangeParams } from "@qa-sdk/core";
+import type {
+  RecordStore,
+  RecordInsert,
+  StoredRecord,
+  RecordPaginationParams,
+  StoredRecordPage,
+  TimeRangeParams,
+} from '@qa-sdk/core';
 
 export interface ClickHouseClient {
-  query(sql: string, params?: Record<string, unknown>): Promise<{ rows: Record<string, unknown>[] }>;
+  query(
+    sql: string,
+    params?: Record<string, unknown>,
+  ): Promise<{ rows: Record<string, unknown>[] }>;
   insert(table: string, values: Record<string, unknown>[], columns: string[]): Promise<void>;
   exec(sql: string): Promise<void>;
 }
 
-export type AnalyticsInterval = "minute" | "hour" | "day";
+export type AnalyticsInterval = 'minute' | 'hour' | 'day';
 
 export interface TimeSeriesQuery {
   table?: string;
@@ -64,7 +74,7 @@ export interface DistributionBucket {
 export interface KeyObservationAnalyticsQuery {
   prefixId?: string;
   registered?: boolean;
-  orderBy?: "count" | "last_seen";
+  orderBy?: 'count' | 'last_seen';
   limit?: number;
 }
 
@@ -97,7 +107,9 @@ export interface AnalyticsStore {
   queryTimeSeries(params: TimeSeriesQuery): Promise<TimeSeriesBucket[]>;
   queryTopKeys(params?: TopKeysQuery): Promise<TopKeyEntry[]>;
   queryDistribution(params: DistributionQuery): Promise<DistributionBucket[]>;
-  queryKeyObservations(params?: KeyObservationAnalyticsQuery): Promise<KeyObservationAnalyticsEntry[]>;
+  queryKeyObservations(
+    params?: KeyObservationAnalyticsQuery,
+  ): Promise<KeyObservationAnalyticsEntry[]>;
   queryTraceStats(params?: TraceAnalyticsQuery): Promise<TraceServiceStats[]>;
 }
 
@@ -106,14 +118,17 @@ export class ClickHouseAnalyticsStore implements AnalyticsStore {
 
   async bulkInsert(table: string, rows: Record<string, unknown>[]): Promise<void> {
     if (rows.length === 0) return;
-    const tableName = sqlIdentifier(table, "table");
-    const columns = Object.keys(rows[0]).map((column) => sqlIdentifier(column, "column"));
+    const tableName = sqlIdentifier(table, 'table');
+    const columns = Object.keys(rows[0]).map((column) => sqlIdentifier(column, 'column'));
     await this.client.insert(tableName, rows, columns);
   }
 
   async queryTimeSeries(params: TimeSeriesQuery): Promise<TimeSeriesBucket[]> {
-    const table = sqlIdentifier(params.table ?? "event_records", "table");
-    const timestampColumn = sqlIdentifier(params.timestampColumn ?? "timestamp", "timestamp column");
+    const table = sqlIdentifier(params.table ?? 'event_records', 'table');
+    const timestampColumn = sqlIdentifier(
+      params.timestampColumn ?? 'timestamp',
+      'timestamp column',
+    );
     const bucketFn = bucketFunction(params.interval);
     const { where, values } = buildTimeRangeWhere(params, timestampColumn);
     const limit = normalizeLimit(params.limit, 1000);
@@ -121,10 +136,12 @@ export class ClickHouseAnalyticsStore implements AnalyticsStore {
       `SELECT ${bucketFn}(${timestampColumn}) AS bucket, count() AS count`,
       `FROM ${table}`,
       where,
-      "GROUP BY bucket",
-      "ORDER BY bucket",
+      'GROUP BY bucket',
+      'ORDER BY bucket',
       `LIMIT ${limit}`,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     const { rows } = await this.client.query(sql, values);
     return rows.map((row) => ({
@@ -134,19 +151,24 @@ export class ClickHouseAnalyticsStore implements AnalyticsStore {
   }
 
   async queryTopKeys(params: TopKeysQuery = {}): Promise<TopKeyEntry[]> {
-    const table = sqlIdentifier(params.table ?? "event_records", "table");
-    const keyColumn = sqlIdentifier(params.keyColumn ?? "event_key", "key column");
-    const timestampColumn = sqlIdentifier(params.timestampColumn ?? "timestamp", "timestamp column");
+    const table = sqlIdentifier(params.table ?? 'event_records', 'table');
+    const keyColumn = sqlIdentifier(params.keyColumn ?? 'event_key', 'key column');
+    const timestampColumn = sqlIdentifier(
+      params.timestampColumn ?? 'timestamp',
+      'timestamp column',
+    );
     const { where, values } = buildTimeRangeWhere(params, timestampColumn);
     const limit = normalizeLimit(params.limit, 100);
     const sql = [
       `SELECT ${keyColumn} AS key, count() AS count`,
       `FROM ${table}`,
       where,
-      "GROUP BY key",
-      "ORDER BY count DESC",
+      'GROUP BY key',
+      'ORDER BY count DESC',
       `LIMIT ${limit}`,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     const { rows } = await this.client.query(sql, values);
     return rows.map((row) => ({
@@ -156,9 +178,12 @@ export class ClickHouseAnalyticsStore implements AnalyticsStore {
   }
 
   async queryDistribution(params: DistributionQuery): Promise<DistributionBucket[]> {
-    const table = sqlIdentifier(params.table ?? "event_records", "table");
-    const valueColumn = sqlIdentifier(params.valueColumn, "value column");
-    const timestampColumn = sqlIdentifier(params.timestampColumn ?? "timestamp", "timestamp column");
+    const table = sqlIdentifier(params.table ?? 'event_records', 'table');
+    const valueColumn = sqlIdentifier(params.valueColumn, 'value column');
+    const timestampColumn = sqlIdentifier(
+      params.timestampColumn ?? 'timestamp',
+      'timestamp column',
+    );
     const bucketSize = normalizeBucketSize(params.bucketSize);
     const { where, values } = buildTimeRangeWhere(params, timestampColumn);
     values.bucketSize = bucketSize;
@@ -167,10 +192,12 @@ export class ClickHouseAnalyticsStore implements AnalyticsStore {
       `SELECT floor(${valueColumn} / {bucketSize:Float64}) * {bucketSize:Float64} AS bucket, count() AS count`,
       `FROM ${table}`,
       where,
-      "GROUP BY bucket",
-      "ORDER BY bucket",
+      'GROUP BY bucket',
+      'ORDER BY bucket',
       `LIMIT ${limit}`,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     const { rows } = await this.client.query(sql, values);
     return rows.map((row) => ({
@@ -179,27 +206,31 @@ export class ClickHouseAnalyticsStore implements AnalyticsStore {
     }));
   }
 
-  async queryKeyObservations(params: KeyObservationAnalyticsQuery = {}): Promise<KeyObservationAnalyticsEntry[]> {
+  async queryKeyObservations(
+    params: KeyObservationAnalyticsQuery = {},
+  ): Promise<KeyObservationAnalyticsEntry[]> {
     const conditions: string[] = [];
     const values: Record<string, unknown> = {};
     if (params.prefixId) {
-      conditions.push("prefix_id = {prefixId:String}");
+      conditions.push('prefix_id = {prefixId:String}');
       values.prefixId = params.prefixId;
     }
     if (params.registered !== undefined) {
-      conditions.push("registered = {registered:UInt8}");
+      conditions.push('registered = {registered:UInt8}');
       values.registered = params.registered ? 1 : 0;
     }
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    const orderBy = params.orderBy === "last_seen" ? "last_seen" : "count";
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const orderBy = params.orderBy === 'last_seen' ? 'last_seen' : 'count';
     const limit = normalizeLimit(params.limit, 100);
     const sql = [
-      "SELECT prefix_id, packed_key, registered, count, first_seen, last_seen",
-      "FROM key_observations",
+      'SELECT prefix_id, packed_key, registered, count, first_seen, last_seen',
+      'FROM key_observations',
       where,
       `ORDER BY ${orderBy} DESC`,
       `LIMIT ${limit}`,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     const { rows } = await this.client.query(sql, values);
     return rows.map((row) => ({
@@ -216,31 +247,33 @@ export class ClickHouseAnalyticsStore implements AnalyticsStore {
     const conditions: string[] = [];
     const values: Record<string, unknown> = {};
     if (params.serviceName) {
-      conditions.push("service_name = {serviceName:String}");
+      conditions.push('service_name = {serviceName:String}');
       values.serviceName = params.serviceName;
     }
     if (params.from) {
-      conditions.push("first_timestamp >= {from:DateTime64(3)}");
+      conditions.push('first_timestamp >= {from:DateTime64(3)}');
       values.from = formatClickHouseDate(params.from);
     }
     if (params.to) {
-      conditions.push("last_timestamp <= {to:DateTime64(3)}");
+      conditions.push('last_timestamp <= {to:DateTime64(3)}');
       values.to = formatClickHouseDate(params.to);
     }
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const limit = normalizeLimit(params.limit, 100);
     const sql = [
-      "SELECT service_name, count() AS trace_count, sum(record_count) AS record_count, min(first_timestamp) AS first_timestamp, max(last_timestamp) AS last_timestamp",
-      "FROM traces",
+      'SELECT service_name, count() AS trace_count, sum(record_count) AS record_count, min(first_timestamp) AS first_timestamp, max(last_timestamp) AS last_timestamp',
+      'FROM traces',
       where,
-      "GROUP BY service_name",
-      "ORDER BY trace_count DESC",
+      'GROUP BY service_name',
+      'ORDER BY trace_count DESC',
       `LIMIT ${limit}`,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     const { rows } = await this.client.query(sql, values);
     return rows.map((row) => ({
-      serviceName: String(row.service_name ?? ""),
+      serviceName: String(row.service_name ?? ''),
       traceCount: Number(row.trace_count),
       recordCount: Number(row.record_count),
       firstTimestamp: row.first_timestamp == null ? null : parseClickHouseDate(row.first_timestamp),
@@ -254,18 +287,18 @@ export class ClickhouseRecordStore implements RecordStore {
 
   async insertBatch(records: RecordInsert[]): Promise<void> {
     if (records.length === 0) return;
-    const values = records.map(r => ({
+    const values = records.map((r) => ({
       log_id: r.logId,
       trace_id: r.traceId,
       span_id: r.spanId,
       parent_span_id: r.parentSpanId ?? null,
-      timestamp: r.timestamp.toISOString().replace("T", " ").replace("Z", ""),
+      timestamp: r.timestamp.toISOString().replace('T', ' ').replace('Z', ''),
       record_kind: r.recordKind,
       event_key: r.eventKey,
       event_version: r.eventVersion,
       span_name: r.spanName ?? null,
-      start_time: r.startTime?.toISOString().replace("T", " ").replace("Z", "") ?? null,
-      end_time: r.endTime?.toISOString().replace("T", " ").replace("Z", "") ?? null,
+      start_time: r.startTime?.toISOString().replace('T', ' ').replace('Z', '') ?? null,
+      end_time: r.endTime?.toISOString().replace('T', ' ').replace('Z', '') ?? null,
       status_code: r.statusCode ?? null,
       payload_format: r.payloadFormat,
       payload_encoding: r.payloadEncoding,
@@ -280,25 +313,29 @@ export class ClickhouseRecordStore implements RecordStore {
       user_attributes: r.userAttributes ? JSON.stringify(r.userAttributes) : null,
     }));
 
-    await this.client.insert("event_records", values, Object.keys(values[0]));
+    await this.client.insert('event_records', values, Object.keys(values[0]));
   }
 
   async findByTraceId(traceId: string): Promise<StoredRecord[]> {
     const { rows } = await this.client.query(
-      "SELECT * FROM event_records WHERE trace_id = {traceId:String} ORDER BY timestamp",
+      'SELECT * FROM event_records WHERE trace_id = {traceId:String} ORDER BY timestamp',
       { traceId },
     );
     return rows.map(toStoredRecord);
   }
 
-  async findByTraceIdPaginated(traceId: string, params?: RecordPaginationParams): Promise<StoredRecordPage> {
+  async findByTraceIdPaginated(
+    traceId: string,
+    params?: RecordPaginationParams,
+  ): Promise<StoredRecordPage> {
     const limit = params?.limit ?? 100;
     const cursor = params?.cursor;
-    let sql = "SELECT * FROM event_records WHERE trace_id = {traceId:String}";
+    let sql = 'SELECT * FROM event_records WHERE trace_id = {traceId:String}';
     const p: Record<string, unknown> = { traceId };
     if (cursor) {
-      sql += " AND (timestamp > {cursorTs:DateTime64(3)} OR (timestamp = {cursorTs:DateTime64(3)} AND log_id > {cursorId:String}))";
-      p.cursorTs = cursor.timestamp.toISOString().replace("T", " ").replace("Z", "");
+      sql +=
+        ' AND (timestamp > {cursorTs:DateTime64(3)} OR (timestamp = {cursorTs:DateTime64(3)} AND log_id > {cursorId:String}))';
+      p.cursorTs = cursor.timestamp.toISOString().replace('T', ' ').replace('Z', '');
       p.cursorId = cursor.logId;
     }
     sql += ` ORDER BY timestamp, log_id LIMIT ${limit + 1}`;
@@ -306,25 +343,33 @@ export class ClickhouseRecordStore implements RecordStore {
     const items = rows.slice(0, limit).map(toStoredRecord);
     const hasMore = rows.length > limit;
     const last = items[items.length - 1];
-    return { items, hasMore, nextCursor: hasMore && last ? { timestamp: last.timestamp, logId: last.logId } : null };
+    return {
+      items,
+      hasMore,
+      nextCursor: hasMore && last ? { timestamp: last.timestamp, logId: last.logId } : null,
+    };
   }
 
   async findBySessionId(sessionId: string): Promise<StoredRecord[]> {
     const { rows } = await this.client.query(
-      "SELECT * FROM event_records WHERE qa_session_id = {sessionId:String} ORDER BY timestamp",
+      'SELECT * FROM event_records WHERE qa_session_id = {sessionId:String} ORDER BY timestamp',
       { sessionId },
     );
     return rows.map(toStoredRecord);
   }
 
-  async findBySessionIdPaginated(sessionId: string, params?: RecordPaginationParams): Promise<StoredRecordPage> {
+  async findBySessionIdPaginated(
+    sessionId: string,
+    params?: RecordPaginationParams,
+  ): Promise<StoredRecordPage> {
     const limit = params?.limit ?? 100;
     const cursor = params?.cursor;
-    let sql = "SELECT * FROM event_records WHERE qa_session_id = {sessionId:String}";
+    let sql = 'SELECT * FROM event_records WHERE qa_session_id = {sessionId:String}';
     const p: Record<string, unknown> = { sessionId };
     if (cursor) {
-      sql += " AND (timestamp > {cursorTs:DateTime64(3)} OR (timestamp = {cursorTs:DateTime64(3)} AND log_id > {cursorId:String}))";
-      p.cursorTs = cursor.timestamp.toISOString().replace("T", " ").replace("Z", "");
+      sql +=
+        ' AND (timestamp > {cursorTs:DateTime64(3)} OR (timestamp = {cursorTs:DateTime64(3)} AND log_id > {cursorId:String}))';
+      p.cursorTs = cursor.timestamp.toISOString().replace('T', ' ').replace('Z', '');
       p.cursorId = cursor.logId;
     }
     sql += ` ORDER BY timestamp, log_id LIMIT ${limit + 1}`;
@@ -332,12 +377,16 @@ export class ClickhouseRecordStore implements RecordStore {
     const items = rows.slice(0, limit).map(toStoredRecord);
     const hasMore = rows.length > limit;
     const last = items[items.length - 1];
-    return { items, hasMore, nextCursor: hasMore && last ? { timestamp: last.timestamp, logId: last.logId } : null };
+    return {
+      items,
+      hasMore,
+      nextCursor: hasMore && last ? { timestamp: last.timestamp, logId: last.logId } : null,
+    };
   }
 
   async findByTraceAndEventKey(traceId: string, eventKey: string): Promise<StoredRecord[]> {
     const { rows } = await this.client.query(
-      "SELECT * FROM event_records WHERE trace_id = {traceId:String} AND event_key = {eventKey:String} ORDER BY timestamp",
+      'SELECT * FROM event_records WHERE trace_id = {traceId:String} AND event_key = {eventKey:String} ORDER BY timestamp',
       { traceId, eventKey },
     );
     return rows.map(toStoredRecord);
@@ -348,20 +397,20 @@ export class ClickhouseRecordStore implements RecordStore {
     const p: Record<string, unknown> = {};
 
     if (params.from) {
-      conditions.push("timestamp >= {from:DateTime64(3)}");
-      p.from = params.from.toISOString().replace("T", " ").replace("Z", "");
+      conditions.push('timestamp >= {from:DateTime64(3)}');
+      p.from = params.from.toISOString().replace('T', ' ').replace('Z', '');
     }
     if (params.to) {
-      conditions.push("timestamp <= {to:DateTime64(3)}");
-      p.to = params.to.toISOString().replace("T", " ").replace("Z", "");
+      conditions.push('timestamp <= {to:DateTime64(3)}');
+      p.to = params.to.toISOString().replace('T', ' ').replace('Z', '');
     }
     if (params.eventKey) {
-      conditions.push("event_key = {eventKey:String}");
+      conditions.push('event_key = {eventKey:String}');
       p.eventKey = params.eventKey;
     }
 
     const limit = params.limit ?? 1000;
-    const where = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
+    const where = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
     const sql = `SELECT * FROM event_records${where} ORDER BY timestamp, log_id LIMIT ${limit}`;
 
     const { rows } = await this.client.query(sql, p);
@@ -369,7 +418,7 @@ export class ClickhouseRecordStore implements RecordStore {
   }
 }
 
-import { parseJsonColumn } from "../db/json-types.js";
+import { parseJsonColumn } from '../db/json-types.js';
 
 function sqlIdentifier(value: string, label: string): string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
@@ -380,9 +429,12 @@ function sqlIdentifier(value: string, label: string): string {
 
 function bucketFunction(interval: AnalyticsInterval): string {
   switch (interval) {
-    case "minute": return "toStartOfMinute";
-    case "hour": return "toStartOfHour";
-    case "day": return "toStartOfDay";
+    case 'minute':
+      return 'toStartOfMinute';
+    case 'hour':
+      return 'toStartOfHour';
+    case 'day':
+      return 'toStartOfDay';
   }
 }
 
@@ -401,11 +453,11 @@ function buildTimeRangeWhere(
     values.to = formatClickHouseDate(params.to);
   }
   if (params.eventKey) {
-    conditions.push("event_key = {eventKey:String}");
+    conditions.push('event_key = {eventKey:String}');
     values.eventKey = params.eventKey;
   }
   return {
-    where: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "",
+    where: conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '',
     values,
   };
 }
@@ -426,13 +478,13 @@ function normalizeBucketSize(bucketSize: number | undefined): number {
 }
 
 function formatClickHouseDate(date: Date): string {
-  return date.toISOString().replace("T", " ").replace("Z", "");
+  return date.toISOString().replace('T', ' ').replace('Z', '');
 }
 
 function parseClickHouseDate(value: unknown): Date {
   if (value instanceof Date) return value;
-  if (typeof value === "string" && value.includes(" ")) {
-    return new Date(`${value.replace(" ", "T")}Z`);
+  if (typeof value === 'string' && value.includes(' ')) {
+    return new Date(`${value.replace(' ', 'T')}Z`);
   }
   return new Date(value as string | number);
 }

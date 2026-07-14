@@ -8,11 +8,11 @@
  * "이 entry를 추가해도 안전한가?" → impact → 결과 종합.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort } from "spec-schema";
-import { analyzeImpact } from "./analyze-impact.js";
-import { checkAllConstraints, type ConstraintCheckResult } from "./constraint-check.js";
-import type { AffectedPrefix } from "../dkg.types.js";
+import type { Catalog } from '@qa-sdk/core';
+import type { GraphPort } from 'spec-schema';
+import { analyzeImpact } from './analyze-impact.js';
+import { checkAllConstraints, type ConstraintCheckResult } from './constraint-check.js';
+import type { AffectedPrefix } from '../dkg.types.js';
 
 export interface SafeEntryAddInput {
   readonly axisId: string;
@@ -38,7 +38,7 @@ export interface SafeEntryAddResult {
   /** constraint 위반 */
   readonly constraintResults: readonly ConstraintCheckResult[];
   /** 최종 판정 */
-  readonly verdict: "safe" | "needs-capacity" | "constraint-violation" | "already-exists";
+  readonly verdict: 'safe' | 'needs-capacity' | 'constraint-violation' | 'already-exists';
   readonly summary: string;
 }
 
@@ -50,9 +50,14 @@ export function safeEntryAdd(
   graph: GraphPort,
   input: SafeEntryAddInput,
 ): SafeEntryAddResult {
-  const axis = (catalog.axes as Record<string, {
-    versions: Record<string, { entries: readonly string[]; capacity?: number }>;
-  }>)[input.axisId];
+  const axis = (
+    catalog.axes as Record<
+      string,
+      {
+        versions: Record<string, { entries: readonly string[]; capacity?: number }>;
+      }
+    >
+  )[input.axisId];
 
   if (!axis) {
     return {
@@ -62,7 +67,7 @@ export function safeEntryAdd(
       strideBreak: false,
       affectedPrefixes: [],
       constraintResults: [],
-      verdict: "constraint-violation",
+      verdict: 'constraint-violation',
       summary: `Unknown axis: ${input.axisId}`,
     };
   }
@@ -79,11 +84,16 @@ export function safeEntryAdd(
     return {
       ...input,
       alreadyExists: true,
-      headroom: { current: entries.length, capacity, remaining: capacity - entries.length, sufficient: true },
+      headroom: {
+        current: entries.length,
+        capacity,
+        remaining: capacity - entries.length,
+        sufficient: true,
+      },
       strideBreak: false,
       affectedPrefixes: [],
       constraintResults: [],
-      verdict: "already-exists",
+      verdict: 'already-exists',
       summary: `"${input.entry}" already exists in ${input.axisId} (position ${entries.indexOf(input.entry)})`,
     };
   }
@@ -94,29 +104,29 @@ export function safeEntryAdd(
 
   // impact 분석
   const impact = analyzeImpact(graph, {
-    type: sufficient ? "entry-added" : "capacity-changed",
+    type: sufficient ? 'entry-added' : 'capacity-changed',
     target: { axis: input.axisId },
     detail: `"${input.entry}" 추가`,
   });
 
   // constraint 검사
-  const affectedIds = [input.axisId, ...impact.affectedPrefixes.map(p => p.id)];
+  const affectedIds = [input.axisId, ...impact.affectedPrefixes.map((p) => p.id)];
   const constraintResults = checkAllConstraints(graph, affectedIds);
-  const hasViolation = constraintResults.some(r => r.violations.length > 0);
+  const hasViolation = constraintResults.some((r) => r.violations.length > 0);
 
   // 판정
-  let verdict: SafeEntryAddResult["verdict"];
+  let verdict: SafeEntryAddResult['verdict'];
   let summary: string;
 
   if (hasViolation) {
-    verdict = "constraint-violation";
-    const violations = constraintResults.flatMap(r => r.violations);
-    summary = `Constraint violation: ${violations.map(v => v.rule).join("; ")}`;
+    verdict = 'constraint-violation';
+    const violations = constraintResults.flatMap((r) => r.violations);
+    summary = `Constraint violation: ${violations.map((v) => v.rule).join('; ')}`;
   } else if (!sufficient) {
-    verdict = "needs-capacity";
+    verdict = 'needs-capacity';
     summary = `Headroom 0. capacity ${capacity} → ${capacity * 2} 확장 필요 (stride-break 발생).`;
   } else {
-    verdict = "safe";
+    verdict = 'safe';
     summary = `Safe to add. headroom ${remaining}→${remaining - 1}. ${impact.affectedPrefixes.length} prefix 영향. stride-break: false.`;
   }
 

@@ -12,15 +12,15 @@
 
 /** 구조 카테고리 6종 */
 export type SchemaCategory =
-  | "entity"       // 정체성을 가진 것
-  | "event"        // 발생한 것
-  | "relation"     // 둘 이상의 객체 간 연결
-  | "state"        // 상태 스냅샷
-  | "policy"       // 권한/적용 범위/판정 구조
-  | "observation"; // 관측/로깅/추적
+  | 'entity' // 정체성을 가진 것
+  | 'event' // 발생한 것
+  | 'relation' // 둘 이상의 객체 간 연결
+  | 'state' // 상태 스냅샷
+  | 'policy' // 권한/적용 범위/판정 구조
+  | 'observation'; // 관측/로깅/추적
 
 /** 축의 값 유형 */
-export type SchemaValueType = "vocabulary" | "ref" | "literal" | "coordinate";
+export type SchemaValueType = 'vocabulary' | 'ref' | 'literal' | 'coordinate';
 
 /** 스키마의 각 축(slot) 정의 */
 export interface SchemaAxis {
@@ -76,7 +76,7 @@ export interface SchemaFragment {
 /** 구조적 제약. 의미적 규칙(Layer 3)은 여기에 넣지 않는다. */
 export interface SchemaConstraint {
   /** 제약 종류 */
-  rule: "maxCount" | "minCount" | "requiredIf" | "exclusive";
+  rule: 'maxCount' | 'minCount' | 'requiredIf' | 'exclusive';
 
   /** 대상 축 */
   axis: string;

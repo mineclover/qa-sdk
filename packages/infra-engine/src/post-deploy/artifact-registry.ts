@@ -1,17 +1,17 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 
 import {
   createProgrammingArtifactRegistryRecord,
   type ProgrammingArtifactRegistryRecord,
-} from "operational-ontology/programming-artifacts";
+} from 'operational-ontology/programming-artifacts';
 
-import type { DeployResult, ProviderId } from "../core/types.js";
-import type { FleetDeployResult, FleetRunOptions } from "../fleet/manager.js";
+import type { DeployResult, ProviderId } from '../core/types.js';
+import type { FleetDeployResult, FleetRunOptions } from '../fleet/manager.js';
 
 interface ProgrammingArtifactRegistryEnvelope {
   artifacts?: ProgrammingArtifactRegistryRecord[];
@@ -30,8 +30,7 @@ export interface DeploymentOutputArtifactRecordInput {
   fleetScope?: string;
 }
 
-export interface DeploymentOutputArtifactRegistryWriteInput
-  extends DeploymentOutputArtifactRecordInput {
+export interface DeploymentOutputArtifactRegistryWriteInput extends DeploymentOutputArtifactRecordInput {
   artifactRegistry: string;
 }
 
@@ -46,8 +45,7 @@ export interface FleetDeploymentArtifactRecordInput {
   createdAt?: string;
 }
 
-export interface FleetDeploymentArtifactRegistryWriteInput
-  extends FleetDeploymentArtifactRecordInput {
+export interface FleetDeploymentArtifactRegistryWriteInput extends FleetDeploymentArtifactRecordInput {
   artifactRegistry: string;
 }
 
@@ -59,7 +57,7 @@ export function buildDeploymentOutputArtifactRegistryRecord(
   return createProgrammingArtifactRegistryRecord({
     artifactId: `deployment-output-${slugRef(input.service)}-${slugRef(input.env)}-${slugRef(String(input.provider))}`,
     artifactRef,
-    kind: "deployment-output",
+    kind: 'deployment-output',
     producedByRef: `infra deploy ${input.service} ${input.env} --provider ${input.provider}`,
     derivedFromRefs: [
       input.configPath,
@@ -68,12 +66,9 @@ export function buildDeploymentOutputArtifactRegistryRecord(
       ...(input.fleetRunId ? [`fleet-run:${input.fleetRunId}`] : []),
     ],
     verifiesRefs: input.result.success
-      ? [
-          `service:${input.service}`,
-          ...(endpoint ? [`endpoint:${endpoint}`] : []),
-        ]
+      ? [`service:${input.service}`, ...(endpoint ? [`endpoint:${endpoint}`] : [])]
       : [],
-    ownerDefinitionId: "infra-engine-pipeline",
+    ownerDefinitionId: 'infra-engine-pipeline',
     materializesOutputRefs: [
       `service:${input.service}`,
       `env:${input.env}`,
@@ -122,23 +117,23 @@ export function buildFleetDeploymentArtifactRegistryRecord(
   return createProgrammingArtifactRegistryRecord({
     artifactId: `fleet-deployment-${slugRef(input.env)}-${slugRef(input.mode)}-${slugRef(input.runId)}`,
     artifactRef,
-    kind: "deployment-batch",
+    kind: 'deployment-batch',
     producedByRef: [
-      "infra deploy --all",
+      'infra deploy --all',
       input.env,
-      ...(input.scope !== "all" ? ["--tier", input.scope] : []),
-      ...(input.options?.provider ? ["--provider", input.options.provider] : []),
-      ...(input.options?.sync ? ["--sync"] : []),
-      ...(input.options?.continueOnError ? ["--continue-on-error"] : []),
-      ...(input.options?.dryRun !== false ? ["--dry-run"] : []),
-    ].join(" "),
+      ...(input.scope !== 'all' ? ['--tier', input.scope] : []),
+      ...(input.options?.provider ? ['--provider', input.options.provider] : []),
+      ...(input.options?.sync ? ['--sync'] : []),
+      ...(input.options?.continueOnError ? ['--continue-on-error'] : []),
+      ...(input.options?.dryRun !== false ? ['--dry-run'] : []),
+    ].join(' '),
     derivedFromRefs: [
       input.configPath,
       `env:${input.env}`,
       ...input.result.results.map((result) => `service:${result.serviceId}`),
     ],
     verifiesRefs: successfulServices.map((serviceId) => `service:${serviceId}`),
-    ownerDefinitionId: "infra-engine-pipeline",
+    ownerDefinitionId: 'infra-engine-pipeline',
     materializesOutputRefs: [
       `env:${input.env}`,
       artifactRef,
@@ -180,11 +175,7 @@ async function appendProgrammingArtifactRegistryRecord(
   const artifacts = upsertProgrammingArtifactRecord(existing, record);
 
   await mkdir(dirname(resolvedPath), { recursive: true });
-  await writeFile(
-    resolvedPath,
-    JSON.stringify({ ...payload, artifacts }, null, 2) + "\n",
-    "utf8",
-  );
+  await writeFile(resolvedPath, JSON.stringify({ ...payload, artifacts }, null, 2) + '\n', 'utf8');
 }
 
 async function readProgrammingArtifactRegistryEnvelope(
@@ -192,7 +183,7 @@ async function readProgrammingArtifactRegistryEnvelope(
 ): Promise<ProgrammingArtifactRegistryEnvelope> {
   if (!existsSync(registryPath)) return { artifacts: [] };
 
-  const payload = JSON.parse(await readFile(registryPath, "utf8")) as
+  const payload = JSON.parse(await readFile(registryPath, 'utf8')) as
     | ProgrammingArtifactRegistryRecord[]
     | ProgrammingArtifactRegistryEnvelope;
   if (Array.isArray(payload)) return { artifacts: payload };
@@ -224,7 +215,7 @@ function slugRef(value: string): string {
   const slug = value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || "unknown";
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'unknown';
 }

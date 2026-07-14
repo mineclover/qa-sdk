@@ -9,8 +9,8 @@
 //   (b) decisionId/cycleId는 03-identifier-grammar 라운드트립 통과 검증.
 //   (c) (cycleId, pass) unique — 같은 cycleId 결정 row 정확히 1건.
 
-import { equal, deepEqual, ok } from "node:assert/strict";
-import { parseDecisionId, parseCycleId } from "sim-identifier-grammar";
+import { equal, deepEqual, ok } from 'node:assert/strict';
+import { parseDecisionId, parseCycleId } from 'sim-identifier-grammar';
 import type {
   AnyDecision,
   CategoryVerdictValue,
@@ -20,13 +20,13 @@ import type {
   SafetyTriggerCategory,
   SafetyVerdict,
   ResourceVerdict,
-} from "../audit-fetcher.js";
+} from '../audit-fetcher.js';
 
 export interface SafetyExpectation {
   verdict: SafetyVerdict;
   triggerCategory?: SafetyTriggerCategory;
-  categoryVerdicts?: Partial<SafetyDecisionRecordView["categoryVerdicts"]>;
-  action?: SafetyDecisionRecordView["action"];
+  categoryVerdicts?: Partial<SafetyDecisionRecordView['categoryVerdicts']>;
+  action?: SafetyDecisionRecordView['action'];
   minConfidence?: number;
 }
 
@@ -49,9 +49,7 @@ function assertGrammarRoundtrip(
   try {
     parser(value);
   } catch (e) {
-    throw new Error(
-      `${label} grammar invalid: ${value} (${(e as Error).message})`,
-    );
+    throw new Error(`${label} grammar invalid: ${value} (${(e as Error).message})`);
   }
 }
 
@@ -61,18 +59,11 @@ function assertGrammarRoundtrip(
  * spec 05 §3.1 (a): verdict + triggerCategory + categoryVerdicts subset + action 직접 비교.
  * spec 05 §3.1 (b): decisionId/cycleId 라운드트립 검증.
  */
-export function assertSafetyVerdict(
-  d: SafetyDecisionRecordView,
-  e: SafetyExpectation,
-): void {
-  assertGrammarRoundtrip(parseDecisionId, d.decisionId, "decisionId");
-  assertGrammarRoundtrip(parseCycleId, d.cycleId, "cycleId");
-  equal(d.pass, "safety", "pass must be 'safety'");
-  equal(
-    d.verdict,
-    e.verdict,
-    `verdict expected=${e.verdict} actual=${d.verdict}`,
-  );
+export function assertSafetyVerdict(d: SafetyDecisionRecordView, e: SafetyExpectation): void {
+  assertGrammarRoundtrip(parseDecisionId, d.decisionId, 'decisionId');
+  assertGrammarRoundtrip(parseCycleId, d.cycleId, 'cycleId');
+  equal(d.pass, 'safety', "pass must be 'safety'");
+  equal(d.verdict, e.verdict, `verdict expected=${e.verdict} actual=${d.verdict}`);
   if (e.triggerCategory !== undefined) {
     equal(
       d.triggerCategory,
@@ -82,25 +73,18 @@ export function assertSafetyVerdict(
   }
   if (e.categoryVerdicts) {
     for (const [k, v] of Object.entries(e.categoryVerdicts) as [
-      keyof SafetyDecisionRecordView["categoryVerdicts"],
+      keyof SafetyDecisionRecordView['categoryVerdicts'],
       CategoryVerdictValue,
     ][]) {
       const actual = d.categoryVerdicts[k];
-      equal(
-        actual,
-        v,
-        `categoryVerdicts.${k} expected=${v} actual=${actual}`,
-      );
+      equal(actual, v, `categoryVerdicts.${k} expected=${v} actual=${actual}`);
     }
   }
   if (e.action !== undefined) {
-    deepEqual(d.action, e.action, "action mismatch");
+    deepEqual(d.action, e.action, 'action mismatch');
   }
   if (e.minConfidence !== undefined) {
-    ok(
-      d.confidence >= e.minConfidence,
-      `confidence ${d.confidence} < ${e.minConfidence}`,
-    );
+    ok(d.confidence >= e.minConfidence, `confidence ${d.confidence} < ${e.minConfidence}`);
   }
 }
 
@@ -112,14 +96,10 @@ export function assertTriggerCategory(
   d: SafetyDecisionRecordView,
   expected: SafetyTriggerCategory,
 ): void {
-  equal(d.verdict, "rollback", "triggerCategory only valid on rollback");
+  equal(d.verdict, 'rollback', 'triggerCategory only valid on rollback');
   equal(d.triggerCategory, expected, `triggerCategory expected=${expected}`);
   const cv = d.categoryVerdicts[expected];
-  equal(
-    cv,
-    "FAIL",
-    `categoryVerdicts.${expected} must be FAIL when trigger matches, got=${cv}`,
-  );
+  equal(cv, 'FAIL', `categoryVerdicts.${expected} must be FAIL when trigger matches, got=${cv}`);
 }
 
 /**
@@ -127,20 +107,13 @@ export function assertTriggerCategory(
  *
  * verdict=rejected 시 rejectedBy 필수, scale-up/down 시 target invariant.
  */
-export function assertResourceVerdict(
-  d: ResourceDecisionRecordView,
-  e: ResourceExpectation,
-): void {
-  assertGrammarRoundtrip(parseDecisionId, d.decisionId, "decisionId");
-  assertGrammarRoundtrip(parseCycleId, d.cycleId, "cycleId");
-  equal(d.pass, "resource", "pass must be 'resource'");
-  equal(
-    d.verdict,
-    e.verdict,
-    `verdict expected=${e.verdict} actual=${d.verdict}`,
-  );
-  if (e.verdict === "rejected") {
-    ok(d.rejectedBy, "rejected verdict requires rejectedBy");
+export function assertResourceVerdict(d: ResourceDecisionRecordView, e: ResourceExpectation): void {
+  assertGrammarRoundtrip(parseDecisionId, d.decisionId, 'decisionId');
+  assertGrammarRoundtrip(parseCycleId, d.cycleId, 'cycleId');
+  equal(d.pass, 'resource', "pass must be 'resource'");
+  equal(d.verdict, e.verdict, `verdict expected=${e.verdict} actual=${d.verdict}`);
+  if (e.verdict === 'rejected') {
+    ok(d.rejectedBy, 'rejected verdict requires rejectedBy');
     if (e.rejectedBy) {
       equal(
         d.rejectedBy,
@@ -149,8 +122,8 @@ export function assertResourceVerdict(
       );
     }
   }
-  if (e.target && d.action?.kind === "scale") {
-    deepEqual(d.action.target, e.target, "action.target mismatch");
+  if (e.target && d.action?.kind === 'scale') {
+    deepEqual(d.action.target, e.target, 'action.target mismatch');
   }
   if (e.triggerSignals) {
     for (const s of e.triggerSignals) {
@@ -167,9 +140,7 @@ export function assertResourceVerdict(
  * 같은 cycleId+pass 조합이 두 번 이상 나타나면 audit-recorder idempotent write가
  * 깨졌다는 의미.
  */
-export function assertSingleDecisionPerCyclePass(
-  decisions: readonly AnyDecision[],
-): void {
+export function assertSingleDecisionPerCyclePass(decisions: readonly AnyDecision[]): void {
   const seen = new Set<string>();
   for (const d of decisions) {
     const key = `${d.cycleId}::${d.pass}`;

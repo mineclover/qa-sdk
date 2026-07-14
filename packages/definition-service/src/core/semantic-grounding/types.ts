@@ -1,16 +1,16 @@
 // @def.doc definition-service
 
-import type { DocRecord } from "../types.js";
+import type { DocRecord } from '../types.js';
 
 export type SemanticTermKind =
-  | "document"
-  | "prefix"
-  | "axis"
-  | "entry"
-  | "relation"
-  | "table"
-  | "field"
-  | "code";
+  | 'document'
+  | 'prefix'
+  | 'axis'
+  | 'entry'
+  | 'relation'
+  | 'table'
+  | 'field'
+  | 'code';
 
 export interface SemanticAliasRecord {
   readonly aliasId: string;
@@ -18,7 +18,7 @@ export interface SemanticAliasRecord {
   readonly alias: string;
   readonly normalizedAlias: string;
   readonly locale?: string;
-  readonly source: "document" | "manual" | "feedback" | "deterministic-label";
+  readonly source: 'document' | 'manual' | 'feedback' | 'deterministic-label';
   readonly confidence: number;
   readonly createdAt: string;
 }
@@ -26,7 +26,7 @@ export interface SemanticAliasRecord {
 export interface SemanticRelationRecord {
   readonly relationId: string;
   readonly sourceTermId: string;
-  readonly relationType: "same-scope" | "depends-on" | "contains" | "refines" | "mentions";
+  readonly relationType: 'same-scope' | 'depends-on' | 'contains' | 'refines' | 'mentions';
   readonly targetTermId: string;
   readonly evidence: Record<string, unknown>;
 }
@@ -51,10 +51,10 @@ export interface SemanticTermWithAliases extends SemanticTermRecord {
   readonly relations: readonly SemanticRelationRecord[];
 }
 
-export type SemanticGroundingRuntimeStoreKind = "sqlite" | "memory-fixture";
+export type SemanticGroundingRuntimeStoreKind = 'sqlite' | 'memory-fixture';
 
 export interface SemanticGroundingRuntimeSnapshot {
-  readonly source: "definition-service.semantic-grounding";
+  readonly source: 'definition-service.semantic-grounding';
   readonly storeKind: SemanticGroundingRuntimeStoreKind;
   readonly capturedAt: string;
   readonly terms: readonly SemanticTermWithAliases[];
@@ -68,10 +68,10 @@ export interface SemanticQuery {
 }
 
 export type SemanticCandidateMatch =
-  | "canonical-label"
-  | "alias"
-  | "token-overlap"
-  | "relation-neighbor";
+  | 'canonical-label'
+  | 'alias'
+  | 'token-overlap'
+  | 'relation-neighbor';
 
 export interface SemanticEvidence {
   readonly kind: SemanticCandidateMatch;
@@ -109,11 +109,11 @@ export interface GroundingPlannerOptions {
 }
 
 export interface GroundingPlan {
-  readonly kind: "document-search";
+  readonly kind: 'document-search';
   readonly query: string;
   readonly candidateDocIds: readonly string[];
   readonly candidates: readonly SemanticCandidate[];
-  readonly fallbackReason?: "empty-query" | "no-candidate" | "no-confident-candidate";
+  readonly fallbackReason?: 'empty-query' | 'no-candidate' | 'no-confident-candidate';
 }
 
 export interface SemanticDocumentSearchRecordInput {
@@ -136,11 +136,11 @@ export interface SemanticDocumentMergeInput {
 }
 
 export type FeedbackProposalKind =
-  | "alias-add"
-  | "entry-add"
-  | "axis-promotion"
-  | "version-transition"
-  | "wrong-scope-or-alias-missing";
+  | 'alias-add'
+  | 'entry-add'
+  | 'axis-promotion'
+  | 'version-transition'
+  | 'wrong-scope-or-alias-missing';
 
 export interface FeedbackProposalInput {
   readonly kind: FeedbackProposalKind;
@@ -160,15 +160,15 @@ export interface FeedbackProposalDraft {
 
 export interface FeedbackProposalRecord extends FeedbackProposalDraft {
   readonly proposalId: string;
-  readonly status: "open" | "accepted" | "rejected";
+  readonly status: 'open' | 'accepted' | 'rejected';
   readonly createdAt: string;
   readonly updatedAt: string;
 }
 
 export interface SemanticGroundingEventInput {
   readonly query: string;
-  readonly intent: "document-search" | "rag" | "text-to-sql" | "user-search";
+  readonly intent: 'document-search' | 'rag' | 'text-to-sql' | 'user-search';
   readonly candidates: readonly SemanticCandidate[];
   readonly plan: GroundingPlan;
-  readonly outcome: "semantic-hit" | "legacy-fallback" | "no-hit" | "mixed";
+  readonly outcome: 'semantic-hit' | 'legacy-fallback' | 'no-hit' | 'mixed';
 }

@@ -10,8 +10,8 @@
  * I/O만 담당하며 트리 invariant는 호출 시 parent 조회 후 검증한다.
  */
 
-import { asc, eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { asc, eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import {
   EntryNotFoundError,
@@ -23,9 +23,9 @@ import {
   type ExecutionEntry,
   type RecordCheckArgs,
   type RecordExecutionArgs,
-} from "permission-engine";
+} from 'permission-engine';
 
-import { auditEntries } from "./schema.js";
+import { auditEntries } from './schema.js';
 
 type Row = typeof auditEntries.$inferSelect;
 type Insert = typeof auditEntries.$inferInsert;
@@ -42,24 +42,24 @@ function toEntry(row: Row): AuditEntry {
     metadata: row.metadata ? (JSON.parse(row.metadata) as Record<string, unknown>) : undefined,
   };
 
-  if (row.kind === "execution") {
+  if (row.kind === 'execution') {
     return {
       ...base,
-      kind: "execution",
-      apiId: row.apiId ?? "",
-      actorUserId: row.actorUserId ?? "",
+      kind: 'execution',
+      apiId: row.apiId ?? '',
+      actorUserId: row.actorUserId ?? '',
       actorTenantId: row.actorTenantId ?? undefined,
-      targetKind: row.targetKind ?? "",
-      targetId: row.targetId ?? "",
+      targetKind: row.targetKind ?? '',
+      targetId: row.targetId ?? '',
       outcome: row.outcome,
     };
   }
 
   return {
     ...base,
-    kind: "check",
+    kind: 'check',
     pass: row.pass!,
-    outcome: (row.outcome ?? "allow") as AuditOutcome,
+    outcome: (row.outcome ?? 'allow') as AuditOutcome,
     address: row.address ?? undefined,
     unionKind: row.unionKind ?? undefined,
     denyReason: row.denyReason ?? undefined,
@@ -73,7 +73,7 @@ function executionToRow(e: ExecutionEntry): Insert {
     parentSpanId: e.parentSpanId,
     rootSpanId: e.rootSpanId,
     depth: e.depth,
-    kind: "execution",
+    kind: 'execution',
     apiId: e.apiId,
     actorUserId: e.actorUserId,
     actorTenantId: e.actorTenantId ?? null,
@@ -97,7 +97,7 @@ function checkToRow(c: CheckEntry): Insert {
     parentSpanId: c.parentSpanId,
     rootSpanId: c.rootSpanId,
     depth: c.depth,
-    kind: "check",
+    kind: 'check',
     apiId: null,
     actorUserId: null,
     actorTenantId: null,
@@ -133,7 +133,7 @@ export class SqliteAuditRecorder implements AuditRecorder {
 
     const now = args.now ?? new Date().toISOString();
     const entry: ExecutionEntry = {
-      kind: "execution",
+      kind: 'execution',
       spanId: args.spanId,
       traceId: args.traceId,
       parentSpanId: args.parentSpanId,
@@ -161,7 +161,7 @@ export class SqliteAuditRecorder implements AuditRecorder {
   ): Promise<ExecutionEntry> {
     const cur = await this.get(spanId);
     if (!cur) throw new EntryNotFoundError(spanId);
-    if (cur.kind !== "execution") {
+    if (cur.kind !== 'execution') {
       throw new Error(`finishExecution called on non-execution entry: ${spanId}`);
     }
     const endedAt = now ?? new Date().toISOString();
@@ -179,7 +179,7 @@ export class SqliteAuditRecorder implements AuditRecorder {
 
     const now = args.now ?? new Date().toISOString();
     const entry: CheckEntry = {
-      kind: "check",
+      kind: 'check',
       spanId: args.spanId,
       traceId: args.traceId,
       parentSpanId: args.parentSpanId,
@@ -221,7 +221,7 @@ export class SqliteAuditRecorder implements AuditRecorder {
   async firstFailure(rootSpanId: string): Promise<AuditEntry | null> {
     const all = await this.listByRoot(rootSpanId);
     for (const e of all) {
-      if (e.outcome === "deny" || e.outcome === "error") return e;
+      if (e.outcome === 'deny' || e.outcome === 'error') return e;
     }
     return null;
   }

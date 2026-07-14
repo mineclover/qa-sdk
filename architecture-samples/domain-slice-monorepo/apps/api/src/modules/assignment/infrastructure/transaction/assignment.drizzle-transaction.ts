@@ -1,8 +1,8 @@
-import { AssignmentTransactionPort } from "../../application/ports/assignment-transaction.port.js";
+import { AssignmentTransactionPort } from '../../application/ports/assignment-transaction.port.js';
 import {
   TransactionalAssignmentStore,
   type AssignmentUnitOfWorkScope,
-} from "./assignment.unit-of-work.js";
+} from './assignment.unit-of-work.js';
 
 export interface AssignmentDrizzleTransactionClient {
   readonly id: string;

@@ -19,9 +19,9 @@
  *                        └─────────────┘
  */
 
-import { WeightedIndex } from "weighted-index";
-import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DOC_SEQ, LINK_TYPE } from "./vocabulary.js";
-import type { DefScope, DefAspect, DefDepth, LinkType } from "./types.js";
+import { WeightedIndex } from 'weighted-index';
+import { DEF_SCOPE, DEF_ASPECT, DEF_DEPTH, DOC_SEQ, LINK_TYPE } from './vocabulary.js';
+import type { DefScope, DefAspect, DefDepth, LinkType } from './types.js';
 
 // ─── 좌표 인덱스 (lazy init) ─────────────────────────────
 
@@ -38,7 +38,7 @@ let _linkIdx: WeightedIndex | undefined;
 function documentIndex(): WeightedIndex {
   return (_documentIdx ??= new WeightedIndex(
     [DEF_SCOPE.capacity, DEF_ASPECT.capacity, DEF_DEPTH.capacity],
-    ["def_scope", "def_aspect", "def_depth"],
+    ['def_scope', 'def_aspect', 'def_depth'],
   ));
 }
 
@@ -46,7 +46,7 @@ function documentIndex(): WeightedIndex {
 function linkIndex(): WeightedIndex {
   return (_linkIdx ??= new WeightedIndex(
     [DEF_SCOPE.capacity, DEF_ASPECT.capacity, LINK_TYPE.capacity],
-    ["def_scope", "def_aspect", "link_type"],
+    ['def_scope', 'def_aspect', 'link_type'],
   ));
 }
 
@@ -168,7 +168,7 @@ let _uniqueIdx: WeightedIndex | undefined;
 function uniqueDocumentIndex(): WeightedIndex {
   return (_uniqueIdx ??= new WeightedIndex(
     [DEF_SCOPE.capacity, DEF_ASPECT.capacity, DEF_DEPTH.capacity, DOC_SEQ.capacity],
-    ["def_scope", "def_aspect", "def_depth", "doc_seq"],
+    ['def_scope', 'def_aspect', 'def_depth', 'doc_seq'],
   ));
 }
 

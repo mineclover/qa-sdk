@@ -8,23 +8,23 @@
 
 /** transport 액션 */
 export const MC_TRANSPORT_ACTIONS = [
-  "play", "pause", "seek", "restart", "complete", "set_loop", "set_rate",
+  'play',
+  'pause',
+  'seek',
+  'restart',
+  'complete',
+  'set_loop',
+  'set_rate',
 ] as const;
 
 /** 편집 액션 */
-export const MC_EDIT_ACTIONS = [
-  "select", "edit_timing", "edit_parameter", "undo", "redo",
-] as const;
+export const MC_EDIT_ACTIONS = ['select', 'edit_timing', 'edit_parameter', 'undo', 'redo'] as const;
 
 /** 타임라인 액션 */
-export const MC_TIMELINE_ACTIONS = [
-  "drag_start", "drag_commit",
-] as const;
+export const MC_TIMELINE_ACTIONS = ['drag_start', 'drag_commit'] as const;
 
 /** 컴포지션 라이프사이클 액션 */
-export const MC_COMPOSITION_ACTIONS = [
-  "import", "export", "preset_switch",
-] as const;
+export const MC_COMPOSITION_ACTIONS = ['import', 'export', 'preset_switch'] as const;
 
 /** 전체 액션 목록 */
 export const MC_ALL_ACTIONS = [

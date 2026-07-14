@@ -1,21 +1,21 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { Inject, Injectable, Optional } from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
-import { DefinitionClient } from "@qa-sdk/definition-client";
-import { runDefinitionClientCall } from "../../lib/definition-client-fail-open.js";
-import { createLogger } from "../../lib/logger.js";
-import type { ConfigStore } from "../../stores/config-store.js";
-import type { ServiceEndpointStore } from "../../stores/service-endpoint-store.js";
-import type { ServiceRecord } from "./service.types.js";
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
+import { DefinitionClient } from '@qa-sdk/definition-client';
+import { runDefinitionClientCall } from '../../lib/definition-client-fail-open.js';
+import { createLogger } from '../../lib/logger.js';
+import type { ConfigStore } from '../../stores/config-store.js';
+import type { ServiceEndpointStore } from '../../stores/service-endpoint-store.js';
+import type { ServiceRecord } from './service.types.js';
 
-export const SERVICE_CONFIG_STORE = "SERVICE_CONFIG_STORE";
-export const SERVICE_ENDPOINT_STORE = "SERVICE_ENDPOINT_STORE";
+export const SERVICE_CONFIG_STORE = 'SERVICE_CONFIG_STORE';
+export const SERVICE_ENDPOINT_STORE = 'SERVICE_ENDPOINT_STORE';
 
-const CONFIG_TYPE = "services";
-const TOPOLOGY_DOC_ID = "registry-services-api-spec";
-const logger = createLogger("registry-service");
+const CONFIG_TYPE = 'services';
+const TOPOLOGY_DOC_ID = 'registry-services-api-spec';
+const logger = createLogger('registry-service');
 
 type ServiceListPayload = {
   services?: unknown;
@@ -25,7 +25,9 @@ type ServiceListPayload = {
 export class ServiceTopologyService {
   constructor(
     @Inject(SERVICE_CONFIG_STORE) private readonly configStore: ConfigStore,
-    @Optional() @Inject(SERVICE_ENDPOINT_STORE) private readonly endpointStore?: ServiceEndpointStore,
+    @Optional()
+    @Inject(SERVICE_ENDPOINT_STORE)
+    private readonly endpointStore?: ServiceEndpointStore,
     @Optional() @Inject(DefinitionClient) private readonly definitionClient?: DefinitionClient,
   ) {}
 
@@ -50,7 +52,7 @@ export class ServiceTopologyService {
     const services = await this.requireServices(catalogId);
     const found = services.find((service) => service.serviceId === serviceId);
     if (!found) {
-      throw new AppError("NOT_FOUND", `Service '${serviceId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Service '${serviceId}' not found`, 404);
     }
 
     return found;
@@ -59,11 +61,11 @@ export class ServiceTopologyService {
   async replaceAll(catalogId: string, input: unknown) {
     const body = this.asListPayload(input);
     if (!Array.isArray(body.services)) {
-      throw new AppError("INVALID_INPUT", "services 배열 필수", 400);
+      throw new AppError('INVALID_INPUT', 'services 배열 필수', 400);
     }
 
     await this.configStore.set(catalogId, CONFIG_TYPE, JSON.stringify(body.services));
-    await this.logAffectedTests("replaceAll", catalogId, { count: body.services.length });
+    await this.logAffectedTests('replaceAll', catalogId, { count: body.services.length });
     return {
       ok: true,
       count: body.services.length,
@@ -73,7 +75,7 @@ export class ServiceTopologyService {
   async upsert(catalogId: string, input: unknown) {
     const body = this.asRecord(input) as Partial<ServiceRecord>;
     if (!body.serviceId || !body.name) {
-      throw new AppError("INVALID_INPUT", "serviceId, name 필수", 400);
+      throw new AppError('INVALID_INPUT', 'serviceId, name 필수', 400);
     }
 
     const services = await this.list(catalogId);
@@ -87,11 +89,11 @@ export class ServiceTopologyService {
     }
 
     await this.configStore.set(catalogId, CONFIG_TYPE, JSON.stringify(next));
-    await this.logAffectedTests("upsert", catalogId, { serviceId: body.serviceId });
+    await this.logAffectedTests('upsert', catalogId, { serviceId: body.serviceId });
     return {
       ok: true,
       serviceId: body.serviceId,
-      action: index >= 0 ? "updated" : "created",
+      action: index >= 0 ? 'updated' : 'created',
     };
   }
 
@@ -99,11 +101,11 @@ export class ServiceTopologyService {
     const services = await this.requireServices(catalogId);
     const filtered = services.filter((service) => service.serviceId !== serviceId);
     if (filtered.length === services.length) {
-      throw new AppError("NOT_FOUND", `Service '${serviceId}' not found`, 404);
+      throw new AppError('NOT_FOUND', `Service '${serviceId}' not found`, 404);
     }
 
     await this.configStore.set(catalogId, CONFIG_TYPE, JSON.stringify(filtered));
-    await this.logAffectedTests("remove", catalogId, { serviceId });
+    await this.logAffectedTests('remove', catalogId, { serviceId });
     return {
       ok: true,
       serviceId,
@@ -122,20 +124,23 @@ export class ServiceTopologyService {
     return owners;
   }
 
-  async listUrls(catalogId: string, query: {
-    envName: string;
-    namespace: string;
-    region: string;
-  }) {
+  async listUrls(
+    catalogId: string,
+    query: {
+      envName: string;
+      namespace: string;
+      region: string;
+    },
+  ) {
     const urls: Record<string, string> = {};
 
     if (this.endpointStore) {
       const endpoints = await this.endpointStore.list(catalogId);
       for (const endpoint of endpoints) {
         if (
-          endpoint.env === query.envName
-          && endpoint.namespace === query.namespace
-          && endpoint.region === query.region
+          endpoint.env === query.envName &&
+          endpoint.namespace === query.namespace &&
+          endpoint.region === query.region
         ) {
           urls[endpoint.svcName] = endpoint.url;
         }
@@ -158,19 +163,22 @@ export class ServiceTopologyService {
     return urls;
   }
 
-  async getGateway(catalogId: string, query: {
-    envName: string;
-    namespace: string;
-    region: string;
-  }) {
+  async getGateway(
+    catalogId: string,
+    query: {
+      envName: string;
+      namespace: string;
+      region: string;
+    },
+  ) {
     const endpointUrls: Record<string, string> = {};
     if (this.endpointStore) {
       const endpoints = await this.endpointStore.list(catalogId);
       for (const endpoint of endpoints) {
         if (
-          endpoint.env === query.envName
-          && endpoint.namespace === query.namespace
-          && endpoint.region === query.region
+          endpoint.env === query.envName &&
+          endpoint.namespace === query.namespace &&
+          endpoint.region === query.region
         ) {
           endpointUrls[endpoint.svcName] = endpoint.url;
         }
@@ -180,12 +188,15 @@ export class ServiceTopologyService {
     const services = await this.list(catalogId);
     return {
       routes: services
-        .filter((service): service is typeof service & { gatewayPath: string } => !!service.gatewayPath)
+        .filter(
+          (service): service is typeof service & { gatewayPath: string } => !!service.gatewayPath,
+        )
         .map((service) => ({
           path: service.gatewayPath,
           serviceId: service.serviceId,
-          url: endpointUrls[service.serviceId] ?? service.urls?.[query.envName] ?? service.url ?? "",
-          tier: service.tier ?? "backend",
+          url:
+            endpointUrls[service.serviceId] ?? service.urls?.[query.envName] ?? service.url ?? '',
+          tier: service.tier ?? 'backend',
           strip: service.stripPrefix ?? false,
         })),
       env: query.envName,
@@ -195,7 +206,7 @@ export class ServiceTopologyService {
   private async requireServices(catalogId: string) {
     const record = await this.configStore.get(catalogId, CONFIG_TYPE);
     if (!record) {
-      throw new AppError("NOT_FOUND", "Services not found", 404);
+      throw new AppError('NOT_FOUND', 'Services not found', 404);
     }
 
     return this.parseServices(record.data) ?? [];
@@ -214,7 +225,7 @@ export class ServiceTopologyService {
   }
 
   private asRecord(input: unknown): Record<string, unknown> {
-    if (!input || typeof input !== "object") {
+    if (!input || typeof input !== 'object') {
       return {};
     }
 
@@ -222,21 +233,23 @@ export class ServiceTopologyService {
   }
 
   private async logAffectedTests(
-    action: "replaceAll" | "upsert" | "remove",
+    action: 'replaceAll' | 'upsert' | 'remove',
     catalogId: string,
     detail: Record<string, unknown>,
   ) {
-    const result = await runDefinitionClientCall(
-      `getAffectedTests(${TOPOLOGY_DOC_ID})`,
-      async () => this.definitionClient?.getAffectedTests(TOPOLOGY_DOC_ID),
+    const result = await runDefinitionClientCall(`getAffectedTests(${TOPOLOGY_DOC_ID})`, async () =>
+      this.definitionClient?.getAffectedTests(TOPOLOGY_DOC_ID),
     );
 
-    logger.info({
-      catalogId,
-      action,
-      docId: TOPOLOGY_DOC_ID,
-      affectedTests: result?.totalTests ?? 0,
-      ...detail,
-    }, "service topology changed");
+    logger.info(
+      {
+        catalogId,
+        action,
+        docId: TOPOLOGY_DOC_ID,
+        affectedTests: result?.totalTests ?? 0,
+        ...detail,
+      },
+      'service topology changed',
+    );
   }
 }

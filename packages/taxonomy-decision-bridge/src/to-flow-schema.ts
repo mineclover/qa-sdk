@@ -1,11 +1,5 @@
-import type {
-  BranchSchema,
-  Evidence,
-  EvidenceKind,
-  FlowSchema,
-  GateSchema,
-} from "decision-flow";
-import type { DecisionFile, GateMarkers } from "./decision-file.js";
+import type { BranchSchema, Evidence, EvidenceKind, FlowSchema, GateSchema } from 'decision-flow';
+import type { DecisionFile, GateMarkers } from './decision-file.js';
 
 export type ToFlowSchemaOptions = {
   /** evidence.source 기본값으로 채울 markdown 파일 path. 미지정 시 빈 문자열. */
@@ -25,12 +19,9 @@ export type ToFlowSchemaOptions = {
  *
  * 단일 gate phase="decide", weight="tactical". multi-gate markdown은 scope 외.
  */
-export function toFlowSchema(
-  decision: DecisionFile,
-  opts: ToFlowSchemaOptions = {},
-): FlowSchema {
+export function toFlowSchema(decision: DecisionFile, opts: ToFlowSchemaOptions = {}): FlowSchema {
   const { meta, markers } = decision;
-  const purpose = markers.purpose ?? "(목적 미정)";
+  const purpose = markers.purpose ?? '(목적 미정)';
 
   // markers.gates 채워졌으면 multi-gate, 아니면 single-gate(backward compat).
   const gates: GateSchema[] =
@@ -38,16 +29,14 @@ export function toFlowSchema(
       ? markers.gates.map(gateMarkersToSchema)
       : [singleGateFromMarkers(markers)];
 
-  const includeOutcomes = meta.lifecycle === "approved" && !!markers.outcome;
-  const outcomes = includeOutcomes
-    ? [{ id: "approved", label: markers.outcome! }]
-    : undefined;
+  const includeOutcomes = meta.lifecycle === 'approved' && !!markers.outcome;
+  const outcomes = includeOutcomes ? [{ id: 'approved', label: markers.outcome! }] : undefined;
 
   return {
     id: meta.id,
     name: `Decision: ${meta.subject}`,
     description: purpose,
-    version: "1",
+    version: '1',
     gates,
     outcomes,
     unit: {
@@ -58,17 +47,17 @@ export function toFlowSchema(
   };
 }
 
-function singleGateFromMarkers(markers: DecisionFile["markers"]): GateSchema {
+function singleGateFromMarkers(markers: DecisionFile['markers']): GateSchema {
   const branches: readonly BranchSchema[] = markers.options.map((o) => ({
     id: o.id,
     label: o.body || o.id,
   }));
   const evidenceKinds = uniqueEvidenceKinds(markers.evidence);
   return {
-    id: "decide",
-    name: "결정",
-    phase: markers.phase ?? "decide",
-    weight: markers.weight ?? "tactical",
+    id: 'decide',
+    name: '결정',
+    phase: markers.phase ?? 'decide',
+    weight: markers.weight ?? 'tactical',
     branches,
     requiredEvidence: evidenceKinds.length > 0 ? evidenceKinds : undefined,
     affects: markers.dependsOn.length > 0 ? markers.dependsOn : undefined,
@@ -84,8 +73,8 @@ function gateMarkersToSchema(g: GateMarkers): GateSchema {
   return {
     id: g.id,
     name: g.name ?? g.id,
-    phase: g.phase ?? "decide",
-    weight: g.weight ?? "tactical",
+    phase: g.phase ?? 'decide',
+    weight: g.weight ?? 'tactical',
     branches,
     requiredEvidence: evidenceKinds.length > 0 ? evidenceKinds : undefined,
     affects: g.dependsOn.length > 0 ? g.dependsOn : undefined,
@@ -100,7 +89,7 @@ export function extractEvidence(
   decision: DecisionFile,
   opts: ToFlowSchemaOptions = {},
 ): Evidence[] {
-  const source = opts.sourcePath ?? "";
+  const source = opts.sourcePath ?? '';
   const all =
     decision.markers.gates.length > 0
       ? decision.markers.gates.flatMap((g) => g.evidence)

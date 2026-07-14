@@ -1,11 +1,11 @@
 // @def.boundary infra-engine-system
 // @def.doc infra-engine-system
 
-import { readFile, writeFile, mkdir, rename } from "node:fs/promises";
-import { resolve } from "node:path";
-import { homedir } from "node:os";
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { homedir } from 'node:os';
 
-const VERSION_FILE = resolve(homedir(), ".qa-sdk", "infra-versions.json");
+const VERSION_FILE = resolve(homedir(), '.qa-sdk', 'infra-versions.json');
 
 export interface ServiceVersion {
   serviceId: string;
@@ -20,19 +20,29 @@ export interface ServiceVersion {
 
 export interface VersionStore {
   getVersion(serviceId: string, env: string): Promise<ServiceVersion | null>;
-  setVersion(serviceId: string, env: string, version: string, endpoint: string, provider: string): Promise<ServiceVersion>;
+  setVersion(
+    serviceId: string,
+    env: string,
+    version: string,
+    endpoint: string,
+    provider: string,
+  ): Promise<ServiceVersion>;
   listVersions(env?: string): Promise<ServiceVersion[]>;
   rollback(serviceId: string, env: string): Promise<ServiceVersion | null>;
 }
 
 export function createVersionStore(): VersionStore {
   async function load(): Promise<Record<string, ServiceVersion>> {
-    try { return JSON.parse(await readFile(VERSION_FILE, "utf-8")); } catch { return {}; }
+    try {
+      return JSON.parse(await readFile(VERSION_FILE, 'utf-8'));
+    } catch {
+      return {};
+    }
   }
 
   async function save(data: Record<string, ServiceVersion>): Promise<void> {
-    await mkdir(resolve(homedir(), ".qa-sdk"), { recursive: true });
-    const tmp = VERSION_FILE + ".tmp";
+    await mkdir(resolve(homedir(), '.qa-sdk'), { recursive: true });
+    const tmp = VERSION_FILE + '.tmp';
     await writeFile(tmp, JSON.stringify(data, null, 2));
     await rename(tmp, VERSION_FILE);
   }
@@ -69,7 +79,7 @@ export function createVersionStore(): VersionStore {
     async listVersions(env) {
       const data = await load();
       const all = Object.values(data);
-      return env ? all.filter(v => v.env === env) : all;
+      return env ? all.filter((v) => v.env === env) : all;
     },
 
     async rollback(serviceId, env) {
@@ -86,7 +96,11 @@ export function createVersionStore(): VersionStore {
         deployedAt: now,
         history: [
           ...current.history.slice(-19),
-          { version: current.previousVersion, deployedAt: now, rollbackFrom: current.currentVersion },
+          {
+            version: current.previousVersion,
+            deployedAt: now,
+            rollbackFrom: current.currentVersion,
+          },
         ],
       };
       data[key] = entry;

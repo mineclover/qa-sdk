@@ -87,7 +87,7 @@ export interface OrphanAddress {
   readonly prefixId: string;
   readonly serialized: string;
   readonly count: number;
-  readonly reason: "unknown-prefix" | "unknown-version" | "decode-failed";
+  readonly reason: 'unknown-prefix' | 'unknown-version' | 'decode-failed';
 }
 
 /** 구버전 사용 — 최신이 아닌 버전을 사용하는 레코드 */
@@ -126,7 +126,7 @@ export interface AxisOverlap {
   readonly aOnly: readonly string[];
   readonly bOnly: readonly string[];
   readonly overlapRatio: number;
-  readonly recommendation: "merge" | "alias" | "keep-separate" | "review";
+  readonly recommendation: 'merge' | 'alias' | 'keep-separate' | 'review';
   readonly reason: string;
 }
 
@@ -136,7 +136,7 @@ export interface PrefixOverlap {
   readonly sharedAxes: readonly string[];
   readonly sharedRefs: readonly string[];
   readonly structuralSimilarity: number;
-  readonly recommendation: "merge" | "split" | "keep-separate" | "review";
+  readonly recommendation: 'merge' | 'split' | 'keep-separate' | 'review';
   readonly reason: string;
 }
 
@@ -148,7 +148,7 @@ export interface DecisionConflict {
   readonly a: string;
   readonly b: string;
   readonly sharedTargets: readonly string[];
-  readonly conflict: "contradictory" | "redundant" | "superseding" | "compatible";
+  readonly conflict: 'contradictory' | 'redundant' | 'superseding' | 'compatible';
   readonly resolution: string;
 }
 
@@ -161,8 +161,8 @@ export interface CausalCandidate {
   readonly target: { readonly prefix: string; readonly entry: string };
   readonly coOccurrenceRate: number;
   readonly observedCount: number;
-  readonly confidence: "high" | "medium" | "low";
-  readonly suggestion: "intent-link" | "constraint" | "observe-more";
+  readonly confidence: 'high' | 'medium' | 'low';
+  readonly suggestion: 'intent-link' | 'constraint' | 'observe-more';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -175,15 +175,28 @@ export interface SimplificationCandidate {
   readonly activeAddressCount: number;
   readonly utilizationRate: number;
   readonly singleValueDims: readonly { readonly dim: string; readonly value: string }[];
-  readonly lowUsageEntries: readonly { readonly axis: string; readonly entry: string; readonly usageRate: number }[];
+  readonly lowUsageEntries: readonly {
+    readonly axis: string;
+    readonly entry: string;
+    readonly usageRate: number;
+  }[];
   readonly suggestions: readonly SimplificationSuggestion[];
 }
 
 export type SimplificationSuggestion =
-  | { readonly kind: "remove-dim"; readonly dim: string; readonly reason: string }
-  | { readonly kind: "deactivate-entry"; readonly axis: string; readonly entry: string; readonly reason: string }
-  | { readonly kind: "split-prefix"; readonly newPrefixes: readonly string[]; readonly reason: string }
-  | { readonly kind: "ok"; readonly reason: string };
+  | { readonly kind: 'remove-dim'; readonly dim: string; readonly reason: string }
+  | {
+      readonly kind: 'deactivate-entry';
+      readonly axis: string;
+      readonly entry: string;
+      readonly reason: string;
+    }
+  | {
+      readonly kind: 'split-prefix';
+      readonly newPrefixes: readonly string[];
+      readonly reason: string;
+    }
+  | { readonly kind: 'ok'; readonly reason: string };
 
 // ═══════════════════════════════════════════════════════════════
 //  경계 추천
@@ -195,19 +208,19 @@ export interface BoundaryRecommendation {
   readonly suggestedDims: readonly string[];
   readonly relatedPrefixes: readonly {
     readonly id: string;
-    readonly relation: "extends" | "splits-from" | "independent";
+    readonly relation: 'extends' | 'splits-from' | 'independent';
   }[];
   readonly estimatedCapacity: number;
-  readonly confidence: "high" | "medium" | "low";
+  readonly confidence: 'high' | 'medium' | 'low';
 }
 
 // ── re-export (entry-coverage) ───────────────────────────────
 
-export type { CoverageReport, PrefixCoverage } from "./entry-coverage.js";
+export type { CoverageReport, PrefixCoverage } from './entry-coverage.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Dormant 분류
 // ═══════════════════════════════════════════════════════════════
 
 /** dormant entry의 구조적 분류 */
-export type DormantReason = "error-path" | "forward-designed" | "source-gap" | "structural";
+export type DormantReason = 'error-path' | 'forward-designed' | 'source-gap' | 'structural';

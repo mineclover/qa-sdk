@@ -1,28 +1,28 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { randomUUID } from "node:crypto";
+import { randomUUID } from 'node:crypto';
 
-import type { DataObjectBinding, FieldRef } from "@qa-sdk/core";
-import { desc, eq } from "drizzle-orm";
+import type { DataObjectBinding, FieldRef } from '@qa-sdk/core';
+import { desc, eq } from 'drizzle-orm';
 
-import { createDb, type DrizzleDb } from "./db/connection.js";
-import { dataObjectBindings, lineageValidations } from "./db/schema.js";
+import { createDb, type DrizzleDb } from './db/connection.js';
+import { dataObjectBindings, lineageValidations } from './db/schema.js';
 
 export interface StoredDataObjectBinding {
   readonly schemaId: string;
   readonly prefixId: string;
   readonly prefixVersion: string;
-  readonly columnToAxis: DataObjectBinding["columnToAxis"];
+  readonly columnToAxis: DataObjectBinding['columnToAxis'];
   readonly createdAt: string;
 }
 
 export type DataObjectBindingInput = Pick<
   DataObjectBinding,
-  "schemaId" | "prefixId" | "prefixVersion" | "columnToAxis"
+  'schemaId' | 'prefixId' | 'prefixVersion' | 'columnToAxis'
 >;
 
-export type LineageValidationStatus = "bound" | "unbound" | "mismatched";
+export type LineageValidationStatus = 'bound' | 'unbound' | 'mismatched';
 
 export interface LineageValidationDetail {
   readonly status: LineageValidationStatus;
@@ -57,7 +57,7 @@ export class SqliteBindingStore {
   private db: DrizzleDb;
 
   constructor(pathOrDb: string | DrizzleDb) {
-    if (typeof pathOrDb === "string") {
+    if (typeof pathOrDb === 'string') {
       const { db } = createDb(pathOrDb);
       this.db = db;
     } else {
@@ -122,7 +122,7 @@ export class SqliteLineageValidationStore {
   private db: DrizzleDb;
 
   constructor(pathOrDb: string | DrizzleDb) {
-    if (typeof pathOrDb === "string") {
+    if (typeof pathOrDb === 'string') {
       const { db } = createDb(pathOrDb);
       this.db = db;
     } else {
@@ -187,7 +187,7 @@ function rowToBinding(row: BindingRow): StoredDataObjectBinding {
     schemaId: row.schemaId,
     prefixId: row.prefixId,
     prefixVersion: row.prefixVersion,
-    columnToAxis: JSON.parse(row.columnToAxis) as DataObjectBinding["columnToAxis"],
+    columnToAxis: JSON.parse(row.columnToAxis) as DataObjectBinding['columnToAxis'],
     createdAt: row.createdAt,
   };
 }

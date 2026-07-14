@@ -3,16 +3,22 @@
   "version": "0.1.0",
   "description": "DB 트래픽 제어 — 쿼리별 버짓 기반 동시성/QPS 제한 + Drizzle 미들웨어",
   "keywords": [
-    "database",
-    "traffic-control",
     "budget",
-    "drizzle",
-    "sqlcommenter",
     "concurrency",
-    "rate-limit"
+    "database",
+    "drizzle",
+    "rate-limit",
+    "sqlcommenter",
+    "traffic-control"
   ],
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,12 +26,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

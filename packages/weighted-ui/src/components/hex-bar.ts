@@ -8,7 +8,7 @@
  * Generalized from explorer hex-bar.ts — no PackFormat/formatHex dependency.
  */
 
-export type FieldType = "prefix" | "version" | "shard" | "gap" | "index";
+export type FieldType = 'prefix' | 'version' | 'shard' | 'gap' | 'index';
 
 export interface HexField {
   type: FieldType;
@@ -17,11 +17,11 @@ export interface HexField {
 }
 
 const FIELD_LABELS: Record<FieldType, string> = {
-  prefix: "prefix",
-  version: "ver",
-  shard: "shard",
-  gap: "gap",
-  index: "index",
+  prefix: 'prefix',
+  version: 'ver',
+  shard: 'shard',
+  gap: 'gap',
+  index: 'index',
 };
 
 export function renderHexBar(
@@ -37,7 +37,7 @@ export function renderHexBar(
 
   const totalNeeded = fields.reduce((s, f) => s + f.chars, 0);
   const fits = totalNeeded <= capacity;
-  const overflowField = fields.find((f) => ((f.value ?? 0).toString(16).length > f.chars));
+  const overflowField = fields.find((f) => (f.value ?? 0).toString(16).length > f.chars);
 
   if (!fits || overflowField) {
     const overflowText = overflowField
@@ -55,10 +55,8 @@ export function renderHexBar(
   }
 
   // Build hex string from fields
-  const hexParts = fields.map((f) =>
-    (f.value ?? 0).toString(16).padStart(f.chars, "0"),
-  );
-  const fullHex = hexParts.join("");
+  const hexParts = fields.map((f) => (f.value ?? 0).toString(16).padStart(f.chars, '0'));
+  const fullHex = hexParts.join('');
 
   // Formatted string
   const formatted = options?.formatFn ? options.formatFn(fullHex) : fullHex;
@@ -73,15 +71,17 @@ export function renderHexBar(
   const cells = fieldTypes
     .map((ft, i) => {
       const isFieldStart = i > 0 && fieldTypes[i] !== fieldTypes[i - 1];
-      const cls = `hex-cell hex-cell-${ft}${isFieldStart ? " hex-cell-sep" : ""}`;
+      const cls = `hex-cell hex-cell-${ft}${isFieldStart ? ' hex-cell-sep' : ''}`;
       return `<span class="${cls}">${fullHex[i]}</span>`;
     })
-    .join("");
+    .join('');
 
   // Field labels
-  let labelsHtml = "";
+  let labelsHtml = '';
   if (showLabels) {
-    const CELL_W = 18, CELL_GAP = 1, SEP = 3;
+    const CELL_W = 18,
+      CELL_GAP = 1,
+      SEP = 3;
     const segPx = (n: number) => n * CELL_W + (n - 1) * CELL_GAP;
 
     const segments = fields.filter((f) => f.chars > 0);
@@ -89,16 +89,16 @@ export function renderHexBar(
       .map((s, idx) => {
         const w = segPx(s.chars);
         const ml = idx > 0 ? SEP : 0;
-        return `<span class="hex-label hex-label-${s.type}" style="width:${w}px;flex:none;min-width:0;${ml > 0 ? `margin-left:${ml}px;` : ""}">${FIELD_LABELS[s.type]} (${s.chars})</span>`;
+        return `<span class="hex-label hex-label-${s.type}" style="width:${w}px;flex:none;min-width:0;${ml > 0 ? `margin-left:${ml}px;` : ''}">${FIELD_LABELS[s.type]} (${s.chars})</span>`;
       })
-      .join("")}</div>`;
+      .join('')}</div>`;
   }
 
   // Show formatted string if different from raw
   const fmtLine =
     formatted !== fullHex
       ? `<div style="font-family:monospace;font-size:0.68rem;color:var(--text-muted);margin-top:3px">${formatted}</div>`
-      : "";
+      : '';
 
   const gap = capacity - totalNeeded;
   return `
@@ -106,7 +106,7 @@ export function renderHexBar(
       <div class="hex-layout-head">
         <span class="hex-layout-name">${label}</span>
         <span class="hex-layout-cap">${capacity} chars</span>
-        <span class="hex-layout-status hex-status-ok">${gap > 0 ? `gap ${gap}` : "꽉 참"}</span>
+        <span class="hex-layout-status hex-status-ok">${gap > 0 ? `gap ${gap}` : '꽉 참'}</span>
       </div>
       <div class="hex-bar">${cells}</div>
       ${labelsHtml}

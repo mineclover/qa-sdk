@@ -1,43 +1,51 @@
 // @def.boundary viz-system-root
 // @def.doc viz-system-root
 
-import "./styles/main.css";
-import "./styles/graph.css";
+import './styles/main.css';
+import './styles/graph.css';
 
-import { getCanvasPaneFocusFlags, toggleCanvasPaneFocus } from "canvas-viewport";
-import type { ScenarioSpec, SpecGraph, StoredRecord, VerdictReport } from "@qa-sdk/core";
-import { compileSpec } from "@qa-sdk/engine";
-import { computeLayout } from "./graph/layout";
-import { createGraphSvg, type GraphRenderer } from "./graph/renderer";
-import { createUpdater, type GraphUpdater } from "./graph/updater";
-import { createScenarioSelector } from "./panels/scenario-selector";
-import { createSessionList, type SessionList } from "./panels/session-list";
-import { createEventLog, type EventLog } from "./panels/event-log";
-import { createVerdictPanel, type VerdictPanel } from "./panels/verdict-panel";
-import { createRoleplayHost, type RoleplayHost } from "./iframe/roleplay-host";
-import { createWsClient, type WsClient } from "./api/ws-client";
-import { createSession, listSessions, getSessionRecords, getSessionVerdicts, recomputeVerdicts } from "./api/ingest-client";
-import { mergeAndSortRecords } from "./lib/record-utils";
+import { getCanvasPaneFocusFlags, toggleCanvasPaneFocus } from 'canvas-viewport';
+import type { ScenarioSpec, SpecGraph, StoredRecord, VerdictReport } from '@qa-sdk/core';
+import { compileSpec } from '@qa-sdk/engine';
+import { computeLayout } from './graph/layout';
+import { createGraphSvg, type GraphRenderer } from './graph/renderer';
+import { createUpdater, type GraphUpdater } from './graph/updater';
+import { createScenarioSelector } from './panels/scenario-selector';
+import { createSessionList, type SessionList } from './panels/session-list';
+import { createEventLog, type EventLog } from './panels/event-log';
+import { createVerdictPanel, type VerdictPanel } from './panels/verdict-panel';
+import { createRoleplayHost, type RoleplayHost } from './iframe/roleplay-host';
+import { createWsClient, type WsClient } from './api/ws-client';
+import {
+  createSession,
+  listSessions,
+  getSessionRecords,
+  getSessionVerdicts,
+  recomputeVerdicts,
+} from './api/ingest-client';
+import { mergeAndSortRecords } from './lib/record-utils';
 
 // ── DOM refs (HTML 템플릿에 정의된 요소) ─────────────────────
 /* eslint-disable typescript/no-non-null-assertion */
-const sidebarEl = document.getElementById("sidebar")!;
-const graphContainerEl = document.getElementById("graph-container")!;
-const eventLogContainerEl = document.getElementById("event-log-container")!;
-const footerEl = document.getElementById("footer")!;
-const sessionInfoEl = document.getElementById("session-info")!;
-const sessionIdValueEl = document.getElementById("session-id-value")!;
-const wsStatusEl = document.getElementById("ws-status")!;
-const recomputeBtn = document.getElementById("recompute-btn") as HTMLButtonElement;
-const mainLeftEl = document.getElementById("main-left")!;
-const mainRightEl = document.getElementById("main-right")!;
-const errorBannerEl = document.getElementById("error-banner")!;
-const errorBannerMsgEl = document.getElementById("error-banner-msg")!;
-const errorBannerCloseBtn = document.getElementById("error-banner-close")!;
+const sidebarEl = document.getElementById('sidebar')!;
+const graphContainerEl = document.getElementById('graph-container')!;
+const eventLogContainerEl = document.getElementById('event-log-container')!;
+const footerEl = document.getElementById('footer')!;
+const sessionInfoEl = document.getElementById('session-info')!;
+const sessionIdValueEl = document.getElementById('session-id-value')!;
+const wsStatusEl = document.getElementById('ws-status')!;
+const recomputeBtn = document.getElementById('recompute-btn') as HTMLButtonElement;
+const mainLeftEl = document.getElementById('main-left')!;
+const mainRightEl = document.getElementById('main-right')!;
+const errorBannerEl = document.getElementById('error-banner')!;
+const errorBannerMsgEl = document.getElementById('error-banner-msg')!;
+const errorBannerCloseBtn = document.getElementById('error-banner-close')!;
 /* eslint-enable typescript/no-non-null-assertion */
 
 // ── Error Banner ──────────────────────────────────────────────
-errorBannerCloseBtn.addEventListener("click", () => { errorBannerEl.hidden = true; });
+errorBannerCloseBtn.addEventListener('click', () => {
+  errorBannerEl.hidden = true;
+});
 
 function showError(msg: string): void {
   errorBannerMsgEl.textContent = msg;
@@ -49,20 +57,20 @@ function clearError(): void {
 }
 
 // ── Split-pane focus ──────────────────────────────────────────
-let focusedPane: "left" | "right" | null = null;
+let focusedPane: 'left' | 'right' | null = null;
 
-function focusPane(pane: "left" | "right"): void {
+function focusPane(pane: 'left' | 'right'): void {
   focusedPane = toggleCanvasPaneFocus(focusedPane, pane);
-  const left = getCanvasPaneFocusFlags(focusedPane, "left");
-  const right = getCanvasPaneFocusFlags(focusedPane, "right");
-  mainLeftEl.classList.toggle("focused", left.focused);
-  mainLeftEl.classList.toggle("unfocused", left.unfocused);
-  mainRightEl.classList.toggle("focused", right.focused);
-  mainRightEl.classList.toggle("unfocused", right.unfocused);
+  const left = getCanvasPaneFocusFlags(focusedPane, 'left');
+  const right = getCanvasPaneFocusFlags(focusedPane, 'right');
+  mainLeftEl.classList.toggle('focused', left.focused);
+  mainLeftEl.classList.toggle('unfocused', left.unfocused);
+  mainRightEl.classList.toggle('focused', right.focused);
+  mainRightEl.classList.toggle('unfocused', right.unfocused);
 }
 
 // Only focus on clicks that hit the pane background (not interactive children)
-const INTERACTIVE = new Set(["A", "BUTTON", "INPUT", "SELECT", "TEXTAREA"]);
+const INTERACTIVE = new Set(['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA']);
 
 function isPaneBackground(e: MouseEvent): boolean {
   let el = e.target as HTMLElement | null;
@@ -73,16 +81,20 @@ function isPaneBackground(e: MouseEvent): boolean {
   return true;
 }
 
-mainLeftEl.addEventListener("click", (e) => { if (isPaneBackground(e)) focusPane("left"); });
-mainRightEl.addEventListener("click", (e) => { if (isPaneBackground(e)) focusPane("right"); });
+mainLeftEl.addEventListener('click', (e) => {
+  if (isPaneBackground(e)) focusPane('left');
+});
+mainRightEl.addEventListener('click', (e) => {
+  if (isPaneBackground(e)) focusPane('right');
+});
 
 // ── State ─────────────────────────────────────────────────────
 let currentSpec: ScenarioSpec | null = null;
 let currentGraph: SpecGraph | null = null;
 let currentRenderer: GraphRenderer | null = null;
 let currentUpdater: GraphUpdater | null = null;
-let currentSessionId: string | null = null;   // session being visualized
-let _mySessionId: string | null = null;       // session created for this visit
+let currentSessionId: string | null = null; // session being visualized
+let _mySessionId: string | null = null; // session created for this visit
 let wsClient: WsClient | null = null;
 let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let wsReconnectDelay = 1_000; // exponential backoff: 1s → 2s → 4s → max 30s
@@ -112,7 +124,7 @@ function renderGraph(spec: ScenarioSpec): void {
   renderer.render();
   currentRenderer = renderer;
   if (graph.nodes.length > 0) {
-    renderer.updateNodeState(graph.nodes[0].step_id, "active");
+    renderer.updateNodeState(graph.nodes[0].step_id, 'active');
   }
 
   // event log sequence strip용 step 번호 맵 (event_key → 1-based index, 첫 등장 기준)
@@ -130,7 +142,7 @@ function replayRecords(records: StoredRecord[]): void {
   currentUpdater = createUpdater(currentGraph, currentRenderer);
   // Always start with first node active — processRecord will advance it as records replay
   if (currentGraph.nodes.length > 0) {
-    currentRenderer.updateNodeState(currentGraph.nodes[0].step_id, "active");
+    currentRenderer.updateNodeState(currentGraph.nodes[0].step_id, 'active');
   }
   eventLog.clear();
   verdictPanel.clear();
@@ -150,7 +162,7 @@ async function selectSession(sessionId: string): Promise<void> {
   try {
     historical = await getSessionRecords(sessionId);
   } catch (err) {
-    console.error("[viz-web:selectSession] failed to fetch historical records", err);
+    console.error('[viz-web:selectSession] failed to fetch historical records', err);
   }
 
   // Merge server history with any WS-buffered records, dedup by logId, sort by timestamp
@@ -166,9 +178,9 @@ async function selectSession(sessionId: string): Promise<void> {
   void loadVerdicts(sessionId);
 
   roleplayHost.sendContext({
-    traceId: "",
+    traceId: '',
     sessionId,
-    scenarioId: currentSpec?.scenario_id ?? "",
+    scenarioId: currentSpec?.scenario_id ?? '',
   });
 }
 
@@ -188,8 +200,8 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
   renderGraph(spec);
 
   sessionInfoEl.hidden = false;
-  sessionIdValueEl.textContent = "Creating session…";
-  setWsStatus("connecting");
+  sessionIdValueEl.textContent = 'Creating session…';
+  setWsStatus('connecting');
 
   clearError();
 
@@ -204,7 +216,7 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
       });
     }
   } catch (err) {
-    console.error("[viz-web:listSessions]", err);
+    console.error('[viz-web:listSessions]', err);
     showError(`Failed to load sessions: ${err instanceof Error ? err.message : String(err)}`);
   }
 
@@ -224,7 +236,7 @@ async function handleScenarioSelect(spec: ScenarioSpec): Promise<void> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     sessionIdValueEl.textContent = `Error: ${msg}`;
-    setWsStatus("error");
+    setWsStatus('error');
     showError(`Failed to create session: ${msg}`);
     return;
   }
@@ -240,7 +252,7 @@ createScenarioSelector(sidebarEl, (spec) => void handleScenarioSelect(spec));
 // ── WebSocket ─────────────────────────────────────────────────
 function scheduleWsReconnect(scenarioId: string): void {
   if (wsReconnectTimer) return; // already scheduled
-  setWsStatus("connecting");
+  setWsStatus('connecting');
   wsReconnectTimer = setTimeout(() => {
     wsReconnectTimer = null;
     // Only reconnect if this scenario is still the active one
@@ -273,7 +285,7 @@ function connectWs(scenarioId: string): void {
           const oldest = sessionRecords.keys().next().value;
           if (oldest !== undefined) {
             sessionRecords.delete(oldest);
-            console.warn("[viz-web:sessionRecords] evicted oldest session from buffer", oldest);
+            console.warn('[viz-web:sessionRecords] evicted oldest session from buffer', oldest);
           }
         }
         sessionRecords.set(sid, []);
@@ -307,17 +319,17 @@ function connectWs(scenarioId: string): void {
     onSubscribed(_scenarioId: string) {
       wsReconnectDelay = 1_000; // reset backoff on successful connect
       clearError();
-      setWsStatus("connected");
+      setWsStatus('connected');
     },
     onDisconnected() {
-      setWsStatus("disconnected");
+      setWsStatus('disconnected');
       if (currentSessionId) void loadVerdicts(currentSessionId);
       scheduleWsReconnect(scenarioId);
     },
     onError(evt) {
-      console.error("[viz-web:ws] connection error", evt);
-      setWsStatus("error");
-      showError("WebSocket connection error — reconnecting…");
+      console.error('[viz-web:ws] connection error', evt);
+      setWsStatus('error');
+      showError('WebSocket connection error — reconnecting…');
     },
   });
 
@@ -333,7 +345,7 @@ async function loadVerdicts(sessionId: string): Promise<void> {
       applyVerdictToGraph(result.verdicts[0]);
     }
   } catch (err) {
-    console.error("[viz-web:loadVerdicts]", err);
+    console.error('[viz-web:loadVerdicts]', err);
   }
 }
 
@@ -343,7 +355,7 @@ async function recomputeAndLoadVerdicts(sessionId: string): Promise<void> {
   const traceIds = [...new Set(records.map((r) => r.traceId))];
 
   recomputeBtn.disabled = true;
-  recomputeBtn.textContent = "Computing…";
+  recomputeBtn.textContent = 'Computing…';
   try {
     if (traceIds.length > 0) {
       await Promise.all(
@@ -357,7 +369,7 @@ async function recomputeAndLoadVerdicts(sessionId: string): Promise<void> {
     await loadVerdicts(sessionId);
   } finally {
     recomputeBtn.disabled = false;
-    recomputeBtn.textContent = "Refresh Verdict";
+    recomputeBtn.textContent = 'Refresh Verdict';
   }
 }
 
@@ -365,31 +377,37 @@ function applyVerdictToGraph(report: VerdictReport): void {
   if (!currentRenderer) return;
   for (const match of report.step_matches) {
     switch (match.verdict) {
-      case "pass": currentRenderer.updateNodeState(match.step_id, "matched"); break;
-      case "fail": currentRenderer.updateNodeState(match.step_id, "failed"); break;
-      default: currentRenderer.updateNodeState(match.step_id, "pending"); break;
+      case 'pass':
+        currentRenderer.updateNodeState(match.step_id, 'matched');
+        break;
+      case 'fail':
+        currentRenderer.updateNodeState(match.step_id, 'failed');
+        break;
+      default:
+        currentRenderer.updateNodeState(match.step_id, 'pending');
+        break;
     }
   }
   for (const stepId of report.missing_steps) {
-    currentRenderer.updateNodeState(stepId, "failed");
+    currentRenderer.updateNodeState(stepId, 'failed');
   }
 }
 
 // ── WS Status ─────────────────────────────────────────────────
-function setWsStatus(status: "connecting" | "connected" | "disconnected" | "error"): void {
-  wsStatusEl.dataset["status"] = status;
+function setWsStatus(status: 'connecting' | 'connected' | 'disconnected' | 'error'): void {
+  wsStatusEl.dataset['status'] = status;
   wsStatusEl.title = status;
 }
 
 // ── Recompute button ──────────────────────────────────────────
-recomputeBtn.addEventListener("click", () => {
+recomputeBtn.addEventListener('click', () => {
   if (currentSessionId) void recomputeAndLoadVerdicts(currentSessionId);
 });
 
 // ── Roleplay iframe ───────────────────────────────────────────
 roleplayHost.onEvent((msg) => {
-  if (msg.type === "event:emitted" && currentRenderer && currentGraph) {
+  if (msg.type === 'event:emitted' && currentRenderer && currentGraph) {
     const node = currentGraph.nodes.find((n) => n.event_key === msg.eventKey);
-    if (node) currentRenderer.updateNodeState(node.step_id, "active");
+    if (node) currentRenderer.updateNodeState(node.step_id, 'active');
   }
 });

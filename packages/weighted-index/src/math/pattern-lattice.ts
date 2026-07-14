@@ -15,20 +15,15 @@ import {
   intersectRanges,
   subtractRanges,
   parseConstraintSegments,
-} from "./calc.js";
+} from './calc.js';
 
 /**
  * Constraint를 정렬·병합된 [from, to] 범위 배열로 변환한다.
  * null → [1, dimSize] 전체 범위.
  */
-function _constraintToRanges(
-  c: CoordConstraint,
-  dimSize: number,
-): [number, number][] {
+function _constraintToRanges(c: CoordConstraint, dimSize: number): [number, number][] {
   return mergeRanges(
-    parseConstraintSegments(c, dimSize).map(
-      ({ from, to }) => [from, to] as [number, number],
-    ),
+    parseConstraintSegments(c, dimSize).map(({ from, to }) => [from, to] as [number, number]),
   );
 }
 
@@ -44,16 +39,10 @@ export function rangesToConstraint(
   ranges: readonly [number, number][],
   dimSize: number,
 ): CoordConstraint {
-  if (
-    ranges.length === 1 &&
-    ranges[0][0] === 1 &&
-    ranges[0][1] === dimSize
-  ) {
+  if (ranges.length === 1 && ranges[0][0] === 1 && ranges[0][1] === dimSize) {
     return null;
   }
-  return ranges
-    .map(([from, to]) => (from === to ? String(from) : `${from}-${to}`))
-    .join(",");
+  return ranges.map(([from, to]) => (from === to ? String(from) : `${from}-${to}`)).join(',');
 }
 
 /**
@@ -177,10 +166,7 @@ export function patternSpecificity(
   for (let i = 0; i < shape.length; i++) {
     if (pattern[i] === null) continue;
     const ranges = parseConstraintSegments(pattern[i], shape[i]);
-    const covered = ranges.reduce(
-      (sum, { from, to }) => sum + (to - from + 1),
-      0,
-    );
+    const covered = ranges.reduce((sum, { from, to }) => sum + (to - from + 1), 0);
     score += 1 - covered / shape[i];
   }
   return score;

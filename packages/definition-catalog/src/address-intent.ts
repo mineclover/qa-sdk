@@ -79,7 +79,7 @@ export function resolveIntents(
   intents: readonly SliceIntent[],
 ): readonly SliceIntent[] {
   return intents
-    .filter(i => sliceContains(i.slice, address))
+    .filter((i) => sliceContains(i.slice, address))
     .toSorted((a, b) => sliceDepth(a.slice) - sliceDepth(b.slice));
 }
 
@@ -137,7 +137,12 @@ export function computeConsumption(
   version: string,
   totalSpace: number,
   observedAddresses: number,
-  dimStats: readonly { axisId: string; totalEntries: number; observedEntries: number; topEntries?: readonly { entry: string; count: number }[] }[],
+  dimStats: readonly {
+    axisId: string;
+    totalEntries: number;
+    observedEntries: number;
+    topEntries?: readonly { entry: string; count: number }[];
+  }[],
 ): PrefixConsumption {
   const byDimension: Record<string, DimConsumption> = {};
   for (const d of dimStats) {
@@ -164,7 +169,7 @@ export function computeConsumption(
 // ─── 소비율 진단 ────────────────────────────────────────
 
 /** 소비율 진단 수준 */
-export type ConsumptionSeverity = "healthy" | "underused" | "crowded" | "critical";
+export type ConsumptionSeverity = 'healthy' | 'underused' | 'crowded' | 'critical';
 
 /** 소비율 진단 결과 */
 export interface ConsumptionDiagnosis {
@@ -197,10 +202,11 @@ export function diagnoseConsumption(consumption: PrefixConsumption): Consumption
   if (rate > 0.9 || flaggedDims.length > 0) {
     return {
       prefixId: consumption.prefixId,
-      severity: "critical",
-      message: rate > 0.9
-        ? `전체 소비율 ${(rate * 100).toFixed(1)}% — capacity 확장 필요`
-        : `차원 ${flaggedDims.join(", ")} 소비율 90% 초과 — 해당 축 확장 필요`,
+      severity: 'critical',
+      message:
+        rate > 0.9
+          ? `전체 소비율 ${(rate * 100).toFixed(1)}% — capacity 확장 필요`
+          : `차원 ${flaggedDims.join(', ')} 소비율 90% 초과 — 해당 축 확장 필요`,
       flaggedDims,
     };
   }
@@ -208,7 +214,7 @@ export function diagnoseConsumption(consumption: PrefixConsumption): Consumption
   if (rate > 0.7) {
     return {
       prefixId: consumption.prefixId,
-      severity: "crowded",
+      severity: 'crowded',
       message: `소비율 ${(rate * 100).toFixed(1)}% — headroom 부족 경고`,
       flaggedDims,
     };
@@ -217,7 +223,7 @@ export function diagnoseConsumption(consumption: PrefixConsumption): Consumption
   if (rate < 0.01 && consumption.observedAddresses > 0) {
     return {
       prefixId: consumption.prefixId,
-      severity: "underused",
+      severity: 'underused',
       message: `소비율 ${(rate * 100).toFixed(2)}% — 주소 공간 과잉 또는 사용 미달`,
       flaggedDims,
     };
@@ -225,7 +231,7 @@ export function diagnoseConsumption(consumption: PrefixConsumption): Consumption
 
   return {
     prefixId: consumption.prefixId,
-    severity: "healthy",
+    severity: 'healthy',
     message: `소비율 ${(rate * 100).toFixed(1)}% — 정상`,
     flaggedDims,
   };

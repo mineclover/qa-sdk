@@ -5,16 +5,16 @@ import {
   GraphStoreQueryPort,
   type GraphRetentionPruneAllResult,
   type GraphRetentionPruneResult,
-} from "../../application/ports/graph-store-query.port.js";
-import type { GraphExplorerLoggerPort } from "../../application/ports/graph-explorer-logger.port.js";
+} from '../../application/ports/graph-store-query.port.js';
+import type { GraphExplorerLoggerPort } from '../../application/ports/graph-explorer-logger.port.js';
 import {
   buildGraphRetentionGraphLog,
   buildGraphRetentionSweepLog,
-} from "../../application/events/graph-retention-event.js";
+} from '../../application/events/graph-retention-event.js';
 import type {
   AuthorizationGraphDiff,
   AuthorizationGraphSnapshotRecord,
-} from "authorization-ontology";
+} from 'authorization-ontology';
 
 /** BFF — graph catalog 화면용 응답. */
 export interface GraphCatalogBffModel {
@@ -39,7 +39,7 @@ export interface GraphSnapshotsBffModel {
  *   쓰기 메서드 호출만 검출하므로 graph store 의 prune() 호출은 허용.
  */
 export class GraphCatalogBff {
-  readonly cachePrefix = "graph-explorer-bff-catalog:v1";
+  readonly cachePrefix = 'graph-explorer-bff-catalog:v1';
 
   constructor(
     private readonly graphs: GraphStoreQueryPort,
@@ -56,14 +56,14 @@ export class GraphCatalogBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "graph-explorer",
-        useCase: "GraphCatalogBff.getCatalog",
-        queryName: "GraphCatalogQuery",
-        outcome: "success",
+        domain: 'graph-explorer',
+        useCase: 'GraphCatalogBff.getCatalog',
+        queryName: 'GraphCatalogQuery',
+        outcome: 'success',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      "graph-catalog.bff.success",
+      'graph-catalog.bff.success',
     );
     return { count: graphIds.length, graphIds, cacheKey };
   }
@@ -78,15 +78,15 @@ export class GraphCatalogBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "graph-explorer",
-        useCase: "GraphCatalogBff.getLatest",
+        domain: 'graph-explorer',
+        useCase: 'GraphCatalogBff.getLatest',
         aggregateId: input.graphId,
-        queryName: "GraphLatestSnapshotQuery",
-        outcome: snapshot ? "success" : "failure",
+        queryName: 'GraphLatestSnapshotQuery',
+        outcome: snapshot ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      snapshot ? "graph-catalog.bff.latest.found" : "graph-catalog.bff.latest.miss",
+      snapshot ? 'graph-catalog.bff.latest.found' : 'graph-catalog.bff.latest.miss',
     );
     return snapshot;
   }
@@ -102,15 +102,15 @@ export class GraphCatalogBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "graph-explorer",
-        useCase: "GraphCatalogBff.listSnapshots",
+        domain: 'graph-explorer',
+        useCase: 'GraphCatalogBff.listSnapshots',
         aggregateId: input.graphId,
-        queryName: "GraphSnapshotsListQuery",
-        outcome: "success",
+        queryName: 'GraphSnapshotsListQuery',
+        outcome: 'success',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      "graph-catalog.bff.list.success",
+      'graph-catalog.bff.list.success',
     );
     return { graphId: input.graphId, count: snapshots.length, snapshots, cacheKey };
   }
@@ -125,15 +125,15 @@ export class GraphCatalogBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "graph-explorer",
-        useCase: "GraphCatalogBff.getSnapshot",
+        domain: 'graph-explorer',
+        useCase: 'GraphCatalogBff.getSnapshot',
         aggregateId: input.snapshotId,
-        queryName: "GraphSnapshotByIdQuery",
-        outcome: snapshot ? "success" : "failure",
+        queryName: 'GraphSnapshotByIdQuery',
+        outcome: snapshot ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      snapshot ? "graph-catalog.bff.snapshot.found" : "graph-catalog.bff.snapshot.miss",
+      snapshot ? 'graph-catalog.bff.snapshot.found' : 'graph-catalog.bff.snapshot.miss',
     );
     return snapshot;
   }
@@ -149,14 +149,14 @@ export class GraphCatalogBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "graph-explorer",
-        useCase: "GraphCatalogBff.getDiff",
-        queryName: "GraphDiffQuery",
-        outcome: diff ? "success" : "failure",
+        domain: 'graph-explorer',
+        useCase: 'GraphCatalogBff.getDiff',
+        queryName: 'GraphDiffQuery',
+        outcome: diff ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      diff ? "graph-catalog.bff.diff.success" : "graph-catalog.bff.diff.miss",
+      diff ? 'graph-catalog.bff.diff.success' : 'graph-catalog.bff.diff.miss',
     );
     return diff;
   }
@@ -172,13 +172,13 @@ export class GraphCatalogBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "graph-explorer",
-        useCase: "GraphCatalogBff.prune",
+        domain: 'graph-explorer',
+        useCase: 'GraphCatalogBff.prune',
         aggregateId: input.graphId,
-        commandName: "PruneGraphRetentionCommand",
-        outcome: "success",
+        commandName: 'PruneGraphRetentionCommand',
+        outcome: 'success',
         ...buildGraphRetentionGraphLog({
-          trigger: "api",
+          trigger: 'api',
           graphId: input.graphId,
           keepLatest: input.keepLatest,
           beforeCount: result.beforeCount,
@@ -187,7 +187,7 @@ export class GraphCatalogBff {
           keptSnapshotIds: result.keptSnapshotIds,
         }),
       },
-      "graph retention prune requested via API",
+      'graph retention prune requested via API',
     );
     return result;
   }
@@ -202,12 +202,12 @@ export class GraphCatalogBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "graph-explorer",
-        useCase: "GraphCatalogBff.pruneAll",
-        commandName: "PruneAllGraphRetentionCommand",
-        outcome: "success",
+        domain: 'graph-explorer',
+        useCase: 'GraphCatalogBff.pruneAll',
+        commandName: 'PruneAllGraphRetentionCommand',
+        outcome: 'success',
         ...buildGraphRetentionSweepLog({
-          trigger: "api",
+          trigger: 'api',
           keepLatest: input.keepLatest,
           graphCount: result.graphCount,
           beforeCount: result.beforeCount,
@@ -216,7 +216,7 @@ export class GraphCatalogBff {
           graphIds: result.graphIds,
         }),
       },
-      "graph retention sweep requested via API",
+      'graph retention sweep requested via API',
     );
     return result;
   }

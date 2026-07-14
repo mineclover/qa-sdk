@@ -16,7 +16,7 @@ import {
   decodeBatch,
   popcountWasm,
   maskAndWasm,
-} from "./index.js";
+} from './index.js';
 
 // ── 테스트 데이터 생성 ─────────────────────────────────────────────
 
@@ -40,7 +40,11 @@ function generateMask(byteLen: number): Uint8Array {
 
 // ── 벤치마크 유틸 ──────────────────────────────────────────────────
 
-function bench(label: string, fn: () => void, iterations: number): { opsPerSec: number; avgNs: number } {
+function bench(
+  label: string,
+  fn: () => void,
+  iterations: number,
+): { opsPerSec: number; avgNs: number } {
   // 워밍업
   for (let i = 0; i < Math.min(100, iterations); i++) fn();
 
@@ -72,7 +76,7 @@ function formatNs(ns: number): string {
 // ── 메인 ───────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("=== G-5: JS vs WASM 벤치마크 ===\n");
+  console.log('=== G-5: JS vs WASM 벤치마크 ===\n');
 
   // 4D shape: [10, 7, 5, 2] = 700 주소 공간
   const shape4D = [10, 7, 5, 2] as const;
@@ -88,11 +92,11 @@ async function main() {
 
   // WASM 초기화 시도
   const wasmReady = await initWasm();
-  console.log(`WASM: ${wasmReady ? "로드 완료" : "미사용 (JS fallback만 측정)"}\n`);
+  console.log(`WASM: ${wasmReady ? '로드 완료' : '미사용 (JS fallback만 측정)'}\n`);
 
   // ── encodeBatch ───────────────────────────────────────────────────
 
-  console.log("── encodeBatch (4D, shape=[10,7,5,2]) ──");
+  console.log('── encodeBatch (4D, shape=[10,7,5,2]) ──');
   for (const n of batches) {
     const coords = generateCoords(n, dims4D, shape4D);
     const iters = Math.max(10, Math.floor(10_000 / n));
@@ -105,7 +109,7 @@ async function main() {
     }
   }
 
-  console.log("\n── encodeBatch (8D, shape=[8,6,5,4,3,3,2,2]) ──");
+  console.log('\n── encodeBatch (8D, shape=[8,6,5,4,3,3,2,2]) ──');
   for (const n of batches) {
     const coords = generateCoords(n, dims8D, shape8D);
     const iters = Math.max(10, Math.floor(5_000 / n));
@@ -119,40 +123,44 @@ async function main() {
 
   // ── decodeBatch ───────────────────────────────────────────────────
 
-  console.log("\n── decodeBatch (4D) ──");
+  console.log('\n── decodeBatch (4D) ──');
   for (const n of batches) {
     const addrs = new Uint32Array(n);
     for (let i = 0; i < n; i++) addrs[i] = i % 700;
     const iters = Math.max(10, Math.floor(10_000 / n));
 
-    const label = wasmReady ? "WASM" : "JS  ";
-    bench(`${label} ${n.toLocaleString().padStart(7)}`, () => decodeBatch(strides4D, [...shape4D], addrs), iters);
+    const label = wasmReady ? 'WASM' : 'JS  ';
+    bench(
+      `${label} ${n.toLocaleString().padStart(7)}`,
+      () => decodeBatch(strides4D, [...shape4D], addrs),
+      iters,
+    );
   }
 
   // ── bitmask popcount ──────────────────────────────────────────────
 
-  console.log("\n── popcount (1KB / 10KB / 100KB mask) ──");
+  console.log('\n── popcount (1KB / 10KB / 100KB mask) ──');
   for (const kb of [1, 10, 100]) {
     const mask = generateMask(kb * 1024);
     const iters = Math.max(100, Math.floor(100_000 / kb));
 
-    const label = wasmReady ? "WASM" : "JS  ";
+    const label = wasmReady ? 'WASM' : 'JS  ';
     bench(`${label} ${String(kb).padStart(3)}KB`, () => popcountWasm(mask), iters);
   }
 
   // ── bitmask AND ───────────────────────────────────────────────────
 
-  console.log("\n── maskAnd (1KB / 10KB / 100KB mask) ──");
+  console.log('\n── maskAnd (1KB / 10KB / 100KB mask) ──');
   for (const kb of [1, 10, 100]) {
     const a = generateMask(kb * 1024);
     const b = generateMask(kb * 1024);
     const iters = Math.max(100, Math.floor(100_000 / kb));
 
-    const label = wasmReady ? "WASM" : "JS  ";
+    const label = wasmReady ? 'WASM' : 'JS  ';
     bench(`${label} ${String(kb).padStart(3)}KB`, () => maskAndWasm(a, b), iters);
   }
 
-  console.log("\n=== 완료 ===");
+  console.log('\n=== 완료 ===');
 }
 
 main().catch(console.error);

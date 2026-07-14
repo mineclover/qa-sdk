@@ -1,6 +1,4 @@
-import {
-  recordCanonicalReviewDraftReopened,
-} from '../business/canonicalReviewActivity.js';
+import { recordCanonicalReviewDraftReopened } from '../business/canonicalReviewActivity.js';
 import type { CanonicalReviewDraft, CanonicalRiskLevel } from '../business/canonicalReviewDraft.js';
 import { transitionCanonicalReviewStatus } from '../business/canonicalReviewStateMachine.js';
 import { validateCanonicalReviewDraft } from '../business/canonicalReviewValidation.js';

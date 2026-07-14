@@ -1,11 +1,11 @@
 // @def.doc definition-service
 
-import type { DefinitionServiceDatabase } from "../database.module.js";
-import type { ConsumptionSnapshot } from "../core/types.js";
-import type { ConsumptionStore } from "../core/interfaces.js";
-import { diagnoseSnapshot } from "../core/consumption-diagnostics.js";
-import { consumptionSnapshots } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import type { DefinitionServiceDatabase } from '../database.module.js';
+import type { ConsumptionSnapshot } from '../core/types.js';
+import type { ConsumptionStore } from '../core/interfaces.js';
+import { diagnoseSnapshot } from '../core/consumption-diagnostics.js';
+import { consumptionSnapshots } from '../db/schema.js';
+import { eq, desc } from 'drizzle-orm';
 
 /** Drizzle select 결과 → ConsumptionSnapshot 변환 */
 type SnapshotRow = typeof consumptionSnapshots.$inferSelect;

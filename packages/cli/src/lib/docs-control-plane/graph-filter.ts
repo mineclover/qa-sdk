@@ -5,10 +5,10 @@ import type {
   DocumentGraphRankedNode,
   DocumentGraphRankingResult,
   DocumentGraphRankStrength,
-} from "./graph-rank.js";
-import type { TraversalAxis } from "./graph-types.js";
+} from './graph-rank.js';
+import type { TraversalAxis } from './graph-types.js';
 
-export const DOCUMENT_GRAPH_FILTER_ALGORITHM = "docs-graph-result-filter-v1";
+export const DOCUMENT_GRAPH_FILTER_ALGORITHM = 'docs-graph-result-filter-v1';
 
 export interface DocumentGraphViewFilterInput {
   readonly kinds?: readonly string[];
@@ -150,34 +150,34 @@ function countStrengths(
 }
 
 function isArchiveRankedNode(node: DocumentGraphRankedNode): boolean {
-  const archiveState = factorStringMetadata(node, "archive-state", "archiveState");
-  return archiveState === "archived" || archiveState === "historical";
+  const archiveState = factorStringMetadata(node, 'archive-state', 'archiveState');
+  return archiveState === 'archived' || archiveState === 'historical';
 }
 
 function nodeKinds(node: DocumentGraphRankedNode): readonly string[] {
   return normalizeStringList([
     node.kind,
-    factorStringMetadata(node, "node-kind", "kind"),
-    factorStringMetadata(node, "node-kind", "documentKind"),
+    factorStringMetadata(node, 'node-kind', 'kind'),
+    factorStringMetadata(node, 'node-kind', 'documentKind'),
   ]);
 }
 
 function nodeRoles(node: DocumentGraphRankedNode): readonly string[] {
   return normalizeStringList([
-    factorStringMetadata(node, "role", "roleType"),
+    factorStringMetadata(node, 'role', 'roleType'),
     roleFromKind(node.kind),
     roleFromPath(node.path),
   ]);
 }
 
 function nodeAxes(node: DocumentGraphRankedNode): readonly string[] {
-  return normalizeStringList(factorStringArrayMetadata(node, "axis", "axes"));
+  return normalizeStringList(factorStringArrayMetadata(node, 'axis', 'axes'));
 }
 
 function nodeFollowUpCategories(node: DocumentGraphRankedNode): readonly string[] {
   return normalizeStringList([
-    factorStringMetadata(node, "follow-up-category", "category"),
-    ...factorStringArrayMetadata(node, "follow-up-category", "categories"),
+    factorStringMetadata(node, 'follow-up-category', 'category'),
+    ...factorStringArrayMetadata(node, 'follow-up-category', 'categories'),
   ]);
 }
 
@@ -187,7 +187,7 @@ function factorStringMetadata(
   key: string,
 ): string | undefined {
   const value = node.factors.find((item) => item.factor === factor)?.metadata[key];
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function factorStringArrayMetadata(
@@ -197,22 +197,20 @@ function factorStringArrayMetadata(
 ): readonly string[] {
   const value = node.factors.find((item) => item.factor === factor)?.metadata[key];
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string =>
-    typeof item === "string" && item.trim().length > 0
-  );
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 }
 
 function roleFromKind(kind: string): string | undefined {
   return [
-    "spec",
-    "todo",
-    "plan",
-    "rule",
-    "cases",
-    "test",
-    "memo",
-    "prd",
-    "ralph-prd-json",
+    'spec',
+    'todo',
+    'plan',
+    'rule',
+    'cases',
+    'test',
+    'memo',
+    'prd',
+    'ralph-prd-json',
   ].includes(kind)
     ? kind
     : undefined;
@@ -232,7 +230,7 @@ function matchesAny(values: readonly string[], filters: readonly string[]): bool
 function normalizeStringList(values: readonly (string | undefined)[]): readonly string[] {
   return uniqueStrings(
     values
-      .filter((value): value is string => typeof value === "string")
+      .filter((value): value is string => typeof value === 'string')
       .map((value) => value.trim())
       .filter((value) => value.length > 0),
   );

@@ -7,9 +7,9 @@ import type {
   TransmissionSource,
   TransmissionRuntime,
   TransmissionBuild,
-} from "@qa-sdk/core";
-import type { Transport } from "./transport/transport.js";
-import type { MaskingRule } from "./masking.js";
+} from '@qa-sdk/core';
+import type { Transport } from './transport/transport.js';
+import type { MaskingRule } from './masking.js';
 
 export interface QaLoggerConfig {
   /** Transport layer for sending envelopes */

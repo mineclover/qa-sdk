@@ -10,12 +10,7 @@
  * 개별 핸들러 에러는 격리되어 다른 핸들러에 전파되지 않는다.
  */
 
-import type {
-  EventBus,
-  EventHandler,
-  GateEvent,
-  GateEventType,
-} from "../ports/event-bus.port.js";
+import type { EventBus, EventHandler, GateEvent, GateEventType } from '../ports/event-bus.port.js';
 
 export interface MemoryEventBusOptions {
   /** 핸들러 에러 시 호출되는 콜백. 미설정 시 에러를 삼킨다 (fail-open). */
@@ -23,10 +18,7 @@ export interface MemoryEventBusOptions {
 }
 
 export class MemoryEventBus implements EventBus {
-  private readonly handlers = new Map<
-    GateEventType,
-    Set<EventHandler<any>>
-  >();
+  private readonly handlers = new Map<GateEventType, Set<EventHandler<any>>>();
   private readonly onError: ((error: unknown, event: GateEvent) => void) | undefined;
   private closed = false;
 
@@ -44,7 +36,7 @@ export class MemoryEventBus implements EventBus {
       try {
         const result = handler(event);
         // async 핸들러 — fire-and-forget + 에러 격리
-        if (result && typeof (result as Promise<void>).catch === "function") {
+        if (result && typeof (result as Promise<void>).catch === 'function') {
           (result as Promise<void>).catch((err) => {
             this.onError?.(err, event);
           });

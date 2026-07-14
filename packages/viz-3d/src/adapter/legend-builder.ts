@@ -28,13 +28,13 @@ export function buildRoleLegend(
   roleColors: Record<string, RoleColorLike>,
   onClick?: (role: string, el: HTMLElement) => void,
 ): void {
-  container.innerHTML = "";
+  container.innerHTML = '';
   for (const [role, rc] of Object.entries(roleColors)) {
-    const sp = document.createElement("span");
-    sp.className = "sl-role sl-active";
+    const sp = document.createElement('span');
+    sp.className = 'sl-role sl-active';
     sp.dataset.role = role;
     sp.innerHTML = `<span class="sl-dot" style="background:${rc.token.css}"></span>${role}`;
-    if (onClick) sp.addEventListener("click", () => onClick(role, sp));
+    if (onClick) sp.addEventListener('click', () => onClick(role, sp));
     container.appendChild(sp);
   }
 }
@@ -49,9 +49,9 @@ export function buildCategoryLegend(
   container: HTMLElement,
   categoryColors: Record<string, CategoryColorLike>,
 ): void {
-  container.innerHTML = "";
+  container.innerHTML = '';
   for (const [cat, cc] of Object.entries(categoryColors)) {
-    const sp = document.createElement("span");
+    const sp = document.createElement('span');
     sp.style.cssText = `font-size:8px;color:${cc.main.css};padding:2px 5px;border:1px solid ${cc.main.css}33;border-radius:3px`;
     sp.textContent = cat;
     container.appendChild(sp);

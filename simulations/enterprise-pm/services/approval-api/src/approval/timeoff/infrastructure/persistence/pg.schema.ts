@@ -1,21 +1,21 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { pgSchema, text } from "drizzle-orm/pg-core";
+import { pgSchema, text } from 'drizzle-orm/pg-core';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
-export const timeOffRequests = sim.table("approval_time_off_requests", {
-  id: text("id").primaryKey(),
-  requesterId: text("requester_id").notNull(),
-  startDate: text("start_date").notNull(),
-  endDate: text("end_date").notNull(),
-  reason: text("reason").notNull(),
-  status: text("status", {
-    enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+export const timeOffRequests = sim.table('approval_time_off_requests', {
+  id: text('id').primaryKey(),
+  requesterId: text('requester_id').notNull(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  reason: text('reason').notNull(),
+  status: text('status', {
+    enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
   }).notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
 export const SIM_APPROVAL_TIMEOFF_PG_DDL = `

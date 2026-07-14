@@ -5,10 +5,7 @@ import {
   type PlaybookFocusable,
   type PlaybookSubmissionReceipt,
 } from '../../shared/runtime/playbookPersist.js';
-import {
-  createPlaybookStore,
-  type PlaybookStore,
-} from '../../shared/runtime/playbookStore.js';
+import { createPlaybookStore, type PlaybookStore } from '../../shared/runtime/playbookStore.js';
 import type { CanonicalReviewActivity } from '../business/canonicalReviewActivity.js';
 import type { CanonicalReviewDraft } from '../business/canonicalReviewDraft.js';
 import type { CanonicalReviewResult } from '../business/canonicalReviewResult.js';
@@ -31,10 +28,7 @@ export interface CanonicalReviewState {
   lastSubmittedAt: string | null;
 }
 
-export type CanonicalReviewRefs = Record<
-  CanonicalReviewField,
-  PlaybookFocusable | null
->;
+export type CanonicalReviewRefs = Record<CanonicalReviewField, PlaybookFocusable | null>;
 
 export type PersistCanonicalReview = (
   draft: CanonicalReviewDraft,

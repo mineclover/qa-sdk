@@ -8,11 +8,8 @@ import type {
   OperationalOntologyObservationKind,
   OperationalOntologyObservationRecord,
   OperationalOntologyProjectionRecord,
-} from "./persistence-core.js";
-import {
-  validateFacetKindsForObjectKind,
-  validateFacetPayloadShape,
-} from "./persistence-core.js";
+} from './persistence-core.js';
+import { validateFacetKindsForObjectKind, validateFacetPayloadShape } from './persistence-core.js';
 
 export interface OperationalOntologyObjectQuery {
   objectKind?: OperationalOntologyObjectKind;
@@ -113,10 +110,7 @@ export class InMemoryOperationalOntologyStore implements OperationalOntologyStor
     const existingFacets = this.facetsByObjectId.get(record.objectId) ?? [];
     const nextFacets = [
       ...existingFacets.filter(
-        (facet) =>
-          !(
-            facet.facetKind === record.facetKind && facet.version === record.version
-          ),
+        (facet) => !(facet.facetKind === record.facetKind && facet.version === record.version),
       ),
       structuredClone(record),
     ];
@@ -138,22 +132,18 @@ export class InMemoryOperationalOntologyStore implements OperationalOntologyStor
     );
     if (!payloadValidation.valid) {
       throw new Error(
-        `Invalid payload shape for ${object.objectKind}/${record.facetKind}: missing ${payloadValidation.missingKeys.join(", ")}`,
+        `Invalid payload shape for ${object.objectKind}/${record.facetKind}: missing ${payloadValidation.missingKeys.join(', ')}`,
       );
     }
 
     this.facetsByObjectId.set(
       record.objectId,
-      nextFacets.toSorted((left, right) =>
-        compareByTimestamp(left.recordedAt, right.recordedAt),
-      ),
+      nextFacets.toSorted((left, right) => compareByTimestamp(left.recordedAt, right.recordedAt)),
     );
   }
 
   async listFacets(objectId: string): Promise<OperationalOntologyFacetRecord[]> {
-    return (this.facetsByObjectId.get(objectId) ?? []).map((facet) =>
-      structuredClone(facet),
-    );
+    return (this.facetsByObjectId.get(objectId) ?? []).map((facet) => structuredClone(facet));
   }
 
   async appendObservation(record: OperationalOntologyObservationRecord): Promise<void> {

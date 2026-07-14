@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "9761a201-7133-446a-95b7-fd5735d5b173",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "policy_rule",
@@ -101,9 +99,7 @@
       "table": "policy_rule"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "policy_rule_pk",
       "table": "policy_rule",

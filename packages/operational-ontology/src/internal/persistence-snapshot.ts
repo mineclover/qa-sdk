@@ -1,23 +1,20 @@
 import type {
   OperationalOntologyObservationRecord,
   OperationalOntologyProjectionRecord,
-} from "./persistence-core.js";
-import type { OperationalOntologyStore } from "./persistence-memory.js";
-import type { OperationalOntologySnapshot } from "./projector-types.js";
-import { createTraversalCanonicalKey } from "./runtime-core.js";
+} from './persistence-core.js';
+import type { OperationalOntologyStore } from './persistence-memory.js';
+import type { OperationalOntologySnapshot } from './projector-types.js';
+import { createTraversalCanonicalKey } from './runtime-core.js';
 
-export const OPERATIONAL_ONTOLOGY_SNAPSHOT_PROJECTION_KIND =
-  "operational_ontology_snapshot";
-export const OPERATIONAL_ONTOLOGY_CORRIDOR_PROJECTION_KIND =
-  "operational_ontology_corridor";
+export const OPERATIONAL_ONTOLOGY_SNAPSHOT_PROJECTION_KIND = 'operational_ontology_snapshot';
+export const OPERATIONAL_ONTOLOGY_CORRIDOR_PROJECTION_KIND = 'operational_ontology_corridor';
 export const OPERATIONAL_ONTOLOGY_CONTROL_FLOW_PROJECTION_KIND =
-  "operational_ontology_control_flow";
+  'operational_ontology_control_flow';
 export const OPERATIONAL_ONTOLOGY_CHECKPOINT_LATTICE_PROJECTION_KIND =
-  "operational_ontology_checkpoint_lattice";
-export const OPERATIONAL_ONTOLOGY_JUNCTION_PROJECTION_KIND =
-  "operational_ontology_junction";
+  'operational_ontology_checkpoint_lattice';
+export const OPERATIONAL_ONTOLOGY_JUNCTION_PROJECTION_KIND = 'operational_ontology_junction';
 export const OPERATIONAL_ONTOLOGY_ROUTE_DECISION_PROJECTION_KIND =
-  "operational_ontology_route_decision";
+  'operational_ontology_route_decision';
 
 export interface PersistOperationalOntologySnapshotOptions {
   snapshotId?: string;
@@ -44,7 +41,7 @@ function createSnapshotProjectionId(
 }
 
 function ensureTraversalCanonicalKey(
-  traversal: OperationalOntologySnapshot["traversals"][number]["traversal"],
+  traversal: OperationalOntologySnapshot['traversals'][number]['traversal'],
 ): string {
   return traversal.canonicalKey ?? createTraversalCanonicalKey(traversal);
 }
@@ -55,8 +52,7 @@ export async function persistOperationalOntologySnapshot(
   options: PersistOperationalOntologySnapshotOptions = {},
 ): Promise<PersistOperationalOntologySnapshotResult> {
   const builtAt = options.builtAt ?? new Date().toISOString();
-  const snapshotProjectionId =
-    options.snapshotId ?? createSnapshotProjectionId(snapshot, builtAt);
+  const snapshotProjectionId = options.snapshotId ?? createSnapshotProjectionId(snapshot, builtAt);
   const snapshotProjection: OperationalOntologyProjectionRecord = {
     projectionId: snapshotProjectionId,
     projectionKind: OPERATIONAL_ONTOLOGY_SNAPSHOT_PROJECTION_KIND,
@@ -134,18 +130,18 @@ export async function persistOperationalOntologySnapshot(
 
       await store.upsertObject({
         objectId,
-        objectKind: "traversal",
+        objectKind: 'traversal',
         canonicalKey: traversalKey,
-        schemaVersion: options.schemaVersion ?? "v1",
-        lifecycle: options.lifecycle ?? "observed",
+        schemaVersion: options.schemaVersion ?? 'v1',
+        lifecycle: options.lifecycle ?? 'observed',
         createdAt: builtAt,
         updatedAt: builtAt,
       });
 
       await store.putFacet({
         objectId,
-        facetKind: "route",
-        version: options.schemaVersion ?? "v1",
+        facetKind: 'route',
+        version: options.schemaVersion ?? 'v1',
         payloadJson: {
           purpose: traversalObservation.traversal.purpose,
           start: traversalObservation.traversal.start,
@@ -159,15 +155,13 @@ export async function persistOperationalOntologySnapshot(
 
       await store.putFacet({
         objectId,
-        facetKind: "aggregate",
-        version: options.schemaVersion ?? "v1",
+        facetKind: 'aggregate',
+        version: options.schemaVersion ?? 'v1',
         payloadJson: {
           observationCount: 1,
           lastObservedAt: builtAt,
           reachability:
-            traversalObservation.unreachableGoalIds.length === 0
-              ? "complete"
-              : "partial",
+            traversalObservation.unreachableGoalIds.length === 0 ? 'complete' : 'partial',
         },
         sourceRef: snapshotProjectionId,
         recordedAt: builtAt,
@@ -176,7 +170,7 @@ export async function persistOperationalOntologySnapshot(
       const observation: OperationalOntologyObservationRecord = {
         observationId: `${snapshotProjectionId}:traversal:${objectId}`,
         targetObjectId: objectId,
-        observationKind: "traversal_observed",
+        observationKind: 'traversal_observed',
         payloadJson: structuredClone(traversalObservation),
         observedAt: builtAt,
       };
@@ -194,7 +188,7 @@ export async function persistOperationalOntologySnapshot(
 }
 
 export async function loadOperationalOntologySnapshot(
-  store: Pick<OperationalOntologyStore, "listProjections">,
+  store: Pick<OperationalOntologyStore, 'listProjections'>,
   snapshotProjectionId: string,
 ): Promise<OperationalOntologySnapshot | null> {
   const projection = (

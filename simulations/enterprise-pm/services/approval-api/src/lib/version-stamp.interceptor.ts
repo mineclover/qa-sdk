@@ -6,9 +6,9 @@ import {
   type ExecutionContext,
   Injectable,
   type NestInterceptor,
-} from "@nestjs/common";
-import { type Observable, tap } from "rxjs";
-import { SERVICE_VERSION } from "./service-version.js";
+} from '@nestjs/common';
+import { type Observable, tap } from 'rxjs';
+import { SERVICE_VERSION } from './service-version.js';
 
 /**
  * 응답 객체의 헤더 설정 메서드 추상.
@@ -38,10 +38,10 @@ export class VersionStampInterceptor implements NestInterceptor {
       tap(() => {
         const reply = ctx.switchToHttp().getResponse<HeaderSettingResponse>();
         // Fastify reply는 header(), Node http response는 setHeader().
-        if (typeof reply.header === "function") {
-          reply.header("x-service-version", SERVICE_VERSION);
-        } else if (typeof reply.setHeader === "function") {
-          reply.setHeader("x-service-version", SERVICE_VERSION);
+        if (typeof reply.header === 'function') {
+          reply.header('x-service-version', SERVICE_VERSION);
+        } else if (typeof reply.setHeader === 'function') {
+          reply.setHeader('x-service-version', SERVICE_VERSION);
         }
       }),
     );

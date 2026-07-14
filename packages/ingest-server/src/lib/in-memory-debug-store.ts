@@ -1,12 +1,12 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { StoredRecord } from "@qa-sdk/core";
+import type { StoredRecord } from '@qa-sdk/core';
 import {
   DEFAULT_DEBUG_STORE_MAX_ENTRIES,
   resolveDebugStoreTtlMs,
   type DebugStore,
-} from "./debug-store.js";
+} from './debug-store.js';
 
 interface DebugStoreEntry {
   record: StoredRecord;
@@ -27,21 +27,18 @@ export class InMemoryDebugStore implements DebugStore {
   constructor(options: InMemoryDebugStoreOptions = {}) {
     this.defaultTtlMs = normalizePositiveInteger(
       options.ttlMs ?? resolveDebugStoreTtlMs(),
-      "ttlMs",
+      'ttlMs',
     );
     this.maxEntries = normalizePositiveInteger(
       options.maxEntries ?? DEFAULT_DEBUG_STORE_MAX_ENTRIES,
-      "maxEntries",
+      'maxEntries',
     );
   }
 
   async append(record: StoredRecord, ttlMs?: number): Promise<void> {
     this.pruneExpiredEntries();
 
-    const resolvedTtlMs = normalizePositiveInteger(
-      ttlMs ?? this.defaultTtlMs,
-      "ttlMs",
-    );
+    const resolvedTtlMs = normalizePositiveInteger(ttlMs ?? this.defaultTtlMs, 'ttlMs');
     const recordSnapshot = structuredClone(record);
     const expiresAt = Date.now() + resolvedTtlMs;
 
@@ -67,17 +64,11 @@ export class InMemoryDebugStore implements DebugStore {
     this.evictOverflow();
   }
 
-  async getRecentByTrace(
-    traceId: string,
-    limit?: number,
-  ): Promise<StoredRecord[]> {
+  async getRecentByTrace(traceId: string, limit?: number): Promise<StoredRecord[]> {
     return this.selectRecent((record) => record.traceId === traceId, limit);
   }
 
-  async getRecentBySession(
-    sessionId: string,
-    limit?: number,
-  ): Promise<StoredRecord[]> {
+  async getRecentBySession(sessionId: string, limit?: number): Promise<StoredRecord[]> {
     return this.selectRecent((record) => record.qaSessionId === sessionId, limit);
   }
 

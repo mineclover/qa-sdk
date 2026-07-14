@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { DataObjectBinding } from "./types.js";
+import type { DataObjectBinding } from './types.js';
 
 export class BindingRegistry {
   private readonly bindingsBySchema = new Map<string, DataObjectBinding>();
@@ -65,10 +65,7 @@ function cloneBinding(binding: DataObjectBinding): DataObjectBinding {
   return {
     ...binding,
     columnToAxis: Object.fromEntries(
-      Object.entries(binding.columnToAxis).map(([columnId, mapping]) => [
-        columnId,
-        { ...mapping },
-      ]),
+      Object.entries(binding.columnToAxis).map(([columnId, mapping]) => [columnId, { ...mapping }]),
     ),
   };
 }

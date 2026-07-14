@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc sim-erp-pm-design
 
-import { DisjointUnionIndex } from "weighted-index";
+import { DisjointUnionIndex } from 'weighted-index';
 
 /**
  * sim.bitmap prefix encoding.
@@ -19,10 +19,10 @@ import { DisjointUnionIndex } from "weighted-index";
  * DisjointUnionIndex 생성 시에는 dim 이름 1개만 전달한다.
  */
 
-export const USER_ACTIONS = ["login", "logout", "refresh"] as const;
-export const ROLE_ACTIONS = ["assign", "revoke"] as const;
-export const DEPT_ACTIONS = ["manage_users", "budget_request"] as const;
-export const BITMAP_ACTIONS = ["issue", "refresh", "invalidate"] as const;
+export const USER_ACTIONS = ['login', 'logout', 'refresh'] as const;
+export const ROLE_ACTIONS = ['assign', 'revoke'] as const;
+export const DEPT_ACTIONS = ['manage_users', 'budget_request'] as const;
+export const BITMAP_ACTIONS = ['issue', 'refresh', 'invalidate'] as const;
 
 export type UserAction = (typeof USER_ACTIONS)[number];
 export type RoleAction = (typeof ROLE_ACTIONS)[number];
@@ -30,10 +30,10 @@ export type DeptAction = (typeof DEPT_ACTIONS)[number];
 export type BitmapAction = (typeof BITMAP_ACTIONS)[number];
 
 export const authUnion = new DisjointUnionIndex([
-  { kind: "user_action", shape: [USER_ACTIONS.length], labels: ["action"] },
-  { kind: "role_action", shape: [ROLE_ACTIONS.length], labels: ["action"] },
-  { kind: "dept_action", shape: [DEPT_ACTIONS.length], labels: ["action"] },
-  { kind: "bitmap_action", shape: [BITMAP_ACTIONS.length], labels: ["action"] },
+  { kind: 'user_action', shape: [USER_ACTIONS.length], labels: ['action'] },
+  { kind: 'role_action', shape: [ROLE_ACTIONS.length], labels: ['action'] },
+  { kind: 'dept_action', shape: [DEPT_ACTIONS.length], labels: ['action'] },
+  { kind: 'bitmap_action', shape: [BITMAP_ACTIONS.length], labels: ['action'] },
 ]);
 
 /**
@@ -43,7 +43,7 @@ export const authUnion = new DisjointUnionIndex([
  * action enum의 indexOf(0-based) 결과를 그대로 사용하는 것이 직관적이다.
  */
 export function encodeAction(
-  kind: "user_action" | "role_action" | "dept_action" | "bitmap_action",
+  kind: 'user_action' | 'role_action' | 'dept_action' | 'bitmap_action',
   actionIndex: number,
 ): number {
   return authUnion.encode(kind, [actionIndex + 1]);

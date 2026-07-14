@@ -8,8 +8,8 @@ export {
   type TagSearchResult,
   type TagSummary,
   normalizeTag,
-} from "./types.js";
+} from './types.js';
 
-export { type TagStore } from "./port.js";
+export { type TagStore } from './port.js';
 
-export { InMemoryTagStore } from "./memory-store.js";
+export { InMemoryTagStore } from './memory-store.js';

@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "description": "Design Knowledge Graph — 노드 16종, 엣지 18종, 스킬 23개",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -16,12 +22,6 @@
       "require": "./dist/store/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -30,12 +30,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@qa-sdk/core": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "index-meta": "workspace:*",
     "spec-schema": "workspace:*",
     "spec-transition": "workspace:*",
-    "@qa-sdk/core": "workspace:*",
-    "weighted-index": "workspace:*",
-    "index-meta": "workspace:*",
-    "drizzle-orm": "catalog:"
+    "weighted-index": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -12,7 +12,7 @@
  *   qa.track('cart.add', { item_id: 7 });  // page, userType, locale 자동 포함
  */
 
-import type { TrackingContext } from "./prefix-mapping.js";
+import type { TrackingContext } from './prefix-mapping.js';
 
 export interface TrackingContextConfig {
   /** 기본 로케일 */
@@ -43,9 +43,9 @@ export interface TrackingContextManager {
 }
 
 export function createTrackingContext(config: TrackingContextConfig = {}): TrackingContextManager {
-  let page = config.initialPage ?? "";
-  let userType = config.initialUserType ?? "guest";
-  let locale = config.locale ?? "ko";
+  let page = config.initialPage ?? '';
+  let userType = config.initialUserType ?? 'guest';
+  let locale = config.locale ?? 'ko';
   const custom = new Map<string, string>(Object.entries(config.defaults ?? {}));
 
   return {
@@ -54,14 +54,24 @@ export function createTrackingContext(config: TrackingContextConfig = {}): Track
       for (const [k, v] of custom) ctx[k] = v;
       return ctx;
     },
-    setPage(p: string) { page = p; },
-    setUser(u: string) { userType = u; },
-    setLocale(l: string) { locale = l; },
-    set(key: string, value: string) { custom.set(key, value); },
-    unset(key: string) { custom.delete(key); },
+    setPage(p: string) {
+      page = p;
+    },
+    setUser(u: string) {
+      userType = u;
+    },
+    setLocale(l: string) {
+      locale = l;
+    },
+    set(key: string, value: string) {
+      custom.set(key, value);
+    },
+    unset(key: string) {
+      custom.delete(key);
+    },
     reset() {
-      userType = config.initialUserType ?? "guest";
-      page = "";
+      userType = config.initialUserType ?? 'guest';
+      page = '';
       custom.clear();
       if (config.defaults) {
         for (const [k, v] of Object.entries(config.defaults)) custom.set(k, v);

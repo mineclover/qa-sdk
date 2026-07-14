@@ -12,16 +12,14 @@ export type DecisionListItem = {
 };
 
 export async function fetchDecisionList(): Promise<DecisionListItem[]> {
-  const res = await fetch("/api/decision-list");
+  const res = await fetch('/api/decision-list');
   if (!res.ok) throw new Error(`decision-list ${res.status}`);
   const data = (await res.json()) as { items: DecisionListItem[] };
   return data.items;
 }
 
 export async function fetchDecisionFile(fileName: string): Promise<string> {
-  const res = await fetch(
-    `/api/decision-file?fileName=${encodeURIComponent(fileName)}`,
-  );
+  const res = await fetch(`/api/decision-file?fileName=${encodeURIComponent(fileName)}`);
   if (!res.ok) throw new Error(`decision-file ${res.status}`);
   return res.text();
 }

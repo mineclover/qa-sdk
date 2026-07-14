@@ -1,10 +1,10 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { RoleId } from "./role.ids.js";
+import type { RoleId } from './role.ids.js';
 
 /** Scope 종류. */
-export type RoleScopeType = "global" | "department" | "project";
+export type RoleScopeType = 'global' | 'department' | 'project';
 
 /** 도메인 entity 의 내부 props. */
 export interface RoleProps {

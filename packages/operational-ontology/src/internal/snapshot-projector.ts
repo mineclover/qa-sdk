@@ -1,30 +1,20 @@
-import {
-  augmentCheckpointLatticeWithRouteDecisions,
-} from "./checkpoint-core.js";
-import {
-  projectEventRecordToOperationalOntology,
-} from "./event-projector.js";
-import {
-  projectLineageToOperationalOntology,
-} from "./lineage-projector.js";
-import {
-  projectPathObservationToOperationalOntology,
-} from "./path-projector.js";
-import {
-  projectPipeGraphToOperationalOntology,
-} from "./pipe-projector.js";
+import { augmentCheckpointLatticeWithRouteDecisions } from './checkpoint-core.js';
+import { projectEventRecordToOperationalOntology } from './event-projector.js';
+import { projectLineageToOperationalOntology } from './lineage-projector.js';
+import { projectPathObservationToOperationalOntology } from './path-projector.js';
+import { projectPipeGraphToOperationalOntology } from './pipe-projector.js';
 import type {
   PipeGraphProjectionResult,
   OperationalOntologyProjectionInput,
   OperationalOntologyRuntimePorts,
   OperationalOntologySnapshot,
-} from "./projector-types.js";
-import { dedupeByKey } from "./projector-shared.js";
+} from './projector-types.js';
+import { dedupeByKey } from './projector-shared.js';
 import {
   defaultObservationTopologyTemplateRegistry,
   getObservationTopologyTemplate,
   validateObservationTopologyAgainstTemplate,
-} from "./topology-core.js";
+} from './topology-core.js';
 
 export function projectOperationalOntologySnapshot(
   input: OperationalOntologyProjectionInput,
@@ -32,7 +22,7 @@ export function projectOperationalOntologySnapshot(
 ): OperationalOntologySnapshot {
   const topologyTemplate = getObservationTopologyTemplate(
     input.topologyTemplateRegistry ?? defaultObservationTopologyTemplateRegistry,
-    "runtime_snapshot",
+    'runtime_snapshot',
   );
   const graphProjection = input.graph
     ? ports.controlFlow.projectPipeGraph({
@@ -81,10 +71,7 @@ export function projectOperationalOntologySnapshot(
     (graph) => graph.graphId,
   );
 
-  const junctionMap = new Map<
-    string,
-    PipeGraphProjectionResult["junctions"][number]
-  >();
+  const junctionMap = new Map<string, PipeGraphProjectionResult['junctions'][number]>();
   for (const junction of graphProjection?.junctions ?? []) {
     junctionMap.set(junction.branchNodeId, junction);
   }
@@ -94,7 +81,7 @@ export function projectOperationalOntologySnapshot(
     }
 
     junctionMap.set(decision.branchNodeId, {
-      templateKind: decision.templateKind ?? "observed_route_decision",
+      templateKind: decision.templateKind ?? 'observed_route_decision',
       templateDescription: decision.templateDescription,
       templateValidation: decision.templateValidation,
       branchNodeId: decision.branchNodeId,
@@ -112,13 +99,12 @@ export function projectOperationalOntologySnapshot(
       traversalKey: pathProjection?.traversalObservations[0]?.traversal.canonicalKey,
     })),
     (decision) =>
-      `${decision.branchNodeId}:${decision.mode}:${decision.selectedPathIds.join(",")}:${decision.skippedPathIds.join(",")}`,
+      `${decision.branchNodeId}:${decision.mode}:${decision.selectedPathIds.join(',')}:${decision.skippedPathIds.join(',')}`,
   );
 
   const traversals = dedupeByKey(
     pathProjection?.traversalObservations ?? [],
-    (observation) =>
-      observation.traversal.canonicalKey ?? observation.traversal.start,
+    (observation) => observation.traversal.canonicalKey ?? observation.traversal.start,
   );
 
   const checkpointLattices = dedupeByKey(
@@ -141,19 +127,14 @@ export function projectOperationalOntologySnapshot(
           (routeDecisions.length === 1 ? routeDecisions[0]?.junctionId : undefined),
         traversalKey:
           checkpoint.traversalKey ??
-          (traversals.length === 1
-            ? traversals[0]?.traversal.canonicalKey
-            : undefined),
+          (traversals.length === 1 ? traversals[0]?.traversal.canonicalKey : undefined),
       })),
     ),
     (checkpoint) => checkpoint.checkpointId,
   );
 
   const transmissions = dedupeByKey(
-    [
-      ...(graphProjection?.transmissions ?? []),
-      ...(eventProjection?.transmissions ?? []),
-    ],
+    [...(graphProjection?.transmissions ?? []), ...(eventProjection?.transmissions ?? [])],
     (transmission) => transmission.transmissionId,
   );
 
@@ -162,15 +143,9 @@ export function projectOperationalOntologySnapshot(
     (lineage) => lineage.lineageId,
   );
 
-  const observedNodeKeys = dedupeByKey(
-    eventProjection?.observedNodeKeys ?? [],
-    (key) => key,
-  );
+  const observedNodeKeys = dedupeByKey(eventProjection?.observedNodeKeys ?? [], (key) => key);
 
-  const observedEdgeKeys = dedupeByKey(
-    eventProjection?.observedEdgeKeys ?? [],
-    (key) => key,
-  );
+  const observedEdgeKeys = dedupeByKey(eventProjection?.observedEdgeKeys ?? [], (key) => key);
 
   const topologyValidation = validateObservationTopologyAgainstTemplate(
     {
@@ -181,11 +156,11 @@ export function projectOperationalOntologySnapshot(
       traversals,
     },
     input.topologyTemplateRegistry ?? defaultObservationTopologyTemplateRegistry,
-    "runtime_snapshot",
+    'runtime_snapshot',
   );
 
   return {
-    topologyTemplateKind: "runtime_snapshot",
+    topologyTemplateKind: 'runtime_snapshot',
     topologyTemplateDescription: topologyTemplate.description,
     topologyValidation,
     corridors,

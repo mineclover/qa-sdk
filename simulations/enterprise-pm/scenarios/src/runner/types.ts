@@ -11,7 +11,7 @@ export interface ScenarioEnv {
   /** gateway base URL (예: "http://localhost:8888"). */
   gatewayUrl: string;
   /** in-process: NestJS Test 모듈 부팅. http: 실 docker-compose 가정. */
-  mode: "in-process" | "http";
+  mode: 'in-process' | 'http';
   /** 실 외부 trace_id 추적용 (옵션). */
   rootTraceId?: string;
 }
@@ -42,7 +42,7 @@ export interface Scenario<TCtx = unknown> {
 
 export interface ScenarioResult {
   name: string;
-  status: "passed" | "failed";
+  status: 'passed' | 'failed';
   durationMs: number;
   stepCount: number;
   traceIds: string[];
@@ -51,6 +51,6 @@ export interface ScenarioResult {
   error?: {
     message: string;
     stack?: string;
-    phase: "setup" | "act" | "assert" | "teardown";
+    phase: 'setup' | 'act' | 'assert' | 'teardown';
   };
 }

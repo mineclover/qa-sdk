@@ -4,8 +4,8 @@
 import {
   RoleAssignmentReadModelQuery,
   type RoleAssignmentReadModel,
-} from "../../application/queries/role-assignment-read-model.query.js";
-import type { RoleAssignmentRepositoryPort } from "../../application/ports/role-assignment-repository.port.js";
+} from '../../application/queries/role-assignment-read-model.query.js';
+import type { RoleAssignmentRepositoryPort } from '../../application/ports/role-assignment-repository.port.js';
 
 export class RepositoryRoleAssignmentReadModel extends RoleAssignmentReadModelQuery {
   constructor(private readonly repository: RoleAssignmentRepositoryPort) {

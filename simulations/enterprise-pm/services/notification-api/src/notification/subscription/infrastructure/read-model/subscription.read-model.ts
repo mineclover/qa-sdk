@@ -4,8 +4,8 @@
 import {
   SubscriptionReadModelQuery,
   type SubscriptionDetailReadModel,
-} from "../../application/queries/subscription-read-model.query.js";
-import type { SubscriptionRepositoryPort } from "../../application/ports/subscription-repository.port.js";
+} from '../../application/queries/subscription-read-model.query.js';
+import type { SubscriptionRepositoryPort } from '../../application/ports/subscription-repository.port.js';
 
 export class RepositorySubscriptionReadModel extends SubscriptionReadModelQuery {
   constructor(private readonly repository: SubscriptionRepositoryPort) {

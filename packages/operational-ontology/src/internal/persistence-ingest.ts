@@ -4,16 +4,15 @@ import {
   type OperationalOntologyProjectionInput,
   type OperationalOntologyRuntimePorts,
   type OperationalOntologySnapshot,
-} from "./projector-core.js";
-import type { OperationalOntologyStore } from "./persistence-memory.js";
+} from './projector-core.js';
+import type { OperationalOntologyStore } from './persistence-memory.js';
 import {
   persistOperationalOntologySnapshot,
   type PersistOperationalOntologySnapshotOptions,
   type PersistOperationalOntologySnapshotResult,
-} from "./persistence-snapshot.js";
+} from './persistence-snapshot.js';
 
-export interface IngestOperationalOntologyProjectionOptions
-  extends PersistOperationalOntologySnapshotOptions {
+export interface IngestOperationalOntologyProjectionOptions extends PersistOperationalOntologySnapshotOptions {
   ports?: OperationalOntologyRuntimePorts;
 }
 

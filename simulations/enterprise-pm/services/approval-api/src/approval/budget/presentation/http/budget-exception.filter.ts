@@ -1,8 +1,8 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { ArgumentsHost, Catch, HttpException, type ExceptionFilter } from "@nestjs/common";
-import { mapDomainErrorToHttp } from "@qa-sdk/sim-domain-slice-kit";
+import { ArgumentsHost, Catch, HttpException, type ExceptionFilter } from '@nestjs/common';
+import { mapDomainErrorToHttp } from '@qa-sdk/sim-domain-slice-kit';
 
 /**
  * 슬라이스 로컬 예외 필터.
@@ -44,8 +44,8 @@ function extractTraceId(request: {
   traceId?: string;
 }): string {
   if (request.traceId) return request.traceId;
-  const header = request.headers?.["x-trace-id"];
-  if (typeof header === "string") return header;
+  const header = request.headers?.['x-trace-id'];
+  if (typeof header === 'string') return header;
   if (Array.isArray(header) && header[0]) return header[0];
-  return "";
+  return '';
 }

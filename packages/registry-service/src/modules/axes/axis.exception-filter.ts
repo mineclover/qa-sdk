@@ -1,12 +1,8 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import {
-  ArgumentsHost,
-  Catch,
-  type ExceptionFilter,
-} from "@nestjs/common";
-import { AppError } from "@qa-sdk/core";
+import { ArgumentsHost, Catch, type ExceptionFilter } from '@nestjs/common';
+import { AppError } from '@qa-sdk/core';
 
 @Catch(AppError)
 export class AxisExceptionFilter implements ExceptionFilter {

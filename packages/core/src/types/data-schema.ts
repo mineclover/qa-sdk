@@ -19,23 +19,18 @@ export interface DataColumn {
   constraints?: ColumnConstraint[];
 }
 
-export type FacetRole =
-  | "produced"
-  | "consumed"
-  | "derived"
-  | "managed"
-  | "identity";
+export type FacetRole = 'produced' | 'consumed' | 'derived' | 'managed' | 'identity';
 
 export interface ColumnConstraint {
-  type: "not-null" | "unique" | "range" | "pattern" | "enum" | "fk";
+  type: 'not-null' | 'unique' | 'range' | 'pattern' | 'enum' | 'fk';
   value?: unknown;
 }
 
 export type ColumnRef =
-  | { kind: "scalar"; type: string }
-  | { kind: "axis_ref"; axisId: string }
-  | { kind: "table_ref"; table: string }
-  | { kind: "prefix_ref"; prefixId: string };
+  | { kind: 'scalar'; type: string }
+  | { kind: 'axis_ref'; axisId: string }
+  | { kind: 'table_ref'; table: string }
+  | { kind: 'prefix_ref'; prefixId: string };
 
 // ── DataRelation — 엔티티 간 관계 ────────────────────
 
@@ -43,14 +38,14 @@ export interface DataRelation {
   relationId: string;
   source: { schemaId: string; column: string };
   target: { schemaId: string; column: string };
-  cardinality: "1:1" | "1:N" | "N:1" | "N:M";
-  ownership: "owns" | "references" | "embeds";
+  cardinality: '1:1' | '1:N' | 'N:1' | 'N:M';
+  ownership: 'owns' | 'references' | 'embeds';
   cascade: CascadeRule;
 }
 
 export interface CascadeRule {
-  onDelete: "cascade" | "set-null" | "restrict" | "no-action";
-  onUpdate: "cascade" | "restrict" | "no-action";
+  onDelete: 'cascade' | 'set-null' | 'restrict' | 'no-action';
+  onUpdate: 'cascade' | 'restrict' | 'no-action';
 }
 
 // ── FieldLineage — 필드 변환 추적 ────────────────────
@@ -72,16 +67,16 @@ export interface FieldRef {
 }
 
 export type TransformKind =
-  | "direct"
-  | "rename"
-  | "compute"
-  | "aggregate"
-  | "lookup"
-  | "derive"
-  | "concat"
-  | "split"
-  | "filter"
-  | "cast";
+  | 'direct'
+  | 'rename'
+  | 'compute'
+  | 'aggregate'
+  | 'lookup'
+  | 'derive'
+  | 'concat'
+  | 'split'
+  | 'filter'
+  | 'cast';
 
 // ── SchemaVersion — 변경 이력 + 호환성 ───────────────
 
@@ -102,17 +97,17 @@ export interface SchemaChange {
 }
 
 export type SchemaChangeType =
-  | "add-optional"
-  | "add-required"
-  | "remove"
-  | "rename"
-  | "type-change"
-  | "constraint-add"
-  | "constraint-remove"
-  | "default-add"
-  | "default-change";
+  | 'add-optional'
+  | 'add-required'
+  | 'remove'
+  | 'rename'
+  | 'type-change'
+  | 'constraint-add'
+  | 'constraint-remove'
+  | 'default-add'
+  | 'default-change';
 
-export type SchemaCompatibility = "backward" | "forward" | "full" | "breaking";
+export type SchemaCompatibility = 'backward' | 'forward' | 'full' | 'breaking';
 
 // ── DataContract — 스키마 호환 검증 ──────────────────
 

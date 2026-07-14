@@ -1,12 +1,12 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { DepartmentRepositoryPort } from "../../application/ports/department-repository.port.js";
-import type { DepartmentOutboxPort } from "../../application/ports/department-outbox.port.js";
+import type { DepartmentRepositoryPort } from '../../application/ports/department-repository.port.js';
+import type { DepartmentOutboxPort } from '../../application/ports/department-outbox.port.js';
 import type {
   DepartmentTransactionPort,
   DepartmentTransactionScope,
-} from "../../application/ports/department-transaction.port.js";
+} from '../../application/ports/department-transaction.port.js';
 
 export class DepartmentUnitOfWork {
   constructor(

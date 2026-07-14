@@ -15,30 +15,30 @@ export class DocumentDomainException extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "DocumentDomainException";
+    this.name = 'DocumentDomainException';
   }
 }
 
 /** Document ID 가 비어 있는 경우 (HTTP 400 매핑). */
 export class InvalidDocumentIdException extends DocumentDomainException {
   constructor() {
-    super("INVALID_DOCUMENT_ID", "DocumentId must not be empty.");
-    this.name = "ValidationError";
+    super('INVALID_DOCUMENT_ID', 'DocumentId must not be empty.');
+    this.name = 'ValidationError';
   }
 }
 
 /** Document title 검증 실패 (HTTP 400). */
 export class InvalidDocumentTitleException extends DocumentDomainException {
   constructor() {
-    super("INVALID_DOCUMENT_TITLE", "Document title must not be empty.");
-    this.name = "ValidationError";
+    super('INVALID_DOCUMENT_TITLE', 'Document title must not be empty.');
+    this.name = 'ValidationError';
   }
 }
 
 /** Document 가 존재하지 않을 때 (HTTP 404). */
 export class DocumentNotFoundException extends DocumentDomainException {
   constructor(id: string) {
-    super("DOCUMENT_NOT_FOUND", `Document not found: ${id}`);
-    this.name = "NotFoundError";
+    super('DOCUMENT_NOT_FOUND', `Document not found: ${id}`);
+    this.name = 'NotFoundError';
   }
 }

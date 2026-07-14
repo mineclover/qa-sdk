@@ -1,13 +1,13 @@
 // @def.boundary deterministic-label-architecture
-import { basename } from "node:path";
+import { basename } from 'node:path';
 
-import type { DocumentEnvelope, DocumentSource } from "doc-envelope";
+import type { DocumentEnvelope, DocumentSource } from 'doc-envelope';
 import type {
   OntologyPackValidateDocsReadiness,
   OntologyPackValidateFileRef,
   OntologyPackValidateIssue,
   OntologyPackValidateSourceMapReadiness,
-} from "./types.js";
+} from './types.js';
 
 export type OntologyPackDocsFamilyReader = (input: {
   readonly packId: string;
@@ -57,24 +57,26 @@ export async function collectDocsReadiness(input: {
   });
   const coveredRefs = coverage.filter((item) => item.covered).map((item) => item.path);
   const missingRefs = coverage.filter((item) => !item.covered).map((item) => item.path);
-  const sourceMapStatus = checkedRefs.length === 0
-    ? "skipped"
-    : missingRefs.length === 0
-      ? "ready"
-      : coveredRefs.length > 0
-        ? "partial"
-        : "missing";
-  const docsStatus = docs.length > 0 && sourceMapStatus === "ready"
-    ? "ready"
-    : docs.length > 0
-      ? "partial"
-      : "missing";
+  const sourceMapStatus =
+    checkedRefs.length === 0
+      ? 'skipped'
+      : missingRefs.length === 0
+        ? 'ready'
+        : coveredRefs.length > 0
+          ? 'partial'
+          : 'missing';
+  const docsStatus =
+    docs.length > 0 && sourceMapStatus === 'ready'
+      ? 'ready'
+      : docs.length > 0
+        ? 'partial'
+        : 'missing';
   const familyId = `${input.packId}-system`;
   const sourceMapIssues: OntologyPackValidateIssue[] = missingRefs.map((path) => ({
-    level: "warning",
-    source: "source-map",
+    level: 'warning',
+    source: 'source-map',
     path: `readiness.sourceMap.${path}`,
-    code: "source-map-missing",
+    code: 'source-map-missing',
     message: `Matching docs family does not declare source-map coverage for "${path}".`,
     details: {
       familyId,
@@ -101,12 +103,12 @@ export async function collectDocsReadiness(input: {
 export function emptyDocsReadiness(packId: string | null): OntologyPackDocsReadiness {
   return {
     docs: {
-      status: "skipped",
-      familyId: packId ? `${packId}-system` : "",
+      status: 'skipped',
+      familyId: packId ? `${packId}-system` : '',
       matchingDocs: [],
     },
     sourceMap: {
-      status: "skipped",
+      status: 'skipped',
       checkedRefs: [],
       coveredRefs: [],
       missingRefs: [],
@@ -127,21 +129,23 @@ export function filterMatchingDocsForPack(
     .filter((doc) => {
       const docId = docIdOf(doc);
       const file = basename(doc.path);
-      return docId === systemDocId
-        || docId.startsWith(prefix)
-        || file === `${systemDocId}.spec.md`
-        || file.startsWith(prefix);
+      return (
+        docId === systemDocId ||
+        docId.startsWith(prefix) ||
+        file === `${systemDocId}.spec.md` ||
+        file.startsWith(prefix)
+      );
     })
     .toSorted((left, right) => left.path.localeCompare(right.path));
 }
 
 function sourcePathOf(source: DocumentSource): string | null {
   if (!source.path) return null;
-  return source.path.replaceAll("\\", "/");
+  return source.path.replaceAll('\\', '/');
 }
 
 function docIdOf(doc: DocumentEnvelope): string {
-  return typeof doc.metadata["defId"] === "string" ? doc.metadata["defId"] : doc.stableId;
+  return typeof doc.metadata['defId'] === 'string' ? doc.metadata['defId'] : doc.stableId;
 }
 
 function uniqueStrings(values: readonly string[]): readonly string[] {

@@ -1,14 +1,14 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { sql } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { sql } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createSqliteTransactionPort,
   createPgTransactionPort,
   type TransactionPort,
-} from "@qa-sdk/sim-domain-slice-kit";
+} from '@qa-sdk/sim-domain-slice-kit';
 
 export function createSubscriptionSqliteTransactionPort(
   db: BetterSQLite3Database,
@@ -22,7 +22,7 @@ export function createSubscriptionPgTransactionPort(db: PostgresJsDatabase): Tra
   );
 }
 
-export type SubscriptionDialect = "sqlite" | "pg";
+export type SubscriptionDialect = 'sqlite' | 'pg';
 
 export interface SubscriptionTransactionFactoryOpts {
   readonly dialect: SubscriptionDialect;
@@ -32,10 +32,10 @@ export interface SubscriptionTransactionFactoryOpts {
 export function createSubscriptionTransactionPort(
   opts: SubscriptionTransactionFactoryOpts,
 ): TransactionPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return createSubscriptionSqliteTransactionPort(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return createSubscriptionPgTransactionPort(opts.db as PostgresJsDatabase);
   }
   throw new Error(

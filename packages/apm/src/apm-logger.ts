@@ -11,12 +11,12 @@
  * address_context를 자동으로 생성한다.
  */
 
-import type { EventRecord, MetricType, PayloadFormat, PayloadEncoding } from "@qa-sdk/core";
-import { toServiceDims, toTransmissionSource, toTransmissionBuild } from "@qa-sdk/core";
-import { QaLogger, TraceContext } from "@qa-sdk/sdk";
-import type { SpanHandle } from "@qa-sdk/sdk";
-import { createBinder, type PartialBinder } from "weighted-index";
-import type { ApmLoggerConfig, ApmBootConfig } from "./config.js";
+import type { EventRecord, MetricType, PayloadFormat, PayloadEncoding } from '@qa-sdk/core';
+import { toServiceDims, toTransmissionSource, toTransmissionBuild } from '@qa-sdk/core';
+import { QaLogger, TraceContext } from '@qa-sdk/sdk';
+import type { SpanHandle } from '@qa-sdk/sdk';
+import { createBinder, type PartialBinder } from 'weighted-index';
+import type { ApmLoggerConfig, ApmBootConfig } from './config.js';
 
 export class ApmLogger {
   private readonly logger: QaLogger;
@@ -32,9 +32,10 @@ export class ApmLogger {
     this.binder = createBinder(codec, prefix, fixedDims, this._generation);
 
     // 자유 차원이 없으면 (fully bound) → infra_context로 설정
-    const infraContext = this.binder.free.length === 0
-      ? { [prefix]: this.formatAddress(this.binder.resolveId({})) }
-      : undefined;
+    const infraContext =
+      this.binder.free.length === 0
+        ? { [prefix]: this.formatAddress(this.binder.resolveId({})) }
+        : undefined;
 
     this.logger = new QaLogger({
       ...loggerConfig,
@@ -46,10 +47,7 @@ export class ApmLogger {
   // ── Context ─────────────────────────────────────────
 
   /** Start a new trace context. */
-  startTrace(options?: {
-    trace_id?: string;
-    qa_session_id?: string;
-  }): TraceContext {
+  startTrace(options?: { trace_id?: string; qa_session_id?: string }): TraceContext {
     return this.logger.startTrace(options);
   }
 
@@ -80,18 +78,30 @@ export class ApmLogger {
   }
 
   /** 편의 메서드: info 레벨 로그 */
-  info(eventKey: string, payload?: Record<string, unknown>, dims?: Record<string, string>): EventRecord {
-    return this.log({ event_key: eventKey, event_version: "1", payload, dims });
+  info(
+    eventKey: string,
+    payload?: Record<string, unknown>,
+    dims?: Record<string, string>,
+  ): EventRecord {
+    return this.log({ event_key: eventKey, event_version: '1', payload, dims });
   }
 
   /** 편의 메서드: warn 레벨 로그 */
-  warn(eventKey: string, payload?: Record<string, unknown>, dims?: Record<string, string>): EventRecord {
-    return this.log({ event_key: eventKey, event_version: "1", payload, dims });
+  warn(
+    eventKey: string,
+    payload?: Record<string, unknown>,
+    dims?: Record<string, string>,
+  ): EventRecord {
+    return this.log({ event_key: eventKey, event_version: '1', payload, dims });
   }
 
   /** 편의 메서드: error 레벨 로그 */
-  error(eventKey: string, payload?: Record<string, unknown>, dims?: Record<string, string>): EventRecord {
-    return this.log({ event_key: eventKey, event_version: "1", payload, dims });
+  error(
+    eventKey: string,
+    payload?: Record<string, unknown>,
+    dims?: Record<string, string>,
+  ): EventRecord {
+    return this.log({ event_key: eventKey, event_version: '1', payload, dims });
   }
 
   // ── Span ────────────────────────────────────────────
@@ -116,14 +126,18 @@ export class ApmLogger {
   // ── Metric ──────────────────────────────────────────
 
   /** 메트릭 이벤트 기록. dims로 address_context 자동 생성. */
-  metric(name: string, value: number, opts?: {
-    type?: MetricType;
-    unit?: string;
-    labels?: Record<string, string>;
-    buckets?: number[];
-    quantiles?: number[];
-    dims?: Record<string, string>;
-  }): EventRecord {
+  metric(
+    name: string,
+    value: number,
+    opts?: {
+      type?: MetricType;
+      unit?: string;
+      labels?: Record<string, string>;
+      buckets?: number[];
+      quantiles?: number[];
+      dims?: Record<string, string>;
+    },
+  ): EventRecord {
     return this.logger.metric(name, value, {
       type: opts?.type,
       unit: opts?.unit,
@@ -184,11 +198,11 @@ export function createApmLoggerFromBoot(boot: ApmBootConfig): ApmLogger {
   return createApmLogger({
     transport: boot.transport,
     owner: boot.owner,
-    source: toTransmissionSource(service, "@qa-sdk/apm", "0.1.0"),
+    source: toTransmissionSource(service, '@qa-sdk/apm', '0.1.0'),
     build: toTransmissionBuild(service),
-    runtime: { platform: "node", ...boot.runtime },
+    runtime: { platform: 'node', ...boot.runtime },
     codec: boot.codec,
-    prefix: boot.prefix ?? "service",
+    prefix: boot.prefix ?? 'service',
     fixedDims: toServiceDims(service),
     generation: boot.generation,
     actor: boot.actor,

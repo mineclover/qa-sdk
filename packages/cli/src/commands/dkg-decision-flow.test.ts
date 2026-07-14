@@ -1,8 +1,8 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { describe, expect, it, vi } from "vitest";
-import { FlowEngine, getAnnotatedDesignFlow } from "decision-flow";
+import { describe, expect, it, vi } from 'vitest';
+import { FlowEngine, getAnnotatedDesignFlow } from 'decision-flow';
 
 import {
   applyDkgFlowDecisionTypeJump,
@@ -15,72 +15,73 @@ import {
   loadFlowInstanceMeta,
   saveFlowInstanceMeta,
   startDkgDecisionFlowBridge,
-} from "./dkg-decision-flow.js";
-import { dkgDecide } from "./dkg.js";
+} from './dkg-decision-flow.js';
+import { dkgDecide } from './dkg.js';
 
-describe("dkg decide flow bridge", () => {
-  it("capacity 타입은 reuse-existing으로 선행 선택하고 capacity-setting으로 점프한다", () => {
-    expect(getDkgFlowBridgeSteps("capacity")).toEqual([
-      { gateId: "axis-definition", branchId: "reuse-existing" },
+describe('dkg decide flow bridge', () => {
+  it('capacity 타입은 reuse-existing으로 선행 선택하고 capacity-setting으로 점프한다', () => {
+    expect(getDkgFlowBridgeSteps('capacity')).toEqual([
+      { gateId: 'axis-definition', branchId: 'reuse-existing' },
     ]);
 
-    const bridged = applyDkgFlowDecisionTypeJump(getAnnotatedDesignFlow(), "capacity");
+    const bridged = applyDkgFlowDecisionTypeJump(getAnnotatedDesignFlow(), 'capacity');
     const reuseExisting = bridged.gates
-      .find((gate) => gate.id === "axis-definition")
-      ?.branches?.find((branch) => branch.id === "reuse-existing");
+      .find((gate) => gate.id === 'axis-definition')
+      ?.branches?.find((branch) => branch.id === 'reuse-existing');
 
-    expect(reuseExisting?.nextGateId).toBe("capacity-setting");
+    expect(reuseExisting?.nextGateId).toBe('capacity-setting');
   });
 
-  it("new-prefix 타입은 prefix-design까지 자동 선행 선택한다", async () => {
+  it('new-prefix 타입은 prefix-design까지 자동 선행 선택한다', async () => {
     const result = await startDkgDecisionFlowBridge({
-      type: "new-prefix",
-      decisionId: "DEC-TEST-001",
-      context: { target: "decision_event" },
+      type: 'new-prefix',
+      decisionId: 'DEC-TEST-001',
+      context: { target: 'decision_event' },
     });
 
     expect(result.appliedSteps).toEqual([
-      { gateId: "axis-definition", branchId: "reuse-existing" },
-      { gateId: "prefix-design", branchId: "new-prefix" },
+      { gateId: 'axis-definition', branchId: 'reuse-existing' },
+      { gateId: 'prefix-design', branchId: 'new-prefix' },
     ]);
     expect(result.instance.selections.map((selection) => selection.gateId)).toEqual([
-      "axis-definition",
-      "prefix-design",
+      'axis-definition',
+      'prefix-design',
     ]);
-    expect(result.instance.context.dkgDecisionId).toBe("DEC-TEST-001");
-    expect(result.currentGate?.id).toBe("capacity-setting");
+    expect(result.instance.context.dkgDecisionId).toBe('DEC-TEST-001');
+    expect(result.currentGate?.id).toBe('capacity-setting');
   });
 
-  it("merge 타입은 merge-split까지 점프해 merge를 자동 선택한다", async () => {
+  it('merge 타입은 merge-split까지 점프해 merge를 자동 선택한다', async () => {
     const result = await startDkgDecisionFlowBridge({
-      type: "merge",
-      context: { target: "decision_path" },
+      type: 'merge',
+      context: { target: 'decision_path' },
     });
 
-    expect(result.instance.selections.map((selection) => `${selection.gateId}:${selection.branchId}`)).toEqual([
-      "axis-definition:reuse-existing",
-      "merge-split:merge",
-    ]);
-    expect(result.currentGate?.id).toBe("prefix-design");
+    expect(
+      result.instance.selections.map((selection) => `${selection.gateId}:${selection.branchId}`),
+    ).toEqual(['axis-definition:reuse-existing', 'merge-split:merge']);
+    expect(result.currentGate?.id).toBe('prefix-design');
   });
 
-  it("completeDefaults를 주면 new-axis 경로를 기본 branch로 끝까지 완료한다", async () => {
+  it('completeDefaults를 주면 new-axis 경로를 기본 branch로 끝까지 완료한다', async () => {
     const result = await startDkgDecisionFlowBridge({
-      type: "new-axis",
-      context: { target: "decision_event", targetKind: "prefix" },
-      decisionId: "DEC-TEST-004",
+      type: 'new-axis',
+      context: { target: 'decision_event', targetKind: 'prefix' },
+      decisionId: 'DEC-TEST-004',
       completeDefaults: true,
     });
 
-    expect(result.instance.status).toBe("completed");
+    expect(result.instance.status).toBe('completed');
     expect(result.currentGate).toBeNull();
-    expect(result.instance.selections.map((selection) => `${selection.gateId}:${selection.branchId}`)).toEqual([
-      "axis-definition:new-axis",
-      "prefix-design:extend-existing",
-      "capacity-setting:minimum",
-      "version-strategy:in-place",
-      "merge-split:not-applicable",
-      "service-binding:single-owner",
+    expect(
+      result.instance.selections.map((selection) => `${selection.gateId}:${selection.branchId}`),
+    ).toEqual([
+      'axis-definition:new-axis',
+      'prefix-design:extend-existing',
+      'capacity-setting:minimum',
+      'version-strategy:in-place',
+      'merge-split:not-applicable',
+      'service-binding:single-owner',
     ]);
     expect(result.instance.addressContext).toEqual(
       expect.objectContaining({
@@ -90,15 +91,16 @@ describe("dkg decide flow bridge", () => {
     );
   });
 
-  it("자동 매핑 selection에 rationale, scaffold 필드, 미선택 branch 설명을 evidence로 기록한다", async () => {
+  it('자동 매핑 selection에 rationale, scaffold 필드, 미선택 branch 설명을 evidence로 기록한다', async () => {
     const result = await startDkgDecisionFlowBridge({
-      type: "new-prefix",
-      context: { target: "decision_event" },
+      type: 'new-prefix',
+      context: { target: 'decision_event' },
       evidence: {
-        rationale: "새 prefix가 독립 주소 공간을 요구한다.",
-        scaffoldContext: "새 prefix 'decision_event': dims [flow_type, cognitive_phase], domain: decision-domain.",
-        alternatives: ["기존 prefix 확장", "별도 시스템으로 관리"],
-        reversalConditions: ["6개월 이상 미사용"],
+        rationale: '새 prefix가 독립 주소 공간을 요구한다.',
+        scaffoldContext:
+          "새 prefix 'decision_event': dims [flow_type, cognitive_phase], domain: decision-domain.",
+        alternatives: ['기존 prefix 확장', '별도 시스템으로 관리'],
+        reversalConditions: ['6개월 이상 미사용'],
       },
     });
 
@@ -108,35 +110,35 @@ describe("dkg decide flow bridge", () => {
     expect(axisSelection?.evidence).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          kind: "rule",
-          source: "dkg-decide",
-          content: "새 prefix가 독립 주소 공간을 요구한다.",
+          kind: 'rule',
+          source: 'dkg-decide',
+          content: '새 prefix가 독립 주소 공간을 요구한다.',
         }),
         expect.objectContaining({
-          source: "dkg-decide:scaffold",
-          metadata: expect.objectContaining({ field: "context", autoGenerated: true }),
+          source: 'dkg-decide:scaffold',
+          metadata: expect.objectContaining({ field: 'context', autoGenerated: true }),
         }),
         expect.objectContaining({
-          source: "dkg-decide:scaffold",
-          metadata: expect.objectContaining({ field: "alternatives", autoGenerated: true }),
+          source: 'dkg-decide:scaffold',
+          metadata: expect.objectContaining({ field: 'alternatives', autoGenerated: true }),
         }),
         expect.objectContaining({
-          source: "dkg-decide:scaffold",
-          metadata: expect.objectContaining({ field: "reversalConditions", autoGenerated: true }),
+          source: 'dkg-decide:scaffold',
+          metadata: expect.objectContaining({ field: 'reversalConditions', autoGenerated: true }),
         }),
         expect.objectContaining({
-          source: "dkg-decide:alternatives",
+          source: 'dkg-decide:alternatives',
           content: expect.stringMatching(/새 축 생성|독립 axis/),
-          metadata: expect.objectContaining({ gateId: "axis-definition" }),
+          metadata: expect.objectContaining({ gateId: 'axis-definition' }),
         }),
       ]),
     );
     expect(prefixSelection?.evidence).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          source: "dkg-decide:alternatives",
+          source: 'dkg-decide:alternatives',
           content: expect.stringMatching(/기존 prefix|차원만 확장/),
-          metadata: expect.objectContaining({ gateId: "prefix-design" }),
+          metadata: expect.objectContaining({ gateId: 'prefix-design' }),
         }),
       ]),
     );
@@ -144,12 +146,12 @@ describe("dkg decide flow bridge", () => {
     expect(prefixSelection?.confidence).toBeCloseTo(0.73, 2);
   });
 
-  it("사용자 confidence가 있으면 evidence 기반 계산보다 우선한다", async () => {
+  it('사용자 confidence가 있으면 evidence 기반 계산보다 우선한다', async () => {
     const result = await startDkgDecisionFlowBridge({
-      type: "new-axis",
-      context: { target: "decision_event" },
+      type: 'new-axis',
+      context: { target: 'decision_event' },
       evidence: {
-        rationale: "명시 confidence 적용 테스트",
+        rationale: '명시 confidence 적용 테스트',
         confidence: 0.42,
       },
     });
@@ -157,71 +159,70 @@ describe("dkg decide flow bridge", () => {
     expect(result.instance.selections[0]?.confidence).toBe(0.42);
   });
 
-  it("매핑되지 않는 타입은 axis-definition부터 순차 안내한다", async () => {
+  it('매핑되지 않는 타입은 axis-definition부터 순차 안내한다', async () => {
     const result = await startDkgDecisionFlowBridge({
-      type: "dim-add",
-      context: { target: "decision_event" },
+      type: 'dim-add',
+      context: { target: 'decision_event' },
     });
 
     expect(result.appliedSteps).toEqual([]);
     expect(result.sequential).toBe(true);
     expect(result.instance.selections).toEqual([]);
-    expect(result.currentGate?.id).toBe("axis-definition");
+    expect(result.currentGate?.id).toBe('axis-definition');
   });
 
-  it("new-prefix 타입은 core gate warning에 영향 gate 목록을 포함한다", () => {
-    const warnings = collectDkgCoreGateWarnings("new-prefix");
+  it('new-prefix 타입은 core gate warning에 영향 gate 목록을 포함한다', () => {
+    const warnings = collectDkgCoreGateWarnings('new-prefix');
 
-    expect(warnings.map((warning) => warning.gateId)).toEqual([
-      "axis-definition",
-      "prefix-design",
-    ]);
+    expect(warnings.map((warning) => warning.gateId)).toEqual(['axis-definition', 'prefix-design']);
     expect(warnings[0]?.impactedGates).toEqual([
-      { gateId: "prefix-design", kind: "constrains", weight: "core" },
-      { gateId: "capacity-setting", kind: "enables", weight: "structural" },
-      { gateId: "merge-split", kind: "constrains", weight: "core" },
+      { gateId: 'prefix-design', kind: 'constrains', weight: 'core' },
+      { gateId: 'capacity-setting', kind: 'enables', weight: 'structural' },
+      { gateId: 'merge-split', kind: 'constrains', weight: 'core' },
     ]);
     expect(warnings[1]?.invalidation.invalidatesCore).toBe(false);
   });
 
-  it("merge 타입은 core invalidation warning을 포맷한다", () => {
-    const lines = formatDkgCoreGateWarnings(collectDkgCoreGateWarnings("merge"));
+  it('merge 타입은 core invalidation warning을 포맷한다', () => {
+    const lines = formatDkgCoreGateWarnings(collectDkgCoreGateWarnings('merge'));
 
-    expect(lines.some((line) => line.includes("prefix-design [invalidates, core]"))).toBe(true);
-    expect(lines.some((line) => line.includes("capacity-setting [invalidates, structural]"))).toBe(true);
-    expect(lines).toContain("    ⚠ 코어 gate 무효화 — 전체 재설계 필요");
+    expect(lines.some((line) => line.includes('prefix-design [invalidates, core]'))).toBe(true);
+    expect(lines.some((line) => line.includes('capacity-setting [invalidates, structural]'))).toBe(
+      true,
+    );
+    expect(lines).toContain('    ⚠ 코어 gate 무효화 — 전체 재설계 필요');
   });
 
-  it("경고 확인을 거부하면 dkg decide를 중단한다", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    let printed = "";
+  it('경고 확인을 거부하면 dkg decide를 중단한다', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    let printed = '';
 
     try {
       await dkgDecide({
-        target: "decision_event",
-        type: "merge",
-        title: "merge 테스트",
-        rationale: "경고 중단 확인",
+        target: 'decision_event',
+        type: 'merge',
+        title: 'merge 테스트',
+        rationale: '경고 중단 확인',
         legacy: true,
         confirmProceed: async () => false,
       });
-      printed = logSpy.mock.calls.flat().join("\n");
+      printed = logSpy.mock.calls.flat().join('\n');
     } finally {
       warnSpy.mockRestore();
       logSpy.mockRestore();
     }
 
-    expect(printed).toContain("══ 코어 gate 영향 경고 ══");
-    expect(printed).toContain("중단: 코어 gate 경고 확인 후 다시 실행하세요.");
+    expect(printed).toContain('══ 코어 gate 영향 경고 ══');
+    expect(printed).toContain('중단: 코어 gate 경고 확인 후 다시 실행하세요.');
   });
 
-  it("FlowInstance를 meta 키로 저장하고 복원한다", async () => {
+  it('FlowInstance를 meta 키로 저장하고 복원한다', async () => {
     const store = new Map<string, string>();
     const result = await startDkgDecisionFlowBridge({
-      type: "new-axis",
-      decisionId: "DEC-TEST-002",
-      context: { target: "decision_path" },
+      type: 'new-axis',
+      decisionId: 'DEC-TEST-002',
+      context: { target: 'decision_path' },
     });
 
     saveFlowInstanceMeta(
@@ -247,18 +248,18 @@ describe("dkg decide flow bridge", () => {
     expect(restored).toEqual(result.instance);
   });
 
-  it("완료된 FlowInstance의 addressContext를 DKG metadata.address_context로 변환한다", () => {
+  it('완료된 FlowInstance의 addressContext를 DKG metadata.address_context로 변환한다', () => {
     const engine = new FlowEngine();
     const schema = getAnnotatedDesignFlow();
     engine.registerSchema(schema);
 
-    const inst = engine.startFlow("coordinate-design", { scopeMode: "hold" });
-    engine.selectBranch(inst.id, "new-axis");
-    engine.selectBranch(inst.id, "new-prefix");
-    engine.selectBranch(inst.id, "minimum");
-    engine.selectBranch(inst.id, "in-place");
-    engine.selectBranch(inst.id, "keep-separate");
-    const completed = engine.selectBranch(inst.id, "single-owner");
+    const inst = engine.startFlow('coordinate-design', { scopeMode: 'hold' });
+    engine.selectBranch(inst.id, 'new-axis');
+    engine.selectBranch(inst.id, 'new-prefix');
+    engine.selectBranch(inst.id, 'minimum');
+    engine.selectBranch(inst.id, 'in-place');
+    engine.selectBranch(inst.id, 'keep-separate');
+    const completed = engine.selectBranch(inst.id, 'single-owner');
 
     expect(buildDkgFlowAddressMetadata(completed)).toEqual({
       address_context: {
@@ -268,27 +269,55 @@ describe("dkg decide flow bridge", () => {
     });
   });
 
-  it("코어 trace 포맷에 연결된 decision id와 pivot point가 포함된다", async () => {
+  it('코어 trace 포맷에 연결된 decision id와 pivot point가 포함된다', async () => {
     const result = await startDkgDecisionFlowBridge({
-      type: "new-prefix",
-      decisionId: "DEC-TEST-003",
-      context: { target: "decision_event" },
+      type: 'new-prefix',
+      decisionId: 'DEC-TEST-003',
+      context: { target: 'decision_event' },
     });
     const lines = formatFlowInstanceCoreTrace({
       ...result.instance,
       selections: [
         ...result.instance.selections,
-        { gateId: "capacity-setting", branchId: "minimum", evidence: [], confidence: 0.5, timestamp: "2026-03-24T00:00:00.000Z", durationMs: 0 },
-        { gateId: "version-strategy", branchId: "in-place", evidence: [], confidence: 0.5, timestamp: "2026-03-24T00:00:01.000Z", durationMs: 0 },
-        { gateId: "merge-split", branchId: "keep-separate", evidence: [], confidence: 0.5, timestamp: "2026-03-24T00:00:02.000Z", durationMs: 0 },
-        { gateId: "service-binding", branchId: "single-owner", evidence: [], confidence: 0.5, timestamp: "2026-03-24T00:00:03.000Z", durationMs: 0 },
+        {
+          gateId: 'capacity-setting',
+          branchId: 'minimum',
+          evidence: [],
+          confidence: 0.5,
+          timestamp: '2026-03-24T00:00:00.000Z',
+          durationMs: 0,
+        },
+        {
+          gateId: 'version-strategy',
+          branchId: 'in-place',
+          evidence: [],
+          confidence: 0.5,
+          timestamp: '2026-03-24T00:00:01.000Z',
+          durationMs: 0,
+        },
+        {
+          gateId: 'merge-split',
+          branchId: 'keep-separate',
+          evidence: [],
+          confidence: 0.5,
+          timestamp: '2026-03-24T00:00:02.000Z',
+          durationMs: 0,
+        },
+        {
+          gateId: 'service-binding',
+          branchId: 'single-owner',
+          evidence: [],
+          confidence: 0.5,
+          timestamp: '2026-03-24T00:00:03.000Z',
+          durationMs: 0,
+        },
       ],
-      status: "completed",
-      completedAt: "2026-03-24T00:00:04.000Z",
+      status: 'completed',
+      completedAt: '2026-03-24T00:00:04.000Z',
     });
 
-    expect(lines).toContain("    dkgDecisionId: DEC-TEST-003");
-    expect(lines.some((line) => line.includes("axis-definition=reuse-existing"))).toBe(true);
-    expect(lines.some((line) => line.includes("★ axis-definition = reuse-existing"))).toBe(true);
+    expect(lines).toContain('    dkgDecisionId: DEC-TEST-003');
+    expect(lines.some((line) => line.includes('axis-definition=reuse-existing'))).toBe(true);
+    expect(lines.some((line) => line.includes('★ axis-definition = reuse-existing'))).toBe(true);
   });
 });

@@ -1,8 +1,8 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import type { DailyMetricReadModel } from "../../domain/metric.types.js";
-import type { RecordMetricCommand } from "../commands/record-metric.command.js";
+import type { DailyMetricReadModel } from '../../domain/metric.types.js';
+import type { RecordMetricCommand } from '../commands/record-metric.command.js';
 
 /**
  * Metric admin port — 시계열 record 적재.

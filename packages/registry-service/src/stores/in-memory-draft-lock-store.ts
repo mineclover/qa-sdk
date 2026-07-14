@@ -1,8 +1,8 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import type { DraftLock } from "../types/index.js";
-import type { DraftLockStore } from "./draft-lock-store.js";
+import type { DraftLock } from '../types/index.js';
+import type { DraftLockStore } from './draft-lock-store.js';
 
 export class InMemoryDraftLockStore implements DraftLockStore {
   private readonly _locks = new Map<string, DraftLock>();

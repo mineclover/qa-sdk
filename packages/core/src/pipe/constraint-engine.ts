@@ -6,8 +6,11 @@
  */
 
 import type {
-  ConstraintDef, ConstraintResult, ConstraintPredicate, FailureTrace,
-} from "../types/constraint.js";
+  ConstraintDef,
+  ConstraintResult,
+  ConstraintPredicate,
+  FailureTrace,
+} from '../types/constraint.js';
 
 // ── Constraint 레지스트리 ─────────────────────────────
 
@@ -27,7 +30,7 @@ export class ConstraintRegistry {
 
   /** 스펙별 constraint 조회 */
   getBySpec(specId: string): ConstraintDef[] {
-    return [...this.constraints.values()].filter(c => c.specId === specId);
+    return [...this.constraints.values()].filter((c) => c.specId === specId);
   }
 
   /** 전체 constraint 목록 */
@@ -44,18 +47,18 @@ export class ConstraintRegistry {
 
   /** 특정 constraint의 최신 결과 */
   getLatestResult(constraintId: string): ConstraintResult | null {
-    const filtered = this.results.filter(r => r.constraintId === constraintId);
+    const filtered = this.results.filter((r) => r.constraintId === constraintId);
     return filtered.length > 0 ? filtered[filtered.length - 1] : null;
   }
 
   /** 특정 스펙의 모든 결과 */
   getResultsBySpec(specId: string): ConstraintResult[] {
-    return this.results.filter(r => r.specId === specId);
+    return this.results.filter((r) => r.specId === specId);
   }
 
   /** 실패한 결과만 */
   getFailures(): ConstraintResult[] {
-    return this.results.filter(r => r.verdict === "fail");
+    return this.results.filter((r) => r.verdict === 'fail');
   }
 
   /** 전체 결과 */
@@ -82,7 +85,7 @@ export class ConstraintRegistry {
       const result = this.getLatestResult(c.constraintId);
       if (!result) {
         untested++;
-      } else if (result.verdict === "pass") {
+      } else if (result.verdict === 'pass') {
         verified++;
       } else {
         failed++;
@@ -108,9 +111,10 @@ export class ConstraintRegistry {
     overallRate: number;
     specBreakdown: Record<string, { total: number; verified: number; rate: number }>;
   } {
-    const specIds = new Set(this.constraints.values()).size > 0
-      ? [...new Set([...this.constraints.values()].map(c => c.specId))]
-      : [];
+    const specIds =
+      new Set(this.constraints.values()).size > 0
+        ? [...new Set([...this.constraints.values()].map((c) => c.specId))]
+        : [];
 
     let totalConstraints = 0;
     let totalVerified = 0;
@@ -147,52 +151,63 @@ export class ConstraintRegistry {
 /** predicate를 실제 값에 대해 평가 */
 export function evaluatePredicate(predicate: ConstraintPredicate, actual: unknown): boolean {
   switch (predicate.op) {
-    case "eq": return actual === predicate.expected;
-    case "neq": return actual !== predicate.expected;
-    case "gt": return (actual as number) > (predicate.expected as number);
-    case "gte": return (actual as number) >= (predicate.expected as number);
-    case "lt": return (actual as number) < (predicate.expected as number);
-    case "lte": return (actual as number) <= (predicate.expected as number);
+    case 'eq':
+      return actual === predicate.expected;
+    case 'neq':
+      return actual !== predicate.expected;
+    case 'gt':
+      return (actual as number) > (predicate.expected as number);
+    case 'gte':
+      return (actual as number) >= (predicate.expected as number);
+    case 'lt':
+      return (actual as number) < (predicate.expected as number);
+    case 'lte':
+      return (actual as number) <= (predicate.expected as number);
 
-    case "exists": return actual != null;
-    case "not-exists": return actual == null;
+    case 'exists':
+      return actual != null;
+    case 'not-exists':
+      return actual == null;
 
-    case "contains": {
+    case 'contains': {
       if (Array.isArray(actual)) return actual.includes(predicate.expected);
-      if (typeof actual === "string") return actual.includes(predicate.expected as string);
+      if (typeof actual === 'string') return actual.includes(predicate.expected as string);
       return false;
     }
-    case "not-contains": {
+    case 'not-contains': {
       if (Array.isArray(actual)) return !actual.includes(predicate.expected);
-      if (typeof actual === "string") return !actual.includes(predicate.expected as string);
+      if (typeof actual === 'string') return !actual.includes(predicate.expected as string);
       return true;
     }
 
-    case "subset-of": {
+    case 'subset-of': {
       if (!Array.isArray(actual) || !Array.isArray(predicate.expected)) return false;
-      return actual.every(item => (predicate.expected as unknown[]).includes(item));
+      return actual.every((item) => (predicate.expected as unknown[]).includes(item));
     }
-    case "superset-of": {
+    case 'superset-of': {
       if (!Array.isArray(actual) || !Array.isArray(predicate.expected)) return false;
-      return (predicate.expected as unknown[]).every(item => (actual as unknown[]).includes(item));
+      return (predicate.expected as unknown[]).every((item) =>
+        (actual as unknown[]).includes(item),
+      );
     }
 
-    case "type-is": return typeof actual === predicate.expected;
+    case 'type-is':
+      return typeof actual === predicate.expected;
 
-    case "and":
-      return (predicate.children ?? []).every(c => evaluatePredicate(c, actual));
-    case "or":
-      return (predicate.children ?? []).some(c => evaluatePredicate(c, actual));
-    case "not":
+    case 'and':
+      return (predicate.children ?? []).every((c) => evaluatePredicate(c, actual));
+    case 'or':
+      return (predicate.children ?? []).some((c) => evaluatePredicate(c, actual));
+    case 'not':
       return predicate.children?.[0] ? !evaluatePredicate(predicate.children[0], actual) : false;
 
     // compatible, breaking, connected-to, reachable, traceable는
     // 도메인 로직이 필요하므로 여기서는 true 반환 (외부에서 평가)
-    case "compatible":
-    case "breaking":
-    case "connected-to":
-    case "reachable":
-    case "traceable":
+    case 'compatible':
+    case 'breaking':
+    case 'connected-to':
+    case 'reachable':
+    case 'traceable':
       return true;
 
     default:
@@ -213,7 +228,7 @@ export function executeConstraint(
   const result: ConstraintResult = {
     constraintId: constraint.constraintId,
     specId: constraint.specId,
-    verdict: pass ? "pass" : "fail",
+    verdict: pass ? 'pass' : 'fail',
     actualValue,
     expectedValue: constraint.predicate.expected,
     executedAt: new Date().toISOString(),

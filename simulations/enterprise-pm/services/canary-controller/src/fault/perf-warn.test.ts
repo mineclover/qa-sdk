@@ -9,45 +9,43 @@
 //   (d) applyTo("PASS") → "WARN" 격상
 //   (e) applyTo("FAIL") → "FAIL" 보존 (격하 금지)
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { PerfWarnFault } from "./perf-warn.js";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { PerfWarnFault } from './perf-warn.js';
 
-describe("PerfWarnFault (spec §8)", () => {
+describe('PerfWarnFault (spec §8)', () => {
   let fault: PerfWarnFault;
   beforeEach(() => {
     fault = new PerfWarnFault();
   });
 
-  it("(a) enable + isEnabled", async () => {
-    await fault.enable({ severity: "warn" });
+  it('(a) enable + isEnabled', async () => {
+    await fault.enable({ severity: 'warn' });
     expect(fault.isEnabled()).toBe(true);
-    expect(fault.getParams()).toEqual({ severity: "warn" });
+    expect(fault.getParams()).toEqual({ severity: 'warn' });
   });
 
-  it("(b) rejects unsupported severity", async () => {
-    await expect(fault.enable({ severity: "fail" })).rejects.toThrow(
-      /severity must be "warn"/,
-    );
+  it('(b) rejects unsupported severity', async () => {
+    await expect(fault.enable({ severity: 'fail' })).rejects.toThrow(/severity must be "warn"/);
   });
 
-  it("(c) disable resets state", async () => {
-    await fault.enable({ severity: "warn" });
+  it('(c) disable resets state', async () => {
+    await fault.enable({ severity: 'warn' });
     await fault.disable();
     expect(fault.isEnabled()).toBe(false);
     expect(fault.getParams()).toBeNull();
   });
 
-  it("(d) applyTo upgrades PASS → WARN when enabled", async () => {
+  it('(d) applyTo upgrades PASS → WARN when enabled', async () => {
     // disabled → passthrough
-    expect(fault.applyTo("PASS")).toBe("PASS");
-    await fault.enable({ severity: "warn" });
-    expect(fault.applyTo("PASS")).toBe("WARN");
+    expect(fault.applyTo('PASS')).toBe('PASS');
+    await fault.enable({ severity: 'warn' });
+    expect(fault.applyTo('PASS')).toBe('WARN');
   });
 
-  it("(e) applyTo preserves FAIL and WARN", async () => {
-    await fault.enable({ severity: "warn" });
-    expect(fault.applyTo("FAIL")).toBe("FAIL");
+  it('(e) applyTo preserves FAIL and WARN', async () => {
+    await fault.enable({ severity: 'warn' });
+    expect(fault.applyTo('FAIL')).toBe('FAIL');
     // WARN already → still WARN (no degradation)
-    expect(fault.applyTo("WARN")).toBe("WARN");
+    expect(fault.applyTo('WARN')).toBe('WARN');
   });
 });

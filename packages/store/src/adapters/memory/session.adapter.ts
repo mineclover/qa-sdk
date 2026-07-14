@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import type { SessionStore, SessionUpsert, StoredSession } from "@qa-sdk/core";
+import type { SessionStore, SessionUpsert, StoredSession } from '@qa-sdk/core';
 
 /** SessionStore의 in-memory 구현 */
 export class InMemorySessionStore implements SessionStore {

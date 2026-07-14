@@ -4,12 +4,10 @@
 import {
   createProgrammingArtifactRegistryRecord,
   type ProgrammingArtifactRegistryRecord,
-} from "operational-ontology/programming-artifacts";
+} from 'operational-ontology/programming-artifacts';
 
-const ACTIVATION_EVIDENCE_OWNER_DEFINITION_ID =
-  "operational-ontology-registry-activation-cli";
-const ACTIVATION_REGISTRY_ALLOCATION_DEFINITION_ID =
-  "operational-ontology-registry-allocation";
+const ACTIVATION_EVIDENCE_OWNER_DEFINITION_ID = 'operational-ontology-registry-activation-cli';
+const ACTIVATION_REGISTRY_ALLOCATION_DEFINITION_ID = 'operational-ontology-registry-allocation';
 
 export interface ActivationEvidenceRegistryCommandContext {
   readonly packId: string;
@@ -25,9 +23,7 @@ export interface ActivationEvidenceRegistryActivationResult {
   } | null;
   readonly allocationSummaries?: readonly ActivationEvidenceAllocationSummary[];
   readonly activationStatuses?: readonly ActivationEvidenceActivationStatus[];
-  readonly syncSummariesByAllocationId?: Readonly<
-    Record<string, ActivationEvidenceSyncSummary>
-  >;
+  readonly syncSummariesByAllocationId?: Readonly<Record<string, ActivationEvidenceSyncSummary>>;
   readonly smokeCheckSummary?: ActivationEvidenceSmokeCheckSummary;
   readonly warnings?: readonly unknown[];
   readonly errors?: readonly unknown[];
@@ -69,9 +65,7 @@ export function buildActivationEvidenceRegistryRecord(
 ): ProgrammingArtifactRegistryRecord {
   const outputPath = input.resolvedOutputPath?.trim();
   if (!outputPath) {
-    throw new Error(
-      "Activation evidence registry record requires resolved output path",
-    );
+    throw new Error('Activation evidence registry record requires resolved output path');
   }
 
   const { activationResult, commandContext } = input;
@@ -80,18 +74,15 @@ export function buildActivationEvidenceRegistryRecord(
 
   return createProgrammingArtifactRegistryRecord({
     artifactId: [
-      "activation-evidence",
+      'activation-evidence',
       slugRegistryIdSegment(activationResult.packId),
       slugRegistryIdSegment(activationResult.ontologyId),
-    ].join("-"),
+    ].join('-'),
     artifactRef: outputPath,
     outputPath,
-    kind: "activation-evidence",
+    kind: 'activation-evidence',
     producedByRef: `qa-sdk ontology registry activate-pack ${commandContext.packId}`,
-    derivedFromRefs: [
-      activationResult.packId,
-      commandContext.knownPackImportRef,
-    ],
+    derivedFromRefs: [activationResult.packId, commandContext.knownPackImportRef],
     verifiesRefs: [
       activationResult.packId,
       activationResult.ontologyId,
@@ -121,12 +112,10 @@ function buildActivationEvidenceRegistryMetadata(input: {
     namespace: activationResult.namespaceSummary?.namespace ?? null,
     allocationCount: allocationSummaries.length,
     activationStatusCounts: countStatusValues(
-      allocationSummaries.map((summary) => summary.activationStatus ?? "none"),
+      allocationSummaries.map((summary) => summary.activationStatus ?? 'none'),
     ),
     syncStatusCounts: buildSyncStatusCounts(activationResult),
-    smokeCheckSummary: cloneSmokeCheckSummary(
-      activationResult.smokeCheckSummary,
-    ),
+    smokeCheckSummary: cloneSmokeCheckSummary(activationResult.smokeCheckSummary),
     warningCount: activationResult.warnings?.length ?? 0,
     errorCount: activationResult.errors?.length ?? 0,
     generatedAt: input.generatedAt,
@@ -137,14 +126,14 @@ function buildSyncStatusCounts(
   activationResult: ActivationEvidenceRegistryActivationResult,
 ): Record<string, number> {
   const allocationStatuses = activationResult.allocationSummaries?.map(
-    (summary) => summary.syncStatus ?? "none",
+    (summary) => summary.syncStatus ?? 'none',
   );
   if (allocationStatuses && allocationStatuses.length > 0) {
     return countStatusValues(allocationStatuses);
   }
 
   const activationStatuses = activationResult.activationStatuses?.map(
-    (status) => status.syncStatus ?? "none",
+    (status) => status.syncStatus ?? 'none',
   );
   if (activationStatuses && activationStatuses.length > 0) {
     return countStatusValues(activationStatuses);
@@ -152,7 +141,7 @@ function buildSyncStatusCounts(
 
   return countStatusValues(
     Object.values(activationResult.syncSummariesByAllocationId ?? {}).map(
-      (summary) => summary.syncStatus ?? "none",
+      (summary) => summary.syncStatus ?? 'none',
     ),
   );
 }
@@ -183,7 +172,7 @@ function slugRegistryIdSegment(value: string): string {
   const slug = value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || "unknown";
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'unknown';
 }

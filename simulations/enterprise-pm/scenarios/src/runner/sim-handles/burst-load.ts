@@ -44,20 +44,14 @@ export interface BurstHandle {
  *   - rps > 1000 시 setInterval interval을 1ms로 clamp + 매 tick에 batch 발사.
  *   - stop() 시 interval clear + AbortController abort + 남은 in-flight settle 대기.
  */
-export function createBurstLoad(args: BurstLoadFactoryArgs): (
-  rps: number,
-) => Promise<BurstHandle> {
+export function createBurstLoad(args: BurstLoadFactoryArgs): (rps: number) => Promise<BurstHandle> {
   const fetchImpl: FetchLike =
-    args.fetchImpl ??
-    ((input, init) =>
-      fetch(input, init) as unknown as ReturnType<FetchLike>);
+    args.fetchImpl ?? ((input, init) => fetch(input, init) as unknown as ReturnType<FetchLike>);
   const setIntervalI =
     args.setIntervalImpl ??
-    ((cb, ms) =>
-      setInterval(cb, ms) as unknown as ReturnType<typeof setInterval>);
+    ((cb, ms) => setInterval(cb, ms) as unknown as ReturnType<typeof setInterval>);
   const clearIntervalI =
-    args.clearIntervalImpl ??
-    ((h) => clearInterval(h as ReturnType<typeof setInterval>));
+    args.clearIntervalImpl ?? ((h) => clearInterval(h as ReturnType<typeof setInterval>));
 
   return async function burstLoad(rps: number): Promise<BurstHandle> {
     if (!Number.isFinite(rps) || rps <= 0) {
@@ -74,7 +68,7 @@ export function createBurstLoad(args: BurstLoadFactoryArgs): (
         const p = (async () => {
           try {
             await fetchImpl(args.targetUrl, {
-              method: "GET",
+              method: 'GET',
               signal: abort.signal,
             });
           } catch {

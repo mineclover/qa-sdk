@@ -1,4 +1,4 @@
-import type { TaxonomyIR, Coordinate } from "../schema/ir.js";
+import type { TaxonomyIR, Coordinate } from '../schema/ir.js';
 
 /**
  * walkByCoordinate — Coordinate(부분 좌표)에서 출발해 relation 화살표를 따라
@@ -53,5 +53,5 @@ function isCompatible(coord: Coordinate, rule: Record<string, string>): boolean 
 
 function coordKey(coord: Coordinate): string {
   const keys = Object.keys(coord).sort();
-  return keys.map((k) => `${k}=${coord[k]}`).join(",");
+  return keys.map((k) => `${k}=${coord[k]}`).join(',');
 }

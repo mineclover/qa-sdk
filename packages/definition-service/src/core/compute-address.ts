@@ -17,7 +17,7 @@ import {
   DEF_SCOPE,
   DEF_ASPECT,
   DEF_DEPTH,
-} from "definition-catalog";
+} from 'definition-catalog';
 
 export function computeDocumentAddress(
   scope: string,

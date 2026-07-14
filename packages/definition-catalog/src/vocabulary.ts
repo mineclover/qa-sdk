@@ -19,17 +19,20 @@
 export interface VersionedAxis {
   readonly id: string;
   readonly name: string;
-  readonly versions: Record<string, {
-    readonly entries: readonly string[];
-    readonly capacity?: number;
-    readonly ko?: Record<string, string>;
-  }>;
+  readonly versions: Record<
+    string,
+    {
+      readonly entries: readonly string[];
+      readonly capacity?: number;
+      readonly ko?: Record<string, string>;
+    }
+  >;
 }
 
 // ─── 축 설명력 메타데이터 ─────────────────────────────────
 
 /** 축의 설명력 역할 */
-export type ExplanatoryRole = "primary" | "secondary" | "contextual" | "relation";
+export type ExplanatoryRole = 'primary' | 'secondary' | 'contextual' | 'relation';
 
 /** 축의 설명력 메타데이터 */
 export interface AxisExplanatoryMeta {
@@ -44,7 +47,11 @@ export interface AxisExplanatoryMeta {
 function toVersionedAxis(
   id: string,
   name: string,
-  def: { readonly entries: readonly string[]; readonly capacity: number; readonly ko: Record<string, string> },
+  def: {
+    readonly entries: readonly string[];
+    readonly capacity: number;
+    readonly ko: Record<string, string>;
+  },
 ): VersionedAxis {
   return {
     id,
@@ -63,12 +70,12 @@ function toVersionedAxis(
  * tier가 구조적 책임을 표현하고, level은 group/module/leaf 검증 보조 메타데이터로 남는다.
  */
 export const DEF_LEVEL = {
-  entries: ["group", "module", "leaf"] as const,
-  capacity: 8,  // nextPowerOf2(3 * 2 = 6) = 8
+  entries: ['group', 'module', 'leaf'] as const,
+  capacity: 8, // nextPowerOf2(3 * 2 = 6) = 8
   ko: {
-    group: "그룹",
-    module: "모듈",
-    leaf: "리프",
+    group: '그룹',
+    module: '모듈',
+    leaf: '리프',
   } as Record<string, string>,
 } as const;
 
@@ -80,18 +87,28 @@ export const DEF_LEVEL = {
  * meta: 메타-설계 제안 (정규 스펙의 규칙 자체를 재정의 대상으로 삼는 RFC/proposal 문서).
  */
 export const DEF_SCOPE = {
-  entries: ["ui", "feature", "flow", "state", "constraint", "data", "interface", "meta", "decision"] as const,
-  capacity: 32,  // nextPowerOf2(9 * 2 = 18) = 32. v0.14에서 decision 추가로 8→9 entries.
+  entries: [
+    'ui',
+    'feature',
+    'flow',
+    'state',
+    'constraint',
+    'data',
+    'interface',
+    'meta',
+    'decision',
+  ] as const,
+  capacity: 32, // nextPowerOf2(9 * 2 = 18) = 32. v0.14에서 decision 추가로 8→9 entries.
   ko: {
-    ui: "화면/UI",
-    feature: "기능",
-    flow: "흐름",
-    state: "상태",
-    constraint: "제약조건",
-    data: "데이터",
-    interface: "인터페이스",
-    meta: "메타-설계",
-    decision: "의사결정",
+    ui: '화면/UI',
+    feature: '기능',
+    flow: '흐름',
+    state: '상태',
+    constraint: '제약조건',
+    data: '데이터',
+    interface: '인터페이스',
+    meta: '메타-설계',
+    decision: '의사결정',
   } as Record<string, string>,
 } as const;
 
@@ -109,83 +126,114 @@ export const DEF_SCOPE = {
 export const DEF_ASPECT = {
   entries: [
     // ui (3)
-    "layout", "component", "interaction",
+    'layout',
+    'component',
+    'interaction',
     // feature (2 + 7 + 3 = 12)
-    "func_def", "scenario",
-    "codegen_func", "harness_func", "gate_func", "analyzer_func",
-    "encoding_func", "domain_service_func", "nesting_func",
+    'func_def',
+    'scenario',
+    'codegen_func',
+    'harness_func',
+    'gate_func',
+    'analyzer_func',
+    'encoding_func',
+    'domain_service_func',
+    'nesting_func',
     // Mini-5b: encoding 계열 sub-roles (sibling of encoding_func, child of func_def)
-    "codec_func", "binder_func", "format_func",
+    'codec_func',
+    'binder_func',
+    'format_func',
     // flow (3 + 5 + 3 = 11)
-    "user_scenario", "process_flow", "relation",
-    "lifecycle_flow", "ingest_flow", "pipeline_flow",
-    "gate_flow", "definition_mgmt_flow",
+    'user_scenario',
+    'process_flow',
+    'relation',
+    'lifecycle_flow',
+    'ingest_flow',
+    'pipeline_flow',
+    'gate_flow',
+    'definition_mgmt_flow',
     // Mini-5b: definition-management 계열 sub-roles (sibling of definition_mgmt_flow, child of process_flow)
-    "mgmt_flow", "quality_flow", "harness_flow",
+    'mgmt_flow',
+    'quality_flow',
+    'harness_flow',
     // state (3)
-    "app_state", "domain_state", "system_state",
+    'app_state',
+    'domain_state',
+    'system_state',
     // constraint (3)
-    "tech_constraint", "biz_constraint", "infra_constraint",
+    'tech_constraint',
+    'biz_constraint',
+    'infra_constraint',
     // data (5 + 2 = 7)
-    "domain_data", "system_data", "external_data", "prefix_schema", "axis_catalog",
-    "taxonomy_data", "coordinate_model_data",
+    'domain_data',
+    'system_data',
+    'external_data',
+    'prefix_schema',
+    'axis_catalog',
+    'taxonomy_data',
+    'coordinate_model_data',
     // interface (3 + 5 = 8)
-    "api_contract", "cli_contract", "event_contract",
-    "decode_contract", "gate_contract", "query_contract",
-    "browser_contract", "pipeline_contract",
+    'api_contract',
+    'cli_contract',
+    'event_contract',
+    'decode_contract',
+    'gate_contract',
+    'query_contract',
+    'browser_contract',
+    'pipeline_contract',
     // meta (1)
-    "proposal_design",
+    'proposal_design',
   ] as const,
-  capacity: 128,  // nextPowerOf2(46 * 2 = 92) = 128
+  capacity: 128, // nextPowerOf2(46 * 2 = 92) = 128
   ko: {
-    layout: "레이아웃",
-    component: "컴포넌트",
-    interaction: "인터랙션",
-    func_def: "기능정의",
-    scenario: "시나리오",
-    codegen_func: "코드생성기능",
-    harness_func: "하네스기능",
-    gate_func: "게이트기능",
-    analyzer_func: "분석기능",
-    encoding_func: "인코딩기능",
-    domain_service_func: "도메인서비스기능",
-    nesting_func: "스코프중첩기능",
-    codec_func: "코덱기능",
-    binder_func: "바인더기능",
-    format_func: "포맷기능",
-    user_scenario: "사용자시나리오",
-    process_flow: "프로세스흐름",
-    relation: "연관관계",
-    lifecycle_flow: "라이프사이클흐름",
-    ingest_flow: "수집흐름",
-    pipeline_flow: "파이프라인흐름",
-    gate_flow: "게이트흐름",
-    definition_mgmt_flow: "정의관리흐름",
-    mgmt_flow: "관리흐름",
-    quality_flow: "품질흐름",
-    harness_flow: "하네스흐름",
-    app_state: "앱상태",
-    domain_state: "도메인상태",
-    system_state: "시스템상태",
-    tech_constraint: "기술적제약",
-    biz_constraint: "비즈니스제약",
-    infra_constraint: "인프라제약",
-    domain_data: "도메인데이터",
-    system_data: "시스템데이터",
-    external_data: "외부데이터",
-    prefix_schema: "Prefix스키마",
-    axis_catalog: "Axis카탈로그",
-    taxonomy_data: "분류체계데이터",
-    coordinate_model_data: "좌표모델데이터",
-    api_contract: "API계약",
-    cli_contract: "CLI계약",
-    event_contract: "이벤트계약",
-    decode_contract: "디코드계약",
-    gate_contract: "게이트계약",
-    query_contract: "쿼리계약",
-    browser_contract: "브라우저계약",
-    pipeline_contract: "파이프라인계약",
-    proposal_design: "제안 설계",
+    layout: '레이아웃',
+    component: '컴포넌트',
+    interaction: '인터랙션',
+    func_def: '기능정의',
+    scenario: '시나리오',
+    codegen_func: '코드생성기능',
+    harness_func: '하네스기능',
+    gate_func: '게이트기능',
+    analyzer_func: '분석기능',
+    encoding_func: '인코딩기능',
+    domain_service_func: '도메인서비스기능',
+    nesting_func: '스코프중첩기능',
+    codec_func: '코덱기능',
+    binder_func: '바인더기능',
+    format_func: '포맷기능',
+    user_scenario: '사용자시나리오',
+    process_flow: '프로세스흐름',
+    relation: '연관관계',
+    lifecycle_flow: '라이프사이클흐름',
+    ingest_flow: '수집흐름',
+    pipeline_flow: '파이프라인흐름',
+    gate_flow: '게이트흐름',
+    definition_mgmt_flow: '정의관리흐름',
+    mgmt_flow: '관리흐름',
+    quality_flow: '품질흐름',
+    harness_flow: '하네스흐름',
+    app_state: '앱상태',
+    domain_state: '도메인상태',
+    system_state: '시스템상태',
+    tech_constraint: '기술적제약',
+    biz_constraint: '비즈니스제약',
+    infra_constraint: '인프라제약',
+    domain_data: '도메인데이터',
+    system_data: '시스템데이터',
+    external_data: '외부데이터',
+    prefix_schema: 'Prefix스키마',
+    axis_catalog: 'Axis카탈로그',
+    taxonomy_data: '분류체계데이터',
+    coordinate_model_data: '좌표모델데이터',
+    api_contract: 'API계약',
+    cli_contract: 'CLI계약',
+    event_contract: '이벤트계약',
+    decode_contract: '디코드계약',
+    gate_contract: '게이트계약',
+    query_contract: '쿼리계약',
+    browser_contract: '브라우저계약',
+    pipeline_contract: '파이프라인계약',
+    proposal_design: '제안 설계',
   } as Record<string, string>,
 } as const;
 
@@ -214,36 +262,36 @@ export const DEF_ASPECT = {
  */
 export const ASPECT_PARENTS: Record<string, string> = {
   // func_def 계열
-  codegen_func: "func_def",
-  harness_func: "func_def",
-  gate_func: "func_def",
-  analyzer_func: "func_def",
-  encoding_func: "func_def",
-  domain_service_func: "func_def",
-  nesting_func: "func_def",
+  codegen_func: 'func_def',
+  harness_func: 'func_def',
+  gate_func: 'func_def',
+  analyzer_func: 'func_def',
+  encoding_func: 'func_def',
+  domain_service_func: 'func_def',
+  nesting_func: 'func_def',
   // Mini-5b: encoding 계열 sub-roles (sibling of encoding_func, child of func_def)
-  codec_func: "func_def",
-  binder_func: "func_def",
-  format_func: "func_def",
+  codec_func: 'func_def',
+  binder_func: 'func_def',
+  format_func: 'func_def',
   // process_flow 계열
-  lifecycle_flow: "process_flow",
-  ingest_flow: "process_flow",
-  pipeline_flow: "process_flow",
-  gate_flow: "process_flow",
-  definition_mgmt_flow: "process_flow",
+  lifecycle_flow: 'process_flow',
+  ingest_flow: 'process_flow',
+  pipeline_flow: 'process_flow',
+  gate_flow: 'process_flow',
+  definition_mgmt_flow: 'process_flow',
   // Mini-5b: definition-management 계열 sub-roles (sibling of definition_mgmt_flow, child of process_flow)
-  mgmt_flow: "process_flow",
-  quality_flow: "process_flow",
-  harness_flow: "process_flow",
+  mgmt_flow: 'process_flow',
+  quality_flow: 'process_flow',
+  harness_flow: 'process_flow',
   // api_contract 계열
-  decode_contract: "api_contract",
-  gate_contract: "api_contract",
-  query_contract: "api_contract",
-  browser_contract: "api_contract",
-  pipeline_contract: "api_contract",
+  decode_contract: 'api_contract',
+  gate_contract: 'api_contract',
+  query_contract: 'api_contract',
+  browser_contract: 'api_contract',
+  pipeline_contract: 'api_contract',
   // domain_data 계열
-  taxonomy_data: "domain_data",
-  coordinate_model_data: "domain_data",
+  taxonomy_data: 'domain_data',
+  coordinate_model_data: 'domain_data',
 };
 
 /**
@@ -267,36 +315,36 @@ export const ASPECT_PARENTS: Record<string, string> = {
  */
 export const ROOT_ASPECTS: ReadonlySet<string> = new Set([
   // ui family roots
-  "layout",
-  "component",
-  "interaction",
+  'layout',
+  'component',
+  'interaction',
   // feature family roots
-  "func_def",
-  "scenario",
+  'func_def',
+  'scenario',
   // flow family roots
-  "user_scenario",
-  "process_flow",
-  "relation",
+  'user_scenario',
+  'process_flow',
+  'relation',
   // state family roots
-  "app_state",
-  "domain_state",
-  "system_state",
+  'app_state',
+  'domain_state',
+  'system_state',
   // constraint family roots
-  "tech_constraint",
-  "biz_constraint",
-  "infra_constraint",
+  'tech_constraint',
+  'biz_constraint',
+  'infra_constraint',
   // data family roots
-  "domain_data",
-  "system_data",
-  "external_data",
-  "prefix_schema",
-  "axis_catalog",
+  'domain_data',
+  'system_data',
+  'external_data',
+  'prefix_schema',
+  'axis_catalog',
   // interface family roots
-  "api_contract",
-  "cli_contract",
-  "event_contract",
+  'api_contract',
+  'cli_contract',
+  'event_contract',
   // meta family roots
-  "proposal_design",
+  'proposal_design',
 ]);
 
 /**
@@ -358,13 +406,13 @@ export function getAspectFamily(aspect: string): string[] {
  * 설명력: 같은 주제라도 개요와 구현 명세는 다른 문서다. scope×aspect 내에서 깊이를 구분한다.
  */
 export const DEF_DEPTH = {
-  entries: ["overview", "specification", "implementation", "validation"] as const,
-  capacity: 8,  // nextPowerOf2(4 * 2 = 8) = 8
+  entries: ['overview', 'specification', 'implementation', 'validation'] as const,
+  capacity: 8, // nextPowerOf2(4 * 2 = 8) = 8
   ko: {
-    overview: "개요",
-    specification: "명세",
-    implementation: "구현",
-    validation: "검증",
+    overview: '개요',
+    specification: '명세',
+    implementation: '구현',
+    validation: '검증',
   } as Record<string, string>,
 } as const;
 
@@ -375,14 +423,14 @@ export const DEF_DEPTH = {
  * 설명력: 초안과 승인된 문서는 신뢰도가 다르다. 문서의 현재 상태를 좌표에 반영한다.
  */
 export const DEF_LIFECYCLE = {
-  entries: ["draft", "review", "approved", "deprecated", "archived"] as const,
-  capacity: 16,  // nextPowerOf2(5 * 2 = 10) = 16
+  entries: ['draft', 'review', 'approved', 'deprecated', 'archived'] as const,
+  capacity: 16, // nextPowerOf2(5 * 2 = 10) = 16
   ko: {
-    draft: "초안",
-    review: "검토중",
-    approved: "승인",
-    deprecated: "폐기예정",
-    archived: "보관",
+    draft: '초안',
+    review: '검토중',
+    approved: '승인',
+    deprecated: '폐기예정',
+    archived: '보관',
   } as Record<string, string>,
 } as const;
 
@@ -394,19 +442,30 @@ export const DEF_LIFECYCLE = {
  * contains는 그룹→멤버 포함 관계로, 계층 구조와 concern 전파의 경로가 된다.
  */
 export const LINK_TYPE = {
-  entries: ["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes", "refs", "verifies"] as const,
-  capacity: 32,  // nextPowerOf2(10 * 2 = 20) = 32
+  entries: [
+    'depends_on',
+    'implements',
+    'refines',
+    'constrains',
+    'traces_to',
+    'contains',
+    'evolves_from',
+    'supersedes',
+    'refs',
+    'verifies',
+  ] as const,
+  capacity: 32, // nextPowerOf2(10 * 2 = 20) = 32
   ko: {
-    depends_on: "의존",
-    implements: "구현",
-    refines: "구체화",
-    constrains: "제약",
-    traces_to: "추적",
-    contains: "포함",
-    evolves_from: "진화원본",
-    supersedes: "대체",
-    refs: "배치",
-    verifies: "검증",
+    depends_on: '의존',
+    implements: '구현',
+    refines: '구체화',
+    constrains: '제약',
+    traces_to: '추적',
+    contains: '포함',
+    evolves_from: '진화원본',
+    supersedes: '대체',
+    refs: '배치',
+    verifies: '검증',
   } as Record<string, string>,
 } as const;
 
@@ -430,12 +489,12 @@ export const DOC_SEQ = {
  * 설명력: taxonomy 자체가 어떤 종류의 분류 기능을 제공하는지 결정한다.
  */
 export const TAXONOMY_FAMILY = {
-  entries: ["topological", "functional", "bridge"] as const,
-  capacity: 8,  // nextPowerOf2(3 * 2 = 6) = 8
+  entries: ['topological', 'functional', 'bridge'] as const,
+  capacity: 8, // nextPowerOf2(3 * 2 = 6) = 8
   ko: {
-    topological: "위상좌표계",
-    functional: "기능부여",
-    bridge: "브릿지",
+    topological: '위상좌표계',
+    functional: '기능부여',
+    bridge: '브릿지',
   } as Record<string, string>,
 } as const;
 
@@ -445,49 +504,52 @@ export const TAXONOMY_FAMILY = {
  * 새 taxonomy 추가 시 여기에 등록한다.
  * 이 레지스트리가 meta-taxonomy의 SSOT다.
  */
-export const TAXONOMY_REGISTRY: Record<string, {
-  readonly name: string;
-  readonly family: (typeof TAXONOMY_FAMILY.entries)[number];
-  readonly primaryQuestion: string;
-  readonly ownedConcepts: readonly string[];
-  readonly coordinateAxes?: readonly string[];
-  readonly bridgeTarget?: string;
-  readonly bridgeRole?: string;
-}> = {
-  "definition-taxonomy": {
-    name: "정의 분류",
-    family: "topological",
-    primaryQuestion: "어떤 인지 관점으로 읽고 기록할 것인가",
-    ownedConcepts: ["scope", "aspect", "depth", "level", "layer", "lifecycle"],
-    coordinateAxes: ["def_scope", "def_aspect", "def_depth", "doc_seq"],
+export const TAXONOMY_REGISTRY: Record<
+  string,
+  {
+    readonly name: string;
+    readonly family: (typeof TAXONOMY_FAMILY.entries)[number];
+    readonly primaryQuestion: string;
+    readonly ownedConcepts: readonly string[];
+    readonly coordinateAxes?: readonly string[];
+    readonly bridgeTarget?: string;
+    readonly bridgeRole?: string;
+  }
+> = {
+  'definition-taxonomy': {
+    name: '정의 분류',
+    family: 'topological',
+    primaryQuestion: '어떤 인지 관점으로 읽고 기록할 것인가',
+    ownedConcepts: ['scope', 'aspect', 'depth', 'level', 'layer', 'lifecycle'],
+    coordinateAxes: ['def_scope', 'def_aspect', 'def_depth', 'doc_seq'],
   },
-  "structural-taxonomy": {
-    name: "구조 분류",
-    family: "topological",
-    primaryQuestion: "실제로 어떤 단위가 존재하고 어떻게 배열되는가",
-    ownedConcepts: ["facet", "boundary", "runtime_scope", "contract"],
-    coordinateAxes: ["facet", "boundary", "runtime_scope"],
+  'structural-taxonomy': {
+    name: '구조 분류',
+    family: 'topological',
+    primaryQuestion: '실제로 어떤 단위가 존재하고 어떻게 배열되는가',
+    ownedConcepts: ['facet', 'boundary', 'runtime_scope', 'contract'],
+    coordinateAxes: ['facet', 'boundary', 'runtime_scope'],
   },
-  "observability-taxonomy": {
-    name: "관측 분류",
-    family: "functional",
-    primaryQuestion: "무엇을 어떤 층위에서 관측하는가",
-    ownedConcepts: ["semantic_address", "telemetry", "infra_observe"],
+  'observability-taxonomy': {
+    name: '관측 분류',
+    family: 'functional',
+    primaryQuestion: '무엇을 어떤 층위에서 관측하는가',
+    ownedConcepts: ['semantic_address', 'telemetry', 'infra_observe'],
   },
-  "pm-taxonomy": {
-    name: "전달 분류",
-    family: "functional",
-    primaryQuestion: "무엇을 누가 언제 끝내는가",
-    ownedConcepts: ["initiative", "epic", "deliverable", "task", "checkpoint"],
+  'pm-taxonomy': {
+    name: '전달 분류',
+    family: 'functional',
+    primaryQuestion: '무엇을 누가 언제 끝내는가',
+    ownedConcepts: ['initiative', 'epic', 'deliverable', 'task', 'checkpoint'],
   },
-  "df-taxonomy": {
-    name: "의사결정 분류",
-    family: "bridge",
-    primaryQuestion: "왜 이런 판단을 했는가",
-    ownedConcepts: ["DecisionUnit", "Evidence", "DecisionLayer", "verdict"],
-    coordinateAxes: ["decision_path", "decision_layer"],
-    bridgeTarget: "definition-taxonomy",
-    bridgeRole: "스펙관리의 의사결정 의도를 자체 좌표 공간에 기억한다",
+  'df-taxonomy': {
+    name: '의사결정 분류',
+    family: 'bridge',
+    primaryQuestion: '왜 이런 판단을 했는가',
+    ownedConcepts: ['DecisionUnit', 'Evidence', 'DecisionLayer', 'verdict'],
+    coordinateAxes: ['decision_path', 'decision_layer'],
+    bridgeTarget: 'definition-taxonomy',
+    bridgeRole: '스펙관리의 의사결정 의도를 자체 좌표 공간에 기억한다',
   },
 } as const;
 
@@ -495,12 +557,12 @@ export const TAXONOMY_REGISTRY: Record<string, {
 
 /** 카탈로그 호환 VersionedAxis 목록 */
 export const DEFINITION_AXES: Record<string, VersionedAxis> = {
-  def_level: toVersionedAxis("def_level", "분해 레벨", DEF_LEVEL),
-  def_scope: toVersionedAxis("def_scope", "정의 대분류", DEF_SCOPE),
-  def_aspect: toVersionedAxis("def_aspect", "세부 측면", DEF_ASPECT),
-  def_depth: toVersionedAxis("def_depth", "정의 깊이", DEF_DEPTH),
-  def_lifecycle: toVersionedAxis("def_lifecycle", "생명주기", DEF_LIFECYCLE),
-  link_type: toVersionedAxis("link_type", "관계 유형", LINK_TYPE),
+  def_level: toVersionedAxis('def_level', '분해 레벨', DEF_LEVEL),
+  def_scope: toVersionedAxis('def_scope', '정의 대분류', DEF_SCOPE),
+  def_aspect: toVersionedAxis('def_aspect', '세부 측면', DEF_ASPECT),
+  def_depth: toVersionedAxis('def_depth', '정의 깊이', DEF_DEPTH),
+  def_lifecycle: toVersionedAxis('def_lifecycle', '생명주기', DEF_LIFECYCLE),
+  link_type: toVersionedAxis('link_type', '관계 유형', LINK_TYPE),
 };
 
 // ─── 축 설명력 메타 레지스트리 ────────────────────────────
@@ -508,41 +570,46 @@ export const DEFINITION_AXES: Record<string, VersionedAxis> = {
 /** 축별 설명력 메타데이터 */
 export const AXIS_META: Record<string, AxisExplanatoryMeta> = {
   def_scope: {
-    role: "primary",
-    explains: "문서가 소프트웨어의 어떤 측면을 정의하는가 (UI, 기능, 흐름, 상태, 제약, 데이터, 인터페이스)",
-    designRationale: "소프트웨어 정의의 7대 분류는 아키텍처 관점에서 직교하는 관심사다. " +
-      "UI를 정의하는 문서와 데이터를 정의하는 문서는 독자, 형식, 검증 방법이 모두 다르다. " +
-      "인터페이스(API/CLI/이벤트)는 기능이 아니라 접근 계약이므로 별도 scope.",
-    orthogonalTo: ["def_depth", "def_lifecycle"],
+    role: 'primary',
+    explains:
+      '문서가 소프트웨어의 어떤 측면을 정의하는가 (UI, 기능, 흐름, 상태, 제약, 데이터, 인터페이스)',
+    designRationale:
+      '소프트웨어 정의의 7대 분류는 아키텍처 관점에서 직교하는 관심사다. ' +
+      'UI를 정의하는 문서와 데이터를 정의하는 문서는 독자, 형식, 검증 방법이 모두 다르다. ' +
+      '인터페이스(API/CLI/이벤트)는 기능이 아니라 접근 계약이므로 별도 scope.',
+    orthogonalTo: ['def_depth', 'def_lifecycle'],
   },
   def_aspect: {
-    role: "primary",
-    explains: "대분류 내에서 구체적으로 어떤 세부 유형을 정의하는가",
-    designRationale: "레이아웃 정의와 컴포넌트 정의는 같은 UI지만 다른 문서다. " +
-      "scope만으로는 문서의 정확한 주제를 특정할 수 없다. " +
-      "scope-aspect 쌍이 함께 문서의 정체성을 결정한다. " +
-      "data scope에 prefix_schema/axis_catalog를 두어 좌표 정의 문서도 관리한다.",
-    orthogonalTo: ["def_depth", "def_lifecycle"],
+    role: 'primary',
+    explains: '대분류 내에서 구체적으로 어떤 세부 유형을 정의하는가',
+    designRationale:
+      '레이아웃 정의와 컴포넌트 정의는 같은 UI지만 다른 문서다. ' +
+      'scope만으로는 문서의 정확한 주제를 특정할 수 없다. ' +
+      'scope-aspect 쌍이 함께 문서의 정체성을 결정한다. ' +
+      'data scope에 prefix_schema/axis_catalog를 두어 좌표 정의 문서도 관리한다.',
+    orthogonalTo: ['def_depth', 'def_lifecycle'],
   },
   def_depth: {
-    role: "secondary",
-    explains: "같은 주제를 얼마나 깊이 다루는가 (개요 vs 명세 vs 구현 vs 검증)",
-    designRationale: "컴포넌트 개요와 컴포넌트 구현 명세는 독자와 목적이 다르다. " +
-      "depth가 없으면 같은 scope×aspect 내 문서들을 구분할 수 없다.",
-    orthogonalTo: ["def_scope", "def_aspect", "def_lifecycle"],
+    role: 'secondary',
+    explains: '같은 주제를 얼마나 깊이 다루는가 (개요 vs 명세 vs 구현 vs 검증)',
+    designRationale:
+      '컴포넌트 개요와 컴포넌트 구현 명세는 독자와 목적이 다르다. ' +
+      'depth가 없으면 같은 scope×aspect 내 문서들을 구분할 수 없다.',
+    orthogonalTo: ['def_scope', 'def_aspect', 'def_lifecycle'],
   },
   def_lifecycle: {
-    role: "contextual",
-    explains: "문서가 현재 어떤 상태인가 (초안, 검토, 승인, 폐기, 보관)",
-    designRationale: "초안 문서와 승인된 문서는 신뢰도가 다르다. " +
-      "생명주기는 문서의 내용이 아니라 상태를 측정하는 메타 축이다.",
-    orthogonalTo: ["def_scope", "def_aspect", "def_depth"],
+    role: 'contextual',
+    explains: '문서가 현재 어떤 상태인가 (초안, 검토, 승인, 폐기, 보관)',
+    designRationale:
+      '초안 문서와 승인된 문서는 신뢰도가 다르다. ' +
+      '생명주기는 문서의 내용이 아니라 상태를 측정하는 메타 축이다.',
+    orthogonalTo: ['def_scope', 'def_aspect', 'def_depth'],
   },
   link_type: {
-    role: "relation",
-    explains: "두 정의 사이의 관계가 어떤 성격인가 (의존, 구현, 구체화, 제약, 추적)",
-    designRationale: "관계의 종류에 따라 전이 규칙이 다르다. " +
-      "의존은 전이적이지만 구현은 아닐 수 있다.",
-    orthogonalTo: ["def_scope", "def_aspect"],
+    role: 'relation',
+    explains: '두 정의 사이의 관계가 어떤 성격인가 (의존, 구현, 구체화, 제약, 추적)',
+    designRationale:
+      '관계의 종류에 따라 전이 규칙이 다르다. ' + '의존은 전이적이지만 구현은 아닐 수 있다.',
+    orthogonalTo: ['def_scope', 'def_aspect'],
   },
 };

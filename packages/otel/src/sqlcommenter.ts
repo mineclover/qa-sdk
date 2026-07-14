@@ -1,7 +1,7 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import { context, trace } from "@opentelemetry/api";
+import { context, trace } from '@opentelemetry/api';
 
 /**
  * sqlcommenter 포맷으로 메타데이터 문자열을 빌드한다.
@@ -14,7 +14,7 @@ import { context, trace } from "@opentelemetry/api";
 export function buildSqlComment(tags: Record<string, string>): string {
   return Object.entries(tags)
     .map(([k, v]) => `${encodeKey(k)}='${encodeValue(v)}'`)
-    .join(",");
+    .join(',');
 }
 
 /**
@@ -29,8 +29,8 @@ export function buildSqlCommentWithTrace(tags: Record<string, string>): string {
     const spanContext = span.spanContext();
     if (spanContext.traceId) {
       // W3C traceparent: version-traceId-spanId-traceFlags
-      const traceFlags = (spanContext.traceFlags ?? 0).toString(16).padStart(2, "0");
-      merged["traceparent"] = `00-${spanContext.traceId}-${spanContext.spanId}-${traceFlags}`;
+      const traceFlags = (spanContext.traceFlags ?? 0).toString(16).padStart(2, '0');
+      merged['traceparent'] = `00-${spanContext.traceId}-${spanContext.spanId}-${traceFlags}`;
     }
   }
 

@@ -10,8 +10,8 @@
  *   - 기타 store(Trace/Session/Verdict/Graph/ScenarioSpec/Transmission/Dlq)는
  *     @qa-sdk/store 그대로 — plan 08에서 점진적 이전.
  */
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import {
   DrizzleRecordStore,
   DrizzleTraceStore,
@@ -24,11 +24,11 @@ import {
   DrizzleDlqStore,
   createDb,
   closeClient,
-} from "@qa-sdk/store";
-import type { Db } from "@qa-sdk/store";
+} from '@qa-sdk/store';
+import type { Db } from '@qa-sdk/store';
 
-import { PgRecordStore } from "../../../stores/pg/event-record.adapter.js";
-import { PgKeyObservationStore } from "../../../stores/pg/key-observation.adapter.js";
+import { PgRecordStore } from '../../../stores/pg/event-record.adapter.js';
+import { PgKeyObservationStore } from '../../../stores/pg/key-observation.adapter.js';
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -67,9 +67,8 @@ async function truncate(d: Db, ...tables: string[]) {
 let ingestDdlApplied = false;
 async function ensureIngestTables() {
   if (ingestDdlApplied) return;
-  const { KEY_OBSERVATIONS_PG_DDL, EVENT_RECORDS_PG_DDL } = await import(
-    "../../../stores/pg/schema.js"
-  );
+  const { KEY_OBSERVATIONS_PG_DDL, EVENT_RECORDS_PG_DDL } =
+    await import('../../../stores/pg/schema.js');
   const sql = getIngestSql();
   await sql.unsafe(KEY_OBSERVATIONS_PG_DDL);
   await sql.unsafe(EVENT_RECORDS_PG_DDL);
@@ -88,7 +87,7 @@ export async function createPgRecordStore() {
   const sql = getIngestSql();
   return {
     store: new PgRecordStore(drizzle({ client: sql })),
-    cleanup: async () => truncateIngest("event_records"),
+    cleanup: async () => truncateIngest('event_records'),
   };
 }
 
@@ -96,7 +95,7 @@ export async function createPgTraceStore() {
   const d = getDb();
   return {
     store: new DrizzleTraceStore(d),
-    cleanup: async () => truncate(d, "traces"),
+    cleanup: async () => truncate(d, 'traces'),
   };
 }
 
@@ -105,8 +104,7 @@ export async function createPgKeyObservationStore() {
   const sql = getIngestSql();
   return {
     store: new PgKeyObservationStore(drizzle({ client: sql })),
-    cleanup: async () =>
-      truncateIngest("key_observations", "key_observation_prefixes"),
+    cleanup: async () => truncateIngest('key_observations', 'key_observation_prefixes'),
   };
 }
 
@@ -114,19 +112,19 @@ export async function createPgSessionStore() {
   const d = getDb();
   return {
     store: new DrizzleSessionStore(d),
-    cleanup: async () => truncate(d, "qa_sessions"),
+    cleanup: async () => truncate(d, 'qa_sessions'),
   };
 }
 
 /** FK 제약 테이블용 traces 시딩. 매 factory 호출 시 실행 — beforeEach cleanup 이후에도 안전. */
-async function seedTraces(d: Db, ids = ["t1", "t2"]) {
+async function seedTraces(d: Db, ids = ['t1', 't2']) {
   const traceStore = new DrizzleTraceStore(d);
   for (const traceId of ids) {
     await traceStore.upsert({
       traceId,
       recordCount: 0,
-      firstTimestamp: new Date("2026-01-01"),
-      lastTimestamp: new Date("2026-01-01"),
+      firstTimestamp: new Date('2026-01-01'),
+      lastTimestamp: new Date('2026-01-01'),
     });
   }
 }
@@ -136,7 +134,7 @@ export async function createPgVerdictStore() {
   await seedTraces(d);
   return {
     store: new DrizzleVerdictStore(d),
-    cleanup: async () => truncate(d, "verdict_reports", "traces"),
+    cleanup: async () => truncate(d, 'verdict_reports', 'traces'),
   };
 }
 
@@ -145,7 +143,7 @@ export async function createPgGraphStore() {
   await seedTraces(d);
   return {
     store: new DrizzleGraphStore(d),
-    cleanup: async () => truncate(d, "runtime_graphs", "traces"),
+    cleanup: async () => truncate(d, 'runtime_graphs', 'traces'),
   };
 }
 
@@ -153,7 +151,7 @@ export async function createPgScenarioSpecStore() {
   const d = getDb();
   return {
     store: new DrizzleScenarioSpecStore(d),
-    cleanup: async () => truncate(d, "scenario_specs"),
+    cleanup: async () => truncate(d, 'scenario_specs'),
   };
 }
 
@@ -161,7 +159,7 @@ export async function createPgTransmissionStore() {
   const d = getDb();
   return {
     store: new DrizzleTransmissionStore(d),
-    cleanup: async () => truncate(d, "transmissions"),
+    cleanup: async () => truncate(d, 'transmissions'),
   };
 }
 
@@ -170,7 +168,7 @@ export async function createPgDlqStore() {
   await seedTraces(d);
   return {
     store: new DrizzleDlqStore(d),
-    cleanup: async () => truncate(d, "dead_letter_queue", "traces"),
+    cleanup: async () => truncate(d, 'dead_letter_queue', 'traces'),
   };
 }
 

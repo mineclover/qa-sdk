@@ -2,6 +2,9 @@
   "name": "@qa-sdk/otel",
   "version": "0.1.0",
   "description": "OpenTelemetry 초기화와 Drizzle 계측 유틸리티",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -9,9 +12,6 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -19,14 +19,21 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-node": "^0.57.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
-    "@opentelemetry/resources": "^1.30.0",
-    "@opentelemetry/semantic-conventions": "^1.30.0",
     "@opentelemetry/instrumentation-http": "^0.57.0",
+    "@opentelemetry/resources": "^1.30.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
     "@opentelemetry/sdk-trace-base": "^1.30.0",
     "@opentelemetry/sdk-trace-node": "^1.30.0",
+    "@opentelemetry/semantic-conventions": "^1.30.0",
     "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@qa-sdk/store": "workspace:*",
+    "@types/node": "^22.13.10",
+    "drizzle-orm": "catalog:",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
   },
   "peerDependencies": {
     "@qa-sdk/store": "workspace:*"
@@ -35,12 +42,5 @@
     "@qa-sdk/store": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@qa-sdk/store": "workspace:*",
-    "@types/node": "^22.13.10",
-    "drizzle-orm": "catalog:",
-    "typescript": "^5.8.2",
-    "vitest": "^1.6.1"
   }
 }

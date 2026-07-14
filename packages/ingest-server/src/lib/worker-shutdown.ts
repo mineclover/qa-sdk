@@ -1,7 +1,7 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import type { Logger } from "pino";
+import type { Logger } from 'pino';
 
 type ExitFn = (code: number) => never | void;
 type SignalHandler = () => void;
@@ -16,9 +16,7 @@ export interface WorkerShutdownDeps {
   process?: SignalRegistrar;
 }
 
-export function installWorkerShutdown(
-  deps: WorkerShutdownDeps,
-) {
+export function installWorkerShutdown(deps: WorkerShutdownDeps) {
   const exit = deps.exit ?? process.exit;
   const signalRegistrar = deps.process ?? process;
   let shutdownPromise: Promise<void> | null = null;
@@ -33,23 +31,23 @@ export function installWorkerShutdown(
   };
 
   const performShutdown = async (signal: NodeJS.Signals | string) => {
-    deps.logger.info({ signal }, "worker shutdown requested");
+    deps.logger.info({ signal }, 'worker shutdown requested');
 
     try {
       await deps.close();
-      deps.logger.info("worker shutdown complete");
+      deps.logger.info('worker shutdown complete');
       exit(0);
     } catch (error) {
-      deps.logger.error({ err: error }, "error during worker shutdown");
+      deps.logger.error({ err: error }, 'error during worker shutdown');
       exit(1);
     }
   };
 
-  signalRegistrar.on("SIGTERM", () => {
-    void shutdown("SIGTERM");
+  signalRegistrar.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
   });
-  signalRegistrar.on("SIGINT", () => {
-    void shutdown("SIGINT");
+  signalRegistrar.on('SIGINT', () => {
+    void shutdown('SIGINT');
   });
 
   return { shutdown };

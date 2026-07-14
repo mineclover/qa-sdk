@@ -1,9 +1,9 @@
 // @def.boundary spec-engine-system
 // @def.doc spec-engine-system
 
-import type { SchemaDef, SchemaAxis, SchemaConstraint } from "./schema.types.js";
-import type { SchemaRegistry } from "./schema.registry.js";
-import type { ValidationErrorDetail } from "./shared/errors.js";
+import type { SchemaDef, SchemaAxis, SchemaConstraint } from './schema.types.js';
+import type { SchemaRegistry } from './schema.registry.js';
+import type { ValidationErrorDetail } from './shared/errors.js';
 
 type ValidationInputValue =
   | string
@@ -39,10 +39,7 @@ export class SchemaValidator {
    * 데이터를 스키마에 대해 검증한다.
    * fragment를 resolve한 완전한 스키마 기준으로 검증.
    */
-  validate(
-    schemaId: string,
-    data: ValidationInputMap,
-  ): ValidationResult {
+  validate(schemaId: string, data: ValidationInputMap): ValidationResult {
     const schema = this.registry.resolveSchema(schemaId);
     const errors: ValidationErrorDetail[] = [];
 
@@ -54,10 +51,7 @@ export class SchemaValidator {
   }
 
   /** Layer 0: vocabulary 값 유효성 */
-  private validateLayer0(
-    schema: SchemaDef,
-    data: ValidationInputMap,
-  ): ValidationErrorDetail[] {
+  private validateLayer0(schema: SchemaDef, data: ValidationInputMap): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
 
     for (const [key, value] of Object.entries(data)) {
@@ -72,10 +66,7 @@ export class SchemaValidator {
   }
 
   /** Layer 1: 좌표 구조 정규성 (unknown axis 검출) */
-  private validateLayer1(
-    schema: SchemaDef,
-    data: ValidationInputMap,
-  ): ValidationErrorDetail[] {
+  private validateLayer1(schema: SchemaDef, data: ValidationInputMap): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
 
     for (const key of Object.keys(data)) {
@@ -83,7 +74,7 @@ export class SchemaValidator {
         errors.push({
           layer: 1,
           axis: key,
-          rule: "unknownAxis",
+          rule: 'unknownAxis',
           message: `Unknown axis "${key}" — not defined in schema "${schema.id}"`,
         });
       }
@@ -93,10 +84,7 @@ export class SchemaValidator {
   }
 
   /** Layer 2: 구조적 제약 */
-  private validateLayer2(
-    schema: SchemaDef,
-    data: ValidationInputMap,
-  ): ValidationErrorDetail[] {
+  private validateLayer2(schema: SchemaDef, data: ValidationInputMap): ValidationErrorDetail[] {
     const errors: ValidationErrorDetail[] = [];
 
     // required 검사
@@ -105,7 +93,7 @@ export class SchemaValidator {
         errors.push({
           layer: 2,
           axis: key,
-          rule: "required",
+          rule: 'required',
           message: `Required axis "${key}" is missing`,
         });
       }
@@ -131,33 +119,33 @@ export class SchemaValidator {
     const errors: ValidationErrorDetail[] = [];
 
     switch (axis.valueType) {
-      case "vocabulary":
-      case "literal":
-        if (typeof value !== "string" && typeof value !== "number") {
+      case 'vocabulary':
+      case 'literal':
+        if (typeof value !== 'string' && typeof value !== 'number') {
           errors.push({
             layer: 0,
             axis: key,
-            rule: "type",
+            rule: 'type',
             message: `Axis "${key}" expects string or number, got ${typeof value}`,
           });
         }
         break;
-      case "ref":
-        if (typeof value !== "string" && typeof value !== "number") {
+      case 'ref':
+        if (typeof value !== 'string' && typeof value !== 'number') {
           errors.push({
             layer: 0,
             axis: key,
-            rule: "type",
+            rule: 'type',
             message: `Axis "${key}" (ref) expects string or number identifier, got ${typeof value}`,
           });
         }
         break;
-      case "coordinate":
-        if (typeof value !== "string" && typeof value !== "number") {
+      case 'coordinate':
+        if (typeof value !== 'string' && typeof value !== 'number') {
           errors.push({
             layer: 0,
             axis: key,
-            rule: "type",
+            rule: 'type',
             message: `Axis "${key}" (coordinate) expects address string or number, got ${typeof value}`,
           });
         }
@@ -171,7 +159,7 @@ export class SchemaValidator {
       errors.push({
         layer: 0,
         axis: key,
-        rule: "multi",
+        rule: 'multi',
         message: `Axis "${key}" does not allow multiple values`,
       });
     }
@@ -188,43 +176,51 @@ export class SchemaValidator {
     const value = data[constraint.axis];
 
     switch (constraint.rule) {
-      case "maxCount": {
-        if (Array.isArray(value) && constraint.value !== undefined && value.length > constraint.value) {
+      case 'maxCount': {
+        if (
+          Array.isArray(value) &&
+          constraint.value !== undefined &&
+          value.length > constraint.value
+        ) {
           errors.push({
             layer: 2,
             axis: constraint.axis,
-            rule: "maxCount",
+            rule: 'maxCount',
             message: `Axis "${constraint.axis}" has ${value.length} values, max is ${constraint.value}`,
           });
         }
         break;
       }
-      case "minCount": {
-        if (Array.isArray(value) && constraint.value !== undefined && value.length < constraint.value) {
+      case 'minCount': {
+        if (
+          Array.isArray(value) &&
+          constraint.value !== undefined &&
+          value.length < constraint.value
+        ) {
           errors.push({
             layer: 2,
             axis: constraint.axis,
-            rule: "minCount",
+            rule: 'minCount',
             message: `Axis "${constraint.axis}" has ${value.length} values, min is ${constraint.value}`,
           });
         }
         break;
       }
-      case "requiredIf": {
+      case 'requiredIf': {
         if (constraint.condition) {
           const condValue = data[constraint.condition.axis];
           if (condValue === constraint.condition.value && !(constraint.axis in data)) {
             errors.push({
               layer: 2,
               axis: constraint.axis,
-              rule: "requiredIf",
+              rule: 'requiredIf',
               message: `Axis "${constraint.axis}" is required when "${constraint.condition.axis}" is "${constraint.condition.value}"`,
             });
           }
         }
         break;
       }
-      case "exclusive": {
+      case 'exclusive': {
         // exclusive: 이 축이 존재하면 다른 특정 축과 동시에 존재할 수 없음
         // 초기 구현에서는 단일 축 존재 여부만 체크
         break;

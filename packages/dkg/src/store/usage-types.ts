@@ -52,7 +52,7 @@ export interface UsageData {
 export interface MetricValue {
   readonly id: string;
   readonly value: number;
-  readonly status: "ok" | "warning" | "critical";
+  readonly status: 'ok' | 'warning' | 'critical';
   readonly unit?: string;
   readonly observedAt?: string;
 }

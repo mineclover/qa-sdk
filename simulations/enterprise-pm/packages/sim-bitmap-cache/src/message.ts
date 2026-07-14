@@ -8,14 +8,14 @@
  * 모든 Subscriber가 동일 schema로 parse하여 LRU cache에서 해당 entry 제거.
  */
 
-import { z } from "zod";
+import { z } from 'zod';
 
-export const InvalidationScope = z.enum(["user", "role", "prefix"]);
+export const InvalidationScope = z.enum(['user', 'role', 'prefix']);
 export const InvalidationReason = z.enum([
-  "permission_change",
-  "role_redefinition",
-  "prefix_version_bump",
-  "security_incident",
+  'permission_change',
+  'role_redefinition',
+  'prefix_version_bump',
+  'security_incident',
 ]);
 
 export const invalidationMessageSchema = z.object({
@@ -37,7 +37,7 @@ export type InvalidationMessage = z.infer<typeof invalidationMessageSchema>;
 export type Scope = z.infer<typeof InvalidationScope>;
 export type Reason = z.infer<typeof InvalidationReason>;
 
-export const INVALIDATION_CHANNEL = "bitmap:invalidate";
+export const INVALIDATION_CHANNEL = 'bitmap:invalidate';
 
 export function serializeMessage(msg: InvalidationMessage): string {
   return JSON.stringify(msg);

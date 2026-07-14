@@ -6,9 +6,9 @@ import type {
   DefDoc,
   DefinitionEntry,
   MemoryDefinitionRegistry,
-} from "definition-catalog";
-import type { GateDescriptor } from "quality-ledger";
-import type { QualityGateSpec } from "work-domain";
+} from 'definition-catalog';
+import type { GateDescriptor } from 'quality-ledger';
+import type { QualityGateSpec } from 'work-domain';
 
 export interface QualityTopologyDoc {
   readonly id: string;
@@ -63,9 +63,7 @@ export function toQualityTopologyDoc(
   };
 }
 
-export function defDocToQualityTopologyDoc(
-  doc: DefDoc,
-): QualityTopologyDoc {
+export function defDocToQualityTopologyDoc(doc: DefDoc): QualityTopologyDoc {
   return {
     id: doc.docId,
     title: doc.title ?? doc.docId,
@@ -81,7 +79,7 @@ export function defDocToQualityTopologyDoc(
 }
 
 function qualityDimension(value: string | undefined): string {
-  return value ?? "unknown";
+  return value ?? 'unknown';
 }
 
 export function collectContainedQualityDocs(
@@ -97,8 +95,8 @@ export function collectContainedQualityDocs(
     visited.add(id);
 
     const children = registry
-      .getLinks(id, "outgoing")
-      .filter((link) => link.linkType === "contains")
+      .getLinks(id, 'outgoing')
+      .filter((link) => link.linkType === 'contains')
       .map((link) => registry.get(link.targetId))
       .filter((doc): doc is NonNullable<typeof doc> => doc !== undefined);
 
@@ -113,7 +111,7 @@ export function collectContainedQualityDocs(
 }
 
 export async function collectContainedQualityDocsFromDataSource(
-  source: Pick<DefDataSource, "getChildren">,
+  source: Pick<DefDataSource, 'getChildren'>,
   rootId: string,
 ): Promise<QualityTopologyDoc[]> {
   const visited = new Set<string>();
@@ -137,9 +135,7 @@ export async function collectContainedQualityDocsFromDataSource(
 export function collectQualityGateDocs(
   docs: readonly QualityTopologyDoc[],
 ): QualityGateTopologyDoc[] {
-  return docs.filter(
-    (doc): doc is QualityGateTopologyDoc => doc.gate !== undefined,
-  );
+  return docs.filter((doc): doc is QualityGateTopologyDoc => doc.gate !== undefined);
 }
 
 export function toGateDescriptors(
@@ -170,7 +166,7 @@ export function resolveQualityGateTopology(
 }
 
 export async function resolveQualityGateDescriptorsFromDataSource(
-  source: Pick<DefDataSource, "get" | "getChildren">,
+  source: Pick<DefDataSource, 'get' | 'getChildren'>,
   refs: readonly QualityGateDescriptorResolutionRef[],
 ): Promise<GateDescriptor[]> {
   const descriptors: GateDescriptor[] = [];
@@ -193,7 +189,7 @@ export async function resolveQualityGateDescriptorsFromDataSource(
 }
 
 async function resolveQualityGateDescriptorsForRef(
-  source: Pick<DefDataSource, "get" | "getChildren">,
+  source: Pick<DefDataSource, 'get' | 'getChildren'>,
   input: QualityGateDescriptorResolutionRef,
 ): Promise<GateDescriptor[]> {
   const docId = definitionDocRefCandidate(input.ref);
@@ -202,11 +198,13 @@ async function resolveQualityGateDescriptorsForRef(
   const root = await source.get(docId);
   if (!root) return [];
   if (root.gate) {
-    return [{
-      gateDocId: root.docId,
-      docVersion: root.version,
-      bundleId: input.bundleId ?? null,
-    }];
+    return [
+      {
+        gateDocId: root.docId,
+        docVersion: root.version,
+        bundleId: input.bundleId ?? null,
+      },
+    ];
   }
   if (input.directGateOnly) return [];
 
@@ -219,7 +217,7 @@ async function resolveQualityGateDescriptorsForRef(
 }
 
 async function resolveQualityGateDescriptorsForContainer(
-  source: Pick<DefDataSource, "get" | "getChildren">,
+  source: Pick<DefDataSource, 'get' | 'getChildren'>,
   root: DefDoc,
   bundleId: string | null | undefined,
   directChildGatesOnly = false,
@@ -227,11 +225,13 @@ async function resolveQualityGateDescriptorsForContainer(
   const children = await source.getChildren(root.docId);
   const directGateDescriptors = children
     .filter((child) => child.gate !== undefined)
-    .map((child): GateDescriptor => ({
-      gateDocId: child.docId,
-      docVersion: child.version,
-      bundleId: bundleId === undefined ? root.docId : bundleId,
-    }));
+    .map(
+      (child): GateDescriptor => ({
+        gateDocId: child.docId,
+        docVersion: child.version,
+        bundleId: bundleId === undefined ? root.docId : bundleId,
+      }),
+    );
   if (directChildGatesOnly) {
     return directGateDescriptors;
   }
@@ -239,38 +239,27 @@ async function resolveQualityGateDescriptorsForContainer(
   if (bundleId === undefined && childBundles.length > 0) {
     const childBundleDescriptors = await Promise.all(
       childBundles.map(async (child) => {
-        const containedDocs = await collectContainedQualityDocsFromDataSource(
-          source,
-          child.docId,
-        );
+        const containedDocs = await collectContainedQualityDocsFromDataSource(source, child.docId);
         return toGateDescriptors(child.docId, containedDocs);
       }),
     );
-    return [
-      ...directGateDescriptors,
-      ...childBundleDescriptors.flat(),
-    ];
+    return [...directGateDescriptors, ...childBundleDescriptors.flat()];
   }
 
-  const containedDocs = await collectContainedQualityDocsFromDataSource(
-    source,
-    root.docId,
-  );
+  const containedDocs = await collectContainedQualityDocsFromDataSource(source, root.docId);
   return toGateDescriptors(bundleId === undefined ? root.docId : bundleId, containedDocs);
 }
 
 function isQualityBundleDoc(doc: DefDoc): boolean {
-  return doc.tags.includes("quality-bundle");
+  return doc.tags.includes('quality-bundle');
 }
 
 function definitionDocRefCandidate(ref: string): string | undefined {
-  const strippedArtifact = ref.startsWith("artifact:")
-    ? ref.slice("artifact:".length)
-    : ref;
-  const strippedWorkArea = strippedArtifact.startsWith("work-area:")
-    ? strippedArtifact.slice("work-area:".length)
+  const strippedArtifact = ref.startsWith('artifact:') ? ref.slice('artifact:'.length) : ref;
+  const strippedWorkArea = strippedArtifact.startsWith('work-area:')
+    ? strippedArtifact.slice('work-area:'.length)
     : strippedArtifact;
-  if (!strippedWorkArea || strippedWorkArea.includes("/") || strippedWorkArea.includes(":")) {
+  if (!strippedWorkArea || strippedWorkArea.includes('/') || strippedWorkArea.includes(':')) {
     return undefined;
   }
   return strippedWorkArea;

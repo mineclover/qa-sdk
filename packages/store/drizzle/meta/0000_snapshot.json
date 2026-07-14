@@ -108,12 +108,8 @@
           "name": "dead_letter_queue_trace_id_traces_trace_id_fk",
           "tableFrom": "dead_letter_queue",
           "tableTo": "traces",
-          "columnsFrom": [
-            "trace_id"
-          ],
-          "columnsTo": [
-            "trace_id"
-          ],
+          "columnsFrom": ["trace_id"],
+          "columnsTo": ["trace_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -323,12 +319,8 @@
           "name": "event_records_trace_id_traces_trace_id_fk",
           "tableFrom": "event_records",
           "tableTo": "traces",
-          "columnsFrom": [
-            "trace_id"
-          ],
-          "columnsTo": [
-            "trace_id"
-          ],
+          "columnsFrom": ["trace_id"],
+          "columnsTo": ["trace_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -425,12 +417,8 @@
           "name": "runtime_graphs_trace_id_traces_trace_id_fk",
           "tableFrom": "runtime_graphs",
           "tableTo": "traces",
-          "columnsFrom": [
-            "trace_id"
-          ],
-          "columnsTo": [
-            "trace_id"
-          ],
+          "columnsFrom": ["trace_id"],
+          "columnsTo": ["trace_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -614,12 +602,8 @@
           "name": "traces_session_id_qa_sessions_session_id_fk",
           "tableFrom": "traces",
           "tableTo": "qa_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "session_id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["session_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -825,12 +809,8 @@
           "name": "verdict_reports_trace_id_traces_trace_id_fk",
           "tableFrom": "verdict_reports",
           "tableTo": "traces",
-          "columnsFrom": [
-            "trace_id"
-          ],
-          "columnsTo": [
-            "trace_id"
-          ],
+          "columnsFrom": ["trace_id"],
+          "columnsTo": ["trace_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -840,10 +820,7 @@
         "verdict_reports_scenario_id_trace_id_unique": {
           "name": "verdict_reports_scenario_id_trace_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "scenario_id",
-            "trace_id"
-          ]
+          "columns": ["scenario_id", "trace_id"]
         }
       },
       "policies": {},

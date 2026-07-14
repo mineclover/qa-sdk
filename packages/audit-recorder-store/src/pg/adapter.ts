@@ -19,8 +19,8 @@
  * Plan 06c factory 정착 후 별도 후속 plan에서 (현재는 양쪽 maintain 비용 < 추출 비용 판단).
  */
 
-import { asc, eq } from "drizzle-orm";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { asc, eq } from 'drizzle-orm';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 import {
   EntryNotFoundError,
@@ -32,9 +32,9 @@ import {
   type ExecutionEntry,
   type RecordCheckArgs,
   type RecordExecutionArgs,
-} from "permission-engine";
+} from 'permission-engine';
 
-import { auditEntries } from "./schema.js";
+import { auditEntries } from './schema.js';
 
 type Row = typeof auditEntries.$inferSelect;
 type Insert = typeof auditEntries.$inferInsert;
@@ -52,24 +52,24 @@ function toEntry(row: Row): AuditEntry {
     metadata: (row.metadata as Record<string, unknown> | null) ?? undefined,
   };
 
-  if (row.kind === "execution") {
+  if (row.kind === 'execution') {
     return {
       ...base,
-      kind: "execution",
-      apiId: row.apiId ?? "",
-      actorUserId: row.actorUserId ?? "",
+      kind: 'execution',
+      apiId: row.apiId ?? '',
+      actorUserId: row.actorUserId ?? '',
       actorTenantId: row.actorTenantId ?? undefined,
-      targetKind: row.targetKind ?? "",
-      targetId: row.targetId ?? "",
-      outcome: row.outcome as ExecutionEntry["outcome"],
+      targetKind: row.targetKind ?? '',
+      targetId: row.targetId ?? '',
+      outcome: row.outcome as ExecutionEntry['outcome'],
     };
   }
 
   return {
     ...base,
-    kind: "check",
-    pass: row.pass as CheckEntry["pass"],
-    outcome: ((row.outcome ?? "allow") as AuditOutcome),
+    kind: 'check',
+    pass: row.pass as CheckEntry['pass'],
+    outcome: (row.outcome ?? 'allow') as AuditOutcome,
     address: row.address ?? undefined,
     unionKind: row.unionKind ?? undefined,
     denyReason: row.denyReason ?? undefined,
@@ -83,7 +83,7 @@ function executionToRow(e: ExecutionEntry): Insert {
     parentSpanId: e.parentSpanId,
     rootSpanId: e.rootSpanId,
     depth: e.depth,
-    kind: "execution",
+    kind: 'execution',
     apiId: e.apiId,
     actorUserId: e.actorUserId,
     actorTenantId: e.actorTenantId ?? null,
@@ -107,7 +107,7 @@ function checkToRow(c: CheckEntry): Insert {
     parentSpanId: c.parentSpanId,
     rootSpanId: c.rootSpanId,
     depth: c.depth,
-    kind: "check",
+    kind: 'check',
     apiId: null,
     actorUserId: null,
     actorTenantId: null,
@@ -143,7 +143,7 @@ export class PgAuditRecorder implements AuditRecorder {
 
     const now = args.now ?? new Date().toISOString();
     const entry: ExecutionEntry = {
-      kind: "execution",
+      kind: 'execution',
       spanId: args.spanId,
       traceId: args.traceId,
       parentSpanId: args.parentSpanId,
@@ -171,7 +171,7 @@ export class PgAuditRecorder implements AuditRecorder {
   ): Promise<ExecutionEntry> {
     const cur = await this.get(spanId);
     if (!cur) throw new EntryNotFoundError(spanId);
-    if (cur.kind !== "execution") {
+    if (cur.kind !== 'execution') {
       throw new Error(`finishExecution called on non-execution entry: ${spanId}`);
     }
     const endedAt = now ?? new Date().toISOString();
@@ -188,7 +188,7 @@ export class PgAuditRecorder implements AuditRecorder {
 
     const now = args.now ?? new Date().toISOString();
     const entry: CheckEntry = {
-      kind: "check",
+      kind: 'check',
       spanId: args.spanId,
       traceId: args.traceId,
       parentSpanId: args.parentSpanId,
@@ -228,7 +228,7 @@ export class PgAuditRecorder implements AuditRecorder {
   async firstFailure(rootSpanId: string): Promise<AuditEntry | null> {
     const all = await this.listByRoot(rootSpanId);
     for (const e of all) {
-      if (e.outcome === "deny" || e.outcome === "error") return e;
+      if (e.outcome === 'deny' || e.outcome === 'error') return e;
     }
     return null;
   }

@@ -1,8 +1,8 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { ProjectEntity } from "../../domain/index.js";
-import type { ProjectTransactionScope } from "./project-transaction.port.js";
+import type { ProjectEntity } from '../../domain/index.js';
+import type { ProjectTransactionScope } from './project-transaction.port.js';
 
 /**
  * Project Aggregate 의 영속 추상.

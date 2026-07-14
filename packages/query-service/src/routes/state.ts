@@ -12,22 +12,28 @@
  * StateStore가 없으면 501 Not Implemented.
  */
 
-import { Hono } from "hono";
-import { AppError } from "../lib/errors.js";
-import type { ReplayRecordStore } from "../lib/replay-record-store.js";
-import type { ReplayCache } from "../lib/replay-cache.js";
-import { replayCacheKey } from "../lib/replay-cache.js";
-import type { StoredRecord } from "@qa-sdk/core";
+import { Hono } from 'hono';
+import { AppError } from '../lib/errors.js';
+import type { ReplayRecordStore } from '../lib/replay-record-store.js';
+import type { ReplayCache } from '../lib/replay-cache.js';
+import { replayCacheKey } from '../lib/replay-cache.js';
+import type { StoredRecord } from '@qa-sdk/core';
 
 /** 최소 StateStore 인터페이스 (동기/비동기 모두 호환) */
 export interface StateStorePort {
-  snapshot(contextId: string, resourceId: string): Record<string, string> | Promise<Record<string, string>>;
+  snapshot(
+    contextId: string,
+    resourceId: string,
+  ): Record<string, string> | Promise<Record<string, string>>;
 }
 
 /** TransitionInstance 저장소 (선택) */
 export interface TransitionInstanceStorePort {
   findByContext(contextId: string, limit?: number): Promise<readonly Record<string, unknown>[]>;
-  findByContextAndResource(contextId: string, resourceId: string): Promise<readonly Record<string, unknown>[]>;
+  findByContextAndResource(
+    contextId: string,
+    resourceId: string,
+  ): Promise<readonly Record<string, unknown>[]>;
 }
 
 /** TransitionEngine 최소 포트 — 이벤트 replay */
@@ -72,8 +78,8 @@ export function createStateRoutes(deps: StateRouteDeps) {
   const app = new Hono();
 
   // GET /state/:contextId/:resourceId — 현재 축 스냅샷
-  app.get("/:contextId/:resourceId", async (c) => {
-    if (!deps.stateStore) return c.json({ error: "transition state store not configured" }, 501);
+  app.get('/:contextId/:resourceId', async (c) => {
+    if (!deps.stateStore) return c.json({ error: 'transition state store not configured' }, 501);
 
     const { contextId, resourceId } = c.req.param();
     const snapshot = await deps.stateStore.snapshot(contextId, resourceId);
@@ -81,8 +87,9 @@ export function createStateRoutes(deps: StateRouteDeps) {
   });
 
   // GET /state/:contextId/:resourceId/history — transition instance 이력
-  app.get("/:contextId/:resourceId/history", async (c) => {
-    if (!deps.transitionStore) return c.json({ error: "transition instance store not configured" }, 501);
+  app.get('/:contextId/:resourceId/history', async (c) => {
+    if (!deps.transitionStore)
+      return c.json({ error: 'transition instance store not configured' }, 501);
 
     const { contextId, resourceId } = c.req.param();
     const instances = await deps.transitionStore.findByContextAndResource(contextId, resourceId);
@@ -90,9 +97,9 @@ export function createStateRoutes(deps: StateRouteDeps) {
   });
 
   // GET /state/:contextId/:resourceId/at?ts= — 시점 상태 (replay)
-  app.get("/:contextId/:resourceId/at", async (c) => {
-    const ts = c.req.query("ts");
-    if (!ts) return c.json({ error: "ts query parameter required" }, 400);
+  app.get('/:contextId/:resourceId/at', async (c) => {
+    const ts = c.req.query('ts');
+    if (!ts) return c.json({ error: 'ts query parameter required' }, 400);
 
     const { contextId, resourceId } = c.req.param();
 
@@ -100,7 +107,7 @@ export function createStateRoutes(deps: StateRouteDeps) {
     if (deps.recordStore) {
       const targetTime = new Date(ts);
       if (Number.isNaN(targetTime.getTime())) {
-        return c.json({ error: "invalid timestamp format (ISO-8601 required)" }, 400);
+        return c.json({ error: 'invalid timestamp format (ISO-8601 required)' }, 400);
       }
 
       // 캐시 확인
@@ -108,9 +115,13 @@ export function createStateRoutes(deps: StateRouteDeps) {
       const cached = deps.replayCache?.get(cacheKey);
       if (cached) {
         return c.json({
-          contextId, resourceId, timestamp: ts,
-          state: cached.state, recordCount: cached.recordCount,
-          mode: "replay", cached: true,
+          contextId,
+          resourceId,
+          timestamp: ts,
+          state: cached.state,
+          recordCount: cached.recordCount,
+          mode: 'replay',
+          cached: true,
         });
       }
 
@@ -126,16 +137,16 @@ export function createStateRoutes(deps: StateRouteDeps) {
           contextId,
           resourceId,
         );
-        mode = "engine-replay";
+        mode = 'engine-replay';
       } else if (deps.transitionEngine && deps.replayStateStore && relevant.length > 0) {
         deps.replayStateStore.clear();
         deps.transitionEngine.process(relevant.map(toTransitionEvent));
         replayedState = await deps.replayStateStore.snapshot(contextId, resourceId);
-        mode = "engine-replay";
+        mode = 'engine-replay';
       } else {
         // 정확 replay resolver가 없으면 address_context 기반 축약으로만 응답
         replayedState = mergeAddressContexts(relevant);
-        mode = deps.transitionEngine ? "replay-fallback" : "replay";
+        mode = deps.transitionEngine ? 'replay-fallback' : 'replay';
       }
 
       // 캐시 저장
@@ -146,26 +157,37 @@ export function createStateRoutes(deps: StateRouteDeps) {
       });
 
       return c.json({
-        contextId, resourceId, timestamp: ts,
-        state: replayedState, recordCount: relevant.length,
-        mode, cached: false,
+        contextId,
+        resourceId,
+        timestamp: ts,
+        state: replayedState,
+        recordCount: relevant.length,
+        mode,
+        cached: false,
       });
     }
 
     // recordStore 없으면 현재 상태 fallback
-    if (!deps.stateStore) return c.json({ error: "state store or record store required" }, 501);
+    if (!deps.stateStore) return c.json({ error: 'state store or record store required' }, 501);
     const snapshot = await deps.stateStore.snapshot(contextId, resourceId);
-    return c.json({ contextId, resourceId, timestamp: ts, state: snapshot, mode: "current-fallback" });
+    return c.json({
+      contextId,
+      resourceId,
+      timestamp: ts,
+      state: snapshot,
+      mode: 'current-fallback',
+    });
   });
 
   // GET /transitions?context_id=&limit= — context별 전이 목록
-  app.get("/", async (c) => {
-    if (!deps.transitionStore) return c.json({ error: "transition instance store not configured" }, 501);
+  app.get('/', async (c) => {
+    if (!deps.transitionStore)
+      return c.json({ error: 'transition instance store not configured' }, 501);
 
-    const contextId = c.req.query("context_id");
-    if (!contextId) return c.json({ error: "context_id query parameter required" }, 400);
+    const contextId = c.req.query('context_id');
+    if (!contextId) return c.json({ error: 'context_id query parameter required' }, 400);
 
-    const limit = Number(c.req.query("limit") ?? 50);
+    const limit = Number(c.req.query('limit') ?? 50);
     const instances = await deps.transitionStore.findByContext(contextId, limit);
     return c.json({ contextId, instances, count: instances.length });
   });
@@ -175,18 +197,22 @@ export function createStateRoutes(deps: StateRouteDeps) {
 
 // ── 헬퍼 ──────────────────────────────────────────────
 
-function filterByContext(records: StoredRecord[], contextId: string, resourceId: string): StoredRecord[] {
-  return records.filter(r => {
+function filterByContext(
+  records: StoredRecord[],
+  contextId: string,
+  resourceId: string,
+): StoredRecord[] {
+  return records.filter((r) => {
     const addressContext = r.addressContext ?? {};
     const payload = isRecordObject(r.payload) ? r.payload : null;
 
     const matchedContext = hasExplicitId(addressContext, payload, contextId, [
-      "context_id",
-      "contextId",
+      'context_id',
+      'contextId',
     ]);
     const matchedResource = hasExplicitId(addressContext, payload, resourceId, [
-      "resource_id",
-      "resourceId",
+      'resource_id',
+      'resourceId',
     ]);
 
     return matchedContext && matchedResource;
@@ -212,7 +238,7 @@ function toTransitionEvent(r: StoredRecord): TransitionEventLike {
 }
 
 function isRecordObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function hasExplicitId(

@@ -73,12 +73,18 @@ export interface GraphRegistryPort {
   edgesTo(nodeId: string, type?: string): readonly DkgEdgePort[];
   neighbors(nodeId: string, type: string): string[];
   reverseNeighbors(nodeId: string, type: string): string[];
-  transitiveNeighbors(nodeId: string, type: string, direction?: "forward" | "reverse"): Array<{ id: string; distance: number }>;
+  transitiveNeighbors(
+    nodeId: string,
+    type: string,
+    direction?: 'forward' | 'reverse',
+  ): Array<{ id: string; distance: number }>;
   activeConstraints(targetId: string): Array<{ constraintId: string; rule: string }>;
   intentLinksFor(prefixId: string): Array<{ id: string; intent: string; invariant?: string }>;
 
   // cascade
-  cascadeFromAxis(axisId: string): Array<{ id: string; reason: "composes" | "references"; distance: number }>;
+  cascadeFromAxis(
+    axisId: string,
+  ): Array<{ id: string; reason: 'composes' | 'references'; distance: number }>;
   cascadeFromPrefix(prefixId: string): {
     domains: Array<{ id: string; affectedPrefixes: string[] }>;
     consumers: Array<{ id: string; via: string }>;
@@ -87,13 +93,13 @@ export interface GraphRegistryPort {
   // write
   addNode(node: DkgNodePort): void;
   replaceNode(node: DkgNodePort): void;
-  addEdge(type: string, from: string, to: string, meta?: DkgEdgePort["meta"]): void;
+  addEdge(type: string, from: string, to: string, meta?: DkgEdgePort['meta']): void;
 
   // table column refs
   getTableColumnRefs(tableId: string): Array<{
     column: string;
     targetId: string;
-    refKind: "column_axis" | "prefix_ref" | "fk";
+    refKind: 'column_axis' | 'prefix_ref' | 'fk';
   }>;
 
   // counts
@@ -107,7 +113,7 @@ export interface MetricValuePort {
   readonly id: string;
   readonly name: string;
   readonly value: number;
-  readonly status: "ok" | "warning" | "critical";
+  readonly status: 'ok' | 'warning' | 'critical';
   readonly detail?: string;
   readonly target?: string;
   readonly measuredAt?: string;
@@ -116,7 +122,7 @@ export interface MetricValuePort {
 // ── ObservationNode ─────────────────────────────────────
 
 export interface ObservationNodePort {
-  readonly kind: "observation";
+  readonly kind: 'observation';
   readonly id: string;
   readonly date: string;
   readonly source: string;
@@ -131,13 +137,15 @@ export interface ObservationNodePort {
 
 export interface DkgSqliteStorePort {
   loadGraph(): GraphRegistryPort;
-  saveGraph(graph: GraphRegistryPort, source: string): { nodesWritten: number; edgesWritten: number };
-  saveNodes(
-    nodes: readonly DkgNodePort[],
-    edges: readonly DkgEdgePort[],
+  saveGraph(
+    graph: GraphRegistryPort,
     source: string,
-  ): void;
-  saveUsageSnapshotWithObservations(usage: UsageDataPort, observations: readonly DkgNodePort[]): { snapshotId: number };
+  ): { nodesWritten: number; edgesWritten: number };
+  saveNodes(nodes: readonly DkgNodePort[], edges: readonly DkgEdgePort[], source: string): void;
+  saveUsageSnapshotWithObservations(
+    usage: UsageDataPort,
+    observations: readonly DkgNodePort[],
+  ): { snapshotId: number };
   setMeta(key: string, value: string): void;
   getMeta?(key: string): string | null;
   updateNode?(node: DkgNodePort): void;
@@ -157,17 +165,28 @@ export interface AnalysisModulePort {
     date?: string;
     transitionSpecs?: readonly TransitionSpecPort[];
   }): GraphRegistryPort;
-  collectMetrics(catalog: CatalogPort, graph: GraphRegistryPort, usage: UsageDataPort | null): MetricValuePort[];
-  metricsToObservations(metrics: readonly MetricValuePort[], options?: { date?: string }): ObservationNodePort[];
+  collectMetrics(
+    catalog: CatalogPort,
+    graph: GraphRegistryPort,
+    usage: UsageDataPort | null,
+  ): MetricValuePort[];
+  metricsToObservations(
+    metrics: readonly MetricValuePort[],
+    options?: { date?: string },
+  ): ObservationNodePort[];
 }
 
 // ── Propagation Module (동적 import 결과) ────────────────
 
 export interface PropagationModulePort {
-  checkActivationReadiness(graph: GraphRegistryPort, prefixId: string, options?: {
-    mode?: "strict" | "warn";
-    schemaCheck?: boolean;
-  }): {
+  checkActivationReadiness(
+    graph: GraphRegistryPort,
+    prefixId: string,
+    options?: {
+      mode?: 'strict' | 'warn';
+      schemaCheck?: boolean;
+    },
+  ): {
     allowed: boolean;
     diagnostics: readonly { level: string; source: string; id: string; message: string }[];
     constraintViolations: number;
@@ -185,44 +204,65 @@ export interface StoreModulePort {
 export interface CatalogPort {
   readonly id?: string;
   readonly name?: string;
-  readonly axes: Record<string, {
-    readonly id: string;
-    readonly name: string;
-    readonly versions: Record<string, { entries?: readonly string[]; capacity?: number; ko?: Record<string, string> }>;
-  }>;
-  readonly prefixes: Record<string, {
-    readonly id: string;
-    readonly name: string;
-    readonly labels: readonly string[];
-    readonly dims?: Record<string, {
-      readonly kind: "axis" | "prefix_ref" | "table_ref";
-      readonly axisId?: string;
-      readonly prefixId?: string;
-      readonly table?: string;
-    }>;
-    readonly versions?: readonly {
-      readonly version: string;
-      readonly axisVersions?: Record<string, string>;
-      readonly refEntries?: Record<string, { readonly values: readonly number[]; readonly refVersion: string }>;
-    }[];
-    readonly meta?: {
-      readonly category?: string;
-      readonly layer?: number;
-      readonly visualShape?: string;
-      readonly heightRatio?: number;
-      readonly detailKind?: string;
-    };
-  }>;
-  readonly tables?: Record<string, {
-    readonly table: string;
-    readonly columns: Record<string, {
-      readonly kind: "scalar" | "prefix_ref" | "table_ref" | "axis_ref";
-      readonly type?: string;
-      readonly prefixId?: string;
-      readonly table?: string;
-      readonly axisId?: string;
-    }>;
-  }>;
+  readonly axes: Record<
+    string,
+    {
+      readonly id: string;
+      readonly name: string;
+      readonly versions: Record<
+        string,
+        { entries?: readonly string[]; capacity?: number; ko?: Record<string, string> }
+      >;
+    }
+  >;
+  readonly prefixes: Record<
+    string,
+    {
+      readonly id: string;
+      readonly name: string;
+      readonly labels: readonly string[];
+      readonly dims?: Record<
+        string,
+        {
+          readonly kind: 'axis' | 'prefix_ref' | 'table_ref';
+          readonly axisId?: string;
+          readonly prefixId?: string;
+          readonly table?: string;
+        }
+      >;
+      readonly versions?: readonly {
+        readonly version: string;
+        readonly axisVersions?: Record<string, string>;
+        readonly refEntries?: Record<
+          string,
+          { readonly values: readonly number[]; readonly refVersion: string }
+        >;
+      }[];
+      readonly meta?: {
+        readonly category?: string;
+        readonly layer?: number;
+        readonly visualShape?: string;
+        readonly heightRatio?: number;
+        readonly detailKind?: string;
+      };
+    }
+  >;
+  readonly tables?: Record<
+    string,
+    {
+      readonly table: string;
+      readonly columns: Record<
+        string,
+        {
+          readonly kind: 'scalar' | 'prefix_ref' | 'table_ref' | 'axis_ref';
+          readonly type?: string;
+          readonly prefixId?: string;
+          readonly table?: string;
+          readonly axisId?: string;
+        }
+      >;
+    }
+  >;
 }
 
 export interface DkgConfigPort {
@@ -234,7 +274,11 @@ export interface DkgConfigPort {
   readonly skills: readonly object[];
   readonly specs?: readonly object[];
   readonly decisions?: readonly object[];
-  readonly reviewPairs?: readonly { readonly a: string; readonly b: string; readonly reason: string }[];
+  readonly reviewPairs?: readonly {
+    readonly a: string;
+    readonly b: string;
+    readonly reason: string;
+  }[];
 }
 
 export interface TransitionSpecPort {

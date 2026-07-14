@@ -11,8 +11,8 @@
  *   index.ts            — barrel export
  */
 
-import { createHash } from "node:crypto";
-import { toPascal } from "./naming.js";
+import { createHash } from 'node:crypto';
+import { toPascal } from './naming.js';
 
 // ── 입력 타입 (event-catalog 비의존) ──────────────────
 
@@ -28,7 +28,7 @@ export interface EventDef {
 }
 
 /** 페이로드 필드 타입 */
-export type FieldType = "string" | "number" | "boolean" | "string[]";
+export type FieldType = 'string' | 'number' | 'boolean' | 'string[]';
 
 /** 페이로드 필드 정의 */
 export interface FieldDef {
@@ -50,7 +50,10 @@ export interface EventMapping {
   domain: string;
   prefixes: Array<{
     prefixId: string;
-    dims: Record<string, { kind: string; value?: string; contextKey?: string; payloadKey?: string }>;
+    dims: Record<
+      string,
+      { kind: string; value?: string; contextKey?: string; payloadKey?: string }
+    >;
     condition?: string;
   }>;
 }
@@ -82,9 +85,9 @@ function computeHash(events: readonly EventDef[], mappings: readonly EventMappin
     parts.push(`${e.event_key}:${e.event_version}:${e.category}`);
   }
   for (const m of [...mappings].toSorted((a, b) => a.event_key.localeCompare(b.event_key))) {
-    parts.push(`${m.event_key}:${m.domain}:${m.prefixes.map(p => p.prefixId).join(",")}`);
+    parts.push(`${m.event_key}:${m.domain}:${m.prefixes.map((p) => p.prefixId).join(',')}`);
   }
-  return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 12);
+  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 12);
 }
 
 // ── Header ────────────────────────────────────────────
@@ -94,7 +97,7 @@ function header(hash: string, timestamp: string): string {
     `// Generated from Event Catalog (hash: ${hash}) at ${timestamp.slice(0, 19)}`,
     `// !! 자동 생성 파일 — 직접 수정 금지 !!`,
     ``,
-  ].join("\n");
+  ].join('\n');
 }
 
 // ── 네이밍 ────────────────────────────────────────────
@@ -102,9 +105,9 @@ function header(hash: string, timestamp: string): string {
 /** "cart.add" → "CartAdd" */
 function eventKeyToPascal(eventKey: string): string {
   return eventKey
-    .split(".")
-    .map(part => toPascal(part.replace(/-/g, "_")))
-    .join("");
+    .split('.')
+    .map((part) => toPascal(part.replace(/-/g, '_')))
+    .join('');
 }
 
 /** "cart.add" → "trackCartAdd" */
@@ -115,10 +118,14 @@ function eventKeyToFnName(eventKey: string): string {
 /** FieldType → TypeScript 타입 */
 function fieldTypeToTs(ft: FieldType): string {
   switch (ft) {
-    case "string": return "string";
-    case "number": return "number";
-    case "boolean": return "boolean";
-    case "string[]": return "string[]";
+    case 'string':
+      return 'string';
+    case 'number':
+      return 'number';
+    case 'boolean':
+      return 'boolean';
+    case 'string[]':
+      return 'string[]';
   }
 }
 
@@ -148,14 +155,14 @@ export function generateTrackCode(
   const ts = options?.timestamp ?? new Date().toISOString();
   const h = header(hash, ts);
 
-  const mappingSet = new Set(mappings.map(m => m.event_key));
-  const guideMap = new Map(payloadGuides.map(g => [g.event_key, g]));
+  const mappingSet = new Set(mappings.map((m) => m.event_key));
+  const guideMap = new Map(payloadGuides.map((g) => [g.event_key, g]));
 
   // 매핑이 있는 이벤트만 track 함수 생성 (매핑 없으면 prefix 바인딩 불가)
-  const trackableEvents = events.filter(e => mappingSet.has(e.event_key));
+  const trackableEvents = events.filter((e) => mappingSet.has(e.event_key));
   const sorted = [...trackableEvents].toSorted((a, b) => a.event_key.localeCompare(b.event_key));
   const sortedMappings = [...mappings]
-    .filter(m => trackableEvents.some(e => e.event_key === m.event_key))
+    .filter((m) => trackableEvents.some((e) => e.event_key === m.event_key))
     .toSorted((a, b) => a.event_key.localeCompare(b.event_key));
 
   // 카테고리 그룹
@@ -167,11 +174,11 @@ export function generateTrackCode(
   }
 
   const files: TrackCodegenFile[] = [
-    { path: "event-keys.ts", content: genEventKeys(h, sorted, categories) },
-    { path: "event-payloads.ts", content: genEventPayloads(h, sorted, guideMap) },
-    { path: "event-mappings.ts", content: genEventMappings(h, sortedMappings) },
-    { path: "track-functions.ts", content: genTrackFunctions(h, sorted, guideMap, options) },
-    { path: "index.ts", content: genIndex(h, sorted) },
+    { path: 'event-keys.ts', content: genEventKeys(h, sorted, categories) },
+    { path: 'event-payloads.ts', content: genEventPayloads(h, sorted, guideMap) },
+    { path: 'event-mappings.ts', content: genEventMappings(h, sortedMappings) },
+    { path: 'track-functions.ts', content: genTrackFunctions(h, sorted, guideMap, options) },
+    { path: 'index.ts', content: genIndex(h, sorted) },
   ];
 
   return { files, contentHash: hash };
@@ -179,28 +186,26 @@ export function generateTrackCode(
 
 // ── event-keys.ts ─────────────────────────────────────
 
-function genEventKeys(
-  h: string,
-  events: EventDef[],
-  categories: Map<string, EventDef[]>,
-): string {
+function genEventKeys(h: string, events: EventDef[], categories: Map<string, EventDef[]>): string {
   const lines: string[] = [h];
 
   // 전체 유니온
   lines.push(`/** 추적 가능한 이벤트 키 (매핑 보유) */`);
   lines.push(`export type EventKey =`);
   for (let i = 0; i < events.length; i++) {
-    const sep = i < events.length - 1 ? "" : ";";
+    const sep = i < events.length - 1 ? '' : ';';
     lines.push(`  | "${events[i].event_key}"${sep}`);
   }
   lines.push(``);
 
   // 카테고리별 유니온
-  for (const [cat, evts] of [...categories.entries()].toSorted((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [cat, evts] of [...categories.entries()].toSorted((a, b) =>
+    a[0].localeCompare(b[0]),
+  )) {
     lines.push(`/** ${cat} 카테고리 이벤트 */`);
     lines.push(`export type ${toPascal(cat)}EventKey =`);
     for (let i = 0; i < evts.length; i++) {
-      const sep = i < evts.length - 1 ? "" : ";";
+      const sep = i < evts.length - 1 ? '' : ';';
       lines.push(`  | "${evts[i].event_key}"${sep}`);
     }
     lines.push(``);
@@ -214,7 +219,7 @@ function genEventKeys(
   }
   lines.push(`] as const;`);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 // ── event-payloads.ts ─────────────────────────────────
@@ -236,7 +241,7 @@ function genEventPayloads(
 
     if (guide && guide.fields.length > 0) {
       for (const f of guide.fields) {
-        const opt = f.required ? "" : "?";
+        const opt = f.required ? '' : '?';
         lines.push(`  /** ${f.description} */`);
         lines.push(`  ${f.name}${opt}: ${fieldTypeToTs(f.type)};`);
       }
@@ -256,7 +261,7 @@ function genEventPayloads(
   }
   lines.push(`}`);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 // ── track-functions.ts ────────────────────────────────
@@ -267,7 +272,7 @@ function genTrackFunctions(
   guideMap: Map<string, PayloadGuide>,
   options?: TrackCodegenOptions,
 ): string {
-  const importPath = options?.eventCatalogImport ?? "event-catalog";
+  const importPath = options?.eventCatalogImport ?? 'event-catalog';
   const lines: string[] = [h];
 
   // import 선언
@@ -287,11 +292,13 @@ function genTrackFunctions(
     const fnName = eventKeyToFnName(e.event_key);
     const payloadType = `${eventKeyToPascal(e.event_key)}Payload`;
     const guide = guideMap.get(e.event_key);
-    const hasRequired = guide?.fields.some(f => f.required) ?? false;
-    const payloadOpt = hasRequired ? "" : "?";
+    const hasRequired = guide?.fields.some((f) => f.required) ?? false;
+    const payloadOpt = hasRequired ? '' : '?';
 
     lines.push(`/** ${e.display_name} — ${e.description} */`);
-    lines.push(`export function ${fnName}(tracker: Tracker, payload${payloadOpt}: ${payloadType}): void {`);
+    lines.push(
+      `export function ${fnName}(tracker: Tracker, payload${payloadOpt}: ${payloadType}): void {`,
+    );
     lines.push(`  tracker.track("${e.event_key}", payload as Record<string, unknown>);`);
     lines.push(`}`);
     lines.push(``);
@@ -307,15 +314,12 @@ function genTrackFunctions(
   lines.push(`  tracker.track(eventKey, payload as Record<string, unknown>);`);
   lines.push(`}`);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 // ── event-mappings.ts ─────────────────────────────────
 
-function genEventMappings(
-  h: string,
-  mappings: EventMapping[],
-): string {
+function genEventMappings(h: string, mappings: EventMapping[]): string {
   const lines: string[] = [h];
 
   lines.push(`import type { EventKey } from "./event-keys.js";`);
@@ -361,14 +365,24 @@ function genEventMappings(
       lines.push(`        dims: {`);
 
       for (const [dimLabel, source] of Object.entries(p.dims)) {
-        const src = source as { kind: string; value?: string; contextKey?: string; payloadKey?: string; fallback?: string };
-        if (src.kind === "fixed") {
+        const src = source as {
+          kind: string;
+          value?: string;
+          contextKey?: string;
+          payloadKey?: string;
+          fallback?: string;
+        };
+        if (src.kind === 'fixed') {
           lines.push(`          ${dimLabel}: { kind: "fixed", value: "${src.value}" },`);
-        } else if (src.kind === "context") {
-          lines.push(`          ${dimLabel}: { kind: "context", contextKey: "${src.contextKey}" },`);
-        } else if (src.kind === "payload") {
-          const fb = src.fallback ? `, fallback: "${src.fallback}"` : "";
-          lines.push(`          ${dimLabel}: { kind: "payload", payloadKey: "${src.payloadKey}"${fb} },`);
+        } else if (src.kind === 'context') {
+          lines.push(
+            `          ${dimLabel}: { kind: "context", contextKey: "${src.contextKey}" },`,
+          );
+        } else if (src.kind === 'payload') {
+          const fb = src.fallback ? `, fallback: "${src.fallback}"` : '';
+          lines.push(
+            `          ${dimLabel}: { kind: "payload", payloadKey: "${src.payloadKey}"${fb} },`,
+          );
         }
       }
 
@@ -382,7 +396,7 @@ function genEventMappings(
 
   lines.push(`] as const;`);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }
 
 // ── index.ts ──────────────────────────────────────────
@@ -394,7 +408,7 @@ function genIndex(h: string, events: EventDef[]): string {
   lines.push(`export { EVENT_KEYS } from "./event-keys.js";`);
 
   // 카테고리별 EventKey 타입들도 re-export
-  const cats = [...new Set(events.map(e => e.category))].toSorted();
+  const cats = [...new Set(events.map((e) => e.category))].toSorted();
   for (const cat of cats) {
     lines.push(`export type { ${toPascal(cat)}EventKey } from "./event-keys.js";`);
   }
@@ -403,7 +417,7 @@ function genIndex(h: string, events: EventDef[]): string {
   lines.push(`export type { EventPayloadMap } from "./event-payloads.js";`);
 
   // payload 인터페이스 re-export
-  const payloadNames = events.map(e => `${eventKeyToPascal(e.event_key)}Payload`);
+  const payloadNames = events.map((e) => `${eventKeyToPascal(e.event_key)}Payload`);
   lines.push(`export type {`);
   for (const name of payloadNames) {
     lines.push(`  ${name},`);
@@ -412,18 +426,20 @@ function genIndex(h: string, events: EventDef[]): string {
 
   lines.push(``);
   lines.push(`export { EVENT_MAPPINGS } from "./event-mappings.js";`);
-  lines.push(`export type { DimSource, PrefixDimMapping, EventMappingEntry } from "./event-mappings.js";`);
+  lines.push(
+    `export type { DimSource, PrefixDimMapping, EventMappingEntry } from "./event-mappings.js";`,
+  );
   lines.push(``);
   lines.push(`export { track } from "./track-functions.js";`);
   lines.push(`export type { Tracker } from "./track-functions.js";`);
 
   // track 함수 re-export
-  const fnNames = events.map(e => eventKeyToFnName(e.event_key));
+  const fnNames = events.map((e) => eventKeyToFnName(e.event_key));
   lines.push(`export {`);
   for (const fn of fnNames) {
     lines.push(`  ${fn},`);
   }
   lines.push(`} from "./track-functions.js";`);
 
-  return lines.join("\n") + "\n";
+  return lines.join('\n') + '\n';
 }

@@ -1,18 +1,14 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { context, propagation } from "@opentelemetry/api";
-import {
-  buildHttpHeader,
-  buildVersionTag,
-  type VersionTag,
-} from "sim-identifier-grammar";
+import { context, propagation } from '@opentelemetry/api';
+import { buildHttpHeader, buildVersionTag, type VersionTag } from 'sim-identifier-grammar';
 
 // grammar #4 HTTP header builder — SSOT. raw "x-service-version" 문자열 사용 금지.
 const X_SERVICE_VERSION_HEADER = buildHttpHeader({
-  kind: "header",
-  domain: "service",
-  attr: "version",
+  kind: 'header',
+  domain: 'service',
+  attr: 'version',
 });
 
 export interface ProxyArgs {
@@ -54,7 +50,7 @@ export async function proxyRequest(args: ProxyArgs): Promise<Response> {
 
   // body 변환 — GET/HEAD는 body 금지
   let body: ArrayBuffer | undefined;
-  if (args.request.method !== "GET" && args.request.method !== "HEAD") {
+  if (args.request.method !== 'GET' && args.request.method !== 'HEAD') {
     body = await args.request.clone().arrayBuffer();
   }
 
@@ -75,14 +71,14 @@ export async function proxyRequest(args: ProxyArgs): Promise<Response> {
     });
   } catch (err) {
     const name = (err as Error).name;
-    if (name === "AbortError" || name === "TimeoutError") {
+    if (name === 'AbortError' || name === 'TimeoutError') {
       return Response.json(
-        { error: "upstream_timeout", target, timeoutMs: args.timeoutMs },
+        { error: 'upstream_timeout', target, timeoutMs: args.timeoutMs },
         { status: 504 },
       );
     }
     return Response.json(
-      { error: "upstream_unavailable", target, message: (err as Error).message },
+      { error: 'upstream_unavailable', target, message: (err as Error).message },
       { status: 502 },
     );
   }

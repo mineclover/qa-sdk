@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/sim-metrics-collector",
   "version": "0.1.0",
-  "description": "시뮬 — Prometheus exporter (prom-client 기반)",
   "private": true,
+  "description": "시뮬 — Prometheus exporter (prom-client 기반)",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",

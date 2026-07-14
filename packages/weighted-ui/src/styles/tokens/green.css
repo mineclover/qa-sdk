@@ -1,12 +1,12 @@
 /* ── weighted-ui: Green Theme (explorer) ── */
 :root {
-  --ui-primary:       #217346;
-  --ui-primary-dark:  #185c38;
+  --ui-primary: #217346;
+  --ui-primary-dark: #185c38;
   --ui-primary-light: #e8f5ee;
   --ui-primary-faint: #f0faf4;
 
-  --surface-ribbon:   var(--ui-primary);
-  --surface-status:   var(--ui-primary);
-  --border-ribbon:    var(--ui-primary-dark);
-  --text-formula-fn:  var(--ui-primary);
+  --surface-ribbon: var(--ui-primary);
+  --surface-status: var(--ui-primary);
+  --border-ribbon: var(--ui-primary-dark);
+  --text-formula-fn: var(--ui-primary);
 }

@@ -12,44 +12,43 @@
  */
 
 // 0-3: Passphrase 자동 설정 — Pulumi 로컬 백엔드에서 암호 프롬프트 방지
-process.env.PULUMI_CONFIG_PASSPHRASE ??= "";
+process.env.PULUMI_CONFIG_PASSPHRASE ??= '';
 
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { homedir } from "node:os";
-import { createPipeline } from "../src/core/pipeline.js";
-import { createConfigStage } from "../src/config/config-stage.js";
-import { createPlainLoader } from "../src/config/sops-loader.js";
-import { createProvisionStage } from "../src/stages/provision-stage.js";
-import { createRegisterStage } from "../src/stages/register-stage.js";
-import { createVerifyStage } from "../src/verify/verify-stage.js";
-import { createObserveStage } from "../src/stages/observe-stage.js";
-import { createGateAdapter } from "../src/adapters/gate.js";
-import { createInfraProfileAdapter } from "../src/adapters/infra-profile.js";
-import { createServiceProfileAdapter } from "../src/adapters/service-profile.js";
-import { createLocalProvider, type LocalProviderOptions } from "../src/providers/local.js";
-import { registerProvider, getProvider } from "../src/providers/registry.js";
-import { createPulumiDeployFn } from "../src/providers/pulumi-deploy.js";
-import { writeDeploymentOutputArtifactRegistryRecord } from "../src/post-deploy/artifact-registry.js";
-import { buildDeployHistoryEntry, readFleetRunContextFromEnv } from "../src/post-deploy/deploy-history.js";
-import { runPostDeployCodegen } from "infra-env-kit";
-import type {
-  RegistryAdapter,
-  IngestAdapter,
-  CoordinateAdapter,
-} from "../src/adapters/adapter.js";
-import type { DeployContext, DeployHistoryEntry } from "../src/core/types.js";
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { homedir } from 'node:os';
+import { createPipeline } from '../src/core/pipeline.js';
+import { createConfigStage } from '../src/config/config-stage.js';
+import { createPlainLoader } from '../src/config/sops-loader.js';
+import { createProvisionStage } from '../src/stages/provision-stage.js';
+import { createRegisterStage } from '../src/stages/register-stage.js';
+import { createVerifyStage } from '../src/verify/verify-stage.js';
+import { createObserveStage } from '../src/stages/observe-stage.js';
+import { createGateAdapter } from '../src/adapters/gate.js';
+import { createInfraProfileAdapter } from '../src/adapters/infra-profile.js';
+import { createServiceProfileAdapter } from '../src/adapters/service-profile.js';
+import { createLocalProvider, type LocalProviderOptions } from '../src/providers/local.js';
+import { registerProvider, getProvider } from '../src/providers/registry.js';
+import { createPulumiDeployFn } from '../src/providers/pulumi-deploy.js';
+import { writeDeploymentOutputArtifactRegistryRecord } from '../src/post-deploy/artifact-registry.js';
+import {
+  buildDeployHistoryEntry,
+  readFleetRunContextFromEnv,
+} from '../src/post-deploy/deploy-history.js';
+import { runPostDeployCodegen } from 'infra-env-kit';
+import type { RegistryAdapter, IngestAdapter, CoordinateAdapter } from '../src/adapters/adapter.js';
+import type { DeployContext, DeployHistoryEntry } from '../src/core/types.js';
 
 // --- 설정 ---
-const DRY_RUN = process.argv.includes("--dry-run");
+const DRY_RUN = process.argv.includes('--dry-run');
 const { positional: positionalArgs, flags } = parseScriptArgs(process.argv.slice(2));
-const SERVICE = positionalArgs[0] || "ingest-server";
-const ENV = positionalArgs[1] || "dev";
+const SERVICE = positionalArgs[0] || 'ingest-server';
+const ENV = positionalArgs[1] || 'dev';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CONFIG_FILE = positionalArgs[2] || `${ENV}.json`;
 const CONFIG_PATH = resolve(__dirname, `../config/${CONFIG_FILE}`);
-const PROFILE_DIR = resolve(homedir(), ".qa-sdk");
-const ARTIFACT_REGISTRY = flags["artifact-registry"];
+const PROFILE_DIR = resolve(homedir(), '.qa-sdk');
+const ARTIFACT_REGISTRY = flags['artifact-registry'];
 const FLEET_CONTEXT = readFleetRunContextFromEnv();
 
 function parseScriptArgs(args: readonly string[]): {
@@ -58,18 +57,18 @@ function parseScriptArgs(args: readonly string[]): {
 } {
   const positional: string[] = [];
   const parsedFlags: Record<string, string | undefined> = {};
-  const booleanFlags = new Set(["dry-run", "sync"]);
+  const booleanFlags = new Set(['dry-run', 'sync']);
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]!;
-    if (!arg.startsWith("--")) {
+    if (!arg.startsWith('--')) {
       positional.push(arg);
       continue;
     }
 
-    const [key, inlineValue] = arg.slice(2).split("=", 2);
+    const [key, inlineValue] = arg.slice(2).split('=', 2);
     if (booleanFlags.has(key)) {
-      parsedFlags[key] = inlineValue ?? "true";
+      parsedFlags[key] = inlineValue ?? 'true';
       continue;
     }
 
@@ -79,11 +78,11 @@ function parseScriptArgs(args: readonly string[]): {
     }
 
     const next = args[index + 1];
-    if (next && !next.startsWith("--")) {
+    if (next && !next.startsWith('--')) {
       parsedFlags[key] = next;
       index += 1;
     } else {
-      parsedFlags[key] = "true";
+      parsedFlags[key] = 'true';
     }
   }
 
@@ -92,8 +91,8 @@ function parseScriptArgs(args: readonly string[]): {
 
 async function getGitSha(): Promise<string> {
   try {
-    const { execa } = await import("execa");
-    const { stdout } = await execa("git", ["rev-parse", "--short", "HEAD"]);
+    const { execa } = await import('execa');
+    const { stdout } = await execa('git', ['rev-parse', '--short', 'HEAD']);
     return stdout.trim();
   } catch {
     return `build-${Date.now()}`;
@@ -108,12 +107,14 @@ async function main() {
 
   // 프로바이더 등록 — nginx 테스트 시 이미지/헬스체크 오버라이드
   // healthPath: config의 health_path가 우선, 없으면 local.ts 기본값 /health/live
-  const isNginxTest = SERVICE === "nginx-test";
-  registerProvider(createLocalProvider({
-    env: ENV,
-    imageOverride: isNginxTest ? "nginx:alpine" : undefined,
-    healthPath: isNginxTest ? "/" : undefined,
-  }));
+  const isNginxTest = SERVICE === 'nginx-test';
+  registerProvider(
+    createLocalProvider({
+      env: ENV,
+      imageOverride: isNginxTest ? 'nginx:alpine' : undefined,
+      healthPath: isNginxTest ? '/' : undefined,
+    }),
+  );
 
   // 어댑터 설정
   const infraProfile = createInfraProfileAdapter(PROFILE_DIR);
@@ -123,17 +124,17 @@ async function main() {
   // 실제 registry-service 연동 (미실행 시 mock fallback)
   let registry: RegistryAdapter;
   try {
-    const registryUrl = process.env.REGISTRY_URL ?? "http://localhost:3300";
-    const res = await fetch(new URL("/health", registryUrl), { signal: AbortSignal.timeout(2000) });
+    const registryUrl = process.env.REGISTRY_URL ?? 'http://localhost:3300';
+    const res = await fetch(new URL('/health', registryUrl), { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
-      const { createRegistryAdapter } = await import("../src/adapters/registry.js");
+      const { createRegistryAdapter } = await import('../src/adapters/registry.js');
       registry = createRegistryAdapter(registryUrl);
       console.log(`[registry] 실서비스 연결됨 (${registryUrl})`);
     } else {
-      throw new Error("not ok");
+      throw new Error('not ok');
     }
   } catch {
-    console.log("[registry] 미실행 — mock 모드");
+    console.log('[registry] 미실행 — mock 모드');
     registry = {
       syncDeployment: async (params) => {
         console.log(`[registry-mock] sync: ${params.serviceId} → ${params.url}`);
@@ -144,17 +145,19 @@ async function main() {
   // IngestAdapter — ingest-server 실행 시 실연동, 미실행 시 mock fallback
   let ingestAdapter: IngestAdapter;
   try {
-    const ingestUrl = process.env.INGEST_URL ?? "http://localhost:3200";
-    const res = await fetch(new URL("/health/live", ingestUrl), { signal: AbortSignal.timeout(2000) });
+    const ingestUrl = process.env.INGEST_URL ?? 'http://localhost:3200';
+    const res = await fetch(new URL('/health/live', ingestUrl), {
+      signal: AbortSignal.timeout(2000),
+    });
     if (res.ok) {
-      const { createIngestAdapter } = await import("../src/adapters/ingest.js");
+      const { createIngestAdapter } = await import('../src/adapters/ingest.js');
       ingestAdapter = createIngestAdapter({ baseUrl: ingestUrl });
       console.log(`[ingest] 실서비스 연결됨 (${ingestUrl})`);
     } else {
-      throw new Error("not ok");
+      throw new Error('not ok');
     }
   } catch {
-    console.log("[ingest] 미실행 — mock 모드");
+    console.log('[ingest] 미실행 — mock 모드');
     ingestAdapter = {
       emit: async (key: string) => {
         console.log(`[ingest-mock] emit: ${key}`);
@@ -163,8 +166,8 @@ async function main() {
     };
   }
 
-  const { createCoordinateAdapter } = await import("../src/adapters/coordinate.js");
-  const { DEMO_CATALOG } = await import("demo-snapshot");
+  const { createCoordinateAdapter } = await import('../src/adapters/coordinate.js');
+  const { DEMO_CATALOG } = await import('demo-snapshot');
   const coordinateAdapter = createCoordinateAdapter(DEMO_CATALOG);
 
   // 파이프라인 구성 — dry-run 시 config + provision(preview)만 실행
@@ -185,11 +188,11 @@ async function main() {
   // 실행
   const result = await pipeline.run({
     service: SERVICE,
-    provider: "local",
+    provider: 'local',
     env: ENV,
-    region: "local",
+    region: 'local',
     configPath: CONFIG_PATH,
-    triggeredBy: "manual",
+    triggeredBy: 'manual',
   } as DeployContext);
 
   // 결과 출력
@@ -201,9 +204,7 @@ async function main() {
   console.log(`소요시간: ${result.duration}ms`);
   console.log(`\n스테이지별:`);
   for (const s of result.stageResults) {
-    console.log(
-      `  ${s.stage}: ${s.status} (${s.duration}ms)${s.error ? ` — ${s.error}` : ""}`,
-    );
+    console.log(`  ${s.stage}: ${s.status} (${s.duration}ms)${s.error ? ` — ${s.error}` : ''}`);
   }
 
   // 배포 이력 기록
@@ -214,16 +215,18 @@ async function main() {
     // 버전 기록
     if (result.success) {
       try {
-        const { createVersionStore } = await import("../src/post-deploy/version-manager.js");
+        const { createVersionStore } = await import('../src/post-deploy/version-manager.js');
         const vs = createVersionStore();
         const gitSha = await getGitSha();
-        const vEntry = await vs.setVersion(SERVICE, ENV, gitSha, result.endpoint ?? "", "local");
+        const vEntry = await vs.setVersion(SERVICE, ENV, gitSha, result.endpoint ?? '', 'local');
         if (vEntry.previousVersion) {
           console.log(`[version] ${vEntry.previousVersion} -> ${vEntry.currentVersion}`);
         } else {
           console.log(`[version] ${gitSha.slice(0, 8)} (초기 배포)`);
         }
-      } catch { /* 버전 기록 실패 무시 */ }
+      } catch {
+        /* 버전 기록 실패 무시 */
+      }
     }
 
     if (result.success && ARTIFACT_REGISTRY) {
@@ -232,7 +235,7 @@ async function main() {
           artifactRegistry: ARTIFACT_REGISTRY,
           service: SERVICE,
           env: ENV,
-          provider: "local",
+          provider: 'local',
           configPath: CONFIG_PATH,
           result,
           fleetRunId: FLEET_CONTEXT.runId,
@@ -248,26 +251,29 @@ async function main() {
       }
     }
 
-    const historyEntry: DeployHistoryEntry = buildDeployHistoryEntry({
-      deployedAt,
-      version: result.endpoint ?? "unknown",
-      env: ENV,
-      provider: "local",
-      endpoint: result.endpoint ?? "",
-      duration: result.duration,
-      success: result.success,
-      triggeredBy: "manual",
-      configPath: CONFIG_PATH,
-      artifactId,
-    }, FLEET_CONTEXT);
+    const historyEntry: DeployHistoryEntry = buildDeployHistoryEntry(
+      {
+        deployedAt,
+        version: result.endpoint ?? 'unknown',
+        env: ENV,
+        provider: 'local',
+        endpoint: result.endpoint ?? '',
+        duration: result.duration,
+        success: result.success,
+        triggeredBy: 'manual',
+        configPath: CONFIG_PATH,
+        artifactId,
+      },
+      FLEET_CONTEXT,
+    );
     await infraProfile.addHistory(SERVICE, historyEntry);
   }
 
   // --sync: codegen + cascade
-  if (result.success && process.argv.includes("--sync")) {
+  if (result.success && process.argv.includes('--sync')) {
     try {
-      const { createDiscoveryClient } = await import("../src/discovery/client.js");
-      const client = createDiscoveryClient(process.env.REGISTRY_URL ?? "http://localhost:3300");
+      const { createDiscoveryClient } = await import('../src/discovery/client.js');
+      const client = createDiscoveryClient(process.env.REGISTRY_URL ?? 'http://localhost:3300');
       const codegenResult = await runPostDeployCodegen(client, SERVICE, ENV);
       console.log(`[codegen] TS: ${codegenResult.tsPath}`);
       console.log(`[codegen] env: ${codegenResult.envPaths.length}건`);
@@ -276,12 +282,14 @@ async function main() {
     }
 
     try {
-      const { findCascadeTargets, executeCascade } = await import("../src/post-deploy/cascade.js");
-      const { createPlainLoader: pl } = await import("../src/config/sops-loader.js");
+      const { findCascadeTargets, executeCascade } = await import('../src/post-deploy/cascade.js');
+      const { createPlainLoader: pl } = await import('../src/config/sops-loader.js');
       const rawConfig = await pl().decrypt(CONFIG_PATH);
       const targets = findCascadeTargets(rawConfig as any, SERVICE);
       await executeCascade(targets, ENV, { dryRun: true });
-    } catch { /* cascade 감지 실패 무시 */ }
+    } catch {
+      /* cascade 감지 실패 무시 */
+    }
   }
 
   // 프로필 확인
@@ -297,6 +305,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("배포 실패:", err);
+  console.error('배포 실패:', err);
   process.exit(1);
 });

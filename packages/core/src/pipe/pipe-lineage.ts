@@ -8,14 +8,20 @@
  * 원본 값은 다루지 않음 — 계보 그래프만.
  */
 
-import type { PipeFlow, PipeStep, PipeSpec, PipeGraph, StepDataContract } from "../types/pipe-spec.js";
-import { normalizeEndpointPipeIds, normalizePortRefs } from "./pipe-endpoint.js";
-import type { FieldLineage, FieldRef, TransformKind } from "../types/data-schema.js";
-import type { LineageChainValidation } from "../data-object/types.js";
-import { BindingRegistry } from "../data-object/registry.js";
-import { validateLineageChain } from "../data-object/validate.js";
-import { getChildFlows } from "./pipe-flow-utils.js";
-import { resolveStepSchemaId } from "./pipe-schema-id.js";
+import type {
+  PipeFlow,
+  PipeStep,
+  PipeSpec,
+  PipeGraph,
+  StepDataContract,
+} from '../types/pipe-spec.js';
+import { normalizeEndpointPipeIds, normalizePortRefs } from './pipe-endpoint.js';
+import type { FieldLineage, FieldRef, TransformKind } from '../types/data-schema.js';
+import type { LineageChainValidation } from '../data-object/types.js';
+import { BindingRegistry } from '../data-object/registry.js';
+import { validateLineageChain } from '../data-object/validate.js';
+import { getChildFlows } from './pipe-flow-utils.js';
+import { resolveStepSchemaId } from './pipe-schema-id.js';
 
 // ── 계보 경고 ───────────────────────────────────────
 
@@ -41,9 +47,9 @@ export interface StaticLineageResult {
  * 각 step의 dataContract.lineageHints → FieldLineage 생성.
  * hints 없으면 consumes/produces 이름 매칭 추론 (direct).
  */
-export function deriveStaticLineage(flow: PipeFlow, pipeId = "pipe"): FieldLineage[] {
+export function deriveStaticLineage(flow: PipeFlow, pipeId = 'pipe'): FieldLineage[] {
   const lineages: FieldLineage[] = [];
-  walkLineage(flow, pipeId, "flow", lineages);
+  walkLineage(flow, pipeId, 'flow', lineages);
   return lineages;
 }
 
@@ -51,10 +57,13 @@ export function deriveStaticLineage(flow: PipeFlow, pipeId = "pipe"): FieldLinea
  * 정적 계보를 파생하고 경고도 함께 반환한다.
  * reduce step에 accumulator 패턴이 없으면 "계보 불완전" 경고 발행.
  */
-export function deriveStaticLineageWithDiagnostics(flow: PipeFlow, pipeId = "pipe"): StaticLineageResult {
+export function deriveStaticLineageWithDiagnostics(
+  flow: PipeFlow,
+  pipeId = 'pipe',
+): StaticLineageResult {
   const lineages: FieldLineage[] = [];
   const warnings: LineageWarning[] = [];
-  walkLineage(flow, pipeId, "flow", lineages, warnings);
+  walkLineage(flow, pipeId, 'flow', lineages, warnings);
   return { lineages, warnings };
 }
 
@@ -65,13 +74,13 @@ function walkLineage(
   lineages: FieldLineage[],
   warnings?: LineageWarning[],
 ): void {
-  if (flow.kind === "step") {
+  if (flow.kind === 'step') {
     extractStepLineage(flow, pipeId, path, lineages);
     return;
   }
 
   // sequence: step 간 체인 추적
-  if (flow.kind === "sequence") {
+  if (flow.kind === 'sequence') {
     // 각 step 개별 계보
     for (let i = 0; i < flow.steps.length; i++) {
       walkLineage(flow.steps[i], pipeId, `${path}.steps[${i}]`, lineages, warnings);
@@ -82,7 +91,7 @@ function walkLineage(
   }
 
   // reduce: accumulator → step 본체의 계보를 집계 관점으로 연결
-  if (flow.kind === "reduce") {
+  if (flow.kind === 'reduce') {
     walkLineage(flow.step, pipeId, `${path}.step`, lineages, warnings);
     // reduce의 step이 produces하는 필드는 accumulator를 통해 집계됨
     const stepProduces = getFlowProduces(flow.step, pipeId);
@@ -97,7 +106,7 @@ function walkLineage(
           lineages.push({
             target: { schemaId: prodRef.schemaId, column: field },
             sources: [{ schemaId: consumeRef.schemaId, column: field }],
-            transform: "aggregate",
+            transform: 'aggregate',
             pipeId,
             stepPath: `${path}.accumulate`,
           });
@@ -140,7 +149,7 @@ function extractStepLineage(
       // 명시적 힌트 사용 — FieldLineage spec(facet-code-lineage.spec.md)이 정의한 필드만 사용
       lineages.push({
         target: { schemaId: stepSchemaId, column: outputField },
-        sources: hint.sources.map(s => ({ schemaId: stepSchemaId, column: s })),
+        sources: hint.sources.map((s) => ({ schemaId: stepSchemaId, column: s })),
         transform: hint.transform,
         pipeId,
         stepPath: path,
@@ -171,7 +180,7 @@ function chainSequenceLineage(
         lineages.push({
           target: { schemaId: nextRef.schemaId, column: field },
           sources: [{ schemaId: prevRef.schemaId, column: field }],
-          transform: "direct",
+          transform: 'direct',
           pipeId,
           stepPath: `${path}.chain[${i}→${i + 1}]`,
         });
@@ -184,11 +193,11 @@ function chainSequenceLineage(
 
 /** flow의 마지막 produces 필드 + schemaId (비-step 래퍼 재귀) */
 function getFlowProduces(flow: PipeFlow, pipeId: string): Map<string, { schemaId: string }> | null {
-  if (flow.kind === "step" && flow.dataContract?.produces) {
+  if (flow.kind === 'step' && flow.dataContract?.produces) {
     const sid = resolveStepSchemaId(flow, pipeId);
-    return new Map(Object.keys(flow.dataContract.produces).map(f => [f, { schemaId: sid }]));
+    return new Map(Object.keys(flow.dataContract.produces).map((f) => [f, { schemaId: sid }]));
   }
-  if (flow.kind === "sequence" && flow.steps.length > 0) {
+  if (flow.kind === 'sequence' && flow.steps.length > 0) {
     return getFlowProduces(flow.steps[flow.steps.length - 1], pipeId);
   }
   // branch/parallel 등: 자식들의 produces 합집합
@@ -204,11 +213,11 @@ function getFlowProduces(flow: PipeFlow, pipeId: string): Map<string, { schemaId
 
 /** flow의 첫 consumes 필드 + schemaId (비-step 래퍼 재귀) */
 function getFlowConsumes(flow: PipeFlow, pipeId: string): Map<string, { schemaId: string }> | null {
-  if (flow.kind === "step" && flow.dataContract?.consumes) {
+  if (flow.kind === 'step' && flow.dataContract?.consumes) {
     const sid = resolveStepSchemaId(flow, pipeId);
-    return new Map(Object.keys(flow.dataContract.consumes).map(f => [f, { schemaId: sid }]));
+    return new Map(Object.keys(flow.dataContract.consumes).map((f) => [f, { schemaId: sid }]));
   }
-  if (flow.kind === "sequence" && flow.steps.length > 0) {
+  if (flow.kind === 'sequence' && flow.steps.length > 0) {
     return getFlowConsumes(flow.steps[0], pipeId);
   }
   // branch/parallel 등: 자식들의 consumes 합집합
@@ -238,7 +247,7 @@ export interface FlowLineageSummary {
  * sequence: 첫 step consumes = 입력, 마지막 step produces = 출력
  * 내부 체인을 역추적하여 "출력 c는 최종적으로 입력 a에서 왔다"를 압축.
  */
-export function summarizeFlowLineage(flow: PipeFlow, pipeId = "pipe"): FlowLineageSummary {
+export function summarizeFlowLineage(flow: PipeFlow, pipeId = 'pipe'): FlowLineageSummary {
   const lineages = deriveStaticLineage(flow, pipeId);
 
   // 전체 입력 수집: consumes에 있지만 어떤 produces에도 없는 필드
@@ -247,16 +256,20 @@ export function summarizeFlowLineage(flow: PipeFlow, pipeId = "pipe"): FlowLinea
 
   collectAllFields(flow, allConsumed, allProduced);
 
-  const inputs = [...allConsumed].filter(f => !allProduced.has(f));
+  const inputs = [...allConsumed].filter((f) => !allProduced.has(f));
   const lastProduces = getLastProduces(flow);
-  const outputs = [...allProduced].filter(f => lastProduces.has(f));
+  const outputs = [...allProduced].filter((f) => lastProduces.has(f));
 
   // 출력별 기여 입력 역추적 — schemaId 포함 복합키 BFS
   const outputLineage: Record<string, string[]> = {};
   const lastStepSchemas = getLastProducesWithSchema(flow, pipeId);
   for (const output of outputs) {
     const startSchemaId = lastStepSchemas.get(output) ?? pipeId;
-    const origins = traceOriginsStatic({ schemaId: startSchemaId, column: output }, lineages, inputs);
+    const origins = traceOriginsStatic(
+      { schemaId: startSchemaId, column: output },
+      lineages,
+      inputs,
+    );
     outputLineage[output] = origins;
   }
 
@@ -287,7 +300,7 @@ function traceOriginsStatic(
 
     // schemaId + column 복합키로 매칭
     const matching = lineages.filter(
-      l => l.target.schemaId === current.schemaId && l.target.column === current.column,
+      (l) => l.target.schemaId === current.schemaId && l.target.column === current.column,
     );
     for (const m of matching) {
       for (const src of m.sources) {
@@ -301,7 +314,7 @@ function traceOriginsStatic(
 
 /** flow에서 모든 consumes/produces 필드 수집 */
 function collectAllFields(flow: PipeFlow, consumed: Set<string>, produced: Set<string>): void {
-  if (flow.kind === "step" && flow.dataContract) {
+  if (flow.kind === 'step' && flow.dataContract) {
     if (flow.dataContract.consumes) {
       for (const f of Object.keys(flow.dataContract.consumes)) consumed.add(f);
     }
@@ -317,10 +330,10 @@ function collectAllFields(flow: PipeFlow, consumed: Set<string>, produced: Set<s
 
 /** flow의 마지막 produces 필드 — sequence면 마지막 step, 아니면 전체 */
 function getLastProduces(flow: PipeFlow): Set<string> {
-  if (flow.kind === "sequence" && flow.steps.length > 0) {
+  if (flow.kind === 'sequence' && flow.steps.length > 0) {
     return getLastProduces(flow.steps[flow.steps.length - 1]);
   }
-  if (flow.kind === "step" && flow.dataContract?.produces) {
+  if (flow.kind === 'step' && flow.dataContract?.produces) {
     return new Set(Object.keys(flow.dataContract.produces));
   }
   const result = new Set<string>();
@@ -332,10 +345,10 @@ function getLastProduces(flow: PipeFlow): Set<string> {
 
 /** flow의 마지막 produces 필드 + schemaId 매핑 */
 function getLastProducesWithSchema(flow: PipeFlow, pipeId: string): Map<string, string> {
-  if (flow.kind === "sequence" && flow.steps.length > 0) {
+  if (flow.kind === 'sequence' && flow.steps.length > 0) {
     return getLastProducesWithSchema(flow.steps[flow.steps.length - 1], pipeId);
   }
-  if (flow.kind === "step" && flow.dataContract?.produces) {
+  if (flow.kind === 'step' && flow.dataContract?.produces) {
     const sid = resolveStepSchemaId(flow, pipeId);
     const map = new Map<string, string>();
     for (const f of Object.keys(flow.dataContract.produces)) map.set(f, sid);
@@ -378,16 +391,12 @@ export function validateStaticLineage(
  *
  * schemaId를 몰라도 됨 — flow의 마지막 produces에서 자동 해석.
  */
-export function findFieldOrigin(
-  flow: PipeFlow,
-  fieldName: string,
-  pipeId = "pipe",
-): string[] {
+export function findFieldOrigin(flow: PipeFlow, fieldName: string, pipeId = 'pipe'): string[] {
   const lineages = deriveStaticLineage(flow, pipeId);
   const allConsumed = new Set<string>();
   const allProduced = new Set<string>();
   collectAllFields(flow, allConsumed, allProduced);
-  const inputs = [...allConsumed].filter(f => !allProduced.has(f));
+  const inputs = [...allConsumed].filter((f) => !allProduced.has(f));
 
   const lastSchemas = getLastProducesWithSchema(flow, pipeId);
   const startSchemaId = lastSchemas.get(fieldName);
@@ -416,7 +425,7 @@ export interface GraphLineageSummary {
  */
 export function deriveGraphLineage(graph: PipeGraph): GraphLineageSummary {
   const pipeLineages = new Map<string, FieldLineage[]>();
-  const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
+  const pipeMap = new Map(graph.pipes.map((p) => [p.pipeId, p]));
 
   // 1. 각 pipe의 정적 계보
   for (const pipe of graph.pipes) {
@@ -438,7 +447,7 @@ export function deriveGraphLineage(graph: PipeGraph): GraphLineageSummary {
 
       // PortRef의 portId로 port의 facetType 조회
       const fromPortFacet = fromRef.portId
-        ? fromPipe.ports?.find(p => p.portId === fromRef.portId)?.facetType
+        ? fromPipe.ports?.find((p) => p.portId === fromRef.portId)?.facetType
         : undefined;
 
       for (const toRefEntry of toRefs) {
@@ -448,7 +457,7 @@ export function deriveGraphLineage(graph: PipeGraph): GraphLineageSummary {
         if (!toConsumes) continue;
 
         const toPortFacet = toRefEntry.portId
-          ? toPipe.ports?.find(p => p.portId === toRefEntry.portId)?.facetType
+          ? toPipe.ports?.find((p) => p.portId === toRefEntry.portId)?.facetType
           : undefined;
 
         // facetType 우선순위: PortRef port facet > connection-level facetType
@@ -463,7 +472,7 @@ export function deriveGraphLineage(graph: PipeGraph): GraphLineageSummary {
             crossPipeChains.push({
               target: { schemaId: toFieldRef.schemaId, column: field },
               sources: [{ schemaId: fromFieldRef.schemaId, column: field }],
-              transform: "direct",
+              transform: 'direct',
               pipeId: `${fromRef.pipeId}→${toRefEntry.pipeId}`,
               stepPath: `connection.${conn.kind}`,
             });
@@ -486,33 +495,40 @@ export function summarizeGraphLineage(graph: PipeGraph): FlowLineageSummary {
   const { allLineages } = deriveGraphLineage(graph);
 
   // graph 전체의 입력: entry pipe의 첫 consumes
-  const entryPipe = graph.pipes.find(p => p.pipeId === graph.entryPipeId);
+  const entryPipe = graph.pipes.find((p) => p.pipeId === graph.entryPipeId);
   const allConsumed = new Set<string>();
   const allProduced = new Set<string>();
   for (const pipe of graph.pipes) {
     collectAllFields(pipe.flow, allConsumed, allProduced);
   }
-  const inputs = [...allConsumed].filter(f => !allProduced.has(f));
+  const inputs = [...allConsumed].filter((f) => !allProduced.has(f));
 
   // graph 전체의 출력: 나가는 연결 없는 pipe의 마지막 produces
   const hasOutgoing = new Set<string>();
   for (const conn of graph.connections) {
     for (const id of normalizeEndpointPipeIds(conn.from)) hasOutgoing.add(id);
   }
-  const exitPipes = graph.pipes.filter(p => !hasOutgoing.has(p.pipeId));
+  const exitPipes = graph.pipes.filter((p) => !hasOutgoing.has(p.pipeId));
   const outputSet = new Set<string>();
   const outputSchemas = new Map<string, string>();
   for (const pipe of exitPipes) {
     const lp = getLastProducesWithSchema(pipe.flow, pipe.pipeId);
-    for (const [f, sid] of lp) { outputSet.add(f); outputSchemas.set(f, sid); }
+    for (const [f, sid] of lp) {
+      outputSet.add(f);
+      outputSchemas.set(f, sid);
+    }
   }
   const outputs = [...outputSet];
 
   // 출력별 기여 입력 역추적
   const outputLineage: Record<string, string[]> = {};
   for (const output of outputs) {
-    const startSchemaId = outputSchemas.get(output) ?? "";
-    outputLineage[output] = traceOriginsStatic({ schemaId: startSchemaId, column: output }, allLineages, inputs);
+    const startSchemaId = outputSchemas.get(output) ?? '';
+    outputLineage[output] = traceOriginsStatic(
+      { schemaId: startSchemaId, column: output },
+      allLineages,
+      inputs,
+    );
   }
 
   return { inputs, outputs, outputLineage };
@@ -534,10 +550,10 @@ export function findFieldOriginInGraph(
   for (const pipe of graph.pipes) {
     collectAllFields(pipe.flow, allConsumed, allProduced);
   }
-  const inputs = [...allConsumed].filter(f => !allProduced.has(f));
+  const inputs = [...allConsumed].filter((f) => !allProduced.has(f));
 
   // 해당 pipe의 produces에서 시작 schemaId
-  const pipe = graph.pipes.find(p => p.pipeId === pipeId);
+  const pipe = graph.pipes.find((p) => p.pipeId === pipeId);
   if (!pipe) return [];
   const lastSchemas = getLastProducesWithSchema(pipe.flow, pipeId);
   const startSchemaId = lastSchemas.get(fieldName);
@@ -551,9 +567,9 @@ export function findFieldOriginInGraph(
 /** FieldLineage의 안정 키 — target + sources + transform 기반 */
 export function lineageId(lineage: FieldLineage): string {
   const srcKey = lineage.sources
-    .map(s => `${s.schemaId}:${s.column}`)
+    .map((s) => `${s.schemaId}:${s.column}`)
     .toSorted()
-    .join("+");
+    .join('+');
   return `${lineage.target.schemaId}:${lineage.target.column}←${srcKey}|${lineage.transform}`;
 }
 
@@ -572,9 +588,12 @@ export interface LineageDiff {
 }
 
 /** 두 계보 버전 간 차이 비교 */
-export function diffLineage(prev: readonly FieldLineage[], next: readonly FieldLineage[]): LineageDiff {
-  const prevIds = new Map(prev.map(l => [lineageId(l), l]));
-  const nextIds = new Map(next.map(l => [lineageId(l), l]));
+export function diffLineage(
+  prev: readonly FieldLineage[],
+  next: readonly FieldLineage[],
+): LineageDiff {
+  const prevIds = new Map(prev.map((l) => [lineageId(l), l]));
+  const nextIds = new Map(next.map((l) => [lineageId(l), l]));
 
   const added: FieldLineage[] = [];
   const removed: FieldLineage[] = [];

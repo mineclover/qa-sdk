@@ -16,10 +16,10 @@
  * - DB 에 있는데 map 에 없음 → orphan 로그만 남기고 삭제 금지 (수동 검토)
  */
 
-import { ASPECT_PARENTS, DEFINITION_TAXONOMY } from "definition-catalog";
-import { eq } from "drizzle-orm";
-import type { DefinitionServiceDatabase } from "../database.module.js";
-import { aspectParents } from "../db/schema.js";
+import { ASPECT_PARENTS, DEFINITION_TAXONOMY } from 'definition-catalog';
+import { eq } from 'drizzle-orm';
+import type { DefinitionServiceDatabase } from '../database.module.js';
+import { aspectParents } from '../db/schema.js';
 
 export interface AspectParentSyncReport {
   readonly inserted: number;
@@ -32,9 +32,7 @@ export interface AspectParentSyncReport {
  * aspect_parents 테이블을 ASPECT_PARENTS map 과 동기화한다.
  * Idempotent: 같은 입력 반복 호출 시 동일 결과.
  */
-export function syncAspectParents(
-  db: DefinitionServiceDatabase,
-): AspectParentSyncReport {
+export function syncAspectParents(db: DefinitionServiceDatabase): AspectParentSyncReport {
   const descriptionByAspect = buildDescriptionMap();
   const mapEntries = Object.entries(ASPECT_PARENTS);
 
@@ -50,9 +48,7 @@ export function syncAspectParents(
     const description = descriptionByAspect.get(child) ?? null;
 
     if (!existing) {
-      db.insert(aspectParents)
-        .values({ childId: child, parentId: parent, description })
-        .run();
+      db.insert(aspectParents).values({ childId: child, parentId: parent, description }).run();
       inserted++;
       continue;
     }

@@ -1,25 +1,25 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { AUTHORED_LINK_AXIS_MAP, type TraversalAxis } from "./graph-types.js";
-import { isArchivedPrdDocument, isTransientDocument } from "doc-envelope";
-import type { DocumentEnvelope, DocumentLink, DocumentMetadata } from "doc-envelope";
+import { AUTHORED_LINK_AXIS_MAP, type TraversalAxis } from './graph-types.js';
+import { isArchivedPrdDocument, isTransientDocument } from 'doc-envelope';
+import type { DocumentEnvelope, DocumentLink, DocumentMetadata } from 'doc-envelope';
 
 export const DOCUMENT_ROLE_MATRIX_ROLES = [
-  "spec",
-  "plan",
-  "todo",
-  "rule",
-  "cases",
-  "test",
-  "memo",
-  "prd",
-  "ralph-prd-json",
+  'spec',
+  'plan',
+  'todo',
+  'rule',
+  'cases',
+  'test',
+  'memo',
+  'prd',
+  'ralph-prd-json',
 ] as const;
 
 export type DocumentRoleMatrixRole = (typeof DOCUMENT_ROLE_MATRIX_ROLES)[number];
 
-export type DocumentRoleMatrixRelation = "composition" | "refinement" | "trace";
+export type DocumentRoleMatrixRelation = 'composition' | 'refinement' | 'trace';
 
 export interface DocumentRoleMatrixDocument {
   readonly adapterId: string;
@@ -34,7 +34,7 @@ export interface DocumentRoleMatrixDocument {
 export interface DocumentRoleMatrixLinkedDocument extends DocumentRoleMatrixDocument {
   readonly relation: DocumentRoleMatrixRelation;
   readonly linkType: string;
-  readonly direction: "out" | "in";
+  readonly direction: 'out' | 'in';
   readonly sourceDocumentId: string;
   readonly sourceDocumentPath: string;
   readonly targetId: string;
@@ -98,16 +98,13 @@ export function buildDocumentRoleMatrix(
   if (!familyId) return undefined;
 
   const activeDocuments = documents.filter(isActiveRoleMatrixDocument);
-  const target = isActiveRoleMatrixDocument(options.target)
-    ? options.target
-    : options.target;
-  const sameFamilyDocuments = activeDocuments.filter((document) =>
-    document.familyId === familyId && roleOfDocument(document)
+  const target = isActiveRoleMatrixDocument(options.target) ? options.target : options.target;
+  const sameFamilyDocuments = activeDocuments.filter(
+    (document) => document.familyId === familyId && roleOfDocument(document),
   );
-  const seedDocuments = uniqueDocuments([
-    target,
-    ...sameFamilyDocuments,
-  ]).filter(isActiveRoleMatrixDocument);
+  const seedDocuments = uniqueDocuments([target, ...sameFamilyDocuments]).filter(
+    isActiveRoleMatrixDocument,
+  );
 
   const sameFamilyByRole = new Map<DocumentRoleMatrixRole, DocumentRoleMatrixDocument[]>();
   for (const document of sameFamilyDocuments) {
@@ -141,7 +138,10 @@ export function buildDocumentRoleMatrix(
   const missingSameFamilyRoles = roles
     .filter((coverage) => !coverage.sameFamilyPresent)
     .map((coverage) => coverage.role);
-  const typeCoverage = buildTypeCoverage(sameFamilyDocuments, linkedRoleDocuments.map((item) => item.document));
+  const typeCoverage = buildTypeCoverage(
+    sameFamilyDocuments,
+    linkedRoleDocuments.map((item) => item.document),
+  );
 
   return {
     familyId,
@@ -163,15 +163,14 @@ export function buildDocumentRoleMatrix(
   };
 }
 
-export function roleOfDocument(
-  document: DocumentEnvelope,
-): DocumentRoleMatrixRole | undefined {
+export function roleOfDocument(document: DocumentEnvelope): DocumentRoleMatrixRole | undefined {
   const documentKind = asString(document.metadata.documentKind);
   const pathRole = roleFromPath(document.path);
 
-  if (document.kind !== "spec" && isDocumentRoleMatrixRole(document.kind)) return document.kind;
-  if (documentKind && documentKind !== "spec" && isDocumentRoleMatrixRole(documentKind)) return documentKind;
-  if (pathRole && pathRole !== "spec") return pathRole;
+  if (document.kind !== 'spec' && isDocumentRoleMatrixRole(document.kind)) return document.kind;
+  if (documentKind && documentKind !== 'spec' && isDocumentRoleMatrixRole(documentKind))
+    return documentKind;
+  if (pathRole && pathRole !== 'spec') return pathRole;
   if (isDocumentRoleMatrixRole(document.kind)) return document.kind;
 
   if (documentKind && isDocumentRoleMatrixRole(documentKind)) return documentKind;
@@ -182,7 +181,7 @@ export function roleOfDocument(
 function buildTypeCoverage(
   sameFamilyDocuments: readonly DocumentEnvelope[],
   linkedDocuments: readonly DocumentRoleMatrixLinkedDocument[],
-): DocumentRoleMatrix["typeCoverage"] {
+): DocumentRoleMatrix['typeCoverage'] {
   const sameFamilyByType = new Map<string, DocumentRoleMatrixDocument[]>();
   for (const document of sameFamilyDocuments) {
     const type = typeOfDocument(document);
@@ -222,17 +221,21 @@ function buildTypeCoverage(
 }
 
 function typeOfDocument(document: DocumentEnvelope): string {
-  return (asString(document.metadata.type)
-    ?? asString(document.metadata.documentKind)
-    ?? document.kind)
-    || "document";
+  return (
+    (asString(document.metadata.type) ??
+      asString(document.metadata.documentKind) ??
+      document.kind) ||
+    'document'
+  );
 }
 
 function typeOfRoleMatrixDocument(document: DocumentRoleMatrixDocument): string {
-  return (asString(document.metadata.type)
-    ?? asString(document.metadata.documentKind)
-    ?? document.kind)
-    || "document";
+  return (
+    (asString(document.metadata.type) ??
+      asString(document.metadata.documentKind) ??
+      document.kind) ||
+    'document'
+  );
 }
 
 function collectLinkedRoleDocuments(
@@ -255,13 +258,19 @@ function collectLinkedRoleDocuments(
       const relation = relationForLink(link);
       if (!relation) continue;
       for (const target of resolveLinkedDocuments(documents, seed, link, relation)) {
-        addLinkedRoleDocument(linked, target, {
-          relation,
-          link,
-          direction: "out",
-          source: seed,
-          reason: `graph:${relation}`,
-        }, familyId, seedKeys);
+        addLinkedRoleDocument(
+          linked,
+          target,
+          {
+            relation,
+            link,
+            direction: 'out',
+            source: seed,
+            reason: `graph:${relation}`,
+          },
+          familyId,
+          seedKeys,
+        );
       }
     }
   }
@@ -274,13 +283,19 @@ function collectLinkedRoleDocuments(
       if (!seedIdentities.has(link.targetId) && !seedIdentities.has(normalizePath(link.targetId))) {
         continue;
       }
-      addLinkedRoleDocument(linked, candidate, {
-        relation,
-        link,
-        direction: "in",
-        source: candidate,
-        reason: `graph:${relation}`,
-      }, familyId, seedKeys);
+      addLinkedRoleDocument(
+        linked,
+        candidate,
+        {
+          relation,
+          link,
+          direction: 'in',
+          source: candidate,
+          reason: `graph:${relation}`,
+        },
+        familyId,
+        seedKeys,
+      );
     }
   }
 
@@ -293,16 +308,15 @@ function resolveLinkedDocuments(
   link: DocumentLink,
   relation: DocumentRoleMatrixRelation,
 ): readonly DocumentEnvelope[] {
-  if (relation === "trace") {
+  if (relation === 'trace') {
     const taskOwners = documents.filter((document) =>
-      document.tasks.some((task) => task.id === link.targetId)
+      document.tasks.some((task) => task.id === link.targetId),
     );
     if (taskOwners.length > 0) return taskOwners;
   }
 
-  return documents.filter((document) =>
-    document !== source &&
-    documentIdentityValues(document).includes(link.targetId)
+  return documents.filter(
+    (document) => document !== source && documentIdentityValues(document).includes(link.targetId),
   );
 }
 
@@ -315,7 +329,7 @@ function addLinkedRoleDocument(
   context: {
     readonly relation: DocumentRoleMatrixRelation;
     readonly link: DocumentLink;
-    readonly direction: "out" | "in";
+    readonly direction: 'out' | 'in';
     readonly source: DocumentEnvelope;
     readonly reason: string;
   },
@@ -348,7 +362,7 @@ function relationForLink(link: DocumentLink): DocumentRoleMatrixRelation | undef
 }
 
 function isRoleMatrixLinkedAxis(axis: TraversalAxis): axis is DocumentRoleMatrixRelation {
-  return axis === "composition" || axis === "refinement" || axis === "trace";
+  return axis === 'composition' || axis === 'refinement' || axis === 'trace';
 }
 
 function isActiveRoleMatrixDocument(document: DocumentEnvelope): boolean {
@@ -391,10 +405,13 @@ function dedupeLinkedRoleDocuments(
   readonly role: DocumentRoleMatrixRole;
   readonly document: DocumentRoleMatrixLinkedDocument;
 }[] {
-  const byKey = new Map<string, {
-    readonly role: DocumentRoleMatrixRole;
-    readonly document: DocumentRoleMatrixLinkedDocument;
-  }>();
+  const byKey = new Map<
+    string,
+    {
+      readonly role: DocumentRoleMatrixRole;
+      readonly document: DocumentRoleMatrixLinkedDocument;
+    }
+  >();
   for (const item of linked) {
     const key = [
       item.role,
@@ -403,7 +420,7 @@ function dedupeLinkedRoleDocuments(
       item.document.linkType,
       item.document.direction,
       item.document.targetId,
-    ].join("\0");
+    ].join('\0');
     if (!byKey.has(key)) byKey.set(key, item);
   }
   return [...byKey.values()];
@@ -436,7 +453,7 @@ function documentIdentityValues(document: DocumentEnvelope): readonly string[] {
 }
 
 function titleOf(document: DocumentEnvelope): string | undefined {
-  for (const key of ["title", "name", "defId"] as const) {
+  for (const key of ['title', 'name', 'defId'] as const) {
     const value = asString(document.metadata[key]);
     if (value) return value;
   }
@@ -447,21 +464,25 @@ function compareRoleMatrixDocuments(
   left: DocumentRoleMatrixDocument,
   right: DocumentRoleMatrixDocument,
 ): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.stableId.localeCompare(right.stableId);
+  return (
+    left.path.localeCompare(right.path) ||
+    left.kind.localeCompare(right.kind) ||
+    left.stableId.localeCompare(right.stableId)
+  );
 }
 
 function compareLinkedRoleMatrixDocuments(
   left: DocumentRoleMatrixLinkedDocument,
   right: DocumentRoleMatrixLinkedDocument,
 ): number {
-  return compareRoleMatrixDocuments(left, right)
-    || left.relation.localeCompare(right.relation)
-    || left.linkType.localeCompare(right.linkType)
-    || left.direction.localeCompare(right.direction)
-    || left.sourceDocumentId.localeCompare(right.sourceDocumentId)
-    || left.targetId.localeCompare(right.targetId);
+  return (
+    compareRoleMatrixDocuments(left, right) ||
+    left.relation.localeCompare(right.relation) ||
+    left.linkType.localeCompare(right.linkType) ||
+    left.direction.localeCompare(right.direction) ||
+    left.sourceDocumentId.localeCompare(right.sourceDocumentId) ||
+    left.targetId.localeCompare(right.targetId)
+  );
 }
 
 function uniqueDocuments(documents: readonly DocumentEnvelope[]): readonly DocumentEnvelope[] {
@@ -476,9 +497,7 @@ function uniqueDocuments(documents: readonly DocumentEnvelope[]): readonly Docum
   return uniqueDocs;
 }
 
-function uniqueRoleMatrixDocumentCount(
-  documents: readonly DocumentRoleMatrixDocument[],
-): number {
+function uniqueRoleMatrixDocumentCount(documents: readonly DocumentRoleMatrixDocument[]): number {
   return new Set(documents.map(documentKeyLike)).size;
 }
 
@@ -491,11 +510,11 @@ function documentKeyLike(document: DocumentRoleMatrixDocument): string {
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function unique(values: readonly (string | undefined)[]): readonly string[] {

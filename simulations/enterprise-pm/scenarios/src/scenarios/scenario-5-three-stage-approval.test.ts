@@ -1,17 +1,17 @@
-import { describe, expect, it, beforeAll, afterAll } from "vitest";
-import { runScenario } from "../runner/runner.js";
-import { scenario5ThreeStageApproval } from "./scenario-5-three-stage-approval.js";
-import type { InProcessHandle } from "../env/in-process-env.js";
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { runScenario } from '../runner/runner.js';
+import { scenario5ThreeStageApproval } from './scenario-5-three-stage-approval.js';
+import type { InProcessHandle } from '../env/in-process-env.js';
 
-const SKIP = process.env.SIM_SCENARIO_INPROC !== "1";
+const SKIP = process.env.SIM_SCENARIO_INPROC !== '1';
 
-describe.skipIf(SKIP)("Scenario 5 — 3-stage approval", () => {
+describe.skipIf(SKIP)('Scenario 5 — 3-stage approval', () => {
   let handle: InProcessHandle;
   beforeAll(async () => {
-    const { bootstrapInProcess } = await import("../env/in-process-env.js");
+    const { bootstrapInProcess } = await import('../env/in-process-env.js');
     handle = await bootstrapInProcess({
-      jwtSecret: "x".repeat(32),
-      dialect: "sqlite",
+      jwtSecret: 'x'.repeat(32),
+      dialect: 'sqlite',
     });
     const g = globalThis as unknown as {
       __simGatewayFetch: typeof handle.gatewayFetch;
@@ -24,14 +24,14 @@ describe.skipIf(SKIP)("Scenario 5 — 3-stage approval", () => {
     if (handle) await handle.cleanup();
   });
 
-  it("scenario 5 통과", async () => {
+  it('scenario 5 통과', async () => {
     const result = await runScenario(scenario5ThreeStageApproval, {
-      gatewayUrl: "http://sim-inproc",
-      mode: "in-process",
+      gatewayUrl: 'http://sim-inproc',
+      mode: 'in-process',
     });
-    if (result.status !== "passed") {
-      console.error("[Scenario 5 실패]", result.error);
+    if (result.status !== 'passed') {
+      console.error('[Scenario 5 실패]', result.error);
     }
-    expect(result.status).toBe("passed");
+    expect(result.status).toBe('passed');
   }, 60_000);
 });

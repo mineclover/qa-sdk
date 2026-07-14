@@ -10,17 +10,17 @@
  * rule.md §3: "nesting missing-provider와 IR dangling-ref가 같은 문제의 다른 관점"
  */
 
-import type { ScopeNesting, ScopeContract } from "../scope-nesting.js";
-import { validateScopeNesting } from "../scope-nesting.js";
-import type { IRGraph, IRIssue } from "./ir-validate.js";
-import { validateIRGraph } from "./ir-validate.js";
-import type { ModuleIR, DataRef } from "./ir-types.js";
+import type { ScopeNesting, ScopeContract } from '../scope-nesting.js';
+import { validateScopeNesting } from '../scope-nesting.js';
+import type { IRGraph, IRIssue } from './ir-validate.js';
+import { validateIRGraph } from './ir-validate.js';
+import type { ModuleIR, DataRef } from './ir-types.js';
 
 // ── 교차 검증 결과 ────────────────────────────────────
 
 export interface CrossValidationIssue {
-  readonly severity: "error" | "warning";
-  readonly source: "nesting" | "ir" | "cross";
+  readonly severity: 'error' | 'warning';
+  readonly source: 'nesting' | 'ir' | 'cross';
   readonly rule: string;
   readonly target: string;
   readonly message: string;
@@ -53,7 +53,7 @@ export function crossValidate(
   for (const ni of nestingResult.issues) {
     issues.push({
       severity: ni.severity,
-      source: "nesting",
+      source: 'nesting',
       rule: ni.code,
       target: `${ni.scopeId}/${ni.contractId}`,
       message: ni.message,
@@ -65,7 +65,7 @@ export function crossValidate(
   for (const ii of irIssues) {
     issues.push({
       severity: ii.severity,
-      source: "ir",
+      source: 'ir',
       rule: ii.type,
       target: ii.target,
       message: ii.message,
@@ -73,16 +73,16 @@ export function crossValidate(
   }
 
   // step 3: 교차 검증 — nesting scope ↔ IR module 매핑
-  const moduleMap = new Map(graph.modules.map(m => [m.id, m]));
-  const scopeMap = new Map(nesting.scopes.map(s => [s.scopeId, s]));
+  const moduleMap = new Map(graph.modules.map((m) => [m.id, m]));
+  const scopeMap = new Map(nesting.scopes.map((s) => [s.scopeId, s]));
 
   // nesting scope에 대응하는 IR module이 있는가
   for (const scope of nesting.scopes) {
     if (!moduleMap.has(scope.scopeId)) {
       issues.push({
-        severity: "warning",
-        source: "cross",
-        rule: "scope-without-module",
+        severity: 'warning',
+        source: 'cross',
+        rule: 'scope-without-module',
         target: scope.scopeId,
         message: `nesting scope "${scope.scopeId}"에 대응하는 ModuleIR 없음`,
       });
@@ -93,12 +93,12 @@ export function crossValidate(
 
     // provides ↔ outputs 매칭
     for (const contract of scope.provides) {
-      const hasOutput = mod.interface.outputs.some(o => o.dataId === contract.contractId);
+      const hasOutput = mod.interface.outputs.some((o) => o.dataId === contract.contractId);
       if (!hasOutput) {
         issues.push({
-          severity: "warning",
-          source: "cross",
-          rule: "provides-without-output",
+          severity: 'warning',
+          source: 'cross',
+          rule: 'provides-without-output',
           target: `${scope.scopeId}/${contract.contractId}`,
           message: `scope provides "${contract.contractId}" 하지만 ModuleIR.outputs에 없음`,
         });
@@ -107,12 +107,12 @@ export function crossValidate(
 
     // consumes ↔ inputs 매칭
     for (const contract of scope.consumes) {
-      const hasInput = mod.interface.inputs.some(i => i.dataId === contract.contractId);
+      const hasInput = mod.interface.inputs.some((i) => i.dataId === contract.contractId);
       if (!hasInput) {
         issues.push({
-          severity: "warning",
-          source: "cross",
-          rule: "consumes-without-input",
+          severity: 'warning',
+          source: 'cross',
+          rule: 'consumes-without-input',
           target: `${scope.scopeId}/${contract.contractId}`,
           message: `scope consumes "${contract.contractId}" 하지만 ModuleIR.inputs에 없음`,
         });
@@ -125,9 +125,9 @@ export function crossValidate(
     if (mod.relations.children.length > 0 && !scopeMap.has(mod.id)) {
       // group/module 수준이면 nesting에도 있어야 의미
       issues.push({
-        severity: "warning",
-        source: "cross",
-        rule: "module-without-scope",
+        severity: 'warning',
+        source: 'cross',
+        rule: 'module-without-scope',
         target: mod.id,
         message: `ModuleIR "${mod.id}" (level=${mod.meta.level})에 대응하는 nesting scope 없음`,
       });
@@ -136,7 +136,7 @@ export function crossValidate(
 
   return {
     nestingValid: nestingResult.valid,
-    irValid: irIssues.filter(i => i.severity === "error").length === 0,
+    irValid: irIssues.filter((i) => i.severity === 'error').length === 0,
     issues,
   };
 }
@@ -152,19 +152,19 @@ export function nestingToModuleIRs(nesting: ScopeNesting): ModuleIR[] {
     const parent = i > 0 ? nesting.scopes[i - 1] : null;
     const child = i < nesting.scopes.length - 1 ? nesting.scopes[i + 1] : null;
 
-    const inputs: DataRef[] = scope.consumes.map(c => ({
+    const inputs: DataRef[] = scope.consumes.map((c) => ({
       dataId: c.contractId,
-      schemaHash: "",
+      schemaHash: '',
     }));
 
-    const outputs: DataRef[] = scope.provides.map(c => ({
+    const outputs: DataRef[] = scope.provides.map((c) => ({
       dataId: c.contractId,
-      schemaHash: "",
+      schemaHash: '',
     }));
 
     modules.push({
       id: scope.scopeId,
-      source: { filePath: "", line: 0, kind: "module" },
+      source: { filePath: '', line: 0, kind: 'module' },
       interface: { inputs, outputs, sideEffects: [] },
       relations: {
         parent: parent ? { moduleId: parent.scopeId } : null,
@@ -173,9 +173,7 @@ export function nestingToModuleIRs(nesting: ScopeNesting): ModuleIR[] {
         external: [],
       },
       meta: {
-        level: !parent && child ? "group"
-          : parent && child ? "module"
-          : "leaf",
+        level: !parent && child ? 'group' : parent && child ? 'module' : 'leaf',
       },
     });
   }

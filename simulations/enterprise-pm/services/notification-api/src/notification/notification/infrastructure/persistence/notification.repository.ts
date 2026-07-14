@@ -1,17 +1,17 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { and, eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { and, eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { NotificationEntity } from "../../domain/index.js";
-import type { NotificationSnapshot } from "../../domain/notification.types.js";
-import type { NotificationStatus } from "../../domain/notification.types.js";
-import { NotificationRepositoryPort } from "../../application/ports/notification-repository.port.js";
-import type { NotificationTransactionScope } from "../../application/ports/notification-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { NotificationEntity } from '../../domain/index.js';
+import type { NotificationSnapshot } from '../../domain/notification.types.js';
+import type { NotificationStatus } from '../../domain/notification.types.js';
+import { NotificationRepositoryPort } from '../../application/ports/notification-repository.port.js';
+import type { NotificationTransactionScope } from '../../application/ports/notification-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface NotificationRow {
   id: string;
@@ -165,7 +165,7 @@ export class PgNotificationRepository extends NotificationRepositoryPort {
   }
 }
 
-export type NotificationDialect = "sqlite" | "pg";
+export type NotificationDialect = 'sqlite' | 'pg';
 
 export interface NotificationRepositoryFactoryOpts {
   readonly dialect: NotificationDialect;
@@ -175,10 +175,10 @@ export interface NotificationRepositoryFactoryOpts {
 export function createNotificationRepository(
   opts: NotificationRepositoryFactoryOpts,
 ): NotificationRepositoryPort {
-  if (opts.dialect === "sqlite") {
+  if (opts.dialect === 'sqlite') {
     return new SqliteNotificationRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgNotificationRepository(opts.db as PostgresJsDatabase);
   }
   throw new Error(

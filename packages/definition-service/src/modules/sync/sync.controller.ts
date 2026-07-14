@@ -1,9 +1,9 @@
 // @def.doc definition-service
 
-import { Controller, Get, Post, Inject, NotFoundException } from "@nestjs/common";
-import { SyncService } from "./sync.service.js";
+import { Controller, Get, Post, Inject, NotFoundException } from '@nestjs/common';
+import { SyncService } from './sync.service.js';
 
-@Controller("sync")
+@Controller('sync')
 export class SyncController {
   constructor(@Inject(SyncService) private readonly sync: SyncService) {}
 
@@ -14,7 +14,7 @@ export class SyncController {
   }
 
   /** DB → file 역동기화 (메타데이터를 frontmatter에 기록) */
-  @Post("to-files")
+  @Post('to-files')
   async runReverse() {
     return this.sync.runReverse();
   }
@@ -22,14 +22,14 @@ export class SyncController {
   @Get()
   status() {
     const result = this.sync.getLastResult();
-    if (!result) throw new NotFoundException("아직 동기화 실행 이력 없음");
+    if (!result) throw new NotFoundException('아직 동기화 실행 이력 없음');
     return result;
   }
 
-  @Get("to-files")
+  @Get('to-files')
   reverseStatus() {
     const result = this.sync.getLastReverseResult();
-    if (!result) throw new NotFoundException("아직 역동기화 실행 이력 없음");
+    if (!result) throw new NotFoundException('아직 역동기화 실행 이력 없음');
     return result;
   }
 }

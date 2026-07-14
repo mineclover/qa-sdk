@@ -1,7 +1,7 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { isAbsolute, relative as relativePath } from "node:path";
+import { isAbsolute, relative as relativePath } from 'node:path';
 
 import {
   TRAVERSAL_AXIS_PRIORITY,
@@ -10,11 +10,11 @@ import {
   type DocumentGraphEdgeSummary,
   type DocumentGraphNodeKind,
   type TraversalAxis,
-} from "./graph-types.js";
+} from './graph-types.js';
 import {
   normalizeDocumentGraphEdges,
   type NormalizeDocumentGraphEdgesOptions,
-} from "./graph-normalize.js";
+} from './graph-normalize.js';
 import type {
   DocumentDiagnostic,
   DocumentEnvelope,
@@ -23,13 +23,9 @@ import type {
   DocumentRawSourcePointer,
   DocumentSection,
   DocumentTask,
-} from "doc-envelope";
+} from 'doc-envelope';
 
-export type DocumentGraphIndexNodeKind =
-  | DocumentGraphNodeKind
-  | "document"
-  | "task"
-  | "context";
+export type DocumentGraphIndexNodeKind = DocumentGraphNodeKind | 'document' | 'task' | 'context';
 
 export interface DocumentGraphNodeReason {
   readonly reason: string;
@@ -62,16 +58,16 @@ export interface DocumentGraphLookupIndexes {
 }
 
 export type DocumentGraphTargetLookupKind =
-  | "node-id"
-  | "stable-id"
-  | "path"
-  | "source-path"
-  | "task-id"
-  | "artifact-id"
-  | "evidence-ref"
-  | "family-id"
-  | "source-path-missing"
-  | "missing";
+  | 'node-id'
+  | 'stable-id'
+  | 'path'
+  | 'source-path'
+  | 'task-id'
+  | 'artifact-id'
+  | 'evidence-ref'
+  | 'family-id'
+  | 'source-path-missing'
+  | 'missing';
 
 export interface DocumentGraphTargetResolution {
   readonly target: string;
@@ -82,8 +78,7 @@ export interface DocumentGraphTargetResolution {
   readonly diagnostics: readonly DocumentDiagnostic[];
 }
 
-export interface BuildDocumentGraphIndexOptions
-  extends NormalizeDocumentGraphEdgesOptions {
+export interface BuildDocumentGraphIndexOptions extends NormalizeDocumentGraphEdgesOptions {
   /**
    * Repository root used only to canonicalize absolute source path targets into
    * repository-relative source node ids. The graph still stores source-owned
@@ -140,8 +135,9 @@ export function buildDocumentGraphIndex(
     addDocumentNodes(nodeBuilder, document);
   }
 
-  const projectedEdges = options.edges
-    ?? normalizeDocumentGraphEdges(documents, {
+  const projectedEdges =
+    options.edges ??
+    normalizeDocumentGraphEdges(documents, {
       includeContext: options.includeContext,
     });
 
@@ -155,8 +151,8 @@ export function buildDocumentGraphIndex(
   const edges = edgeBuilder.edges();
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const edgesById = new Map(edges.map((edge) => [edge.id, edge]));
-  const outgoingEdgesByNodeId = buildAdjacencyIndex(nodes, edges, "out");
-  const incomingEdgesByNodeId = buildAdjacencyIndex(nodes, edges, "in");
+  const outgoingEdgesByNodeId = buildAdjacencyIndex(nodes, edges, 'out');
+  const incomingEdgesByNodeId = buildAdjacencyIndex(nodes, edges, 'in');
   const lookup = buildLookupIndexes(nodes);
 
   const indexCore = {
@@ -183,10 +179,7 @@ export function buildDocumentGraphIndex(
   };
 }
 
-function addDocumentNodes(
-  builder: NodeBuilder,
-  document: DocumentEnvelope,
-): void {
+function addDocumentNodes(builder: NodeBuilder, document: DocumentEnvelope): void {
   builder.add({
     id: documentNodeId(document),
     kind: documentNodeKind(document),
@@ -199,7 +192,7 @@ function addDocumentNodes(
       adapterId: document.adapterId,
       documentKind: document.kind,
     },
-    reason: documentNodeReason(document, "document-envelope"),
+    reason: documentNodeReason(document, 'document-envelope'),
   });
 
   for (const task of document.tasks) {
@@ -213,14 +206,10 @@ function addDocumentNodes(
   }
 }
 
-function addTaskNode(
-  builder: NodeBuilder,
-  document: DocumentEnvelope,
-  task: DocumentTask,
-): void {
+function addTaskNode(builder: NodeBuilder, document: DocumentEnvelope, task: DocumentTask): void {
   builder.add({
     id: taskNodeId(document, task),
-    kind: "task",
+    kind: 'task',
     label: task.title,
     stableId: `${document.stableId}:${task.id}`,
     familyId: document.familyId,
@@ -234,7 +223,7 @@ function addTaskNode(
       sourceDocumentPath: document.path,
     },
     reason: {
-      ...documentNodeReason(document, "document-task"),
+      ...documentNodeReason(document, 'document-task'),
       rawSource: task.rawSource ?? document.rawSource,
       metadata: {
         taskId: task.id,
@@ -251,12 +240,12 @@ function addEvidenceNode(
 ): void {
   builder.add({
     id: evidenceNodeId(evidence.id),
-    kind: "evidence",
+    kind: 'evidence',
     label: evidence.summary ?? evidence.kind ?? evidence.id,
     stableId: evidence.id,
     familyId: document.familyId,
     path: evidence.rawSource
-      ? `${evidence.rawSource.path}${evidence.rawSource.pointer ? `#${evidence.rawSource.pointer}` : ""}`
+      ? `${evidence.rawSource.path}${evidence.rawSource.pointer ? `#${evidence.rawSource.pointer}` : ''}`
       : `${document.path}#${evidence.id}`,
     metadata: {
       ...evidence.metadata,
@@ -266,7 +255,7 @@ function addEvidenceNode(
       sourceDocumentPath: document.path,
     },
     reason: {
-      ...documentNodeReason(document, "document-evidence-record"),
+      ...documentNodeReason(document, 'document-evidence-record'),
       rawSource: evidence.rawSource ?? document.rawSource,
       metadata: {
         evidenceId: evidence.id,
@@ -284,7 +273,7 @@ function addSectionNode(
 ): void {
   builder.add({
     id: sectionNodeId(document, section),
-    kind: "section",
+    kind: 'section',
     label: section.title ?? section.anchor ?? section.id,
     stableId: `${document.stableId}:${section.id}`,
     familyId: document.familyId,
@@ -299,7 +288,7 @@ function addSectionNode(
       sourceDocumentPath: document.path,
     },
     reason: {
-      ...documentNodeReason(document, "document-section"),
+      ...documentNodeReason(document, 'document-section'),
       rawSource: section.rawSource ?? document.rawSource,
       metadata: {
         sectionId: section.id,
@@ -309,9 +298,7 @@ function addSectionNode(
   });
 }
 
-function buildLookupIndexes(
-  nodes: readonly DocumentGraphIndexNode[],
-): DocumentGraphLookupIndexes {
+function buildLookupIndexes(nodes: readonly DocumentGraphIndexNode[]): DocumentGraphLookupIndexes {
   const byStableId = new Map<string, DocumentGraphIndexNode[]>();
   const byFamilyId = new Map<string, DocumentGraphIndexNode[]>();
   const byPath = new Map<string, DocumentGraphIndexNode[]>();
@@ -326,7 +313,7 @@ function buildLookupIndexes(
     addLookup(byFamilyId, node.familyId, node);
     addLookup(byPath, node.path ? normalizeGraphPath(node.path) : undefined, node);
 
-    if (node.kind === "source" && node.path) {
+    if (node.kind === 'source' && node.path) {
       addLookup(bySourcePath, normalizeSourcePath(node.path), node);
     }
 
@@ -359,52 +346,53 @@ function buildLookupIndexes(
 }
 
 function resolveDocumentGraphTarget(
-  index: Omit<DocumentGraphIndex, "resolveTarget" | "outgoing" | "incoming">,
+  index: Omit<DocumentGraphIndex, 'resolveTarget' | 'outgoing' | 'incoming'>,
   target: string,
   rootDir: string | undefined,
 ): DocumentGraphTargetResolution {
   const normalizedTarget = normalizeGraphPath(target, rootDir);
   const sourcePath = normalizeSourcePath(target, rootDir);
   const exactNode = index.nodesById.get(canonicalizeNodeId(target, rootDir));
-  if (exactNode) return indexedResolution(target, "node-id", [exactNode]);
+  if (exactNode) return indexedResolution(target, 'node-id', [exactNode]);
 
-  const stableIdMatches = index.lookup.byStableId.get(target)
-    ?? index.lookup.byStableId.get(normalizedTarget);
-  if (stableIdMatches?.length) return indexedResolution(target, "stable-id", stableIdMatches);
+  const stableIdMatches =
+    index.lookup.byStableId.get(target) ?? index.lookup.byStableId.get(normalizedTarget);
+  if (stableIdMatches?.length) return indexedResolution(target, 'stable-id', stableIdMatches);
 
   const taskMatches = index.lookup.byTaskId.get(target);
-  if (taskMatches?.length) return indexedResolution(target, "task-id", taskMatches);
+  if (taskMatches?.length) return indexedResolution(target, 'task-id', taskMatches);
 
   const artifactMatches = index.lookup.byArtifactId.get(target);
-  if (artifactMatches?.length) return indexedResolution(target, "artifact-id", artifactMatches);
+  if (artifactMatches?.length) return indexedResolution(target, 'artifact-id', artifactMatches);
 
   const evidenceMatches = index.lookup.byEvidenceRef.get(target);
-  if (evidenceMatches?.length) return indexedResolution(target, "evidence-ref", evidenceMatches);
+  if (evidenceMatches?.length) return indexedResolution(target, 'evidence-ref', evidenceMatches);
 
-  const pathMatches = (index.lookup.byPath.get(normalizedTarget) ?? [])
-    .filter((node) => node.kind !== "source");
-  if (pathMatches.length) return indexedResolution(target, "path", pathMatches);
+  const pathMatches = (index.lookup.byPath.get(normalizedTarget) ?? []).filter(
+    (node) => node.kind !== 'source',
+  );
+  if (pathMatches.length) return indexedResolution(target, 'path', pathMatches);
 
   const sourceMatches = isPathLikeRef(target)
     ? index.lookup.bySourcePath.get(sourcePath)
     : undefined;
-  if (sourceMatches?.length) return indexedResolution(target, "source-path", sourceMatches);
+  if (sourceMatches?.length) return indexedResolution(target, 'source-path', sourceMatches);
 
   const familyMatches = index.lookup.byFamilyId.get(target);
-  if (familyMatches?.length) return indexedResolution(target, "family-id", familyMatches);
+  if (familyMatches?.length) return indexedResolution(target, 'family-id', familyMatches);
 
   if (isPathLikeRef(target)) {
     const node = syntheticSourceNode(sourcePath);
     return {
       target,
-      lookupKind: "source-path-missing",
+      lookupKind: 'source-path-missing',
       indexed: false,
       node,
       nodes: [node],
       diagnostics: [
         {
-          code: "source-map-missing",
-          severity: "info",
+          code: 'source-map-missing',
+          severity: 'info',
           message: `No document source-map coverage found for ${sourcePath}.`,
           metadata: {
             target,
@@ -417,7 +405,7 @@ function resolveDocumentGraphTarget(
 
   return {
     target,
-    lookupKind: "missing",
+    lookupKind: 'missing',
     indexed: false,
     nodes: [],
     diagnostics: [],
@@ -443,22 +431,23 @@ function indexedResolution(
 function buildAdjacencyIndex(
   nodes: readonly DocumentGraphIndexNode[],
   edges: readonly DocumentGraphEdgeSummary[],
-  direction: "out" | "in",
+  direction: 'out' | 'in',
 ): ReadonlyMap<string, readonly DocumentGraphEdgeSummary[]> {
   const adjacency = new Map<string, DocumentGraphEdgeSummary[]>();
   for (const node of nodes) {
     adjacency.set(node.id, []);
   }
   for (const edge of edges) {
-    const key = direction === "out" ? edge.fromNodeId : edge.toNodeId;
+    const key = direction === 'out' ? edge.fromNodeId : edge.toNodeId;
     const bucket = adjacency.get(key) ?? [];
     bucket.push(edge);
     adjacency.set(key, bucket);
   }
 
   return new Map(
-    [...adjacency.entries()]
-      .map(([nodeId, items]) => [nodeId, items.toSorted(compareGraphEdges)] as const),
+    [...adjacency.entries()].map(
+      ([nodeId, items]) => [nodeId, items.toSorted(compareGraphEdges)] as const,
+    ),
   );
 }
 
@@ -469,11 +458,12 @@ class NodeBuilder {
 
   add(input: NodeInput): DocumentGraphIndexNode {
     const id = canonicalizeNodeId(input.id, this.rootDir);
-    const path = input.kind === "source"
-      ? normalizeSourcePath(input.path ?? sourcePathFromNodeId(id), this.rootDir)
-      : input.path
-        ? normalizeGraphPath(input.path, this.rootDir)
-        : undefined;
+    const path =
+      input.kind === 'source'
+        ? normalizeSourcePath(input.path ?? sourcePathFromNodeId(id), this.rootDir)
+        : input.path
+          ? normalizeGraphPath(input.path, this.rootDir)
+          : undefined;
     const existing = this.nodesById.get(id);
     if (existing) {
       const node = {
@@ -508,92 +498,92 @@ class NodeBuilder {
     const id = canonicalizeNodeId(nodeId, this.rootDir);
     if (this.nodesById.has(id)) return;
 
-    if (id.startsWith("source:")) {
+    if (id.startsWith('source:')) {
       const sourcePath = sourcePathFromNodeId(id);
       this.add({
         id,
-        kind: "source",
+        kind: 'source',
         label: sourcePath,
         path: sourcePath,
         metadata: {
           sourcePath,
         },
-        reason: endpointReason("edge-endpoint"),
+        reason: endpointReason('edge-endpoint'),
       });
       return;
     }
 
-    if (id.startsWith("evidence:")) {
-      const evidenceId = id.slice("evidence:".length);
+    if (id.startsWith('evidence:')) {
+      const evidenceId = id.slice('evidence:'.length);
       this.add({
         id,
-        kind: "evidence",
+        kind: 'evidence',
         label: evidenceId,
         stableId: evidenceId,
         metadata: {
           evidenceId,
         },
-        reason: endpointReason("edge-endpoint"),
+        reason: endpointReason('edge-endpoint'),
       });
       return;
     }
 
-    if (id.startsWith("task:")) {
-      const { documentStableId, taskId } = parseScopedNodeId(id, "task");
+    if (id.startsWith('task:')) {
+      const { documentStableId, taskId } = parseScopedNodeId(id, 'task');
       this.add({
         id,
-        kind: "task",
+        kind: 'task',
         label: taskId,
         stableId: `${documentStableId}:${taskId}`,
         metadata: {
           taskId,
           sourceDocumentId: documentStableId,
         },
-        reason: endpointReason("edge-endpoint"),
+        reason: endpointReason('edge-endpoint'),
       });
       return;
     }
 
-    if (id.startsWith("section:")) {
-      const { documentStableId, taskId: sectionId } = parseScopedNodeId(id, "section");
+    if (id.startsWith('section:')) {
+      const { documentStableId, taskId: sectionId } = parseScopedNodeId(id, 'section');
       this.add({
         id,
-        kind: "section",
+        kind: 'section',
         label: sectionId,
         stableId: `${documentStableId}:${sectionId}`,
         metadata: {
           sectionId,
           sourceDocumentId: documentStableId,
         },
-        reason: endpointReason("edge-endpoint"),
+        reason: endpointReason('edge-endpoint'),
       });
       return;
     }
 
-    if (id.startsWith("context:")) {
-      const contextId = id.slice("context:".length);
+    if (id.startsWith('context:')) {
+      const contextId = id.slice('context:'.length);
       this.add({
         id,
-        kind: "context",
+        kind: 'context',
         label: contextId,
         stableId: contextId,
         metadata: {
           contextId,
         },
-        reason: endpointReason("edge-endpoint"),
+        reason: endpointReason('edge-endpoint'),
       });
       return;
     }
 
-    if (id.startsWith("document:")) {
-      const stableId = id.slice("document:".length);
+    if (id.startsWith('document:')) {
+      const stableId = id.slice('document:'.length);
       this.add({
         id,
-        kind: "document",
+        kind: 'document',
         label: stableId,
         stableId,
         metadata: {},
-        reason: endpointReason("edge-endpoint"),
+        reason: endpointReason('edge-endpoint'),
       });
     }
   }
@@ -615,8 +605,8 @@ class IndexEdgeBuilder {
       input.axis,
       input.fromNodeId,
       input.toNodeId,
-      input.authoredType ?? "",
-    ].join("\u0000");
+      input.authoredType ?? '',
+    ].join('\u0000');
     const existing = this.edgesByKey.get(key);
     if (existing) {
       const merged = {
@@ -650,10 +640,7 @@ class IndexEdgeBuilder {
   }
 }
 
-function canonicalizeEdge(
-  edge: DocumentGraphEdgeSummary,
-  rootDir: string | undefined,
-): EdgeInput {
+function canonicalizeEdge(edge: DocumentGraphEdgeSummary, rootDir: string | undefined): EdgeInput {
   const fromNodeId = canonicalizeNodeId(edge.fromNodeId, rootDir);
   const toNodeId = canonicalizeNodeId(edge.toNodeId, rootDir);
   return {
@@ -662,9 +649,7 @@ function canonicalizeEdge(
     fromNodeId,
     toNodeId,
     authoredType: edge.authoredType,
-    reasons: edge.reasons.map((reason) =>
-      canonicalizeEdgeReason(reason, toNodeId, rootDir)
-    ),
+    reasons: edge.reasons.map((reason) => canonicalizeEdgeReason(reason, toNodeId, rootDir)),
     metadata: edge.metadata,
   };
 }
@@ -675,7 +660,7 @@ function canonicalizeEdgeReason(
   rootDir: string | undefined,
 ): DocumentGraphEdgeReason {
   const targetNodeId = canonicalizeNodeId(reason.targetNodeId ?? fallbackTargetNodeId, rootDir);
-  const targetNodePath = targetNodeId.startsWith("source:")
+  const targetNodePath = targetNodeId.startsWith('source:')
     ? sourcePathFromNodeId(targetNodeId)
     : reason.targetNodePath
       ? normalizeGraphPath(reason.targetNodePath, rootDir)
@@ -688,49 +673,48 @@ function canonicalizeEdgeReason(
 }
 
 function canonicalizeNodeId(nodeId: string, rootDir: string | undefined): string {
-  if (!nodeId.startsWith("source:")) return nodeId;
+  if (!nodeId.startsWith('source:')) return nodeId;
   return sourceNodeId(sourcePathFromNodeId(nodeId), rootDir);
 }
 
 function documentNodeKind(document: DocumentEnvelope): DocumentGraphIndexNodeKind {
-  if (document.kind === "knowledge" || document.metadata.type === "knowledge") return "knowledge";
+  if (document.kind === 'knowledge' || document.metadata.type === 'knowledge') return 'knowledge';
   if (isKnownDocumentKind(document.kind)) return document.kind;
   if (
-    document.kind.includes("evidence") ||
-    document.kind === "quality-status" ||
+    document.kind.includes('evidence') ||
+    document.kind === 'quality-status' ||
     asString(document.metadata.artifactId)
   ) {
-    return "evidence";
+    return 'evidence';
   }
-  return "document";
+  return 'document';
 }
 
 function isKnownDocumentKind(value: string): value is DocumentGraphNodeKind {
   return [
-    "spec",
-    "todo",
-    "plan",
-    "rule",
-    "cases",
-    "test",
-    "memo",
-    "prd",
-    "ralph-prd-json",
-    "ralph-session",
+    'spec',
+    'todo',
+    'plan',
+    'rule',
+    'cases',
+    'test',
+    'memo',
+    'prd',
+    'ralph-prd-json',
+    'ralph-session',
   ].includes(value);
 }
 
 function documentLabel(document: DocumentEnvelope): string {
-  return asString(document.metadata.title)
-    ?? asString(document.metadata.name)
-    ?? asString(document.metadata.summary)
-    ?? document.stableId;
+  return (
+    asString(document.metadata.title) ??
+    asString(document.metadata.name) ??
+    asString(document.metadata.summary) ??
+    document.stableId
+  );
 }
 
-function documentNodeReason(
-  document: DocumentEnvelope,
-  reason: string,
-): DocumentGraphNodeReason {
+function documentNodeReason(document: DocumentEnvelope, reason: string): DocumentGraphNodeReason {
   return {
     adapterId: document.adapterId,
     reason,
@@ -753,19 +737,19 @@ function endpointReason(reason: string): DocumentGraphNodeReason {
 function syntheticSourceNode(sourcePath: string): DocumentGraphIndexNode {
   return {
     id: sourceNodeId(sourcePath),
-    kind: "source",
+    kind: 'source',
     label: sourcePath,
     path: sourcePath,
     metadata: {
       sourcePath,
-      sourceMapCoverage: "missing",
+      sourceMapCoverage: 'missing',
       synthetic: true,
     },
     reasons: [
       {
-        reason: "source-path target",
+        reason: 'source-path target',
         metadata: {
-          sourceMapCoverage: "missing",
+          sourceMapCoverage: 'missing',
         },
       },
     ],
@@ -793,17 +777,17 @@ function sourceNodeId(path: string, rootDir?: string): string {
 }
 
 function sourcePathFromNodeId(nodeId: string): string {
-  return nodeId.slice("source:".length);
+  return nodeId.slice('source:'.length);
 }
 
 function parseScopedNodeId(
   nodeId: string,
-  prefix: "task" | "section",
+  prefix: 'task' | 'section',
 ): { readonly documentStableId: string; readonly taskId: string } {
-  const parts = nodeId.slice(`${prefix}:`.length).split(":");
-  const taskId = parts.pop() ?? "";
+  const parts = nodeId.slice(`${prefix}:`.length).split(':');
+  const taskId = parts.pop() ?? '';
   return {
-    documentStableId: parts.join(":"),
+    documentStableId: parts.join(':'),
     taskId,
   };
 }
@@ -825,11 +809,11 @@ function mergeNodeMetadata(
   };
 
   for (const field of [
-    "evidenceIds",
-    "verificationRefs",
-    "verifiesRefs",
-    "materializesOutputRefs",
-    "sourceRefs",
+    'evidenceIds',
+    'verificationRefs',
+    'verifiesRefs',
+    'materializesOutputRefs',
+    'sourceRefs',
   ] as const) {
     const values = unique([
       ...metadataStringValues(existing[field]),
@@ -845,8 +829,8 @@ const NODE_KIND_PRIORITY = {
   spec: 0,
   knowledge: 1,
   prd: 2,
-  "ralph-prd-json": 3,
-  "ralph-session": 4,
+  'ralph-prd-json': 3,
+  'ralph-session': 4,
   todo: 5,
   plan: 6,
   rule: 7,
@@ -861,27 +845,28 @@ const NODE_KIND_PRIORITY = {
   context: 16,
 } as const satisfies Readonly<Record<DocumentGraphIndexNodeKind, number>>;
 
-function compareNodes(
-  left: DocumentGraphIndexNode,
-  right: DocumentGraphIndexNode,
-): number {
-  return NODE_KIND_PRIORITY[left.kind] - NODE_KIND_PRIORITY[right.kind]
-    || left.id.localeCompare(right.id);
+function compareNodes(left: DocumentGraphIndexNode, right: DocumentGraphIndexNode): number {
+  return (
+    NODE_KIND_PRIORITY[left.kind] - NODE_KIND_PRIORITY[right.kind] ||
+    left.id.localeCompare(right.id)
+  );
 }
 
 function compareGraphEdges(
   left: DocumentGraphEdgeSummary,
   right: DocumentGraphEdgeSummary,
 ): number {
-  return TRAVERSAL_AXIS_PRIORITY[left.axis] - TRAVERSAL_AXIS_PRIORITY[right.axis]
-    || left.kind.localeCompare(right.kind)
-    || left.fromNodeId.localeCompare(right.fromNodeId)
-    || left.toNodeId.localeCompare(right.toNodeId)
-    || (left.authoredType ?? "").localeCompare(right.authoredType ?? "");
+  return (
+    TRAVERSAL_AXIS_PRIORITY[left.axis] - TRAVERSAL_AXIS_PRIORITY[right.axis] ||
+    left.kind.localeCompare(right.kind) ||
+    left.fromNodeId.localeCompare(right.fromNodeId) ||
+    left.toNodeId.localeCompare(right.toNodeId) ||
+    (left.authoredType ?? '').localeCompare(right.authoredType ?? '')
+  );
 }
 
 function edgeId(input: EdgeInput): string {
-  return `edge:${input.axis}:${input.kind}:${input.fromNodeId}->${input.toNodeId}${input.authoredType ? `:${input.authoredType}` : ""}`;
+  return `edge:${input.axis}:${input.kind}:${input.fromNodeId}->${input.toNodeId}${input.authoredType ? `:${input.authoredType}` : ''}`;
 }
 
 function addLookup(
@@ -901,8 +886,7 @@ function finalizeLookup(
   lookup: Map<string, DocumentGraphIndexNode[]>,
 ): ReadonlyMap<string, readonly DocumentGraphIndexNode[]> {
   return new Map(
-    [...lookup.entries()]
-      .map(([key, nodes]) => [key, nodes.toSorted(compareNodes)] as const),
+    [...lookup.entries()].map(([key, nodes]) => [key, nodes.toSorted(compareNodes)] as const),
   );
 }
 
@@ -911,37 +895,35 @@ function normalizeSourcePath(value: string, rootDir?: string): string {
 }
 
 function normalizeGraphPath(value: string, rootDir?: string): string {
-  return toRepoPath(value, rootDir).replaceAll("\\", "/").replace(/\/+/g, "/");
+  return toRepoPath(value, rootDir).replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function toRepoPath(value: string, rootDir: string | undefined): string {
-  const normalized = value.replaceAll("\\", "/");
+  const normalized = value.replaceAll('\\', '/');
   if (!rootDir || !isAbsolute(normalized)) return normalized;
 
-  const normalizedRoot = rootDir.replaceAll("\\", "/");
-  const relative = relativePath(normalizedRoot, normalized).replaceAll("\\", "/");
-  return relative && !relative.startsWith("..") && !isAbsolute(relative)
-    ? relative
-    : normalized;
+  const normalizedRoot = rootDir.replaceAll('\\', '/');
+  const relative = relativePath(normalizedRoot, normalized).replaceAll('\\', '/');
+  return relative && !relative.startsWith('..') && !isAbsolute(relative) ? relative : normalized;
 }
 
 function isPathLikeRef(value: string): boolean {
   return (
-    value.includes("/") ||
-    value.includes("\\") ||
+    value.includes('/') ||
+    value.includes('\\') ||
     /\.(?:json|js|jsx|ts|tsx|md|cjs|mjs|css|html|yml|yaml|toml|sql)(?::|$)/.test(value)
   );
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function metadataStringValues(value: unknown): readonly string[] {
-  if (typeof value === "string") return [value].filter(Boolean);
+  if (typeof value === 'string') return [value].filter(Boolean);
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => typeof item === "string" ? item.trim() : "")
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
     .filter((item) => item.length > 0);
 }
 
@@ -952,9 +934,9 @@ function unique(values: readonly string[]): readonly string[] {
 function relationEvidenceRefs(value: unknown): readonly string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
-    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
     const evidenceRef = (item as Record<string, unknown>).evidenceRef;
-    return typeof evidenceRef === "string" && evidenceRef.trim().length > 0
+    return typeof evidenceRef === 'string' && evidenceRef.trim().length > 0
       ? [evidenceRef.trim()]
       : [];
   });

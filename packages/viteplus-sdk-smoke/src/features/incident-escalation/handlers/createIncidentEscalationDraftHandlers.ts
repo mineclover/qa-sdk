@@ -1,6 +1,4 @@
-import {
-  recordIncidentEscalationDraftReopened,
-} from '../business/incidentEscalationActivity.js';
+import { recordIncidentEscalationDraftReopened } from '../business/incidentEscalationActivity.js';
 import type {
   IncidentEscalationDraft,
   IncidentSeverity,
@@ -66,10 +64,7 @@ function applyDraftUpdate(
     return;
   }
 
-  appendIncidentEscalationActivity(
-    context,
-    recordIncidentEscalationDraftReopened(changedField),
-  );
+  appendIncidentEscalationActivity(context, recordIncidentEscalationDraftReopened(changedField));
   context.bridge.emitEvent('incident_escalation_reopened', {
     field: changedField,
   });

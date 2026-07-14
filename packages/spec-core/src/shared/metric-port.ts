@@ -1,6 +1,6 @@
 /** convergence MetricValue/MetricStatus와 구조 호환 — kernel tier 격리용 */
 
-export type MetricStatus = "ok" | "warning" | "critical";
+export type MetricStatus = 'ok' | 'warning' | 'critical';
 
 export interface MetricValue {
   readonly id: string;

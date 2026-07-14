@@ -1,7 +1,7 @@
 // @def.boundary sim-metrics-collector
 // @def.doc sim-erp-pm-design
 
-import { Registry, collectDefaultMetrics, Gauge } from "prom-client";
+import { Registry, collectDefaultMetrics, Gauge } from 'prom-client';
 
 /**
  * Prometheus Registry 생성.
@@ -10,7 +10,7 @@ import { Registry, collectDefaultMetrics, Gauge } from "prom-client";
  * Plan 14a: cross-service scrape registry 부착 (7 비즈니스 서비스의 /metrics 합산).
  */
 export function createMetricsRegistry(
-  opts: { serviceName: string } = { serviceName: "sim-metrics-collector" },
+  opts: { serviceName: string } = { serviceName: 'sim-metrics-collector' },
 ) {
   const registry = new Registry();
   registry.setDefaultLabels({ service: opts.serviceName });
@@ -19,8 +19,8 @@ export function createMetricsRegistry(
 
   const startedAt = Date.now();
   const uptimeGauge = new Gauge({
-    name: "sim_collector_uptime_seconds",
-    help: "Seconds since sim-metrics-collector started",
+    name: 'sim_collector_uptime_seconds',
+    help: 'Seconds since sim-metrics-collector started',
     registers: [registry],
     collect() {
       this.set((Date.now() - startedAt) / 1000);

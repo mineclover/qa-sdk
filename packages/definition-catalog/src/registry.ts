@@ -19,15 +19,15 @@ import type {
   DefinitionLink,
   DefinitionFilter,
   DefinitionStats,
-} from "./types.js";
-import { validateScopeAspect } from "./taxonomy.js";
+} from './types.js';
+import { validateScopeAspect } from './taxonomy.js';
 import {
   encodeDocument,
   serializeDocumentAddress,
   parseDocumentAddress,
   parseUniqueDocumentAddress,
   encodeLink,
-} from "./observe.js";
+} from './observe.js';
 
 // ─── 레지스트리 인터페이스 ────────────────────────────────
 
@@ -51,7 +51,7 @@ export interface DefinitionRegistry {
   unlink(sourceId: string, targetId: string, linkType: LinkType): boolean;
 
   /** 관계 조회 */
-  getLinks(id: string, direction?: "outgoing" | "incoming" | "both"): readonly DefinitionLink[];
+  getLinks(id: string, direction?: 'outgoing' | 'incoming' | 'both'): readonly DefinitionLink[];
 
   /** scope로 필터 */
   findByScope(scope: DefScope): readonly DefinitionEntry[];
@@ -88,7 +88,10 @@ function linkKey(sourceId: string, targetId: string, linkType: LinkType): string
   return `${sourceId}|${targetId}|${linkType}`;
 }
 
-function resolveDocumentAddress(input: DefinitionEntryInput): { address?: number; serialized?: string } {
+function resolveDocumentAddress(input: DefinitionEntryInput): {
+  address?: number;
+  serialized?: string;
+} {
   if (input.serialized) {
     const parsedV2 = parseUniqueDocumentAddress(input.serialized);
     if (parsedV2 !== null) return { address: parsedV2, serialized: input.serialized };
@@ -129,7 +132,10 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
 
   private addToAddressIndex(address: number, id: string): void {
     let ids = this.addressIndex.get(address);
-    if (!ids) { ids = new Set(); this.addressIndex.set(address, ids); }
+    if (!ids) {
+      ids = new Set();
+      this.addressIndex.set(address, ids);
+    }
     ids.add(id);
   }
 
@@ -171,7 +177,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     // explicit v2 address는 불변 식별자로 간주하여 보존한다.
     const depth = patch.depth ?? existing.depth;
     const lifecycle = patch.lifecycle ?? existing.lifecycle;
-    const usesLegacyV1Address = existing.serialized?.startsWith("def_document:v1:") ?? true;
+    const usesLegacyV1Address = existing.serialized?.startsWith('def_document:v1:') ?? true;
     const needsReencode = patch.depth !== undefined && usesLegacyV1Address;
 
     let address = existing.address;
@@ -259,43 +265,47 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
     return this.links.delete(linkKey(sourceId, targetId, lt));
   }
 
-  getLinks(id: string, direction: "outgoing" | "incoming" | "both" = "both"): readonly DefinitionLink[] {
+  getLinks(
+    id: string,
+    direction: 'outgoing' | 'incoming' | 'both' = 'both',
+  ): readonly DefinitionLink[] {
     const result: DefinitionLink[] = [];
     for (const link of this.links.values()) {
-      if (direction === "outgoing" && link.sourceId === id) result.push(link);
-      else if (direction === "incoming" && link.targetId === id) result.push(link);
-      else if (direction === "both" && (link.sourceId === id || link.targetId === id)) result.push(link);
+      if (direction === 'outgoing' && link.sourceId === id) result.push(link);
+      else if (direction === 'incoming' && link.targetId === id) result.push(link);
+      else if (direction === 'both' && (link.sourceId === id || link.targetId === id))
+        result.push(link);
     }
     return result;
   }
 
   findByScope(scope: DefScope): readonly DefinitionEntry[] {
-    return [...this.entries.values()].filter(e => e.scope === scope);
+    return [...this.entries.values()].filter((e) => e.scope === scope);
   }
 
   findByAspect(aspect: DefAspect): readonly DefinitionEntry[] {
-    return [...this.entries.values()].filter(e => e.aspect === aspect);
+    return [...this.entries.values()].filter((e) => e.aspect === aspect);
   }
 
   findByLifecycle(lifecycle: DefLifecycle): readonly DefinitionEntry[] {
-    return [...this.entries.values()].filter(e => e.lifecycle === lifecycle);
+    return [...this.entries.values()].filter((e) => e.lifecycle === lifecycle);
   }
 
   findByService(serviceId: string): readonly DefinitionEntry[] {
-    return [...this.entries.values()].filter(e => e.serviceId === serviceId);
+    return [...this.entries.values()].filter((e) => e.serviceId === serviceId);
   }
 
   findByAddress(address: number): readonly DefinitionEntry[] {
     const ids = this.addressIndex.get(address);
     if (!ids) return [];
     return [...ids]
-      .map(id => this.entries.get(id))
+      .map((id) => this.entries.get(id))
       .filter((e): e is DefinitionEntry => e !== undefined);
   }
 
   query(filter: DefinitionFilter): readonly DefinitionEntry[] {
-    return [...this.entries.values()].filter(e => {
-      if (filter.type && (e.type ?? "spec") !== filter.type) return false;
+    return [...this.entries.values()].filter((e) => {
+      if (filter.type && (e.type ?? 'spec') !== filter.type) return false;
       if (filter.knowledgeKind && e.knowledgeKind !== filter.knowledgeKind) return false;
       if (filter.scope && e.scope !== filter.scope) return false;
       if (filter.aspect && e.aspect !== filter.aspect) return false;
@@ -303,7 +313,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
       if (filter.lifecycle && e.lifecycle !== filter.lifecycle) return false;
       if (filter.layer && e.layer !== filter.layer) return false;
       if (filter.tags && filter.tags.length > 0) {
-        if (!e.tags || !filter.tags.every(t => e.tags?.includes(t))) return false;
+        if (!e.tags || !filter.tags.every((t) => e.tags?.includes(t))) return false;
       }
       if (filter.serviceId && e.serviceId !== filter.serviceId) return false;
       return true;
@@ -327,10 +337,7 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
       visited.add(currentId);
 
       for (const link of this.links.values()) {
-        if (
-          link.linkType !== "evolves_from" &&
-          link.linkType !== "supersedes"
-        ) {
+        if (link.linkType !== 'evolves_from' && link.linkType !== 'supersedes') {
           continue;
         }
 
@@ -355,9 +362,25 @@ export class MemoryDefinitionRegistry implements DefinitionRegistry {
   }
 
   stats(): DefinitionStats {
-    const byScope = { ui: 0, feature: 0, flow: 0, state: 0, constraint: 0, data: 0, interface: 0, meta: 0, decision: 0 } as Record<DefScope, number>;
-    const byLifecycle = { draft: 0, review: 0, approved: 0, deprecated: 0, archived: 0 } as Record<DefLifecycle, number>;
-    const byDepth = { overview: 0, specification: 0, implementation: 0, validation: 0 } as Record<DefDepth, number>;
+    const byScope = {
+      ui: 0,
+      feature: 0,
+      flow: 0,
+      state: 0,
+      constraint: 0,
+      data: 0,
+      interface: 0,
+      meta: 0,
+      decision: 0,
+    } as Record<DefScope, number>;
+    const byLifecycle = { draft: 0, review: 0, approved: 0, deprecated: 0, archived: 0 } as Record<
+      DefLifecycle,
+      number
+    >;
+    const byDepth = { overview: 0, specification: 0, implementation: 0, validation: 0 } as Record<
+      DefDepth,
+      number
+    >;
 
     for (const e of this.entries.values()) {
       if (e.scope) byScope[e.scope as DefScope]++;

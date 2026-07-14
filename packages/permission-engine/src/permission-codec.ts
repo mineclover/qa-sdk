@@ -23,24 +23,20 @@ import {
   clearBit,
   hasBit,
   popcount,
-} from "weighted-index";
+} from 'weighted-index';
 
-import { BitIndex, BitMaskSet, IndexBridge } from "bit-index";
+import { BitIndex, BitMaskSet, IndexBridge } from 'bit-index';
 
-import {
-  formatPermCode,
-  parsePermCode,
-  type PermissionCode,
-} from "./permission-code.js";
+import { formatPermCode, parsePermCode, type PermissionCode } from './permission-code.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 /** 코덱 차원 정의. 등록된 ID 목록 순서가 1-based 인덱스가 된다. */
 export interface CodecDims {
-  services: readonly string[];   // "shop/payment", "cms/auth", ...
-  types: readonly string[];      // "api", "page", "action"
-  resources: readonly string[];  // "admin/teams", "billing/invoices", ...
-  actions: readonly string[];    // "GET", "POST", "view", "edit", ...
+  services: readonly string[]; // "shop/payment", "cms/auth", ...
+  types: readonly string[]; // "api", "page", "action"
+  resources: readonly string[]; // "admin/teams", "billing/invoices", ...
+  actions: readonly string[]; // "GET", "POST", "view", "edit", ...
 }
 
 /** 디코딩된 좌표. */
@@ -70,8 +66,8 @@ type PermissionLabelSchema = {
 
 // ── 내부 상수 ────────────────────────────────────────────────────────────────
 
-const LABEL_VERSION = "v1";
-const DIM_LABELS = ["service", "type", "resource", "action"] as const;
+const LABEL_VERSION = 'v1';
+const DIM_LABELS = ['service', 'type', 'resource', 'action'] as const;
 
 // ── PermissionCodec ──────────────────────────────────────────────────────────
 
@@ -94,10 +90,10 @@ export class PermissionCodec {
 
     // CodecDims → LabelRegistry 변환
     this._labels = createLabelRegistry({
-      service:  [{ version: LABEL_VERSION, ids: [...dims.services] }],
-      type:     [{ version: LABEL_VERSION, ids: [...dims.types] }],
+      service: [{ version: LABEL_VERSION, ids: [...dims.services] }],
+      type: [{ version: LABEL_VERSION, ids: [...dims.types] }],
       resource: [{ version: LABEL_VERSION, ids: [...dims.resources] }],
-      action:   [{ version: LABEL_VERSION, ids: [...dims.actions] }],
+      action: [{ version: LABEL_VERSION, ids: [...dims.actions] }],
     });
 
     this.index = new WeightedIndex([
@@ -109,9 +105,13 @@ export class PermissionCodec {
   }
 
   /** 전체 슬롯 수. */
-  get size(): number { return this.index.size; }
+  get size(): number {
+    return this.index.size;
+  }
 
-  get dims(): CodecDims { return this._dims; }
+  get dims(): CodecDims {
+    return this._dims;
+  }
 
   // ── Tier 1 → Tier 2: text → integer ────────────────────────────────────
 
@@ -124,20 +124,20 @@ export class PermissionCodec {
   /** PermissionCode 객체 → integer address. */
   encodeCode(code: PermissionCode): number {
     return this.index.encode([
-      this._getLabelIndex("service", code.service),
-      this._getLabelIndex("type", code.type),
-      this._getLabelIndex("resource", code.resource),
-      this._getLabelIndex("action", code.action),
+      this._getLabelIndex('service', code.service),
+      this._getLabelIndex('type', code.type),
+      this._getLabelIndex('resource', code.resource),
+      this._getLabelIndex('action', code.action),
     ]);
   }
 
   /** 개별 파트 → integer address. */
   encodeRaw(service: string, type: string, resource: string, action: string): number {
     return this.index.encode([
-      this._getLabelIndex("service", service),
-      this._getLabelIndex("type", type),
-      this._getLabelIndex("resource", resource),
-      this._getLabelIndex("action", action),
+      this._getLabelIndex('service', service),
+      this._getLabelIndex('type', type),
+      this._getLabelIndex('resource', resource),
+      this._getLabelIndex('action', action),
     ]);
   }
 
@@ -147,10 +147,10 @@ export class PermissionCodec {
   decode(address: number): DecodedPerm {
     const coords = this.index.decode(address);
     return {
-      service:  this._labels.getEntityId("service", LABEL_VERSION, coords[0]) as string,
-      type:     this._labels.getEntityId("type", LABEL_VERSION, coords[1]) as string,
-      resource: this._labels.getEntityId("resource", LABEL_VERSION, coords[2]) as string,
-      action:   this._labels.getEntityId("action", LABEL_VERSION, coords[3]) as string,
+      service: this._labels.getEntityId('service', LABEL_VERSION, coords[0]) as string,
+      type: this._labels.getEntityId('type', LABEL_VERSION, coords[1]) as string,
+      resource: this._labels.getEntityId('resource', LABEL_VERSION, coords[2]) as string,
+      action: this._labels.getEntityId('action', LABEL_VERSION, coords[3]) as string,
       address,
     };
   }
@@ -164,13 +164,13 @@ export class PermissionCodec {
   // ── Tier 2 직렬화 (SemanticAddress 호환) ────────────────────────────────
 
   /** integer address → "perm:v2:42" 형태. */
-  serialize(address: number, schema = "perm"): string {
+  serialize(address: number, schema = 'perm'): string {
     return `${schema}:${this.version}:${address}`;
   }
 
   /** "perm:v2:42" → integer address. 버전 검증 포함. */
   parse(serialized: string): number {
-    const parts = serialized.split(":");
+    const parts = serialized.split(':');
     if (parts.length < 2) {
       throw new RangeError(`Invalid serialized address: "${serialized}"`);
     }
@@ -206,12 +206,24 @@ export class PermissionCodec {
   }
 
   /** bitmask에 raw 파트로 권한 부여. */
-  grantRaw(mask: Uint8Array, service: string, type: string, resource: string, action: string): void {
+  grantRaw(
+    mask: Uint8Array,
+    service: string,
+    type: string,
+    resource: string,
+    action: string,
+  ): void {
     setBit(mask, this.encodeRaw(service, type, resource, action));
   }
 
   /** bitmask에서 raw 파트로 권한 확인. */
-  checkRaw(mask: Uint8Array, service: string, type: string, resource: string, action: string): boolean {
+  checkRaw(
+    mask: Uint8Array,
+    service: string,
+    type: string,
+    resource: string,
+    action: string,
+  ): boolean {
     return hasBit(mask, this.encodeRaw(service, type, resource, action));
   }
 
@@ -255,10 +267,7 @@ export class PermissionCodec {
   /** BitIndex 인스턴스 (lazy). 같은 shape, DIM_LABELS. */
   get bitIndex(): BitIndex {
     if (!this._bitIndex) {
-      this._bitIndex = new BitIndex(
-        [...this.index.shape],
-        [...DIM_LABELS],
-      );
+      this._bitIndex = new BitIndex([...this.index.shape], [...DIM_LABELS]);
     }
     return this._bitIndex;
   }
@@ -266,10 +275,7 @@ export class PermissionCodec {
   /** WI ↔ BI 브릿지 (lazy). */
   get bridge(): IndexBridge {
     if (!this._bridge) {
-      this._bridge = new IndexBridge(
-        [...this.index.shape],
-        [...DIM_LABELS],
-      );
+      this._bridge = new IndexBridge([...this.index.shape], [...DIM_LABELS]);
     }
     return this._bridge;
   }
@@ -321,16 +327,13 @@ export class PermissionCodec {
    */
   filterGrants(
     mask: Uint8Array,
-    conditions: Partial<Record<"service" | "type" | "resource" | "action", string>>,
+    conditions: Partial<Record<'service' | 'type' | 'resource' | 'action', string>>,
   ): DecodedPerm[] {
     // 라벨 문자열 → 1-based 인덱스 변환
     const dimConditions: Record<string, number> = {};
     for (const [label, value] of Object.entries(conditions)) {
       if (value !== undefined) {
-        dimConditions[label] = this._getLabelIndex(
-          label as keyof PermissionLabelSchema,
-          value,
-        );
+        dimConditions[label] = this._getLabelIndex(label as keyof PermissionLabelSchema, value);
       }
     }
 
@@ -338,7 +341,7 @@ export class PermissionCodec {
     const filtered = bitSet.filterByLabels(dimConditions);
     const br = this.bridge;
 
-    return filtered.map(biPacked => this.decode(br.toWeightedUnsafe(biPacked)));
+    return filtered.map((biPacked) => this.decode(br.toWeightedUnsafe(biPacked)));
   }
 
   /**
@@ -355,10 +358,7 @@ export class PermissionCodec {
     return new PermissionView(this, mask);
   }
 
-  private _getLabelIndex(
-    label: keyof PermissionLabelSchema,
-    value: string,
-  ): number {
+  private _getLabelIndex(label: keyof PermissionLabelSchema, value: string): number {
     try {
       return this._labels.getIndex(label, LABEL_VERSION, value);
     } catch (error) {
@@ -400,17 +400,19 @@ export class PermissionView {
   }
 
   /** 캐시된 BitMaskSet (advanced). */
-  get bitSet(): BitMaskSet { return this._bitSet; }
+  get bitSet(): BitMaskSet {
+    return this._bitSet;
+  }
 
   // ── 점진적 패치 (재생성 없이 O(1)) ───────────────────────────────
 
   /** 권한 1건 부여 (view 재생성 없이). */
   applyGrant(service: string, type: string, resource: string, action: string): void {
     const packed = this._codec.bitIndex.encode([
-      this._codec["_getLabelIndex"]("service", service),
-      this._codec["_getLabelIndex"]("type", type),
-      this._codec["_getLabelIndex"]("resource", resource),
-      this._codec["_getLabelIndex"]("action", action),
+      this._codec['_getLabelIndex']('service', service),
+      this._codec['_getLabelIndex']('type', type),
+      this._codec['_getLabelIndex']('resource', resource),
+      this._codec['_getLabelIndex']('action', action),
     ]);
     this._bitSet.grantPacked(packed);
   }
@@ -418,16 +420,18 @@ export class PermissionView {
   /** 권한 1건 회수 (view 재생성 없이). */
   applyRevoke(service: string, type: string, resource: string, action: string): void {
     const packed = this._codec.bitIndex.encode([
-      this._codec["_getLabelIndex"]("service", service),
-      this._codec["_getLabelIndex"]("type", type),
-      this._codec["_getLabelIndex"]("resource", resource),
-      this._codec["_getLabelIndex"]("action", action),
+      this._codec['_getLabelIndex']('service', service),
+      this._codec['_getLabelIndex']('type', type),
+      this._codec['_getLabelIndex']('resource', resource),
+      this._codec['_getLabelIndex']('action', action),
     ]);
     this._bitSet.revokePacked(packed);
   }
 
   /** 부여된 권한 수. */
-  get size(): number { return this._bitSet.size; }
+  get size(): number {
+    return this._bitSet.size;
+  }
 
   // ── O(1) 확인 ──────────────────────────────────────────────────────
 
@@ -435,10 +439,10 @@ export class PermissionView {
   check(service: string, type: string, resource: string, action: string): boolean {
     const bi = this._codec.bitIndex;
     const packed = bi.encode([
-      this._codec["_getLabelIndex"]("service", service),
-      this._codec["_getLabelIndex"]("type", type),
-      this._codec["_getLabelIndex"]("resource", resource),
-      this._codec["_getLabelIndex"]("action", action),
+      this._codec['_getLabelIndex']('service', service),
+      this._codec['_getLabelIndex']('type', type),
+      this._codec['_getLabelIndex']('resource', resource),
+      this._codec['_getLabelIndex']('action', action),
     ]);
     return this._bitSet.checkPacked(packed);
   }
@@ -447,30 +451,32 @@ export class PermissionView {
 
   /** service별 필터 → DecodedPerm[]. */
   filterByService(service: string): DecodedPerm[] {
-    return this._filterByLabel("service", service);
+    return this._filterByLabel('service', service);
   }
 
   /** type별 필터 → DecodedPerm[]. */
   filterByType(type: string): DecodedPerm[] {
-    return this._filterByLabel("type", type);
+    return this._filterByLabel('type', type);
   }
 
   /** resource별 필터 → DecodedPerm[]. */
   filterByResource(resource: string): DecodedPerm[] {
-    return this._filterByLabel("resource", resource);
+    return this._filterByLabel('resource', resource);
   }
 
   /** action별 필터 → DecodedPerm[]. */
   filterByAction(action: string): DecodedPerm[] {
-    return this._filterByLabel("action", action);
+    return this._filterByLabel('action', action);
   }
 
   /** 복합 조건 필터 → DecodedPerm[]. */
-  filter(conditions: Partial<Record<"service" | "type" | "resource" | "action", string>>): DecodedPerm[] {
+  filter(
+    conditions: Partial<Record<'service' | 'type' | 'resource' | 'action', string>>,
+  ): DecodedPerm[] {
     const dimConditions: Record<string, number> = {};
     for (const [label, value] of Object.entries(conditions)) {
       if (value !== undefined) {
-        dimConditions[label] = this._codec["_getLabelIndex"](
+        dimConditions[label] = this._codec['_getLabelIndex'](
           label as keyof PermissionLabelSchema,
           value,
         );
@@ -479,14 +485,14 @@ export class PermissionView {
 
     const filtered = this._bitSet.filterByLabels(dimConditions);
     const br = this._codec.bridge;
-    return filtered.map(biPacked => this._codec.decode(br.toWeightedUnsafe(biPacked)));
+    return filtered.map((biPacked) => this._codec.decode(br.toWeightedUnsafe(biPacked)));
   }
 
   /** 부여된 권한 전체 → DecodedPerm[]. */
   listAll(): DecodedPerm[] {
     const br = this._codec.bridge;
-    return [...this._bitSet.entries].map(biPacked =>
-      this._codec.decode(br.toWeightedUnsafe(biPacked))
+    return [...this._bitSet.entries].map((biPacked) =>
+      this._codec.decode(br.toWeightedUnsafe(biPacked)),
     );
   }
 
@@ -494,38 +500,38 @@ export class PermissionView {
 
   /** 부여된 권한에서 고유 service 목록. */
   distinctServices(): string[] {
-    return this._distinctLabels("service");
+    return this._distinctLabels('service');
   }
 
   /** 부여된 권한에서 고유 type 목록. */
   distinctTypes(): string[] {
-    return this._distinctLabels("type");
+    return this._distinctLabels('type');
   }
 
   /** 부여된 권한에서 고유 resource 목록. */
   distinctResources(): string[] {
-    return this._distinctLabels("resource");
+    return this._distinctLabels('resource');
   }
 
   /** 부여된 권한에서 고유 action 목록. */
   distinctActions(): string[] {
-    return this._distinctLabels("action");
+    return this._distinctLabels('action');
   }
 
   // ── 내부 ──────────────────────────────────────────────────────────
 
   private _filterByLabel(label: keyof PermissionLabelSchema, value: string): DecodedPerm[] {
-    const idx = this._codec["_getLabelIndex"](label, value);
+    const idx = this._codec['_getLabelIndex'](label, value);
     const filtered = this._bitSet.filterByLabel(label, idx);
     const br = this._codec.bridge;
-    return filtered.map(biPacked => this._codec.decode(br.toWeightedUnsafe(biPacked)));
+    return filtered.map((biPacked) => this._codec.decode(br.toWeightedUnsafe(biPacked)));
   }
 
   private _distinctLabels(label: keyof PermissionLabelSchema): string[] {
     const dimIndex = DIM_LABELS.indexOf(label);
     const indices = this._bitSet.distinctDim(dimIndex);
-    return indices.map(i =>
-      this._codec["_labels"].getEntityId(label, LABEL_VERSION, i) as string
+    return indices.map(
+      (i) => this._codec['_labels'].getEntityId(label, LABEL_VERSION, i) as string,
     );
   }
 }

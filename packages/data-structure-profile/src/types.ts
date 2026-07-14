@@ -1,4 +1,4 @@
-export type DiagnosticSeverity = "error" | "warning" | "info";
+export type DiagnosticSeverity = 'error' | 'warning' | 'info';
 
 export type ProfileDiagnostic = {
   code: string;
@@ -107,9 +107,9 @@ export type PrivacyReadinessConfig = {
 };
 
 export type ValidationReport = {
-  kind: "data-structure-profile.validation-report.v1";
+  kind: 'data-structure-profile.validation-report.v1';
   profile: string;
-  status: "pass" | "needs-review" | "fail";
+  status: 'pass' | 'needs-review' | 'fail';
   summary: {
     errors: number;
     warnings: number;
@@ -133,12 +133,12 @@ export type CheckedGate = {
   id: string;
   risk: string;
   severity: DiagnosticSeverity;
-  result: "pass" | "warn" | "fail";
+  result: 'pass' | 'warn' | 'fail';
   evidence: string;
 };
 
 export type CompiledLineage = {
-  kind: "data-structure-profile.compiled.v1";
+  kind: 'data-structure-profile.compiled.v1';
   profile: string;
   taxonomyRef: string;
   lineage: {
@@ -162,7 +162,7 @@ export type LineageEdge = {
 };
 
 export type MeasurementReport = {
-  kind: "data-structure-profile.measurement-report.v1";
+  kind: 'data-structure-profile.measurement-report.v1';
   profile: string;
   inputs: {
     expectedEventRatePerSec: number;
@@ -184,7 +184,7 @@ export type MeasurementReport = {
 };
 
 export type DpmReadinessReport = {
-  kind: "data-structure-profile.dpm-readiness.v1";
+  kind: 'data-structure-profile.dpm-readiness.v1';
   profile: string;
   required: boolean;
   policyRef: string | null;
@@ -197,12 +197,12 @@ export type QualityLedgerRunInput = {
   docVersion: number;
   bundleId: string;
   command: string;
-  outcome: "pass" | "fail";
+  outcome: 'pass' | 'fail';
   exitCode: number;
   notes: string;
   successPattern: string;
   successPatternMatched: boolean;
-  failureClass?: "static-check-failure";
+  failureClass?: 'static-check-failure';
 };
 
 export type QualityLedgerAdapterOptions = {

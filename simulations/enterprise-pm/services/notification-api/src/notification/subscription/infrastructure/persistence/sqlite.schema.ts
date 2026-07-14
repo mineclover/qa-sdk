@@ -1,7 +1,7 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, integer, primaryKey, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (subscription slice).
@@ -12,17 +12,17 @@ import { sqliteTable, text, integer, primaryKey, index } from "drizzle-orm/sqlit
  * 캡슐화 (cross-slice import 금지) 와 outbox 공유를 양립시키기 위함.
  */
 export const subscriptions = sqliteTable(
-  "notif_subscriptions",
+  'notif_subscriptions',
   {
-    userId: text("user_id").notNull(),
-    eventType: text("event_type").notNull(),
-    channel: text("channel", { enum: ["in_app", "email"] }).notNull(),
-    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
-    createdAt: text("created_at").notNull(),
+    userId: text('user_id').notNull(),
+    eventType: text('event_type').notNull(),
+    channel: text('channel', { enum: ['in_app', 'email'] }).notNull(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    createdAt: text('created_at').notNull(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.eventType] }),
-    index("idx_notif_sub_event").on(t.eventType),
+    index('idx_notif_sub_event').on(t.eventType),
   ],
 );
 
@@ -31,21 +31,18 @@ export const subscriptions = sqliteTable(
  * 슬라이스가 동일 컬럼 정의를 가진 별도 drizzle table 을 export 하지만 양쪽 모두
  * 동일 물리 테이블을 가리킨다.
  */
-export const notificationOutbox = sqliteTable(
-  "notification_outbox_events",
-  {
-    id: text("id").primaryKey(),
-    aggregate_id: text("aggregate_id").notNull(),
-    event_name: text("event_name").notNull(),
-    event_version: integer("event_version").notNull(),
-    payload: text("payload").notNull(),
-    occurred_at: integer("occurred_at").notNull(),
-    scope_id: text("scope_id").notNull(),
-    status: text("status", { enum: ["pending", "published", "failed"] })
-      .notNull()
-      .default("pending"),
-  },
-);
+export const notificationOutbox = sqliteTable('notification_outbox_events', {
+  id: text('id').primaryKey(),
+  aggregate_id: text('aggregate_id').notNull(),
+  event_name: text('event_name').notNull(),
+  event_version: integer('event_version').notNull(),
+  payload: text('payload').notNull(),
+  occurred_at: integer('occurred_at').notNull(),
+  scope_id: text('scope_id').notNull(),
+  status: text('status', { enum: ['pending', 'published', 'failed'] })
+    .notNull()
+    .default('pending'),
+});
 
 export const SIM_NOTIF_SUBSCRIPTION_SQLITE_DDL = `
 CREATE TABLE IF NOT EXISTS notif_subscriptions (

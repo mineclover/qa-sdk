@@ -1,12 +1,12 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { TaskRepositoryPort } from "../../application/ports/task-repository.port.js";
-import type { TaskOutboxPort } from "../../application/ports/task-outbox.port.js";
+import type { TaskRepositoryPort } from '../../application/ports/task-repository.port.js';
+import type { TaskOutboxPort } from '../../application/ports/task-outbox.port.js';
 import type {
   TaskTransactionPort,
   TaskTransactionScope,
-} from "../../application/ports/task-transaction.port.js";
+} from '../../application/ports/task-transaction.port.js';
 
 export class TaskUnitOfWork {
   constructor(

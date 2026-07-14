@@ -1,9 +1,9 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import { openRepository, type Repository } from "es-git";
-import { collectBranchCommits, collectCommitSummary } from "./branch-conflicts-commits.js";
-import { collectChangedFiles } from "./branch-conflicts-diff.js";
+import { openRepository, type Repository } from 'es-git';
+import { collectBranchCommits, collectCommitSummary } from './branch-conflicts-commits.js';
+import { collectChangedFiles } from './branch-conflicts-diff.js';
 import type {
   AnalyzeRemoteBranchConflictsOptions,
   BranchChangeSet,
@@ -12,14 +12,14 @@ import type {
   GitWorktreeDescriptor,
   RemoteBranchConflictAnalysis,
   SharedConflictHotspot,
-} from "./branch-conflicts-types.js";
+} from './branch-conflicts-types.js';
 import {
   buildWorktreeDisplayName,
   canonicalPath,
   listGitWorktrees,
   normalizeRefName,
-} from "./branch-conflicts-worktrees.js";
-import { collectWorkspaceChanges } from "./branch-conflicts-workspace.js";
+} from './branch-conflicts-worktrees.js';
+import { collectWorkspaceChanges } from './branch-conflicts-workspace.js';
 
 export async function analyzeRemoteBranchConflicts(
   options: AnalyzeRemoteBranchConflictsOptions,
@@ -34,10 +34,10 @@ export async function analyzeRemoteBranchConflicts(
 
   if (fetch) {
     const remote = repo.getRemote(remoteName);
-    await remote.fetch([], { fetch: { prune: "On" } });
+    await remote.fetch([], { fetch: { prune: 'On' } });
   }
 
-  const currentRef = options.currentRef ?? "HEAD";
+  const currentRef = options.currentRef ?? 'HEAD';
   const currentBranchName = resolveCurrentBranchName(repo, options.currentRef);
   const baseRef = resolveBaseRef(repo, {
     explicitBaseRef: options.baseRef,
@@ -58,10 +58,13 @@ export async function analyzeRemoteBranchConflicts(
     maxCommitHistory,
   });
 
-  const skipCurrentRemoteBranch = options.excludeCurrentRemoteBranch !== false
-    && currentBranchName !== null;
+  const skipCurrentRemoteBranch =
+    options.excludeCurrentRemoteBranch !== false && currentBranchName !== null;
   const branches = listRemoteBranchNames(repo, remoteName)
-    .filter((branchName) => !skipCurrentRemoteBranch || branchName !== `${remoteName}/${currentBranchName}`)
+    .filter(
+      (branchName) =>
+        !skipCurrentRemoteBranch || branchName !== `${remoteName}/${currentBranchName}`,
+    )
     .map((branchName) => {
       const branchHeadOid = repo.revparseSingle(branchName);
       const branchChangeSet = buildBranchChangeSet({
@@ -83,11 +86,11 @@ export async function analyzeRemoteBranchConflicts(
 
   const worktrees = includeWorktrees
     ? await collectWorktreeAnalyses({
-      cwd: repoPath,
-      current,
-      baseRef,
-      maxCommitHistory,
-    })
+        cwd: repoPath,
+        current,
+        baseRef,
+        maxCommitHistory,
+      })
     : [];
 
   return {
@@ -102,8 +105,8 @@ export async function analyzeRemoteBranchConflicts(
     currentBranchName,
     currentHeadOid,
     current,
-    repoWorkspace: collectWorkspaceChanges(repoPath, repoPath, "repo"),
-    workspace: collectWorkspaceChanges(repoPath, executionCwd, "execution"),
+    repoWorkspace: collectWorkspaceChanges(repoPath, repoPath, 'repo'),
+    workspace: collectWorkspaceChanges(repoPath, executionCwd, 'execution'),
     branches,
     worktrees,
     hotspots: buildHotspots([current, ...branches, ...worktrees]),
@@ -119,11 +122,13 @@ function buildComparedBranchAnalysis(
     .flatMap((file) => {
       const currentFile = currentByPath.get(file.path);
       if (!currentFile) return [];
-      return [{
-        path: file.path,
-        currentStatus: currentFile.status,
-        comparedStatus: file.status,
-      }];
+      return [
+        {
+          path: file.path,
+          currentStatus: currentFile.status,
+          comparedStatus: file.status,
+        },
+      ];
     })
     .toSorted((left, right) => left.path.localeCompare(right.path));
   const overlappingPathSet = new Set(overlappingFiles.map((file) => file.path));
@@ -137,14 +142,12 @@ function buildComparedBranchAnalysis(
   };
 }
 
-async function collectWorktreeAnalyses(
-  options: {
-    cwd: string;
-    current: BranchChangeSet;
-    baseRef: string;
-    maxCommitHistory: number;
-  },
-): Promise<ComparedWorktreeAnalysis[]> {
+async function collectWorktreeAnalyses(options: {
+  cwd: string;
+  current: BranchChangeSet;
+  baseRef: string;
+  maxCommitHistory: number;
+}): Promise<ComparedWorktreeAnalysis[]> {
   const worktrees = listGitWorktrees(options.cwd)
     .filter((worktree) => !worktree.isBare)
     .filter((worktree) => canonicalPath(worktree.path) !== options.cwd);
@@ -191,21 +194,20 @@ async function analyzeWorktree(
   };
 }
 
-function buildBranchChangeSet(
-  options: {
-    cwd: string;
-    repo: Repository;
-    branchName: string;
-    displayName: string;
-    ref: string;
-    headOid: string;
-    baseHeadOid: string;
-    maxCommitHistory: number;
-  },
-): BranchChangeSet {
-  const mergeBaseOid = options.headOid === options.baseHeadOid
-    ? options.baseHeadOid
-    : options.repo.getMergeBase(options.baseHeadOid, options.headOid);
+function buildBranchChangeSet(options: {
+  cwd: string;
+  repo: Repository;
+  branchName: string;
+  displayName: string;
+  ref: string;
+  headOid: string;
+  baseHeadOid: string;
+  maxCommitHistory: number;
+}): BranchChangeSet {
+  const mergeBaseOid =
+    options.headOid === options.baseHeadOid
+      ? options.baseHeadOid
+      : options.repo.getMergeBase(options.baseHeadOid, options.headOid);
   const { files, diffStats } = collectChangedFiles(options.repo, mergeBaseOid, options.headOid);
   const { commitCount, commits } = collectBranchCommits(
     options.cwd,
@@ -233,23 +235,20 @@ function resolveRemoteName(repo: Repository, preferredRemoteName?: string): stri
   if (preferredRemoteName) return preferredRemoteName;
 
   const remoteNames = repo.remoteNames();
-  if (remoteNames.includes("origin")) return "origin";
+  if (remoteNames.includes('origin')) return 'origin';
   if (remoteNames.length > 0) return remoteNames[0]!;
 
-  throw new Error("원격 저장소가 없어 충돌 분석을 시작할 수 없음");
+  throw new Error('원격 저장소가 없어 충돌 분석을 시작할 수 없음');
 }
 
-function resolveCurrentBranchName(
-  repo: Repository,
-  explicitCurrentRef?: string,
-): string | null {
-  if (explicitCurrentRef && explicitCurrentRef !== "HEAD") {
+function resolveCurrentBranchName(repo: Repository, explicitCurrentRef?: string): string | null {
+  if (explicitCurrentRef && explicitCurrentRef !== 'HEAD') {
     return normalizeRefName(explicitCurrentRef);
   }
 
   try {
     const headName = repo.head().shorthand();
-    return headName === "HEAD" ? null : headName;
+    return headName === 'HEAD' ? null : headName;
   } catch {
     return null;
   }
@@ -265,8 +264,8 @@ function resolveBaseRef(
 ): string {
   if (options.explicitBaseRef) return options.explicitBaseRef;
 
-  if (options.currentBranchName !== null && !options.currentBranchName.includes("/")) {
-    const localBranch = repo.findBranch(options.currentBranchName, "Local");
+  if (options.currentBranchName !== null && !options.currentBranchName.includes('/')) {
+    const localBranch = repo.findBranch(options.currentBranchName, 'Local');
     const upstream = localBranch?.findUpstream();
     if (upstream) return upstream.name();
   }
@@ -281,10 +280,10 @@ function resolveBaseRef(
   }
 
   const mainCandidate = `${options.remoteName}/main`;
-  if (repo.findBranch(mainCandidate, "Remote")) return mainCandidate;
+  if (repo.findBranch(mainCandidate, 'Remote')) return mainCandidate;
 
   const masterCandidate = `${options.remoteName}/master`;
-  if (repo.findBranch(masterCandidate, "Remote")) return masterCandidate;
+  if (repo.findBranch(masterCandidate, 'Remote')) return masterCandidate;
 
   const firstRemoteBranch = listRemoteBranchNames(repo, options.remoteName)[0];
   if (firstRemoteBranch) return firstRemoteBranch;
@@ -292,15 +291,12 @@ function resolveBaseRef(
   throw new Error(`기준 브랜치를 찾을 수 없음: remote=${options.remoteName}`);
 }
 
-function listRemoteBranchNames(
-  repo: Repository,
-  remoteName: string,
-): string[] {
+function listRemoteBranchNames(repo: Repository, remoteName: string): string[] {
   const prefix = `${remoteName}/`;
-  return collectIteratorValues(repo.branches({ type: "Remote" }))
+  return collectIteratorValues(repo.branches({ type: 'Remote' }))
     .map((branch) => branch.name)
     .filter((branchName) => branchName.startsWith(prefix))
-    .filter((branchName) => !branchName.endsWith("/HEAD"))
+    .filter((branchName) => !branchName.endsWith('/HEAD'))
     .toSorted();
 }
 
@@ -314,9 +310,7 @@ function collectIteratorValues<T>(iterator: Iterator<T, void, void>): T[] {
   }
 }
 
-function buildHotspots(
-  branches: readonly BranchChangeSet[],
-): SharedConflictHotspot[] {
+function buildHotspots(branches: readonly BranchChangeSet[]): SharedConflictHotspot[] {
   const pathToBranches = new Map<string, Set<string>>();
 
   for (const branch of branches) {

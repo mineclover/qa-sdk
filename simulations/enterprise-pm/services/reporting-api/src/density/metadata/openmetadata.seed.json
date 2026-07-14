@@ -47,11 +47,7 @@
       "purpose": "read_model",
       "version": "v1",
       "prefix": "density-read-model",
-      "segments": [
-        { "name": "catalog" },
-        { "name": "prefix" },
-        { "name": "version" }
-      ],
+      "segments": [{ "name": "catalog" }, { "name": "prefix" }, { "name": "version" }],
       "ttl": "short",
       "openmetadataEntity": "reporting.density_read_model"
     }

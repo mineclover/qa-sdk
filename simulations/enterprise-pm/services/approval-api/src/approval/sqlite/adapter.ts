@@ -1,11 +1,11 @@
 // @def.boundary sim-approval-api
 // @def.doc sim-erp-pm-design
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, asc, eq } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { and, asc, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
-import type { ApprovalRepository } from "../shared/port.js";
+import type { ApprovalRepository } from '../shared/port.js';
 import type {
   BudgetRequest,
   BudgetRequestCreate,
@@ -18,16 +18,16 @@ import type {
   ExpenseReportCreate,
   RequestStatus,
   StepDecision,
-} from "../shared/types.js";
-import { RequestNotFoundError } from "../shared/errors.js";
-import { determineStages } from "../shared/budget-state.js";
+} from '../shared/types.js';
+import { RequestNotFoundError } from '../shared/errors.js';
+import { determineStages } from '../shared/budget-state.js';
 import {
   budgetRequests,
   approvalSteps,
   resourceRequests,
   timeOffRequests,
   expenseReports,
-} from "./schema.js";
+} from './schema.js';
 
 export class SqliteApprovalRepository implements ApprovalRepository {
   constructor(private readonly db: BetterSQLite3Database) {}
@@ -39,10 +39,10 @@ export class SqliteApprovalRepository implements ApprovalRepository {
     const request: BudgetRequest = {
       id: randomUUID(),
       projectId: args.projectId,
-      projectDepartmentId: args.projectDepartmentId ?? "",
+      projectDepartmentId: args.projectDepartmentId ?? '',
       amount: args.amount,
       requesterId: args.requesterId,
-      status: "draft",
+      status: 'draft',
       currentStage: 1,
       totalStages,
       createdAt: now,
@@ -54,16 +54,29 @@ export class SqliteApprovalRepository implements ApprovalRepository {
   }
 
   async findBudgetRequest(id: string): Promise<BudgetRequest | null> {
-    const rows = this.db.select().from(budgetRequests).where(eq(budgetRequests.id, id)).limit(1).all();
+    const rows = this.db
+      .select()
+      .from(budgetRequests)
+      .where(eq(budgetRequests.id, id))
+      .limit(1)
+      .all();
     return rows[0] ? (rows[0] as BudgetRequest) : null;
   }
 
   async listBudgetRequestsByProject(projectId: string): Promise<BudgetRequest[]> {
-    return this.db.select().from(budgetRequests).where(eq(budgetRequests.projectId, projectId)).all() as BudgetRequest[];
+    return this.db
+      .select()
+      .from(budgetRequests)
+      .where(eq(budgetRequests.projectId, projectId))
+      .all() as BudgetRequest[];
   }
 
   async listBudgetRequestsByRequester(requesterId: string): Promise<BudgetRequest[]> {
-    return this.db.select().from(budgetRequests).where(eq(budgetRequests.requesterId, requesterId)).all() as BudgetRequest[];
+    return this.db
+      .select()
+      .from(budgetRequests)
+      .where(eq(budgetRequests.requesterId, requesterId))
+      .all() as BudgetRequest[];
   }
 
   async updateBudgetRequestState(
@@ -75,11 +88,15 @@ export class SqliteApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: BudgetRequest = { ...cur, status, currentStage, updatedAt: now };
-    this.db.update(budgetRequests).set({
-      status: next.status,
-      currentStage: next.currentStage,
-      updatedAt: next.updatedAt,
-    }).where(eq(budgetRequests.id, id)).run();
+    this.db
+      .update(budgetRequests)
+      .set({
+        status: next.status,
+        currentStage: next.currentStage,
+        updatedAt: next.updatedAt,
+      })
+      .where(eq(budgetRequests.id, id))
+      .run();
     return next;
   }
 
@@ -91,7 +108,7 @@ export class SqliteApprovalRepository implements ApprovalRepository {
         requestId,
         stageNumber: i,
         approverId: null,
-        decision: "pending",
+        decision: 'pending',
         comment: null,
         decidedAt: null,
       };
@@ -109,15 +126,18 @@ export class SqliteApprovalRepository implements ApprovalRepository {
     comment?: string,
   ): Promise<ApprovalStep> {
     const now = new Date().toISOString();
-    this.db.update(approvalSteps).set({
-      approverId,
-      decision,
-      comment: comment ?? null,
-      decidedAt: now,
-    }).where(and(
-      eq(approvalSteps.requestId, requestId),
-      eq(approvalSteps.stageNumber, stageNumber),
-    )).run();
+    this.db
+      .update(approvalSteps)
+      .set({
+        approverId,
+        decision,
+        comment: comment ?? null,
+        decidedAt: now,
+      })
+      .where(
+        and(eq(approvalSteps.requestId, requestId), eq(approvalSteps.stageNumber, stageNumber)),
+      )
+      .run();
     return {
       requestId,
       stageNumber,
@@ -129,7 +149,9 @@ export class SqliteApprovalRepository implements ApprovalRepository {
   }
 
   async listSteps(requestId: string): Promise<ApprovalStep[]> {
-    return this.db.select().from(approvalSteps)
+    return this.db
+      .select()
+      .from(approvalSteps)
       .where(eq(approvalSteps.requestId, requestId))
       .orderBy(asc(approvalSteps.stageNumber))
       .all() as ApprovalStep[];
@@ -144,7 +166,7 @@ export class SqliteApprovalRepository implements ApprovalRepository {
       requesterId: args.requesterId,
       resourceType: args.resourceType,
       description: args.description,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -153,7 +175,12 @@ export class SqliteApprovalRepository implements ApprovalRepository {
   }
 
   async findResourceRequest(id: string): Promise<ResourceRequest | null> {
-    const rows = this.db.select().from(resourceRequests).where(eq(resourceRequests.id, id)).limit(1).all();
+    const rows = this.db
+      .select()
+      .from(resourceRequests)
+      .where(eq(resourceRequests.id, id))
+      .limit(1)
+      .all();
     return rows[0] ? (rows[0] as ResourceRequest) : null;
   }
 
@@ -162,8 +189,11 @@ export class SqliteApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: ResourceRequest = { ...cur, status, updatedAt: now };
-    this.db.update(resourceRequests).set({ status: next.status, updatedAt: next.updatedAt })
-      .where(eq(resourceRequests.id, id)).run();
+    this.db
+      .update(resourceRequests)
+      .set({ status: next.status, updatedAt: next.updatedAt })
+      .where(eq(resourceRequests.id, id))
+      .run();
     return next;
   }
 
@@ -176,7 +206,7 @@ export class SqliteApprovalRepository implements ApprovalRepository {
       startDate: args.startDate,
       endDate: args.endDate,
       reason: args.reason,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -185,7 +215,12 @@ export class SqliteApprovalRepository implements ApprovalRepository {
   }
 
   async findTimeOffRequest(id: string): Promise<TimeOffRequest | null> {
-    const rows = this.db.select().from(timeOffRequests).where(eq(timeOffRequests.id, id)).limit(1).all();
+    const rows = this.db
+      .select()
+      .from(timeOffRequests)
+      .where(eq(timeOffRequests.id, id))
+      .limit(1)
+      .all();
     return rows[0] ? (rows[0] as TimeOffRequest) : null;
   }
 
@@ -194,8 +229,11 @@ export class SqliteApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: TimeOffRequest = { ...cur, status, updatedAt: now };
-    this.db.update(timeOffRequests).set({ status: next.status, updatedAt: next.updatedAt })
-      .where(eq(timeOffRequests.id, id)).run();
+    this.db
+      .update(timeOffRequests)
+      .set({ status: next.status, updatedAt: next.updatedAt })
+      .where(eq(timeOffRequests.id, id))
+      .run();
     return next;
   }
 
@@ -208,7 +246,7 @@ export class SqliteApprovalRepository implements ApprovalRepository {
       amount: args.amount,
       category: args.category,
       description: args.description,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     };
@@ -217,7 +255,12 @@ export class SqliteApprovalRepository implements ApprovalRepository {
   }
 
   async findExpenseReport(id: string): Promise<ExpenseReport | null> {
-    const rows = this.db.select().from(expenseReports).where(eq(expenseReports.id, id)).limit(1).all();
+    const rows = this.db
+      .select()
+      .from(expenseReports)
+      .where(eq(expenseReports.id, id))
+      .limit(1)
+      .all();
     return rows[0] ? (rows[0] as ExpenseReport) : null;
   }
 
@@ -226,8 +269,11 @@ export class SqliteApprovalRepository implements ApprovalRepository {
     if (!cur) throw new RequestNotFoundError(id);
     const now = new Date().toISOString();
     const next: ExpenseReport = { ...cur, status, updatedAt: now };
-    this.db.update(expenseReports).set({ status: next.status, updatedAt: next.updatedAt })
-      .where(eq(expenseReports.id, id)).run();
+    this.db
+      .update(expenseReports)
+      .set({ status: next.status, updatedAt: next.updatedAt })
+      .where(eq(expenseReports.id, id))
+      .run();
     return next;
   }
 }

@@ -99,8 +99,8 @@ export function projectViewportFrame(
   layout: MinimapLayout,
   viewport: { width: number; height: number },
 ): MinimapViewportFrame {
-  const visibleX = (-transform.x) / transform.k;
-  const visibleY = (-transform.y) / transform.k;
+  const visibleX = -transform.x / transform.k;
+  const visibleY = -transform.y / transform.k;
   const visibleWidth = viewport.width / transform.k;
   const visibleHeight = viewport.height / transform.k;
 
@@ -112,10 +112,7 @@ export function projectViewportFrame(
   };
 }
 
-export function minimapPointToContentPoint(
-  point: CanvasPoint,
-  layout: MinimapLayout,
-): CanvasPoint {
+export function minimapPointToContentPoint(point: CanvasPoint, layout: MinimapLayout): CanvasPoint {
   return {
     x: (point.x - layout.padding) / layout.scale,
     y: (point.y - layout.padding) / layout.scale,
@@ -150,6 +147,9 @@ export function zoomTransformAtCanvasPoint(options: {
   };
 }
 
-export function clampScale(scale: number, preset: CanvasViewportPreset = DEFAULT_CANVAS_VIEWPORT_PRESET): number {
+export function clampScale(
+  scale: number,
+  preset: CanvasViewportPreset = DEFAULT_CANVAS_VIEWPORT_PRESET,
+): number {
   return Math.min(preset.maxScale, Math.max(preset.minScale, scale));
 }

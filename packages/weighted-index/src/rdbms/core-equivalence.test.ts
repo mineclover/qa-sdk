@@ -16,45 +16,51 @@
  *   (5) max address === size - 1
  */
 
-import Database from "better-sqlite3";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, eq, sql } from "drizzle-orm";
-import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { beforeAll, describe, expect, it } from "vitest";
+import Database from 'better-sqlite3';
+import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import { and, eq, sql } from 'drizzle-orm';
+import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { beforeAll, describe, expect, it } from 'vitest';
 
-import { calcAddressRanges } from "../math/calc.js";
-import { WI, actionLabels, resourceLabels, roleLabels, shape } from "./shared.js";
+import { calcAddressRanges } from '../math/calc.js';
+import { WI, actionLabels, resourceLabels, roleLabels, shape } from './shared.js';
 
-const roles = sqliteTable("roles", {
-  id: integer("id").primaryKey(),
-  entityId: text("entity_id").notNull().unique(),
+const roles = sqliteTable('roles', {
+  id: integer('id').primaryKey(),
+  entityId: text('entity_id').notNull().unique(),
 });
 
-const actions = sqliteTable("actions", {
-  id: integer("id").primaryKey(),
-  entityId: text("entity_id").notNull().unique(),
+const actions = sqliteTable('actions', {
+  id: integer('id').primaryKey(),
+  entityId: text('entity_id').notNull().unique(),
 });
 
-const resources = sqliteTable("resources", {
-  id: integer("id").primaryKey(),
-  entityId: text("entity_id").notNull().unique(),
+const resources = sqliteTable('resources', {
+  id: integer('id').primaryKey(),
+  entityId: text('entity_id').notNull().unique(),
 });
 
 const coords = sqliteTable(
-  "coords",
+  'coords',
   {
-    roleId: integer("role_id").notNull().references(() => roles.id),
-    actionId: integer("action_id").notNull().references(() => actions.id),
-    resourceId: integer("resource_id").notNull().references(() => resources.id),
+    roleId: integer('role_id')
+      .notNull()
+      .references(() => roles.id),
+    actionId: integer('action_id')
+      .notNull()
+      .references(() => actions.id),
+    resourceId: integer('resource_id')
+      .notNull()
+      .references(() => resources.id),
   },
   (t) => [primaryKey({ columns: [t.roleId, t.actionId, t.resourceId] })],
 );
 
-describe("weighted-index ↔ RDBMS materialization 등가성", () => {
+describe('weighted-index ↔ RDBMS materialization 등가성', () => {
   let db: BetterSQLite3Database;
 
   beforeAll(() => {
-    const raw = new Database(":memory:");
+    const raw = new Database(':memory:');
     raw.exec(`
       CREATE TABLE roles     (id INTEGER PRIMARY KEY, entity_id TEXT NOT NULL UNIQUE);
       CREATE TABLE actions   (id INTEGER PRIMARY KEY, entity_id TEXT NOT NULL UNIQUE);
@@ -68,9 +74,15 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
     `);
     db = drizzle({ client: raw });
 
-    db.insert(roles).values(roleLabels.map((entityId, i) => ({ id: i + 1, entityId }))).run();
-    db.insert(actions).values(actionLabels.map((entityId, i) => ({ id: i + 1, entityId }))).run();
-    db.insert(resources).values(resourceLabels.map((entityId, i) => ({ id: i + 1, entityId }))).run();
+    db.insert(roles)
+      .values(roleLabels.map((entityId, i) => ({ id: i + 1, entityId })))
+      .run();
+    db.insert(actions)
+      .values(actionLabels.map((entityId, i) => ({ id: i + 1, entityId })))
+      .run();
+    db.insert(resources)
+      .values(resourceLabels.map((entityId, i) => ({ id: i + 1, entityId })))
+      .run();
 
     const rows: Array<{ roleId: number; actionId: number; resourceId: number }> = [];
     for (let r = 1; r <= shape[0]; r++) {
@@ -83,7 +95,7 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
     db.insert(coords).values(rows).run();
   });
 
-  it("[증명1] lex-order row position === WeightedIndex.encode", () => {
+  it('[증명1] lex-order row position === WeightedIndex.encode', () => {
     const ordered = db
       .select({
         address: sql<number>`row_number() over (order by ${coords.roleId}, ${coords.actionId}, ${coords.resourceId}) - 1`,
@@ -100,7 +112,7 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
     }
   });
 
-  it("[증명2] dim JOIN 복원 === PrefixCodec.decodeToIds", () => {
+  it('[증명2] dim JOIN 복원 === PrefixCodec.decodeToIds', () => {
     const target = WI.encode([2, 3, 1]); // editor × delete × doc → 특정 주소
 
     const [row] = db
@@ -113,13 +125,7 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
       .innerJoin(roles, eq(coords.roleId, roles.id))
       .innerJoin(actions, eq(coords.actionId, actions.id))
       .innerJoin(resources, eq(coords.resourceId, resources.id))
-      .where(
-        and(
-          eq(coords.roleId, 2),
-          eq(coords.actionId, 3),
-          eq(coords.resourceId, 1),
-        ),
-      )
+      .where(and(eq(coords.roleId, 2), eq(coords.actionId, 3), eq(coords.resourceId, 1)))
       .limit(1)
       .all();
 
@@ -129,7 +135,7 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
     expect(row.resourceEntity).toBe(resourceLabels[decoded[2] - 1]);
   });
 
-  it("[증명3] WHERE 부분 좌표 필터 === calcAddressRanges", () => {
+  it('[증명3] WHERE 부분 좌표 필터 === calcAddressRanges', () => {
     const sqlAddresses = db
       .select({
         address: sql<number>`row_number() over (order by ${coords.roleId}, ${coords.actionId}, ${coords.resourceId}) - 1`,
@@ -140,7 +146,7 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
       .filter((r) => r.roleId === 2)
       .map((r) => r.address);
 
-    const ranges = calcAddressRanges([...shape], ["2", null, null]);
+    const ranges = calcAddressRanges([...shape], ['2', null, null]);
     const wiAddresses: number[] = [];
     for (const [lo, hi] of ranges) {
       for (let n = lo; n <= hi; n++) wiAddresses.push(n);
@@ -150,7 +156,7 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
     expect(sqlAddresses).toEqual([9, 10, 11, 12, 13, 14, 15, 16, 17]);
   });
 
-  it("[증명4-보조] materialized row count === ∏shape", () => {
+  it('[증명4-보조] materialized row count === ∏shape', () => {
     const [{ count }] = db
       .select({ count: sql<number>`count(*)` })
       .from(coords)
@@ -159,7 +165,7 @@ describe("weighted-index ↔ RDBMS materialization 등가성", () => {
     expect(count).toBe(shape[0] * shape[1] * shape[2]);
   });
 
-  it("[증명5-보조] 가장 큰 좌표 주소 === size - 1", () => {
+  it('[증명5-보조] 가장 큰 좌표 주소 === size - 1', () => {
     const maxAddress = db
       .select({
         address: sql<number>`row_number() over (order by ${coords.roleId}, ${coords.actionId}, ${coords.resourceId}) - 1`,

@@ -26,14 +26,9 @@
  * SSOT 원칙: frontmatter가 유일한 입력, registry는 파생 인덱스.
  */
 
-import { readFile, readdir, stat } from "node:fs/promises";
-import { join, relative } from "node:path";
-import {
-  ALL_DOMAIN_IDS,
-  ALL_GATE_KIND_IDS,
-  getSubDomain,
-  type QualityGateSpec,
-} from "test-types";
+import { readFile, readdir, stat } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+import { ALL_DOMAIN_IDS, ALL_GATE_KIND_IDS, getSubDomain, type QualityGateSpec } from 'test-types';
 import type {
   DefLevel,
   DefTier,
@@ -47,10 +42,10 @@ import type {
   DefLayer,
   LinkType,
   EffectiveConcerns,
-} from "./types.js";
-import { isValidScopeAspect } from "./taxonomy.js";
-import { MemoryDefinitionRegistry } from "./registry.js";
-import { computeEffectiveConcerns } from "./concern.js";
+} from './types.js';
+import { isValidScopeAspect } from './taxonomy.js';
+import { MemoryDefinitionRegistry } from './registry.js';
+import { computeEffectiveConcerns } from './concern.js';
 
 // ─── Frontmatter 타입 ────────────────────────────────────
 
@@ -155,7 +150,7 @@ export function extractFrontmatter(content: string): { yaml: string; body: strin
   if (match) return { yaml: match[1], body: match[2] };
   // 빈 frontmatter: ---\n---
   const empty = content.match(/^---\r?\n---\r?\n?([\s\S]*)$/);
-  if (empty) return { yaml: "", body: empty[1] };
+  if (empty) return { yaml: '', body: empty[1] };
   return null;
 }
 
@@ -171,19 +166,38 @@ export function extractFrontmatter(content: string): { yaml: string; body: strin
  *
  * 구현은 yaml-lite.ts에 분리. re-export로 하위 호환 유지.
  */
-import { parseYaml, parseScalar } from "./yaml-lite.js";
+import { parseYaml, parseScalar } from './yaml-lite.js';
 export { parseYaml, parseScalar };
-import { parseDocumentAddress, parseUniqueDocumentAddress } from "./observe.js";
-
+import { parseDocumentAddress, parseUniqueDocumentAddress } from './observe.js';
 
 // ─── Frontmatter → DefinitionEntryInput 변환 ────────────
 
-const VALID_LEVELS = new Set(["group", "module", "leaf"]);
-const VALID_SCOPES = new Set(["ui", "feature", "flow", "state", "constraint", "data", "interface", "meta"]);
-const VALID_DEPTHS = new Set(["overview", "specification", "implementation", "validation"]);
-const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
-const VALID_LAYERS = new Set(["domain", "operation", "mediation", "experience"]);
-const VALID_LINK_TYPES = new Set(["depends_on", "implements", "refines", "constrains", "traces_to", "contains", "evolves_from", "supersedes", "refs", "verifies"]);
+const VALID_LEVELS = new Set(['group', 'module', 'leaf']);
+const VALID_SCOPES = new Set([
+  'ui',
+  'feature',
+  'flow',
+  'state',
+  'constraint',
+  'data',
+  'interface',
+  'meta',
+]);
+const VALID_DEPTHS = new Set(['overview', 'specification', 'implementation', 'validation']);
+const VALID_LIFECYCLES = new Set(['draft', 'review', 'approved', 'deprecated', 'archived']);
+const VALID_LAYERS = new Set(['domain', 'operation', 'mediation', 'experience']);
+const VALID_LINK_TYPES = new Set([
+  'depends_on',
+  'implements',
+  'refines',
+  'constrains',
+  'traces_to',
+  'contains',
+  'evolves_from',
+  'supersedes',
+  'refs',
+  'verifies',
+]);
 const VALID_WORK_DOMAINS = new Set<string>(ALL_DOMAIN_IDS);
 const VALID_GATE_KINDS = new Set<string>(ALL_GATE_KIND_IDS);
 
@@ -192,7 +206,7 @@ const VALID_GATE_KINDS = new Set<string>(ALL_GATE_KIND_IDS);
  */
 export function extractDef(parsed: Record<string, unknown>, filePath: string): FrontmatterDef {
   const def = parsed.def;
-  if (!def || typeof def !== "object" || Array.isArray(def)) {
+  if (!def || typeof def !== 'object' || Array.isArray(def)) {
     throw new Error(`${filePath}: 'def' 블록이 없거나 올바르지 않습니다`);
   }
 
@@ -200,18 +214,18 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
 
   // 필수 필드 검증
   const id = d.id;
-  if (typeof id !== "string" || id.length === 0) throw new Error(`${filePath}: def.id 필수`);
+  if (typeof id !== 'string' || id.length === 0) throw new Error(`${filePath}: def.id 필수`);
 
   const type = d.type as DefDocType | undefined;
-  const isKnowledge = type === "knowledge";
+  const isKnowledge = type === 'knowledge';
 
   const scope = d.scope;
-  if (!isKnowledge && (typeof scope !== "string" || !VALID_SCOPES.has(scope))) {
+  if (!isKnowledge && (typeof scope !== 'string' || !VALID_SCOPES.has(scope))) {
     throw new Error(`${filePath}: def.scope 유효하지 않음: "${scope}"`);
   }
 
   const aspect = d.aspect;
-  if (!isKnowledge && typeof aspect !== "string") {
+  if (!isKnowledge && typeof aspect !== 'string') {
     throw new Error(`${filePath}: def.aspect 필수`);
   }
 
@@ -220,24 +234,30 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   }
 
   const depth = d.depth;
-  if (!isKnowledge && (typeof depth !== "string" || !VALID_DEPTHS.has(depth))) {
+  if (!isKnowledge && (typeof depth !== 'string' || !VALID_DEPTHS.has(depth))) {
     throw new Error(`${filePath}: def.depth 유효하지 않음: "${depth}"`);
   }
 
-  const lifecycle = d.lifecycle ?? "draft";
-  if (typeof lifecycle !== "string" || !VALID_LIFECYCLES.has(lifecycle)) {
+  const lifecycle = d.lifecycle ?? 'draft';
+  if (typeof lifecycle !== 'string' || !VALID_LIFECYCLES.has(lifecycle)) {
     throw new Error(`${filePath}: def.lifecycle 유효하지 않음: "${lifecycle}"`);
   }
 
   // 선택 필드
-  const tags = Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === "string") : undefined;
+  const tags = Array.isArray(d.tags)
+    ? d.tags.filter((t): t is string => typeof t === 'string')
+    : undefined;
 
   const links: FrontmatterLink[] = [];
   if (Array.isArray(d.links)) {
     for (const item of d.links) {
-      if (typeof item === "object" && item !== null) {
+      if (typeof item === 'object' && item !== null) {
         const l = item as Record<string, string>;
-        if (typeof l.target === "string" && typeof l.type === "string" && VALID_LINK_TYPES.has(l.type)) {
+        if (
+          typeof l.target === 'string' &&
+          typeof l.type === 'string' &&
+          VALID_LINK_TYPES.has(l.type)
+        ) {
           links.push({ target: l.target, type: l.type as LinkType });
         }
       }
@@ -245,92 +265,144 @@ export function extractDef(parsed: Record<string, unknown>, filePath: string): F
   }
 
   // svc (서비스 레지스트리 연결)
-  const svc = typeof d.svc === "string" ? d.svc : undefined;
+  const svc = typeof d.svc === 'string' ? d.svc : undefined;
 
   // level (분해 레벨 — 선택, 기본 "leaf")
   const rawLevel = d.level;
-  const level = typeof rawLevel === "string" && VALID_LEVELS.has(rawLevel) ? rawLevel : "leaf";
+  const level = typeof rawLevel === 'string' && VALID_LEVELS.has(rawLevel) ? rawLevel : 'leaf';
 
   // layer (존재론적 계층 — 선택, 기본 없음)
-  const layer = typeof d.layer === "string" && VALID_LAYERS.has(d.layer) ? d.layer as DefLayer : undefined;
+  const layer =
+    typeof d.layer === 'string' && VALID_LAYERS.has(d.layer) ? (d.layer as DefLayer) : undefined;
 
   // address (좌표 주소 — 파일 소유, 선택)
-  const address = typeof d.address === "string" ? d.address : undefined;
-  const version = typeof d.version === "string" ? d.version : undefined;
-  const revision = typeof d.revision === "number"
-    ? d.revision
-    : typeof d.revision === "string" && /^\d+$/.test(d.revision)
-      ? Number(d.revision)
-      : undefined;
+  const address = typeof d.address === 'string' ? d.address : undefined;
+  const version = typeof d.version === 'string' ? d.version : undefined;
+  const revision =
+    typeof d.revision === 'number'
+      ? d.revision
+      : typeof d.revision === 'string' && /^\d+$/.test(d.revision)
+        ? Number(d.revision)
+        : undefined;
 
   // type (문서 유형 — design | spec | knowledge)
-  const VALID_DOC_TYPES = new Set(["design", "spec", "knowledge"]);
-  let docType = typeof d.type === "string" && VALID_DOC_TYPES.has(d.type) ? d.type as DefDocType : undefined;
+  const VALID_DOC_TYPES = new Set(['design', 'spec', 'knowledge']);
+  let docType =
+    typeof d.type === 'string' && VALID_DOC_TYPES.has(d.type) ? (d.type as DefDocType) : undefined;
 
   // knowledge_kind (knowledge 문서 세부 종류)
-  const VALID_KNOWLEDGE_KINDS = new Set(["philosophy", "adr", "guide", "narrative", "convention", "pattern", "concept", "proposal", "template"]);
-  const knowledgeKind = typeof d.knowledge_kind === "string" && VALID_KNOWLEDGE_KINDS.has(d.knowledge_kind) ? d.knowledge_kind as KnowledgeKind : undefined;
+  const VALID_KNOWLEDGE_KINDS = new Set([
+    'philosophy',
+    'adr',
+    'guide',
+    'narrative',
+    'convention',
+    'pattern',
+    'concept',
+    'proposal',
+    'template',
+  ]);
+  const knowledgeKind =
+    typeof d.knowledge_kind === 'string' && VALID_KNOWLEDGE_KINDS.has(d.knowledge_kind)
+      ? (d.knowledge_kind as KnowledgeKind)
+      : undefined;
 
   // D-19 Type 추론 로직: type이 명시되지 않은 경우 knowledge_kind 존재 여부로 추론, 그 외는 "spec"(또는 "design")
   if (!docType) {
     if (knowledgeKind) {
-      docType = "knowledge";
+      docType = 'knowledge';
     } else {
       // 레거시 호환 및 기본 동작
-      docType = "spec";
+      docType = 'spec';
     }
   }
 
   // D-19 상호 배제 검증
-  if (docType === "design" || docType === "spec") {
+  if (docType === 'design' || docType === 'spec') {
     if (knowledgeKind) {
-      throw new Error(`${filePath}: Design/Spec 문서(type: ${docType})는 knowledge_kind를 가질 수 없습니다.`);
+      throw new Error(
+        `${filePath}: Design/Spec 문서(type: ${docType})는 knowledge_kind를 가질 수 없습니다.`,
+      );
     }
-  } else if (docType === "knowledge") {
+  } else if (docType === 'knowledge') {
     if (!knowledgeKind) {
       throw new Error(`${filePath}: Knowledge 문서는 knowledge_kind 필드가 필수입니다.`);
     }
   }
 
-  const VALID_TIERS = new Set(["component", "entry", "system", "layout", "exempt"]);
-  const tier = typeof d.tier === "string" && VALID_TIERS.has(d.tier) ? d.tier as DefTier : undefined;
+  const VALID_TIERS = new Set(['component', 'entry', 'system', 'layout', 'exempt']);
+  const tier =
+    typeof d.tier === 'string' && VALID_TIERS.has(d.tier) ? (d.tier as DefTier) : undefined;
 
   // ─── 추적 및 소유권 (D-19/20) ───
-  const VALID_PROJECTION_PLANES = new Set(["intent", "execution"]);
-  const VALID_INTENT_HIERARCHIES = new Set(["core", "auxiliary"]);
-  const VALID_LINEAGE_FACETS = new Set(["ingress", "checkpoint", "transform", "egress"]);
-  const VALID_LINEAGE_KINDS = new Set(["interaction", "call", "subscription", "load", "validation", "mapping", "enrichment", "branching", "settlement", "emission", "response", "suspension"]);
+  const VALID_PROJECTION_PLANES = new Set(['intent', 'execution']);
+  const VALID_INTENT_HIERARCHIES = new Set(['core', 'auxiliary']);
+  const VALID_LINEAGE_FACETS = new Set(['ingress', 'checkpoint', 'transform', 'egress']);
+  const VALID_LINEAGE_KINDS = new Set([
+    'interaction',
+    'call',
+    'subscription',
+    'load',
+    'validation',
+    'mapping',
+    'enrichment',
+    'branching',
+    'settlement',
+    'emission',
+    'response',
+    'suspension',
+  ]);
 
-  let projectionPlane = typeof d.projection_plane === "string" && VALID_PROJECTION_PLANES.has(d.projection_plane) ? d.projection_plane : undefined;
-  const intentHierarchy = typeof d.intent_hierarchy === "string" && VALID_INTENT_HIERARCHIES.has(d.intent_hierarchy) ? d.intent_hierarchy : undefined;
-  const lineageFacet = typeof d.lineage_facet === "string" && VALID_LINEAGE_FACETS.has(d.lineage_facet) ? d.lineage_facet : undefined;
-  const lineageKind = typeof d.lineage_kind === "string" && VALID_LINEAGE_KINDS.has(d.lineage_kind) ? d.lineage_kind : undefined;
-  const ownerSystem = typeof d.owner_system === "string" ? d.owner_system : undefined;
+  let projectionPlane =
+    typeof d.projection_plane === 'string' && VALID_PROJECTION_PLANES.has(d.projection_plane)
+      ? d.projection_plane
+      : undefined;
+  const intentHierarchy =
+    typeof d.intent_hierarchy === 'string' && VALID_INTENT_HIERARCHIES.has(d.intent_hierarchy)
+      ? d.intent_hierarchy
+      : undefined;
+  const lineageFacet =
+    typeof d.lineage_facet === 'string' && VALID_LINEAGE_FACETS.has(d.lineage_facet)
+      ? d.lineage_facet
+      : undefined;
+  const lineageKind =
+    typeof d.lineage_kind === 'string' && VALID_LINEAGE_KINDS.has(d.lineage_kind)
+      ? d.lineage_kind
+      : undefined;
+  const ownerSystem = typeof d.owner_system === 'string' ? d.owner_system : undefined;
 
   // 6.1 추론 우선의 법칙: projection_plane 자동 추론
   if (!projectionPlane) {
-    const p = filePath.replace(/\\/g, "/"); // 윈도우 경로 호환
-    if (p.includes("docs/specs/") || p.includes("docs/proposals/")) {
-      projectionPlane = "intent";
-    } else if (p.includes("packages/") || p.includes("src/")) {
-      projectionPlane = "execution";
+    const p = filePath.replace(/\\/g, '/'); // 윈도우 경로 호환
+    if (p.includes('docs/specs/') || p.includes('docs/proposals/')) {
+      projectionPlane = 'intent';
+    } else if (p.includes('packages/') || p.includes('src/')) {
+      projectionPlane = 'execution';
     }
   }
 
   // D-20 소유권 강제: type: design인 경우 owner_system 필수 (구현 단계에서는 warning 처리 후 차후 error 승격 가능)
-  if (docType === "design" && !ownerSystem) {
+  if (docType === 'design' && !ownerSystem) {
     // TODO: Phase 4B에서 error로 승격. 현재는 pass 하거나 warning 로그
   }
 
   let lifecycleRef: LifecycleRef | undefined = undefined;
-  if (typeof d.lifecycle_ref === "object" && d.lifecycle_ref !== null && !Array.isArray(d.lifecycle_ref)) {
+  if (
+    typeof d.lifecycle_ref === 'object' &&
+    d.lifecycle_ref !== null &&
+    !Array.isArray(d.lifecycle_ref)
+  ) {
     const lr = d.lifecycle_ref as Record<string, unknown>;
-    if (typeof lr.state_component === "string") {
+    if (typeof lr.state_component === 'string') {
       lifecycleRef = {
         stateComponent: lr.state_component,
-        ...(Array.isArray(lr.pipe_refs) ? { pipeRefs: lr.pipe_refs.filter((r): r is string => typeof r === "string") } : {}),
-        ...(typeof lr.read_only_projection === "boolean" ? { readOnlyProjection: lr.read_only_projection } : {}),
-        ...(typeof lr.notes === "string" ? { notes: lr.notes } : {}),
+        ...(Array.isArray(lr.pipe_refs)
+          ? { pipeRefs: lr.pipe_refs.filter((r): r is string => typeof r === 'string') }
+          : {}),
+        ...(typeof lr.read_only_projection === 'boolean'
+          ? { readOnlyProjection: lr.read_only_projection }
+          : {}),
+        ...(typeof lr.notes === 'string' ? { notes: lr.notes } : {}),
       };
     }
   }
@@ -373,52 +445,53 @@ export function extractGate(
 ): FrontmatterGate | undefined {
   const gate = parsed.gate;
   if (gate === undefined) return undefined;
-  if (typeof gate !== "object" || gate === null || Array.isArray(gate)) {
+  if (typeof gate !== 'object' || gate === null || Array.isArray(gate)) {
     throw new Error(`${filePath}: 'gate' 블록이 올바르지 않습니다`);
   }
 
   const g = gate as Record<string, unknown>;
 
   const kind = g.kind;
-  if (typeof kind !== "string" || !VALID_GATE_KINDS.has(kind)) {
+  if (typeof kind !== 'string' || !VALID_GATE_KINDS.has(kind)) {
     throw new Error(`${filePath}: gate.kind 유효하지 않음: "${kind}"`);
   }
 
   const workDomain = g.workDomain;
-  if (typeof workDomain !== "string" || !VALID_WORK_DOMAINS.has(workDomain)) {
+  if (typeof workDomain !== 'string' || !VALID_WORK_DOMAINS.has(workDomain)) {
     throw new Error(`${filePath}: gate.workDomain 유효하지 않음: "${workDomain}"`);
   }
 
   const command = g.command;
-  if (typeof command !== "string" || command.trim().length === 0) {
+  if (typeof command !== 'string' || command.trim().length === 0) {
     throw new Error(`${filePath}: gate.command 필수`);
   }
 
   const pickString = (value: unknown): string | undefined =>
-    typeof value === "string" && value.trim().length > 0 ? value : undefined;
+    typeof value === 'string' && value.trim().length > 0 ? value : undefined;
   const pickStringArray = (value: unknown): readonly string[] | undefined =>
     Array.isArray(value)
-      ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
       : undefined;
   const subDomainId = pickString(g.subDomainId);
-  if (subDomainId && !getSubDomain(
-    workDomain as FrontmatterGate["workDomain"],
-    subDomainId,
-  )) {
+  if (subDomainId && !getSubDomain(workDomain as FrontmatterGate['workDomain'], subDomainId)) {
     throw new Error(`${filePath}: gate.subDomainId 유효하지 않음: "${subDomainId}"`);
   }
 
   return {
-    kind: kind as FrontmatterGate["kind"],
-    workDomain: workDomain as FrontmatterGate["workDomain"],
+    kind: kind as FrontmatterGate['kind'],
+    workDomain: workDomain as FrontmatterGate['workDomain'],
     command: command,
     ...(subDomainId ? { subDomainId } : {}),
     ...(pickString(g.storyId) ? { storyId: pickString(g.storyId) } : {}),
     ...(pickString(g.package) ? { package: pickString(g.package) } : {}),
     ...(pickString(g.successPattern) ? { successPattern: pickString(g.successPattern) } : {}),
     ...(pickStringArray(g.references)?.length ? { references: pickStringArray(g.references) } : {}),
-    ...(pickStringArray(g.suggestOnPass)?.length ? { suggestOnPass: pickStringArray(g.suggestOnPass) } : {}),
-    ...(pickStringArray(g.suggestOnFail)?.length ? { suggestOnFail: pickStringArray(g.suggestOnFail) } : {}),
+    ...(pickStringArray(g.suggestOnPass)?.length
+      ? { suggestOnPass: pickStringArray(g.suggestOnPass) }
+      : {}),
+    ...(pickStringArray(g.suggestOnFail)?.length
+      ? { suggestOnFail: pickStringArray(g.suggestOnFail) }
+      : {}),
   };
 }
 
@@ -432,21 +505,21 @@ export function extractTests(parsed: Record<string, unknown>): FrontmatterTest[]
 
   const result: FrontmatterTest[] = [];
   for (const item of tests) {
-    if (typeof item !== "object" || item === null) continue;
+    if (typeof item !== 'object' || item === null) continue;
     const t = item as Record<string, unknown>;
-    const name = typeof t.name === "string" ? t.name : "";
-    const kind = typeof t.kind === "string" ? t.kind : "";
+    const name = typeof t.name === 'string' ? t.name : '';
+    const kind = typeof t.kind === 'string' ? t.kind : '';
     if (!kind) continue; // kind 필수
 
     result.push({
       name,
       kind,
-      scope: typeof t.scope === "string" ? t.scope : "single",
-      ...(typeof t.phase === "string" ? { phase: t.phase } : {}),
-      intent: typeof t.intent === "string" ? t.intent : "",
-      ...(typeof t.module === "string" ? { module: t.module } : {}),
+      scope: typeof t.scope === 'string' ? t.scope : 'single',
+      ...(typeof t.phase === 'string' ? { phase: t.phase } : {}),
+      intent: typeof t.intent === 'string' ? t.intent : '',
+      ...(typeof t.module === 'string' ? { module: t.module } : {}),
       ...(Array.isArray(t.participants)
-        ? { participants: t.participants.filter((p): p is string => typeof p === "string") }
+        ? { participants: t.participants.filter((p): p is string => typeof p === 'string') }
         : {}),
     });
   }
@@ -490,7 +563,7 @@ async function scanMarkdownFiles(dir: string): Promise<string[]> {
       const s = await stat(fullPath);
       if (s.isDirectory()) {
         await walk(fullPath);
-      } else if (entry.endsWith(".md")) {
+      } else if (entry.endsWith('.md')) {
         files.push(fullPath);
       }
     }
@@ -500,21 +573,21 @@ async function scanMarkdownFiles(dir: string): Promise<string[]> {
   return files;
 }
 
-type DocVariant = "spec" | "todo" | "test" | "cases" | "memo" | "plan" | "rule" | "other";
+type DocVariant = 'spec' | 'todo' | 'test' | 'cases' | 'memo' | 'plan' | 'rule' | 'other';
 
 function getDocVariant(filePath: string): DocVariant {
-  if (filePath.endsWith(".spec.md")) return "spec";
-  if (filePath.endsWith(".todo.md")) return "todo";
-  if (filePath.endsWith(".test.md")) return "test";
-  if (filePath.endsWith(".cases.md")) return "cases";
-  if (filePath.endsWith(".memo.md")) return "memo";
-  if (filePath.endsWith(".plan.md")) return "plan";
-  if (filePath.endsWith(".rule.md")) return "rule";
-  return "other";
+  if (filePath.endsWith('.spec.md')) return 'spec';
+  if (filePath.endsWith('.todo.md')) return 'todo';
+  if (filePath.endsWith('.test.md')) return 'test';
+  if (filePath.endsWith('.cases.md')) return 'cases';
+  if (filePath.endsWith('.memo.md')) return 'memo';
+  if (filePath.endsWith('.plan.md')) return 'plan';
+  if (filePath.endsWith('.rule.md')) return 'rule';
+  return 'other';
 }
 
 function getDocStem(filePath: string): string {
-  return filePath.replace(/\.(spec|todo|test|cases|memo|plan|rule)\.md$/, "").replace(/\.md$/, "");
+  return filePath.replace(/\.(spec|todo|test|cases|memo|plan|rule)\.md$/, '').replace(/\.md$/, '');
 }
 
 function compareVariantPriority(left: string, right: string): number {
@@ -528,7 +601,9 @@ function compareVariantPriority(left: string, right: string): number {
     todo: 6,
     other: 7,
   };
-  return priority[getDocVariant(left)] - priority[getDocVariant(right)] || left.localeCompare(right);
+  return (
+    priority[getDocVariant(left)] - priority[getDocVariant(right)] || left.localeCompare(right)
+  );
 }
 
 /**
@@ -541,10 +616,7 @@ function compareVariantPriority(left: string, right: string): number {
  * @param baseDir 스캔 시작 디렉토리 (상대 경로의 기준)
  * @param dirs 스캔할 디렉토리 목록 (절대 경로)
  */
-export async function scanAndBuild(
-  baseDir: string,
-  dirs: readonly string[],
-): Promise<ScanResult> {
+export async function scanAndBuild(baseDir: string, dirs: readonly string[]): Promise<ScanResult> {
   const registry = new MemoryDefinitionRegistry();
   const errors: { file: string; error: string }[] = [];
   const linkErrors: { source: string; target: string; error: string }[] = [];
@@ -562,7 +634,7 @@ export async function scanAndBuild(
   const now = new Date().toISOString();
   for (const filePath of allFiles) {
     try {
-      const content = await readFile(filePath, "utf-8");
+      const content = await readFile(filePath, 'utf-8');
       const fm = extractFrontmatter(content);
       if (!fm) continue; // frontmatter 없는 파일은 건너뜀
 
@@ -575,12 +647,10 @@ export async function scanAndBuild(
       const existing = registry.get(def.id);
       if (existing) {
         const currentVariant = getDocVariant(relPath);
-        const existingVariant = getDocVariant(existing.ref ?? "");
+        const existingVariant = getDocVariant(existing.ref ?? '');
         const sameStem = existing.ref ? getDocStem(existing.ref) === getDocStem(relPath) : false;
         const allowedTodoCoexistence =
-          sameStem
-          && currentVariant === "todo"
-          && existingVariant === "spec";
+          sameStem && currentVariant === 'todo' && existingVariant === 'spec';
         if (allowedTodoCoexistence) {
           continue;
         }
@@ -611,7 +681,10 @@ export async function scanAndBuild(
         gate: doc.gate,
         ...(def.address
           ? {
-              address: parseUniqueDocumentAddress(def.address) ?? parseDocumentAddress(def.address) ?? undefined,
+              address:
+                parseUniqueDocumentAddress(def.address) ??
+                parseDocumentAddress(def.address) ??
+                undefined,
               serialized: def.address,
             }
           : {}),
@@ -652,11 +725,14 @@ export function computeAllConcerns(
 ): Map<string, EffectiveConcerns> {
   const result = new Map<string, EffectiveConcerns>();
   for (const entry of registry.all()) {
-    result.set(entry.id, computeEffectiveConcerns(
+    result.set(
       entry.id,
-      id => registry.get(id),
-      (id, dir) => registry.getLinks(id, dir),
-    ));
+      computeEffectiveConcerns(
+        entry.id,
+        (id) => registry.get(id),
+        (id, dir) => registry.getLinks(id, dir),
+      ),
+    );
   }
   return result;
 }

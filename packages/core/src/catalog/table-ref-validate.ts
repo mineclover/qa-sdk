@@ -7,10 +7,10 @@
  * prefix dims의 { kind: "table_ref", table } ↔ tables의 referencedBy 양방향 일치 검증
  */
 
-import type { Catalog } from "./catalog.types.js";
+import type { Catalog } from './catalog.types.js';
 
 export interface TableRefIssue {
-  readonly severity: "error" | "warning";
+  readonly severity: 'error' | 'warning';
   readonly message: string;
 }
 
@@ -30,12 +30,12 @@ export function validateTableRefs(catalog: Catalog): TableRefIssue[] {
 
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
     for (const [dimLabel, dim] of Object.entries(prefix.dims)) {
-      if (dim.kind !== "table_ref") continue;
+      if (dim.kind !== 'table_ref') continue;
 
       // table이 catalog.tables에 존재하는지
       if (!tables[dim.table]) {
         issues.push({
-          severity: "warning",
+          severity: 'warning',
           message: `prefix "${prefixId}".dims["${dimLabel}"] → table_ref "${dim.table}" 이 catalog.tables에 없음`,
         });
       }
@@ -57,7 +57,7 @@ export function validateTableRefs(catalog: Catalog): TableRefIssue[] {
       // referencedBy에 선언했지만 실제 prefix dim에 table_ref 없음
       if (!actualRefs.has(key)) {
         issues.push({
-          severity: "warning",
+          severity: 'warning',
           message: `table "${tableName}".referencedBy에 "${ref.prefixId}.${ref.dimLabel}" 선언됨 — 실제 prefix dim에 table_ref 없음`,
         });
       }
@@ -67,9 +67,9 @@ export function validateTableRefs(catalog: Catalog): TableRefIssue[] {
   // 3단계: 실제 참조가 있지만 referencedBy에 미선언
   for (const key of actualRefs) {
     if (!declaredRefs.has(key)) {
-      const [table, ref] = key.split(":");
+      const [table, ref] = key.split(':');
       issues.push({
-        severity: "warning",
+        severity: 'warning',
         message: `prefix ${ref} → table_ref "${table}" — table의 referencedBy에 미선언 (colocation 누락)`,
       });
     }

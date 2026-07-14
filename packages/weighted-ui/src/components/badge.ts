@@ -21,10 +21,8 @@ export function chip(parts: {
   ink: string;
   isNew?: boolean;
 }): string {
-  const labelHtml = parts.label
-    ? `<span class="ui-chip-label">${parts.label}</span>`
-    : "";
-  const newHtml = parts.isNew ? ` ${newTag()}` : "";
+  const labelHtml = parts.label ? `<span class="ui-chip-label">${parts.label}</span>` : '';
+  const newHtml = parts.isNew ? ` ${newTag()}` : '';
   const infoHtml = parts.info
     ? `<span class="ui-chip-info">${parts.info}${newHtml}</span>`
     : newHtml;
@@ -48,9 +46,6 @@ export function newTag(): string {
 }
 
 /** 정보 배지 (variant별 색상) */
-export function infoBadge(
-  text: string,
-  variant: "green" | "gray" | "blue" | "red",
-): string {
+export function infoBadge(text: string, variant: 'green' | 'gray' | 'blue' | 'red'): string {
   return `<span class="info-badge info-badge-${variant}">${text}</span>`;
 }

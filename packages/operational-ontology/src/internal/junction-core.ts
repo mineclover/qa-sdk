@@ -1,12 +1,6 @@
-import type {
-  BranchHandlingMode,
-  BranchPath,
-} from "./runtime-core.js";
+import type { BranchHandlingMode, BranchPath } from './runtime-core.js';
 
-export const JUNCTION_TEMPLATE_KINDS = [
-  "conditional_branch",
-  "observed_route_decision",
-] as const;
+export const JUNCTION_TEMPLATE_KINDS = ['conditional_branch', 'observed_route_decision'] as const;
 
 export type JunctionTemplateKind = (typeof JUNCTION_TEMPLATE_KINDS)[number];
 
@@ -26,15 +20,15 @@ export interface JunctionTemplateRegistry {
 
 export const DEFAULT_JUNCTION_TEMPLATES = {
   conditional_branch: {
-    kind: "conditional_branch",
-    description: "Junction materialized from conditional PipeConnection paths",
-    allowedModes: ["first_match", "all_matches", "fallback", "optional"],
+    kind: 'conditional_branch',
+    description: 'Junction materialized from conditional PipeConnection paths',
+    allowedModes: ['first_match', 'all_matches', 'fallback', 'optional'],
     minPaths: 1,
   },
   observed_route_decision: {
-    kind: "observed_route_decision",
-    description: "Route decision materialized from observed branch outcomes",
-    allowedModes: ["first_match", "all_matches", "fallback", "optional"],
+    kind: 'observed_route_decision',
+    description: 'Route decision materialized from observed branch outcomes',
+    allowedModes: ['first_match', 'all_matches', 'fallback', 'optional'],
     minPaths: 1,
   },
 } as const satisfies Record<JunctionTemplateKind, JunctionTemplate>;
@@ -102,10 +96,9 @@ export function validateJunctionAgainstTemplate(
 ): JunctionTemplateValidationResult {
   const allowedModes = template.allowedModes;
   const pathCount = paths.length;
-  const tooFewPaths =
-    typeof template.minPaths === "number" ? pathCount < template.minPaths : false;
+  const tooFewPaths = typeof template.minPaths === 'number' ? pathCount < template.minPaths : false;
   const tooManyPaths =
-    typeof template.maxPaths === "number" ? pathCount > template.maxPaths : false;
+    typeof template.maxPaths === 'number' ? pathCount > template.maxPaths : false;
   const pathsMissingCondition = template.requireConditionOnPaths
     ? paths.filter((path) => !path.when).map((path) => path.pathId)
     : [];

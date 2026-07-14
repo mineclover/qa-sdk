@@ -1,8 +1,8 @@
 // @def.boundary sim-identifier-grammar
-import { z } from "zod";
+import { z } from 'zod';
 
-export const SERVICE_PREFIX_NAMESPACES = ["sim"] as const;
-export const SERVICE_PREFIX_CATEGORIES = ["svc", "slice", "evt", "cache"] as const;
+export const SERVICE_PREFIX_NAMESPACES = ['sim'] as const;
+export const SERVICE_PREFIX_CATEGORIES = ['svc', 'slice', 'evt', 'cache'] as const;
 const NAME_REGEX = /^[a-z][a-z0-9-]{0,30}$/;
 
 export type ServicePrefixNamespace = (typeof SERVICE_PREFIX_NAMESPACES)[number];
@@ -23,7 +23,7 @@ const ServicePrefixInputSchema = z.object({
 export const ServicePrefixSchema = z
   .string()
   .regex(/^sim\.(svc|slice|evt|cache)\.[a-z][a-z0-9-]{0,30}$/, {
-    message: "invalid service prefix",
+    message: 'invalid service prefix',
   });
 
 export function buildServicePrefix(input: ServicePrefix): string {
@@ -33,7 +33,7 @@ export function buildServicePrefix(input: ServicePrefix): string {
 
 export function parseServicePrefix(s: string): ServicePrefix {
   ServicePrefixSchema.parse(s);
-  const [namespace, category, name] = s.split(".") as [
+  const [namespace, category, name] = s.split('.') as [
     ServicePrefixNamespace,
     ServicePrefixCategory,
     string,

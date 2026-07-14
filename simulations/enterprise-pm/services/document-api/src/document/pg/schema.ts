@@ -1,39 +1,51 @@
 // @def.boundary sim-document-api
 // @def.doc sim-erp-pm-design
 
-import { pgSchema, primaryKey, index, text, integer } from "drizzle-orm/pg-core";
+import { pgSchema, primaryKey, index, text, integer } from 'drizzle-orm/pg-core';
 
-const sim = pgSchema("sim");
+const sim = pgSchema('sim');
 
-export const documents = sim.table("doc_documents", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id").notNull(),
-  title: text("title").notNull(),
-  currentVersion: integer("current_version").notNull().default(0),
-  ownerId: text("owner_id").notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-}, (t) => [index("idx_sim_doc_proj").on(t.projectId)]);
+export const documents = sim.table(
+  'doc_documents',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    title: text('title').notNull(),
+    currentVersion: integer('current_version').notNull().default(0),
+    ownerId: text('owner_id').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [index('idx_sim_doc_proj').on(t.projectId)],
+);
 
-export const documentVersions = sim.table("doc_versions", {
-  documentId: text("document_id").notNull(),
-  versionNumber: integer("version_number").notNull(),
-  contentRef: text("content_ref").notNull(),
-  authorId: text("author_id").notNull(),
-  createdAt: text("created_at").notNull(),
-}, (t) => [primaryKey({ columns: [t.documentId, t.versionNumber] })]);
+export const documentVersions = sim.table(
+  'doc_versions',
+  {
+    documentId: text('document_id').notNull(),
+    versionNumber: integer('version_number').notNull(),
+    contentRef: text('content_ref').notNull(),
+    authorId: text('author_id').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.documentId, t.versionNumber] })],
+);
 
-export const comments = sim.table("doc_comments", {
-  id: text("id").primaryKey(),
-  documentId: text("document_id").notNull(),
-  authorId: text("author_id").notNull(),
-  parentCommentId: text("parent_comment_id"),
-  body: text("body").notNull(),
-  createdAt: text("created_at").notNull(),
-}, (t) => [
-  index("idx_sim_cmt_doc").on(t.documentId),
-  index("idx_sim_cmt_parent").on(t.parentCommentId),
-]);
+export const comments = sim.table(
+  'doc_comments',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id').notNull(),
+    authorId: text('author_id').notNull(),
+    parentCommentId: text('parent_comment_id'),
+    body: text('body').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [
+    index('idx_sim_cmt_doc').on(t.documentId),
+    index('idx_sim_cmt_parent').on(t.parentCommentId),
+  ],
+);
 
 export const SIM_DOC_PG_DDL = `
 CREATE SCHEMA IF NOT EXISTS sim;

@@ -1,18 +1,11 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { createHash } from "node:crypto";
-import {
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Optional,
-} from "@nestjs/common";
-import type { CatalogStore } from "./stores/catalog-store.js";
-import type { ConfigStore } from "./stores/config-store.js";
-import { CATALOG_STORE, CONFIG_STORE } from "./modules/catalog/catalog.service.js";
+import { createHash } from 'node:crypto';
+import { Controller, Get, HttpException, HttpStatus, Inject, Optional } from '@nestjs/common';
+import type { CatalogStore } from './stores/catalog-store.js';
+import type { ConfigStore } from './stores/config-store.js';
+import { CATALOG_STORE, CONFIG_STORE } from './modules/catalog/catalog.service.js';
 
 @Controller()
 export class HealthController {
@@ -21,36 +14,42 @@ export class HealthController {
     @Optional() @Inject(CONFIG_STORE) private readonly configStore?: ConfigStore,
   ) {}
 
-  @Get("health")
+  @Get('health')
   health() {
-    return { ok: true, service: "registry-service" };
+    return { ok: true, service: 'registry-service' };
   }
 
-  @Get("health/live")
+  @Get('health/live')
   live() {
     return { ok: true };
   }
 
-  @Get("health/generation")
+  @Get('health/generation')
   async generation() {
     if (!this.catalogStore) {
-      throw new HttpException({ error: "catalogStore not available" }, HttpStatus.SERVICE_UNAVAILABLE);
+      throw new HttpException(
+        { error: 'catalogStore not available' },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
 
     const catalogs = await this.catalogStore.list();
-    const generations: Record<string, {
-      catalogHash: string;
-      dkgConfigHash: string | null;
-      prefixCount: number;
-      axisCount: number;
-      updatedAt: string;
-    }> = {};
+    const generations: Record<
+      string,
+      {
+        catalogHash: string;
+        dkgConfigHash: string | null;
+        prefixCount: number;
+        axisCount: number;
+        updatedAt: string;
+      }
+    > = {};
 
     for (const catalog of catalogs) {
-      const catalogHash = createHash("sha256").update(catalog.data).digest("hex").slice(0, 12);
-      const dkgConfigRecord = await this.configStore?.get(catalog.id, "dkg-config");
+      const catalogHash = createHash('sha256').update(catalog.data).digest('hex').slice(0, 12);
+      const dkgConfigRecord = await this.configStore?.get(catalog.id, 'dkg-config');
       const dkgConfigHash = dkgConfigRecord?.data
-        ? createHash("sha256").update(dkgConfigRecord.data).digest("hex").slice(0, 12)
+        ? createHash('sha256').update(dkgConfigRecord.data).digest('hex').slice(0, 12)
         : null;
 
       let prefixCount = 0;
@@ -76,6 +75,6 @@ export class HealthController {
       };
     }
 
-    return { service: "registry-service", generations };
+    return { service: 'registry-service', generations };
   }
 }

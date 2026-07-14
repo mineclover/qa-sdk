@@ -1,7 +1,7 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import { SubscriptionUserQueryPort } from "../../application/ports/user-query.port.js";
+import { SubscriptionUserQueryPort } from '../../application/ports/user-query.port.js';
 
 /**
  * 외부 (auth) 도메인 read-model 의 최소 인터페이스 — 구조적 타이핑.

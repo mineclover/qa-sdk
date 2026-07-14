@@ -1,7 +1,7 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import { ulid } from "ulid";
+import { ulid } from 'ulid';
 
 export function newTransmissionId(): string {
   return `txm_${ulid()}`;

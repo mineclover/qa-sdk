@@ -2,10 +2,10 @@
 // @def.doc infra-engine-system
 
 // fleet/manager.ts — 중앙 배포 관리 (Fleet Manager)
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import type { DiscoveryClient, ServiceInfo } from "../discovery/client.js";
-import type { InfraProfileAdapter } from "../adapters/adapter.js";
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import type { DiscoveryClient, ServiceInfo } from '../discovery/client.js';
+import type { InfraProfileAdapter } from '../adapters/adapter.js';
 
 export interface FleetStatus {
   env: string;
@@ -54,7 +54,7 @@ export interface FleetDeployResult {
 export interface FleetRunOptions {
   dryRun?: boolean;
   continueOnError?: boolean;
-  provider?: "local" | "cloudflare";
+  provider?: 'local' | 'cloudflare';
   sync?: boolean;
 }
 
@@ -66,21 +66,14 @@ export interface FleetManager {
   listDeployable(env: string): Promise<ServiceInfo[]>;
 
   /** 환경에 모든 서비스 배포 (순차) */
-  deployAll(
-    env: string,
-    options?: FleetRunOptions,
-  ): Promise<FleetDeployResult>;
+  deployAll(env: string, options?: FleetRunOptions): Promise<FleetDeployResult>;
 
   /** 특정 tier의 서비스만 배포 */
   deployByTier(env: string, tier: string, options?: FleetRunOptions): Promise<FleetDeployResult>;
 }
 
 export interface FleetManagerOptions {
-  deployExecutor?: (
-    serviceId: string,
-    env: string,
-    options?: FleetRunOptions,
-  ) => Promise<void>;
+  deployExecutor?: (serviceId: string, env: string, options?: FleetRunOptions) => Promise<void>;
 }
 
 export function createFleetManager(
@@ -98,26 +91,21 @@ export function createFleetManager(
         serviceId: deployment.serviceId,
         name: deployment.serviceId,
         url: deployment.endpoint,
-        tier: "unknown",
-        team: "infra-profile",
+        tier: 'unknown',
+        team: 'infra-profile',
         ownedPrefixes: [],
         consumedPrefixes: [],
         urls: { [env]: deployment.endpoint },
       }));
   }
 
-  async function buildServiceStatuses(
-    env: string,
-  ): Promise<FleetServiceStatus[]> {
+  async function buildServiceStatuses(env: string): Promise<FleetServiceStatus[]> {
     const deployments = await infraProfile.getAllDeployments();
     let services: ServiceInfo[];
     let urls: Record<string, string>;
 
     try {
-      [services, urls] = await Promise.all([
-        discovery.listServices(),
-        discovery.resolveAll(env),
-      ]);
+      [services, urls] = await Promise.all([discovery.listServices(), discovery.resolveAll(env)]);
     } catch {
       services = buildOfflineServices(env, deployments);
       urls = Object.fromEntries(services.map((svc) => [svc.serviceId, svc.url]));
@@ -127,7 +115,7 @@ export function createFleetManager(
     const statuses: FleetServiceStatus[] = [];
 
     for (const svc of services) {
-      const registryUrl = urls[svc.serviceId] ?? svc.url ?? "";
+      const registryUrl = urls[svc.serviceId] ?? svc.url ?? '';
       const deployment = deployments[svc.serviceId];
       const deployedUrl = deployment?.endpoint;
       const deployed = deployment != null;
@@ -138,10 +126,9 @@ export function createFleetManager(
 
       if (deployed && deployedUrl) {
         try {
-          const res = await fetch(
-            `${deployedUrl}${deployment.healthPath ?? "/health"}`,
-            { signal: AbortSignal.timeout(2_000) },
-          );
+          const res = await fetch(`${deployedUrl}${deployment.healthPath ?? '/health'}`, {
+            signal: AbortSignal.timeout(2_000),
+          });
           healthy = res.ok;
           running = res.ok;
         } catch {
@@ -192,7 +179,7 @@ export function createFleetManager(
     return statuses;
   }
 
-  function summarize(services: FleetServiceStatus[]): FleetStatus["summary"] {
+  function summarize(services: FleetServiceStatus[]): FleetStatus['summary'] {
     let deployed = 0;
     let running = 0;
     let healthy = 0;
@@ -210,10 +197,7 @@ export function createFleetManager(
     return { total: services.length, deployed, running, healthy, degraded, unknown };
   }
 
-  function buildDryRunResult(
-    env: string,
-    services: ServiceInfo[],
-  ): FleetDeployResult {
+  function buildDryRunResult(env: string, services: ServiceInfo[]): FleetDeployResult {
     const results = services.map((svc) => ({
       serviceId: svc.serviceId,
       success: true,
@@ -238,32 +222,25 @@ export function createFleetManager(
     env: string,
     options?: FleetRunOptions,
   ): Promise<void> {
-    const packageRoot = existsSync(resolve(process.cwd(), "scripts/infra.ts"))
+    const packageRoot = existsSync(resolve(process.cwd(), 'scripts/infra.ts'))
       ? process.cwd()
-      : resolve(process.cwd(), "packages/infra-engine");
-    const args = [
-      "--import",
-      "tsx",
-      "./scripts/infra.ts",
-      "deploy",
-      serviceId,
-      env,
-    ];
+      : resolve(process.cwd(), 'packages/infra-engine');
+    const args = ['--import', 'tsx', './scripts/infra.ts', 'deploy', serviceId, env];
     if (options?.provider) {
-      args.push("--provider", options.provider);
+      args.push('--provider', options.provider);
     }
     if (options?.sync) {
-      args.push("--sync");
+      args.push('--sync');
     }
     if (options?.dryRun) {
-      args.push("--dry-run");
+      args.push('--dry-run');
     }
 
-    const { execa } = await import("execa");
-    await execa("node", args, {
+    const { execa } = await import('execa');
+    await execa('node', args, {
       cwd: packageRoot,
       env: process.env,
-      stdio: "inherit",
+      stdio: 'inherit',
     });
   }
 
@@ -278,7 +255,7 @@ export function createFleetManager(
 
     const deployRunner = managerOptions?.deployExecutor ?? defaultDeployExecutor;
 
-    const results: FleetDeployResult["results"] = [];
+    const results: FleetDeployResult['results'] = [];
 
     for (const svc of services) {
       const start = Date.now();

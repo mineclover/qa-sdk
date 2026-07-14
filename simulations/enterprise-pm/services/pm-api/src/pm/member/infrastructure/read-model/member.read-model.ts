@@ -4,9 +4,9 @@
 import {
   MemberReadModelQuery,
   type MemberDetailReadModel,
-} from "../../application/queries/member-read-model.query.js";
-import type { MemberRepositoryPort } from "../../application/ports/member-repository.port.js";
-import type { MemberEntity } from "../../domain/index.js";
+} from '../../application/queries/member-read-model.query.js';
+import type { MemberRepositoryPort } from '../../application/ports/member-repository.port.js';
+import type { MemberEntity } from '../../domain/index.js';
 
 export class RepositoryMemberReadModel extends MemberReadModelQuery {
   constructor(private readonly repository: MemberRepositoryPort) {

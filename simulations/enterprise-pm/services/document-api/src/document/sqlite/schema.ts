@@ -1,37 +1,46 @@
 // @def.boundary sim-document-api
 // @def.doc sim-erp-pm-design
 
-import { sqliteTable, text, integer, primaryKey, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
 
-export const documents = sqliteTable("documents", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id").notNull(),
-  title: text("title").notNull(),
-  currentVersion: integer("current_version").notNull().default(0),
-  ownerId: text("owner_id").notNull(),
-  createdAt: text("created_at").notNull(),
-  updatedAt: text("updated_at").notNull(),
-}, (t) => [index("idx_doc_proj").on(t.projectId)]);
+export const documents = sqliteTable(
+  'documents',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    title: text('title').notNull(),
+    currentVersion: integer('current_version').notNull().default(0),
+    ownerId: text('owner_id').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (t) => [index('idx_doc_proj').on(t.projectId)],
+);
 
-export const documentVersions = sqliteTable("document_versions", {
-  documentId: text("document_id").notNull(),
-  versionNumber: integer("version_number").notNull(),
-  contentRef: text("content_ref").notNull(),
-  authorId: text("author_id").notNull(),
-  createdAt: text("created_at").notNull(),
-}, (t) => [primaryKey({ columns: [t.documentId, t.versionNumber] })]);
+export const documentVersions = sqliteTable(
+  'document_versions',
+  {
+    documentId: text('document_id').notNull(),
+    versionNumber: integer('version_number').notNull(),
+    contentRef: text('content_ref').notNull(),
+    authorId: text('author_id').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.documentId, t.versionNumber] })],
+);
 
-export const comments = sqliteTable("comments", {
-  id: text("id").primaryKey(),
-  documentId: text("document_id").notNull(),
-  authorId: text("author_id").notNull(),
-  parentCommentId: text("parent_comment_id"),
-  body: text("body").notNull(),
-  createdAt: text("created_at").notNull(),
-}, (t) => [
-  index("idx_cmt_doc").on(t.documentId),
-  index("idx_cmt_parent").on(t.parentCommentId),
-]);
+export const comments = sqliteTable(
+  'comments',
+  {
+    id: text('id').primaryKey(),
+    documentId: text('document_id').notNull(),
+    authorId: text('author_id').notNull(),
+    parentCommentId: text('parent_comment_id'),
+    body: text('body').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [index('idx_cmt_doc').on(t.documentId), index('idx_cmt_parent').on(t.parentCommentId)],
+);
 
 export const SIM_DOC_SQLITE_DDL = `
 CREATE TABLE IF NOT EXISTS documents (

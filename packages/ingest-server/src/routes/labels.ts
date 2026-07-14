@@ -16,9 +16,9 @@
  * status: "pending" | "confirmed" | "rejected" | "investigating"
  */
 
-import { Hono } from "hono";
-import type { SqlDriver } from "index-meta";
-import { parseJsonColumn, type InsightMetadataJson } from "../db/json-types.js";
+import { Hono } from 'hono';
+import type { SqlDriver } from 'index-meta';
+import { parseJsonColumn, type InsightMetadataJson } from '../db/json-types.js';
 
 export interface LabelsDeps {
   driver?: SqlDriver;
@@ -52,26 +52,32 @@ export function createLabelsRoutes(deps: LabelsDeps) {
   const db = deps.driver;
 
   // GET /v1/labels — 전체 라벨 목록 (kind 필터 가능)
-  app.get("/v1/labels", async (c) => {
-    const kind = c.req.query("kind");
-    const status = c.req.query("status");
-    let query = "SELECT * FROM insight_labels";
+  app.get('/v1/labels', async (c) => {
+    const kind = c.req.query('kind');
+    const status = c.req.query('status');
+    let query = 'SELECT * FROM insight_labels';
     const conditions: string[] = [];
     const params: unknown[] = [];
 
-    if (kind) { conditions.push("kind = ?"); params.push(kind); }
-    if (status) { conditions.push("status = ?"); params.push(status); }
-    if (conditions.length > 0) query += " WHERE " + conditions.join(" AND ");
-    query += " ORDER BY updated_at DESC LIMIT 100";
+    if (kind) {
+      conditions.push('kind = ?');
+      params.push(kind);
+    }
+    if (status) {
+      conditions.push('status = ?');
+      params.push(status);
+    }
+    if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
+    query += ' ORDER BY updated_at DESC LIMIT 100';
 
     const rows = await db.query<LabelRow>(query, params);
     return c.json(rows.map(toLabel));
   });
 
   // GET /v1/labels/summary — kind별 집계 (/:id보다 먼저 매칭)
-  app.get("/v1/labels/summary", async (c) => {
+  app.get('/v1/labels/summary', async (c) => {
     const rows = await db.query<{ kind: string; status: string; cnt: number }>(
-      "SELECT kind, status, COUNT(*) as cnt FROM insight_labels GROUP BY kind, status",
+      'SELECT kind, status, COUNT(*) as cnt FROM insight_labels GROUP BY kind, status',
     );
     const summary: Record<string, Record<string, number>> = {};
     for (const r of rows) {
@@ -82,19 +88,19 @@ export function createLabelsRoutes(deps: LabelsDeps) {
   });
 
   // GET /v1/labels/:id
-  app.get("/v1/labels/:id", async (c) => {
-    const row = await db.queryOne<LabelRow>(
-      "SELECT * FROM insight_labels WHERE id = ?", [c.req.param("id")],
-    );
-    if (!row) return c.json({ error: "Label not found" }, 404);
+  app.get('/v1/labels/:id', async (c) => {
+    const row = await db.queryOne<LabelRow>('SELECT * FROM insight_labels WHERE id = ?', [
+      c.req.param('id'),
+    ]);
+    if (!row) return c.json({ error: 'Label not found' }, 404);
     return c.json(toLabel(row));
   });
 
   // POST /v1/labels — 새 라벨 생성
-  app.post("/v1/labels", async (c) => {
+  app.post('/v1/labels', async (c) => {
     const body = await c.req.json<LabelInput>();
     if (!body.kind || !body.targetId || !body.label) {
-      return c.json({ error: "kind, targetId, label required" }, 400);
+      return c.json({ error: 'kind, targetId, label required' }, 400);
     }
 
     const id = `lbl-${body.kind}-${Date.now().toString(36)}`;
@@ -103,36 +109,57 @@ export function createLabelsRoutes(deps: LabelsDeps) {
     await db.execute(
       `INSERT INTO insight_labels (id, kind, target_id, label, status, notes, metadata, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, body.kind, body.targetId, body.label, body.status ?? "pending",
-       body.notes ?? null, body.metadata ? JSON.stringify(body.metadata) : null, now, now],
+      [
+        id,
+        body.kind,
+        body.targetId,
+        body.label,
+        body.status ?? 'pending',
+        body.notes ?? null,
+        body.metadata ? JSON.stringify(body.metadata) : null,
+        now,
+        now,
+      ],
     );
 
     return c.json({ ok: true, id, kind: body.kind, targetId: body.targetId });
   });
 
   // PATCH /v1/labels/:id — 라벨 업데이트 (status, notes, label 변경)
-  app.patch("/v1/labels/:id", async (c) => {
-    const id = c.req.param("id");
+  app.patch('/v1/labels/:id', async (c) => {
+    const id = c.req.param('id');
     const body = await c.req.json<Partial<LabelInput>>();
     const now = new Date().toISOString();
 
-    const sets: string[] = ["updated_at = ?"];
+    const sets: string[] = ['updated_at = ?'];
     const params: unknown[] = [now];
 
-    if (body.label) { sets.push("label = ?"); params.push(body.label); }
-    if (body.status) { sets.push("status = ?"); params.push(body.status); }
-    if (body.notes !== undefined) { sets.push("notes = ?"); params.push(body.notes); }
-    if (body.metadata) { sets.push("metadata = ?"); params.push(JSON.stringify(body.metadata)); }
+    if (body.label) {
+      sets.push('label = ?');
+      params.push(body.label);
+    }
+    if (body.status) {
+      sets.push('status = ?');
+      params.push(body.status);
+    }
+    if (body.notes !== undefined) {
+      sets.push('notes = ?');
+      params.push(body.notes);
+    }
+    if (body.metadata) {
+      sets.push('metadata = ?');
+      params.push(JSON.stringify(body.metadata));
+    }
 
     params.push(id);
-    await db.execute(`UPDATE insight_labels SET ${sets.join(", ")} WHERE id = ?`, params);
+    await db.execute(`UPDATE insight_labels SET ${sets.join(', ')} WHERE id = ?`, params);
 
     return c.json({ ok: true, id });
   });
 
   // DELETE /v1/labels/:id
-  app.delete("/v1/labels/:id", async (c) => {
-    await db.execute("DELETE FROM insight_labels WHERE id = ?", [c.req.param("id")]);
+  app.delete('/v1/labels/:id', async (c) => {
+    await db.execute('DELETE FROM insight_labels WHERE id = ?', [c.req.param('id')]);
     return c.json({ ok: true });
   });
 

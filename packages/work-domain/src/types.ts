@@ -15,16 +15,9 @@ import type {
   SubDomain,
   QualityGate,
   WorkDomainDef,
-} from "test-types";
+} from 'test-types';
 
-export type {
-  GateKindId,
-  WorkDomainId,
-  QualityGateSpec,
-  SubDomain,
-  QualityGate,
-  WorkDomainDef,
-};
+export type { GateKindId, WorkDomainId, QualityGateSpec, SubDomain, QualityGate, WorkDomainDef };
 
 // ─── 분류 결과 ──────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (budget slice).
@@ -12,25 +12,22 @@ import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core
  *   - 시간은 ISO-8601 TEXT
  */
 export const budgetRequests = sqliteTable(
-  "budget_requests",
+  'budget_requests',
   {
-    id: text("id").primaryKey(),
-    projectId: text("project_id").notNull(),
-    projectDepartmentId: text("project_department_id").notNull().default(""),
-    amount: real("amount").notNull(),
-    requesterId: text("requester_id").notNull(),
-    status: text("status", {
-      enum: ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"],
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    projectDepartmentId: text('project_department_id').notNull().default(''),
+    amount: real('amount').notNull(),
+    requesterId: text('requester_id').notNull(),
+    status: text('status', {
+      enum: ['draft', 'submitted', 'in_review', 'approved', 'rejected', 'revision_requested'],
     }).notNull(),
-    currentStage: integer("current_stage").notNull(),
-    totalStages: integer("total_stages").notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    currentStage: integer('current_stage').notNull(),
+    totalStages: integer('total_stages').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
-  (t) => [
-    index("idx_br_proj").on(t.projectId),
-    index("idx_br_req").on(t.requesterId),
-  ],
+  (t) => [index('idx_br_proj').on(t.projectId), index('idx_br_req').on(t.requesterId)],
 );
 
 export const SIM_APPROVAL_BUDGET_SQLITE_DDL = `

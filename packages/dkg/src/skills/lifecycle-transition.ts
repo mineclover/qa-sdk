@@ -8,13 +8,8 @@
  * DKG 그래프에 evolves-from/supersedes 엣지로 이력을 기록한다.
  */
 
-import type { GraphRegistry } from "../graph-registry.js";
-import type {
-  DecisionNode,
-  ObservationNode,
-  PrefixNode,
-  VersionEventNode,
-} from "../dkg.types.js";
+import type { GraphRegistry } from '../graph-registry.js';
+import type { DecisionNode, ObservationNode, PrefixNode, VersionEventNode } from '../dkg.types.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -41,16 +36,16 @@ export interface LifecycleReport {
 // ═══════════════════════════════════════════════════════════════
 
 const PREFIX_TRANSITIONS: Record<string, readonly string[]> = {
-  draft: ["active"],
-  active: ["deprecated"],
-  deprecated: ["archived"],
+  draft: ['active'],
+  active: ['deprecated'],
+  deprecated: ['archived'],
   archived: [],
 };
 
 const DECISION_TRANSITIONS: Record<string, readonly string[]> = {
-  active: ["superseded", "reversed"],
+  active: ['superseded', 'reversed'],
   superseded: [],
-  reversed: ["active"],
+  reversed: ['active'],
 };
 
 /**
@@ -59,18 +54,24 @@ const DECISION_TRANSITIONS: Record<string, readonly string[]> = {
 export function transitionPrefix(
   graph: GraphRegistry,
   prefixId: string,
-  toLifecycle: NonNullable<PrefixNode["lifecycle"]>,
+  toLifecycle: NonNullable<PrefixNode['lifecycle']>,
   options?: { date?: string; reason?: string; supersededBy?: string },
 ): TransitionResult {
   const node = graph.getNode(prefixId) as PrefixNode | undefined;
-  if (!node || node.kind !== "prefix") {
-    return { nodeId: prefixId, from: "?", to: toLifecycle, success: false, reason: "노드 없음" };
+  if (!node || node.kind !== 'prefix') {
+    return { nodeId: prefixId, from: '?', to: toLifecycle, success: false, reason: '노드 없음' };
   }
 
-  const from = node.lifecycle ?? "active";
+  const from = node.lifecycle ?? 'active';
   const allowed = PREFIX_TRANSITIONS[from];
   if (!allowed?.includes(toLifecycle)) {
-    return { nodeId: prefixId, from, to: toLifecycle, success: false, reason: `${from} → ${toLifecycle} 전이 불가` };
+    return {
+      nodeId: prefixId,
+      from,
+      to: toLifecycle,
+      success: false,
+      reason: `${from} → ${toLifecycle} 전이 불가`,
+    };
   }
 
   // 노드 교체 (immutable)
@@ -78,24 +79,24 @@ export function transitionPrefix(
   graph.replaceNode(updated);
 
   // deprecated 시 supersedes 엣지
-  if (toLifecycle === "deprecated" && options?.supersededBy) {
-    graph.addEdge("supersedes", options.supersededBy, prefixId);
+  if (toLifecycle === 'deprecated' && options?.supersededBy) {
+    graph.addEdge('supersedes', options.supersededBy, prefixId);
   }
 
   // version event 기록
   const evt: VersionEventNode = {
-    kind: "version-event",
+    kind: 'version-event',
     id: `VE-LC-${prefixId}-${toLifecycle}`,
     subjectId: prefixId,
-    subjectKind: "prefix",
+    subjectKind: 'prefix',
     fromVersion: from,
     toVersion: toLifecycle,
     date: options?.date ?? new Date().toISOString().slice(0, 10),
-    changes: [{ kind: "entry-added", detail: `lifecycle: ${from} → ${toLifecycle}` }],
+    changes: [{ kind: 'entry-added', detail: `lifecycle: ${from} → ${toLifecycle}` }],
     impact: options?.reason ?? `${prefixId} ${toLifecycle}`,
   };
   graph.addNode(evt);
-  graph.addEdge("evolves-from", evt.id, prefixId);
+  graph.addEdge('evolves-from', evt.id, prefixId);
 
   return { nodeId: prefixId, from, to: toLifecycle, success: true };
 }
@@ -106,25 +107,31 @@ export function transitionPrefix(
 export function transitionDecision(
   graph: GraphRegistry,
   decisionId: string,
-  toLifecycle: "superseded" | "reversed",
+  toLifecycle: 'superseded' | 'reversed',
   options?: { date?: string; supersededBy?: string; reason?: string },
 ): TransitionResult {
   const node = graph.getNode(decisionId) as DecisionNode | undefined;
-  if (!node || node.kind !== "decision") {
-    return { nodeId: decisionId, from: "?", to: toLifecycle, success: false, reason: "노드 없음" };
+  if (!node || node.kind !== 'decision') {
+    return { nodeId: decisionId, from: '?', to: toLifecycle, success: false, reason: '노드 없음' };
   }
 
   const from = node.lifecycle;
   const allowed = DECISION_TRANSITIONS[from];
   if (!allowed?.includes(toLifecycle)) {
-    return { nodeId: decisionId, from, to: toLifecycle, success: false, reason: `${from} → ${toLifecycle} 전이 불가` };
+    return {
+      nodeId: decisionId,
+      from,
+      to: toLifecycle,
+      success: false,
+      reason: `${from} → ${toLifecycle} 전이 불가`,
+    };
   }
 
   const updated: DecisionNode = { ...node, lifecycle: toLifecycle };
   graph.replaceNode(updated);
 
-  if (toLifecycle === "superseded" && options?.supersededBy) {
-    graph.addEdge("supersedes", options.supersededBy, decisionId);
+  if (toLifecycle === 'superseded' && options?.supersededBy) {
+    graph.addEdge('supersedes', options.supersededBy, decisionId);
   }
 
   return { nodeId: decisionId, from, to: toLifecycle, success: true };
@@ -136,17 +143,23 @@ export function transitionDecision(
 export function resolveObservation(
   graph: GraphRegistry,
   observationId: string,
-  resolution: { decisionId: string; outcome: "accepted" | "deferred" | "rejected"; note?: string },
+  resolution: { decisionId: string; outcome: 'accepted' | 'deferred' | 'rejected'; note?: string },
 ): TransitionResult {
   const node = graph.getNode(observationId) as ObservationNode | undefined;
-  if (!node || node.kind !== "observation") {
-    return { nodeId: observationId, from: "open", to: resolution.outcome, success: false, reason: "노드 없음" };
+  if (!node || node.kind !== 'observation') {
+    return {
+      nodeId: observationId,
+      from: 'open',
+      to: resolution.outcome,
+      success: false,
+      reason: '노드 없음',
+    };
   }
 
   const updated: ObservationNode = { ...node, resolution };
   graph.replaceNode(updated);
 
-  return { nodeId: observationId, from: "open", to: resolution.outcome, success: true };
+  return { nodeId: observationId, from: 'open', to: resolution.outcome, success: true };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -157,36 +170,36 @@ export function resolveObservation(
  * 전체 DKG 그래프의 lifecycle 상태를 요약한다.
  */
 export function generateLifecycleReport(graph: GraphRegistry): LifecycleReport {
-  const prefixes = graph.getNodesByKind("prefix").map(p => ({
+  const prefixes = graph.getNodesByKind('prefix').map((p) => ({
     id: p.id,
-    lifecycle: p.lifecycle ?? "active",
+    lifecycle: p.lifecycle ?? 'active',
     category: p.category,
   }));
 
-  const dslBundles = graph.getNodesByKind("dsl-bundle").map(d => ({
+  const dslBundles = graph.getNodesByKind('dsl-bundle').map((d) => ({
     id: d.id,
-    lifecycle: d.lifecycle ?? "active",
+    lifecycle: d.lifecycle ?? 'active',
   }));
 
-  const decisions = graph.getNodesByKind("decision").map(d => ({
+  const decisions = graph.getNodesByKind('decision').map((d) => ({
     id: d.id,
     lifecycle: d.lifecycle,
     title: d.title,
   }));
 
-  const observations = graph.getNodesByKind("observation").map(o => ({
+  const observations = graph.getNodesByKind('observation').map((o) => ({
     id: o.id,
     resolved: !!o.resolution,
     outcome: o.resolution?.outcome,
   }));
 
-  const activeP = prefixes.filter(p => p.lifecycle === "active").length;
-  const deprecatedP = prefixes.filter(p => p.lifecycle === "deprecated").length;
-  const activeDsl = dslBundles.filter(d => d.lifecycle === "active").length;
-  const activeDec = decisions.filter(d => d.lifecycle === "active").length;
-  const supersededDec = decisions.filter(d => d.lifecycle === "superseded").length;
-  const openObs = observations.filter(o => !o.resolved).length;
-  const resolvedObs = observations.filter(o => o.resolved).length;
+  const activeP = prefixes.filter((p) => p.lifecycle === 'active').length;
+  const deprecatedP = prefixes.filter((p) => p.lifecycle === 'deprecated').length;
+  const activeDsl = dslBundles.filter((d) => d.lifecycle === 'active').length;
+  const activeDec = decisions.filter((d) => d.lifecycle === 'active').length;
+  const supersededDec = decisions.filter((d) => d.lifecycle === 'superseded').length;
+  const openObs = observations.filter((o) => !o.resolved).length;
+  const resolvedObs = observations.filter((o) => o.resolved).length;
 
   return {
     prefixes,
@@ -198,6 +211,6 @@ export function generateLifecycleReport(graph: GraphRegistry): LifecycleReport {
       `DSL: ${activeDsl} active`,
       `Decision: ${activeDec} active, ${supersededDec} superseded`,
       `Observation: ${openObs} open, ${resolvedObs} resolved`,
-    ].join(" | "),
+    ].join(' | '),
   };
 }

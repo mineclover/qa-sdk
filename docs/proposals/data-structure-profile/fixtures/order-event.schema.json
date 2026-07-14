@@ -51,12 +51,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "line_no",
-          "sku",
-          "quantity",
-          "unit_price"
-        ],
+        "required": ["line_no", "sku", "quantity", "unit_price"],
         "properties": {
           "line_no": {
             "type": "integer",

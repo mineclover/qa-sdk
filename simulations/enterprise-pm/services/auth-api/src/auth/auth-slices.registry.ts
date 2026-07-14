@@ -11,12 +11,12 @@
 // - authenticate 는 command-only 슬라이스 (entity 없음)
 // - bitmap 은 캐시/조회 슬라이스
 
-import { UserSliceModule } from "./user/user.module.js"; // Phase 2
-import { RoleSliceModule } from "./role/role.module.js"; // Phase 2
-import { RoleAssignmentSliceModule } from "./role-assignment/role-assignment.module.js"; // Phase 2
-import { DepartmentSliceModule } from "./department/department.module.js"; // Phase 2
-import { AuthenticateSliceModule } from "./authenticate/authenticate.module.js"; // Phase 2
-import { BitmapSliceModule } from "./bitmap/bitmap.module.js"; // Phase 2
+import { UserSliceModule } from './user/user.module.js'; // Phase 2
+import { RoleSliceModule } from './role/role.module.js'; // Phase 2
+import { RoleAssignmentSliceModule } from './role-assignment/role-assignment.module.js'; // Phase 2
+import { DepartmentSliceModule } from './department/department.module.js'; // Phase 2
+import { AuthenticateSliceModule } from './authenticate/authenticate.module.js'; // Phase 2
+import { BitmapSliceModule } from './bitmap/bitmap.module.js'; // Phase 2
 
 /**
  * auth 도메인의 슬라이스 모듈 목록. Phase 2 에이전트가 자기 슬라이스의

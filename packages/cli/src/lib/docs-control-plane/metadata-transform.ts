@@ -1,24 +1,24 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import {
   extractFrontmatter,
   extractSourceEntriesFromYaml,
   parseDocument,
   parseYaml,
-} from "definition-catalog";
+} from 'definition-catalog';
 
-import { DEFINITION_MARKDOWN_ADAPTER_ID } from "./adapters/definition-markdown.js";
+import { DEFINITION_MARKDOWN_ADAPTER_ID } from './adapters/definition-markdown.js';
 import type {
   DocumentChange,
   DocumentDiagnostic,
   DocumentEnvelope,
   DocumentMetadata,
-} from "doc-envelope";
+} from 'doc-envelope';
 
 export interface LoadedMetadataTransformRule {
   readonly source: string;
@@ -26,8 +26,8 @@ export interface LoadedMetadataTransformRule {
 }
 
 export interface MetadataTransformPreview {
-  readonly command: "docs transform metadata";
-  readonly mode: "dry-run";
+  readonly command: 'docs transform metadata';
+  readonly mode: 'dry-run';
   readonly dryRunDefaulted: boolean;
   readonly applySupported: false;
   readonly ruleSource: string;
@@ -117,31 +117,40 @@ interface PartialLinkPreview {
   readonly type?: string;
 }
 
-const VALID_TOP_LEVEL_RULE_KEYS = new Set(["select", "match", "set", "tags", "links", "sources"]);
-const VALID_SELECTOR_KEYS = new Set(["ids", "stableIds", "defIds", "paths", "familyIds", "kinds", "metadata"]);
-const VALID_SET_KEYS = new Set(["lifecycle", "level", "svc", "sources"]);
-const VALID_LIFECYCLES = new Set(["draft", "review", "approved", "deprecated", "archived"]);
-const VALID_LEVELS = new Set(["group", "module", "leaf"]);
-const VALID_LINK_TYPES = new Set([
-  "depends_on",
-  "implements",
-  "refines",
-  "constrains",
-  "traces_to",
-  "contains",
-  "evolves_from",
-  "supersedes",
+const VALID_TOP_LEVEL_RULE_KEYS = new Set(['select', 'match', 'set', 'tags', 'links', 'sources']);
+const VALID_SELECTOR_KEYS = new Set([
+  'ids',
+  'stableIds',
+  'defIds',
+  'paths',
+  'familyIds',
+  'kinds',
+  'metadata',
 ]);
-const FORBIDDEN_ID_FIELDS = new Set(["id", "def.id", "defId"]);
+const VALID_SET_KEYS = new Set(['lifecycle', 'level', 'svc', 'sources']);
+const VALID_LIFECYCLES = new Set(['draft', 'review', 'approved', 'deprecated', 'archived']);
+const VALID_LEVELS = new Set(['group', 'module', 'leaf']);
+const VALID_LINK_TYPES = new Set([
+  'depends_on',
+  'implements',
+  'refines',
+  'constrains',
+  'traces_to',
+  'contains',
+  'evolves_from',
+  'supersedes',
+]);
+const FORBIDDEN_ID_FIELDS = new Set(['id', 'def.id', 'defId']);
 
 export function unsupportedMetadataTransformApplyError(): StructuredDocsError {
   return {
     error: {
-      code: "unsupported-operation",
-      operation: "docs.transform.metadata.apply",
-      message: "`qa-sdk docs transform metadata --apply` is not supported in this PRD.",
-      laterPrd: "metadata-transform-apply",
-      remediation: "Run the command without --apply to preview the change set. Apply support is deferred to a later apply PRD.",
+      code: 'unsupported-operation',
+      operation: 'docs.transform.metadata.apply',
+      message: '`qa-sdk docs transform metadata --apply` is not supported in this PRD.',
+      laterPrd: 'metadata-transform-apply',
+      remediation:
+        'Run the command without --apply to preview the change set. Apply support is deferred to a later apply PRD.',
     },
   };
 }
@@ -151,38 +160,36 @@ export async function loadMetadataTransformRule(
   rawRule: string,
 ): Promise<LoadedMetadataTransformRule> {
   const trimmed = rawRule.trim();
-  if (!trimmed || trimmed === "true") {
-    throw new Error("docs transform metadata requires --rule <json-file|inline-json>");
+  if (!trimmed || trimmed === 'true') {
+    throw new Error('docs transform metadata requires --rule <json-file|inline-json>');
   }
 
-  if (trimmed.startsWith("{")) {
+  if (trimmed.startsWith('{')) {
     return {
-      source: "inline-json",
-      rule: parseRuleJson(trimmed, "inline-json"),
+      source: 'inline-json',
+      rule: parseRuleJson(trimmed, 'inline-json'),
     };
   }
 
-  const path = trimmed.startsWith("/") ? trimmed : join(rootDir, trimmed);
+  const path = trimmed.startsWith('/') ? trimmed : join(rootDir, trimmed);
   if (!existsSync(path)) {
     throw new Error(`metadata transform rule file not found: ${trimmed}`);
   }
 
-  const content = await readFile(path, "utf8");
+  const content = await readFile(path, 'utf8');
   return {
     source: trimmed,
     rule: parseRuleJson(content, trimmed),
   };
 }
 
-export async function previewMetadataTransform(
-  options: {
-    readonly rootDir: string;
-    readonly documents: readonly DocumentEnvelope[];
-    readonly rule: Record<string, unknown>;
-    readonly ruleSource: string;
-    readonly dryRunDefaulted: boolean;
-  },
-): Promise<MetadataTransformPreview> {
+export async function previewMetadataTransform(options: {
+  readonly rootDir: string;
+  readonly documents: readonly DocumentEnvelope[];
+  readonly rule: Record<string, unknown>;
+  readonly ruleSource: string;
+  readonly dryRunDefaulted: boolean;
+}): Promise<MetadataTransformPreview> {
   const diagnostics: DocumentDiagnostic[] = [];
   const normalized = normalizeRule(options.rule, diagnostics);
   if (!normalized || hasErrorDiagnostic(diagnostics)) {
@@ -194,23 +201,26 @@ export async function previewMetadataTransform(
 
   for (const document of matched) {
     if (!isDefinitionMarkdown(document)) {
-      diagnostics.push(diagnostic({
-        code: "metadata-transform-unsupported-source",
-        severity: "error",
-        message: "metadata transforms only preview definition markdown frontmatter; PRD JSON and other source schemas are refused",
-        path: document.path,
-        pointer: "metadata-transform.select",
-        metadata: {
-          adapterId: document.adapterId,
-          kind: document.kind,
-          stableId: document.stableId,
-        },
-      }));
+      diagnostics.push(
+        diagnostic({
+          code: 'metadata-transform-unsupported-source',
+          severity: 'error',
+          message:
+            'metadata transforms only preview definition markdown frontmatter; PRD JSON and other source schemas are refused',
+          path: document.path,
+          pointer: 'metadata-transform.select',
+          metadata: {
+            adapterId: document.adapterId,
+            kind: document.kind,
+            stableId: document.stableId,
+          },
+        }),
+      );
       continue;
     }
 
     const changeSet = await previewDefinitionDocument(options.rootDir, document, normalized);
-    if (changeSet.diagnostics.some((item) => item.severity === "error")) {
+    if (changeSet.diagnostics.some((item) => item.severity === 'error')) {
       diagnostics.push(...changeSet.diagnostics);
       continue;
     }
@@ -234,17 +244,19 @@ function normalizeRule(
 ): NormalizedRule | null {
   for (const key of Object.keys(raw)) {
     if (!VALID_TOP_LEVEL_RULE_KEYS.has(key)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-unsupported-field",
-        `unsupported metadata transform rule key: ${key}`,
-        { key },
-      ));
+      diagnostics.push(
+        ruleDiagnostic(
+          'metadata-transform-unsupported-field',
+          `unsupported metadata transform rule key: ${key}`,
+          { key },
+        ),
+      );
     }
   }
 
   const selector = normalizeSelector(raw.select ?? raw.match, diagnostics);
   const set = normalizeSet(raw.set, diagnostics);
-  const tags = normalizeStringOps(raw.tags, "tags", diagnostics);
+  const tags = normalizeStringOps(raw.tags, 'tags', diagnostics);
   const links = normalizeLinkOps(raw.links, diagnostics);
   const sources = normalizeSources(raw.sources, diagnostics);
 
@@ -263,31 +275,33 @@ function normalizeSelector(
 ): MetadataTransformSelector | null {
   if (value === undefined) return null;
   if (!isRecord(value)) {
-    diagnostics.push(ruleDiagnostic(
-      "metadata-transform-invalid-selector",
-      "select must be a JSON object",
-      {},
-    ));
+    diagnostics.push(
+      ruleDiagnostic('metadata-transform-invalid-selector', 'select must be a JSON object', {}),
+    );
     return null;
   }
 
   for (const key of Object.keys(value)) {
     if (!VALID_SELECTOR_KEYS.has(key)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-unsupported-selector",
-        `unsupported metadata transform selector key: ${key}`,
-        { key },
-      ));
+      diagnostics.push(
+        ruleDiagnostic(
+          'metadata-transform-unsupported-selector',
+          `unsupported metadata transform selector key: ${key}`,
+          { key },
+        ),
+      );
     }
   }
 
   const metadata = isRecord(value.metadata) ? value.metadata : undefined;
   if (value.metadata !== undefined && !metadata) {
-    diagnostics.push(ruleDiagnostic(
-      "metadata-transform-invalid-selector",
-      "select.metadata must be a JSON object",
-      { key: "metadata" },
-    ));
+    diagnostics.push(
+      ruleDiagnostic(
+        'metadata-transform-invalid-selector',
+        'select.metadata must be a JSON object',
+        { key: 'metadata' },
+      ),
+    );
   }
 
   return {
@@ -301,17 +315,12 @@ function normalizeSelector(
   };
 }
 
-function normalizeSet(
-  value: unknown,
-  diagnostics: DocumentDiagnostic[],
-): NormalizedRule["set"] {
+function normalizeSet(value: unknown, diagnostics: DocumentDiagnostic[]): NormalizedRule['set'] {
   if (value === undefined) return {};
   if (!isRecord(value)) {
-    diagnostics.push(ruleDiagnostic(
-      "metadata-transform-invalid-set",
-      "set must be a JSON object",
-      {},
-    ));
+    diagnostics.push(
+      ruleDiagnostic('metadata-transform-invalid-set', 'set must be a JSON object', {}),
+    );
     return {};
   }
 
@@ -324,73 +333,83 @@ function normalizeSet(
 
   for (const [key, rawValue] of Object.entries(value)) {
     if (FORBIDDEN_ID_FIELDS.has(key)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-protected-field",
-        "metadata transforms must not remove or replace def.id",
-        { key },
-      ));
+      diagnostics.push(
+        ruleDiagnostic(
+          'metadata-transform-protected-field',
+          'metadata transforms must not remove or replace def.id',
+          { key },
+        ),
+      );
       continue;
     }
     if (!VALID_SET_KEYS.has(key)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-unsupported-field",
-        `unsupported metadata transform set field: ${key}`,
-        { key },
-      ));
+      diagnostics.push(
+        ruleDiagnostic(
+          'metadata-transform-unsupported-field',
+          `unsupported metadata transform set field: ${key}`,
+          { key },
+        ),
+      );
       continue;
     }
 
-    if (key === "lifecycle") {
+    if (key === 'lifecycle') {
       const lifecycle = requiredString(rawValue);
       if (!lifecycle || !VALID_LIFECYCLES.has(lifecycle)) {
-        diagnostics.push(ruleDiagnostic(
-          "metadata-transform-invalid-value",
-          `invalid lifecycle value: ${String(rawValue)}`,
-          { key, value: rawValue },
-        ));
+        diagnostics.push(
+          ruleDiagnostic(
+            'metadata-transform-invalid-value',
+            `invalid lifecycle value: ${String(rawValue)}`,
+            { key, value: rawValue },
+          ),
+        );
         continue;
       }
       result.lifecycle = lifecycle;
     }
 
-    if (key === "level") {
+    if (key === 'level') {
       const level = requiredString(rawValue);
       if (!level || !VALID_LEVELS.has(level)) {
-        diagnostics.push(ruleDiagnostic(
-          "metadata-transform-invalid-value",
-          `invalid level value: ${String(rawValue)}`,
-          { key, value: rawValue },
-        ));
+        diagnostics.push(
+          ruleDiagnostic(
+            'metadata-transform-invalid-value',
+            `invalid level value: ${String(rawValue)}`,
+            { key, value: rawValue },
+          ),
+        );
         continue;
       }
       result.level = level;
     }
 
-    if (key === "svc") {
+    if (key === 'svc') {
       if (rawValue === null) {
         result.svc = null;
         continue;
       }
       const svc = requiredString(rawValue);
       if (!svc) {
-        diagnostics.push(ruleDiagnostic(
-          "metadata-transform-invalid-value",
-          "svc must be a non-empty string or null",
-          { key, value: rawValue },
-        ));
+        diagnostics.push(
+          ruleDiagnostic(
+            'metadata-transform-invalid-value',
+            'svc must be a non-empty string or null',
+            { key, value: rawValue },
+          ),
+        );
         continue;
       }
       result.svc = svc;
     }
 
-    if (key === "sources") {
+    if (key === 'sources') {
       const sources = stringList(rawValue);
       if (!sources) {
-        diagnostics.push(ruleDiagnostic(
-          "metadata-transform-invalid-value",
-          "set.sources must be a string array",
-          { key },
-        ));
+        diagnostics.push(
+          ruleDiagnostic('metadata-transform-invalid-value', 'set.sources must be a string array', {
+            key,
+          }),
+        );
         continue;
       }
       result.sources = sources;
@@ -408,11 +427,13 @@ function normalizeStringOps(
   if (value === undefined) return { add: [], remove: [] };
   if (Array.isArray(value)) return { add: stringList(value) ?? [], remove: [] };
   if (!isRecord(value)) {
-    diagnostics.push(ruleDiagnostic(
-      "metadata-transform-invalid-value",
-      `${field} must be an array or add/remove object`,
-      { field },
-    ));
+    diagnostics.push(
+      ruleDiagnostic(
+        'metadata-transform-invalid-value',
+        `${field} must be an array or add/remove object`,
+        { field },
+      ),
+    );
     return { add: [], remove: [] };
   }
 
@@ -425,15 +446,17 @@ function normalizeStringOps(
 function normalizeSources(
   value: unknown,
   diagnostics: DocumentDiagnostic[],
-): NormalizedRule["sources"] {
+): NormalizedRule['sources'] {
   if (value === undefined) return { add: [], remove: [] };
   if (Array.isArray(value)) return { set: stringList(value) ?? [], add: [], remove: [] };
   if (!isRecord(value)) {
-    diagnostics.push(ruleDiagnostic(
-      "metadata-transform-invalid-value",
-      "sources must be an array or set/add/remove object",
-      { field: "sources" },
-    ));
+    diagnostics.push(
+      ruleDiagnostic(
+        'metadata-transform-invalid-value',
+        'sources must be an array or set/add/remove object',
+        { field: 'sources' },
+      ),
+    );
     return { add: [], remove: [] };
   }
 
@@ -447,14 +470,14 @@ function normalizeSources(
 function normalizeLinkOps(
   value: unknown,
   diagnostics: DocumentDiagnostic[],
-): NormalizedRule["links"] {
+): NormalizedRule['links'] {
   if (value === undefined) return { add: [], remove: [] };
   if (!isRecord(value)) {
-    diagnostics.push(ruleDiagnostic(
-      "metadata-transform-invalid-value",
-      "links must be an add/remove object",
-      { field: "links" },
-    ));
+    diagnostics.push(
+      ruleDiagnostic('metadata-transform-invalid-value', 'links must be an add/remove object', {
+        field: 'links',
+      }),
+    );
     return { add: [], remove: [] };
   }
 
@@ -473,29 +496,31 @@ function linkList(
   const links: LinkPreview[] = [];
   for (const item of items) {
     if (!isRecord(item)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-invalid-link",
-        "link transform entries must be objects",
-        { item },
-      ));
+      diagnostics.push(
+        ruleDiagnostic(
+          'metadata-transform-invalid-link',
+          'link transform entries must be objects',
+          { item },
+        ),
+      );
       continue;
     }
     const target = requiredString(item.target);
     const type = requiredString(item.type);
     if (!target || (requireType && !type)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-invalid-link",
-        "link add entries require target and type",
-        { item },
-      ));
+      diagnostics.push(
+        ruleDiagnostic(
+          'metadata-transform-invalid-link',
+          'link add entries require target and type',
+          { item },
+        ),
+      );
       continue;
     }
     if (type && !VALID_LINK_TYPES.has(type)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-invalid-link",
-        `invalid link type: ${type}`,
-        { item },
-      ));
+      diagnostics.push(
+        ruleDiagnostic('metadata-transform-invalid-link', `invalid link type: ${type}`, { item }),
+      );
       continue;
     }
     if (target && type) links.push({ target, type });
@@ -511,29 +536,27 @@ function partialLinkList(
   const links: PartialLinkPreview[] = [];
   for (const item of items) {
     if (!isRecord(item)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-invalid-link",
-        "link remove entries must be objects",
-        { item },
-      ));
+      diagnostics.push(
+        ruleDiagnostic('metadata-transform-invalid-link', 'link remove entries must be objects', {
+          item,
+        }),
+      );
       continue;
     }
     const target = requiredString(item.target);
     const type = requiredString(item.type);
     if (!target) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-invalid-link",
-        "link remove entries require target",
-        { item },
-      ));
+      diagnostics.push(
+        ruleDiagnostic('metadata-transform-invalid-link', 'link remove entries require target', {
+          item,
+        }),
+      );
       continue;
     }
     if (type && !VALID_LINK_TYPES.has(type)) {
-      diagnostics.push(ruleDiagnostic(
-        "metadata-transform-invalid-link",
-        `invalid link type: ${type}`,
-        { item },
-      ));
+      diagnostics.push(
+        ruleDiagnostic('metadata-transform-invalid-link', `invalid link type: ${type}`, { item }),
+      );
       continue;
     }
     links.push({
@@ -550,34 +573,38 @@ async function previewDefinitionDocument(
   rule: NormalizedRule,
 ): Promise<MetadataTransformChangeSet> {
   const path = document.path;
-  const fullPath = path.startsWith("/") ? path : join(rootDir, path);
+  const fullPath = path.startsWith('/') ? path : join(rootDir, path);
   const diagnostics: DocumentDiagnostic[] = [];
 
-  let content = "";
+  let content = '';
   try {
-    content = await readFile(fullPath, "utf8");
+    content = await readFile(fullPath, 'utf8');
   } catch (error) {
-    diagnostics.push(diagnostic({
-      code: "metadata-transform-read-failed",
-      severity: "error",
-      message: error instanceof Error ? error.message : String(error),
-      path,
-      pointer: "frontmatter",
-      metadata: {},
-    }));
+    diagnostics.push(
+      diagnostic({
+        code: 'metadata-transform-read-failed',
+        severity: 'error',
+        message: error instanceof Error ? error.message : String(error),
+        path,
+        pointer: 'frontmatter',
+        metadata: {},
+      }),
+    );
     return emptyChangeSet(document, diagnostics);
   }
 
   const frontmatter = extractFrontmatter(content);
   if (!frontmatter) {
-    diagnostics.push(diagnostic({
-      code: "metadata-transform-frontmatter-missing",
-      severity: "error",
-      message: "definition markdown file has no frontmatter",
-      path,
-      pointer: "frontmatter",
-      metadata: {},
-    }));
+    diagnostics.push(
+      diagnostic({
+        code: 'metadata-transform-frontmatter-missing',
+        severity: 'error',
+        message: 'definition markdown file has no frontmatter',
+        path,
+        pointer: 'frontmatter',
+        metadata: {},
+      }),
+    );
     return emptyChangeSet(document, diagnostics);
   }
 
@@ -585,31 +612,38 @@ async function previewDefinitionDocument(
   try {
     parsedDocument = parseDocument(content, fullPath);
   } catch (error) {
-    diagnostics.push(diagnostic({
-      code: "metadata-transform-frontmatter-invalid",
-      severity: "error",
-      message: error instanceof Error ? error.message : String(error),
-      path,
-      pointer: "frontmatter",
-      metadata: {},
-    }));
+    diagnostics.push(
+      diagnostic({
+        code: 'metadata-transform-frontmatter-invalid',
+        severity: 'error',
+        message: error instanceof Error ? error.message : String(error),
+        path,
+        pointer: 'frontmatter',
+        metadata: {},
+      }),
+    );
     return emptyChangeSet(document, diagnostics);
   }
 
   const yamlObject = parseYaml(frontmatter.yaml);
   if (!isRecord(yamlObject.def)) {
-    diagnostics.push(diagnostic({
-      code: "metadata-transform-def-missing",
-      severity: "error",
-      message: "definition markdown file has no def frontmatter object",
-      path,
-      pointer: "frontmatter.def",
-      metadata: {},
-    }));
+    diagnostics.push(
+      diagnostic({
+        code: 'metadata-transform-def-missing',
+        severity: 'error',
+        message: 'definition markdown file has no def frontmatter object',
+        path,
+        pointer: 'frontmatter.def',
+        metadata: {},
+      }),
+    );
     return emptyChangeSet(document, diagnostics);
   }
 
-  const before = metadataPreview(parsedDocument.def, extractSourceEntriesFromYaml(frontmatter.yaml));
+  const before = metadataPreview(
+    parsedDocument.def,
+    extractSourceEntriesFromYaml(frontmatter.yaml),
+  );
   const nextYaml = cloneRecord(yamlObject);
   const nextDef = cloneRecord(yamlObject.def);
   nextYaml.def = nextDef;
@@ -619,15 +653,17 @@ async function previewDefinitionDocument(
   applyLinks(nextDef, rule.links);
   applySources(nextYaml, before.sources, rule);
 
-  if (!isRecord(nextYaml.def) || typeof nextYaml.def.id !== "string" || !nextYaml.def.id.trim()) {
-    diagnostics.push(diagnostic({
-      code: "metadata-transform-protected-field",
-      severity: "error",
-      message: "metadata transforms must not remove def.id",
-      path,
-      pointer: "frontmatter.def.id",
-      metadata: {},
-    }));
+  if (!isRecord(nextYaml.def) || typeof nextYaml.def.id !== 'string' || !nextYaml.def.id.trim()) {
+    diagnostics.push(
+      diagnostic({
+        code: 'metadata-transform-protected-field',
+        severity: 'error',
+        message: 'metadata transforms must not remove def.id',
+        path,
+        pointer: 'frontmatter.def.id',
+        metadata: {},
+      }),
+    );
     return emptyChangeSet(document, diagnostics);
   }
 
@@ -636,14 +672,16 @@ async function previewDefinitionDocument(
   try {
     projectedDocument = parseDocument(`---\n${projectedYaml}\n---\n${frontmatter.body}`, fullPath);
   } catch (error) {
-    diagnostics.push(diagnostic({
-      code: "metadata-transform-projected-frontmatter-invalid",
-      severity: "error",
-      message: error instanceof Error ? error.message : String(error),
-      path,
-      pointer: "frontmatter",
-      metadata: {},
-    }));
+    diagnostics.push(
+      diagnostic({
+        code: 'metadata-transform-projected-frontmatter-invalid',
+        severity: 'error',
+        message: error instanceof Error ? error.message : String(error),
+        path,
+        pointer: 'frontmatter',
+        metadata: {},
+      }),
+    );
     return emptyChangeSet(document, diagnostics);
   }
 
@@ -655,16 +693,15 @@ async function previewDefinitionDocument(
     stableId: document.stableId,
     ...(document.familyId ? { familyId: document.familyId } : {}),
     path,
-    summary: changes.length === 0
-      ? "no metadata changes"
-      : `${changes.length} metadata change(s) planned`,
+    summary:
+      changes.length === 0 ? 'no metadata changes' : `${changes.length} metadata change(s) planned`,
     before,
     after,
     changes,
     diagnostics,
     metadata: {
       dryRun: true,
-      sourceSchema: "definition-frontmatter",
+      sourceSchema: 'definition-frontmatter',
       before,
       after,
       projectedFrontmatter: projectedYaml,
@@ -672,13 +709,10 @@ async function previewDefinitionDocument(
   };
 }
 
-function applySet(
-  def: Record<string, unknown>,
-  set: NormalizedRule["set"],
-): void {
+function applySet(def: Record<string, unknown>, set: NormalizedRule['set']): void {
   if (set.lifecycle !== undefined) def.lifecycle = set.lifecycle;
   if (set.level !== undefined) def.level = set.level;
-  if ("svc" in set) {
+  if ('svc' in set) {
     if (set.svc === null) delete def.svc;
     else if (set.svc !== undefined) def.svc = set.svc;
   }
@@ -687,7 +721,7 @@ function applySet(
 function applyTags(def: Record<string, unknown>, tags: AddRemoveStrings): void {
   if (tags.add.length === 0 && tags.remove.length === 0) return;
   const current = Array.isArray(def.tags)
-    ? def.tags.filter((item): item is string => typeof item === "string")
+    ? def.tags.filter((item): item is string => typeof item === 'string')
     : [];
   const removed = current.filter((tag) => !tags.remove.includes(tag));
   const next = uniqueStrings([...removed, ...tags.add]);
@@ -695,21 +729,21 @@ function applyTags(def: Record<string, unknown>, tags: AddRemoveStrings): void {
   else delete def.tags;
 }
 
-function applyLinks(
-  def: Record<string, unknown>,
-  ops: NormalizedRule["links"],
-): void {
+function applyLinks(def: Record<string, unknown>, ops: NormalizedRule['links']): void {
   if (ops.add.length === 0 && ops.remove.length === 0) return;
   const current = Array.isArray(def.links)
     ? def.links.flatMap((item): LinkPreview[] => {
-      if (!isRecord(item)) return [];
-      const target = requiredString(item.target);
-      const type = requiredString(item.type);
-      return target && type ? [{ target, type }] : [];
-    })
+        if (!isRecord(item)) return [];
+        const target = requiredString(item.target);
+        const type = requiredString(item.type);
+        return target && type ? [{ target, type }] : [];
+      })
     : [];
-  const removed = current.filter((link) =>
-    !ops.remove.some((item) => item.target === link.target && (!item.type || item.type === link.type))
+  const removed = current.filter(
+    (link) =>
+      !ops.remove.some(
+        (item) => item.target === link.target && (!item.type || item.type === link.type),
+      ),
   );
   const next = uniqueLinks([...removed, ...ops.add]);
   if (next.length > 0) def.links = next.map((link) => ({ target: link.target, type: link.type }));
@@ -723,9 +757,9 @@ function applySources(
 ): void {
   const setSources = rule.set.sources ?? rule.sources.set;
   if (
-    setSources === undefined
-    && rule.sources.add.length === 0
-    && rule.sources.remove.length === 0
+    setSources === undefined &&
+    rule.sources.add.length === 0 &&
+    rule.sources.remove.length === 0
   ) {
     return;
   }
@@ -750,15 +784,14 @@ function selectDocuments(
   return documents.filter((document) => matchesSelector(document, selector));
 }
 
-function matchesSelector(
-  document: DocumentEnvelope,
-  selector: MetadataTransformSelector,
-): boolean {
-  if (selector.ids && !selector.ids.some((id) => documentIdentityValues(document).includes(id))) return false;
+function matchesSelector(document: DocumentEnvelope, selector: MetadataTransformSelector): boolean {
+  if (selector.ids && !selector.ids.some((id) => documentIdentityValues(document).includes(id)))
+    return false;
   if (selector.stableIds && !selector.stableIds.includes(document.stableId)) return false;
-  if (selector.defIds && !selector.defIds.includes(String(document.metadata.defId ?? ""))) return false;
+  if (selector.defIds && !selector.defIds.includes(String(document.metadata.defId ?? '')))
+    return false;
   if (selector.paths && !selector.paths.includes(document.path)) return false;
-  if (selector.familyIds && !selector.familyIds.includes(document.familyId ?? "")) return false;
+  if (selector.familyIds && !selector.familyIds.includes(document.familyId ?? '')) return false;
   if (selector.kinds && !selector.kinds.includes(document.kind)) return false;
   if (selector.metadata) {
     for (const [key, expected] of Object.entries(selector.metadata)) {
@@ -780,12 +813,14 @@ function documentIdentityValues(document: DocumentEnvelope): readonly string[] {
     document.path,
     stringValue(document.metadata.defId),
     stringValue(document.metadata.sourcePath),
-  ].filter((value): value is string => typeof value === "string" && value.length > 0);
+  ].filter((value): value is string => typeof value === 'string' && value.length > 0);
 }
 
 function isDefinitionMarkdown(document: DocumentEnvelope): boolean {
-  return document.adapterId === DEFINITION_MARKDOWN_ADAPTER_ID
-    && document.rawSource.sourceSchema === "definition-frontmatter";
+  return (
+    document.adapterId === DEFINITION_MARKDOWN_ADAPTER_ID &&
+    document.rawSource.sourceSchema === 'definition-frontmatter'
+  );
 }
 
 function metadataPreview(
@@ -815,7 +850,7 @@ function sourceEntriesFromYamlObject(yamlObject: Record<string, unknown>): reado
   const source = stringValue(yamlObject.source);
   if (source) values.push(source);
   if (Array.isArray(yamlObject.sources)) {
-    values.push(...yamlObject.sources.filter((item): item is string => typeof item === "string"));
+    values.push(...yamlObject.sources.filter((item): item is string => typeof item === 'string'));
   }
   return uniqueStrings(values);
 }
@@ -826,7 +861,7 @@ function metadataChanges(
   after: MetadataPreview,
 ): readonly DocumentChange[] {
   const changes: DocumentChange[] = [];
-  for (const field of ["lifecycle", "level", "svc", "tags", "links", "sources"] as const) {
+  for (const field of ['lifecycle', 'level', 'svc', 'tags', 'links', 'sources'] as const) {
     const beforeValue = before[field];
     const afterValue = after[field];
     if (JSON.stringify(beforeValue) === JSON.stringify(afterValue)) continue;
@@ -835,8 +870,8 @@ function metadataChanges(
       description: `${field}: ${formatPreviewValue(beforeValue)} -> ${formatPreviewValue(afterValue)}`,
       rawSource: {
         path,
-        pointer: field === "sources" ? "frontmatter.sources" : `frontmatter.def.${field}`,
-        sourceSchema: "definition-frontmatter",
+        pointer: field === 'sources' ? 'frontmatter.sources' : `frontmatter.def.${field}`,
+        sourceSchema: 'definition-frontmatter',
         metadata: {},
       },
       metadata: {
@@ -850,7 +885,7 @@ function metadataChanges(
 }
 
 function formatPreviewValue(value: unknown): string {
-  if (value === undefined) return "(unset)";
+  if (value === undefined) return '(unset)';
   return JSON.stringify(value);
 }
 
@@ -869,7 +904,7 @@ function emptyChangeSet(
     stableId: document.stableId,
     ...(document.familyId ? { familyId: document.familyId } : {}),
     path: document.path,
-    summary: "metadata transform preview failed",
+    summary: 'metadata transform preview failed',
     before: emptyPreview,
     after: emptyPreview,
     changes: [],
@@ -888,8 +923,8 @@ function buildPreview(
   diagnostics: readonly DocumentDiagnostic[],
 ): MetadataTransformPreview {
   return {
-    command: "docs transform metadata",
-    mode: "dry-run",
+    command: 'docs transform metadata',
+    mode: 'dry-run',
     dryRunDefaulted: options.dryRunDefaulted,
     applySupported: false,
     ruleSource: options.ruleSource,
@@ -897,7 +932,9 @@ function buildPreview(
       matched,
       affected: changeSets.length,
       changes: changeSets.reduce((count, changeSet) => count + changeSet.changes.length, 0),
-      diagnostics: diagnostics.length + changeSets.reduce((count, changeSet) => count + changeSet.diagnostics.length, 0),
+      diagnostics:
+        diagnostics.length +
+        changeSets.reduce((count, changeSet) => count + changeSet.diagnostics.length, 0),
     },
     changeSets,
     diagnostics,
@@ -907,29 +944,31 @@ function buildPreview(
 function stringifyYaml(value: Record<string, unknown>): string {
   const keys = orderTopLevelKeys(Object.keys(value));
   const lines = keys.flatMap((key) => stringifyKeyValue(key, value[key], 0));
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function stringifyKeyValue(key: string, value: unknown, indent: number): string[] {
-  const prefix = " ".repeat(indent);
+  const prefix = ' '.repeat(indent);
   if (isScalar(value)) return [`${prefix}${key}: ${formatScalar(value)}`];
   if (Array.isArray(value)) return stringifyArray(key, value, indent);
   if (isRecord(value)) {
-    const orderedKeys = key === "def" ? orderDefKeys(Object.keys(value)) : Object.keys(value);
+    const orderedKeys = key === 'def' ? orderDefKeys(Object.keys(value)) : Object.keys(value);
     if (orderedKeys.length === 0) return [`${prefix}${key}: {}`];
     return [
       `${prefix}${key}:`,
-      ...orderedKeys.flatMap((childKey) => stringifyKeyValue(childKey, value[childKey], indent + 2)),
+      ...orderedKeys.flatMap((childKey) =>
+        stringifyKeyValue(childKey, value[childKey], indent + 2),
+      ),
     ];
   }
   return [`${prefix}${key}: ${formatScalar(String(value))}`];
 }
 
 function stringifyArray(key: string, value: readonly unknown[], indent: number): string[] {
-  const prefix = " ".repeat(indent);
+  const prefix = ' '.repeat(indent);
   if (value.length === 0) return [`${prefix}${key}: []`];
-  if (key === "tags" && value.every(isScalar)) {
-    return [`${prefix}${key}: [${value.map(formatScalar).join(", ")}]`];
+  if (key === 'tags' && value.every(isScalar)) {
+    return [`${prefix}${key}: [${value.map(formatScalar).join(', ')}]`];
   }
 
   const lines = [`${prefix}${key}:`];
@@ -961,33 +1000,33 @@ function formatScalarOrNested(value: unknown): string {
 }
 
 function formatScalar(value: string | number | boolean | null): string {
-  if (value === null) return "null";
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (value === null) return 'null';
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   if (/^[A-Za-z0-9_./:@#-]+$/.test(value)) return value;
   return JSON.stringify(value);
 }
 
 function orderTopLevelKeys(keys: readonly string[]): readonly string[] {
-  return orderKeys(keys, ["def", "source", "sources", "gate", "tests"]);
+  return orderKeys(keys, ['def', 'source', 'sources', 'gate', 'tests']);
 }
 
 function orderDefKeys(keys: readonly string[]): readonly string[] {
   return orderKeys(keys, [
-    "id",
-    "address",
-    "version",
-    "revision",
-    "type",
-    "knowledge_kind",
-    "level",
-    "scope",
-    "aspect",
-    "depth",
-    "lifecycle",
-    "layer",
-    "svc",
-    "tags",
-    "links",
+    'id',
+    'address',
+    'version',
+    'revision',
+    'type',
+    'knowledge_kind',
+    'level',
+    'scope',
+    'aspect',
+    'depth',
+    'lifecycle',
+    'layer',
+    'svc',
+    'tags',
+    'links',
   ]);
 }
 
@@ -1008,10 +1047,10 @@ function ruleDiagnostic(
 ): DocumentDiagnostic {
   return diagnostic({
     code,
-    severity: "error",
+    severity: 'error',
     message,
-    path: "(rule)",
-    pointer: "metadata-transform.rule",
+    path: '(rule)',
+    pointer: 'metadata-transform.rule',
     metadata,
   });
 }
@@ -1038,13 +1077,13 @@ function diagnostic(input: {
 }
 
 function hasErrorDiagnostic(diagnostics: readonly DocumentDiagnostic[]): boolean {
-  return diagnostics.some((item) => item.severity === "error");
+  return diagnostics.some((item) => item.severity === 'error');
 }
 
 function stringList(value: unknown): readonly string[] | null {
   if (!Array.isArray(value)) return null;
   const result = value
-    .filter((item): item is string => typeof item === "string")
+    .filter((item): item is string => typeof item === 'string')
     .map((item) => item.trim())
     .filter(Boolean);
   return uniqueStrings(result);
@@ -1052,16 +1091,16 @@ function stringList(value: unknown): readonly string[] | null {
 
 function optionalStringList(value: unknown): readonly string[] | undefined {
   if (value === undefined) return undefined;
-  if (typeof value === "string") return [value];
+  if (typeof value === 'string') return [value];
   return stringList(value) ?? undefined;
 }
 
 function requiredString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function stringValue(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function uniqueStrings(values: readonly string[]): readonly string[] {
@@ -1085,12 +1124,14 @@ function cloneRecord(value: Record<string, unknown>): Record<string, unknown> {
 }
 
 function isScalar(value: unknown): value is string | number | boolean | null {
-  return value === null
-    || typeof value === "string"
-    || typeof value === "number"
-    || typeof value === "boolean";
+  return (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -1,9 +1,9 @@
 // @def.boundary experience-layer-group
 // @def.doc experience-layer-group
 
-import { relativeToNode, summarizeNodeSources } from "./normalize.js";
-import type { FileTreeNode, NodeSourceSummary, NormalizedReport, RenderState } from "./types.js";
-import { isCanvasDisclosureOpen } from "canvas-viewport";
+import { relativeToNode, summarizeNodeSources } from './normalize.js';
+import type { FileTreeNode, NodeSourceSummary, NormalizedReport, RenderState } from './types.js';
+import { isCanvasDisclosureOpen } from 'canvas-viewport';
 
 export function renderFileMapLayout(
   container: HTMLElement,
@@ -15,7 +15,7 @@ export function renderFileMapLayout(
   const drawerOpen = isCanvasDisclosureOpen(state.drawerState);
 
   container.innerHTML = `
-    <div class="fmap-page ${drawerOpen ? "is-drawer-open" : "is-drawer-collapsed"}">
+    <div class="fmap-page ${drawerOpen ? 'is-drawer-open' : 'is-drawer-collapsed'}">
       <section class="fmap-main">
         <div class="fmap-main-toolbar">
           <div>
@@ -49,10 +49,10 @@ export function renderFileMapLayout(
         </div>
 
         <div class="fmap-summary">
-          ${summaryCard("현재 파일", String(report.stats.currentFiles), "현재 브랜치에서 직접 수정")}
-          ${summaryCard("원격 브랜치", String(report.stats.remoteBranches), "비교 대상 remote branch")}
-          ${summaryCard("로컬 worktree", String(report.stats.worktrees), "동시 작업 중인 worktree")}
-          ${summaryCard("Hotspots", String(report.stats.hotspots), "여러 작업이 만나는 지점")}
+          ${summaryCard('현재 파일', String(report.stats.currentFiles), '현재 브랜치에서 직접 수정')}
+          ${summaryCard('원격 브랜치', String(report.stats.remoteBranches), '비교 대상 remote branch')}
+          ${summaryCard('로컬 worktree', String(report.stats.worktrees), '동시 작업 중인 worktree')}
+          ${summaryCard('Hotspots', String(report.stats.hotspots), '여러 작업이 만나는 지점')}
         </div>
 
         <div class="fmap-panel">
@@ -76,20 +76,24 @@ export function renderFileMapLayout(
             <h3>범례</h3>
           </div>
           <div class="fmap-legend">
-            ${legendRow("fmap-swatch-current", "현재 브랜치 변경")}
-            ${legendRow("fmap-swatch-workspace", "repo 작업중 변경")}
-            ${legendRow("fmap-swatch-execution", "실행 위치 작업중")}
-            ${legendRow("fmap-swatch-remote", "remote 브랜치 영향")}
-            ${legendRow("fmap-swatch-worktree", "local worktree 영향")}
-            ${legendRow("fmap-swatch-overlap", "현재 변경과 직접 충돌")}
-            ${legendRow("fmap-swatch-hotspot", "다중 소스 hotspot")}
+            ${legendRow('fmap-swatch-current', '현재 브랜치 변경')}
+            ${legendRow('fmap-swatch-workspace', 'repo 작업중 변경')}
+            ${legendRow('fmap-swatch-execution', '실행 위치 작업중')}
+            ${legendRow('fmap-swatch-remote', 'remote 브랜치 영향')}
+            ${legendRow('fmap-swatch-worktree', 'local worktree 영향')}
+            ${legendRow('fmap-swatch-overlap', '현재 변경과 직접 충돌')}
+            ${legendRow('fmap-swatch-hotspot', '다중 소스 hotspot')}
           </div>
           <div class="fmap-safe">
             <strong>Safe scope</strong>
             <div class="fmap-chip-list">
-              ${report.stats.safeScopes.length > 0
-                ? report.stats.safeScopes.map((scope) => `<span class="fmap-chip">${escapeHtml(scope)}</span>`).join("")
-                : '<span class="fmap-muted">사용 가능한 scope 없음</span>'}
+              ${
+                report.stats.safeScopes.length > 0
+                  ? report.stats.safeScopes
+                      .map((scope) => `<span class="fmap-chip">${escapeHtml(scope)}</span>`)
+                      .join('')
+                  : '<span class="fmap-muted">사용 가능한 scope 없음</span>'
+              }
             </div>
           </div>
         </div>
@@ -117,39 +121,48 @@ function findNodeById(node: FileTreeNode, id: string): FileTreeNode | null {
 
 function renderNodeDetail(node: FileTreeNode, report: NormalizedReport): string {
   const metricRows = [
-    detailMetric("파일", String(node.metrics.fileCount)),
-    detailMetric("repo workspace", String(node.metrics.workspaceTouchedFiles)),
-    detailMetric("cwd workspace", String(node.metrics.executionWorkspaceTouchedFiles)),
-    detailMetric("remote touch", String(node.metrics.remoteTouchCount)),
-    detailMetric("worktree touch", String(node.metrics.worktreeTouchCount)),
-    detailMetric("overlap", String(node.metrics.remoteOverlapCount + node.metrics.worktreeOverlapCount + node.metrics.workspaceOverlapCount)),
-    detailMetric("hotspot", String(node.metrics.hotspotCount)),
-    detailMetric("risk", String(node.metrics.riskScore)),
-  ].join("");
+    detailMetric('파일', String(node.metrics.fileCount)),
+    detailMetric('repo workspace', String(node.metrics.workspaceTouchedFiles)),
+    detailMetric('cwd workspace', String(node.metrics.executionWorkspaceTouchedFiles)),
+    detailMetric('remote touch', String(node.metrics.remoteTouchCount)),
+    detailMetric('worktree touch', String(node.metrics.worktreeTouchCount)),
+    detailMetric(
+      'overlap',
+      String(
+        node.metrics.remoteOverlapCount +
+          node.metrics.worktreeOverlapCount +
+          node.metrics.workspaceOverlapCount,
+      ),
+    ),
+    detailMetric('hotspot', String(node.metrics.hotspotCount)),
+    detailMetric('risk', String(node.metrics.riskScore)),
+  ].join('');
   const sourceSummaries = summarizeNodeSources(node, report.sources);
 
   return `
     <div class="fmap-node-head">
-      <div class="fmap-node-type">${node.kind === "dir" ? "Directory" : "File"}</div>
-      <div class="fmap-node-title">${escapeHtml(node.path || "(root)")}</div>
+      <div class="fmap-node-type">${node.kind === 'dir' ? 'Directory' : 'File'}</div>
+      <div class="fmap-node-title">${escapeHtml(node.path || '(root)')}</div>
     </div>
     <div class="fmap-node-grid">${metricRows}</div>
-    ${renderSourceSection("현재 브랜치", node.pathMetrics.currentTouched ? ["current"] : [])}
-    ${renderSourceSection("작업중 변경", node.pathMetrics.workspaceTouched ? ["workspace"] : [])}
-    ${renderSourceSection("실행 위치 변경", node.pathMetrics.executionWorkspaceTouched ? ["execution"] : [])}
-    ${renderSourceSection("Remote branches", node.pathMetrics.remoteBranches)}
-    ${renderSourceSection("Remote overlaps", node.pathMetrics.overlappingRemoteBranches)}
-    ${renderSourceSection("Local worktrees", node.pathMetrics.worktrees)}
-    ${renderSourceSection("Worktree overlaps", node.pathMetrics.overlappingWorktrees)}
-    ${renderSourceSection("Workspace overlaps", node.pathMetrics.overlappingWorkspaceTargets)}
-    ${renderSourceSection("Hotspot members", node.pathMetrics.hotspotBranches)}
+    ${renderSourceSection('현재 브랜치', node.pathMetrics.currentTouched ? ['current'] : [])}
+    ${renderSourceSection('작업중 변경', node.pathMetrics.workspaceTouched ? ['workspace'] : [])}
+    ${renderSourceSection('실행 위치 변경', node.pathMetrics.executionWorkspaceTouched ? ['execution'] : [])}
+    ${renderSourceSection('Remote branches', node.pathMetrics.remoteBranches)}
+    ${renderSourceSection('Remote overlaps', node.pathMetrics.overlappingRemoteBranches)}
+    ${renderSourceSection('Local worktrees', node.pathMetrics.worktrees)}
+    ${renderSourceSection('Worktree overlaps', node.pathMetrics.overlappingWorktrees)}
+    ${renderSourceSection('Workspace overlaps', node.pathMetrics.overlappingWorkspaceTargets)}
+    ${renderSourceSection('Hotspot members', node.pathMetrics.hotspotBranches)}
     ${renderNodeSummaryBanner(node)}
     <div class="fmap-source-block">
       <strong>변경 요약</strong>
       <div class="fmap-source-summary-list">
-        ${sourceSummaries.length > 0
-          ? sourceSummaries.map((summary) => renderSourceSummaryCard(node, summary)).join("")
-          : '<span class="fmap-muted">선택 영역 아래 변경 상세가 없습니다</span>'}
+        ${
+          sourceSummaries.length > 0
+            ? sourceSummaries.map((summary) => renderSourceSummaryCard(node, summary)).join('')
+            : '<span class="fmap-muted">선택 영역 아래 변경 상세가 없습니다</span>'
+        }
       </div>
     </div>
   `;
@@ -160,36 +173,51 @@ function renderSourceSection(title: string, values: string[]): string {
     <div class="fmap-source-block">
       <strong>${escapeHtml(title)}</strong>
       <div class="fmap-chip-list">
-        ${values.length > 0
-          ? values.map((value) => `<span class="fmap-chip">${escapeHtml(value)}</span>`).join("")
-          : '<span class="fmap-muted">없음</span>'}
+        ${
+          values.length > 0
+            ? values.map((value) => `<span class="fmap-chip">${escapeHtml(value)}</span>`).join('')
+            : '<span class="fmap-muted">없음</span>'
+        }
       </div>
     </div>
   `;
 }
 
 function renderSourceSummaryCard(node: FileTreeNode, summary: NodeSourceSummary): string {
-  const previewFiles = summary.files.slice(0, 5).map((file) => {
-    const relative = relativeToNode(node, file.path);
-    const rename = file.previousPath ? ` <= ${escapeHtml(relativeToNode(node, file.previousPath))}` : "";
-    const binary = file.binary ? " [binary]" : "";
-    const overlapClass = summary.overlapCount > 0 && summaryHasOverlap(summary, file.path) ? "is-overlap" : "";
-    return `
+  const previewFiles = summary.files
+    .slice(0, 5)
+    .map((file) => {
+      const relative = relativeToNode(node, file.path);
+      const rename = file.previousPath
+        ? ` <= ${escapeHtml(relativeToNode(node, file.previousPath))}`
+        : '';
+      const binary = file.binary ? ' [binary]' : '';
+      const overlapClass =
+        summary.overlapCount > 0 && summaryHasOverlap(summary, file.path) ? 'is-overlap' : '';
+      return `
       <div class="fmap-file-row ${overlapClass}">
         <span class="fmap-file-status">${escapeHtml(file.status)}</span>
         <span class="fmap-file-path">${escapeHtml(relative)}${rename}${binary}</span>
       </div>
     `;
-  }).join("");
+    })
+    .join('');
 
-  const previewCommits = summary.commits.slice(0, 4).map((commit) => {
-    const touchedPaths = commit.changedPaths
-      .filter((path) => path === node.path || path.startsWith(`${node.path}/`) || node.path === "")
-      .slice(0, 3)
-      .map((path) => `<span class="fmap-commit-path">${escapeHtml(relativeToNode(node, path))}</span>`)
-      .join("");
+  const previewCommits = summary.commits
+    .slice(0, 4)
+    .map((commit) => {
+      const touchedPaths = commit.changedPaths
+        .filter(
+          (path) => path === node.path || path.startsWith(`${node.path}/`) || node.path === '',
+        )
+        .slice(0, 3)
+        .map(
+          (path) =>
+            `<span class="fmap-commit-path">${escapeHtml(relativeToNode(node, path))}</span>`,
+        )
+        .join('');
 
-    return `
+      return `
       <div class="fmap-commit-row">
         <div class="fmap-commit-head">
           <span class="fmap-commit-oid">${escapeHtml(commit.shortOid)}</span>
@@ -197,33 +225,36 @@ function renderSourceSummaryCard(node: FileTreeNode, summary: NodeSourceSummary)
         </div>
         <div class="fmap-commit-summary">${escapeHtml(commit.summary)}</div>
         <div class="fmap-commit-tags">
-          ${commit.conventionalType ? `<span class="fmap-commit-tag">${escapeHtml(commit.conventionalType)}</span>` : ""}
-          ${commit.conventionalScope ? `<span class="fmap-commit-tag">${escapeHtml(commit.conventionalScope)}</span>` : ""}
-          ${commit.breaking ? '<span class="fmap-commit-tag fmap-commit-tag-breaking">breaking</span>' : ""}
+          ${commit.conventionalType ? `<span class="fmap-commit-tag">${escapeHtml(commit.conventionalType)}</span>` : ''}
+          ${commit.conventionalScope ? `<span class="fmap-commit-tag">${escapeHtml(commit.conventionalScope)}</span>` : ''}
+          ${commit.breaking ? '<span class="fmap-commit-tag fmap-commit-tag-breaking">breaking</span>' : ''}
         </div>
-        ${touchedPaths ? `<div class="fmap-commit-paths">${touchedPaths}</div>` : ""}
+        ${touchedPaths ? `<div class="fmap-commit-paths">${touchedPaths}</div>` : ''}
       </div>
     `;
-  }).join("");
+    })
+    .join('');
 
   return `
     <div class="fmap-source-card fmap-source-${summary.type}">
       <div class="fmap-source-card-head">
         <div>
           <div class="fmap-source-label">${escapeHtml(summary.label)}</div>
-          ${summary.worktreePath ? `<div class="fmap-source-meta">${escapeHtml(summary.worktreePath)}</div>` : ""}
+          ${summary.worktreePath ? `<div class="fmap-source-meta">${escapeHtml(summary.worktreePath)}</div>` : ''}
         </div>
         <div class="fmap-source-count">${summary.fileCount} files</div>
       </div>
       <div class="fmap-source-badges">
-        ${summary.statusCounts.map((entry) => statusBadge(entry.status, entry.count)).join("")}
-        ${summary.overlapCount > 0 ? `<span class="fmap-status-pill fmap-status-overlap">overlap ${summary.overlapCount}</span>` : ""}
+        ${summary.statusCounts.map((entry) => statusBadge(entry.status, entry.count)).join('')}
+        ${summary.overlapCount > 0 ? `<span class="fmap-status-pill fmap-status-overlap">overlap ${summary.overlapCount}</span>` : ''}
         <span class="fmap-status-pill fmap-status-touched">commits ${summary.commitCount}</span>
         <span class="fmap-status-pill fmap-status-touched">files ${summary.diffStats.filesChanged}</span>
         <span class="fmap-status-pill fmap-status-added">+${summary.diffStats.insertions}</span>
         <span class="fmap-status-pill fmap-status-deleted">-${summary.diffStats.deletions}</span>
       </div>
-      ${summary.splitPoint ? `
+      ${
+        summary.splitPoint
+          ? `
         <details class="fmap-split-point">
           <summary class="fmap-split-summary-row">
             <span class="fmap-split-label">분기점</span>
@@ -238,21 +269,32 @@ function renderSourceSummaryCard(node: FileTreeNode, summary: NodeSourceSummary)
               <span class="fmap-status-pill fmap-status-deleted">-${summary.splitPoint.diffStats.deletions}</span>
             </div>
             <div class="fmap-commit-paths">
-              ${summary.splitPoint.changedPaths.length > 0
-                ? summary.splitPoint.changedPaths.map((path) => `<span class="fmap-commit-path">${escapeHtml(relativeToNode(node, path))}</span>`).join("")
-                : '<span class="fmap-muted">분기점 변경 파일 없음</span>'}
+              ${
+                summary.splitPoint.changedPaths.length > 0
+                  ? summary.splitPoint.changedPaths
+                      .map(
+                        (path) =>
+                          `<span class="fmap-commit-path">${escapeHtml(relativeToNode(node, path))}</span>`,
+                      )
+                      .join('')
+                  : '<span class="fmap-muted">분기점 변경 파일 없음</span>'
+              }
             </div>
           </div>
         </details>
-      ` : ""}
+      `
+          : ''
+      }
       <div class="fmap-file-list">${previewFiles}</div>
-      ${summary.files.length > 5 ? `<div class="fmap-file-more">… ${summary.files.length - 5}개 추가 파일</div>` : ""}
+      ${summary.files.length > 5 ? `<div class="fmap-file-more">… ${summary.files.length - 5}개 추가 파일</div>` : ''}
       <div class="fmap-commit-list">
         <div class="fmap-commit-title">최근 커밋</div>
-        ${summary.commits.length > 0
-          ? previewCommits
-          : '<div class="fmap-muted">선택 영역에 매칭되는 커밋이 없습니다</div>'}
-        ${summary.commits.length > 4 ? `<div class="fmap-file-more">… ${summary.commits.length - 4}개 추가 커밋</div>` : ""}
+        ${
+          summary.commits.length > 0
+            ? previewCommits
+            : '<div class="fmap-muted">선택 영역에 매칭되는 커밋이 없습니다</div>'
+        }
+        ${summary.commits.length > 4 ? `<div class="fmap-file-more">… ${summary.commits.length - 4}개 추가 커밋</div>` : ''}
       </div>
     </div>
   `;
@@ -273,9 +315,11 @@ function renderNodeSummaryBanner(node: FileTreeNode): string {
 }
 
 function summaryHasOverlap(summary: NodeSourceSummary, path: string): boolean {
-  return summary.overlapCount > 0
-    && summary.files.some((file) => file.path === path)
-    && summary.type !== "current";
+  return (
+    summary.overlapCount > 0 &&
+    summary.files.some((file) => file.path === path) &&
+    summary.type !== 'current'
+  );
 }
 
 function summaryCard(title: string, value: string, desc: string): string {
@@ -308,17 +352,17 @@ function detailMetric(label: string, value: string): string {
 
 function statusBadge(status: string, count: number): string {
   const normalized = status.toLowerCase();
-  const variant = normalized.includes("add")
-    ? "added"
-    : normalized.includes("delete")
-      ? "deleted"
-      : normalized.includes("rename")
-        ? "renamed"
-        : normalized.includes("copy")
-          ? "copied"
-          : normalized.includes("modify")
-            ? "modified"
-            : "touched";
+  const variant = normalized.includes('add')
+    ? 'added'
+    : normalized.includes('delete')
+      ? 'deleted'
+      : normalized.includes('rename')
+        ? 'renamed'
+        : normalized.includes('copy')
+          ? 'copied'
+          : normalized.includes('modify')
+            ? 'modified'
+            : 'touched';
 
   return `<span class="fmap-status-pill fmap-status-${variant}">${escapeHtml(status)} ${count}</span>`;
 }
@@ -326,11 +370,11 @@ function statusBadge(status: string, count: number): string {
 function formatDate(value: string): string {
   try {
     const date = new Date(value);
-    return new Intl.DateTimeFormat("ko-KR", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Intl.DateTimeFormat('ko-KR', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
     }).format(date);
   } catch {
     return value;
@@ -338,8 +382,5 @@ function formatDate(value: string): string {
 }
 
 function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }

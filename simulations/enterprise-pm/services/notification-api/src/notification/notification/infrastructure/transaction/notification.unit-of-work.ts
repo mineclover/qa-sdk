@@ -1,12 +1,12 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import type { NotificationRepositoryPort } from "../../application/ports/notification-repository.port.js";
-import type { NotificationOutboxPort } from "../../application/ports/notification-outbox.port.js";
+import type { NotificationRepositoryPort } from '../../application/ports/notification-repository.port.js';
+import type { NotificationOutboxPort } from '../../application/ports/notification-outbox.port.js';
 import type {
   NotificationTransactionPort,
   NotificationTransactionScope,
-} from "../../application/ports/notification-transaction.port.js";
+} from '../../application/ports/notification-transaction.port.js';
 
 /**
  * Unit of Work — TransactionPort + RepositoryPort + OutboxPort 합성.

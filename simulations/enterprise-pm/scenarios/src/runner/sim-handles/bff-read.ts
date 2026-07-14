@@ -29,7 +29,7 @@ export interface BffReadFactoryArgs {
 }
 
 export interface BffReadResult {
-  source: "replica" | "primary";
+  source: 'replica' | 'primary';
 }
 
 /**
@@ -38,9 +38,7 @@ export interface BffReadResult {
  * 응답 헤더: `x-data-source: primary | replica`.
  * 헤더 누락 시 throw — fallback 금지.
  */
-export function createBffRead(
-  args: BffReadFactoryArgs,
-): () => Promise<BffReadResult> {
+export function createBffRead(args: BffReadFactoryArgs): () => Promise<BffReadResult> {
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -50,18 +48,14 @@ export function createBffRead(
       }) as unknown as ReturnType<FetchLike>);
 
   return async function bffRead(): Promise<BffReadResult> {
-    const res = await fetchImpl(args.bffReadUrl, { method: "GET" });
+    const res = await fetchImpl(args.bffReadUrl, { method: 'GET' });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(
-        `bff-read GET ${args.bffReadUrl} failed: status=${res.status} body=${body}`,
-      );
+      throw new Error(`bff-read GET ${args.bffReadUrl} failed: status=${res.status} body=${body}`);
     }
-    const source = res.headers.get("x-data-source");
-    if (source !== "replica" && source !== "primary") {
-      throw new Error(
-        `bff-read invalid x-data-source header: ${JSON.stringify(source)}`,
-      );
+    const source = res.headers.get('x-data-source');
+    if (source !== 'replica' && source !== 'primary') {
+      throw new Error(`bff-read invalid x-data-source header: ${JSON.stringify(source)}`);
     }
     return { source };
   };

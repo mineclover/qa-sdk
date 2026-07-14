@@ -1,26 +1,26 @@
 #!/usr/bin/env node
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { createSurfaceIndex, MANAGED_PACKAGE_SCOPE } from "./package-surfaces.mjs";
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createSurfaceIndex, MANAGED_PACKAGE_SCOPE } from './package-surfaces.mjs';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
-const format = readOption("--format", "markdown");
-const limit = Number(readOption("--limit", "40"));
-const includeAll = args.includes("--all");
+const format = readOption('--format', 'markdown');
+const limit = Number(readOption('--limit', '40'));
+const includeAll = args.includes('--all');
 const surfaceIndex = createSurfaceIndex();
-const SOURCE_REF_ROOTS = "packages|docs|scripts|skills|simulations";
+const SOURCE_REF_ROOTS = 'packages|docs|scripts|skills|simulations';
 
 const EXCLUDED_DIRS = new Set([
-  ".git",
-  "node_modules",
-  "dist",
-  "build",
-  "coverage",
-  ".turbo",
-  ".next",
-  ".vite",
+  '.git',
+  'node_modules',
+  'dist',
+  'build',
+  'coverage',
+  '.turbo',
+  '.next',
+  '.vite',
 ]);
 
 function readOption(name, fallback) {
@@ -45,7 +45,7 @@ function walk(dir, predicate = () => true) {
 }
 
 function readText(path) {
-  return readFileSync(path, "utf8");
+  return readFileSync(path, 'utf8');
 }
 
 function repoPath(path) {
@@ -53,40 +53,46 @@ function repoPath(path) {
 }
 
 function parseFrontmatter(text) {
-  if (!text.startsWith("---\n")) return emptyFrontmatter();
-  const end = text.indexOf("\n---", 4);
+  if (!text.startsWith('---\n')) return emptyFrontmatter();
+  const end = text.indexOf('\n---', 4);
   if (end === -1) return emptyFrontmatter();
   const frontmatter = text.slice(4, end);
   const sourceRefs = collectSourceRefs(frontmatter);
   return {
-    lifecycle: matchValue(frontmatter, "lifecycle"),
-    status: matchValue(frontmatter, "status"),
-    role: matchValue(frontmatter, "role"),
-    supersededBy: matchValue(frontmatter, "superseded_by"),
-    type: matchValue(frontmatter, "type"),
-    tier: matchValue(frontmatter, "tier"),
-    scope: matchValue(frontmatter, "scope"),
-    aspect: matchValue(frontmatter, "aspect"),
-    hasSources: /^\s*sources:\s*$/m.test(frontmatter) || new RegExp(`^\\s*source:\\s*(?:${SOURCE_REF_ROOTS})/`, "m").test(frontmatter),
+    lifecycle: matchValue(frontmatter, 'lifecycle'),
+    status: matchValue(frontmatter, 'status'),
+    role: matchValue(frontmatter, 'role'),
+    supersededBy: matchValue(frontmatter, 'superseded_by'),
+    type: matchValue(frontmatter, 'type'),
+    tier: matchValue(frontmatter, 'tier'),
+    scope: matchValue(frontmatter, 'scope'),
+    aspect: matchValue(frontmatter, 'aspect'),
+    hasSources:
+      /^\s*sources:\s*$/m.test(frontmatter) ||
+      new RegExp(`^\\s*source:\\s*(?:${SOURCE_REF_ROOTS})/`, 'm').test(frontmatter),
     sourceRefs,
   };
 }
 
 function collectSourceRefs(frontmatter) {
   const refs = [
-    ...frontmatter.matchAll(new RegExp(`^\\s*source:\\s+((?:${SOURCE_REF_ROOTS})/[^\\n#]+)`, "gm")),
-    ...frontmatter.matchAll(new RegExp(`^\\s*-\\s+((?:${SOURCE_REF_ROOTS})/[^\\n#]+)`, "gm")),
+    ...frontmatter.matchAll(new RegExp(`^\\s*source:\\s+((?:${SOURCE_REF_ROOTS})/[^\\n#]+)`, 'gm')),
+    ...frontmatter.matchAll(new RegExp(`^\\s*-\\s+((?:${SOURCE_REF_ROOTS})/[^\\n#]+)`, 'gm')),
   ].map((match) => cleanSourceRef(match[1]));
   return [...new Set(refs)];
 }
 
 function cleanSourceRef(source) {
-  return source.trim().replace(/^['"]|['"]$/g, "");
+  return source.trim().replace(/^['"]|['"]$/g, '');
 }
 
 function sourceRefFilePath(source) {
   const cleaned = cleanSourceRef(source);
-  const match = cleaned.match(new RegExp(`^((?:${SOURCE_REF_ROOTS})/.*?\\.(?:[cm]?[jt]sx?|mjs|cjs|md|json|ya?ml|sql|toml))(?:[:#].*)?$`));
+  const match = cleaned.match(
+    new RegExp(
+      `^((?:${SOURCE_REF_ROOTS})/.*?\\.(?:[cm]?[jt]sx?|mjs|cjs|md|json|ya?ml|sql|toml))(?:[:#].*)?$`,
+    ),
+  );
   return match?.[1] ?? cleaned;
 }
 
@@ -96,28 +102,28 @@ function sourceRefExists(source) {
 
 function emptyFrontmatter() {
   return {
-    lifecycle: "",
-    status: "",
-    role: "",
-    supersededBy: "",
-    type: "",
-    tier: "",
-    scope: "",
-    aspect: "",
+    lifecycle: '',
+    status: '',
+    role: '',
+    supersededBy: '',
+    type: '',
+    tier: '',
+    scope: '',
+    aspect: '',
     hasSources: false,
     sourceRefs: [],
   };
 }
 
 function matchValue(frontmatter, key) {
-  return frontmatter.match(new RegExp(`^(?: {0,2})${key}:\\s*([^\\n#]+)`, "m"))?.[1]?.trim() ?? "";
+  return frontmatter.match(new RegExp(`^(?: {0,2})${key}:\\s*([^\\n#]+)`, 'm'))?.[1]?.trim() ?? '';
 }
 
 function docRefFilePath(docPath, ref) {
   const cleaned = cleanSourceRef(ref);
-  if (!cleaned || cleaned === "-") return "";
-  const withoutAnchor = cleaned.split("#")[0];
-  if (withoutAnchor.startsWith("docs/")) {
+  if (!cleaned || cleaned === '-') return '';
+  const withoutAnchor = cleaned.split('#')[0];
+  if (withoutAnchor.startsWith('docs/')) {
     return join(repoRoot, withoutAnchor);
   }
   return resolve(dirname(docPath), withoutAnchor);
@@ -132,27 +138,26 @@ function classifyDoc(path) {
   const text = readText(path);
   const frontmatter = parseFrontmatter(text);
   const relativePath = repoPath(path);
-  const isArchivedDoc = relativePath.startsWith("docs/archive/");
-  const isProposalIndexDoc = relativePath === "docs/proposals/README.md";
-  const isTemplateDoc = relativePath.startsWith("docs/proposals/_template/");
-  const isDecisionSkeleton = relativePath.startsWith("docs/decisions/")
-    && frontmatter.lifecycle === "draft"
-    && /^\s*subject:\s*tax:/m.test(text)
-    && /## 결정\s*\n\s*\(미정\)/m.test(text);
-  const isPlanningNote = relativePath.startsWith("docs/plan/")
-    && !text.startsWith("---\n");
-  const isSupersededNote = relativePath.startsWith("docs/proposals/")
-    && frontmatter.status === "superseded";
-  const isSupersededMovedNote = isSupersededNote
-    && frontmatter.role === "moved-note";
-  const hasSupersededTarget = isSupersededMovedNote
-    && docRefExists(path, frontmatter.supersededBy);
-  const isProposal = relativePath.startsWith("docs/proposals/")
-    && !isProposalIndexDoc
-    && !isTemplateDoc;
-  const isSpec = relativePath.startsWith("docs/specs/");
-  const isRule = relativePath.endsWith(".rule.md");
-  const hasCommand = /\b(pnpm|node|tsx|qa-sdk|vitest|smoke|arch:feedback|def validate)\b/.test(text);
+  const isArchivedDoc = relativePath.startsWith('docs/archive/');
+  const isProposalIndexDoc = relativePath === 'docs/proposals/README.md';
+  const isTemplateDoc = relativePath.startsWith('docs/proposals/_template/');
+  const isDecisionSkeleton =
+    relativePath.startsWith('docs/decisions/') &&
+    frontmatter.lifecycle === 'draft' &&
+    /^\s*subject:\s*tax:/m.test(text) &&
+    /## 결정\s*\n\s*\(미정\)/m.test(text);
+  const isPlanningNote = relativePath.startsWith('docs/plan/') && !text.startsWith('---\n');
+  const isSupersededNote =
+    relativePath.startsWith('docs/proposals/') && frontmatter.status === 'superseded';
+  const isSupersededMovedNote = isSupersededNote && frontmatter.role === 'moved-note';
+  const hasSupersededTarget = isSupersededMovedNote && docRefExists(path, frontmatter.supersededBy);
+  const isProposal =
+    relativePath.startsWith('docs/proposals/') && !isProposalIndexDoc && !isTemplateDoc;
+  const isSpec = relativePath.startsWith('docs/specs/');
+  const isRule = relativePath.endsWith('.rule.md');
+  const hasCommand = /\b(pnpm|node|tsx|qa-sdk|vitest|smoke|arch:feedback|def validate)\b/.test(
+    text,
+  );
   const hasTestWords = /\b(test|fixture|smoke|verification|검증|validation)\b/i.test(text);
   const hasPackageRef = /\bpackages\//.test(text);
   const hasSkillRef = /\bskills\//.test(text);
@@ -168,65 +173,69 @@ function classifyDoc(path) {
     hasSkillRef,
   ].filter(Boolean).length;
 
-  let verdict = "prove";
+  let verdict = 'prove';
   const reasons = [];
 
   if (evidenceScore >= 3) {
-    verdict = "keep";
-    reasons.push("has executable/source evidence");
+    verdict = 'keep';
+    reasons.push('has executable/source evidence');
   }
 
   if (isProposalIndexDoc) {
-    verdict = "keep";
-    reasons.push("proposal index");
+    verdict = 'keep';
+    reasons.push('proposal index');
   }
 
   if (isTemplateDoc) {
-    verdict = "keep";
-    reasons.push("proposal template scaffold");
+    verdict = 'keep';
+    reasons.push('proposal template scaffold');
   }
 
   if (isSupersededMovedNote && hasSupersededTarget) {
-    verdict = "keep";
-    reasons.push("superseded moved-note target exists");
+    verdict = 'keep';
+    reasons.push('superseded moved-note target exists');
   }
 
-  if (frontmatter.lifecycle === "approved" && evidenceScore < 2 && isSpec) {
-    verdict = "prove";
-    reasons.push("approved spec needs execution evidence");
+  if (frontmatter.lifecycle === 'approved' && evidenceScore < 2 && isSpec) {
+    verdict = 'prove';
+    reasons.push('approved spec needs execution evidence');
   }
 
-  if (isProposal && !/status:\s*(implemented|accepted|superseded)/.test(text) && evidenceScore < 2) {
-    verdict = "prove";
-    reasons.push("open proposal needs execution evidence");
+  if (
+    isProposal &&
+    !/status:\s*(implemented|accepted|superseded)/.test(text) &&
+    evidenceScore < 2
+  ) {
+    verdict = 'prove';
+    reasons.push('open proposal needs execution evidence');
   }
 
   if (isSupersededNote && !hasSupersededTarget) {
-    verdict = "prove";
-    reasons.push("superseded proposal redirect note");
+    verdict = 'prove';
+    reasons.push('superseded proposal redirect note');
   }
 
   if (isRule && evidenceScore < 2) {
-    verdict = "prove";
-    reasons.push("rule needs command/source proof");
+    verdict = 'prove';
+    reasons.push('rule needs command/source proof');
   }
 
   if (missingSourceRefs.length > 0) {
-    verdict = "prove";
-    reasons.push(`missing source refs: ${missingSourceRefs.slice(0, 3).join(", ")}`);
+    verdict = 'prove';
+    reasons.push(`missing source refs: ${missingSourceRefs.slice(0, 3).join(', ')}`);
   }
 
   if (reasons.length === 0) {
-    reasons.push("needs review");
+    reasons.push('needs review');
   }
 
   return {
     path: relativePath,
     verdict,
-    lifecycle: frontmatter.lifecycle || "-",
-    status: frontmatter.status || "-",
-    type: frontmatter.type || "-",
-    tier: frontmatter.tier || "-",
+    lifecycle: frontmatter.lifecycle || '-',
+    status: frontmatter.status || '-',
+    type: frontmatter.type || '-',
+    tier: frontmatter.tier || '-',
     isArchivedDoc,
     isProposalIndexDoc,
     isTemplateDoc,
@@ -242,37 +251,36 @@ function classifyDoc(path) {
 }
 
 function classifyPackage(packageJsonPath) {
-  const packageDir = resolve(packageJsonPath, "..");
+  const packageDir = resolve(packageJsonPath, '..');
   const manifest = JSON.parse(readText(packageJsonPath));
   const packagePath = repoPath(packageDir);
   const packageName = manifest.name ?? packagePath;
-  const displayName = packagePath.split("/").at(-1) ?? packageName;
+  const displayName = packagePath.split('/').at(-1) ?? packageName;
   const surfaceManaged = isSurfaceManagedPackagePath(packagePath);
   const surface = surfaceManaged
-    ? surfaceIndex.get(packageName) ?? surfaceIndex.get(displayName)
+    ? (surfaceIndex.get(packageName) ?? surfaceIndex.get(displayName))
     : undefined;
-  const surfaceScope = surfaceManaged ? "surface-managed" : "workspace-support";
-  const surfaceId = surface?.id ?? (surfaceManaged ? "unassigned" : "workspace-support");
-  const surfaceGroup = surface?.group ?? (surfaceManaged ? "unassigned" : "workspace-support");
-  const surfaceVerdict = surface?.verdict ?? (surfaceManaged ? "unassigned" : "workspace-support");
+  const surfaceScope = surfaceManaged ? 'surface-managed' : 'workspace-support';
+  const surfaceId = surface?.id ?? (surfaceManaged ? 'unassigned' : 'workspace-support');
+  const surfaceGroup = surface?.group ?? (surfaceManaged ? 'unassigned' : 'workspace-support');
+  const surfaceVerdict = surface?.verdict ?? (surfaceManaged ? 'unassigned' : 'workspace-support');
   const scripts = manifest.scripts ?? {};
-  const hasSrc = existsSync(join(packageDir, "src"));
-  const hasLib = existsSync(join(packageDir, "lib"));
-  const hasRootRuntimeEntry = [
-    "index.ts",
-    "main.ts",
-    "server.ts",
-    "worker.ts",
-    "cli.ts",
-  ].some((entry) => existsSync(join(packageDir, entry)));
-  const hasPublic = existsSync(join(packageDir, "public"));
+  const hasSrc = existsSync(join(packageDir, 'src'));
+  const hasLib = existsSync(join(packageDir, 'lib'));
+  const hasRootRuntimeEntry = ['index.ts', 'main.ts', 'server.ts', 'worker.ts', 'cli.ts'].some(
+    (entry) => existsSync(join(packageDir, entry)),
+  );
+  const hasPublic = existsSync(join(packageDir, 'public'));
   const testFiles = walk(packageDir, (path) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(path));
-  const hasTestSurface = testFiles.length > 0
-    || existsSync(join(packageDir, "tests"))
-    || existsSync(join(packageDir, "scenarios"));
+  const hasTestSurface =
+    testFiles.length > 0 ||
+    existsSync(join(packageDir, 'tests')) ||
+    existsSync(join(packageDir, 'scenarios'));
   const hasRuntimeSurface = hasSrc || hasLib || hasRootRuntimeEntry || hasPublic || hasTestSurface;
-  const hasReadme = existsSync(join(packageDir, "README.md"));
-  const hasTestScript = Object.keys(scripts).some((scriptName) => scriptName === "test" || scriptName.startsWith("test:"));
+  const hasReadme = existsSync(join(packageDir, 'README.md'));
+  const hasTestScript = Object.keys(scripts).some(
+    (scriptName) => scriptName === 'test' || scriptName.startsWith('test:'),
+  );
   const hasBuildScript = Boolean(scripts.build);
   const hasRunScript = Boolean(scripts.dev || scripts.start);
   const hasBin = Boolean(manifest.bin);
@@ -286,35 +294,35 @@ function classifyPackage(packageJsonPath) {
     hasBin,
   ].filter(Boolean).length;
 
-  let verdict = "prove";
+  let verdict = 'prove';
   const reasons = [];
 
   if (evidenceScore >= 4) {
-    verdict = "keep";
-    reasons.push("has package source, docs, tests/build/bin evidence");
+    verdict = 'keep';
+    reasons.push('has package source, docs, tests/build/bin evidence');
   }
 
-  if (surface?.verdict === "no-promotion") {
-    verdict = "quarantine";
-    reasons.push("surface manifest marks this package no-promotion");
+  if (surface?.verdict === 'no-promotion') {
+    verdict = 'quarantine';
+    reasons.push('surface manifest marks this package no-promotion');
   }
 
   if (hasRuntimeSurface && !hasTestScript && testFiles.length === 0) {
-    verdict = "prove";
-    reasons.push("source package has no local test evidence");
+    verdict = 'prove';
+    reasons.push('source package has no local test evidence');
   }
 
   if (!hasRuntimeSurface && !hasBin && Object.keys(scripts).length === 0) {
-    verdict = "quarantine";
-    reasons.push("package has no source, bin, or scripts");
+    verdict = 'quarantine';
+    reasons.push('package has no source, bin, or scripts');
   }
 
   if (!hasReadme) {
-    reasons.push("missing README");
+    reasons.push('missing README');
   }
 
   if (reasons.length === 0) {
-    reasons.push("needs review");
+    reasons.push('needs review');
   }
 
   return {
@@ -340,17 +348,17 @@ function classifyPackage(packageJsonPath) {
 }
 
 function isSurfaceManagedPackagePath(packagePath) {
-  if (MANAGED_PACKAGE_SCOPE !== "packages/*") {
+  if (MANAGED_PACKAGE_SCOPE !== 'packages/*') {
     throw new Error(`Unsupported managed package scope: ${MANAGED_PACKAGE_SCOPE}`);
   }
-  return packagePath.startsWith("packages/") && packagePath.split("/").length === 2;
+  return packagePath.startsWith('packages/') && packagePath.split('/').length === 2;
 }
 
 function workspacePackageJsonPaths() {
-  const workspacePath = join(repoRoot, "pnpm-workspace.yaml");
+  const workspacePath = join(repoRoot, 'pnpm-workspace.yaml');
   const patterns = existsSync(workspacePath)
     ? readWorkspacePackagePatterns(readText(workspacePath))
-    : ["packages/*"];
+    : ['packages/*'];
   const packageJsonPaths = new Set();
 
   for (const pattern of patterns) {
@@ -364,16 +372,14 @@ function readWorkspacePackagePatterns(text) {
   const patterns = [];
   let inPackages = false;
 
-  for (const line of text.split("\n")) {
+  for (const line of text.split('\n')) {
     if (/^packages:\s*$/.test(line)) {
       inPackages = true;
       continue;
     }
     if (inPackages && /^[^\s#][^:]*:\s*/.test(line)) break;
-    const packageMatch = inPackages
-      ? line.match(/^\s*-\s+["']?([^"'\n]+)["']?\s*$/)
-      : null;
-    if (packageMatch && !packageMatch[1].startsWith("!")) {
+    const packageMatch = inPackages ? line.match(/^\s*-\s+["']?([^"'\n]+)["']?\s*$/) : null;
+    if (packageMatch && !packageMatch[1].startsWith('!')) {
       patterns.push(packageMatch[1]);
     }
   }
@@ -382,37 +388,35 @@ function readWorkspacePackagePatterns(text) {
 }
 
 function addWorkspacePatternPackageJsons(pattern, packageJsonPaths) {
-  if (!pattern.includes("*")) {
-    const manifestPath = join(repoRoot, pattern, "package.json");
+  if (!pattern.includes('*')) {
+    const manifestPath = join(repoRoot, pattern, 'package.json');
     if (existsSync(manifestPath)) packageJsonPaths.add(manifestPath);
     return;
   }
 
-  if (!pattern.endsWith("/*")) return;
+  if (!pattern.endsWith('/*')) return;
   const baseDir = join(repoRoot, pattern.slice(0, -2));
   if (!existsSync(baseDir)) return;
 
   for (const entry of readdirSync(baseDir)) {
-    if (EXCLUDED_DIRS.has(entry) || entry.startsWith(".")) continue;
-    const manifestPath = join(baseDir, entry, "package.json");
+    if (EXCLUDED_DIRS.has(entry) || entry.startsWith('.')) continue;
+    const manifestPath = join(baseDir, entry, 'package.json');
     if (existsSync(manifestPath) && statSync(join(baseDir, entry)).isDirectory()) {
       packageJsonPaths.add(manifestPath);
     }
   }
 }
 
-const docs = walk(join(repoRoot, "docs"), (path) => path.endsWith(".md"))
-  .map(classifyDoc);
-const packages = workspacePackageJsonPaths()
-  .map(classifyPackage);
+const docs = walk(join(repoRoot, 'docs'), (path) => path.endsWith('.md')).map(classifyDoc);
+const packages = workspacePackageJsonPaths().map(classifyPackage);
 
 const report = {
   generatedAt: new Date().toISOString(),
   summary: {
     docs: summarize(docs),
     packages: summarize(packages),
-    packageScopes: summarizeBy(packages, "surfaceScope"),
-    packageFeatureGroups: summarizeBy(packages, "surfaceGroup"),
+    packageScopes: summarizeBy(packages, 'surfaceScope'),
+    packageFeatureGroups: summarizeBy(packages, 'surfaceGroup'),
   },
   docs,
   packages,
@@ -427,7 +431,7 @@ function summarize(items) {
 
 function summarizeBy(items, key) {
   return items.reduce((acc, item) => {
-    const value = item[key] ?? "unknown";
+    const value = item[key] ?? 'unknown';
     acc[value] = (acc[value] ?? 0) + 1;
     return acc;
   }, {});
@@ -435,82 +439,92 @@ function summarizeBy(items, key) {
 
 function byPriority(left, right) {
   const rank = { quarantine: 0, prove: 1, keep: 2 };
-  return (rank[left.verdict] ?? 9) - (rank[right.verdict] ?? 9)
-    || Number(isLowSignalDefaultDoc(left)) - Number(isLowSignalDefaultDoc(right))
-    || left.evidenceScore - right.evidenceScore
-    || left.path.localeCompare(right.path);
+  return (
+    (rank[left.verdict] ?? 9) - (rank[right.verdict] ?? 9) ||
+    Number(isLowSignalDefaultDoc(left)) - Number(isLowSignalDefaultDoc(right)) ||
+    left.evidenceScore - right.evidenceScore ||
+    left.path.localeCompare(right.path)
+  );
 }
 
 function isLowSignalDefaultDoc(item) {
   return Boolean(
-    item.isArchivedDoc
-    || item.isTemplateDoc
-    || item.isDecisionSkeleton
-    || item.isPlanningNote
-    || item.isSupersededNote
+    item.isArchivedDoc ||
+    item.isTemplateDoc ||
+    item.isDecisionSkeleton ||
+    item.isPlanningNote ||
+    item.isSupersededNote,
   );
 }
 
 function renderMarkdown() {
   const lines = [];
-  lines.push("# qa-sdk Design Usefulness Audit");
-  lines.push("");
+  lines.push('# qa-sdk Design Usefulness Audit');
+  lines.push('');
   lines.push(`Generated: ${report.generatedAt}`);
-  lines.push("");
-  lines.push("## Summary");
-  lines.push("");
+  lines.push('');
+  lines.push('## Summary');
+  lines.push('');
   lines.push(`- Docs: ${formatSummary(report.summary.docs)}`);
   lines.push(`- Packages: ${formatSummary(report.summary.packages)}`);
   lines.push(`- Package scopes: ${formatScopeSummary(report.summary.packageScopes)}`);
-  lines.push(`- Package feature groups: ${formatScopeSummary(report.summary.packageFeatureGroups)}`);
-  lines.push("");
-  lines.push("## Package Candidates");
-  lines.push("");
-  lines.push("| Verdict | Scope | Feature group | Score | Package | Evidence | Reason |");
-  lines.push("|---|---|---|---:|---|---|---|");
+  lines.push(
+    `- Package feature groups: ${formatScopeSummary(report.summary.packageFeatureGroups)}`,
+  );
+  lines.push('');
+  lines.push('## Package Candidates');
+  lines.push('');
+  lines.push('| Verdict | Scope | Feature group | Score | Package | Evidence | Reason |');
+  lines.push('|---|---|---|---:|---|---|---|');
   for (const item of [...packages].sort(byPriority).slice(0, limit)) {
-    lines.push(`| ${item.verdict} | ${item.surfaceScope}<br>${item.surface} | ${item.surfaceGroup} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, testSurface=${item.hasTestSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join("; ")} |`);
+    lines.push(
+      `| ${item.verdict} | ${item.surfaceScope}<br>${item.surface} | ${item.surfaceGroup} | ${item.evidenceScore} | \`${item.name}\`<br>\`${item.path}\` | runtime=${item.hasRuntimeSurface}, testSurface=${item.hasTestSurface}, readme=${item.hasReadme}, testScript=${item.hasTestScript}, tests=${item.testFiles}, build=${item.hasBuildScript}, run=${item.hasRunScript}, bin=${item.hasBin} | ${item.reasons.join('; ')} |`,
+    );
   }
-  lines.push("");
-  lines.push("## Doc Candidates");
-  lines.push("");
-  lines.push("| Verdict | Score | Scope | Lifecycle | Doc | Sources | Reason |");
-  lines.push("|---|---:|---|---|---|---:|---|");
+  lines.push('');
+  lines.push('## Doc Candidates');
+  lines.push('');
+  lines.push('| Verdict | Score | Scope | Lifecycle | Doc | Sources | Reason |');
+  lines.push('|---|---:|---|---|---|---:|---|');
   for (const item of [...docs].sort(byPriority).slice(0, limit)) {
-    lines.push(`| ${item.verdict} | ${item.evidenceScore} | ${docScope(item)} | ${item.lifecycle} | \`${item.path}\` | ${item.sourceRefs} | ${item.reasons.join("; ")} |`);
+    lines.push(
+      `| ${item.verdict} | ${item.evidenceScore} | ${docScope(item)} | ${item.lifecycle} | \`${item.path}\` | ${item.sourceRefs} | ${item.reasons.join('; ')} |`,
+    );
   }
-  lines.push("");
-  lines.push("## Rule");
-  lines.push("");
-  lines.push("This report is a candidate generator, not an automatic deletion list. Use `docs/specs/system/design-usefulness-audit.rule.md` before changing lifecycle, archiving, or removing docs/packages.");
-  return `${lines.join("\n")}\n`;
+  lines.push('');
+  lines.push('## Rule');
+  lines.push('');
+  lines.push(
+    'This report is a candidate generator, not an automatic deletion list. Use `docs/specs/system/design-usefulness-audit.rule.md` before changing lifecycle, archiving, or removing docs/packages.',
+  );
+  return `${lines.join('\n')}\n`;
 }
 
 function docScope(item) {
-  if (item.isArchivedDoc) return "archive";
-  if (item.isProposalIndexDoc) return "proposal-index";
-  if (item.isTemplateDoc) return "template";
-  if (item.isDecisionSkeleton) return "decision-draft";
-  if (item.isPlanningNote) return "plan-note";
-  if (item.isSupersededNote) return "superseded-note";
-  return "active";
+  if (item.isArchivedDoc) return 'archive';
+  if (item.isProposalIndexDoc) return 'proposal-index';
+  if (item.isTemplateDoc) return 'template';
+  if (item.isDecisionSkeleton) return 'decision-draft';
+  if (item.isPlanningNote) return 'plan-note';
+  if (item.isSupersededNote) return 'superseded-note';
+  return 'active';
 }
 
 function formatSummary(summary) {
-  return ["keep", "prove", "quarantine", "remove"]
+  return ['keep', 'prove', 'quarantine', 'remove']
     .filter((key) => summary[key])
     .map((key) => `${key}=${summary[key]}`)
-    .join(", ");
+    .join(', ');
 }
 
 function formatScopeSummary(summary) {
   return Object.entries(summary)
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
-    .join(", ");
+    .join(', ');
 }
 
-if (format === "json") {
+if (format === 'json') {
   console.log(JSON.stringify(renderJson(), null, 2));
 } else {
   console.log(renderMarkdown());
@@ -523,6 +537,6 @@ function renderJson() {
     summary: report.summary,
     packageCandidates: [...packages].sort(byPriority).slice(0, limit),
     docCandidates: [...docs].sort(byPriority).slice(0, limit),
-    note: "Use --all to include every scanned doc and package.",
+    note: 'Use --all to include every scanned doc and package.',
   };
 }

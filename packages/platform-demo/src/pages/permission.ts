@@ -5,11 +5,8 @@
 //  권한 인덱스 — 2D grid page (API-backed, version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import {
-  fetchPermCells,
-  type PermCellsResponse,
-} from "../registry.js";
-import { DEMO_KO } from "demo-snapshot";
+import { fetchPermCells, type PermCellsResponse } from '../registry.js';
+import { DEMO_KO } from 'demo-snapshot';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -19,16 +16,16 @@ export interface PermState {
 
 // ── Label maps ────────────────────────────────────────────────────────────
 
-const ENV_KO    = DEMO_KO.env;
+const ENV_KO = DEMO_KO.env;
 const REGION_KO = DEMO_KO.region;
-const NS_KO     = DEMO_KO.ns;
+const NS_KO = DEMO_KO.ns;
 
 // ── Color helpers (use data.maxValue for scaling) ─────────────────────────
 
 function permDensityFill(value: number, maxValue: number): string {
   const t = value / maxValue;
   const from = [232, 238, 245];
-  const to   = [30,  58,  95];
+  const to = [30, 58, 95];
   const r = Math.round(from[0] + (to[0] - from[0]) * t * 0.75);
   const g = Math.round(from[1] + (to[1] - from[1]) * t * 0.75);
   const b = Math.round(from[2] + (to[2] - from[2]) * t * 0.75);
@@ -36,20 +33,16 @@ function permDensityFill(value: number, maxValue: number): string {
 }
 
 function permDensityInk(value: number, maxValue: number): string {
-  return value > maxValue * 0.6 ? "#ffffff" : "#000000";
+  return value > maxValue * 0.6 ? '#ffffff' : '#000000';
 }
 
 // ── Side panel ────────────────────────────────────────────────────────────
 
-function renderPermDetail(
-  container: HTMLElement,
-  value: number,
-  data: PermCellsResponse
-): void {
-  const svcPos  = Math.floor(value / data.roleStride);
+function renderPermDetail(container: HTMLElement, value: number, data: PermCellsResponse): void {
+  const svcPos = Math.floor(value / data.roleStride);
   const rolePos = value % data.roleStride;
 
-  const svcLabel  = data.svcLabels[svcPos];
+  const svcLabel = data.svcLabels[svcPos];
   const roleLabel = data.roleLabels[rolePos];
   if (!svcLabel || !roleLabel) {
     container.innerHTML = `<div style="padding:1rem;color:#c0392b">디코딩 오류</div>`;
@@ -122,7 +115,7 @@ function renderGrid(
   container: HTMLElement,
   state: PermState,
   data: PermCellsResponse,
-  onSelect: (v: number) => void
+  onSelect: (v: number) => void,
 ): void {
   const { selectedValue } = state;
   const { svcLabels, roleLabels, cells, roleStride, maxValue } = data;
@@ -132,21 +125,21 @@ function renderGrid(
     cellMap.set(`${cell.svcPos},${cell.rolePos}`, cell.value);
   }
 
-  const tbl = document.createElement("table");
-  tbl.className = "xl-grid";
-  tbl.setAttribute("role", "grid");
+  const tbl = document.createElement('table');
+  tbl.className = 'xl-grid';
+  tbl.setAttribute('role', 'grid');
 
   const thead = tbl.createTHead();
   const headRow = thead.insertRow();
 
-  const corner = document.createElement("th");
-  corner.className = "xl-corner";
+  const corner = document.createElement('th');
+  corner.className = 'xl-corner';
   corner.innerHTML = `<span style="font-size:0.62rem;color:var(--text-muted)">svc \\ role</span>`;
   headRow.appendChild(corner);
 
   roleLabels.forEach((rl, ri) => {
-    const th = document.createElement("th");
-    th.className = "xl-col-header";
+    const th = document.createElement('th');
+    th.className = 'xl-col-header';
     const letter = String.fromCharCode(65 + ri);
     th.innerHTML = `
       <span class="col-letter">${letter}</span>
@@ -160,8 +153,8 @@ function renderGrid(
   svcLabels.forEach((sl, si) => {
     const tr = tbody.insertRow();
 
-    const rh = document.createElement("th");
-    rh.className = "xl-row-header";
+    const rh = document.createElement('th');
+    rh.className = 'xl-row-header';
     rh.innerHTML = `
       <span class="row-num">${si + 1}</span>
       <span class="row-value">${sl.svcName}</span>
@@ -170,14 +163,14 @@ function renderGrid(
     tr.appendChild(rh);
 
     roleLabels.forEach((_rl, ri) => {
-      const value = cellMap.get(`${si + 1},${ri + 1}`) ?? (si * roleStride + ri);
-      const td = document.createElement("td");
-      td.className = "xl-cell perm-cell";
-      td.setAttribute("role", "gridcell");
+      const value = cellMap.get(`${si + 1},${ri + 1}`) ?? si * roleStride + ri;
+      const td = document.createElement('td');
+      td.className = 'xl-cell perm-cell';
+      td.setAttribute('role', 'gridcell');
       td.tabIndex = 0;
-      if (value === selectedValue) td.classList.add("selected");
+      if (value === selectedValue) td.classList.add('selected');
 
-      const bg  = permDensityFill(value, maxValue);
+      const bg = permDensityFill(value, maxValue);
       const ink = permDensityInk(value, maxValue);
       td.style.backgroundColor = bg;
       td.style.color = ink;
@@ -187,12 +180,12 @@ function renderGrid(
         <span class="cell-coord-tag" style="color:${ink};opacity:0.7">[${si + 1},${ri + 1}]</span>
       `;
 
-      td.addEventListener("click", () => onSelect(value));
+      td.addEventListener('click', () => onSelect(value));
       tr.appendChild(td);
     });
   });
 
-  container.innerHTML = "";
+  container.innerHTML = '';
   container.appendChild(tbl);
 }
 
@@ -208,14 +201,14 @@ export async function renderPermissionPage(
   spContent: HTMLElement,
   state: PermState,
   onSelect: (v: number | null) => void,
-  ver = "v2",
+  ver = 'v2',
 ): Promise<void> {
   if (!_permCache.has(ver)) {
     gridContainer.innerHTML = `<div style="padding:2rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
       _permCache.set(ver, await fetchPermCells(ver));
     } catch (e) {
-      gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
+      gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
       return;
     }
   }
@@ -232,26 +225,26 @@ export async function renderPermissionPage(
   });
 
   if (state.selectedValue !== null) {
-    spPlaceholder.classList.add("hidden");
-    spContent.classList.remove("hidden");
+    spPlaceholder.classList.add('hidden');
+    spContent.classList.remove('hidden');
     renderPermDetail(spContent, state.selectedValue, data);
   } else {
-    spContent.classList.add("hidden");
-    spPlaceholder.classList.remove("hidden");
+    spContent.classList.add('hidden');
+    spPlaceholder.classList.remove('hidden');
   }
 }
 
 export function updatePermSelection(
   gridContainer: HTMLElement,
   prevValue: number | null,
-  newValue: number | null
+  newValue: number | null,
 ): void {
-  gridContainer.querySelectorAll<HTMLElement>(".xl-cell").forEach((td) => {
-    const span = td.querySelector<HTMLElement>(".cell-id-val");
+  gridContainer.querySelectorAll<HTMLElement>('.xl-cell').forEach((td) => {
+    const span = td.querySelector<HTMLElement>('.cell-id-val');
     if (!span) return;
     const v = Number(span.textContent);
-    if (v === prevValue) td.classList.remove("selected");
-    if (v === newValue)  td.classList.add("selected");
+    if (v === prevValue) td.classList.remove('selected');
+    if (v === newValue) td.classList.add('selected');
   });
 }
 
@@ -259,22 +252,22 @@ export async function refreshPermDetail(
   spPlaceholder: HTMLElement,
   spContent: HTMLElement,
   value: number | null,
-  ver = "v2",
+  ver = 'v2',
 ): Promise<void> {
   if (value === null) {
-    spContent.classList.add("hidden");
-    spPlaceholder.classList.remove("hidden");
+    spContent.classList.add('hidden');
+    spPlaceholder.classList.remove('hidden');
     return;
   }
-  spPlaceholder.classList.add("hidden");
-  spContent.classList.remove("hidden");
+  spPlaceholder.classList.add('hidden');
+  spContent.classList.remove('hidden');
 
   if (!_permCache.has(ver)) {
     spContent.innerHTML = `<div style="padding:1rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
       _permCache.set(ver, await fetchPermCells(ver));
     } catch (e) {
-      spContent.innerHTML = `<div style="padding:1rem;color:#c0392b">오류: ${e instanceof Error ? e.message : "알 수 없는 오류"}</div>`;
+      spContent.innerHTML = `<div style="padding:1rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
       return;
     }
   }

@@ -5,9 +5,9 @@ import type {
   OntologyPackSourceMapCandidate,
   OntologyPackSourceMapFrontmatterCandidate,
   OntologyPackSourceMapGuidance,
-} from "../ontology-pack-scaffold-plan.js";
+} from '../ontology-pack-scaffold-plan.js';
 
-type SourceRole = OntologyPackSourceMapCandidate["sourceRole"];
+type SourceRole = OntologyPackSourceMapCandidate['sourceRole'];
 
 export interface OntologyPackSourceMapSourceInput {
   readonly sourcePath: string;
@@ -42,16 +42,16 @@ export function createOntologyPackSourceMapPlan(
         docPath: doc.docPath,
         sourcePath: source.sourcePath,
         sourceRole: source.sourceRole,
-      })
-    )
+      }),
+    ),
   );
   const frontmatterCandidates = docs.map((doc) => ({
     docId: doc.docId,
     docPath: doc.docPath,
-    frontmatterKey: "sources" as const,
-    candidateKind: "suggested-doc-edit" as const,
-    targetKind: "definition-doc-frontmatter" as const,
-    applyMode: "candidate-only" as const,
+    frontmatterKey: 'sources' as const,
+    candidateKind: 'suggested-doc-edit' as const,
+    targetKind: 'definition-doc-frontmatter' as const,
+    applyMode: 'candidate-only' as const,
     sources: doc.sources.map((source) => source.sourcePath),
     yaml: renderSourcesYaml(doc.sources.map((source) => source.sourcePath)),
   }));
@@ -69,15 +69,15 @@ export function createOntologyPackSourceMapPlan(
 function sourceMapCandidate(
   input: Omit<
     OntologyPackSourceMapCandidate,
-    "applyMode" | "candidateKind" | "frontmatterKey" | "sourceFileKind"
+    'applyMode' | 'candidateKind' | 'frontmatterKey' | 'sourceFileKind'
   >,
 ): OntologyPackSourceMapCandidate {
   return {
     ...input,
-    frontmatterKey: "sources",
-    sourceFileKind: "generated-file",
-    candidateKind: "suggested-doc-edit",
-    applyMode: "candidate-only",
+    frontmatterKey: 'sources',
+    sourceFileKind: 'generated-file',
+    candidateKind: 'suggested-doc-edit',
+    applyMode: 'candidate-only',
   };
 }
 
@@ -88,26 +88,21 @@ function createSourceMapGuidance(
   const uniqueSourcePaths = [...new Set(sourcePaths)];
   return {
     summary:
-      "Review the sources frontmatter candidates, run qa-sdk def sync, then verify source coverage with def find-by-file and docs graph.",
-    findByFileCommands: uniqueSourcePaths.map((sourcePath) =>
-      `qa-sdk def find-by-file ${sourcePath}`
+      'Review the sources frontmatter candidates, run qa-sdk def sync, then verify source coverage with def find-by-file and docs graph.',
+    findByFileCommands: uniqueSourcePaths.map(
+      (sourcePath) => `qa-sdk def find-by-file ${sourcePath}`,
     ),
     docsGraphCommands: [
       `qa-sdk docs graph ${definitionId} --axis source`,
-      ...uniqueSourcePaths.map((sourcePath) =>
-        `qa-sdk docs graph ${sourcePath} --axis source`
-      ),
+      ...uniqueSourcePaths.map((sourcePath) => `qa-sdk docs graph ${sourcePath} --axis source`),
     ],
     notes: [
-      "Source-map candidates use repository-relative normalized paths.",
-      "Generated TypeScript files do not receive @def.boundary/<doc-id> or @def.doc/<doc-id> source comments by default.",
+      'Source-map candidates use repository-relative normalized paths.',
+      'Generated TypeScript files do not receive @def.boundary/<doc-id> or @def.doc/<doc-id> source comments by default.',
     ],
   };
 }
 
 function renderSourcesYaml(sources: readonly string[]): string {
-  return [
-    "sources:",
-    ...sources.map((source) => `  - ${source}`),
-  ].join("\n");
+  return ['sources:', ...sources.map((source) => `  - ${source}`)].join('\n');
 }

@@ -9,42 +9,40 @@
  * 여기서도 선언한다. drift 방지 책임은 Plan 14b 의 coverage spec 에 추적.
  */
 
-import { DisjointUnionIndex } from "weighted-index";
+import { DisjointUnionIndex } from 'weighted-index';
 import {
   PrefixCatalogQueryPort,
   type PrefixDescriptor,
-} from "../../application/ports/prefix-catalog.query.port.js";
+} from '../../application/ports/prefix-catalog.query.port.js';
 
-const USER_ACTIONS = ["login", "logout", "refresh"] as const;
-const ROLE_ACTIONS = ["assign", "revoke"] as const;
-const DEPT_ACTIONS = ["manage_users", "budget_request"] as const;
-const BITMAP_ACTIONS = ["issue", "refresh", "invalidate"] as const;
+const USER_ACTIONS = ['login', 'logout', 'refresh'] as const;
+const ROLE_ACTIONS = ['assign', 'revoke'] as const;
+const DEPT_ACTIONS = ['manage_users', 'budget_request'] as const;
+const BITMAP_ACTIONS = ['issue', 'refresh', 'invalidate'] as const;
 
 /** sim.bitmap@uv1 — auth-codec.ts 의 authUnion 과 동일 구조. */
 function buildSimBitmapDescriptor(): PrefixDescriptor {
   const union = new DisjointUnionIndex([
-    { kind: "user_action", shape: [USER_ACTIONS.length], labels: ["action"] },
-    { kind: "role_action", shape: [ROLE_ACTIONS.length], labels: ["action"] },
-    { kind: "dept_action", shape: [DEPT_ACTIONS.length], labels: ["action"] },
-    { kind: "bitmap_action", shape: [BITMAP_ACTIONS.length], labels: ["action"] },
+    { kind: 'user_action', shape: [USER_ACTIONS.length], labels: ['action'] },
+    { kind: 'role_action', shape: [ROLE_ACTIONS.length], labels: ['action'] },
+    { kind: 'dept_action', shape: [DEPT_ACTIONS.length], labels: ['action'] },
+    { kind: 'bitmap_action', shape: [BITMAP_ACTIONS.length], labels: ['action'] },
   ]);
   return {
-    id: "sim.bitmap",
-    version: "uv1",
+    id: 'sim.bitmap',
+    version: 'uv1',
     union,
     axes: [
-      { name: "user_action", labels: USER_ACTIONS },
-      { name: "role_action", labels: ROLE_ACTIONS },
-      { name: "dept_action", labels: DEPT_ACTIONS },
-      { name: "bitmap_action", labels: BITMAP_ACTIONS },
+      { name: 'user_action', labels: USER_ACTIONS },
+      { name: 'role_action', labels: ROLE_ACTIONS },
+      { name: 'dept_action', labels: DEPT_ACTIONS },
+      { name: 'bitmap_action', labels: BITMAP_ACTIONS },
     ],
     coordsOneBased: true,
   };
 }
 
-const DESCRIPTORS = new Map<string, PrefixDescriptor>([
-  ["sim.bitmap", buildSimBitmapDescriptor()],
-]);
+const DESCRIPTORS = new Map<string, PrefixDescriptor>([['sim.bitmap', buildSimBitmapDescriptor()]]);
 
 class SimPrefixCatalogAdapter extends PrefixCatalogQueryPort {
   async resolve(id: string): Promise<PrefixDescriptor | null> {

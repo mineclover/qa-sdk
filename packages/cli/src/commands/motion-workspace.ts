@@ -1,9 +1,9 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { parseArgs } from "node:util";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import {
   MOTION_COMPOSITION_SCHEMA_V2,
   assembleComposition,
@@ -14,13 +14,13 @@ import {
   type MotionSceneDef,
   parseMotionComposition,
   serializeMotionComposition,
-} from "motion-content";
+} from 'motion-content';
 import {
   createMotionWorkspaceSnapshot,
   type MotionWorkspaceDescriptor,
   type MotionWorkspaceSnapshot,
   type MotionWorkspaceSnapshotV2,
-} from "motion-workspace";
+} from 'motion-workspace';
 import {
   MotionWorkspaceClient,
   MotionWorkspaceClientError,
@@ -29,28 +29,38 @@ import {
   type MotionWorkspaceListResponse,
   type MotionWorkspaceSceneGetResponse,
   type MotionWorkspaceSceneListResponse,
-} from "motion-workspace-client";
+} from 'motion-workspace-client';
 import {
   describeError,
   formatWorkspaceSource,
   isRecord,
   type MotionCompositionSummary,
-} from "./motion-shared.js";
+} from './motion-shared.js';
 
-const DEFAULT_MOTION_WORKSPACE_BASE_URL = "http://localhost:3710";
+const DEFAULT_MOTION_WORKSPACE_BASE_URL = 'http://localhost:3710';
 const DEFAULT_NEW_SCENE_DURATION_MS = 1200;
 
-export const MOTION_WORKSPACE_LIST_USAGE = "Usage: qa-sdk motion workspace list [--base-url <url>]";
-export const MOTION_WORKSPACE_SHOW_USAGE = "Usage: qa-sdk motion workspace show <id> [--base-url <url>]";
-export const MOTION_WORKSPACE_CREATE_USAGE = "Usage: qa-sdk motion workspace create <id> [--base-url <url>]";
-export const MOTION_WORKSPACE_DELETE_USAGE = "Usage: qa-sdk motion workspace delete <id> [--base-url <url>]";
-export const MOTION_SCENE_LIST_USAGE = "Usage: qa-sdk motion scene list --workspace <id> [--base-url <url>]";
-export const MOTION_SCENE_SHOW_USAGE = "Usage: qa-sdk motion scene show --workspace <id> --scene <id> [--base-url <url>]";
-export const MOTION_SCENE_CREATE_USAGE = "Usage: qa-sdk motion scene create --workspace <id> [--base-url <url>]";
-export const MOTION_SCENE_DELETE_USAGE = "Usage: qa-sdk motion scene delete --workspace <id> --scene <id> [--base-url <url>]";
-export const MOTION_EXPORT_USAGE = "Usage: qa-sdk motion export --workspace <id> --out <file> [--base-url <url>]";
-export const MOTION_IMPORT_USAGE = "Usage: qa-sdk motion import <file> --workspace <id> [--base-url <url>]";
-export const MOTION_APPLY_USAGE = "Usage: qa-sdk motion apply --workspace <id> --command <json> [--base-url <url>]";
+export const MOTION_WORKSPACE_LIST_USAGE = 'Usage: qa-sdk motion workspace list [--base-url <url>]';
+export const MOTION_WORKSPACE_SHOW_USAGE =
+  'Usage: qa-sdk motion workspace show <id> [--base-url <url>]';
+export const MOTION_WORKSPACE_CREATE_USAGE =
+  'Usage: qa-sdk motion workspace create <id> [--base-url <url>]';
+export const MOTION_WORKSPACE_DELETE_USAGE =
+  'Usage: qa-sdk motion workspace delete <id> [--base-url <url>]';
+export const MOTION_SCENE_LIST_USAGE =
+  'Usage: qa-sdk motion scene list --workspace <id> [--base-url <url>]';
+export const MOTION_SCENE_SHOW_USAGE =
+  'Usage: qa-sdk motion scene show --workspace <id> --scene <id> [--base-url <url>]';
+export const MOTION_SCENE_CREATE_USAGE =
+  'Usage: qa-sdk motion scene create --workspace <id> [--base-url <url>]';
+export const MOTION_SCENE_DELETE_USAGE =
+  'Usage: qa-sdk motion scene delete --workspace <id> --scene <id> [--base-url <url>]';
+export const MOTION_EXPORT_USAGE =
+  'Usage: qa-sdk motion export --workspace <id> --out <file> [--base-url <url>]';
+export const MOTION_IMPORT_USAGE =
+  'Usage: qa-sdk motion import <file> --workspace <id> [--base-url <url>]';
+export const MOTION_APPLY_USAGE =
+  'Usage: qa-sdk motion apply --workspace <id> --command <json> [--base-url <url>]';
 
 export interface MotionWorkspaceClientLike {
   list(): Promise<MotionWorkspaceListResponse>;
@@ -89,16 +99,14 @@ function getNow(deps?: MotionWorkspaceCommandDeps): string {
 function isSceneComposition(
   composition: MotionCompositionDef | MotionCompositionDefV2,
 ): composition is MotionCompositionDefV2 {
-  return "targets" in composition && "scenes" in composition;
+  return 'targets' in composition && 'scenes' in composition;
 }
 
-function formatSelection(
-  selection: MotionWorkspaceSnapshotV2["editor"]["selection"],
-): string {
+function formatSelection(selection: MotionWorkspaceSnapshotV2['editor']['selection']): string {
   if (!selection) {
-    return "(none)";
+    return '(none)';
   }
-  if (selection.kind === "scene-layer") {
+  if (selection.kind === 'scene-layer') {
     return `${selection.kind}:${selection.sceneId}/${selection.targetId}`;
   }
   return `${selection.kind}:${selection.id}`;
@@ -139,9 +147,7 @@ function summarizeComposition(
 function toLegacyExportComposition(
   composition: MotionCompositionDef | MotionCompositionDefV2,
 ): MotionCompositionDef {
-  return isSceneComposition(composition)
-    ? assembleComposition(composition)
-    : composition;
+  return isSceneComposition(composition) ? assembleComposition(composition) : composition;
 }
 
 function printWorkspaceDescriptor(descriptor: MotionWorkspaceDescriptor): void {
@@ -151,7 +157,7 @@ function printWorkspaceDescriptor(descriptor: MotionWorkspaceDescriptor): void {
 }
 
 function printSceneDescriptor(
-  descriptor: MotionWorkspaceSceneListResponse["scenes"][number],
+  descriptor: MotionWorkspaceSceneListResponse['scenes'][number],
 ): void {
   const id = descriptor.scene.id.padEnd(20);
   const revision = `r${descriptor.revision}`.padEnd(6);
@@ -159,13 +165,10 @@ function printSceneDescriptor(
   console.log(`  ${id} ${revision} ${timing} ${descriptor.scene.title}`);
 }
 
-function printWorkspaceSummary(
-  workspaceId: string,
-  snapshot: MotionWorkspaceSnapshotV2,
-): void {
+function printWorkspaceSummary(workspaceId: string, snapshot: MotionWorkspaceSnapshotV2): void {
   const summary = summarizeComposition(snapshot.document.composition);
 
-  console.log("\n══ Remote Motion Workspace ══");
+  console.log('\n══ Remote Motion Workspace ══');
   console.log(`  workspace: ${workspaceId}`);
   console.log(`  schemaVersion: ${snapshot.schemaVersion}`);
   console.log(`  revision: ${snapshot.globalRevision}`);
@@ -195,11 +198,8 @@ function printWorkspaceSummary(
   console.log(`  composition.transitions: ${summary.transitions}`);
 }
 
-function printSceneSummary(
-  workspaceId: string,
-  response: MotionWorkspaceSceneGetResponse,
-): void {
-  console.log("\n══ Remote Motion Scene ══");
+function printSceneSummary(workspaceId: string, response: MotionWorkspaceSceneGetResponse): void {
+  console.log('\n══ Remote Motion Scene ══');
   console.log(`  workspace: ${workspaceId}`);
   console.log(`  scene: ${response.scene.id}`);
   console.log(`  title: ${response.scene.title}`);
@@ -213,12 +213,13 @@ function printSceneSummary(
 }
 
 function resolveBaseUrl(explicitBaseUrl?: string): string {
-  const baseUrl = explicitBaseUrl?.trim()
-    || process.env["MOTION_WORKSPACE_SERVICE_ORIGIN"]?.trim()
-    || process.env["QA_MOTION_WORKSPACE_BASE_URL"]?.trim()
-    || DEFAULT_MOTION_WORKSPACE_BASE_URL;
+  const baseUrl =
+    explicitBaseUrl?.trim() ||
+    process.env['MOTION_WORKSPACE_SERVICE_ORIGIN']?.trim() ||
+    process.env['QA_MOTION_WORKSPACE_BASE_URL']?.trim() ||
+    DEFAULT_MOTION_WORKSPACE_BASE_URL;
 
-  return baseUrl.replace(/\/+$/, "");
+  return baseUrl.replace(/\/+$/, '');
 }
 
 function getClient(
@@ -232,7 +233,7 @@ function getClient(
 function parseOptions(
   args: string[],
   usage: string,
-  options: Record<string, { type: "string" | "boolean" }>,
+  options: Record<string, { type: 'string' | 'boolean' }>,
 ): ReturnType<typeof parseArgs> | null {
   try {
     return parseArgs({
@@ -266,7 +267,7 @@ function readRequiredOption(
   value: string | boolean | readonly (string | boolean)[] | undefined,
   usage: string,
 ): string | null {
-  if (typeof value !== "string" || value.length === 0) {
+  if (typeof value !== 'string' || value.length === 0) {
     console.error(usage);
     process.exitCode = 1;
     return null;
@@ -274,10 +275,7 @@ function readRequiredOption(
   return value;
 }
 
-function rejectPositionals(
-  parsed: ReturnType<typeof parseArgs>,
-  usage: string,
-): boolean {
+function rejectPositionals(parsed: ReturnType<typeof parseArgs>, usage: string): boolean {
   if (parsed.positionals.length === 0) {
     return false;
   }
@@ -287,9 +285,7 @@ function rejectPositionals(
   return true;
 }
 
-function parseMotionEditorCommandJson(
-  rawCommand: string,
-): MotionEditorCommand {
+function parseMotionEditorCommandJson(rawCommand: string): MotionEditorCommand {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawCommand) as unknown;
@@ -297,34 +293,30 @@ function parseMotionEditorCommandJson(
     throw new Error(`command JSON 파싱 실패: ${describeError(error)}`, { cause: error });
   }
 
-  if (!isRecord(parsed) || typeof parsed.type !== "string") {
-    throw new Error("command JSON은 최소한 string type 필드를 가진 object여야 합니다.");
+  if (!isRecord(parsed) || typeof parsed.type !== 'string') {
+    throw new Error('command JSON은 최소한 string type 필드를 가진 object여야 합니다.');
   }
 
   return parsed as MotionEditorCommand;
 }
 
-async function readCompositionDocument(
-  filePath: string,
-): Promise<{
+async function readCompositionDocument(filePath: string): Promise<{
   readonly filePath: string;
   readonly composition: MotionCompositionDef;
 }> {
   const resolvedPath = resolve(filePath);
-  const source = await readFile(resolvedPath, "utf-8");
+  const source = await readFile(resolvedPath, 'utf-8');
   return {
     filePath: resolvedPath,
     composition: parseMotionComposition(source),
   };
 }
 
-function createSeedWorkspaceSnapshot(
-  deps?: MotionWorkspaceCommandDeps,
-): MotionWorkspaceSnapshotV2 {
+function createSeedWorkspaceSnapshot(deps?: MotionWorkspaceCommandDeps): MotionWorkspaceSnapshotV2 {
   return createMotionWorkspaceSnapshot({
     composition: createPromoGridComposition(),
     source: {
-      presetId: "promo-grid",
+      presetId: 'promo-grid',
     },
     savedAt: getNow(deps),
   });
@@ -349,10 +341,10 @@ function createImportedWorkspaceSnapshot(
   return options.globalRevision === undefined
     ? snapshot
     : {
-      ...snapshot,
-      globalRevision: options.globalRevision,
-      savedAt: options.savedAt ?? snapshot.savedAt,
-    };
+        ...snapshot,
+        globalRevision: options.globalRevision,
+        savedAt: options.savedAt ?? snapshot.savedAt,
+      };
 }
 
 async function getWorkspaceOrNull(
@@ -369,14 +361,12 @@ async function getWorkspaceOrNull(
   }
 }
 
-function requireSceneComposition(
-  workspace: MotionWorkspaceSnapshotV2,
-): MotionCompositionDefV2 {
+function requireSceneComposition(workspace: MotionWorkspaceSnapshotV2): MotionCompositionDefV2 {
   if (
-    workspace.document.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2
-    || !isSceneComposition(workspace.document.composition)
+    workspace.document.schemaVersion !== MOTION_COMPOSITION_SCHEMA_V2 ||
+    !isSceneComposition(workspace.document.composition)
   ) {
-    throw new Error("scene endpoint는 qa-sdk.motion-composition/v2 workspace에서만 지원합니다.");
+    throw new Error('scene endpoint는 qa-sdk.motion-composition/v2 workspace에서만 지원합니다.');
   }
 
   return workspace.document.composition;
@@ -398,11 +388,9 @@ function createNextIndexedId(
   return { id, index };
 }
 
-function createNextSceneDraft(
-  composition: MotionCompositionDefV2,
-): MotionSceneDef {
+function createNextSceneDraft(composition: MotionCompositionDefV2): MotionSceneDef {
   const { id, index } = createNextIndexedId(
-    "scene",
+    'scene',
     composition.scenes.map((scene) => scene.id),
   );
   const durationMs = Math.min(DEFAULT_NEW_SCENE_DURATION_MS, composition.durationMs);
@@ -428,7 +416,7 @@ export async function motionWorkspaceList(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_WORKSPACE_LIST_USAGE, {
-    "base-url": { type: "string" },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -436,13 +424,13 @@ export async function motionWorkspaceList(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const response = await client.list();
 
     if (response.workspaces.length === 0) {
-      console.log("등록된 remote motion workspace가 없습니다.");
+      console.log('등록된 remote motion workspace가 없습니다.');
       return;
     }
 
@@ -461,7 +449,7 @@ export async function motionWorkspaceShow(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_WORKSPACE_SHOW_USAGE, {
-    "base-url": { type: "string" },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -474,7 +462,7 @@ export async function motionWorkspaceShow(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const response = await client.get(workspaceId);
@@ -490,7 +478,7 @@ export async function motionWorkspaceCreate(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_WORKSPACE_CREATE_USAGE, {
-    "base-url": { type: "string" },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -503,7 +491,7 @@ export async function motionWorkspaceCreate(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const response = await client.create(workspaceId, createSeedWorkspaceSnapshot(deps));
@@ -520,7 +508,7 @@ export async function motionWorkspaceDelete(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_WORKSPACE_DELETE_USAGE, {
-    "base-url": { type: "string" },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -533,7 +521,7 @@ export async function motionWorkspaceDelete(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     await client.delete(workspaceId);
@@ -549,8 +537,8 @@ export async function motionSceneList(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_SCENE_LIST_USAGE, {
-    workspace: { type: "string" },
-    "base-url": { type: "string" },
+    workspace: { type: 'string' },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -563,7 +551,7 @@ export async function motionSceneList(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const response = await client.listScenes(workspaceId);
@@ -590,9 +578,9 @@ export async function motionSceneShow(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_SCENE_SHOW_USAGE, {
-    workspace: { type: "string" },
-    scene: { type: "string" },
-    "base-url": { type: "string" },
+    workspace: { type: 'string' },
+    scene: { type: 'string' },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -606,7 +594,7 @@ export async function motionSceneShow(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const response = await client.getScene(workspaceId, sceneId);
@@ -622,8 +610,8 @@ export async function motionSceneCreate(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_SCENE_CREATE_USAGE, {
-    workspace: { type: "string" },
-    "base-url": { type: "string" },
+    workspace: { type: 'string' },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -636,17 +624,13 @@ export async function motionSceneCreate(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const current = await client.get(workspaceId);
     const composition = requireSceneComposition(current.workspace);
     const draft = createNextSceneDraft(composition);
-    const response = await client.createScene(
-      workspaceId,
-      draft,
-      current.workspace.globalRevision,
-    );
+    const response = await client.createScene(workspaceId, draft, current.workspace.globalRevision);
 
     console.log(`scene 생성 완료: ${workspaceId}/${response.scene.id}`);
     printSceneSummary(workspaceId, response);
@@ -661,9 +645,9 @@ export async function motionSceneDelete(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_SCENE_DELETE_USAGE, {
-    workspace: { type: "string" },
-    scene: { type: "string" },
-    "base-url": { type: "string" },
+    workspace: { type: 'string' },
+    scene: { type: 'string' },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -677,7 +661,7 @@ export async function motionSceneDelete(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const current = await client.get(workspaceId);
@@ -699,9 +683,9 @@ export async function motionExport(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_EXPORT_USAGE, {
-    workspace: { type: "string" },
-    out: { type: "string" },
-    "base-url": { type: "string" },
+    workspace: { type: 'string' },
+    out: { type: 'string' },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -715,7 +699,7 @@ export async function motionExport(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const response = await client.get(workspaceId);
@@ -727,7 +711,7 @@ export async function motionExport(
       serializeMotionComposition(
         toLegacyExportComposition(response.workspace.document.composition),
       ),
-      "utf-8",
+      'utf-8',
     );
 
     console.log(`motion export 완료: ${workspaceId} -> ${resolvedOutPath}`);
@@ -742,8 +726,8 @@ export async function motionImport(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_IMPORT_USAGE, {
-    workspace: { type: "string" },
-    "base-url": { type: "string" },
+    workspace: { type: 'string' },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -757,7 +741,7 @@ export async function motionImport(
 
   try {
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const document = await readCompositionDocument(filePath);
@@ -775,14 +759,10 @@ export async function motionImport(
       return;
     }
 
-    const nextSnapshot = createImportedWorkspaceSnapshot(
-      document.composition,
-      document.filePath,
-      {
-        globalRevision: existing.globalRevision + 1,
-        savedAt: getNow(deps),
-      },
-    );
+    const nextSnapshot = createImportedWorkspaceSnapshot(document.composition, document.filePath, {
+      globalRevision: existing.globalRevision + 1,
+      savedAt: getNow(deps),
+    });
     const updated = await client.update(workspaceId, nextSnapshot);
     console.log(`motion import 완료: ${document.filePath} -> ${workspaceId} (updated)`);
     printWorkspaceSummary(workspaceId, updated.workspace);
@@ -797,9 +777,9 @@ export async function motionApply(
   deps?: MotionWorkspaceCommandDeps,
 ): Promise<void> {
   const parsed = parseOptions(args, MOTION_APPLY_USAGE, {
-    workspace: { type: "string" },
-    command: { type: "string" },
-    "base-url": { type: "string" },
+    workspace: { type: 'string' },
+    command: { type: 'string' },
+    'base-url': { type: 'string' },
   });
   if (!parsed) {
     return;
@@ -814,7 +794,7 @@ export async function motionApply(
   try {
     const command = parseMotionEditorCommandJson(rawCommand);
     const client = getClient(
-      typeof parsed.values["base-url"] === "string" ? parsed.values["base-url"] : undefined,
+      typeof parsed.values['base-url'] === 'string' ? parsed.values['base-url'] : undefined,
       deps,
     );
     const current = await client.get(workspaceId);

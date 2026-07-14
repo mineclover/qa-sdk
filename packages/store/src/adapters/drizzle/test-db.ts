@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { closeClient, createDb, getClient, type Db } from "../../db/client.js";
+import { closeClient, createDb, getClient, type Db } from '../../db/client.js';
 
 const tableSetupStatements = [
   `create table if not exists "qa_sessions" (
@@ -128,7 +128,7 @@ export const hasTestDatabaseUrl = Boolean(process.env.DATABASE_URL);
 function getTestDatabaseUrl() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL is required for store integration tests.");
+    throw new Error('DATABASE_URL is required for store integration tests.');
   }
 
   return databaseUrl;
@@ -136,18 +136,20 @@ function getTestDatabaseUrl() {
 
 async function hasRequiredTables(databaseUrl: string) {
   const client = getClient(databaseUrl);
-  const [row] = await client<{
-    qa_sessions_table: string | null;
-    traces_table: string | null;
-    event_records_table: string | null;
-    transmissions_table: string | null;
-    runtime_graphs_table: string | null;
-    verdict_reports_table: string | null;
-    dead_letter_queue_table: string | null;
-    key_observations_table: string | null;
-    key_observation_prefixes_table: string | null;
-    insight_labels_table: string | null;
-  }[]>`
+  const [row] = await client<
+    {
+      qa_sessions_table: string | null;
+      traces_table: string | null;
+      event_records_table: string | null;
+      transmissions_table: string | null;
+      runtime_graphs_table: string | null;
+      verdict_reports_table: string | null;
+      dead_letter_queue_table: string | null;
+      key_observations_table: string | null;
+      key_observation_prefixes_table: string | null;
+      insight_labels_table: string | null;
+    }[]
+  >`
     select
       to_regclass('public.qa_sessions')::text as qa_sessions_table,
       to_regclass('public.traces')::text as traces_table,

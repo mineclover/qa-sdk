@@ -28,15 +28,15 @@ export async function recordOperatorAction(
     recordedAt: new Date().toISOString(),
     evidence: [
       {
-        kind: "external",
-        source: "break-glass-cli",
+        kind: 'external',
+        source: 'break-glass-cli',
         content: { command: record.command, reason: record.reason },
       },
     ],
   };
   const res = await fetch(`${auditUrl}/operator-actions`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(5_000),
   });

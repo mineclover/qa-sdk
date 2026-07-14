@@ -16,7 +16,7 @@
  *   V > 0.9 → 축 병합 또는 재설계 필요
  */
 
-import type { FlowInstance } from "./types.js";
+import type { FlowInstance } from './types.js';
 
 // ─── 타입 ────────────────────────────────────────────────
 
@@ -65,9 +65,7 @@ export function checkOrthogonality(
       cramersV: 0,
       isOrthogonal: true,
       sampleSize: pairs.length,
-      warning: pairs.length === 0
-        ? undefined
-        : `표본 부족 (${pairs.length}건) — 최소 5건 필요`,
+      warning: pairs.length === 0 ? undefined : `표본 부족 (${pairs.length}건) — 최소 5건 필요`,
     };
   }
 
@@ -117,7 +115,7 @@ export function checkOrthogonality(
       const colTotal = colTotals.get(colKey)!;
       const expected = (rowTotal * colTotal) / n;
       if (expected > 0) {
-        chiSquared += ((observed - expected) ** 2) / expected;
+        chiSquared += (observed - expected) ** 2 / expected;
       }
     }
   }
@@ -162,7 +160,7 @@ export function extractPhaseEvidencePairs(
       const phase = gatePhases.get(sel.gateId);
       if (!phase) continue;
       if (sel.evidence.length === 0) {
-        pairs.push({ a: phase, b: "none" });
+        pairs.push({ a: phase, b: 'none' });
       } else {
         for (const ev of sel.evidence) {
           pairs.push({ a: phase, b: ev.kind });
@@ -176,15 +174,13 @@ export function extractPhaseEvidencePairs(
 /**
  * FlowInstance 이력에서 evidence_kind × confidence_band 쌍을 추출한다.
  */
-export function extractEvidenceConfidencePairs(
-  instances: readonly FlowInstance[],
-): ObservedPair[] {
+export function extractEvidenceConfidencePairs(instances: readonly FlowInstance[]): ObservedPair[] {
   const pairs: ObservedPair[] = [];
   for (const instance of instances) {
     for (const sel of instance.selections) {
       const band = discretizeBand(sel.confidence);
       if (sel.evidence.length === 0) {
-        pairs.push({ a: "none", b: band });
+        pairs.push({ a: 'none', b: band });
       } else {
         for (const ev of sel.evidence) {
           pairs.push({ a: ev.kind, b: band });
@@ -206,20 +202,18 @@ export function checkAllDeclaredOrthogonality(
 
   // cognitive_phase × evidence_kind
   const phaseEvidence = extractPhaseEvidencePairs(instances, gatePhases);
-  results.push(checkOrthogonality("cognitive_phase", "evidence_kind", phaseEvidence));
+  results.push(checkOrthogonality('cognitive_phase', 'evidence_kind', phaseEvidence));
 
   // evidence_kind × confidence_band
   const evidenceConfidence = extractEvidenceConfidencePairs(instances);
-  results.push(checkOrthogonality("evidence_kind", "confidence_band", evidenceConfidence));
+  results.push(checkOrthogonality('evidence_kind', 'confidence_band', evidenceConfidence));
 
   return results;
 }
 
 // ─── 내부 유틸 ──────────────────────────────────────────
 
-function buildContingencyTable(
-  pairs: readonly ObservedPair[],
-): Map<string, Map<string, number>> {
+function buildContingencyTable(pairs: readonly ObservedPair[]): Map<string, Map<string, number>> {
   const table = new Map<string, Map<string, number>>();
   for (const { a, b } of pairs) {
     let row = table.get(a);
@@ -233,8 +227,8 @@ function buildContingencyTable(
 }
 
 function discretizeBand(confidence: number): string {
-  if (confidence >= 0.9) return "exact";
-  if (confidence >= 0.7) return "high";
-  if (confidence >= 0.4) return "medium";
-  return "low";
+  if (confidence >= 0.9) return 'exact';
+  if (confidence >= 0.7) return 'high';
+  if (confidence >= 0.4) return 'medium';
+  return 'low';
 }

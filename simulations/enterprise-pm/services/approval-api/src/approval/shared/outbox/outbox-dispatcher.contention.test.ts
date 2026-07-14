@@ -11,25 +11,25 @@
  * 시나리오 #15 (`outbox-multi-dispatcher-lock`) 부하·복합 검증은 Plan E
  * `05-error-and-scenarios.md` §3 으로 분리한다 — 본 테스트는 핵심 메커니즘만 책임진다.
  */
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildIdempotencyKey } from "sim-identifier-grammar";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
 
-import { createOutboxDispatcher } from "./outbox-dispatcher.js";
+import { createOutboxDispatcher } from './outbox-dispatcher.js';
 import {
   SIM_APPROVAL_PG_RESET_DDL,
   SIM_OUTBOX_CONSUMER_LOG_PG_RESET_DDL,
-} from "../../pg/schema.js";
+} from '../../pg/schema.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
-describe.skipIf(!PG_AVAILABLE)("N dispatcher contention (SKIP LOCKED disjoint)", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('N dispatcher contention (SKIP LOCKED disjoint)', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
 
   const cfg = () => ({
     host: PG_HOST,
@@ -54,10 +54,10 @@ describe.skipIf(!PG_AVAILABLE)("N dispatcher contention (SKIP LOCKED disjoint)",
 
     const baseTime = 1_714_250_400_000;
     for (let i = 0; i < ROWS; i++) {
-      const aggregateId = `br-${String(i).padStart(3, "0")}`;
+      const aggregateId = `br-${String(i).padStart(3, '0')}`;
       const idempotencyKey = buildIdempotencyKey({
         aggregateId,
-        eventName: "approval.budget.submitted",
+        eventName: 'approval.budget.submitted',
         occurredAt: baseTime + i,
       });
       await setup`
@@ -81,7 +81,7 @@ describe.skipIf(!PG_AVAILABLE)("N dispatcher contention (SKIP LOCKED disjoint)",
     }
   });
 
-  it("N=3 dispatcher 동시 polling — disjoint + 총합 = INSERT row 수", async () => {
+  it('N=3 dispatcher 동시 polling — disjoint + 총합 = INSERT row 수', async () => {
     const claimed: string[][] = pools.map(() => []);
     const dispatchers = pools.map((sql, idx) =>
       createOutboxDispatcher({
@@ -109,7 +109,7 @@ describe.skipIf(!PG_AVAILABLE)("N dispatcher contention (SKIP LOCKED disjoint)",
 
     const remaining = await setup<{ status: string }[]>`
       SELECT status FROM sim.approval_outbox_events`;
-    expect(remaining.every((r) => r.status === "dispatched")).toBe(true);
+    expect(remaining.every((r) => r.status === 'dispatched')).toBe(true);
 
     const log = await setup<{ idempotency_key: string }[]>`
       SELECT idempotency_key FROM sim.outbox_consumer_log`;

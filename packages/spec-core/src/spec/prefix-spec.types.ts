@@ -1,9 +1,9 @@
 // @def.boundary spec-engine-system
 // @def.doc spec-engine-system
 
-import type { ExportSurface } from "../export-surface/export-surface.types.js";
-import type { SchemaCategory } from "spec-schema";
-import type { SpecId } from "./spec.types.js";
+import type { ExportSurface } from '../export-surface/export-surface.types.js';
+import type { SchemaCategory } from 'spec-schema';
+import type { SpecId } from './spec.types.js';
 
 /**
  * DimRef: prefix 내부의 차원 참조.
@@ -12,9 +12,9 @@ import type { SpecId } from "./spec.types.js";
  * spec-core에서는 이 타입을 "prefix의 내부 구조"로 사용한다.
  */
 export type DimRef =
-  | { kind: "axis"; axisId: string }
-  | { kind: "prefix_ref"; prefixId: string }
-  | { kind: "table_ref"; table: string };
+  | { kind: 'axis'; axisId: string }
+  | { kind: 'prefix_ref'; prefixId: string }
+  | { kind: 'table_ref'; table: string };
 
 /**
  * prefix의 완전한 명세.

@@ -107,7 +107,7 @@ export interface RequestContract {
   readonly metadata: ContractMetadata;
 }
 
-export type ContractDiagnosticSeverity = "error" | "warning";
+export type ContractDiagnosticSeverity = 'error' | 'warning';
 
 export interface ContractDiagnostic {
   readonly code: string;
@@ -186,7 +186,7 @@ export interface ObservationContractInput {
   readonly metadata?: ContractMetadata | null;
 }
 
-export type EvaluationStatus = "success" | "partial" | "failure" | "blocked";
+export type EvaluationStatus = 'success' | 'partial' | 'failure' | 'blocked';
 
 export interface EvaluationFinding {
   readonly code: string;

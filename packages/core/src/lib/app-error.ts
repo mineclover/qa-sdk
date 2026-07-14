@@ -20,7 +20,7 @@ export class AppError extends Error {
     public readonly extras: Record<string, unknown> = {},
   ) {
     super(message);
-    this.name = "AppError";
+    this.name = 'AppError';
   }
 }
 
@@ -41,6 +41,6 @@ export class ServiceClientError extends Error {
     public readonly payload?: unknown,
   ) {
     super(message);
-    this.name = "ServiceClientError";
+    this.name = 'ServiceClientError';
   }
 }

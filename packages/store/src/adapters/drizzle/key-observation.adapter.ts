@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import { count as countFn, desc, eq, lt, sql, sum, asc } from "drizzle-orm";
+import { count as countFn, desc, eq, lt, sql, sum, asc } from 'drizzle-orm';
 import type {
   KeyObservationStore,
   KeyObservationEntry,
@@ -9,10 +9,10 @@ import type {
   KeyObservationSummary,
   PrefixObservationSummary,
   PayloadSummary,
-} from "@qa-sdk/core";
-import { parsePackedAddress } from "@qa-sdk/core/coordinates/address-context-schema";
-import type { DbExecutor } from "../../db/client.js";
-import { keyObservations, keyObservationPrefixes } from "../../db/schema.js";
+} from '@qa-sdk/core';
+import { parsePackedAddress } from '@qa-sdk/core/coordinates/address-context-schema';
+import type { DbExecutor } from '../../db/client.js';
+import { keyObservations, keyObservationPrefixes } from '../../db/schema.js';
 
 const EMPTY_SUMMARY: PayloadSummary = { fieldFrequency: {}, sampleValues: {} };
 
@@ -88,11 +88,10 @@ export class DrizzleKeyObservationStore implements KeyObservationStore {
 
   async findByPrefix(
     prefixId: string,
-    opts?: { limit?: number; orderBy?: "count" | "last_seen" },
+    opts?: { limit?: number; orderBy?: 'count' | 'last_seen' },
   ): Promise<KeyObservation[]> {
-    const orderCol = opts?.orderBy === "last_seen"
-      ? desc(keyObservations.lastSeen)
-      : desc(keyObservations.count);
+    const orderCol =
+      opts?.orderBy === 'last_seen' ? desc(keyObservations.lastSeen) : desc(keyObservations.count);
 
     const rows = await this.db
       .select()
@@ -166,7 +165,7 @@ export class DrizzleKeyObservationStore implements KeyObservationStore {
       prefixId: r.prefixId,
       // PG 스키마는 아직 version 컬럼 미포함 — D1 P3 적용 후 PG도 동기 예정.
       // 임시: 단일 version "v1"로 보고 (호출부 호환). 실제 분리는 PG 마이그레이션 후.
-      version: "v1",
+      version: 'v1',
       distinctKeys: r.distinctKeys,
       totalCount: r.totalCount,
       firstSeen: r.firstSeen.toISOString(),

@@ -1,8 +1,8 @@
 {
   "name": "@qa-sdk/registry-ui",
   "version": "0.1.0",
-  "description": "registry 데이터를 탐색하고 구성하는 브라우저 UI",
   "private": true,
+  "description": "registry 데이터를 탐색하고 구성하는 브라우저 UI",
   "type": "module",
   "scripts": {
     "dev": "vite",

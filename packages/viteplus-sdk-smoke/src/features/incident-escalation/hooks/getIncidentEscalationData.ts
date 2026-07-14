@@ -14,14 +14,12 @@ export interface IncidentEscalationViewModel {
   statusTone: 'neutral' | 'critical' | 'positive' | 'accent';
   statusSummary: string;
   validationMessages: Partial<Record<IncidentEscalationField, string>>;
-  result:
-    | {
-        routeLabel: string;
-        urgencyLabel: string;
-        summary: string;
-        actions: string[];
-      }
-    | null;
+  result: {
+    routeLabel: string;
+    urgencyLabel: string;
+    summary: string;
+    actions: string[];
+  } | null;
   activity: PresentedIncidentEscalationActivity[];
   sessionId: string;
   traceId: string;
@@ -59,9 +57,7 @@ export function getIncidentEscalationData(
           actions: state.result.actions,
         }
       : null,
-    activity: state.activity.map((activity) =>
-      presentIncidentEscalationActivity(activity),
-    ),
+    activity: state.activity.map((activity) => presentIncidentEscalationActivity(activity)),
     sessionId: state.sessionId,
     traceId: state.traceId,
     envelopeCount: envelopes.length,

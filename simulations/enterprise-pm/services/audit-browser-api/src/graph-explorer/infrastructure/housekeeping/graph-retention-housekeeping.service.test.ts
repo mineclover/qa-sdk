@@ -1,19 +1,19 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc authorization-graph-store
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LoggerPort } from "@qa-sdk/sim-domain-slice-kit";
-import { GraphStoreQueryPort } from "../../application/ports/graph-store-query.port.js";
-import { GraphRetentionHousekeepingService } from "./graph-retention-housekeeping.service.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
+import { GraphStoreQueryPort } from '../../application/ports/graph-store-query.port.js';
+import { GraphRetentionHousekeepingService } from './graph-retention-housekeeping.service.js';
 
 class FakeGraphs extends GraphStoreQueryPort {
   pruneAllSpy = vi.fn(async (keepLatest: number) => ({
     keepLatest,
-    graphIds: ["g1"],
+    graphIds: ['g1'],
     graphCount: 1,
     beforeCount: 2,
     afterCount: 1,
-    deletedSnapshotIds: ["s1"],
+    deletedSnapshotIds: ['s1'],
     graphs: [],
   }));
   async latest() {
@@ -33,7 +33,7 @@ class FakeGraphs extends GraphStoreQueryPort {
   }
   async prune() {
     return {
-      graphId: "g1",
+      graphId: 'g1',
       beforeCount: 0,
       afterCount: 0,
       deletedSnapshotIds: [],
@@ -53,7 +53,7 @@ function makeLogger(): LoggerPort {
   };
 }
 
-describe("GraphRetentionHousekeepingService", () => {
+describe('GraphRetentionHousekeepingService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -62,7 +62,7 @@ describe("GraphRetentionHousekeepingService", () => {
     vi.restoreAllMocks();
   });
 
-  it("runs one sweep on boot when enabled", async () => {
+  it('runs one sweep on boot when enabled', async () => {
     const graphs = new FakeGraphs();
     const svc = new GraphRetentionHousekeepingService(
       graphs,
@@ -74,7 +74,7 @@ describe("GraphRetentionHousekeepingService", () => {
     await svc.onModuleDestroy();
   });
 
-  it("runs periodic sweeps when interval is configured", async () => {
+  it('runs periodic sweeps when interval is configured', async () => {
     const graphs = new FakeGraphs();
     const svc = new GraphRetentionHousekeepingService(
       graphs,
@@ -87,13 +87,9 @@ describe("GraphRetentionHousekeepingService", () => {
     await svc.onModuleDestroy();
   });
 
-  it("keepLatest 미설정 시 sweep 미실행", async () => {
+  it('keepLatest 미설정 시 sweep 미실행', async () => {
     const graphs = new FakeGraphs();
-    const svc = new GraphRetentionHousekeepingService(
-      graphs,
-      { runOnBoot: true },
-      makeLogger(),
-    );
+    const svc = new GraphRetentionHousekeepingService(graphs, { runOnBoot: true }, makeLogger());
     await svc.onModuleInit();
     expect(graphs.pruneAllSpy).not.toHaveBeenCalled();
     await svc.onModuleDestroy();

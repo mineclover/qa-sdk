@@ -8,9 +8,9 @@ import type {
   LatencyViolation,
   SpecGraph,
   RuntimeGraph,
-} from "@qa-sdk/core";
-import { now } from "@qa-sdk/core";
-import { derivePathObservation } from "../path-observation/observe-path.js";
+} from '@qa-sdk/core';
+import { now } from '@qa-sdk/core';
+import { derivePathObservation } from '../path-observation/observe-path.js';
 
 /**
  * MatchResult로부터 최종 VerdictReport를 생성한다.
@@ -29,15 +29,9 @@ export function computeVerdict(
 ): VerdictReport {
   const stepMatches = matchResult.step_matches;
   const latencyViolations: LatencyViolation[] = [];
-  const specNodesById = new Map(
-    specGraph.nodes.map((node) => [node.step_id, node] as const),
-  );
+  const specNodesById = new Map(specGraph.nodes.map((node) => [node.step_id, node] as const));
 
-  const requiredStepIds = new Set(
-    specGraph.nodes
-      .filter((n) => n.required)
-      .map((n) => n.step_id),
-  );
+  const requiredStepIds = new Set(specGraph.nodes.filter((n) => n.required).map((n) => n.step_id));
 
   for (const sm of stepMatches) {
     // latency check
@@ -47,8 +41,7 @@ export function computeVerdict(
         const runtimeNode = runtimeGraph.nodes.find((n) => n.id === sm.matched_node_id);
         if (runtimeNode?.start_time && runtimeNode?.end_time) {
           const actual =
-            new Date(runtimeNode.end_time).getTime() -
-            new Date(runtimeNode.start_time).getTime();
+            new Date(runtimeNode.end_time).getTime() - new Date(runtimeNode.start_time).getTime();
           if (actual > specNode.timeout_ms) {
             latencyViolations.push({
               step_id: sm.step_id,
@@ -64,28 +57,26 @@ export function computeVerdict(
   const orderingViolations = matchResult.ordering_violations ?? [];
 
   // 판정
-  const hasRequiredFailure = stepMatches.some((stepMatch) =>
-    stepMatch.verdict === "fail" && requiredStepIds.has(stepMatch.step_id)
+  const hasRequiredFailure = stepMatches.some(
+    (stepMatch) => stepMatch.verdict === 'fail' && requiredStepIds.has(stepMatch.step_id),
   );
-  const hasRequiredMissing = matchResult.missing_steps.some((id) =>
-    requiredStepIds.has(id),
-  );
-  const warnedCount = stepMatches.filter((stepMatch) => stepMatch.verdict === "warn").length;
-  const passedCount = stepMatches.filter((stepMatch) => stepMatch.verdict === "pass").length;
-  const failedCount = stepMatches.filter((stepMatch) => stepMatch.verdict === "fail").length;
+  const hasRequiredMissing = matchResult.missing_steps.some((id) => requiredStepIds.has(id));
+  const warnedCount = stepMatches.filter((stepMatch) => stepMatch.verdict === 'warn').length;
+  const passedCount = stepMatches.filter((stepMatch) => stepMatch.verdict === 'pass').length;
+  const failedCount = stepMatches.filter((stepMatch) => stepMatch.verdict === 'fail').length;
 
   let overall: Verdict;
   if (hasRequiredFailure || hasRequiredMissing) {
-    overall = "fail";
+    overall = 'fail';
   } else if (latencyViolations.length > 0) {
-    overall = "degraded";
+    overall = 'degraded';
   } else if (warnedCount > 0 || matchResult.missing_steps.length > 0) {
-    overall = "warn";
+    overall = 'warn';
   } else if (passedCount > 0) {
     // 이벤트는 모두 포착됐지만 순서가 어긋난 경우 → warn
-    overall = orderingViolations.length > 0 ? "warn" : "pass";
+    overall = orderingViolations.length > 0 ? 'warn' : 'pass';
   } else {
-    overall = "unknown";
+    overall = 'unknown';
   }
 
   const summary = buildSummary(overall, {
@@ -130,5 +121,5 @@ function buildSummary(
   if (counts.warned > 0) parts.push(`warned=${counts.warned}`);
   if (counts.missing > 0) parts.push(`missing=${counts.missing}`);
   if (counts.ordering > 0) parts.push(`ordering_violations=${counts.ordering}`);
-  return parts.join(", ");
+  return parts.join(', ');
 }

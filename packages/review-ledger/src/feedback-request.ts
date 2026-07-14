@@ -1,5 +1,5 @@
 // @def.boundary system-root
-import { randomUUID } from "node:crypto";
+import { randomUUID } from 'node:crypto';
 import type {
   CreateFeedbackRequestInput,
   EvidenceBundle,
@@ -7,7 +7,7 @@ import type {
   FeedbackRelatedDoc,
   FeedbackRequest,
   FileReviewStatus,
-} from "./types.js";
+} from './types.js';
 
 export function buildEvidenceBundle(
   statuses: readonly FileReviewStatus[],
@@ -28,9 +28,9 @@ export function buildEvidenceBundle(
 
   return {
     total: items.length,
-    reviewed: items.filter((item) => item.status === "reviewed").length,
-    stale: items.filter((item) => item.status === "stale").length,
-    unreviewed: items.filter((item) => item.status === "unreviewed").length,
+    reviewed: items.filter((item) => item.status === 'reviewed').length,
+    stale: items.filter((item) => item.status === 'stale').length,
+    unreviewed: items.filter((item) => item.status === 'unreviewed').length,
     items,
   };
 }
@@ -42,13 +42,13 @@ export function createFeedbackRequest(
   const inferredScope = inferServiceScope(input.serviceScope, evidenceBundle);
 
   return {
-    id: `frq_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
+    id: `frq_${randomUUID().replace(/-/g, '').slice(0, 16)}`,
     createdAt: new Date().toISOString(),
     requestedBy: input.requestedBy,
     purpose: input.purpose,
     targetModel: input.targetModel ?? null,
     serviceScope: inferredScope,
-    status: "open",
+    status: 'open',
     notes: input.notes ?? null,
     prompt: renderFeedbackPrompt({
       purpose: input.purpose,
@@ -72,8 +72,8 @@ export function renderFeedbackPrompt(input: {
 }): string {
   const lines: string[] = [];
 
-  lines.push("# Feedback Request");
-  lines.push("");
+  lines.push('# Feedback Request');
+  lines.push('');
   lines.push(`Purpose: ${input.purpose}`);
   lines.push(`Requested By: ${input.requestedBy}`);
   if (input.targetModel) {
@@ -85,14 +85,14 @@ export function renderFeedbackPrompt(input: {
   if (input.notes) {
     lines.push(`Notes: ${input.notes}`);
   }
-  lines.push("");
-  lines.push("## Evidence Summary");
+  lines.push('');
+  lines.push('## Evidence Summary');
   lines.push(`- total files: ${input.evidenceBundle.total}`);
   lines.push(`- reviewed: ${input.evidenceBundle.reviewed}`);
   lines.push(`- stale: ${input.evidenceBundle.stale}`);
   lines.push(`- unreviewed: ${input.evidenceBundle.unreviewed}`);
-  lines.push("");
-  lines.push("## Files");
+  lines.push('');
+  lines.push('## Files');
 
   for (const item of input.evidenceBundle.items) {
     const tail = [
@@ -103,9 +103,9 @@ export function renderFeedbackPrompt(input: {
       item.aiModel ? `model=${item.aiModel}` : null,
     ]
       .filter(Boolean)
-      .join(", ");
+      .join(', ');
 
-    lines.push(`- [${item.status}] ${item.filePath}${tail ? ` (${tail})` : ""}`);
+    lines.push(`- [${item.status}] ${item.filePath}${tail ? ` (${tail})` : ''}`);
     if (item.notes) {
       lines.push(`  note: ${item.notes}`);
     }
@@ -113,18 +113,18 @@ export function renderFeedbackPrompt(input: {
       lines.push(
         `  docs: ${(item.relatedDocs ?? [])
           .map((doc) => `${doc.docId} [${doc.reason}]`)
-          .join(", ")}`,
+          .join(', ')}`,
       );
     }
   }
 
-  lines.push("");
-  lines.push("## Requested Output");
-  lines.push("- Evaluate the evidence bundle as the current source of truth.");
-  lines.push("- Identify concrete gaps, risks, and inconsistencies.");
-  lines.push("- Recommend next actions grounded in the listed files and review states.");
+  lines.push('');
+  lines.push('## Requested Output');
+  lines.push('- Evaluate the evidence bundle as the current source of truth.');
+  lines.push('- Identify concrete gaps, risks, and inconsistencies.');
+  lines.push('- Recommend next actions grounded in the listed files and review states.');
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 function inferServiceScope(

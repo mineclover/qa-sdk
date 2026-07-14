@@ -1,8 +1,8 @@
 // @def.boundary decode-service-system
 // @def.doc decode-service-system
 
-import { Hono } from "hono";
-import type { DecoderPool } from "../lib/decoder-pool.js";
+import { Hono } from 'hono';
+import type { DecoderPool } from '../lib/decoder-pool.js';
 
 export interface MetricsRouteDeps {
   pool: DecoderPool;
@@ -23,8 +23,8 @@ function gauge(
     Object.keys(labels).length > 0
       ? `{${Object.entries(labels)
           .map(([k, v]) => `${k}="${v}"`)
-          .join(",")}}`
-      : "";
+          .join(',')}}`
+      : '';
   lines.push(`${name}${labelStr} ${value}`);
   return lines;
 }
@@ -34,37 +34,27 @@ export function createMetricsRoutes(deps: MetricsRouteDeps) {
   const getUptimeSeconds = deps.getUptimeSeconds ?? getRuntimeUptimeSeconds;
   const getMemoryUsage = deps.getMemoryUsage ?? getRuntimeMemoryUsage;
 
-  routes.get("/metrics", (c) => {
+  routes.get('/metrics', (c) => {
     const lines: string[] = [];
 
     // ── process metrics ──
     lines.push(
       ...gauge(
-        "process_uptime_seconds",
+        'process_uptime_seconds',
         Math.round(getUptimeSeconds()),
-        "Process uptime in seconds",
+        'Process uptime in seconds',
       ),
     );
 
     const mem = getMemoryUsage();
-    lines.push(
-      ...gauge("process_heap_used_bytes", mem.heapUsed, "Process heap used bytes"),
-    );
-    lines.push(
-      ...gauge("process_rss_bytes", mem.rss, "Process resident set size bytes"),
-    );
+    lines.push(...gauge('process_heap_used_bytes', mem.heapUsed, 'Process heap used bytes'));
+    lines.push(...gauge('process_rss_bytes', mem.rss, 'Process resident set size bytes'));
 
     // ── decoder pool ──
-    lines.push(
-      ...gauge(
-        "decode_pool_size",
-        deps.pool.size,
-        "Number of cached decoders in pool",
-      ),
-    );
+    lines.push(...gauge('decode_pool_size', deps.pool.size, 'Number of cached decoders in pool'));
 
-    return c.text(lines.join("\n") + "\n", 200, {
-      "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+    return c.text(lines.join('\n') + '\n', 200, {
+      'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
     });
   });
 
@@ -72,13 +62,13 @@ export function createMetricsRoutes(deps: MetricsRouteDeps) {
 }
 
 function getRuntimeUptimeSeconds(): number {
-  return typeof process !== "undefined" && typeof process.uptime === "function"
+  return typeof process !== 'undefined' && typeof process.uptime === 'function'
     ? process.uptime()
     : 0;
 }
 
 function getRuntimeMemoryUsage(): { heapUsed: number; rss: number } {
-  return typeof process !== "undefined" && typeof process.memoryUsage === "function"
+  return typeof process !== 'undefined' && typeof process.memoryUsage === 'function'
     ? process.memoryUsage()
     : { heapUsed: 0, rss: 0 };
 }

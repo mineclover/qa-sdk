@@ -1,23 +1,23 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { TaskEntity } from "../../domain/index.js";
-import type { TaskSnapshot } from "../../domain/index.js";
-import { TaskRepositoryPort } from "../../application/ports/task-repository.port.js";
-import type { TaskTransactionScope } from "../../application/ports/task-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { TaskEntity } from '../../domain/index.js';
+import type { TaskSnapshot } from '../../domain/index.js';
+import { TaskRepositoryPort } from '../../application/ports/task-repository.port.js';
+import type { TaskTransactionScope } from '../../application/ports/task-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface TaskRow {
   id: string;
   projectId: string;
   title: string;
   assigneeId: string | null;
-  status: "todo" | "in_progress" | "done" | "blocked";
+  status: 'todo' | 'in_progress' | 'done' | 'blocked';
   parentTaskId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -157,21 +157,21 @@ export class PgTaskRepository extends TaskRepositoryPort {
   }
 }
 
-export type TaskDialect = "sqlite" | "pg";
+export type TaskDialect = 'sqlite' | 'pg';
 
 export interface TaskRepositoryFactoryOpts {
   readonly dialect: TaskDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createTaskRepository(
-  opts: TaskRepositoryFactoryOpts,
-): TaskRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createTaskRepository(opts: TaskRepositoryFactoryOpts): TaskRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteTaskRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgTaskRepository(opts.db as PostgresJsDatabase);
   }
-  throw new Error(`createTaskRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  throw new Error(
+    `createTaskRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

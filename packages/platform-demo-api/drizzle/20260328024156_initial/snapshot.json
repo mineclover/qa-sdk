@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "5c6a82eb-e28a-470b-b645-f42599daa4c6",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "grants",
@@ -135,19 +133,14 @@
       "table": "logs"
     },
     {
-      "columns": [
-        "feature_id",
-        "role"
-      ],
+      "columns": ["feature_id", "role"],
       "nameExplicit": false,
       "name": "grants_pk",
       "entityType": "pks",
       "table": "grants"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "logs_pk",
       "table": "logs",

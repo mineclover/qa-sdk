@@ -11,7 +11,7 @@
  * @layer 측정 (Measurement)
  */
 
-import type { VersionUsage } from "./convergence.types.js";
+import type { VersionUsage } from './convergence.types.js';
 
 export interface DeploymentSkew {
   readonly prefix: string;
@@ -33,16 +33,14 @@ export interface DeploymentSkew {
     readonly count: number;
   }[];
   /** 심각도 */
-  readonly severity: "ok" | "warning" | "critical";
+  readonly severity: 'ok' | 'warning' | 'critical';
   readonly summary: string;
 }
 
 /**
  * versionUsages에서 배포 스큐를 감지한다.
  */
-export function analyzeDeploymentSkew(
-  versionUsages: readonly VersionUsage[],
-): DeploymentSkew[] {
+export function analyzeDeploymentSkew(versionUsages: readonly VersionUsage[]): DeploymentSkew[] {
   // prefix별로 그룹핑
   const byPrefix = new Map<string, VersionUsage[]>();
   for (const vu of versionUsages) {
@@ -72,9 +70,9 @@ export function analyzeDeploymentSkew(
 
     // version 정렬 (count 기준, 가장 많이 쓰이는 게 "latest"로 추정)
     const sorted = [...merged.values()].toSorted((a, b) => b.count - a.count);
-    const latestVersion = sorted[0]?.version ?? "unknown";
+    const latestVersion = sorted[0]?.version ?? 'unknown';
 
-    const activeVersions = sorted.map(u => ({
+    const activeVersions = sorted.map((u) => ({
       version: u.version,
       count: u.count,
       sessions: u.sessions,
@@ -84,9 +82,10 @@ export function analyzeDeploymentSkew(
     const hasSkew = sorted.length > 1;
 
     // 구버전에 머물러 있는 session
-    const staleConsumers: DeploymentSkew["staleConsumers"][number][] = [];
+    const staleConsumers: DeploymentSkew['staleConsumers'][number][] = [];
     if (hasSkew) {
-      for (const usage of sorted.slice(1)) { // latest 제외
+      for (const usage of sorted.slice(1)) {
+        // latest 제외
         for (const session of usage.sessions) {
           // 이 session이 latest에도 있으면 → 전환 중 (경고 낮춤)
           const inLatest = sorted[0].sessions.includes(session);
@@ -101,13 +100,13 @@ export function analyzeDeploymentSkew(
       }
     }
 
-    let severity: DeploymentSkew["severity"];
+    let severity: DeploymentSkew['severity'];
     if (!hasSkew) {
-      severity = "ok";
+      severity = 'ok';
     } else if (staleConsumers.length > 0) {
-      severity = "critical"; // 구버전 전용 session 존재
+      severity = 'critical'; // 구버전 전용 session 존재
     } else {
-      severity = "warning"; // version 혼재하지만 모든 session이 양쪽 다 사용
+      severity = 'warning'; // version 혼재하지만 모든 session이 양쪽 다 사용
     }
 
     const summary = !hasSkew

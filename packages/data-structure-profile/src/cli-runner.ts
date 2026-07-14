@@ -1,20 +1,13 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import {
-  toBenchReportInput,
-  toQualityLedgerRunInputs,
-} from "./adapters.js";
-import { assessDpmReadiness } from "./dpm.js";
-import { compileLineage } from "./lineage.js";
-import { measureProfile } from "./measurement.js";
-import { parseProfile } from "./parse.js";
-import { parseProfileTaxonomy } from "./taxonomy.js";
-import { validateProfile } from "./validate.js";
-import type {
-  DataStructureProfile,
-  TaxonomyVocabulary,
-  ValidationReport,
-} from "./types.js";
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { toBenchReportInput, toQualityLedgerRunInputs } from './adapters.js';
+import { assessDpmReadiness } from './dpm.js';
+import { compileLineage } from './lineage.js';
+import { measureProfile } from './measurement.js';
+import { parseProfile } from './parse.js';
+import { parseProfileTaxonomy } from './taxonomy.js';
+import { validateProfile } from './validate.js';
+import type { DataStructureProfile, TaxonomyVocabulary, ValidationReport } from './types.js';
 
 export type DataStructureProfileCliIo = {
   cwd?: string;
@@ -68,23 +61,23 @@ export async function runDataStructureProfileCli(
     const taxonomy = parsed.taxonomyPath ? readTaxonomy(parsed.taxonomyPath, io) : undefined;
 
     switch (parsed.command) {
-      case "validate":
+      case 'validate':
         return runValidate(profile, taxonomy, parsed, writeStdout);
-      case "compile":
+      case 'compile':
         writeJson(writeStdout, compileLineage(profile));
         return 0;
-      case "measure":
+      case 'measure':
         writeJson(
           writeStdout,
-          parsed.adapter === "bench"
+          parsed.adapter === 'bench'
             ? toBenchReportInput(measureProfile(profile))
             : measureProfile(profile),
         );
         return 0;
-      case "dpm-readiness": {
+      case 'dpm-readiness': {
         const report = assessDpmReadiness(profile);
         writeJson(writeStdout, report);
-        return report.diagnostics.some((diagnostic) => diagnostic.severity === "error") ? 1 : 0;
+        return report.diagnostics.some((diagnostic) => diagnostic.severity === 'error') ? 1 : 0;
       }
     }
     writeStderr(`${HELP}\n`);
@@ -104,7 +97,7 @@ function runValidate(
   const report = validateProfile(profile, { taxonomy });
   writeJson(
     writeStdout,
-    parsed.adapter === "quality-ledger"
+    parsed.adapter === 'quality-ledger'
       ? toQualityLedgerRunInputs(report, {
           docVersion: profile.version,
           command: commandForReport(report),
@@ -112,8 +105,8 @@ function runValidate(
       : report,
   );
 
-  if (report.status === "fail") return 1;
-  if (parsed.failOnWarning && report.status !== "pass") return 1;
+  if (report.status === 'fail') return 1;
+  if (parsed.failOnWarning && report.status !== 'pass') return 1;
   return 0;
 }
 
@@ -122,21 +115,21 @@ function parseCliArgs(argv: readonly string[]): ParsedArgs {
     command: argv[0],
     profilePath: argv[1],
     failOnWarning: false,
-    help: argv.includes("--help") || argv.includes("-h"),
+    help: argv.includes('--help') || argv.includes('-h'),
   };
 
   for (let index = 2; index < argv.length; index += 1) {
     const token = argv[index];
     switch (token) {
-      case "--taxonomy":
+      case '--taxonomy':
         parsed.taxonomyPath = readOptionValue(argv, index, token);
         index += 1;
         break;
-      case "--adapter":
+      case '--adapter':
         parsed.adapter = readOptionValue(argv, index, token);
         index += 1;
         break;
-      case "--fail-on-warning":
+      case '--fail-on-warning':
         parsed.failOnWarning = true;
         break;
       default:
@@ -149,17 +142,21 @@ function parseCliArgs(argv: readonly string[]): ParsedArgs {
 
 function readOptionValue(argv: readonly string[], index: number, option: string): string {
   const value = argv[index + 1];
-  if (!value || value.startsWith("--")) {
+  if (!value || value.startsWith('--')) {
     throw new Error(`${option} requires a value.`);
   }
   return value;
 }
 
-function isKnownCommand(command: string | undefined): command is NonNullable<ParsedArgs["command"]> {
-  return command === "validate"
-    || command === "compile"
-    || command === "measure"
-    || command === "dpm-readiness";
+function isKnownCommand(
+  command: string | undefined,
+): command is NonNullable<ParsedArgs['command']> {
+  return (
+    command === 'validate' ||
+    command === 'compile' ||
+    command === 'measure' ||
+    command === 'dpm-readiness'
+  );
 }
 
 function readProfile(path: string, io: DataStructureProfileCliIo): DataStructureProfile {
@@ -173,7 +170,7 @@ function readTaxonomy(path: string, io: DataStructureProfileCliIo): TaxonomyVoca
 function readPath(path: string, io: DataStructureProfileCliIo): string {
   const cwd = io.cwd ?? process.cwd();
   const absolutePath = resolve(cwd, path);
-  const readText = io.readText ?? ((targetPath: string) => readFileSync(targetPath, "utf8"));
+  const readText = io.readText ?? ((targetPath: string) => readFileSync(targetPath, 'utf8'));
   return readText(absolutePath);
 }
 

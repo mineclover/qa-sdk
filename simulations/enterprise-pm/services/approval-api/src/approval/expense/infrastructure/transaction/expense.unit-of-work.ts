@@ -1,12 +1,12 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { ExpenseRepositoryPort } from "../../application/ports/expense-repository.port.js";
-import type { ExpenseOutboxPort } from "../../application/ports/expense-outbox.port.js";
+import type { ExpenseRepositoryPort } from '../../application/ports/expense-repository.port.js';
+import type { ExpenseOutboxPort } from '../../application/ports/expense-outbox.port.js';
 import type {
   ExpenseTransactionPort,
   ExpenseTransactionScope,
-} from "../../application/ports/expense-transaction.port.js";
+} from '../../application/ports/expense-transaction.port.js';
 
 export class ExpenseUnitOfWork {
   constructor(

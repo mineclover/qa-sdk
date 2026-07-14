@@ -12,16 +12,16 @@ import {
   newTransmissionId,
   newLogId,
   now,
-} from "@qa-sdk/core";
+} from '@qa-sdk/core';
 
-import { TraceContext } from "./context.js";
-import { applyMasking } from "./masking.js";
+import { TraceContext } from './context.js';
+import { applyMasking } from './masking.js';
 import {
   type QaLoggerConfig,
   DEFAULT_BATCH_SIZE,
   DEFAULT_FLUSH_INTERVAL_MS,
   DEFAULT_MAX_BUFFER_SIZE,
-} from "./config.js";
+} from './config.js';
 
 export class QaLogger {
   private readonly config: QaLoggerConfig;
@@ -43,7 +43,7 @@ export class QaLogger {
 
     if (this.flushIntervalMs > 0) {
       this.flushTimer = setInterval(() => {
-        this.flush().catch((err: unknown) => this.handleError(err, "interval-flush"));
+        this.flush().catch((err: unknown) => this.handleError(err, 'interval-flush'));
       }, this.flushIntervalMs);
     }
 
@@ -55,10 +55,7 @@ export class QaLogger {
   // ── Context Management ─────────────────────────────
 
   /** Start a new trace context (or attach to existing trace). */
-  startTrace(options?: {
-    trace_id?: string;
-    qa_session_id?: string;
-  }): TraceContext {
+  startTrace(options?: { trace_id?: string; qa_session_id?: string }): TraceContext {
     this.activeContext = new TraceContext(options);
     return this.activeContext;
   }
@@ -98,20 +95,19 @@ export class QaLogger {
     address_context?: Record<string, string>;
   }): EventRecord {
     const ctx = this.ensureContext();
-    const { payload, maskedFields, maskingApplied } =
-      this.processPayload(params.payload);
+    const { payload, maskedFields, maskingApplied } = this.processPayload(params.payload);
 
     const record: EventRecord = {
       log_id: newLogId(),
       timestamp: now(),
-      record_kind: "log",
+      record_kind: 'log',
       trace_id: ctx.trace_id,
       span_id: ctx.currentSpanId,
       parent_span_id: ctx.parentSpanId,
       event_key: params.event_key,
       event_version: params.event_version,
-      payload_format: params.payload_format ?? "json",
-      payload_encoding: params.payload_encoding ?? "raw",
+      payload_format: params.payload_format ?? 'json',
+      payload_encoding: params.payload_encoding ?? 'raw',
       payload_masking_applied: maskingApplied,
       payload_masked_fields: maskedFields,
       payload,
@@ -144,25 +140,21 @@ export class QaLogger {
 
     return {
       span_id: spanId,
-      end: (endParams?: {
-        status_code?: SpanStatusCode;
-        payload?: Record<string, unknown>;
-      }) => {
+      end: (endParams?: { status_code?: SpanStatusCode; payload?: Record<string, unknown> }) => {
         ctx.popSpan();
 
         const mergedPayload = {
           ...params.payload,
           ...endParams?.payload,
         };
-        const { payload, maskedFields, maskingApplied } =
-          this.processPayload(
-            Object.keys(mergedPayload).length > 0 ? mergedPayload : undefined,
-          );
+        const { payload, maskedFields, maskingApplied } = this.processPayload(
+          Object.keys(mergedPayload).length > 0 ? mergedPayload : undefined,
+        );
 
         const record: EventRecord = {
           log_id: newLogId(),
           timestamp: now(),
-          record_kind: "span",
+          record_kind: 'span',
           trace_id: ctx.trace_id,
           span_id: spanId,
           parent_span_id: parentSpanId,
@@ -171,9 +163,9 @@ export class QaLogger {
           span_name: params.span_name,
           start_time: startTime,
           end_time: now(),
-          status_code: endParams?.status_code ?? "ok",
-          payload_format: params.payload_format ?? "json",
-          payload_encoding: params.payload_encoding ?? "raw",
+          status_code: endParams?.status_code ?? 'ok',
+          payload_format: params.payload_format ?? 'json',
+          payload_encoding: params.payload_encoding ?? 'raw',
           payload_masking_applied: maskingApplied,
           payload_masked_fields: maskedFields,
           payload,
@@ -191,32 +183,36 @@ export class QaLogger {
   // ── Metric ──────────────────────────────────────────
 
   /** Record a metric event. */
-  metric(name: string, value: number, opts?: {
-    type?: MetricType;
-    unit?: string;
-    labels?: Record<string, string>;
-    buckets?: number[];
-    quantiles?: number[];
-    address_context?: Record<string, string>;
-  }): EventRecord {
+  metric(
+    name: string,
+    value: number,
+    opts?: {
+      type?: MetricType;
+      unit?: string;
+      labels?: Record<string, string>;
+      buckets?: number[];
+      quantiles?: number[];
+      address_context?: Record<string, string>;
+    },
+  ): EventRecord {
     const ctx = this.ensureContext();
 
     const record: EventRecord = {
       log_id: newLogId(),
       timestamp: now(),
-      record_kind: "metric",
+      record_kind: 'metric',
       trace_id: ctx.trace_id,
       span_id: ctx.currentSpanId,
       parent_span_id: ctx.parentSpanId,
       event_key: name,
-      event_version: "1",
-      payload_format: "json",
-      payload_encoding: "raw",
+      event_version: '1',
+      payload_format: 'json',
+      payload_encoding: 'raw',
       payload_masking_applied: false,
       payload_masked_fields: [],
       payload: null,
       qa_session_id: ctx.qa_session_id,
-      metric_type: opts?.type ?? "gauge",
+      metric_type: opts?.type ?? 'gauge',
       metric_name: name,
       metric_value: value,
       ...(opts?.unit ? { metric_unit: opts.unit } : {}),
@@ -249,7 +245,7 @@ export class QaLogger {
         const dropped = combined.splice(0, combined.length - this.maxBufferSize);
         this.handleError(
           new Error(`[qa-sdk:flush] buffer overflow — dropped ${dropped.length} oldest records`),
-          "buffer-overflow",
+          'buffer-overflow',
         );
       }
       this.buffer = combined;
@@ -306,13 +302,15 @@ export class QaLogger {
       // Buffer is at cap and no flush in progress — drop oldest to make room
       this.buffer.shift();
       this.handleError(
-        new Error(`[qa-sdk:addRecord] buffer at cap (${this.maxBufferSize}) — dropping oldest record`),
-        "buffer-overflow",
+        new Error(
+          `[qa-sdk:addRecord] buffer at cap (${this.maxBufferSize}) — dropping oldest record`,
+        ),
+        'buffer-overflow',
       );
     }
     this.buffer.push(record);
     if (!this.flushInProgress && this.buffer.length >= this.batchSize) {
-      this.flush().catch((err: unknown) => this.handleError(err, "batch-flush"));
+      this.flush().catch((err: unknown) => this.handleError(err, 'batch-flush'));
     }
   }
 
@@ -330,7 +328,9 @@ export class QaLogger {
     return {
       actor_id: this.actor.actor_id,
       ...(this.actor.user_id !== undefined ? { user_id: this.actor.user_id } : {}),
-      ...(this.actor.user_attributes !== undefined ? { user_attributes: this.actor.user_attributes } : {}),
+      ...(this.actor.user_attributes !== undefined
+        ? { user_attributes: this.actor.user_attributes }
+        : {}),
     };
   }
 
@@ -351,8 +351,5 @@ export class QaLogger {
 
 export interface SpanHandle {
   span_id: string;
-  end(params?: {
-    status_code?: SpanStatusCode;
-    payload?: Record<string, unknown>;
-  }): EventRecord;
+  end(params?: { status_code?: SpanStatusCode; payload?: Record<string, unknown> }): EventRecord;
 }

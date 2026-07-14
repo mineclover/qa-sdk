@@ -5,8 +5,8 @@ export {
   createDepartmentTransactionPort,
   createDepartmentSqliteTransactionPort,
   createDepartmentPgTransactionPort,
-} from "./department.drizzle-transaction.js";
+} from './department.drizzle-transaction.js';
 export type {
   DepartmentDialect,
   DepartmentTransactionFactoryOpts,
-} from "./department.drizzle-transaction.js";
+} from './department.drizzle-transaction.js';

@@ -7,15 +7,36 @@
       "owner": "sim-approval-owner"
     },
     "glossary": [
-      { "term": "ExpenseReport", "description": "An employee's reimbursement request after spending." },
-      { "term": "ExpenseCategory", "description": "Type label of the spending (travel/lodging/meal/...)." }
+      {
+        "term": "ExpenseReport",
+        "description": "An employee's reimbursement request after spending."
+      },
+      {
+        "term": "ExpenseCategory",
+        "description": "Type label of the spending (travel/lodging/meal/...)."
+      }
     ],
     "lineage": [
-      { "name": "expense-write-path", "from": "approval.expense_reports", "to": "approval.outbox_events", "via": "transactional-outbox" },
-      { "name": "expense-read-path", "from": "approval.outbox_events", "to": "reporting.expense_read_model", "via": "expense-read-model-sync" }
+      {
+        "name": "expense-write-path",
+        "from": "approval.expense_reports",
+        "to": "approval.outbox_events",
+        "via": "transactional-outbox"
+      },
+      {
+        "name": "expense-read-path",
+        "from": "approval.outbox_events",
+        "to": "reporting.expense_read_model",
+        "via": "expense-read-model-sync"
+      }
     ],
     "qualityTests": [
-      { "name": "expense_status_values", "type": "columnValuesToBeInSet", "entity": "approval.expense_reports.status", "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"] }
+      {
+        "name": "expense_status_values",
+        "type": "columnValuesToBeInSet",
+        "entity": "approval.expense_reports.status",
+        "values": ["draft", "submitted", "in_review", "approved", "rejected", "revision_requested"]
+      }
     ]
   },
   "cacheKeys": [

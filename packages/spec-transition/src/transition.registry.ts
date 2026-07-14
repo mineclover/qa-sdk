@@ -7,8 +7,8 @@
  * Map<name, Map<version, TransitionSpec>> 구조.
  */
 
-import type { TransitionSpec, ValidationResult } from "./transition.types.js";
-import { validateTransitionSpec } from "./transition.schema.js";
+import type { TransitionSpec, ValidationResult } from './transition.types.js';
+import { validateTransitionSpec } from './transition.schema.js';
 
 export class TransitionRegistry {
   private readonly specs = new Map<string, Map<string, TransitionSpec>>();

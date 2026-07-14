@@ -12,7 +12,7 @@
  * 5. actor_id만 있고 user_id 없음 → "pseudonymized"
  */
 
-import type { IdentificationMode } from "../types/event-pattern.js";
+import type { IdentificationMode } from '../types/event-pattern.js';
 
 export interface IdentifyActorInput {
   actor_id?: string;
@@ -29,20 +29,20 @@ export function identifyActorMode(input: IdentifyActorInput): IdentificationMode
 
   // 서비스 간 호출
   if (
-    input.platform === "node" &&
-    (input.owner_type === "workspace" || input.owner_type === "tenant")
+    input.platform === 'node' &&
+    (input.owner_type === 'workspace' || input.owner_type === 'tenant')
   ) {
-    return "service";
+    return 'service';
   }
 
   // actor_id 없거나 "anonymous"
-  if (!input.actor_id || input.actor_id === "anonymous" || input.actor_id === "") {
-    return "anonymous";
+  if (!input.actor_id || input.actor_id === 'anonymous' || input.actor_id === '') {
+    return 'anonymous';
   }
 
   // user_id 있으면 identified
-  if (input.user_id) return "identified";
+  if (input.user_id) return 'identified';
 
   // actor_id만 있으면 pseudonymized
-  return "pseudonymized";
+  return 'pseudonymized';
 }

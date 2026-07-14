@@ -41,7 +41,7 @@ export {
   generatePromptArtifacts,
   validatePromptArtifact,
   evaluatePromptArtifactQuality,
-} from "./internal/prompt-artifact-core.js";
+} from './internal/prompt-artifact-core.js';
 
 import {
   evaluatePromptArtifactQuality,
@@ -50,7 +50,7 @@ import {
   generatePromptArtifacts,
   InMemoryPromptArtifactContextProviderRegistry,
   validatePromptArtifact,
-} from "./internal/prompt-artifact-core.js";
+} from './internal/prompt-artifact-core.js';
 
 export const operationalOntologyPromptArtifactPlane = {
   generatePromptArtifact,

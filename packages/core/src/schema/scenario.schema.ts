@@ -1,17 +1,9 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import { z } from "zod";
+import { z } from 'zod';
 
-export const constraintOpSchema = z.enum([
-  "eq",
-  "neq",
-  "exists",
-  "gt",
-  "lt",
-  "contains",
-  "masked",
-]);
+export const constraintOpSchema = z.enum(['eq', 'neq', 'exists', 'gt', 'lt', 'contains', 'masked']);
 
 export const stepConstraintSchema = z.object({
   field: z.string().min(1),
@@ -21,7 +13,7 @@ export const stepConstraintSchema = z.object({
 
 export const entryConditionSchema = z.object({
   field: z.string().min(1),
-  op: z.enum(["eq", "neq", "exists", "gt", "lt", "contains"]),
+  op: z.enum(['eq', 'neq', 'exists', 'gt', 'lt', 'contains']),
   value: z.unknown().optional(),
 });
 
@@ -30,14 +22,17 @@ export const branchDefSchema = z.object({
   next: z.array(z.string().min(1)),
 });
 
-export const stepKindSchema = z.enum(["sequence", "optional", "branch"]);
+export const stepKindSchema = z.enum(['sequence', 'optional', 'branch']);
 
 export const scenarioStepSchema = z.object({
   id: z.string().min(1),
   event_key: z.string().min(1),
-  event_version: z.string().regex(/^\d{3}$/).optional(),
+  event_version: z
+    .string()
+    .regex(/^\d{3}$/)
+    .optional(),
   source: z.string().optional(),
-  record_kind: z.enum(["log", "span"]).optional(),
+  record_kind: z.enum(['log', 'span']).optional(),
   required: z.boolean(),
   kind: stepKindSchema,
   constraints: z.array(stepConstraintSchema).optional(),

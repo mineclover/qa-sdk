@@ -1,7 +1,7 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { DashboardService } from "./dashboard.service.js";
+import { DashboardService } from './dashboard.service.js';
 
 export interface DevDashboardSocketClient {
   send(data: string): void;
@@ -32,9 +32,9 @@ export class DevDashboardSocketHub {
   handleMessage(client: DevDashboardSocketClient, data: unknown) {
     try {
       const message = JSON.parse(String(data)) as { type?: string };
-      if (message.type === "refresh") {
+      if (message.type === 'refresh') {
         this.dashboard.refresh();
-        client.send(JSON.stringify({ type: "refreshed" }));
+        client.send(JSON.stringify({ type: 'refreshed' }));
       }
     } catch {
       // 잘못된 메시지는 무시한다.
@@ -71,7 +71,7 @@ export class DevDashboardSocketHub {
       }
     }, this.intervalMs);
 
-    if ("unref" in this.pushTimer && typeof this.pushTimer.unref === "function") {
+    if ('unref' in this.pushTimer && typeof this.pushTimer.unref === 'function') {
       this.pushTimer.unref();
     }
   }

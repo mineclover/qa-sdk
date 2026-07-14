@@ -2,6 +2,9 @@
   "name": "@qa-sdk/registry-client",
   "version": "0.1.0",
   "description": "registry-service 카탈로그와 엔드포인트를 조회하는 HTTP 클라이언트",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -9,7 +12,6 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",

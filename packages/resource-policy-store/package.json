@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "description": "ResourcePolicyRegistry SQLite 영속 구현 — authorization-ontology-resource-lifecycle 스펙 Phase 2",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -11,10 +17,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -27,14 +29,6 @@
     "permission-engine": "workspace:*",
     "weighted-index": "workspace:*"
   },
-  "peerDependencies": {
-    "better-sqlite3": "catalog:",
-    "postgres": "^3.4.0"
-  },
-  "peerDependenciesMeta": {
-    "better-sqlite3": { "optional": true },
-    "postgres": { "optional": true }
-  },
   "devDependencies": {
     "@types/better-sqlite3": "catalog:",
     "@types/node": "^22.0.0",
@@ -43,5 +37,17 @@
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "catalog:",
+    "postgres": "^3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "postgres": {
+      "optional": true
+    }
   }
 }

@@ -18,86 +18,84 @@ const ROUTE_PERMISSIONS: Array<{
 }> = [
   // Ingest
   {
-    prefix: "/v1/ingest",
-    perm: { domain: "infra", feature: "ingest_write" },
+    prefix: '/v1/ingest',
+    perm: { domain: 'infra', feature: 'ingest_write' },
   },
   {
-    prefix: "/v1/admin",
-    perm: { domain: "infra", feature: "ingest_admin" },
+    prefix: '/v1/admin',
+    perm: { domain: 'infra', feature: 'ingest_admin' },
   },
   {
-    prefix: "/v1/sessions",
-    perm: { domain: "infra", feature: "ingest_read" },
+    prefix: '/v1/sessions',
+    perm: { domain: 'infra', feature: 'ingest_read' },
   },
   {
-    prefix: "/v1/traces",
-    perm: { domain: "infra", feature: "ingest_read" },
+    prefix: '/v1/traces',
+    perm: { domain: 'infra', feature: 'ingest_read' },
   },
   {
-    prefix: "/v1/scenarios",
-    perm: { domain: "infra", feature: "ingest_read" },
+    prefix: '/v1/scenarios',
+    perm: { domain: 'infra', feature: 'ingest_read' },
   },
   {
-    prefix: "/v1/streams",
-    perm: { domain: "infra", feature: "ingest_read" },
+    prefix: '/v1/streams',
+    perm: { domain: 'infra', feature: 'ingest_read' },
   },
   {
-    prefix: "/v1/insights",
-    perm: { domain: "infra", feature: "ingest_read" },
+    prefix: '/v1/insights',
+    perm: { domain: 'infra', feature: 'ingest_read' },
   },
 
   // Registry
-  { prefix: "/api/", perm: { domain: "infra", feature: "registry_read" } },
-  { prefix: "/dev/", perm: { domain: "infra", feature: "registry_read" } },
+  { prefix: '/api/', perm: { domain: 'infra', feature: 'registry_read' } },
+  { prefix: '/dev/', perm: { domain: 'infra', feature: 'registry_read' } },
   {
-    prefix: "/catalogs",
-    perm: { domain: "infra", feature: "registry_read" },
+    prefix: '/catalogs',
+    perm: { domain: 'infra', feature: 'registry_read' },
   },
   {
-    prefix: "/metrics",
-    perm: { domain: "infra", feature: "monitoring_read" },
+    prefix: '/metrics',
+    perm: { domain: 'infra', feature: 'monitoring_read' },
   },
 
   // Gate / Query / Decode
-  { prefix: "/gate/", perm: { domain: "infra", feature: "gate_read" } },
-  { prefix: "/query/", perm: { domain: "infra", feature: "query_read" } },
-  { prefix: "/decode/", perm: { domain: "infra", feature: "decode_read" } },
+  { prefix: '/gate/', perm: { domain: 'infra', feature: 'gate_read' } },
+  { prefix: '/query/', perm: { domain: 'infra', feature: 'query_read' } },
+  { prefix: '/decode/', perm: { domain: 'infra', feature: 'decode_read' } },
 
   // Definition
-  { prefix: "/docs", perm: { domain: "infra", feature: "definition_read" } },
+  { prefix: '/docs', perm: { domain: 'infra', feature: 'definition_read' } },
   {
-    prefix: "/sync",
-    perm: { domain: "infra", feature: "definition_write" },
+    prefix: '/sync',
+    perm: { domain: 'infra', feature: 'definition_write' },
   },
   {
-    prefix: "/graph/",
-    perm: { domain: "infra", feature: "definition_read" },
+    prefix: '/graph/',
+    perm: { domain: 'infra', feature: 'definition_read' },
   },
   {
-    prefix: "/definitions/",
-    perm: { domain: "infra", feature: "definition_read" },
+    prefix: '/definitions/',
+    perm: { domain: 'infra', feature: 'definition_read' },
   },
 
   // Decision
   {
-    prefix: "/decisions/",
-    perm: { domain: "infra", feature: "decision_read" },
+    prefix: '/decisions/',
+    perm: { domain: 'infra', feature: 'decision_read' },
   },
   {
-    prefix: "/decision/",
-    perm: { domain: "infra", feature: "decision_read" },
+    prefix: '/decision/',
+    perm: { domain: 'infra', feature: 'decision_read' },
   },
 ];
 
 // 공개 엔드포인트 - 권한 체크 스킵
-const PUBLIC_PATHS = new Set(["/health", "/health/", "/debug/healthz"]);
+const PUBLIC_PATHS = new Set(['/health', '/health/', '/debug/healthz']);
 
 /**
  * 경로에 필요한 permission을 반환. 공개 경로면 null.
  */
-export function getRoutePermission(
-  pathname: string,
-): RoutePermission | null {
+export function getRoutePermission(pathname: string): RoutePermission | null {
   if (PUBLIC_PATHS.has(pathname)) return null;
 
   // Longest prefix match
@@ -151,7 +149,7 @@ export function checkPermission(
   // 알 수 없는 feature -> domain 존재만으로 허용 (fail-open)
   if (idx === undefined) return true;
 
-  const bytes = Buffer.from(bitmaskB64, "base64");
+  const bytes = Buffer.from(bitmaskB64, 'base64');
   const byteIdx = Math.floor(idx / 8);
   const bitIdx = idx % 8;
   if (byteIdx >= bytes.length) return false;

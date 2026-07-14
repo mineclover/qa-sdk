@@ -7,7 +7,7 @@
  * 세션 종료 시 호출되어 이벤트 시퀀스를 패턴으로 분류한다.
  */
 
-import type { PatternClassification, PatternAnomaly } from "@qa-sdk/core";
+import type { PatternClassification, PatternAnomaly } from '@qa-sdk/core';
 
 /** 패턴 분류 결과 */
 export interface PatternClassificationResult {

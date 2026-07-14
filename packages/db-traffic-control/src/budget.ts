@@ -1,6 +1,6 @@
 // @def.boundary db-traffic-control-spec
 // @def.doc db-traffic-control-spec
-import type { BudgetDef, BudgetMatchRule, QueryAttributes } from "./types.js";
+import type { BudgetDef, BudgetMatchRule, QueryAttributes } from './types.js';
 
 /**
  * 쿼리 속성에 매칭되는 Budget을 우선순위 순으로 찾아 반환한다.
@@ -76,7 +76,7 @@ function matchesRule(attrs: QueryAttributes, rule: BudgetMatchRule): boolean {
  */
 export function matchGlob(value: string, pattern: string): boolean {
   // 특수문자 이스케이프 (단, * 제외)
-  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp("^" + escaped.replace(/\*/g, ".*") + "$");
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp('^' + escaped.replace(/\*/g, '.*') + '$');
   return regex.test(value);
 }

@@ -1,10 +1,6 @@
 import type { OperationalOntologyStore } from './persistence-memory.js';
-import {
-  DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY,
-} from './implementation-governance-taxonomy.js';
-import {
-  validateImplementationBlueprint,
-} from './implementation-governance-evaluator.js';
+import { DEFAULT_IMPLEMENTATION_GOVERNANCE_TAXONOMY } from './implementation-governance-taxonomy.js';
+import { validateImplementationBlueprint } from './implementation-governance-evaluator.js';
 import type {
   GovernanceRun,
   ImplementationBlueprint,
@@ -60,7 +56,8 @@ export async function persistImplementationGovernanceRun(
     version: statusFacetVersion,
     payloadJson: {
       state,
-      reason: state === 'passed' ? 'All governance constraints passed' : 'Governance constraints failed',
+      reason:
+        state === 'passed' ? 'All governance constraints passed' : 'Governance constraints failed',
     },
     recordedAt: now,
   });

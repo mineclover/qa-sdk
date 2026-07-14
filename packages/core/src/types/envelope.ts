@@ -1,11 +1,11 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { EventRecord } from "./record.js";
+import type { EventRecord } from './record.js';
 
 // ── Owner ──────────────────────────────────────────────
 
-export type OwnerType = "tenant" | "workspace" | "user" | "agent";
+export type OwnerType = 'tenant' | 'workspace' | 'user' | 'agent';
 
 export interface TransmissionOwner {
   owner_type: OwnerType;

@@ -1,34 +1,34 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import { boolean, index, pgSchema, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, pgSchema, text, timestamp } from 'drizzle-orm/pg-core';
 
-const auditSchema = pgSchema("audit");
+const auditSchema = pgSchema('audit');
 
 /**
  * RLS shadow-mode 기록 테이블 (Plan 15d).
  * application-layer 판정 과 TS-level RLS 예측 판정을 쌍으로 기록해 divergence 를 분석.
  */
 export const rlsShadowDecisions = auditSchema.table(
-  "rls_shadow_decisions",
+  'rls_shadow_decisions',
   {
-    id: text("id").primaryKey(),
-    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
-    userId: text("user_id"),
-    tenantId: text("tenant_id"),
-    resourceTable: text("resource_table").notNull(),
-    operation: text("operation").notNull(),              // 'select' | 'insert' | 'update' | 'delete'
-    applicationDecision: text("application_decision").notNull(),
-    rlsWouldDecision: text("rls_would_decision").notNull(),
-    divergence: boolean("divergence").notNull(),          // GENERATED column 대신 app 에서 기록
-    denyReason: text("deny_reason"),
-    requestId: text("request_id"),
+    id: text('id').primaryKey(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    userId: text('user_id'),
+    tenantId: text('tenant_id'),
+    resourceTable: text('resource_table').notNull(),
+    operation: text('operation').notNull(), // 'select' | 'insert' | 'update' | 'delete'
+    applicationDecision: text('application_decision').notNull(),
+    rlsWouldDecision: text('rls_would_decision').notNull(),
+    divergence: boolean('divergence').notNull(), // GENERATED column 대신 app 에서 기록
+    denyReason: text('deny_reason'),
+    requestId: text('request_id'),
   },
   (t) => [
-    index("idx_shadow_divergence").on(t.divergence, t.occurredAt),
-    index("idx_shadow_time").on(t.occurredAt),
-    index("idx_shadow_user").on(t.userId, t.occurredAt),
-    index("idx_shadow_table_op").on(t.resourceTable, t.operation),
+    index('idx_shadow_divergence').on(t.divergence, t.occurredAt),
+    index('idx_shadow_time').on(t.occurredAt),
+    index('idx_shadow_user').on(t.userId, t.occurredAt),
+    index('idx_shadow_table_op').on(t.resourceTable, t.operation),
   ],
 );
 

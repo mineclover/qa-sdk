@@ -1,15 +1,12 @@
 // @def.boundary sim-reporting-api
 // @def.doc domain-slice-architecture
 
-import { ReportReadModelQuery } from "../../application/queries/report-read-model.query.js";
-import type {
-  ReportReadModel,
-  ReportSummaryReadModel,
-} from "../../domain/report.types.js";
-import type { ReportId } from "../../domain/report.ids.js";
-import { toReportId } from "../../domain/report.ids.js";
-import type { ReportingRepository } from "../../../shared/port.js";
-import type { Report } from "../../../shared/types.js";
+import { ReportReadModelQuery } from '../../application/queries/report-read-model.query.js';
+import type { ReportReadModel, ReportSummaryReadModel } from '../../domain/report.types.js';
+import type { ReportId } from '../../domain/report.ids.js';
+import { toReportId } from '../../domain/report.ids.js';
+import type { ReportingRepository } from '../../../shared/port.js';
+import type { Report } from '../../../shared/types.js';
 
 /**
  * Repository 위에 얇게 얹은 Read Model 어댑터.

@@ -1,19 +1,19 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { Body, Controller, Delete, Get, Inject, Post, Query, UseFilters } from "@nestjs/common";
-import { z } from "zod";
-import { DomainExceptionFilter } from "@qa-sdk/sim-domain-slice-kit";
-import { RoleAssignmentUseCase } from "../../application/use-cases/role-assignment.use-case.js";
+import { Body, Controller, Delete, Get, Inject, Post, Query, UseFilters } from '@nestjs/common';
+import { z } from 'zod';
+import { DomainExceptionFilter } from '@qa-sdk/sim-domain-slice-kit';
+import { RoleAssignmentUseCase } from '../../application/use-cases/role-assignment.use-case.js';
 import {
   RoleAssignmentReadModelQuery,
   type RoleAssignmentReadModel,
-} from "../../application/queries/role-assignment-read-model.query.js";
+} from '../../application/queries/role-assignment-read-model.query.js';
 
 const assignSchema = z.object({
   userId: z.string().min(1),
   roleId: z.string().min(1),
-  scopeType: z.enum(["global", "department", "project"]),
+  scopeType: z.enum(['global', 'department', 'project']),
   scopeId: z.string().nullable(),
 });
 
@@ -23,7 +23,7 @@ const listQuerySchema = z.object({
   userId: z.string().min(1),
 });
 
-@Controller("role-assignments")
+@Controller('role-assignments')
 @UseFilters(DomainExceptionFilter)
 export class RoleAssignmentController {
   constructor(
@@ -39,10 +39,10 @@ export class RoleAssignmentController {
   }
 
   @Delete()
-  async revoke(@Body() body: unknown): Promise<{ status: "revoked" }> {
+  async revoke(@Body() body: unknown): Promise<{ status: 'revoked' }> {
     const parsed = revokeSchema.parse(body);
     await this.useCase.revoke(parsed);
-    return { status: "revoked" };
+    return { status: 'revoked' };
   }
 
   @Get()

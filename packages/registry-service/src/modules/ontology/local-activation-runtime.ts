@@ -1,25 +1,21 @@
 // @def.boundary registry-system
 // @def.doc registry-system
 
-import { mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { mkdir } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 
-import {
-  SqlIndexMetaStore,
-  SqlPrefixRegistry,
-  type NodeSqliteDriver,
-} from "index-meta";
+import { SqlIndexMetaStore, SqlPrefixRegistry, type NodeSqliteDriver } from 'index-meta';
 
-import { createRegistryDatabaseDriver } from "../../bootstrap/stores.js";
-import { SqlOntologyRegistryStore } from "../../stores/sql-ontology-registry-store.js";
+import { createRegistryDatabaseDriver } from '../../bootstrap/stores.js';
+import { SqlOntologyRegistryStore } from '../../stores/sql-ontology-registry-store.js';
 import {
   createOntologyIndexMetaSyncAdapter,
   type OntologyIndexMetaSyncAdapter,
-} from "./index-meta-sync.adapter.js";
-import { OntologyPackActivationHelper } from "./ontology-activation.helper.js";
-import { OntologyRegistryService } from "./ontology-registry.service.js";
+} from './index-meta-sync.adapter.js';
+import { OntologyPackActivationHelper } from './ontology-activation.helper.js';
+import { OntologyRegistryService } from './ontology-registry.service.js';
 
-export const LOCAL_ONTOLOGY_ACTIVATION_MEMORY_STORE = ":memory:";
+export const LOCAL_ONTOLOGY_ACTIVATION_MEMORY_STORE = ':memory:';
 
 export interface LocalOntologyActivationRuntimeOptions {
   readonly storePath?: string;
@@ -37,9 +33,7 @@ export interface LocalOntologyActivationRuntime {
   close(): void;
 }
 
-export function resolveLocalOntologyActivationStorePath(
-  storePath?: string,
-): string {
+export function resolveLocalOntologyActivationStorePath(storePath?: string): string {
   if (!storePath || storePath === LOCAL_ONTOLOGY_ACTIVATION_MEMORY_STORE) {
     return LOCAL_ONTOLOGY_ACTIVATION_MEMORY_STORE;
   }

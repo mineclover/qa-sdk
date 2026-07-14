@@ -11,8 +11,8 @@
  * @layer 기록 (Recording)
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities } from "@qa-sdk/core";
+import type { Catalog } from '@qa-sdk/core';
+import { encodePrefixByValue, decodePrefixAsResult, decodeResultToEntities } from '@qa-sdk/core';
 
 export interface RefEntrySyncResult {
   readonly prefix: string;
@@ -24,7 +24,11 @@ export interface RefEntrySyncResult {
   readonly newValues: readonly number[];
   readonly changed: boolean;
   /** 변경된 주소 매핑 (old → new) */
-  readonly mapping: readonly { old: number; new: number; meaning: Record<string, string | number> }[];
+  readonly mapping: readonly {
+    old: number;
+    new: number;
+    meaning: Record<string, string | number>;
+  }[];
 }
 
 /**
@@ -33,9 +37,7 @@ export interface RefEntrySyncResult {
  * 각 refEntry의 old address를 decode(old shape) → re-encode(current shape)하여
  * 최신 주소로 변환한다.
  */
-export function syncRefEntries(
-  catalog: Catalog,
-): RefEntrySyncResult[] {
+export function syncRefEntries(catalog: Catalog): RefEntrySyncResult[] {
   const results: RefEntrySyncResult[] = [];
 
   for (const [prefixId, prefix] of Object.entries(catalog.prefixes)) {
@@ -44,13 +46,14 @@ export function syncRefEntries(
 
       for (const [dimLabel, refEntry] of Object.entries(vdef.refEntries)) {
         const dimRef = prefix.dims[dimLabel];
-        if (dimRef.kind !== "prefix_ref") continue;
+        if (dimRef.kind !== 'prefix_ref') continue;
 
         const refPrefixId = dimRef.prefixId;
         const refVersion = refEntry.refVersion;
 
         // 각 old address를 decode → re-encode
-        const mapping: { old: number; new: number; meaning: Record<string, string | number> }[] = [];
+        const mapping: { old: number; new: number; meaning: Record<string, string | number> }[] =
+          [];
         const newValues: number[] = [];
 
         for (const oldAddr of refEntry.values) {
@@ -96,10 +99,10 @@ export function syncRefEntries(
  * syncRefEntries 결과를 콘솔에 출력한다.
  */
 export function printSyncReport(results: readonly RefEntrySyncResult[]): void {
-  const changed = results.filter(r => r.changed);
+  const changed = results.filter((r) => r.changed);
 
   if (changed.length === 0) {
-    console.log("  ✅ 모든 refEntries가 최신 shape과 일치합니다.");
+    console.log('  ✅ 모든 refEntries가 최신 shape과 일치합니다.');
     return;
   }
 
@@ -107,11 +110,13 @@ export function printSyncReport(results: readonly RefEntrySyncResult[]): void {
 
   for (const r of changed) {
     console.log(`  ${r.prefix}:${r.version}.${r.dimLabel} → ${r.refPrefix}:${r.refVersion}`);
-    console.log(`    old: [${r.oldValues.join(", ")}]`);
-    console.log(`    new: [${r.newValues.join(", ")}]`);
+    console.log(`    old: [${r.oldValues.join(', ')}]`);
+    console.log(`    new: [${r.newValues.join(', ')}]`);
     for (const m of r.mapping) {
       if (m.old !== m.new) {
-        const meaning = Object.entries(m.meaning).map(([k, v]) => `${k}=${v}`).join(", ");
+        const meaning = Object.entries(m.meaning)
+          .map(([k, v]) => `${k}=${v}`)
+          .join(', ');
         console.log(`    ${m.old} → ${m.new}  (${meaning})`);
       }
     }

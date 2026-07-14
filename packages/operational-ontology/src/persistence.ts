@@ -40,7 +40,7 @@ export {
   validateFacetKindsForObjectKind,
   getFacetPayloadShapeDescriptor,
   validateFacetPayloadShape,
-} from "./internal/persistence-core.js";
+} from './internal/persistence-core.js';
 
 export {
   type OperationalOntologyObjectQuery,
@@ -50,7 +50,7 @@ export {
   type OperationalOntologyObjectBundle,
   type OperationalOntologyStore,
   InMemoryOperationalOntologyStore,
-} from "./internal/persistence-memory.js";
+} from './internal/persistence-memory.js';
 
 export {
   OPERATIONAL_ONTOLOGY_SNAPSHOT_PROJECTION_KIND,
@@ -63,13 +63,13 @@ export {
   type PersistOperationalOntologySnapshotResult,
   persistOperationalOntologySnapshot,
   loadOperationalOntologySnapshot,
-} from "./internal/persistence-snapshot.js";
+} from './internal/persistence-snapshot.js';
 
 export {
   type IngestOperationalOntologyProjectionOptions,
   type IngestOperationalOntologyProjectionResult,
   ingestOperationalOntologyProjection,
-} from "./internal/persistence-ingest.js";
+} from './internal/persistence-ingest.js';
 
 export {
   type OperationalOntologyCheckpointDiff,
@@ -86,7 +86,7 @@ export {
   diffOperationalOntologyRouteDecision,
   diffOperationalOntologySnapshots,
   diffOperationalOntologyTraversal,
-} from "./internal/persistence-diff.js";
+} from './internal/persistence-diff.js';
 
 export {
   type OperationalOntologyCorridorView,
@@ -106,7 +106,7 @@ export {
   loadOperationalOntologyTraversalBundles,
   loadOperationalOntologyJunctionView,
   loadOperationalOntologySnapshotView,
-} from "./internal/persistence-query.js";
+} from './internal/persistence-query.js';
 
 export {
   diffLatestOperationalOntologyCheckpointByScope,
@@ -130,7 +130,7 @@ export {
   loadLatestOperationalOntologyRouteDecisionByScope,
   loadLatestOperationalOntologySnapshotViewByScope,
   loadLatestOperationalOntologyTraversalBundleByScope,
-} from "./internal/persistence-service.js";
+} from './internal/persistence-service.js';
 
 import {
   getAllowedFacetKindsForObjectKind,
@@ -139,12 +139,12 @@ import {
   validateFacetKindsForObjectKind,
   getFacetPayloadShapeDescriptor,
   validateFacetPayloadShape,
-} from "./internal/persistence-core.js";
+} from './internal/persistence-core.js';
 import {
   persistOperationalOntologySnapshot,
   loadOperationalOntologySnapshot,
-} from "./internal/persistence-snapshot.js";
-import { ingestOperationalOntologyProjection } from "./internal/persistence-ingest.js";
+} from './internal/persistence-snapshot.js';
+import { ingestOperationalOntologyProjection } from './internal/persistence-ingest.js';
 import {
   diffOperationalOntologyCheckpoint,
   diffOperationalOntologyCorridor,
@@ -152,7 +152,7 @@ import {
   diffOperationalOntologyRouteDecision,
   diffOperationalOntologySnapshots,
   diffOperationalOntologyTraversal,
-} from "./internal/persistence-diff.js";
+} from './internal/persistence-diff.js';
 import {
   loadOperationalOntologyCheckpointLattice,
   loadOperationalOntologyCorridorView,
@@ -168,7 +168,7 @@ import {
   loadOperationalOntologyTraversalBundles,
   loadOperationalOntologyJunctionView,
   loadOperationalOntologySnapshotView,
-} from "./internal/persistence-query.js";
+} from './internal/persistence-query.js';
 import {
   diffLatestOperationalOntologyCheckpointByScope,
   diffLatestOperationalOntologyCorridorByScope,
@@ -191,7 +191,7 @@ import {
   loadLatestOperationalOntologyRouteDecisionByScope,
   loadLatestOperationalOntologySnapshotViewByScope,
   loadLatestOperationalOntologyTraversalBundleByScope,
-} from "./internal/persistence-service.js";
+} from './internal/persistence-service.js';
 
 export const operationalOntologyPersistencePlane = {
   getAllowedFacetKindsForObjectKind,

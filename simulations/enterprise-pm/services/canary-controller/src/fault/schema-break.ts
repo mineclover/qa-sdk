@@ -5,8 +5,8 @@
 // 본 fault는 /v1/insights/schema-compat 응답을 덮어쓰지 않고 outbox publisher fixture가
 // 다음 발행부터 추가 필드를 첨부하도록 토글한다 — 결정 모델은 정상 측정 경로로 hard FAIL을 본다.
 
-import { z } from "zod";
-import type { Fault } from "./types.js";
+import { z } from 'zod';
+import type { Fault } from './types.js';
 
 export interface SchemaBreakStore {
   setBreak(fieldName: string): Promise<void>;

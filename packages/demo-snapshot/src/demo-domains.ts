@@ -25,33 +25,39 @@ export {
   AXIS,
   type AxisId,
   // 도메인 인스턴스
-  DEMO_RBAC, DEMO_CONTENT, DEMO_TRACKING, DEMO_RELATIONAL,
-  DEMO_DOMAINS, type DemoDomainId,
+  DEMO_RBAC,
+  DEMO_CONTENT,
+  DEMO_TRACKING,
+  DEMO_RELATIONAL,
+  DEMO_DOMAINS,
+  type DemoDomainId,
   // SchemaSnapshot
   buildDemoSchemaSnapshot,
-  type AxisSnapshot, type DomainSnapshot, type SchemaSnapshot,
-} from "./demo-compat.js";
+  type AxisSnapshot,
+  type DomainSnapshot,
+  type SchemaSnapshot,
+} from './demo-compat.js';
 
 // 타입 re-export (demo-catalog.ts에서 정의)
-export type { Axis, Domain } from "./demo-catalog.js";
+export type { Axis, Domain } from './demo-catalog.js';
 
 // ── 독립 데이터 (카탈로그 외) ────────────────────────────────────────────────
 
 export interface RbacPolicyRule {
   readonly pattern: readonly (string | null)[];
-  readonly value: "allow" | "deny";
+  readonly value: 'allow' | 'deny';
   readonly priority: number;
 }
 
 export const DEMO_RBAC_POLICIES: readonly RbacPolicyRule[] = [
-  { pattern: [null, null, null],  value: "deny",  priority: 1 },
-  { pattern: ["1", null, null],   value: "allow", priority: 10 },
-  { pattern: [null, "1", null],   value: "allow", priority: 5 },
+  { pattern: [null, null, null], value: 'deny', priority: 1 },
+  { pattern: ['1', null, null], value: 'allow', priority: 10 },
+  { pattern: [null, '1', null], value: 'allow', priority: 5 },
 ];
 
 export const RELATIONAL_RESERVED = {
-  NULL: "_",
-  OTHER: "~",
+  NULL: '_',
+  OTHER: '~',
 } as const;
 
 export interface ShoppingServiceContext {
@@ -63,18 +69,37 @@ export interface ShoppingServiceContext {
 
 export const DEMO_SHOPPING_SERVICES: readonly ShoppingServiceContext[] = [
   {
-    id: "shop/payment", name: "결제 서비스",
-    resources: ["products", "orders", "payments", "payments/cancel", "payments/cancel/approve", "users", "config"],
-    actions: ["GET", "POST", "PUT", "DELETE"],
+    id: 'shop/payment',
+    name: '결제 서비스',
+    resources: [
+      'products',
+      'orders',
+      'payments',
+      'payments/cancel',
+      'payments/cancel/approve',
+      'users',
+      'config',
+    ],
+    actions: ['GET', 'POST', 'PUT', 'DELETE'],
   },
   {
-    id: "shop/backend", name: "쇼핑 백엔드",
-    resources: ["products", "products/detail", "orders", "orders/detail", "payments", "users", "config"],
-    actions: ["GET", "POST", "PUT", "DELETE", "view", "edit", "create"],
+    id: 'shop/backend',
+    name: '쇼핑 백엔드',
+    resources: [
+      'products',
+      'products/detail',
+      'orders',
+      'orders/detail',
+      'payments',
+      'users',
+      'config',
+    ],
+    actions: ['GET', 'POST', 'PUT', 'DELETE', 'view', 'edit', 'create'],
   },
   {
-    id: "cms/auth", name: "인증 서비스",
-    resources: ["admin/teams", "admin/users", "billing/invoices"],
-    actions: ["GET", "POST", "PUT", "DELETE"],
+    id: 'cms/auth',
+    name: '인증 서비스',
+    resources: ['admin/teams', 'admin/users', 'billing/invoices'],
+    actions: ['GET', 'POST', 'PUT', 'DELETE'],
   },
 ];

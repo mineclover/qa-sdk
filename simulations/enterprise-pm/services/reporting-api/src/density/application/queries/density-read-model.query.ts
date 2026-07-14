@@ -1,7 +1,7 @@
 // @def.boundary sim-reporting-api
 // @def.doc event-taxonomy-marginal-density
 
-import type { MarginalDensityReadModel } from "../../domain/density.types.js";
+import type { MarginalDensityReadModel } from '../../domain/density.types.js';
 
 /** density compute 입력 — query string 좌표 3 종. */
 export interface ComputeDensityArgs {

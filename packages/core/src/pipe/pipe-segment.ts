@@ -12,10 +12,10 @@
  * 소비자가 실제 axis label로 교체해야 한다.
  */
 
-import type { PipeGraph, PipeSpec, PipeConnection } from "../types/pipe-spec.js";
-import type { PathSegment, EventTransition, BranchRoute } from "../catalog/catalog.types.js";
-import { chainSegments } from "../catalog/path-summation.js";
-import { normalizeEndpointPipeIds } from "./pipe-endpoint.js";
+import type { PipeGraph, PipeSpec, PipeConnection } from '../types/pipe-spec.js';
+import type { PathSegment, EventTransition, BranchRoute } from '../catalog/catalog.types.js';
+import { chainSegments } from '../catalog/path-summation.js';
+import { normalizeEndpointPipeIds } from './pipe-endpoint.js';
 
 /** 도출 결과 */
 export interface DetectedSegments {
@@ -27,7 +27,7 @@ export interface DetectedSegments {
 
 export interface SegmentReason {
   segmentId: string;
-  kind: "conditional-branch" | "event-transition" | "fan-out" | "linear-chain";
+  kind: 'conditional-branch' | 'event-transition' | 'fan-out' | 'linear-chain';
   pipeIds: string[];
   condition?: string;
 }
@@ -46,7 +46,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
   if (graph.pipes.length === 0) return { segments: [], reasons: [] };
 
   const reasons: SegmentReason[] = [];
-  const pipeMap = new Map(graph.pipes.map(p => [p.pipeId, p]));
+  const pipeMap = new Map(graph.pipes.map((p) => [p.pipeId, p]));
 
   // outgoing connections 인덱스
   const outgoing = new Map<string, PipeConnection[]>();
@@ -79,7 +79,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
       chain.push(current);
 
       const conns = outgoing.get(current) ?? [];
-      const nextConns = conns.filter(c => c.kind === "next");
+      const nextConns = conns.filter((c) => c.kind === 'next');
 
       if (nextConns.length === 1) {
         const tos = normalizeEndpointPipeIds(nextConns[0].to);
@@ -100,7 +100,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
     const conns = outgoing.get(pipeId) ?? [];
 
     // conditional 분기 → 각 분기별 세그먼트
-    const conditionals = conns.filter(c => c.kind === "conditional");
+    const conditionals = conns.filter((c) => c.kind === 'conditional');
     if (conditionals.length > 0) {
       visited.add(pipeId);
 
@@ -123,7 +123,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
 
           reasons.push({
             segmentId: segId,
-            kind: "conditional-branch",
+            kind: 'conditional-branch',
             pipeIds: [pipeId, ...branchChain],
             condition: cond.condition,
           });
@@ -135,7 +135,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
 
       // 비-conditional 연결도 처리
       for (const c of conns) {
-        if (c.kind !== "conditional" && c.kind !== "feedback") {
+        if (c.kind !== 'conditional' && c.kind !== 'feedback') {
           const tos = normalizeEndpointPipeIds(c.to);
           for (const to of tos) processNode(to);
         }
@@ -144,7 +144,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
     }
 
     // fan-out → 병렬 세그먼트
-    const fanouts = conns.filter(c => c.kind === "fan-out");
+    const fanouts = conns.filter((c) => c.kind === 'fan-out');
     if (fanouts.length > 0) {
       visited.add(pipeId);
 
@@ -162,7 +162,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
 
           reasons.push({
             segmentId: segId,
-            kind: "fan-out",
+            kind: 'fan-out',
             pipeIds: [pipeId, ...chain],
           });
         }
@@ -186,7 +186,7 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
 
       reasons.push({
         segmentId: segId,
-        kind: "linear-chain",
+        kind: 'linear-chain',
         pipeIds: chain,
       });
 
@@ -194,13 +194,10 @@ export function detectPathSegments(graph: PipeGraph): DetectedSegments {
     }
   }
 
-  function processNextConnections(
-    lastId: string,
-    out: Map<string, PipeConnection[]>,
-  ): void {
+  function processNextConnections(lastId: string, out: Map<string, PipeConnection[]>): void {
     const conns = out.get(lastId) ?? [];
     for (const c of conns) {
-      if (c.kind === "feedback") continue;
+      if (c.kind === 'feedback') continue;
       const tos = normalizeEndpointPipeIds(c.to);
       for (const to of tos) processNode(to);
     }
@@ -222,7 +219,7 @@ function findEventTransition(
 ): EventTransition | undefined {
   const conns = outgoing.get(pipeId) ?? [];
   for (const c of conns) {
-    if (c.kind === "event") {
+    if (c.kind === 'event') {
       const tos = normalizeEndpointPipeIds(c.to);
       const toPipe = pipeMap.get(tos[0]);
       if (toPipe) {

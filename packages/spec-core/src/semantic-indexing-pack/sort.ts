@@ -1,13 +1,13 @@
 // @def.boundary spec-engine-system
 // @def.doc coord-semantic-indexing-pack
 
-import type { SemanticIndexingSurfaceRef, SemanticIndexingSurfaceRole } from "./types.js";
+import type { SemanticIndexingSurfaceRef, SemanticIndexingSurfaceRole } from './types.js';
 
 const ROLE_PRIORITY: Record<SemanticIndexingSurfaceRole, number> = {
-  "public-library": 0,
-  "browser-edge": 1,
-  "runtime-service": 2,
-  "ui-demo": 3,
+  'public-library': 0,
+  'browser-edge': 1,
+  'runtime-service': 2,
+  'ui-demo': 3,
   visualization: 4,
   other: 5,
 };
@@ -19,7 +19,7 @@ function timestamp(value: string | undefined): number {
 }
 
 function rolePriority(role: SemanticIndexingSurfaceRole | undefined): number {
-  return ROLE_PRIORITY[role ?? "other"];
+  return ROLE_PRIORITY[role ?? 'other'];
 }
 
 export function sortSemanticIndexingPackSurfaces(

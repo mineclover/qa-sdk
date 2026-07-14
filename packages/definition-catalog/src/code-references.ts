@@ -1,15 +1,15 @@
 // @def.doc definition-catalog-spec
 // @def.boundary definition-catalog-spec
 
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
-import { extractFrontmatter } from "./frontmatter.js";
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { extractFrontmatter } from './frontmatter.js';
 
 export interface CodeReferenceInput {
   codePath: string;
   docId: string;
-  relationType: "boundary" | "doc";
-  sourceKind: "code_comment" | "doc_frontmatter";
+  relationType: 'boundary' | 'doc';
+  sourceKind: 'code_comment' | 'doc_frontmatter';
   symbol?: string;
   line?: number;
 }
@@ -43,10 +43,10 @@ export interface CodeLinkCoverageOptions {
  * 에서 category A(Infrastructure / harness) 로 분류된 패키지 4 종을 반영한다.
  */
 export const DEFAULT_EXCLUDE_PACKAGES: readonly string[] = [
-  "simulation-tests",
-  "facet-tests",
-  "viteplus-sdk-smoke",
-  "bench",
+  'simulation-tests',
+  'facet-tests',
+  'viteplus-sdk-smoke',
+  'bench',
 ];
 
 export interface CoverageMetrics {
@@ -74,14 +74,14 @@ const CODE_TARGET_RE = /^(.+?\.(?:ts|tsx|js|jsx|mjs|cjs|json|sh))(?:(?::|#)(.+))
 const CODE_FILE_RE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
 const TEST_FILE_RE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const IGNORED_DIRS = new Set([
-  "node_modules",
-  "dist",
-  ".git",
-  ".next",
-  ".turbo",
-  "coverage",
-  "synced",
-  "__mocks__",
+  'node_modules',
+  'dist',
+  '.git',
+  '.next',
+  '.turbo',
+  'coverage',
+  'synced',
+  '__mocks__',
 ]);
 
 function computePercentage(linked: number, total: number): number {
@@ -142,7 +142,7 @@ export function extractSourceEntriesFromYaml(yaml: string): string[] {
       values.push(item[1]!.trim());
       continue;
     }
-    if (line.trim() !== "" && !line.startsWith(" ")) {
+    if (line.trim() !== '' && !line.startsWith(' ')) {
       inSources = false;
     }
   }
@@ -166,16 +166,16 @@ export function formatCodeReferenceTarget(target: CodeReferenceTarget): string {
 }
 
 export function makeCodeReferenceScopeKey(codePath: string, symbol?: string): string {
-  return `${codePath}#${symbol ?? ""}`;
+  return `${codePath}#${symbol ?? ''}`;
 }
 
 function parseDocFrontmatterSources(rootDir: string, docsDir: string): CodeReferenceInput[] {
   const docsRoot = join(rootDir, docsDir);
-  const markdownFiles = walkFiles(docsRoot, (file) => file.endsWith(".md"));
+  const markdownFiles = walkFiles(docsRoot, (file) => file.endsWith('.md'));
   const refs: CodeReferenceInput[] = [];
 
   for (const filePath of markdownFiles) {
-    const content = readFileSync(filePath, "utf8");
+    const content = readFileSync(filePath, 'utf8');
     const frontmatter = extractFrontmatter(content);
     if (!frontmatter) continue;
     const docId = extractDocIdFromYaml(frontmatter.yaml);
@@ -183,12 +183,12 @@ function parseDocFrontmatterSources(rootDir: string, docsDir: string): CodeRefer
 
     for (const entry of extractSourceEntriesFromYaml(frontmatter.yaml)) {
       const target = parseCodeReferenceTarget(entry);
-      if (!target || !target.codePath.startsWith("packages/")) continue;
+      if (!target || !target.codePath.startsWith('packages/')) continue;
       refs.push({
         codePath: target.codePath,
         docId,
-        relationType: "doc",
-        sourceKind: "doc_frontmatter",
+        relationType: 'doc',
+        sourceKind: 'doc_frontmatter',
         symbol: target.symbol,
       });
     }
@@ -207,15 +207,15 @@ function parseCodeCommentRefs(rootDir: string, codeDirs: readonly string[]): Cod
 
     for (const filePath of codeFiles) {
       const relPath = relative(rootDir, filePath);
-      const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
+      const lines = readFileSync(filePath, 'utf8').split(/\r?\n/);
       for (let index = 0; index < lines.length; index++) {
         const match = lines[index]!.match(pattern);
         if (!match) continue;
         refs.push({
           codePath: relPath,
           docId: match[2]!,
-          relationType: match[1] as "boundary" | "doc",
-          sourceKind: "code_comment",
+          relationType: match[1] as 'boundary' | 'doc',
+          sourceKind: 'code_comment',
           symbol: match[3] || undefined,
           line: index + 1,
         });
@@ -233,8 +233,8 @@ export function collectCodeReferences(
     codeDirs?: readonly string[];
   } = {},
 ): CodeReferenceInput[] {
-  const docsDir = options.docsDir ?? "docs";
-  const codeDirs = options.codeDirs ?? ["packages"];
+  const docsDir = options.docsDir ?? 'docs';
+  const codeDirs = options.codeDirs ?? ['packages'];
   const refs = [
     ...parseDocFrontmatterSources(rootDir, docsDir),
     ...parseCodeCommentRefs(rootDir, codeDirs),
@@ -247,9 +247,9 @@ export function collectCodeReferences(
       ref.docId,
       ref.relationType,
       ref.sourceKind,
-      ref.symbol ?? "",
-      ref.line ?? "",
-    ].join("|");
+      ref.symbol ?? '',
+      ref.line ?? '',
+    ].join('|');
     deduped.set(key, ref);
   }
 
@@ -260,16 +260,18 @@ export function collectCodeLinkCoverage(
   rootDir: string,
   options: CodeLinkCoverageOptions = {},
 ): CodeLinkCoverageResult {
-  const docsDir = options.docsDir ?? "docs";
-  const codeDirs = options.codeDirs ?? ["packages"];
-  const scopes = (options.scopes ?? []).map((scope) => scope.replaceAll("\\", "/"));
+  const docsDir = options.docsDir ?? 'docs';
+  const codeDirs = options.codeDirs ?? ['packages'];
+  const scopes = (options.scopes ?? []).map((scope) => scope.replaceAll('\\', '/'));
   const includeTests = options.includeTests ?? false;
   const includeNonSrc = options.includeNonSrc ?? false;
   // caller 가 명시적으로 `excludePackages: []` 를 주입하면 default 를 비활성화한다.
   const excludePackages = options.excludePackages ?? DEFAULT_EXCLUDE_PACKAGES;
 
   const linkedFiles = new Set(
-    collectCodeReferences(rootDir, { docsDir, codeDirs }).map((ref) => ref.codePath.replaceAll("\\", "/")),
+    collectCodeReferences(rootDir, { docsDir, codeDirs }).map((ref) =>
+      ref.codePath.replaceAll('\\', '/'),
+    ),
   );
 
   const candidateFiles = new Set<string>();
@@ -277,8 +279,8 @@ export function collectCodeLinkCoverage(
     const root = join(rootDir, dir);
     const files = walkFiles(root, (file) => CODE_FILE_RE.test(file));
     for (const filePath of files) {
-      const relPath = relative(rootDir, filePath).replaceAll("\\", "/");
-      if (!includeNonSrc && !relPath.includes("/src/")) continue;
+      const relPath = relative(rootDir, filePath).replaceAll('\\', '/');
+      if (!includeNonSrc && !relPath.includes('/src/')) continue;
       if (!includeTests && TEST_FILE_RE.test(relPath)) continue;
       if (scopes.length > 0 && !scopes.some((scope) => relPath.startsWith(scope))) continue;
       candidateFiles.add(relPath);

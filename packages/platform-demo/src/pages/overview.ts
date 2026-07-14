@@ -6,14 +6,14 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function renderOverviewPage(container: HTMLElement): void {
-  container.innerHTML = "";
+  container.innerHTML = '';
 
-  const wrap = document.createElement("div");
-  wrap.className = "ov-wrap";
+  const wrap = document.createElement('div');
+  wrap.className = 'ov-wrap';
 
   // ── Header ──────────────────────────────────────────────────────────────
-  const header = document.createElement("header");
-  header.className = "ov-header";
+  const header = document.createElement('header');
+  header.className = 'ov-header';
   header.innerHTML = `
     <h1 class="ov-title">n차원 참조 주소 체계</h1>
     <p class="ov-subtitle">
@@ -24,8 +24,8 @@ export function renderOverviewPage(container: HTMLElement): void {
   wrap.appendChild(header);
 
   // ── Core Concept ──────────────────────────────────────────────────────
-  const concept = document.createElement("div");
-  concept.className = "ov-concept";
+  const concept = document.createElement('div');
+  concept.className = 'ov-concept';
   concept.innerHTML = `
     <div class="ov-concept-inner">
       <div class="ov-concept-icon">fx</div>
@@ -44,64 +44,64 @@ export function renderOverviewPage(container: HTMLElement): void {
   // ── Flow: 4 stages ──────────────────────────────────────────────────────
   const stages = [
     {
-      num: "01",
-      label: "문제 인식",
-      title: "하드코딩된 식별자와 권한",
+      num: '01',
+      label: '문제 인식',
+      title: '하드코딩된 식별자와 권한',
       body: `코드 곳곳에 <strong>문자열 상수와 매직 넘버</strong>가 산재합니다.
              권한 문자열이 하드코딩되어 오타를 감지할 수 없고,
              식별자가 변경되면 어디까지 영향이 퍼지는지 <strong>추적이 불가능</strong>합니다.`,
       detail: `if (role === "amdin") — 오타가 런타임까지 살아남음`,
-      accent: "var(--env-dev)",
-      icon: "⊙",
-      tabs: ["권한"],
+      accent: 'var(--env-dev)',
+      icon: '⊙',
+      tabs: ['권한'],
     },
     {
-      num: "02",
-      label: "상수 추출",
-      title: "SDK로 식별자 체계화",
+      num: '02',
+      label: '상수 추출',
+      title: 'SDK로 식별자 체계화',
       body: `흩어진 문자열·숫자 식별자를 <strong>인덱스와 버전 단위</strong>로 선언합니다.
              SDK가 차원별 상수를 자동 생성하여 <strong>IDE 자동완성과 타입 안전성</strong>을 확보하고,
              변경 지점을 스키마 한곳으로 단일화합니다.`,
       detail: `client("perm", "v1").constants("role") → { admin, editor, viewer }`,
-      accent: "var(--xl-blue)",
-      icon: "⊞",
-      tabs: ["서비스"],
+      accent: 'var(--xl-blue)',
+      icon: '⊞',
+      tabs: ['서비스'],
     },
     {
-      num: "03",
-      label: "체계화",
-      title: "다차원 좌표를 정수로 압축",
+      num: '03',
+      label: '체계화',
+      title: '다차원 좌표를 정수로 압축',
       body: `추출된 상수를 <strong>다차원 좌표 체계</strong>로 구조화합니다.
              여러 축의 조합을 하나의 정수 주소로 변환하여,
              전송·저장·범위 쿼리 등 <strong>정수 연산</strong>으로 확장합니다.`,
       detail: `[역할, 행위, 리소스] → 단일 정수 주소`,
-      accent: "var(--env-prod)",
-      icon: "◈",
-      tabs: ["시나리오", "범위탐색"],
+      accent: 'var(--env-prod)',
+      icon: '◈',
+      tabs: ['시나리오', '범위탐색'],
     },
     {
-      num: "04",
-      label: "타입 주입",
-      title: "스키마 기반 버전 관리",
+      num: '04',
+      label: '타입 주입',
+      title: '스키마 기반 버전 관리',
       body: `스키마가 <strong>유효한 조합만 허용</strong>하고, 잘못된 입력은 컴파일 타임에 차단합니다.
              버전별 스냅샷으로 스펙 변경을 흡수하며,
              기존 주소가 깨지지 않도록 <strong>안정적인 마이그레이션</strong>을 제공합니다.`,
       detail: `encode({ role: "없는값" }) → 컴파일 에러 · v1 → v2 자동 전환`,
-      accent: "var(--xl-navy)",
-      icon: "▶",
-      tabs: ["버전", "권한 부여 관리"],
+      accent: 'var(--xl-navy)',
+      icon: '▶',
+      tabs: ['버전', '권한 부여 관리'],
     },
   ];
 
-  const flow = document.createElement("div");
-  flow.className = "ov-flow";
+  const flow = document.createElement('div');
+  flow.className = 'ov-flow';
 
   for (let i = 0; i < stages.length; i++) {
     const s = stages[i];
 
-    const card = document.createElement("div");
-    card.className = "ov-card";
-    card.style.setProperty("--card-accent", s.accent);
+    const card = document.createElement('div');
+    card.className = 'ov-card';
+    card.style.setProperty('--card-accent', s.accent);
 
     card.innerHTML = `
       <div class="ov-card-num">${s.num}</div>
@@ -115,7 +115,7 @@ export function renderOverviewPage(container: HTMLElement): void {
         <code>${s.detail}</code>
       </div>
       <div class="ov-card-tabs">
-        ${s.tabs.map((t) => `<span class="ov-card-tab">${t}</span>`).join("")}
+        ${s.tabs.map((t) => `<span class="ov-card-tab">${t}</span>`).join('')}
       </div>
     `;
 
@@ -123,9 +123,9 @@ export function renderOverviewPage(container: HTMLElement): void {
 
     // Arrow between cards
     if (i < stages.length - 1) {
-      const arrow = document.createElement("div");
-      arrow.className = "ov-arrow";
-      arrow.textContent = "→";
+      const arrow = document.createElement('div');
+      arrow.className = 'ov-arrow';
+      arrow.textContent = '→';
       flow.appendChild(arrow);
     }
   }
@@ -135,37 +135,37 @@ export function renderOverviewPage(container: HTMLElement): void {
   // ── DX Ecosystem ──────────────────────────────────────────────────────
   const dxTools = [
     {
-      icon: "⊞",
-      title: "Core Codec",
-      layer: "Library",
-      desc: "다차원 좌표 ↔ 정수 전단사 변환 엔진. 범위 연산, 비트마스크, 주소 직렬화, 용량 계획을 제공합니다.",
-      pkg: "weighted-index",
+      icon: '⊞',
+      title: 'Core Codec',
+      layer: 'Library',
+      desc: '다차원 좌표 ↔ 정수 전단사 변환 엔진. 범위 연산, 비트마스크, 주소 직렬화, 용량 계획을 제공합니다.',
+      pkg: 'weighted-index',
     },
     {
-      icon: "◈",
-      title: "Schema Registry",
-      layer: "Library + DB",
-      desc: "차원·인덱스 선언과 버전 관리 프레임워크. DB 저장소, 분산 라우팅, 게이트 제어를 포함합니다.",
-      pkg: "index-meta",
+      icon: '◈',
+      title: 'Schema Registry',
+      layer: 'Library + DB',
+      desc: '차원·인덱스 선언과 버전 관리 프레임워크. DB 저장소, 분산 라우팅, 게이트 제어를 포함합니다.',
+      pkg: 'index-meta',
     },
     {
-      icon: "◇",
-      title: "Client SDK",
-      layer: "Browser / Edge",
-      desc: "Node.js 의존성 없는 경량 번들. 프론트엔드·Edge에서 동일한 스키마로 encode/decode합니다.",
-      pkg: "index-meta/client",
+      icon: '◇',
+      title: 'Client SDK',
+      layer: 'Browser / Edge',
+      desc: 'Node.js 의존성 없는 경량 번들. 프론트엔드·Edge에서 동일한 스키마로 encode/decode합니다.',
+      pkg: 'index-meta/client',
     },
     {
-      icon: "▤",
-      title: "Explorer",
-      layer: "Dev Tool",
-      desc: "인코딩·디코딩 결과를 시각적으로 확인하는 탐색 도구. 주소 공간 구조를 직관적으로 파악합니다.",
-      pkg: "weighted-index-explorer",
+      icon: '▤',
+      title: 'Explorer',
+      layer: 'Dev Tool',
+      desc: '인코딩·디코딩 결과를 시각적으로 확인하는 탐색 도구. 주소 공간 구조를 직관적으로 파악합니다.',
+      pkg: 'weighted-index-explorer',
     },
   ];
 
-  const dxSection = document.createElement("div");
-  dxSection.className = "ov-dx";
+  const dxSection = document.createElement('div');
+  dxSection.className = 'ov-dx';
   dxSection.innerHTML = `
     <div class="ov-dx-header">
       <h3 class="ov-dx-title">DX Ecosystem</h3>
@@ -174,7 +174,9 @@ export function renderOverviewPage(container: HTMLElement): void {
       </p>
     </div>
     <div class="ov-dx-grid">
-      ${dxTools.map((t) => `
+      ${dxTools
+        .map(
+          (t) => `
         <div class="ov-dx-card">
           <div class="ov-dx-card-head">
             <span class="ov-dx-card-icon">${t.icon}</span>
@@ -186,14 +188,16 @@ export function renderOverviewPage(container: HTMLElement): void {
           <div class="ov-dx-card-body">${t.desc}</div>
           <div class="ov-dx-card-pkg"><code>${t.pkg}</code></div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join('')}
     </div>
   `;
   wrap.appendChild(dxSection);
 
   // ── SDK Usage Examples ──────────────────────────────────────────────────
-  const usage = document.createElement("div");
-  usage.className = "ov-usage";
+  const usage = document.createElement('div');
+  usage.className = 'ov-usage';
   usage.innerHTML = `
     <h3 class="ov-usage-title">라이브러리 사용 예시</h3>
     <div class="ov-usage-grid">

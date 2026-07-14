@@ -1,7 +1,7 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (project slice).
@@ -11,18 +11,15 @@ import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
  * 어댑터가 service-shared schema 를 직접 import; alias re-export 불필요).
  */
 export const projects = sqliteTable(
-  "projects",
+  'projects',
   {
-    id: text("id").primaryKey(),
-    name: text("name").notNull(),
-    ownerId: text("owner_id").notNull(),
-    departmentId: text("department_id").notNull(),
-    status: text("status", { enum: ["draft", "active", "archived"] }).notNull(),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    ownerId: text('owner_id').notNull(),
+    departmentId: text('department_id').notNull(),
+    status: text('status', { enum: ['draft', 'active', 'archived'] }).notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
-  (t) => [
-    index("idx_proj_owner").on(t.ownerId),
-    index("idx_proj_dept").on(t.departmentId),
-  ],
+  (t) => [index('idx_proj_owner').on(t.ownerId), index('idx_proj_dept').on(t.departmentId)],
 );

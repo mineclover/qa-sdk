@@ -4,8 +4,8 @@
 import {
   ExpenseReadModelQuery,
   type ExpenseDetailReadModel,
-} from "../../application/queries/expense-read-model.query.js";
-import type { ExpenseRepositoryPort } from "../../application/ports/expense-repository.port.js";
+} from '../../application/queries/expense-read-model.query.js';
+import type { ExpenseRepositoryPort } from '../../application/ports/expense-repository.port.js';
 
 export class RepositoryExpenseReadModel extends ExpenseReadModelQuery {
   constructor(private readonly repository: ExpenseRepositoryPort) {

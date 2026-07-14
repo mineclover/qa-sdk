@@ -1,7 +1,7 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-export type WorkTopicDiagnosticSeverity = "error" | "warning";
+export type WorkTopicDiagnosticSeverity = 'error' | 'warning';
 
 export interface WorkTopicBoundary {
   readonly read: readonly string[];
@@ -49,19 +49,21 @@ export function extractWorkTopicDocumentMetadata(
   for (const match of markdown.matchAll(WORK_TOPIC_BLOCK_RE)) {
     blockIndex += 1;
     const pointer = `work-topic-block:${blockIndex}`;
-    const rawYaml = match[1] ?? "";
+    const rawYaml = match[1] ?? '';
 
     let parsedYaml: unknown;
     try {
       parsedYaml = parseWorkTopicYaml(rawYaml);
     } catch (error) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer,
-        code: "work-topic-yaml-parse-error",
-        severity: "error",
-        message: error instanceof Error ? error.message : String(error),
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer,
+          code: 'work-topic-yaml-parse-error',
+          severity: 'error',
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      );
       continue;
     }
 
@@ -70,10 +72,12 @@ export function extractWorkTopicDocumentMetadata(
     diagnostics.push(...normalized.diagnostics);
   }
 
-  diagnostics.push(...validateSingleWorkTopicDocument({
-    sourcePath,
-    topics,
-  }));
+  diagnostics.push(
+    ...validateSingleWorkTopicDocument({
+      sourcePath,
+      topics,
+    }),
+  );
 
   return {
     topics,
@@ -97,19 +101,20 @@ function normalizeTopicBlock(
         diagnostic({
           sourcePath,
           pointer,
-          code: "work-topic-schema-error",
-          severity: "error",
-          message: "work-topic block must parse to an object root.",
+          code: 'work-topic-schema-error',
+          severity: 'error',
+          message: 'work-topic block must parse to an object root.',
         }),
       ],
     };
   }
 
-  const rawTopics = value.work_topic !== undefined
-    ? [value.work_topic]
-    : Array.isArray(value.work_topics)
-    ? value.work_topics
-    : undefined;
+  const rawTopics =
+    value.work_topic !== undefined
+      ? [value.work_topic]
+      : Array.isArray(value.work_topics)
+        ? value.work_topics
+        : undefined;
 
   if (!rawTopics) {
     return {
@@ -118,9 +123,9 @@ function normalizeTopicBlock(
         diagnostic({
           sourcePath,
           pointer,
-          code: "work-topic-missing-root",
-          severity: "error",
-          message: "work-topic block must define `work_topic:` or `work_topics:`.",
+          code: 'work-topic-missing-root',
+          severity: 'error',
+          message: 'work-topic block must define `work_topic:` or `work_topics:`.',
         }),
       ],
     };
@@ -133,13 +138,15 @@ function normalizeTopicBlock(
     const rawTopic = rawTopics[index];
     const topicPointer = `${pointer}.topic:${index + 1}`;
     if (!isRecord(rawTopic)) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: topicPointer,
-        code: "work-topic-schema-error",
-        severity: "error",
-        message: "work_topic entry must be an object.",
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: topicPointer,
+          code: 'work-topic-schema-error',
+          severity: 'error',
+          message: 'work_topic entry must be an object.',
+        }),
+      );
       continue;
     }
 
@@ -154,35 +161,41 @@ function normalizeTopicBlock(
     const boundaries = boundaryField(rawTopic.boundaries);
 
     if (!id) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: topicPointer,
-        code: "work-topic-schema-error",
-        severity: "error",
-        message: "work_topic.id is required.",
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: topicPointer,
+          code: 'work-topic-schema-error',
+          severity: 'error',
+          message: 'work_topic.id is required.',
+        }),
+      );
       continue;
     }
     if (!ownerSystem) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: topicPointer,
-        code: "work-topic-schema-error",
-        severity: "error",
-        message: `work_topic ${id} is missing owner_system.`,
-        topicId: id,
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: topicPointer,
+          code: 'work-topic-schema-error',
+          severity: 'error',
+          message: `work_topic ${id} is missing owner_system.`,
+          topicId: id,
+        }),
+      );
       continue;
     }
     if (!goal) {
-      diagnostics.push(diagnostic({
-        sourcePath,
-        pointer: topicPointer,
-        code: "work-topic-schema-error",
-        severity: "error",
-        message: `work_topic ${id} is missing goal.`,
-        topicId: id,
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath,
+          pointer: topicPointer,
+          code: 'work-topic-schema-error',
+          severity: 'error',
+          message: `work_topic ${id} is missing goal.`,
+          topicId: id,
+        }),
+      );
       continue;
     }
 
@@ -210,14 +223,16 @@ function validateSingleWorkTopicDocument(input: {
   const seen = new Set<string>();
   for (const topic of input.topics) {
     if (seen.has(topic.id)) {
-      diagnostics.push(diagnostic({
-        sourcePath: input.sourcePath,
-        pointer: `work_topic:${topic.id}`,
-        code: "work-topic-duplicate-id",
-        severity: "error",
-        message: `Duplicate work_topic id: ${topic.id}`,
-        topicId: topic.id,
-      }));
+      diagnostics.push(
+        diagnostic({
+          sourcePath: input.sourcePath,
+          pointer: `work_topic:${topic.id}`,
+          code: 'work-topic-duplicate-id',
+          severity: 'error',
+          message: `Duplicate work_topic id: ${topic.id}`,
+          topicId: topic.id,
+        }),
+      );
       continue;
     }
     seen.add(topic.id);
@@ -228,8 +243,8 @@ function validateSingleWorkTopicDocument(input: {
 function parseWorkTopicYaml(yaml: string): Record<string, unknown> {
   const lines = yaml
     .split(/\r?\n/)
-    .map((line) => line.replace(/\r$/, ""))
-    .filter((line) => line.trim().length > 0 && !line.trim().startsWith("#"))
+    .map((line) => line.replace(/\r$/, ''))
+    .filter((line) => line.trim().length > 0 && !line.trim().startsWith('#'))
     .map((line) => ({
       indent: line.length - line.trimStart().length,
       text: line.trim(),
@@ -242,7 +257,7 @@ function parseWorkTopicYaml(yaml: string): Record<string, unknown> {
       const line = lines[index]!;
       if (line.indent < indent) break;
       if (line.indent > indent) break;
-      if (line.text.startsWith("- ")) break;
+      if (line.text.startsWith('- ')) break;
 
       const parsed = parseKeyValue(line.text);
       if (!parsed) {
@@ -250,7 +265,7 @@ function parseWorkTopicYaml(yaml: string): Record<string, unknown> {
         continue;
       }
       index += 1;
-      if (parsed.value === "") {
+      if (parsed.value === '') {
         result[parsed.key] = parseNested(line.indent);
       } else {
         result[parsed.key] = parseScalarOrInlineArray(parsed.value);
@@ -262,7 +277,7 @@ function parseWorkTopicYaml(yaml: string): Record<string, unknown> {
   function parseNested(parentIndent: number): unknown {
     const next = lines[index];
     if (!next || next.indent <= parentIndent) return {};
-    if (next.text.startsWith("- ")) return parseArray(next.indent);
+    if (next.text.startsWith('- ')) return parseArray(next.indent);
     return parseObject(next.indent);
   }
 
@@ -271,7 +286,7 @@ function parseWorkTopicYaml(yaml: string): Record<string, unknown> {
     while (index < lines.length) {
       const line = lines[index]!;
       if (line.indent < indent) break;
-      if (line.indent !== indent || !line.text.startsWith("- ")) break;
+      if (line.indent !== indent || !line.text.startsWith('- ')) break;
 
       const rest = line.text.slice(2).trim();
       index += 1;
@@ -282,14 +297,13 @@ function parseWorkTopicYaml(yaml: string): Record<string, unknown> {
       }
 
       const item: Record<string, unknown> = {};
-      item[parsed.key] = parsed.value === ""
-        ? parseNested(line.indent)
-        : parseScalarOrInlineArray(parsed.value);
+      item[parsed.key] =
+        parsed.value === '' ? parseNested(line.indent) : parseScalarOrInlineArray(parsed.value);
 
       while (index < lines.length) {
         const next = lines[index]!;
         if (next.indent <= line.indent) break;
-        if (next.indent !== line.indent + 2 || next.text.startsWith("- ")) break;
+        if (next.indent !== line.indent + 2 || next.text.startsWith('- ')) break;
 
         const continuation = parseKeyValue(next.text);
         if (!continuation) {
@@ -297,9 +311,10 @@ function parseWorkTopicYaml(yaml: string): Record<string, unknown> {
           continue;
         }
         index += 1;
-        item[continuation.key] = continuation.value === ""
-          ? parseNested(next.indent)
-          : parseScalarOrInlineArray(continuation.value);
+        item[continuation.key] =
+          continuation.value === ''
+            ? parseNested(next.indent)
+            : parseScalarOrInlineArray(continuation.value);
       }
       result.push(item);
     }
@@ -314,32 +329,34 @@ function parseKeyValue(text: string): { key: string; value: string } | null {
   if (!match?.[1]) return null;
   return {
     key: match[1].trim(),
-    value: match[2]?.trim() ?? "",
+    value: match[2]?.trim() ?? '',
   };
 }
 
 function looksLikePathReference(value: string): boolean {
-  return /^.+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|py|rb|rs|ts|tsx|txt|yaml|yml)(?::|#).+/.test(value);
+  return /^.+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|py|rb|rs|ts|tsx|txt|yaml|yml)(?::|#).+/.test(
+    value,
+  );
 }
 
 function parseScalarOrInlineArray(value: string): unknown {
-  if (value.startsWith("[") && value.endsWith("]")) {
+  if (value.startsWith('[') && value.endsWith(']')) {
     const inner = value.slice(1, -1).trim();
     if (!inner) return [];
-    return inner.split(",").map((item) => parseScalar(item.trim()));
+    return inner.split(',').map((item) => parseScalar(item.trim()));
   }
   return parseScalar(value);
 }
 
 function parseScalar(value: string): unknown {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  if (value === "null") return null;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  if (value === 'null') return null;
   const numberValue = Number(value);
-  if (!Number.isNaN(numberValue) && value.trim() !== "") return numberValue;
+  if (!Number.isNaN(numberValue) && value.trim() !== '') return numberValue;
   if (
-    (value.startsWith("\"") && value.endsWith("\""))
-    || (value.startsWith("'") && value.endsWith("'"))
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
   ) {
     return value.slice(1, -1);
   }
@@ -347,16 +364,14 @@ function parseScalar(value: string): unknown {
 }
 
 function stringField(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0
-    ? value.trim()
-    : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function stringArrayField(value: unknown): readonly string[] {
-  if (typeof value === "string" && value.trim().length > 0) return [value.trim()];
+  if (typeof value === 'string' && value.trim().length > 0) return [value.trim()];
   if (!Array.isArray(value)) return [];
   return value
-    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     .map((item) => item.trim());
 }
 
@@ -376,7 +391,7 @@ function boundaryField(value: unknown): WorkTopicBoundary {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function diagnostic(input: {

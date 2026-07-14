@@ -1,20 +1,20 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { buildIdempotencyKey } from "sim-identifier-grammar";
+import { buildIdempotencyKey } from 'sim-identifier-grammar';
 
-import { RoleEntity, DuplicateRoleNameException } from "../../domain/index.js";
-import { toGrammarSafeAggregateId } from "../../../_outbox/idempotency-key-source.js";
-import type { CreateRoleCommand } from "../commands/create-role.command.js";
-import type { DeleteRoleCommand } from "../commands/delete-role.command.js";
-import type { RoleLoggerPort } from "../ports/role-logger.port.js";
+import { RoleEntity, DuplicateRoleNameException } from '../../domain/index.js';
+import { toGrammarSafeAggregateId } from '../../../_outbox/idempotency-key-source.js';
+import type { CreateRoleCommand } from '../commands/create-role.command.js';
+import type { DeleteRoleCommand } from '../commands/delete-role.command.js';
+import type { RoleLoggerPort } from '../ports/role-logger.port.js';
 import type {
   RoleOutboxPort,
   RoleCreatedEventPayload,
   RoleDeletedEventPayload,
-} from "../ports/role-outbox.port.js";
-import type { RoleRepositoryPort } from "../ports/role-repository.port.js";
-import type { RoleTransactionPort } from "../ports/role-transaction.port.js";
+} from '../ports/role-outbox.port.js';
+import type { RoleRepositoryPort } from '../ports/role-repository.port.js';
+import type { RoleTransactionPort } from '../ports/role-transaction.port.js';
 
 export class RoleUseCase {
   constructor(
@@ -24,19 +24,21 @@ export class RoleUseCase {
     private readonly logger: RoleLoggerPort,
   ) {}
 
-  async create(command: CreateRoleCommand): Promise<{ readonly id: string; readonly status: "ACTIVE" }> {
+  async create(
+    command: CreateRoleCommand,
+  ): Promise<{ readonly id: string; readonly status: 'ACTIVE' }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "role",
-      useCase: "RoleUseCase.create",
+      domain: 'role',
+      useCase: 'RoleUseCase.create',
       aggregateId: command.id,
-      commandName: "CreateRoleCommand",
+      commandName: 'CreateRoleCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "role.create.started");
+    this.logger.info({ ...ctxBase }, 'role.create.started');
 
     try {
       const existing = await this.repository.findByName(command.name);
@@ -44,8 +46,8 @@ export class RoleUseCase {
         throw new DuplicateRoleNameException(command.name);
       }
 
-      const eventName = "auth.role.created";
-      await this.transaction.run("role.create", async (scope): Promise<void> => {
+      const eventName = 'auth.role.created';
+      await this.transaction.run('role.create', async (scope): Promise<void> => {
         const role = RoleEntity.create({
           id: command.id,
           name: command.name,
@@ -80,41 +82,43 @@ export class RoleUseCase {
       });
 
       this.logger.info(
-        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
-        "role.create.success",
+        { ...ctxBase, eventName, eventVersion: 1, outcome: 'success' },
+        'role.create.success',
       );
-      return { id: command.id, status: "ACTIVE" };
+      return { id: command.id, status: 'ACTIVE' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "role.create.failure",
+        'role.create.failure',
       );
       throw error;
     }
   }
 
-  async delete(command: DeleteRoleCommand): Promise<{ readonly id: string; readonly status: "DELETED" }> {
+  async delete(
+    command: DeleteRoleCommand,
+  ): Promise<{ readonly id: string; readonly status: 'DELETED' }> {
     const traceId = command.traceId ?? `trace-${command.id}`;
     const correlationId = command.correlationId ?? traceId;
     const ctxBase = {
       traceId,
       correlationId,
-      domain: "role",
-      useCase: "RoleUseCase.delete",
+      domain: 'role',
+      useCase: 'RoleUseCase.delete',
       aggregateId: command.id,
-      commandName: "DeleteRoleCommand",
+      commandName: 'DeleteRoleCommand',
     } as const;
 
-    this.logger.info({ ...ctxBase }, "role.delete.started");
+    this.logger.info({ ...ctxBase }, 'role.delete.started');
 
     try {
-      const eventName = "auth.role.deleted";
-      await this.transaction.run("role.delete", async (scope): Promise<void> => {
+      const eventName = 'auth.role.deleted';
+      await this.transaction.run('role.delete', async (scope): Promise<void> => {
         await this.repository.delete(command.id, scope);
         const occurredAt = new Date();
         const payload: RoleDeletedEventPayload = {
@@ -139,19 +143,19 @@ export class RoleUseCase {
       });
 
       this.logger.info(
-        { ...ctxBase, eventName, eventVersion: 1, outcome: "success" },
-        "role.delete.success",
+        { ...ctxBase, eventName, eventVersion: 1, outcome: 'success' },
+        'role.delete.success',
       );
-      return { id: command.id, status: "DELETED" };
+      return { id: command.id, status: 'DELETED' };
     } catch (error) {
       this.logger.error(
         {
           ...ctxBase,
-          outcome: "failure",
-          errorCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+          outcome: 'failure',
+          errorCode: error instanceof Error ? error.name : 'UNKNOWN_ERROR',
           err: error,
         },
-        "role.delete.failure",
+        'role.delete.failure',
       );
       throw error;
     }

@@ -1,7 +1,7 @@
 // @def.doc definition-data-source
 
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import type {
   DefBoundaryContextResult,
   DefBoundaryResolutionCandidate,
@@ -19,7 +19,7 @@ import type {
   DefValidateOptions,
   DefValidationResult,
   ValidateGraphOptions,
-} from "definition-catalog";
+} from 'definition-catalog';
 import {
   analyzeImpact,
   assembleBoundary,
@@ -35,11 +35,11 @@ import {
   type DefinitionEntry,
   type DefinitionLink,
   type MemoryDefinitionRegistry,
-} from "definition-catalog";
+} from 'definition-catalog';
 import {
   getFeedbackRequestSummariesForDoc,
   getSyntheticIncomingLinksForDoc,
-} from "./review-feedback-source.js";
+} from './review-feedback-source.js';
 
 type ScanIssue = { file: string; error: string };
 type ScanLinkIssue = { source: string; target: string; error: string };
@@ -63,10 +63,10 @@ function mapEntryToDoc(entry: DefinitionEntry, body?: string): DefDoc {
     revision: entry.revision,
     address: entry.serialized,
     version: entry.revision ?? 1,
-    purpose: body ? extractByLevel(body, "purpose").text || undefined : undefined,
-    intent: body ? extractByMarker(body, "intent").text || undefined : undefined,
-    context: body ? extractByMarker(body, "context").text || undefined : undefined,
-    caveat: body ? extractByMarker(body, "caveat").text || undefined : undefined,
+    purpose: body ? extractByLevel(body, 'purpose').text || undefined : undefined,
+    intent: body ? extractByMarker(body, 'intent').text || undefined : undefined,
+    context: body ? extractByMarker(body, 'context').text || undefined : undefined,
+    caveat: body ? extractByMarker(body, 'caveat').text || undefined : undefined,
     gate: entry.gate,
     sourcePath: entry.ref,
   };
@@ -81,7 +81,7 @@ async function loadBodies(
   for (const entry of registry.all()) {
     if (!entry.ref) continue;
     try {
-      const content = await readFile(join(rootDir, entry.ref), "utf-8");
+      const content = await readFile(join(rootDir, entry.ref), 'utf-8');
       const fm = extractFrontmatter(content);
       if (fm) bodies.set(entry.id, fm.body);
     } catch {
@@ -102,7 +102,7 @@ async function loadDeclaredLinks(
     if (!entry.ref) continue;
     try {
       const filePath = join(rootDir, entry.ref);
-      const content = await readFile(filePath, "utf-8");
+      const content = await readFile(filePath, 'utf-8');
       const document = parseDocument(content, filePath);
       links.set(
         entry.id,
@@ -188,7 +188,7 @@ function scoreQuery(doc: DefDoc, rawQuery: string): number | null {
     [5, doc.caveat],
     [6, doc.svc],
     [7, doc.address],
-    [8, doc.tags.join(" ")],
+    [8, doc.tags.join(' ')],
   ];
 
   for (const [rank, value] of values) {
@@ -206,12 +206,14 @@ function sortByQuery(docs: readonly DefDoc[], query: string): DefDoc[] {
   return docs
     .map((doc) => ({ doc, score: scoreQuery(doc, query) }))
     .filter((item): item is { doc: DefDoc; score: number } => item.score !== null)
-    .toSorted((left, right) => left.score - right.score || left.doc.docId.localeCompare(right.doc.docId))
+    .toSorted(
+      (left, right) => left.score - right.score || left.doc.docId.localeCompare(right.doc.docId),
+    )
     .map((item) => item.doc);
 }
 
 export class ScanDataSource implements DefDataSource {
-  readonly mode = "scan" as const;
+  readonly mode = 'scan' as const;
 
   private constructor(
     private readonly rootDir: string,
@@ -224,14 +226,12 @@ export class ScanDataSource implements DefDataSource {
     private readonly scanLinkErrors: readonly ScanLinkIssue[],
   ) {}
 
-  static async create(
-    rootDir: string = process.cwd(),
-    docsDir = "docs",
-  ): Promise<ScanDataSource> {
+  static async create(rootDir: string = process.cwd(), docsDir = 'docs'): Promise<ScanDataSource> {
     const scan = await scanAndBuild(rootDir, [join(rootDir, docsDir)]);
     const bodies = await loadBodies(scan.registry, rootDir);
     const declaredLinks = await loadDeclaredLinks(scan.registry, rootDir);
-    const docs = scan.registry.all()
+    const docs = scan.registry
+      .all()
       .map((entry) => {
         const doc = mapEntryToDoc(entry, bodies.get(entry.id));
         const links = declaredLinks.get(entry.id) ?? [];
@@ -266,7 +266,7 @@ export class ScanDataSource implements DefDataSource {
     if (!doc) return null;
     return {
       docId,
-      body: this.bodies.get(docId) ?? "",
+      body: this.bodies.get(docId) ?? '',
       docVersion: doc.docVersion,
       revision: doc.revision,
       sourcePath: doc.sourcePath,
@@ -275,7 +275,7 @@ export class ScanDataSource implements DefDataSource {
 
   async resolveByFile(filePath: string): Promise<DefFileBoundaryResolution> {
     return {
-      kind: "none",
+      kind: 'none',
       codePath: filePath,
       references: [],
     };
@@ -293,16 +293,18 @@ export class ScanDataSource implements DefDataSource {
   }
 
   async getChildren(docId: string): Promise<DefDoc[]> {
-    return this.registry.getLinks(docId, "outgoing")
-      .filter((link) => link.linkType === "contains")
+    return this.registry
+      .getLinks(docId, 'outgoing')
+      .filter((link) => link.linkType === 'contains')
       .map((link) => this.docs.find((doc) => doc.docId === link.targetId))
       .filter((doc): doc is DefDoc => doc !== undefined)
       .toSorted((left, right) => left.docId.localeCompare(right.docId));
   }
 
   async getParent(docId: string): Promise<DefDoc | null> {
-    const parentLink = this.registry.getLinks(docId, "incoming")
-      .find((link) => link.linkType === "contains");
+    const parentLink = this.registry
+      .getLinks(docId, 'incoming')
+      .find((link) => link.linkType === 'contains');
     if (!parentLink) return null;
     return this.docs.find((doc) => doc.docId === parentLink.sourceId) ?? null;
   }
@@ -328,7 +330,7 @@ export class ScanDataSource implements DefDataSource {
 
   async getBoundary(
     docId: string,
-    level: "purpose" | "overview" = "overview",
+    level: 'purpose' | 'overview' = 'overview',
   ): Promise<DefBoundaryResult | null> {
     const assembled = assembleBoundary(
       docId,
@@ -347,12 +349,12 @@ export class ScanDataSource implements DefDataSource {
         scope: assembled.boundary.scope,
         aspect: assembled.boundary.aspect,
         depth: assembled.boundary.depth,
-        lifecycle: doc?.lifecycle ?? "approved",
+        lifecycle: doc?.lifecycle ?? 'approved',
         ...(doc?.layer ? { layer: doc.layer } : {}),
         ...(doc?.svc ? { svc: doc.svc } : {}),
         ...(assembled.boundary.purpose ? { purpose: assembled.boundary.purpose } : {}),
-        ...(level === "overview" && assembled.boundary.overview.length > 0
-          ? { overview: assembled.boundary.overview.join("\n") }
+        ...(level === 'overview' && assembled.boundary.overview.length > 0
+          ? { overview: assembled.boundary.overview.join('\n') }
           : {}),
       },
       members: assembled.members.map((member) => ({
@@ -361,18 +363,18 @@ export class ScanDataSource implements DefDataSource {
         scope: member.scope,
         aspect: member.aspect,
         depth: member.depth,
-        summary: member.purpose ?? member.overview[0] ?? "(요약 없음)",
+        summary: member.purpose ?? member.overview[0] ?? '(요약 없음)',
       })),
       couplings: {
         outgoing: assembled.couplings.outgoing.map((item) => ({
           type: item.linkType,
           target: item.doc.id,
-          summary: item.doc.purpose ?? item.doc.overview[0] ?? "(요약 없음)",
+          summary: item.doc.purpose ?? item.doc.overview[0] ?? '(요약 없음)',
         })),
         incoming: assembled.couplings.incoming.map((item) => ({
           type: item.linkType,
           source: item.doc.id,
-          summary: item.doc.purpose ?? item.doc.overview[0] ?? "(요약 없음)",
+          summary: item.doc.purpose ?? item.doc.overview[0] ?? '(요약 없음)',
         })),
       },
     };
@@ -380,8 +382,8 @@ export class ScanDataSource implements DefDataSource {
 
   async getBoundaryContext(
     docId: string,
-    level: "purpose" | "overview" = "overview",
-    mode: "direct" | "transitive" = "transitive",
+    level: 'purpose' | 'overview' = 'overview',
+    mode: 'direct' | 'transitive' = 'transitive',
   ): Promise<DefBoundaryContextResult | null> {
     const boundary = await this.getBoundary(docId, level);
     if (!boundary) return null;
@@ -391,21 +393,21 @@ export class ScanDataSource implements DefDataSource {
         docId,
         (id) => this.registry.get(id),
         (id, direction) => {
-          if (direction === "outgoing") {
+          if (direction === 'outgoing') {
             return (this.declaredOutgoingLinks.get(id) ?? []).map((link) => ({
               sourceId: id,
               targetId: link.target,
-              linkType: link.type as DefinitionLink["linkType"],
+              linkType: link.type as DefinitionLink['linkType'],
               address: 0,
-              serialized: "",
+              serialized: '',
             }));
           }
           return (this.declaredIncomingLinks.get(id) ?? []).map((link) => ({
             sourceId: link.source,
             targetId: id,
-            linkType: link.type as DefinitionLink["linkType"],
+            linkType: link.type as DefinitionLink['linkType'],
             address: 0,
-            serialized: "",
+            serialized: '',
           }));
         },
       ),
@@ -416,21 +418,21 @@ export class ScanDataSource implements DefDataSource {
         docId,
         (id) => this.registry.get(id),
         (id, direction) => {
-          if (direction === "outgoing") {
+          if (direction === 'outgoing') {
             return (this.declaredOutgoingLinks.get(id) ?? []).map((link) => ({
               sourceId: id,
               targetId: link.target,
-              linkType: link.type as DefinitionLink["linkType"],
+              linkType: link.type as DefinitionLink['linkType'],
               address: 0,
-              serialized: "",
+              serialized: '',
             }));
           }
           return (this.declaredIncomingLinks.get(id) ?? []).map((link) => ({
             sourceId: link.source,
             targetId: id,
-            linkType: link.type as DefinitionLink["linkType"],
+            linkType: link.type as DefinitionLink['linkType'],
             address: 0,
-            serialized: "",
+            serialized: '',
           }));
         },
       ),
@@ -444,7 +446,9 @@ export class ScanDataSource implements DefDataSource {
       )
     )
       .flat()
-      .filter((item, index, items) => index === items.findIndex((candidate) => candidate.id === item.id));
+      .filter(
+        (item, index, items) => index === items.findIndex((candidate) => candidate.id === item.id),
+      );
 
     return {
       mode,
@@ -467,7 +471,7 @@ export class ScanDataSource implements DefDataSource {
           docId: item.id,
           ...(item.address ? { address: item.address } : {}),
           via: item.via,
-          path: item.path.join(" → "),
+          path: item.path.join(' → '),
           direction: item.direction,
           distance: item.depth,
           ...(item.layer ? { layer: item.layer } : {}),
@@ -487,16 +491,16 @@ export class ScanDataSource implements DefDataSource {
       ...(options.repoRoot ? { repoRoot: options.repoRoot } : {}),
     };
     const graph = validateGraph(this.registry, graphOptions);
-    const issues: DefValidationResult["issues"] = [
+    const issues: DefValidationResult['issues'] = [
       ...this.scanErrors.map((item) => ({
-        severity: "error" as const,
-        type: "scan-error",
+        severity: 'error' as const,
+        type: 'scan-error',
         docId: item.file,
         message: item.error,
       })),
       ...this.scanLinkErrors.map((item) => ({
-        severity: "error" as const,
-        type: "broken-link",
+        severity: 'error' as const,
+        type: 'broken-link',
         docId: item.source,
         message: `${item.target}: ${item.error}`,
       })),
@@ -508,8 +512,8 @@ export class ScanDataSource implements DefDataSource {
       })),
     ];
 
-    const errors = issues.filter((issue) => issue.severity === "error").length;
-    const warnings = issues.filter((issue) => issue.severity === "warning").length;
+    const errors = issues.filter((issue) => issue.severity === 'error').length;
+    const warnings = issues.filter((issue) => issue.severity === 'warning').length;
     return { issues, errors, warnings, passed: errors === 0 };
   }
 }

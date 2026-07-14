@@ -16,17 +16,17 @@
  * 비-sub-doc 문서의 rollup 경로는 전혀 건드리지 않는다.
  */
 
-import type { DefinitionEntry, DefinitionLink, LinkType } from "./types.js";
+import type { DefinitionEntry, DefinitionLink, LinkType } from './types.js';
 
 /** 최소 registry 계약 — `deriveDomainRoot`에 필요한 접근자만 선언한다. */
 export interface DomainRootRegistry {
   all(): readonly DefinitionEntry[];
   get(id: string): DefinitionEntry | undefined;
-  getLinks(id: string, direction?: "outgoing" | "incoming" | "both"): readonly DefinitionLink[];
+  getLinks(id: string, direction?: 'outgoing' | 'incoming' | 'both'): readonly DefinitionLink[];
 }
 
 const MAX_DEPTH = 10;
-const DOMAIN_LINK_TYPES: readonly LinkType[] = ["refines", "depends_on"];
+const DOMAIN_LINK_TYPES: readonly LinkType[] = ['refines', 'depends_on'];
 
 /**
  * Sub-document 확장자 목록.
@@ -35,12 +35,12 @@ const DOMAIN_LINK_TYPES: readonly LinkType[] = ["refines", "depends_on"];
  * 대응하는 부모 spec/group 을 찾아 rollup 을 위임해야 한다.
  */
 export const SUB_DOC_EXTENSIONS: readonly string[] = [
-  ".todo.md",
-  ".plan.md",
-  ".memo.md",
-  ".test.md",
-  ".cases.md",
-  ".rule.md",
+  '.todo.md',
+  '.plan.md',
+  '.memo.md',
+  '.test.md',
+  '.cases.md',
+  '.rule.md',
 ];
 
 /** Sub-doc id 접미사 (Strategy D 용). 확장자 목록에서 자동 파생. */
@@ -49,7 +49,7 @@ const SUB_DOC_ID_SUFFIXES: readonly string[] = SUB_DOC_EXTENSIONS.map(
 );
 
 /** Strategy D fallback 접미사 — baseId 에 붙여 재탐색. */
-const SUB_DOC_FALLBACK_SUFFIXES: readonly string[] = ["", "-system", "-spec"];
+const SUB_DOC_FALLBACK_SUFFIXES: readonly string[] = ['', '-system', '-spec'];
 
 /** 문서 ref(source_path) 가 sub-doc 확장자로 끝나는지 판정. */
 function isSubDocRef(ref: string | undefined): boolean {
@@ -69,17 +69,14 @@ function matchSubDocExtension(ref: string | undefined): string | null {
 /** 문서가 domain tier(system 또는 layout)인지 판정한다. */
 export function isDomainTier(doc: DefinitionEntry | undefined | null): boolean {
   if (!doc) return false;
-  return doc.tier === "system" || doc.tier === "layout";
+  return doc.tier === 'system' || doc.tier === 'layout';
 }
 
-function getDomainCandidateLinks(
-  docId: string,
-  registry: DomainRootRegistry,
-): DefinitionLink[] {
-  const outgoing = registry.getLinks(docId, "outgoing");
+function getDomainCandidateLinks(docId: string, registry: DomainRootRegistry): DefinitionLink[] {
+  const outgoing = registry.getLinks(docId, 'outgoing');
   const candidates: DefinitionLink[] = [];
   for (const link of outgoing) {
-    if (link.linkType !== "refines" && link.linkType !== "depends_on") continue;
+    if (link.linkType !== 'refines' && link.linkType !== 'depends_on') continue;
     const target = registry.get(link.targetId);
     if (!isDomainTier(target)) continue;
     candidates.push(link);
@@ -100,13 +97,13 @@ export function selectPrimaryParent(
   registry: DomainRootRegistry,
 ): DefinitionLink {
   if (candidates.length === 0) {
-    throw new Error("selectPrimaryParent: 후보가 비어 있음");
+    throw new Error('selectPrimaryParent: 후보가 비어 있음');
   }
 
   const scored = candidates.map((link) => {
     const furtherCandidates = getDomainCandidateLinks(link.targetId, registry);
     const hasNoFurther = furtherCandidates.length === 0 ? 1 : 0;
-    const isRefines = link.linkType === "refines" ? 1 : 0;
+    const isRefines = link.linkType === 'refines' ? 1 : 0;
     return { link, hasNoFurther, isRefines };
   });
 
@@ -150,7 +147,7 @@ export function deriveDomainRoot(
 
   // 기본 walk 가 self 로 귀결한 경우에 한해 sub-doc rollup 시도.
   // 비-component tier 이거나 sub-doc 이 아니면 즉시 self 반환 — backward compat.
-  if (doc.tier !== "component") return doc.id;
+  if (doc.tier !== 'component') return doc.id;
   if (!isSubDocRef(doc.ref)) return doc.id;
 
   const rolled = deriveSubDocRoot(doc, registry, visited, depth);
@@ -220,14 +217,11 @@ function stripSubDocIdSuffix(id: string): string | null {
 }
 
 /** Strategy A — 이 문서를 `contains` 하는 부모 DefinitionEntry 목록. */
-function collectContainsParents(
-  docId: string,
-  registry: DomainRootRegistry,
-): DefinitionEntry[] {
-  const incoming = registry.getLinks(docId, "incoming");
+function collectContainsParents(docId: string, registry: DomainRootRegistry): DefinitionEntry[] {
+  const incoming = registry.getLinks(docId, 'incoming');
   const parents: DefinitionEntry[] = [];
   for (const link of incoming) {
-    if (link.linkType !== "contains") continue;
+    if (link.linkType !== 'contains') continue;
     const parent = registry.get(link.sourceId);
     if (parent) parents.push(parent);
   }
@@ -240,8 +234,8 @@ function collectContainsParents(
  */
 function selectSubDocParent(parents: readonly DefinitionEntry[]): DefinitionEntry {
   const tierRank = (doc: DefinitionEntry): number => {
-    if (doc.tier === "system") return 0;
-    if (doc.tier === "layout") return 1;
+    if (doc.tier === 'system') return 0;
+    if (doc.tier === 'layout') return 1;
     return 2;
   };
   return [...parents].toSorted((a, b) => {
@@ -300,15 +294,15 @@ export function detectOwnerRootMismatch(
   doc: DefinitionEntry,
   derivedRoot: string,
   registry: DomainRootRegistry,
-): "ok" | "mismatch" | "no-owner" {
+): 'ok' | 'mismatch' | 'no-owner' {
   const owner = doc.owner_system;
-  if (!owner) return "no-owner";
-  if (owner === derivedRoot) return "ok";
+  if (!owner) return 'no-owner';
+  if (owner === derivedRoot) return 'ok';
 
   const rootDoc = registry.get(derivedRoot);
-  if (rootDoc?.owner_system && rootDoc.owner_system === owner) return "ok";
+  if (rootDoc?.owner_system && rootDoc.owner_system === owner) return 'ok';
 
-  return "mismatch";
+  return 'mismatch';
 }
 
 export { DOMAIN_LINK_TYPES };

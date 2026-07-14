@@ -8,22 +8,22 @@
  * 아키텍처 정합성을 증명하고 스코어링한다.
  */
 
-import type { DefinitionEntry } from "definition-catalog";
-import type { ModuleIR } from "./ir-types.js";
+import type { DefinitionEntry } from 'definition-catalog';
+import type { ModuleIR } from './ir-types.js';
 
 // ── 핵심 타입 ─────────────────────────────────────────
 
 /** 드리프트 종류 */
 export type AlignmentDriftType =
-  | "broken-promise"      // 의도에는 있으나 구현에서 누락
-  | "shadow-implementation" // 의도에는 없으나 구현에만 존재
-  | "hierarchy-mismatch"   // 코어/보조 위계 불일치
-  | "facet-drift";         // 패싯 단계(Ingress/Egress 등) 불일치
+  | 'broken-promise' // 의도에는 있으나 구현에서 누락
+  | 'shadow-implementation' // 의도에는 없으나 구현에만 존재
+  | 'hierarchy-mismatch' // 코어/보조 위계 불일치
+  | 'facet-drift'; // 패싯 단계(Ingress/Egress 등) 불일치
 
 /** 정렬 이슈 */
 export interface AlignmentIssue {
   readonly type: AlignmentDriftType;
-  readonly severity: "error" | "warning";
+  readonly severity: 'error' | 'warning';
   readonly message: string;
   readonly intentId: string;
   readonly executionId?: string;
@@ -53,20 +53,24 @@ export function compareIntentWithExecution(
   executionUnits: ModuleIR[],
 ): AlignmentResult {
   const issues: AlignmentIssue[] = [];
-  
+
   // 1. 매칭: @def.doc 또는 id 기반
-  const matched = executionUnits.filter(u => u.meta.defDocRef === intent.id || u.id === intent.id);
-  
+  const matched = executionUnits.filter(
+    (u) => u.meta.defDocRef === intent.id || u.id === intent.id,
+  );
+
   if (matched.length === 0) {
     // 구현이 아예 식별되지 않은 경우 (Broken Promise)
     return {
       score: 0,
-      issues: [{
-        type: "broken-promise",
-        severity: "error",
-        intentId: intent.id,
-        message: `설계 의도 "${intent.id}"에 대응하는 실제 코드 구현을 찾을 수 없습니다.`,
-      }],
+      issues: [
+        {
+          type: 'broken-promise',
+          severity: 'error',
+          intentId: intent.id,
+          message: `설계 의도 "${intent.id}"에 대응하는 실제 코드 구현을 찾을 수 없습니다.`,
+        },
+      ],
       summary: { matchedUnits: 0, brokenPromises: 1, shadowsFound: 0 },
     };
   }
@@ -80,16 +84,16 @@ export function compareIntentWithExecution(
 
     // 2. 의도 위계(Core/Auxiliary) 대조
     if (intent.intent_hierarchy && unit.meta.intentHierarchy) {
-      if (intent.intent_hierarchy === "core" && unit.meta.intentHierarchy === "auxiliary") {
+      if (intent.intent_hierarchy === 'core' && unit.meta.intentHierarchy === 'auxiliary') {
         // 코어 의도에 보조 구현이 매칭된 경우: 페널티 없이 사이드카로 간주
         shadowCount++; // 사이드카 발견으로 카운트
-        continue; 
+        continue;
       }
-      
+
       if (intent.intent_hierarchy !== unit.meta.intentHierarchy) {
         issues.push({
-          type: "hierarchy-mismatch",
-          severity: "warning",
+          type: 'hierarchy-mismatch',
+          severity: 'warning',
           intentId: intent.id,
           executionId: unit.id,
           message: `의도 위계 불일치: 설계는 "${intent.intent_hierarchy}"이나 코드는 "${unit.meta.intentHierarchy}"로 추출됨.`,
@@ -99,10 +103,10 @@ export function compareIntentWithExecution(
     }
 
     // 3. 투영 평면 교차 검증
-    if (unit.meta.projectionPlane !== "execution") {
+    if (unit.meta.projectionPlane !== 'execution') {
       issues.push({
-        type: "facet-drift",
-        severity: "warning",
+        type: 'facet-drift',
+        severity: 'warning',
         intentId: intent.id,
         executionId: unit.id,
         message: `구현 평면 오류: 코드에서 추출된 노드가 "execution" 평면으로 마킹되지 않음.`,
@@ -114,9 +118,7 @@ export function compareIntentWithExecution(
     scoredUnits++;
   }
 
-  const averageScore = scoredUnits > 0 
-    ? Math.max(0, Math.min(100, matchedScore / scoredUnits))
-    : 0;
+  const averageScore = scoredUnits > 0 ? Math.max(0, Math.min(100, matchedScore / scoredUnits)) : 0;
 
   return {
     score: averageScore,
@@ -137,20 +139,20 @@ export function auditShadowImplementation(
   executions: ModuleIR[],
 ): AlignmentIssue[] {
   const issues: AlignmentIssue[] = [];
-  const intentIds = new Set(intents.map(i => i.id));
-  
+  const intentIds = new Set(intents.map((i) => i.id));
+
   for (const unit of executions) {
     // 코어 로직인데 연결된 문서가 없는 경우
-    if (unit.meta.intentHierarchy === "core" && !unit.meta.defDocRef && !intentIds.has(unit.id)) {
+    if (unit.meta.intentHierarchy === 'core' && !unit.meta.defDocRef && !intentIds.has(unit.id)) {
       issues.push({
-        type: "shadow-implementation",
-        severity: "warning",
-        intentId: "unknown",
+        type: 'shadow-implementation',
+        severity: 'warning',
+        intentId: 'unknown',
         executionId: unit.id,
         message: `은밀한 구현(Shadow): 코어 비즈니스 로직 "${unit.id}"이(가) 설계 문서에 정의되지 않은 채 구현되어 있습니다.`,
       });
     }
   }
-  
+
   return issues;
 }

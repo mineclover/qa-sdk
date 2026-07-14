@@ -3,11 +3,34 @@
   "version": "0.1.0",
   "description": "DefDataSource 팩토리 — SQLite 로컬 + HTTP 서버 자동 감지",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" } },
-  "main": "./dist/index.cjs", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "scripts": { "build": "tsup", "typecheck": "tsc --noEmit", "clean": "rm -rf dist" },
-  "dependencies": { "better-sqlite3": "catalog:", "definition-catalog": "workspace:*", "drizzle-orm": "catalog:" },
-  "devDependencies": { "@types/better-sqlite3": "catalog:", "@types/node": "^22.0.0", "tsup": "^8.5.1", "typescript": "^5.8.2" }
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "better-sqlite3": "catalog:",
+    "definition-catalog": "workspace:*",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
 }

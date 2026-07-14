@@ -9,8 +9,8 @@
  * cleanup-scheduler와 동일한 패턴.
  */
 
-import type { Logger } from "pino";
-import type { ConvergencePipelineRunner } from "./convergence-pipeline.js";
+import type { Logger } from 'pino';
+import type { ConvergencePipelineRunner } from './convergence-pipeline.js';
 
 export const DEFAULT_CONVERGENCE_SCHEDULE_INTERVAL_MS = 5 * 60 * 1_000; // 5분
 
@@ -37,11 +37,12 @@ export function installConvergenceScheduler(
 
   const timer = setInterval(() => {
     if (running) {
-      deps.logger?.debug("convergence scheduler: previous flush still running, skipping");
+      deps.logger?.debug('convergence scheduler: previous flush still running, skipping');
       return;
     }
     running = true;
-    void deps.convergencePipeline.flush()
+    void deps.convergencePipeline
+      .flush()
       .then((result) => {
         if (result) {
           deps.logger?.info(
@@ -50,24 +51,24 @@ export function installConvergenceScheduler(
               metricsCollected: result.metricsCollected,
               observationsGenerated: result.observationsGenerated,
             },
-            "convergence scheduled flush completed",
+            'convergence scheduled flush completed',
           );
         }
         return undefined;
       })
       .catch((error) => {
-        deps.logger?.error({ err: error }, "convergence scheduled flush failed");
+        deps.logger?.error({ err: error }, 'convergence scheduled flush failed');
       })
       .finally(() => {
         running = false;
       });
   }, intervalMs);
 
-  if ("unref" in timer && typeof timer.unref === "function") {
+  if ('unref' in timer && typeof timer.unref === 'function') {
     timer.unref();
   }
 
-  deps.logger?.info({ intervalMs }, "convergence scheduler installed");
+  deps.logger?.info({ intervalMs }, 'convergence scheduler installed');
 
   return {
     stop() {

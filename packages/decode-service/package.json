@@ -1,12 +1,12 @@
 {
   "name": "@qa-sdk/decode-service",
   "version": "0.1.0",
-  "description": "DecodeMap 기반 주소 디코딩 API 서비스",
   "private": true,
-  "type": "module",
+  "description": "DecodeMap 기반 주소 디코딩 API 서비스",
   "files": [
     "dist"
   ],
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsup",

@@ -7,9 +7,17 @@
  * 모니터링 서버가 이 함수들을 HTTP/WebSocket 핸들러에서 호출한다.
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import { buildLayerMap, computeActivity, extractTracePaths, type LayerMapResult, type PrefixActivity, type TracePath, type Projection } from "./layer-map.js";
-import type { AddressContextRecord } from "../shared/metric-port.js";
+import type { Catalog } from '@qa-sdk/core';
+import {
+  buildLayerMap,
+  computeActivity,
+  extractTracePaths,
+  type LayerMapResult,
+  type PrefixActivity,
+  type TracePath,
+  type Projection,
+} from './layer-map.js';
+import type { AddressContextRecord } from '../shared/metric-port.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Monitor State
@@ -29,7 +37,12 @@ export class MonitorState {
       domainMembers?: ReadonlyMap<string, string>;
     },
   ) {
-    this.layerMap = buildLayerMap(catalog, options?.projection, options?.svcOwners, options?.domainMembers);
+    this.layerMap = buildLayerMap(
+      catalog,
+      options?.projection,
+      options?.svcOwners,
+      options?.domainMembers,
+    );
     this.windowMs = (options?.windowSeconds ?? 30) * 1000;
   }
 
@@ -64,7 +77,7 @@ export class MonitorState {
   getActivity(): PrefixActivity[] {
     this.pruneWindow();
     return computeActivity(
-      this.recentWindow.map(r => ({ timestamp: r.timestamp, addressContext: r.address_context })),
+      this.recentWindow.map((r) => ({ timestamp: r.timestamp, addressContext: r.address_context })),
       this.layerMap,
     );
   }
@@ -72,8 +85,12 @@ export class MonitorState {
   /** Q3: 특정 trace의 경로 — 이벤트가 어떤 layer를 거쳤는가 */
   getTracePath(traceId: string): TracePath | undefined {
     const filtered = this.recentWindow
-      .filter(r => r.trace_id === traceId)
-      .map(r => ({ traceId: r.trace_id ?? traceId, timestamp: r.timestamp, addressContext: r.address_context }));
+      .filter((r) => r.trace_id === traceId)
+      .map((r) => ({
+        traceId: r.trace_id ?? traceId,
+        timestamp: r.timestamp,
+        addressContext: r.address_context,
+      }));
 
     const paths = extractTracePaths(filtered, this.layerMap);
     return paths[0];
@@ -90,17 +107,28 @@ export class MonitorState {
     }
 
     const records = this.recentWindow
-      .filter((r): r is typeof r & { trace_id: string } => r.trace_id != null && traceIds.has(r.trace_id))
-      .map(r => ({ traceId: r.trace_id, timestamp: r.timestamp, addressContext: r.address_context }));
+      .filter(
+        (r): r is typeof r & { trace_id: string } => r.trace_id != null && traceIds.has(r.trace_id),
+      )
+      .map((r) => ({
+        traceId: r.trace_id,
+        timestamp: r.timestamp,
+        addressContext: r.address_context,
+      }));
 
     return extractTracePaths(records, this.layerMap);
   }
 
   /** Q5: 계층별 활성 요약 */
-  getLayerSummary(): { layer: number; name: string; activeCount: number; totalIntensity: number }[] {
+  getLayerSummary(): {
+    layer: number;
+    name: string;
+    activeCount: number;
+    totalIntensity: number;
+  }[] {
     const activity = this.getActivity();
-    return [0, 1, 2].map(level => {
-      const layerActivity = activity.filter(a => a.layer === level);
+    return [0, 1, 2].map((level) => {
+      const layerActivity = activity.filter((a) => a.layer === level);
       return {
         layer: level,
         name: this.layerMap.layers[level].name,
@@ -150,10 +178,12 @@ export async function createMonitorStateAsync(
     try {
       const res = await fetch(`${options.registryUrl}/api/services/svc-owners`);
       if (res.ok) {
-        const data = await res.json() as Record<string, string>;
+        const data = (await res.json()) as Record<string, string>;
         svcOwners = new Map(Object.entries(data));
       }
-    } catch { /* fetch 실패 시 prefixMap fallback */ }
+    } catch {
+      /* fetch 실패 시 prefixMap fallback */
+    }
   }
 
   return new MonitorState(catalog, {

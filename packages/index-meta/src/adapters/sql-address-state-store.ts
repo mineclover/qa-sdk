@@ -8,20 +8,20 @@
  * sql/schema.sql이 먼저 적용된 DB가 필요하다.
  */
 
-import type { AddressStateStore, AddressStateCacheRecord } from "../invalid-range-store.js";
-import type { DimStateSpec } from "../invalid-ranges.js";
-import type { SqlDriver } from "./sql-store.js";
+import type { AddressStateStore, AddressStateCacheRecord } from '../invalid-range-store.js';
+import type { DimStateSpec } from '../invalid-ranges.js';
+import type { SqlDriver } from './sql-store.js';
 
 // ── DB row 타입 ───────────────────────────────────────────
 
 interface AddressStateCacheRow extends Record<string, unknown> {
-  prefix:        string;
-  version_id:    string;
-  specs_json:    string;
+  prefix: string;
+  version_id: string;
+  specs_json: string;
   reserved_json: string;
   inactive_json: string;
-  open_json:     string;
-  computed_at:   string;
+  open_json: string;
+  computed_at: string;
 }
 
 // ── SqlAddressStateStore ──────────────────────────────────
@@ -48,7 +48,7 @@ export class SqlAddressStateStore implements AddressStateStore {
         JSON.stringify(record.inactiveRanges),
         JSON.stringify(record.openRanges),
         record.computedAt,
-      ]
+      ],
     );
   }
 
@@ -56,7 +56,7 @@ export class SqlAddressStateStore implements AddressStateStore {
     const row = await this.driver.queryOne<AddressStateCacheRow>(
       `SELECT prefix, version_id, specs_json, reserved_json, inactive_json, open_json, computed_at
        FROM address_state_cache WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     return row ? toRecord(row) : null;
   }
@@ -64,7 +64,7 @@ export class SqlAddressStateStore implements AddressStateStore {
   async delete(prefix: string, versionId: string): Promise<void> {
     await this.driver.execute(
       `DELETE FROM address_state_cache WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
   }
 }
@@ -73,12 +73,12 @@ export class SqlAddressStateStore implements AddressStateStore {
 
 function toRecord(row: AddressStateCacheRow): AddressStateCacheRecord {
   return {
-    prefix:        row.prefix,
-    versionId:     row.version_id,
-    specs:         JSON.parse(row.specs_json)    as DimStateSpec[],
+    prefix: row.prefix,
+    versionId: row.version_id,
+    specs: JSON.parse(row.specs_json) as DimStateSpec[],
     reservedRanges: JSON.parse(row.reserved_json) as [number, number][],
     inactiveRanges: JSON.parse(row.inactive_json) as [number, number][],
-    openRanges:    JSON.parse(row.open_json)     as [number, number][],
-    computedAt:    row.computed_at,
+    openRanges: JSON.parse(row.open_json) as [number, number][],
+    computedAt: row.computed_at,
   };
 }

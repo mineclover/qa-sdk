@@ -8,24 +8,24 @@
  * Phase 2 (verdict, transition, convergence)는 비활성 (CF Workers 제약).
  * 이벤트 수집 + 저장 + WebSocket 실시간 스트림.
  */
-import { D1SqlDriver } from "index-meta";
-import { drizzle } from "drizzle-orm/d1";
-import { createApp } from "./app.js";
-import { INGEST_D1_SCHEMA_DDL } from "./stores/d1-schema.sql.js";
-import * as schema from "./db/schema.js";
-import { D1RecordStore } from "./stores/d1-record-store.js";
-import { D1TraceStore } from "./stores/d1-trace-store.js";
-import { D1SessionStore } from "./stores/d1-session-store.js";
-import { D1VerdictStore } from "./stores/d1-verdict-store.js";
-import type { D1Db } from "./stores/d1-db-type.js";
+import { D1SqlDriver } from 'index-meta';
+import { drizzle } from 'drizzle-orm/d1';
+import { createApp } from './app.js';
+import { INGEST_D1_SCHEMA_DDL } from './stores/d1-schema.sql.js';
+import * as schema from './db/schema.js';
+import { D1RecordStore } from './stores/d1-record-store.js';
+import { D1TraceStore } from './stores/d1-trace-store.js';
+import { D1SessionStore } from './stores/d1-session-store.js';
+import { D1VerdictStore } from './stores/d1-verdict-store.js';
+import type { D1Db } from './stores/d1-db-type.js';
 import {
   InMemoryTransmissionStore,
   InMemoryGraphStore,
   InMemoryScenarioSpecStore,
   InMemoryDlqStore,
-} from "@qa-sdk/store";
-import { InMemoryDebugStore } from "./lib/in-memory-debug-store.js";
-import { RecordStreamBroker } from "./lib/record-stream-broker.js";
+} from '@qa-sdk/store';
+import { InMemoryDebugStore } from './lib/in-memory-debug-store.js';
+import { RecordStreamBroker } from './lib/record-stream-broker.js';
 
 // ── CF Workers WebSocket 타입 (런타임에서 제공) ──
 declare const WebSocketPair: {
@@ -84,37 +84,39 @@ function handleWebSocketUpgrade(): Response {
 
   const unsubscribers = new Map<string, () => void>();
 
-  server.addEventListener("message", (evt: CFWebSocketEvent) => {
+  server.addEventListener('message', (evt: CFWebSocketEvent) => {
     let msg: { type: string; scenarioId: string };
     try {
-      msg = JSON.parse(typeof evt.data === "string" ? evt.data : String(evt.data));
+      msg = JSON.parse(typeof evt.data === 'string' ? evt.data : String(evt.data));
     } catch {
-      server.send(JSON.stringify({ type: "error", message: "invalid JSON" }));
+      server.send(JSON.stringify({ type: 'error', message: 'invalid JSON' }));
       return;
     }
 
-    if (msg.type === "subscribe" && msg.scenarioId) {
+    if (msg.type === 'subscribe' && msg.scenarioId) {
       if (unsubscribers.has(msg.scenarioId)) return;
       const unsubscribe = broker.subscribeToScenario(msg.scenarioId, (record) => {
         try {
-          server.send(JSON.stringify({ type: "record", scenarioId: msg.scenarioId, data: record }));
-        } catch { /* client disconnected */ }
+          server.send(JSON.stringify({ type: 'record', scenarioId: msg.scenarioId, data: record }));
+        } catch {
+          /* client disconnected */
+        }
       });
       unsubscribers.set(msg.scenarioId, unsubscribe);
-      server.send(JSON.stringify({ type: "subscribed", scenarioId: msg.scenarioId }));
-    } else if (msg.type === "unsubscribe" && msg.scenarioId) {
+      server.send(JSON.stringify({ type: 'subscribed', scenarioId: msg.scenarioId }));
+    } else if (msg.type === 'unsubscribe' && msg.scenarioId) {
       unsubscribers.get(msg.scenarioId)?.();
       unsubscribers.delete(msg.scenarioId);
-      server.send(JSON.stringify({ type: "unsubscribed", scenarioId: msg.scenarioId }));
+      server.send(JSON.stringify({ type: 'unsubscribed', scenarioId: msg.scenarioId }));
     }
   });
 
-  server.addEventListener("close", () => {
+  server.addEventListener('close', () => {
     for (const unsub of unsubscribers.values()) unsub();
     unsubscribers.clear();
   });
 
-  server.addEventListener("error", () => {
+  server.addEventListener('error', () => {
     for (const unsub of unsubscribers.values()) unsub();
     unsubscribers.clear();
   });
@@ -127,10 +129,10 @@ export default {
     const url = new URL(request.url);
 
     // WebSocket upgrade — /v1/ws
-    if (url.pathname === "/v1/ws") {
-      const upgrade = request.headers.get("Upgrade");
-      if (upgrade?.toLowerCase() !== "websocket") {
-        return new Response("Expected WebSocket upgrade", { status: 426 });
+    if (url.pathname === '/v1/ws') {
+      const upgrade = request.headers.get('Upgrade');
+      if (upgrade?.toLowerCase() !== 'websocket') {
+        return new Response('Expected WebSocket upgrade', { status: 426 });
       }
       return handleWebSocketUpgrade();
     }
@@ -139,8 +141,14 @@ export default {
     const db = drizzle(env.DB, { schema }) as unknown as D1Db;
 
     // DDL 초기화 — IF NOT EXISTS이므로 매 요청 안전 실행
-    for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
-      try { await env.DB.exec(stmt + ";"); } catch { /* 이미 존재 */ }
+    for (const stmt of INGEST_D1_SCHEMA_DDL.split(';')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)) {
+      try {
+        await env.DB.exec(stmt + ';');
+      } catch {
+        /* 이미 존재 */
+      }
     }
 
     const app = createApp({
@@ -155,7 +163,7 @@ export default {
       debugStore: new InMemoryDebugStore(),
       recordStreamBroker: broker,
       sqlDriver: driver,
-      corsOrigin: env.CORS_ORIGIN ?? "*",
+      corsOrigin: env.CORS_ORIGIN ?? '*',
     });
 
     return app.fetch(request);
@@ -164,8 +172,14 @@ export default {
   /** Cron Trigger — 5분마다 실행하여 Worker warm 상태 유지 + DDL 초기화 */
   async scheduled(_event: unknown, env: Env, _ctx: unknown): Promise<void> {
     if (!ddlInitialized) {
-      for (const stmt of INGEST_D1_SCHEMA_DDL.split(";").map(s => s.trim()).filter(s => s.length > 0)) {
-        try { await env.DB.exec(stmt + ";"); } catch { /* 이미 존재 */ }
+      for (const stmt of INGEST_D1_SCHEMA_DDL.split(';')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)) {
+        try {
+          await env.DB.exec(stmt + ';');
+        } catch {
+          /* 이미 존재 */
+        }
       }
       ddlInitialized = true;
     }

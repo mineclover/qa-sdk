@@ -3,16 +3,12 @@
  * UI 외부에서 격리 테스트 가능 — React 미사용.
  */
 
-import type { DecisionFile } from "taxonomy-decision-bridge";
-import type { FlowSchema } from "decision-flow";
+import type { DecisionFile } from 'taxonomy-decision-bridge';
+import type { FlowSchema } from 'decision-flow';
 
 // ─── parse error 분류 ─────────────────────────────────────
 
-export type ParseErrorKind =
-  | "frontmatter-missing"
-  | "frontmatter-field"
-  | "lifecycle"
-  | "unknown";
+export type ParseErrorKind = 'frontmatter-missing' | 'frontmatter-field' | 'lifecycle' | 'unknown';
 
 export type ClassifiedError = {
   kind: ParseErrorKind;
@@ -25,31 +21,31 @@ export type ClassifiedError = {
  * 메시지 패턴 매칭이므로 bridge가 메시지를 바꾸면 함께 갱신 필요.
  */
 export function classifyParseError(message: string): ClassifiedError {
-  if (message.includes("frontmatter 누락")) {
+  if (message.includes('frontmatter 누락')) {
     return {
-      kind: "frontmatter-missing",
+      kind: 'frontmatter-missing',
       message,
-      hint: "파일 최상단에 `---` 로 감싼 YAML 블록이 필요합니다.",
+      hint: '파일 최상단에 `---` 로 감싼 YAML 블록이 필요합니다.',
     };
   }
-  if (message.includes("frontmatter.lifecycle")) {
+  if (message.includes('frontmatter.lifecycle')) {
     return {
-      kind: "lifecycle",
+      kind: 'lifecycle',
       message,
-      hint: "lifecycle은 draft/review/approved/deprecated/archived/tbd 중 하나여야 합니다.",
+      hint: 'lifecycle은 draft/review/approved/deprecated/archived/tbd 중 하나여야 합니다.',
     };
   }
-  if (message.includes("frontmatter.")) {
+  if (message.includes('frontmatter.')) {
     return {
-      kind: "frontmatter-field",
+      kind: 'frontmatter-field',
       message,
-      hint: "필수 필드: id, subject, lifecycle, created, updated.",
+      hint: '필수 필드: id, subject, lifecycle, created, updated.',
     };
   }
   return {
-    kind: "unknown",
+    kind: 'unknown',
     message,
-    hint: "마커 문법 또는 본문 구조 확인이 필요합니다.",
+    hint: '마커 문법 또는 본문 구조 확인이 필요합니다.',
   };
 }
 
@@ -64,14 +60,8 @@ export type SkeletonStatus = {
  * skeleton = 의미있는 컨텐츠가 0건. 분기(option) 0건 + 증거(evidence) 0건.
  * single-gate / multi-gate 모두 일관 기준 적용.
  */
-export function detectSkeleton(
-  file: DecisionFile,
-  schema: FlowSchema,
-): SkeletonStatus {
-  const totalBranches = schema.gates.reduce(
-    (sum, g) => sum + (g.branches?.length ?? 0),
-    0,
-  );
+export function detectSkeleton(file: DecisionFile, schema: FlowSchema): SkeletonStatus {
+  const totalBranches = schema.gates.reduce((sum, g) => sum + (g.branches?.length ?? 0), 0);
   const isMulti = file.markers.gates.length > 0;
   const totalEvidence = isMulti
     ? file.markers.gates.reduce((sum, g) => sum + g.evidence.length, 0)
@@ -80,7 +70,7 @@ export function detectSkeleton(
   if (totalBranches === 0 && totalEvidence === 0) {
     return {
       isSkeleton: true,
-      reason: "옵션·증거 모두 0건",
+      reason: '옵션·증거 모두 0건',
     };
   }
   if (totalBranches === 0) {
@@ -190,30 +180,30 @@ export function detectCycles(schema: FlowSchema): GateCycle[] {
 
 /** 사이클 회전 순서 무관 비교 키 — 최소 회전 형태로 정규화. */
 function normalizeCycleKey(cycle: string[]): string {
-  if (cycle.length === 0) return "";
+  if (cycle.length === 0) return '';
   let min = 0;
   for (let i = 1; i < cycle.length; i++) {
     if (cycle[i] < cycle[min]) min = i;
   }
   const rotated = [...cycle.slice(min), ...cycle.slice(0, min)];
-  return rotated.join(">");
+  return rotated.join('>');
 }
 
 // ─── 잘못된 마커 감지 ─────────────────────────────────────
 
 const KNOWN_MARKER_NAMES = new Set([
-  "purpose",
-  "context",
-  "outcome",
-  "option",
-  "evidence",
-  "phase",
-  "weight",
-  "depends_on",
-  "gate",
-  "cost",
-  "benefit",
-  "risk",
+  'purpose',
+  'context',
+  'outcome',
+  'option',
+  'evidence',
+  'phase',
+  'weight',
+  'depends_on',
+  'gate',
+  'cost',
+  'benefit',
+  'risk',
 ]);
 
 export type UnknownMarker = {
@@ -228,7 +218,7 @@ export type UnknownMarker = {
  */
 export function findUnknownMarkers(body: string): UnknownMarker[] {
   const out: UnknownMarker[] = [];
-  const lines = body.split("\n");
+  const lines = body.split('\n');
   // 마커 패턴: ^ + 이름 (영문 시작, 이후 word). 콜론 이하는 매개변수.
   const scanner = /\^([a-zA-Z_][\w]*)/g;
   for (let i = 0; i < lines.length; i++) {
@@ -260,12 +250,8 @@ export type MarkerStats = {
 export function computeMarkerStats(file: DecisionFile): MarkerStats {
   const m = file.markers;
   const isMulti = m.gates.length > 0;
-  const allOptions = isMulti
-    ? m.gates.flatMap((g) => g.options)
-    : m.options;
-  const allEvidence = isMulti
-    ? m.gates.flatMap((g) => g.evidence)
-    : m.evidence;
+  const allOptions = isMulti ? m.gates.flatMap((g) => g.options) : m.options;
+  const allEvidence = isMulti ? m.gates.flatMap((g) => g.evidence) : m.evidence;
   const evidenceByKind: Record<string, number> = {};
   for (const e of allEvidence) {
     evidenceByKind[e.kind] = (evidenceByKind[e.kind] ?? 0) + 1;
@@ -341,80 +327,80 @@ export type MarkerSpec = {
   syntax: string;
   desc: string;
   example: string;
-  category: "core" | "evidence" | "flow" | "multi-gate" | "annotation";
+  category: 'core' | 'evidence' | 'flow' | 'multi-gate' | 'annotation';
 };
 
 export const MARKER_CHEATSHEET: readonly MarkerSpec[] = [
   {
-    syntax: "^purpose",
-    desc: "결정의 질문/목적 (필수)",
-    example: "OAuth 통합 방식 ^purpose",
-    category: "core",
+    syntax: '^purpose',
+    desc: '결정의 질문/목적 (필수)',
+    example: 'OAuth 통합 방식 ^purpose',
+    category: 'core',
   },
   {
-    syntax: "^context",
-    desc: "배경 정보",
-    example: "보안 위험 검토 ^context",
-    category: "core",
+    syntax: '^context',
+    desc: '배경 정보',
+    example: '보안 위험 검토 ^context',
+    category: 'core',
   },
   {
-    syntax: "^option:<id>",
-    desc: "선택지",
-    example: "JWT 토큰 ^option:jwt",
-    category: "core",
+    syntax: '^option:<id>',
+    desc: '선택지',
+    example: 'JWT 토큰 ^option:jwt',
+    category: 'core',
   },
   {
-    syntax: "^outcome",
-    desc: "최종 결정 (lifecycle=approved 시 schema에 반영)",
-    example: "JWT 채택 ^outcome",
-    category: "core",
+    syntax: '^outcome',
+    desc: '최종 결정 (lifecycle=approved 시 schema에 반영)',
+    example: 'JWT 채택 ^outcome',
+    category: 'core',
   },
   {
-    syntax: "^evidence:<kind> weight=N",
-    desc: "근거. kind: data/rule/precedent/intuition/external",
-    example: "벤치마크 결과 ^evidence:data weight=3",
-    category: "evidence",
+    syntax: '^evidence:<kind> weight=N',
+    desc: '근거. kind: data/rule/precedent/intuition/external',
+    example: '벤치마크 결과 ^evidence:data weight=3',
+    category: 'evidence',
   },
   {
-    syntax: "^phase:<phase>",
-    desc: "인지 단계. perceive/interpret/evaluate/decide/plan/execute/reflect",
-    example: "^phase:evaluate",
-    category: "flow",
+    syntax: '^phase:<phase>',
+    desc: '인지 단계. perceive/interpret/evaluate/decide/plan/execute/reflect',
+    example: '^phase:evaluate',
+    category: 'flow',
   },
   {
-    syntax: "^weight:<weight>",
-    desc: "게이트 가중치. core/structural/tactical",
-    example: "^weight:core",
-    category: "flow",
+    syntax: '^weight:<weight>',
+    desc: '게이트 가중치. core/structural/tactical',
+    example: '^weight:core',
+    category: 'flow',
   },
   {
-    syntax: "^gate:<id>",
-    desc: "multi-gate 분기점 시작 (이후 ^option/^evidence는 이 gate 소속)",
-    example: "^gate:protocol",
-    category: "multi-gate",
+    syntax: '^gate:<id>',
+    desc: 'multi-gate 분기점 시작 (이후 ^option/^evidence는 이 gate 소속)',
+    example: '^gate:protocol',
+    category: 'multi-gate',
   },
   {
-    syntax: "^depends_on:<gateId>:<kind>",
-    desc: "게이트 의존. kind: constrains/enables/invalidates",
-    example: "^depends_on:protocol:enables",
-    category: "multi-gate",
+    syntax: '^depends_on:<gateId>:<kind>',
+    desc: '게이트 의존. kind: constrains/enables/invalidates',
+    example: '^depends_on:protocol:enables',
+    category: 'multi-gate',
   },
   {
-    syntax: "^cost:<optionId>",
-    desc: "옵션 비용 평가 — 같은 id의 ^option에 attach",
-    example: "초기 셋업 1주 ^cost:jwt",
-    category: "annotation",
+    syntax: '^cost:<optionId>',
+    desc: '옵션 비용 평가 — 같은 id의 ^option에 attach',
+    example: '초기 셋업 1주 ^cost:jwt',
+    category: 'annotation',
   },
   {
-    syntax: "^benefit:<optionId>",
-    desc: "옵션 이점 평가",
-    example: "stateless 인증 ^benefit:jwt",
-    category: "annotation",
+    syntax: '^benefit:<optionId>',
+    desc: '옵션 이점 평가',
+    example: 'stateless 인증 ^benefit:jwt',
+    category: 'annotation',
   },
   {
-    syntax: "^risk:<optionId>",
-    desc: "옵션 위험 평가",
-    example: "탈취 시 회수 어려움 ^risk:jwt",
-    category: "annotation",
+    syntax: '^risk:<optionId>',
+    desc: '옵션 위험 평가',
+    example: '탈취 시 회수 어려움 ^risk:jwt',
+    category: 'annotation',
   },
 ];

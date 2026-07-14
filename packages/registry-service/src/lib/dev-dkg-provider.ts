@@ -8,7 +8,7 @@
  * DEV_DASHBOARD_ENABLED=true 시에만 초기화.
  */
 
-import type { Logger } from "pino";
+import type { Logger } from 'pino';
 import type {
   GraphRegistryPort,
   MetricValuePort,
@@ -19,7 +19,7 @@ import type {
   CatalogPort,
   DkgConfigPort,
   TransitionSpecPort,
-} from "../types/spec-core-ports.js";
+} from '../types/spec-core-ports.js';
 
 export interface DevDkgProviderConfig {
   /** 주입할 카탈로그 (없으면 DEMO_CATALOG fallback) */
@@ -43,22 +43,22 @@ export interface DevDkgProvider {
   close(): void;
 }
 
-export async function createDevDkgProvider(
-  config: DevDkgProviderConfig,
-): Promise<DevDkgProvider> {
-  const enrichmentModule = await import("dkg-enrichment");
-  const convergenceModule = await import("@qa-sdk/convergence");
-  const storeModuleImport = await import("@qa-sdk/spec-core/store");
-  const demoSnapshotImport = await import("demo-snapshot");
-  const demoDkgConfigImport = await import("demo-dkg-config");
+export async function createDevDkgProvider(config: DevDkgProviderConfig): Promise<DevDkgProvider> {
+  const enrichmentModule = await import('dkg-enrichment');
+  const convergenceModule = await import('@qa-sdk/convergence');
+  const storeModuleImport = await import('@qa-sdk/spec-core/store');
+  const demoSnapshotImport = await import('demo-snapshot');
+  const demoDkgConfigImport = await import('demo-dkg-config');
 
   const analysis: AnalysisModulePort = {
     bootstrapDkg(options) {
       return enrichmentModule.bootstrapDkg({
-        catalog: options.catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["catalog"],
-        config: options.config as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["config"],
+        catalog: options.catalog as Parameters<typeof enrichmentModule.bootstrapDkg>[0]['catalog'],
+        config: options.config as Parameters<typeof enrichmentModule.bootstrapDkg>[0]['config'],
         date: options.date,
-        transitionSpecs: options.transitionSpecs as Parameters<typeof enrichmentModule.bootstrapDkg>[0]["transitionSpecs"],
+        transitionSpecs: options.transitionSpecs as Parameters<
+          typeof enrichmentModule.bootstrapDkg
+        >[0]['transitionSpecs'],
       });
     },
     collectMetrics(catalog, graph, usage) {
@@ -87,29 +87,39 @@ export async function createDevDkgProvider(
       return this.inner.loadGraph();
     }
 
-    saveGraph(graph: GraphRegistryPort, source: string): { nodesWritten: number; edgesWritten: number } {
+    saveGraph(
+      graph: GraphRegistryPort,
+      source: string,
+    ): { nodesWritten: number; edgesWritten: number } {
       return this.inner.saveGraph(
-        graph as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveGraph"]>[0],
-        source as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveGraph"]>[1],
+        graph as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>['saveGraph']>[0],
+        source as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>['saveGraph']>[1],
       );
     }
 
     saveNodes(
-      nodes: readonly import("../types/spec-core-ports.js").DkgNodePort[],
-      edges: readonly import("../types/spec-core-ports.js").DkgEdgePort[],
+      nodes: readonly import('../types/spec-core-ports.js').DkgNodePort[],
+      edges: readonly import('../types/spec-core-ports.js').DkgEdgePort[],
       source: string,
     ): void {
       this.inner.saveNodes(
-        nodes as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveNodes"]>[0],
-        edges as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveNodes"]>[1],
-        source as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveNodes"]>[2],
+        nodes as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>['saveNodes']>[0],
+        edges as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>['saveNodes']>[1],
+        source as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>['saveNodes']>[2],
       );
     }
 
-    saveUsageSnapshotWithObservations(usage: import("../types/spec-core-ports.js").UsageDataPort, observations: readonly import("../types/spec-core-ports.js").DkgNodePort[]): { snapshotId: number } {
+    saveUsageSnapshotWithObservations(
+      usage: import('../types/spec-core-ports.js').UsageDataPort,
+      observations: readonly import('../types/spec-core-ports.js').DkgNodePort[],
+    ): { snapshotId: number } {
       return this.inner.saveUsageSnapshotWithObservations(
-        usage as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveUsageSnapshotWithObservations"]>[0],
-        observations as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["saveUsageSnapshotWithObservations"]>[1],
+        usage as Parameters<
+          InstanceType<typeof storeModuleImport.DkgSqliteStore>['saveUsageSnapshotWithObservations']
+        >[0],
+        observations as Parameters<
+          InstanceType<typeof storeModuleImport.DkgSqliteStore>['saveUsageSnapshotWithObservations']
+        >[1],
       );
     }
 
@@ -121,9 +131,9 @@ export async function createDevDkgProvider(
       return this.inner.getMeta(key);
     }
 
-    updateNode(node: import("../types/spec-core-ports.js").DkgNodePort): void {
+    updateNode(node: import('../types/spec-core-ports.js').DkgNodePort): void {
       this.inner.updateNode(
-        node as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>["updateNode"]>[0],
+        node as Parameters<InstanceType<typeof storeModuleImport.DkgSqliteStore>['updateNode']>[0],
       );
     }
 
@@ -149,30 +159,40 @@ export async function createDevDkgProvider(
 
   // TransitionSpec 로드 (non-blocking, 실패 시 undefined)
   let transitionSpecs: readonly TransitionSpecPort[] | undefined;
-  import("@qa-sdk/spec-core/transition").then(m => { transitionSpecs = m.DEMO_TRANSITION_SPECS; return undefined; }).catch(() => {});
+  import('@qa-sdk/spec-core/transition')
+    .then((m) => {
+      transitionSpecs = m.DEMO_TRANSITION_SPECS;
+      return undefined;
+    })
+    .catch(() => {});
 
   function ensureInit(): void {
     const now = Date.now();
-    if (cachedGraph && (now - lastInit) < ttl) return;
+    if (cachedGraph && now - lastInit < ttl) return;
 
     cachedCatalog = config.catalog ?? demoSnapshot.DEMO_CATALOG;
 
     if (config.dkgSqlitePath) {
       if (!dkgStore) {
-        dkgStore = new storeModule.DkgSqliteStore(
-          config.dkgSqlitePath,
-          config.catalogId ?? "demo",
-        );
+        dkgStore = new storeModule.DkgSqliteStore(config.dkgSqlitePath, config.catalogId ?? 'demo');
       }
       const loaded = dkgStore.loadGraph();
       if (loaded.getAllNodes().length === 0) {
-        cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
-        dkgStore.saveGraph(cachedGraph, "bootstrap");
+        cachedGraph = analysis.bootstrapDkg({
+          catalog: cachedCatalog,
+          config: demoSnapshot.DEMO_DKG_CONFIG,
+          transitionSpecs,
+        });
+        dkgStore.saveGraph(cachedGraph, 'bootstrap');
       } else {
         cachedGraph = loaded;
       }
     } else {
-      cachedGraph = analysis.bootstrapDkg({ catalog: cachedCatalog, config: demoSnapshot.DEMO_DKG_CONFIG, transitionSpecs });
+      cachedGraph = analysis.bootstrapDkg({
+        catalog: cachedCatalog,
+        config: demoSnapshot.DEMO_DKG_CONFIG,
+        transitionSpecs,
+      });
     }
 
     lastInit = now;
@@ -181,35 +201,44 @@ export async function createDevDkgProvider(
     if (config.logger && cachedGraph) {
       const graphShape = Object.keys(Object.getPrototypeOf(cachedGraph) ?? {});
       const graphOwn = Object.keys(cachedGraph);
-      config.logger.info({
-        graphConstructor: cachedGraph.constructor?.name,
-        graphProtoMethods: graphShape.slice(0, 15),
-        graphOwnKeys: graphOwn.slice(0, 10),
-        nodeCount: cachedGraph.nodeCount,
-        edgeCount: cachedGraph.edgeCount,
-        sampleNode: cachedGraph.getAllNodes()[0],
-      }, "type-boundary: graph shape");
+      config.logger.info(
+        {
+          graphConstructor: cachedGraph.constructor?.name,
+          graphProtoMethods: graphShape.slice(0, 15),
+          graphOwnKeys: graphOwn.slice(0, 10),
+          nodeCount: cachedGraph.nodeCount,
+          edgeCount: cachedGraph.edgeCount,
+          sampleNode: cachedGraph.getAllNodes()[0],
+        },
+        'type-boundary: graph shape',
+      );
 
       if (cachedCatalog) {
-        config.logger.info({
-          catalogKeys: Object.keys(cachedCatalog),
-          axesCount: Object.keys(cachedCatalog.axes).length,
-          prefixesCount: Object.keys(cachedCatalog.prefixes).length,
-          sampleAxisKeys: Object.keys(Object.values(cachedCatalog.axes)[0] ?? {}),
-        }, "type-boundary: catalog shape");
+        config.logger.info(
+          {
+            catalogKeys: Object.keys(cachedCatalog),
+            axesCount: Object.keys(cachedCatalog.axes).length,
+            prefixesCount: Object.keys(cachedCatalog.prefixes).length,
+            sampleAxisKeys: Object.keys(Object.values(cachedCatalog.axes)[0] ?? {}),
+          },
+          'type-boundary: catalog shape',
+        );
       }
 
       const metrics = analysis.collectMetrics(cachedCatalog, cachedGraph, null);
       if (metrics.length > 0) {
-        config.logger.info({
-          metricCount: metrics.length,
-          sampleMetric: metrics[0],
-          metricKeys: Object.keys(metrics[0]),
-        }, "type-boundary: metric shape");
+        config.logger.info(
+          {
+            metricCount: metrics.length,
+            sampleMetric: metrics[0],
+            metricKeys: Object.keys(metrics[0]),
+          },
+          'type-boundary: metric shape',
+        );
       }
     }
 
-    config.logger?.debug("dev-dkg-provider: initialized");
+    config.logger?.debug('dev-dkg-provider: initialized');
   }
 
   return {

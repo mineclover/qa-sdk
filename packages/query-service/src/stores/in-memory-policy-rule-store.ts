@@ -9,11 +9,9 @@ import {
   PolicyRuleNotFoundError,
   type PolicyRuleStore,
   type StoredPolicyRule,
-} from "./policy-rule-store.js";
+} from './policy-rule-store.js';
 
-export class InMemoryPolicyRuleStore<T = unknown>
-  implements PolicyRuleStore<T>
-{
+export class InMemoryPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
   private readonly rules = new Map<string, StoredPolicyRule<T>>();
 
   async insert(rule: StoredPolicyRule<T>): Promise<StoredPolicyRule<T>> {
@@ -34,15 +32,9 @@ export class InMemoryPolicyRuleStore<T = unknown>
     return cloneStoredPolicyRule(rule);
   }
 
-  async findByIndex(
-    indexId: string,
-    versionId: string,
-  ): Promise<StoredPolicyRule<T>[]> {
+  async findByIndex(indexId: string, versionId: string): Promise<StoredPolicyRule<T>[]> {
     return [...this.rules.values()]
-      .filter(
-        (rule) =>
-          rule.indexId === indexId && rule.versionId === versionId,
-      )
+      .filter((rule) => rule.indexId === indexId && rule.versionId === versionId)
       .toSorted(compareStoredPolicyRules)
       .map(cloneStoredPolicyRule);
   }

@@ -11,10 +11,10 @@
  * 어떤 SQLite 호환 DB에도 동작한다.
  */
 
-import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from "../index-meta-store.js";
-import { ValidationError } from "../errors.js";
-import type { EntityId } from "../types.js";
-import { validateEntryForInsert } from "./validate-entry.js";
+import type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from '../index-meta-store.js';
+import { ValidationError } from '../errors.js';
+import type { EntityId } from '../types.js';
+import { validateEntryForInsert } from './validate-entry.js';
 
 // ── SqlDialect — DB 종류 + 기능 플래그 ──────────────────────────────────────
 
@@ -82,19 +82,13 @@ export interface SqlDriver {
    * 여러 행 반환 쿼리 (SELECT multiple).
    * 결과가 없으면 빈 배열.
    */
-  query<T extends Record<string, unknown>>(
-    sql: string,
-    params?: unknown[]
-  ): Promise<T[]>;
+  query<T extends Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
 
   /**
    * 단일 행 반환 쿼리 (SELECT one).
    * 결과가 없으면 null.
    */
-  queryOne<T extends Record<string, unknown>>(
-    sql: string,
-    params?: unknown[]
-  ): Promise<T | null>;
+  queryOne<T extends Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T | null>;
 
   /**
    * 변경 쿼리 (INSERT / UPDATE / DELETE).
@@ -150,7 +144,7 @@ export class SqlIndexMetaStore implements IndexMetaStore {
     await this.driver.execute(
       `INSERT INTO schema_version (prefix, version_id, capacity, created_at)
        VALUES (?, ?, ?, ?)`,
-      [record.prefix, record.versionId, record.capacity, record.createdAt]
+      [record.prefix, record.versionId, record.capacity, record.createdAt],
     );
   }
 
@@ -159,19 +153,16 @@ export class SqlIndexMetaStore implements IndexMetaStore {
       `SELECT prefix, version_id, capacity, created_at
        FROM schema_version WHERE prefix = ?
        ORDER BY created_at ASC`,
-      [prefix]
+      [prefix],
     );
     return rows.map(toSchemaVersionRecord);
   }
 
-  async getSchemaVersion(
-    prefix: string,
-    versionId: string
-  ): Promise<SchemaVersionRecord | null> {
+  async getSchemaVersion(prefix: string, versionId: string): Promise<SchemaVersionRecord | null> {
     const row = await this.driver.queryOne<SchemaVersionRow>(
       `SELECT prefix, version_id, capacity, created_at
        FROM schema_version WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     return row ? toSchemaVersionRecord(row) : null;
   }
@@ -179,7 +170,7 @@ export class SqlIndexMetaStore implements IndexMetaStore {
   async getCapacity(prefix: string, versionId: string): Promise<number | null> {
     const row = await this.driver.queryOne<{ capacity: number }>(
       `SELECT capacity FROM schema_version WHERE prefix = ? AND version_id = ?`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     return row?.capacity ?? null;
   }
@@ -197,7 +188,7 @@ export class SqlIndexMetaStore implements IndexMetaStore {
     await this.driver.execute(
       `INSERT INTO entry (prefix, version_id, position, value, created_at)
        VALUES (?, ?, ?, ?, ?)`,
-      [record.prefix, record.versionId, record.position, String(record.value), record.createdAt]
+      [record.prefix, record.versionId, record.position, String(record.value), record.createdAt],
     );
   }
 
@@ -206,7 +197,7 @@ export class SqlIndexMetaStore implements IndexMetaStore {
       `SELECT prefix, version_id, position, value, created_at
        FROM entry WHERE prefix = ? AND version_id = ?
        ORDER BY position ASC`,
-      [prefix, versionId]
+      [prefix, versionId],
     );
     return rows.map(toEntryRecord);
   }
@@ -215,36 +206,36 @@ export class SqlIndexMetaStore implements IndexMetaStore {
     prefix: string,
     versionId: string,
     from: number,
-    to: number
+    to: number,
   ): Promise<EntryRecord[]> {
     const rows = await this.driver.query<EntryRow>(
       `SELECT prefix, version_id, position, value, created_at
        FROM entry
        WHERE prefix = ? AND version_id = ? AND position >= ? AND position <= ?
        ORDER BY position ASC`,
-      [prefix, versionId, from, to]
+      [prefix, versionId, from, to],
     );
     return rows.map(toEntryRecord);
   }
 
-  async getEntry(
-    prefix: string,
-    versionId: string,
-    position: number
-  ): Promise<EntryRecord | null> {
+  async getEntry(prefix: string, versionId: string, position: number): Promise<EntryRecord | null> {
     const row = await this.driver.queryOne<EntryRow>(
       `SELECT prefix, version_id, position, value, created_at
        FROM entry WHERE prefix = ? AND version_id = ? AND position = ?`,
-      [prefix, versionId, position]
+      [prefix, versionId, position],
     );
     return row ? toEntryRecord(row) : null;
   }
 
-  async getEntryByValue(prefix: string, versionId: string, value: EntityId): Promise<EntryRecord | null> {
+  async getEntryByValue(
+    prefix: string,
+    versionId: string,
+    value: EntityId,
+  ): Promise<EntryRecord | null> {
     const row = await this.driver.queryOne<EntryRow>(
       `SELECT prefix, version_id, position, value, created_at
        FROM entry WHERE prefix = ? AND version_id = ? AND value = ?`,
-      [prefix, versionId, String(value)]
+      [prefix, versionId, String(value)],
     );
     return row ? toEntryRecord(row) : null;
   }
@@ -253,12 +244,12 @@ export class SqlIndexMetaStore implements IndexMetaStore {
     prefix: string,
     fromVersion: string,
     toVersion: string,
-    positionMap?: Record<number, number>
+    positionMap?: Record<number, number>,
   ): Promise<{ migrated: number; skipped: number }> {
     const sv = await this.getSchemaVersion(prefix, toVersion);
     if (!sv) {
       throw new ValidationError(
-        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`
+        `SchemaVersion not found: "${prefix}/${toVersion}". Insert schema version first.`,
       );
     }
 
@@ -282,12 +273,12 @@ export class SqlIndexMetaStore implements IndexMetaStore {
         }
         if (newPosition < 1 || newPosition > sv.capacity) {
           throw new ValidationError(
-            `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`
+            `Mapped position ${newPosition} out of range [1, ${sv.capacity}] for "${prefix}/${toVersion}"`,
           );
         }
         await tx.execute(
           `INSERT INTO entry (prefix, version_id, position, value, created_at) VALUES (?, ?, ?, ?, ?)`,
-          [prefix, toVersion, newPosition, String(entry.value), now]
+          [prefix, toVersion, newPosition, String(entry.value), now],
         );
         existingPositions.add(newPosition);
         migrated++;
@@ -317,19 +308,19 @@ interface EntryRow extends Record<string, unknown> {
 
 function toSchemaVersionRecord(row: SchemaVersionRow): SchemaVersionRecord {
   return {
-    prefix:    row.prefix,
+    prefix: row.prefix,
     versionId: row.version_id,
-    capacity:  row.capacity,
+    capacity: row.capacity,
     createdAt: row.created_at,
   };
 }
 
 function toEntryRecord(row: EntryRow): EntryRecord {
   return {
-    prefix:    row.prefix,
+    prefix: row.prefix,
     versionId: row.version_id,
-    position:  row.position,
-    value:     row.value,
+    position: row.position,
+    value: row.value,
     createdAt: row.created_at,
   };
 }

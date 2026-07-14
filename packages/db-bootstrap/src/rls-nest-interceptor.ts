@@ -1,12 +1,12 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import type { CallHandler, ExecutionContext, NestInterceptor } from "@nestjs/common";
-import { Injectable } from "@nestjs/common";
-import { Observable, from, lastValueFrom, defer, mergeMap } from "rxjs";
+import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { Observable, from, lastValueFrom, defer, mergeMap } from 'rxjs';
 
-import type { RlsSessionContext } from "./rls-session.js";
-import { withRlsContext } from "./rls-context-storage.js";
+import type { RlsSessionContext } from './rls-session.js';
+import { withRlsContext } from './rls-context-storage.js';
 
 /**
  * JWT claim shape — sim-gateway + auth-api 공통.
@@ -24,7 +24,7 @@ export interface RlsJwtClaims {
 
 /** hex TEXT → Uint8Array. 비-hex 문자 또는 홀수 길이는 throw. */
 export function decodeBitmapHex(hex: string): Uint8Array {
-  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
   if (clean.length % 2 !== 0) throw new Error(`bitmap hex odd length: ${clean.length}`);
   if (!/^[0-9a-fA-F]*$/.test(clean)) throw new Error(`bitmap hex non-hex char: ${clean}`);
   const out = new Uint8Array(clean.length / 2);
@@ -34,9 +34,7 @@ export function decodeBitmapHex(hex: string): Uint8Array {
   return out;
 }
 
-export function claimsToRlsContext(
-  claims: RlsJwtClaims | null,
-): RlsSessionContext {
+export function claimsToRlsContext(claims: RlsJwtClaims | null): RlsSessionContext {
   if (!claims) {
     return { userId: null, tenantId: null, bitmapMask: null, role: null };
   }
@@ -52,7 +50,7 @@ export function claimsToRlsContext(
     userId: claims.sub ?? null,
     tenantId: claims.tenantId ?? null,
     bitmapMask: mask,
-    role: claims.role === "admin" ? "admin" : null,
+    role: claims.role === 'admin' ? 'admin' : null,
   };
 }
 

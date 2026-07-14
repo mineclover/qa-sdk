@@ -1,4 +1,4 @@
-import type { CoordAxes, RelationCategoryResolver, RelationCategorySchema } from "./schema-core.js";
+import type { CoordAxes, RelationCategoryResolver, RelationCategorySchema } from './schema-core.js';
 
 export interface NodeCoord {
   realm: string;
@@ -40,11 +40,11 @@ export interface TraversalObservation {
 }
 
 export const INFORMATION_FACET_KINDS = [
-  "definition",
-  "management",
-  "production",
-  "consumption",
-  "storage",
+  'definition',
+  'management',
+  'production',
+  'consumption',
+  'storage',
 ] as const;
 
 export type InformationFacetKind = (typeof INFORMATION_FACET_KINDS)[number];
@@ -56,25 +56,25 @@ export interface InformationFacetRef {
 }
 
 export const TRANSMISSION_SEMANTICS = [
-  "contract_descent",
-  "production_to_consumption",
-  "storage_projection",
-  "observation_emission",
+  'contract_descent',
+  'production_to_consumption',
+  'storage_projection',
+  'observation_emission',
 ] as const;
 
 export type TransmissionSemantic = (typeof TRANSMISSION_SEMANTICS)[number];
 
 export const TRANSMISSION_MEDIA = [
-  "direct",
-  "event",
-  "state",
-  "projection",
-  "observation",
+  'direct',
+  'event',
+  'state',
+  'projection',
+  'observation',
 ] as const;
 
 export type TransmissionMedium = (typeof TRANSMISSION_MEDIA)[number];
 
-export type TransmissionDirection = "forward" | "reverse" | "bidirectional";
+export type TransmissionDirection = 'forward' | 'reverse' | 'bidirectional';
 
 export interface SemanticTransmission {
   transmissionId: string;
@@ -92,11 +92,7 @@ export interface BranchCondition {
   expression: string;
 }
 
-export type BranchHandlingMode =
-  | "first_match"
-  | "all_matches"
-  | "fallback"
-  | "optional";
+export type BranchHandlingMode = 'first_match' | 'all_matches' | 'fallback' | 'optional';
 
 export interface BranchPath {
   pathId: string;
@@ -106,28 +102,28 @@ export interface BranchPath {
 }
 
 export const CONTROL_FLOW_NODE_KINDS = [
-  "step",
-  "sequence",
-  "branch",
-  "optional",
-  "parallel",
-  "join",
-  "retry",
-  "feedback",
-  "emit",
-  "transition_scope",
+  'step',
+  'sequence',
+  'branch',
+  'optional',
+  'parallel',
+  'join',
+  'retry',
+  'feedback',
+  'emit',
+  'transition_scope',
 ] as const;
 
 export type ControlFlowNodeKind = (typeof CONTROL_FLOW_NODE_KINDS)[number];
 
 export const CONTROL_FLOW_EDGE_KINDS = [
-  "next",
-  "conditional",
-  "event",
-  "error",
-  "fan_out",
-  "join",
-  "feedback",
+  'next',
+  'conditional',
+  'event',
+  'error',
+  'fan_out',
+  'join',
+  'feedback',
 ] as const;
 
 export type ControlFlowEdgeKind = (typeof CONTROL_FLOW_EDGE_KINDS)[number];
@@ -162,17 +158,17 @@ function encodeAxes(axes: CoordAxes): string {
   return Object.entries(axes)
     .toSorted(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
-    .join("&");
+    .join('&');
 }
 
-export function createNodeCanonicalKey(input: Omit<NodeCoord, "canonicalKey">): string {
+export function createNodeCanonicalKey(input: Omit<NodeCoord, 'canonicalKey'>): string {
   const axes = encodeAxes(input.taxonomies);
   return axes.length === 0
     ? `node:${input.realm}/${input.space}/${input.anchor}`
     : `node:${input.realm}/${input.space}/${input.anchor}?${axes}`;
 }
 
-export function createNodeCoord(input: Omit<NodeCoord, "canonicalKey">): NodeCoord {
+export function createNodeCoord(input: Omit<NodeCoord, 'canonicalKey'>): NodeCoord {
   return {
     ...input,
     canonicalKey: createNodeCanonicalKey(input),
@@ -180,7 +176,7 @@ export function createNodeCoord(input: Omit<NodeCoord, "canonicalKey">): NodeCoo
 }
 
 export function createRelationTypeCanonicalKey(
-  input: Omit<RelationTypeCoord, "canonicalKey">,
+  input: Omit<RelationTypeCoord, 'canonicalKey'>,
 ): string {
   const axes = encodeAxes(input.axes);
   return axes.length === 0
@@ -190,7 +186,7 @@ export function createRelationTypeCanonicalKey(
 
 export function createRelationTypeCoord(
   definition: RelationCategorySchema,
-  input: Omit<RelationTypeCoord, "canonicalKey" | "axes"> & { axes?: CoordAxes },
+  input: Omit<RelationTypeCoord, 'canonicalKey' | 'axes'> & { axes?: CoordAxes },
 ): RelationTypeCoord {
   const axes = {
     ...definition.defaultValues,
@@ -211,7 +207,7 @@ function resolveRelationCategory(
   resolver: RelationCategoryResolver,
   category: string,
 ): RelationCategorySchema | undefined {
-  if (typeof resolver === "function") {
+  if (typeof resolver === 'function') {
     return resolver(category);
   }
 
@@ -220,7 +216,7 @@ function resolveRelationCategory(
 
 export function createRelationTypeCoordWithResolver(
   resolver: RelationCategoryResolver,
-  input: Omit<RelationTypeCoord, "canonicalKey" | "axes"> & { axes?: CoordAxes },
+  input: Omit<RelationTypeCoord, 'canonicalKey' | 'axes'> & { axes?: CoordAxes },
 ): RelationTypeCoord {
   const definition = resolveRelationCategory(resolver, input.category);
 
@@ -231,11 +227,11 @@ export function createRelationTypeCoordWithResolver(
   return createRelationTypeCoord(definition, input);
 }
 
-export function createEdgeCanonicalKey(input: Omit<EdgeCoord, "canonicalKey">): string {
+export function createEdgeCanonicalKey(input: Omit<EdgeCoord, 'canonicalKey'>): string {
   return `edge:${input.start}->${input.relationType}->${input.end}`;
 }
 
-export function createEdgeCoord(input: Omit<EdgeCoord, "canonicalKey">): EdgeCoord {
+export function createEdgeCoord(input: Omit<EdgeCoord, 'canonicalKey'>): EdgeCoord {
   return {
     ...input,
     canonicalKey: createEdgeCanonicalKey(input),
@@ -243,15 +239,15 @@ export function createEdgeCoord(input: Omit<EdgeCoord, "canonicalKey">): EdgeCoo
 }
 
 export function createTraversalCanonicalKey(input: TraversalCoord): string {
-  return `traversal:${input.purpose}:${input.start}->${input.edges.join("/")}->${input.end}`;
+  return `traversal:${input.purpose}:${input.start}->${input.edges.join('/')}->${input.end}`;
 }
 
-export function createInformationFacetKey(input: Omit<InformationFacetRef, "key">): string {
+export function createInformationFacetKey(input: Omit<InformationFacetRef, 'key'>): string {
   return `facet:${input.nodeId}:${input.facetKind}`;
 }
 
 export function createInformationFacetRef(
-  input: Omit<InformationFacetRef, "key">,
+  input: Omit<InformationFacetRef, 'key'>,
 ): InformationFacetRef {
   return {
     ...input,

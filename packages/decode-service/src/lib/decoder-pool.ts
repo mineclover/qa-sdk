@@ -1,8 +1,8 @@
 // @def.boundary decode-service-system
 // @def.doc decode-service-system
 
-import { PrefixDecoder, PrefixDecoderBig } from "index-meta-workers";
-import type { PrefixDecoderConfig, PrefixDecoderBigConfig, DecodeMap } from "index-meta-workers";
+import { PrefixDecoder, PrefixDecoderBig } from 'index-meta-workers';
+import type { PrefixDecoderConfig, PrefixDecoderBigConfig, DecodeMap } from 'index-meta-workers';
 
 type AnyDecoder = PrefixDecoder | PrefixDecoderBig;
 
@@ -52,7 +52,7 @@ export class DecoderPool {
    * numberType에 따라 PrefixDecoder 또는 PrefixDecoderBig를 자동 선택.
    */
   loadMap(map: DecodeMap): AnyDecoder {
-    if (map.numberType === "bigint") {
+    if (map.numberType === 'bigint') {
       return this.loadBig({ map });
     }
     return this.load({ map });

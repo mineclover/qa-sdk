@@ -1,17 +1,17 @@
 // @def.boundary persistence-system-root
 // @def.doc test-scenario-store
 
-import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { eq, and, count, max, sql } from "drizzle-orm";
-import { testScenarios, testScenarioRuns } from "./db/schema.js";
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
+import { eq, and, count, max, sql } from 'drizzle-orm';
+import { testScenarios, testScenarioRuns } from './db/schema.js';
 import type {
   TestScenario,
   TestScenarioRun,
   CreateTestScenarioInput,
   TestLifecycle,
-} from "./types.js";
+} from './types.js';
 
 type DrizzleDb = ReturnType<typeof drizzle>;
 
@@ -19,18 +19,21 @@ export class SqliteTestScenarioStore {
   private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
 
-  constructor(path: string = ":memory:") {
+  constructor(path: string = ':memory:') {
     const DatabaseSync = getDatabaseSync();
     this.rawDb = new DatabaseSync(path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
+    this.rawDb.exec('PRAGMA journal_mode = WAL');
+    this.rawDb.exec('PRAGMA busy_timeout = 3000');
     this.db = drizzle({ client: this.rawDb });
     try {
       migrate(this.db, {
-        migrationsFolder: new URL("../drizzle", import.meta.url).pathname,
+        migrationsFolder: new URL('../drizzle', import.meta.url).pathname,
       });
     } catch (err) {
-      throw new Error(`[test-scenario-store] 마이그레이션 실패: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
+      throw new Error(
+        `[test-scenario-store] 마이그레이션 실패: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err },
+      );
     }
   }
 
@@ -43,18 +46,21 @@ export class SqliteTestScenarioStore {
 
     if (existing) return;
 
-    this.db.insert(testScenarios).values({
-      id: input.aCoord,
-      aCoord: input.aCoord,
-      specAddress: input.specAddress,
-      kind: input.kind,
-      scope: input.scope ?? "single",
-      phase: input.phase ?? null,
-      lifecycle: "declared",
-      intent: input.intent,
-      primarySvc: input.primarySvc,
-      participants: JSON.stringify(input.participants ?? []),
-    }).run();
+    this.db
+      .insert(testScenarios)
+      .values({
+        id: input.aCoord,
+        aCoord: input.aCoord,
+        specAddress: input.specAddress,
+        kind: input.kind,
+        scope: input.scope ?? 'single',
+        phase: input.phase ?? null,
+        lifecycle: 'declared',
+        intent: input.intent,
+        primarySvc: input.primarySvc,
+        participants: JSON.stringify(input.participants ?? []),
+      })
+      .run();
   }
 
   assign(aCoord: string, bCoord: string, filePath: string, violation: boolean): void {
@@ -62,7 +68,7 @@ export class SqliteTestScenarioStore {
       .update(testScenarios)
       .set({
         id: bCoord,
-        lifecycle: "assigned",
+        lifecycle: 'assigned',
         filePath,
         conventionViolation: violation,
         updatedAt: new Date().toISOString(),
@@ -71,44 +77,48 @@ export class SqliteTestScenarioStore {
       .run();
   }
 
-  recordRun(scenarioId: string, passed: boolean, commitHash: string | null, durationMs: number | null): void {
-    this.db.insert(testScenarioRuns).values({
-      scenarioId,
-      passed,
-      commitHash,
-      durationMs,
-    }).run();
+  recordRun(
+    scenarioId: string,
+    passed: boolean,
+    commitHash: string | null,
+    durationMs: number | null,
+  ): void {
+    this.db
+      .insert(testScenarioRuns)
+      .values({
+        scenarioId,
+        passed,
+        commitHash,
+        durationMs,
+      })
+      .run();
 
     const scenario = this.getById(scenarioId);
-    if (scenario && scenario.lifecycle === "assigned") {
+    if (scenario && scenario.lifecycle === 'assigned') {
       this.db
         .update(testScenarios)
-        .set({ lifecycle: "collected", updatedAt: new Date().toISOString() })
+        .set({ lifecycle: 'collected', updatedAt: new Date().toISOString() })
         .where(eq(testScenarios.id, scenarioId))
         .run();
     }
   }
 
   getByACoord(aCoord: string): TestScenario | undefined {
-    const row = this.db
-      .select()
-      .from(testScenarios)
-      .where(eq(testScenarios.aCoord, aCoord))
-      .get();
+    const row = this.db.select().from(testScenarios).where(eq(testScenarios.aCoord, aCoord)).get();
     return row ? this.rowToScenario(row) : undefined;
   }
 
   getById(id: string): TestScenario | undefined {
-    const row = this.db
-      .select()
-      .from(testScenarios)
-      .where(eq(testScenarios.id, id))
-      .get();
+    const row = this.db.select().from(testScenarios).where(eq(testScenarios.id, id)).get();
     return row ? this.rowToScenario(row) : undefined;
   }
 
   listAll(): TestScenario[] {
-    return this.db.select().from(testScenarios).all().map(r => this.rowToScenario(r));
+    return this.db
+      .select()
+      .from(testScenarios)
+      .all()
+      .map((r) => this.rowToScenario(r));
   }
 
   listByLifecycle(lifecycle: TestLifecycle): TestScenario[] {
@@ -117,7 +127,7 @@ export class SqliteTestScenarioStore {
       .from(testScenarios)
       .where(eq(testScenarios.lifecycle, lifecycle))
       .all()
-      .map(r => this.rowToScenario(r));
+      .map((r) => this.rowToScenario(r));
   }
 
   nextSeq(_kind: string, _scope: string): number {
@@ -138,10 +148,10 @@ export class SqliteTestScenarioStore {
       id: row.id,
       aCoord: row.aCoord,
       specAddress: row.specAddress,
-      kind: row.kind as TestScenario["kind"],
-      scope: row.scope as TestScenario["scope"],
-      phase: (row.phase as TestScenario["phase"]) ?? null,
-      lifecycle: row.lifecycle as TestScenario["lifecycle"],
+      kind: row.kind as TestScenario['kind'],
+      scope: row.scope as TestScenario['scope'],
+      phase: (row.phase as TestScenario['phase']) ?? null,
+      lifecycle: row.lifecycle as TestScenario['lifecycle'],
       intent: row.intent,
       primarySvc: row.primarySvc,
       participants: JSON.parse(row.participants),

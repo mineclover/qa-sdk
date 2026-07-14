@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "description": "Node, relation, traversal을 taxonomy 교차점으로 좌표화하는 operational ontology 초안 라이브러리",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -101,10 +107,6 @@
       "require": "./dist/persistence.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

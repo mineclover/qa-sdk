@@ -4,7 +4,7 @@
 // controller 라이프사이클 종료 시 resetAll()로 누수 방지(Stage 11 시나리오 runner에서 호출).
 // spec 2026-05-02 §8 — getFault(kind) 노출 (admin controller 가 active/params 조회용).
 
-import type { Fault, FaultKind } from "./types.js";
+import type { Fault, FaultKind } from './types.js';
 
 export class FaultInjector {
   constructor(private readonly registry: Record<FaultKind, Fault>) {}

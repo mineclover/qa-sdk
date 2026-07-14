@@ -8,8 +8,8 @@
  * 정수는 이 파일 밖으로 노출되지 않는다.
  */
 
-import { calcWeights } from "weighted-index";
-import type { DemoCatalog } from "./demo-catalog.js";
+import { calcWeights } from 'weighted-index';
+import type { DemoCatalog } from './demo-catalog.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Semantic RefEntries 정의 — 의미가 원본
@@ -17,68 +17,68 @@ import type { DemoCatalog } from "./demo-catalog.js";
 
 /** dev+prod × asia × 전 서비스 × 전 namespace (15개) — 권한 서비스 참조 대상 */
 export const PERM_SVC_MEANING = [
-  { env: "dev", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "gateway", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "auth", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "payment", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "gateway", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "gateway", namespace: "cms" },
+  { env: 'dev', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-web', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-backend', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'auth', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'payment', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'gateway', namespace: 'cms' },
 ] as const;
 
 /** dev+prod × asia × 전 서비스 × shop+cms (15개) — 이벤트 서비스 참조 대상 */
 export const EVT_SVC_MEANING = [
-  { env: "dev", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "gateway", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "gateway", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "auth", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "payment", namespace: "cms" },
-  { env: "prod", region: "asia", svc_name: "gateway", namespace: "cms" },
+  { env: 'dev', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-web', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-backend', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'auth', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'payment', namespace: 'cms' },
+  { env: 'prod', region: 'asia', svc_name: 'gateway', namespace: 'cms' },
 ] as const;
 
 /** prod 5개 서비스 (namespace=shop, 5개) */
 export const ORDER_SVC_MEANING = [
-  { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "gateway", namespace: "shop" },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
 ] as const;
 
 /** dev+stage+prod × asia × 전 서비스 (namespace=shop, 15개) — 인프라 계측 대상 */
 export const INFRA_SVC_MEANING = [
-  { env: "dev", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "dev", region: "asia", svc_name: "gateway", namespace: "shop" },
-  { env: "stage", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "stage", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "stage", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "stage", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "stage", region: "asia", svc_name: "gateway", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-web", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "shopping-backend", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "auth", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "payment", namespace: "shop" },
-  { env: "prod", region: "asia", svc_name: "gateway", namespace: "shop" },
+  { env: 'dev', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'dev', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
+  { env: 'stage', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'stage', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'stage', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'stage', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'stage', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-web', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'shopping-backend', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'auth', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'payment', namespace: 'shop' },
+  { env: 'prod', region: 'asia', svc_name: 'gateway', namespace: 'shop' },
 ] as const;
 
 // ═══════════════════════════════════════════════════════════════
@@ -94,16 +94,19 @@ export function deriveServiceAddresses(
   meanings: readonly Record<string, string>[],
 ): number[] {
   const svcPrefix = catalog.prefixes.service;
-  const fixedLabels = svcPrefix.labels.filter(
-    l => svcPrefix.dims[l].kind !== "table_ref",
-  );
+  const fixedLabels = svcPrefix.labels.filter((l) => svcPrefix.dims[l].kind !== 'table_ref');
 
   // shape 계산
-  const shape = fixedLabels.map(label => {
+  const shape = fixedLabels.map((label) => {
     const dimRef = svcPrefix.dims[label];
-    if (dimRef.kind === "axis") {
-      const axis = (catalog.axes as Record<string, { versions: Record<string, { capacity?: number; entries: readonly string[] }> }>)[dimRef.axisId];
-      const snap = axis.versions["v1"];
+    if (dimRef.kind === 'axis') {
+      const axis = (
+        catalog.axes as Record<
+          string,
+          { versions: Record<string, { capacity?: number; entries: readonly string[] }> }
+        >
+      )[dimRef.axisId];
+      const snap = axis.versions['v1'];
       return snap.capacity ?? snap.entries.length;
     }
     return 1;
@@ -113,16 +116,22 @@ export function deriveServiceAddresses(
   const strides = calcWeights(shape);
 
   // 의미값 → 정수 주소
-  return meanings.map(meaning => {
+  return meanings.map((meaning) => {
     let addr = 0;
     for (let i = 0; i < fixedLabels.length; i++) {
       const label = fixedLabels[i];
       const dimRef = svcPrefix.dims[label];
-      if (dimRef.kind === "axis") {
-        const axis = (catalog.axes as Record<string, { versions: Record<string, { entries: readonly string[] }> }>)[dimRef.axisId];
-        const entries = axis.versions["v1"].entries;
+      if (dimRef.kind === 'axis') {
+        const axis = (
+          catalog.axes as Record<
+            string,
+            { versions: Record<string, { entries: readonly string[] }> }
+          >
+        )[dimRef.axisId];
+        const entries = axis.versions['v1'].entries;
         const pos = entries.indexOf(meaning[label] as string);
-        if (pos === -1) throw new Error(`Entry "${meaning[label]}" not found in axis "${dimRef.axisId}"`);
+        if (pos === -1)
+          throw new Error(`Entry "${meaning[label]}" not found in axis "${dimRef.axisId}"`);
         addr += pos * strides[i];
       }
     }

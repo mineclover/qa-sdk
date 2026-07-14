@@ -1,20 +1,20 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import {
   createDrizzleOutboxPort,
   type OutboxPort,
   type OutboxRecord,
-} from "@qa-sdk/sim-domain-slice-kit";
-import type { TransactionScope } from "@qa-sdk/sim-domain-slice-kit";
-import { buildSchemaHash } from "sim-identifier-grammar";
-import { approvalOutboxEvents as sqliteApprovalOutbox } from "../../../sqlite/schema.js";
-import { approvalOutboxEvents as pgApprovalOutbox } from "../../../pg/schema.js";
-import { withServiceVersion } from "../../../../lib/service-version.js";
+} from '@qa-sdk/sim-domain-slice-kit';
+import type { TransactionScope } from '@qa-sdk/sim-domain-slice-kit';
+import { buildSchemaHash } from 'sim-identifier-grammar';
+import { approvalOutboxEvents as sqliteApprovalOutbox } from '../../../sqlite/schema.js';
+import { approvalOutboxEvents as pgApprovalOutbox } from '../../../pg/schema.js';
+import { withServiceVersion } from '../../../../lib/service-version.js';
 
-export type BudgetDialect = "sqlite" | "pg";
+export type BudgetDialect = 'sqlite' | 'pg';
 
 export interface BudgetOutboxFactoryOpts {
   readonly dialect: BudgetDialect;
@@ -24,18 +24,18 @@ export interface BudgetOutboxFactoryOpts {
 // 단계 8(Plan C): build-time schemaHash. 모듈 로드 시 1회만 계산. spec 02 §4.2.
 // EventName 계약: { domain, aggregate, verbPast } — sim-identifier-grammar/event-name.ts SSOT.
 const BUDGET_EVENT_NAME = {
-  domain: "approval",
-  aggregate: "budget",
-  verbPast: "submitted",
+  domain: 'approval',
+  aggregate: 'budget',
+  verbPast: 'submitted',
 } as const;
 const BUDGET_PAYLOAD_SHAPE = {
-  id: "string",
-  requesterId: "string",
-  amount: "number",
-  status: "string",
-  currentStage: "number",
-  totalStages: "number",
-  occurredAt: "string",
+  id: 'string',
+  requesterId: 'string',
+  amount: 'number',
+  status: 'string',
+  currentStage: 'number',
+  totalStages: 'number',
+  occurredAt: 'string',
 } as const;
 export const BUDGET_SCHEMA_HASH: string = buildSchemaHash({
   eventName: BUDGET_EVENT_NAME,
@@ -51,7 +51,7 @@ export const BUDGET_SCHEMA_HASH: string = buildSchemaHash({
  */
 function withBudgetStamps(record: OutboxRecord): OutboxRecord {
   const stamped =
-    typeof record.payload === "object" && record.payload !== null
+    typeof record.payload === 'object' && record.payload !== null
       ? withServiceVersion({
           ...(record.payload as Record<string, unknown>),
           schemaHash: BUDGET_SCHEMA_HASH,
@@ -71,10 +71,8 @@ function wrap(port: OutboxPort): OutboxPort {
   };
 }
 
-export function createBudgetOutboxPort(
-  opts: BudgetOutboxFactoryOpts,
-): OutboxPort {
-  if (opts.dialect === "sqlite") {
+export function createBudgetOutboxPort(opts: BudgetOutboxFactoryOpts): OutboxPort {
+  if (opts.dialect === 'sqlite') {
     return wrap(
       createDrizzleOutboxPort({
         db: opts.db as never,
@@ -82,7 +80,7 @@ export function createBudgetOutboxPort(
       }),
     );
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return wrap(
       createDrizzleOutboxPort({
         db: opts.db as never,

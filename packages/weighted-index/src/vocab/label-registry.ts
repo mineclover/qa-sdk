@@ -32,8 +32,8 @@ import {
   LabelNotFoundError,
   ShapeError,
   VersionNotFoundError,
-} from "../math/errors.js";
-import { assertNoColon, assertNonEmptyArray, formatList } from "../math/validators.js";
+} from '../math/errors.js';
+import { assertNoColon, assertNonEmptyArray, formatList } from '../math/validators.js';
 
 // ── 공개 타입 ────────────────────────────────────────────────────────────────
 
@@ -62,10 +62,8 @@ export interface LabelVersionEntry<TId extends EntityId = EntityId> {
  * 레이블 정의 객체에서 schema 타입을 추론하는 헬퍼.
  * createLabelRegistry 의 반환 타입을 결정한다.
  */
-export type InferLabelSchema<
-  T extends Record<string, LabelVersionEntry<EntityId>[]>
-> = {
-  [K in keyof T]: T[K][number]["ids"][number];
+export type InferLabelSchema<T extends Record<string, LabelVersionEntry<EntityId>[]>> = {
+  [K in keyof T]: T[K][number]['ids'][number];
 };
 
 // ── 내부 캐시 ────────────────────────────────────────────────────────────────
@@ -84,9 +82,7 @@ interface VersionCache {
  * createLabelRegistry() 팩토리로 생성하면 자동 추론된다.
  * 직접 생성 시 기본값 Record<string, EntityId> 로 동작한다.
  */
-export class LabelRegistry<
-  TSchema extends Record<string, EntityId> = Record<string, EntityId>
-> {
+export class LabelRegistry<TSchema extends Record<string, EntityId> = Record<string, EntityId>> {
   private readonly data: ReadonlyMap<string, ReadonlyMap<string, VersionCache>>;
   private readonly versionOrder: ReadonlyMap<string, readonly string[]>;
 
@@ -104,9 +100,7 @@ export class LabelRegistry<
       for (const entry of versions) {
         assertNoColon(entry.version, `Label "${name}" version`);
         if (versionMap.has(entry.version)) {
-          throw new ShapeError(
-            `Duplicate version "${entry.version}" in label "${name}"`
-          );
+          throw new ShapeError(`Duplicate version "${entry.version}" in label "${name}"`);
         }
         assertNonEmptyArray(entry.ids, `Label "${name}" version "${entry.version}" ids`);
 
@@ -145,13 +139,13 @@ export class LabelRegistry<
   getIndex<K extends keyof TSchema & string>(
     label: K,
     version: string,
-    entityId: TSchema[K]
+    entityId: TSchema[K],
   ): number {
     const cache = this._getCache(label, version);
     const idx = cache.idToIndex.get(entityId as EntityId);
     if (idx === undefined) {
       throw new EntityNotFoundError(
-        `Entity id "${entityId}" not found in label "${label}" version "${version}"`
+        `Entity id "${entityId}" not found in label "${label}" version "${version}"`,
       );
     }
     return idx;
@@ -164,13 +158,13 @@ export class LabelRegistry<
   getEntityId<K extends keyof TSchema & string>(
     label: K,
     version: string,
-    index: number
+    index: number,
   ): TSchema[K] {
     const cache = this._getCache(label, version);
     const id = cache.indexToId.get(index);
     if (id === undefined) {
       throw new EntityNotFoundError(
-        `Index ${index} not found in label "${label}" version "${version}" (max: ${cache.max})`
+        `Index ${index} not found in label "${label}" version "${version}" (max: ${cache.max})`,
       );
     }
     return id as TSchema[K];
@@ -184,13 +178,13 @@ export class LabelRegistry<
   }
 
   getVersions<K extends keyof TSchema & string>(
-    label: K
+    label: K,
   ): readonly LabelVersionEntry<TSchema[K]>[] {
     const order = this._getOrder(label);
     const versionMap = this._getVersionMap(label);
     return order.map(
       // eslint-disable-next-line typescript/no-non-null-assertion -- versionMap은 order와 동일한 키로 구축됨
-      (v) => versionMap.get(v)!.entry as LabelVersionEntry<TSchema[K]>
+      (v) => versionMap.get(v)!.entry as LabelVersionEntry<TSchema[K]>,
     );
   }
 
@@ -222,7 +216,7 @@ export class LabelRegistry<
     const idx = cache.idToIndex.get(entityId);
     if (idx === undefined) {
       throw new EntityNotFoundError(
-        `Entity id "${entityId}" not found in label "${label}" version "${version}"`
+        `Entity id "${entityId}" not found in label "${label}" version "${version}"`,
       );
     }
     return idx;
@@ -234,7 +228,7 @@ export class LabelRegistry<
     const id = cache.indexToId.get(index);
     if (id === undefined) {
       throw new EntityNotFoundError(
-        `Index ${index} not found in label "${label}" version "${version}" (max: ${cache.max})`
+        `Index ${index} not found in label "${label}" version "${version}" (max: ${cache.max})`,
       );
     }
     return id;
@@ -242,10 +236,7 @@ export class LabelRegistry<
 
   // ── 내부 ────────────────────────────────────────────────────────────────
 
-  private _buildCache(
-    labelName: string,
-    entry: LabelVersionEntry<EntityId>
-  ): VersionCache {
+  private _buildCache(labelName: string, entry: LabelVersionEntry<EntityId>): VersionCache {
     const idToIndex = new Map<EntityId, number>();
     const indexToId = new Map<number, EntityId>();
     const seenIds = new Set<EntityId>();
@@ -254,10 +245,10 @@ export class LabelRegistry<
       // -0 과 0 은 JavaScript Map/Set에서 동일하게 취급되므로 0 으로 정규화.
       // 정규화하지 않으면 ids: [-0, 0] 이 중복 감지를 통과해 bijection 이 깨진다.
       const raw = entry.ids[pos];
-      const id: EntityId = typeof raw === "number" && Object.is(raw, -0) ? 0 : raw;
+      const id: EntityId = typeof raw === 'number' && Object.is(raw, -0) ? 0 : raw;
       if (seenIds.has(id)) {
         throw new ShapeError(
-          `Duplicate entity id "${id}" in label "${labelName}" version "${entry.version}"`
+          `Duplicate entity id "${id}" in label "${labelName}" version "${entry.version}"`,
         );
       }
       seenIds.add(id);
@@ -269,13 +260,11 @@ export class LabelRegistry<
     return { entry, idToIndex, indexToId, max: entry.ids.length };
   }
 
-  private _getVersionMap(
-    label: string
-  ): ReadonlyMap<string, VersionCache> {
+  private _getVersionMap(label: string): ReadonlyMap<string, VersionCache> {
     const versionMap = this.data.get(label);
     if (!versionMap) {
       throw new LabelNotFoundError(
-        `Unknown label: "${label}". Registered: [${formatList(this.data.keys())}]`
+        `Unknown label: "${label}". Registered: [${formatList(this.data.keys())}]`,
       );
     }
     return versionMap;
@@ -294,7 +283,7 @@ export class LabelRegistry<
     const cache = versionMap.get(version);
     if (!cache) {
       throw new VersionNotFoundError(
-        `Unknown version "${version}" for label "${label}". Available: [${formatList(versionMap.keys())}]`
+        `Unknown version "${version}" for label "${label}". Available: [${formatList(versionMap.keys())}]`,
       );
     }
     return cache;
@@ -324,12 +313,12 @@ export class LabelRegistry<
  * labels.getIndex("role", "v1", 1);     // ✓
  * labels.getIndex("role", "v1", "hi");  // ✗ 컴파일 오류
  */
-export function createLabelRegistry<
-  T extends Record<string, LabelVersionEntry<EntityId>[]>
->(defs: T): LabelRegistry<InferLabelSchema<T>> {
+export function createLabelRegistry<T extends Record<string, LabelVersionEntry<EntityId>[]>>(
+  defs: T,
+): LabelRegistry<InferLabelSchema<T>> {
   return new LabelRegistry(
     defs as unknown as {
       [K in keyof InferLabelSchema<T>]: LabelVersionEntry<InferLabelSchema<T>[K]>[];
-    }
+    },
   );
 }

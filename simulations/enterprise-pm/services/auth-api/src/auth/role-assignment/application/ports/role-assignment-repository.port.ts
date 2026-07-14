@@ -1,8 +1,8 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import type { RoleAssignmentEntity } from "../../domain/index.js";
-import type { RoleAssignmentTransactionScope } from "./role-assignment-transaction.port.js";
+import type { RoleAssignmentEntity } from '../../domain/index.js';
+import type { RoleAssignmentTransactionScope } from './role-assignment-transaction.port.js';
 
 export abstract class RoleAssignmentRepositoryPort {
   abstract save(entity: RoleAssignmentEntity, scope: RoleAssignmentTransactionScope): Promise<void>;

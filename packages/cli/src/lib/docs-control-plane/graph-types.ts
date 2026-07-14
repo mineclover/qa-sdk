@@ -1,78 +1,77 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import type { DocumentMetadata, DocumentRawSourcePointer } from "doc-envelope";
+import type { DocumentMetadata, DocumentRawSourcePointer } from 'doc-envelope';
 
 export const CANONICAL_TRAVERSAL_AXES = [
-  "composition",
-  "refinement",
-  "dependency",
-  "constraint",
-  "trace",
-  "source",
-  "evidence",
-  "role",
-  "context",
+  'composition',
+  'refinement',
+  'dependency',
+  'constraint',
+  'trace',
+  'source',
+  'evidence',
+  'role',
+  'context',
 ] as const;
 
 export type TraversalAxis = (typeof CANONICAL_TRAVERSAL_AXES)[number];
 
-export const TRAVERSAL_DIRECTIONS = ["out", "in", "both"] as const;
+export const TRAVERSAL_DIRECTIONS = ['out', 'in', 'both'] as const;
 
 export type TraversalDirection = (typeof TRAVERSAL_DIRECTIONS)[number];
 
 export const DOCUMENT_GRAPH_NODE_KINDS = [
-  "spec",
-  "todo",
-  "plan",
-  "rule",
-  "cases",
-  "test",
-  "memo",
-  "knowledge",
-  "prd",
-  "ralph-prd-json",
-  "ralph-session",
-  "source",
-  "evidence",
-  "section",
+  'spec',
+  'todo',
+  'plan',
+  'rule',
+  'cases',
+  'test',
+  'memo',
+  'knowledge',
+  'prd',
+  'ralph-prd-json',
+  'ralph-session',
+  'source',
+  'evidence',
+  'section',
 ] as const;
 
 export type DocumentGraphNodeKind = (typeof DOCUMENT_GRAPH_NODE_KINDS)[number];
 
 export const DOCUMENT_GRAPH_FAMILY_ROLE_TYPES = [
-  "spec",
-  "todo",
-  "plan",
-  "rule",
-  "cases",
-  "test",
-  "memo",
+  'spec',
+  'todo',
+  'plan',
+  'rule',
+  'cases',
+  'test',
+  'memo',
 ] as const;
 
-export type DocumentGraphFamilyRoleType =
-  (typeof DOCUMENT_GRAPH_FAMILY_ROLE_TYPES)[number];
+export type DocumentGraphFamilyRoleType = (typeof DOCUMENT_GRAPH_FAMILY_ROLE_TYPES)[number];
 
 export const DOCUMENT_GRAPH_EDGE_KINDS = [
-  "authored-link",
-  "document-constraint",
-  "document-source",
-  "document-evidence",
-  "task-trace",
-  "task-evidence",
-  "section-membership",
-  "role-membership",
-  "context-metadata",
+  'authored-link',
+  'document-constraint',
+  'document-source',
+  'document-evidence',
+  'task-trace',
+  'task-evidence',
+  'section-membership',
+  'role-membership',
+  'context-metadata',
 ] as const;
 
 export type DocumentGraphEdgeKind = (typeof DOCUMENT_GRAPH_EDGE_KINDS)[number];
 
 export const TRAVERSAL_PRESET_IDS = [
-  "family",
-  "implementation",
-  "review",
-  "impact",
-  "prd-completion",
+  'family',
+  'implementation',
+  'review',
+  'impact',
+  'prd-completion',
 ] as const;
 
 export type TraversalPresetId = (typeof TRAVERSAL_PRESET_IDS)[number];
@@ -162,37 +161,37 @@ export interface TraversalResultSummary {
 }
 
 export const AUTHORED_LINK_AXIS_MAP = {
-  contains: "composition",
-  refines: "refinement",
-  depends_on: "dependency",
-  constrains: "constraint",
-  traces_to: "trace",
-  implements: "trace",
-  evolves_from: "trace",
-  supersedes: "trace",
-  verifies: "evidence",
-  materializes_output: "evidence",
+  contains: 'composition',
+  refines: 'refinement',
+  depends_on: 'dependency',
+  constrains: 'constraint',
+  traces_to: 'trace',
+  implements: 'trace',
+  evolves_from: 'trace',
+  supersedes: 'trace',
+  verifies: 'evidence',
+  materializes_output: 'evidence',
 } as const satisfies Readonly<Record<string, TraversalAxis>>;
 
 export type AuthoredLinkType = keyof typeof AUTHORED_LINK_AXIS_MAP;
 
 export const ENVELOPE_FIELD_AXIS_MAP = {
-  sources: "source",
-  source: "source",
-  sourceRefs: "source",
-  codeReferences: "source",
-  verifiesRefs: "evidence",
-  materializesOutputRefs: "evidence",
-  verificationRefs: "evidence",
-  evidence: "evidence",
-  tasks: "trace",
-  familyId: "role",
-  kind: "role",
-  tags: "context",
-  scope: "context",
-  aspect: "context",
-  layer: "context",
-  knowledgeKind: "context",
+  sources: 'source',
+  source: 'source',
+  sourceRefs: 'source',
+  codeReferences: 'source',
+  verifiesRefs: 'evidence',
+  materializesOutputRefs: 'evidence',
+  verificationRefs: 'evidence',
+  evidence: 'evidence',
+  tasks: 'trace',
+  familyId: 'role',
+  kind: 'role',
+  tags: 'context',
+  scope: 'context',
+  aspect: 'context',
+  layer: 'context',
+  knowledgeKind: 'context',
 } as const satisfies Readonly<Record<string, TraversalAxis>>;
 
 export type EnvelopeFieldAxisKey = keyof typeof ENVELOPE_FIELD_AXIS_MAP;

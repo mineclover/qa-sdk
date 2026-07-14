@@ -9,25 +9,25 @@
  *
  * 실행: node scripts/tax-add-lifecycle.mjs <file>...
  */
-import { readFileSync, writeFileSync } from "node:fs";
-import { basename } from "node:path";
+import { readFileSync, writeFileSync } from 'node:fs';
+import { basename } from 'node:path';
 
 function addLifecycleToFile(filePath) {
-  const text = readFileSync(filePath, "utf8");
-  const lines = text.split("\n");
+  const text = readFileSync(filePath, 'utf8');
+  const lines = text.split('\n');
   let changed = 0;
   const out = lines.map((line) => {
     // 한 줄 entry 객체 패턴: `- { ... }`
     const m = line.match(/^(\s*-\s*\{[^}]*?)\s*\}\s*$/);
     if (!m) return line;
     const inner = m[1];
-    if (inner.includes("lifecycle:")) return line;
-    if (!inner.includes("id:")) return line;
+    if (inner.includes('lifecycle:')) return line;
+    if (!inner.includes('id:')) return line;
     changed++;
     return `${inner}, lifecycle: approved }`;
   });
   if (changed > 0) {
-    writeFileSync(filePath, out.join("\n"));
+    writeFileSync(filePath, out.join('\n'));
     console.log(`✔ ${basename(filePath)}: ${changed} entries`);
   } else {
     console.log(`  ${basename(filePath)}: 변경 없음`);
@@ -36,7 +36,7 @@ function addLifecycleToFile(filePath) {
 
 const files = process.argv.slice(2);
 if (files.length === 0) {
-  console.error("사용법: node scripts/tax-add-lifecycle.mjs <file>...");
+  console.error('사용법: node scripts/tax-add-lifecycle.mjs <file>...');
   process.exit(1);
 }
 for (const f of files) addLifecycleToFile(f);

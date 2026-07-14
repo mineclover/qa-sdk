@@ -16,13 +16,13 @@
  *   → WorkflowSpec { nodes, edges, validators, metadata }
  */
 
-import type { ContractSection, AssembledContract, Reversibility } from "./contract.js";
-import type { ContractMarkerKind } from "./taxonomy.js";
+import type { ContractSection, AssembledContract, Reversibility } from './contract.js';
+import type { ContractMarkerKind } from './taxonomy.js';
 
 // ─── 타입: 워크플로우 노드 ──────────────────────────────
 
 /** 실행 모드 — HyEvo의 LLM node / Code node 분리 */
-export type StepMode = "code" | "llm";
+export type StepMode = 'code' | 'llm';
 
 /**
  * 워크플로우 노드.
@@ -39,7 +39,7 @@ export interface WorkflowNode {
   /** 수행할 연산 (마커에서 파생된 설명) */
   readonly operation: string;
   /** 원본 계약 마커 */
-  readonly sourceMarker: ContractMarkerKind | "guard" | "verify";
+  readonly sourceMarker: ContractMarkerKind | 'guard' | 'verify';
   /** 원본 문서 ID */
   readonly sourceDocId: string;
   /** 입력 스키마 설명 (predecessor output에서 파생) */
@@ -66,7 +66,7 @@ export interface WorkflowEdge {
   /** 도착 노드 ID */
   readonly to: string;
   /** 엣지 유형 */
-  readonly kind: "sequence" | "branch" | "guard" | "verify";
+  readonly kind: 'sequence' | 'branch' | 'guard' | 'verify';
 }
 
 // ─── 타입: 검증 바인딩 ──────────────────────────────────
@@ -85,7 +85,7 @@ export interface ValidatorBinding {
   /** 검증 규칙 설명 */
   readonly rule: string;
   /** 검증 시점 */
-  readonly phase: "pre" | "post";
+  readonly phase: 'pre' | 'post';
   /** 원본 문서 ID */
   readonly sourceDocId: string;
 }
@@ -167,13 +167,12 @@ export interface SpecContext {
 export interface ReflectionResult {
   /** 분류된 문제 레이어 */
   readonly issueLayer:
-    | "document"       // 문서 의미 부족
-    | "contract"       // 경계/입출력 정의 누락
-    | "topology"       // step graph 구조 부적절
-    | "validator"      // 검증 규칙 부족
-    | "evidence"       // 증거 수집 부족
-    | "mode"           // code/llm 분류 오류
-    ;
+    | 'document' // 문서 의미 부족
+    | 'contract' // 경계/입출력 정의 누락
+    | 'topology' // step graph 구조 부적절
+    | 'validator' // 검증 규칙 부족
+    | 'evidence' // 증거 수집 부족
+    | 'mode'; // code/llm 분류 오류
   /** 설명 */
   readonly description: string;
   /** 수정 제안 */
@@ -191,10 +190,7 @@ export interface ReflectionResult {
  * @param contract assembleContract()의 결과
  * @param version 워크플로우 버전 (기본: 1)
  */
-export function compileWorkflow(
-  contract: AssembledContract,
-  version: number = 1,
-): WorkflowSpec {
+export function compileWorkflow(contract: AssembledContract, version: number = 1): WorkflowSpec {
   const nodes: WorkflowNode[] = [];
   const edges: WorkflowEdge[] = [];
   const validators: ValidatorBinding[] = [];
@@ -206,14 +202,14 @@ export function compileWorkflow(
   const guardNodeIds: string[] = [];
   for (const section of contract.preconditions) {
     const nodeId = nextId();
-    nodes.push(createNode(nodeId, "code", section, "guard", "사전 조건 검증 통과 여부"));
+    nodes.push(createNode(nodeId, 'code', section, 'guard', '사전 조건 검증 통과 여부'));
     guardNodeIds.push(nodeId);
 
     validators.push({
       validatorId: `v.pre.${nodeId}`,
       appliesTo: [nodeId],
       rule: extractFirstLine(section.body),
-      phase: "pre",
+      phase: 'pre',
       sourceDocId: section.sourceId,
     });
   }
@@ -222,12 +218,12 @@ export function compileWorkflow(
   const inputNodeIds: string[] = [];
   for (const section of contract.inputs) {
     const nodeId = nextId();
-    nodes.push(createNode(nodeId, "code", section, "inputs", "정규화된 입력"));
+    nodes.push(createNode(nodeId, 'code', section, 'inputs', '정규화된 입력'));
     inputNodeIds.push(nodeId);
 
     // guard → input
     for (const guardId of guardNodeIds) {
-      edges.push({ from: guardId, to: nodeId, kind: "guard" });
+      edges.push({ from: guardId, to: nodeId, kind: 'guard' });
     }
   }
 
@@ -243,9 +239,14 @@ export function compileWorkflow(
         nodeId,
         mode: classifyStepMode(item),
         operation: item,
-        sourceMarker: "flow-steps",
+        sourceMarker: 'flow-steps',
         sourceDocId: section.sourceId,
-        inputSchema: stepNodeIds.length > 0 ? `이전 단계 출력` : inputNodeIds.length > 0 ? `정규화된 입력` : null,
+        inputSchema:
+          stepNodeIds.length > 0
+            ? `이전 단계 출력`
+            : inputNodeIds.length > 0
+              ? `정규화된 입력`
+              : null,
         outputSchema: item,
         body: item,
         reversibility: null,
@@ -256,19 +257,19 @@ export function compileWorkflow(
 
   // step 간 순차 연결
   for (let i = 1; i < stepNodeIds.length; i++) {
-    edges.push({ from: stepNodeIds[i - 1], to: stepNodeIds[i], kind: "sequence" });
+    edges.push({ from: stepNodeIds[i - 1], to: stepNodeIds[i], kind: 'sequence' });
   }
 
   // input → 첫 step
   if (inputNodeIds.length > 0 && stepNodeIds.length > 0) {
     for (const inputId of inputNodeIds) {
-      edges.push({ from: inputId, to: stepNodeIds[0], kind: "sequence" });
+      edges.push({ from: inputId, to: stepNodeIds[0], kind: 'sequence' });
     }
   }
   // guard 직접 → 첫 step (input 없는 경우)
   if (inputNodeIds.length === 0 && guardNodeIds.length > 0 && stepNodeIds.length > 0) {
     for (const guardId of guardNodeIds) {
-      edges.push({ from: guardId, to: stepNodeIds[0], kind: "guard" });
+      edges.push({ from: guardId, to: stepNodeIds[0], kind: 'guard' });
     }
   }
 
@@ -282,10 +283,10 @@ export function compileWorkflow(
         nodeId,
         mode: section.markerDef.modeHint,
         operation: item,
-        sourceMarker: "decision-point",
+        sourceMarker: 'decision-point',
         sourceDocId: section.sourceId,
-        inputSchema: "현재 단계 상태",
-        outputSchema: "분기 결정",
+        inputSchema: '현재 단계 상태',
+        outputSchema: '분기 결정',
         body: item,
         reversibility: null,
       });
@@ -297,7 +298,7 @@ export function compileWorkflow(
   for (const branchId of branchNodeIds) {
     // 분기는 마지막 step에서 나감 (간소화된 연결)
     if (stepNodeIds.length > 0) {
-      edges.push({ from: stepNodeIds[stepNodeIds.length - 1], to: branchId, kind: "branch" });
+      edges.push({ from: stepNodeIds[stepNodeIds.length - 1], to: branchId, kind: 'branch' });
     }
   }
 
@@ -305,12 +306,12 @@ export function compileWorkflow(
   const outputNodeIds: string[] = [];
   for (const section of contract.outputs) {
     const nodeId = nextId();
-    nodes.push(createNode(nodeId, "code", section, "outputs", "최종 응답"));
+    nodes.push(createNode(nodeId, 'code', section, 'outputs', '최종 응답'));
     outputNodeIds.push(nodeId);
 
     // 마지막 step → output
     if (stepNodeIds.length > 0) {
-      edges.push({ from: stepNodeIds[stepNodeIds.length - 1], to: nodeId, kind: "sequence" });
+      edges.push({ from: stepNodeIds[stepNodeIds.length - 1], to: nodeId, kind: 'sequence' });
     }
   }
 
@@ -321,9 +322,12 @@ export function compileWorkflow(
     for (const item of postcondItems) {
       validators.push({
         validatorId: `v.post.${nextId()}`,
-        appliesTo: allStepAndOutputIds.length > 0 ? [allStepAndOutputIds[allStepAndOutputIds.length - 1]] : [],
+        appliesTo:
+          allStepAndOutputIds.length > 0
+            ? [allStepAndOutputIds[allStepAndOutputIds.length - 1]]
+            : [],
         rule: item,
-        phase: "post",
+        phase: 'post',
         sourceDocId: section.sourceId,
       });
     }
@@ -332,14 +336,14 @@ export function compileWorkflow(
   // ── 7단계: Evidence 노드 (관측점, 가역성 포함) ──
   for (const evItem of contract.parsedEvidence) {
     const nodeId = nextId();
-    const revLabel = evItem.reversibility ? ` [${evItem.reversibility}]` : "";
+    const revLabel = evItem.reversibility ? ` [${evItem.reversibility}]` : '';
     nodes.push({
       nodeId,
-      mode: "code",
+      mode: 'code',
       operation: `증거 수집: ${evItem.description}`,
-      sourceMarker: "evidence",
+      sourceMarker: 'evidence',
       sourceDocId: evItem.sourceId,
-      inputSchema: "실행 결과",
+      inputSchema: '실행 결과',
       outputSchema: `증거: ${evItem.description}${revLabel}`,
       body: evItem.raw,
       reversibility: evItem.reversibility,
@@ -347,9 +351,9 @@ export function compileWorkflow(
 
     // evidence는 마지막 output 이후에 연결
     if (outputNodeIds.length > 0) {
-      edges.push({ from: outputNodeIds[outputNodeIds.length - 1], to: nodeId, kind: "verify" });
+      edges.push({ from: outputNodeIds[outputNodeIds.length - 1], to: nodeId, kind: 'verify' });
     } else if (stepNodeIds.length > 0) {
-      edges.push({ from: stepNodeIds[stepNodeIds.length - 1], to: nodeId, kind: "verify" });
+      edges.push({ from: stepNodeIds[stepNodeIds.length - 1], to: nodeId, kind: 'verify' });
     }
   }
 
@@ -360,12 +364,12 @@ export function compileWorkflow(
       const nodeId = nextId();
       nodes.push({
         nodeId,
-        mode: "code",
+        mode: 'code',
         operation: `실패 처리: ${item}`,
-        sourceMarker: "failure",
+        sourceMarker: 'failure',
         sourceDocId: section.sourceId,
-        inputSchema: "에러 상태",
-        outputSchema: "에러 응답",
+        inputSchema: '에러 상태',
+        outputSchema: '에러 응답',
         body: item,
         reversibility: null,
       });
@@ -374,8 +378,8 @@ export function compileWorkflow(
   }
 
   // ── 메타데이터 ──
-  const codeNodes = nodes.filter(n => n.mode === "code").length;
-  const llmNodes = nodes.filter(n => n.mode === "llm").length;
+  const codeNodes = nodes.filter((n) => n.mode === 'code').length;
+  const llmNodes = nodes.filter((n) => n.mode === 'llm').length;
   const total = nodes.length;
 
   const metadata: WorkflowMetadata = {
@@ -412,16 +416,16 @@ export function reflect(
   errorMessages: readonly string[],
 ): readonly ReflectionResult[] {
   const results: ReflectionResult[] = [];
-  const failedNodes = workflow.nodes.filter(n => failedNodeIds.includes(n.nodeId));
+  const failedNodes = workflow.nodes.filter((n) => failedNodeIds.includes(n.nodeId));
 
   for (const node of failedNodes) {
     // mode 분류 오류 감지: code 노드가 의미 해석 에러를 냄
-    const hasSemanticError = errorMessages.some(msg =>
-      msg.includes("ambiguous") || msg.includes("unclear") || msg.includes("해석"),
+    const hasSemanticError = errorMessages.some(
+      (msg) => msg.includes('ambiguous') || msg.includes('unclear') || msg.includes('해석'),
     );
-    if (node.mode === "code" && hasSemanticError) {
+    if (node.mode === 'code' && hasSemanticError) {
       results.push({
-        issueLayer: "mode",
+        issueLayer: 'mode',
         description: `노드 ${node.nodeId}(${node.operation})가 code 모드이지만 의미 해석 에러 발생`,
         suggestion: `mode를 "llm"으로 변경하거나 입력을 더 구조화`,
       });
@@ -430,11 +434,11 @@ export function reflect(
 
     // validator 부족 감지: post-validation이 없는 노드에서 실패
     const hasPostValidator = workflow.validators.some(
-      v => v.appliesTo.includes(node.nodeId) && v.phase === "post",
+      (v) => v.appliesTo.includes(node.nodeId) && v.phase === 'post',
     );
     if (!hasPostValidator) {
       results.push({
-        issueLayer: "validator",
+        issueLayer: 'validator',
         description: `노드 ${node.nodeId}(${node.operation})에 사후 검증이 없음`,
         suggestion: `postcondition을 추가하여 실패를 조기 감지`,
       });
@@ -442,10 +446,10 @@ export function reflect(
     }
 
     // topology 문제: 입력이 없는 노드에서 실패
-    const hasInput = workflow.edges.some(e => e.to === node.nodeId);
-    if (!hasInput && node.sourceMarker !== "guard") {
+    const hasInput = workflow.edges.some((e) => e.to === node.nodeId);
+    if (!hasInput && node.sourceMarker !== 'guard') {
       results.push({
-        issueLayer: "topology",
+        issueLayer: 'topology',
         description: `노드 ${node.nodeId}(${node.operation})에 입력 엣지가 없음`,
         suggestion: `predecessor 노드를 추가하거나 입력 연결 수정`,
       });
@@ -453,12 +457,10 @@ export function reflect(
     }
 
     // evidence 부족: verify 노드가 없는 경우
-    const hasEvidence = workflow.edges.some(
-      e => e.from === node.nodeId && e.kind === "verify",
-    );
-    if (!hasEvidence && (node.sourceMarker === "flow-steps" || node.sourceMarker === "outputs")) {
+    const hasEvidence = workflow.edges.some((e) => e.from === node.nodeId && e.kind === 'verify');
+    if (!hasEvidence && (node.sourceMarker === 'flow-steps' || node.sourceMarker === 'outputs')) {
       results.push({
-        issueLayer: "evidence",
+        issueLayer: 'evidence',
         description: `노드 ${node.nodeId}(${node.operation})에 증거 수집이 연결되지 않음`,
         suggestion: `evidence 마커를 추가하여 실행 결과를 관측`,
       });
@@ -467,7 +469,7 @@ export function reflect(
 
     // 기본: contract 레이어 문제
     results.push({
-      issueLayer: "contract",
+      issueLayer: 'contract',
       description: `노드 ${node.nodeId}(${node.operation})에서 실패 — 계약 정의 검토 필요`,
       suggestion: `해당 문서(${node.sourceDocId})의 계약 섹션을 보강`,
     });
@@ -482,7 +484,7 @@ function createNode(
   nodeId: string,
   mode: StepMode,
   section: ContractSection,
-  sourceMarker: WorkflowNode["sourceMarker"],
+  sourceMarker: WorkflowNode['sourceMarker'],
   outputDesc: string,
 ): WorkflowNode {
   return {
@@ -501,7 +503,7 @@ function createNode(
 /** 번호 목록 파싱 (1. xxx, 2. xxx) */
 function parseNumberedList(body: string): string[] {
   const items: string[] = [];
-  for (const line of body.split("\n")) {
+  for (const line of body.split('\n')) {
     const match = line.match(/^\s*\d+\.\s+(.+)/);
     if (match) items.push(match[1].trim());
   }
@@ -511,7 +513,7 @@ function parseNumberedList(body: string): string[] {
 /** 불릿 목록 파싱 (- xxx) */
 function parseBulletList(body: string): string[] {
   const items: string[] = [];
-  for (const line of body.split("\n")) {
+  for (const line of body.split('\n')) {
     const match = line.match(/^\s*[-*]\s+(.+)/);
     if (match) items.push(match[1].trim());
   }
@@ -520,7 +522,7 @@ function parseBulletList(body: string): string[] {
 
 /** 본문의 첫 줄 추출 */
 function extractFirstLine(body: string): string {
-  const line = body.split("\n").find(l => l.trim().length > 0);
+  const line = body.split('\n').find((l) => l.trim().length > 0);
   return line?.trim() ?? body.trim();
 }
 
@@ -532,9 +534,20 @@ function extractFirstLine(body: string): string {
  */
 function classifyStepMode(stepText: string): StepMode {
   const llmKeywords = [
-    "판단", "해석", "분류", "추론", "생성", "요약", "평가",
-    "analyze", "classify", "interpret", "generate", "summarize", "judge",
+    '판단',
+    '해석',
+    '분류',
+    '추론',
+    '생성',
+    '요약',
+    '평가',
+    'analyze',
+    'classify',
+    'interpret',
+    'generate',
+    'summarize',
+    'judge',
   ];
   const lower = stepText.toLowerCase();
-  return llmKeywords.some(kw => lower.includes(kw)) ? "llm" : "code";
+  return llmKeywords.some((kw) => lower.includes(kw)) ? 'llm' : 'code';
 }

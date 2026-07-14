@@ -1,8 +1,8 @@
 // @def.boundary spec-engine-system
 // @def.doc spec-engine-system
 
-import type { ExportSurface } from "./export-surface.types.js";
-import { DuplicateRegistrationError, NotFoundError } from "spec-schema";
+import type { ExportSurface } from './export-surface.types.js';
+import { DuplicateRegistrationError, NotFoundError } from 'spec-schema';
 
 /**
  * prefix별 export surface를 등록하고 제목을 resolve하는 레지스트리.
@@ -16,7 +16,7 @@ export class ExportSurfaceRegistry {
   /** prefix의 export surface 등록 */
   register(prefixId: string, surface: ExportSurface): void {
     if (this.surfaces.has(prefixId)) {
-      throw new DuplicateRegistrationError("ExportSurface", prefixId);
+      throw new DuplicateRegistrationError('ExportSurface', prefixId);
     }
     this.surfaces.set(prefixId, surface);
   }
@@ -24,7 +24,7 @@ export class ExportSurfaceRegistry {
   /** prefix의 export surface 조회 */
   get(prefixId: string): ExportSurface {
     const surface = this.surfaces.get(prefixId);
-    if (!surface) throw new NotFoundError("ExportSurface", prefixId);
+    if (!surface) throw new NotFoundError('ExportSurface', prefixId);
     return surface;
   }
 
@@ -64,10 +64,7 @@ export class ExportSurfaceRegistry {
  *
  * @example resolvePattern("{action}.{role}", { action: "add", role: "admin" }) → "add.admin"
  */
-function resolvePattern(
-  pattern: string,
-  values: Record<string, string>,
-): string {
+function resolvePattern(pattern: string, values: Record<string, string>): string {
   return pattern.replace(/\{(\w+)\}/g, (_, dimId: string) => {
     const value = values[dimId];
     if (value === undefined) {

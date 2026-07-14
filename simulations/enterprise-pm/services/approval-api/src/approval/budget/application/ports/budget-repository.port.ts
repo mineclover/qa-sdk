@@ -1,8 +1,8 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { BudgetEntity } from "../../domain/index.js";
-import type { BudgetTransactionScope } from "./budget-transaction.port.js";
+import type { BudgetEntity } from '../../domain/index.js';
+import type { BudgetTransactionScope } from './budget-transaction.port.js';
 
 /**
  * Budget Aggregate 의 영속 추상.

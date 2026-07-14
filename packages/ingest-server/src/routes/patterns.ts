@@ -6,8 +6,8 @@
  *
  * convergence pipeline의 패턴 분류 결과를 조회.
  */
-import { Hono } from "hono";
-import type { Logger } from "pino";
+import { Hono } from 'hono';
+import type { Logger } from 'pino';
 
 export interface PatternRouteDeps {
   /** convergence pipeline의 마지막 flush 결과에서 패턴 통계 캐시 */
@@ -28,17 +28,21 @@ export function createPatternRoutes(deps: PatternRouteDeps) {
   const routes = new Hono();
 
   // GET /v1/patterns/health — 패턴 분류 상태 요약
-  routes.get("/v1/patterns/health", (c) => {
+  routes.get('/v1/patterns/health', (c) => {
     const stats = deps.getPatternStats?.();
     if (!stats) {
       return c.json({
-        status: "inactive",
-        message: "패턴 분류 비활성 (PATTERN_CLASSIFICATION_ENABLED=false 또는 flush 미발생)",
+        status: 'inactive',
+        message: '패턴 분류 비활성 (PATTERN_CLASSIFICATION_ENABLED=false 또는 flush 미발생)',
       });
     }
 
-    const status = stats.classificationRate >= 80 ? "healthy" :
-                   stats.classificationRate >= 50 ? "degraded" : "critical";
+    const status =
+      stats.classificationRate >= 80
+        ? 'healthy'
+        : stats.classificationRate >= 50
+          ? 'degraded'
+          : 'critical';
 
     return c.json({
       status,
@@ -50,7 +54,7 @@ export function createPatternRoutes(deps: PatternRouteDeps) {
   });
 
   // GET /v1/patterns/stats — 상세 통계
-  routes.get("/v1/patterns/stats", (c) => {
+  routes.get('/v1/patterns/stats', (c) => {
     const stats = deps.getPatternStats?.();
     if (!stats) return c.json({ patterns: [], anomalies: [] });
 

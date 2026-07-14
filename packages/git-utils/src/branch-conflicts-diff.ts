@@ -1,8 +1,8 @@
 // @def.boundary shared-utility-group
 // @def.doc shared-utility-group
 
-import type { DiffDelta, DiffFile, Repository } from "es-git";
-import type { BranchChangeFile, BranchChangeStats } from "./branch-conflicts-types.js";
+import type { DiffDelta, DiffFile, Repository } from 'es-git';
+import type { BranchChangeFile, BranchChangeStats } from './branch-conflicts-types.js';
 
 export function collectChangedFiles(
   repo: Repository,
@@ -47,7 +47,7 @@ function mapDiffDelta(delta: DiffDelta): BranchChangeFile {
   const path = newFile.path() ?? oldFile.path();
 
   if (path === null) {
-    throw new Error("diff delta 경로를 해석할 수 없음");
+    throw new Error('diff delta 경로를 해석할 수 없음');
   }
 
   const previousPath = oldFile.path();

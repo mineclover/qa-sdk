@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { detectEnvironment } from "../../src/commands/env-manager.js";
+import { detectEnvironment } from '../../src/commands/env-manager.js';
 
-describe("detectEnvironment", () => {
+describe('detectEnvironment', () => {
   const envSnapshot = { ...process.env };
 
   beforeEach(() => {
@@ -17,26 +17,20 @@ describe("detectEnvironment", () => {
     process.env = { ...envSnapshot };
   });
 
-  it("preferredBackend=file이면 MinIO 감지를 건너뛴다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: true }),
-    );
+  it('preferredBackend=file이면 MinIO 감지를 건너뛴다', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
-    const result = await detectEnvironment("file");
-    expect(result).toBe("file");
+    const result = await detectEnvironment('file');
+    expect(result).toBe('file');
     expect(process.env.PULUMI_BACKEND_URL).toBeUndefined();
   });
 
-  it("이미 설정된 PULUMI_BACKEND_URL은 그대로 존중한다", async () => {
-    process.env.PULUMI_BACKEND_URL = "file://~/.pulumi-local";
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: true }),
-    );
+  it('이미 설정된 PULUMI_BACKEND_URL은 그대로 존중한다', async () => {
+    process.env.PULUMI_BACKEND_URL = 'file://~/.pulumi-local';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
 
-    const result = await detectEnvironment("minio");
-    expect(result).toBe("file");
-    expect(process.env.PULUMI_BACKEND_URL).toBe("file://~/.pulumi-local");
+    const result = await detectEnvironment('minio');
+    expect(result).toBe('file');
+    expect(process.env.PULUMI_BACKEND_URL).toBe('file://~/.pulumi-local');
   });
 });

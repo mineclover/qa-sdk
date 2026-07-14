@@ -1,6 +1,6 @@
-import { parseRef } from "taxonomy-engine";
-import type { StaticTaxonomy } from "../types/taxonomy";
-import { LifecycleBadge } from "./LifecycleBadge";
+import { parseRef } from 'taxonomy-engine';
+import type { StaticTaxonomy } from '../types/taxonomy';
+import { LifecycleBadge } from './LifecycleBadge';
 
 export function UnitDetailPanel({
   selectedRef,
@@ -20,13 +20,15 @@ export function UnitDetailPanel({
     return <div className="text-sm text-red-600">잘못된 ref 형식</div>;
   }
 
-  if (ref.kind === "axis") {
+  if (ref.kind === 'axis') {
     const axis = taxonomy.axes[ref.axis];
     if (!axis) return <div className="text-sm text-red-600">axis 없음: {ref.axis}</div>;
     return (
       <div className="space-y-1 text-sm">
         <div className="font-mono text-blue-700 flex items-center gap-2">
-          <span>{taxonomy.taxonomy}:{ref.axis}</span>
+          <span>
+            {taxonomy.taxonomy}:{ref.axis}
+          </span>
           <LifecycleBadge value={axis.lifecycle} />
         </div>
         {axis.description && <p className="text-gray-700">{axis.description}</p>}
@@ -48,14 +50,16 @@ export function UnitDetailPanel({
     );
   }
 
-  if (ref.kind === "entry") {
+  if (ref.kind === 'entry') {
     const axis = taxonomy.axes[ref.axis];
     const entry = axis?.entries.find((e) => e.id === ref.entry);
     if (!entry) return <div className="text-sm text-red-600">entry 없음: {ref.entry}</div>;
     return (
       <div className="space-y-2 text-sm">
         <div className="font-mono text-blue-700 flex items-center gap-2">
-          <span>{taxonomy.taxonomy}:{ref.axis}.{ref.entry}</span>
+          <span>
+            {taxonomy.taxonomy}:{ref.axis}.{ref.entry}
+          </span>
           <LifecycleBadge value={entry.lifecycle} title={entry.placeholderReason} />
         </div>
         {entry.label && <p className="text-gray-700">{entry.label}</p>}
@@ -83,9 +87,9 @@ export function UnitDetailPanel({
           <div className="text-xs">
             <div className="text-gray-500 mb-0.5">decisionLink</div>
             <a
-              href={entry.decisionLink.startsWith("http") ? entry.decisionLink : undefined}
+              href={entry.decisionLink.startsWith('http') ? entry.decisionLink : undefined}
               className="font-mono text-blue-600 hover:underline break-all"
-              target={entry.decisionLink.startsWith("http") ? "_blank" : undefined}
+              target={entry.decisionLink.startsWith('http') ? '_blank' : undefined}
               rel="noreferrer"
             >
               {entry.decisionLink}
@@ -104,7 +108,7 @@ export function UnitDetailPanel({
     );
   }
 
-  if (ref.kind === "relation") {
+  if (ref.kind === 'relation') {
     const rel = taxonomy.relations[ref.relation];
     if (!rel) return <div className="text-sm text-red-600">relation 없음</div>;
     return (
@@ -114,9 +118,9 @@ export function UnitDetailPanel({
           <dt className="text-gray-500">kind</dt>
           <dd>{rel.kind}</dd>
           <dt className="text-gray-500">from</dt>
-          <dd className="font-mono">{rel.from.join(", ")}</dd>
+          <dd className="font-mono">{rel.from.join(', ')}</dd>
           <dt className="text-gray-500">to</dt>
-          <dd className="font-mono">{rel.to.join(", ")}</dd>
+          <dd className="font-mono">{rel.to.join(', ')}</dd>
           <dt className="text-gray-500">rules</dt>
           <dd>{rel.rules.length}</dd>
         </dl>
@@ -124,7 +128,7 @@ export function UnitDetailPanel({
     );
   }
 
-  if (ref.kind === "constraint") {
+  if (ref.kind === 'constraint') {
     const c = taxonomy.constraints.find((x) => x.id === ref.constraint);
     if (!c) return <div className="text-sm text-red-600">constraint 없음</div>;
     return (
@@ -139,7 +143,7 @@ export function UnitDetailPanel({
         <details>
           <summary className="cursor-pointer text-xs">rule</summary>
           <pre className="bg-gray-50 p-2 mt-1 rounded overflow-auto text-xs">
-            {typeof c.rule === "string" ? c.rule : JSON.stringify(c.rule, null, 2)}
+            {typeof c.rule === 'string' ? c.rule : JSON.stringify(c.rule, null, 2)}
           </pre>
         </details>
       </div>

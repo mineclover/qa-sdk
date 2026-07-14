@@ -1,13 +1,13 @@
 // @def.boundary ingest-system
 // @def.doc ingest-system
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { PgKeyObservationStore } from "./key-observation.adapter.js";
+import { PgKeyObservationStore } from './key-observation.adapter.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
 /**
  * 테스트 격리 전략 (05 시리즈 PgResourcePolicyRegistry 동일 패턴):
@@ -49,12 +49,12 @@ CREATE TABLE ingest.key_observation_prefixes (
 );
 `;
 
-describe.skipIf(!PG_AVAILABLE)("PgKeyObservationStore — PG-specific", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('PgKeyObservationStore — PG-specific', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
 
   let sql: ReturnType<typeof postgres>;
   let store: PgKeyObservationStore;
@@ -84,83 +84,83 @@ describe.skipIf(!PG_AVAILABLE)("PgKeyObservationStore — PG-specific", () => {
     }
   });
 
-  it("observe → packed_key parse → version/address 분리 저장", async () => {
+  it('observe → packed_key parse → version/address 분리 저장', async () => {
     await store.observe({
-      packedKey: "svc:v1:42",
-      prefixId: "svc",
+      packedKey: 'svc:v1:42',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:00Z",
+      timestamp: '2026-04-22T10:00:00Z',
     });
-    const rows = await store.findByPrefix("svc");
+    const rows = await store.findByPrefix('svc');
     expect(rows).toHaveLength(1);
-    expect(rows[0].version).toBe("v1");
+    expect(rows[0].version).toBe('v1');
     expect(rows[0].address).toBe(42);
   });
 
-  it("같은 prefix·다른 version은 별도 row (PG composite PK)", async () => {
+  it('같은 prefix·다른 version은 별도 row (PG composite PK)', async () => {
     await store.observe({
-      packedKey: "svc:v1:5",
-      prefixId: "svc",
+      packedKey: 'svc:v1:5',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:00Z",
+      timestamp: '2026-04-22T10:00:00Z',
     });
     await store.observe({
-      packedKey: "svc:v2:5",
-      prefixId: "svc",
+      packedKey: 'svc:v2:5',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:01Z",
+      timestamp: '2026-04-22T10:00:01Z',
     });
-    const rows = await store.findByPrefix("svc");
+    const rows = await store.findByPrefix('svc');
     expect(rows).toHaveLength(2);
     const versions = new Set(rows.map((r) => r.version));
-    expect(versions).toEqual(new Set(["v1", "v2"]));
+    expect(versions).toEqual(new Set(['v1', 'v2']));
   });
 
-  it("payload_summary jsonb round-trip", async () => {
+  it('payload_summary jsonb round-trip', async () => {
     await store.observe({
-      packedKey: "svc:v1:1",
-      prefixId: "svc",
+      packedKey: 'svc:v1:1',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:00Z",
-      payloadFields: ["page", "userId"],
-      samplePayload: { page: "home", userId: "u1" },
+      timestamp: '2026-04-22T10:00:00Z',
+      payloadFields: ['page', 'userId'],
+      samplePayload: { page: 'home', userId: 'u1' },
     });
-    const rows = await store.findByPrefix("svc");
+    const rows = await store.findByPrefix('svc');
     expect(rows[0].payloadSummary.fieldFrequency.page).toBe(1);
-    expect(rows[0].payloadSummary.sampleValues.userId).toBe("u1");
+    expect(rows[0].payloadSummary.sampleValues.userId).toBe('u1');
   });
 
-  it("prefixSummary는 (prefix_id, version)별 분리", async () => {
+  it('prefixSummary는 (prefix_id, version)별 분리', async () => {
     await store.observe({
-      packedKey: "svc:v1:1",
-      prefixId: "svc",
+      packedKey: 'svc:v1:1',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:00Z",
+      timestamp: '2026-04-22T10:00:00Z',
     });
     await store.observe({
-      packedKey: "svc:v2:1",
-      prefixId: "svc",
+      packedKey: 'svc:v2:1',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:01Z",
+      timestamp: '2026-04-22T10:00:01Z',
     });
-    const summaries = await store.prefixSummary("svc");
+    const summaries = await store.prefixSummary('svc');
     expect(summaries).toHaveLength(2);
     const versions = new Set(summaries.map((s) => s.version));
-    expect(versions).toEqual(new Set(["v1", "v2"]));
+    expect(versions).toEqual(new Set(['v1', 'v2']));
   });
 
-  it("findUnregistered — registered=FALSE 비교 (PG boolean)", async () => {
+  it('findUnregistered — registered=FALSE 비교 (PG boolean)', async () => {
     await store.observe({
-      packedKey: "svc:v1:1",
-      prefixId: "svc",
+      packedKey: 'svc:v1:1',
+      prefixId: 'svc',
       registered: false,
-      timestamp: "2026-04-22T10:00:00Z",
+      timestamp: '2026-04-22T10:00:00Z',
     });
     await store.observe({
-      packedKey: "svc:v1:2",
-      prefixId: "svc",
+      packedKey: 'svc:v1:2',
+      prefixId: 'svc',
       registered: true,
-      timestamp: "2026-04-22T10:00:00Z",
+      timestamp: '2026-04-22T10:00:00Z',
     });
     const unreg = await store.findUnregistered();
     expect(unreg).toHaveLength(1);

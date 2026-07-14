@@ -5,7 +5,7 @@
 // QA_SDK_*_PASSWORD 등 PG 도메인 비밀번호를 로드한다.
 // gitignored 평문 파일이며, sops rotate 대상은 아니다.
 
-import { readFile } from "node:fs/promises";
+import { readFile } from 'node:fs/promises';
 
 /**
  * .env 포맷 파일을 파싱하여 key=value dict로 반환.
@@ -20,9 +20,9 @@ export function parseEnvFile(content: string): Record<string, string> {
   const result: Record<string, string> = {};
   for (const rawLine of content.split(/\r?\n/)) {
     const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
+    if (!line || line.startsWith('#')) continue;
 
-    const eqIdx = line.indexOf("=");
+    const eqIdx = line.indexOf('=');
     if (eqIdx === -1) continue;
 
     const key = line.slice(0, eqIdx).trim();
@@ -47,6 +47,6 @@ export function parseEnvFile(content: string): Record<string, string> {
  * 파일 없으면 fail-fast — 비밀번호가 필요한 호출에서 skip 방지.
  */
 export async function readEnvDockerSecrets(path: string): Promise<Record<string, string>> {
-  const content = await readFile(path, "utf-8");
+  const content = await readFile(path, 'utf-8');
   return parseEnvFile(content);
 }

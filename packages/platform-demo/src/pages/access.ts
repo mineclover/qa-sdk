@@ -5,22 +5,25 @@
 //  접근 제어 — perm_svc(1D 압축) × role × event 매핑 시뮬레이터
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { serializeAddress } from "weighted-index";
+import { serializeAddress } from 'weighted-index';
 import {
   DEMO_KO,
   DEMO_PERM_SVC_VALUES,
   DEMO_EVT_SVC_VALUES,
-  demoRolesFor, demoEventsFor,
-  demoRoleStride, demoEvtStride,
-  demoCalcPermAddr, demoCalcEvtAddr,
+  demoRolesFor,
+  demoEventsFor,
+  demoRoleStride,
+  demoEvtStride,
+  demoCalcPermAddr,
+  demoCalcEvtAddr,
   type DemoVer,
-} from "demo-snapshot";
-import { buildRefSvcRows, type DemoRefSvcRow } from "./demo-display-data.js";
+} from 'demo-snapshot';
+import { buildRefSvcRows, type DemoRefSvcRow } from './demo-display-data.js';
 
 type Ver = DemoVer;
 
 function fmtAddr(schema: string, ver: Ver, index: number): string {
-  return serializeAddress({ schema, version: ver, index }, "colon");
+  return serializeAddress({ schema, version: ver, index }, 'colon');
 }
 
 // ── Page-specific ref rows ───────────────────────────────────────────────
@@ -32,8 +35,16 @@ const EVT_SVCS = buildRefSvcRows(DEMO_EVT_SVC_VALUES);
 
 // ── Role / Event metadata (demoRolesFor/demoEventsFor에서 동적 생성) ────
 
-interface RoleMeta { idx1: number; id: string; ko: string }
-interface EvtMeta { idx1: number; id: string; ko: string }
+interface RoleMeta {
+  idx1: number;
+  id: string;
+  ko: string;
+}
+interface EvtMeta {
+  idx1: number;
+  id: string;
+  ko: string;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -49,7 +60,9 @@ const calcPermAddr = demoCalcPermAddr;
 const calcEvtAddr = demoCalcEvtAddr;
 
 // 백엔드 서비스는 모바일 이니시에이터 미지원 (refEntry view에서 판정)
-const BACKEND_SVCS = new Set<string>([...PERM_SVCS, ...EVT_SVCS].filter(s => s.svcId.includes("backend")).map(s => s.svcId));
+const BACKEND_SVCS = new Set<string>(
+  [...PERM_SVCS, ...EVT_SVCS].filter((s) => s.svcId.includes('backend')).map((s) => s.svcId),
+);
 function svcSupportsInit(ps: DemoRefSvcRow, init: number): boolean {
   return !(BACKEND_SVCS.has(ps.svcId) && init === 2);
 }
@@ -57,34 +70,34 @@ function svcSupportsInit(ps: DemoRefSvcRow, init: number): boolean {
 // ── State ───────────────────────────────────────────────────────────────
 
 interface AccessState {
-  permSvc: number | null;  // null = wildcard
+  permSvc: number | null; // null = wildcard
   roleIdx1: number;
-  initiator: number;       // 1=web, 2=mobile
+  initiator: number; // 1=web, 2=mobile
 }
 
 // ── Render ───────────────────────────────────────────────────────────────
 
 export function renderAccessPage(container: HTMLElement, ver: Ver): void {
-  container.innerHTML = "";
+  container.innerHTML = '';
 
   const st: AccessState = {
-    permSvc: 7,     // payment/shop
-    roleIdx1: 1,    // admin
-    initiator: 1,   // web
+    permSvc: 7, // payment/shop
+    roleIdx1: 1, // admin
+    initiator: 1, // web
   };
 
-  const wrap = document.createElement("div");
-  wrap.className = "acc-wrap";
+  const wrap = document.createElement('div');
+  wrap.className = 'acc-wrap';
 
-  const columns = document.createElement("div");
-  columns.className = "acc-columns";
+  const columns = document.createElement('div');
+  columns.className = 'acc-columns';
 
   // ── Controls (visually RIGHT, uses acc-left for flex:1) ────────────
-  const ctrlPanel = document.createElement("div");
-  ctrlPanel.className = "acc-left";
+  const ctrlPanel = document.createElement('div');
+  ctrlPanel.className = 'acc-left';
 
-  const header = document.createElement("div");
-  header.className = "acc-header";
+  const header = document.createElement('div');
+  header.className = 'acc-header';
   header.innerHTML = `
     <h2 class="acc-title">주소 공간 탐색기</h2>
     <p class="acc-desc">
@@ -97,53 +110,53 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
   ctrlPanel.appendChild(header);
 
   // perm_svc selector
-  const svcCtrl = document.createElement("div");
-  svcCtrl.className = "acc-controls";
+  const svcCtrl = document.createElement('div');
+  svcCtrl.className = 'acc-controls';
   ctrlPanel.appendChild(svcCtrl);
 
   // Role selector
-  const roleBar = document.createElement("div");
-  roleBar.className = "acc-role-bar";
+  const roleBar = document.createElement('div');
+  roleBar.className = 'acc-role-bar';
   roleBar.innerHTML = `<div class="acc-role-label">역할 (role)</div>`;
-  const roleBtns = document.createElement("div");
-  roleBtns.className = "acc-role-btns";
+  const roleBtns = document.createElement('div');
+  roleBtns.className = 'acc-role-btns';
   roleBar.appendChild(roleBtns);
   ctrlPanel.appendChild(roleBar);
 
   // Initiator toggle
-  const initBar = document.createElement("div");
-  initBar.className = "acc-role-bar";
+  const initBar = document.createElement('div');
+  initBar.className = 'acc-role-bar';
   initBar.innerHTML = `<div class="acc-role-label">발원 (initiator)</div>`;
-  const initBtns = document.createElement("div");
-  initBtns.className = "acc-role-btns";
+  const initBtns = document.createElement('div');
+  initBtns.className = 'acc-role-btns';
   initBar.appendChild(initBtns);
   ctrlPanel.appendChild(initBar);
 
   // Summary
-  const summaryEl = document.createElement("div");
-  summaryEl.className = "acc-summary";
+  const summaryEl = document.createElement('div');
+  summaryEl.className = 'acc-summary';
   ctrlPanel.appendChild(summaryEl);
 
   // Insight
-  const insightEl = document.createElement("div");
-  insightEl.className = "acc-insight";
+  const insightEl = document.createElement('div');
+  insightEl.className = 'acc-insight';
   ctrlPanel.appendChild(insightEl);
 
   // ── Grids (visually LEFT, uses acc-right for fixed size) ───────────
-  const gridPanel = document.createElement("div");
-  gridPanel.className = "acc-right";
+  const gridPanel = document.createElement('div');
+  gridPanel.className = 'acc-right';
 
-  const permSection = document.createElement("div");
-  permSection.className = "acc-tbl-section";
+  const permSection = document.createElement('div');
+  permSection.className = 'acc-tbl-section';
   gridPanel.appendChild(permSection);
 
-  const evtSection = document.createElement("div");
-  evtSection.className = "acc-tbl-section";
+  const evtSection = document.createElement('div');
+  evtSection.className = 'acc-tbl-section';
   gridPanel.appendChild(evtSection);
 
   // Cell detail panel (shown on click)
-  const detailPanel = document.createElement("div");
-  detailPanel.className = "acc-cell-detail";
+  const detailPanel = document.createElement('div');
+  detailPanel.className = 'acc-cell-detail';
   gridPanel.appendChild(detailPanel);
 
   columns.appendChild(gridPanel);
@@ -157,15 +170,15 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     const curRoles = rolesFor(ver);
     const curEvents = eventsFor(ver);
     // eslint-disable-next-line typescript/no-non-null-assertion -- roleIdx1는 curRoles에서 유래
-    const curRole = curRoles.find(r => r.idx1 === st.roleIdx1)!;
+    const curRole = curRoles.find((r) => r.idx1 === st.roleIdx1)!;
     const totalPermCells = PERM_SVCS.length * rc(ver);
     const totalEvtCells = EVT_SVCS.length * curEvents.length;
 
-    const selectedPermSvcs = st.permSvc !== null
-      ? [st.permSvc]
-      : PERM_SVCS.map(ps => ps.pos);
+    const selectedPermSvcs = st.permSvc !== null ? [st.permSvc] : PERM_SVCS.map((ps) => ps.pos);
     const selectedSvcAddrs = new Set(
-      selectedPermSvcs.map(pos => PERM_SVCS[pos - 1]?.addr).filter((addr): addr is number => typeof addr === "number")
+      selectedPermSvcs
+        .map((pos) => PERM_SVCS[pos - 1]?.addr)
+        .filter((addr): addr is number => typeof addr === 'number'),
     );
 
     // Highlighted addresses
@@ -183,51 +196,66 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     }
 
     // ── perm_svc selector ──
-    svcCtrl.innerHTML = "";
-    const svcLabel = document.createElement("div");
-    svcLabel.className = "acc-dim-label";
+    svcCtrl.innerHTML = '';
+    const svcLabel = document.createElement('div');
+    svcLabel.className = 'acc-dim-label';
     svcLabel.innerHTML = `
       <span class="acc-dim-key">perm_svc</span>
       <span class="acc-dim-info">permission refEntries → ${PERM_SVCS.length}개</span>
     `;
     svcCtrl.appendChild(svcLabel);
 
-    const svcBtns = document.createElement("div");
-    svcBtns.className = "acc-dim-btns";
+    const svcBtns = document.createElement('div');
+    svcBtns.className = 'acc-dim-btns';
 
-    const wBtn = document.createElement("button");
-    wBtn.className = "acc-btn acc-btn-wild" + (st.permSvc === null ? " acc-btn-active-wild" : "");
-    wBtn.textContent = "*";
-    wBtn.addEventListener("click", () => { st.permSvc = null; repaint(); });
+    const wBtn = document.createElement('button');
+    wBtn.className = 'acc-btn acc-btn-wild' + (st.permSvc === null ? ' acc-btn-active-wild' : '');
+    wBtn.textContent = '*';
+    wBtn.addEventListener('click', () => {
+      st.permSvc = null;
+      repaint();
+    });
     svcBtns.appendChild(wBtn);
 
     for (const ps of PERM_SVCS) {
-      const btn = document.createElement("button");
-      btn.className = "acc-btn" + (st.permSvc === ps.pos ? " acc-btn-active" : "");
+      const btn = document.createElement('button');
+      btn.className = 'acc-btn' + (st.permSvc === ps.pos ? ' acc-btn-active' : '');
       btn.innerHTML = `<span class="acc-btn-id">${ps.pos}</span><span class="acc-btn-ko">${ps.label}</span>`;
       btn.title = ps.title;
-      btn.addEventListener("click", () => { st.permSvc = ps.pos; repaint(); });
+      btn.addEventListener('click', () => {
+        st.permSvc = ps.pos;
+        repaint();
+      });
       svcBtns.appendChild(btn);
     }
     svcCtrl.appendChild(svcBtns);
 
     // ── Role buttons ──
-    roleBtns.innerHTML = "";
+    roleBtns.innerHTML = '';
     for (const role of curRoles) {
-      const btn = document.createElement("button");
-      btn.className = `acc-role-btn role-tag-${role.id}${role.idx1 === st.roleIdx1 ? " acc-role-btn-active" : ""}`;
+      const btn = document.createElement('button');
+      btn.className = `acc-role-btn role-tag-${role.id}${role.idx1 === st.roleIdx1 ? ' acc-role-btn-active' : ''}`;
       btn.textContent = role.ko;
-      btn.addEventListener("click", () => { st.roleIdx1 = role.idx1; repaint(); });
+      btn.addEventListener('click', () => {
+        st.roleIdx1 = role.idx1;
+        repaint();
+      });
       roleBtns.appendChild(btn);
     }
 
     // ── Initiator buttons ──
-    initBtns.innerHTML = "";
-    for (const [init, label, ko] of [[1, "web", "웹"], [2, "mobile", "모바일"]] as [number, string, string][]) {
-      const btn = document.createElement("button");
-      btn.className = `acc-role-btn${st.initiator === init ? " acc-role-btn-active" : ""}`;
+    initBtns.innerHTML = '';
+    for (const [init, label, ko] of [
+      [1, 'web', '웹'],
+      [2, 'mobile', '모바일'],
+    ] as [number, string, string][]) {
+      const btn = document.createElement('button');
+      btn.className = `acc-role-btn${st.initiator === init ? ' acc-role-btn-active' : ''}`;
       btn.textContent = `${label} · ${ko}`;
-      btn.addEventListener("click", () => { st.initiator = init; repaint(); });
+      btn.addEventListener('click', () => {
+        st.initiator = init;
+        repaint();
+      });
       initBtns.appendChild(btn);
     }
 
@@ -244,31 +272,31 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     let permHead = `<tr><th class="acc-tbl-corner">서비스 \\ 역할</th>`;
     for (const role of curRoles) {
       const isActive = role.idx1 === st.roleIdx1;
-      permHead += `<th class="acc-tbl-ch${isActive ? " acc-tbl-ch-active" : ""}">${role.ko}</th>`;
+      permHead += `<th class="acc-tbl-ch${isActive ? ' acc-tbl-ch-active' : ''}">${role.ko}</th>`;
     }
     permHead += `</tr>`;
 
-    let permBody = "";
+    let permBody = '';
     for (const ps of PERM_SVCS) {
       const isRow = selectedPermSvcs.includes(ps.pos);
-      permBody += `<tr class="${isRow ? "acc-tbl-row-active" : ""}">`;
+      permBody += `<tr class="${isRow ? 'acc-tbl-row-active' : ''}">`;
       permBody += `<th class="acc-tbl-rh" title="${ps.title}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
       for (const role of curRoles) {
         const addr = calcPermAddr(ps.pos, role.idx1, ver);
         const isHit = permHits.has(addr);
-        permBody += `<td class="acc-tbl-td${isHit ? " acc-tbl-td-hit" : ""}" data-type="permission" data-addr="${addr}" data-svc="${ps.pos}" data-role="${role.idx1}"><span class="acc-td-val">${addr}</span><span class="acc-td-addr">${fmtAddr("permission", ver, addr)}</span></td>`;
+        permBody += `<td class="acc-tbl-td${isHit ? ' acc-tbl-td-hit' : ''}" data-type="permission" data-addr="${addr}" data-svc="${ps.pos}" data-role="${role.idx1}"><span class="acc-td-val">${addr}</span><span class="acc-td-addr">${fmtAddr('permission', ver, addr)}</span></td>`;
       }
       permBody += `</tr>`;
     }
 
     permSection.innerHTML = permTitleHtml;
-    const permTbl = document.createElement("table");
-    permTbl.className = "acc-tbl";
+    const permTbl = document.createElement('table');
+    permTbl.className = 'acc-tbl';
     permTbl.innerHTML = `<thead>${permHead}</thead><tbody>${permBody}</tbody>`;
     permSection.appendChild(permTbl);
 
     // ── Event table ──
-    const initLabel = st.initiator === 1 ? "web" : "mobile";
+    const initLabel = st.initiator === 1 ? 'web' : 'mobile';
     const evtTitleHtml = `
       <div class="acc-grid-title">
         <span class="acc-grid-title-text">감사 좌표 (event:${ver}) · ${initLabel}</span>
@@ -284,11 +312,11 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     }
     evtHead += `</tr>`;
 
-    let evtBody = "";
+    let evtBody = '';
     for (const ps of EVT_SVCS) {
       const isRow = selectedSvcAddrs.has(ps.addr);
       const supported = svcSupportsInit(ps, st.initiator);
-      evtBody += `<tr class="${isRow ? "acc-tbl-row-active" : ""}">`;
+      evtBody += `<tr class="${isRow ? 'acc-tbl-row-active' : ''}">`;
       evtBody += `<th class="acc-tbl-rh" title="${ps.title}">${ps.svcKo}<br/><span class="acc-tbl-rh-sub">${ps.nsKo}</span></th>`;
       for (const evt of curEvents) {
         if (!supported) {
@@ -296,25 +324,24 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
         } else {
           const addr = calcEvtAddr(ps.pos, evt.idx1, st.initiator, ver);
           const isHit = evtHits.has(addr);
-          evtBody += `<td class="acc-tbl-td${isHit ? " acc-tbl-td-hit" : ""}" data-type="event" data-addr="${addr}" data-svc="${ps.pos}" data-evt="${evt.idx1}" data-init="${st.initiator}"><span class="acc-td-val">${addr}</span><span class="acc-td-addr">${fmtAddr("event", ver, addr)}</span></td>`;
+          evtBody += `<td class="acc-tbl-td${isHit ? ' acc-tbl-td-hit' : ''}" data-type="event" data-addr="${addr}" data-svc="${ps.pos}" data-evt="${evt.idx1}" data-init="${st.initiator}"><span class="acc-td-val">${addr}</span><span class="acc-td-addr">${fmtAddr('event', ver, addr)}</span></td>`;
         }
       }
       evtBody += `</tr>`;
     }
 
     evtSection.innerHTML = evtTitleHtml;
-    const evtTbl = document.createElement("table");
-    evtTbl.className = "acc-tbl";
+    const evtTbl = document.createElement('table');
+    evtTbl.className = 'acc-tbl';
     evtTbl.innerHTML = `<thead>${evtHead}</thead><tbody>${evtBody}</tbody>`;
     evtSection.appendChild(evtTbl);
 
     // ── Summary ──
-    const svcDisplay = st.permSvc !== null
-      ? PERM_SVCS[st.permSvc - 1].label
-      : "* (전체)";
-    const permAddrStr = st.permSvc !== null
-      ? `permission:${ver}:${calcPermAddr(st.permSvc, st.roleIdx1, ver)}`
-      : `${permHits.size}개`;
+    const svcDisplay = st.permSvc !== null ? PERM_SVCS[st.permSvc - 1].label : '* (전체)';
+    const permAddrStr =
+      st.permSvc !== null
+        ? `permission:${ver}:${calcPermAddr(st.permSvc, st.roleIdx1, ver)}`
+        : `${permHits.size}개`;
 
     summaryEl.innerHTML = `
       <div class="acc-summary-rule">
@@ -334,7 +361,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
 
     // ── Insight ──
     const totalEvtFull = EVT_SVCS.length * curEvents.length * 2;
-    const serviceRefCount = new Set(PERM_SVCS.map(ps => ps.addr)).size;
+    const serviceRefCount = new Set(PERM_SVCS.map((ps) => ps.addr)).size;
     insightEl.innerHTML = `
       <div class="acc-insight-inner">
         <span class="acc-insight-mark">i</span>
@@ -346,31 +373,31 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
         </span>
       </div>
     `;
-    insightEl.style.display = "";
+    insightEl.style.display = '';
 
     // ── Cell click → detail panel ──
-    gridPanel.querySelectorAll<HTMLTableCellElement>(".acc-tbl-td[data-type]").forEach(td => {
-      td.style.cursor = "pointer";
-      td.addEventListener("click", () => {
+    gridPanel.querySelectorAll<HTMLTableCellElement>('.acc-tbl-td[data-type]').forEach((td) => {
+      td.style.cursor = 'pointer';
+      td.addEventListener('click', () => {
         // Remove previous selection
-        gridPanel.querySelectorAll(".acc-tbl-td-selected").forEach(el =>
-          el.classList.remove("acc-tbl-td-selected")
-        );
-        td.classList.add("acc-tbl-td-selected");
+        gridPanel
+          .querySelectorAll('.acc-tbl-td-selected')
+          .forEach((el) => el.classList.remove('acc-tbl-td-selected'));
+        td.classList.add('acc-tbl-td-selected');
 
-        const type = td.dataset["type"] ?? "";
+        const type = td.dataset['type'] ?? '';
         const addr = Number(td.dataset.addr);
         const svcPos = Number(td.dataset.svc);
 
-        if (type === "permission") {
+        if (type === 'permission') {
           const ps = PERM_SVCS[svcPos - 1];
           const roleIdx1 = Number(td.dataset.role);
           // eslint-disable-next-line typescript/no-non-null-assertion -- roleIdx1는 curRoles에서 유래
-          const role = curRoles.find(r => r.idx1 === roleIdx1)!;
+          const role = curRoles.find((r) => r.idx1 === roleIdx1)!;
           const isHit = permHits.has(addr);
           detailPanel.innerHTML = `
             <div class="acc-detail-head">
-              <code class="acc-detail-addr${isHit ? " acc-detail-addr-hit" : ""}">${fmtAddr("permission", ver, addr)}</code>
+              <code class="acc-detail-addr${isHit ? ' acc-detail-addr-hit' : ''}">${fmtAddr('permission', ver, addr)}</code>
             </div>
             <div class="acc-detail-body">
               <div class="acc-detail-row">
@@ -396,12 +423,12 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
           const evtIdx1 = Number(td.dataset.evt);
           const initIdx = Number(td.dataset.init);
           // eslint-disable-next-line typescript/no-non-null-assertion -- evtIdx1는 curEvents에서 유래
-          const evt = curEvents.find(e => e.idx1 === evtIdx1)!;
-          const detailInitLabel = initIdx === 1 ? "web" : "mobile";
+          const evt = curEvents.find((e) => e.idx1 === evtIdx1)!;
+          const detailInitLabel = initIdx === 1 ? 'web' : 'mobile';
           const isHit = evtHits.has(addr);
           detailPanel.innerHTML = `
             <div class="acc-detail-head">
-              <code class="acc-detail-addr${isHit ? " acc-detail-addr-hit" : ""}">${fmtAddr("event", ver, addr)}</code>
+              <code class="acc-detail-addr${isHit ? ' acc-detail-addr-hit' : ''}">${fmtAddr('event', ver, addr)}</code>
             </div>
             <div class="acc-detail-body">
               <div class="acc-detail-row">
@@ -427,7 +454,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
             </div>
           `;
         }
-        detailPanel.style.display = "block";
+        detailPanel.style.display = 'block';
       });
     });
   }

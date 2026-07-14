@@ -32,7 +32,7 @@ export function parseSerializedAddress(
   serialized: string,
   knownCatalogIds?: ReadonlySet<string>,
 ): ParsedAddress {
-  const parts = serialized.split(":");
+  const parts = serialized.split(':');
   if (parts.length === 3) {
     const addr = Number(parts[2]);
     if (isNaN(addr)) {
@@ -49,14 +49,14 @@ export function parseSerializedAddress(
     if (knownCatalogIds && !knownCatalogIds.has(parts[0])) {
       throw new Error(
         `Unknown catalog '${parts[0]}' in "${serialized}". ` +
-        `Known catalogs: ${[...knownCatalogIds].join(", ")}`,
+          `Known catalogs: ${[...knownCatalogIds].join(', ')}`,
       );
     }
     return { catalogId: parts[0], prefix: parts[1], version: parts[2], address: addr };
   }
   throw new Error(
     `Invalid address format: "${serialized}". ` +
-    `Expected "prefix:version:address" or "catalogId:prefix:version:address"`,
+      `Expected "prefix:version:address" or "catalogId:prefix:version:address"`,
   );
 }
 

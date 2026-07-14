@@ -11,18 +11,18 @@
  *   4. systemOverview — 시스템 대시보드
  */
 
-import type { Catalog } from "@qa-sdk/core";
-import type { GraphPort } from "spec-schema";
-import type { ServiceTopologyRegistry, SharedContract } from "../service-topology.js";
-import { buildDependencyGraph } from "../service-topology.js";
-import { checkAllDomainsHealth } from "./domain-health.js";
+import type { Catalog } from '@qa-sdk/core';
+import type { GraphPort } from 'spec-schema';
+import type { ServiceTopologyRegistry, SharedContract } from '../service-topology.js';
+import { buildDependencyGraph } from '../service-topology.js';
+import { checkAllDomainsHealth } from './domain-health.js';
 import type {
   PrefixNode,
   DslBundleNode,
   ObservationNode,
   DecisionNode,
   ConstraintNode,
-} from "../dkg.types.js";
+} from '../dkg.types.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -44,7 +44,7 @@ export interface ConsumedPrefixInfo {
 
 export interface ServiceDependency {
   readonly serviceId: string;
-  readonly direction: "depends-on" | "depended-by";
+  readonly direction: 'depends-on' | 'depended-by';
   readonly via: readonly string[];
 }
 
@@ -66,7 +66,7 @@ export interface ServiceProfile {
 
 export interface PrefixDimInfo {
   readonly label: string;
-  readonly kind: "axis" | "prefix_ref" | "table_ref";
+  readonly kind: 'axis' | 'prefix_ref' | 'table_ref';
   readonly ref: string; // axisId, prefixId, or table
 }
 
@@ -127,7 +127,7 @@ export interface ServiceSummary {
 }
 
 export interface HotSpot {
-  readonly type: "headroom-zero" | "constraint-violation" | "observation";
+  readonly type: 'headroom-zero' | 'constraint-violation' | 'observation';
   readonly target: string;
   readonly detail: string;
 }
@@ -170,16 +170,13 @@ function getAxisHeadroom(catalog: Catalog, axisId: string): AxisHeadroom | null 
   return { axisId, entries, capacity, headroom: capacity - entries };
 }
 
-function getMinHeadroom(
-  catalog: Catalog,
-  prefixId: string,
-): OwnedPrefixInfo["minHeadroom"] {
+function getMinHeadroom(catalog: Catalog, prefixId: string): OwnedPrefixInfo['minHeadroom'] {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) return null;
 
   let min: { axis: string; headroom: number } | null = null;
   for (const [, dimRef] of Object.entries(prefix.dims)) {
-    if (dimRef.kind !== "axis") continue;
+    if (dimRef.kind !== 'axis') continue;
     const hr = getAxisHeadroom(catalog, dimRef.axisId);
     if (!hr) continue;
     if (min === null || hr.headroom < min.headroom) {
@@ -200,15 +197,15 @@ export function exploreService(
   serviceId: string,
 ): ServiceProfile | null {
   const services = topo.listServices();
-  const svc = services.find(s => s.serviceId === serviceId);
+  const svc = services.find((s) => s.serviceId === serviceId);
   if (!svc) return null;
 
   // owned prefixes
-  const ownedPrefixes: OwnedPrefixInfo[] = svc.ownedPrefixes.map(pid => {
+  const ownedPrefixes: OwnedPrefixInfo[] = svc.ownedPrefixes.map((pid) => {
     const node = graph.getNode(pid) as PrefixNode | undefined;
     return {
       id: pid,
-      category: node?.category ?? "unknown",
+      category: node?.category ?? 'unknown',
       dimCount: node?.dimLabels.length ?? 0,
       minHeadroom: getMinHeadroom(catalog, pid),
     };
@@ -216,16 +213,16 @@ export function exploreService(
 
   // consumed prefixes + contracts
   const allContracts = getAllContracts(topo);
-  const consumedPrefixes: ConsumedPrefixInfo[] = svc.consumedPrefixes.map(pid => {
+  const consumedPrefixes: ConsumedPrefixInfo[] = svc.consumedPrefixes.map((pid) => {
     const contract = allContracts.find(
-      c => c.prefixId === pid && c.consumers.includes(serviceId),
+      (c) => c.prefixId === pid && c.consumers.includes(serviceId),
     );
     return { id: pid, contract: contract?.id ?? null };
   });
 
   // contracts (as provider or consumer)
   const contracts = allContracts.filter(
-    c => c.provider === serviceId || c.consumers.includes(serviceId),
+    (c) => c.provider === serviceId || c.consumers.includes(serviceId),
   );
 
   // dependencies
@@ -233,10 +230,10 @@ export function exploreService(
   const dependencies: ServiceDependency[] = [];
   for (const edge of depGraph.edges) {
     if (edge.from === serviceId) {
-      dependencies.push({ serviceId: edge.to, direction: "depends-on", via: edge.via });
+      dependencies.push({ serviceId: edge.to, direction: 'depends-on', via: edge.via });
     }
     if (edge.to === serviceId) {
-      dependencies.push({ serviceId: edge.from, direction: "depended-by", via: edge.via });
+      dependencies.push({ serviceId: edge.from, direction: 'depended-by', via: edge.via });
     }
   }
 
@@ -248,7 +245,7 @@ export function exploreService(
 
   for (const pid of svc.ownedPrefixes) {
     // observations → prefix
-    for (const edge of graph.edgesTo(pid, "observes")) {
+    for (const edge of graph.edgesTo(pid, 'observes')) {
       if (!seenObs.has(edge.from)) {
         seenObs.add(edge.from);
         const node = graph.getNode(edge.from) as ObservationNode | undefined;
@@ -256,7 +253,7 @@ export function exploreService(
       }
     }
     // decisions → prefix (governs/justifies)
-    for (const type of ["governs", "justifies"] as const) {
+    for (const type of ['governs', 'justifies'] as const) {
       for (const edge of graph.edgesTo(pid, type)) {
         if (!seenDec.has(edge.from)) {
           seenDec.add(edge.from);
@@ -293,7 +290,7 @@ export function explorePrefix(
   prefixId: string,
 ): PrefixProfile | null {
   const node = graph.getNode(prefixId) as PrefixNode | undefined;
-  if (!node || node.kind !== "prefix") return null;
+  if (!node || node.kind !== 'prefix') return null;
 
   const prefix = catalog.prefixes[prefixId];
 
@@ -302,11 +299,12 @@ export function explorePrefix(
     ? Object.entries(prefix.dims).map(([label, dimRef]) => ({
         label,
         kind: dimRef.kind,
-        ref: dimRef.kind === "axis"
-          ? dimRef.axisId
-          : dimRef.kind === "prefix_ref"
-            ? dimRef.prefixId
-            : (dimRef as { table: string }).table,
+        ref:
+          dimRef.kind === 'axis'
+            ? dimRef.axisId
+            : dimRef.kind === 'prefix_ref'
+              ? dimRef.prefixId
+              : (dimRef as { table: string }).table,
       }))
     : [];
 
@@ -314,7 +312,7 @@ export function explorePrefix(
   const headroom: AxisHeadroom[] = [];
   if (prefix) {
     for (const dimRef of Object.values(prefix.dims)) {
-      if (dimRef.kind === "axis") {
+      if (dimRef.kind === 'axis') {
         const hr = getAxisHeadroom(catalog, dimRef.axisId);
         if (hr) headroom.push(hr);
       }
@@ -326,37 +324,37 @@ export function explorePrefix(
   const consumers = topo.getConsumers(prefixId);
 
   // domains + dsl bundles (같은 "contains" edge에서 kind로 분류)
-  const domainEdges = graph.edgesTo(prefixId, "contains");
+  const domainEdges = graph.edgesTo(prefixId, 'contains');
   const domains: string[] = [];
   const dslBundles: string[] = [];
   for (const edge of domainEdges) {
     const dn = graph.getNode(edge.from);
-    if (dn?.kind === "domain") domains.push(dn.id);
-    else if (dn?.kind === "dsl-bundle") dslBundles.push(dn.id);
+    if (dn?.kind === 'domain') domains.push(dn.id);
+    else if (dn?.kind === 'dsl-bundle') dslBundles.push(dn.id);
   }
 
   // constraints
-  const constraintEdges = graph.edgesTo(prefixId, "constrains");
+  const constraintEdges = graph.edgesTo(prefixId, 'constrains');
   const constraints: { id: string; rule: string }[] = [];
   for (const edge of constraintEdges) {
     const cn = graph.getNode(edge.from) as ConstraintNode | undefined;
-    if (cn?.kind === "constraint") constraints.push({ id: cn.id, rule: cn.rule });
+    if (cn?.kind === 'constraint') constraints.push({ id: cn.id, rule: cn.rule });
   }
 
   // observations
-  const obsEdges = graph.edgesTo(prefixId, "observes");
+  const obsEdges = graph.edgesTo(prefixId, 'observes');
   const observations: { id: string; finding: string }[] = [];
   for (const edge of obsEdges) {
     const on = graph.getNode(edge.from) as ObservationNode | undefined;
-    if (on?.kind === "observation") observations.push({ id: on.id, finding: on.finding });
+    if (on?.kind === 'observation') observations.push({ id: on.id, finding: on.finding });
   }
 
   // decisions
   const decisions: { id: string; title: string }[] = [];
-  for (const type of ["governs", "justifies"] as const) {
+  for (const type of ['governs', 'justifies'] as const) {
     for (const edge of graph.edgesTo(prefixId, type)) {
       const dn = graph.getNode(edge.from) as DecisionNode | undefined;
-      if (dn?.kind === "decision") decisions.push({ id: dn.id, title: dn.title });
+      if (dn?.kind === 'decision') decisions.push({ id: dn.id, title: dn.title });
     }
   }
 
@@ -366,8 +364,8 @@ export function explorePrefix(
   return {
     id: prefixId,
     name: node.name,
-    category: node.category ?? "unknown",
-    lifecycle: node.lifecycle ?? "active",
+    category: node.category ?? 'unknown',
+    lifecycle: node.lifecycle ?? 'active',
     dimensions,
     headroom,
     owner,
@@ -385,22 +383,18 @@ export function explorePrefix(
 //  3. exploreDsl
 // ═══════════════════════════════════════════════════════════════
 
-export function exploreDsl(
-  graph: GraphPort,
-  catalog: Catalog,
-  dslId: string,
-): DslProfile | null {
+export function exploreDsl(graph: GraphPort, catalog: Catalog, dslId: string): DslProfile | null {
   const node = graph.getNode(dslId) as DslBundleNode | undefined;
-  if (!node || node.kind !== "dsl-bundle") return null;
+  if (!node || node.kind !== 'dsl-bundle') return null;
 
   // members with role info — reconstruct from graph edges
-  const memberPrefixIds = graph.neighbors(dslId, "contains");
-  const members: DslMemberInfo[] = memberPrefixIds.map(pid => {
+  const memberPrefixIds = graph.neighbors(dslId, 'contains');
+  const members: DslMemberInfo[] = memberPrefixIds.map((pid) => {
     const prefix = catalog.prefixes[pid];
     let svcRefLabel: string | undefined;
     if (prefix) {
       for (const [label, dimRef] of Object.entries(prefix.dims)) {
-        if (dimRef.kind === "prefix_ref" && dimRef.prefixId === node.serviceBindingPrefix) {
+        if (dimRef.kind === 'prefix_ref' && dimRef.prefixId === node.serviceBindingPrefix) {
           svcRefLabel = label;
           break;
         }
@@ -408,13 +402,13 @@ export function exploreDsl(
     }
     // Infer role from prefix category
     const pNode = graph.getNode(pid) as PrefixNode | undefined;
-    const cat = pNode?.category ?? "unknown";
+    const cat = pNode?.category ?? 'unknown';
     let role: string;
-    if (cat === "observation") role = "observation";
-    else if (cat === "event") role = "event";
-    else if (cat === "policy") role = "infra";
-    else if (cat === "entity" && pid === node.serviceBindingPrefix) role = "context";
-    else role = "observation";
+    if (cat === 'observation') role = 'observation';
+    else if (cat === 'event') role = 'event';
+    else if (cat === 'policy') role = 'infra';
+    else if (cat === 'entity' && pid === node.serviceBindingPrefix) role = 'context';
+    else role = 'observation';
 
     return { prefixId: pid, role, svcRefLabel };
   });
@@ -427,7 +421,7 @@ export function exploreDsl(
     const latest = prefix.versions[prefix.versions.length - 1];
     for (const [label, axisVer] of Object.entries(latest.axisVersions)) {
       const dimRef = prefix.dims[label];
-      if (!dimRef || dimRef.kind !== "axis") continue;
+      if (!dimRef || dimRef.kind !== 'axis') continue;
       const axisId = dimRef.axisId;
       if (!axisVersionMap.has(axisId)) axisVersionMap.set(axisId, new Map());
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- set above guarantees presence
@@ -439,20 +433,21 @@ export function exploreDsl(
   for (const [axisId, prefixVersions] of axisVersionMap) {
     const uniqueVersions = new Set(prefixVersions.values());
     if (uniqueVersions.size > 1) {
-      const nums = [...uniqueVersions].map(v => parseInt(v.replace(/\D/g, ""), 10) || 0);
+      const nums = [...uniqueVersions].map((v) => parseInt(v.replace(/\D/g, ''), 10) || 0);
       axisConflicts.push({ axisId, spread: Math.max(...nums) - Math.min(...nums) });
     }
   }
 
-  const severity = axisConflicts.some(c => c.spread >= 3)
-    ? "major"
+  const severity = axisConflicts.some((c) => c.spread >= 3)
+    ? 'major'
     : axisConflicts.length > 0
-      ? "minor"
-      : "ok";
+      ? 'minor'
+      : 'ok';
 
-  const summary = axisConflicts.length > 0
-    ? `축 버전 충돌 ${axisConflicts.length}건: ${axisConflicts.map(c => `${c.axisId}(spread=${c.spread})`).join(", ")}`
-    : "버전 스큐 없음";
+  const summary =
+    axisConflicts.length > 0
+      ? `축 버전 충돌 ${axisConflicts.length}건: ${axisConflicts.map((c) => `${c.axisId}(spread=${c.spread})`).join(', ')}`
+      : '버전 스큐 없음';
 
   return {
     id: node.id,
@@ -479,7 +474,7 @@ export function systemOverview(
 ): SystemOverview {
   // services
   const allServices = topo.listServices();
-  const services: ServiceSummary[] = allServices.map(s => ({
+  const services: ServiceSummary[] = allServices.map((s) => ({
     serviceId: s.serviceId,
     name: s.name,
     status: s.status,
@@ -495,7 +490,7 @@ export function systemOverview(
     const hr = getAxisHeadroom(catalog, axisId);
     if (hr && hr.headroom === 0) {
       hotSpots.push({
-        type: "headroom-zero",
+        type: 'headroom-zero',
         target: axisId,
         detail: `${axis.name}: entries=${hr.entries}, capacity=${hr.capacity}`,
       });
@@ -503,16 +498,16 @@ export function systemOverview(
   }
 
   // active constraints with violations — check constraint nodes
-  const constraints = graph.getNodesByKind("constraint") as ConstraintNode[];
+  const constraints = graph.getNodesByKind('constraint') as ConstraintNode[];
   for (const c of constraints) {
-    if (c.lifecycle !== "active") continue;
+    if (c.lifecycle !== 'active') continue;
     // Check if there are observations about this constraint
-    const obsEdges = graph.edgesTo(c.id, "observes");
+    const obsEdges = graph.edgesTo(c.id, 'observes');
     for (const edge of obsEdges) {
       const obs = graph.getNode(edge.from) as ObservationNode | undefined;
       if (obs) {
         hotSpots.push({
-          type: "constraint-violation",
+          type: 'constraint-violation',
           target: c.id,
           detail: obs.finding,
         });
@@ -521,11 +516,11 @@ export function systemOverview(
   }
 
   // active observations
-  const observations = graph.getNodesByKind("observation") as ObservationNode[];
+  const observations = graph.getNodesByKind('observation') as ObservationNode[];
   for (const obs of observations) {
     if (obs.suggestion && !obs.resolution) {
       hotSpots.push({
-        type: "observation",
+        type: 'observation',
         target: obs.id,
         detail: obs.finding.slice(0, 80),
       });
@@ -544,7 +539,7 @@ export function systemOverview(
 
   // domain health
   const healthResults = checkAllDomainsHealth(graph);
-  const domainHealth: DomainHealthSummary[] = healthResults.map(r => ({
+  const domainHealth: DomainHealthSummary[] = healthResults.map((r) => ({
     domainId: r.domainId,
     health: r.overallHealth,
     issueCount: r.issues.length,

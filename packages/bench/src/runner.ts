@@ -1,4 +1,4 @@
-import { summarizeDistribution } from "./probe-transport.js";
+import { summarizeDistribution } from './probe-transport.js';
 import type {
   BenchmarkCounters,
   BenchmarkErrorSummary,
@@ -7,11 +7,9 @@ import type {
   BenchmarkRunSummary,
   BenchmarkWorkerSnapshot,
   TransportProbeSnapshot,
-} from "./types.js";
+} from './types.js';
 
-export async function runBenchmark(
-  config: BenchmarkRunConfig,
-): Promise<BenchmarkRunSummary> {
+export async function runBenchmark(config: BenchmarkRunConfig): Promise<BenchmarkRunSummary> {
   const concurrency = Math.max(1, config.concurrency ?? 1);
   const warmupIterations = Math.max(0, config.warmupIterations ?? 0);
   const measuredIterations = Math.max(1, config.measuredIterations);
@@ -72,7 +70,7 @@ async function runWorker(config: {
   workerId: number;
   warmupIterations: number;
   measuredIterations: number;
-  scenario: BenchmarkRunConfig["scenario"];
+  scenario: BenchmarkRunConfig['scenario'];
 }): Promise<{ iterationLatencies: number[]; snapshot: BenchmarkWorkerSnapshot }> {
   const { harness } = config;
 
@@ -82,7 +80,7 @@ async function runWorker(config: {
         client: harness.client,
         workerId: config.workerId,
         iteration,
-        phase: "warmup",
+        phase: 'warmup',
       });
     }
 
@@ -96,7 +94,7 @@ async function runWorker(config: {
         client: harness.client,
         workerId: config.workerId,
         iteration,
-        phase: "measure",
+        phase: 'measure',
       });
       iterationLatencies.push(performance.now() - started);
     }
@@ -110,8 +108,9 @@ async function runWorker(config: {
 }
 
 function splitIterations(total: number, concurrency: number): number[] {
-  return Array.from({ length: concurrency }, (_, index) =>
-    Math.floor(total / concurrency) + (index < total % concurrency ? 1 : 0),
+  return Array.from(
+    { length: concurrency },
+    (_, index) => Math.floor(total / concurrency) + (index < total % concurrency ? 1 : 0),
   );
 }
 
@@ -124,10 +123,7 @@ function emptyCounters(): BenchmarkCounters {
   };
 }
 
-function mergeCounters(
-  left: BenchmarkCounters,
-  right: BenchmarkCounters,
-): BenchmarkCounters {
+function mergeCounters(left: BenchmarkCounters, right: BenchmarkCounters): BenchmarkCounters {
   return {
     sessionsStarted: left.sessionsStarted + right.sessionsStarted,
     eventsEmitted: left.eventsEmitted + right.eventsEmitted,
@@ -141,20 +137,24 @@ function aggregateTransportSnapshots(
 ): TransportProbeSnapshot | undefined {
   if (snapshots.length === 0) return undefined;
 
-  const latencyValues = snapshots.flatMap((snapshot) => [
-    snapshot.sendLatencyMs.min,
-    snapshot.sendLatencyMs.p50,
-    snapshot.sendLatencyMs.p95,
-    snapshot.sendLatencyMs.p99,
-    snapshot.sendLatencyMs.max,
-  ]).filter((value) => value > 0);
+  const latencyValues = snapshots
+    .flatMap((snapshot) => [
+      snapshot.sendLatencyMs.min,
+      snapshot.sendLatencyMs.p50,
+      snapshot.sendLatencyMs.p95,
+      snapshot.sendLatencyMs.p99,
+      snapshot.sendLatencyMs.max,
+    ])
+    .filter((value) => value > 0);
 
-  const hasBytes = snapshots.some((snapshot) => typeof snapshot.bytesSent === "number");
+  const hasBytes = snapshots.some((snapshot) => typeof snapshot.bytesSent === 'number');
   const addressContext = aggregateAddressContextCoverage(
-    snapshots.map((snapshot) => snapshot.addressContext).filter(
-      (coverage): coverage is NonNullable<TransportProbeSnapshot["addressContext"]> =>
-        coverage !== undefined,
-    ),
+    snapshots
+      .map((snapshot) => snapshot.addressContext)
+      .filter(
+        (coverage): coverage is NonNullable<TransportProbeSnapshot['addressContext']> =>
+          coverage !== undefined,
+      ),
   );
 
   return {
@@ -163,10 +163,7 @@ function aggregateTransportSnapshots(
     failedSends: snapshots.reduce((acc, snapshot) => acc + snapshot.failedSends, 0),
     ...(hasBytes
       ? {
-          bytesSent: snapshots.reduce(
-            (acc, snapshot) => acc + (snapshot.bytesSent ?? 0),
-            0,
-          ),
+          bytesSent: snapshots.reduce((acc, snapshot) => acc + (snapshot.bytesSent ?? 0), 0),
         }
       : {}),
     sendLatencyMs: summarizeDistribution(latencyValues),
@@ -193,7 +190,7 @@ function aggregateErrorSummaries(
 }
 
 function aggregateAddressContextCoverage(
-  coverages: Array<NonNullable<TransportProbeSnapshot["addressContext"]>>,
+  coverages: Array<NonNullable<TransportProbeSnapshot['addressContext']>>,
 ) {
   if (coverages.length === 0) return undefined;
 

@@ -5,8 +5,11 @@ import {
   BudgetReadModelQuery,
   type BudgetDetailReadModel,
   type BudgetStepReadModel,
-} from "../../application/queries/budget-read-model.query.js";
-import type { SqliteBudgetRepository, PgBudgetRepository } from "../persistence/budget.repository.js";
+} from '../../application/queries/budget-read-model.query.js';
+import type {
+  SqliteBudgetRepository,
+  PgBudgetRepository,
+} from '../persistence/budget.repository.js';
 
 /**
  * Step (approval_steps) 의 read-only 조회 추상.
@@ -50,7 +53,7 @@ export class RepositoryBudgetReadModel extends BudgetReadModelQuery {
 
   async listByProject(projectId: string): Promise<BudgetDetailReadModel[]> {
     const fn = (this.repository as SqliteBudgetRepository).listByProject;
-    if (typeof fn !== "function") return [];
+    if (typeof fn !== 'function') return [];
     const entities = await (this.repository as SqliteBudgetRepository).listByProject(projectId);
     return entities.map((e) => {
       const s = e.toSnapshot();
@@ -70,7 +73,7 @@ export class RepositoryBudgetReadModel extends BudgetReadModelQuery {
 
   async listByRequester(requesterId: string): Promise<BudgetDetailReadModel[]> {
     const fn = (this.repository as SqliteBudgetRepository).listByRequester;
-    if (typeof fn !== "function") return [];
+    if (typeof fn !== 'function') return [];
     const entities = await (this.repository as SqliteBudgetRepository).listByRequester(requesterId);
     return entities.map((e) => {
       const s = e.toSnapshot();

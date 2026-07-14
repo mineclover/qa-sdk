@@ -10,8 +10,8 @@
  * 병합 전략: def 블록의 DB 소유 필드만 덮어쓰고, 나머지는 보존.
  */
 
-import { readFile, writeFile } from "node:fs/promises";
-import { extractFrontmatter, parseYaml } from "./frontmatter.js";
+import { readFile, writeFile } from 'node:fs/promises';
+import { extractFrontmatter, parseYaml } from './frontmatter.js';
 
 /** DB에서 받아올 메타데이터 */
 export interface DbMetadata {
@@ -32,7 +32,18 @@ export interface DbMetadata {
 
 /** DB 소유 필드 목록 — 이 필드만 덮어씀 */
 const DB_OWNED_FIELDS = new Set([
-  "address", "version", "revision", "level", "scope", "aspect", "depth", "lifecycle", "layer", "svc", "tags", "links",
+  'address',
+  'version',
+  'revision',
+  'level',
+  'scope',
+  'aspect',
+  'depth',
+  'lifecycle',
+  'layer',
+  'svc',
+  'tags',
+  'links',
 ]);
 
 /**
@@ -44,11 +55,8 @@ const DB_OWNED_FIELDS = new Set([
  * 3. def: 블록 밖의 커스텀 필드(source: 등)는 그대로 유지
  * 4. id, address는 파일 값 유지
  */
-export function mergeFrontmatter(
-  existingYaml: string,
-  metadata: DbMetadata,
-): string {
-  const lines = existingYaml.split("\n");
+export function mergeFrontmatter(existingYaml: string, metadata: DbMetadata): string {
+  const lines = existingYaml.split('\n');
   const result: string[] = [];
 
   // DB 소유 필드를 먼저 직렬화
@@ -64,10 +72,10 @@ export function mergeFrontmatter(
   if (metadata.layer) dbLines.push(`  layer: ${metadata.layer}`);
   if (metadata.svc) dbLines.push(`  svc: ${metadata.svc}`);
   if (metadata.tags && metadata.tags.length > 0) {
-    dbLines.push(`  tags: [${metadata.tags.join(", ")}]`);
+    dbLines.push(`  tags: [${metadata.tags.join(', ')}]`);
   }
   if (metadata.links && metadata.links.length > 0) {
-    dbLines.push("  links:");
+    dbLines.push('  links:');
     for (const link of metadata.links) {
       dbLines.push(`    - target: ${link.target}`);
       dbLines.push(`      type: ${link.type}`);
@@ -83,7 +91,7 @@ export function mergeFrontmatter(
     const trimmed = line.trim();
 
     // def: 블록 시작 감지
-    if (trimmed === "def:" && !inDef) {
+    if (trimmed === 'def:' && !inDef) {
       inDef = true;
       result.push(line);
       continue;
@@ -93,7 +101,7 @@ export function mergeFrontmatter(
       const indent = line.length - line.trimStart().length;
 
       // def 블록 끝 (indent 0인 다른 키 또는 빈 줄)
-      if (indent === 0 && trimmed !== "" && !trimmed.startsWith("#")) {
+      if (indent === 0 && trimmed !== '' && !trimmed.startsWith('#')) {
         // def 블록 끝나기 전에 DB 필드 삽입
         if (!defFieldsWritten) {
           result.push(...dbLines);
@@ -112,7 +120,7 @@ export function mergeFrontmatter(
           const key = keyMatch[1];
           if (DB_OWNED_FIELDS.has(key)) {
             // DB 소유 필드 → 스킵 (나중에 DB 값으로 교체)
-            skippingDbField = key === "links" || key === "tags";
+            skippingDbField = key === 'links' || key === 'tags';
             // id 바로 뒤에 DB 필드 삽입 (첫 DB 소유 필드 만날 때)
             if (!defFieldsWritten) {
               result.push(...dbLines);
@@ -147,7 +155,7 @@ export function mergeFrontmatter(
     result.push(...dbLines);
   }
 
-  return result.join("\n");
+  return result.join('\n');
 }
 
 /**
@@ -163,19 +171,19 @@ export async function writeFrontmatterToFile(
   filePath: string,
   metadata: DbMetadata,
 ): Promise<boolean> {
-  const content = await readFile(filePath, "utf-8");
+  const content = await readFile(filePath, 'utf-8');
   const parsed = extractFrontmatter(content);
   if (!parsed) return false;
 
   const yaml = parseYaml(parsed.yaml);
-  const def = yaml["def"] as Record<string, unknown> | undefined;
-  if (!def || !def["id"]) return false;
+  const def = yaml['def'] as Record<string, unknown> | undefined;
+  if (!def || !def['id']) return false;
 
   const newYaml = mergeFrontmatter(parsed.yaml, metadata);
   const newContent = `---\n${newYaml}\n---\n${parsed.body}`;
 
   if (newContent === content) return false;
 
-  await writeFile(filePath, newContent, "utf-8");
+  await writeFile(filePath, newContent, 'utf-8');
   return true;
 }

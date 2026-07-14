@@ -1,11 +1,11 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
-const FORCE_APPLIED = process.env.QA_TEST_PG_FORCE === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
+const FORCE_APPLIED = process.env.QA_TEST_PG_FORCE === '1';
 
 const RESET_TABLE_DDL = `
 DROP TABLE IF EXISTS audit.audit_entries CASCADE;
@@ -57,25 +57,29 @@ CREATE POLICY ae_insert_policy ON audit.audit_entries
 GRANT SELECT, INSERT ON audit.audit_entries TO audit_app;
 `;
 
-describe.skipIf(!(PG_AVAILABLE && FORCE_APPLIED))("audit RLS enforce 회귀", () => {
+describe.skipIf(!(PG_AVAILABLE && FORCE_APPLIED))('audit RLS enforce 회귀', () => {
   let adminSql: ReturnType<typeof postgres>;
   let appSql: ReturnType<typeof postgres>;
 
   beforeEach(async () => {
     adminSql = postgres({
-      host: process.env.QA_TEST_PG_HOST ?? "localhost",
-      port: Number(process.env.QA_TEST_PG_PORT ?? "5434"),
-      database: process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test",
-      user: "qa_admin", password: process.env.QA_TEST_PG_PASSWORD ?? "",
-      max: 3, onnotice: () => {},
+      host: process.env.QA_TEST_PG_HOST ?? 'localhost',
+      port: Number(process.env.QA_TEST_PG_PORT ?? '5434'),
+      database: process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test',
+      user: 'qa_admin',
+      password: process.env.QA_TEST_PG_PASSWORD ?? '',
+      max: 3,
+      onnotice: () => {},
     });
     await adminSql.unsafe(RESET_TABLE_DDL);
     appSql = postgres({
-      host: process.env.QA_TEST_PG_HOST ?? "localhost",
-      port: Number(process.env.QA_TEST_PG_PORT ?? "5434"),
-      database: process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test",
-      user: "audit_app", password: process.env.QA_TEST_PG_AUDIT_APP_PASSWORD ?? "",
-      max: 3, onnotice: () => {},
+      host: process.env.QA_TEST_PG_HOST ?? 'localhost',
+      port: Number(process.env.QA_TEST_PG_PORT ?? '5434'),
+      database: process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test',
+      user: 'audit_app',
+      password: process.env.QA_TEST_PG_AUDIT_APP_PASSWORD ?? '',
+      max: 3,
+      onnotice: () => {},
     });
   });
 
@@ -88,7 +92,7 @@ describe.skipIf(!(PG_AVAILABLE && FORCE_APPLIED))("audit RLS enforce 회귀", ()
     }
   });
 
-  it("bob 이 alice 의 audit entry 조회 시 0 row (FORCE cross-actor deny)", async () => {
+  it('bob 이 alice 의 audit entry 조회 시 0 row (FORCE cross-actor deny)', async () => {
     // FORCE 상태 — qa_admin 도 정책 대상. admin context 로 seed.
     await adminSql.begin(async (tx) => {
       await tx`SELECT set_config('app.role', 'admin', true)`;
@@ -96,7 +100,7 @@ describe.skipIf(!(PG_AVAILABLE && FORCE_APPLIED))("audit RLS enforce 회귀", ()
         INSERT INTO audit.audit_entries (span_id, trace_id, root_span_id, depth, kind, actor_user_id, started_at)
         VALUES ('sp-alice', 't', 'sp-alice', 0, 'execution', 'alice', '2026-04-22')`;
     });
-    const mask = "00000010"; // bit 20
+    const mask = '00000010'; // bit 20
     await appSql.begin(async (tx) => {
       await tx`SELECT set_config('app.user_id', 'bob', true)`;
       await tx`SELECT set_config('app.bitmap_mask', ${mask}, true)`;
@@ -105,7 +109,7 @@ describe.skipIf(!(PG_AVAILABLE && FORCE_APPLIED))("audit RLS enforce 회귀", ()
     });
   });
 
-  it("qa_admin 도 FORCE 대상 — app.role 미주입이면 0 row", async () => {
+  it('qa_admin 도 FORCE 대상 — app.role 미주입이면 0 row', async () => {
     await adminSql.begin(async (tx) => {
       await tx`SELECT set_config('app.role', 'admin', true)`;
       await tx`

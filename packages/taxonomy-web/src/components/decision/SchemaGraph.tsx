@@ -1,18 +1,12 @@
-import type { FlowSchema, GateSchema } from "decision-flow";
-import type { GateCycle } from "../../lib/decisionDemo";
+import type { FlowSchema, GateSchema } from 'decision-flow';
+import type { GateCycle } from '../../lib/decisionDemo';
 
 /**
  * Gate를 가로로 배치하고 depends_on을 화살표로 표시.
  * multi-gate 전용 — single-gate에서는 단일 박스만 그려도 정보가 적어서 caller가 숨김.
  * cycles 전달 시 사이클을 구성하는 엣지를 빨간 굵게 표시.
  */
-export function SchemaGraph({
-  schema,
-  cycles = [],
-}: {
-  schema: FlowSchema;
-  cycles?: GateCycle[];
-}) {
+export function SchemaGraph({ schema, cycles = [] }: { schema: FlowSchema; cycles?: GateCycle[] }) {
   const layout = computeLayout(schema);
   const cycleEdgeSet = computeCycleEdges(cycles);
   const edges = collectEdges(schema, layout).map((e) => ({
@@ -111,7 +105,7 @@ function computeLayout(schema: FlowSchema): Layout {
 type Edge = {
   from: NodeLayout;
   to: NodeLayout;
-  kind: "constrains" | "enables" | "invalidates";
+  kind: 'constrains' | 'enables' | 'invalidates';
   inCycle?: boolean;
 };
 
@@ -172,26 +166,14 @@ function GateBox({ node }: { node: NodeLayout }) {
       >
         {gate.id}
       </text>
-      <text
-        x={x + w / 2}
-        y={y + 34}
-        textAnchor="middle"
-        fontSize={10}
-        fill={phaseColor}
-      >
-        {gate.phase} · {gate.weight ?? "tactical"}
+      <text x={x + w / 2} y={y + 34} textAnchor="middle" fontSize={10} fill={phaseColor}>
+        {gate.phase} · {gate.weight ?? 'tactical'}
       </text>
-      <text
-        x={x + w / 2}
-        y={y + 48}
-        textAnchor="middle"
-        fontSize={10}
-        fill="#6b7280"
-      >
+      <text x={x + w / 2} y={y + 48} textAnchor="middle" fontSize={10} fill="#6b7280">
         {gate.branches?.length ?? 0} opts
         {gate.requiredEvidence && gate.requiredEvidence.length > 0
           ? ` · ${gate.requiredEvidence.length} ev`
-          : ""}
+          : ''}
       </text>
     </g>
   );
@@ -199,22 +181,22 @@ function GateBox({ node }: { node: NodeLayout }) {
 
 function colorForPhase(phase?: string): string {
   switch (phase) {
-    case "diverge":
-    case "perceive":
-      return "#2563eb";
-    case "converge":
-    case "interpret":
-      return "#16a34a";
-    case "evaluate":
-      return "#ca8a04";
-    case "plan":
-      return "#7c3aed";
-    case "execute":
-      return "#0891b2";
-    case "reflect":
-      return "#be185d";
+    case 'diverge':
+    case 'perceive':
+      return '#2563eb';
+    case 'converge':
+    case 'interpret':
+      return '#16a34a';
+    case 'evaluate':
+      return '#ca8a04';
+    case 'plan':
+      return '#7c3aed';
+    case 'execute':
+      return '#0891b2';
+    case 'reflect':
+      return '#be185d';
     default:
-      return "#475569";
+      return '#475569';
   }
 }
 
@@ -230,15 +212,15 @@ function EdgeArrow({ edge }: { edge: Edge }) {
   // 같은 row라면 곡선이 아래로 휘게
   const midY = Math.max(y1, y2) + 24;
   const path = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
-  const stroke = inCycle ? "#b91c1c" : strokeForKind(kind);
+  const stroke = inCycle ? '#b91c1c' : strokeForKind(kind);
   const marker = inCycle
-    ? "url(#arrow-constrain)"
-    : kind === "constrains"
-      ? "url(#arrow-constrain)"
-      : kind === "invalidates"
-        ? "url(#arrow-invalidate)"
-        : "url(#arrow)";
-  const isInvalidate = kind === "invalidates";
+    ? 'url(#arrow-constrain)'
+    : kind === 'constrains'
+      ? 'url(#arrow-constrain)'
+      : kind === 'invalidates'
+        ? 'url(#arrow-invalidate)'
+        : 'url(#arrow)';
+  const isInvalidate = kind === 'invalidates';
   const labelX = (x1 + x2) / 2;
   const labelY = midY + 4;
   return (
@@ -248,7 +230,7 @@ function EdgeArrow({ edge }: { edge: Edge }) {
         fill="none"
         stroke={stroke}
         strokeWidth={inCycle ? 2.5 : 1.5}
-        strokeDasharray={isInvalidate && !inCycle ? "4 3" : undefined}
+        strokeDasharray={isInvalidate && !inCycle ? '4 3' : undefined}
         markerEnd={marker}
       />
       <text
@@ -258,7 +240,7 @@ function EdgeArrow({ edge }: { edge: Edge }) {
         fontSize={9}
         fill={stroke}
         fontFamily="monospace"
-        fontWeight={inCycle ? "bold" : undefined}
+        fontWeight={inCycle ? 'bold' : undefined}
       >
         {inCycle ? `⟲ ${kind}` : kind}
       </text>
@@ -266,13 +248,13 @@ function EdgeArrow({ edge }: { edge: Edge }) {
   );
 }
 
-function strokeForKind(kind: Edge["kind"]): string {
+function strokeForKind(kind: Edge['kind']): string {
   switch (kind) {
-    case "constrains":
-      return "#dc2626";
-    case "enables":
-      return "#7c3aed";
-    case "invalidates":
-      return "#737373";
+    case 'constrains':
+      return '#dc2626';
+    case 'enables':
+      return '#7c3aed';
+    case 'invalidates':
+      return '#737373';
   }
 }

@@ -1,13 +1,10 @@
 // @def.boundary sim-scenarios
 // @def.doc authorization-ontology-resource-lifecycle
 
-import { ok, equal } from "node:assert/strict";
-import type { Scenario } from "../runner/types.js";
-import { fetchAuditTrace, fetchFirstFailure } from "./lib/audit-helpers.js";
-import {
-  auditFirstFailureHint,
-  auditTraceHint,
-} from "../post-run/operator-handoff.js";
+import { ok, equal } from 'node:assert/strict';
+import type { Scenario } from '../runner/types.js';
+import { fetchAuditTrace, fetchFirstFailure } from './lib/audit-helpers.js';
+import { auditFirstFailureHint, auditTraceHint } from '../post-run/operator-handoff.js';
 
 interface S5Ctx {
   carol: { email: string; password: string };
@@ -31,21 +28,21 @@ interface S5Ctx {
  *   - firstFailure null × 3
  */
 export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
-  name: "scenario-5-three-stage-approval",
-  description: "1500만원 budget → 3단계 승인 + 통합 audit tree",
+  name: 'scenario-5-three-stage-approval',
+  description: '1500만원 budget → 3단계 승인 + 통합 audit tree',
   validates: [
-    "approval state machine 3-stage",
-    "nested audit tree (≥9 entry)",
-    "OTEL trace 일관성",
-    "transaction 경계",
+    'approval state machine 3-stage',
+    'nested audit tree (≥9 entry)',
+    'OTEL trace 일관성',
+    'transaction 경계',
   ],
 
   async setup() {
     const handle = (globalThis as any).__simHandle;
-    if (!handle) throw new Error("__simHandle not bound");
+    if (!handle) throw new Error('__simHandle not bound');
     const fx = handle.fixtures;
     const req = await fx.seedBudgetRequest({
-      projectId: "proj-scenario-5",
+      projectId: 'proj-scenario-5',
       projectDepartmentId: fx.departments.eng,
       amount: 15_000_000,
       requesterId: fx.alice.id,
@@ -64,7 +61,7 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
 
   async act(ctx) {
     const gatewayFetch = (globalThis as any).__simGatewayFetch;
-    if (!gatewayFetch) throw new Error("__simGatewayFetch not bound");
+    if (!gatewayFetch) throw new Error('__simGatewayFetch not bound');
     const traceIds: string[] = [];
     const stageRootSpanIds: string[] = [];
 
@@ -72,41 +69,36 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
       name: string;
       creds: { email: string; password: string };
     }> = [
-      { name: "carol-manager", creds: ctx.carol },
-      { name: "david-director", creds: ctx.david },
-      { name: "eve-cfo", creds: ctx.eve },
+      { name: 'carol-manager', creds: ctx.carol },
+      { name: 'david-director', creds: ctx.david },
+      { name: 'eve-cfo', creds: ctx.eve },
     ];
 
     for (const stage of stages) {
       const loginRes = await gatewayFetch(
-        new Request("http://sim/auth/login", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
+        new Request('http://sim/auth/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
           body: JSON.stringify(stage.creds),
         }),
       );
       if (!loginRes.ok)
-        throw new Error(
-          `${stage.name} login: ${loginRes.status} ${await loginRes.text()}`,
-        );
+        throw new Error(`${stage.name} login: ${loginRes.status} ${await loginRes.text()}`);
       const { token } = (await loginRes.json()) as { token: string };
-      traceIds.push(loginRes.headers.get("x-trace-id") ?? "");
+      traceIds.push(loginRes.headers.get('x-trace-id') ?? '');
 
       const decisionRes = await gatewayFetch(
-        new Request(
-          `http://sim/approvals/requests/${ctx.request.id}/decisions`,
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              decision: "approve",
-              comment: `${stage.name} approves`,
-            }),
+        new Request(`http://sim/approvals/requests/${ctx.request.id}/decisions`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
-        ),
+          body: JSON.stringify({
+            decision: 'approve',
+            comment: `${stage.name} approves`,
+          }),
+        }),
       );
       if (!decisionRes.ok) {
         throw new Error(
@@ -118,15 +110,15 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
         status: string;
         currentStage: number;
       };
-      traceIds.push(decisionRes.headers.get("x-trace-id") ?? "");
+      traceIds.push(decisionRes.headers.get('x-trace-id') ?? '');
       if (decision.rootSpanId) stageRootSpanIds.push(decision.rootSpanId);
     }
 
     // GET final status — eve token 으로 조회
     const eveLogin = await gatewayFetch(
-      new Request("http://sim/auth/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://sim/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(ctx.eve),
       }),
     );
@@ -136,8 +128,7 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
         headers: { Authorization: `Bearer ${eveToken}` },
       }),
     );
-    if (!getRes.ok)
-      throw new Error(`get final: ${getRes.status} ${await getRes.text()}`);
+    if (!getRes.ok) throw new Error(`get final: ${getRes.status} ${await getRes.text()}`);
     const final = (await getRes.json()) as {
       status: string;
       currentStage: number;
@@ -145,14 +136,10 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
 
     // audit traces — 3 stage 모두
     const traces = await Promise.all(
-      stageRootSpanIds.map((rootSpanId) =>
-        fetchAuditTrace(gatewayFetch, rootSpanId, eveToken),
-      ),
+      stageRootSpanIds.map((rootSpanId) => fetchAuditTrace(gatewayFetch, rootSpanId, eveToken)),
     );
     const failures = await Promise.all(
-      stageRootSpanIds.map((rootSpanId) =>
-        fetchFirstFailure(gatewayFetch, rootSpanId, eveToken),
-      ),
+      stageRootSpanIds.map((rootSpanId) => fetchFirstFailure(gatewayFetch, rootSpanId, eveToken)),
     );
 
     return {
@@ -168,28 +155,21 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
       stepCount: 4,
       operatorHints: stageRootSpanIds.flatMap((rootSpanId, index) => [
         auditTraceHint(rootSpanId, `stage-${index + 1}-trace`),
-        auditFirstFailureHint(
-          rootSpanId,
-          `stage-${index + 1}-first-failure`,
-        ),
+        auditFirstFailureHint(rootSpanId, `stage-${index + 1}-first-failure`),
       ]),
     };
   },
 
   async assert(_ctx, actResult) {
     const d = actResult.data as Record<string, unknown>;
-    equal(d.finalStatus, "approved", "final status must be approved");
+    equal(d.finalStatus, 'approved', 'final status must be approved');
     // applyDecision 알고리즘: currentStage < total → stage++. 마지막 stage 승인 시에도 stage 는 유지되고
     // status 만 "approved" 로. 본 테스트는 최종 stage 값이 3 또는 미만(3단계 완료 후 stage 증가 없음).
     ok(
       (d.finalStage as number) >= 1 && (d.finalStage as number) <= 3,
       `final stage in [1, 3], got ${d.finalStage}`,
     );
-    equal(
-      (d.stageRootSpanIds as string[]).length,
-      3,
-      "must have 3 stage rootSpanIds",
-    );
+    equal((d.stageRootSpanIds as string[]).length, 3, 'must have 3 stage rootSpanIds');
 
     const traces = d.traces as Array<{
       count: number;
@@ -200,17 +180,13 @@ export const scenario5ThreeStageApproval: Scenario<S5Ctx> = {
         trace.count >= 2,
         `stage ${i + 1} audit count ≥ 2 (execution + check), got ${trace.count}`,
       );
-      const exec = trace.entries.filter((e) => e.kind === "execution");
+      const exec = trace.entries.filter((e) => e.kind === 'execution');
       ok(exec.length >= 1, `stage ${i + 1} must have execution entry`);
     }
 
     const failures = d.failures as Array<{ firstFailure: unknown }>;
     for (const [i, f] of failures.entries()) {
-      equal(
-        f.firstFailure,
-        null,
-        `stage ${i + 1} firstFailure must be null`,
-      );
+      equal(f.firstFailure, null, `stage ${i + 1} firstFailure must be null`);
     }
   },
 

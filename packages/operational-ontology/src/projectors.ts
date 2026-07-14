@@ -19,9 +19,9 @@ export {
   projectLineageToOperationalOntology,
   projectPathObservationToOperationalOntology,
   projectOperationalOntologySnapshot,
-} from "./internal/projector-core.js";
+} from './internal/projector-core.js';
 
-export { type AddressContextBinding } from "./internal/checkpoint-core.js";
+export { type AddressContextBinding } from './internal/checkpoint-core.js';
 
 import {
   defaultOperationalOntologyRuntimePorts,
@@ -31,7 +31,7 @@ import {
   projectLineageToOperationalOntology,
   projectPathObservationToOperationalOntology,
   projectOperationalOntologySnapshot,
-} from "./internal/projector-core.js";
+} from './internal/projector-core.js';
 
 export const operationalOntologyProjectors = {
   projectEventRecordToOperationalOntology,

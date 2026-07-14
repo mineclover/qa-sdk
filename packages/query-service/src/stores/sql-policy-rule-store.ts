@@ -1,8 +1,8 @@
 // @def.boundary query-api-spec
 // @def.doc query-api-spec
 
-import type { SqlDriver } from "index-meta-workers";
-import { parseJsonColumn } from "../lib/typed-json.js";
+import type { SqlDriver } from 'index-meta-workers';
+import { parseJsonColumn } from '../lib/typed-json.js';
 import {
   cloneStoredPolicyRule,
   compareStoredPolicyRules,
@@ -10,7 +10,7 @@ import {
   PolicyRuleNotFoundError,
   type PolicyRuleStore,
   type StoredPolicyRule,
-} from "./policy-rule-store.js";
+} from './policy-rule-store.js';
 
 interface PolicyRuleRow extends Record<string, unknown> {
   id: string;
@@ -28,7 +28,7 @@ interface PolicyRuleRow extends Record<string, unknown> {
 let _migrationsFolder: string | undefined;
 function getMigrationsFolder(): string {
   if (!_migrationsFolder) {
-    _migrationsFolder = new URL("../../drizzle", import.meta.url).pathname;
+    _migrationsFolder = new URL('../../drizzle', import.meta.url).pathname;
   }
   return _migrationsFolder;
 }
@@ -42,7 +42,7 @@ export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
     await this.ensureSchema();
 
     const existing = await this.driver.queryOne<{ id: string }>(
-      "SELECT id FROM policy_rule WHERE id = ?",
+      'SELECT id FROM policy_rule WHERE id = ?',
       [rule.id],
     );
     if (existing) {
@@ -75,10 +75,7 @@ export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
     return toStoredPolicyRule<T>(row);
   }
 
-  async findByIndex(
-    indexId: string,
-    versionId: string,
-  ): Promise<StoredPolicyRule<T>[]> {
+  async findByIndex(indexId: string, versionId: string): Promise<StoredPolicyRule<T>[]> {
     await this.ensureSchema();
 
     const rows = await this.driver.query<PolicyRuleRow>(
@@ -89,9 +86,7 @@ export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
       [indexId, versionId],
     );
 
-    return rows
-      .map((row) => toStoredPolicyRule<T>(row))
-      .toSorted(compareStoredPolicyRules);
+    return rows.map((row) => toStoredPolicyRule<T>(row)).toSorted(compareStoredPolicyRules);
   }
 
   async update(rule: StoredPolicyRule<T>): Promise<StoredPolicyRule<T>> {
@@ -124,17 +119,14 @@ export class SqlPolicyRuleStore<T = unknown> implements PolicyRuleStore<T> {
   async delete(id: string): Promise<void> {
     await this.ensureSchema();
 
-    const result = await this.driver.execute(
-      "DELETE FROM policy_rule WHERE id = ?",
-      [id],
-    );
+    const result = await this.driver.execute('DELETE FROM policy_rule WHERE id = ?', [id]);
     if (result.rowsAffected === 0) {
       throw new PolicyRuleNotFoundError(id);
     }
   }
 
   private async ensureSchema(): Promise<void> {
-    if (this.driver.dialect.name === "d1") {
+    if (this.driver.dialect.name === 'd1') {
       // Workers/D1는 런타임 파일시스템 접근이 불가해 배포 시점에 migration을 적용해야 한다.
       return;
     }
@@ -151,7 +143,7 @@ function toStoredPolicyRule<T>(row: PolicyRuleRow): StoredPolicyRule<T> {
     id: row.id,
     indexId: row.index_id,
     versionId: row.version_id,
-    pattern: parseJsonColumn<StoredPolicyRule<T>["pattern"]>(row.pattern_json, []),
+    pattern: parseJsonColumn<StoredPolicyRule<T>['pattern']>(row.pattern_json, []),
     value: parseJsonColumn<T>(row.value_json, undefined as T),
     priority: row.priority ?? undefined,
     createdAt: row.created_at,
@@ -176,24 +168,24 @@ function toParams<T>(rule: StoredPolicyRule<T>): unknown[] {
 
 async function migratePolicyRuleSchema(driver: SqlDriver): Promise<void> {
   const [{ drizzle }, { migrate }] = await Promise.all([
-    import("drizzle-orm/sqlite-proxy"),
-    import("drizzle-orm/sqlite-proxy/migrator"),
+    import('drizzle-orm/sqlite-proxy'),
+    import('drizzle-orm/sqlite-proxy/migrator'),
   ]);
 
   const db = drizzle(async (sql, params, method) => {
     switch (method) {
-      case "run":
+      case 'run':
         await driver.execute(sql, params);
         return { rows: [] };
-      case "get": {
+      case 'get': {
         const row = await driver.queryOne<Record<string, unknown>>(sql, params);
         return { rows: row ? [row] : [] };
       }
-      case "values": {
+      case 'values': {
         const rows = await driver.query<Record<string, unknown>>(sql, params);
         return { rows: rows.map((row) => Object.values(row)) };
       }
-      case "all":
+      case 'all':
       default:
         return {
           rows: await driver.query<Record<string, unknown>>(sql, params),

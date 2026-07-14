@@ -1,12 +1,12 @@
 // @def.boundary qa-sdk-core-system
 // @def.doc qa-sdk-core-system
 
-import type { PipeConnection, PortRef } from "../types/pipe-spec.js";
+import type { PipeConnection, PortRef } from '../types/pipe-spec.js';
 
-type PipeEndpoint = PipeConnection["from"] | PipeConnection["to"];
+type PipeEndpoint = PipeConnection['from'] | PipeConnection['to'];
 
 export function isPortRef(value: string | PortRef): value is PortRef {
-  return typeof value !== "string";
+  return typeof value !== 'string';
 }
 
 export function toEndpointArray(endpoint: PipeEndpoint): Array<string | PortRef> {
@@ -14,11 +14,11 @@ export function toEndpointArray(endpoint: PipeEndpoint): Array<string | PortRef>
 }
 
 export function normalizePortRefs(endpoint: PipeEndpoint): PortRef[] {
-  return toEndpointArray(endpoint).map(value => isPortRef(value) ? value : { pipeId: value });
+  return toEndpointArray(endpoint).map((value) => (isPortRef(value) ? value : { pipeId: value }));
 }
 
 export function normalizeEndpointPipeIds(endpoint: PipeEndpoint): string[] {
-  return normalizePortRefs(endpoint).map(value => value.pipeId);
+  return normalizePortRefs(endpoint).map((value) => value.pipeId);
 }
 
 export function endpointIdentity(value: string | PortRef): string {

@@ -1,33 +1,53 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-export { createIndexSDK, RESERVED_TOKENS } from "./index-sdk.js";
-export type { IndexSDK, IndexClient, IndexSDKOptions, DimCapacityInfo, DimEntryView, DimFullView } from "./index-sdk.js";
-export { MetaRegistry, computeActiveIndices, snapshotCapacity, computeShapeProductBig, fitsNumber } from "./meta-registry.js";
-export { AddressProtocolManager, type FallbackStats } from "./address-protocol-manager.js";
-export { MetaCodec, validateDecodeMap } from "./meta-codec.js";
-export { MetaCodecBig } from "./meta-codec-big.js";
-export { MetaResolver } from "./meta-resolver.js";
-export { defineTable } from "./table-def.js";
-export { compileSchema } from "./compile-schema.js";
-export { InMemoryIndexMetaStore } from "./adapters/memory-store.js";
-export { InMemoryPrefixRegistry } from "./adapters/memory-prefix-registry.js";
-export { SqlPrefixRegistry } from "./adapters/sql-prefix-registry.js";
-export { InMemoryPrefixRouter } from "./adapters/memory-prefix-router.js";
-export { SqlPrefixRouter } from "./adapters/sql-prefix-router.js";
-export { SqlIndexMetaStore } from "./adapters/sql-store.js";
-export type { SqlDriver, SqlDialect, ExecuteResult } from "./adapters/sql-store.js";
-export { getDatabaseSync, type DatabaseSyncCtor, type DatabaseSyncInstance } from "./adapters/database-sync-loader.js";
-export { NodeSqliteDriver } from "./adapters/node-sqlite-driver.js";
-export { BetterSqliteDriver } from "./adapters/better-sqlite-driver.js";
-export { createSqliteDriver } from "./adapters/create-sqlite-driver.js";
-export type { SqliteDriverType, CreateSqliteDriverOptions } from "./adapters/create-sqlite-driver.js";
-export { D1SqlDriver } from "./adapters/d1-driver.js";
-export { D1IndexMetaStore, type D1Database } from "./adapters/d1-store.js";
-export { BunSqliteDriver, type BunDatabase } from "./adapters/bun-sqlite-driver.js";
-export { DistributedStoreClient } from "./distributed-client.js";
-export { syncSchemaToRegistry, applySchemaDiff } from "./schema-sync.js";
-export type { ApplySchemaDiffResult } from "./schema-sync.js";
+export { createIndexSDK, RESERVED_TOKENS } from './index-sdk.js';
+export type {
+  IndexSDK,
+  IndexClient,
+  IndexSDKOptions,
+  DimCapacityInfo,
+  DimEntryView,
+  DimFullView,
+} from './index-sdk.js';
+export {
+  MetaRegistry,
+  computeActiveIndices,
+  snapshotCapacity,
+  computeShapeProductBig,
+  fitsNumber,
+} from './meta-registry.js';
+export { AddressProtocolManager, type FallbackStats } from './address-protocol-manager.js';
+export { MetaCodec, validateDecodeMap } from './meta-codec.js';
+export { MetaCodecBig } from './meta-codec-big.js';
+export { MetaResolver } from './meta-resolver.js';
+export { defineTable } from './table-def.js';
+export { compileSchema } from './compile-schema.js';
+export { InMemoryIndexMetaStore } from './adapters/memory-store.js';
+export { InMemoryPrefixRegistry } from './adapters/memory-prefix-registry.js';
+export { SqlPrefixRegistry } from './adapters/sql-prefix-registry.js';
+export { InMemoryPrefixRouter } from './adapters/memory-prefix-router.js';
+export { SqlPrefixRouter } from './adapters/sql-prefix-router.js';
+export { SqlIndexMetaStore } from './adapters/sql-store.js';
+export type { SqlDriver, SqlDialect, ExecuteResult } from './adapters/sql-store.js';
+export {
+  getDatabaseSync,
+  type DatabaseSyncCtor,
+  type DatabaseSyncInstance,
+} from './adapters/database-sync-loader.js';
+export { NodeSqliteDriver } from './adapters/node-sqlite-driver.js';
+export { BetterSqliteDriver } from './adapters/better-sqlite-driver.js';
+export { createSqliteDriver } from './adapters/create-sqlite-driver.js';
+export type {
+  SqliteDriverType,
+  CreateSqliteDriverOptions,
+} from './adapters/create-sqlite-driver.js';
+export { D1SqlDriver } from './adapters/d1-driver.js';
+export { D1IndexMetaStore, type D1Database } from './adapters/d1-store.js';
+export { BunSqliteDriver, type BunDatabase } from './adapters/bun-sqlite-driver.js';
+export { DistributedStoreClient } from './distributed-client.js';
+export { syncSchemaToRegistry, applySchemaDiff } from './schema-sync.js';
+export type { ApplySchemaDiffResult } from './schema-sync.js';
 export {
   ADDRESS_GATE,
   computeStateRanges,
@@ -37,49 +57,53 @@ export {
   decodableRanges,
   activeRanges,
   positionsToConstraint,
-} from "./invalid-ranges.js";
-export { InMemoryAddressStateStore } from "./adapters/memory-invalid-range-store.js";
-export { SqlAddressStateStore } from "./adapters/sql-address-state-store.js";
-export { InMemoryAddressRangeCache } from "./adapters/memory-address-range-cache.js";
-export { SqlAddressRangeCache } from "./adapters/sql-address-range-cache.js";
-export { CrossVersionEntrySync } from "./cross-version-entry-sync.js";
-export type { CrossVersionAddResult } from "./cross-version-entry-sync.js";
-export { CoalescingCache } from "./coalescing-cache.js";
-export type { CoalescingCacheOptions } from "./coalescing-cache.js";
-export { EntryCache } from "./entry-cache.js";
-export { MigrationCache } from "./migration-cache.js";
-export { MetadataCache } from "./metadata-cache.js";
-export type { MetadataCacheOptions } from "./metadata-cache.js";
-export { InMemoryVersionLifecycleStore } from "./adapters/memory-version-lifecycle.js";
-export { SqlVersionLifecycleStore } from "./adapters/sql-version-lifecycle-store.js";
-export { InMemoryMigrationStore } from "./adapters/memory-migration-store.js";
-export { SqlMigrationStore } from "./adapters/sql-migration-store.js";
-export { InMemoryEntryMetadataStore } from "./adapters/memory-entry-metadata-store.js";
-export { InMemoryEntryFlagStore } from "./adapters/memory-entry-flag-store.js";
-export { SqlEntryFlagStore } from "./adapters/sql-entry-flag-store.js";
-export { GateEngine, GateAwareVersionLifecycleStore, GateAwareEntryFlagStore } from "./gate-engine.js";
-export type { GateEngineDeps } from "./gate-engine.js";
+} from './invalid-ranges.js';
+export { InMemoryAddressStateStore } from './adapters/memory-invalid-range-store.js';
+export { SqlAddressStateStore } from './adapters/sql-address-state-store.js';
+export { InMemoryAddressRangeCache } from './adapters/memory-address-range-cache.js';
+export { SqlAddressRangeCache } from './adapters/sql-address-range-cache.js';
+export { CrossVersionEntrySync } from './cross-version-entry-sync.js';
+export type { CrossVersionAddResult } from './cross-version-entry-sync.js';
+export { CoalescingCache } from './coalescing-cache.js';
+export type { CoalescingCacheOptions } from './coalescing-cache.js';
+export { EntryCache } from './entry-cache.js';
+export { MigrationCache } from './migration-cache.js';
+export { MetadataCache } from './metadata-cache.js';
+export type { MetadataCacheOptions } from './metadata-cache.js';
+export { InMemoryVersionLifecycleStore } from './adapters/memory-version-lifecycle.js';
+export { SqlVersionLifecycleStore } from './adapters/sql-version-lifecycle-store.js';
+export { InMemoryMigrationStore } from './adapters/memory-migration-store.js';
+export { SqlMigrationStore } from './adapters/sql-migration-store.js';
+export { InMemoryEntryMetadataStore } from './adapters/memory-entry-metadata-store.js';
+export { InMemoryEntryFlagStore } from './adapters/memory-entry-flag-store.js';
+export { SqlEntryFlagStore } from './adapters/sql-entry-flag-store.js';
+export {
+  GateEngine,
+  GateAwareVersionLifecycleStore,
+  GateAwareEntryFlagStore,
+} from './gate-engine.js';
+export type { GateEngineDeps } from './gate-engine.js';
 export {
   migrateAddress,
   migrateValue,
   migrateBatch,
   migrateCrossIndex,
   completeCrossIndex,
-} from "./migrate-address.js";
-export { RelationalEngine } from "./relational-engine.js";
-export type { RelationTypeRule, RelationResolveResult } from "./relational-engine.js";
+} from './migrate-address.js';
+export { RelationalEngine } from './relational-engine.js';
+export type { RelationTypeRule, RelationResolveResult } from './relational-engine.js';
 // ── 내부 전용 (position 기반 pattern resolver) ──
 export {
   matchRules,
   resolvePolicy as resolvePatternPolicy,
   detectConflicts as detectPatternConflicts,
-} from "./policy-resolver.js";
+} from './policy-resolver.js';
 export type {
   PatternRule,
   ConflictStrategy,
   ResolveResult,
   ConflictReport,
-} from "./policy-resolver.js";
+} from './policy-resolver.js';
 // ── 공개 API (entity name + 명시적 와일드카드) ──
 export {
   WILDCARD,
@@ -88,62 +112,61 @@ export {
   ruleToPattern,
   resolvePolicy,
   detectConflicts,
-} from "./named-policy.js";
+} from './named-policy.js';
+export type { MatchSpec, PolicyRule } from './named-policy.js';
+export { composeQuery, deepDecode } from './cross-index-query.js';
+export { gateFilterRanges, gateAwareResolve, buildDenialSpecs } from './gate-aware-query.js';
+export type { GateAwareResult } from './gate-aware-query.js';
+export type { DeepDecodeResult } from './cross-index-query.js';
+export { PrefixDecoder } from './prefix-decoder.js';
 export type {
-  MatchSpec,
-  PolicyRule,
-} from "./named-policy.js";
-export {
-  composeQuery,
-  deepDecode,
-} from "./cross-index-query.js";
-export { gateFilterRanges, gateAwareResolve, buildDenialSpecs } from "./gate-aware-query.js";
-export type { GateAwareResult } from "./gate-aware-query.js";
+  PrefixDecoderConfig,
+  PrefixDeepDecodeResult,
+  PrefixDeepDecodeDetailedResult,
+} from './prefix-decoder.js';
+export { PrefixDecoderBig } from './prefix-decoder-big.js';
 export type {
-  DeepDecodeResult,
-} from "./cross-index-query.js";
-export { PrefixDecoder } from "./prefix-decoder.js";
-export type { PrefixDecoderConfig, PrefixDeepDecodeResult, PrefixDeepDecodeDetailedResult } from "./prefix-decoder.js";
-export { PrefixDecoderBig } from "./prefix-decoder-big.js";
-export type { PrefixDecoderBigConfig, PrefixDeepDecodeResultBig, PrefixDeepDecodeDetailedResultBig } from "./prefix-decoder-big.js";
-export {
-  queryAcrossVersions,
-  entityVersionSpan,
-  translateConstraint,
-} from "./version-query.js";
-export type { CoordConstraint } from "weighted-index";
-export { exportVersion, importVersion } from "./backup.js";
-export { validateEntryBatchPayload, applyEntryBatch } from "./api-payload.js";
-export { generateTypes, lintSchema, formatSchemaDiff } from "./codegen.js";
-export type { GenerateTypesOptions, LintDiagnostic } from "./codegen.js";
+  PrefixDecoderBigConfig,
+  PrefixDeepDecodeResultBig,
+  PrefixDeepDecodeDetailedResultBig,
+} from './prefix-decoder-big.js';
+export { queryAcrossVersions, entityVersionSpan, translateConstraint } from './version-query.js';
+export type { CoordConstraint } from 'weighted-index';
+export { exportVersion, importVersion } from './backup.js';
+export { validateEntryBatchPayload, applyEntryBatch } from './api-payload.js';
+export { generateTypes, lintSchema, formatSchemaDiff } from './codegen.js';
+export type { GenerateTypesOptions, LintDiagnostic } from './codegen.js';
 
-export type {
-  IndexMetaStore,
-  SchemaVersionRecord,
-  EntryRecord,
-} from "./index-meta-store.js";
+export type { IndexMetaStore, SchemaVersionRecord, EntryRecord } from './index-meta-store.js';
 
-export type {
-  PrefixRegistry,
-  PrefixRegistryRecord,
-} from "./prefix-registry.js";
+export type { PrefixRegistry, PrefixRegistryRecord } from './prefix-registry.js';
 
-export type { PrefixRouter } from "./prefix-router.js";
-export type { DimRef, ResolvedAddress } from "./prefix-registry.js";
-export type { DimStateSpec, AddressState, GateResult } from "./invalid-ranges.js";
-export type { AddressStateStore, AddressStateCacheRecord } from "./invalid-range-store.js";
-export type { AddressRangeCache, RangeCacheRecord } from "./address-range-cache.js";
-export type { EntryFlagStore, EntryFlagRecord } from "./entry-flag-store.js";
-export type { VersionLifecycleStore, VersionRecord, VersionStatus, DeactivationMode } from "./version-lifecycle.js";
-export type { MigrationStore, MigrationMapping, MigrationChangeType, MigrationResolveResult } from "./migration-store.js";
-export type { EntryMetadataStore, MetadataEntry } from "./entry-metadata-store.js";
+export type { PrefixRouter } from './prefix-router.js';
+export type { DimRef, ResolvedAddress } from './prefix-registry.js';
+export type { DimStateSpec, AddressState, GateResult } from './invalid-ranges.js';
+export type { AddressStateStore, AddressStateCacheRecord } from './invalid-range-store.js';
+export type { AddressRangeCache, RangeCacheRecord } from './address-range-cache.js';
+export type { EntryFlagStore, EntryFlagRecord } from './entry-flag-store.js';
+export type {
+  VersionLifecycleStore,
+  VersionRecord,
+  VersionStatus,
+  DeactivationMode,
+} from './version-lifecycle.js';
+export type {
+  MigrationStore,
+  MigrationMapping,
+  MigrationChangeType,
+  MigrationResolveResult,
+} from './migration-store.js';
+export type { EntryMetadataStore, MetadataEntry } from './entry-metadata-store.js';
 export type {
   MigrateResult,
   CrossIndexPartialResult,
   CrossIndexMigrateResult,
-} from "./migrate-address.js";
-export type { VersionBackup } from "./backup.js";
-export type { EntryBatchPayload } from "./api-payload.js";
+} from './migrate-address.js';
+export type { VersionBackup } from './backup.js';
+export type { EntryBatchPayload } from './api-payload.js';
 
 export type {
   AddressRef,
@@ -151,7 +174,7 @@ export type {
   CompositeVersion,
   TableVersion,
   TableDef,
-} from "./table-def.js";
+} from './table-def.js';
 
 export type {
   LeafVersionSpec,
@@ -164,7 +187,7 @@ export type {
   TableVersionChange,
   VersionCapacityChange,
   CompiledSchema,
-} from "./compile-schema.js";
+} from './compile-schema.js';
 
 export type {
   EntityId,
@@ -194,7 +217,7 @@ export type {
   NumberType,
   VersionCapacityInfo,
   VersionedValueBig,
-} from "./types.js";
+} from './types.js';
 
 export {
   IndexMetaError,
@@ -208,4 +231,4 @@ export {
   ParseError,
   NegotiationError,
   CapacityOverflowError,
-} from "./errors.js";
+} from './errors.js';

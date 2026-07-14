@@ -98,29 +98,24 @@ export function captureActiveField(root: HTMLElement): ActiveFieldSnapshot | nul
   return {
     field,
     selectionStart:
-      activeElement instanceof HTMLInputElement ||
-      activeElement instanceof HTMLTextAreaElement
+      activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement
         ? activeElement.selectionStart
         : null,
     selectionEnd:
-      activeElement instanceof HTMLInputElement ||
-      activeElement instanceof HTMLTextAreaElement
+      activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement
         ? activeElement.selectionEnd
         : null,
   };
 }
 
-export function restoreActiveField(
-  root: HTMLElement,
-  snapshot: ActiveFieldSnapshot | null,
-): void {
+export function restoreActiveField(root: HTMLElement, snapshot: ActiveFieldSnapshot | null): void {
   if (!snapshot) {
     return;
   }
 
-  const element = root.querySelector<
-    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-  >(`[data-field="${snapshot.field}"]`);
+  const element = root.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+    `[data-field="${snapshot.field}"]`,
+  );
   if (!element) {
     return;
   }
@@ -130,8 +125,7 @@ export function restoreActiveField(
   if (
     snapshot.selectionStart === null ||
     snapshot.selectionEnd === null ||
-    (!(element instanceof HTMLInputElement) &&
-      !(element instanceof HTMLTextAreaElement))
+    (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement))
   ) {
     return;
   }
@@ -140,16 +134,11 @@ export function restoreActiveField(
 }
 
 export function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
 export function escapeAttribute(value: string): string {
-  return escapeHtml(value)
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+  return escapeHtml(value).replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
 export function resolveFieldId(field: string, idPrefix = 'playbook'): string {

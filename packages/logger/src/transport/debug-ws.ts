@@ -18,8 +18,13 @@
  * const logger = new QaLogger({ transports: [httpTransport, transport] });
  * ```
  */
-import { TAG_EVENT_RECORD, encodeFrame, type TransmissionEnvelope, type MsgpackEncode } from "@qa-sdk/core";
-import type { Transport } from "./transport.js";
+import {
+  TAG_EVENT_RECORD,
+  encodeFrame,
+  type TransmissionEnvelope,
+  type MsgpackEncode,
+} from '@qa-sdk/core';
+import type { Transport } from './transport.js';
 
 const MAX_BUFFER = 1000;
 const RECONNECT_BASE_MS = 1000;
@@ -38,11 +43,13 @@ export class DebugWebSocketTransport implements Transport {
     opts?: { encode?: MsgpackEncode },
   ) {
     // msgpack encode — 런타임 주입 또는 lazy import
-    this.encode = opts?.encode ?? ((v: unknown) => {
-      // fallback: JSON → Uint8Array (msgpack 미설치 환경)
-      const json = JSON.stringify(v);
-      return new TextEncoder().encode(json);
-    });
+    this.encode =
+      opts?.encode ??
+      ((v: unknown) => {
+        // fallback: JSON → Uint8Array (msgpack 미설치 환경)
+        const json = JSON.stringify(v);
+        return new TextEncoder().encode(json);
+      });
     this.connect();
   }
 
@@ -79,8 +86,14 @@ export class DebugWebSocketTransport implements Transport {
 
   async shutdown(): Promise<void> {
     this.closed = true;
-    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
-    if (this.ws) { this.ws.close(); this.ws = null; }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
     this.buffer = [];
   }
 
@@ -90,19 +103,19 @@ export class DebugWebSocketTransport implements Transport {
     if (this.closed) return;
     try {
       this.ws = new WebSocket(this.url);
-      this.ws.binaryType = "arraybuffer";
+      this.ws.binaryType = 'arraybuffer';
 
-      this.ws.addEventListener("open", () => {
+      this.ws.addEventListener('open', () => {
         this.reconnectAttempt = 0;
         this.drainBuffer();
       });
 
-      this.ws.addEventListener("close", () => {
+      this.ws.addEventListener('close', () => {
         this.ws = null;
         this.scheduleReconnect();
       });
 
-      this.ws.addEventListener("error", () => {
+      this.ws.addEventListener('error', () => {
         // close가 뒤따르므로 여기서는 무시
       });
     } catch {

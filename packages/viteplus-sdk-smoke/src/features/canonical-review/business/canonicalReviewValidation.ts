@@ -1,10 +1,6 @@
 import type { CanonicalReviewDraft } from './canonicalReviewDraft.js';
 
-export type CanonicalReviewField =
-  | 'changeTitle'
-  | 'owner'
-  | 'riskLevel'
-  | 'rollbackPlan';
+export type CanonicalReviewField = 'changeTitle' | 'owner' | 'riskLevel' | 'rollbackPlan';
 
 export interface CanonicalReviewValidationIssue {
   field: CanonicalReviewField;

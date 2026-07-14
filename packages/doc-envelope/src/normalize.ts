@@ -21,23 +21,21 @@ import type {
   DocumentTask,
   DocumentTaskInput,
   RawSourcePointerInput,
-} from "./types.js";
+} from './types.js';
 
 /**
  * Repository 파일이 SSOT다. Normalization은 indexing/coordination을 위해 envelope를
  * 안정화할 뿐이며, source document schema를 rewrite/migrate/reinterpret하지 않는다.
  */
-export function normalizeDocumentEnvelope(
-  input: DocumentEnvelopeInput,
-): DocumentEnvelope {
+export function normalizeDocumentEnvelope(input: DocumentEnvelopeInput): DocumentEnvelope {
   const familyId = optionalNonEmptyString(input.familyId);
 
   return {
-    adapterId: requiredNonEmptyString(input.adapterId, "adapterId"),
-    kind: requiredNonEmptyString(input.kind, "kind"),
-    stableId: requiredNonEmptyString(input.stableId, "stableId"),
+    adapterId: requiredNonEmptyString(input.adapterId, 'adapterId'),
+    kind: requiredNonEmptyString(input.kind, 'kind'),
+    stableId: requiredNonEmptyString(input.stableId, 'stableId'),
     ...(familyId ? { familyId } : {}),
-    path: normalizePath(input.path, "path"),
+    path: normalizePath(input.path, 'path'),
     metadata: normalizeMetadata(input.metadata),
     links: (input.links ?? []).map(normalizeLink),
     sources: (input.sources ?? []).map(normalizeSource),
@@ -45,7 +43,7 @@ export function normalizeDocumentEnvelope(
     tasks: (input.tasks ?? []).map(normalizeTask),
     evidence: (input.evidence ?? []).map(normalizeEvidence),
     diagnostics: (input.diagnostics ?? []).map(normalizeDiagnostic),
-    rawSource: normalizeRawSourcePointer(input.rawSource, "rawSource"),
+    rawSource: normalizeRawSourcePointer(input.rawSource, 'rawSource'),
   };
 }
 
@@ -59,14 +57,14 @@ export function declareDocumentAdapterCapabilities(
 }
 
 export function defineDocumentAdapter(
-  adapter: Omit<DocumentAdapter, "capabilities" | "id"> & {
+  adapter: Omit<DocumentAdapter, 'capabilities' | 'id'> & {
     readonly id: string;
     readonly capabilities?: DocumentAdapterCapabilityDeclaration;
   },
 ): DocumentAdapter {
   return {
     ...adapter,
-    id: requiredNonEmptyString(adapter.id, "adapter.id"),
+    id: requiredNonEmptyString(adapter.id, 'adapter.id'),
     capabilities: declareDocumentAdapterCapabilities(adapter.capabilities),
   };
 }
@@ -76,8 +74,8 @@ function normalizeLink(input: DocumentLinkInput): DocumentLink {
   const targetAdapterId = optionalNonEmptyString(input.targetAdapterId);
 
   return {
-    type: requiredNonEmptyString(input.type, "links[].type"),
-    targetId: requiredNonEmptyString(input.targetId, "links[].targetId"),
+    type: requiredNonEmptyString(input.type, 'links[].type'),
+    targetId: requiredNonEmptyString(input.targetId, 'links[].targetId'),
     ...(sourceId ? { sourceId } : {}),
     ...(targetAdapterId ? { targetAdapterId } : {}),
     metadata: normalizeMetadata(input.metadata),
@@ -85,15 +83,12 @@ function normalizeLink(input: DocumentLinkInput): DocumentLink {
 }
 
 function normalizeSource(input: DocumentSourceInput): DocumentSource {
-  const path = input.path ? normalizePath(input.path, "sources[].path") : undefined;
+  const path = input.path ? normalizePath(input.path, 'sources[].path') : undefined;
   const label = optionalNonEmptyString(input.label);
-  const rawSource = normalizeOptionalRawSourcePointer(
-    input.rawSource,
-    "sources[].rawSource",
-  );
+  const rawSource = normalizeOptionalRawSourcePointer(input.rawSource, 'sources[].rawSource');
 
   return {
-    id: requiredNonEmptyString(input.id, "sources[].id"),
+    id: requiredNonEmptyString(input.id, 'sources[].id'),
     ...(path ? { path } : {}),
     ...(label ? { label } : {}),
     ...(rawSource ? { rawSource } : {}),
@@ -104,13 +99,10 @@ function normalizeSource(input: DocumentSourceInput): DocumentSource {
 function normalizeSection(input: DocumentSectionInput): DocumentSection {
   const title = optionalNonEmptyString(input.title);
   const anchor = optionalNonEmptyString(input.anchor);
-  const rawSource = normalizeOptionalRawSourcePointer(
-    input.rawSource,
-    "sections[].rawSource",
-  );
+  const rawSource = normalizeOptionalRawSourcePointer(input.rawSource, 'sections[].rawSource');
 
   return {
-    id: requiredNonEmptyString(input.id, "sections[].id"),
+    id: requiredNonEmptyString(input.id, 'sections[].id'),
     ...(title ? { title } : {}),
     ...(anchor ? { anchor } : {}),
     ...(input.content !== undefined ? { content: input.content } : {}),
@@ -122,14 +114,11 @@ function normalizeSection(input: DocumentSectionInput): DocumentSection {
 
 function normalizeTask(input: DocumentTaskInput): DocumentTask {
   const status = optionalNonEmptyString(input.status);
-  const rawSource = normalizeOptionalRawSourcePointer(
-    input.rawSource,
-    "tasks[].rawSource",
-  );
+  const rawSource = normalizeOptionalRawSourcePointer(input.rawSource, 'tasks[].rawSource');
 
   return {
-    id: requiredNonEmptyString(input.id, "tasks[].id"),
-    title: requiredNonEmptyString(input.title, "tasks[].title"),
+    id: requiredNonEmptyString(input.id, 'tasks[].id'),
+    title: requiredNonEmptyString(input.title, 'tasks[].title'),
     ...(status ? { status } : {}),
     evidenceIds: normalizeStringList(input.evidenceIds),
     ...(rawSource ? { rawSource } : {}),
@@ -140,13 +129,10 @@ function normalizeTask(input: DocumentTaskInput): DocumentTask {
 function normalizeEvidence(input: DocumentEvidenceInput): DocumentEvidence {
   const kind = optionalNonEmptyString(input.kind);
   const summary = optionalNonEmptyString(input.summary);
-  const rawSource = normalizeOptionalRawSourcePointer(
-    input.rawSource,
-    "evidence[].rawSource",
-  );
+  const rawSource = normalizeOptionalRawSourcePointer(input.rawSource, 'evidence[].rawSource');
 
   return {
-    id: requiredNonEmptyString(input.id, "evidence[].id"),
+    id: requiredNonEmptyString(input.id, 'evidence[].id'),
     ...(kind ? { kind } : {}),
     ...(summary ? { summary } : {}),
     ...(rawSource ? { rawSource } : {}),
@@ -154,18 +140,13 @@ function normalizeEvidence(input: DocumentEvidenceInput): DocumentEvidence {
   };
 }
 
-function normalizeDiagnostic(
-  input: DocumentDiagnosticInput,
-): DocumentDiagnostic {
-  const rawSource = normalizeOptionalRawSourcePointer(
-    input.rawSource,
-    "diagnostics[].rawSource",
-  );
+function normalizeDiagnostic(input: DocumentDiagnosticInput): DocumentDiagnostic {
+  const rawSource = normalizeOptionalRawSourcePointer(input.rawSource, 'diagnostics[].rawSource');
 
   return {
-    code: requiredNonEmptyString(input.code, "diagnostics[].code"),
-    severity: requiredNonEmptyString(input.severity, "diagnostics[].severity"),
-    message: requiredNonEmptyString(input.message, "diagnostics[].message"),
+    code: requiredNonEmptyString(input.code, 'diagnostics[].code'),
+    severity: requiredNonEmptyString(input.severity, 'diagnostics[].severity'),
+    message: requiredNonEmptyString(input.message, 'diagnostics[].message'),
     ...(rawSource ? { rawSource } : {}),
     metadata: normalizeMetadata(input.metadata),
   };
@@ -194,20 +175,16 @@ function normalizeRawSourcePointer(
   };
 }
 
-function normalizeMetadata(
-  metadata: DocumentMetadata | null | undefined,
-): DocumentMetadata {
+function normalizeMetadata(metadata: DocumentMetadata | null | undefined): DocumentMetadata {
   return { ...metadata };
 }
 
 function normalizeStringList(values: readonly string[] | null | undefined): readonly string[] {
-  return (values ?? [])
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
+  return (values ?? []).map((value) => value.trim()).filter((value) => value.length > 0);
 }
 
 function normalizePath(value: string, fieldName: string): string {
-  return requiredNonEmptyString(value, fieldName).replaceAll("\\", "/").replace(/\/+/g, "/");
+  return requiredNonEmptyString(value, fieldName).replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function requiredNonEmptyString(value: string, fieldName: string): string {
@@ -223,6 +200,4 @@ function optionalNonEmptyString(value: string | null | undefined): string | unde
   return normalized ? normalized : undefined;
 }
 
-export {
-  normalizeRawSourcePointer,
-};
+export { normalizeRawSourcePointer };

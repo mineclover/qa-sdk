@@ -10,15 +10,22 @@
  */
 
 import {
-  store, notify, loadPreset, resolveAll, availableDims, PRESETS,
-  type EnumAxis, type CompositeDef, type ResolvedDef,
-} from "../store.js";
+  store,
+  notify,
+  loadPreset,
+  resolveAll,
+  availableDims,
+  PRESETS,
+  type EnumAxis,
+  type CompositeDef,
+  type ResolvedDef,
+} from '../store.js';
 
 let container: HTMLElement;
 
 export function renderPrefixBuilderPage(el: HTMLElement): void {
   container = el;
-  if (store.axes.length === 0) loadPreset("qa-sdk-git");
+  if (store.axes.length === 0) loadPreset('qa-sdk-git');
   render();
   store.listeners.add(render);
 }
@@ -33,9 +40,9 @@ function render(): void {
     <div class="pb-page">
       <div class="pb-toolbar">
         <span class="pb-label">프리셋:</span>
-        ${Object.keys(PRESETS).map((k) =>
-          `<button class="dsl-btn pb-preset" data-key="${k}">${k}</button>`
-        ).join("")}
+        ${Object.keys(PRESETS)
+          .map((k) => `<button class="dsl-btn pb-preset" data-key="${k}">${k}</button>`)
+          .join('')}
         <button class="dsl-btn pb-preset" data-key="">비우기</button>
       </div>
 
@@ -48,7 +55,7 @@ function render(): void {
         <!-- 좌: Leaf Axis -->
         <div class="pb-col">
           <h2>Leaf Axis (${store.axes.length})</h2>
-          ${store.axes.map((a, i) => axisCard(a, i)).join("")}
+          ${store.axes.map((a, i) => axisCard(a, i)).join('')}
 
           <div class="pb-form">
             <h3>축 추가</h3>
@@ -74,7 +81,7 @@ function render(): void {
         <!-- 우: Composite Prefix -->
         <div class="pb-col">
           <h2>Composite Prefix (${store.composites.length})</h2>
-          ${store.composites.map((c, i) => compositeCard(c, i, resolved)).join("")}
+          ${store.composites.map((c, i) => compositeCard(c, i, resolved)).join('')}
 
           <div class="pb-form">
             <h3>Composite 추가</h3>
@@ -89,14 +96,18 @@ function render(): void {
             <div class="pb-row">
               <label>Dims 선택 (클릭 순서 = 축 배치 순서)</label>
               <div class="pb-dim-picker" id="pb-dim-picker">
-                ${dims.map((d) => `
+                ${dims
+                  .map(
+                    (d) => `
                   <label class="pb-chip-label">
                     <input type="checkbox" class="pb-dim-check" value="${d.id}" />
-                    <span class="pb-chip ${d.kind === "composite" ? "pb-chip-comp" : ""}">${d.id}
-                      <small>${d.kind === "composite" ? "comp" : "leaf"}</small>
+                    <span class="pb-chip ${d.kind === 'composite' ? 'pb-chip-comp' : ''}">${d.id}
+                      <small>${d.kind === 'composite' ? 'comp' : 'leaf'}</small>
                     </span>
                   </label>
-                `).join("")}
+                `,
+                  )
+                  .join('')}
               </div>
               <div class="pb-dim-order" id="pb-dim-order">
                 <span class="pb-hint">선택한 항목이 순서대로 표시됩니다 (leaf + composite 모두 가능)</span>
@@ -130,8 +141,8 @@ function axisCard(a: EnumAxis, idx: number): string {
       </div>
       <div class="dsl-card-body">
         <div class="dsl-entries">
-          ${shown.map((e) => `<span class="dsl-entry">${e}</span>`).join("")}
-          ${more > 0 ? `<span class="dsl-muted">+${more}</span>` : ""}
+          ${shown.map((e) => `<span class="dsl-entry">${e}</span>`).join('')}
+          ${more > 0 ? `<span class="dsl-muted">+${more}</span>` : ''}
         </div>
       </div>
     </div>
@@ -140,33 +151,35 @@ function axisCard(a: EnumAxis, idx: number): string {
 
 function compositeCard(c: CompositeDef, idx: number, resolved: Map<string, ResolvedDef>): string {
   const r = resolved.get(c.id);
-  if (!r) return `<div class="dsl-card dsl-card-err">dims 참조 오류: [${c.dims.join(", ")}]</div>`;
+  if (!r) return `<div class="dsl-card dsl-card-err">dims 참조 오류: [${c.dims.join(', ')}]</div>`;
 
   const safe = r.capacity <= Number.MAX_SAFE_INTEGER;
   // dim별 kind 표시
-  const dimLabels = c.dims.map((d) => {
-    const dr = resolved.get(d);
-    const kind = dr?.kind === "composite" ? "comp" : "leaf";
-    return `<span class="dsl-badge ${kind === "comp" ? "pb-badge-comp-ref" : ""}">${d} <small>${kind}</small></span>`;
-  }).join(" × ");
+  const dimLabels = c.dims
+    .map((d) => {
+      const dr = resolved.get(d);
+      const kind = dr?.kind === 'composite' ? 'comp' : 'leaf';
+      return `<span class="dsl-badge ${kind === 'comp' ? 'pb-badge-comp-ref' : ''}">${d} <small>${kind}</small></span>`;
+    })
+    .join(' × ');
 
   return `
     <div class="dsl-card">
       <div class="dsl-card-header">
         <strong>${c.id}</strong>
         <span class="dsl-badge">${r.bits}/53b</span>
-        <span class="dsl-badge ${safe ? "dsl-badge-ok" : "dsl-badge-err"}">${safe ? "Number" : "BigInt"}</span>
+        <span class="dsl-badge ${safe ? 'dsl-badge-ok' : 'dsl-badge-err'}">${safe ? 'Number' : 'BigInt'}</span>
         <span class="dsl-badge">owner: ${c.owner}</span>
         <button class="dsl-btn-sm pb-del-comp" data-idx="${idx}">x</button>
       </div>
       <div class="dsl-card-body">
         <div class="pb-dim-refs">${dimLabels}</div>
-        <div>shape: [${r.shape.map((s) => s.toLocaleString()).join(", ")}]</div>
-        <div>stride: [${r.strides.map((s) => s.toLocaleString()).join(", ")}]</div>
+        <div>shape: [${r.shape.map((s) => s.toLocaleString()).join(', ')}]</div>
+        <div>stride: [${r.strides.map((s) => s.toLocaleString()).join(', ')}]</div>
         <div>capacity: ${r.capacity.toLocaleString()}</div>
       </div>
       <div class="pb-budget-bar">
-        <div class="pb-budget-fill ${r.bits > 53 ? "dsl-bar-over" : r.bits > 42 ? "dsl-bar-warn" : "dsl-bar-ok"}"
+        <div class="pb-budget-fill ${r.bits > 53 ? 'dsl-bar-over' : r.bits > 42 ? 'dsl-bar-warn' : 'dsl-bar-ok'}"
              style="width:${Math.min((r.bits / 53) * 100, 100)}%"></div>
       </div>
     </div>
@@ -176,7 +189,7 @@ function compositeCard(c: CompositeDef, idx: number, resolved: Map<string, Resol
 // ── DAG 시각화 ──────────────────────────────────────────────
 
 function renderRefDag(resolved: Map<string, ResolvedDef>): string {
-  if (store.composites.length === 0 && store.axes.length === 0) return "";
+  if (store.composites.length === 0 && store.axes.length === 0) return '';
 
   // 참조 관계 생성
   const lines: string[] = [];
@@ -187,9 +200,9 @@ function renderRefDag(resolved: Map<string, ResolvedDef>): string {
     const safe = r.capacity <= Number.MAX_SAFE_INTEGER;
     const dimParts = c.dims.map((d) => {
       const dr = resolved.get(d);
-      const kind = dr?.kind === "composite" ? "comp" : "leaf";
+      const kind = dr?.kind === 'composite' ? 'comp' : 'leaf';
       const cap = dr?.capacity ?? 0;
-      return `<span class="pb-dag-ref ${kind === "comp" ? "pb-dag-ref-comp" : ""}">${d}<small>${cap.toLocaleString()}</small></span>`;
+      return `<span class="pb-dag-ref ${kind === 'comp' ? 'pb-dag-ref-comp' : ''}">${d}<small>${cap.toLocaleString()}</small></span>`;
     });
 
     lines.push(`
@@ -199,7 +212,7 @@ function renderRefDag(resolved: Map<string, ResolvedDef>): string {
         ${dimParts.join('<span class="pb-dag-op">×</span>')}
         <span class="pb-dag-arrow">→</span>
         <span class="pb-dag-cap">cap: ${r.capacity.toLocaleString()}</span>
-        <span class="dsl-badge ${safe ? "dsl-badge-ok" : "dsl-badge-err"}">${r.bits}/53b</span>
+        <span class="dsl-badge ${safe ? 'dsl-badge-ok' : 'dsl-badge-err'}">${r.bits}/53b</span>
       </div>
     `);
   }
@@ -213,13 +226,17 @@ function renderRefDag(resolved: Map<string, ResolvedDef>): string {
       <div class="pb-dag-title">
         참조 구조 <small>composite는 dim의 capacity만 참조 — 내부를 펼치지 않음</small>
       </div>
-      ${lines.length > 0 ? lines.join("") : '<div class="dsl-muted">composite가 없습니다</div>'}
-      ${orphans.length > 0 ? `
+      ${lines.length > 0 ? lines.join('') : '<div class="dsl-muted">composite가 없습니다</div>'}
+      ${
+        orphans.length > 0
+          ? `
         <div class="pb-dag-orphans">
           <small>미참조 leaf:</small>
-          ${orphans.map((a) => `<span class="dsl-entry">${a.id}</span>`).join(" ")}
+          ${orphans.map((a) => `<span class="dsl-entry">${a.id}</span>`).join(' ')}
         </div>
-      ` : ""}
+      `
+          : ''
+      }
     </div>
   `;
 }
@@ -228,29 +245,36 @@ function renderRefDag(resolved: Map<string, ResolvedDef>): string {
 
 function bind(): void {
   // 프리셋
-  container.querySelectorAll<HTMLButtonElement>(".pb-preset").forEach((btn) =>
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.key ?? "";
+  container.querySelectorAll<HTMLButtonElement>('.pb-preset').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key ?? '';
       if (key) loadPreset(key);
-      else { store.axes = []; store.composites = []; notify(); }
+      else {
+        store.axes = [];
+        store.composites = [];
+        notify();
+      }
     }),
   );
 
   // 축 삭제
-  container.querySelectorAll<HTMLButtonElement>(".pb-del-axis").forEach((btn) =>
-    btn.addEventListener("click", () => {
+  container.querySelectorAll<HTMLButtonElement>('.pb-del-axis').forEach((btn) =>
+    btn.addEventListener('click', () => {
       store.axes.splice(Number(btn.dataset.idx), 1);
       notify();
     }),
   );
 
   // 축 추가
-  container.querySelector(".pb-submit-axis")?.addEventListener("click", () => {
-    const id = (container.querySelector("#pb-ax-id") as HTMLInputElement).value.trim();
-    const raw = (container.querySelector("#pb-ax-entries") as HTMLTextAreaElement).value;
+  container.querySelector('.pb-submit-axis')?.addEventListener('click', () => {
+    const id = (container.querySelector('#pb-ax-id') as HTMLInputElement).value.trim();
+    const raw = (container.querySelector('#pb-ax-entries') as HTMLTextAreaElement).value;
     if (!id || !raw) return;
-    const entries = raw.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
-    const capVal = Number((container.querySelector("#pb-ax-cap") as HTMLInputElement).value);
+    const entries = raw
+      .split(/[,\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const capVal = Number((container.querySelector('#pb-ax-cap') as HTMLInputElement).value);
     const cap = capVal > 0 ? Math.max(capVal, entries.length) : entries.length;
     if (store.axes.some((a) => a.id === id) || store.composites.some((c) => c.id === id)) {
       return alert(`'${id}'가 이미 존재합니다`);
@@ -260,11 +284,11 @@ function bind(): void {
   });
 
   // Composite dim 선택 — 클릭 순서 추적
-  const orderEl = container.querySelector("#pb-dim-order");
+  const orderEl = container.querySelector('#pb-dim-order');
   const selected: string[] = [];
 
-  container.querySelectorAll<HTMLInputElement>(".pb-dim-check").forEach((ch) => {
-    ch.addEventListener("change", () => {
+  container.querySelectorAll<HTMLInputElement>('.pb-dim-check').forEach((ch) => {
+    ch.addEventListener('change', () => {
       if (ch.checked) {
         selected.push(ch.value);
       } else {
@@ -276,11 +300,12 @@ function bind(): void {
   });
 
   // Composite 추가
-  container.querySelector(".pb-submit-comp")?.addEventListener("click", () => {
-    const id = (container.querySelector("#pb-comp-id") as HTMLInputElement).value.trim();
-    const owner = (container.querySelector("#pb-comp-owner") as HTMLInputElement).value.trim() || "default";
-    if (!id) return alert("ID를 입력하세요");
-    if (selected.length === 0) return alert("최소 1개 dim을 선택하세요");
+  container.querySelector('.pb-submit-comp')?.addEventListener('click', () => {
+    const id = (container.querySelector('#pb-comp-id') as HTMLInputElement).value.trim();
+    const owner =
+      (container.querySelector('#pb-comp-owner') as HTMLInputElement).value.trim() || 'default';
+    if (!id) return alert('ID를 입력하세요');
+    if (selected.length === 0) return alert('최소 1개 dim을 선택하세요');
     if (store.axes.some((a) => a.id === id) || store.composites.some((c) => c.id === id)) {
       return alert(`'${id}'가 이미 존재합니다`);
     }
@@ -289,8 +314,8 @@ function bind(): void {
   });
 
   // Composite 삭제
-  container.querySelectorAll<HTMLButtonElement>(".pb-del-comp").forEach((btn) =>
-    btn.addEventListener("click", () => {
+  container.querySelectorAll<HTMLButtonElement>('.pb-del-comp').forEach((btn) =>
+    btn.addEventListener('click', () => {
       store.composites.splice(Number(btn.dataset.idx), 1);
       notify();
     }),
@@ -300,16 +325,17 @@ function bind(): void {
 function updateDimOrder(el: Element | null, selected: string[]): void {
   if (!el) return;
   if (selected.length === 0) {
-    el.innerHTML = '<span class="pb-hint">선택한 항목이 순서대로 표시됩니다 (leaf + composite 모두 가능)</span>';
+    el.innerHTML =
+      '<span class="pb-hint">선택한 항목이 순서대로 표시됩니다 (leaf + composite 모두 가능)</span>';
     return;
   }
 
   const resolved = resolveAll();
   const parts = selected.map((d, i) => {
     const r = resolved.get(d);
-    const kind = r?.kind === "composite" ? "comp" : "leaf";
+    const kind = r?.kind === 'composite' ? 'comp' : 'leaf';
     const cap = r?.capacity ?? 0;
-    return `<span class="dsl-badge ${kind === "comp" ? "pb-badge-comp-ref" : ""}">${i}: ${d} (${cap.toLocaleString()})</span>`;
+    return `<span class="dsl-badge ${kind === 'comp' ? 'pb-badge-comp-ref' : ''}">${i}: ${d} (${cap.toLocaleString()})</span>`;
   });
 
   // 실시간 shape/capacity 미리보기
@@ -319,12 +345,12 @@ function updateDimOrder(el: Element | null, selected: string[]): void {
   const safe = product <= Number.MAX_SAFE_INTEGER;
 
   el.innerHTML = `
-    <div>${parts.join(" → ")}</div>
+    <div>${parts.join(' → ')}</div>
     <div class="pb-preview">
-      shape: [${caps.map((c) => c.toLocaleString()).join(", ")}]
+      shape: [${caps.map((c) => c.toLocaleString()).join(', ')}]
       · capacity: ${product.toLocaleString()}
       · ${bits}/53b
-      <span class="dsl-badge ${safe ? "dsl-badge-ok" : "dsl-badge-err"}">${safe ? "OK" : "BigInt"}</span>
+      <span class="dsl-badge ${safe ? 'dsl-badge-ok' : 'dsl-badge-err'}">${safe ? 'OK' : 'BigInt'}</span>
     </div>
   `;
 }

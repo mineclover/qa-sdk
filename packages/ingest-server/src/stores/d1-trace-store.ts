@@ -5,11 +5,11 @@
  * D1TraceStore — TraceStore의 D1/SQLite drizzle ORM 구현.
  * upsert: 없으면 insert, 있으면 recordCount 누적 + timestamp MIN/MAX 갱신.
  */
-import { desc, eq, sql } from "drizzle-orm";
-import type { TraceStore, TraceUpsert, StoredTrace } from "@qa-sdk/core";
-import { traces } from "../db/schema.js";
-import { parseJsonColumn, type UserAttributesJson } from "../db/json-types.js";
-import type { D1Db } from "./d1-db-type.js";
+import { desc, eq, sql } from 'drizzle-orm';
+import type { TraceStore, TraceUpsert, StoredTrace } from '@qa-sdk/core';
+import { traces } from '../db/schema.js';
+import { parseJsonColumn, type UserAttributesJson } from '../db/json-types.js';
+import type { D1Db } from './d1-db-type.js';
 
 export class D1TraceStore implements TraceStore {
   constructor(private readonly db: D1Db) {}
@@ -44,10 +44,7 @@ export class D1TraceStore implements TraceStore {
   }
 
   async findById(traceId: string): Promise<StoredTrace | null> {
-    const [row] = await this.db
-      .select()
-      .from(traces)
-      .where(eq(traces.traceId, traceId));
+    const [row] = await this.db.select().from(traces).where(eq(traces.traceId, traceId));
     return row ? toStoredTrace(row) : null;
   }
 

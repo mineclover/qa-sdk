@@ -1,8 +1,8 @@
 // @def.boundary sim-domain-slice-kit
 // @def.doc domain-slice-architecture
 
-import { ArgumentsHost, Catch, type ExceptionFilter } from "@nestjs/common";
-import { mapDomainErrorToHttp } from "../error-mapping.js";
+import { ArgumentsHost, Catch, type ExceptionFilter } from '@nestjs/common';
+import { mapDomainErrorToHttp } from '../error-mapping.js';
 
 /**
  * 컨트롤러에서 던져진 도메인 예외를 표준 HTTP 응답으로 변환한다.
@@ -37,8 +37,8 @@ function extractTraceId(request: {
   traceId?: string;
 }): string {
   if (request.traceId) return request.traceId;
-  const header = request.headers?.["x-trace-id"];
-  if (typeof header === "string") return header;
+  const header = request.headers?.['x-trace-id'];
+  if (typeof header === 'string') return header;
   if (Array.isArray(header) && header[0]) return header[0];
-  return "";
+  return '';
 }

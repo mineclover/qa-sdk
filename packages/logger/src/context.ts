@@ -1,7 +1,7 @@
 // @def.boundary observability-system-root
 // @def.doc observability-system-root
 
-import { newTraceId, newSpanId } from "@qa-sdk/core";
+import { newTraceId, newSpanId } from '@qa-sdk/core';
 
 /**
  * Manages trace context for a QA session.

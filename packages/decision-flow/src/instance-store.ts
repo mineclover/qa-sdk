@@ -1,5 +1,5 @@
 // @def.boundary df-system
-import type { FlowInstance } from "./types.js";
+import type { FlowInstance } from './types.js';
 
 export interface InstanceContextQuery {
   readonly schemaId?: string;
@@ -42,7 +42,7 @@ export class MemoryInstanceStore implements InstanceStore {
         return false;
       }
 
-      if (!Object.prototype.hasOwnProperty.call(query, "value")) {
+      if (!Object.prototype.hasOwnProperty.call(query, 'value')) {
         return true;
       }
 
@@ -76,12 +76,9 @@ export class MemoryInstanceStore implements InstanceStore {
   }
 }
 
-function resolveContextValue(
-  context: Record<string, unknown>,
-  key: string,
-): unknown {
-  return key.split(".").reduce<unknown>((current, segment) => {
-    if (current === null || typeof current !== "object") {
+function resolveContextValue(context: Record<string, unknown>, key: string): unknown {
+  return key.split('.').reduce<unknown>((current, segment) => {
+    if (current === null || typeof current !== 'object') {
       return undefined;
     }
     return (current as Record<string, unknown>)[segment];
@@ -111,7 +108,7 @@ function deepClone<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map((entry) => deepClone(entry)) as T;
   }
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [key, deepClone(entry)]),
     ) as T;

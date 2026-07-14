@@ -16,15 +16,15 @@ import {
   catalogToPrefixSpecs,
   loadSpecs,
   registerPresets,
-} from "@qa-sdk/spec-core";
-import type { PrefixSpec } from "@qa-sdk/spec-core";
+} from '@qa-sdk/spec-core';
+import type { PrefixSpec } from '@qa-sdk/spec-core';
 import {
   buildSemanticIndexingPackReport,
   formatSemanticIndexingPackReportMarkdown,
   type SemanticIndexingPackManifest,
   type SemanticIndexingPromotionProposal,
   type SemanticIndexingSurfaceChangeInput,
-} from "@qa-sdk/spec-core/semantic-indexing-pack";
+} from '@qa-sdk/spec-core/semantic-indexing-pack';
 import {
   buildIR,
   generateFromIR,
@@ -33,14 +33,14 @@ import {
   generateProtoFromIR,
   generateJsonSchemaFromIR,
   generateDtsFromIR,
-} from "@qa-sdk/spec-core/codegen";
-import type { AxisInput } from "@qa-sdk/spec-core/codegen";
-import { resolveAddress, type DemoCatalog } from "demo-snapshot";
-import { decodePrefixAsResult, type ResolvedAddress, type ResolvedDimValue } from "@qa-sdk/core";
-import { parseArgs } from "node:util";
-import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
-import { promisify } from "node:util";
+} from '@qa-sdk/spec-core/codegen';
+import type { AxisInput } from '@qa-sdk/spec-core/codegen';
+import { resolveAddress, type DemoCatalog } from 'demo-snapshot';
+import { decodePrefixAsResult, type ResolvedAddress, type ResolvedDimValue } from '@qa-sdk/core';
+import { parseArgs } from 'node:util';
+import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
 
 // ── Shared bootstrap ────────────────────────────────
 
@@ -80,7 +80,7 @@ interface SpecContext {
 
 /** 싱글턴 캐시 — 같은 옵션이면 재생성하지 않음 */
 let cachedContext: SpecContext | null = null;
-let cachedKey = "";
+let cachedKey = '';
 
 /**
  * spec context 초기화.
@@ -102,7 +102,9 @@ export async function createSpecContext(options: {
 
   // catalog bridge
   if (options.catalogInput) {
-    prefixSpecs = catalogToPrefixSpecs(options.catalogInput as Parameters<typeof catalogToPrefixSpecs>[0]);
+    prefixSpecs = catalogToPrefixSpecs(
+      options.catalogInput as Parameters<typeof catalogToPrefixSpecs>[0],
+    );
     for (const spec of prefixSpecs) {
       surfaces.register(spec.id, spec.export);
     }
@@ -135,7 +137,14 @@ export async function createSpecContext(options: {
     }
   }
 
-  cachedContext = { surfaces, schemas, validator, specDocs, prefixSpecs, catalogInput: options.catalogInput };
+  cachedContext = {
+    surfaces,
+    schemas,
+    validator,
+    specDocs,
+    prefixSpecs,
+    catalogInput: options.catalogInput,
+  };
   cachedKey = key;
   return cachedContext;
 }
@@ -143,69 +152,109 @@ export async function createSpecContext(options: {
 // ── spec 공통: --catalog / --specs 파싱 ─────────────
 
 const SPEC_BASE_OPTIONS = {
-  specs: { type: "string" as const },
-  catalog: { type: "boolean" as const, default: false },
+  specs: { type: 'string' as const },
+  catalog: { type: 'boolean' as const, default: false },
 };
 
 const execFileAsync = promisify(execFile);
 
 const DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST: SemanticIndexingPackManifest = {
-  packId: "coord-semantic-indexing-pack",
-  version: "v1",
+  packId: 'coord-semantic-indexing-pack',
+  version: 'v1',
   planes: [
     {
-      plane: "semantic-source",
+      plane: 'semantic-source',
       refs: [
         {
-          id: "coord-semantic-indexing-logic",
-          kind: "doc",
-          path: "docs/specs/indexing-core-system/coord-foundation/foundation-semantic-indexing-logic.md",
-          role: "public-library",
+          id: 'coord-semantic-indexing-logic',
+          kind: 'doc',
+          path: 'docs/specs/indexing-core-system/coord-foundation/foundation-semantic-indexing-logic.md',
+          role: 'public-library',
         },
         {
-          id: "definition-service-semantic-grounding",
-          kind: "source",
-          path: "packages/definition-service/src/core/semantic-grounding/types.ts",
-          role: "runtime-service",
+          id: 'definition-service-semantic-grounding',
+          kind: 'source',
+          path: 'packages/definition-service/src/core/semantic-grounding/types.ts',
+          role: 'runtime-service',
         },
       ],
     },
     {
-      plane: "taxonomy",
-      refs: [
-        { id: "taxonomy-boundaries", kind: "doc", path: "docs/specs/system/taxonomy-boundaries.spec.md", role: "public-library" },
-        { id: "taxonomy-engine", kind: "package", path: "packages/taxonomy-engine/src/index.ts", role: "public-library" },
-      ],
-    },
-    {
-      plane: "coordinate",
-      refs: [
-        { id: "index-meta-system", kind: "doc", path: "docs/specs/index-meta-system/index-meta-system.md", role: "public-library" },
-        { id: "weighted-index", kind: "package", path: "packages/weighted-index/src/index.ts", role: "public-library" },
-      ],
-    },
-    {
-      plane: "transition",
-      refs: [
-        { id: "spec-transition", kind: "package", path: "packages/spec-transition/src/index.ts", role: "public-library" },
-        { id: "spec-core-transition", kind: "source", path: "packages/spec-core/src/transition/index.ts", role: "public-library" },
-      ],
-    },
-    {
-      plane: "materialization",
-      refs: [
-        { id: "address-index", kind: "package", path: "packages/address-index/src/index.ts", role: "public-library" },
-        { id: "query-service", kind: "package", path: "packages/query-service/src/index.ts", role: "runtime-service" },
-      ],
-    },
-    {
-      plane: "feedback",
+      plane: 'taxonomy',
       refs: [
         {
-          id: "semantic-feedback",
-          kind: "source",
-          path: "packages/definition-service/src/core/semantic-grounding/feedback.ts",
-          role: "runtime-service",
+          id: 'taxonomy-boundaries',
+          kind: 'doc',
+          path: 'docs/specs/system/taxonomy-boundaries.spec.md',
+          role: 'public-library',
+        },
+        {
+          id: 'taxonomy-engine',
+          kind: 'package',
+          path: 'packages/taxonomy-engine/src/index.ts',
+          role: 'public-library',
+        },
+      ],
+    },
+    {
+      plane: 'coordinate',
+      refs: [
+        {
+          id: 'index-meta-system',
+          kind: 'doc',
+          path: 'docs/specs/index-meta-system/index-meta-system.md',
+          role: 'public-library',
+        },
+        {
+          id: 'weighted-index',
+          kind: 'package',
+          path: 'packages/weighted-index/src/index.ts',
+          role: 'public-library',
+        },
+      ],
+    },
+    {
+      plane: 'transition',
+      refs: [
+        {
+          id: 'spec-transition',
+          kind: 'package',
+          path: 'packages/spec-transition/src/index.ts',
+          role: 'public-library',
+        },
+        {
+          id: 'spec-core-transition',
+          kind: 'source',
+          path: 'packages/spec-core/src/transition/index.ts',
+          role: 'public-library',
+        },
+      ],
+    },
+    {
+      plane: 'materialization',
+      refs: [
+        {
+          id: 'address-index',
+          kind: 'package',
+          path: 'packages/address-index/src/index.ts',
+          role: 'public-library',
+        },
+        {
+          id: 'query-service',
+          kind: 'package',
+          path: 'packages/query-service/src/index.ts',
+          role: 'runtime-service',
+        },
+      ],
+    },
+    {
+      plane: 'feedback',
+      refs: [
+        {
+          id: 'semantic-feedback',
+          kind: 'source',
+          path: 'packages/definition-service/src/core/semantic-grounding/feedback.ts',
+          role: 'runtime-service',
         },
       ],
     },
@@ -213,26 +262,26 @@ const DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST: SemanticIndexingPackManifest = {
 };
 
 function isSchemaValidationInput(value: unknown): value is SchemaValidationInput {
-  return !!value && typeof value === "object" && !Array.isArray(value);
+  return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 async function loadCatalogInput(): Promise<CatalogInputLike | undefined> {
   try {
-    const { DEMO_CATALOG } = await import("demo-snapshot");
+    const { DEMO_CATALOG } = await import('demo-snapshot');
     return DEMO_CATALOG;
   } catch {
-    console.error("demo-snapshot 패키지를 로딩할 수 없습니다");
+    console.error('demo-snapshot 패키지를 로딩할 수 없습니다');
     process.exit(1);
   }
 }
 
 async function readJsonFile<T>(path: string): Promise<T> {
-  return JSON.parse(await readFile(path, "utf8")) as T;
+  return JSON.parse(await readFile(path, 'utf8')) as T;
 }
 
 async function gitOutput(args: readonly string[]): Promise<string | undefined> {
   try {
-    const { stdout } = await execFileAsync("git", [...args], { cwd: process.cwd() });
+    const { stdout } = await execFileAsync('git', [...args], { cwd: process.cwd() });
     const output = String(stdout).trim();
     return output.length > 0 ? output : undefined;
   } catch {
@@ -252,8 +301,8 @@ async function enrichSemanticPackManifestWithGit(
           plane.refs.map(async (ref) => {
             if (!ref.path) return ref;
             const [status, lastChangedAt] = await Promise.all([
-              gitOutput(["status", "--short", "--", ref.path]),
-              gitOutput(["log", "-1", "--format=%cI", "--", ref.path]),
+              gitOutput(['status', '--short', '--', ref.path]),
+              gitOutput(['log', '-1', '--format=%cI', '--', ref.path]),
             ]);
             return {
               ...ref,
@@ -273,19 +322,22 @@ export async function specSemanticPackReport(options: {
   manifest?: SemanticIndexingPackManifest;
   changes?: readonly SemanticIndexingSurfaceChangeInput[];
   promotionProposals?: readonly SemanticIndexingPromotionProposal[];
-  format?: "json" | "markdown";
+  format?: 'json' | 'markdown';
   includeGit?: boolean;
 }): Promise<void> {
-  const manifest = options.includeGit === false
-    ? (options.manifest ?? DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST)
-    : await enrichSemanticPackManifestWithGit(options.manifest ?? DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST);
+  const manifest =
+    options.includeGit === false
+      ? (options.manifest ?? DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST)
+      : await enrichSemanticPackManifestWithGit(
+          options.manifest ?? DEFAULT_SEMANTIC_INDEXING_PACK_MANIFEST,
+        );
   const report = buildSemanticIndexingPackReport({
     manifest,
     changes: options.changes,
     promotionProposals: options.promotionProposals,
   });
 
-  if (options.format === "json") {
+  if (options.format === 'json') {
     console.log(JSON.stringify(report, null, 2));
     return;
   }
@@ -294,26 +346,30 @@ export async function specSemanticPackReport(options: {
 }
 
 export async function runSpecSemanticPackReport(argv: string[]): Promise<void> {
-  const includeGit = !argv.includes("--no-git");
-  const args = argv.filter((arg) => arg !== "--no-git");
+  const includeGit = !argv.includes('--no-git');
+  const args = argv.filter((arg) => arg !== '--no-git');
   const { values } = parseArgs({
     args,
     options: {
-      manifest: { type: "string" },
-      changes: { type: "string" },
-      proposals: { type: "string" },
-      format: { type: "string", default: "markdown" },
+      manifest: { type: 'string' },
+      changes: { type: 'string' },
+      proposals: { type: 'string' },
+      format: { type: 'string', default: 'markdown' },
     },
     strict: true,
   });
 
   await specSemanticPackReport({
-    manifest: values.manifest ? await readJsonFile<SemanticIndexingPackManifest>(values.manifest) : undefined,
-    changes: values.changes ? await readJsonFile<readonly SemanticIndexingSurfaceChangeInput[]>(values.changes) : undefined,
+    manifest: values.manifest
+      ? await readJsonFile<SemanticIndexingPackManifest>(values.manifest)
+      : undefined,
+    changes: values.changes
+      ? await readJsonFile<readonly SemanticIndexingSurfaceChangeInput[]>(values.changes)
+      : undefined,
     promotionProposals: values.proposals
       ? await readJsonFile<readonly SemanticIndexingPromotionProposal[]>(values.proposals)
       : undefined,
-    format: values.format === "json" ? "json" : "markdown",
+    format: values.format === 'json' ? 'json' : 'markdown',
     includeGit,
   });
 }
@@ -328,16 +384,18 @@ export async function specList(options: {
 
   console.log(`\nPrefix Specs (${ctx.prefixSpecs.length}):`);
   for (const spec of ctx.prefixSpecs) {
-    const exportDims = spec.export.dims.join(", ");
+    const exportDims = spec.export.dims.join(', ');
     const pattern = spec.export.pattern;
-    const internal = Object.keys(spec.dims).filter(d => !spec.export.dims.includes(d));
+    const internal = Object.keys(spec.dims).filter((d) => !spec.export.dims.includes(d));
     console.log(`  ${spec.id} (${spec.version})`);
     console.log(`    export: [${exportDims}] → ${pattern}`);
     if (internal.length > 0) {
-      console.log(`    internal: [${internal.join(", ")}]`);
+      console.log(`    internal: [${internal.join(', ')}]`);
     }
     if (spec.imports) {
-      const imports = Object.entries(spec.imports).map(([k, v]) => `${k}→${v}`).join(", ");
+      const imports = Object.entries(spec.imports)
+        .map(([k, v]) => `${k}→${v}`)
+        .join(', ');
       console.log(`    imports: ${imports}`);
     }
     if (spec.specRef) {
@@ -353,8 +411,10 @@ export async function specList(options: {
     for (const id of ctx.schemas.schemaKeys()) {
       const schema = ctx.schemas.getSchema(id);
       const axisCount = Object.keys(schema.axes).length;
-      const fragments = schema.use?.join(", ") ?? "—";
-      console.log(`  ${schema.id} [${schema.category}] ${schema.version} (${axisCount} axes, use: ${fragments})`);
+      const fragments = schema.use?.join(', ') ?? '—';
+      console.log(
+        `  ${schema.id} [${schema.category}] ${schema.version} (${axisCount} axes, use: ${fragments})`,
+      );
     }
   }
 
@@ -362,7 +422,7 @@ export async function specList(options: {
     console.log(`\nFragments (${ctx.schemas.fragmentCount}):`);
     for (const id of ctx.schemas.fragmentKeys()) {
       const f = ctx.schemas.getFragment(id);
-      console.log(`  ${f.id} (${Object.keys(f.axes).join(", ")})`);
+      console.log(`  ${f.id} (${Object.keys(f.axes).join(', ')})`);
     }
   }
 
@@ -399,12 +459,12 @@ export async function specResolve(options: {
 export async function runSpecResolve(argv: string[]): Promise<void> {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, prefix: { type: "string" }, values: { type: "string" } },
+    options: { ...SPEC_BASE_OPTIONS, prefix: { type: 'string' }, values: { type: 'string' } },
     strict: true,
   });
 
   if (!values.prefix || !values.values) {
-    console.error("--prefix <id> --values <json> 필수");
+    console.error('--prefix <id> --values <json> 필수');
     console.error(
       '예: qa-sdk spec resolve --catalog --prefix permission --values \'{"perm_svc":"40","role":"admin"}\'',
     );
@@ -415,7 +475,7 @@ export async function runSpecResolve(argv: string[]): Promise<void> {
   try {
     parsed = JSON.parse(values.values) as Record<string, string>;
   } catch {
-    console.error("--values JSON 파싱 실패");
+    console.error('--values JSON 파싱 실패');
     process.exit(1);
   }
 
@@ -439,7 +499,9 @@ export async function specValidate(options: {
 
   if (!ctx.schemas.hasSchema(options.schemaId)) {
     console.error(`Schema "${options.schemaId}" not found.`);
-    console.error(`Available schemas: ${[...ctx.schemas.schemaKeys()].join(", ") || "(none — add schema JSON files to specs dir)"}`);
+    console.error(
+      `Available schemas: ${[...ctx.schemas.schemaKeys()].join(', ') || '(none — add schema JSON files to specs dir)'}`,
+    );
     process.exitCode = 1;
     return;
   }
@@ -447,11 +509,11 @@ export async function specValidate(options: {
   const result = ctx.validator.validate(options.schemaId, options.data);
 
   if (result.valid) {
-    console.log("✓ Valid");
+    console.log('✓ Valid');
   } else {
-    console.log("✗ Invalid:");
+    console.log('✗ Invalid:');
     for (const err of result.errors) {
-      console.log(`  L${err.layer} [${err.rule}] ${err.axis ?? ""}: ${err.message}`);
+      console.log(`  L${err.layer} [${err.rule}] ${err.axis ?? ''}: ${err.message}`);
     }
     process.exitCode = 1;
   }
@@ -460,22 +522,22 @@ export async function specValidate(options: {
 export async function runSpecValidate(argv: string[]): Promise<void> {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, schema: { type: "string" }, data: { type: "string" } },
+    options: { ...SPEC_BASE_OPTIONS, schema: { type: 'string' }, data: { type: 'string' } },
     strict: true,
   });
 
   if (!values.schema || !values.data) {
-    console.error("--schema <id> --data <json> 필수");
+    console.error('--schema <id> --data <json> 필수');
     process.exit(1);
   }
 
   let parsed: SchemaValidationInput;
   try {
     const raw = JSON.parse(values.data) as unknown;
-    if (!isSchemaValidationInput(raw)) throw new Error("invalid");
+    if (!isSchemaValidationInput(raw)) throw new Error('invalid');
     parsed = raw;
   } catch {
-    console.error("--data JSON 파싱 실패");
+    console.error('--data JSON 파싱 실패');
     process.exit(1);
   }
 
@@ -492,20 +554,20 @@ export async function runSpecValidate(argv: string[]): Promise<void> {
 export async function specDecode(options: {
   catalogInput?: CatalogInputLike;
   specPath?: string;
-  address: string;   // "prefix:version:address" 형식
+  address: string; // "prefix:version:address" 형식
   deep?: boolean;
-  format?: "text" | "json";
+  format?: 'text' | 'json';
 }): Promise<void> {
   const ctx = await createSpecContext(options);
 
   if (!ctx.catalogInput) {
-    console.error("spec decode는 --catalog 옵션이 필요합니다 (DEMO_CATALOG 기반 decode)");
+    console.error('spec decode는 --catalog 옵션이 필요합니다 (DEMO_CATALOG 기반 decode)');
     process.exitCode = 1;
     return;
   }
 
   // "prefix:version:address" 파싱
-  const parts = options.address.split(":");
+  const parts = options.address.split(':');
   if (parts.length !== 3) {
     console.error('주소 형식: "prefix:version:address" (예: permission:v1:42)');
     process.exitCode = 1;
@@ -536,24 +598,32 @@ export async function specDecode(options: {
   }
 
   // 2단계: export title
-  let title = "(export surface 미등록)";
-  const spec = ctx.prefixSpecs.find(s => s.id === prefixId);
+  let title = '(export surface 미등록)';
+  const spec = ctx.prefixSpecs.find((s) => s.id === prefixId);
   if (ctx.surfaces.has(prefixId) && spec) {
     const exportValues: Record<string, string> = {};
     for (const dim of spec.export.dims) {
       if (decoded[dim]) exportValues[dim] = String(decoded[dim].value);
     }
-    try { title = ctx.surfaces.resolve(prefixId, exportValues); } catch { /* keep fallback */ }
+    try {
+      title = ctx.surfaces.resolve(prefixId, exportValues);
+    } catch {
+      /* keep fallback */
+    }
   }
 
   // 3단계: deep resolve
   let resolved: ReturnType<typeof resolveAddress> | undefined;
   if (options.deep) {
-    try { resolved = resolveAddress(catalog, prefixId, version, address); } catch { /* skip */ }
+    try {
+      resolved = resolveAddress(catalog, prefixId, version, address);
+    } catch {
+      /* skip */
+    }
   }
 
   // ── JSON 출력 ─────────────────────────────────────
-  if (options.format === "json") {
+  if (options.format === 'json') {
     const result: {
       address: string;
       title: string;
@@ -599,7 +669,7 @@ export async function specDecode(options: {
 
   if (resolved) {
     console.log(`\n  Deep resolve:`);
-    printResolved(resolved.dims, "    ");
+    printResolved(resolved.dims, '    ');
   }
 }
 
@@ -608,17 +678,17 @@ export async function runSpecDecode(argv: string[]): Promise<void> {
     args: argv,
     options: {
       ...SPEC_BASE_OPTIONS,
-      address: { type: "string" },
-      deep: { type: "boolean", default: false },
-      format: { type: "string" },
+      address: { type: 'string' },
+      deep: { type: 'boolean', default: false },
+      format: { type: 'string' },
     },
     strict: true,
   });
 
   if (!values.address) {
     console.error('--address "prefix:version:address" 필수');
-    console.error("예: qa-sdk spec decode --catalog --address permission:v1:3");
-    console.error("    qa-sdk spec decode --catalog --address permission:v1:3 --deep");
+    console.error('예: qa-sdk spec decode --catalog --address permission:v1:3');
+    console.error('    qa-sdk spec decode --catalog --address permission:v1:3 --deep');
     process.exit(1);
   }
 
@@ -627,7 +697,7 @@ export async function runSpecDecode(argv: string[]): Promise<void> {
     catalogInput: values.catalog ? await loadCatalogInput() : undefined,
     address: values.address,
     deep: values.deep,
-    format: values.format === "json" ? "json" : "text",
+    format: values.format === 'json' ? 'json' : 'text',
   });
 }
 
@@ -652,24 +722,21 @@ function buildResolvedJson(
   return result;
 }
 
-function printResolved(
-  dims: Record<string, ResolvedDimValue>,
-  indent: string,
-): void {
+function printResolved(dims: Record<string, ResolvedDimValue>, indent: string): void {
   for (const [label, dim] of Object.entries(dims)) {
-    const ko = dim.ko ? ` (${dim.ko})` : "";
+    const ko = dim.ko ? ` (${dim.ko})` : '';
     console.log(`${indent}${label}: ${dim.value}${ko} [pos:${dim.position}]`);
     if (dim.ref) {
       const ref: ResolvedAddress = dim.ref;
       console.log(`${indent}  → ${ref.prefix}:${ref.version}:${ref.address}`);
-      printResolved(ref.dims, indent + "    ");
+      printResolved(ref.dims, indent + '    ');
     }
   }
 }
 
 // ── spec codegen ────────────────────────────────────
 
-export type CodegenFormat = "ts" | "esm" | "cjs" | "proto" | "json-schema" | "dts";
+export type CodegenFormat = 'ts' | 'esm' | 'cjs' | 'proto' | 'json-schema' | 'dts';
 
 export async function specCodegen(options: {
   catalogInput?: CatalogInputLike;
@@ -680,14 +747,16 @@ export async function specCodegen(options: {
   const ctx = await createSpecContext(options);
 
   if (!ctx.catalogInput) {
-    console.error("spec codegen은 --catalog 옵션이 필요합니다");
+    console.error('spec codegen은 --catalog 옵션이 필요합니다');
     process.exitCode = 1;
     return;
   }
 
   // codegen 전 스키마 검증
   const _validationResult = ctx.validator.validate(
-    ctx.prefixSpecs.length > 0 ? `${ctx.prefixSpecs[0].schema?.category ?? "entity"}.base` : "entity.base",
+    ctx.prefixSpecs.length > 0
+      ? `${ctx.prefixSpecs[0].schema?.category ?? 'entity'}.base`
+      : 'entity.base',
     {},
   );
   // prefix specs 자체 구조 검증 (validator가 등록된 schema가 없으면 skip)
@@ -708,7 +777,7 @@ export async function specCodegen(options: {
   }
 
   const catalog = ctx.catalogInput as DemoCatalog;
-  const format = options.format ?? "ts";
+  const format = options.format ?? 'ts';
 
   // axis entries 추출
   const axes: AxisInput[] = [];
@@ -717,7 +786,7 @@ export async function specCodegen(options: {
 
   for (const spec of ctx.prefixSpecs) {
     for (const [, dimRef] of Object.entries(spec.dims)) {
-      if (dimRef.kind === "axis" && !seenAxisIds.has(dimRef.axisId)) {
+      if (dimRef.kind === 'axis' && !seenAxisIds.has(dimRef.axisId)) {
         seenAxisIds.add(dimRef.axisId);
         const axis = catalog.axes[dimRef.axisId];
         if (axis) {
@@ -743,36 +812,36 @@ export async function specCodegen(options: {
   // format별 코드 생성
   let content: string;
   switch (format) {
-    case "ts":
+    case 'ts':
       content = generateFromIR(ir);
       break;
-    case "esm":
-      content = generateJSFromIR(ir, "esm");
+    case 'esm':
+      content = generateJSFromIR(ir, 'esm');
       break;
-    case "cjs":
+    case 'cjs':
       content = generateCJSFromIR(ir);
       break;
-    case "proto":
+    case 'proto':
       content = generateProtoFromIR(ir);
       break;
-    case "json-schema":
+    case 'json-schema':
       content = generateJsonSchemaFromIR(ir);
       break;
-    case "dts":
+    case 'dts':
       content = generateDtsFromIR(ir);
       break;
     default:
       console.error(`지원하지 않는 format: ${format}`);
-      console.error("지원 형식: ts, esm, cjs, proto, json-schema, dts");
+      console.error('지원 형식: ts, esm, cjs, proto, json-schema, dts');
       process.exitCode = 1;
       return;
   }
 
   if (options.output) {
-    const { writeFile, mkdir } = await import("node:fs/promises");
-    const { dirname } = await import("node:path");
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    const { dirname } = await import('node:path');
     await mkdir(dirname(options.output), { recursive: true });
-    await writeFile(options.output, content, "utf-8");
+    await writeFile(options.output, content, 'utf-8');
     console.log(`Generated: ${options.output} (${format})`);
   } else {
     console.log(content);
@@ -784,8 +853,8 @@ export async function runSpecCodegen(argv: string[]): Promise<void> {
     args: argv,
     options: {
       ...SPEC_BASE_OPTIONS,
-      output: { type: "string" },
-      format: { type: "string", default: "ts" },
+      output: { type: 'string' },
+      format: { type: 'string', default: 'ts' },
     },
     strict: true,
   });
@@ -794,7 +863,7 @@ export async function runSpecCodegen(argv: string[]): Promise<void> {
     specPath: values.specs,
     catalogInput: values.catalog ? await loadCatalogInput() : undefined,
     output: values.output,
-    format: values.format as "ts" | "esm" | "cjs" | "proto" | "json-schema",
+    format: values.format as 'ts' | 'esm' | 'cjs' | 'proto' | 'json-schema',
   });
 }
 
@@ -809,7 +878,7 @@ export async function specTrace(options: {
 
   if (!ctx.specDocs.has(options.specId)) {
     console.error(`Spec "${options.specId}" not found.`);
-    console.error(`Available specs: ${[...ctx.specDocs.keys()].join(", ") || "(none)"}`);
+    console.error(`Available specs: ${[...ctx.specDocs.keys()].join(', ') || '(none)'}`);
     process.exitCode = 1;
     return;
   }
@@ -821,7 +890,7 @@ export async function specTrace(options: {
   }
 
   // prefix가 이 spec을 참조하는지 확인
-  const linkedPrefixes = ctx.prefixSpecs.filter(p => p.specRef === options.specId);
+  const linkedPrefixes = ctx.prefixSpecs.filter((p) => p.specRef === options.specId);
   if (linkedPrefixes.length > 0) {
     console.log(`\n  Linked Prefixes:`);
     for (const p of linkedPrefixes) {
@@ -852,20 +921,20 @@ export async function specTrace(options: {
   }
 
   if (outgoing.length === 0 && incoming.length === 0 && linkedPrefixes.length === 0) {
-    console.log("\n  (no relations or linked prefixes)");
+    console.log('\n  (no relations or linked prefixes)');
   }
 }
 
 export async function runSpecTrace(argv: string[]): Promise<void> {
   const { values } = parseArgs({
     args: argv,
-    options: { ...SPEC_BASE_OPTIONS, id: { type: "string" } },
+    options: { ...SPEC_BASE_OPTIONS, id: { type: 'string' } },
     strict: true,
   });
 
   if (!values.id) {
-    console.error("--id <specId> 필수");
-    console.error("예: qa-sdk spec trace --id FEAT-003");
+    console.error('--id <specId> 필수');
+    console.error('예: qa-sdk spec trace --id FEAT-003');
     process.exit(1);
   }
 

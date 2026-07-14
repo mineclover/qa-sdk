@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { ExpenseStatus } from "../../domain/index.js";
+import type { ExpenseStatus } from '../../domain/index.js';
 
 export interface UpdateExpenseStatusCommand {
   readonly id: string;

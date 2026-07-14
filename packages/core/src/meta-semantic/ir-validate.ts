@@ -7,18 +7,18 @@
  * 스펙: docs/specs/meta-semantic/meta-semantic-ir/
  */
 
-import type { ModuleIR, DataIR, PipeIR } from "./ir-types.js";
+import type { ModuleIR, DataIR, PipeIR } from './ir-types.js';
 
-export type IRIssueSeverity = "error" | "warning";
+export type IRIssueSeverity = 'error' | 'warning';
 
 export type IRIssueType =
-  | "dangling-ref"
-  | "missing-manager"
-  | "orphan-data"
-  | "orphan-module"
-  | "circular-pipe"
-  | "circular-parent"
-  | "schema-collision";
+  | 'dangling-ref'
+  | 'missing-manager'
+  | 'orphan-data'
+  | 'orphan-module'
+  | 'circular-pipe'
+  | 'circular-parent'
+  | 'schema-collision';
 
 export interface IRIssue {
   readonly severity: IRIssueSeverity;
@@ -36,17 +36,17 @@ export interface IRGraph {
 /** IR 그래프 전체 검증 */
 export function validateIRGraph(graph: IRGraph): IRIssue[] {
   const issues: IRIssue[] = [];
-  const moduleMap = new Map(graph.modules.map(m => [m.id, m]));
-  const dataIds = new Set(graph.data.map(d => d.definition.type));
-  const pipeIds = new Set(graph.pipes.map(p => p.transactionId));
+  const moduleMap = new Map(graph.modules.map((m) => [m.id, m]));
+  const dataIds = new Set(graph.data.map((d) => d.definition.type));
+  const pipeIds = new Set(graph.pipes.map((p) => p.transactionId));
 
   // 모듈 검증
   for (const mod of graph.modules) {
     // parent 순환 탐지
     if (mod.relations.parent && !moduleMap.has(mod.relations.parent.moduleId)) {
       issues.push({
-        severity: "error",
-        type: "dangling-ref",
+        severity: 'error',
+        type: 'dangling-ref',
         target: mod.id,
         message: `parent "${mod.relations.parent.moduleId}" 미존재`,
       });
@@ -55,8 +55,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
     for (const child of mod.relations.children) {
       if (!moduleMap.has(child.moduleId)) {
         issues.push({
-          severity: "error",
-          type: "dangling-ref",
+          severity: 'error',
+          type: 'dangling-ref',
           target: mod.id,
           message: `child "${child.moduleId}" 미존재`,
         });
@@ -67,8 +67,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
     for (const input of mod.interface.inputs) {
       if (!dataIds.has(input.dataId)) {
         issues.push({
-          severity: "error",
-          type: "dangling-ref",
+          severity: 'error',
+          type: 'dangling-ref',
           target: mod.id,
           message: `input data "${input.dataId}" 미존재`,
         });
@@ -78,8 +78,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
     for (const output of mod.interface.outputs) {
       if (!dataIds.has(output.dataId)) {
         issues.push({
-          severity: "error",
-          type: "dangling-ref",
+          severity: 'error',
+          type: 'dangling-ref',
           target: mod.id,
           message: `output data "${output.dataId}" 미존재`,
         });
@@ -91,8 +91,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
   for (const data of graph.data) {
     if (!moduleMap.has(data.management.managedBy.moduleId)) {
       issues.push({
-        severity: "error",
-        type: "missing-manager",
+        severity: 'error',
+        type: 'missing-manager',
         target: data.definition.type,
         message: `managedBy "${data.management.managedBy.moduleId}" 미존재`,
       });
@@ -102,10 +102,10 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
     const hasConsumer = data.lifecycle.consumedBy.length > 0;
     if (!hasProducer && !hasConsumer) {
       issues.push({
-        severity: "warning",
-        type: "orphan-data",
+        severity: 'warning',
+        type: 'orphan-data',
         target: data.definition.type,
-        message: "producedBy/consumedBy 모두 비어 있음",
+        message: 'producedBy/consumedBy 모두 비어 있음',
       });
     }
   }
@@ -114,8 +114,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
   for (const pipe of graph.pipes) {
     if (!moduleMap.has(pipe.targetModule.moduleId)) {
       issues.push({
-        severity: "error",
-        type: "dangling-ref",
+        severity: 'error',
+        type: 'dangling-ref',
         target: pipe.transactionId,
         message: `targetModule "${pipe.targetModule.moduleId}" 미존재`,
       });
@@ -123,8 +123,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
 
     if (!dataIds.has(pipe.payload.dataId)) {
       issues.push({
-        severity: "error",
-        type: "dangling-ref",
+        severity: 'error',
+        type: 'dangling-ref',
         target: pipe.transactionId,
         message: `payload "${pipe.payload.dataId}" 미존재`,
       });
@@ -132,7 +132,9 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
   }
 
   // triggers 순환 탐지 (DFS)
-  const triggerMap = new Map(graph.pipes.map(p => [p.transactionId, p.triggers.map(t => t.pipeId)]));
+  const triggerMap = new Map(
+    graph.pipes.map((p) => [p.transactionId, p.triggers.map((t) => t.pipeId)]),
+  );
   for (const pipe of graph.pipes) {
     const visited = new Set<string>();
     const stack = [pipe.transactionId];
@@ -140,8 +142,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
       const current = stack.pop()!;
       if (visited.has(current)) {
         issues.push({
-          severity: "error",
-          type: "circular-pipe",
+          severity: 'error',
+          type: 'circular-pipe',
           target: pipe.transactionId,
           message: `triggers 순환: ${pipe.transactionId} → ... → ${current}`,
         });
@@ -160,8 +162,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
     while (current) {
       if (visited.has(current)) {
         issues.push({
-          severity: "error",
-          type: "circular-parent",
+          severity: 'error',
+          type: 'circular-parent',
           target: mod.id,
           message: `parent 순환: ${mod.id} → ... → ${current}`,
         });
@@ -179,8 +181,8 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
     const existing = hashToType.get(data.definition.schemaHash);
     if (existing && existing !== data.definition.type) {
       issues.push({
-        severity: "warning",
-        type: "schema-collision",
+        severity: 'warning',
+        type: 'schema-collision',
         target: data.definition.type,
         message: `schemaHash "${data.definition.schemaHash}" 충돌: "${existing}" vs "${data.definition.type}"`,
       });
@@ -189,14 +191,21 @@ export function validateIRGraph(graph: IRGraph): IRIssue[] {
   }
 
   // 고아 모듈 (비루트인데 어떤 parent에도 속하지 않음)
-  const childrenOf = new Set(graph.modules.flatMap(m => m.relations.children.map(c => c.moduleId)));
+  const childrenOf = new Set(
+    graph.modules.flatMap((m) => m.relations.children.map((c) => c.moduleId)),
+  );
   for (const mod of graph.modules) {
-    if (mod.relations.parent === null && !childrenOf.has(mod.id) && mod.relations.children.length === 0 && graph.modules.length > 1) {
+    if (
+      mod.relations.parent === null &&
+      !childrenOf.has(mod.id) &&
+      mod.relations.children.length === 0 &&
+      graph.modules.length > 1
+    ) {
       issues.push({
-        severity: "warning",
-        type: "orphan-module",
+        severity: 'warning',
+        type: 'orphan-module',
         target: mod.id,
-        message: "어떤 parent에도 속하지 않는 비루트 leaf 모듈",
+        message: '어떤 parent에도 속하지 않는 비루트 leaf 모듈',
       });
     }
   }

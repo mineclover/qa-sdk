@@ -1,20 +1,17 @@
 // @def.boundary motion-workspace-service-spec
-import type { NodeWebSocket } from "@hono/node-ws";
-import { Hono } from "hono";
-import type { Context } from "hono";
-import type { WSEvents, WSContext } from "hono/ws";
-import type { MotionWorkspaceController } from "../controller.js";
-import {
-  createInvalidJsonError,
-  createInvalidRequestError,
-} from "../errors.js";
+import type { NodeWebSocket } from '@hono/node-ws';
+import { Hono } from 'hono';
+import type { Context } from 'hono';
+import type { WSEvents, WSContext } from 'hono/ws';
+import type { MotionWorkspaceController } from '../controller.js';
+import { createInvalidJsonError, createInvalidRequestError } from '../errors.js';
 import {
   parseWorkspaceWsPresenceMessage,
   parseWorkspaceWsSceneControlMessage,
   type WorkspaceSceneUnlockMessage,
   type WorkspaceWsServerMessage,
-} from "../ws-protocol.js";
-import type { WorkspaceWsHub } from "../ws-hub.js";
+} from '../ws-protocol.js';
+import type { WorkspaceWsHub } from '../ws-hub.js';
 
 async function parseJsonBody(c: Context): Promise<unknown> {
   try {
@@ -27,12 +24,12 @@ async function parseJsonBody(c: Context): Promise<unknown> {
 
 export interface MotionWorkspaceRouteDeps {
   readonly controller: MotionWorkspaceController;
-  readonly upgradeWebSocket: NodeWebSocket["upgradeWebSocket"];
+  readonly upgradeWebSocket: NodeWebSocket['upgradeWebSocket'];
   readonly wsHub: WorkspaceWsHub;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function sendWsJson(ws: WSContext, payload: unknown): void {
@@ -56,10 +53,7 @@ function broadcastSceneUnlocks(
   }
 }
 
-function disconnectWorkspaceConnection(
-  hub: WorkspaceWsHub,
-  connectionId: string,
-): void {
+function disconnectWorkspaceConnection(hub: WorkspaceWsHub, connectionId: string): void {
   const presenceMessage = hub.clearPresence(connectionId);
   const unlockMessages = hub.disconnect(connectionId);
   if (presenceMessage) {
@@ -75,7 +69,7 @@ function broadcastSceneUpdated(
   revision: number,
 ): void {
   broadcastWsMessage(hub, workspaceId, {
-    type: "scene:updated",
+    type: 'scene:updated',
     workspaceId,
     sceneId,
     revision,
@@ -88,40 +82,37 @@ function broadcastResourceUpdated(
   revision: number,
 ): void {
   broadcastWsMessage(hub, workspaceId, {
-    type: "resource:updated",
+    type: 'resource:updated',
     workspaceId,
     revision,
   });
 }
 
 function isResourceMutationApplyRequest(input: unknown): boolean {
-  return isRecord(input)
-    && isRecord(input["command"])
-    && input["command"]["type"] === "set-composition";
+  return (
+    isRecord(input) && isRecord(input['command']) && input['command']['type'] === 'set-composition'
+  );
 }
 
 function requireUserId(c: Context): string {
-  const userId = c.req.query("userId")?.trim();
+  const userId = c.req.query('userId')?.trim();
   if (!userId) {
-    throw createInvalidRequestError("userId query가 필요합니다.");
+    throw createInvalidRequestError('userId query가 필요합니다.');
   }
 
   return userId;
 }
 
 function requireWorkspaceId(c: Context): string {
-  const workspaceId = c.req.param("id");
+  const workspaceId = c.req.param('id');
   if (!workspaceId) {
-    throw createInvalidRequestError("workspace id가 필요합니다.");
+    throw createInvalidRequestError('workspace id가 필요합니다.');
   }
 
   return workspaceId;
 }
 
-export function createWorkspaceWsEvents(
-  c: Context,
-  hub: WorkspaceWsHub,
-): WSEvents {
+export function createWorkspaceWsEvents(c: Context, hub: WorkspaceWsHub): WSEvents {
   const workspaceId = requireWorkspaceId(c);
   const userId = requireUserId(c);
   let connectionId: string | null = null;
@@ -136,7 +127,7 @@ export function createWorkspaceWsEvents(
       connectionId = connection.connectionId;
       broadcastSceneUnlocks(hub, hub.pruneExpiredSceneLocks(workspaceId));
       sendWsJson(ws, {
-        type: "connected",
+        type: 'connected',
         workspaceId,
         userId,
         sceneLocks: hub.getSceneLocks(workspaceId),
@@ -146,15 +137,13 @@ export function createWorkspaceWsEvents(
 
     onMessage(event, ws) {
       try {
-        const raw = typeof event.data === "string"
-          ? event.data
-          : String(event.data);
+        const raw = typeof event.data === 'string' ? event.data : String(event.data);
         const payload = JSON.parse(raw);
         if (!connectionId) {
           sendWsJson(ws, {
-            type: "error",
-            code: "not_connected",
-            message: "WS 연결이 아직 초기화되지 않았습니다.",
+            type: 'error',
+            code: 'not_connected',
+            message: 'WS 연결이 아직 초기화되지 않았습니다.',
           });
           return;
         }
@@ -162,11 +151,12 @@ export function createWorkspaceWsEvents(
         broadcastSceneUnlocks(hub, hub.pruneExpiredSceneLocks(workspaceId));
 
         const presenceMessage = parseWorkspaceWsPresenceMessage(payload);
-        if (presenceMessage === "invalid") {
+        if (presenceMessage === 'invalid') {
           sendWsJson(ws, {
-            type: "error",
-            code: "invalid_request",
-            message: "presence payload는 { type, userId, activeSceneId?, cursor? } 형식이어야 합니다.",
+            type: 'error',
+            code: 'invalid_request',
+            message:
+              'presence payload는 { type, userId, activeSceneId?, cursor? } 형식이어야 합니다.',
           });
           return;
         }
@@ -174,9 +164,9 @@ export function createWorkspaceWsEvents(
         if (presenceMessage) {
           if (presenceMessage.userId !== userId) {
             sendWsJson(ws, {
-              type: "error",
-              code: "invalid_request",
-              message: "presence userId는 연결 userId와 일치해야 합니다.",
+              type: 'error',
+              code: 'invalid_request',
+              message: 'presence userId는 연결 userId와 일치해야 합니다.',
             });
             return;
           }
@@ -193,11 +183,11 @@ export function createWorkspaceWsEvents(
         }
 
         const sceneControlMessage = parseWorkspaceWsSceneControlMessage(payload);
-        if (sceneControlMessage === "invalid") {
+        if (sceneControlMessage === 'invalid') {
           sendWsJson(ws, {
-            type: "error",
-            code: "invalid_request",
-            message: "scene lock/unlock payload는 { type, sceneId, userId } 형식이어야 합니다.",
+            type: 'error',
+            code: 'invalid_request',
+            message: 'scene lock/unlock payload는 { type, sceneId, userId } 형식이어야 합니다.',
           });
           return;
         }
@@ -205,14 +195,14 @@ export function createWorkspaceWsEvents(
         if (sceneControlMessage) {
           if (sceneControlMessage.userId !== userId) {
             sendWsJson(ws, {
-              type: "error",
-              code: "invalid_request",
-              message: "scene lock/unlock userId는 연결 userId와 일치해야 합니다.",
+              type: 'error',
+              code: 'invalid_request',
+              message: 'scene lock/unlock userId는 연결 userId와 일치해야 합니다.',
             });
             return;
           }
 
-          if (sceneControlMessage.type === "scene:lock") {
+          if (sceneControlMessage.type === 'scene:lock') {
             const lockMessage = hub.lockScene({
               connectionId,
               sceneId: sceneControlMessage.sceneId,
@@ -226,7 +216,7 @@ export function createWorkspaceWsEvents(
           const unlockMessage = hub.unlockScene({
             connectionId,
             sceneId: sceneControlMessage.sceneId,
-            reason: "explicit",
+            reason: 'explicit',
           });
           if (unlockMessage) {
             broadcastWsMessage(hub, workspaceId, unlockMessage);
@@ -235,16 +225,16 @@ export function createWorkspaceWsEvents(
         }
 
         broadcastWsMessage(hub, workspaceId, {
-          type: "workspace-message",
+          type: 'workspace-message',
           workspaceId,
           userId,
           payload,
         });
       } catch {
         sendWsJson(ws, {
-          type: "error",
-          code: "invalid_json",
-          message: "WS payload는 JSON 이어야 합니다.",
+          type: 'error',
+          code: 'invalid_json',
+          message: 'WS payload는 JSON 이어야 합니다.',
         });
       }
     },
@@ -263,108 +253,82 @@ export function createWorkspaceWsEvents(
   };
 }
 
-export function createWorkspaceRoutes(
-  deps: MotionWorkspaceRouteDeps,
-) {
+export function createWorkspaceRoutes(deps: MotionWorkspaceRouteDeps) {
   const app = new Hono();
 
-  app.get("/workspaces", async (c) => {
+  app.get('/workspaces', async (c) => {
     return c.json(await deps.controller.listWorkspaces());
   });
 
   app.get(
-    "/workspaces/:id/ws",
+    '/workspaces/:id/ws',
     deps.upgradeWebSocket((c) => createWorkspaceWsEvents(c, deps.wsHub)),
   );
 
-  app.get("/workspaces/:id", async (c) => {
-    return c.json(await deps.controller.getWorkspace(c.req.param("id")));
+  app.get('/workspaces/:id', async (c) => {
+    return c.json(await deps.controller.getWorkspace(c.req.param('id')));
   });
 
-  app.get("/workspaces/:id/scenes", async (c) => {
-    return c.json(await deps.controller.listScenes(c.req.param("id")));
+  app.get('/workspaces/:id/scenes', async (c) => {
+    return c.json(await deps.controller.listScenes(c.req.param('id')));
   });
 
-  app.get("/workspaces/:id/scenes/:sceneId", async (c) => {
-    return c.json(await deps.controller.getScene(
-      c.req.param("id"),
-      c.req.param("sceneId"),
-    ));
+  app.get('/workspaces/:id/scenes/:sceneId', async (c) => {
+    return c.json(await deps.controller.getScene(c.req.param('id'), c.req.param('sceneId')));
   });
 
-  app.put("/workspaces/:id/scenes/:sceneId", async (c) => {
+  app.put('/workspaces/:id/scenes/:sceneId', async (c) => {
     const body = await parseJsonBody(c);
     const response = await deps.controller.updateScene(
-      c.req.param("id"),
-      c.req.param("sceneId"),
+      c.req.param('id'),
+      c.req.param('sceneId'),
       body,
     );
-    broadcastSceneUpdated(
-      deps.wsHub,
-      c.req.param("id"),
-      c.req.param("sceneId"),
-      response.revision,
-    );
+    broadcastSceneUpdated(deps.wsHub, c.req.param('id'), c.req.param('sceneId'), response.revision);
     return c.json(response);
   });
 
-  app.post("/workspaces/:id/scenes", async (c) => {
+  app.post('/workspaces/:id/scenes', async (c) => {
     const body = await parseJsonBody(c);
-    const response = await deps.controller.createScene(c.req.param("id"), body);
-    broadcastResourceUpdated(
-      deps.wsHub,
-      c.req.param("id"),
-      response.globalRevision,
-    );
+    const response = await deps.controller.createScene(c.req.param('id'), body);
+    broadcastResourceUpdated(deps.wsHub, c.req.param('id'), response.globalRevision);
     return c.json(response);
   });
 
-  app.put("/workspaces/:id", async (c) => {
+  app.put('/workspaces/:id', async (c) => {
     const body = await parseJsonBody(c);
-    return c.json(await deps.controller.createWorkspace(c.req.param("id"), body));
+    return c.json(await deps.controller.createWorkspace(c.req.param('id'), body));
   });
 
-  app.post("/workspaces/:id", async (c) => {
+  app.post('/workspaces/:id', async (c) => {
     const body = await parseJsonBody(c);
-    const response = await deps.controller.updateWorkspace(c.req.param("id"), body);
-    broadcastResourceUpdated(
-      deps.wsHub,
-      c.req.param("id"),
-      response.workspace.globalRevision,
-    );
+    const response = await deps.controller.updateWorkspace(c.req.param('id'), body);
+    broadcastResourceUpdated(deps.wsHub, c.req.param('id'), response.workspace.globalRevision);
     return c.json(response);
   });
 
-  app.post("/workspaces/:id/apply-command", async (c) => {
+  app.post('/workspaces/:id/apply-command', async (c) => {
     const body = await parseJsonBody(c);
-    const response = await deps.controller.applyCommand(c.req.param("id"), body);
+    const response = await deps.controller.applyCommand(c.req.param('id'), body);
     if (isResourceMutationApplyRequest(body)) {
-      broadcastResourceUpdated(
-        deps.wsHub,
-        c.req.param("id"),
-        response.workspace.globalRevision,
-      );
+      broadcastResourceUpdated(deps.wsHub, c.req.param('id'), response.workspace.globalRevision);
     }
     return c.json(response);
   });
 
-  app.delete("/workspaces/:id", async (c) => {
-    await deps.controller.deleteWorkspace(c.req.param("id"));
+  app.delete('/workspaces/:id', async (c) => {
+    await deps.controller.deleteWorkspace(c.req.param('id'));
     return c.body(null, 204);
   });
 
-  app.delete("/workspaces/:id/scenes/:sceneId", async (c) => {
+  app.delete('/workspaces/:id/scenes/:sceneId', async (c) => {
     const body = await parseJsonBody(c);
     const response = await deps.controller.deleteScene(
-      c.req.param("id"),
-      c.req.param("sceneId"),
+      c.req.param('id'),
+      c.req.param('sceneId'),
       body,
     );
-    broadcastResourceUpdated(
-      deps.wsHub,
-      c.req.param("id"),
-      response.globalRevision,
-    );
+    broadcastResourceUpdated(deps.wsHub, c.req.param('id'), response.globalRevision);
     return c.json(response);
   });
 

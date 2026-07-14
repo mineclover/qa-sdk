@@ -2,8 +2,8 @@
 // @def.doc infra-engine-system
 
 // monitor/dashboard.ts — 인프라 대시보드 데이터 API
-import type { InfraProfileAdapter } from "../adapters/adapter.js";
-import type { DeployHistoryEntry, SyncStatus } from "../core/types.js";
+import type { InfraProfileAdapter } from '../adapters/adapter.js';
+import type { DeployHistoryEntry, SyncStatus } from '../core/types.js';
 
 export interface DashboardSummary {
   timestamp: string;
@@ -68,7 +68,7 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
       const byEnv: Record<string, number> = {};
 
       for (const m of monitors) {
-        const status = m.lastStatus ?? "Unknown";
+        const status = m.lastStatus ?? 'Unknown';
         byStatus[status] = (byStatus[status] ?? 0) + 1;
       }
 
@@ -95,10 +95,11 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
       const history = await infraProfile.getHistory(serviceId);
 
       // 가동 시간 계산
-      let uptime: ServiceDashboard["uptime"];
+      let uptime: ServiceDashboard['uptime'];
       if (history.length > 0) {
         const chronological = [...history].toSorted(
-          (left, right) => new Date(left.deployedAt).getTime() - new Date(right.deployedAt).getTime(),
+          (left, right) =>
+            new Date(left.deployedAt).getTime() - new Date(right.deployedAt).getTime(),
         );
         const lastSuccess = [...chronological].toReversed().find((h) => h.success);
         if (lastSuccess) {
@@ -109,7 +110,10 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
           uptime = {
             since,
             durationMs,
-            percentage: totalMs > 0 ? Math.min(100, Math.max(0, Math.round((durationMs / totalMs) * 100))) : 100,
+            percentage:
+              totalMs > 0
+                ? Math.min(100, Math.max(0, Math.round((durationMs / totalMs) * 100)))
+                : 100,
           };
         }
       }
@@ -127,8 +131,8 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
           : undefined,
         monitor: monitor
           ? {
-              status: monitor.lastStatus ?? "Unknown",
-              lastChecked: monitor.lastChecked ?? "never",
+              status: monitor.lastStatus ?? 'Unknown',
+              lastChecked: monitor.lastChecked ?? 'never',
               interval: monitor.interval,
             }
           : undefined,
@@ -143,7 +147,7 @@ export function createDashboardData(infraProfile: InfraProfileAdapter): Dashboar
 
       for (const [historyKey, entries] of Object.entries(allHistory)) {
         for (const entry of entries) {
-          if (entry.mode !== "fleet-summary") continue;
+          if (entry.mode !== 'fleet-summary') continue;
           fleetRuns.push({
             historyKey,
             deployedAt: entry.deployedAt,

@@ -18,23 +18,13 @@
           },
           "state": {
             "type": "string",
-            "enum": [
-              "active",
-              "inactive",
-              "open",
-              "reserved"
-            ]
+            "enum": ["active", "inactive", "open", "reserved"]
           },
           "shouldVerify": {
             "type": "boolean"
           }
         },
-        "required": [
-          "encode",
-          "decode",
-          "state",
-          "shouldVerify"
-        ]
+        "required": ["encode", "decode", "state", "shouldVerify"]
       },
       "ErrorResponse": {
         "type": "object",
@@ -46,18 +36,11 @@
             "type": "string"
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "GateClassifyResponse": {
         "type": "string",
-        "enum": [
-          "active",
-          "inactive",
-          "open",
-          "reserved"
-        ]
+        "enum": ["active", "inactive", "open", "reserved"]
       },
       "GateFilterResponse": {
         "type": "object",
@@ -77,15 +60,10 @@
             }
           }
         },
-        "required": [
-          "ranges"
-        ]
+        "required": ["ranges"]
       },
       "GateStateResponse": {
-        "type": [
-          "object",
-          "null"
-        ],
+        "type": ["object", "null"],
         "properties": {
           "reserved": {
             "type": "array",
@@ -130,11 +108,7 @@
             }
           }
         },
-        "required": [
-          "reserved",
-          "inactive",
-          "open"
-        ]
+        "required": ["reserved", "inactive", "open"]
       },
       "HealthResponse": {
         "type": "object",
@@ -146,10 +120,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "status",
-          "gate_engine_configured"
-        ]
+        "required": ["status", "gate_engine_configured"]
       }
     },
     "parameters": {}
@@ -157,9 +128,7 @@
   "paths": {
     "/gate/check": {
       "post": {
-        "tags": [
-          "Gate"
-        ],
+        "tags": ["Gate"],
         "summary": "주소 encode/decode 가능 여부 확인",
         "description": "주소의 gate 상태를 확인하여 encode/decode 허용 여부를 반환한다.",
         "requestBody": {
@@ -181,11 +150,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "prefix",
-                  "versionId",
-                  "address"
-                ]
+                "required": ["prefix", "versionId", "address"]
               }
             }
           }
@@ -216,9 +181,7 @@
     },
     "/gate/classify": {
       "post": {
-        "tags": [
-          "Gate"
-        ],
+        "tags": ["Gate"],
         "summary": "주소 상태 분류",
         "description": "주소의 상태를 active/inactive/open/reserved 중 하나로 분류한다.",
         "requestBody": {
@@ -240,11 +203,7 @@
                     "minimum": 0
                   }
                 },
-                "required": [
-                  "prefix",
-                  "versionId",
-                  "address"
-                ]
+                "required": ["prefix", "versionId", "address"]
               }
             }
           }
@@ -265,9 +224,7 @@
     },
     "/gate/recompute": {
       "post": {
-        "tags": [
-          "Gate"
-        ],
+        "tags": ["Gate"],
         "summary": "단일 prefix 상태 재계산",
         "description": "DimStateSpec을 기반으로 단일 prefix의 주소 상태를 재계산한다.",
         "requestBody": {
@@ -285,10 +242,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "prefix",
-                  "versionId"
-                ]
+                "required": ["prefix", "versionId"]
               }
             }
           }
@@ -302,9 +256,7 @@
     },
     "/gate/cascade-recompute": {
       "post": {
-        "tags": [
-          "Gate"
-        ],
+        "tags": ["Gate"],
         "summary": "leaf → composite cascade 전파",
         "description": "leaf prefix 변경을 composite prefix까지 DFS 전파하여 재계산한다.",
         "requestBody": {
@@ -322,10 +274,7 @@
                     "minLength": 1
                   }
                 },
-                "required": [
-                  "prefix",
-                  "versionId"
-                ]
+                "required": ["prefix", "versionId"]
               }
             }
           }
@@ -339,9 +288,7 @@
     },
     "/gate/filter-ranges": {
       "post": {
-        "tags": [
-          "Gate"
-        ],
+        "tags": ["Gate"],
         "summary": "gate 차단 범위 제거",
         "description": "입력 범위에서 gate 차단 범위를 제거하여 유효 범위만 반환한다.",
         "requestBody": {
@@ -376,19 +323,10 @@
                   },
                   "mode": {
                     "type": "string",
-                    "enum": [
-                      "encodable",
-                      "decodable",
-                      "active"
-                    ]
+                    "enum": ["encodable", "decodable", "active"]
                   }
                 },
-                "required": [
-                  "prefix",
-                  "versionId",
-                  "ranges",
-                  "mode"
-                ]
+                "required": ["prefix", "versionId", "ranges", "mode"]
               }
             }
           }
@@ -409,9 +347,7 @@
     },
     "/gate/state/{prefix}/{version}": {
       "get": {
-        "tags": [
-          "Gate"
-        ],
+        "tags": ["Gate"],
         "summary": "prefix 전체 상태 범위 조회",
         "description": "prefix의 reserved/inactive/open 전체 범위를 반환한다.",
         "parameters": [
@@ -450,9 +386,7 @@
     },
     "/health": {
       "get": {
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "summary": "Health check",
         "responses": {
           "200": {

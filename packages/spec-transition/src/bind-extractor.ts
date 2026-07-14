@@ -8,15 +8,9 @@
  * 깊이 2까지만 지원. 전체 JSONPath가 아닌 제한된 문법.
  */
 
-import type { BindDef } from "./transition.types.js";
+import type { BindDef } from './transition.types.js';
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonObject
-  | readonly JsonValue[];
+type JsonValue = string | number | boolean | null | JsonObject | readonly JsonValue[];
 
 interface JsonObject {
   readonly [key: string]: JsonValue;
@@ -27,7 +21,7 @@ export interface BindEventObject {
 }
 
 function isJsonObject(value: JsonValue | undefined): value is JsonObject {
-  return !!value && typeof value === "object" && !Array.isArray(value);
+  return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 /** bind 경로 파싱 결과 */
@@ -42,7 +36,7 @@ function parsePath(path: string): ParsedPath | null {
   if (!match) return null;
   return {
     eventIndex: Number(match[1]),
-    fieldPath: match[2].split("."),
+    fieldPath: match[2].split('.'),
   };
 }
 
@@ -87,22 +81,26 @@ export function extractBind(
   for (const [key, path] of Object.entries(bind)) {
     const parsed = parsePath(path);
     if (!parsed) {
-      errors.push({ key, path, reason: "invalid path format" });
+      errors.push({ key, path, reason: 'invalid path format' });
       continue;
     }
 
     if (parsed.eventIndex >= events.length) {
-      errors.push({ key, path, reason: `event index ${parsed.eventIndex} out of range (${events.length} events)` });
+      errors.push({
+        key,
+        path,
+        reason: `event index ${parsed.eventIndex} out of range (${events.length} events)`,
+      });
       continue;
     }
 
     const value = extractField(events[parsed.eventIndex], parsed.fieldPath);
     if (value === undefined || value === null) {
-      errors.push({ key, path, reason: "field not found or null" });
+      errors.push({ key, path, reason: 'field not found or null' });
       continue;
     }
 
-    if (typeof value !== "string" && typeof value !== "number") {
+    if (typeof value !== 'string' && typeof value !== 'number') {
       errors.push({ key, path, reason: `expected string or number, got ${typeof value}` });
       continue;
     }

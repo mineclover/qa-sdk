@@ -1,24 +1,24 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import postgres from "postgres";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import postgres from 'postgres';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { RP_READ_BIT, RP_WRITE_BIT } from "./rls-bits.js";
+import { RP_READ_BIT, RP_WRITE_BIT } from './rls-bits.js';
 
-const PG_AVAILABLE = process.env.QA_TEST_PG === "1";
+const PG_AVAILABLE = process.env.QA_TEST_PG === '1';
 
 /**
  * hex bitmap 에서 특정 pos 의 비트를 set. 무한 확장.
  */
-function setBitHex(pos: number, hex = ""): string {
+function setBitHex(pos: number, hex = ''): string {
   const byteIdx = Math.floor(pos / 8);
   const bitIdx = pos % 8;
   const bytes: number[] = [];
   for (let i = 0; i < hex.length; i += 2) bytes.push(parseInt(hex.slice(i, i + 2), 16));
   while (bytes.length <= byteIdx) bytes.push(0);
   bytes[byteIdx] |= 1 << bitIdx;
-  return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -94,28 +94,37 @@ CREATE POLICY rp_delete_policy ON auth.resource_policies
 GRANT SELECT, INSERT, UPDATE, DELETE ON auth.resource_policies TO auth_app;
 `;
 
-describe.skipIf(!PG_AVAILABLE)("auth.resource_policies RLS — Plan 15b", () => {
-  const PG_HOST = process.env.QA_TEST_PG_HOST ?? "localhost";
-  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? "5434");
-  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? "qa_sdk_test";
-  const PG_USER = process.env.QA_TEST_PG_USER ?? "qa_admin";
-  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? "";
-  const AUTH_APP_PASSWORD = process.env.QA_TEST_PG_AUTH_APP_PASSWORD ?? "";
+describe.skipIf(!PG_AVAILABLE)('auth.resource_policies RLS — Plan 15b', () => {
+  const PG_HOST = process.env.QA_TEST_PG_HOST ?? 'localhost';
+  const PG_PORT = Number(process.env.QA_TEST_PG_PORT ?? '5434');
+  const PG_DATABASE = process.env.QA_TEST_PG_DATABASE ?? 'qa_sdk_test';
+  const PG_USER = process.env.QA_TEST_PG_USER ?? 'qa_admin';
+  const PG_PASSWORD = process.env.QA_TEST_PG_PASSWORD ?? '';
+  const AUTH_APP_PASSWORD = process.env.QA_TEST_PG_AUTH_APP_PASSWORD ?? '';
 
   let adminSql: ReturnType<typeof postgres>;
   let appSql: ReturnType<typeof postgres>;
 
   beforeEach(async () => {
     adminSql = postgres({
-      host: PG_HOST, port: PG_PORT, database: PG_DATABASE,
-      user: PG_USER, password: PG_PASSWORD, max: 3, onnotice: () => {},
+      host: PG_HOST,
+      port: PG_PORT,
+      database: PG_DATABASE,
+      user: PG_USER,
+      password: PG_PASSWORD,
+      max: 3,
+      onnotice: () => {},
     });
     await adminSql.unsafe(RESET_TABLE_DDL);
 
     appSql = postgres({
-      host: PG_HOST, port: PG_PORT, database: PG_DATABASE,
-      user: "auth_app", password: AUTH_APP_PASSWORD,
-      max: 3, onnotice: () => {},
+      host: PG_HOST,
+      port: PG_PORT,
+      database: PG_DATABASE,
+      user: 'auth_app',
+      password: AUTH_APP_PASSWORD,
+      max: 3,
+      onnotice: () => {},
     });
   });
 
@@ -128,7 +137,7 @@ describe.skipIf(!PG_AVAILABLE)("auth.resource_policies RLS — Plan 15b", () => 
     }
   });
 
-  it("SELECT — 세션 미주입 → 0 row (default deny)", async () => {
+  it('SELECT — 세션 미주입 → 0 row (default deny)', async () => {
     await adminSql.unsafe(`
       INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at)
       VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')
@@ -138,7 +147,7 @@ describe.skipIf(!PG_AVAILABLE)("auth.resource_policies RLS — Plan 15b", () => 
     expect(rows.length).toBe(0);
   });
 
-  it("SELECT — owner + RP_READ_BIT set → 1 row", async () => {
+  it('SELECT — owner + RP_READ_BIT set → 1 row', async () => {
     await adminSql.unsafe(`
       INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at)
       VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')
@@ -149,11 +158,11 @@ describe.skipIf(!PG_AVAILABLE)("auth.resource_policies RLS — Plan 15b", () => 
       await tx`SELECT set_config('app.bitmap_mask', ${mask}, true)`;
       const rows = await tx`SELECT resource_id FROM auth.resource_policies`;
       expect(rows.length).toBe(1);
-      expect(rows[0].resource_id).toBe("r1");
+      expect(rows[0].resource_id).toBe('r1');
     });
   });
 
-  it("SELECT — non-owner 는 RP_READ_BIT 있어도 0 row", async () => {
+  it('SELECT — non-owner 는 RP_READ_BIT 있어도 0 row', async () => {
     await adminSql.unsafe(`
       INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at)
       VALUES ('r1', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')
@@ -167,7 +176,7 @@ describe.skipIf(!PG_AVAILABLE)("auth.resource_policies RLS — Plan 15b", () => 
     });
   });
 
-  it("SELECT — REGISTERED 상태는 owner 여도 0 row (DB 직접 접근 금지)", async () => {
+  it('SELECT — REGISTERED 상태는 owner 여도 0 row (DB 직접 접근 금지)', async () => {
     await adminSql.unsafe(`
       INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at)
       VALUES ('r1', 'doc', 'REGISTERED', 'alice', '2026-04-22')
@@ -181,18 +190,19 @@ describe.skipIf(!PG_AVAILABLE)("auth.resource_policies RLS — Plan 15b", () => 
     });
   });
 
-  it("INSERT — owner 일치 + RP_WRITE_BIT → 성공", async () => {
+  it('INSERT — owner 일치 + RP_WRITE_BIT → 성공', async () => {
     const mask = setBitHex(RP_WRITE_BIT);
     await appSql.begin(async (tx) => {
       await tx`SELECT set_config('app.user_id', 'alice', true)`;
       await tx`SELECT set_config('app.bitmap_mask', ${mask}, true)`;
       await tx`INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at) VALUES ('r-ok', 'doc', 'UNREGISTERED', 'alice', '2026-04-22')`;
     });
-    const rows = await adminSql`SELECT resource_id FROM auth.resource_policies WHERE resource_id='r-ok'`;
+    const rows =
+      await adminSql`SELECT resource_id FROM auth.resource_policies WHERE resource_id='r-ok'`;
     expect(rows.length).toBe(1);
   });
 
-  it("INSERT — owner 불일치 → 실패", async () => {
+  it('INSERT — owner 불일치 → 실패', async () => {
     const mask = setBitHex(RP_WRITE_BIT);
     await expect(
       appSql.begin(async (tx) => {
@@ -203,14 +213,15 @@ describe.skipIf(!PG_AVAILABLE)("auth.resource_policies RLS — Plan 15b", () => 
     ).rejects.toThrow(/row-level security|row violates/i);
   });
 
-  it("admin bypass — app.role=admin 이면 모든 state 가시", async () => {
+  it('admin bypass — app.role=admin 이면 모든 state 가시', async () => {
     await adminSql.unsafe(`
       INSERT INTO auth.resource_policies (resource_id, resource_type, state, owner_id, updated_at)
       VALUES ('r-reg', 'doc', 'REGISTERED', 'alice', '2026-04-22')
     `);
     await appSql.begin(async (tx) => {
       await tx`SELECT set_config('app.role', 'admin', true)`;
-      const rows = await tx`SELECT resource_id FROM auth.resource_policies WHERE resource_id='r-reg'`;
+      const rows =
+        await tx`SELECT resource_id FROM auth.resource_policies WHERE resource_id='r-reg'`;
       expect(rows.length).toBe(1);
     });
   });

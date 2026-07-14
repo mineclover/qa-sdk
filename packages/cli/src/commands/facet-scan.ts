@@ -8,26 +8,29 @@
  * 격리된 테스트 인프라에서 동기화하여 테스트할 대상이다.
  */
 
-import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative, extname, dirname } from "node:path";
+import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { join, relative, extname, dirname } from 'node:path';
 
 export interface FacetMarker {
-  type: "file";
+  type: 'file';
   exports: string[];
 }
 
 const FACET_RE = /@facet(?:\s+export\s+([\w,\s]+))?/;
 
 export function parseFacetMarker(line: string): FacetMarker | null {
-  const trimmed = line.replace(/^\s*(?:\/\/\s*|#\s*|\*\s*)/, "").trim();
+  const trimmed = line.replace(/^\s*(?:\/\/\s*|#\s*|\*\s*)/, '').trim();
   const match = trimmed.match(FACET_RE);
   if (!match) return null;
 
   const exports = match[1]
-    ? match[1].split(",").map(s => s.trim()).filter(Boolean)
+    ? match[1]
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
     : [];
 
-  return { type: "file", exports };
+  return { type: 'file', exports };
 }
 
 // ---------------------------------------------------------------------------
@@ -46,7 +49,7 @@ export interface ScanResult {
 }
 
 const EXCLUDE = [/node_modules/, /(?:^|\/)dist\//, /\.test\.\w+$/, /\.spec\.\w+$/];
-const SCAN_EXTS = new Set([".ts", ".tsx", ".js", ".jsx", ".py"]);
+const SCAN_EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.py']);
 
 export function scanFacetFiles(root: string): ScanResult {
   const facetFiles: FacetFile[] = [];
@@ -55,16 +58,20 @@ export function scanFacetFiles(root: string): ScanResult {
     for (const entry of readdirSync(dir)) {
       const full = join(dir, entry);
       const rel = relative(root, full);
-      if (EXCLUDE.some(p => p.test(rel))) continue;
+      if (EXCLUDE.some((p) => p.test(rel))) continue;
 
       const st = statSync(full);
-      if (st.isDirectory()) { walk(full); continue; }
+      if (st.isDirectory()) {
+        walk(full);
+        continue;
+      }
       if (!SCAN_EXTS.has(extname(full))) continue;
 
-      const content = readFileSync(full, "utf-8");
-      const firstMarker = content.split("\n")
-        .map(line => parseFacetMarker(line))
-        .find(m => m !== null);
+      const content = readFileSync(full, 'utf-8');
+      const firstMarker = content
+        .split('\n')
+        .map((line) => parseFacetMarker(line))
+        .find((m) => m !== null);
 
       if (firstMarker) {
         facetFiles.push({ relativePath: rel, absolutePath: full, marker: firstMarker });
@@ -97,12 +104,12 @@ export interface ImportDepsResult {
 }
 
 const BLOCK_PATTERNS = [
-  { pattern: /process\.env/, reason: "process.env" },
-  { pattern: /import\s.*from\s+["']hono/, reason: "hono" },
-  { pattern: /import\s.*from\s+["']express/, reason: "express" },
-  { pattern: /import\s.*from\s+["']drizzle/, reason: "drizzle" },
-  { pattern: /import\s.*from\s+["']better-sqlite3/, reason: "better-sqlite3" },
-  { pattern: /createLogger\(/, reason: "createLogger" },
+  { pattern: /process\.env/, reason: 'process.env' },
+  { pattern: /import\s.*from\s+["']hono/, reason: 'hono' },
+  { pattern: /import\s.*from\s+["']express/, reason: 'express' },
+  { pattern: /import\s.*from\s+["']drizzle/, reason: 'drizzle' },
+  { pattern: /import\s.*from\s+["']better-sqlite3/, reason: 'better-sqlite3' },
+  { pattern: /createLogger\(/, reason: 'createLogger' },
 ];
 
 const TYPE_IMPORT_RE = /^import\s+type\s+/;
@@ -119,7 +126,11 @@ export function resolveImportDeps(entryPath: string, root: string): ImportDepsRe
 
     const rel = relative(root, resolved);
     let content: string;
-    try { content = readFileSync(resolved, "utf-8"); } catch { return; }
+    try {
+      content = readFileSync(resolved, 'utf-8');
+    } catch {
+      return;
+    }
 
     if (!isTypeOnly) {
       for (const { pattern, reason } of BLOCK_PATTERNS) {
@@ -132,11 +143,11 @@ export function resolveImportDeps(entryPath: string, root: string): ImportDepsRe
 
     included.push({ relativePath: rel, absolutePath: resolved });
 
-    for (const line of content.split("\n")) {
+    for (const line of content.split('\n')) {
       const m = line.match(/^import\s+(?:type\s+)?(?:\{[^}]*\}|[\w*]+)\s+from\s+["']([^"']+)["']/);
       if (!m) continue;
       const importPath = m[1];
-      if (importPath.startsWith(".")) {
+      if (importPath.startsWith('.')) {
         walk(join(dirname(resolved), importPath), TYPE_IMPORT_RE.test(line));
       }
     }
@@ -144,7 +155,7 @@ export function resolveImportDeps(entryPath: string, root: string): ImportDepsRe
 
   walk(entryPath, false);
   return {
-    included: included.filter(f => f.absolutePath !== entryPath),
+    included: included.filter((f) => f.absolutePath !== entryPath),
     blocked,
   };
 }
@@ -152,12 +163,17 @@ export function resolveImportDeps(entryPath: string, root: string): ImportDepsRe
 function resolveFilePath(importPath: string): string | null {
   const candidates = [
     importPath,
-    importPath.replace(/\.js$/, ".ts"),
-    importPath + ".ts",
-    importPath + "/index.ts",
+    importPath.replace(/\.js$/, '.ts'),
+    importPath + '.ts',
+    importPath + '/index.ts',
   ];
   for (const c of candidates) {
-    try { statSync(c); return c; } catch { /* next */ }
+    try {
+      statSync(c);
+      return c;
+    } catch {
+      /* next */
+    }
   }
   return null;
 }
@@ -171,16 +187,19 @@ export function generateIncludeList(facetFiles: FacetFile[], deps: DepFile[]): s
   for (const f of facetFiles) paths.add(f.relativePath);
   for (const d of deps) paths.add(d.relativePath);
 
-  const lines = [...paths].toSorted().map(p => `+ ${p}`);
-  lines.push("- **");
-  return lines.join("\n") + "\n";
+  const lines = [...paths].toSorted().map((p) => `+ ${p}`);
+  lines.push('- **');
+  return lines.join('\n') + '\n';
 }
 
-export function facetScan(serviceRoot: string, opts: { output?: string; deps?: boolean } = {}): void {
+export function facetScan(
+  serviceRoot: string,
+  opts: { output?: string; deps?: boolean } = {},
+): void {
   const { facetFiles } = scanFacetFiles(serviceRoot);
 
   if (facetFiles.length === 0) {
-    console.log("@facet 마커 파일 없음");
+    console.log('@facet 마커 파일 없음');
     return;
   }
 
@@ -196,7 +215,7 @@ export function facetScan(serviceRoot: string, opts: { output?: string; deps?: b
 
   console.log(`@facet 파일: ${facetFiles.length}건`);
   for (const f of facetFiles) {
-    const exports = f.marker.exports.length > 0 ? ` (export: ${f.marker.exports.join(", ")})` : "";
+    const exports = f.marker.exports.length > 0 ? ` (export: ${f.marker.exports.join(', ')})` : '';
     console.log(`  ${f.relativePath}${exports}`);
   }
 
@@ -212,7 +231,7 @@ export function facetScan(serviceRoot: string, opts: { output?: string; deps?: b
 
   if (opts.output) {
     const list = generateIncludeList(facetFiles, allDeps);
-    writeFileSync(opts.output, list, "utf-8");
+    writeFileSync(opts.output, list, 'utf-8');
     console.log(`\ninclude-list → ${opts.output}`);
   }
 }

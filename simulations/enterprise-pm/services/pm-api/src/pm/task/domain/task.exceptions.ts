@@ -15,34 +15,34 @@ export class TaskDomainException extends Error {
     message: string,
   ) {
     super(message);
-    this.name = "TaskDomainException";
+    this.name = 'TaskDomainException';
   }
 }
 
 export class InvalidTaskIdException extends TaskDomainException {
   constructor() {
-    super("INVALID_TASK_ID", "TaskId must not be empty.");
-    this.name = "ValidationError";
+    super('INVALID_TASK_ID', 'TaskId must not be empty.');
+    this.name = 'ValidationError';
   }
 }
 
 export class InvalidTaskTitleException extends TaskDomainException {
   constructor() {
-    super("INVALID_TASK_TITLE", "Task title must not be empty.");
-    this.name = "ValidationError";
+    super('INVALID_TASK_TITLE', 'Task title must not be empty.');
+    this.name = 'ValidationError';
   }
 }
 
 export class TaskTransitionDoneException extends TaskDomainException {
   constructor() {
-    super("TASK_DONE_TRANSITION", "Done task cannot transition further.");
-    this.name = "ConflictError";
+    super('TASK_DONE_TRANSITION', 'Done task cannot transition further.');
+    this.name = 'ConflictError';
   }
 }
 
 export class TaskNotFoundException extends TaskDomainException {
   constructor(id: string) {
-    super("TASK_NOT_FOUND", `Task not found: ${id}`);
-    this.name = "NotFoundError";
+    super('TASK_NOT_FOUND', `Task not found: ${id}`);
+    this.name = 'NotFoundError';
   }
 }

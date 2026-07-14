@@ -1,12 +1,12 @@
 // @def.doc definition-catalog-spec
 
-import type { DefinitionEntry } from "./types.js";
-import type { MemoryDefinitionRegistry } from "./registry.js";
+import type { DefinitionEntry } from './types.js';
+import type { MemoryDefinitionRegistry } from './registry.js';
 import {
   SEMANTIC_LINT_FAMILIES,
   type SemanticLintFamilyRule,
   type SemanticLintTraversalLinkType,
-} from "./taxonomy.js";
+} from './taxonomy.js';
 
 function neighboringDocIds(
   docId: string,
@@ -14,7 +14,7 @@ function neighboringDocIds(
   allowedLinkTypes: ReadonlySet<SemanticLintTraversalLinkType>,
 ): string[] {
   const ids: string[] = [];
-  for (const link of registry.getLinks(docId, "both")) {
+  for (const link of registry.getLinks(docId, 'both')) {
     if (!allowedLinkTypes.has(link.linkType as SemanticLintTraversalLinkType)) continue;
     ids.push(link.sourceId === docId ? link.targetId : link.sourceId);
   }
@@ -56,8 +56,9 @@ export function collectSemanticFamilies(
   const cached = cache.get(docId);
   if (cached) return cached;
 
-  const families = SEMANTIC_LINT_FAMILIES
-    .filter((family) => resolvesSemanticFamily(docId, registry, family))
+  const families = SEMANTIC_LINT_FAMILIES.filter((family) =>
+    resolvesSemanticFamily(docId, registry, family),
+  )
     .map((family) => family.id)
     .toSorted();
 
@@ -67,7 +68,7 @@ export function collectSemanticFamilies(
 }
 
 function hasCrossScope(entry: DefinitionEntry | undefined): boolean {
-  return entry?.tags?.includes("cross-scope") ?? false;
+  return entry?.tags?.includes('cross-scope') ?? false;
 }
 
 function intersects(left: readonly string[], right: readonly string[]): boolean {
@@ -96,9 +97,12 @@ export function allowsSemanticMultiParent(
   if (distinctScopes.size <= 1) return false;
 
   const childFamilies = collectSemanticFamilies(childId, registry, cache);
-  if (childFamilies.length > 0 && parents.some((parent) =>
-    intersects(childFamilies, collectSemanticFamilies(parent.id, registry, cache)),
-  )) {
+  if (
+    childFamilies.length > 0 &&
+    parents.some((parent) =>
+      intersects(childFamilies, collectSemanticFamilies(parent.id, registry, cache)),
+    )
+  ) {
     return true;
   }
 

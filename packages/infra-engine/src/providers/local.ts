@@ -2,18 +2,18 @@
 // @def.doc infra-engine-system
 
 // providers/local.ts — 로컬 K3s (k3d) 프로바이더
-import * as k8s from "@pulumi/kubernetes";
-import type { DeployProvider, ValidationResult } from "../adapters/adapter.js";
-import type { ResolvedConfig } from "../core/types.js";
+import * as k8s from '@pulumi/kubernetes';
+import type { DeployProvider, ValidationResult } from '../adapters/adapter.js';
+import type { ResolvedConfig } from '../core/types.js';
 
 /** K3s 환경에서 namespace를 결정하는 매핑 */
 const ENV_NAMESPACE: Record<string, string> = {
-  test: "qa-dev",
-  dev: "qa-dev",
-  stage: "qa-stage",
-  staging: "qa-stage",
-  prod: "qa-prod",
-  production: "qa-prod",
+  test: 'qa-dev',
+  dev: 'qa-dev',
+  stage: 'qa-stage',
+  staging: 'qa-stage',
+  prod: 'qa-prod',
+  production: 'qa-prod',
 };
 
 export interface LocalProviderOptions {
@@ -27,28 +27,25 @@ export interface LocalProviderOptions {
 
 export function createLocalProvider(options?: LocalProviderOptions): DeployProvider {
   return {
-    name: "local",
+    name: 'local',
 
     getProgram(config: ResolvedConfig, serviceId: string) {
       return async () => {
         const svcConfig = config.services[serviceId];
         const port = svcConfig?.port ?? 3200;
         const image = options?.imageOverride ?? `qa-sdk/${serviceId}:latest`;
-        const env = options?.env ?? "dev";
-        const namespace = ENV_NAMESPACE[env] ?? "qa-dev";
-        const healthPath = options?.healthPath
-          ?? (svcConfig as Record<string, unknown>)?.health_path as string | undefined
-          ?? config.connections?.[serviceId]?.health_path
-          ?? "/health/live";
+        const env = options?.env ?? 'dev';
+        const namespace = ENV_NAMESPACE[env] ?? 'qa-dev';
+        const healthPath =
+          options?.healthPath ??
+          ((svcConfig as Record<string, unknown>)?.health_path as string | undefined) ??
+          config.connections?.[serviceId]?.health_path ??
+          '/health/live';
 
         // 서비스 설정에서 env vars 추출 (port, depends_on, gates 제외)
         const envVars = Object.entries(svcConfig ?? {})
-          .filter(
-            ([k, v]) => typeof v === "string" || typeof v === "number",
-          )
-          .filter(
-            ([k]) => k !== "port" && k !== "depends_on" && k !== "gates",
-          )
+          .filter(([k, v]) => typeof v === 'string' || typeof v === 'number')
+          .filter(([k]) => k !== 'port' && k !== 'depends_on' && k !== 'gates')
           .map(([k, v]) => ({
             name: k.toUpperCase(),
             value: String(v),
@@ -67,7 +64,7 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
                   {
                     name: serviceId,
                     image,
-                    imagePullPolicy: "IfNotPresent", // k3d imported images
+                    imagePullPolicy: 'IfNotPresent', // k3d imported images
                     ports: [{ containerPort: port }],
                     env: envVars,
                     readinessProbe: {
@@ -87,7 +84,7 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
         const service = new k8s.core.v1.Service(svcName, {
           metadata: { namespace, name: svcName, labels: { app: serviceId } },
           spec: {
-            type: "NodePort",
+            type: 'NodePort',
             selector: { app: serviceId },
             ports: [{ port, targetPort: port }],
           },
@@ -109,14 +106,11 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
     async validate(config: ResolvedConfig): Promise<ValidationResult> {
       // kubectl 접근 가능 여부 + K8s 클러스터 상태 확인
       try {
-        const { execa } = await import("execa");
+        const { execa } = await import('execa');
 
         // kubectl context가 k3d-qa-local인지 확인
-        const { stdout: currentContext } = await execa("kubectl", [
-          "config",
-          "current-context",
-        ]);
-        if (currentContext.trim() !== "k3d-qa-local") {
+        const { stdout: currentContext } = await execa('kubectl', ['config', 'current-context']);
+        if (currentContext.trim() !== 'k3d-qa-local') {
           return {
             valid: false,
             errors: [
@@ -125,23 +119,18 @@ export function createLocalProvider(options?: LocalProviderOptions): DeployProvi
           };
         }
 
-        const { stdout } = await execa("kubectl", [
-          "cluster-info",
-          "--request-timeout=3s",
-        ]);
-        if (stdout.includes("running")) {
+        const { stdout } = await execa('kubectl', ['cluster-info', '--request-timeout=3s']);
+        if (stdout.includes('running')) {
           return { valid: true, errors: [] };
         }
         return {
           valid: false,
-          errors: ["K8s 클러스터에 연결할 수 없습니다"],
+          errors: ['K8s 클러스터에 연결할 수 없습니다'],
         };
       } catch {
         return {
           valid: false,
-          errors: [
-            "kubectl이 설치되어 있지 않거나 K8s 클러스터가 실행 중이 아닙니다",
-          ],
+          errors: ['kubectl이 설치되어 있지 않거나 K8s 클러스터가 실행 중이 아닙니다'],
         };
       }
     },

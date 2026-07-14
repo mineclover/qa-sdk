@@ -14,17 +14,25 @@
  *   3. 복수 entry는 배열로 지정
  */
 
-import type { CoordConstraint } from "weighted-index";
-import type { MetaCodec } from "./meta-codec.js";
-import type { EntityId } from "./types.js";
-import type { PatternRule, ConflictStrategy, ResolveResult, ConflictReport } from "./policy-resolver.js";
-import { resolvePolicy as resolvePatternPolicy, detectConflicts as detectPatternConflicts } from "./policy-resolver.js";
-import { ValidationError } from "./errors.js";
+import type { CoordConstraint } from 'weighted-index';
+import type { MetaCodec } from './meta-codec.js';
+import type { EntityId } from './types.js';
+import type {
+  PatternRule,
+  ConflictStrategy,
+  ResolveResult,
+  ConflictReport,
+} from './policy-resolver.js';
+import {
+  resolvePolicy as resolvePatternPolicy,
+  detectConflicts as detectPatternConflicts,
+} from './policy-resolver.js';
+import { ValidationError } from './errors.js';
 
 // ── 와일드카드 상수 ─────────────────────────────────────
 
 /** 명시적 와일드카드. 해당 dim의 모든 entry에 매칭. */
-export const WILDCARD = "*" as const;
+export const WILDCARD = '*' as const;
 
 // ── PolicyRule ─────────────────────────────────────
 
@@ -63,10 +71,7 @@ export interface PolicyRule<T> {
  * @throws {ValidationError} dim 누락 또는 unknown dim
  * @throws {ValidationError} entity name이 해당 dim에 없을 때
  */
-export function matchToConstraints(
-  codec: MetaCodec,
-  match: MatchSpec,
-): CoordConstraint[] {
+export function matchToConstraints(codec: MetaCodec, match: MatchSpec): CoordConstraint[] {
   const dimIds = codec.dimIds;
 
   // 누락 dim 검증
@@ -82,23 +87,21 @@ export function matchToConstraints(
   const dimIdSet = new Set(dimIds);
   for (const key of Object.keys(match)) {
     if (!dimIdSet.has(key)) {
-      throw new ValidationError(
-        `match에 unknown dim "${key}" — 유효 dim: [${dimIds.join(", ")}]`,
-      );
+      throw new ValidationError(`match에 unknown dim "${key}" — 유효 dim: [${dimIds.join(', ')}]`);
     }
   }
 
-  return dimIds.map(dimId => {
+  return dimIds.map((dimId) => {
     const spec = match[dimId];
 
     if (spec === WILDCARD) return null;
 
     if (Array.isArray(spec)) {
       // 복수 entry → position 목록
-      const positions = (spec as readonly EntityId[]).map(entry =>
+      const positions = (spec as readonly EntityId[]).map((entry) =>
         resolvePosition(codec, dimId, entry),
       );
-      return positions.join(",");
+      return positions.join(',');
     }
 
     // 단일 entry → 단일 position
@@ -112,30 +115,22 @@ export function matchToConstraints(
  * @throws {ValidationError} dim 누락 (match와 같은 검증)
  * @throws {ValidationError} entity name이 해당 dim에 없을 때
  */
-export function entitiesToCoord(
-  codec: MetaCodec,
-  entities: Record<string, EntityId>,
-): number[] {
+export function entitiesToCoord(codec: MetaCodec, entities: Record<string, EntityId>): number[] {
   const dimIds = codec.dimIds;
 
   for (const dimId of dimIds) {
     if (!(dimId in entities)) {
-      throw new ValidationError(
-        `entities에 dim "${dimId}" 누락`,
-      );
+      throw new ValidationError(`entities에 dim "${dimId}" 누락`);
     }
   }
 
-  return dimIds.map(dimId => resolvePosition(codec, dimId, entities[dimId]));
+  return dimIds.map((dimId) => resolvePosition(codec, dimId, entities[dimId]));
 }
 
 /**
  * PolicyRule(match 기반) → PatternRule(position 기반) 변환. 내부 엔진 호출용.
  */
-export function ruleToPattern<T>(
-  codec: MetaCodec,
-  rule: PolicyRule<T>,
-): PatternRule<T> {
+export function ruleToPattern<T>(codec: MetaCodec, rule: PolicyRule<T>): PatternRule<T> {
   return {
     id: rule.id,
     pattern: matchToConstraints(codec, rule.match),
@@ -182,7 +177,7 @@ export function resolvePolicy<T>(
 ): ResolveResult<T> | null {
   const coord = entitiesToCoord(codec, entities);
   const shape = [...codec.shape];
-  const policyRules = rules.map(r => ruleToPattern(codec, r));
+  const policyRules = rules.map((r) => ruleToPattern(codec, r));
 
   return resolvePatternPolicy(coord, policyRules, shape, strategy);
 }
@@ -196,7 +191,7 @@ export function detectConflicts<T>(
   eq?: (a: T, b: T) => boolean,
 ): ConflictReport<T>[] {
   const shape = [...codec.shape];
-  const policyRules = rules.map(r => ruleToPattern(codec, r));
+  const policyRules = rules.map((r) => ruleToPattern(codec, r));
   return detectPatternConflicts(policyRules, shape, eq);
 }
 
@@ -211,7 +206,7 @@ function resolvePosition(codec: MetaCodec, dimId: string, entry: EntityId): numb
   const idx = dim.entries.indexOf(entry);
   if (idx === -1) {
     throw new ValidationError(
-      `dim "${dimId}"에 entry "${entry}" 없음 — 유효: [${dim.entries.slice(0, 8).join(", ")}${dim.entries.length > 8 ? ", ..." : ""}]`,
+      `dim "${dimId}"에 entry "${entry}" 없음 — 유효: [${dim.entries.slice(0, 8).join(', ')}${dim.entries.length > 8 ? ', ...' : ''}]`,
     );
   }
 

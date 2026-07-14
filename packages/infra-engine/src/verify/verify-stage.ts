@@ -2,9 +2,9 @@
 // @def.doc infra-engine-system
 
 // verify/verify-stage.ts — 헬스체크 + 품질 게이트 검증 스테이지
-import type { Stage, DeployContext, VerifyResult, GateCheckResult } from "../core/types.js";
-import type { GateAdapter, ServiceProfileAdapter } from "../adapters/adapter.js";
-import { runBuiltinGates, type GateOptions } from "./gate-definitions.js";
+import type { Stage, DeployContext, VerifyResult, GateCheckResult } from '../core/types.js';
+import type { GateAdapter, ServiceProfileAdapter } from '../adapters/adapter.js';
+import { runBuiltinGates, type GateOptions } from './gate-definitions.js';
 
 interface VerifyOptions {
   maxRetries?: number;
@@ -19,7 +19,7 @@ export function createVerifyStage(gate: GateAdapter, options?: VerifyOptions): S
   const gateOptions: GateOptions = { serviceProfile: options?.serviceProfile };
 
   return {
-    name: "verify",
+    name: 'verify',
     async execute(ctx: DeployContext): Promise<DeployContext> {
       const start = Date.now();
       let checks: GateCheckResult[] = [];
@@ -28,9 +28,9 @@ export function createVerifyStage(gate: GateAdapter, options?: VerifyOptions): S
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         checks = await runBuiltinGates(ctx, gateOptions);
         const verdict = gate.evaluate(checks);
-        if (verdict !== "fail") {
+        if (verdict !== 'fail') {
           const verification: VerifyResult = {
-            healthStatus: verdict === "pass" ? "healthy" : "degraded",
+            healthStatus: verdict === 'pass' ? 'healthy' : 'degraded',
             gateVerdict: verdict,
             checks,
             retryCount: attempt,
@@ -46,7 +46,10 @@ export function createVerifyStage(gate: GateAdapter, options?: VerifyOptions): S
 
       // 최종 실패 → throw (파이프라인 rollback 트리거)
       throw new Error(
-        `VerifyStage 실패 (${retryCount + 1}회 시도): ${checks.filter((c) => c.verdict === "fail").map((c) => `${c.gate}: ${c.detail}`).join(", ")}`,
+        `VerifyStage 실패 (${retryCount + 1}회 시도): ${checks
+          .filter((c) => c.verdict === 'fail')
+          .map((c) => `${c.gate}: ${c.detail}`)
+          .join(', ')}`,
       );
     },
     // rollback 없음 — 읽기 전용 검증

@@ -56,11 +56,9 @@ interface ComposePsItem {
  *
  * controllerUrl이 있으면 HTTP 우선. 없으면 CLI fallback.
  */
-export function createComposeHandle(
-  args: ComposeHandleFactoryArgs,
-): ComposeHandle {
-  const v1Name = args.serviceNames?.v1 ?? "approval-api-v1";
-  const v2Name = args.serviceNames?.v2 ?? "approval-api-v2";
+export function createComposeHandle(args: ComposeHandleFactoryArgs): ComposeHandle {
+  const v1Name = args.serviceNames?.v1 ?? 'approval-api-v1';
+  const v2Name = args.serviceNames?.v2 ?? 'approval-api-v2';
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -70,24 +68,20 @@ export function createComposeHandle(
       }) as unknown as ReturnType<FetchLike>);
 
   async function getViaHttp(base: string): Promise<{ v1: number; v2: number }> {
-    const url = `${base.replace(/\/$/, "")}/admin/compose/replicas`;
-    const res = await fetchImpl(url, { method: "GET" });
+    const url = `${base.replace(/\/$/, '')}/admin/compose/replicas`;
+    const res = await fetchImpl(url, { method: 'GET' });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(
-        `compose-handle GET ${url} failed: status=${res.status} body=${body}`,
-      );
+      throw new Error(`compose-handle GET ${url} failed: status=${res.status} body=${body}`);
     }
     let json: unknown;
     try {
       json = await res.json();
     } catch (e) {
-      throw new Error(
-        `compose-handle JSON parse failed: ${(e as Error).message}`,
-      );
+      throw new Error(`compose-handle JSON parse failed: ${(e as Error).message}`);
     }
     const obj = json as { v1?: unknown; v2?: unknown };
-    if (typeof obj.v1 !== "number" || typeof obj.v2 !== "number") {
+    if (typeof obj.v1 !== 'number' || typeof obj.v2 !== 'number') {
       throw new Error(`compose-handle invalid shape: ${JSON.stringify(json)}`);
     }
     return { v1: obj.v1, v2: obj.v2 };
@@ -95,49 +89,36 @@ export function createComposeHandle(
 
   async function getViaCli(): Promise<{ v1: number; v2: number }> {
     if (!args.execImpl) {
-      throw new Error(
-        "compose-handle: execImpl required when controllerUrl missing",
-      );
+      throw new Error('compose-handle: execImpl required when controllerUrl missing');
     }
-    const r = await args.execImpl("docker", [
-      "compose",
-      "ps",
-      "--format",
-      "json",
-    ]);
+    const r = await args.execImpl('docker', ['compose', 'ps', '--format', 'json']);
     if (r.exitCode !== 0) {
-      throw new Error(
-        `compose-handle docker ps failed: exitCode=${r.exitCode} stderr=${r.stderr}`,
-      );
+      throw new Error(`compose-handle docker ps failed: exitCode=${r.exitCode} stderr=${r.stderr}`);
     }
     // docker compose v2: NDJSON (line-per-service) or JSON array, depending on version.
-    const lines = r.stdout.trim().split("\n").filter(Boolean);
+    const lines = r.stdout.trim().split('\n').filter(Boolean);
     let items: ComposePsItem[];
-    if (lines.length > 0 && lines[0].startsWith("[")) {
+    if (lines.length > 0 && lines[0].startsWith('[')) {
       try {
         items = JSON.parse(r.stdout) as ComposePsItem[];
       } catch (e) {
-        throw new Error(
-          `compose-handle JSON.parse failed: ${(e as Error).message}`,
-        );
+        throw new Error(`compose-handle JSON.parse failed: ${(e as Error).message}`);
       }
     } else {
       items = lines.map((l) => {
         try {
           return JSON.parse(l) as ComposePsItem;
         } catch (e) {
-          throw new Error(
-            `compose-handle line JSON.parse failed: ${(e as Error).message}`,
-          );
+          throw new Error(`compose-handle line JSON.parse failed: ${(e as Error).message}`);
         }
       });
     }
     let v1 = 0;
     let v2 = 0;
     for (const it of items) {
-      const svc = it.Service ?? "";
-      const state = (it.State ?? "").toLowerCase();
-      if (state !== "running") continue;
+      const svc = it.Service ?? '';
+      const state = (it.State ?? '').toLowerCase();
+      if (state !== 'running') continue;
       if (svc === v1Name) v1 += 1;
       else if (svc === v2Name) v2 += 1;
     }

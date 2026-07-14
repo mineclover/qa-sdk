@@ -1,6 +1,6 @@
-import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
-import { parse as parseYaml } from "taxonomy-engine";
+import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
+import { parse as parseYaml } from 'taxonomy-engine';
 import {
   extractEvidence,
   parseDecisionFile,
@@ -8,10 +8,10 @@ import {
   toFlowSchema,
   toMarkdownText,
   type DecisionFile,
-} from "taxonomy-decision-bridge";
+} from 'taxonomy-decision-bridge';
 
-const TAX_DIR = "docs/taxonomies";
-const DECISIONS_DIR = "docs/decisions";
+const TAX_DIR = 'docs/taxonomies';
+const DECISIONS_DIR = 'docs/decisions';
 
 type RenderArgs = {
   refFilter?: string;
@@ -20,7 +20,7 @@ type RenderArgs = {
 
 export async function decisionRenderCmd(args: string[]): Promise<void> {
   const parsed = parseRenderArgs(args);
-  if ("error" in parsed) {
+  if ('error' in parsed) {
     console.error(parsed.error);
     process.exit(1);
     return;
@@ -30,7 +30,7 @@ export async function decisionRenderCmd(args: string[]): Promise<void> {
   let yamlFiles: string[];
   try {
     yamlFiles = readdirSync(join(cwd, TAX_DIR))
-      .filter((f) => f.endsWith(".yaml"))
+      .filter((f) => f.endsWith('.yaml'))
       .map((f) => join(TAX_DIR, f));
   } catch (e) {
     console.error(`docs/taxonomies/ 읽기 실패: ${(e as Error).message}`);
@@ -41,9 +41,9 @@ export async function decisionRenderCmd(args: string[]): Promise<void> {
   const rendered: Array<{ ref: string; text: string }> = [];
 
   for (const yamlFile of yamlFiles) {
-    const text = readFileSync(join(cwd, yamlFile), "utf8");
+    const text = readFileSync(join(cwd, yamlFile), 'utf8');
     const r = parseYaml(text);
-    if ("error" in r) continue;
+    if ('error' in r) continue;
     for (const [axisName, axis] of r.ir.axes) {
       for (const entry of axis.entries) {
         if (!entry.decisionLink) continue;
@@ -54,12 +54,12 @@ export async function decisionRenderCmd(args: string[]): Promise<void> {
           yamlAbsDir: dirname(join(cwd, yamlFile)),
           decisionsDir: join(cwd, DECISIONS_DIR),
         });
-        if (resolved.kind === "external" || resolved.kind === "unsupported") continue;
+        if (resolved.kind === 'external' || resolved.kind === 'unsupported') continue;
         const decisionPath = resolved.absPath;
         if (!existsSync(decisionPath)) continue;
         let decisionFile: DecisionFile;
         try {
-          decisionFile = parseDecisionFile(readFileSync(decisionPath, "utf8"));
+          decisionFile = parseDecisionFile(readFileSync(decisionPath, 'utf8'));
         } catch {
           continue;
         }
@@ -83,7 +83,7 @@ export async function decisionRenderCmd(args: string[]): Promise<void> {
   }
 
   if (rendered.length === 0) {
-    console.error("render 대상 decision 없음");
+    console.error('render 대상 decision 없음');
     process.exit(1);
     return;
   }
@@ -115,12 +115,12 @@ function parseRenderArgs(args: string[]): RenderArgs | { error: string } {
   const opts: RenderArgs = {};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--out") {
+    if (a === '--out') {
       const next = args[i + 1];
-      if (!next) return { error: "--out: path 인자 필요" };
+      if (!next) return { error: '--out: path 인자 필요' };
       opts.outPath = next;
       i++;
-    } else if (!a.startsWith("--")) {
+    } else if (!a.startsWith('--')) {
       opts.refFilter = a;
     } else {
       return { error: `알 수 없는 옵션: ${a}` };

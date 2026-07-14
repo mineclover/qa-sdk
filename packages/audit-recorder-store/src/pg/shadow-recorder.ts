@@ -1,16 +1,16 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import type { Sql } from "postgres";
-import type { RlsShadowPrediction } from "db-bootstrap";
-import { randomUUID } from "node:crypto";
+import type { Sql } from 'postgres';
+import type { RlsShadowPrediction } from 'db-bootstrap';
+import { randomUUID } from 'node:crypto';
 
 export interface ShadowRecordInput {
   userId: string | null;
   tenantId: string | null;
   resourceTable: string;
-  operation: "select" | "insert" | "update" | "delete";
-  applicationDecision: "allow" | "deny";
+  operation: 'select' | 'insert' | 'update' | 'delete';
+  applicationDecision: 'allow' | 'deny';
   rlsPrediction: RlsShadowPrediction;
   requestId?: string | null;
 }
@@ -28,7 +28,7 @@ export class PgRlsShadowRecorder {
   constructor(
     private readonly sql: Sql,
     private readonly logger: Logger,
-    private readonly tableRef: string = "audit.rls_shadow_decisions",
+    private readonly tableRef: string = 'audit.rls_shadow_decisions',
   ) {}
 
   record(input: ShadowRecordInput): void {
@@ -55,7 +55,7 @@ export class PgRlsShadowRecorder {
     );
     // fire-and-forget — 실패만 로깅
     Promise.resolve(promise).catch((err: unknown) => {
-      this.logger.error({ err, shadowId: id }, "rls-shadow 기록 실패");
+      this.logger.error({ err, shadowId: id }, 'rls-shadow 기록 실패');
     });
   }
 }

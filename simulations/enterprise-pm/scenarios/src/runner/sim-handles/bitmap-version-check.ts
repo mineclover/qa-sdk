@@ -38,7 +38,7 @@ export interface BitmapVersionCheckFactoryArgs {
 
 export interface BitmapVersionCheckResult {
   recoveredAtMs: number;
-  recoveredVia: "version-check" | "ttl";
+  recoveredVia: 'version-check' | 'ttl';
 }
 
 /**
@@ -49,10 +49,7 @@ export interface BitmapVersionCheckResult {
  */
 export function createBitmapVersionCheck(
   args: BitmapVersionCheckFactoryArgs,
-): (
-  expected: string,
-  timeoutMs: number,
-) => Promise<BitmapVersionCheckResult> {
+): (expected: string, timeoutMs: number) => Promise<BitmapVersionCheckResult> {
   const fetchImpl: FetchLike =
     args.fetchImpl ??
     ((input, init) =>
@@ -61,11 +58,10 @@ export function createBitmapVersionCheck(
         signal: AbortSignal.timeout(args.requestTimeoutMs ?? 5_000),
       }) as unknown as ReturnType<FetchLike>);
   const sleep =
-    args.sleepImpl ??
-    ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+    args.sleepImpl ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const now = args.nowImpl ?? (() => Date.now());
   const pollMs = args.pollIntervalMs ?? 200;
-  const base = args.authApiUrl.replace(/\/$/, "");
+  const base = args.authApiUrl.replace(/\/$/, '');
 
   return async function checkRecovery(
     expected: string,
@@ -74,7 +70,7 @@ export function createBitmapVersionCheck(
     const deadline = now() + timeoutMs;
     while (now() < deadline) {
       const url = `${base}/admin/bitmap/version`;
-      const res = await fetchImpl(url, { method: "GET" });
+      const res = await fetchImpl(url, { method: 'GET' });
       if (!res.ok) {
         const body = await res.text();
         throw new Error(
@@ -85,28 +81,22 @@ export function createBitmapVersionCheck(
       try {
         json = await res.json();
       } catch (e) {
-        throw new Error(
-          `bitmap-version-check JSON parse failed: ${(e as Error).message}`,
-        );
+        throw new Error(`bitmap-version-check JSON parse failed: ${(e as Error).message}`);
       }
       const obj = json as { version?: unknown; recoveredVia?: unknown };
-      if (typeof obj.version !== "string") {
-        throw new Error(
-          `bitmap-version-check invalid shape: ${JSON.stringify(json)}`,
-        );
+      if (typeof obj.version !== 'string') {
+        throw new Error(`bitmap-version-check invalid shape: ${JSON.stringify(json)}`);
       }
       if (obj.version === expected) {
         const via =
-          obj.recoveredVia === "version-check" || obj.recoveredVia === "ttl"
+          obj.recoveredVia === 'version-check' || obj.recoveredVia === 'ttl'
             ? obj.recoveredVia
-            : "version-check";
+            : 'version-check';
         return { recoveredAtMs: now(), recoveredVia: via };
       }
       if (now() + pollMs >= deadline) break;
       await sleep(pollMs);
     }
-    throw new Error(
-      `bitmap-version-check timeout: expected=${expected} timeoutMs=${timeoutMs}`,
-    );
+    throw new Error(`bitmap-version-check timeout: expected=${expected} timeoutMs=${timeoutMs}`);
   };
 }

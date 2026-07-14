@@ -5,8 +5,8 @@ import type {
   MigrationStore,
   MigrationMapping,
   MigrationResolveResult,
-} from "../migration-store.js";
-import type { EntityId } from "../types.js";
+} from '../migration-store.js';
+import type { EntityId } from '../types.js';
 
 interface StoredMigrationMapping {
   readonly prefix: string;
@@ -96,19 +96,17 @@ export class InMemoryMigrationStore implements MigrationStore {
     for (let index = 0; index < path.length - 1; index++) {
       const currentVersionId = path[index];
       const toVersionId = path[index + 1];
-      const mapping = this._mappings
-        .find(
-          (entry) =>
-            entry.prefix === prefix &&
-            entry.mapping.fromVersionId === currentVersionId &&
-            entry.mapping.toVersionId === toVersionId &&
-            entry.mapping.position === position,
-        )
-        ?.mapping;
+      const mapping = this._mappings.find(
+        (entry) =>
+          entry.prefix === prefix &&
+          entry.mapping.fromVersionId === currentVersionId &&
+          entry.mapping.toVersionId === toVersionId &&
+          entry.mapping.position === position,
+      )?.mapping;
 
       if (mapping !== undefined) {
         chain.push(mapping);
-        if (mapping.changeType === "deactivated") {
+        if (mapping.changeType === 'deactivated') {
           currentEntityId = null;
           return {
             currentVersionId: toVersionId,
@@ -128,7 +126,11 @@ export class InMemoryMigrationStore implements MigrationStore {
     };
   }
 
-  private findPath(prefix: string, fromVersionId: string, latestVersionId: string): string[] | null {
+  private findPath(
+    prefix: string,
+    fromVersionId: string,
+    latestVersionId: string,
+  ): string[] | null {
     const edges = this.getEdges(prefix);
     const adjacency = new Map<string, MigrationEdge[]>();
 

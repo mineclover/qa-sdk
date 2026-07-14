@@ -21,7 +21,7 @@
  *  getDataset()                      : 전체 스키마 내보내기
  */
 
-import { computeActiveIndices, snapshotCapacity, type MetaRegistry } from "./meta-registry.js";
+import { computeActiveIndices, snapshotCapacity, type MetaRegistry } from './meta-registry.js';
 import type {
   AddressConfig,
   EntityId,
@@ -29,8 +29,8 @@ import type {
   DimRange,
   IndexRange,
   MetaDataset,
-} from "./types.js";
-import type { PrefixDecoderConfig } from "./prefix-decoder.js";
+} from './types.js';
+import type { PrefixDecoderConfig } from './prefix-decoder.js';
 
 // ── MetaResolver ──────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ export class MetaResolver {
     const refs: Record<string, DecodeMap> = {};
 
     for (const dim of map.dims) {
-      if (dim.kind.type === "index_ref") {
+      if (dim.kind.type === 'index_ref') {
         const refIndexId = dim.kind.indexId;
         if (!refs[refIndexId]) {
           const refVersionIds = this.registry.getVersionIds(refIndexId);

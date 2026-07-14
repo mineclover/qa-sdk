@@ -18,7 +18,7 @@ export interface QueryAttributes {
   readonly tags: Readonly<Record<string, string>>;
 }
 
-export type QueryOperation = "select" | "insert" | "update" | "delete";
+export type QueryOperation = 'select' | 'insert' | 'update' | 'delete';
 
 // ── Budget 정의 ────────────────────────────────────────────
 
@@ -53,14 +53,14 @@ export interface BudgetDef {
   readonly match: BudgetMatchRule;
   readonly limits: BudgetLimits;
   /** warn: 로그만 (쿼리 차단 안 함), enforce: 실제 차단 */
-  readonly mode: "warn" | "enforce";
+  readonly mode: 'warn' | 'enforce';
   /** 우선순위 — 여러 budget 매칭 시 낮은 값 우선 */
   readonly priority: number;
 }
 
 // ── 판정 결과 ──────────────────────────────────────────────
 
-export type Verdict = "allow" | "throttled" | "rejected";
+export type Verdict = 'allow' | 'throttled' | 'rejected';
 
 export interface QueryDecision {
   readonly verdict: Verdict;

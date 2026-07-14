@@ -2,12 +2,8 @@ import {
   validateOperationalOntologySchema,
   type OperationalOntologySchema,
 } from './schema-core.js';
-import {
-  validateImplementationBlueprint,
-} from './implementation-governance-evaluator.js';
-import {
-  validateImplementationGovernanceTaxonomy,
-} from './implementation-governance-taxonomy.js';
+import { validateImplementationBlueprint } from './implementation-governance-evaluator.js';
+import { validateImplementationGovernanceTaxonomy } from './implementation-governance-taxonomy.js';
 import type {
   ImplementationBlueprint,
   ImplementationBlueprintValidationResult,
@@ -90,7 +86,12 @@ export function validateOperationalOntologyPack(
 
   if (pack.packId.trim().length === 0) {
     issues.push(
-      createPackIssue('pack-id-empty', 'Operational ontology pack id must not be empty', 'packId', 'pack'),
+      createPackIssue(
+        'pack-id-empty',
+        'Operational ontology pack id must not be empty',
+        'packId',
+        'pack',
+      ),
     );
   }
 

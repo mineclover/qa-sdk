@@ -3,19 +3,19 @@
   "version": "0.1.0",
   "description": "QA-SDK CLI — APM schema management and code generation",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "qa-sdk": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "corepack pnpm --filter cli-command build && tsup",
     "dev": "corepack pnpm --filter cli-command build && tsup --watch",
@@ -33,10 +33,9 @@
     "@qa-sdk/registry-service": "workspace:*",
     "@qa-sdk/spec-core": "workspace:*",
     "authorization-ontology": "workspace:*",
-    "operational-ontology": "workspace:*",
     "better-sqlite3": "catalog:",
-    "codegen-core": "workspace:*",
     "cli-command": "workspace:*",
+    "codegen-core": "workspace:*",
     "config-loader": "workspace:*",
     "decision-flow": "workspace:*",
     "decision-flow-store": "workspace:*",
@@ -45,9 +44,9 @@
     "demo-dkg-config": "workspace:*",
     "demo-snapshot": "workspace:*",
     "deterministic-label-registry": "workspace:*",
-    "doc-envelope": "workspace:*",
     "dkg": "workspace:*",
     "dkg-enrichment": "workspace:*",
+    "doc-envelope": "workspace:*",
     "drizzle-orm": "catalog:",
     "execa": "^9.6.1",
     "git-utils": "workspace:*",
@@ -56,16 +55,17 @@
     "motion-workspace": "workspace:*",
     "motion-workspace-client": "workspace:*",
     "ontology-pack-validate": "workspace:*",
+    "operational-ontology": "workspace:*",
     "package-classifier": "workspace:*",
     "quality-ledger": "workspace:*",
     "ralph-tui-integration": "workspace:*",
     "review-ledger": "workspace:*",
     "snapshot-io": "workspace:*",
     "spec-analyzer": "workspace:*",
-    "taxonomy-decision-bridge": "workspace:*",
-    "taxonomy-engine": "workspace:*",
     "spec-tracker": "workspace:*",
     "spec-transition": "workspace:*",
+    "taxonomy-decision-bridge": "workspace:*",
+    "taxonomy-engine": "workspace:*",
     "test-scenario-store": "workspace:*",
     "test-types": "workspace:*",
     "work-domain": "workspace:*"

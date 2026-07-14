@@ -1,7 +1,7 @@
 // @def.boundary sim-auth-api
 // @def.doc domain-slice-architecture
 
-import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, index } from 'drizzle-orm/sqlite-core';
 
 /**
  * SQLite schema (user slice).
@@ -12,17 +12,17 @@ import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
  *     본 슬라이스는 별도 DDL 을 노출하지 않는다 (idempotent CREATE).
  */
 export const users = sqliteTable(
-  "users",
+  'users',
   {
-    id: text("id").primaryKey(),
-    email: text("email").notNull().unique(),
-    displayName: text("display_name").notNull(),
-    departmentId: text("department_id"),
-    primaryRoleId: text("primary_role_id"),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(),
+    displayName: text('display_name').notNull(),
+    departmentId: text('department_id'),
+    primaryRoleId: text('primary_role_id'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
   },
-  (t) => [index("idx_users_dept").on(t.departmentId)],
+  (t) => [index('idx_users_dept').on(t.departmentId)],
 );
 
 /**

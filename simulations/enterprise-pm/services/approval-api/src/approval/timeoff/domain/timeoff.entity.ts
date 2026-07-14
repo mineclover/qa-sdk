@@ -1,14 +1,14 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import { toRequesterId, toTimeOffRequestId } from "./timeoff.ids.js";
+import { toRequesterId, toTimeOffRequestId } from './timeoff.ids.js';
 import {
   InvalidTimeOffRangeException,
   TimeOffStatusConflictException,
-} from "./timeoff.exceptions.js";
-import type { TimeOffProps, TimeOffSnapshot, TimeOffStatus } from "./timeoff.types.js";
+} from './timeoff.exceptions.js';
+import type { TimeOffProps, TimeOffSnapshot, TimeOffStatus } from './timeoff.types.js';
 
-const TERMINAL: TimeOffStatus[] = ["approved", "rejected"];
+const TERMINAL: TimeOffStatus[] = ['approved', 'rejected'];
 
 export class TimeOffEntity {
   private constructor(private readonly props: TimeOffProps) {}
@@ -31,7 +31,7 @@ export class TimeOffEntity {
       startDate: input.startDate,
       endDate: input.endDate,
       reason: input.reason,
-      status: "draft",
+      status: 'draft',
       createdAt: now,
       updatedAt: now,
     });

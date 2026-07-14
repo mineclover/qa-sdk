@@ -16,20 +16,20 @@ export interface ScenarioSpec {
 
 export interface EntryCondition {
   field: string;
-  op: "eq" | "neq" | "exists" | "gt" | "lt" | "contains";
+  op: 'eq' | 'neq' | 'exists' | 'gt' | 'lt' | 'contains';
   value?: unknown;
 }
 
 // ── Step ────────────────────────────────────────────────
 
-export type StepKind = "sequence" | "optional" | "branch";
+export type StepKind = 'sequence' | 'optional' | 'branch';
 
 export interface ScenarioStep {
   id: string;
   event_key: string;
   event_version?: string;
   source?: string;
-  record_kind?: "log" | "span";
+  record_kind?: 'log' | 'span';
   required: boolean;
   kind: StepKind;
   constraints?: StepConstraint[];
@@ -42,7 +42,7 @@ export interface ScenarioStep {
 
 export interface StepConstraint {
   field: string;
-  op: "eq" | "neq" | "exists" | "gt" | "lt" | "contains" | "masked";
+  op: 'eq' | 'neq' | 'exists' | 'gt' | 'lt' | 'contains' | 'masked';
   value?: unknown;
 }
 

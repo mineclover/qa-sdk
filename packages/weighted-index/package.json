@@ -3,13 +3,19 @@
   "version": "0.2.0",
   "description": "Weighted positional notation — encode/decode multi-dimensional coordinates to a single integer, with label versioning and prefix management.",
   "keywords": [
-    "weighted-index",
-    "codec",
     "bijection",
-    "versioning"
+    "codec",
+    "versioning",
+    "weighted-index"
   ],
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -32,12 +38,6 @@
       "require": "./dist/protocol/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

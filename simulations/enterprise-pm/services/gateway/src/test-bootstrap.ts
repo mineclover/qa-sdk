@@ -1,11 +1,11 @@
 // @def.boundary sim-gateway
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { randomBytes } from "node:crypto";
-import type { Hono } from "hono";
-import { createApp, type AppOptions } from "./app.js";
-import { signBitmapJwt } from "./lib/jwt.js";
-import type { VersionedBitmap } from "permission-engine";
+import { randomBytes } from 'node:crypto';
+import type { Hono } from 'hono';
+import { createApp, type AppOptions } from './app.js';
+import { signBitmapJwt } from './lib/jwt.js';
+import type { VersionedBitmap } from 'permission-engine';
 
 /**
  * 시나리오 runner 공통 fixture — 6 PROXY_TARGETS 의 기본 placeholder URL.
@@ -15,12 +15,12 @@ import type { VersionedBitmap } from "permission-engine";
  * 테스트 의도(의존 주입 누락)를 명확히 드러낸다.
  */
 export const DEFAULT_TEST_PROXY_TARGETS: Readonly<Record<string, string>> = {
-  "sim-pm-api": "http://127.0.0.1:1",
-  "sim-approval-api": "http://127.0.0.1:1",
-  "sim-notification-api": "http://127.0.0.1:1",
-  "sim-reporting-api": "http://127.0.0.1:1",
-  "sim-document-api": "http://127.0.0.1:1",
-  "sim-audit-browser-api": "http://127.0.0.1:1",
+  'sim-pm-api': 'http://127.0.0.1:1',
+  'sim-approval-api': 'http://127.0.0.1:1',
+  'sim-notification-api': 'http://127.0.0.1:1',
+  'sim-reporting-api': 'http://127.0.0.1:1',
+  'sim-document-api': 'http://127.0.0.1:1',
+  'sim-audit-browser-api': 'http://127.0.0.1:1',
 };
 
 export interface GatewayTestAppOptions {
@@ -55,18 +55,15 @@ export interface GatewayTestAppHandle {
  * default proxy targets 을 주입. 실 downstream 을 연결하려는 시나리오는 proxyTargets
  * 필드로 override (부분 override 도 허용).
  */
-export function createGatewayTestApp(
-  opts: GatewayTestAppOptions,
-): GatewayTestAppHandle {
-  const secret =
-    opts.jwtSecret ?? randomBytes(32).toString("hex"); // 64 char hex = 32 byte 이상
-  const currentBitmapV = opts.currentBitmapV ?? "uv1";
+export function createGatewayTestApp(opts: GatewayTestAppOptions): GatewayTestAppHandle {
+  const secret = opts.jwtSecret ?? randomBytes(32).toString('hex'); // 64 char hex = 32 byte 이상
+  const currentBitmapV = opts.currentBitmapV ?? 'uv1';
   const jwtTtlSeconds = opts.jwtTtlSeconds ?? 300;
   const proxyTargets: Record<string, string> = {
     ...DEFAULT_TEST_PROXY_TARGETS,
     ...(opts.proxyTargets ?? {}),
   };
-  const authApiUrl = opts.authApiUrl ?? "http://127.0.0.1:1";
+  const authApiUrl = opts.authApiUrl ?? 'http://127.0.0.1:1';
   const proxyTimeoutMs = opts.proxyTimeoutMs ?? 500;
 
   const appOptions: AppOptions = {
@@ -108,13 +105,13 @@ export interface IssueTestTokenArgs {
 export async function issueTestToken(args: IssueTestTokenArgs): Promise<string> {
   const now = new Date();
   const bitmap: VersionedBitmap = {
-    prefix: "sim.bitmap",
+    prefix: 'sim.bitmap',
     v: args.bitmapV,
     mask: args.mask ?? new Uint8Array(3),
     issuedAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + args.ttlSeconds * 1000).toISOString(),
-    issuer: args.issuer ?? "test-bootstrap",
-    signature: args.signature ?? "test-signature",
+    issuer: args.issuer ?? 'test-bootstrap',
+    signature: args.signature ?? 'test-signature',
   };
   return signBitmapJwt({
     userId: args.userId,

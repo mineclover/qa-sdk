@@ -1,5 +1,5 @@
-import type { AssignmentReadModelPort } from "../../application/queries/assignment-read-model.query.js";
-import type { AssignmentLoggerPort } from "../../application/ports/assignment-logger.port.js";
+import type { AssignmentReadModelPort } from '../../application/queries/assignment-read-model.query.js';
+import type { AssignmentLoggerPort } from '../../application/ports/assignment-logger.port.js';
 
 export interface AssignmentDetailBffModel {
   readonly id: string;
@@ -11,7 +11,7 @@ export interface AssignmentDetailBffModel {
 }
 
 export class AssignmentDetailBff {
-  readonly cachePrefix = "assignment-bff-detail:v1";
+  readonly cachePrefix = 'assignment-bff-detail:v1';
 
   constructor(
     private readonly readModel: AssignmentReadModelPort,
@@ -28,11 +28,11 @@ export class AssignmentDetailBff {
     await this.logger.record({
       traceId: input.traceId,
       correlationId: input.correlationId,
-      domain: "assignment",
-      useCase: "AssignmentDetailBff.getDetail",
+      domain: 'assignment',
+      useCase: 'AssignmentDetailBff.getDetail',
       aggregateId: input.id,
-      queryName: "AssignmentDetailBffQuery",
-      outcome: detail ? "success" : "failure",
+      queryName: 'AssignmentDetailBffQuery',
+      outcome: detail ? 'success' : 'failure',
       cacheKeyPrefix: this.cachePrefix,
       cacheHit: false,
     });

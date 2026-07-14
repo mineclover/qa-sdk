@@ -1,15 +1,15 @@
 {
   "name": "@qa-sdk/simulation-tests",
   "version": "0.1.0",
-  "description": "서비스 간 순수 로직 결합을 검증하는 시뮬레이션 테스트",
   "private": true,
+  "description": "서비스 간 순수 로직 결합을 검증하는 시뮬레이션 테스트",
   "type": "module",
   "scripts": {
     "test": "test -d synced && vitest run --passWithNoTests || echo 'synced/ rclone 복제본 없음 — 로컬 전용 테스트 skip'"
   },
   "dependencies": {
-    "index-meta": "workspace:*",
-    "@qa-sdk/core": "workspace:*"
+    "@qa-sdk/core": "workspace:*",
+    "index-meta": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.2",

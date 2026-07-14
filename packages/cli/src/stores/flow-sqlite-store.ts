@@ -15,23 +15,12 @@ import type {
   InstanceContextQuery,
   InstanceTimeRangeQuery,
   FlowInstance,
-} from "decision-flow";
-import { getDatabaseSync, type DatabaseSyncInstance } from "index-meta";
-import { drizzle } from "drizzle-orm/node-sqlite";
-import { migrate } from "drizzle-orm/node-sqlite/migrator";
-import { flowInstances } from "../db/schema.js";
-import {
-  eq,
-  and,
-  desc,
-  asc,
-  gte,
-  lte,
-  sql,
-  count,
-  countDistinct,
-  type SQL,
-} from "drizzle-orm";
+} from 'decision-flow';
+import { getDatabaseSync, type DatabaseSyncInstance } from 'index-meta';
+import { drizzle } from 'drizzle-orm/node-sqlite';
+import { migrate } from 'drizzle-orm/node-sqlite/migrator';
+import { flowInstances } from '../db/schema.js';
+import { eq, and, desc, asc, gte, lte, sql, count, countDistinct, type SQL } from 'drizzle-orm';
 
 // drizzle() 반환 타입
 type DrizzleDb = ReturnType<typeof drizzle>;
@@ -45,16 +34,16 @@ export class SqliteInstanceStore implements InstanceStore {
   constructor(path: string) {
     const DatabaseSync = getDatabaseSync();
     this.rawDb = new DatabaseSync(path);
-    this.rawDb.exec("PRAGMA journal_mode = WAL");
-    this.rawDb.exec("PRAGMA busy_timeout = 3000");
+    this.rawDb.exec('PRAGMA journal_mode = WAL');
+    this.rawDb.exec('PRAGMA busy_timeout = 3000');
     // drizzle 인스턴스 생성 + 마이그레이션 실행
     try {
       this.db = drizzle({ client: this.rawDb });
       migrate(this.db, {
-        migrationsFolder: new URL("../../drizzle", import.meta.url).pathname,
+        migrationsFolder: new URL('../../drizzle', import.meta.url).pathname,
       });
     } catch (err) {
-      console.error("[cli] drizzle 마이그레이션 실패:", err);
+      console.error('[cli] drizzle 마이그레이션 실패:', err);
       throw err;
     }
   }
@@ -69,9 +58,7 @@ export class SqliteInstanceStore implements InstanceStore {
       selections: JSON.stringify(instance.selections),
       outcome: instance.outcome ?? null,
       address: instance.coordinateAddress ?? null,
-      addressContext: instance.addressContext
-        ? JSON.stringify(instance.addressContext)
-        : null,
+      addressContext: instance.addressContext ? JSON.stringify(instance.addressContext) : null,
       verdict: instance.verdict ? JSON.stringify(instance.verdict) : null,
       testPlan: instance.testPlan ? JSON.stringify(instance.testPlan) : null,
       startedAt: instance.startedAt,
@@ -117,14 +104,12 @@ export class SqliteInstanceStore implements InstanceStore {
     }
     // SQLite에서 JSON 필드 검색 — json_extract 사용
     const jsonPath = `$.${query.key}`;
-    if (Object.prototype.hasOwnProperty.call(query, "value")) {
+    if (Object.prototype.hasOwnProperty.call(query, 'value')) {
       conditions.push(
         sql`json_extract(${flowInstances.context}, ${jsonPath}) = ${String(query.value)}`,
       );
     } else {
-      conditions.push(
-        sql`json_extract(${flowInstances.context}, ${jsonPath}) IS NOT NULL`,
-      );
+      conditions.push(sql`json_extract(${flowInstances.context}, ${jsonPath}) IS NOT NULL`);
     }
     const rows = this.db
       .select()
@@ -184,11 +169,7 @@ export class SqliteInstanceStore implements InstanceStore {
 
   /** 인스턴스 단건 조회 */
   findById(id: string): FlowInstance | undefined {
-    const row = this.db
-      .select()
-      .from(flowInstances)
-      .where(eq(flowInstances.id, id))
-      .get();
+    const row = this.db.select().from(flowInstances).where(eq(flowInstances.id, id)).get();
     return row ? toFlowInstance(row) : undefined;
   }
 
@@ -197,7 +178,7 @@ export class SqliteInstanceStore implements InstanceStore {
     const rows = this.db
       .select()
       .from(flowInstances)
-      .where(eq(flowInstances.status, "active"))
+      .where(eq(flowInstances.status, 'active'))
       .orderBy(desc(flowInstances.startedAt))
       .all();
     return rows.map(toFlowInstance);
@@ -210,19 +191,16 @@ export class SqliteInstanceStore implements InstanceStore {
     active: number;
     schemas: number;
   } {
-    const totalRow = this.db
-      .select({ cnt: count() })
-      .from(flowInstances)
-      .get();
+    const totalRow = this.db.select({ cnt: count() }).from(flowInstances).get();
     const completedRow = this.db
       .select({ cnt: count() })
       .from(flowInstances)
-      .where(eq(flowInstances.status, "completed"))
+      .where(eq(flowInstances.status, 'completed'))
       .get();
     const activeRow = this.db
       .select({ cnt: count() })
       .from(flowInstances)
-      .where(eq(flowInstances.status, "active"))
+      .where(eq(flowInstances.status, 'active'))
       .get();
     const schemasRow = this.db
       .select({ cnt: countDistinct(flowInstances.schemaId) })
@@ -256,9 +234,7 @@ function toFlowInstance(row: DrizzleRow): FlowInstance {
     selections: safeJsonParse(row.selections, []),
     outcome: row.outcome ?? undefined,
     coordinateAddress: row.address ?? undefined,
-    addressContext: row.addressContext
-      ? safeJsonParse(row.addressContext, undefined)
-      : undefined,
+    addressContext: row.addressContext ? safeJsonParse(row.addressContext, undefined) : undefined,
     verdict: row.verdict ? safeJsonParse(row.verdict, undefined) : undefined,
     testPlan: row.testPlan ? safeJsonParse(row.testPlan, undefined) : undefined,
     startedAt: row.startedAt,
@@ -270,9 +246,7 @@ function safeJsonParse<T>(json: string, fallback: T): T {
   try {
     return JSON.parse(json) as T;
   } catch {
-    console.warn(
-      `[flow-sqlite] JSON 파싱 실패 — fallback 사용: ${json.slice(0, 50)}`,
-    );
+    console.warn(`[flow-sqlite] JSON 파싱 실패 — fallback 사용: ${json.slice(0, 50)}`);
     return fallback;
   }
 }

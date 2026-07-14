@@ -1,7 +1,7 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import type { PrefixRouter } from "../prefix-router.js";
+import type { PrefixRouter } from '../prefix-router.js';
 
 export class InMemoryPrefixRouter implements PrefixRouter {
   /** prefix → d1DatabaseId */

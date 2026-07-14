@@ -1,12 +1,12 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import type { DocumentRepositoryPort } from "../../application/ports/document-repository.port.js";
-import type { DocumentOutboxPort } from "../../application/ports/document-outbox.port.js";
+import type { DocumentRepositoryPort } from '../../application/ports/document-repository.port.js';
+import type { DocumentOutboxPort } from '../../application/ports/document-outbox.port.js';
 import type {
   DocumentTransactionPort,
   DocumentTransactionScope,
-} from "../../application/ports/document-transaction.port.js";
+} from '../../application/ports/document-transaction.port.js';
 
 /**
  * Unit of Work — TransactionPort + RepositoryPort + OutboxPort 합성.

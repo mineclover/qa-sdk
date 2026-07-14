@@ -1,8 +1,5 @@
 // @def.doc deterministic-label-architecture
-import {
-  detectCompletedRecords,
-  type CompletedRecordState,
-} from "doc-envelope";
+import { detectCompletedRecords, type CompletedRecordState } from 'doc-envelope';
 import {
   projectDeterministicLabelRecordsFromDocuments,
   SEMANTIC_COORDINATE_LABEL_KINDS,
@@ -13,14 +10,10 @@ import {
   type SemanticCoordinateDiagnosticCode,
   type SemanticCoordinateLabelKind,
   type SemanticCoordinateSkippedDocument,
-} from "./index.js";
-import type {
-  DocumentAdapter,
-  DocumentEnvelope,
-} from "doc-envelope";
+} from './index.js';
+import type { DocumentAdapter, DocumentEnvelope } from 'doc-envelope';
 
-export interface DeterministicLabelInventoryOptions
-  extends SemanticCoordinateCandidateInventoryOptions {
+export interface DeterministicLabelInventoryOptions extends SemanticCoordinateCandidateInventoryOptions {
   readonly rootDir: string;
   readonly documents?: readonly DocumentEnvelope[] | null;
   readonly adapters?: readonly DocumentAdapter[] | null;
@@ -43,7 +36,7 @@ export interface DeterministicLabelInventorySummary {
   readonly skippedDocuments: number;
   readonly completedRecords: number;
   readonly byKind: Readonly<Record<SemanticCoordinateLabelKind, number>>;
-  readonly byDiagnosticSeverity: Readonly<Record<"error" | "warning", number>>;
+  readonly byDiagnosticSeverity: Readonly<Record<'error' | 'warning', number>>;
   readonly byDiagnosticCode: Readonly<Partial<Record<SemanticCoordinateDiagnosticCode, number>>>;
 }
 
@@ -179,7 +172,7 @@ function countRecordsByKind(
 
 function countDiagnosticsBySeverity(
   diagnostics: readonly SemanticCoordinateDiagnostic[],
-): Readonly<Record<"error" | "warning", number>> {
+): Readonly<Record<'error' | 'warning', number>> {
   const counts = { error: 0, warning: 0 };
   for (const diagnostic of diagnostics) {
     counts[diagnostic.severity] += 1;
@@ -200,41 +193,43 @@ function countDiagnosticsByCode(
 }
 
 function compareDocuments(left: DocumentEnvelope, right: DocumentEnvelope): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.stableId.localeCompare(right.stableId)
-    || left.adapterId.localeCompare(right.adapterId);
+  return (
+    left.path.localeCompare(right.path) ||
+    left.kind.localeCompare(right.kind) ||
+    left.stableId.localeCompare(right.stableId) ||
+    left.adapterId.localeCompare(right.adapterId)
+  );
 }
 
-function compareRecords(
-  left: DeterministicLabelRecord,
-  right: DeterministicLabelRecord,
-): number {
-  return left.label.localeCompare(right.label)
-    || left.kind.localeCompare(right.kind)
-    || firstPhysicalRef(left).localeCompare(firstPhysicalRef(right));
+function compareRecords(left: DeterministicLabelRecord, right: DeterministicLabelRecord): number {
+  return (
+    left.label.localeCompare(right.label) ||
+    left.kind.localeCompare(right.kind) ||
+    firstPhysicalRef(left).localeCompare(firstPhysicalRef(right))
+  );
 }
 
 function firstPhysicalRef(record: DeterministicLabelRecord): string {
-  return record.physicalRefs[0]?.ref ?? "";
+  return record.physicalRefs[0]?.ref ?? '';
 }
 
 function compareDiagnostics(
   left: SemanticCoordinateDiagnostic,
   right: SemanticCoordinateDiagnostic,
 ): number {
-  return (left.label ?? "").localeCompare(right.label ?? "")
-    || left.code.localeCompare(right.code)
-    || left.severity.localeCompare(right.severity)
-    || left.message.localeCompare(right.message)
-    || (left.id ?? "").localeCompare(right.id ?? "");
+  return (
+    (left.label ?? '').localeCompare(right.label ?? '') ||
+    left.code.localeCompare(right.code) ||
+    left.severity.localeCompare(right.severity) ||
+    left.message.localeCompare(right.message) ||
+    (left.id ?? '').localeCompare(right.id ?? '')
+  );
 }
 
-function compareCompletedRecords(
-  left: CompletedRecordState,
-  right: CompletedRecordState,
-): number {
-  return left.path.localeCompare(right.path)
-    || left.kind.localeCompare(right.kind)
-    || left.documentId.localeCompare(right.documentId);
+function compareCompletedRecords(left: CompletedRecordState, right: CompletedRecordState): number {
+  return (
+    left.path.localeCompare(right.path) ||
+    left.kind.localeCompare(right.kind) ||
+    left.documentId.localeCompare(right.documentId)
+  );
 }

@@ -1,20 +1,20 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
-import { type CompletedRecordState } from "doc-envelope";
-import { detectCompletedRecordsWithRalphIntegration } from "../completed-records-combined.js";
+import { type CompletedRecordState } from 'doc-envelope';
+import { detectCompletedRecordsWithRalphIntegration } from '../completed-records-combined.js';
 import type {
   DocumentEnvelope,
   DocumentMetadata,
   DocumentSource,
   DocumentTask,
-} from "doc-envelope";
+} from 'doc-envelope';
 
-export type DocumentDriftSeverity = "error" | "warning" | "info";
+export type DocumentDriftSeverity = 'error' | 'warning' | 'info';
 
 export interface DocumentDriftIssue {
   readonly severity: DocumentDriftSeverity;
@@ -68,24 +68,25 @@ interface ScenarioEvidenceReference {
   readonly testTitle: string;
 }
 
-const SEVERITIES: readonly DocumentDriftSeverity[] = ["error", "warning", "info"];
-const COMPLETE_WORD_RE = /\b(completed?|done|closed|implemented|finished|resolved)\b|완료|닫힘|구현됨|구현됐다/i;
+const SEVERITIES: readonly DocumentDriftSeverity[] = ['error', 'warning', 'info'];
+const COMPLETE_WORD_RE =
+  /\b(completed?|done|closed|implemented|finished|resolved)\b|완료|닫힘|구현됨|구현됐다/i;
 const STOP_WORDS = new Set([
-  "and",
-  "are",
-  "for",
-  "from",
-  "must",
-  "open",
-  "pass",
-  "passes",
-  "should",
-  "that",
-  "the",
-  "this",
-  "todo",
-  "using",
-  "with",
+  'and',
+  'are',
+  'for',
+  'from',
+  'must',
+  'open',
+  'pass',
+  'passes',
+  'should',
+  'that',
+  'the',
+  'this',
+  'todo',
+  'using',
+  'with',
 ]);
 
 export async function detectDocumentDrift(
@@ -136,7 +137,7 @@ export async function detectDocumentDrift(
 function detectRalphSessionDriftDiagnostics(context: DriftContext): void {
   for (const document of context.scopedDocuments) {
     for (const diagnostic of document.diagnostics) {
-      if (!diagnostic.code.startsWith("ralph-session-")) continue;
+      if (!diagnostic.code.startsWith('ralph-session-')) continue;
       addIssue(context, {
         severity: toDriftSeverity(diagnostic.severity),
         code: diagnostic.code,
@@ -154,10 +155,10 @@ function detectRalphSessionDriftDiagnostics(context: DriftContext): void {
 }
 
 function ralphSessionRemediation(code: string): string {
-  if (code === "ralph-session-prd-complete-session-running") {
-    return "Stop or archive the ralph session, or reopen the PRD JSON story state if work is still active.";
+  if (code === 'ralph-session-prd-complete-session-running') {
+    return 'Stop or archive the ralph session, or reopen the PRD JSON story state if work is still active.';
   }
-  return "Update the ralph session metadata counts, or rerun the tracker sync so session state matches the PRD JSON story state.";
+  return 'Update the ralph session metadata counts, or rerun the tracker sync so session state matches the PRD JSON story state.';
 }
 
 async function detectCompletedRecordCandidates(context: DriftContext): Promise<void> {
@@ -169,7 +170,7 @@ async function detectCompletedRecordCandidates(context: DriftContext): Promise<v
 
   for (const record of completedRecords) {
     addIssue(context, {
-      severity: "info",
+      severity: 'info',
       code: completedRecordDriftCode(record),
       message: completedRecordDriftMessage(record),
       path: record.path,
@@ -180,29 +181,29 @@ async function detectCompletedRecordCandidates(context: DriftContext): Promise<v
 }
 
 function completedRecordDriftCode(record: CompletedRecordState): string {
-  if (record.kind === "todo") return "completed-todo-record-candidate";
-  if (record.kind === "prd") return "completed-prd-record-candidate";
-  return "completed-record-candidate";
+  if (record.kind === 'todo') return 'completed-todo-record-candidate';
+  if (record.kind === 'prd') return 'completed-prd-record-candidate';
+  return 'completed-record-candidate';
 }
 
 function completedRecordDriftMessage(record: CompletedRecordState): string {
-  if (record.kind === "todo") {
+  if (record.kind === 'todo') {
     return `Completed TODO record candidate: ${record.title}`;
   }
-  if (record.kind === "prd") {
+  if (record.kind === 'prd') {
     return `Completed PRD markdown record candidate: ${record.title}`;
   }
   return `Completed record candidate: ${record.title}`;
 }
 
 function completedRecordRemediation(record: CompletedRecordState): string {
-  if (record.kind === "todo") {
-    return "Review whether the checked-only TODO should stay as evidence, move to archive, convert to memo, or be promoted through an explicit lifecycle workflow.";
+  if (record.kind === 'todo') {
+    return 'Review whether the checked-only TODO should stay as evidence, move to archive, convert to memo, or be promoted through an explicit lifecycle workflow.';
   }
-  if (record.kind === "prd") {
-    return "Review whether the completed PRD markdown should stay as evidence, move to archive, or feed a separate explicit lifecycle cleanup workflow.";
+  if (record.kind === 'prd') {
+    return 'Review whether the completed PRD markdown should stay as evidence, move to archive, or feed a separate explicit lifecycle cleanup workflow.';
   }
-  return "Review whether the completed record should stay as evidence or be handled by an explicit lifecycle cleanup workflow.";
+  return 'Review whether the completed record should stay as evidence or be handled by an explicit lifecycle cleanup workflow.';
 }
 
 function completedRecordMetadata(record: CompletedRecordState): DocumentMetadata {
@@ -224,15 +225,16 @@ function completedRecordMetadata(record: CompletedRecordState): DocumentMetadata
 }
 
 function detectPrdMarkdownUncheckedAfterJsonComplete(context: DriftContext): void {
-  const markdownPrds = context.scopedDocuments.filter((document) => document.kind === "prd");
+  const markdownPrds = context.scopedDocuments.filter((document) => document.kind === 'prd');
   const prdJsonDocuments = context.scopedDocuments
-    .filter((document) => document.kind === "ralph-prd-json")
+    .filter((document) => document.kind === 'ralph-prd-json')
     .filter(isCompletePrdJsonDocument);
 
   for (const prdJson of prdJsonDocuments) {
-    const prdMarkdown = markdownPrds.find((candidate) =>
-      candidate.familyId === prdJson.familyId
-      || stripKnownExtension(candidate.path) === stripKnownExtension(prdJson.path)
+    const prdMarkdown = markdownPrds.find(
+      (candidate) =>
+        candidate.familyId === prdJson.familyId ||
+        stripKnownExtension(candidate.path) === stripKnownExtension(prdJson.path),
     );
     if (!prdMarkdown) continue;
 
@@ -240,17 +242,19 @@ function detectPrdMarkdownUncheckedAfterJsonComplete(context: DriftContext): voi
       const jsonTask = prdJson.tasks.find((task) => task.id === markdownTask.id);
       if (!jsonTask || jsonTask.metadata.passes !== true) continue;
 
-      const uncheckedCriteria = acceptanceCriteria(markdownTask)
-        .filter((criterion) => criterion.checked === false);
+      const uncheckedCriteria = acceptanceCriteria(markdownTask).filter(
+        (criterion) => criterion.checked === false,
+      );
       if (uncheckedCriteria.length === 0) continue;
 
       addIssue(context, {
-        severity: "warning",
-        code: "prd-markdown-unchecked-after-json-complete",
+        severity: 'warning',
+        code: 'prd-markdown-unchecked-after-json-complete',
         message: `PRD JSON ${prdJson.path} is complete but markdown story ${markdownTask.id} still has unchecked acceptance criteria.`,
         path: markdownTask.rawSource?.path ?? prdMarkdown.path,
         ...(markdownTask.rawSource?.pointer ? { pointer: markdownTask.rawSource.pointer } : {}),
-        remediation: "Check completed markdown criteria, or set the matching PRD JSON story passes=false until the work is actually complete.",
+        remediation:
+          'Check completed markdown criteria, or set the matching PRD JSON story passes=false until the work is actually complete.',
         metadata: {
           prdJsonPath: prdJson.path,
           prdMarkdownPath: prdMarkdown.path,
@@ -263,7 +267,7 @@ function detectPrdMarkdownUncheckedAfterJsonComplete(context: DriftContext): voi
 }
 
 async function detectOpenTodosDescribedAsComplete(context: DriftContext): Promise<void> {
-  const todoDocuments = context.scopedDocuments.filter((document) => document.kind === "todo");
+  const todoDocuments = context.scopedDocuments.filter((document) => document.kind === 'todo');
   for (const todoDocument of todoDocuments) {
     const content = await readRepoFile(context, todoDocument.path);
     if (!content) continue;
@@ -276,12 +280,13 @@ async function detectOpenTodosDescribedAsComplete(context: DriftContext): Promis
       const match = await findCompletedMention(context, item, candidates);
       if (!match) continue;
       addIssue(context, {
-        severity: "warning",
-        code: "todo-open-described-complete",
+        severity: 'warning',
+        code: 'todo-open-described-complete',
         message: `TODO item is still open but related documentation describes it as complete: ${item.text}`,
         path: todoDocument.path,
         pointer: item.pointer,
-        remediation: "Check the TODO item, or remove the completed claim from the related spec or PRD notes.",
+        remediation:
+          'Check the TODO item, or remove the completed claim from the related spec or PRD notes.',
         metadata: {
           todo: item.text,
           completedInPath: match.document.path,
@@ -296,7 +301,7 @@ async function detectOpenTodosDescribedAsComplete(context: DriftContext): Promis
 async function detectScenarioMatrixTitleDrift(context: DriftContext): Promise<void> {
   for (const document of context.scopedDocuments) {
     const content = await readRepoFile(context, document.path);
-    if (!content || !content.includes("Scenario Matrix") || !/\bE-[A-Z0-9]/.test(content)) continue;
+    if (!content || !content.includes('Scenario Matrix') || !/\bE-[A-Z0-9]/.test(content)) continue;
 
     const evidenceIds = new Set(content.match(/\bE-[A-Z0-9][A-Z0-9_-]*\b/g) ?? []);
     const references = parseScenarioEvidenceReferences(context.rootDir, document.path, content);
@@ -305,11 +310,12 @@ async function detectScenarioMatrixTitleDrift(context: DriftContext): Promise<vo
     for (const evidenceId of evidenceIds) {
       if (referencesById.has(evidenceId)) continue;
       addIssue(context, {
-        severity: "warning",
-        code: "scenario-matrix-evidence-reference-missing",
+        severity: 'warning',
+        code: 'scenario-matrix-evidence-reference-missing',
         message: `Scenario matrix evidence id ${evidenceId} has no test title reference.`,
         path: document.path,
-        remediation: "Add an Evidence References entry with a concrete test file and test title, or remove the stale E-* marker.",
+        remediation:
+          'Add an Evidence References entry with a concrete test file and test title, or remove the stale E-* marker.',
         metadata: {
           evidenceId,
           documentId: document.stableId,
@@ -321,11 +327,12 @@ async function detectScenarioMatrixTitleDrift(context: DriftContext): Promise<vo
       const testContent = await readRepoFile(context, reference.testPath);
       if (testContent === null) {
         addIssue(context, {
-          severity: "error",
-          code: "scenario-matrix-test-file-missing",
+          severity: 'error',
+          code: 'scenario-matrix-test-file-missing',
           message: `Scenario matrix evidence ${reference.id} points to a missing test file: ${reference.testPath}`,
           path: document.path,
-          remediation: "Update the Evidence References test file path or restore the missing test file.",
+          remediation:
+            'Update the Evidence References test file path or restore the missing test file.',
           metadata: {
             evidenceId: reference.id,
             testPath: reference.testPath,
@@ -338,11 +345,12 @@ async function detectScenarioMatrixTitleDrift(context: DriftContext): Promise<vo
 
       if (!testContent.includes(reference.testTitle)) {
         addIssue(context, {
-          severity: "warning",
-          code: "scenario-matrix-test-title-missing",
+          severity: 'warning',
+          code: 'scenario-matrix-test-title-missing',
           message: `Scenario matrix evidence ${reference.id} names a test title that no longer exists: ${reference.testTitle}`,
           path: document.path,
-          remediation: "Update the Evidence References test title to the current test name, or restore the renamed test.",
+          remediation:
+            'Update the Evidence References test title to the current test name, or restore the renamed test.',
           metadata: {
             evidenceId: reference.id,
             testPath: reference.testPath,
@@ -364,12 +372,13 @@ function detectMissingSourceReferences(context: DriftContext): void {
       if (existsSync(resolveRepoPath(context.rootDir, normalizedPath))) continue;
 
       addIssue(context, {
-        severity: "error",
-        code: "document-source-reference-missing",
+        severity: 'error',
+        code: 'document-source-reference-missing',
         message: `Document source reference points to a missing file: ${normalizedPath}`,
         path: source.rawSource?.path ?? document.path,
         ...(source.rawSource?.pointer ? { pointer: source.rawSource.pointer } : {}),
-        remediation: "Create the referenced file, or update/remove the stale source reference in the owning document.",
+        remediation:
+          'Create the referenced file, or update/remove the stale source reference in the owning document.',
         metadata: {
           documentId: document.stableId,
           sourceId: source.id,
@@ -384,10 +393,10 @@ function detectMissingSourceReferences(context: DriftContext): void {
 function detectDefinitionLevelViolations(context: DriftContext): void {
   for (const document of context.scopedDocuments) {
     for (const diagnostic of document.diagnostics) {
-      if (diagnostic.code !== "level-violation") continue;
+      if (diagnostic.code !== 'level-violation') continue;
       addIssue(context, {
         severity: toDriftSeverity(diagnostic.severity),
-        code: "definition-level-violation",
+        code: 'definition-level-violation',
         message: diagnostic.message,
         path: diagnostic.rawSource?.path ?? document.path,
         ...(diagnostic.rawSource?.pointer ? { pointer: diagnostic.rawSource.pointer } : {}),
@@ -408,11 +417,12 @@ function scopeDocumentsToPrd(
 ): readonly DocumentEnvelope[] {
   const normalizedPrdPath = normalizePath(prdPath);
   const prdFamilyId = stripKnownExtension(normalizedPrdPath);
-  return documents.filter((document) =>
-    document.familyId === prdFamilyId
-    || document.stableId === prdFamilyId
-    || stripKnownExtension(document.path) === prdFamilyId
-    || stripKnownExtension(asString(document.metadata.prdPath) ?? "") === prdFamilyId
+  return documents.filter(
+    (document) =>
+      document.familyId === prdFamilyId ||
+      document.stableId === prdFamilyId ||
+      stripKnownExtension(document.path) === prdFamilyId ||
+      stripKnownExtension(asString(document.metadata.prdPath) ?? '') === prdFamilyId,
   );
 }
 
@@ -432,12 +442,16 @@ function acceptanceCriteria(
   if (!Array.isArray(rawCriteria)) return [];
   return rawCriteria
     .map((criterion) => {
-      if (typeof criterion === "string") return { text: criterion };
-      if (!isRecord(criterion) || typeof criterion.text !== "string") return null;
-      return Object.assign({text:criterion.text}, typeof criterion.checked===`boolean`?{checked:criterion.checked}:{});
+      if (typeof criterion === 'string') return { text: criterion };
+      if (!isRecord(criterion) || typeof criterion.text !== 'string') return null;
+      return Object.assign(
+        { text: criterion.text },
+        typeof criterion.checked === `boolean` ? { checked: criterion.checked } : {},
+      );
     })
-    .filter((criterion): criterion is { readonly text: string; readonly checked?: boolean } =>
-      criterion !== null && criterion.text.trim().length > 0
+    .filter(
+      (criterion): criterion is { readonly text: string; readonly checked?: boolean } =>
+        criterion !== null && criterion.text.trim().length > 0,
     );
 }
 
@@ -448,7 +462,7 @@ function parseOpenTodos(content: string): readonly OpenTodoItem[] {
       const match = line.match(/^\s*[-*]\s+\[ \]\s+(.+?)\s*$/);
       if (!match) return null;
       return {
-        text: match[1]?.trim() ?? "",
+        text: match[1]?.trim() ?? '',
         pointer: `line ${index + 1}`,
       };
     })
@@ -462,7 +476,7 @@ function completionCandidateDocuments(
   return context.scopedDocuments.filter((document) => {
     if (document === todoDocument) return false;
     if (todoDocument.familyId && document.familyId === todoDocument.familyId) return true;
-    return document.kind === "prd" || document.kind === "ralph-prd-json";
+    return document.kind === 'prd' || document.kind === 'ralph-prd-json';
   });
 }
 
@@ -493,11 +507,16 @@ async function candidateCompletionText(
     asString(document.metadata.notes),
     asString(document.metadata.completionNotes),
     ...taskNotes,
-  ].filter((value): value is string => Boolean(value)).join("\n");
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join('\n');
 }
 
 function findCompletionSegment(content: string, todoText: string): string | null {
-  const segments = content.split(/\r?\n/).map((segment) => segment.trim()).filter(Boolean);
+  const segments = content
+    .split(/\r?\n/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
   for (const segment of segments) {
     if (describesCompletion(segment, todoText)) return segment;
   }
@@ -519,16 +538,16 @@ function describesCompletion(segment: string, todoText: string): boolean {
 
 function significantTokens(value: string): readonly string[] {
   return normalizeSearchText(value)
-    .split(" ")
+    .split(' ')
     .filter((token) => token.length >= 4 && !STOP_WORDS.has(token));
 }
 
 function normalizeSearchText(value: string): string {
   return value
     .toLowerCase()
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .replace(/\s+/g, " ")
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -537,21 +556,24 @@ function parseScenarioEvidenceReferences(
   documentPath: string,
   content: string,
 ): readonly ScenarioEvidenceReference[] {
-  return [...content.matchAll(
-    /^-\s+`(E-[A-Za-z0-9_-]+)`:\s+\[[^\]]+\]\(([^)]+)\)\s+test title\s+`([^`]+)`/gm,
-  )].map((match) => {
-    const link = match[2]?.trim() ?? "";
-    return {
-      id: match[1]?.trim() ?? "",
-      link,
-      testPath: resolveMarkdownLink(rootDir, documentPath, link),
-      testTitle: match[3]?.trim() ?? "",
-    };
-  }).filter((reference) =>
-    reference.id.length > 0
-    && reference.link.length > 0
-    && reference.testTitle.length > 0
-  );
+  return [
+    ...content.matchAll(
+      /^-\s+`(E-[A-Za-z0-9_-]+)`:\s+\[[^\]]+\]\(([^)]+)\)\s+test title\s+`([^`]+)`/gm,
+    ),
+  ]
+    .map((match) => {
+      const link = match[2]?.trim() ?? '';
+      return {
+        id: match[1]?.trim() ?? '',
+        link,
+        testPath: resolveMarkdownLink(rootDir, documentPath, link),
+        testTitle: match[3]?.trim() ?? '',
+      };
+    })
+    .filter(
+      (reference) =>
+        reference.id.length > 0 && reference.link.length > 0 && reference.testTitle.length > 0,
+    );
 }
 
 function documentSourcePath(source: DocumentSource): string | undefined {
@@ -564,16 +586,15 @@ function documentSourcePath(source: DocumentSource): string | undefined {
 
 function pathLikeReference(value: string): string | undefined {
   const normalized = value.trim();
-  const direct = normalized.match(/^(.+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|py|rb|rs|ts|tsx|txt|yaml|yml))(?:[:#].*)?$/);
+  const direct = normalized.match(
+    /^(.+\.(?:c|cc|cpp|css|go|html|java|js|json|jsx|kt|md|py|rb|rs|ts|tsx|txt|yaml|yml))(?:[:#].*)?$/,
+  );
   if (direct?.[1]) return direct[1];
-  if (normalized.includes("/") || normalized.includes("\\")) return normalized;
+  if (normalized.includes('/') || normalized.includes('\\')) return normalized;
   return undefined;
 }
 
-async function readRepoFile(
-  context: DriftContext,
-  path: string,
-): Promise<string | null> {
+async function readRepoFile(context: DriftContext, path: string): Promise<string | null> {
   const repoPath = normalizeRepoPath(context.rootDir, path);
   if (context.fileCache.has(repoPath)) {
     return context.fileCache.get(repoPath) ?? null;
@@ -581,7 +602,7 @@ async function readRepoFile(
 
   const resolvedPath = resolveRepoPath(context.rootDir, repoPath);
   try {
-    const content = await readFile(resolvedPath, "utf8");
+    const content = await readFile(resolvedPath, 'utf8');
     context.fileCache.set(repoPath, content);
     return content;
   } catch {
@@ -590,17 +611,10 @@ async function readRepoFile(
   }
 }
 
-function addIssue(
-  context: DriftContext,
-  issue: DocumentDriftIssue,
-): void {
-  const key = [
-    issue.severity,
-    issue.code,
-    issue.path,
-    issue.pointer ?? "",
-    issue.message,
-  ].join("\0");
+function addIssue(context: DriftContext, issue: DocumentDriftIssue): void {
+  const key = [issue.severity, issue.code, issue.path, issue.pointer ?? '', issue.message].join(
+    '\0',
+  );
   if (context.issueKeys.has(key)) return;
   context.issueKeys.add(key);
   context.issues.push(issue);
@@ -610,17 +624,19 @@ function groupIssuesBySeverity(
   issues: readonly DocumentDriftIssue[],
 ): Record<DocumentDriftSeverity, readonly DocumentDriftIssue[]> {
   return {
-    error: issues.filter((issue) => issue.severity === "error"),
-    warning: issues.filter((issue) => issue.severity === "warning"),
-    info: issues.filter((issue) => issue.severity === "info"),
+    error: issues.filter((issue) => issue.severity === 'error'),
+    warning: issues.filter((issue) => issue.severity === 'warning'),
+    info: issues.filter((issue) => issue.severity === 'info'),
   };
 }
 
 function compareDriftIssues(left: DocumentDriftIssue, right: DocumentDriftIssue): number {
-  return severityRank(left.severity) - severityRank(right.severity)
-    || left.path.localeCompare(right.path)
-    || (left.pointer ?? "").localeCompare(right.pointer ?? "")
-    || left.code.localeCompare(right.code);
+  return (
+    severityRank(left.severity) - severityRank(right.severity) ||
+    left.path.localeCompare(right.path) ||
+    (left.pointer ?? '').localeCompare(right.pointer ?? '') ||
+    left.code.localeCompare(right.code)
+  );
 }
 
 function severityRank(severity: DocumentDriftSeverity): number {
@@ -629,20 +645,20 @@ function severityRank(severity: DocumentDriftSeverity): number {
 }
 
 function toDriftSeverity(severity: string): DocumentDriftSeverity {
-  if (severity === "error" || severity === "warning" || severity === "info") return severity;
-  return "warning";
+  if (severity === 'error' || severity === 'warning' || severity === 'info') return severity;
+  return 'warning';
 }
 
 function definitionLevelRemediation(document: DocumentEnvelope): string {
-  const level = asString(document.metadata.level) ?? "leaf";
-  if (level === "group" || level === "module") {
-    return "Add a contains link to at least one child document, or change the document level to leaf if it should not own children.";
+  const level = asString(document.metadata.level) ?? 'leaf';
+  if (level === 'group' || level === 'module') {
+    return 'Add a contains link to at least one child document, or change the document level to leaf if it should not own children.';
   }
-  return "Remove the contains links from the leaf document, or change its level to module/group if it owns child documents.";
+  return 'Remove the contains links from the leaf document, or change its level to module/group if it owns child documents.';
 }
 
 function resolveMarkdownLink(rootDir: string, documentPath: string, link: string): string {
-  const cleaned = link.split("#")[0]?.trim() ?? link;
+  const cleaned = link.split('#')[0]?.trim() ?? link;
   if (/^[a-z]+:\/\//i.test(cleaned)) return cleaned;
   const resolved = isAbsolute(cleaned)
     ? cleaned
@@ -658,27 +674,25 @@ function normalizeRepoPath(rootDir: string, path: string): string {
   const normalized = normalizePath(path);
   if (!isAbsolute(normalized)) return normalized;
   const relativePath = relative(rootDir, normalized);
-  return relativePath && !relativePath.startsWith("..")
-    ? normalizePath(relativePath)
-    : normalized;
+  return relativePath && !relativePath.startsWith('..') ? normalizePath(relativePath) : normalized;
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function stripKnownExtension(value: string): string {
-  return normalizePath(value).replace(/\.(?:md|json)$/i, "");
+  return normalizePath(value).replace(/\.(?:md|json)$/i, '');
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function asNumber(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

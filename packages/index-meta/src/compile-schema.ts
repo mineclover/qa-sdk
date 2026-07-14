@@ -1,8 +1,8 @@
 // @def.boundary index-meta-system
 // @def.doc index-meta-system
 
-import { ValidationError } from "./errors.js";
-import { type TableDef } from "./table-def.js";
+import { ValidationError } from './errors.js';
+import { type TableDef } from './table-def.js';
 
 // ── Output 타입 ───────────────────────────────────────────
 
@@ -28,15 +28,15 @@ export interface CompositeVersionSpec {
 }
 
 export interface LeafTableSpec {
-  readonly kind: "leaf";
+  readonly kind: 'leaf';
   readonly id: string;
-  readonly entryKind: { type: "string_enum" } | { type: "number_enum" };
+  readonly entryKind: { type: 'string_enum' } | { type: 'number_enum' };
   readonly versions: ReadonlyMap<string, LeafVersionSpec>;
   readonly description?: string;
 }
 
 export interface CompositeTableSpec {
-  readonly kind: "composite";
+  readonly kind: 'composite';
   readonly id: string;
   readonly versions: ReadonlyMap<string, CompositeVersionSpec>;
   readonly description?: string;
@@ -109,11 +109,7 @@ class CompiledSchemaImpl implements CompiledSchema {
   }
 }
 
-function diffVersions(
-  tableId: string,
-  from: TableSpec,
-  to: TableSpec
-): TableVersionChange | null {
+function diffVersions(tableId: string, from: TableSpec, to: TableSpec): TableVersionChange | null {
   const fromVersions = from.versions as ReadonlyMap<string, { capacity: number }>;
   const toVersions = to.versions as ReadonlyMap<string, { capacity: number }>;
 
@@ -157,7 +153,7 @@ export function compileSchema(defs: TableDef[]): CompiledSchema {
         versions.set(versionId, { versionId, capacity: lv.capacity });
       }
       specMap.set(def.id, {
-        kind: "leaf",
+        kind: 'leaf',
         id: def.id,
         entryKind: def.source.kind,
         versions,
@@ -177,13 +173,13 @@ export function compileSchema(defs: TableDef[]): CompiledSchema {
           const refSpec = specMap.get(ref.prefix);
           if (!refSpec)
             throw new ValidationError(
-              `Table "${def.id}" version "${versionId}": referenced table "${ref.prefix}" not found`
+              `Table "${def.id}" version "${versionId}": referenced table "${ref.prefix}" not found`,
             );
 
           const refVersion = refSpec.versions.get(ref.version);
           if (!refVersion)
             throw new ValidationError(
-              `Table "${def.id}" version "${versionId}": version "${ref.version}" not found in table "${ref.prefix}"`
+              `Table "${def.id}" version "${versionId}": version "${ref.version}" not found in table "${ref.prefix}"`,
             );
 
           dims.push({
@@ -196,7 +192,7 @@ export function compileSchema(defs: TableDef[]): CompiledSchema {
         versions.set(versionId, { versionId, capacity, dims });
       }
       specMap.set(def.id, {
-        kind: "composite",
+        kind: 'composite',
         id: def.id,
         versions,
         description: def.description,
@@ -214,8 +210,7 @@ function collectAllDefs(defs: TableDef[]): Map<string, TableDef> {
 
   function visit(def: TableDef): void {
     if (result.has(def.id)) {
-      if (result.get(def.id) !== def)
-        throw new ValidationError(`Duplicate table id: "${def.id}"`);
+      if (result.get(def.id) !== def) throw new ValidationError(`Duplicate table id: "${def.id}"`);
       return;
     }
     result.set(def.id, def);

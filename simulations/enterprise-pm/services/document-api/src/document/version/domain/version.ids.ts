@@ -4,11 +4,11 @@
 import {
   InvalidVersionDocumentIdException,
   InvalidVersionNumberException,
-} from "./version.exceptions.js";
+} from './version.exceptions.js';
 
-export type DocumentId = string & { readonly __brand: "DocumentId" };
-export type AuthorId = string & { readonly __brand: "AuthorId" };
-export type VersionNumber = number & { readonly __brand: "VersionNumber" };
+export type DocumentId = string & { readonly __brand: 'DocumentId' };
+export type AuthorId = string & { readonly __brand: 'AuthorId' };
+export type VersionNumber = number & { readonly __brand: 'VersionNumber' };
 
 export function toDocumentId(value: string): DocumentId {
   if (value.trim().length === 0) {

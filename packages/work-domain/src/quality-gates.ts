@@ -8,8 +8,8 @@
  * prd.json acceptanceCriteria 문자열로 변환한다.
  */
 
-import type { QualityGate, WorkDomainId } from "./types.js";
-import { getDomainDef } from "./registry.js";
+import type { QualityGate, WorkDomainId } from './types.js';
+import { getDomainDef } from './registry.js';
 
 /**
  * 도메인에 해당하는 품질 게이트 목록 반환.
@@ -17,15 +17,12 @@ import { getDomainDef } from "./registry.js";
  * @param domainId - 작업 도메인 ID
  * @param pkg - 대상 패키지명 (게이트 명령의 `<pkg>` 치환용, optional)
  */
-export function resolveQualityGates(
-  domainId: WorkDomainId,
-  pkg?: string,
-): readonly QualityGate[] {
+export function resolveQualityGates(domainId: WorkDomainId, pkg?: string): readonly QualityGate[] {
   const domain = getDomainDef(domainId);
   if (!pkg) return domain.qualityGates;
 
   return domain.qualityGates.map((gate) =>
-    Object.assign({}, gate, { command: gate.command.replaceAll("<pkg>", pkg) }),
+    Object.assign({}, gate, { command: gate.command.replaceAll('<pkg>', pkg) }),
   );
 }
 

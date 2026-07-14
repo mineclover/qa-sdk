@@ -1,8 +1,8 @@
 // @def.boundary sim-notification-api
 // @def.doc domain-slice-architecture
 
-import type { SubscriptionEntity } from "../../domain/index.js";
-import type { SubscriptionTransactionScope } from "./subscription-transaction.port.js";
+import type { SubscriptionEntity } from '../../domain/index.js';
+import type { SubscriptionTransactionScope } from './subscription-transaction.port.js';
 
 /** Subscription Aggregate 의 영속 추상. */
 export abstract class SubscriptionRepositoryPort {

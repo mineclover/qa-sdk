@@ -43,9 +43,9 @@ import {
   toVersionedValue,
   type AddressProtocol,
   type SemanticAddress,
-} from "weighted-index";
-import type { AddressConfig, VersionedValue } from "./types.js";
-import { NegotiationError, ParseError, ValidationError } from "./errors.js";
+} from 'weighted-index';
+import type { AddressConfig, VersionedValue } from './types.js';
+import { NegotiationError, ParseError, ValidationError } from './errors.js';
 
 // ── 공개 타입 ────────────────────────────────────────────────────────────────
 
@@ -100,10 +100,7 @@ export class AddressProtocolManager {
       this._schemaChars = config.schemaChars;
 
       // schemas와 versions가 모두 있어야 layout 프로토콜 생성 가능
-      if (
-        Object.keys(config.schemas).length > 0 &&
-        Object.keys(config.versions).length > 0
-      ) {
+      if (Object.keys(config.schemas).length > 0 && Object.keys(config.versions).length > 0) {
         const layoutProto = createLayoutProtocol({
           format: config.format,
           schemaChars: config.schemaChars,
@@ -145,7 +142,7 @@ export class AddressProtocolManager {
    */
   serialize(vv: VersionedValue, protocol?: AddressProtocol | string): string {
     const addr = fromVersionedValue(vv);
-    if (typeof protocol === "object") return protocol.serialize(addr);
+    if (typeof protocol === 'object') return protocol.serialize(addr);
     const protoName = protocol ?? this._writeProtocol ?? this._defaultProtocol;
     return this._requireProtocol(protoName).serialize(addr);
   }
@@ -159,7 +156,7 @@ export class AddressProtocolManager {
   parse(input: string, protocol?: AddressProtocol | string): VersionedValue {
     let addr: SemanticAddress;
     try {
-      if (typeof protocol === "object") {
+      if (typeof protocol === 'object') {
         addr = protocol.parse(input);
       } else if (protocol) {
         addr = this._requireProtocol(protocol).parse(input);
@@ -173,7 +170,7 @@ export class AddressProtocolManager {
     } catch (e) {
       if (e instanceof ParseError) throw e;
       throw new ParseError(
-        `Failed to parse address "${input}": ${e instanceof Error ? e.message : String(e)}`
+        `Failed to parse address "${input}": ${e instanceof Error ? e.message : String(e)}`,
       );
     }
     return toVersionedValue(addr);
@@ -187,14 +184,12 @@ export class AddressProtocolManager {
    */
   parseSchemaOnly(input: string): { schema: string } {
     if (this._schemaReverseMap && this._schemaChars) {
-      const rawHex = input.replace(/[^0-9a-fA-F]/g, "");
+      const rawHex = input.replace(/[^0-9a-fA-F]/g, '');
       const schemaHex = rawHex.slice(0, this._schemaChars);
       const schemaNum = parseInt(schemaHex, 16);
       const schema = this._schemaReverseMap.get(schemaNum);
       if (schema === undefined) {
-        throw new ParseError(
-          `Unknown schema number ${schemaNum} (0x${schemaHex}) in "${input}"`
-        );
+        throw new ParseError(`Unknown schema number ${schemaNum} (0x${schemaHex}) in "${input}"`);
       }
       return { schema };
     }
@@ -260,21 +255,15 @@ export class AddressProtocolManager {
    * 서버 우선순위에서 클라이언트도 지원하는 첫 번째 프로토콜을 반환.
    * 공통 프로토콜이 없으면 NegotiationError.
    */
-  negotiate(
-    clientCapabilities: string[],
-    serverPreferences: string[]
-  ): string {
+  negotiate(clientCapabilities: string[], serverPreferences: string[]): string {
     for (const pref of serverPreferences) {
-      if (
-        clientCapabilities.includes(pref) &&
-        this._protocols.has(pref)
-      ) {
+      if (clientCapabilities.includes(pref) && this._protocols.has(pref)) {
         return pref;
       }
     }
     throw new NegotiationError(
-      `No common protocol: client=[${clientCapabilities.join(", ")}], ` +
-        `server=[${serverPreferences.join(", ")}]`
+      `No common protocol: client=[${clientCapabilities.join(', ')}], ` +
+        `server=[${serverPreferences.join(', ')}]`,
     );
   }
 
@@ -314,9 +303,7 @@ export class AddressProtocolManager {
       this._readProtocols = new Set(this._protocols.keys());
     }
     if (!this._readProtocols.has(name)) {
-      throw new ValidationError(
-        `Read protocol "${name}" is not in the read set`
-      );
+      throw new ValidationError(`Read protocol "${name}" is not in the read set`);
     }
     this._readProtocols.delete(name);
   }
@@ -392,13 +379,9 @@ export class AddressProtocolManager {
     this._protocols.set(protocol.name, protocol);
 
     if (existed) {
-      this._order = this._order.map((p) =>
-        p.name === protocol.name ? protocol : p
-      );
-    } else if (protocol.name.startsWith("layout:")) {
-      const firstTextIdx = this._order.findIndex(
-        (p) => !p.name.startsWith("layout:")
-      );
+      this._order = this._order.map((p) => (p.name === protocol.name ? protocol : p));
+    } else if (protocol.name.startsWith('layout:')) {
+      const firstTextIdx = this._order.findIndex((p) => !p.name.startsWith('layout:'));
       if (firstTextIdx >= 0) {
         this._order.splice(firstTextIdx, 0, protocol);
       } else {
@@ -435,7 +418,7 @@ export class AddressProtocolManager {
     throw new ParseError(
       `No read protocol matches "${input}". ` +
         // eslint-disable-next-line typescript/no-non-null-assertion -- parse()에서 _readProtocols 존재 확인 후 호출
-        `Allowed: [${[...this._readProtocols!].join(", ")}]`
+        `Allowed: [${[...this._readProtocols!].join(', ')}]`,
     );
   }
 
@@ -463,7 +446,7 @@ export class AddressProtocolManager {
     throw new ParseError(
       `All fallback protocols failed for "${input}": ` +
         // eslint-disable-next-line typescript/no-non-null-assertion -- parse()에서 _fallbackChain 존재 확인 후 호출
-        `[${this._fallbackChain!.join(", ")}]`
+        `[${this._fallbackChain!.join(', ')}]`,
     );
   }
 }

@@ -1,10 +1,10 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import type { MemberProjectId, MemberUserId } from "./member.ids.js";
+import type { MemberProjectId, MemberUserId } from './member.ids.js';
 
 /** 멤버 역할 — 라이프사이클 상태 머신. */
-export type MemberRole = "lead" | "contributor" | "viewer";
+export type MemberRole = 'lead' | 'contributor' | 'viewer';
 
 export interface MemberProps {
   readonly projectId: MemberProjectId;

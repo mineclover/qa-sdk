@@ -10,16 +10,26 @@ export interface EventSchemaRecord {
   readonly eventVersion: string;
   readonly displayName: string;
   readonly description?: string;
-  readonly recordKind: "log" | "span" | "both";
-  readonly status: "active" | "deprecated" | "retired";
+  readonly recordKind: 'log' | 'span' | 'both';
+  readonly status: 'active' | 'deprecated' | 'retired';
   readonly createdAt: string;
   readonly updatedAt: string;
 }
 
 export interface EventSchemaStore {
   upsert(record: EventSchemaRecord): Promise<void>;
-  get(catalogId: string, serviceId: string, eventKey: string, eventVersion: string): Promise<EventSchemaRecord | null>;
+  get(
+    catalogId: string,
+    serviceId: string,
+    eventKey: string,
+    eventVersion: string,
+  ): Promise<EventSchemaRecord | null>;
   listByService(catalogId: string, serviceId: string): Promise<EventSchemaRecord[]>;
   list(catalogId: string): Promise<EventSchemaRecord[]>;
-  delete(catalogId: string, serviceId: string, eventKey: string, eventVersion: string): Promise<boolean>;
+  delete(
+    catalogId: string,
+    serviceId: string,
+    eventKey: string,
+    eventVersion: string,
+  ): Promise<boolean>;
 }

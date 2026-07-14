@@ -6,10 +6,10 @@
  *
  * pino는 peer dependency — 서비스 패키지가 직접 설치한다.
  */
-import pino, { type Logger, type Destination } from "pino";
+import pino, { type Logger, type Destination } from 'pino';
 
 function resolveLevel() {
-  return process.env.NODE_ENV === "production" ? "info" : "debug";
+  return process.env.NODE_ENV === 'production' ? 'info' : 'debug';
 }
 
 /** 추가 pino destination. write(msg: string) 계약을 구현하면 된다. */
@@ -25,17 +25,19 @@ export interface CreateLoggerOptions {
 
 /** 레벨 우선순위. destination별 level 필터링에 사용. */
 const LEVEL_PRIORITY: Record<string, number> = {
-  trace: 10, debug: 20, info: 30, warn: 40, error: 50, fatal: 60,
+  trace: 10,
+  debug: 20,
+  info: 30,
+  warn: 40,
+  error: 50,
+  fatal: 60,
 };
 
 /**
  * 여러 Destination에 동시 write하는 래퍼.
  * primary(stdout)는 무조건 write, 추가 destination은 level 필터 적용.
  */
-function createMultiDestination(
-  primary: Destination,
-  extras: LoggerDestination[],
-): Destination {
+function createMultiDestination(primary: Destination, extras: LoggerDestination[]): Destination {
   return {
     write(chunk: string) {
       primary.write(chunk);
@@ -45,7 +47,7 @@ function createMultiDestination(
         if (extra.level) {
           try {
             const parsed = JSON.parse(chunk) as Record<string, unknown>;
-            const logLevel = typeof parsed.level === "string" ? parsed.level : "info";
+            const logLevel = typeof parsed.level === 'string' ? parsed.level : 'info';
             const threshold = LEVEL_PRIORITY[extra.level] ?? 0;
             const actual = LEVEL_PRIORITY[logLevel] ?? 0;
             if (actual < threshold) continue;
@@ -81,4 +83,4 @@ export function createLogger(name: string, options?: CreateLoggerOptions): Logge
   return pino(pinoOpts);
 }
 
-export type { Logger } from "pino";
+export type { Logger } from 'pino';

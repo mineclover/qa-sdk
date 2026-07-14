@@ -12,34 +12,25 @@
 
 /** prefix의 시각 형태 힌트 */
 export type VisualShape =
-  | "cube"      // 기본 큐브 (observation, entity)
-  | "thin-bar"  // 얇은 바 (policy — 권한은 pass/fail 이진)
-  | "flat-tile" // 납작한 타일 (event — 발생하고 사라짐)
-  | "column"    // 세로 컬럼 (table — DB 컬럼)
-  | "sphere"    // 구형 (relation — 관계)
-  ;
+  | 'cube' // 기본 큐브 (observation, entity)
+  | 'thin-bar' // 얇은 바 (policy — 권한은 pass/fail 이진)
+  | 'flat-tile' // 납작한 타일 (event — 발생하고 사라짐)
+  | 'column' // 세로 컬럼 (table — DB 컬럼)
+  | 'sphere'; // 구형 (relation — 관계)
 
 /** 클릭 시 표시할 상세 정보 유형 */
 export type DetailKind =
-  | "schema"      // DB 스키마 (table)
-  | "permission"  // 권한 매트릭스 (policy)
-  | "event-def"   // 이벤트 구조 — actor×action×target (event)
-  | "endpoint"    // API 경로 + 메서드 (observation/endpoint)
-  | "flow-step"   // 흐름 단계 설명 (observation/flow_point)
-  | "config"      // 설정/파라미터 (entity/service, data_policy)
-  | "metric"      // 메트릭/통계 (pipeline_point)
-  | "generic"     // 기본 정보
-  ;
+  | 'schema' // DB 스키마 (table)
+  | 'permission' // 권한 매트릭스 (policy)
+  | 'event-def' // 이벤트 구조 — actor×action×target (event)
+  | 'endpoint' // API 경로 + 메서드 (observation/endpoint)
+  | 'flow-step' // 흐름 단계 설명 (observation/flow_point)
+  | 'config' // 설정/파라미터 (entity/service, data_policy)
+  | 'metric' // 메트릭/통계 (pipeline_point)
+  | 'generic'; // 기본 정보
 
 /** prefix 의미 카테고리 */
-export type PrefixCategory =
-  | "entity"
-  | "event"
-  | "relation"
-  | "state"
-  | "policy"
-  | "observation"
-  ;
+export type PrefixCategory = 'entity' | 'event' | 'relation' | 'state' | 'policy' | 'observation';
 
 /** 시각화 계층 (0=UI, 1=비즈니스, 2=인프라, 3=확장) */
 export type LayerLevel = 0 | 1 | 2 | 3;
@@ -71,9 +62,9 @@ export interface VersionedAxis {
 // ── DimRef ────────────────────────────────────────────────────────────────
 
 export type DimRef =
-  | { readonly kind: "axis"; readonly axisId: string }
-  | { readonly kind: "prefix_ref"; readonly prefixId: string }
-  | { readonly kind: "table_ref"; readonly table: string };
+  | { readonly kind: 'axis'; readonly axisId: string }
+  | { readonly kind: 'prefix_ref'; readonly prefixId: string }
+  | { readonly kind: 'table_ref'; readonly table: string };
 
 // ── Prefix ────────────────────────────────────────────────────────────────
 
@@ -86,7 +77,7 @@ export interface PrefixVersionDef {
 }
 
 /** 주소 모델: product(전곱, 기본) | sum(경로 합산) */
-export type AddressModel = "product" | "sum";
+export type AddressModel = 'product' | 'sum';
 
 /**
  * 축 값 기반 분기 조건.
@@ -157,10 +148,10 @@ export interface PrefixDef {
 // ── Table Schema ──────────────────────────────────────────────────────────
 
 export type ColumnRef =
-  | { readonly kind: "scalar"; readonly type: string }
-  | { readonly kind: "prefix_ref"; readonly prefixId: string }
-  | { readonly kind: "table_ref"; readonly table: string }
-  | { readonly kind: "axis_ref"; readonly axisId: string };
+  | { readonly kind: 'scalar'; readonly type: string }
+  | { readonly kind: 'prefix_ref'; readonly prefixId: string }
+  | { readonly kind: 'table_ref'; readonly table: string }
+  | { readonly kind: 'axis_ref'; readonly axisId: string };
 
 /** prefix dim에서 이 테이블을 table_ref로 참조하는 역방향 선언 */
 export interface TableRefSource {
@@ -188,7 +179,7 @@ export interface Catalog {
 // ── Catalog 유틸리티 타입 ─────────────────────────────────────────────────
 
 /** Catalog에서 prefix 이름 리터럴 유니온 추출 */
-export type PrefixIds<C extends Catalog> = keyof C["prefixes"] & string;
+export type PrefixIds<C extends Catalog> = keyof C['prefixes'] & string;
 
 /** Catalog에서 axis 이름 리터럴 유니온 추출 */
-export type AxisIds<C extends Catalog> = keyof C["axes"] & string;
+export type AxisIds<C extends Catalog> = keyof C['axes'] & string;

@@ -5,8 +5,8 @@ import {
   createDefaultLoggerAdapter,
   type LoggerPort,
   type HostLoggerLike,
-} from "@qa-sdk/sim-domain-slice-kit";
-import { createLogger } from "../../../../lib/logger.js";
+} from '@qa-sdk/sim-domain-slice-kit';
+import { createLogger } from '../../../../lib/logger.js';
 
 /**
  * User 슬라이스 LoggerPort 어댑터.
@@ -15,6 +15,6 @@ import { createLogger } from "../../../../lib/logger.js";
  * sim-domain-slice-kit 의 LoggerPort 로 감싼다.
  */
 export function createUserLogger(): LoggerPort {
-  const host = createLogger("sim-auth-api.user") as unknown as HostLoggerLike;
+  const host = createLogger('sim-auth-api.user') as unknown as HostLoggerLike;
   return createDefaultLoggerAdapter(host);
 }

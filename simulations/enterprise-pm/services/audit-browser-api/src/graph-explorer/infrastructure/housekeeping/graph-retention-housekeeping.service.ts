@@ -1,18 +1,13 @@
 // @def.boundary sim-audit-browser-api
 // @def.doc authorization-graph-store
 
-import {
-  Inject,
-  Injectable,
-  type OnModuleDestroy,
-  type OnModuleInit,
-} from "@nestjs/common";
-import { SLICE_LOGGER_PORT, type LoggerPort } from "@qa-sdk/sim-domain-slice-kit";
-import { GraphStoreQueryPort } from "../../application/ports/graph-store-query.port.js";
+import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { SLICE_LOGGER_PORT, type LoggerPort } from '@qa-sdk/sim-domain-slice-kit';
+import { GraphStoreQueryPort } from '../../application/ports/graph-store-query.port.js';
 import {
   buildGraphRetentionFailureLog,
   buildGraphRetentionSweepLog,
-} from "../../application/events/graph-retention-event.js";
+} from '../../application/events/graph-retention-event.js';
 
 export interface GraphRetentionHousekeepingOptions {
   readonly keepLatest?: number;
@@ -21,7 +16,7 @@ export interface GraphRetentionHousekeepingOptions {
 }
 
 export const GRAPH_RETENTION_HOUSEKEEPING_OPTIONS = Symbol.for(
-  "sim-audit-browser-api/graph-explorer/HousekeepingOptions",
+  'sim-audit-browser-api/graph-explorer/HousekeepingOptions',
 );
 
 /**
@@ -31,9 +26,7 @@ export const GRAPH_RETENTION_HOUSEKEEPING_OPTIONS = Symbol.for(
  * 를 통해 retention 이벤트를 ingest 로 전달.
  */
 @Injectable()
-export class GraphRetentionHousekeepingService
-  implements OnModuleInit, OnModuleDestroy
-{
+export class GraphRetentionHousekeepingService implements OnModuleInit, OnModuleDestroy {
   private timer: NodeJS.Timeout | null = null;
 
   constructor(
@@ -47,12 +40,12 @@ export class GraphRetentionHousekeepingService
     if (this.options.keepLatest === undefined) return;
 
     if (this.options.runOnBoot) {
-      await this.runSweep("boot");
+      await this.runSweep('boot');
     }
 
     if (this.options.intervalMs !== undefined && this.options.intervalMs > 0) {
       this.timer = setInterval(() => {
-        void this.runSweep("interval");
+        void this.runSweep('interval');
       }, this.options.intervalMs);
     }
   }
@@ -64,7 +57,7 @@ export class GraphRetentionHousekeepingService
     }
   }
 
-  private async runSweep(trigger: "boot" | "interval"): Promise<void> {
+  private async runSweep(trigger: 'boot' | 'interval'): Promise<void> {
     const keepLatest = this.options.keepLatest;
     if (keepLatest === undefined) return;
 
@@ -72,9 +65,9 @@ export class GraphRetentionHousekeepingService
       const result = await this.graphs.pruneAll(keepLatest);
       this.logger.info(
         {
-          domain: "graph-explorer",
-          useCase: "GraphRetentionHousekeepingService.runSweep",
-          outcome: "success",
+          domain: 'graph-explorer',
+          useCase: 'GraphRetentionHousekeepingService.runSweep',
+          outcome: 'success',
           ...buildGraphRetentionSweepLog({
             trigger,
             keepLatest,
@@ -85,19 +78,19 @@ export class GraphRetentionHousekeepingService
             graphIds: result.graphIds,
           }),
         },
-        "graph retention housekeeping completed",
+        'graph retention housekeeping completed',
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(
         {
-          domain: "graph-explorer",
-          useCase: "GraphRetentionHousekeepingService.runSweep",
-          outcome: "failure",
+          domain: 'graph-explorer',
+          useCase: 'GraphRetentionHousekeepingService.runSweep',
+          outcome: 'failure',
           err: error,
           ...buildGraphRetentionFailureLog({ trigger, keepLatest, error: message }),
         },
-        "graph retention housekeeping failed",
+        'graph retention housekeeping failed',
       );
     }
   }

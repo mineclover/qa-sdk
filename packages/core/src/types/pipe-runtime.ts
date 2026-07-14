@@ -3,40 +3,34 @@
 
 // ── 조건 표현식 ──────────────────────────────────────
 
-export type ConditionExpr =
-  | FieldCondition
-  | LogicalCondition
-  | ExistsCondition
-  | EventCondition;
+export type ConditionExpr = FieldCondition | LogicalCondition | ExistsCondition | EventCondition;
 
 export interface FieldCondition {
-  type: "field";
+  type: 'field';
   field: string;
-  op: "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "contains" | "matches";
+  op: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'matches';
   value: unknown;
 }
 
 export interface LogicalCondition {
-  type: "and" | "or" | "not";
+  type: 'and' | 'or' | 'not';
   children: ConditionExpr[];
 }
 
 export interface ExistsCondition {
-  type: "exists" | "not-exists";
+  type: 'exists' | 'not-exists';
   field: string;
 }
 
 export interface EventCondition {
-  type: "event-received";
+  type: 'event-received';
   eventKey: string;
   timeout?: number;
 }
 
 // ── Step 실행 결과 ───────────────────────────────────
 
-export type StepResult =
-  | { status: "ok"; output: unknown }
-  | { status: "error"; error: StepError };
+export type StepResult = { status: 'ok'; output: unknown } | { status: 'error'; error: StepError };
 
 export interface StepError {
   code: string;
@@ -73,10 +67,7 @@ export interface IPipeContext {
 
 export interface StepExecutor {
   facet: string;
-  execute(
-    step: import("./pipe-spec.js").PipeStep,
-    context: IPipeContext,
-  ): Promise<StepResult>;
+  execute(step: import('./pipe-spec.js').PipeStep, context: IPipeContext): Promise<StepResult>;
 }
 
 // ── 실행 결과 ────────────────────────────────────────
@@ -89,7 +80,7 @@ export interface ExecutedStep {
   eventKey?: string;
   input: unknown;
   output: unknown;
-  status: "ok" | "error" | "cancelled" | "skipped";
+  status: 'ok' | 'error' | 'cancelled' | 'skipped';
   error?: StepError;
   duration: number;
   timestamp: string;
@@ -101,5 +92,5 @@ export interface RunResult {
   errors: StepError[];
   finalContext: Record<string, unknown>;
   duration: number;
-  status: "complete" | "error" | "cancelled" | "max-steps";
+  status: 'complete' | 'error' | 'cancelled' | 'max-steps';
 }

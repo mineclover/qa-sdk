@@ -13,8 +13,8 @@
  * (`@opentelemetry/api`의 default tracer는 noop).
  */
 
-import { trace, type Span } from "@opentelemetry/api";
-import { randomBytes } from "node:crypto";
+import { trace, type Span } from '@opentelemetry/api';
+import { randomBytes } from 'node:crypto';
 
 import type {
   AuditEntry,
@@ -23,32 +23,36 @@ import type {
   ExecutionEntry,
   RecordCheckArgs,
   RecordExecutionArgs,
-} from "./types.js";
-import type { AuditRecorder } from "./recorder.js";
+} from './types.js';
+import type { AuditRecorder } from './recorder.js';
 
 /**
  * Wrapper에 넘기는 인자 — 모든 ID 필드가 optional.
  */
-export interface OtelRecordExecutionArgs
-  extends Omit<RecordExecutionArgs, "spanId" | "traceId" | "parentSpanId"> {
+export interface OtelRecordExecutionArgs extends Omit<
+  RecordExecutionArgs,
+  'spanId' | 'traceId' | 'parentSpanId'
+> {
   spanId?: string;
   traceId?: string;
   parentSpanId?: string | null;
 }
 
-export interface OtelRecordCheckArgs
-  extends Omit<RecordCheckArgs, "spanId" | "traceId" | "parentSpanId"> {
+export interface OtelRecordCheckArgs extends Omit<
+  RecordCheckArgs,
+  'spanId' | 'traceId' | 'parentSpanId'
+> {
   spanId?: string;
   traceId?: string;
   parentSpanId?: string;
 }
 
 function randomSpanId(): string {
-  return randomBytes(8).toString("hex");
+  return randomBytes(8).toString('hex');
 }
 
 function randomTraceId(): string {
-  return randomBytes(16).toString("hex");
+  return randomBytes(16).toString('hex');
 }
 
 /**
@@ -95,8 +99,7 @@ export class OtelAuditRecorder implements AuditRecorder {
     // - parentSpanId = active span의 parent (= execution span)
     // active span이 없으면 random spanId + parent는 호출자가 명시해야 함.
     const spanId = args.spanId ?? auto.spanId;
-    const parentSpanId =
-      args.parentSpanId ?? auto.parentSpanId ?? auto.spanId;
+    const parentSpanId = args.parentSpanId ?? auto.parentSpanId ?? auto.spanId;
     return this.inner.recordCheck({
       ...args,
       spanId,

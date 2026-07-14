@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import * as schema from "../../db/schema.js";
-import { SearchService } from "./search.service.js";
+import { describe, expect, it } from 'vitest';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import * as schema from '../../db/schema.js';
+import { SearchService } from './search.service.js';
 
 function createService() {
-  const raw = new Database(":memory:");
+  const raw = new Database(':memory:');
   raw.exec(`
     CREATE TABLE documents (
       doc_id text PRIMARY KEY NOT NULL,
@@ -47,16 +47,18 @@ function createService() {
   const db = drizzle({ client: raw, schema });
   const service = new SearchService(raw, db);
   service.onModuleInit();
-  service.index("doc-a", "상품 담기 문서");
-  service.index("doc-b", "checkout document");
+  service.index('doc-a', '상품 담기 문서');
+  service.index('doc-b', 'checkout document');
   return { raw, service };
 }
 
-describe("SearchService", () => {
-  it("matches only the requested document ids for a query", () => {
+describe('SearchService', () => {
+  it('matches only the requested document ids for a query', () => {
     const { raw, service } = createService();
 
-    expect(service.matchDocIds("상품 담기", ["doc-a", "doc-b", "missing"])).toEqual(new Set(["doc-a"]));
+    expect(service.matchDocIds('상품 담기', ['doc-a', 'doc-b', 'missing'])).toEqual(
+      new Set(['doc-a']),
+    );
 
     raw.close();
   });

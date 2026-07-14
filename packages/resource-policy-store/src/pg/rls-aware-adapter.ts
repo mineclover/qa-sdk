@@ -1,7 +1,7 @@
 // @def.boundary permission-engine-spec
 // @def.doc authorization-ontology-rls-enforcement
 
-import type { Sql } from "postgres";
+import type { Sql } from 'postgres';
 
 import {
   createRlsTxRunner,
@@ -9,7 +9,7 @@ import {
   type RlsTxRunner,
   type RlsSessionContext,
   type RlsTxSql,
-} from "db-bootstrap";
+} from 'db-bootstrap';
 
 import {
   DuplicatePolicyError,
@@ -23,7 +23,7 @@ import {
   type ResourcePolicyRegisterArgs,
   type ResourcePolicyRegistry,
   type ResourcePolicyState,
-} from "permission-engine";
+} from 'permission-engine';
 
 interface RawRow {
   resource_id: string;

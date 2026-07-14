@@ -4,8 +4,8 @@
 import {
   ExpenseReadModelQuery,
   type ExpenseDetailReadModel,
-} from "../../application/queries/expense-read-model.query.js";
-import type { ExpenseLoggerPort } from "../../application/ports/expense-logger.port.js";
+} from '../../application/queries/expense-read-model.query.js';
+import type { ExpenseLoggerPort } from '../../application/ports/expense-logger.port.js';
 
 export interface ExpenseDetailBffModel {
   readonly id: string;
@@ -18,7 +18,7 @@ export interface ExpenseDetailBffModel {
 }
 
 export class ExpenseDetailBff {
-  readonly cachePrefix = "expense-bff-detail:v1";
+  readonly cachePrefix = 'expense-bff-detail:v1';
 
   constructor(
     private readonly readModel: ExpenseReadModelQuery,
@@ -36,21 +36,21 @@ export class ExpenseDetailBff {
       {
         traceId: input.traceId,
         correlationId: input.correlationId,
-        domain: "expense",
-        useCase: "ExpenseDetailBff.getDetail",
+        domain: 'expense',
+        useCase: 'ExpenseDetailBff.getDetail',
         aggregateId: input.id,
-        queryName: "ExpenseDetailBffQuery",
-        outcome: detail ? "success" : "failure",
+        queryName: 'ExpenseDetailBffQuery',
+        outcome: detail ? 'success' : 'failure',
         cacheKeyPrefix: this.cachePrefix,
         cacheHit: false,
       },
-      detail ? "expense-detail.bff.success" : "expense-detail.bff.miss",
+      detail ? 'expense-detail.bff.success' : 'expense-detail.bff.miss',
     );
     if (!detail) return null;
     return {
       id: detail.id,
       title: `Expense Report ${detail.id}`,
-      amountLabel: `${detail.amount.toLocaleString("en-US")} KRW`,
+      amountLabel: `${detail.amount.toLocaleString('en-US')} KRW`,
       statusLabel: detail.status.toUpperCase(),
       categoryLabel: detail.category,
       updatedAt: detail.updatedAt,

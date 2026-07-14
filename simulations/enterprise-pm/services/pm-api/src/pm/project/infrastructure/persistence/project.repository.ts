@@ -1,16 +1,16 @@
 // @def.boundary sim-pm-api
 // @def.doc domain-slice-architecture
 
-import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { eq } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { ProjectEntity } from "../../domain/index.js";
-import type { ProjectSnapshot, ProjectStatus } from "../../domain/index.js";
-import { ProjectRepositoryPort } from "../../application/ports/project-repository.port.js";
-import type { ProjectTransactionScope } from "../../application/ports/project-transaction.port.js";
-import * as sqliteSchema from "./sqlite.schema.js";
-import * as pgSchema from "./pg.schema.js";
+import { ProjectEntity } from '../../domain/index.js';
+import type { ProjectSnapshot, ProjectStatus } from '../../domain/index.js';
+import { ProjectRepositoryPort } from '../../application/ports/project-repository.port.js';
+import type { ProjectTransactionScope } from '../../application/ports/project-transaction.port.js';
+import * as sqliteSchema from './sqlite.schema.js';
+import * as pgSchema from './pg.schema.js';
 
 interface ProjectRow {
   id: string;
@@ -152,21 +152,21 @@ export class PgProjectRepository extends ProjectRepositoryPort {
   }
 }
 
-export type ProjectDialect = "sqlite" | "pg";
+export type ProjectDialect = 'sqlite' | 'pg';
 
 export interface ProjectRepositoryFactoryOpts {
   readonly dialect: ProjectDialect;
   readonly db: BetterSQLite3Database | PostgresJsDatabase;
 }
 
-export function createProjectRepository(
-  opts: ProjectRepositoryFactoryOpts,
-): ProjectRepositoryPort {
-  if (opts.dialect === "sqlite") {
+export function createProjectRepository(opts: ProjectRepositoryFactoryOpts): ProjectRepositoryPort {
+  if (opts.dialect === 'sqlite') {
     return new SqliteProjectRepository(opts.db as BetterSQLite3Database);
   }
-  if (opts.dialect === "pg") {
+  if (opts.dialect === 'pg') {
     return new PgProjectRepository(opts.db as PostgresJsDatabase);
   }
-  throw new Error(`createProjectRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`);
+  throw new Error(
+    `createProjectRepository: 지원하지 않는 dialect="${(opts as { dialect: string }).dialect}"`,
+  );
 }

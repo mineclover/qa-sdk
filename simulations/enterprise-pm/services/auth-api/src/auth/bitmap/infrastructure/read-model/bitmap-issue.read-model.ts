@@ -1,13 +1,13 @@
 // @def.boundary sim-auth-api
 // @def.doc authorization-ontology-bitmap-pipeline
 
-import { issueBitmap } from "permission-engine";
-import { BitmapIssueQuery } from "../../application/queries/bitmap-issue.query.js";
-import type { BitmapIssueResult } from "../../domain/index.js";
-import type { UserQueryPort } from "../../application/ports/user-query.port.js";
-import type { RoleAssignmentQueryPort } from "../../application/ports/role-assignment-query.port.js";
-import type { RoleQueryPort, RoleViewForBitmap } from "../../application/ports/role-query.port.js";
-import { computeBitsFor } from "../computation/compute-bits.js";
+import { issueBitmap } from 'permission-engine';
+import { BitmapIssueQuery } from '../../application/queries/bitmap-issue.query.js';
+import type { BitmapIssueResult } from '../../domain/index.js';
+import type { UserQueryPort } from '../../application/ports/user-query.port.js';
+import type { RoleAssignmentQueryPort } from '../../application/ports/role-assignment-query.port.js';
+import type { RoleQueryPort, RoleViewForBitmap } from '../../application/ports/role-query.port.js';
+import { computeBitsFor } from '../computation/compute-bits.js';
 
 export interface BitmapIssuerConfig {
   readonly secret: Uint8Array;
@@ -48,8 +48,8 @@ export class IssuerBitmapReadModel extends BitmapIssueQuery {
     const mask = computeBitsFor(assignments, roles);
 
     const bm = issueBitmap({
-      prefix: "sim.bitmap",
-      v: this.config.version ?? "v1",
+      prefix: 'sim.bitmap',
+      v: this.config.version ?? 'v1',
       mask,
       issuer: this.config.issuer,
       secret: this.config.secret,

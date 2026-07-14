@@ -1,9 +1,9 @@
 // @def.boundary sim-document-api
 // @def.doc domain-slice-architecture
 
-import { toDocumentId, toOwnerId, toProjectId } from "./document.ids.js";
-import { InvalidDocumentTitleException } from "./document.exceptions.js";
-import type { DocumentProps, DocumentSnapshot } from "./document.types.js";
+import { toDocumentId, toOwnerId, toProjectId } from './document.ids.js';
+import { InvalidDocumentTitleException } from './document.exceptions.js';
+import type { DocumentProps, DocumentSnapshot } from './document.types.js';
 
 /**
  * Document Aggregate Root.
@@ -59,7 +59,8 @@ export class DocumentEntity {
     }
     return new DocumentEntity({
       ...this.props,
-      projectId: patch.projectId !== undefined ? toProjectId(patch.projectId) : this.props.projectId,
+      projectId:
+        patch.projectId !== undefined ? toProjectId(patch.projectId) : this.props.projectId,
       title: patch.title ?? this.props.title,
       ownerId: patch.ownerId !== undefined ? toOwnerId(patch.ownerId) : this.props.ownerId,
       updatedAt: now,

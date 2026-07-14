@@ -1,7 +1,7 @@
 // @def.boundary persistence-system-root
 // @def.doc persistence-system-root
 
-import type { StoredVerdict, VerdictInsert, VerdictStore } from "@qa-sdk/core";
+import type { StoredVerdict, VerdictInsert, VerdictStore } from '@qa-sdk/core';
 
 /** VerdictStore의 in-memory 구현 */
 export class InMemoryVerdictStore implements VerdictStore {
@@ -30,10 +30,7 @@ export class InMemoryVerdictStore implements VerdictStore {
     this.verdictIdsByScenarioTrace.set(scenarioTraceKey, stored.id);
   }
 
-  async removeByScenarioAndTrace(
-    scenarioId: string,
-    traceId: string,
-  ): Promise<boolean> {
+  async removeByScenarioAndTrace(scenarioId: string, traceId: string): Promise<boolean> {
     const key = toScenarioTraceKey(scenarioId, traceId);
     const verdictId = this.verdictIdsByScenarioTrace.get(key);
     if (!verdictId) return false;
@@ -43,13 +40,8 @@ export class InMemoryVerdictStore implements VerdictStore {
     return true;
   }
 
-  async findByScenarioAndTrace(
-    scenarioId: string,
-    traceId: string,
-  ): Promise<StoredVerdict | null> {
-    const verdictId = this.verdictIdsByScenarioTrace.get(
-      toScenarioTraceKey(scenarioId, traceId),
-    );
+  async findByScenarioAndTrace(scenarioId: string, traceId: string): Promise<StoredVerdict | null> {
+    const verdictId = this.verdictIdsByScenarioTrace.get(toScenarioTraceKey(scenarioId, traceId));
 
     if (!verdictId) return null;
 

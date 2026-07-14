@@ -1,26 +1,26 @@
-import { describe, expect, it, vi } from "vitest";
-import type { DocRecord } from "../../core/types.js";
-import { SyncService } from "./sync.service.js";
+import { describe, expect, it, vi } from 'vitest';
+import type { DocRecord } from '../../core/types.js';
+import { SyncService } from './sync.service.js';
 
 function doc(index: number): DocRecord {
-  const id = `doc-${String(index).padStart(5, "0")}`;
+  const id = `doc-${String(index).padStart(5, '0')}`;
   return {
     docId: id,
     title: id,
-    scope: "data",
-    aspect: "domain_data",
-    depth: "overview",
-    lifecycle: "approved",
+    scope: 'data',
+    aspect: 'domain_data',
+    depth: 'overview',
+    lifecycle: 'approved',
     tags: [],
     links: [],
     version: 1,
     bodyHash: `${id}-hash`,
-    syncedAt: "2026-06-30T00:00:00.000Z",
+    syncedAt: '2026-06-30T00:00:00.000Z',
   };
 }
 
-describe("SyncService semantic materialization source", () => {
-  it("rebuilds search over every document instead of the first 10000 docs only", () => {
+describe('SyncService semantic materialization source', () => {
+  it('rebuilds search over every document instead of the first 10000 docs only', () => {
     const docs = Array.from({ length: 10005 }, (_, index) => doc(index));
     const docsService = {
       list({ limit = 500, offset = 0 }: { limit?: number; offset?: number } = {}) {
@@ -34,6 +34,6 @@ describe("SyncService semantic materialization source", () => {
 
     expect(indexedDocs).toHaveLength(10005);
     expect(search.index).toHaveBeenCalledTimes(10005);
-    expect(indexedDocs.at(-1)?.docId).toBe("doc-10004");
+    expect(indexedDocs.at(-1)?.docId).toBe('doc-10004');
   });
 });

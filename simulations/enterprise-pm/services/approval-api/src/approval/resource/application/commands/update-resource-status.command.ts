@@ -1,7 +1,7 @@
 // @def.boundary sim-approval-api
 // @def.doc domain-slice-architecture
 
-import type { ResourceStatus } from "../../domain/index.js";
+import type { ResourceStatus } from '../../domain/index.js';
 
 export interface UpdateResourceStatusCommand {
   readonly id: string;

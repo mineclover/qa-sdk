@@ -24,8 +24,8 @@
  *   3. 배치 변환: 대량 주소를 한 번에 변환하여 캐시 구축
  */
 
-import { WeightedIndex } from "weighted-index";
-import { BitIndex, BitIndexBig } from "./bit-index.js";
+import { WeightedIndex } from 'weighted-index';
+import { BitIndex, BitIndexBig } from './bit-index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  IndexBridge
@@ -82,12 +82,12 @@ export class IndexBridge {
 
   /** WeightedIndex index 배열 → BitIndex packed 배열 (배치). */
   toBitBatch(wiIndices: number[]): number[] {
-    return wiIndices.map(i => this.toBitUnsafe(i));
+    return wiIndices.map((i) => this.toBitUnsafe(i));
   }
 
   /** BitIndex packed 배열 → WeightedIndex index 배열 (배치). */
   toWeightedBatch(biPackeds: number[]): number[] {
-    return biPackeds.map(p => this.toWeightedUnsafe(p));
+    return biPackeds.map((p) => this.toWeightedUnsafe(p));
   }
 }
 

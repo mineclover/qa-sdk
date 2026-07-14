@@ -10,7 +10,7 @@ import {
   type DocumentGraphEdgeSummary,
   type DocumentGraphFamilyRoleType,
   type TraversalAxis,
-} from "./graph-types.js";
+} from './graph-types.js';
 import type {
   DocumentEnvelope,
   DocumentMetadata,
@@ -18,7 +18,7 @@ import type {
   DocumentSection,
   DocumentSource,
   DocumentTask,
-} from "doc-envelope";
+} from 'doc-envelope';
 
 export interface NormalizeDocumentGraphEdgesOptions {
   readonly includeContext?: boolean;
@@ -108,7 +108,7 @@ function addAuthoredLinkEdges(
     if (!axis) return;
 
     const target = resolveAuthoredLinkTarget(index, document, link.targetId, axis);
-    const kind: DocumentGraphEdgeKind = axis === "evidence" ? "document-evidence" : "authored-link";
+    const kind: DocumentGraphEdgeKind = axis === 'evidence' ? 'document-evidence' : 'authored-link';
     builder.add({
       kind,
       axis,
@@ -131,7 +131,7 @@ function addAuthoredLinkEdges(
         },
       }),
       metadata: {
-        source: "DocumentEnvelope.links",
+        source: 'DocumentEnvelope.links',
         link,
       },
     });
@@ -145,8 +145,8 @@ function addRuleConstraintEdges(
 ): void {
   if (!isRuleDocument(document) || !document.familyId) return;
 
-  const sameFamily = index.documents.filter((candidate) =>
-    candidate !== document && candidate.familyId === document.familyId
+  const sameFamily = index.documents.filter(
+    (candidate) => candidate !== document && candidate.familyId === document.familyId,
   );
   const targets = sameFamily.some(isSpecConstraintTarget)
     ? sameFamily.filter(isSpecConstraintTarget)
@@ -155,14 +155,14 @@ function addRuleConstraintEdges(
   for (const targetDocument of targets) {
     const target = documentTarget(targetDocument);
     builder.add({
-      kind: "document-constraint",
-      axis: "constraint",
+      kind: 'document-constraint',
+      axis: 'constraint',
       fromNodeId: documentNodeId(document),
       toNodeId: target.nodeId,
-      authoredType: "rule-family",
+      authoredType: 'rule-family',
       reason: reasonFor(document, {
-        reason: ".rule.md same-family constraint",
-        rawSource: rawSourceFor(document, "familyId", {
+        reason: '.rule.md same-family constraint',
+        rawSource: rawSourceFor(document, 'familyId', {
           familyId: document.familyId,
           targetKind: targetDocument.kind,
         }),
@@ -173,24 +173,21 @@ function addRuleConstraintEdges(
         },
       }),
       metadata: {
-        source: "DocumentEnvelope.familyId",
+        source: 'DocumentEnvelope.familyId',
         familyId: document.familyId,
       },
     });
   }
 }
 
-function addDocumentSourceEdges(
-  builder: EdgeBuilder,
-  document: DocumentEnvelope,
-): void {
-  addSourceRefEdge(builder, document, document.path, "path", document.rawSource);
+function addDocumentSourceEdges(builder: EdgeBuilder, document: DocumentEnvelope): void {
+  addSourceRefEdge(builder, document, document.path, 'path', document.rawSource);
   addSourceRefEdge(
     builder,
     document,
     asString(document.metadata.sourcePath),
-    "sourcePath",
-    rawSourceFor(document, "metadata.sourcePath"),
+    'sourcePath',
+    rawSourceFor(document, 'metadata.sourcePath'),
   );
 
   for (const source of document.sources) {
@@ -198,8 +195,8 @@ function addDocumentSourceEdges(
     if (!targetValue) continue;
     const target = sourceTarget(targetValue);
     builder.add({
-      kind: "document-source",
-      axis: "source",
+      kind: 'document-source',
+      axis: 'source',
       fromNodeId: documentNodeId(document),
       toNodeId: target.nodeId,
       authoredType: asString(source.metadata.sourceKind),
@@ -216,7 +213,7 @@ function addDocumentSourceEdges(
         },
       }),
       metadata: {
-        source: "DocumentEnvelope.sources",
+        source: 'DocumentEnvelope.sources',
         sourceId: source.id,
         ...source.metadata,
       },
@@ -224,21 +221,35 @@ function addDocumentSourceEdges(
   }
 
   for (const value of metadataStringValues(document.metadata.sourceRefs)) {
-    addSourceRefEdge(builder, document, value, "sourceRefs", rawSourceFor(document, "metadata.sourceRefs"));
-  }
-  for (const value of metadataStringValues(document.metadata.verificationRefs).filter(isPathLikeRef)) {
     addSourceRefEdge(
       builder,
       document,
       value,
-      "verificationRefs",
-      rawSourceFor(document, "metadata.verificationRefs"),
+      'sourceRefs',
+      rawSourceFor(document, 'metadata.sourceRefs'),
     );
   }
-  for (const field of ["artifactRef", "outputPath"] as const) {
+  for (const value of metadataStringValues(document.metadata.verificationRefs).filter(
+    isPathLikeRef,
+  )) {
+    addSourceRefEdge(
+      builder,
+      document,
+      value,
+      'verificationRefs',
+      rawSourceFor(document, 'metadata.verificationRefs'),
+    );
+  }
+  for (const field of ['artifactRef', 'outputPath'] as const) {
     const value = asString(document.metadata[field]);
     if (value && isPathLikeRef(value)) {
-      addSourceRefEdge(builder, document, value, field, rawSourceFor(document, `metadata.${field}`));
+      addSourceRefEdge(
+        builder,
+        document,
+        value,
+        field,
+        rawSourceFor(document, `metadata.${field}`),
+      );
     }
   }
 }
@@ -253,8 +264,8 @@ function addSourceRefEdge(
   if (!value) return;
   const target = sourceTarget(value);
   builder.add({
-    kind: "document-source",
-    axis: "source",
+    kind: 'document-source',
+    axis: 'source',
     fromNodeId: documentNodeId(document),
     toNodeId: target.nodeId,
     authoredType: field,
@@ -283,8 +294,8 @@ function addDocumentEvidenceEdges(
   for (const evidence of document.evidence) {
     const target = evidenceTarget(evidence.id);
     builder.add({
-      kind: "document-evidence",
-      axis: "evidence",
+      kind: 'document-evidence',
+      axis: 'evidence',
       fromNodeId: documentNodeId(document),
       toNodeId: target.nodeId,
       authoredType: evidence.kind,
@@ -300,16 +311,22 @@ function addDocumentEvidenceEdges(
         },
       }),
       metadata: {
-        source: "DocumentEnvelope.evidence",
+        source: 'DocumentEnvelope.evidence',
         evidenceId: evidence.id,
         evidenceKind: evidence.kind,
       },
     });
   }
 
-  addEvidenceMetadataRefs(builder, index, document, "verifiesRefs", "verifies");
-  addEvidenceMetadataRefs(builder, index, document, "materializesOutputRefs", "materializes_output");
-  addEvidenceMetadataRefs(builder, index, document, "verificationRefs", "verificationRefs");
+  addEvidenceMetadataRefs(builder, index, document, 'verifiesRefs', 'verifies');
+  addEvidenceMetadataRefs(
+    builder,
+    index,
+    document,
+    'materializesOutputRefs',
+    'materializes_output',
+  );
+  addEvidenceMetadataRefs(builder, index, document, 'verificationRefs', 'verificationRefs');
   addQualityOrActivationEvidenceRefs(builder, index, document);
 }
 
@@ -321,10 +338,10 @@ function addEvidenceMetadataRefs(
   authoredType: string,
 ): void {
   for (const value of metadataStringValues(document.metadata[field])) {
-    const target = resolveDocumentOrReference(index, value, "evidence");
+    const target = resolveDocumentOrReference(index, value, 'evidence');
     builder.add({
-      kind: "document-evidence",
-      axis: "evidence",
+      kind: 'document-evidence',
+      axis: 'evidence',
       fromNodeId: documentNodeId(document),
       toNodeId: target.nodeId,
       authoredType,
@@ -351,17 +368,24 @@ function addQualityOrActivationEvidenceRefs(
   index: ResolutionIndex,
   document: DocumentEnvelope,
 ): void {
-  if (document.kind !== "quality-status" && document.kind !== "activation-evidence") return;
+  if (document.kind !== 'quality-status' && document.kind !== 'activation-evidence') return;
 
-  for (const field of ["artifactId", "artifactRef", "packId", "ontologyId", "outputPath"] as const) {
+  for (const field of [
+    'artifactId',
+    'artifactRef',
+    'packId',
+    'ontologyId',
+    'outputPath',
+  ] as const) {
     const value = asString(document.metadata[field]);
     if (!value) continue;
-    const target = field === "outputPath"
-      ? sourceTarget(value)
-      : resolveDocumentOrReference(index, value, "evidence");
+    const target =
+      field === 'outputPath'
+        ? sourceTarget(value)
+        : resolveDocumentOrReference(index, value, 'evidence');
     builder.add({
-      kind: "document-evidence",
-      axis: "evidence",
+      kind: 'document-evidence',
+      axis: 'evidence',
       fromNodeId: documentNodeId(document),
       toNodeId: target.nodeId,
       authoredType: document.kind,
@@ -393,13 +417,13 @@ function addTaskTraceEdges(
   for (const task of document.tasks) {
     const taskTarget = taskNodeTarget(document, task);
     builder.add({
-      kind: "task-trace",
-      axis: "trace",
+      kind: 'task-trace',
+      axis: 'trace',
       fromNodeId: documentNodeId(document),
       toNodeId: taskTarget.nodeId,
-      authoredType: "task",
+      authoredType: 'task',
       reason: reasonFor(document, {
-        reason: "document-task trace",
+        reason: 'document-task trace',
         rawSource: task.rawSource ?? rawSourceFor(document, `tasks.${task.id}`),
         target: taskTarget,
         metadata: {
@@ -409,7 +433,7 @@ function addTaskTraceEdges(
         },
       }),
       metadata: {
-        source: "DocumentEnvelope.tasks",
+        source: 'DocumentEnvelope.tasks',
         taskId: task.id,
       },
     });
@@ -417,13 +441,13 @@ function addTaskTraceEdges(
     for (const dependency of taskTraceDependencies(task)) {
       const target = resolveTaskOrReference(index, document, dependency);
       builder.add({
-        kind: "task-trace",
-        axis: "trace",
+        kind: 'task-trace',
+        axis: 'trace',
         fromNodeId: taskNodeId(document, task),
         toNodeId: target.nodeId,
-        authoredType: "task-dependency",
+        authoredType: 'task-dependency',
         reason: reasonFor(document, {
-          reason: "task dependency trace",
+          reason: 'task dependency trace',
           rawSource: task.rawSource ?? rawSourceFor(document, `tasks.${task.id}.dependencies`),
           target,
           metadata: {
@@ -432,7 +456,7 @@ function addTaskTraceEdges(
           },
         }),
         metadata: {
-          source: "DocumentTask.metadata",
+          source: 'DocumentTask.metadata',
           taskId: task.id,
           dependency,
         },
@@ -441,24 +465,24 @@ function addTaskTraceEdges(
   }
 
   const prdPath = asString(document.metadata.prdPath);
-  if (document.kind === "ralph-session" && prdPath) {
-    const target = resolveDocumentOrReference(index, prdPath.replace(/\.json$/, ""), "document");
+  if (document.kind === 'ralph-session' && prdPath) {
+    const target = resolveDocumentOrReference(index, prdPath.replace(/\.json$/, ''), 'document');
     builder.add({
-      kind: "task-trace",
-      axis: "trace",
+      kind: 'task-trace',
+      axis: 'trace',
       fromNodeId: documentNodeId(document),
       toNodeId: target.nodeId,
-      authoredType: "ralph-session-prd",
+      authoredType: 'ralph-session-prd',
       reason: reasonFor(document, {
-        reason: "ralph session PRD trace",
-        rawSource: rawSourceFor(document, "metadata.prdPath"),
+        reason: 'ralph session PRD trace',
+        rawSource: rawSourceFor(document, 'metadata.prdPath'),
         target,
         metadata: {
           prdPath,
         },
       }),
       metadata: {
-        source: "DocumentEnvelope.metadata.prdPath",
+        source: 'DocumentEnvelope.metadata.prdPath',
         prdPath,
       },
     });
@@ -472,15 +496,15 @@ function addTaskEvidenceEdges(
 ): void {
   for (const task of document.tasks) {
     for (const evidenceId of task.evidenceIds) {
-      const target = resolveDocumentOrReference(index, evidenceId, "evidence");
+      const target = resolveDocumentOrReference(index, evidenceId, 'evidence');
       builder.add({
-        kind: "task-evidence",
-        axis: "evidence",
+        kind: 'task-evidence',
+        axis: 'evidence',
         fromNodeId: taskNodeId(document, task),
         toNodeId: target.nodeId,
-        authoredType: "task-evidence",
+        authoredType: 'task-evidence',
         reason: reasonFor(document, {
-          reason: "task evidence reference",
+          reason: 'task evidence reference',
           rawSource: task.rawSource ?? rawSourceFor(document, `tasks.${task.id}.evidenceIds`),
           target,
           metadata: {
@@ -489,7 +513,7 @@ function addTaskEvidenceEdges(
           },
         }),
         metadata: {
-          source: "DocumentTask.evidenceIds",
+          source: 'DocumentTask.evidenceIds',
           taskId: task.id,
           evidenceId,
         },
@@ -498,20 +522,17 @@ function addTaskEvidenceEdges(
   }
 }
 
-function addSectionMembershipEdges(
-  builder: EdgeBuilder,
-  document: DocumentEnvelope,
-): void {
+function addSectionMembershipEdges(builder: EdgeBuilder, document: DocumentEnvelope): void {
   for (const section of document.sections) {
     const target = sectionNodeTarget(document, section);
     builder.add({
-      kind: "section-membership",
-      axis: "composition",
+      kind: 'section-membership',
+      axis: 'composition',
       fromNodeId: documentNodeId(document),
       toNodeId: target.nodeId,
-      authoredType: "section",
+      authoredType: 'section',
       reason: reasonFor(document, {
-        reason: "document-section membership",
+        reason: 'document-section membership',
         rawSource: section.rawSource ?? rawSourceFor(document, `sections.${section.id}`),
         target,
         metadata: {
@@ -522,7 +543,7 @@ function addSectionMembershipEdges(
         },
       }),
       metadata: {
-        source: "DocumentEnvelope.sections",
+        source: 'DocumentEnvelope.sections',
         sectionId: section.id,
       },
     });
@@ -539,14 +560,15 @@ function addSectionReferenceEdges(
     for (const value of metadataStringValues(section.metadata.sourceRefs)) {
       const target = sourceTarget(value);
       builder.add({
-        kind: "document-source",
-        axis: "source",
+        kind: 'document-source',
+        axis: 'source',
         fromNodeId: sectionTarget.nodeId,
         toNodeId: target.nodeId,
-        authoredType: "section-source",
+        authoredType: 'section-source',
         reason: reasonFor(document, {
-          reason: "section source reference",
-          rawSource: section.rawSource ?? rawSourceFor(document, `sections.${section.id}.sourceRefs`),
+          reason: 'section source reference',
+          rawSource:
+            section.rawSource ?? rawSourceFor(document, `sections.${section.id}.sourceRefs`),
           target,
           metadata: {
             sectionId: section.id,
@@ -554,7 +576,7 @@ function addSectionReferenceEdges(
           },
         }),
         metadata: {
-          source: "DocumentSection.metadata.sourceRefs",
+          source: 'DocumentSection.metadata.sourceRefs',
           sectionId: section.id,
           value,
         },
@@ -562,16 +584,17 @@ function addSectionReferenceEdges(
     }
 
     for (const value of metadataStringValues(section.metadata.evidenceIds)) {
-      const target = resolveDocumentOrReference(index, value, "evidence");
+      const target = resolveDocumentOrReference(index, value, 'evidence');
       builder.add({
-        kind: "document-evidence",
-        axis: "evidence",
+        kind: 'document-evidence',
+        axis: 'evidence',
         fromNodeId: sectionTarget.nodeId,
         toNodeId: target.nodeId,
-        authoredType: "section-evidence",
+        authoredType: 'section-evidence',
         reason: reasonFor(document, {
-          reason: "section evidence reference",
-          rawSource: section.rawSource ?? rawSourceFor(document, `sections.${section.id}.evidenceIds`),
+          reason: 'section evidence reference',
+          rawSource:
+            section.rawSource ?? rawSourceFor(document, `sections.${section.id}.evidenceIds`),
           target,
           metadata: {
             sectionId: section.id,
@@ -579,7 +602,7 @@ function addSectionReferenceEdges(
           },
         }),
         metadata: {
-          source: "DocumentSection.metadata.evidenceIds",
+          source: 'DocumentSection.metadata.evidenceIds',
           sectionId: section.id,
           value,
         },
@@ -588,22 +611,19 @@ function addSectionReferenceEdges(
   }
 }
 
-function addContextEdges(
-  builder: EdgeBuilder,
-  document: DocumentEnvelope,
-): void {
+function addContextEdges(builder: EdgeBuilder, document: DocumentEnvelope): void {
   for (const tag of metadataStringValues(document.metadata.tags)) {
-    addContextEdge(builder, document, "tag", tag);
+    addContextEdge(builder, document, 'tag', tag);
   }
-  for (const field of ["scope", "aspect", "layer", "knowledgeKind"] as const) {
+  for (const field of ['scope', 'aspect', 'layer', 'knowledgeKind'] as const) {
     const value = asString(document.metadata[field]);
     if (value) addContextEdge(builder, document, field, value);
   }
-  if (document.metadata.type === "knowledge") {
-    addContextEdge(builder, document, "documentContext", "knowledge");
+  if (document.metadata.type === 'knowledge') {
+    addContextEdge(builder, document, 'documentContext', 'knowledge');
   }
-  if (document.kind === "memo") {
-    addContextEdge(builder, document, "documentContext", "memo");
+  if (document.kind === 'memo') {
+    addContextEdge(builder, document, 'documentContext', 'memo');
   }
 }
 
@@ -615,8 +635,8 @@ function addContextEdge(
 ): void {
   const target = contextTarget(field, value);
   builder.add({
-    kind: "context-metadata",
-    axis: "context",
+    kind: 'context-metadata',
+    axis: 'context',
     fromNodeId: documentNodeId(document),
     toNodeId: target.nodeId,
     authoredType: field,
@@ -630,17 +650,14 @@ function addContextEdge(
       },
     }),
     metadata: {
-      source: "DocumentEnvelope.metadata",
+      source: 'DocumentEnvelope.metadata',
       field,
       value,
     },
   });
 }
 
-function addRoleEdges(
-  builder: EdgeBuilder,
-  documents: readonly DocumentEnvelope[],
-): void {
+function addRoleEdges(builder: EdgeBuilder, documents: readonly DocumentEnvelope[]): void {
   const byFamily = new Map<string, RoleFamilyMember[]>();
   for (const document of documents) {
     if (!document.familyId) continue;
@@ -669,13 +686,12 @@ function addRoleEdges(
         if (from.document === to.document) continue;
         const target = documentTarget(to.document);
         builder.add({
-          kind: "role-membership",
-          axis: "role",
+          kind: 'role-membership',
+          axis: 'role',
           fromNodeId: documentNodeId(from.document),
           toNodeId: target.nodeId,
-          authoredType: from.membership.source === "DocumentEnvelope.familyId"
-            ? "family"
-            : "family-context",
+          authoredType:
+            from.membership.source === 'DocumentEnvelope.familyId' ? 'family' : 'family-context',
           reason: reasonFor(from.document, {
             reason: from.membership.reason,
             rawSource: from.membership.rawSource,
@@ -708,12 +724,13 @@ function addRoleFamilyMember(
   member: RoleFamilyMember,
 ): void {
   const members = byFamily.get(member.membership.familyId) ?? [];
-  const existingIndex = members.findIndex((candidate) =>
-    candidate.document.stableId === member.document.stableId &&
-    candidate.document.path === member.document.path
+  const existingIndex = members.findIndex(
+    (candidate) =>
+      candidate.document.stableId === member.document.stableId &&
+      candidate.document.path === member.document.path,
   );
   if (existingIndex >= 0) {
-    if (members[existingIndex]!.membership.source !== "DocumentEnvelope.familyId") {
+    if (members[existingIndex]!.membership.source !== 'DocumentEnvelope.familyId') {
       members[existingIndex] = member;
     }
     byFamily.set(member.membership.familyId, members);
@@ -723,20 +740,17 @@ function addRoleFamilyMember(
   byFamily.set(member.membership.familyId, members);
 }
 
-function sameFamilyRoleMembership(
-  document: DocumentEnvelope,
-  familyId: string,
-): RoleMembership {
+function sameFamilyRoleMembership(document: DocumentEnvelope, familyId: string): RoleMembership {
   return {
     familyId,
-    source: "DocumentEnvelope.familyId",
-    reason: "same-family role relationship",
-    rawSource: rawSourceFor(document, "familyId", {
+    source: 'DocumentEnvelope.familyId',
+    reason: 'same-family role relationship',
+    rawSource: rawSourceFor(document, 'familyId', {
       familyId,
     }),
     metadata: {
       familyId,
-      roleMembership: "same-family",
+      roleMembership: 'same-family',
     },
   };
 }
@@ -758,7 +772,7 @@ function linkedFamilyContextMemberships(
       memberships.push({
         familyId,
         source,
-        reason: "linked family context role relationship",
+        reason: 'linked family context role relationship',
         rawSource: rawSourceFor(document, pointer, {
           familyId,
           value,
@@ -767,21 +781,21 @@ function linkedFamilyContextMemberships(
           ...metadata,
           familyId,
           value,
-          roleMembership: "family-context",
+          roleMembership: 'family-context',
         },
       });
     }
   };
 
   const metadataFields = [
-    "familyContext",
-    "familyContextId",
-    "familyContextIds",
-    "contextFamily",
-    "contextFamilyId",
-    "contextFamilyIds",
-    "familyIds",
-    "relatedFamilyIds",
+    'familyContext',
+    'familyContextId',
+    'familyContextIds',
+    'contextFamily',
+    'contextFamilyId',
+    'contextFamilyIds',
+    'familyIds',
+    'relatedFamilyIds',
   ] as const;
 
   for (const field of metadataFields) {
@@ -791,24 +805,22 @@ function linkedFamilyContextMemberships(
   }
 
   document.links.forEach((link, indexInLinks) => {
-    addMemberships(link.targetId, "DocumentEnvelope.links", `links[${indexInLinks}]`, {
-      field: "links",
+    addMemberships(link.targetId, 'DocumentEnvelope.links', `links[${indexInLinks}]`, {
+      field: 'links',
       linkType: link.type,
-      linkDirection: "target",
+      linkDirection: 'target',
     });
-    addMemberships(link.sourceId, "DocumentEnvelope.links", `links[${indexInLinks}]`, {
-      field: "links",
+    addMemberships(link.sourceId, 'DocumentEnvelope.links', `links[${indexInLinks}]`, {
+      field: 'links',
       linkType: link.type,
-      linkDirection: "source",
+      linkDirection: 'source',
     });
   });
 
   return dedupeRoleMemberships(memberships);
 }
 
-function buildFamilyReferenceIndex(
-  documents: readonly DocumentEnvelope[],
-): FamilyReferenceIndex {
+function buildFamilyReferenceIndex(documents: readonly DocumentEnvelope[]): FamilyReferenceIndex {
   const familyIds = new Set<string>();
   const familyIdsByIdentity = new Map<string, Set<string>>();
 
@@ -824,17 +836,14 @@ function buildFamilyReferenceIndex(
   return {
     familyIds,
     familyIdsByIdentity: new Map(
-      [...familyIdsByIdentity.entries()].map(([key, values]) =>
-        [key, [...values].toSorted()] as const
+      [...familyIdsByIdentity.entries()].map(
+        ([key, values]) => [key, [...values].toSorted()] as const,
       ),
     ),
   };
 }
 
-function resolveFamilyReference(
-  index: FamilyReferenceIndex,
-  value: string,
-): readonly string[] {
+function resolveFamilyReference(index: FamilyReferenceIndex, value: string): readonly string[] {
   const normalizedValue = normalizePath(value);
   return unique([
     index.familyIds.has(value) ? value : undefined,
@@ -855,33 +864,30 @@ function addFamilyIdentity(
   familyIdsByIdentity.set(identity, values);
 }
 
-function dedupeRoleMemberships(
-  memberships: readonly RoleMembership[],
-): readonly RoleMembership[] {
+function dedupeRoleMemberships(memberships: readonly RoleMembership[]): readonly RoleMembership[] {
   const byFamilyId = new Map<string, RoleMembership>();
   for (const membership of memberships) {
     if (!byFamilyId.has(membership.familyId)) byFamilyId.set(membership.familyId, membership);
   }
   return [...byFamilyId.values()].toSorted((left, right) =>
-    left.familyId.localeCompare(right.familyId)
+    left.familyId.localeCompare(right.familyId),
   );
 }
 
 function isFamilyContextRoleDocument(document: DocumentEnvelope): boolean {
   const roleType = roleTypeForDocument(document);
-  return roleType === "cases" || roleType === "test" || roleType === "memo";
+  return roleType === 'cases' || roleType === 'test' || roleType === 'memo';
 }
 
-function roleTypeForDocument(
-  document: DocumentEnvelope,
-): DocumentGraphFamilyRoleType | undefined {
-  if (document.kind !== "spec" && isFamilyRoleType(document.kind)) return document.kind;
+function roleTypeForDocument(document: DocumentEnvelope): DocumentGraphFamilyRoleType | undefined {
+  if (document.kind !== 'spec' && isFamilyRoleType(document.kind)) return document.kind;
 
   const documentKind = asString(document.metadata.documentKind);
-  if (documentKind && documentKind !== "spec" && isFamilyRoleType(documentKind)) return documentKind;
+  if (documentKind && documentKind !== 'spec' && isFamilyRoleType(documentKind))
+    return documentKind;
 
   const pathRoleType = familyRoleTypeFromPath(document.path);
-  if (pathRoleType && pathRoleType !== "spec") return pathRoleType;
+  if (pathRoleType && pathRoleType !== 'spec') return pathRoleType;
 
   if (isFamilyRoleType(document.kind)) return document.kind;
   if (documentKind && isFamilyRoleType(documentKind)) return documentKind;
@@ -933,7 +939,7 @@ function resolveTaskOrReference(
 ): ResolvedTarget {
   const task = index.taskById.get(value) ?? index.taskById.get(`${document.stableId}:${value}`);
   if (task) return taskNodeTarget(task.document, task.task);
-  return resolveDocumentOrReference(index, value, "document");
+  return resolveDocumentOrReference(index, value, 'document');
 }
 
 function resolveAuthoredLinkTarget(
@@ -942,25 +948,25 @@ function resolveAuthoredLinkTarget(
   value: string,
   axis: TraversalAxis,
 ): ResolvedTarget {
-  if (axis === "trace") return resolveTaskOrReference(index, document, value);
-  return resolveDocumentOrReference(index, value, axis === "evidence" ? "evidence" : "document");
+  if (axis === 'trace') return resolveTaskOrReference(index, document, value);
+  return resolveDocumentOrReference(index, value, axis === 'evidence' ? 'evidence' : 'document');
 }
 
 function resolveDocumentOrReference(
   index: ResolutionIndex,
   value: string,
-  fallback: "document" | "evidence",
+  fallback: 'document' | 'evidence',
 ): ResolvedTarget {
   const normalizedValue = normalizePath(value);
-  const document = index.documentByIdentity.get(value)
-    ?? index.documentByIdentity.get(normalizedValue);
+  const document =
+    index.documentByIdentity.get(value) ?? index.documentByIdentity.get(normalizedValue);
   if (document) return documentTarget(document);
   if (isPathLikeRef(value)) return sourceTarget(value);
-  return fallback === "evidence" ? evidenceTarget(value) : unresolvedDocumentTarget(value);
+  return fallback === 'evidence' ? evidenceTarget(value) : unresolvedDocumentTarget(value);
 }
 
 function documentIdentityValues(document: DocumentEnvelope): readonly string[] {
-  const isSession = document.kind === "ralph-session";
+  const isSession = document.kind === 'ralph-session';
   return unique([
     document.stableId,
     document.path,
@@ -1068,7 +1074,11 @@ function rawSourceFor(
 ): DocumentRawSourcePointer {
   return {
     path: document.rawSource.path,
-    ...(pointer ? { pointer } : document.rawSource.pointer ? { pointer: document.rawSource.pointer } : {}),
+    ...(pointer
+      ? { pointer }
+      : document.rawSource.pointer
+        ? { pointer: document.rawSource.pointer }
+        : {}),
     ...(document.rawSource.sourceSchema ? { sourceSchema: document.rawSource.sourceSchema } : {}),
     metadata: {
       ...document.rawSource.metadata,
@@ -1078,10 +1088,7 @@ function rawSourceFor(
 }
 
 function sourceTargetValue(source: DocumentSource): string | undefined {
-  return source.path
-    ?? asString(source.metadata.value)
-    ?? source.label
-    ?? source.id;
+  return source.path ?? asString(source.metadata.value) ?? source.label ?? source.id;
 }
 
 function taskTraceDependencies(task: DocumentTask): readonly string[] {
@@ -1093,33 +1100,33 @@ function taskTraceDependencies(task: DocumentTask): readonly string[] {
 }
 
 function isRuleDocument(document: DocumentEnvelope): boolean {
-  return document.kind === "rule" || document.path.endsWith(".rule.md");
+  return document.kind === 'rule' || document.path.endsWith('.rule.md');
 }
 
 function isSpecConstraintTarget(document: DocumentEnvelope): boolean {
-  return document.kind === "spec" && document.metadata.type !== "knowledge";
+  return document.kind === 'spec' && document.metadata.type !== 'knowledge';
 }
 
 function metadataStringValues(value: unknown): readonly string[] {
-  if (typeof value === "string") return [value].filter(Boolean);
+  if (typeof value === 'string') return [value].filter(Boolean);
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => typeof item === "string" ? item.trim() : "")
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
     .filter((item) => item.length > 0);
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
 function normalizePath(value: string): string {
-  return value.replaceAll("\\", "/").replace(/\/+/g, "/");
+  return value.replaceAll('\\', '/').replace(/\/+/g, '/');
 }
 
 function isPathLikeRef(value: string): boolean {
   return (
-    value.includes("/") ||
-    value.includes("\\") ||
+    value.includes('/') ||
+    value.includes('\\') ||
     /\.(?:json|js|jsx|ts|tsx|md|cjs|mjs|css|html|yml|yaml|toml|sql)(?::|$)/.test(value)
   );
 }
@@ -1132,11 +1139,13 @@ function compareGraphEdges(
   left: DocumentGraphEdgeSummary,
   right: DocumentGraphEdgeSummary,
 ): number {
-  return TRAVERSAL_AXIS_PRIORITY[left.axis] - TRAVERSAL_AXIS_PRIORITY[right.axis]
-    || left.kind.localeCompare(right.kind)
-    || left.fromNodeId.localeCompare(right.fromNodeId)
-    || left.toNodeId.localeCompare(right.toNodeId)
-    || (left.authoredType ?? "").localeCompare(right.authoredType ?? "");
+  return (
+    TRAVERSAL_AXIS_PRIORITY[left.axis] - TRAVERSAL_AXIS_PRIORITY[right.axis] ||
+    left.kind.localeCompare(right.kind) ||
+    left.fromNodeId.localeCompare(right.fromNodeId) ||
+    left.toNodeId.localeCompare(right.toNodeId) ||
+    (left.authoredType ?? '').localeCompare(right.authoredType ?? '')
+  );
 }
 
 class EdgeBuilder {
@@ -1148,8 +1157,8 @@ class EdgeBuilder {
       input.axis,
       input.fromNodeId,
       input.toNodeId,
-      input.authoredType ?? "",
-    ].join("\u0000");
+      input.authoredType ?? '',
+    ].join('\u0000');
     const existing = this.edgesByKey.get(key);
     if (existing) {
       this.edgesByKey.set(key, {
@@ -1164,7 +1173,7 @@ class EdgeBuilder {
     }
 
     this.edgesByKey.set(key, {
-      id: `edge:${input.axis}:${input.kind}:${input.fromNodeId}->${input.toNodeId}${input.authoredType ? `:${input.authoredType}` : ""}`,
+      id: `edge:${input.axis}:${input.kind}:${input.fromNodeId}->${input.toNodeId}${input.authoredType ? `:${input.authoredType}` : ''}`,
       kind: input.kind,
       axis: input.axis,
       fromNodeId: input.fromNodeId,

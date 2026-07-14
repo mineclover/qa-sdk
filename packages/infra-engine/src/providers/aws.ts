@@ -2,19 +2,19 @@
 // @def.doc infra-engine-system
 
 // providers/aws.ts — AWS 프로바이더 (골격)
-import type { DeployProvider, ValidationResult } from "../adapters/adapter.js";
-import type { ResolvedConfig } from "../core/types.js";
+import type { DeployProvider, ValidationResult } from '../adapters/adapter.js';
+import type { ResolvedConfig } from '../core/types.js';
 
 export function createAwsProvider(): DeployProvider {
   return {
-    name: "aws",
+    name: 'aws',
     getProgram(_config: ResolvedConfig, _serviceId: string) {
       return async () => {
-        throw new Error("AWS 프로바이더 미구현 -- @pulumi/aws 연동 필요");
+        throw new Error('AWS 프로바이더 미구현 -- @pulumi/aws 연동 필요');
       };
     },
     async destroy(_stackName: string) {
-      throw new Error("AWS destroy 미구현");
+      throw new Error('AWS destroy 미구현');
     },
     async validate(config: ResolvedConfig): Promise<ValidationResult> {
       const global = config.global as Record<string, unknown>;
@@ -24,7 +24,9 @@ export function createAwsProvider(): DeployProvider {
       if (!hasOidc && !hasKeys) {
         return {
           valid: false,
-          errors: ["AWS 인증 설정 필요 (config.global.aws_role_arn 또는 aws_access_key_id + aws_secret_access_key)"],
+          errors: [
+            'AWS 인증 설정 필요 (config.global.aws_role_arn 또는 aws_access_key_id + aws_secret_access_key)',
+          ],
         };
       }
       return { valid: true, errors: [] };

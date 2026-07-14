@@ -4,8 +4,8 @@
 import {
   DepartmentReadModelQuery,
   type DepartmentDetailReadModel,
-} from "../../application/queries/department-read-model.query.js";
-import type { DepartmentRepositoryPort } from "../../application/ports/department-repository.port.js";
+} from '../../application/queries/department-read-model.query.js';
+import type { DepartmentRepositoryPort } from '../../application/ports/department-repository.port.js';
 
 export class RepositoryDepartmentReadModel extends DepartmentReadModelQuery {
   constructor(private readonly repository: DepartmentRepositoryPort) {

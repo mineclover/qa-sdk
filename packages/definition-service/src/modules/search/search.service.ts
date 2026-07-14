@@ -12,15 +12,15 @@
  * 나중에 외부 검색엔진(Meilisearch 등)으로 교체 시 이 모듈만 변경.
  */
 
-import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
-import type Database from "better-sqlite3";
-import { sql, eq, like, or, asc, count, and, inArray } from "drizzle-orm";
-import { DATABASE, DRIZZLE_DB, type DefinitionServiceDatabase } from "../../database.module.js";
-import { documents } from "../../db/schema.js";
-import { createLogger } from "../../lib/logger.js";
-import type { DocRecord } from "../../core/types.js";
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import type Database from 'better-sqlite3';
+import { sql, eq, like, or, asc, count, and, inArray } from 'drizzle-orm';
+import { DATABASE, DRIZZLE_DB, type DefinitionServiceDatabase } from '../../database.module.js';
+import { documents } from '../../db/schema.js';
+import { createLogger } from '../../lib/logger.js';
+import type { DocRecord } from '../../core/types.js';
 
-const logger = createLogger("definition-service");
+const logger = createLogger('definition-service');
 
 /** drizzle SELECT 결과 row → DocRecord 변환 */
 function rowToDoc(row: typeof documents.$inferSelect): DocRecord {
@@ -49,9 +49,7 @@ function rowToDoc(row: typeof documents.$inferSelect): DocRecord {
     intent: row.intent || undefined,
     context: row.context || undefined,
     caveat: row.caveat || undefined,
-    gate: row.gateJson
-      ? JSON.parse(row.gateJson) as DocRecord["gate"]
-      : undefined,
+    gate: row.gateJson ? (JSON.parse(row.gateJson) as DocRecord['gate']) : undefined,
     syncedAt: row.syncedAt,
     sourcePath: row.sourcePath || undefined,
   };
@@ -59,7 +57,7 @@ function rowToDoc(row: typeof documents.$inferSelect): DocRecord {
 
 @Injectable()
 export class SearchService implements OnModuleInit {
-  private ftsMode: "trigram" | "default" = "default";
+  private ftsMode: 'trigram' | 'default' = 'default';
 
   constructor(
     /** FTS5 DDL용 — drizzle이 VIRTUAL TABLE을 지원하지 않으므로 raw exec 필요 */
@@ -79,7 +77,7 @@ export class SearchService implements OnModuleInit {
           tokenize='trigram'
         )
       `);
-      this.ftsMode = "trigram";
+      this.ftsMode = 'trigram';
     } catch {
       // trigram 미지원 환경 fallback (구버전 SQLite)
       this.rawDb.exec(`
@@ -88,10 +86,10 @@ export class SearchService implements OnModuleInit {
           content='documents', content_rowid='rowid'
         )
       `);
-      this.ftsMode = "default";
+      this.ftsMode = 'default';
     }
 
-    logger.info({ tokenizer: this.ftsMode }, "FTS5 search index 준비 완료");
+    logger.info({ tokenizer: this.ftsMode }, 'FTS5 search index 준비 완료');
   }
 
   /** 문서 인덱싱 (upsert 후 호출) */
@@ -113,13 +111,15 @@ export class SearchService implements OnModuleInit {
         try {
           this.db.run(sql`
             INSERT INTO documents_fts (documents_fts, doc_id, purpose, intent, context, caveat)
-            VALUES ('delete', ${docId}, ${existing.purpose ?? ""}, ${existing.intent ?? ""}, ${existing.context ?? ""}, ${existing.caveat ?? ""})
+            VALUES ('delete', ${docId}, ${existing.purpose ?? ''}, ${existing.intent ?? ''}, ${existing.context ?? ''}, ${existing.caveat ?? ''})
           `);
-        } catch { /* 첫 인덱싱 시 삭제할 것 없음 */ }
+        } catch {
+          /* 첫 인덱싱 시 삭제할 것 없음 */
+        }
       }
       this.db.run(sql`
         INSERT INTO documents_fts (doc_id, purpose, intent, context, caveat)
-        VALUES (${docId}, ${purpose ?? ""}, ${intent ?? ""}, ${context ?? ""}, ${caveat ?? ""})
+        VALUES (${docId}, ${purpose ?? ''}, ${intent ?? ''}, ${context ?? ''}, ${caveat ?? ''})
       `);
     } catch {
       // FTS 인덱싱 실패가 저장을 차단하지 않음
@@ -164,7 +164,7 @@ export class SearchService implements OnModuleInit {
     if (docIds.length === 0) return new Set();
 
     try {
-      const placeholders = docIds.map(() => "?").join(", ");
+      const placeholders = docIds.map(() => '?').join(', ');
       const rows = this.rawDb
         .prepare(`
           SELECT d.doc_id AS docId

@@ -1,6 +1,6 @@
-import type { Catalog } from "@qa-sdk/core";
-import type { TransitionSpec } from "spec-transition";
-import type { GraphRegistry } from "./graph-registry.js";
+import type { Catalog } from '@qa-sdk/core';
+import type { TransitionSpec } from 'spec-transition';
+import type { GraphRegistry } from './graph-registry.js';
 import type {
   ConsumerNode,
   ConstraintNode,
@@ -11,7 +11,7 @@ import type {
   SkillNode,
   SpecNode,
   TransitionSpecNode,
-} from "./dkg.types.js";
+} from './dkg.types.js';
 
 /** decision-flow FlowSchema와 구조 호환 — kernel tier에서 logic import 방지 */
 export interface FlowSchemaLike {
@@ -46,7 +46,11 @@ export interface DkgConfigInput {
   readonly decisions?: readonly DecisionNode[];
   readonly flowSchemas?: readonly FlowSchemaEntry[];
   readonly transitionSpecs?: readonly TransitionSpecNode[];
-  readonly reviewPairs?: readonly { readonly a: string; readonly b: string; readonly reason: string }[];
+  readonly reviewPairs?: readonly {
+    readonly a: string;
+    readonly b: string;
+    readonly reason: string;
+  }[];
 }
 
 export interface BootstrapDkgOptions {
