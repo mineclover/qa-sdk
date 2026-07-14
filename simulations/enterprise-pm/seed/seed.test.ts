@@ -8,15 +8,20 @@ import { describe, expect, it } from 'vitest';
 
 const SEED_DIR = dirname(fileURLToPath(import.meta.url));
 
+function readQuotedValues(source: string): string[] {
+  return [...source.matchAll(/(['"])(.*?)\1/g)].map((match) => match[2]);
+}
+
 describe('seed.ts runner — 정합성 회귀 (코드 읽기만)', () => {
   it('requiredTables가 auth_* 네이밍으로 업데이트됨', async () => {
     const src = await readFile(resolve(SEED_DIR, 'seed.ts'), 'utf-8');
-    expect(src).toMatch(
-      /requiredTables\s*=\s*\[[\s\S]*?"auth_departments"[\s\S]*?"auth_roles"[\s\S]*?"auth_users"[\s\S]*?"auth_role_assignments"/,
-    );
-    expect(src).not.toMatch(
-      /requiredTables\s*=\s*\[[\s\S]*?"department"[\s\S]*?"role"[\s\S]*?"user"[\s\S]*?"role_assignment"\s*\]/,
-    );
+    const requiredTables = src.match(/requiredTables\s*=\s*\[([\s\S]*?)\]/)?.[1] ?? '';
+    expect(readQuotedValues(requiredTables)).toEqual([
+      'auth_departments',
+      'auth_roles',
+      'auth_users',
+      'auth_role_assignments',
+    ]);
   });
 
   it('count query가 auth_* 테이블 조회', async () => {
@@ -33,7 +38,7 @@ describe('seed.ts runner — 정합성 회귀 (코드 읽기만)', () => {
     const src = await readFile(resolve(SEED_DIR, 'seed.ts'), 'utf-8');
     const m = src.match(/SEED_FILES\s*=\s*\[([\s\S]*?)\]/);
     expect(m).toBeTruthy();
-    const order = m![1].match(/"([^"]+)"/g)!.map((s) => s.slice(1, -1));
+    const order = readQuotedValues(m![1]);
     expect(order).toEqual(['departments.sql', 'roles.sql', 'users.sql', 'role-assignments.sql']);
   });
 });

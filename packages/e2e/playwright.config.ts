@@ -32,7 +32,8 @@ export default defineConfig({
       command: 'corepack pnpm --filter @qa-sdk/ingest-server exec tsx src/test-server.ts',
       url: `${INGEST_URL}/health`,
       reuseExistingServer: !process.env['CI'],
-      timeout: 15_000,
+      // convergence + SQLite 초기화가 포함되어 cold start가 15초를 넘을 수 있다.
+      timeout: 30_000,
       env: {
         PORT: '3101',
         CONVERGENCE_ENABLED: 'true',

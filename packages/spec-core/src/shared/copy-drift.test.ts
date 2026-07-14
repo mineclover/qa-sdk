@@ -44,8 +44,8 @@ describe('convergence 복사본 드리프트 방지', () => {
     expect(convTypes).toContain('DecisionNode');
     expect(convTypes).toContain('ObservationNode');
     expect(convTypes).toContain('ConstraintNode');
-    expect(convTypes).toContain('kind: "decision"');
-    expect(convTypes).toContain('kind: "observation"');
-    expect(convTypes).toContain('kind: "constraint"');
+    expect(convTypes).toMatch(/kind:\s*['"]decision['"]/);
+    expect(convTypes).toMatch(/kind:\s*['"]observation['"]/);
+    expect(convTypes).toMatch(/kind:\s*['"]constraint['"]/);
   });
 });

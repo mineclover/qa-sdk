@@ -9,5 +9,7 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
     exclude: ['dist/**'],
     passWithNoTests: true,
+    // Nest dashboard integration tests cold-start the catalog and SQLite runtime.
+    testTimeout: 15_000,
   },
 });
