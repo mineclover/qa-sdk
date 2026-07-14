@@ -12,6 +12,7 @@
 #   - ~/.claude/skills/, ~/.codex/skills/ 는 실행 위치
 #   - 동기화 방향: repo → home (역방향 금지)
 #   - home 쪽에만 있는 skill은 건드리지 않음 (다른 프로젝트용 사용자 skill 보존)
+#   - repo skill과 같은 이름의 home 디렉터리는 bundled resources까지 SSOT와 일치시킴
 
 set -euo pipefail
 
@@ -49,6 +50,11 @@ if [[ ! -d "$REPO_SKILLS" ]]; then
   exit 1
 fi
 
+if ! command -v rsync >/dev/null 2>&1; then
+  echo "rsync가 필요합니다: bundled skill resources 동기화를 보장할 수 없습니다."
+  exit 1
+fi
+
 TARGETS=()
 case "$TARGET" in
   all)
@@ -78,13 +84,12 @@ sync_target() {
   mkdir -p "$home_skills"
 
   for skill_dir in "$REPO_SKILLS"/*/; do
-    local skill_name src dst dst_dir
+    local skill_name src dst_dir
     skill_name=$(basename "$skill_dir")
-    src="$skill_dir/SKILL.md"
+    src="$skill_dir"
     dst_dir="$home_skills/$skill_name"
-    dst="$dst_dir/SKILL.md"
 
-    if [[ ! -f "$src" ]]; then
+    if [[ ! -f "$src/SKILL.md" ]]; then
       continue
     fi
 
@@ -93,17 +98,17 @@ sync_target() {
         echo "[$label][create] $skill_name"
       else
         mkdir -p "$dst_dir"
-        cp "$src" "$dst"
+        rsync -a --delete "$src/" "$dst_dir/"
         echo "[$label][create] $skill_name"
       fi
       created=$((created + 1))
-    elif ! cmp -s "$src" "$dst"; then
+    elif ! diff -qr "$src" "$dst_dir" >/dev/null 2>&1; then
       if $DRY_RUN; then
         echo "[$label][update] $skill_name"
-        diff --color=auto "$dst" "$src" | head -20 || true
+        diff -ruN "$dst_dir" "$src" | head -40 || true
         echo ""
       else
-        cp "$src" "$dst"
+        rsync -a --delete "$src/" "$dst_dir/"
         echo "[$label][update] $skill_name"
       fi
       synced=$((synced + 1))

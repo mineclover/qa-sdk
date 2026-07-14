@@ -3,19 +3,21 @@ name: gform-parser
 description: >
   Google Form URL로부터 필드 메타데이터(레이블, 타입, entry ID, 선택지, 필수 여부)를
   자동 추출하고, JS config 파일이나 HTML 폼을 생성한다.
-  Google Form URL이 주어지거나, 폼 필드 정보 추출이 필요할 때 사용.
-triggers:
-  - google form
-  - form parser
-  - 폼 필드 추출
-  - 설문 폼 config
-argument-hint: "<google-form-url> [--json|--config <name>]"
+  Google Form URL이 주어지거나 폼 필드 정보 추출이 필요할 때 사용한다.
+  트리거: google form, form parser, 폼 필드 추출, 설문 폼 config.
 allowed-tools: Bash, Read, Write, Edit, WebFetch, Glob, Grep
 ---
 
 # Google Form Parser
 
 Google Form의 `/viewform` 페이지에 포함된 `FB_PUBLIC_LOAD_DATA_` 변수를 파싱하여 폼 메타데이터를 추출한다.
+
+## 실행 전제
+
+이 스킬은 폼 파서가 포함된 저장소에서 사용할 수 있는 portable workflow다. 현재 qa-sdk에는 `packages/gform-parser`가 없으므로, 이 저장소에서 해당 경로의 명령을 실행하지 않는다. 먼저 `test -d packages/gform-parser`로 호스트 패키지 존재 여부를 확인한다.
+
+- 패키지가 있으면 아래의 repo-local parser 명령을 사용한다.
+- 패키지가 없으면 URL의 `/viewform` 응답에서 `FB_PUBLIC_LOAD_DATA_`를 확인하고, `references/fb-public-load-data.md`의 구조에 따라 메타데이터를 추출한다. config/HTML 생성은 현재 작업 저장소의 실제 builder가 확인된 경우에만 수행한다.
 
 ## 핵심 기능
 

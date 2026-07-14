@@ -35,7 +35,7 @@ kubectl create namespace qa-prod
 cd packages/infra-engine
 
 # nginx 테스트 배포 (이미지 빌드 불필요)
-pnpm exec tsx scripts/infra.ts deploy nginx-test dev test-nginx.json
+corepack pnpm exec tsx scripts/infra.ts deploy nginx-test dev test-nginx.json
 
 # 서비스 배포 (Docker 이미지 필요)
 # 1. 이미지 빌드
@@ -43,35 +43,35 @@ docker build -t qa-sdk/ingest-server:latest -f Dockerfile.ingest-server .
 # 2. k3d에 이미지 로드
 k3d image import qa-sdk/ingest-server:latest -c qa-local
 # 3. 배포
-pnpm exec tsx scripts/infra.ts deploy ingest-server dev
+corepack pnpm exec tsx scripts/infra.ts deploy ingest-server dev
 
 # NestJS 서비스 (Docker 빌드 → k3d → deploy)
 # Dockerfile.nestjs는 SERVICE build-arg로 NestJS 3서비스 공유
 docker build --build-arg SERVICE=decision-service -t qa-sdk/decision-service:latest -f Dockerfile.nestjs .
 k3d image import qa-sdk/decision-service:latest -c qa-local
-pnpm exec tsx scripts/infra.ts deploy decision-service dev
+corepack pnpm exec tsx scripts/infra.ts deploy decision-service dev
 
 # definition-service
 docker build --build-arg SERVICE=definition-service -t qa-sdk/definition-service:latest -f Dockerfile.nestjs .
 k3d image import qa-sdk/definition-service:latest -c qa-local
-pnpm exec tsx scripts/infra.ts deploy definition-service dev
+corepack pnpm exec tsx scripts/infra.ts deploy definition-service dev
 
 # motion-workspace-service
 docker build --build-arg SERVICE=motion-workspace-service -t qa-sdk/motion-workspace-service:latest -f Dockerfile.nestjs .
 k3d image import qa-sdk/motion-workspace-service:latest -c qa-local
-pnpm exec tsx scripts/infra.ts deploy motion-workspace-service dev
+corepack pnpm exec tsx scripts/infra.ts deploy motion-workspace-service dev
 
 # 다른 환경에 배포
-pnpm exec tsx scripts/infra.ts deploy nginx-test stage test-nginx.json
+corepack pnpm exec tsx scripts/infra.ts deploy nginx-test stage test-nginx.json
 
 # dry-run (변경 사항 미리보기, 실제 배포 없음)
-pnpm exec tsx scripts/infra.ts deploy nginx-test dev --dry-run
+corepack pnpm exec tsx scripts/infra.ts deploy nginx-test dev --dry-run
 
 # 환경 내 전체 서비스 일괄 배포
-pnpm exec tsx scripts/infra.ts deploy --all dev
+corepack pnpm exec tsx scripts/infra.ts deploy --all dev
 
 # 실패해도 계속 배포
-pnpm exec tsx scripts/infra.ts deploy --all dev --continue-on-error
+corepack pnpm exec tsx scripts/infra.ts deploy --all dev --continue-on-error
 ```
 
 ### 인자
@@ -96,10 +96,10 @@ infra deploy --all <env> [--continue-on-error]
 cd packages/infra-engine
 
 # 서비스 리소스 정리
-pnpm exec tsx scripts/infra.ts destroy nginx-test dev
+corepack pnpm exec tsx scripts/infra.ts destroy nginx-test dev
 
 # 확인 프롬프트 스킵
-pnpm exec tsx scripts/infra.ts destroy nginx-test dev --yes
+corepack pnpm exec tsx scripts/infra.ts destroy nginx-test dev --yes
 ```
 
 destroy는 다음을 수행한다:
@@ -147,23 +147,23 @@ curl http://127.0.0.1:20080/
 cat ~/.qa-sdk/infra-profile.json
 
 # 디스커버리로 확인
-pnpm exec tsx scripts/infra.ts discover nginx-test dev
+corepack pnpm exec tsx scripts/infra.ts discover nginx-test dev
 
 # 배포 이력 확인
-pnpm exec tsx scripts/infra.ts history nginx-test
+corepack pnpm exec tsx scripts/infra.ts history nginx-test
 
 # 배포 이력 JSON 출력
-pnpm exec tsx scripts/infra.ts history nginx-test --json
+corepack pnpm exec tsx scripts/infra.ts history nginx-test --json
 ```
 
 ## 정리
 
 ```bash
 # infra destroy로 정리 (권장)
-pnpm exec tsx scripts/infra.ts destroy nginx-test dev --yes
+corepack pnpm exec tsx scripts/infra.ts destroy nginx-test dev --yes
 
 # port-forward 정리
-pnpm exec tsx scripts/infra.ts pf cleanup
+corepack pnpm exec tsx scripts/infra.ts pf cleanup
 
 # 또는 수동 정리:
 kubectl -n qa-dev delete deploy,svc --all

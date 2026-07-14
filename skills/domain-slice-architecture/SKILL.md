@@ -109,8 +109,8 @@ Domain Slice Architecture 작업을 설계 → 최소 구현 → 계약/관측/�
 
 ```bash
 node packages/cli/dist/index.js def validate --no-code-checks=true
-pnpm --filter @qa-sdk/scaffold test
-pnpm exec qa-scaffold validate <slice-or-service-src>
+corepack pnpm --filter @qa-sdk/scaffold test
+corepack pnpm exec qa-scaffold validate <slice-or-service-src>
 node architecture-samples/domain-slice-monorepo/scripts/verify.mjs
 ```
 
@@ -119,6 +119,6 @@ node architecture-samples/domain-slice-monorepo/scripts/verify.mjs
 시뮬레이션 변경 시 추가:
 
 ```bash
-pnpm --filter @qa-sdk/sim-scenarios test
+corepack pnpm --filter @qa-sdk/sim-scenarios test
 node simulations/enterprise-pm/contracts/openapi/scripts/check-merge.mjs
 ```

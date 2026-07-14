@@ -1,15 +1,6 @@
 ---
 name: doc-lifecycle
-description: "문서 유형 생명주기 관리. 7종 확장자(spec/rule/todo/test/cases/memo/plan) 문서 생성, 승격, 상태 조회, 정합성 검증."
-triggers:
-  - doc lifecycle
-  - 문서 생성
-  - 문서 승격
-  - doc create
-  - doc promote
-  - doc status
-  - doc audit type
-argument-hint: "<command> <doc-id> [--type spec|rule|todo|test|cases|memo|plan]"
+description: "문서 유형 생명주기 관리. 7종 확장자(spec/rule/todo/test/cases/memo/plan) 문서 생성, 승격, 상태 조회, 정합성 검증. 트리거: doc lifecycle, 문서 생성, 문서 승격, doc create, doc promote, doc status, doc audit type."
 ---
 
 # Doc Lifecycle — 문서 유형 생명주기 관리

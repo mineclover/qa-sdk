@@ -1,12 +1,6 @@
 ---
 name: ralph-tui-create-beads
 description: "Convert PRDs to beads for ralph-tui execution. Creates an epic with child beads for each user story. Use when you have a PRD and want to use ralph-tui with beads as the task source. Triggers on: create beads, convert prd to beads, beads for ralph, ralph beads."
-triggers:
-  - create beads
-  - convert prd to beads
-  - beads for ralph
-  - ralph beads
-argument-hint: "<prd-path|text>"
 ---
 
 # Ralph TUI - Create Beads

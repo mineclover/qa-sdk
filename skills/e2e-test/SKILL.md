@@ -1,13 +1,6 @@
 ---
 name: e2e-test
 description: "Playwright E2E 테스트 작성/실행/디버깅. 시나리오 문서(^preconditions, ^steps, ^assertions)를 Playwright 테스트로 변환하고, 품질 게이트와 연동한다. 트리거: /e2e-test, 'E2E 테스트 작성', 'e2e 실행', '시나리오 테스트', 'playwright', '브라우저 테스트', '통합 테스트 작성'."
-triggers:
-  - /e2e-test
-  - playwright
-  - E2E 테스트 작성
-  - e2e 실행
-  - 브라우저 테스트
-argument-hint: "<scenario-doc|target> [--grep <pattern>]"
 ---
 
 # E2E 테스트 스킬
@@ -36,14 +29,15 @@ Playwright 기반 E2E 테스트를 시나리오 문서에서 도출하고, 작�
 
 ### 서버 구성 (자동 기동)
 
-Playwright가 테스트 실행 전에 4개 서버를 자동 기동한다.
+Playwright가 테스트 실행 전에 5개 서버를 자동 기동한다.
 
 | 서버 | URL | 기동 명령 | 타임아웃 |
 |------|-----|----------|---------|
-| ingest-server (인메모리) | `http://localhost:3101` | `pnpm --filter @qa-sdk/ingest-server exec tsx src/test-server.ts` | 15초 |
-| viz-web | `http://localhost:5210` | `pnpm --filter @qa-sdk/viz-web exec vite --port 5210` | 30초 |
-| roleplay-web | `http://localhost:5211` | `pnpm --filter @qa-sdk/roleplay-web exec vite --port 5211` | 30초 |
-| shop-web | `http://localhost:5220` | `pnpm --filter @qa-sdk/shop-web start` | 15초 |
+| ingest-server (인메모리) | `http://localhost:3101` | `corepack pnpm --filter @qa-sdk/ingest-server exec tsx src/test-server.ts` | 15초 |
+| viz-web | `http://localhost:5210` | `corepack pnpm --filter @qa-sdk/viz-web exec vite --port 5210` | 30초 |
+| roleplay-web | `http://localhost:5211` | `corepack pnpm --filter @qa-sdk/roleplay-web exec vite --port 5211` | 30초 |
+| shop-web | `http://localhost:5220` | `corepack pnpm --filter @qa-sdk/shop-web start` | 15초 |
+| registry-ui | `http://localhost:5230` | CLI build + conflicts report + `corepack pnpm --filter @qa-sdk/registry-ui exec vite --port 5230` | 40초 |
 
 - 로컬에서는 `reuseExistingServer: true` (이미 떠 있으면 재사용)
 - CI에서는 매번 새로 기동
@@ -52,22 +46,22 @@ Playwright가 테스트 실행 전에 4개 서버를 자동 기동한다.
 
 ```bash
 # 전체 E2E 실행
-pnpm --filter @qa-sdk/e2e test
+corepack pnpm --filter @qa-sdk/e2e test:e2e
 
 # UI 모드 (디버깅에 유용)
-pnpm --filter @qa-sdk/e2e test:ui
+corepack pnpm --filter @qa-sdk/e2e test:ui
 
 # headed 모드 (브라우저 화면 표시)
-pnpm --filter @qa-sdk/e2e test:headed
+corepack pnpm --filter @qa-sdk/e2e test:headed
 
 # 특정 테스트 파일만
-pnpm --filter @qa-sdk/e2e test -- tests/shopping-flow.spec.ts
+corepack pnpm --filter @qa-sdk/e2e test:e2e -- tests/shopping-flow.spec.ts
 
 # 특정 테스트 이름으로 필터
-pnpm --filter @qa-sdk/e2e test -- --grep "로그인"
+corepack pnpm --filter @qa-sdk/e2e test:e2e -- --grep "로그인"
 
 # 브라우저 설치 (최초 1회)
-pnpm --filter @qa-sdk/e2e install:browsers
+corepack pnpm --filter @qa-sdk/e2e install:browsers
 ```
 
 ## 시나리오 마커 → E2E 변환 규칙
@@ -341,12 +335,12 @@ viz-web에서 시나리오를 선택하고 WebSocket 연결까지 대기한다. 
 
 - **scope**: `system` (시스템 레벨 검증)
 - **도구**: Playwright
-- **실행**: `pnpm --filter @qa-sdk/e2e test`
+- **실행**: `corepack pnpm --filter @qa-sdk/e2e test:e2e`
 - **상태 흐름**: `not_started` → `testing` → `test_passed` → `complete`
 
 work-domain 레지스트리에서 프론트엔드 작업 도메인의 품질 게이트로 등록되어 있다:
 ```typescript
-{ id: "e2e", kind: "e2e-test", command: "pnpm --filter <pkg> test:e2e", description: "E2E 테스트" }
+{ id: "e2e", kind: "e2e-test", command: "corepack pnpm --filter <pkg> test:e2e", description: "E2E 테스트" }
 ```
 
 ### 게이트 통과 기준
@@ -411,7 +405,7 @@ Playwright는 첫 번째 retry에서 trace를 저장한다 (`trace: "on-first-re
 
 ```bash
 # trace viewer 실행
-npx playwright show-trace packages/e2e/test-results/<테스트명>/trace.zip
+corepack pnpm exec playwright show-trace packages/e2e/test-results/<테스트명>/trace.zip
 ```
 
 ### 스크린샷 확인
@@ -422,7 +416,7 @@ npx playwright show-trace packages/e2e/test-results/<테스트명>/trace.zip
 ### UI 모드로 디버깅
 
 ```bash
-pnpm --filter @qa-sdk/e2e test:ui
+corepack pnpm --filter @qa-sdk/e2e test:ui
 ```
 Playwright Inspector가 열리고 스텝별 실행, 셀렉터 탐색, 네트워크 감시가 가능하다.
 
@@ -436,9 +430,9 @@ curl http://localhost:5211          # roleplay-web
 curl http://localhost:5220          # shop-web
 
 # 서버를 수동으로 띄우고 테스트 실행 (reuseExistingServer)
-pnpm --filter @qa-sdk/ingest-server exec tsx src/test-server.ts &
-pnpm --filter @qa-sdk/shop-web start &
-pnpm --filter @qa-sdk/e2e test
+corepack pnpm --filter @qa-sdk/ingest-server exec tsx src/test-server.ts &
+corepack pnpm --filter @qa-sdk/shop-web start &
+corepack pnpm --filter @qa-sdk/e2e test:e2e
 ```
 
 ### waitForTimeout 사용 주의

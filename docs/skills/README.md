@@ -25,6 +25,20 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 - 먼저 `qa-sdk` 명령 진입점 또는 `cli-command-group` 문서를 통해 어떤 표면을 써야 하는지 찾는다.
 - `SKILL.md`는 실행 정의 SSOT이지만, 운영/탐색의 1차 진입점은 아니다.
 
+### SSOT 정합성 게이트
+
+스킬을 추가하거나 수정하면 다음 순서로 원본과 실행 위치를 확인한다.
+
+```bash
+corepack pnpm skills:check
+./scripts/sync-skills.sh --dry-run
+./scripts/sync-skills.sh
+```
+
+`skills:check`는 모든 `SKILL.md`의 표준 frontmatter, 디렉터리 이름, 본문 크기, 로컬 Markdown 링크를 검사한다. 동기화 스크립트는 `SKILL.md`만 복사하지 않고 `references/`와 `agents/`를 포함한 해당 스킬 디렉터리 전체를 `~/.claude/skills/`와 `~/.codex/skills/`에 전파한다. 실행 위치의 추가 스킬은 보존하지만, 같은 이름의 repo-owned 스킬은 `skills/` 원본으로 덮어쓴다.
+
+포맷 게이트는 작업 범위를 분리한다. `corepack pnpm format:check`는 현재 작업 트리에서 변경되었거나 추가된 oxfmt 대상 코드·설정 파일만 검사하며, 문서와 셸 파일의 whitespace는 `git diff --check`로 확인한다. CI나 PR에서는 `corepack pnpm format:check -- --base origin/main`처럼 기준 브랜치를 지정한다. 전체 추적 파일을 점검할 때는 `corepack pnpm format:check:all`을 사용한다. 이 명령은 기존 baseline 포맷 문제를 포함하므로 baseline 정리 전에는 실패할 수 있으며, 일반 변경의 closeout 게이트와 분리해 관리한다.
+
 ## 계층(L1-L4) 관점 skill navigation
 
 계층 모델 SSoT: `docs/specs/system/layer-separation.rule.md` (L1 data / L2 validator / L3 workflow / L4 tooling).

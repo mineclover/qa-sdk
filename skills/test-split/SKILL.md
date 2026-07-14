@@ -1,12 +1,6 @@
 ---
 name: test-split
 description: "테스트 파일의 패싯 분리와 시나리오 구조 표준화. 혼합된 관심사를 가진 테스트 파일을 분석하고, 소스 모듈별로 분리하고, 내부 구조를 표준화한다. 트리거: /test-split, '테스트 분할', '테스트 분리', 'test facet split'."
-triggers:
-  - /test-split
-  - 테스트 분할
-  - 테스트 분리
-  - test facet split
-argument-hint: "<test-file-path> [--analyze | --run | --structure]"
 ---
 
 # Test Split — 패싯 기반 테스트 분리

@@ -7,6 +7,8 @@ description: "서비스 연결 정보 export — .env 파일, TypeScript 모듈,
 
 registry-service + definition-service 데이터를 소비 가능한 형식으로 export한다.
 
+환경 공급 산출물의 신규 SSOT는 `infra-env-kit`의 `infra-env` CLI다. `infra-engine infra export ...`는 호환용 legacy surface이므로 새 작업에서는 아래 명령을 사용한다.
+
 ## 사전 조건
 
 - registry-service 실행 중 (localhost:3300)
@@ -15,30 +17,31 @@ registry-service + definition-service 데이터를 소비 가능한 형식으로
 ## 명령
 
 ```bash
-cd packages/infra-engine
+# 먼저 CLI 산출물을 만든다
+corepack pnpm --filter infra-env-kit build
 
 # .env 파일 (consumed prefix 기반 필터링)
-pnpm exec tsx scripts/export.ts env gate-service dev
+corepack pnpm --filter infra-env-kit cli env gate-service dev
 # → .env.gate-service.dev (core + consumed만)
 
 # .env 파일 (전체 서비스)
-pnpm exec tsx scripts/export.ts env gate-service dev --all
+corepack pnpm --filter infra-env-kit cli env gate-service dev --all
 # → .env.gate-service.dev (모든 서비스 URL)
 
 # TypeScript 모듈
-pnpm exec tsx scripts/export.ts ts dev
+corepack pnpm --filter infra-env-kit cli ts dev
 # → generated/service-connections.dev.ts
 
 # docker-compose override
-pnpm exec tsx scripts/export.ts compose dev
+corepack pnpm --filter infra-env-kit cli compose dev
 # → generated/docker-compose.override.dev.yml
 
 # 서비스별 문서 요약
-pnpm exec tsx scripts/export.ts docs ingest-server
+corepack pnpm --filter infra-engine infra docs ingest-server
 # → 48건 문서 lifecycle/layer 분포
 
 # 전체 서비스 문서 요약
-pnpm exec tsx scripts/export.ts docs
+corepack pnpm --filter infra-engine infra docs
 ```
 
 ## 출력 형식
@@ -95,7 +98,7 @@ services:
 
 ## 활용
 
-1. **서비스 개발 시작**: `export.ts env my-service dev` → `.env` 파일 생성 후 `source`
-2. **코드에 연결 정보**: `export.ts ts staging` → `import { getServiceUrl } from "./generated/..."`
-3. **Docker Compose 로컬 개발**: `export.ts compose dev` → 환경변수 자동 주입
-4. **문서 현황 파악**: `export.ts docs` → 서비스별 스펙 문서 분포
+1. **서비스 개발 시작**: `infra-env env my-service dev` → `.env` 파일 생성 후 `source`
+2. **코드에 연결 정보**: `infra-env ts stage` → `import { getServiceUrl } from "./generated/..."`
+3. **Docker Compose 로컬 개발**: `infra-env compose dev` → 환경변수 자동 주입
+4. **문서 현황 파악**: `infra docs` → 서비스별 스펙 문서 분포
