@@ -8,6 +8,7 @@ import {
   formatCodeReferenceTarget,
   makeCodeReferenceScopeKey,
   MemoryDefinitionRegistry,
+  resolveCodeBoundary,
   selectConcernContext,
   selectImpactContext,
   validateGraph,
@@ -69,20 +70,6 @@ export class GraphService {
       address: 0,
       serialized: '',
     }));
-  }
-
-  private resolveBoundaryAnchor(doc: DocRecord): DocRecord {
-    if (doc.level === 'group' || doc.level === 'module') return doc;
-
-    let current = doc;
-    const visited = new Set<string>([doc.docId]);
-    while (true) {
-      const parent = this.docs.getParent(current.docId);
-      if (!parent || visited.has(parent.docId)) return current;
-      if (parent.level === 'group' || parent.level === 'module') return parent;
-      visited.add(parent.docId);
-      current = parent;
-    }
   }
 
   /** 영향 분석 — DB edge 테이블 기반 */
@@ -244,47 +231,22 @@ export class GraphService {
         codePath: pathRefs[0]!.codePath,
         symbol: pathRefs[0]!.symbol,
       });
-      const boundaryIds = [
-        ...new Set(
-          pathRefs
-            .filter((ref) => ref.relationType === 'boundary' && docsById.has(ref.docId))
-            .map((ref) => ref.docId),
-        ),
-      ];
+      const resolution = resolveCodeBoundary({
+        codePath: targetLabel,
+        references: pathRefs,
+        docs: pathRefs
+          .map((ref) => docsById.get(ref.docId))
+          .filter((doc): doc is DocRecord => Boolean(doc)),
+      });
 
-      if (boundaryIds.length > 1) {
+      if (resolution.kind === 'ambiguous') {
         issues.push({
           severity: 'error',
           type: 'ambiguous-code-boundary',
-          docId: boundaryIds[0]!,
-          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(', ')}`,
-        });
-        continue;
-      }
-
-      const explicitBoundaryId = boundaryIds[0] ?? null;
-      const inferredAnchorIds = new Set<string>();
-      for (const ref of pathRefs) {
-        const doc = docsById.get(ref.docId);
-        if (!doc) continue;
-        const anchor = this.resolveBoundaryAnchor(doc);
-        inferredAnchorIds.add(anchor.docId);
-        if (explicitBoundaryId && anchor.docId !== explicitBoundaryId) {
-          issues.push({
-            severity: 'error',
-            type: 'inconsistent-code-boundary',
-            docId: ref.docId,
-            message: `code reference "${targetLabel}"의 explicit boundary "${explicitBoundaryId}"와 문서 "${ref.docId}"의 anchor "${anchor.docId}"가 다름`,
-          });
-        }
-      }
-
-      if (!explicitBoundaryId && inferredAnchorIds.size > 1) {
-        issues.push({
-          severity: 'error',
-          type: 'ambiguous-code-boundary',
-          docId: pathRefs[0]!.docId,
-          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(', ')}`,
+          docId: resolution.candidates[0]!.anchor.docId,
+          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${resolution.candidates
+            .map((candidate) => candidate.anchor.docId)
+            .join(', ')}`,
         });
       }
     }

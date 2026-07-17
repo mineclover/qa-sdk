@@ -11,7 +11,6 @@ import Database from 'better-sqlite3';
 import { isAbsolute, relative } from 'node:path';
 import type {
   DefBoundaryContextResult,
-  DefBoundaryResolutionCandidate,
   DefBoundaryResult,
   DefCodeReference,
   DefDataSource,
@@ -35,6 +34,7 @@ import {
   makeCodeReferenceScopeKey,
   MemoryDefinitionRegistry,
   parseCodeReferenceTarget,
+  resolveCodeBoundary,
   selectConcernContext,
   selectImpactContext,
   validateGraph,
@@ -165,63 +165,11 @@ export class LocalDataSource implements DefDataSource {
       };
     }
 
-    const boundaryRefs = scopedReferences.filter((ref) => ref.relationType === 'boundary');
-    const boundaryDocIds = [...new Set(boundaryRefs.map((ref) => ref.docId))];
-    if (boundaryDocIds.length > 1) {
-      const candidates = docs
-        .filter((doc) => boundaryDocIds.includes(doc.docId))
-        .map((anchor) => ({
-          anchor,
-          supportingDocs: docs.filter((doc) => doc.docId === anchor.docId),
-          references: scopedReferences,
-        }));
-      return {
-        kind: 'ambiguous',
-        codePath: formatCodeReferenceTarget(requested),
-        candidates,
-        references: scopedReferences,
-      };
-    }
-
-    const byAnchor = new Map<string, DefBoundaryResolutionCandidate>();
-
-    for (const doc of docs) {
-      const anchor =
-        boundaryDocIds.length === 1
-          ? (docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc)
-          : await this.resolveBoundaryAnchor(doc);
-      const existing = byAnchor.get(anchor.docId);
-      if (existing) {
-        existing.supportingDocs.push(doc);
-      } else {
-        byAnchor.set(anchor.docId, { anchor, supportingDocs: [doc], references: scopedReferences });
-      }
-    }
-
-    const candidates = [...byAnchor.values()].map((candidate) => ({
-      anchor: candidate.anchor,
-      supportingDocs: candidate.supportingDocs.toSorted((a: DefDoc, b: DefDoc) =>
-        a.docId.localeCompare(b.docId),
-      ),
-      references: scopedReferences,
-    }));
-
-    if (candidates.length === 1) {
-      return {
-        kind: 'unique',
-        codePath: formatCodeReferenceTarget(requested),
-        anchor: candidates[0]!.anchor,
-        supportingDocs: candidates[0]!.supportingDocs,
-        references: scopedReferences,
-      };
-    }
-
-    return {
-      kind: 'ambiguous',
+    return resolveCodeBoundary({
       codePath: formatCodeReferenceTarget(requested),
-      candidates,
       references: scopedReferences,
-    };
+      docs,
+    });
   }
 
   async list(filter?: DefListFilter): Promise<DefDoc[]> {
@@ -735,39 +683,22 @@ export class LocalDataSource implements DefDataSource {
         codePath: pathRefs[0]!.codePath,
         symbol: pathRefs[0]!.symbol,
       });
-      const boundaryIds = [
-        ...new Set(
-          pathRefs
-            .filter((ref) => ref.relationType === 'boundary' && docsById.has(ref.docId))
-            .map((ref) => ref.docId),
-        ),
-      ];
+      const resolution = resolveCodeBoundary({
+        codePath: targetLabel,
+        references: pathRefs,
+        docs: pathRefs
+          .map((ref) => docsById.get(ref.docId))
+          .filter((doc): doc is DefDoc => Boolean(doc)),
+      });
 
-      if (boundaryIds.length > 1) {
+      if (resolution.kind === 'ambiguous') {
         issues.push({
           severity: 'error',
           type: 'ambiguous-code-boundary',
-          docId: boundaryIds[0]!,
-          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${boundaryIds.join(', ')}`,
-        });
-        continue;
-      }
-
-      const explicitBoundaryId = boundaryIds[0] ?? null;
-      const inferredAnchorIds = new Set<string>();
-      for (const ref of pathRefs) {
-        const doc = docsById.get(ref.docId);
-        if (!doc) continue;
-        const anchor = await this.resolveBoundaryAnchor(doc);
-        inferredAnchorIds.add(anchor.docId);
-      }
-
-      if (!explicitBoundaryId && inferredAnchorIds.size > 1) {
-        issues.push({
-          severity: 'error',
-          type: 'ambiguous-code-boundary',
-          docId: pathRefs[0]!.docId,
-          message: `code reference "${targetLabel}"가 여러 boundary anchor에 걸침: ${[...inferredAnchorIds].join(', ')}`,
+          docId: resolution.candidates[0]!.anchor.docId,
+          message: `code reference "${targetLabel}"에 둘 이상의 boundary가 선언됨: ${resolution.candidates
+            .map((candidate) => candidate.anchor.docId)
+            .join(', ')}`,
         });
       }
     }
@@ -811,20 +742,5 @@ export class LocalDataSource implements DefDataSource {
       }
     }
     return { codePath: rawPath.replaceAll('\\', '/'), symbol };
-  }
-
-  private async resolveBoundaryAnchor(doc: DefDoc): Promise<DefDoc> {
-    const isBoundaryDoc = (d: DefDoc) =>
-      d.level === 'group' || d.level === 'module' || d.tier === 'system' || d.tier === 'layout';
-    if (isBoundaryDoc(doc)) return doc;
-    let current = doc;
-    const visited = new Set<string>([doc.docId]);
-    while (true) {
-      const parent = await this.getParent(current.docId);
-      if (!parent || visited.has(parent.docId)) return current;
-      if (isBoundaryDoc(parent)) return parent;
-      visited.add(parent.docId);
-      current = parent;
-    }
   }
 }

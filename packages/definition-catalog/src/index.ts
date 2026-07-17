@@ -481,6 +481,8 @@ export type {
   DefValidateOptions,
   DefDataSource,
 } from './data-source.js';
+export { resolveCodeBoundary } from './code-boundary.js';
+export type { ResolveCodeBoundaryInput } from './code-boundary.js';
 
 // ─── CLI 도구 ───────────────────────────────────────────
 export { topdown, bottomup, context, boundary, boundaryContext } from './cli-tools.js';

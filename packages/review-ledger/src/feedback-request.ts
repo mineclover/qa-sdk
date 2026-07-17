@@ -12,19 +12,24 @@ import type {
 export function buildEvidenceBundle(
   statuses: readonly FileReviewStatus[],
   relatedDocsByFile: Record<string, FeedbackRelatedDoc[]> = {},
+  relatedDocResolutionsByFile: CreateFeedbackRequestInput['relatedDocResolutionsByFile'] = {},
 ): EvidenceBundle {
-  const items: EvidenceBundleItem[] = statuses.map((status) => ({
-    filePath: status.filePath,
-    serviceScope: status.serviceScope,
-    status: status.status,
-    latestFileCommit: status.latestFileCommit,
-    reviewedCommit: status.lastEntry?.reviewedCommit ?? null,
-    reviewedAt: status.lastEntry?.reviewedAt ?? null,
-    reviewer: status.lastEntry?.reviewer ?? null,
-    aiModel: status.lastEntry?.aiModel ?? null,
-    notes: status.lastEntry?.notes ?? null,
-    relatedDocs: relatedDocsByFile[status.filePath] ?? [],
-  }));
+  const items: EvidenceBundleItem[] = statuses.map((status) => {
+    const resolution = relatedDocResolutionsByFile?.[status.filePath];
+    return {
+      filePath: status.filePath,
+      serviceScope: status.serviceScope,
+      status: status.status,
+      latestFileCommit: status.latestFileCommit,
+      reviewedCommit: status.lastEntry?.reviewedCommit ?? null,
+      reviewedAt: status.lastEntry?.reviewedAt ?? null,
+      reviewer: status.lastEntry?.reviewer ?? null,
+      aiModel: status.lastEntry?.aiModel ?? null,
+      notes: status.lastEntry?.notes ?? null,
+      relatedDocs: relatedDocsByFile[status.filePath] ?? [],
+      ...(resolution ? { relatedDocResolution: resolution } : {}),
+    };
+  });
 
   return {
     total: items.length,
@@ -115,6 +120,13 @@ export function renderFeedbackPrompt(input: {
           .map((doc) => `${doc.docId} [${doc.reason}]`)
           .join(', ')}`,
       );
+    }
+    if (item.relatedDocResolution) {
+      const detail =
+        item.relatedDocResolution.kind === 'ambiguous'
+          ? ` candidates=${item.relatedDocResolution.candidateDocIds.join(',')}`
+          : '';
+      lines.push(`  definition resolution: ${item.relatedDocResolution.kind}${detail}`);
     }
   }
 

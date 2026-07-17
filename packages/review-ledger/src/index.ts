@@ -27,4 +27,5 @@ export type {
   EvidenceBundle,
   FeedbackRequest,
   FeedbackRelatedDoc,
+  FeedbackRelatedDocResolution,
 } from './types.js';

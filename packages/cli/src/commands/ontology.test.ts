@@ -4,10 +4,12 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { syncDocsToLocalDb } from 'definition-data-source';
 import { SqliteQualityStore } from 'quality-ledger';
 import { cliOntology } from './ontology.js';
 import { USAGE, main, resolveSubcommand } from '../index.js';
@@ -23,6 +25,8 @@ const AUTHORIZATION_TAXONOMY_IDS = [
   'authorization-principal',
   'authorization-resource',
 ];
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 
 describe('ontology CLI', () => {
   it('known pack resolver resolves activation pack ids without store setup', () => {
@@ -2635,39 +2639,51 @@ describe('ontology CLI', () => {
 
   it('prompt extract-file can persist governance evidence', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'qa-sdk-ontology-prompt-'));
-    const storePath = join(dir, 'store.json');
+    try {
+      const storePath = join(dir, 'store.json');
+      const definitionDbPath = join(dir, 'definition-service.sqlite');
+      await syncDocsToLocalDb({ rootDir: REPO_ROOT, dbPath: definitionDbPath });
 
-    const first = await captureConsoleAsync(async () => {
-      await cliOntology([
-        'prompt.extract-file',
-        'packages/operational-ontology/src/internal/checkpoint-core.ts',
-        '--use-case',
-        'feature_modification',
-        '--kind',
-        'code_editing_rules',
-        '--store',
-        storePath,
-        '--quality-only',
-      ]);
-    });
-    expect(first.stdout).toContain('actions: close_governance_evidence');
+      const first = await captureConsoleAsync(async () => {
+        await cliOntology([
+          'prompt.extract-file',
+          'packages/operational-ontology/src/internal/checkpoint-core.ts',
+          '--use-case',
+          'feature_modification',
+          '--kind',
+          'code_editing_rules',
+          '--store',
+          storePath,
+          '--local',
+          '--db',
+          definitionDbPath,
+          '--quality-only',
+        ]);
+      });
+      expect(first.stdout).toContain('actions: close_governance_evidence');
 
-    const persisted = await captureConsoleAsync(async () => {
-      await cliOntology([
-        'prompt.extract-file',
-        'packages/operational-ontology/src/internal/checkpoint-core.ts',
-        '--use-case',
-        'feature_modification',
-        '--kind',
-        'code_editing_rules',
-        '--store',
-        storePath,
-        '--persist-governance',
-        '--quality-only',
-      ]);
-    });
-    expect(persisted.stdout).toContain('ontologyManagementRequired: false');
-    expect(persisted.stdout).not.toContain('actions: close_governance_evidence');
+      const persisted = await captureConsoleAsync(async () => {
+        await cliOntology([
+          'prompt.extract-file',
+          'packages/operational-ontology/src/internal/checkpoint-core.ts',
+          '--use-case',
+          'feature_modification',
+          '--kind',
+          'code_editing_rules',
+          '--store',
+          storePath,
+          '--local',
+          '--db',
+          definitionDbPath,
+          '--persist-governance',
+          '--quality-only',
+        ]);
+      });
+      expect(persisted.stdout).toContain('ontologyManagementRequired: false');
+      expect(persisted.stdout).not.toContain('actions: close_governance_evidence');
+    } finally {
+      await rm(dir, { force: true, recursive: true });
+    }
   });
 
   it('prompt extract-artifact --json reports registry hits as structured source', async () => {

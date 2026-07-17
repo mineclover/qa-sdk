@@ -69,7 +69,14 @@ import {
   withQualityStatusRecordsSummary,
   workAreaQualityTargetRefs,
 } from './ontology/prompt-extract-artifact.js';
-import { getStorePath, loadStore, parseFlags, printJson, saveStore } from './ontology/support.js';
+import {
+  closeDataSource,
+  getStorePath,
+  loadStore,
+  parseFlags,
+  printJson,
+  saveStore,
+} from './ontology/support.js';
 import {
   cmdSnapshotDiff,
   cmdSnapshotDiffLatest,
@@ -298,119 +305,123 @@ async function cmdPromptExtract(rest: string[]): Promise<void> {
   const kind = parsePromptArtifactKind(flags['kind']);
   const useCase = parsePromptArtifactUseCase(flags['use-case']);
   const source = await createDataSource(toDefinitionDataSourceOptions(flags));
-  const root = await source.get(docId);
-  if (!root) {
-    console.error(`Definition document not found: ${docId}`);
-    process.exitCode = 1;
-    return;
-  }
+  try {
+    const root = await source.get(docId);
+    if (!root) {
+      console.error(`Definition document not found: ${docId}`);
+      process.exitCode = 1;
+      return;
+    }
 
-  const [children, outgoingLinks, incomingLinks] = await Promise.all([
-    source.getChildren(docId),
-    source.getOutgoingLinks(docId),
-    source.getIncomingLinks(docId),
-  ]);
-  const [rootDoc, childDocs] = await Promise.all([
-    defDocWithBody(source, root),
-    Promise.all(children.map((child) => defDocWithBody(source, child))),
-  ]);
-  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
-    root: rootDoc,
-    children: childDocs,
-    outgoingLinks: outgoingLinks.map((link) => outgoingLinkToPromptLink(root, link)),
-    incomingLinks: incomingLinks.map((link) => incomingLinkToPromptLink(root, link)),
-    useCase,
-    now: new Date().toISOString(),
-  });
-  const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
-    docId,
-    ...workAreaQualityTargetRefs(extraction.workArea),
-  ]);
-  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
-    flags,
-    qualityStatusTargetRefs,
-    source,
-  );
-  const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
-    appendQualityStatusEvidenceToPromptArtifactExtraction(
-      extraction,
-      qualityStatusRecords(qualityStatusEvidence.matches),
-      {
-        useCase,
-        now: new Date().toISOString(),
-      },
-    ),
-    qualityStatusEvidence.snapshotEvidence,
-  );
-  const promptQualityStatusEvidenceFromExtraction =
-    promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
-  const artifactSource = withQualityStatusRecordsSummary(
-    parseArtifactExtractionSource(flags),
-    qualityStatusEvidence.matches,
-    qualityStatusEvidence.snapshotEvidence,
-    promptQualityStatusEvidenceFromExtraction,
-  );
-  const promptQualityStatusEvidence = artifactSource
-    ? promptQualityStatusEvidenceFromExtraction
-    : undefined;
-  await maybePersistGovernanceEvidence(flags, extractionWithQuality);
-  const artifacts =
-    kind === 'all'
-      ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
-      : [generatePromptArtifact({ ...extractionWithQuality, kind, useCase })];
-  const evaluations = artifacts.map((artifact) => ({
-    artifact,
-    quality: evaluatePromptArtifactQuality({
-      artifact,
-      workArea: extractionWithQuality.workArea,
-      sources: extractionWithQuality.sources,
-      qualityStatusEvidence: promptQualityStatusEvidence,
-    }),
-  }));
-  const outputs = await materializePromptArtifacts({
-    flags,
-    artifacts,
-    producedByRef: `qa-sdk ontology prompt extract ${docId}`,
-    ownerDefinitionId: docId,
-    materializesOutputRefs: [docId],
-  });
-
-  if (flags['json'] === 'true') {
-    printJson({
-      docId,
+    const [children, outgoingLinks, incomingLinks] = await Promise.all([
+      source.getChildren(docId),
+      source.getOutgoingLinks(docId),
+      source.getIncomingLinks(docId),
+    ]);
+    const [rootDoc, childDocs] = await Promise.all([
+      defDocWithBody(source, root),
+      Promise.all(children.map((child) => defDocWithBody(source, child))),
+    ]);
+    const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+      root: rootDoc,
+      children: childDocs,
+      outgoingLinks: outgoingLinks.map((link) => outgoingLinkToPromptLink(root, link)),
+      incomingLinks: incomingLinks.map((link) => incomingLinkToPromptLink(root, link)),
       useCase,
-      source: artifactSource,
-      outputs,
-      workArea: extractionWithQuality.workArea,
-      sourceSummary: {
-        corridors: extractionWithQuality.sources.corridors?.length ?? 0,
-        checkpointLattices: extractionWithQuality.sources.checkpointLattices?.length ?? 0,
-        traversals: extractionWithQuality.sources.traversals?.length ?? 0,
-        blueprints: extractionWithQuality.sources.blueprints?.length ?? 0,
-        governanceRuns: extractionWithQuality.sources.governanceRuns?.length ?? 0,
-      },
-      artifacts: evaluations,
+      now: new Date().toISOString(),
     });
-    return;
-  }
+    const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
+      docId,
+      ...workAreaQualityTargetRefs(extraction.workArea),
+    ]);
+    const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
+      flags,
+      qualityStatusTargetRefs,
+      source,
+    );
+    const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
+      appendQualityStatusEvidenceToPromptArtifactExtraction(
+        extraction,
+        qualityStatusRecords(qualityStatusEvidence.matches),
+        {
+          useCase,
+          now: new Date().toISOString(),
+        },
+      ),
+      qualityStatusEvidence.snapshotEvidence,
+    );
+    const promptQualityStatusEvidenceFromExtraction =
+      promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
+    const artifactSource = withQualityStatusRecordsSummary(
+      parseArtifactExtractionSource(flags),
+      qualityStatusEvidence.matches,
+      qualityStatusEvidence.snapshotEvidence,
+      promptQualityStatusEvidenceFromExtraction,
+    );
+    const promptQualityStatusEvidence = artifactSource
+      ? promptQualityStatusEvidenceFromExtraction
+      : undefined;
+    await maybePersistGovernanceEvidence(flags, extractionWithQuality);
+    const artifacts =
+      kind === 'all'
+        ? generatePromptArtifacts({ ...extractionWithQuality, useCase })
+        : [generatePromptArtifact({ ...extractionWithQuality, kind, useCase })];
+    const evaluations = artifacts.map((artifact) => ({
+      artifact,
+      quality: evaluatePromptArtifactQuality({
+        artifact,
+        workArea: extractionWithQuality.workArea,
+        sources: extractionWithQuality.sources,
+        qualityStatusEvidence: promptQualityStatusEvidence,
+      }),
+    }));
+    const outputs = await materializePromptArtifacts({
+      flags,
+      artifacts,
+      producedByRef: `qa-sdk ontology prompt extract ${docId}`,
+      ownerDefinitionId: docId,
+      materializesOutputRefs: [docId],
+    });
 
-  for (const output of outputs) {
-    console.log(`output: ${output.outputPath}`);
-  }
-  for (const { artifact, quality } of evaluations) {
-    console.log(`--- ${artifact.kind} ---`);
-    console.log(`artifactId: ${artifact.artifactId}`);
-    console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
-    console.log(`quality: ${quality.grade} (${quality.score})`);
-    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
-    if (quality.recommendedManagementActions.length > 0) {
-      console.log(
-        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
-      );
+    if (flags['json'] === 'true') {
+      printJson({
+        docId,
+        useCase,
+        source: artifactSource,
+        outputs,
+        workArea: extractionWithQuality.workArea,
+        sourceSummary: {
+          corridors: extractionWithQuality.sources.corridors?.length ?? 0,
+          checkpointLattices: extractionWithQuality.sources.checkpointLattices?.length ?? 0,
+          traversals: extractionWithQuality.sources.traversals?.length ?? 0,
+          blueprints: extractionWithQuality.sources.blueprints?.length ?? 0,
+          governanceRuns: extractionWithQuality.sources.governanceRuns?.length ?? 0,
+        },
+        artifacts: evaluations,
+      });
+      return;
     }
-    if (flags['quality-only'] !== 'true') {
-      console.log(artifact.content);
+
+    for (const output of outputs) {
+      console.log(`output: ${output.outputPath}`);
     }
+    for (const { artifact, quality } of evaluations) {
+      console.log(`--- ${artifact.kind} ---`);
+      console.log(`artifactId: ${artifact.artifactId}`);
+      console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
+      console.log(`quality: ${quality.grade} (${quality.score})`);
+      console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+      if (quality.recommendedManagementActions.length > 0) {
+        console.log(
+          `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
+        );
+      }
+      if (flags['quality-only'] !== 'true') {
+        console.log(artifact.content);
+      }
+    }
+  } finally {
+    closeDataSource(source);
   }
 }
 
@@ -427,167 +438,175 @@ async function cmdPromptExtractFile(rest: string[]): Promise<void> {
   const kind = parsePromptArtifactKind(flags['kind']);
   const useCase = parsePromptArtifactUseCase(flags['use-case']);
   const source = await createDataSource(toDefinitionDataSourceOptions(flags));
-  if (source.mode === 'scan') {
-    console.error(
-      'extract-file requires DB-owned code references. Run `qa-sdk def sync` and use local/server datasource.',
-    );
-    process.exitCode = 1;
-    return;
-  }
-
-  const mapping = await source.resolveByFile(filePath);
-  if (mapping.kind === 'none') {
-    console.error(`No definition boundary mapping for file: ${filePath}`);
-    process.exitCode = 1;
-    return;
-  }
-  if (mapping.kind === 'ambiguous') {
-    console.error(`Ambiguous definition boundary mapping for file: ${filePath}`);
-    for (const candidate of mapping.candidates) {
-      console.error(`  candidate: ${candidate.anchor.docId}`);
-    }
-    process.exitCode = 1;
-    return;
-  }
-
-  const specificDoc =
-    mapping.supportingDocs.length === 1 ? mapping.supportingDocs[0]! : mapping.anchor;
-  const docId = specificDoc.docId;
-  const [children, outgoingLinks, incomingLinks] = await Promise.all([
-    source.getChildren(docId),
-    source.getOutgoingLinks(docId),
-    source.getIncomingLinks(docId),
-  ]);
-  const supportingDocIds = new Set(mapping.supportingDocs.map((doc) => doc.docId));
-  const childCandidates = [
-    ...mapping.supportingDocs.filter((doc) => doc.docId !== docId),
-    ...children.filter((doc) => !supportingDocIds.has(doc.docId)),
-  ];
-  const [rootDoc, childDocs] = await Promise.all([
-    defDocWithBody(source, specificDoc),
-    Promise.all(childCandidates.map((child) => defDocWithBody(source, child))),
-  ]);
-  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
-    root: {
-      ...rootDoc,
-      sourcePath: rootDoc.sourcePath ?? mapping.codePath,
-    },
-    children: childDocs,
-    outgoingLinks: outgoingLinks.map((link) => outgoingLinkToPromptLink(specificDoc, link)),
-    incomingLinks: incomingLinks.map((link) => incomingLinkToPromptLink(specificDoc, link)),
-    useCase,
-    verificationRefs: mapping.references
-      .filter((ref) => ref.codePath.endsWith('.test.ts'))
-      .map((ref) => ref.codePath),
-    now: new Date().toISOString(),
-  });
-  const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
-    filePath,
-    mapping.codePath,
-    mapping.anchor.docId,
-    docId,
-    ...workAreaQualityTargetRefs(extraction.workArea),
-  ]);
-  const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
-    flags,
-    qualityStatusTargetRefs,
-    source,
-  );
-  const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
-    appendQualityStatusEvidenceToPromptArtifactExtraction(
-      extraction,
-      qualityStatusRecords(qualityStatusEvidence.matches),
-      {
-        useCase,
-        now: new Date().toISOString(),
-      },
-    ),
-    qualityStatusEvidence.snapshotEvidence,
-  );
-  const promptQualityStatusEvidenceFromExtraction =
-    promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
-  const artifactSource = withQualityStatusRecordsSummary(
-    parseArtifactExtractionSource(flags),
-    qualityStatusEvidence.matches,
-    qualityStatusEvidence.snapshotEvidence,
-    promptQualityStatusEvidenceFromExtraction,
-  );
-  const promptQualityStatusEvidence = artifactSource
-    ? promptQualityStatusEvidenceFromExtraction
-    : undefined;
-  await maybePersistGovernanceEvidence(flags, extractionWithQuality);
-  const workArea = {
-    ...extractionWithQuality.workArea,
-    paths: uniqueCliValues([mapping.codePath, ...(extractionWithQuality.workArea.paths ?? [])]),
-    constraints: uniqueCliValues([
-      `file:${mapping.codePath}`,
-      ...(extractionWithQuality.workArea.constraints ?? []),
-    ]),
-  };
-  const artifacts =
-    kind === 'all'
-      ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
-      : [
-          generatePromptArtifact({
-            workArea,
-            sources: extractionWithQuality.sources,
-            kind,
-            useCase,
-          }),
-        ];
-  const evaluations = artifacts.map((artifact) => ({
-    artifact,
-    quality: evaluatePromptArtifactQuality({
-      artifact,
-      workArea,
-      sources: extractionWithQuality.sources,
-      qualityStatusEvidence: promptQualityStatusEvidence,
-    }),
-  }));
-  const outputs = await materializePromptArtifacts({
-    flags,
-    artifacts,
-    producedByRef: `qa-sdk ontology prompt extract-file ${filePath}`,
-    ownerDefinitionId: docId,
-    materializesOutputRefs: [docId, mapping.codePath],
-  });
-
-  if (flags['json'] === 'true') {
-    printJson({
-      filePath,
-      boundaryDocId: mapping.anchor.docId,
-      contextDocId: docId,
-      useCase,
-      source: artifactSource,
-      outputs,
-      workArea,
-      artifacts: evaluations,
-    });
-    return;
-  }
-
-  console.log(`file: ${filePath}`);
-  console.log(`boundary: ${mapping.anchor.docId}`);
-  if (docId !== mapping.anchor.docId) {
-    console.log(`context: ${docId}`);
-  }
-  for (const output of outputs) {
-    console.log(`output: ${output.outputPath}`);
-  }
-  for (const { artifact, quality } of evaluations) {
-    console.log(`--- ${artifact.kind} ---`);
-    console.log(`artifactId: ${artifact.artifactId}`);
-    console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
-    console.log(`quality: ${quality.grade} (${quality.score})`);
-    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
-    if (quality.recommendedManagementActions.length > 0) {
-      console.log(
-        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
+  try {
+    if (source.mode === 'scan') {
+      console.error(
+        'extract-file requires DB-owned code references. Run `qa-sdk def sync` and use local/server datasource.',
       );
+      process.exitCode = 1;
+      return;
     }
-    if (flags['quality-only'] !== 'true') {
-      console.log(artifact.content);
+
+    const mapping = await source.resolveByFile(filePath);
+    if (mapping.kind === 'none' || mapping.kind === 'evidence-only') {
+      console.error(
+        mapping.kind === 'evidence-only'
+          ? `Definition evidence exists but no authoritative boundary for file: ${filePath}`
+          : `No definition boundary mapping for file: ${filePath}`,
+      );
+      process.exitCode = 1;
+      return;
     }
+    if (mapping.kind === 'ambiguous') {
+      console.error(`Ambiguous definition boundary mapping for file: ${filePath}`);
+      for (const candidate of mapping.candidates) {
+        console.error(`  candidate: ${candidate.anchor.docId}`);
+      }
+      process.exitCode = 1;
+      return;
+    }
+
+    const specificDoc =
+      mapping.supportingDocs.length === 1 ? mapping.supportingDocs[0]! : mapping.anchor;
+    const docId = specificDoc.docId;
+    const [children, outgoingLinks, incomingLinks] = await Promise.all([
+      source.getChildren(docId),
+      source.getOutgoingLinks(docId),
+      source.getIncomingLinks(docId),
+    ]);
+    const supportingDocIds = new Set(mapping.supportingDocs.map((doc) => doc.docId));
+    const childCandidates = [
+      ...mapping.supportingDocs.filter((doc) => doc.docId !== docId),
+      ...children.filter((doc) => !supportingDocIds.has(doc.docId)),
+    ];
+    const [rootDoc, childDocs] = await Promise.all([
+      defDocWithBody(source, specificDoc),
+      Promise.all(childCandidates.map((child) => defDocWithBody(source, child))),
+    ]);
+    const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+      root: {
+        ...rootDoc,
+        sourcePath: rootDoc.sourcePath ?? mapping.codePath,
+      },
+      children: childDocs,
+      outgoingLinks: outgoingLinks.map((link) => outgoingLinkToPromptLink(specificDoc, link)),
+      incomingLinks: incomingLinks.map((link) => incomingLinkToPromptLink(specificDoc, link)),
+      useCase,
+      verificationRefs: mapping.references
+        .filter((ref) => ref.codePath.endsWith('.test.ts'))
+        .map((ref) => ref.codePath),
+      now: new Date().toISOString(),
+    });
+    const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
+      filePath,
+      mapping.codePath,
+      mapping.anchor.docId,
+      docId,
+      ...workAreaQualityTargetRefs(extraction.workArea),
+    ]);
+    const qualityStatusEvidence = await loadRelatedQualityStatusEvidenceFromFlags(
+      flags,
+      qualityStatusTargetRefs,
+      source,
+    );
+    const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
+      appendQualityStatusEvidenceToPromptArtifactExtraction(
+        extraction,
+        qualityStatusRecords(qualityStatusEvidence.matches),
+        {
+          useCase,
+          now: new Date().toISOString(),
+        },
+      ),
+      qualityStatusEvidence.snapshotEvidence,
+    );
+    const promptQualityStatusEvidenceFromExtraction =
+      promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
+    const artifactSource = withQualityStatusRecordsSummary(
+      parseArtifactExtractionSource(flags),
+      qualityStatusEvidence.matches,
+      qualityStatusEvidence.snapshotEvidence,
+      promptQualityStatusEvidenceFromExtraction,
+    );
+    const promptQualityStatusEvidence = artifactSource
+      ? promptQualityStatusEvidenceFromExtraction
+      : undefined;
+    await maybePersistGovernanceEvidence(flags, extractionWithQuality);
+    const workArea = {
+      ...extractionWithQuality.workArea,
+      paths: uniqueCliValues([mapping.codePath, ...(extractionWithQuality.workArea.paths ?? [])]),
+      constraints: uniqueCliValues([
+        `file:${mapping.codePath}`,
+        ...(extractionWithQuality.workArea.constraints ?? []),
+      ]),
+    };
+    const artifacts =
+      kind === 'all'
+        ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
+        : [
+            generatePromptArtifact({
+              workArea,
+              sources: extractionWithQuality.sources,
+              kind,
+              useCase,
+            }),
+          ];
+    const evaluations = artifacts.map((artifact) => ({
+      artifact,
+      quality: evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: extractionWithQuality.sources,
+        qualityStatusEvidence: promptQualityStatusEvidence,
+      }),
+    }));
+    const outputs = await materializePromptArtifacts({
+      flags,
+      artifacts,
+      producedByRef: `qa-sdk ontology prompt extract-file ${filePath}`,
+      ownerDefinitionId: docId,
+      materializesOutputRefs: [docId, mapping.codePath],
+    });
+
+    if (flags['json'] === 'true') {
+      printJson({
+        filePath,
+        boundaryDocId: mapping.anchor.docId,
+        contextDocId: docId,
+        useCase,
+        source: artifactSource,
+        outputs,
+        workArea,
+        artifacts: evaluations,
+      });
+      return;
+    }
+
+    console.log(`file: ${filePath}`);
+    console.log(`boundary: ${mapping.anchor.docId}`);
+    if (docId !== mapping.anchor.docId) {
+      console.log(`context: ${docId}`);
+    }
+    for (const output of outputs) {
+      console.log(`output: ${output.outputPath}`);
+    }
+    for (const { artifact, quality } of evaluations) {
+      console.log(`--- ${artifact.kind} ---`);
+      console.log(`artifactId: ${artifact.artifactId}`);
+      console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
+      console.log(`quality: ${quality.grade} (${quality.score})`);
+      console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+      if (quality.recommendedManagementActions.length > 0) {
+        console.log(
+          `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
+        );
+      }
+      if (flags['quality-only'] !== 'true') {
+        console.log(artifact.content);
+      }
+    }
+  } finally {
+    closeDataSource(source);
   }
 }
 
@@ -604,102 +623,106 @@ async function cmdPromptExtractPermission(rest: string[]): Promise<void> {
   const kind = parsePromptArtifactKind(flags['kind']);
   const useCase = parsePromptArtifactUseCase(flags['use-case'] ?? 'schema_governance_review');
   const source = await createDataSource(toDefinitionDataSourceOptions(flags));
-  const root = await source.get('authorization-ontology-system');
-  if (!root) {
-    console.error('Definition document not found: authorization-ontology-system');
-    process.exitCode = 1;
-    return;
-  }
+  try {
+    const root = await source.get('authorization-ontology-system');
+    if (!root) {
+      console.error('Definition document not found: authorization-ontology-system');
+      process.exitCode = 1;
+      return;
+    }
 
-  const contextDocs = (
-    await Promise.all(AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.map((docId) => source.get(docId)))
-  ).filter((doc): doc is DefDoc => Boolean(doc));
-  const rootDoc = await defDocWithBody(source, root);
-  const childDocs = await Promise.all(contextDocs.map((doc) => defDocWithBody(source, doc)));
-  const outgoingLinks = (await source.getOutgoingLinks(root.docId))
-    .filter(
-      (link) =>
-        AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.includes(link.target as never) ||
-        link.target === 'permission-system',
-    )
-    .map((link) => outgoingLinkToPromptLink(root, link));
-  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
-    root: {
-      ...rootDoc,
-      purpose: `${rootDoc.purpose ?? root.docId} Permission query: ${permissionRef}`,
-    },
-    children: childDocs,
-    outgoingLinks,
-    useCase,
-    verificationRefs: [
-      'packages/authorization-ontology/src/index.test.ts',
-      'packages/authorization-ontology/src/permission-engine-bridge.test.ts',
-    ],
-    now: new Date().toISOString(),
-  });
-  const workArea = {
-    ...extraction.workArea,
-    workAreaId: `permission:${permissionRef}`,
-    displayName: `Permission context: ${permissionRef}`,
-    constraints: uniqueCliValues([
-      `permission:${permissionRef}`,
-      ...(extraction.workArea.constraints ?? []),
-    ]),
-    localInstructions: [
-      'Resolve permission refs through permission_feature, grants_feature, denies_feature, materializes_permission, and decision_* relations.',
-      'Treat this extraction as authorization-context evidence until a graph-store permission query is available.',
-    ],
-  };
-  await maybePersistGovernanceEvidence(flags, extraction);
-  const artifacts =
-    kind === 'all'
-      ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
-      : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
-  const evaluations = artifacts.map((artifact) => ({
-    artifact,
-    quality: evaluatePromptArtifactQuality({
-      artifact,
-      workArea,
-      sources: extraction.sources,
-    }),
-  }));
-  const outputs = await materializePromptArtifacts({
-    flags,
-    artifacts,
-    producedByRef: `qa-sdk ontology prompt extract-permission ${permissionRef}`,
-    ownerDefinitionId: 'authorization-ontology-system',
-    materializesOutputRefs: ['authorization-ontology-system', permissionRef],
-  });
-
-  if (flags['json'] === 'true') {
-    printJson({
-      permissionRef,
+    const contextDocs = (
+      await Promise.all(AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.map((docId) => source.get(docId)))
+    ).filter((doc): doc is DefDoc => Boolean(doc));
+    const rootDoc = await defDocWithBody(source, root);
+    const childDocs = await Promise.all(contextDocs.map((doc) => defDocWithBody(source, doc)));
+    const outgoingLinks = (await source.getOutgoingLinks(root.docId))
+      .filter(
+        (link) =>
+          AUTHORIZATION_PERMISSION_CONTEXT_DOC_IDS.includes(link.target as never) ||
+          link.target === 'permission-system',
+      )
+      .map((link) => outgoingLinkToPromptLink(root, link));
+    const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+      root: {
+        ...rootDoc,
+        purpose: `${rootDoc.purpose ?? root.docId} Permission query: ${permissionRef}`,
+      },
+      children: childDocs,
+      outgoingLinks,
       useCase,
-      outputs,
-      workArea,
-      artifacts: evaluations,
+      verificationRefs: [
+        'packages/authorization-ontology/src/index.test.ts',
+        'packages/authorization-ontology/src/permission-engine-bridge.test.ts',
+      ],
+      now: new Date().toISOString(),
     });
-    return;
-  }
+    const workArea = {
+      ...extraction.workArea,
+      workAreaId: `permission:${permissionRef}`,
+      displayName: `Permission context: ${permissionRef}`,
+      constraints: uniqueCliValues([
+        `permission:${permissionRef}`,
+        ...(extraction.workArea.constraints ?? []),
+      ]),
+      localInstructions: [
+        'Resolve permission refs through permission_feature, grants_feature, denies_feature, materializes_permission, and decision_* relations.',
+        'Treat this extraction as authorization-context evidence until a graph-store permission query is available.',
+      ],
+    };
+    await maybePersistGovernanceEvidence(flags, extraction);
+    const artifacts =
+      kind === 'all'
+        ? generatePromptArtifacts({ workArea, sources: extraction.sources, useCase })
+        : [generatePromptArtifact({ workArea, sources: extraction.sources, kind, useCase })];
+    const evaluations = artifacts.map((artifact) => ({
+      artifact,
+      quality: evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: extraction.sources,
+      }),
+    }));
+    const outputs = await materializePromptArtifacts({
+      flags,
+      artifacts,
+      producedByRef: `qa-sdk ontology prompt extract-permission ${permissionRef}`,
+      ownerDefinitionId: 'authorization-ontology-system',
+      materializesOutputRefs: ['authorization-ontology-system', permissionRef],
+    });
 
-  console.log(`permission: ${permissionRef}`);
-  for (const output of outputs) {
-    console.log(`output: ${output.outputPath}`);
-  }
-  for (const { artifact, quality } of evaluations) {
-    console.log(`--- ${artifact.kind} ---`);
-    console.log(`artifactId: ${artifact.artifactId}`);
-    console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
-    console.log(`quality: ${quality.grade} (${quality.score})`);
-    console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
-    if (quality.recommendedManagementActions.length > 0) {
-      console.log(
-        `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
-      );
+    if (flags['json'] === 'true') {
+      printJson({
+        permissionRef,
+        useCase,
+        outputs,
+        workArea,
+        artifacts: evaluations,
+      });
+      return;
     }
-    if (flags['quality-only'] !== 'true') {
-      console.log(artifact.content);
+
+    console.log(`permission: ${permissionRef}`);
+    for (const output of outputs) {
+      console.log(`output: ${output.outputPath}`);
     }
+    for (const { artifact, quality } of evaluations) {
+      console.log(`--- ${artifact.kind} ---`);
+      console.log(`artifactId: ${artifact.artifactId}`);
+      console.log(`useCase: ${artifact.useCase ?? '(none)'}`);
+      console.log(`quality: ${quality.grade} (${quality.score})`);
+      console.log(`ontologyManagementRequired: ${quality.ontologyManagementRequired}`);
+      if (quality.recommendedManagementActions.length > 0) {
+        console.log(
+          `actions: ${quality.recommendedManagementActions.map((action) => action.kind).join(', ')}`,
+        );
+      }
+      if (flags['quality-only'] !== 'true') {
+        console.log(artifact.content);
+      }
+    }
+  } finally {
+    closeDataSource(source);
   }
 }
 

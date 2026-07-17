@@ -329,14 +329,27 @@ export const Catalog = {
 `,
       'utf8',
     );
+    writeFileSync(
+      join(pkgDir, 'conflicting.ts'),
+      `// @def.boundary event-prefix-group
+// @def.boundary observation-prefix-group
+export const conflicting = true;
+`,
+      'utf8',
+    );
 
     const result = await syncDocsToLocalDb({ rootDir });
-    expect(result.codeReferences).toBe(2);
+    expect(result.codeReferences).toBe(4);
 
     const source = new LocalDataSource(join(rootDir, 'data/definition-service.sqlite'), rootDir);
     try {
       const ambiguous = await source.resolveByFile('packages/demo/src/catalog.ts');
       expect(ambiguous.kind).toBe('ambiguous');
+
+      const validation = await source.validate();
+      expect(
+        validation.issues.filter((issue) => issue.type === 'ambiguous-code-boundary'),
+      ).toHaveLength(1);
 
       const eventMapping = await source.resolveByFile(
         'packages/demo/src/catalog.ts:Catalog.events.auth_event',
@@ -403,6 +416,59 @@ ${sources}
       expect(row.count).toBe(220);
     } finally {
       db.close();
+    }
+  });
+
+  it('frontmatter source refs만으로 code boundary 모호성을 만들지 않는다', async () => {
+    const rootDir = makeTempDir();
+    const docsDir = join(rootDir, 'docs');
+    const dataDir = join(rootDir, 'data');
+    mkdirSync(docsDir, { recursive: true });
+    mkdirSync(dataDir, { recursive: true });
+
+    for (const [id, aspect] of [
+      ['first-source-doc', 'func_def'],
+      ['second-source-doc', 'func_def'],
+    ] as const) {
+      writeFileSync(
+        join(docsDir, `${id}.md`),
+        `---
+def:
+  id: ${id}
+  tier: component
+  scope: feature
+  aspect: ${aspect}
+  depth: specification
+  lifecycle: approved
+sources:
+  - packages/demo/src/shared.ts
+---
+# ${id}
+
+## 목적 ^purpose
+
+공유 구현 소스의 문서 증거.
+`,
+        'utf8',
+      );
+    }
+
+    await syncDocsToLocalDb({ rootDir });
+    const source = new LocalDataSource(join(rootDir, 'data/definition-service.sqlite'), rootDir);
+    try {
+      const mapping = await source.resolveByFile('packages/demo/src/shared.ts');
+      expect(mapping.kind).toBe('evidence-only');
+      if (mapping.kind === 'evidence-only') {
+        expect(mapping.supportingDocs.map((doc) => doc.docId)).toEqual([
+          'first-source-doc',
+          'second-source-doc',
+        ]);
+      }
+
+      const result = await source.validate();
+      expect(result.issues.filter((issue) => issue.type === 'ambiguous-code-boundary')).toEqual([]);
+    } finally {
+      source.close();
     }
   });
 });

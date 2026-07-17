@@ -2492,6 +2492,18 @@ async function cmdFindByFile(source: DefDataSource, filePath: string) {
     return;
   }
 
+  if (mapping.kind === 'evidence-only') {
+    console.log('source-map evidence는 있지만 authoritative boundary가 선언되지 않았습니다.');
+    console.log(
+      '  → `sources`와 `@def.doc`는 supporting evidence만 제공하므로 `@def.boundary <doc-id>`를 추가하세요.\n',
+    );
+    console.log(`source-map evidence (${mapping.supportingDocs.length}건):`);
+    for (const doc of mapping.supportingDocs) {
+      console.log(`  - ${formatLinkRef(doc.docId, doc.address)}`);
+    }
+    return;
+  }
+
   if (mapping.kind === 'ambiguous') {
     console.log('explicit source-map이 둘 이상의 boundary anchor로 갈라집니다.');
     if (mapping.references.some((ref) => ref.symbol)) {

@@ -148,7 +148,11 @@ export class ReviewLedger {
   createFeedbackRequest(input: CreateFeedbackRequestInput): FeedbackRequest {
     const filePaths = this.resolveFeedbackFiles(input);
     const statuses = this.buildStatuses(filePaths);
-    const evidenceBundle = buildEvidenceBundle(statuses, input.relatedDocsByFile ?? {});
+    const evidenceBundle = buildEvidenceBundle(
+      statuses,
+      input.relatedDocsByFile ?? {},
+      input.relatedDocResolutionsByFile ?? {},
+    );
     const request = createFeedbackRequest(input, evidenceBundle);
     this.store.insertFeedbackRequest(request);
     return request;

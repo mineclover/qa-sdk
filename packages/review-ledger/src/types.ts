@@ -79,9 +79,14 @@ export interface FeedbackRelatedDoc {
   scope: string;
   aspect: string;
   depth: string;
-  reason: 'service-scope' | 'file-hint';
+  reason: 'service-scope' | 'file-hint' | 'file-evidence';
   purpose?: string;
 }
+
+/** 파일 경계 해석 결과 중 자동 후보로 승격할 수 없는 상태 */
+export type FeedbackRelatedDocResolution =
+  | { kind: 'none'; codePath: string }
+  | { kind: 'ambiguous'; codePath: string; candidateDocIds: string[] };
 
 /** 번들에 포함된 파일 단위 증거 */
 export interface EvidenceBundleItem {
@@ -95,6 +100,7 @@ export interface EvidenceBundleItem {
   aiModel: string | null;
   notes: string | null;
   relatedDocs: FeedbackRelatedDoc[];
+  relatedDocResolution?: FeedbackRelatedDocResolution;
 }
 
 /** AI 피드백 요청에 첨부되는 증거 묶음 */
@@ -115,6 +121,7 @@ export interface CreateFeedbackRequestInput {
   notes?: string;
   filePaths?: string[];
   relatedDocsByFile?: Record<string, FeedbackRelatedDoc[]>;
+  relatedDocResolutionsByFile?: Record<string, FeedbackRelatedDocResolution>;
 }
 
 /** 저장된 피드백 요청 */

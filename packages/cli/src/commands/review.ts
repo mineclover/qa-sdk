@@ -23,7 +23,7 @@ import { execaSync } from 'execa';
 import { ReviewLedger, SqliteReviewStore } from 'review-ledger';
 import { getQaSdkDir } from '../lib/qa-dir.js';
 import { bridgeFeedbackRequestToDkg } from '../lib/review-feedback-dkg.js';
-import { resolveRelatedDocsForFiles } from '../lib/review-feedback-docs.js';
+import { resolveRelatedDocsForFilesWithResolution } from '../lib/review-feedback-docs.js';
 
 const QA_DIR = getQaSdkDir();
 const DB_PATH = join(QA_DIR, 'review-ledger.sqlite');
@@ -306,7 +306,9 @@ export async function reviewRequest(args: string[]): Promise<void> {
 
   const ledger = createLedger(cwd);
   try {
-    const relatedDocsByFile = filePaths ? await resolveRelatedDocsForFiles(cwd, filePaths) : {};
+    const relatedDocs = filePaths
+      ? await resolveRelatedDocsForFilesWithResolution(cwd, filePaths)
+      : { relatedDocsByFile: {}, relatedDocResolutionsByFile: {} };
 
     const request = ledger.createFeedbackRequest({
       requestedBy: reviewer,
@@ -315,7 +317,8 @@ export async function reviewRequest(args: string[]): Promise<void> {
       serviceScope: scope,
       notes,
       filePaths,
-      relatedDocsByFile,
+      relatedDocsByFile: relatedDocs.relatedDocsByFile,
+      relatedDocResolutionsByFile: relatedDocs.relatedDocResolutionsByFile,
     });
 
     const decisionId = parseFlag(args, '--decision-id');

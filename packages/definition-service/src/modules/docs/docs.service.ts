@@ -13,13 +13,16 @@ import type {
   DocListResult,
 } from '../../core/interfaces.js';
 import type {
-  DefBoundaryResolutionCandidate,
   DefCodeReference,
   DefFeedbackRequestSummary,
   DefFileBoundaryResolution,
   DefSyntheticIncomingLink,
 } from 'definition-catalog';
-import { formatCodeReferenceTarget, parseCodeReferenceTarget } from 'definition-catalog';
+import {
+  formatCodeReferenceTarget,
+  parseCodeReferenceTarget,
+  resolveCodeBoundary,
+} from 'definition-catalog';
 import { mergeSemanticDocumentResults } from '../../core/semantic-grounding/planner.js';
 import { SearchService } from '../search/search.service.js';
 import { SemanticGroundingService } from '../semantic-grounding/semantic-grounding.service.js';
@@ -187,20 +190,6 @@ export class DocsService {
     return { codePath: rawPath.replaceAll('\\', '/'), symbol };
   }
 
-  private resolveBoundaryAnchor(doc: DocRecord): DocRecord {
-    if (doc.level === 'group' || doc.level === 'module') return doc;
-
-    let current = doc;
-    const visited = new Set<string>([doc.docId]);
-    while (true) {
-      const parent = this.getParent(current.docId);
-      if (!parent || visited.has(parent.docId)) return current;
-      if (parent.level === 'group' || parent.level === 'module') return parent;
-      visited.add(parent.docId);
-      current = parent;
-    }
-  }
-
   resolveByFile(filePath: string): DefFileBoundaryResolution {
     const requested = this.normalizeCodeReferenceTarget(filePath);
     const references = this.store.getCodeReferencesByPath(requested.codePath).map((ref) =>
@@ -239,61 +228,11 @@ export class DocsService {
       };
     }
 
-    const boundaryDocIds = [
-      ...new Set(
-        scopedReferences.filter((ref) => ref.relationType === 'boundary').map((ref) => ref.docId),
-      ),
-    ];
-    if (boundaryDocIds.length > 1) {
-      const candidates = docs
-        .filter((doc) => boundaryDocIds.includes(doc.docId))
-        .map((anchor) => ({
-          anchor,
-          supportingDocs: docs.filter((doc) => doc.docId === anchor.docId),
-          references: scopedReferences,
-        })) as DefBoundaryResolutionCandidate[];
-      return {
-        kind: 'ambiguous',
-        codePath: formatCodeReferenceTarget(requested),
-        candidates,
-        references: scopedReferences,
-      };
-    }
-
-    const byAnchor = new Map<string, DefBoundaryResolutionCandidate>();
-    for (const doc of docs) {
-      const anchor =
-        boundaryDocIds.length === 1
-          ? (docs.find((item) => item.docId === boundaryDocIds[0]) ?? doc)
-          : this.resolveBoundaryAnchor(doc);
-      const existing = byAnchor.get(anchor.docId);
-      if (existing) existing.supportingDocs.push(doc);
-      else
-        byAnchor.set(anchor.docId, { anchor, supportingDocs: [doc], references: scopedReferences });
-    }
-
-    const candidates = [...byAnchor.values()].map((candidate) => ({
-      anchor: candidate.anchor,
-      supportingDocs: candidate.supportingDocs.toSorted((a, b) => a.docId.localeCompare(b.docId)),
-      references: scopedReferences,
-    }));
-
-    if (candidates.length === 1) {
-      return {
-        kind: 'unique',
-        codePath: formatCodeReferenceTarget(requested),
-        anchor: candidates[0]!.anchor,
-        supportingDocs: candidates[0]!.supportingDocs,
-        references: scopedReferences,
-      };
-    }
-
-    return {
-      kind: 'ambiguous',
+    return resolveCodeBoundary({
       codePath: formatCodeReferenceTarget(requested),
-      candidates,
       references: scopedReferences,
-    };
+      docs,
+    });
   }
 
   getHistory(docId: string, limit?: number): DocHistoryRecord[] {

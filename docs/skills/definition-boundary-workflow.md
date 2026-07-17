@@ -100,7 +100,7 @@ node packages/cli/dist/index.js def validate --scan
 - `qa-sdk def context <문서ID>`
   상위/하위/제약/의존 맥락 확인
 - `qa-sdk def find-by-file <파일경로[:symbol]>`
-  `source:` + `@def.boundary`/`@def.doc`가 DB에 적재된 경우에만 authoritative boundary를 조회한다
+  DB code reference를 사용해 authoritative boundary를 조회한다. `@def.boundary`만 소유권 선언이며 `source:`/`sources`와 `@def.doc`는 supporting evidence로 유지한다. evidence만 있고 explicit boundary가 없으면 `evidence-only`로 보고한다.
 - `qa-sdk def code-link-gaps [--scope=...]`
   explicit code link가 없는 코드를 file-level로 리스트업한다
 - `qa-sdk def validate`
@@ -110,7 +110,7 @@ node packages/cli/dist/index.js def validate --scan
 
 skill 파일은 내부 실행 정의 SSOT이고, 사용자는 위 명령 진입점을 통해 간접적으로 접근한다.
 
-`def find-by-file`는 DB에 explicit code reference가 없는 파일에는 결과를 주지 않는다. heuristic ranking은 사용하지 않는다.
+`def find-by-file`는 DB에 code reference가 없는 파일에는 `none`을, evidence만 있는 파일에는 `evidence-only`를 반환한다. 상위 문서나 tier를 따라 authoritative boundary를 추론하지 않으며 heuristic ranking도 사용하지 않는다.
 
 ## 참고 문서
 

@@ -23,7 +23,7 @@
  *   - **CI-friendly** — 외부 네트워크 불필요, workspace 내 sqlite DB 공유
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, afterAll, beforeAll } from 'vitest';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import {
@@ -186,11 +186,17 @@ const BOUNDARY_SAMPLES = [
 ] as const;
 
 describe('workflow smoke — L3 layer regression sentinels', () => {
-  let source: DefDataSource;
+  let source!: DefDataSource;
 
   beforeAll(async () => {
     source = await ensureDataSource();
   }, 30_000);
+
+  afterAll(() => {
+    if (source && 'close' in source && typeof source.close === 'function') {
+      source.close();
+    }
+  });
 
   describe('Scenario A — audit --by-domain 은 핵심 루트를 모두 보고한다', () => {
     it('핵심 도메인 루트가 deriveAllDomainRoots 결과에 등장하고 문서 수가 > 0', async () => {
@@ -282,19 +288,18 @@ describe('workflow smoke — L3 layer regression sentinels', () => {
         const resolution = await source.resolveByFile(absPath);
         expect(
           resolution.kind,
-          `${relPath}: resolveByFile 결과가 "none" — @def.boundary 주석이 없거나 DB code_references 가 비어있음.`,
-        ).not.toBe('none');
+          `${relPath}: explicit @def.boundary 결과가 필요하지만 ${resolution.kind} 상태임.`,
+        ).toBe('unique');
 
-        if (resolution.kind === 'unique') {
-          const anchor = resolution.anchor;
-          expect(anchor, `${relPath}: unique boundary anchor 가 비었다.`).toBeTruthy();
-          expect(
-            anchor.lifecycle,
-            `${relPath}: boundary 타깃 "${anchor.docId}" 이 lifecycle=${anchor.lifecycle} — ` +
-              `approved 로 재지정하거나 소스 주석을 현재 권위 문서로 갱신 필요.`,
-          ).not.toBe('deprecated');
-          expect(anchor.lifecycle).not.toBe('archived');
-        }
+        if (resolution.kind !== 'unique') return;
+        const anchor = resolution.anchor;
+        expect(anchor, `${relPath}: unique boundary anchor 가 비었다.`).toBeTruthy();
+        expect(
+          anchor.lifecycle,
+          `${relPath}: boundary 타깃 "${anchor.docId}" 이 lifecycle=${anchor.lifecycle} — ` +
+            `approved 로 재지정하거나 소스 주석을 현재 권위 문서로 갱신 필요.`,
+        ).not.toBe('deprecated');
+        expect(anchor.lifecycle).not.toBe('archived');
       },
     );
   });

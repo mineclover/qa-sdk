@@ -74,6 +74,12 @@ export type DefFileBoundaryResolution =
       references: DefCodeReference[];
     }
   | {
+      kind: 'evidence-only';
+      codePath: string;
+      supportingDocs: DefDoc[];
+      references: DefCodeReference[];
+    }
+  | {
       kind: 'unique';
       codePath: string;
       anchor: DefDoc;

@@ -245,6 +245,10 @@ describe('SqliteReviewStore', () => {
             aiModel: 'claude-opus-4-6',
             notes: '재검토 필요',
             relatedDocs: [],
+            relatedDocResolution: {
+              kind: 'none',
+              codePath: 'packages/core/src/index.ts',
+            },
           },
         ],
       },
@@ -255,6 +259,10 @@ describe('SqliteReviewStore', () => {
     expect(loaded).not.toBeNull();
     expect(loaded!.purpose).toBe('stale 파일 기반 피드백 요청');
     expect(loaded!.evidenceBundle.stale).toBe(1);
+    expect(loaded!.evidenceBundle.items[0]?.relatedDocResolution).toEqual({
+      kind: 'none',
+      codePath: 'packages/core/src/index.ts',
+    });
     expect(loaded!.prompt).toContain('# Feedback Request');
   });
 
@@ -417,5 +425,43 @@ describe('feedback-request helpers', () => {
     expect(prompt).toContain('[stale] packages/core/src/index.ts');
     expect(prompt).toContain('docs: core-guide [service-scope]');
     expect(prompt).toContain('Requested Output');
+  });
+
+  it('문서 경계 해석 진단을 evidence와 prompt에 보존한다', () => {
+    const bundle = buildEvidenceBundle(
+      [
+        {
+          filePath: 'packages/core/src/shared.ts',
+          status: 'unreviewed',
+          serviceScope: 'core',
+          latestFileCommit: null,
+          lastEntry: null,
+        },
+      ],
+      {},
+      {
+        'packages/core/src/shared.ts': {
+          kind: 'ambiguous',
+          codePath: 'packages/core/src/shared.ts',
+          candidateDocIds: ['core-a', 'core-b'],
+        },
+      },
+    );
+
+    expect(bundle.items[0]?.relatedDocResolution).toEqual({
+      kind: 'ambiguous',
+      codePath: 'packages/core/src/shared.ts',
+      candidateDocIds: ['core-a', 'core-b'],
+    });
+
+    const prompt = renderFeedbackPrompt({
+      purpose: '경계 해석 확인',
+      requestedBy: 'junwoo',
+      targetModel: null,
+      serviceScope: 'core',
+      notes: null,
+      evidenceBundle: bundle,
+    });
+    expect(prompt).toContain('definition resolution: ambiguous candidates=core-a,core-b');
   });
 });

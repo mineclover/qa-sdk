@@ -12,7 +12,14 @@ def:
   links:
     - target: system-root
       type: refines
-source: packages/review-ledger/src/types.ts
+    - target: definition-metadata-source-map
+      type: depends_on
+sources:
+  - packages/review-ledger/src/types.ts
+  - packages/review-ledger/src/feedback-request.ts
+  - packages/review-ledger/src/ledger.ts
+  - packages/cli/src/lib/review-feedback-docs.ts
+  - packages/cli/src/commands/review.ts
 ---
 
 # Review Ledger — 리뷰 원장 + AI 피드백 요청
@@ -27,6 +34,7 @@ source: packages/review-ledger/src/types.ts
 - `feedback_requests`: 리뷰 상태 스냅샷을 목적별로 묶은 AI 피드백 요청 artifact.
 - `EvidenceBundle`: 요청 생성 시점의 파일 상태(`reviewed/stale/unreviewed`)와 최신 커밋, 마지막 리뷰 메타데이터를 보존하는 스냅샷.
 - `relatedDocs`: 각 파일이 어떤 definition 문서와 관련되는지 자동 추론한 후보 목록.
+- `relatedDocResolution`: 후보로 승격할 수 없는 `none`/`ambiguous` 파일 해석 결과를 보존하는 선택적 진단.
 - `prompt`: AI에 그대로 전달할 수 있는 일관된 텍스트 입력. purpose, scope, evidence summary, 파일 목록을 포함한다.
 
 ## 핵심 모델
@@ -76,6 +84,24 @@ interface EvidenceBundle {
 
 각 item은 파일별 상태와 최신 커밋, 마지막 리뷰 메타데이터를 담는다.
 필요하면 `relatedDocs`로 definition 문서 후보를 함께 담아 문서/코드/피드백을 같은 좌표 맥락에서 읽게 한다.
+
+### relatedDocs resolution contract
+
+`relatedDocs`는 코드 소유권을 판정하는 필드가 아니라 피드백에 포함할 문서 후보다. `find-by-file` 결과를 다음처럼 소비한다.
+
+| `find-by-file` 상태 | review feedback 동작                                        | `FeedbackRelatedDoc.reason` |
+| ------------------- | ----------------------------------------------------------- | --------------------------- |
+| `unique`            | authoritative anchor 또는 단일 supporting doc을 후보로 포함 | `file-hint`                 |
+| `evidence-only`     | supporting docs를 후보로 포함하되 owner로 승격하지 않음     | `file-evidence`             |
+| `none`              | 후보를 만들지 않음                                          | -                           |
+| `ambiguous`         | 자동 후보를 만들지 않고 boundary 정리를 요구                | -                           |
+
+이 구분은 `definition-metadata-source-map`의 explicit boundary 규칙을 보존하면서, source evidence가 존재하는 파일을 리뷰 context에서 조용히 누락하지 않기 위한 것이다.
+
+`none`과 `ambiguous`는 `EvidenceBundleItem.relatedDocResolution`에 파일별로 남긴다.
+`ambiguous`는 `codePath`와 boundary 후보 anchor의 `candidateDocIds`를 함께 보존한다.
+이 진단은 `relatedDocs` 후보가 아니며, 문서 소유권을 추론하거나 자동 승격하지 않는다.
+저장된 `prompt`에는 `definition resolution: none|ambiguous`로 표시되어 후속 리뷰가 누락과 충돌을 구분할 수 있다.
 
 이 구조는 다음 질문에 바로 답할 수 있게 한다.
 
