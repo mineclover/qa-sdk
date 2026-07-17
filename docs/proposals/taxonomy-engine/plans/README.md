@@ -10,6 +10,41 @@ def:
   aspect: proposal_design
   tier: layout
   depth: overview
+  links:
+    - target: taxonomy-engine-design
+      type: refs
+    - target: taxonomy-engine-plan-v0-1-follow-up-out-of-scope
+      type: refs
+    - target: taxonomy-engine-plan-v0-1-self-review
+      type: refs
+    - target: taxonomy-engine-plan-v0-7
+      type: refs
+    - target: taxonomy-engine-plan-v0-8
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-execution-order
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-non-goals
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-open-decisions
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-a
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-b
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-c
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-d
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-e
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-f
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-g
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-phase-h
+      type: refs
+    - target: taxonomy-engine-plan-v0-8-regression-policy
+      type: refs
 status: accepted
 date: 2026-07-05
 part_of: taxonomy-engine

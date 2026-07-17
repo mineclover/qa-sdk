@@ -7,9 +7,14 @@ def:
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
-  aspect: roadmap
+  aspect: proposal_design
   tier: layout
   depth: overview
+  links:
+    - target: taxonomy-engine-design
+      type: refs
+    - target: taxonomy-engine-plans-index
+      type: refs
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine

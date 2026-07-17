@@ -7,7 +7,7 @@ def:
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
-  aspect: self_review
+  aspect: proposal_design
   tier: component
   depth: validation
 status: historical-self-review

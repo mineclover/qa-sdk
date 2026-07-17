@@ -7,7 +7,7 @@ def:
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: interface
-  aspect: api_surface
+  aspect: api_contract
   tier: component
   depth: specification
 status: implemented

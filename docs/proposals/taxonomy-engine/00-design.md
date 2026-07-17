@@ -10,6 +10,23 @@ def:
   aspect: proposal_design
   tier: system
   depth: overview
+  links:
+    - target: taxonomy-engine-architecture
+      type: refs
+    - target: taxonomy-engine-api-surface
+      type: refs
+    - target: taxonomy-engine-data-model
+      type: refs
+    - target: taxonomy-engine-reference-grammar
+      type: refs
+    - target: taxonomy-engine-diagnostics-policy
+      type: refs
+    - target: taxonomy-engine-concepts-index
+      type: refs
+    - target: taxonomy-engine-plans-index
+      type: refs
+    - target: taxonomy-engine-roadmap
+      type: refs
 status: implemented
 date: 2026-05-20
 part_of: taxonomy-engine

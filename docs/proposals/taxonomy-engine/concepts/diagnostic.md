@@ -7,7 +7,7 @@ def:
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: constraint
-  aspect: diagnostic
+  aspect: tech_constraint
   tier: component
   depth: specification
 status: implemented

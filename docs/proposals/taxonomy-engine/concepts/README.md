@@ -10,6 +10,41 @@ def:
   aspect: proposal_design
   tier: layout
   depth: overview
+  links:
+    - target: taxonomy-engine-design
+      type: refs
+    - target: taxonomy-engine-axis-concept
+      type: refs
+    - target: taxonomy-engine-entry-concept
+      type: refs
+    - target: taxonomy-engine-coordinate-concept
+      type: refs
+    - target: taxonomy-engine-relation-concept
+      type: refs
+    - target: taxonomy-engine-constraint-concept
+      type: refs
+    - target: taxonomy-engine-taxonomy-concept
+      type: refs
+    - target: taxonomy-engine-registry-concept
+      type: refs
+    - target: taxonomy-engine-diagnostic-concept
+      type: refs
+    - target: taxonomy-engine-diagnostics-catalog
+      type: refs
+    - target: taxonomy-engine-doctor-concept
+      type: refs
+    - target: taxonomy-engine-lifecycle-concept
+      type: refs
+    - target: taxonomy-engine-semver-migration-concept
+      type: refs
+    - target: taxonomy-engine-decision-sync
+      type: refs
+    - target: taxonomy-engine-decision-flow-bridge
+      type: refs
+    - target: taxonomy-engine-cli-commands-concept
+      type: refs
+    - target: taxonomy-engine-codegen-output-concept
+      type: refs
 status: implemented
 date: 2026-07-05
 part_of: taxonomy-engine
