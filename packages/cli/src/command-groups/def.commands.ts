@@ -45,6 +45,16 @@ export const DEF_COMMAND_DESCRIPTORS = [
   { id: 'def.find-by-file', path: ['find-by-file'], handlerKey: 'def.find-by-file' },
   { id: 'def.guide', path: ['guide'], handlerKey: 'def.guide' },
   { id: 'def.state', path: ['state'], handlerKey: 'def.state' },
+  {
+    id: 'def.verification-bindings',
+    path: ['verification-bindings'],
+    handlerKey: 'def.verification-bindings',
+  },
+  {
+    id: 'def.verification-artifact',
+    path: ['verification-artifact'],
+    handlerKey: 'def.verification-artifact',
+  },
 ] as const satisfies readonly CommandDescriptor[];
 
 export const DEF_COMMAND_TREE = descriptorsToTree(

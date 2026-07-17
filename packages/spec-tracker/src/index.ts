@@ -9,3 +9,4 @@ export * from './verification-claim.js';
 export * from './claim-extractor.js';
 export * from './claim-report.js';
 export * from './claim-audit.js';
+export * from './verification-artifact.js';

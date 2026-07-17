@@ -58,6 +58,9 @@ describe('createDataSource', () => {
     await expect(source.get('sample-doc')).resolves.toMatchObject({
       docId: 'sample-doc',
     });
+    await expect(source.getBody('sample-doc')).resolves.toMatchObject({
+      bodyHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
   });
 
   it('local 모드에서 nested cwd여도 workspace root의 DB를 찾는다', async () => {

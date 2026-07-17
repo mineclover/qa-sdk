@@ -1,6 +1,5 @@
 // @def.doc definition-data-source
 
-import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import Database from 'better-sqlite3';
@@ -17,6 +16,7 @@ import {
   scanAndBuild,
   type DefinitionEntry,
 } from 'definition-catalog';
+import { hashDefinitionBody } from './body-hash.js';
 
 export interface SyncLocalDbOptions {
   rootDir: string;
@@ -372,7 +372,7 @@ function toDocumentRow(
     revision: entry.revision ?? null,
     address: entry.serialized ?? null,
     version: entry.revision ?? 1,
-    bodyHash: hashBody(body),
+    bodyHash: hashDefinitionBody(body),
     body,
     purpose: extractByMarker(body, 'purpose').text || null,
     intent: extractByMarker(body, 'intent').text || null,
@@ -382,10 +382,6 @@ function toDocumentRow(
     syncedAt: new Date().toISOString(),
     sourcePath,
   };
-}
-
-function hashBody(body: string): string {
-  return createHash('sha256').update(body).digest('hex');
 }
 
 function quote(value: string): string {

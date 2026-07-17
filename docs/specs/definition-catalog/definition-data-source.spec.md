@@ -16,7 +16,9 @@ def:
   links:
     - target: definition-service-system
       type: depends_on
-source: packages/definition-data-source/src/index.ts
+sources:
+  - packages/definition-data-source/src/index.ts
+  - packages/definition-data-source/src/body-hash.ts
 ---
 
 # definition-data-source — DefDataSource 팩토리

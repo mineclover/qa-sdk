@@ -56,8 +56,16 @@ import {
   syncDocsToLocalDb,
   type DataSourceOptions,
 } from 'definition-data-source';
+import { analyzeDrift, extractDeclarations, scanImplementations, type DriftReport } from 'spec-analyzer';
+import type { VerificationDefinitionBinding, VerificationSummary } from 'spec-tracker';
 import { formatHelpSections, type CommandHelpSectionSpec } from '../command-spec.js';
 import { cmdTierClassify } from '../lib/def-tier-classify.cmd.js';
+import {
+  writeVerificationBindingsFile,
+  resolveVerificationReadModel,
+  writeVerificationArtifactFile,
+  type VerificationReadModel,
+} from '../lib/spec-definition-verification.js';
 
 // ── 유틸 ──────────────────────────────────────────────
 
@@ -182,6 +190,13 @@ function parseCsvFlag(value?: string): string[] {
 
 async function getSource(options: DataSourceOptions): Promise<DefDataSource> {
   return createDataSource(options);
+}
+
+function closeDataSource(source: DefDataSource | undefined): void {
+  if (!source) return;
+  if ('close' in source && typeof (source as { close?: () => void }).close === 'function') {
+    (source as { close: () => void }).close();
+  }
 }
 
 // ── DataSource 기반 커맨드 ────────────────────────────
@@ -2247,12 +2262,15 @@ const DEF_HELP_SECTIONS = [
       'state               전체 머신 상태 분포',
       'state <머신ID>      특정 머신 분포',
       'state <문서ID>      문서별 상태',
+      'state [--verification-artifact=<path>] [--verification-drift] [--json]  검증 read model 조합',
       'state --deps        머신 간 의존 관계',
     ],
   },
   {
     title: '유틸',
     lines: [
+      'verification-bindings  --spec-ids=<id1,id2> --out=<bindings.json> --captured-at=<ISO> [--json]',
+      'verification-artifact  --summary=<VerificationSummary.json> --out=<artifact.json> --run-started-at=<ISO> --run-completed-at=<ISO> [--bindings=<bindings.json>]',
       'audit-db            DB 검증/정리',
       'overview            전체 그룹 구조 조회',
       'tier classify       Phase 1.B 자동 분류 실행기',
@@ -2283,7 +2301,9 @@ export async function cliDef(args: string[]): Promise<void> {
   if (sub === 'code-link-gaps') return cmdCodeLinkGaps(flags);
   if (sub === 'doctor') return cmdDoctor(flags, options);
   if (sub === 'link-rules') return cmdLinkRules();
-  if (sub === 'state') return cmdState(rest, flags);
+  if (sub === 'verification-bindings') return cmdVerificationBindings(flags, options);
+  if (sub === 'verification-artifact') return cmdVerificationArtifact(flags);
+  if (sub === 'state') return cmdState(rest, flags, options);
 
   // DefDataSource 기반 커맨드 (전체 통합)
   const dsCommands = new Set([
@@ -2680,9 +2700,162 @@ function cmdLinkRules() {
   }
 }
 
+// ── verification artifact (CI/CLI 파일 producer) ─────────────
+
+/**
+ * 테스트 실행 직전에 definition snapshot을 캡처한다.
+ * 생성된 bindings 파일은 실행 종료 후 verification-artifact producer에 전달한다.
+ */
+async function cmdVerificationBindings(
+  flags: Record<string, string>,
+  sourceOptions: DataSourceOptions,
+): Promise<void> {
+  const specIds = parseCsvFlag(flags['spec-ids'] ?? flags['spec-id']);
+  const outPath = flags['out'];
+  const capturedAt = flags['captured-at'] ?? flags['run-started-at'];
+  if (specIds.length === 0 || !outPath || !capturedAt) {
+    console.log(
+      'Usage: qa-sdk def verification-bindings --spec-ids=<id1,id2> --out=<bindings.json> --captured-at=<ISO> [--json]',
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  let source: DefDataSource;
+  try {
+    source = await getSource(sourceOptions);
+  } catch (error) {
+    console.log(`[verification-bindings] ${(error as Error).message}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const bindings = await writeVerificationBindingsFile(
+      resolve(getRootDir(), outPath),
+      source,
+      specIds,
+      { capturedAt },
+    );
+    const output = { out: resolve(getRootDir(), outPath), bindings };
+    if (flags['json'] === 'true' || flags['json'] === '') {
+      console.log(JSON.stringify(output, null, 2));
+    } else {
+      console.log(`검증 binding 캡처: ${output.out}`);
+      console.log(`bindings: ${bindings.length}`);
+    }
+  } catch (error) {
+    console.log(`[verification-bindings] ${(error as Error).message}`);
+    process.exitCode = 1;
+  } finally {
+    if ('close' in source && typeof (source as { close?: () => void }).close === 'function') {
+      (source as { close: () => void }).close();
+    }
+  }
+}
+
+/**
+ * 검증 runner가 만든 VerificationSummary와 run-start definition binding을
+ * 불변 wire artifact로 패키징한다. 이 명령은 DB를 읽거나 쓰지 않는다.
+ */
+async function cmdVerificationArtifact(flags: Record<string, string>): Promise<void> {
+  const summaryPath = flags['summary'];
+  const outPath = flags['out'];
+  const runStartedAt = flags['run-started-at'];
+  const runCompletedAt = flags['run-completed-at'];
+  if (!summaryPath || !outPath || !runStartedAt || !runCompletedAt) {
+    console.log(
+      'Usage: qa-sdk def verification-artifact --summary=<VerificationSummary.json> --out=<artifact.json> --run-started-at=<ISO> --run-completed-at=<ISO> [--bindings=<bindings.json>] [--json]',
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const root = getRootDir();
+  const readJson = (filePath: string): unknown =>
+    JSON.parse(readFileSync(resolve(root, filePath), 'utf8')) as unknown;
+
+  try {
+    const summaryInput = readJson(summaryPath);
+    if (
+      typeof summaryInput !== 'object' ||
+      summaryInput === null ||
+      Array.isArray(summaryInput) ||
+      !Array.isArray((summaryInput as { reports?: unknown }).reports)
+    ) {
+      throw new Error('summary must be an object with a reports array');
+    }
+
+    let bindings: Map<string, VerificationDefinitionBinding> | undefined;
+    const bindingsPath = flags['bindings'];
+    if (bindingsPath) {
+      const bindingsInput = readJson(bindingsPath);
+      if (!Array.isArray(bindingsInput)) {
+        throw new Error('bindings must be an array');
+      }
+      bindings = new Map();
+      for (const [index, item] of bindingsInput.entries()) {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+          throw new Error(`bindings[${index}] must be an object`);
+        }
+        const binding = item as VerificationDefinitionBinding;
+        if (typeof binding.specId !== 'string' || binding.specId.trim().length === 0) {
+          throw new Error(`bindings[${index}].specId must be non-empty`);
+        }
+        if (bindings.has(binding.specId)) {
+          throw new Error(`duplicate binding specId: ${binding.specId}`);
+        }
+        bindings.set(binding.specId, binding);
+      }
+    }
+
+    const artifact = await writeVerificationArtifactFile(resolve(root, outPath), {
+      runStartedAt,
+      runCompletedAt,
+      summary: summaryInput as VerificationSummary,
+      ...(bindings ? { bindings } : {}),
+    });
+    if (flags['json'] === 'true' || flags['json'] === '') {
+      console.log(JSON.stringify({ out: resolve(root, outPath), artifact }, null, 2));
+    } else {
+      console.log(`검증 아티팩트 생성: ${resolve(root, outPath)}`);
+      console.log(`reports: ${artifact.reports.length}`);
+    }
+  } catch (error) {
+    console.log(`[verification-artifact] ${(error as Error).message}`);
+    process.exitCode = 1;
+  }
+}
+
 // ── def state — 하네스 상태 분포 ───────────────────────
 
-async function cmdState(rest: string[], flags: Record<string, string>) {
+interface HarnessDocState {
+  readonly id: string;
+  readonly lifecycle: string;
+  readonly specImpl: string;
+  readonly convention: string;
+  readonly verification?: VerificationReadModel;
+}
+
+async function cmdState(
+  rest: string[],
+  flags: Record<string, string>,
+  sourceOptions: DataSourceOptions = {},
+) {
+  const sourceHolder: { current?: DefDataSource } = {};
+  try {
+    return await cmdStateImpl(rest, flags, sourceOptions, sourceHolder);
+  } finally {
+    closeDataSource(sourceHolder.current);
+  }
+}
+
+async function cmdStateImpl(
+  rest: string[],
+  flags: Record<string, string>,
+  sourceOptions: DataSourceOptions = {},
+  sourceHolder: { current?: DefDataSource } = {},
+) {
   const root = getRootDir();
   const registry = createHarnessRegistry();
 
@@ -2716,8 +2889,60 @@ async function cmdState(rest: string[], flags: Record<string, string>) {
     checksumMatch,
   });
 
+  let verificationArtifact: unknown | undefined;
+  let verificationSource: DefDataSource | undefined;
+  const artifactPath = flags['verification-artifact'];
+  const driftEnabled = flags['verification-drift'] === 'true' || flags['verification-drift'] === '';
+  if (artifactPath || driftEnabled) {
+    const now = new Date().toISOString();
+    try {
+      verificationArtifact = artifactPath
+        ? (JSON.parse(readFileSync(resolve(root, artifactPath), 'utf8')) as unknown)
+        : {
+            schemaVersion: 1,
+            runStartedAt: now,
+            runCompletedAt: now,
+            reports: [],
+          };
+    } catch {
+      // Adapter가 invalid artifact로 진단하도록 빈 object를 전달한다.
+      verificationArtifact = {};
+    }
+
+    try {
+      verificationSource = await getSource(sourceOptions);
+      sourceHolder.current = verificationSource;
+    } catch (error) {
+      console.log(`verification artifact source unavailable: ${(error as Error).message}`);
+    }
+  }
+
+  const driftReports = new Map<string, DriftReport>();
+  const implementationsByService = new Map<
+    string,
+    Awaited<ReturnType<typeof scanImplementations>>
+  >();
+  if (driftEnabled && verificationSource) {
+    for (const entry of scanResult.registry.all()) {
+      if (!entry.serviceId) continue;
+      try {
+        const body = await verificationSource.getBody(entry.id);
+        if (!body) continue;
+        const declared = extractDeclarations(body.body, entry.id);
+        let implemented = implementationsByService.get(entry.serviceId);
+        if (!implemented) {
+          implemented = await scanImplementations(join(root, 'packages', entry.serviceId));
+          implementationsByService.set(entry.serviceId, implemented);
+        }
+        driftReports.set(entry.id, analyzeDrift(entry.id, entry.serviceId, declared, implemented));
+      } catch {
+        // Static drift is optional sidecar evidence; runtime state remains available.
+      }
+    }
+  }
+
   // 각 문서별 상태 파생
-  const docStates: { id: string; lifecycle: string; specImpl: string; convention: string }[] = [];
+  const docStates: HarnessDocState[] = [];
   for (const entry of scanResult.registry.all()) {
     const id = entry.id;
     const lifecycle = deriveDocLifecycle(entry.lifecycle);
@@ -2745,17 +2970,28 @@ async function cmdState(rest: string[], flags: Record<string, string>) {
       isSourceReferenced: entry.depth === 'implementation' || entry.depth === 'validation',
     });
 
-    // convention: 현재 spec-tracker 미연동 → unverified
-    const convention = deriveConventionState({
+    let verification: VerificationReadModel | undefined;
+    if (verificationArtifact !== undefined && verificationSource) {
+      verification = await resolveVerificationReadModel(
+        verificationSource,
+        verificationArtifact,
+        id,
+        driftReports.get(id),
+      );
+    }
+
+    // artifact가 없거나 binding이 현재 definition snapshot과 연결되지 않을 때만 unverified 유지
+    const convention = verification?.convention ?? deriveConventionState({
       evidenceCount: 0,
       coverage: 0,
       hasFailures: false,
     });
 
-    docStates.push({ id, lifecycle, specImpl, convention });
+    docStates.push({ id, lifecycle, specImpl, convention, ...(verification ? { verification } : {}) });
   }
 
   const target = rest[0];
+  const jsonOutput = flags['json'] === 'true' || flags['json'] === '';
 
   // 특정 머신 분포
   if (target && registry.machines.has(target)) {
@@ -2770,11 +3006,34 @@ async function cmdState(rest: string[], flags: Record<string, string>) {
       console.log(`문서 "${target}" 없음`);
       return;
     }
+    if (jsonOutput) {
+      console.log(
+        JSON.stringify(
+          {
+            id: doc.id,
+            'doc-lifecycle': doc.lifecycle,
+            'spec-impl': doc.specImpl,
+            'convention-compliance': doc.convention,
+            'db-sync': syncState,
+            ...(doc.verification ? { verification: doc.verification } : {}),
+          },
+          null,
+          2,
+        ),
+      );
+      return;
+    }
     console.log(`${doc.id}`);
     console.log(`  doc-lifecycle:          ${doc.lifecycle}`);
     console.log(`  spec-impl:              ${doc.specImpl}`);
     console.log(`  convention-compliance:   ${doc.convention}`);
     console.log(`  db-sync:                ${syncState}`);
+    if (doc.verification) printVerificationReadModel(doc.verification);
+    return;
+  }
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ documents: docStates, 'db-sync': syncState }, null, 2));
     return;
   }
 
@@ -2792,6 +3051,22 @@ async function cmdState(rest: string[], flags: Record<string, string>) {
     'convention',
     docStates.map((d) => d.convention),
   );
+  if (verificationArtifact !== undefined) {
+    printDistributionLine(
+      'verification-report',
+      docStates.map((d) => d.verification?.reportStatus ?? 'not-evaluated'),
+    );
+    printDistributionLine(
+      'verification-binding',
+      docStates.map((d) => d.verification?.bindingStatus ?? 'not-evaluated'),
+    );
+    if (driftEnabled) {
+      printDistributionLine(
+        'verification-drift',
+        docStates.map((d) => (d.verification?.driftReport ? 'available' : 'not-available')),
+      );
+    }
+  }
   console.log(`db-sync              ${syncState}`);
 
   console.log(`\n── 시스템 계층 ────────────────────────`);
@@ -2817,9 +3092,24 @@ function printDistributionLine(label: string, states: string[]) {
   console.log(`${label.padEnd(21)}${parts.join(' ')}`);
 }
 
+function printVerificationReadModel(model: VerificationReadModel): void {
+  console.log(`  verification-report:    ${model.reportStatus}`);
+  console.log(`  verification-binding:   ${model.bindingStatus ?? 'none'}`);
+  if (model.definitionAddress) console.log(`  definition-address:     ${model.definitionAddress}`);
+  if (model.currentDocId) console.log(`  current-doc-id:         ${model.currentDocId}`);
+  if (model.driftReport) {
+    console.log(`  drift-coverage:         ${model.driftReport.coverage}`);
+    console.log(`  drift-missing:          ${model.driftReport.missing.length}`);
+    console.log(`  drift-undocumented:     ${model.driftReport.undocumented.length}`);
+  }
+  for (const diagnostic of model.diagnostics) {
+    console.log(`  verification-diagnostic: ${diagnostic.code} — ${diagnostic.message}`);
+  }
+}
+
 function printMachineDistribution(
   machineId: string,
-  docStates: { id: string; lifecycle: string; specImpl: string; convention: string }[],
+  docStates: HarnessDocState[],
   syncState: string,
 ) {
   const docMachineField: Record<string, keyof (typeof docStates)[0]> = {
@@ -2830,7 +3120,7 @@ function printMachineDistribution(
 
   const field = docMachineField[machineId];
   if (field) {
-    const values = docStates.map((d) => d[field]);
+    const values = docStates.map((d) => String(d[field]));
     printDistributionLine(machineId, values);
     console.log(`\n상세:`);
     for (const d of docStates) {

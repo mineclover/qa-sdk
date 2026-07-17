@@ -40,6 +40,7 @@ import {
   getFeedbackRequestSummariesForDoc,
   getSyntheticIncomingLinksForDoc,
 } from './review-feedback-source.js';
+import { hashDefinitionBody } from './body-hash.js';
 
 type ScanIssue = { file: string; error: string };
 type ScanLinkIssue = { source: string; target: string; error: string };
@@ -264,9 +265,11 @@ export class ScanDataSource implements DefDataSource {
   async getBody(docId: string): Promise<DefDocBody | null> {
     const doc = this.docs.find((item) => item.docId === docId);
     if (!doc) return null;
+    const body = this.bodies.get(docId);
     return {
       docId,
-      body: this.bodies.get(docId) ?? '',
+      body: body ?? '',
+      ...(body !== undefined ? { bodyHash: hashDefinitionBody(body) } : {}),
       docVersion: doc.docVersion,
       revision: doc.revision,
       sourcePath: doc.sourcePath,
