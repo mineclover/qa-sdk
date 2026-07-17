@@ -35,9 +35,18 @@ importers:
       '@qa-sdk/scaffold':
         specifier: workspace:*
         version: link:packages/architecture-schematics
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
       '@typescript-eslint/parser':
         specifier: ^8.59.1
         version: 8.59.1(eslint@10.3.0(jiti@2.6.1))(typescript@5.9.3)
+      chalk:
+        specifier: ^5.6.2
+        version: 5.6.2
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -47,6 +56,9 @@ importers:
       eslint:
         specifier: ^10.3.0
         version: 10.3.0(jiti@2.6.1)
+      js-yaml:
+        specifier: ^4.1.1
+        version: 4.1.1
       oxfmt:
         specifier: ^0.42.0
         version: 0.42.0
@@ -68,6 +80,9 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
       typescript-eslint:
         specifier: ^8.59.1
         version: 8.59.1(eslint@10.3.0(jiti@2.6.1))(typescript@5.9.3)
@@ -2873,7 +2888,7 @@ importers:
         version: 20.19.39
       http-server:
         specifier: ^14.1.1
-        version: 14.1.1(debug@4.4.3)
+        version: 14.1.1
       jsdom:
         specifier: ^25.0.0
         version: 25.0.1
@@ -16317,7 +16332,7 @@ snapshots:
       etag: 1.8.1
       fresh: 0.5.2
       fs-extra: 3.0.1
-      http-proxy: 1.18.1(debug@4.4.3)
+      http-proxy: 1.18.1
       immutable: 3.8.3
       micromatch: 4.0.8
       opn: 5.3.0
@@ -18151,7 +18166,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  http-proxy@1.18.1(debug@4.4.3):
+  http-proxy@1.18.1:
     dependencies:
       eventemitter3: 4.0.7
       follow-redirects: 1.16.0(debug@4.4.3)
@@ -18159,14 +18174,14 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  http-server@14.1.1(debug@4.4.3):
+  http-server@14.1.1:
     dependencies:
       basic-auth: 2.0.1
       chalk: 4.1.2
       corser: 2.0.1
       he: 1.2.0
       html-encoding-sniffer: 3.0.0
-      http-proxy: 1.18.1(debug@4.4.3)
+      http-proxy: 1.18.1
       mime: 1.6.0
       minimist: 1.2.8
       opener: 1.5.2

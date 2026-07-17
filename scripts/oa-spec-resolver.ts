@@ -9,9 +9,10 @@ export interface Endpoint {
   summary?: string;
   tags?: string[];
   sourceFile: string;
+  sourceProfileId?: string;
 }
 
-export function resolveEndpointsFromDir(baseDir: string): Endpoint[] {
+export function resolveEndpointsFromDir(baseDir: string, sourceProfileId?: string): Endpoint[] {
   if (!existsSync(baseDir)) {
     console.error(`❌ Base directory not found: ${baseDir}`);
     return [];
@@ -26,8 +27,10 @@ export function resolveEndpointsFromDir(baseDir: string): Endpoint[] {
       const spec = yaml.load(content) as any;
       if (!spec || !spec.paths) continue;
 
-      for (const [path, methods] of Object.entries(spec.paths)) {
-        for (const [method, detail] of Object.entries(methods as any)) {
+      for (const [path, methods] of Object.entries(
+        spec.paths as Record<string, Record<string, any>>,
+      )) {
+        for (const [method, detail] of Object.entries(methods)) {
           if (['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) {
             endpoints.push({
               method: method.toUpperCase(),
@@ -36,6 +39,7 @@ export function resolveEndpointsFromDir(baseDir: string): Endpoint[] {
               summary: detail.summary,
               tags: detail.tags,
               sourceFile: file,
+              ...(sourceProfileId ? { sourceProfileId } : {}),
             });
           }
         }
@@ -74,8 +78,8 @@ export function resolveEndpointsFromSpec(specPath: string): Endpoint[] {
   const spec = yaml.load(content) as any;
   const endpoints: Endpoint[] = [];
   if (!spec || !spec.paths) return [];
-  for (const [path, methods] of Object.entries(spec.paths)) {
-    for (const [method, detail] of Object.entries(methods as any)) {
+  for (const [path, methods] of Object.entries(spec.paths as Record<string, Record<string, any>>)) {
+    for (const [method, detail] of Object.entries(methods)) {
       if (['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) {
         endpoints.push({
           method: method.toUpperCase(),
@@ -93,7 +97,8 @@ export function resolveEndpointsFromSpec(specPath: string): Endpoint[] {
 
 // For manual testing
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const specPath = '/Users/junwoobang/workflow/oa-sdk/packages/schemas/src/openapi.yaml';
+  const oaSdkRoot = process.env.QA_API_IMPACT_OA_SDK_ROOT?.trim() || '../oa-sdk';
+  const specPath = resolve(process.cwd(), oaSdkRoot, 'packages/schemas/src/openapi.yaml');
   const endpoints = resolveEndpointsFromSpec(specPath);
   console.log(`Found ${endpoints.length} endpoints in ${specPath}`);
   endpoints.slice(0, 5).forEach((e) => console.log(`- ${e.method} ${e.path} (${e.operationId})`));
