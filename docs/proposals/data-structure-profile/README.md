@@ -8,8 +8,25 @@ def:
   projection_plane: intent
   scope: meta
   aspect: proposal_design
-  tier: system
+  tier: layout
   depth: overview
+  links:
+    - target: data-structure-profile-00-design
+      type: refs
+    - target: data-structure-profile-01-fit-audit
+      type: refs
+    - target: data-structure-profile-02-taxonomy-layer
+      type: refs
+    - target: data-structure-profile-03-profile-layer
+      type: refs
+    - target: data-structure-profile-04-validation-and-diagnostics
+      type: refs
+    - target: data-structure-profile-05-adoption-plan
+      type: refs
+    - target: data-structure-profile-06-reference-map
+      type: refs
+    - target: data-structure-profile-fixtures-readme
+      type: refs
 status: implemented
 date: 2026-07-01
 part_of: data-structure-profile

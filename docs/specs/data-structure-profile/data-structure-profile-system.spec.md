@@ -17,13 +17,15 @@ def:
     - target: data-structure-profile-profile-contract
       type: contains
     - target: data-structure-profile-validation
-      type: contains
+      type: refs
     - target: data-structure-profile-cli
       type: contains
     - target: data-structure-profile-system-test
-      type: contains
+      type: refs
     - target: data-structure-profile-operations-rule
-      type: contains
+      type: refs
+    - target: data-structure-profile-readme
+      type: refs
 sources:
   - packages/data-structure-profile/package.json
   - packages/data-structure-profile/src/index.ts

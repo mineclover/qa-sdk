@@ -7,7 +7,7 @@ def:
   owner_system: taxonomy-engine
   projection_plane: intent
   scope: meta
-  aspect: proposal_fixture
+  aspect: proposal_design
   tier: component
   depth: specification
 status: implemented

@@ -2,7 +2,7 @@
 def:
   id: data-structure-profile-system-future-work
   type: spec
-  tier: system
+  tier: component
   level: leaf
   scope: feature
   aspect: func_def

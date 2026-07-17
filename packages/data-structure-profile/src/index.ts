@@ -1,3 +1,5 @@
+// @def.boundary data-structure-profile-system
+
 export { toBenchReportInput, toQualityLedgerRunInputs } from './adapters.js';
 export { runDataStructureProfileCli } from './cli-runner.js';
 export { assessDpmReadiness } from './dpm.js';
