@@ -22,11 +22,11 @@ def:
     - target: apm-sdk
       type: refs
     - target: apm-codegen-system
-      type: contains
+      type: refs
     - target: apm-schema-system
-      type: contains
+      type: refs
     - target: apm-runtime-system
-      type: contains
+      type: refs
 sources:
   - packages/cli/src/commands/codegen.ts
   - packages/sdk/src/index.ts

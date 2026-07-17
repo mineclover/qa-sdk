@@ -1,3 +1,5 @@
+// @def.boundary operational-ontology-system
+
 import type { SemanticTransmission } from './runtime-core.js';
 import type { FlowCorridor } from './corridor-core.js';
 import type { RouteDecision } from './junction-core.js';

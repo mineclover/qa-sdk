@@ -18,6 +18,10 @@ def:
       type: refs
     - target: spec-analyzer-system
       type: refs
+    - target: spec-definition-separation
+      type: refs
+    - target: spec-definition-merge-validation
+      type: refs
 sources:
   - packages/spec-analyzer/src/index.ts
   - packages/spec-analyzer/src/extractor.ts
@@ -54,8 +58,10 @@ spec-analyzer (정적)           spec-tracker (런타임)
          └──────────┬────────────────────┘
                     ↓
            definition-service
-           (문서별 구현 상태 기록)
+           (상위 adapter가 선택적으로 조합할 수 있는 문서 메타데이터 경계)
 ```
+
+위 흐름은 두 검증 결과가 향후 조합될 수 있는 논리적 경계를 나타낸다. 현재 `spec-analyzer`와 `spec-tracker`의 결과를 definition graph에 자동 저장하거나 동일한 evidence 레코드로 materialize하는 구현은 없다. 현재 책임 분리는 [spec-definition-separation](spec-definition-separation.spec.md)에 고정한다.
 
 ## 소유하지 않는 것
 

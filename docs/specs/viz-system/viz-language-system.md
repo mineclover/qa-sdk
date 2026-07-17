@@ -15,6 +15,8 @@ def:
       type: contains
     - target: rlsc-integration
       type: contains
+    - target: rlsc
+      type: refs
     - target: graphics-interface-adapter-coverage
       type: contains
     - target: canvas-viewport-spec

@@ -19,7 +19,7 @@ def:
       type: refs
     - target: registry-system
       type: refs
-    - target: decision-flow-system
+    - target: df-system
       type: refs
 sources:
   - package.json

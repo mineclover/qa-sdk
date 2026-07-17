@@ -21,6 +21,34 @@ def:
       type: refs
     - target: weighted-index-system
       type: refs
+    - target: task-infra-debug-store
+      type: refs
+    - target: task-infra-sql-adapters
+      type: refs
+    - target: task-service-gate
+      type: refs
+    - target: task-service-query
+      type: refs
+    - target: task-spec-partial-binder
+      type: refs
+    - target: task-spec-permission-engine
+      type: refs
+    - target: task-test-api-payload
+      type: refs
+    - target: task-test-backup
+      type: refs
+    - target: task-test-bigint
+      type: refs
+    - target: task-test-gpu-fallback
+      type: refs
+    - target: task-test-permission-code
+      type: refs
+    - target: task-test-schema-sync
+      type: refs
+    - target: task-test-wasm-js
+      type: refs
+    - target: task-unit-1-async-worker
+      type: refs
 sources:
   - docs/specs/gate/gate-system.md
   - docs/specs/query-system/query-system.md

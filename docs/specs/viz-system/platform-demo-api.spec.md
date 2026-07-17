@@ -15,8 +15,6 @@ def:
       type: refines
     - target: platform-demo-api
       type: contains
-    - target: platform-demo-system
-      type: depends_on
 sources:
   - packages/platform-demo-api/src/index.ts
   - packages/platform-demo-api/src/registry.ts

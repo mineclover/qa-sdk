@@ -14,6 +14,8 @@ def:
   links:
     - target: spec-engine-system
       type: traces_to
+    - target: spec-engine-system
+      type: refs
     - target: indexing-core-system
       type: depends_on
     - target: decision-standard-group

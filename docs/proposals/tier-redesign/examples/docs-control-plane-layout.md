@@ -13,6 +13,8 @@ def:
   links:
     - target: tier-redesign-readme
       type: depends_on
+    - target: tier-redesign-examples-deterministic-label-system
+      type: refs
 status: pilot-draft
 date: 2026-04-18
 part_of: tier-redesign

@@ -29,6 +29,8 @@ def:
       type: depends_on
     - target: spec-prop-system
       type: depends_on
+    - target: spec-engine-design-guide
+      type: refs
 sources:
   - packages/spec-core/src/index.ts
   - packages/spec-core/src/self-evaluation.test.ts
