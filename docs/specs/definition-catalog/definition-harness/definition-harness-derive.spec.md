@@ -51,7 +51,7 @@ CLI `qa-sdk def state --derive`나 definition-service의 sync 과정에서 호�
 
 - frontmatter (lifecycle 필드) — doc-lifecycle 직접 매핑
 - def-config (checksums) — db-sync drift 감지
-- spec-tracker — convention coverage/failures
+- spec-tracker — convention 파생에 사용할 수 있는 aggregate input (현재 CLI 기본 경로는 미연동)
 - GateEngine (index-meta) — address-state computeStateRanges
 - VersionLifecycleStore (index-meta) — version status
 - FlowInstance (decision-flow-store) — flow status
@@ -75,7 +75,7 @@ frontmatter의 `lifecycle` 필드에서 직접 읽음 — 파생 불필요.
 | svc 있고 코드 존재 + 관련 테스트 통과 | `verified` |
 | 문서에 코드 블록 없고 소스 참조만 있음 | `source-referenced` |
 
-판별 입력: `svc` 필드, explicit `source:` code-boundary-map, spec-tracker 증거, 문서 본문 패턴 감지
+판별 입력: `svc` 필드, explicit `source:` code-boundary-map, 문서 본문 패턴 감지
 
 ### convention-compliance
 
@@ -85,6 +85,8 @@ frontmatter의 `lifecycle` 필드에서 직접 읽음 — 파생 불필요.
 | spec-tracker coverage < 100% | `partial` |
 | spec-tracker coverage = 100% | `compliant` |
 | spec-tracker에 failed 증거 있음 | `violated` |
+
+현재 구현에서 `deriveConventionState`는 `ConventionDeriveInput`의 순수 값만 받는다. `definition-catalog`은 `SpecCollector`나 `DefDataSource`를 직접 호출하지 않으며, 실제 `spec-tracker` 리포트를 이 입력으로 변환하는 책임은 상위 CLI/CI adapter에 있다. 현재 `qa-sdk def state` 경로는 해당 adapter가 없어 `evidenceCount: 0`을 전달하고 `unverified`를 반환한다.
 
 ### db-sync
 
@@ -174,20 +176,20 @@ decision-flow의 PolicyLearning에서 파생.
 
 ```typescript
 // 개별 머신 파생
-deriveDocLifecycle(frontmatter: DefFrontmatter): DocLifecycleState
-deriveSpecImplState(docId: string, ctx: DeriveContext): SpecImplState
-deriveConventionState(specId: string, collector: SpecCollector): ConventionState
-deriveSyncState(config: DefConfig, scanResult: ScanResult): SyncState
-deriveAddressState(prefix: string, version: string, gateEngine: GateEngine): AddressState
-deriveVersionLifecycle(prefix: string, store: VersionLifecycleStore): VersionLifecycleState
-deriveFlowState(instanceId: string, store: InstanceStore): FlowState
-deriveServiceStatus(serviceId: string, catalog: Catalog): ServiceState
-deriveEventStatus(eventKey: string): EventState
-deriveMetricHealth(prefix: string, registry: MetricRegistry): MetricHealthState
-derivePolicyState(candidateId: string): PolicyState
+deriveDocLifecycle(lifecycle: string): DocLifecycleState
+deriveSpecImplState(input: SpecImplDeriveInput): SpecImplState
+deriveConventionState(input: ConventionDeriveInput): ConventionState
+deriveSyncState(input: SyncDeriveInput): SyncState
+deriveAddressState(input: AddressDeriveInput): AddressState
+deriveVersionLifecycle(status: string | null): VersionLifecycleState
+deriveFlowState(status: string | null): FlowState
+deriveServiceStatus(input: ServiceDeriveInput): ServiceState
+deriveEventStatus(input: EventDeriveInput): EventState
+deriveMetricHealth(input: MetricDeriveInput | null): MetricHealthState
+derivePolicyState(status: string | null): PolicyState
 
 // 전체 파생 — 모든 엔티티 × 모든 머신
-deriveAllStates(ctx: DeriveAllContext): Map<string, CompositeInstance>
+deriveAllStates(inputs: DeriveInputs): DerivedStates
 ```
 
 ## 파생 전략 ^intent
