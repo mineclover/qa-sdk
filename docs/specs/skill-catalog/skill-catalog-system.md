@@ -28,6 +28,8 @@ sources:
   - scripts/sync-skills.sh
   - packages/cli/src/skills-workflows.test.ts
   - skills/def-context/SKILL.md
+  - skills/arch-governance/SKILL.md
+  - skills/project-closure-review/SKILL.md
 ---
 
 ## 목적 ^purpose
@@ -43,7 +45,18 @@ sources:
 - dkg-skill-group: DKG 그래프 자동화 39개 (read 5, write 5, analysis 26, chain 3)
 - cli-command-group: CLI 명령 그룹 (def/dkg/flow/coord 4개)
 - infra-skill-group: 로컬 인프라 배포/조회/export/status 스킬 4개
-- governance-skill-group: audit/semantic-change 같은 구조 거버넌스 스킬 2개
+- governance-skill-group: 아키텍처/감사/semantic-change/작업 종료 거버넌스 스킬 4개
+
+### 실행 정의 baseline
+
+서로 다른 두 skill 집합을 같은 수로 세지 않는다.
+
+| 원본 | 현재 수 | 확인 명령 | 의미 |
+|---|---:|---|---|
+| `skills/*/SKILL.md` | 36 skills / 45 files | `corepack pnpm skills:check` | Claude/Codex 실행 정의 SSOT |
+| `packages/dkg` SkillDef | 39 skills | `qa-sdk dkg skills` | DKG 그래프 자동화 카탈로그 |
+
+첫 행의 36개는 그룹별로 `claude 16 + automation 8 + ralph-tui 4 + infra 4 + governance 4`로 구성된다. 두 번째 행은 별도 런타임 카탈로그이므로 첫 행의 분모에 합산하지 않는다.
 
 ## 3디렉토리 경계 ^boundary
 

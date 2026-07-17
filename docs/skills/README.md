@@ -39,6 +39,8 @@ corepack pnpm skills:check
 
 포맷 게이트는 추적 소스 전체를 기준으로 한다. `corepack pnpm format:check`는 생성물과 의존성을 제외한 전체 추적 코드·설정 파일을 검사하고, `corepack pnpm format:check:changed`는 현재 작업 트리의 변경 파일만 빠르게 검사한다. CI나 PR에서는 `corepack pnpm format:check -- --base origin/main`처럼 기준 브랜치를 지정할 수 있다. `corepack pnpm format`은 같은 추적 범위를 실제 정리한다. 문서와 셸 파일의 whitespace는 `git diff --check`로 확인한다.
 
+현재 실행 정의 baseline은 `skills:check` 기준 **36 skills / 45 files**다. 이는 `packages/dkg`의 별도 SkillDef 카탈로그인 **39개 DKG skill**과 다른 집합이므로 합산하지 않는다. repo 실행 정의의 SSOT는 계속 `skills/`이며, 카탈로그 entry는 `docs/specs/skill-catalog/`에서 관리한다.
+
 ## 계층(L1-L4) 관점 skill navigation
 
 계층 모델 SSoT: `docs/specs/system/layer-separation.rule.md` (L1 data / L2 validator / L3 workflow / L4 tooling).
@@ -96,6 +98,10 @@ corepack pnpm skills:check
   definition-catalog 통합 헬스체크 — onboarding 및 pre-commit 시 가장 먼저 실행하는 진입점 (`qa-sdk def doctor`)
 - `skills/semantic-change/SKILL.md`
   좌표/링크 semantic 변경 체크리스트 — Option B 사례를 재사용 가능한 4-계층 검증 절차로 고정
+- `skills/arch-governance/SKILL.md`
+  계층 경계, API 영향도, package 사용성, 이벤트 signal 연결을 통합 점검
+- `skills/project-closure-review/SKILL.md`
+  root/submodule, generated artifact, 검증 결과, 커밋 경계를 작업 종료 단위로 정리
 - `docs/specs/system/layer-separation.rule.md`
   L1 data / L2 validator / L3 workflow / L4 tooling 4 계층 책임 + workflow smoke 원칙 (Phase 3b Option B 재발 방지)
 - `docs/specs/system/change-simulation-precedence.rule.md`
