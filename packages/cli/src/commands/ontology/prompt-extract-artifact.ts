@@ -49,6 +49,7 @@ import {
   promptQualityStatusEvidenceFromArtifactExtraction,
   type QualityStatusFreshnessPolicy,
 } from './quality-ledger-evidence.js';
+import { closeDataSource } from './support.js';
 
 export interface LoadedArtifactRegistryProvider extends LoadedQualityStatusRegistryProvider {
   provider: ArtifactRegistryPromptArtifactContextProvider;
@@ -443,17 +444,22 @@ export async function cmdPromptExtractArtifact(
   if (loadedRegistry && registryExtraction) {
     const directRegistryRecord = loadedRegistry.store.getArtifactByRef(artifactRef);
     const qualityDescriptorSource = await deps.loadQualityStatusDescriptorSource(flags);
-    const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(
-      loadedRegistry,
-      [
-        artifactRef,
-        ...registryRecordQualityTargetRefs(directRegistryRecord),
-        ...workAreaQualityTargetRefs(registryExtraction.workArea),
-      ],
-      qualityDescriptorSource,
-      flags['quality-ledger'],
-      freshnessPolicy.policy,
-    );
+    let qualityStatusEvidence: RelatedQualityStatusEvidence;
+    try {
+      qualityStatusEvidence = await loadRelatedQualityStatusEvidence(
+        loadedRegistry,
+        [
+          artifactRef,
+          ...registryRecordQualityTargetRefs(directRegistryRecord),
+          ...workAreaQualityTargetRefs(registryExtraction.workArea),
+        ],
+        qualityDescriptorSource,
+        flags['quality-ledger'],
+        freshnessPolicy.policy,
+      );
+    } finally {
+      closeDataSource(qualityDescriptorSource);
+    }
     const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
       appendQualityStatusEvidenceToPromptArtifactExtraction(
         registryExtraction,
@@ -533,149 +539,157 @@ export async function cmdPromptExtractArtifact(
   }
 
   const source = await createDataSource(deps.toDefinitionDataSourceOptions(flags));
-  const directDoc = await source.get(artifactRef);
-  if (directDoc) {
-    await deps.cmdPromptExtract(
-      withArtifactFallbackFlags(
-        [artifactRef, ...rest.slice(1)],
-        artifactFallbackSource({
-          kind: 'artifact-definition-fallback',
-          fallbackKind: 'definition',
-          target: artifactRef,
-          loadedRegistry,
-        }),
-        useCase,
-        flags,
-      ),
-    );
-    return;
-  }
-
-  const query = flags['q'] ?? artifactRef.split(/[/:#]/).filter(Boolean).at(-1) ?? artifactRef;
-  const candidates = await source.list({ q: query, limit: 8 });
-  const rootDoc = {
-    docId: `artifact:${artifactRef}`,
-    title: `Artifact context: ${artifactRef}`,
-    purpose: `Manage context for artifact ${artifactRef}${artifactType ? ` (${artifactType})` : ''}.`,
-    tags: ['artifact', ...(artifactType ? [`artifact-type:${artifactType}`] : [])],
-    sourcePath: artifactRef.startsWith('artifacts/') ? artifactRef : undefined,
-    lifecycle: 'draft',
-  };
-  const childDocs = await Promise.all(candidates.map((doc) => deps.defDocWithBody(source, doc)));
-  const extraction = extractPromptArtifactSourcesFromDefinitionContext({
-    root: rootDoc,
-    children: childDocs,
-    useCase,
-    verificationRefs: candidates
-      .filter((doc) => doc.tags.some((tag) => tag.startsWith('quality-gate') || tag === 'testing'))
-      .map((doc) => doc.docId),
-    now: new Date().toISOString(),
-  });
-  const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
-    artifactRef,
-    query,
-    ...candidates.map((doc) => doc.docId),
-    ...workAreaQualityTargetRefs(extraction.workArea),
-  ]);
-  const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(
-    loadedRegistry,
-    qualityStatusTargetRefs,
-    source,
-    flags['quality-ledger'],
-    freshnessPolicy.policy,
-  );
-  const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
-    appendQualityStatusEvidenceToPromptArtifactExtraction(
-      extraction,
-      qualityStatusRecords(qualityStatusEvidence.matches),
-      {
-        useCase,
-        now: new Date().toISOString(),
-      },
-    ),
-    qualityStatusEvidence.snapshotEvidence,
-  );
-  const promptQualityStatusEvidence =
-    promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
-  const workArea = {
-    ...extractionWithQuality.workArea,
-    workAreaId: `artifact:${artifactRef}`,
-    displayName: `Artifact context: ${artifactRef}`,
-    constraints: uniqueArtifactValues([
-      `artifact:${artifactRef}`,
-      ...(artifactType ? [`artifact-type:${artifactType}`] : []),
-      ...(extractionWithQuality.workArea.constraints ?? []),
-    ]),
-    localInstructions: [
-      'Treat artifact refs as deliverable evidence, not as source code ownership by themselves.',
-      'Resolve artifact context through matching definition docs, quality gates, and source maps before editing.',
-      ...(extractionWithQuality.workArea.localInstructions ?? []),
-    ],
-  };
-  await deps.maybePersistGovernanceEvidence(flags, extractionWithQuality);
-  const artifacts =
-    kind === 'all'
-      ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
-      : [
-          generatePromptArtifact({
-            workArea,
-            sources: extractionWithQuality.sources,
-            kind,
-            useCase,
+  try {
+    const directDoc = await source.get(artifactRef);
+    if (directDoc) {
+      await deps.cmdPromptExtract(
+        withArtifactFallbackFlags(
+          [artifactRef, ...rest.slice(1)],
+          artifactFallbackSource({
+            kind: 'artifact-definition-fallback',
+            fallbackKind: 'definition',
+            target: artifactRef,
+            loadedRegistry,
           }),
-        ];
-  const evaluations = artifacts.map((artifact) => ({
-    artifact,
-    quality: evaluatePromptArtifactQuality({
-      artifact,
-      workArea,
-      sources: extractionWithQuality.sources,
-      qualityStatusEvidence: promptQualityStatusEvidence,
-    }),
-  }));
-  const fallbackSource = artifactFallbackSource({
-    kind: 'artifact-search-fallback',
-    fallbackKind: 'search',
-    target: query,
-    loadedRegistry,
-    matchedDocs: candidates.map((doc) => doc.docId),
-    qualityStatusMatches: qualityStatusEvidence.matches,
-    qualityStatusSnapshotEvidence: qualityStatusEvidence.snapshotEvidence,
-    qualityStatusPromptEvidence: promptQualityStatusEvidence,
-  });
-  const outputs = await deps.materializePromptArtifacts({
-    flags,
-    artifacts,
-    producedByRef: `qa-sdk ontology prompt extract-artifact ${artifactRef}`,
-    materializesOutputRefs: [artifactRef],
-  });
+          useCase,
+          flags,
+        ),
+      );
+      return;
+    }
 
-  if (flags['json'] === 'true') {
-    deps.printJson({
-      artifactRef,
-      artifactType,
-      source: fallbackSource,
-      matchedDocs: candidates.map((doc) => doc.docId),
+    const query = flags['q'] ?? artifactRef.split(/[/:#]/).filter(Boolean).at(-1) ?? artifactRef;
+    const candidates = await source.list({ q: query, limit: 8 });
+    const rootDoc = {
+      docId: `artifact:${artifactRef}`,
+      title: `Artifact context: ${artifactRef}`,
+      purpose: `Manage context for artifact ${artifactRef}${artifactType ? ` (${artifactType})` : ''}.`,
+      tags: ['artifact', ...(artifactType ? [`artifact-type:${artifactType}`] : [])],
+      sourcePath: artifactRef.startsWith('artifacts/') ? artifactRef : undefined,
+      lifecycle: 'draft',
+    };
+    const childDocs = await Promise.all(candidates.map((doc) => deps.defDocWithBody(source, doc)));
+    const extraction = extractPromptArtifactSourcesFromDefinitionContext({
+      root: rootDoc,
+      children: childDocs,
       useCase,
-      outputs,
-      workArea,
-      artifacts: evaluations,
+      verificationRefs: candidates
+        .filter((doc) =>
+          doc.tags.some((tag) => tag.startsWith('quality-gate') || tag === 'testing'),
+        )
+        .map((doc) => doc.docId),
+      now: new Date().toISOString(),
     });
-    return;
-  }
-
-  console.log(`artifact: ${artifactRef}`);
-  if (artifactType) console.log(`artifactType: ${artifactType}`);
-  if (candidates.length > 0) {
-    console.log(`matchedDocs: ${candidates.map((doc) => doc.docId).join(', ')}`);
-  }
-  if (fallbackSource.qualitySignal.warning) {
-    console.log(
-      `warning: ${fallbackSource.qualitySignal.code} (${fallbackSource.qualitySignal.grade})`,
+    const qualityStatusTargetRefs = await expandQualityTopologyTargetRefs(source, [
+      artifactRef,
+      query,
+      ...candidates.map((doc) => doc.docId),
+      ...workAreaQualityTargetRefs(extraction.workArea),
+    ]);
+    const qualityStatusEvidence = await loadRelatedQualityStatusEvidence(
+      loadedRegistry,
+      qualityStatusTargetRefs,
+      source,
+      flags['quality-ledger'],
+      freshnessPolicy.policy,
     );
-    console.log(`action: ${fallbackSource.qualitySignal.recommendedManagementActions.join(', ')}`);
+    const extractionWithQuality = appendQualityStatusSnapshotGovernanceEvidence(
+      appendQualityStatusEvidenceToPromptArtifactExtraction(
+        extraction,
+        qualityStatusRecords(qualityStatusEvidence.matches),
+        {
+          useCase,
+          now: new Date().toISOString(),
+        },
+      ),
+      qualityStatusEvidence.snapshotEvidence,
+    );
+    const promptQualityStatusEvidence =
+      promptQualityStatusEvidenceFromArtifactExtraction(qualityStatusEvidence);
+    const workArea = {
+      ...extractionWithQuality.workArea,
+      workAreaId: `artifact:${artifactRef}`,
+      displayName: `Artifact context: ${artifactRef}`,
+      constraints: uniqueArtifactValues([
+        `artifact:${artifactRef}`,
+        ...(artifactType ? [`artifact-type:${artifactType}`] : []),
+        ...(extractionWithQuality.workArea.constraints ?? []),
+      ]),
+      localInstructions: [
+        'Treat artifact refs as deliverable evidence, not as source code ownership by themselves.',
+        'Resolve artifact context through matching definition docs, quality gates, and source maps before editing.',
+        ...(extractionWithQuality.workArea.localInstructions ?? []),
+      ],
+    };
+    await deps.maybePersistGovernanceEvidence(flags, extractionWithQuality);
+    const artifacts =
+      kind === 'all'
+        ? generatePromptArtifacts({ workArea, sources: extractionWithQuality.sources, useCase })
+        : [
+            generatePromptArtifact({
+              workArea,
+              sources: extractionWithQuality.sources,
+              kind,
+              useCase,
+            }),
+          ];
+    const evaluations = artifacts.map((artifact) => ({
+      artifact,
+      quality: evaluatePromptArtifactQuality({
+        artifact,
+        workArea,
+        sources: extractionWithQuality.sources,
+        qualityStatusEvidence: promptQualityStatusEvidence,
+      }),
+    }));
+    const fallbackSource = artifactFallbackSource({
+      kind: 'artifact-search-fallback',
+      fallbackKind: 'search',
+      target: query,
+      loadedRegistry,
+      matchedDocs: candidates.map((doc) => doc.docId),
+      qualityStatusMatches: qualityStatusEvidence.matches,
+      qualityStatusSnapshotEvidence: qualityStatusEvidence.snapshotEvidence,
+      qualityStatusPromptEvidence: promptQualityStatusEvidence,
+    });
+    const outputs = await deps.materializePromptArtifacts({
+      flags,
+      artifacts,
+      producedByRef: `qa-sdk ontology prompt extract-artifact ${artifactRef}`,
+      materializesOutputRefs: [artifactRef],
+    });
+
+    if (flags['json'] === 'true') {
+      deps.printJson({
+        artifactRef,
+        artifactType,
+        source: fallbackSource,
+        matchedDocs: candidates.map((doc) => doc.docId),
+        useCase,
+        outputs,
+        workArea,
+        artifacts: evaluations,
+      });
+      return;
+    }
+
+    console.log(`artifact: ${artifactRef}`);
+    if (artifactType) console.log(`artifactType: ${artifactType}`);
+    if (candidates.length > 0) {
+      console.log(`matchedDocs: ${candidates.map((doc) => doc.docId).join(', ')}`);
+    }
+    if (fallbackSource.qualitySignal.warning) {
+      console.log(
+        `warning: ${fallbackSource.qualitySignal.code} (${fallbackSource.qualitySignal.grade})`,
+      );
+      console.log(
+        `action: ${fallbackSource.qualitySignal.recommendedManagementActions.join(', ')}`,
+      );
+    }
+    printPromptArtifactOutputs(outputs, evaluations, flags);
+  } finally {
+    closeDataSource(source);
   }
-  printPromptArtifactOutputs(outputs, evaluations, flags);
 }
 
 function qualityStatusRecordsSummary(

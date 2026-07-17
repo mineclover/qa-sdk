@@ -92,6 +92,11 @@ interface LoadedQualityIndex {
   readonly errors: readonly { file: string; error: string }[];
 }
 
+export function closeQualityDataSource(source: DefDataSource | undefined): void {
+  if (!source || !('close' in source) || typeof source.close !== 'function') return;
+  source.close();
+}
+
 interface LoadedDocGraph {
   readonly registry: MemoryDefinitionRegistry;
   readonly bodies: ReadonlyMap<string, string>;
@@ -373,17 +378,22 @@ async function loadQualityDocsFromDataSource(
   options: DataSourceOptions,
 ): Promise<LoadedQualityIndex> {
   const source = await createDataSource(options);
-  const docs = (await source.list({ tag: 'quality-gate', limit: 1000 }))
-    .map(toQualityDoc)
-    .filter((doc): doc is LoadedQualityDoc => doc !== undefined)
-    .toSorted((a, b) => a.entry.id.localeCompare(b.entry.id));
+  try {
+    const docs = (await source.list({ tag: 'quality-gate', limit: 1000 }))
+      .map(toQualityDoc)
+      .filter((doc): doc is LoadedQualityDoc => doc !== undefined)
+      .toSorted((a, b) => a.entry.id.localeCompare(b.entry.id));
 
-  return {
-    docs,
-    byId: new Map(docs.map((doc) => [doc.entry.id, doc])),
-    source,
-    errors: [],
-  };
+    return {
+      docs,
+      byId: new Map(docs.map((doc) => [doc.entry.id, doc])),
+      source,
+      errors: [],
+    };
+  } catch (error) {
+    closeQualityDataSource(source);
+    throw error;
+  }
 }
 
 async function loadQualityDocsFromScan(rootDir: string): Promise<LoadedQualityIndex> {
@@ -481,10 +491,14 @@ async function loadQualityDocs(
   options: DataSourceOptions,
 ): Promise<LoadedQualityIndex> {
   const scanData = await loadQualityDocsFromScan(rootDir);
+  let data: LoadedQualityIndex | undefined;
 
   try {
-    const data = await loadQualityDocsFromDataSource(options);
-    if (data.docs.length === 0) return scanData;
+    data = await loadQualityDocsFromDataSource(options);
+    if (data.docs.length === 0) {
+      closeQualityDataSource(data.source);
+      return scanData;
+    }
 
     const merged = new Map(scanData.docs.map((doc) => [doc.entry.id, doc]));
     for (const doc of data.docs) {
@@ -514,9 +528,23 @@ async function loadQualityDocs(
       errors: scanData.errors,
     };
   } catch {
+    closeQualityDataSource(data?.source);
     // fallback below
   }
   return scanData;
+}
+
+async function withQualityDocs<T>(
+  rootDir: string,
+  sourceOptions: DataSourceOptions,
+  callback: (index: LoadedQualityIndex) => Promise<T> | T,
+): Promise<T> {
+  const index = await loadQualityDocs(rootDir, sourceOptions);
+  try {
+    return await callback(index);
+  } finally {
+    closeQualityDataSource(index.source);
+  }
 }
 
 function matchesFilter(doc: LoadedQualityDoc, flags: Record<string, string>): boolean {
@@ -1399,45 +1427,48 @@ async function buildQualityStatus(
   sourceOptions: DataSourceOptions,
 ): Promise<QualityStatusSnapshot | null> {
   const graph = await loadDocGraph(rootDir);
-  const index =
-    sourceOptions.mode === 'scan'
-      ? loadQualityDocsFromGraph(graph)
-      : await loadQualityDocs(rootDir, sourceOptions);
-  const root = graph.registry.get(rootId);
-  if (!root) {
-    console.error(`bundle/system 문서 "${rootId}" 없음`);
-    process.exitCode = 1;
-    return null;
-  }
-
-  const directChildren = graph.registry
-    .getLinks(rootId, 'outgoing')
-    .filter((link) => link.linkType === 'contains')
-    .map((link) => link.targetId);
-
-  const ledger = createLedger();
-  const reviewLedger = await createReviewLedger(rootDir);
-  try {
-    const summaries: QualityBundleStatusSummary[] = [];
-    for (const id of directChildren) {
-      const summary = await buildBundleStatusSummary(
-        rootDir,
-        index,
-        graph,
-        { ledger, reviewLedger },
-        id,
-      );
-      if (summary) summaries.push(summary);
+  const build = async (index: LoadedQualityIndex): Promise<QualityStatusSnapshot | null> => {
+    const root = graph.registry.get(rootId);
+    if (!root) {
+      console.error(`bundle/system 문서 "${rootId}" 없음`);
+      process.exitCode = 1;
+      return null;
     }
-    return {
-      rootId,
-      bundles: summaries.toSorted((a, b) => a.bundleId.localeCompare(b.bundleId)),
-      generatedAt: new Date().toISOString(),
-    };
-  } finally {
-    ledger.store.close();
-    reviewLedger.close();
+
+    const directChildren = graph.registry
+      .getLinks(rootId, 'outgoing')
+      .filter((link) => link.linkType === 'contains')
+      .map((link) => link.targetId);
+
+    const ledger = createLedger();
+    const reviewLedger = await createReviewLedger(rootDir);
+    try {
+      const summaries: QualityBundleStatusSummary[] = [];
+      for (const id of directChildren) {
+        const summary = await buildBundleStatusSummary(
+          rootDir,
+          index,
+          graph,
+          { ledger, reviewLedger },
+          id,
+        );
+        if (summary) summaries.push(summary);
+      }
+      return {
+        rootId,
+        bundles: summaries.toSorted((a, b) => a.bundleId.localeCompare(b.bundleId)),
+        generatedAt: new Date().toISOString(),
+      };
+    } finally {
+      ledger.store.close();
+      reviewLedger.close();
+    }
+  };
+
+  if (sourceOptions.mode === 'scan') {
+    return build(loadQualityDocsFromGraph(graph));
   }
+  return withQualityDocs(rootDir, sourceOptions, build);
 }
 
 async function cmdExport(
@@ -1534,15 +1565,16 @@ async function cmdList(
   flags: Record<string, string>,
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
-  const { docs, errors } = await loadQualityDocs(rootDir, sourceOptions);
-  const filtered = docs.filter((doc) => matchesFilter(doc, flags));
+  await withQualityDocs(rootDir, sourceOptions, async ({ docs, errors }) => {
+    const filtered = docs.filter((doc) => matchesFilter(doc, flags));
 
-  console.log(`quality gates: ${filtered.length}건`);
-  if (errors.length > 0) {
-    console.log(`scan warnings: ${errors.length}건 (다른 문서 파싱 에러 포함)`);
-  }
+    console.log(`quality gates: ${filtered.length}건`);
+    if (errors.length > 0) {
+      console.log(`scan warnings: ${errors.length}건 (다른 문서 파싱 에러 포함)`);
+    }
 
-  for (const doc of filtered) printDocLine(doc);
+    for (const doc of filtered) printDocLine(doc);
+  });
 }
 
 async function cmdShow(
@@ -1551,6 +1583,14 @@ async function cmdShow(
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
   const index = await loadQualityDocs(rootDir, sourceOptions);
+  try {
+    await cmdShowWithIndex(index, gateId);
+  } finally {
+    closeQualityDataSource(index.source);
+  }
+}
+
+async function cmdShowWithIndex(index: LoadedQualityIndex, gateId: string): Promise<void> {
   const doc = index.byId.get(gateId);
   if (!doc) {
     console.error(`gate 문서 "${gateId}" 없음`);
@@ -1615,6 +1655,14 @@ async function cmdBundle(
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
   const index = await loadQualityDocs(rootDir, sourceOptions);
+  try {
+    await cmdBundleWithIndex(index, bundleId);
+  } finally {
+    closeQualityDataSource(index.source);
+  }
+}
+
+async function cmdBundleWithIndex(index: LoadedQualityIndex, bundleId: string): Promise<void> {
   const bundle = await getBundleDoc(index, bundleId);
   if (!bundle) {
     console.error(`bundle 문서 "${bundleId}" 없음`);
@@ -1710,6 +1758,19 @@ async function cmdRun(
   sourceOptions: DataSourceOptions,
 ): Promise<void> {
   const index = await loadQualityDocs(rootDir, sourceOptions);
+  try {
+    await cmdRunWithIndex(index, rootDir, gateId, flags);
+  } finally {
+    closeQualityDataSource(index.source);
+  }
+}
+
+async function cmdRunWithIndex(
+  index: LoadedQualityIndex,
+  rootDir: string,
+  gateId: string,
+  flags: Record<string, string>,
+): Promise<void> {
   const doc = index.byId.get(gateId);
   if (!doc) {
     console.error(`gate 문서 "${gateId}" 없음`);
@@ -1889,6 +1950,19 @@ async function cmdNext(
   const outcome = flags['outcome'] === 'fail' ? 'fail' : 'pass';
   const json = flags['json'] === 'true';
   const index = await loadQualityDocs(rootDir, sourceOptions);
+  try {
+    await cmdNextWithIndex(index, gateId, outcome, json);
+  } finally {
+    closeQualityDataSource(index.source);
+  }
+}
+
+async function cmdNextWithIndex(
+  index: LoadedQualityIndex,
+  gateId: string,
+  outcome: 'pass' | 'fail',
+  json: boolean,
+): Promise<void> {
   const doc = index.byId.get(gateId);
   if (!doc) {
     console.error(`gate 문서 "${gateId}" 없음`);
@@ -1971,6 +2045,19 @@ async function cmdDiagnose(
   const json = flags['json'] === 'true';
   const outcome = flags['outcome'] === 'pass' ? 'pass' : 'fail';
   const index = await loadQualityDocs(rootDir, sourceOptions);
+  try {
+    await cmdDiagnoseWithIndex(index, gateId, outcome, json);
+  } finally {
+    closeQualityDataSource(index.source);
+  }
+}
+
+async function cmdDiagnoseWithIndex(
+  index: LoadedQualityIndex,
+  gateId: string,
+  outcome: 'pass' | 'fail',
+  json: boolean,
+): Promise<void> {
   const doc = index.byId.get(gateId);
   if (!doc) {
     console.error(`gate 문서 "${gateId}" 없음`);
@@ -2060,6 +2147,19 @@ async function cmdClaims(
 ): Promise<void> {
   const graph = await loadDocGraph(rootDir);
   const qualityIndex = await loadQualityDocs(rootDir, sourceOptions);
+  try {
+    await cmdClaimsWithIndex(graph, qualityIndex, rootDir, bundleId);
+  } finally {
+    closeQualityDataSource(qualityIndex.source);
+  }
+}
+
+async function cmdClaimsWithIndex(
+  graph: LoadedDocGraph,
+  qualityIndex: LoadedQualityIndex,
+  rootDir: string,
+  bundleId: string,
+): Promise<void> {
   const bundle = graph.registry.get(bundleId);
   if (!bundle) {
     console.error(`bundle 문서 "${bundleId}" 없음`);

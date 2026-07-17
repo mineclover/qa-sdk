@@ -42,6 +42,7 @@ sources:
   - packages/cli/src/commands/quality.ts
   - packages/cli/src/commands/quality.test.ts
 ---
+
 # Definition Quality Gates — 문서 그래프 기반 품질 검증
 
 ## 목적 ^purpose
@@ -73,6 +74,11 @@ anchor 문서(unit/module/leaf)의 완성도를 계약 문서 기반으로 검�
 - **definition-code-link-coverage**: explicit `source:` / `@def.boundary` / `@def.doc`가 없는 코드 file-level gap 진단
 - `6단계 프로세스`: Define→Resolve→Gather→Execute→Judge→Route
 - `CLI`: `qa-sdk quality status/export/list/show/run/bundle/claims/next/diagnose`
+
+quality CLI가 `local` 또는 `server` definition datasource를 사용하면 명령 단위로
+source를 소유한다. 문서 조회와 관계 조회가 끝난 뒤 정상 반환, early return, 오류 및
+scan fallback 경로에서 source를 닫는다. `scan` 모드는 영속 datasource를 만들지 않으므로
+별도 close가 필요하지 않다.
 
 ## 6단계 프로세스
 

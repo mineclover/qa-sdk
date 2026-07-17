@@ -20,6 +20,7 @@ import {
   buildReviewBindings,
   buildClaimAuditBindings,
   collectClaimAuditReviewScopes,
+  closeQualityDataSource,
   evaluateGateRunResult,
   extractSourceFileBindings,
   rankNextDocs,
@@ -416,6 +417,14 @@ describe('quality CLI surface', () => {
       json: 'true',
     });
     expect(parsed.sourceOptions.mode).toBe('scan');
+  });
+
+  it('quality data source close helper closes owned sources', () => {
+    const close = vi.fn();
+
+    closeQualityDataSource({ close } as never);
+
+    expect(close).toHaveBeenCalledOnce();
   });
 
   it('quality export does not write output or registry records when the root is missing', async () => {

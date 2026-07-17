@@ -53,6 +53,12 @@ export function parseFlags(args: string[]): {
   return { positional, flags };
 }
 
+export function closeDataSource(source: unknown): void {
+  if (!source || typeof source !== 'object') return;
+  const close = (source as { close?: unknown }).close;
+  if (typeof close === 'function') close.call(source);
+}
+
 export function getStorePath(flags: Record<string, string>): string {
   return resolve(flags['store'] ?? DEFAULT_STORE_FILE);
 }

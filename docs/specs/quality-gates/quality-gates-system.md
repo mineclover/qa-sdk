@@ -44,6 +44,11 @@ sources:
   - packages/work-domain/src/gate-tracker.ts
   - packages/quality-ledger/src/ledger.ts
   - packages/cli/src/commands/quality.ts
+  - package.json
+  - scripts/check-format.mjs
+  - scripts/validate-skills.mjs
+  - scripts/ai-feedback-loop.ts
+  - scripts/verify-analysis-os.ts
 ---
 # Quality Gates System
 
@@ -107,3 +112,32 @@ sources:
 - `quality-gates-system` bundle 상태: `verified`, `24/24 gate verified`
 - root status snapshot generatedAt: `2026-03-30T00:32:17.716Z`
 - export artifact: `artifacts/quality-gates-system.json`
+
+### Workspace 안정화 baseline
+
+위 quality-ledger snapshot과 별개로, workspace 전체 안정화 검증은 2026-07-15의 `2315514a`에서 다음 기준을 통과했다. 이 표는 실행 결과의 요약이며, `quality-ledger`의 bundle 상태를 자동으로 갱신하는 기록은 아니다.
+
+| 검증 | 결과 |
+|---|---|
+| `corepack pnpm test` | workspace scope 132개 중 131개 통과. 외부 DB/PG 의존 시나리오는 환경 조건에 따라 skip |
+| `corepack pnpm format:check` | 추적 source 4,692개 통과 |
+| `corepack pnpm lint:ci` | 2,904개 파일, warning/error 0 |
+| `corepack pnpm arch:feedback` | 71/71 통과 |
+| `corepack pnpm def:check` | approved 1,000, purpose 누락 0, short 0, orphan 0. `svc` 누락 142건은 informational |
+| `corepack pnpm skills:check` | 36 skills, 45 files 통과 |
+| workspace build | 오류 없이 완료. package export 조건, CJS `import.meta`, Vite chunk/dynamic import 관련 기존 warning만 존재 |
+| representative Playwright E2E | `scenario-selector.spec.ts`의 `viz-web loads and shows scenario selector` 1건 통과 |
+
+`packages/e2e`의 기본 `test`는 CI 중복 실행을 막기 위한 noop이며, 브라우저 검증은 전용 `test:e2e` 및 대표 시나리오로 분리한다. 따라서 전체 test 결과의 skip/noop과 실제 실패를 같은 상태로 세지 않는다.
+
+### Definition DB 전체 동기화 검증
+
+이전 기록의 `545 errors / 30 warnings`는 기존 baseline으로 분리할 수 있는 결과가 아니었다. 전체 동기화에서 탈락한 문서 39건, 문서 `sources`를 boundary로 잘못 추론한 validator 경로, 실제 그래프 링크/경계 누락을 함께 포함하고 있었다. taxonomy 좌표 보정, 그래프 링크 정리, `doc_frontmatter`와 `@def.boundary` 분리, `rlsc` 시스템 anchor 추가 후 다음 명령이 통과한다.
+
+```bash
+node packages/cli/dist/index.js def sync
+node packages/cli/dist/index.js def validate
+node packages/cli/dist/index.js def audit
+```
+
+현재 기준으로 `def sync`는 `1,461건 문서 / 3,949건 링크`를 적재하며, `def validate: 0 errors / 0 warnings`, `def audit` 그래프 검증도 `0 errors / 0 warnings`다. 따라서 해당 수치를 “기존 definition graph baseline”이라고 남기지 않고 해결된 회귀 원인과 검증 절차를 이 문서가 관리한다.
