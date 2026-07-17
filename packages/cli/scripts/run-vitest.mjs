@@ -2,18 +2,11 @@
 
 import { spawn } from 'node:child_process';
 
-let forwardedArgs = process.argv.slice(2);
-const hasExplicitSeparator = forwardedArgs[0] === '--';
-if (hasExplicitSeparator) forwardedArgs = forwardedArgs.slice(1);
-
 const knownModes = new Set(['--parallel', '--serial', '--slow']);
-const mode =
-  hasExplicitSeparator && knownModes.has(forwardedArgs[0] ?? '')
-    ? forwardedArgs.shift()
-    : '--serial';
-if (!hasExplicitSeparator && forwardedArgs[0] === '--parallel')
-  forwardedArgs = forwardedArgs.slice(1);
+let forwardedArgs = process.argv.slice(2);
 if (forwardedArgs[0] === '--') forwardedArgs = forwardedArgs.slice(1);
+
+const mode = knownModes.has(forwardedArgs[0] ?? '') ? forwardedArgs.shift() : '--serial';
 const filters = forwardedArgs;
 
 const SLOW_TEST_FILES = [

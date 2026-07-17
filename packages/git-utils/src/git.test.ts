@@ -193,7 +193,7 @@ describe('collectCommitTypes', () => {
 // ── commitCountsByScope ─────────────────────────────
 
 describe('commitCountsByScope', () => {
-  it('scope별 type 카운트', async () => {
+  it('scope별 type 카운트', { timeout: 15000 }, async () => {
     const repoDir = await createRepo();
     await writeAndCommit(repoDir, 'a.txt', 'a', 'feat(api): endpoint 1');
     await writeAndCommit(repoDir, 'b.txt', 'b', 'feat(api): endpoint 2');

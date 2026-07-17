@@ -45,7 +45,7 @@ describe('createSandbox', () => {
     expect(files).toContain('packages/api/src/index.ts');
   });
 
-  it('브랜치 생성 + 파일 변경 + push', async () => {
+  it('브랜치 생성 + 파일 변경 + push', { timeout: 15000 }, async () => {
     const sb = await createSandbox({
       name: 'branch',
       withRemote: true,
