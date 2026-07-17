@@ -13,6 +13,8 @@ def:
   links:
     - target: design-usefulness-audit
       type: depends_on
+    - target: skill-catalog-system
+      type: refs
 ---
 
 # qa-sdk Usefulness Audit Plan
@@ -145,3 +147,39 @@ package 감사는 `pnpm-workspace.yaml`의 workspace roots를 읽지만 기능 s
 `docs/plan/schema-builder/ddl-inventory.md`처럼 frontmatter가 없는 planning note는 현재 상태의 구현 증거라기보다 당시 설계/인벤토리 맥락이다. 기본 후보 목록에서는 `plan-note`로 뒤로 보내고, 실제 구현 여부를 증명하려면 별도 작업에서 현재 소스(`index-meta` table schema, ingest DDL, registry schema 등)와 검증 명령을 붙여 approved/draft 문서로 승격한다.
 
 `docs/proposals/ai-dlc-dspy-harness/04-bdd-contract-model.md`, `05-bdd-mechanical-design.md`, `06-bdd-cli-impact.md`는 `status: superseded`와 `superseded_by`를 가진 moved note다. 삭제 대상은 아니지만 active 구현 후보도 아니므로 기본 후보 목록에서는 `superseded-note`로 뒤로 보내고, 이동 대상인 `docs/proposals/bdd-contract-system/`을 별도 후보로 다룬다.
+
+## 다음 작업 준비
+
+2026-07-15 기준 workspace 안정화는 `2315514a`에서 닫혔다. 다음 작업은 기능을 더 추가하는 라운드가 아니라, 정적 형식 검사를 통과한 실행 정의가 실제 작업 맥락에서 유용하게 작동하는지 확인하는 **skill behavior smoke audit**으로 시작한다.
+
+### 첫 검증 slice
+
+한 번에 전체 36개를 재작성하지 않고, 서로 다른 책임을 대표하는 세 skill만 먼저 확인한다.
+
+| skill | 확인할 것 |
+|---|---|
+| `arch-governance` | 문서에 적힌 `arch:*` 명령과 실제 root script/분석기 경로의 일치 |
+| `project-closure-review` | root/submodule 상태 분리, generated artifact 판정, 커밋 순서와 리뷰 출력의 실행 가능성 |
+| `def-entry-sync` | `def sync`, `def validate`, `skills:check`와 root entry/catalog 갱신 순서의 정합성 |
+
+### 진입 조건
+
+- `corepack pnpm skills:check`가 36 skills / 45 files로 통과한다.
+- `corepack pnpm def:check`와 `corepack pnpm arch:feedback`이 통과한다.
+- 작업 범위는 `skills/`, 관련 catalog 문서, 필요한 검증 fixture로 제한한다.
+- `~/.claude/skills/`와 `~/.codex/skills/`를 직접 수정하지 않고, 필요하면 repo SSOT 수정 후 `scripts/sync-skills.sh`로 전파한다.
+
+definition graph 전체 동기화에서 관찰됐던 `545 errors / 30 warnings`는 기존 baseline으로 분류하지 않고 해결했다. 원인은 taxonomy에서 탈락한 문서 39건, frontmatter `sources`의 boundary 오추론, 실제 누락 링크/순환/계층 위반이 섞여 있던 것이며, `def sync` 후 `def validate`와 `def audit` 그래프 검증이 각각 `0 errors / 0 warnings`가 되도록 정리했다.
+
+### 완료 조건
+
+1. 각 skill의 trigger, 입력 전제, 명령 경로, 실패 시 다음 행동이 실제 파일/스크립트와 일치한다.
+2. 대표 happy path와 최소 failure path를 각각 한 번 실행하거나, 실행 불가한 외부 의존성을 명시한다.
+3. 결과를 해당 skill catalog entry 또는 이 계획에 source-backed evidence로 남긴다.
+4. `skills:check`, focused test/smoke, `def:check`, `arch:feedback`, `git diff --check`를 재실행한다.
+
+### 비목표
+
+- 근거 없이 skill을 삭제하거나 새 그룹을 추가하는 것
+- 모든 skill 문서를 같은 형식으로 대규모 재작성하는 것
+- 정적 `skills:check` 통과를 실제 동작 증명의 대체물로 간주하는 것
