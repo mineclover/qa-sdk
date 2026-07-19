@@ -55,6 +55,12 @@ export interface ContractReport {
   readonly skipped: number;
   readonly markers: Readonly<Record<string, MarkerSummary>>;
   readonly coverage: number;
+  /**
+   * `contract` is evidence-level coverage. `suite` is only a command/lane
+   * health signal and must not be promoted to convention compliance.
+   * Omitted values are legacy contract reports.
+   */
+  readonly coverageBasis?: 'contract' | 'suite';
   readonly lastVerified: string;
 }
 

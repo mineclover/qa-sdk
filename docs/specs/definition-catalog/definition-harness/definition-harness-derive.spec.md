@@ -86,7 +86,7 @@ frontmatter의 `lifecycle` 필드에서 직접 읽음 — 파생 불필요.
 | spec-tracker coverage = 100% | `compliant` |
 | spec-tracker에 failed 증거 있음 | `violated` |
 
-현재 구현에서 `deriveConventionState`는 `ConventionDeriveInput`의 순수 값만 받는다. `definition-catalog`은 `SpecCollector`나 `DefDataSource`를 직접 호출하지 않으며, 실제 `spec-tracker` 리포트를 이 입력으로 변환하는 책임은 상위 CLI/CI adapter에 있다. 현재 `qa-sdk def state` 경로는 해당 adapter가 없어 `evidenceCount: 0`을 전달하고 `unverified`를 반환한다.
+현재 구현에서 `deriveConventionState`는 `ConventionDeriveInput`의 순수 값만 받는다. `definition-catalog`은 `SpecCollector`나 `DefDataSource`를 직접 호출하지 않으며, 실제 `spec-tracker` 리포트를 이 입력으로 변환하는 책임은 상위 CLI/CI adapter에 있다. 기본 `qa-sdk def state` 경로는 artifact가 없어 `evidenceCount: 0`을 전달하고 `unverified`를 반환한다. `def state --verification-artifact` 경로만 validated artifact를 adapter로 변환하며, v2 unique binding과 `coverageBasis: contract`인 report만 convention derive에 사용한다. v1 shared address 또는 suite-level report는 `unverified`로 남긴다.
 
 ### db-sync
 

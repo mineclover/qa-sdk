@@ -107,6 +107,7 @@ describe("컨벤션 준수", () => {
 - spec-tracker 자체에는 ContractReport를 전송하거나 definition-service/graph에 쓰는 consumer가 없다. 상위 `packages/cli`가 `def verification-artifact` file producer와 `def state --verification-artifact` read-model consumer를 제공하지만, definition-service/graph 자동 반영은 하지 않는다.
 - artifact producer의 command registration, datasource snapshot, exit-code 정책은 `packages/cli`와 `definition-data-source`의 책임이다. tracker는 유효한 wire artifact를 생성·검증하는 순수 helper만 제공한다.
 - CI lane 조합과 artifact 보존 정책은 `scripts/spec-verification-runner.ts`와 `.github/workflows/def-verification.yml`이 소유한다. runner는 tracker collector를 통해 summary를 만들지만 tracker 내부에 CI/workflow 의존성을 추가하지 않는다.
+- runner가 생성하는 suite-level report는 `ContractReport.coverageBasis: suite`로 표시되는 lane health 신호이며, 계약 coverage로 해석하지 않는다. `coverageBasis`가 없거나 `contract`인 report만 convention adapter의 derive 대상이다.
 - 테스트 프레임워크 의존: vitest 어댑터만 제공 (확장 가능)
 - `linkSpec`과 `specIt`은 `globalThis.afterEach`/`globalThis.it`를 사용하므로 Vitest globals mode가 필요하다. globals mode가 아니면 이 문서의 명시적 `collector.record()` 경로를 사용한다.
 - ContractEvidence는 readonly 타입이며 collector는 추가/조회 중심으로 사용한다

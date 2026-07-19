@@ -21,6 +21,8 @@ def:
       type: refs
     - target: spec-definition-merge-validation
       type: refs
+    - target: federated-architecture-governance
+      type: refs
 sources:
   - packages/spec-tracker/src/types.ts
   - packages/spec-tracker/src/collector.ts
@@ -112,13 +114,13 @@ run-start binding + ContractReport
 
 | 식별자 | 의미 | 현재 보장 범위 |
 |---|---|---|
-| `address` | 정의 문서의 불변 주소 앵커 | rename 뒤에도 evidence와 graph anchor를 유지 |
+| `address` | 정의 문서 주소. v2만 문서 단위의 불변 앵커 | v2는 rename 뒤에도 evidence와 graph anchor를 유지. v1은 분류 주소라 여러 문서가 공유할 수 있음 |
 | `docId` | 현재 정의 문서의 사람이 읽는 lookup 라벨 | datasource 조회와 현재 graph 표시에 사용. 변경 가능 |
 | `specId` | spec-analyzer/spec-tracker가 사용하는 문서 연결 문자열 | tracker 내부 grouping key. 현재는 자유 문자열 |
 | `docVersion` / `revision` / `bodyHash` | `DefDoc` + `DefDocBody`가 제공하는 version·개정·본문 식별값 | run-start binding과 현재 datasource snapshot의 정합성 비교 |
 | `ContractReport.lastVerified` | tracker evidence가 마지막으로 집계된 시각 | 실행 report의 이력 메타데이터; definition 선택 조건으로 사용하지 않음 |
 
-현재 `specId`는 운영 convention상 `docId`를 가리키도록 사용하지만, `ContractEvidence`에 `address`/`docVersion`/`revision`/`bodyHash`가 없으므로 특정 정의 개정에 고정된 추적을 제공하지 않는다. `def verification-bindings`가 run-start snapshot을 캡처하고, CLI adapter가 binding의 `address`로 `specId`를 해석한다. 상세 계약은 [spec-definition-merge-validation](spec-definition-merge-validation.todo.md)에 둔다.
+현재 `specId`는 운영 convention상 `docId`를 가리키도록 사용하지만, `ContractEvidence`에 `address`/`docVersion`/`revision`/`bodyHash`가 없으므로 특정 정의 개정에 고정된 추적을 제공하지 않는다. `def verification-bindings`가 run-start snapshot을 캡처하고, CLI adapter는 v2 binding만 address로 rename-safe하게 해석한다. v1 binding은 `docIdAtRun`으로만 현재 문서를 확인하고 `ambiguous-address`/`unverified`로 격리한다. 상세 계약은 [spec-definition-merge-validation](spec-definition-merge-validation.todo.md)에 둔다.
 
 ## 허용되는 연결 ^interface
 
@@ -134,9 +136,9 @@ run-start binding + ContractReport
 - `spec-tracker`가 `DefDataSource`를 직접 호출하여 `specId` 존재 여부를 보장하지 않는다.
 - raw `ContractReport` 단독으로는 현재 정의 문서의 revision과 일치하는지 판정하지 않는다. run-start `VerificationArtifact`가 있을 때만 상위 CLI adapter가 판정한다.
 - `ContractReport`가 definition graph의 `verifies` 또는 `traces_to` 링크로 자동 materialize되지 않는다.
-- `definition harness`의 `convention-compliance`는 tracker를 내부에서 호출하지 않는다. CLI의 현재 경로는 tracker 미연동 상태를 `unverified`로 표현한다.
+- `definition harness`의 `convention-compliance`는 tracker를 내부에서 호출하지 않는다. 기본 CLI 경로는 tracker 미연동 상태를 `unverified`로 표현하고, artifact 경로도 v2 binding과 contract-level report가 모두 확인될 때만 derive한다.
 - `quality`의 claim audit는 source binding과 quality gate 상태를 조합하며, 실제 `ContractEvidence` 수집 결과를 기본 입력으로 사용하지 않는다.
-- `VerificationArtifact`, run-start binding capture(`def verification-bindings`), CLI file producer(`def verification-artifact`), CLI read-model adapter(`def state --verification-artifact`), 세 lane runner와 active workflow가 구현되어 있다. definition graph materialize는 아직 없으며, 현재 `ContractReport`만으로는 revision pinning이나 document rename 보존을 보장하지 않고 producer는 run-start binding file을 함께 받아야 한다.
+- `VerificationArtifact`, run-start binding capture(`def verification-bindings`), CLI file producer(`def verification-artifact`), CLI read-model adapter(`def state --verification-artifact`), 세 lane runner와 active workflow가 구현되어 있다. definition graph materialize는 아직 없으며, 현재 `ContractReport`만으로는 revision pinning이나 document rename 보존을 보장하지 않고 producer는 run-start binding file을 함께 받아야 한다. v1 shared address는 `ambiguous-address`, suite-level report는 `coverageBasis: suite`로 각각 convention derive에서 제외된다.
 
 ## 경계 불변조건 ^invariants
 
@@ -145,7 +147,7 @@ run-start binding + ContractReport
 3. 정적 drift 판정은 `spec-analyzer`가 변경한다.
 4. harness 상태는 입력된 관측값에서 파생하며, 입력되지 않은 tracker evidence를 추정하지 않는다.
 5. 상위 CLI/CI만 여러 결과를 조합하며, 조합 결과를 원본 evidence나 정의 graph의 소유 데이터로 거꾸로 저장하지 않는다.
-6. `specId`를 `docId`와 동일하게 취급하는 코드는 이 convention을 명시해야 하며, rename-safe historical binding에는 `address`와 run-start snapshot을 사용한다.
+6. `specId`를 `docId`와 동일하게 취급하는 코드는 이 convention을 명시해야 하며, rename-safe historical binding에는 v2 `address`와 run-start snapshot을 사용한다. v1 address는 historical anchor로 사용하지 않는다.
 7. quality claim과 runtime contract evidence는 한 read model에 함께 표시할 수 있어도, evidence count/coverage/failure를 서로 계산하지 않는다.
 8. definition body hash는 datasource별로 재정의하지 않고 공통 SHA-256 helper를 사용한다. binding producer가 실패하면 CLI는 non-zero exit를 반환한다.
 

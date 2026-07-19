@@ -26,6 +26,7 @@ export type VerificationBindingStatus =
   | 'missing'
   | 'unversioned'
   | 'stale-revision'
+  | 'ambiguous-address'
   | 'invalid';
 
 export type VerificationAdapterDiagnosticCode =
@@ -35,6 +36,8 @@ export type VerificationAdapterDiagnosticCode =
   | 'address-mismatch'
   | 'unversioned-binding'
   | 'stale-revision'
+  | 'ambiguous-address'
+  | 'suite-level-evidence'
   | 'drift-spec-mismatch';
 
 export interface VerificationAdapterDiagnostic {
@@ -51,6 +54,8 @@ export interface VerificationRuntimeEvidence {
   readonly skipped: number;
   /** ContractReport.coverage의 원래 0..1 ratio. */
   readonly coverageRatio: number;
+  /** contract coverage와 suite health를 구분한다. */
+  readonly coverageBasis: 'contract' | 'suite';
 }
 
 export interface VerificationReadModel {
@@ -191,12 +196,17 @@ function runtimeEvidence(report: ContractReport): VerificationRuntimeEvidence {
     failed: report.failed,
     skipped: report.skipped,
     coverageRatio: report.coverage,
+    coverageBasis: report.coverageBasis ?? 'contract',
   };
 }
 
-function deriveConvention(
-  report: ContractReport,
-): { readonly convention: ConventionState; readonly input?: ConventionDeriveInput } {
+function deriveConvention(report: ContractReport): {
+  readonly convention: ConventionState;
+  readonly input?: ConventionDeriveInput;
+} {
+  if (report.coverageBasis === 'suite') {
+    return { convention: 'unverified' };
+  }
   // ContractReport는 0..1 ratio, harness input은 0..100 percentage다.
   const input: ConventionDeriveInput = {
     evidenceCount: report.evidences,
@@ -204,6 +214,12 @@ function deriveConvention(
     hasFailures: report.failed > 0,
   };
   return { convention: deriveConventionState(input), input };
+}
+
+function isUniqueDefinitionAddress(address: string): boolean {
+  // v1 addresses encode classification coordinates and are shared by many
+  // documents. Only v2 addresses carry the document sequence needed here.
+  return /^def_document:v2:\d+$/.test(address);
 }
 
 function noReport(
@@ -219,10 +235,7 @@ function noReport(
   };
 }
 
-function invalidArtifact(
-  specId: string,
-  message: string,
-): VerificationReadModel {
+function invalidArtifact(specId: string, message: string): VerificationReadModel {
   return {
     specId,
     reportStatus: 'no-report',
@@ -244,12 +257,15 @@ async function resolveCurrentDoc(
   specId: string,
   binding: VerificationDefinitionBinding | undefined,
 ): Promise<DefDoc | null> {
-  if (binding) {
+  if (binding && isUniqueDefinitionAddress(binding.definitionAddress)) {
     const byAddress = await source.getByAddress(binding.definitionAddress);
     if (byAddress) return byAddress;
     // Address가 사라진 경우 docId fallback은 rename 진단을 가능하게 한다.
     return source.get(binding.docIdAtRun);
   }
+  // v1 address는 단일 문서를 식별하지 못하므로 run-start label만 조회한다.
+  // 호출자는 아래에서 ambiguous-address로 승격을 막는다.
+  if (binding) return source.get(binding.docIdAtRun);
   return source.get(specId);
 }
 
@@ -301,7 +317,11 @@ async function resolveRuntimeVerificationReadModel(
       currentDocId: currentDoc.docId,
       definitionAddress: currentDoc.address,
       diagnostics: [
-        createDiagnostic('unversioned-binding', 'report에 run-start definition binding이 없음', specId),
+        createDiagnostic(
+          'unversioned-binding',
+          'report에 run-start definition binding이 없음',
+          specId,
+        ),
       ],
     };
   }
@@ -320,6 +340,29 @@ async function resolveRuntimeVerificationReadModel(
       specId,
       reportStatus: 'reported',
       bindingStatus: 'stale-revision',
+      convention: 'unverified',
+      report,
+      runtimeEvidence: runtimeEvidence(report),
+      definitionAddress: binding.definitionAddress,
+      docIdAtRun: binding.docIdAtRun,
+      currentDocId: currentDoc.docId,
+      diagnostics,
+    };
+  }
+
+  if (!isUniqueDefinitionAddress(binding.definitionAddress)) {
+    diagnostics.push(
+      createDiagnostic(
+        'ambiguous-address',
+        'v1 definition address는 여러 문서가 공유할 수 있어 historical binding anchor로 사용할 수 없음',
+        specId,
+        binding.definitionAddress,
+      ),
+    );
+    return {
+      specId,
+      reportStatus: 'reported',
+      bindingStatus: 'ambiguous-address',
       convention: 'unverified',
       report,
       runtimeEvidence: runtimeEvidence(report),
@@ -406,6 +449,16 @@ async function resolveRuntimeVerificationReadModel(
     };
   }
 
+  if (report.coverageBasis === 'suite') {
+    diagnostics.push(
+      createDiagnostic(
+        'suite-level-evidence',
+        'suite 실행 성공은 계약 evidence coverage가 아니므로 convention derive에 사용하지 않음',
+        specId,
+        binding.definitionAddress,
+      ),
+    );
+  }
   const derived = deriveConvention(report);
   return {
     specId,

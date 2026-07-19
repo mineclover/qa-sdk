@@ -41,6 +41,7 @@ export type VerificationArtifactDiagnosticCode =
   | 'invalid-spec-id'
   | 'invalid-report-counts'
   | 'invalid-report-coverage'
+  | 'invalid-report-coverage-basis'
   | 'invalid-report-timestamp'
   | 'invalid-binding'
   | 'binding-spec-mismatch'
@@ -131,6 +132,15 @@ function validateReport(
   }
 
   const coverage = report['coverage'];
+  const coverageBasis = report['coverageBasis'];
+  if (coverageBasis !== undefined && coverageBasis !== 'contract' && coverageBasis !== 'suite') {
+    addDiagnostic(
+      diagnostics,
+      'invalid-report-coverage-basis',
+      `${path}.coverageBasis`,
+      'coverageBasis must be contract or suite when present',
+    );
+  }
   const passedCount = countsValid ? (passed as number) : null;
   const failedCount = countsValid ? (failed as number) : null;
   const testable = passedCount !== null && failedCount !== null ? passedCount + failedCount : null;
@@ -194,12 +204,7 @@ function validateBinding(
     );
   }
   if (!isNonEmptyString(binding['docIdAtRun'])) {
-    addDiagnostic(
-      diagnostics,
-      'invalid-binding',
-      `${path}.docIdAtRun`,
-      'docIdAtRun is required',
-    );
+    addDiagnostic(diagnostics, 'invalid-binding', `${path}.docIdAtRun`, 'docIdAtRun is required');
   }
   if (binding['docVersion'] !== undefined && !isNonEmptyString(binding['docVersion'])) {
     addDiagnostic(
@@ -315,7 +320,13 @@ export function validateVerificationArtifact(input: unknown): VerificationArtifa
       if (item['binding'] !== undefined && runStartedAt !== null) {
         validateBinding(item['binding'], `${path}.binding`, specId, runStartedAt, diagnostics);
       } else if (item['binding'] !== undefined) {
-        validateBinding(item['binding'], `${path}.binding`, specId, Number.POSITIVE_INFINITY, diagnostics);
+        validateBinding(
+          item['binding'],
+          `${path}.binding`,
+          specId,
+          Number.POSITIVE_INFINITY,
+          diagnostics,
+        );
       }
     }
   }

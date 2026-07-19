@@ -89,7 +89,9 @@ function resultError(result: VerificationSuiteResult): string | undefined {
   return undefined;
 }
 
-export function runVerificationSuites(options: VerificationRunnerOptions): VerificationRunnerResult {
+export function runVerificationSuites(
+  options: VerificationRunnerOptions,
+): VerificationRunnerResult {
   const suites = selectSuites(options.specIds);
   const collector = new SpecCollector();
   const runSuite = options.runSuite ?? executeSuite;
@@ -109,7 +111,17 @@ export function runVerificationSuites(options: VerificationRunnerOptions): Verif
     });
   }
 
-  const summary = generateReport(collector, suites.map((suite) => suite.specId));
+  // A suite command proves lane health, not every contract declared by the
+  // document. Keep the evidence shape visible while preventing it from being
+  // interpreted as contract coverage by the upper adapter.
+  const generated = generateReport(
+    collector,
+    suites.map((suite) => suite.specId),
+  );
+  const summary = {
+    ...generated,
+    reports: generated.reports.map((report) => ({ ...report, coverageBasis: 'suite' as const })),
+  };
   const summaryPath = isAbsolute(options.summaryPath)
     ? options.summaryPath
     : resolve(options.rootDir, options.summaryPath);
@@ -136,7 +148,9 @@ if (isMainModule()) {
   const args = process.argv.slice(2);
   const summaryPath = flagValue(args, '--summary');
   if (!summaryPath) {
-    console.error('Usage: tsx scripts/spec-verification-runner.ts --summary=<path> [--spec-ids=<csv>]');
+    console.error(
+      'Usage: tsx scripts/spec-verification-runner.ts --summary=<path> [--spec-ids=<csv>]',
+    );
     process.exitCode = 2;
   } else {
     try {
@@ -146,7 +160,9 @@ if (isMainModule()) {
         specIds: flagValue(args, '--spec-ids')?.split(','),
       });
       console.log(`verification summary: ${resolve(process.cwd(), summaryPath)}`);
-      console.log(`suites: ${result.summary.reports.length} | failed: ${result.failed ? 'yes' : 'no'}`);
+      console.log(
+        `suites: ${result.summary.reports.length} | failed: ${result.failed ? 'yes' : 'no'}`,
+      );
       process.exitCode = result.failed ? 1 : 0;
     } catch (error) {
       console.error(`[verification-runner] ${(error as Error).message}`);

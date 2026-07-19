@@ -34,9 +34,12 @@ describe('spec-verification-runner', () => {
 
     expect(result.failed).toBe(true);
     expect(result.summary.reports).toHaveLength(DEFAULT_VERIFICATION_SUITES.length);
-    expect(result.summary.reports.find((report) => report.specId === 'spec-tracker-system')).toMatchObject({
+    expect(
+      result.summary.reports.find((report) => report.specId === 'spec-tracker-system'),
+    ).toMatchObject({
       failed: 1,
       coverage: 0,
+      coverageBasis: 'suite',
     });
     expect(JSON.parse(readFileSync(summaryPath, 'utf8'))).toEqual(result.summary);
   });

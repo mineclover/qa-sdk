@@ -84,6 +84,15 @@ describe('VerificationArtifact', () => {
     expect(result.diagnostics.map((item) => item.code)).toEqual(
       expect.arrayContaining(['invalid-report-counts', 'invalid-report-coverage']),
     );
+
+    const invalidBasis = validateVerificationArtifact({
+      ...artifact,
+      reports: [{ ...artifact.reports[0], report: { ...REPORT, coverageBasis: 'unknown' } }],
+    });
+    expect(invalidBasis.valid).toBe(false);
+    expect(invalidBasis.diagnostics.map((item) => item.code)).toContain(
+      'invalid-report-coverage-basis',
+    );
   });
 
   it('중복 specId, binding 불일치, run 이후 capturedAt을 거부한다', () => {
@@ -106,7 +115,11 @@ describe('VerificationArtifact', () => {
     const result = validateVerificationArtifact(duplicate);
     expect(result.valid).toBe(false);
     expect(result.diagnostics.map((item) => item.code)).toEqual(
-      expect.arrayContaining(['duplicate-spec-id', 'binding-spec-mismatch', 'binding-before-run-invalid']),
+      expect.arrayContaining([
+        'duplicate-spec-id',
+        'binding-spec-mismatch',
+        'binding-before-run-invalid',
+      ]),
     );
   });
 

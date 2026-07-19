@@ -69,10 +69,7 @@ function artifact(overrides: Partial<VerificationArtifact> = {}): VerificationAr
 function source(
   doc: DefDoc | null = DOC,
   body: DefDocBody | null = BODY,
-): Pick<
-  import('definition-catalog').DefDataSource,
-  'get' | 'getByAddress' | 'getBody'
-> {
+): Pick<import('definition-catalog').DefDataSource, 'get' | 'getByAddress' | 'getBody'> {
   return {
     get: async (docId) => (doc?.docId === docId ? doc : null),
     getByAddress: async (address) => (doc?.address === address ? doc : null),
@@ -88,6 +85,22 @@ describe('resolveVerificationReadModel', () => {
     expect(result.convention).toBe('compliant');
     expect(result.conventionInput?.coverage).toBe(100);
     expect(result.runtimeEvidence?.coverageRatio).toBe(1);
+    expect(result.runtimeEvidence?.coverageBasis).toBe('contract');
+  });
+
+  it('suite-level evidence는 binding이 resolved여도 compliant로 승격하지 않는다', async () => {
+    const suiteReport: ContractReport = { ...REPORT, coverageBasis: 'suite' };
+    const result = await resolveVerificationReadModel(
+      source(),
+      artifact({ reports: [{ report: suiteReport, binding: BINDING }] }),
+      'spec-a',
+    );
+
+    expect(result.bindingStatus).toBe('resolved');
+    expect(result.convention).toBe('unverified');
+    expect(result.conventionInput).toBeUndefined();
+    expect(result.runtimeEvidence?.coverageBasis).toBe('suite');
+    expect(result.diagnostics.map((item) => item.code)).toContain('suite-level-evidence');
   });
 
   it('optional DriftReport를 runtime evidence와 별도 필드로 결합한다', async () => {
@@ -110,20 +123,15 @@ describe('resolveVerificationReadModel', () => {
   });
 
   it('다른 specId의 DriftReport는 runtime read model에 섞지 않는다', async () => {
-    const result = await resolveVerificationReadModel(
-      source(),
-      artifact(),
-      'spec-a',
-      {
-        specId: 'other-spec',
-        svc: 'svc-a',
-        declared: [],
-        implemented: [],
-        missing: [],
-        undocumented: [],
-        coverage: 1,
-      },
-    );
+    const result = await resolveVerificationReadModel(source(), artifact(), 'spec-a', {
+      specId: 'other-spec',
+      svc: 'svc-a',
+      declared: [],
+      implemented: [],
+      missing: [],
+      undocumented: [],
+      coverage: 1,
+    });
 
     expect(result.bindingStatus).toBe('invalid');
     expect(result.diagnostics[0]?.code).toBe('drift-spec-mismatch');
@@ -183,6 +191,26 @@ describe('resolveVerificationReadModel', () => {
 
     expect(result.bindingStatus).toBe('missing');
     expect(result.convention).toBe('unverified');
+  });
+
+  it('v1 분류 주소는 단건 anchor로 사용하지 않고 ambiguous-address로 격리한다', async () => {
+    const v1Doc = { ...DOC, address: 'def_document:v1:123' };
+    const v1Binding = { ...BINDING, definitionAddress: 'def_document:v1:123' };
+    const result = await resolveVerificationReadModel(
+      {
+        get: async (docId) => (docId === v1Doc.docId ? v1Doc : null),
+        getByAddress: async () => {
+          throw new Error('v1 address must not be resolved as a unique address');
+        },
+        getBody: async (docId) => (docId === BODY.docId ? BODY : null),
+      },
+      artifact({ reports: [{ report: REPORT, binding: v1Binding }] }),
+      'spec-a',
+    );
+
+    expect(result.bindingStatus).toBe('ambiguous-address');
+    expect(result.convention).toBe('unverified');
+    expect(result.diagnostics.map((item) => item.code)).toContain('ambiguous-address');
   });
 
   it('report가 없으면 unverified로 남긴다', async () => {
@@ -257,9 +285,13 @@ describe('captureVerificationDefinitionBindings', () => {
     ).rejects.toThrow('definition not found');
 
     await expect(
-      captureVerificationDefinitionBindings(source(DOC, { ...BODY, bodyHash: undefined }), ['spec-a'], {
-        capturedAt: '2026-01-01T00:00:00.000Z',
-      }),
+      captureVerificationDefinitionBindings(
+        source(DOC, { ...BODY, bodyHash: undefined }),
+        ['spec-a'],
+        {
+          capturedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ),
     ).rejects.toThrow('snapshot is incomplete');
   });
 
@@ -267,12 +299,9 @@ describe('captureVerificationDefinitionBindings', () => {
     const directory = await mkdtemp(join(tmpdir(), 'qa-sdk-verification-bindings-'));
     try {
       const filePath = join(directory, 'bindings.json');
-      await writeVerificationBindingsFile(
-        filePath,
-        source(),
-        ['spec-a'],
-        { capturedAt: '2026-01-01T00:00:00.000Z' },
-      );
+      await writeVerificationBindingsFile(filePath, source(), ['spec-a'], {
+        capturedAt: '2026-01-01T00:00:00.000Z',
+      });
       expect(JSON.parse(await readFile(filePath, 'utf8'))).toEqual([BINDING]);
 
       await expect(

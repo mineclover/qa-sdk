@@ -66,13 +66,13 @@ quality CLI         = source binding + quality gate 기반 별도 판정
 
 현재 병합은 **소유권 병합이 아니라 상위 read model 조합**이어야 한다. 대상은 정의 식별·정적 drift·실행 증거의 상태 요약이며, 결과는 read-only snapshot 또는 harness 입력으로 제한한다. `DefDoc`, `ContractEvidence`, `DriftReport`의 원본과 `DefDoc.links`/lifecycle/graph는 변경하지 않는다.
 
-`docId`는 현재 문서를 찾기 위한 사람이 읽는 라벨이며, 증거 귀속의 장기 앵커는 불변 `DefDoc.address`다. 따라서 문서 rename은 evidence를 끊지 않아야 하고, adapter는 `specId`를 현재 `docId`에만 고정하지 않는다.
+`docId`는 현재 문서를 찾기 위한 사람이 읽는 라벨이며, 증거 귀속의 장기 앵커는 **v2 `DefDoc.address`**다. v1 address는 scope/aspect/depth 분류 좌표라 여러 문서가 공유하므로 historical anchor가 아니다. v1 binding은 `docIdAtRun`으로만 확인하고 `ambiguous-address`/`unverified`로 격리한다.
 
 ## 준비 상태 ^status
 
 | 항목 | 현재 상태 | 병합 전 조건/잔여 범위 |
 |---|---|---|
-| 정의 identity | `address` 불변, `docId`는 현재 조회 라벨, `specId`는 자유 문자열; binding resolver와 top-level producer/workflow가 구현됨 | graph write 승격 전까지 read-only 유지 |
+| 정의 identity | v2 `address`만 문서 단위 unique anchor, v1은 shared classification address; `docId`는 현재 조회 라벨, `specId`는 자유 문자열; binding resolver와 top-level producer/workflow가 구현됨 | v2 migration 전까지 v1 binding은 `ambiguous-address`로 read-only 격리 |
 | 문서 version | `DefDoc` + `DefDocBody`에서 `docVersion`/`revision`/본문 hash를 조회하고, local DB/scan source가 동일 SHA-256으로 run-start binding을 캡처 | graph write 승격 전까지 binding은 file artifact에만 보존 |
 | 실행 evidence | collector/reporter가 인메모리 생성되고 runner가 세 lane summary를 artifact로 저장; workflow가 14일 보존 | definition-service evidence 영속은 별도 write contract 필요 |
 | harness derive | primitive input을 받는 순수 함수이며 CLI adapter가 유효한 입력일 때만 convention 상태에 반영 | 기본 경로의 `unverified` fallback 유지 |
@@ -92,6 +92,7 @@ VerificationArtifact
   reports[]
     ContractReport
     binding? { definitionAddress, docIdAtRun, docVersion, revision, bodyHash, capturedAt }
+    report.coverageBasis? = contract | suite
 
 입력
   VerificationArtifact
@@ -110,11 +111,12 @@ VerificationArtifact
 
 | bindingStatus | 판정 | harness 입력 |
 |---|---|---|
-| `resolved` | address, docVersion, revision, bodyHash가 현재 snapshot과 모두 일치 | report를 convention derive input으로 변환 |
+| `resolved` | v2 address, docVersion, revision, bodyHash가 현재 snapshot과 모두 일치 | contract-level report만 convention derive input으로 변환 |
 | `missing` | address/legacy alias가 현재 정의로 해석되지 않음 | 사용하지 않음 |
 | `unversioned` | binding에 revision 또는 bodyHash가 없음 | 사용하지 않음 |
 | `stale-revision` | 현재 revision 또는 bodyHash가 run snapshot과 다름 | 사용하지 않음 |
 | `invalid` | artifact schema, count, timestamp, specId 중 하나가 불변조건을 위반 | 사용하지 않음 |
+| `ambiguous-address` | v1 shared address라 문서 단위 anchor가 아님 | 사용하지 않음 |
 
 정책:
 
@@ -126,6 +128,8 @@ VerificationArtifact
 6. quality source/gate 결과는 `qualityClaim` 필드에만 남긴다. `evidenceCount`, `coverage`, `hasFailures`는 runtime `ContractReport`만으로 계산한다.
 7. adapter는 graph link를 자동 생성하지 않는다. `verifies` materialize는 별도 write contract다.
 8. `DriftReport`는 `specId`가 현재 read model과 일치할 때만 별도 `driftReport` 필드로 표시한다. drift coverage/missing은 runtime convention evidence를 변경하지 않는다.
+9. `coverageBasis: suite`는 runner command의 lane health만 나타내며 `ConventionDeriveInput`으로 변환하지 않는다. `coverageBasis: contract` 또는 legacy contract report만 derive 대상이다.
+10. `def_document:v1:*` address는 여러 문서가 공유할 수 있으므로 resolver가 unique anchor로 조회하지 않는다. 현재 문서가 `docIdAtRun`으로 확인되어도 `ambiguous-address`와 `unverified`를 반환한다.
 
 ## 구현 경계와 단계 계획 ^implementation-plan
 
@@ -165,6 +169,7 @@ Phase A~E의 저장소 및 CI 구현 범위는 하나의 변경 묶음으로 완
 | V11 quality 비중복 | 구현됨 | quality source/gate 결과가 runtime evidence count/coverage/failure에 영향을 주지 않음 |
 | V12 drift 비중복 | 구현됨 | 다른 `specId`의 `DriftReport`는 invalid; 일치하는 drift는 별도 필드에만 표시 |
 | V13 CLI transport | 구현됨 | top-level command tree에서 producer가 resolve되고, scan source도 bodyHash binding을 생성하며, 필수 입력/producer 오류는 exit code 1을 반환 |
+| V14 suite health 분리 | 구현됨 | runner report는 `coverageBasis: suite`로 기록되고, binding이 resolved여도 convention은 `unverified`; contract evidence만 derive |
 
 ## 병합 gate ^gates
 
@@ -183,6 +188,8 @@ Phase A~E의 저장소 및 CI 구현 범위는 하나의 변경 묶음으로 완
 - [x] local DB와 scan source의 bodyHash 알고리즘이 공유되고 scan-mode binding이 검증됨
 - [x] 필수 flag, datasource, summary/binding, 파일 쓰기 오류가 non-zero exit로 전파됨
 - [x] runner가 세 검증 lane을 실행해 `VerificationSummary`를 생성하고 suite 실패를 최종 exit code로 전파함
+- [x] runner suite 결과와 contract coverage를 `coverageBasis`로 구분하고 suite-level report를 convention derive에서 제외함
+- [x] v1 shared address를 unique resolver에서 제외하고 `ambiguous-address` 회귀 assertion을 추가함
 - [x] active workflow가 artifact 보존과 read-only state 생성을 명시함
 
 `.github/workflows/def-verification.yml`은 `verification-bindings` → runner → `verification-artifact` → `state`를 실행하고, suite 실패 시 artifact를 남긴 뒤 non-zero로 종료한다. 이 TODO의 남은 범위는 graph/materialize와 definition-service evidence write이며, 둘 다 별도 write contract와 승인이 필요하다.
@@ -191,6 +198,7 @@ Phase A~E의 저장소 및 CI 구현 범위는 하나의 변경 묶음으로 완
 
 - [x] active workflow에서 runner summary와 세 CLI 명령을 연결하고 artifact를 14일 보존한다.
 - [ ] graph `verifies` materialize 또는 definition-service evidence 영속: 별도 write contract와 승인된 proposal 필요.
+- v1 → v2 unique document address migration: migration 완료 전에는 `ambiguous-address`를 유지하고 자동 승격하지 않음.
 - graph write 승인이 완료되기 전까지 이 TODO는 draft로 유지하고, 완료된 항목만 대응 spec으로 흡수한다.
 
 ## 비범위 ^non-goals

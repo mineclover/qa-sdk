@@ -60,6 +60,9 @@ jobs:
       - name: Sync definitions
         run: node packages/cli/dist/index.js def sync
 
+      - name: Validate definition scan
+        run: node packages/cli/dist/index.js def scan-audit
+
       - name: Capture run-start definition bindings
         id: binding
         run: |
@@ -74,7 +77,7 @@ jobs:
             --captured-at="$run_started_at" \
             --json
 
-      - name: Run verification suites and write summary
+      - name: Run runtime verification suites and write summary
         id: runner
         run: |
           set +e

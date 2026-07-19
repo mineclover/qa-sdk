@@ -257,7 +257,12 @@ describe('def commands', () => {
         '--json',
       ]);
       const bindingOutput = JSON.parse(getOutput()) as {
-        bindings: Array<{ specId: string; definitionAddress: string; revision: number; bodyHash: string }>;
+        bindings: Array<{
+          specId: string;
+          definitionAddress: string;
+          revision: number;
+          bodyHash: string;
+        }>;
       };
       expect(bindingOutput.bindings[0]?.specId).toBe('definition-management');
       expect(bindingOutput.bindings[0]?.definitionAddress).toMatch(/^def_document:/);
@@ -318,8 +323,8 @@ describe('def commands', () => {
       };
       expect(state.verification).toEqual(
         expect.objectContaining({
-          bindingStatus: 'resolved',
-          convention: 'compliant',
+          bindingStatus: 'ambiguous-address',
+          convention: 'unverified',
         }),
       );
       expect(state.verification?.driftReport?.specId).toBe('definition-management');
