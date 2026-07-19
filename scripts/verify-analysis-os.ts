@@ -519,6 +519,10 @@ async function main() {
       'Surface Report: taxonomy web preview is a consumer surface',
     );
     assert(
+      hasExactly(surfaces['federated-connection-contract'], ['federated-connection']),
+      'Surface Report: federated connection owns source identity and relation contracts separately',
+    );
+    assert(
       hasExactly(surfaces['profile-contract-tooling'], ['data-structure-profile']),
       'Surface Report: data-structure-profile owns profile contracts separately',
     );
@@ -548,6 +552,7 @@ async function main() {
       surfaceGroups['taxonomy-tooling'] === 'taxonomy-capability' &&
         surfaceGroups['taxonomy-decision-bridge'] === 'taxonomy-capability' &&
         surfaceGroups['taxonomy-preview-surfaces'] === 'taxonomy-capability' &&
+        surfaceGroups['federated-connection-contract'] === 'connection-capability' &&
         surfaceGroups['coordinate-kernel'] === 'coordinate-kernel-capability' &&
         surfaceGroups['observability-runtime'] === 'observability-runtime-capability' &&
         surfaceGroups['profile-contract-tooling'] === 'profile-capability' &&
@@ -577,6 +582,8 @@ async function main() {
         groupSummaries['observability-runtime-capability']?.packageCount === 21 &&
         groupSummaries['taxonomy-capability']?.surfaceCount === 3 &&
         groupSummaries['taxonomy-capability']?.packageCount === 3 &&
+        groupSummaries['connection-capability']?.surfaceCount === 1 &&
+        groupSummaries['connection-capability']?.packageCount === 1 &&
         groupSummaries['profile-capability']?.surfaceCount === 4 &&
         groupSummaries['profile-capability']?.packageCount === 5 &&
         groupSummaries['operational-ontology-capability']?.surfaceCount === 2 &&

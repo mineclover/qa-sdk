@@ -5,6 +5,7 @@ sources:
   - scripts/package-surfaces.mjs
   - docs/specs/system/system-root.md
   - docs/specs/system/system-packages.spec.md
+  - docs/specs/connection-system/federated-connection-contract.spec.md
 ---
 
 # QA-SDK Specifications
@@ -209,6 +210,14 @@ API 클라이언트, iframe 통신 프로토콜.
 | [dkg-state-store.spec.md](dkg-system/dkg-state-store.spec.md) | 로컬 SQLite 상태 저장소 (5 테이블) | implemented |
 | [dkg-constraint.spec.md](dkg-system/dkg-constraint.spec.md) | CON-001~CON-007 불변 조건 | implemented |
 | [dkg-growth-spiral.spec.md](dkg-system/dkg-growth-spiral.spec.md) | 고정 축 → 운용 → 발견 → 새 고정 축 성장 모델 | implemented |
+
+### connection-system/ — 원본 식별자와 qa-sdk 연결 계약
+
+원본 시스템의 local ID를 보존하면서 qa-sdk 연결 identity, mapping, typed relation을 관리하는 순수 계약 표면.
+
+| 스펙 | 설명 | 원본 패키지 | 상태 |
+|---|---|---|---|
+| [federated-connection-contract.spec.md](connection-system/federated-connection-contract.spec.md) | SourceRef/ConnectionRef, source snapshot/observation, mapping conflict, typed relation, in-memory registry | federated-connection | implemented |
 
 ### meta-semantic/ — 메타 시맨틱 아키텍처
 

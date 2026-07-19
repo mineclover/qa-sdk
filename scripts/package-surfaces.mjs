@@ -33,6 +33,10 @@ export const SURFACE_GROUPS = [
     description: 'finite vocabulary tooling, adapters, and taxonomy-only preview consumers',
   },
   {
+    id: 'connection-capability',
+    description: 'source identity, connection mapping, and typed relation contract tooling',
+  },
+  {
     id: 'profile-capability',
     description:
       'profile contract tooling, evidence adapters, measurement, and profile-only preview consumers',
@@ -151,6 +155,12 @@ export const SURFACES = [
     group: 'taxonomy-capability',
     verdict: 'consumer-only',
     packages: ['@qa-sdk/taxonomy-web'],
+  },
+  {
+    id: 'federated-connection-contract',
+    group: 'connection-capability',
+    verdict: 'keep-as-contract',
+    packages: ['federated-connection'],
   },
   {
     id: 'profile-contract-tooling',

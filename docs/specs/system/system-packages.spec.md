@@ -31,6 +31,10 @@ def:
       type: refs
     - target: scaffold-system
       type: refs
+    - target: federated-architecture-governance
+      type: refs
+    - target: federated-connection-contract
+      type: refs
 ---
 
 # 패키지 구조
@@ -63,6 +67,7 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Taxonomy tooling | taxonomy capability | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine` |
 | Taxonomy decision bridge | taxonomy capability | taxonomy artifact와 decision-flow 변환 계약 | `taxonomy-decision-bridge` |
 | Taxonomy preview surfaces | taxonomy capability | taxonomy artifact 브라우저 탐색 consumer | `@qa-sdk/taxonomy-web` |
+| Federated connection contract | connection capability | source identity, mapping, typed relation 순수 계약/registry | `federated-connection` |
 | Profile contract tooling | profile capability | profile fixture 계약과 adapter payload | `data-structure-profile` |
 | Quality evidence ledgers | profile capability | gate/review 결과 영속 기록 | `quality-ledger`, `review-ledger` |
 | Measurement tooling | profile capability | 측정 실행과 리포트 표면 | `@qa-sdk/bench` |
@@ -80,9 +85,24 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Product demo surfaces | demo consumer surfaces | 제품 데모/스모크 UI와 API consumer | `@qa-sdk/platform-demo`, `@qa-sdk/shop-web`, `@qa-sdk/registry-ui` |
 | Quarantine candidates | quarantine | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |
 
-상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `arch:surfaces`는 기능군별 surface/package 요약도 출력하므로 coordinate kernel, observability runtime, definition catalog, decision evidence, spec analysis, governance tooling, taxonomy capability, profile capability, operational ontology capability, authorization support, motion authoring, simulation contract, visual analysis, verification suite, demo consumer, quarantine이 같은 제품 surface로 다시 합쳐졌는지 즉시 확인할 수 있다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
+상세 승격/격리 규칙은 `package-surface-separation-rule`을 따른다. `packages/*` surface-managed package coverage와 기능군 drift는 `corepack pnpm arch:surfaces`와 `corepack pnpm arch:verify`가 검증한다. `arch:surfaces`는 기능군별 surface/package 요약도 출력하므로 coordinate kernel, observability runtime, definition catalog, decision evidence, spec analysis, governance tooling, taxonomy capability, connection capability, profile capability, operational ontology capability, authorization support, motion authoring, simulation contract, visual analysis, verification suite, demo consumer, quarantine이 같은 제품 surface로 다시 합쳐졌는지 즉시 확인할 수 있다. `simulations/*`와 `vendor/*` workspace는 support scope로만 감사하며, 기능 surface 표에는 승격하지 않는다.
 
 운영자가 실제 패키지를 고를 때는 taxonomy 기능군은 `system-taxonomy`, profile 기능군은 `system-profile`, operational ontology 기능군은 `system-operational-ontology`를 먼저 본다. 이 문서들은 package ownership을 새로 만들지 않고 이 표와 `package-surface-separation-rule`의 배정을 소비하는 얇은 entry surface다.
+
+## 중간 연결 시스템의 배치 ^constraint
+
+qa-sdk가 기존에 지향해온 중간 연결 방향은 단일 ERP 또는 federation runtime surface로 추가하지 않는다. 순수 identity/mapping/relation/source observation 계약만 `Federated connection contract` surface로 분리하고, source별 실행 adapter·persistence·source write·업무 workflow는 별도 source 시스템과 adapter의 책임으로 남긴다.
+
+| 연결 책임 | 현재 참조 표면 | 경계 |
+|---|---|---|
+| source 관측 실행 | source 시스템 adapter / Observability runtime | 원본 상태와 local ID의 권위는 source에 남는다 |
+| source snapshot·observation 계약 | Federated connection contract | revision/hash/change semantics를 표준화하지만 source API·webhook·polling을 실행하지 않는다 |
+| 유한 vocabulary·definition address | Coordinate kernel / Definition control plane / Taxonomy tooling | definition address는 source ID나 connection identity가 아니다 |
+| 설계 context·constraint | Decision recording | DKG는 source mapping의 SSOT가 아니다 |
+| mapping·typed relation | Federated connection contract | 기존 catalog/DKG/engine에 임의 흡수하지 않는다 |
+| impact·검증 evidence | Spec analysis kernel / Quality evidence ledgers | evidence는 approval이나 source write가 아니다 |
+
+이 배치는 새 업무 시스템을 qa-sdk 안에 구현한다는 뜻이 아니라, 여러 시스템 사이의 식별자 규칙과 연결 상태를 운영하기 위한 책임 경계를 명확히 하는 것이다.
 
 ## 인코딩 체인
 

@@ -50,6 +50,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | `spec analysis capability` | spec schema, transition, convergence, snapshot, codegen처럼 명세 분석 산출물을 만드는 표면 |
 | `governance tooling` | CLI, architecture, scaffold, config/db/infra helper처럼 운영자가 실행하는 관리 도구 표면 |
 | `taxonomy capability` | 유한 vocabulary tooling, taxonomy adapter, taxonomy-only preview consumer |
+| `connection capability` | source identity, connection mapping, typed relation contract tooling |
 | `profile capability` | profile contract tooling, evidence ledger adapter, measurement, profile-only preview consumer |
 | `operational ontology capability` | operational ontology runtime, pack projection, programming artifact registry, ontology-only preview consumer |
 | `authorization support capability` | 권한 정책과 감사 영속 보조 표면 |
@@ -70,6 +71,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | Taxonomy tooling | taxonomy capability | keep as tooling | `taxonomy-engine` | finite vocabulary parse/validate/diff/codegen tests |
 | Taxonomy decision bridge | taxonomy capability | keep as bridge | `taxonomy-decision-bridge` | taxonomy/decision-flow round-trip tests |
 | Taxonomy preview surfaces | taxonomy capability | consumer only | `@qa-sdk/taxonomy-web` | taxonomy-web build/test; no vocabulary ownership |
+| Federated connection contract | connection capability | keep as contract | `federated-connection` | source identity/snapshot/observation/mapping/relation contract tests; source write, persistence, and ERP ownership 금지 |
 | Profile contract tooling | profile capability | keep as contract tool | `data-structure-profile` | profile parser/validator/compiler tests + fixture snapshots |
 | Quality evidence ledgers | profile capability | maintain | `quality-ledger`, `review-ledger` | persistence tests and adapter smoke from producer reports |
 | Measurement tooling | profile capability | keep as tooling | `@qa-sdk/bench` | benchmark CLI/tests and report rendering evidence |
@@ -93,18 +95,19 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 2. `Taxonomy tooling`은 유한 vocabulary와 ref/diff/validation/codegen을 소유한다. decision-flow 변환, web preview, concrete profile measurement, data lineage는 소유하지 않는다.
 3. `Taxonomy decision bridge`는 taxonomy와 decision-flow 사이의 변환 계약만 소유한다. taxonomy vocabulary SSOT가 되지 않고 web preview 상태도 소유하지 않는다.
 4. `Taxonomy preview surfaces`는 taxonomy artifact를 읽어 보여주는 consumer다. engine API나 vocabulary entry를 직접 소유하지 않는다.
-5. `Profile contract tooling`은 profile YAML, validation report, lineage artifact, measurement dry-run, adapter payload를 소유한다. `quality-ledger`, `@qa-sdk/bench`, `viz-web`를 runtime dependency로 끌어들이지 않는다.
-6. `Quality evidence ledgers`는 gate/review 실행 결과의 영속 기록을 소유한다. `dsp-*` 진단 의미나 row multiplier 계산을 소유하지 않는다.
-7. `Measurement tooling`은 측정 실행과 리포트 표면을 소유한다. profile source-path parsing이나 transform semantics를 소유하지 않는다.
-8. `Profile preview surfaces`는 lineage/graph artifact를 읽는 consumer다. profile schema나 ledger 결과를 쓰기 표면으로 승격하지 않는다.
-9. `Operational ontology runtime`은 schema/pack/runtime/projector/persistence boundary를 소유한다. decision-flow instance lifecycle, taxonomy vocabulary SSOT, generic product demo ownership을 흡수하지 않는다.
-10. `Operational ontology preview surfaces`는 ontology store JSON을 읽는 consumer다. schema 작성, registry persistence, pack validation rule ownership을 가져오지 않는다.
-11. `Decision recording`은 판단 과정과 증거의 "왜"를 기록한다. taxonomy, profile, operational ontology runtime의 source of truth가 되지 않는다.
-12. `Spec analysis kernel`은 spec/codegen/transition/convergence evidence를 소유한다. runtime service ownership으로 승격하지 않는다.
-13. `Product demo surfaces`, `Visual analysis tools`, `Verification suites`는 consumer surface다. 상위 surface의 ownership을 가져오지 않는다.
-14. `Quarantine candidates`는 package-local build/test를 유지할 수 있지만 README, roadmap, quality gate에서 제품 core처럼 홍보하지 않는다.
-15. 모든 `packages/*/package.json` 항목은 정확히 하나의 surface에 배정되어야 한다.
-16. `simulations/*`와 `vendor/*` workspace package는 support workspace로 감사할 수 있지만, package surface manifest에는 포함하지 않는다. 이름 끝부분이 `packages/*` package와 같아도 surface를 상속하지 않는다.
+5. `Federated connection contract`는 source namespace, revisioned snapshot/observation, connection identity, crosswalk/mapping, typed relation의 순수 계약과 in-memory registry만 소유한다. 원본 payload의 권위, source API/webhook/polling 실행, DB/network persistence, ERP 업무 로직, source write는 소유하지 않는다.
+6. `Profile contract tooling`은 profile YAML, validation report, lineage artifact, measurement dry-run, adapter payload를 소유한다. `quality-ledger`, `@qa-sdk/bench`, `viz-web`를 runtime dependency로 끌어들이지 않는다.
+7. `Quality evidence ledgers`는 gate/review 실행 결과의 영속 기록을 소유한다. `dsp-*` 진단 의미나 row multiplier 계산을 소유하지 않는다.
+8. `Measurement tooling`은 측정 실행과 리포트 표면을 소유한다. profile source-path parsing이나 transform semantics를 소유하지 않는다.
+9. `Profile preview surfaces`는 lineage/graph artifact를 읽는 consumer다. profile schema나 ledger 결과를 쓰기 표면으로 승격하지 않는다.
+10. `Operational ontology runtime`은 schema/pack/runtime/projector/persistence boundary를 소유한다. decision-flow instance lifecycle, taxonomy vocabulary SSOT, generic product demo ownership을 흡수하지 않는다.
+11. `Operational ontology preview surfaces`는 ontology store JSON을 읽는 consumer다. schema 작성, registry persistence, pack validation rule ownership을 가져오지 않는다.
+12. `Decision recording`은 판단 과정과 증거의 "왜"를 기록한다. taxonomy, profile, operational ontology runtime, connection contract의 source of truth가 되지 않는다.
+13. `Spec analysis kernel`은 spec/codegen/transition/convergence evidence를 소유한다. runtime service ownership으로 승격하지 않는다.
+14. `Product demo surfaces`, `Visual analysis tools`, `Verification suites`는 consumer surface다. 상위 surface의 ownership을 가져오지 않는다.
+15. `Quarantine candidates`는 package-local build/test를 유지할 수 있지만 README, roadmap, quality gate에서 제품 core처럼 홍보하지 않는다.
+16. 모든 `packages/*/package.json` 항목은 정확히 하나의 surface에 배정되어야 한다.
+17. `simulations/*`와 `vendor/*` workspace package는 support workspace로 감사할 수 있지만, package surface manifest에는 포함하지 않는다. 이름 끝부분이 `packages/*` package와 같아도 surface를 상속하지 않는다.
 
 ## 사용성 신호 처리
 
