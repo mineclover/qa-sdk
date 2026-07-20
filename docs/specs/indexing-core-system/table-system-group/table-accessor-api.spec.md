@@ -176,4 +176,4 @@ ColumnRef와 DimRef를 합치면 좌표↔테이블↔좌표를 오가는 그래
 
 - [table-dimref-types](table-dimref-types.spec.md) — DimRef 종류와 사용 규칙
 - [table-schema-def](table-schema-def.spec.md) — 테이블 스키마 정의와 그래프 탐색
-- [dimension-operations.md](../indexing/dimension-operations.md) — 축 교차 선택, 환경 주입, 배포 시점 해석
+- [dimension-operations.md](../dim-ops-system.md) — 축 교차 선택, 환경 주입, 배포 시점 해석

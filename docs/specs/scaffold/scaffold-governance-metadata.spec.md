@@ -13,7 +13,7 @@ def:
   tags: [scaffold, governance, metadata, openmetadata, lineage]
   links:
     - target: scaffold-system
-      type: refines
+      type: refs
     - target: scaffold-domain-schematic
       type: constrains
     - target: scaffold-openmetadata-storage

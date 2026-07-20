@@ -41,7 +41,7 @@ def:
 - `consumption` — 정보가 읽히거나 사용되는 지점
 - `storage` — 정보가 보존되는 방식과 위치
 
-이 5역할은 정보의 종류를 분류하는 것이 아니라, **같은 정보가 시스템 안에서 어떤 역할로 존재하는가**를 분리하는 기준이다. [meta-semantic-concepts.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/meta-semantic/meta-semantic-concepts.spec.md#L51), [tracking-three-axes.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/system/tracking-three-axes.spec.md#L64), [meta-semantic-ir.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/meta-semantic/meta-semantic-ir.spec.md#L16)
+이 5역할은 정보의 종류를 분류하는 것이 아니라, **같은 정보가 시스템 안에서 어떤 역할로 존재하는가**를 분리하는 기준이다. [meta-semantic-concepts.spec.md](../meta-semantic/meta-semantic-concepts.spec.md#L51), [tracking-three-axes.spec.md](../system/tracking-three-axes.spec.md#L64), [meta-semantic-ir.spec.md](../meta-semantic/meta-semantic-ir.spec.md#L16)
 
 ## 정의 ^defines
 

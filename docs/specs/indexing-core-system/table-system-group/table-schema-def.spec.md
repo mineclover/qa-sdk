@@ -230,4 +230,4 @@ const serviceResolved = resolveAddress(DEMO_CATALOG, "service", "v1", org7.regio
 
 - [table-dimref-types](table-dimref-types.spec.md) — DimRef 종류와 사용 규칙
 - [table-accessor-api](table-accessor-api.spec.md) — accessor API에서의 table_ref 처리
-- [schema-layer.md](../indexing/schema-layer.md) — 4-Layer 아키텍처에서 table_ref의 위치 (Layer 2)
+- [schema-layer.md](../schema-layer.md) — 4-Layer 아키텍처에서 table_ref의 위치 (Layer 2)

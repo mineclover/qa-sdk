@@ -25,6 +25,8 @@ def:
       type: refs
     - target: dkg-state-store
       type: refs
+    - target: federated-architecture-governance
+      type: refs
 sources:
   - packages/dkg/src/index.ts
   - packages/dkg/src/bootstrap.ts
@@ -41,6 +43,15 @@ sources:
 ## 목적 ^purpose
 
 고정 축을 정의하고, 운용하고, 운용에서 새 기능을 발견하고, 그 기능이 다시 고정 축이 되는 누적적 성장 나선을 추적하는 설계 시점 메타데이터 그래프. 매 회전에서 "왜 이것을 닫았는가"를 구조적으로 보존한다.
+
+## 연결 시스템과의 경계 ^constraint
+
+DKG는 qa-sdk의 기존 중간 연결 방향에서 **설계·결정·제약·소비자 지식**을 담당한다. source record 간 connection identity, crosswalk, source revision 또는 원본 업무 상태를 소유하지 않는다.
+
+- DKG의 `DomainNode`, `ConsumerNode`, `IntentLinkNode`, `ConstraintNode`는 연결 시스템의 해석 context가 될 수 있지만, source mapping 자체가 아니다.
+- source 간 대응 관계는 별도의 federation relation graph와 mapping 계약에서 관리한다.
+- DKG와 연결 그래프 사이의 연결은 typed reference, decision evidence, adapter를 통해 명시한다.
+- DKG graph를 확장할 때 source identity와 definition identity를 DKG node key로 합치지 않는다.
 
 ## 구성 ^overview
 

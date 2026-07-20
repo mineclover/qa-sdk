@@ -60,7 +60,7 @@ handling mode의 초기 종류는 다음을 기준으로 둔다.
 
 ### 기존 체계와의 연결
 
-기존 pipe flow의 `branch`, `optional`, `conditional connection`은 이미 제어 흐름을 다룬다. operational ontology의 branch handling은 그것을 정보 전달 관점으로 다시 읽는 것이다. [pipe-spec.ts](/Users/junwoobang/workflow/qa-sdk/packages/core/src/types/pipe-spec.ts#L141), [scenario.ts](/Users/junwoobang/workflow/qa-sdk/packages/core/src/types/scenario.ts#L17)
+기존 pipe flow의 `branch`, `optional`, `conditional connection`은 이미 제어 흐름을 다룬다. operational ontology의 branch handling은 그것을 정보 전달 관점으로 다시 읽는 것이다. [pipe-spec.ts](../../../packages/core/src/types/pipe-spec.ts#L141), [scenario.ts](../../../packages/core/src/types/scenario.ts#L17)
 
 ### 최소 우선순위
 

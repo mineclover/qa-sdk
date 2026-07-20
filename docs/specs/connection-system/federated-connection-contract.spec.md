@@ -21,14 +21,18 @@ def:
       type: constrains
     - target: spec-verification-system
       type: refs
+    - target: federated-connection-runtime
+      type: refs
 sources:
   - packages/federated-connection/src/contract.ts
   - packages/federated-connection/src/keys.ts
   - packages/federated-connection/src/source-adapter.ts
   - packages/federated-connection/src/validate.ts
   - packages/federated-connection/src/registry.ts
+  - packages/federated-connection/src/identifier-registry.ts
   - packages/federated-connection/src/index.ts
   - packages/federated-connection/__tests__/registry.test.ts
+  - packages/federated-connection/__tests__/identifier-registry.test.ts
   - packages/federated-connection/__tests__/source-adapter.test.ts
 ---
 
@@ -36,7 +40,7 @@ sources:
 
 ## 목적 ^purpose
 
-qa-sdk가 기존에 지향해온 중간 연결 방향을 순수 계약으로 구현한다. 원본 시스템의 local ID와 revision을 보존하면서 qa-sdk 연결 identity, mapping 상태, typed relation을 표현하고 검증한다.
+qa-sdk가 기존에 지향해온 중간 연결 방향을 순수 계약으로 구현한다. 원본 시스템의 local ID와 revision을 보존하면서 source별 유한 식별자 규칙, qa-sdk 연결 identity, mapping 상태, typed relation을 표현하고 검증한다.
 
 이 문서는 ERP나 source 업무 모델의 명세가 아니다. source write, persistence, network adapter, business workflow는 이 계약을 소비하는 별도 시스템의 책임이다.
 
@@ -45,6 +49,8 @@ qa-sdk가 기존에 지향해온 중간 연결 방향을 순수 계약으로 구
 | 계약 | 의미 | 구현 |
 |---|---|---|
 | `SourceRef` | source namespace + entity type + local ID + revision | `packages/federated-connection/src/contract.ts:SourceRef` |
+| `SourceIdentifierRule` | source/entity별 local ID·revision 패턴과 규칙 버전 | `packages/federated-connection/src/contract.ts:SourceIdentifierRule` |
+| `SourceIdentifierRegistry` | active 규칙 선택과 source lookup/snapshot 검증 | `packages/federated-connection/src/identifier-registry.ts:SourceIdentifierRegistry` |
 | `ConnectionRef` | qa-sdk 연결 namespace + connection ID + version | `packages/federated-connection/src/contract.ts:ConnectionRef` |
 | `ConnectionMapping` | source와 connection identity 사이의 상태·confidence·provenance | `packages/federated-connection/src/contract.ts:ConnectionMapping` |
 | `TypedRelation` | source 또는 connection endpoint 사이의 의미 있는 관계 | `packages/federated-connection/src/contract.ts:TypedRelation` |
@@ -55,6 +61,9 @@ qa-sdk가 기존에 지향해온 중간 연결 방향을 순수 계약으로 구
 ## 불변 조건 ^constraint
 
 - source local ID와 connection ID를 같은 identity로 취급하지 않는다.
+- source별 식별자 규칙은 `sourceSystem + entityType + version`으로 분리하며 다른 source profile에 암묵적으로 재사용하지 않는다.
+- `active` 규칙만 관측 입력을 승인하고, 관측 시 선택된 규칙 ID/version을 운영 메타데이터에 고정한다.
+- identifier rule 변경은 source local ID의 의미를 바꿀 수 있으므로 기존 plan에 소급 적용하지 않고 새 관측/plan에서 명시적으로 선택한다.
 - source reference는 revision을 포함해야 하며, source가 독립적으로 진화할 수 있도록 값을 변경하지 않는다.
 - 동일 source reference에 서로 다른 active target을 등록할 수 없다.
 - `proposed`, `ambiguous`, `rejected`, `retired` mapping은 `resolved` 결과가 아니다.
@@ -70,6 +79,7 @@ qa-sdk가 기존에 지향해온 중간 연결 방향을 순수 계약으로 구
 ```text
 source adapter
   -> SourceSnapshot / SourceObservation
+  -> SourceIdentifierRegistry.validate()
   -> SourceRef
   -> ConnectionRegistry.registerMapping()
   -> resolve() / mappingsForSource()
@@ -89,7 +99,8 @@ ERP의 `customer:cust-7@rev-3`와 CRM의 `account:acct-42@snapshot-9`는 서로 
 - `definition-catalog`: definition vocabulary와 definition graph. connection identity/crosswalk는 소유하지 않는다.
 - `dkg`: 설계·결정·제약 지식. source mapping의 SSOT가 아니다.
 - `taxonomy-engine`: 유한 vocabulary와 변환 계약. source 간 mapping registry가 아니다.
-- `federated-connection`: source/connection identity와 mapping/relation 순수 계약 및 in-memory registry.
+- `federated-connection`: source/connection identity, source별 유한 identifier rule, mapping/relation 순수 계약 및 in-memory registry.
+- `federated-connection-runtime`: connection state, impact plan, policy, approval, execute/re-fetch/verify orchestration.
 - source-specific adapter: 각 원본 API/DB/SDK와 `SourceAdapter`를 구현하며 source authority와 fetch semantics를 소유한다.
 - `spec-tracker`/`quality-ledger`/`review-ledger`: registry 결과를 검증 evidence로 소비할 수 있지만, mapping authority가 아니다.
 

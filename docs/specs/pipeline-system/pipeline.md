@@ -45,9 +45,9 @@ entity ID ↔ PK 문자열 전체 경로를 한 곳에서 정의한다.
 
 - 레이어 분리 원리: [`foundation.md`](foundation.md) §3
 - 수학 엔진: [`../weighted-index-system/wi-math.spec.md`](../weighted-index-system/wi-math.spec.md)
-- 스키마 레이어: [`index-meta/registry.spec.md`](index-meta/registry.spec.md)
+- 스키마 레이어: [`index-meta/registry.spec.md`](../registry-system/registry.spec.md)
 - 프로토콜/포맷: [`../weighted-index-system/wi-pack-format-system.md`](../weighted-index-system/wi-pack-format-system.md)
-- 외부 소비 (DecodeMap): [`index-meta/resolver.spec.md`](index-meta/resolver.spec.md)
+- 외부 소비 (DecodeMap): [`index-meta/resolver.spec.md`](../index-meta-system/resolver.spec.md)
 
 ---
 
@@ -233,7 +233,7 @@ const ids = codec.decodeValue(14);
 
 `DecodeMap`에 `address`가 포함되면 UUID 파싱 → value 추출 → 좌표 복원 → entity 매핑까지 전체 파이프라인을 외부에서 자립적으로 수행할 수 있다. MetaCodec은 DecodeMap 하나로 동작하므로 MetaRegistry가 불필요하다.
 
-버전 range 조회(`getIndexRange`, `getDimRange`)와 전체 데이터셋 내보내기(`getDataset`)는 [`index-meta/resolver.spec.md`](index-meta/resolver.spec.md) 참조.
+버전 range 조회(`getIndexRange`, `getDimRange`)와 전체 데이터셋 내보내기(`getDataset`)는 [`index-meta/resolver.spec.md`](../index-meta-system/resolver.spec.md) 참조.
 
 ---
 

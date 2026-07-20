@@ -22,6 +22,8 @@ def:
       type: traces_to
     - target: work-topic-schema-plan
       type: traces_to
+    - target: markdown-navigation-health
+      type: traces_to
 sources:
   - docs/specs/system/work-lifecycle.cases.md
   - docs/specs/definition-catalog/responsibility-closure-harness.rule.md
@@ -87,6 +89,56 @@ Responsibility closure 관점:
 
 작업 토픽은 `work-topic-schema-plan`이 정의하는 `work_topic` shape를 사용한다. BDD contract는 behavior truth이고, `work_topic`은 delivery slice다.
 
+## 표준 실행 방법 ^workflow
+
+artifact 전이만 지키는 것으로는 작업 결과를 재현할 수 없다. 모든 작업은 아래 실행 순서를 따르며, 변경 종류에 따라 필요한 검증 게이트만 추가한다.
+
+| 단계 | 작업자 행동 | 남겨야 하는 결과 | 중단 기준 |
+|---|---|---|---|
+| 0. 범위 판정 | 변경을 source behavior, definition semantic, Markdown navigation, refactor/cleanup 중 하나로 분류하고 owner와 non-goal을 정한다 | 작업 유형, owner, non-goal | owner가 두 시스템에 걸치는데 경계가 정해지지 않음 |
+| 1. 기준선 수집 | 기존 working tree, 관련 source/consumer/test, 현재 검증 수치를 확인한다 | baseline과 기존 실패 목록 | 기존 실패를 새 변경의 결과처럼 해석하거나 무시함 |
+| 2. 계약 고정 | behavior 변경은 cases/test를 먼저 만들고, 문서 정리는 변경 불변식과 rollback 단위를 기록한다 | cases, todo, 기대 결과 | 기대 결과 없이 구현 또는 대량 수정 시작 |
+| 3. 최소 변경 | 한 책임 단위만 reversible하게 변경한다. 구현된 타입/API는 source를 authority로 두고 문서는 참조로 축소한다 | 구현/문서 diff | fuzzy 자동 수정, 대량 이동, unrelated refactor가 섞임 |
+| 4. focused 검증 | 변경 파일과 직접 소비자부터 검증한다. 문서 navigation은 source-relative link와 Hyalo, semantic graph는 `def sync/validate`로 확인한다 | focused test와 명령 결과 | focused 결과 없이 전체 green만 근거로 판단 |
+| 5. 영향 검증 | 변경 유형에 맞춰 L1 Data, L2 Validator, L3 Workflow, L4 Tooling과 package/API gate를 확인하고 baseline 대비 차이를 판정한다 | 결과 diff, 예상/비예상 경고 구분 | 설명되지 않은 error, silent empty, API 영향이 남음 |
+| 6. 종료 | diff 범위, 잔여 todo, blocker, rollback 경로를 확인한다. 사용자가 요청한 경우에만 저장소 경계별로 커밋한다 | closure 기록과 커밋 범위 | 미해결 항목을 숨긴 채 완료 선언 |
+
+### 변경 유형별 최소 게이트 ^constraint
+
+| 변경 유형 | 최소 게이트 |
+|---|---|
+| source/package behavior | 관련 package test와 typecheck/build. public API나 계층 경계를 건드리면 `arch:feedback` 또는 해당 영향도 분석을 추가한다 |
+| definition semantic | `def sync` → `def validate` → `def scan-audit` → 필요 시 workflow smoke. aspect, tier, link 의미 변경은 `semantic-change` playbook과 simulation-first 규칙을 적용한다 |
+| Markdown navigation | `docs/specs/**`의 source-relative 링크 확인 → Hyalo exact/fixable 후보 dry-run → 파일 이동이 있으면 `def sync` → `def validate`. Hyalo는 `def.links`, `sources`, owner를 판정하지 않는다 |
+| refactor/cleanup | consumer와 test를 먼저 확인하고, 삭제·격리는 별도 decision 단위로 분리한다. usefulness 결과만으로 자동 삭제하지 않는다 |
+| mixed root/submodule closure | root와 각 submodule 상태를 별도로 확인하고, submodule commit → root pointer commit 순서를 지킨다 |
+
+정의 문서 변경의 구체적인 명령 순서는 `definition-mgmt-verification-loop`가 소유한다. 이 문서는 언제 그 루프를 선택하는지와 작업 종료 조건만 소유한다.
+
+### 기준선과 결과 판정 ^constraint
+
+- 기존 baseline error/warning은 새 결과와 분리해 기록한다. 수치가 줄었다는 이유만으로 의미가 보존됐다고 판정하지 않는다.
+- validator green은 구조적 필요 조건이다. 사용자 진입점의 non-empty 결과, source round-trip, CLI/API 소비자 검증이 끝나야 작업이 닫힌다.
+- warning은 예상된 category와 새로 생긴 category를 분리한다. 새 category의 원인이 설명되지 않으면 commit 대상에서 제외한다.
+- 문서 본문 링크와 definition graph 링크는 서로 다른 좌표다. 물리 링크를 고칠 때 `def.links[].target`의 semantic type이나 owner를 추론해 바꾸지 않는다.
+- 정규 문서 내부 링크는 source 파일 기준 상대경로를 사용한다. repo 외부 근거를 가리키는 경로는 repo-relative로 유지하되 정규 docs navigation 결과와 semantic source 검증을 섞지 않는다.
+
+### 작업 종료 기록 ^validation
+
+작업 종료 시 다음 항목을 짧게 남긴다.
+
+```text
+작업 유형 / owner:
+범위 / non-goal:
+기준선:
+변경 요약:
+검증 명령과 결과:
+예상된 잔여 / blocker:
+커밋 또는 미커밋 사유:
+```
+
+이 기록은 새로운 truth 문서가 아니다. `plan`, `cases`, `todo`, `test`, `spec`의 현재 권한과 검증 결과를 연결하는 closure evidence다.
+
 ## 현재 구현 경계 ^boundary
 
 - docs-control-plane은 BDD block, work_topic block, completed-record cleanup review를 read-only로 투영한다.
@@ -99,6 +151,8 @@ Responsibility closure 관점:
 - `bdd-contract-system` — behavior contract, test unit, implementation unit
 - `work-topic-schema-plan` — delivery slice shape와 split heuristic
 - `work-lifecycle-cases` — 실제 사용 시나리오와 실패 시 수정 대상
+- `definition-mgmt-verification-loop` — definition 문서 변경의 세부 검증 순서
+- `markdown-navigation-health` — 정규 Markdown navigation과 semantic graph의 책임 경계
 
 ## 검증 ^validation
 

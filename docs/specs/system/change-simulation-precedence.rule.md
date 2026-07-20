@@ -161,7 +161,7 @@ Phase 3b 실측에서 dup-coord 가 28 → 36 증가한 것이 **Phase 5 재설�
 
 ## 5. 근거
 
-- [`skills/semantic-change/SKILL.md`](../../../skills/semantic-change/SKILL.md) §"Step 2 — 시뮬레이션" — 본 규칙을 체크리스트로 소비하는 playbook
+- [`semantic-change/SKILL.md`](../../../.agents/skills/semantic-change/SKILL.md) §"Step 2 — 시뮬레이션" — 본 규칙을 체크리스트로 소비하는 playbook
 - [layer-separation.rule.md](./layer-separation.rule.md) — 시뮬 후 실측과의 계층별 검증 접점 (L2 validator + L3 workflow smoke)
 - [domain-hierarchy/reviews/2026-04-20-phase0-simulation.md](../../proposals/domain-hierarchy/reviews/2026-04-20-phase0-simulation.md) — 1차 시뮬레이션 (Go/No-Go 판정의 원형)
 - [domain-hierarchy/reviews/2026-04-20-phase0b-q2-resim.md](../../proposals/domain-hierarchy/reviews/2026-04-20-phase0b-q2-resim.md) — 2차 (규칙 재설계 후)

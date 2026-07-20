@@ -1,0 +1,14 @@
+# Hyalo is a Markdown navigation health tool in this repository.
+# Definition metadata and semantic links remain owned by qa-sdk def.
+dir = "docs"
+format = "json"
+hints = false
+default_limit = 0
+# New internal links are source-relative. Keep the prefix only for legacy root links.
+site_prefix = "docs"
+
+[links]
+# GitHub/CI is case-sensitive even though the local filesystem may not be.
+case_insensitive = "false"
+# Do not reinterpret qa-sdk's nested `def.links` graph as Hyalo properties.
+frontmatter_properties = []

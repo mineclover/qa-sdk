@@ -62,5 +62,5 @@ gate 시스템의 핵심 경로를 검증하는 시나리오와 기대 결과를
 
 ## 시나리오 5: gateFilterRanges
 
-- 전제: ranges = [[0,100]], reserved = [[20,30]], mode = "active"
-- 기대: → [[0,19], [31,100]]
+- 전제: ranges = `[[0,100]]`, reserved = `[[20,30]]`, mode = "active"
+- 기대: → `[[0,19], [31,100]]`

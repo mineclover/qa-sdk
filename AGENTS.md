@@ -14,6 +14,18 @@ qa-sdk는 **차원 압축 기반 관측 시스템**이다. 두 가지 좌표 세
 
 두 세계는 동일한 인코딩 엔진(WeightedIndex)을 공유하며, `address_context` 형식으로 ingest 파이프라인에서 합류한다.
 
+## 기존 연합형 연결 방향
+
+qa-sdk는 ERP/CRM 등 원본 업무 시스템을 재구현하는 제품이 아니다. 기존 방향성은 원본 시스템이 데이터·업무 상태·local ID·권한을 계속 소유하고, qa-sdk가 그 사이의 식별자 규칙과 연결 상태를 보조하는 중간 연결 시스템으로 동작하는 것이다.
+
+- `SourceRef`는 source namespace, entity type, local ID, revision을 보존한다.
+- `ConnectionRef`는 qa-sdk의 연결 식별자이며 source local ID의 대체가 아니다.
+- `Mapping`, `TypedRelation`, lineage, impact/evidence는 source identity와 분리해 관리한다.
+- definition graph는 정의·문서 구조, DKG는 설계·결정 지식을 소유하며 federation relation graph와 합치지 않는다.
+- 연결 identity/crosswalk를 `definition-catalog`, `dkg`, `engine` 중 한 곳의 부가 기능으로 임의 소유하지 않는다.
+
+상세 운영 원칙: `docs/specs/system/federated-architecture-governance.rule.md`
+
 ## 의사결정 흐름 (decision-flow)
 
 ### 핵심 개념
@@ -201,6 +213,16 @@ qa-sdk dkg decide --type merge             # merge/split 판정
 
 knowledge 문서는 `knowledge_kind`로 세분화: philosophy, adr, guide, narrative, convention, pattern
 
+### Markdown navigation health (Hyalo)
+
+Hyalo는 Markdown 본문의 물리적 navigation link와 backlinks를 보조 점검하는 도구다. `def:` frontmatter, `def.links`, link type, owner/root, `sources`, `@def.*` 경계는 계속 qa-sdk `def sync`/`def validate`가 소유한다.
+
+- 적용 범위는 정규 spec의 navigation health와 문서 이동 검토로 한정한다.
+- 문서 본문의 내부 링크는 source 파일 기준 상대경로를 사용하고, `/Users/...`, `/docs/...` 같은 환경·vault 기준 absolute link를 새로 만들지 않는다.
+- `docs/proposals/**`는 dry-run 보고만 허용하고, `docs/superpowers/**`와 archive는 신규 gate에 포함하지 않는다.
+- 전체 문서군에 `hyalo lint --strict`를 적용하지 않으며, `links auto`, fuzzy 자동 수정, 대량 `mv`를 기본 실행하지 않는다.
+- 상세 운영 기준: `docs/specs/system/markdown-navigation-health.rule.md`
+
 ### 스킬 관리
 
 **SSOT**: `skills/` 디렉토리가 스킬 원본. 수정은 항상 repo에서 하고 동기화 스크립트로 전파.
@@ -278,6 +300,9 @@ def:
 
 ## 작업 시 필수 확인
 
+- [ ] 작업 시작 시 변경 유형, owner, non-goal, baseline을 먼저 기록한다. 참조: `docs/specs/system/work-lifecycle.spec.md`
+- [ ] behavior 변경은 `plan → cases → todo → test → implementation → spec` 순서를 지키고, 문서 정리는 semantic graph와 Markdown navigation을 분리한다.
+- [ ] focused 검증 후 영향도 검증을 수행한다. 기존 baseline error/warning과 새 결과를 합산하지 않는다.
 - [ ] 축 추가 → 5Q Checklist 통과 확인
 - [ ] prefix 추가 → DEMO_CATALOG + DKG decision-domain에 등록
 - [ ] 코어 gate 관련 변경 → `flow analyze --impact` 실행
@@ -289,6 +314,7 @@ def:
 - [ ] 종단 문서가 150줄 초과 또는 혼합 책임이면 `/def-split`으로 분할
 - [ ] 품질 게이트 → `createGateTracker({ listener: runtime.gateListener })` 패턴 사용
 - [ ] 스킬 수정 → `skills/` 디렉토리에서 수정 후 `sync-skills.sh`로 전파 (실행 환경 직접 수정 금지)
+- [ ] 작업 종료 → diff 범위, 잔여 todo/blocker, 검증 결과, 커밋 또는 미커밋 사유를 closure 기록으로 남긴다.
 
 ## 참조
 
@@ -296,6 +322,7 @@ def:
 |------|------|
 | 좌표 체계 관리 가이드 | `docs/specs/definition-catalog/definition-management.spec.md` |
 | 런타임 초기화 가이드 | `docs/guides/definition-runtime-guide.md` |
+| Markdown navigation health 규칙 | `docs/specs/system/markdown-navigation-health.rule.md` |
 | 하네스 아키텍처 | `docs/specs/definition-catalog/definition-harness-architecture.spec.md` |
 | decision-flow 스펙 | `docs/specs/decision-flow/decision-flow.spec.md` |
 | 프로젝트 규칙 | `CLAUDE.md` |

@@ -15,6 +15,8 @@ def:
       type: refs
     - target: system-packages
       type: refs
+    - target: federated-architecture-governance
+      type: refs
 sources:
   - scripts/package-surfaces.mjs
   - scripts/report-package-surfaces.mjs
@@ -53,6 +55,7 @@ sources:
 ## 경계 규칙 ^constraint
 
 - taxonomy capability는 reusable finite vocabulary와 변환 계약을 소유한다.
+- taxonomy capability는 source별 local ID 규칙과 유한 vocabulary를 정의할 수 있지만, source 간 connection identity나 crosswalk를 소유하지 않는다.
 - concrete data lineage, row multiplier, DPM readiness, quality-ledger run 기록은 profile capability로 보낸다.
 - browser preview는 consumer surface이며 vocabulary SSOT가 아니다.
 - 새 taxonomy 패키지를 추가하면 먼저 `scripts/package-surfaces.mjs`에 하나의 taxonomy surface로 배정하고, `arch:surfaces`로 누락/중복을 확인한다.

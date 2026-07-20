@@ -1,4 +1,3 @@
-// @def.boundary federated-connection-contract
 // @def.doc federated-connection-contract
 
 export const MAPPING_STATUSES = ['proposed', 'active', 'ambiguous', 'rejected', 'retired'] as const;
@@ -9,11 +8,31 @@ export const PROVENANCE_KINDS = ['manual', 'source', 'derived', 'imported'] as c
 
 export type ProvenanceKind = (typeof PROVENANCE_KINDS)[number];
 
+export const REVISION_STRATEGIES = ['opaque', 'monotonic', 'timestamp'] as const;
+
+export type RevisionStrategy = (typeof REVISION_STRATEGIES)[number];
+
+export const IDENTIFIER_RULE_STATUSES = ['draft', 'active', 'retired'] as const;
+
+export type IdentifierRuleStatus = (typeof IDENTIFIER_RULE_STATUSES)[number];
+
 export type SourceRef = Readonly<{
   sourceSystem: string;
   entityType: string;
   localId: string;
   revision: string;
+}>;
+
+export type SourceIdentifierRule = Readonly<{
+  id: string;
+  sourceSystem: string;
+  entityType: string;
+  version: number;
+  localIdPattern: string;
+  revisionPattern?: string;
+  revisionStrategy: RevisionStrategy;
+  status: IdentifierRuleStatus;
+  provenance: MappingProvenance;
 }>;
 
 export type ConnectionRef = Readonly<{

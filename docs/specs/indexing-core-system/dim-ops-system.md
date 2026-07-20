@@ -63,8 +63,8 @@ sources:
 - `dim-ops-deploy-resolve`: 배포 시점에 차원 값을 해석하여 concrete 좌표를 생성하는 연산.
 - `dim-ops-patterns`: PartialBinder, FixedDims, ServiceBinder 등 차원 조합의 실용 패턴.
 
-기반 문서: [foundation.md](../indexing/foundation.md) · [patterns.md](../indexing/patterns.md)
-관련 스펙: [../permission/permission-system.md](../permission/permission-system.md) · [../permission/perm-external-system.md](../permission/perm-external-system.md) · [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md)
+기반 문서: [foundation.md](foundation.md) · [patterns.md](patterns.md)
+관련 스펙: [../permission/permission-system.md](../permission/permission-system.md) · [../permission/perm-external-system.md](../permission/perm-external-system.md) · [weighted-index/partial-binder.spec.md](../weighted-index-system/partial-binder.spec.md)
 
 ## 전체 그림
 
@@ -118,7 +118,7 @@ sources:
 ## 참조
 
 - [../permission/permission-system.md](../permission/permission-system.md) — PermissionSet, TernaryMask, ScopedEngine 상세
-- [permission-engine/resource.spec.md](../indexing/permission-engine/resource.spec.md) — ServiceRef, PermCodeFactory, resource 규칙
-- [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md) — PartialBinder 상세, PrefixCodec 연동
-- [patterns.md](../indexing/patterns.md) — EntityId 기반 이동, cross-index 참조
+- [permission-engine/resource.spec.md](../permission/perm-external-system.md) — ServiceRef, PermCodeFactory, resource 규칙
+- [weighted-index/partial-binder.spec.md](../weighted-index-system/partial-binder.spec.md) — PartialBinder 상세, PrefixCodec 연동
+- [patterns.md](patterns.md) — EntityId 기반 이동, cross-index 참조
 - [../query-system/query-system.md](../query-system/query-system.md) — 좌표 질의 (lattice, policy, cross-index)

@@ -149,7 +149,7 @@ Prefix "rbac" = role(4) × action(8) × resource(16)
 
 Axis와 Prefix는 동형이다. Axis = Prefix의 1차원 특수 케이스.
 
-상세: [coord-foundation/](../indexing-core-system/coord-foundation/) · [dual-coordinate-system.spec.md](dual-coordinate-system.spec.md)
+상세: [coord-foundation/foundation-closed-space.md](../indexing-core-system/coord-foundation/foundation-closed-space.md) · [dual-coordinate-system.spec.md](dual-coordinate-system.spec.md)
 
 ---
 
@@ -191,7 +191,7 @@ Taxonomy가 다음 조건을 만족하면 System으로 취급한다.
 | 개념 | 상세 문서 |
 |------|---------|
 | Entry 정의, 이벤트, 좌표 기초 | [system-concepts.spec.md](system-concepts.spec.md) |
-| Axis/Prefix 수학 (mixed-radix, capacity, stride) | [coord-foundation/](../indexing-core-system/coord-foundation/) |
+| Axis/Prefix 수학 (mixed-radix, capacity, stride) | [coord-foundation/foundation-closed-space.md](../indexing-core-system/coord-foundation/foundation-closed-space.md) |
 | DSL Bundle 구현 (4개 번들, 멤버 역할, 불변조건) | [dsl-bundle.md](../indexing-core-system/dsl-bundle.md) |
 | Taxonomy 분류군 (topological / functional / bridge) | [meta-taxonomy.spec.md](meta-taxonomy.spec.md) |
 | 두 좌표 시스템 동형성 (이벤트 ↔ 문서) | [dual-coordinate-system.spec.md](dual-coordinate-system.spec.md) |

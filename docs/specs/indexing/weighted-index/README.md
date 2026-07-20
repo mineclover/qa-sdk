@@ -30,7 +30,7 @@ implemented
 
 | 문서 | 관심사 |
 |---|---|
-| [core.spec.md](core.spec.md) | WeightedIndex 수학 엔진, LabelRegistry, PrefixCodec, bitmask, obfuscate |
+| [core.spec.md](../../weighted-index-system/wi-system.md) | WeightedIndex 수학 엔진, LabelRegistry, PrefixCodec, bitmask, obfuscate |
 | [../../weighted-index-system/wi-trace-group.md](../../weighted-index-system/wi-trace-group.md) | 변경 전파 추적성 — 3-tier 핀 구조, 변경 유형별 전파 경로, DKG·qa-sdk 계약 |
 | [partial-binder.spec.md](partial-binder.spec.md) | PartialBinder, createBinder, 부분 차원 캐시, PrefixCodec 기반 curried encoder |
 | [../../weighted-index-system/wi-pack-format-system.md](../../weighted-index-system/wi-pack-format-system.md) | PackFormat, FormatRegistry, SemanticAddress, AddressConverter, fitLayout |
@@ -40,9 +40,9 @@ implemented
 
 | 문서 | 설명 |
 |---|---|
-| [../foundation.md](../foundation.md) | 근본 원리 (닫힌 조합 공간, 전단사, 레이어 분리) |
-| [../pipeline.md](../pipeline.md) | 인코딩/디코딩 파이프라인 전체 경로 |
-| [../patterns.md](../patterns.md) | 사용 패턴 |
+| [foundation.md](../../indexing-core-system/foundation.md) | 근본 원리 (닫힌 주소 공간, 전단사, 레이어 분리) |
+| [pipeline.md](../../pipeline-system/pipeline.md) | 인코딩/디코딩 파이프라인 전체 경로 |
+| [patterns.md](../../indexing-core-system/patterns.md) | 사용 패턴 |
 | [../../indexing-core-system/conventions-system.md](../../indexing-core-system/conventions-system.md) | 프로젝트 관례 |
 
 ## 외부 소비자

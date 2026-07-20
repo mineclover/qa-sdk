@@ -163,6 +163,12 @@ export const SURFACES = [
     packages: ['federated-connection'],
   },
   {
+    id: 'federated-connection-runtime',
+    group: 'connection-capability',
+    verdict: 'keep-as-runtime',
+    packages: ['federated-connection-runtime'],
+  },
+  {
     id: 'profile-contract-tooling',
     group: 'profile-capability',
     verdict: 'keep-as-contract-tool',

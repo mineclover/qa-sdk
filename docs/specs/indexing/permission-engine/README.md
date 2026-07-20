@@ -21,7 +21,7 @@ sources:
 
 패키지: `permission-engine`
 의존: `weighted-index`
-운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
+운영 흐름: `[S2]` 권한 해소/검사 — [runtime-flow-paths.spec.md](../../apm-system/apm-runtime-system/runtime-flow-paths.spec.md)
 
 소스: `packages/permission-engine/src/index.ts`, `packages/permission-engine/src/browser.ts`
 
@@ -33,10 +33,10 @@ implemented
 
 | 문서 | 관심사 | 상태 |
 |---|---|---|
-| [core.spec.md](core.spec.md) | `PermissionSet`, `TernaryMask`, `ScopedEngine` — binary/ternary mask, 계층 상속, scope 라우팅 | implemented |
+| [core.spec.md](../../permission/permission-system.md) | `PermissionSet`, `TernaryMask`, `ScopedEngine` — binary/ternary mask, 계층 상속, scope 라우팅 | implemented |
 | [codec.spec.md](codec.spec.md) | `PermissionCodec` — 3-tier protocol stack, Tier 1↔2↔3 변환, PrefixCodec/index-meta 호환성 | implemented |
-| [resource.spec.md](resource.spec.md) | `resource`, `service-ref`, `permission-code` — canonical resource 규칙, service identity/context, permission address text contract | implemented |
-| [migration.spec.md](migration.spec.md) | `migration.ts` — shape 변경 시 grant 재배치, ID 매칭 자동 변환, `CoordMapper` 커스텀 변환 | implemented |
+| [resource.spec.md](../../permission/perm-external-system.md) | `resource`, `service-ref`, `permission-code` — canonical resource 규칙, service identity/context, permission address text contract | implemented |
+| [migration.spec.md](../../permission/perm-migration-system.md) | `migration.ts` — shape 변경 시 grant 재배치, ID 매칭 자동 변환, `CoordMapper` 커스텀 변환 | implemented |
 
 ## 레이어 구조
 
@@ -94,7 +94,7 @@ index.ts
 | 문서 | 설명 |
 |---|---|
 | [../README.md](../README.md) | 인덱싱 전체 개념 맵 |
-| [../foundation.md](../foundation.md) | 닫힌 주소 공간과 전단사 원리 |
-| [../patterns.md](../patterns.md) | 인덱싱 시스템 사용 패턴 |
+| [foundation.md](../../indexing-core-system/foundation.md) | 닫힌 주소 공간과 전단사 원리 |
+| [patterns.md](../../indexing-core-system/patterns.md) | 인덱싱 시스템 사용 패턴 |
 | [../../indexing-core-system/conventions-system.md](../../indexing-core-system/conventions-system.md) | 프로젝트 관례 |
-| [../../operations/runtime-flows.spec.md](../../operations/runtime-flows.spec.md) | `[S2]` 등 런타임 흐름 심볼 체계 |
+| [runtime-flow-paths.spec.md](../../apm-system/apm-runtime-system/runtime-flow-paths.spec.md) | `[S2]` 등 런타임 흐름 심볼 체계 |

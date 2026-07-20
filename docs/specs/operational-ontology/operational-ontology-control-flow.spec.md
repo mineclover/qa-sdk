@@ -75,7 +75,7 @@ control flow는 아래를 관리한다.
 
 ### 기존 체계와의 연결
 
-이 모델은 기존 `PipeGraph`를 대체하려는 것이 아니라, operational ontology에서 정보 전달과 계보를 해석할 때 필요한 최소 orchestration vocabulary를 제공한다. [pipe-spec.ts](/Users/junwoobang/workflow/qa-sdk/packages/core/src/types/pipe-spec.ts#L41)
+이 모델은 기존 `PipeGraph`를 대체하려는 것이 아니라, operational ontology에서 정보 전달과 계보를 해석할 때 필요한 최소 orchestration vocabulary를 제공한다. [pipe-spec.ts](../../../packages/core/src/types/pipe-spec.ts#L41)
 
 ### 현재 우선순위
 

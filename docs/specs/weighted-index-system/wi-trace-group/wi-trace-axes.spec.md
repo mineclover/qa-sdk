@@ -42,7 +42,7 @@ sources:
 
 ## 참조
 
-기반: [wi-math.spec.md](wi-math.spec.md) · [../dkg-system/dkg-system.md](../dkg-system/dkg-system.md)
+기반: [wi-math.spec.md](../wi-math.spec.md) · [../../dkg-system/dkg-system.md](../../dkg-system/dkg-system.md)
 
 ## 역할 정의
 

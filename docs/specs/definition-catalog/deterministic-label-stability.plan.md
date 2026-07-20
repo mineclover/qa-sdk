@@ -43,7 +43,7 @@ sources:
 
 ## 선행 조건 (2026-04-18 추가)
 
-본 plan은 [tier-redesign 제안](../../proposals/tier-redesign/)의 Phase 3 완료를 **선행 조건**으로 작성되었으나, 이후 STC에서 FSM tier가 제거되고 deterministic-label-registry도 상태 없는 projection으로 단순화됐다. 현재 이 조건은 historical context이며, 현행 stability spec은 `deterministic-label-stability-boundary`의 단순화 결정을 따른다.
+본 plan은 [tier-redesign 제안](../../proposals/tier-redesign/README.md)의 Phase 3 완료를 **선행 조건**으로 작성되었으나, 이후 STC에서 FSM tier가 제거되고 deterministic-label-registry도 상태 없는 projection으로 단순화됐다. 현재 이 조건은 historical context이며, 현행 stability spec은 `deterministic-label-stability-boundary`의 단순화 결정을 따른다.
 
 > **참고**: 현재 tier-redesign 제안은 `docs/proposals/tier-redesign/`에서 격리 진행 중(RFC 단계). def graph에 포함되지 않으므로 본 plan의 frontmatter에 `depends_on` 링크는 없다. 수락(accepted) 후 정규 spec이 생성되면 그때 `depends_on`을 복원한다.
 

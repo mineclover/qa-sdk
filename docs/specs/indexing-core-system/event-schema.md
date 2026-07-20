@@ -43,7 +43,7 @@ sources:
 prefix가 이 관계의 **고정된 구조**를 정의하고, table_ref가 **동적 엔티티 타입**을 연결한다.
 
 **참고**: 이 문서의 내용은 좌표 결정 CORE가 아니라 PERIPHERAL 확장이다.
-CORE(축 값 조합 → 유일한 정수)는 [coordinate-states.md](coordinate-states.md)에서 정의한다.
+CORE(축 값 조합 → 유일한 정수)는 [coordinate-states.md](coord-states-group.md)에서 정의한다.
 table_ref와 이벤트 패턴은 CORE 위에 구축되는 응용 계층이다.
 
 ## 구성 ^overview
@@ -62,7 +62,7 @@ table_ref와 이벤트 패턴은 CORE 위에 구축되는 응용 계층이다.
 
 ## 참조
 
-기반: [coordinate-states.md](coordinate-states.md) · [behavioral-traversal.md](behavioral-traversal.md) · [ontology-evaluation.md](ontology-evaluation.md)
+기반: [coordinate-states.md](coord-states-group.md) · [behavioral-traversal.md](behavior-traversal-group.md) · [ontology-evaluation.md](ontology-evaluation.md)
 
 ## 이벤트 = 타입이 있는 관계
 

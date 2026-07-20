@@ -276,7 +276,7 @@ observation log는 append-only 원칙을 따른다.
 - observation은 수정보다 append를 우선한다
 - 집계/요약은 observation log가 아니라 projection에서 계산한다
 
-이 영역은 `address_context`가 EventRecord의 canonical source인 방식과 같은 철학을 따른다. 관측 시점의 원본 의미를 먼저 보존하고, 조회 편의 구조는 나중에 파생한다. [address-context-storage.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/apm-system/apm-schema-system/address-context-storage.spec.md#L17)
+이 영역은 `address_context`가 EventRecord의 canonical source인 방식과 같은 철학을 따른다. 관측 시점의 원본 의미를 먼저 보존하고, 조회 편의 구조는 나중에 파생한다. [address-context-storage.spec.md](../apm-system/apm-schema-system/address-context-storage.spec.md#L17)
 
 ### 5. projection store
 

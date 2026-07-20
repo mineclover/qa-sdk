@@ -1,4 +1,3 @@
-// @def.boundary federated-connection-contract
 // @def.doc federated-connection-contract
 
 import { ConnectionContractError, type SourceRef } from './contract.js';
@@ -35,6 +34,7 @@ export type SourceObservation<TPayload = unknown> = Readonly<{
 export interface SourceAdapter<TPayload = unknown> {
   readonly sourceSystem: string;
   readonly entityType: string;
+  readonly identifierRuleVersion?: number;
   fetch(lookup: SourceLookup): Promise<SourceSnapshot<TPayload>>;
 }
 

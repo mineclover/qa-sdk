@@ -35,7 +35,7 @@ sources:
 DecodeMap 기반 독립 encode/decode 모듈.
 MetaRegistry 없이 entity ID ↔ VersionedValue 변환을 수행한다.
 
-디코딩 파이프라인: [../pipeline.md](../pipeline.md)
+디코딩 파이프라인: [../pipeline-system/pipeline.md](../pipeline-system/pipeline.md)
 
 ## 구성 ^overview
 
@@ -50,8 +50,8 @@ MetaRegistry 없이 entity ID ↔ VersionedValue 변환을 수행한다.
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
-운영 흐름: `[S2, A1]` encode · `[S5, A5, D1]` decode — [runtime-flows.spec.md](../../operations/runtime-flows.spec.md)
+패키지 인덱스: [index-meta-system.md](index-meta-system.md)
+운영 흐름: `[S2, A1]` encode · `[S5, A5, D1]` decode — [runtime-flow-paths.spec.md](../apm-system/apm-runtime-system/runtime-flow-paths.spec.md)
 
 ## 상태
 

@@ -18,6 +18,8 @@ def:
       type: traces_to
     - target: automation-skill-group
       type: traces_to
+    - target: markdown-navigation-health
+      type: traces_to
 ---
 
 # Work Lifecycle — Use Cases
@@ -128,3 +130,32 @@ BDD system에서 `qa-sdk docs bdd list|validate|units|compile|test-plan|impl-pla
 
 - skill-catalog 문서가 skill과 spec의 권한 경계를 흐릴 때
 - `work-lifecycle`이 skill의 역할을 과대평가할 때
+
+## UC-006: 문서 navigation을 상대경로 기준으로 정리한다 ^overview
+
+### 상황
+
+정규 spec 문서의 링크가 파일 위치 기준 상대경로, vault/root 기준 경로, 절대경로로 혼재되어 있다. 작업자는 링크 health를 회복하되 definition graph의 semantic 관계와 source ownership을 변경하지 않아야 한다.
+
+### Given / When / Then
+
+```text
+Given docs/specs 문서와 기존 baseline 링크 결과가 있다.
+When 정규 spec의 내부 Markdown 링크를 정리한다.
+Then 링크 작성 파일 기준 상대경로를 사용하고, /Users/...·/docs/... absolute link를 새로 만들지 않는다.
+And def.links[].target, link type, owner_system, sources는 Hyalo 결과만으로 변경하지 않는다.
+And exact/fixable 후보를 확인한 뒤에만 적용하며 fuzzy 자동 수정과 대량 이동은 실행하지 않는다.
+And 변경 후 Hyalo navigation 결과와 def sync/validate 결과를 서로 다른 증거로 기록한다.
+```
+
+### 기대 증거
+
+- `docs/specs/**` 정규 navigation 범위의 broken/fixable/fuzzy/unfixable/ambiguous 결과가 0이거나, 남은 항목에 의도가 기록된다.
+- `def sync`와 `def validate`는 semantic graph 기준으로 통과한다.
+- repo 외부 source/evidence 경로는 root 기준으로 검증하되 docs-vault navigation 지표에 합산하지 않는다.
+
+### 실패 시 수정 대상
+
+- 물리 링크가 깨졌으면 source 파일 기준 경로와 실제 target 존재 여부를 먼저 수정한다.
+- semantic link가 깨졌으면 `def sync`/`def validate` 기준으로 frontmatter를 수정한다.
+- 두 결과가 다르면 Hyalo가 semantic graph를 재해석한 것이 아닌지, 또는 root/vault 기준을 혼용한 것이 아닌지 확인한다.

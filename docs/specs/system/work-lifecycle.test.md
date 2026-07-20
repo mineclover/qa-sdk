@@ -33,9 +33,12 @@ sources:
 | lifecycle artifacts/workTopics/prune summary | `packages/cli/src/commands/docs.test.ts` |
 | cross-family `work_topic.contracts[]` resolution | `packages/cli/src/commands/docs.test.ts` |
 | path suffix readiness (`:symbol`, `#anchor`) | `packages/cli/src/commands/docs.test.ts` |
+| standard work-method artifact/closure mapping | `docs/specs/system/work-lifecycle.spec.md` + `docs/specs/system/work-lifecycle.cases.md` |
+| source-relative Markdown navigation boundary | `.hyalo.toml` + `docs/specs/system/markdown-navigation-health.rule.md` |
 
 ## 소비 ^consumes
 
 - `work-lifecycle`
 - `work-topic-schema-plan`
 - `docs-control-plane`
+- `markdown-navigation-health`

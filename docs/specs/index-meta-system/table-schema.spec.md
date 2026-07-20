@@ -42,7 +42,7 @@ sources:
 `MetaRegistry`가 런타임 encode/decode를 담당한다면,
 이 레이어는 **외부 DB의 주소 공간(address space)을 정의하고 버전을 관리**한다.
 
-저장소 레이어: [store.spec.md](store.spec.md)
+저장소 레이어: [index-meta-store-group.md](index-meta-store-group.md)
 
 ## 구성 ^overview
 
@@ -60,7 +60,7 @@ sources:
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
+패키지 인덱스: [index-meta-system.md](index-meta-system.md)
 
 ## 상태
 

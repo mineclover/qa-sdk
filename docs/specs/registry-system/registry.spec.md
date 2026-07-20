@@ -28,7 +28,7 @@ sources:
 MetaRegistry — 주소 게이트웨이. 스키마 관리 + 직렬화 + 코덱 생성.
 entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](codec.spec.md)이 담당한다.
 
-디코딩 파이프라인: [../pipeline.md](../pipeline.md)
+디코딩 파이프라인: [../pipeline-system/pipeline.md](../pipeline-system/pipeline.md)
 
 ## 구성 ^overview
 
@@ -43,7 +43,7 @@ entity ID ↔ VersionedValue 변환(encode/decode)은 [MetaCodec](codec.spec.md)
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
+패키지 인덱스: [registry-system.md](registry-system.md)
 
 ## 상태
 
@@ -189,17 +189,17 @@ new MetaRegistry(input: MetaRegistryInput)
 | 메서드 | 설명 |
 |---|---|
 | `createCodec(indexId, versionId)` | 특정 version에 특화된 독립 코덱 생성 → [MetaCodec](codec.spec.md) |
-| `createCodecBig(indexId, versionId)` | BigInt 기반 코덱 생성 → [MetaCodecBig](../../indexing-core-system/bigint-addressing-runtime.spec.md) |
+| `createCodecBig(indexId, versionId)` | BigInt 기반 코덱 생성 → [MetaCodecBig](../indexing-core-system/bigint-addressing-group/bigint-addressing-runtime.spec.md) |
 | `getActiveManifest(indexId, versionId)` | 버전 단위 활성 인덱스 집합 |
 | `getCapacityInfo(indexId, versionId)` | `VersionCapacityInfo` 반환 (BigInt 정확 값 포함) |
 | `serialize(vv, protocol?)` | VersionedValue → 프로토콜 문자열 ([address.spec.md](address.spec.md) 참조) |
-| `serializeBig(vvb)` / `parseBig(input)` | BigInt 주소 직렬화/파싱 ([../../indexing-core-system/bigint-addressing-runtime.spec.md](../../indexing-core-system/bigint-addressing-runtime.spec.md) §4) |
+| `serializeBig(vvb)` / `parseBig(input)` | BigInt 주소 직렬화/파싱 ([../indexing-core-system/bigint-addressing-group/bigint-addressing-runtime.spec.md](../indexing-core-system/bigint-addressing-group/bigint-addressing-runtime.spec.md) §4) |
 | `parse(input, protocol?)` | 프로토콜 문자열 → VersionedValue (검증 포함) |
 | `toInput()` | 생성자 입력의 deep clone 반환 (fork 패턴) |
 
 > **Note**: encode/decode/toPK/fromPK는 MetaCodec으로 분리되었다.
 > `codec.encode(entityIds)` + `reg.serialize(vv)` 조합으로 사용한다.
-> BigInt 인덱스(shape product > 2^53)는 `createCodecBig()` + `serializeBig()` 사용. 상세: [../../indexing-core-system/bigint-addressing-group.md](../../indexing-core-system/bigint-addressing-group.md)
+> BigInt 인덱스(shape product > 2^53)는 `createCodecBig()` + `serializeBig()` 사용. 상세: [../indexing-core-system/bigint-addressing-group.md](../indexing-core-system/bigint-addressing-group.md)
 
 ### 조회 API
 

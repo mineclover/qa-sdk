@@ -41,7 +41,7 @@ prefix가 실제로 무엇을 표현하는지,
 
 ## 참조
 
-기반: [decision-standard.md](decision-standard.md) · [README.md](README.md)
+기반: [decision-standard.md](../decision-flow/decision-standard-group.md) · [spec-engine-system.md](spec-engine-system.md)
 
 ## 구성 ^overview
 

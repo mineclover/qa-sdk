@@ -17,7 +17,7 @@ def:
     - target: convergence-advisors
       type: refs
     - target: spec-architecture-system
-      type: depends_on
+      type: refs
 sources:
   - packages/convergence/src/symbol-comparator.ts
   - packages/convergence/src/decision-comparator.ts

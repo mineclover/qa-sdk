@@ -13,9 +13,9 @@ def:
   tags: [infra, runtime, contract, structural]
   links:
     - target: shared-utility-group
-      type: refines
+      type: refs
     - target: infra-engine-pipeline
-      type: depends_on
+      type: refs
     - target: infra-env-kit-env-bridge
       type: refs
     - target: infra-env-kit-export-surface

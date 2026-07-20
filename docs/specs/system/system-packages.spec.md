@@ -12,9 +12,9 @@ def:
   tags: [entry-point, cross-scope, structural]
   links:
     - target: spec-architecture-system
-      type: refines
+      type: refs
     - target: registry-api
-      type: refines
+      type: refs
     - target: package-surface-separation-rule
       type: refs
     - target: system-taxonomy
@@ -68,6 +68,7 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Taxonomy decision bridge | taxonomy capability | taxonomy artifact와 decision-flow 변환 계약 | `taxonomy-decision-bridge` |
 | Taxonomy preview surfaces | taxonomy capability | taxonomy artifact 브라우저 탐색 consumer | `@qa-sdk/taxonomy-web` |
 | Federated connection contract | connection capability | source identity, mapping, typed relation 순수 계약/registry | `federated-connection` |
+| Federated connection runtime | connection capability | connection state persistence, impact plan, policy, approval, execute/re-fetch/verify orchestration | `federated-connection-runtime` |
 | Profile contract tooling | profile capability | profile fixture 계약과 adapter payload | `data-structure-profile` |
 | Quality evidence ledgers | profile capability | gate/review 결과 영속 기록 | `quality-ledger`, `review-ledger` |
 | Measurement tooling | profile capability | 측정 실행과 리포트 표면 | `@qa-sdk/bench` |

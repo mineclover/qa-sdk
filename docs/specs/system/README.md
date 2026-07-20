@@ -25,6 +25,8 @@ def:
       type: refs
     - target: link-type-usage
       type: refs
+    - target: markdown-navigation-health
+      type: refs
     - target: facet-test-isolation-rule
       type: refs
     - target: layer-separation
@@ -36,6 +38,8 @@ def:
     - target: design-usefulness-audit
       type: refs
     - target: package-surface-separation-rule
+      type: refs
+    - target: federated-architecture-governance
       type: refs
 sources:
   - scripts/design-usefulness-audit.mjs
@@ -65,11 +69,13 @@ sources:
 | [catalog-purity-bridge](./catalog-purity-bridge.rule.md) | `definition-catalog` 는 DB 의존 없는 순수 라이브러리 — 브릿지는 `definition-service` 가 담당 |
 | [change-simulation-precedence](./change-simulation-precedence.rule.md) | 구조적 변경은 코드 커밋 전 시뮬레이션 선행 |
 | [link-type-usage](./link-type-usage.rule.md) | LinkType 6종 사용 규칙 (contains / depends_on / implements / refines / constrains / traces_to) |
+| [markdown-navigation-health](./markdown-navigation-health.rule.md) | Hyalo를 Markdown navigation link health에만 사용하는 책임 경계 |
 | [facet-test-isolation](./facet-test-isolation.rule.md) | 격리 테스트 패키지 운영 규칙 + 서비스 온보딩 절차 |
 | [layer-separation](./layer-separation.rule.md) | data / validator / workflow / tooling 4 계층 책임 모델 + workflow smoke 원칙 |
 | [coordinate-storage](./coordinate-storage.rule.md) | weighted-index 좌표를 저장할 때 `(prefix_id, version, address)` VersionedIndex 패턴 필수 |
 | [design-usefulness-audit](./design-usefulness-audit.rule.md) | 실행 증거 없는 설계 문서/패키지를 keep/prove/quarantine/remove로 판정하는 감사 규칙 |
 | [package-surface-separation](./package-surface-separation.rule.md) | package surface를 coordinate kernel, observability runtime, definition catalog, decision evidence, spec analysis, governance tooling, taxonomy, profile, operational ontology, authorization, motion, simulation, visual analysis, verification, demo, quarantine으로 분리하는 승격/격리 규칙 |
+| [federated-architecture-governance](./federated-architecture-governance.rule.md) | 원본 업무 시스템을 재구현하지 않고 식별자·mapping·관계·변경 증거를 관리하는 중간 연결 시스템의 책임 분리 |
 
 ---
 

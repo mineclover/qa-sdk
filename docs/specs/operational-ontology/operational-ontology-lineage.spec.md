@@ -38,7 +38,7 @@ sources:
 - `expression`
 - `transmission ref`
 
-이 구조는 meta-semantic의 `FieldLineage`와 같은 방향이지만, operational ontology에서는 field 수준보다 먼저 **정보 facet 사이의 계보**를 본다. [data-schema.ts](/Users/junwoobang/workflow/qa-sdk/packages/core/src/types/data-schema.ts#L46)
+이 구조는 meta-semantic의 `FieldLineage`와 같은 방향이지만, operational ontology에서는 field 수준보다 먼저 **정보 facet 사이의 계보**를 본다. [data-schema.ts](../../../packages/core/src/types/data-schema.ts#L46)
 
 ## 정의 ^defines
 

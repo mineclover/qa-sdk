@@ -227,5 +227,5 @@ prefix는 **타입**을 정의한다. 런타임에 발생하는 **인스턴스**
 
 ## 참조
 
-- [event-schema.md](../indexing/event-schema.md) — 이벤트 = 관계 정의, 3-slot 구조, 관계 유형 분류
-- [foundation.md](../indexing/foundation.md) — 좌표 시스템 근본 원리 (닫힌 공간, stride 공식)
+- [event-schema.md](../event-schema.md) — 이벤트 = 관계 정의, 3-slot 구조, 관계 유형 분류
+- [foundation.md](../foundation.md) — 좌표 시스템 근본 원리 (닫힌 공간, stride 공식)

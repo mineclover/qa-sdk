@@ -66,7 +66,7 @@ def:
 
 ### 기존 체계와의 연결
 
-기존 meta-semantic의 pipe simulation은 이미 “무엇이 함께 실행되는가”를 다룬다. operational ontology의 simulation은 여기에 “무엇이 facet로 전달되는가”를 덧붙인 해석층이 된다. [meta-semantic-pipe-impl.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/meta-semantic/meta-semantic-pipe-impl.spec.md#L54), [tracking-three-axes.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/system/tracking-three-axes.spec.md#L128)
+기존 meta-semantic의 pipe simulation은 이미 “무엇이 함께 실행되는가”를 다룬다. operational ontology의 simulation은 여기에 “무엇이 facet로 전달되는가”를 덧붙인 해석층이 된다. [meta-semantic-pipe-impl.spec.md](../meta-semantic/meta-semantic-pipe-impl.spec.md#L54), [tracking-three-axes.spec.md](../system/tracking-three-axes.spec.md#L128)
 
 ### 최소 검증 질문
 

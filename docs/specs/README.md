@@ -213,11 +213,12 @@ API 클라이언트, iframe 통신 프로토콜.
 
 ### connection-system/ — 원본 식별자와 qa-sdk 연결 계약
 
-원본 시스템의 local ID를 보존하면서 qa-sdk 연결 identity, mapping, typed relation을 관리하는 순수 계약 표면.
+원본 시스템의 local ID를 보존하면서 qa-sdk 연결 identity, mapping, typed relation을 관리하는 계약·운영 표면.
 
 | 스펙 | 설명 | 원본 패키지 | 상태 |
 |---|---|---|---|
 | [federated-connection-contract.spec.md](connection-system/federated-connection-contract.spec.md) | SourceRef/ConnectionRef, source snapshot/observation, mapping conflict, typed relation, in-memory registry | federated-connection | implemented |
+| [federated-connection-runtime.spec.md](connection-system/federated-connection-runtime.spec.md) | SQLite/memory state, impact plan, policy, approval, execute/re-fetch/verify runtime | federated-connection-runtime | implemented |
 
 ### meta-semantic/ — 메타 시맨틱 아키텍처
 

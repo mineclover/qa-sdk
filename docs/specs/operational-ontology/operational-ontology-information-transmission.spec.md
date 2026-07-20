@@ -58,7 +58,7 @@ def:
 4. **observation emission**
    정보나 경로의 상태가 관측 이벤트로 전달
 
-이 분리는 meta-semantic의 계약 하향과 파이프 실행 개념을 operational ontology 쪽에서 재사용하는 방식이다. [meta-semantic-concepts.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/meta-semantic/meta-semantic-concepts.spec.md#L59), [meta-semantic-ir.spec.md](/Users/junwoobang/workflow/qa-sdk/docs/specs/meta-semantic/meta-semantic-ir.spec.md#L21)
+이 분리는 meta-semantic의 계약 하향과 파이프 실행 개념을 operational ontology 쪽에서 재사용하는 방식이다. [meta-semantic-concepts.spec.md](../meta-semantic/meta-semantic-concepts.spec.md#L59), [meta-semantic-ir.spec.md](../meta-semantic/meta-semantic-ir.spec.md#L21)
 
 ### edge의 재해석
 

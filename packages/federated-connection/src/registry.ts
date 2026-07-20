@@ -1,4 +1,3 @@
-// @def.boundary federated-connection-contract
 // @def.doc federated-connection-contract
 
 import {

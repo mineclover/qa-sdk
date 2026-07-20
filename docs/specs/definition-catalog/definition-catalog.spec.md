@@ -43,6 +43,8 @@ def:
       type: refs
     - target: definition-service
       type: refs
+    - target: federated-architecture-governance
+      type: constrains
 ---
 
 # Definition Catalog — 소프트웨어 정의 좌표계
@@ -50,6 +52,15 @@ def:
 ## 목적 ^purpose
 
 비즈니스 로직 정의를 좌표 주소로 분류하고, contains 계층으로 조립하는 문서 메타데이터 시스템.
+
+## 연결 시스템과의 경계 ^constraint
+
+`definition-catalog`은 qa-sdk의 기존 중간 연결 방향에서 **정의 그래프와 정의 주소**를 담당한다. 원본 시스템의 local ID, source reference, connection identity, source 간 crosswalk를 소유하지 않는다.
+
+- definition address는 문서·계약을 식별하는 qa-sdk 내부 좌표이며 source record의 canonical ID가 아니다.
+- definition graph와 federation relation graph는 별도 그래프다. 필요한 연결은 reference, adapter, mapping evidence로 표현한다.
+- `definition-service`와 `definition-data-source`는 definition metadata의 persistence/read bridge를 제공하지만 source 업무 데이터의 master store가 아니다.
+- connection identity/crosswalk가 필요할 때 definition-catalog의 taxonomy나 graph model에 임의로 추가하지 않고, 별도 연결 시스템 계약을 통해 참조한다.
 
 ## 정의 ^defines
 

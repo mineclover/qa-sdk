@@ -111,13 +111,13 @@ sources:
 
 | 문서 | 성격 | 핵심 내용 |
 |---|---|---|
-| [architecture.md](architecture.md) | **전체 아키텍처** | 5-Layer 구조 (L0~L4), Document Spec 투영, 식별자 규약, 추적성 연결, 구현 순서 **(DRAFT)** |
+| [architecture.md](../indexing-core-system/index-arch-group.md) | **전체 아키텍처** | 5-Layer 구조 (L0~L4), Document Spec 투영, 식별자 규약, 추적성 연결, 구현 순서 **(DRAFT)** |
 | [foundation.md](foundation.md) | **근본 원리** | 좌표 시스템 정체성, 닫힌 조합 공간, stride 공식과 주소 안정성, 버전화된 공간 계열, 레이어 분리 |
-| [coordinate-states.md](coordinate-states.md) | **좌표 상태 모델** | 인프라 타입 시스템 정체성, 활성 영역, draft/sealed, version diff, 하네스 원칙 **(DRAFT)** |
+| [coordinate-states.md](../indexing-core-system/coord-states-group.md) | **좌표 상태 모델** | 인프라 타입 시스템 정체성, 활성 영역, draft/sealed, version diff, 하네스 원칙 **(DRAFT)** |
 | [schema-layer.md](schema-layer.md) | **Schema Layer** | 4-Layer 아키텍처, 6 기본 스키마, fragment 조합, 구조적 제약, 검증 파이프라인 **(DRAFT)** |
 | [event-schema.md](event-schema.md) | **이벤트 스키마** | EventSchema의 구체 예시, 3-slot 구조, table_ref 증명 **(DRAFT — PERIPHERAL)** |
-| [behavioral-traversal.md](behavioral-traversal.md) | **행위 축 탐색** | 데이터 흐름 경로 추적, 4가지 관계, 탐색 DSL, 단일 원천 추적 **(DRAFT — QA 시스템 전제)** |
-| [data-design.md](data-design.md) | **설계 구조** | 좌표 시스템 6단계 설계: 차원 압축, 편입, 의미 부여, 범위 연산, 캐싱, 통합 카탈로그 |
+| [behavioral-traversal.md](../indexing-core-system/behavior-traversal-group.md) | **행위 축 탐색** | 데이터 흐름 경로 추적, 4가지 관계, 탐색 DSL, 단일 원천 추적 **(DRAFT — QA 시스템 전제)** |
+| [data-design.md](../indexing-core-system/data-design-group.md) | **설계 구조** | 좌표 시스템 6단계 설계: 차원 압축, 편입, 의미 부여, 범위 연산, 캐싱, 통합 카탈로그 |
 | [ontology-evaluation.md](ontology-evaluation.md) | **온톨로지 대응** | RDF/OWL 스키마 매핑 평가, 좌표 시스템의 경계와 데이터 저장 계층 출발점 |
 | [version-operations.md](version-operations.md) | **버전 운영** | DraftWorkspace, 배포 워크플로우, 다중 버전 관리, 저장값 마이그레이션 |
 | [pipeline.md](pipeline.md) | **파이프라인 레퍼런스** | entity ID ↔ PK 문자열 전체 인코딩/디코딩 경로 |
@@ -125,10 +125,10 @@ sources:
 | [../indexing-core-system/conventions-system.md](../indexing-core-system/conventions-system.md) | **프로젝트 관례** | ID 네이밍, 예약 토큰, EntityId 정규화, 커스텀 포맷 등록 |
 | [../indexing-core-system/slot-marker-group.md](../indexing-core-system/slot-marker-group.md) | **슬롯 마커** | 닫힌 패턴에서 "선택하지 않음"을 표현하는 공식 메커니즘. 테스트 코드, 수집 전략, 용량 영향 |
 | [../query-system/query-system.md](../query-system/query-system.md) | **좌표 질의** | 패턴 포함 관계(lattice), 정책 해소, cross-index 합성 질의, 버전 횡단 탐색, RelationalEngine |
-| [dimension-operations.md](dimension-operations.md) | **차원 운영** | 축 교차 선택(BitMaskSet, ScopedEngine), 환경 주입(ServiceRef, PermCodeFactory), 배포 시점 해석(PartialBinder) |
-| [table-system.md](table-system.md) | **테이블 시스템** | 좌표↔관계형 양방향 연결, DimRef table_ref, ColumnRef 4종, 이벤트 인코딩 분리, 그래프 탐색 |
-| [dsl-bundle.md](dsl-bundle.md) | **DSL 번들** | prefix 묶음 + 서비스 바인딩 + 사용 패턴 정의, DslBundleNode, 커버리지 분석 |
-| [signal-model.md](signal-model.md) | **Signal 모델** | 트래킹 상위 개념 — Signal = 의미있는 순간, 7가지 SignalRole, Signal 체인, 검증 |
+| [dimension-operations.md](../indexing-core-system/dim-ops-system.md) | **차원 운영** | 축 교차 선택(BitMaskSet, ScopedEngine), 환경 주입(ServiceRef, PermCodeFactory), 배포 시점 해석(PartialBinder) |
+| [table-system.md](../indexing-core-system/table-system-group.md) | **테이블 시스템** | 좌표↔관계형 양방향 연결, DimRef table_ref, ColumnRef 4종, 이벤트 인코딩 분리, 그래프 탐색 |
+| [dsl-bundle.md](../indexing-core-system/dsl-bundle.md) | **DSL 번들** | prefix 묶음 + 서비스 바인딩 + 사용 패턴 정의, DslBundleNode, 커버리지 분석 |
+| [signal-model.md](../indexing-core-system/signal-model.md) | **Signal 모델** | 트래킹 상위 개념 — Signal = 의미있는 순간, 7가지 SignalRole, Signal 체인, 검증 |
 | [../indexing-core-system/bigint-addressing-group.md](../indexing-core-system/bigint-addressing-group.md) | **BigInt 주소 체계** | Number.MAX_SAFE_INTEGER 한계, BigInt API (weighted-index + index-meta), 용량 가드, 성능 특성 |
 | [../indexing-core-system/benchmark-system.md](../indexing-core-system/benchmark-system.md) | **벤치마크** | 차원 확장 한계, encode/decode 속도, cross-index 종단 탐사, 정보 디코딩 파이프라인 |
 | [acceleration.md](acceleration.md) | **하드웨어 가속 비전** | FPGA/PCIe 가속 적합성, 파이프라인 경계, batch/binary 인터페이스 로드맵 |
@@ -174,7 +174,7 @@ index-meta/                        ← 스키마 + 프로토콜 바인딩 + 외�
 | [../permission/permission-system.md](../permission/permission-system.md) | 4 문서 | 비트마스크 권한 엔진, 3-tier 코덱, external identity layer, ternary 상속, 외부 scope 라우팅, shape migration | implemented |
 | [../index-meta-system/index-meta-system.md](../index-meta-system/index-meta-system.md) | 13 문서 | 스키마 선언, 저장소, 주소 게이트웨이, 코덱, Address, Resolver, SDK, DX, GateEngine, 시나리오, ADR | implemented / planned |
 
-대표 하위 문서: [weighted-index/partial-binder.spec.md](weighted-index/partial-binder.spec.md) · [permission-engine/README.md](permission-engine/README.md)
+대표 하위 문서: [weighted-index/partial-binder.spec.md](../weighted-index-system/partial-binder.spec.md) · [permission-engine/README.md](permission-engine/README.md)
 
 ## 좌표 시스템 관심사 흐름
 
@@ -351,4 +351,4 @@ shape  ─→  shapeProduct(shape)  ─→  ≤ 2^53?  ─→  WeightedIndex (Nu
 
 > **검증**: [`format-adapter.test.ts`](../../../packages/weighted-index/src/format-adapter.test.ts) — §1 구조적 격리, §2 사후 분석, §3 실시간 감지, §4 경계값 정밀도, §5 엔진 선택 분리, §6 다중 포맷 동시 평가, §7 포맷 변경 시 수학 불변
 
-상세: [bigint-addressing.spec.md](bigint-addressing.spec.md)
+상세: [bigint-addressing-runtime.spec.md](../indexing-core-system/bigint-addressing-group/bigint-addressing-runtime.spec.md)

@@ -12,7 +12,7 @@ def:
   lifecycle: approved
   links:
     - target: system-support
-      type: depends_on
+      type: refs
     - target: service-definition-standard
       type: depends_on
     - target: architecture-revealing-code-convention

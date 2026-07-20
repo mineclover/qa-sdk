@@ -13,7 +13,7 @@ def:
   tags: [scaffold, architecture, codegen, contract, structural]
   links:
     - target: system-packages
-      type: refines
+      type: refs
     - target: scaffold-domain-schematic
       type: refs
     - target: scaffold-domain-development-convention

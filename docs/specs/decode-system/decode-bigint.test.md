@@ -67,7 +67,7 @@ PrefixDecoderBig의 생성, decode, encode, deep decode, batch, matchRanges, ref
 
 ### matchRanges (1)
 
-18. { role: "admin" } 부분 조건 → BigInt 범위 [[0n, 8n]] 반환
+18. { role: "admin" } 부분 조건 → BigInt 범위 `[[0n, 8n]]` 반환
 
 ### resolveRef / hasRef (5)
 

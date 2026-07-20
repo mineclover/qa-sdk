@@ -39,7 +39,7 @@ sources:
 - **중첩 prefix 활용**: PrefixCodec과 결합하여 composite prefix를 디코딩 없이 순수 산술로 필터링하며, 비율은 `1/shape[dimIndex]`로 예측 가능
 - **사용 예**: role/env 필터링, OR 조건, AND 조건, SQL `BETWEEN` 생성까지의 전체 코드 예시 포함
 
-관련: [core.spec.md](core.spec.md), [../index-meta/store.spec.md](../index-meta/store.spec.md)
+관련: [core.spec.md](wi-system.md), [../index-meta/store.spec.md](../index-meta-system/index-meta-store-group.md)
 
 
 ## 참조

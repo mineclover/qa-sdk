@@ -320,8 +320,8 @@ def:
 
     writeFileSync(
       join(pkgDir, 'catalog.ts'),
-      `// @def.boundary event-prefix-group#Catalog.events.auth_event
-// @def.boundary observation-prefix-group#Catalog.observations.page_view
+      `// ${'@def'}.boundary event-prefix-group#Catalog.events.auth_event
+// ${'@def'}.boundary observation-prefix-group#Catalog.observations.page_view
 export const Catalog = {
   events: { auth_event: {} },
   observations: { page_view: {} },
@@ -331,8 +331,8 @@ export const Catalog = {
     );
     writeFileSync(
       join(pkgDir, 'conflicting.ts'),
-      `// @def.boundary event-prefix-group
-// @def.boundary observation-prefix-group
+      `// ${'@def'}.boundary event-prefix-group
+// ${'@def'}.boundary observation-prefix-group
 export const conflicting = true;
 `,
       'utf8',

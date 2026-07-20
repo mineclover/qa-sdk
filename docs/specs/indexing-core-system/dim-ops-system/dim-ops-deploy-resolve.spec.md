@@ -49,7 +49,7 @@ sources:
 PartialBinder는 차원을 **여러 시점에 걸쳐 점진적으로 고정**하는 curried encoder다. 빌드/배포/런타임 각 단계에서 알게 되는 차원만 바인딩하면, 최종 시점에 나머지만 전달하여 주소를 계산한다.
 
 소스: `packages/weighted-index/src/vocab/partial-binder.ts`
-상세 스펙: [weighted-index/partial-binder.spec.md](../indexing/weighted-index/partial-binder.spec.md)
+상세 스펙: [weighted-index/partial-binder.spec.md](../../weighted-index-system/partial-binder.spec.md)
 
 ## 구성 ^overview
 

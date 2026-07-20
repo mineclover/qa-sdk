@@ -1305,6 +1305,28 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@25.5.0)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.54.8)(terser@5.48.0)
 
+  packages/federated-connection-runtime:
+    dependencies:
+      federated-connection:
+        specifier: workspace:*
+        version: link:../federated-connection
+      index-meta:
+        specifier: workspace:*
+        version: link:../index-meta
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.1
+        version: 1.6.1(@types/node@22.19.15)(happy-dom@20.8.4)(jsdom@29.1.1)(lightningcss@1.32.0)(stylus@0.54.8)(terser@5.48.0)
+
   packages/gate-service:
     dependencies:
       '@hono/node-server':

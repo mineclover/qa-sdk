@@ -174,7 +174,7 @@ pnpm exec qa-sdk def code-link-gaps --json
 
 ## 5. 근거
 
-- [`skills/semantic-change/SKILL.md`](../../../skills/semantic-change/SKILL.md) — 본 규칙을 재사용 가능한 5-step 체크리스트로 정리한 playbook (Option B 사례 포함)
+- [`semantic-change/SKILL.md`](../../../.agents/skills/semantic-change/SKILL.md) — 본 규칙을 재사용 가능한 5-step 체크리스트로 정리한 playbook (Option B 사례 포함)
 - [selector-review §2.3 / §5 Gap #1 / Gap #8](../../proposals/domain-hierarchy/reviews/2026-04-21-selector-review.md) — `def topdown gate-system` 0 member silent regression 증거
 - [selector-fixes §1.2 / §1.3](../../proposals/domain-hierarchy/reviews/2026-04-21-selector-fixes.md) — `collectDomainMembers` union 도입과 실측 복구
 - `packages/cli/src/commands/def.ts:829-861` — `collectDomainMembers` 구현 (Union 원칙)

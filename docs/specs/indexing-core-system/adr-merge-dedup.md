@@ -69,7 +69,7 @@ sources:
 
 ## 참조
 
-관련 계획: [tasks/indexing-merge-plan.md](../../../../tasks/indexing-merge-plan.md)
+관련 계획: [tasks/archive/indexing-merge-plan.md](../../../tasks/archive/indexing-merge-plan.md)
 
 ## 맥락
 

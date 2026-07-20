@@ -62,6 +62,6 @@ sources:
 
 ## 기반 문서
 
-- [foundation.md](../indexing/foundation.md) — 좌표 시스템 근본 원리
-- [event-schema.md](../indexing/event-schema.md) — 이벤트 = 관계 정의, 3-slot 구조
-- [schema-layer.md](../indexing/schema-layer.md) — 4-Layer 아키텍처에서 table_ref의 위치
+- [foundation.md](foundation.md) — 좌표 시스템 근본 원리
+- [event-schema.md](event-schema.md) — 이벤트 = 관계 정의, 3-slot 구조
+- [schema-layer.md](schema-layer.md) — 4-Layer 아키텍처에서 table_ref의 위치

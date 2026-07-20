@@ -36,7 +36,7 @@ MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합
       `prefix-registry.test.ts`, `table-def.test.ts`, `schema-sync.test.ts`, `address-resolver.test.ts`,
       `migrate-address.test.ts`
 
-외부 시스템 통합 시나리오 (AddressProtocolManager): [../../index-meta-system/address-scenarios-group.md](../../index-meta-system/address-scenarios-group.md)
+외부 시스템 통합 시나리오 (AddressProtocolManager): [address-scenarios-group.md](address-scenarios-group.md)
 
 ## 구성 ^overview
 
@@ -53,7 +53,7 @@ MetaCodec + MetaResolver + MetaRegistry + PrefixRegistry + IndexMetaStore 통합
 
 ## 참조
 
-패키지 인덱스: [README.md](README.md)
+패키지 인덱스: [index-meta-system.md](index-meta-system.md)
 
 ## 상태
 

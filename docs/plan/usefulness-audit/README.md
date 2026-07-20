@@ -12,7 +12,7 @@ def:
   tags: [audit, usefulness, pruning]
   links:
     - target: design-usefulness-audit
-      type: depends_on
+      type: refs
     - target: skill-catalog-system
       type: refs
 ---

@@ -47,7 +47,7 @@ Signal = 시스템에서 발생한 의미있는 순간.
 "트래킹 포인트"는 코드의 호출 지점이지 좌표계의 개념이 아니다.
 좌표계의 상위 개념은 Signal.
 
-기반 문서: [dimension-operations.md](dimension-operations.md) · [dsl-bundle.md](dsl-bundle.md) · [table-system.md](table-system.md)
+기반 문서: [dimension-operations.md](dim-ops-system.md) · [dsl-bundle.md](dsl-bundle.md) · [table-system.md](table-system-group.md)
 소스: `packages/viz-3d/src/core/signal-model.ts`
 
 ## 구성 ^overview
@@ -288,9 +288,9 @@ Data Flow                    ◄ 5/13 ►
 
 ## 참조
 
-- [dimension-operations.md](dimension-operations.md) — 축 교차/환경 주입
+- [dimension-operations.md](dim-ops-system.md) — 축 교차/환경 주입
 - [dsl-bundle.md](dsl-bundle.md) — DSL 번들 (Signal의 상위 묶음)
-- [table-system.md](table-system.md) — data role의 테이블 연결
+- [table-system.md](table-system-group.md) — data role의 테이블 연결
 
 ## 관련 소스
 
