@@ -1,9 +1,6 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import {
-  scanAndClassify,
-  type ClassifiedPackage,
-} from '../packages/package-classifier/src/pkg-classifier.js';
+import { scanAndClassify } from '../packages/package-classifier/src/pkg-classifier.js';
 
 async function extractBoundaryTags(pkgDir: string): Promise<{ boundary?: string; doc?: string }> {
   const indexPaths = [join(pkgDir, 'src/index.ts'), join(pkgDir, 'src/main.ts')];
@@ -19,6 +16,10 @@ async function extractBoundaryTags(pkgDir: string): Promise<{ boundary?: string;
     }
   }
   return {};
+}
+
+function comparableManifest(value: { generatedAt?: string }): string {
+  return JSON.stringify({ ...value, generatedAt: null });
 }
 
 async function main() {
@@ -57,11 +58,19 @@ async function main() {
   }
 
   const outputPath = join(root, 'docs/generated-api-manifest.json');
+  try {
+    const previous = JSON.parse(await readFile(outputPath, 'utf-8')) as { generatedAt?: string };
+    if (previous.generatedAt && comparableManifest(previous) === comparableManifest(manifest)) {
+      // 내용이 같으면 timestamp만 바뀌어 dirty가 생기지 않도록 기존 generatedAt을 보존한다.
+      manifest.generatedAt = previous.generatedAt;
+    }
+  } catch {
+    // no previous manifest
+  }
+
   await writeFile(outputPath, JSON.stringify(manifest, null, 2));
   console.log(`✅ API Reference Manifest generated at: ${outputPath}`);
 }
-
-import { writeFile } from 'node:fs/promises';
 
 main().catch((err) => {
   console.error(err);
