@@ -27,6 +27,7 @@ sources:
   - packages/context-runtime/src/routes.ts
   - packages/context-runtime/src/working-context.ts
   - packages/context-runtime/src/handoff.ts
+  - packages/context-runtime/src/adapters.ts
   - packages/context-runtime/src/closure.ts
   - packages/context-runtime/src/budget.test.ts
   - packages/context-runtime/src/discovery.test.ts
@@ -34,15 +35,16 @@ sources:
   - packages/context-runtime/src/working-context.test.ts
   - packages/context-runtime/src/manifest.test.ts
   - packages/context-runtime/src/handoff.test.ts
+  - packages/context-runtime/src/adapters.test.ts
   - packages/context-runtime/src/closure.test.ts
   - packages/context-runtime/src/boundary.test.ts
 ---
 
-# Context Runtime — Phase 1–4 구현
+# Context Runtime — Phase 1–5 구현
 
 ## 목적 ^purpose
 
-Discovery/Working Context 분리의 기반 타입·순수 검증·Discovery Plan·Working Context compiler·reference-only Handoff를 제공한다. 이 단계는 실제 source 조회나 LLM 실행·영속화를 하지 않고, 이후 adapter가 소비할 수 있는 결정론적 plan과 실행 전/후 envelope만 소유한다.
+Discovery/Working Context 분리의 기반 타입·순수 검증·Discovery Plan·Working Context compiler·reference-only Handoff·외부 경계 adapter contract를 제공한다. 이 단계는 실제 source 조회나 LLM 실행·영속화를 하지 않고, composition root가 주입하는 port와 event mapping seam만 소유한다.
 
 ## 현재 구현 ^defines
 
@@ -59,17 +61,21 @@ Discovery/Working Context 분리의 기반 타입·순수 검증·Discovery Plan
 - `freezeRouteSelection` — 선언된 route key만 선택하는 순수 freeze 연산
 - `ContextManifest` / `createContextManifest` — canonical JSON, stable digest, Fact reference만 포함하는 실행 manifest
 - `TaskHandoff` / `createTaskHandoff` — source/result revision, evidence, unresolved question, next task만 전달하는 reference-only handoff
+- `createDefinitionGraphDiscoveryAdapter` — definition graph route node를 Discovery candidate로 투영
+- `createFederatedResolutionAdapter` — federation query 결과를 Resolution Fact로 투영하고 미선언 Fact를 제거
+- `createDecisionHintAdapter` — decision-flow hint를 optional provenance로 투영
+- `mapContextObservation` — 별도 observation event와 address context metadata를 생성하며 Fact 값은 포함하지 않음
 
 ## 경계 ^boundary
 
 - 외부 I/O, 네트워크, DB, LLM SDK, `process.env`를 참조하지 않는다.
 - 원본 업무 데이터와 Fact authority를 소유하지 않는다.
 - Discovery summary를 Working Fact로 승격하지 않는다.
-- Handoff persistence와 외부 source adapter는 다음 Phase의 책임이다.
+- Handoff persistence와 실제 source port 구현은 composition root/후속 runtime의 책임이다.
 
 ## 검증 ^validation
 
-`packages/context-runtime/src/{budget,routes,discovery,working-context,manifest,handoff,closure}.test.ts`가 100K 예산 분리, Discovery plan projection, cap/no-silent-eviction, Working Context envelope, deterministic Manifest, reference-only Handoff, route bounds, route freeze, missing route, stale Fact, evidence 누락을 결정론적으로 검증하고, `boundary.test.ts`가 production source의 순수 라이브러리 경계를 점검한다.
+`packages/context-runtime/src/{budget,routes,discovery,working-context,manifest,handoff,adapters,closure}.test.ts`가 100K 예산 분리, Discovery plan projection, cap/no-silent-eviction, Working Context envelope, deterministic Manifest, reference-only Handoff, boundary adapter projection, route bounds, route freeze, missing route, stale Fact, evidence 누락을 결정론적으로 검증하고, `boundary.test.ts`가 production source의 순수 라이브러리 경계를 점검한다.
 
 검증 명령:
 

@@ -36,11 +36,11 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 
 ## Phase 0 — 계약 고정
 
-- [ ] `ContextBudgetProfile`의 Discovery 100K 상한과 Working 100K 예약량을 구현 정책으로 확정
-- [ ] `DiscoveryRoute`와 `ResolutionRoute`의 입력·출력·신뢰도 차이 확정
-- [ ] `DiscoveryClosure`, `WorkingClosure`, `VerificationClosure` 상태 vocabulary 확정
-- [ ] BDD contract의 fixture shape와 error code를 승인
-- [ ] tokens와 표현 중립 budget metric의 adapter 경계 확정
+- [x] `ContextBudgetProfile`의 Discovery 100K 상한과 Working 100K 예약량을 구현 정책으로 확정
+- [x] `DiscoveryRoute`와 `ResolutionRoute`의 입력·출력·신뢰도 차이 확정
+- [x] `DiscoveryClosure`, `WorkingClosure`, `VerificationClosure` 상태 vocabulary 확정
+- [x] BDD contract의 fixture shape와 error code를 승인
+- [x] tokens와 표현 중립 budget metric의 adapter 경계 확정
 
 ## Phase 1 — 순수 타입과 검증
 
@@ -72,10 +72,10 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 
 ## Phase 5 — 경계 어댑터
 
-- [ ] definition graph를 Discovery source로 읽는 adapter 설계
-- [ ] federation query port를 Resolution source로 소비하는 adapter 설계
-- [ ] decision-flow의 history/pattern/model hint를 Working Context의 optional hint로 투영
-- [ ] 관측은 별도 event mapping으로 연결하고 `address_context`를 본문 Fact로 사용하지 않음
+- [x] definition graph를 Discovery source로 읽는 adapter 설계
+- [x] federation query port를 Resolution source로 소비하는 adapter 설계
+- [x] decision-flow의 history/pattern/model hint를 Working Context의 optional hint로 투영
+- [x] 관측은 별도 event mapping으로 연결하고 `address_context`를 본문 Fact로 사용하지 않음
 
 ## 보류 항목 ^constraint
 
@@ -87,8 +87,8 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 
 ## 완료 조건 ^validation
 
-- [ ] `context-bounded-execution.cases.md`의 모든 contract에 test unit과 implementation unit이 연결됨
-- [ ] focused unit/contract test가 통과함
-- [ ] 구현된 사실만 새로운 `.spec.md`에 흡수됨
-- [ ] `def sync`와 `def validate`가 통과함
-- [ ] package boundary와 public surface 영향이 `arch:feedback`으로 검증됨
+- [x] `context-bounded-execution.cases.md`의 모든 contract에 test unit과 implementation unit이 연결됨
+- [x] focused unit/contract test가 통과함
+- [x] 구현된 사실만 새로운 `.spec.md`에 흡수됨
+- [x] `def sync`와 `def validate`가 통과함
+- [x] package boundary와 public surface 영향이 `arch:feedback`으로 검증됨

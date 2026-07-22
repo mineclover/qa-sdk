@@ -3,7 +3,10 @@ export const WORKING_RESERVE_MIN_TOKENS = 100_000 as const;
 export const DEFAULT_TOTAL_WINDOW_TOKENS = 200_000 as const;
 
 export type ContextStage = 'discovery' | 'working' | 'verification';
-export type ClosureStatus = 'closed' | 'blocked';
+export type DiscoveryClosure = 'open' | 'planned' | 'discovery-capped' | 'frozen';
+export type WorkingClosure = 'open' | 'closed' | 'blocked';
+export type VerificationClosure = 'pending' | 'verified' | 'failed';
+export type ClosureStatus = Exclude<WorkingClosure, 'open'>;
 export type DiscoveryPlanStatus = 'planned' | 'discovery-capped';
 export type DiscoveryNextAction = 'freeze' | 'decompose';
 export type CyclePolicy = 'reject' | 'stop';
@@ -91,6 +94,7 @@ export interface DiscoveryCandidate {
   readonly route: ContextRoute;
   readonly priority: number;
   readonly estimatedSize: EstimatedRouteSize;
+  readonly sourceRef?: string;
 }
 
 export interface DiscoveryRouteProjection {
@@ -101,6 +105,7 @@ export interface DiscoveryRouteProjection {
   readonly estimatedSize: EstimatedRouteSize;
   readonly authority: AuthorityLevel;
   readonly freshness?: FreshnessRequirement;
+  readonly sourceRef?: string;
 }
 
 export type DiscoverySkipReason = 'budget-exhausted' | 'route-expansion-limit';
@@ -233,6 +238,100 @@ export interface TaskHandoff {
   readonly nextTask?: NextTask;
 }
 
+export interface DefinitionGraphDiscoveryRequest {
+  readonly taskKey: string;
+  readonly anchor: ContextAnchor;
+}
+
+export interface DefinitionGraphRouteNode extends DiscoveryCandidate {
+  readonly sourceRef: string;
+}
+
+export interface DefinitionGraphDiscoveryPort {
+  readonly listRoutes: (
+    input: DefinitionGraphDiscoveryRequest,
+  ) => readonly DefinitionGraphRouteNode[];
+}
+
+export interface DefinitionGraphDiscoveryAdapter {
+  readonly discover: (
+    input: DefinitionGraphDiscoveryRequest,
+  ) => readonly DiscoveryCandidate[];
+}
+
+export interface FederatedResolutionRecord {
+  readonly factKey: string;
+  readonly value: unknown;
+  readonly authority: AuthorityLevel;
+  readonly observedAt: string;
+  readonly revision: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface FederatedResolutionRequest {
+  readonly taskKey: string;
+  readonly snapshotRef: string;
+  readonly route: ResolutionRoute;
+  readonly requiredFactKeys: readonly string[];
+}
+
+export interface FederatedResolutionPort {
+  readonly resolve: (
+    input: FederatedResolutionRequest,
+  ) => readonly FederatedResolutionRecord[];
+}
+
+export interface FederatedResolutionAdapter {
+  readonly resolve: (
+    input: FederatedResolutionRequest,
+  ) => readonly ResolvedFact[];
+}
+
+export interface DecisionHintRequest {
+  readonly taskKey: string;
+  readonly anchor: ContextAnchor;
+}
+
+export interface DecisionHintRecord {
+  readonly hintKey: string;
+  readonly summary: string;
+  readonly sourceRevision: string;
+  readonly confidence?: number;
+}
+
+export interface ContextHint extends DecisionHintRecord {
+  readonly provenance: 'decision-flow';
+}
+
+export interface DecisionHintPort {
+  readonly listHints: (input: DecisionHintRequest) => readonly DecisionHintRecord[];
+}
+
+export interface DecisionHintAdapter {
+  readonly getHints: (input: DecisionHintRequest) => readonly ContextHint[];
+}
+
+export interface ContextObservationInput {
+  readonly taskKey: string;
+  readonly stage: ContextStage;
+  readonly status: string;
+  readonly routeKeys: readonly string[];
+  readonly factKeys: readonly string[];
+  readonly manifestDigest?: string;
+  readonly addressContext?: Readonly<Record<string, string>>;
+}
+
+export interface ContextObservationRecord {
+  readonly eventName: 'context_runtime_observation';
+  readonly taskKey: string;
+  readonly stage: ContextStage;
+  readonly status: string;
+  readonly routeKeys: readonly string[];
+  readonly factCount: number;
+  readonly manifestDigest?: string;
+  readonly addressContext?: Readonly<Record<string, string>>;
+}
+
 export interface WorkingClosureInput {
   readonly requiredFacts: readonly RequiredFact[];
   readonly resolutionRoutes: readonly ResolutionRoute[];
@@ -278,6 +377,7 @@ export type ContextRuntimeErrorCode =
   | 'invalid-working-context'
   | 'invalid-context-manifest'
   | 'invalid-task-handoff'
+  | 'invalid-context-adapter'
   | 'context-closure-incomplete';
 
 export class ContextRuntimeError extends Error {

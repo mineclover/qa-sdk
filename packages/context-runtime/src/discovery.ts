@@ -38,6 +38,7 @@ export function projectDiscoveryCandidate(
     estimatedCostTokens: route.estimatedCostTokens,
     estimatedSize: Object.freeze({ ...candidate.estimatedSize }),
     authority,
+    ...(candidate.sourceRef ? { sourceRef: candidate.sourceRef } : {}),
     ...(route.kind === 'resolution' && route.freshness
       ? { freshness: Object.freeze({ ...route.freshness }) }
       : {}),
