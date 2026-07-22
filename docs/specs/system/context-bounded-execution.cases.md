@@ -85,6 +85,8 @@ bdd_contracts:
       returns:
         working_context.status: closed
         working_context.facts: authoritative_only
+        working_context.allowed_operations: present
+        working_context.output_contract: present
         manifest: present
       invariants: [working_context.contains_revisions, working_context.contains_evidence_refs]
 

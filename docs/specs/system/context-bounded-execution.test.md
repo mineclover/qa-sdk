@@ -59,7 +59,7 @@ test_units:
     contract: context-runtime.working.reject-missing-route.v1
     level: unit
     assertions: [then.error.code, then.returns.working_context.status, then.invariants.no_execution_context_emitted]
-    test_file: packages/context-runtime/src/closure.test.ts
+    test_file: packages/context-runtime/src/working-context.test.ts
 
   - id: TU-context-runtime-discovery-cap
     contract: context-runtime.discovery.stop-at-cap.v1
@@ -99,14 +99,14 @@ implementation_units:
     contract: context-runtime.working.resolve-authoritative-facts.v1
     unit_kind: projection
     owned_by: context-runtime
-    source_target: packages/context-runtime/src/working-context-compiler.ts
+    source_target: packages/context-runtime/src/working-context.ts:compileWorkingContext
     effects: [working.context.envelope, context.manifest]
 
   - id: IU-context-runtime-closure-validator
     contract: context-runtime.working.reject-missing-route.v1
     unit_kind: guard
     owned_by: context-runtime
-    source_target: packages/context-runtime/src/closure-validator.ts
+    source_target: packages/context-runtime/src/working-context.ts:assertWorkingContext
     effects: [context.closure.blocked]
 
   - id: IU-context-runtime-discovery-cap-guard

@@ -156,6 +156,33 @@ export interface RouteSelection {
   readonly manifestDigest: string;
 }
 
+export interface OutputContract {
+  readonly contractKey: string;
+  readonly description: string;
+  readonly requiredFields: readonly string[];
+}
+
+export interface WorkingContextCompileInput {
+  readonly taskKey: string;
+  readonly routeSelection: RouteSelection;
+  readonly routes: readonly ContextRoute[];
+  readonly requiredFacts: readonly RequiredFact[];
+  readonly resolvedFacts: readonly ResolvedFact[];
+  readonly allowedOperations: readonly string[];
+  readonly outputContract: OutputContract;
+  readonly now?: string;
+}
+
+export interface WorkingContext {
+  readonly status: ClosureStatus;
+  readonly taskKey: string;
+  readonly routeSelection: RouteSelection;
+  readonly facts: readonly ResolvedFact[];
+  readonly allowedOperations: readonly string[];
+  readonly outputContract: OutputContract;
+  readonly diagnostics: readonly ClosureDiagnostic[];
+}
+
 export interface WorkingClosureInput {
   readonly requiredFacts: readonly RequiredFact[];
   readonly resolutionRoutes: readonly ResolutionRoute[];
@@ -168,6 +195,7 @@ export interface ClosureDiagnostic {
     | 'missing-resolution-route'
     | 'missing-fact'
     | 'route-fact-mismatch'
+    | 'route-not-selected'
     | 'insufficient-authority'
     | 'stale-fact'
     | 'invalid-fact-revision'
@@ -197,6 +225,7 @@ export type ContextRuntimeErrorCode =
   | 'invalid-context-budget'
   | 'invalid-context-route'
   | 'invalid-discovery-plan'
+  | 'invalid-working-context'
   | 'context-closure-incomplete';
 
 export class ContextRuntimeError extends Error {

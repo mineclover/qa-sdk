@@ -15,6 +15,11 @@ export {
 } from './closure.js';
 
 export {
+  assertWorkingContext,
+  compileWorkingContext,
+} from './working-context.js';
+
+export {
   freezeRouteSelection,
   isDiscoveryRoute,
   isResolutionRoute,
@@ -51,6 +56,7 @@ export type {
   DiscoveryRoute,
   EstimatedRouteSize,
   FreshnessRequirement,
+  OutputContract,
   RequiredFact,
   ResolutionRoute,
   ResolvedFact,
@@ -59,6 +65,8 @@ export type {
   RouteSelection,
   SkippedDiscoveryRoute,
   TaskIntent,
+  WorkingContext,
+  WorkingContextCompileInput,
   ValidationIssue,
   ValidationResult,
   WorkingClosureInput,

@@ -25,19 +25,21 @@ sources:
   - packages/context-runtime/src/budget.ts
   - packages/context-runtime/src/discovery.ts
   - packages/context-runtime/src/routes.ts
+  - packages/context-runtime/src/working-context.ts
   - packages/context-runtime/src/closure.ts
   - packages/context-runtime/src/budget.test.ts
   - packages/context-runtime/src/discovery.test.ts
   - packages/context-runtime/src/routes.test.ts
+  - packages/context-runtime/src/working-context.test.ts
   - packages/context-runtime/src/closure.test.ts
   - packages/context-runtime/src/boundary.test.ts
 ---
 
-# Context Runtime — Phase 1–2 구현
+# Context Runtime — Phase 1–3 구현
 
 ## 목적 ^purpose
 
-Discovery/Working Context 분리의 기반 타입·순수 검증과 Discovery Plan 생성기를 제공한다. 이 단계는 실제 source 조회나 LLM 실행을 하지 않고, 이후 adapter/compiler가 소비할 수 있는 결정론적 plan과 closure guard만 소유한다.
+Discovery/Working Context 분리의 기반 타입·순수 검증·Discovery Plan·Working Context compiler를 제공한다. 이 단계는 실제 source 조회나 LLM 실행을 하지 않고, 이후 adapter가 소비할 수 있는 결정론적 plan과 실행 전 closure envelope만 소유한다.
 
 ## 현재 구현 ^defines
 
@@ -48,6 +50,8 @@ Discovery/Working Context 분리의 기반 타입·순수 검증과 Discovery Pl
 - `DiscoveryRouteProjection` — cost/authority/freshness/estimated size projection
 - `validateRoute` / `validateRouteSet` — relation path, bounds, cycle policy, authority/freshness 검증
 - `planDiscovery` — 100K cap, route expansion limit, no-silent-eviction 결과를 포함한 Discovery Plan 생성
+- `WorkingContextCompileInput` / `WorkingContext` — frozen route, resolved Fact, allowed operation, output contract envelope
+- `compileWorkingContext` / `assertWorkingContext` — closure 결과를 실행 가능한 Working Context로 제한하는 compiler/guard
 - `validateWorkingClosure` — required Fact의 route, authority, freshness, revision, evidence 검증
 - `freezeRouteSelection` — 선언된 route key만 선택하는 순수 freeze 연산
 
@@ -56,11 +60,11 @@ Discovery/Working Context 분리의 기반 타입·순수 검증과 Discovery Pl
 - 외부 I/O, 네트워크, DB, LLM SDK, `process.env`를 참조하지 않는다.
 - 원본 업무 데이터와 Fact authority를 소유하지 않는다.
 - Discovery summary를 Working Fact로 승격하지 않는다.
-- planner, Working Context compiler, Handoff persistence는 다음 Phase의 책임이다.
+- Handoff persistence와 외부 source adapter는 다음 Phase의 책임이다.
 
 ## 검증 ^validation
 
-`packages/context-runtime/src/{budget,routes,discovery,closure}.test.ts`가 100K 예산 분리, Discovery plan projection, cap/no-silent-eviction, route bounds, route freeze, missing route, stale Fact, evidence 누락을 결정론적으로 검증하고, `boundary.test.ts`가 production source의 순수 라이브러리 경계를 점검한다.
+`packages/context-runtime/src/{budget,routes,discovery,working-context,closure}.test.ts`가 100K 예산 분리, Discovery plan projection, cap/no-silent-eviction, Working Context envelope, route bounds, route freeze, missing route, stale Fact, evidence 누락을 결정론적으로 검증하고, `boundary.test.ts`가 production source의 순수 라이브러리 경계를 점검한다.
 
 검증 명령:
 

@@ -58,10 +58,10 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 
 ## Phase 3 — Working Context Compile
 
-- [ ] freeze된 ResolutionRoute를 통해 required Fact 목록을 해소하는 compiler 추가
-- [ ] required Fact에 route가 없으면 `context-closure-incomplete` 반환
-- [ ] stale/unauthoritative Fact를 Working Context에서 제외
-- [ ] Working Context에 revision, evidence ref, allowed operation, output contract 포함
+- [x] freeze된 ResolutionRoute를 통해 required Fact 목록을 해소하는 compiler 추가
+- [x] required Fact에 route가 없으면 `context-closure-incomplete` 반환
+- [x] stale/unauthoritative Fact를 Working Context에서 제외
+- [x] Working Context에 revision, evidence ref, allowed operation, output contract 포함
 
 ## Phase 4 — Handoff와 검증
 
