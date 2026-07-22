@@ -20,6 +20,11 @@ export {
 } from './working-context.js';
 
 export {
+  createContextManifest,
+  createTaskHandoff,
+} from './handoff.js';
+
+export {
   freezeRouteSelection,
   isDiscoveryRoute,
   isResolutionRoute,
@@ -38,6 +43,8 @@ export type {
   AuthorityRequirement,
   ClosureDiagnostic,
   ClosureStatus,
+  ContextManifest,
+  ContextManifestInput,
   ContextAnchor,
   ContextBudgetProfile,
   ContextRoute,
@@ -56,6 +63,8 @@ export type {
   DiscoveryRoute,
   EstimatedRouteSize,
   FreshnessRequirement,
+  ManifestFactRef,
+  NextTask,
   OutputContract,
   RequiredFact,
   ResolutionRoute,
@@ -65,6 +74,8 @@ export type {
   RouteSelection,
   SkippedDiscoveryRoute,
   TaskIntent,
+  TaskHandoff,
+  TaskHandoffInput,
   WorkingContext,
   WorkingContextCompileInput,
   ValidationIssue,

@@ -65,10 +65,10 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 
 ## Phase 4 — Handoff와 검증
 
-- [ ] `ContextManifest`를 deterministic JSON/hash로 생성
-- [ ] `TaskHandoff`에 source/result revision, evidence ref, unresolved question, next task를 저장
-- [ ] 대화 transcript가 Handoff schema에 들어가지 않음을 검증
-- [ ] 동일 snapshot + manifest 재생성 테스트 추가
+- [x] `ContextManifest`를 deterministic JSON/hash로 생성
+- [x] `TaskHandoff`에 source/result revision, evidence ref, unresolved question, next task를 저장
+- [x] 대화 transcript가 Handoff schema에 들어가지 않음을 검증
+- [x] 동일 snapshot + manifest 재생성 테스트 추가
 
 ## Phase 5 — 경계 어댑터
 

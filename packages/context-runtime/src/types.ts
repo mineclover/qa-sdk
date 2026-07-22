@@ -183,6 +183,56 @@ export interface WorkingContext {
   readonly diagnostics: readonly ClosureDiagnostic[];
 }
 
+export interface ManifestFactRef {
+  readonly factKey: string;
+  readonly revision: string;
+  readonly evidenceRefs: readonly string[];
+}
+
+export interface ContextManifest {
+  readonly version: 'v1';
+  readonly taskKey: string;
+  readonly snapshotRef: string;
+  readonly selectedRouteKeys: readonly string[];
+  readonly routeManifestDigest: string;
+  readonly factRefs: readonly ManifestFactRef[];
+  readonly allowedOperations: readonly string[];
+  readonly outputContract: OutputContract;
+  readonly canonicalJson: string;
+  readonly digest: string;
+}
+
+export interface ContextManifestInput {
+  readonly workingContext: WorkingContext;
+  readonly snapshotRef: string;
+}
+
+export interface NextTask {
+  readonly taskKey: string;
+  readonly objective: string;
+}
+
+export interface TaskHandoffInput {
+  readonly workingContext: WorkingContext;
+  readonly manifest: ContextManifest;
+  readonly sourceRevision: string;
+  readonly resultRevision: string;
+  readonly unresolvedQuestions: readonly string[];
+  readonly nextTask?: NextTask;
+}
+
+export interface TaskHandoff {
+  readonly version: 'v1';
+  readonly taskKey: string;
+  readonly sourceRevision: string;
+  readonly resultRevision: string;
+  readonly manifestDigest: string;
+  readonly factRefs: readonly ManifestFactRef[];
+  readonly evidenceRefs: readonly string[];
+  readonly unresolvedQuestions: readonly string[];
+  readonly nextTask?: NextTask;
+}
+
 export interface WorkingClosureInput {
   readonly requiredFacts: readonly RequiredFact[];
   readonly resolutionRoutes: readonly ResolutionRoute[];
@@ -226,6 +276,8 @@ export type ContextRuntimeErrorCode =
   | 'invalid-context-route'
   | 'invalid-discovery-plan'
   | 'invalid-working-context'
+  | 'invalid-context-manifest'
+  | 'invalid-task-handoff'
   | 'context-closure-incomplete';
 
 export class ContextRuntimeError extends Error {

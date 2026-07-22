@@ -67,6 +67,12 @@ test_units:
     assertions: [then.returns.status, then.returns.working_reserve_tokens, then.invariants.no_silent_eviction]
     test_file: packages/context-runtime/src/discovery.test.ts
 
+  - id: TU-context-runtime-manifest-deterministic
+    contract: context-runtime.manifest.deterministic.v1
+    level: unit
+    assertions: [then.returns.manifest.canonical_json, then.returns.manifest.digest, then.invariants.manifest.excludes_fact_values]
+    test_file: packages/context-runtime/src/manifest.test.ts
+
   - id: TU-context-runtime-reference-only-handoff
     contract: context-runtime.handoff.reference-only.v1
     level: unit
@@ -120,8 +126,15 @@ implementation_units:
     contract: context-runtime.handoff.reference-only.v1
     unit_kind: projection
     owned_by: context-runtime
-    source_target: packages/context-runtime/src/task-handoff.ts
+    source_target: packages/context-runtime/src/handoff.ts:createTaskHandoff
     effects: [typed.task.handoff]
+
+  - id: IU-context-runtime-context-manifest
+    contract: context-runtime.manifest.deterministic.v1
+    unit_kind: projection
+    owned_by: context-runtime
+    source_target: packages/context-runtime/src/handoff.ts:createContextManifest
+    effects: [context.manifest, manifest.digest]
 ```
 
 ## 구현 전 검증 항목 ^validation

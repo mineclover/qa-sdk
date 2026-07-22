@@ -122,6 +122,22 @@ bdd_contracts:
         working_reserve_tokens: 100000
       invariants: [no_silent_eviction, next_action_is_decompose_or_freeze]
 
+  - id: context-runtime.manifest.deterministic.v1
+    owner_system: context-runtime
+    contract_kind: query-projection
+    mode: read
+    given:
+      predicates: [working_context.closed, snapshot.reference_available]
+      fixtures: [context-runtime.fixture.completed-order-release]
+    when:
+      operation: context-runtime.createContextManifest
+    then:
+      returns:
+        manifest.canonical_json: deterministic
+        manifest.digest: present
+        manifest.fact_refs: reference_only
+      invariants: [manifest.excludes_fact_values, same_snapshot_same_manifest]
+
   - id: context-runtime.handoff.reference-only.v1
     owner_system: context-runtime
     contract_kind: query-projection
