@@ -7,7 +7,7 @@ def:
   scope: feature
   aspect: func_def
   depth: specification
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   tags: [architecture, context, contract, testing, observability]
   links:
@@ -21,6 +21,10 @@ def:
       type: depends_on
     - target: responsibility-closure-harness
       type: depends_on
+  sources:
+    - packages/context-runtime/src/index.ts
+    - packages/cli/src/commands/def.ts
+    - packages/cli/src/lib/context-runtime/definition-document-context.ts
 ---
 
 # Context-Bounded Execution — 최상위 실행 불변 원칙
@@ -108,6 +112,15 @@ Task Intent
 
 Discovery가 종료되면 선택된 Route를 freeze한다. Working Context는 Discovery Context를 복사하지 않고 freeze된 Route에서 다시 해소한다.
 
+## Definition 문서 소비자 ^consumer
+
+`qa-sdk def context --bounded`는 definition graph를 첫 번째 실제 소비 경로로 사용한다. `DefDataSource`가 문서·본문·바운더리 결과를 읽고, `context-runtime`은 이를 저장하지 않고 Discovery Plan, Route Selection, Working Context, Manifest, observation mapping으로 투영한다.
+
+- 기본 `qa-sdk def context <문서ID>` 출력은 유지한다.
+- `--bounded`에서만 100K Discovery cap과 100K Working reserve 정책을 적용한다.
+- cap으로 필수 ResolutionRoute가 선택되지 않으면 Working Context를 `blocked`로 만들고 Manifest를 생성하지 않는다.
+- `address_context`는 observation metadata에만 포함하며 Working Fact의 본문으로 사용하지 않는다.
+
 ## Closure 판정 ^closure
 
 - `discovery-closed`: 작업에 필요한 정보를 찾을 수 있는 Route와 비용이 확보됨
@@ -125,14 +138,21 @@ Discovery가 종료되면 선택된 Route를 freeze한다. Working Context는 Di
 - context-runtime은 선택·해소 계획과 envelope/manifest/handoff를 소유한다.
 - `address_context`는 관측 의미 좌표이며 Working Context 본문이 아니다.
 
+## 구현 참조 ^source
+
+- `packages/context-runtime/src/index.ts` — 순수 budget, discovery, route, working context, manifest, handoff 계약
+- `packages/cli/src/lib/context-runtime/definition-document-context.ts` — `DefDataSource` composition-root adapter
+- `packages/cli/src/commands/def.ts` — `def context --bounded` 소비자 CLI
+- `packages/cli/src/commands/def.test.ts` — bounded 정상/blocked contract 검증
+
 ## Release checklist ^validation
 
-- [ ] Discovery와 Working 예산이 분리되어 있는가
-- [ ] Working 예약량이 Discovery에서 borrow 불가능한가
-- [ ] 모든 필수 Fact에 ResolutionRoute가 있는가
-- [ ] Route마다 depth/fan-out/cycle 정책이 있는가
-- [ ] Fact별 authority/revision/freshness가 있는가
-- [ ] Discovery 요약이 실행 Fact로 잘못 승격되지 않는가
-- [ ] 동일 snapshot + manifest로 계획을 재현할 수 있는가
-- [ ] overflow 시 분해·중단·에스컬레이션 정책이 있는가
-- [ ] Handoff가 대화 전문이 아닌 typed reference인가
+- [x] Discovery와 Working 예산이 분리되어 있는가
+- [x] Working 예약량이 Discovery에서 borrow 불가능한가
+- [x] 모든 필수 Fact에 ResolutionRoute가 있는가
+- [x] Route마다 depth/fan-out/cycle 정책이 있는가
+- [x] Fact별 authority/revision/freshness가 있는가
+- [x] Discovery 요약이 실행 Fact로 잘못 승격되지 않는가
+- [x] 동일 snapshot + manifest로 계획을 재현할 수 있는가
+- [x] overflow 시 분해·중단·에스컬레이션 정책이 있는가
+- [x] Handoff가 대화 전문이 아닌 typed reference인가

@@ -486,6 +486,60 @@ describe('def commands', () => {
       expect(contextOutput).toContain('blast radius');
     });
 
+    it('[contract:docs-control-plane.definition-context.bounded-consumer.v1] 기존 context와 bounded context를 함께 제공한다', async () => {
+      await runDef(['sync']);
+      vi.mocked(console.log).mockClear();
+
+      await runDef(['context', 'definition-addressing']);
+      expect(getOutput()).toContain('# 컨텍스트:');
+
+      vi.mocked(console.log).mockClear();
+      await runDef(['context', 'definition-addressing', '--bounded', '--json']);
+      const bounded = JSON.parse(getOutput()) as {
+        mode: string;
+        discovery: { selectedRouteKeys: string[] };
+        workingContext: { status: string; facts: Array<{ factKey: string; revision: string }> };
+        manifest: { digest: string; canonicalJson: string };
+        observation: { eventName: string };
+      };
+
+      expect(bounded.mode).toBe('bounded');
+      expect(bounded.discovery.selectedRouteKeys.length).toBeGreaterThan(0);
+      expect(bounded.workingContext.status).toBe('closed');
+      expect(bounded.workingContext.facts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ factKey: 'definition.document', revision: expect.any(String) }),
+        ]),
+      );
+      expect(bounded.manifest.digest).toMatch(/^fnv1a64:/);
+      expect(bounded.manifest.canonicalJson).not.toContain('Definition Addressing');
+      expect(bounded.observation.eventName).toBe('context_runtime_observation');
+    });
+
+    it('[contract:docs-control-plane.definition-context.bounded-blocked.v1] Discovery cap에서 Working Context와 manifest를 차단한다', async () => {
+      await runDef(['sync']);
+      vi.mocked(console.log).mockClear();
+
+      await runDef(['context', 'definition-addressing', '--bounded', '--used-tokens', '100000', '--json']);
+      const bounded = JSON.parse(getOutput()) as {
+        discovery: { status: string; selectedRouteKeys: string[]; workingReserveTokens: number };
+        workingContext: { status: string; diagnostics: Array<{ code: string }> };
+        manifest?: unknown;
+        observation: { status: string; manifestDigest?: string };
+      };
+
+      expect(bounded.discovery.status).toBe('discovery-capped');
+      expect(bounded.discovery.selectedRouteKeys).toHaveLength(0);
+      expect(bounded.discovery.workingReserveTokens).toBe(100000);
+      expect(bounded.workingContext.status).toBe('blocked');
+      expect(bounded.workingContext.diagnostics).toEqual(
+        expect.arrayContaining([expect.objectContaining({ code: 'route-not-selected' })]),
+      );
+      expect(bounded.manifest).toBeUndefined();
+      expect(bounded.observation.status).toBe('blocked');
+      expect(bounded.observation.manifestDigest).toBeUndefined();
+    });
+
     it('알 수 없는 서브커맨드면 help 출력', async () => {
       await runDef(['nonexistent-command']);
       const output = getOutput();

@@ -23,6 +23,7 @@ import {
   decodeResultToEntities,
   latestPrefixVersion,
 } from '@qa-sdk/core';
+import { createCatalogProvider } from './catalog-provider.js';
 
 const logger = createLogger('qa-context');
 
@@ -351,7 +352,6 @@ export async function createQaContextAsync<C extends Catalog = Catalog>(
 
   if (registryUrl) {
     try {
-      const { createCatalogProvider } = await import('./catalog-provider.js');
       const provider = createCatalogProvider({ registry: registryUrl });
       const catalog = await provider.getCatalog();
 
@@ -384,7 +384,6 @@ export async function createQaContextAsync<C extends Catalog = Catalog>(
     } catch (err) {
       logger.warn({ err, registryUrl }, 'Registry fetch 실패. 로컬 catalog fallback.');
       try {
-        const { createCatalogProvider } = await import('./catalog-provider.js');
         const provider = createCatalogProvider({ catalog: userConfig?.catalog });
         const catalog = await provider.getCatalog();
         return createQaContext({ ...userConfig, catalog });

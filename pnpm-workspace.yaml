@@ -9,12 +9,19 @@ packages:
 onlyBuiltDependencies:
   - better-sqlite3
 
+# ragrid's old stylus range otherwise keeps deprecated source-map/glob
+# packages in the workspace. The current stylus API remains compatible with
+# the CSS build and Vite peer consumers used here.
+overrides:
+  stylus: ^0.64.0
+  'stylus>glob': ^13.0.6
+
 # 모노레포 전체에서 공유하는 버전은 여기에 catalog로 선언하고
 # 각 package.json은 `"catalog:"`로 참조한다.
 catalog:
   drizzle-orm: 1.0.0-beta.22
   drizzle-kit: 1.0.0-beta.22
-  better-sqlite3: ^12.8.0
+  better-sqlite3: ^13.0.1
   "@types/better-sqlite3": ^7.6.13
   ioredis: ^5.4.0
   ioredis-mock: ^8.9.0

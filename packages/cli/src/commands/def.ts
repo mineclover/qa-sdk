@@ -66,6 +66,7 @@ import {
   writeVerificationArtifactFile,
   type VerificationReadModel,
 } from '../lib/spec-definition-verification.js';
+import { buildBoundedDefinitionContext } from '../lib/context-runtime/definition-document-context.js';
 
 // ── 유틸 ──────────────────────────────────────────────
 
@@ -101,6 +102,14 @@ function formatLinkRef(id: string, address?: string): string {
 
 function hasFlag(flags: Record<string, string>, name: string): boolean {
   return flags[name] === 'true';
+}
+
+function parseNonNegativeIntegerFlag(value: string, name: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`--${name} must be a non-negative integer`);
+  }
+  return parsed;
 }
 
 async function collectFeedbackMatches(
@@ -1154,10 +1163,36 @@ async function cmdBottomup(source: DefDataSource, docId: string) {
 
 // ── context (DefDataSource 기반) ──────────────────────
 
-async function cmdContext(source: DefDataSource, docId: string) {
+async function cmdContext(
+  source: DefDataSource,
+  docId: string,
+  flags: Record<string, string> = {},
+) {
   const doc = await source.get(docId);
   if (!doc) {
     console.log(`문서 "${docId}" 없음`);
+    return;
+  }
+
+  if (flags['bounded'] === 'true') {
+    const bounded = await buildBoundedDefinitionContext({
+      source,
+      docId,
+      ...(flags['used-tokens']
+        ? { usedTokens: parseNonNegativeIntegerFlag(flags['used-tokens'], 'used-tokens') }
+        : {}),
+    });
+    if (flags['json'] === 'true') {
+      console.log(JSON.stringify(bounded, null, 2));
+      return;
+    }
+    console.log(`# bounded 컨텍스트: ${doc.title ?? doc.docId}\n`);
+    console.log(`discovery: ${bounded.discovery.status}`);
+    console.log(`selected routes: ${bounded.discovery.selectedRouteKeys.join(', ') || '(없음)'}`);
+    console.log(`working: ${bounded.workingContext.status}`);
+    console.log(`facts: ${bounded.workingContext.facts.map((fact) => fact.factKey).join(', ') || '(없음)'}`);
+    console.log(`manifest: ${bounded.manifest?.digest ?? '(not created — working context blocked)'}`);
+    console.log(`observation: ${bounded.observation.eventName}`);
     return;
   }
 
@@ -2234,7 +2269,7 @@ const DEF_HELP_SECTIONS = [
     title: '분석',
     lines: [
       'scan-audit          raw frontmatter/link 감사 (DB 미사용)',
-      'context <ID>        작업 전 컨텍스트 (소속/의존/영향)',
+      'context <ID> [--bounded] [--used-tokens N] [--json]  작업 전 컨텍스트 (소속/의존/영향)',
       'boundary <ID> | --address=<ADDR>       바운더리 구조 + direct coupling (--level, --json 가능)',
       'boundary-context <ID> | --address=<ADDR> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)',
       'impact <ID> | --address=<ADDR>  변경 영향 분석',
@@ -2413,7 +2448,7 @@ export async function cliDef(args: string[]): Promise<void> {
             console.log('Usage: qa-sdk def context <문서ID>');
             return;
           }
-          return await cmdContext(source, rest[0]);
+          return await cmdContext(source, rest[0], flags);
         case 'boundary':
           if (!rest[0] && !flags['address']) {
             console.log(

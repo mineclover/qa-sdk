@@ -32,7 +32,7 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 | owner | `context-runtime` |
 | 기존 소비자 | `@qa-sdk/context`, `decision-flow`, definition graph, federation query port |
 | non-goal | LLM adapter, 원본 데이터 저장, ERP/CRM 재구현, 외부 transaction |
-| baseline | 2026-07-21, `context-runtime` package와 구현 source 없음 |
+| baseline | 2026-07-23, `context-runtime` 순수 runtime과 `def context --bounded` 첫 소비자 구현 완료 |
 
 ## Phase 0 — 계약 고정
 
@@ -77,6 +77,13 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 - [x] decision-flow의 history/pattern/model hint를 Working Context의 optional hint로 투영
 - [x] 관측은 별도 event mapping으로 연결하고 `address_context`를 본문 Fact로 사용하지 않음
 
+## Phase 6 — Definition 문서 소비자 연결
+
+- [x] `DefDataSource`의 문서/본문/바운더리 결과를 context-runtime 입력으로 투영
+- [x] `qa-sdk def context --bounded`에서 Discovery Plan과 Working Context를 실행
+- [x] bounded 출력에 deterministic Manifest와 observation mapping을 포함
+- [x] 기존 `qa-sdk def context <문서ID>` 출력과의 하위 호환성 검증
+
 ## 보류 항목 ^constraint
 
 - [ ] 실제 LLM tokenizer별 token 계산
@@ -92,3 +99,18 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 - [x] 구현된 사실만 새로운 `.spec.md`에 흡수됨
 - [x] `def sync`와 `def validate`가 통과함
 - [x] package boundary와 public surface 영향이 `arch:feedback`으로 검증됨
+
+## Closure evidence ^evidence
+
+- `corepack pnpm install --frozen-lockfile` — lockfile 고정 설치 통과
+- `corepack pnpm --filter context-runtime typecheck` — 통과
+- `corepack pnpm --filter context-runtime test` — 33 tests 통과
+- `corepack pnpm --filter context-runtime build` — ESM/CJS/DTS build 통과
+- `corepack pnpm --filter dkg test` — 126 tests 통과
+- `corepack pnpm --filter dkg-enrichment test` — 27 tests 통과
+- `corepack pnpm --filter @qa-sdk/cli exec vitest run src/commands/def.test.ts` — 27 tests 통과
+- `corepack pnpm run def:check` — definition validate 경고 0건
+- `corepack pnpm arch:feedback` — 6/6 단계 통과
+- `corepack pnpm arch:check` — tier violation 0건
+
+외부 upstream이 소유한 deprecated 전이 의존성 경고와 기존 CLI bundle unused-export 경고는 이번 범위에서 수정하지 않는다.

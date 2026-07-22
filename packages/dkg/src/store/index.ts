@@ -6,7 +6,12 @@
  */
 
 export { DkgSqliteStore } from './dkg-sqlite-store.js';
-export type { NodeSource, CliAuditEventInput, CliAuditEventRow } from './dkg-sqlite-store.js';
+export type {
+  NodeSource,
+  CliAuditEventInput,
+  CliAuditEventRow,
+  UsageSnapshotInput,
+} from './dkg-sqlite-store.js';
 
 // ── Metric-aware snapshot ──
 // collectMetrics + metricsToObservations are passed in to avoid store → convergence dependency

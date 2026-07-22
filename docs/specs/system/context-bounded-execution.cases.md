@@ -7,7 +7,7 @@ def:
   scope: flow
   aspect: user_scenario
   depth: validation
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   tags: [scenario, testing, architecture, context]
   links:
@@ -15,6 +15,9 @@ def:
       type: refines
     - target: context-bounded-execution-todo
       type: traces_to
+  sources:
+    - packages/context-runtime/src/index.ts
+    - packages/cli/src/commands/def.test.ts
 ---
 
 # Context-Bounded Execution — 행동 계약
@@ -213,6 +216,42 @@ bdd_contracts:
         handoff: typed
         evidence_refs: non_empty
       invariants: [handoff.excludes_conversation_transcript, handoff.preserves_revisions_and_manifest_digest]
+
+  - id: docs-control-plane.definition-context.bounded-consumer.v1
+    owner_system: docs-control-plane
+    contract_kind: dependency-contract
+    mode: read
+    given:
+      predicates: [definition.document_exists, definition.graph_context_available, context.runtime_budget_available]
+      fixtures: [definition-context.fixture.definition-addressing]
+    when:
+      operation: docs-control-plane.def.context.bounded
+    then:
+      returns:
+        bounded.mode: true
+        discovery.plan: present
+        working_context.status: closed
+        manifest.digest: present
+        observation.event: typed
+      invariants: [default_context_output_unchanged, discovery_summary_not_fact, working_facts_have_revisions, manifest_excludes_fact_values]
+
+  - id: docs-control-plane.definition-context.bounded-blocked.v1
+    owner_system: docs-control-plane
+    contract_kind: validation-failure
+    mode: read
+    given:
+      predicates: [definition.document_exists, discovery.used_tokens_at_cap, required_fact_route_not_selected]
+      fixtures: [definition-context.fixture.definition-addressing]
+    when:
+      operation: docs-control-plane.def.context.bounded
+    then:
+      error:
+        code: context-closure-incomplete
+      returns:
+        working_context.status: blocked
+        manifest: absent
+        observation.status: blocked
+      invariants: [working_reserve_preserved, no_execution_context_emitted, no_manifest_for_blocked_context]
 
 ```
 

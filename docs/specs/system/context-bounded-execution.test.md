@@ -7,7 +7,7 @@ def:
   scope: flow
   aspect: user_scenario
   depth: validation
-  lifecycle: draft
+  lifecycle: approved
   layer: operation
   tags: [testing, architecture, context]
   links:
@@ -19,6 +19,17 @@ def:
       type: traces_to
     - target: context-runtime
       type: traces_to
+  sources:
+    - packages/context-runtime/src/budget.test.ts
+    - packages/context-runtime/src/discovery.test.ts
+    - packages/context-runtime/src/routes.test.ts
+    - packages/context-runtime/src/working-context.test.ts
+    - packages/context-runtime/src/manifest.test.ts
+    - packages/context-runtime/src/handoff.test.ts
+    - packages/context-runtime/src/adapters.test.ts
+    - packages/context-runtime/src/closure.test.ts
+    - packages/context-runtime/src/boundary.test.ts
+    - packages/cli/src/commands/def.test.ts
 ---
 
 # Context-Bounded Execution — 검증 매핑
@@ -102,6 +113,18 @@ test_units:
     level: unit
     assertions: [then.returns.handoff, then.returns.evidence_refs, then.invariants.handoff.excludes_conversation_transcript]
     test_file: packages/context-runtime/src/handoff.test.ts
+
+  - id: TU-docs-control-plane-bounded-definition-context
+    contract: docs-control-plane.definition-context.bounded-consumer.v1
+    level: integration
+    assertions: [then.returns.bounded.mode, then.returns.discovery.plan, then.returns.working_context.status, then.returns.manifest.digest, then.returns.observation.event, then.invariants.default_context_output_unchanged, then.invariants.manifest_excludes_fact_values]
+    test_file: packages/cli/src/commands/def.test.ts
+
+  - id: TU-docs-control-plane-bounded-definition-context-blocked
+    contract: docs-control-plane.definition-context.bounded-blocked.v1
+    level: integration
+    assertions: [then.returns.working_context.status, then.returns.manifest, then.returns.observation.status, then.invariants.working_reserve_preserved, then.invariants.no_manifest_for_blocked_context]
+    test_file: packages/cli/src/commands/def.test.ts
 
 implementation_units:
   - id: IU-context-runtime-budget-profile
@@ -187,6 +210,20 @@ implementation_units:
     owned_by: context-runtime
     source_target: packages/context-runtime/src/adapters.ts:mapContextObservation
     effects: [context.observation_event]
+
+  - id: IU-docs-control-plane-bounded-definition-context
+    contract: docs-control-plane.definition-context.bounded-consumer.v1
+    unit_kind: operation
+    owned_by: docs-control-plane
+    source_target: packages/cli/src/lib/context-runtime/definition-document-context.ts:buildBoundedDefinitionContext
+    effects: [definition.discovery_plan, definition.working_context, definition.context_manifest, definition.context_observation]
+
+  - id: IU-docs-control-plane-bounded-context-command
+    contract: docs-control-plane.definition-context.bounded-consumer.v1
+    unit_kind: projection
+    owned_by: docs-control-plane
+    source_target: packages/cli/src/commands/def.ts:cmdContext
+    effects: [def.context.bounded_output]
 ```
 
 ## 구현 전 검증 항목 ^validation

@@ -37,6 +37,7 @@
     "cli-command": "workspace:*",
     "codegen-core": "workspace:*",
     "config-loader": "workspace:*",
+    "context-runtime": "workspace:*",
     "decision-flow": "workspace:*",
     "decision-flow-store": "workspace:*",
     "definition-catalog": "workspace:*",

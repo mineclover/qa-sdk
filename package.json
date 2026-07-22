@@ -65,7 +65,6 @@
     "js-yaml": "^4.1.1",
     "oxfmt": "^0.42.0",
     "oxlint": "^1.62.0",
-    "protobufjs-cli": "^2.0.3",
     "sim-identifier-grammar": "workspace:*",
     "sim-service-catalog": "workspace:*",
     "tinyglobby": "^0.2.16",

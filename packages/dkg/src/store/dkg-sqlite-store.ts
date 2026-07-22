@@ -28,6 +28,63 @@ import { GraphRegistry } from '../graph-registry.js';
 import type { DkgNode, DkgEdge } from '../dkg.types.js';
 import type { UsageData, VersionUsage } from './usage-types.js';
 
+/**
+ * Store-owned snapshot envelope. The store persists the payload and only
+ * indexes the common period/stat/version fields, so callers from convergence
+ * may pass their UsageData without importing convergence into the store tier.
+ */
+export interface UsageSnapshotInput {
+  readonly entryUsages?: readonly (
+    | {
+        readonly prefixId: string;
+        readonly entryId: string;
+        readonly count: number;
+      }
+    | {
+        readonly axisId: string;
+        readonly entry: string;
+        readonly count: number;
+        readonly lastSeen: string;
+      }
+  )[];
+  readonly addressUsages?: readonly (
+    | {
+        readonly prefixId: string;
+        readonly version: string;
+        readonly address: number;
+        readonly count: number;
+      }
+    | {
+        readonly prefix: string;
+        readonly version: string;
+        readonly address: number;
+        readonly count: number;
+      }
+  )[];
+  readonly coOccurrences?: readonly {
+    readonly sourcePrefix: string;
+    readonly sourceEntry: string;
+    readonly targetPrefix: string;
+    readonly targetEntry: string;
+    readonly count: number;
+    readonly totalSourceCount: number;
+  }[];
+  readonly collectionPeriod?: {
+    readonly from?: string;
+    readonly to?: string;
+  };
+  readonly sourceStats?: {
+    readonly totalRecords?: number;
+  };
+  readonly versionUsages?: readonly {
+    readonly prefix?: string;
+    readonly version?: string;
+    readonly count?: number;
+    readonly lastSeen?: string;
+    readonly sessions?: readonly string[];
+  }[];
+}
+
 export type NodeSource = 'bootstrap' | 'manual' | 'auto';
 
 type DrizzleDb = ReturnType<typeof drizzle>;
@@ -324,8 +381,8 @@ export class DkgSqliteStore {
 
   // ── Usage: 스냅샷 저장/로드 ──────────────────────────
 
-  /** UsageData를 스냅샷으로 저장. 반환: snapshot ID. */
-  saveUsageSnapshot(usage: UsageData): number {
+  /** Usage snapshot을 스냅샷으로 저장. 반환: snapshot ID. */
+  saveUsageSnapshot(usage: UsageSnapshotInput): number {
     const from = String(usage.collectionPeriod?.from ?? new Date().toISOString());
     const to = String(usage.collectionPeriod?.to ?? from);
     const totalRecords = Number(usage.sourceStats?.totalRecords ?? 0);
@@ -452,7 +509,7 @@ export class DkgSqliteStore {
    * ObservationNode의 subjects 필드에서 observes 엣지를 자동 생성하여 그래프 정합성을 유지한다.
    */
   saveUsageSnapshotWithObservations(
-    usage: UsageData,
+    usage: UsageSnapshotInput,
     autoObservations: readonly DkgNode[],
   ): { snapshotId: number; observationsWritten: number } {
     const snapshotId = this.saveUsageSnapshot(usage);
