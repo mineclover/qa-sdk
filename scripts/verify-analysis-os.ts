@@ -584,7 +584,7 @@ async function main() {
       groupSummaries['coordinate-kernel-capability']?.surfaceCount === 1 &&
         groupSummaries['coordinate-kernel-capability']?.packageCount === 9 &&
         groupSummaries['observability-runtime-capability']?.surfaceCount === 1 &&
-        groupSummaries['observability-runtime-capability']?.packageCount === 21 &&
+        groupSummaries['observability-runtime-capability']?.packageCount === 22 &&
         groupSummaries['taxonomy-capability']?.surfaceCount === 3 &&
         groupSummaries['taxonomy-capability']?.packageCount === 3 &&
         groupSummaries['connection-capability']?.surfaceCount === 2 &&

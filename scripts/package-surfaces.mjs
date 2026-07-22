@@ -114,6 +114,7 @@ export const SURFACES = [
       '@qa-sdk/browser-codec',
       '@qa-sdk/codec-proto',
       '@qa-sdk/context',
+      'context-runtime',
       '@qa-sdk/engine',
       '@qa-sdk/decode-service',
       '@qa-sdk/gateway',

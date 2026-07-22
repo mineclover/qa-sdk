@@ -66,7 +66,7 @@ qa-sdk를 하나의 거대한 제품 플랫폼으로 계속 확장하지 않고,
 | Surface | 기능군 | 판정 | 대표 패키지/그룹 | 승격 기준 |
 |---------|--------|------|-------------|-----------|
 | Coordinate kernel | coordinate kernel capability | keep | weighted/index/address/search packages | 다수 내부 소비자, package tests, `arch:usage` fan-in 근거 |
-| Observability runtime | observability runtime capability | maintain | core/sdk/browser/ingest/registry/store/logging/codec services | ingest/registry/runtime smoke 또는 서비스별 quality gate |
+| Observability runtime | observability runtime capability | maintain | core/sdk/browser/ingest/registry/store/logging/codec/context-runtime services | ingest/registry/runtime smoke 또는 서비스별 quality gate |
 | Definition control plane | definition catalog capability | keep | definition catalog/service/client/data-source/doc envelope/readiness tools | `def validate`, definition quality gates, docs graph 정합성 |
 | Taxonomy tooling | taxonomy capability | keep as tooling | `taxonomy-engine` | finite vocabulary parse/validate/diff/codegen tests |
 | Taxonomy decision bridge | taxonomy capability | keep as bridge | `taxonomy-decision-bridge` | taxonomy/decision-flow round-trip tests |

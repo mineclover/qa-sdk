@@ -62,7 +62,7 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Surface | 기능군 | 역할 | 대표 패키지 |
 |---------|--------|------|-------------|
 | Coordinate kernel | coordinate kernel capability | 좌표 인코딩과 주소 수학 | `weighted-index`, `index-meta`, `bit-index`, `permission-engine` |
-| Observability runtime | observability runtime capability | 이벤트 수집·저장·SDK runtime | `@qa-sdk/core`, `@qa-sdk/sdk`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service` |
+| Observability runtime | observability runtime capability | 이벤트 수집·저장·SDK와 bounded context runtime | `@qa-sdk/core`, `@qa-sdk/sdk`, `@qa-sdk/ingest-server`, `@qa-sdk/registry-service`, `context-runtime` |
 | Definition control plane | definition catalog capability | 문서 그래프와 품질 gate | `definition-catalog`, `@qa-sdk/definition-service`, `doc-envelope` |
 | Taxonomy tooling | taxonomy capability | 유한 vocabulary 선언·검증·diff/codegen | `taxonomy-engine` |
 | Taxonomy decision bridge | taxonomy capability | taxonomy artifact와 decision-flow 변환 계약 | `taxonomy-decision-bridge` |
