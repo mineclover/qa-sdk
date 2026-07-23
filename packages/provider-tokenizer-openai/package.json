@@ -1,0 +1,35 @@
+{
+  "name": "@qa-sdk/provider-tokenizer-openai",
+  "version": "0.1.0",
+  "description": "OpenAI gpt-4o tokenizer module for the bounded context composition root",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "fixtures",
+    "README.md"
+  ],
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "js-tiktoken": "1.0.21"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^1.6.1"
+  }
+}

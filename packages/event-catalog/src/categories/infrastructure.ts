@@ -190,4 +190,15 @@ export const infrastructureEvents: CoreEventDef[] = [
     auto_collectable: false,
     graph_hint: { role: 'transition', goal_eligible: false, loopable: true },
   },
+  {
+    event_key: 'context_runtime_observation',
+    event_version: '1',
+    mode: 'core',
+    category: 'infrastructure',
+    channel: ['backend', 'agent'],
+    display_name: '컨텍스트 런타임 관측',
+    description: 'Discovery/Working Context의 route, closure, usage metadata 관측',
+    auto_collectable: false,
+    graph_hint: { role: 'observation', goal_eligible: false, loopable: true },
+  },
 ];

@@ -3,7 +3,7 @@
 
 import pino from 'pino';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RegistryClient } from './index.js';
+import { createRegistryConfigClient, RegistryClient } from './index.js';
 
 describe('RegistryClient', () => {
   beforeEach(() => {
@@ -31,6 +31,13 @@ describe('RegistryClient', () => {
     ).resolves.toEqual({ valid: true });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL(
+        '/api/event-schemas/checkout-api/checkout.form.updated/001',
+        'https://registry.qa-sdk.test/',
+      ),
+      expect.objectContaining({ method: 'GET' }),
+    );
   });
 
   it('returns valid false with the registry error message on 404', async () => {
@@ -188,6 +195,93 @@ describe('RegistryClient', () => {
 
     // 5. a는 축출되었으므로 cache miss
     await client.validateEvent('svc', 'event-a', '001'); // fetch 4
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('config client uses the injected fetch and applies endpoint defaults', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      expect(String(input)).toBe(
+        'http://registry.local/api/endpoints/resolve?catalog=demo&namespace=shop&name=ingest-server&env=dev&region=asia',
+      );
+      return new Response(JSON.stringify({ url: 'http://localhost:3200' }), { status: 200 });
+    });
+    const client = createRegistryConfigClient({
+      registryUrl: 'http://registry.local/',
+      fetch: fetchMock,
+    });
+
+    await expect(client.resolveEndpoint({ name: 'ingest-server' })).resolves.toBe(
+      'http://localhost:3200',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(client.defaults).toEqual({
+      registryUrl: 'http://registry.local',
+      catalogId: 'demo',
+      env: 'dev',
+      namespace: 'shop',
+      region: 'asia',
+    });
+  });
+
+  it('config client parses catalog/config/generation responses through the injected fetch', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = new URL(String(input)).pathname;
+      if (path === '/catalogs/demo') {
+        return new Response(JSON.stringify({ data: JSON.stringify({ axes: ['service'] }) }), {
+          status: 200,
+        });
+      }
+      if (path === '/catalogs/demo/config') {
+        return new Response(JSON.stringify({ data: JSON.stringify({ mode: 'local' }) }), {
+          status: 200,
+        });
+      }
+      if (path === '/health/generation') {
+        return new Response(
+          JSON.stringify({
+            generations: {
+              demo: {
+                catalogHash: 'catalog-v1',
+                dkgConfigHash: null,
+                prefixCount: 2,
+                axisCount: 1,
+              },
+            },
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response(null, { status: 404 });
+    });
+    const client = createRegistryConfigClient({
+      registryUrl: 'http://registry.local',
+      fetch: fetchMock,
+    });
+
+    await expect(client.fetchCatalog()).resolves.toEqual({ axes: ['service'] });
+    await expect(client.fetchConfig('config')).resolves.toEqual({ mode: 'local' });
+    await expect(client.fetchGeneration()).resolves.toEqual({
+      catalogHash: 'catalog-v1',
+      dkgConfigHash: null,
+      prefixCount: 2,
+      axisCount: 1,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('config client fails soft when the injected fetch is unavailable', async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error('connect ECONNREFUSED');
+    });
+    const client = createRegistryConfigClient({
+      registryUrl: 'http://registry.local',
+      fetch: fetchMock,
+    });
+
+    await expect(client.listEndpoints()).resolves.toEqual([]);
+    await expect(client.fetchServiceUrls()).resolves.toEqual({});
+    await expect(client.fetchCatalog()).resolves.toBeNull();
+    await expect(client.isHealthy()).resolves.toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

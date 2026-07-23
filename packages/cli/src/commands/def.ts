@@ -56,7 +56,12 @@ import {
   syncDocsToLocalDb,
   type DataSourceOptions,
 } from 'definition-data-source';
-import { analyzeDrift, extractDeclarations, scanImplementations, type DriftReport } from 'spec-analyzer';
+import {
+  analyzeDrift,
+  extractDeclarations,
+  scanImplementations,
+  type DriftReport,
+} from 'spec-analyzer';
 import type { VerificationDefinitionBinding, VerificationSummary } from 'spec-tracker';
 import { formatHelpSections, type CommandHelpSectionSpec } from '../command-spec.js';
 import { cmdTierClassify } from '../lib/def-tier-classify.cmd.js';
@@ -66,7 +71,23 @@ import {
   writeVerificationArtifactFile,
   type VerificationReadModel,
 } from '../lib/spec-definition-verification.js';
-import { buildBoundedDefinitionContext } from '../lib/context-runtime/definition-document-context.js';
+import {
+  createDefinitionTaskHandoff,
+  buildBoundedDefinitionContext,
+  executeDefinitionTaskDecompositionWithDiscovery,
+  type DefinitionChildExecutionResult,
+} from '../lib/context-runtime/definition-document-context.js';
+import { JsonTaskHandoffStore } from '../lib/context-runtime/task-handoff-store.js';
+import {
+  loadProviderTokenCounter,
+  loadProviderTokenCounterFromRegistry,
+  readProviderUsageEvent,
+} from '../lib/context-runtime/provider-usage-adapters.js';
+import {
+  createContextUsageLedger,
+  type ContextUsageSummary,
+  type DiscoveryTaskDecomposition,
+} from 'context-runtime';
 
 // ── 유틸 ──────────────────────────────────────────────
 
@@ -88,6 +109,11 @@ type FeedbackTraceMatch = {
   anchorDocId: string;
   request: DefFeedbackRequestSummary;
 };
+
+interface DefinitionDiscoveryResultsInput {
+  readonly results: Map<string, DefinitionChildExecutionResult>;
+  readonly unresolvedQuestions: readonly string[];
+}
 
 const CONCERN_TAG_SET = new Set<string>(CONCERN_TAGS);
 const BOUNDARY_LEVELS = new Set(['group', 'module']);
@@ -902,7 +928,11 @@ async function cmdAuditDb(source: DefDataSource) {
     // prefix_schema 리프는 contains 1건만 있어도 정상
     const isLeafPrefix =
       d.aspect === 'prefix_schema' && !d.docId.endsWith('-group') && !d.docId.endsWith('-system');
-    if (!isLeafPrefix && outgoing.length === 0 && incoming.length <= 1) {
+    // Layout/pack의 구성원은 부모 layout에서 incoming `refs` 하나만 가져도
+    // 유효한 배치 연결을 가진다. `refs`를 고립으로 세면 layout 규칙과
+    // audit-db가 서로 모순되어 정상적인 조망 문서군에 false positive가 난다.
+    const hasLayoutReference = incoming.some((link) => link.type === 'refs');
+    if (!isLeafPrefix && !hasLayoutReference && outgoing.length === 0 && incoming.length <= 1) {
       noLinks++;
       issues.push(`[medium] ${d.docId}: 고립 — outgoing 0, incoming ≤1`);
     }
@@ -1175,23 +1205,84 @@ async function cmdContext(
   }
 
   if (flags['bounded'] === 'true') {
+    if (flags['initial-usage'] && flags['provider-usage']) {
+      throw new Error('--initial-usage와 --provider-usage는 동시에 사용할 수 없습니다');
+    }
+    const providerUsage = flags['provider-usage']
+      ? createContextUsageLedger([
+          readProviderUsageEvent(
+            flags['provider-usage'],
+            flags['provider'],
+            flags['provider-phase'],
+          ),
+        ]).snapshot()
+      : undefined;
+    if (flags['tokenizer-module'] && flags['tokenizer-registry']) {
+      throw new Error('--tokenizer-module과 --tokenizer-registry는 동시에 사용할 수 없습니다');
+    }
+    if (
+      !flags['tokenizer-module'] &&
+      !flags['tokenizer-registry'] &&
+      (flags['tokenizer-provider'] !== undefined || flags['tokenizer-model'] !== undefined)
+    ) {
+      throw new Error(
+        '--tokenizer-provider/--tokenizer-model은 --tokenizer-module 또는 --tokenizer-registry와 함께 사용해야 합니다',
+      );
+    }
+    const tokenizerSelection = {
+      ...(flags['tokenizer-provider'] ? { provider: flags['tokenizer-provider'] } : {}),
+      ...(flags['tokenizer-model'] ? { model: flags['tokenizer-model'] } : {}),
+    };
+    const tokenCounter = flags['tokenizer-module']
+      ? await loadProviderTokenCounter(flags['tokenizer-module'], tokenizerSelection)
+      : flags['tokenizer-registry']
+        ? await loadProviderTokenCounterFromRegistry(
+            flags['tokenizer-registry'],
+            tokenizerSelection,
+          )
+        : undefined;
     const bounded = await buildBoundedDefinitionContext({
       source,
       docId,
+      document: doc,
+      ...(flags['initial-usage']
+        ? { initialUsage: readInitialUsageSummary(flags['initial-usage']) }
+        : {}),
+      ...(providerUsage ? { initialUsage: providerUsage } : {}),
+      ...(tokenCounter ? { tokenCounter } : {}),
       ...(flags['used-tokens']
         ? { usedTokens: parseNonNegativeIntegerFlag(flags['used-tokens'], 'used-tokens') }
         : {}),
+      ...(!flags['used-tokens'] && tokenCounter
+        ? { usedTokensMeasurement: 'measured' as const }
+        : {}),
     });
+    const persistedHandoff = flags['handoff-out']
+      ? await persistDefinitionTaskHandoff(bounded, flags)
+      : undefined;
+    const boundedOutput = persistedHandoff
+      ? { ...bounded, handoff: persistedHandoff.handoff }
+      : bounded;
     if (flags['json'] === 'true') {
-      console.log(JSON.stringify(bounded, null, 2));
+      console.log(JSON.stringify(boundedOutput, null, 2));
       return;
     }
     console.log(`# bounded 컨텍스트: ${doc.title ?? doc.docId}\n`);
     console.log(`discovery: ${bounded.discovery.status}`);
     console.log(`selected routes: ${bounded.discovery.selectedRouteKeys.join(', ') || '(없음)'}`);
     console.log(`working: ${bounded.workingContext.status}`);
-    console.log(`facts: ${bounded.workingContext.facts.map((fact) => fact.factKey).join(', ') || '(없음)'}`);
-    console.log(`manifest: ${bounded.manifest?.digest ?? '(not created — working context blocked)'}`);
+    if (bounded.discovery.decomposition) {
+      console.log(
+        `decomposition: ${bounded.discovery.decomposition.children.length} child task(s) [${bounded.discovery.decomposition.reason}]`,
+      );
+    }
+    console.log(
+      `facts: ${bounded.workingContext.facts.map((fact) => fact.factKey).join(', ') || '(없음)'}`,
+    );
+    console.log(
+      `manifest: ${bounded.manifest?.digest ?? '(not created — working context blocked)'}`,
+    );
+    if (persistedHandoff) console.log(`handoff: ${persistedHandoff.path}`);
     console.log(`observation: ${bounded.observation.eventName}`);
     return;
   }
@@ -1329,6 +1420,292 @@ async function cmdContext(
       console.log(`- ${request.id}${model}: ${request.purpose}`);
     }
   }
+}
+
+async function cmdHandoff(rest: readonly string[], flags: Record<string, string>): Promise<void> {
+  const storePath = rest[0] ?? flags['store'];
+  const taskKey = rest[1] ?? flags['task-key'];
+  if (!storePath || storePath === 'true' || !taskKey || taskKey === 'true') {
+    console.log('Usage: qa-sdk def handoff <store-path> <task-key> [--json]');
+    return;
+  }
+
+  const handoffs = await new JsonTaskHandoffStore(resolve(getRootDir(), storePath)).findByTaskKey(
+    taskKey,
+  );
+  if (flags['json'] === 'true') {
+    console.log(JSON.stringify(handoffs, null, 2));
+    return;
+  }
+
+  console.log(`# Typed Handoff: ${taskKey}\n`);
+  console.log(`records: ${handoffs.length}`);
+  for (const handoff of handoffs) {
+    console.log(`- result: ${handoff.resultRevision}`);
+    console.log(`  source: ${handoff.sourceRevision}`);
+    console.log(`  manifest: ${handoff.manifestDigest}`);
+  }
+}
+
+/**
+ * Aggregate exactly one completed child Handoff per decomposition slice.
+ * The decomposition is accepted either directly or from a bounded context
+ * JSON result's `discovery.decomposition` field.
+ */
+async function cmdHandoffAggregate(
+  rest: readonly string[],
+  flags: Record<string, string>,
+): Promise<void> {
+  const storePath = rest[0] ?? flags['store'];
+  const decompositionPath = rest[1] ?? flags['decomposition'];
+  const sourceRevision = flags['source-revision'];
+  const resultRevision = flags['result-revision'];
+  if (
+    !storePath ||
+    storePath === 'true' ||
+    !decompositionPath ||
+    decompositionPath === 'true' ||
+    !sourceRevision ||
+    sourceRevision === 'true' ||
+    !resultRevision ||
+    resultRevision === 'true'
+  ) {
+    console.log(
+      'Usage: qa-sdk def handoff-aggregate <store-path> <decomposition.json> --source-revision <REV> --result-revision <REV> [--discovery-results <path>] [--unresolved-questions <csv>] [--json]',
+    );
+    return;
+  }
+  if (flags['unresolved-questions'] === 'true') {
+    throw new Error('--unresolved-questions에는 csv 값이 필요합니다');
+  }
+
+  const nextTaskKey = flags['next-task-key'];
+  const nextTaskObjective = flags['next-task-objective'];
+  if (nextTaskKey === 'true' || nextTaskObjective === 'true') {
+    throw new Error('--next-task-key와 --next-task-objective에는 값이 필요합니다');
+  }
+  if (Boolean(nextTaskKey) !== Boolean(nextTaskObjective)) {
+    throw new Error('--next-task-key와 --next-task-objective는 함께 지정해야 합니다');
+  }
+
+  const decomposition = readDiscoveryDecomposition(decompositionPath);
+  const store = new JsonTaskHandoffStore(resolve(getRootDir(), storePath));
+  const discoveryInput = flags['discovery-results']
+    ? readDefinitionDiscoveryResults(flags['discovery-results'])
+    : { results: new Map<string, DefinitionChildExecutionResult>(), unresolvedQuestions: [] };
+  const discoveryResults = discoveryInput.results;
+  const decompositionTaskKeys = new Set(decomposition.children.map((child) => child.taskKey));
+  for (const taskKey of discoveryResults.keys()) {
+    if (!decompositionTaskKeys.has(taskKey)) {
+      throw new Error(
+        `discovery result가 decomposition에 없는 child Task를 가리킵니다: ${taskKey}`,
+      );
+    }
+  }
+
+  const execution = await executeDefinitionTaskDecompositionWithDiscovery({
+    decomposition,
+    executeChild: async (child) => {
+      const discovery = discoveryResults.get(child.taskKey);
+      if (discovery) return discovery;
+
+      const history = await store.findByTaskKey(child.taskKey);
+      if (history.length !== 1) {
+        throw new Error(
+          `child Task ${child.taskKey}는 정확히 하나의 Handoff가 필요합니다 (현재 ${history.length}건)`,
+        );
+      }
+      return {
+        taskKey: child.taskKey,
+        kind: 'handoff',
+        routeKeys: child.routeKeys,
+        unresolvedQuestions: history[0]!.unresolvedQuestions,
+        handoff: history[0]!,
+      };
+    },
+    sourceRevision,
+    resultRevision,
+    unresolvedQuestions: [
+      ...parseCsvFlag(flags['unresolved-questions']),
+      ...discoveryInput.unresolvedQuestions,
+    ],
+    ...(nextTaskKey && nextTaskObjective
+      ? { nextTask: { taskKey: nextTaskKey, objective: nextTaskObjective } }
+      : {}),
+  });
+  if (!execution.handoff) {
+    const failed = execution.execution.children.find((child) => child.status === 'failed');
+    throw new Error(
+      `parent Handoff를 만들 수 없습니다: ${failed?.error ?? execution.execution.status}`,
+    );
+  }
+
+  const handoff = execution.handoff;
+  await store.save(handoff);
+
+  if (flags['json'] === 'true') {
+    const output =
+      execution.discoveryRefs.length > 0
+        ? {
+            handoff,
+            discoveryRefs: execution.discoveryRefs,
+            unresolvedQuestions: execution.unresolvedQuestions,
+          }
+        : handoff;
+    console.log(JSON.stringify(output, null, 2));
+    return;
+  }
+  console.log(`# Parent Typed Handoff: ${handoff.taskKey}\n`);
+  console.log(`children: ${handoff.childTaskKeys?.length ?? 0}`);
+  console.log(`discovery refs: ${execution.discoveryRefs.length}`);
+  console.log(`result: ${handoff.resultRevision}`);
+  console.log(`manifest: ${handoff.manifestDigest}`);
+}
+
+function readDiscoveryDecomposition(pathValue: string): DiscoveryTaskDecomposition {
+  const path = resolve(getRootDir(), pathValue);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+  } catch (error) {
+    throw new Error(`decomposition JSON을 읽을 수 없습니다: ${path}`, { cause: error });
+  }
+
+  const candidate =
+    isRecord(parsed) && isRecord(parsed.discovery) ? parsed.discovery.decomposition : parsed;
+  if (!isRecord(candidate) || !Array.isArray(candidate.children)) {
+    throw new Error('decomposition JSON은 children 배열을 포함해야 합니다');
+  }
+  return candidate as unknown as DiscoveryTaskDecomposition;
+}
+
+function readDefinitionDiscoveryResults(pathValue: string): DefinitionDiscoveryResultsInput {
+  if (pathValue === 'true') {
+    throw new Error('--discovery-results에는 discovery result JSON 파일 경로가 필요합니다');
+  }
+
+  const path = resolve(getRootDir(), pathValue);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+  } catch (error) {
+    throw new Error(`discovery result JSON을 읽을 수 없습니다: ${path}`, { cause: error });
+  }
+
+  const wrapperUnresolvedQuestions =
+    isRecord(parsed) && parsed.unresolvedQuestions !== undefined ? parsed.unresolvedQuestions : [];
+  if (!isStringArray(wrapperUnresolvedQuestions)) {
+    throw new Error('discovery result JSON의 unresolvedQuestions는 문자열 배열이어야 합니다');
+  }
+  if (wrapperUnresolvedQuestions.some((question) => !question.trim())) {
+    throw new Error('discovery result JSON의 unresolvedQuestions에는 빈 값이 있을 수 없습니다');
+  }
+
+  const values =
+    isRecord(parsed) && Array.isArray(parsed.discoveryRefs) ? parsed.discoveryRefs : parsed;
+  if (!Array.isArray(values)) {
+    throw new Error('discovery result JSON은 배열 또는 discoveryRefs 배열을 포함해야 합니다');
+  }
+
+  const results = new Map<string, DefinitionChildExecutionResult>();
+  for (const [index, value] of values.entries()) {
+    if (!isRecord(value)) {
+      throw new Error(`discovery result[${index}]가 객체가 아닙니다`);
+    }
+    const taskKey = value.taskKey;
+    const routeKeys = value.routeKeys;
+    const sourceRefs = value.sourceRefs ?? [];
+    const unresolvedQuestions = value.unresolvedQuestions ?? [];
+    if (typeof taskKey !== 'string' || taskKey.trim().length === 0) {
+      throw new Error(`discovery result[${index}].taskKey가 필요합니다`);
+    }
+    if (!isStringArray(routeKeys)) {
+      throw new Error(`discovery result[${index}].routeKeys는 문자열 배열이어야 합니다`);
+    }
+    if (!isStringArray(sourceRefs)) {
+      throw new Error(`discovery result[${index}].sourceRefs는 문자열 배열이어야 합니다`);
+    }
+    if (!isStringArray(unresolvedQuestions)) {
+      throw new Error(`discovery result[${index}].unresolvedQuestions는 문자열 배열이어야 합니다`);
+    }
+    if (results.has(taskKey)) {
+      throw new Error(`discovery result에 중복된 taskKey가 있습니다: ${taskKey}`);
+    }
+    results.set(taskKey, {
+      taskKey,
+      kind: 'discovery',
+      routeKeys,
+      sourceRefs,
+      unresolvedQuestions,
+    });
+  }
+  return { results, unresolvedQuestions: [...new Set(wrapperUnresolvedQuestions)].sort() };
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readInitialUsageSummary(value: string): ContextUsageSummary {
+  if (value === 'true') {
+    throw new Error('--initial-usage에는 usage summary JSON 파일 경로가 필요합니다');
+  }
+
+  const path = resolve(getRootDir(), value);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+  } catch (error) {
+    throw new Error(`initial usage summary를 읽을 수 없습니다: ${path}`, { cause: error });
+  }
+  return parsed as ContextUsageSummary;
+}
+
+async function persistDefinitionTaskHandoff(
+  bounded: Awaited<ReturnType<typeof buildBoundedDefinitionContext>>,
+  flags: Record<string, string>,
+): Promise<{ handoff: ReturnType<typeof createDefinitionTaskHandoff>; path: string }> {
+  const outputPath = flags['handoff-out'];
+  if (!outputPath || outputPath === 'true') {
+    throw new Error('--handoff-out에는 저장할 JSON 파일 경로가 필요합니다');
+  }
+  const resultRevision = flags['result-revision'];
+  if (!resultRevision || resultRevision === 'true') {
+    throw new Error('--handoff-out 사용 시 --result-revision이 필요합니다');
+  }
+
+  const sourceRevision = flags['source-revision'];
+  if (sourceRevision === 'true') {
+    throw new Error('--source-revision에는 revision 값이 필요합니다');
+  }
+  if (flags['unresolved-questions'] === 'true') {
+    throw new Error('--unresolved-questions에는 csv 값이 필요합니다');
+  }
+  const nextTaskKey = flags['next-task-key'];
+  const nextTaskObjective = flags['next-task-objective'];
+  if (nextTaskKey === 'true' || nextTaskObjective === 'true') {
+    throw new Error('--next-task-key와 --next-task-objective에는 값이 필요합니다');
+  }
+  if (Boolean(nextTaskKey) !== Boolean(nextTaskObjective)) {
+    throw new Error('--next-task-key와 --next-task-objective는 함께 지정해야 합니다');
+  }
+
+  const handoff = createDefinitionTaskHandoff({
+    boundedContext: bounded,
+    resultRevision,
+    ...(sourceRevision ? { sourceRevision } : {}),
+    unresolvedQuestions: parseCsvFlag(flags['unresolved-questions']),
+    ...(nextTaskKey && nextTaskObjective
+      ? { nextTask: { taskKey: nextTaskKey, objective: nextTaskObjective } }
+      : {}),
+  });
+  const path = resolve(getRootDir(), outputPath);
+  await new JsonTaskHandoffStore(path).save(handoff);
+  return { handoff, path };
 }
 
 // ── boundary (DefDataSource 기반) ─────────────────────
@@ -2269,7 +2646,10 @@ const DEF_HELP_SECTIONS = [
     title: '분석',
     lines: [
       'scan-audit          raw frontmatter/link 감사 (DB 미사용)',
-      'context <ID> [--bounded] [--used-tokens N] [--json]  작업 전 컨텍스트 (소속/의존/영향)',
+      'context <ID> [--bounded] [--used-tokens N] [--initial-usage <path>] [--provider-usage <path> --provider openai|anthropic|generic] [--provider-phase discovery|working] [--tokenizer-module <path>|--tokenizer-registry <path> [--tokenizer-provider openai|anthropic|generic] [--tokenizer-model <id>]] [--json]  작업 전 컨텍스트 (소속/의존/영향)',
+      'context <ID> --bounded --handoff-out <path> --result-revision <REV> [--source-revision <REV>] [--unresolved-questions <csv>] [--next-task-key <KEY> --next-task-objective <TEXT>]  Typed Handoff 저장',
+      'handoff <store-path> <task-key> [--json]  저장된 Typed Handoff 조회',
+      'handoff-aggregate <store-path> <decomposition.json> --source-revision <REV> --result-revision <REV> [--discovery-results <path>] [--json]  discovery child는 refs로, resolution child는 parent Handoff로 집계',
       'boundary <ID> | --address=<ADDR>       바운더리 구조 + direct coupling (--level, --json 가능)',
       'boundary-context <ID> | --address=<ADDR> 바운더리 + concerns + impact + feedback (--level, --mode, --json 가능)',
       'impact <ID> | --address=<ADDR>  변경 영향 분석',
@@ -2339,6 +2719,8 @@ export async function cliDef(args: string[]): Promise<void> {
   if (sub === 'verification-bindings') return cmdVerificationBindings(flags, options);
   if (sub === 'verification-artifact') return cmdVerificationArtifact(flags);
   if (sub === 'state') return cmdState(rest, flags, options);
+  if (sub === 'handoff') return cmdHandoff(rest, flags);
+  if (sub === 'handoff-aggregate') return cmdHandoffAggregate(rest, flags);
 
   // DefDataSource 기반 커맨드 (전체 통합)
   const dsCommands = new Set([
@@ -3028,13 +3410,21 @@ async function cmdStateImpl(
     }
 
     // artifact가 없거나 binding이 현재 definition snapshot과 연결되지 않을 때만 unverified 유지
-    const convention = verification?.convention ?? deriveConventionState({
-      evidenceCount: 0,
-      coverage: 0,
-      hasFailures: false,
-    });
+    const convention =
+      verification?.convention ??
+      deriveConventionState({
+        evidenceCount: 0,
+        coverage: 0,
+        hasFailures: false,
+      });
 
-    docStates.push({ id, lifecycle, specImpl, convention, ...(verification ? { verification } : {}) });
+    docStates.push({
+      id,
+      lifecycle,
+      specImpl,
+      convention,
+      ...(verification ? { verification } : {}),
+    });
   }
 
   const target = rest[0];

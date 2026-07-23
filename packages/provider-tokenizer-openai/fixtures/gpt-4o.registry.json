@@ -1,0 +1,11 @@
+{
+  "version": "v1",
+  "entries": [
+    {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "module": "../dist/index.js",
+      "tokenizerRevision": "js-tiktoken@1.0.21"
+    }
+  ]
+}

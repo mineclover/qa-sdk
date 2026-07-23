@@ -139,7 +139,21 @@ function parseBddYaml(yaml: string): Record<string, unknown> {
     const next = lines[index];
     if (!next || next.indent <= parentIndent) return {};
     if (next.text.startsWith('- ')) return parseArray(next.indent);
+    if (next.text.startsWith('[')) return parseMultilineInlineArray(next.indent);
     return parseObject(next.indent);
+  }
+
+  function parseMultilineInlineArray(indent: number): unknown[] {
+    const chunks: string[] = [];
+    while (index < lines.length) {
+      const line = lines[index]!;
+      if (line.indent < indent) break;
+      chunks.push(line.text);
+      index += 1;
+      if (line.text.includes(']')) break;
+    }
+    const parsed = parseScalarOrInlineArray(chunks.join(' '));
+    return Array.isArray(parsed) ? parsed : [];
   }
 
   function parseArray(indent: number): unknown[] {
@@ -198,7 +212,11 @@ function parseScalarOrInlineArray(value: string): unknown {
   if (value.startsWith('[') && value.endsWith(']')) {
     const inner = value.slice(1, -1).trim();
     if (!inner) return [];
-    return inner.split(',').map((item) => parseScalar(item.trim()));
+    return inner
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+      .map(parseScalar);
   }
   return parseScalar(value);
 }

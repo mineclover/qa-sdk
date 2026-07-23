@@ -31,9 +31,12 @@
 ## 실행
 
 ```bash
+pnpm --filter @qa-sdk/definition-service dev
 pnpm --filter @qa-sdk/definition-service build
 pnpm --filter @qa-sdk/definition-service test
 pnpm --filter @qa-sdk/definition-service start
 ```
+
+`dev`는 [`scripts/dev.mjs`](scripts/dev.mjs)를 통해 `tsc` compile 완료 후 Nest 앱을 재기동한다. GraphQL decorator metadata를 보존해야 하므로 개발 실행을 `tsx watch src/main.ts`로 바꾸지 않는다. 전체 로컬 서비스 조립은 [local-development-runtime.spec.md](../../docs/specs/infra-engine/local-development-runtime.spec.md)를 따른다.
 
 운영 환경 변수와 초기화 순서는 [definition-runtime-guide.md](../../docs/specs/guides-system/definition-runtime-guide.md)를 같이 본다.

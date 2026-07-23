@@ -3,258 +3,81 @@ def:
   id: context-bounded-execution-cases
   type: spec
   tier: component
-  level: leaf
+  level: group
   scope: flow
   aspect: user_scenario
-  depth: validation
+  depth: overview
   lifecycle: approved
   layer: operation
+  family_id: docs/specs/system/context-bounded-execution
   tags: [scenario, testing, architecture, context]
   links:
+    - target: context-bounded-execution-cases-planning-core
+      type: contains
+    - target: context-bounded-execution-cases-planning-cap
+      type: contains
+    - target: context-bounded-execution-cases-usage
+      type: contains
+    - target: context-bounded-execution-cases-adapters
+      type: contains
     - target: context-bounded-execution
       type: refines
-    - target: context-bounded-execution-todo
-      type: traces_to
-  sources:
-    - packages/context-runtime/src/index.ts
-    - packages/cli/src/commands/def.test.ts
+    - target: context-bounded-execution-cases-handoff
+      type: contains
+    - target: context-bounded-execution-cases-provider-usage
+      type: contains
+    - target: context-bounded-execution-cases-provider-tokenizer
+      type: contains
+    - target: context-bounded-execution-cases-definition-consumer
+      type: contains
+    - target: context-bounded-execution-cases-definition-discovery
+      type: contains
+    - target: context-bounded-execution-cases-definition-working
+      type: contains
+    - target: context-bounded-execution-cases-definition-handoff
+      type: contains
+    - target: context-bounded-execution-cases-observation
+      type: contains
+sources:
+  - packages/context-runtime/src/index.ts
+  - packages/context-runtime/src/usage.ts
+  - packages/context-runtime/src/handoff.ts
+  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts
+  - packages/cli/src/lib/context-runtime/task-handoff-store.ts
+  - packages/event-catalog/src/categories/infrastructure.ts
 ---
-
-# Context-Bounded Execution — 행동 계약
+# Context-Bounded Execution — 행동 계약 모음
 
 ## 목적 ^purpose
 
-Discovery Context와 Working Context가 예산·경로·정보 신뢰도·handoff에서 분리되는 동작을 결정론적 계약으로 고정한다.
+Discovery Context와 Working Context의 행동 계약을 역할별 leaf 문서로 분리해 관리한다. 개별 계약은 child 문서에 있고, 이 문서는 family entry point와 구성 관계를 소유한다.
 
-## BDD 계약 ^overview
+## 구성 ^overview
 
-```yaml bdd
-bdd_contracts:
-  - id: context-runtime.budget.reserve-isolation.v1
-    owner_system: context-runtime
-    contract_kind: query-projection
-    mode: read
-    given:
-      predicates: [budget.working_reserve_is_100k, discovery.has_optional_expansion]
-      fixtures: [context-runtime.fixture.default-200k-profile]
-    when:
-      operation: context-runtime.planDiscovery
-    then:
-      returns:
-        discovery.max_tokens: 100000
-        working.reserve_tokens: 100000
-      invariants: [budget.no_borrow_from_working, budget.system_and_output_reserve_preserved]
+- [Context-Bounded Execution — 예산·Route 계약](./context-bounded-execution-cases-planning-core.cases.md) — 예산 격리, route freeze와 authoritative fact 해소를 검증한다.
+- [Context-Bounded Execution — Cap·Working closure 계약](./context-bounded-execution-cases-planning-cap.cases.md) — missing route, cap, overrun과 manifest를 검증한다.
+- [Context-Bounded Execution — Usage 계약](./context-bounded-execution-cases-usage.cases.md) — phase-separated usage와 provider usage를 검증한다.
+- [Context-Bounded Execution — Adapter·Observation 계약](./context-bounded-execution-cases-adapters.cases.md) — adapter와 metadata-only observation을 검증한다.
+- [Context-Bounded Execution — Decomposition·Handoff 계약](./context-bounded-execution-cases-handoff.cases.md) — child task 실행, reference-only handoff, persistence와 aggregation 경계를 검증한다.
+- [Context-Bounded Execution — Provider usage 계약](./context-bounded-execution-cases-provider-usage.cases.md) — provider response usage와 provider/model token counter의 측정 identity를 검증한다.
+- [Context-Bounded Execution — 외부 tokenizer 계약](./context-bounded-execution-cases-provider-tokenizer.cases.md) — 외부 tokenizer module과 registry 선택, 잘못된 선택·export의 fail-closed 동작을 검증한다.
+- [Context-Bounded Execution — Definition consumer 계약](./context-bounded-execution-cases-definition-consumer.cases.md) — definition graph를 bounded context consumer로 사용하는 정상·blocked·decomposition 경로를 검증한다.
+- [Context-Bounded Execution — Definition discovery 계약](./context-bounded-execution-cases-definition-discovery.cases.md) — lazy resolution, graph discovery와 local/server source transport 경계를 검증한다.
+- [Context-Bounded Execution — Definition working 계약](./context-bounded-execution-cases-definition-working.cases.md) — 최소 Working Fact, observation sink와 phase-separated usage accounting을 검증한다.
+- [Context-Bounded Execution — Definition handoff 계약](./context-bounded-execution-cases-definition-handoff.cases.md) — Definition child 결과의 discovery/read-model 분리와 handoff persistence·aggregation을 검증한다.
+- [Context-Bounded Execution — Observation vocabulary 계약](./context-bounded-execution-cases-observation.cases.md) — context runtime observation event의 catalog projection을 검증한다.
 
-  - id: context-runtime.discovery.plan-routes.v1
-    owner_system: context-runtime
-    contract_kind: query-projection
-    mode: read
-    given:
-      predicates: [task.intent_available, discovery.candidate_routes_present, budget.working_reserve_is_100k]
-      fixtures: [context-runtime.fixture.order-release-candidates]
-    when:
-      operation: context-runtime.planDiscovery
-    then:
-      returns:
-        discovery.plan: deterministic
-        candidate.projections: cost_authority_freshness_size
-      invariants: [selected_routes_have_bounds, discovery.does_not_borrow_working_reserve, same_input_same_plan]
+## 검증 경계 ^validation
 
-  - id: context-runtime.discovery-to-working.route-freeze.v1
-    owner_system: context-runtime
-    contract_kind: query-projection
-    mode: read
-    given:
-      predicates: [discovery.context_map_available, discovery.candidate_routes_present]
-      fixtures: [context-runtime.fixture.order-release-map]
-    when:
-      operation: context-runtime.freezeRouteSelection
-    then:
-      returns:
-        selected_routes: non_empty
-        working_context: not_yet_loaded
-      invariants: [discovery.summary_not_fact, selected_routes_have_bounds]
+qa-sdk docs bdd validate context-bounded-execution-cases --family-only는 이 문서와 모든 child 문서의 계약·test unit·implementation unit family를 함께 검증한다.
 
-  - id: context-runtime.working.resolve-authoritative-facts.v1
-    owner_system: context-runtime
-    contract_kind: dependency-contract
-    mode: read
-    given:
-      predicates: [route.selection_frozen, required_facts.have_resolution_routes, facts.authority_and_freshness_valid]
-      fixtures: [context-runtime.fixture.order-release-authoritative-facts]
-    when:
-      operation: context-runtime.compileWorkingContext
-    then:
-      returns:
-        working_context.status: closed
-        working_context.facts: authoritative_only
-        working_context.allowed_operations: present
-        working_context.output_contract: present
-        manifest: present
-      invariants: [working_context.contains_revisions, working_context.contains_evidence_refs]
+## 구현 참조 ^source
 
-  - id: context-runtime.working.reject-missing-route.v1
-    owner_system: context-runtime
-    contract_kind: validation-failure
-    mode: read
-    given:
-      predicates: [route.selection_frozen, required_fact.has_no_resolution_route]
-      fixtures: [context-runtime.fixture.order-release-missing-inventory-route]
-    when:
-      operation: context-runtime.compileWorkingContext
-    then:
-      error:
-        code: context-closure-incomplete
-      returns:
-        working_context.status: blocked
-        missing: includes_required_fact
-      invariants: [no_execution_context_emitted]
-
-  - id: context-runtime.discovery.stop-at-cap.v1
-    owner_system: context-runtime
-    contract_kind: query-projection
-    mode: read
-    given:
-      predicates: [discovery.used_tokens_at_cap, working.reserve_not_started]
-      fixtures: [context-runtime.fixture.discovery-overflow]
-    when:
-      operation: context-runtime.planDiscovery
-    then:
-      returns:
-        status: discovery-capped
-        working_reserve_tokens: 100000
-      invariants: [no_silent_eviction, next_action_is_decompose_or_freeze]
-
-  - id: context-runtime.manifest.deterministic.v1
-    owner_system: context-runtime
-    contract_kind: query-projection
-    mode: read
-    given:
-      predicates: [working_context.closed, snapshot.reference_available]
-      fixtures: [context-runtime.fixture.completed-order-release]
-    when:
-      operation: context-runtime.createContextManifest
-    then:
-      returns:
-        manifest.canonical_json: deterministic
-        manifest.digest: present
-        manifest.fact_refs: reference_only
-      invariants: [manifest.excludes_fact_values, same_snapshot_same_manifest]
-
-  - id: context-runtime.adapters.definition-discovery.v1
-    owner_system: context-runtime
-    contract_kind: dependency-contract
-    mode: read
-    given:
-      predicates: [definition-graph.port_available, task.anchor_available]
-      fixtures: [context-runtime.fixture.definition-route-nodes]
-    when:
-      operation: context-runtime.definitionGraphDiscovery.discover
-    then:
-      returns:
-        discovery.candidates: typed
-        discovery.candidates.source_refs: present
-      invariants: [adapter.does_not_own_definition_storage, candidates.retain_route_bounds]
-
-  - id: context-runtime.adapters.federated-resolution.v1
-    owner_system: context-runtime
-    contract_kind: dependency-contract
-    mode: read
-    given:
-      predicates: [federation.query_port_available, resolution_route_selected]
-      fixtures: [context-runtime.fixture.federated-inventory-fact]
-    when:
-      operation: context-runtime.federatedResolution.resolve
-    then:
-      returns:
-        resolved_facts: typed
-        resolved_facts.revisions: present
-        resolved_facts.evidence_refs: present
-      invariants: [adapter.does_not_own_federated_storage, undeclared_facts_filtered]
-
-  - id: context-runtime.adapters.decision-hints.v1
-    owner_system: context-runtime
-    contract_kind: dependency-contract
-    mode: read
-    given:
-      predicates: [decision-flow.hint_port_available, task.anchor_available]
-      fixtures: [context-runtime.fixture.decision-hints]
-    when:
-      operation: context-runtime.decisionHints.getHints
-    then:
-      returns:
-        hints: optional
-        hints.provenance: decision-flow
-      invariants: [hints.do_not_become_authoritative_facts]
-
-  - id: context-runtime.observation.event-mapping.v1
-    owner_system: context-runtime
-    contract_kind: query-projection
-    mode: read
-    given:
-      predicates: [context_runtime.result_available]
-      fixtures: [context-runtime.fixture.closed-working-context]
-    when:
-      operation: context-runtime.mapContextObservation
-    then:
-      returns:
-        observation.event: typed
-        observation.address_context: event_metadata_only
-      invariants: [observation.excludes_fact_values, observation.is_not_persistence]
-
-  - id: context-runtime.handoff.reference-only.v1
-    owner_system: context-runtime
-    contract_kind: query-projection
-    mode: read
-    given:
-      predicates: [working_context.closed, task.outcome_recorded]
-      fixtures: [context-runtime.fixture.completed-order-release]
-    when:
-      operation: context-runtime.createTaskHandoff
-    then:
-      returns:
-        handoff: typed
-        evidence_refs: non_empty
-      invariants: [handoff.excludes_conversation_transcript, handoff.preserves_revisions_and_manifest_digest]
-
-  - id: docs-control-plane.definition-context.bounded-consumer.v1
-    owner_system: docs-control-plane
-    contract_kind: dependency-contract
-    mode: read
-    given:
-      predicates: [definition.document_exists, definition.graph_context_available, context.runtime_budget_available]
-      fixtures: [definition-context.fixture.definition-addressing]
-    when:
-      operation: docs-control-plane.def.context.bounded
-    then:
-      returns:
-        bounded.mode: true
-        discovery.plan: present
-        working_context.status: closed
-        manifest.digest: present
-        observation.event: typed
-      invariants: [default_context_output_unchanged, discovery_summary_not_fact, working_facts_have_revisions, manifest_excludes_fact_values]
-
-  - id: docs-control-plane.definition-context.bounded-blocked.v1
-    owner_system: docs-control-plane
-    contract_kind: validation-failure
-    mode: read
-    given:
-      predicates: [definition.document_exists, discovery.used_tokens_at_cap, required_fact_route_not_selected]
-      fixtures: [definition-context.fixture.definition-addressing]
-    when:
-      operation: docs-control-plane.def.context.bounded
-    then:
-      error:
-        code: context-closure-incomplete
-      returns:
-        working_context.status: blocked
-        manifest: absent
-        observation.status: blocked
-      invariants: [working_reserve_preserved, no_execution_context_emitted, no_manifest_for_blocked_context]
-
-```
-
-## 시나리오 해석 ^context
-
-Discovery에서 찾은 `order.inventory`는 재고 상태가 아니다. Working Compiler가 ResolutionRoute를 통해 authority와 revision을 확인한 뒤에만 실행 Fact가 된다. Discovery cap에 도달한 경우에도 Working reserve를 줄여 계속하지 않고, 현재 탐색 결과를 freeze하거나 Task를 분해한다.
+- packages/context-runtime/src/index.ts
+- packages/context-runtime/src/usage.ts
+- packages/context-runtime/src/handoff.ts
+- packages/cli/src/commands/def.test.ts
+- packages/cli/src/lib/context-runtime/definition-document-context.ts
+- packages/cli/src/lib/context-runtime/task-handoff-store.ts
+- packages/event-catalog/src/categories/infrastructure.ts

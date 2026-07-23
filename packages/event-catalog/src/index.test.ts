@@ -21,7 +21,7 @@ const expectedCategoryCounts = {
   execution: 16,
   outcome: 7,
   quality: 8,
-  infrastructure: 15,
+  infrastructure: 16,
 } satisfies Record<EventCategory, number>;
 
 const expectedV1MinimalKeys = [
@@ -78,9 +78,9 @@ const validGraphRoles = [
 ] as const satisfies readonly GraphRole[];
 
 describe('@qa-sdk/event-catalog', () => {
-  it('registers all 60 core events with the expected category counts', () => {
-    expect(allCoreEvents).toHaveLength(82);
-    expect(new Set(allCoreEvents.map((event) => event.event_key)).size).toBe(82);
+  it('registers all core events with the expected category counts', () => {
+    expect(allCoreEvents).toHaveLength(83);
+    expect(new Set(allCoreEvents.map((event) => event.event_key)).size).toBe(83);
 
     const categoryCounts = Object.fromEntries(
       Object.entries(coreEventsByCategory).map(([category, events]) => [category, events.length]),
@@ -137,10 +137,28 @@ describe('@qa-sdk/event-catalog', () => {
   });
 
   it('extends payload guides beyond v1 minimal for agent tool bridge events', () => {
-    expect(payloadGuides).toHaveLength(22);
-    expect(payloadGuideMap.size).toBe(22);
+    expect(payloadGuides).toHaveLength(23);
+    expect(payloadGuideMap.size).toBe(23);
     expect(getPayloadGuide('tool_invoke')).toBeDefined();
     expect(getPayloadGuide('tool_result')).toBeDefined();
+    expect(getPayloadGuide('context_runtime_observation')).toBeDefined();
+  });
+
+  it('[contract:event-vocab.context-runtime-observation.v1] registers context runtime observation as a metadata-only event', () => {
+    const event = coreEventMap.get('context_runtime_observation');
+
+    expect(event).toMatchObject({
+      event_key: 'context_runtime_observation',
+      category: 'infrastructure',
+      graph_hint: { role: 'observation', goal_eligible: false },
+    });
+    expect(getPayloadGuide('context_runtime_observation')?.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'task_key', required: true }),
+        expect.objectContaining({ name: 'route_keys', required: true }),
+        expect.objectContaining({ name: 'fact_count', required: true }),
+      ]),
+    );
   });
 
   it('marks each required payload field as required', () => {

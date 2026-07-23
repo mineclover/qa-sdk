@@ -1,11 +1,7 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
-export {
-  declareDocumentAdapterCapabilities,
-  defineDocumentAdapter,
-  normalizeDocumentEnvelope,
-} from 'doc-envelope';
+export { defineDocumentAdapter, normalizeDocumentEnvelope } from 'doc-envelope';
 export {
   ARTIFACT_EVIDENCE_ADAPTER_ID,
   createArtifactEvidenceAdapter,
@@ -18,10 +14,7 @@ export { createPrdMarkdownAdapter, PRD_MARKDOWN_ADAPTER_ID } from './adapters/pr
 export {
   buildRalphPrdJsonEnvelopeFromContent,
   createRalphPrdJsonAdapter,
-  readRalphPrdJsonSummary,
-  RALPH_PRD_JSON_ADAPTER_ID,
   createRalphSessionAdapter,
-  RALPH_SESSION_ADAPTER_ID,
 } from 'ralph-tui-integration';
 export { previewPrdCompletionSync } from './prd-completion-sync.js';
 export {
@@ -81,34 +74,16 @@ export {
 export {
   CANONICAL_TODO_CATEGORY_LABELS,
   classifyTodoHeading,
-  countMarkdownCheckboxes,
   parseTodoFollowUps,
 } from 'doc-envelope';
 export { detectCompletedRecords } from 'doc-envelope';
 export { findNextFollowUps } from './follow-ups.js';
-export { buildDeterministicLabelInventory } from 'deterministic-label-registry';
 export {
   extractBddDocumentMetadata,
   hasBddMetadata,
   validateBddDocumentSet,
 } from './bdd-contract-extract.js';
 export { extractWorkTopicDocumentMetadata, hasWorkTopicMetadata } from './work-topic-extract.js';
-export {
-  buildSemanticCoordinateCandidatesFromDocument,
-  buildSemanticCoordinateCandidate,
-  buildDeterministicLabelRecord,
-  collectSemanticCoordinateCandidatesFromDocuments,
-  detectSemanticCoordinateCandidateCollisions,
-  isSemanticCoordinateLabelKind,
-  projectDeterministicLabelRecordsFromDocuments,
-  SEMANTIC_COORDINATE_CANONICAL_EXAMPLES,
-  SEMANTIC_COORDINATE_DIAGNOSTIC_CODES,
-  SEMANTIC_COORDINATE_DOMAINS,
-  SEMANTIC_COORDINATE_LABEL_KINDS,
-  SEMANTIC_EXISTING_ID_SOURCES,
-  SEMANTIC_PHYSICAL_REF_KINDS,
-} from 'deterministic-label-registry';
-
 export type {
   AuthoredLinkType,
   DocumentGraphEdgeKind,

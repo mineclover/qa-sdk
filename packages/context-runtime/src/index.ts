@@ -9,19 +9,17 @@ export {
   validateContextBudgetProfile,
 } from './budget.js';
 
-export {
-  assertWorkingClosure,
-  validateWorkingClosure,
-} from './closure.js';
+export { assertWorkingClosure, validateWorkingClosure } from './closure.js';
+
+export { executeDiscoveryTaskDecomposition } from './decomposition.js';
+
+export { assertWorkingContext, compileWorkingContext } from './working-context.js';
 
 export {
-  assertWorkingContext,
-  compileWorkingContext,
-} from './working-context.js';
-
-export {
+  aggregateTaskHandoffs,
   createContextManifest,
   createTaskHandoff,
+  executeAndAggregateTaskHandoffs,
 } from './handoff.js';
 
 export {
@@ -41,9 +39,18 @@ export {
 } from './routes.js';
 
 export {
+  createDiscoveryTaskDecomposition,
   planDiscovery,
   projectDiscoveryCandidate,
+  toDiscoveryTokenInput,
 } from './discovery.js';
+
+export {
+  JSON_CONTEXT_TOKEN_COUNTER,
+  createContextUsageLedger,
+  createJsonContextTokenCounter,
+  createProviderUsageEvent,
+} from './usage.js';
 
 export type {
   AuthorityLevel,
@@ -55,6 +62,15 @@ export type {
   ContextHint,
   ContextObservationInput,
   ContextObservationRecord,
+  ContextTokenCounter,
+  ContextTokenCountContext,
+  ContextUsageEvent,
+  ContextUsageMetricSummary,
+  ContextUsageLedger,
+  ContextUsageMeasurement,
+  ContextUsagePhase,
+  ContextUsageSummary,
+  DiscoveryDecompositionReason,
   ContextAnchor,
   ContextBudgetProfile,
   ContextRoute,
@@ -69,6 +85,13 @@ export type {
   DiscoveryPlan,
   DiscoveryPlanInput,
   DiscoveryPlanStatus,
+  DiscoveryTaskDecomposition,
+  DiscoveryTaskExecutionOptions,
+  DiscoveryTaskExecutionRecord,
+  DiscoveryTaskExecutionResult,
+  DiscoveryTaskExecutionStatus,
+  DiscoveryTaskChildExecutionStatus,
+  DiscoveryTaskSlice,
   DiscoveryRouteProjection,
   DiscoverySkipReason,
   DiscoveryRoute,
@@ -89,6 +112,7 @@ export type {
   ManifestFactRef,
   NextTask,
   OutputContract,
+  ProviderUsageSnapshot,
   RequiredFact,
   ResolutionRoute,
   ResolvedFact,
@@ -98,7 +122,11 @@ export type {
   SkippedDiscoveryRoute,
   TaskIntent,
   TaskHandoff,
+  TaskHandoffAggregationInput,
+  TaskHandoffDecompositionExecutionOptions,
+  TaskHandoffDecompositionExecutionResult,
   TaskHandoffInput,
+  TaskHandoffStore,
   WorkingContext,
   WorkingContextCompileInput,
   WorkingClosure,

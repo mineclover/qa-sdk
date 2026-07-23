@@ -115,6 +115,7 @@ export const SURFACES = [
       '@qa-sdk/codec-proto',
       '@qa-sdk/context',
       'context-runtime',
+      '@qa-sdk/provider-tokenizer-openai',
       '@qa-sdk/engine',
       '@qa-sdk/decode-service',
       '@qa-sdk/gateway',

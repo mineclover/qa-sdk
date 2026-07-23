@@ -78,9 +78,11 @@ describe('context-runtime manifest', () => {
   });
 
   it('[contract:context-runtime.manifest.deterministic.v1] refuses to manifest a blocked Working Context', () => {
-    expect(() => createContextManifest({
-      workingContext: workingContext({ status: 'blocked' }),
-      snapshotRef: 'snapshot:orders:42',
-    })).toThrowError(expect.objectContaining({ code: 'invalid-context-manifest' }));
+    expect(() =>
+      createContextManifest({
+        workingContext: workingContext({ status: 'blocked' }),
+        snapshotRef: 'snapshot:orders:42',
+      }),
+    ).toThrowError(expect.objectContaining({ code: 'invalid-context-manifest' }));
   });
 });

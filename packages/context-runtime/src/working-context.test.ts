@@ -91,7 +91,9 @@ describe('context-runtime working context compiler', () => {
   });
 
   it('[contract:context-runtime.working.reject-missing-route.v1] blocks execution when the required route was not frozen', () => {
-    const result = compileWorkingContext(input({ routeSelection: { ...routeSelection, selectedRouteKeys: [] } }));
+    const result = compileWorkingContext(
+      input({ routeSelection: { ...routeSelection, selectedRouteKeys: [] } }),
+    );
 
     expect(result.status).toBe('blocked');
     expect(result.facts).toEqual([]);
@@ -105,9 +107,11 @@ describe('context-runtime working context compiler', () => {
   });
 
   it('[contract:context-runtime.working.resolve-authoritative-facts.v1] excludes stale facts from the execution envelope', () => {
-    const result = compileWorkingContext(input({
-      resolvedFacts: [fact({ observedAt: '2026-07-22T23:00:00.000Z' })],
-    }));
+    const result = compileWorkingContext(
+      input({
+        resolvedFacts: [fact({ observedAt: '2026-07-22T23:00:00.000Z' })],
+      }),
+    );
 
     expect(result.status).toBe('blocked');
     expect(result.facts).toEqual([]);
@@ -115,12 +119,36 @@ describe('context-runtime working context compiler', () => {
   });
 
   it('[contract:context-runtime.working.resolve-authoritative-facts.v1] excludes unauthoritative facts from the execution envelope', () => {
-    const result = compileWorkingContext(input({
-      resolvedFacts: [fact({ authority: 'projection_allowed' })],
-    }));
+    const result = compileWorkingContext(
+      input({
+        resolvedFacts: [fact({ authority: 'projection_allowed' })],
+      }),
+    );
 
     expect(result.status).toBe('blocked');
     expect(result.facts).toEqual([]);
-    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toContain('insufficient-authority');
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      'insufficient-authority',
+    );
+  });
+
+  it('[contract:context-runtime.working.reject-budget-overrun.v1] blocks execution when measured working usage exceeds the reserved budget', () => {
+    const result = compileWorkingContext(
+      input({
+        workingUsageTokens: 101,
+        workingBudgetTokens: 100,
+      }),
+    );
+
+    expect(result.status).toBe('blocked');
+    expect(result.facts).toEqual([]);
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'working-budget-exhausted',
+          factKey: '$context',
+        }),
+      ]),
+    );
   });
 });

@@ -110,9 +110,9 @@ export class RegistryClient {
     }
 
     const url = new URL(
-      `/services/${encodeURIComponent(serviceName)}/events/${encodeURIComponent(
+      `/api/event-schemas/${encodeURIComponent(serviceName)}/${encodeURIComponent(
         eventKey,
-      )}/versions/${encodeURIComponent(eventVersion)}`,
+      )}/${encodeURIComponent(eventVersion)}`,
       `${this.baseUrl}/`,
     );
 
@@ -196,6 +196,8 @@ export interface RegistryConfig {
   readonly region?: string;
   /** fetch timeout ms (default: 5000) */
   readonly timeoutMs?: number;
+  /** fetch implementation (default: global fetch) */
+  readonly fetch?: typeof fetch;
 }
 
 /**
@@ -214,10 +216,11 @@ export function createRegistryConfigClient(config: RegistryConfig) {
   const defaultNamespace = config.namespace ?? 'shop';
   const defaultRegion = config.region ?? 'asia';
   const timeoutMs = config.timeoutMs ?? 5_000;
+  const fetchImpl = config.fetch ?? fetch;
 
   async function safeFetch(url: string): Promise<Response | null> {
     try {
-      return await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      return await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
     } catch {
       return null;
     }

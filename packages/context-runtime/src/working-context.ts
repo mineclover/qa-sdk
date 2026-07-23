@@ -1,4 +1,14 @@
-import { ContextRuntimeError, type ClosureDiagnostic, type ContextRoute, type OutputContract, type ResolutionRoute, type RouteSelection, type ValidationIssue, type WorkingContext, type WorkingContextCompileInput } from './types.js';
+import {
+  ContextRuntimeError,
+  type ClosureDiagnostic,
+  type ContextRoute,
+  type OutputContract,
+  type ResolutionRoute,
+  type RouteSelection,
+  type ValidationIssue,
+  type WorkingContext,
+  type WorkingContextCompileInput,
+} from './types.js';
 import { validateWorkingClosure } from './closure.js';
 import { validateRouteSet } from './routes.js';
 
@@ -47,6 +57,18 @@ export function compileWorkingContext(input: WorkingContextCompileInput): Workin
       message: `ResolutionRoute ${requiredFact.resolutionRouteKey} was not selected for Working Context`,
     }));
 
+  if (
+    input.workingUsageTokens !== undefined &&
+    input.workingBudgetTokens !== undefined &&
+    input.workingUsageTokens > input.workingBudgetTokens
+  ) {
+    diagnostics.push({
+      code: 'working-budget-exhausted',
+      factKey: '$context',
+      message: `Working Context usage ${input.workingUsageTokens} exceeds reserved budget ${input.workingBudgetTokens}`,
+    });
+  }
+
   const closure = validateWorkingClosure({
     requiredFacts: input.requiredFacts,
     resolutionRoutes: selectedResolutionRoutes,
@@ -57,9 +79,11 @@ export function compileWorkingContext(input: WorkingContextCompileInput): Workin
 
   const closed = diagnostics.length === 0;
   const facts = closed
-    ? input.requiredFacts.map((requiredFact) =>
-        input.resolvedFacts.find((fact) => fact.factKey === requiredFact.factKey),
-      ).filter((fact): fact is (typeof input.resolvedFacts)[number] => fact !== undefined)
+    ? input.requiredFacts
+        .map((requiredFact) =>
+          input.resolvedFacts.find((fact) => fact.factKey === requiredFact.factKey),
+        )
+        .filter((fact): fact is (typeof input.resolvedFacts)[number] => fact !== undefined)
     : [];
 
   return Object.freeze({
@@ -105,7 +129,10 @@ function validateWorkingContextInput(input: WorkingContextCompileInput): Validat
       message: 'Working Context requires at least one Fact',
     });
   }
-  if (input.allowedOperations.length === 0 || input.allowedOperations.some((operation) => !operation.trim())) {
+  if (
+    input.allowedOperations.length === 0 ||
+    input.allowedOperations.some((operation) => !operation.trim())
+  ) {
     issues.push({
       code: 'allowed-operations-invalid',
       path: 'allowedOperations',
@@ -126,6 +153,16 @@ function validateWorkingContextInput(input: WorkingContextCompileInput): Validat
       path: 'routeSelection.manifestDigest',
       message: 'routeSelection.manifestDigest is required',
     });
+  }
+  for (const field of ['workingUsageTokens', 'workingBudgetTokens'] as const) {
+    const value = input[field];
+    if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+      issues.push({
+        code: 'working-usage-invalid',
+        path: field,
+        message: `${field} must be a non-negative integer`,
+      });
+    }
   }
   return issues;
 }

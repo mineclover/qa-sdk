@@ -3,6 +3,8 @@ export const WORKING_RESERVE_MIN_TOKENS = 100_000 as const;
 export const DEFAULT_TOTAL_WINDOW_TOKENS = 200_000 as const;
 
 export type ContextStage = 'discovery' | 'working' | 'verification';
+export type ContextUsagePhase = 'discovery' | 'working';
+export type ContextUsageMeasurement = 'estimated' | 'measured';
 export type DiscoveryClosure = 'open' | 'planned' | 'discovery-capped' | 'frozen';
 export type WorkingClosure = 'open' | 'closed' | 'blocked';
 export type VerificationClosure = 'pending' | 'verified' | 'failed';
@@ -102,18 +104,24 @@ export interface DiscoveryRouteProjection {
   readonly kind: ContextRoute['kind'];
   readonly priority: number;
   readonly estimatedCostTokens: number;
+  readonly costMeasurement?: ContextUsageMeasurement;
   readonly estimatedSize: EstimatedRouteSize;
   readonly authority: AuthorityLevel;
   readonly freshness?: FreshnessRequirement;
   readonly sourceRef?: string;
 }
 
-export type DiscoverySkipReason = 'budget-exhausted' | 'route-expansion-limit';
+export type DiscoverySkipReason =
+  | 'budget-exhausted'
+  | 'route-expansion-limit'
+  | 'object-limit'
+  | 'relation-limit';
 
 export interface SkippedDiscoveryRoute {
   readonly routeKey: string;
   readonly reason: DiscoverySkipReason;
   readonly estimatedCostTokens: number;
+  readonly costMeasurement?: ContextUsageMeasurement;
 }
 
 export interface DiscoveryPlanInput {
@@ -121,6 +129,8 @@ export interface DiscoveryPlanInput {
   readonly candidates: readonly DiscoveryCandidate[];
   readonly budget: ContextBudgetProfile;
   readonly usedTokens: number;
+  /** Optional provider/model counter applied to the canonical candidate shape before selection. */
+  readonly tokenCounter?: ContextTokenCounter;
 }
 
 export interface DiscoveryPlan {
@@ -134,7 +144,55 @@ export interface DiscoveryPlan {
   readonly usedTokens: number;
   readonly projectedDiscoveryTokens: number;
   readonly remainingDiscoveryTokens: number;
+  readonly projectedObjectCount: number;
+  readonly projectedRelationCount: number;
   readonly workingReserveTokens: number;
+  readonly decomposition?: DiscoveryTaskDecomposition;
+}
+
+export type DiscoveryDecompositionReason =
+  | 'budget-exhausted'
+  | 'route-expansion-limit'
+  | 'object-limit'
+  | 'relation-limit'
+  | 'mixed-cap';
+
+export interface DiscoveryTaskSlice {
+  readonly taskKey: string;
+  readonly objective: string;
+  readonly anchor: ContextAnchor;
+  readonly routeKeys: readonly string[];
+  readonly estimatedCostTokens: number;
+  readonly costMeasurement?: ContextUsageMeasurement;
+  readonly estimatedObjectCount: number;
+  readonly estimatedRelationCount: number;
+}
+
+export interface DiscoveryTaskDecomposition {
+  readonly parentTaskKey: string;
+  readonly reason: DiscoveryDecompositionReason;
+  readonly children: readonly DiscoveryTaskSlice[];
+}
+
+export type DiscoveryTaskChildExecutionStatus = 'completed' | 'failed' | 'skipped';
+export type DiscoveryTaskExecutionStatus = 'completed' | 'partial' | 'failed';
+
+export interface DiscoveryTaskExecutionRecord<TResult> {
+  readonly task: DiscoveryTaskSlice;
+  readonly status: DiscoveryTaskChildExecutionStatus;
+  readonly result?: TResult;
+  readonly error?: string;
+}
+
+export interface DiscoveryTaskExecutionResult<TResult> {
+  readonly parentTaskKey: string;
+  readonly status: DiscoveryTaskExecutionStatus;
+  readonly children: readonly DiscoveryTaskExecutionRecord<TResult>[];
+}
+
+export interface DiscoveryTaskExecutionOptions {
+  /** Continue independent child tasks after a child failure. Defaults to true. */
+  readonly continueOnError?: boolean;
 }
 
 export interface RequiredFact {
@@ -175,6 +233,10 @@ export interface WorkingContextCompileInput {
   readonly resolvedFacts: readonly ResolvedFact[];
   readonly allowedOperations: readonly string[];
   readonly outputContract: OutputContract;
+  /** Resolved Fact payload usage measured or estimated by the composition root. */
+  readonly workingUsageTokens?: number;
+  /** Working reserve available to the compiled context. */
+  readonly workingBudgetTokens?: number;
   readonly now?: string;
 }
 
@@ -226,6 +288,28 @@ export interface TaskHandoffInput {
   readonly nextTask?: NextTask;
 }
 
+/**
+ * Input for a deterministic parent Handoff assembled from completed child
+ * Tasks. The runtime only merges references; consumer-specific result
+ * semantics remain outside this contract.
+ */
+export interface TaskHandoffAggregationInput {
+  readonly decomposition: DiscoveryTaskDecomposition;
+  readonly childHandoffs: readonly TaskHandoff[];
+  readonly sourceRevision: string;
+  readonly resultRevision: string;
+  readonly unresolvedQuestions: readonly string[];
+  readonly nextTask?: NextTask;
+}
+
+/** Options for executing child Tasks and assembling their parent Handoff. */
+export interface TaskHandoffDecompositionExecutionOptions extends DiscoveryTaskExecutionOptions {
+  readonly sourceRevision: string;
+  readonly resultRevision: string;
+  readonly unresolvedQuestions: readonly string[];
+  readonly nextTask?: NextTask;
+}
+
 export interface TaskHandoff {
   readonly version: 'v1';
   readonly taskKey: string;
@@ -235,7 +319,28 @@ export interface TaskHandoff {
   readonly factRefs: readonly ManifestFactRef[];
   readonly evidenceRefs: readonly string[];
   readonly unresolvedQuestions: readonly string[];
+  /** Child Task keys are references only; child Fact values are never embedded. */
+  readonly childTaskKeys?: readonly string[];
   readonly nextTask?: NextTask;
+}
+
+export interface TaskHandoffDecompositionExecutionResult {
+  readonly execution: DiscoveryTaskExecutionResult<TaskHandoff>;
+  /** Absent whenever one or more child Tasks did not complete. */
+  readonly handoff?: TaskHandoff;
+}
+
+/**
+ * Task Handoff persistence port.
+ *
+ * The runtime owns the typed handoff shape, but deliberately does not own
+ * storage, transport, or process lifecycle. Adapters may persist multiple
+ * result revisions for the same task; saving the exact same handoff again is
+ * expected to be idempotent.
+ */
+export interface TaskHandoffStore {
+  readonly save: (handoff: TaskHandoff) => Promise<void>;
+  readonly findByTaskKey: (taskKey: string) => Promise<readonly TaskHandoff[]>;
 }
 
 export interface DefinitionGraphDiscoveryRequest {
@@ -254,9 +359,7 @@ export interface DefinitionGraphDiscoveryPort {
 }
 
 export interface DefinitionGraphDiscoveryAdapter {
-  readonly discover: (
-    input: DefinitionGraphDiscoveryRequest,
-  ) => readonly DiscoveryCandidate[];
+  readonly discover: (input: DefinitionGraphDiscoveryRequest) => readonly DiscoveryCandidate[];
 }
 
 export interface FederatedResolutionRecord {
@@ -276,15 +379,11 @@ export interface FederatedResolutionRequest {
 }
 
 export interface FederatedResolutionPort {
-  readonly resolve: (
-    input: FederatedResolutionRequest,
-  ) => readonly FederatedResolutionRecord[];
+  readonly resolve: (input: FederatedResolutionRequest) => readonly FederatedResolutionRecord[];
 }
 
 export interface FederatedResolutionAdapter {
-  readonly resolve: (
-    input: FederatedResolutionRequest,
-  ) => readonly ResolvedFact[];
+  readonly resolve: (input: FederatedResolutionRequest) => readonly ResolvedFact[];
 }
 
 export interface DecisionHintRequest {
@@ -319,6 +418,70 @@ export interface ContextObservationInput {
   readonly factKeys: readonly string[];
   readonly manifestDigest?: string;
   readonly addressContext?: Readonly<Record<string, string>>;
+  readonly usage?: ContextUsageSummary;
+}
+
+export interface ContextUsageEvent {
+  readonly phase: ContextUsagePhase;
+  readonly tokens: number;
+  readonly measurement: ContextUsageMeasurement;
+  readonly routeKey?: string;
+  readonly sourceRef?: string;
+  /** Provider/runtime-specific measured token breakdown, if available. */
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  /** Optional representation-neutral transport/runtime measurements. */
+  readonly bytes?: number;
+  readonly latencyMs?: number;
+  readonly provider?: string;
+  /** Optional provider model identity for exact tokenizer accounting. */
+  readonly model?: string;
+  readonly tokenizerRevision?: string;
+}
+
+/** Phase and source identity supplied to provider-specific token serialization. */
+export interface ContextTokenCountContext {
+  readonly phase: ContextUsagePhase;
+  readonly routeKey?: string;
+  readonly factKey?: string;
+}
+
+export interface ProviderUsageSnapshot {
+  readonly provider: string;
+  readonly phase: ContextUsagePhase;
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  readonly totalTokens?: number;
+  readonly bytes?: number;
+  readonly latencyMs?: number;
+  readonly sourceRef?: string;
+  readonly routeKey?: string;
+}
+
+export interface ContextUsageMetricSummary {
+  readonly bytes?: number;
+  readonly latencyMs?: number;
+  readonly measurement: ContextUsageMeasurement | 'mixed';
+}
+
+export interface ContextUsageSummary {
+  readonly events: readonly ContextUsageEvent[];
+  readonly discoveryTokens: number;
+  readonly workingTokens: number;
+  readonly totalTokens: number;
+  readonly measurement: ContextUsageMeasurement | 'mixed';
+  readonly metrics?: ContextUsageMetricSummary;
+}
+
+export interface ContextTokenCounter {
+  readonly measurement: ContextUsageMeasurement;
+  /** Count a canonical value with the Discovery/Working serialization context. */
+  readonly count: (value: unknown, context?: ContextTokenCountContext) => number;
+}
+
+export interface ContextUsageLedger {
+  readonly record: (event: ContextUsageEvent) => void;
+  readonly snapshot: () => ContextUsageSummary;
 }
 
 export interface ContextObservationRecord {
@@ -330,6 +493,7 @@ export interface ContextObservationRecord {
   readonly factCount: number;
   readonly manifestDigest?: string;
   readonly addressContext?: Readonly<Record<string, string>>;
+  readonly usage?: ContextUsageSummary;
 }
 
 export interface WorkingClosureInput {
@@ -348,7 +512,8 @@ export interface ClosureDiagnostic {
     | 'insufficient-authority'
     | 'stale-fact'
     | 'invalid-fact-revision'
-    | 'missing-evidence';
+    | 'missing-evidence'
+    | 'working-budget-exhausted';
   readonly factKey: string;
   readonly message: string;
 }

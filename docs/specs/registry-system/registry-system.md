@@ -49,5 +49,5 @@ Prefix DAG, 버전 라이프사이클, DraftWorkspace를 중앙에서 관리하�
 - `registry-constraint`: Registry 시스템의 기술적 불변 조건.
 - `registry-services-api-spec`: 서비스 topology, svc-owner projection, runtime URL overlay, gateway route를 등록, 조회, 수정하는 Registry API 계약과 검증 범위를 정의한다.
 - `registry-events-spec`: 저장형 이벤트 스키마 CRUD와 정적 event-catalog 조회.
-- `registry-client-spec`: registry-service 설정/엔드포인트 조회 클라이언트와 legacy 이벤트 검증 HTTP 클라이언트.
+- `registry-client-spec`: registry-service 설정/엔드포인트 조회 클라이언트와 이벤트 검증 HTTP 클라이언트.
 - `meta-registry-spec`: MetaRegistry — 주소 게이트웨이.

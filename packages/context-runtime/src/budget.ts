@@ -22,9 +22,7 @@ export function createContextBudgetProfile(
   return Object.freeze({ ...DEFAULT_CONTEXT_BUDGET_PROFILE, ...overrides });
 }
 
-export function validateContextBudgetProfile(
-  profile: ContextBudgetProfile,
-): ValidationResult {
+export function validateContextBudgetProfile(profile: ContextBudgetProfile): ValidationResult {
   const issues: ValidationIssue[] = [];
   const numericFields: readonly (keyof ContextBudgetProfile)[] = [
     'totalWindowTokens',

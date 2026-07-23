@@ -93,7 +93,10 @@ export function validateRoute(route: ContextRoute): ValidationResult {
         message: 'ResolutionRoute must declare a valid minimum authority',
       });
     }
-    if (route.freshness && (!Number.isInteger(route.freshness.maxAgeMs) || route.freshness.maxAgeMs < 0)) {
+    if (
+      route.freshness &&
+      (!Number.isInteger(route.freshness.maxAgeMs) || route.freshness.maxAgeMs < 0)
+    ) {
       issues.push({
         code: 'freshness-requirement-invalid',
         path: 'freshness.maxAgeMs',
@@ -150,7 +153,10 @@ export function freezeRouteSelection(
     );
   }
   if (!frozenAt.trim() || !manifestDigest.trim()) {
-    throw new ContextRuntimeError('invalid-context-route', 'Frozen route selection requires timestamp and manifest digest');
+    throw new ContextRuntimeError(
+      'invalid-context-route',
+      'Frozen route selection requires timestamp and manifest digest',
+    );
   }
   return Object.freeze({
     selectedRouteKeys: [...selectedRouteKeys],

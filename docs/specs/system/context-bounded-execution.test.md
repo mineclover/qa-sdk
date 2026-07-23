@@ -3,12 +3,13 @@ def:
   id: context-bounded-execution-test
   type: spec
   tier: component
-  level: leaf
+  level: group
   scope: flow
   aspect: user_scenario
-  depth: validation
+  depth: overview
   lifecycle: approved
   layer: operation
+  family_id: docs/specs/system/context-bounded-execution
   tags: [testing, architecture, context]
   links:
     - target: context-bounded-execution
@@ -19,217 +20,97 @@ def:
       type: traces_to
     - target: context-runtime
       type: traces_to
-  sources:
-    - packages/context-runtime/src/budget.test.ts
-    - packages/context-runtime/src/discovery.test.ts
-    - packages/context-runtime/src/routes.test.ts
-    - packages/context-runtime/src/working-context.test.ts
-    - packages/context-runtime/src/manifest.test.ts
-    - packages/context-runtime/src/handoff.test.ts
-    - packages/context-runtime/src/adapters.test.ts
-    - packages/context-runtime/src/closure.test.ts
-    - packages/context-runtime/src/boundary.test.ts
-    - packages/cli/src/commands/def.test.ts
+    - target: context-bounded-execution-test-planning-core
+      type: contains
+    - target: context-bounded-execution-test-planning-cap
+      type: contains
+    - target: context-bounded-execution-test-usage
+      type: contains
+    - target: context-bounded-execution-test-adapters
+      type: contains
+    - target: context-bounded-execution-test-handoff
+      type: contains
+    - target: context-bounded-execution-test-provider-usage
+      type: contains
+    - target: context-bounded-execution-test-provider-tokenizer
+      type: contains
+    - target: context-bounded-execution-test-definition-consumer
+      type: contains
+    - target: context-bounded-execution-test-definition-discovery
+      type: contains
+    - target: context-bounded-execution-test-definition-working
+      type: contains
+    - target: context-bounded-execution-test-definition-handoff
+      type: contains
+    - target: context-bounded-execution-test-observation
+      type: contains
+sources:
+  - packages/context-runtime/src/budget.test.ts
+  - packages/context-runtime/src/discovery.test.ts
+  - packages/context-runtime/src/decomposition.test.ts
+  - packages/context-runtime/src/routes.test.ts
+  - packages/context-runtime/src/working-context.test.ts
+  - packages/context-runtime/src/manifest.test.ts
+  - packages/context-runtime/src/handoff.test.ts
+  - packages/context-runtime/src/handoff-execution.test.ts
+  - packages/context-runtime/src/adapters.test.ts
+  - packages/context-runtime/src/closure.test.ts
+  - packages/context-runtime/src/boundary.test.ts
+  - packages/context-runtime/src/usage.test.ts
+  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.test.ts
+  - packages/cli/src/lib/context-runtime/definition-document-context.test.ts
+  - packages/cli/src/lib/context-runtime/task-handoff-store.test.ts
+  - packages/definition-data-source/src/factory.test.ts
+  - packages/definition-data-source/src/server-data-source.test.ts
+  - packages/event-catalog/src/index.test.ts
+  - packages/provider-tokenizer-openai/src/index.test.ts
 ---
-
-# Context-Bounded Execution — 검증 매핑
+# Context-Bounded Execution — 검증 매핑 모음
 
 ## 목적 ^purpose
 
-Discovery/Working Context 계약을 구현할 때 사용할 test unit과 implementation unit을 연결한다. 구현된 unit은 실제 source target을 가리키고, 이후 Phase의 unit은 예정 경계로 남긴다.
+Discovery/Working Context 계약의 test unit과 implementation unit을 역할별 leaf 문서로 분리해 관리한다. 이 문서는 family entry point와 전체 source/test 경계를 소유한다.
 
-## 검증 계약 ^defines
+## 구성 ^overview
 
-```yaml bdd
-test_units:
-  - id: TU-context-runtime-budget-reserve-isolation
-    contract: context-runtime.budget.reserve-isolation.v1
-    level: unit
-    assertions: [then.returns.discovery.max_tokens, then.returns.working.reserve_tokens, then.invariants.budget.no_borrow_from_working]
-    test_file: packages/context-runtime/src/budget.test.ts
+- [Context-Bounded Execution — 예산·Route 검증](./context-bounded-execution-test-planning-core.test.md) — 예산 격리, route freeze와 authoritative fact 해소의 test/implementation unit을 관리한다.
+- [Context-Bounded Execution — Cap·Working closure 검증](./context-bounded-execution-test-planning-cap.test.md) — missing route, Discovery cap·size bound, Working overrun과 manifest의 test/implementation unit을 관리한다.
+- [Context-Bounded Execution — Usage 검증](./context-bounded-execution-test-usage.test.md) — phase-separated usage ledger, malformed input, measured token counter와 provider usage의 unit을 관리한다.
+- [Context-Bounded Execution — Adapter·Observation 검증](./context-bounded-execution-test-adapters.test.md) — definition/federation/decision adapter와 metadata-only observation projection의 unit을 관리한다.
+- [Context-Bounded Execution — Decomposition·Handoff 검증](./context-bounded-execution-test-handoff.test.md) — child task 실행, reference-only handoff, persistence와 aggregation의 unit을 관리한다.
+- [Context-Bounded Execution — Provider usage 검증](./context-bounded-execution-test-provider-usage.test.md) — provider response usage와 provider/model token counter의 unit을 관리한다.
+- [Context-Bounded Execution — 외부 tokenizer 검증](./context-bounded-execution-test-provider-tokenizer.test.md) — 외부 tokenizer module과 registry 선택 및 fail-closed guard의 unit을 관리한다.
+- [Context-Bounded Execution — Definition consumer 검증](./context-bounded-execution-test-definition-consumer.test.md) — definition graph bounded consumer의 정상·blocked·decomposition 경로 unit을 관리한다.
+- [Context-Bounded Execution — Definition discovery 검증](./context-bounded-execution-test-definition-discovery.test.md) — lazy resolution, graph discovery와 local/server source transport의 unit을 관리한다.
+- [Context-Bounded Execution — Definition working 검증](./context-bounded-execution-test-definition-working.test.md) — 최소 Working Fact, observation sink와 phase-separated usage accounting의 unit을 관리한다.
+- [Context-Bounded Execution — Definition handoff 검증](./context-bounded-execution-test-definition-handoff.test.md) — Definition child 결과의 discovery/read-model 분리와 handoff persistence·aggregation의 unit을 관리한다.
+- [Context-Bounded Execution — Observation vocabulary 검증](./context-bounded-execution-test-observation.test.md) — context runtime observation event catalog projection의 unit을 관리한다.
 
-  - id: TU-context-runtime-route-freeze
-    contract: context-runtime.discovery-to-working.route-freeze.v1
-    level: unit
-    assertions: [then.returns.selected_routes, then.returns.working_context, then.invariants.discovery.summary_not_fact]
-    test_file: packages/context-runtime/src/routes.test.ts
+## BDD 검증 경계 ^validation
 
-  - id: TU-context-runtime-discovery-plan
-    contract: context-runtime.discovery.plan-routes.v1
-    level: unit
-    assertions: [then.returns.discovery.plan, then.returns.candidate.projections, then.invariants.same_input_same_plan]
-    test_file: packages/context-runtime/src/discovery.test.ts
+qa-sdk docs bdd validate context-bounded-execution-cases --family-only는 cases와 이 test family의 contract·test unit·implementation unit을 함께 검증한다.
 
-  - id: TU-context-runtime-authoritative-facts
-    contract: context-runtime.working.resolve-authoritative-facts.v1
-    level: integration
-    assertions: [then.returns.working_context.status, then.returns.working_context.facts, then.invariants.working_context.contains_revisions]
-    test_file: packages/context-runtime/src/working-context.test.ts
+## 구현 참조 ^source
 
-  - id: TU-context-runtime-missing-route
-    contract: context-runtime.working.reject-missing-route.v1
-    level: unit
-    assertions: [then.error.code, then.returns.working_context.status, then.invariants.no_execution_context_emitted]
-    test_file: packages/context-runtime/src/working-context.test.ts
-
-  - id: TU-context-runtime-discovery-cap
-    contract: context-runtime.discovery.stop-at-cap.v1
-    level: unit
-    assertions: [then.returns.status, then.returns.working_reserve_tokens, then.invariants.no_silent_eviction]
-    test_file: packages/context-runtime/src/discovery.test.ts
-
-  - id: TU-context-runtime-manifest-deterministic
-    contract: context-runtime.manifest.deterministic.v1
-    level: unit
-    assertions: [then.returns.manifest.canonical_json, then.returns.manifest.digest, then.invariants.manifest.excludes_fact_values]
-    test_file: packages/context-runtime/src/manifest.test.ts
-
-  - id: TU-context-runtime-definition-discovery-adapter
-    contract: context-runtime.adapters.definition-discovery.v1
-    level: unit
-    assertions: [then.returns.discovery.candidates, then.returns.discovery.candidates.source_refs, then.invariants.candidates.retain_route_bounds]
-    test_file: packages/context-runtime/src/adapters.test.ts
-
-  - id: TU-context-runtime-federated-resolution-adapter
-    contract: context-runtime.adapters.federated-resolution.v1
-    level: unit
-    assertions: [then.returns.resolved_facts, then.returns.resolved_facts.revisions, then.invariants.undeclared_facts_filtered]
-    test_file: packages/context-runtime/src/adapters.test.ts
-
-  - id: TU-context-runtime-decision-hints-adapter
-    contract: context-runtime.adapters.decision-hints.v1
-    level: unit
-    assertions: [then.returns.hints, then.returns.hints.provenance, then.invariants.hints.do_not_become_authoritative_facts]
-    test_file: packages/context-runtime/src/adapters.test.ts
-
-  - id: TU-context-runtime-observation-event-mapping
-    contract: context-runtime.observation.event-mapping.v1
-    level: unit
-    assertions: [then.returns.observation.event, then.returns.observation.address_context, then.invariants.observation.excludes_fact_values]
-    test_file: packages/context-runtime/src/adapters.test.ts
-
-  - id: TU-context-runtime-reference-only-handoff
-    contract: context-runtime.handoff.reference-only.v1
-    level: unit
-    assertions: [then.returns.handoff, then.returns.evidence_refs, then.invariants.handoff.excludes_conversation_transcript]
-    test_file: packages/context-runtime/src/handoff.test.ts
-
-  - id: TU-docs-control-plane-bounded-definition-context
-    contract: docs-control-plane.definition-context.bounded-consumer.v1
-    level: integration
-    assertions: [then.returns.bounded.mode, then.returns.discovery.plan, then.returns.working_context.status, then.returns.manifest.digest, then.returns.observation.event, then.invariants.default_context_output_unchanged, then.invariants.manifest_excludes_fact_values]
-    test_file: packages/cli/src/commands/def.test.ts
-
-  - id: TU-docs-control-plane-bounded-definition-context-blocked
-    contract: docs-control-plane.definition-context.bounded-blocked.v1
-    level: integration
-    assertions: [then.returns.working_context.status, then.returns.manifest, then.returns.observation.status, then.invariants.working_reserve_preserved, then.invariants.no_manifest_for_blocked_context]
-    test_file: packages/cli/src/commands/def.test.ts
-
-implementation_units:
-  - id: IU-context-runtime-budget-profile
-    contract: context-runtime.budget.reserve-isolation.v1
-    unit_kind: guard
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/budget.ts
-    effects: [budget.profile_validation]
-
-  - id: IU-context-runtime-route-selection-freeze
-    contract: context-runtime.discovery-to-working.route-freeze.v1
-    unit_kind: operation
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/routes.ts:freezeRouteSelection
-    effects: [route.selection.freeze]
-
-  - id: IU-context-runtime-discovery-planner
-    contract: context-runtime.discovery.plan-routes.v1
-    unit_kind: operation
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/discovery.ts:planDiscovery
-    effects: [discovery.plan, route.projection]
-
-  - id: IU-context-runtime-working-compiler
-    contract: context-runtime.working.resolve-authoritative-facts.v1
-    unit_kind: projection
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/working-context.ts:compileWorkingContext
-    effects: [working.context.envelope, context.manifest]
-
-  - id: IU-context-runtime-closure-validator
-    contract: context-runtime.working.reject-missing-route.v1
-    unit_kind: guard
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/working-context.ts:assertWorkingContext
-    effects: [context.closure.blocked]
-
-  - id: IU-context-runtime-discovery-cap-guard
-    contract: context-runtime.discovery.stop-at-cap.v1
-    unit_kind: guard
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/discovery.ts:planDiscovery
-    effects: [discovery.capped, work.reserve.preserved]
-
-  - id: IU-context-runtime-task-handoff
-    contract: context-runtime.handoff.reference-only.v1
-    unit_kind: projection
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/handoff.ts:createTaskHandoff
-    effects: [typed.task.handoff]
-
-  - id: IU-context-runtime-context-manifest
-    contract: context-runtime.manifest.deterministic.v1
-    unit_kind: projection
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/handoff.ts:createContextManifest
-    effects: [context.manifest, manifest.digest]
-
-  - id: IU-context-runtime-definition-discovery-adapter
-    contract: context-runtime.adapters.definition-discovery.v1
-    unit_kind: projection
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/adapters.ts:createDefinitionGraphDiscoveryAdapter
-    effects: [discovery.candidate_projection]
-
-  - id: IU-context-runtime-federated-resolution-adapter
-    contract: context-runtime.adapters.federated-resolution.v1
-    unit_kind: projection
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/adapters.ts:createFederatedResolutionAdapter
-    effects: [resolution.fact_projection]
-
-  - id: IU-context-runtime-decision-hints-adapter
-    contract: context-runtime.adapters.decision-hints.v1
-    unit_kind: projection
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/adapters.ts:createDecisionHintAdapter
-    effects: [decision.hint_projection]
-
-  - id: IU-context-runtime-observation-event-mapping
-    contract: context-runtime.observation.event-mapping.v1
-    unit_kind: projection
-    owned_by: context-runtime
-    source_target: packages/context-runtime/src/adapters.ts:mapContextObservation
-    effects: [context.observation_event]
-
-  - id: IU-docs-control-plane-bounded-definition-context
-    contract: docs-control-plane.definition-context.bounded-consumer.v1
-    unit_kind: operation
-    owned_by: docs-control-plane
-    source_target: packages/cli/src/lib/context-runtime/definition-document-context.ts:buildBoundedDefinitionContext
-    effects: [definition.discovery_plan, definition.working_context, definition.context_manifest, definition.context_observation]
-
-  - id: IU-docs-control-plane-bounded-context-command
-    contract: docs-control-plane.definition-context.bounded-consumer.v1
-    unit_kind: projection
-    owned_by: docs-control-plane
-    source_target: packages/cli/src/commands/def.ts:cmdContext
-    effects: [def.context.bounded_output]
-```
-
-## 구현 전 검증 항목 ^validation
-
-- 각 unit이 하나의 contract id만 소유하는가
-- `Working Context` 테스트가 Discovery summary를 Fact로 인정하지 않는가
-- cap 테스트가 Working reserve를 감소시키지 않는가
-- missing route와 stale authority가 실행 Context를 만들지 않는가
-- handoff 테스트가 transcript 원문을 전달하지 않는가
+- packages/context-runtime/src/budget.test.ts
+- packages/context-runtime/src/discovery.test.ts
+- packages/context-runtime/src/decomposition.test.ts
+- packages/context-runtime/src/routes.test.ts
+- packages/context-runtime/src/working-context.test.ts
+- packages/context-runtime/src/manifest.test.ts
+- packages/context-runtime/src/handoff.test.ts
+- packages/context-runtime/src/handoff-execution.test.ts
+- packages/context-runtime/src/adapters.test.ts
+- packages/context-runtime/src/closure.test.ts
+- packages/context-runtime/src/boundary.test.ts
+- packages/context-runtime/src/usage.test.ts
+- packages/cli/src/commands/def.test.ts
+- packages/cli/src/lib/context-runtime/provider-usage-adapters.ts
+- packages/cli/src/lib/context-runtime/provider-usage-adapters.test.ts
+- packages/cli/src/lib/context-runtime/definition-document-context.test.ts
+- packages/cli/src/lib/context-runtime/task-handoff-store.test.ts
+- packages/definition-data-source/src/factory.test.ts
+- packages/definition-data-source/src/server-data-source.test.ts
+- packages/event-catalog/src/index.test.ts

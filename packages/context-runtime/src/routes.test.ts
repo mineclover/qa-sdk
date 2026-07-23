@@ -57,10 +57,7 @@ describe('context-runtime routes', () => {
       'sha256:route-manifest',
     );
 
-    expect(selection.selectedRouteKeys).toEqual([
-      'order.customer.map',
-      'order.customer.status',
-    ]);
+    expect(selection.selectedRouteKeys).toEqual(['order.customer.map', 'order.customer.status']);
     expect(selection.manifestDigest).toBe('sha256:route-manifest');
   });
 });

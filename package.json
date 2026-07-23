@@ -35,6 +35,7 @@
     "dev:registry": "corepack pnpm --filter @qa-sdk/registry-service dev",
     "dev:shop": "corepack pnpm --filter @qa-sdk/shop-web dev",
     "dev:demo": "corepack pnpm --filter platform-demo dev",
+    "dev:local": "bash scripts/dev-local.sh",
     "dev:viz": "corepack pnpm --filter @qa-sdk/viz-web dev",
     "dev:roleplay": "corepack pnpm --filter @qa-sdk/roleplay-web dev",
     "demo": "concurrently -n reg,ing,shop,demo -c cyan,yellow,green,magenta \"corepack pnpm run dev:registry\" \"corepack pnpm run dev:ingest\" \"corepack pnpm run dev:shop\" \"corepack pnpm run dev:demo\"",

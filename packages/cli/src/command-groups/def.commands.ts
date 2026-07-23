@@ -20,6 +20,12 @@ export const DEF_COMMAND_DESCRIPTORS = [
   { id: 'def.topdown', path: ['topdown'], handlerKey: 'def.topdown' },
   { id: 'def.bottomup', path: ['bottomup'], handlerKey: 'def.bottomup' },
   { id: 'def.context', path: ['context'], handlerKey: 'def.context' },
+  { id: 'def.handoff', path: ['handoff'], handlerKey: 'def.handoff' },
+  {
+    id: 'def.handoff-aggregate',
+    path: ['handoff-aggregate'],
+    handlerKey: 'def.handoff-aggregate',
+  },
   { id: 'def.boundary', path: ['boundary'], handlerKey: 'def.boundary' },
   { id: 'def.boundary-context', path: ['boundary-context'], handlerKey: 'def.boundary-context' },
   { id: 'def.audit', path: ['audit'], handlerKey: 'def.audit' },

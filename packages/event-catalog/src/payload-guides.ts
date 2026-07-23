@@ -267,6 +267,41 @@ export const payloadGuides: readonly PayloadFieldGuide[] = [
       { name: 'reason', required: false, type: 'string', description: '실패 사유' },
     ],
   },
+  {
+    event_key: 'context_runtime_observation',
+    fields: [
+      { name: 'task_key', required: true, type: 'string', description: '컨텍스트 task 식별자' },
+      {
+        name: 'stage',
+        required: true,
+        type: 'string',
+        description: 'discovery/working/verification 단계',
+      },
+      { name: 'status', required: true, type: 'string', description: '현재 closure 상태' },
+      { name: 'route_keys', required: true, type: 'string[]', description: '선택된 route 키' },
+      { name: 'fact_count', required: true, type: 'number', description: '해소된 Fact 개수' },
+      {
+        name: 'manifest_digest',
+        required: false,
+        type: 'string',
+        description: 'closed context manifest digest',
+      },
+      {
+        name: 'discovery_tokens',
+        required: false,
+        type: 'number',
+        description: 'Discovery 사용량',
+      },
+      { name: 'working_tokens', required: false, type: 'number', description: 'Working 사용량' },
+      { name: 'total_tokens', required: false, type: 'number', description: '전체 사용량' },
+      {
+        name: 'usage_measurement',
+        required: false,
+        type: 'string',
+        description: 'estimated/measured/mixed',
+      },
+    ],
+  },
 ];
 
 /** Lookup map: event_key → PayloadFieldGuide */
