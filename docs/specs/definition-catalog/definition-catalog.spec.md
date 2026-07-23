@@ -14,6 +14,9 @@ def:
   owner_system: definition-service
   projection_plane: intent
   tags: [structural, entry-point]
+  sources:
+    - packages/cli/src/commands/def.ts:cmdAuditDb
+    - packages/cli/src/commands/def.test.ts
   links:
     - target: system-concepts
       type: depends_on
@@ -147,7 +150,8 @@ docs/*.md frontmatter
 - `def scan-audit`
   raw frontmatter 기준 스캔 에러, 링크 에러, graph 규칙을 본다.
 - `def audit-db`
-  approved 문서의 purpose, 짧은 목적문, 고립, svc 부여 상태를 빠르게 점검한다.
+  approved 문서의 purpose, 짧은 목적문, 고립, svc 부여 상태를 빠르게 점검한다. Layout/pack
+  구성원의 incoming `refs`는 유효한 배치 연결로 인정하여 고립 false positive를 만들지 않는다.
 - address-first 조회
   `def get --address`, `def incoming|outgoing --address`, `def impact --address`로 canonical address 기준 탐색을 지원한다.
 - docs control plane

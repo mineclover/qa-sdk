@@ -3,6 +3,7 @@
 
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { DefinitionClient } from '@qa-sdk/definition-client';
+import { env } from '../../config/env.js';
 import {
   seedDemoCatalog,
   seedDefinitionCatalog,
@@ -60,6 +61,11 @@ export class SeedService implements OnModuleInit {
       },
       'registry seed complete',
     );
+
+    if (!env.DEFINITION_SYNC_ON_SEED) {
+      logger.info('definition-service sync skipped — owned by definition-service startup');
+      return;
+    }
 
     const syncResult = await runDefinitionClientCall(
       'triggerSync()',

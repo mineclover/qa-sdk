@@ -24,6 +24,8 @@ sources:
   - packages/definition-service/src/sync/reverse-sync.ts
   - packages/definition-service/src/core/doc-versioner.test.ts
   - packages/definition-catalog/src/taxonomy.test.ts
+  - packages/definition-service/package.json
+  - packages/definition-service/scripts/dev.mjs
 ---
 # Definition Service — 기술 제약
 
@@ -65,3 +67,13 @@ definition-service의 동작을 제한하는 불변 조건과 검증 규칙을 �
 |------|------|
 | registry-service 축 검증 fail-open | AxisRegistry fetch 실패 시 로컬 캐시(하드코딩) 사용 |
 | 서버 시작 시 외부 fetch timeout | AbortSignal.timeout(5_000) 필수 |
+
+### 개발 실행 제약 ^development-runtime
+
+- `definition-service`의 `dev` 명령은 [`scripts/dev.mjs`](../../../packages/definition-service/scripts/dev.mjs)가 소유한다.
+- GraphQL decorator metadata를 보존하기 위해 개발 컴파일러는 `tsc --watch`를 사용한다. `tsx watch src/main.ts`로 대체하면 `design:paramtypes`가 사라져 GraphQL schema 생성이 실패할 수 있다.
+- 컴파일 시작 시 기존 앱을 중단하고 `Found 0 errors. Watching for file changes.` 이후에만 `dist/main.js`를 실행한다. 컴파일 중간 산출물을 읽는 `tsc --watch` + `node --watch` 병렬 조합은 허용하지 않는다.
+- `build` 경로는 tsup decorator metadata 변환을 위해 `@swc/core`를 사용한다. workspace install policy에도 해당 build dependency가 허용되어야 한다.
+- startup sync는 `SYNC_ON_START=true`인 definition-service가 소유한다. registry-service가 동시에 `DEFINITION_SYNC_ON_SEED=true`로 실행되는 구성은 로컬 프로파일에서 금지한다.
+
+검증: `corepack pnpm --filter @qa-sdk/definition-service build`, `corepack pnpm --filter @qa-sdk/definition-service test`, `corepack pnpm health`.

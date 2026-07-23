@@ -33,7 +33,7 @@ export async function seedEndpoints(store: ServiceEndpointStore, logger: SeedLog
       svcName: 'platform-demo-api',
       env: 'dev',
       region: 'asia',
-      url: 'http://localhost:8787',
+      url: 'http://localhost:8788',
     },
     {
       catalogId: 'demo',

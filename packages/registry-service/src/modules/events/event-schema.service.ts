@@ -92,22 +92,6 @@ export class EventSchemaService {
     return { ok: true };
   }
 
-  async validateLegacyRoute(
-    catalogId: string,
-    rawName: string,
-    eventKey: string,
-    eventVersion: string,
-  ) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split("/") on a string containing "/" always yields ≥2 elements
-    const serviceId = rawName.includes('/') ? rawName.split('/').pop()! : rawName;
-    const record = await this.eventSchemaStore.get(catalogId, serviceId, eventKey, eventVersion);
-    if (!record) {
-      throw new AppError('NOT_FOUND', 'Event not found', 404);
-    }
-
-    return record;
-  }
-
   private asPayload(input: unknown): EventSchemaPayload {
     if (!input || typeof input !== 'object') {
       return {};

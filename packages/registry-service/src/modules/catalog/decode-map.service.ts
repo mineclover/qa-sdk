@@ -114,7 +114,10 @@ export class DecodeMapService {
           kind: { type: 'string_enum' },
           entries,
         });
-        shape.push(axisVersionDef.capacity ?? entries.length);
+        // DecodeMap.shape는 주소 공간의 예약 capacity가 아니라 실제 entries와
+        // 일치해야 한다. capacity는 향후 확장을 위한 여유 공간이므로 decoder
+        // 입력에 사용하면 validateDecodeMap 계약을 깨뜨린다.
+        shape.push(entries.length);
         continue;
       }
 

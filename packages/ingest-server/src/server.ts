@@ -269,19 +269,27 @@ async function startServer() {
 
     // event-catalog 동적 import (optional — 미설치 시 eventKey 검증만 비활성화)
     let isCoreEvent: ((eventKey: string) => boolean) | undefined;
+    let isKnownEvent: ((eventKey: string) => boolean) | undefined;
     try {
       const eventCatalog = await import('@qa-sdk/event-catalog' as string);
       isCoreEvent = eventCatalog.isCoreEvent;
+      const getMapping = eventCatalog.getMapping as ((eventKey: string) => unknown) | undefined;
+      isKnownEvent = (eventKey) => Boolean(isCoreEvent?.(eventKey) || getMapping?.(eventKey));
       logger.info(
         { coreEventCount: (eventCatalog.allCoreEvents as unknown[]).length },
-        'event-catalog 로드 완료',
+        'event-catalog 및 mapping pack 로드 완료',
       );
     } catch {
       logger.warn('event-catalog 미설치 — eventKey 검증 비활성화');
     }
 
     const { createCatalogValidator } = await import('./lib/catalog-validator.js');
-    catalogValidator = createCatalogValidator({ knownPrefixes, isCoreEvent, logger });
+    catalogValidator = createCatalogValidator({
+      knownPrefixes,
+      isCoreEvent,
+      isKnownEvent,
+      logger,
+    });
     logger.info({ prefixCount: knownPrefixes.size }, 'catalog validator 초기화 완료');
   } catch {
     logger.warn('catalog validator 초기화 실패 — event/prefix 검증 비활성화');

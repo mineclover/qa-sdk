@@ -431,7 +431,7 @@ curl -X PUT http://localhost:3300/api/event-schemas/my-service/my.event/001 \
   -d '{"displayName":"내 이벤트","recordKind":"log"}'
 
 # 검증 (ingest-server의 RegistryClient가 호출하는 경로)
-curl http://localhost:3300/services/my-service/events/my.event/versions/001
+curl http://localhost:3300/api/event-schemas/my-service/my.event/001
 ```
 
 ---

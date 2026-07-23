@@ -22,6 +22,11 @@ export const envSchema = z
     PORT: z.coerce.number().int().default(DEFAULT_PORT),
     CORS_ORIGIN: z.string().default('*'),
     SQLITE_PATH: z.string().default(':memory:'),
+    /** Definition 문서 sync의 소유권. seed 이후 동기화가 기본 동작이다. */
+    DEFINITION_SYNC_ON_SEED: z.preprocess(
+      (v) => v ?? 'true',
+      z.enum(['true', 'false']).transform((v) => v === 'true'),
+    ),
     CONSTRAINT_GATE_ENABLED: booleanWithDefaultFalse,
     CONSTRAINT_GATE_MODE: z.enum(['strict', 'warn']).default('warn'),
     CONSTRAINT_GATE_DKG_PATH: z.string().optional(),

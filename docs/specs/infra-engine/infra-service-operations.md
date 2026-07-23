@@ -25,6 +25,8 @@ def:
       type: contains
     - target: verdaccio-local-npm
       type: contains
+    - target: local-development-runtime
+      type: traces_to
     - target: infra-engine-system
       type: depends_on
 sources:
@@ -52,3 +54,4 @@ sources:
 | [store-driver-selection.spec.md](store-driver-selection.spec.md) | STORE_DRIVER, INSIGHTS_DRIVER 선택 가이드 |
 | [codec-proto.spec.md](codec-proto.spec.md) | Protobuf 포맷 감지, 로컬→JSON / 원격→Proto |
 | [verdaccio-local-npm.spec.md](verdaccio-local-npm.spec.md) | Verdaccio 로컬 NPM 배포 워크플로우 |
+| [local-development-runtime.spec.md](local-development-runtime.spec.md) | 전체 로컬 개발 서비스 조립, 순서, health, Cloudflare 분리 |

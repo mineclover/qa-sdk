@@ -30,7 +30,7 @@ AUTH_MODE=tailscale pnpm dev
 ```bash
 cd packages/gateway
 pnpm dev:worker             # wrangler dev
-pnpm deploy                 # wrangler deploy
+pnpm deploy                 # wrangler deploy --env production
 ```
 
 ### 3. Docker

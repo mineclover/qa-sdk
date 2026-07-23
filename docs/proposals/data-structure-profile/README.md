@@ -37,6 +37,11 @@ superseded_by: -
 
 # Data Structure Profile Proposal
 
+## Purpose ^purpose
+
+Data Structure Profile proposal과 구현된 fixture-first baseline 문서군의 진입점을 제공하고,
+taxonomy layer와 concrete profile layer의 소유 경계를 조망한다.
+
 Data Structure Profile은 qa-sdk의 taxonomy-engine 철학을 계승하면서, 가명처리에서 시작된
 데이터 구조 관리 문제를 stream flattening, measurement, quality gate, DPM readiness 판단으로
 확장하기 위한 proposal이다.

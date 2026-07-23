@@ -204,7 +204,7 @@ select{background:var(--bg3);border:1px solid var(--border);color:var(--txt);pad
 
   function renderTimeline() {
     if (traces.length === 0) {
-      document.getElementById('traceList').innerHTML = '<div class="empty">No traces. Send events from <a href="https://shop-web-7dq.pages.dev" target="_blank" style="color:var(--blue)">shop-web</a>.</div>';
+      document.getElementById('traceList').innerHTML = '<div class="empty">No traces. Send events from <a href="http://localhost:5220" target="_blank" style="color:var(--blue)">shop-web</a>.</div>';
       return;
     }
     document.getElementById('traceList').innerHTML = traces.map(renderCard).join('');

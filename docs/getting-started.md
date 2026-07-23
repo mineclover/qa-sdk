@@ -70,18 +70,28 @@ corepack pnpm setup     # 의존성 + .env + 빌드 + 검증 (원클릭)
 ## 2. 서비스 기동
 
 ```bash
-corepack pnpm demo      # 4서비스 동시 기동
+corepack pnpm dev:local # 전체 로컬 스택 동시 기동
 ```
+
+로컬 기동 계약과 서비스 간 readiness 규칙은 [로컬 개발 런타임 스펙](specs/infra-engine/local-development-runtime.spec.md)을 따른다.
 
 | 서비스 | URL | 용도 |
 |--------|-----|------|
 | registry-service | http://localhost:3300 | 카탈로그/좌표 스키마 |
+| definition-service | http://localhost:3700 | 문서 metadata sync/search/graph |
 | ingest-server | http://localhost:3200 | 이벤트 수집 |
+| gate-service | http://localhost:3400 | 품질 gate |
+| query-service | http://localhost:3500 | 이벤트 조회 |
+| decode-service | http://localhost:3600 | 주소 디코딩 |
+| gateway | http://localhost:8787 | 로컬 API gateway |
+| platform-demo-api | http://localhost:8788 | 데모 API |
 | shop-web | http://localhost:5220 | 쇼핑 데모 |
 | platform-demo | http://localhost:5176 | 3D 모니터 + 다이어그램 + 디버거 |
 
 ```bash
-corepack pnpm health    # local/prod 서비스와 인프라 헬스체크
+corepack pnpm health    # 로컬 서비스와 인프라 헬스체크
+# Cloudflare 배포 상태를 함께 확인할 때만 명시적으로 실행
+CHECK_CLOUDFLARE=1 corepack pnpm health
 ```
 
 ## 3. 프로젝트 초기화
@@ -212,7 +222,7 @@ qa-sdk dkg skills      # 자동화 스킬 목록
 모든 서비스가 Cloudflare Workers + D1로 배포됨:
 
 ```bash
-corepack pnpm health    # CF Workers 상태 확인 포함
+CHECK_CLOUDFLARE=1 corepack pnpm health    # CF Workers 상태 확인 포함
 ```
 
 | 서비스 | prod URL |

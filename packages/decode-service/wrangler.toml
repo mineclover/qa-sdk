@@ -4,6 +4,10 @@ compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
+REGISTRY_URL = "http://localhost:3300"
+
+# Cloudflare 배포는 명시적으로 production 환경을 선택한다.
+[env.production.vars]
 REGISTRY_URL = "https://qa-registry-service.astralclover.workers.dev"
 
 # registry D1 직접 조회 (CF Workers 간 fetch 404 우회)

@@ -40,7 +40,7 @@ import {
 
 // ── API Base ──────────────────────────────────────────────────────────────
 
-const API_BASE = process.env.DEMO_API_BASE ?? 'https://platform-demo-api.astralclover.workers.dev';
+const API_BASE = process.env.DEMO_API_BASE ?? 'http://localhost:8788';
 const describeDemoApi = process.env.DEMO_API_BASE ? describe : describe.skip;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {

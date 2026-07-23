@@ -38,6 +38,8 @@ export interface CatalogValidatorOptions {
   knownPrefixes: ReadonlySet<string>;
   /** event-catalog의 isCoreEvent 함수 (외부에서 주입) */
   isCoreEvent?: (eventKey: string) => boolean;
+  /** core event와 mapping pack event를 포함한 전체 등록 event 판정 */
+  isKnownEvent?: (eventKey: string) => boolean;
   logger?: Logger;
 }
 
@@ -48,9 +50,9 @@ export interface CatalogValidatorOptions {
  * prefix 검증은 knownPrefixes Set 기반.
  */
 export function createCatalogValidator(options: CatalogValidatorOptions): CatalogValidator {
-  const { knownPrefixes, isCoreEvent, logger } = options;
+  const { knownPrefixes, isCoreEvent, isKnownEvent, logger } = options;
 
-  if (isCoreEvent) {
+  if (isKnownEvent || isCoreEvent) {
     logger?.info('event-catalog eventKey 검증 활성화');
   } else {
     logger?.info('event-catalog 미제공 — eventKey 검증 비활성화 (모든 이벤트 허용)');
@@ -63,9 +65,9 @@ export function createCatalogValidator(options: CatalogValidatorOptions): Catalo
         return { known: true };
       }
 
-      const isCoreResult = isCoreEvent(eventKey);
+      const isCoreResult = isCoreEvent?.(eventKey) ?? false;
       return {
-        known: isCoreResult,
+        known: isKnownEvent ? isKnownEvent(eventKey) : isCoreResult,
         isCoreEvent: isCoreResult,
       };
     },

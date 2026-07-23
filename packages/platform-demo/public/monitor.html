@@ -266,8 +266,8 @@ kbd{display:inline-block;padding:1px 6px;background:rgba(100,255,218,0.06);borde
   var cfg = window.__QA_CONFIG__ || {};
   var dash = document.getElementById('link-dashboard');
   var wsInput = document.getElementById('ws-url');
-  if(dash) dash.href = cfg.DASHBOARD_URL || 'https://qa-gateway.astralclover.workers.dev/dev/';
-  if(wsInput) wsInput.value = cfg.WS_URL || 'wss://qa-ingest-server.astralclover.workers.dev/v1/ws';
+  if(dash) dash.href = cfg.DASHBOARD_URL || 'http://localhost:8787/dev/';
+  if(wsInput) wsInput.value = cfg.WS_URL || 'ws://localhost:3200/v1/ws';
 })();
 // ── Info overlay 닫기 (module 로딩 실패와 무관하게 동작) ──
 (function(){
@@ -799,7 +799,7 @@ $('btn-check-server').addEventListener('click', async ()=>{
   } catch { $('srv-ingest').innerHTML='<span style="color:#ff3860">● ingest: offline</span>'; }
   // Check registry
   try {
-    const regUrl = (window.__QA_CONFIG__||{}).REGISTRY_URL || 'https://qa-gateway.astralclover.workers.dev';
+    const regUrl = (window.__QA_CONFIG__||{}).REGISTRY_URL || 'http://localhost:3300';
     const r=await fetch(regUrl+'/health');
     $('srv-registry').innerHTML=r.ok?'<span style="color:#2ed573">● registry: ok</span>':'<span style="color:#ff3860">● registry: '+r.status+'</span>';
   } catch { $('srv-registry').innerHTML='<span style="color:#ff3860">● registry: offline</span>'; }

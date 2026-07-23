@@ -215,7 +215,7 @@ nav a.active{color:var(--mint);background:rgba(100,255,218,0.08)}
 const _cfg = window.__QA_CONFIG__ || {};
 const WS_URL = _cfg.WS_URL
   ? _cfg.WS_URL.replace('/v1/ws', '/v1/debug-ws')
-  : 'wss://qa-ingest-server.astralclover.workers.dev/v1/debug-ws';
+  : 'ws://localhost:3200/v1/debug-ws';
 
 // ═══════════════════════════════════════════════════════
 //  State

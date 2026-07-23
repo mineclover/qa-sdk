@@ -41,6 +41,11 @@ sources:
 
 # Data Structure Profile Fixtures
 
+## Purpose ^purpose
+
+Data Structure Profile의 결정론적 fixture와 expected output 묶음을 안내하여 parser, validator,
+lineage, measurement, DPM readiness 검증 입력의 위치와 역할을 고정한다.
+
 This directory contains the first deterministic fixture pack for Data Structure Profile.
 
 | File | Role |

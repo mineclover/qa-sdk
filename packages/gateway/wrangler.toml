@@ -1,6 +1,6 @@
 # QA-SDK API Gateway — CF Worker
-# 배포: npx wrangler deploy
-# 로컬: npx wrangler dev
+# 로컬: npx wrangler dev --local
+# 배포: npx wrangler deploy --env production
 
 name = "qa-gateway"
 main = "worker.ts"
@@ -8,11 +8,20 @@ compatibility_date = "2025-01-01"
 
 [vars]
 AUTH_MODE = "bypass"
-REGISTRY_URL = "https://qa-registry-service.astralclover.workers.dev"
+REGISTRY_URL = "http://localhost:3300"
 INGEST_URL = "http://localhost:3200"
 GATE_URL = "http://localhost:3400"
 QUERY_URL = "http://localhost:3500"
 DECODE_URL = "http://localhost:3600"
+
+# Cloudflare 배포는 명시적으로 production 환경을 선택한다.
+[env.production.vars]
+AUTH_MODE = "bypass"
+REGISTRY_URL = "https://qa-registry-service.astralclover.workers.dev"
+INGEST_URL = "https://qa-ingest-server.astralclover.workers.dev"
+GATE_URL = "https://qa-gate-service.astralclover.workers.dev"
+QUERY_URL = "https://qa-query-service.astralclover.workers.dev"
+DECODE_URL = "https://qa-decode-service.astralclover.workers.dev"
 
 # Service Bindings — Worker-to-Worker 직접 호출 (HTTP 우회)
 # 로컬 dev에서는 binding이 없으므로 자동으로 URL fetch fallback

@@ -80,9 +80,9 @@ export async function seedConfigs(configStore: ConfigStore, logger: SeedLogger =
       name: '플랫폼 데모 API',
       tier: 'backend',
       team: 'frontend',
-      url: 'http://localhost:8787',
+      url: 'http://localhost:8788',
       urls: {
-        dev: 'http://localhost:8787',
+        dev: 'http://localhost:8788',
         prod: 'https://platform-demo-api.astralclover.workers.dev',
       },
       ownedPrefixes: ['execution_context'],

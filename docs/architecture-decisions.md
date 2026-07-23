@@ -188,7 +188,7 @@ core  ← 모든 패키지가 의존
 
 ```text
 ingest-server → registry-server
-  용도: 이벤트 등록 여부 검증 (GET /services/{name}/events/{key}/versions/{ver})
+  용도: 이벤트 등록 여부 검증 (GET /api/event-schemas/{service}/{event}/{version})
   클라이언트: @qa-sdk/registry-client
   전략: fail-open (레지스트리 장애 시 이벤트 통과)
 ```
