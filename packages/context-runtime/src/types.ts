@@ -14,6 +14,70 @@ export type DiscoveryNextAction = 'freeze' | 'decompose';
 export type CyclePolicy = 'reject' | 'stop';
 export type AuthorityLevel = 'projection_allowed' | 'verified' | 'authoritative';
 
+export type StopObligationKind = 'route' | 'fact' | 'evidence';
+
+export interface ContextStopObligation {
+  readonly kind: StopObligationKind;
+  readonly key: string;
+}
+
+export interface ContextStopPolicy {
+  readonly obligations: readonly ContextStopObligation[];
+  /** Consecutive expansion rounds without new route/fact/evidence progress. */
+  readonly noProgressLimit?: number;
+}
+
+export type StopReason =
+  | 'coverage-satisfied'
+  | 'budget-exhausted'
+  | 'route-expansion-limit'
+  | 'object-limit'
+  | 'relation-limit'
+  | 'no-progress'
+  | 'source-exhausted'
+  | 'cycle-detected'
+  | 'missing-required-fact'
+  | 'authority-insufficient'
+  | 'freshness-failed';
+
+export type StopAction = 'freeze' | 'decompose' | 'block';
+
+export interface StopProgress {
+  readonly newRoutes: number;
+  readonly newFacts: number;
+  readonly newEvidenceRefs: number;
+}
+
+export interface StopDecision {
+  readonly reason: StopReason;
+  readonly action: StopAction;
+  readonly satisfiedObligations: readonly ContextStopObligation[];
+  readonly unresolvedObligations: readonly ContextStopObligation[];
+  readonly progress: StopProgress;
+}
+
+export interface StopEvaluationInput {
+  readonly policy: ContextStopPolicy;
+  readonly selectedRouteKeys: readonly string[];
+  readonly resolvedFacts?: readonly ResolvedFact[];
+  readonly evidenceRefs?: readonly string[];
+  readonly progress?: StopProgress;
+  readonly consecutiveNoProgress?: number;
+  /** True when all permitted source routes for this round have been exhausted. */
+  readonly sourceExhausted?: boolean;
+  /** A hard cap takes precedence over semantic coverage. */
+  readonly hardStopReason?: Exclude<
+    StopReason,
+    | 'coverage-satisfied'
+    | 'no-progress'
+    | 'source-exhausted'
+    | 'cycle-detected'
+    | 'missing-required-fact'
+    | 'authority-insufficient'
+    | 'freshness-failed'
+  >;
+}
+
 export interface ContextBudgetProfile {
   readonly totalWindowTokens: number;
   readonly discoveryMaxTokens: number;
@@ -115,7 +179,9 @@ export type DiscoverySkipReason =
   | 'budget-exhausted'
   | 'route-expansion-limit'
   | 'object-limit'
-  | 'relation-limit';
+  | 'relation-limit'
+  | 'coverage-satisfied'
+  | 'no-progress';
 
 export interface SkippedDiscoveryRoute {
   readonly routeKey: string;
@@ -131,6 +197,10 @@ export interface DiscoveryPlanInput {
   readonly usedTokens: number;
   /** Optional provider/model counter applied to the canonical candidate shape before selection. */
   readonly tokenCounter?: ContextTokenCounter;
+  /** Optional semantic stop policy evaluated during deterministic route selection. */
+  readonly stopPolicy?: ContextStopPolicy;
+  /** Per-route progress reported by a source adapter for no-progress detection. */
+  readonly progressByRoute?: Readonly<Record<string, StopProgress>>;
 }
 
 export interface DiscoveryPlan {
@@ -147,6 +217,7 @@ export interface DiscoveryPlan {
   readonly projectedObjectCount: number;
   readonly projectedRelationCount: number;
   readonly workingReserveTokens: number;
+  readonly stopDecision?: StopDecision;
   readonly decomposition?: DiscoveryTaskDecomposition;
 }
 
@@ -238,6 +309,7 @@ export interface WorkingContextCompileInput {
   /** Working reserve available to the compiled context. */
   readonly workingBudgetTokens?: number;
   readonly now?: string;
+  readonly stopPolicy?: ContextStopPolicy;
 }
 
 export interface WorkingContext {
@@ -248,6 +320,7 @@ export interface WorkingContext {
   readonly allowedOperations: readonly string[];
   readonly outputContract: OutputContract;
   readonly diagnostics: readonly ClosureDiagnostic[];
+  readonly stopDecision?: StopDecision;
 }
 
 export interface ManifestFactRef {
@@ -419,6 +492,7 @@ export interface ContextObservationInput {
   readonly manifestDigest?: string;
   readonly addressContext?: Readonly<Record<string, string>>;
   readonly usage?: ContextUsageSummary;
+  readonly stopDecision?: StopDecision;
 }
 
 export interface ContextUsageEvent {
@@ -494,6 +568,7 @@ export interface ContextObservationRecord {
   readonly manifestDigest?: string;
   readonly addressContext?: Readonly<Record<string, string>>;
   readonly usage?: ContextUsageSummary;
+  readonly stopDecision?: StopDecision;
 }
 
 export interface WorkingClosureInput {
@@ -513,7 +588,8 @@ export interface ClosureDiagnostic {
     | 'stale-fact'
     | 'invalid-fact-revision'
     | 'missing-evidence'
-    | 'working-budget-exhausted';
+    | 'working-budget-exhausted'
+    | 'stop-obligation-unresolved';
   readonly factKey: string;
   readonly message: string;
 }

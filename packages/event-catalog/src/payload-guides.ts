@@ -281,6 +281,36 @@ export const payloadGuides: readonly PayloadFieldGuide[] = [
       { name: 'route_keys', required: true, type: 'string[]', description: '선택된 route 키' },
       { name: 'fact_count', required: true, type: 'number', description: '해소된 Fact 개수' },
       {
+        name: 'stop_reason',
+        required: false,
+        type: 'string',
+        description: 'coverage/cap/no-progress/source exhaustion 종료 사유',
+      },
+      {
+        name: 'stop_action',
+        required: false,
+        type: 'string',
+        description: 'freeze/decompose/block 후속 동작',
+      },
+      {
+        name: 'satisfied_obligations',
+        required: false,
+        type: 'string[]',
+        description: '충족된 route/fact/evidence obligation 목록',
+      },
+      {
+        name: 'unresolved_obligations',
+        required: false,
+        type: 'string[]',
+        description: '미충족 route/fact/evidence obligation 목록',
+      },
+      {
+        name: 'stop_progress',
+        required: false,
+        type: 'object',
+        description: '신규 route/fact/evidence 진행량',
+      },
+      {
         name: 'manifest_digest',
         required: false,
         type: 'string',

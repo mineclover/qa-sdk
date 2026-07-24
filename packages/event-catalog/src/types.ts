@@ -41,7 +41,7 @@ export interface CoreEventDef {
 
 // ── Payload Field Guide ────────────────────────────────
 
-export type PayloadFieldType = 'string' | 'number' | 'boolean' | 'string[]';
+export type PayloadFieldType = 'string' | 'number' | 'boolean' | 'string[]' | 'object';
 
 export interface PayloadFieldDef {
   name: string;

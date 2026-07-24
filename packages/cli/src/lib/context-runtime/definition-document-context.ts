@@ -48,6 +48,8 @@ import {
   type TaskHandoffDecompositionExecutionResult,
   type NextTask,
   type WorkingContext,
+  type ContextStopPolicy,
+  type StopDecision,
 } from 'context-runtime';
 
 const DEFINITION_ROUTE_BOUNDS = Object.freeze({
@@ -89,6 +91,8 @@ export interface BoundedDefinitionContextInput {
   readonly tokenCounter?: DefinitionContextTokenCounter;
   /** Working Context가 닫히기 위해 반드시 해소되어야 하는 definition Fact. */
   readonly requiredFactKeys?: readonly DefinitionContextFactKey[];
+  /** Explicit StopPolicy; omitted input uses the required definition Facts as obligations. */
+  readonly stopPolicy?: ContextStopPolicy;
   /** 이전 discovery/working 단계의 ledger snapshot. `usedTokens`와 동시 사용하지 않는다. */
   readonly initialUsage?: ContextUsageSummary;
   readonly usedTokens?: number;
@@ -115,6 +119,7 @@ export interface BoundedDefinitionContextResult {
   readonly observation: ContextObservationRecord;
   readonly observationEvent: EventRecordLike;
   readonly usage: ContextUsageSummary;
+  readonly stopDecision?: StopDecision;
   /** Exact counter identity when a provider tokenizer was supplied. */
   readonly tokenCounter?: DefinitionTokenCounterDescriptor;
 }
@@ -341,6 +346,7 @@ export async function buildBoundedDefinitionContext(
   if (input.initialUsage && input.usedTokens !== undefined) {
     throw new Error('initialUsage와 usedTokens는 동시에 사용할 수 없습니다');
   }
+  const stopPolicy = input.stopPolicy ?? createDefinitionStopPolicy(requiredFactKeys);
   const usageLedger = createContextUsageLedger(input.initialUsage?.events);
   const initialUsageSnapshot = usageLedger.snapshot();
   if (input.initialUsage) {
@@ -389,6 +395,7 @@ export async function buildBoundedDefinitionContext(
     budget,
     usedTokens,
     tokenCounter,
+    stopPolicy,
   });
   for (const projection of discovery.projections) {
     usageLedger.record({
@@ -464,6 +471,7 @@ export async function buildBoundedDefinitionContext(
     workingUsageTokens: usage.workingTokens,
     workingBudgetTokens: budget.workingReserveTokens,
     now,
+    stopPolicy,
   });
   const manifest =
     workingContext.status === 'closed'
@@ -478,6 +486,11 @@ export async function buildBoundedDefinitionContext(
     ...(manifest ? { manifestDigest: manifest.digest } : {}),
     ...(doc.address ? { addressContext: { def_document: doc.address } } : {}),
     usage,
+    ...(workingContext.stopDecision
+      ? { stopDecision: workingContext.stopDecision }
+      : discovery.stopDecision
+        ? { stopDecision: discovery.stopDecision }
+        : {}),
   });
   const observationEvent = toContextObservationEventRecord(observation, now);
   await input.observationSink?.(observation);
@@ -495,6 +508,11 @@ export async function buildBoundedDefinitionContext(
     observation,
     observationEvent,
     usage,
+    ...(workingContext.stopDecision
+      ? { stopDecision: workingContext.stopDecision }
+      : discovery.stopDecision
+        ? { stopDecision: discovery.stopDecision }
+        : {}),
     ...(tokenCounterDescriptor ? { tokenCounter: tokenCounterDescriptor } : {}),
   });
 }
@@ -513,6 +531,19 @@ export function toContextObservationEventRecord(
       status: observation.status,
       route_keys: observation.routeKeys,
       fact_count: observation.factCount,
+      ...(observation.stopDecision
+        ? {
+            stop_reason: observation.stopDecision.reason,
+            stop_action: observation.stopDecision.action,
+            satisfied_obligations: observation.stopDecision.satisfiedObligations.map(
+              (obligation) => `${obligation.kind}:${obligation.key}`,
+            ),
+            unresolved_obligations: observation.stopDecision.unresolvedObligations.map(
+              (obligation) => `${obligation.kind}:${obligation.key}`,
+            ),
+            stop_progress: { ...observation.stopDecision.progress },
+          }
+        : {}),
       ...(observation.manifestDigest ? { manifest_digest: observation.manifestDigest } : {}),
       ...(observation.usage
         ? {
@@ -755,6 +786,16 @@ function createRequiredFacts(
       };
     }),
   );
+}
+
+function createDefinitionStopPolicy(
+  requiredFactKeys: readonly DefinitionContextFactKey[],
+): ContextStopPolicy {
+  return Object.freeze({
+    obligations: Object.freeze(
+      requiredFactKeys.map((key) => Object.freeze({ kind: 'fact' as const, key })),
+    ),
+  });
 }
 
 function createResolutionRecords(

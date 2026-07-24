@@ -13,6 +13,14 @@ export { assertWorkingClosure, validateWorkingClosure } from './closure.js';
 
 export { executeDiscoveryTaskDecomposition } from './decomposition.js';
 
+export {
+  assertValidStopPolicy,
+  DEFAULT_NO_PROGRESS_LIMIT,
+  evaluateStopDecision,
+  isProgressEmpty,
+  validateStopPolicy,
+} from './stop-rules.js';
+
 export { assertWorkingContext, compileWorkingContext } from './working-context.js';
 
 export {
@@ -57,6 +65,8 @@ export type {
   AuthorityRequirement,
   ClosureDiagnostic,
   ClosureStatus,
+  ContextStopObligation,
+  ContextStopPolicy,
   ContextManifest,
   ContextManifestInput,
   ContextHint,
@@ -135,6 +145,12 @@ export type {
   ValidationResult,
   WorkingClosureInput,
   WorkingClosureResult,
+  StopAction,
+  StopDecision,
+  StopEvaluationInput,
+  StopObligationKind,
+  StopProgress,
+  StopReason,
 } from './types.js';
 
 export {

@@ -151,4 +151,49 @@ describe('context-runtime working context compiler', () => {
       ]),
     );
   });
+
+  it('[contract:context-runtime.working.stop-on-coverage.v1] exposes a coverage stop decision for a closed Working Context', () => {
+    const result = compileWorkingContext(
+      input({
+        stopPolicy: {
+          obligations: [
+            { kind: 'route', key: route.routeKey },
+            { kind: 'fact', key: requiredFact.factKey },
+            { kind: 'evidence', key: 'evidence:inventory:42' },
+          ],
+        },
+      }),
+    );
+
+    expect(result.status).toBe('closed');
+    expect(result.stopDecision).toMatchObject({
+      reason: 'coverage-satisfied',
+      action: 'freeze',
+      unresolvedObligations: [],
+    });
+  });
+
+  it('[contract:context-runtime.working.stop-on-source-exhausted.v1] adds a bounded diagnostic for an unresolved stop obligation', () => {
+    const result = compileWorkingContext(
+      input({
+        resolvedFacts: [],
+        stopPolicy: { obligations: [{ kind: 'fact', key: requiredFact.factKey }] },
+      }),
+    );
+
+    expect(result.status).toBe('blocked');
+    expect(result.stopDecision).toMatchObject({
+      reason: 'source-exhausted',
+      action: 'block',
+      unresolvedObligations: [{ kind: 'fact', key: requiredFact.factKey }],
+    });
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'stop-obligation-unresolved',
+          factKey: `stop:fact:${requiredFact.factKey}`,
+        }),
+      ]),
+    );
+  });
 });

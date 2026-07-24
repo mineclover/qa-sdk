@@ -11,8 +11,10 @@ import {
 } from './types.js';
 import { validateWorkingClosure } from './closure.js';
 import { validateRouteSet } from './routes.js';
+import { assertValidStopPolicy, evaluateStopDecision } from './stop-rules.js';
 
 export function compileWorkingContext(input: WorkingContextCompileInput): WorkingContext {
+  if (input.stopPolicy) assertValidStopPolicy(input.stopPolicy, 'invalid-working-context');
   const inputIssues = validateWorkingContextInput(input);
   if (inputIssues.length > 0) {
     throw new ContextRuntimeError(
@@ -76,6 +78,48 @@ export function compileWorkingContext(input: WorkingContextCompileInput): Workin
     now: input.now,
   });
   diagnostics.push(...closure.diagnostics);
+  const closureInvalidFactKeys = new Set(
+    closure.diagnostics.map((diagnostic) => diagnostic.factKey),
+  );
+  const validResolvedFacts = input.resolvedFacts.filter(
+    (fact) => !closureInvalidFactKeys.has(fact.factKey),
+  );
+
+  const stopDecision = input.stopPolicy
+    ? evaluateStopDecision({
+        policy: input.stopPolicy,
+        selectedRouteKeys: input.routeSelection.selectedRouteKeys,
+        resolvedFacts: validResolvedFacts,
+        evidenceRefs: validResolvedFacts.flatMap((fact) => fact.evidenceRefs),
+        ...(input.workingUsageTokens !== undefined &&
+        input.workingBudgetTokens !== undefined &&
+        input.workingUsageTokens > input.workingBudgetTokens
+          ? { hardStopReason: 'budget-exhausted' as const }
+          : {}),
+        sourceExhausted: input.requiredFacts.every((fact) =>
+          input.routeSelection.selectedRouteKeys.includes(fact.resolutionRouteKey),
+        ),
+      })
+    : undefined;
+  if (input.stopPolicy) {
+    const unresolved =
+      stopDecision?.unresolvedObligations ??
+      input.stopPolicy.obligations.filter(
+        (obligation) =>
+          !isStopObligationSatisfied(
+            obligation,
+            input.routeSelection.selectedRouteKeys,
+            validResolvedFacts,
+          ),
+      );
+    diagnostics.push(
+      ...unresolved.map((obligation) => ({
+        code: 'stop-obligation-unresolved' as const,
+        factKey: `stop:${obligation.kind}:${obligation.key}`,
+        message: `StopPolicy obligation ${obligation.kind}:${obligation.key} was not satisfied`,
+      })),
+    );
+  }
 
   const closed = diagnostics.length === 0;
   const facts = closed
@@ -94,7 +138,20 @@ export function compileWorkingContext(input: WorkingContextCompileInput): Workin
     allowedOperations: Object.freeze([...input.allowedOperations]),
     outputContract: freezeOutputContract(input.outputContract),
     diagnostics: Object.freeze([...diagnostics]),
+    ...(stopDecision ? { stopDecision } : {}),
   });
+}
+
+function isStopObligationSatisfied(
+  obligation: NonNullable<WorkingContextCompileInput['stopPolicy']>['obligations'][number],
+  selectedRouteKeys: readonly string[],
+  resolvedFacts: readonly WorkingContextCompileInput['resolvedFacts'][number][],
+): boolean {
+  if (obligation.kind === 'route') return selectedRouteKeys.includes(obligation.key);
+  if (obligation.kind === 'fact') {
+    return resolvedFacts.some((fact) => fact.factKey === obligation.key);
+  }
+  return resolvedFacts.some((fact) => fact.evidenceRefs.includes(obligation.key));
 }
 
 export function assertWorkingContext(input: WorkingContextCompileInput): WorkingContext {

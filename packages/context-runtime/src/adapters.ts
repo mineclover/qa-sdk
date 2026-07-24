@@ -151,8 +151,24 @@ export function mapContextObservation(input: ContextObservationInput): ContextOb
     ...(input.manifestDigest ? { manifestDigest: input.manifestDigest } : {}),
     ...(input.addressContext ? { addressContext: freezeRecord(input.addressContext) } : {}),
     ...(input.usage ? { usage: freezeUsageSummary(input.usage) } : {}),
+    ...(input.stopDecision ? { stopDecision: freezeStopDecision(input.stopDecision) } : {}),
   };
   return Object.freeze(record);
+}
+
+function freezeStopDecision(
+  decision: NonNullable<ContextObservationInput['stopDecision']>,
+): NonNullable<ContextObservationInput['stopDecision']> {
+  return Object.freeze({
+    ...decision,
+    satisfiedObligations: Object.freeze(
+      decision.satisfiedObligations.map((obligation) => Object.freeze({ ...obligation })),
+    ),
+    unresolvedObligations: Object.freeze(
+      decision.unresolvedObligations.map((obligation) => Object.freeze({ ...obligation })),
+    ),
+    progress: Object.freeze({ ...decision.progress }),
+  });
 }
 
 function validateUsageSummary(usage: ContextUsageSummary): ValidationIssue[] {

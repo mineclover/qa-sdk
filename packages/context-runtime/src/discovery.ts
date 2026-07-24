@@ -14,8 +14,11 @@ import {
   type ValidationIssue,
   type ContextTokenCounter,
   type ContextTokenCountContext,
+  type StopDecision,
+  type StopProgress,
 } from './types.js';
 import { validateRoute, validateRouteSet } from './routes.js';
+import { assertValidStopPolicy, evaluateStopDecision, isProgressEmpty } from './stop-rules.js';
 
 export function projectDiscoveryCandidate(
   candidate: DiscoveryCandidate,
@@ -54,6 +57,7 @@ export function projectDiscoveryCandidate(
 
 export function planDiscovery(input: DiscoveryPlanInput): DiscoveryPlan {
   const budget = assertValidContextBudgetProfile(input.budget);
+  if (input.stopPolicy) assertValidStopPolicy(input.stopPolicy, 'invalid-discovery-plan');
   const inputIssues = validatePlanInput(input);
   if (inputIssues.length > 0) {
     throw new ContextRuntimeError(
@@ -86,8 +90,12 @@ export function planDiscovery(input: DiscoveryPlanInput): DiscoveryPlan {
   let projectedCandidateTokens = 0;
   let projectedObjectCount = 0;
   let projectedRelationCount = 0;
+  let progress: StopProgress = { newRoutes: 0, newFacts: 0, newEvidenceRefs: 0 };
+  let consecutiveNoProgress = 0;
+  let semanticStopDecision: StopDecision | undefined;
+  let semanticStopReason: 'coverage-satisfied' | 'no-progress' | undefined;
 
-  for (const { projection } of candidates) {
+  for (const [candidateIndex, { projection }] of candidates.entries()) {
     if (
       budget.maxRouteExpansions !== undefined &&
       selectedRouteKeys.length >= budget.maxRouteExpansions
@@ -150,9 +158,66 @@ export function planDiscovery(input: DiscoveryPlanInput): DiscoveryPlan {
     projectedCandidateTokens += projection.estimatedCostTokens;
     projectedObjectCount += projection.estimatedSize.objectCount;
     projectedRelationCount += projection.estimatedSize.relationCount;
+
+    if (input.stopPolicy) {
+      const routeProgress = input.progressByRoute?.[projection.routeKey] ?? {
+        newRoutes: 1,
+        newFacts: 0,
+        newEvidenceRefs: 0,
+      };
+      progress = addProgress(progress, routeProgress);
+      consecutiveNoProgress = isProgressEmpty(routeProgress) ? consecutiveNoProgress + 1 : 0;
+
+      const routeOnlyPolicy = input.stopPolicy.obligations.every(
+        (obligation) => obligation.kind === 'route',
+      );
+      const decision = evaluateStopDecision({
+        policy: input.stopPolicy,
+        selectedRouteKeys,
+        progress,
+        consecutiveNoProgress,
+      });
+      if (decision?.reason === 'coverage-satisfied' && routeOnlyPolicy) {
+        semanticStopDecision = decision;
+        semanticStopReason = 'coverage-satisfied';
+        for (const remaining of candidates.slice(candidateIndex + 1)) {
+          skippedRoutes.push(createSkippedRoute(remaining.projection, 'coverage-satisfied'));
+        }
+        break;
+      }
+      if (decision?.reason === 'no-progress') {
+        semanticStopDecision = decision;
+        semanticStopReason = 'no-progress';
+        for (const remaining of candidates.slice(candidateIndex + 1)) {
+          skippedRoutes.push(createSkippedRoute(remaining.projection, 'no-progress'));
+        }
+        break;
+      }
+    }
   }
 
-  const capped = skippedRoutes.length > 0;
+  const hardSkippedRoutes = skippedRoutes.filter(isHardSkippedRoute);
+  const hardStopReason = selectHardStopReason(hardSkippedRoutes);
+  const stopDecision = input.stopPolicy
+    ? hardStopReason
+      ? evaluateStopDecision({
+          policy: input.stopPolicy,
+          selectedRouteKeys,
+          progress,
+          consecutiveNoProgress,
+          hardStopReason,
+        })
+      : (semanticStopDecision ??
+        (semanticStopReason === 'coverage-satisfied'
+          ? evaluateStopDecision({
+              policy: input.stopPolicy,
+              selectedRouteKeys,
+              progress,
+              consecutiveNoProgress,
+            })
+          : undefined))
+    : undefined;
+  const capped = hardSkippedRoutes.length > 0;
   const projectedDiscoveryTokens = input.usedTokens + projectedCandidateTokens;
   const remainingDiscoveryTokens = Math.max(0, discoveryCapacity - projectedDiscoveryTokens);
   const nextAction: DiscoveryPlan['nextAction'] =
@@ -162,7 +227,7 @@ export function planDiscovery(input: DiscoveryPlanInput): DiscoveryPlan {
       ? createDiscoveryTaskDecomposition({
           intent: input.intent,
           candidates: input.candidates,
-          skippedRoutes,
+          skippedRoutes: hardSkippedRoutes,
         })
       : undefined;
 
@@ -180,6 +245,7 @@ export function planDiscovery(input: DiscoveryPlanInput): DiscoveryPlan {
     projectedObjectCount,
     projectedRelationCount,
     workingReserveTokens: budget.workingReserveTokens,
+    ...(stopDecision ? { stopDecision } : {}),
     ...(decomposition ? { decomposition } : {}),
   });
 }
@@ -194,10 +260,14 @@ export function createDiscoveryTaskDecomposition(input: {
   const candidateByRoute = new Map(
     input.candidates.map((candidate) => [candidate.route.routeKey, candidate] as const),
   );
-  const reasons = new Set(input.skippedRoutes.map((route) => route.reason));
+  const hardSkippedRoutes = input.skippedRoutes.filter(isHardSkippedRoute);
+  if (hardSkippedRoutes.length === 0) return undefined;
+  const reasons = new Set<DiscoveryDecompositionReason>(
+    hardSkippedRoutes.map((route) => route.reason),
+  );
   const reason: DiscoveryDecompositionReason = reasons.size === 1 ? [...reasons][0]! : 'mixed-cap';
   const usedTaskKeys = new Set<string>();
-  const children = input.skippedRoutes.flatMap((skippedRoute, index) => {
+  const children = hardSkippedRoutes.flatMap((skippedRoute, index) => {
     const candidate = candidateByRoute.get(skippedRoute.routeKey);
     if (!candidate) return [];
     const taskKey = uniqueDecompositionTaskKey(
@@ -229,6 +299,60 @@ export function createDiscoveryTaskDecomposition(input: {
 
 function slugifyRouteKey(routeKey: string): string {
   return routeKey.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'route';
+}
+
+type HardStopReason =
+  | 'budget-exhausted'
+  | 'route-expansion-limit'
+  | 'object-limit'
+  | 'relation-limit';
+
+function isHardSkipReason(reason: SkippedDiscoveryRoute['reason']): reason is HardStopReason {
+  return (
+    reason === 'budget-exhausted' ||
+    reason === 'route-expansion-limit' ||
+    reason === 'object-limit' ||
+    reason === 'relation-limit'
+  );
+}
+
+function isHardSkippedRoute(
+  route: SkippedDiscoveryRoute,
+): route is SkippedDiscoveryRoute & { readonly reason: HardStopReason } {
+  return isHardSkipReason(route.reason);
+}
+
+function selectHardStopReason(
+  skippedRoutes: readonly SkippedDiscoveryRoute[],
+): HardStopReason | undefined {
+  const reasons = new Set(skippedRoutes.map((route) => route.reason));
+  const precedence: readonly HardStopReason[] = [
+    'budget-exhausted',
+    'route-expansion-limit',
+    'object-limit',
+    'relation-limit',
+  ];
+  return precedence.find((reason) => reasons.has(reason));
+}
+
+function createSkippedRoute(
+  projection: DiscoveryRouteProjection,
+  reason: SkippedDiscoveryRoute['reason'],
+): SkippedDiscoveryRoute {
+  return Object.freeze({
+    routeKey: projection.routeKey,
+    reason,
+    estimatedCostTokens: projection.estimatedCostTokens,
+    ...(projection.costMeasurement ? { costMeasurement: projection.costMeasurement } : {}),
+  });
+}
+
+function addProgress(left: StopProgress, right: StopProgress): StopProgress {
+  return {
+    newRoutes: left.newRoutes + right.newRoutes,
+    newFacts: left.newFacts + right.newFacts,
+    newEvidenceRefs: left.newEvidenceRefs + right.newEvidenceRefs,
+  };
 }
 
 function countCandidateTokens(

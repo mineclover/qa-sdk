@@ -85,6 +85,7 @@ import {
 } from '../lib/context-runtime/provider-usage-adapters.js';
 import {
   createContextUsageLedger,
+  type ContextStopPolicy,
   type ContextUsageSummary,
   type DiscoveryTaskDecomposition,
 } from 'context-runtime';
@@ -221,6 +222,43 @@ function parseCsvFlag(value?: string): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
+}
+
+function parseContextStopPolicy(flags: Record<string, string>): ContextStopPolicy | undefined {
+  const routeKeys = parseCsvFlag(flags['stop-routes']);
+  const factKeys = parseCsvFlag(flags['stop-facts']);
+  const evidenceKeys = parseCsvFlag(flags['stop-evidence']);
+  const hasStopFlags =
+    flags['stop-routes'] !== undefined ||
+    flags['stop-facts'] !== undefined ||
+    flags['stop-evidence'] !== undefined ||
+    flags['no-progress-limit'] !== undefined;
+  if (!hasStopFlags) return undefined;
+  if (flags['no-progress-limit'] === 'true') {
+    throw new Error('--no-progress-limit에는 양의 정수가 필요합니다');
+  }
+
+  const obligations = [
+    ...routeKeys.map((key) => ({ kind: 'route' as const, key })),
+    ...factKeys.map((key) => ({ kind: 'fact' as const, key })),
+    ...evidenceKeys.map((key) => ({ kind: 'evidence' as const, key })),
+  ];
+  if (obligations.length === 0) {
+    throw new Error(
+      '--stop-routes/--stop-facts/--stop-evidence 중 하나 이상의 obligation이 필요합니다',
+    );
+  }
+
+  const noProgressLimit = flags['no-progress-limit']
+    ? parseNonNegativeIntegerFlag(flags['no-progress-limit'], 'no-progress-limit')
+    : undefined;
+  if (noProgressLimit !== undefined && noProgressLimit < 1) {
+    throw new Error('--no-progress-limit must be a positive integer');
+  }
+  return Object.freeze({
+    obligations: Object.freeze(obligations),
+    ...(noProgressLimit !== undefined ? { noProgressLimit } : {}),
+  });
 }
 
 async function getSource(options: DataSourceOptions): Promise<DefDataSource> {
@@ -1233,6 +1271,7 @@ async function cmdContext(
       ...(flags['tokenizer-provider'] ? { provider: flags['tokenizer-provider'] } : {}),
       ...(flags['tokenizer-model'] ? { model: flags['tokenizer-model'] } : {}),
     };
+    const stopPolicy = parseContextStopPolicy(flags);
     const tokenCounter = flags['tokenizer-module']
       ? await loadProviderTokenCounter(flags['tokenizer-module'], tokenizerSelection)
       : flags['tokenizer-registry']
@@ -1256,6 +1295,7 @@ async function cmdContext(
       ...(!flags['used-tokens'] && tokenCounter
         ? { usedTokensMeasurement: 'measured' as const }
         : {}),
+      ...(stopPolicy ? { stopPolicy } : {}),
     });
     const persistedHandoff = flags['handoff-out']
       ? await persistDefinitionTaskHandoff(bounded, flags)
@@ -1271,6 +1311,9 @@ async function cmdContext(
     console.log(`discovery: ${bounded.discovery.status}`);
     console.log(`selected routes: ${bounded.discovery.selectedRouteKeys.join(', ') || '(없음)'}`);
     console.log(`working: ${bounded.workingContext.status}`);
+    if (bounded.stopDecision) {
+      console.log(`stop: ${bounded.stopDecision.reason} → ${bounded.stopDecision.action}`);
+    }
     if (bounded.discovery.decomposition) {
       console.log(
         `decomposition: ${bounded.discovery.decomposition.children.length} child task(s) [${bounded.discovery.decomposition.reason}]`,
@@ -2646,7 +2689,7 @@ const DEF_HELP_SECTIONS = [
     title: '분석',
     lines: [
       'scan-audit          raw frontmatter/link 감사 (DB 미사용)',
-      'context <ID> [--bounded] [--used-tokens N] [--initial-usage <path>] [--provider-usage <path> --provider openai|anthropic|generic] [--provider-phase discovery|working] [--tokenizer-module <path>|--tokenizer-registry <path> [--tokenizer-provider openai|anthropic|generic] [--tokenizer-model <id>]] [--json]  작업 전 컨텍스트 (소속/의존/영향)',
+      'context <ID> [--bounded] [--used-tokens N] [--initial-usage <path>] [--provider-usage <path> --provider openai|anthropic|generic] [--provider-phase discovery|working] [--tokenizer-module <path>|--tokenizer-registry <path> [--tokenizer-provider openai|anthropic|generic] [--tokenizer-model <id>]] [--stop-routes <csv>] [--stop-facts <csv>] [--stop-evidence <csv>] [--no-progress-limit N] [--json]  작업 전 컨텍스트 (소속/의존/영향)',
       'context <ID> --bounded --handoff-out <path> --result-revision <REV> [--source-revision <REV>] [--unresolved-questions <csv>] [--next-task-key <KEY> --next-task-objective <TEXT>]  Typed Handoff 저장',
       'handoff <store-path> <task-key> [--json]  저장된 Typed Handoff 조회',
       'handoff-aggregate <store-path> <decomposition.json> --source-revision <REV> --result-revision <REV> [--discovery-results <path>] [--json]  discovery child는 refs로, resolution child는 parent Handoff로 집계',

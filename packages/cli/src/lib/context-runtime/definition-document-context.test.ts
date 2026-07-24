@@ -94,6 +94,11 @@ describe('bounded definition context source resolution', () => {
       'definition.document.authoritative',
     ]);
     expect(result.workingContext.status).toBe('closed');
+    expect(result.stopDecision).toMatchObject({
+      reason: 'coverage-satisfied',
+      action: 'freeze',
+      unresolvedObligations: [],
+    });
     expect(source.get).not.toHaveBeenCalled();
     expect(source.getBoundaryContext).not.toHaveBeenCalled();
     expect(source.getBody).not.toHaveBeenCalled();
@@ -223,6 +228,11 @@ describe('bounded definition context source resolution', () => {
     });
 
     expect(result.workingContext.status).toBe('closed');
+    expect(result.stopDecision).toMatchObject({
+      reason: 'coverage-satisfied',
+      action: 'freeze',
+      unresolvedObligations: [],
+    });
     expect(eventSink).toHaveBeenCalledOnce();
     expect(eventSink).toHaveBeenCalledWith(result.observationEvent);
     expect(eventSink.mock.calls[0]?.[0]).toMatchObject({
@@ -236,6 +246,11 @@ describe('bounded definition context source resolution', () => {
         status: 'closed',
         fact_count: 1,
         working_tokens: 1,
+        stop_reason: 'coverage-satisfied',
+        stop_action: 'freeze',
+        satisfied_obligations: ['fact:definition.document'],
+        unresolved_obligations: [],
+        stop_progress: { newRoutes: 0, newFacts: 0, newEvidenceRefs: 0 },
       },
     });
     expect(JSON.stringify(eventSink.mock.calls[0]?.[0])).not.toContain(

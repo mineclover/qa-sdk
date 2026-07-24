@@ -139,6 +139,77 @@ describe('context-runtime discovery planner', () => {
     expect(result.remainingDiscoveryTokens).toBe(20_000);
   });
 
+  it('[contract:context-runtime.discovery.stop-on-coverage.v1] records semantic coverage and does not select lower-priority routes', () => {
+    const result = planDiscovery({
+      intent,
+      candidates: [
+        discoveryCandidate('order.topic', 100, 20),
+        discoveryCandidate('order.optional', 100, 10),
+      ],
+      budget: createContextBudgetProfile(),
+      usedTokens: 0,
+      stopPolicy: { obligations: [{ kind: 'route', key: 'order.topic' }] },
+    });
+
+    expect(result.status).toBe('planned');
+    expect(result.selectedRouteKeys).toEqual(['order.topic']);
+    expect(result.skippedRoutes).toEqual([
+      expect.objectContaining({
+        routeKey: 'order.optional',
+        reason: 'coverage-satisfied',
+      }),
+    ]);
+    expect(result.stopDecision).toMatchObject({
+      reason: 'coverage-satisfied',
+      action: 'freeze',
+      unresolvedObligations: [],
+    });
+  });
+
+  it('[contract:context-runtime.discovery.stop-on-no-progress.v1] stops route expansion after repeated empty progress', () => {
+    const result = planDiscovery({
+      intent,
+      candidates: [
+        discoveryCandidate('order.first', 100, 20),
+        discoveryCandidate('order.second', 100, 10),
+        discoveryCandidate('order.third', 100, 5),
+      ],
+      budget: createContextBudgetProfile(),
+      usedTokens: 0,
+      stopPolicy: {
+        obligations: [{ kind: 'fact', key: 'order.status' }],
+        noProgressLimit: 2,
+      },
+      progressByRoute: {
+        'order.first': { newRoutes: 0, newFacts: 0, newEvidenceRefs: 0 },
+        'order.second': { newRoutes: 0, newFacts: 0, newEvidenceRefs: 0 },
+      },
+    });
+
+    expect(result.selectedRouteKeys).toEqual(['order.first', 'order.second']);
+    expect(result.skippedRoutes[0]).toMatchObject({
+      routeKey: 'order.third',
+      reason: 'no-progress',
+    });
+    expect(result.stopDecision).toMatchObject({ reason: 'no-progress', action: 'block' });
+  });
+
+  it('[contract:context-runtime.stop.hard-cap-precedence.v1] reports an unresolved required route as a hard budget stop', () => {
+    const result = planDiscovery({
+      intent,
+      candidates: [discoveryCandidate('order.topic', 100, 20)],
+      budget: createContextBudgetProfile(),
+      usedTokens: 100_000,
+      stopPolicy: { obligations: [{ kind: 'route', key: 'order.topic' }] },
+    });
+
+    expect(result.stopDecision).toMatchObject({
+      reason: 'budget-exhausted',
+      action: 'block',
+      unresolvedObligations: [{ kind: 'route', key: 'order.topic' }],
+    });
+  });
+
   it('[contract:context-runtime.discovery.stop-at-cap.v1] decomposes when the discovery cap is already exhausted', () => {
     const result = planDiscovery({
       intent,
