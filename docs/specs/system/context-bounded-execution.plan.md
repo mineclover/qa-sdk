@@ -80,6 +80,18 @@ min(100K, totalWindow - systemReserve - outputReserve - workingReserve)
 4. Closure를 판단하고, 초과·누락·오래된 Fact는 실행 전에 차단한다.
 5. 결과는 대화 전문이 아니라 Typed Handoff와 Manifest로 다음 Task에 전달한다.
 
+Stop Rules 확장:
+
+```text
+Route 후보
+  → hard budget/bounds 확인
+  → declared obligation coverage 확인
+  → no-progress/source exhaustion 확인
+  → freeze | decompose | block
+```
+
+Stop 판단은 LLM의 주관적 충분성 판정이 아니라, Route·Fact·Evidence obligation과 결정론적 progress 집합으로 계산한다. 상세 계약은 `context-stop-rules-todo`와 `context-bounded-execution-cases-stop-rules`가 소유한다.
+
 ## 비범위 ^constraint
 
 - 이번 단계에서 100K에 맞춘 특정 LLM SDK나 tokenizer를 도입하지 않는다.

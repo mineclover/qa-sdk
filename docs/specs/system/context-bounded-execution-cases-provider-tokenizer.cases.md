@@ -14,6 +14,8 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+    - target: provider-tokenizer-openai-gpt-4o
+      type: traces_to
 ---
 # Context-Bounded Execution — 외부 tokenizer 계약
 

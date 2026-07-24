@@ -2,7 +2,7 @@
 def:
   id: context-bounded-execution-cases
   type: spec
-  tier: component
+  tier: layout
   level: group
   scope: flow
   aspect: user_scenario
@@ -13,31 +13,33 @@ def:
   tags: [scenario, testing, architecture, context]
   links:
     - target: context-bounded-execution-cases-planning-core
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-planning-cap
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-usage
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-adapters
-      type: contains
+      type: refs
     - target: context-bounded-execution
       type: refines
     - target: context-bounded-execution-cases-handoff
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-provider-usage
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-provider-tokenizer
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-definition-consumer
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-definition-discovery
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-definition-working
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-definition-handoff
-      type: contains
+      type: refs
     - target: context-bounded-execution-cases-observation
-      type: contains
+      type: refs
+    - target: context-bounded-execution-cases-stop-rules
+      type: refs
 sources:
   - packages/context-runtime/src/index.ts
   - packages/context-runtime/src/usage.ts
@@ -51,7 +53,7 @@ sources:
 
 ## 목적 ^purpose
 
-Discovery Context와 Working Context의 행동 계약을 역할별 leaf 문서로 분리해 관리한다. 개별 계약은 child 문서에 있고, 이 문서는 family entry point와 구성 관계를 소유한다.
+Discovery Context와 Working Context의 행동 계약을 역할별 leaf 문서로 분리해 관리한다. 개별 계약은 참조된 role 문서에 있고, 이 layout 문서는 family entry point와 문서 배치를 소유한다.
 
 ## 구성 ^overview
 
@@ -67,6 +69,7 @@ Discovery Context와 Working Context의 행동 계약을 역할별 leaf 문서�
 - [Context-Bounded Execution — Definition working 계약](./context-bounded-execution-cases-definition-working.cases.md) — 최소 Working Fact, observation sink와 phase-separated usage accounting을 검증한다.
 - [Context-Bounded Execution — Definition handoff 계약](./context-bounded-execution-cases-definition-handoff.cases.md) — Definition child 결과의 discovery/read-model 분리와 handoff persistence·aggregation을 검증한다.
 - [Context-Bounded Execution — Observation vocabulary 계약](./context-bounded-execution-cases-observation.cases.md) — context runtime observation event의 catalog projection을 검증한다.
+- [Context-Bounded Execution — Stop Rules 계약](./context-bounded-execution-cases-stop-rules.cases.md) — topic coverage, no-progress, source exhaustion과 hard-cap precedence를 검증한다.
 
 ## 검증 경계 ^validation
 

@@ -2,10 +2,10 @@
 def:
   id: context-bounded-execution-test
   type: spec
-  tier: component
+  tier: layout
   level: group
   scope: flow
-  aspect: user_scenario
+  aspect: process_flow
   depth: overview
   lifecycle: approved
   layer: operation
@@ -21,29 +21,31 @@ def:
     - target: context-runtime
       type: traces_to
     - target: context-bounded-execution-test-planning-core
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-planning-cap
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-usage
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-adapters
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-handoff
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-provider-usage
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-provider-tokenizer
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-definition-consumer
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-definition-discovery
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-definition-working
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-definition-handoff
-      type: contains
+      type: refs
     - target: context-bounded-execution-test-observation
-      type: contains
+      type: refs
+    - target: context-bounded-execution-test-stop-rules
+      type: refs
 sources:
   - packages/context-runtime/src/budget.test.ts
   - packages/context-runtime/src/discovery.test.ts
@@ -71,7 +73,7 @@ sources:
 
 ## 목적 ^purpose
 
-Discovery/Working Context 계약의 test unit과 implementation unit을 역할별 leaf 문서로 분리해 관리한다. 이 문서는 family entry point와 전체 source/test 경계를 소유한다.
+Discovery/Working Context 계약의 test unit과 implementation unit을 역할별 leaf 문서로 분리해 관리한다. 이 layout 문서는 family entry point와 전체 source/test 경계를 소유한다.
 
 ## 구성 ^overview
 
@@ -87,6 +89,7 @@ Discovery/Working Context 계약의 test unit과 implementation unit을 역할�
 - [Context-Bounded Execution — Definition working 검증](./context-bounded-execution-test-definition-working.test.md) — 최소 Working Fact, observation sink와 phase-separated usage accounting의 unit을 관리한다.
 - [Context-Bounded Execution — Definition handoff 검증](./context-bounded-execution-test-definition-handoff.test.md) — Definition child 결과의 discovery/read-model 분리와 handoff persistence·aggregation의 unit을 관리한다.
 - [Context-Bounded Execution — Observation vocabulary 검증](./context-bounded-execution-test-observation.test.md) — context runtime observation event catalog projection의 unit을 관리한다.
+- [Context-Bounded Execution — Stop Rules 검증](./context-bounded-execution-test-stop-rules.test.md) — topic coverage, no-progress, source exhaustion과 hard-cap precedence의 unit을 관리한다.
 
 ## BDD 검증 경계 ^validation
 
