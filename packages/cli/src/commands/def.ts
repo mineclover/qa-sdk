@@ -15,6 +15,7 @@
 
 import { dirname, join, resolve, relative } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
+import { execa } from 'execa';
 import {
   CONCERN_TAGS,
   scanAndBuild,
@@ -2304,6 +2305,45 @@ async function cmdCodeLinkGaps(flags: Record<string, string>) {
   }
 }
 
+/**
+ * Execute the externally-owned spec-management platform without importing its
+ * parser, store or taxonomy implementation into qa-sdk. The executable is
+ * supplied by the published `@spec-platform/qa-sdk-adapter` package; a local
+ * development path can be supplied explicitly through --platform-bin.
+ */
+export function createPlatformVerifyInvocation(
+  root: string,
+  flags: Record<string, string>,
+): { readonly command: string; readonly args: readonly string[] } {
+  const executable = flags['platform-bin'] ?? process.env.QA_SPEC_PLATFORM_BIN ?? 'qa-spec-platform';
+  const args = ['verify', root];
+  if (flags.store) args.push('--store', flags.store);
+  if (flags['include-tests'] === 'true') args.push('--include-tests');
+  if (flags.json === 'true') args.push('--json');
+  if (executable.endsWith('.js')) return { command: process.execPath, args: [executable, ...args] };
+  return { command: executable, args };
+}
+
+async function cmdPlatformVerify(flags: Record<string, string>) {
+  const root = getRootDir();
+  const invocation = createPlatformVerifyInvocation(root, flags);
+  try {
+    const result = await execa(invocation.command, invocation.args, {
+      cwd: root,
+      reject: false,
+      stdio: 'inherit',
+    });
+    if (result.exitCode) process.exitCode = result.exitCode;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(
+      `spec-management platform 실행 실패: ${detail}\n` +
+        'Install @spec-platform/qa-sdk-adapter or pass --platform-bin=<qa-spec-platform path>.',
+    );
+    process.exitCode = 1;
+  }
+}
+
 // ── doctor (통합 헬스체크) ──────────────────────────────────
 
 /**
@@ -2709,6 +2749,7 @@ const DEF_HELP_SECTIONS = [
       'audit --by-domain   도메인 루트 기준 리포트',
       'validate            DB 기준 그래프 + code reference 검증',
       'code-link-gaps      explicit 문서 연결 없는 코드 목록',
+      'platform-verify     외부 spec-management platform으로 문서/코드 evidence 검증',
       'stats               분포 통계',
       'check <ID>          문서 정합성 점검',
       'link-rules          LinkType 사용 규칙',
@@ -2757,6 +2798,7 @@ export async function cliDef(args: string[]): Promise<void> {
   if (sub === 'scan-audit') return cmdScanAudit(flags);
   if (sub === 'sync') return cmdSync(flags);
   if (sub === 'code-link-gaps') return cmdCodeLinkGaps(flags);
+  if (sub === 'platform-verify') return cmdPlatformVerify(flags);
   if (sub === 'doctor') return cmdDoctor(flags, options);
   if (sub === 'link-rules') return cmdLinkRules();
   if (sub === 'verification-bindings') return cmdVerificationBindings(flags, options);

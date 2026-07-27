@@ -7,7 +7,7 @@ import { join } from 'node:path';
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DEF_COMMAND_DESCRIPTORS } from '../command-groups/def.commands.js';
-import { cliDef } from './def.js';
+import { cliDef, createPlatformVerifyInvocation } from './def.js';
 
 describe('def commands', () => {
   let tempRoot: string;
@@ -69,8 +69,36 @@ describe('def commands', () => {
   describe('command registry', () => {
     it('verification producer commands are reachable from the top-level command tree', () => {
       expect(DEF_COMMAND_DESCRIPTORS.map((descriptor) => descriptor.id)).toEqual(
-        expect.arrayContaining(['def.verification-bindings', 'def.verification-artifact']),
+        expect.arrayContaining([
+          'def.platform-verify',
+          'def.verification-bindings',
+          'def.verification-artifact',
+        ]),
       );
+    });
+  });
+
+  describe('platform-verify', () => {
+    it('runs the external QA profile through a JavaScript entrypoint in local development', () => {
+      expect(
+        createPlatformVerifyInvocation('/repo', {
+          'platform-bin': '/tools/qa-spec-platform.js',
+          store: '.evidence',
+          'include-tests': 'true',
+          json: 'true',
+        }),
+      ).toEqual({
+        command: process.execPath,
+        args: [
+          '/tools/qa-spec-platform.js',
+          'verify',
+          '/repo',
+          '--store',
+          '.evidence',
+          '--include-tests',
+          '--json',
+        ],
+      });
     });
   });
 
