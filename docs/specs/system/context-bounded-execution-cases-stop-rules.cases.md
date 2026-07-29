@@ -16,6 +16,10 @@ def:
       type: refines
     - target: context-stop-rules-todo
       type: traces_to
+sources:
+  - packages/context-runtime/src/stop-rules.ts
+  - packages/context-runtime/src/discovery.ts
+  - packages/context-runtime/src/working-context.ts
 ---
 # Context-Bounded Execution — Stop Rules 계약
 

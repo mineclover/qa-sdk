@@ -44,7 +44,7 @@ sources:
   - packages/context-runtime/src/index.ts
   - packages/context-runtime/src/usage.ts
   - packages/context-runtime/src/handoff.ts
-  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/commands/def.context.test.ts
   - packages/cli/src/lib/context-runtime/definition-document-context.ts
   - packages/cli/src/lib/context-runtime/task-handoff-store.ts
   - packages/event-catalog/src/categories/infrastructure.ts
@@ -80,7 +80,7 @@ qa-sdk docs bdd validate context-bounded-execution-cases --family-only는 이 �
 - packages/context-runtime/src/index.ts
 - packages/context-runtime/src/usage.ts
 - packages/context-runtime/src/handoff.ts
-- packages/cli/src/commands/def.test.ts
+- packages/cli/src/commands/def.context.test.ts
 - packages/cli/src/lib/context-runtime/definition-document-context.ts
 - packages/cli/src/lib/context-runtime/task-handoff-store.ts
 - packages/event-catalog/src/categories/infrastructure.ts

@@ -14,6 +14,14 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/context-runtime/src/usage.test.ts
+  - packages/context-runtime/src/adapters.test.ts
+  - packages/context-runtime/src/discovery.test.ts
+  - packages/context-runtime/src/usage.ts:createContextUsageLedger
+  - packages/context-runtime/src/adapters.ts:mapContextObservation
+  - packages/context-runtime/src/discovery.ts:planDiscovery
+  - packages/context-runtime/src/usage.ts:createProviderUsageEvent
 ---
 # Context-Bounded Execution — Usage 검증
 

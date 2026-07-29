@@ -14,6 +14,15 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/context-runtime/src/decomposition.test.ts
+  - packages/context-runtime/src/handoff-execution.test.ts
+  - packages/context-runtime/src/handoff.test.ts
+  - packages/cli/src/lib/context-runtime/task-handoff-store.test.ts
+  - packages/context-runtime/src/decomposition.ts:executeDiscoveryTaskDecomposition
+  - packages/context-runtime/src/handoff.ts:executeAndAggregateTaskHandoffs
+  - packages/context-runtime/src/handoff.ts:createTaskHandoff
+  - packages/context-runtime/src/handoff.ts:aggregateTaskHandoffs
 ---
 # Context-Bounded Execution — Decomposition·Handoff 검증
 

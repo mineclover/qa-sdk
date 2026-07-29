@@ -130,7 +130,7 @@ Discovery가 종료되면 선택된 Route를 freeze한다. Working Context는 Di
 - `packages/cli/src/lib/context-runtime/definition-document-context.ts` — `DefDataSource` adapter와 bounded consumer
 - `packages/cli/src/lib/context-runtime/task-handoff-store.ts` — local JSON Handoff store
 - `packages/cli/src/commands/def.ts` — bounded context, handoff 조회·집계 CLI
-- `packages/cli/src/commands/def.test.ts` — bounded 정상/blocked contract 검증
+- `packages/cli/src/commands/def.context.test.ts` — bounded 정상/blocked contract 검증
 
 ## Release checklist ^validation
 

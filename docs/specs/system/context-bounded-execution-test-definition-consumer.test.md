@@ -14,6 +14,11 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/cli/src/commands/def.context.test.ts
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts:buildBoundedDefinitionContext
+  - packages/cli/src/commands/def.ts:cmdContext
+  - packages/context-runtime/src/discovery.ts:createDiscoveryTaskDecomposition
 ---
 # Context-Bounded Execution — Definition consumer 검증
 
@@ -38,7 +43,7 @@ test_units:
         then.invariants.default_context_output_unchanged,
         then.invariants.manifest_excludes_fact_values,
       ]
-    test_file: packages/cli/src/commands/def.test.ts
+    test_file: packages/cli/src/commands/def.context.test.ts
 
   - id: TU-docs-control-plane-bounded-definition-context-blocked
     contract: docs-control-plane.definition-context.bounded-blocked.v1
@@ -51,7 +56,7 @@ test_units:
         then.invariants.working_reserve_preserved,
         then.invariants.no_manifest_for_blocked_context,
       ]
-    test_file: packages/cli/src/commands/def.test.ts
+    test_file: packages/cli/src/commands/def.context.test.ts
 
   - id: TU-docs-control-plane-bounded-definition-context-decomposition
     contract: docs-control-plane.definition-context.decomposition.v1
@@ -62,7 +67,7 @@ test_units:
         then.returns.discovery.decomposition.children,
         then.invariants.child_route_keys_are_explicit,
       ]
-    test_file: packages/cli/src/commands/def.test.ts
+    test_file: packages/cli/src/commands/def.context.test.ts
 implementation_units:
   - id: IU-docs-control-plane-bounded-definition-context
     contract: docs-control-plane.definition-context.bounded-consumer.v1

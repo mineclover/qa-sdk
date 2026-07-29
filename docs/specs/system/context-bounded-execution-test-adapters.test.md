@@ -14,6 +14,12 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/context-runtime/src/adapters.test.ts
+  - packages/context-runtime/src/adapters.ts:createDefinitionGraphDiscoveryAdapter
+  - packages/context-runtime/src/adapters.ts:createFederatedResolutionAdapter
+  - packages/context-runtime/src/adapters.ts:createDecisionHintAdapter
+  - packages/context-runtime/src/adapters.ts:mapContextObservation
 ---
 # Context-Bounded Execution — Adapter·Observation 검증
 

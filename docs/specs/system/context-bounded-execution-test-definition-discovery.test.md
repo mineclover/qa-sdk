@@ -14,6 +14,13 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/cli/src/lib/context-runtime/definition-document-context.test.ts
+  - packages/definition-data-source/src/factory.test.ts
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts:buildBoundedDefinitionContext
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts:createDefinitionGraphDiscoveryCandidates
+  - packages/definition-data-source/src/factory.ts:createDataSource
+  - packages/definition-data-source/src/server-data-source.ts:ServerDataSource
 ---
 # Context-Bounded Execution — Definition discovery 검증
 

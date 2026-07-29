@@ -14,6 +14,10 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.test.ts
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts:createProviderUsageAdapter
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts:createProviderTokenCounter
 ---
 # Context-Bounded Execution — Provider usage 검증
 

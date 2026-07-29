@@ -14,6 +14,9 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/context-runtime/src/adapters.ts
+  - packages/context-runtime/src/adapters.test.ts
 ---
 # Context-Bounded Execution — Adapter·Observation 계약
 

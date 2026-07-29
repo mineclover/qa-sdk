@@ -14,6 +14,12 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/cli/src/lib/context-runtime/definition-document-context.test.ts
+  - packages/cli/src/commands/def.context.test.ts
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts:createRequiredFacts
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts:buildBoundedDefinitionContext
+  - packages/cli/src/commands/def.ts:readInitialUsageSummary
 ---
 # Context-Bounded Execution — Definition working 검증
 
@@ -81,7 +87,7 @@ test_units:
         then.returns.discovery.status,
         then.invariants.usage_summary_is_validated_by_runtime_ledger,
       ]
-    test_file: packages/cli/src/commands/def.test.ts
+    test_file: packages/cli/src/commands/def.context.test.ts
 implementation_units:
   - id: IU-docs-control-plane-bounded-context-minimum-working-facts
     contract: docs-control-plane.definition-context.minimum-working-facts.v1

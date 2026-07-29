@@ -14,6 +14,9 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/event-catalog/src/registry.ts
+  - packages/context-runtime/src/adapters.ts
 ---
 # Context-Bounded Execution — Observation vocabulary 계약
 

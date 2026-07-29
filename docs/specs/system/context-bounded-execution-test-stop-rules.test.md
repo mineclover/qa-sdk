@@ -16,6 +16,13 @@ def:
       type: refines
     - target: context-bounded-execution-cases-stop-rules
       type: traces_to
+sources:
+  - packages/context-runtime/src/stop-rules.test.ts
+  - packages/context-runtime/src/working-context.test.ts
+  - packages/context-runtime/src/stop-rules.ts:validateStopPolicy
+  - packages/context-runtime/src/stop-rules.ts:evaluateStopDecision
+  - packages/context-runtime/src/discovery.ts:planDiscovery
+  - packages/context-runtime/src/working-context.ts:compileWorkingContext
 ---
 # Context-Bounded Execution — Stop Rules 검증
 

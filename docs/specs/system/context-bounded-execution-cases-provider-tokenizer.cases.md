@@ -16,6 +16,9 @@ def:
       type: refines
     - target: provider-tokenizer-openai-gpt-4o
       type: traces_to
+sources:
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.test.ts
 ---
 # Context-Bounded Execution — 외부 tokenizer 계약
 

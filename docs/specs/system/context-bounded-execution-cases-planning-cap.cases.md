@@ -14,6 +14,10 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/context-runtime/src/discovery.ts
+  - packages/context-runtime/src/working-context.ts
+  - packages/context-runtime/src/handoff.ts
 ---
 # Context-Bounded Execution — Cap·Working closure 계약
 

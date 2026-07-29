@@ -14,6 +14,10 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/context-runtime/src/usage.ts
+  - packages/context-runtime/src/discovery.ts
+  - packages/context-runtime/src/adapters.ts
 ---
 # Context-Bounded Execution — Usage 계약
 

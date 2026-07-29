@@ -14,6 +14,14 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/context-runtime/src/working-context.test.ts
+  - packages/context-runtime/src/discovery.test.ts
+  - packages/context-runtime/src/manifest.test.ts
+  - packages/context-runtime/src/working-context.ts:assertWorkingContext
+  - packages/context-runtime/src/discovery.ts:planDiscovery
+  - packages/context-runtime/src/working-context.ts:compileWorkingContext
+  - packages/context-runtime/src/handoff.ts:createContextManifest
 ---
 # Context-Bounded Execution — Cap·Working closure 검증
 

@@ -59,7 +59,7 @@ sources:
   - packages/context-runtime/src/closure.test.ts
   - packages/context-runtime/src/boundary.test.ts
   - packages/context-runtime/src/usage.test.ts
-  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/commands/def.context.test.ts
   - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts
   - packages/cli/src/lib/context-runtime/provider-usage-adapters.test.ts
   - packages/cli/src/lib/context-runtime/definition-document-context.test.ts
@@ -109,7 +109,7 @@ qa-sdk docs bdd validate context-bounded-execution-cases --family-onlyëŠ” casesì
 - packages/context-runtime/src/closure.test.ts
 - packages/context-runtime/src/boundary.test.ts
 - packages/context-runtime/src/usage.test.ts
-- packages/cli/src/commands/def.test.ts
+- packages/cli/src/commands/def.context.test.ts
 - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts
 - packages/cli/src/lib/context-runtime/provider-usage-adapters.test.ts
 - packages/cli/src/lib/context-runtime/definition-document-context.test.ts

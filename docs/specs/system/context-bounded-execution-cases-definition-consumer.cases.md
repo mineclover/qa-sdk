@@ -14,6 +14,9 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/cli/src/commands/def/context-handoff.ts
+  - packages/cli/src/commands/def.context.test.ts
 ---
 # Context-Bounded Execution — Definition consumer 계약
 

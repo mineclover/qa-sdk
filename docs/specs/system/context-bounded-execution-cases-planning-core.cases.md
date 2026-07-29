@@ -14,6 +14,9 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/context-runtime/src/discovery.ts
+  - packages/context-runtime/src/working-context.ts
 ---
 # Context-Bounded Execution — 예산·Route 계약
 

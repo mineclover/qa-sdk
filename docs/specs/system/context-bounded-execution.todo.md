@@ -179,19 +179,19 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 - `corepack pnpm --filter context-runtime test` — 65 tests 통과
 - `corepack pnpm --filter context-runtime build` — ESM/CJS/DTS build 통과
 - `corepack pnpm --filter @qa-sdk/cli typecheck` — 통과
-- `corepack pnpm --filter @qa-sdk/cli exec vitest run src/lib/context-runtime/definition-document-context.test.ts src/commands/def.test.ts` — 52 tests 통과
+- `corepack pnpm --filter @qa-sdk/cli exec vitest run src/lib/context-runtime/definition-document-context.test.ts src/commands/def.context.test.ts` — 26 tests 통과
 - `corepack pnpm --filter event-catalog test` — 58 tests 통과
 - `corepack pnpm --filter event-catalog typecheck` — 통과
 - `corepack pnpm --filter dkg test` — 126 tests 통과
 - `corepack pnpm --filter dkg-enrichment test` — 27 tests 통과
-- `corepack pnpm --filter @qa-sdk/cli exec vitest run src/commands/def.test.ts` — 39 tests 통과
+- `corepack pnpm --filter @qa-sdk/cli exec vitest run src/commands/def.context.test.ts` — 13 tests 통과
 - `corepack pnpm --filter @qa-sdk/cli exec vitest run src/lib/context-runtime/definition-document-context.test.ts` — 13 tests 통과
 - `corepack pnpm --filter @qa-sdk/cli exec vitest run src/lib/context-runtime/task-handoff-store.test.ts` — 3 tests 통과
 - `corepack pnpm --filter @qa-sdk/cli exec vitest run src/lib/context-runtime/provider-usage-adapters.test.ts` — 17 tests 통과
 - `corepack pnpm --filter @qa-sdk/provider-tokenizer-openai build` — ESM build diagnostics 0건
 - `corepack pnpm --filter @qa-sdk/provider-tokenizer-openai typecheck` — 통과
 - `corepack pnpm --filter @qa-sdk/provider-tokenizer-openai test` — 3 tests 통과
-- `corepack pnpm --filter @qa-sdk/cli exec vitest run src/commands/def.test.ts src/lib/context-runtime/definition-document-context.test.ts src/lib/context-runtime/task-handoff-store.test.ts src/lib/context-runtime/provider-usage-adapters.test.ts` — 72 tests 통과
+- `corepack pnpm --filter @qa-sdk/cli exec vitest run src/commands/def.context.test.ts src/lib/context-runtime/definition-document-context.test.ts src/lib/context-runtime/task-handoff-store.test.ts src/lib/context-runtime/provider-usage-adapters.test.ts` — 46 tests 통과
 - `corepack pnpm --filter @qa-sdk/cli test` — 64 test files 통과, 663 tests 통과, 2 skipped
 - `corepack pnpm --filter definition-catalog test` — 47 test files 통과, 661 tests 통과
 - `node packages/cli/dist/index.js docs bdd validate context-bounded-execution-cases --family-only --json` — issues 0건

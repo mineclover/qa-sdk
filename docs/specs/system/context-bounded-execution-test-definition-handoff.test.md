@@ -14,6 +14,15 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/cli/src/commands/def.context.test.ts
+  - packages/cli/src/lib/context-runtime/definition-document-context.test.ts
+  - packages/cli/src/lib/context-runtime/task-handoff-store.ts:JsonTaskHandoffStore
+  - packages/cli/src/commands/def.ts:cmdHandoff
+  - packages/cli/src/commands/def.ts:cmdHandoffAggregate
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts:executeDefinitionTaskDecomposition
+  - packages/cli/src/lib/context-runtime/definition-document-context.ts:executeDefinitionTaskDecompositionWithDiscovery
+  - packages/cli/src/commands/def.ts:persistDefinitionTaskHandoff
 ---
 # Context-Bounded Execution — Definition handoff 검증
 
@@ -35,7 +44,7 @@ test_units:
         then.invariants.child_revision_ambiguity_fails_closed,
         then.invariants.parent_child_keys_are_persisted,
       ]
-    test_file: packages/cli/src/commands/def.test.ts
+      test_file: packages/cli/src/commands/def.context.test.ts
 
   - id: TU-docs-control-plane-handoff-execution
     contract: docs-control-plane.definition-context.handoff-execution.v1
@@ -72,7 +81,7 @@ test_units:
         then.invariants.discovery_refs_never_become_facts,
         then.invariants.discovery_child_keys_are_not_parent_handoff_keys,
       ]
-    test_file: packages/cli/src/commands/def.test.ts
+      test_file: packages/cli/src/commands/def.context.test.ts
 
   - id: TU-docs-control-plane-bounded-definition-context-handoff-persistence
     contract: docs-control-plane.definition-context.handoff-persistence.v1
@@ -84,7 +93,7 @@ test_units:
         then.invariants.result_revision_is_explicit,
         then.invariants.handoff_excludes_fact_values,
       ]
-    test_file: packages/cli/src/commands/def.test.ts
+      test_file: packages/cli/src/commands/def.context.test.ts
 implementation_units:
   - id: IU-docs-control-plane-task-handoff-store
     contract: docs-control-plane.definition-context.handoff-persistence.v1

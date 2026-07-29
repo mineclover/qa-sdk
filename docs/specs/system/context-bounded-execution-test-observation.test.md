@@ -14,6 +14,9 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/event-catalog/src/index.test.ts
+  - packages/event-catalog/src/categories/infrastructure.ts:infrastructureEvents
 ---
 # Context-Bounded Execution — Observation vocabulary 검증
 

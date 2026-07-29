@@ -14,6 +14,15 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/context-runtime/src/budget.test.ts
+  - packages/context-runtime/src/routes.test.ts
+  - packages/context-runtime/src/discovery.test.ts
+  - packages/context-runtime/src/working-context.test.ts
+  - packages/context-runtime/src/budget.ts
+  - packages/context-runtime/src/routes.ts:freezeRouteSelection
+  - packages/context-runtime/src/discovery.ts:planDiscovery
+  - packages/context-runtime/src/working-context.ts:compileWorkingContext
 ---
 # Context-Bounded Execution — 예산·Route 검증
 

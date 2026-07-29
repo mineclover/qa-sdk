@@ -14,6 +14,10 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/context-runtime/src/handoff.ts
+  - packages/context-runtime/src/decomposition.ts
+  - packages/cli/src/lib/context-runtime/task-handoff-store.ts
 ---
 # Context-Bounded Execution — Decomposition·Handoff 계약
 

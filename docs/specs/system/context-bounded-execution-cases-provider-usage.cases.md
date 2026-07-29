@@ -14,6 +14,9 @@ def:
   links:
     - target: context-bounded-execution-cases
       type: refines
+sources:
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts
+  - packages/context-runtime/src/usage.ts
 ---
 # Context-Bounded Execution — Provider usage 계약
 

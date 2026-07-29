@@ -14,6 +14,13 @@ def:
   links:
     - target: context-bounded-execution-test
       type: refines
+sources:
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.test.ts
+  - packages/provider-tokenizer-openai/src/index.test.ts
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts:loadProviderTokenCounter
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts:unwrapProviderTokenCounterModule
+  - packages/cli/src/lib/context-runtime/provider-usage-adapters.ts:loadProviderTokenCounterFromRegistry
+  - packages/provider-tokenizer-openai/src/index.ts:providerTokenCounter
 ---
 # Context-Bounded Execution — 외부 tokenizer 검증
 
