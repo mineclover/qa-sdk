@@ -1,5 +1,9 @@
 # Feedback Register
 
+## 목적 ^purpose
+
+검토·운영·사용 중 발견한 피드백을 intake부터 triage, 후속 spec 승격까지 추적하는 운영 index다.
+
 검토·운영·사용 중 발견한 피드백을 한 곳에서 intake와 triage로 관리한다. 이 폴더는
 구현 또는 계약의 SSOT가 아니다. 승인된 변경의 설계·행동 계약은 `docs/specs/`와
 코드·테스트로 승격한다.

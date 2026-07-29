@@ -43,6 +43,10 @@ sources:
 
 # STC Tiers
 
+## 목적 ^purpose
+
+이 문서는 STC Tiers에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 STC(`Semantic Topological Coordinate`)의 `tier` 축은 **4가지 값**을 가진다 — 데이터·인스턴스·기능·배치의 구조적 분리. 각 tier는 독립 문서로 정의되며, 한 문서가 해당하는 tier는 frontmatter `tier` 필드로 선언한다.
 
 > **Pivot 후 구조 (D-17)**: 이전에 5 tier(Component/Entry/FSM/System/Layout)였으나 FSM은 Pivot으로 제거됨. 상태 전이/원자 경계 등은 meta-semantic(`docs/specs/meta-semantic/`)에 위임. System이 상태 관리 시 [rules/state-machine-delegation.md](../rules/state-machine-delegation.md) 참조.

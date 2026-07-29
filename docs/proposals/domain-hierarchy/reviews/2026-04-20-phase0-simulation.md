@@ -21,6 +21,10 @@ role: review
 
 # Phase 0 Simulation — domain_root 파생 효과 측정
 
+## 목적 ^purpose
+
+이 문서는 Phase 0 Simulation — domain_root 파생 효과 측정에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 방법론
 
 1. **데이터 소스**: `/Users/junwoobang/workflow/qa-sdk/data/definition-service.sqlite`

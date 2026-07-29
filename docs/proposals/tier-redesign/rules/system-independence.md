@@ -34,6 +34,10 @@ sources:
 
 # System 독립성 + meta-semantic 상태 위임 + Inline 정의 금지
 
+## 목적 ^purpose
+
+이 문서는 System 독립성 + meta-semantic 상태 위임 + Inline 정의 금지에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 세 가지 규칙이 STC의 구조적 무결성을 보장한다.
 
 ## 규칙 1 — System 독립성

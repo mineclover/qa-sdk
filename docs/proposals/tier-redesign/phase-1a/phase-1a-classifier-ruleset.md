@@ -23,6 +23,10 @@ superseded_by: -
 
 # Phase 1.A — 자동 분류 룰 초안 (`def tier classify`)
 
+## 목적 ^purpose
+
+이 문서는 Phase 1.A — 자동 분류 룰 초안 (def tier classify)에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > **의존**: [phase-1a-depth-usage-report](./phase-1a-depth-usage-report.md) · [phase-1a-layout-contains-report](./phase-1a-layout-contains-report.md) · [phase-1a-meta-operational-policy](./phase-1a-meta-operational-policy.md)
 
 ## 요약

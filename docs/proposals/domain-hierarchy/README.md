@@ -39,6 +39,10 @@ sources:
 
 # Domain Hierarchy — 시스템의 도메인 소속 및 좌표 구별
 
+## 목적 ^purpose
+
+이 문서는 Domain Hierarchy — 시스템의 도메인 소속 및 좌표 구별에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 배경
 
 현재 `def validate`가 `duplicate-coordinate` 경고 30건을 보고한다. 분석 결과:

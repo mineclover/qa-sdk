@@ -33,6 +33,10 @@ sources:
 
 # STC Tier — Layout (ECS 외 확장 축)
 
+## 목적 ^purpose
+
+이 문서는 STC Tier — Layout (ECS 외 확장 축)에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > **⚠️ ECS 정석 외 확장**: Layout은 ECS 원전 3축(Entity/Component/System)에 **없는 확장 개념**이다. 문서 조직 단위로서 "어떤 System들이 함께 이 도메인을 구성하는가"를 서술하기 위해 STC가 추가한 4번째 tier. 일부 ECS 프레임워크의 **archetype / scene / world** 개념과 유사한 위치. 변형 근거: [../mental-models.md § ECS 정석 vs STC 적응](../mental-models.md).
 
 ## 핵심 원칙 (§1.3)

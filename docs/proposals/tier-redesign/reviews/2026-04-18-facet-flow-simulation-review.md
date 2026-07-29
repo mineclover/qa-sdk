@@ -38,6 +38,10 @@ sources:
 
 # Data Facet + Flow + Simulation 체계 리뷰
 
+## 목적 ^purpose
+
+이 문서는 Data Facet + Flow + Simulation 체계 리뷰에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > 리뷰 대상: `docs/specs/meta-semantic/` 전체 체계 (9개 원자 개념 + pipe-impl 22+ leaf)
 > 비교 대상: `docs/proposals/tier-redesign/` (STC: Component/Entry/FSM/System/Layout)
 > 목적: STC 제안이 기존 meta-semantic 설계와 어떻게 관계하는지, 흡수/충돌/보완 구조를 파악

@@ -51,6 +51,10 @@ sources:
 
 # STC — Semantic Topological Coordinate 제안
 
+## 목적 ^purpose
+
+이 문서는 STC — Semantic Topological Coordinate 제안에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > **Status**: `under-review` · **Started**: 2026-04-18 · **Promoted**: 2026-04-19 · **Reviewer**: subagent review 1~6차 (독립 에이전트 피드백 루프)
 
 ## 제안 요약

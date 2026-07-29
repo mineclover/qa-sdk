@@ -21,6 +21,10 @@ role: review
 
 # Sub-document Rollup Simulation — 4 파생 전략 비교
 
+## 목적 ^purpose
+
+이 문서는 Sub-document Rollup Simulation — 4 파생 전략 비교에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## §1 문제 정의
 
 [`service-todo-review`](./2026-04-21-service-todo-review.md) §5.2 에서 확인된 현상:

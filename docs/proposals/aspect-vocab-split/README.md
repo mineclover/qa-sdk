@@ -35,6 +35,10 @@ sources:
 
 # Aspect Vocabulary Split — Class D dup-coord 해소 RFC
 
+## 목적 ^purpose
+
+이 문서는 Aspect Vocabulary Split — Class D dup-coord 해소 RFC에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 배경
 
 Phase 5d/5e 완료 시점(2026-04-20) 검증 상태: `errors=0`, `warnings=73`, `duplicate-coordinate=17`. 남은 17 그룹의 분포는 다음과 같다.

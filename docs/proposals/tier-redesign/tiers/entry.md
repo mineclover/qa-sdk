@@ -32,6 +32,10 @@ sources:
 
 # STC Tier — Entry (ECS Entity 적응)
 
+## 목적 ^purpose
+
+이 문서는 STC Tier — Entry (ECS Entity 적응)에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 정의
 
 **고유 ID가 여러 Component를 aggregates하는 canonical 식별자 문서.** ECS 정석의 Entity(= ID + Component 참조 집합) 모델을 따른다 — Component의 "instance"나 "projection"이 아니라, **어떤 Component들을 조합해 단일 ID 뒤에 묶는지 선언**한다.

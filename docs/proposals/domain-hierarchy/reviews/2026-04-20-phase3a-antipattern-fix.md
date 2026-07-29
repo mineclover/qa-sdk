@@ -26,6 +26,10 @@ role: review
 
 # Phase 3a — 부모→자식 `depends_on` 안티패턴 교정 시도 (BLOCKED)
 
+## 목적 ^purpose
+
+이 문서는 Phase 3a — 부모→자식 depends_on 안티패턴 교정 시도 (BLOCKED)에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 요약
 
 Phase 3 리포트가 지정한 교정안 — **14개 `*-system` 부모 문서의 자식 대상 `type: depends_on`을 `type: contains`로 치환** — 을 전량 적용해보고 전량 revert했다.

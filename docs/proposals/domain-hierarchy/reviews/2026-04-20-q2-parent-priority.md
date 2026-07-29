@@ -25,6 +25,10 @@ role: review
 
 # Domain Hierarchy — Open Question 2: Parent Link Priority
 
+## 목적 ^purpose
+
+이 문서는 Domain Hierarchy — Open Question 2: Parent Link Priority에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 **Question**: When a doc has BOTH `depends_on` and `refines` parents pointing to system/layout tiers, which should `deriveDomainRoot()` prioritize?
 
 ---

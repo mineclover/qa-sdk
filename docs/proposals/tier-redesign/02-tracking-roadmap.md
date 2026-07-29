@@ -34,6 +34,10 @@ sources:
 
 # 로드맵: 이중 평면 거버넌스 및 추적 자동화
 
+## 목적 ^purpose
+
+이 문서는 로드맵: 이중 평면 거버넌스 및 추적 자동화에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > 근거: [taxonomy-catalog.spec.md](./integration/taxonomy-catalog.spec.md) Section 4, 5.
 > 설계자의 **주권적 의도(Intent)**와 코드의 **실증적 사실(Execution)**을 분리하고, 그 사이의 괴리를 자동 감지하여 시스템의 정합성을 증명한다.
 

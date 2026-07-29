@@ -34,6 +34,10 @@ sources:
 
 # STC Tier — Component (데이터 진입점)
 
+## 목적 ^purpose
+
+이 문서는 STC Tier — Component (데이터 진입점)에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 정의
 
 Component tier는 **모든 데이터 개념의 STC-level 진입점** (D-18). 데이터의 shape/role/schema/enum/상수가 여기로 들어온다. 내부적으로 **sub-type taxonomy**로 세분화되어 관리되며, meta-semantic이 다루는 Data 개념(Data IR, 5 facet 역할 등)은 Component sub-type 중 하나로 매핑된다.

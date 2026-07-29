@@ -31,6 +31,10 @@ sources:
 
 # BDD Contract System — AI-DLC 행동 계약 체계
 
+## 목적 ^purpose
+
+이 문서는 BDD Contract System — AI-DLC 행동 계약 체계에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 배경
 
 BDD는 DSPy harness의 하위 기능이 아니라 AI-DLC의 상위 행동 계약 체계다. `Given / When / Then`은 사람이 읽는 형식이면서 동시에 `BddContract`, `BddTestUnit`, `BddImplementationUnit`, `ScenarioSpec`, `PipeGraph`로 이어지는 결정론적 계약이다.

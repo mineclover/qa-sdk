@@ -39,7 +39,7 @@ sources:
 
 # State Machine Delegation — 상태 관리는 meta-semantic에 위임
 
-## 목적
+## 목적 ^purpose
 
 STC는 문서 **분류 축**을 제공한다. 상태 전이/원자 경계/이벤트 흐름 같은 **실행 체계**는 이미 존재하는 meta-semantic(`docs/specs/meta-semantic/`)에 소유된다. 따라서 System tier 문서가 상태 관리를 다룰 때는 **meta-semantic을 참조**하는 형태로 표현한다.
 

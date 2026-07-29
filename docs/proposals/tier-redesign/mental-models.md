@@ -42,7 +42,7 @@ sources:
 
 # STC Mental Models — Taxonomy 기반 읽기 지도
 
-## 목적
+## 목적 ^purpose
 
 STC 제안은 **3가지 mental model**의 교차로 읽을 수 있다. 모델은 모두 **taxonomy 형식**으로 정의되며 (qa-sdk 컨벤션 준수), 각자 직교적이다. **관점(perspective)**은 이 taxonomy들을 어떻게 조회하느냐의 질의 패턴.
 

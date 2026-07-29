@@ -22,6 +22,10 @@ superseded_by: -
 
 # Taxonomy Catalog — 문서 분류 텍소노미 및 상위 개념 명세
 
+## 목적 ^purpose
+
+이 문서는 Taxonomy Catalog — 문서 분류 텍소노미 및 상위 개념 명세에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > 근거: [integration/system-linkage-map.md](./system-linkage-map.md) P0-1 과제. 
 > 모든 분류 축(Axis)과 값(Entry)을 단일 진입점으로 관리하여 설계의 원자성을 보장한다.
 

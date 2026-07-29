@@ -37,6 +37,10 @@ sources:
 
 # Phase 1.A — Layout-like `contains` 전환 대상 조사
 
+## 목적 ^purpose
+
+이 문서는 Phase 1.A — Layout-like contains 전환 대상 조사에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 요약
 
 2026-04-18 전수조사 당시 codebase의 **995개 contains 엣지** 중 **117개(12%)는 System-contains-System 위반**(module→module), **9개 group 문서는 Layout-like 패턴**(여러 module을 조직)을 보였다. 전환 규모: 위반 정정(depends_on 변경) 117건 + Layout 패턴 정규화 9건. Phase 2 자동화 규칙은 scope 기반 필터링으로 충분할 것으로 예상했다.

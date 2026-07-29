@@ -50,6 +50,10 @@ sources:
 
 # STC Pilot Examples
 
+## 목적 ^purpose
+
+이 문서는 STC Pilot Examples에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 STC tier 패턴을 실제 문서로 적용한 Pilot 초안들. Phase 3 Pilot 검증 전에 작성되어 schema 실효성을 사전 점검.
 
 본 디렉토리는 `docs/proposals/tier-redesign/` 격리 영역 — **`def sync` / `def validate` 스캔 대상 아님** (상위 [proposals README](../README.md) 규칙 상속). 따라서 가상 참조(`depends_on: notification-system` 등, 실존 target 없음)가 **broken-link error로 잡히지 않음**. tier 필드 공식 지원 전까지 격리 유지.

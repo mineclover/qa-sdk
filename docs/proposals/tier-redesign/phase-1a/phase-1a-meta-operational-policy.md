@@ -34,6 +34,10 @@ sources:
 
 # Phase 1.A — Meta-operational 문서 정책 조사
 
+## 목적 ^purpose
+
+이 문서는 Phase 1.A — Meta-operational 문서 정책 조사에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > 근거: 독립 에이전트 전수 조사 (2026-04-18). specs/ 바깥 경계 문서 116개 분류.
 
 ## 요약

@@ -19,6 +19,10 @@ role: review
 
 # Phase 0c — `owner_system` 1차 휴리스틱 시뮬레이션
 
+## 목적 ^purpose
+
+이 문서는 Phase 0c — owner_system 1차 휴리스틱 시뮬레이션에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 Phase 0([2026-04-20-phase0-simulation.md](./2026-04-20-phase0-simulation.md))와 Phase 0b([2026-04-20-phase0b-q2-resim.md](./2026-04-20-phase0b-q2-resim.md))는 동일한 17/10/3 분포를 냈지만 두 시뮬레이션 모두 `definition-catalog-spec`가 86–90건을 단일 root로 흡수하는 과도 수렴 문제를 남겼다.
 
 Phase 0b의 권고는 **Option B = Q2 규칙 + 추가 휴리스틱**이었다. 본 Phase 0c는 그 추가 휴리스틱 후보 중 2번 — **`owner_system`을 1차 소스로 승격**하고 링크 체인은 fallback으로 사용하는 안 — 을 시뮬레이션한다.

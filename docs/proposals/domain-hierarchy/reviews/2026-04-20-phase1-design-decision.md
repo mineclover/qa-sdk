@@ -28,6 +28,10 @@ superseded_by: -
 
 # Phase 1 설계 결정 — 시뮬레이션 통합 결론
 
+## 목적 ^purpose
+
+이 문서는 Phase 1 설계 결정 — 시뮬레이션 통합 결론에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 맥락
 
 Phase 0/0b/0c 세 차례 시뮬레이션으로 `deriveDomainRoot` 파생 알고리즘을 측정했다. 모든 케이스에서 duplicate-coordinate 그룹 축소는 **동일한 17/10/3 (resolved/partial/unchanged) 분포**에 수렴했다. 차이가 드러난 지표는 top-root 흡수량이었다.

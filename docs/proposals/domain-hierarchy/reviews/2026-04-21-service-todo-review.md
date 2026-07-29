@@ -21,6 +21,10 @@ role: review
 
 # Service TODO/Plan Inventory — 서비스별 백로그 상태 리뷰
 
+## 목적 ^purpose
+
+이 문서는 Service TODO/Plan Inventory — 서비스별 백로그 상태 리뷰에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## §1 Executive Summary
 
 레지스트리된 1,248개 문서 중 `*.todo.md` / `*.plan.md` 확장자를 가진 문서는 총 **38건**이다. 내역은 다음과 같다.

@@ -35,6 +35,10 @@ sources:
 
 # STC Tier — System
 
+## 목적 ^purpose
+
+이 문서는 STC Tier — System에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 핵심 원칙 (§1.2)
 
 **System은 독립적이다.** System은 다른 System에 포함(`contains`)되지 않는다. System 간 관계는 다음만 허용:

@@ -140,6 +140,7 @@ function classifyDoc(path) {
   const relativePath = repoPath(path);
   const isArchivedDoc = relativePath.startsWith('docs/archive/');
   const isProposalIndexDoc = relativePath === 'docs/proposals/README.md';
+  const isFeedbackIndexDoc = relativePath === 'docs/feedback/README.md';
   const isTemplateDoc = relativePath.startsWith('docs/proposals/_template/');
   const isDecisionSkeleton =
     relativePath.startsWith('docs/decisions/') &&
@@ -184,6 +185,11 @@ function classifyDoc(path) {
   if (isProposalIndexDoc) {
     verdict = 'keep';
     reasons.push('proposal index');
+  }
+
+  if (isFeedbackIndexDoc) {
+    verdict = 'keep';
+    reasons.push('feedback index');
   }
 
   if (isTemplateDoc) {
@@ -238,6 +244,7 @@ function classifyDoc(path) {
     tier: frontmatter.tier || '-',
     isArchivedDoc,
     isProposalIndexDoc,
+    isFeedbackIndexDoc,
     isTemplateDoc,
     isDecisionSkeleton,
     isPlanningNote,
@@ -503,6 +510,7 @@ function renderMarkdown() {
 function docScope(item) {
   if (item.isArchivedDoc) return 'archive';
   if (item.isProposalIndexDoc) return 'proposal-index';
+  if (item.isFeedbackIndexDoc) return 'feedback-index';
   if (item.isTemplateDoc) return 'template';
   if (item.isDecisionSkeleton) return 'decision-draft';
   if (item.isPlanningNote) return 'plan-note';

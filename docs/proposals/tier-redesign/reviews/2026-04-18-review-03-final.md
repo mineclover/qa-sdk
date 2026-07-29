@@ -23,6 +23,10 @@ superseded_by: -
 
 # STC Proposal — 3차 최종 리뷰 (D-17 Pivot 전)
 
+## 목적 ^purpose
+
+이 문서는 STC Proposal — 3차 최종 리뷰 (D-17 Pivot 전)에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > **⚠️ D-17 Pivot으로 무효화된 리뷰**: 본 리뷰는 D-16 Hybrid absorb를 전제로 한 검증이었음. 이후 사용자가 Pivot 방향을 택해 FSM tier 자체가 제거됨. 본 리뷰의 D-16 관련 검증 항목은 현재 proposal 상태와 일치하지 않음.
 
 ## 요약 (Executive Summary)

@@ -23,6 +23,10 @@ superseded_by: -
 
 # Classification — level → tier 전환 기준 + 판단 우선순위
 
+## 목적 ^purpose
+
+이 문서는 Classification — level → tier 전환 기준 + 판단 우선순위에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 최상위 분류 (Top-Level Taxonomy): Design vs Knowledge (D-19)
 
 모든 `definition-catalog` 문서는 `type` 필드를 통해 두 도메인 중 하나에 소속된다. 이는 문서의 본질을 결정하는 최상위 마스터 스위치다.

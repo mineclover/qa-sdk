@@ -18,6 +18,10 @@ superseded_by: -
 
 # AI-DLC DSPy Harness — 시스템 단위 프롬프트 최적화 하네스
 
+## 목적 ^purpose
+
+이 문서는 AI-DLC DSPy Harness — 시스템 단위 프롬프트 최적화 하네스에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 ## 배경
 
 AI-DLC 전환에서 [BDD Contract System](../bdd-contract-system/) / Scenario / Pipe 명세를 SSOT로 쓰려면 AI 출력 최적화 도구가 명세 체계를 흔들면 안 된다. DSPy는 유용하지만, 문서 검증이나 meta-semantic 실행 의미론에 직접 섞이면 제거가 어려워지고 결정론적 검증 경계가 흐려진다.

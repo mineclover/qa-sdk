@@ -39,6 +39,10 @@ sources:
 
 # STC Proposal — 4차 리뷰 (D-17 Pivot 검증)
 
+## 목적 ^purpose
+
+이 문서는 STC Proposal — 4차 리뷰 (D-17 Pivot 검증)에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 > **현재 상태 메모**: 이 문서는 D-17 Pivot 적용 중 발견된 blocker를 남긴 historical review다.
 > 이후 `tiers/`, `rules/`, `examples/`, `mental-models` 문서가 FSM tier 제거와 current
 > deterministic-label stateless projection 경계에 맞춰 정리되었다. 본문 아래의 파일/라인 지적은 당시

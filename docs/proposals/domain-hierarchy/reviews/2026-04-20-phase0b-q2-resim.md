@@ -21,6 +21,10 @@ role: review
 
 # Phase 0b — Q2 규칙(`refines > depends_on`) 재시뮬레이션
 
+## 목적 ^purpose
+
+이 문서는 Phase 0b — Q2 규칙(refines > depends_on) 재시뮬레이션에 대한 제안·검토 기록을 보존하고, 관련 설계 판단과 후속 작업의 근거를 제공한다.
+
 Phase 0 시뮬레이션([2026-04-20-phase0-simulation.md](./2026-04-20-phase0-simulation.md))은 `selectPrimaryParent` 규칙 2로 **`depends_on > refines`**를 적용했고, GO 판정(17/30 완전 해소)을 받되 **`definition-catalog-spec`가 90건을 단일 root로 흡수**하는 과잉 수렴 문제를 남겼다.
 
 Q2 리뷰([2026-04-20-q2-parent-priority.md](./2026-04-20-q2-parent-priority.md))는 그 반대인 **`refines > depends_on`**(Option B)을 권고한다. 본 Phase 0b는 동일 DB/필터/방어코드에서 규칙 2만 뒤집어 재시뮬레이션하고, Phase 0 결과와 정량적으로 비교한다.
