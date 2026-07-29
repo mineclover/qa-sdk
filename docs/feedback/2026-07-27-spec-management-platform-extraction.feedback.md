@@ -207,9 +207,12 @@ extension 또는 optional plugin으로 남긴다.
 - P4 1차 완료: `qa-spec-platform verify`를 QA profile의 공식 executable로 추가했고,
   `qa-sdk def platform-verify`는 parser/store를 import하지 않고 이 executable만 호출한다. local development는
   `--platform-bin=<qa-spec-platform.js>`로, 배포 뒤에는 published executable로 실행한다.
-- 실저장소 검증: QA workspace에서 **1,718 documents, 35,325 facts, error 0, warning 822**를 재현했다.
-  warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며, 새 platform 오류로
-  합산하지 않는다.
+- P4 2차 완료: `qa-spec-platform scan-audit`와 `code-link-gaps`를 같은 Evidence Snapshot 기반
+  query로 추가했다. `QA_SPEC_PLATFORM_BIN` 또는 `--platform-bin`을 지정한 legacy 명령이 이 query를
+  호출하며, 실제 qa-sdk에서 기존 code-link 수치(`1,869 / 1,781 / 88 / 95.3%`)를 재현했다.
+- 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
+  재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
+  새 platform 오류로 합산하지 않는다.
 - `qa-sdk def platform-verify --platform-bin=… --store=…`로 외부 adapter가 실제 snapshot을 저장하는
   end-to-end 경로를 확인했다. 기존 `qa-sdk def`의 SQLite/HTTP read model과 address/DKG bridge는 별도
   product capability이므로 아직 유지한다.
@@ -222,12 +225,13 @@ extension 또는 optional plugin으로 남긴다.
 | P1 neutral parser/runtime | 완료 | 독립 workspace test/typecheck 통과 |
 | P2 graph/code verifier + QA profile | 완료 | 실 qa-sdk 0 error collect/verify |
 | P3 store/client port | 완료 | immutable file store + storage-agnostic query client + QA adapter round-trip |
-| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify` external compatibility entrypoint 구현·회귀 통과 |
+| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint 구현·회귀 통과; 기본 legacy fallback은 유지 |
 
 ## 남은 선행 결정
 
 1. 기존 `qa-sdk def` 중 parser/evidence 기능인 `scan-audit`, `code-link-gaps`를 external snapshot의 query로
-   대체할 순서와 legacy 출력 호환 기간을 결정한다.
+   대체하는 호환 경로는 구현했다. 이제 published executable을 기본값으로 삼을 시점과 legacy fallback의
+   호환 기간을 결정한다.
 2. platform package의 publication/버전 정책을 정한 뒤 qa-sdk가 published executable을 기본 실행 경로로
    소비하게 한다.
 3. SQLite/Postgres/HTTP adapter를 어느 deployment에서 제공할지와 snapshot freshness 정책을 결정한다.

@@ -122,4 +122,4 @@ skill 파일은 내부 실행 정의 SSOT이고, 사용자는 위 명령 진입�
 
 - `def boundary`, `def boundary-context`, `def body`
   - 검증: `packages/cli/src/skills-workflows.test.ts`
-  - address 기반 boundary smoke: `packages/cli/src/commands/def.test.ts`
+  - address 기반 boundary smoke: `packages/cli/src/commands/def.read.test.ts`

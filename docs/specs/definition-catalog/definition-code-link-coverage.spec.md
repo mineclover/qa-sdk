@@ -42,6 +42,17 @@ qa-sdk def code-link-gaps --scope=packages/cli/src,packages/definition-service/s
 qa-sdk def code-link-gaps --scope=packages/work-domain/src --json --limit=20
 ```
 
+분리된 spec-management platform을 검증 대상으로 사용할 때는 같은 명령에 외부 executable을
+주입할 수 있다. 이 경로는 qa-sdk collector를 거치지 않고 플랫폼의 snapshot query를 사용한다.
+
+```bash
+QA_SPEC_PLATFORM_BIN=/path/to/qa-spec-platform \
+  qa-sdk def code-link-gaps --json --limit=20
+```
+
+`--platform-bin=<path>`는 환경변수보다 우선하며, 배포 후 기본 실행 경로 전환 전까지 legacy
+collector와의 출력 비교를 위한 compatibility mode로 유지한다.
+
 - `--scope`
   - 쉼표로 구분한 path prefix 목록. 없으면 전체 `packages/*/src`
 - `--strict`
@@ -62,5 +73,5 @@ qa-sdk def code-link-gaps --scope=packages/work-domain/src --json --limit=20
 
 - `packages/definition-catalog/src/code-references.ts`
 - `packages/cli/src/commands/def.ts`
-- `packages/cli/src/commands/def.test.ts`
+- `packages/cli/src/commands/def.quality.test.ts`
 - `packages/definition-catalog/src/code-references.test.ts`

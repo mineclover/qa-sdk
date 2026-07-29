@@ -16,7 +16,7 @@ def:
   tags: [structural, entry-point]
   sources:
     - packages/cli/src/commands/def.ts:cmdAuditDb
-    - packages/cli/src/commands/def.test.ts
+    - packages/cli/src/commands/def.quality.test.ts
   links:
     - target: system-concepts
       type: depends_on

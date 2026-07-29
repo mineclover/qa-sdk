@@ -25,7 +25,11 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/def.ts
-  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/commands/def.lifecycle.test.ts
+  - packages/cli/src/commands/def.quality.test.ts
+  - packages/cli/src/commands/def.state-verification.test.ts
+  - packages/cli/src/commands/def.read.test.ts
+  - packages/cli/src/commands/def.context.test.ts
   - packages/cli/src/commands/quality.ts
   - packages/cli/src/commands/quality.test.ts
   - packages/definition-catalog/src/scan-real.test.ts

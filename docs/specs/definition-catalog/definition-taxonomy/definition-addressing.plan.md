@@ -18,7 +18,7 @@ def:
     - packages/definition-catalog/src/registry.ts
     - packages/definition-catalog/src/frontmatter.ts
     - packages/cli/src/commands/def.ts
-    - packages/cli/src/commands/def.test.ts
+    - packages/cli/src/commands/def.read.test.ts
     - packages/cli/src/data-sources/local-data-source.ts
     - packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts
     - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts

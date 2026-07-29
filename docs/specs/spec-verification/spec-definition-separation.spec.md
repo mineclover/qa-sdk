@@ -35,7 +35,7 @@ sources:
   - packages/definition-catalog/src/data-source.ts
   - packages/definition-catalog/src/harness-derive.ts
   - packages/cli/src/commands/def.ts
-  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/commands/def.state-verification.test.ts
   - packages/cli/src/command-groups/def.commands.ts
   - packages/cli/src/lib/spec-definition-verification.ts
   - packages/cli/src/lib/spec-definition-verification.test.ts

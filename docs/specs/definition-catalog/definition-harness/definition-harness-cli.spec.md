@@ -20,59 +20,75 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/def.ts
-  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/commands/def.state-verification.test.ts
   - packages/definition-catalog/src/harness-derive.ts
   - packages/definition-catalog/src/def-config.ts
 ---
-# Harness CLI — 상태 조회/전이/프로세스 실행
+# Harness CLI — 상태 분포/검증 read model
 
 ## 목적 ^purpose
 
-CLI에서 11개 머신의 상태 분포를 조회하고, 단일 전이를 실행하고, 프로세스(복수 머신 전이 시퀀스)를 실행한다. `def state` 서브커맨드로 통합.
+CLI에서 문서 하네스의 파생 상태와 동기화 상태를 조회하고, 검증 artifact를 문서 상태 read model에 조합한다.
+현재 `def state`는 상태를 직접 전이시키는 명령이 아니라, 문서·검증·drift 결과를 읽기 위한 projection surface다.
 
 ## 구성 ^overview
 
-`qa-sdk def state` 서브커맨드가 3가지 모드를 제공한다: (1) 전체 머신 분포 조회 — 11개 머신별 상태 카운트, (2) 단일 엔티티 상태 조회/전이 — `--to` 옵션으로 특정 상태로 전이, (3) 프로세스 실행 — `--process` 옵션으로 prefix-release, doc-approval, service-deprecation 등 복수 머신 전이 시퀀스를 한번에 실행. `--dry-run`으로 실제 전이 없이 시뮬레이션 가능.
+`qa-sdk def state`는 다음 조회 모드를 제공한다.
+
+1. 전체 문서 상태 분포 — `doc-lifecycle`, `spec-impl`, `convention-compliance`, `db-sync`
+2. 특정 머신 분포 — registry에 등록된 machine id를 positional argument로 전달
+3. 특정 문서 상태 — 문서 id를 positional argument로 전달하고 `--json`으로 read model을 받음
+4. 하네스 의존 관계 — `--deps`로 cascade/guard/notify 관계를 출력
+5. 검증 연계 — `--verification-artifact`, `--verification-drift`로 binding/report/drift를 조합
+
+상태 파생은 `harness-derive`와 현재 frontmatter/config snapshot을 사용하며, 검증 artifact가 없으면
+convention 상태는 `unverified`로 유지된다.
 
 ## 사용 맥락 ^context
 
-CLI에서 하네스 상태를 직접 관리할 때 사용한다. 자동 파생(`harness-derive`)이 대부분의 상태를 결정하지만, 수동 전이가 필요한 경우(검토 요청, 폐기 선언 등) 이 CLI를 사용한다. definition-service가 실행 중이면 HTTP 모드, 아니면 로컬 SQLite 모드로 동작.
+문서 lifecycle과 구현 상태를 한 번에 점검하거나, 검증 runner가 생성한 artifact가 현재 definition
+snapshot과 연결되는지 확인할 때 사용한다. DataSource는 CLI의 `--local`, `--server`, `--scan`
+선택을 따르며, state 명령 자체는 상태 전이나 프로세스 실행을 소유하지 않는다.
 
 ## 정의 ^defines
 
-- `qa-sdk def state` 서브커맨드 (조회/전이/프로세스/진단)
-- 3종 출력 형식 (전체 분포, 엔티티 상태, dry-run)
-- 의존 관계 시각화 (`--deps`)
+- `qa-sdk def state` 전체 문서 상태 분포 read model
+- machine/document 단위 상태 조회와 JSON projection
+- `--deps` 의존 관계 시각화
+- verification report/binding/drift sidecar 조합
+- 외부 서비스가 아직 연결되지 않은 machine 영역의 명시적 fallback 출력
 
 ## 소비 ^consumes
 
-- state-model — computeDistribution(), 머신 정의
-- harness-derive — deriveDocLifecycle, deriveSpecImplState 등 11개 파생 함수
+- state-model — machine registry와 dependency 정의
+- harness-derive — deriveDocLifecycle, deriveSpecImplState, deriveConventionState, deriveSyncState
 - def-config — readDefConfig(), detectDrift()
+- spec-definition-verification — verification artifact와 drift read model
 
 ## CLI 인터페이스 ^api-surface
 
 ```bash
-# 전체 상태 분포 (11개 머신)
+# 전체 문서 상태 분포
 qa-sdk def state
+
 # 특정 머신의 분포
 qa-sdk def state doc-lifecycle
-qa-sdk def state version-lifecycle
-qa-sdk def state address-state
-# 특정 엔티티의 모든 상태 조회
-qa-sdk def state <entityId>
-# 가능한 전이 조회
-qa-sdk def state <entityId> --transitions
-# 단일 전이 (guard 자동 검증, cascade 자동 실행)
-qa-sdk def state <entityId> --machine doc-lifecycle --to review
-# 프로세스 실행
-qa-sdk def state <entityId> --process prefix-release
-qa-sdk def state <entityId> --process doc-approval
-qa-sdk def state <entityId> --process service-deprecation
+
+# 특정 문서 상태
+qa-sdk def state definition-management
+qa-sdk def state definition-management --json
+
 # 의존 관계 시각화
 qa-sdk def state --deps
-# 프로세스 사전 검증 (dry-run)
-qa-sdk def state <entityId> --process prefix-release --dry-run
+
+# 검증 artifact를 문서 상태에 조합
+qa-sdk def state definition-management \
+  --verification-artifact=artifacts/verification-artifact.json --json
+
+# artifact와 구현 drift read model을 함께 요청
+qa-sdk def state definition-management \
+  --verification-artifact=artifacts/verification-artifact.json \
+  --verification-drift --json
 ```
 
 ## 출력 형식 ^outputs
@@ -80,65 +96,56 @@ qa-sdk def state <entityId> --process prefix-release --dry-run
 ### 전체 분포
 
 ```
-── 문서 계층 ──────────────────────────
-doc-lifecycle        draft(13) review(0) approved(480) deprecated(63) archived(0)
-spec-impl            designed(5) implementing(2) implemented(3) verified(1) source-referenced(489)
-convention           unverified(490) partial(3) compliant(2) violated(0)
-db-sync              synced(1)
+── 문서 계층 (N건) ──────────────────────
+doc-lifecycle        draft(...) review(...) approved(...) deprecated(...)
+spec-impl             designed(...) implementing(...) implemented(...) verified(...)
+convention            unverified(...) partial(...) compliant(...) violated(...)
+db-sync              synced(...)
 
 ── 시스템 계층 ────────────────────────
-address-state        active(28) inactive(3) open(2) reserved(1)
-version-lifecycle    draft(0) released(0) active(34) deprecated(3)
-service-status       active(14) deprecated(0) retired(0)
-event-status         active(47) deprecated(2) retired(0)
-metric-health        ok(8) warning(1) critical(0)
+address-state        (외부 서비스 연결 필요)
+version-lifecycle    (외부 서비스 연결 필요)
+service-status       (외부 서비스 연결 필요)
+event-status         (외부 서비스 연결 필요)
+metric-health        (외부 서비스 연결 필요)
 
 ── 프로세스 계층 ──────────────────────
-decision-flow        pending(0) active(1) completed(12) abandoned(2) blocked(0)
-policy-candidate     candidate(3) approved(5) rejected(1) modified(1)
+decision-flow        (외부 서비스 연결 필요)
+policy-candidate     (외부 서비스 연결 필요)
 ```
 
-### 엔티티 상태
+### 특정 문서 JSON
 
-```
-service:v2
-  version-lifecycle: active
-  address-state:    active
-  db-sync:          synced
-  transitions:
-    version-lifecycle → deprecated (폐기)
-    address-state     → inactive (비활성화)
-```
-
-### 프로세스 dry-run
-
-```
-prefix-release on service:v2
-  ✓ step 0: version-lifecycle → released (현재: draft)
-  ✓ step 1: version-lifecycle → active   (precondition: released ✓)
-  ✓ step 2: address-state → active       (guard: version active ✓)
-  ✓ step 3: db-sync → syncing
-  ✓ step 4: db-sync → synced
-  result: 전부 실행 가능
+```json
+{
+  "id": "definition-management",
+  "doc-lifecycle": "approved",
+  "spec-impl": "source-referenced",
+  "convention-compliance": "unverified",
+  "db-sync": "synced",
+  "verification": {
+    "reportStatus": "no-report",
+    "bindingStatus": "not-evaluated",
+    "convention": "unverified"
+  }
+}
 ```
 
 ### 의존 관계 출력
 
 ```
 cascade:
-  version:deprecated → address:inactive
-  service:deprecated → event:deprecated
-  spec:verified      → convention:compliant
-
+  <source-machine>:<source-state> → <target-machine>:<target-state>  (<label>)
 guard:
-  version:active     → address:active
-  doc:approved       → convention:compliant
-
+  <source-machine>:<source-state> → <target-machine>:<target-state>  (<label>)
 notify:
-  metric:critical    → flow:blocked
-  flow:completed     → doc:review
+  <source-machine>:<source-state> → <target-machine>:<target-state>  (<label>)
 ```
+
 ## 품질 게이트 CLI
 상세: `definition-quality-gates` 문서 참조. `qa-sdk quality list/show/run/bundle/next` 커맨드.
-## SDK 이벤트 emit ^constraint
-모든 전이 실행 시 `harness.transition` 이벤트가 자동 emit된다. 프로세스의 각 스텝은 `harness.process_step`으로, guard 검증은 `harness.guard_check`로 emit.
+## 검증 artifact 연계 ^constraint
+
+`--verification-artifact`를 지정하면 definition snapshot과 artifact의 report/binding을 함께 읽는다.
+`--verification-drift`를 추가하면 service source의 선언과 구현을 비교한 drift read model을 보조 정보로 붙인다.
+artifact가 없거나 현재 snapshot과 연결되지 않으면 상태를 `unverified`로 유지하며, state 조회 자체는 실패시키지 않는다.

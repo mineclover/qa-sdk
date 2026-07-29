@@ -28,7 +28,7 @@ sources:
   - packages/definition-catalog/src/address-assign.test.ts
   - packages/definition-catalog/src/registry.test.ts
   - packages/cli/src/commands/def.ts
-  - packages/cli/src/commands/def.test.ts
+  - packages/cli/src/commands/def.read.test.ts
   - packages/cli/src/data-sources/local-data-source.ts
   - packages/cli/src/lib/docs-control-plane/adapters/definition-markdown.ts
   - packages/cli/src/lib/docs-control-plane/docs-control-plane.test.ts
