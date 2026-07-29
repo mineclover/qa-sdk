@@ -34,12 +34,12 @@ sources:
 
 ## 목적 ^purpose
 
-사용자가 시스템과 상호작용하는 모든 skill/CLI 도구를 experience 계층으로 관리한다.
-각 skill 문서에는 코드에서 파생할 수 없는 의도/맥락/피드백 규칙을 기록한다.
+사용자가 시스템과 상호작용하는 Agent Skill, DKG Operation, CLI command를 experience 계층에서 관리한다.
+각 catalog entry에는 코드에서 파생할 수 없는 의도·맥락·피드백 규칙을 기록한다.
 
 ## 구성 ^overview
 
-- claude-skill-group: definition-catalog 중심 스킬 16개
+- claude-skill-group: definition-catalog 중심 Agent Skill 16개 (legacy ID)
 - automation-skill-group: 구현/테스트/문서 전환/운영 게이트/아키텍처 slice 보조 스킬 8개
 - ralph-tui-skill-group: PRD/작업 생성용 ralph-tui 스킬 4개
 - dkg-skill-group: DKG 그래프 자동화 39개 (read 5, write 5, analysis 26, chain 3)
@@ -53,39 +53,41 @@ sources:
 
 | 원본 | 현재 수 | 확인 명령 | 의미 |
 |---|---:|---|---|
-| `skills/*/SKILL.md` | 36 skills / 45 files | `corepack pnpm skills:check` | Claude/Codex 실행 정의 SSOT |
-| `packages/dkg` SkillDef | 39 skills | `qa-sdk dkg skills` | DKG 그래프 자동화 카탈로그 |
+| `skills/*/SKILL.md` | 36 skills / 45 files | `corepack pnpm skills:check` | Agent Skill 실행 정의 SSOT |
+| `packages/dkg` SkillDef | 39 operations | `qa-sdk dkg skills` | DKG Operation 런타임 카탈로그 |
 
 첫 행의 36개는 그룹별로 `claude 16 + automation 8 + ralph-tui 4 + infra 4 + governance 4`로 구성된다. 두 번째 행은 별도 런타임 카탈로그이므로 첫 행의 분모에 합산하지 않는다.
 
-## 3디렉토리 경계 ^boundary
+## 용어와 저장소 경계 ^boundary
 
-"skill"이라는 이름이 들어간 디렉토리가 3개 있다. 각각 **목적, SSOT, 수정 기준**이 다르다.
+표준 용어의 전체 정의는 [`docs/skills/README.md`](../../skills/README.md)를 따른다. 이 문서는 catalog 관점의 저장소 경계만 고정한다.
 
 | 디렉토리 | 목적 | SSOT | 수정하면 바뀌는 것 |
 |---------|------|------|-----------------|
-| `skills/` | 실행 정의 | Claude/Codex skill의 유일한 원본 | 에이전트가 실행하는 프롬프트·트리거·절차 |
-| `docs/skills/` | 사용 가이드 | 운영 플레이북 (워크플로우 조합 설명) | 사람이 읽는 사용 순서·선택 기준 |
+| `skills/` | Agent Skill 실행 정의 | Agent Skill의 유일한 repo 원본 | 에이전트가 실행하는 프롬프트·트리거·절차 |
+| `docs/skills/` | Skill playbook | 운영 절차의 소유 문서 | 사람이 읽는 사용 순서·선택 기준 |
 | `docs/specs/skill-catalog/` | 카탈로그 스펙 | 문서 시스템 내 skill 메타데이터 | 목적·맥락·관계·피드백 규칙 (def frontmatter) |
 
 ### 판단 기준
 
-- skill 동작을 바꾸고 싶다 → `skills/*/SKILL.md` 수정
-- skill 사용법·조합·선택 기준을 바꾸고 싶다 → `docs/skills/*.md` 수정
-- skill 간 관계·목적·피드백 규칙을 바꾸고 싶다 → `docs/specs/skill-catalog/*.md` 수정
+- Agent Skill 동작을 바꾸고 싶다 → `skills/*/SKILL.md` 수정
+- Skill playbook의 사용법·조합·선택 기준을 바꾸고 싶다 → `docs/skills/*.md` 수정
+- DKG Operation 동작을 바꾸고 싶다 → 해당 `SkillDef`와 구현·계약을 수정
+- 실행 단위 간 관계·목적·피드백 규칙을 바꾸고 싶다 → `docs/specs/skill-catalog/*.md` 수정
 
 ### 조회 원칙
 
-- skill 조회는 command entrypoint를 통해 간접적으로 수행한다.
+- Agent Skill 조회는 command entrypoint를 통해 간접적으로 수행한다.
 - `qa-sdk def ...`, `qa-sdk quality ...`, `qa-sdk dkg skills ...` 같은 명령 표면이 1차 진입점이다.
 - `skills/*/SKILL.md`는 구현 SSOT이지만, 사용자와 운영자가 직접 뒤지는 탐색 표면이 아니다.
 
 ### 주의
 
-- `skills/`와 `docs/skills/`는 이름이 비슷하지만 역할이 다르다. 전자는 실행 정의, 후자는 운영 설명
-- `docs/specs/skill-catalog/`은 Claude skill과 DKG skill을 모두 추적한다. SSOT 소스가 다를 뿐 카탈로그 관점에서는 같은 experience 계층
-  - Claude skill: `skills/*/SKILL.md`가 SSOT → 카탈로그는 메타데이터 추적
-  - DKG skill: `demo-dkg-config.ts` SkillDef[]가 SSOT → 카탈로그는 메타데이터 추적
+- `skills/`와 `docs/skills/`는 이름이 비슷하지만 역할이 다르다. 전자는 Agent Skill 실행 정의, 후자는 Skill playbook이다.
+- `docs/specs/skill-catalog/`은 Agent Skill과 DKG Operation을 모두 추적한다. 원본과 실행 모델이 다르므로 수량을 합산하거나 서로의 수정 대상으로 취급하지 않는다.
+  - Agent Skill: `skills/*/SKILL.md`가 SSOT → 카탈로그는 메타데이터를 추적
+  - DKG Operation: `SkillDef[]`와 구현이 SSOT → 카탈로그는 메타데이터를 추적
+- `claude-skill-group`은 기존 definition graph ID다. 새 문장에서는 **Agent Skill group**이라 부르고, ID·경로·링크를 바꾸지 않는다.
 
 ## 피드백 루프 ^feedback
 

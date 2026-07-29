@@ -5,23 +5,38 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 
 # Skills Guide Index
 
-"skill"이 들어간 디렉토리가 3개 있다. 각각 목적이 다르다.
+이 저장소에서 `skill`은 두 종류의 실행 단위를 가리킬 수 있다. 혼용하지 않고 아래 용어를 사용한다.
+
+| 용어 | 뜻 | 소유 위치 | 직접 수정 여부 |
+|---|---|---|---|
+| **Agent Skill (에이전트 실행 스킬)** | Codex/Claude가 읽어 작업 절차를 수행하는 instruction bundle | `skills/<name>/SKILL.md` | 예 — repo SSOT |
+| **Skill runtime copy (실행 복제본)** | Agent Skill을 각 호스트가 읽는 위치에 전파한 사본 | `~/.codex/skills/`, `~/.claude/skills/` | 아니오 — `sync-skills.sh`로만 갱신 |
+| **Agent-local skill view (에이전트 로컬 뷰)** | 현재 작업 호스트가 별도로 제공하는 부분집합/어댑터 | `.agents/skills/` | 아니오 — repo SSOT 또는 동기화 대상이 아님 |
+| **DKG Operation (DKG 작업)** | DKG 그래프를 조회·변경·분석하는 코드 기반 `SkillDef` 연산 | `packages/dkg`의 SkillDef/구현 | 예 — 해당 코드와 계약을 수정 |
+| **CLI command (CLI 명령)** | 사람이 호출하는 실행 표면. Agent Skill과 DKG Operation을 포함해 호출할 수 있음 | `packages/cli/src/commands/` | 예 — 명령 계약을 수정 |
+| **Skill playbook (운영 플레이북)** | 어떤 Agent Skill·DKG Operation·CLI 명령을 어떤 순서로 쓸지 설명 | `docs/skills/` | 예 — 사람용 운영 절차를 수정 |
+| **Skill catalog entry (스킬 카탈로그 엔트리)** | 위 실행 단위의 목적·관계·피드백을 definition graph에 기록 | `docs/specs/skill-catalog/` | 예 — 메타 스펙을 수정 |
+
+`tool`은 이들을 뭉뚱그려 부르는 말로만 쓴다. 실행 주체를 정확히 말해야 할 때는 반드시 **Agent Skill**, **DKG Operation**, 또는 **CLI command**를 사용한다.
+
+### 저장소 문서 경계
 
 | 디렉토리 | 목적 | 수정하면 바뀌는 것 |
 |---------|------|-----------------|
-| `skills/` | **실행 정의** — Claude/Codex skill의 SSOT | 에이전트가 실행하는 프롬프트·트리거·절차 |
-| `docs/skills/` | **사용 가이드** — 운영 플레이북 | 사람이 읽는 사용 순서·선택 기준 |
+| `skills/` | **Agent Skill 실행 정의** — repo SSOT | 에이전트가 실행하는 프롬프트·트리거·절차 |
+| `docs/skills/` | **Skill playbook** — 운영 플레이북 | 사람이 읽는 사용 순서·선택 기준 |
 | `docs/specs/skill-catalog/` | **카탈로그 스펙** — 문서 시스템 내 메타데이터 | 목적·맥락·관계·피드백 규칙 |
 
 ### 판단 기준
 
-- skill 동작을 바꾸고 싶다 → `skills/*/SKILL.md` 수정
-- skill 사용법·조합·선택 기준을 바꾸고 싶다 → `docs/skills/*.md` 수정
-- skill 간 관계·목적·피드백 규칙을 바꾸고 싶다 → `docs/specs/skill-catalog/*.md` 수정
+- Agent Skill 동작을 바꾸고 싶다 → `skills/*/SKILL.md` 수정
+- Skill playbook의 사용법·조합·선택 기준을 바꾸고 싶다 → `docs/skills/*.md` 수정
+- DKG Operation 동작을 바꾸고 싶다 → 해당 `SkillDef`와 구현·계약을 수정
+- 실행 단위 간 관계·목적·피드백 규칙을 바꾸고 싶다 → `docs/specs/skill-catalog/*.md` 수정
 
 ### 조회 원칙
 
-- 사용자는 skill을 직접 `skills/*/SKILL.md`로 조회하지 않는다.
+- 사용자는 Agent Skill을 직접 `skills/*/SKILL.md`로 조회하지 않는다.
 - 먼저 `qa-sdk` 명령 진입점 또는 `cli-command-group` 문서를 통해 어떤 표면을 써야 하는지 찾는다.
 - `SKILL.md`는 실행 정의 SSOT이지만, 운영/탐색의 1차 진입점은 아니다.
 
@@ -39,7 +54,7 @@ corepack pnpm skills:check
 
 포맷 게이트는 추적 소스 전체를 기준으로 한다. `corepack pnpm format:check`는 생성물과 의존성을 제외한 전체 추적 코드·설정 파일을 검사하고, `corepack pnpm format:check:changed`는 현재 작업 트리의 변경 파일만 빠르게 검사한다. CI나 PR에서는 `corepack pnpm format:check -- --base origin/main`처럼 기준 브랜치를 지정할 수 있다. `corepack pnpm format`은 같은 추적 범위를 실제 정리한다. 문서와 셸 파일의 whitespace는 `git diff --check`로 확인한다.
 
-현재 실행 정의 baseline은 `skills:check` 기준 **36 skills / 45 files**다. 이는 `packages/dkg`의 별도 SkillDef 카탈로그인 **39개 DKG skill**과 다른 집합이므로 합산하지 않는다. repo 실행 정의의 SSOT는 계속 `skills/`이며, 카탈로그 entry는 `docs/specs/skill-catalog/`에서 관리한다.
+현재 Agent Skill baseline은 `skills:check` 기준 **36 skills / 45 files**다. 이는 `packages/dkg`의 별도 `SkillDef` 카탈로그인 **39개 DKG Operation**과 다른 집합이므로 합산하지 않는다. Agent Skill의 repo SSOT는 계속 `skills/`이며, catalog entry는 `docs/specs/skill-catalog/`에서 관리한다.
 
 ## 계층(L1-L4) 관점 skill navigation
 
@@ -130,9 +145,9 @@ corepack pnpm skills:check
 - `docs/specs/skill-catalog/ralph-tui-skill-group.md`
   ralph-tui PRD/작업 생성
 
-## DKG Skill (39개)
+## DKG Operation (`SkillDef`, 39개)
 
-CLI에서 `dkg run skill-*`로 실행하는 DKG 그래프 자동화 도구. 운영 플레이북의 각 단계를 개별 skill로 직접 실행할 수 있다.
+CLI에서 `dkg run skill-*`로 실행하는 DKG 그래프 자동화 연산이다. Agent Skill이 아니라 코드·입출력 계약을 가진 런타임 작업이며, 필요하면 Skill playbook이 여러 DKG Operation과 CLI command를 조합한다.
 
 - `dkg skills` — 전체 목록
 - `dkg skills <카테고리|키워드>` — 필터링 (예: `dkg skills chain`, `dkg skills checkout`)
@@ -142,8 +157,8 @@ CLI에서 `dkg run skill-*`로 실행하는 DKG 그래프 자동화 도구. 운�
 
 1. 작업 유형이 모호하면 이 문서에서 그룹을 고른다.
 2. 운영 절차가 필요하면 `docs/skills/*.md` 플레이북을 읽는다.
-3. 개별 단계를 skill로 직접 실행하려면 `dkg skills <keyword>`로 탐색한다.
-4. 왜 그 skill을 써야 하는지, 어떤 피드백 규칙이 있는지 알고 싶으면 `docs/specs/skill-catalog/*.md`로 내려간다.
-5. 실제 실행 정의는 `skills/*/SKILL.md`가 소유하지만, 조회와 선택은 command entrypoint와 workflow 문서를 먼저 따른다.
+3. 개별 DKG Operation을 직접 실행하려면 `dkg skills <keyword>`로 탐색한다.
+4. 왜 해당 실행 단위를 써야 하는지, 어떤 피드백 규칙이 있는지 알고 싶으면 `docs/specs/skill-catalog/*.md`로 내려간다.
+5. Agent Skill 실행 정의는 `skills/*/SKILL.md`가 소유하지만, 조회와 선택은 command entrypoint와 workflow 문서를 먼저 따른다.
 6. 코드 파일과 문서 경계를 맞출 때는 `qa-sdk def find-by-file <파일경로[:symbol]>`를 쓴다. 이 명령은 DB의 `code_references`만 보고 결과를 낸다.
 7. `code_references`는 문서 frontmatter `source:`와 코드 주석 `@def.boundary[#symbol]`, `@def.doc[#symbol]`를 `qa-sdk def sync`로 정규화해서 만든다. explicit mapping이 없으면 결과를 주지 않는다.

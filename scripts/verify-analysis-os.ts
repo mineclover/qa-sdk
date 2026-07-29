@@ -246,8 +246,10 @@ async function main() {
     const skillCatalogDocsWithoutSourceRefs = skillCatalogDocs.filter(
       (item: { sourceRefs: number }) => item.sourceRefs === 0,
     );
+    // The spec-lifecycle family adds cases/rule/test companions to the catalog.
+    const expectedSkillCatalogDocCount = 56;
     assert(
-      skillCatalogDocs.length === 53 &&
+      skillCatalogDocs.length === expectedSkillCatalogDocCount &&
         skillCatalogProveDocs.length === 0 &&
         skillCatalogDocsWithoutSourceRefs.length === 0,
       `Usefulness Audit: skill catalog docs are source-backed keep docs (${skillCatalogDocs.length} docs, prove=${skillCatalogProveDocs.length}, missingSources=${skillCatalogDocsWithoutSourceRefs.length})`,

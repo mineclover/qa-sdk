@@ -7,6 +7,29 @@ description: "스펙 문서 생명주기 관리. 설계→구현→검증 단계
 
 설계 문서(spec)가 코드로 구현되는 전 과정의 상태 전이를 관리한다.
 
+## 책임 경계와 정식 도구
+
+이 skill은 별도 `qa-sdk spec-lifecycle` 명령이 아니다. 구현된 사실을 문서에
+반영하기 전에 **어떤 read model과 gate를 어떤 순서로 사용할지** 정하는 운영
+절차다.
+
+| 판단 대상 | 정식 도구 | 이 skill에서의 의미 |
+|---|---|---|
+| 문서 family와 lifecycle 현황 | `qa-sdk docs status <doc-id> --family-only --json` | spec/rule/todo/test/cases 역할의 존재와 상태를 inventory로 본다. missing role 자체는 실패가 아니다 |
+| 작업 범위와 관련 artifact | `qa-sdk docs collect <doc-id> --family-only --json` | 전환 전에 읽어야 할 같은 family 문서와 직접 관계를 수집한다 |
+| 책임·source·검증 근거의 누락 | `qa-sdk docs closure <doc-id|source> --json` | 편집 전에는 missing을 찾고, source-map 검증 뒤에는 final closure를 다시 확인한다 |
+| BDD 계약 | `qa-sdk docs bdd validate <doc-id> --family-only --json` | BDD block이 있을 때만 행동 계약과 unit 연결을 검증한다 |
+| source → 문서 역추적 | `qa-sdk def sync` 후 `qa-sdk def find-by-file <path[:symbol]>` | DB에 동기화된 코드가 어떤 명시적 boundary/source-map에 속하는지 확인한다 |
+| 미연결 source 범위 | `qa-sdk def code-link-gaps --scope=<scope> --json` | source reference 또는 `@def.boundary`가 없는 코드를 찾는다 |
+| raw/semantic 문서 정합성 | `qa-sdk def scan-audit` → `def sync` → `def validate` → `def audit` | raw source, local DB, definition graph를 각각 검증한다. audit report는 baseline과 비교한다 |
+
+- `doc-lifecycle`은 7종 문서 artifact의 생성·승격·정리를 다룬다.
+- `spec-lifecycle`은 구현 뒤 **코드 SSOT 전환과 source-map 근거**를 다룬다.
+- `docs cleanup review/plan/apply`는 완료 record를 정리하는 계획형 write surface다.
+  그것이 code/test evidence를 만들거나 todo를 자동으로 spec으로 승격하지는 않는다.
+- 위 read model과 `def` gate는 source Markdown을 자동 수정하지 않는다. 완료 판정과
+  문서 편집의 authority는 여전히 작업자에게 있다.
+
 ## 핵심 원칙
 
 ### 0. todo → spec 흡수 순서
@@ -116,6 +139,11 @@ draft → review → approved → (구현 시작)
 # 새 스펙 문서 생성 (/def-new 사용)
 # → draft lifecycle으로 시작
 # → 타입, API, 흐름을 ^inputs, ^api-surface 마커에 작성
+
+# family와 기존 계약을 먼저 수집 (read-only)
+qa-sdk docs status <doc-id> --family-only --json
+qa-sdk docs collect <doc-id> --family-only --json
+qa-sdk docs bdd validate <doc-id> --family-only --json  # BDD block이 있을 때만
 ```
 
 ### 2단계: 구현 완료 — 코드 참조 전환
@@ -123,6 +151,7 @@ draft → review → approved → (구현 시작)
 대상 문서 확인:
 ```bash
 qa-sdk def list --svc <service> --depth=specification
+qa-sdk docs closure <doc-id> --json
 ```
 
 각 문서에서:
@@ -168,6 +197,22 @@ qa-sdk def code-link-gaps --json
 # raw frontmatter/link 감사 (DB 미사용 — sync 전 빠른 점검)
 qa-sdk def scan-audit
 ```
+
+정식 순서와 write 경계:
+
+1. `docs status`/`collect`로 artifact 범위를 inventory한다. role이 없다는 사실만으로
+   파일을 추가하지 말고, 해당 역할이 현재 책임에 필요한지 판단한다.
+2. 편집 전 `docs closure`로 source/test/evidence의 부족분을 찾는다. BDD block이 있으면
+   이 단계에서 `docs bdd validate`/`units`를 추가한다.
+3. 구현된 타입·API의 문서 사본을 source reference로 바꾸고, raw 문서 기준
+   `scan-audit`을 실행한다.
+4. `def sync`로 local DB를 갱신한 뒤 `find-by-file`과 좁은 `code-link-gaps --scope`로
+   explicit mapping을 확인한다. `find-by-file`은 sync 전 DB 결과를 신뢰하지 않는다.
+5. `def validate → def audit`로 definition graph를 확인하고, audit report는 기존 baseline과
+   새 결과를 분리해서 해석한다.
+6. `docs closure`를 다시 실행해 missing이 해소됐음을 final proof로 남긴다.
+7. 완료 record를 이동·변환해야 할 때만 `docs cleanup review → plan --dry-run → apply`를
+   명시적으로 선택한다. 이 절차는 promotion evidence를 대신하지 않는다.
 
 | 명령 | 입력 | 검증하는 것 |
 |------|------|-------------|

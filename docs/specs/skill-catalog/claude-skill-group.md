@@ -56,13 +56,13 @@ sources:
 
 ## 탐색 ^navigation
 
-skill-catalog-system > **claude-skill-group**
+skill-catalog-system > **Agent Skill group** (`claude-skill-group`은 legacy ID)
 
 형제: `automation-skill-group` · `ralph-tui-skill-group` · `dkg-skill-group` · `cli-command-group` · `infra-skill-group` · `governance-skill-group`
 
 ## 목적 ^purpose
 
-definition-catalog를 읽고, 만들고, 분해하고, 상태를 관리하는 핵심 스킬 16개 묶음이다.
+definition-catalog를 읽고, 만들고, 분해하고, 상태를 관리하는 핵심 Agent Skill 16개 묶음이다.
 문서 작업 전 탐색과 감사 루틴, boundary 구조화 루틴을 표준화해 스킬 간 사용 순서를 고정한다.
 
 ## 구성 ^overview

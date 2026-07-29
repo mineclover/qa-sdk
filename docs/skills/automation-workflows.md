@@ -40,6 +40,20 @@ description: "automation skill 묶음 운영 가이드. bdd-contract, e2e-test, 
 - 필요하면 `e2e-test`로 최종 사용자 흐름 검증
 - registry 운영 점검이면 `event-taxonomy-gate`로 drift gate 실행
 
+#### spec-lifecycle 도구 순서
+
+`spec-lifecycle`은 새 CLI가 아니라 discovery와 final proof를 분리한 다음 확인 루프다.
+
+1. `qa-sdk docs status <doc-id> --family-only --json` — 같은 family의 role inventory. missing role은 필요한 책임이 있을 때만 follow-up이다.
+2. `qa-sdk docs collect <doc-id> --family-only --json` 및 첫 `qa-sdk docs closure <doc-id|source> --json` — 전환 범위와 현재 missing 수집
+3. 구현된 타입/API를 source reference로 바꾼 뒤 `qa-sdk def scan-audit` → `def sync` — raw 문서 검사와 DB 갱신
+4. `qa-sdk def find-by-file <path[:symbol]>` 및 `qa-sdk def code-link-gaps --scope=<scope> --json` — sync된 source-map과 범위 coverage 확인
+5. `qa-sdk def validate` → `def audit` → 두 번째 `qa-sdk docs closure <doc-id|source> --json` — graph 검증과 final closure proof
+
+BDD block이 있을 때만 1~3 단계 사이에 `qa-sdk docs bdd validate <doc-id> --family-only --json`와
+`qa-sdk docs bdd units <doc-id> --family-only --json`를 넣는다. 완료 record의 이동·변환은
+`qa-sdk docs cleanup review → plan --dry-run → apply`로 별도 승인한다.
+
 ## 빠른 링크
 
 - command entrypoint
@@ -47,6 +61,11 @@ description: "automation skill 묶음 운영 가이드. bdd-contract, e2e-test, 
   `qa-sdk docs bdd validate <doc-id> --family-only --json`
   `qa-sdk docs bdd units <doc-id> --family-only --json`
   `qa-sdk docs bdd compile <doc-id> --family-only --format both --json`
+  `qa-sdk docs status <doc-id> --family-only --json`
+  `qa-sdk docs collect <doc-id> --family-only --json`
+  `qa-sdk docs closure <doc-id|source> --json`
+  `qa-sdk def find-by-file <path[:symbol]>`
+  `qa-sdk def code-link-gaps --scope=<scope> --json`
   `qa-sdk quality show <gate-doc-id>`
   `qa-sdk quality run <gate-doc-id> --json`
   `qa-sdk review request ...`
