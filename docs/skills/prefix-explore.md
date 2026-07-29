@@ -1,23 +1,11 @@
 ---
 name: prefix-explore
-description: "prefix/axis/domain/dsl 정보를 조회하고 탐색. 트리거: 'prefix 조회', 'axis 확인', 'domain 확인', 'dsl 확인', 'prefix 정보', '축 정보', '도메인 구조', '볼트 현황'"
+description: "prefix/axis/domain/dsl 정보를 조회하고 탐색. 트리거: 'prefix 조회', 'axis 확인', 'domain 확인', 'dsl 확인', 'prefix 정보', '축 정보', '도메인 구조'"
 ---
 
 # Prefix 탐색
 
-spec-prefix 볼트와 CLI에서 prefix, axis, domain, dsl 정보를 조회한다.
-
-## obs CLI (권장)
-
-```bash
-node packages/cli/dist/index.js obs stats              # 볼트 현황 (폴더별 노트 수)
-node packages/cli/dist/index.js obs read prefix/<id>.md # 노트 읽기
-node packages/cli/dist/index.js obs read axis/<id>.md   # 축 읽기
-node packages/cli/dist/index.js obs read dsl/<id>.md    # DSL 읽기
-node packages/cli/dist/index.js obs search "keyword"    # 검색
-node packages/cli/dist/index.js obs backlinks role      # 백링크 (이 노트를 참조하는 노트)
-node packages/cli/dist/index.js obs list prefix         # 폴더 내 목록
-```
+qa-sdk CLI에서 카탈로그와 DKG를 기준으로 prefix, axis, domain, dsl 정보를 조회한다.
 
 ## DKG CLI (심층 분석)
 
@@ -29,14 +17,6 @@ node packages/cli/dist/index.js dkg domains              # 도메인 건강
 node packages/cli/dist/index.js dkg dsl dsl-checkout     # DSL 번들 프로파일
 node packages/cli/dist/index.js dkg service auth         # 서비스 프로파일
 node packages/cli/dist/index.js dkg trace permission     # 인과 체인 역추적
-```
-
-## Obsidian 직접 접근
-
-```bash
-obsidian read vault="spec-prefix" path="prefix/<id>.md"
-obsidian search vault="spec-prefix" query="signal-role: guard"
-obsidian backlinks vault="spec-prefix" file="service"
 ```
 
 ## Skill 기반 탐색
@@ -54,11 +34,11 @@ dkg run skill-table-impact <tableId>     # DB 의존 추적
 
 ## 사용 가이드
 
-- **간단한 조회** → `obs` CLI
+- **간단한 조회** → `dkg` CLI
 - **영향 분석, 수렴 검토** → `dkg run skill-*`
-- **Graph View 시각화** → Obsidian 직접 열기
+- **문서 구조·코드 연결 검증** → `spec-management-platform`의 `qa-spec-platform`
 
 ## 검증 매핑
 
-- `obs stats`, `obs read`, `obs backlinks`, `dkg prefix`, `dkg impact`, `dkg trace`
+- `dkg prefix`, `dkg impact`, `dkg trace`
   - 검증: `packages/cli/src/skills-workflows.test.ts`

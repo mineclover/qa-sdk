@@ -15,7 +15,6 @@ import { register } from '../commands/register.js';
 import { dryRun, type ChangeScenario } from '../commands/dry-run.js';
 import { codegen, codegenDataObjects, runMigrationTest } from '../commands/codegen.js';
 import { schemaPull } from '../commands/schema-pull.js';
-import { syncObsidian } from '../commands/sync-obsidian.js';
 import {
   cliEncode,
   cliDecode,
@@ -182,21 +181,6 @@ export const ROOT_COMMAND_DESCRIPTORS = [
     ],
   },
   {
-    id: 'root.sync-obsidian',
-    path: ['sync-obsidian'],
-    usage: 'qa-sdk sync-obsidian [options]     CATALOG → Obsidian 볼트 전체 동기화',
-    handlerKey: 'root.sync-obsidian',
-    options: [
-      {
-        flag: '--vault',
-        valueHint: '<name>',
-        type: 'string',
-        description: '대상 Obsidian 볼트 (기본: spec-prefix)',
-      },
-      { flag: '--dry-run', type: 'boolean', description: '미리보기 (실제 쓰기 없음)' },
-    ],
-  },
-  {
     id: 'root.encode',
     path: ['encode'],
     usage: 'qa-sdk encode <prefix> [--dim val] 문자열 → 주소 인코딩',
@@ -253,7 +237,7 @@ export const ROOT_COMMAND_TREE = descriptorsToTree(
 const ALL_ROOT_SPECS = collectCommandUsageSpecs([], ROOT_COMMAND_TREE);
 
 export const ROOT_COMMAND_SPECS = ALL_ROOT_SPECS.filter((s) =>
-  ['init', 'register', 'dry-run', 'codegen', 'inspect', 'sync-obsidian'].includes(s.name),
+  ['init', 'register', 'dry-run', 'codegen', 'inspect'].includes(s.name),
 ) as readonly CommandUsageSpec<string>[];
 
 export const DX_COMMAND_SPECS = ALL_ROOT_SPECS.filter((s) =>
@@ -442,20 +426,6 @@ export function createRootHandlerRegistry(
         registry: registryUrl,
         output: values.output ?? './schemas',
         snapshotId: values['snapshot-id'],
-      });
-    },
-    'root.sync-obsidian': (rest) => {
-      const { values } = parseArgs({
-        args: rest,
-        options: {
-          vault: { type: 'string', default: 'spec-prefix' },
-          'dry-run': { type: 'boolean', default: false },
-        },
-        strict: true,
-      });
-      syncObsidian({
-        vault: values.vault ?? 'spec-prefix',
-        dryRun: values['dry-run'] ?? false,
       });
     },
     'root.encode': (rest) => {

@@ -114,11 +114,6 @@ import {
   MOTION_HANDLER_REGISTRY as MOTION_GROUP_HANDLER_REGISTRY,
 } from './command-groups/motion.commands.js';
 import {
-  OBS_COMMAND_SPECS as OBS_GROUP_COMMAND_SPECS,
-  OBS_COMMAND_TREE as OBS_GROUP_COMMAND_TREE,
-  OBS_HANDLER_REGISTRY as OBS_GROUP_HANDLER_REGISTRY,
-} from './command-groups/obs.commands.js';
-import {
   CACHE_COMMAND_SPECS as CACHE_GROUP_COMMAND_SPECS,
   CACHE_COMMAND_TREE as CACHE_GROUP_COMMAND_TREE,
   CACHE_HANDLER_REGISTRY as CACHE_GROUP_HANDLER_REGISTRY,
@@ -200,7 +195,6 @@ ${formatUsageLines(DEF_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageLines(TAXONOMY_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageLines(DECISION_GROUP_TOP_LEVEL_USAGE_LINES)}
 ${formatUsageSpecs(DOCS_GROUP_COMMAND_SPECS)}
-${formatUsageSpecs(OBS_GROUP_COMMAND_SPECS)}
 ${formatUsageSpecs(CACHE_GROUP_COMMAND_SPECS)}
 `.trim();
 
@@ -249,10 +243,6 @@ async function dispatchReviewCommand(handlerKey: string, rest: string[]): Promis
 
 async function dispatchIngestCommand(handlerKey: string, rest: string[]): Promise<void> {
   await dispatchFromRegistry(INGEST_GROUP_HANDLER_REGISTRY, handlerKey, rest);
-}
-
-async function dispatchObsCommand(handlerKey: string, rest: string[]): Promise<void> {
-  await dispatchFromRegistry(OBS_GROUP_HANDLER_REGISTRY, handlerKey, rest);
 }
 
 async function dispatchCacheCommand(handlerKey: string, rest: string[]): Promise<void> {
@@ -394,12 +384,6 @@ const TREE_COMMAND_GROUPS: readonly TreeCommandGroup[] = [
     rootName: 'qa-sdk ingest',
     tree: INGEST_GROUP_COMMAND_TREE,
     dispatch: dispatchIngestCommand,
-  },
-  {
-    rootSegments: ['obs'],
-    rootName: 'qa-sdk obs',
-    tree: OBS_GROUP_COMMAND_TREE,
-    dispatch: dispatchObsCommand,
   },
   {
     rootSegments: ['gate'],

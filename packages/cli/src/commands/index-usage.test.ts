@@ -5,12 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { USAGE, main, resolveSubcommand } from '../index.js';
 
 describe('top-level usage contracts', () => {
-  it('service/ingest/obs/review request usage를 구체적으로 노출한다', () => {
+  it('service/ingest/review request usage를 구체적으로 노출한다', () => {
     expect(USAGE).toContain('qa-sdk service mode [local|staging|prod] [--set key=value]');
     expect(USAGE).toContain('qa-sdk ingest mode [local|dev|staging|prod] [--set key=value]');
     expect(USAGE).toContain('qa-sdk ingest insights [--limit N]');
-    expect(USAGE).toContain('qa-sdk obs list [prefix] [--vault <name>]');
-    expect(USAGE).toContain('qa-sdk obs stats [--vault <name>]');
+    expect(USAGE).not.toMatch(/obsidian|sync-obsidian/i);
     expect(USAGE).toContain(
       'qa-sdk docs status [doc-id|path] [--family-only] [--include-session] [--json]',
     );
@@ -93,13 +92,6 @@ describe('top-level usage contracts', () => {
       expect(ingestHelp).toContain('qa-sdk ingest');
       expect(ingestHelp).toContain('qa-sdk ingest health');
       expect(ingestHelp).toContain('qa-sdk ingest insights');
-
-      stdout.length = 0;
-      await main(['obs', '--help']);
-      const obsHelp = stdout.join('\n');
-      expect(obsHelp).toContain('qa-sdk obs');
-      expect(obsHelp).toContain('qa-sdk obs read');
-      expect(obsHelp).toContain('qa-sdk obs stats');
 
       stdout.length = 0;
       await main(['gate', '--help']);
@@ -194,14 +186,10 @@ describe('top-level usage contracts', () => {
     }
   });
 
-  it('ingest/obs 하위 명령을 tree 기반으로 해석한다', () => {
+  it('ingest 하위 명령을 tree 기반으로 해석한다', () => {
     expect(resolveSubcommand(['ingest', 'mode', 'prod', '--set', 'a=b'])).toEqual({
       name: 'ingest mode',
       rest: ['prod', '--set', 'a=b'],
-    });
-    expect(resolveSubcommand(['obs', 'list', 'docs', '--vault', 'spec-prefix'])).toEqual({
-      name: 'obs list',
-      rest: ['docs', '--vault', 'spec-prefix'],
     });
     expect(resolveSubcommand(['gate', 'check', 'tracking', 'v1'])).toEqual({
       name: 'gate check',

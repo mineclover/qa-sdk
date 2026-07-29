@@ -74,7 +74,7 @@ pnpm --filter decision-flow typecheck && pnpm --filter decision-flow test
 | 테스트 신뢰도 | 전체 테스트 통과 + E2E 포함 |
 | 관측 인프라 | 커버리지 % + 건전성 % |
 | 폐루프 동작 | Observation → Decision 해소 비율 |
-| 설계 추적성 | DKG 노드/엣지 수 + Obsidian 노트 수 |
+| 설계 추적성 | DKG 노드/엣지 수 + spec-management-platform evidence snapshot |
 | 의사결정 품질 | decision-flow 평균 confidence + 자동화 비율 + 컨텍스트 축적량 |
 
 ## 문제 발견 시

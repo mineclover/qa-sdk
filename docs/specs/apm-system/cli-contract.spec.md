@@ -43,8 +43,7 @@ spec list/resolve/validate/trace (스펙 조작),
 dkg 20+ (DKG 진단/분석),
 flow 12+ (의사결정 흐름),
 quality 9 (상태 요약/export/조회/실행/추천/claim 감사),
-service/ingest/gate/query (서비스 토폴로지),
-sync-obsidian (볼트 동기화).
+service/ingest/gate/query (서비스 토폴로지).
 
 ## 커맨드 그룹
 

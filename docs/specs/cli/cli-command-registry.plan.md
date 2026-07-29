@@ -34,7 +34,7 @@ CLI 명령 메타데이터를 authored descriptor에서 runtime tree와 help로 
 - `service mode` / `ingest mode` profile 전환은 `ingest-mode.e2e.test.ts`로 안정화되었다.
 - `quality show` / `quality run`은 fixture gate 문서 기준 smoke로 고정되었다.
 - `dkg audit-events`는 local ingest forwarding e2e로 검증된다.
-- `sync-obsidian` write path는 installed Obsidian CLI + dedicated vault env 기반 gated smoke로 관리한다.
+- 문서 파싱·문서 연결·taxonomy 검증은 `spec-management-platform`의 `qa-spec-platform`으로 분리한다.
 - `dkg self-check` full path heavy smoke는 `QA_SDK_RUN_HEAVY_SMOKE=1` env로 CI workflow에 연결되었다.
 
 ## 완료된 단계

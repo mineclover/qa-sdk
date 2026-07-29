@@ -164,9 +164,7 @@ describe('skills workflow mapping', () => {
     const decide = readDoc('docs/skills/decide.md');
     const ingestInsights = readDoc('docs/skills/ingest-insights.md');
     const boundaryWorkflow = readDoc('docs/skills/definition-boundary-workflow.md');
-    const syncPrefix = readDoc('docs/skills/sync-prefix.md');
 
-    expect(prefixExplore).toContain('node packages/cli/dist/index.js obs stats');
     expect(prefixExplore).toContain('node packages/cli/dist/index.js dkg prefix permission');
     expect(claimWorkflow).toContain('node packages/cli/dist/index.js dkg claim <nodeId>');
     expect(claimWorkflow).toContain('node packages/cli/dist/index.js dkg release <nodeId>');
@@ -175,12 +173,6 @@ describe('skills workflow mapping', () => {
     expect(ingestInsights).toContain('node packages/cli/dist/index.js ingest mode');
     expect(ingestInsights).toContain('node packages/cli/dist/index.js ingest insights');
     expect(boundaryWorkflow).toContain('qa-sdk def boundary <문서ID>');
-    expect(syncPrefix).toContain('node packages/cli/dist/index.js sync-obsidian');
-
-    expect(resolveSubcommand(['obs', 'stats'])).toEqual({
-      name: 'obs stats',
-      rest: [],
-    });
     expect(resolveSubcommand(['dkg', 'prefix', 'permission'])).toEqual({
       name: 'dkg prefix',
       rest: ['permission'],
@@ -215,31 +207,20 @@ describe('skills workflow mapping', () => {
       name: 'def boundary',
       rest: ['cli-command-spec'],
     });
-    expect(resolveSubcommand(['sync-obsidian', '--dry-run'])).toEqual({
-      name: 'sync-obsidian',
-      rest: ['--dry-run'],
-    });
-
     const stdout: string[] = [];
     const originalLog = console.log;
     console.log = (...args: unknown[]) => {
       stdout.push(args.join(' '));
     };
     try {
-      await main(['obs', '--help']);
       await main(['ingest', '--help']);
       await main(['def', 'boundary', '--help']);
-      await main(['sync-obsidian', '--dry-run', '--vault', 'spec-prefix']);
     } finally {
       console.log = originalLog;
     }
     const output = stdout.join('\n');
-    expect(output).toContain('qa-sdk obs');
     expect(output).toContain('qa-sdk ingest');
     expect(output).toContain('qa-sdk def boundary');
-    expect(output).toContain('DEMO_CATALOG → Obsidian 볼트 "spec-prefix" 동기화');
-    expect(output).toContain('mode: dry-run (미리보기)');
-    expect(output).toContain('합계:');
 
     expect(existsSync(resolve(REPO_ROOT, 'packages/cli/src/commands/dkg.e2e.test.ts'))).toBe(true);
     expect(existsSync(resolve(REPO_ROOT, 'packages/cli/src/commands/review.test.ts'))).toBe(true);

@@ -23,7 +23,6 @@ description: "새 축/prefix를 DEMO_CATALOG에 추가하는 전체 플로우. �
 
 ```bash
 node packages/cli/dist/index.js dkg overlaps  # 축 중복 스캔
-node packages/cli/dist/index.js obs search "<후보 이름>"  # Obsidian에서 검색
 ```
 
 ## Step 3: DEMO_CATALOG에 등록
@@ -71,12 +70,16 @@ pnpm --filter @qa-sdk/spec-core build
 node packages/cli/dist/index.js dkg self-check
 ```
 
-## Step 5: Obsidian 동기화
+## Step 5: 문서 구조 검증
 
 ```bash
-pnpm --filter @qa-sdk/cli build
-node packages/cli/dist/index.js sync-obsidian
+cd /path/to/spec-management-platform
+corepack pnpm --filter @spec-platform/qa-sdk-adapter build
+corepack pnpm --filter @spec-platform/qa-sdk-adapter start -- scan-audit /path/to/qa-sdk --json
 ```
+
+문서 파싱·taxonomy·코드 연결 검증은 `spec-management-platform`이 소유한다. qa-sdk는
+카탈로그와 DKG의 정의만 제공한다.
 
 ## 주의사항
 
