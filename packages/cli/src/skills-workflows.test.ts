@@ -22,8 +22,36 @@ describe('skills workflow mapping', () => {
     expect(doc).toContain('qa-sdk quality run <gate-doc-id> --json');
     expect(doc).toContain('qa-sdk review request ...');
     expect(doc).toContain('qa-sdk docs bdd validate <doc-id> --family-only --json');
+    expect(doc).toContain('qa-sdk docs status <doc-id> --family-only --json');
+    expect(doc).toContain('qa-sdk docs collect <doc-id> --family-only --json');
+    expect(doc).toContain('qa-sdk docs closure <doc-id|source> --json');
+    expect(doc).toContain('qa-sdk def find-by-file <path[:symbol]>');
+    expect(doc).toContain('qa-sdk def code-link-gaps --scope=<scope> --json');
     expect(doc).toContain('pnpm gate:event-taxonomy');
     expect(doc).toContain('검증 매핑');
+
+    const lifecycleOrder = [
+      'qa-sdk docs status <doc-id> --family-only --json',
+      'qa-sdk docs collect <doc-id> --family-only --json',
+      'qa-sdk def scan-audit',
+      'def sync',
+      'qa-sdk def find-by-file <path[:symbol]>',
+      'qa-sdk def validate',
+      'def audit',
+    ];
+    const lifecyclePositions = lifecycleOrder.map((command) => doc.indexOf(command));
+    expect(lifecyclePositions.every((position) => position >= 0)).toBe(true);
+    expect(
+      lifecyclePositions.every(
+        (position, index) => index === 0 || position > lifecyclePositions[index - 1]!,
+      ),
+    ).toBe(true);
+    const closurePositions = [...doc.matchAll(/qa-sdk docs closure <doc-id\|source> --json/g)].map(
+      (match) => match.index ?? -1,
+    );
+    expect(closurePositions.length).toBeGreaterThanOrEqual(2);
+    expect(closurePositions[0]).toBeLessThan(lifecyclePositions[2]!);
+    expect(closurePositions[1]).toBeGreaterThan(lifecyclePositions[6]!);
 
     expect(
       resolveSubcommand(['docs', 'bdd', 'validate', 'checkout-spec', '--family-only', '--json']),
@@ -36,6 +64,34 @@ describe('skills workflow mapping', () => {
     ).toEqual({
       name: 'docs bdd units',
       rest: ['checkout-spec', '--family-only', '--json'],
+    });
+    expect(
+      resolveSubcommand(['docs', 'status', 'checkout-spec', '--family-only', '--json']),
+    ).toEqual({
+      name: 'docs status',
+      rest: ['checkout-spec', '--family-only', '--json'],
+    });
+    expect(
+      resolveSubcommand(['docs', 'collect', 'checkout-spec', '--family-only', '--json']),
+    ).toEqual({
+      name: 'docs collect',
+      rest: ['checkout-spec', '--family-only', '--json'],
+    });
+    expect(resolveSubcommand(['docs', 'closure', 'checkout-spec', '--json'])).toEqual({
+      name: 'docs closure',
+      rest: ['checkout-spec', '--json'],
+    });
+    expect(resolveSubcommand(['def', 'find-by-file', 'packages/cli/src/commands/docs.ts'])).toEqual(
+      {
+        name: 'def find-by-file',
+        rest: ['packages/cli/src/commands/docs.ts'],
+      },
+    );
+    expect(
+      resolveSubcommand(['def', 'code-link-gaps', '--scope=packages/cli/src', '--json']),
+    ).toEqual({
+      name: 'def code-link-gaps',
+      rest: ['--scope=packages/cli/src', '--json'],
     });
     expect(resolveSubcommand(['quality', 'show', 'gate-a'])).toEqual({
       name: 'quality show',

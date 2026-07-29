@@ -14,6 +14,8 @@ import {
 } from 'operational-ontology/persistence';
 
 import { getQaSdkDir } from '../../lib/qa-dir.js';
+import { parseCliArgs } from '../../lib/cli-args.js';
+export { closeDataSource } from '../../lib/data-source-runtime.js';
 
 interface PersistedOntologyStoreFile {
   objects: OperationalOntologyObjectRecord[];
@@ -28,35 +30,7 @@ export function parseFlags(args: string[]): {
   positional: string[];
   flags: Record<string, string>;
 } {
-  const positional: string[] = [];
-  const flags: Record<string, string> = {};
-
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]!;
-    if (!arg.startsWith('--')) {
-      positional.push(arg);
-      continue;
-    }
-
-    const [key, inline] = arg.slice(2).split('=', 2);
-    const next = args[index + 1];
-    if (inline !== undefined) {
-      flags[key] = inline;
-    } else if (next && !next.startsWith('--')) {
-      flags[key] = next;
-      index += 1;
-    } else {
-      flags[key] = 'true';
-    }
-  }
-
-  return { positional, flags };
-}
-
-export function closeDataSource(source: unknown): void {
-  if (!source || typeof source !== 'object') return;
-  const close = (source as { close?: unknown }).close;
-  if (typeof close === 'function') close.call(source);
+  return parseCliArgs(args);
 }
 
 export function getStorePath(flags: Record<string, string>): string {

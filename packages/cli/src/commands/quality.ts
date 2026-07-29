@@ -53,6 +53,8 @@ import type {
 } from 'spec-tracker';
 import { generateVerificationClaimAudit } from 'spec-tracker';
 import { appendProgrammingArtifactRegistryRecord } from '../lib/programming-artifact-registry.js';
+import { parseCliArgs, toDataSourceOptions } from '../lib/cli-args.js';
+import { closeDataSource } from '../lib/data-source-runtime.js';
 import { getQaSdkDir } from '../lib/qa-dir.js';
 import {
   collectContainedQualityDocs,
@@ -92,10 +94,7 @@ interface LoadedQualityIndex {
   readonly errors: readonly { file: string; error: string }[];
 }
 
-export function closeQualityDataSource(source: DefDataSource | undefined): void {
-  if (!source || !('close' in source) || typeof source.close !== 'function') return;
-  source.close();
-}
+export const closeQualityDataSource = closeDataSource;
 
 interface LoadedDocGraph {
   readonly registry: MemoryDefinitionRegistry;
@@ -299,44 +298,11 @@ export function parseQualityCommandArgs(args: string[]): {
   flags: Record<string, string>;
   sourceOptions: DataSourceOptions;
 } {
-  const positional: string[] = [];
-  const flags: Record<string, string> = {};
-  let mode: DataSourceOptions['mode'];
-
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]!;
-    if (arg === '--local') {
-      mode = 'local';
-      continue;
-    }
-    if (arg === '--server') {
-      mode = 'server';
-      continue;
-    }
-    if (arg === '--scan') {
-      mode = 'scan';
-      continue;
-    }
-    if (arg.startsWith('--')) {
-      const [key, inline] = arg.slice(2).split('=', 2);
-      const next = args[index + 1];
-      if (inline !== undefined) {
-        flags[key] = inline;
-      } else if (next && !next.startsWith('--')) {
-        flags[key] = next;
-        index += 1;
-      } else {
-        flags[key] = 'true';
-      }
-      continue;
-    }
-    positional.push(arg);
-  }
-
+  const { positional, flags, sourceMode } = parseCliArgs(args);
   return {
     positional,
     flags,
-    sourceOptions: { mode },
+    sourceOptions: toDataSourceOptions(flags, sourceMode),
   };
 }
 

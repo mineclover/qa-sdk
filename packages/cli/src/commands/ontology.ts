@@ -25,6 +25,7 @@ import {
   createProgrammingArtifactRegistryRecord,
 } from 'operational-ontology/programming-artifacts';
 import { appendProgrammingArtifactRegistryRecords } from '../lib/programming-artifact-registry.js';
+import { toDataSourceOptions } from '../lib/cli-args.js';
 import { cmdRegistryActivatePack } from './ontology/activation.js';
 import {
   cmdArtifactRegistryAppend,
@@ -92,18 +93,7 @@ interface PromptArtifactMaterialization {
 }
 
 function toDefinitionDataSourceOptions(flags: Record<string, string>): DataSourceOptions {
-  return {
-    mode:
-      flags['local'] === 'true'
-        ? 'local'
-        : flags['server'] === 'true'
-          ? 'server'
-          : flags['scan'] === 'true'
-            ? 'scan'
-            : undefined,
-    dbPath: flags['db'],
-    serverUrl: flags['server-url'],
-  };
+  return toDataSourceOptions(flags);
 }
 
 async function loadQualityStatusDescriptorSource(
