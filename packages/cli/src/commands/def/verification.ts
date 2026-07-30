@@ -15,6 +15,18 @@ import { parseCsvFlag } from './shared.js';
 
 type SourceFactory = (options: DataSourceOptions) => Promise<DefDataSource>;
 
+function wantsJson(flags: Record<string, string>): boolean {
+  return flags.json === 'true' || flags.json === '';
+}
+
+function printDiagnostic(message: string, json: boolean): void {
+  if (json) {
+    console.error(message);
+  } else {
+    console.log(message);
+  }
+}
+
 /** Capture the definition snapshot used by the verification runner. */
 export async function cmdVerificationBindings(
   root: string,
@@ -28,8 +40,9 @@ export async function cmdVerificationBindings(
   const outPath = flags.out;
   const capturedAt = flags['captured-at'] ?? flags['run-started-at'];
   if (specIds.length === 0 || !outPath || !capturedAt) {
-    console.log(
+    printDiagnostic(
       'Usage: qa-sdk def verification-bindings --spec-ids=<id1,id2> --out=<bindings.json> --captured-at=<ISO> [--json]',
+      wantsJson(flags),
     );
     process.exitCode = 1;
     return;
@@ -39,7 +52,7 @@ export async function cmdVerificationBindings(
   try {
     source = await createSource(sourceOptions);
   } catch (error) {
-    console.log(`[verification-bindings] ${(error as Error).message}`);
+    printDiagnostic(`[verification-bindings] ${(error as Error).message}`, wantsJson(flags));
     process.exitCode = 1;
     return;
   }
@@ -50,14 +63,14 @@ export async function cmdVerificationBindings(
       capturedAt,
     });
     const output = { out: outputPath, bindings };
-    if (flags.json === 'true' || flags.json === '') {
+    if (wantsJson(flags)) {
       console.log(JSON.stringify(output, null, 2));
     } else {
       console.log(`검증 binding 캡처: ${output.out}`);
       console.log(`bindings: ${bindings.length}`);
     }
   } catch (error) {
-    console.log(`[verification-bindings] ${(error as Error).message}`);
+    printDiagnostic(`[verification-bindings] ${(error as Error).message}`, wantsJson(flags));
     process.exitCode = 1;
   } finally {
     closeDataSource(source);
@@ -74,8 +87,9 @@ export async function cmdVerificationArtifact(
   const runStartedAt = flags['run-started-at'];
   const runCompletedAt = flags['run-completed-at'];
   if (!summaryPath || !outPath || !runStartedAt || !runCompletedAt) {
-    console.log(
+    printDiagnostic(
       'Usage: qa-sdk def verification-artifact --summary=<VerificationSummary.json> --out=<artifact.json> --run-started-at=<ISO> --run-completed-at=<ISO> [--bindings=<bindings.json>] [--json]',
+      wantsJson(flags),
     );
     process.exitCode = 1;
     return;
@@ -123,14 +137,14 @@ export async function cmdVerificationArtifact(
       summary: summaryInput as VerificationSummary,
       ...(bindings ? { bindings } : {}),
     });
-    if (flags.json === 'true' || flags.json === '') {
+    if (wantsJson(flags)) {
       console.log(JSON.stringify({ out: outputPath, artifact }, null, 2));
     } else {
       console.log(`검증 아티팩트 생성: ${outputPath}`);
       console.log(`reports: ${artifact.reports.length}`);
     }
   } catch (error) {
-    console.log(`[verification-artifact] ${(error as Error).message}`);
+    printDiagnostic(`[verification-artifact] ${(error as Error).message}`, wantsJson(flags));
     process.exitCode = 1;
   }
 }

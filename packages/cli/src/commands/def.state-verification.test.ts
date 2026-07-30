@@ -9,7 +9,7 @@ import { useDefCliHarness } from './def-test-helpers.js';
 describe('def state and verification commands', () => {
   const { getOutput, getTempRoot, runDef } = useDefCliHarness();
 
-describe('state', () => {
+  describe('state', () => {
     it('전체 머신 상태 분포 출력', async () => {
       await runDef(['state']);
       const output = getOutput();
@@ -73,8 +73,26 @@ describe('state', () => {
       const previousExitCode = process.exitCode;
       process.exitCode = undefined;
       try {
-        await runDef(['verification-artifact']);
+        await runDef(['help']);
+        const summaryPath = join(getTempRoot(), 'invalid-verification-summary.json');
+        await writeFile(summaryPath, '[]');
+        vi.mocked(console.log).mockClear();
+        vi.mocked(console.error).mockClear();
+        await runDef([
+          'verification-artifact',
+          '--summary',
+          summaryPath,
+          '--out',
+          join(getTempRoot(), 'invalid-verification-artifact.json'),
+          '--run-started-at=2026-01-01T00:00:00.000Z',
+          '--run-completed-at=2026-01-01T00:02:00.000Z',
+          '--json',
+        ]);
         expect(process.exitCode).toBe(1);
+        expect(getOutput()).toBe('');
+        expect(vi.mocked(console.error).mock.calls.at(-1)?.[0]).toContain(
+          '[verification-artifact]',
+        );
       } finally {
         process.exitCode = previousExitCode;
       }

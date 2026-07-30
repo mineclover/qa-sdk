@@ -18,12 +18,15 @@ const SLOW_TEST_FILES = [
   'src/commands/review.test.ts',
   'src/commands/git-scan.test.ts',
 ];
+const STABILITY_TEST_FILES = ['src/lib/deterministic-label-inventory-determinism-live.test.ts'];
 
 const args = [
   'vitest',
   'run',
   ...(mode !== '--parallel' ? ['--no-file-parallelism'] : []),
-  ...(mode === '--slow' ? SLOW_TEST_FILES : []),
+  // This suite performs two whole-repository scans and owns a separate stability budget.
+  ...(mode === '--parallel' ? STABILITY_TEST_FILES.flatMap((file) => ['--exclude', file]) : []),
+  ...(mode === '--slow' ? [...SLOW_TEST_FILES, ...STABILITY_TEST_FILES] : []),
   ...filters,
 ];
 

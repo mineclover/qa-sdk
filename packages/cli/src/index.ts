@@ -13,7 +13,7 @@
  */
 
 import { pathToFileURL } from 'node:url';
-import { emitCliEvent, setCatalogContext } from './commands/dkg.js';
+import { emitCliEvent, flushCliAuditEvents, setCatalogContext } from './commands/dkg.js';
 import { loadCatalog } from 'config-loader';
 import type { Catalog } from '@qa-sdk/core';
 import { cliQuality } from './commands/quality.js';
@@ -501,6 +501,14 @@ let loadedCatalog: Catalog | undefined;
 // ── Main ─────────────────────────────────────────────
 
 export async function main(argv = process.argv.slice(2)) {
+  try {
+    return await executeMain(argv);
+  } finally {
+    await flushCliAuditEvents();
+  }
+}
+
+async function executeMain(argv: string[]) {
   const args = argv;
 
   // --catalog 글로벌 옵션 추출

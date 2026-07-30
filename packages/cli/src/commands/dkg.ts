@@ -481,6 +481,7 @@ function cliSessionId(): string {
 const CLI_AUDIT_SERVICE = createServiceBootConfig('qa-sdk-cli');
 const CLI_AUDIT_SOURCE = toTransmissionSource(CLI_AUDIT_SERVICE, '@qa-sdk/cli', '0.1.0');
 const CLI_AUDIT_BUILD = toTransmissionBuild(CLI_AUDIT_SERVICE);
+let pendingAuditForwards: Promise<void>[] = [];
 
 function resolveAuditIngestUrl(): string | null {
   const base = process.env.QA_CLI_AUDIT_INGEST_URL ?? process.env.INGEST_URL;
@@ -643,7 +644,14 @@ function persistAuditRecord(input: {
     lifecycleFrom: input.lifecycleFrom,
     lifecycleTo: input.lifecycleTo,
   });
-  void forwardAuditRecordToIngest(record);
+  pendingAuditForwards.push(forwardAuditRecordToIngest(record));
+}
+
+/** Wait for audit transmissions started during the current CLI invocation. */
+export async function flushCliAuditEvents(): Promise<void> {
+  const pending = pendingAuditForwards;
+  pendingAuditForwards = [];
+  await Promise.allSettled(pending);
 }
 
 // ── DKG 이벤트 기록 (write 명령 상세) ──────────────────
