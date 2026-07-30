@@ -22,7 +22,11 @@ def:
       type: depends_on
     - target: deterministic-label-registry-extraction-plan
       type: depends_on
-  source: packages/deterministic-label-registry/src/records.ts
+sources:
+  - packages/deterministic-label-registry/src/records.ts
+  - packages/deterministic-label-registry/src/inventory.ts
+  - packages/cli/src/lib/deterministic-label-inventory-determinism-live.test.ts
+  - packages/cli/scripts/run-vitest.mjs
 ---
 
 # Deterministic Label — 투영 결정론 계약
@@ -128,6 +132,17 @@ const first = await buildDeterministicLabelInventory(options);
 const second = await buildDeterministicLabelInventory(options);
 expect(JSON.stringify(first, null, 2)).toBe(JSON.stringify(second, null, 2));
 ```
+
+실제 저장소를 대상으로 한 이 증명은 `packages/cli/src/lib/deterministic-label-inventory-determinism-live.test.ts`
+에서 수행하며, 일반 CLI 병렬 회귀와 분리된 stability lane으로 실행한다.
+
+```bash
+corepack pnpm --filter @qa-sdk/cli test:slow
+```
+
+일반 `test`/`test:parallel`은 이 live 파일을 제외하고 worker 수를 제한한 뒤 나머지 contract 회귀를
+수행한다. 따라서 live 증명을 생략하는 것이 아니라, full-repo I/O와 5초 성능 budget을 가진 검증을
+전용 lane에서 독립적으로 항상 실행하는 구조다.
 
 ### Snapshot 정착
 

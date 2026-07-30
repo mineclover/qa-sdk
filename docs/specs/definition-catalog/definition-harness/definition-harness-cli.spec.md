@@ -20,6 +20,8 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/def.ts
+  - packages/cli/src/commands/def/verification.ts
+  - packages/cli/src/lib/spec-definition-verification.ts
   - packages/cli/src/commands/def.state-verification.test.ts
   - packages/definition-catalog/src/harness-derive.ts
   - packages/definition-catalog/src/def-config.ts
@@ -89,6 +91,26 @@ qa-sdk def state definition-management \
 qa-sdk def state definition-management \
   --verification-artifact=artifacts/verification-artifact.json \
   --verification-drift --json
+
+# definition snapshot에서 run-start binding 생성
+qa-sdk def verification-bindings \
+  --spec-ids=definition-management \
+  --out=artifacts/verification-bindings.json \
+  --captured-at=2026-01-01T00:00:00.000Z --json
+
+# scan datasource로 binding을 직접 캡처
+qa-sdk def verification-bindings --scan \
+  --spec-ids=definition-management \
+  --out=artifacts/verification-bindings.json \
+  --captured-at=2026-01-01T00:00:00.000Z --json
+
+# VerificationSummary + binding을 immutable artifact로 조합
+qa-sdk def verification-artifact \
+  --summary=artifacts/verification-summary.json \
+  --bindings=artifacts/verification-bindings.json \
+  --out=artifacts/verification-artifact.json \
+  --run-started-at=2026-01-01T00:00:00.000Z \
+  --run-completed-at=2026-01-01T00:02:00.000Z --json
 ```
 
 ## 출력 형식 ^outputs
@@ -149,3 +171,15 @@ notify:
 `--verification-artifact`를 지정하면 definition snapshot과 artifact의 report/binding을 함께 읽는다.
 `--verification-drift`를 추가하면 service source의 선언과 구현을 비교한 drift read model을 보조 정보로 붙인다.
 artifact가 없거나 현재 snapshot과 연결되지 않으면 상태를 `unverified`로 유지하며, state 조회 자체는 실패시키지 않는다.
+
+## 검증 producer와 JSON 채널 계약 ^verification-contract
+
+`verification-bindings`는 실행 시작 시점의 definition snapshot을 binding으로 고정하고,
+`verification-artifact`는 외부 VerificationSummary와 binding을 하나의 immutable artifact로 묶는다.
+`state`는 이 artifact를 소비해 report/binding/drift read model을 제공한다. producer와 consumer 사이의
+구체적인 파일 shape은 `packages/cli/src/lib/spec-definition-verification.ts`가 SSOT이며, 이 문서는
+CLI 호출 순서와 책임 경계만 정의한다.
+
+`--json`을 지정한 성공 응답은 stdout에 JSON 문서 하나만 출력한다. 입력·파일·datasource 오류는
+exit code `1`과 함께 stderr로 진단하며 stdout을 오염시키지 않는다. 따라서 shell pipe나 JSON parser가
+성공/실패를 분리해서 처리할 수 있다.

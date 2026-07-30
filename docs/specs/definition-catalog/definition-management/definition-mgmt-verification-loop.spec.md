@@ -25,6 +25,10 @@ def:
       type: depends_on
 sources:
   - packages/cli/src/commands/def.ts
+  - packages/cli/src/commands/def/verification.ts
+  - packages/cli/scripts/run-vitest.mjs
+  - packages/cli/vitest.config.ts
+  - packages/cli/src/lib/deterministic-label-inventory-determinism-live.test.ts
   - packages/cli/src/commands/def.lifecycle.test.ts
   - packages/cli/src/commands/def.quality.test.ts
   - packages/cli/src/commands/def.state-verification.test.ts
@@ -125,6 +129,24 @@ pnpm --filter @qa-sdk/cli exec vitest run src/commands/quality.test.ts
 - `quality.test`
   quality CLI 경로를 건드렸을 때만 같이 본다.
 
+### CLI 회귀 실행 lane
+
+CLI 전체 회귀는 repository scan과 SQLite datasource를 사용하는 통합 테스트가 포함되므로
+무제한 fork 병렬 실행을 허용하지 않는다. `packages/cli/vitest.config.ts`가 worker 수와
+통합 테스트 timeout을 관리하며, 기본 `test`/`test:parallel`은 안정적인 일반 회귀만 실행한다.
+
+```bash
+# build 포함 일반 회귀 — live stability 파일은 제외
+corepack pnpm --filter @qa-sdk/cli test
+
+# 전체 저장소를 두 번 읽는 stability 증명과 slow/e2e 파일
+corepack pnpm --filter @qa-sdk/cli test:slow
+```
+
+`deterministic-label-inventory-determinism-live.test.ts`는 실제 저장소를 두 번 스캔하고
+별도의 5초 stability budget을 적용하므로 일반 병렬 lane에 섞지 않는다. 이는 검증 범위를
+줄이는 것이 아니라 실행 비용과 의미가 다른 증명을 별도 lane에서 항상 실행하기 위한 분리다.
+
 ## 레거시 제거 루프
 
 deprecated/draft 정리나 current 치환 뒤에는 이 루프를 먼저 돈다.
@@ -162,6 +184,8 @@ node packages/cli/dist/index.js def validate --scan
 | quality gate 변경 | 기본 루프 + quality gate 루프 |
 | 레거시 정리 | 레거시 제거 루프 |
 | datasource/fallback 변경 | 기본 루프 + raw scan 루프 |
+| verification producer/consumer 변경 | 기본 루프 + `def.state-verification.test.ts` focused test |
+| CLI test runner/worker 변경 | 기본 회귀 + `test:slow` |
 
 ## 피드백 신호
 

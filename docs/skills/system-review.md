@@ -113,7 +113,9 @@ node packages/cli/dist/index.js dkg resolve <obsId> --decision <decId> --outcome
   - 검증: `packages/cli/src/skills-workflows.test.ts`
   - smoke는 비용 때문에 `dkg self-check --fast`를 사용한다.
 - `dkg audit-events`
-  - ingest forwarding e2e: `packages/cli/src/commands/dkg.e2e.test.ts`
+  - local audit log + ingest forwarding e2e: `packages/cli/src/commands/dkg.e2e.test.ts`
+  - CLI `main()`은 명령 종료 전에 queued audit forwarding을 flush한다.
+  - forwarding 실패는 원본 CLI 명령을 차단하지 않으며, `QA_CLI_AUDIT_WARN=1` 또는 `DEBUG`에서만 경고를 출력한다.
 - DKG decision/flow bridge와 관측 기록
   - 검증: `packages/cli/src/commands/dkg.e2e.test.ts`
 - flow 정책/판정 보조
