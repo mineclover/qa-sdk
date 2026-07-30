@@ -11,6 +11,7 @@ import { DkgSqliteStore } from '../../../spec-core/src/store/index.js';
 
 const originalHome = process.env.HOME;
 const originalAuditIngestUrl = process.env.QA_CLI_AUDIT_INGEST_URL;
+const originalAuditWarn = process.env.QA_CLI_AUDIT_WARN;
 const tempHomes: string[] = [];
 const runHeavySmoke = process.env.QA_SDK_RUN_HEAVY_SMOKE === '1';
 
@@ -27,6 +28,11 @@ describe('dkg CLI E2E', () => {
       delete process.env.QA_CLI_AUDIT_INGEST_URL;
     } else {
       process.env.QA_CLI_AUDIT_INGEST_URL = originalAuditIngestUrl;
+    }
+    if (originalAuditWarn === undefined) {
+      delete process.env.QA_CLI_AUDIT_WARN;
+    } else {
+      process.env.QA_CLI_AUDIT_WARN = originalAuditWarn;
     }
     await Promise.all(
       tempHomes.splice(0).map((home) => rm(home, { recursive: true, force: true })),
@@ -179,6 +185,44 @@ describe('dkg CLI E2E', () => {
     const events = store.listRecentCliAuditEvents(5, { command: 'dkg audit-events' });
     expect(events.length).toBeGreaterThan(0);
     expect(events[0]?.eventKey).toBe('cli.command.executed');
+  });
+
+  it('ingest HTTP 오류는 fail-open으로 격리하되 warning에서 상태를 진단한다', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'qa-dkg-audit-http-error-'));
+    tempHomes.push(home);
+    process.env.HOME = home;
+    process.env.QA_CLI_AUDIT_WARN = '1';
+    vi.resetModules();
+
+    const server = createServer((req, res) => {
+      req.resume();
+      req.on('end', () => {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false }));
+        server.close();
+      });
+    });
+    await new Promise<void>((resolve, reject) => {
+      server.listen(0, '127.0.0.1', () => resolve());
+      server.on('error', reject);
+    });
+    const address = server.address();
+    expect(address).toBeTruthy();
+    expect(typeof address).not.toBe('string');
+    process.env.QA_CLI_AUDIT_INGEST_URL = `http://127.0.0.1:${(address as { port: number }).port}`;
+
+    const { main } = await import('../index.js');
+    const output = await captureConsoleAsync(async () => {
+      await main(['dkg', 'audit-events', '--limit', '1']);
+    });
+
+    expect(output.stdout).toContain('CLI Audit Events');
+    expect(output.stderr).toContain('[cli-audit-ingest] 전송 실패');
+    expect(output.stderr).toContain('HTTP 503');
+
+    const store = new DkgSqliteStore(join(home, '.qa-sdk', 'state.sqlite'), 'demo');
+    const events = store.listRecentCliAuditEvents(5, { command: 'dkg audit-events' });
+    expect(events.length).toBeGreaterThan(0);
   });
 
   const heavyIt = runHeavySmoke ? it : it.skip;

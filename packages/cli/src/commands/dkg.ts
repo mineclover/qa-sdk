@@ -514,12 +514,17 @@ async function forwardAuditRecordToIngest(record: EventRecord): Promise<void> {
   };
 
   try {
-    await fetch(ingestUrl, {
+    const response = await fetch(ingestUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(envelope),
       signal: AbortSignal.timeout(3_000),
     });
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`,
+      );
+    }
   } catch (err) {
     if (process.env.DEBUG || process.env.QA_CLI_AUDIT_WARN === '1') {
       console.warn(`[cli-audit-ingest] 전송 실패 (${ingestUrl}): ${errorMessage(err)}`);

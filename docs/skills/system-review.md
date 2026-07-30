@@ -115,7 +115,8 @@ node packages/cli/dist/index.js dkg resolve <obsId> --decision <decId> --outcome
 - `dkg audit-events`
   - local audit log + ingest forwarding e2e: `packages/cli/src/commands/dkg.e2e.test.ts`
   - CLI `main()`은 명령 종료 전에 queued audit forwarding을 flush한다.
-  - forwarding 실패는 원본 CLI 명령을 차단하지 않으며, `QA_CLI_AUDIT_WARN=1` 또는 `DEBUG`에서만 경고를 출력한다.
+  - 네트워크 오류와 HTTP non-2xx 응답은 원본 CLI 명령을 차단하지 않으며,
+    `QA_CLI_AUDIT_WARN=1` 또는 `DEBUG`에서만 상태를 포함한 경고를 출력한다.
 - DKG decision/flow bridge와 관측 기록
   - 검증: `packages/cli/src/commands/dkg.e2e.test.ts`
 - flow 정책/판정 보조
