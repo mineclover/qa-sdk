@@ -144,8 +144,10 @@ describe('dkg CLI E2E', () => {
       resolveBody = resolve;
       rejectBody = reject;
     });
+    let requestPath = '';
     const timeout = setTimeout(() => rejectBody(new Error('audit forwarding timeout')), 5_000);
     const server = createServer((req, res) => {
+      requestPath = req.url ?? '';
       const chunks: Buffer[] = [];
       req.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
       req.on('end', () => {
@@ -163,7 +165,7 @@ describe('dkg CLI E2E', () => {
     const address = server.address();
     expect(address).toBeTruthy();
     expect(typeof address).not.toBe('string');
-    process.env.QA_CLI_AUDIT_INGEST_URL = `http://127.0.0.1:${(address as { port: number }).port}`;
+    process.env.QA_CLI_AUDIT_INGEST_URL = `http://127.0.0.1:${(address as { port: number }).port}/`;
 
     const { main } = await import('../index.js');
     const output = await captureConsoleAsync(async () => {
@@ -173,6 +175,7 @@ describe('dkg CLI E2E', () => {
     expect(output.stdout).toContain('CLI Audit Events');
 
     const envelope = JSON.parse(await requestBody);
+    expect(requestPath).toBe('/v1/ingest');
     expect(envelope.records).toHaveLength(1);
     expect(envelope.records[0].event_key).toBe('cli.command.executed');
     expect(envelope.records[0].payload).toEqual(

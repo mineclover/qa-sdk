@@ -486,7 +486,8 @@ let pendingAuditForwards: Promise<void>[] = [];
 function resolveAuditIngestUrl(): string | null {
   const base = process.env.QA_CLI_AUDIT_INGEST_URL ?? process.env.INGEST_URL;
   if (!base) return null;
-  return base.endsWith('/v1/ingest') ? base : `${base}/v1/ingest`;
+  const normalizedBase = base.replace(/\/+$/, '');
+  return normalizedBase.endsWith('/v1/ingest') ? normalizedBase : `${normalizedBase}/v1/ingest`;
 }
 
 async function forwardAuditRecordToIngest(record: EventRecord): Promise<void> {

@@ -38,6 +38,8 @@ DKG CLI lifecycle/audit 이벤트가 로컬 SQLite와 중앙 ingest forwarding �
 - 중앙 ingest forwarding은 명령 종료 전에 완료를 기다리지만 best-effort이며, 네트워크 오류와 HTTP
   non-2xx 응답은 원본 명령을 실패시키지 않는다. `QA_CLI_AUDIT_WARN=1` 또는 `DEBUG`에서만 경고를
   출력하고, HTTP 오류는 응답 상태를 함께 표시한다.
+- `QA_CLI_AUDIT_INGEST_URL`과 `INGEST_URL`은 base URL 또는 `/v1/ingest` endpoint를 받을 수 있으며,
+  끝의 `/`는 정규화한다.
 
 ## 관련 소스
 
