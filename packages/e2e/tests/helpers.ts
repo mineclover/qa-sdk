@@ -1,9 +1,103 @@
 // @def.boundary validation-layer-group
 // @def.doc validation-layer-group
 
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext, Page } from '@playwright/test';
 
 export const INGEST_URL = 'http://localhost:3101';
+
+export interface SessionRecord {
+  event_key?: string;
+  qa_session_id?: string;
+}
+
+/** Make E2E transport assertions observable without changing production config. */
+export async function useFetchTransport(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'sendBeacon', {
+      configurable: true,
+      value: undefined,
+    });
+  });
+}
+
+/** Read the QaMonitor session created in the browser page. */
+export async function getQaSessionId(page: Page): Promise<string> {
+  const sessionId = await page.evaluate(() => {
+    const raw = sessionStorage.getItem('qa_monitor');
+    if (!raw) return null;
+    try {
+      const session = JSON.parse(raw) as { sessionId?: unknown };
+      return typeof session.sessionId === 'string' ? session.sessionId : null;
+    } catch {
+      return null;
+    }
+  });
+
+  if (!sessionId) throw new Error('QaMonitor session ID was not initialized');
+  return sessionId;
+}
+
+/** Read records persisted by ingest-server for one browser session. */
+export async function fetchSessionRecords(
+  request: APIRequestContext,
+  sessionId: string,
+): Promise<SessionRecord[]> {
+  const res = await request.get(
+    `${INGEST_URL}/v1/sessions/${encodeURIComponent(sessionId)}/records?limit=1000`,
+  );
+  if (res.status() === 404) return [];
+  if (!res.ok()) throw new Error(`fetchSessionRecords failed: ${res.status()} ${await res.text()}`);
+
+  const body = (await res.json()) as { items?: SessionRecord[] };
+  return body.items ?? [];
+}
+
+/** Trigger pagehide flush, then wait until the server exposes the session records. */
+export async function flushAndReadSessionEventKeys(
+  page: Page,
+  request: APIRequestContext,
+  timeoutMs = 8_000,
+): Promise<string[]> {
+  const sessionId = await getQaSessionId(page);
+  let ingestRequestCount = 0;
+  const ingestResponseStatuses: number[] = [];
+  const onRequest = (request: import('@playwright/test').Request) => {
+    if (request.url().includes('/v1/ingest') && request.method() === 'POST') {
+      ingestRequestCount += 1;
+    }
+  };
+  const onResponse = (response: import('@playwright/test').Response) => {
+    if (response.url().includes('/v1/ingest') && response.request().method() === 'POST') {
+      ingestResponseStatuses.push(response.status());
+    }
+  };
+  page.on('request', onRequest);
+  page.on('response', onResponse);
+  // QaLogger's production flush interval is 5 seconds. Let the normal timer
+  // drain first; navigation below then also exercises the pagehide fallback.
+  await page.waitForTimeout(5_250);
+  await page.goto('about:blank', { waitUntil: 'commit' });
+  page.off('request', onRequest);
+  page.off('response', onResponse);
+
+  const deadline = Date.now() + timeoutMs;
+  let records: SessionRecord[] = [];
+  while (Date.now() < deadline) {
+    records = await fetchSessionRecords(request, sessionId);
+    if (records.length > 0) break;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  if (records.length === 0) {
+    throw new Error(
+      `No records persisted for QaMonitor session ${sessionId} (ingest requests observed: ${ingestRequestCount}, response statuses: ${ingestResponseStatuses.join(',') || 'none'})`,
+    );
+  }
+
+  return records.flatMap((record) =>
+    typeof record.event_key === 'string' ? [record.event_key] : [],
+  );
+}
 
 export interface StepDef {
   id: string;

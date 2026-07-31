@@ -12,7 +12,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const INGEST_URL = process.env['INGEST_URL'] ?? 'http://localhost:3200';
+const INGEST_URL = process.env['INGEST_URL'] ?? 'http://localhost:3101';
 const SHOP_URL = 'http://localhost:5220';
 
 /** 브라우저 이벤트 카운터 값 읽기 */

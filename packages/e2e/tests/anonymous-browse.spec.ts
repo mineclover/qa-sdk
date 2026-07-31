@@ -2,12 +2,14 @@
 // @def.doc validation-layer-group
 
 import { test, expect } from '@playwright/test';
+import { flushAndReadSessionEventKeys, useFetchTransport } from './helpers.js';
 
 const SHOP_URL = 'http://localhost:5220';
 const INGEST_URL = 'http://localhost:3101';
 
 test.describe('익명 브라우징 시나리오 — 로그인 후 상품만 탐색', () => {
   test.beforeEach(async ({ page }) => {
+    await useFetchTransport(page);
     await page.goto(`${SHOP_URL}?ingest=${INGEST_URL}`);
     await expect(page.locator('[data-testid="logo"]')).toBeVisible();
   });
@@ -57,21 +59,7 @@ test.describe('익명 브라우징 시나리오 — 로그인 후 상품만 탐�
     expect(evtCount).toBeGreaterThanOrEqual(4);
   });
 
-  test('탐색만 하면 cart/checkout 이벤트가 발생하지 않는다', async ({ page }) => {
-    const capturedEventKeys: string[] = [];
-    page.on('request', (req) => {
-      if (req.url().includes('/v1/ingest') && req.method() === 'POST') {
-        try {
-          const body = JSON.parse(req.postData() ?? '{}');
-          for (const record of body.records ?? []) {
-            if (record.event_key) capturedEventKeys.push(record.event_key);
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-    });
-
+  test('탐색만 하면 cart/checkout 이벤트가 발생하지 않는다', async ({ page, request }) => {
     // 로그인 → 상품 탐색
     await page.locator('[data-testid="login-submit"]').click();
     await expect(page.locator('[data-testid="nav-home"]')).toBeVisible();
@@ -80,7 +68,7 @@ test.describe('익명 브라우징 시나리오 — 로그인 후 상품만 탐�
     await page.locator('[data-testid="product-2"]').click();
     await expect(page.locator('[data-testid="product-detail"]')).toBeVisible();
 
-    await page.waitForTimeout(1500);
+    const capturedEventKeys = await flushAndReadSessionEventKeys(page, request);
 
     // 이벤트가 서버에 전송됨
     expect(capturedEventKeys.length).toBeGreaterThanOrEqual(1);

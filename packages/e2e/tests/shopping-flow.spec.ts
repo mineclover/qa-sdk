@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 
 const SHOP_URL = 'http://localhost:5220';
-const INGEST_URL = 'http://localhost:3200';
+const INGEST_URL = 'http://localhost:3101';
 
 test.describe('쇼핑 전체 흐름 E2E — address_context 검증', () => {
   test.beforeEach(async ({ page }) => {

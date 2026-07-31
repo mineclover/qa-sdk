@@ -275,7 +275,7 @@ const PAGE_PERMISSIONS = {
   mypage:   { resource: 'page/mypage',   action: 'view', minRole: 'customer' },
   complete: { resource: 'page/order',    action: 'view', minRole: 'customer' },
 };
-const ROLE_LEVEL = { guest: 0, customer: 1, admin: 2 };
+const ROLE_LEVEL = { guest: 0, member: 1, customer: 1, premium: 1, admin: 2 };
 
 function checkPermission(page, action) {
   const rule = PAGE_PERMISSIONS[page];

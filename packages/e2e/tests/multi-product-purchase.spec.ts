@@ -2,12 +2,14 @@
 // @def.doc validation-layer-group
 
 import { test, expect } from '@playwright/test';
+import { flushAndReadSessionEventKeys, useFetchTransport } from './helpers.js';
 
 const SHOP_URL = 'http://localhost:5220';
 const INGEST_URL = 'http://localhost:3101';
 
 test.describe('다중 상품 구매 시나리오 — 2개 상품 담기 후 결제 완료', () => {
   test.beforeEach(async ({ page }) => {
+    await useFetchTransport(page);
     await page.goto(`${SHOP_URL}?ingest=${INGEST_URL}`);
     await expect(page.locator('[data-testid="logo"]')).toBeVisible();
   });
@@ -59,22 +61,8 @@ test.describe('다중 상품 구매 시나리오 — 2개 상품 담기 후 결�
     await expect(page.locator('#cart-count')).toContainText('0');
   });
 
-  test('다중 상품 구매 시 이벤트가 충분히 발생한다', async ({ page }) => {
+  test('다중 상품 구매 시 이벤트가 충분히 발생한다', async ({ page, request }) => {
     page.on('dialog', (d) => d.accept());
-
-    const capturedEventKeys: string[] = [];
-    page.on('request', (req) => {
-      if (req.url().includes('/v1/ingest') && req.method() === 'POST') {
-        try {
-          const body = JSON.parse(req.postData() ?? '{}');
-          for (const record of body.records ?? []) {
-            if (record.event_key) capturedEventKeys.push(record.event_key);
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-    });
 
     // 로그인
     await page.locator('[data-testid="login-submit"]').click();
@@ -100,14 +88,13 @@ test.describe('다중 상품 구매 시나리오 — 2개 상품 담기 후 결�
     await page.locator('[data-testid="pay-btn"]').click();
     await expect(page.locator('[data-testid="order-complete"]')).toBeVisible({ timeout: 5000 });
 
-    // 네트워크 전송 완료 대기
-    await page.waitForTimeout(2000);
-
     // 이벤트 카운트: login + home + products(×2) + detail(×2) + cart.add(×2)
     //   + api calls + cart page + checkout + payment + complete = 최소 10
     const evtText = await page.locator('#qa-events').textContent();
     const evtCount = parseInt(evtText?.replace('events: ', '') || '0');
     expect(evtCount).toBeGreaterThanOrEqual(10);
+
+    const capturedEventKeys = await flushAndReadSessionEventKeys(page, request);
 
     // 핵심 이벤트 종류 검증
     const hasCartAdd = capturedEventKeys.filter((k) => k === 'cart.add').length >= 2;
