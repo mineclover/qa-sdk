@@ -5503,6 +5503,7 @@ interface SelfCheckResult {
   passed?: number;
   failed?: number;
   durationMs?: number;
+  error?: string;
 }
 
 /**
@@ -5601,6 +5602,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
           let tests = 0,
             passed = 0,
             failed = 0;
+          let error: string | undefined;
           try {
             const { stdout: output } = execaSync(
               'pnpm',
@@ -5613,8 +5615,9 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
             failed = failedMatch ? parseInt(failedMatch[1]) : 0;
             tests = passed + failed;
             result = failed > 0 ? 'failed' : passed > 0 ? 'passed' : 'skipped';
-          } catch {
+          } catch (err: unknown) {
             result = 'error';
+            error = summarizeCommandError(err);
           }
           const dur = Date.now() - t0;
           results.push({
@@ -5626,10 +5629,12 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
             passed,
             failed,
             durationMs: dur,
+            error,
           });
           const icon = result === 'passed' ? '✅' : result === 'failed' ? '⚠' : '🔴';
           const detail = result === 'error' ? '실행 실패' : `${passed}/${tests} (${dur}ms)`;
           console.log(`      ${icon} ${scenario.padEnd(28)} ${result} ${detail}`);
+          if (error) console.log(`        ↳ ${error}`);
         }
         continue;
       }
@@ -6098,6 +6103,25 @@ function findArg(args: string[], flag: string): string | undefined {
 }
 
 // ── helpers ─────────────────────────────────────────
+
+/** execa/Playwright 실패를 self-check 한 줄 진단으로 압축한다. */
+function summarizeCommandError(err: unknown): string {
+  const execErr = err as {
+    stderr?: string;
+    stdout?: string;
+    shortMessage?: string;
+    message?: string;
+  };
+  const text = [execErr.stderr, execErr.stdout, execErr.shortMessage, execErr.message]
+    .filter((value): value is string => Boolean(value))
+    .join('\n')
+    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '');
+  const lines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return (lines.slice(-4).join(' | ') || 'unknown command error').slice(0, 1000);
+}
 
 /** ConvergeAction의 대상을 사람이 읽을 수 있는 문자열로 추출 */
 function convergeActionTarget(action: ConvergeAction): string {
