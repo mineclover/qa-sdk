@@ -223,7 +223,7 @@ extension 또는 optional plugin으로 남긴다.
   PATH에 설치된 `qa-spec-platform`이 있을 때만 external query를 선택하고, 없으면 legacy collector로
   폴백한다. 명시적 `--platform=true`, `--platform-bin`, `QA_SPEC_PLATFORM_BIN`은 기존처럼 실행 실패를
   숨기지 않는다. 이로써 registry publication 전에도 설치 여부에 따른 route selection을 검증할 수 있다.
-- P4 7차 release readiness audit: platform build/typecheck와 full specification journey(`5 pass, 1 skip`)를
+- P4 7차 release readiness audit: platform build/typecheck와 full specification journey(`5 pass, 2 skip`)를
   재실행했다. 11개 `@spec-platform/*` 이름은 npm registry에서 모두 `404 Not Found`였고,
   `npm whoami --registry=https://registry.npmjs.org`는 `401 Unauthorized`였다. 따라서 archive/clean
   consumer 검증은 완료됐지만 실제 registry publication과 registry consumer 검증은 아직 완료되지 않았다.
@@ -233,6 +233,11 @@ extension 또는 optional plugin으로 남긴다.
   `pnpm pack` 후 `npm publish <tarball>`을 수행하는 guarded `corepack pnpm release:packages`를 추가했다.
   기본 실행은 publish dry-run이며, 실제 publish는 `--publish`와
   `SPEC_PLATFORM_PUBLISH_CONFIRM=1`을 모두 요구한다. 11개 archive dry-run은 warning 없이 통과했다.
+- P4 9차 운영 전환 준비: `qa-sdk def scan-audit`와 `code-link-gaps`가
+  `QA_SPEC_PLATFORM_MODE=auto` 환경 변수로도 설치된 `qa-spec-platform`을 자동 선택하도록 확장했다.
+  CLI의 `--platform=<값>`이 환경 변수보다 우선하고 `--platform=false`로 명시적 비활성화가 가능하다.
+  adapter가 설치되지 않은 현재 환경에서는 legacy collector로 폴백하며, registry publication과 기본 경로
+  전환은 여전히 보류한다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
@@ -248,7 +253,7 @@ extension 또는 optional plugin으로 남긴다.
 | P1 neutral parser/runtime | 완료 | 독립 workspace test/typecheck 통과 |
 | P2 graph/code verifier + QA profile | 완료 | 실 qa-sdk 0 error collect/verify |
 | P3 store/client port | 완료 | immutable file store + storage-agnostic query client + QA adapter round-trip |
-| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`, `--platform=auto`, publish contract, dependency-first release runner, clean archive/install smoke, full journey 통과; registry package는 아직 미공개이고 consumer default 전환은 보류 |
+| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`, `--platform=auto`/`QA_SPEC_PLATFORM_MODE=auto`, publish contract, dependency-first release runner, clean archive/install smoke, full journey 통과; registry package는 아직 미공개이고 consumer default 전환은 보류 |
 
 ## 남은 선행 결정
 

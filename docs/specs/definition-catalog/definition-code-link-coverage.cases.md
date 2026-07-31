@@ -71,6 +71,29 @@ bdd_contracts:
         - no-external-process-is-required
         - legacy-output-contract-is-preserved
 
+  - id: definition-code-link-coverage.platform.mode.env-auto.v1
+    owner_system: definition-service
+    contract_kind: dependency-contract
+    mode: read
+    links:
+      spec: definition-code-link-coverage
+    given:
+      predicates:
+        - platform-mode-environment-is-auto
+        - cli-platform-flag-is-absent
+        - qa-spec-platform-is-on-path
+      fixtures:
+        - executable-platform-adapter
+    when:
+      actor: operator
+      operation: def.code-link-gaps
+    then:
+      returns:
+        collector: external-platform
+      invariants:
+        - environment-mode-is-supported
+        - cli-platform-flag-overrides-environment-mode
+
 test_units:
   - id: TU-definition-code-link-coverage-platform-auto-installed
     contract: definition-code-link-coverage.platform.auto.installed.v1
@@ -85,6 +108,13 @@ test_units:
     given_fixture: legacy-code-link-collector
     when: hasExternalPlatform({ platform: 'auto' }, unavailablePath)
     assertions: [external-route-not-selected, legacy-routing-preserved]
+    test_file: packages/cli/src/commands/def.lifecycle.test.ts
+  - id: TU-definition-code-link-coverage-platform-mode-env-auto
+    contract: definition-code-link-coverage.platform.mode.env-auto.v1
+    level: unit
+    given_fixture: executable-platform-adapter
+    when: hasExternalPlatform({}, path, { QA_SPEC_PLATFORM_MODE: 'auto' })
+    assertions: [environment-mode-selects-external, cli-flag-overrides-environment]
     test_file: packages/cli/src/commands/def.lifecycle.test.ts
 
 implementation_units:
@@ -104,8 +134,15 @@ implementation_units:
     inputs: [cli-flags, explicit-executable, path-value]
     effects: [external-or-legacy-route-selection]
     must_not_own: [parser-implementation, legacy-collector-behavior]
+  - id: IU-definition-code-link-coverage-platform-mode-resolution
+    contract: definition-code-link-coverage.platform.mode.env-auto.v1
+    unit_kind: guard
+    owned_by: definition-service
+    source_target: packages/cli/src/commands/def/platform.ts:resolvePlatformMode
+    inputs: [cli-flags, environment]
+    effects: [cli-over-environment-mode-resolution]
+    must_not_own: [platform-executable-discovery, legacy-collector-behavior]
 ```
-
 ## 운영 경계 ^constraint
 
 - `--platform=auto`는 설치된 `qa-spec-platform`을 발견한 경우에만 외부 경로를 선택한다.

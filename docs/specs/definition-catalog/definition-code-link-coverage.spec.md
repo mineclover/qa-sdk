@@ -58,6 +58,10 @@ collector와의 출력 비교를 위한 compatibility mode로 유지한다.
 호환성 검증에 사용할 수 있다. `--platform=true`, `--platform-bin`,
 `QA_SPEC_PLATFORM_BIN`은 명시적 외부 실행 요청이므로 실행 실패를 legacy 경로로 숨기지 않는다.
 
+배포 후 운영 설정은 `QA_SPEC_PLATFORM_MODE=auto`로 같은 자동 선택을 활성화할 수 있다.
+CLI의 `--platform=<값>`이 환경 변수보다 우선하며, `--platform=false`는 환경 모드를 명시적으로
+비활성화한다. 따라서 기본값은 여전히 legacy collector이고, 설치 확인 뒤 환경 설정으로만 전환한다.
+
 - `--scope`
   - 쉼표로 구분한 path prefix 목록. 없으면 전체 `packages/*/src`
 - `--strict`
@@ -74,7 +78,7 @@ collector와의 출력 비교를 위한 compatibility mode로 유지한다.
 - strict gate는 package 또는 boundary scope를 좁혀서 점진적으로 도입한다.
 - 문서 연결은 heuristic이 아니라 explicit mapping만 인정한다.
 - 자동 선택 모드는 기본값이 아니며, 외부 패키지 배포와 clean consumer 검증이 끝날 때까지
-  `--platform=auto`로만 활성화한다.
+  `--platform=auto` 또는 `QA_SPEC_PLATFORM_MODE=auto`로만 활성화한다.
 
 ## 관련 소스
 
