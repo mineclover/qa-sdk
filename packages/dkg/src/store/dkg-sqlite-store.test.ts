@@ -97,3 +97,55 @@ describe('DkgSqliteStore CLI audit events', () => {
     expect(store.stats().auditEvents).toBe(1);
   });
 });
+
+describe('DkgSqliteStore flow evidence', () => {
+  it('raw address_context와 trace/session 범위를 snapshot과 분리해 저장·조회한다', () => {
+    const store = createStore();
+    const result = store.saveFlowEvidence({
+      runId: 'convergence-run-1',
+      observedAt: '2026-07-31T12:00:00.000Z',
+      snapshotId: 7,
+      records: [
+        {
+          timestamp: '2026-07-31T11:59:00.000Z',
+          logId: 'log-1',
+          traceId: 'trace-1',
+          sessionId: 'session-1',
+          eventKey: 'checkout.page',
+          addressContext: {
+            page_view: 'page_view:v1:1',
+            endpoint: 'endpoint:v1:2',
+          },
+        },
+        {
+          timestamp: '2026-07-31T11:59:01.000Z',
+          traceId: 'trace-2',
+          sessionId: 'session-2',
+          addressContext: { order_event: 'order_event:v1:3' },
+        },
+      ],
+    });
+
+    expect(result).toEqual({ recordsWritten: 2 });
+    expect(store.listRecentFlowEvidence(10, { runId: 'convergence-run-1' })).toEqual([
+      expect.objectContaining({
+        runId: 'convergence-run-1',
+        snapshotId: 7,
+        traceId: 'trace-2',
+        sessionId: 'session-2',
+        addressContext: { order_event: 'order_event:v1:3' },
+      }),
+      expect.objectContaining({
+        runId: 'convergence-run-1',
+        snapshotId: 7,
+        logId: 'log-1',
+        traceId: 'trace-1',
+        sessionId: 'session-1',
+        addressContext: {
+          page_view: 'page_view:v1:1',
+          endpoint: 'endpoint:v1:2',
+        },
+      }),
+    ]);
+  });
+});

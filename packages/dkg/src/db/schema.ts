@@ -4,7 +4,8 @@
 /**
  * DKG State Store — Drizzle ORM 스키마.
  *
- * 5개 테이블: dkg_nodes, dkg_edges, usage_snapshots, version_usages, dkg_meta
+ * 핵심 테이블: dkg_nodes, dkg_edges, usage_snapshots, version_usages, dkg_meta.
+ * 보조 테이블: cli_audit_events, flow_evidence_records.
  * node:sqlite 기반. ~/.qa-sdk/state.sqlite 에 저장.
  */
 
@@ -142,6 +143,41 @@ export const cliAuditEvents = sqliteTable(
     index('idx_cli_audit_target').on(table.targetId, table.targetKind),
     index('idx_cli_audit_lifecycle').on(table.lifecycleTo),
     index('idx_cli_audit_timestamp').on(table.timestamp),
+  ],
+);
+
+// ═══════════════════════════════════════════════════════════════
+//  Flow evidence — raw address_context 기반 flow 판정 근거
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * UsageData 집계와 분리해 IntentLink observation 회복 근거를 보존한다.
+ * payload는 복제하지 않고 좌표·trace/session 범위만 저장한다.
+ */
+export const flowEvidenceRecords = sqliteTable(
+  'flow_evidence_records',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    catalogId: text('catalog_id').notNull().default('demo'),
+    snapshotId: integer('snapshot_id'),
+    runId: text('run_id').notNull(),
+    observedAt: text('observed_at').notNull(),
+    timestamp: text('timestamp').notNull(),
+    logId: text('log_id'),
+    traceId: text('trace_id'),
+    sessionId: text('session_id'),
+    eventKey: text('event_key'),
+    addressContext: text('address_context').notNull(),
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => [
+    index('idx_flow_evidence_catalog').on(table.catalogId),
+    index('idx_flow_evidence_run').on(table.catalogId, table.runId),
+    index('idx_flow_evidence_trace').on(table.catalogId, table.traceId),
+    index('idx_flow_evidence_session').on(table.catalogId, table.sessionId),
+    index('idx_flow_evidence_timestamp').on(table.catalogId, table.timestamp),
   ],
 );
 

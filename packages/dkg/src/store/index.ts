@@ -10,6 +10,9 @@ export type {
   NodeSource,
   CliAuditEventInput,
   CliAuditEventRow,
+  FlowEvidenceBatchInput,
+  FlowEvidenceRecordInput,
+  FlowEvidenceRecordRow,
   UsageSnapshotInput,
 } from './dkg-sqlite-store.js';
 

@@ -5558,6 +5558,60 @@ function groupSelfCheckFlowRecords(
   );
 }
 
+interface PersistedFlowEvidenceScope {
+  readonly runId: string;
+  readonly observedAt: string;
+  readonly fresh: boolean;
+  readonly records: readonly AddressContextRecord[];
+  readonly observedPrefixes: readonly string[];
+}
+
+/**
+ * 가장 최근 runtime flow evidence 한 batch만 self-check에 재사용한다.
+ *
+ * 오래된 evidence를 현재 정상 근거로 오인하지 않도록 24시간 freshness gate를
+ * 둔다. stale evidence는 출력에는 남기되 flow recovery 입력으로 사용하지 않는다.
+ */
+function loadLatestPersistedFlowEvidence(
+  store: DkgSqliteStore,
+  nowIso: string,
+): PersistedFlowEvidenceScope | undefined {
+  const rows = store.listRecentFlowEvidence(10_000);
+  const latest = rows[0];
+  if (!latest) return undefined;
+
+  const batchRows = rows.filter((row) => row.runId === latest.runId);
+  const observedAt = latest.observedAt;
+  const observedMs = Date.parse(observedAt);
+  const nowMs = Date.parse(nowIso);
+  const fresh =
+    Number.isFinite(observedMs) &&
+    Number.isFinite(nowMs) &&
+    nowMs >= observedMs &&
+    nowMs - observedMs <= 24 * 60 * 60 * 1_000;
+
+  const records: AddressContextRecord[] = batchRows.map((row) => ({
+    address_context: { ...row.addressContext },
+    timestamp: row.timestamp,
+    ...(row.logId ? { log_id: row.logId } : {}),
+    ...(row.traceId ? { trace_id: row.traceId } : {}),
+    ...(row.sessionId ? { session_id: row.sessionId } : {}),
+    ...(row.eventKey ? { event_key: row.eventKey } : {}),
+    execution_mode: 'replay',
+    execution_id: row.runId,
+  }));
+
+  return {
+    runId: latest.runId,
+    observedAt,
+    fresh,
+    records,
+    observedPrefixes: [
+      ...new Set(records.flatMap((record) => Object.keys(record.address_context))),
+    ].toSorted(),
+  };
+}
+
 /**
  * dkg self-check — 빌드/테스트 실행 + 좌표 인코딩 + convergence 분석 + invariant 검증.
  *
@@ -5571,6 +5625,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   const fast = opts.fast ?? false;
   const graph = getGraph();
   const store = apply ? getStore() : null;
+  const flowEvidenceStore = getStore();
 
   const now = new Date().toISOString();
   const runId = `self-check-${Date.now()}`;
@@ -5842,7 +5897,10 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   // 실제 endpoint가 관측된 IntentLink만 자동 해소 대상으로 삼는다.
   const existingObs = graph.getNodesByKind('observation');
   const liveRecords = records.filter((r) => r.execution_mode !== 'synthetic');
-  const flowRecords = groupSelfCheckFlowRecords(liveRecords);
+  const selfCheckFlowRecords = groupSelfCheckFlowRecords(liveRecords);
+  const persistedFlowEvidence = loadLatestPersistedFlowEvidence(flowEvidenceStore, now);
+  const persistedFlowRecords = persistedFlowEvidence?.fresh ? persistedFlowEvidence.records : [];
+  const flowRecords = [...selfCheckFlowRecords, ...persistedFlowRecords];
   const flowResult = traceFlows(graph, flowRecords, { date: now.slice(0, 10) });
   const recoveredFlowObservations = resolveRecoveredFlowObservations(
     graph,
@@ -6022,7 +6080,14 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   console.log(`\n  ── Phase E: flow-trace ──`);
   // 합성 이벤트는 단일 prefix만 포함하므로 제외하고, live 결과는 패키지별로
   // 합쳐서 build/test/contract 관계를 검사한다.
-  console.log(`    context: ${flowRecords.length}/${liveRecords.length} live records`);
+  console.log(
+    `    context: ${selfCheckFlowRecords.length}/${liveRecords.length} live records${persistedFlowEvidence ? ` + ${persistedFlowRecords.length} persisted ${persistedFlowEvidence.fresh ? 'fresh' : 'stale'} evidence (${persistedFlowEvidence.observedAt})` : ''}`,
+  );
+  if (persistedFlowEvidence) {
+    console.log(
+      `    evidence scope: run=${persistedFlowEvidence.runId}, prefixes=[${persistedFlowEvidence.observedPrefixes.join(',')}]${persistedFlowEvidence.fresh ? '' : ' — recovery 입력에서 제외'}`,
+    );
+  }
   if (flowResult.violations.length > 0) {
     console.log(
       `    🔴 IntentLink 위반 ${flowResult.violations.length}종 (${flowResult.violations.reduce((s, v) => s + v.count, 0)}건):`,

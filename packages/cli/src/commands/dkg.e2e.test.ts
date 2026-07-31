@@ -2,7 +2,7 @@
 // @def.doc docs-control-plane
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:http';
@@ -226,6 +226,61 @@ describe('dkg CLI E2E', () => {
     const store = new DkgSqliteStore(join(home, '.qa-sdk', 'state.sqlite'), 'demo');
     const events = store.listRecentCliAuditEvents(5, { command: 'dkg audit-events' });
     expect(events.length).toBeGreaterThan(0);
+  });
+
+  it('self-check는 최신 flow evidence를 재사용하고 stale evidence는 recovery에서 제외한다', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'qa-dkg-flow-evidence-'));
+    tempHomes.push(home);
+    process.env.HOME = home;
+
+    await mkdir(join(home, '.qa-sdk'), { recursive: true });
+    const store = new DkgSqliteStore(join(home, '.qa-sdk', 'state.sqlite'), 'demo');
+    store.saveFlowEvidence({
+      runId: 'runtime-flow-fresh',
+      observedAt: new Date().toISOString(),
+      records: [
+        {
+          timestamp: new Date().toISOString(),
+          traceId: 'trace-runtime-1',
+          sessionId: 'session-runtime-1',
+          addressContext: { page_view: 'page_view:v1:1', endpoint: 'endpoint:v1:2' },
+        },
+      ],
+    });
+
+    vi.resetModules();
+    const { main } = await import('../index.js');
+    const freshOutput = await captureConsoleAsync(async () => {
+      await main(['dkg', 'self-check', '--fast']);
+    });
+    expect(freshOutput.stdout).toContain('persisted fresh evidence');
+    expect(freshOutput.stdout).toContain('evidence scope: run=runtime-flow-fresh');
+
+    const staleHome = await mkdtemp(join(tmpdir(), 'qa-dkg-flow-evidence-stale-'));
+    tempHomes.push(staleHome);
+    process.env.HOME = staleHome;
+    await mkdir(join(staleHome, '.qa-sdk'), { recursive: true });
+    const staleAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1_000).toISOString();
+    const staleStore = new DkgSqliteStore(join(staleHome, '.qa-sdk', 'state.sqlite'), 'demo');
+    staleStore.saveFlowEvidence({
+      runId: 'runtime-flow-stale',
+      observedAt: staleAt,
+      records: [
+        {
+          timestamp: staleAt,
+          traceId: 'trace-runtime-stale',
+          addressContext: { page_view: 'page_view:v1:1' },
+        },
+      ],
+    });
+
+    vi.resetModules();
+    const { main: staleMain } = await import('../index.js');
+    const staleOutput = await captureConsoleAsync(async () => {
+      await staleMain(['dkg', 'self-check', '--fast']);
+    });
+    expect(staleOutput.stdout).toContain('persisted stale evidence');
+    expect(staleOutput.stdout).toContain('recovery 입력에서 제외');
   });
 
   const heavyIt = runHeavySmoke ? it : it.skip;

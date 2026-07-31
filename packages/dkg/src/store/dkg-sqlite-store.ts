@@ -22,6 +22,7 @@ import {
   usageSnapshots,
   versionUsages,
   cliAuditEvents,
+  flowEvidenceRecords,
   dkgMeta,
 } from '../db/schema.js';
 import { GraphRegistry } from '../graph-registry.js';
@@ -139,6 +140,31 @@ export interface CliAuditEventRow {
   readonly record: EventRecord;
 }
 
+/** DKG store가 보존하는 raw flow evidence의 최소 입력. */
+export interface FlowEvidenceRecordInput {
+  readonly timestamp: string;
+  readonly addressContext: Readonly<Record<string, string>>;
+  readonly logId?: string;
+  readonly traceId?: string;
+  readonly sessionId?: string;
+  readonly eventKey?: string;
+}
+
+export interface FlowEvidenceBatchInput {
+  readonly runId: string;
+  readonly observedAt: string;
+  readonly snapshotId?: number;
+  readonly records: readonly FlowEvidenceRecordInput[];
+}
+
+export interface FlowEvidenceRecordRow extends FlowEvidenceRecordInput {
+  readonly id: number;
+  readonly catalogId: string;
+  readonly runId: string;
+  readonly observedAt: string;
+  readonly snapshotId?: number;
+}
+
 export class DkgSqliteStore {
   private rawDb: DatabaseSyncInstance;
   private db: DrizzleDb;
@@ -195,6 +221,25 @@ export class DkgSqliteStore {
       CREATE INDEX IF NOT EXISTS idx_cli_audit_target ON cli_audit_events (target_id, target_kind);
       CREATE INDEX IF NOT EXISTS idx_cli_audit_lifecycle ON cli_audit_events (lifecycle_to);
       CREATE INDEX IF NOT EXISTS idx_cli_audit_timestamp ON cli_audit_events (timestamp);
+      CREATE TABLE IF NOT EXISTS flow_evidence_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        catalog_id TEXT NOT NULL DEFAULT 'demo',
+        snapshot_id INTEGER,
+        run_id TEXT NOT NULL,
+        observed_at TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        log_id TEXT,
+        trace_id TEXT,
+        session_id TEXT,
+        event_key TEXT,
+        address_context TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_flow_evidence_catalog ON flow_evidence_records (catalog_id);
+      CREATE INDEX IF NOT EXISTS idx_flow_evidence_run ON flow_evidence_records (catalog_id, run_id);
+      CREATE INDEX IF NOT EXISTS idx_flow_evidence_trace ON flow_evidence_records (catalog_id, trace_id);
+      CREATE INDEX IF NOT EXISTS idx_flow_evidence_session ON flow_evidence_records (catalog_id, session_id);
+      CREATE INDEX IF NOT EXISTS idx_flow_evidence_timestamp ON flow_evidence_records (catalog_id, timestamp);
     `);
   }
 
@@ -461,6 +506,61 @@ export class DkgSqliteStore {
       .from(cliAuditEvents)
       .get();
     return row?.id ?? 0;
+  }
+
+  /**
+   * 집계 snapshot과 별도로 raw flow 판정 근거를 보존한다.
+   * payload는 저장하지 않고 address_context와 trace/session 범위만 기록한다.
+   */
+  saveFlowEvidence(input: FlowEvidenceBatchInput): { recordsWritten: number } {
+    for (const record of input.records) {
+      this.db
+        .insert(flowEvidenceRecords)
+        .values({
+          catalogId: this.catalogId,
+          snapshotId: input.snapshotId,
+          runId: input.runId,
+          observedAt: input.observedAt,
+          timestamp: record.timestamp,
+          logId: record.logId ?? null,
+          traceId: record.traceId ?? null,
+          sessionId: record.sessionId ?? null,
+          eventKey: record.eventKey ?? null,
+          addressContext: JSON.stringify(record.addressContext),
+        })
+        .run();
+    }
+    return { recordsWritten: input.records.length };
+  }
+
+  /** 최근 raw flow evidence 조회. address_context를 JSON에서 복원한다. */
+  listRecentFlowEvidence(
+    limit = 100,
+    options?: { readonly runId?: string },
+  ): FlowEvidenceRecordRow[] {
+    const boundedLimit = Math.max(1, Math.min(10_000, limit));
+    const conditions = [eq(flowEvidenceRecords.catalogId, this.catalogId)];
+    if (options?.runId) conditions.push(eq(flowEvidenceRecords.runId, options.runId));
+    const rows = this.db
+      .select()
+      .from(flowEvidenceRecords)
+      .where(and(...conditions))
+      .orderBy(desc(flowEvidenceRecords.id))
+      .limit(boundedLimit)
+      .all();
+    return rows.map((row) => ({
+      id: row.id,
+      catalogId: row.catalogId,
+      snapshotId: row.snapshotId ?? undefined,
+      runId: row.runId,
+      observedAt: row.observedAt,
+      timestamp: row.timestamp,
+      logId: row.logId ?? undefined,
+      traceId: row.traceId ?? undefined,
+      sessionId: row.sessionId ?? undefined,
+      eventKey: row.eventKey ?? undefined,
+      addressContext: JSON.parse(row.addressContext) as Record<string, string>,
+    }));
   }
 
   /** 최근 N개 스냅샷의 versionUsages를 로드. */

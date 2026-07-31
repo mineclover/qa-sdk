@@ -16,16 +16,16 @@ function createMockRecordStore() {
   return {
     findByTraceId: vi.fn().mockResolvedValue([
       {
-        id: 'rec-1',
+        logId: 'rec-1',
         addressContext: { cart_event: 'cart_event:v1:3' },
-        createdAt: '2026-03-21T10:00:00Z',
-        sessionId: 'sess-1',
+        timestamp: new Date('2026-03-21T10:00:00Z'),
+        qaSessionId: 'sess-1',
       },
       {
-        id: 'rec-2',
+        logId: 'rec-2',
         addressContext: { auth_event: 'auth_event:v1:1' },
-        createdAt: '2026-03-21T10:00:01Z',
-        sessionId: 'sess-1',
+        timestamp: new Date('2026-03-21T10:00:01Z'),
+        qaSessionId: 'sess-1',
       },
     ]),
   } as any;
@@ -461,6 +461,8 @@ describe('ConvergencePipelineRunner', () => {
       }),
     };
     const dkgStore = createMockDkgStore();
+    const saveFlowEvidence = vi.fn().mockReturnValue({ recordsWritten: 2 });
+    dkgStore.saveFlowEvidence = saveFlowEvidence;
     const deps = createDeps({ convergenceFns, dkgStore });
     pipeline = new ConvergencePipelineRunner(deps, {
       recordThreshold: 999,
@@ -474,6 +476,30 @@ describe('ConvergencePipelineRunner', () => {
     expect(convergenceFns.traceFlows).toHaveBeenCalledTimes(1);
     const savedObs = (dkgStore.saveUsageSnapshotWithObservations as any).mock.calls[0][1];
     expect(savedObs.map((o: any) => o.id)).toContain('OBS-FLOW-IL-checkout-flow-page_view');
+    expect(saveFlowEvidence).toHaveBeenCalledTimes(1);
+    expect(saveFlowEvidence.mock.calls[0][0]).toMatchObject({
+      snapshotId: 42,
+      records: [
+        {
+          logId: 'rec-1',
+          traceId: 't1',
+          sessionId: 'sess-1',
+          addressContext: { cart_event: 'cart_event:v1:3' },
+        },
+        {
+          traceId: 't1',
+          sessionId: 'sess-1',
+          addressContext: { auth_event: 'auth_event:v1:1' },
+        },
+      ],
+    });
+    expect(result!.flowEvidence).toMatchObject({
+      recordCount: 2,
+      traceCount: 1,
+      sessionCount: 1,
+      observedPrefixes: ['auth_event', 'cart_event'],
+      recordsPersisted: 2,
+    });
   });
 
   it('현재 runtime flow evidence 회복을 metric 계산보다 먼저 반영함', async () => {

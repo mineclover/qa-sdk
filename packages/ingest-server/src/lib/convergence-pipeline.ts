@@ -7,7 +7,7 @@
  * Window-based 배치 처리:
  * - traceId를 버퍼에 축적
  * - threshold(건수) 또는 timer(시간) 도달 시 flush
- * - flush: recordStore에서 레코드 조회 → aggregateUsageData → collectMetrics → metricsToObservations → DKG store 저장
+ * - flush: recordStore에서 레코드 조회 → aggregateUsageData → flow trace/evidence → collectMetrics → metricsToObservations → DKG store 저장
  *         + 세션별 패턴 분류 → 이상 감지 → observation 생성
  *
  * 에러 격리: convergence 실패가 Phase 2 verdict를 절대 차단하지 않음.
@@ -128,6 +128,20 @@ export interface DkgStorePort {
     usage: UsageData,
     observations: readonly ObservationNode[],
   ): { snapshotId: number; observationsWritten: number };
+  /** raw address_context 기반 flow evidence 저장 (선택적 store capability) */
+  saveFlowEvidence?(input: {
+    readonly runId: string;
+    readonly observedAt: string;
+    readonly snapshotId?: number;
+    readonly records: readonly {
+      readonly timestamp: string;
+      readonly addressContext: Readonly<Record<string, string>>;
+      readonly logId?: string;
+      readonly traceId?: string;
+      readonly sessionId?: string;
+      readonly eventKey?: string;
+    }[];
+  }): { recordsWritten: number };
   /** observation 노드 업데이트 (자동 해소용) */
   updateNode?(node: ObservationNode): void;
   /** 노드/엣지 추가 저장 (prompts 연결 등) */
@@ -173,6 +187,14 @@ export interface ConvergenceFlushResult {
   pattern?: PatternFlushResult;
   flowViolations?: number;
   flowObservationsResolved?: number;
+  flowEvidence?: {
+    readonly runId: string;
+    readonly recordCount: number;
+    readonly traceCount: number;
+    readonly sessionCount: number;
+    readonly observedPrefixes: readonly string[];
+    readonly recordsPersisted: number;
+  };
 }
 
 // ── Pipeline Runner ──────────────────────────────────
@@ -295,12 +317,18 @@ export class ConvergencePipelineRunner {
         for (const r of records) {
           const rec = r as unknown as Record<string, unknown>;
           if (rec.addressContext && typeof rec.addressContext === 'object') {
+            const rawTimestamp = rec.timestamp ?? rec.createdAt;
             addressRecords.push({
               address_context: rec.addressContext as Record<string, string>,
-              timestamp: (rec.createdAt as string) ?? new Date().toISOString(),
-              log_id: (rec.id as string) ?? '',
+              timestamp:
+                rawTimestamp instanceof Date
+                  ? rawTimestamp.toISOString()
+                  : typeof rawTimestamp === 'string'
+                    ? rawTimestamp
+                    : new Date().toISOString(),
+              log_id: String(rec.logId ?? rec.id ?? ''),
               trace_id: traceId,
-              session_id: rec.sessionId as string | undefined,
+              session_id: (rec.qaSessionId ?? rec.sessionId) as string | undefined,
               event_key: (rec.eventKey as string) ?? '',
               actor_id: rec.actorId as string | undefined,
               user_id: rec.userId as string | undefined,
@@ -325,6 +353,8 @@ export class ConvergencePipelineRunner {
     const usage = convergenceFns.aggregateUsageData(catalog, addressRecords);
 
     const graph = graphProvider();
+    const observedAt = new Date().toISOString();
+    const flowEvidenceRunId = `convergence-${observedAt}-${traceIds.length}`;
 
     // 3. flow evidence — metric보다 먼저 회복 상태를 반영한다.
     // 현재 배치에서 endpoint가 실제 관측된 IntentLink만 회복시키고,
@@ -335,7 +365,7 @@ export class ConvergencePipelineRunner {
     if (convergenceFns.traceFlows) {
       try {
         const flowResult = convergenceFns.traceFlows(graph, addressRecords, {
-          date: new Date().toISOString().slice(0, 10),
+          date: observedAt.slice(0, 10),
         });
         flowViolationCount = flowResult.violations.length;
         flowObservations = flowResult.observations;
@@ -349,7 +379,7 @@ export class ConvergencePipelineRunner {
             addressRecords,
             flowResult,
             existingObs,
-            { date: new Date().toISOString().slice(0, 10) },
+            { date: observedAt.slice(0, 10) },
           );
           for (const observation of resolved) {
             graph.replaceNode?.(observation);
@@ -414,10 +444,32 @@ export class ConvergencePipelineRunner {
 
     // 7. DKG store 저장
     let snapshotId: number | undefined;
+    let flowEvidenceRecordsPersisted = 0;
     if (dkgStore && usage) {
       try {
         const result = dkgStore.saveUsageSnapshotWithObservations(usage, observations);
         snapshotId = result.snapshotId;
+
+        if (dkgStore.saveFlowEvidence) {
+          try {
+            const evidenceResult = dkgStore.saveFlowEvidence({
+              runId: flowEvidenceRunId,
+              observedAt,
+              snapshotId,
+              records: addressRecords.map((record) => ({
+                timestamp: record.timestamp,
+                addressContext: record.address_context,
+                ...(record.log_id ? { logId: record.log_id } : {}),
+                ...(record.trace_id ? { traceId: record.trace_id } : {}),
+                ...(record.session_id ? { sessionId: record.session_id } : {}),
+                ...(record.event_key ? { eventKey: record.event_key } : {}),
+              })),
+            });
+            flowEvidenceRecordsPersisted = evidenceResult.recordsWritten;
+          } catch (error) {
+            logger?.warn({ err: error }, 'convergence: flow evidence persistence failed');
+          }
+        }
 
         // OBS-PATTERN → CON-005 prompts 자동 연결
         const patternObs = observations.filter((o) => o.id.startsWith('OBS-PATTERN-'));
@@ -438,6 +490,17 @@ export class ConvergencePipelineRunner {
       }
     }
 
+    const flowEvidence = {
+      runId: flowEvidenceRunId,
+      recordCount: addressRecords.length,
+      traceCount: new Set(addressRecords.map((record) => record.trace_id).filter(Boolean)).size,
+      sessionCount: new Set(addressRecords.map((record) => record.session_id).filter(Boolean)).size,
+      observedPrefixes: [
+        ...new Set(addressRecords.flatMap((record) => Object.keys(record.address_context))),
+      ].toSorted(),
+      recordsPersisted: flowEvidenceRecordsPersisted,
+    };
+
     logger?.info(
       {
         traceCount: traceIds.length,
@@ -447,6 +510,7 @@ export class ConvergencePipelineRunner {
         autoResolvedCount,
         flowViolationCount,
         flowObservationsResolved,
+        flowEvidence,
         pattern: patternResult,
         snapshotId,
       },
@@ -461,6 +525,7 @@ export class ConvergencePipelineRunner {
       pattern: patternResult,
       flowViolations: flowViolationCount > 0 ? flowViolationCount : undefined,
       flowObservationsResolved: flowObservationsResolved > 0 ? flowObservationsResolved : undefined,
+      flowEvidence,
     };
   }
 
