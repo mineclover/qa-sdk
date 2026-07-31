@@ -55,7 +55,8 @@ flow/domain 후보가 있는 5개(`decision_event`, `decision_path`,
 rationale → evidence(source/consumer/flow) → downstream consumer 영향`. 이 형식이
 채워지기 전에는 `OBS-DSL-UNCOVERED`를 자동 해소하지 않는다.
 
-이 검토 단위는 `dkg run skill-dsl-ownership-audit`로 재현 가능하게 산출한다.
+이 검토 단위는 `dkg run skill-dsl-ownership-audit`로 재현 가능하게 산출하고,
+`dkg run skill-dsl-ownership-audit --json`으로 후속 문서/도구에 전달한다.
 출력은 각 prefix의 `choice=pending`, flow/domain 후보, 현재 DSL 포함 여부,
 downstream domain/consumer/intent-link, 그리고 필요한 근거(source/consumer/flow/
 rationale)를 포함한다. 이 skill은 owner를 추론하거나 observation을 resolve하지 않으며,

@@ -132,7 +132,8 @@ CLI의 `dkg run skill-analyze-impact`는 정적 cascade 결과에 다음 세 rea
 downstream domain/consumer/intent-link 영향, 그리고 사람이 채워야 할
 `source`/`consumer`/`flow`/`decision-rationale` 근거 목록을 포함한다.
 
-CLI `dkg run skill-dsl-ownership-audit`는 이 리포트를 출력한다. 이 경로는 DSL owner를
+CLI `dkg run skill-dsl-ownership-audit`는 이 리포트를 출력하며 `--json`으로 후속
+decision 문서/도구가 소비할 수 있는 결정론적 JSON을 내보낸다. 이 경로는 DSL owner를
 추론하거나 `OBS-DSL-UNCOVERED`를 resolve하지 않으며, 근거가 채워진 뒤 DecisionNode로
 기록할 수 있는 입력 자료만 만든다.
 

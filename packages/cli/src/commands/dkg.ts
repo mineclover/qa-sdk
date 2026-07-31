@@ -198,13 +198,13 @@ function bootstrapOptions(catalogOverride?: BootstrapCatalogInput) {
   return { catalog, config, transitionSpecs: DEMO_TRANSITION_SPECS };
 }
 
-function getGraph(catalogId?: string): GraphRegistry {
+function getGraph(catalogId?: string, quiet = false): GraphRegistry {
   const id = catalogId ?? activeCatalogId;
   if (!graphCache.has(id)) {
     if (registry.has(id) && id !== 'demo') {
       const graph = bootstrapDkg(bootstrapOptions(registry.getCatalog(id)));
       graphCache.set(id, graph);
-      console.log(`  (bootstrapped with custom catalog: ${id})`);
+      if (!quiet) console.log(`  (bootstrapped with custom catalog: ${id})`);
       return graph;
     }
 
@@ -214,9 +214,11 @@ function getGraph(catalogId?: string): GraphRegistry {
     if (stats.nodes > 0) {
       const graph = store.loadGraph();
       graphCache.set(id, graph);
-      console.log(
-        `  (loaded from ${STATE_DB} [${id}]: ${stats.nodes} nodes, ${stats.edges} edges)`,
-      );
+      if (!quiet) {
+        console.log(
+          `  (loaded from ${STATE_DB} [${id}]: ${stats.nodes} nodes, ${stats.edges} edges)`,
+        );
+      }
     } else {
       const graph = bootstrapDkg(
         registry.has(id) ? bootstrapOptions(registry.getCatalog(id)) : bootstrapOptions(),
@@ -224,9 +226,11 @@ function getGraph(catalogId?: string): GraphRegistry {
       const saved = store.saveGraph(graph);
       store.setMeta('last_bootstrap', new Date().toISOString());
       graphCache.set(id, graph);
-      console.log(
-        `  (bootstrapped & saved [${id}]: ${saved.nodesWritten} nodes, ${saved.edgesWritten} edges)`,
-      );
+      if (!quiet) {
+        console.log(
+          `  (bootstrapped & saved [${id}]: ${saved.nodesWritten} nodes, ${saved.edgesWritten} edges)`,
+        );
+      }
     }
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위에서 .set() 보장
@@ -3385,7 +3389,8 @@ export function dkgClaims(): void {
 // ── dkg run ─────────────────────────────────────────
 
 export function dkgRun(skillId: string, args: string[]): void {
-  const graph = getGraph();
+  const jsonOutput = args.includes('--json');
+  const graph = getGraph(undefined, jsonOutput);
 
   // skill 노드 확인
   const skillNode = graph.getNode(skillId) as SkillNode | undefined;
@@ -3395,14 +3400,16 @@ export function dkgRun(skillId: string, args: string[]): void {
     return;
   }
 
-  console.log(`\n══ Run: ${skillNode.name} (${skillId}) ══`);
-  if (skillNode.specialization) {
-    const spec = skillNode.specialization;
-    if (spec.dslBundles?.length) console.log(`  DSL: ${spec.dslBundles.join(', ')}`);
-    if (spec.prefixes?.length) console.log(`  prefix: ${spec.prefixes.join(', ')}`);
-    if (spec.constraints?.length) console.log(`  제약: ${spec.constraints.join(', ')}`);
+  if (!jsonOutput) {
+    console.log(`\n══ Run: ${skillNode.name} (${skillId}) ══`);
+    if (skillNode.specialization) {
+      const spec = skillNode.specialization;
+      if (spec.dslBundles?.length) console.log(`  DSL: ${spec.dslBundles.join(', ')}`);
+      if (spec.prefixes?.length) console.log(`  prefix: ${spec.prefixes.join(', ')}`);
+      if (spec.constraints?.length) console.log(`  제약: ${spec.constraints.join(', ')}`);
+    }
+    console.log('');
   }
-  console.log('');
 
   // skill별 실행 라우팅
   switch (skillId) {
@@ -3608,6 +3615,10 @@ export function dkgRun(skillId: string, args: string[]): void {
 
     case 'skill-dsl-ownership-audit': {
       const result = auditDslOwnership(graph);
+      if (args.includes('--json')) {
+        console.log(JSON.stringify(result, null, 2));
+        break;
+      }
       console.log(`  status: ${result.status}`);
       console.log(
         `  pending: ${result.pendingCount} (candidate=${result.candidateCount}, no-candidate=${result.noCandidateCount})`,
@@ -4401,6 +4412,8 @@ export function dkgRun(skillId: string, args: string[]): void {
       console.log(`  output: ${skillNode.output}`);
       break;
   }
+
+  if (jsonOutput) return;
 
   // skill 실행 이벤트 기록
   emitSkillExecution(skillId, skillNode.category);
