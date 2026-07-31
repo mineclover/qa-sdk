@@ -198,14 +198,14 @@ API 클라이언트, iframe 통신 프로토콜.
 
 ### dkg-system/ — 설계 지식 그래프
 
-좌표계 성장 나선을 추적하는 메타데이터 그래프. 노드 16종, 엣지 18종, skill 39개.
+좌표계 성장 나선을 추적하는 메타데이터 그래프. 노드 16종, 엣지 18종, skill 40개.
 
 | 스펙 | 설명 | 상태 |
 |---|---|---|
 | [dkg-system.md](dkg-system/dkg-system.md) | DKG 시스템 모듈 — 전체 구성 overview | implemented |
 | [dkg-node-types.spec.md](dkg-system/dkg-node-types.spec.md) | 16종 노드 타입 (Axis, Prefix, Decision, Observation, Skill 등) | implemented |
 | [dkg-edge-types.spec.md](dkg-system/dkg-edge-types.spec.md) | 18종 엣지 타입 (composes, governs, observes 등) | implemented |
-| [dkg-skills-system.md](dkg-system/dkg-skills-system.md) | 39개 skill 시스템 — read/write/analysis/chain 4카테고리 | implemented |
+| [dkg-skills-system.md](dkg-system/dkg-skills-system.md) | 40개 skill 시스템 — read/write/analysis/chain 4카테고리 | implemented |
 | [dkg-skill-catalog.spec.md](dkg-system/dkg-skills-system/dkg-skill-catalog.spec.md) | SkillNode 타입, specialization, 등록 체계, 전체 목록 | implemented |
 | [dkg-state-store.spec.md](dkg-system/dkg-state-store.spec.md) | 로컬 SQLite 상태 저장소 (5 테이블) | implemented |
 | [dkg-constraint.spec.md](dkg-system/dkg-constraint.spec.md) | CON-001~CON-007 불변 조건 | implemented |
@@ -296,7 +296,7 @@ Claude/Codex skill + DKG skill의 목적·맥락·관계를 experience 계층에
 |---|---|---|
 | [skill-catalog-system.md](skill-catalog/skill-catalog-system.md) | 전체 그룹 구조 — 5개 그룹, 3디렉토리 경계 | implemented |
 | [claude-skill-group.md](skill-catalog/claude-skill-group.md) | definition-catalog 중심 Claude skill 11개 | implemented |
-| [dkg-skill-group.md](skill-catalog/dkg-skill-group.md) | DKG 자동화 39개 — 현황 + 도메인 계층 연결 | implemented |
+| [dkg-skill-group.md](skill-catalog/dkg-skill-group.md) | DKG 자동화 40개 — 현황 + 도메인 계층 연결 | implemented |
 
 ### quality-gates/ — 품질 게이트 & 하네스
 

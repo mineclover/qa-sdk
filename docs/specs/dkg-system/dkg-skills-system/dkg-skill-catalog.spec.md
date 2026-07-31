@@ -47,4 +47,4 @@ DKG skill을 등록/조회/실행하는 카탈로그. 각 skill의 targetKinds, 
 ## 구성 ^overview
 
 - `dkg-skill-catalog-types`: SkillNode 타입, 카테고리 분류, 전문화(Specialization) 메커니즘, DKG 등록 체계
-- `dkg-skill-catalog-registry`: 39개 skill 전체 목록 + CLI 연결 상태 + 구현 소스 매핑
+- `dkg-skill-catalog-registry`: 40개 skill 전체 목록 + CLI 연결 상태 + 구현 소스 매핑

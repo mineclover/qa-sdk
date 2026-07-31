@@ -42,7 +42,7 @@ sources:
 - claude-skill-group: definition-catalog 중심 Agent Skill 16개 (legacy ID)
 - automation-skill-group: 구현/테스트/문서 전환/운영 게이트/아키텍처 slice 보조 스킬 8개
 - ralph-tui-skill-group: PRD/작업 생성용 ralph-tui 스킬 4개
-- dkg-skill-group: DKG 그래프 자동화 39개 (read 5, write 5, analysis 26, chain 3)
+- dkg-skill-group: DKG 그래프 자동화 40개 (read 5, write 5, analysis 27, chain 3)
 - cli-command-group: CLI 명령 그룹 (def/dkg/flow/coord 4개)
 - infra-skill-group: 로컬 인프라 배포/조회/export/status 스킬 4개
 - governance-skill-group: 아키텍처/감사/semantic-change/작업 종료 거버넌스 스킬 4개
@@ -54,7 +54,7 @@ sources:
 | 원본 | 현재 수 | 확인 명령 | 의미 |
 |---|---:|---|---|
 | `skills/*/SKILL.md` | 36 skills / 45 files | `corepack pnpm skills:check` | Agent Skill 실행 정의 SSOT |
-| `packages/dkg` SkillDef | 39 operations | `qa-sdk dkg skills` | DKG Operation 런타임 카탈로그 |
+| `packages/dkg` SkillDef | 40 operations | `qa-sdk dkg skills` | DKG Operation 런타임 카탈로그 |
 
 첫 행의 36개는 그룹별로 `claude 16 + automation 8 + ralph-tui 4 + infra 4 + governance 4`로 구성된다. 두 번째 행은 별도 런타임 카탈로그이므로 첫 행의 분모에 합산하지 않는다.
 

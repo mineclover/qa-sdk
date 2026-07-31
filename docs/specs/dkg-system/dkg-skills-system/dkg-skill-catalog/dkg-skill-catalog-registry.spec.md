@@ -36,7 +36,7 @@ sources:
   - packages/dkg/src/skills/skills-suite.test.ts
   - packages/cli/src/commands/dkg.ts
 ---
-# Skill 레지스트리 (39개)
+# Skill 레지스트리 (40개)
 
 
 ## 탐색 ^navigation
@@ -47,7 +47,7 @@ dkg-system > dkg-skills-system > dkg-skill-catalog > **dkg-skill-catalog-registr
 
 ## 목적 ^purpose
 
-DKG에 등록된 39개 skill의 전체 목록. 카테고리별 분류, CLI 연결 상태, 구현 소스 매핑.
+DKG에 등록된 40개 skill의 전체 목록. 카테고리별 분류, CLI 연결 상태, 구현 소스 매핑.
 
 정의: `packages/demo-dkg-config/src/index.ts` (`DEMO_DKG_CONFIG`)
 구현: `packages/dkg/src/skills/*.ts`
@@ -73,9 +73,9 @@ CLI: `packages/cli/src/commands/dkg.ts` dkgRun() switch
 | `skill-release` | claim-operation.ts | targetId → ObservationNode |
 | `skill-lifecycle-transition` | lifecycle-transition.ts | nodeId+toLifecycle → TransitionResult |
 
-## analysis (26개)
+## analysis (27개)
 
-### 구조 분석 (10개)
+### 구조 분석 (11개)
 
 | Skill ID | 소스 파일 | 입력 → 출력 |
 |----------|----------|------------|
@@ -84,6 +84,7 @@ CLI: `packages/cli/src/commands/dkg.ts` dkgRun() switch
 | `skill-svc-binding-check` | constraint-check.ts | targetId → ConstraintCheckResult |
 | `skill-domain-health` | domain-health.ts | domainId? → DomainHealthResult |
 | `skill-analyze-impact` | analyze-impact.ts | ImpactAnalysisInput → ImpactAnalysisResult |
+| `skill-dsl-ownership-audit` | dsl-ownership-review.ts | DKG graph → DslOwnershipReviewReport |
 | `skill-decision-scaffold` | decision-scaffold.ts | ScaffoldInput → DecisionNode |
 | `skill-infer-migrator` | infer-migrator.ts | DiffInfo → InferredMigrator |
 | `skill-observation-coverage` | coverage-audit.ts | UsageData → CoverageAuditResult |
@@ -141,6 +142,7 @@ CLI: `packages/cli/src/commands/dkg.ts` dkgRun() switch
 | 소스 파일 | 제공 함수 | 대응 skill |
 |----------|----------|-----------|
 | analyze-impact.ts | `analyzeImpact()` | skill-analyze-impact |
+| dsl-ownership-review.ts | `auditDslOwnership()` | skill-dsl-ownership-audit |
 | claim-operation.ts | `prepareClaim()`, `prepareRelease()` | skill-claim, skill-release |
 | constraint-check.ts | `checkConstraints()` | skill-event-action-check, skill-svc-binding-check |
 | converge-chain.ts | `convergeChain()` | skill-converge-chain |

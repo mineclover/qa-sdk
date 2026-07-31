@@ -40,7 +40,7 @@ skill-catalog-system > **dkg-skill-group**
 
 ## 목적 ^purpose
 
-DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 수행하는 **DKG Operation** 체계. 39개 `SkillDef`가 4개 카테고리(read/write/analysis/chain)로 분류되며, CLI `dkg skills`/`dkg run`으로 조회·실행한다. 이는 `skills/*/SKILL.md`의 Agent Skill과 다른 코드 기반 런타임 집합이다.
+DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 수행하는 **DKG Operation** 체계. 40개 `SkillDef`가 4개 카테고리(read/write/analysis/chain)로 분류되며, CLI `dkg skills`/`dkg run`으로 조회·실행한다. 이는 `skills/*/SKILL.md`의 Agent Skill과 다른 코드 기반 런타임 집합이다.
 
 ## 구성 ^overview
 
@@ -58,9 +58,9 @@ DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 
 |---------|------|---------|
 | read | 5 | 5 |
 | write | 5 | 5 |
-| analysis | 26 | 26 |
+| analysis | 27 | 27 |
 | chain | 3 | 3 |
-| **합계** | **39** | **39** |
+| **합계** | **40** | **40** |
 
 상세 목록: `docs/specs/dkg-system/dkg-skill-catalog.spec.md`
 

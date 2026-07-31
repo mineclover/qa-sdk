@@ -243,6 +243,6 @@ env 전환: config.js의 `ENV: "dev"` → `"prod"` 변경, 또는 `registry.fetc
 ## 다음 읽기
 
 - 좌표 개념 이해: `docs/CONVENTIONS.md` — DimRef, Axis, Prefix, Address 용어 정의
-- DKG 탐색: `dkg skills` — 39개 자동화 도구 목록 + `dkg run skill-system-overview`
+- DKG 탐색: `dkg skills` — 40개 자동화 도구 목록 + `dkg run skill-system-overview`
 - 운영 플레이북: `docs/skills/README.md` — prefix 추가, 시스템 리뷰, claim 워크플로우
 - 상세 스펙: `docs/specs/README.md` — 관심사별 스펙 인덱스

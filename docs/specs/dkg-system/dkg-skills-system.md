@@ -43,7 +43,7 @@ dkg-system > **dkg-skills-system**
 
 ## 목적 ^purpose
 
-DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 수행하는 39개 skill. 4개 카테고리(read/write/analysis/chain)로 분류되며, `bootstrapDkg()`에서 SkillNode로 등록된다.
+DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 수행하는 40개 skill. 4개 카테고리(read/write/analysis/chain)로 분류되며, `bootstrapDkg()`에서 SkillNode로 등록된다.
 
 ## 구성 ^overview
 
@@ -61,17 +61,17 @@ DKG 그래프 위에서 구조 분석·의사결정 기록·자동화 연산을 
 |---------|---|---------|------|
 | read | 5 | 5/5 | 그래프 탐색·조회 |
 | write | 5 | 5/5 | Decision/Observation/Claim 기록, lifecycle 전이 |
-| analysis | 26 | 26/26 | 구조 검증·커버리지·헬스체크·도메인별 분석 |
+| analysis | 27 | 27/27 | 구조 검증·커버리지·헬스체크·도메인별 분석 |
 | chain | 3 | 3/3 | 다단계 skill 순차 실행 |
 
 ### 구현 계층
 
 ```
-SkillDef (demo-dkg-config 패키지, 39개 정의)
+SkillDef (demo-dkg-config 패키지, 40개 정의)
   ↓ bootstrapDkg() — dkg-enrichment (base+enrich+finalize)
 SkillNode (DKG 그래프 노드)
   ↓ dkg 스킬 모듈 + dkg-enrichment 수렴 스킬
 skill 함수 구현
   ↓ cli/src/commands/dkg.ts (dkg run switch)
-CLI 실행 경로 (39/39 연결)
+CLI 실행 경로 (40/40 연결)
 ```

@@ -54,7 +54,7 @@ corepack pnpm skills:check
 
 포맷 게이트는 추적 소스 전체를 기준으로 한다. `corepack pnpm format:check`는 생성물과 의존성을 제외한 전체 추적 코드·설정 파일을 검사하고, `corepack pnpm format:check:changed`는 현재 작업 트리의 변경 파일만 빠르게 검사한다. CI나 PR에서는 `corepack pnpm format:check -- --base origin/main`처럼 기준 브랜치를 지정할 수 있다. `corepack pnpm format`은 같은 추적 범위를 실제 정리한다. 문서와 셸 파일의 whitespace는 `git diff --check`로 확인한다.
 
-현재 Agent Skill baseline은 `skills:check` 기준 **36 skills / 45 files**다. 이는 `packages/dkg`의 별도 `SkillDef` 카탈로그인 **39개 DKG Operation**과 다른 집합이므로 합산하지 않는다. Agent Skill의 repo SSOT는 계속 `skills/`이며, catalog entry는 `docs/specs/skill-catalog/`에서 관리한다.
+현재 Agent Skill baseline은 `skills:check` 기준 **36 skills / 45 files**다. 이는 `packages/dkg`의 별도 `SkillDef` 카탈로그인 **40개 DKG Operation**과 다른 집합이므로 합산하지 않는다. Agent Skill의 repo SSOT는 계속 `skills/`이며, catalog entry는 `docs/specs/skill-catalog/`에서 관리한다.
 
 ## 계층(L1-L4) 관점 skill navigation
 
@@ -145,7 +145,7 @@ corepack pnpm skills:check
 - `docs/specs/skill-catalog/ralph-tui-skill-group.md`
   ralph-tui PRD/작업 생성
 
-## DKG Operation (`SkillDef`, 39개)
+## DKG Operation (`SkillDef`, 40개)
 
 CLI에서 `dkg run skill-*`로 실행하는 DKG 그래프 자동화 연산이다. Agent Skill이 아니라 코드·입출력 계약을 가진 런타임 작업이며, 필요하면 Skill playbook이 여러 DKG Operation과 CLI command를 조합한다.
 

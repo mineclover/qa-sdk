@@ -1,12 +1,12 @@
 # FB-2026-07-31-03 — self-check 잔여 metric의 실행 근거·설계 판단
 
-| 항목 | 값 |
-|---|---|
-| 상태 | `in-progress` |
-| 우선순위 | P1/P2 — 실행 근거 확보 후 순차 처리 |
-| 등록일 | 2026-07-31 |
-| 출처 | `dkg self-check --apply` 후속 리뷰 |
-| 대상 | convergence metric, IntentLink flow trace, IR 축 capacity, DSL coverage |
+| 항목     | 값                                                                      |
+| -------- | ----------------------------------------------------------------------- |
+| 상태     | `in-progress`                                                           |
+| 우선순위 | P1/P2 — 실행 근거 확보 후 순차 처리                                     |
+| 등록일   | 2026-07-31                                                              |
+| 출처     | `dkg self-check --apply` 후속 리뷰                                      |
+| 대상     | convergence metric, IntentLink flow trace, IR 축 capacity, DSL coverage |
 
 ## 현재 근거
 
@@ -23,8 +23,8 @@ collection health `100%`, build/test coverage `86%`/`82%`, IntentLink·DSL invar
   `transition_event`, `convergence_event`, `graph_event`, `test_scenario`, `ir_*`)는
   직접적인 flow-schema/domain 후보가 없다. decision-flow, definition harness, IR
   관측 영역의 DSL 소유 여부는 아직 결정하지 않았다.
-후속 bootstrap은 각 미소속 prefix에 기존 `flow-schema`/`domain` 연결을
-`ownershipCandidates` 메타데이터로 보존한다.
+  후속 bootstrap은 각 미소속 prefix에 기존 `flow-schema`/`domain` 연결을
+  `ownershipCandidates` 메타데이터로 보존한다.
 
 ownership 후보의 구체적 범위는 다음과 같다. `decision_event`, `decision_path`,
 `escalation_event`, `model_apply`는 `coordinate-design`, `forcing-questions`,
@@ -54,6 +54,12 @@ flow/domain 후보가 있는 5개(`decision_event`, `decision_path`,
 `target prefix → choice(DSL 귀속|의도적 독립) → owner DSL/domain 또는 none →
 rationale → evidence(source/consumer/flow) → downstream consumer 영향`. 이 형식이
 채워지기 전에는 `OBS-DSL-UNCOVERED`를 자동 해소하지 않는다.
+
+이 검토 단위는 `dkg run skill-dsl-ownership-audit`로 재현 가능하게 산출한다.
+출력은 각 prefix의 `choice=pending`, flow/domain 후보, 현재 DSL 포함 여부,
+downstream domain/consumer/intent-link, 그리고 필요한 근거(source/consumer/flow/
+rationale)를 포함한다. 이 skill은 owner를 추론하거나 observation을 resolve하지 않으며,
+사람이 근거를 채운 뒤 DecisionNode로 기록하는 입력 자료만 만든다.
 
 그래프 refresh 직후의 `--fast` 재측정은 build/test mock 입력의 비대표성을 반영해
 coverage metric을 생성하지 않으며 `263건, 5 issues`로 집계된다. coverage 요약은
@@ -129,15 +135,19 @@ business flow 관측을 정상으로 간주하지 않으며, 위 조건을 만�
 
 runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 남기므로, 이후
 재검토 시 어떤 trace/session/event가 어떤 prefix를 관측했는지 복원할 수 있다.
+`packages/ingest-server/src/lib/convergence-e2e.test.ts`의 실제 Hono ingest route 통합
+검증도 `POST /v1/ingest`가 Phase 2 완료 알림을 거쳐 pipeline flush와 flow evidence
+저장 입력까지 연결되는 것을 확인한다. 이 테스트는 synthetic evidence를 운영 DB에
+넣지 않고, production 경로의 readiness만 검증한다.
 
 ## 보류 항목과 재개 조건
 
-| 항목 | 보류 이유 | 재개 조건 |
-|---|---|---|
-| `OBS-FLOW-*` health | 최신 batch만 사용하고 24시간 freshness gate를 적용함. 현재 self-check 실행에는 fresh business evidence가 없음 | 실제 business ingest flush 후 fresh batch로 self-check를 재실행해 recovered/retained 결과 확인 |
-| IR 주소 migration | capacity 변경 전 historical snapshot에 `ir_pipe=28`, `ir_intent_path=28`, `ir_data=40` records가 있으나 변경 후 active raw evidence는 없음. `DEC-MIGRATE-ir-capacity-history`로 history 보존 정책 기록 | historical snapshot은 immutable history로 보존하고, 새 IR runtime address 유입 시 provenance/backfill 정책 재개 |
-| confidence axis overlap | `DEC-SEP-pattern_confidence-confidence_band`로 분리 유지 결정 완료. consumer 계약과 대상 축을 그래프에 연결함 | consumer 계약 변경 또는 신규 공용 prefix가 생기면 재검토 |
-| `OBS-DSL-UNCOVERED` | 22개 prefix의 DSL 소유·포함 여부가 설계 판단. bootstrap은 기존 flow-schema/domain 후보만 제시 | 각 prefix의 DSL 귀속 또는 의도적 비소속 결정 기록 |
+| 항목                    | 보류 이유                                                                                                                                                                                              | 재개 조건                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `OBS-FLOW-*` health     | 최신 batch만 사용하고 24시간 freshness gate를 적용함. 현재 self-check 실행에는 fresh business evidence가 없음                                                                                          | 실제 business ingest flush 후 fresh batch로 self-check를 재실행해 recovered/retained 결과 확인                  |
+| IR 주소 migration       | capacity 변경 전 historical snapshot에 `ir_pipe=28`, `ir_intent_path=28`, `ir_data=40` records가 있으나 변경 후 active raw evidence는 없음. `DEC-MIGRATE-ir-capacity-history`로 history 보존 정책 기록 | historical snapshot은 immutable history로 보존하고, 새 IR runtime address 유입 시 provenance/backfill 정책 재개 |
+| confidence axis overlap | `DEC-SEP-pattern_confidence-confidence_band`로 분리 유지 결정 완료. consumer 계약과 대상 축을 그래프에 연결함                                                                                          | consumer 계약 변경 또는 신규 공용 prefix가 생기면 재검토                                                        |
+| `OBS-DSL-UNCOVERED`     | 22개 prefix의 DSL 소유·포함 여부가 설계 판단. bootstrap은 기존 flow-schema/domain 후보만 제시                                                                                                          | 각 prefix의 DSL 귀속 또는 의도적 비소속 결정 기록                                                               |
 
 ## 종료 조건
 
@@ -146,10 +156,12 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 - category audit가 `68/68` 통과하고 IR headroom 경고가 사라진다. ✅
 - capacity 변경은 DKG decision 및 semantic-change impact를 기록했다. ✅
 - runtime usage audit가 정적 affected prefix와 historical/current evidence를 분리해 출력한다. ✅
+- `POST /v1/ingest`에서 Phase 2와 convergence flush를 거쳐 raw flow evidence 저장 입력까지 연결됨을 통합 테스트로 확인했다. ✅
 - historical IR snapshot은 변경 전 schema evidence로 분류했다. ✅
 - `DEC-MIGRATE-ir-capacity-history`가 affected prefix와 재검토 조건을 기록한다. ✅
 - 새 IR 주소 소비자가 유입되면 migration/backfill 정책을 재개한다.
 - confidence axis overlap 판단이 `DEC-SEP` DecisionNode와 대상 엣지로 기록된다. ✅
 - DSL 소유 판단이 prefix별 DecisionNode/스펙으로 기록된다.
+- `dkg run skill-dsl-ownership-audit`가 22개 pending review unit과 downstream 영향·근거 요구사항을 산출한다. ✅
 - 후속 self-check에서 자동 해소된 observation과 의도적으로 남은 warning의 이유가
   각각 출력된다.

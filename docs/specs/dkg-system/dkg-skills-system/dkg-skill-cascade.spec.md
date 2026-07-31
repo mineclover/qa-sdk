@@ -23,6 +23,9 @@ sources:
   - packages/dkg/src/skills/analyze-impact.ts
   - packages/dkg/src/skills/runtime-usage-audit.ts
   - packages/dkg/src/skills/runtime-usage-audit.test.ts
+  - packages/dkg/src/skills/dsl-ownership-review.ts
+  - packages/dkg/src/skills/dsl-ownership-review.test.ts
+  - packages/ingest-server/src/lib/convergence-e2e.test.ts
   - packages/dkg/src/skills/constraint-check.ts
   - packages/dkg/src/skills/safe-entry-add.ts
   - packages/dkg/src/skills/skill-chain.ts
@@ -46,7 +49,7 @@ DKG 그래프에서 특정 노드 변경의 영향을 종단까지 추적하는 
 
 ## 구성 ^overview
 
-6단계 분석 파이프라인: axis cascade → prefix cascade → constraint 검사 → intent-link 검사 → stride-break/migration 판정 → persisted runtime usage 보강. 입력은 `ImpactAnalysisInput`, 출력은 `ImpactAnalysisResult`와 CLI의 runtime usage read model이다.
+6단계 분석 파이프라인: axis cascade → prefix cascade → constraint 검사 → intent-link 검사 → stride-break/migration 판정 → persisted runtime usage 보강. 입력은 `ImpactAnalysisInput`, 출력은 `ImpactAnalysisResult`와 CLI의 runtime usage read model이다. DSL 소유 판단은 별도 `skill-dsl-ownership-audit`가 담당하며 자동 귀속하지 않는다.
 
 ## 입력 타입
 
@@ -118,6 +121,18 @@ CLI의 `dkg run skill-analyze-impact`는 정적 cascade 결과에 다음 세 rea
 받는다. historical snapshot도 runtime evidence로 표시하되 active consumer로
 자동 판정하지 않으며, 이 audit는 migration 실행이나 observation 해소를 자동화하지
 않는다.
+
+## DSL ownership review
+
+`auditDslOwnership(graph)`는 `OBS-DSL-UNCOVERED`의 subjects를 prefix별 검토 단위로
+펼친다. 각 unit은 `choice: pending`, `status: needs-human-decision`, reverse graph에서
+얻은 flow-schema/domain 후보, 현재 DSL bundle 포함 여부, `cascadeFromPrefix()` 기반
+downstream domain/consumer/intent-link 영향, 그리고 사람이 채워야 할
+`source`/`consumer`/`flow`/`decision-rationale` 근거 목록을 포함한다.
+
+CLI `dkg run skill-dsl-ownership-audit`는 이 리포트를 출력한다. 이 경로는 DSL owner를
+추론하거나 `OBS-DSL-UNCOVERED`를 resolve하지 않으며, 근거가 채워진 뒤 DecisionNode로
+기록할 수 있는 입력 자료만 만든다.
 
 ## 출력 타입
 
