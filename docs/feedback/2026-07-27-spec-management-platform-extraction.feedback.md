@@ -243,6 +243,9 @@ extension 또는 optional plugin으로 남긴다.
   npm 자식 프로세스에 전달해 발생시키던 `Unknown env config` 경고를 차단했다. `test:release` sanitizer
   단위 테스트와 11개 archive dry-run을 다시 실행해 warning-free 결과를 확인했고, full specification
   journey는 `5 pass, 2 skip`으로 유지됐다.
+- P4 11차 publish 보호 강화: 명시적 `--publish` 경로가 `npm whoami` 인증 preflight를 먼저 수행하도록
+  추가했다. 인증 실패는 archive 생성·publish 전에 중단되며, `SPEC_PLATFORM_REGISTRY`로 대상 registry를
+  명시할 수 있다. 잘못된 local registry로 preflight fail-fast를 확인했고 실제 registry publish는 실행하지 않았다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
