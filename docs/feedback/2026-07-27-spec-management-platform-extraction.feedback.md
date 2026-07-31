@@ -229,6 +229,10 @@ extension 또는 optional plugin으로 남긴다.
   consumer 검증은 완료됐지만 실제 registry publication과 registry consumer 검증은 아직 완료되지 않았다.
   이번 단계에서는 publish를 실행하지 않았다. publish 후에는 `SPEC_PLATFORM_REGISTRY_SMOKE=1`
   live consumer gate가 registry 설치와 `qa-spec-platform verify`를 자동 검증하도록 추가했다.
+- P4 8차 release runner: adapter dependency closure 11개를 dependency-first로 정렬하고,
+  `pnpm pack` 후 `npm publish <tarball>`을 수행하는 guarded `corepack pnpm release:packages`를 추가했다.
+  기본 실행은 publish dry-run이며, 실제 publish는 `--publish`와
+  `SPEC_PLATFORM_PUBLISH_CONFIRM=1`을 모두 요구한다. 11개 archive dry-run은 warning 없이 통과했다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
@@ -244,7 +248,7 @@ extension 또는 optional plugin으로 남긴다.
 | P1 neutral parser/runtime | 완료 | 독립 workspace test/typecheck 통과 |
 | P2 graph/code verifier + QA profile | 완료 | 실 qa-sdk 0 error collect/verify |
 | P3 store/client port | 완료 | immutable file store + storage-agnostic query client + QA adapter round-trip |
-| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint, `--platform=auto` route selection, publish contract, clean archive/install smoke, full journey 통과; registry package는 아직 미공개이고 consumer default 전환은 보류 |
+| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`, `--platform=auto`, publish contract, dependency-first release runner, clean archive/install smoke, full journey 통과; registry package는 아직 미공개이고 consumer default 전환은 보류 |
 
 ## 남은 선행 결정
 
