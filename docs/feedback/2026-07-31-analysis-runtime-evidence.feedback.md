@@ -2,7 +2,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `deferred` |
+| 상태 | `in-progress` |
 | 우선순위 | P1/P2 — 실행 근거 확보 후 순차 처리 |
 | 등록일 | 2026-07-31 |
 | 출처 | `dkg self-check --apply` 후속 리뷰 |
@@ -18,10 +18,13 @@ collection health `100%`, build/test coverage `86%`/`82%`, IntentLink·DSL invar
 - headroom warning 3개: `ir_pipe_state`, `ir_retention`, `ir_storage_type` 모두 `3/4`
 - overlap warning 1개: `pattern_confidence` ↔ `confidence_band` 80% merge 후보
 
-현재 SQLite usage snapshot은 집계된 `addressUsages`만 보존하고 raw
-`address_context`/session co-occurrence를 보존하지 않는다. 따라서 최신 flow trace가
-정상이라는 이유만으로 과거 business flow observation을 자동 해소하면 관측 부재를
-정상으로 오인할 수 있다.
+기존 SQLite usage snapshot은 집계된 `addressUsages`만 보존하고 raw
+`address_context`/session co-occurrence를 보존하지 않았다. 이번 후속 구현에서
+ingest runtime flush는 payload를 복제하지 않고 raw 좌표와 trace/session/event 범위를
+`flow_evidence_records`에 별도 저장하며, flush 결과에도 관측 prefix·범위를 남긴다.
+CLI self-check는 이제 가장 최근 evidence batch를 읽어 flow trace에 보강한다. 단,
+현재 실행 시각 기준 24시간 이내의 batch만 recovery 입력으로 사용하고, stale batch는
+범위와 시점을 출력하되 정상 근거로 사용하지 않는다.
 
 ## 처리된 범위
 
@@ -32,21 +35,27 @@ observation을 회복 후보로 만든다.
 2. 같은 실행에서 동일한 flow violation이 재발하지 않는다.
 3. 실제 저장은 self-check `--apply`에서만 수행한다.
 
-현재 self-check는 build/test/contract live context만 flow trace에 사용하므로, 위
-조건을 만족하지 못한 과거 business flow observation 7건은 의도적으로 유지한다.
+현재 self-check는 build/test/contract live context와 freshness를 통과한 최신 runtime
+evidence를 flow trace에 사용한다. 저장된 evidence가 없거나 stale인 실행에서는
+business flow 관측을 정상으로 간주하지 않으며, 위 조건을 만족하지 못한 observation은
+의도적으로 유지한다.
+
+runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 남기므로, 이후
+재검토 시 어떤 trace/session/event가 어떤 prefix를 관측했는지 복원할 수 있다.
 
 ## 보류 항목과 재개 조건
 
 | 항목 | 보류 이유 | 재개 조건 |
 |---|---|---|
-| `OBS-FLOW-*` health | raw business context가 없어 회복 여부 판정 불가 | ingest/store가 raw address context 또는 session-level flow evidence를 제공한 뒤 재실행 |
+| `OBS-FLOW-*` health | 최신 batch만 사용하고 24시간 freshness gate를 적용함. 현재 self-check 실행에는 fresh business evidence가 없음 | 실제 business ingest flush 후 fresh batch로 self-check를 재실행해 recovered/retained 결과 확인 |
 | IR headroom 3건 | capacity `4 → 8`은 주소 stride와 snapshot에 영향을 주는 semantic 변경 | capacity 결정 기록, impact 분석, catalog/codegen/주소 회귀 검증 완료 |
 | axis overlap 1건 | 두 confidence 축의 의미가 실제로 병합 가능한지 사람 판단 필요 | merge 또는 `DEC-SEP` 수용 결정과 downstream consumer 확인 |
 | `OBS-DSL-UNCOVERED` | 17개 prefix의 DSL 소유·포함 여부가 설계 판단 | 각 prefix의 DSL 귀속 또는 의도적 비소속 결정 기록 |
 
 ## 종료 조건
 
-- raw flow evidence가 저장되고 관측 범위가 closure에 표시된다.
+- runtime raw flow evidence가 저장되고 ingest flush 결과에 관측 범위가 표시된다. ✅
+- self-check가 최신 evidence를 읽고 24시간 freshness gate로 관측 부재와 정상 복귀를 구분한다. ✅
 - capacity 변경은 semantic-change impact와 주소 회귀를 통과한다.
 - overlap 및 DSL 소유 판단이 DecisionNode/스펙으로 기록된다.
 - 후속 self-check에서 자동 해소된 observation과 의도적으로 남은 warning의 이유가

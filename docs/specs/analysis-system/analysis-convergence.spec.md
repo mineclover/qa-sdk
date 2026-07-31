@@ -24,6 +24,7 @@ sources:
   - packages/convergence/src/metric-registry.ts
   - packages/convergence/src/convergence-runner.ts
   - packages/dkg/src/skills/flow-trace.ts
+  - packages/dkg/src/store/dkg-sqlite-store.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
   - packages/spec-core/src/convergence/pipeline-e2e.test.ts
@@ -53,6 +54,8 @@ prefix 간 중복이나 낭비를 감지하는 수렴 분석. 유사한 축 조�
 7. **observation 생성** — `metricsToObservations(metrics)` → `ObservationNode[]`
 8. **자동 해소** — `resolveRecoveredMetrics()`로 ok 복귀한 metric의 기존 observation 해소
 9. **DKG 저장** — `saveUsageSnapshotWithObservations(usage, observations)` 및 회복 노드 update
+10. **flow evidence 저장** — `address_context`와 trace/session/event 범위를
+    `flow_evidence_records`에 저장하고 flush 결과에 관측 prefix·범위를 남긴다.
 
 ### 집계 계층 (Aggregation Layers)
 

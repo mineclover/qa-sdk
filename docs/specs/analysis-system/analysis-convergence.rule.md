@@ -18,6 +18,7 @@ sources:
   - packages/convergence/src/usage-aggregator.ts
   - packages/convergence/src/metric-registry.ts
   - packages/dkg/src/skills/flow-trace.ts
+  - packages/dkg/src/store/dkg-sqlite-store.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
 ---
@@ -39,6 +40,9 @@ convergence-pipeline을 소비할 때 확인해야 하는 타입 제약, 포트 
 - runtime flow recovery는 현재 `addressRecords`에서 endpoint가 관측된 IntentLink에만
   적용하고, recovery 후 metric을 계산한다. raw evidence가 없는 snapshot만으로
   과거 flow observation을 닫지 않는다.
+- `UsageData` snapshot과 raw flow evidence는 분리한다. runtime flush는 payload를
+  복제하지 않고 `address_context`와 trace/session/event 범위를
+  `flow_evidence_records`에 저장한다.
 
 ## 구현/검증 증거 ^implementation-evidence
 

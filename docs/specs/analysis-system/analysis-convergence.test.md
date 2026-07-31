@@ -17,6 +17,7 @@ def:
       type: depends_on
 sources:
   - packages/convergence/src/smoke.test.ts
+  - packages/dkg/src/store/dkg-sqlite-store.test.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
   - packages/spec-core/src/convergence/pipeline-e2e.test.ts
 ---
@@ -35,6 +36,8 @@ convergence pipeline에서 분리되지 않고 연결되는지 검증한다.
 | metric observation 생성·저장 | `packages/ingest-server/src/lib/convergence-pipeline.test.ts` |
 | flow observation과 metric observation의 동시 저장 | `packages/ingest-server/src/lib/convergence-pipeline.test.ts` |
 | runtime flow recovery의 metric 선행 반영 | `packages/ingest-server/src/lib/convergence-pipeline.test.ts` |
+| raw address context와 trace/session 범위의 별도 저장 | `packages/dkg/src/store/dkg-sqlite-store.test.ts` |
+| flush 결과의 관측 prefix·저장 건수 노출 | `packages/ingest-server/src/lib/convergence-pipeline.test.ts` |
 | encode → aggregate → convergence event 경로 | `packages/spec-core/src/convergence/pipeline-e2e.test.ts` |
 
 ## 시나리오 ^scenarios

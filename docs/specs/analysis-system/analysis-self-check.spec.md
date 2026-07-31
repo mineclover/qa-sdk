@@ -20,6 +20,7 @@ sources:
   - packages/convergence/src/self-check-analyzer.test.ts
   - packages/cli/src/commands/dkg.ts
   - packages/cli/src/commands/dkg.e2e.test.ts
+  - packages/dkg/src/store/dkg-sqlite-store.ts
 ---
 # Self-Check — 시스템 건강 상태
 
@@ -96,6 +97,9 @@ coverage, overlap, health 등 실제 조치 대상으로 바로 연결할 수 �
 Phase B metrics 계산 전 live flow records를 IntentLink와 대조해, 실제 endpoint가
 관측된 링크의 과거 flow observation만 in-memory 회복 상태로 반영한다. 동일 실행에서
 위반이 재발했거나 링크 자체가 관측되지 않았으면 해소하지 않는다.
+runtime ingest가 저장한 `flow_evidence_records`가 있으면 가장 최근 batch를 추가 입력으로
+읽는다. 24시간 freshness gate를 통과한 evidence만 flow recovery에 사용하고, stale
+evidence는 관측 범위로 출력하되 현재 정상 근거로 사용하지 않는다.
 과거 metric observation이 현재 결과에서 회복되면 dependent health metric까지
 재계산하고, recovery가 더 이상 없을 때까지 반복한 뒤 `--apply`에서 저장한다.
 
@@ -150,4 +154,5 @@ build/test coverage는 각각 `86%`/`82%`이며, dormant/error-path entry는 실
 - `packages/convergence/src/self-check-analyzer.test.ts` — pure analysis 검증
 - `packages/spec-core/src/convergence/index.ts` — re-export
 - `packages/cli/src/commands/dkg.ts` — CLI `dkg self-check` 명령, 패키지 컨텍스트 병합, metrics issue 출력
+- `packages/dkg/src/store/dkg-sqlite-store.ts` — runtime flow evidence 저장·조회
 - `packages/cli/src/commands/dkg.e2e.test.ts` — full self-check heavy smoke lane

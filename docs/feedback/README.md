@@ -35,7 +35,7 @@
 |---|---|---|---|
 | FB-2026-07-27-01 | accepted | P1 | [문서 검증 evidence 수집·판정 구조](./2026-07-27-definition-verification.feedback.md) |
 | FB-2026-07-27-02 | in-progress | P0 | [spec-management platform의 qa-sdk 분리](./2026-07-27-spec-management-platform-extraction.feedback.md) |
-| FB-2026-07-31-03 | deferred | P1/P2 | [self-check 잔여 metric의 실행 근거·설계 판단](./2026-07-31-analysis-runtime-evidence.feedback.md) |
+| FB-2026-07-31-03 | in-progress | P1/P2 | [self-check 잔여 metric의 실행 근거·설계 판단](./2026-07-31-analysis-runtime-evidence.feedback.md) |
 
 ## 승격 규칙
 

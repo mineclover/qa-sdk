@@ -16,6 +16,7 @@ def:
 sources:
   - packages/cli/src/commands/dkg.ts
   - packages/convergence/src/self-check-analyzer.ts
+  - packages/dkg/src/store/dkg-sqlite-store.ts
 ---
 # Self-Check — 소비 규칙
 
@@ -33,6 +34,9 @@ Self-check 결과를 수집·분석·출력할 때 error/failure 경로와 관�
 - `metrics`의 non-`ok` 항목은 metric ID, 상태, detail을 함께 출력한다.
 - flow observation 회복은 현재 실행에서 endpoint가 실제 관측된 IntentLink에만
   적용하며, 재발 위반 또는 미관측 링크는 자동 해소하지 않는다.
+- persisted flow evidence는 가장 최근 run 단위로만 읽고 24시간 freshness gate를
+  통과한 경우에만 recovery 입력에 포함한다. stale evidence는 출력하되 정상 근거로
+  사용하지 않는다.
 - 현재 `ok`로 복귀한 metric의 과거 observation은 health 재계산 전에
   fixed point까지 recovered 상태로 반영하고, 실제 DKG 저장은 `--apply`에서만 수행한다.
 - `--apply` 없이는 observation 해소·생성이나 usage snapshot 저장을 수행하지
