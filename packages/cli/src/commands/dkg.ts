@@ -5856,11 +5856,36 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   console.log(`    전체: ${coverage.summary}`);
 
   // B-3: metrics with usage data
-  const metrics = collectMetrics(DEMO_CATALOG, graph, usage, {
+  const existingObs = graph.getNodesByKind('observation');
+  const metricObservationState = new Map(existingObs.map((obs) => [obs.id, obs]));
+  const recoveredMetricObservations: ObservationNode[] = [];
+  let metrics = collectMetrics(DEMO_CATALOG, graph, usage, {
     schemaHealthAuditor: auditSchemaHealth,
   });
+  // 이전 snapshot에서 생성됐지만 현재 metric이 ok로 복귀한 observation은
+  // health metric이 계속 action으로 세지 않도록 먼저 in-memory 해소한다.
+  // 실제 저장은 Phase C의 --apply 경로에서만 수행한다.
+  // health metric이 coverage observation에 의존하므로, 한 단계 해소 후
+  // 새로 ok가 된 health observation까지 fixed point에 도달할 때까지 반복한다.
+  for (let pass = 0; pass < 10; pass++) {
+    const recovered = resolveRecoveredMetrics(metrics, [...metricObservationState.values()], {
+      date: now.slice(0, 10),
+    });
+    if (recovered.length === 0) break;
+    for (const resolved of recovered) {
+      metricObservationState.set(resolved.id, resolved);
+      recoveredMetricObservations.push(resolved);
+      graph.replaceNode(resolved);
+    }
+    metrics = collectMetrics(DEMO_CATALOG, graph, usage, {
+      schemaHealthAuditor: auditSchemaHealth,
+    });
+  }
   const metricIssues = metrics.filter((m) => m.status !== 'ok');
   console.log(`    metrics: ${metrics.length}건, ${metricIssues.length} issues`);
+  if (recoveredMetricObservations.length > 0) {
+    console.log(`    recovered metrics: ${recoveredMetricObservations.length}건 (--apply로 저장)`);
+  }
   if (metricIssues.length > 0) {
     const severityRank: Record<MetricValue['status'], number> = {
       critical: 0,
@@ -5887,8 +5912,12 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   // ════════════════════════════════════════════════════════════
 
   // ── observation 해소/생성 후보 탐색 (읽기 전용) ──
-  const existingObs = graph.getNodesByKind('observation');
   const resolveTargets: Array<{ obs: ObservationNode; reason: string }> = [];
+
+  for (const resolved of recoveredMetricObservations) {
+    const original = existingObs.find((obs) => obs.id === resolved.id);
+    if (original) resolveTargets.push({ obs: original, reason: 'metric ok 복귀' });
+  }
 
   for (const obs of existingObs.filter(
     (o) => o.id.startsWith('OBS-SELF-BUILD-') && !o.resolution,

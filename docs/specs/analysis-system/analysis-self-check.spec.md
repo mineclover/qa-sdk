@@ -91,6 +91,8 @@ build script가 있는 패키지만 `IL-build-test` 대상으로 검사한다. �
 Phase B의 metrics 결과는 요약 수치뿐 아니라 non-`ok` 항목의 ID, 상태, detail을
 함께 출력한다. `11 issues`처럼 개수만 남는 상태를 방지하고, 각 경고를 capacity,
 coverage, overlap, health 등 실제 조치 대상으로 바로 연결할 수 있어야 한다.
+과거 metric observation이 현재 결과에서 회복되면 dependent health metric까지
+재계산하고, recovery가 더 이상 없을 때까지 반복한 뒤 `--apply`에서 저장한다.
 
 #### 6단계: 요약 생성
 
