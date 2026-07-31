@@ -38,7 +38,7 @@ export const DEF_HELP_SECTIONS = [
   {
     title: '분석',
     lines: [
-      'scan-audit          raw frontmatter/link 감사 (DB 미사용)',
+      'scan-audit [--platform=auto] raw frontmatter/link 감사 (DB 미사용; 설치된 외부 플랫폼 자동 사용)',
       'context <ID> [--bounded] [--used-tokens N] [--initial-usage <path>] [--provider-usage <path> --provider openai|anthropic|generic] [--provider-phase discovery|working] [--tokenizer-module <path>|--tokenizer-registry <path> [--tokenizer-provider openai|anthropic|generic] [--tokenizer-model <id>]] [--stop-routes <csv>] [--stop-facts <csv>] [--stop-evidence <csv>] [--no-progress-limit N] [--json]  작업 전 컨텍스트 (소속/의존/영향)',
       'context <ID> --bounded --handoff-out <path> --result-revision <REV> [--source-revision <REV>] [--unresolved-questions <csv>] [--next-task-key <KEY> --next-task-objective <TEXT>]  Typed Handoff 저장',
       'handoff <store-path> <task-key> [--json]  저장된 Typed Handoff 조회',
@@ -58,7 +58,7 @@ export const DEF_HELP_SECTIONS = [
       'audit --rollup-aspect  aspect family 별 문서 rollup 집계',
       'audit --by-domain   도메인 루트 기준 리포트',
       'validate            DB 기준 그래프 + code reference 검증',
-      'code-link-gaps      explicit 문서 연결 없는 코드 목록',
+      'code-link-gaps [--platform=auto] explicit 문서 연결 없는 코드 목록 (미설치 시 legacy collector)',
       'platform-verify     외부 spec-management platform으로 문서/코드 evidence 검증',
       'stats               분포 통계',
       'check <ID>          문서 정합성 점검',

@@ -1,6 +1,8 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
+import { accessSync, constants, existsSync } from 'node:fs';
+import { delimiter, isAbsolute, join } from 'node:path';
 import { execa } from 'execa';
 
 export type PlatformCompatibilityCommand = 'verify' | 'scan-audit' | 'code-link-gaps';
@@ -27,8 +29,61 @@ export function createPlatformQueryInvocation(
   return createPlatformInvocation(command, root, flags);
 }
 
-export function hasExternalPlatform(flags: Record<string, string>): boolean {
-  return Boolean(flags['platform-bin'] || process.env.QA_SPEC_PLATFORM_BIN || flags.platform === 'true');
+/**
+ * Return whether an executable can be invoked from a configured path.
+ *
+ * `pathValue` is injectable so command routing remains deterministic in tests
+ * and does not need to mutate the process environment.
+ */
+export function isPlatformExecutableAvailable(
+  executable: string,
+  pathValue = process.env.PATH,
+): boolean {
+  const isReadable = (candidate: string) => {
+    try {
+      accessSync(candidate, constants.R_OK);
+      return existsSync(candidate);
+    } catch {
+      return false;
+    }
+  };
+  const isExecutable = (candidate: string) => {
+    try {
+      accessSync(candidate, constants.X_OK);
+      return existsSync(candidate);
+    } catch {
+      return false;
+    }
+  };
+
+  // JavaScript entrypoints are launched through the current Node process and
+  // therefore only need to be readable. Explicit path-like values are also
+  // supported for local development and package-manager shims.
+  if (isAbsolute(executable) || executable.includes('/') || executable.includes('\\')) {
+    return executable.endsWith('.js') ? isReadable(executable) : isExecutable(executable);
+  }
+
+  const pathEntries = pathValue?.split(delimiter).filter(Boolean) ?? [];
+  const candidates =
+    process.platform === 'win32'
+      ? [executable, `${executable}.cmd`, `${executable}.exe`]
+      : [executable];
+  return pathEntries.some((directory) =>
+    candidates.some((candidate) => isExecutable(join(directory, candidate))),
+  );
+}
+
+export function hasExternalPlatform(
+  flags: Record<string, string>,
+  pathValue = process.env.PATH,
+): boolean {
+  // Explicit configuration must remain fail-loud: a typo in --platform-bin or
+  // QA_SPEC_PLATFORM_BIN should produce the existing execution error rather
+  // than silently switching to a different collector.
+  if (flags['platform-bin'] || process.env.QA_SPEC_PLATFORM_BIN || flags.platform === 'true') {
+    return true;
+  }
+  return flags.platform === 'auto' && isPlatformExecutableAvailable('qa-spec-platform', pathValue);
 }
 
 function createPlatformInvocation(
@@ -36,7 +91,8 @@ function createPlatformInvocation(
   root: string,
   flags: Record<string, string>,
 ): { readonly command: string; readonly args: readonly string[] } {
-  const executable = flags['platform-bin'] ?? process.env.QA_SPEC_PLATFORM_BIN ?? 'qa-spec-platform';
+  const executable =
+    flags['platform-bin'] ?? process.env.QA_SPEC_PLATFORM_BIN ?? 'qa-spec-platform';
   const args = [command, root];
   if (flags.store && command === 'verify') args.push('--store', flags.store);
   if (flags.docs && command !== 'verify') args.push('--docs', flags.docs);
@@ -44,14 +100,18 @@ function createPlatformInvocation(
   if (flags.scope && command === 'code-link-gaps') args.push('--scope', flags.scope);
   if (flags.limit && command === 'code-link-gaps') args.push('--limit', flags.limit);
   if (flags['include-tests'] === 'true') args.push('--include-tests');
-  if (flags['include-non-src'] === 'true' && command === 'code-link-gaps') args.push('--include-non-src');
+  if (flags['include-non-src'] === 'true' && command === 'code-link-gaps')
+    args.push('--include-non-src');
   if (flags.strict === 'true' && command === 'code-link-gaps') args.push('--strict');
   if (flags.json === 'true') args.push('--json');
   if (executable.endsWith('.js')) return { command: process.execPath, args: [executable, ...args] };
   return { command: executable, args };
 }
 
-export async function cmdPlatformVerify(root: string, flags: Record<string, string>): Promise<void> {
+export async function cmdPlatformVerify(
+  root: string,
+  flags: Record<string, string>,
+): Promise<void> {
   await runPlatformCommand('verify', root, flags);
 }
 
@@ -76,7 +136,7 @@ async function runPlatformCommand(
       stdio: 'inherit',
     });
     if (result.failed || result.exitCode === undefined) {
-    console.error(
+      console.error(
         `spec-management platform 실행 실패 (${command}): ${result.shortMessage ?? 'external command failed'}\n` +
           'Install @spec-platform/qa-sdk-adapter or pass --platform-bin=<qa-spec-platform path>.',
       );

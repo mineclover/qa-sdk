@@ -1,15 +1,19 @@
 // @def.boundary docs-control-plane
 // @def.doc docs-control-plane
 
+import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { describe, expect, it, vi } from 'vitest';
 import { DEF_COMMAND_DESCRIPTORS } from '../command-groups/def.commands.js';
 import { cliDef, createPlatformQueryInvocation, createPlatformVerifyInvocation } from './def.js';
+import { hasExternalPlatform, isPlatformExecutableAvailable } from './def/platform.js';
 import { useDefCliHarness } from './def-test-helpers.js';
 
 describe('def lifecycle and routing commands', () => {
   const { getOutput, runDef } = useDefCliHarness();
 
-describe('help', () => {
+  describe('help', () => {
     it('서브커맨드 없으면 help 출력', async () => {
       await runDef([]);
       expect(getOutput()).toContain('qa-sdk def');
@@ -54,6 +58,29 @@ describe('help', () => {
           '--json',
         ],
       });
+    });
+
+    it('[contract:definition-code-link-coverage.platform.auto.installed.v1] selects an installed adapter in auto mode', async () => {
+      const directory = await mkdtemp(join(tmpdir(), 'qa-sdk-platform-'));
+      const executable = join(directory, 'qa-spec-platform');
+      vi.stubEnv('QA_SPEC_PLATFORM_BIN', '');
+      try {
+        await writeFile(executable, '#!/usr/bin/env node\n');
+        await chmod(executable, 0o755);
+
+        expect(isPlatformExecutableAvailable('qa-spec-platform', directory)).toBe(true);
+        expect(hasExternalPlatform({ platform: 'auto' }, directory)).toBe(true);
+      } finally {
+        vi.unstubAllEnvs();
+        await rm(directory, { recursive: true, force: true });
+      }
+    });
+
+    it('[contract:definition-code-link-coverage.platform.auto.fallback.v1] preserves legacy routing when adapter is unavailable', () => {
+      expect(isPlatformExecutableAvailable('qa-spec-platform', '/tmp/qa-spec-platform-bin')).toBe(
+        false,
+      );
+      expect(hasExternalPlatform({ platform: 'auto' }, '/tmp/qa-spec-platform-bin')).toBe(false);
     });
 
     it('forwards legacy query options to the external profile command', () => {
@@ -128,9 +155,9 @@ describe('help', () => {
     });
   });
 
-it('알 수 없는 서브커맨드면 help 출력', async () => {
-      await runDef(['nonexistent-command']);
-      const output = getOutput();
-      expect(output).toContain('qa-sdk def');
-    });
+  it('알 수 없는 서브커맨드면 help 출력', async () => {
+    await runDef(['nonexistent-command']);
+    const output = getOutput();
+    expect(output).toContain('qa-sdk def');
+  });
 });
