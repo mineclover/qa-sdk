@@ -27,6 +27,8 @@ sources:
   - packages/dkg/src/skills/runtime-usage-audit.test.ts
   - packages/dkg/src/skills/dsl-ownership-review.ts
   - packages/dkg/src/skills/dsl-ownership-review.test.ts
+  - docs/specs/dkg-system/dkg-skills-system/dkg-skill-cascade.cases.md
+  - packages/cli/src/commands/dkg.e2e.test.ts
   - packages/ingest-server/src/lib/convergence-e2e.test.ts
   - packages/dkg/src/skills/constraint-check.ts
   - packages/dkg/src/skills/safe-entry-add.ts
@@ -136,6 +138,31 @@ CLI `dkg run skill-dsl-ownership-audit`는 이 리포트를 출력하며 `--json
 decision 문서/도구가 소비할 수 있는 결정론적 JSON을 내보낸다. 이 경로는 DSL owner를
 추론하거나 `OBS-DSL-UNCOVERED`를 resolve하지 않으며, 근거가 채워진 뒤 DecisionNode로
 기록할 수 있는 입력 자료만 만든다.
+
+### DSL ownership decision 기록
+
+사람이 검토한 결과는 다음 CLI로 명시적으로 기록한다.
+
+```text
+qa-sdk dkg dsl-ownership decide \
+  --prefix <prefixId> \
+  --choice assign|independent \
+  --rationale "..." \
+  --evidence-source "..." \
+  --evidence-consumer "..." \
+  --evidence-flow "..." \
+  [--dsl <dslBundleId>] [--domain <domainId>] [--json]
+```
+
+- source/consumer/flow/rationale 중 하나라도 비어 있으면 기록을 거부한다.
+- `assign`은 존재하는 DSL bundle을 요구한다. bundle membership은 별도 catalog 변경이며,
+  membership이 실제로 반영되기 전까지 audit unit은 `needs-membership-update`로 남는다.
+- `independent`는 의도적 DSL 비소속 판단을 기록하고 ownership review unit에서 제외한다.
+- 두 선택 모두 DecisionNode의 metadata에 choice, owner reference, 근거를 보존하고
+  `OBS-DSL-UNCOVERED → prompts → DecisionNode` 및 `DecisionNode → governs → prefix`
+  엣지를 남긴다.
+- 이 명령은 bundle membership 변경이나 `OBS-DSL-UNCOVERED` resolution을 자동 수행하지
+  않는다. observation은 별도의 `dkg resolve` 결정으로 닫는다.
 
 ## 출력 타입
 

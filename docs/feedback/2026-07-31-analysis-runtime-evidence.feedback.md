@@ -166,3 +166,22 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 - `dkg run skill-dsl-ownership-audit`가 22개 pending review unit과 downstream 영향·근거 요구사항을 산출한다. ✅
 - 후속 self-check에서 자동 해소된 observation과 의도적으로 남은 warning의 이유가
   각각 출력된다.
+
+## 후속 구현 — DSL ownership 결정 입력 경로
+
+`OBS-DSL-UNCOVERED`를 사람이 검토한 뒤 근거와 함께 기록할 수 있도록
+`dkg dsl-ownership decide`를 추가했다.
+
+- `assign|independent` choice와 source/consumer/flow/rationale를 필수 검증한다.
+- 결과는 `DEC-DSL-OWNERSHIP-*` DecisionNode와 `prompts`/`governs` 엣지로 저장한다.
+- `auditDslOwnership()`는 active ownership decision을 반영해 `decidedCount`와 남은
+  pending unit을 분리한다.
+- assign 결정은 DSL bundle membership을 자동 변경하지 않으며, 실제 membership 전까지
+  `needs-membership-update`로 남긴다.
+- independent 결정도 `OBS-DSL-UNCOVERED`를 자동 resolve하지 않는다. observation loop의
+  종료는 사람이 `dkg resolve`로 별도 수행한다.
+
+검증 계약은
+`docs/specs/dkg-system/dkg-skills-system/dkg-skill-cascade.cases.md`에 기록했고,
+순수 skill 단위 테스트와 CLI E2E에서 불완전 근거 거부·독립 결정 저장·pending 감소를
+검증한다.
