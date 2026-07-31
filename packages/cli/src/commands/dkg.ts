@@ -62,6 +62,7 @@ import {
   systemHealthChain,
   convergeChain,
   traceFlows,
+  resolveRecoveredFlowObservations,
   validateDslInvariants,
   scaffoldDecision,
   inferMigrator,
@@ -5836,6 +5837,22 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     `    entryUsage: ${usage.entryUsages.length}, addressUsage: ${usage.addressUsages.length}`,
   );
 
+  // Flow 결과를 metrics보다 먼저 반영한다. domain health metric이 현재 실행에서
+  // 회복된 flow observation을 계속 action으로 세지 않도록 하되, 이번 실행에서
+  // 실제 endpoint가 관측된 IntentLink만 자동 해소 대상으로 삼는다.
+  const existingObs = graph.getNodesByKind('observation');
+  const liveRecords = records.filter((r) => r.execution_mode !== 'synthetic');
+  const flowRecords = groupSelfCheckFlowRecords(liveRecords);
+  const flowResult = traceFlows(graph, flowRecords, { date: now.slice(0, 10) });
+  const recoveredFlowObservations = resolveRecoveredFlowObservations(
+    graph,
+    flowRecords,
+    flowResult,
+    existingObs,
+    { date: now.slice(0, 10) },
+  );
+  for (const resolved of recoveredFlowObservations) graph.replaceNode(resolved);
+
   // ════════════════════════════════════════════════════════════
   //  Phase B: convergence 분석
   // ════════════════════════════════════════════════════════════
@@ -5856,7 +5873,6 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   console.log(`    전체: ${coverage.summary}`);
 
   // B-3: metrics with usage data
-  const existingObs = graph.getNodesByKind('observation');
   const metricObservationState = new Map(existingObs.map((obs) => [obs.id, obs]));
   const recoveredMetricObservations: ObservationNode[] = [];
   let metrics = collectMetrics(DEMO_CATALOG, graph, usage, {
@@ -5886,6 +5902,9 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   if (recoveredMetricObservations.length > 0) {
     console.log(`    recovered metrics: ${recoveredMetricObservations.length}건 (--apply로 저장)`);
   }
+  if (recoveredFlowObservations.length > 0) {
+    console.log(`    recovered flows: ${recoveredFlowObservations.length}건 (--apply로 저장)`);
+  }
   if (metricIssues.length > 0) {
     const severityRank: Record<MetricValue['status'], number> = {
       critical: 0,
@@ -5913,6 +5932,11 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
 
   // ── observation 해소/생성 후보 탐색 (읽기 전용) ──
   const resolveTargets: Array<{ obs: ObservationNode; reason: string }> = [];
+
+  for (const resolved of recoveredFlowObservations) {
+    const original = existingObs.find((obs) => obs.id === resolved.id);
+    if (original) resolveTargets.push({ obs: original, reason: 'flow 위반 복귀' });
+  }
 
   for (const resolved of recoveredMetricObservations) {
     const original = existingObs.find((obs) => obs.id === resolved.id);
@@ -5998,9 +6022,6 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   console.log(`\n  ── Phase E: flow-trace ──`);
   // 합성 이벤트는 단일 prefix만 포함하므로 제외하고, live 결과는 패키지별로
   // 합쳐서 build/test/contract 관계를 검사한다.
-  const liveRecords = records.filter((r) => r.execution_mode !== 'synthetic');
-  const flowRecords = groupSelfCheckFlowRecords(liveRecords);
-  const flowResult = traceFlows(graph, flowRecords, { date: now.slice(0, 10) });
   console.log(`    context: ${flowRecords.length}/${liveRecords.length} live records`);
   if (flowResult.violations.length > 0) {
     console.log(
@@ -6084,6 +6105,16 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     const snapshotId = store.saveUsageSnapshot(toDkgUsageData(DEMO_CATALOG, usage));
     console.log(`    snapshot #${snapshotId} 저장`);
 
+    if (flowResult.observations.length > 0) {
+      const flowEdges = flowResult.observations.flatMap((obs) => {
+        const target =
+          obs.suggestion?.kind === 'revise-decision' ? obs.suggestion.decisionId : obs.subjects[0];
+        return target ? [{ type: 'observes' as const, from: obs.id, to: target }] : [];
+      });
+      store.saveNodes(flowResult.observations, flowEdges, 'auto');
+      console.log(`    flow observations ${flowResult.observations.length}건 저장`);
+    }
+
     for (const { obs, reason } of resolveTargets) {
       const resolved: ObservationNode = {
         ...obs,
@@ -6110,11 +6141,17 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
       );
       console.log(`    created: ${cand.id}`);
     }
-  } else if (resolveTargets.length > 0 || newObsCandidates.length > 0) {
+  } else if (
+    resolveTargets.length > 0 ||
+    newObsCandidates.length > 0 ||
+    flowResult.observations.length > 0
+  ) {
     console.log(`\n  ── Pending (--apply로 반영) ──`);
     for (const { obs, reason } of resolveTargets)
       console.log(`    해소 후보: ${obs.id} (${reason})`);
     for (const cand of newObsCandidates) console.log(`    생성 후보: ${cand.id}: ${cand.finding}`);
+    for (const obs of flowResult.observations)
+      console.log(`    생성 후보: ${obs.id}: ${obs.finding}`);
   }
 
   // ════════════════════════════════════════════════════════════
@@ -6182,9 +6219,12 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
       console.log(`    ... +${cliCov.dormantCoords.length - 5}개`);
   }
 
-  if (!apply && (resolveTargets.length > 0 || newObsCandidates.length > 0)) {
+  if (
+    !apply &&
+    (resolveTargets.length > 0 || newObsCandidates.length > 0 || flowResult.observations.length > 0)
+  ) {
     console.log(
-      `  pending:    ${resolveTargets.length} resolve, ${newObsCandidates.length} new obs (--apply로 반영)`,
+      `  pending:    ${resolveTargets.length} resolve, ${newObsCandidates.length + flowResult.observations.length} new obs (--apply로 반영)`,
     );
   }
 

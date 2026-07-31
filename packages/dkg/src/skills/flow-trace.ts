@@ -46,6 +46,71 @@ export interface FlowTraceResult {
   readonly summary: string;
 }
 
+/**
+ * 현재 실행에서 실제로 관측된 IntentLink의 과거 위반 observation을 해소한다.
+ *
+ * 전체 flow가 정상이라는 사실만으로는 관측되지 않은 IntentLink를 해소할 수
+ * 없으므로, 이번 records에서 endpoint가 하나 이상 나타난 link만 대상으로
+ * 삼는다. 같은 실행에서 동일한 위반이 다시 발견된 경우도 해소하지 않는다.
+ */
+export function resolveRecoveredFlowObservations(
+  graph: GraphPort,
+  records: readonly AddressContextRecord[],
+  result: Pick<FlowTraceResult, 'violations'>,
+  existingObservations: readonly ObservationNode[],
+  options?: { date?: string },
+): ObservationNode[] {
+  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const intentLinks = graph.getNodesByKind('intent-link') as IntentLinkNode[];
+  const observedIntentLinks = new Set<string>();
+
+  for (const record of records) {
+    const present = new Set(Object.keys(record.address_context ?? {}));
+    if (present.size === 0) continue;
+    for (const link of intentLinks) {
+      if (link.endpoints.some((endpoint) => present.has(endpoint))) {
+        observedIntentLinks.add(link.id);
+      }
+    }
+  }
+
+  const activeViolationIds = new Set(
+    result.violations.map((violation) =>
+      flowObservationId(violation.intentLinkId, violation.missingPrefixes),
+    ),
+  );
+  const resolved: ObservationNode[] = [];
+
+  for (const observation of existingObservations) {
+    if (observation.kind !== 'observation') continue;
+    if (observation.resolution) continue;
+    if (!observation.id.startsWith('OBS-FLOW-')) continue;
+
+    const intentLinkId =
+      observation.suggestion?.kind === 'revise-decision'
+        ? observation.suggestion.decisionId
+        : observation.subjects[0];
+    if (!intentLinkId || !observedIntentLinks.has(intentLinkId)) continue;
+    if (activeViolationIds.has(observation.id)) continue;
+
+    resolved.push({
+      ...observation,
+      date,
+      resolution: {
+        decisionId: 'AUTO-RESOLVE',
+        outcome: 'accepted',
+        note: `현재 관측된 IntentLink에서 flow 위반이 재현되지 않아 자동 해소 (${date})`,
+      },
+    });
+  }
+
+  return resolved;
+}
+
+function flowObservationId(intentLinkId: string, missingPrefixes: readonly string[]): string {
+  return `OBS-FLOW-${intentLinkId}-${missingPrefixes.join('_')}`;
+}
+
 export function traceFlows(
   graph: GraphPort,
   records: readonly AddressContextRecord[],
@@ -91,7 +156,7 @@ export function traceFlows(
   const observations = violations.map((violation) => {
     const obs: ObservationNode = {
       kind: 'observation',
-      id: `OBS-FLOW-${violation.intentLinkId}-${violation.missingPrefixes.join('_')}`,
+      id: flowObservationId(violation.intentLinkId, violation.missingPrefixes),
       date,
       source: 'runtime',
       subjects: [

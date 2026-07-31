@@ -87,10 +87,15 @@ CLI의 Phase E `IntentLink` 검증은 self-check가 생성한 단일 prefix 레�
 build script가 있는 패키지만 `IL-build-test` 대상으로 검사한다. 이렇게 해야
 테스트 레코드 하나만 보고 build/contract가 누락됐다고 판정하는 false positive를
 피할 수 있다. build script가 없는 패키지는 기존 invariant 검증의 대상이 아니다.
+flow 결과는 Phase E에서 출력하지만, health metric이 과거 flow observation에
+오염되지 않도록 같은 live context를 Phase B 전에 먼저 계산한다.
 
 Phase B의 metrics 결과는 요약 수치뿐 아니라 non-`ok` 항목의 ID, 상태, detail을
 함께 출력한다. `11 issues`처럼 개수만 남는 상태를 방지하고, 각 경고를 capacity,
 coverage, overlap, health 등 실제 조치 대상으로 바로 연결할 수 있어야 한다.
+Phase B metrics 계산 전 live flow records를 IntentLink와 대조해, 실제 endpoint가
+관측된 링크의 과거 flow observation만 in-memory 회복 상태로 반영한다. 동일 실행에서
+위반이 재발했거나 링크 자체가 관측되지 않았으면 해소하지 않는다.
 과거 metric observation이 현재 결과에서 회복되면 dependent health metric까지
 재계산하고, recovery가 더 이상 없을 때까지 반복한 뒤 `--apply`에서 저장한다.
 

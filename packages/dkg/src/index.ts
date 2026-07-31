@@ -173,7 +173,11 @@ export { entryAddChain, systemHealthChain } from './skills/skill-chain.js';
 export type { ChainStepResult, SkillChainResult } from './skills/skill-chain.js';
 export { convergeChain } from './skills/converge-chain.js';
 export type { ConvergeAction, ConvergeChainResult } from './skills/converge-chain.js';
-export { traceFlows, validateDslInvariants } from './skills/flow-trace.js';
+export {
+  traceFlows,
+  validateDslInvariants,
+  resolveRecoveredFlowObservations,
+} from './skills/flow-trace.js';
 export type {
   DslInvariantResult,
   DslInvariantViolation,

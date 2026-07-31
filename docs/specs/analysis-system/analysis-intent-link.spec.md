@@ -17,6 +17,7 @@ def:
     - target: analysis-transition
       type: depends_on
 sources:
+  - packages/dkg/src/skills/flow-trace.ts
   - packages/dkg-enrichment/src/skills/flow-trace.ts
   - packages/dkg-enrichment/src/skills/flow-trace.test.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
@@ -75,6 +76,15 @@ interface IntentLinkNode {
   suggestion: { kind: "revise-decision", decisionId: intentLinkId }
 }
 ```
+
+### 회복 observation의 해소
+
+`resolveRecoveredFlowObservations()`는 현재 실행의 flow records에서 해당
+IntentLink endpoint가 하나 이상 실제 관측되고, 같은 실행에서 동일한 위반이
+재발하지 않은 경우에만 미해결 `OBS-FLOW-*`를 자동 해소 후보로 반환한다.
+현재 records가 비어 있거나 IntentLink가 관측되지 않은 경우에는 정상 결과만으로
+과거 observation을 닫지 않는다. 실제 DKG 저장은 self-check의 `--apply` 경로가
+담당한다.
 
 ### DSL Bundle Invariant 검증
 
