@@ -223,6 +223,11 @@ extension 또는 optional plugin으로 남긴다.
   PATH에 설치된 `qa-spec-platform`이 있을 때만 external query를 선택하고, 없으면 legacy collector로
   폴백한다. 명시적 `--platform=true`, `--platform-bin`, `QA_SPEC_PLATFORM_BIN`은 기존처럼 실행 실패를
   숨기지 않는다. 이로써 registry publication 전에도 설치 여부에 따른 route selection을 검증할 수 있다.
+- P4 7차 release readiness audit: platform build/typecheck와 full specification journey(`5 pass, 1 skip`)를
+  재실행했다. 11개 `@spec-platform/*` 이름은 npm registry에서 모두 `404 Not Found`였고,
+  `npm whoami --registry=https://registry.npmjs.org`는 `401 Unauthorized`였다. 따라서 archive/clean
+  consumer 검증은 완료됐지만 실제 registry publication과 registry consumer 검증은 아직 완료되지 않았다.
+  이번 단계에서는 publish를 실행하지 않았다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
@@ -238,16 +243,16 @@ extension 또는 optional plugin으로 남긴다.
 | P1 neutral parser/runtime | 완료 | 독립 workspace test/typecheck 통과 |
 | P2 graph/code verifier + QA profile | 완료 | 실 qa-sdk 0 error collect/verify |
 | P3 store/client port | 완료 | immutable file store + storage-agnostic query client + QA adapter round-trip |
-| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint, `--platform=auto` route selection, publish contract, clean archive/install smoke 통과; 실제 registry publication과 consumer default 전환은 보류 |
+| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint, `--platform=auto` route selection, publish contract, clean archive/install smoke, full journey 통과; registry package는 아직 미공개이고 consumer default 전환은 보류 |
 
 ## 남은 선행 결정
 
-1. 기존 `qa-sdk def` 중 parser/evidence 기능인 `scan-audit`, `code-link-gaps`를 external snapshot의 query로
-   대체하는 호환 경로와 `--platform=auto` 설치 감지 경로는 구현했다. 이제 published executable을 기본값으로
-   삼을 시점과 legacy fallback의 호환 기간을 결정한다.
-2. platform package의 publication/버전 정책을 정한 뒤 qa-sdk가 published executable을 기본 실행 경로로
-   소비하게 한다.
-3. SQLite/Postgres/HTTP adapter를 어느 deployment에서 제공할지와 snapshot freshness 정책을 결정한다.
+1. npm scope ownership, publish 권한, 버전 및 dependency-first publication 순서를 확정한다.
+2. 실제 registry에 dependency packages와 `@spec-platform/qa-sdk-adapter`를 publish한 뒤,
+   tarball이 아닌 registry 설치로 clean consumer의 `qa-spec-platform verify`를 검증한다.
+3. registry consumer 검증 후 `qa-spec-platform`을 기본 실행 경로로 삼을 시점과 legacy fallback의
+   호환 기간을 결정한다.
+4. SQLite/Postgres/HTTP adapter를 어느 deployment에서 제공할지와 snapshot freshness 정책을 결정한다.
 
 ## 종료 조건
 
