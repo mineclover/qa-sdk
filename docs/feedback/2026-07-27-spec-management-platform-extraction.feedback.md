@@ -232,12 +232,16 @@ extension 또는 optional plugin으로 남긴다.
 - P4 8차 release runner: adapter dependency closure 11개를 dependency-first로 정렬하고,
   `pnpm pack` 후 `npm publish <tarball>`을 수행하는 guarded `corepack pnpm release:packages`를 추가했다.
   기본 실행은 publish dry-run이며, 실제 publish는 `--publish`와
-  `SPEC_PLATFORM_PUBLISH_CONFIRM=1`을 모두 요구한다. 11개 archive dry-run은 warning 없이 통과했다.
+  `SPEC_PLATFORM_PUBLISH_CONFIRM=1`을 모두 요구한다. 11개 archive dry-run 경로를 고정했다.
 - P4 9차 운영 전환 준비: `qa-sdk def scan-audit`와 `code-link-gaps`가
   `QA_SPEC_PLATFORM_MODE=auto` 환경 변수로도 설치된 `qa-spec-platform`을 자동 선택하도록 확장했다.
   CLI의 `--platform=<값>`이 환경 변수보다 우선하고 `--platform=false`로 명시적 비활성화가 가능하다.
   adapter가 설치되지 않은 현재 환경에서는 legacy collector로 폴백하며, registry publication과 기본 경로
   전환은 여전히 보류한다.
+- P4 10차 release preflight 경고 정리: `corepack pnpm release:packages`가 pnpm 전용 환경 설정을
+  npm 자식 프로세스에 전달해 발생시키던 `Unknown env config` 경고를 차단했다. `test:release` sanitizer
+  단위 테스트와 11개 archive dry-run을 다시 실행해 warning-free 결과를 확인했고, full specification
+  journey는 `5 pass, 2 skip`으로 유지됐다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
