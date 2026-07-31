@@ -27,13 +27,20 @@ build `27/27`, business 포함 1,140 records, metrics 319건 중 11 issues다.
 후속 bootstrap은 각 미소속 prefix에 기존 `flow-schema`/`domain` 연결을
 `ownershipCandidates` 메타데이터로 보존한다.
 
+ownership 후보의 구체적 범위는 다음과 같다. `decision_event`, `decision_path`,
+`escalation_event`, `model_apply`는 `coordinate-design`, `forcing-questions`,
+`office-hours`, `ceo-review`, `eng-review`, `design-review`, `code-review`,
+`investigation`, `build`, `ship`, `reflect`, `sprint-pipeline` flow-schema와
+`decision-domain` 후보를 공유한다. `forcing_response`는 `office-hours`와
+`decision-domain` 후보만 가진다. 나머지 17개는 현재 직접 후보가 없다.
+
 `--fast` 재측정은 build/test mock 입력의 비대표성을 반영해 coverage metric을
 생성하지 않도록 변경했다. 그 결과 `251건, 9 issues`로 집계되며, coverage 요약은
 `provisional (--fast)`로만 출력된다(`build_event 41%`, `test_event 39%`). full
 self-check/runtime usage의 coverage metric과 기존 `319건, 11 issues` 기준은
 이 변경의 대상이 아니며, 실제 coverage warning은 해당 경로에서만 판정한다.
 
-변경 후 full self-check 재측정은 build `25/25`(2 skipped), test 집계 `6769/6769`,
+runner 수정 전 full self-check 재측정은 build `25/25`(2 skipped), test 집계 `6769/6769`,
 records `1,226건`, metrics `319건 중 9 issues`, coverage `86%`/`84%`였다. 이
 실행에서 `bit-index`와 E2E 7개 시나리오는 self-check 프로세스 오류로 보고됐지만,
 `bit-index` 단독 테스트는 `62/62` 통과했다. E2E 오류는 `localhost:5230 already
