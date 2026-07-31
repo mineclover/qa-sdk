@@ -1142,6 +1142,10 @@ source: packages/checkout/src/authoring-catalog.ts
 ## 목적 ^purpose
 
 Describe authoring catalog behavior without access-control or telemetry concerns.
+
+\`\`\`text
+permission-engine
+\`\`\`
 `,
     );
 

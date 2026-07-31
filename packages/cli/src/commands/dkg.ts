@@ -5507,6 +5507,57 @@ interface SelfCheckResult {
 }
 
 /**
+ * self-check의 build/test/contract 레코드를 패키지 실행 컨텍스트로 합친다.
+ *
+ * self-check는 각 결과를 하나의 address_context prefix로 기록한다. 이를
+ * 그대로 flow-trace에 넘기면 같은 패키지의 test 레코드가 build_event를
+ * 누락한 것으로 판정된다. event_key의 `kind:pkg:scope` 규약으로 패키지를
+ * 묶고, build_event가 실제로 존재하는 패키지만 build→test→contract
+ * IntentLink 검사 대상으로 남긴다. build script가 없는 패키지는 별도
+ * invariant 경로에서 이미 처리되므로 이 관계형 검사에서 제외한다.
+ */
+function groupSelfCheckFlowRecords(
+  records: readonly AddressContextRecord[],
+): readonly AddressContextRecord[] {
+  const grouped = new Map<string, AddressContextRecord>();
+  const unscoped: AddressContextRecord[] = [];
+
+  for (const record of records) {
+    const eventKey = record.event_key ?? '';
+    const match = eventKey.match(/^(?:build|test|contract):([^:]+)/);
+    if (!match?.[1]) {
+      unscoped.push(record);
+      continue;
+    }
+
+    const packageId = match[1];
+    const groupKey = `${record.execution_id ?? record.session_id ?? 'self-check'}:${packageId}`;
+    const previous = grouped.get(groupKey);
+    if (!previous) {
+      grouped.set(groupKey, {
+        ...record,
+        event_key: `self-check:${packageId}`,
+        address_context: { ...record.address_context },
+      });
+      continue;
+    }
+
+    grouped.set(groupKey, {
+      ...previous,
+      address_context: {
+        ...previous.address_context,
+        ...record.address_context,
+      },
+    });
+  }
+
+  return [...grouped.values(), ...unscoped].filter(
+    (record) =>
+      !record.event_key?.startsWith('self-check:') || 'build_event' in record.address_context,
+  );
+}
+
+/**
  * dkg self-check — 빌드/테스트 실행 + 좌표 인코딩 + convergence 분석 + invariant 검증.
  *
  * 기본(dry-run): 분석 결과를 출력만. DKG 상태 변경 없음.
@@ -5810,6 +5861,19 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   });
   const metricIssues = metrics.filter((m) => m.status !== 'ok');
   console.log(`    metrics: ${metrics.length}건, ${metricIssues.length} issues`);
+  if (metricIssues.length > 0) {
+    const severityRank: Record<MetricValue['status'], number> = {
+      critical: 0,
+      warning: 1,
+      ok: 2,
+    };
+    for (const issue of metricIssues.toSorted(
+      (a, b) => severityRank[a.status] - severityRank[b.status],
+    )) {
+      const icon = issue.status === 'critical' ? '🔴' : '⚠';
+      console.log(`      ${icon} ${issue.id}: ${issue.detail ?? `value=${issue.value}`}`);
+    }
+  }
 
   // B-4: schema health (metric에 포함되지만 명시 출력)
   const schemaMetric = metrics.find((m) => m.id === 'metric:schema:violations');
@@ -5903,9 +5967,12 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   // ════════════════════════════════════════════════════════════
 
   console.log(`\n  ── Phase E: flow-trace ──`);
-  // 합성 이벤트는 단일 prefix만 포함하므로 IntentLink 검증에서 제외 (false positive 방지)
+  // 합성 이벤트는 단일 prefix만 포함하므로 제외하고, live 결과는 패키지별로
+  // 합쳐서 build/test/contract 관계를 검사한다.
   const liveRecords = records.filter((r) => r.execution_mode !== 'synthetic');
-  const flowResult = traceFlows(graph, liveRecords, { date: now.slice(0, 10) });
+  const flowRecords = groupSelfCheckFlowRecords(liveRecords);
+  const flowResult = traceFlows(graph, flowRecords, { date: now.slice(0, 10) });
+  console.log(`    context: ${flowRecords.length}/${liveRecords.length} live records`);
   if (flowResult.violations.length > 0) {
     console.log(
       `    🔴 IntentLink 위반 ${flowResult.violations.length}종 (${flowResult.violations.reduce((s, v) => s + v.count, 0)}건):`,

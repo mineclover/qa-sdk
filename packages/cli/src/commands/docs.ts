@@ -4324,13 +4324,18 @@ function hasClosureConcernVerificationEvidence(
 }
 
 function closureSignalText(document: DocumentEnvelope): string {
-  return [
+  const text = [
     document.stableId,
     document.path,
     titleOf(document),
     metadataSearchText(document.metadata),
     ...document.links.map((link) => `${link.type} ${link.targetId}`),
   ].join(' ');
+  // Fenced source/config examples are implementation vocabulary, not proof
+  // that the document owns a cross-cutting policy concern. In particular,
+  // package names such as `permission-engine` must not activate the
+  // authorization closure gate for an unrelated self-check document.
+  return text.replace(/```[\s\S]*?```/g, ' ');
 }
 
 function closureSummaryText(document: DocumentSummary): string {

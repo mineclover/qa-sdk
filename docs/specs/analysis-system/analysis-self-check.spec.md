@@ -15,6 +15,11 @@ def:
       type: depends_on
     - target: analysis-transition
       type: depends_on
+sources:
+  - packages/convergence/src/self-check-analyzer.ts
+  - packages/convergence/src/self-check-analyzer.test.ts
+  - packages/cli/src/commands/dkg.ts
+  - packages/cli/src/commands/dkg.e2e.test.ts
 ---
 # Self-Check — 시스템 건강 상태
 
@@ -28,30 +33,16 @@ Self-Check는 `@qa-sdk/convergence`의 `analyzeSelfCheck()` 순수 함수로 구
 
 ### 입출력
 
-```typescript
-function analyzeSelfCheck(
-  results: SelfCheckResult[],  // 빌드/테스트 결과
-  catalog: Catalog,            // DEMO_CATALOG
-  runId?: string,              // 실행 식별자
-): SelfCheckAnalysis;
-```
+구현 진입점은 `packages/convergence/src/self-check-analyzer.ts:analyzeSelfCheck`이며,
+CLI 실행·저장·출력 조정은 `packages/cli/src/commands/dkg.ts`가 담당한다.
+입력은 빌드/테스트 결과와 catalog, 선택적 실행 ID이고, 출력은 인코딩된
+`AddressContextRecord`, UsageData, coverage/health/invariant 보고서다.
 
 ### SelfCheckResult 입력
 
-각 패키지의 빌드/테스트 결과를 표현한다:
-
-```typescript
-interface SelfCheckResult {
-  pkg: string;           // 패키지 이름
-  kind: "build" | "test";
-  result: string;        // "success" | "failure" | "skipped" | "passed" | "failed"
-  module?: string;       // 테스트 모듈명
-  tests?: number;        // 테스트 총 수
-  passed?: number;
-  failed?: number;
-  durationMs?: number;
-}
-```
+각 패키지의 빌드/테스트 결과를 표현한다. 필드와 허용 결과의 SSOT는
+`packages/convergence/src/self-check-analyzer.ts:SelfCheckResult`다.
+CLI는 여기에 테스트 모듈, 테스트 수, 통과/실패 수, 실행 시간을 추가해 전달한다.
 
 ### 분석 파이프라인 (6단계)
 
@@ -90,20 +81,23 @@ prefix_ref dim은 refEntries의 첫 번째 값을 자동 주입. table_ref dim�
 | 빌드 실패 후 테스트 금지 | 빌드가 failure인데 테스트가 실행됨 |
 | 테스트 실패 시 빌드 성공 선행 | 테스트가 failed인데 빌드가 success가 아님 |
 
+CLI의 Phase E `IntentLink` 검증은 self-check가 생성한 단일 prefix 레코드를
+그대로 비교하지 않는다. `event_key`의 `kind:pkg:scope` 규약으로 동일 패키지의
+`build_event`, `test_event`, `contract_check`를 하나의 실행 컨텍스트로 합친 뒤
+build script가 있는 패키지만 `IL-build-test` 대상으로 검사한다. 이렇게 해야
+테스트 레코드 하나만 보고 build/contract가 누락됐다고 판정하는 false positive를
+피할 수 있다. build script가 없는 패키지는 기존 invariant 검증의 대상이 아니다.
+
+Phase B의 metrics 결과는 요약 수치뿐 아니라 non-`ok` 항목의 ID, 상태, detail을
+함께 출력한다. `11 issues`처럼 개수만 남는 상태를 방지하고, 각 경고를 capacity,
+coverage, overlap, health 등 실제 조치 대상으로 바로 연결할 수 있어야 한다.
+
 #### 6단계: 요약 생성
 
-```typescript
-interface SelfCheckAnalysis {
-  records: AddressContextRecord[];        // 인코딩된 레코드
-  usage: UsageData;                       // 집계 결과
-  health: CollectionHealthReport;         // 수집 건전성
-  coverage: CoverageReport;              // entry 커버리지
-  invariantViolations: InvariantViolation[];  // 불변조건 위반
-  buildSummary: { success, failure, skipped, total };
-  testSummary: { passed, failed, tests, total };
-  bizRecords: number;                    // 합성 이벤트 수
-}
-```
+`analyzeSelfCheck()`의 반환 shape은
+`packages/convergence/src/self-check-analyzer.ts:SelfCheckAnalysis`가 소유한다.
+CLI는 이 결과를 address usage, health, coverage, metrics, IntentLink/DSL
+검증으로 확장해 운영자 출력으로 만든다.
 
 ### 대상 패키지 목록
 
@@ -129,8 +123,24 @@ self-check 결과에서 파생되는 convergence 분석이 headroom과 capacity�
 | warning | headroom ≤ 1 | capacity 확장 검토 |
 | critical | headroom = 0 | 즉시 capacity 확장 필요 |
 
+## 검증 ^validation
+
+```bash
+corepack pnpm --filter @qa-sdk/cli typecheck
+corepack pnpm --filter @qa-sdk/cli build
+node packages/cli/dist/index.js dkg self-check
+node packages/cli/dist/index.js def validate
+```
+
+2026-07-31 기준 전체 self-check는 build `25/25`(2 skipped), test
+`6853/6853`, collection health `100%`, IntentLink/DSL invariant 통과였다.
+build/test coverage는 각각 `86%`/`82%`이며, dormant/error-path entry는 실패가
+아니라 관측 범위에 대한 후속 backlog로 분류한다.
+
 ## 관련 소스
 
 - `packages/convergence/src/self-check-analyzer.ts` — `analyzeSelfCheck()` 구현
+- `packages/convergence/src/self-check-analyzer.test.ts` — pure analysis 검증
 - `packages/spec-core/src/convergence/index.ts` — re-export
-- `packages/cli/src/commands/dkg.ts` — CLI `dkg self-check` 명령
+- `packages/cli/src/commands/dkg.ts` — CLI `dkg self-check` 명령, 패키지 컨텍스트 병합, metrics issue 출력
+- `packages/cli/src/commands/dkg.e2e.test.ts` — full self-check heavy smoke lane
