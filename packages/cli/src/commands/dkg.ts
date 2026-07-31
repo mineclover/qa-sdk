@@ -42,6 +42,7 @@ import { catalogToPrefixSpecs, catalogToSchemaSnapshot } from '@qa-sdk/spec-core
 import {
   GraphRegistry,
   analyzeImpact,
+  auditRuntimePrefixUsage,
   createDemoTopology,
   exploreService,
   explorePrefix,
@@ -3579,6 +3580,23 @@ export function dkgRun(skillId: string, args: string[]): void {
       console.log(
         `  affectedConsumers: ${result.affectedConsumers.map((c) => c.id).join(', ') || '(없음)'}`,
       );
+      const affectedPrefixIds = [
+        ...new Set([targetId, ...result.affectedPrefixes.map((prefix) => prefix.id)]),
+      ];
+      const runtimeUsage = auditRuntimePrefixUsage({
+        prefixIds: affectedPrefixIds,
+        usageSnapshots: getStore().getRecentUsageSnapshots(500),
+        flowEvidence: getStore().listRecentFlowEvidence(10_000),
+        cliAuditEvents: getStore().listRecentCliAuditEvents(10_000),
+      });
+      console.log(
+        `  runtimeUsage: ${runtimeUsage.observedPrefixIds.length}/${affectedPrefixIds.length} affected prefix에 persisted evidence 있음`,
+      );
+      for (const usage of runtimeUsage.prefixes) {
+        console.log(
+          `    ${usage.prefixId}: snapshots=${usage.usageSnapshotRecords} (${usage.usageSnapshotBatches} batches${usage.oldestUsageSnapshotAt ? `, ${usage.oldestUsageSnapshotAt}..${usage.latestUsageSnapshotAt}` : ''}), flow=${usage.flowEvidenceRecords}, cli=${usage.cliAuditEvents}`,
+        );
+      }
       if (result.constraintViolations.length > 0) {
         console.log(
           `  ⚠ constraint violations: ${result.constraintViolations.map((v) => v.constraintId).join(', ')}`,

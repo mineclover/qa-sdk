@@ -257,6 +257,16 @@ describe('bootstrapDkg flowSchemas', () => {
       expect.arrayContaining(['pattern_confidence', 'confidence_band']),
     );
   });
+
+  it('IR migration policy decision은 historical affected prefix를 가리킨다', () => {
+    const bootstrapped = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+    const decision = bootstrapped.getNode('DEC-MIGRATE-ir-capacity-history');
+
+    expect(decision?.kind).toBe('decision');
+    expect(bootstrapped.edgesFrom(decision!.id, 'justifies').map((edge) => edge.to)).toEqual(
+      expect.arrayContaining(['ir_pipe', 'ir_intent_path', 'ir_data']),
+    );
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════

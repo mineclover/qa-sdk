@@ -1393,6 +1393,36 @@ export const DEMO_DKG_CONFIG = {
       },
       lifecycle: 'active',
     },
+    {
+      kind: 'decision',
+      id: 'DEC-MIGRATE-ir-capacity-history',
+      date: '2026-07-31',
+      title: 'IR capacity 변경 전 aggregate snapshot은 immutable history로 보존',
+      context:
+        'ir_pipe_state·ir_retention·ir_storage_type capacity를 4에서 8로 변경하면 affected prefix의 stride가 바뀐다. runtime usage audit에서 변경 전 snapshot에만 IR 주소가 남아 있고 변경 후 raw evidence는 확인되지 않았다.',
+      rationale:
+        'historical usage snapshot은 당시 catalog shape로 집계된 evidence이므로 현재 capacity로 재인코딩하면 과거 관측의 의미가 바뀐다. 확인된 snapshot 4개(2026-07-31 01:26:36..02:04:48 UTC)는 ir_pipe 28, ir_intent_path 28, ir_data 40 records를 포함하지만 flow_evidence_records와 IR CLI audit는 0건이고 변경 후 snapshot에는 IR 주소가 없다. 따라서 현재는 history를 보존하고 active raw consumer migration은 수행하지 않는다.',
+      alternatives: [
+        'historical aggregate snapshot을 새 capacity로 backfill — 당시 schema provenance 손실 위험',
+        '새 IR runtime address 유입 시 read-repair/backfill — provenance와 affected consumer 확인 후 재검토',
+      ],
+      reversalConditions: [
+        'flow_evidence_records에 IR prefix가 유입되거나 변경 후 snapshot에서 IR address usage가 관측되면 재검토',
+      ],
+      metadata: {
+        decisionKind: 'migration-policy',
+        targets: ['ir_pipe', 'ir_intent_path', 'ir_data'],
+        evidence: [
+          'dkg run skill-analyze-impact ir_pipe_state',
+          'dkg run skill-analyze-impact ir_retention',
+          'dkg run skill-analyze-impact ir_storage_type',
+          'state.sqlite:usage_snapshots',
+          'state.sqlite:flow_evidence_records',
+          'state.sqlite:cli_audit_events',
+        ],
+      },
+      lifecycle: 'active',
+    },
   ],
 
   // transitionSpecs는 demo-transition-specs.ts → toTransitionSpecNodes()로 자동 파생.

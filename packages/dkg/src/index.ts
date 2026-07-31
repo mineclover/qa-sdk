@@ -131,6 +131,14 @@ export type { ScaffoldInput } from './decision-scaffold.js';
 
 // ── Skills ─────────────────────────────────────────
 export { analyzeImpact } from './skills/analyze-impact.js';
+export { auditRuntimePrefixUsage } from './skills/runtime-usage-audit.js';
+export type {
+  RuntimeCliAuditInput,
+  RuntimeFlowEvidenceInput,
+  RuntimePrefixUsage,
+  RuntimeUsageAuditResult,
+  RuntimeUsageSnapshotInput,
+} from './skills/runtime-usage-audit.js';
 export { inferMigrator } from './skills/infer-migrator.js';
 export type { DiffInfo } from './skills/infer-migrator.js';
 export { versionEventFromDiff } from './skills/version-event-derive.js';
