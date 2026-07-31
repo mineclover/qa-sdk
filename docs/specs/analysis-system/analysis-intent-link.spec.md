@@ -16,6 +16,8 @@ def:
       type: depends_on
     - target: analysis-transition
       type: depends_on
+    - target: analysis-intent-link-rule
+      type: traces_to
 sources:
   - packages/dkg/src/skills/flow-trace.ts
   - packages/dkg-enrichment/src/skills/flow-trace.ts
