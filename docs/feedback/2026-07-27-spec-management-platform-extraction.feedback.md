@@ -210,6 +210,9 @@ extension 또는 optional plugin으로 남긴다.
 - P4 2차 완료: `qa-spec-platform scan-audit`와 `code-link-gaps`를 같은 Evidence Snapshot 기반
   query로 추가했다. `QA_SPEC_PLATFORM_BIN` 또는 `--platform-bin`을 지정한 legacy 명령이 이 query를
   호출하며, 실제 qa-sdk에서 기존 code-link 수치(`1,869 / 1,781 / 88 / 95.3%`)를 재현했다.
+- P4 3차 완료: `@spec-platform/qa-sdk-adapter`에 public executable/package contract를 명시하고,
+  full specification journey에서 built `qa-spec-platform` 실행·`pnpm pack` archive·workspace dependency
+  치환·test/source 제외를 검증한다. release publication 자체는 실행하지 않는다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
@@ -225,7 +228,7 @@ extension 또는 optional plugin으로 남긴다.
 | P1 neutral parser/runtime | 완료 | 독립 workspace test/typecheck 통과 |
 | P2 graph/code verifier + QA profile | 완료 | 실 qa-sdk 0 error collect/verify |
 | P3 store/client port | 완료 | immutable file store + storage-agnostic query client + QA adapter round-trip |
-| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint 구현·회귀 통과; 기본 legacy fallback은 유지 |
+| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint, publish contract, clean archive smoke 통과; 실제 registry publication과 consumer default 전환은 보류 |
 
 ## 남은 선행 결정
 
@@ -246,3 +249,4 @@ P0–P3와 P4의 external compatibility entrypoint는 충족했다. legacy contr
 - qa-sdk는 그 공식 adapter/client port만 통해 parsing/evidence surface를 소비한다.
 - qa-sdk coordinate/DKG/registry 특화 기능은 platform core가 아니라 extension에 존재한다.
 - 기존 QA 사용자 workflow의 compatibility test가 통과한 뒤에만 legacy `def` 구현을 deprecate 또는 제거한다.
+- `@spec-platform/qa-sdk-adapter`가 registry에 publish되고 clean consumer install에서 `qa-spec-platform verify`가 동작한다.
