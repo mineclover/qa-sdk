@@ -20,6 +20,8 @@ build `27/27`, business 포함 1,140 records, metrics 319건 중 11 issues다.
 - overlap warning 1개: `pattern_confidence` ↔ `confidence_band` 80% merge 후보
 - 현재 bootstrap 기준 `OBS-DSL-UNCOVERED`는 22개 prefix를 가리킨다. decision-flow,
   definition harness, IR 관측 영역의 DSL 소유 여부는 아직 결정하지 않았다.
+  후속 bootstrap은 각 미소속 prefix에 기존 `flow-schema`/`domain` 연결을
+  `ownershipCandidates` 메타데이터로 보존한다.
 
 기존 SQLite usage snapshot은 집계된 `addressUsages`만 보존하고 raw
 `address_context`/session co-occurrence를 보존하지 않았다. 이번 후속 구현에서
@@ -53,7 +55,7 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 | `OBS-FLOW-*` health | 최신 batch만 사용하고 24시간 freshness gate를 적용함. 현재 self-check 실행에는 fresh business evidence가 없음 | 실제 business ingest flush 후 fresh batch로 self-check를 재실행해 recovered/retained 결과 확인 |
 | IR headroom 3건 | capacity `4 → 8`은 주소 stride와 snapshot에 영향을 주는 semantic 변경 | capacity 결정 기록, impact 분석, catalog/codegen/주소 회귀 검증 완료 |
 | axis overlap 1건 | 두 confidence 축의 의미가 실제로 병합 가능한지 사람 판단 필요 | merge 또는 `DEC-SEP` 수용 결정과 downstream consumer 확인 |
-| `OBS-DSL-UNCOVERED` | 22개 prefix의 DSL 소유·포함 여부가 설계 판단 | 각 prefix의 DSL 귀속 또는 의도적 비소속 결정 기록 |
+| `OBS-DSL-UNCOVERED` | 22개 prefix의 DSL 소유·포함 여부가 설계 판단. bootstrap은 기존 flow-schema/domain 후보만 제시 | 각 prefix의 DSL 귀속 또는 의도적 비소속 결정 기록 |
 
 ## 종료 조건
 

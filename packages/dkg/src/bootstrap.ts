@@ -186,13 +186,42 @@ export function bootstrapDkgFinalize(
 
   const dslCoverage = analyzeDslCoverage(catalog, dslRegistry);
   if (dslCoverage.uncovered.length > 0) {
+    const ownershipCandidates = Object.fromEntries(
+      dslCoverage.uncovered.map((prefixId) => [
+        prefixId,
+        {
+          flowSchemas: graph
+            .reverseNeighbors(prefixId, 'observes')
+            .filter((id) => graph.getNode(id)?.kind === 'flow-schema'),
+          domains: graph
+            .reverseNeighbors(prefixId, 'contains')
+            .filter((id) => graph.getNode(id)?.kind === 'domain'),
+        },
+      ]),
+    );
+    const ownershipSummary = dslCoverage.uncovered
+      .map((prefixId) => {
+        const candidate = ownershipCandidates[prefixId];
+        const flow = candidate?.flowSchemas ?? [];
+        const domains = candidate?.domains ?? [];
+        const refs = [
+          ...(flow.length > 0 ? [`flow-schema=${flow.join('|')}`] : []),
+          ...(domains.length > 0 ? [`domain=${domains.join('|')}`] : []),
+        ];
+        return `${prefixId}[${refs.length > 0 ? refs.join(',') : 'owner-candidate=none'}]`;
+      })
+      .join(', ');
     const obs: ObservationNode = {
       kind: 'observation',
       id: 'OBS-DSL-UNCOVERED',
       date,
       source: 'metric',
       subjects: dslCoverage.uncovered as string[],
-      finding: `DSL에 포함되지 않은 prefix ${dslCoverage.uncovered.length}개: ${dslCoverage.uncovered.join(', ')}`,
+      finding: `DSL에 포함되지 않은 prefix ${dslCoverage.uncovered.length}개: ${dslCoverage.uncovered.join(', ')}. 소유 후보: ${ownershipSummary}`,
+      metadata: {
+        coverageKind: 'dsl',
+        ownershipCandidates,
+      },
       suggestion: {
         kind: 'add-constraint',
         rule: '모든 관측/이벤트 prefix는 DSL 번들에 포함되어야 한다',

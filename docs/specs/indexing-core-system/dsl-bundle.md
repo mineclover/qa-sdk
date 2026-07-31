@@ -44,7 +44,7 @@ DSL Bundle은 여러 prefix를 묶어 **하나의 사용 시나리오**를 구�
 - **멤버 역할 5종**: observation, permission, event, infra, context — 각 prefix의 DSL 내 역할을 구분
 - **svcRefLabel 자동 감지**: defineDslBundle()이 멤버 prefix의 dims에서 prefix_ref → service인 차원을 자동으로 찾아 서비스 바인딩
 - **DKG 노드 타입**: dsl-bundle은 DomainNode(소유 경계)와 달리 사용 패턴을 표현하며, 하나의 prefix가 여러 DSL에 포함 가능
-- **커버리지 분석**: analyzeDslCoverage()로 카탈로그 prefix의 DSL 배치 현황(covered/uncovered/unbound) 파악
+- **커버리지 분석**: analyzeDslCoverage()로 카탈로그 prefix의 DSL 배치 현황(covered/uncovered/unbound)을 파악한다. 미소속 observation에는 기존 flow-schema/domain 연결을 `ownershipCandidates` 메타데이터로 남기며, 이를 DSL 편입 또는 비소속 결정으로 자동 승격하지 않는다.
 - **불변조건 선언**: 번들별로 prefix 간 선후 관계나 필수 공출현 조건을 명시 (예: checkout page_view 없이 flow_point success 관측 금지)
 
 기반 문서: [dimension-operations.md](dim-ops-system.md) · [table-system.md](table-system-group.md)
@@ -237,7 +237,22 @@ const report = analyzeDslCoverage(DEMO_CATALOG, registry);
 // report.roleCounts: { observation: 3, infra: 2, event: 2, ... }
 ```
 
-**uncovered prefix는 독립 사용되거나 새 DSL에 배치되어야 할 후보다.**
+**uncovered prefix는 독립 사용되거나 새 DSL에 배치되어야 할 후보이다.** 다만
+flow-schema나 domain이 이미 해당 prefix를 관찰·소유하고 있을 수 있으므로,
+`bootstrapDkgFinalize()`가 생성하는 `OBS-DSL-UNCOVERED`는 이를 자동으로 DSL에
+편입하지 않는다. 관찰된 연결은 다음 형태로 보존한다.
+
+```typescript
+observation.metadata = {
+  coverageKind: 'dsl',
+  ownershipCandidates: {
+    decision_event: { flowSchemas: ['coordinate-design'], domains: ['decision-domain'] },
+  },
+};
+```
+
+이 메타데이터는 DSL 귀속 또는 의도적 비소속을 결정하기 위한 근거이며, 결정이
+기록되기 전에는 coverage warning을 자동 해소하지 않는다.
 
 ---
 

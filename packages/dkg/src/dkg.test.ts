@@ -225,6 +225,24 @@ describe('bootstrapDkg flowSchemas', () => {
       ]),
     );
   });
+
+  it('DSL 미소속 observation에 기존 flow-schema/domain 소유 후보를 보존한다', () => {
+    const bootstrapped = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+    const observation = bootstrapped.getNode('OBS-DSL-UNCOVERED');
+
+    expect(observation?.kind).toBe('observation');
+    if (observation?.kind !== 'observation') return;
+
+    expect(observation.metadata).toMatchObject({
+      coverageKind: 'dsl',
+      ownershipCandidates: {
+        decision_event: {
+          flowSchemas: expect.arrayContaining(['coordinate-design']),
+        },
+      },
+    });
+    expect(observation.finding).toContain('decision_event[flow-schema=coordinate-design');
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════
