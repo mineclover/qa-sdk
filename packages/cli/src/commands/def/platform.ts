@@ -73,17 +73,26 @@ export function isPlatformExecutableAvailable(
   );
 }
 
+export function resolvePlatformMode(
+  flags: Record<string, string>,
+  environment: Readonly<Record<string, string | undefined>> = process.env,
+): string | undefined {
+  return flags.platform ?? environment.QA_SPEC_PLATFORM_MODE;
+}
+
 export function hasExternalPlatform(
   flags: Record<string, string>,
   pathValue = process.env.PATH,
+  environment: Readonly<Record<string, string | undefined>> = process.env,
 ): boolean {
   // Explicit configuration must remain fail-loud: a typo in --platform-bin or
   // QA_SPEC_PLATFORM_BIN should produce the existing execution error rather
   // than silently switching to a different collector.
-  if (flags['platform-bin'] || process.env.QA_SPEC_PLATFORM_BIN || flags.platform === 'true') {
+  const mode = resolvePlatformMode(flags, environment);
+  if (flags['platform-bin'] || environment.QA_SPEC_PLATFORM_BIN || mode === 'true') {
     return true;
   }
-  return flags.platform === 'auto' && isPlatformExecutableAvailable('qa-spec-platform', pathValue);
+  return mode === 'auto' && isPlatformExecutableAvailable('qa-spec-platform', pathValue);
 }
 
 function createPlatformInvocation(

@@ -7,7 +7,11 @@ import { tmpdir } from 'node:os';
 import { describe, expect, it, vi } from 'vitest';
 import { DEF_COMMAND_DESCRIPTORS } from '../command-groups/def.commands.js';
 import { cliDef, createPlatformQueryInvocation, createPlatformVerifyInvocation } from './def.js';
-import { hasExternalPlatform, isPlatformExecutableAvailable } from './def/platform.js';
+import {
+  hasExternalPlatform,
+  isPlatformExecutableAvailable,
+  resolvePlatformMode,
+} from './def/platform.js';
 import { useDefCliHarness } from './def-test-helpers.js';
 
 describe('def lifecycle and routing commands', () => {
@@ -72,6 +76,23 @@ describe('def lifecycle and routing commands', () => {
         expect(hasExternalPlatform({ platform: 'auto' }, directory)).toBe(true);
       } finally {
         vi.unstubAllEnvs();
+        await rm(directory, { recursive: true, force: true });
+      }
+    });
+
+    it('[contract:definition-code-link-coverage.platform.mode.env-auto.v1] uses environment mode only when the CLI does not override it', async () => {
+      const directory = await mkdtemp(join(tmpdir(), 'qa-sdk-platform-env-'));
+      const executable = join(directory, 'qa-spec-platform');
+      try {
+        await writeFile(executable, '#!/usr/bin/env node\n');
+        await chmod(executable, 0o755);
+
+        expect(resolvePlatformMode({}, { QA_SPEC_PLATFORM_MODE: 'auto' })).toBe('auto');
+        expect(hasExternalPlatform({}, directory, { QA_SPEC_PLATFORM_MODE: 'auto' })).toBe(true);
+        expect(
+          hasExternalPlatform({ platform: 'false' }, directory, { QA_SPEC_PLATFORM_MODE: 'auto' }),
+        ).toBe(false);
+      } finally {
         await rm(directory, { recursive: true, force: true });
       }
     });
