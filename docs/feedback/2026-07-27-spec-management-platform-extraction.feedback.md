@@ -216,6 +216,9 @@ extension 또는 optional plugin으로 남긴다.
 - P4 4차 완료: 11개 transitive platform package tarball을 clean npm consumer에 설치해 `.bin/qa-spec-platform`
   실행을 검증했다. 이 과정에서 npm bin symlink 때문에 main-module 판정이 실패하던 실제 결함을
   adapter와 generic CLI의 realpath 비교로 수정했다.
+- P4 5차 완료: clean consumer에 함께 설치되는 공개 platform dependency 전체에 `dist-only`,
+  `publishConfig.access=public`, Node `>=22`, test artifact 제외 contract를 통일하고 archive 검증을
+  full journey에 고정했다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
