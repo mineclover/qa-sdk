@@ -128,16 +128,22 @@ ScenarioSpec (설계)            "이 순서로 진행되어야 한다"
 
 ### convergence pipeline 통합
 
-`ConvergencePipelineRunner.runPipeline()` 단계 5b에서 IntentLink 흐름 검증이 실행된다:
+`ConvergencePipelineRunner.runPipeline()`은 raw `addressRecords`로 IntentLink 흐름을
+검증하고, metric 계산 전에 관측된 link의 과거 observation 회복을 반영한다:
 
 ```typescript
-// 5b. IntentLink 흐름 검증 (에러 격리)
+// flow evidence preflight (에러 격리)
 if (convergenceFns.traceFlows) {
   const flowResult = convergenceFns.traceFlows(graph, addressRecords);
   flowViolationCount = flowResult.violations.length;
   observations.push(...flowResult.observations);
 }
 ```
+
+회복 후보가 있으면 `resolveRecoveredFlowObservations()` 결과를 graph와 DKG store에
+반영한 뒤 `collectMetrics()`를 호출한다. self-check도 동일한 판정 규칙을 사용하지만,
+build/test/contract 결과만으로 구성된 실행에서는 business IntentLink를 미관측으로
+간주한다.
 
 ## 관련 소스
 

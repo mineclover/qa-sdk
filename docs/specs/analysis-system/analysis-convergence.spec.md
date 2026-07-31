@@ -23,6 +23,7 @@ sources:
   - packages/convergence/src/usage-aggregator.ts
   - packages/convergence/src/metric-registry.ts
   - packages/convergence/src/convergence-runner.ts
+  - packages/dkg/src/skills/flow-trace.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
   - packages/spec-core/src/convergence/pipeline-e2e.test.ts
@@ -45,10 +46,13 @@ prefix 간 중복이나 낭비를 감지하는 수렴 분석. 유사한 축 조�
 2. **flush 트리거** — 건수 임계값(`recordThreshold`, 기본 100) 또는 타이머(`flushIntervalMs`, 기본 60초) 도달 시 실행
 3. **레코드 조회** — `recordStore.findByTraceId()`로 address_context가 있는 레코드만 수집
 4. **집계** — `aggregateUsageData(catalog, records)` → `UsageData` 생성
-5. **metric 수집** — `collectMetrics(catalog, graph, usage)` → `MetricValue[]`
-6. **observation 생성** — `metricsToObservations(metrics)` → `ObservationNode[]`
-7. **자동 해소** — `resolveRecoveredMetrics()`로 ok 복귀한 metric의 기존 observation 해소
-8. **DKG 저장** — `saveUsageSnapshotWithObservations(usage, observations)`
+5. **flow trace** — raw `addressRecords`로 IntentLink 위반을 검사하고, 현재 배치에서
+   실제 endpoint가 관측된 link의 과거 flow observation만 회복 후보로 만든다.
+6. **metric 수집** — flow 회복 상태가 반영된 graph에 대해
+   `collectMetrics(catalog, graph, usage)` → `MetricValue[]`
+7. **observation 생성** — `metricsToObservations(metrics)` → `ObservationNode[]`
+8. **자동 해소** — `resolveRecoveredMetrics()`로 ok 복귀한 metric의 기존 observation 해소
+9. **DKG 저장** — `saveUsageSnapshotWithObservations(usage, observations)` 및 회복 노드 update
 
 ### 집계 계층 (Aggregation Layers)
 

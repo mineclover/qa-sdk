@@ -4,7 +4,7 @@ def:
   type: spec
   tier: component
   scope: flow
-  aspect: scenario
+  aspect: user_scenario
   depth: validation
   lifecycle: approved
   layer: operation
@@ -17,6 +17,7 @@ def:
       type: depends_on
 sources:
   - packages/dkg/src/skills/flow-trace.test.ts
+  - packages/ingest-server/src/lib/convergence-pipeline.test.ts
   - packages/cli/src/commands/dkg.e2e.test.ts
 ---
 # IntentLink — 검증 기준
@@ -34,6 +35,7 @@ IntentLink의 event trace 판정과 observation lifecycle이 현재 구현과 �
 | 정상 event context에서 위반 없음 | `packages/dkg/src/skills/flow-trace.test.ts` |
 | 관측된 link의 과거 observation 회복 | `packages/dkg/src/skills/flow-trace.test.ts` |
 | 미관측 link와 재발 violation의 해소 보류 | `packages/dkg/src/skills/flow-trace.test.ts` |
+| runtime flow recovery가 metric 계산보다 선행 | `packages/ingest-server/src/lib/convergence-pipeline.test.ts` |
 | self-check live flow trace 통합 | `packages/cli/src/commands/dkg.e2e.test.ts` + full self-check |
 
 ## 시나리오 ^scenarios

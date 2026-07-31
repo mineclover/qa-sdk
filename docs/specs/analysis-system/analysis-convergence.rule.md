@@ -17,6 +17,7 @@ sources:
   - packages/convergence/src/index.ts
   - packages/convergence/src/usage-aggregator.ts
   - packages/convergence/src/metric-registry.ts
+  - packages/dkg/src/skills/flow-trace.ts
   - packages/ingest-server/src/lib/convergence-pipeline.ts
   - packages/ingest-server/src/lib/convergence-pipeline.test.ts
 ---
@@ -35,6 +36,9 @@ convergence-pipeline을 소비할 때 확인해야 하는 타입 제약, 포트 
 - `OBS-PATTERN`: DKG ObservationNode 스키마 준수 (`subjects[]`, `finding`, `intent`)
 - `GraphPort` vs `ConvergenceGraphPort`: 서비스는 최소 포트, CLI는 GraphRegistry(최대)
 - `as unknown as ConcreteType`: 동적 import 구조적 캐스트. **`as any` 금지**
+- runtime flow recovery는 현재 `addressRecords`에서 endpoint가 관측된 IntentLink에만
+  적용하고, recovery 후 metric을 계산한다. raw evidence가 없는 snapshot만으로
+  과거 flow observation을 닫지 않는다.
 
 ## 구현/검증 증거 ^implementation-evidence
 
