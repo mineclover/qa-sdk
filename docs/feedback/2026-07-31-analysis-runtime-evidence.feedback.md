@@ -185,3 +185,12 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 `docs/specs/dkg-system/dkg-skills-system/dkg-skill-cascade.cases.md`에 기록했고,
 순수 skill 단위 테스트와 CLI E2E에서 불완전 근거 거부·독립 결정 저장·pending 감소를
 검증한다.
+
+## 후속 구현 — self-check 잔여 이유 출력
+
+이제 `dkg self-check`는 `recovered metrics/flows` 아래에 observation별 자동 해소
+이유를 표시하고, `retained issues` 아래에 자동 해소하지 않은 metric issue와 이유를
+표시한다. `OBS-FLOW-*`는 runtime evidence의 freshness와 observed prefix 범위를,
+`OBS-DSL-UNCOVERED`는 human ownership decision 미기록을, domain-health와 schema
+issue는 각각 미해결 observation과 graph audit 잔여를 명시한다. 이 출력은 dry-run
+상태 보고이며, `--apply` 저장과 `dkg resolve` 종료 경계는 유지한다.

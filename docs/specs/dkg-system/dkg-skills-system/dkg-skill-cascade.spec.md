@@ -164,6 +164,16 @@ qa-sdk dkg dsl-ownership decide \
 - 이 명령은 bundle membership 변경이나 `OBS-DSL-UNCOVERED` resolution을 자동 수행하지
   않는다. observation은 별도의 `dkg resolve` 결정으로 닫는다.
 
+### self-check 관측 결과 출력
+
+`dkg self-check`는 metric issue를 단순 합계로만 보고하지 않는다. 현재 실행에서
+회복 조건을 만족한 observation은 `recovered` 항목과 observation별 이유를 출력하고,
+남은 issue는 `retained issues`로 분리해 자동 해소하지 않은 이유를 출력한다.
+`OBS-FLOW-*`는 persisted runtime evidence의 부재/stale/fresh 범위를, DSL ownership
+observation은 human decision 미기록을, domain-health와 schema issue는 미해결
+observation 또는 graph audit 잔여를 이유로 표시한다. 이 출력은 상태를 변경하지 않으며,
+실제 저장과 observation 종료는 기존 `--apply` 및 `dkg resolve` 경계를 따른다.
+
 ## 출력 타입
 
 ```typescript

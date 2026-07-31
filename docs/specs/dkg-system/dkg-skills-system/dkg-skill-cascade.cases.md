@@ -104,6 +104,27 @@ bdd_contracts:
           value: written
       invariants: [owner-dsl-is-empty, rationale-and-evidence-are-preserved, observation-remains-open]
 
+  - id: dkg.self-check.observation-reason.output.v1
+    owner_system: dkg-system
+    contract_kind: query-projection
+    mode: read
+    links:
+      spec: dkg-skill-cascade
+    given:
+      state_component: self-check-observation-state
+      state: recovered-and-retained-issues
+      predicates: [recovery-evidence-classified, metric-issue-present]
+      fixtures: [isolated-home-with-bootstrap-observations]
+    when:
+      actor: operator
+      operation: dkg.self-check
+    then:
+      state: reported
+      returns:
+        recovered_reason: printed-per-observation
+        retained_reason: printed-per-metric-issue
+      invariants: [dry-run-does-not-mutate, retained-issue-is-not-auto-resolved]
+
 test_units:
   - id: TU-dsl-ownership-incomplete-evidence
     contract: dsl-ownership.pending.record.incomplete-evidence.v1
@@ -126,6 +147,13 @@ test_units:
     when: recordDslOwnershipDecision() with choice=independent
     assertions: [then.returns, owner-dsl-is-empty, pending-count-decreases]
     test_file: packages/dkg/src/skills/dsl-ownership-review.test.ts
+  - id: TU-dkg-self-check-observation-reason
+    contract: dkg.self-check.observation-reason.output.v1
+    level: integration
+    given_fixture: isolated-home-with-bootstrap-observations
+    when: dkg self-check --fast
+    assertions: [recovered-reason-or-retained-reason, no-persistence-in-dry-run]
+    test_file: packages/cli/src/commands/dkg.e2e.test.ts
 
 implementation_units:
   - id: IU-record-dsl-ownership-decision
@@ -152,6 +180,14 @@ implementation_units:
     inputs: [cli-flags]
     effects: [manual-dkg-persistence, pending-review-reduction]
     must_not_own: [automatic-owner-selection, automatic-observation-resolution]
+  - id: IU-dkg-self-check-observation-reason
+    contract: dkg.self-check.observation-reason.output.v1
+    unit_kind: projection
+    owned_by: dkg-system
+    source_target: packages/cli/src/commands/dkg.ts
+    inputs: [metric-values, observation-state, persisted-flow-evidence]
+    effects: [recovered-reason-output, retained-reason-output]
+    must_not_own: [observation-persistence, automatic-observation-resolution]
 ```
 
 ## 경계 ^constraint

@@ -33,6 +33,7 @@ runtime evidence의 수집·freshness·범위를 명시적으로 확인한다.
 - `cli_audit_events`는 CLI 실행 경로의 audit event이며 business flow evidence와 분리한다.
 - flow observation recovery는 fresh evidence와 현재 실행 records가 함께 있을 때만 허용한다. evidence가 없거나 stale이면 observation을 자동 해소하지 않는다.
 - metric, log, trace, audit event가 어느 범위의 prefix를 관측했는지 출력되어야 하며, synthetic/test 입력은 운영 business evidence로 분류하지 않는다.
+- self-check는 회복된 observation과 의도적으로 유지한 metric issue를 별도 출력하고, evidence freshness·human decision·미해결 graph 상태 중 유지 이유를 표시해야 한다.
 
 ## DSL ownership 입력 정책 ^constraint
 
