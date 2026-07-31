@@ -39,8 +39,10 @@ confidence overlap의 소비자 근거도 확인했다. `pattern_confidence`는
 `decision_event`·`forcing_response`와 `decision-flow`의 `discretizeConfidence()`가
 결정 근거의 확신도(`low/medium/high/exact`)로 소비한다. 값 이름은 일부 같지만
 소유 시스템·입력·출력 계약·축 cardinality가 다르고 두 축을 함께 쓰는 prefix도
-없다. 따라서 현재 근거는 `keep-separate` 쪽을 지지하지만, merge하지 않는다는
-최종 DecisionNode 기록은 아직 남아 있다.
+없다. 따라서 merge하지 않는다는 `DEC-SEP-pattern_confidence-confidence_band`
+DecisionNode를 설정에 기록했고, bootstrap이 decision에서 두 축으로
+`justifies` 엣지를 생성하도록 보강했다. refresh 후 overlap metric은
+`DEC-SEP 수용`으로 표시되며 더 이상 미해결 issue로 집계되지 않는다.
 
 DSL ownership은 prefix별 1개 decision unit으로 관리한다. 현재 unit은
 flow/domain 후보가 있는 5개(`decision_event`, `decision_path`,
@@ -54,7 +56,7 @@ rationale → evidence(source/consumer/flow) → downstream consumer 영향`. �
 채워지기 전에는 `OBS-DSL-UNCOVERED`를 자동 해소하지 않는다.
 
 그래프 refresh 직후의 `--fast` 재측정은 build/test mock 입력의 비대표성을 반영해
-coverage metric을 생성하지 않으며 `263건, 6 issues`로 집계된다. coverage 요약은
+coverage metric을 생성하지 않으며 `263건, 5 issues`로 집계된다. coverage 요약은
 `provisional (--fast)`로만 출력된다(`build_event 41%`, `test_event 39%`). 이전
 `251건, 9 issues`는 refresh 전 stale graph 기준이다.
 
@@ -67,10 +69,10 @@ used` 포트 충돌이며, 포트 점유 프로세스는 종료하지 않고 실
 
 self-check runner를 단일 Playwright 프로세스 + JSON report 시나리오별 집계로
 수정한 뒤 재실행한 결과는 build `25/25`(2 skipped), test `6857/6857`, E2E
-`31/31`, records `1,229건`, coverage `86%`/`82%`였다. 그래프 refresh와 IR
-capacity 반영 후 최신 full 기준은 metrics `331건 중 6 issues`이며, schema 위반은
-`0건`이다. 남은 6건은 domain health 5건(critical 3, warning 2)과 confidence
-overlap warning 1건이다. self-check 종합 출력도 metric critical이 있으면
+`31/31`, records `1,229건`, coverage `86%`/`82%`였다. 최신 refresh와 confidence
+분리 결정 반영 후 full 기준은 metrics `331건 중 5 issues`이며, schema 위반은
+`0건`이다. 남은 5건은 domain health 5건(critical 3, warning 2)이다.
+self-check 종합 출력도 metric critical이 있으면
 `⚠ 문제 감지`, warning만 있으면 `⚠ 잔여 경고`로 표시하도록 수정했다.
 이 실행에서는 `bit-index` `62/62`와 E2E 8개 시나리오가 모두 통과했고, 실행 오류가
 없었다. 이전 포트 충돌은 자동화 경로에서 해소됐다. 다만 당시 self-check는 metric
@@ -125,7 +127,7 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 |---|---|---|
 | `OBS-FLOW-*` health | 최신 batch만 사용하고 24시간 freshness gate를 적용함. 현재 self-check 실행에는 fresh business evidence가 없음 | 실제 business ingest flush 후 fresh batch로 self-check를 재실행해 recovered/retained 결과 확인 |
 | IR 주소 migration | capacity `4 → 8` 변경으로 기존 주소 stride가 달라짐 | `ir_pipe`, `ir_intent_path`, `ir_data` 소비자의 기존 주소 snapshot/backfill 정책 확인 |
-| axis overlap 1건 | 두 confidence 축의 의미가 실제로 병합 가능한지 사람 판단 필요 | merge 또는 `DEC-SEP` 수용 결정과 downstream consumer 확인 |
+| confidence axis overlap | `DEC-SEP-pattern_confidence-confidence_band`로 분리 유지 결정 완료. consumer 계약과 대상 축을 그래프에 연결함 | consumer 계약 변경 또는 신규 공용 prefix가 생기면 재검토 |
 | `OBS-DSL-UNCOVERED` | 22개 prefix의 DSL 소유·포함 여부가 설계 판단. bootstrap은 기존 flow-schema/domain 후보만 제시 | 각 prefix의 DSL 귀속 또는 의도적 비소속 결정 기록 |
 
 ## 종료 조건
@@ -135,6 +137,7 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 - category audit가 `68/68` 통과하고 IR headroom 경고가 사라진다. ✅
 - capacity 변경은 DKG decision 및 semantic-change impact를 기록했다. ✅
 - 기존 IR 주소 소비자 migration/backfill 정책을 확인한다.
-- overlap 및 DSL 소유 판단이 DecisionNode/스펙으로 기록된다.
+- confidence axis overlap 판단이 `DEC-SEP` DecisionNode와 대상 엣지로 기록된다. ✅
+- DSL 소유 판단이 prefix별 DecisionNode/스펙으로 기록된다.
 - 후속 self-check에서 자동 해소된 observation과 의도적으로 남은 warning의 이유가
   각각 출력된다.
