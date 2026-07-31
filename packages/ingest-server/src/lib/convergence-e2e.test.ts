@@ -11,6 +11,20 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+import type { TransmissionEnvelope } from '@qa-sdk/core';
+import {
+  InMemoryDlqStore,
+  InMemoryGraphStore,
+  InMemoryRecordStore,
+  InMemoryScenarioSpecStore,
+  InMemorySessionStore,
+  InMemoryTraceStore,
+  InMemoryTransmissionStore,
+  InMemoryVerdictStore,
+} from '@qa-sdk/store';
+import pino from 'pino';
+import { createApp } from '../app.js';
+import { RecordStreamBroker } from './record-stream-broker.js';
 import {
   ConvergencePipelineRunner,
   type ConvergenceFunctions,
@@ -18,6 +32,114 @@ import {
 } from './convergence-pipeline.js';
 
 describe('관측 루프 E2E', () => {
+  it('POST /v1/ingest → Phase 2 → flow evidence persistence 경로를 연결한다', async () => {
+    const recordStore = new InMemoryRecordStore();
+    const dkgStore: DkgStorePort & {
+      saveFlowEvidence: NonNullable<DkgStorePort['saveFlowEvidence']>;
+    } = {
+      saveUsageSnapshotWithObservations: vi.fn().mockReturnValue({
+        snapshotId: 7,
+        observationsWritten: 0,
+      }),
+      saveFlowEvidence: vi.fn().mockReturnValue({ recordsWritten: 1 }),
+    };
+    const convergenceFns: ConvergenceFunctions = {
+      aggregateUsageData: vi.fn().mockReturnValue({
+        collectionPeriod: { from: '2026-07-31', to: '2026-07-31' },
+        entryUsages: [],
+        addressUsages: [],
+        coOccurrences: [],
+        versionUsages: [],
+        sourceStats: { totalRecords: 1 },
+      }),
+      collectMetrics: vi.fn().mockReturnValue([]),
+      metricsToObservations: vi.fn().mockReturnValue([]),
+    };
+    const pipeline = new ConvergencePipelineRunner(
+      {
+        recordStore,
+        convergenceFns,
+        graphProvider: () => ({ getNodesByKind: () => [] }) as any,
+        catalogProvider: () => ({ id: 'test', name: 'test', axes: {}, prefixes: {} }),
+        dkgStore,
+      },
+      { recordThreshold: 999, flushIntervalMs: 999_999 },
+    );
+    const app = createApp({
+      recordStore,
+      traceStore: new InMemoryTraceStore(),
+      graphStore: new InMemoryGraphStore(),
+      transmissionStore: new InMemoryTransmissionStore(),
+      sessionStore: new InMemorySessionStore(),
+      verdictStore: new InMemoryVerdictStore(),
+      scenarioSpecStore: new InMemoryScenarioSpecStore(),
+      dlqStore: new InMemoryDlqStore(),
+      recordStreamBroker: new RecordStreamBroker(),
+      convergencePipeline: pipeline,
+      logger: pino({ level: 'silent' }),
+    });
+    const envelope: TransmissionEnvelope = {
+      transmission_id: 'tx-convergence-e2e',
+      sent_at: '2026-07-31T10:00:00.000Z',
+      owner: { owner_type: 'workspace', owner_id: 'workspace-e2e' },
+      source: { service_name: 'checkout-api', sdk_name: 'qa-sdk-test', sdk_version: '0.1.0' },
+      runtime: { platform: 'node', app_version: 'test' },
+      build: { env: 'test', release_version: 'test' },
+      records: [
+        {
+          log_id: 'log-convergence-e2e',
+          timestamp: '2026-07-31T09:59:59.000Z',
+          record_kind: 'log',
+          trace_id: 'trace-convergence-e2e',
+          span_id: 'span-convergence-e2e',
+          event_key: 'checkout.page.viewed',
+          event_version: '001',
+          payload_format: 'json',
+          payload_encoding: 'raw',
+          payload_masking_applied: false,
+          payload_masked_fields: [],
+          payload: { source: 'e2e' },
+          qa_session_id: 'session-convergence-e2e',
+          address_context: { page_view: 'page_view:v1:1' },
+        },
+      ],
+    };
+
+    try {
+      const response = await app.request('/v1/ingest', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(envelope),
+      });
+      expect(response.status).toBe(202);
+
+      const result = await pipeline.flush();
+
+      expect(result).toMatchObject({ recordsProcessed: 1, snapshotId: 7 });
+      expect(dkgStore.saveFlowEvidence).toHaveBeenCalledWith(
+        expect.objectContaining({
+          snapshotId: 7,
+          records: [
+            expect.objectContaining({
+              traceId: 'trace-convergence-e2e',
+              sessionId: 'session-convergence-e2e',
+              addressContext: { page_view: 'page_view:v1:1' },
+            }),
+          ],
+        }),
+      );
+      expect(result?.flowEvidence).toMatchObject({
+        recordCount: 1,
+        traceCount: 1,
+        sessionCount: 1,
+        observedPrefixes: ['page_view'],
+        recordsPersisted: 1,
+      });
+    } finally {
+      await pipeline.close();
+    }
+  });
+
   // ── 전체 파이프라인 흐름 검증 ────────────────────────
 
   it('Phase 2 → convergence → DKG store 저장까지 전체 경로', async () => {
