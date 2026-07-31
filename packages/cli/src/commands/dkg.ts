@@ -6422,12 +6422,19 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     );
   }
 
-  const hasProblem =
+  const hasBlockingProblem =
     buildSummary.failure > 0 ||
     testSummary.failed > 0 ||
     results.some((result) => result.result === 'error') ||
     invariantViolations.length > 0;
-  console.log(hasProblem ? `\n  ⚠ 문제 감지` : `\n  ✅ 전체 정상`);
+  const hasCriticalMetric = metricIssues.some((metric) => metric.status === 'critical');
+  if (hasBlockingProblem || hasCriticalMetric) {
+    console.log(`\n  ⚠ 문제 감지`);
+  } else if (metricIssues.length > 0) {
+    console.log(`\n  ⚠ 잔여 경고 ${metricIssues.length}건`);
+  } else {
+    console.log(`\n  ✅ 전체 정상`);
+  }
 }
 
 function findArg(args: string[], flag: string): string | undefined {

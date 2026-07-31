@@ -33,6 +33,8 @@ Self-check 결과를 수집·분석·출력할 때 error/failure 경로와 관�
 - `dkg self-check`의 분석 실패는 원래 build/test 결과를 가리지 않아야 하며,
   metrics와 flow 검증은 진단 가능한 warning/detail을 남긴다.
 - `metrics`의 non-`ok` 항목은 metric ID, 상태, detail을 함께 출력한다.
+- 종합 상태는 build/test/error/invariant 실패 또는 critical metric이 있으면 `문제 감지`,
+  metric warning만 남으면 `잔여 경고`, non-`ok`가 없으면 `전체 정상`으로 표시한다.
 - flow observation 회복은 현재 실행에서 endpoint가 실제 관측된 IntentLink에만
   적용하며, 재발 위반 또는 미관측 링크는 자동 해소하지 않는다.
 - persisted flow evidence는 가장 최근 run 단위로만 읽고 24시간 freshness gate를
