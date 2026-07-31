@@ -27,6 +27,7 @@
 ```bash
 pnpm --filter @qa-sdk/e2e install:browsers
 pnpm --filter @qa-sdk/e2e test
+pnpm --filter @qa-sdk/e2e typecheck
 pnpm --filter @qa-sdk/e2e test:ui
 pnpm --filter @qa-sdk/e2e test:headed
 ```

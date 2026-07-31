@@ -25,6 +25,7 @@ def:
       type: depends_on
 sources:
   - packages/e2e/package.json
+  - packages/e2e/tsconfig.json
   - packages/e2e/playwright.config.ts
   - packages/e2e/tests/helpers.ts
   - packages/e2e/tests/event-pipeline.spec.ts
@@ -62,6 +63,7 @@ Playwright 기반 cross-app 브라우저 E2E 패키지. ingest, viz, roleplay, s
 
 ```bash
 corepack pnpm --filter @qa-sdk/e2e test
+corepack pnpm --filter @qa-sdk/e2e typecheck
 corepack pnpm --filter @qa-sdk/e2e exec playwright test --list
 qa-sdk docs closure e2e-suite-spec
 ```

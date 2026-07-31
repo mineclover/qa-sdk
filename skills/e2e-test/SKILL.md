@@ -48,6 +48,9 @@ Playwright가 테스트 실행 전에 5개 서버를 자동 기동한다.
 # 전체 E2E 실행
 corepack pnpm --filter @qa-sdk/e2e test:e2e
 
+# 테스트 소스 타입검증
+corepack pnpm --filter @qa-sdk/e2e typecheck
+
 # UI 모드 (디버깅에 유용)
 corepack pnpm --filter @qa-sdk/e2e test:ui
 
@@ -234,37 +237,36 @@ test("이벤트 주입 후 viz에 표시", async ({ page, request }) => {
 });
 ```
 
-### 패턴 3: 네트워크 이벤트 캡처 (발생/미발생 검증)
+### 패턴 3: 서버 저장 기반 이벤트 검증 (발생/미발생 검증)
 
-`page.on("request")` 리스너로 ingest 서버로 전송되는 이벤트를 가로채서 검증한다.
+`navigator.sendBeacon`은 Playwright request 이벤트에서 본문과 응답을 안정적으로 제공하지 않는다. 브라우저 이벤트를 검증할 때는 `helpers.ts`의 세션 기반 helper를 사용한다.
 
 ```typescript
-test("특정 이벤트가 발생하지 않는다", async ({ page }) => {
-  const capturedEventKeys: string[] = [];
-  page.on("request", (req) => {
-    if (req.url().includes("/v1/ingest") && req.method() === "POST") {
-      try {
-        const body = JSON.parse(req.postData() ?? "{}");
-        for (const record of body.records ?? []) {
-          if (record.event_key) capturedEventKeys.push(record.event_key);
-        }
-      } catch { /* ignore */ }
-    }
-  });
+import {
+  flushAndReadSessionEventKeys,
+  useFetchTransport,
+} from "./helpers.js";
 
+test.beforeEach(async ({ page }) => {
+  // 테스트 페이지에서만 fetch(keepalive)를 사용해 저장 결과를 관찰한다.
+  await useFetchTransport(page);
+  await page.goto(`${SHOP_URL}?ingest=${INGEST_URL}`);
+});
+
+test("특정 이벤트가 발생하지 않는다", async ({ page, request }) => {
   // ... 사용자 행동 수행 ...
 
-  await page.waitForTimeout(1500); // 전송 완료 대기
+  const eventKeys = await flushAndReadSessionEventKeys(page, request);
 
   // 긍정: 특정 이벤트가 있어야 함
-  const hasCartAdd = capturedEventKeys.some(k => k === "cart.add");
-  expect(hasCartAdd).toBe(true);
+  expect(eventKeys.some((key) => key === "cart.add")).toBe(true);
 
   // 부정: 특정 이벤트가 없어야 함
-  const hasPayment = capturedEventKeys.some(k => k.startsWith("payment."));
-  expect(hasPayment).toBe(false);
+  expect(eventKeys.some((key) => key.startsWith("payment."))).toBe(false);
 });
 ```
+
+`flushAndReadSessionEventKeys()`는 `sessionStorage.qa_monitor`의 세션 ID를 읽고, 운영 flush 주기(5초)를 기다린 뒤 `GET /v1/sessions/:sessionId/records`를 조회한다. UI 카운터만으로 전송 성공을 단정하지 않는다.
 
 ### 패턴 4: iframe 통합 (roleplay-web)
 
@@ -295,6 +297,14 @@ test("iframe 내부 요소 조작", async ({ page }) => {
 export const INGEST_URL = "http://localhost:3101";
 ```
 E2E 전용 ingest 서버 주소. dev 서버(3200)와 포트가 다르다.
+
+### `useFetchTransport(page)`
+
+테스트 페이지에서만 `navigator.sendBeacon`을 비활성화해 `fetch(keepalive)` fallback을 사용하게 한다. 운영 SDK 설정이나 BeaconTransport의 기본 우선순위는 변경하지 않는다.
+
+### `flushAndReadSessionEventKeys(page, request)`
+
+pagehide/정상 타이머 flush 이후 ingest-server의 세션 레코드를 조회해 event key 목록을 반환한다. 네트워크 request 본문 캡처 대신 서버가 실제 저장한 결과를 assertion 입력으로 사용한다.
 
 ### `registerScenario(request, scenarioId, steps)`
 시나리오를 ingest 서버에 등록한다. 이미 존재하면(409) 무시한다.
@@ -336,6 +346,7 @@ viz-web에서 시나리오를 선택하고 WebSocket 연결까지 대기한다. 
 - **scope**: `system` (시스템 레벨 검증)
 - **도구**: Playwright
 - **실행**: `corepack pnpm --filter @qa-sdk/e2e test:e2e`
+- **타입검증**: `corepack pnpm --filter @qa-sdk/e2e typecheck`
 - **상태 흐름**: `not_started` → `testing` → `test_passed` → `complete`
 
 work-domain 레지스트리에서 프론트엔드 작업 도메인의 품질 게이트로 등록되어 있다:
@@ -439,7 +450,7 @@ corepack pnpm --filter @qa-sdk/e2e test:e2e
 
 - `page.waitForTimeout()`은 고정 대기라서 불안정하다
 - 가능하면 `expect(...).toBeVisible({ timeout })`, `waitFor({ state })` 사용
-- sendBeacon/네트워크 전송 완료 확인이 필요한 경우에만 `waitForTimeout(1500~2000)` 허용
+- 브라우저 ingest 저장 확인은 임의의 `waitForTimeout` 대신 `flushAndReadSessionEventKeys()`를 사용한다. helper 내부의 5초 대기는 QaLogger 운영 flush 주기를 반영한다.
 
 ### WebSocket 연결 실패
 
