@@ -46,6 +46,11 @@ self-check runner를 단일 Playwright 프로세스 + JSON report 시나리오�
 이 실행에서는 `bit-index` `62/62`와 E2E 8개 시나리오가 모두 통과했고, 실행 오류가
 없어 종합 판정도 정상으로 확인했다. 이전 포트 충돌은 자동화 경로에서 해소됐다.
 
+`dsl-bundle-spec` closure는 permission policy rule, event observability rule 및
+각 테스트 source evidence를 연결한 뒤 `closed`(missing 0, diagnostics 0)로
+전환됐다. 이는 문서 책임의 근거가 닫혔다는 뜻이며, 22개 prefix의 DSL 귀속 또는
+의도적 독립 사용을 자동으로 결정했다는 뜻은 아니다.
+
 기존 SQLite usage snapshot은 집계된 `addressUsages`만 보존하고 raw
 `address_context`/session co-occurrence를 보존하지 않았다. 이번 후속 구현에서
 ingest runtime flush는 payload를 복제하지 않고 raw 좌표와 trace/session/event 범위를
