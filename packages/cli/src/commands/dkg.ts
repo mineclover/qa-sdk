@@ -43,6 +43,7 @@ import {
   GraphRegistry,
   analyzeImpact,
   auditRuntimePrefixUsage,
+  auditDslOwnership,
   createDemoTopology,
   exploreService,
   explorePrefix,
@@ -3600,6 +3601,36 @@ export function dkgRun(skillId: string, args: string[]): void {
       if (result.constraintViolations.length > 0) {
         console.log(
           `  ⚠ constraint violations: ${result.constraintViolations.map((v) => v.constraintId).join(', ')}`,
+        );
+      }
+      break;
+    }
+
+    case 'skill-dsl-ownership-audit': {
+      const result = auditDslOwnership(graph);
+      console.log(`  status: ${result.status}`);
+      console.log(
+        `  pending: ${result.pendingCount} (candidate=${result.candidateCount}, no-candidate=${result.noCandidateCount})`,
+      );
+      for (const unit of result.units) {
+        const flow = unit.candidateFlowSchemas.join('|') || '(없음)';
+        const domains = unit.candidateDomains.join('|') || '(없음)';
+        const currentDsl = unit.currentDslBundles.join('|') || '(미소속)';
+        const impact = [
+          `domains=${unit.downstreamImpact.domains.join('|') || '(없음)'}`,
+          `consumers=${unit.downstreamImpact.consumers.join('|') || '(없음)'}`,
+          `intent-links=${unit.downstreamImpact.intentLinks.join('|') || '(없음)'}`,
+        ].join(', ');
+        console.log(`    - ${unit.prefixId}: choice=${unit.choice}`);
+        console.log(`      flow-candidates=${flow}; domain-candidates=${domains}`);
+        console.log(`      current-dsl=${currentDsl}; ${impact}`);
+        console.log(
+          `      evidence=${unit.evidenceRequirements.join(', ')}; status=${unit.status}`,
+        );
+      }
+      if (result.pendingCount > 0) {
+        console.log(
+          '  ℹ 각 unit의 source/consumer/flow/rationale 근거를 채운 뒤 DecisionNode로 기록하고 observation을 재검토하세요.',
         );
       }
       break;

@@ -1027,6 +1027,17 @@ export const DEMO_DKG_CONFIG = {
     },
     {
       kind: 'skill',
+      id: 'skill-dsl-ownership-audit',
+      name: 'DSL 소유 검토 단위 감사',
+      description:
+        'OBS-DSL-UNCOVERED의 미소속 prefix를 후보 flow/domain, 현재 DSL, downstream 영향과 근거 요구사항이 포함된 사람 검토 단위로 산출. DSL 자동 귀속과 observation 자동 해소는 하지 않음',
+      category: 'analysis',
+      targetKinds: ['prefix', 'observation', 'dsl-bundle'],
+      input: 'OBS-DSL-UNCOVERED + DKG graph',
+      output: 'DslOwnershipReviewReport',
+    },
+    {
+      kind: 'skill',
       id: 'skill-infer-migrator',
       name: '마이그레이션 패턴 추론',
       description:
