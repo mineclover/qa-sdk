@@ -283,6 +283,22 @@ describe('dkg CLI E2E', () => {
     expect(staleOutput.stdout).toContain('recovery 입력에서 제외');
   });
 
+  it('self-check는 persisted runtime evidence가 없을 때 recovery 범위를 명시한다', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'qa-dkg-flow-evidence-none-'));
+    tempHomes.push(home);
+    process.env.HOME = home;
+    await mkdir(join(home, '.qa-sdk'), { recursive: true });
+
+    vi.resetModules();
+    const { main } = await import('../index.js');
+    const output = await captureConsoleAsync(async () => {
+      await main(['dkg', 'self-check', '--fast']);
+    });
+
+    expect(output.stdout).toContain('evidence scope: none');
+    expect(output.stdout).toContain('recovery 입력은 self-check live records만 사용');
+  });
+
   const heavyIt = runHeavySmoke ? it : it.skip;
 
   heavyIt('dkg self-check full path는 별도 heavy smoke lane에서 실행된다', async () => {

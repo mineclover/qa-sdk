@@ -37,6 +37,8 @@ Self-check 결과를 수집·분석·출력할 때 error/failure 경로와 관�
 - persisted flow evidence는 가장 최근 run 단위로만 읽고 24시간 freshness gate를
   통과한 경우에만 recovery 입력에 포함한다. stale evidence는 출력하되 정상 근거로
   사용하지 않는다.
+- persisted flow evidence가 없으면 `evidence scope: none`과 함께 recovery 입력이
+  self-check live records뿐임을 출력한다. evidence 부재를 정상 복귀로 해석하지 않는다.
 - 현재 `ok`로 복귀한 metric의 과거 observation은 health 재계산 전에
   fixed point까지 recovered 상태로 반영하고, 실제 DKG 저장은 `--apply`에서만 수행한다.
 - `--apply` 없이는 observation 해소·생성이나 usage snapshot 저장을 수행하지

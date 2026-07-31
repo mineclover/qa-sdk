@@ -37,6 +37,7 @@ Self-check의 좌표화, 실패 경로, metrics detail 출력, package-scoped fl
 | non-`ok` metric의 ID·status·detail 출력 | `packages/cli/src/commands/dkg.ts` + full self-check |
 | 관측된 링크의 flow observation 회복·미관측/재발 보류 | `packages/dkg/src/skills/flow-trace.test.ts` |
 | persisted flow evidence의 latest-run/freshness 소비 | `packages/dkg/src/store/dkg-sqlite-store.test.ts` + `packages/cli/src/commands/dkg.ts` |
+| persisted flow evidence 부재 시 recovery 범위 출력 | `packages/cli/src/commands/dkg.e2e.test.ts` |
 | recovered metric observation의 연쇄 health 재계산/`--apply` 저장 | `packages/cli/src/commands/dkg.ts` + full self-check |
 
 ## 시나리오 ^scenarios

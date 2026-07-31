@@ -99,7 +99,9 @@ Phase B metrics 계산 전 live flow records를 IntentLink와 대조해, 실제 
 위반이 재발했거나 링크 자체가 관측되지 않았으면 해소하지 않는다.
 runtime ingest가 저장한 `flow_evidence_records`가 있으면 가장 최근 batch를 추가 입력으로
 읽는다. 24시간 freshness gate를 통과한 evidence만 flow recovery에 사용하고, stale
-evidence는 관측 범위로 출력하되 현재 정상 근거로 사용하지 않는다.
+evidence는 관측 범위로 출력하되 현재 정상 근거로 사용하지 않는다. 저장된 evidence가
+없으면 Phase E에 `evidence scope: none`을 출력하고 self-check live records만 recovery
+입력으로 사용한다.
 과거 metric observation이 현재 결과에서 회복되면 dependent health metric까지
 재계산하고, recovery가 더 이상 없을 때까지 반복한 뒤 `--apply`에서 저장한다.
 

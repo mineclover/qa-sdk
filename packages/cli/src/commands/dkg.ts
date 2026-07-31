@@ -6087,6 +6087,10 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     console.log(
       `    evidence scope: run=${persistedFlowEvidence.runId}, prefixes=[${persistedFlowEvidence.observedPrefixes.join(',')}]${persistedFlowEvidence.fresh ? '' : ' — recovery 입력에서 제외'}`,
     );
+  } else {
+    console.log(
+      `    evidence scope: none — persisted runtime evidence 없음; recovery 입력은 self-check live records만 사용`,
+    );
   }
   if (flowResult.violations.length > 0) {
     console.log(
