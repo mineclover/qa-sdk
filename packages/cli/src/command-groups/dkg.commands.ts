@@ -37,6 +37,7 @@ import {
   dkgFlowSchema,
   dkgTrace,
   dkgDecide,
+  dkgDslOwnershipDecide,
   dkgObserve,
   dkgClaim,
   dkgRelease,
@@ -191,6 +192,13 @@ export const DKG_COMMAND_DESCRIPTORS = [
     path: ['decide'],
     usage: 'qa-sdk dkg decide [options]        의사결정 기록',
     handlerKey: 'dkg.decide',
+  },
+  {
+    id: 'dkg.dsl-ownership.decide',
+    path: ['dsl-ownership', 'decide'],
+    usage:
+      'qa-sdk dkg dsl-ownership decide --prefix <id> --choice assign|independent ...',
+    handlerKey: 'dkg.dsl-ownership.decide',
   },
   {
     id: 'dkg.observe',
@@ -716,6 +724,45 @@ export function createDkgHandlerRegistry(
         confidence,
         spec: specIdx >= 0 ? rest[specIdx + 1] : undefined,
         force: rest.includes('--force'),
+      });
+    },
+    'dkg.dsl-ownership.decide': (rest) => {
+      const prefixIdx = rest.indexOf('--prefix');
+      const choiceIdx = rest.indexOf('--choice');
+      const rationaleIdx = rest.indexOf('--rationale');
+      const sourceIdx = rest.indexOf('--evidence-source');
+      const consumerIdx = rest.indexOf('--evidence-consumer');
+      const flowIdx = rest.indexOf('--evidence-flow');
+      const json = rest.includes('--json');
+      if (
+        prefixIdx < 0 ||
+        choiceIdx < 0 ||
+        rationaleIdx < 0 ||
+        sourceIdx < 0 ||
+        consumerIdx < 0 ||
+        flowIdx < 0
+      ) {
+        const usage =
+          'Usage: qa-sdk dkg dsl-ownership decide --prefix <id> --choice assign|independent --rationale "..." --evidence-source "..." --evidence-consumer "..." --evidence-flow "..." [--dsl <id>] [--domain <id>] [--json]';
+        if (json) console.log(JSON.stringify({ verdict: 'blocked', reason: 'invalid-usage' }));
+        else console.error(usage);
+        return;
+      }
+      const dslIdx = rest.indexOf('--dsl');
+      const domainIdx = rest.indexOf('--domain');
+      const choice = rest[choiceIdx + 1] as 'assign' | 'independent';
+      dkgDslOwnershipDecide({
+        prefixId: rest[prefixIdx + 1],
+        choice,
+        rationale: rest[rationaleIdx + 1],
+        evidence: {
+          source: rest[sourceIdx + 1],
+          consumer: rest[consumerIdx + 1],
+          flow: rest[flowIdx + 1],
+        },
+        ...(dslIdx >= 0 ? { ownerDslBundleId: rest[dslIdx + 1] } : {}),
+        ...(domainIdx >= 0 ? { ownerDomainId: rest[domainIdx + 1] } : {}),
+        json,
       });
     },
     'dkg.observe': (rest) => {

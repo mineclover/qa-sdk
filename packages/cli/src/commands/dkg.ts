@@ -52,6 +52,7 @@ import {
   traceNode,
   recordDecision,
   recordObservation,
+  recordDslOwnershipDecision,
   prepareClaim,
   prepareRelease,
   claimKey,
@@ -88,6 +89,7 @@ import {
   type ConvergeAction,
   type ObservationSuggestion,
   type TransitionSpecNode,
+  type RecordDslOwnershipDecisionInput,
 } from 'dkg';
 import { bootstrapDkg } from 'dkg-enrichment';
 import {
@@ -274,6 +276,7 @@ const CLI_COMMAND_MAP: Record<string, { intent: string; domain: string; subject:
   'dkg discover-links': { intent: 'analyze', domain: 'convergence', subject: 'intent-link' },
   // dkg mutate
   'dkg decide': { intent: 'mutate', domain: 'dkg-graph', subject: 'decision' },
+  'dkg dsl-ownership decide': { intent: 'mutate', domain: 'dkg-graph', subject: 'decision' },
   'dkg observe': { intent: 'mutate', domain: 'dkg-graph', subject: 'observation' },
   'dkg claim': { intent: 'mutate', domain: 'dkg-graph', subject: 'prefix' },
   'dkg release': { intent: 'mutate', domain: 'dkg-graph', subject: 'prefix' },
@@ -2825,6 +2828,67 @@ export function dkgTrace(nodeId: string): void {
 }
 
 // ── dkg decide ──────────────────────────────────────
+
+export function dkgDslOwnershipDecide(
+  opts: RecordDslOwnershipDecisionInput & { json?: boolean },
+): void {
+  const graph = getGraph(undefined, opts.json ?? false);
+  const result = recordDslOwnershipDecision(graph, opts);
+
+  if (result.verdict === 'blocked') {
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.error(`  DSL ownership 결정 차단: ${result.reason}`);
+    }
+    return;
+  }
+
+  // Pure operation의 결과만 저장한다. bundle membership 변경과 observation
+  // resolution은 별도 작업이며 이 명령이 자동으로 소유하지 않는다.
+  const decision = result.decision;
+  if (!decision) {
+    console.error('  DSL ownership 결정 결과에 DecisionNode가 없습니다.');
+    return;
+  }
+  graph.addNode(decision);
+  for (const edge of result.edges) graph.addEdge(edge.type, edge.from, edge.to);
+  const persistedEdges = result.edges.map(({ type, from, to }) => ({ type, from, to }));
+  getStore().saveNodes([decision], persistedEdges, 'manual');
+  emitDkgEvent('decide', 'prefix', opts.prefixId, {
+    decisionType: 'dsl-ownership',
+    nodeSource: 'manual',
+    command: 'dkg dsl-ownership decide',
+  });
+
+  const review = auditDslOwnership(graph);
+  if (opts.json) {
+    console.log(
+      JSON.stringify(
+        {
+          ...result,
+          review: {
+            status: review.status,
+            pendingCount: review.pendingCount,
+            decidedCount: review.decidedCount,
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  console.log('\n══ DSL ownership Decision 기록 완료 ══');
+  console.log(`  id:        ${decision.id}`);
+  console.log(`  prefix:    ${opts.prefixId}`);
+  console.log(`  choice:    ${opts.choice}`);
+  if (opts.ownerDslBundleId) console.log(`  owner DSL: ${opts.ownerDslBundleId}`);
+  if (opts.ownerDomainId) console.log(`  owner domain: ${opts.ownerDomainId}`);
+  console.log(`  review:    pending ${review.pendingCount}, decided ${review.decidedCount}`);
+  console.log('  observation: 미해소 — dkg resolve로 별도 닫아야 함');
+}
 
 function recordLegacyDecision(opts: {
   target: string;
@@ -6517,7 +6581,7 @@ function summarizeCommandError(err: unknown): string {
   const text = [execErr.stderr, execErr.stdout, execErr.shortMessage, execErr.message]
     .filter((value): value is string => Boolean(value))
     .join('\n')
-    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '');
+    .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`, 'g'), '');
   const lines = text
     .split('\n')
     .map((line) => line.trim())

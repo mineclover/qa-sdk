@@ -132,11 +132,14 @@ export type { ScaffoldInput } from './decision-scaffold.js';
 // ── Skills ─────────────────────────────────────────
 export { analyzeImpact } from './skills/analyze-impact.js';
 export { auditRuntimePrefixUsage } from './skills/runtime-usage-audit.js';
-export { auditDslOwnership } from './skills/dsl-ownership-review.js';
+export { auditDslOwnership, recordDslOwnershipDecision } from './skills/dsl-ownership-review.js';
 export type {
+  DslOwnershipEvidence,
   DslOwnershipReviewChoice,
   DslOwnershipReviewUnit,
   DslOwnershipReviewReport,
+  RecordDslOwnershipDecisionInput,
+  RecordDslOwnershipDecisionResult,
 } from './skills/dsl-ownership-review.js';
 export type {
   RuntimeCliAuditInput,

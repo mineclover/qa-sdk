@@ -132,6 +132,66 @@ describe('dkg CLI E2E', () => {
     expect(hasFlow || hasBridgeWarning).toBe(true);
   });
 
+  it('[contract:dsl-ownership.pending.record.independent.v1] DSL 독립 사용 결정을 JSON으로 기록한다', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'qa-dkg-ownership-'));
+    tempHomes.push(home);
+    process.env.HOME = home;
+    vi.resetModules();
+
+    const { main } = await import('../index.js');
+    const output = await captureConsoleAsync(async () => {
+      await main([
+        'dkg',
+        'dsl-ownership',
+        'decide',
+        '--prefix',
+        'ir_data',
+        '--choice',
+        'independent',
+        '--rationale',
+        'IR data는 정의 공간 관측이며 공용 DSL에 귀속하지 않는다.',
+        '--evidence-source',
+        'packages/dkg/src/bootstrap.ts',
+        '--evidence-consumer',
+        'none: definition-space observer',
+        '--evidence-flow',
+        'definition-catalog refresh',
+        '--json',
+      ]);
+    });
+
+    const payload = JSON.parse(output.stdout) as {
+      verdict: string;
+      decision: { id: string; metadata?: Record<string, unknown> };
+      review: { pendingCount: number; decidedCount: number };
+    };
+    expect(payload.verdict).toBe('ok');
+    expect(payload.decision.metadata).toMatchObject({
+      decisionType: 'dsl-ownership',
+      prefixId: 'ir_data',
+      choice: 'independent',
+      evidence: {
+        source: 'packages/dkg/src/bootstrap.ts',
+        consumer: 'none: definition-space observer',
+        flow: 'definition-catalog refresh',
+      },
+    });
+    expect(payload.review).toMatchObject({ pendingCount: 21, decidedCount: 1 });
+
+    const store = new DkgSqliteStore(join(home, '.qa-sdk', 'state.sqlite'), 'demo');
+    const graph = store.loadGraph();
+    const decision = graph.getNode(payload.decision.id);
+    expect(decision?.kind).toBe('decision');
+    expect(graph.getNodesByKind('decision')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.stringContaining('DEC-DSL-OWNERSHIP-ir_data-'),
+          metadata: expect.objectContaining({ choice: 'independent' }),
+        }),
+      ]),
+    );
+  });
+
   it('dkg audit-events는 로컬 audit log를 남기고 ingest forwarding을 수행한다', async () => {
     const home = await mkdtemp(join(tmpdir(), 'qa-dkg-audit-'));
     tempHomes.push(home);
