@@ -15,6 +15,10 @@ def:
       type: depends_on
     - target: table-system-group
       type: depends_on
+    - target: permission-encoding-rule
+      type: depends_on
+    - target: event-intent-definition-rule
+      type: depends_on
 sources:
   - packages/dkg/src/dsl-bundle.ts
   - packages/dkg/src/bootstrap.ts
@@ -26,6 +30,8 @@ sources:
   - packages/demo-dkg-config/src/index.ts
   - packages/spec-core/src/dkg/index.ts
   - packages/spec-core/src/convergence/pipeline-e2e.test.ts
+  - packages/permission-engine/src/permission-codec.test.ts
+  - packages/event-catalog/src/index.test.ts
 
 ---
 
