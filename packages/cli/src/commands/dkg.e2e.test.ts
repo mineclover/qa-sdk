@@ -297,6 +297,7 @@ describe('dkg CLI E2E', () => {
 
     expect(output.stdout).toContain('evidence scope: none');
     expect(output.stdout).toContain('recovery 입력은 self-check live records만 사용');
+    expect(output.stdout).toContain('coverage metric: skipped');
   });
 
   const heavyIt = runHeavySmoke ? it : it.skip;

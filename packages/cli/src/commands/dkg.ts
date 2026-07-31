@@ -5929,12 +5929,18 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   if (buildCov) console.log(`    build_event: ${buildCov.summary}`);
   if (testCov) console.log(`    test_event:  ${testCov.summary}`);
   console.log(`    전체: ${coverage.summary}`);
+  if (fast) {
+    console.log(
+      `    coverage metric: skipped (--fast; build/test mock 결과는 대표 coverage로 사용하지 않음)`,
+    );
+  }
 
   // B-3: metrics with usage data
   const metricObservationState = new Map(existingObs.map((obs) => [obs.id, obs]));
   const recoveredMetricObservations: ObservationNode[] = [];
   let metrics = collectMetrics(DEMO_CATALOG, graph, usage, {
     schemaHealthAuditor: auditSchemaHealth,
+    skipCoverage: fast,
   });
   // 이전 snapshot에서 생성됐지만 현재 metric이 ok로 복귀한 observation은
   // health metric이 계속 action으로 세지 않도록 먼저 in-memory 해소한다.
@@ -5953,6 +5959,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     }
     metrics = collectMetrics(DEMO_CATALOG, graph, usage, {
       schemaHealthAuditor: auditSchemaHealth,
+      skipCoverage: fast,
     });
   }
   const metricIssues = metrics.filter((m) => m.status !== 'ok');
@@ -6252,7 +6259,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     `  test:       ${testSummary.passed}/${testSummary.tests} passed${testSummary.failed > 0 ? ` (${testSummary.failed} failed)` : ''}`,
   );
   console.log(
-    `  coverage:   build_event ${buildCov ? Math.round(buildCov.coverageRate * 100) : '?'}%, test_event ${testCov ? Math.round(testCov.coverageRate * 100) : '?'}%`,
+    `  coverage:   ${fast ? 'provisional (--fast) ' : ''}build_event ${buildCov ? Math.round(buildCov.coverageRate * 100) : '?'}%, test_event ${testCov ? Math.round(testCov.coverageRate * 100) : '?'}%`,
   );
   console.log(`  health:     건전성 ${Math.round(health.healthRate * 100)}%`);
   console.log(

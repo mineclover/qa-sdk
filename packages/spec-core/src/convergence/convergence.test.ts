@@ -19,6 +19,7 @@ import {
   recommendFromCausality,
   recommendAll,
   runConvergenceAnalysis,
+  collectMetrics,
 } from '@qa-sdk/convergence';
 import type { DecisionNode, IntentLinkNode, DomainNode } from 'dkg';
 import type { CoOccurrence, EntryUsage, AddressUsage, UsageData } from '@qa-sdk/convergence';
@@ -113,6 +114,24 @@ describe('SymbolComparator', () => {
     );
     expect(roleOverlap).toBeDefined();
     expect(roleOverlap!.sharedEntries).toContain('admin');
+  });
+});
+
+describe('Metric scope', () => {
+  it('--fast에 해당하는 비대표 usage에서는 coverage metric을 생략할 수 있다', () => {
+    const usage: UsageData = {
+      entryUsages: [{ axisId: 'qa_pkg', entry: 'cli', count: 1, lastSeen: '2026-07-31T00:00:00Z' }],
+      addressUsages: [],
+      coOccurrences: [],
+      collectionPeriod: { from: '2026-07-31', to: '2026-07-31' },
+      versionUsages: [],
+    };
+
+    const measured = collectMetrics(DEMO_CATALOG, graph, usage);
+    const fastScoped = collectMetrics(DEMO_CATALOG, graph, usage, { skipCoverage: true });
+
+    expect(measured.some((metric) => metric.id === 'metric:coverage:build_event')).toBe(true);
+    expect(fastScoped.some((metric) => metric.id.startsWith('metric:coverage:'))).toBe(false);
   });
 });
 

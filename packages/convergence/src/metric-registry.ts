@@ -155,12 +155,13 @@ function evaluateStatus(value: number, threshold: MetricDef['threshold']): Metri
  * 전체 자동 metric을 수집하여 값 + 상태를 반환한다.
  *
  * @param options.schemaHealthAuditor - 스키마 건전성 감사 함수. 미제공 시 schema violations metric 생략.
+ * @param options.skipCoverage - 관측 coverage가 대표성이 없는 실행에서 coverage metric을 생략한다.
  */
 export function collectMetrics(
   catalog: Catalog,
   graph: GraphPort,
   usage: UsageData | null,
-  options?: { schemaHealthAuditor?: SchemaHealthAuditor },
+  options?: { schemaHealthAuditor?: SchemaHealthAuditor; skipCoverage?: boolean },
 ): MetricValue[] {
   const now = new Date().toISOString().slice(0, 10);
   const results: MetricValue[] = [];
@@ -226,7 +227,7 @@ export function collectMetrics(
   }
 
   // ── coverage ── (only if usage data available)
-  if (usage && usage.entryUsages.length > 0) {
+  if (!options?.skipCoverage && usage && usage.entryUsages.length > 0) {
     // eslint-disable-next-line typescript/no-non-null-assertion -- METRIC_DEFS에 정적으로 정의된 ID
     const covDef = METRIC_DEFS.find((m) => m.id === 'metric:coverage')!;
     const report = analyzeEntryCoverage(catalog, usage.entryUsages, usage.addressUsages);
