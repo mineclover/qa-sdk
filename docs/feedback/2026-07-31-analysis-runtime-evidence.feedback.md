@@ -40,6 +40,12 @@ records `1,226건`, metrics `319건 중 9 issues`, coverage `86%`/`84%`였다. �
 used` 포트 충돌이며, 포트 점유 프로세스는 종료하지 않고 실행 환경 잔여 항목으로
 보류한다.
 
+self-check runner를 단일 Playwright 프로세스 + JSON report 시나리오별 집계로
+수정한 뒤 재실행한 결과는 build `25/25`(2 skipped), test `6857/6857`, E2E
+`31/31`, records `1,229건`, metrics `319건 중 9 issues`, coverage `86%`/`82%`였다.
+이 실행에서는 `bit-index` `62/62`와 E2E 8개 시나리오가 모두 통과했고, 실행 오류가
+없어 종합 판정도 정상으로 확인했다. 이전 포트 충돌은 자동화 경로에서 해소됐다.
+
 기존 SQLite usage snapshot은 집계된 `addressUsages`만 보존하고 raw
 `address_context`/session co-occurrence를 보존하지 않았다. 이번 후속 구현에서
 ingest runtime flush는 payload를 복제하지 않고 raw 좌표와 trace/session/event 범위를

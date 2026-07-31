@@ -40,6 +40,7 @@ Self-check의 좌표화, 실패 경로, metrics detail 출력, package-scoped fl
 | persisted flow evidence의 latest-run/freshness 소비 | `packages/dkg/src/store/dkg-sqlite-store.test.ts` + `packages/cli/src/commands/dkg.ts` |
 | persisted flow evidence 부재 시 recovery 범위 출력 | `packages/cli/src/commands/dkg.e2e.test.ts` |
 | `--fast` mock 입력의 coverage metric 제외 | `packages/spec-core/src/convergence/convergence.test.ts` + `packages/cli/src/commands/dkg.e2e.test.ts` |
+| E2E 단일 Playwright 실행·시나리오별 JSON 집계·실행 오류 보존 | full self-check heavy smoke (`packages/cli/src/commands/dkg.e2e.test.ts`) |
 | recovered metric observation의 연쇄 health 재계산/`--apply` 저장 | `packages/cli/src/commands/dkg.ts` + full self-check |
 
 ## 시나리오 ^scenarios

@@ -106,6 +106,11 @@ evidence는 관측 범위로 출력하되 현재 정상 근거로 사용하지 �
 입력으로 사용한다.
 과거 metric observation이 현재 결과에서 회복되면 dependent health metric까지
 재계산하고, recovery가 더 이상 없을 때까지 반복한 뒤 `--apply`에서 저장한다.
+E2E 시나리오는 Playwright를 시나리오마다 별도 기동하지 않고 하나의 프로세스에서
+실행한 JSON report를 시나리오별 결과로 재구성한다. 따라서 webServer 포트 충돌로
+후속 시나리오가 연쇄 실패하는 것을 방지하고, report가 없거나 프로세스 실행이
+실패하면 해당 결과를 `error`로 보존한다. 일반 패키지 테스트의 실행 오류도
+`error`로 남기며 최종 종합 판정을 문제로 만든다.
 `--fast`에서는 build/test가 mock이므로 coverage metric을 생략하고, coverage 요약은
 `provisional (--fast)`로 표시한다. 실제 coverage warning은 full self-check 또는
 runtime usage를 입력으로 삼는 실행에서만 생성한다.

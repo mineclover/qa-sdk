@@ -46,6 +46,11 @@ Self-check 결과를 수집·분석·출력할 때 error/failure 경로와 관�
   않는다.
 - 패키지별 `build_event`, `test_event`, `contract_check`는 동일 package
   execution context로 합친 뒤 IntentLink를 검사한다.
+- E2E 시나리오는 webServer를 매번 재기동하지 않도록 하나의 Playwright 프로세스로
+  실행하고, JSON report를 시나리오별 `test_event`로 다시 집계한다. Playwright
+  시작 실패나 report 누락은 실행 오류로 보존하며 정상으로 정규화하지 않는다.
+- 일반 패키지 테스트의 프로세스 실행 오류도 `error` 결과와 진단 detail을 보존하고,
+  종합 판정에서 문제로 계산한다.
 - `--fast`는 build/test를 실행하지 않고 mock 결과를 사용하므로 coverage metric을
   측정하지 않는다. Phase B의 coverage 수치는 provisional로만 표시하며, full
   self-check 또는 runtime usage에서만 coverage warning을 판정한다.
