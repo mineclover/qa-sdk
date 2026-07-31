@@ -252,7 +252,9 @@ observation.metadata = {
 ```
 
 이 메타데이터는 DSL 귀속 또는 의도적 비소속을 결정하기 위한 근거이며, 결정이
-기록되기 전에는 coverage warning을 자동 해소하지 않는다.
+기록되기 전에는 coverage warning을 자동 해소하지 않는다. observation의 suggestion도
+모든 prefix를 DSL에 편입하라는 규칙이 아니라, 각 미소속 prefix에 대해 DSL 귀속 또는
+의도적 독립 사용을 결정하고 근거를 기록하라는 판단 요청이다.
 
 ---
 
