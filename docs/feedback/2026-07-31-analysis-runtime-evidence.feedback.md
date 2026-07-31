@@ -94,7 +94,16 @@ capacity를 각각 `4 → 8`로 올려 해소했다. 각 축은 entries 3개이�
 `nextPowerOf2(3 × 2) = 8`이며, DKG에 세 capacity decision을 기록했다. impact
 분석 결과 `ir_pipe_state`는 `ir_pipe`, `ir_intent_path`, 나머지 두 축은 `ir_data`의
 stride를 변경하고 `migrationRequired=true`를 반환한다. 따라서 정적 headroom은
-닫혔지만 기존 주소 소비자의 migration 확인은 별도 후속 항목이다.
+닫혔지만 기존 주소 소비자의 migration 확인은 별도 후속 항목이다. 이를 위해
+`skill-analyze-impact`에 usage snapshot·flow evidence·CLI audit를 함께 조회하는
+runtime usage audit를 추가했다. 현재 상태 DB에는 flow evidence와 IR prefix CLI
+audit는 0건이지만, capacity 변경 전인 `2026-07-31 01:26:36..02:04:48` 구간의
+historical usage snapshot 4개가 남아 있다. 영향 prefix별 합계는
+`ir_pipe=28`, `ir_intent_path=28`, `ir_data=40` records이며, capacity 변경 이후
+새 snapshot에는 해당 IR 주소가 나타나지 않는다. 이 데이터는 현재 소비자의
+raw backfill 증거가 아니라 변경 전 schema로 생성된 immutable aggregate history로
+분류한다. 향후 IR runtime address가 다시 유입되면 `migrationRequired=true` impact와
+snapshot provenance/backfill 정책을 기준으로 재개한다.
 
 기존 SQLite usage snapshot은 집계된 `addressUsages`만 보존하고 raw
 `address_context`/session co-occurrence를 보존하지 않았다. 이번 후속 구현에서
@@ -126,7 +135,7 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 | 항목 | 보류 이유 | 재개 조건 |
 |---|---|---|
 | `OBS-FLOW-*` health | 최신 batch만 사용하고 24시간 freshness gate를 적용함. 현재 self-check 실행에는 fresh business evidence가 없음 | 실제 business ingest flush 후 fresh batch로 self-check를 재실행해 recovered/retained 결과 확인 |
-| IR 주소 migration | capacity `4 → 8` 변경으로 기존 주소 stride가 달라짐 | `ir_pipe`, `ir_intent_path`, `ir_data` 소비자의 기존 주소 snapshot/backfill 정책 확인 |
+| IR 주소 migration | capacity 변경 전 historical snapshot에 `ir_pipe=28`, `ir_intent_path=28`, `ir_data=40` records가 있으나 변경 후 active raw evidence는 없음. `DEC-MIGRATE-ir-capacity-history`로 history 보존 정책 기록 | historical snapshot은 immutable history로 보존하고, 새 IR runtime address 유입 시 provenance/backfill 정책 재개 |
 | confidence axis overlap | `DEC-SEP-pattern_confidence-confidence_band`로 분리 유지 결정 완료. consumer 계약과 대상 축을 그래프에 연결함 | consumer 계약 변경 또는 신규 공용 prefix가 생기면 재검토 |
 | `OBS-DSL-UNCOVERED` | 22개 prefix의 DSL 소유·포함 여부가 설계 판단. bootstrap은 기존 flow-schema/domain 후보만 제시 | 각 prefix의 DSL 귀속 또는 의도적 비소속 결정 기록 |
 
@@ -136,7 +145,10 @@ runtime ingest 경로에서는 `flow_evidence_records`로 raw 좌표 근거를 �
 - self-check가 최신 evidence를 읽고 24시간 freshness gate로 관측 부재와 정상 복귀를 구분한다. ✅
 - category audit가 `68/68` 통과하고 IR headroom 경고가 사라진다. ✅
 - capacity 변경은 DKG decision 및 semantic-change impact를 기록했다. ✅
-- 기존 IR 주소 소비자 migration/backfill 정책을 확인한다.
+- runtime usage audit가 정적 affected prefix와 historical/current evidence를 분리해 출력한다. ✅
+- historical IR snapshot은 변경 전 schema evidence로 분류했다. ✅
+- `DEC-MIGRATE-ir-capacity-history`가 affected prefix와 재검토 조건을 기록한다. ✅
+- 새 IR 주소 소비자가 유입되면 migration/backfill 정책을 재개한다.
 - confidence axis overlap 판단이 `DEC-SEP` DecisionNode와 대상 엣지로 기록된다. ✅
 - DSL 소유 판단이 prefix별 DecisionNode/스펙으로 기록된다.
 - 후속 self-check에서 자동 해소된 observation과 의도적으로 남은 warning의 이유가

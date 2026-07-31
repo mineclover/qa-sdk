@@ -21,6 +21,8 @@ sources:
   - packages/dkg/src/dkg.types.ts
   - packages/dkg/src/graph-registry.ts
   - packages/dkg/src/skills/analyze-impact.ts
+  - packages/dkg/src/skills/runtime-usage-audit.ts
+  - packages/dkg/src/skills/runtime-usage-audit.test.ts
   - packages/dkg/src/skills/constraint-check.ts
   - packages/dkg/src/skills/safe-entry-add.ts
   - packages/dkg/src/skills/skill-chain.ts
@@ -44,7 +46,7 @@ DKG 그래프에서 특정 노드 변경의 영향을 종단까지 추적하는 
 
 ## 구성 ^overview
 
-5단계 분석 파이프라인: axis cascade → prefix cascade → constraint 검사 → intent-link 검사 → stride-break/migration 판정. 입력은 `ImpactAnalysisInput`, 출력은 `ImpactAnalysisResult`.
+6단계 분석 파이프라인: axis cascade → prefix cascade → constraint 검사 → intent-link 검사 → stride-break/migration 판정 → persisted runtime usage 보강. 입력은 `ImpactAnalysisInput`, 출력은 `ImpactAnalysisResult`와 CLI의 runtime usage read model이다.
 
 ## 입력 타입
 
@@ -102,6 +104,20 @@ interface ImpactAnalysisInput {
 | entry-deactivated | false | false | false |
 | version-bump | false | false | false |
 | new-prefix | false | false | false |
+
+### 6단계: Persisted Runtime Usage 보강
+
+CLI의 `dkg run skill-analyze-impact`는 정적 cascade 결과에 다음 세 read model을
+추가 대조한다.
+
+- `usage_snapshots.addressUsages`: 과거 집계 snapshot에서 affected prefix가 관측된 횟수와 batch 시간 범위
+- `flow_evidence_records`: raw runtime flow evidence에서 affected prefix가 관측된 record 수
+- `cli_audit_events`: CLI audit의 `address_context`에 affected prefix가 등장한 event 수
+
+순수 함수 `auditRuntimePrefixUsage()`는 저장소를 직접 참조하지 않고 read model만
+받는다. historical snapshot도 runtime evidence로 표시하되 active consumer로
+자동 판정하지 않으며, 이 audit는 migration 실행이나 observation 해소를 자동화하지
+않는다.
 
 ## 출력 타입
 
