@@ -17,6 +17,8 @@ def:
       type: depends_on
     - target: dkg-edge-types
       type: depends_on
+    - target: dkg-skill-cascade-observability
+      type: constrains
 sources:
   - packages/dkg/src/dkg.types.ts
   - packages/dkg/src/graph-registry.ts
