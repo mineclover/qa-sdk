@@ -17,9 +17,11 @@ def:
       type: depends_on
 sources:
   - packages/convergence/src/self-check-analyzer.ts
+  - packages/convergence/src/metric-registry.ts
   - packages/convergence/src/self-check-analyzer.test.ts
   - packages/cli/src/commands/dkg.ts
   - packages/cli/src/commands/dkg.e2e.test.ts
+  - packages/spec-core/src/convergence/convergence.test.ts
   - packages/dkg/src/store/dkg-sqlite-store.ts
 ---
 # Self-Check — 시스템 건강 상태
@@ -104,6 +106,9 @@ evidence는 관측 범위로 출력하되 현재 정상 근거로 사용하지 �
 입력으로 사용한다.
 과거 metric observation이 현재 결과에서 회복되면 dependent health metric까지
 재계산하고, recovery가 더 이상 없을 때까지 반복한 뒤 `--apply`에서 저장한다.
+`--fast`에서는 build/test가 mock이므로 coverage metric을 생략하고, coverage 요약은
+`provisional (--fast)`로 표시한다. 실제 coverage warning은 full self-check 또는
+runtime usage를 입력으로 삼는 실행에서만 생성한다.
 
 #### 6단계: 요약 생성
 

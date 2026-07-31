@@ -15,6 +15,7 @@ def:
       type: constrains
 sources:
   - packages/cli/src/commands/dkg.ts
+  - packages/convergence/src/metric-registry.ts
   - packages/convergence/src/self-check-analyzer.ts
   - packages/dkg/src/store/dkg-sqlite-store.ts
 ---
@@ -45,6 +46,9 @@ Self-check 결과를 수집·분석·출력할 때 error/failure 경로와 관�
   않는다.
 - 패키지별 `build_event`, `test_event`, `contract_check`는 동일 package
   execution context로 합친 뒤 IntentLink를 검사한다.
+- `--fast`는 build/test를 실행하지 않고 mock 결과를 사용하므로 coverage metric을
+  측정하지 않는다. Phase B의 coverage 수치는 provisional로만 표시하며, full
+  self-check 또는 runtime usage에서만 coverage warning을 판정한다.
 
 ## 구현·검증 증거 ^implementation-evidence
 

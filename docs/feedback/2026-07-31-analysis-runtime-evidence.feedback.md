@@ -18,10 +18,27 @@ build `27/27`, business 포함 1,140 records, metrics 319건 중 11 issues다.
 - domain health 5개: 과거 `OBS-FLOW-*`와 `OBS-DSL-UNCOVERED`가 현재 health에 연결됨
 - headroom warning 3개: `ir_pipe_state`, `ir_retention`, `ir_storage_type` 모두 `3/4`
 - overlap warning 1개: `pattern_confidence` ↔ `confidence_band` 80% merge 후보
-- 현재 bootstrap 기준 `OBS-DSL-UNCOVERED`는 22개 prefix를 가리킨다. decision-flow,
-  definition harness, IR 관측 영역의 DSL 소유 여부는 아직 결정하지 않았다.
-  후속 bootstrap은 각 미소속 prefix에 기존 `flow-schema`/`domain` 연결을
-  `ownershipCandidates` 메타데이터로 보존한다.
+- 현재 bootstrap 기준 `OBS-DSL-UNCOVERED`는 22개 prefix를 가리킨다. 이 중 5개는
+  기존 flow-schema 연결이 있고, 나머지 17개(`harness_*`, `quality_event`,
+  `task_event`, `sdk_lifecycle`, `rpc_event`, `gate_execution`, `bundle_observation`,
+  `transition_event`, `convergence_event`, `graph_event`, `test_scenario`, `ir_*`)는
+  직접적인 flow-schema/domain 후보가 없다. decision-flow, definition harness, IR
+  관측 영역의 DSL 소유 여부는 아직 결정하지 않았다.
+후속 bootstrap은 각 미소속 prefix에 기존 `flow-schema`/`domain` 연결을
+`ownershipCandidates` 메타데이터로 보존한다.
+
+`--fast` 재측정은 build/test mock 입력의 비대표성을 반영해 coverage metric을
+생성하지 않도록 변경했다. 그 결과 `251건, 9 issues`로 집계되며, coverage 요약은
+`provisional (--fast)`로만 출력된다(`build_event 41%`, `test_event 39%`). full
+self-check/runtime usage의 coverage metric과 기존 `319건, 11 issues` 기준은
+이 변경의 대상이 아니며, 실제 coverage warning은 해당 경로에서만 판정한다.
+
+변경 후 full self-check 재측정은 build `25/25`(2 skipped), test 집계 `6769/6769`,
+records `1,226건`, metrics `319건 중 9 issues`, coverage `86%`/`84%`였다. 이
+실행에서 `bit-index`와 E2E 7개 시나리오는 self-check 프로세스 오류로 보고됐지만,
+`bit-index` 단독 테스트는 `62/62` 통과했다. E2E 오류는 `localhost:5230 already
+used` 포트 충돌이며, 포트 점유 프로세스는 종료하지 않고 실행 환경 잔여 항목으로
+보류한다.
 
 기존 SQLite usage snapshot은 집계된 `addressUsages`만 보존하고 raw
 `address_context`/session co-occurrence를 보존하지 않았다. 이번 후속 구현에서
