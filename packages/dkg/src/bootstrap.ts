@@ -261,6 +261,14 @@ export function bootstrapDkgFinalize(
         graph.addEdge('justifies', decision.id, axisId);
       }
     }
+    const targets = decision.metadata?.targets;
+    if (Array.isArray(targets)) {
+      for (const target of targets) {
+        if (typeof target === 'string' && graph.getNode(target)) {
+          graph.addEdge('justifies', decision.id, target);
+        }
+      }
+    }
   }
 
   const configTspecs = config.transitionSpecs ?? [];

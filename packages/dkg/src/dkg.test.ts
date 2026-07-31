@@ -247,6 +247,16 @@ describe('bootstrapDkg flowSchemas', () => {
       rule: '각 미소속 prefix의 DSL 귀속 또는 의도적 독립 사용을 결정하고 근거를 기록한다',
     });
   });
+
+  it('설정 기반 separation decision의 metadata targets를 justifies 엣지로 연결한다', () => {
+    const bootstrapped = bootstrapDkg({ catalog: DEMO_CATALOG, config: DEMO_DKG_CONFIG });
+    const decision = bootstrapped.getNode('DEC-SEP-pattern_confidence-confidence_band');
+
+    expect(decision?.kind).toBe('decision');
+    expect(bootstrapped.edgesFrom(decision!.id, 'justifies').map((edge) => edge.to)).toEqual(
+      expect.arrayContaining(['pattern_confidence', 'confidence_band']),
+    );
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════

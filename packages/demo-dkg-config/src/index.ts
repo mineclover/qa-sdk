@@ -1371,6 +1371,28 @@ export const DEMO_DKG_CONFIG = {
         '5Q 충족: 유한(4종) / 의사결정(읽기 경로 분기) / 공유(여러 prefix) / 안정(인프라 유형) / capacity 8. 기존 resource_type(api/page/webhook)은 논리적 유형이고, resource_location은 물리적 위치로 의미가 다르다.',
       lifecycle: 'active',
     },
+    {
+      kind: 'decision',
+      id: 'DEC-SEP-pattern_confidence-confidence_band',
+      date: '2026-07-31',
+      title: 'pattern_confidence와 confidence_band 분리 유지',
+      context:
+        '두 축은 exact/high/medium/low 계열 entry를 공유하지만 서로 다른 소비 시스템과 좌표 계약에서 사용된다.',
+      rationale:
+        'pattern_confidence는 pattern_match/classifyPattern()의 세션 행동 패턴 분류 신뢰도이고, confidence_band는 decision_event/forcing_response/discretizeConfidence()의 결정 근거 확신도다. 함께 사용하는 prefix가 없고 cardinality와 unknown 처리도 다르므로 병합하지 않는다.',
+      alternatives: ['공통 confidence 축으로 병합 — 기존 consumer의 의미·주소 계약 재설계 필요'],
+      metadata: {
+        decisionKind: 'axis-overlap',
+        targets: ['pattern_confidence', 'confidence_band'],
+        evidence: [
+          'packages/core/src/types/event-pattern.ts',
+          'packages/convergence/src/pattern-classifier.ts',
+          'packages/decision-flow/src/observe.ts',
+          'packages/decision-flow/src/vocabulary.ts',
+        ],
+      },
+      lifecycle: 'active',
+    },
   ],
 
   // transitionSpecs는 demo-transition-specs.ts → toTransitionSpecNodes()로 자동 파생.
