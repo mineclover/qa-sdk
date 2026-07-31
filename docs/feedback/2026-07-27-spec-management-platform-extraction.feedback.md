@@ -227,7 +227,8 @@ extension 또는 optional plugin으로 남긴다.
   재실행했다. 11개 `@spec-platform/*` 이름은 npm registry에서 모두 `404 Not Found`였고,
   `npm whoami --registry=https://registry.npmjs.org`는 `401 Unauthorized`였다. 따라서 archive/clean
   consumer 검증은 완료됐지만 실제 registry publication과 registry consumer 검증은 아직 완료되지 않았다.
-  이번 단계에서는 publish를 실행하지 않았다.
+  이번 단계에서는 publish를 실행하지 않았다. publish 후에는 `SPEC_PLATFORM_REGISTRY_SMOKE=1`
+  live consumer gate가 registry 설치와 `qa-spec-platform verify`를 자동 검증하도록 추가했다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
