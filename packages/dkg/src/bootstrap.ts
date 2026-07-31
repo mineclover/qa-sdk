@@ -224,7 +224,7 @@ export function bootstrapDkgFinalize(
       },
       suggestion: {
         kind: 'add-constraint',
-        rule: '모든 관측/이벤트 prefix는 DSL 번들에 포함되어야 한다',
+        rule: '각 미소속 prefix의 DSL 귀속 또는 의도적 독립 사용을 결정하고 근거를 기록한다',
       },
     };
     graph.addNode(obs);

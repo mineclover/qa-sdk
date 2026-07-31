@@ -242,6 +242,10 @@ describe('bootstrapDkg flowSchemas', () => {
       },
     });
     expect(observation.finding).toContain('decision_event[flow-schema=coordinate-design');
+    expect(observation.suggestion).toEqual({
+      kind: 'add-constraint',
+      rule: '각 미소속 prefix의 DSL 귀속 또는 의도적 독립 사용을 결정하고 근거를 기록한다',
+    });
   });
 });
 
