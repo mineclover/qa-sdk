@@ -251,6 +251,10 @@ extension 또는 optional plugin으로 남긴다.
 - P4 13차 private registry smoke 보완: `SPEC_PLATFORM_REGISTRY_TOKEN`을 선택적으로 받아 임시 mode-0600
   npm user config에 registry-scoped auth를 주입하고 cleanup하도록 했다. 토큰은 출력하지 않으며 public npm
   smoke의 익명 동작은 그대로 유지한다.
+- P4 14차 local workspace 소비 경로: sibling `spec-management-platform`의
+  `@spec-platform/qa-sdk-adapter` workspace package를 build된 executable로 연결하는
+  `platform:workspace` runner를 QA-SDK에 추가했다. npm publish 없이도 동일한 `qa-sdk def` bridge를
+  검증하며, platform repository를 QA workspace에 합치지 않고 독립 경계를 유지한다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.

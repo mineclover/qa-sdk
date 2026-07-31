@@ -50,6 +50,19 @@ QA_SPEC_PLATFORM_BIN=/path/to/qa-spec-platform \
   qa-sdk def code-link-gaps --json --limit=20
 ```
 
+레지스트리 publish 전 로컬 개발에서는 sibling `spec-management-platform` workspace의
+`@spec-platform/qa-sdk-adapter`를 직접 소비할 수 있다. QA-SDK root에서 다음 명령을 사용하면
+workspace adapter를 build하고 `qa-sdk def` 프로세스 bridge에 연결한다.
+
+```bash
+corepack pnpm platform:workspace:build
+corepack pnpm platform:workspace -- def code-link-gaps --scope=packages/cli/src --limit=1 --json
+```
+
+기본 platform 경로는 `../spec-management-platform`이며, 다른 checkout은
+`SPEC_PLATFORM_ROOT=/path/to/spec-management-platform`으로 지정한다. 이 경로는 독립 platform
+package를 qa-sdk workspace에 합치지 않고, local workspace executable만 주입한다.
+
 `--platform-bin=<path>`는 환경변수보다 우선하며, 배포 후 기본 실행 경로 전환 전까지 legacy
 collector와의 출력 비교를 위한 compatibility mode로 유지한다.
 
