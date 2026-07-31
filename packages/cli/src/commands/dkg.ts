@@ -5507,6 +5507,103 @@ interface SelfCheckResult {
   error?: string;
 }
 
+interface PlaywrightJsonError {
+  message?: string;
+  value?: string;
+  stack?: string;
+}
+
+interface PlaywrightJsonTestResult {
+  status?: string;
+  errors?: readonly PlaywrightJsonError[];
+}
+
+interface PlaywrightJsonTest {
+  status?: string;
+  results?: readonly PlaywrightJsonTestResult[];
+}
+
+interface PlaywrightJsonSpec {
+  tests?: readonly PlaywrightJsonTest[];
+}
+
+interface PlaywrightJsonSuite {
+  file?: string;
+  specs?: readonly PlaywrightJsonSpec[];
+  suites?: readonly PlaywrightJsonSuite[];
+}
+
+interface PlaywrightJsonReport {
+  suites?: readonly PlaywrightJsonSuite[];
+  errors?: readonly PlaywrightJsonError[];
+}
+
+interface E2eScenarioSummary {
+  tests: number;
+  passed: number;
+  failed: number;
+  error?: string;
+}
+
+/**
+ * 단일 Playwright JSON report를 self-check의 scenario별 결과로 축약한다.
+ * 시나리오마다 Playwright를 재기동하면 webServer가 반복 기동되어 포트 충돌이
+ * 발생하므로, 전체 시나리오를 한 프로세스에서 실행한 뒤 파일별로 다시 나눈다.
+ */
+function parsePlaywrightScenarioSummaries(
+  output: string,
+  scenarios: readonly string[],
+): Map<string, E2eScenarioSummary> | undefined {
+  let report: PlaywrightJsonReport;
+  try {
+    report = JSON.parse(output) as PlaywrightJsonReport;
+  } catch {
+    return undefined;
+  }
+  if (!Array.isArray(report.suites)) return undefined;
+
+  const summaries = new Map<string, E2eScenarioSummary>();
+  const addSuite = (suite: PlaywrightJsonSuite): void => {
+    const fileName = suite.file?.split(/[\\/]/).pop() ?? '';
+    const scenario = scenarios.find((candidate) => fileName === `${candidate}.spec.ts`);
+    if (scenario) {
+      const summary = summaries.get(scenario) ?? { tests: 0, passed: 0, failed: 0 };
+      for (const spec of suite.specs ?? []) {
+        for (const test of spec.tests ?? []) {
+          if (test.status === 'skipped') continue;
+          summary.tests++;
+          if (test.status === 'expected') summary.passed++;
+          else summary.failed++;
+          if (!summary.error) {
+            const error = test.results
+              ?.flatMap((result) => result.errors ?? [])
+              .map((entry) => entry.message ?? entry.value ?? entry.stack)
+              .find((message): message is string => Boolean(message));
+            if (error) summary.error = error;
+          }
+        }
+      }
+      summaries.set(scenario, summary);
+    }
+    for (const child of suite.suites ?? []) addSuite(child);
+  };
+
+  for (const suite of report.suites) addSuite(suite);
+  return summaries;
+}
+
+function summarizePlaywrightReportErrors(output: string): string | undefined {
+  try {
+    const report = JSON.parse(output) as PlaywrightJsonReport;
+    const messages = (report.errors ?? [])
+      .map((entry) => entry.message ?? entry.value ?? entry.stack)
+      .filter((message): message is string => Boolean(message));
+    return messages.length > 0 ? messages.slice(-4).join(' | ').slice(0, 1000) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * self-check의 build/test/contract 레코드를 패키지 실행 컨텍스트로 합친다.
  *
@@ -5700,33 +5797,50 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
         continue;
       }
 
-      // E2E 패키지: 시나리오별로 분리 실행
+      // E2E 패키지: webServer 재기동을 막기 위해 단일 프로세스에서 시나리오별 집계
       if (pkg.name === 'e2e') {
-        console.log(`    📋 ${pkg.name.padEnd(20)} (시나리오별 실행)`);
-        for (const scenario of E2E_SCENARIOS) {
-          const t0 = Date.now();
-          let result: string;
-          let tests = 0,
-            passed = 0,
-            failed = 0;
-          let error: string | undefined;
-          try {
-            const { stdout: output } = execaSync(
+        console.log(`    📋 ${pkg.name.padEnd(20)} (단일 프로세스에서 시나리오별 집계)`);
+        const t0 = Date.now();
+        const scenarioArgs = E2E_SCENARIOS.map((scenario) => `tests/${scenario}.spec.ts`);
+        let output = '';
+        let commandError: string | undefined;
+        try {
+          output =
+            execaSync(
               'pnpm',
-              ['--filter', pkg.filter, 'exec', 'playwright', 'test', `tests/${scenario}.spec.ts`],
-              { cwd, timeout: 180000 },
-            );
-            const passedMatch = output.match(/(\d+)\s+passed/);
-            const failedMatch = output.match(/(\d+)\s+failed/);
-            passed = passedMatch ? parseInt(passedMatch[1]) : 0;
-            failed = failedMatch ? parseInt(failedMatch[1]) : 0;
-            tests = passed + failed;
-            result = failed > 0 ? 'failed' : passed > 0 ? 'passed' : 'skipped';
-          } catch (err: unknown) {
-            result = 'error';
-            error = summarizeCommandError(err);
-          }
-          const dur = Date.now() - t0;
+              [
+                '--filter',
+                pkg.filter,
+                'exec',
+                'playwright',
+                'test',
+                ...scenarioArgs,
+                '--reporter=json',
+              ],
+              { cwd, timeout: 300000 },
+            ).stdout ?? '';
+        } catch (err: unknown) {
+          const execErr = err as { stdout?: string };
+          output = execErr.stdout ?? '';
+          commandError = summarizeCommandError(err);
+        }
+
+        const summaries = parsePlaywrightScenarioSummaries(output, E2E_SCENARIOS);
+        const reportError = summarizePlaywrightReportErrors(output);
+        const dur = Date.now() - t0;
+        for (const scenario of E2E_SCENARIOS) {
+          const summary = summaries?.get(scenario);
+          const tests = summary?.tests ?? 0;
+          const passed = summary?.passed ?? 0;
+          const failed = summary?.failed ?? 0;
+          const error = summary?.error ?? (summary ? undefined : (reportError ?? commandError));
+          const result = summary
+            ? failed > 0
+              ? 'failed'
+              : passed > 0
+                ? 'passed'
+                : 'skipped'
+            : 'error';
           results.push({
             pkg: pkg.name,
             kind: 'test',
@@ -5752,6 +5866,7 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
         passed = 0,
         failed = 0;
       let output = '';
+      let error: string | undefined;
       try {
         output =
           execaSync('pnpm', ['--filter', pkg.filter, 'test'], { cwd, timeout: 120000, all: true })
@@ -5767,8 +5882,9 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
         failed = failMatch ? parseInt(failMatch[1]) : 0;
         tests = passed + failed;
         result = failed > 0 ? 'failed' : 'passed';
-      } catch {
+      } catch (err: unknown) {
         result = 'error';
+        error = summarizeCommandError(err);
       }
       const dur = Date.now() - t0;
       results.push({
@@ -5780,10 +5896,12 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
         passed,
         failed,
         durationMs: dur,
+        error,
       });
       const icon = result === 'passed' ? '✅' : result === 'failed' ? '⚠' : '🔴';
       const detail = result === 'error' ? '실행 실패' : `${passed}/${tests} (${dur}ms)`;
       console.log(`    ${icon} ${pkg.name.padEnd(20)} ${result} ${detail}`);
+      if (error) console.log(`      ↳ ${error}`);
 
       // 파일별 결과 파싱 → contract_check 기록
       // vitest 출력: " ✓ src/path/file.test.ts  (N tests) Xms" 또는 " × src/path/file.test.ts"
@@ -6305,7 +6423,10 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   }
 
   const hasProblem =
-    buildSummary.failure > 0 || testSummary.failed > 0 || invariantViolations.length > 0;
+    buildSummary.failure > 0 ||
+    testSummary.failed > 0 ||
+    results.some((result) => result.result === 'error') ||
+    invariantViolations.length > 0;
   console.log(hasProblem ? `\n  ⚠ 문제 감지` : `\n  ✅ 전체 정상`);
 }
 
