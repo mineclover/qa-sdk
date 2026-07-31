@@ -707,7 +707,7 @@ export const IR_CERTAINTY = {
 } as const;
 export type IrCertainty = (typeof IR_CERTAINTY)[keyof typeof IR_CERTAINTY];
 
-/** ir_pipe_state — 파이프 트랜잭션 상태 (entries: 3, capacity: 4) */
+/** ir_pipe_state — 파이프 트랜잭션 상태 (entries: 3, capacity: 8) */
 export const IR_PIPE_STATE = {
   PENDING: 'pending',
   COMMITTED: 'committed',
@@ -715,7 +715,7 @@ export const IR_PIPE_STATE = {
 } as const;
 export type IrPipeState = (typeof IR_PIPE_STATE)[keyof typeof IR_PIPE_STATE];
 
-/** ir_retention — 데이터 보존 (entries: 3, capacity: 4) */
+/** ir_retention — 데이터 보존 (entries: 3, capacity: 8) */
 export const IR_RETENTION = {
   EPHEMERAL: 'ephemeral',
   SESSION: 'session',
@@ -723,7 +723,7 @@ export const IR_RETENTION = {
 } as const;
 export type IrRetention = (typeof IR_RETENTION)[keyof typeof IR_RETENTION];
 
-/** ir_storage_type — 저장 유형 (entries: 3, capacity: 4) */
+/** ir_storage_type — 저장 유형 (entries: 3, capacity: 8) */
 export const IR_STORAGE_TYPE = {
   MEMORY: 'memory',
   DB: 'db',

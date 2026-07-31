@@ -37,7 +37,7 @@ sources:
 - **dim 3종**: axis(유한 열거형, 정수 position), prefix_ref(다른 prefix 주소 참조), table_ref(외부 DB 참조, 인코딩 안 됨)
 - **5Q Checklist**: 유한성, 의사결정 사용 여부, 공유 여부, 안정성, capacity 합리성 — 전부 YES이면 axis
 - **capacity 공식**: `nextPowerOf2(entries × 2)` — entries 수에 따라 8/16/32/64 등으로 설정
-- **카테고리 판정**: `category-rules.ts`의 `CATEGORY_RULES` 기반, `inferCategory()`가 meta.category 우선 → 구조 기반 fallback 순으로 결정
+- **카테고리 판정**: `category-rules.ts`의 `CATEGORY_RULES` 기반, `inferCategory()`가 meta.category 우선 → 구조 기반 fallback 순으로 결정. observation은 기본적으로 `svc_ref`를 요구하지만 `ir_module`처럼 정의 공간 자체를 관측하는 자기 관측 prefix는 예외다.
 
 ## 1. prefix가 뭔가
 
@@ -58,9 +58,9 @@ endpoint:v1:32 = "prod/asia/shopping-web에서 POST /api v1 호출"
 ├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
 │ entity      │ 정체성을 가진 것 │    5    │ 서비스, 콘텐츠, 리소스. 2-6 dims.        │
 ├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
-│ event       │ 발생한 것        │   15    │ action/op/intent 관련 축 필수.           │
+│ event       │ 발생한 것        │   15    │ action/op/intent/call-kind 관련 축 필수.  │
 ├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
-│ observation │ 관측 포인트      │   11    │ svc_ref(서비스 참조) 포함. 관측 데이터.  │
+│ observation │ 관측 포인트      │   11    │ svc_ref 포함(정의 공간 자기 관측은 예외). │
 ├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤
 │ policy      │ 권한/규칙        │    2    │ role/action/resource 축 포함.            │
 ├─────────────┼──────────────────┼─────────┼──────────────────────────────────────────┤

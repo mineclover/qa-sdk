@@ -66,7 +66,8 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
       const edges = graph.edgesFrom(prefixId, 'composes');
       const axisEdges = edges.filter((e) => e.meta?.dimKind === 'axis');
 
-      // event prefix는 action/operation/intent 관련 축을 가져야 함
+      // event prefix는 action/operation/intent 관련 축을 가져야 함.
+      // 호출 종류(call kind)도 실행 행위를 구분하는 이벤트 축이다.
       const hasAction = axisEdges.some(
         (e) =>
           e.to.includes('action') ||
@@ -87,7 +88,8 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
           e.to.includes('escalation') ||
           e.to.includes('forcing') ||
           e.to.includes('cognitive') ||
-          e.to.includes('flow_type'),
+          e.to.includes('flow_type') ||
+          e.to.includes('call_kind'),
       );
       if (!hasAction) {
         errors.push(`event prefix "${prefixId}" has no action-related axis`);
@@ -136,7 +138,7 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
   observation: {
     category: 'observation',
     description:
-      '관측/로깅/추적. svc_ref(service 참조)를 포함해야 한다. 자기 참조 관측(dev/decision-domain)은 면제.',
+      '관측/로깅/추적. 기본적으로 svc_ref(service 참조)를 포함해야 하며, 정의 공간 자체를 관측하는 자기 관측은 면제한다.',
     validate: (prefixId, graph) => {
       const errors: string[] = [];
       const refs = graph.neighbors(prefixId, 'references');
@@ -150,6 +152,8 @@ export const CATEGORY_RULES: Record<SchemaCategory, CategoryRule> = {
           'model_apply',
           'contract_check',
           'skill_execution',
+          // ModuleIR는 서비스 런타임이 아닌 정의 공간(meta-semantic IR)을 관측한다.
+          'ir_module',
         ];
         if (!SELF_OBSERVATION_PREFIXES.includes(prefixId)) {
           errors.push(`observation prefix "${prefixId}" must reference service prefix`);

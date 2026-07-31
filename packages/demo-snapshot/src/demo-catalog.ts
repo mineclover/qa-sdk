@@ -3054,7 +3054,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ['pending', 'committed', 'rolledBack'],
-          capacity: 4,
+          capacity: 8,
           ko: { pending: '대기', committed: '확정', rolledBack: '롤백' },
         },
       },
@@ -3081,7 +3081,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ['ephemeral', 'session', 'persistent'],
-          capacity: 4,
+          capacity: 8,
           ko: { ephemeral: '일시', session: '세션', persistent: '영구' },
         },
       },
@@ -3092,7 +3092,7 @@ export const DEMO_CATALOG = {
       versions: {
         v1: {
           entries: ['memory', 'db', 'event-stream'],
-          capacity: 4,
+          capacity: 8,
           ko: { memory: '메모리', db: 'DB', 'event-stream': '이벤트스트림' },
         },
       },

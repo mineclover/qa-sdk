@@ -525,15 +525,15 @@ const SCHEMA = {
     },
     ir_pipe_state: {
       entries: ['pending', 'committed', 'rolledBack'],
-      capacity: 4,
+      capacity: 8,
     },
     ir_retention: {
       entries: ['ephemeral', 'session', 'persistent'],
-      capacity: 4,
+      capacity: 8,
     },
     ir_storage_type: {
       entries: ['memory', 'db', 'event-stream'],
-      capacity: 4,
+      capacity: 8,
     },
     ir_transaction_scope: {
       entries: ['local', 'distributed'],
