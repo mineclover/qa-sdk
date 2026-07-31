@@ -5835,6 +5835,43 @@ function loadLatestPersistedFlowEvidence(
   };
 }
 
+function describeRecoveredObservation(obs: ObservationNode): string {
+  if (obs.id.startsWith('OBS-FLOW-')) return 'fresh flow evidence에서 IntentLink 위반 복귀';
+  if (obs.id.startsWith('OBS-METRIC-')) return '현재 metric 값이 ok로 복귀';
+  return '현재 self-check 입력에서 실패 조건 해소';
+}
+
+function describeRetainedMetricIssue(
+  issue: MetricValue,
+  persistedFlowEvidence: PersistedFlowEvidenceScope | undefined,
+): string {
+  const detail = issue.detail ?? '';
+
+  if (detail.includes('OBS-DSL-UNCOVERED')) {
+    return 'DSL ownership human decision이 아직 기록되지 않음 — dkg dsl-ownership decide로 근거를 기록해야 함';
+  }
+
+  if (detail.includes('OBS-FLOW-')) {
+    if (!persistedFlowEvidence) {
+      return 'fresh persisted runtime evidence 없음 — self-check live records만으로 자동 해소하지 않음';
+    }
+    if (!persistedFlowEvidence.fresh) {
+      return `persisted runtime evidence가 stale 상태(${persistedFlowEvidence.observedAt}) — fresh evidence 전까지 자동 해소하지 않음`;
+    }
+    return `fresh runtime evidence에서도 flow observation이 유지됨 — observed prefixes=[${persistedFlowEvidence.observedPrefixes.join(',')}]`;
+  }
+
+  if (issue.id.startsWith('metric:health:')) {
+    return '연결된 action-needed observation이 아직 미해결 상태라 domain health warning을 유지함';
+  }
+
+  if (issue.id === 'metric:schema:violations') {
+    return '현재 graph schema audit에서 위반이 남아 있어 자동 해소하지 않음';
+  }
+
+  return '현재 실행에서 metric 상태가 ok로 복귀하지 않아 자동 해소하지 않음';
+}
+
 /**
  * dkg self-check — 빌드/테스트 실행 + 좌표 인코딩 + convergence 분석 + invariant 검증.
  *
@@ -6210,11 +6247,20 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
   console.log(`    metrics: ${metrics.length}건, ${metricIssues.length} issues`);
   if (recoveredMetricObservations.length > 0) {
     console.log(`    recovered metrics: ${recoveredMetricObservations.length}건 (--apply로 저장)`);
+    for (const obs of recoveredMetricObservations) {
+      console.log(`      ✅ ${obs.id}: ${describeRecoveredObservation(obs)}`);
+    }
   }
   if (recoveredFlowObservations.length > 0) {
     console.log(`    recovered flows: ${recoveredFlowObservations.length}건 (--apply로 저장)`);
+    for (const obs of recoveredFlowObservations) {
+      console.log(`      ✅ ${obs.id}: ${describeRecoveredObservation(obs)}`);
+    }
   }
   if (metricIssues.length > 0) {
+    console.log(
+      `    retained issues: ${metricIssues.length}건 (의도적으로 유지 — 자동 해소하지 않음)`,
+    );
     const severityRank: Record<MetricValue['status'], number> = {
       critical: 0,
       warning: 1,
@@ -6225,6 +6271,9 @@ export function dkgSelfCheck(opts: { apply?: boolean; fast?: boolean } = {}): vo
     )) {
       const icon = issue.status === 'critical' ? '🔴' : '⚠';
       console.log(`      ${icon} ${issue.id}: ${issue.detail ?? `value=${issue.value}`}`);
+      console.log(
+        `        ↳ 유지 이유: ${describeRetainedMetricIssue(issue, persistedFlowEvidence)}`,
+      );
     }
   }
 

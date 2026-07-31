@@ -358,6 +358,9 @@ describe('dkg CLI E2E', () => {
     expect(output.stdout).toContain('evidence scope: none');
     expect(output.stdout).toContain('recovery 입력은 self-check live records만 사용');
     expect(output.stdout).toContain('coverage metric: skipped');
+    expect(output.stdout).toContain('retained issues:');
+    expect(output.stdout).toContain('의도적으로 유지 — 자동 해소하지 않음');
+    expect(output.stdout).toContain('DSL ownership human decision이 아직 기록되지 않음');
   });
 
   const heavyIt = runHeavySmoke ? it : it.skip;
