@@ -76,6 +76,14 @@ async function setupConvergence() {
           metricsToObservations: specConvergence.metricsToObservations,
           traceFlows: (g, records, opts) =>
             specDkg.traceFlows(g as Parameters<typeof specDkg.traceFlows>[0], records, opts),
+          resolveRecoveredFlowObservations: (g, records, result, existingObs, opts) =>
+            specDkg.resolveRecoveredFlowObservations(
+              g as Parameters<typeof specDkg.resolveRecoveredFlowObservations>[0],
+              records,
+              result,
+              existingObs,
+              opts,
+            ),
         },
         graphProvider: () => (graph ?? { getNodesByKind: () => [] }) as ConvergenceGraphPort,
         catalogProvider: () => provider.getCatalog() as Catalog,

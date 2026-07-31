@@ -476,6 +476,71 @@ describe('ConvergencePipelineRunner', () => {
     expect(savedObs.map((o: any) => o.id)).toContain('OBS-FLOW-IL-checkout-flow-page_view');
   });
 
+  it('현재 runtime flow evidence 회복을 metric 계산보다 먼저 반영함', async () => {
+    const order: string[] = [];
+    const prior = {
+      kind: 'observation',
+      id: 'OBS-FLOW-IL-checkout-flow-page_view',
+      date: '2026-03-21',
+      source: 'runtime',
+      subjects: ['IL-checkout-flow', 'flow_point', 'page_view'],
+      finding: '이전 flow 위반',
+    };
+    const recovered = {
+      ...prior,
+      resolution: {
+        decisionId: 'AUTO-RESOLVE',
+        outcome: 'accepted',
+        note: 'runtime evidence 회복',
+      },
+    };
+    let observations: readonly Record<string, unknown>[] = [prior];
+    const graph = {
+      getAllNodes: () => [],
+      getNodesByKind: (kind: string) => (kind === 'observation' ? observations : []),
+      replaceNode: vi.fn((node: Record<string, unknown>) => {
+        observations = [node];
+        order.push('replace');
+      }),
+    };
+    const updateNode = vi.fn(() => order.push('persist-resolution'));
+    const convergenceFns = {
+      ...createMockConvergenceFns(),
+      traceFlows: vi.fn(() => {
+        order.push('flow');
+        return { violations: [], observations: [], summary: '흐름 위반 없음' };
+      }),
+      resolveRecoveredFlowObservations: vi.fn(() => {
+        order.push('flow-recovery');
+        return [recovered];
+      }),
+      collectMetrics: vi.fn(() => {
+        order.push('metrics');
+        expect(observations[0]?.resolution).toBeDefined();
+        return [];
+      }),
+    };
+    const dkgStore = createMockDkgStore();
+    dkgStore.updateNode = updateNode;
+    const deps = createDeps({
+      convergenceFns,
+      graphProvider: () => graph as any,
+      dkgStore,
+    });
+    pipeline = new ConvergencePipelineRunner(deps, {
+      recordThreshold: 999,
+      flushIntervalMs: 999_999,
+    });
+
+    pipeline.notifyCompletion(['t1']);
+    const result = await pipeline.flush();
+
+    expect(order.slice(0, 4)).toEqual(['flow', 'flow-recovery', 'replace', 'persist-resolution']);
+    expect(order).toContain('metrics');
+    expect(result!.flowObservationsResolved).toBe(1);
+    expect(convergenceFns.resolveRecoveredFlowObservations).toHaveBeenCalledTimes(1);
+  });
+
   it('이전 윈도우 통계 비교 — 두 번째 flush에서 previous 전달', async () => {
     const patternFns = createMockPatternFns();
     const deps = createDeps({

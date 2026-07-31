@@ -152,6 +152,7 @@ async function startServer() {
         collectMetrics: specConvergence.collectMetrics,
         metricsToObservations: specConvergence.metricsToObservations,
         traceFlows: specDkg.traceFlows,
+        resolveRecoveredFlowObservations: specDkg.resolveRecoveredFlowObservations,
       } as unknown as ConvergenceFunctions;
 
       // 패턴 분류 함수 (optional — 실패해도 convergence 전체는 동작)

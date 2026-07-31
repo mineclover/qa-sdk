@@ -55,6 +55,7 @@ export interface ConvergenceGraphPort {
   neighbors?(id: string, type: string): string[];
   addNode?(node: { kind: string; id: string }): void;
   addEdge?(type: string, from: string, to: string, meta?: Record<string, unknown>): void;
+  replaceNode?(node: { kind: string; id: string }): void;
 }
 
 /** convergence 분석 함수 (@qa-sdk/convergence에서 동적 import) */
@@ -74,12 +75,28 @@ export interface ConvergenceFunctions {
     existingObs: readonly ObservationNode[],
     options?: { date?: string },
   ) => ObservationNode[];
+  resolveRecoveredFlowObservations?: (
+    graph: ConvergenceGraphPort,
+    records: readonly AddressContextRecord[],
+    result: {
+      violations: readonly {
+        intentLinkId: string;
+        missingPrefixes: readonly string[];
+      }[];
+    },
+    existingObs: readonly ObservationNode[],
+    options?: { date?: string },
+  ) => ObservationNode[];
   traceFlows?: (
     graph: ConvergenceGraphPort,
     records: readonly AddressContextRecord[],
     options?: { date?: string },
   ) => {
-    violations: readonly { intentLinkId: string; count: number }[];
+    violations: readonly {
+      intentLinkId: string;
+      missingPrefixes: readonly string[];
+      count: number;
+    }[];
     observations: readonly ObservationNode[];
     summary: string;
   };
@@ -155,6 +172,7 @@ export interface ConvergenceFlushResult {
   snapshotId?: number;
   pattern?: PatternFlushResult;
   flowViolations?: number;
+  flowObservationsResolved?: number;
 }
 
 // ── Pipeline Runner ──────────────────────────────────
@@ -306,14 +324,58 @@ export class ConvergencePipelineRunner {
     const catalog = catalogProvider();
     const usage = convergenceFns.aggregateUsageData(catalog, addressRecords);
 
-    // 3. metric 수집
     const graph = graphProvider();
+
+    // 3. flow evidence — metric보다 먼저 회복 상태를 반영한다.
+    // 현재 배치에서 endpoint가 실제 관측된 IntentLink만 회복시키고,
+    // 미관측 link는 정상 결과만으로 닫지 않는다.
+    let flowViolationCount = 0;
+    let flowObservations: readonly ObservationNode[] = [];
+    let flowObservationsResolved = 0;
+    if (convergenceFns.traceFlows) {
+      try {
+        const flowResult = convergenceFns.traceFlows(graph, addressRecords, {
+          date: new Date().toISOString().slice(0, 10),
+        });
+        flowViolationCount = flowResult.violations.length;
+        flowObservations = flowResult.observations;
+
+        if (convergenceFns.resolveRecoveredFlowObservations) {
+          const existingObs = graph.getNodesByKind(
+            'observation',
+          ) as unknown as readonly ObservationNode[];
+          const resolved = convergenceFns.resolveRecoveredFlowObservations(
+            graph,
+            addressRecords,
+            flowResult,
+            existingObs,
+            { date: new Date().toISOString().slice(0, 10) },
+          );
+          for (const observation of resolved) {
+            graph.replaceNode?.(observation);
+            dkgStore?.updateNode?.(observation);
+          }
+          flowObservationsResolved = resolved.length;
+        }
+
+        if (flowViolationCount > 0) {
+          logger?.warn(
+            { violations: flowViolationCount, summary: flowResult.summary },
+            'convergence: IntentLink flow violations detected',
+          );
+        }
+      } catch (error) {
+        logger?.warn({ err: error }, 'convergence: flow-trace failed');
+      }
+    }
+
+    // 4. metric 수집 — 현재 flow evidence가 반영된 graph를 사용한다.
     const metrics = convergenceFns.collectMetrics(catalog, graph, usage);
 
-    // 4. 자동 observation 생성
+    // 5. 자동 observation 생성
     const observations: ObservationNode[] = [...convergenceFns.metricsToObservations(metrics)];
 
-    // 4b. ok 복귀 metric의 자동 해소
+    // 5b. ok 복귀 metric의 자동 해소
     let autoResolvedCount = 0;
     if (convergenceFns.resolveRecoveredMetrics && dkgStore) {
       try {
@@ -330,7 +392,7 @@ export class ConvergencePipelineRunner {
       }
     }
 
-    // 5. 패턴 분류 (에러 격리: 실패해도 metric pipeline 결과는 유지)
+    // 6. 패턴 분류 (에러 격리: 실패해도 metric pipeline 결과는 유지)
     let patternResult: PatternFlushResult | undefined;
     if (patternFns) {
       try {
@@ -345,25 +407,12 @@ export class ConvergencePipelineRunner {
       }
     }
 
-    // 5b. IntentLink 흐름 검증 (에러 격리)
-    let flowViolationCount = 0;
-    if (convergenceFns.traceFlows) {
-      try {
-        const flowResult = convergenceFns.traceFlows(graph, addressRecords);
-        flowViolationCount = flowResult.violations.length;
-        if (flowResult.observations.length > 0) {
-          observations.push(...flowResult.observations);
-          logger?.warn(
-            { violations: flowViolationCount, summary: flowResult.summary },
-            'convergence: IntentLink flow violations detected',
-          );
-        }
-      } catch (error) {
-        logger?.warn({ err: error }, 'convergence: flow-trace failed');
-      }
+    // 6b. IntentLink 흐름 observation 추가 (검사는 3단계에서 선행)
+    if (flowObservations.length > 0) {
+      observations.push(...flowObservations);
     }
 
-    // 6. DKG store 저장
+    // 7. DKG store 저장
     let snapshotId: number | undefined;
     if (dkgStore && usage) {
       try {
@@ -397,6 +446,7 @@ export class ConvergencePipelineRunner {
         observationsGenerated: observations.length,
         autoResolvedCount,
         flowViolationCount,
+        flowObservationsResolved,
         pattern: patternResult,
         snapshotId,
       },
@@ -410,6 +460,7 @@ export class ConvergencePipelineRunner {
       snapshotId,
       pattern: patternResult,
       flowViolations: flowViolationCount > 0 ? flowViolationCount : undefined,
+      flowObservationsResolved: flowObservationsResolved > 0 ? flowObservationsResolved : undefined,
     };
   }
 

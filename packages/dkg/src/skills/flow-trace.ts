@@ -56,7 +56,9 @@ export interface FlowTraceResult {
 export function resolveRecoveredFlowObservations(
   graph: GraphPort,
   records: readonly AddressContextRecord[],
-  result: Pick<FlowTraceResult, 'violations'>,
+  result: {
+    readonly violations: readonly Pick<FlowViolation, 'intentLinkId' | 'missingPrefixes'>[];
+  },
   existingObservations: readonly ObservationNode[],
   options?: { date?: string },
 ): ObservationNode[] {
