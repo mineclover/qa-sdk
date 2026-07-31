@@ -213,6 +213,9 @@ extension 또는 optional plugin으로 남긴다.
 - P4 3차 완료: `@spec-platform/qa-sdk-adapter`에 public executable/package contract를 명시하고,
   full specification journey에서 built `qa-spec-platform` 실행·`pnpm pack` archive·workspace dependency
   치환·test/source 제외를 검증한다. release publication 자체는 실행하지 않는다.
+- P4 4차 완료: 11개 transitive platform package tarball을 clean npm consumer에 설치해 `.bin/qa-spec-platform`
+  실행을 검증했다. 이 과정에서 npm bin symlink 때문에 main-module 판정이 실패하던 실제 결함을
+  adapter와 generic CLI의 realpath 비교로 수정했다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
@@ -228,7 +231,7 @@ extension 또는 optional plugin으로 남긴다.
 | P1 neutral parser/runtime | 완료 | 독립 workspace test/typecheck 통과 |
 | P2 graph/code verifier + QA profile | 완료 | 실 qa-sdk 0 error collect/verify |
 | P3 store/client port | 완료 | immutable file store + storage-agnostic query client + QA adapter round-trip |
-| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint, publish contract, clean archive smoke 통과; 실제 registry publication과 consumer default 전환은 보류 |
+| P4 `qa-sdk def` compatibility transition | 진행 중 | `platform-verify`와 quality query external compatibility entrypoint, publish contract, clean archive/install smoke 통과; 실제 registry publication과 consumer default 전환은 보류 |
 
 ## 남은 선행 결정
 
