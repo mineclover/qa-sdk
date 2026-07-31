@@ -248,6 +248,9 @@ extension 또는 optional plugin으로 남긴다.
   명시할 수 있다. 잘못된 local registry로 preflight fail-fast를 확인했고 실제 registry publish는 실행하지 않았다.
 - P4 12차 registry 대상 정합성: full specification journey의 live registry consumer smoke도
   `SPEC_PLATFORM_REGISTRY`를 사용하도록 맞춰 publish runner와 동일한 staging/private registry를 검증할 수 있게 했다.
+- P4 13차 private registry smoke 보완: `SPEC_PLATFORM_REGISTRY_TOKEN`을 선택적으로 받아 임시 mode-0600
+  npm user config에 registry-scoped auth를 주입하고 cleanup하도록 했다. 토큰은 출력하지 않으며 public npm
+  smoke의 익명 동작은 그대로 유지한다.
 - 실저장소 검증: 현재 QA profile에서 **1,718 documents, 36,107 facts, error 0, warning 727**을
   재현했다. warning은 기존 legacy frontmatter와 현재 code-link coverage의 baseline 신호이며,
   새 platform 오류로 합산하지 않는다.
