@@ -293,7 +293,7 @@ export const SURFACES = [
     id: 'visual-analysis-tools',
     group: 'visual-analysis-capability',
     verdict: 'consumer-tooling',
-    packages: ['canvas-viewport', '@qa-sdk/viz-3d', 'viz-core', 'visbug-bridge', 'rlsc-analysis'],
+    packages: ['canvas-viewport', '@qa-sdk/viz-3d', 'viz-core', 'visbug-bridge', 'rlsc-analysis', 'browser-layout-inspector', 'browser-layout-inspector-extension'],
   },
   {
     id: 'verification-suites',

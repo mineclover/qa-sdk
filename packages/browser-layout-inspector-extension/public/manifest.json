@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Browser Layout Inspector",
+  "version": "0.1.0",
+  "description": "Select page elements, measure layout, inspect CSS, and make reversible live inline style edits.",
+  "action": {
+    "default_title": "Browser Layout Inspector"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting", "sidePanel"]
+}

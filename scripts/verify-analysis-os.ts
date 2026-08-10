@@ -610,7 +610,7 @@ async function main() {
         groupSummaries['simulation-contract-capability']?.surfaceCount === 1 &&
         groupSummaries['simulation-contract-capability']?.packageCount === 6 &&
         groupSummaries['visual-analysis-capability']?.surfaceCount === 1 &&
-        groupSummaries['visual-analysis-capability']?.packageCount === 5 &&
+        groupSummaries['visual-analysis-capability']?.packageCount === 7 &&
         groupSummaries['verification-suite-capability']?.surfaceCount === 1 &&
         groupSummaries['verification-suite-capability']?.packageCount === 5 &&
         groupSummaries['demo-consumer-surfaces']?.surfaceCount === 1 &&

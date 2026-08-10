@@ -35,6 +35,8 @@ def:
       type: refs
     - target: federated-connection-contract
       type: refs
+    - target: browser-layout-inspector
+      type: refs
 ---
 
 # 패키지 구조
@@ -81,7 +83,7 @@ qa-sdk 전체를 단일 제품 플랫폼으로 확장하지 않는다. 패키지
 | Authorization support | authorization support capability | 권한 정책/감사 영속 보조 | `resource-policy-store`, `audit-recorder-store` |
 | Motion authoring | motion authoring capability | motion content/workspace authoring | `motion-content`, `motion-workspace`, `motion-workspace-client` |
 | Simulation contracts | simulation contract capability | 시뮬레이션 producer/consumer DTO 계약 | `sim-service-catalog`, `sim-decision-view`, `sim-outbox-view` |
-| Visual analysis tools | visual analysis capability | 시각화/브릿지/레이아웃 분석 도구 | `viz-core`, `@qa-sdk/viz-3d`, `visbug-bridge` |
+| Visual analysis tools | visual analysis capability | 시각화/브릿지/레이아웃 분석 도구 | `viz-core`, `@qa-sdk/viz-3d`, `visbug-bridge`, `browser-layout-inspector`, `browser-layout-inspector-extension` |
 | Verification suites | verification suite capability | 테스트 하니스와 시나리오 저장소 | `test-types`, `@qa-sdk/e2e`, `test-scenario-store` |
 | Product demo surfaces | demo consumer surfaces | 제품 데모/스모크 UI와 API consumer | `@qa-sdk/platform-demo`, `@qa-sdk/shop-web`, `@qa-sdk/registry-ui` |
 | Quarantine candidates | quarantine | 제품 surface 승격 보류 | `request-contract`, `weighted-gpu` |

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>Browser Layout Inspector</title>
+    <style>
+      body { box-sizing: border-box; min-width: 320px; margin: 0; padding: 14px; color: #172033; font: 13px/1.4 system-ui, sans-serif; }
+      h1 { margin: 0 0 10px; font-size: 16px; }
+      h2 { margin: 16px 0 7px; font-size: 13px; }
+      p { margin: 0 0 8px; color: #52627c; }
+      .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+      .tool-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; color: #42526e; }
+      .tool-options label { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 500; }
+      .tool-options input { width: auto; }
+      .guide-count { font: 12px ui-monospace, monospace; }
+      .selection { overflow: hidden; padding: 7px 8px; border: 1px solid #c9d3e4; border-radius: 4px; background: #f8faff; color: #243756; font: 12px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+      label { display: grid; gap: 4px; margin: 0 0 8px; font-weight: 600; }
+      input { box-sizing: border-box; width: 100%; padding: 6px 8px; border: 1px solid #aeb8cc; border-radius: 4px; font: 12px ui-monospace, monospace; }
+      button { padding: 7px 10px; border: 0; border-radius: 4px; background: #265ee8; color: white; font-weight: 700; cursor: pointer; }
+      button.secondary { background: #52627c; }
+      button.danger { background: #bc263c; }
+      button:disabled { cursor: wait; opacity: .6; }
+      details { margin-top: 16px; border-top: 1px solid #d9e0ec; padding-top: 10px; }
+      summary { cursor: pointer; color: #52627c; }
+      pre { max-height: 420px; margin: 8px 0 0; overflow: auto; padding: 10px; border-radius: 4px; background: #f3f6fb; white-space: pre-wrap; word-break: break-word; font: 11px/1.35 ui-monospace, monospace; }
+    </style>
+  </head>
+  <body>
+    <h1>Browser Layout Inspector</h1>
+    <p>Side Panel은 열린 채 유지됩니다. 요소 간격(A → B)과 자유 드래그 Ruler는 서로 다른 측정 도구입니다. Escape로 취소할 수 있습니다.</p>
+    <div class="actions"><button id="pick-select" type="button">요소 선택</button><button id="pick-measure" type="button">요소 간격 (A → B)</button><button id="ruler" class="secondary" type="button">Ruler</button><button id="refresh" class="secondary" type="button">새로고침</button></div>
+    <div class="tool-options"><label><input id="ruler-snap" type="checkbox" /> 8px snap</label><button id="pin-guides" class="secondary" type="button">Ruler 가이드 고정</button><button id="clear-guides" class="secondary" type="button">가이드 지우기</button><span id="guide-count" class="guide-count">가이드 0개</span></div>
+    <h2>현재 선택</h2>
+    <div id="selection" class="selection">선택된 요소 없음</div>
+    <h2>실시간 스타일</h2>
+    <label>CSS 속성 <input id="style-property" placeholder="padding-left" /></label>
+    <label>값 <input id="style-value" placeholder="24px" /></label>
+    <div class="actions"><button id="apply-style" type="button">즉시 적용</button><button id="hide-selected" class="danger" type="button">선택 숨기기</button><button id="restore-selected" class="secondary" type="button">선택 원복 / 다시 보이기</button><button id="restore-all" class="secondary" type="button">전체 원복</button></div>
+    <details>
+      <summary>셀렉터로 직접 검사 (보조 기능)</summary>
+      <label>대상 selector <input id="selector" placeholder='[data-measure-id="card"]' /></label>
+      <label>상대 위치 기준 selector (선택) <input id="reference-selector" placeholder="#app-shell" /></label>
+      <label>computed property 목록 (쉼표, 비우면 전체) <input id="properties" placeholder="display, gap, width" /></label>
+      <button id="inspect" type="button">직접 검사</button>
+    </details>
+    <h2>CSS 출력</h2>
+    <div class="actions"><button id="copy-css" class="secondary" type="button">CSS 복사</button><button id="export-png" class="secondary" type="button">Viewport PNG</button></div>
+    <h2>데이터 교환</h2>
+    <p>명시적으로 생성한 JSON에는 URL·viewport·scroll·DPR과 현재 측정 상태가 포함됩니다.</p>
+    <div class="actions"><button id="copy-json" class="secondary" type="button">JSON 복사</button><button id="download-json" class="secondary" type="button">JSON 저장</button></div>
+    <pre id="output" aria-live="polite">/* 요소 선택을 누른 뒤 페이지에서 대상을 클릭하세요. */</pre>
+    <script src="popup.js"></script>
+  </body>
+</html>

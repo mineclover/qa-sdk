@@ -1,0 +1,30 @@
+{
+  "name": "browser-layout-inspector-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Manifest V3 extension shell for browser-layout-inspector.",
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup && cp public/manifest.json dist/manifest.json && cp public/popup.html dist/popup.html",
+    "test:extension": "corepack pnpm run build && playwright test -c playwright.extension.config.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "browser-layout-inspector": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2"
+  }
+}
