@@ -29,6 +29,23 @@ export interface CssInfluenceReport {
   readonly inlineStyle: readonly CssDeclaration[];
 }
 
+/** One declaration rendered with its source context; it is not a cascade-winner claim. */
+export interface CssSourceDeclaration extends CssDeclaration {
+  readonly source: 'inline' | 'author';
+  readonly stylesheetHref: string | null;
+  readonly stylesheetLabel: string;
+  readonly selector: string | null;
+  readonly conditions: readonly string[];
+  readonly rulePath: readonly number[] | null;
+}
+
+/** DevTools-style read model: candidate declarations and browser-final computed values stay separate. */
+export interface CssInspectorSnapshot {
+  readonly sourceDeclarations: readonly CssSourceDeclaration[];
+  readonly computedDeclarations: readonly CssDeclaration[];
+  readonly inaccessibleStylesheets: readonly InaccessibleStylesheet[];
+}
+
 export interface ComputedStyleSnapshot {
   readonly pseudoElement: string | null;
   readonly properties: Readonly<Record<string, string>>;
@@ -60,9 +77,12 @@ export interface RelativePosition {
   readonly referenceSelector: string | null;
   readonly deltaCssPx: Readonly<{ x: number; y: number }> | null;
   /** Directional edge gaps. Negative values indicate overlap. */
-  readonly edgeGapsCssPx:
-    | Readonly<{ leftToRight: number; rightToLeft: number; topToBottom: number; bottomToTop: number }>
-    | null;
+  readonly edgeGapsCssPx: Readonly<{
+    leftToRight: number;
+    rightToLeft: number;
+    topToBottom: number;
+    bottomToTop: number;
+  }> | null;
 }
 
 export interface PositionReport {

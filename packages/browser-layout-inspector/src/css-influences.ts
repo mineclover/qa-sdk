@@ -92,8 +92,8 @@ function readRules(
             element,
             imported.styleSheet.cssRules,
             view,
-            imported.href,
-            imported.href,
+            imported.href ?? null,
+            imported.href ?? '(imported stylesheet)',
             nextConditions,
             nextPath,
             matches,
@@ -125,7 +125,16 @@ function readRules(
 
     const nestedRules = (rule as CSSGroupingRule).cssRules;
     if (nestedRules) {
-      readRules(element, nestedRules, view, stylesheetHref, stylesheetLabel, nextConditions, nextPath, matches);
+      readRules(
+        element,
+        nestedRules,
+        view,
+        stylesheetHref,
+        stylesheetLabel,
+        nextConditions,
+        nextPath,
+        matches,
+      );
     }
   });
 }
@@ -144,7 +153,7 @@ export function collectCssInfluences(element: Element): CssInfluenceReport {
   Array.from(document.styleSheets).forEach((sheet, index) => {
     const label = stylesheetLabel(sheet, index);
     try {
-      readRules(element, sheet.cssRules, view, sheet.href, label, [], [], matchedSelectors);
+      readRules(element, sheet.cssRules, view, sheet.href ?? null, label, [], [], matchedSelectors);
     } catch {
       inaccessibleStylesheets.push({
         stylesheetHref: sheet.href,
@@ -157,6 +166,8 @@ export function collectCssInfluences(element: Element): CssInfluenceReport {
   return {
     matchedSelectors,
     inaccessibleStylesheets,
-    inlineStyle: (element as HTMLElement).style ? readDeclarations((element as HTMLElement).style) : [],
+    inlineStyle: (element as HTMLElement).style
+      ? readDeclarations((element as HTMLElement).style)
+      : [],
   };
 }

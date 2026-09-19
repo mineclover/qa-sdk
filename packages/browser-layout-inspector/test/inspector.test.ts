@@ -5,7 +5,12 @@ import {
   extractComputedStyle,
   extractElementMetrics,
   extractPosition,
+  inspectCssDeclarations,
   inspectSelectorLayout,
+  matchCssPixels,
+  measureElementComparison,
+  measureRuler,
+  rulerGuides,
   splitSelectorList,
 } from '../src/index.js';
 
@@ -20,7 +25,8 @@ describe('browser-layout-inspector', () => {
       <style>.card, #not-target { color: red; } .shell > .card { padding: 12px; }</style>
       <style>@media screen { :is(.card, .fallback) { margin: 8px; } }</style>
     `;
-    document.body.innerHTML = '<main class="shell"><article class="card" style="border-width: 2px"></article></main>';
+    document.body.innerHTML =
+      '<main class="shell"><article class="card" style="border-width: 2px"></article></main>';
     const target = document.querySelector('.card');
     if (!target) throw new Error('missing target');
 
@@ -37,7 +43,11 @@ describe('browser-layout-inspector', () => {
       value: 'red',
       priority: '',
     });
-    expect(report.inlineStyle).toContainEqual({ property: 'border-top-width', value: '2px', priority: '' });
+    expect(report.inlineStyle).toContainEqual({
+      property: 'border-top-width',
+      value: '2px',
+      priority: '',
+    });
   });
 
   it('[contract:browser-layout-inspector.css-provenance.query.v1] keeps commas inside functional and attribute selectors intact', () => {
@@ -59,6 +69,44 @@ describe('browser-layout-inspector', () => {
     });
   });
 
+  it('[contract:browser-layout-inspector.css-inspector.query.v1] separates individual source declarations from sorted final computed values', () => {
+    document.head.innerHTML = '<style>.card { color: red; padding: 12px !important; }</style>';
+    document.body.innerHTML =
+      '<article class="card" style="border-width: 2px; color: blue"></article>';
+    const target = document.querySelector('.card');
+    if (!target) throw new Error('missing target');
+
+    const inspector = inspectCssDeclarations(target);
+
+    expect(inspector.sourceDeclarations).toContainEqual(
+      expect.objectContaining({
+        source: 'inline',
+        stylesheetLabel: 'element.style',
+        property: 'color',
+        value: 'blue',
+        selector: null,
+      }),
+    );
+    expect(inspector.sourceDeclarations).toContainEqual(
+      expect.objectContaining({
+        source: 'author',
+        selector: '.card',
+        property: 'padding-top',
+        value: '12px',
+        priority: 'important',
+      }),
+    );
+    const computedProperties = inspector.computedDeclarations.map(
+      (declaration) => declaration.property,
+    );
+    expect(computedProperties).toEqual(
+      computedProperties.slice().sort((left, right) => left.localeCompare(right)),
+    );
+    expect(inspector.computedDeclarations).toContainEqual(
+      expect.objectContaining({ property: 'color', value: 'blue' }),
+    );
+  });
+
   it('[contract:browser-layout-inspector.geometry.query.v1] returns viewport, document, box, and reference-relative CSS pixel positions', () => {
     document.body.innerHTML = '<section id="reference"><article id="target"></article></section>';
     const reference = document.querySelector('#reference');
@@ -66,7 +114,14 @@ describe('browser-layout-inspector', () => {
     if (!reference || !target) throw new Error('missing fixture');
     setRect(reference, { x: 20, y: 30, width: 400, height: 300 });
     setRect(target, { x: 80, y: 95, width: 120, height: 40 });
-    setBoxMetrics(target, { offsetWidth: 124, offsetHeight: 44, clientWidth: 120, clientHeight: 40, scrollWidth: 180, scrollHeight: 90 });
+    setBoxMetrics(target, {
+      offsetWidth: 124,
+      offsetHeight: 44,
+      clientWidth: 120,
+      clientHeight: 40,
+      scrollWidth: 180,
+      scrollHeight: 90,
+    });
     Object.defineProperty(window, 'scrollX', { configurable: true, value: 10 });
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 15 });
 
@@ -83,6 +138,37 @@ describe('browser-layout-inspector', () => {
       deltaCssPx: { x: 60, y: 65 },
       edgeGapsCssPx: { leftToRight: -340, topToBottom: -235 },
     });
+  });
+
+  it('[contract:browser-layout-inspector.measurement-core.query.v1] exposes DOM-free comparison, Ruler, guide, and tolerance helpers for browser tests', () => {
+    const comparison = measureElementComparison(
+      { left: 20, right: 120, top: 30, bottom: 130, width: 100, height: 100 },
+      { left: 150, right: 210, top: 60, bottom: 110, width: 60, height: 50 },
+    );
+    expect(comparison).toMatchObject({
+      deltaCssPx: { x: 130, y: 30 },
+      cornerDeltasCssPx: { left: 130, right: 90, top: 30, bottom: -20 },
+      directionalEdgeGapsCssPx: { referenceRightToTargetLeft: 30, referenceBottomToTargetTop: -70 },
+      gaps: [
+        expect.objectContaining({
+          axis: 'horizontal',
+          cssPx: 30,
+          from: { box: 'reference', edge: 'right' },
+          to: { box: 'target', edge: 'left' },
+        }),
+      ],
+    });
+    const ruler = measureRuler({ x: 3, y: 4 }, { x: 13, y: 28 });
+    expect(ruler).toMatchObject({ width: 10, height: 24, distance: 26, angle: 67.38 });
+    expect(rulerGuides(ruler)).toEqual({ vertical: [3, 13], horizontal: [4, 28] });
+    expect(matchCssPixels(10.4, { expected: 10, toleranceCssPx: 0.5 })).toEqual({
+      actual: 10.4,
+      expected: 10,
+      toleranceCssPx: 0.5,
+      differenceCssPx: 0.4,
+      pass: true,
+    });
+    expect(matchCssPixels(10.6, { expected: 10, toleranceCssPx: 0.5 }).pass).toBe(false);
   });
 
   it('[contract:browser-layout-inspector.selector.query.v1] resolves a target and produces all extension payload sections together', () => {

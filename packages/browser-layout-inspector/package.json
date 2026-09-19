@@ -15,6 +15,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./measurement": {
+      "types": "./dist/measurement.d.ts",
+      "import": "./dist/measurement.js",
+      "require": "./dist/measurement.cjs"
     }
   },
   "scripts": {

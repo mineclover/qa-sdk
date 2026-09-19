@@ -1,7 +1,15 @@
 export { collectCssInfluences, splitSelectorList } from './css-influences.js';
+export { inspectCssDeclarations } from './css-inspector.js';
 export { extractComputedStyle } from './computed-style.js';
 export { extractElementMetrics, extractPosition, observeElementMetrics } from './metrics.js';
+export {
+  matchCssPixels,
+  measureElementComparison,
+  measureRuler,
+  rulerGuides,
+} from './measurement.js';
 export type * from './types.js';
+export type * from './measurement.js';
 
 import { collectCssInfluences } from './css-influences.js';
 import { extractComputedStyle } from './computed-style.js';
@@ -19,7 +27,9 @@ export function inspectElementLayout(
 ): ElementLayoutInspection {
   return {
     targetSelector: options.targetSelector ?? null,
-    ...(options.includeCssInfluences === false ? {} : { cssInfluences: collectCssInfluences(element) }),
+    ...(options.includeCssInfluences === false
+      ? {}
+      : { cssInfluences: collectCssInfluences(element) }),
     computedStyle: extractComputedStyle(element, options.computedProperties, options.pseudoElement),
     metrics: extractElementMetrics(element),
     position: extractPosition(element, options.referenceElement, options.referenceSelector ?? null),
@@ -34,6 +44,8 @@ export function inspectSelectorLayout(
 ): ElementLayoutInspection {
   const element = document.querySelector(selector);
   if (!element) throw new Error(`No element matched selector: ${selector}`);
-  const referenceElement = options.referenceSelector ? document.querySelector(options.referenceSelector) : null;
+  const referenceElement = options.referenceSelector
+    ? document.querySelector(options.referenceSelector)
+    : null;
   return inspectElementLayout(element, { ...options, targetSelector: selector, referenceElement });
 }
