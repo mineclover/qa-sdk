@@ -414,33 +414,33 @@ test('[contract:browser-layout-inspector.geometry.query.v1][contract:browser-lay
       'pointer-events',
       'none',
     );
-    const leftLabel = page.locator('[data-browser-layout-inspector-dimension="left"] span');
-    await leftLabel.hover();
-    await expect(leftLabel).toHaveCSS('background-color', 'rgb(17, 94, 89)');
-    const labelBox = await leftLabel.boundingBox();
+    const rightLabel = page.locator('[data-browser-layout-inspector-dimension="right"] span');
+    await rightLabel.hover();
+    await expect(rightLabel).toHaveCSS('background-color', 'rgb(17, 94, 89)');
+    const labelBox = await rightLabel.boundingBox();
     if (!labelBox) throw new Error('dimension label not visible');
     await page.mouse.move(labelBox.x + labelBox.width / 2, labelBox.y + labelBox.height / 2);
     await page.mouse.down();
-    const leftDimension = page.locator('[data-browser-layout-inspector-dimension="left"]');
-    await expect(leftDimension).toHaveAttribute(
+    const rightDimension = page.locator('[data-browser-layout-inspector-dimension="right"]');
+    await expect(rightDimension).toHaveAttribute(
       'data-browser-layout-inspector-dimension-active',
       '',
     );
-    await expect(leftDimension).toHaveCSS('border-color', 'rgb(94, 234, 212)');
+    await expect(rightDimension).toHaveCSS('border-color', 'rgb(94, 234, 212)');
     await page.mouse.move(
       labelBox.x + labelBox.width / 2 + 44,
       labelBox.y + labelBox.height / 2 + 28,
     );
     await page.mouse.up();
-    await expect(leftLabel).toHaveCSS('cursor', 'grab');
-    await expect(leftLabel).toHaveAttribute('style', /translate\(44px, 28px\)/);
-    await expect(leftDimension).not.toHaveAttribute(
+    await expect(rightLabel).toHaveCSS('cursor', 'grab');
+    await expect(rightLabel).toHaveAttribute('style', /translate\(44px, 28px\)/);
+    await expect(rightDimension).not.toHaveAttribute(
       'data-browser-layout-inspector-dimension-active',
     );
-    await leftLabel.click();
+    await rightLabel.click();
     await expect
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-      .toBe('A.left → B.left +30px');
+      .toBe('A.right → B.right -150px');
 
     await sendExtensionMessage(worker, inspectedTabId, {
       type: 'browser-layout-inspector.start-picker',
