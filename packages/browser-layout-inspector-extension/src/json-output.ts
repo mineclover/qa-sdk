@@ -9,7 +9,9 @@ export interface BrowserLayoutInspectorExchangeV1 {
   readonly exportedAt: string;
   readonly environment: PageToolState['environment'];
   readonly selected: PageToolState['selected'];
+  readonly workItems: PageToolState['workItems'];
   readonly inspection: PageToolState['inspection'];
+  readonly cssInspector: PageToolState['cssInspector'];
   readonly elementMeasurement: PageToolState['measurement'];
   readonly ruler: PageToolState['ruler'];
   readonly rulerSnapEnabled: boolean;
@@ -17,13 +19,18 @@ export interface BrowserLayoutInspectorExchangeV1 {
   readonly changedElementCount: number;
 }
 
-export function createLayoutExchange(state: PageToolState, exportedAt = new Date().toISOString()): BrowserLayoutInspectorExchangeV1 {
+export function createLayoutExchange(
+  state: PageToolState,
+  exportedAt = new Date().toISOString(),
+): BrowserLayoutInspectorExchangeV1 {
   return {
     schemaVersion: 'browser-layout-inspector.exchange.v1',
     exportedAt,
     environment: state.environment,
     selected: state.selected,
+    workItems: state.workItems,
     inspection: state.inspection,
+    cssInspector: state.cssInspector,
     elementMeasurement: state.measurement,
     ruler: state.ruler,
     rulerSnapEnabled: state.rulerSnapEnabled,

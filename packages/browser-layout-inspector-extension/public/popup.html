@@ -6,14 +6,26 @@
     <style>
       body { box-sizing: border-box; min-width: 320px; margin: 0; padding: 14px; color: #172033; font: 13px/1.4 system-ui, sans-serif; }
       h1 { margin: 0 0 10px; font-size: 16px; }
-      h2 { margin: 16px 0 7px; font-size: 13px; }
+      h2 { margin: 0 0 7px; font-size: 13px; }
+      h3 { margin: 12px 0 6px; color: #42526e; font-size: 12px; }
       p { margin: 0 0 8px; color: #52627c; }
       .actions { display: flex; flex-wrap: wrap; gap: 6px; }
       .tool-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; color: #42526e; }
       .tool-options label { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 500; }
       .tool-options input { width: auto; }
+      .panel { margin-top: 12px; padding: 12px; border: 1px solid #d9e0ec; border-radius: 7px; background: #fff; box-shadow: 0 1px 2px rgb(23 32 51 / .04); }
+      .panel-intro { margin-bottom: 9px; font-size: 12px; }
       .guide-count { font: 12px ui-monospace, monospace; }
       .selection { overflow: hidden; padding: 7px 8px; border: 1px solid #c9d3e4; border-radius: 4px; background: #f8faff; color: #243756; font: 12px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+      .selection-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+      .work-list { display: grid; gap: 5px; }
+      .work-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; }
+      .work-item-selector { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 5px 6px; border: 1px solid #aeb8cc; border-radius: 4px; color: #243756; background: #fff; font: 11px/1.3 ui-monospace, monospace; }
+      .work-item-focus { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 7px; min-width: 0; padding: 6px 7px; border: 1px solid #c9d3e4; border-radius: 4px; background: #f8faff; color: #243756; text-align: left; font: 12px/1.3 ui-monospace, monospace; }
+      .work-item-focus.active { border-color: #265ee8; box-shadow: inset 0 0 0 1px #265ee8; }
+      .work-item-label { font-weight: 800; }
+      .work-item-detail { min-width: 0; overflow: hidden; color: #52627c; text-overflow: ellipsis; white-space: nowrap; }
+      .work-item-clear { padding: 5px 7px; background: #52627c; font-size: 11px; }
       label { display: grid; gap: 4px; margin: 0 0 8px; font-weight: 600; }
       input { box-sizing: border-box; width: 100%; padding: 6px 8px; border: 1px solid #aeb8cc; border-radius: 4px; font: 12px ui-monospace, monospace; }
       button { padding: 7px 10px; border: 0; border-radius: 4px; background: #265ee8; color: white; font-weight: 700; cursor: pointer; }
@@ -22,33 +34,85 @@
       button:disabled { cursor: wait; opacity: .6; }
       details { margin-top: 16px; border-top: 1px solid #d9e0ec; padding-top: 10px; }
       summary { cursor: pointer; color: #52627c; }
+      .inspector-note { margin-top: -2px; font-size: 12px; }
+      .declaration-list { max-height: 250px; overflow: auto; border: 1px solid #d9e0ec; border-radius: 4px; background: #f8faff; }
+      .declaration-row { display: grid; grid-template-columns: minmax(90px, .8fr) minmax(100px, 1.2fr) auto auto; gap: 5px; align-items: center; padding: 6px; border-bottom: 1px solid #e6ebf3; font: 11px/1.3 ui-monospace, monospace; }
+      .declaration-row:last-child { border-bottom: 0; }
+      .declaration-row input { min-width: 0; padding: 4px 5px; }
+      .declaration-row button { padding: 4px 6px; font-size: 11px; }
+      .declaration-row .remove { background: #bc263c; }
+      .declaration-meta { grid-column: 1 / -1; color: #52627c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .computed-row { display: grid; grid-template-columns: minmax(105px, .8fr) minmax(120px, 1.2fr); gap: 8px; padding: 5px 7px; border-bottom: 1px solid #e6ebf3; font: 11px/1.3 ui-monospace, monospace; }
+      .computed-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .empty-state { padding: 8px; color: #52627c; font-size: 12px; }
+      .dom-tree { display: grid; gap: 2px; max-height: 340px; overflow: auto; padding: 6px; border: 1px solid #d9e0ec; border-radius: 4px; background: #f8faff; }
+      .dom-tree details { margin: 0; border: 0; padding: 0; }
+      .dom-tree summary { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 3px 2px; color: #42526e; font: 11px/1.35 ui-monospace, monospace; }
+      .dom-tree-node { min-width: 0; padding: 3px 5px; border: 0; border-radius: 3px; background: transparent; color: #243756; font: 11px/1.35 ui-monospace, monospace; text-align: left; }
+      .dom-tree-node:hover { background: #dde9ff; color: #173f9e; }
+      .dom-tree-children { display: grid; gap: 2px; margin-left: 12px; padding-left: 7px; border-left: 1px solid #c9d3e4; }
+      .dom-tree-truncated { padding: 3px 5px; color: #75829a; font: 11px/1.35 ui-monospace, monospace; }
       pre { max-height: 420px; margin: 8px 0 0; overflow: auto; padding: 10px; border-radius: 4px; background: #f3f6fb; white-space: pre-wrap; word-break: break-word; font: 11px/1.35 ui-monospace, monospace; }
     </style>
   </head>
   <body>
     <h1>Browser Layout Inspector</h1>
-    <p>Side Panel은 열린 채 유지됩니다. 요소 간격(A → B)과 자유 드래그 Ruler는 서로 다른 측정 도구입니다. Escape로 취소할 수 있습니다.</p>
-    <div class="actions"><button id="pick-select" type="button">요소 선택</button><button id="pick-measure" type="button">요소 간격 (A → B)</button><button id="ruler" class="secondary" type="button">Ruler</button><button id="refresh" class="secondary" type="button">새로고침</button></div>
-    <div class="tool-options"><label><input id="ruler-snap" type="checkbox" /> 8px snap</label><button id="pin-guides" class="secondary" type="button">Ruler 가이드 고정</button><button id="clear-guides" class="secondary" type="button">가이드 지우기</button><span id="guide-count" class="guide-count">가이드 0개</span></div>
-    <h2>현재 선택</h2>
-    <div id="selection" class="selection">선택된 요소 없음</div>
-    <h2>실시간 스타일</h2>
-    <label>CSS 속성 <input id="style-property" placeholder="padding-left" /></label>
-    <label>값 <input id="style-value" placeholder="24px" /></label>
-    <div class="actions"><button id="apply-style" type="button">즉시 적용</button><button id="hide-selected" class="danger" type="button">선택 숨기기</button><button id="restore-selected" class="secondary" type="button">선택 원복 / 다시 보이기</button><button id="restore-all" class="secondary" type="button">전체 원복</button></div>
-    <details>
-      <summary>셀렉터로 직접 검사 (보조 기능)</summary>
-      <label>대상 selector <input id="selector" placeholder='[data-measure-id="card"]' /></label>
-      <label>상대 위치 기준 selector (선택) <input id="reference-selector" placeholder="#app-shell" /></label>
-      <label>computed property 목록 (쉼표, 비우면 전체) <input id="properties" placeholder="display, gap, width" /></label>
-      <button id="inspect" type="button">직접 검사</button>
-    </details>
-    <h2>CSS 출력</h2>
-    <div class="actions"><button id="copy-css" class="secondary" type="button">CSS 복사</button><button id="export-png" class="secondary" type="button">Viewport PNG</button></div>
-    <h2>데이터 교환</h2>
-    <p>명시적으로 생성한 JSON에는 URL·viewport·scroll·DPR과 현재 측정 상태가 포함됩니다.</p>
-    <div class="actions"><button id="copy-json" class="secondary" type="button">JSON 복사</button><button id="download-json" class="secondary" type="button">JSON 저장</button></div>
-    <pre id="output" aria-live="polite">/* 요소 선택을 누른 뒤 페이지에서 대상을 클릭하세요. */</pre>
+    <p>측정, 요소 CSS, 화면 계층, 전체 스타일/내보내기를 각각의 패널에서 다룹니다.</p>
+
+    <section class="panel" data-browser-layout-inspector-panel="measurement">
+      <h2>측정과 선택</h2>
+      <p class="panel-intro">대상을 선택하고, 비교·Ruler·라벨링 작업을 관리합니다.</p>
+      <div class="actions"><button id="pick-select" type="button">요소 선택</button><button id="pick-auto-select" type="button">자동 선택</button><button id="pick-measure" type="button">요소 간격 (A → B)</button><button id="ruler" class="secondary" type="button">Ruler</button><button id="refresh" class="secondary" type="button">상태 새로고침</button></div>
+      <div class="tool-options"><label><input id="ruler-snap" type="checkbox" /> 8px snap</label><button id="clear-guides" class="secondary" type="button">Ruler 가이드 지우기</button><span id="guide-count" class="guide-count">Ruler 가이드 0개</span></div>
+      <h3>현재 작업</h3>
+      <div class="selection-workspace">
+        <div id="selection" class="selection">선택된 요소 없음</div>
+        <div id="work-items" class="work-list"><div class="empty-state">일반 선택, 비교 A/B, Ruler box가 여기에 남습니다.</div></div>
+      </div>
+      <p class="inspector-note">작업 행은 CSS Inspector 대상을 바꿉니다. 자동 선택 중에는 hover 대상이 갱신되고 Delete/Backspace로 숨깁니다.</p>
+    </section>
+
+    <section class="panel" data-browser-layout-inspector-panel="css-inspector">
+      <h2>CSS Inspector</h2>
+      <p class="panel-intro">선택 요소의 inline 편집, 매칭된 author 후보, 최종 computed 값을 분리해 봅니다.</p>
+      <h3>Element style — 편집 가능</h3>
+      <div id="inline-declarations" class="declaration-list"><div class="empty-state">요소를 선택하면 inline declaration을 편집할 수 있습니다.</div></div>
+      <label>새 CSS 속성 <input id="style-property" placeholder="padding-left" /></label>
+      <label>값 <input id="style-value" placeholder="24px" /></label>
+      <div class="tool-options"><label><input id="style-important" type="checkbox" /> !important</label><button id="apply-style" type="button">선언 추가 / 적용</button><button id="hide-selected" class="danger" type="button">선택 숨기기</button><button id="restore-selected" class="secondary" type="button">선택 원복 / 다시 보이기</button><button id="restore-all" class="secondary" type="button">전체 원복</button></div>
+      <h3>Matched author declarations — 읽기 전용</h3>
+      <div id="author-declarations" class="declaration-list"><div class="empty-state">선택된 요소의 CSS source 후보가 표시됩니다.</div></div>
+      <h3>Computed — 최종 브라우저 값</h3>
+      <label>Computed 필터 <input id="computed-filter" placeholder="예: display, grid, color" /></label>
+      <div id="computed-declarations" class="declaration-list"><div class="empty-state">선택된 요소의 최종 computed 값이 표시됩니다.</div></div>
+      <details>
+        <summary>셀렉터로 직접 검사 (보조 기능)</summary>
+        <label>대상 selector <input id="selector" placeholder='[data-measure-id="card"]' /></label>
+        <label>상대 위치 기준 selector (선택) <input id="reference-selector" placeholder="#app-shell" /></label>
+        <label>computed property 목록 (쉼표, 비우면 전체) <input id="properties" placeholder="display, gap, width" /></label>
+        <button id="inspect" type="button">직접 검사</button>
+      </details>
+      <h3>선택 요소 CSS 출력</h3>
+      <div class="actions"><button id="copy-css" class="secondary" type="button">CSS 복사</button></div>
+      <pre id="output" aria-live="polite">/* 요소 선택을 누른 뒤 페이지에서 대상을 클릭하세요. */</pre>
+    </section>
+
+    <section class="panel" data-browser-layout-inspector-panel="dom-tree">
+      <h2>화면 계층 구조</h2>
+      <p class="panel-intro">현재 문서의 body 하위 DOM을 제한된 깊이로 표시합니다. 노드를 누르면 해당 요소를 일반 선택으로 엽니다.</p>
+      <div class="actions"><button id="refresh-dom-tree" class="secondary" type="button">트리 새로고침</button></div>
+      <div id="dom-tree" class="dom-tree"><div class="empty-state">트리 새로고침으로 현재 페이지 구조를 읽습니다.</div></div>
+    </section>
+
+    <section class="panel" data-browser-layout-inspector-panel="export">
+      <h2>페이지 스타일과 내보내기</h2>
+      <p class="panel-intro">접근 가능한 현재 페이지 author stylesheet 전체를 CSS로 추출합니다. cross-origin CSSOM은 우회하지 않고 진단으로 남습니다.</p>
+      <div class="actions"><button id="extract-page-styles" class="secondary" type="button">페이지 스타일 추출</button><button id="copy-page-styles" class="secondary" type="button">페이지 CSS 복사</button><button id="download-page-styles" class="secondary" type="button">페이지 CSS 저장</button></div>
+      <pre id="page-style-output" aria-live="polite">/* 페이지 스타일 추출을 누르세요. */</pre>
+      <h3>측정 데이터와 화면 export</h3>
+      <p class="inspector-note">JSON에는 URL·viewport·scroll·DPR과 현재 측정 상태가 포함됩니다.</p>
+      <div class="actions"><button id="copy-json" class="secondary" type="button">JSON 복사</button><button id="download-json" class="secondary" type="button">JSON 저장</button><button id="export-png" class="secondary" type="button">Viewport PNG</button></div>
+    </section>
     <script src="popup.js"></script>
   </body>
 </html>

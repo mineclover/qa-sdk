@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "Manifest V3 extension shell for browser-layout-inspector.",
+  "files": [
+    "dist"
+  ],
   "type": "module",
-  "files": ["dist"],
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,7 +16,8 @@
     }
   },
   "scripts": {
-    "build": "tsup && cp public/manifest.json dist/manifest.json && cp public/popup.html dist/popup.html",
+    "build": "tsup && cp public/manifest.json dist/manifest.json && cp public/popup.html dist/popup.html && cp public/demo.html dist/demo.html",
+    "demo": "node scripts/demo-server.mjs",
     "test:extension": "corepack pnpm run build && playwright test -c playwright.extension.config.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"

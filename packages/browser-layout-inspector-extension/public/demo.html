@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Browser Layout Inspector Demo</title>
+    <style>
+      :root { color: #172033; background: #f3f6fb; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; }
+      .app-shell { width: min(1120px, calc(100% - 48px)); margin: 48px auto; }
+      .eyebrow { margin: 0 0 10px; color: #4f46e5; font: 700 13px/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+      h1 { margin: 0; font-size: clamp(30px, 5vw, 54px); letter-spacing: -.04em; }
+      .intro { max-width: 760px; margin: 16px 0 32px; color: #52627c; font-size: 17px; line-height: 1.6; }
+      .dashboard { display: grid; grid-template-columns: 1.35fr .85fr; gap: 24px; }
+      .card { border: 1px solid #d9e0ec; border-radius: 18px; background: white; box-shadow: 0 16px 35px rgb(34 52 84 / 0.08); }
+      .hero-card { padding: 28px; }
+      .hero-card > header { display: flex; justify-content: space-between; align-items: start; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid #e7edf7; }
+      .hero-card h2 { margin: 0; font-size: 24px; }
+      .status { padding: 6px 10px; border-radius: 999px; background: #e0f7eb; color: #147a45; font-size: 12px; font-weight: 800; }
+      .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
+      .metric { min-height: 112px; padding: 16px; border-radius: 12px; background: #f7f9fd; }
+      .metric dt { color: #6b7a94; font-size: 12px; font-weight: 700; }
+      .metric dd { margin: 10px 0 0; color: #243756; font: 800 28px/1 ui-monospace, monospace; }
+      .feature-list { display: grid; gap: 10px; margin: 24px 0 0; padding: 0; list-style: none; }
+      .feature-list li { padding: 12px 14px; border-left: 4px solid #8b5cf6; border-radius: 0 8px 8px 0; background: #faf8ff; }
+      .side-stack { display: flex; flex-direction: column; gap: 24px; }
+      .side-card { padding: 22px; }
+      .side-card h3 { margin: 0; font-size: 16px; }
+      .side-card p { color: #52627c; line-height: 1.55; }
+      .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+      button { padding: 9px 12px; border: 0; border-radius: 8px; background: #4f46e5; color: white; font: 700 13px/1 system-ui, sans-serif; cursor: pointer; }
+      button.secondary { background: #dce4f3; color: #31425f; }
+      .demo-target { padding: 18px; border: 2px dashed #f59e0b; border-radius: 12px; background: linear-gradient(135deg, #fff9eb, #fff); color: #92400e; }
+      .demo-target strong { display: block; margin-bottom: 5px; font-size: 16px; }
+      @media (max-width: 760px) { .app-shell { width: min(100% - 28px, 1120px); margin: 28px auto; } .dashboard { grid-template-columns: 1fr; } .metric-grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell" id="app-shell">
+      <p class="eyebrow">Layout playground</p>
+      <h1>Browser Layout Inspector Demo</h1>
+      <p class="intro">확장 프로그램을 열고 요소 선택을 누른 뒤 이 페이지의 카드·Grid·버튼을 선택해보세요. Side Panel에서 CSS 선언, 최종 computed 값, A → B 간격, Ruler를 모두 시험할 수 있습니다.</p>
+      <section class="dashboard" aria-label="layout demo">
+        <article class="card hero-card" id="reference">
+          <header>
+            <div><p class="eyebrow">CSS Grid</p><h2 id="target">선택해 볼 대상 요소</h2></div>
+            <span class="status">Healthy</span>
+          </header>
+          <dl class="metric-grid" id="metric-grid">
+            <div class="metric"><dt>Conversion</dt><dd>7.4%</dd></div>
+            <div class="metric"><dt>Sessions</dt><dd>18,420</dd></div>
+            <div class="metric"><dt>Revenue</dt><dd>₩2.8M</dd></div>
+          </dl>
+          <ul class="feature-list"><li>Author CSS 선언 후보를 행 단위로 읽습니다.</li><li>Computed 값은 실제 브라우저 최종값입니다.</li><li>Element style만 안전하게 즉시 수정하고 원복합니다.</li></ul>
+        </article>
+        <aside class="side-stack">
+          <section class="card side-card"><h3>Flex controls</h3><p>버튼을 선택해 <code>display</code>, padding, color 같은 final computed 값을 확인해보세요.</p><div class="controls"><button type="button">Primary action</button><button class="secondary" type="button">Secondary</button></div></section>
+          <section class="card side-card demo-target" id="demo-target"><strong>A → B 측정 대상</strong><span><code>#reference</code>를 A로, 이 박스를 B로 선택해 directional edge gap을 확인하세요.</span></section>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>
