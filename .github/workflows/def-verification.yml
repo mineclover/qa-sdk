@@ -32,6 +32,8 @@ jobs:
   verification:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     env:
       VERIFICATION_SPEC_IDS: spec-definition-merge-validation,spec-definition-separation,spec-tracker-system
 
@@ -39,7 +41,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          # Definition verification does not consume private submodules. Avoid
+          # making this gate depend on cross-repository credentials.
+          submodules: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -52,10 +56,10 @@ jobs:
           corepack prepare pnpm@10.30.3 --activate
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --filter '@qa-sdk/cli...' --frozen-lockfile
 
       - name: Build workspace
-        run: pnpm -r run build
+        run: pnpm --workspace-concurrency=1 --filter '@qa-sdk/cli...' run build
 
       - name: Sync definitions
         run: node packages/cli/dist/index.js def sync
@@ -90,7 +94,7 @@ jobs:
 
       - name: Package verification artifact
         id: artifact
-        if: always()
+        if: ${{ always() && steps.binding.outcome == 'success' && hashFiles('artifacts/verification-bindings.json', 'artifacts/verification-summary.json') != '' }}
         run: |
           set -euo pipefail
           run_completed_at="$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)"
@@ -104,7 +108,7 @@ jobs:
             --json
 
       - name: Derive verification read model
-        if: always()
+        if: ${{ always() && steps.artifact.outcome == 'success' && hashFiles('artifacts/verification-artifact.json') != '' }}
         run: |
           set -euo pipefail
           node packages/cli/dist/index.js def state \
@@ -118,6 +122,7 @@ jobs:
         with:
           name: definition-verification-${{ github.run_id }}
           path: artifacts/
+          if-no-files-found: ignore
           retention-days: 14
 
       - name: Fail when verification suite failed

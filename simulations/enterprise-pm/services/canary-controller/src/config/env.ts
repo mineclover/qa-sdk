@@ -4,7 +4,12 @@
 
 import { z } from 'zod';
 
-const envSchema = z.object({
+const optionalPositiveInt = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  z.coerce.number().int().positive().optional(),
+);
+
+export const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(5300),
   CORS_ORIGIN: z.string().default('*'),
   SIM_LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
@@ -24,12 +29,12 @@ const envSchema = z.object({
   // dwellTime override — controller-config.yaml 의 dwell.promotionMs 보다 우선.
   // 시뮬 환경에서 cycle MS=5000 + dwell=15000 으로 4 promote 가 ~75s 안에 완료되도록
   // 단축 가능. 미설정 시 yaml 값 사용 (production 기본 120000).
-  SIM_CONTROLLER_DWELL_MS: z.coerce.number().int().positive().optional(),
+  SIM_CONTROLLER_DWELL_MS: optionalPositiveInt,
   // 시뮬 candidate 시드 — startup 시 InMemorySimServiceCatalog 에 candidate 등록.
   // 시나리오 9 setup 의 v3=stable + v4=undeployed 가정에 따라 기본은 미설정 (v3 stable
   // 만 fixture). 값 설정 시 해당 정수 버전을 candidate 로 추가하여 controller 가 weight
   // 100 도달 시 transition 가능.
-  SIM_CONTROLLER_CANDIDATE_VERSION: z.coerce.number().int().positive().optional(),
+  SIM_CONTROLLER_CANDIDATE_VERSION: optionalPositiveInt,
   SIM_DB_WRITE_URL: z.string().url(),
   SIM_METRICS_COLLECTOR_URL: z.string().url(),
   QA_INGEST_URL: z.string().url(),
@@ -45,5 +50,10 @@ const envSchema = z.object({
   SIM_CONTROLLER_TARGET_SERVICE: z.string().default('approval'),
 });
 
-export const env = envSchema.parse(process.env);
 export type ControllerEnv = z.infer<typeof envSchema>;
+
+export function parseEnv(source: NodeJS.ProcessEnv = process.env): ControllerEnv {
+  return envSchema.parse(source);
+}
+
+export const env = parseEnv();

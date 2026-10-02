@@ -121,7 +121,7 @@ export class ConcurrencyLimiter {
     // 대기 중인 waiter가 있으면 슬롯 즉시 양도
     if (slot.waiters.length > 0 && slot.current < slot.max) {
       const next = slot.waiters.shift()!;
-      if (next.timer !== undefined) globalThis.clearTimeout(next.timer as number);
+      if (next.timer !== undefined) clearTimeout(next.timer);
       slot.current += 1;
       next.resolve();
     }

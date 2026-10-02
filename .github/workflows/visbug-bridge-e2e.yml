@@ -19,10 +19,15 @@ jobs:
   visbug-bridge-e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          # rlsc-analysis is a private submodule. Use a fine-grained read
+          # token with access to that repository and qa-sdk.
+          token: ${{ secrets.RLSC_ANALYSIS_READ_TOKEN || github.token }}
 
       - uses: actions/setup-node@v4
         with:
