@@ -94,7 +94,7 @@ jobs:
 
       - name: Package verification artifact
         id: artifact
-        if: ${{ always() && steps.binding.outcome == 'success' && hashFiles('artifacts/verification-bindings.json', 'artifacts/verification-summary.json') != '' }}
+        if: ${{ always() && steps.binding.outcome == 'success' && hashFiles('artifacts/verification-bindings.json') != '' && hashFiles('artifacts/verification-summary.json') != '' }}
         run: |
           set -euo pipefail
           run_completed_at="$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)"
