@@ -2,15 +2,11 @@
 // @def.doc platform-demo-system
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  서비스 인덱스 — 4D grid page (API-backed)
+//  서비스 인덱스 — 4D grid page (catalog-backed mock read model)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import {
-  fetchServiceCells,
-  fetchServiceDecode,
-  type ServiceCellsResponse,
-  type ServiceDecodeResponse,
-} from '../registry.js';
+import type { ServiceCellsResponse, ServiceDecodeResponse } from '../registry.js';
+import { fetchMockServiceCells, fetchMockServiceDecode } from '../mock-service-api.js';
 import { densityFill, densityInk } from 'weighted-ui';
 import {
   DEMO_ENVS,
@@ -21,9 +17,16 @@ import {
   DEMO_PERM_SVC_VALUES,
   DEMO_EVT_SVC_VALUES,
   DEMO_SVC_SHAPE,
-  DEMO_ROLES_V2,
-  DEMO_EVENTS_V2,
+  DEMO_SVC_STRIDES,
+  DEMO_ROLE_CAP,
+  DEMO_EVENT_CAP,
+  DEMO_INITIATORS,
+  demoCalcPermAddr,
+  demoRolesFor,
+  demoEventsFor,
+  type DemoVer,
 } from 'demo-snapshot';
+import { EVENT_INITIATOR_CAP, eventAddress } from '../event-address.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -38,14 +41,31 @@ export interface ServiceState {
 
 // ── Dimension metadata (for axis bar labels only — no codec needed) ────────
 
-const DIM_META: Record<SvcDimKey, { label: string; size: number }> = {
-  env: { label: '환경 (env)', size: DEMO_SVC_SHAPE[0] },
-  region: { label: '리전 (region)', size: DEMO_SVC_SHAPE[1] },
-  svc_name: { label: '서비스 (svc)', size: DEMO_SVC_SHAPE[2] },
-  namespace: { label: '네임스페이스 (ns)', size: DEMO_SVC_SHAPE[3] },
+const DIM_META: Record<SvcDimKey, { label: string; size: number; entries: number }> = {
+  env: { label: '환경 (env)', size: DEMO_SVC_SHAPE[0], entries: DEMO_ENVS.length },
+  region: { label: '리전 (region)', size: DEMO_SVC_SHAPE[1], entries: DEMO_REGIONS.length },
+  svc_name: { label: '서비스 (svc)', size: DEMO_SVC_SHAPE[2], entries: DEMO_SVCS.length },
+  namespace: { label: '네임스페이스 (ns)', size: DEMO_SVC_SHAPE[3], entries: DEMO_NSS.length },
 };
 
 const ALL_DIMS: readonly SvcDimKey[] = ['env', 'region', 'svc_name', 'namespace'] as const;
+
+const SERVICE_CAPACITY = DEMO_SVC_SHAPE.reduce((total, capacity) => total * capacity, 1);
+const SERVICE_VALID_ENTRIES =
+  DEMO_ENVS.length * DEMO_REGIONS.length * DEMO_SVCS.length * DEMO_NSS.length;
+
+function serviceFormula(): string {
+  const labels = ['env', 'region', 'svc_name', 'ns'];
+  return `encode([${labels.join(', ')}]) = ${labels
+    .map((label, index) => `(${label}−1)×${DEMO_SVC_STRIDES[index]}`)
+    .join(' + ')}`;
+}
+
+function serviceCatalogSummary(): string {
+  const entries = `[${DEMO_ENVS.length}, ${DEMO_REGIONS.length}, ${DEMO_SVCS.length}, ${DEMO_NSS.length}]`;
+  const capacity = `[${DEMO_SVC_SHAPE.join(', ')}]`;
+  return `${serviceFormula()} · entries ${entries} · capacity ${capacity} · 유효 ${SERVICE_VALID_ENTRIES}개 / 주소 0–${SERVICE_CAPACITY - 1}`;
+}
 
 // ── Env tag ───────────────────────────────────────────────────────────────
 
@@ -68,18 +88,37 @@ function renderServiceDetail(
   decoded: ServiceDecodeResponse,
   permPos: number,
   evtPos: number,
+  ver: DemoVer,
 ): void {
   const { env, region, svc_name, namespace, envKo, regionKo, svcNameKo, namespaceKo } = decoded;
   const inPerm = permPos >= 0;
   const inEvt = evtPos >= 0;
 
+  const roles = demoRolesFor(ver);
+  const events = demoEventsFor(ver);
+  const permissionCapacity = DEMO_ROLE_CAP[ver];
+  const eventCapacity = DEMO_EVENT_CAP[ver] * EVENT_INITIATOR_CAP;
+  const permAddr = inPerm ? demoCalcPermAddr(permPos + 1, 1, ver) : null;
+  const evtAddr = inEvt ? eventAddress(evtPos + 1, 1, 1, ver) : null;
+  const permStart = permAddr ?? 0;
+  const evtStart = evtAddr ?? 0;
+  const positions = [
+    DEMO_ENVS.indexOf(env as (typeof DEMO_ENVS)[number]) + 1,
+    DEMO_REGIONS.indexOf(region as (typeof DEMO_REGIONS)[number]) + 1,
+    DEMO_SVCS.indexOf(svc_name as (typeof DEMO_SVCS)[number]) + 1,
+    DEMO_NSS.indexOf(namespace as (typeof DEMO_NSS)[number]) + 1,
+  ];
+  const addressCalculation = positions
+    .map((position, index) => `(${position}−1)×${DEMO_SVC_STRIDES[index]}`)
+    .join(' + ');
+
   const permInfo = inPerm
-    ? `<span class="info-badge info-badge-green">권한 인덱스 pos ${permPos + 1}</span>`
-    : `<span class="info-badge info-badge-gray">권한 없음</span>`;
+    ? `<button type="button" class="service-ref-link" data-nav-sheet="permission" data-nav-address="${permAddr}" aria-label="권한 인덱스 permission:${ver}:${permAddr} 열기"><code>permission:${ver}:${permAddr}</code><span>권한 범위 열기 →</span></button>`
+    : `<span class="info-badge info-badge-gray">권한 index_ref 없음</span>`;
 
   const evtInfo = inEvt
-    ? `<span class="info-badge info-badge-green">이벤트 인덱스 pos ${evtPos + 1}</span>`
-    : `<span class="info-badge info-badge-gray">이벤트 없음</span>`;
+    ? `<button type="button" class="service-ref-link" data-nav-sheet="event" data-nav-address="${evtAddr}" aria-label="이벤트 인덱스 event:${ver}:${evtAddr} 열기"><code>event:${ver}:${evtAddr}</code><span>이벤트 범위 열기 →</span></button>`
+    : `<span class="info-badge info-badge-gray">이벤트 index_ref 없음</span>`;
 
   container.innerHTML = `
     <div class="sp-section">
@@ -90,6 +129,10 @@ function renderServiceDetail(
           <span class="detail-value" style="font-size:1.4rem;font-family:var(--font-num)">${value}</span>
         </div>
         <code class="addr-code">service:v1:${value}</code>
+        <div class="service-ref-range">
+          <div>서비스 v1 · capacity [${DEMO_SVC_SHAPE.join(', ')}]</div>
+          <code>${addressCalculation} = ${value}</code>
+        </div>
       </div>
     </div>
     <div class="sp-section">
@@ -133,30 +176,42 @@ function renderServiceDetail(
         ${
           inPerm
             ? `
-        <div style="margin-top:8px">
-          <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:.05em;margin-bottom:4px">권한 범위</div>
-          <div style="font-size:0.72rem;color:var(--text-muted)">
-            ${DEMO_ROLES_V2.length}개 역할 (v2 기준) →
-            값 ${permPos * DEMO_ROLES_V2.length}–${permPos * DEMO_ROLES_V2.length + DEMO_ROLES_V2.length - 1}
-          </div>
+        <div class="service-ref-range">
+          <div class="service-ref-range-title">권한 범위 · ${ver}</div>
+          <div>${roles.length}개 유효 역할 · capacity ${permissionCapacity}</div>
+          <div>유효 값 ${permStart}–${permStart + roles.length - 1}</div>
+          <code>주소 공간 ${permStart}–${permStart + permissionCapacity - 1}</code>
         </div>`
             : ''
         }
         ${
           inEvt
             ? `
-        <div style="margin-top:8px">
-          <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:.05em;margin-bottom:4px">이벤트 범위</div>
-          <div style="font-size:0.72rem;color:var(--text-muted)">
-            ${DEMO_EVENTS_V2.length}가지 이벤트 × 2 initiator →
-            값 ${evtPos * DEMO_EVENTS_V2.length * 2}–${evtPos * DEMO_EVENTS_V2.length * 2 + DEMO_EVENTS_V2.length * 2 - 1}
-          </div>
+        <div class="service-ref-range">
+          <div class="service-ref-range-title">이벤트 범위 · ${ver}</div>
+          <div>${events.length}개 이벤트 × ${DEMO_INITIATORS.length} initiator · capacity ${eventCapacity}</div>
+          <div>유효 값 ${evtStart}–${evtStart + (events.length - 1) * EVENT_INITIATOR_CAP + DEMO_INITIATORS.length - 1}</div>
+          <code>주소 공간 ${evtStart}–${evtStart + eventCapacity - 1}</code>
         </div>`
             : ''
         }
       </div>
     </div>
   `;
+
+  container.querySelectorAll<HTMLButtonElement>('.service-ref-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      const sheet = link.dataset.navSheet;
+      const address = Number(link.dataset.navAddress);
+      if ((sheet !== 'permission' && sheet !== 'event') || !Number.isFinite(address)) return;
+      document.dispatchEvent(
+        new CustomEvent('navigate-to', {
+          detail:
+            sheet === 'permission' ? { sheet, permAddr: address } : { sheet, evtAddr: address },
+        }),
+      );
+    });
+  });
 }
 
 // ── Sidebar ───────────────────────────────────────────────────────────────
@@ -269,6 +324,7 @@ function buildAxisBar(
         'axis-btn' + (isActive ? ' axis-btn-active' : '') + (isOther ? ' axis-btn-other' : '');
       btn.dataset.dim = dim;
       btn.dataset.axis = axis;
+      btn.title = `${meta.label}: 유효 ${meta.entries}개 / capacity ${meta.size}`;
 
       if (isActive) {
         btn.style.background = '#e8eef5';
@@ -278,7 +334,7 @@ function buildAxisBar(
 
       btn.innerHTML = `
         <span class="axis-btn-name">${dim}</span>
-        <span class="axis-btn-ko">${meta.label} · ${meta.size}</span>
+        <span class="axis-btn-ko">${meta.label} · ${meta.entries}개 / cap ${meta.size}</span>
       `;
 
       if (!isOther) {
@@ -349,6 +405,7 @@ function renderGrid(
       const td = document.createElement('td');
       td.className = 'xl-cell svc-cell-density';
       td.setAttribute('role', 'gridcell');
+      td.dataset.value = String(value);
       td.tabIndex = 0;
       if (value === selectedValue) td.classList.add('selected');
 
@@ -367,8 +424,22 @@ function renderGrid(
     });
   });
 
+  const shell = document.createElement('div');
+  shell.className = 'service-grid-shell';
+
+  const summary = document.createElement('div');
+  summary.className = 'service-catalog-summary';
+  summary.innerHTML = `
+    <span class="service-catalog-summary-label">서비스 주소 계산</span>
+    <code>${serviceCatalogSummary()}</code>
+  `;
+
+  shell.append(summary, tbl);
+  container.dataset.serviceFormula = serviceFormula();
+  container.dataset.serviceCapacity = String(SERVICE_CAPACITY);
+  container.dataset.serviceStrides = DEMO_SVC_STRIDES.join(',');
   container.innerHTML = '';
-  container.appendChild(tbl);
+  container.appendChild(shell);
 }
 
 // ── Main export ───────────────────────────────────────────────────────────
@@ -388,24 +459,18 @@ export async function renderServicePage(
   spContent: HTMLElement,
   state: ServiceState,
   handlers: ServicePageHandlers,
+  ver: DemoVer = 'v2',
 ): Promise<void> {
   // Axis bar (synchronous — no API needed)
   buildAxisBar(xAxisContainer, yAxisContainer, state, handlers.onAxisChange);
 
-  // Show loading state
-  gridContainer.innerHTML = `<div style="padding:2rem;color:var(--text-muted)">로딩 중...</div>`;
-
-  let data: ServiceCellsResponse;
-  try {
-    data = await fetchServiceCells({
-      xDim: state.xDim,
-      yDim: state.yDim,
-      fixed: state.fixed,
-    });
-  } catch (e) {
-    gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
-    return;
-  }
+  // Read from the bundled catalog. No API, Worker, or registry is required.
+  gridContainer.innerHTML = `<div style="padding:2rem;color:var(--text-muted)">목 데이터 준비 중...</div>`;
+  const data = await fetchMockServiceCells({
+    xDim: state.xDim,
+    yDim: state.yDim,
+    fixed: state.fixed,
+  });
 
   // Grid
   renderGrid(gridContainer, state, data, (v) => {
@@ -430,7 +495,7 @@ export async function renderServicePage(
   if (state.selectedValue !== null) {
     spPlaceholder.classList.add('hidden');
     spContent.classList.remove('hidden');
-    await renderServiceDetailPanel(spContent, state.selectedValue);
+    await renderServiceDetailPanel(spContent, state.selectedValue, ver);
   } else {
     spContent.classList.add('hidden');
     spPlaceholder.classList.remove('hidden');
@@ -440,13 +505,14 @@ export async function renderServicePage(
 export async function renderServiceDetailPanel(
   container: HTMLElement,
   value: number,
+  ver: DemoVer = 'v2',
 ): Promise<void> {
-  container.innerHTML = `<div style="padding:1rem;color:var(--text-muted)">로딩 중...</div>`;
+  container.innerHTML = `<div style="padding:1rem;color:var(--text-muted)">목 데이터 해석 중...</div>`;
   try {
-    const decoded = await fetchServiceDecode(value);
+    const decoded = await fetchMockServiceDecode(value);
     const permPos = (DEMO_PERM_SVC_VALUES as readonly number[]).indexOf(value);
     const evtPos = (DEMO_EVT_SVC_VALUES as readonly number[]).indexOf(value);
-    renderServiceDetail(container, value, decoded, permPos, evtPos);
+    renderServiceDetail(container, value, decoded, permPos, evtPos, ver);
   } catch (e) {
     container.innerHTML = `<div style="padding:1rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
   }

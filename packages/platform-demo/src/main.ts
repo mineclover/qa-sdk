@@ -49,8 +49,9 @@ import {
   demoEventsFor,
   demoFeatures,
   demoRoleStride,
-  demoEvtStride,
+  DEMO_SVC_STRIDES,
 } from 'demo-snapshot';
+import { EVENT_INITIATOR_CAP, eventStride } from './event-address.js';
 import { resetGrants } from './registry.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -93,6 +94,7 @@ const SHEET_IDS: readonly SheetId[] = [
 
 // Sheets that depend on the active version
 const VERSION_SENSITIVE_SHEETS: readonly SheetId[] = [
+  'service',
   'permission',
   'event',
   'scenario',
@@ -239,7 +241,7 @@ const prefixMetaContainer = document.getElementById('prefix-meta-container')!;
 function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string } {
   const rc = DEMO_ROLE_CAP[ver];
   const ec = DEMO_EVENT_CAP[ver];
-  const ic = DEMO_INITIATORS.length;
+  const ic = EVENT_INITIATOR_CAP;
   const psc = DEMO_PERM_SVC_VALUES.length;
   const esc = DEMO_EVT_SVC_VALUES.length;
   const fc = demoFeatures(ver).length;
@@ -250,7 +252,7 @@ function getSheetInfo(sheet: SheetId, ver: Ver): { shape: string; slots: string 
 
   switch (sheet) {
     case 'overview':
-      return { shape: 'n차원 참조 주소 체계', slots: '프로젝트 개요' };
+      return { shape: '서비스 운영 연결을 위한 관측 좌표', slots: '요청 → 판정 → 증거' };
     case 'service':
       return {
         shape: `service:v1 · entries ${serviceEntriesShape}`,
@@ -309,8 +311,7 @@ function updateFormulaBar(): void {
 
   if (sheet === 'overview') {
     nameBox.textContent = '—';
-    fbFormula.textContent =
-      'encode([dim₁, dim₂, …, dimₙ]) → 단일 정수 주소  |  protobuf varint 전송';
+    fbFormula.textContent = '서비스 요청 → 권한 판정 → 이벤트 주소 → address_context → 운영 증거';
   } else if (sheet === 'service') {
     const { xDim, yDim, selectedValue } = state.svc;
     if (selectedValue !== null) {
@@ -318,7 +319,7 @@ function updateFormulaBar(): void {
       fbFormula.textContent = `service:v1:${selectedValue}`;
     } else {
       nameBox.textContent = '—';
-      fbFormula.textContent = `encode([env, region, svc_name, ns]) = (env−1)×20 + (region−1)×10 + (svc_name−1)×2 + (ns−1)  |  X: ${xDim}  Y: ${yDim}`;
+      fbFormula.textContent = `encode([env, region, svc_name, namespace]) = (env−1)×${DEMO_SVC_STRIDES[0]} + (region−1)×${DEMO_SVC_STRIDES[1]} + (svc_name−1)×${DEMO_SVC_STRIDES[2]} + (namespace−1)×${DEMO_SVC_STRIDES[3]}  |  X: ${xDim}  Y: ${yDim}`;
     }
   } else if (sheet === 'permission') {
     const { selectedValue } = state.perm;
@@ -351,8 +352,8 @@ function updateFormulaBar(): void {
   } else if (sheet === 'access') {
     nameBox.textContent = '—';
     const rStride = demoRoleStride(ver);
-    const eStride = demoEvtStride(ver);
-    fbFormula.textContent = `permAddr = (perm_svc−1)×${rStride} + (role−1)  |  evtAddr = (svc−1)×${eStride} + (event−1)×2 + (init−1)`;
+    const eStride = eventStride(ver);
+    fbFormula.textContent = `permAddr = (perm_svc−1)×${rStride} + (role−1)  |  evtAddr = (svc−1)×${eStride} + (event−1)×${EVENT_INITIATOR_CAP} + (init−1)`;
   } else if (sheet === 'logging') {
     nameBox.textContent = '—';
     fbFormula.textContent = `log.svc = service:v1:N  |  log.perm = permission:${ver}:N  |  log.evt = event:${ver}:N  →  구조화 로그`;
@@ -368,13 +369,13 @@ function updateFormulaBar(): void {
   } else {
     const { selectedValue, fixedInitiator } = state.evt;
     const initLabel = fixedInitiator === 1 ? 'web' : 'mobile';
-    const svcStride = demoEvtStride(ver);
+    const svcStride = eventStride(ver);
     if (selectedValue !== null) {
       nameBox.textContent = String(selectedValue);
-      fbFormula.textContent = `event:${ver}:${selectedValue}  =  (svc−1)×${svcStride} + (event−1)×2 + (initiator−1)`;
+      fbFormula.textContent = `event:${ver}:${selectedValue}  =  (svc−1)×${svcStride} + (event−1)×${EVENT_INITIATOR_CAP} + (initiator−1)`;
     } else {
       nameBox.textContent = '—';
-      fbFormula.textContent = `encode([svc, event, initiator]) = (svc−1)×${svcStride} + (event−1)×2 + (initiator−1)  |  initiator: ${initLabel}`;
+      fbFormula.textContent = `encode([svc, event, initiator]) = (svc−1)×${svcStride} + (event−1)×${EVENT_INITIATOR_CAP} + (initiator−1)  |  initiator: ${initLabel}`;
     }
   }
 }
@@ -483,6 +484,17 @@ resetBtn?.addEventListener('click', async () => {
   resetBtn.textContent = '초기화 중...';
   (resetBtn as HTMLButtonElement).disabled = true;
   try {
+    // The bundled demo read models are immutable and do not need a Worker/D1
+    // reset. Keep this control useful only for the grant editor, where the
+    // external mutation route still exists.
+    const mutableSheets: readonly SheetId[] = ['grant', 'version', 'perm-engine'];
+    if (!mutableSheets.includes(state.sheet)) {
+      resetBtn.textContent = '목 데이터 고정';
+      setTimeout(() => {
+        resetBtn.textContent = '초기화';
+      }, 1500);
+      return;
+    }
     await resetGrants();
     // 현재 시트가 DB 의존 시트면 re-render
     const dbSheets: SheetId[] = ['scenario', 'grant', 'version', 'perm-engine'];
@@ -535,7 +547,7 @@ function repaintService(): void {
         if (v !== null) {
           svcSpPlaceholder.classList.add('hidden');
           svcSpContent.classList.remove('hidden');
-          renderServiceDetailPanel(svcSpContent, v).catch(console.error);
+          renderServiceDetailPanel(svcSpContent, v, state.ver).catch(console.error);
         } else {
           svcSpContent.classList.add('hidden');
           svcSpPlaceholder.classList.remove('hidden');
@@ -557,6 +569,7 @@ function repaintService(): void {
         updateStatusSel(null);
       },
     },
+    state.ver,
   ).catch(console.error);
 }
 
@@ -625,7 +638,22 @@ interface NavDetail {
 }
 
 document.addEventListener('navigate-to', ((e: CustomEvent<NavDetail>) => {
-  const { sheet, svcAddr, permAddr } = e.detail;
+  const { sheet, svcAddr, permAddr, evtAddr } = e.detail;
+
+  // Set selection before rendering. The event page chooses its initiator
+  // cache synchronously, so deriving it first prevents a mobile grid from
+  // rendering while a web address is selected (and vice versa).
+  if (sheet === 'service' && svcAddr !== undefined) {
+    state.svc.selectedValue = svcAddr;
+  }
+  if (sheet === 'permission' && permAddr !== undefined) {
+    state.perm.selectedValue = permAddr;
+  }
+  if (sheet === 'event' && evtAddr !== undefined) {
+    const initiatorPos = (evtAddr % EVENT_INITIATOR_CAP) + 1;
+    if (initiatorPos <= DEMO_INITIATORS.length) state.evt.fixedInitiator = initiatorPos;
+    state.evt.selectedValue = evtAddr;
+  }
 
   // Force re-render of target sheet with current version
   const sheetEl = document.getElementById(`sheet-${sheet}`);
@@ -635,22 +663,30 @@ document.addEventListener('navigate-to', ((e: CustomEvent<NavDetail>) => {
 
   // Post-navigation selection
   if (sheet === 'service' && svcAddr !== undefined) {
-    state.svc.selectedValue = svcAddr;
     updateStatusSel(svcAddr);
     updateFormulaBar();
+    svcSpPlaceholder.classList.add('hidden');
+    svcSpContent.classList.remove('hidden');
+    renderServiceDetailPanel(svcSpContent, svcAddr, state.ver).catch(console.error);
     // Highlight cell after render
     requestAnimationFrame(() => {
       const cell = svcGridContainer.querySelector(`[data-value="${svcAddr}"]`);
       if (cell) {
-        cell.classList.add('cell-selected');
+        cell.classList.add('selected');
         cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     });
   }
   if (sheet === 'permission' && permAddr !== undefined) {
-    state.perm.selectedValue = permAddr;
     updateStatusSel(permAddr);
     updateFormulaBar();
+    refreshPermDetail(permSpPlaceholder, permSpContent, permAddr, state.ver).catch(console.error);
+  }
+  if (sheet === 'event' && evtAddr !== undefined) {
+    updateStatusSel(evtAddr);
+    updateFormulaBar();
+    const initiator = state.evt.fixedInitiator === 1 ? 'web' : 'mobile';
+    refreshEventDetail(evtSpPlaceholder, evtSpContent, evtAddr, initiator, state.ver);
   }
 }) as EventListener);
 

@@ -13,21 +13,20 @@
 import {
   DEMO_ROLE_CAP,
   DEMO_EVENT_CAP,
-  DEMO_INITIATORS,
   DEMO_KO,
   DEMO_SVC_SHAPE,
   DEMO_SVC_STRIDES,
   DEMO_PERM_SVC_VALUES,
   DEMO_EVT_SVC_VALUES,
+  demoEncodeSvc,
   demoRolesFor,
   demoRoleStride,
   demoEventsFor,
-  demoEvtStride,
   demoCalcPermAddr,
-  demoCalcEvtAddr,
   type DemoVer,
 } from 'demo-snapshot';
 import { fetchFeatures, type FeaturesResponse } from '../registry.js';
+import { EVENT_INITIATOR_CAP, eventAddress, eventStride } from '../event-address.js';
 
 type Ver = DemoVer;
 const ALL_VERS: Ver[] = ['v1', 'v2', 'v3', 'v4'];
@@ -84,8 +83,8 @@ function evtTagClass(id: string): string {
   return 'evt-tag';
 }
 
-// 주소 예시에 사용할 서비스: payment:prod:shop (value=46)
-const EXAMPLE_SVC_VALUE = 46;
+// 주소 예시에 사용할 서비스: prod/asia/payment/shop (catalog에서 파생)
+const EXAMPLE_SVC_VALUE = demoEncodeSvc([3, 1, 4, 1]);
 const EXAMPLE_PERM_SVC_POS = DEMO_PERM_SVC_VALUES.indexOf(EXAMPLE_SVC_VALUE) + 1;
 const EXAMPLE_EVT_SVC_POS = DEMO_EVT_SVC_VALUES.indexOf(EXAMPLE_SVC_VALUE) + 1;
 
@@ -178,12 +177,12 @@ function buildIndexShapeSection(ver: Ver): HTMLElement {
   const evtCap = DEMO_EVENT_CAP[ver];
   const roleCount = roleCap; // shape uses capacity, not entry count
   const evtCount = evtCap;
-  const initCount = DEMO_INITIATORS.length;
+  const initCount = EVENT_INITIATOR_CAP;
   const permSvcCount = DEMO_PERM_SVC_VALUES.length;
   const evtSvcCount = DEMO_EVT_SVC_VALUES.length;
 
   const roleStride = demoRoleStride(ver);
-  const evtStride = demoEvtStride(ver);
+  const evtStride = eventStride(ver);
   const permSlots = permSvcCount * roleCount;
   const evtSlots = evtSvcCount * evtCount * initCount;
 
@@ -196,7 +195,7 @@ function buildIndexShapeSection(ver: Ver): HTMLElement {
 
   const prev = prevVer(ver);
   const prevRoleStride = prev ? demoRoleStride(prev) : roleStride;
-  const prevEvtStride = prev ? demoEvtStride(prev) : evtStride;
+  const prevEvtStride = prev ? eventStride(prev) : evtStride;
   const strideChanged = roleStride !== prevRoleStride || evtStride !== prevEvtStride;
   const hasHeadroom = roleEntries < roleCap || evtEntries < evtCap;
 
@@ -456,8 +455,8 @@ function buildAddressExamplesSection(ver: Ver): HTMLElement {
     return {
       id,
       ko: DEMO_KO.event[id] ?? id,
-      prev: prevP !== null && prev ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, prevP, 1, prev) : null,
-      cur: curP !== null ? demoCalcEvtAddr(EXAMPLE_EVT_SVC_POS, curP, 1, ver) : null,
+      prev: prevP !== null && prev ? eventAddress(EXAMPLE_EVT_SVC_POS, prevP, 1, prev) : null,
+      cur: curP !== null ? eventAddress(EXAMPLE_EVT_SVC_POS, curP, 1, ver) : null,
       isNew: prevEvents ? !prevEvents.some((e) => e.id === id) : false,
     };
   });
@@ -554,9 +553,9 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
 
   const curRS = demoRoleStride(ver);
   const prevRS = demoRoleStride(prev);
-  const curES = demoEvtStride(ver);
-  const prevES = demoEvtStride(prev);
-  const IC = DEMO_INITIATORS.length;
+  const curES = eventStride(ver);
+  const prevES = eventStride(prev);
+  const IC = EVENT_INITIATOR_CAP;
   const strideChanged = curRS !== prevRS || curES !== prevES;
 
   const svcPos = EXAMPLE_PERM_SVC_POS;
@@ -578,8 +577,8 @@ function buildCompositeIndexSection(ver: Ver): HTMLElement {
   const evtRows = allEvents.map((e) => {
     const curP = dimPos(curEvents, e.id);
     const prevP = dimPos(prevEvents, e.id);
-    const prevAddr = prevP !== null ? demoCalcEvtAddr(evtSvcPos, prevP, 1, prev) : null;
-    const curAddr = curP !== null ? demoCalcEvtAddr(evtSvcPos, curP, 1, ver) : null;
+    const prevAddr = prevP !== null ? eventAddress(evtSvcPos, prevP, 1, prev) : null;
+    const curAddr = curP !== null ? eventAddress(evtSvcPos, curP, 1, ver) : null;
     const isNew = !prevEvents.some((pe) => pe.id === e.id);
     const delta = prevAddr !== null && curAddr !== null ? curAddr - prevAddr : null;
     const formula = curP !== null ? `(${evtSvcPos}−1)×${curES} + (${curP}−1)×${IC} + 0` : '';
@@ -709,13 +708,13 @@ function buildProtocolSection(ver: Ver): HTMLElement {
 
   const prevRS = demoRoleStride(prev);
   const curRS = demoRoleStride(ver);
-  const prevES = demoEvtStride(prev);
-  const curES = demoEvtStride(ver);
+  const prevES = eventStride(prev);
+  const curES = eventStride(ver);
   const prevRC = demoRolesFor(prev).length;
   const curRC = demoRolesFor(ver).length;
   const prevEC = demoEventsFor(prev).length;
   const curEC = demoEventsFor(ver).length;
-  const IC = DEMO_INITIATORS.length;
+  const IC = EVENT_INITIATOR_CAP;
   const strideChanged = prevRS !== curRS || prevES !== curES;
 
   const curRoles = rolesFor(ver);

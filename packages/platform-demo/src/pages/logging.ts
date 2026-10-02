@@ -12,21 +12,22 @@ import {
   DEMO_SVCS,
   DEMO_NSS,
   DEMO_KO,
+  DEMO_SVC_SHAPE,
   DEMO_SVC_STRIDES,
   DEMO_PERM_SVC_VALUES,
   DEMO_EVT_SVC_VALUES,
   DEMO_EVENT_CAP,
+  DEMO_INITIATORS,
   demoEncodeSvc,
   demoDecodeSvc,
   demoEventsFor,
+  demoRolesFor,
   demoRoleStride,
-  demoEvtStride,
-  demoDecodePerm,
-  demoDecodeEvt,
   DEMO_LOG_TEMPLATES,
   type DemoVer,
 } from 'demo-snapshot';
 import { API_BASE } from '../registry.js';
+import { EVENT_INITIATOR_CAP, encodeEventAddress, eventStride } from '../event-address.js';
 
 type Ver = DemoVer;
 
@@ -64,25 +65,63 @@ const SVC_DIMS: DimMeta[] = [
 const encodeSvc = demoEncodeSvc;
 const decodeSvc = demoDecodeSvc;
 const roleStride = demoRoleStride;
-const evtStrideFor = demoEvtStride;
+const evtStrideFor = eventStride;
+const SERVICE_MAX_ADDRESS = DEMO_SVC_SHAPE.reduce((total, capacity) => total * capacity, 1) - 1;
 
 // UI용 래퍼: demo-snapshot flat → 기존 UI가 기대하는 nested 형태
 function decodePerm(addr: number, v: Ver) {
-  const d = demoDecodePerm(addr, v);
-  if (!d) return null;
+  const stride = roleStride(v);
+  if (!Number.isInteger(addr) || addr < 0) return null;
+  const svcPos = Math.floor(addr / stride);
+  const roleIdx = addr % stride;
+  const svcValue = DEMO_PERM_SVC_VALUES[svcPos];
+  if (svcValue === undefined) return null;
+
+  const [envPos, regionPos, svcNamePos, namespacePos] = demoDecodeSvc(svcValue);
+  const svcId = DEMO_SVCS[svcNamePos - 1];
+  const nsId = DEMO_NSS[namespacePos - 1];
+  const envId = DEMO_ENVS[envPos - 1];
+  const regionId = DEMO_REGIONS[regionPos - 1];
+  const roleId = demoRolesFor(v)[roleIdx] ?? `(reserved:${roleIdx})`;
+  if (!svcId || !nsId || !envId || !regionId) return null;
+
   return {
-    svc: { pos: d.svcIdx + 1, svcId: d.svcId, svcKo: d.svcKo, nsId: d.nsId, nsKo: d.nsKo },
-    role: { idx1: (addr % demoRoleStride(v)) + 1, id: d.roleId, ko: d.roleKo },
+    svc: {
+      pos: svcPos + 1,
+      svcId,
+      svcKo: DEMO_KO.svc[svcId],
+      nsId,
+      nsKo: DEMO_KO.ns[nsId],
+    },
+    role: {
+      idx1: roleIdx + 1,
+      id: roleId,
+      ko: DEMO_KO.role[roleId] ?? (roleId.startsWith('(reserved:') ? '(예약)' : roleId),
+    },
   };
 }
 
 function decodeEvt(addr: number, v: Ver) {
-  const d = demoDecodeEvt(addr, v);
-  if (!d) return null;
+  const stride = eventStride(v);
+  const svcPos = Math.floor(addr / stride);
+  const rem = addr % stride;
+  const evtPos = Math.floor(rem / EVENT_INITIATOR_CAP);
+  const initPos = rem % EVENT_INITIATOR_CAP;
+  const svcValue = DEMO_EVT_SVC_VALUES[svcPos];
+  const eventId = demoEventsFor(v)[evtPos];
+  const initiatorId = DEMO_INITIATORS[initPos];
+  if (svcValue === undefined || eventId === undefined || initiatorId === undefined) return null;
+  const [envPos, regionPos, svcNamePos, namespacePos] = demoDecodeSvc(svcValue);
+  const svcId = DEMO_SVCS[svcNamePos - 1];
+  const nsId = DEMO_NSS[namespacePos - 1];
+  const envId = DEMO_ENVS[envPos - 1];
+  const regionId = DEMO_REGIONS[regionPos - 1];
   return {
-    svc: { pos: d.svcIdx + 1, svcId: d.svcId, svcKo: d.svcKo, nsId: d.nsId, nsKo: d.nsKo },
-    event: { idx1: Math.floor((addr % demoEvtStride(v)) / 2) + 1, id: d.eventId, ko: d.eventKo },
-    initiator: { idx1: (addr % 2) + 1, id: d.initiatorId, ko: d.initiatorKo },
+    svc: { pos: svcPos + 1, svcId, svcKo: DEMO_KO.svc[svcId], nsId, nsKo: DEMO_KO.ns[nsId] },
+    event: { idx1: evtPos + 1, id: eventId, ko: DEMO_KO.event[eventId] },
+    initiator: { idx1: initPos + 1, id: initiatorId, ko: DEMO_KO.initiator[initiatorId] },
+    env: envId,
+    region: regionId,
   };
 }
 
@@ -115,18 +154,53 @@ function navigateTo(sheet: string, detail: Record<string, unknown> = {}): void {
   document.dispatchEvent(new CustomEvent('navigate-to', { detail: { sheet, ...detail } }));
 }
 
+function refPosition(addresses: readonly number[], serviceAddress: number): number | null {
+  const index = addresses.indexOf(serviceAddress);
+  return index >= 0 ? index + 1 : null;
+}
+
+function permissionAddressFor(
+  serviceAddress: number,
+  rolePosition: number,
+  ver: Ver,
+): number | null {
+  const servicePosition = refPosition(DEMO_PERM_SVC_VALUES, serviceAddress);
+  return servicePosition === null
+    ? null
+    : (servicePosition - 1) * roleStride(ver) + (rolePosition - 1);
+}
+
+function eventAddressFor(
+  serviceAddress: number,
+  eventPosition: number,
+  initiatorPosition: number,
+  ver: Ver,
+): number | null {
+  const servicePosition = refPosition(DEMO_EVT_SVC_VALUES, serviceAddress);
+  return servicePosition === null
+    ? null
+    : (servicePosition - 1) * evtStrideFor(ver) +
+        (eventPosition - 1) * EVENT_INITIATOR_CAP +
+        (initiatorPosition - 1);
+}
+
 // ── Sample logs (fallback when API offline) ──────────────────────────────
 
 function generateSampleLogs(ver: Ver): LogEntry[] {
-  const rs = roleStride(ver);
-  const es = evtStrideFor(ver);
   const t = Date.now() - 30_000;
+  const prodShoppingWeb = encodeSvc([3, 1, 1, 1]);
+  const prodPayment = encodeSvc([3, 1, 4, 1]);
+  const prodAuth = encodeSvc([3, 1, 3, 1]);
+  const prodGateway = encodeSvc([3, 1, 5, 1]);
+  const prodBackendCms = encodeSvc([3, 2, 2, 2]);
+  const devShoppingWeb = encodeSvc([2, 1, 1, 1]);
+  const prodAuthCms = encodeSvc([3, 1, 3, 2]);
   return [
     {
       ts: new Date(t).toISOString(),
       level: 'INFO',
-      svcAddr: encodeSvc([3, 1, 1, 1]),
-      permAddr: (1 - 1) * rs + (2 - 1),
+      svcAddr: prodShoppingWeb,
+      permAddr: permissionAddressFor(prodShoppingWeb, 2, ver),
       evtAddr: null,
       action: 'page.view',
       message: '메인 페이지 조회',
@@ -136,9 +210,9 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 1200).toISOString(),
       level: 'INFO',
-      svcAddr: encodeSvc([3, 1, 4, 1]),
-      permAddr: (4 - 1) * rs + (1 - 1),
-      evtAddr: (4 - 1) * es + (3 - 1) * 2,
+      svcAddr: prodPayment,
+      permAddr: permissionAddressFor(prodPayment, 1, ver),
+      evtAddr: eventAddressFor(prodPayment, 3, 1, ver),
       action: 'payment.initiate',
       message: '결제 요청 시작 — KRW 45,000',
       latencyMs: 187,
@@ -147,7 +221,7 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 2800).toISOString(),
       level: 'DEBUG',
-      svcAddr: encodeSvc([3, 1, 3, 1]),
+      svcAddr: prodAuth,
       permAddr: null,
       evtAddr: null,
       action: 'token.validate',
@@ -158,9 +232,9 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 4500).toISOString(),
       level: 'WARN',
-      svcAddr: encodeSvc([3, 1, 5, 1]),
+      svcAddr: prodGateway,
       permAddr: null,
-      evtAddr: (5 - 1) * es,
+      evtAddr: eventAddressFor(prodGateway, 1, 1, ver),
       action: 'rate.limit',
       message: 'Rate limit 임계값 80% 도달 — IP 203.0.113.42',
       latencyMs: 1,
@@ -169,9 +243,9 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 5100).toISOString(),
       level: 'ERROR',
-      svcAddr: encodeSvc([3, 1, 4, 1]),
-      permAddr: (4 - 1) * rs + (2 - 1),
-      evtAddr: (4 - 1) * es + (4 - 1) * 2,
+      svcAddr: prodPayment,
+      permAddr: permissionAddressFor(prodPayment, 2, ver),
+      evtAddr: eventAddressFor(prodPayment, 4, 1, ver),
       action: 'payment.refund.fail',
       message: '환불 처리 실패 — PG 응답 타임아웃 (30s)',
       latencyMs: 30012,
@@ -180,8 +254,8 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 7200).toISOString(),
       level: 'INFO',
-      svcAddr: encodeSvc([3, 2, 2, 2]),
-      permAddr: (2 - 1) * rs + (3 - 1),
+      svcAddr: prodBackendCms,
+      permAddr: permissionAddressFor(prodBackendCms, 3, ver),
       evtAddr: null,
       action: 'catalog.sync',
       message: '상품 카탈로그 동기화 완료 — 2,340건',
@@ -191,9 +265,9 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 9800).toISOString(),
       level: 'INFO',
-      svcAddr: encodeSvc([2, 1, 1, 1]),
-      permAddr: (1 - 1) * rs + (2 - 1),
-      evtAddr: (1 - 1) * es + (2 - 1) * 2 + 1,
+      svcAddr: devShoppingWeb,
+      permAddr: permissionAddressFor(devShoppingWeb, 2, ver),
+      evtAddr: eventAddressFor(devShoppingWeb, 2, 2, ver),
       action: 'deploy.canary',
       message: '카나리 배포 진행 중 — v2.4.1-rc3',
       latencyMs: 0,
@@ -202,8 +276,8 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 11500).toISOString(),
       level: 'WARN',
-      svcAddr: encodeSvc([3, 1, 3, 2]),
-      permAddr: (3 - 1) * rs,
+      svcAddr: prodAuthCms,
+      permAddr: permissionAddressFor(prodAuthCms, 1, ver),
       evtAddr: null,
       action: 'auth.brute',
       message: '로그인 실패 연속 5회 — 계정 잠금 경고',
@@ -224,9 +298,9 @@ function generateSampleLogs(ver: Ver): LogEntry[] {
     {
       ts: new Date(t + 14200).toISOString(),
       level: 'ERROR',
-      svcAddr: encodeSvc([3, 1, 3, 1]),
-      permAddr: (3 - 1) * rs,
-      evtAddr: (3 - 1) * es + (6 - 1) * 2,
+      svcAddr: prodAuth,
+      permAddr: permissionAddressFor(prodAuth, 1, ver),
+      evtAddr: eventAddressFor(prodAuth, 6, 1, ver),
       action: 'session.expire',
       message: '세션 만료 — 비정상 토큰 재사용 감지',
       latencyMs: 2,
@@ -260,8 +334,8 @@ function generateRandomLog(ver: Ver): LogEntry {
   const evtCount = demoEventsFor(ver).length;
   const evtAddr = hasEvt
     ? Math.floor(Math.random() * evtSvcCount) * es +
-      Math.floor(Math.random() * evtCount) * 2 +
-      Math.floor(Math.random() * 2)
+      Math.floor(Math.random() * evtCount) * EVENT_INITIATOR_CAP +
+      Math.floor(Math.random() * DEMO_INITIATORS.length)
     : null;
 
   const latencyMs =
@@ -547,14 +621,14 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
     className: 'log-addr-input',
     placeholder: 'min',
     min: '0',
-    max: '99',
+    max: String(SERVICE_MAX_ADDRESS),
   });
   const elRangeMax = Object.assign(document.createElement('input'), {
     type: 'number',
     className: 'log-addr-input',
     placeholder: 'max',
     min: '0',
-    max: '99',
+    max: String(SERVICE_MAX_ADDRESS),
   });
   let customRange: [number, number] | null = null;
 
@@ -637,8 +711,9 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   function renderComparison(entry?: LogEntry): void {
     // 기본값 또는 선택된 엔트리
     const svcAddr = entry?.svcAddr ?? encodeSvc([3, 1, 1, 1]);
-    const permAddr = entry?.permAddr ?? (1 - 1) * roleStride(ver) + 1;
-    const evtAddr = entry?.evtAddr ?? (4 - 1) * evtStrideFor(ver) + (3 - 1) * 2;
+    const permAddr = entry?.permAddr ?? permissionAddressFor(svcAddr, 2, ver);
+    const evtAddr = entry?.evtAddr ?? eventAddressFor(svcAddr, 3, 1, ver);
+    const svcRangeStart = Math.floor(svcAddr / DEMO_SVC_STRIDES[0]) * DEMO_SVC_STRIDES[0];
     const action = entry?.action ?? 'payment.initiate';
     const actIdx = actionIdx(action);
 
@@ -738,7 +813,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
         <div class="log-comp-benefit"><span class="log-comp-benefit-num">~${pct2}%</span><span class="log-comp-benefit-label">완전 주소화 절감</span></div>
         <div class="log-comp-benefit"><span class="log-comp-benefit-num">~${pct3}%</span><span class="log-comp-benefit-label">Protobuf 절감</span></div>
         <div class="log-comp-benefit"><span class="log-comp-benefit-num">O(1)</span><span class="log-comp-benefit-label">주소 비교 연산</span></div>
-        <div class="log-comp-benefit"><span class="log-comp-benefit-num">범위 쿼리</span><span class="log-comp-benefit-label">svc ${Math.floor(svcAddr / 20) * 20}~${Math.floor(svcAddr / 20) * 20 + 19}</span></div>
+        <div class="log-comp-benefit"><span class="log-comp-benefit-num">범위 쿼리</span><span class="log-comp-benefit-label">env block ${svcRangeStart}~${svcRangeStart + DEMO_SVC_STRIDES[0] - 1}</span></div>
       </div>
     `;
   }
@@ -767,7 +842,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
   // eslint-disable-next-line typescript/no-non-null-assertion -- 알려진 유효 주소
   const exPermD = decodePerm(exPerm, ver)!;
 
-  const exEvt = ver === 'v1' ? 46 : 58;
+  const exEvt = encodeEventAddress(exSvc, 'order.paid', 'web', ver);
   // eslint-disable-next-line typescript/no-non-null-assertion -- 알려진 유효 주소
   const exEvtD = decodeEvt(exEvt, ver)!;
 
@@ -803,7 +878,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
         <div class="log-anat-head">
           <span class="log-anat-schema">perm</span>
           <span class="log-anat-idx">= ${exPerm}</span>
-          <span class="log-anat-shape">shape [10, ${_rs}]</span>
+          <span class="log-anat-shape">shape [${DEMO_PERM_SVC_VALUES.length}, ${_rs}]</span>
         </div>
         <div class="log-anat-body">
           <div class="log-anat-dim">
@@ -827,7 +902,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
         <div class="log-anat-head">
           <span class="log-anat-schema">evt</span>
           <span class="log-anat-idx">= ${exEvt}</span>
-          <span class="log-anat-shape">shape [10, ${DEMO_EVENT_CAP[ver]}, 2]</span>
+          <span class="log-anat-shape">shape [${DEMO_EVT_SVC_VALUES.length}, ${DEMO_EVENT_CAP[ver]}, ${EVENT_INITIATOR_CAP}]</span>
         </div>
         <div class="log-anat-body">
           <div class="log-anat-dim">
@@ -849,7 +924,7 @@ export function renderLoggingPage(container: HTMLElement, ver: Ver): void {
             <span class="log-anat-dim-coord">${exEvtD.initiator.idx1}</span>
           </div>
           <div class="log-anat-formula">
-            (${exEvtD.svc.pos}-1)×${_es} + (${exEvtD.event.idx1}-1)×2 + (${exEvtD.initiator.idx1}-1) = <strong>${exEvt}</strong>
+            (${exEvtD.svc.pos}-1)×${_es} + (${exEvtD.event.idx1}-1)×${EVENT_INITIATOR_CAP} + (${exEvtD.initiator.idx1}-1) = <strong>${exEvt}</strong>
           </div>
         </div>
       </div>

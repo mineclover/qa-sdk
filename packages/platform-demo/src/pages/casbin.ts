@@ -5,12 +5,18 @@
 //  Casbin 권한 모델 해설 — qa-sdk 주소 체계 ↔ Casbin 대비
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { fetchMockGrantTable, fetchMockFeatures } from '../mock-casbin-api.js';
+import type { GrantRow, FeaturesResponse } from '../registry.js';
 import {
-  fetchGrantTable,
-  fetchFeatures,
-  type GrantRow,
-  type FeaturesResponse,
-} from '../registry.js';
+  DEMO_PERM_SVC_VALUES,
+  DEMO_SVCS,
+  DEMO_SVC_SHAPE,
+  DEMO_SVC_STRIDES,
+  demoDecodeSvc,
+  demoRolePos,
+  demoRoleStride,
+  type DemoVer,
+} from 'demo-snapshot';
 
 // ── Step navigation ───────────────────────────────────────────────────────
 
@@ -39,6 +45,22 @@ const STEPS: { id: StepId; num: string; title: string; desc: string }[] = [
 
 // ── Render helpers ────────────────────────────────────────────────────────
 
+function exampleRow(rows: GrantRow[], role: string): GrantRow {
+  const row = rows.find((item) => item.featureId === 'payment_history' && item.role === role);
+  if (!row) throw new Error(`Casbin example is missing payment_history/${role}`);
+  return row;
+}
+
+function hasGrant(features: FeaturesResponse, featureId: string, role: string): boolean {
+  const featureIndex = features.features.findIndex((feature) => feature.id === featureId);
+  const roleIndex = features.roles.findIndex((item) => item.id === role);
+  return features.matrix[featureIndex]?.[roleIndex] ?? false;
+}
+
+function varintBytes(value: number): number {
+  return Math.max(1, Math.ceil(Math.log2(value + 1) / 7));
+}
+
 function renderStepNav(active: StepId, onSwitch: (id: StepId) => void): HTMLElement {
   const nav = document.createElement('div');
   nav.className = 'cb-step-nav';
@@ -54,9 +76,20 @@ function renderStepNav(active: StepId, onSwitch: (id: StepId) => void): HTMLElem
 
 // ── Step 1: qa-sdk 기존 시스템 ────────────────────────────────────────────
 
-function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLElement {
+function renderStepOurs(rows: GrantRow[], features: FeaturesResponse, ver: DemoVer): HTMLElement {
   const el = document.createElement('div');
   el.className = 'cb-step-content cb-fade-in';
+  const role = features.roles.some((item) => item.id === 'customer') ? 'customer' : 'viewer';
+  const example = exampleRow(rows, role);
+  const coords = demoDecodeSvc(example.svcValue);
+  const labels = ['env', 'region', 'svc_name', 'ns'];
+  const svcFormula = labels.map((label, i) => `(${label}-1)×${DEMO_SVC_STRIDES[i]}`).join(' + ');
+  const svcCalculation = coords
+    .map((coord, i) => `(${coord}-1)×${DEMO_SVC_STRIDES[i]}`)
+    .join(' + ');
+  const permSvcPos = DEMO_PERM_SVC_VALUES.indexOf(example.svcValue) + 1;
+  const rolePos = demoRolePos(ver)[role];
+  const roleStride = demoRoleStride(ver);
 
   // 인코딩 설명
   const intro = document.createElement('div');
@@ -67,16 +100,17 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
       <span class="cb-card-title">weighted-index: 다차원 좌표 → 정수 주소</span>
     </div>
     <div class="cb-card-body">
-      <p class="cb-desc">qa-sdk는 <strong>mixed-radix 인코딩</strong>으로 다차원 좌표를 하나의 정수로 압축합니다.</p>
+      <p class="cb-desc">qa-sdk는 <strong>mixed-radix 인코딩</strong>으로 다차원 좌표를 하나의 정수 주소로 표현합니다. 주소는 분류 좌표이며, 허용 여부는 별도의 grant 정책이 결정합니다.</p>
       <div class="cb-formula-box">
-        <div class="cb-formula-label">서비스 인코딩</div>
-        <code class="cb-formula">encode([env, region, svc_name, ns]) = (env-1)×20 + (region-1)×10 + (svc_name-1)×2 + (ns-1)</code>
-        <div class="cb-formula-example">예: [prod, asia, payment, shop] → (3-1)×20 + (1-1)×10 + (4-1)×2 + (1-1) = <strong>46</strong></div>
+        <div class="cb-formula-label">서비스 인코딩 — capacity [${DEMO_SVC_SHAPE.join(', ')}]</div>
+        <code class="cb-formula">encode([env, region, svc_name, ns]) = ${svcFormula}</code>
+        <div class="cb-formula-example">예: [${example.env}, ${example.region}, payment, ${example.namespace}] → ${svcCalculation} = <strong>${example.svcValue}</strong></div>
       </div>
       <div class="cb-formula-box">
-        <div class="cb-formula-label">권한 인코딩 (v2)</div>
-        <code class="cb-formula">permAddr = (perm_svc - 1) × 6 + (role - 1)</code>
-        <div class="cb-formula-example">예: perm_svc=9 (결제/쇼핑), role=4 (고객) → 8×6 + 3 = <strong>51</strong></div>
+        <div class="cb-formula-label">권한 인코딩 (${ver}) — service 참조 × role capacity</div>
+        <code class="cb-formula">permAddr = (perm_svc - 1) × ${roleStride} + (role - 1)</code>
+        <div class="cb-formula-example">예: perm_svc=${permSvcPos} (service:v1:${example.svcValue}), role=${rolePos} (${example.roleKo}) → (${permSvcPos}-1)×${roleStride} + (${rolePos}-1) = <strong>${example.permValue}</strong></div>
+        <div class="cb-note">같은 서비스와 역할 좌표를 여러 기능이 공유할 수 있습니다. 기능별 허용 여부는 아래 grant 매트릭스로 구분합니다.</div>
       </div>
     </div>
   `;
@@ -88,7 +122,7 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
   matrix.innerHTML = `
     <div class="cb-card-head">
       <span class="cb-card-icon">⊡</span>
-      <span class="cb-card-title">grant 매트릭스 (현재 상태)</span>
+      <span class="cb-card-title">grant 매트릭스 (${ver} 데모 스냅샷)</span>
     </div>
   `;
   const matBody = document.createElement('div');
@@ -134,7 +168,10 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
   matrix.appendChild(matBody);
 
   // 주소 매핑 예시 (실제 데이터에서 추출)
-  const examples = rows.filter((r) => r.featureId === 'payment_history').slice(0, 3);
+  const exampleRoles = ['operator', 'viewer', role];
+  const examples = rows.filter(
+    (r) => r.featureId === 'payment_history' && exampleRoles.includes(r.role),
+  );
   if (examples.length > 0) {
     const addrCard = document.createElement('div');
     addrCard.className = 'cb-addr-examples';
@@ -168,19 +205,19 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
       <div class="cb-trait-grid">
         <div class="cb-trait">
           <div class="cb-trait-label">저장</div>
-          <div class="cb-trait-val">정수 주소 기반 grant/deny 비트맵</div>
+          <div class="cb-trait-val">기능 × 역할 grant 비트맵</div>
         </div>
         <div class="cb-trait">
           <div class="cb-trait-label">확장</div>
-          <div class="cb-trait-val">shape 변경으로 차원 자동 확장 (v1→v2: role 5→6)</div>
+          <div class="cb-trait-val">${features.roles.length}개 역할, capacity ${roleStride} — 여유 슬롯 내 추가 시 stride 유지</div>
         </div>
         <div class="cb-trait">
           <div class="cb-trait-label">직렬화</div>
-          <div class="cb-trait-val">protobuf varint — 단일 정수 전송</div>
+          <div class="cb-trait-val">정수 값의 varint: 서비스 ${varintBytes(example.svcValue)}B, 권한 ${varintBytes(example.permValue)}B</div>
         </div>
         <div class="cb-trait">
           <div class="cb-trait-label">조회 성능</div>
-          <div class="cb-trait-val">O(1) 정수 비교</div>
+          <div class="cb-trait-val">컴파일된 비트맵의 단일 슬롯 검사 O(1)</div>
         </div>
       </div>
     </div>
@@ -195,6 +232,22 @@ function renderStepOurs(rows: GrantRow[], features: FeaturesResponse): HTMLEleme
 function renderStepCasbinRbac(features: FeaturesResponse): HTMLElement {
   const el = document.createElement('div');
   el.className = 'cb-step-content cb-fade-in';
+
+  const paymentHistoryId = features.features.some((feature) => feature.id === 'payment_history')
+    ? 'payment_history'
+    : (features.features[0]?.id ?? 'unknown_feature');
+  const directRole =
+    features.roles.find(
+      (role) => hasGrant(features, paymentHistoryId, role.id) && role.id === 'operator',
+    ) ?? features.roles.find((role) => hasGrant(features, paymentHistoryId, role.id));
+  const deniedRole = features.roles.find((role) => !hasGrant(features, paymentHistoryId, role.id));
+  const inheritedRole = features.roles.find((role) => role.id === 'admin');
+  const directRoleId = directRole?.id ?? 'operator';
+  const deniedRoleId = deniedRole?.id ?? 'viewer';
+  const inheritedRoleId = inheritedRole?.id ?? 'admin';
+  const directResult = hasGrant(features, paymentHistoryId, directRoleId);
+  const deniedResult = hasGrant(features, paymentHistoryId, deniedRoleId);
+  const inheritedResult = hasGrant(features, paymentHistoryId, inheritedRoleId);
 
   // model.conf
   const modelCard = document.createElement('div');
@@ -212,7 +265,7 @@ r = sub, obj, act
 
 <span class="cb-code-comment"># policy_definition: 허용 규칙</span>
 [policy_definition]
-p = sub, obj, act
+p = sub, obj, act, eft
 
 <span class="cb-code-comment"># role_definition: 역할 계층 (admin ⊃ operator ⊃ viewer)</span>
 [role_definition]
@@ -243,7 +296,7 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
       .filter((_, ri) => features.matrix[features.features.indexOf(feat)]?.[ri])
       .map((r) => r.id);
     for (const role of granted) {
-      policyLines += `p, ${role}, ${feat.id}, read\n`;
+      policyLines += `p, ${role}, ${feat.id}, read, allow\n`;
     }
   });
 
@@ -272,17 +325,17 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act</pre>
 
 <span class="cb-code-kw">const</span> e = <span class="cb-code-kw">await</span> <span class="cb-code-fn">newEnforcer</span>(<span class="cb-code-str">'model.conf'</span>, <span class="cb-code-str">'policy.csv'</span>);
 
-<span class="cb-code-comment">// viewer가 결제 내역을 볼 수 있는가?</span>
-<span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(<span class="cb-code-str">'viewer'</span>, <span class="cb-code-str">'payment_history'</span>, <span class="cb-code-str">'read'</span>);
-<span class="cb-code-comment">// → true (직접 부여됨)</span>
+<span class="cb-code-comment">// ${directRoleId}가 결제 내역을 볼 수 있는가?</span>
+<span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(<span class="cb-code-str">'${directRoleId}'</span>, <span class="cb-code-str">'${paymentHistoryId}'</span>, <span class="cb-code-str">'read'</span>);
+<span class="cb-code-comment">// → ${directResult} (grant 매트릭스에 ${directRoleId}가 있음)</span>
 
-<span class="cb-code-comment">// customer가 결제 취소 승인을 할 수 있는가?</span>
-<span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(<span class="cb-code-str">'customer'</span>, <span class="cb-code-str">'payment_cancel_approve'</span>, <span class="cb-code-str">'read'</span>);
-<span class="cb-code-comment">// → false (admin, operator만 가능)</span>
+<span class="cb-code-comment">// ${deniedRoleId}는 ${paymentHistoryId}를 직접 상속하지 않음</span>
+<span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(<span class="cb-code-str">'${deniedRoleId}'</span>, <span class="cb-code-str">'${paymentHistoryId}'</span>, <span class="cb-code-str">'read'</span>);
+<span class="cb-code-comment">// → ${deniedResult} (operator의 권한이 하위 역할로 역전파되지 않음)</span>
 
-<span class="cb-code-comment">// admin은 operator 역할을 상속 → operator 권한도 자동 허용</span>
-<span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(<span class="cb-code-str">'admin'</span>, <span class="cb-code-str">'payment_cancel_req'</span>, <span class="cb-code-str">'read'</span>);
-<span class="cb-code-comment">// → true (g, admin, operator 계층 상속)</span></pre>
+<span class="cb-code-comment">// ${inheritedRoleId}는 operator 역할을 상속 → operator 권한도 허용</span>
+<span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(<span class="cb-code-str">'${inheritedRoleId}'</span>, <span class="cb-code-str">'${paymentHistoryId}'</span>, <span class="cb-code-str">'read'</span>);
+<span class="cb-code-comment">// → ${inheritedResult} (g, ${inheritedRoleId}, operator 계층 상속)</span></pre>
       <div class="cb-note">
         <strong>역할 계층 비교:</strong> Casbin은 <code>g, admin, operator</code> 한 줄로 역할 계층을 정의합니다.
         qa-sdk는 <code>TernaryMask.inherit(parent, child)</code>로 비트 연산 기반 상속을 수행합니다 — 상위 역할 마스크를 하위에 합산하므로 O(1) 비트 OR로 동일한 계층 상속을 달성합니다.
@@ -428,7 +481,7 @@ admin.<span class="cb-code-fn">check</span>(0); <span class="cb-code-comment">//
           </tr>
           <tr>
             <td class="cb-cmp-key">직렬화 크기</td>
-            <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> varint 1~2 bytes</td>
+            <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> varint 정수 필드</td>
             <td class="cb-cmp-con"><span class="cb-badge cb-badge-con">CON</span> 문자열 그대로 전송</td>
           </tr>
           <tr>
@@ -448,7 +501,7 @@ admin.<span class="cb-code-fn">check</span>(0); <span class="cb-code-comment">//
           <div class="cb-verdict-title cb-verdict-qa">weighted-index 선택 기준</div>
           <ul class="cb-verdict-list">
             <li>서버간 고성능 통신 (마이크로서비스 이벤트 버스)</li>
-            <li>대량 로그 태깅 — 주소 1~2 bytes로 압축</li>
+            <li>대량 로그 태깅 — 정수 주소 필드로 압축</li>
             <li>shape 기반 버전 관리가 필요한 경우</li>
           </ul>
         </div>
@@ -470,9 +523,21 @@ admin.<span class="cb-code-fn">check</span>(0); <span class="cb-code-comment">//
 
 // ── Step 3: Casbin ABAC ───────────────────────────────────────────────────
 
-function renderStepCasbinAbac(): HTMLElement {
+function renderStepCasbinAbac(rows: GrantRow[], ver: DemoVer): HTMLElement {
   const el = document.createElement('div');
   el.className = 'cb-step-content cb-fade-in';
+  const example =
+    rows.find((row) => row.featureId === 'payment_history' && row.role === 'operator') ?? rows[0];
+  if (!example) {
+    el.textContent = 'ABAC 예시를 만들 권한 데이터가 없습니다.';
+    return el;
+  }
+  const [envPos, regionPos, svcPos, namespacePos] = demoDecodeSvc(example.svcValue);
+  const permSvcPos = DEMO_PERM_SVC_VALUES.indexOf(example.svcValue) + 1;
+  const rolePos = demoRolePos(ver)[example.role];
+  const serviceCoords = [example.env, example.region, DEMO_SVCS[svcPos - 1], example.namespace];
+  const permissionAddress = example.permAddr;
+  const serviceAddress = 'service:v1:' + example.svcValue;
 
   // ABAC 개념
   const conceptCard = document.createElement('div');
@@ -490,8 +555,8 @@ function renderStepCasbinAbac(): HTMLElement {
       <div class="cb-abac-diagram">
         <div class="cb-abac-box cb-abac-qa">
           <div class="cb-abac-box-title">qa-sdk 방식</div>
-          <code>permAddr = encode([prod, asia, payment, shop, operator])</code>
-          <div class="cb-abac-arrow">→ 정수 51</div>
+          <code>service = encode([${serviceCoords.join(', ')}])<br/>permission = encode([perm_svc=${permSvcPos}, role=${example.role}])</code>
+          <div class="cb-abac-arrow">→ ${serviceAddress} · ${permissionAddress}</div>
         </div>
         <div class="cb-abac-vs">vs</div>
         <div class="cb-abac-box cb-abac-casbin">
@@ -517,7 +582,7 @@ function renderStepCasbinAbac(): HTMLElement {
 r = sub, obj, act
 
 [policy_definition]
-p = sub_role, obj_env, obj_region, obj_svc, act
+p = sub_role, obj_env, obj_region, obj_svc, obj_namespace, act, eft
 
 [policy_effect]
 e = some(where (p.eft == allow))
@@ -528,6 +593,7 @@ m = r.sub.role == p.sub_role \\
  && r.obj.env == p.obj_env \\
  && r.obj.region == p.obj_region \\
  && r.obj.svc == p.obj_svc \\
+ && r.obj.namespace == p.obj_namespace \\
  && r.act == p.act</pre>
       <div class="cb-note">
         <strong>핵심:</strong> <code>r.sub</code>, <code>r.obj</code>가 문자열이 아닌 <strong>객체</strong>로 전달됩니다.
@@ -548,20 +614,21 @@ m = r.sub.role == p.sub_role \\
     <div class="cb-card-body">
       <pre class="cb-code"><span class="cb-code-kw">const</span> user = {
   id: <span class="cb-code-str">'u-1042'</span>,
-  role: <span class="cb-code-str">'operator'</span>,       <span class="cb-code-comment">// qa-sdk role 차원</span>
+  role: <span class="cb-code-str">'${example.role}'</span>,       <span class="cb-code-comment">// qa-sdk role 차원 (position ${rolePos})</span>
 };
 
 <span class="cb-code-kw">const</span> resource = {
   type: <span class="cb-code-str">'payment_history'</span>,
-  env: <span class="cb-code-str">'prod'</span>,              <span class="cb-code-comment">// qa-sdk env 차원</span>
-  region: <span class="cb-code-str">'asia'</span>,           <span class="cb-code-comment">// qa-sdk region 차원</span>
-  svc: <span class="cb-code-str">'payment'</span>,           <span class="cb-code-comment">// qa-sdk svc_name 차원</span>
+  env: <span class="cb-code-str">'${example.env}'</span>,              <span class="cb-code-comment">// qa-sdk env 차원 (position ${envPos})</span>
+  region: <span class="cb-code-str">'${example.region}'</span>,           <span class="cb-code-comment">// qa-sdk region 차원 (position ${regionPos})</span>
+  svc: <span class="cb-code-str">'${DEMO_SVCS[svcPos - 1]}'</span>,           <span class="cb-code-comment">// qa-sdk svc_name 차원 (position ${svcPos})</span>
+  namespace: <span class="cb-code-str">'${example.namespace}'</span>,    <span class="cb-code-comment">// qa-sdk namespace 차원 (position ${namespacePos})</span>
 };
 
-<span class="cb-code-comment">// qa-sdk: permAddr 51에 grant 있는지 O(1) 체크</span>
+<span class="cb-code-comment">// qa-sdk: ${permissionAddress}에 ${example.role} grant가 있는지 O(1) 체크</span>
 <span class="cb-code-comment">// Casbin: matcher가 각 속성을 정책 행과 매칭</span>
 <span class="cb-code-kw">await</span> e.<span class="cb-code-fn">enforce</span>(user, resource, <span class="cb-code-str">'read'</span>);
-<span class="cb-code-comment">// → true (policy에 operator, prod, asia, payment, read 행 존재)</span></pre>
+<span class="cb-code-comment">// → ${example.granted} (현재 grant 스냅샷)</span></pre>
     </div>
   `;
   el.appendChild(codeCard);
@@ -608,7 +675,7 @@ m = r.sub.role == p.sub_role \\
           </tr>
           <tr>
             <td class="cb-cmp-key">정책 크기</td>
-            <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> shape 기반 압축 — 60개 슬롯</td>
+            <td class="cb-cmp-pro"><span class="cb-badge cb-badge-pro">PRO</span> shape 기반 압축 — ${DEMO_PERM_SVC_VALUES.length * demoRoleStride(ver)}개 capacity 슬롯</td>
             <td class="cb-cmp-con"><span class="cb-badge cb-badge-con">CON</span> 차원 조합 × 역할 수만큼 행 증가</td>
           </tr>
           <tr>
@@ -648,7 +715,7 @@ m = r.sub.role == p.sub_role \\
           <div class="cb-verdict-title cb-verdict-qa">weighted-index가 이기는 곳</div>
           <ul class="cb-verdict-list">
             <li>초고성능 서버간 이벤트 라우팅</li>
-            <li>대량 로그 태깅 — 주소 1~2 bytes</li>
+            <li>대량 로그 태깅 — 정수 주소 필드</li>
             <li>범위 쿼리: "결제 서비스 전체" 같은 와일드카드</li>
             <li>shape 기반 자동 버전 마이그레이션</li>
           </ul>
@@ -689,7 +756,7 @@ m = r.sub.role == p.sub_role \\
 
 // ── Main export ───────────────────────────────────────────────────────────
 
-export function renderCasbinPage(container: HTMLElement, ver = 'v2'): void {
+export function renderCasbinPage(container: HTMLElement, ver: DemoVer = 'v2'): void {
   container.innerHTML = '';
   container.classList.add('cb-body');
 
@@ -699,13 +766,13 @@ export function renderCasbinPage(container: HTMLElement, ver = 'v2'): void {
   let grantRows: GrantRow[] = [];
   let featuresData: FeaturesResponse | null = null;
 
-  // 로딩 스켈레톤
+  // Bundled mock read model — Casbin explainer does not require D1/API servers.
   const loading = document.createElement('div');
   loading.innerHTML = `
     <div class="scenario-skeleton">
       <div class="scenario-spinner-wrap">
         <div class="scenario-spinner"></div>
-        <span class="scenario-spinner-text">데이터 로딩 중...</span>
+        <span class="scenario-spinner-text">목 데이터 준비 중...</span>
       </div>
     </div>
   `;
@@ -719,13 +786,13 @@ export function renderCasbinPage(container: HTMLElement, ver = 'v2'): void {
 
     switch (activeStep) {
       case 'ours':
-        contentEl = renderStepOurs(grantRows, featuresData);
+        contentEl = renderStepOurs(grantRows, featuresData, ver);
         break;
       case 'casbin-rbac':
         contentEl = renderStepCasbinRbac(featuresData);
         break;
       case 'casbin-abac':
-        contentEl = renderStepCasbinAbac();
+        contentEl = renderStepCasbinAbac(grantRows, ver);
         break;
     }
     container.appendChild(contentEl);
@@ -743,8 +810,8 @@ export function renderCasbinPage(container: HTMLElement, ver = 'v2'): void {
     renderContent();
   }
 
-  // 데이터 로드
-  Promise.all([fetchGrantTable(ver), fetchFeatures(ver)])
+  // 데이터 로드 (demo-snapshot 기반, 외부 서버 없음)
+  Promise.all([fetchMockGrantTable(ver), fetchMockFeatures(ver)])
     .then(([grantData, features]) => {
       grantRows = grantData.rows;
       featuresData = features;

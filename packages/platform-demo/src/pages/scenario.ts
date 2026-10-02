@@ -5,13 +5,12 @@
 //  시나리오 페이지 — 역할 전환 + 기능 접근 매트릭스 + 시뮬레이션 재생
 // ═══════════════════════════════════════════════════════════════════════════
 
+import type { ScenarioResponse, SimStep, FeaturesResponse } from '../registry.js';
 import {
-  fetchScenario,
-  fetchFeatures,
-  type ScenarioResponse,
-  type SimStep,
-  type FeaturesResponse,
-} from '../registry.js';
+  fetchMockFeatures,
+  fetchMockScenario,
+  type ScenarioRequestTrace,
+} from '../mock-scenario-api.js';
 import { DEMO_KO, DEMO_FEATURE_KO, demoRolesFor, demoFeatures, type DemoVer } from 'demo-snapshot';
 
 // ── Constants (demo-snapshot SSOT 기반) ───────────────────────────────────
@@ -55,6 +54,84 @@ function updateRoleBar(bar: HTMLElement, activeRole: string): void {
   }
 }
 
+// ── Representative request trace ──────────────────────────────────────────
+
+function renderRequestSection(request: ScenarioRequestTrace): HTMLElement {
+  const section = document.createElement('section');
+  section.className = 'scenario-panel scenario-request-trace';
+  section.style.margin = '16px';
+
+  const statusLabel = request.permission.status === 'ok' ? '허용됨' : '거부됨';
+  const statusClass = request.permission.status === 'ok' ? 'status-ok' : 'status-denied';
+  const serviceCoords = [
+    request.service.env,
+    request.service.region,
+    request.service.svcName,
+    request.service.namespace,
+  ].join(' / ');
+
+  section.innerHTML = `
+    <div class="scenario-panel-header">
+      <span style="font-weight:700">대표 요청 추적</span>
+      <span style="color:var(--text-muted);font-size:0.72rem">${request.requestId} · ${request.featureName}</span>
+      <span class="${statusClass}" style="margin-left:auto">${statusLabel}</span>
+    </div>
+    <div style="padding:12px 16px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-bottom:12px;font-size:0.76rem">
+        <span style="color:var(--text-muted)">sourceRef</span>
+        <code class="scenario-addr-chip">${request.sourceRef.namespace}/${request.sourceRef.entityType}/${request.sourceRef.localId}</code>
+        <span style="color:var(--text-muted)">localId</span>
+        <code class="scenario-addr-chip">${request.sourceRef.localId}</code>
+        <span style="color:var(--text-muted)">revision ${request.sourceRef.revision}</span>
+      </div>
+      <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:7px">service → permission → event · 하나의 요청을 같은 address_context로 연결</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+        <div style="border:1px solid var(--border-cell);border-radius:var(--radius-sm);padding:9px;background:var(--surface-1)">
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:5px">service</div>
+          <button type="button" class="scenario-nav-chip" data-nav-sheet="service" data-nav-address="${request.service.value}"><code class="scenario-addr-chip">${request.service.address}</code></button>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:6px">${serviceCoords}</div>
+        </div>
+        <div style="border:1px solid var(--border-cell);border-radius:var(--radius-sm);padding:9px;background:var(--surface-1)">
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:5px">permission · ${request.permission.roleKo}</div>
+          <button type="button" class="scenario-nav-chip" data-nav-sheet="permission" data-nav-address="${request.permission.value}"><code class="scenario-addr-chip">${request.permission.address}</code></button>
+          <div class="${request.permission.status === 'ok' ? 'status-ok' : 'status-denied'}" style="font-size:0.7rem;margin-top:6px">${request.permission.status === 'ok' ? 'grant' : 'deny'}</div>
+        </div>
+        <div style="border:1px solid var(--border-cell);border-radius:var(--radius-sm);padding:9px;background:var(--surface-1)">
+          <div style="font-size:0.68rem;color:var(--text-muted);margin-bottom:5px">event · ${request.event?.nameKo ?? '없음'}</div>
+          ${request.event ? `<button type="button" class="scenario-nav-chip" data-nav-sheet="event" data-nav-address="${request.event.value}"><code class="scenario-addr-chip">${request.event.address}</code></button><div style="font-size:0.7rem;color:var(--text-muted);margin-top:6px">${request.event.initiator} · ${request.event.status === 'ok' ? 'success' : 'denied'}</div>` : '<span style="font-size:0.7rem;color:var(--text-muted)">이벤트 주소 없음</span>'}
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">address_context</div>
+    </div>
+  `;
+
+  const body = section.lastElementChild;
+  if (body) {
+    const pre = document.createElement('pre');
+    pre.style.cssText =
+      'margin:0 16px 14px;padding:9px 12px;border:1px solid var(--border-cell);border-radius:var(--radius-sm);background:var(--xl-navy-faint);font:0.7rem var(--font-num);color:var(--xl-navy);white-space:pre-wrap;overflow-wrap:anywhere;';
+    pre.textContent = JSON.stringify(request.addressContext, null, 2);
+    body.appendChild(pre);
+  }
+
+  section.querySelectorAll<HTMLButtonElement>('.scenario-nav-chip').forEach((button) => {
+    button.addEventListener('click', () => {
+      const sheet = button.dataset.navSheet;
+      const address = Number(button.dataset.navAddress);
+      if (!sheet || !Number.isFinite(address)) return;
+      const detail =
+        sheet === 'service'
+          ? { sheet, svcAddr: address }
+          : sheet === 'permission'
+            ? { sheet, permAddr: address }
+            : { sheet, evtAddr: address };
+      document.dispatchEvent(new CustomEvent('navigate-to', { detail }));
+    });
+  });
+
+  return section;
+}
+
 // ── Mock website ───────────────────────────────────────────────────────────
 
 type NavFeatureId = string;
@@ -85,7 +162,7 @@ function buildContentHtml(featureId: NavFeatureId, scenario: ScenarioResponse): 
 
   const feature = scenario.features.find((f) => f.id === featureId);
   if (!feature) return `<div style="padding:12px;color:var(--text-muted)">알 수 없는 기능</div>`;
-  const svc = feature.svcAddr; // API에서 SSOT 기반으로 계산된 주소 (예: "service:v1:40")
+  const svc = feature.svcAddr; // DEMO_CATALOG 의미값에서 계산된 주소
 
   if (!feature.hasAccess) {
     return `
@@ -510,6 +587,7 @@ export function renderScenarioPage(container: HTMLElement, ver = 'v2'): void {
 
   // Elements we keep references to for updating
   let roleBar: HTMLElement | null = null;
+  let requestSection: HTMLElement | null = null;
   let siteSection: HTMLElement | null = null;
   let matrixSection: HTMLElement | null = null;
   let simSection: HTMLElement | null = null;
@@ -541,10 +619,23 @@ export function renderScenarioPage(container: HTMLElement, ver = 'v2'): void {
 
     // Show loading in sim
     if (simSection) showSimLoading();
+    if (requestSection) {
+      requestSection.innerHTML = `
+        <div class="scenario-panel-header"><span style="font-weight:700">대표 요청 추적</span></div>
+        <div class="scenario-spinner-wrap"><div class="scenario-spinner"></div><span class="scenario-spinner-text">주소 컨텍스트 갱신 중...</span></div>
+      `;
+    }
 
     // Fetch scenario + features together so matrix reflects latest grant state
-    Promise.all([fetchScenario(activeRole, ver), fetchFeatures(ver)])
+    Promise.all([fetchMockScenario(activeRole, ver as DemoVer), fetchMockFeatures(ver as DemoVer)])
       .then(([scenario, features]) => {
+        const newRequest = renderRequestSection(scenario.request);
+        newRequest.classList.add('scenario-content-enter');
+        if (requestSection && requestSection.parentNode === container) {
+          container.replaceChild(newRequest, requestSection);
+        }
+        requestSection = newRequest;
+
         if (siteSection && siteSection.parentNode === container) {
           const newSite = renderSiteSection(scenario, navItems);
           newSite.classList.add('scenario-content-enter');
@@ -597,22 +688,27 @@ export function renderScenarioPage(container: HTMLElement, ver = 'v2'): void {
       </div>
       <div class="scenario-spinner-wrap" style="padding:16px">
         <div class="scenario-spinner"></div>
-        <span class="scenario-spinner-text">데이터 로딩 중...</span>
+        <span class="scenario-spinner-text">목 데이터 준비 중...</span>
       </div>
     </div>
   `;
   container.appendChild(loadingDiv);
 
   // Fetch both in parallel
-  Promise.all([fetchScenario(activeRole, ver), fetchFeatures(ver)])
+  Promise.all([fetchMockScenario(activeRole, ver as DemoVer), fetchMockFeatures(ver as DemoVer)])
     .then(([scenario, features]) => {
       container.removeChild(loadingDiv);
+
+      // Render representative request trace
+      requestSection = renderRequestSection(scenario.request);
+      requestSection.classList.add('scenario-content-enter');
+      // eslint-disable-next-line typescript/no-non-null-assertion -- roleBar 할당 완료
+      roleBar!.insertAdjacentElement('afterend', requestSection);
 
       // Render site section
       siteSection = renderSiteSection(scenario, navItems);
       siteSection.classList.add('scenario-content-enter');
-      // eslint-disable-next-line typescript/no-non-null-assertion -- 위에서 roleBar 할당 완료
-      roleBar!.insertAdjacentElement('afterend', siteSection);
+      requestSection.insertAdjacentElement('afterend', siteSection);
 
       // Render matrix section
       matrixSection = renderMatrixSection(features, activeRole);

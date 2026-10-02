@@ -15,7 +15,9 @@
 
 - monitor/diagram/debugger 성격의 시각화 페이지와 좌표계 데모 페이지를 묶는다.
 - `weighted-index`, `permission-engine`, `demo-snapshot`, `weighted-ui`, viz-language 계약을 조합해 브라우저에서 개념을 시연한다.
-- 별도 백엔드 없이 Vite 앱으로 동작하며, 필요한 데이터는 registry/ingest/platform-demo-api에서 읽는다.
+- Vite 앱은 카탈로그 탐색 화면을 `demo-snapshot` 기반 bundled read model로 제공하므로 별도 백엔드 없이도 동작한다.
+- 서비스·권한·이벤트·Casbin·시나리오 화면은 `src/mock-*-api.ts`와 `src/event-address.ts`를 사용한다. 이 read model은 API response shape를 유지하면서 canonical catalog 주소와 `address_context`를 만든다.
+- grant 편집, 로그 조회/seed, version, permission-engine, prefix-meta처럼 runtime 상태가 필요한 화면은 `platform-demo-api` 경계를 계속 사용하며 API가 없을 때의 제한을 화면에 반영한다.
 
 ## 코드 진입점
 
@@ -33,6 +35,6 @@ pnpm --filter @qa-sdk/platform-demo build
 pnpm --filter @qa-sdk/platform-demo test
 ```
 
-`test`는 production build 뒤 workbook HTML/asset, public 정적 관찰 페이지 복사, `def-catalog-data.json`, fallback read-model, diagram preset 전역 등록을 검증한다.
+`test`는 production build 뒤 workbook HTML/asset, public 정적 관찰 페이지 복사, `def-catalog-data.json`, fallback read-model, diagram preset 전역 등록을 검증하고, 모든 catalog 버전의 bundled read model·주소 계산·`address_context`를 실행한다.
 
 개별 페이지를 수정할 때는 먼저 관련 spec이 어느 그룹에 속하는지 확인한 뒤, 그 문서 링크를 README와 코드 변경에 함께 반영한다.

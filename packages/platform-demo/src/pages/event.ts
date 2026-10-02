@@ -5,8 +5,10 @@
 //  이벤트 인덱스 — 3D grid page (API-backed, version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { fetchEvtCells, type EvtCellsResponse } from '../registry.js';
+import { fetchMockEvtCells } from '../mock-event-api.js';
+import type { EvtCellsResponse } from '../registry.js';
 import { DEMO_KO, DEMO_INITIATORS } from 'demo-snapshot';
+import { EVENT_INITIATOR_CAP } from '../event-address.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -48,14 +50,14 @@ function renderEventDetail(container: HTMLElement, value: number, data: EvtCells
   const svcStride = data.svcStride;
   const svcPos = Math.floor(value / svcStride) + 1;
   const rem1 = value % svcStride;
-  const evtPos = Math.floor(rem1 / 2) + 1;
-  const initPos = (rem1 % 2) + 1;
+  const evtPos = Math.floor(rem1 / EVENT_INITIATOR_CAP) + 1;
+  const initPos = (rem1 % EVENT_INITIATOR_CAP) + 1;
 
   const svcLabel = data.svcLabels[svcPos - 1];
   const evtLabel = data.eventLabels[evtPos - 1];
-  const initiator = initPos === 1 ? 'web' : 'mobile';
+  const initiator = DEMO_INITIATORS[initPos - 1];
 
-  if (!svcLabel || !evtLabel) {
+  if (!svcLabel || !evtLabel || !initiator) {
     container.innerHTML = `<div style="padding:1rem;color:#c0392b">디코딩 오류</div>`;
     return;
   }
@@ -248,7 +250,7 @@ export async function renderEventPage(
   if (!_evtCache.has(cacheKey)) {
     gridContainer.innerHTML = `<div style="padding:2rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
-      const data = await fetchEvtCells(initiator, ver);
+      const data = await fetchMockEvtCells(initiator, ver as 'v1' | 'v2' | 'v3' | 'v4');
       _evtCache.set(cacheKey, data);
     } catch (e) {
       gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;

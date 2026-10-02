@@ -5,6 +5,12 @@
 //  개요 페이지 — 프로젝트 목표, 핵심 개념, DX 생태계
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { encodeEventAddress } from '../event-address.js';
+import { demoEncodeSvc } from 'demo-snapshot';
+
+const EXAMPLE_SERVICE_VALUE = demoEncodeSvc([3, 1, 4, 1]);
+const EXAMPLE_EVENT_VALUE = encodeEventAddress(EXAMPLE_SERVICE_VALUE, 'order.paid', 'web', 'v2');
+
 export function renderOverviewPage(container: HTMLElement): void {
   container.innerHTML = '';
 
@@ -15,10 +21,10 @@ export function renderOverviewPage(container: HTMLElement): void {
   const header = document.createElement('header');
   header.className = 'ov-header';
   header.innerHTML = `
-    <h1 class="ov-title">n차원 참조 주소 체계</h1>
+    <h1 class="ov-title">서비스 운영 연결을 위한 관측 좌표</h1>
     <p class="ov-subtitle">
-      모든 리소스에 <strong>고유한 정수 주소</strong>를 부여하고,<br/>
-      스펙이 변해도 기존 주소가 깨지지 않는 중앙 인덱스 시스템
+      서비스·권한·이벤트를 같은 좌표로 연결해<br/>
+      한 번의 요청에서 판정 근거와 영향 범위를 따라갑니다
     </p>
   `;
   wrap.appendChild(header);
@@ -31,15 +37,54 @@ export function renderOverviewPage(container: HTMLElement): void {
       <div class="ov-concept-icon">fx</div>
       <div class="ov-concept-text">
         <p>
-          서비스, 권한, 이벤트 등 모든 리소스를 <strong>다차원 좌표</strong>로 표현하고,
-          이를 <strong>하나의 정수</strong>로 변환합니다.
-          문자열 대신 숫자로 식별하여 전송·저장·연산이 효율적이며,
-          중앙 레지스트리가 모든 버전의 주소 스키마를 관리합니다.
+          주소는 제품의 목적이 아니라 연결을 가볍게 전달하는 <strong>관측 좌표</strong>입니다.
+          서비스 요청을 좌표와 정수 주소로 정규화한 뒤,
+          권한 판정과 성공·거부 이벤트를 같은 <strong>address context</strong>로 묶어
+          원인과 영향을 추적합니다. 중앙 레지스트리는 각 버전의 좌표 해석을 보존합니다.
         </p>
       </div>
     </div>
   `;
   wrap.appendChild(concept);
+
+  // ── Representative operating journey ──────────────────────────────────
+  const journey = document.createElement('section');
+  journey.className = 'ov-journey';
+  journey.innerHTML = `
+    <div class="ov-journey-head">
+      <div>
+        <div class="ov-journey-kicker">대표 운영 여정</div>
+        <h2 class="ov-journey-title">결제 내역 요청 하나를 끝까지 추적</h2>
+        <p class="ov-journey-desc">
+          좌표를 계산하는 데서 멈추지 않고, 누가 왜 허용·거부됐는지와 관련 이벤트까지 확인합니다.
+        </p>
+      </div>
+      <a class="ov-journey-cta" href="/scenario">시나리오 실행 →</a>
+    </div>
+    <div class="ov-journey-steps">
+      <div class="ov-journey-step">
+        <span class="ov-journey-step-num">01</span>
+        <strong>요청 선택</strong>
+        <span>prod · asia · payment · shop</span>
+        <a href="/service">서비스 좌표 보기</a>
+      </div>
+      <span class="ov-journey-arrow">→</span>
+      <div class="ov-journey-step">
+        <span class="ov-journey-step-num">02</span>
+        <strong>권한 판정</strong>
+        <span>operator가 결제 내역을 조회할 수 있는가?</span>
+        <a href="/casbin">판정 모델 보기</a>
+      </div>
+      <span class="ov-journey-arrow">→</span>
+      <div class="ov-journey-step">
+        <span class="ov-journey-step-num">03</span>
+        <strong>증거 연결</strong>
+        <span>permission → event → log</span>
+        <a href="/logging">주소 context 추적</a>
+      </div>
+    </div>
+  `;
+  wrap.appendChild(journey);
 
   // ── Flow: 4 stages ──────────────────────────────────────────────────────
   const stages = [
@@ -209,19 +254,19 @@ export function renderOverviewPage(container: HTMLElement): void {
         <pre class="ov-usage-code"><span class="ov-code-kw">const</span> addr = index.<span class="ov-code-fn">encode</span>({
   env: <span class="ov-code-str">"prod"</span>,
   region: <span class="ov-code-str">"kr"</span>,
-  svc: <span class="ov-code-str">"payment"</span>,
-  ns: <span class="ov-code-str">"default"</span>
+  svc_name: <span class="ov-code-str">"payment"</span>,
+  namespace: <span class="ov-code-str">"shop"</span>
 });
-<span class="ov-code-cmt">// => 46</span></pre>
+<span class="ov-code-cmt">// => service:v1:65632</span></pre>
       </div>
       <div class="ov-usage-card">
         <div class="ov-usage-card-head">
           <span class="ov-usage-card-label">주소 해석</span>
           <span class="ov-usage-card-desc">정수 주소를 좌표로 복원</span>
         </div>
-        <pre class="ov-usage-code"><span class="ov-code-kw">const</span> coords = index.<span class="ov-code-fn">decode</span>(<span class="ov-code-num">46</span>);
-<span class="ov-code-cmt">// => { env: "prod", region: "kr",</span>
-<span class="ov-code-cmt">//      svc: "payment", ns: "default" }</span></pre>
+        <pre class="ov-usage-code"><span class="ov-code-kw">const</span> coords = index.<span class="ov-code-fn">decode</span>(<span class="ov-code-num">65632</span>);
+<span class="ov-code-cmt">// => { env: "prod", region: "asia",</span>
+<span class="ov-code-cmt">//      svc_name: "payment", namespace: "shop" }</span></pre>
       </div>
       <div class="ov-usage-card">
         <div class="ov-usage-card-head">
@@ -230,9 +275,9 @@ export function renderOverviewPage(container: HTMLElement): void {
         </div>
         <pre class="ov-usage-code"><span class="ov-code-kw">const</span> matches = index.<span class="ov-code-fn">range</span>({
   env: <span class="ov-code-str">"prod"</span>,
-  svc: <span class="ov-code-str">"*"</span>  <span class="ov-code-cmt">// 와일드카드</span>
+  svc_name: <span class="ov-code-str">"payment"</span>  <span class="ov-code-cmt">// 서비스 범위</span>
 });
-<span class="ov-code-cmt">// => [40, 41, 42, ..., 49]</span></pre>
+<span class="ov-code-cmt">// => matching service:v1:* addresses</span></pre>
       </div>
       <div class="ov-usage-card">
         <div class="ov-usage-card-head">
@@ -266,11 +311,11 @@ codec.<span class="ov-code-fn">checkRaw</span>(mask,
           <span class="ov-usage-card-desc">정수 주소로 경량 로그 전송</span>
         </div>
         <pre class="ov-usage-code">logger.<span class="ov-code-fn">info</span>({
-  svc:  <span class="ov-code-num">46</span>,   <span class="ov-code-cmt">// "payment/prod/kr"</span>
-  perm: <span class="ov-code-num">42</span>,   <span class="ov-code-cmt">// "payment:admin"</span>
-  evt:  <span class="ov-code-num">132</span>   <span class="ov-code-cmt">// "order.paid:web"</span>
+  svc:  <span class="ov-code-num">${EXAMPLE_SERVICE_VALUE}</span>, <span class="ov-code-cmt">// prod/asia/payment/shop</span>
+  perm: <span class="ov-code-num">354</span>,   <span class="ov-code-cmt">// payment_history/operator</span>
+  evt:  <span class="ov-code-num">${EXAMPLE_EVENT_VALUE}</span>   <span class="ov-code-cmt">// order.paid/web</span>
 });
-<span class="ov-code-cmt">// ~6 bytes (문자열 대비 96% 감소)</span></pre>
+<span class="ov-code-cmt">// schema/version으로 각 주소를 좌표로 해석</span></pre>
       </div>
     </div>
     <div class="ov-usage-footer">

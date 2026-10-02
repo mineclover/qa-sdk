@@ -13,12 +13,11 @@ import {
   demoRolesFor,
   demoEventsFor,
   demoRoleStride,
-  demoEvtStride,
   demoCalcPermAddr,
-  demoCalcEvtAddr,
   type DemoVer,
 } from 'demo-snapshot';
 import { buildRefSvcRows, type DemoRefSvcRow } from './demo-display-data.js';
+import { EVENT_INITIATOR_CAP, eventAddress, eventStride } from '../event-address.js';
 
 type Ver = DemoVer;
 
@@ -32,6 +31,13 @@ function fmtAddr(schema: string, ver: Ver, index: number): string {
 
 const PERM_SVCS = buildRefSvcRows(DEMO_PERM_SVC_VALUES);
 const EVT_SVCS = buildRefSvcRows(DEMO_EVT_SVC_VALUES);
+
+// Keep the initial selection tied to the canonical ref-entry value. The
+// service reference catalog now contains both shop and cms entries, so a
+// positional literal would select a different service when the catalog order
+// changes.
+const PAYMENT_SHOP_PERM_POS =
+  PERM_SVCS.find((svc) => svc.svcId === 'payment' && svc.nsId === 'shop')?.pos ?? 1;
 
 // ── Role / Event metadata (demoRolesFor/demoEventsFor에서 동적 생성) ────
 
@@ -55,9 +61,9 @@ function eventsFor(v: Ver): EvtMeta[] {
   return [...demoEventsFor(v)].map((id, i) => ({ idx1: i + 1, id, ko: DEMO_KO.event[id] ?? id }));
 }
 const rc = demoRoleStride;
-const evtStride = demoEvtStride;
+const evtStride = eventStride;
 const calcPermAddr = demoCalcPermAddr;
-const calcEvtAddr = demoCalcEvtAddr;
+const calcEvtAddr = eventAddress;
 
 // 백엔드 서비스는 모바일 이니시에이터 미지원 (refEntry view에서 판정)
 const BACKEND_SVCS = new Set<string>(
@@ -81,7 +87,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
   container.innerHTML = '';
 
   const st: AccessState = {
-    permSvc: 7, // payment/shop
+    permSvc: PAYMENT_SHOP_PERM_POS,
     roleIdx1: 1, // admin
     initiator: 1, // web
   };
@@ -360,7 +366,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
     `;
 
     // ── Insight ──
-    const totalEvtFull = EVT_SVCS.length * curEvents.length * 2;
+    const totalEvtFull = EVT_SVCS.length * curEvents.length * EVENT_INITIATOR_CAP;
     const serviceRefCount = new Set(PERM_SVCS.map((ps) => ps.addr)).size;
     insightEl.innerHTML = `
       <div class="acc-insight-inner">
@@ -449,7 +455,7 @@ export function renderAccessPage(container: HTMLElement, ver: Ver): void {
               </div>
               <div class="acc-detail-row">
                 <span class="acc-detail-key">산식</span>
-                <span class="acc-detail-val"><code>(${svcPos} − 1) × ${evtStride(ver)} + (${evtIdx1} − 1) × 2 + (${initIdx} − 1) = ${addr}</code></span>
+                <span class="acc-detail-val"><code>(${svcPos} − 1) × ${evtStride(ver)} + (${evtIdx1} − 1) × ${EVENT_INITIATOR_CAP} + (${initIdx} − 1) = ${addr}</code></span>
               </div>
             </div>
           `;

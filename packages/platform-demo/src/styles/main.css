@@ -217,11 +217,147 @@ body > nav > a {
   .bottom-bar {
     position: static;
   }
+
+  /* Keep the coordinate table readable: the page can scroll vertically while
+     the wide catalog grid gets its own horizontal scroll surface. */
+  #sheet-service .sheet-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, auto) auto;
+    overflow: visible;
+  }
+  #sheet-service .dim-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-height: 168px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    white-space: nowrap;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-cell);
+  }
+  #sheet-service .dim-sidebar .sb-header,
+  #sheet-service .dim-sidebar .sb-list {
+    display: inline-flex;
+    vertical-align: top;
+  }
+  #sheet-service .dim-sidebar .sb-header {
+    height: 100%;
+    min-height: 36px;
+    position: static;
+  }
+  #sheet-service .dim-sidebar .sb-list {
+    flex-direction: row;
+  }
+  #sheet-service .dim-sidebar .sb-item {
+    min-width: 86px;
+    border-left: 0;
+    border-bottom: 3px solid transparent;
+  }
+  #sheet-service .dim-sidebar .sb-item.sb-active {
+    border-bottom-color: var(--xl-navy);
+  }
+  #sheet-service .dim-sidebar .sb-sep {
+    display: inline-block;
+    width: 8px;
+    height: 100%;
+    min-height: 36px;
+    vertical-align: top;
+  }
+  #sheet-service .sheet-grid-wrap {
+    min-width: 0;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #sheet-service .service-grid-shell {
+    width: max-content;
+    min-width: 100%;
+  }
+  #sheet-service .side-panel {
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    border-left: 0;
+    border-top: 1px solid var(--border-cell);
+  }
+  #sheet-service .sp-placeholder {
+    min-height: 118px;
+  }
 }
 
 /* ── Service grid cells — density gradient (light to dark navy) ── */
 .svc-cell-density {
   /* background set inline from low=#e8eef5 to high=#1e3a5f */
+}
+
+/* ── Service catalog summary and index_ref links ── */
+.service-grid-shell {
+  min-width: max-content;
+}
+.service-catalog-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: max-content;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-cell);
+  background: var(--surface-0);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+.service-catalog-summary-label {
+  color: var(--text-header);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.service-catalog-summary code {
+  color: var(--xl-navy);
+  white-space: nowrap;
+}
+.service-ref-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid #b0c4d8;
+  border-radius: var(--radius-sm);
+  background: var(--xl-navy-faint);
+  color: var(--xl-navy);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.68rem;
+  text-align: left;
+}
+.service-ref-link:hover,
+.service-ref-link:focus-visible {
+  background: var(--xl-blue-hover);
+  border-color: var(--xl-blue);
+  outline: none;
+}
+.service-ref-link span {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.service-ref-range {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+.service-ref-range-title {
+  color: var(--text-header);
+  font-weight: 700;
+}
+.service-ref-range code {
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 /* ── Perm / Evt cells ── */
@@ -548,6 +684,19 @@ code {
 }
 .scenario-action-btn:hover {
   background: var(--xl-blue-dark, #1a5c8a);
+}
+
+.scenario-nav-chip {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.scenario-nav-chip:hover .scenario-addr-chip {
+  color: var(--xl-blue);
+  border-color: var(--xl-blue);
 }
 
 /* ── Config panel ── */
@@ -2897,6 +3046,97 @@ code {
   font-weight: 600;
 }
 
+/* ── Representative operating journey ── */
+.ov-journey {
+  margin-bottom: 36px;
+  background: var(--surface-0);
+  border: 1px solid var(--xl-navy-light);
+  border-left: 4px solid var(--env-prod);
+  border-radius: var(--radius);
+  padding: 20px 22px 22px;
+}
+.ov-journey-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+.ov-journey-kicker {
+  color: var(--env-prod);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.ov-journey-title {
+  color: var(--xl-navy);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.ov-journey-desc {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+.ov-journey-cta,
+.ov-journey-step a {
+  color: var(--xl-blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+.ov-journey-cta {
+  flex: 0 0 auto;
+  border: 1px solid var(--xl-blue);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.ov-journey-cta:hover {
+  background: var(--xl-blue-light);
+}
+.ov-journey-steps {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.ov-journey-step {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid var(--border-cell);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: var(--surface-1);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+.ov-journey-step strong {
+  color: var(--xl-navy);
+  font-size: 0.9rem;
+}
+.ov-journey-step-num {
+  color: var(--env-prod);
+  font-family: var(--font-num);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ov-journey-step a {
+  margin-top: auto;
+  font-size: 0.76rem;
+}
+.ov-journey-arrow {
+  align-self: center;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+}
+
 /* ── DX Ecosystem ── */
 .ov-dx {
   margin-bottom: 32px;
@@ -2981,6 +3221,43 @@ code {
   border-radius: var(--radius-sm);
   padding: 3px 8px;
   display: inline-block;
+}
+
+@media (max-width: 760px) {
+  .ov-wrap {
+    padding: 24px 14px 36px;
+  }
+  .ov-title {
+    font-size: 1.55rem;
+  }
+  .ov-subtitle {
+    font-size: 0.92rem;
+  }
+  .ov-journey-head {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ov-journey-cta {
+    align-self: flex-start;
+  }
+  .ov-journey-steps {
+    flex-direction: column;
+  }
+  .ov-journey-arrow {
+    transform: rotate(90deg);
+  }
+  .ov-flow {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ov-arrow {
+    transform: rotate(90deg);
+    padding: 0;
+  }
+  .ov-usage-grid,
+  .ov-dx-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

@@ -5,7 +5,8 @@
 //  권한 인덱스 — 2D grid page (API-backed, version-aware)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { fetchPermCells, type PermCellsResponse } from '../registry.js';
+import { fetchMockPermCells } from '../mock-permission-api.js';
+import type { PermCellsResponse } from '../registry.js';
 import { DEMO_KO } from 'demo-snapshot';
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -206,7 +207,7 @@ export async function renderPermissionPage(
   if (!_permCache.has(ver)) {
     gridContainer.innerHTML = `<div style="padding:2rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
-      _permCache.set(ver, await fetchPermCells(ver));
+      _permCache.set(ver, await fetchMockPermCells(ver as 'v1' | 'v2' | 'v3' | 'v4'));
     } catch (e) {
       gridContainer.innerHTML = `<div style="padding:2rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
       return;
@@ -265,7 +266,7 @@ export async function refreshPermDetail(
   if (!_permCache.has(ver)) {
     spContent.innerHTML = `<div style="padding:1rem;color:var(--text-muted)">로딩 중...</div>`;
     try {
-      _permCache.set(ver, await fetchPermCells(ver));
+      _permCache.set(ver, await fetchMockPermCells(ver as 'v1' | 'v2' | 'v3' | 'v4'));
     } catch (e) {
       spContent.innerHTML = `<div style="padding:1rem;color:#c0392b">오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}</div>`;
       return;

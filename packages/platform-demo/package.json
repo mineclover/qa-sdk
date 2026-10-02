@@ -9,7 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "prebuild-diagrams": "tsx scripts/generate-diagram-presets.ts",
-    "test": "tsc && vite build && node scripts/static-smoke.test.mjs"
+    "test": "tsc && vite build && node scripts/static-smoke.test.mjs && tsx scripts/mock-read-model.test.ts"
   },
   "dependencies": {
     "bit-index": "workspace:*",
