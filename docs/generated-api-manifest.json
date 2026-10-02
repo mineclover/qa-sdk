@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T05:02:00.646Z",
+  "generatedAt": "2026-10-02T14:38:27.411Z",
   "layers": {
     "consumer": [
       {
@@ -110,6 +110,7 @@
           "cli-command",
           "codegen-core",
           "config-loader",
+          "context-runtime",
           "decision-flow",
           "decision-flow-store",
           "definition-catalog",
@@ -164,6 +165,15 @@
         "internalDeps": [
           "core"
         ]
+      },
+      {
+        "id": "context-runtime",
+        "name": "context-runtime",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "context-runtime",
+        "docRef": "context-runtime",
+        "internalDeps": []
       },
       {
         "id": "data-object-codegen",
@@ -521,6 +531,15 @@
         ]
       },
       {
+        "id": "provider-tokenizer-openai",
+        "name": "@qa-sdk/provider-tokenizer-openai",
+        "version": "0.1.0",
+        "tier": "consumer",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
         "id": "quality-ledger",
         "name": "quality-ledger",
         "version": "0.1.0",
@@ -793,6 +812,26 @@
         "boundary": "browser-runtime-system",
         "docRef": "none",
         "internalDeps": []
+      },
+      {
+        "id": "browser-layout-inspector",
+        "name": "browser-layout-inspector",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": []
+      },
+      {
+        "id": "browser-layout-inspector-extension",
+        "name": "browser-layout-inspector-extension",
+        "version": "0.1.0",
+        "tier": "bridge",
+        "boundary": "unknown",
+        "docRef": "none",
+        "internalDeps": [
+          "browser-layout-inspector"
+        ]
       },
       {
         "id": "codec",
