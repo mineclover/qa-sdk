@@ -26,15 +26,18 @@ function captureDemoBaseline() {
   return targets.map((element) => ({
     element,
     parent: element.parentElement,
-    style: element.getAttribute('style'),
+    attributes: [...element.attributes].map(({ name, value }) => [name, value]),
     innerHTML: element.innerHTML,
   }));
 }
 
 function restoreDemoBaseline(baseline) {
-  baseline.forEach(({ element, style, innerHTML }) => {
-    if (style == null) element.removeAttribute('style');
-    else element.setAttribute('style', style);
+  baseline.forEach(({ element, attributes, innerHTML }) => {
+    const baselineAttributes = new Map(attributes);
+    [...element.attributes].forEach(({ name }) => {
+      if (!baselineAttributes.has(name)) element.removeAttribute(name);
+    });
+    baselineAttributes.forEach((value, name) => element.setAttribute(name, value));
     element.innerHTML = innerHTML;
   });
   const parents = new Map();
@@ -114,6 +117,7 @@ function prependEntry(entry, scan, getScan) {
 
 function resetDemoLayout(visbug, baseline) {
   visbug?.muteEditLogMutations?.();
+  visbug?.selectorEngine?.unselect_all?.({ silent: true });
   restoreDemoBaseline(baseline);
   document.querySelectorAll('.demo-section, .demo-box, [data-demo-target]').forEach((el) => {
     el.removeAttribute('data-selected');
