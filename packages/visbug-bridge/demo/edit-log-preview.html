@@ -131,6 +131,10 @@
         </div>
         <details class="demo-snapshot" data-visbug-ignore open>
           <summary>RLSC snapshot · bounded view</summary>
+          <div class="demo-snapshot-actions" data-visbug-ignore>
+            <button type="button" id="btn-copy-snapshot" data-visbug-ignore>snapshot 복사</button>
+            <span id="snapshot-copy-status" aria-live="polite"></span>
+          </div>
           <pre id="rlsc-snapshot">snapshot 준비 중…</pre>
         </details>
       </header>
@@ -158,14 +162,18 @@
       element.setAttribute('data-qa-address', `visbug-demo:${section}`)
     })
     const scanOptions = { includeText: true }
+    const scanRoot = document.querySelector('.demo-canvas')
+    if (!(scanRoot instanceof HTMLElement)) throw new Error('RLSC demo canvas missing')
     const getScan = () => {
-      const scan = scanScreen(document.body, scanOptions)
+      const scan = scanScreen(scanRoot, scanOptions)
       const output = document.querySelector('#rlsc-snapshot')
       if (output) {
         output.textContent = formatRLSCSnapshot(scan.doc, {
           maxDepth: 4,
           maxNodes: 80,
           maxRelations: 16,
+          includeAnalysis: true,
+          maxIssues: 8,
         })
       }
       return scan

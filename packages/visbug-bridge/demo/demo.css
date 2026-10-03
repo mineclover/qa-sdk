@@ -320,6 +320,32 @@ body {
   font-size: 0.75rem;
 }
 
+.demo-snapshot-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.5rem 0.4rem;
+}
+
+.demo-snapshot-actions button {
+  border: 1px solid var(--demo-border);
+  background: var(--demo-surface);
+  color: var(--demo-text);
+  border-radius: 5px;
+  padding: 0.25rem 0.4rem;
+  cursor: pointer;
+  font-size: 0.68rem;
+}
+
+.demo-snapshot-actions button:hover {
+  border-color: var(--demo-accent);
+}
+
+#snapshot-copy-status {
+  color: var(--demo-feature);
+  font-size: 0.68rem;
+}
+
 .demo-snapshot pre {
   max-height: 15rem;
   overflow: auto;

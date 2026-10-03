@@ -185,6 +185,19 @@ export function wireEditLogDemo(visbug, { scan, getScan } = {}) {
   document.getElementById('btn-panel')?.addEventListener('click', () => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }, { capture: true });
+
+  document.getElementById('btn-copy-snapshot')?.addEventListener('click', async () => {
+    const output = document.getElementById('rlsc-snapshot');
+    const status = document.getElementById('snapshot-copy-status');
+    if (!output || !status) return;
+    try {
+      await navigator.clipboard.writeText(output.textContent ?? '');
+      status.textContent = '복사됨';
+    } catch {
+      status.textContent = '복사 실패 — 콘솔 출력을 사용하세요';
+    }
+    window.setTimeout(() => { status.textContent = ''; }, 2000);
+  }, { capture: true });
 }
 
 function applyPageTheme(theme) {

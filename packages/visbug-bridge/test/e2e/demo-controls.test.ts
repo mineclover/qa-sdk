@@ -49,3 +49,21 @@ test('clear and merge controls operate on a real edit-log stream', async ({ page
   await expect(page.locator('.demo-log-empty')).toBeVisible();
   await expect(page.locator('#rlsc-snapshot')).toContainText('RLSC snapshot v1.0');
 });
+
+test('bounded snapshot can be copied as a review artifact', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async (value: string) => { (window as any).__copiedSnapshot = value; } },
+    });
+  });
+  await page.goto('/packages/visbug-bridge/demo/edit-log-preview.html');
+  await page.waitForFunction(() => Boolean(document.querySelector('vis-bug')));
+  await page.locator('#btn-copy-snapshot').click();
+  await expect(page.locator('#snapshot-copy-status')).toHaveText('복사됨');
+  const copied = await page.evaluate(() => (window as any).__copiedSnapshot as string);
+  expect(copied).toContain('RLSC snapshot v1.0');
+  expect(copied).toContain('tree:');
+  expect(copied).not.toContain('demo-panel');
+  expect(copied).not.toContain('vis-bug');
+});
