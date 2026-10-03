@@ -65,7 +65,7 @@ console.log({ node, canonical, figma });
 
 ## Snapshot 가독성 리뷰
 
-`scanScreen()`의 `result.doc`는 손실 없는 원본 snapshot이라 JSON으로 바로 출력하면 트리·grid·layer·relation·styleStack이 모두 포함된다. 현재 demo를 1280×720 viewport에서 한 번 수집한 샘플은 89개 노드, 약 600KB, 2만 5천 줄 이상의 JSON으로 확장되므로 사람이 읽는 리뷰 출력으로는 과하다. 노드 수와 raw 크기는 viewport와 대상 DOM에 따라 달라진다.
+`scanScreen()`의 `result.doc`는 손실 없는 원본 snapshot이라 JSON으로 바로 출력하면 트리·grid·layer·relation·styleStack이 모두 포함된다. demo 규모의 DOM에서는 pretty JSON이 수십만 자와 수만 줄까지 커질 수 있으므로 사람이 읽는 리뷰 출력으로는 과하다. 노드 수와 raw 크기는 viewport와 대상 DOM에 따라 달라지며, snapshot panel 자체도 수집 대상에 포함된다.
 
 검토할 때는 세 층을 분리한다.
 
@@ -96,7 +96,7 @@ console.log(
 const rawSnapshot = JSON.stringify(result.doc, null, 2);
 ```
 
-읽기 쉬운 출력은 `RLSC snapshot v1.0` 헤더, viewport/counts, stable identifier가 포함된 tree, bounded layer/relation 목록 순서로 표시된다. 이 text projection은 원본을 대체하지 않으며, 생략된 노드와 relation 행은 `omitted`로 표시한다.
+읽기 쉬운 출력은 `RLSC snapshot v1.0` 헤더, viewport/counts, stable identifier가 포함된 tree, bounded layer/relation 목록 순서로 표시된다. 현재 VisBug demo panel은 최대 80 nodes와 16 relation rows를 보여준다. 이 text projection은 원본을 대체하지 않으며, 생략된 노드와 relation 행은 `omitted`로 표시한다.
 
 작은 fixture에서는 전체 tree를 확인해도 되지만, 큰 DOM에서는 relation이 노드 쌍에 따라 빠르게 늘어날 수 있다. `maxDepth`, `maxNodes`, `maxRelations`를 먼저 제한하고, 필요할 때만 raw JSON을 별도 파일로 저장한다.
 
