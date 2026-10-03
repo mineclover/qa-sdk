@@ -11,6 +11,7 @@
     "imports": {
       "visbug": "/vendor/projectvisbug/app/bundle.js",
       "visbug-bridge": "/packages/visbug-bridge/dist/index.js",
+      "rlsc-analysis": "/packages/rlsc-analysis/dist/index.js",
       "rlsc-analysis/browser": "/packages/rlsc-analysis/dist/browser.js"
     }
   }
@@ -128,6 +129,10 @@
           <span class="mutation" id="stat-mutation">mutation 0</span>
           <span id="stat-total">total 0</span>
         </div>
+        <details class="demo-snapshot" data-visbug-ignore open>
+          <summary>RLSC snapshot · bounded view</summary>
+          <pre id="rlsc-snapshot">snapshot 준비 중…</pre>
+        </details>
       </header>
       <ul class="demo-log" id="log-list">
         <li class="demo-log-empty">편집 후 엔트리가 여기 표시됩니다.</li>
@@ -144,6 +149,7 @@
   <script type="module">
     import { mountVisBug } from 'visbug-bridge'
     import { createDomRefSymbolResolver } from 'visbug-bridge'
+    import { formatRLSCSnapshot } from 'rlsc-analysis'
     import { scanScreen } from 'rlsc-analysis/browser'
     import { wireEditLogDemo } from './edit-log-preview.js'
 
@@ -152,8 +158,19 @@
       element.setAttribute('data-qa-address', `visbug-demo:${section}`)
     })
     const scanOptions = { includeText: true }
-    const initialScan = scanScreen(document.body, scanOptions)
-    const getScan = () => scanScreen(document.body, scanOptions)
+    const getScan = () => {
+      const scan = scanScreen(document.body, scanOptions)
+      const output = document.querySelector('#rlsc-snapshot')
+      if (output) {
+        output.textContent = formatRLSCSnapshot(scan.doc, {
+          maxDepth: 4,
+          maxNodes: 80,
+          maxRelations: 16,
+        })
+      }
+      return scan
+    }
+    const initialScan = getScan()
     const resolveDomRefSymbols = createDomRefSymbolResolver({
       rlsc: { locateElement: (element) => element.getAttribute('data-qa-address') },
     })

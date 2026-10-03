@@ -101,7 +101,7 @@ interface RLSCDocument {
 
 ## 직렬화와 Inspector 경계
 
-`rlsc-analysis`의 현재 공개 export에는 `encodeToMarkup`/`parseMarkup`가 없다. 이 API와 RLSC/1.0 텍스트 포맷, Inspector UI가 필요한 소비자는 [pnpm-mcp의 rlsc 패키지](https://github.com/mineclover/pnpm-mcp/tree/main/packages/rlsc)와 [rlsc-demo](https://github.com/mineclover/pnpm-mcp/tree/main/packages/rlsc-demo)를 사용한다. qa-sdk 문서는 그 외부 구현을 현재 submodule의 API로 혼동하지 않는다.
+`rlsc-analysis`의 현재 공개 export에는 `encodeToMarkup`/`parseMarkup`가 없다. 대신 `summarizeRLSCDocument()`와 `formatRLSCSnapshot()`이 손실 없는 `RLSCDocument`를 사람이 검토할 수 있는 bounded text projection으로 변환한다. RLSC/1.0 텍스트 포맷과 Inspector UI가 필요한 소비자는 [pnpm-mcp의 rlsc 패키지](https://github.com/mineclover/pnpm-mcp/tree/main/packages/rlsc)와 [rlsc-demo](https://github.com/mineclover/pnpm-mcp/tree/main/packages/rlsc-demo)를 사용한다. qa-sdk 문서는 그 외부 구현을 현재 submodule의 API로 혼동하지 않는다.
 
 ## 수집 옵션 — CollectorOptions
 

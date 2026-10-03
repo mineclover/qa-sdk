@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test('demo controls remain clickable while VisBug is capturing page clicks', async ({ page }) => {
   await page.goto('/packages/visbug-bridge/demo/edit-log-preview.html');
   await page.waitForFunction(() => Boolean(document.querySelector('vis-bug')));
+  await expect(page.locator('#rlsc-snapshot')).toContainText('RLSC snapshot v1.0');
 
   const target = page.locator('[data-section="padding"] [data-demo-target]');
   await target.scrollIntoViewIfNeeded();
@@ -46,4 +47,5 @@ test('clear and merge controls operate on a real edit-log stream', async ({ page
   await page.locator('#btn-clear').click();
   await expect(page.locator('#stat-total')).toHaveText('total 0');
   await expect(page.locator('.demo-log-empty')).toBeVisible();
+  await expect(page.locator('#rlsc-snapshot')).toContainText('RLSC snapshot v1.0');
 });

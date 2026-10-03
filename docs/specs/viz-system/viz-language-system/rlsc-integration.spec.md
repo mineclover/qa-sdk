@@ -97,7 +97,7 @@ console.log({
 });
 ```
 
-`scanScreen()`이 반환하는 주요 값은 `doc`, `nodes`, `index`, `metrics`, `pattern`, `overflowIssues`, `textOccupancies`와 직접 조회 함수들이다. `collectLayoutWithText()`의 `textPrepared`는 현재 빈 map이며, `analyzeTextOccupancy()`는 Canvas/pretext 측정이 아니라 결정론적 문자 폭 추정이다. 텍스트 수치는 레이아웃 힌트로만 사용한다.
+`scanScreen()`이 반환하는 주요 값은 `doc`, `nodes`, `index`, `metrics`, `pattern`, `overflowIssues`, `textOccupancies`와 직접 조회 함수들이다. `summarizeRLSCDocument()`와 `formatRLSCSnapshot()`은 raw `doc`를 review-friendly projection으로 보여준다. `collectLayoutWithText()`의 `textPrepared`는 현재 빈 map이며, `analyzeTextOccupancy()`는 Canvas/pretext 측정이 아니라 결정론적 문자 폭 추정이다. 텍스트 수치는 레이아웃 힌트로만 사용한다.
 
 ## VisBug join 사용법
 

@@ -2,6 +2,22 @@
 
 현재 qa-sdk에서 바로 설치하고 검증할 수 있는 RLSC 표면은 public `rlsc-analysis` submodule과 `visbug-bridge`다. 전체 DSL encoder, perspective viewer, Inspector 앱은 [pnpm-mcp](https://github.com/mineclover/pnpm-mcp)의 외부 패키지로 관리한다.
 
+## 클론한 qa-sdk에서 시작하기
+
+submodule까지 받아야 `visbug-bridge demo`가 vendor VisBug와 RLSC 분석 패키지를 함께 빌드할 수 있다.
+
+```bash
+git clone --recurse-submodules https://github.com/mineclover/qa-sdk.git
+cd qa-sdk
+corepack enable
+corepack pnpm install --frozen-lockfile
+corepack pnpm --filter rlsc-analysis build
+corepack pnpm --filter rlsc-analysis test
+corepack pnpm --filter visbug-bridge demo
+```
+
+Node.js 22 이상과 Corepack을 사용한다. 데모 서버가 열리면 [edit-log-preview.html](http://127.0.0.1:4173/packages/visbug-bridge/demo/edit-log-preview.html)을 열고, 종료할 때는 서버 터미널에서 `Ctrl-C`를 누른다. `4173` 포트가 사용 중이면 현재 demo script의 포트 고정값을 바꾸거나 다른 checkout에서 실행한다.
+
 ## 분석만 사용하는 경우
 
 DOM API는 `rlsc-analysis/browser`에서 가져온다. 주소 metadata를 붙인 뒤 한 번 스캔하면 노드, layout metric, overflow, 재식별 index를 함께 얻는다.
@@ -46,6 +62,43 @@ console.log({ node, canonical, figma });
 ```
 
 `collectLayoutWithText()`와 `scanScreen({ includeText: true })`의 text occupancy는 현재 Canvas/pretext 실측이 아니라 결정론적인 문자 폭 추정이다. 텍스트 수치는 비교와 경고에 사용하고, 최종 렌더링 판단에는 실제 브라우저 측정을 사용한다. `createLayoutMonitor()`도 root resize와 DOM mutation을 감시하는 경량 monitor이며, window resize와 모든 descendant의 독립적인 ResizeObserver를 제공하는 계약은 아니다.
+
+## Snapshot 가독성 리뷰
+
+`scanScreen()`의 `result.doc`는 손실 없는 원본 snapshot이라 JSON으로 바로 출력하면 트리·grid·layer·relation·styleStack이 모두 포함된다. 현재 demo를 1280×720 viewport에서 한 번 수집한 샘플은 89개 노드, 약 600KB, 2만 5천 줄 이상의 JSON으로 확장되므로 사람이 읽는 리뷰 출력으로는 과하다. 노드 수와 raw 크기는 viewport와 대상 DOM에 따라 달라진다.
+
+검토할 때는 세 층을 분리한다.
+
+1. `summarizeRLSCDocument(doc)` — viewport, node/layer/relation 수와 relation type별 개수
+2. `formatRLSCSnapshot(doc, options)` — 깊이·노드·relation 행을 제한한 들여쓰기 트리
+3. `JSON.stringify(doc, null, 2)` — 저장·diff·기계 소비용 원본
+
+```ts
+import { formatRLSCSnapshot, summarizeRLSCDocument } from 'rlsc-analysis';
+import { scanScreen } from 'rlsc-analysis/browser';
+
+const result = scanScreen(document.body, {
+  includeText: true,
+  collect: { addressAttribute: 'data-qa-address' },
+});
+
+console.table(summarizeRLSCDocument(result.doc));
+console.log(
+  formatRLSCSnapshot(result.doc, {
+    maxDepth: 5,
+    maxNodes: 120,
+    maxRelations: 24,
+    includeAttributes: true,
+  }),
+);
+
+// 원본 보관이 필요할 때만 사용한다.
+const rawSnapshot = JSON.stringify(result.doc, null, 2);
+```
+
+읽기 쉬운 출력은 `RLSC snapshot v1.0` 헤더, viewport/counts, stable identifier가 포함된 tree, bounded layer/relation 목록 순서로 표시된다. 이 text projection은 원본을 대체하지 않으며, 생략된 노드와 relation 행은 `omitted`로 표시한다.
+
+작은 fixture에서는 전체 tree를 확인해도 되지만, 큰 DOM에서는 relation이 노드 쌍에 따라 빠르게 늘어날 수 있다. `maxDepth`, `maxNodes`, `maxRelations`를 먼저 제한하고, 필요할 때만 raw JSON을 별도 파일로 저장한다.
 
 ## VisBug 편집을 RLSC 노드에 연결하는 경우
 
@@ -98,10 +151,10 @@ qa-sdk에는 `rlsc-demo` 소스가 없으므로 다음 외부 checkout에서 실
 git clone https://github.com/mineclover/pnpm-mcp.git
 cd pnpm-mcp
 corepack pnpm install
-corepack pnpm --filter rlsc-demo dev
+corepack pnpm --filter rlsc-demo dev -- --host 127.0.0.1
 ```
 
-이 데모는 RLSC의 Tree/Grid/Layers/Relations/Context와 perspective viewer를 포함한다. qa-sdk의 `packages/rlsc-demo/dist`는 이전 빌드 산출물이며 사용 경로가 아니다.
+브라우저: [http://127.0.0.1:5173/](http://127.0.0.1:5173/). 현재 외부 checkout의 `rlsc-demo dev` 화면은 Summary/overlay와 raw Document projection을 제공한다. raw Document는 canonical `result.doc` 전체나 RLSC/1.0 markup과 구분해서 본다. RLSC/1.0 markup은 사람·LLM 검토용 compact 표현이며 lossless JSON 복원 포맷이 아니다. 현재 `rlsc-demo build`는 외부 checkout HEAD에서 `rlsc-perspective` source 경계 문제로 실패할 수 있으므로 dev 실행을 기준으로 한다. qa-sdk의 `packages/rlsc-demo/dist`는 이전 빌드 산출물이며 사용 경로가 아니다.
 
 ## 검증 범위
 

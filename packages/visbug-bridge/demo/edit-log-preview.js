@@ -148,6 +148,7 @@ export function wireEditLogDemo(visbug, { scan, getScan } = {}) {
     statMutation.textContent = 'mutation 0';
     statTotal.textContent = 'total 0';
     document.querySelectorAll('.demo-section.done').forEach((el) => el.classList.remove('done'));
+    getScan?.();
   }, { capture: true });
 
   document.getElementById('btn-clear')?.addEventListener('click', () => {
