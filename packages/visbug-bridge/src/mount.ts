@@ -42,6 +42,9 @@ export function mountVisBug(host: HTMLElement, opts: VisBugMountOptions = {}): V
   if (opts.colorScheme) {
     visbug.setAttribute('color-scheme', opts.colorScheme);
   }
+  if (opts.tutsBaseURL) {
+    visbug.setAttribute('tutsBaseURL', opts.tutsBaseURL);
+  }
   host.appendChild(visbug);
 
   if (opts.onEntry) {

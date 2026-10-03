@@ -107,6 +107,8 @@ export interface VisBugMountOptions {
   readonly logger?: { warn: (...args: unknown[]) => void };
   /** `<vis-bug color-scheme>` — light / dark / auto (기본 auto) */
   readonly colorScheme?: 'light' | 'dark' | 'auto';
+  /** VisBug tutorial GIF base URL when the host serves vendor assets separately. */
+  readonly tutsBaseURL?: string;
   /**
    * editlog 이벤트 필터. 기본 `feature` — mutation 노이즈 제외.
    * `intent`는 feature와 동일(소비자 preset). `all`은 mutation 포함.

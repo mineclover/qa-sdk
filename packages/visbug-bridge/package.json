@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "demo": "corepack pnpm --filter visbug run bundle && tsup && http-server ../.. -p 4173 -c-1",
+    "demo": "corepack pnpm --filter visbug run bundle && corepack pnpm --filter rlsc-analysis build && tsup && http-server ../.. -p 4173 -c-1",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
     "test:extension": "corepack pnpm -C ../../vendor/projectvisbug run extension:build && playwright test -c playwright.extension.config.ts",

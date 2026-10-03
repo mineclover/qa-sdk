@@ -10,7 +10,8 @@
   {
     "imports": {
       "visbug": "/vendor/projectvisbug/app/bundle.js",
-      "visbug-bridge": "/packages/visbug-bridge/dist/index.js"
+      "visbug-bridge": "/packages/visbug-bridge/dist/index.js",
+      "rlsc-analysis/browser": "/packages/rlsc-analysis/dist/browser.js"
     }
   }
   </script>
@@ -20,7 +21,7 @@
     <main class="demo-canvas">
       <h1>edit-log feature-wrapper 프리뷰</h1>
       <p class="demo-lead">
-        하단 VisBug 툴바로 요소를 선택한 뒤 편집하면 오른쪽 패널에 <code>source: feature</code> 엔트리가 쌓입니다.
+        하단 VisBug 툴바로 요소를 선택한 뒤 편집하면 오른쪽 패널에 <code>feature</code>/<code>mutation</code> 엔트리가 쌓입니다.
         섹션 테두리가 초록색이면 해당 feature 캡처가 한 번 이상 성공한 것입니다.
       </p>
       <p class="demo-hint">
@@ -134,7 +135,7 @@
       <footer class="demo-panel-actions">
         <button type="button" id="btn-reset-layout">레이아웃 초기화</button>
         <button type="button" id="btn-clear">비우기</button>
-        <button type="button" id="btn-merge">correlated</button>
+        <button type="button" id="btn-merge">intent 병합</button>
         <button type="button" id="btn-panel">패널</button>
       </footer>
     </aside>
@@ -142,11 +143,26 @@
 
   <script type="module">
     import { mountVisBug } from 'visbug-bridge'
+    import { createDomRefSymbolResolver } from 'visbug-bridge'
+    import { scanScreen } from 'rlsc-analysis/browser'
     import { wireEditLogDemo } from './edit-log-preview.js'
 
-    mountVisBug(document.body, { colorScheme: 'light' })
+    document.querySelectorAll('[data-demo-target]').forEach((element) => {
+      const section = element.closest('[data-section]')?.getAttribute('data-section') || 'target'
+      element.setAttribute('data-qa-address', `visbug-demo:${section}`)
+    })
+    const scan = scanScreen(document.body, { includeText: true })
+    const resolveDomRefSymbols = createDomRefSymbolResolver({
+      rlsc: { locateElement: (element) => element.getAttribute('data-qa-address') },
+    })
+    mountVisBug(document.body, {
+      colorScheme: 'light',
+      tutsBaseURL: '/vendor/projectvisbug/app/tuts',
+      entryFilter: 'all',
+      resolveDomRefSymbols,
+    })
     customElements.whenDefined('vis-bug').then(() => {
-      wireEditLogDemo(document.querySelector('vis-bug'))
+      wireEditLogDemo(document.querySelector('vis-bug'), { scan })
     })
   </script>
 </body>

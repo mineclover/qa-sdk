@@ -41,14 +41,20 @@ function entryTags(entry) {
   return tags;
 }
 
-function renderEntry(entry) {
+function renderEntry(entry, scan) {
   const li = document.createElement('li');
   li.className = 'demo-entry';
   li.dataset.source = entry.source;
   const tags = entryTags(entry);
+  const rlscSymbol = entry.target?.catalog?.symbols?.find((symbol) => symbol.kind === 'rlsc');
+  const rlscMatches = rlscSymbol ? scan?.byQaAddress(rlscSymbol.value) ?? [] : [];
+  const rlscLabel = rlscSymbol
+    ? `RLSC ${rlscMatches.length === 1 ? `join: ${rlscMatches[0].id}` : `match ${rlscMatches.length}`}`
+    : 'RLSC symbol 없음';
   li.innerHTML = `
     <div><strong>${entry.feature}</strong> <span class="meta">${entry.source}</span></div>
     <div class="meta">${entry.target?.selector || entry.target?.nodePath || '?'}</div>
+    <div class="meta">${rlscLabel}</div>
     ${entry.args ? `<div class="meta">args ${formatArgs(entry.args)}</div>` : ''}
     ${entry.afterDOM?.textContent != null ? `<div class="meta">text → "${String(entry.afterDOM.textContent).slice(0, 40)}"</div>` : ''}
     ${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag">${t}</span>`).join('')}</div>` : ''}
@@ -63,8 +69,7 @@ function markSection(feature) {
   document.querySelector(sel)?.classList.add('done');
 }
 
-function prependEntry(entry) {
-  if (entry.source !== 'feature') return;
+function prependEntry(entry, scan) {
   if (entry.source === 'feature') featureCount++;
   else mutationCount++;
   statFeature.textContent = `feature ${featureCount}`;
@@ -74,7 +79,7 @@ function prependEntry(entry) {
   if (entry.source === 'feature') markSection(entry.feature);
 
   logEl.querySelector('.demo-log-empty')?.remove();
-  logEl.prepend(renderEntry(entry));
+  logEl.prepend(renderEntry(entry, scan));
   while (logEl.children.length > 40) logEl.lastChild?.remove();
 }
 
@@ -99,12 +104,12 @@ function resetDemoLayout(visbug) {
   visbug?.clearHistory?.();
 }
 
-export function wireEditLogDemo(visbug) {
+export function wireEditLogDemo(visbug, { scan } = {}) {
   if (!visbug) return;
 
   wireThemeControls(visbug);
 
-  visbug.addEventListener('editlog', (e) => prependEntry(e.detail));
+  visbug.addEventListener('editlog', (e) => prependEntry(e.detail, scan));
 
   document.getElementById('btn-reset-layout')?.addEventListener('click', () => {
     resetDemoLayout(visbug);
@@ -146,7 +151,7 @@ export function wireEditLogDemo(visbug) {
     merged
       .slice()
       .reverse()
-      .forEach((entry) => prependEntry(entry));
+      .forEach((entry) => prependEntry(entry, scan));
   });
 
   document.getElementById('btn-panel')?.addEventListener('click', () => {

@@ -4,7 +4,7 @@
 
 ## 1. 완료된 작업 (Completed)
 
-- ✅ **PRD US-006~012 완료**: `tasks/prd-rlsc-screen-analysis-perspective-packages.json` 상의 모든 US가 통과(`passes: true`)되었으며 코드가 main에 반영됨.
+- ✅ **PRD US-006~012 완료**: `tasks/prd-rlsc-screen-analysis-perspective-packages.json` 상의 당시 acceptance가 통과(`passes: true`)되었다. 이후 구현 소유권은 `pnpm-mcp`로 이동했으며, 현재 qa-sdk에는 `rlsc-analysis` public submodule과 `visbug-bridge` 통합만 유지한다. 현행 사용법은 `docs/guides/rlsc-usage-demo.md`를 따른다.
 - ✅ **Lint debt sweep 완료**: `fix/ci-lint-error-sweep` 브랜치의 핵심 변경 사항(oxlint, unicorn, vi.mocked 등)이 이미 main에 머지 또는 체리픽됨. 현재 `pnpm run lint` 통과.
 - ✅ **시나리오 9~17 sim-handles drift 해결**: `catalog-store` 핸들이 특정 버전(`v3`, `v4`)을 하드코딩하지 않고 토폴로지 내 모든 버전을 동적으로 반환하도록 수정됨.
 - ✅ **시나리오 1~8 HTTP mode 구현 완료**: `wireSimHandles` 및 `createSimGatewayFetch`를 통한 HTTP shim 구현 완료. `SimHandle` 인터페이스 호환성 확보 및 유닛 테스트로 인증 전파/타임아웃 검증 완료.

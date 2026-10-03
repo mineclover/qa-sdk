@@ -26,99 +26,121 @@ sources:
 
 ## 목적 ^purpose
 
-RLSC를 context engineering, 기존 좌표계, API 요약, 패키지 구조와 연결하는 통합 경로를 정리한다.
+현재 qa-sdk가 소유하는 RLSC 실행 경계와 브라우저 사용 경로를 고정한다. 화면 수집·분석은 `rlsc-analysis`, 편집 인텐트와 좌표 심볼 연결은 `visbug-bridge`가 담당한다. Inspector UI와 전체 RLSC DSL은 외부 `pnpm-mcp` 패키지의 책임이다.
 
 ## 구성 ^overview
 
-RLSC 계열은 DOM 수집 → 분석 fact 생성 → graphics/layout contract 연결의 파이프라인을 제공한다. 기존 qa-sdk 좌표 인프라와의 연결은 `data-qa-address` 같은 DOM 속성 또는 bridge 테스트에서 확인되는 통합 표면을 통해 관리한다.
+현재 검증 경로는 다음과 같다.
 
-## Context Engineering — generateDesignContext
+```text
+DOM metadata
+  └─ rlsc-analysis/browser: scanScreen()
+       ├─ RLSCDocument + nodes + index
+       ├─ metrics / pattern / overflowIssues
+       └─ byQaAddress() / byXPath() / byComponentId()
 
-`generateDesignContext(doc, options)` 가 R.L.S.C. 문서를 LLM이 이해할 수 있는 `DesignContext`로 변환한다.
-
-### ContextPurpose — 5가지 목적
-
-| 목적 | 프롬프트 역할 |
-|------|-------------|
-| `layout-analysis` | 구조적 특성, 계층 관계, 공간 활용 분석 |
-| `component-search` | 특정 컴포넌트 위치, 크기, 역할 식별 |
-| `design-generation` | 기존 패턴 유지하면서 변경사항을 R.L.S.C. 마크업으로 생성 |
-| `design-diff` | 두 시점의 변경 요소, 이동, 크기 변화 분석 |
-| `accessibility-audit` | ARIA 역할 누락, 키보드 접근성, 시각적 계층 문제 분석 |
-
-### DesignContext 구조
-
-| 필드 | 내용 |
-|------|------|
-| `summary` | 자연어 레이아웃 요약 (가시 요소 수, 주요 영역 top 5, 역할 분포) |
-| `structure` | R.L.S.C. 마크업 (토큰 예산의 40%까지) |
-| `matrix` | 그리드 텍스트 표현 |
-| `relations` | 공간 관계 텍스트 |
-| `focusDetail` | 포커스 영역 상세 (노드 ID 또는 rect) |
-| `prompt` | 전체 프롬프트 (목적별 템플릿 + 데이터 조합) |
-
-### 토큰 예산 관리
-
-- `maxTokens` 옵션 (기본 4,000)
-- 1 토큰 = 약 4자로 근사
-- structure 섹션에 예산의 40% 할당
-- 초과 시 truncate + `... (truncated)` 표시
-
-## 기존 좌표계 통합
-
-RLSC는 패키지 구현은 독립 repository/submodule로 공유할 수 있지만, 좌표 인프라 계약은 qa-sdk의 기존 주소 체계를 재사용한다:
-
-1. **수집 시점**: `data-qa-address` 속성에서 좌표 주소 추출 → `RLSCNode.address`
-2. **문서 단위**: `RLSCDocument.address` 에 페이지 수준 좌표 주소 저장
-3. **검색**: `findByAddress(doc, address)` 로 특정 좌표 주소를 가진 노드 검색
-4. **마크업**: `addr:page_view:v2:42` 형태로 직렬화
-
-## 패키지 경계
-
-| 패키지 | 책임 | 배포/공유 기준 |
-|--------|------|---------------|
-| `rlsc-analysis` | DOM 스캔, 메타데이터 수집, identifier/index, 영역/overflow 분석 | `packages/rlsc-analysis` |
-| `rlsc-perspective` | 수집된 `RLSCDocument`의 CSS 3D Perspective 시각화 | 외부/이전 패키지 경계 |
-| `rlsc` | 기존 RLSC DSL, rendering, compatibility export | 외부/이전 패키지 경계 |
-| `rlsc-demo` | 분석/시각화 통합 데모 | 외부/이전 패키지 경계 |
-
-qa-sdk는 RLSC 전체 구현 패키지나 demo를 제품 코어로 승격하지 않는다. qa-sdk 쪽 계약은 `rlsc-analysis` 근거, `data-qa-address` 기반 좌표 연결, viz-language 문서 수준의 통합 설명으로 제한한다.
-
-외부 소비자는 `pnpm-mcp`에서 빌드/테스트된 registry 또는 local tarball 산출물을 설치한다. 구현과 테스트 하네스의 관리 주체는 `pnpm-mcp`다.
-
-## 쿼리 API
-
-| 함수 | 설명 |
-|------|------|
-| `queryNodes(doc, query)` | 조건 기반 노드 검색 (tag, role, class, text, rect, area, z-range) |
-| `findByRect(doc, rect)` | 영역 내 노드 검색 |
-| `findByRole(doc, role)` | role 기반 검색 |
-| `findByAddress(doc, address)` | 좌표 주소 기반 검색 |
-| `findById(doc, id)` | 노드 ID로 단일 노드 검색 |
-| `replaceNode(doc, id, patch)` | 불변 노드 교체 |
-| `removeNode(doc, id)` | 불변 노드 제거 |
-| `diffDocuments(before, after)` | 두 문서 간 차이 계산 (added/removed/moved/resized/reordered) |
-
-## 레거시 패키지 구조 — external rlsc package
-
-```
-src/
-  types.ts       ← 전체 타입 정의 (Node, Grid, Layer, Relation, Document, Context, Query)
-  collector.ts   ← DOM 수집 (브라우저 전용) + flattenTree
-  grid.ts        ← 뷰포트 셀 분할 + 점유 분석 + gridToText
-  layers.ts      ← z-index 레이어 분류 + layersToText
-  relations.ts   ← 공간 관계 탐지 + relationsToText
-  encoder.ts     ← 마크업 직렬화/파싱 (encodeToMarkup, parseMarkup)
-  context.ts     ← Context Engineering (generateDesignContext)
-  query.ts       ← 검색/교체/삭제/비교 API
-  index.ts       ← 공개 export 배럴
+VisBug edit
+  └─ visbug-bridge: createDomRefSymbolResolver()
+       └─ EditLogEntry.target.catalog.symbols[].kind === "rlsc"
+            └─ scan.byQaAddress(symbol.value) 로 RLSC node join
 ```
 
-## demo 통합 — external rlsc-demo
+## 현재 패키지 경계
 
-R.L.S.C. Inspector UI:
+| 패키지 | 현재 책임 | 위치 |
+|--------|-----------|------|
+| `rlsc-analysis` | DOM 수집, metadata, identifier/index, area/layout/text 분석, graphics adapter contract | `packages/rlsc-analysis` public submodule |
+| `visbug-bridge` | VisBug Web Component mount, edit-log listener, DomRef와 `rlsc`/`qa-coord` 심볼 연결 | `packages/visbug-bridge` |
+| `rlsc` | encoder, context, query, compatibility surface | 외부 `pnpm-mcp/packages/rlsc` |
+| `rlsc-perspective` | `RLSCDocument` 3D viewer | 외부 `pnpm-mcp/packages/rlsc-perspective` |
+| `rlsc-demo` | 수집·분석·오버레이를 보여주는 Inspector | 외부 `pnpm-mcp/packages/rlsc-demo` |
 
-- 캔버스: 샘플 레이아웃 + 호버/선택 하이라이트 오버레이
-- 패널: 탭 기반 (Tree, Grid, Layers, Relations, Context)
-- 바운딩 박스 오버레이: 노드별 경계선 시각화
-- 선택 시 포커스 상세 표시
+qa-sdk의 `packages/rlsc-demo`와 `packages/rlsc-perspective`에는 추적되는 source/package가 없다. 로컬에 남은 `dist`는 무시되는 이전 산출물이므로 실행 경로로 문서화하지 않는다.
+
+## 좌표 metadata 계약
+
+`rlsc-analysis/browser`가 수집하는 노드는 다음 DOM metadata를 보존한다.
+
+| DOM attribute | RLSC 필드 | bridge 용도 |
+|---------------|-----------|-------------|
+| `data-component-id` | `identifier.componentId` | 안정적인 컴포넌트 조회 |
+| `data-qa-address` | `address`, `identifier.qaAddress` | `scan.byQaAddress()` join key |
+| `data-debug-label` | `debugLabel` | 사람이 읽는 진단 라벨 |
+| `data-boundary` | `boundary` | 경계/소유권 표시 |
+
+`collectLayout()`는 현재 문서 수준 `RLSCDocument.address`를 자동으로 채우지 않는다. 페이지 주소가 필요하면 소비자가 별도 metadata를 보관하고, 노드 수준 주소는 `data-qa-address`로 연결한다.
+
+## 브라우저 소비 API
+
+`rlsc-analysis` root export는 순수 분석용이고, DOM API는 `/browser` subpath에서 가져온다.
+
+```ts
+import { normalizeGraphicsLayoutSpecFromRLSCNode } from 'rlsc-analysis';
+import { scanScreen } from 'rlsc-analysis/browser';
+
+const scan = scanScreen(document.body, {
+  includeText: true,
+  collect: { addressAttribute: 'data-qa-address' },
+});
+
+const submit = scan.byQaAddress('checkout:form:submit')[0];
+const layout = submit
+  ? normalizeGraphicsLayoutSpecFromRLSCNode(submit)
+  : null;
+
+console.log({
+  nodeCount: scan.nodes.length,
+  overflowIssues: scan.overflowIssues,
+  metrics: scan.metrics,
+  submit,
+  layout,
+});
+```
+
+`scanScreen()`이 반환하는 주요 값은 `doc`, `nodes`, `index`, `metrics`, `pattern`, `overflowIssues`, `textOccupancies`와 직접 조회 함수들이다. `collectLayoutWithText()`의 `textPrepared`는 현재 빈 map이며, `analyzeTextOccupancy()`는 Canvas/pretext 측정이 아니라 결정론적 문자 폭 추정이다. 텍스트 수치는 레이아웃 힌트로만 사용한다.
+
+## VisBug join 사용법
+
+```ts
+import { createDomRefSymbolResolver, mountVisBug } from 'visbug-bridge';
+import { scanScreen } from 'rlsc-analysis/browser';
+
+const scan = scanScreen(document.body);
+const resolveDomRefSymbols = createDomRefSymbolResolver({
+  rlsc: {
+    locateElement: (element) => element.getAttribute('data-qa-address'),
+  },
+});
+
+mountVisBug(document.body, {
+  entryFilter: 'all',
+  resolveDomRefSymbols,
+  onEntry(entry) {
+    const symbol = entry.target.catalog?.symbols.find((item) => item.kind === 'rlsc');
+    const node = symbol ? scan.byQaAddress(symbol.value)[0] : undefined;
+    console.log({ entry, rlscNode: node });
+  },
+});
+```
+
+`rlsc` 심볼이 없으면 bridge의 canonical XPath가 fallback 후보가 된다. 현재 bridge smoke는 이 두 경로를 검증한다. 실제 edit/replay 조작은 브라우저 데모에서 확인하고, 분석 snapshot은 편집 전후에 다시 `scanScreen()`으로 수집한다.
+
+## 외부 Inspector 데모
+
+전체 Tree/Grid/Layers/Relations/Context 화면이 필요하면 공개 [pnpm-mcp/packages/rlsc-demo](https://github.com/mineclover/pnpm-mcp/tree/main/packages/rlsc-demo)를 사용한다.
+
+실행 명령은 `git clone` 후 `corepack pnpm --filter rlsc-demo dev`이며, 상세 사용 예제는 `docs/guides/rlsc-usage-demo.md`에 둔다.
+
+qa-sdk 안에서 바로 실행할 수 있는 현재 데모는 VisBug bridge와 RLSC join을 합친다.
+
+```bash
+corepack pnpm --filter visbug-bridge demo
+```
+
+브라우저에서 [http://localhost:4173/packages/visbug-bridge/demo/edit-log-preview.html](http://localhost:4173/packages/visbug-bridge/demo/edit-log-preview.html)을 열고 점선 박스를 편집한다. 각 edit-log 항목에 `RLSC join: <node id>`가 표시되며, feature/mutation 카운터와 intent 병합을 함께 확인할 수 있다.
+
+## 검증 명령
+
+검증 명령은 `corepack pnpm --filter rlsc-analysis test`와 `corepack pnpm --filter visbug-bridge test:e2e`를 기본으로 한다. 전체 명령은 `docs/guides/rlsc-usage-demo.md`에 둔다.
+
+브라우저 accuracy smoke와 perspective viewer는 `pnpm-mcp` checkout에서 실행한다. qa-sdk root에는 perspective package가 없으므로 stale `dist`를 기준으로 한 결과를 성공 근거로 사용하지 않는다.

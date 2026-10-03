@@ -28,6 +28,7 @@ ctrl.unmount()
 - `host: HTMLElement` — `<vis-bug>`이 append될 부모. 필수.
 - `opts.bufferSize?: number` — ring buffer 최대 크기. 기본 1000.
 - `opts.colorScheme?: 'light' | 'dark' | 'auto'` — `<vis-bug color-scheme>` (기본 auto)
+- `opts.tutsBaseURL?: string` — VisBug tutorial GIF 경로. vendor 자산을 별도 서빙할 때 지정한다.
 - `opts.entryFilter?: 'feature' | 'intent' | 'all' | 'mutation-debug'` — `onEntry` 전달 필터. 기본 `feature`.
 - `opts.onEntry?: (entry: EditLogEntry) => void` — 단일 listener. 예외는 `logger.warn`으로 격리.
 - `opts.logger?: { warn }` — 미지정 시 `console.warn`.
@@ -141,8 +142,9 @@ pnpm --filter visbug-bridge demo
 
 브라우저: [http://localhost:4173/packages/visbug-bridge/demo/edit-log-preview.html](http://localhost:4173/packages/visbug-bridge/demo/edit-log-preview.html)
 
-- 오른쪽 패널: `source: feature` / `mutation` 실시간 스트림
+- 오른쪽 패널: `source: feature` / `mutation` 실시간 스트림과 `RLSC join: <node id>` 결과
 - 섹션별 체크리스트: 해당 feature 엔트리가 한 번이라도 기록되면 초록 테두리
+- 데모의 `data-demo-target`에는 `data-qa-address`가 자동으로 주입되어 edit-log target catalog와 `rlsc-analysis` snapshot을 join한다.
 - 내장 history 패널: <kbd>Cmd+Shift+L</kbd>
 
 vendor만 단독 실행 (bridge 없이):

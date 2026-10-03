@@ -27,7 +27,7 @@ RLSC의 정체성, 핵심 개념, 마크업 포맷을 분리해 시각 구조 DS
 
 ## 구성 ^overview
 
-R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구조를 좌표계 DSL로 표현한다. 현재 qa-sdk 근거는 `rlsc-analysis`의 browser collector/metadata 분석이며, DOM을 순회하여 구조·텍스트·위치·스타일 신호를 추출하고 LLM Context Engineering에 사용할 수 있는 분석 fact로 정규화한다.
+R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구조를 좌표계 데이터로 표현한다. 현재 qa-sdk가 검증하는 구현은 공개 `rlsc-analysis` submodule의 browser collector/metadata 분석이며, DOM을 순회하여 구조·텍스트·위치·스타일 신호를 분석 fact로 정규화한다. 전체 DSL 인코더와 Inspector UI는 `pnpm-mcp`의 외부 패키지 경계에 있다.
 
 ## 핵심 타입
 
@@ -35,7 +35,7 @@ R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구�
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `id` | string | `tag#id` 또는 자동 생성 (`tag.class__N`) |
+| `id` | string | `tag#id` 또는 자동 생성 (`tag-N`) |
 | `tag` | string | HTML 태그명 |
 | `classes` | string[] | CSS 클래스 |
 | `role` | string? | ARIA role 또는 시맨틱 추론 |
@@ -44,15 +44,21 @@ R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구�
 | `depth` | number | DOM 깊이 (root=0) |
 | `display` | string | CSS display |
 | `position` | string | CSS position |
+| `overflow` | string | CSS overflow |
 | `visible` | boolean | 뷰포트 내 가시 여부 |
 | `textContent` | string? | 가시 텍스트 (최대 80자) |
 | `address` | string? | 기존 좌표계 주소 (`data-qa-address`) |
+| `debugLabel` | string? | 디버깅용 라벨 (`data-debug-label`) |
+| `boundary` | string? | 경계 태그 (`data-boundary`) |
+| `fontInfo` | TextFontInfo? | 텍스트 점유 추정에 사용하는 글꼴/패딩 |
+| `styleStack` | StandardStyleStack? | 레이아웃에 필요한 축약 스타일 |
+| `identifier` | ScreenIdentifier? | component/qa/css/node 재식별 정보 |
 | `attributes` | Record | data-*, aria-*, href, src, alt 등 의미론적 속성 |
 | `children` | RLSCNode[] | 자식 노드 |
 
 ### LayoutGrid — 뷰포트 셀 분할 행렬
 
-- `cellSize`: 셀 크기 (기본 16px)
+- `cellSize`: 셀 크기 (기본 32px)
 - `cells[row][col]`: 각 셀의 `nodeIds`, `zStack`, `dominant`, `coverage`
 - `analyzeGrid(root, viewport)` 로 생성
 
@@ -61,7 +67,8 @@ R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구�
 | z-index 범위 | 역할 |
 |--------------|------|
 | < 0 | background |
-| 0 ~ 9 | content |
+| 0 | background |
+| 1 ~ 9 | content |
 | 10 ~ 99 | sticky |
 | 100 ~ 999 | overlay |
 | 1000 ~ 9999 | modal |
@@ -69,14 +76,12 @@ R.L.S.C.™ (Relative Layout Structured Content)는 디자인의 시각적 구�
 
 ### RLSCRelation — 노드 간 공간 관계
 
-8가지 관계 유형: `contains`, `overlaps`, `adjacent-x`, `adjacent-y`, `aligned-x`, `aligned-y`, `stacked`, `flow`
+현재 `detectRelations()`가 생성하는 관계는 `contains`, `overlaps`, `aligned-x`, `aligned-y` 네 종류다. 타입 유니온에는 향후 확장을 위해 `adjacent-x`, `adjacent-y`, `stacked`, `flow`도 남아 있지만 현재 collector가 이를 생성한다고 가정하면 안 된다.
 
-- `contains`: DOM depth 기반 포함 관계 (외부 rect가 내부 rect를 완전 포함)
-- `stacked`: 같은 위치, 다른 z-index (overlap > 0.8)
-- `overlaps`: rect 겹침 (overlap > 0.1)
-- `adjacent-x/y`: 16px 이내 인접
-- `aligned-x/y`: 4px 이내 정렬
-- `flow`: 같은 부모 아래 형제 노드 순서
+- `contains`: 한 rect가 다른 rect를 완전히 포함
+- `overlaps`: 두 rect가 교차 (`strength: 0.5`)
+- `aligned-x` / `aligned-y`: 해당 축 좌표가 4px 이내로 정렬
+- `strength: 1`은 `contains`에만 사용된다.
 
 ### RLSCDocument — 전체 문서
 
@@ -94,29 +99,9 @@ interface RLSCDocument {
 }
 ```
 
-## 마크업 포맷
+## 직렬화와 Inspector 경계
 
-`encodeToMarkup(doc)` 로 직렬화:
-
-```
-RLSC/1.0
-viewport: 1920x1080
-url: https://example.com
-timestamp: 2026-03-26T...
----
-# Tree
-[header#main-header] @(0,0) 1920x60 role:banner
-  [nav.main-nav] @(100,10) 800x40 display:flex role:navigation
----
-# GRID 16px cols:120 rows:68
-  (0..119,0..3): header#main-header
----
-# Layers
-  z:    0  content      [header#main-header, nav.main-nav]
----
-# Relations
-  header#main-header CONTAINS nav.main-nav
-```
+`rlsc-analysis`의 현재 공개 export에는 `encodeToMarkup`/`parseMarkup`가 없다. 이 API와 RLSC/1.0 텍스트 포맷, Inspector UI가 필요한 소비자는 [pnpm-mcp의 rlsc 패키지](https://github.com/mineclover/pnpm-mcp/tree/main/packages/rlsc)와 [rlsc-demo](https://github.com/mineclover/pnpm-mcp/tree/main/packages/rlsc-demo)를 사용한다. qa-sdk 문서는 그 외부 구현을 현재 submodule의 API로 혼동하지 않는다.
 
 ## 수집 옵션 — CollectorOptions
 

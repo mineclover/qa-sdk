@@ -17,7 +17,7 @@ help:
 	@echo "  make sim-up           - Boot the local Docker simulation stack."
 	@echo "  make sim-down         - Tear down the local Docker simulation stack."
 	@echo "  make visbug-smoke     - Build visbug bundle + run visbug-bridge unit/e2e tests."
-	@echo "  make visbug-demo     - Start edit-log feature-wrapper preview (http://localhost:4173/...)."
+	@echo "  make visbug-demo     - Start RLSC + edit-log preview (http://localhost:4173/...)."
 	@echo "  make visbug-ext      - Build Chrome/Firefox/Edge extension bundle (vendor/projectvisbug/extension/)."
 	@echo "  make install-hooks    - Install pre-push Git hook to enforce architecture boundaries."
 

@@ -98,4 +98,13 @@ describe('mountVisBug', () => {
     expect(visbug.resolveDomRefSymbols).toBe(resolveDomRefSymbols);
     ctrl.unmount();
   });
+
+  it('sets the tutorial asset base URL before mount', async () => {
+    const { mountVisBug } = await import('../src/mount.js');
+    const ctrl = mountVisBug(document.body, { tutsBaseURL: '/vendor/projectvisbug/app/tuts' });
+    expect(document.querySelector('vis-bug')?.getAttribute('tutsBaseURL')).toBe(
+      '/vendor/projectvisbug/app/tuts',
+    );
+    ctrl.unmount();
+  });
 });
