@@ -96,7 +96,7 @@ WeakRef / AsyncIterator / CustomElements v1 / MutationObserver — Chrome 86+, F
 - **2026-06-18** — E2E + extension asset smoke 자동화: bridge Playwright 2/2, `test:extension` 1/1, unpacked extension의 tutorial GIF 13개 200 확인
 - **2026-06-18** — Safari archive smoke 자동화: `pnpm -C vendor/projectvisbug run safari:archive:unsigned`로 Release archive 산출물 `VisBug.app` 확인, notarization은 credentials 기반 `safari:notarize`로 분리
 - **2026-06-18** — DomRef D5b smoke 복원: `rlsc-analysis/browser` workspace export 기반 `rlsc` symbol + XPath fallback join 검증 (`packages/visbug-bridge/test/rlsc-integration.spec.ts`)
-  - 검증: bridge unit 20/20 + typecheck, vendor unit 118/118
+  - 검증: bridge unit 20/20 + typecheck, vendor unit 120/120
 - **2026-06-17** — edit-log v1.2: mutation noise filter, `merge: 'intent'`, bridge `entryFilter`, extension build scripts
 - **2026-06-17** — feature-wrapper 전면 확장 + DOM 캡처 (`dom-bind`, `beforeDOM`/`afterDOM`, replay `dom` mode)
   - feature: padding~imageswap, text (contenteditable), move drag `swapElements`

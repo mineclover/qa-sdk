@@ -116,7 +116,7 @@ edit-log       →  (visbug Web Component 내부 only)
 
 ## 테스트
 
-- unit: `pnpm -C vendor/projectvisbug test:unit` — edit-log, DomRef, feature wrapper, selection, tutorial image fallback 포함 (현재 118 tests)
+- unit: `pnpm -C vendor/projectvisbug test:unit` — edit-log, DomRef, feature wrapper, selection, tutorial image fallback 포함 (현재 120 tests)
 - playwright: `app/edit-log/integration.test.js` (15 tests — padding~text/swap feature capture)
 
 로컬:

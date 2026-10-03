@@ -21,6 +21,34 @@ let featureCount = 0;
 let mutationCount = 0;
 const seenFeatures = new Set();
 
+function captureDemoBaseline() {
+  const targets = [...document.querySelectorAll('[data-demo-target]')];
+  return targets.map((element) => ({
+    element,
+    parent: element.parentElement,
+    style: element.getAttribute('style'),
+    innerHTML: element.innerHTML,
+  }));
+}
+
+function restoreDemoBaseline(baseline) {
+  baseline.forEach(({ element, style, innerHTML }) => {
+    if (style == null) element.removeAttribute('style');
+    else element.setAttribute('style', style);
+    element.innerHTML = innerHTML;
+  });
+  const parents = new Map();
+  baseline.forEach((snapshot) => {
+    if (!snapshot.parent) return;
+    const siblings = parents.get(snapshot.parent) ?? [];
+    siblings.push(snapshot.element);
+    parents.set(snapshot.parent, siblings);
+  });
+  parents.forEach((elements, parent) => {
+    elements.forEach((element) => parent.appendChild(element));
+  });
+}
+
 function formatArgs(args) {
   if (!args) return '';
   try {
@@ -84,25 +112,16 @@ function prependEntry(entry, scan, getScan) {
   while (logEl.children.length > 40) logEl.lastChild?.remove();
 }
 
-const LAYOUT_STYLE_PROPS = [
-  'position',
-  'top',
-  'left',
-  'width',
-  'height',
-  'transform',
-  'box-sizing',
-];
-
-function resetDemoLayout(visbug) {
+function resetDemoLayout(visbug, baseline) {
   visbug?.muteEditLogMutations?.();
+  restoreDemoBaseline(baseline);
   document.querySelectorAll('.demo-section, .demo-box, [data-demo-target]').forEach((el) => {
-    LAYOUT_STYLE_PROPS.forEach((prop) => el.style.removeProperty(prop));
     el.removeAttribute('data-selected');
     el.removeAttribute('data-selected-hide');
     el.removeAttribute('data-label-id');
   });
   document.querySelectorAll('visbug-handles, visbug-label').forEach((el) => el.remove());
+  visbug?.resetEditLogTracking?.();
   visbug?.clearHistory?.();
   window.setTimeout(() => visbug?.unmuteEditLogMutations?.(), 0);
 }
@@ -111,11 +130,12 @@ export function wireEditLogDemo(visbug, { scan, getScan } = {}) {
   if (!visbug) return;
 
   wireThemeControls(visbug);
+  const baseline = captureDemoBaseline();
 
   visbug.addEventListener('editlog', (e) => prependEntry(e.detail, scan, getScan));
 
   document.getElementById('btn-reset-layout')?.addEventListener('click', () => {
-    resetDemoLayout(visbug);
+    resetDemoLayout(visbug, baseline);
     logEl.innerHTML = '<div class="demo-log-empty">편집 후 엔트리가 여기 표시됩니다.</div>';
     featureCount = 0;
     mutationCount = 0;
