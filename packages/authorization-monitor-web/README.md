@@ -39,7 +39,7 @@ payload는 `AuthorizationOntologyGraph` 자체이거나 `{ graphId, snapshotId, 
 브라우저에서 `rlsc`를 주입해 다음처럼 수집할 수 있다.
 
 ```ts
-import { collectLayout } from "rlsc";
+import { collectLayout } from "rlsc-analysis/browser";
 
 const doc = collectLayout(document.querySelector("#app")!, {
   addressAttribute: "data-qa-address",

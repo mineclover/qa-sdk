@@ -35,7 +35,13 @@ export function mountVisBug(host: HTMLElement, opts: VisBugMountOptions = {}): V
     getTargetRefByLabelId: (labelId: string | number) => DomRefCatalog | null;
     resolveDomRefSymbols?: VisBugMountOptions['resolveDomRefSymbols'];
     editLogStream: () => AsyncIterable<EditLogEntry>;
+    bufferSize?: number;
   };
+  if (opts.bufferSize !== undefined) {
+    // Set this before insertion so the custom element consumes the value from
+    // its connectedCallback when it installs the edit-log dispatcher.
+    visbug.bufferSize = opts.bufferSize;
+  }
   if (opts.resolveDomRefSymbols) {
     visbug.resolveDomRefSymbols = opts.resolveDomRefSymbols;
   }

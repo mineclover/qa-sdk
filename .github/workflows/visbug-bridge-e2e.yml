@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - packages/visbug-bridge/**
+      - packages/rlsc-analysis/**
       - vendor/projectvisbug
+      - pnpm-lock.yaml
       - .github/workflows/visbug-bridge-e2e.yml
   pull_request:
     branches: [main]
     paths:
       - packages/visbug-bridge/**
+      - packages/rlsc-analysis/**
       - vendor/projectvisbug
+      - pnpm-lock.yaml
       - .github/workflows/visbug-bridge-e2e.yml
   workflow_dispatch:
 

@@ -19,7 +19,7 @@
 4. `pnpm --filter visbug run bundle` (e2e용 vendor bundle)
 5. `pnpm --filter visbug-bridge build` (tsup ESM/CJS/DTS)
 6. `pnpm --filter visbug-bridge exec playwright install --with-deps chromium`
-7. `pnpm --filter visbug-bridge test` (vitest 단위, 18개)
+7. `pnpm --filter visbug-bridge test` (vitest 단위, 현재 20개)
 8. `pnpm --filter visbug-bridge test:e2e` (playwright, 2개)
 9. `pnpm --filter visbug-bridge test:extension` (extension build + tutorial GIF asset smoke, 1개)
 10. 실패 시 `test-results/` artifact 업로드 (7일 보관)
@@ -42,13 +42,15 @@
 ```
 
 ### path filter로 트리거 절약
-visbug-bridge 변경 시에만 e2e 잡 실행하려면 `paths` 필터 추가:
+bridge가 소비하는 RLSC 분석 submodule 또는 lockfile이 바뀌어도 e2e 잡이 실행되도록 `paths` 필터를 유지한다:
 ```yaml
 on:
   pull_request:
     paths:
       - 'packages/visbug-bridge/**'
+      - 'packages/rlsc-analysis/**'
       - 'vendor/projectvisbug'   # submodule pointer
+      - 'pnpm-lock.yaml'
       - '.github/workflows/visbug-bridge-e2e.yml'
 ```
 

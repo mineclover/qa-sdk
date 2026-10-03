@@ -125,7 +125,7 @@ pnpm --filter visbug-bridge build
 ## 테스트
 
 ```bash
-pnpm --filter visbug-bridge test       # vitest 단위 (controller + mount + coordinate symbols + rlsc smoke, 18 tests)
+pnpm --filter visbug-bridge test       # vitest 단위 (controller + mount + coordinate symbols + rlsc smoke, 20 tests)
 pnpm --filter visbug-bridge test:e2e   # playwright e2e (chromium + http-server, 2 tests)
 pnpm --filter visbug-bridge test:extension # extension build + tutorial GIF asset smoke (1 test)
 ```

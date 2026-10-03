@@ -107,4 +107,12 @@ describe('mountVisBug', () => {
     );
     ctrl.unmount();
   });
+
+  it('passes bufferSize to the custom element before it connects', async () => {
+    const { mountVisBug } = await import('../src/mount.js');
+    const ctrl = mountVisBug(document.body, { bufferSize: 250 });
+    const visbug: any = document.querySelector('vis-bug');
+    expect(visbug?.bufferSize).toBe(250);
+    ctrl.unmount();
+  });
 });

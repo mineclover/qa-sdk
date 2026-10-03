@@ -41,13 +41,14 @@ function entryTags(entry) {
   return tags;
 }
 
-function renderEntry(entry, scan) {
+function renderEntry(entry, scan, getScan) {
   const li = document.createElement('li');
   li.className = 'demo-entry';
   li.dataset.source = entry.source;
   const tags = entryTags(entry);
+  const currentScan = getScan?.() ?? scan;
   const rlscSymbol = entry.target?.catalog?.symbols?.find((symbol) => symbol.kind === 'rlsc');
-  const rlscMatches = rlscSymbol ? scan?.byQaAddress(rlscSymbol.value) ?? [] : [];
+  const rlscMatches = rlscSymbol ? currentScan?.byQaAddress(rlscSymbol.value) ?? [] : [];
   const rlscLabel = rlscSymbol
     ? `RLSC ${rlscMatches.length === 1 ? `join: ${rlscMatches[0].id}` : `match ${rlscMatches.length}`}`
     : 'RLSC symbol 없음';
@@ -69,7 +70,7 @@ function markSection(feature) {
   document.querySelector(sel)?.classList.add('done');
 }
 
-function prependEntry(entry, scan) {
+function prependEntry(entry, scan, getScan) {
   if (entry.source === 'feature') featureCount++;
   else mutationCount++;
   statFeature.textContent = `feature ${featureCount}`;
@@ -79,7 +80,7 @@ function prependEntry(entry, scan) {
   if (entry.source === 'feature') markSection(entry.feature);
 
   logEl.querySelector('.demo-log-empty')?.remove();
-  logEl.prepend(renderEntry(entry, scan));
+  logEl.prepend(renderEntry(entry, scan, getScan));
   while (logEl.children.length > 40) logEl.lastChild?.remove();
 }
 
@@ -94,6 +95,7 @@ const LAYOUT_STYLE_PROPS = [
 ];
 
 function resetDemoLayout(visbug) {
+  visbug?.muteEditLogMutations?.();
   document.querySelectorAll('.demo-section, .demo-box, [data-demo-target]').forEach((el) => {
     LAYOUT_STYLE_PROPS.forEach((prop) => el.style.removeProperty(prop));
     el.removeAttribute('data-selected');
@@ -102,14 +104,15 @@ function resetDemoLayout(visbug) {
   });
   document.querySelectorAll('visbug-handles, visbug-label').forEach((el) => el.remove());
   visbug?.clearHistory?.();
+  window.setTimeout(() => visbug?.unmuteEditLogMutations?.(), 0);
 }
 
-export function wireEditLogDemo(visbug, { scan } = {}) {
+export function wireEditLogDemo(visbug, { scan, getScan } = {}) {
   if (!visbug) return;
 
   wireThemeControls(visbug);
 
-  visbug.addEventListener('editlog', (e) => prependEntry(e.detail, scan));
+  visbug.addEventListener('editlog', (e) => prependEntry(e.detail, scan, getScan));
 
   document.getElementById('btn-reset-layout')?.addEventListener('click', () => {
     resetDemoLayout(visbug);
@@ -121,7 +124,7 @@ export function wireEditLogDemo(visbug, { scan } = {}) {
     statMutation.textContent = 'mutation 0';
     statTotal.textContent = 'total 0';
     document.querySelectorAll('.demo-section.done').forEach((el) => el.classList.remove('done'));
-  });
+  }, { capture: true });
 
   document.getElementById('btn-clear')?.addEventListener('click', () => {
     visbug.clearHistory();
@@ -133,7 +136,7 @@ export function wireEditLogDemo(visbug, { scan } = {}) {
     statMutation.textContent = 'mutation 0';
     statTotal.textContent = 'total 0';
     document.querySelectorAll('.demo-section.done').forEach((el) => el.classList.remove('done'));
-  });
+  }, { capture: true });
 
   document.getElementById('btn-merge')?.addEventListener('click', () => {
     logEl.innerHTML = '';
@@ -151,12 +154,12 @@ export function wireEditLogDemo(visbug, { scan } = {}) {
     merged
       .slice()
       .reverse()
-      .forEach((entry) => prependEntry(entry, scan));
-  });
+      .forEach((entry) => prependEntry(entry, scan, getScan));
+  }, { capture: true });
 
   document.getElementById('btn-panel')?.addEventListener('click', () => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-  });
+  }, { capture: true });
 }
 
 function applyPageTheme(theme) {

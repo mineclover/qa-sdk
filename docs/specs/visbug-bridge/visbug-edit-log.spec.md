@@ -64,7 +64,7 @@ sources:
 | `target.catalog` | 항상 | full XPath canonical + multi-symbol catalog (`dom-ref`) |
 | `target.primary` | 선택 | 사람이 읽기 좋은 1순위 심볼 (`id`/`attr`/`css` 등) |
 | `target.selector` / `target.nodePath` | 항상 | 하위 호환 필드. `selector`는 `primary.value` 우선 |
-| `correlationId` | 항상 | canonical target id + CSS 변경 prop + DOM 변경(`dom`) 키로 bucket |
+| `correlationId` | 항상 | canonical target id + CSS 변경 prop + DOM 변경(`dom`) 키 + 100ms bucket |
 
 `beforeDOM` / `afterDOM` 예:
 
@@ -81,8 +81,9 @@ sources:
    - **`mutationScope: 'page-edits'` (기본)** — `data-selected` 또는 `contenteditable` 노드만 mutation 수집  
    - **`contentRoot`** — Observer root = vis-bug 부모 (bridge `mountVisBug(host)` 시 `host` 경계)  
    - computed style diff 없음 → skip  
-   - 동일 `correlationId`의 `feature` 엔트리 존재 시 mutation skip  
-   - resize drag 중 `muteEditLogMutations()` 구간 skip  
+   - 동일 correlation의 `feature` 엔트리가 callback 시각 기준 100ms 이내에 있으면 mutation skip (MutationObserver가 bucket 경계를 넘어도 인접 bucket 후보를 확인)
+   - resize drag 중 `muteEditLogMutations()` 구간 skip
+   - feature/mutation capture는 동일 `TargetRegistry` catalog를 재사용해 target identity를 유지
 3. **Debug** — `mutationCapture: 'all'` + `mutationScope: 'document'`로 v1 capture-all 복원
 4. **Active tool inference (v1.1)** — mutation entry의 `feature`는 `host.active_tool.dataset.tool`에서 추론
 5. **Feature wrapper** — `feature-bind.js` + `bindFeatureCall()`:
@@ -115,7 +116,7 @@ edit-log       →  (visbug Web Component 내부 only)
 
 ## 테스트
 
-- unit: `pnpm -C vendor/projectvisbug test:unit` — edit-log, DomRef, feature wrapper, selection, tutorial image fallback 포함 (현재 111 tests)
+- unit: `pnpm -C vendor/projectvisbug test:unit` — edit-log, DomRef, feature wrapper, selection, tutorial image fallback 포함 (현재 118 tests)
 - playwright: `app/edit-log/integration.test.js` (15 tests — padding~text/swap feature capture)
 
 로컬:

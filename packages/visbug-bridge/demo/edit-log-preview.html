@@ -151,7 +151,9 @@
       const section = element.closest('[data-section]')?.getAttribute('data-section') || 'target'
       element.setAttribute('data-qa-address', `visbug-demo:${section}`)
     })
-    const scan = scanScreen(document.body, { includeText: true })
+    const scanOptions = { includeText: true }
+    const initialScan = scanScreen(document.body, scanOptions)
+    const getScan = () => scanScreen(document.body, scanOptions)
     const resolveDomRefSymbols = createDomRefSymbolResolver({
       rlsc: { locateElement: (element) => element.getAttribute('data-qa-address') },
     })
@@ -162,7 +164,7 @@
       resolveDomRefSymbols,
     })
     customElements.whenDefined('vis-bug').then(() => {
-      wireEditLogDemo(document.querySelector('vis-bug'), { scan })
+      wireEditLogDemo(document.querySelector('vis-bug'), { scan: initialScan, getScan })
     })
   </script>
 </body>
