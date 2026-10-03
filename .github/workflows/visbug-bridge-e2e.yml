@@ -55,7 +55,7 @@ jobs:
         run: corepack pnpm --filter visbug-bridge test:e2e
 
       - name: Run extension asset smoke
-        run: corepack pnpm --filter visbug-bridge test:extension
+        run: xvfb-run -a corepack pnpm --filter visbug-bridge test:extension
 
       - name: Upload playwright trace on failure
         if: failure()
