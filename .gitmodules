@@ -1,9 +1,6 @@
 [submodule "vendor/projectvisbug"]
 	path = vendor/projectvisbug
 	url = https://github.com/mineclover/ProjectVisBug.git
-[submodule "vendor/headroom"]
-	path = vendor/headroom
-	url = https://github.com/chopratejas/headroom
 [submodule "packages/rlsc-analysis"]
 	path = packages/rlsc-analysis
 	url = https://github.com/mineclover/rlsc-analysis.git
