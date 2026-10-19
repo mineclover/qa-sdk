@@ -6,9 +6,20 @@ packages:
   - "simulations/enterprise-pm/packages/*"
   - "simulations/enterprise-pm/scenarios"
 
-onlyBuiltDependencies:
-  - better-sqlite3
-  - '@swc/core'
+# pnpm 11은 strictDepBuilds=true가 기본이라 빌드 스크립트가 있는 의존성은 모두 명시해야 한다.
+# pnpm 10에서 onlyBuiltDependencies에 없어 건너뛰던 패키지는 false로 유지한다.
+allowBuilds:
+  better-sqlite3: true
+  '@swc/core': true
+  # 아래는 install/postinstall 스크립트가 있으나 pnpm 10에서도 실행하지 않던 패키지
+  '@nestjs/core': false
+  '@pulumi/kubernetes': false
+  esbuild: false
+  fsevents: false
+  msgpackr-extract: false
+  protobufjs: false
+  sharp: false
+  workerd: false
 
 # ragrid's old stylus range otherwise keeps deprecated source-map/glob
 # packages in the workspace. The current stylus API remains compatible with

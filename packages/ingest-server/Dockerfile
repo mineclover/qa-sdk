@@ -8,7 +8,7 @@ FROM node:${NODE_VERSION} AS builder
 WORKDIR /workspace
 
 RUN apk add --no-cache python3 make g++ libc6-compat
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.6 --activate
 
 # workspace 메타 + 루트 tsconfig + lockfile (캐시 최적화)
 # tsconfig.json은 sub-package들의 "extends": "../../tsconfig.json"이 참조하므로 필수
@@ -38,11 +38,11 @@ FROM node:${NODE_VERSION} AS runtime
 WORKDIR /app
 
 RUN apk add --no-cache libc6-compat tini
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.6 --activate
 
 ENV NODE_ENV=production
 ENV PORT=3200
-# pnpm 10.30.3은 TTY 없는 환경에서 modules dir 정리 시 confirmation을 요구하므로
+# pnpm은 TTY 없는 환경에서 modules dir 정리 시 confirmation을 요구하므로
 # CI=true 또는 --config.confirmModulesPurge=false 가 필요하다.
 ENV CI=true
 

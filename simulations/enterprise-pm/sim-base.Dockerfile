@@ -18,7 +18,7 @@ FROM node:${NODE_VERSION} AS builder
 RUN apk add --no-cache python3 make g++ libc6-compat
 
 # pnpm 활성화
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.6 --activate
 
 WORKDIR /app
 
@@ -62,7 +62,7 @@ FROM node:${NODE_VERSION} AS runtime
 # better-sqlite3 native runtime
 RUN apk add --no-cache libc6-compat tini wget
 
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.6 --activate
 
 WORKDIR /app
 

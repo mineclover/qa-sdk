@@ -8,7 +8,7 @@ ARG NODE_VERSION=22-alpine
 FROM node:${NODE_VERSION} AS builder
 
 # pnpm 활성화 (corepack)
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.6 --activate
 
 WORKDIR /workspace
 
@@ -34,7 +34,7 @@ RUN pnpm --filter "{./simulations/enterprise-pm/services/${SERVICE_NAME}}" build
 # ── Stage 2: runtime ──
 FROM node:${NODE_VERSION} AS runtime
 
-RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
+RUN corepack enable && corepack prepare pnpm@11.28.6 --activate
 
 WORKDIR /app
 

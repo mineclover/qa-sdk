@@ -14,7 +14,7 @@
 전용 잡은 `.github/workflows/visbug-bridge-e2e.yml`에서 활성화되어 있다. 실행 단계:
 
 1. `actions/checkout@v4` with `submodules: recursive`
-2. Node 22 + pnpm 10.30.3 (corepack)
+2. Node 22 + pnpm 11.28.6 (corepack)
 3. `pnpm install --frozen-lockfile`
 4. `pnpm --filter visbug run bundle` (e2e용 vendor bundle)
 5. `pnpm --filter visbug-bridge build` (tsup ESM/CJS/DTS)
