@@ -220,7 +220,7 @@ Discovery Context와 Working Context를 실제 `context-runtime` slice로 구현
 - **이번 warning closure diff 범위**: cases/test family index를 component ownership이 아닌 layout/pack reference로 재분류하고, provider tokenizer 구현 spec의 inbound trace를 보강했다. `def topdown`의 기존 family 멤버십을 `refs` 경로로 재검증했다.
 - **문서 분할**: 150줄 초과가 된 bounded execution cases/test 문서를 overview group과 역할별 leaf family로 분리했다. contract ID와 unit ID는 유지하고, `contains` 및 공통 family ID로 `--family-only` 수집 범위를 보존했다. rule/client 문서는 중복 설명을 압축해 각각 150줄 미만으로 정리했다.
 - **잔여 blocker**: 추가 provider SDK/model tokenizer는 provider와 모델 선택이 필요하다. `context-runtime` 전용 axis/prefix는 현재 좌표 prefix 소비 0건이며 Q2의 실제 의사결정 효과도 닫히지 않아 보류한다. 재검토 조건은 위 Q3 증거 매트릭스의 두 번째 PrefixDef + 공통 query/impact consumer + contract test다.
-- **provider discovery**: managed workspace에는 OpenAI API SDK나 Anthropic SDK는 없고, 첫 실제 tokenizer module은 별도 `@qa-sdk/provider-tokenizer-openai` package의 `js-tiktoken@1.0.21` dependency로 격리했다. upstream `vendor/headroom` provider references는 사용하지 않는다.
-- **submodule 상태**: `packages/rlsc-analysis`, `vendor/headroom`, `vendor/projectvisbug` 모두 clean이며 pointer 변경 없음.
+- **provider discovery**: managed workspace에는 OpenAI API SDK나 Anthropic SDK는 없고, 첫 실제 tokenizer module은 별도 `@qa-sdk/provider-tokenizer-openai` package의 `js-tiktoken@1.0.21` dependency로 격리했다. upstream `~/ref/chopratejas/headroom` provider references는 사용하지 않는다.
+- **submodule 상태**: `packages/rlsc-analysis`, `~/ref/chopratejas/headroom`(더 이상 submodule 아님), `vendor/projectvisbug` 모두 clean이며 pointer 변경 없음.
 - **root 커밋 상태**: 이번 Q3 후속 문서 1건이 미커밋이며, 사용자 요청이 없어 커밋하지 않았다. submodule pointer 변경은 없다.
 - **검증 상태**: `def sync`, `def validate`, `def scan-audit`, `arch:feedback` 6/6, `git diff --check` 통과. 전체 `format:check`는 이번 diff와 무관한 기존 tracked baseline 2건(`docs/generated-api-manifest.json`, `scripts/verify-analysis-os.ts`) 때문에 실패했으며 Q3 문서는 통과했다.
