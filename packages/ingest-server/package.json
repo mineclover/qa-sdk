@@ -45,7 +45,7 @@
     "resource-policy-store": "workspace:*",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.3",
     "wrangler": "^4.76.0"
   },
   "peerDependencies": {

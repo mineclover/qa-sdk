@@ -38,6 +38,6 @@
     "@types/better-sqlite3": "catalog:",
     "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
-    "typescript": "^5.4.0"
+    "typescript": "^5.9.3"
   }
 }

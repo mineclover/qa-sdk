@@ -36,7 +36,7 @@
     "drizzle-kit": "catalog:",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "vitest": "^1.6.1"
   }
 }

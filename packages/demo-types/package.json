@@ -24,6 +24,6 @@
   "devDependencies": {
     "@qa-sdk/core": "workspace:*",
     "demo-snapshot": "workspace:*",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.3"
   }
 }
