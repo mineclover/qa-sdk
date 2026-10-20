@@ -62,10 +62,10 @@
     "@opentelemetry/sdk-trace-base": "^1.30.1",
     "@qa-sdk/sim-auth-api": "workspace:*",
     "@qa-sdk/sim-domain-slice-kit": "workspace:*",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.5",
     "fast-check": "^3.23.2",
     "tsup": "^8.5.1",
-    "tsx": "^4.19.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"
   }

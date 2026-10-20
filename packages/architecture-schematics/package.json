@@ -35,9 +35,9 @@
     "typescript": "^5.8.2"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.5",
     "tsup": "^8.5.1",
-    "vitest": "^3.0.0"
+    "vitest": "^3.2.7"
   },
   "schematics": "./collection.json"
 }

@@ -30,7 +30,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.5",
     "ioredis-mock": "catalog:",
     "reflect-metadata": "^0.2.2",
     "tsup": "^8.5.1",

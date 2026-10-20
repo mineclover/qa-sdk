@@ -58,11 +58,11 @@
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
     "@types/better-sqlite3": "catalog:",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.5",
     "better-sqlite3": "catalog:",
     "drizzle-kit": "catalog:",
     "postgres": "^3.4.0",
-    "tsx": "^4.19.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"
   },

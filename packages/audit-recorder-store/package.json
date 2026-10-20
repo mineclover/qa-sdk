@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "catalog:",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.5",
     "better-sqlite3": "catalog:",
     "postgres": "^3.4.0",
     "resource-policy-store": "workspace:*",

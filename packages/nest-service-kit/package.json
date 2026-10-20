@@ -27,7 +27,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-fastify": "^11.0.0",
     "@nestjs/platform-ws": "^11.0.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.20.5",
     "typescript": "^5.8.2",
     "vitest": "^1.6.1"
   },
