@@ -132,13 +132,19 @@ function createBrowserCodecCases(catalog: Catalog, prefixId: string): MicroCase[
   }
   const decodeCase: MicroCase =
     browserDecode(browserCatalog, encoded.serialized) === null
-      ? { id: decodeId, run: failing(new Error(`browser-codec.decode(${encoded.serialized})가 null을 반환했다`)) }
+      ? {
+          id: decodeId,
+          run: failing(new Error(`browser-codec.decode(${encoded.serialized})가 null을 반환했다`)),
+        }
       : { id: decodeId, run: () => browserDecode(browserCatalog, encoded.serialized) };
 
   return [{ id: encodeId, run: () => browserEncode(browserCatalog, prefixId, values) }, decodeCase];
 }
 
-function createEnvelopeRecords(count: number, addressContext: Record<string, string>): EventRecord[] {
+function createEnvelopeRecords(
+  count: number,
+  addressContext: Record<string, string>,
+): EventRecord[] {
   const traceId = newTraceId();
   const timestamp = new Date(0).toISOString();
   return Array.from({ length: count }, (_, i) => ({

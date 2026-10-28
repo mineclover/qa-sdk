@@ -23,7 +23,11 @@ describe('measureCase', () => {
         throw new Error('Unknown axis version');
       },
     });
-    expect(r).toMatchObject({ status: 'skipped', skipReason: expect.stringContaining('Unknown axis version'), nsPerOp: null });
+    expect(r).toMatchObject({
+      status: 'skipped',
+      skipReason: expect.stringContaining('Unknown axis version'),
+      nsPerOp: null,
+    });
   });
 
   it('cold 측정은 warm=false로 따로 기록한다', () => {

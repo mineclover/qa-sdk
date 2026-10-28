@@ -95,11 +95,14 @@ export function collectEnvironment(): BenchmarkEnvironment {
 type Field = Record<string, unknown>;
 
 function fail(path: string, expected: string, actual: unknown): never {
-  throw new Error(`invalid BenchmarkReportV1: ${path}는 ${expected}여야 한다 (받은 값: ${JSON.stringify(actual)})`);
+  throw new Error(
+    `invalid BenchmarkReportV1: ${path}는 ${expected}여야 한다 (받은 값: ${JSON.stringify(actual)})`,
+  );
 }
 
 function asObject(value: unknown, path: string): Field {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) fail(path, 'object', value);
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    fail(path, 'object', value);
   return value as Field;
 }
 
@@ -108,7 +111,8 @@ function expectString(obj: Field, key: string, path: string): void {
 }
 
 function expectNullableString(obj: Field, key: string, path: string): void {
-  if (obj[key] !== null && typeof obj[key] !== 'string') fail(`${path}.${key}`, 'string | null', obj[key]);
+  if (obj[key] !== null && typeof obj[key] !== 'string')
+    fail(`${path}.${key}`, 'string | null', obj[key]);
 }
 
 function expectFiniteNumber(obj: Field, key: string, path: string): void {
@@ -129,7 +133,8 @@ function validateEnvironment(value: unknown): void {
   const env = asObject(value, path);
   expectNullableString(env, 'commitSha', path);
   for (const key of ['node', 'platform', 'arch', 'cpuModel']) expectString(env, key, path);
-  if (!Number.isInteger(env.cpus) || (env.cpus as number) < 1) fail(`${path}.cpus`, 'positive integer', env.cpus);
+  if (!Number.isInteger(env.cpus) || (env.cpus as number) < 1)
+    fail(`${path}.cpus`, 'positive integer', env.cpus);
   expectBoolean(env, 'gcExposed', path);
 }
 
@@ -148,7 +153,8 @@ function validateCase(value: unknown, index: number): void {
     const ns = asObject(c.nsPerOp, `${path}.nsPerOp`);
     for (const key of ['mean', 'p50', 'p95']) expectFiniteNumber(ns, key, `${path}.nsPerOp`);
     expectNullableNumber(ns, 'p99', `${path}.nsPerOp`);
-    if (c.skipReason !== undefined) fail(`${path}.skipReason`, 'undefined (status=ok)', c.skipReason);
+    if (c.skipReason !== undefined)
+      fail(`${path}.skipReason`, 'undefined (status=ok)', c.skipReason);
   } else if (c.status === 'skipped') {
     expectString(c, 'skipReason', path);
     if (c.nsPerOp !== null) fail(`${path}.nsPerOp`, 'null (status=skipped)', c.nsPerOp);

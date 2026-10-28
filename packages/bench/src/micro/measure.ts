@@ -26,7 +26,9 @@ let sink: unknown;
 export function measureCase(options: MeasureCaseOptions): MicroCaseResult {
   const { id, warm, iterations, run } = options;
   if (!Number.isInteger(iterations) || iterations < 1) {
-    throw new Error(`measureCase(${id}): iterations는 1 이상의 정수여야 한다 (받은 값: ${iterations})`);
+    throw new Error(
+      `measureCase(${id}): iterations는 1 이상의 정수여야 한다 (받은 값: ${iterations})`,
+    );
   }
   try {
     if (warm) for (let i = 0; i < WARMUP_ITERATIONS; i++) sink = run();
