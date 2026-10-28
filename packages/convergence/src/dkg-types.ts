@@ -2,8 +2,9 @@
 /**
  * DKG 타입 부분집합 — convergence가 의존하는 최소 노드 타입만 복제.
  *
- * 원본: spec-core/src/dkg/dkg.types.ts
- * convergence 패키지가 spec-core에 역의존하지 않도록 복제.
+ * 원본: dkg/src/dkg.types.ts
+ * convergence 패키지가 dkg에 의존하지 않도록 복제.
+ * drift 방지: dkg-enrichment/src/type-drift.test.ts가 정본과 상호 할당 가능함을 검사한다.
  * 타입만 정의 (런타임 코드 없음).
  */
 
@@ -18,6 +19,20 @@ export type ObservationSuggestion =
   | { readonly kind: 'add-entry'; readonly axis: string; readonly entry: string }
   | { readonly kind: 'add-constraint'; readonly rule: string }
   | { readonly kind: 'revise-decision'; readonly decisionId: string; readonly reason: string };
+
+/** observation을 만든 producer·버전·입력 (G3 cache key·differential test 근거) */
+export interface ObservationProvenance {
+  /** producer 식별자 — 예: 'convergence/metric-registry' */
+  readonly producer: string;
+  /** producer 패키지 버전 */
+  readonly producerVersion: string;
+  /** 규칙·알고리즘 버전 (G3 cache key 구성요소) */
+  readonly algorithmVersion?: string;
+  /** 입력 canonical digest (G3에서 채움) */
+  readonly inputDigest?: string;
+  /** catalog digest */
+  readonly catalogDigest?: string;
+}
 
 // ── 노드 타입 ─────────────────────────────────────────────
 
@@ -44,6 +59,10 @@ export interface ObservationNode {
   readonly finding: string;
   readonly suggestion?: ObservationSuggestion;
   readonly intent?: ObservationIntent;
+  /** feedback request 등 외부 브릿지 메타데이터 */
+  readonly metadata?: Readonly<Record<string, unknown>>;
+  /** 자동 생성 observation의 출처. 수동·기존 저장 observation은 없을 수 있다 */
+  readonly provenance?: ObservationProvenance;
   readonly resolution?: {
     readonly decisionId: string;
     readonly outcome: 'accepted' | 'deferred' | 'rejected';

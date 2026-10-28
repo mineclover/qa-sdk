@@ -8,6 +8,8 @@
 import type { GraphPort } from 'spec-schema';
 import type { ObservationNode } from './dkg-types.js';
 import type { CoOccurrence, CausalCandidate } from './convergence.types.js';
+import { isoDate, systemClock, type Clock } from './clock.js';
+import { convergenceProvenance } from './producer-info.js';
 
 /**
  * co-occurrence 데이터에서 인과 후보를 추출한다.
@@ -68,10 +70,11 @@ export function discoverCausality(
 export function discoverCausalityWithObservations(
   graph: GraphPort,
   coOccurrences: readonly CoOccurrence[],
-  options?: { date?: string },
+  options?: { date?: string; clock?: Clock },
 ): { candidates: CausalCandidate[]; observations: ObservationNode[] } {
   const candidates = discoverCausality(graph, coOccurrences);
-  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const date = options?.date ?? isoDate(options?.clock ?? systemClock);
+  const provenance = convergenceProvenance('causalDiscovery');
 
   const observations: ObservationNode[] = candidates.map((c) => {
     const id = `OBS-CAUSAL-${c.source.prefix}-${c.source.entry}-${c.target.prefix}-${c.target.entry}`;
@@ -95,6 +98,7 @@ export function discoverCausalityWithObservations(
           rule: `${c.source.prefix}:${c.source.entry} → ${c.target.prefix}:${c.target.entry} (${c.suggestion})`,
         },
       }),
+      provenance,
     };
   });
 

@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 
 import type { EventRecord } from '@qa-sdk/core';
 
+import type { ObservationNode } from '../dkg.types.js';
 import { DkgSqliteStore } from './dkg-sqlite-store.js';
 
 const tempDirs: string[] = [];
@@ -147,5 +148,68 @@ describe('DkgSqliteStore flow evidence', () => {
         },
       }),
     ]);
+  });
+});
+
+describe('DkgSqliteStore observation provenance', () => {
+  const base: ObservationNode = {
+    kind: 'observation',
+    id: 'OBS-METRIC-metric-headroom-axis_x',
+    date: '2026-10-28',
+    source: 'metric',
+    subjects: ['axis_x'],
+    finding: '[critical] 축 여유 공간: axis_x headroom=0',
+  };
+
+  it('provenance가 saveNodes → loadGraph round-trip에서 보존된다', () => {
+    const store = createStore();
+    const withProvenance: ObservationNode = {
+      ...base,
+      provenance: {
+        producer: 'convergence/metric-registry',
+        producerVersion: '0.1.0',
+        algorithmVersion: 'metric-registry/1',
+        inputDigest: 'sha256:input',
+        catalogDigest: 'sha256:catalog',
+      },
+    };
+    store.saveNodes([withProvenance], [], 'auto');
+
+    const loaded = store.loadGraph().getNode(withProvenance.id) as ObservationNode | undefined;
+    expect(loaded?.provenance).toEqual(withProvenance.provenance);
+    store.close();
+  });
+
+  it('provenance 없는 기존 형태 observation도 오류 없이 로드된다', () => {
+    const store = createStore();
+    store.saveNodes([base], [], 'auto');
+
+    const loaded = store.loadGraph().getNode(base.id) as ObservationNode | undefined;
+    expect(loaded).toEqual(base);
+    expect(loaded?.provenance).toBeUndefined();
+    store.close();
+  });
+
+  it('saveUsageSnapshotWithObservations 경로도 provenance를 보존한다', () => {
+    const store = createStore();
+    const obs: ObservationNode = {
+      ...base,
+      provenance: { producer: 'convergence/metric-registry', producerVersion: '0.1.0' },
+    };
+    store.saveUsageSnapshotWithObservations(
+      {
+        entryUsages: [],
+        addressUsages: [],
+        coOccurrences: [],
+        totalRecords: 0,
+        collectionPeriod: { from: '2026-10-28T00:00:00.000Z', to: '2026-10-28T00:00:00.000Z' },
+        versionUsages: [],
+      },
+      [obs],
+    );
+
+    const loaded = store.loadGraph().getNode(obs.id) as ObservationNode | undefined;
+    expect(loaded?.provenance).toEqual(obs.provenance);
+    store.close();
   });
 });

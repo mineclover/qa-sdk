@@ -15,6 +15,8 @@ import { analyzeDeploymentSkew } from './deployment-skew.js';
 import { analyzeEntryCoverage } from './entry-coverage.js';
 import { scanAxisOverlaps } from './symbol-comparator.js';
 import { scanDecisionConflicts } from './decision-comparator.js';
+import { isoDate, systemClock, type Clock } from './clock.js';
+import { convergenceProvenance } from './producer-info.js';
 
 /** axis version snapshot의 최소 형태 (convergence가 catalog.types에 직접 의존하지 않으므로 복제) */
 interface AxisVersionSnapshotLike {
@@ -156,14 +158,21 @@ function evaluateStatus(value: number, threshold: MetricDef['threshold']): Metri
  *
  * @param options.schemaHealthAuditor - 스키마 건전성 감사 함수. 미제공 시 schema violations metric 생략.
  * @param options.skipCoverage - 관측 coverage가 대표성이 없는 실행에서 coverage metric을 생략한다.
+ * @param options.date - 측정 날짜 (YYYY-MM-DD). 지정 시 clock보다 우선한다.
+ * @param options.clock - 분석 시각 공급자 (기본: systemClock). 실행당 한 번만 평가한다.
  */
 export function collectMetrics(
   catalog: Catalog,
   graph: GraphPort,
   usage: UsageData | null,
-  options?: { schemaHealthAuditor?: SchemaHealthAuditor; skipCoverage?: boolean },
+  options?: {
+    schemaHealthAuditor?: SchemaHealthAuditor;
+    skipCoverage?: boolean;
+    date?: string;
+    clock?: Clock;
+  },
 ): MetricValue[] {
-  const now = new Date().toISOString().slice(0, 10);
+  const now = options?.date ?? isoDate(options?.clock ?? systemClock);
   const results: MetricValue[] = [];
 
   // ── headroom ──
@@ -179,7 +188,7 @@ export function collectMetrics(
       'capacity' in latest ? ((latest as AxisVersionSnapshotLike).capacity ?? entries) : entries;
     return { id, name: axis.name, entries, capacity };
   });
-  const headroomReport = analyzeHeadroom(axisData, { graph });
+  const headroomReport = analyzeHeadroom(axisData, { graph, date: now });
   for (const issue of headroomReport.issues) {
     results.push({
       id: `metric:headroom:${issue.axisId}`,
@@ -410,12 +419,14 @@ export function collectMetrics(
  * metric 결과에서 threshold 초과 항목을 자동 Observation으로 변환한다.
  *
  * ID는 결정적 (timestamp 없음) → 동일 metric 위반은 항상 같은 ID → upsert 시 덮어쓰기.
+ * 모든 observation에 producer·버전 provenance를 기록한다.
  */
 export function metricsToObservations(
   metrics: readonly MetricValue[],
-  options?: { date?: string },
+  options?: { date?: string; clock?: Clock },
 ): ObservationNode[] {
-  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const date = options?.date ?? isoDate(options?.clock ?? systemClock);
+  const provenance = convergenceProvenance('metricRegistry');
   const observations: ObservationNode[] = [];
 
   for (const m of metrics) {
@@ -432,6 +443,7 @@ export function metricsToObservations(
         m.status === 'critical'
           ? { kind: 'add-constraint', rule: `${m.id} 임계값 초과 — 즉시 조치 필요` }
           : undefined,
+      provenance,
     };
     observations.push(obs);
   }
@@ -447,9 +459,9 @@ export function metricsToObservations(
 export function resolveRecoveredMetrics(
   metrics: readonly MetricValue[],
   existingObservations: readonly ObservationNode[],
-  options?: { date?: string },
+  options?: { date?: string; clock?: Clock },
 ): ObservationNode[] {
-  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const date = options?.date ?? isoDate(options?.clock ?? systemClock);
   const resolved: ObservationNode[] = [];
 
   // ok로 복귀한 metric의 예상 observation ID 목록

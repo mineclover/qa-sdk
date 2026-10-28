@@ -15,6 +15,7 @@ import type {
   IdentificationMode,
   PatternConfidence,
 } from '@qa-sdk/core';
+import { isoInstant, systemClock, type ClockOptions } from './clock.js';
 
 /** 분류 엔진 입력: 세션의 이벤트 목록 */
 export interface ClassifierInput {
@@ -37,14 +38,26 @@ export interface ClassifierEvent {
  *
  * 규칙은 priority 내림차순으로 평가. 첫 매칭 규칙을 채택.
  * 매칭 규칙이 없으면 unclassified.
+ *
+ * @param options.clock - classifiedAt 시각 공급자 (기본: systemClock)
  */
 export function classifyPattern(
   input: ClassifierInput,
   rules: readonly PatternRule[],
+  options?: ClockOptions,
 ): PatternClassification {
+  const classifiedAt = isoInstant(options?.clock ?? systemClock);
   const { events } = input;
   if (events.length === 0) {
-    return makeResult('unclassified', detectIdMode(input), 'unknown', 'rule-empty', 0, 0);
+    return makeResult(
+      'unclassified',
+      detectIdMode(input),
+      'unknown',
+      'rule-empty',
+      0,
+      0,
+      classifiedAt,
+    );
   }
 
   const eventKeys = events.map((e) => e.event_key);
@@ -69,11 +82,20 @@ export function classifyPattern(
         rule.id,
         events.length,
         durationMs,
+        classifiedAt,
       );
     }
   }
 
-  return makeResult('unclassified', idMode, 'unknown', 'rule-none', events.length, durationMs);
+  return makeResult(
+    'unclassified',
+    idMode,
+    'unknown',
+    'rule-none',
+    events.length,
+    durationMs,
+    classifiedAt,
+  );
 }
 
 /** identification_mode 자동 판별 */
@@ -188,6 +210,7 @@ function makeResult(
   ruleId: string,
   eventCount: number,
   durationMs: number,
+  classifiedAt: string,
 ): PatternClassification {
   return {
     pattern,
@@ -196,6 +219,6 @@ function makeResult(
     matchedRuleId: ruleId,
     eventCount,
     durationMs,
-    classifiedAt: new Date().toISOString(),
+    classifiedAt,
   };
 }

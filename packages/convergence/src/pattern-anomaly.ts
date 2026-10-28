@@ -6,6 +6,7 @@
  */
 
 import type { PatternAnomaly, PatternClassification, PatternStats } from '@qa-sdk/core';
+import { isoInstant, systemClock, type ClockOptions } from './clock.js';
 
 /** 이상 감지 입력: 분류 결과 배열 + 이전 통계 (비교용) */
 export interface AnomalyDetectionInput {
@@ -21,10 +22,15 @@ export interface AnomalyDetectionInput {
 
 /**
  * 분류 결과에서 이상 패턴을 감지한다.
+ *
+ * @param options.clock - detectedAt 시각 공급자 (기본: systemClock). 호출당 한 번만 평가한다.
  */
-export function detectAnomalies(input: AnomalyDetectionInput): PatternAnomaly[] {
+export function detectAnomalies(
+  input: AnomalyDetectionInput,
+  options?: ClockOptions,
+): PatternAnomaly[] {
   const anomalies: PatternAnomaly[] = [];
-  const now = new Date().toISOString();
+  const now = isoInstant(options?.clock ?? systemClock);
   const ratioThreshold = input.ratioShiftThreshold ?? 0.3;
   const spikeMultiplier = input.volumeSpikeMultiplier ?? 3.0;
 

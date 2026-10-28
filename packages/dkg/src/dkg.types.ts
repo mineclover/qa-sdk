@@ -160,11 +160,27 @@ export interface ObservationNode {
   readonly intent?: ObservationIntent;
   /** feedback request 등 외부 브릿지 메타데이터 */
   readonly metadata?: Readonly<Record<string, unknown>>;
+  /** 자동 생성 observation의 출처. 수동·기존 저장 observation은 없을 수 있다 */
+  readonly provenance?: ObservationProvenance;
   readonly resolution?: {
     readonly decisionId: string;
     readonly outcome: 'accepted' | 'deferred' | 'rejected';
     readonly note?: string;
   };
+}
+
+/** observation을 만든 producer·버전·입력 (G3 cache key·differential test 근거) */
+export interface ObservationProvenance {
+  /** producer 식별자 — 예: 'convergence/metric-registry' */
+  readonly producer: string;
+  /** producer 패키지 버전 */
+  readonly producerVersion: string;
+  /** 규칙·알고리즘 버전 (G3 cache key 구성요소) */
+  readonly algorithmVersion?: string;
+  /** 입력 canonical digest (G3에서 채움) */
+  readonly inputDigest?: string;
+  /** catalog digest */
+  readonly catalogDigest?: string;
 }
 
 export type ObservationSuggestion =

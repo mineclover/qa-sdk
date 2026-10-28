@@ -19,6 +19,7 @@ import { aggregateUsageData, analyzeCollectionHealth } from './usage-aggregator.
 import { analyzeEntryCoverage } from './entry-coverage.js';
 import type { UsageData, CollectionHealthReport, CoverageReport } from './convergence.types.js';
 import type { AddressContextRecord } from './usage-aggregator.js';
+import { systemClock, type ClockOptions } from './clock.js';
 
 // ═══════════════════════════════════════════════════════════════
 //  Types
@@ -177,14 +178,18 @@ export const SELF_CHECK_PKG_NAMES = [
  *
  * @param results - 빌드/테스트 결과 (CI에서 수집하거나 mock)
  * @param catalog - DEMO_CATALOG
- * @param runId - 실행 식별자
+ * @param runId - 실행 식별자 (기본: `analysis-{clock epoch ms}`)
+ * @param options.clock - 분석 시각 공급자 (기본: systemClock). 실행당 한 번만 평가한다.
  */
 export function analyzeSelfCheck(
   results: readonly SelfCheckResult[],
   catalog: Catalog,
-  runId: string = `analysis-${Date.now()}`,
+  runId?: string,
+  options?: ClockOptions,
 ): SelfCheckAnalysis {
-  const now = new Date().toISOString();
+  const at = (options?.clock ?? systemClock)();
+  const now = at.toISOString();
+  const effectiveRunId = runId ?? `analysis-${at.getTime()}`;
   const records: AddressContextRecord[] = [];
 
   // ── 1. 결과 → AddressContextRecord 인코딩 ──
@@ -202,10 +207,10 @@ export function analyzeSelfCheck(
       records.push({
         address_context: { [prefixId]: `${prefixId}:${ver}:${address}` },
         timestamp: now,
-        session_id: runId,
+        session_id: effectiveRunId,
         event_key: `${r.kind}:${r.pkg}`,
         execution_mode: 'live',
-        execution_id: runId,
+        execution_id: effectiveRunId,
       });
     } catch {
       // entry가 축에 없으면 건너뜀
@@ -234,10 +239,10 @@ export function analyzeSelfCheck(
       records.push({
         address_context: { [se.prefix]: `${se.prefix}:${ver}:${address}` },
         timestamp: now,
-        session_id: runId,
+        session_id: effectiveRunId,
         event_key: `synthetic:${se.prefix}`,
         execution_mode: 'synthetic',
-        execution_id: runId,
+        execution_id: effectiveRunId,
       });
       bizRecords++;
     } catch {

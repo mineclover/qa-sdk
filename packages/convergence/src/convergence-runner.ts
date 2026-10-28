@@ -25,6 +25,7 @@ import { scanDecisionConflicts } from './decision-comparator.js';
 import { discoverCausalityWithObservations } from './causal-discovery.js';
 import { scanAllSimplifications } from './simplification-advisor.js';
 import { recommendAll } from './boundary-recommender.js';
+import { isoDate, systemClock, type Clock } from './clock.js';
 
 // ═══════════════════════════════════════════════════════════════
 
@@ -45,7 +46,8 @@ export interface ConvergenceReport {
  * @param graph - DKG 그래프
  * @param usage - 관측 집계 (없으면 구조 분석만 수행)
  * @param options.entriesMap - 축별 entries 맵 (scanAxisOverlaps에 필요)
- * @param options.date - Observation 날짜 (기본: today)
+ * @param options.date - Observation 날짜 (기본: clock의 날짜)
+ * @param options.clock - 분석 시각 공급자 (기본: systemClock). 실행당 한 번만 평가한다.
  */
 export function runConvergenceAnalysis(
   graph: GraphPort,
@@ -53,9 +55,10 @@ export function runConvergenceAnalysis(
   options?: {
     entriesMap?: ReadonlyMap<string, readonly string[]>;
     date?: string;
+    clock?: Clock;
   },
 ): ConvergenceReport {
-  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const date = options?.date ?? isoDate(options?.clock ?? systemClock);
   const allObservations: ObservationNode[] = [];
 
   // 1. SymbolComparator — 축 중복 스캔
