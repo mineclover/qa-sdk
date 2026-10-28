@@ -15,6 +15,7 @@ export type {
   PrefixNode,
   ObservationIntent,
   ObservationSuggestion,
+  ObservationProvenance,
   DecisionType,
   CapacityParams,
   NewAxisParams,
@@ -26,6 +27,17 @@ export type {
 } from './dkg-types.js';
 export { scaffoldDecision } from './decision-scaffold.js';
 export type { ScaffoldInput } from './decision-scaffold.js';
+
+// ── 결정론·Provenance ─────────────────────────────
+export { systemClock, isoDate, isoInstant } from './clock.js';
+export type { Clock, ClockOptions } from './clock.js';
+export {
+  CONVERGENCE_PACKAGE_NAME,
+  CONVERGENCE_PRODUCER_VERSION,
+  CONVERGENCE_PRODUCERS,
+  CONVERGENCE_ALGORITHM_VERSIONS,
+  convergenceProvenance,
+} from './producer-info.js';
 
 // ── Types ──────────────────────────────────────────
 export type {

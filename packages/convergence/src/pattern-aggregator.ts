@@ -12,6 +12,8 @@ import type {
   BehaviorPattern,
   IdentificationMode,
 } from '@qa-sdk/core';
+import { compareTimestamps } from '@qa-sdk/core';
+import { isoInstant, systemClock, type ClockOptions } from './clock.js';
 
 /**
  * 분류 결과 배열에서 패턴별 통계를 집계한다.
@@ -39,7 +41,9 @@ export function aggregatePatternStats(
       existing.count++;
       existing.totalEvents += c.eventCount;
       existing.totalDuration += c.durationMs;
-      if (c.classifiedAt > existing.lastSeen) existing.lastSeen = c.classifiedAt;
+      if (compareTimestamps(c.classifiedAt, existing.lastSeen) > 0) {
+        existing.lastSeen = c.classifiedAt;
+      }
     } else {
       groups.set(key, {
         pattern: c.pattern,
@@ -67,10 +71,13 @@ export function aggregatePatternStats(
 
 /**
  * 분류 결과 + 이상 감지 수로 건전성 보고서를 생성한다.
+ *
+ * @param options.clock - generatedAt 시각 공급자 (기본: systemClock)
  */
 export function buildPatternHealthReport(
   classifications: readonly PatternClassification[],
   anomalyCount: number = 0,
+  options?: ClockOptions,
 ): PatternHealthReport {
   const stats = aggregatePatternStats(classifications);
   const total = classifications.length || 1;
@@ -86,6 +93,6 @@ export function buildPatternHealthReport(
     classificationRate: 1 - unclassifiedCount / total,
     identifiedRate: identifiedCount / total,
     anomalyCount,
-    generatedAt: new Date().toISOString(),
+    generatedAt: isoInstant(options?.clock ?? systemClock),
   };
 }

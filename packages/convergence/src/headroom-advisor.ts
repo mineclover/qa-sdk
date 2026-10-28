@@ -9,6 +9,7 @@ import { nextPowerOf2 } from 'weighted-index';
 import type { GraphPort } from 'spec-schema';
 import type { DecisionNode } from './dkg-types.js';
 import { scaffoldDecision } from './decision-scaffold.js';
+import { isoDate, systemClock, type Clock } from './clock.js';
 
 export interface HeadroomIssue {
   readonly axisId: string;
@@ -61,9 +62,9 @@ export function analyzeHeadroom(
     /** 이미 sealed된 version이 있는가 (데이터가 인코딩되어 있을 수 있음) */
     sealed?: boolean;
   }>,
-  options?: { date?: string; graph?: GraphPort },
+  options?: { date?: string; graph?: GraphPort; clock?: Clock },
 ): HeadroomReport {
-  const date = options?.date ?? new Date().toISOString().slice(0, 10);
+  const date = options?.date ?? isoDate(options?.clock ?? systemClock);
   const graph = options?.graph;
   const issues: HeadroomIssue[] = [];
   const decisions: DecisionNode[] = [];
