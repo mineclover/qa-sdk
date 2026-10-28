@@ -156,12 +156,23 @@ viz-3d/scripts ──► browser-codec/src/demo-catalog-browser.ts (생성물 �
 | X-11 | convergence timer 2개 | D-4 | E |
 | X-12 | 미사용 env key `QA_PG_SCHEMA`, `TRANSITION_VIOLATION_MODE`, `TRANSITION_STATE_PATH` | 소비처 연결 또는 제거 | E |
 | X-13 | `QaLogger` ↔ `IngestForwarder` batching 중복 | G2에서 공용 buffer로 통합 | G2 |
-| X-14 | `convergence/src/dkg-types.ts` 타입 사본(`metadata` 누락으로 drift) | 정본 타입 필드와 동기화 + drift 테스트 | F |
-| X-15 | `scaffoldDecision` 2벌 (`dkg`, `convergence`), dkg ↔ dkg-enrichment skills 근사 중복 | 단일 소유 패키지 결정 | F |
+| X-14 | `convergence/src/dkg-types.ts` 타입 사본(`metadata` 누락으로 drift) | **Track F 처리**: `metadata`·`provenance` 동기화, `dkg-enrichment/src/type-drift.test.ts`가 `toEqualTypeOf`로 고정 (`test` 스크립트에 `tsc --noEmit`) | F |
+| X-15 | `scaffoldDecision` 2벌 (`dkg`, `convergence`), dkg ↔ dkg-enrichment skills 근사 중복 | **판정 완료 (§5.1)**: `scaffoldDecision` 정본 = `dkg`, skills 정본 = `dkg-enrichment`. 이동·삭제는 G3 | F → G3 |
 | X-16 | `data-object-codegen` 패키지 소비처 0건, `event-catalog/src/track-codegen.ts` ↔ `codegen-core` 중복 | 제거 여부 결정 (공개 API 영향 확인 필요) | D |
-| X-17 | `runConvergenceAnalysis`, `transitionFlushToMetrics`, `aggregateTransitionResults` 프로덕션 호출 0건 | G3에서 incremental 진입점으로 흡수 또는 제거 | G3 |
+| X-17 | `runConvergenceAnalysis`, `transitionFlushToMetrics`, `aggregateTransitionResults` 프로덕션 호출 0건 | G3에서 incremental 진입점으로 흡수 또는 제거. `runConvergenceAnalysis`는 Track F에서 `clock` 옵션을 받으므로 흡수 시 그대로 재사용 가능 | G3 |
 
 X-1, X-2 외 항목은 동작이나 공개 API를 바꾸므로 담당 트랙에서 테스트와 함께 처리한다.
+
+### 5.1 X-15 소유 판정 (Track F Task 4, HEAD `05b46396` 기준)
+
+판정 기준: 프로덕션 호출 경로 + 의존 방향(`convergence`는 `dkg`를 import하지 않음, `dkg`는 `convergence` 런타임에 정적 의존하지 않음, `dkg-enrichment`는 둘 다 의존하는 logic tier).
+
+| 대상 | 현재 상태 | 프로덕션 호출 경로 | 판정 | G3 Task |
+|---|---|---|---|---|
+| `scaffoldDecision` | `dkg/src/decision-scaffold.ts` ↔ `convergence/src/decision-scaffold.ts` 본문 동일 (`@def` 헤더·타입 import 경로만 다름). `dkg/src/skills/decision-scaffold.ts`는 이미 re-export shim | `dkg` 판: CLI `commands/dkg.ts`, `dkg/src/skills/{converge-chain,record-operation,skill-chain}`, `dkg-enrichment/src/skills/converge-chain`. `convergence` 판: `headroom-advisor`, `separation-record` (convergence 내부 전용) | **정본 = `dkg`**. `convergence` 사본은 의존 방향 때문에 유지하되 동작 drift를 막는다 | 둘 다 의존 가능한 하위 계층(후보: `spec-schema` — DKG node 타입 부분집합과 `weighted-index` 의존 수용 여부 확인)으로 이동하거나, 이동 전까지 `dkg-enrichment`에 DecisionType 6종 parity 테스트 추가 |
+| skills `converge-chain`, `coverage-audit`, `flow-trace` | `dkg` 판은 convergence 분석기를 import하지 않고 로컬 근사 재구현 (헤더에 명시). `dkg-enrichment` 판은 `@qa-sdk/convergence` 분석기(`scanAxisOverlaps`, `analyzeSimplification`, `discoverCausality`, `analyzeDeploymentSkew`, `analyzeEntryCoverage`)를 호출. `resolveRecoveredFlowObservations`는 `dkg` 판에만 있음 | **`dkg` 판만 프로덕션 사용**: CLI `commands/dkg.ts`가 `from 'dkg'`로 import, ingest-server는 `@qa-sdk/spec-core/dkg`(= `export * from 'dkg'`) 경유 `traceFlows`·`resolveRecoveredFlowObservations`. `dkg-enrichment` 판은 자체 테스트(`operational-loop`, `converge-review`, `converge-chain`)에서만 호출. 외부 패키지는 `dkg-enrichment`에서 `bootstrapDkg`만 import | **정본 = `dkg-enrichment`** (분석 로직은 convergence 단일 구현을 써야 G3 cache key·differential test가 의미를 가짐. `dkg`는 graph·store tier로 남김). `dkg` 판은 deprecated 후보 | ① `resolveRecoveredFlowObservations`를 `dkg-enrichment`로 이식 ② `dkg` 판 vs `dkg-enrichment` 판 differential test(같은 graph·usage fixture)로 출력 차이 목록화 ③ CLI·ingest-server import를 `dkg-enrichment`로 전환 (ingest-server·cli·spec-core는 이미 `dkg-enrichment` 의존 선언) ④ `dkg/src/skills/{converge-chain,coverage-audit,flow-trace}.ts`와 `dkg/src/index.ts` export 제거 |
+
+Track F에서는 코드를 옮기지 않았다.
 
 ## 6. 정리 완료 내역
 
