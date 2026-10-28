@@ -55,6 +55,7 @@
 
 | 제안 | 상태 | 요약 |
 |------|------|------|
+| [swc-next-qa-sdk-optimization](./swc-next-qa-sdk-optimization/) | `draft` | SWC Next 원리 기반 최적화·호환성 로드맵을 코드 실측으로 검토하고 T0+A~F 병렬 트랙과 트랙별 구현 계획으로 분해. CatalogSnapshot 계약(ADR-010 예정), capacity/entries shape 불일치(R-1) 포함 |
 | [bdd-contract-system](./bdd-contract-system/) | `draft` | BDD Given/When/Then을 AI-DLC 행동 계약으로 정의하고 test unit / implementation unit / ScenarioSpec / PipeGraph / docs CLI 소비 표면을 기계화 |
 | [ai-dlc-dspy-harness](./ai-dlc-dspy-harness/) | `draft` | DSPy를 시스템 단위로 탈부착 가능한 sidecar harness로 도입하고, 계약/증거/게이트만 기존 문서 시스템에 편입 |
 | [data-structure-profile](./data-structure-profile/) | `implemented` | 구현된 baseline은 `docs/specs/data-structure-profile/`로 이식됨. future adapter/runtime scope는 `data-structure-profile-system.todo`가 소유 |
