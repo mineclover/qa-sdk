@@ -89,3 +89,29 @@ describe('serializeAddress', () => {
     expect(serializeAddress(parsed)).toBe(original);
   });
 });
+
+describe('parseSerializedAddress strict 형식', () => {
+  it.each([
+    'service:v1:',
+    'service:v1:1.5',
+    'service:v1:0x1f',
+    'service:v1:1e3',
+    'service:v1:-1',
+    'service:v1: 3',
+    'service:v1:007',
+    'service:v1:Infinity',
+    'service:v1:9007199254740993',
+    ':v1:3',
+    'service::3',
+    ':service:v1:3',
+  ])('%s 는 거부한다', (input) => {
+    expect(() => parseSerializedAddress(input)).toThrow();
+  });
+
+  it('0과 안전한 정수 최대값은 허용한다', () => {
+    expect(parseSerializedAddress('service:v1:0').address).toBe(0);
+    expect(parseSerializedAddress(`service:v1:${Number.MAX_SAFE_INTEGER}`).address).toBe(
+      Number.MAX_SAFE_INTEGER,
+    );
+  });
+});

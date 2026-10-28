@@ -22,7 +22,7 @@
  */
 
 import type { Catalog } from '@qa-sdk/core';
-import { createLogger } from '@qa-sdk/core';
+import { createLogger, latestPrefixVersion } from '@qa-sdk/core';
 
 const logger = createLogger('catalog-provider');
 
@@ -78,9 +78,7 @@ function createLocalProvider(catalog?: Catalog): CatalogProvider {
     },
     latestVersion(prefixId: string) {
       if (!_catalog) return 'v1';
-      const prefix = _catalog.prefixes[prefixId];
-      if (!prefix?.versions?.length) return 'v1';
-      return prefix.versions[prefix.versions.length - 1].version;
+      return latestPrefixVersion(_catalog, prefixId);
     },
   };
 }
@@ -115,9 +113,7 @@ function createRegistryProvider(registryUrl: string, catalogId: string): Catalog
     },
     latestVersion(prefixId: string) {
       if (!_catalog) return 'v1';
-      const prefix = _catalog.prefixes[prefixId];
-      if (!prefix?.versions?.length) return 'v1';
-      return prefix.versions[prefix.versions.length - 1].version;
+      return latestPrefixVersion(_catalog, prefixId);
     },
   };
 }

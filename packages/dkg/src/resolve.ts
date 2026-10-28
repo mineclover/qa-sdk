@@ -11,7 +11,12 @@
  */
 
 import type { Catalog } from '@qa-sdk/core';
-import { decodePrefix, encodePrefixByValue, parseSerializedAddress } from '@qa-sdk/core';
+import {
+  decodePrefix,
+  encodePrefixByValue,
+  latestPrefixVersion,
+  parseSerializedAddress,
+} from '@qa-sdk/core';
 
 export interface ResolveResult {
   /** 최신 version의 주소 (prefix:version:address) */
@@ -45,7 +50,7 @@ export function resolve(
   if (!prefix) throw new Error(`Unknown prefix: "${prefixId}"`);
 
   // latest version 결정
-  const latest = latestVersion ?? prefix.versions[prefix.versions.length - 1].version;
+  const latest = latestVersion ?? latestPrefixVersion(catalog, prefixId);
 
   // decode
   const decoded = decodePrefix(catalog, prefixId, version, address);

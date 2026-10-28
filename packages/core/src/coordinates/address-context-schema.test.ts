@@ -82,3 +82,20 @@ describe('AddressContextV1Schema', () => {
     expect(() => AddressContextV1Schema.parse(bad)).toThrow();
   });
 });
+
+describe('parsePackedAddress ↔ parseSerializedAddress 일치', () => {
+  it.each(['demo:service:v1:42', 'service:v1:42', 'service:v1:0'])(
+    '%s 를 같은 의미로 해석한다',
+    async (input) => {
+      const { parseSerializedAddress } = await import('../lib/address-parser.js');
+      expect(parsePackedAddress(input)).toEqual({ ...parseSerializedAddress(input) });
+    },
+  );
+
+  it.each(['service:v1:007', 'service:v1:9007199254740993', 'service:v1:1.5', ''])(
+    '%s 는 null',
+    (input) => {
+      expect(parsePackedAddress(input)).toBeNull();
+    },
+  );
+});

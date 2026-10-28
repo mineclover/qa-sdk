@@ -15,6 +15,7 @@
  */
 
 import { z } from 'zod';
+import { parseSerializedAddress } from '../lib/address-parser.js';
 
 export interface ParsedPackedAddress {
   catalogId?: string;
@@ -23,17 +24,22 @@ export interface ParsedPackedAddress {
   address: number;
 }
 
-const PACKED_KEY_RE = /^(?:([^:]+):)?([^:]+):([^:]+):(\d+)$/;
-
+/** 정규 파서(parseSerializedAddress)에 위임하고 실패를 null로 돌려준다 — 형식 규칙은 한 곳에서만 정의 */
 export function parsePackedAddress(value: string): ParsedPackedAddress | null {
   if (!value || typeof value !== 'string') return null;
-  const m = PACKED_KEY_RE.exec(value);
-  if (!m) return null;
-  const [, catalogId, prefix, version, addrStr] = m;
-  const address = Number(addrStr);
-  if (!Number.isFinite(address) || address < 0) return null;
-  if (!Number.isInteger(address)) return null;
-  return catalogId ? { catalogId, prefix, version, address } : { prefix, version, address };
+  try {
+    const parsed = parseSerializedAddress(value);
+    return parsed.catalogId
+      ? {
+          catalogId: parsed.catalogId,
+          prefix: parsed.prefix,
+          version: parsed.version,
+          address: parsed.address,
+        }
+      : { prefix: parsed.prefix, version: parsed.version, address: parsed.address };
+  } catch {
+    return null;
+  }
 }
 
 export function serializePackedAddress(p: ParsedPackedAddress): string {
