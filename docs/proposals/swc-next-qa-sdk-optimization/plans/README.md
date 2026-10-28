@@ -15,7 +15,7 @@ sources:
 | Wave | 트랙 | 계획 | 착수 조건 | Task 수 |
 |---|---|---|---|---|
 | 0 | T0 계약 기반 | [T0-contract-foundation.md](./T0-contract-foundation.md) | 즉시 | 7 (0~6) |
-| 1 | A Codec 호환성 | [A-codec-compatibility.md](./A-codec-compatibility.md) | T0 + D-8 (D-1 확정) | 7 (0~6) |
+| 1 | A Codec 호환성 | [A-codec-compatibility.md](./A-codec-compatibility.md) | T0 ✅ + D-1·D-8 확정 | 7 (0~6) |
 | 1 | B Envelope binding | [B-envelope-snapshot-binding.md](./B-envelope-snapshot-binding.md) | T0 + D-2 | 8 (0~7) |
 | 1 | C Baseline benchmark | [C-baseline-benchmark.md](./C-baseline-benchmark.md) | 즉시 | 5 (0~4) |
 | 1 | D Codegen 결정론 | [D-codegen-determinism.md](./D-codegen-determinism.md) | Task 1 즉시, Task 2~ T0 | 6 (0~5) |

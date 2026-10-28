@@ -70,6 +70,11 @@ export type DimRef =
 
 export interface PrefixVersionDef {
   readonly version: string;
+  /**
+   * 이 버전의 차원 목록. 미선언 시 PrefixDef.labels를 쓴다.
+   * 버전마다 dim 구성이 다를 때(예: v2에서 dim 추가) 이전 버전의 실제 dim을 고정한다 (D-8).
+   */
+  readonly labels?: readonly string[];
   readonly axisVersions: Record<string, string>;
   readonly refEntries?: Record<string, { values: readonly number[]; refVersion: string }>;
   /** 경로 합산 세그먼트 (addressModel: "sum"일 때). 버전마다 세그먼트 구성이 다를 수 있음. */

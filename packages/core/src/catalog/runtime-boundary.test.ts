@@ -101,3 +101,48 @@ describe('catalog runtime closed-space boundaries', () => {
     );
   });
 });
+
+describe('버전별 dim 목록 (D-8)', () => {
+  const VERSIONED_LABELS_CATALOG: Catalog = {
+    id: 'versioned-labels',
+    name: 'versioned-labels',
+    axes: {
+      env: { id: 'env', name: 'env', versions: { v1: { entries: ['dev', 'prod'] } } },
+      mod: { id: 'mod', name: 'mod', versions: { v1: { entries: ['a', 'b', 'c'] } } },
+    },
+    prefixes: {
+      p: {
+        id: 'p',
+        name: 'p',
+        labels: ['env', 'mod'],
+        dims: { env: { kind: 'axis', axisId: 'env' }, mod: { kind: 'axis', axisId: 'mod' } },
+        versions: [
+          { version: 'v1', labels: ['env'], axisVersions: { env: 'v1' } },
+          { version: 'v2', axisVersions: { env: 'v1', mod: 'v1' } },
+        ],
+      },
+    },
+  };
+
+  it('버전에 labels가 있으면 그 버전의 고정 차원만 사용한다', () => {
+    expect(getPrefixShape(VERSIONED_LABELS_CATALOG, 'p', 'v1').shape).toEqual([2]);
+    expect(getPrefixShape(VERSIONED_LABELS_CATALOG, 'p', 'v2').shape).toEqual([2, 3]);
+    expect(decodePrefix(VERSIONED_LABELS_CATALOG, 'p', 'v1', 1)).toEqual({
+      env: { position: 1, value: 'prod' },
+    });
+    expect(encodePrefix(VERSIONED_LABELS_CATALOG, 'p', 'v1', { env: 1 })).toBe(1);
+  });
+
+  it('dims에 없는 label을 선언하면 거부한다', () => {
+    const broken: Catalog = {
+      ...VERSIONED_LABELS_CATALOG,
+      prefixes: {
+        p: {
+          ...VERSIONED_LABELS_CATALOG.prefixes.p,
+          versions: [{ version: 'v1', labels: ['env', 'ghost'], axisVersions: { env: 'v1' } }],
+        },
+      },
+    };
+    expect(() => getPrefixShape(broken, 'p', 'v1')).toThrow('Unknown dim label in p@v1: ghost');
+  });
+});

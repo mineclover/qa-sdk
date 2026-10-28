@@ -99,12 +99,26 @@ function resolveAxisCap(catalog: Catalog, axisId: string, version: string): numb
   return snap.capacity ?? snap.entries.length;
 }
 
+/** 버전의 차원 목록 — PrefixVersionDef.labels 우선, 미선언 시 prefix 공통 labels (D-8) */
+function getVersionLabels(
+  prefix: { id: string; labels: readonly string[]; dims: Record<string, DimRef> },
+  versionDef: { version: string; labels?: readonly string[] },
+): readonly string[] {
+  const labels = versionDef.labels ?? prefix.labels;
+  for (const label of labels) {
+    if (!prefix.dims[label]) {
+      throw new Error(`Unknown dim label in ${prefix.id}@${versionDef.version}: ${label}`);
+    }
+  }
+  return labels;
+}
+
 /** table_ref가 아닌 차원(고정 차원)의 labels만 반환 */
-function getFixedLabels(prefix: {
-  labels: readonly string[];
-  dims: Record<string, DimRef>;
-}): string[] {
-  return prefix.labels.filter((l) => prefix.dims[l].kind !== 'table_ref');
+function getFixedLabels(
+  prefix: { id: string; labels: readonly string[]; dims: Record<string, DimRef> },
+  versionDef: { version: string; labels?: readonly string[] },
+): string[] {
+  return getVersionLabels(prefix, versionDef).filter((l) => prefix.dims[l].kind !== 'table_ref');
 }
 
 function resolvePrefixCapacity(catalog: Catalog, prefixId: string, version: string): number {
@@ -114,7 +128,7 @@ function resolvePrefixCapacity(catalog: Catalog, prefixId: string, version: stri
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   let capacity = 1;
-  for (const label of getFixedLabels(prefix)) {
+  for (const label of getFixedLabels(prefix, vdef)) {
     const dim = prefix.dims[label];
     if (dim.kind === 'axis') {
       capacity *= resolveAxisCap(catalog, dim.axisId, vdef.axisVersions[label]);
@@ -161,7 +175,7 @@ export function getPrefixShape(catalog: Catalog, prefixId: string, version: stri
   const shape: number[] = [];
   const dimCapacities: Record<string, number> = {};
 
-  for (const label of getFixedLabels(prefix)) {
+  for (const label of getFixedLabels(prefix, vdef)) {
     const dim = prefix.dims[label];
     let cap: number;
     if (dim.kind === 'axis') {
@@ -199,7 +213,7 @@ export function getPrefixEntries(
   const entries: Record<string, readonly (string | number)[]> = {};
   const ko: Record<string, Record<string, string>> = {};
 
-  for (const label of prefix.labels) {
+  for (const label of getVersionLabels(prefix, vdef)) {
     const dim = prefix.dims[label];
     if (dim.kind === 'axis') {
       const axis = catalog.axes[dim.axisId];
@@ -228,7 +242,7 @@ export function getPrefixProfile(
   const vdef = prefix.versions.find((v) => v.version === ver);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${ver}`);
 
-  const fixedLabels = getFixedLabels(prefix);
+  const fixedLabels = getFixedLabels(prefix, vdef);
   const { shape, dimCapacities } = getPrefixShape(catalog, prefixId, ver);
   const strides = calcWeights(shape);
 
@@ -348,7 +362,9 @@ export function encodePrefix(
 ): number {
   const prefix = catalog.prefixes[prefixId];
   if (!prefix) throw new Error(`Unknown prefix: ${prefixId}`);
-  const fixedLabels = getFixedLabels(prefix);
+  const vdef = prefix.versions.find((v) => v.version === version);
+  if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
+  const fixedLabels = getFixedLabels(prefix, vdef);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);
   validatePositions(catalog, prefixId, version, fixedLabels, positions);
 
@@ -386,7 +402,7 @@ export function decodePrefix(
   const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
   validateAddress(catalog, prefixId, version, address);
-  const fixedLabels = getFixedLabels(prefix);
+  const fixedLabels = getFixedLabels(prefix, vdef);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);
 
   const result: Record<string, DecodedPosition> = {};
@@ -432,7 +448,7 @@ export function decodePrefixPartial(
   const vdef = prefix.versions.find((v) => v.version === version);
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
   validateAddress(catalog, prefixId, version, address);
-  const fixedLabels = getFixedLabels(prefix);
+  const fixedLabels = getFixedLabels(prefix, vdef);
   const { shape } = getPrefixShape(catalog, prefixId, version);
   const { strides } = getShapeAndStrides(catalog, prefixId, version);
 
@@ -513,7 +529,7 @@ export function resolveAddress(
   const decoded = decodePrefix(catalog, prefixId, version, address);
   const dims: Record<string, ResolvedDimValue> = {};
 
-  for (const label of getFixedLabels(prefix)) {
+  for (const label of getFixedLabels(prefix, vdef)) {
     const { position, value } = decoded[label];
     const dim = prefix.dims[label];
 
@@ -560,7 +576,7 @@ export function encodePrefixByValue(
   if (!vdef) throw new Error(`Unknown prefix version: ${prefixId}@${version}`);
 
   const positions: Record<string, number> = {};
-  for (const label of getFixedLabels(prefix)) {
+  for (const label of getFixedLabels(prefix, vdef)) {
     const val = values[label];
     if (val === undefined) throw new Error(`Missing value for dim: ${label}`);
     const dim = prefix.dims[label];
@@ -618,7 +634,7 @@ export function decomposeAddress(
   const decoded = decodePrefix(catalog, prefixId, version, address);
   const result: Record<string, DecomposedDim> = {};
 
-  for (const label of getFixedLabels(prefix)) {
+  for (const label of getFixedLabels(prefix, vdef)) {
     const { position, value } = decoded[label];
     const dim = prefix.dims[label];
 

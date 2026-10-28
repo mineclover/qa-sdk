@@ -69,7 +69,7 @@ async function buildPrefixLayout(
   const { entries } = getPrefixEntries(catalog, prefix.id, versionDef.version);
 
   const dims: DimensionLayout[] = [];
-  for (const label of prefix.labels) {
+  for (const label of versionDef.labels ?? prefix.labels) {
     const dim = prefix.dims[label];
     if (dim.kind === 'table_ref') continue;
     const base = { label, capacity: dimCapacities[label], entries: entries[label] ?? [] };

@@ -39,7 +39,7 @@ role: tracks
 | 트랙 | 착수 조건 | 산출물 | 계획 |
 |---|---|---|---|
 | T0 계약 기반 | 즉시 | `CatalogSnapshot`/`PrefixLayout` 타입, `canonicalJson`, `computeCatalogDigest`, `buildCatalogSnapshot`, `classifyLayoutChange`, `resolveDecodeLayout`, `CodecContractError` 9종 | [plans/T0-contract-foundation.md](./plans/T0-contract-foundation.md) |
-| A Codec 호환성 | T0 머지 + D-8 (D-1 확정: capacity) | 3-way parity 테스트, legacy-v1 golden corpus, DecodeMap shape 정합, strict 파서 | [plans/A-codec-compatibility.md](./plans/A-codec-compatibility.md) |
+| A Codec 호환성 | T0 ✅ + D-1·D-8 확정 | 3-way parity 테스트, legacy-v1 golden corpus, DecodeMap shape 정합, strict 파서 | [plans/A-codec-compatibility.md](./plans/A-codec-compatibility.md) |
 | B Envelope binding | T0 머지 + D-2 | envelope `catalog_snapshot` 필드, ingest 검증, registry snapshot manifest, readiness | [plans/B-envelope-snapshot-binding.md](./plans/B-envelope-snapshot-binding.md) |
 | C Baseline benchmark | 즉시 | codec microbench, 결과 JSON 스키마, benchmark workflow | [plans/C-baseline-benchmark.md](./plans/C-baseline-benchmark.md) |
 | D Codegen 결정론 | T0 머지 (Task 1은 즉시) | timestamp 제거, digest 헤더, generator version, browser catalog 생성기 통합, drift CI | [plans/D-codegen-determinism.md](./plans/D-codegen-determinism.md) |

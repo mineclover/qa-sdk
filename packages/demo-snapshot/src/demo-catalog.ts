@@ -38,6 +38,8 @@ export type DimRef =
 
 export interface PrefixVersionDef {
   readonly version: string;
+  /** 이 버전의 차원 목록 (미선언 시 PrefixDef.labels) — core PrefixVersionDef.labels와 동일 (D-8) */
+  readonly labels?: readonly string[];
   readonly axisVersions: Record<string, string>;
   readonly refEntries?: Record<string, { values: readonly number[]; refVersion: string }>;
 }
@@ -3699,7 +3701,12 @@ export const DEMO_CATALOG = {
         build_result: { kind: 'axis', axisId: 'build_result' },
       },
       versions: [
-        { version: 'v1', axisVersions: { qa_pkg: 'v1', build_result: 'v1' } },
+        // v1은 qa_module 도입 전 2차원 주소 공간
+        {
+          version: 'v1',
+          labels: ['qa_pkg', 'build_result'],
+          axisVersions: { qa_pkg: 'v1', build_result: 'v1' },
+        },
         { version: 'v2', axisVersions: { qa_pkg: 'v1', qa_module: 'v2', build_result: 'v1' } },
       ],
     },
@@ -3716,7 +3723,12 @@ export const DEMO_CATALOG = {
         test_result: { kind: 'axis', axisId: 'test_result' },
       },
       versions: [
-        { version: 'v1', axisVersions: { qa_pkg: 'v1', test_result: 'v1' } },
+        // v1은 qa_module 도입 전 2차원 주소 공간
+        {
+          version: 'v1',
+          labels: ['qa_pkg', 'test_result'],
+          axisVersions: { qa_pkg: 'v1', test_result: 'v1' },
+        },
         { version: 'v2', axisVersions: { qa_pkg: 'v1', qa_module: 'v2', test_result: 'v1' } },
       ],
     },
@@ -3877,6 +3889,8 @@ export const DEMO_CATALOG = {
       versions: [
         {
           version: 'v1',
+          // v1은 anomaly_kind·anomaly_severity 도입 전 (svc_ref × behavior_pattern)
+          labels: ['svc_ref', 'behavior_pattern'],
           axisVersions: { behavior_pattern: 'v1' },
           refEntries: { svc_ref: { values: _PERM_SVC, refVersion: 'v1' } },
         },

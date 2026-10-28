@@ -104,7 +104,7 @@ Wave 2 트랙은 [plans/gated-phases.md](./plans/gated-phases.md)에 진입 조�
 | D-5 | queue 경로가 transition·convergence를 실행하지 않음 | queue 경로에도 같은 Phase 2.5/3 단계 연결 | inline/queue 결과가 달라지면 G3 differential test가 성립하지 않는다 | E, G3 |
 | D-6 | digest 표기 길이 | 전체 64 hex + `sha256:` 접두사. 표시용 12자는 파생값으로만 사용 | 12자 truncation은 충돌 판정용 식별자로 부족하다 | T0, D |
 | D-7 | benchmark CI 트리거 | `workflow_dispatch` + nightly. PR에서는 smoke 1회만 | 원본 인프라 매트릭스의 "CI 시간 증가" 대응 | C |
-| D-8 | 버전마다 dim 구성이 다른 prefix(R-11)의 모델 | `PrefixVersionDef`에 선택적 `labels`를 두어 버전별 dim 목록을 선언하고, 미선언 시 prefix 공통 `labels`를 쓴다 | v1 주소가 실제로 저장돼 있다면 v1 layout을 복원해야 decode할 수 있다. v1을 폐기하면 그 주소는 `MigrationRequired`가 된다 | A |
+| D-8 | 버전마다 dim 구성이 다른 prefix(R-11)의 모델 | ✅ **확정 (2026-10-29)**: `PrefixVersionDef`에 선택적 `labels`를 두어 버전별 dim 목록을 선언하고, 미선언 시 prefix 공통 `labels`를 쓴다 | v1 주소가 실제로 저장돼 있다면 v1 layout을 복원해야 decode할 수 있다. v1을 폐기하면 그 주소는 `MigrationRequired`가 된다 | A |
 
 ## 4. 이번 작업에서 반영한 것
 

@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- 착수 조건: T0 머지, D-8 확정 (D-1은 2026-10-28 capacity로 확정). D-8 확정안이 권장안과 다르면 Task 2를 다시 쓴다
+- 착수 조건: T0 머지(완료), D-1 capacity(2026-10-28 확정), D-8 버전별 labels(2026-10-29 확정)
 - T0 머지 후 `packages/core/src/catalog/snapshot/**` 소유권은 Track A로 넘어온다 ([01-tracks.md](../01-tracks.md) §3.1)
 - 라이브러리(`index-meta`, `weighted-index`)는 `@qa-sdk/core`를 import하지 않는다 (의존 방향: 플랫폼 → 인코딩 라이브러리)
 - 테스트의 prefix 목록·개수는 `DEMO_CATALOG`/snapshot에서 파생. 하드코딩 금지
