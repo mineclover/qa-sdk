@@ -142,7 +142,7 @@ node --expose-gc packages/bench/dist/micro/cli.js --cold --out benchmarks/result
 - **같은 `cpuModel`끼리만 수치를 비교한다.** 하드웨어가 다르면 비교하지 않는다 (CI runner와 로컬 baseline도 직접 비교 금지).
 - warm과 cold case는 섞어 비교하지 않는다.
 - `createdAt`은 메타데이터다. 결과 동일성 판정에 쓰지 않는다.
-- `catalogDigest`는 T0(CatalogSnapshot) 머지 전까지 `null`이다.
+- `catalogDigest`는 `computeCatalogDigest(DEMO_CATALOG)`(`sha256:<64 hex>`)다. T0 머지 전에 기록된 결과(최초 baseline 포함)는 `null`이며, digest가 다른 결과끼리는 같은 catalog 측정으로 비교하지 않는다.
 - 회귀 임계값은 이 트랙에서 정하지 않는다. G2 착수 판정에서 baseline 분산을 보고 정한다.
 
 ### 보관 (retention)

@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { computeCatalogDigest } from '@qa-sdk/core';
 import { DEMO_CATALOG } from 'demo-snapshot';
 import { createCodecSuite } from './codec-suite.js';
 import { measureCase } from './measure.js';
@@ -44,7 +45,10 @@ function parsePositiveInt(name: string, input: string | undefined, fallback: num
 function resolveCommitSha(env: BenchmarkEnvironment): string | null {
   if (env.commitSha) return env.commitSha;
   try {
-    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
   } catch {
     return null;
   }
@@ -81,7 +85,7 @@ function printSummary(report: BenchmarkReportV1, outPath: string): void {
   console.log(`report: ${outPath}`);
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       iterations: { type: 'string' },
@@ -100,7 +104,11 @@ function main(): void {
   }
 
   const iterations = parsePositiveInt('iterations', values.iterations, DEFAULT_ITERATIONS);
-  const coldIterations = parsePositiveInt('cold-iterations', values['cold-iterations'], MIN_SAMPLES_FOR_P99);
+  const coldIterations = parsePositiveInt(
+    'cold-iterations',
+    values['cold-iterations'],
+    MIN_SAMPLES_FOR_P99,
+  );
   const filter = values.filter;
 
   const baseEnv = collectEnvironment();
@@ -109,7 +117,9 @@ function main(): void {
     console.warn('경고: --expose-gc 없이 실행 중 — heapDeltaBytesPerOp는 null로 기록된다');
   }
 
-  const suite = createCodecSuite(DEMO_CATALOG).filter((c) => filter === undefined || c.id.includes(filter));
+  const suite = createCodecSuite(DEMO_CATALOG).filter(
+    (c) => filter === undefined || c.id.includes(filter),
+  );
   if (suite.length === 0) {
     throw new Error(`--filter "${filter}"에 해당하는 case가 없다`);
   }
@@ -117,7 +127,8 @@ function main(): void {
   // cold는 warmup이 섞이지 않도록 warm 측정 전에 모두 실행한다
   const cases: MicroCaseResult[] = [];
   if (values.cold) {
-    for (const c of suite) cases.push(measureCase({ id: c.id, warm: false, iterations: coldIterations, run: c.run }));
+    for (const c of suite)
+      cases.push(measureCase({ id: c.id, warm: false, iterations: coldIterations, run: c.run }));
   }
   for (const c of suite) cases.push(measureCase({ id: c.id, warm: true, iterations, run: c.run }));
 
@@ -127,8 +138,7 @@ function main(): void {
     suite: SUITE,
     createdAt,
     catalogId: DEMO_CATALOG.id,
-    // T0(CatalogSnapshot) 머지 후 computeCatalogDigest(DEMO_CATALOG)로 교체
-    catalogDigest: null,
+    catalogDigest: await computeCatalogDigest(DEMO_CATALOG),
     environment,
     cases,
   } satisfies BenchmarkReportV1);
@@ -141,9 +151,7 @@ function main(): void {
   printSummary(report, outPath);
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
-}
+});
