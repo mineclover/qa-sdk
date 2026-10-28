@@ -39,3 +39,6 @@ verdaccio/storage/
 
 # project skill runtime rollback copies (outside host discovery roots)
 .skill-sync-backups/
+
+# microbench 실행 결과 (baseline만 benchmarks/baseline/에 커밋)
+benchmarks/results/

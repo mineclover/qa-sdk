@@ -1,0 +1,65 @@
+name: benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'packages/bench/**'
+      - 'packages/core/src/catalog/**'
+      - 'packages/browser-codec/src/**'
+      - '.github/workflows/bench.yml'
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'case당 측정 반복 수'
+        default: '10000'
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # microbench는 private submodule을 소비하지 않는다
+          submodules: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.28.6 --activate
+
+      - name: Install dependencies
+        run: pnpm install --filter '@qa-sdk/bench...' --frozen-lockfile
+
+      - name: Build
+        run: pnpm --workspace-concurrency=1 --filter '@qa-sdk/bench...' run build
+
+      # PR은 smoke(500 iterations)만 실행한다. 수치로 실패하지 않고, 실행 오류와 report 검증 실패만 실패로 본다
+      - name: Run microbench
+        env:
+          ITERATIONS: ${{ github.event_name == 'pull_request' && '500' || inputs.iterations || '10000' }}
+        run: |
+          mkdir -p benchmarks/results
+          node --expose-gc packages/bench/dist/micro/cli.js --iterations "$ITERATIONS" --cold --out "benchmarks/results/codec-${GITHUB_SHA::7}.json"
+
+      - name: Upload benchmark report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ github.sha }}
+          path: benchmarks/results/
+          retention-days: 30

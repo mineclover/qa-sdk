@@ -83,3 +83,82 @@ const logger = new QaLogger({
   ...config,
 });
 ```
+
+## Codec microbench (`qa-bench-micro`)
+
+codec·envelope hot path를 **코드 변경 전에** 재현 가능한 JSON으로 기록하는 microbench다.
+위 transport 벤치마크(ingest-server 왕복, JSON vs QAPB)와 달리 네트워크·서버 없이 in-process 함수 호출만 잰다.
+
+### 기존 벤치마크와의 경계
+
+| 항목 | 담당 |
+|------|------|
+| JSON vs QAPB transport, batch·동시성 효과 | `node benchmarks/logging-transport.js`, `benchmarks/logger-buffer-test.js` (위 표) |
+| prefix encode/decode, 주소 파싱, browser-codec, record 배열 JSON 직렬화 | `qa-bench-micro` |
+
+QAPB(protobuf) 직렬화는 transport 벤치마크가 이미 다루므로 microbench에 넣지 않는다.
+`envelope.json/<n>`은 transport가 아니라 record 배열의 `JSON.stringify` + `JSON.parse` 비용만 잰다.
+
+### 실행
+
+```bash
+corepack pnpm --filter '@qa-sdk/bench...' build
+node --expose-gc packages/bench/dist/micro/cli.js --cold --out benchmarks/results/codec-$(git rev-parse --short HEAD).json
+```
+
+| 옵션 | 기본값 | 설명 |
+|------|-------:|------|
+| `--iterations <n>` | 10000 | warm case당 측정 반복 수 (warmup 1000회 후 측정) |
+| `--cold` | off | warmup 없는 cold case를 별도로 추가. warm 측정보다 먼저 전부 실행한다 |
+| `--cold-iterations <n>` | 100 | cold case당 측정 반복 수 (p99 최소 표본 수) |
+| `--filter <substring>` | - | case id에 substring이 포함된 case만 측정 |
+| `--out <path>` | `benchmarks/results/codec-<commit>.json` | report 저장 경로 |
+
+- **`--expose-gc` 필요**: 없으면 `heapDeltaBytesPerOp`는 `null`로 기록하고 경고한다 (0이나 추정값을 쓰지 않는다).
+- `heapDeltaBytesPerOp`는 GC 타이밍 영향을 받는 **allocation 상한 추정**이다. 정확한 allocation profile은 G2에서 `--heap-prof`로 별도 측정한다.
+- 표본이 100 미만이면 `p99`는 `null`이다.
+- cold는 프로세스 안에서 warmup 없이 처음 실행한 측정이다. 같은 함수를 공유하는 앞선 case(예: 다른 prefix의 `encodePrefix`)가 JIT를 일부 데우므로, 프로세스 단위의 진짜 cold start와는 다르다.
+- 측정 중 예외가 나면 그 case만 `skipped`로 기록하고 이유(`skipReason`)를 보존한다. 전체 실행은 멈추지 않는다.
+
+### case 구성
+
+전부 `DEMO_CATALOG`에서 파생한다 (prefix 개수·version 하드코딩 없음).
+
+| case id | 내용 |
+|---------|------|
+| `core.encodePrefix/<prefix>@<latest>` | prefix마다 1개. 모든 dim position 0 |
+| `core.decodePrefix/<prefix>@<latest>` | prefix마다 1개. suite 생성 시 1회 encode한 주소 |
+| `core.parseSerializedAddress` | 대표 prefix(`service`, 없으면 첫 prefix)의 직렬화 주소 |
+| `browser-codec.encode/<대표 prefix>` / `browser-codec.decode/<대표 prefix>` | `flattenForBrowser(catalog)` 결과로 각 dim 첫 값 encode/decode |
+| `envelope.json/<n>` | `n` ∈ {1, logger `DEFAULT_BATCH_SIZE`} 건 record 배열 |
+
+`envelope.json`에 logger buffer 상한(`maxBufferSize` 기본값 500)은 넣지 않았다. `@qa-sdk/logger`가 `DEFAULT_MAX_BUFFER_SIZE`를 공개 export하지 않아 suite에서 파생할 수 없고, baseline 트랙은 측정 대상 패키지를 수정하지 않기 때문이다. logger가 그 상수를 export하면 `ENVELOPE_RECORD_COUNTS`에 추가한다.
+
+### 결과 포맷과 비교 규칙
+
+결과는 `BenchmarkReportV1` JSON(`packages/bench/src/micro/report-schema.ts`)이며 CLI가 `validateReport`로 검증한 뒤 쓴다.
+`commitSha`, node 버전, platform/arch, `cpuModel`, `cpus`, `gcExposed`, `catalogId`, `catalogDigest`를 함께 기록한다.
+
+- **같은 `cpuModel`끼리만 수치를 비교한다.** 하드웨어가 다르면 비교하지 않는다 (CI runner와 로컬 baseline도 직접 비교 금지).
+- warm과 cold case는 섞어 비교하지 않는다.
+- `createdAt`은 메타데이터다. 결과 동일성 판정에 쓰지 않는다.
+- `catalogDigest`는 T0(CatalogSnapshot) 머지 전까지 `null`이다.
+- 회귀 임계값은 이 트랙에서 정하지 않는다. G2 착수 판정에서 baseline 분산을 보고 정한다.
+
+### 보관 (retention)
+
+- `benchmarks/results/`: 로컬·CI 실행 결과. git에 커밋하지 않는다 (`.gitignore`).
+- CI artifact: `bench-<sha>`, 30일 보관.
+- `benchmarks/baseline/`: 최초 baseline 1건만 커밋한다. G2 착수 판정 때 1회 갱신한다.
+
+### 최초 baseline
+
+`benchmarks/baseline/codec-24cbafbb.json` — commit `24cbafbb`(측정 대상 코드 변경 전), Apple M3 Pro × 12, Node v24.22.1, darwin/arm64, `--expose-gc --cold`, warm 10000 / cold 100 iterations, `catalogDigest: null`.
+
+- case 282건 = (prefix 68개 × encode·decode 2 + 주소 파싱 1 + browser-codec 2 + envelope 2) × warm·cold
+- **skipped: 0건.** R-11 prefix(`build_event`, `test_event`, `pattern_anomaly`)는 layout이 없는 v1이 아니라 latest(v2)로 측정되므로 통과한다. v1 layout 결함은 이 suite의 측정 범위 밖이다.
+
+### CI (`.github/workflows/bench.yml`)
+
+- PR (`packages/bench/**`, `packages/core/src/catalog/**`, `packages/browser-codec/src/**` 변경 시): smoke 500 iterations. 수치로 실패하지 않으며, 실행 오류와 report 검증 실패만 실패로 본다.
+- nightly(18:00 UTC)·`workflow_dispatch`: full 측정 (기본 10000 iterations).
