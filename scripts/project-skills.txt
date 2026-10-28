@@ -1,0 +1,10 @@
+# qa-sdk 루트에서 유지할 프로젝트 스킬. 나머지 원본은 작업별 --skill로 선택한다.
+arch-governance
+bdd-contract
+domain-slice-architecture
+project-closure-review
+semantic-change
+spec-lifecycle
+def-doctor
+def-context
+def-validate

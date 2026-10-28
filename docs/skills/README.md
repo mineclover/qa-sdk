@@ -10,8 +10,8 @@ description: "레포 안의 skill 운영 가이드와 skill-catalog 스펙의 �
 | 용어 | 뜻 | 소유 위치 | 직접 수정 여부 |
 |---|---|---|---|
 | **Agent Skill (에이전트 실행 스킬)** | Codex/Claude가 읽어 작업 절차를 수행하는 instruction bundle | `skills/<name>/SKILL.md` | 예 — repo SSOT |
-| **Skill runtime copy (실행 복제본)** | Agent Skill을 각 호스트가 읽는 위치에 전파한 사본 | `~/.codex/skills/`, `~/.claude/skills/` | 아니오 — `sync-skills.sh`로만 갱신 |
-| **Agent-local skill view (에이전트 로컬 뷰)** | 현재 작업 호스트가 별도로 제공하는 부분집합/어댑터 | `.agents/skills/` | 아니오 — repo SSOT 또는 동기화 대상이 아님 |
+| **Skill runtime copy (실행 복제본)** | 선택한 Agent Skill을 프로젝트 호스트 검색 위치에 전파한 사본 | `.agents/skills/`, `.claude/skills/` | 아니오 — `sync-skills.sh`로만 갱신 |
+| **Project skill selection (프로젝트 선택)** | 루트에 기본 노출할 스킬의 이름 목록 | `scripts/project-skills.txt` | 예 — repo SSOT의 설치 범위를 선택 |
 | **DKG Operation (DKG 작업)** | DKG 그래프를 조회·변경·분석하는 코드 기반 `SkillDef` 연산 | `packages/dkg`의 SkillDef/구현 | 예 — 해당 코드와 계약을 수정 |
 | **CLI command (CLI 명령)** | 사람이 호출하는 실행 표면. Agent Skill과 DKG Operation을 포함해 호출할 수 있음 | `packages/cli/src/commands/` | 예 — 명령 계약을 수정 |
 | **Skill playbook (운영 플레이북)** | 어떤 Agent Skill·DKG Operation·CLI 명령을 어떤 순서로 쓸지 설명 | `docs/skills/` | 예 — 사람용 운영 절차를 수정 |
@@ -50,7 +50,21 @@ corepack pnpm skills:check
 ./scripts/sync-skills.sh
 ```
 
-`skills:check`는 모든 `SKILL.md`의 표준 frontmatter, 디렉터리 이름, 본문 크기, 로컬 Markdown 링크를 검사한다. 동기화 스크립트는 `SKILL.md`만 복사하지 않고 `references/`와 `agents/`를 포함한 해당 스킬 디렉터리 전체를 `~/.claude/skills/`와 `~/.codex/skills/`에 전파한다. 실행 위치의 추가 스킬은 보존하지만, 같은 이름의 repo-owned 스킬은 `skills/` 원본으로 덮어쓴다.
+`skills:check`는 모든 `SKILL.md`의 표준 frontmatter, 디렉터리 이름, 본문 크기, 로컬 Markdown 링크를 검사한다. 동기화는 `scripts/project-skills.txt`로 선택한 디렉터리 전체를 `.agents/skills/`(Codex / Antigravity)와 `.claude/skills/`(Claude Code)에 복제한다. `references/`와 `agents/`도 함께 전달하며 사용자 전역에는 쓰지 않는다.
+
+기본 선택은 `arch-governance`, `bdd-contract`, `domain-slice-architecture`, `project-closure-review`, `semantic-change`, `spec-lifecycle` 6개와 문서 검토에 필요한 `def-doctor`, `def-context`, `def-validate` 3개다. 나머지 27개 정의는 `skills/`에 보존하고 필요한 작업에서만 선택한다.
+
+```bash
+./scripts/sync-skills.sh --skill e2e-test --skill test-split
+# 작업 종료 후 기본 9개로 복원
+./scripts/sync-skills.sh
+# 동기화 계약 회귀 검사 (격리 임시 repo/HOME 사용)
+node --test --test-force-exit scripts/sync-skills.test.mjs
+```
+
+`--target codex`와 `--target antigravity`는 공유 프로젝트 경로 `.agents/skills/`를, `--target claude`는 `.claude/skills/`만 갱신한다. 전역/전체 스킬 배포 옵션은 제공하지 않는다. 잘못된 선택이나 검색·백업 루트 심볼릭 링크는 쓰기 전에 거부한다. dry-run은 디렉터리도 만들지 않는다.
+
+업데이트하거나 해제하는 repo-owned 실행 복제본은 `.skill-sync-backups/<run-id>/`의 원래 상대경로에 이동해 보관한다. 복구 시 해당 백업을 원래 프로젝트 경로로 되돌릴 수 있다. `skills/`에 없는 다른 소유자의 로컬 스킬과 `.claude/skills/*.md` legacy 문서는 건드리지 않는다. Claude의 전역 off 예외가 필요하면 실제 호스트가 지원하는 프로젝트 `skillOverrides`를 사용한다. 설치 경로의 정합성 검사는 호스트의 새 세션 발견 확인과 구별한다.
 
 포맷 게이트는 추적 소스 전체를 기준으로 한다. `corepack pnpm format:check`는 생성물과 의존성을 제외한 전체 추적 코드·설정 파일을 검사하고, `corepack pnpm format:check:changed`는 현재 작업 트리의 변경 파일만 빠르게 검사한다. CI나 PR에서는 `corepack pnpm format:check -- --base origin/main`처럼 기준 브랜치를 지정할 수 있다. `corepack pnpm format`은 같은 추적 범위를 실제 정리한다. 문서와 셸 파일의 whitespace는 `git diff --check`로 확인한다.
 

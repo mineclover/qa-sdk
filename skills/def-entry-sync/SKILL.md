@@ -70,7 +70,7 @@ root entry/skill index 갱신 전에 아래 코드를 먼저 본다.
 1. `skills/<name>/SKILL.md` 수정 또는 생성
 2. 필요한 경우 `docs/skills/README.md`에 진입점 추가
 3. 관련 `docs/specs/skill-catalog/...` 문서 반영
-4. 실행 환경 동기화
+4. 프로젝트 실행 환경 동기화 (전역에는 쓰지 않는다)
 
 ```bash
 ./scripts/sync-skills.sh
@@ -79,9 +79,11 @@ root entry/skill index 갱신 전에 아래 코드를 먼저 본다.
 확인:
 
 ```bash
-ls ~/.codex/skills
-ls ~/.claude/skills
+ls .agents/skills
+ls .claude/skills
 ```
+
+기본 노출 목록은 `scripts/project-skills.txt`다. 작업별 추가 스킬은 `--skill <name>`으로 선택하고, 작업 종료 후 기본 동기화로 해제한다. `skills/` 원본은 유지한다.
 
 ## 흔한 drift
 

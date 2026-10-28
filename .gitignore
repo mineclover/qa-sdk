@@ -36,3 +36,6 @@ verdaccio/storage/
 
 # git worktrees (used by superpowers:using-git-worktrees)
 .worktrees/
+
+# project skill runtime rollback copies (outside host discovery roots)
+.skill-sync-backups/

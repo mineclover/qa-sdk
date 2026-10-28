@@ -15,7 +15,9 @@ description: "qa-sdk 모노레포의 아키텍처 계층 정합성, API 영향�
 corepack pnpm arch:feedback
 ```
 
-이 명령은 **Lint → Architectural Boundaries → API Impact → Analysis OS Accuracy** 4단계를 순차적으로 검증한다. 어떤 단계든 실패하면 non-zero로 종료한다.
+이 명령은 **API Impact Regression Tests → Lint → Architectural Boundaries → API Impact Gate(strict) → Analysis OS Accuracy → API Impact Baseline** 6단계를 순차적으로 검증한다. 어떤 단계든 실패하면 non-zero로 종료한다.
+
+기본 loop는 analyzer 회귀 테스트를 빠르게 실행한다. 전체 workspace 테스트가 필요한 경우 `QA_FEEDBACK_FULL_TEST=1 corepack pnpm arch:feedback`을 사용한다. `arch:feedback`의 API impact stage는 confirmed impact를 gate 대상으로 취급하며, advisory 리포트만 필요하면 `corepack pnpm arch:impact`를 별도로 실행한다.
 
 ## 핵심 도구 가이드
 

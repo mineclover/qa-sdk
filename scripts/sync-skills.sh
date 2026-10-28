@@ -1,131 +1,97 @@
 #!/usr/bin/env bash
-# sync-skills.sh — repo skills/ → ~/.claude/skills/, ~/.codex/skills/ 단방향 동기화
-#
-# 사용:
-#   ./scripts/sync-skills.sh                    # 전체 동기화
-#   ./scripts/sync-skills.sh --dry-run          # 변경 사항만 표시
-#   ./scripts/sync-skills.sh --target codex     # Codex만 동기화
-#   ./scripts/sync-skills.sh --target claude    # Claude만 동기화
-#
-# 원칙:
-#   - repo skills/ 가 SSOT (Single Source of Truth)
-#   - ~/.claude/skills/, ~/.codex/skills/ 는 실행 위치
-#   - 동기화 방향: repo → home (역방향 금지)
-#   - home 쪽에만 있는 skill은 건드리지 않음 (다른 프로젝트용 사용자 skill 보존)
-#   - repo skill과 같은 이름의 home 디렉터리는 bundled resources까지 SSOT와 일치시킴
-
+# skills/ 원본에서 선택한 스킬만 프로젝트 실행 위치로 복제한다. 전역에는 쓰지 않는다.
 set -euo pipefail
 
-REPO_SKILLS="$(cd "$(dirname "$0")/.." && pwd)/skills"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+REPO_SKILLS="$REPO_ROOT/skills"
 DRY_RUN=false
-TARGET="all"
+TARGET=all
+SELECTED=()
+
+usage() {
+  echo "사용법: ./scripts/sync-skills.sh [--dry-run] [--target all|claude|codex|antigravity] [--skill <name>]"
+  echo "기본: scripts/project-skills.txt → .agents/skills/, .claude/skills/"
+  echo "--skill은 해당 작업의 추가 스킬이며, 다음 기본 동기화에서 실행 복제본만 해제된다."
+}
+
+while IFS= read -r skill || [[ -n "$skill" ]]; do
+  [[ -z "$skill" || "$skill" == \#* ]] && continue
+  SELECTED+=("$skill")
+done < "$REPO_ROOT/scripts/project-skills.txt"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --)
-      shift
-      ;;
-    --dry-run)
-      DRY_RUN=true
-      shift
-      ;;
-    --target)
-      TARGET="${2:-}"
-      if [[ -z "$TARGET" ]]; then
-        echo "--target 값 필요: all | claude | codex"
-        exit 1
-      fi
+    --) shift ;;
+    --dry-run) DRY_RUN=true; shift ;;
+    --target|--skill)
+      [[ $# -ge 2 && -n "$2" ]] || { usage; exit 1; }
+      if [[ "$1" == --target ]]; then TARGET="$2"; else SELECTED+=("$2"); fi
       shift 2
       ;;
-    *)
-      echo "알 수 없는 옵션: $1"
-      echo "사용법: ./scripts/sync-skills.sh [--dry-run] [--target all|claude|codex]"
-      exit 1
-      ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "지원하지 않는 옵션: $1 (전역 배포는 지원하지 않는다.)" >&2; usage; exit 1 ;;
   esac
 done
 
-if [[ ! -d "$REPO_SKILLS" ]]; then
-  echo "repo skills/ 디렉토리 없음: $REPO_SKILLS"
-  exit 1
-fi
-
-if ! command -v rsync >/dev/null 2>&1; then
-  echo "rsync가 필요합니다: bundled skill resources 동기화를 보장할 수 없습니다."
-  exit 1
-fi
-
 TARGETS=()
 case "$TARGET" in
-  all)
-    TARGETS+=("claude:$HOME/.claude/skills")
-    TARGETS+=("codex:$HOME/.codex/skills")
-    ;;
-  claude)
-    TARGETS+=("claude:$HOME/.claude/skills")
-    ;;
-  codex)
-    TARGETS+=("codex:$HOME/.codex/skills")
-    ;;
-  *)
-    echo "지원하지 않는 target: $TARGET"
-    echo "사용 가능한 값: all | claude | codex"
-    exit 1
-    ;;
+  all) TARGETS=(.agents/skills .claude/skills) ;;
+  codex|antigravity) TARGETS=(.agents/skills) ;;
+  claude) TARGETS=(.claude/skills) ;;
+  *) usage; exit 1 ;;
 esac
 
-sync_target() {
-  local label="$1"
-  local home_skills="$2"
-  local synced=0
-  local skipped=0
-  local created=0
+# 잘못된 선택이나 검색 루트 링크가 있어도 부분 적용하지 않도록 쓰기 전에 검사한다.
+[[ ${#SELECTED[@]} -gt 0 ]] || { echo "프로젝트 기본 스킬 목록이 비어 있다." >&2; exit 1; }
+for skill in "${SELECTED[@]}"; do
+  [[ "$skill" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ && -f "$REPO_SKILLS/$skill/SKILL.md" ]] || {
+    echo "유효하지 않은 repo 스킬: $skill" >&2; exit 1;
+  }
+done
+[[ ! -L "$REPO_ROOT/.skill-sync-backups" ]] || { echo "백업 루트가 링크이므로 중단" >&2; exit 1; }
+for target in "${TARGETS[@]}"; do
+  [[ ! -L "$REPO_ROOT/${target%%/*}" && ! -L "$REPO_ROOT/$target" ]] || {
+    echo "프로젝트 검색 루트가 링크이므로 중단: $target" >&2; exit 1;
+  }
+done
 
-  mkdir -p "$home_skills"
-
-  for skill_dir in "$REPO_SKILLS"/*/; do
-    local skill_name src dst_dir
-    skill_name=$(basename "$skill_dir")
-    src="$skill_dir"
-    dst_dir="$home_skills/$skill_name"
-
-    if [[ ! -f "$src/SKILL.md" ]]; then
-      continue
-    fi
-
-    if [[ ! -d "$dst_dir" ]]; then
-      if $DRY_RUN; then
-        echo "[$label][create] $skill_name"
-      else
-        mkdir -p "$dst_dir"
-        rsync -a --delete "$src/" "$dst_dir/"
-        echo "[$label][create] $skill_name"
-      fi
-      created=$((created + 1))
-    elif ! diff -qr "$src" "$dst_dir" >/dev/null 2>&1; then
-      if $DRY_RUN; then
-        echo "[$label][update] $skill_name"
-        diff -ruN "$dst_dir" "$src" | head -40 || true
-        echo ""
-      else
-        rsync -a --delete "$src/" "$dst_dir/"
-        echo "[$label][update] $skill_name"
-      fi
-      synced=$((synced + 1))
-    else
-      skipped=$((skipped + 1))
-    fi
-  done
-
-  echo ""
-  echo "[$label] 동기화 완료: created=$created updated=$synced unchanged=$skipped"
+is_selected() {
+  local wanted="$1" selected
+  for selected in "${SELECTED[@]}"; do [[ "$selected" == "$wanted" ]] && return 0; done
+  return 1
 }
 
-for entry in "${TARGETS[@]}"; do
-  IFS=":" read -r label path <<< "$entry"
-  sync_target "$label" "$path"
+BACKUP_ROOT="$REPO_ROOT/.skill-sync-backups/$(date -u +%Y%m%dT%H%M%SZ)-$$"
+archive_runtime() {
+  local target="$1" skill="$2"
+  mkdir -p "$BACKUP_ROOT/$target"
+  mv "$REPO_ROOT/$target/$skill" "$BACKUP_ROOT/$target/$skill"
+}
+
+for target in "${TARGETS[@]}"; do
+  for source in "$REPO_SKILLS"/*; do
+    [[ -d "$source" && -f "$source/SKILL.md" ]] || continue
+    skill="${source##*/}"
+    destination="$REPO_ROOT/$target/$skill"
+    if is_selected "$skill"; then
+      if [[ -L "$destination" ]] || ! diff -qr "$source" "$destination" >/dev/null 2>&1; then
+        echo "[$target][sync] $skill"
+        if ! $DRY_RUN; then
+          if [[ -e "$destination" || -L "$destination" ]]; then archive_runtime "$target" "$skill"; fi
+          mkdir -p "$REPO_ROOT/$target"
+          cp -pR "$source" "$destination"
+        fi
+      fi
+    elif [[ -e "$destination" || -L "$destination" ]]; then
+      echo "[$target][deactivate] $skill (원본 skills/$skill 보존)"
+      if ! $DRY_RUN; then archive_runtime "$target" "$skill"; fi
+    fi
+  done
 done
 
 if $DRY_RUN; then
-  echo "(dry-run — 실제 변경 없음)"
+  echo "dry-run: 실제 변경 없음"
+elif [[ -d "$BACKUP_ROOT" ]]; then
+  echo "실행 복제본 백업: $BACKUP_ROOT"
 fi
+echo "프로젝트 스킬 확인 완료: $REPO_ROOT (target=$TARGET)"

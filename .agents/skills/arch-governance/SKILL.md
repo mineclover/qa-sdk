@@ -1,6 +1,6 @@
 ---
 name: arch-governance
-description: 'qa-sdk 모노레포의 아키텍처 계층 정합성, API 영향도, 패키지 사용성 및 이벤트 신호 연결을 관리하고 분석한다.'
+description: "qa-sdk 모노레포의 아키텍처 계층 정합성, API 영향도, 패키지 사용성 및 이벤트 신호 연결을 관리하고 분석한다."
 ---
 
 # Architectural Governance — 아키텍처 수호 가이드

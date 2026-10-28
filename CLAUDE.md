@@ -38,8 +38,9 @@
 ## Skills 관리
 
 - **SSOT**: `skills/` 디렉토리가 skill 정의의 유일한 원본
-- **실행 위치**: `~/.claude/skills/`, `~/.codex/skills/`
-- **동기화**: `./scripts/sync-skills.sh` — repo → home 단방향 전파. `~/.claude/skills/` 직접 수정 금지
+- **프로젝트 실행 위치**: Claude Code는 `.claude/skills/`, Codex / Antigravity는 `.agents/skills/`
+- **동기화**: `./scripts/sync-skills.sh` — `scripts/project-skills.txt`의 최소 선택만 repo → 프로젝트로 전파. 전역에는 쓰지 않으며 실행 복제본 직접 수정 금지
+- **작업별 선택**: `--skill <name>`으로 추가하고 작업 후 기본 동기화로 해제한다. 원본은 `skills/`에 보존하며 기존 실행 복제본은 `.skill-sync-backups/`에 백업한다.
 
 ## SSOT 원칙
 

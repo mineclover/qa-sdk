@@ -225,20 +225,23 @@ Hyalo는 Markdown 본문의 물리적 navigation link와 backlinks를 보조 점
 
 ### 스킬 관리
 
-**SSOT**: `skills/` 디렉토리가 스킬 원본. 수정은 항상 repo에서 하고 동기화 스크립트로 전파.
+**SSOT**: `skills/` 디렉토리가 스킬 원본이다. 수정은 repo에서 하고 프로젝트 실행 복제본만 동기화한다.
 
 ```bash
-# 동기화 (repo → 실행 환경)
+./scripts/sync-skills.sh --dry-run
 ./scripts/sync-skills.sh
-
-# Claude Code 실행 환경
-~/.claude/skills/
-
-# Codex 실행 환경
-~/.codex/skills/
+# 특정 작업에서만 필요한 스킬 추가 (다음 기본 동기화에서 해제)
+./scripts/sync-skills.sh --skill e2e-test
 ```
 
-스킬 수정 흐름: `skills/<name>/SKILL.md` 수정 → git commit → `./scripts/sync-skills.sh` → `~/.claude/skills/`, `~/.codex/skills/` 반영
+- Codex / Antigravity 실행 위치: `.agents/skills/`
+- Claude Code 실행 위치: `.claude/skills/`
+- 기본 선택: `scripts/project-skills.txt`의 core 6개와 `def-doctor`, `def-context`, `def-validate`.
+- 나머지 스킬은 `skills/` 원본을 보존하고 해당 작업에서 `--skill <name>`으로 선택한다.
+- 전역 설치에는 쓰지 않는다. `--target codex|antigravity`도 프로젝트 `.agents/skills/`만 대상으로 한다.
+- 수정·해제되는 기존 실행 복제본은 `.skill-sync-backups/`에 보관한다. 미소유 스킬은 건드리지 않는다.
+
+스킬 수정 흐름: `skills/<name>/SKILL.md` 수정 → `skills:check` → 동기화 dry-run → 프로젝트 동기화. 상세 계약은 `docs/skills/README.md`를 따른다.
 
 ### 주요 스킬
 

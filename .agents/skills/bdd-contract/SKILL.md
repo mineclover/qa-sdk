@@ -1,17 +1,6 @@
 ---
 name: bdd-contract
 description: "BDD 계약 기반 테스트/구현 단위 설계. Given/When/Then을 결정론적 contract로 정규화하고, .cases.md/.test.md에서 test unit과 implementation unit을 도출한다. 트리거: BDD, Given/When/Then, behavior contract, 테스트 단위, 구현 단위, .cases.md, .test.md."
-triggers:
-  - BDD
-  - Given
-  - When
-  - Then
-  - behavior contract
-  - 테스트 단위
-  - 구현 단위
-  - .cases.md
-  - .test.md
-argument-hint: "<spec-or-cases-doc-id|feature> [--unit|--integration|--e2e]"
 ---
 
 # BDD Contract — 테스트/구현 단위 설계

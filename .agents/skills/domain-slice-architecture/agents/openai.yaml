@@ -1,0 +1,4 @@
+interface:
+  display_name: "Domain Slice Architecture"
+  short_description: "Design and validate domain slices."
+  default_prompt: "Use the domain-slice-architecture skill to analyze, implement, and validate a domain slice."
