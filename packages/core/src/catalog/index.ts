@@ -131,3 +131,6 @@ export {
   summarizeTransitions,
   validateTransitionBridge,
 } from './transition-bridge.js';
+
+// ── Catalog Snapshot (좌표 문맥 binding, ADR-010) ─────────────
+export * from './snapshot/index.js';

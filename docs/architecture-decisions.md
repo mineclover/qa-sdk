@@ -425,3 +425,27 @@ Phase 2.6: Convergence Notification
 | **address_context 디코딩** | TransitionEngine은 디코딩된 이벤트만 받음. decode 책임은 호출자 |
 | **effect vocabulary 통제** | create/update/move/consume/open/close. 추가 시 DKG Decision 필수 |
 | **metric은 주입** | autoRunnable: false. Phase 2.5 결과에서 값을 계산하여 주입 |
+
+---
+
+## ADR-010: Coordinate Context Binding (CatalogSnapshot)
+
+### 결정
+
+정수 주소의 의미는 `(catalogId, snapshot digest, codecVersion, prefix, version)` 문맥으로만 해석한다. 문맥 없이 숫자만으로 decode하지 않는다.
+
+### 배경
+
+SDK(capacity 기준 stride)와 DecodeMap(entries 기준 stride)이 같은 주소를 서로 다른 값으로 해석했고, 실패 시 `null`·일반 `Error`·조용한 skip이 섞여 있었다. (`docs/proposals/swc-next-qa-sdk-optimization/` R-1)
+
+### 구조
+
+- `@qa-sdk/core` `catalog/snapshot/`: `CatalogSnapshot`, `PrefixLayout`, `buildCatalogSnapshot`, `resolveDecodeLayout`, `CodecContractError`
+- digest: RFC 8785 부분집합 canonical JSON + SHA-256(WebCrypto), `sha256:<64 hex>`
+- layout 호환: 같은 dim 순서·kind·source·capacity에서 entry append만 호환
+
+### 규칙
+
+- `documentVersion`(문서), `snapshotVersion`(catalog), `codecVersion`(wire ABI), `analyzerVersion`은 서로 다른 축이다
+- 같은 prefix version 안의 breaking layout 변경은 금지 — `findUnversionedBreakingChanges`가 비어 있어야 snapshot을 발행한다
+- 실패는 `CodecContractError.code` 9종으로만 표현한다. `null` 반환·조용한 skip은 신규 코드에서 금지

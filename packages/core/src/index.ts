@@ -89,6 +89,9 @@ export {
   decomposeAddressAsResult,
 } from './catalog/runtime.js';
 
+// ── Catalog Snapshot (ADR-010) ────────────────────────────────
+export * from './catalog/snapshot/index.js';
+
 export type { DecodeResult, DecodedDim } from './catalog/decode-result.js';
 export {
   entitiesToDecodeResult,
