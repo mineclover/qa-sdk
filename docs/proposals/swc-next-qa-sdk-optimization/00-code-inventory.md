@@ -145,9 +145,9 @@ viz-3d/scripts ──► browser-codec/src/demo-catalog-browser.ts (생성물 �
 |---|---|---|---|
 | X-1 | CLI 로더 사본 `cli/src/catalog-loader.ts`, `cli/src/dkg-config-loader.ts` (import 0건, `config-loader`와 `@def` 헤더 외 동일) ✅ | **정리 완료** (삭제) | – |
 | X-2 | `convergence/src/dkg-types.ts` 헤더가 존재하지 않는 `spec-core/src/dkg/dkg.types.ts`를 원본으로 표기 ✅ | **정리 완료** (주석 정정) | – |
-| X-3 | DecodeMap 빌더 2벌 + shape 기준 불일치 | D-1 결정 후 단일 빌더로 통합 | A |
-| X-4 | 주소 파서 9벌 | strict 파서 1개(core) + 기존 함수는 위임 | A |
-| X-5 | `latestPrefixVersion` 재구현 4곳 | core import로 교체 | A |
+| X-3 | DecodeMap 빌더 2벌 + shape 기준 불일치 | ✅ **Track A 처리**: core `layoutToDecodeMap` 단일화, registry·worker 위임 (R-1 해소) | A |
+| X-4 | 주소 파서 9벌 | core 2벌은 ✅ 단일화(`parsePackedAddress` → `parseSerializedAddress`). weighted-index·address-index·browser-sdk·index-meta 파서는 남음 | A (후속) |
+| X-5 | `latestPrefixVersion` 재구현 4곳 | ✅ context·dkg 교체. `core/catalog/browser-flatten.ts`는 Track D 소유로 남음 | A, D |
 | X-6 | QAPB 프레임 구현 2벌 + proto 필드 레이아웃 3벌 | 필드 번호 정본 결정 후 정합 | B |
 | X-7 | `computeCatalogHash` 불완전·비결정 + registry 해시 별도 알고리즘 | T0 `computeCatalogDigest`로 통일 | D (codegen), B (registry) |
 | X-8 | browser catalog 생성기 재구현 + `BrowserCatalog` 타입 3벌 | 생성기는 core `flattenForBrowser` 사용 | D (생성기·core 타입), A (browser-codec import 교체) |

@@ -75,6 +75,19 @@ PK 또는 UNIQUE 제약은 반드시 `(prefix_id, version, address, ...)` 조합
 ### 3.2 이행 기간 동안 read 경로 우선순위
 새 쓰기는 새 version에, 새 읽기는 새 version 우선. 미이행 데이터는 구 version 조회로 fallback. 데이터 일관성 책임은 마이그레이션 도구에 있다.
 
+### 3.3 주소 shape와 decode 정본 (ADR-010)
+
+- 주소 공간의 shape는 축 **capacity**(`capacity ?? entries.length`)다. entries.length로 stride를 계산하지 않는다.
+- headroom position(`entries.length ≤ pos < capacity`)의 decode 표기는 `(reserved:N)` 하나로 통일한다.
+- DecodeMap은 `@qa-sdk/core`의 `layoutToDecodeMap(PrefixLayout)`에서만 만든다. registry·decode-service가 별도 dim 루프로 만들지 않는다.
+- prefix version마다 dim 구성이 다르면 `PrefixVersionDef.labels`로 그 버전의 dim 목록을 선언한다 (미선언 시 prefix 공통 `labels`).
+- 주소 문자열의 address는 0 또는 선행 0 없는 10진 안전 정수만 허용한다 (`parseSerializedAddress`가 정규 파서).
+
+### 3.4 호환성 기준 데이터
+
+- `fixtures/coordinate-compatibility/legacy-v1/demo.json`이 현재 codec 동작의 golden corpus다. 갱신 규칙은 같은 디렉토리 README를 따른다.
+- core runtime ↔ DecodeMap ↔ browser-codec 동치는 `packages/demo-tests/src/codec-compat/three-way-parity.test.ts`가 검증한다.
+
 ## 4. 예외
 
 ### 4.1 in-memory only
@@ -130,3 +143,4 @@ const DEFAULT_VERSION = "v1";
 ## 사례
 
 - **2026-04-22**: ingest-server `key_observations`/`key_observation_prefixes` 이행. packed_key 단일 컬럼 → `(prefix_id, version, address)` 복합 PK + 구조화 컬럼. SDK emit 단계에서 `AddressContextV1Schema` 검증 진입점 추가. 감사: `docs/proposals/ingest-coordinate-storage-audit/README.md`
+- **2026-10-29**: SDK(capacity)와 DecodeMap(entries.length)의 stride 불일치로 product prefix version 83개 전부가 다른 값으로 decode되던 문제 수정(R-1). DecodeMap 정본 빌더 단일화, 버전별 dim 목록(D-8), strict 주소 파서, legacy-v1 corpus. 제안: `docs/proposals/swc-next-qa-sdk-optimization/`
