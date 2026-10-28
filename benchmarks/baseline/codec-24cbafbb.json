@@ -1,0 +1,3966 @@
+{
+  "schemaVersion": 1,
+  "suite": "codec",
+  "createdAt": "2026-10-28T15:13:26.901Z",
+  "catalogId": "demo",
+  "catalogDigest": null,
+  "environment": {
+    "commitSha": "24cbafbb18ea650406addd5cffd3bb7ac7f38ef7",
+    "node": "v24.22.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M3 Pro",
+    "cpus": 12,
+    "gcExposed": true
+  },
+  "cases": [
+    {
+      "id": "core.encodePrefix/service@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 16223.3,
+        "p50": 6083,
+        "p95": 78709,
+        "p99": 134458
+      },
+      "opsPerSec": 58032.71420165002,
+      "heapDeltaBytesPerOp": 2587.28
+    },
+    {
+      "id": "core.decodePrefix/service@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 11249.19,
+        "p50": 6417,
+        "p95": 18333,
+        "p99": 33375
+      },
+      "opsPerSec": 86925.00197754346,
+      "heapDeltaBytesPerOp": 4426.32
+    },
+    {
+      "id": "core.encodePrefix/permission@v4",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5682.16,
+        "p50": 3584,
+        "p95": 5000,
+        "p99": 47042
+      },
+      "opsPerSec": 162678.86541253416,
+      "heapDeltaBytesPerOp": 2377.92
+    },
+    {
+      "id": "core.decodePrefix/permission@v4",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4302.12,
+        "p50": 3542,
+        "p95": 3916,
+        "p99": 17583
+      },
+      "opsPerSec": 219498.9716473226,
+      "heapDeltaBytesPerOp": 2611.68
+    },
+    {
+      "id": "core.encodePrefix/event@v4",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3898.76,
+        "p50": 3042,
+        "p95": 3708,
+        "p99": 43292
+      },
+      "opsPerSec": 240963.85542167487,
+      "heapDeltaBytesPerOp": 2405.84
+    },
+    {
+      "id": "core.decodePrefix/event@v4",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 10951.67,
+        "p50": 4417,
+        "p95": 11791,
+        "p99": 58208
+      },
+      "opsPerSec": 89060.3597682284,
+      "heapDeltaBytesPerOp": 2801.52
+    },
+    {
+      "id": "core.encodePrefix/rbac@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3197.92,
+        "p50": 2834,
+        "p95": 3000,
+        "p99": 3666
+      },
+      "opsPerSec": 296809.00637241453,
+      "heapDeltaBytesPerOp": 2365.12
+    },
+    {
+      "id": "core.decodePrefix/rbac@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4578.37,
+        "p50": 3875,
+        "p95": 5167,
+        "p99": 28917
+      },
+      "opsPerSec": 209790.50320354092,
+      "heapDeltaBytesPerOp": 2685.92
+    },
+    {
+      "id": "core.encodePrefix/content@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 61160.41,
+        "p50": 4125,
+        "p95": 26875,
+        "p99": 1033417
+      },
+      "opsPerSec": 16257.080364925961,
+      "heapDeltaBytesPerOp": 2639.12
+    },
+    {
+      "id": "core.decodePrefix/content@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5578.31,
+        "p50": 4709,
+        "p95": 8625,
+        "p99": 12584
+      },
+      "opsPerSec": 96665.05558240882,
+      "heapDeltaBytesPerOp": 3013.2
+    },
+    {
+      "id": "core.encodePrefix/tracking@v3",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4142.91,
+        "p50": 3625,
+        "p95": 3791,
+        "p99": 29417
+      },
+      "opsPerSec": 231280.71697023377,
+      "heapDeltaBytesPerOp": 2453.12
+    },
+    {
+      "id": "core.decodePrefix/tracking@v3",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5057.89,
+        "p50": 4000,
+        "p95": 5541,
+        "p99": 22875
+      },
+      "opsPerSec": 190264.9058283909,
+      "heapDeltaBytesPerOp": 2819.36
+    },
+    {
+      "id": "core.encodePrefix/relational@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 14217.94,
+        "p50": 2958,
+        "p95": 3875,
+        "p99": 28667
+      },
+      "opsPerSec": 69354.13957520678,
+      "heapDeltaBytesPerOp": 2365.12
+    },
+    {
+      "id": "core.decodePrefix/relational@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 16220.02,
+        "p50": 3541,
+        "p95": 6042,
+        "p99": 118209
+      },
+      "opsPerSec": 60263.65348398999,
+      "heapDeltaBytesPerOp": 2637.52
+    },
+    {
+      "id": "core.encodePrefix/page_view@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4060.4,
+        "p50": 3542,
+        "p95": 3958,
+        "p99": 26292
+      },
+      "opsPerSec": 235918.60808023863,
+      "heapDeltaBytesPerOp": 2453.12
+    },
+    {
+      "id": "core.decodePrefix/page_view@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 18501.68,
+        "p50": 4042,
+        "p95": 4875,
+        "p99": 34083
+      },
+      "opsPerSec": 52801.79526103943,
+      "heapDeltaBytesPerOp": 2765.2
+    },
+    {
+      "id": "core.encodePrefix/endpoint@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4067.96,
+        "p50": 3416,
+        "p95": 7750,
+        "p99": 11583
+      },
+      "opsPerSec": 234444.05109946427,
+      "heapDeltaBytesPerOp": 2453.12
+    },
+    {
+      "id": "core.decodePrefix/endpoint@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4101.69,
+        "p50": 3750,
+        "p95": 4167,
+        "p99": 5208
+      },
+      "opsPerSec": 233804.37120649545,
+      "heapDeltaBytesPerOp": 2765.2
+    },
+    {
+      "id": "core.encodePrefix/flow_point@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4300.83,
+        "p50": 3500,
+        "p95": 4125,
+        "p99": 32208
+      },
+      "opsPerSec": 222510.99204298612,
+      "heapDeltaBytesPerOp": 2453.12
+    },
+    {
+      "id": "core.decodePrefix/flow_point@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5542.07,
+        "p50": 4000,
+        "p95": 8125,
+        "p99": 44125
+      },
+      "opsPerSec": 173247.4718862548,
+      "heapDeltaBytesPerOp": 2765.2
+    },
+    {
+      "id": "core.encodePrefix/engine_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4592.02,
+        "p50": 1500,
+        "p95": 3750,
+        "p99": 64625
+      },
+      "opsPerSec": 209150.32679739557,
+      "heapDeltaBytesPerOp": 2390
+    },
+    {
+      "id": "core.decodePrefix/engine_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 16229.12,
+        "p50": 3042,
+        "p95": 9083,
+        "p99": 190083
+      },
+      "opsPerSec": 60515.91023796394,
+      "heapDeltaBytesPerOp": 2637.52
+    },
+    {
+      "id": "core.encodePrefix/schema_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 15182.93,
+        "p50": 2667,
+        "p95": 2875,
+        "p99": 30792
+      },
+      "opsPerSec": 65026.566603786916,
+      "heapDeltaBytesPerOp": 2365.12
+    },
+    {
+      "id": "core.decodePrefix/schema_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 8505,
+        "p50": 3000,
+        "p95": 5917,
+        "p99": 35916
+      },
+      "opsPerSec": 114476.59583237398,
+      "heapDeltaBytesPerOp": 2637.52
+    },
+    {
+      "id": "core.encodePrefix/schema_validation@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 15533.73,
+        "p50": 1500,
+        "p95": 11875,
+        "p99": 80958
+      },
+      "opsPerSec": 63393.129959720856,
+      "heapDeltaBytesPerOp": 2463.68
+    },
+    {
+      "id": "core.decodePrefix/schema_validation@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4121.66,
+        "p50": 3791,
+        "p95": 4000,
+        "p99": 6833
+      },
+      "opsPerSec": 232378.181547768,
+      "heapDeltaBytesPerOp": 2765.2
+    },
+    {
+      "id": "core.encodePrefix/pipeline_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 48104.56,
+        "p50": 4000,
+        "p95": 8125,
+        "p99": 242958
+      },
+      "opsPerSec": 20668.805336850863,
+      "heapDeltaBytesPerOp": 2621.12
+    },
+    {
+      "id": "core.decodePrefix/pipeline_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 42957.11,
+        "p50": 4417,
+        "p95": 9125,
+        "p99": 1564541
+      },
+      "opsPerSec": 23124.509760392855,
+      "heapDeltaBytesPerOp": 3013.2
+    },
+    {
+      "id": "core.encodePrefix/data_policy@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2640,
+        "p50": 2166,
+        "p95": 2250,
+        "p99": 23708
+      },
+      "opsPerSec": 356135.5024360863,
+      "heapDeltaBytesPerOp": 2277.12
+    },
+    {
+      "id": "core.decodePrefix/data_policy@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 52610.02,
+        "p50": 2292,
+        "p95": 2792,
+        "p99": 24417
+      },
+      "opsPerSec": 18924.90635010093,
+      "heapDeltaBytesPerOp": 2124.16
+    },
+    {
+      "id": "core.encodePrefix/deploy_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2352.94,
+        "p50": 2083,
+        "p95": 2167,
+        "p99": 2500
+      },
+      "opsPerSec": 394411.97119208967,
+      "heapDeltaBytesPerOp": 1797.12
+    },
+    {
+      "id": "core.decodePrefix/deploy_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2584.18,
+        "p50": 2375,
+        "p95": 2500,
+        "p99": 2750
+      },
+      "opsPerSec": 364244.3205204333,
+      "heapDeltaBytesPerOp": 2029.12
+    },
+    {
+      "id": "core.encodePrefix/health_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2213.33,
+        "p50": 2000,
+        "p95": 2125,
+        "p99": 2375
+      },
+      "opsPerSec": 420314.6475450841,
+      "heapDeltaBytesPerOp": 1797.12
+    },
+    {
+      "id": "core.decodePrefix/health_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 33131.99,
+        "p50": 1000,
+        "p95": 4667,
+        "p99": 29750
+      },
+      "opsPerSec": 29237.62882830194,
+      "heapDeltaBytesPerOp": 2029.12
+    },
+    {
+      "id": "core.encodePrefix/cart_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2815.86,
+        "p50": 2750,
+        "p95": 3000,
+        "p99": 20958
+      },
+      "opsPerSec": 330715.17155851313,
+      "heapDeltaBytesPerOp": 1797.12
+    },
+    {
+      "id": "core.decodePrefix/cart_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3480.02,
+        "p50": 3167,
+        "p95": 3542,
+        "p99": 4333
+      },
+      "opsPerSec": 273286.7652685539,
+      "heapDeltaBytesPerOp": 2029.12
+    },
+    {
+      "id": "core.encodePrefix/auth_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1357.54,
+        "p50": 1042,
+        "p95": 1250,
+        "p99": 13750
+      },
+      "opsPerSec": 694444.4444444181,
+      "heapDeltaBytesPerOp": 1797.12
+    },
+    {
+      "id": "core.decodePrefix/auth_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3509.56,
+        "p50": 2792,
+        "p95": 3583,
+        "p99": 24083
+      },
+      "opsPerSec": 267587.882550272,
+      "heapDeltaBytesPerOp": 2213.52
+    },
+    {
+      "id": "core.encodePrefix/order_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2793.31,
+        "p50": 2542,
+        "p95": 2709,
+        "p99": 3000
+      },
+      "opsPerSec": 345026.27375069354,
+      "heapDeltaBytesPerOp": 1796.64
+    },
+    {
+      "id": "core.decodePrefix/order_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3044.16,
+        "p50": 2792,
+        "p95": 2875,
+        "p99": 3625
+      },
+      "opsPerSec": 316747.384458389,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/build_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3287.96,
+        "p50": 2875,
+        "p95": 3042,
+        "p99": 21834
+      },
+      "opsPerSec": 293793.60998898745,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/build_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1445,
+        "p50": 1291,
+        "p95": 1334,
+        "p99": 1708
+      },
+      "opsPerSec": 670205.3509193233,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/test_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3006.35,
+        "p50": 2792,
+        "p95": 2959,
+        "p99": 3375
+      },
+      "opsPerSec": 321931.58953714796,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/test_event@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4118.32,
+        "p50": 3291,
+        "p95": 3625,
+        "p99": 10375
+      },
+      "opsPerSec": 235779.54612437167,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/dkg_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2262.46,
+        "p50": 2042,
+        "p95": 2166,
+        "p99": 2584
+      },
+      "opsPerSec": 421569.1647450013,
+      "heapDeltaBytesPerOp": 1796.64
+    },
+    {
+      "id": "core.decodePrefix/dkg_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4616.68,
+        "p50": 2709,
+        "p95": 2959,
+        "p99": 87666
+      },
+      "opsPerSec": 210526.3157894636,
+      "heapDeltaBytesPerOp": 2061.6
+    },
+    {
+      "id": "core.encodePrefix/dkg_decision_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 9887.44,
+        "p50": 2625,
+        "p95": 10000,
+        "p99": 187708
+      },
+      "opsPerSec": 96926.5558408341,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/dkg_decision_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 6113.39,
+        "p50": 3625,
+        "p95": 7833,
+        "p99": 32958
+      },
+      "opsPerSec": 160000,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/dkg_observation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 20947.95,
+        "p50": 2708,
+        "p95": 20541,
+        "p99": 300583
+      },
+      "opsPerSec": 47206.9311104532,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/dkg_observation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4033.3,
+        "p50": 3458,
+        "p95": 3792,
+        "p99": 22042
+      },
+      "opsPerSec": 241206.2240854102,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/skill_execution@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4403.28,
+        "p50": 2625,
+        "p95": 2834,
+        "p99": 29000
+      },
+      "opsPerSec": 220649.23831882063,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/skill_execution@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 6047.14,
+        "p50": 3500,
+        "p95": 3750,
+        "p99": 48375
+      },
+      "opsPerSec": 162546.3866750842,
+      "heapDeltaBytesPerOp": 2125.12
+    },
+    {
+      "id": "core.encodePrefix/cli_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5273.68,
+        "p50": 2583,
+        "p95": 3125,
+        "p99": 25792
+      },
+      "opsPerSec": 18940.140066123662,
+      "heapDeltaBytesPerOp": 2020.8
+    },
+    {
+      "id": "core.decodePrefix/cli_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 29390.44,
+        "p50": 2958,
+        "p95": 3250,
+        "p99": 17875
+      },
+      "opsPerSec": 33885.86495194978,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/contract_check@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5593.71,
+        "p50": 1167,
+        "p95": 2750,
+        "p99": 22500
+      },
+      "opsPerSec": 176030.61524456766,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/contract_check@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4533.25,
+        "p50": 1333,
+        "p95": 35125,
+        "p99": 57125
+      },
+      "opsPerSec": 214075.46160015737,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/pattern_match@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 11939.12,
+        "p50": 3125,
+        "p95": 3292,
+        "p99": 30500
+      },
+      "opsPerSec": 82528.06573194322,
+      "heapDeltaBytesPerOp": 1812.64
+    },
+    {
+      "id": "core.decodePrefix/pattern_match@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 8209.65,
+        "p50": 2167,
+        "p95": 9292,
+        "p99": 101125
+      },
+      "opsPerSec": 116657.80067379805,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/pattern_anomaly@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 9973.36,
+        "p50": 3250,
+        "p95": 3334,
+        "p99": 20208
+      },
+      "opsPerSec": 98960.91044036698,
+      "heapDeltaBytesPerOp": 1812.64
+    },
+    {
+      "id": "core.decodePrefix/pattern_anomaly@v2",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4049.1,
+        "p50": 3791,
+        "p95": 3917,
+        "p99": 5375
+      },
+      "opsPerSec": 239784.57753558434,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/version_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2603.7,
+        "p50": 2000,
+        "p95": 2166,
+        "p99": 3333
+      },
+      "opsPerSec": 365965.2333028874,
+      "heapDeltaBytesPerOp": 1796.64
+    },
+    {
+      "id": "core.decodePrefix/version_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2556.22,
+        "p50": 2292,
+        "p95": 2458,
+        "p99": 3084
+      },
+      "opsPerSec": 365407.5939004034,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/gate_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 9356.26,
+        "p50": 1708,
+        "p95": 2250,
+        "p99": 29416
+      },
+      "opsPerSec": 105411.06626454591,
+      "heapDeltaBytesPerOp": 1796.64
+    },
+    {
+      "id": "core.decodePrefix/gate_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1357.43,
+        "p50": 958,
+        "p95": 1084,
+        "p99": 12959
+      },
+      "opsPerSec": 711323.5597482363,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/observation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 7143.73,
+        "p50": 916,
+        "p95": 2000,
+        "p99": 180167
+      },
+      "opsPerSec": 138240.88474169956,
+      "heapDeltaBytesPerOp": 1808.24
+    },
+    {
+      "id": "core.decodePrefix/observation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1320.82,
+        "p50": 1000,
+        "p95": 1084,
+        "p99": 13875
+      },
+      "opsPerSec": 722888.0824671446,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/spec_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 7766.67,
+        "p50": 875,
+        "p95": 958,
+        "p99": 2000
+      },
+      "opsPerSec": 127551.02040818309,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/spec_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2823.3,
+        "p50": 2333,
+        "p95": 2500,
+        "p99": 31042
+      },
+      "opsPerSec": 339126.74862224323,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/edge_activity@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 7775.8,
+        "p50": 2042,
+        "p95": 2292,
+        "p99": 203791
+      },
+      "opsPerSec": 126756.04658033517,
+      "heapDeltaBytesPerOp": 1796.64
+    },
+    {
+      "id": "core.decodePrefix/edge_activity@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 11754.58,
+        "p50": 1042,
+        "p95": 2708,
+        "p99": 22416
+      },
+      "opsPerSec": 55623.78740143242,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/execution_context@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2526.64,
+        "p50": 1959,
+        "p95": 2125,
+        "p99": 24750
+      },
+      "opsPerSec": 379266.2714712963,
+      "heapDeltaBytesPerOp": 1796.64
+    },
+    {
+      "id": "core.decodePrefix/execution_context@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 101144.58,
+        "p50": 2250,
+        "p95": 3166,
+        "p99": 332583
+      },
+      "opsPerSec": 9868.704777893789,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/ingest_record@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 119907.53,
+        "p50": 2042,
+        "p95": 4750,
+        "p99": 219041
+      },
+      "opsPerSec": 8325.585682057294,
+      "heapDeltaBytesPerOp": 1796.64
+    },
+    {
+      "id": "core.decodePrefix/ingest_record@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2647.59,
+        "p50": 2209,
+        "p95": 2375,
+        "p99": 3208
+      },
+      "opsPerSec": 360630.67091731506,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/event_classification@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3934.23,
+        "p50": 2584,
+        "p95": 3292,
+        "p99": 25542
+      },
+      "opsPerSec": 226137.92604388497,
+      "heapDeltaBytesPerOp": 1804.64
+    },
+    {
+      "id": "core.decodePrefix/event_classification@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 12372.98,
+        "p50": 2875,
+        "p95": 3250,
+        "p99": 29292
+      },
+      "opsPerSec": 79925.44554439542,
+      "heapDeltaBytesPerOp": 2225.68
+    },
+    {
+      "id": "core.encodePrefix/metric_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2749.16,
+        "p50": 2500,
+        "p95": 2667,
+        "p99": 3375
+      },
+      "opsPerSec": 349497.597203917,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/metric_point@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 9692.04,
+        "p50": 3000,
+        "p95": 3708,
+        "p99": 46209
+      },
+      "opsPerSec": 101832.99388999981,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/version_state@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4048.74,
+        "p50": 2500,
+        "p95": 3542,
+        "p99": 24833
+      },
+      "opsPerSec": 226329.857661224,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/version_state@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2988.36,
+        "p50": 2667,
+        "p95": 3500,
+        "p99": 4166
+      },
+      "opsPerSec": 321844.5555164854,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/metric_aggregate@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3607.93,
+        "p50": 3166,
+        "p95": 4041,
+        "p99": 10750
+      },
+      "opsPerSec": 268757.23964816105,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/metric_aggregate@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5073.37,
+        "p50": 3500,
+        "p95": 9916,
+        "p99": 23125
+      },
+      "opsPerSec": 192601.03850473935,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/validation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3678.39,
+        "p50": 3083,
+        "p95": 3709,
+        "p99": 19709
+      },
+      "opsPerSec": 263042.2945706816,
+      "heapDeltaBytesPerOp": 1775.84
+    },
+    {
+      "id": "core.decodePrefix/validation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 7626.66,
+        "p50": 3542,
+        "p95": 4625,
+        "p99": 127458
+      },
+      "opsPerSec": 128900.53003899442,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/resource_lifecycle@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4061.2,
+        "p50": 3125,
+        "p95": 3500,
+        "p99": 26625
+      },
+      "opsPerSec": 239640.92204242462,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/resource_lifecycle@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3903.71,
+        "p50": 3458,
+        "p95": 3958,
+        "p99": 8416
+      },
+      "opsPerSec": 249092.05944329937,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/test_coverage@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1687.09,
+        "p50": 1417,
+        "p95": 2333,
+        "p99": 2959
+      },
+      "opsPerSec": 574986.9190480986,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/test_coverage@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2995.59,
+        "p50": 1625,
+        "p95": 7084,
+        "p99": 25792
+      },
+      "opsPerSec": 324850.40638766374,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/cli_tracking@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4011.22,
+        "p50": 2916,
+        "p95": 7334,
+        "p99": 37667
+      },
+      "opsPerSec": 242057.48865366713,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/cli_tracking@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 6507.92,
+        "p50": 3625,
+        "p95": 15375,
+        "p99": 77041
+      },
+      "opsPerSec": 149840.79415621064,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/tag_lifecycle@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3597.13,
+        "p50": 3083,
+        "p95": 3375,
+        "p99": 15167
+      },
+      "opsPerSec": 269783.9300503211,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/tag_lifecycle@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3856.67,
+        "p50": 3500,
+        "p95": 3625,
+        "p99": 4250
+      },
+      "opsPerSec": 251335.2183473997,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/decision_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3375.82,
+        "p50": 1458,
+        "p95": 3292,
+        "p99": 51167
+      },
+      "opsPerSec": 287528.17776139855,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/decision_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3878.77,
+        "p50": 3583,
+        "p95": 3667,
+        "p99": 4375
+      },
+      "opsPerSec": 250731.50917804713,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/decision_path@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1307.03,
+        "p50": 1166,
+        "p95": 1209,
+        "p99": 1708
+      },
+      "opsPerSec": 738688.8273311193,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/decision_path@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3422.06,
+        "p50": 3000,
+        "p95": 4291,
+        "p99": 9584
+      },
+      "opsPerSec": 281426.1551838516,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/escalation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2962.04,
+        "p50": 2666,
+        "p95": 2875,
+        "p99": 3875
+      },
+      "opsPerSec": 324939.0739234607,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/escalation_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 88545.81,
+        "p50": 2708,
+        "p95": 5625,
+        "p99": 36917
+      },
+      "opsPerSec": 11278.672076218647,
+      "heapDeltaBytesPerOp": 2094.24
+    },
+    {
+      "id": "core.encodePrefix/model_apply@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 463180.81,
+        "p50": 2667,
+        "p95": 65708,
+        "p99": 1126542
+      },
+      "opsPerSec": 2158.1258834827886,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/model_apply@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 11668.37,
+        "p50": 1333,
+        "p95": 1958,
+        "p99": 26417
+      },
+      "opsPerSec": 67187.36877466437,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/forcing_response@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 13106.23,
+        "p50": 2625,
+        "p95": 3167,
+        "p99": 25875
+      },
+      "opsPerSec": 75507.31477112311,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/forcing_response@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1839.61,
+        "p50": 1292,
+        "p95": 2417,
+        "p99": 15875
+      },
+      "opsPerSec": 526315.789473533,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/harness_transition@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 8385.47,
+        "p50": 3209,
+        "p95": 17375,
+        "p99": 118833
+      },
+      "opsPerSec": 117583.70195825424,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/harness_transition@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4374.2,
+        "p50": 3542,
+        "p95": 4250,
+        "p99": 29459
+      },
+      "opsPerSec": 221975.58268594398,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/harness_guard@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3360,
+        "p50": 3083,
+        "p95": 3291,
+        "p99": 4042
+      },
+      "opsPerSec": 288496.213487089,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/harness_guard@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2085.73,
+        "p50": 1583,
+        "p95": 2708,
+        "p99": 17125
+      },
+      "opsPerSec": 466925.34330716124,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/harness_process_step@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1677.55,
+        "p50": 1375,
+        "p95": 1667,
+        "p99": 12750
+      },
+      "opsPerSec": 578034.6820809187,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/harness_process_step@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1573.4,
+        "p50": 1375,
+        "p95": 1459,
+        "p99": 1792
+      },
+      "opsPerSec": 617600.375501398,
+      "heapDeltaBytesPerOp": 2125.68
+    },
+    {
+      "id": "core.encodePrefix/quality_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4921.31,
+        "p50": 2500,
+        "p95": 2709,
+        "p99": 25125
+      },
+      "opsPerSec": 198593.16601200082,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/quality_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3405.03,
+        "p50": 2834,
+        "p95": 3291,
+        "p99": 42583
+      },
+      "opsPerSec": 284325.9626567892,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/task_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3075.83,
+        "p50": 2500,
+        "p95": 2625,
+        "p99": 28667
+      },
+      "opsPerSec": 311850.9601890346,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/task_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3146.35,
+        "p50": 2875,
+        "p95": 3042,
+        "p99": 3834
+      },
+      "opsPerSec": 307771.8548796018,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/sdk_lifecycle@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2742.53,
+        "p50": 2500,
+        "p95": 2625,
+        "p99": 3209
+      },
+      "opsPerSec": 351957.76506831124,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/sdk_lifecycle@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3130.06,
+        "p50": 2833,
+        "p95": 3000,
+        "p99": 3500
+      },
+      "opsPerSec": 308880.30888029153,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/rpc_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2741.23,
+        "p50": 2500,
+        "p95": 2709,
+        "p99": 3208
+      },
+      "opsPerSec": 351288.8788966526,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/rpc_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3176.66,
+        "p50": 2833,
+        "p95": 3167,
+        "p99": 7875
+      },
+      "opsPerSec": 304800.9192796853,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/gate_execution@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3422.06,
+        "p50": 3083,
+        "p95": 3416,
+        "p99": 3666
+      },
+      "opsPerSec": 283352.74299628154,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/gate_execution@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 4057.97,
+        "p50": 3500,
+        "p95": 3709,
+        "p99": 28500
+      },
+      "opsPerSec": 239592.69242288527,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/bundle_observation@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2852.91,
+        "p50": 1792,
+        "p95": 1917,
+        "p99": 3250
+      },
+      "opsPerSec": 335475.9061204032,
+      "heapDeltaBytesPerOp": 1748.64
+    },
+    {
+      "id": "core.decodePrefix/bundle_observation@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2530.87,
+        "p50": 2250,
+        "p95": 2333,
+        "p99": 2958
+      },
+      "opsPerSec": 379086.55304183834,
+      "heapDeltaBytesPerOp": 2028.64
+    },
+    {
+      "id": "core.encodePrefix/transition_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 23083.26,
+        "p50": 1083,
+        "p95": 2250,
+        "p99": 99375
+      },
+      "opsPerSec": 43168.57327865067,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/transition_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3254.14,
+        "p50": 2834,
+        "p95": 3000,
+        "p99": 7958
+      },
+      "opsPerSec": 296920.0483386294,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/convergence_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1514.15,
+        "p50": 1083,
+        "p95": 1666,
+        "p99": 11333
+      },
+      "opsPerSec": 637279.5809248611,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/convergence_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 6914.96,
+        "p50": 2833,
+        "p95": 3292,
+        "p99": 82084
+      },
+      "opsPerSec": 142137.92495686712,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/graph_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 11694.2,
+        "p50": 3084,
+        "p95": 27792,
+        "p99": 140458
+      },
+      "opsPerSec": 84414.89922970717,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/graph_event@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5519.19,
+        "p50": 3500,
+        "p95": 4084,
+        "p99": 30500
+      },
+      "opsPerSec": 177043.4801083087,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/test_scenario@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 15829.63,
+        "p50": 2708,
+        "p95": 24292,
+        "p99": 150416
+      },
+      "opsPerSec": 62470.71685148233,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/test_scenario@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5663.83,
+        "p50": 3459,
+        "p95": 8917,
+        "p99": 88292
+      },
+      "opsPerSec": 173272.68789256382,
+      "heapDeltaBytesPerOp": 2126.96
+    },
+    {
+      "id": "core.encodePrefix/ir_module@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2824.21,
+        "p50": 2625,
+        "p95": 2709,
+        "p99": 3458
+      },
+      "opsPerSec": 341929.43944099755,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/ir_module@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3096.28,
+        "p50": 1583,
+        "p95": 2500,
+        "p99": 24167
+      },
+      "opsPerSec": 317417.99506079877,
+      "heapDeltaBytesPerOp": 2124.64
+    },
+    {
+      "id": "core.encodePrefix/ir_data@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3110.77,
+        "p50": 2792,
+        "p95": 3167,
+        "p99": 7750
+      },
+      "opsPerSec": 309757.6765696714,
+      "heapDeltaBytesPerOp": 1764.64
+    },
+    {
+      "id": "core.decodePrefix/ir_data@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2212.1,
+        "p50": 1708,
+        "p95": 1833,
+        "p99": 22833
+      },
+      "opsPerSec": 442315.43282773375,
+      "heapDeltaBytesPerOp": 2188.64
+    },
+    {
+      "id": "core.encodePrefix/ir_pipe@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3138.33,
+        "p50": 2542,
+        "p95": 2791,
+        "p99": 21667
+      },
+      "opsPerSec": 307219.66205844725,
+      "heapDeltaBytesPerOp": 1756.64
+    },
+    {
+      "id": "core.decodePrefix/ir_pipe@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3064.99,
+        "p50": 2792,
+        "p95": 3125,
+        "p99": 3708
+      },
+      "opsPerSec": 314795.05268069846,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.encodePrefix/ir_intent_path@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2614.14,
+        "p50": 1084,
+        "p95": 1208,
+        "p99": 17292
+      },
+      "opsPerSec": 373831.7757010362,
+      "heapDeltaBytesPerOp": 1708.64
+    },
+    {
+      "id": "core.decodePrefix/ir_intent_path@v1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 3007.89,
+        "p50": 1250,
+        "p95": 3625,
+        "p99": 46667
+      },
+      "opsPerSec": 323232.32323251327,
+      "heapDeltaBytesPerOp": 2076.64
+    },
+    {
+      "id": "core.parseSerializedAddress",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 2717.46,
+        "p50": 500,
+        "p95": 1916,
+        "p99": 13750
+      },
+      "opsPerSec": 264667.1942366004,
+      "heapDeltaBytesPerOp": 292.4
+    },
+    {
+      "id": "browser-codec.encode/service",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 1594.68,
+        "p50": 834,
+        "p95": 1333,
+        "p99": 16834
+      },
+      "opsPerSec": 610221.2051878691,
+      "heapDeltaBytesPerOp": 1038.16
+    },
+    {
+      "id": "browser-codec.decode/service",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 6530.45,
+        "p50": 3250,
+        "p95": 4542,
+        "p99": 112125
+      },
+      "opsPerSec": 150385.21171988227,
+      "heapDeltaBytesPerOp": 1746.24
+    },
+    {
+      "id": "envelope.json/1",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 5926.68,
+        "p50": 3084,
+        "p95": 6125,
+        "p99": 101333
+      },
+      "opsPerSec": 164699.33313236822,
+      "heapDeltaBytesPerOp": 1140.56
+    },
+    {
+      "id": "envelope.json/50",
+      "status": "ok",
+      "warm": false,
+      "iterations": 100,
+      "nsPerOp": {
+        "mean": 387787.16,
+        "p50": 146417,
+        "p95": 1443584,
+        "p99": 4247875
+      },
+      "opsPerSec": 2574.9636286387367,
+      "heapDeltaBytesPerOp": 10361.76
+    },
+    {
+      "id": "core.encodePrefix/service@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3405.0771,
+        "p50": 1792,
+        "p95": 3500,
+        "p99": 14042
+      },
+      "opsPerSec": 275889.01856592426,
+      "heapDeltaBytesPerOp": 47.3432
+    },
+    {
+      "id": "core.decodePrefix/service@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 12817.3046,
+        "p50": 1666,
+        "p95": 3792,
+        "p99": 70750
+      },
+      "opsPerSec": 69175.76768430775,
+      "heapDeltaBytesPerOp": 31.2736
+    },
+    {
+      "id": "core.encodePrefix/permission@v4",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 11023.0803,
+        "p50": 2042,
+        "p95": 3166,
+        "p99": 26541
+      },
+      "opsPerSec": 83753.14597754592,
+      "heapDeltaBytesPerOp": 454.4752
+    },
+    {
+      "id": "core.decodePrefix/permission@v4",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 4456.5857,
+        "p50": 2458,
+        "p95": 3916,
+        "p99": 30167
+      },
+      "opsPerSec": 218920.37752031029,
+      "heapDeltaBytesPerOp": 333.1896
+    },
+    {
+      "id": "core.encodePrefix/event@v4",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 4411.8711,
+        "p50": 2167,
+        "p95": 2875,
+        "p99": 11958
+      },
+      "opsPerSec": 218479.94717854052,
+      "heapDeltaBytesPerOp": 56.8904
+    },
+    {
+      "id": "core.decodePrefix/event@v4",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 16743.7006,
+        "p50": 3000,
+        "p95": 3583,
+        "p99": 79208
+      },
+      "opsPerSec": 52815.692784551415,
+      "heapDeltaBytesPerOp": 363.6584
+    },
+    {
+      "id": "core.encodePrefix/rbac@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2713.8524,
+        "p50": 2291,
+        "p95": 2667,
+        "p99": 13792
+      },
+      "opsPerSec": 353725.6150404121,
+      "heapDeltaBytesPerOp": 51.392
+    },
+    {
+      "id": "core.decodePrefix/rbac@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3138.9596,
+        "p50": 2584,
+        "p95": 3000,
+        "p99": 13708
+      },
+      "opsPerSec": 308546.74483183905,
+      "heapDeltaBytesPerOp": 373.836
+    },
+    {
+      "id": "core.encodePrefix/content@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 8994.2107,
+        "p50": 3250,
+        "p95": 4167,
+        "p99": 36125
+      },
+      "opsPerSec": 107578.11550875232,
+      "heapDeltaBytesPerOp": 137.3304
+    },
+    {
+      "id": "core.decodePrefix/content@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 42637.2772,
+        "p50": 3709,
+        "p95": 5166,
+        "p99": 109709
+      },
+      "opsPerSec": 22959.017501723327,
+      "heapDeltaBytesPerOp": 579.3232
+    },
+    {
+      "id": "core.encodePrefix/tracking@v3",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 8825.5256,
+        "p50": 2917,
+        "p95": 5083,
+        "p99": 58750
+      },
+      "opsPerSec": 108990.58781261595,
+      "heapDeltaBytesPerOp": 48.7656
+    },
+    {
+      "id": "core.decodePrefix/tracking@v3",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 23746.3456,
+        "p50": 3417,
+        "p95": 5125,
+        "p99": 74750
+      },
+      "opsPerSec": 41655.124725857226,
+      "heapDeltaBytesPerOp": 414.9432
+    },
+    {
+      "id": "core.encodePrefix/relational@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 4199.9371,
+        "p50": 2375,
+        "p95": 2541,
+        "p99": 14958
+      },
+      "opsPerSec": 225294.57434566665,
+      "heapDeltaBytesPerOp": 38.3328
+    },
+    {
+      "id": "core.decodePrefix/relational@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3483.4408,
+        "p50": 1333,
+        "p95": 3167,
+        "p99": 17458
+      },
+      "opsPerSec": 280212.4503547615,
+      "heapDeltaBytesPerOp": 368.476
+    },
+    {
+      "id": "core.encodePrefix/page_view@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2599.7833,
+        "p50": 1375,
+        "p95": 2958,
+        "p99": 18708
+      },
+      "opsPerSec": 359087.37942518457,
+      "heapDeltaBytesPerOp": 56.5992
+    },
+    {
+      "id": "core.decodePrefix/page_view@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 25599.7702,
+        "p50": 1791,
+        "p95": 3875,
+        "p99": 64708
+      },
+      "opsPerSec": 36075.36143002741,
+      "heapDeltaBytesPerOp": 416.0392
+    },
+    {
+      "id": "core.encodePrefix/endpoint@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 19978.7745,
+        "p50": 2667,
+        "p95": 5208,
+        "p99": 78625
+      },
+      "opsPerSec": 48886.956202826084,
+      "heapDeltaBytesPerOp": 49.6016
+    },
+    {
+      "id": "core.decodePrefix/endpoint@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 11385.6384,
+        "p50": 3042,
+        "p95": 4333,
+        "p99": 44125
+      },
+      "opsPerSec": 79050.60226677585,
+      "heapDeltaBytesPerOp": 424.416
+    },
+    {
+      "id": "core.encodePrefix/flow_point@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3703.4741,
+        "p50": 2750,
+        "p95": 3209,
+        "p99": 26458
+      },
+      "opsPerSec": 262482.41006939125,
+      "heapDeltaBytesPerOp": 51.324
+    },
+    {
+      "id": "core.decodePrefix/flow_point@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 24902.9873,
+        "p50": 1583,
+        "p95": 4916,
+        "p99": 165916
+      },
+      "opsPerSec": 39613.053199803704,
+      "heapDeltaBytesPerOp": 410.6216
+    },
+    {
+      "id": "core.encodePrefix/engine_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3347.4144,
+        "p50": 1084,
+        "p95": 2500,
+        "p99": 20375
+      },
+      "opsPerSec": 286108.0275818432,
+      "heapDeltaBytesPerOp": 57.5472
+    },
+    {
+      "id": "core.decodePrefix/engine_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 5479.3885,
+        "p50": 1208,
+        "p95": 2833,
+        "p99": 37792
+      },
+      "opsPerSec": 175648.2681370567,
+      "heapDeltaBytesPerOp": 388.9304
+    },
+    {
+      "id": "core.encodePrefix/schema_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 5784.2143,
+        "p50": 1875,
+        "p95": 2542,
+        "p99": 35208
+      },
+      "opsPerSec": 163301.2990618341,
+      "heapDeltaBytesPerOp": 37.3208
+    },
+    {
+      "id": "core.decodePrefix/schema_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 12524.749,
+        "p50": 1167,
+        "p95": 2834,
+        "p99": 78000
+      },
+      "opsPerSec": 78650.437148961,
+      "heapDeltaBytesPerOp": 363.4776
+    },
+    {
+      "id": "core.encodePrefix/schema_validation@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3094.22,
+        "p50": 1375,
+        "p95": 3083,
+        "p99": 11375
+      },
+      "opsPerSec": 312067.6497754715,
+      "heapDeltaBytesPerOp": 60.3528
+    },
+    {
+      "id": "core.decodePrefix/schema_validation@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3431.0014,
+        "p50": 1334,
+        "p95": 3333,
+        "p99": 28167
+      },
+      "opsPerSec": 284861.7352352641,
+      "heapDeltaBytesPerOp": 424.6072
+    },
+    {
+      "id": "core.encodePrefix/pipeline_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 13791.9654,
+        "p50": 1625,
+        "p95": 4000,
+        "p99": 58375
+      },
+      "opsPerSec": 70411.60554500381,
+      "heapDeltaBytesPerOp": 133.1192
+    },
+    {
+      "id": "core.decodePrefix/pipeline_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 4459.5665,
+        "p50": 1584,
+        "p95": 4625,
+        "p99": 38000
+      },
+      "opsPerSec": 218412.3440716088,
+      "heapDeltaBytesPerOp": 592.6528
+    },
+    {
+      "id": "core.encodePrefix/data_policy@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2283.954,
+        "p50": 875,
+        "p95": 1917,
+        "p99": 6292
+      },
+      "opsPerSec": 414114.41053545434,
+      "heapDeltaBytesPerOp": 45.7232
+    },
+    {
+      "id": "core.decodePrefix/data_policy@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 12715.3171,
+        "p50": 917,
+        "p95": 2209,
+        "p99": 57875
+      },
+      "opsPerSec": 76899.09505298756,
+      "heapDeltaBytesPerOp": 314.9352
+    },
+    {
+      "id": "core.encodePrefix/deploy_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2517.6566,
+        "p50": 1917,
+        "p95": 2250,
+        "p99": 5250
+      },
+      "opsPerSec": 379548.65819491784,
+      "heapDeltaBytesPerOp": 52.2536
+    },
+    {
+      "id": "core.decodePrefix/deploy_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2299.3821,
+        "p50": 958,
+        "p95": 2500,
+        "p99": 26625
+      },
+      "opsPerSec": 419530.5394529178,
+      "heapDeltaBytesPerOp": 335.8904
+    },
+    {
+      "id": "core.encodePrefix/health_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2432.4614,
+        "p50": 875,
+        "p95": 1875,
+        "p99": 13917
+      },
+      "opsPerSec": 384325.91329384135,
+      "heapDeltaBytesPerOp": 48.1136
+    },
+    {
+      "id": "core.decodePrefix/health_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 9677.0483,
+        "p50": 1958,
+        "p95": 2542,
+        "p99": 30542
+      },
+      "opsPerSec": 97144.6355003102,
+      "heapDeltaBytesPerOp": 317.74
+    },
+    {
+      "id": "core.encodePrefix/cart_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2847.7185,
+        "p50": 2291,
+        "p95": 2750,
+        "p99": 8917
+      },
+      "opsPerSec": 338196.78345096984,
+      "heapDeltaBytesPerOp": 43.9928
+    },
+    {
+      "id": "core.decodePrefix/cart_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3061.7824,
+        "p50": 1292,
+        "p95": 2792,
+        "p99": 21792
+      },
+      "opsPerSec": 311673.335177396,
+      "heapDeltaBytesPerOp": 326.2152
+    },
+    {
+      "id": "core.encodePrefix/auth_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 7314.1165,
+        "p50": 917,
+        "p95": 2250,
+        "p99": 27875
+      },
+      "opsPerSec": 131922.20547543,
+      "heapDeltaBytesPerOp": 42.8144
+    },
+    {
+      "id": "core.decodePrefix/auth_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 8746.7227,
+        "p50": 2416,
+        "p95": 2792,
+        "p99": 30750
+      },
+      "opsPerSec": 105824.16521268705,
+      "heapDeltaBytesPerOp": 319.3888
+    },
+    {
+      "id": "core.encodePrefix/order_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 4661.2218,
+        "p50": 2167,
+        "p95": 2542,
+        "p99": 22000
+      },
+      "opsPerSec": 192181.26660061767,
+      "heapDeltaBytesPerOp": 35.2832
+    },
+    {
+      "id": "core.decodePrefix/order_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 13636.5836,
+        "p50": 2416,
+        "p95": 3333,
+        "p99": 93875
+      },
+      "opsPerSec": 70991.50865595552,
+      "heapDeltaBytesPerOp": 316.2632
+    },
+    {
+      "id": "core.encodePrefix/build_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 11873.589,
+        "p50": 2417,
+        "p95": 3667,
+        "p99": 72583
+      },
+      "opsPerSec": 78818.14834841297,
+      "heapDeltaBytesPerOp": 35.808
+    },
+    {
+      "id": "core.decodePrefix/build_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 5773.9215,
+        "p50": 2875,
+        "p95": 3959,
+        "p99": 36625
+      },
+      "opsPerSec": 167892.74823203037,
+      "heapDeltaBytesPerOp": 369.1864
+    },
+    {
+      "id": "core.encodePrefix/test_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 11792.0137,
+        "p50": 1167,
+        "p95": 2750,
+        "p99": 22750
+      },
+      "opsPerSec": 84150.35119686236,
+      "heapDeltaBytesPerOp": 47.2952
+    },
+    {
+      "id": "core.decodePrefix/test_event@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 5407.097,
+        "p50": 1375,
+        "p95": 3125,
+        "p99": 19041
+      },
+      "opsPerSec": 181739.29044437574,
+      "heapDeltaBytesPerOp": 386.516
+    },
+    {
+      "id": "core.encodePrefix/dkg_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 9879.552,
+        "p50": 1792,
+        "p95": 2084,
+        "p99": 18750
+      },
+      "opsPerSec": 100170.95877020467,
+      "heapDeltaBytesPerOp": 39.34
+    },
+    {
+      "id": "core.decodePrefix/dkg_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 11860.0089,
+        "p50": 2042,
+        "p95": 2458,
+        "p99": 45208
+      },
+      "opsPerSec": 80436.20554265745,
+      "heapDeltaBytesPerOp": 314.14
+    },
+    {
+      "id": "core.encodePrefix/dkg_decision_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2601.6975,
+        "p50": 2209,
+        "p95": 2500,
+        "p99": 4541
+      },
+      "opsPerSec": 372724.6233328877,
+      "heapDeltaBytesPerOp": 55.384
+    },
+    {
+      "id": "core.decodePrefix/dkg_decision_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2832.9994,
+        "p50": 1291,
+        "p95": 2875,
+        "p99": 8083
+      },
+      "opsPerSec": 343837.5711314007,
+      "heapDeltaBytesPerOp": 382.0336
+    },
+    {
+      "id": "core.encodePrefix/dkg_observation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3360.4146,
+        "p50": 2292,
+        "p95": 2625,
+        "p99": 6958
+      },
+      "opsPerSec": 287971.4304695742,
+      "heapDeltaBytesPerOp": 45.452
+    },
+    {
+      "id": "core.decodePrefix/dkg_observation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2673.0647,
+        "p50": 2584,
+        "p95": 2916,
+        "p99": 6792
+      },
+      "opsPerSec": 361692.54896349163,
+      "heapDeltaBytesPerOp": 376.0424
+    },
+    {
+      "id": "core.encodePrefix/skill_execution@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2324.4213,
+        "p50": 2291,
+        "p95": 2625,
+        "p99": 6458
+      },
+      "opsPerSec": 413589.8682393729,
+      "heapDeltaBytesPerOp": 44.7992
+    },
+    {
+      "id": "core.decodePrefix/skill_execution@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2955.2516,
+        "p50": 2666,
+        "p95": 3125,
+        "p99": 10750
+      },
+      "opsPerSec": 326363.66324413195,
+      "heapDeltaBytesPerOp": 371.8592
+    },
+    {
+      "id": "core.encodePrefix/cli_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2585.9885,
+        "p50": 2291,
+        "p95": 2625,
+        "p99": 10459
+      },
+      "opsPerSec": 370700.44479235064,
+      "heapDeltaBytesPerOp": 48.46
+    },
+    {
+      "id": "core.decodePrefix/cli_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2932.5065,
+        "p50": 2625,
+        "p95": 2959,
+        "p99": 9042
+      },
+      "opsPerSec": 316255.9445443971,
+      "heapDeltaBytesPerOp": 378.9512
+    },
+    {
+      "id": "core.encodePrefix/contract_check@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2722.1509,
+        "p50": 1000,
+        "p95": 2583,
+        "p99": 3958
+      },
+      "opsPerSec": 357754.5535446794,
+      "heapDeltaBytesPerOp": 887.7304
+    },
+    {
+      "id": "core.decodePrefix/contract_check@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2396.3097,
+        "p50": 1292,
+        "p95": 3208,
+        "p99": 8667
+      },
+      "opsPerSec": 397676.8988137473,
+      "heapDeltaBytesPerOp": 395.336
+    },
+    {
+      "id": "core.encodePrefix/pattern_match@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 20129.5376,
+        "p50": 2667,
+        "p95": 12125,
+        "p99": 209417
+      },
+      "opsPerSec": 48286.37684378536,
+      "heapDeltaBytesPerOp": 43.2584
+    },
+    {
+      "id": "core.decodePrefix/pattern_match@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 11500.3579,
+        "p50": 1500,
+        "p95": 3250,
+        "p99": 19250
+      },
+      "opsPerSec": 85803.67475688024,
+      "heapDeltaBytesPerOp": 411.1936
+    },
+    {
+      "id": "core.encodePrefix/pattern_anomaly@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3735.2299,
+        "p50": 2750,
+        "p95": 3333,
+        "p99": 15459
+      },
+      "opsPerSec": 262579.1840351746,
+      "heapDeltaBytesPerOp": 43.2584
+    },
+    {
+      "id": "core.decodePrefix/pattern_anomaly@v2",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 14475.532,
+        "p50": 3209,
+        "p95": 3917,
+        "p99": 58083
+      },
+      "opsPerSec": 68427.04734512602,
+      "heapDeltaBytesPerOp": 411.3088
+    },
+    {
+      "id": "core.encodePrefix/version_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 22109.9029,
+        "p50": 1750,
+        "p95": 2042,
+        "p99": 42417
+      },
+      "opsPerSec": 43769.302946494776,
+      "heapDeltaBytesPerOp": 27.3016
+    },
+    {
+      "id": "core.decodePrefix/version_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3932.5725,
+        "p50": 1958,
+        "p95": 2959,
+        "p99": 20333
+      },
+      "opsPerSec": 247829.68113340432,
+      "heapDeltaBytesPerOp": 315.4672
+    },
+    {
+      "id": "core.encodePrefix/gate_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2467.9949,
+        "p50": 1750,
+        "p95": 2583,
+        "p99": 20959
+      },
+      "opsPerSec": 382970.5702052764,
+      "heapDeltaBytesPerOp": 27.3016
+    },
+    {
+      "id": "core.decodePrefix/gate_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1854.7809,
+        "p50": 875,
+        "p95": 2083,
+        "p99": 7041
+      },
+      "opsPerSec": 516891.57739128964,
+      "heapDeltaBytesPerOp": 316.7632
+    },
+    {
+      "id": "core.encodePrefix/observation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2479.5563,
+        "p50": 875,
+        "p95": 2042,
+        "p99": 10500
+      },
+      "opsPerSec": 393150.0059129646,
+      "heapDeltaBytesPerOp": 1664.7992
+    },
+    {
+      "id": "core.decodePrefix/observation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2400.7532,
+        "p50": 2083,
+        "p95": 2375,
+        "p99": 8042
+      },
+      "opsPerSec": 399446.7662287985,
+      "heapDeltaBytesPerOp": 283.0632
+    },
+    {
+      "id": "core.encodePrefix/spec_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1641.6175,
+        "p50": 833,
+        "p95": 2041,
+        "p99": 4125
+      },
+      "opsPerSec": 590786.658430351,
+      "heapDeltaBytesPerOp": 1664.7992
+    },
+    {
+      "id": "core.decodePrefix/spec_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2476.7205,
+        "p50": 917,
+        "p95": 2334,
+        "p99": 16750
+      },
+      "opsPerSec": 395697.45494914136,
+      "heapDeltaBytesPerOp": 283.16
+    },
+    {
+      "id": "core.encodePrefix/edge_activity@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2628.7831,
+        "p50": 1791,
+        "p95": 2083,
+        "p99": 20667
+      },
+      "opsPerSec": 370310.36637581274,
+      "heapDeltaBytesPerOp": 1664.7992
+    },
+    {
+      "id": "core.decodePrefix/edge_activity@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 15745.6117,
+        "p50": 2083,
+        "p95": 2375,
+        "p99": 48167
+      },
+      "opsPerSec": 62594.2172069537,
+      "heapDeltaBytesPerOp": 283.16
+    },
+    {
+      "id": "core.encodePrefix/execution_context@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2225.9969,
+        "p50": 750,
+        "p95": 1792,
+        "p99": 4291
+      },
+      "opsPerSec": 428162.3805828334,
+      "heapDeltaBytesPerOp": 1664.7992
+    },
+    {
+      "id": "core.decodePrefix/execution_context@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2284.5867,
+        "p50": 1958,
+        "p95": 2125,
+        "p99": 8708
+      },
+      "opsPerSec": 424254.63763349375,
+      "heapDeltaBytesPerOp": 283.16
+    },
+    {
+      "id": "core.encodePrefix/ingest_record@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1750.7205,
+        "p50": 1708,
+        "p95": 1917,
+        "p99": 3625
+      },
+      "opsPerSec": 551550.4413837381,
+      "heapDeltaBytesPerOp": 1664.7992
+    },
+    {
+      "id": "core.decodePrefix/ingest_record@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1626.7658,
+        "p50": 916,
+        "p95": 2167,
+        "p99": 3958
+      },
+      "opsPerSec": 594455.2189452668,
+      "heapDeltaBytesPerOp": 283.16
+    },
+    {
+      "id": "core.encodePrefix/event_classification@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2013.2391,
+        "p50": 2167,
+        "p95": 2500,
+        "p99": 7083
+      },
+      "opsPerSec": 478778.15814041364,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/event_classification@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2057.4575,
+        "p50": 1209,
+        "p95": 2750,
+        "p99": 6458
+      },
+      "opsPerSec": 473414.8001301874,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/metric_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1659.9423,
+        "p50": 1000,
+        "p95": 2333,
+        "p99": 3334
+      },
+      "opsPerSec": 584786.7721231693,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/metric_point@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2115.447,
+        "p50": 1167,
+        "p95": 2709,
+        "p99": 6291
+      },
+      "opsPerSec": 460979.0882368448,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/version_state@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3298.3411,
+        "p50": 2167,
+        "p95": 2541,
+        "p99": 7542
+      },
+      "opsPerSec": 291590.88341104175,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/version_state@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 6850.6049,
+        "p50": 2542,
+        "p95": 4250,
+        "p99": 20792
+      },
+      "opsPerSec": 140176.84542606704,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/metric_aggregate@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2836.3569,
+        "p50": 1167,
+        "p95": 3042,
+        "p99": 5459
+      },
+      "opsPerSec": 346436.82107909594,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/metric_aggregate@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3308.6921,
+        "p50": 3042,
+        "p95": 3500,
+        "p99": 7666
+      },
+      "opsPerSec": 296383.0157712789,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/validation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 13856.3887,
+        "p50": 2666,
+        "p95": 3125,
+        "p99": 30208
+      },
+      "opsPerSec": 71756.73033282586,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/validation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3870.5796,
+        "p50": 3042,
+        "p95": 3583,
+        "p99": 23084
+      },
+      "opsPerSec": 253908.07050102914,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/resource_lifecycle@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2341.8621,
+        "p50": 1167,
+        "p95": 2875,
+        "p99": 6959
+      },
+      "opsPerSec": 418107.5349165768,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/resource_lifecycle@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3373.4139,
+        "p50": 3042,
+        "p95": 3458,
+        "p99": 15625
+      },
+      "opsPerSec": 290377.60907547566,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/test_coverage@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3448.5147,
+        "p50": 1250,
+        "p95": 3125,
+        "p99": 7667
+      },
+      "opsPerSec": 285761.91814372386,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/test_coverage@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3746.1539,
+        "p50": 3208,
+        "p95": 3625,
+        "p99": 28833
+      },
+      "opsPerSec": 261706.45695255787,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/cli_tracking@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2615.8777,
+        "p50": 1417,
+        "p95": 2917,
+        "p99": 15916
+      },
+      "opsPerSec": 372669.07604678883,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/cli_tracking@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 8429.431,
+        "p50": 3167,
+        "p95": 3625,
+        "p99": 30125
+      },
+      "opsPerSec": 114911.21476919987,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/tag_lifecycle@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2812.9774,
+        "p50": 1208,
+        "p95": 3084,
+        "p99": 13416
+      },
+      "opsPerSec": 348488.7124854515,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/tag_lifecycle@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3656.9752,
+        "p50": 3042,
+        "p95": 3500,
+        "p99": 24542
+      },
+      "opsPerSec": 268506.2351041176,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/decision_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2428.4082,
+        "p50": 1167,
+        "p95": 3167,
+        "p99": 11958
+      },
+      "opsPerSec": 403621.8278200158,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/decision_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2748.8353,
+        "p50": 1375,
+        "p95": 3542,
+        "p99": 15125
+      },
+      "opsPerSec": 356764.8520405094,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/decision_path@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2065.4022,
+        "p50": 1000,
+        "p95": 2584,
+        "p99": 11959
+      },
+      "opsPerSec": 471816.8018398268,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/decision_path@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2397.0305,
+        "p50": 1209,
+        "p95": 2833,
+        "p99": 13958
+      },
+      "opsPerSec": 406309.9942100821,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/escalation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1790.336,
+        "p50": 959,
+        "p95": 2584,
+        "p99": 11875
+      },
+      "opsPerSec": 535405.9396970994,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/escalation_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2577.1334,
+        "p50": 1167,
+        "p95": 3208,
+        "p99": 17667
+      },
+      "opsPerSec": 380455.97648781183,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/model_apply@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1950.0168,
+        "p50": 1000,
+        "p95": 2667,
+        "p99": 5917
+      },
+      "opsPerSec": 493380.48669320793,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/model_apply@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2465.863,
+        "p50": 1167,
+        "p95": 3000,
+        "p99": 9667
+      },
+      "opsPerSec": 397819.94669211726,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/forcing_response@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2323.7574,
+        "p50": 2250,
+        "p95": 2625,
+        "p99": 9416
+      },
+      "opsPerSec": 419360.48113732284,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/forcing_response@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2387.6978,
+        "p50": 1125,
+        "p95": 3042,
+        "p99": 15167
+      },
+      "opsPerSec": 408288.2515055884,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/harness_transition@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2052.6781,
+        "p50": 1167,
+        "p95": 3084,
+        "p99": 8542
+      },
+      "opsPerSec": 476461.8098468433,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/harness_transition@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3115.2419,
+        "p50": 3041,
+        "p95": 3458,
+        "p99": 19750
+      },
+      "opsPerSec": 313266.4455172473,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/harness_guard@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 5888.4972,
+        "p50": 2667,
+        "p95": 3625,
+        "p99": 51958
+      },
+      "opsPerSec": 166866.32779008022,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/harness_guard@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 4171.9079,
+        "p50": 1500,
+        "p95": 3500,
+        "p99": 31458
+      },
+      "opsPerSec": 234935.03740800658,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/harness_process_step@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 6432.7089,
+        "p50": 2666,
+        "p95": 3125,
+        "p99": 40875
+      },
+      "opsPerSec": 153488.40778800196,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/harness_process_step@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 6057.7471,
+        "p50": 1416,
+        "p95": 3458,
+        "p99": 25375
+      },
+      "opsPerSec": 157197.792157009,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/quality_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3671.2513,
+        "p50": 2167,
+        "p95": 2500,
+        "p99": 7584
+      },
+      "opsPerSec": 267847.87579894357,
+      "heapDeltaBytesPerOp": 1672.7864
+    },
+    {
+      "id": "core.decodePrefix/quality_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2575.1905,
+        "p50": 1250,
+        "p95": 2834,
+        "p99": 12583
+      },
+      "opsPerSec": 375530.4367418864,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/task_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2109.4154,
+        "p50": 2166,
+        "p95": 2500,
+        "p99": 7208
+      },
+      "opsPerSec": 461228.89180210646,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/task_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3401.33,
+        "p50": 2542,
+        "p95": 3000,
+        "p99": 16375
+      },
+      "opsPerSec": 287733.2110045169,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/sdk_lifecycle@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1838.4355,
+        "p50": 959,
+        "p95": 2417,
+        "p99": 8167
+      },
+      "opsPerSec": 517521.3315823904,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/sdk_lifecycle@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2941.5663,
+        "p50": 1125,
+        "p95": 2833,
+        "p99": 25708
+      },
+      "opsPerSec": 334730.3639804566,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/rpc_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2641.4441,
+        "p50": 1084,
+        "p95": 2375,
+        "p99": 9792
+      },
+      "opsPerSec": 346626.9626278523,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/rpc_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2351.2889,
+        "p50": 1167,
+        "p95": 2833,
+        "p99": 6209
+      },
+      "opsPerSec": 416760.00354247115,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/gate_execution@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2210.8119,
+        "p50": 1167,
+        "p95": 3000,
+        "p99": 6875
+      },
+      "opsPerSec": 442450.9570767228,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/gate_execution@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 12605.5689,
+        "p50": 3000,
+        "p95": 3542,
+        "p99": 59750
+      },
+      "opsPerSec": 78399.19321585461,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/bundle_observation@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2324.5532,
+        "p50": 1666,
+        "p95": 2000,
+        "p99": 14000
+      },
+      "opsPerSec": 417861.48936281144,
+      "heapDeltaBytesPerOp": 1664.7992
+    },
+    {
+      "id": "core.decodePrefix/bundle_observation@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2144.2136,
+        "p50": 875,
+        "p95": 2042,
+        "p99": 12250
+      },
+      "opsPerSec": 452272.10879062506,
+      "heapDeltaBytesPerOp": 283.16
+    },
+    {
+      "id": "core.encodePrefix/transition_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3082.0419,
+        "p50": 1041,
+        "p95": 2500,
+        "p99": 20167
+      },
+      "opsPerSec": 316446.93382698967,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/transition_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 5119.4917,
+        "p50": 2500,
+        "p95": 2791,
+        "p99": 30666
+      },
+      "opsPerSec": 180015.70745056713,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/convergence_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3271.9168,
+        "p50": 1541,
+        "p95": 2459,
+        "p99": 19083
+      },
+      "opsPerSec": 294554.4279586461,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/convergence_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3256.1346,
+        "p50": 2458,
+        "p95": 2833,
+        "p99": 13792
+      },
+      "opsPerSec": 299957.6369829209,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/graph_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2429.1608,
+        "p50": 1375,
+        "p95": 3042,
+        "p99": 8667
+      },
+      "opsPerSec": 402666.9923437296,
+      "heapDeltaBytesPerOp": 11.1528
+    },
+    {
+      "id": "core.decodePrefix/graph_event@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1827.4224,
+        "p50": 1292,
+        "p95": 3083,
+        "p99": 4833
+      },
+      "opsPerSec": 536711.0347788864,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/test_scenario@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1757.8747,
+        "p50": 1083,
+        "p95": 2375,
+        "p99": 6084
+      },
+      "opsPerSec": 551627.7818726819,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/test_scenario@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1979.6546,
+        "p50": 1125,
+        "p95": 2709,
+        "p99": 5000
+      },
+      "opsPerSec": 489624.0583243917,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/ir_module@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1656.3532,
+        "p50": 959,
+        "p95": 2542,
+        "p99": 4083
+      },
+      "opsPerSec": 588099.7890074386,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/ir_module@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1951.2042,
+        "p50": 1208,
+        "p95": 2708,
+        "p99": 5625
+      },
+      "opsPerSec": 500657.1124600783,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/ir_data@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1876.2467,
+        "p50": 1167,
+        "p95": 3041,
+        "p99": 4458
+      },
+      "opsPerSec": 521610.99555978924,
+      "heapDeltaBytesPerOp": 11.0648
+    },
+    {
+      "id": "core.decodePrefix/ir_data@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2722.4085,
+        "p50": 1375,
+        "p95": 3500,
+        "p99": 7583
+      },
+      "opsPerSec": 360629.47442004667,
+      "heapDeltaBytesPerOp": 379.3368
+    },
+    {
+      "id": "core.encodePrefix/ir_pipe@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 8512.4747,
+        "p50": 959,
+        "p95": 2458,
+        "p99": 31875
+      },
+      "opsPerSec": 115684.11443787055,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/ir_pipe@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 25539.3814,
+        "p50": 2458,
+        "p95": 4083,
+        "p99": 76084
+      },
+      "opsPerSec": 38877.540707545486,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.encodePrefix/ir_intent_path@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 2981.3808,
+        "p50": 2167,
+        "p95": 2458,
+        "p99": 11333
+      },
+      "opsPerSec": 327662.9404727814,
+      "heapDeltaBytesPerOp": 1672.6984
+    },
+    {
+      "id": "core.decodePrefix/ir_intent_path@v1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3750.1509,
+        "p50": 2500,
+        "p95": 3375,
+        "p99": 35166
+      },
+      "opsPerSec": 258216.1139765933,
+      "heapDeltaBytesPerOp": 331.4336
+    },
+    {
+      "id": "core.parseSerializedAddress",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 208.6447,
+        "p50": 125,
+        "p95": 250,
+        "p99": 792
+      },
+      "opsPerSec": 3300193.8863895894,
+      "heapDeltaBytesPerOp": 196.4032
+    },
+    {
+      "id": "browser-codec.encode/service",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 1283.1179,
+        "p50": 375,
+        "p95": 1167,
+        "p99": 4709
+      },
+      "opsPerSec": 438614.11274242,
+      "heapDeltaBytesPerOp": 941.9888
+    },
+    {
+      "id": "browser-codec.decode/service",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 812.419,
+        "p50": 375,
+        "p95": 1042,
+        "p99": 2375
+      },
+      "opsPerSec": 1164274.1996139332,
+      "heapDeltaBytesPerOp": 1462.9896
+    },
+    {
+      "id": "envelope.json/1",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 3278.2948,
+        "p50": 2917,
+        "p95": 3125,
+        "p99": 17125
+      },
+      "opsPerSec": 297465.96773665847,
+      "heapDeltaBytesPerOp": 1090.284
+    },
+    {
+      "id": "envelope.json/50",
+      "status": "ok",
+      "warm": true,
+      "iterations": 10000,
+      "nsPerOp": {
+        "mean": 332008.4186,
+        "p50": 127417,
+        "p95": 704042,
+        "p99": 4466584
+      },
+      "opsPerSec": 3002.0866002915345,
+      "heapDeltaBytesPerOp": 442.0352
+    }
+  ]
+}

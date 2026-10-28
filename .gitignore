@@ -36,3 +36,4 @@ verdaccio/storage/
 
 # git worktrees (used by superpowers:using-git-worktrees)
 .worktrees/
+benchmarks/results/
