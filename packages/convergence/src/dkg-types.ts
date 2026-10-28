@@ -2,8 +2,8 @@
 /**
  * DKG 타입 부분집합 — convergence가 의존하는 최소 노드 타입만 복제.
  *
- * 원본: spec-core/src/dkg/dkg.types.ts
- * convergence 패키지가 spec-core에 역의존하지 않도록 복제.
+ * 원본: dkg/src/dkg.types.ts (spec-core/dkg는 re-export만 담당)
+ * convergence 패키지가 dkg/spec-core에 역의존하지 않도록 복제.
  * 타입만 정의 (런타임 코드 없음).
  */
 
